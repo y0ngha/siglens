@@ -201,6 +201,7 @@ export default async function OptionsPage({ params }: Props) {
                             content={optionsSnapshot?.content}
                             symbol={upper}
                             displayName={displayName}
+                            generatedAt={optionsSnapshot?.generatedAt}
                         />
                     ) : undefined
                 }
@@ -234,6 +235,7 @@ export default async function OptionsPage({ params }: Props) {
                             content={optionsSnapshot?.content}
                             symbol={upper}
                             displayName={displayName}
+                            generatedAt={optionsSnapshot?.generatedAt}
                         />
                     ) : undefined
                 }
@@ -369,6 +371,7 @@ export default async function OptionsPage({ params }: Props) {
                     content={optionsSnapshot?.content}
                     symbol={upper}
                     displayName={displayName}
+                    generatedAt={optionsSnapshot?.generatedAt}
                 />
                 <HydrationBoundary state={dehydrate(queryClient)}>
                     <OptionsPageClient

@@ -523,6 +523,7 @@ export default async function FundamentalPage({ params }: Props) {
                 displayName={displayName}
                 symbol={upper}
                 snapshotContent={fundamentalSnapshot?.content}
+                snapshotGeneratedAt={fundamentalSnapshot?.generatedAt}
             />
         );
     }
@@ -638,6 +639,7 @@ export default async function FundamentalPage({ params }: Props) {
                         content={fundamentalSnapshot?.content}
                         symbol={upper}
                         displayName={displayName}
+                        generatedAt={fundamentalSnapshot?.generatedAt}
                     />
                 ) : (
                     <ErrorBoundary

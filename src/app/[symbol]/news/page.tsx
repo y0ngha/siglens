@@ -384,6 +384,7 @@ export default async function NewsPage({ params }: Props) {
                     content={newsSnapshot?.content}
                     symbol={upper}
                     displayName={displayName}
+                    generatedAt={newsSnapshot?.generatedAt}
                 />
                 <section className="sr-only">
                     <h2>{displayName} 뉴스 분석 개요</h2>

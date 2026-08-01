@@ -169,6 +169,7 @@ export default async function CongressPage({ params }: Props) {
                 displayName={displayName}
                 symbol={upper}
                 snapshotContent={congressSnapshot?.content}
+                snapshotGeneratedAt={congressSnapshot?.generatedAt}
             />
         );
     }
@@ -190,6 +191,7 @@ export default async function CongressPage({ params }: Props) {
                 displayName={displayName}
                 symbol={upper}
                 snapshotContent={congressSnapshot?.content}
+                snapshotGeneratedAt={congressSnapshot?.generatedAt}
             />
         );
     }
@@ -286,6 +288,7 @@ export default async function CongressPage({ params }: Props) {
                         content={congressSnapshot?.content}
                         symbol={upper}
                         displayName={displayName}
+                        generatedAt={congressSnapshot?.generatedAt}
                     />
                 ) : (
                     <CongressTrendSummary symbol={upper} />

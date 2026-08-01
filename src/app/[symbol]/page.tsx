@@ -368,6 +368,7 @@ export default async function SymbolPage({ params }: Props) {
                     content={technicalSnapshot?.content}
                     symbol={ticker}
                     displayName={displayName}
+                    generatedAt={technicalSnapshot?.generatedAt}
                 />
             </main>
         </>

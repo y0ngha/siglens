@@ -173,6 +173,7 @@ export default async function FinancialsPage({ params }: Props) {
                 displayName={displayName}
                 symbol={upper}
                 snapshotContent={financialsSnapshot?.content}
+                snapshotGeneratedAt={financialsSnapshot?.generatedAt}
             />
         );
     }
@@ -194,6 +195,7 @@ export default async function FinancialsPage({ params }: Props) {
                 displayName={displayName}
                 symbol={upper}
                 snapshotContent={financialsSnapshot?.content}
+                snapshotGeneratedAt={financialsSnapshot?.generatedAt}
             />
         );
     }
@@ -294,6 +296,7 @@ export default async function FinancialsPage({ params }: Props) {
                         content={financialsSnapshot?.content}
                         symbol={upper}
                         displayName={displayName}
+                        generatedAt={financialsSnapshot?.generatedAt}
                     />
                 ) : (
                     <FinancialsAiSummary symbol={upper} />

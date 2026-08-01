@@ -352,6 +352,7 @@ export default async function OverallPage({ params }: Props) {
                         content={overallSnapshot?.content}
                         symbol={upper}
                         displayName={displayName}
+                        generatedAt={overallSnapshot?.generatedAt}
                     />
                 )}
                 {/* fallback은 두 역할을 겸한다: (1) useSearchParams CSR-bailout 서브트리가
