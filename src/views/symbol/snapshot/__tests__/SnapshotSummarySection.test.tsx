@@ -82,3 +82,45 @@ describe('SnapshotSummarySection', () => {
         expect(heading.className).not.toContain('text-sm');
     });
 });
+
+describe('SnapshotSummarySection — 기준일 표기', () => {
+    it('asOf가 있으면 "지난 AI 분석" 배지와 실제 기준일 캡션을 렌더한다', () => {
+        render(
+            <SnapshotSummarySection
+                displayName="Apple Inc."
+                asOf={new Date('2026-07-31T20:00:00Z')}
+            >
+                <p>본문</p>
+            </SnapshotSummarySection>
+        );
+
+        expect(screen.getByText('지난 AI 분석')).toBeInTheDocument();
+        expect(
+            screen.getByText(/2026년 7월 31일 미국 장마감 기준/)
+        ).toBeInTheDocument();
+    });
+
+    it('asOf가 있으면 "전일" 고정 문구를 쓰지 않는다 — 7일 된 스냅샷에서 거짓이 되기 때문', () => {
+        render(
+            <SnapshotSummarySection
+                displayName="Apple Inc."
+                asOf={new Date('2026-07-31T20:00:00Z')}
+            >
+                <p>본문</p>
+            </SnapshotSummarySection>
+        );
+
+        expect(screen.queryByText(/전일 장마감 기준/)).not.toBeInTheDocument();
+    });
+
+    it('asOf가 없으면 기존 캡션으로 폴백한다', () => {
+        render(
+            <SnapshotSummarySection displayName="Apple Inc.">
+                <p>본문</p>
+            </SnapshotSummarySection>
+        );
+
+        expect(screen.getByText(/전일 장마감 기준/)).toBeInTheDocument();
+        expect(screen.queryByText('지난 AI 분석')).not.toBeInTheDocument();
+    });
+});
