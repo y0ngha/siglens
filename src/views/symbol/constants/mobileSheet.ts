@@ -1,7 +1,7 @@
 export type SnapPoint = number | string | null;
 
-export const SNAP_PEEK = 0.15; // 15% — 기본 접힘
-export const SNAP_HALF = 0.55; // 55% — 분석 중 배너 노출
+export const SNAP_PEEK = 0.15; // 15% — 기본(초기) 접힘. 차트를 가리지 않는 최대치 아래
+export const SNAP_HALF = 0.55; // 55% — 드래그 중간 스냅
 export const SNAP_FULL = 0.97; // 97% — 전체 열림
 
 export const MOBILE_SNAP_POINTS = [SNAP_PEEK, SNAP_HALF, SNAP_FULL] as const;
