@@ -17,14 +17,24 @@ interface MobileAnalysisSheetProps {
  * 모바일 분석 바텀시트.
  *
  * `modal={false}`는 반드시 Radix Dialog까지 도달해야 한다. vaul 1.1.2는 이 prop을
- * 내부 `DialogPrimitive.Root`에 전달하지 않는 회귀가 있어(업스트림 이슈 #496,
- * PR #424에서 유입), Radix가 modal 모드로 동작하면 FocusScope가 시트 밖 입력의
- * 포커스를 빼앗고(평단 팝오버·헤더 검색·챗봇 입력이 모두 먹통), `hideOthers`가 앱
- * 트리 전체에 `aria-hidden`을 붙이며, `body`에 `pointer-events: none`이 적용된다.
+ * 내부 `DialogPrimitive.Root`에 전달하지 않는 회귀가 있어(업스트림 이슈
+ * https://github.com/emilkowalski/vaul/issues/496, PR #424에서 유입), Radix가
+ * modal 모드로 동작하면 FocusScope가 시트 밖 입력의 포커스를 빼앗고(평단
+ * 팝오버·헤더 검색·챗봇 입력이 모두 먹통), `hideOthers`가 앱 트리 전체에
+ * `aria-hidden`을 붙이며, `body`에 `pointer-events: none`이 적용된다.
  *
  * 그래서 `.yarn/patches/vaul-npm-1.1.2-*.patch`로 passthrough를 복구했고,
  * `src/shared/lib/__tests__/vaulPatchIntegrity.test.ts`가 패치 유실을 감시한다.
  * 패치 덕분에 예전의 body pointer-events 복구용 MutationObserver 핵은 제거했다.
+ *
+ * D2(감사) — 이 패치의 제거 조건: 업스트림 이슈 #496이 closed되고 vaul이
+ * `modal` passthrough를 정식으로 릴리스하면, 다음을 전부 제거한다 —
+ * (1) `.yarn/patches/vaul-npm-1.1.2-*.patch` 파일 자체, (2) `package.json`
+ * `dependencies.vaul`의 `patch:vaul@npm%3A1.1.2#~/.yarn/patches/...` 지정자를
+ * 평범한 semver 지정자로 되돌리기, (3)
+ * `src/shared/lib/__tests__/vaulPatchIntegrity.test.ts`. vaul을 업그레이드하는
+ * 순간 그 테스트는 설계상 실패한다(같은 파일의 JSDoc 참고) — 그것이 바로 이
+ * 제거를 수행할 신호다.
  */
 export function MobileAnalysisSheet({
     activeSnap,

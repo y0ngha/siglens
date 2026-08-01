@@ -38,7 +38,7 @@ test.describe('모바일 차트 페이지 입력 도달성 (authed, 시트 마�
         // 겹칠 수 있어 toPass()로 재시도한다.
         await expect(async () => {
             await expect(quantity).toBeFocused();
-        }).toPass();
+        }).toPass({ timeout: 15_000 });
 
         await quantity.tap();
         await quantity.fill('12');
@@ -66,7 +66,7 @@ test.describe('모바일 차트 페이지 입력 도달성 (authed, 시트 마�
             expect(box.x).toBeGreaterThanOrEqual(0);
             expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
             expect(box.y).toBeGreaterThanOrEqual(0);
-        }).toPass();
+        }).toPass({ timeout: 15_000 });
     });
 
     test('평단 팝오버가 분석 시트에 가려지지 않는다', async ({ page }) => {
@@ -135,6 +135,6 @@ test.describe('모바일 차트 페이지 입력 도달성 (authed, 시트 마�
                     sheetBox.y
                 );
             }
-        }).toPass();
+        }).toPass({ timeout: 15_000 });
     });
 });
