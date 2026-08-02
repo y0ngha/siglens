@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.50.1](https://github.com/y0ngha/siglens/compare/v0.50.0...v0.50.1) (2026-08-02)
+
+
+### Features
+
+* SSE 엣지 통과 실측용 진단 엔드포인트 추가 ([515ccd8](https://github.com/y0ngha/siglens/commit/515ccd87f00cfb16f6bccef978a57bad353d09a0))
+
 # [0.50.0](https://github.com/y0ngha/siglens/compare/v0.49.0...v0.50.0) (2026-08-02)
 
 
