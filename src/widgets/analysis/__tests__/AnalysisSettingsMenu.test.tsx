@@ -2,6 +2,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DEEPSEEK_V4_FLASH_MODEL, type ModelId } from '@y0ngha/siglens-core';
 import { AnalysisSettingsMenu } from '@/widgets/analysis/AnalysisSettingsMenu';
+import { mockViewport } from '@/__tests__/utils/mockViewport';
 
 const ALLOWED_MODELS: readonly ModelId[] = [
     DEEPSEEK_V4_FLASH_MODEL,
@@ -48,18 +49,6 @@ function gearButton() {
 // mobile/desktop split, see the nested describe below) — jsdom has no
 // matchMedia implementation, so every test needs it stubbed. Default to
 // desktop; the mobile-placement tests override with their own stub.
-function mockViewport(isMobile: boolean) {
-    vi.stubGlobal(
-        'matchMedia',
-        vi.fn().mockImplementation((query: string) => ({
-            matches: isMobile,
-            media: query,
-            addEventListener: vi.fn(),
-            removeEventListener: vi.fn(),
-        }))
-    );
-}
-
 describe('AnalysisSettingsMenu', () => {
     beforeEach(() => {
         mockViewport(false);

@@ -6,32 +6,13 @@ import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHol
 import type { PortfolioHoldingView } from '@/entities/portfolio';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { PortfolioChipMounted } from '@/features/portfolio-holding/ui/PortfolioChipMounted';
+import { mockViewport } from '@/__tests__/utils/mockViewport';
 
 vi.mock('@/entities/auth');
 vi.mock('@/entities/portfolio/hooks/usePortfolioHoldings');
 
 const mockUseCurrentUser = vi.mocked(useCurrentUser);
 const mockUsePortfolioHoldings = vi.mocked(usePortfolioHoldings);
-
-// B1(감사): 이전에는 useIsMobileViewport 모듈 전체를 vi.mock으로 갈아치워
-// `useIsMobileViewport: vi.fn(() => true)`처럼 값을 즉시 확정시켰다 — 그러면
-// 원래 훅의 "false로 시작해 effect에서 동기화되는" 2단계 타이밍이 통째로
-// 사라진다. 그 타이밍 차이(마운트 첫 렌더는 false, effect 이후에야 true)가
-// 바로 PopoverSurface의 Fragment→Portal 전환과 focus trap 무력화를 낳았던
-// 원인이므로, 모듈을 모킹하면 이 회귀가 되살아나도 테스트가 여전히 통과한다
-// (실제 훅을 관찰하지 않기 때문). matchMedia만 스텁해 실제 훅과 실제 effect
-// 타이밍이 그대로 돌게 한다 — AnalysisSettingsMenu.test.tsx와 동일 패턴.
-function mockViewport(isMobile: boolean) {
-    vi.stubGlobal(
-        'matchMedia',
-        vi.fn().mockImplementation((query: string) => ({
-            matches: isMobile,
-            media: query,
-            addEventListener: vi.fn(),
-            removeEventListener: vi.fn(),
-        }))
-    );
-}
 
 type CurrentUserResult = UseQueryResult<AuthUserRecord | null>;
 type Holdings = ReturnType<typeof usePortfolioHoldings>;

@@ -1,6 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { test, expect } from '../support/fixtures';
 import { resetChatTokens } from '../support/resetChatTokens';
+import { ANALYSIS_READY_TIMEOUT_MS } from '../support/constants';
 
 /**
  * `@webkit`-tagged symbol-chat spec — Task 5 (last) of the E2E Tier 1 plan.
@@ -67,8 +68,6 @@ import { resetChatTokens } from '../support/resetChatTokens';
 
 const SYMBOL = 'AAPL';
 
-// 분석 진행 마무리 애니메이션(~9s, 실 setTimeout)이 끝나야 입력이 활성화되므로 넉넉히.
-const ANALYSIS_READY_TIMEOUT_MS = 25_000;
 // chatAction → fake provider 왕복(서버 액션 + onMutate의 최소 analyzing 단계 1.5s)을 수용.
 const CHAT_REPLY_TIMEOUT_MS = 15_000;
 

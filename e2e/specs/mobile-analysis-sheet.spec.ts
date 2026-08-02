@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures';
+import { ANALYSIS_READY_TIMEOUT_MS } from '../support/constants';
 
 /**
  * Mobile analysis bottom sheet (`@webkit`) — Tier 3 mobile interaction.
@@ -26,10 +27,6 @@ import { test, expect } from '../support/fixtures';
  */
 const SYMBOL = 'AAPL';
 const HANDLE = '[aria-label="AI 분석 패널 크기 조절"]';
-
-// 분석 진행 마무리 애니메이션(~9s, 실 setTimeout)이 끝나야 챗봇 입력이
-// 활성화된다 — symbol-chat.spec.ts의 ANALYSIS_READY_TIMEOUT_MS와 동일 근거.
-const ANALYSIS_READY_TIMEOUT_MS = 25_000;
 
 // Drag distance: from the PEEK (SNAP_PEEK 0.15) handle, ~400px up on the
 // iPhone 14 viewport (844px tall) clears the PEEK→HALF (0.15→0.55) travel
