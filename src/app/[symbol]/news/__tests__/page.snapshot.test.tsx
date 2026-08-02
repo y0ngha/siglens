@@ -170,6 +170,12 @@ describe('NewsPage — SEO snapshot prose (Task 7b, dual-section with NewsFactsS
         expect((prose?.props as { content: unknown }).content).toEqual(
             SNAPSHOT_CONTENT
         );
+        // C3(감사): content만 확인하고 generatedAt은 확인하지 않았다 —
+        // 페이지에서 `generatedAt={…}` prop을 통째로 지워도 이 테스트는
+        // 여전히 그린이었다.
+        expect((prose?.props as { generatedAt?: Date }).generatedAt).toEqual(
+            new Date('2026-07-24')
+        );
         // Complementary, not exclusive — the deterministic DB-list facts section
         // still renders alongside the AI prose.
         expect(findElementByType(tree, NewsFactsSummary)).not.toBeNull();

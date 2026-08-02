@@ -1,44 +1,11 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { Drawer } from 'vaul';
 import { cn } from '@/shared/lib/cn';
 import { SNAP_POINTS_MUTABLE, type SnapPoint } from './constants/mobileSheet';
 import { useMobileAnalysisSheet } from './hooks/useMobileAnalysisSheet';
 import { useMobileSheetDrag } from './hooks/useMobileSheetDrag';
-
-const POINTER_EVENTS_NONE = 'none';
-const POINTER_EVENTS_AUTO = 'auto';
-
-/**
- * vaul 1.1.2가 modal=false임에도 내부 Radix Dialog Root에 modal prop을 전달하지 않아
- * Radix DismissableLayer가 disableOutsidePointerEvents=true로 강제되며, body에
- * `pointer-events: none`이 적용된다. 결과적으로 시트 외부(상단 탭, 플로팅 버튼)가
- * 클릭 불가 상태가 되어 직접 복구한다. 자체 mutation으로 인한 재진입을 막기 위해
- * 복구 동안 observer를 일시 분리한다.
- */
-function useRestoreBodyPointerEvents(): void {
-    useEffect(() => {
-        const observer = new MutationObserver(() => {
-            if (document.body.style.pointerEvents === POINTER_EVENTS_NONE) {
-                observer.disconnect();
-                document.body.style.pointerEvents = POINTER_EVENTS_AUTO;
-                observer.observe(document.body, {
-                    attributes: true,
-                    attributeFilter: ['style'],
-                });
-            }
-        });
-        if (document.body.style.pointerEvents === POINTER_EVENTS_NONE) {
-            document.body.style.pointerEvents = POINTER_EVENTS_AUTO;
-        }
-        observer.observe(document.body, {
-            attributes: true,
-            attributeFilter: ['style'],
-        });
-        return () => observer.disconnect();
-    }, []);
-}
 
 interface MobileAnalysisSheetProps {
     activeSnap: SnapPoint;
@@ -46,6 +13,29 @@ interface MobileAnalysisSheetProps {
     children: ReactNode;
 }
 
+/**
+ * 모바일 분석 바텀시트.
+ *
+ * `modal={false}`는 반드시 Radix Dialog까지 도달해야 한다. vaul 1.1.2는 이 prop을
+ * 내부 `DialogPrimitive.Root`에 전달하지 않는 회귀가 있어(업스트림 이슈
+ * https://github.com/emilkowalski/vaul/issues/496, PR #424에서 유입), Radix가
+ * modal 모드로 동작하면 FocusScope가 시트 밖 입력의 포커스를 빼앗고(평단
+ * 팝오버·헤더 검색·챗봇 입력이 모두 먹통), `hideOthers`가 앱 트리 전체에
+ * `aria-hidden`을 붙이며, `body`에 `pointer-events: none`이 적용된다.
+ *
+ * 그래서 `.yarn/patches/vaul-npm-1.1.2-*.patch`로 passthrough를 복구했고,
+ * `src/shared/lib/__tests__/vaulPatchIntegrity.test.ts`가 패치 유실을 감시한다.
+ * 패치 덕분에 예전의 body pointer-events 복구용 MutationObserver 핵은 제거했다.
+ *
+ * D2(감사) — 이 패치의 제거 조건: 업스트림 이슈 #496이 closed되고 vaul이
+ * `modal` passthrough를 정식으로 릴리스하면, 다음을 전부 제거한다 —
+ * (1) `.yarn/patches/vaul-npm-1.1.2-*.patch` 파일 자체, (2) `package.json`
+ * `dependencies.vaul`의 `patch:vaul@npm%3A1.1.2#~/.yarn/patches/...` 지정자를
+ * 평범한 semver 지정자로 되돌리기, (3)
+ * `src/shared/lib/__tests__/vaulPatchIntegrity.test.ts`. vaul을 업그레이드하는
+ * 순간 그 테스트는 설계상 실패한다(같은 파일의 JSDoc 참고) — 그것이 바로 이
+ * 제거를 수행할 신호다.
+ */
 export function MobileAnalysisSheet({
     activeSnap,
     onActiveSnapChange,
@@ -65,8 +55,6 @@ export function MobileAnalysisSheet({
         isFullSnap,
         onSnapChange: onActiveSnapChange,
     });
-
-    useRestoreBodyPointerEvents();
 
     return (
         <Drawer.Root

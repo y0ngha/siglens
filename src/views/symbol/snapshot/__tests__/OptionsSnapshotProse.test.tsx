@@ -227,3 +227,21 @@ describe('OptionsSnapshotProse', () => {
         expect(screen.queryByText('만기별 해석')).not.toBeInTheDocument();
     });
 });
+
+describe('OptionsSnapshotProse — 기준일 표기 (C1 감사)', () => {
+    it('generatedAt이 있으면 기준일 캡션과 "지난 AI 분석" 배지를 렌더한다', () => {
+        render(
+            <OptionsSnapshotProse
+                content={buildFixture()}
+                symbol="AAPL"
+                displayName="Apple Inc."
+                generatedAt={new Date('2026-07-31T20:00:00Z')}
+            />
+        );
+
+        expect(screen.getByText('지난 AI 분석')).toBeInTheDocument();
+        expect(
+            screen.getByText(/2026년 7월 31일 미국 장마감 기준/)
+        ).toBeInTheDocument();
+    });
+});

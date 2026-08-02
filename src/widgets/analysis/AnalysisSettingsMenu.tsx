@@ -5,10 +5,12 @@ import { DEEPSEEK_V4_FLASH_MODEL, type ModelId } from '@y0ngha/siglens-core';
 import { ReasoningToggle } from '@/features/reasoning-toggle';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
+import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
 import { getModelDisplay } from '@/shared/lib/modelDisplay';
 import { GearIcon } from '@/shared/ui/GearIcon';
+import { PopoverSurface } from '@/shared/ui/PopoverSurface';
 import { ModelSelector } from './ModelSelector';
 
 interface AnalysisSettingsMenuProps {
@@ -46,12 +48,16 @@ export function AnalysisSettingsMenu({
     const panelRef = useRef<HTMLDivElement>(null);
     const titleId = useId();
     const { isOpen, toggle, close } = usePopoverToggle([triggerRef, panelRef]);
+    const isMobileViewport = useIsMobileViewport();
 
     // Mirrors PortfolioChipPopover: a focus trap owns initial focus, Tab
     // cycling, and restoring focus to the trigger on EVERY close path
     // (Escape, click-outside, re-toggle) via its unmount/deactivate cleanup,
     // so we don't hand-roll a partial (Escape-only) restore here.
-    useFocusTrap(panelRef, isOpen);
+    // `isMobileViewport`을 rearmKey로 넘긴다 — 뷰포트가 뒤집히면 PopoverSurface가
+    // 인라인 렌더 ↔ 포털 사이를 오가며 패널 노드를 교체하는데, ref의 identity는
+    // 그대로라 트랩이 새 노드에 다시 무장되지 않는다(기기 회전 시 포커스 유실).
+    useFocusTrap(panelRef, isOpen, isMobileViewport);
     useEscapeKey(close, isOpen);
 
     // Active = a non-default choice is in effect: reasoning turned on, or a
@@ -95,12 +101,15 @@ export function AnalysisSettingsMenu({
             </button>
 
             {isOpen && (
-                <div
-                    ref={panelRef}
-                    role="dialog"
-                    aria-labelledby={titleId}
-                    tabIndex={-1}
-                    className="border-secondary-700 bg-secondary-900 absolute top-full right-0 z-50 mt-1 flex w-72 max-w-[calc(100vw-2rem)] flex-col gap-3 overscroll-contain rounded-lg border p-3 shadow-2xl outline-none"
+                <PopoverSurface
+                    isMobile={isMobileViewport}
+                    dialogRef={panelRef}
+                    titleId={titleId}
+                    desktopClassName="mt-1"
+                    className={cn(
+                        'border-secondary-700 bg-secondary-900 flex flex-col gap-3',
+                        'overscroll-contain rounded-lg border p-3 shadow-2xl outline-none'
+                    )}
                 >
                     <h2
                         id={titleId}
@@ -120,7 +129,7 @@ export function AnalysisSettingsMenu({
                         canUse={canUseReasoning}
                         onLockedClick={openSignupNudge}
                     />
-                </div>
+                </PopoverSurface>
             )}
         </div>
     );

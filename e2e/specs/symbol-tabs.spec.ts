@@ -96,18 +96,19 @@ test.describe('@webkit symbol tabs', () => {
         test.setTimeout(90_000);
 
         // 모바일(webkit)에서는 MobileAnalysisSheet(vaul Drawer)가 분석 캐시 픽스처
-        // 로드 직후 열린다. vaul 1.1.2는 modal={false}에도 내부 Radix Dialog에 modal을
-        // 넘기지 않아, Radix가 시트 외부 본문(상단 탭 nav·h1 포함)에 aria-hidden을
-        // 부여하고 body에 pointer-events:none을 건다. 컴포넌트의 옵저버가 pointer-events는
-        // 복구하지만 aria-hidden은 복구하지 않으므로, a11y 트리 기반 role 쿼리
-        // (getByRole nav/link/heading)가 모바일에서 "element not found"로 실패하고
-        // 클릭은 pointer-events 복구 레이스로 간헐 타임아웃한다. 따라서:
+        // 로드 직후 열린다. HISTORICAL: vaul 1.1.2는 modal={false}에도 내부 Radix
+        // Dialog에 modal을 넘기지 않는 회귀가 있어(업스트림 이슈 #496), 예전에는
+        // Radix가 시트 외부 본문(상단 탭 nav·h1 포함)에 aria-hidden을 부여하고 body에
+        // pointer-events:none을 걸었다. `.yarn/patches/vaul-npm-1.1.2-*.patch`가 그
+        // passthrough를 복구한 뒤로는(자세한 배경은 MobileAnalysisSheet.tsx 참고)
+        // 둘 다 더 이상 일어나지 않는다 — role 쿼리도 모바일에서 정상 동작한다.
+        // 아래 URL-직접-이동 + CSS locator 경로는 그 회귀를 우회하려고 남아 있던
+        // 것으로, 더 이상 우회가 필요하진 않지만 여전히 유효한 검증 경로라 유지한다:
         //   - 데스크톱(chromium): 실제 탭 링크 클릭 → URL 전환 → aria-current 활성
         //     상태 + h1 마커까지 a11y로 검증(시트가 <aside>라 본문이 inert되지 않음).
-        //   - 모바일(webkit): URL 직접 이동으로 각 탭 라우트를 로드하고, 시트가
-        //     본문을 aria-hidden 처리해도 영향받지 않는 CSS locator로 뷰포트 독립
-        //     h1 마커만 검증한다(toBeVisible은 CSS 가시성 기준이라 시트가 가려도
-        //     렌더된 h1은 통과). 클릭/active 상태 커버리지는 데스크톱 실행이 보장.
+        //   - 모바일(webkit): URL 직접 이동으로 각 탭 라우트를 로드하고, 뷰포트
+        //     독립 h1 마커를 CSS locator로 검증한다. 클릭/active 상태 커버리지는
+        //     데스크톱 실행이 보장.
         const isMobile = test.info().project.name === 'webkit';
 
         await page.goto('/AAPL');
@@ -119,7 +120,8 @@ test.describe('@webkit symbol tabs', () => {
             if (isMobile) {
                 await page.goto(tab.path);
                 await expect(page).toHaveURL(tab.urlRe);
-                // role 비의존 CSS locator — Radix의 aria-hidden을 우회한다.
+                // CSS locator — role 쿼리도 이제 동작하지만(위 HISTORICAL 노트),
+                // 뷰포트 독립 h1 마커 검증에는 이 경로로도 충분해 유지한다.
                 await expect(
                     page.locator('h1').filter({ hasText: tab.heading }).first()
                 ).toBeVisible({ timeout: 15_000 });

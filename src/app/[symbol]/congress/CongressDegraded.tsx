@@ -14,6 +14,8 @@ interface CongressDegradedProps {
      * absent/empty, so this prop is safe to pass unconditionally.
      */
     snapshotContent?: unknown;
+    /** 스냅샷 행의 `generatedAt`. 프로즈 셸의 기준일 캡션에 쓴다. */
+    snapshotGeneratedAt?: Date;
 }
 
 /**
@@ -35,6 +37,7 @@ export function CongressDegraded({
     displayName,
     symbol,
     snapshotContent,
+    snapshotGeneratedAt,
 }: CongressDegradedProps) {
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
@@ -43,6 +46,7 @@ export function CongressDegraded({
                 content={snapshotContent}
                 symbol={symbol}
                 displayName={displayName}
+                generatedAt={snapshotGeneratedAt}
             />
             <section className="border-secondary-800 bg-secondary-900/40 rounded-lg border px-5 py-8 text-center">
                 <p className="text-secondary-200 text-sm font-medium">

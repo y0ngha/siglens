@@ -19,3 +19,13 @@ export const ANALYSIS_FIXTURE_SUMMARY_PREFIX = 'E2E 고정 분석 결과';
  * the literal.
  */
 export const ANALYSIS_RENDER_TIMEOUT_MS = 20_000;
+
+/**
+ * Upper bound for the "analysis ready" UI state to appear — the progress-
+ * finishing animation (~9s of real `setTimeout`s, not clock-frozen) gates
+ * both the chatbot input becoming enabled (`symbol-chat.spec.ts`) and the
+ * mobile analysis sheet's ready affordances (`mobile-analysis-sheet.spec.ts`).
+ * Shared here so the two specs use one source of truth instead of each
+ * redefining the literal.
+ */
+export const ANALYSIS_READY_TIMEOUT_MS = 25_000;

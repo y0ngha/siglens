@@ -23,6 +23,8 @@ interface NewsSnapshotProseProps {
     content: unknown;
     symbol: string;
     displayName: string;
+    /** 스냅샷 행의 `generatedAt`. 셸이 기준일 캡션과 "지난 AI 분석" 배지를 렌더하는 데 쓴다. */
+    generatedAt?: Date;
 }
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
@@ -105,6 +107,7 @@ export function NewsSnapshotProse({
     content,
     symbol,
     displayName,
+    generatedAt,
 }: NewsSnapshotProseProps) {
     const narrowed = narrowNewsContent(content);
     if (narrowed === null) return null;
@@ -118,6 +121,7 @@ export function NewsSnapshotProse({
         <SnapshotSummarySection
             title="뉴스 종합 심리"
             displayName={displayName}
+            asOf={generatedAt}
         >
             <div className="text-secondary-300 space-y-4 text-sm leading-6">
                 {narrowed.overallSentiment !== null && (

@@ -2,6 +2,7 @@ import type { Trend } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 import { createEnumGuard } from '../lib/createEnumGuard';
+import { LIVE_ANALYSIS_CROSS_REF } from '../lib/liveAnalysisCrossRef';
 
 interface TechnicalSnapshotProseProps {
     /**
@@ -14,6 +15,8 @@ interface TechnicalSnapshotProseProps {
     content: unknown;
     symbol: string;
     displayName: string;
+    /** 스냅샷 행의 `generatedAt`. 셸이 기준일 캡션과 "지난 AI 분석" 배지를 렌더하는 데 쓴다. */
+    generatedAt?: Date;
 }
 
 const TREND_LABEL: Record<Trend, string> = {
@@ -144,6 +147,7 @@ export function TechnicalSnapshotProse({
     content,
     symbol,
     displayName,
+    generatedAt,
 }: TechnicalSnapshotProseProps) {
     const narrowed = narrowTechnicalContent(content);
     if (narrowed === null) return null;
@@ -157,8 +161,13 @@ export function TechnicalSnapshotProse({
         <SnapshotSummarySection
             title="기술적 분석 요약"
             displayName={displayName}
+            asOf={generatedAt}
         >
             <div className="text-secondary-300 space-y-4 text-sm leading-6">
+                {/* 근거는 LIVE_ANALYSIS_CROSS_REF JSDoc 참고 — 두 탭이 동일 문구를 쓴다. */}
+                <p className="text-secondary-400 text-xs">
+                    {LIVE_ANALYSIS_CROSS_REF}
+                </p>
                 <div className="space-y-2">
                     {narrowed.trend !== null && (
                         <p className="text-secondary-200 font-medium">

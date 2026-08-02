@@ -1,5 +1,8 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { ComponentType } from 'react';
+import { useMobileSheet } from '@/views/symbol/hooks/useMobileSheet';
+import { SNAP_FULL, SNAP_PEEK } from '@/views/symbol/constants/mobileSheet';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { useHydrated } from '@/shared/hooks/useHydrated';
@@ -68,7 +71,7 @@ vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
 
 vi.mock('@/views/symbol/hooks/useMobileSheet', () => ({
     useMobileSheet: vi.fn(() => ({
-        sheetSnap: 0.55,
+        sheetSnap: 0.2,
         setSheetSnap: vi.fn(),
         mobileSheetContent: null,
         setMobileSheetContent: vi.fn(),
@@ -107,6 +110,44 @@ describe('SymbolPageClient', () => {
     it('renders without crashing', () => {
         const { container } = render(<SymbolPageClient {...defaultProps} />);
         expect(container.firstElementChild).toBeDefined();
+    });
+
+    /*
+     * 시트를 여는 유일한 방법이 PEEK 띠 드래그뿐이면, 툴바 접힘으로 띠가 얇아졌을 때
+     * AI 분석 패널에 접근할 수 없게 된다(띠 = snap − 0.03이고 vaul은 innerHeight,
+     * 시트는 svh 기준이라 두 단위가 벌어지면 띠가 줄어든다). 그래서 시트 **밖**에
+     * 항상 살아 있는 버튼을 둔다. 이 버튼이 사라지면 그 안전장치가 사라진다.
+     */
+    it('시트를 여는 버튼이 시트 밖에 있고, 누르면 전체 스냅으로 연다', async () => {
+        const setSheetSnap = vi.fn();
+        vi.mocked(useMobileSheet).mockReturnValue({
+            sheetSnap: SNAP_PEEK,
+            setSheetSnap,
+            mobileSheetContent: null,
+            setMobileSheetContent: vi.fn(),
+        });
+        // 시트가 실제로 렌더링되는 조건(모바일 + hydrated)이어야 "시트 밖"이라는
+        // closest() 단언이 의미를 갖는다. 데스크탑 모킹(모듈 기본값 false)으로 두면
+        // 시트 자체가 렌더링되지 않아 두 closest() 호출이 공허하게 null을 반환한다.
+        vi.mocked(useIsMobileViewport).mockReturnValue(true);
+        vi.mocked(useHydrated).mockReturnValue(true);
+
+        render(<SymbolPageClient {...defaultProps} />);
+
+        // 시트가 실제로 존재함을 먼저 확인 — 이게 없으면 아래 closest() 단언이
+        // 다시 공허해질 수 있다(시트가 렌더링을 멈춰도 테스트는 그린으로 남는다).
+        expect(screen.getByTestId('mobile-sheet')).toBeInTheDocument();
+
+        const openButton = screen.getByRole('button', { name: 'AI 분석 보기' });
+        // 시트 밖이어야 한다 — 시트 안에 있으면 띠가 사라질 때 같이 사라진다.
+        expect(openButton.closest('[data-testid="mobile-sheet"]')).toBeNull();
+        expect(
+            openButton.closest('[data-testid="mobile-analysis-sheet"]')
+        ).toBeNull();
+
+        await userEvent.click(openButton);
+
+        expect(setSheetSnap).toHaveBeenCalledWith(SNAP_FULL);
     });
 
     it('wraps content in SymbolPageProvider', () => {

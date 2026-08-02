@@ -4,6 +4,7 @@ import { SnapshotBulletList } from '../SnapshotBulletList';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 import { createEnumGuard } from '../lib/createEnumGuard';
 import { narrowStringArray } from '../lib/narrowStringArray';
+import { LIVE_ANALYSIS_CROSS_REF } from '../lib/liveAnalysisCrossRef';
 
 interface OverallSnapshotProseProps {
     /**
@@ -22,6 +23,8 @@ interface OverallSnapshotProseProps {
     content: unknown;
     symbol: string;
     displayName: string;
+    /** 스냅샷 행의 `generatedAt`. 셸이 기준일 캡션과 "지난 AI 분석" 배지를 렌더하는 데 쓴다. */
+    generatedAt?: Date;
 }
 
 // Guard-only label map — the scenario section headings below are hardcoded
@@ -224,6 +227,7 @@ export function OverallSnapshotProse({
     content,
     symbol,
     displayName,
+    generatedAt,
 }: OverallSnapshotProseProps) {
     const narrowed = narrowOverallContent(content);
     if (narrowed === null) return null;
@@ -237,8 +241,13 @@ export function OverallSnapshotProse({
         <SnapshotSummarySection
             title="종합 분석 결론"
             displayName={displayName}
+            asOf={generatedAt}
         >
             <div className="text-secondary-300 space-y-4 text-sm leading-6">
+                {/* 근거는 LIVE_ANALYSIS_CROSS_REF JSDoc 참고 — 두 탭이 동일 문구를 쓴다. */}
+                <p className="text-secondary-400 text-xs">
+                    {LIVE_ANALYSIS_CROSS_REF}
+                </p>
                 {narrowed.headlineKo.length > 0 && (
                     <p className="text-secondary-200 font-medium">
                         {narrowed.headlineKo}

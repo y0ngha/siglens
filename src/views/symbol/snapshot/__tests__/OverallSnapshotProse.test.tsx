@@ -5,6 +5,7 @@ import {
     hasOverallProse,
     OverallSnapshotProse,
 } from '../renderers/OverallSnapshotProse';
+import { LIVE_ANALYSIS_CROSS_REF } from '../lib/liveAnalysisCrossRef';
 
 // 스냅샷 저장소 content는 harvest.ts가 core prewarmOverall(→submitOverallAnalysis)의
 // status==='cached' 분기에서 얻은 result.result(OverallAnalysisResponse)를 그대로
@@ -486,5 +487,50 @@ describe('OverallSnapshotProse — scenarios 방어적 좁히기', () => {
 
         expect(screen.getByText('헤드라인만 유효')).toBeInTheDocument();
         expect(screen.queryByText('약세 시나리오')).not.toBeInTheDocument();
+    });
+});
+
+describe('OverallSnapshotProse — 기준일 표기 + 라이브 분석 상호참조', () => {
+    it('generatedAt이 있으면 기준일 캡션과 "지난 AI 분석" 배지를 렌더한다', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture()}
+                symbol="AAPL"
+                displayName="Apple Inc."
+                generatedAt={new Date('2026-07-31T20:00:00Z')}
+            />
+        );
+
+        expect(screen.getByText('지난 AI 분석')).toBeInTheDocument();
+        expect(
+            screen.getByText(/2026년 7월 31일 미국 장마감 기준/)
+        ).toBeInTheDocument();
+    });
+
+    it('라이브 분석 패널을 가리키는 상호참조 문장을 렌더한다', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture()}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText(LIVE_ANALYSIS_CROSS_REF)).toBeInTheDocument();
+    });
+
+    it('generatedAt이 없어도 헤딩은 그대로 렌더한다', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture()}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(
+            screen.getByRole('heading', { name: '종합 분석 결론' })
+        ).toBeInTheDocument();
+        expect(screen.queryByText('지난 AI 분석')).not.toBeInTheDocument();
     });
 });

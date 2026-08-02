@@ -7,6 +7,7 @@ import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { cn } from '@/shared/lib/cn';
 import { stripNegativeSign } from '@/shared/lib/stripNegativeSign';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
+import { PopoverSurface } from '@/shared/ui/PopoverSurface';
 import type {
     PortfolioActionErrorCode,
     PortfolioHoldingView,
@@ -43,6 +44,21 @@ interface PortfolioChipPopoverProps {
     save: UseSymbolHoldingReturn['save'];
     triggerRef: RefObject<HTMLButtonElement | null>;
     onClose: () => void;
+    /**
+     * Viewport read hoisted from `PortfolioChip` (see its JSDoc). This
+     * component is `next/dynamic({ ssr: false })`-loaded and only ever mounts
+     * once the popover is already open, so an internal `useIsMobileViewport()`
+     * call here would start at `false` and only resolve after this
+     * component's own effect runs — on EVERY open. That flips `PopoverSurface`
+     * from a Fragment to a Portal after mount (different fiber types at the
+     * same position), which unmounts/remounts the whole panel subtree: the
+     * focus trap's effect deps (`[active, ref]`) are both stable so it never
+     * re-arms, and the very first commit paints the anchored (potentially
+     * off-screen) desktop layout before the remount corrects it. Taking the
+     * value as a prop means it is already resolved by the time this component
+     * mounts, so there is nothing to flip.
+     */
+    isMobile: boolean;
 }
 
 /**
@@ -56,6 +72,7 @@ export function PortfolioChipPopover({
     save,
     triggerRef,
     onClose,
+    isMobile,
 }: PortfolioChipPopoverProps) {
     const titleId = useId();
     const errorId = useId();
@@ -71,7 +88,10 @@ export function PortfolioChipPopover({
     const quantityRef = useRef<HTMLInputElement>(null);
     const priceRef = useRef<HTMLInputElement>(null);
 
-    useFocusTrap(panelRef, true);
+    // `isMobile`을 rearmKey로 넘긴다 — 뷰포트가 뒤집히면 PopoverSurface가 인라인
+    // 렌더 ↔ 포털 사이를 오가며 패널 노드를 교체하는데, ref의 identity는 그대로라
+    // 트랩이 새 노드에 다시 무장되지 않는다(기기 회전 시 포커스가 body로 떨어짐).
+    useFocusTrap(panelRef, true, isMobile);
     useEscapeKey(onClose, true);
     useOnClickOutside([panelRef, triggerRef], onClose);
 
@@ -101,13 +121,13 @@ export function PortfolioChipPopover({
     };
 
     return (
-        <div
-            ref={panelRef}
-            role="dialog"
-            aria-labelledby={titleId}
-            tabIndex={-1}
+        <PopoverSurface
+            isMobile={isMobile}
+            dialogRef={panelRef}
+            titleId={titleId}
+            desktopClassName="mt-2"
             className={cn(
-                'border-secondary-700 bg-secondary-900 absolute top-full right-0 z-50 mt-2 w-72 max-w-[calc(100vw-2rem)]',
+                'border-secondary-700 bg-secondary-900',
                 'overscroll-contain rounded-lg border p-4 shadow-2xl outline-none',
                 'motion-safe:animate-[fade-in_150ms_ease-out]'
             )}
@@ -207,6 +227,6 @@ export function PortfolioChipPopover({
                     </button>
                 </div>
             </form>
-        </div>
+        </PopoverSurface>
     );
 }

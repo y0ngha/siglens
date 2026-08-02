@@ -1,10 +1,17 @@
 import { useId, type ReactNode } from 'react';
+import { formatSnapshotAsOf } from '@/shared/lib/formatSnapshotAsOf';
 
 interface SnapshotSummarySectionProps {
     /** 섹션 헤딩 텍스트. 생략 시 "최근 분석 요약". */
     title?: string;
     /** 캡션에 노출되는 심볼 표시명(예: "Apple Inc."). */
     displayName: string;
+    /**
+     * 스냅샷 행의 `generatedAt`. 있으면 h2 옆에 "지난 AI 분석" 배지를 렌더하고
+     * 캡션에 실제 기준일을 노출한다. 없으면 기존 "전일 장마감 기준" 캡션으로
+     * 폴백한다(배지 없음).
+     */
+    asOf?: Date;
     children: ReactNode;
 }
 
@@ -26,16 +33,30 @@ const DEFAULT_TITLE = '최근 분석 요약';
  * 마운트하지 않아야 한다(예: `TechnicalSnapshotProse`가 summary 부재 시
  * `null`을 반환해 이 셸을 감싸지 않는 것과 동일한 계약).
  *
- * "전일 장마감 기준" 캡션은 고정 라벨이다 — ISR 재검증 시점마다 값이
- * 달라지는 `new Date()` 기반 타임스탬프를 렌더에서 사용하지 않는다
- * (결정적 출력 유지, cold-gen dynamic API 회피).
+ * 캡션은 `asOf`가 주어지면 스냅샷 행의 실제 기준일(`formatSnapshotAsOf`로
+ * 포맷)을 노출하고, 없으면 고정 라벨 "전일 장마감 기준"으로 폴백한다. 두 경로
+ * 모두 렌더 중 `new Date()`를 호출하지 않는다 — `asOf`는 항상 DB 행의
+ * `generatedAt`에서 와야 하며, 그래야 같은 캐시 엔트리가 재검증 시점과 무관하게
+ * 항상 같은 문자열을 렌더한다(결정적 출력 유지, cold-gen dynamic API 회피).
+ *
+ * A1(감사): `formatSnapshotAsOf`는 Invalid Date에 `null`을 반환한다(throw하지
+ * 않음). 배지("지난 AI 분석")와 캡션 문구는 반드시 같은 조건에서 갈려야 한다 —
+ * 그래서 포맷된 문자열을 먼저 계산해두고, `null`을 `asOf === undefined`와
+ * 완전히 동일하게 취급한다. 조건이 갈라지면 배지는 뜨는데 캡션은 고정 문구인
+ * (또는 그 반대인) 자기모순적 렌더가 생긴다.
  */
 export function SnapshotSummarySection({
     title = DEFAULT_TITLE,
     displayName,
+    asOf,
     children,
 }: SnapshotSummarySectionProps) {
     const headingId = useId();
+    const formattedAsOf = asOf === undefined ? null : formatSnapshotAsOf(asOf);
+    const caption =
+        formattedAsOf === null
+            ? `${displayName} · 전일 장마감 기준`
+            : `${displayName} · ${formattedAsOf} 미국 장마감 기준`;
 
     return (
         <section
@@ -53,15 +74,20 @@ export function SnapshotSummarySection({
                  * neutral text-secondary-200")으로 낮춘다 — h3 쪽은 각
                  * *SnapshotProse.tsx 렌더러에서 처리.
                  */}
-                <h2
-                    id={headingId}
-                    className="text-secondary-100 text-lg font-semibold tracking-tight"
-                >
-                    {title}
-                </h2>
-                <p className="text-secondary-400 text-xs">
-                    {displayName} · 전일 장마감 기준
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                    <h2
+                        id={headingId}
+                        className="text-secondary-100 text-lg font-semibold tracking-tight"
+                    >
+                        {title}
+                    </h2>
+                    {formattedAsOf !== null && (
+                        <span className="border-secondary-600 text-secondary-300 bg-secondary-900/60 rounded-full border px-2 py-0.5 text-xs font-medium">
+                            지난 AI 분석
+                        </span>
+                    )}
+                </div>
+                <p className="text-secondary-400 text-xs">{caption}</p>
             </div>
             {children}
         </section>

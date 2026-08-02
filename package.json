@@ -84,7 +84,7 @@
         "resend": "^6.12.2",
         "sharp": "^0.35.2",
         "tailwind-merge": "^3.5.0",
-        "vaul": "^1.1.2",
+        "vaul": "patch:vaul@npm%3A1.1.2#~/.yarn/patches/vaul-npm-1.1.2-7a571c1ad6.patch",
         "yahoo-finance2": "^3.15.3"
     },
     "devDependencies": {

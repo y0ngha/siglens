@@ -10,6 +10,7 @@ import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
 import { ChartContent } from './ChartContent';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import { useMobileSheet } from './hooks/useMobileSheet';
+import { SNAP_FULL } from './constants/mobileSheet';
 import { useTimeframeChange } from './hooks/useTimeframeChange';
 import { SymbolPageProvider } from './SymbolPageContext';
 import { buildChartPageHeading } from './utils/chartPageHeading';
@@ -100,9 +101,33 @@ export function SymbolPageClient({
                         CSR-bailout되므로 이 가시 h1은 SSR HTML엔 박히지 않는다 — JS 미실행
                         크롤러용 h1은 page.tsx의 Suspense fallback에 동일 텍스트 sr-only h1으로
                         제공하고, hydration 후 이 가시 h1이 fallback을 대체한다. */}
-                    <h1 className="text-secondary-100 line-clamp-2 min-w-0 text-sm font-semibold sm:line-clamp-none sm:truncate sm:text-base">
-                        {buildChartPageHeading(displayName)}
-                    </h1>
+                    <div className="flex min-w-0 items-center gap-2">
+                        <h1 className="text-secondary-100 line-clamp-2 min-w-0 text-sm font-semibold sm:line-clamp-none sm:truncate sm:text-base">
+                            {buildChartPageHeading(displayName)}
+                        </h1>
+                        {/*
+                         * 분석 시트를 여는 명시적 버튼(모바일 전용).
+                         *
+                         * 이게 없으면 시트를 여는 유일한 방법이 PEEK 띠를 잡고 드래그하는
+                         * 것뿐이다. 그런데 띠 높이는 `snap − 0.03`이고, 시트는 `97svh`
+                         * 고정인 반면 vaul은 오프셋을 `window.innerHeight`로 잡는다 —
+                         * 모바일 툴바가 접혀 innerHeight가 svh보다 커지면 띠가 얇아지고,
+                         * 극단적으로는 0에 수렴해 **잡을 것이 사라진다**. 그 상태에서는
+                         * 제품의 핵심인 AI 분석 패널에 재로드 전까지 접근할 수 없다.
+                         * 이 버튼은 시트 밖(항상 보이는 타임프레임 바)에 있으므로 띠
+                         * 높이와 무관하게 살아 있다.
+                         *
+                         * 세로 공간을 새로 쓰지 않도록 h1과 같은 행의 남는 폭에 둔다 —
+                         * 이 영역은 first-viewport jail이라 한 줄이 늘면 차트가 그만큼 줄어든다.
+                         */}
+                        <button
+                            type="button"
+                            onClick={() => setSheetSnap(SNAP_FULL)}
+                            className="border-secondary-700 text-secondary-300 hover:border-secondary-600 hover:bg-secondary-700/30 hover:text-secondary-100 focus-visible:ring-primary-500 shrink-0 touch-manipulation rounded-lg border px-2.5 py-1 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:outline-none md:hidden"
+                        >
+                            AI 분석 보기
+                        </button>
+                    </div>
                     <TimeframeSelector
                         value={timeframe}
                         onChange={handleTimeframeChange}

@@ -1,6 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { test, expect } from '../support/fixtures';
 import { resetChatTokens } from '../support/resetChatTokens';
+import { ANALYSIS_READY_TIMEOUT_MS } from '../support/constants';
 
 /**
  * `@webkit`-tagged symbol-chat spec — Task 5 (last) of the E2E Tier 1 plan.
@@ -40,20 +41,24 @@ import { resetChatTokens } from '../support/resetChatTokens';
  *     생성된 결정적 응답입니다.`, so we assert the bubble contains
  *     `"지금 사도 돼?"에 대한 테스트 답변입니다`.
  *
- * WEBKIT-SPECIFIC DOM REALITY (iPhone 14 / chart page):
+ * WEBKIT-SPECIFIC DOM REALITY (iPhone 14 / chart page) — HISTORICAL:
  *   The chart page mounts the `MobileAnalysisSheet` vaul drawer (always open,
- *   `dismissible={false}`). vaul's Radix Dialog (1) marks the sibling chat panel
- *   `aria-hidden="true"` and (2) installs a focus scope that redirects focus off
- *   the textarea. Consequences handled here:
- *     - Role queries (`getByRole`) skip the aria-hidden chat subtree, so the send
- *       button and tab links are addressed via CSS locators on webkit. We use CSS
- *       locators uniformly (also valid on chromium).
- *     - Synthetic keystrokes never reach the textarea (focus is yanked back). We
- *       drive the controlled input via the native value setter + an `input` event
- *       — exactly how the browser commits text to a React-controlled field — then
- *       click the send button. This mirrors real text entry (a real soft keyboard
- *       on a device does commit; only Playwright's programmatic focus is trapped)
- *       and works identically on both projects.
+ *   `dismissible={false}`). Before `.yarn/patches/vaul-npm-1.1.2-*.patch`, vaul
+ *   never forwarded `modal={false}` to its internal Radix Dialog, so Radix ran
+ *   modal: it marked the sibling chat panel `aria-hidden="true"` and installed
+ *   a focus scope that redirected focus off the textarea (see
+ *   MobileAnalysisSheet.tsx for the full writeup). The patch restores the
+ *   passthrough, so neither happens anymore — `mobile-input-reachability.spec.ts`
+ *   pins that a real `.tap()` + `.fill()` now reaches sheet-outside inputs.
+ *   The workarounds below still function and are kept (CSS locators remain
+ *   valid selectors either way; the native-setter helper still commits text
+ *   correctly), but they are no longer required to route around a focus trap:
+ *     - Role queries (`getByRole`) technically could reach the chat panel again
+ *       on webkit, but the send button and tab links stay on CSS locators here
+ *       for uniformity across both projects.
+ *     - `typeIntoChat` drives the controlled input via the native value setter
+ *       + an `input` event — exactly how the browser commits text to a
+ *       React-controlled field — then clicks the send button.
  *
  * CHAT TOKEN BUDGET: `chatAction` enforces a daily 5-message limit per hashed IP
  * in Redis (~24h TTL), NOT reset by global-setup. `beforeEach` clears it via
@@ -63,8 +68,6 @@ import { resetChatTokens } from '../support/resetChatTokens';
 
 const SYMBOL = 'AAPL';
 
-// 분석 진행 마무리 애니메이션(~9s, 실 setTimeout)이 끝나야 입력이 활성화되므로 넉넉히.
-const ANALYSIS_READY_TIMEOUT_MS = 25_000;
 // chatAction → fake provider 왕복(서버 액션 + onMutate의 최소 analyzing 단계 1.5s)을 수용.
 const CHAT_REPLY_TIMEOUT_MS = 15_000;
 
@@ -170,8 +173,10 @@ test.describe('@webkit symbol chat', () => {
 
         // 패널을 연 채로 뉴스 탭으로 client-side 이동. FloatingChatButton은 레이아웃
         // 레벨에 마운트돼 탭 네비게이션을 가로질러 유지되므로 useChat이 언마운트되지
-        // 않아 컨텍스트 전환을 감지할 수 있다. 차트 페이지의 vaul 드로어가 탭 nav를
-        // aria-hidden 처리하므로 role 대신 CSS 로케이터로 링크를 집는다(양 프로젝트 공통).
+        // 않아 컨텍스트 전환을 감지할 수 있다. vaul 패치 이전에는 차트 페이지의 vaul
+        // 드로어가 탭 nav를 aria-hidden 처리해 role 조회가 막혔었다(파일 헤더 HISTORICAL
+        // 노트 참고) — 지금은 role 조회도 가능하지만 CSS 로케이터를 양 프로젝트 공통
+        // 경로로 그대로 유지한다.
         await page
             .locator('nav[aria-label="분석 종류"] a', { hasText: '뉴스' })
             .first()
@@ -182,7 +187,7 @@ test.describe('@webkit symbol chat', () => {
         await expect(answerBubble(page).first()).toBeVisible();
 
         // 2) 컨텍스트 전환 시스템 메시지가 삽입된다 (차트 분석 → 뉴스 분석).
-        //    뉴스 페이지에는 vaul 드로어가 없어 패널이 aria-hidden이 아니므로 role 조회 가능.
+        //    뉴스 페이지에는 애초에 vaul 드로어가 없어 role 조회는 항상 가능했다.
         //    ContextSwitchSystemMessage: role="status" + "뉴스 분석 페이지로 전환되었습니다".
         await expect(
             page

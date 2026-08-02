@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useRef, useState } from 'react';
+import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
 import { cn } from '@/shared/lib/cn';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 import { useSymbolHolding } from '../hooks/useSymbolHolding';
@@ -28,10 +29,25 @@ interface PortfolioChipProps {
  * Keep this component free of mount-time side effects for parity with the
  * dual-mounted fear-greed chip and to stay safe if the header layout later
  * duplicates this cluster.
+ *
+ * Owns the `useIsMobileViewport()` read (rather than letting
+ * `PortfolioChipPopover` read it itself) so the value is already resolved by
+ * the time the user can even tap the trigger — this component is mounted
+ * from page load and gated on `isHydrated` below, so its viewport effect has
+ * long since run before `isOpen` can flip. `PortfolioChipPopover` is
+ * `next/dynamic({ ssr: false })` and only mounts ON open, so if IT read the
+ * hook internally, every open would start from `false` and only resolve
+ * after ITS OWN effect ran — flipping `PopoverSurface` from a Fragment to a
+ * Portal after mount (different fiber types at the same position), which
+ * silently disarms `useFocusTrap` (stable `[active, ref]` deps never re-run)
+ * and paints one frame of the anchored, potentially off-screen desktop
+ * layout. Reading it here and passing it down as a prop means
+ * `PortfolioChipPopover` never observes that transition.
  */
 export function PortfolioChip({ symbol }: PortfolioChipProps) {
     const [isOpen, setIsOpen] = useState(false);
     const triggerRef = useRef<HTMLButtonElement>(null);
+    const isMobileViewport = useIsMobileViewport();
     const { holding, isHydrated, isLoading, isError, save } =
         useSymbolHolding(symbol);
 
@@ -87,6 +103,7 @@ export function PortfolioChip({ symbol }: PortfolioChipProps) {
                     save={save}
                     triggerRef={triggerRef}
                     onClose={() => setIsOpen(false)}
+                    isMobile={isMobileViewport}
                 />
             )}
         </div>

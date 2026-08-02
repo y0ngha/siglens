@@ -6,6 +6,7 @@ import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHol
 import type { PortfolioHoldingView } from '@/entities/portfolio';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { PortfolioChipMounted } from '@/features/portfolio-holding/ui/PortfolioChipMounted';
+import { mockViewport } from '@/__tests__/utils/mockViewport';
 
 vi.mock('@/entities/auth');
 vi.mock('@/entities/portfolio/hooks/usePortfolioHoldings');
@@ -66,7 +67,12 @@ function setHoldings(overrides: Partial<Holdings>) {
 describe('PortfolioChipMounted / PortfolioChip', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockViewport(false);
         setHoldings({ holdings: [] });
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
     });
 
     it('renders nothing while the login check is in flight (data undefined)', () => {
@@ -306,5 +312,29 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
             )
         ).toBeInTheDocument();
         expect(screen.getByLabelText('평단')).toHaveFocus();
+    });
+
+    // PortfolioChip now owns the useIsMobileViewport() read (hoisted from
+    // PortfolioChipPopover — see PortfolioChip.tsx JSDoc for why: the popover
+    // is next/dynamic({ssr:false}) and only mounts on open, so if it read the
+    // hook itself, every open would start unresolved and remount the panel
+    // once it settled, disarming the focus trap). This test exercises that
+    // mobile branch, which the file-wide desktop mock previously skipped
+    // entirely.
+    it('모바일 뷰포트에서 열어도 포커스 트랩이 다이얼로그 안에 포커스를 두고, 정상적으로 입력할 수 있다', async () => {
+        mockViewport(true);
+        const user = userEvent.setup();
+        setCurrentUser(USER);
+        setHoldings({ holdings: [] });
+        render(<PortfolioChipMounted symbol="AAPL" />);
+
+        await user.click(screen.getByRole('button', { name: '평단 설정' }));
+        const dialog = await screen.findByRole('dialog');
+
+        expect(document.activeElement).not.toBe(document.body);
+        expect(dialog.contains(document.activeElement)).toBe(true);
+
+        await user.type(await screen.findByLabelText('수량'), '10');
+        expect(screen.getByLabelText('수량')).toHaveValue('10');
     });
 });
