@@ -125,8 +125,8 @@ FIX 4(초기 스냅 PEEK)로 시트가 내려가면 초기 상태에서는 대�
 ### 1.5 결함 4 — 초기 스냅이 차트를 덮음
 
 `useMobileSheet.ts:20`이 초기 스냅을 `SNAP_HALF`(0.55)로 잡는 반면,
-`ChartContent.tsx:484-491`은 하단 패딩을 `SNAP_PEEK`(0.15) 높이만큼만 확보한다. 불일치의
-결과로 초기 화면에서 차트가 가려진다. 3개 기기 실측:
+`ChartContent.tsx:484-491`은 하단 패딩을 `SNAP_PEEK` 높이만큼만 확보한다(당시 값 0.15 —
+아래 참고). 불일치의 결과로 초기 화면에서 차트가 가려진다. 3개 기기 실측:
 
 | 기기 | 뷰포트 | 차트 하단 y | 차트를 안 가리는 최대 시트 비율 | 실제 초기 시트 |
 |---|---|---|---|---|
@@ -134,10 +134,19 @@ FIX 4(초기 스냅 PEEK)로 시트가 내려가면 초기 상태에서는 대�
 | iPhone SE | 568 | 446 | **0.215** | 0.519 ❌ |
 | Pixel 7 | 839 | 676 | **0.194** | 0.520 ❌ |
 
-`SNAP_PEEK`(0.15)는 세 기기의 임계값(0.194~0.215) **아래**이므로 차트를 가리지 않는다.
-또한 `SNAP_HALF`의 주석상 목적인 "분석 중 배너 노출"도 PEEK에서 충족된다 — 배너 실측
-높이 36px, PEEK 가시 영역은 85px(SE)~126px(Pixel 7)이며 핸들 5px + 상단 패딩 12px을 빼도
-여유가 있다. 즉 **HALF는 자기 목적에 비해 과도**하다.
+이 시점에 측정한 `SNAP_PEEK`(0.15)는 세 기기의 임계값(0.194~0.215) **아래**이므로 차트를
+가리지 않는다. 또한 `SNAP_HALF`의 주석상 목적인 "분석 중 배너 노출"도 PEEK에서 충족된다 —
+배너 실측 높이 36px, PEEK 가시 영역은 85px(SE)~126px(Pixel 7)이며 핸들 5px + 상단 패딩
+12px을 빼도 여유가 있다. 즉 **HALF는 자기 목적에 비해 과도**하다.
+
+> **구현 중 변경(사후 기록)**: 최종 구현은 `SNAP_PEEK = 0.20`을 쓴다(§3.4 참고). 위 임계값
+> 분석은 값을 바꿔도 무효화되지 않는다 — 차트 패딩(`--snap-peek`)이 `SNAP_PEEK` 상수를
+> 그대로 읽으므로 시트 점유율과 패딩이 항상 일치하고, 실측 점유율도 0.170~0.171로 임계값
+> 아래에 여전히 머문다(`docs/qa/2026-08-01-mobile-ux-verification.md` FIX 4). 0.15를 버린
+> 이유는 이 차트-가림 문제가 아니라 **별개의 위험**이다 — 실제로 보이는 손잡이 띠는
+> `snap − 0.03`이라, 0.15는 띠가 0.12에 불과해 모바일 툴바가 접혀 `innerHeight`가
+> `svh`보다 조금만 커져도(통상 60~110px 범위) 띠가 0으로 수렴해 잡을 것이 사라진다. 0.20으로
+> 올려 그 여유를 키웠다.
 
 ---
 
@@ -180,7 +189,10 @@ FIX 4(초기 스냅 PEEK)로 시트가 내려가면 초기 상태에서는 대�
 - `yarn patch vaul@npm:1.1.2` → `dist/index.mjs`(`DialogPrimitive.Root`)와
   `dist/index.js`(`DialogPrimitive__namespace.Root`) **양쪽** 모두에
   `modal: modal,` prop 추가 → `yarn patch-commit -s`.
-- 산출물: `.yarn/patches/vaul-npm-1.1.2-*.patch` + `package.json`의 `resolutions` 엔트리. 둘 다 커밋.
+- 산출물: `.yarn/patches/vaul-npm-1.1.2-*.patch` + `package.json`의 `vaul` 의존성 엔트리를
+  `patch:vaul@npm%3A1.1.2#~/.yarn/patches/vaul-npm-1.1.2-*.patch` 형태로 재작성. 둘 다 커밋.
+  (**구현 중 변경**: 별도 `resolutions` 필드가 아니라 yarn 4가 `dependencies.vaul` 값
+  자체를 이 `patch:` 프로토콜 문자열로 다시 쓴다 — `yarn patch-commit`의 실제 산출물이다.)
 - `MobileAnalysisSheet.tsx`에서 `useRestoreBodyPointerEvents()`와 관련 상수를 **제거**한다.
   non-modal 경로에서는 Radix가 `body`를 건드리지 않으며(실측 `bodyPE=auto`), vaul 자체도
   `!modal`일 때 rAF로 `auto`를 보장한다. 죽은 방어 코드를 남기면 다음 사람이 원인을 오독한다.
@@ -189,8 +201,9 @@ FIX 4(초기 스냅 PEEK)로 시트가 내려가면 초기 상태에서는 대�
 **리스크와 완화**
 
 - ~~vaul 버전 상향 시 `yarn install`이 실패하므로 fail-loud~~ — **감사 지적으로 철회.**
-  `resolutions`는 `vaul@npm:1.1.2`에 핀되므로 버전을 올리면 (a) 해상도가 구버전을 계속
-  가리키거나 (b) 매치되지 않아 패치가 조용히 빠진다. **어느 쪽도 install을 실패시키지 않는다.**
+  `package.json`의 `vaul` 항목이 `patch:vaul@npm%3A1.1.2#...` 형태로 특정 버전(1.1.2)에
+  핀되므로, 버전을 올리면 (a) 그 항목이 구버전을 계속 가리키거나 (b) 새 버전 문자열과
+  매치되지 않아 패치가 조용히 빠진다. **어느 쪽도 install을 실패시키지 않는다.**
   → 완화: **패치 무결성 테스트**를 둔다. vitest가 `vaul/dist/index.mjs`와 `dist/index.js`를
   읽어 `DialogPrimitive` Root 생성부에 `modal`이 전달되는지 단언한다. 패치가 빠지면 테스트가
   깨져 CI가 막는다.
@@ -237,16 +250,35 @@ body pointer-events / bad-ancestors: none
 덮인다. 헤더 컨트롤이 하나 더 늘면 다음 팝오버도 같은 방식으로 깨진다. 따라서 일회성 수정이
 아니라 `shared/ui`의 공유 표면으로 만들고 두 곳에 적용한다.
 
-- `src/shared/ui/popoverSurface.tsx`
-  - `POPOVER_SURFACE_DESKTOP` / `POPOVER_SURFACE_MOBILE` 클래스 상수
-  - `PopoverSurface` — `useIsMobileViewport()`가 true면 배경 + 패널을 `document.body`로
-    포털하고, false면 현행 그대로 제자리에 렌더한다.
+- `src/shared/ui/PopoverSurface.tsx`
+  - `PopoverSurface` — 패널 `<div>`(role, `aria-labelledby`, `tabIndex`, 배치 클래스,
+    `aria-modal`) **자체를 소유**한다. `isMobile: boolean`을 **호출자로부터 프롭으로
+    받는다** — `true`면 배경 + 패널을 `document.body`로 포털하고, `false`면 현행 그대로
+    제자리에 렌더한다. 배치 클래스 상수(`POPOVER_PANEL_MOBILE`/`POPOVER_PANEL_DESKTOP`에
+    해당)는 이 파일 내부 비공개 상수로 둔다.
+  - **구현 중 변경(사후 기록)**: 최초 설계는 `PopoverSurface`가 children(=패널 전체를
+    감싼 `<div>`)의 포털 여부만 결정하고, `isMobile`은 내부에서 `useIsMobileViewport()`로
+    직접 읽는 안이었다. 그런데 그 훅은 초기값이 `false`이고 effect에서 동기화되므로,
+    마운트 첫 렌더는 Fragment를 반환하고 effect 이후 렌더부터 `createPortal`을
+    반환한다 — 같은 위치에서 Fragment↔Portal은 다른 fiber 타입이라 React가 패널
+    서브트리 전체를 **unmount 후 remount**했고, 이 remount가 `useFocusTrap`의 초기
+    포커스 지정을 조용히 무효화했다(포커스가 body에 남음). 호출자가 `isMobile`을
+    프롭으로 넘기면 첫 커밋부터 값이 확정되어 이 remount 자체가 없어진다. 패널
+    div의 소유권도 이 변경과 함께 `PopoverSurface`로 옮겼다 — 이전에는 포털 여부(이
+    컴포넌트)와 배치 클래스 분기(각 호출부)가 서로 다른 파일 세 곳에 흩어져 있어 그
+    둘이 항상 일치한다는 보장이 타입에도 lint에도 없었다.
 - 적용 대상: `PortfolioChipPopover`(가로 넘침 + 가려짐), `AnalysisSettingsMenu`(가려짐).
 - 하단 고정(bottom sheet)은 채택하지 않는다 — 분석 시트가 하단을 점유해 충돌한다.
 - 배경 오버레이는 `panelRef` 밖이므로 기존 `useOnClickOutside`(document `pointerdown`)가
   그대로 닫기를 처리한다 — 새 핸들러 불필요.
-- `aria-modal`은 **추가하지 않는다**. 커밋 `34358ab4`가 "over-promised"로 제거한 결정을
-  되돌리지 않으며, 포커스 트랩은 기존 `useFocusTrap`이 이미 제공한다.
+- `aria-modal`은 **모바일 경로에만** 추가한다(**구현 중 변경**). 최초 설계는 커밋
+  `34358ab4`가 "over-promised"로 제거한 결정을 그대로 유지해 아예 추가하지 않는 것이었다.
+  배포 전 감사에서, 모바일 패널은 `fixed inset-0` 백드롭 뒤에 포털된 실질적 모달
+  다이얼로그라 스크린리더 사용자가 다이얼로그 밖(시각적으로는 백드롭에 가려진) 콘텐츠로
+  스와이프해 나갈 수 있으면 안 된다는 지적을 받아, 모바일 경로에만 `aria-modal="true"`를
+  달았다. 데스크탑 앵커드 팝오버는 백드롭이 없고 페이지 나머지와 여전히 상호작용
+  가능한 진짜 모달이 아니므로 `34358ab4`의 판단을 그대로 유지해 달지 않는다 — 이번
+  변경은 모바일 경로에만 추가하는 것으로 그 판단을 뒤집지 않는다.
 
 **주의**: `useIsMobileViewport`는 초기값이 `false`이고 effect에서 동기화된다
 (`src/shared/hooks/useIsMobileViewport.ts:8`). 두 팝오버 모두 **사용자 클릭 이후에만**
@@ -279,22 +311,34 @@ body pointer-events / bad-ancestors: none
 
 **신규 순수 함수**
 
-`src/shared/lib/formatSnapshotAsOf.ts` — `(date: Date) => string`. 외부 의존 없는 순수
-함수이므로 shared에 둔다(레이어 규칙 준수: views → shared 허용).
+`src/shared/lib/formatSnapshotAsOf.ts` — `(date: Date) => string | null`(**구현 중 변경**,
+아래 참고). 외부 의존 없는 순수 함수이므로 shared에 둔다(레이어 규칙 준수: views → shared
+허용).
 
-**데이터 배선 — 렌더러는 7개지만 호출부는 11곳이다**
+> **구현 중 변경(사후 기록)**: 최초 설계는 반환 타입을 `string`으로 잡았다. 배포 전
+> 감사에서(3개 감사가 독립적으로 지적) — `unstable_cache`가 JSON으로 왕복하므로
+> `generatedAt`이 캐시 히트 시 **문자열**로 돌아오고, 저장소 경계에서 이를 다시 `Date`로
+> 되살리는 과정에 Invalid Date가 섞일 수 있다는 게 드러났다. `Intl.DateTimeFormat.format()`은
+> Invalid Date에 `RangeError: Invalid time value`를 던지는데, 이 함수는 ISR-생성 페이지의
+> React 렌더 **안**에서 호출되므로 그 RangeError는 `getSeoSnapshotsStatic`의 try/catch로
+> 잡히지 않는다(렌더는 그 함수의 바깥이다) — 이 저장소가 문서화한 "uncaught loader throw가
+> 빈 ISR 캐시 엔트리를 굳혀버린" 인시던트와 동일한 실패 클래스다. 반환 타입을
+> `string | null`로 바꿔 Invalid Date를 throw 없이 `null`로 degrade시키고, 호출부(셸)가
+> `null`을 `asOf === undefined`와 동일하게 취급해 고정 캡션으로 폴백하도록 했다.
 
-감사 지적으로 정정: 렌더러는 7개가 맞지만 **호출부는 11곳**이며, 그중 3곳은 스냅샷 행이
+**데이터 배선 — 렌더러는 7개지만 호출부는 12곳이다**
+
+감사 지적으로 정정: 렌더러는 7개가 맞지만 **호출부는 12곳**이며, 그중 3곳은 스냅샷 행이
 아니라 `content`만 받는 중간 래퍼다. 이들을 빠뜨리면 "한 탭만 날짜가 있는" 불일치가
 정확히 발생한다.
 
 | 호출부 | 형태 |
 |---|---|
-| `[symbol]/page.tsx:367`, `overall:351`, `news:383`, `congress:285`, `financials:293`, `fundamental:637` | 스냅샷 행 보유 → `generatedAt` 직접 전달 |
+| `[symbol]/page.tsx:367`, `overall:351`, `news:383`, `congress:285`, `financials:293`, `fundamental:637` | 스냅샷 행 보유 → `generatedAt` 직접 전달 (6곳) |
 | `[symbol]/options/page.tsx:200`, `:233`, `:368` | 스냅샷 행 보유 (한 파일에 **3곳**) |
-| `fundamental/FundamentalDegraded.tsx:16`, `financials/FinancialsDegraded.tsx:16`, `congress/CongressDegraded.tsx:16` | `snapshotContent?: unknown`만 받음 → **`snapshotGeneratedAt?: Date` prop 신설 후 호출부에서 전달** |
+| `fundamental/FundamentalDegraded.tsx:16`, `financials/FinancialsDegraded.tsx:16`, `congress/CongressDegraded.tsx:16` | `snapshotContent?: unknown`만 받음 → **`snapshotGeneratedAt?: Date` prop 신설 후 호출부에서 전달** (3곳) |
 
-7개 렌더러 전부에 `generatedAt?: Date`를 열고, 위 11곳 전부를 배선한다.
+6 + 3 + 3 = **12**. 7개 렌더러 전부에 `generatedAt?: Date`를 열고, 위 12곳 전부를 배선한다.
 
 **상호참조 문구**
 
@@ -320,6 +364,28 @@ body pointer-events / bad-ancestors: none
 HALF에 의존하는 제품·분석 로직은 없다 — 다른 `SNAP_HALF` 소비자는 드래그 목표값인
 `useMobileSheetDrag.ts:108`뿐이며 이번 변경의 영향을 받지 않는다.
 
+**후속 추가 — 시트를 여는 명시적 버튼("AI 분석 보기")**
+
+배포 전 실측(§1.5 사후 기록 참고)에서 최종 `SNAP_PEEK` 값을 0.20으로 올렸음에도, 보이는
+손잡이 띠는 여전히 `snap − 0.03`이고 시트는 `97svh` 고정인 반면 vaul은 오프셋을
+`window.innerHeight`로 잡는다는 구조적 위험 자체는 남는다 — 모바일 툴바가 접혀
+`innerHeight`가 `svh`보다 커지면 띠가 얇아지고, 극단적으로는 0에 수렴해 **잡을 것이
+사라진다.** 그 상태에서는 제품의 핵심인 AI 분석 패널에 재로드 전까지 접근할 수 없다.
+
+이 PR 내 후속 커밋으로, 시트를 여는 방법을 "PEEK 띠 드래그"만이 아니라 **항상 살아 있는
+버튼**으로도 제공한다.
+
+- 위치: `SymbolPageClient.tsx`의 timeframe bar 행(h1과 같은 행, 시트 **밖**). 새 세로
+  공간을 쓰지 않고 남는 폭에 배치한다(first-viewport jail이라 한 줄이 늘면 차트가 그만큼
+  줄어든다).
+- 동작: `onClick={() => setSheetSnap(SNAP_FULL)}` — 눌리면 시트가 전체 스냅으로 열린다.
+- 효과: 띠 높이와 완전히 무관해진다 — 이 버튼이 살아 있는 한 띠가 0으로 수렴하는 파국적
+  케이스도 AI 분석 패널 접근 자체는 항상 보장된다. §1.5 사후 기록의 "차트 하단-시트 상단
+  여유가 줄어든 트레이드오프"는 여전히 유효하지만(미관 문제), 그 트레이드오프가 방어하던
+  **기능 상실** 쪽 위험은 이 버튼이 별도로 커버한다.
+- 테스트: `SymbolPageClient.test.tsx`가 이 버튼이 시트 DOM 밖에 있음과, 클릭 시
+  `setSheetSnap(SNAP_FULL)`이 호출됨을 고정한다.
+
 ---
 
 ## 4. 아키텍처 영향
@@ -327,7 +393,8 @@ HALF에 의존하는 제품·분석 로직은 없다 — 다른 `SNAP_HALF` 소�
 - 레이어 위반 없음: `views → shared`, `features(ui) → shared` 모두 허용 방향.
 - siglens-core 스코프 침범 없음 — 분석 로직·지표·프롬프트를 건드리지 않는다.
 - 신규 런타임 의존성 없음. 신규 환경변수 없음.
-- `package.json`에 `resolutions` 필드가 새로 생긴다(패치 적용용).
+- `package.json`의 `vaul` 의존성 항목이 `patch:vaul@npm%3A1.1.2#...` 형태로 재작성된다(패치
+  적용용, **구현 중 변경** — 별도 `resolutions` 필드가 아니다. §3.1 참고).
 
 ---
 
@@ -404,5 +471,6 @@ vaul 버전 상향 시 패치가 조용히 유실되는 것을 막는 단위 테
 
 ## 7. 롤백
 
-- FIX 1: 패치 파일과 `resolutions` 제거 → vaul 원본 동작으로 복귀(단, P0 결함도 함께 복귀).
+- FIX 1: 패치 파일과 `package.json`의 `vaul` 패치 항목(`patch:vaul@npm%3A1.1.2#...`)을
+  일반 `^1.1.2` 형태로 되돌림 → vaul 원본 동작으로 복귀(단, P0 결함도 함께 복귀).
 - FIX 2·3·4: 순수 프론트 변경이라 커밋 되돌리기로 즉시 복구. 데이터·스키마 변경 없음.

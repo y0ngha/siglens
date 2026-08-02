@@ -130,7 +130,7 @@ RangeError / Invalid time value: 0건
 | `yarn format:check` | 통과 |
 | `yarn typecheck` | 통과 |
 | `yarn lint` | 통과 |
-| `yarn test` | **8999 통과** / 2 skipped |
+| `yarn test` | **9026 통과** / 2 skipped |
 | `yarn test-coverage` | statements 96.16% · branches 93.39% (임계값 90%) |
 | `yarn build` | exit 0 |
 | Playwright (모바일 도달성 + 회귀) | 26 통과 / 3 skipped / 0 실패 |

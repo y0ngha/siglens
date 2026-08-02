@@ -45,7 +45,7 @@
 | `src/shared/lib/formatSnapshotAsOf.ts` | 기준일 결정적 포맷 (순수 함수) | 생성 |
 | `src/views/symbol/snapshot/SnapshotSummarySection.tsx` | `asOf` 배지 + 날짜 캡션 | 수정 |
 | `src/views/symbol/snapshot/renderers/*.tsx` (7개) | `generatedAt` 배선, technical·overall은 상호참조 문구 | 수정 |
-| `src/app/[symbol]/**` (페이지 7 + Degraded 래퍼 3) | `generatedAt` 전달 (**총 11 호출부**) | 수정 |
+| `src/app/[symbol]/**` (페이지 7 + Degraded 래퍼 3) | `generatedAt` 전달 (**총 12 호출부**) | 수정 |
 | `playwright.config.ts` | `authed-mobile` 프로젝트 + 라우팅 | 수정 |
 | `e2e/specs/mobile-input-reachability.spec.ts` | 회원 모바일 입력 회귀 가드 | 생성 |
 | `e2e/specs/mobile-analysis-sheet.spec.ts` | 비회원 모바일 입력 케이스 추가 | 수정 |
@@ -56,7 +56,9 @@
 
 **Files:**
 - Create: `.yarn/patches/vaul-npm-1.1.2-<hash>.patch` (yarn이 파일명 결정)
-- Modify: `package.json` (yarn이 `resolutions` 추가), `yarn.lock`
+- Modify: `package.json` (yarn이 `dependencies.vaul` 항목을
+  `patch:vaul@npm%3A1.1.2#~/.yarn/patches/vaul-npm-1.1.2-<hash>.patch` 형태로 재작성 —
+  별도 `resolutions` 필드가 아니다, **구현 중 이렇게 확인됨**), `yarn.lock`
 
 **배경:** vaul 1.1.2는 `Drawer.Root`에 `modal={false}`를 주어도 내부 `DialogPrimitive.Root`에 그 값을 넘기지 않는다. Radix 기본값 `modal=true`가 적용되어 (1) FocusScope 포커스 트랩, (2) `hideOthers`의 `aria-hidden`, (3) `disableOutsidePointerEvents`의 `body { pointer-events: none }`이 발생한다. 업스트림 미해결 이슈: <https://github.com/emilkowalski/vaul/issues/496>
 
@@ -120,11 +122,15 @@ node_modules를 grep하지 말 것 — 이 워크트리의 node_modules는 과�
 
 ```bash
 grep -c '^+.*modal: modal,' .yarn/patches/vaul-npm-1.1.2-*.patch
-node -e "console.log(JSON.stringify(require('./package.json').resolutions))"
+node -e "console.log(require('./package.json').dependencies.vaul)"
 git status --porcelain package.json yarn.lock .yarn/patches
 ```
 
-Expected: grep 결과 `2`(ESM+CJS), `resolutions`에 `vaul@npm:1.1.2` 키가 보이고, 세 경로 모두 변경됨으로 표시.
+Expected: grep 결과 `2`(ESM+CJS), `dependencies.vaul`이
+`patch:vaul@npm%3A1.1.2#~/.yarn/patches/vaul-npm-1.1.2-*.patch` 형태로 보이고, 세 경로 모두
+변경됨으로 표시. (**구현 중 확인됨**: `require('./package.json').resolutions`는 `undefined`다
+— yarn 4는 이 패치를 별도 `resolutions` 필드가 아니라 `dependencies.vaul` 값 자체를
+재작성해서 반영한다.)
 
 - [ ] **Step 6: 커밋**
 
@@ -148,7 +154,10 @@ put aria-hidden on the whole app tree, and body got pointer-events:none."
 **Files:**
 - Create: `src/shared/lib/__tests__/vaulPatchIntegrity.test.ts`
 
-**배경:** `resolutions`는 `vaul@npm:1.1.2`에 핀된다. 의존성 버전을 올리면 해상도가 매치되지 않아 **패치가 조용히 빠지며, `yarn install`은 실패하지 않는다.** 그러면 P0 결함이 무증상으로 되돌아온다. 설치 산출물을 직접 읽어 회귀를 CI에서 막는다.
+**배경:** `package.json`의 `dependencies.vaul` 항목이 `patch:vaul@npm%3A1.1.2#...`로
+`vaul@npm:1.1.2`에 핀된다(별도 `resolutions` 필드가 아니다 — Task 1에서 정정됨). 의존성
+버전을 올리면 이 패치 지정이 매치되지 않아 **패치가 조용히 빠지며, `yarn install`은 실패하지
+않는다.** 그러면 P0 결함이 무증상으로 되돌아온다. 설치 산출물을 직접 읽어 회귀를 CI에서 막는다.
 
 `.test.ts`(node 환경)가 맞다 — `node:fs`로 파일을 읽는 테스트라 DOM이 필요 없다.
 
@@ -165,9 +174,9 @@ import { createRequire } from 'node:module';
  * modal 모드로 동작해, 모바일 분석 시트 **밖**의 모든 입력이 포커스를 빼앗긴다.
  * `.yarn/patches/vaul-npm-1.1.2-*.patch`가 passthrough를 복구한다.
  *
- * 이 테스트가 존재하는 이유: `resolutions`가 `vaul@npm:1.1.2`에 핀되어 있어
- * 버전을 올리면 패치가 **조용히** 빠지고 `yarn install`은 성공한다. 설치된
- * 산출물을 직접 읽는 것만이 유실을 잡아낸다.
+ * 이 테스트가 존재하는 이유: `package.json`의 `dependencies.vaul`이 `vaul@npm:1.1.2`에
+ * 핀되어 있어(별도 `resolutions` 필드가 아니다) 버전을 올리면 패치가 **조용히** 빠지고
+ * `yarn install`은 성공한다. 설치된 산출물을 직접 읽는 것만이 유실을 잡아낸다.
  */
 const require = createRequire(import.meta.url);
 
@@ -223,9 +232,10 @@ Expected: 중간 실행이 FAIL, 복원 후 실행이 PASS.
 git add src/shared/lib/__tests__/vaulPatchIntegrity.test.ts
 git commit -m "test(vaul): fail loudly if the modal passthrough patch goes missing
 
-resolutions pins the patch to vaul@npm:1.1.2, so a version bump drops it
-without failing yarn install. Reading the installed build is the only
-thing that catches it."
+package.json's dependencies.vaul pins the patch to vaul@npm:1.1.2 (not a
+separate resolutions field), so a version bump drops it without failing
+yarn install. Reading the installed build is the only thing that catches
+it."
 ```
 
 ---
@@ -347,7 +357,9 @@ that would mislead the next reader about the real root cause."
 - Modify: `src/views/symbol/constants/mobileSheet.ts`
 - Modify: `src/views/symbol/__tests__/SymbolPageClient.test.tsx` (목값 정합)
 
-**배경:** 초기 스냅이 `SNAP_HALF`(0.55)인데 `ChartContent`는 `SNAP_PEEK`(0.15) 높이만큼만 하단 패딩을 예약한다. 3개 기기 실측 결과 차트를 가리지 않는 최대 시트 비율은 0.194~0.215이므로 HALF는 차트를 덮고 PEEK은 덮지 않는다. `SNAP_HALF`의 원래 목적("분석 중 배너 노출")도 PEEK에서 충족된다 — 배너 높이 36px, PEEK 가시 영역 85px(iPhone SE)~126px(Pixel 7).
+**배경:** 초기 스냅이 `SNAP_HALF`(0.55)인데 `ChartContent`는 `SNAP_PEEK` 높이만큼만 하단 패딩을 예약한다(패딩은 `--snap-peek` CSS 변수로 `SNAP_PEEK` 상수를 그대로 읽으므로 값이 뭐든 항상 정합된다). 3개 기기 실측 결과 차트를 가리지 않는 최대 시트 비율은 0.194~0.215이므로 HALF는 차트를 덮고 PEEK은 덮지 않는다. `SNAP_HALF`의 원래 목적("분석 중 배너 노출")도 PEEK에서 충족된다 — 배너 높이 36px, PEEK 가시 영역 85px(iPhone SE)~126px(Pixel 7).
+
+> **구현 중 변경(사후 기록)**: 이 Task를 쓸 당시 `SNAP_PEEK`는 0.15였다. 배포 전 감사에서, 실제로 보이는 손잡이 띠(`snap − 0.03`)가 0.15에서는 0.12에 불과해 모바일 툴바가 접혀 `innerHeight`가 `svh`보다 조금만(통상 60~110px 범위) 커져도 띠가 0으로 수렴해 잡을 것이 사라진다는 게 드러났다. 그래서 최종 값은 **0.20**이다 — 아래 Step들의 리터럴은 이 변경 이전 값이므로 실제 구현 시 0.20으로 대체한다.
 
 - [ ] **Step 1: 기존 단언을 반전**
 
@@ -372,7 +384,7 @@ import { SNAP_PEEK } from '@/views/symbol/constants/mobileSheet';
 yarn vitest run src/views/symbol/__tests__/hooks/useMobileSheet.test.tsx
 ```
 
-Expected: FAIL — `expected 0.55 to be 0.15`.
+Expected: FAIL — `expected 0.55 to be 0.2` (실제 최종값은 0.15가 아니라 0.20 — 위 사후 기록 참고).
 
 - [ ] **Step 3: 구현**
 
@@ -395,14 +407,14 @@ import { SNAP_PEEK, type SnapPoint } from '../constants/mobileSheet';
 `src/views/symbol/constants/mobileSheet.ts` 3~5행:
 
 ```ts
-export const SNAP_PEEK = 0.15; // 15% — 기본(초기) 접힘. 차트를 가리지 않는 최대치 아래
+export const SNAP_PEEK = 0.2; // 20% — 기본(초기) 접힘. 보이는 띠(snap − 0.03)가 0.15에서는 모바일 툴바 접힘 여유가 부족해 0.20으로 확정
 export const SNAP_HALF = 0.55; // 55% — 드래그 중간 스냅
 export const SNAP_FULL = 0.97; // 97% — 전체 열림
 ```
 
 - [ ] **Step 5: 목값 정합**
 
-`src/views/symbol/__tests__/SymbolPageClient.test.tsx`에서 `sheetSnap: 0.55`를 `sheetSnap: 0.15`로 바꾼다. 동작에는 영향이 없으나 초기값을 잘못 알려주는 목은 다음 사람을 오도한다.
+`src/views/symbol/__tests__/SymbolPageClient.test.tsx`에서 `sheetSnap: 0.55`를 `sheetSnap: 0.2`로 바꾼다. 동작에는 영향이 없으나 초기값을 잘못 알려주는 목은 다음 사람을 오도한다.
 
 - [ ] **Step 6: 테스트 통과 확인**
 
@@ -562,6 +574,27 @@ export const POPOVER_PANEL_DESKTOP =
     'absolute top-full right-0 z-50 w-72 max-w-[calc(100vw-2rem)]';
 ```
 
+> **구현 중 변경(사후 기록)**: 위 설계(내부 `useIsMobileViewport()`, `children`만 감싸고
+> 배치 상수는 export, 패널 `<div>`는 호출자가 각자 소유)는 배포 전 감사에서 뒤집혔다.
+> `useIsMobileViewport()`는 초기값이 `false`이고 effect에서 동기화되므로, 이 컴포넌트가
+> 그 훅을 직접 부르면 마운트 첫 렌더가 Fragment를 반환하고 effect 이후 렌더부터
+> `createPortal`을 반환한다 — 같은 위치에서 Fragment↔Portal은 다른 fiber 타입이라 React가
+> 패널 서브트리 전체를 **unmount 후 remount**했고, 실측 결과 이 remount가
+> `useFocusTrap`의 초기 포커스 지정을 조용히 무효화했다(포커스가 body에 남는 것을 확인).
+> 최종 구현은:
+> - `isMobile: boolean`을 **호출자가 프롭으로 전달**한다(내부 훅 호출 제거) — 첫 커밋부터
+>   값이 확정되어 remount 자체가 없어진다.
+> - `PopoverSurface`가 패널 `<div>`(`role="dialog"`, `aria-labelledby`, `tabIndex`,
+>   배치 클래스, `aria-modal`)를 **직접 소유**한다 — `dialogRef`/`titleId`/`className`/
+>   `desktopClassName` prop을 받는다. 배치 클래스 상수는 export하지 않고 파일 내부
+>   비공개로 둔다(`POPOVER_PANEL_MOBILE`/`POPOVER_PANEL_DESKTOP`이라는 이름은 유지하되
+>   비공개). 이전에는 포털 여부(이 컴포넌트)와 배치 클래스 분기(각 호출부)가 서로 다른
+>   파일 세 곳에 흩어져 있어 그 둘이 항상 일치한다는 보장이 타입에도 lint에도 없었다.
+> - 모바일 경로에만 `aria-modal="true"`를 단다(§3.2 참고 — 최초 설계는 아예 달지 않았다).
+>
+> 아래 Task 6·7의 코드 블록은 이 변경 이전 설계를 그대로 반영하므로, 실제 구현 시
+> 최종 `PopoverSurface.tsx`(및 그 위 실제 소스)를 기준으로 삼는다.
+
 - [ ] **Step 4: 테스트 통과 확인**
 
 ```bash
@@ -587,6 +620,10 @@ the only fix, and it removes the horizontal overflow at the same time."
 ---
 
 ## Task 6: 평단 팝오버에 공유 표면 적용
+
+> **구현 중 변경**: 이 Task의 코드 블록은 Task 5의 최초 설계(내부 `useIsMobileViewport()`,
+> 호출자가 패널 `<div>`를 직접 소유) 기준이다. 최종 구현은 `PopoverSurface`가 `isMobile` 프롭과
+> 패널 `<div>` 자체를 소유하므로 실제 적용 형태가 다르다 — Task 5의 "구현 중 변경" 기록 참고.
 
 **Files:**
 - Modify: `src/features/portfolio-holding/ui/PortfolioChipPopover.tsx`
@@ -749,6 +786,10 @@ stacking context, was painted under the analysis sheet."
 ---
 
 ## Task 7: 분석 설정 메뉴에 공유 표면 적용
+
+> **구현 중 변경**: 이 Task의 코드 블록도 Task 5의 최초 설계 기준이다 — 최종 구현은
+> `isMobile`을 프롭으로 받고 패널 `<div>`는 `PopoverSurface`가 소유한다. Task 5의
+> "구현 중 변경" 기록 참고.
 
 **Files:**
 - Modify: `src/widgets/analysis/AnalysisSettingsMenu.tsx`
@@ -928,6 +969,10 @@ describe('formatSnapshotAsOf', () => {
 });
 ```
 
+> **구현 중 변경(사후 기록)**: 배포 전 감사에서 Invalid Date를 넣는 케이스가 하나 더
+> 필요하다는 게 드러났다 — 아래 Step 3 참고. `formatSnapshotAsOf(new Date('invalid'))`가
+> `null`을 반환하는지 확인하는 테스트를 여기에 추가한다(throw하지 않아야 한다).
+
 - [ ] **Step 2: 테스트가 실패하는지 확인**
 
 ```bash
@@ -950,6 +995,14 @@ Expected: FAIL — `Cannot find module '../formatSnapshotAsOf'`.
  *
  * 입력은 DB 행의 `generatedAt`이어야 한다. 렌더 중 `new Date()`를 넣으면 재검증
  * 시점마다 값이 바뀌어 결정적 출력 원칙이 깨진다.
+ *
+ * `date`가 Invalid Date이면 `null`을 반환한다 — 절대로 throw하지 않는다.
+ * `Intl.DateTimeFormat.format()`은 Invalid Date에 `RangeError: Invalid time value`를
+ * 던진다. 이 함수는 ISR-생성 페이지의 React 렌더 안에서 호출되므로, 그 RangeError는
+ * `getSeoSnapshotsStatic`의 try/catch로도 잡히지 않는다(렌더는 그 함수의 바깥이다) — 이
+ * 저장소가 문서화한 "uncaught loader throw가 빈 ISR 캐시 엔트리를 굳혀버린" 인시던트와
+ * 동일한 실패 클래스다. 호출부는 `null`을 `asOf === undefined`와 동일하게 취급해 고정
+ * 캡션으로 폴백해야 한다.
  */
 const SNAPSHOT_AS_OF_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
     timeZone: 'America/New_York',
@@ -958,10 +1011,18 @@ const SNAPSHOT_AS_OF_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
     day: 'numeric',
 });
 
-export function formatSnapshotAsOf(date: Date): string {
+export function formatSnapshotAsOf(date: Date): string | null {
+    if (Number.isNaN(date.getTime())) return null;
     return SNAPSHOT_AS_OF_FORMATTER.format(date);
 }
 ```
+
+> **구현 중 변경(사후 기록)**: 최초 설계는 반환 타입을 `string`으로 잡았다(위 코드 블록의
+> `string | null`과 Invalid Date 분기는 감사 이후 형태다). `unstable_cache`가 JSON으로
+> 왕복하므로 `generatedAt`이 캐시 히트 시 문자열로 돌아오는데, 이를 저장소 경계에서 다시
+> `Date`로 되살리는 과정에 Invalid Date가 섞일 수 있다는 게 배포 전 감사에서(3개 감사가
+> 독립적으로) 드러났다. 렌더 중 `RangeError`가 던져지면 ISR 빈 캐시 인시던트와 같은
+> 실패 클래스가 되므로, throw 대신 `null`로 degrade하도록 반환 타입을 바꿨다.
 
 - [ ] **Step 4: 테스트 통과 확인**
 
@@ -969,7 +1030,7 @@ export function formatSnapshotAsOf(date: Date): string {
 yarn vitest run src/shared/lib/__tests__/formatSnapshotAsOf.test.ts
 ```
 
-Expected: 4 tests PASS. (Node v25 full-ICU에서 위 3개 기대값이 실측 확인됨.)
+Expected: 5 tests PASS(Invalid Date 케이스 포함). (Node v25 full-ICU에서 위 3개 기대값이 실측 확인됨.)
 
 - [ ] **Step 5: 커밋**
 
@@ -1270,11 +1331,11 @@ analysis lives in the analysis panel, since those two show both at once."
 
 ---
 
-## Task 11: 11개 호출부에서 `generatedAt` 전달
+## Task 11: 12개 호출부에서 `generatedAt` 전달
 
 **Files:** 아래 표의 전 파일
 
-**배경:** 렌더러는 7개지만 **호출부는 11곳**이다. `options/page.tsx`는 한 파일에 3곳(degraded/empty/main)이고, `*Degraded.tsx` 3개는 스냅샷 행이 아니라 `content`만 받으므로 **prop을 새로 뚫어야 한다.** 하나라도 빠지면 그 탭만 날짜 없이 렌더되어 불일치가 생긴다.
+**배경:** 렌더러는 7개지만 **호출부는 12곳**이다(**구현 중 정정** — 이 Task를 쓸 당시 "11곳"으로 셌으나, 페이지 7개(options 3곳 포함 총 9곳 렌더) + Degraded 래퍼 3개(각자 내부에서 자기 `*SnapshotProse`를 렌더) = 9 + 3 = 12다). `options/page.tsx`는 한 파일에 3곳(degraded/empty/main)이고, `*Degraded.tsx` 3개는 스냅샷 행이 아니라 `content`만 받으므로 **prop을 새로 뚫어야 한다.** 하나라도 빠지면 그 탭만 날짜 없이 렌더되어 불일치가 생긴다.
 
 > ⚠️ `snap`이라는 변수에 속지 말 것 — 7개 페이지 모두 `generateMetadata` **안**에만 있는 지역 변수이고 렌더 시점에는 스코프 밖이다. 아래 표의 변수명을 쓴다. `financials/page.tsx:186`의 `const { snapshot, scorecard } = …`는 **무관한** 변수다.
 
@@ -1333,7 +1394,7 @@ grep -rn "SnapshotProse" src/app/ | grep -v import | grep -v __tests__ | wc -l
 grep -rn "generatedAt" src/app/ | grep -v __tests__ | wc -l
 ```
 
-Expected: 첫 번째가 11(렌더 호출 수), 두 번째가 그 이상(각 호출부 + Degraded prop 전달).
+Expected: 첫 번째가 **12**(렌더 호출 수 — 이 Task를 쓸 당시 "11"로 기대했으나 실제 렌더 호출은 12곳이다: 위 배경 참고), 두 번째가 그 이상(각 호출부 + Degraded prop 전달). 이 grep 패턴은 주석·import의 `} from '...'` 줄도 함께 걸려 원문 그대로 실행하면 훨씬 큰 수가 나올 수 있다 — 정확한 렌더 호출 수는 `grep -rn "<TechnicalSnapshotProse\|<OverallSnapshotProse\|<FundamentalSnapshotProse\|<FinancialsSnapshotProse\|<CongressSnapshotProse\|<OptionsSnapshotProse\|<NewsSnapshotProse" src/app/ | grep -v __tests__ | wc -l`처럼 JSX 열림 태그로 좁혀서 센다.
 
 - [ ] **Step 4: 타입·테스트 확인**
 
@@ -1637,7 +1698,7 @@ node_modules/.bin/dotenv -e .env.e2e -o -- node_modules/.bin/next dev --turbopac
 
 수정 전: 세 기기 모두 `sheetVisibleRatio ≈ 0.52`, 차트 하단이 시트에 가림.
 
-기대 결과: `sheetVisibleRatio ≈ 0.15`, 캔들·거래량 차트 하단 y가 시트 상단 y보다 작음, "AI 분석 중" 배너는 여전히 보임.
+기대 결과: `sheetVisibleRatio ≈ 0.17`(**구현 중 변경** — 이 Task를 쓸 당시 `SNAP_PEEK`는 0.15였고 기대 비율도 그대로였다. 최종 `SNAP_PEEK`는 0.20이지만, 실제로 보이는 띠는 `snap − 0.03`이라 측정되는 비율은 여전히 ~0.17이다. §3.4 사후 기록 참고), 캔들·거래량 차트 하단 y가 시트 상단 y보다 작음, "AI 분석 중" 배너는 여전히 보임. 실측(`docs/qa/2026-08-01-mobile-ux-verification.md` FIX 4): iPhone SE 0.171 / iPhone 14 0.170 / Pixel 7 0.170.
 
 - [ ] **Step 5: 브라우저 육안 확인 (Claude Chrome)**
 
@@ -1710,7 +1771,7 @@ Expected: `exit=0`. 파이프(`| tail`)를 쓰면 실패가 exit 0으로 가려�
 
 | 스펙 항목 | 태스크 |
 |---|---|
-| §3.1 vaul 패치 (mjs + cjs), `resolutions` + `yarn.lock` 커밋 | Task 1 |
+| §3.1 vaul 패치 (mjs + cjs), `dependencies.vaul` 재작성 + `yarn.lock` 커밋 (별도 `resolutions` 필드 아님) | Task 1 |
 | §3.1 패치 무결성 가드 | Task 2 |
 | §3.1 `useRestoreBodyPointerEvents` 제거 + 근거 주석 | Task 3 |
 | §3.2 공유 팝오버 표면(포털) | Task 5 |
@@ -1719,7 +1780,7 @@ Expected: `exit=0`. 파이프(`| tail`)를 쓰면 실패가 exit 0으로 가려�
 | §3.3 `formatSnapshotAsOf` | Task 8 |
 | §3.3 셸 `asOf` 배지·캡션 | Task 9 |
 | §3.3 7개 렌더러 배선 + technical·overall 상호참조 문구 | Task 10 |
-| §3.3 11개 호출부 배선(Degraded 3개 포함) | Task 11 |
+| §3.3 12개 호출부 배선(Degraded 3개 포함) | Task 11 |
 | §3.4 초기 스냅 PEEK + 기존 테스트 반전 + 상수 주석 | Task 4 |
 | §5.1 단위 테스트 | Task 2·3·4·5·6·7·8·9·10 각 Step 1 |
 | §5.2 anon 모바일(검색·챗봇) | Task 12 Step 1 |
@@ -1733,6 +1794,6 @@ Expected: `exit=0`. 파이프(`| tail`)를 쓰면 실패가 exit 0으로 가려�
 
 **Placeholder scan** — TBD/TODO 없음. 코드가 필요한 모든 스텝에 실제 코드가 있다. Task 7 Step 1과 Task 10 Step 5는 파일마다 props가 달라 "기존 헬퍼 재사용" 또는 "3가지 변경 반복"으로 기술했으며, 변경 내용을 명시하고 새 변수 생성을 금지했다.
 
-**Type consistency** — `formatSnapshotAsOf(date: Date): string` (Task 8) → `SnapshotSummarySection`의 `asOf?: Date` (Task 9) → 렌더러의 `generatedAt?: Date` (Task 10) → Degraded 래퍼의 `snapshotGeneratedAt?: Date` (Task 11) → 페이지의 `<변수>?.generatedAt` (`SeoAnalysisSnapshot.generatedAt: Date`). 전 구간 일치. prop명이 계층마다 다른 것은 의도적이다 — 셸은 표현 의미(`asOf`), 렌더러는 DB 필드명(`generatedAt`), 래퍼는 소유 대상 명시(`snapshotGeneratedAt`).
+**Type consistency** — `formatSnapshotAsOf(date: Date): string | null`(**구현 중 변경** — Task 8을 쓸 당시엔 `string`이었다. `unstable_cache`의 JSON 왕복으로 캐시 히트 시 `generatedAt`이 문자열로 돌아오는 경계에서 Invalid Date가 섞일 수 있어, 렌더 중 `RangeError`로 죽는 대신 `null`로 degrade하도록 배포 전 감사에서 바뀌었다 — Task 8 참고) (Task 8) → `SnapshotSummarySection`의 `asOf?: Date` (Task 9) → 렌더러의 `generatedAt?: Date` (Task 10) → Degraded 래퍼의 `snapshotGeneratedAt?: Date` (Task 11) → 페이지의 `<변수>?.generatedAt` (`SeoAnalysisSnapshot.generatedAt: Date`). `formatSnapshotAsOf`의 `null` 분기는 셸 내부에서 흡수되어(호출부는 여전히 `Date`를 넘긴다) 이 prop 체인 자체는 계속 일치한다. prop명이 계층마다 다른 것은 의도적이다 — 셸은 표현 의미(`asOf`), 렌더러는 DB 필드명(`generatedAt`), 래퍼는 소유 대상 명시(`snapshotGeneratedAt`).
 
 **명령어 일관성** — 전 태스크가 `yarn typecheck` / `yarn lint <path>` / `yarn format:check` / `yarn vitest run <path>`만 쓴다. `npx tsc`, `npx prettier`, `yarn lint --file`은 등장하지 않는다.
