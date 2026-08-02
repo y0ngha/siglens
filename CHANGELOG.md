@@ -1,5 +1,32 @@
 # Changelog
 
+# [0.50.0](https://github.com/y0ngha/siglens/compare/v0.49.0...v0.50.0) (2026-08-02)
+
+
+### Bug Fixes
+
+* **analysis:** portal the settings menu on mobile so the sheet cannot cover it ([7e513bf](https://github.com/y0ngha/siglens/commit/7e513bfb079a1ad4df40242f5f4a5df257f85d62))
+* **portfolio:** keep the holding popover on screen and above the sheet ([956d5e4](https://github.com/y0ngha/siglens/commit/956d5e49326e9bd99431a38543fad4507253a4c8))
+* **seo-snapshot:** rehydrate Date fields across the unstable_cache boundary ([fa4fe96](https://github.com/y0ngha/siglens/commit/fa4fe963ed11c76474be041eee4f065538cea9b9))
+* **shared:** let a tall popover scroll on short mobile viewports ([1a3a93a](https://github.com/y0ngha/siglens/commit/1a3a93ad550ef0e122cb84876dac9d6e0ec9a771))
+* **shared:** let PopoverSurface own placement and aria-modal ([737220d](https://github.com/y0ngha/siglens/commit/737220def906548e76dcc1e85e31cf5ffdbd45bd))
+* **shared:** re-arm the focus trap when the popover node is replaced ([216409a](https://github.com/y0ngha/siglens/commit/216409a9ce6dd062a8dda5d102215f8fecb7e924))
+* **shared:** take the viewport as a prop so the popover never remounts ([9144595](https://github.com/y0ngha/siglens/commit/914459529608633459817b6968549eaaa38eec32))
+* **snapshot:** never throw on an invalid as-of date ([24a128d](https://github.com/y0ngha/siglens/commit/24a128da1e6770f0f603f00acaa88e3149857906))
+* **symbol:** give the sheet peek strip headroom against viewport drift ([98eab14](https://github.com/y0ngha/siglens/commit/98eab145943b9573712ecd86623b8bf03572ef63))
+* **symbol:** open the mobile analysis sheet at PEEK, not HALF ([281223a](https://github.com/y0ngha/siglens/commit/281223a007b69eb5610dcfb3ee3eac902cfa117c))
+* **vaul:** restore modal prop passthrough to Radix Dialog Root ([9a54ac3](https://github.com/y0ngha/siglens/commit/9a54ac35629a3aaa5a234b80ac80449a09a5b66a)), closes [#424](https://github.com/y0ngha/siglens/issues/424) [#496](https://github.com/y0ngha/siglens/issues/496)
+
+
+### Features
+
+* **shared:** add deterministic snapshot as-of date formatter ([59925de](https://github.com/y0ngha/siglens/commit/59925de08c01cd01262e087624a0b06599852d13))
+* **shared:** add PopoverSurface that portals header popovers on mobile ([e0db901](https://github.com/y0ngha/siglens/commit/e0db9012637e4d1ef59929ef11aa735f2bdaf321))
+* **snapshot:** show the real as-of date and a past-analysis badge ([f04eb3e](https://github.com/y0ngha/siglens/commit/f04eb3e8bfa711e8a0ac2b103705e29fdbeee13e))
+* **snapshot:** thread generatedAt through all seven prose renderers ([0ba26a7](https://github.com/y0ngha/siglens/commit/0ba26a714cc6426b52b25d92363cc063c7e836f1))
+* **symbol:** add an explicit button that opens the mobile analysis sheet ([8bb3351](https://github.com/y0ngha/siglens/commit/8bb33518f515c167cac1fe27262c24af70d4cba3))
+* **symbol:** pass snapshot generatedAt into every prose call site ([eb95db2](https://github.com/y0ngha/siglens/commit/eb95db22f42d385508a5a7744c6f77489da5a1b0))
+
 # [0.49.0](https://github.com/y0ngha/siglens/compare/v0.48.0...v0.49.0) (2026-08-01)
 
 
