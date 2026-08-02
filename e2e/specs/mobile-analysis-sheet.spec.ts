@@ -28,9 +28,9 @@ import { ANALYSIS_READY_TIMEOUT_MS } from '../support/constants';
 const SYMBOL = 'AAPL';
 const HANDLE = '[aria-label="AI 분석 패널 크기 조절"]';
 
-// Drag distance: from the PEEK (SNAP_PEEK 0.15) handle, ~400px up on the
-// iPhone 14 viewport (844px tall) clears the PEEK→HALF (0.15→0.55) travel
-// (~260px) with margin, so vaul settles at HALF/FULL — both well above PEEK.
+// Drag distance: from the PEEK (SNAP_PEEK 0.20) handle, ~400px up on the
+// iPhone 14 viewport (844px tall) clears the PEEK→HALF (0.20→0.55) travel
+// (~295px) with margin, so vaul settles at HALF/FULL — both well above PEEK.
 const DRAG_UP_PX = 400;
 // Expansion is asserted by a robust position delta, NOT an exact snap pixel:
 // the handle must end at least this much higher than its collapsed PEEK Y.

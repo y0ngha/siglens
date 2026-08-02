@@ -105,6 +105,49 @@ test.describe('모바일 차트 페이지 입력 도달성 (authed, 시트 마�
         }).toPass({ timeout: 15_000 });
     });
 
+    test('분석 설정 메뉴가 분석 시트에 가려지지 않는다', async ({ page }) => {
+        // 트리거의 접근 가능한 이름은 현재 모델을 포함해 동적이다
+        // (`분석 설정 · 현재 모델: DeepSeek Flash`처럼) — 정확한 문자열이 아니라
+        // 접두사로 매칭한다.
+        await page
+            .getByRole('button', { name: /^분석 설정/ })
+            .first()
+            .tap();
+
+        // 다이얼로그의 접근 가능한 이름은 `aria-labelledby`가 가리키는 <h2>
+        // "분석 설정" 그대로다(트리거의 동적 라벨과 달리 고정 문자열) —
+        // AnalysisSettingsMenu.test.tsx가 이미 이 이름을 고정한다.
+        const dialog = page.getByRole('dialog', { name: '분석 설정' });
+        await expect(dialog).toBeVisible();
+
+        // 회귀 고정: 평단 팝오버와 같은 PopoverSurface를 공유하므로 같은
+        // 위험이 있다 — z-60 백드롭이 z-40으로 낮아지면 시트(z-50 상당) 아래
+        // 깔려도 유닛 테스트(포털 여부만 확인)는 여전히 그린이다. 실제로
+        // 중요한 건 다이얼로그 중심점에서 elementFromPoint가 실제로 이
+        // 다이얼로그(또는 후손)를 되돌리는지다.
+        await expect(async () => {
+            const box = await dialog.boundingBox();
+            expect(box).not.toBeNull();
+            if (box === null) return;
+
+            const centerX = box.x + box.width / 2;
+            const centerY = box.y + box.height / 2;
+            // ⚠️ 여기서도 `document.querySelector('[role="dialog"]')`로 다시
+            // 찾으면 안 된다 — 모바일에는 role=dialog가 둘(vaul 분석 시트와
+            // 포털된 이 메뉴) 있고, 시트가 body에 먼저 포털되므로
+            // querySelector는 시트를 집는다. Playwright가 접근 가능한
+            // 이름으로 이미 특정한 요소를 그대로 넘긴다.
+            const isOnTop = await dialog.evaluate(
+                (dialogEl, { x, y }) => {
+                    const el = document.elementFromPoint(x, y);
+                    return el !== null && dialogEl.contains(el);
+                },
+                { x: centerX, y: centerY }
+            );
+            expect(isOnTop).toBe(true);
+        }).toPass({ timeout: 15_000 });
+    });
+
     test('시트 밖 앱 트리에 aria-hidden이 붙지 않는다', async ({ page }) => {
         const headerAriaHidden = await page
             .locator('header')

@@ -126,8 +126,17 @@ describe('SymbolPageClient', () => {
             mobileSheetContent: null,
             setMobileSheetContent: vi.fn(),
         });
+        // 시트가 실제로 렌더링되는 조건(모바일 + hydrated)이어야 "시트 밖"이라는
+        // closest() 단언이 의미를 갖는다. 데스크탑 모킹(모듈 기본값 false)으로 두면
+        // 시트 자체가 렌더링되지 않아 두 closest() 호출이 공허하게 null을 반환한다.
+        vi.mocked(useIsMobileViewport).mockReturnValue(true);
+        vi.mocked(useHydrated).mockReturnValue(true);
 
         render(<SymbolPageClient {...defaultProps} />);
+
+        // 시트가 실제로 존재함을 먼저 확인 — 이게 없으면 아래 closest() 단언이
+        // 다시 공허해질 수 있다(시트가 렌더링을 멈춰도 테스트는 그린으로 남는다).
+        expect(screen.getByTestId('mobile-sheet')).toBeInTheDocument();
 
         const openButton = screen.getByRole('button', { name: 'AI 분석 보기' });
         // 시트 밖이어야 한다 — 시트 안에 있으면 띠가 사라질 때 같이 사라진다.
