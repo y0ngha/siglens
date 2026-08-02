@@ -1,6 +1,6 @@
-import { timingSafeEqual } from 'crypto';
 import { constants } from 'node:http2';
 import { after } from 'next/server';
+import { safeBearerCompare } from '@/shared/lib/auth/safeBearerCompare';
 import { acquirePrewarmLock, releasePrewarmLock } from './lock';
 import { runPrewarmBatch } from './runPrewarmBatch';
 
@@ -9,15 +9,6 @@ const {
     HTTP_STATUS_NO_CONTENT,
     HTTP_STATUS_ACCEPTED,
 } = constants;
-
-/** cleanupExpiredSessionsAction의 safeBearerCompare와 동일 — 3번째 사용처 생기면 shared로 승격. */
-function safeBearerCompare(actual: string | null, expected: string): boolean {
-    if (actual === null) return false;
-    const a = Buffer.from(actual);
-    const b = Buffer.from(`Bearer ${expected}`);
-    if (a.length !== b.length) return false;
-    return timingSafeEqual(a, b);
-}
 
 /**
  * SEO pre-warm cron 엔드포인트 (spec 2026-07-24 §6).
