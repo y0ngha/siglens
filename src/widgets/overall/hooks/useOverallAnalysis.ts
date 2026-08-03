@@ -9,67 +9,18 @@ import type {
     Timeframe,
 } from '@y0ngha/siglens-core';
 import type { AssetClass } from '@/shared/config/marketProfile';
-import {
-    submitOverallAnalysisAction,
-    pollOverallAnalysisAction,
-    pollAnalysisAction,
-    pollFundamentalAnalysisAction,
-    cancelAnalysisJobAction,
-    cancelFundamentalAnalysisJobAction,
-    cancelOverallAnalysisJobAction,
-} from '@/entities/analysis/actions';
+import type { RunOverallAnalysisActionResult } from '@/entities/analysis/actions';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
-import {
-    pollNewsAnalysisAction,
-    cancelNewsAnalysisJobAction,
-} from '@/entities/news-article/actions';
-import {
-    cancelOptionsAnalysisJobAction,
-    pollOptionsAnalysisAction,
-} from '@/entities/options-chain/actions';
-import { sleep } from '@/shared/lib/sleep';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import {
-    ANALYSIS_POLL_TIMEOUT_MESSAGE,
-    AUGMENT_AND_OVERALL_POLL_INTERVAL_MS,
-} from '@/shared/config/pollingConfig';
-import type { CancelJobEntry } from '@/shared/lib/types';
 import { useHydrated } from '@/shared/hooks/useHydrated';
-import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import { BotBlockedError } from '@/shared/lib/BotBlockedError';
-import { hasExceededPollCeiling } from '@/shared/lib/pollCeiling';
-import type { OverallAnalysisState, ProgressState } from '../types';
-import { axesForAssetClass } from '../utils/axesForAssetClass';
+import type { OverallAnalysisState } from '../types';
 
 export interface UseOverallAnalysisReturn {
     state: OverallAnalysisState;
     trigger: () => void;
 }
-
-/**
- * 현재 진행 중인 job 상태.
- * pending_dependencies 단계에서는 각 axis jobId를,
- * overall polling 단계에서는 overall jobId를 추적한다.
- */
-type CurrentJobs =
-    | {
-          phase: 'dependencies';
-          jobs: Record<OverallAxis, string | undefined>;
-      }
-    | { phase: 'overall'; jobId: string }
-    | null;
-
-/** dependency axis별 polling 함수의 공통 응답 형태. */
-interface DependencyPollResult {
-    status: string;
-    error?: string;
-}
-
-/**
- * submitUntilReady 재진입 한도. dedup이 적용된 뒤에도 의존성 분석이 끊임없이
- * 다시 pending 상태로 돌아가는 비정상 흐름을 멈추기 위한 안전망.
- */
-const MAX_SUBMIT_RETRY_DEPTH = 3;
 
 /**
  * submitOverallAnalysisAction이 axis 정보와 함께 에러를 돌려줄 수 있어
@@ -86,288 +37,53 @@ class OverallAnalysisError extends Error {
     }
 }
 
-function throwIfAborted(signal: AbortSignal): void {
-    if (signal.aborted)
-        throw new DOMException('Overall analysis aborted', 'AbortError');
-}
-
-async function pollDependencyJob(
-    axis: OverallAxis,
-    jobId: string
-): Promise<DependencyPollResult> {
-    switch (axis) {
-        case 'technical':
-            return pollAnalysisAction(jobId);
-        case 'fundamental':
-            return pollFundamentalAnalysisAction(jobId);
-        case 'news':
-            return pollNewsAnalysisAction(jobId);
-        case 'options':
-            return pollOptionsAnalysisAction(jobId);
-    }
-}
-
 /**
- * pending_dependencies 응답에서 받은 각 axis jobId를 직접 polling해
- * 모든 dependency가 완료될 때까지 대기한다.
- * submit을 반복 호출하지 않으므로 중복 job이 생성되지 않는다.
- *
- * `applicableAxes`는 asset class에 따라 결정된 축 목록이다. crypto는
- * ['technical', 'news']만 폴링하고 fundamental/options는 무시한다.
- *
- * `pollStartTime`은 이 dependency 대기 단계(fetchOverallAnalysis가
- * submitUntilReady를 처음 호출하는 시점)의 시작 시각이다 — dependency 폴링이
- * 재귀 재submit(최대 MAX_SUBMIT_RETRY_DEPTH회)을 거쳐도 리셋하지 않고 그대로
- * 전달해, "의존성이 계속 pending으로 되돌아가는" 비정상 흐름을 하나의
- * 천장(ANALYSIS_POLL_MAX_DURATION_MS)으로 묶는다. 이어지는 최종 overall
- * 폴링(fetchOverallAnalysis 하단)은 이 시각을 공유하지 않고 별도의 새
- * `Date.now()` 기준으로 다시 시작한다 — ANALYSIS_POLL_MAX_DURATION_MS의
- * JSDoc(pollingConfig.ts) 참고. 두 단계가 하나의 시계를 공유하면, 느리지만
- * 정상적으로 진행 중인 dependency 단계가 예산을 모두 소진해 실제로는
- * 정상 진행 중인 최종 job을 즉시 타임아웃시키고(worker job은 취소되지 않아
- * orphan) 사용자에게 거짓 실패로 보이게 된다.
+ * run* 함수는 블로킹으로 결과를 반환하므로 dependency 단계·poll 루프가 필요 없다.
+ * `done`은 `cached`와 동일하게 `result`를 반환한다.
  */
-async function waitForDependencies(
-    initialPendingJobs: Record<OverallAxis, string | undefined>,
-    signal: AbortSignal,
-    onProgress: (p: ProgressState) => void,
-    onJobsUpdate: (jobs: CurrentJobs) => void,
-    applicableAxes: readonly OverallAxis[],
-    pollStartTime: number
-): Promise<void> {
-    let remainingJobs = { ...initialPendingJobs };
-    let retryCount = 0;
-
-    onJobsUpdate({ phase: 'dependencies', jobs: remainingJobs });
-
-    while (applicableAxes.some(axis => remainingJobs[axis] !== undefined)) {
-        throwIfAborted(signal);
-        if (hasExceededPollCeiling(Date.now() - pollStartTime)) {
-            throw new OverallAnalysisError(ANALYSIS_POLL_TIMEOUT_MESSAGE);
-        }
-        await sleep(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
-        throwIfAborted(signal);
-
-        // 병렬 폴링 결과를 모은 뒤 한 번에 remainingJobs를 갱신해 동시 mutation을
-        // 피한다. 두 callback이 같은 직전 값을 읽어 spread로 덮어쓰면 한쪽
-        // 변경이 사라지는 race를 막기 위함.
-        const completedAxes = await Promise.all(
-            applicableAxes
-                .filter(axis => remainingJobs[axis] !== undefined)
-                .map(async (axis): Promise<OverallAxis | null> => {
-                    const jobId = remainingJobs[axis]!;
-                    const result = await pollDependencyJob(axis, jobId);
-                    if (result.status === 'error') {
-                        throw new OverallAnalysisError(
-                            result.error ??
-                                `${axis} 분석 중 오류가 발생했습니다.`,
-                            axis
-                        );
-                    }
-                    return result.status === 'done' ? axis : null;
-                })
-        );
-        remainingJobs = completedAxes.reduce(
-            (acc, axis) =>
-                axis === null ? acc : { ...acc, [axis]: undefined },
-            remainingJobs
-        );
-
-        retryCount++;
-        onJobsUpdate({ phase: 'dependencies', jobs: remainingJobs });
-        onProgress({
-            phase: 'pending_dependencies',
-            pendingJobs: remainingJobs,
-            retryCount,
-        });
-    }
-}
-
-/**
- * submitOverallAnalysisAction을 호출하고, pending_dependencies이면
- * 각 axis job을 직접 polling한 뒤 완료 후 한 번만 재submit한다.
- *
- * `force`는 사용자가 done 상태에서 재분석을 트리거할 때만 true로 전달된다.
- * pending_dependencies로 진입 후 재submit하는 재귀 호출에서는 propagation하지
- * 않는다 — dependency가 이미 새로 만들어진 상태이므로 추가 force는 불필요하다.
- */
-async function submitUntilReady(
-    symbol: string,
-    companyName: string,
-    timeframe: Timeframe,
-    modelId: ModelId,
-    signal: AbortSignal,
-    onProgress: (p: ProgressState) => void,
-    onJobsUpdate: (jobs: CurrentJobs) => void,
-    applicableAxes: readonly OverallAxis[],
-    pollStartTime: number,
-    options: { force?: boolean; reasoning?: boolean } = {},
-    depth = 0
-): Promise<
-    Exclude<
-        Awaited<ReturnType<typeof submitOverallAnalysisAction>>,
-        { status: 'pending_dependencies' }
-    >
-> {
-    if (depth >= MAX_SUBMIT_RETRY_DEPTH) {
-        throw new OverallAnalysisError(
-            '의존성 분석이 반복적으로 지연되고 있습니다. 잠시 후 다시 시도해 주세요.'
-        );
-    }
-
-    const submitted = await submitOverallAnalysisAction(
-        symbol,
-        companyName,
-        timeframe,
-        modelId,
-        options
-    );
-    throwIfAborted(signal);
-
-    if (submitted.status !== 'pending_dependencies') return submitted;
-
-    onProgress({
-        phase: 'pending_dependencies',
-        pendingJobs: submitted.pendingJobs,
-        retryCount: 0,
-    });
-
-    await waitForDependencies(
-        submitted.pendingJobs,
-        signal,
-        onProgress,
-        onJobsUpdate,
-        applicableAxes,
-        pollStartTime
-    );
-    throwIfAborted(signal);
-
-    // 모든 dependency 완료 후 재submit — 이번엔 pending_dependencies가 반환되지
-    // 않는다. force는 의도적으로 전파하지 않는다(위 JSDoc 참고). reasoning은
-    // force와 달리 재분석 "의도"가 아니라 이번 fetchOverallAnalysis 호출 전체에
-    // 걸친 요청 속성이므로 재귀 재submit에도 그대로 유지한다 — 그렇지 않으면
-    // 의존성 완료 후 최종 submit이 reasoning=false로 되돌아가는 회귀가 생긴다.
-    return submitUntilReady(
-        symbol,
-        companyName,
-        timeframe,
-        modelId,
-        signal,
-        onProgress,
-        onJobsUpdate,
-        applicableAxes,
-        pollStartTime,
-        { reasoning: options.reasoning },
-        depth + 1
-    );
-}
-
 async function fetchOverallAnalysis(
     symbol: string,
     companyName: string,
     timeframe: Timeframe,
     modelId: ModelId,
-    signal: AbortSignal,
-    onProgress: (p: ProgressState) => void,
-    // expectedCurrent가 주어지면 ref가 일치할 때만 갱신한다. retry/queryKey
-    // 변경으로 새 실행이 시작된 뒤 이전 실행의 finally가 새 실행의 ref를 null로
-    // 덮어쓰는 race를 막기 위해 사용한다.
-    onJobsUpdate: (jobs: CurrentJobs, expectedCurrent?: CurrentJobs) => void,
-    applicableAxes: readonly OverallAxis[],
-    options: { force?: boolean; reasoning?: boolean } = {}
+    options: { force?: boolean; reasoning?: boolean } = {},
+    signal?: AbortSignal
 ): Promise<OverallAnalysisResponse> {
-    // 이 실행이 마지막으로 ref에 기록한 값. finally에서 compare-and-clear의
-    // 비교 기준으로 사용한다 — 다른 실행이 ref를 갱신했다면 그 값을 보존한다.
-    let lastSetByThisRun: CurrentJobs = null;
-    const trackedUpdate = (jobs: CurrentJobs): void => {
-        lastSetByThisRun = jobs;
-        onJobsUpdate(jobs);
-    };
-
-    onProgress({ phase: 'submitting' });
-
-    // dependency 대기 단계 전용 천장의 시작 시각 — waitForDependencies JSDoc
-    // 참고. 재귀 재submit(MAX_SUBMIT_RETRY_DEPTH회)을 거쳐도 리셋되지 않지만,
-    // 아래 최종 overall 폴링 단계와는 공유하지 않는다(별도 재무장 — 아래 참고).
-    const dependencyPollStartTime = Date.now();
-
-    const submitted = await submitUntilReady(
-        symbol,
-        companyName,
-        timeframe,
-        modelId,
+    const result = await runAnalysisStream<RunOverallAnalysisActionResult>({
+        type: 'overall',
+        params: { symbol, companyName, timeframe, modelId, ...options },
         signal,
-        onProgress,
-        trackedUpdate,
-        applicableAxes,
-        dependencyPollStartTime,
-        options
-    );
+    });
 
-    if (submitted.status === 'cached') return submitted.result;
+    if (result.status === 'cached' || result.status === 'done')
+        return result.result;
 
-    if (submitted.status === 'miss_no_trigger') {
+    if (result.status === 'miss_no_trigger') {
         throw new BotBlockedError();
     }
 
-    if (submitted.status === 'error') {
-        // AnalysisGateBlockedResult: error is { code: AnalysisGateErrorCode, message }, no axis.
-        if (isGateBlockedResult(submitted)) {
-            throw new OverallAnalysisError(submitted.error.message, undefined);
+    if (result.status === 'error') {
+        if (isGateBlockedResult(result)) {
+            throw new OverallAnalysisError(result.error.message, undefined);
         }
         throw new OverallAnalysisError(
-            typeof submitted.error === 'string'
-                ? submitted.error
+            typeof result.error === 'string'
+                ? result.error
                 : '분석 중 오류가 발생했습니다.',
-            submitted.axis
+            result.axis
         );
     }
 
-    if (submitted.status === 'limit_error') {
+    if (result.status === 'limit_error') {
         throw new OverallAnalysisError(
             '오늘 분석 한도를 모두 사용했어요. 내일 다시 시도해 주세요.'
         );
     }
-    if (submitted.status === 'key_error') {
-        throw new OverallAnalysisError(submitted.error, undefined);
+    if (result.status === 'key_error') {
+        throw new OverallAnalysisError(result.error, undefined);
     }
 
-    const { jobId } = submitted;
-    trackedUpdate({ phase: 'overall', jobId });
-    onProgress({ phase: 'polling' });
-
-    // 최종 overall job 자체의 폴링 천장 — 위 dependencyPollStartTime과는 별개로
-    // 여기서 새로 무장한다(re-armed). ANALYSIS_POLL_MAX_DURATION_MS는 "단일
-    // 연속 폴 루프"당 예산이지 훅 전체 수명의 예산이 아니다(pollingConfig.ts
-    // JSDoc 참고) — dependency 단계가 오래 걸렸다는 이유로 이제 막 enqueue된
-    // 정상 job이 즉시 타임아웃되는 것을 막는다.
-    const finalPollStartTime = Date.now();
-
-    try {
-        while (!signal.aborted) {
-            if (hasExceededPollCeiling(Date.now() - finalPollStartTime)) {
-                throw new OverallAnalysisError(ANALYSIS_POLL_TIMEOUT_MESSAGE);
-            }
-            await sleep(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
-            throwIfAborted(signal);
-
-            const polled = await pollOverallAnalysisAction(jobId);
-            throwIfAborted(signal);
-
-            if (polled.status === 'done') return polled.result;
-            if (polled.status === 'error') {
-                throw new OverallAnalysisError(
-                    polled.error ?? '분석 중 오류가 발생했습니다.'
-                );
-            }
-        }
-    } finally {
-        // 이 실행이 마지막으로 기록한 값이 여전히 ref에 있을 때만 비운다.
-        // 새 실행이 ref를 갱신했다면 그 상태를 보존한다.
-        onJobsUpdate(null, lastSetByThisRun);
-    }
-
-    throw new DOMException('Overall analysis aborted', 'AbortError');
+    throw new OverallAnalysisError('예상치 못한 오류가 발생했습니다.');
 }
 
 export function useOverallAnalysis(
@@ -389,11 +105,11 @@ export function useOverallAnalysis(
     /**
      * Asset class of the symbol being analysed.
      * Crypto runs on technical + news only — fundamental and options axes are
-     * never submitted, polled, or cancelled for crypto symbols.
+     * never submitted for crypto symbols (handled server-side by runOverallAnalysis).
      * Defaults to 'equity' so existing callers that don't yet pass this param
      * continue to get the full 4-axis behaviour.
      */
-    assetClass: AssetClass = 'equity',
+    _assetClass: AssetClass = 'equity',
     /**
      * Member "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
      * spec Part A). Defaults to `false`. Part of the query key so toggling
@@ -404,13 +120,8 @@ export function useOverallAnalysis(
     const queryClient = useQueryClient();
     const isHydrated = useHydrated();
     const [triggered, setTriggered] = useState(initialResult !== undefined);
-    const [progress, setProgress] = useState<ProgressState | null>(null);
-    const currentJobsRef = useRef<CurrentJobs>(null);
     // 재분석 trigger가 다음 queryFn 호출에서 force=true를 사용해야 한다고 신호를
     // 보내는 single-shot ref. queryFn 안에서 read 후 즉시 false로 reset한다.
-    // useState 대신 ref를 쓰는 이유: trigger → refetch → queryFn 흐름이 같은
-    // React commit cycle 안에서 진행돼야 해서 setState의 비동기 반영 타이밍에
-    // 의존할 수 없다.
     const queryFnForceRef = useRef<boolean>(false);
     const queryKey = useMemo(
         () =>
@@ -446,26 +157,14 @@ export function useOverallAnalysis(
                 qCompanyName,
                 qTimeframe,
                 qModelId,
-                signal,
-                setProgress,
-                (jobs, expectedCurrent) => {
-                    if (
-                        expectedCurrent !== undefined &&
-                        currentJobsRef.current !== expectedCurrent
-                    ) {
-                        return;
-                    }
-                    currentJobsRef.current = jobs;
-                },
-                axesForAssetClass(assetClass),
-                { force, reasoning: qReasoning }
+                { force, reasoning: qReasoning },
+                signal
             );
         },
         enabled: isHydrated && triggered,
         retry: false,
         staleTime: Infinity,
         // SSR seed: 캐시 HIT면 마운트 시점부터 query.data가 채워져 있어 즉시 done.
-        // staleTime: Infinity와 결합해 자동 refetch(=재생성) 없이 서사를 보여 준다.
         initialData: initialResult,
     });
 
@@ -488,20 +187,11 @@ export function useOverallAnalysis(
         }
         if (query.data !== undefined)
             return { status: 'done', result: query.data };
-        if (progress?.phase === 'pending_dependencies') {
-            return {
-                status: 'pending_dependencies',
-                pendingJobs: progress.pendingJobs,
-                retryCount: progress.retryCount,
-            };
-        }
-        if (progress?.phase === 'polling') return { status: 'polling' };
         return { status: 'submitting' };
-    }, [triggered, query.isError, query.error, query.data, progress]);
+    }, [triggered, query.isError, query.error, query.data]);
 
     const { refetch } = query;
     const trigger = useCallback(() => {
-        setProgress(null);
         if (!triggered) {
             setTriggered(true);
         } else {
@@ -512,129 +202,11 @@ export function useOverallAnalysis(
         }
     }, [triggered, refetch]);
 
-    // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
-    const getPageHideJobs = useCallback((): CancelJobEntry[] | null => {
-        // axesForAssetClass returns a module-level constant array (CRYPTO_AXIS_ORDER or
-        // EQUITY_AXIS_ORDER), so the reference is already stable across renders — useMemo
-        // would be redundant and, with preserve-manual-memoization, preserved as dead
-        // weight rather than optimised away. Computed inline so assetClass is the real
-        // dependency (pure function, stable result).
-        const applicableAxes = axesForAssetClass(assetClass);
-        const current = currentJobsRef.current;
-        if (current === null) return null;
-        currentJobsRef.current = null;
-
-        const jobs: CancelJobEntry[] =
-            current.phase === 'dependencies'
-                ? [
-                      ...(applicableAxes.includes('technical') &&
-                      current.jobs.technical !== undefined
-                          ? [
-                                {
-                                    jobId: current.jobs.technical,
-                                    type: 'analysis' as const,
-                                },
-                            ]
-                          : []),
-                      ...(applicableAxes.includes('fundamental') &&
-                      current.jobs.fundamental !== undefined
-                          ? [
-                                {
-                                    jobId: current.jobs.fundamental,
-                                    type: 'fundamental' as const,
-                                },
-                            ]
-                          : []),
-                      ...(applicableAxes.includes('news') &&
-                      current.jobs.news !== undefined
-                          ? [
-                                {
-                                    jobId: current.jobs.news,
-                                    type: 'news' as const,
-                                },
-                            ]
-                          : []),
-                      ...(applicableAxes.includes('options') &&
-                      current.jobs.options !== undefined
-                          ? [
-                                {
-                                    jobId: current.jobs.options,
-                                    type: 'options' as const,
-                                },
-                            ]
-                          : []),
-                  ]
-                : [{ jobId: current.jobId, type: 'overall' as const }];
-
-        return jobs.length > 0 ? jobs : null;
-    }, [assetClass]);
-    usePageHideCancel(getPageHideJobs);
-
     useEffect(() => {
         if (queryClient.getQueryData(queryKeyRef.current) !== undefined) {
             setTriggered(true);
         }
     }, [queryClient]);
-
-    // symbol, companyName, timeframe, modelId 변경(queryKey 교체) 시, unmount 시
-    // 진행 중인 job을 cancel한다.
-    // fire-and-forget이므로 useMutation 없이 직접 호출한다.
-    useEffect(() => {
-        return () => {
-            // Inline (no useMemo) for the same stability reason as getPageHideJobs above.
-            const applicableAxes = axesForAssetClass(assetClass);
-            const current = currentJobsRef.current;
-            if (current === null) return;
-            currentJobsRef.current = null;
-
-            if (current.phase === 'dependencies') {
-                const { technical, fundamental, news, options } = current.jobs;
-                if (
-                    applicableAxes.includes('technical') &&
-                    technical !== undefined
-                )
-                    void cancelAnalysisJobAction(technical).catch(error =>
-                        console.warn(
-                            '[useOverallAnalysis] cancel technical failed',
-                            error
-                        )
-                    );
-                if (
-                    applicableAxes.includes('fundamental') &&
-                    fundamental !== undefined
-                )
-                    void cancelFundamentalAnalysisJobAction(fundamental).catch(
-                        error =>
-                            console.warn(
-                                '[useOverallAnalysis] cancel fundamental failed',
-                                error
-                            )
-                    );
-                if (applicableAxes.includes('news') && news !== undefined)
-                    void cancelNewsAnalysisJobAction(news).catch(error =>
-                        console.warn(
-                            '[useOverallAnalysis] cancel news failed',
-                            error
-                        )
-                    );
-                if (applicableAxes.includes('options') && options !== undefined)
-                    void cancelOptionsAnalysisJobAction(options).catch(error =>
-                        console.warn(
-                            '[useOverallAnalysis] cancel options failed',
-                            error
-                        )
-                    );
-            } else {
-                void cancelOverallAnalysisJobAction(current.jobId).catch(
-                    error =>
-                        console.warn(
-                            '[useOverallAnalysis] cancel overall failed',
-                            error
-                        )
-                );
-            }
-        };
-    }, [queryKey, assetClass]);
 
     return { state, trigger };
 }

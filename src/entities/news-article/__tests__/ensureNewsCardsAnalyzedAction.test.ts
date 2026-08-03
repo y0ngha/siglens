@@ -12,8 +12,7 @@ vi.mock('../lib/newsRefreshFlag', () => ({
 
 vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
-    submitNewsCardAnalysis: vi.fn(),
-    pollNewsCardAnalysis: vi.fn(),
+    runNewsCardAnalysis: vi.fn(),
 }));
 
 vi.mock('@/shared/lib/sleep', () => ({
@@ -53,22 +52,15 @@ vi.mock('@/entities/news-article/api', () => ({
 
 import type { MockedFunction, MockedClass, Mock } from 'vitest';
 import { ensureNewsCardsAnalyzedAction } from '../actions/ensureNewsCardsAnalyzedAction';
-import {
-    DISABLED_THINKING_BUDGET,
-    POLL_MAX_ATTEMPTS,
-} from '../lib/newsAnalysisConstants';
+import { DISABLED_THINKING_BUDGET } from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
-import {
-    submitNewsCardAnalysis,
-    pollNewsCardAnalysis,
-} from '@y0ngha/siglens-core';
+import { runNewsCardAnalysis } from '@y0ngha/siglens-core';
 import { getNewsClient } from '../lib/getNewsClient';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type {
     NewsItem,
     NewsCardAnalysis,
-    SubmitNewsCardAnalysisResult,
-    PollNewsCardAnalysisResult,
+    RunNewsCardAnalysisResult,
 } from '@y0ngha/siglens-core';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { isRecentlyFetched, markFetched } from '../lib/newsRefreshFlag';
@@ -84,12 +76,8 @@ const mockGetNewsClient = getNewsClient as Mock;
 const mockIsE2E = isE2E as MockedFunction<typeof isE2E>;
 const mockGetAssetInfo = getAssetInfo as MockedFunction<typeof getAssetInfo>;
 
-const mockSubmitNewsCardAnalysis = submitNewsCardAnalysis as MockedFunction<
-    typeof submitNewsCardAnalysis
->;
-
-const mockPollNewsCardAnalysis = pollNewsCardAnalysis as MockedFunction<
-    typeof pollNewsCardAnalysis
+const mockRunNewsCardAnalysis = runNewsCardAnalysis as MockedFunction<
+    typeof runNewsCardAnalysis
 >;
 
 const NEWS_ITEM_1: NewsItem = {
@@ -121,19 +109,9 @@ const CARD_ANALYSIS: NewsCardAnalysis = {
     priceImpact: 'high',
 };
 
-const SUBMITTED_RESULT: SubmitNewsCardAnalysisResult = {
-    status: 'submitted',
-    jobId: 'job-card-001',
-};
-
-const POLL_DONE: PollNewsCardAnalysisResult = {
+const DONE_RESULT: RunNewsCardAnalysisResult = {
     status: 'done',
     result: CARD_ANALYSIS,
-};
-
-const POLL_ERROR: PollNewsCardAnalysisResult = {
-    status: 'error',
-    error: 'LLM worker failed',
 };
 
 describe('ensureNewsCardsAnalyzedAction 함수는', () => {
@@ -144,8 +122,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        mockSubmitNewsCardAnalysis.mockReset();
-        mockPollNewsCardAnalysis.mockReset();
+        mockRunNewsCardAnalysis.mockReset();
+        mockRunNewsCardAnalysis.mockReset();
         mockIsRecentlyFetched.mockResolvedValue(false);
         mockMarkFetched.mockResolvedValue(undefined);
         mockIsE2E.mockReturnValue(false);
@@ -173,8 +151,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
     describe('정상 흐름에서', () => {
         it('FMP에서 6개월치 뉴스를 가져온다', async () => {
             mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
-            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
-            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
@@ -189,8 +167,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
                 NEWS_ITEM_1,
                 NEWS_ITEM_2,
             ]);
-            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
-            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
@@ -200,22 +178,22 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
         });
 
-        it('각 뉴스 아이템에 대해 submitNewsCardAnalysis를 호출한다', async () => {
+        it('각 뉴스 아이템에 대해 runNewsCardAnalysis를 호출한다', async () => {
             mockFetchNewsForPeriod.mockResolvedValue([
                 NEWS_ITEM_1,
                 NEWS_ITEM_2,
             ]);
-            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
-            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
-            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(2);
-            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledWith({
+            expect(mockRunNewsCardAnalysis).toHaveBeenCalledTimes(2);
+            expect(mockRunNewsCardAnalysis).toHaveBeenCalledWith({
                 item: NEWS_ITEM_1,
                 thinkingBudget: DISABLED_THINKING_BUDGET,
             });
-            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledWith({
+            expect(mockRunNewsCardAnalysis).toHaveBeenCalledWith({
                 item: NEWS_ITEM_2,
                 thinkingBudget: DISABLED_THINKING_BUDGET,
             });
@@ -230,13 +208,13 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             await ensureNewsCardsAnalyzedAction('AAPL');
 
             expect(mockUpsertNewsItem).not.toHaveBeenCalled();
-            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
+            expect(mockRunNewsCardAnalysis).not.toHaveBeenCalled();
         });
 
         it('fresh 뉴스 upsert 후 news ISR 캐시를 대문자 태그로 revalidateTag한다', async () => {
             mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
-            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
-            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
 
             // 소문자 입력 → 태그는 대문자 정규화(news:AAPL), profile은 'max'.
             await ensureNewsCardsAnalyzedAction('aapl');
@@ -291,8 +269,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
                 .mockResolvedValueOnce(true); // fulfilled true
             // upsertFailures.length=1 ≤ 2/2(=1), 과반 미달 → throw 안 함.
             // changedCount=1 → revalidateTag 호출.
-            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
-            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
@@ -350,7 +328,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
 
         it('fresh.length === 0 early-return은 DB에 미분석 기사가 있어도 안전하다', async () => {
             // fresh=[]이면 unanalyzed는 항상 빈 배열이 된다(unanalyzed = fresh.filter(...)).
-            // 따라서 listBySymbol로 DB를 조회할 필요가 없고, submitNewsCardAnalysis도
+            // 따라서 listBySymbol로 DB를 조회할 필요가 없고, runNewsCardAnalysis도
             // 호출할 필요가 없다 — 분석 대상이 fresh에서 파생되므로 fresh가 비면 항상 빈다.
             // DB에 analyzedAt=null 행이 남아 있더라도 이번 호출에서 가져온 fresh가 없으면
             // 그 행을 참조할 방법이 없으므로 early-return은 안전하다.
@@ -363,7 +341,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             await ensureNewsCardsAnalyzedAction('AAPL');
 
             expect(mockListBySymbol).not.toHaveBeenCalled();
-            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
+            expect(mockRunNewsCardAnalysis).not.toHaveBeenCalled();
         });
 
         it('[회귀] changedCount=0이어도 analyzedAt=null 기존 기사가 있으면 분석 단계를 실행한다', async () => {
@@ -378,16 +356,16 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             mockListBySymbol.mockResolvedValue([
                 { id: NEWS_ITEM_1.id, analyzedAt: null },
             ]);
-            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
-            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
             // revalidateTag는 changedCount=0이므로 호출되지 않아야 한다.
             expect(revalidateTagSpy).not.toHaveBeenCalled();
             // 그러나 분석 단계는 반드시 실행되어야 한다 — 미분석 기사를 구제해야 하므로.
-            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(1);
-            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledWith(
+            expect(mockRunNewsCardAnalysis).toHaveBeenCalledTimes(1);
+            expect(mockRunNewsCardAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ item: NEWS_ITEM_1 })
             );
             expect(mockAttachAnalysis).toHaveBeenCalledWith(
@@ -409,27 +387,14 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             await ensureNewsCardsAnalyzedAction('AAPL');
 
             expect(revalidateTagSpy).not.toHaveBeenCalled();
-            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
+            expect(mockRunNewsCardAnalysis).not.toHaveBeenCalled();
         });
     });
 
-    describe('submitted 결과는', () => {
-        it('pollNewsCardAnalysis를 호출한다', async () => {
+    describe('done/error 결과는', () => {
+        it('runNewsCardAnalysis가 done을 반환하면 attachAnalysis를 호출한다', async () => {
             mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
-            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
-            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
-
-            await ensureNewsCardsAnalyzedAction('AAPL');
-
-            expect(mockPollNewsCardAnalysis).toHaveBeenCalledWith(
-                SUBMITTED_RESULT.jobId
-            );
-        });
-
-        it('poll 완료(done) 시 attachAnalysis를 호출한다', async () => {
-            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
-            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
-            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
@@ -440,32 +405,15 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             );
         });
 
-        it('poll 에러(error) 시 attachAnalysis를 호출하지 않는다', async () => {
+        it('runNewsCardAnalysis가 throw하면 attachAnalysis를 호출하지 않는다', async () => {
             mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
-            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
-            mockPollNewsCardAnalysis.mockResolvedValue(POLL_ERROR);
+            mockRunNewsCardAnalysis.mockRejectedValue(
+                new Error('LLM worker failed')
+            );
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
             expect(mockAttachAnalysis).not.toHaveBeenCalled();
-        });
-
-        it('processing 후 done이 되면 attachAnalysis를 호출한다', async () => {
-            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
-            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
-            mockPollNewsCardAnalysis
-                .mockResolvedValueOnce({ status: 'processing' })
-                .mockResolvedValueOnce({ status: 'processing' })
-                .mockResolvedValueOnce(POLL_DONE);
-
-            await ensureNewsCardsAnalyzedAction('AAPL');
-
-            expect(mockPollNewsCardAnalysis).toHaveBeenCalledTimes(3);
-            expect(mockAttachAnalysis).toHaveBeenCalledWith(
-                NEWS_ITEM_1.id,
-                CARD_ANALYSIS,
-                expect.any(Date)
-            );
         });
     });
 
@@ -506,14 +454,14 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             mockUpsertNewsItem
                 .mockRejectedValueOnce(new Error('DB constraint error'))
                 .mockResolvedValueOnce(true); // NEWS_ITEM_2는 실제 변경
-            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
-            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
 
             await expect(
                 ensureNewsCardsAnalyzedAction('AAPL')
             ).resolves.toBeUndefined();
 
-            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(2);
+            expect(mockRunNewsCardAnalysis).toHaveBeenCalledTimes(2);
         });
 
         it('upsert 과반 실패 시 throw하지 않고 삼킨 뒤 조용히 리턴한다', async () => {
@@ -535,7 +483,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
                 ensureNewsCardsAnalyzedAction('AAPL')
             ).resolves.toBeUndefined();
 
-            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
+            expect(mockRunNewsCardAnalysis).not.toHaveBeenCalled();
             expect(errorSpy).toHaveBeenCalled();
             errorSpy.mockRestore();
         });
@@ -573,16 +521,16 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
                 NEWS_ITEM_1,
                 NEWS_ITEM_2,
             ]);
-            mockSubmitNewsCardAnalysis
+            mockRunNewsCardAnalysis
                 .mockRejectedValueOnce(new Error('LLM timeout'))
-                .mockResolvedValueOnce(SUBMITTED_RESULT);
-            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+                .mockResolvedValueOnce(DONE_RESULT);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
 
             await expect(
                 ensureNewsCardsAnalyzedAction('AAPL')
             ).resolves.toBeUndefined();
 
-            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(2);
+            expect(mockRunNewsCardAnalysis).toHaveBeenCalledTimes(2);
             expect(mockAttachAnalysis).toHaveBeenCalledTimes(1);
         });
     });
@@ -600,7 +548,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
                 'AAPL',
                 NEWS_LOOKBACK_MS
             );
-            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
+            expect(mockRunNewsCardAnalysis).not.toHaveBeenCalled();
         });
 
         it('분석 완료된 아이템은 건너뛰고 미분석 아이템만 카드 분석을 호출한다', async () => {
@@ -612,16 +560,16 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
                 { id: NEWS_ITEM_1.id, analyzedAt: new Date('2025-07-01') },
                 { id: NEWS_ITEM_2.id, analyzedAt: null },
             ]);
-            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
-            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
-            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(1);
-            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledWith(
+            expect(mockRunNewsCardAnalysis).toHaveBeenCalledTimes(1);
+            expect(mockRunNewsCardAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ item: NEWS_ITEM_2 })
             );
-            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalledWith(
+            expect(mockRunNewsCardAnalysis).not.toHaveBeenCalledWith(
                 expect.objectContaining({ item: NEWS_ITEM_1 })
             );
         });
@@ -633,7 +581,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             await expect(ensureNewsCardsAnalyzedAction('AAPL')).rejects.toThrow(
                 'DB connection lost'
             );
-            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
+            expect(mockRunNewsCardAnalysis).not.toHaveBeenCalled();
         });
     });
 
@@ -655,20 +603,20 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             );
             expect(mockUpsertNewsItem).toHaveBeenCalledTimes(2);
             expect(mockListBySymbol).not.toHaveBeenCalled();
-            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
+            expect(mockRunNewsCardAnalysis).not.toHaveBeenCalled();
         });
 
         it('false이면 기존과 동일하게 LLM 분석까지 수행한다', async () => {
             mockIsRecentlyFetched.mockResolvedValue(false);
             mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
-            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
-            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
 
             await ensureNewsCardsAnalyzedAction('AAPL', {
                 skipAnalysis: false,
             });
 
-            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(1);
+            expect(mockRunNewsCardAnalysis).toHaveBeenCalledTimes(1);
             // markFetched must fire on the human path too (it sits before the
             // skipAnalysis short-circuit). Guards against regressions that move
             // the call into the bot-only branch.
@@ -693,41 +641,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             expect(mockUpsertNewsItem).toHaveBeenCalledTimes(2);
             expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
             expect(mockListBySymbol).not.toHaveBeenCalled();
-            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
-            expect(mockPollNewsCardAnalysis).not.toHaveBeenCalled();
-        });
-    });
-
-    describe('poll 타임아웃은', () => {
-        it(`POLL_MAX_ATTEMPTS(${POLL_MAX_ATTEMPTS})번 모두 processing이면 console.warn을 호출하고 attachAnalysis는 호출하지 않는다`, async () => {
-            const warnSpy = vi
-                .spyOn(console, 'warn')
-                .mockImplementation(() => undefined);
-
-            mockIsRecentlyFetched.mockResolvedValue(false);
-            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
-            mockUpsertNewsItem.mockResolvedValue(true); // 변경 있음 → revalidateTag 통과
-            mockListBySymbol.mockResolvedValue([
-                { id: NEWS_ITEM_1.id, analyzedAt: null },
-            ]);
-            mockSubmitNewsCardAnalysis.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'job-1',
-            } satisfies SubmitNewsCardAnalysisResult);
-            // Always returns 'processing' — worker never finishes.
-            mockPollNewsCardAnalysis.mockResolvedValue({
-                status: 'processing',
-            });
-
-            await ensureNewsCardsAnalyzedAction('AAPL');
-
-            expect(warnSpy).toHaveBeenCalled();
-            expect(mockPollNewsCardAnalysis).toHaveBeenCalledTimes(
-                POLL_MAX_ATTEMPTS
-            );
-            expect(mockAttachAnalysis).not.toHaveBeenCalled();
-
-            warnSpy.mockRestore();
+            expect(mockRunNewsCardAnalysis).not.toHaveBeenCalled();
+            expect(mockRunNewsCardAnalysis).not.toHaveBeenCalled();
         });
     });
 
@@ -793,8 +708,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         it('사람 경로 → 최근 fetch됐어도 항상 fetch한다(가드 무시)', async () => {
             mockIsRecentlyFetched.mockResolvedValue(true);
             mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
-            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
-            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 

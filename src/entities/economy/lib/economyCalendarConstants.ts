@@ -28,7 +28,7 @@ export const CALENDAR_REFRESH_FLAG_TTL_SECONDS =
 export const CALENDAR_REFRESH_FLAG_KEY = 'economy:calendar:refresh';
 
 /**
- * 분석 ensure가 동시에 호출하는 core submitEconomicEventAnalysis 최대 병렬 수.
+ * 분석 ensure가 동시에 호출하는 core runEconomicEventAnalysis 최대 병렬 수.
  * market-news LLM_PARALLEL_LIMIT 패턴 — worker 큐 stampede 방지. 발표 Medium+ 미분석분이
  * 매 접속 소수라 작게 잡는다.
  */

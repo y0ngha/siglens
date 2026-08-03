@@ -1,28 +1,18 @@
 import 'server-only';
 import {
-    submitAnalysis,
-    submitOverallAnalysis,
-    submitFundamentalAnalysis,
-    submitFinancialsAnalysis,
-    submitCongressTrend,
-    pollAnalysis,
-    pollOverallAnalysis,
-    pollFundamentalAnalysis,
-    pollFinancialsAnalysis,
-    pollCongressTrend,
+    runAnalysis,
+    runOverallAnalysis,
+    runFundamentalAnalysis,
+    runFinancialsAnalysis,
+    runCongressTrend,
     isEtRegularSessionOpen,
     computeFinancialsScorecard,
     DEEPSEEK_V4_FLASH_MODEL,
-    type SubmitAnalysisGatedResult,
-    type SubmitOverallAnalysisResult,
-    type SubmitFundamentalAnalysisResult,
-    type SubmitFinancialsAnalysisResult,
-    type SubmitCongressTrendResult,
-    type PollAnalysisResult,
-    type PollOverallAnalysisResult,
-    type PollFundamentalAnalysisResult,
-    type PollFinancialsAnalysisResult,
-    type PollCongressTrendResult,
+    type RunAnalysisResult,
+    type RunOverallAnalysisResult,
+    type RunFundamentalAnalysisResult,
+    type RunFinancialsAnalysisResult,
+    type RunCongressTrendResult,
     type EnrichedNewsItem,
     type FinancialsScorecard,
     type OptionsSnapshot,
@@ -74,13 +64,13 @@ export async function prewarmTechnical(
     companyName: string,
     fmpSymbol: string | undefined,
     force: boolean
-): Promise<SubmitAnalysisGatedResult> {
+): Promise<RunAnalysisResult> {
     const marketProfile = await resolveMarketProfile(symbol);
     const assetClass = getDescriptor(marketProfile).assetClass;
     const marketDataProvider = getCachedMarketDataProvider(
         sessionSpecFor(marketProfile)
     );
-    return submitAnalysis(symbol, companyName, '1Day', force, fmpSymbol, {
+    return runAnalysis(symbol, companyName, '1Day', force, fmpSymbol, {
         modelId: DEEPSEEK_V4_FLASH_MODEL,
         skipEnqueueIfMiss: false,
         marketDataProvider,
@@ -98,8 +88,8 @@ export async function prewarmTechnical(
 export async function prewarmFundamental(
     symbol: string,
     force: boolean
-): Promise<SubmitFundamentalAnalysisResult> {
-    return submitFundamentalAnalysis({
+): Promise<RunFundamentalAnalysisResult> {
+    return runFundamentalAnalysis({
         symbol,
         modelId: DEEPSEEK_V4_FLASH_MODEL,
         dataProvider: getFundamentalDataProvider(),
@@ -117,8 +107,8 @@ export async function prewarmFundamental(
 export async function prewarmFinancials(
     symbol: string,
     force: boolean
-): Promise<SubmitFinancialsAnalysisResult> {
-    return submitFinancialsAnalysis({
+): Promise<RunFinancialsAnalysisResult> {
+    return runFinancialsAnalysis({
         symbol,
         modelId: DEEPSEEK_V4_FLASH_MODEL,
         dataProvider: getFinancialStatementsProvider(),
@@ -139,8 +129,8 @@ export async function prewarmFinancials(
 export async function prewarmCongress(
     symbol: string,
     force: boolean
-): Promise<SubmitCongressTrendResult> {
-    return submitCongressTrend({
+): Promise<RunCongressTrendResult> {
+    return runCongressTrend({
         symbol,
         modelId: DEEPSEEK_V4_FLASH_MODEL,
         dataProvider: getCongressTradesProvider(),
@@ -162,7 +152,7 @@ export async function prewarmOverall(
     symbol: string,
     companyName: string,
     force: boolean
-): Promise<SubmitOverallAnalysisResult> {
+): Promise<RunOverallAnalysisResult> {
     const { db } = getDatabaseClient();
     const newsRepo = new DrizzleNewsRepository(db);
 
@@ -209,7 +199,7 @@ export async function prewarmOverall(
         sessionSpecFor(marketProfile)
     );
 
-    return submitOverallAnalysis({
+    return runOverallAnalysis({
         symbol,
         companyName,
         timeframe: '1Day',
@@ -228,53 +218,4 @@ export async function prewarmOverall(
         financialsScorecard,
         ...(force ? { force: true } : {}),
     });
-}
-
-/**
- * FIX Z(감사) — pre-warm 전용 poll seam. `submitAnalysisAction`이 아니라 이
- * 파일의 `prewarmTechnical`과 짝을 이루는, request-context 없는(after() 컨텍스트
- * 실행) 전용 경로다. actions/ 아래의 poll 액션은 요청 헤더·세션 사용자 조회
- * 함수를 호출해 request scope가 필요하므로 여기서 재사용할 수 없다.
- *
- * `tier: 'free'`는 익명 방문자와 동일한 caller-tier timeframe 게이트를
- * 재현한다 — prewarmTechnical의 submit이 쓰는 tierContext와 동일 값이어야
- * 폴 시점에 intraday 결과가 잘못 걸러지지 않는다(core JSDoc의 "caller-tier
- * timeframe gate" 불변식).
- */
-export async function prewarmPollTechnical(
-    jobId: string
-): Promise<PollAnalysisResult> {
-    return pollAnalysis(jobId, { tier: 'free' });
-}
-
-/** FIX Z(감사) — `prewarmOverall`과 짝을 이루는 pre-warm 전용 poll seam. */
-export async function prewarmPollOverall(
-    jobId: string
-): Promise<PollOverallAnalysisResult> {
-    return pollOverallAnalysis(jobId, { tier: 'free' });
-}
-
-/**
- * FIX Z(감사) — `prewarmFundamental`과 짝을 이루는 pre-warm 전용 poll seam.
- * fundamental/financials/congress/news/options는 timeframe 게이트가 없어
- * `tier`를 받지 않는다(core 시그니처 참고) — technical/overall과의 차이.
- */
-export async function prewarmPollFundamental(
-    jobId: string
-): Promise<PollFundamentalAnalysisResult> {
-    return pollFundamentalAnalysis(jobId);
-}
-
-/** FIX Z(감사) — `prewarmFinancials`와 짝을 이루는 pre-warm 전용 poll seam. */
-export async function prewarmPollFinancials(
-    jobId: string
-): Promise<PollFinancialsAnalysisResult> {
-    return pollFinancialsAnalysis(jobId);
-}
-
-/** FIX Z(감사) — `prewarmCongress`와 짝을 이루는 pre-warm 전용 poll seam. */
-export async function prewarmPollCongress(
-    jobId: string
-): Promise<PollCongressTrendResult> {
-    return pollCongressTrend(jobId);
 }

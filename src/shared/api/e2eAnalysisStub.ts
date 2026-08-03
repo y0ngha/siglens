@@ -6,7 +6,7 @@ import type {
     NewsAnalysisResponse,
     OptionsAnalysisResponse,
     OverallAnalysisResponse,
-    SubmitAnalysisGatedResult,
+    RunAnalysisResult,
     Tier,
     SubmitCongressTrendCached,
     SubmitCongressTrendFetchError,
@@ -51,9 +51,7 @@ interface E2eAnalysisFixture {
 const typedFixture = fixture as E2eAnalysisFixture;
 
 /** Fixed `{ status: 'cached' }` technical analysis result for E2E runs. */
-export function e2eCachedTechnical(
-    tier: Tier = 'free'
-): SubmitAnalysisGatedResult {
+export function e2eCachedTechnical(tier: Tier = 'free'): RunAnalysisResult {
     return {
         status: 'cached',
         ...filterAnalysisResult(typedFixture.technical, tier),

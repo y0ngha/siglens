@@ -3,12 +3,9 @@
 import { getDatabaseClient } from '@/shared/db/client';
 import { revalidateTag } from 'next/cache';
 import { isE2E } from '@/shared/api/e2eEnv';
-import { sleep } from '@/shared/lib/sleep';
-import { MS_PER_SECOND } from '@/shared/config/time';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
 import {
-    pollNewsCardAnalysis,
-    submitNewsCardAnalysis,
+    runNewsCardAnalysis,
     type NewsItem,
     type NewsFeedCategory,
 } from '@y0ngha/siglens-core';
@@ -24,47 +21,26 @@ import {
     MARKET_NEWS_CACHE_TAG_PREFIX,
     LLM_PARALLEL_LIMIT,
 } from '../lib/marketNewsConstants';
-import {
-    DISABLED_THINKING_BUDGET,
-    NEWS_CARD_ANALYSIS_POLL_INTERVAL_MS as POLL_INTERVAL_MS,
-    POLL_MAX_ATTEMPTS,
-} from '@/entities/news-article';
+import { DISABLED_THINKING_BUDGET } from '@/entities/news-article';
 
 /** Divisor for the upsert-majority-failure threshold: if more than half of fetched items fail to upsert, abort. */
 const MAJORITY_DIVISOR = 2;
 
 /**
- * Submit per-card AI analysis for a single item and wait for the worker to
- * finish, then persist the result to DB via `attachAnalysis`.
+ * Run per-card AI analysis for a single item and persist the result to DB.
  *
  * Caller guarantees that `item` has not been analyzed yet (analyzedAt === null).
+ * `runNewsCardAnalysis` returns `{ status: 'done', result }` directly — no polling.
  */
 async function analyzeAndPersist(
     item: NewsItem,
     repo: DrizzleMarketNewsRepository
 ): Promise<void> {
-    const { jobId } = await submitNewsCardAnalysis({
+    const analyzed = await runNewsCardAnalysis({
         item,
         thinkingBudget: DISABLED_THINKING_BUDGET,
     });
-
-    for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
-        await sleep(POLL_INTERVAL_MS);
-        const polled = await pollNewsCardAnalysis(jobId);
-        if (polled.status === 'done') {
-            await repo.attachAnalysis(item.id, polled.result, new Date());
-            return;
-        }
-        if (polled.status === 'error') {
-            console.error(
-                `[ensureMarketNewsCardsAnalyzedAction] poll error ${item.id}: ${polled.error}`
-            );
-            return;
-        }
-    }
-    console.warn(
-        `[ensureMarketNewsCardsAnalyzedAction] poll timeout after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / MS_PER_SECOND}s — ${item.id}`
-    );
+    await repo.attachAnalysis(item.id, analyzed.result, new Date());
 }
 
 /**

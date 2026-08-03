@@ -11,8 +11,8 @@ import { selectAggregateNewsItems } from './newsAnalysisSelection';
  * 3. priceImpact 우선 top-N cap (`selectAggregateNewsItems`)
  *
  * **왜 단일 함수로 묶나** — `submitNewsAnalysisAction`(`/news` 페이지)과
- * `submitOverallAnalysisAction`(`/overall` 페이지 news axis)이 core 안에서 동일한
- * `submitNewsAnalysis` 함수를 호출한다(`dependencyResolver` → `submitNewsAnalysis`).
+ * `runOverallAnalysisAction`(`/overall` 페이지 news axis)이 core 안에서 동일한
+ * `runNewsAnalysis` 함수를 호출한다(`dependencyResolver` → `runNewsAnalysis`).
  * 두 호출자가 같은 news input을 보내야 `symbol+modelId+hash(sorted news IDs)` 캐시
  * 키가 일치해 `/news`에서 한 분석이 `/overall` news axis로 그대로 hit한다. 호출자별로
  * 변환 파이프라인을 직접 짜면 한쪽이 step을 빼먹는 순간 cache miss로 종합 분석이

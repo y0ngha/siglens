@@ -2,7 +2,7 @@
 
 import { headers } from 'next/headers';
 import {
-    submitMarketNewsDigest,
+    runMarketNewsDigest,
     type EnrichedNewsItem,
     type NewsFeedCategory,
 } from '@y0ngha/siglens-core';
@@ -55,7 +55,7 @@ function toEnrichedMarketNewsItem(row: MarketNewsRow): EnrichedNewsItem | null {
  *
  * No tier/BYOK gate — the category digest is public and uses a fixed shared
  * model. Reads enriched rows from DB, maps through `isEnrichedRow`, caps via
- * `selectAggregateNewsItems`, and delegates to core `submitMarketNewsDigest`.
+ * `selectAggregateNewsItems`, and delegates to core `runMarketNewsDigest`.
  *
  * Bot traffic sets `skipEnqueueIfMiss: true` so crawler requests return
  * `miss_no_trigger` without dispatching a worker job.
@@ -77,7 +77,7 @@ export async function submitMarketNewsDigestAction(
         // Cap to the top market-moving items to keep the digest prompt bounded.
         const news = selectAggregateNewsItems(enrichedItems);
 
-        return await submitMarketNewsDigest({
+        return await runMarketNewsDigest({
             category,
             categoryLabel: koLabel,
             modelId: DEFAULT_DIGEST_MODEL_ID,

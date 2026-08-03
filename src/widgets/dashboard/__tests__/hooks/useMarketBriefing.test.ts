@@ -38,10 +38,15 @@ const CACHED_BRIEFING_RESULT: MarketBriefingActionResult = {
     botBlocked: false,
 };
 
-const SUBMITTED_BRIEFING_RESULT: MarketBriefingActionResult = {
+const DONE_BRIEFING_RESULT: MarketBriefingActionResult = {
     briefing: {
-        status: 'submitted',
-        jobId: 'job-123',
+        status: 'done',
+        briefing: {
+            summary: 'AI market overview done',
+            sectors: [],
+            volatility: null,
+        } as unknown as MarketBriefingResponse,
+        generatedAt: '2025-01-01T11:00:00Z',
     },
     botBlocked: false,
 };
@@ -104,15 +109,15 @@ describe('useMarketBriefing', () => {
         client.clear();
     });
 
-    it('(Happy) action done (submitted) → input = submitted briefing', async () => {
-        mockAction.mockResolvedValue(SUBMITTED_BRIEFING_RESULT);
+    it('(Happy) action done (done) → input = done briefing', async () => {
+        mockAction.mockResolvedValue(DONE_BRIEFING_RESULT);
         const { client, wrapper } = makeWrapper();
         const { result } = renderHook(() => useMarketBriefing(), { wrapper });
 
         await waitFor(() => {
             expect(result.current.input).toMatchObject({
-                status: 'submitted',
-                jobId: 'job-123',
+                status: 'done',
+                generatedAt: '2025-01-01T11:00:00Z',
             });
         });
         client.clear();

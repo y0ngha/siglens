@@ -2,11 +2,11 @@
 
 import { headers } from 'next/headers';
 import {
-    submitAnalysis,
+    runAnalysis,
     type MarketDataProvider,
     type ModelId,
     type PositionBucket,
-    type SubmitAnalysisGatedResult,
+    type RunAnalysisResult,
     type Tier,
     type Timeframe,
 } from '@y0ngha/siglens-core';
@@ -41,8 +41,8 @@ import { getDescriptor } from '@/shared/config/marketProfile';
  * avg price, free tier, etc). Optional because `AnalysisGateBlockedResult`
  * (the blocked-gate branch) never carries it.
  */
-export type SubmitAnalysisActionResult =
-    | (SubmitAnalysisGatedResult & { personalized?: boolean })
+export type RunAnalysisActionResult =
+    | (RunAnalysisResult & { personalized?: boolean })
     | AnalysisGateBlockedResult;
 
 /**
@@ -94,7 +94,7 @@ async function resolveHoldingPositionBucket(
         return resolvePositionBucket(tier, avgPrice, currentPrice);
     } catch (error) {
         console.error(
-            '[submitAnalysisAction] position bucket resolution failed, degrading to no-bucket:',
+            '[runAnalysisAction] position bucket resolution failed, degrading to no-bucket:',
             error
         );
         return undefined;
@@ -102,7 +102,7 @@ async function resolveHoldingPositionBucket(
 }
 
 /** 서버사이드 tier + BYOK 게이트 후 core의 submitAnalysis에 위임. */
-export async function submitAnalysisAction(
+export async function runAnalysisAction(
     symbol: string,
     companyName: string,
     timeframe: Timeframe,
@@ -115,7 +115,7 @@ export async function submitAnalysisAction(
      * `false` for anonymous/free callers regardless of this value.
      */
     reasoning?: boolean
-): Promise<SubmitAnalysisActionResult> {
+): Promise<RunAnalysisActionResult> {
     try {
         const user = await getCurrentUser();
         const userId = user?.id ?? null;
@@ -141,7 +141,7 @@ export async function submitAnalysisAction(
             const { e2eCachedTechnical } =
                 await import('@/shared/api/e2eAnalysisStub');
             // The E2E stub returns a fixture BEFORE any bucket is ever
-            // computed (submitAnalysis/resolveHoldingPositionBucket never
+            // computed (runAnalysis/resolveHoldingPositionBucket never
             // runs on this branch), so `personalized` can't be derived the
             // normal way here. To keep the badge wiring exercisable under
             // E2E without lying, we approximate it the same way
@@ -158,7 +158,7 @@ export async function submitAnalysisAction(
                     personalized = holding !== null;
                 } catch (error) {
                     console.error(
-                        '[submitAnalysisAction] E2E personalized-flag holding read failed, degrading to false:',
+                        '[runAnalysisAction] E2E personalized-flag holding read failed, degrading to false:',
                         error
                     );
                     personalized = false;
@@ -187,7 +187,7 @@ export async function submitAnalysisAction(
                 marketDataProvider
             );
             return {
-                ...(await submitAnalysis(
+                ...(await runAnalysis(
                     symbol,
                     companyName,
                     timeframe,
@@ -221,7 +221,7 @@ export async function submitAnalysisAction(
         );
 
         return {
-            ...(await submitAnalysis(
+            ...(await runAnalysis(
                 symbol,
                 companyName,
                 timeframe,
@@ -243,7 +243,7 @@ export async function submitAnalysisAction(
             personalized: positionBucket !== undefined,
         };
     } catch (err) {
-        console.error('[submitAnalysisAction] unexpected error:', err);
+        console.error('[runAnalysisAction] unexpected error:', err);
         return { status: 'error', error: buildGateError('unexpected_error') };
     }
 }

@@ -1,34 +1,20 @@
-import type { MockedFunction } from 'vitest';
+import type { Mock } from 'vitest';
 import { useCongressTrend } from '@/widgets/congress/hooks/useCongressTrend';
-import {
-    cancelCongressTrendJobAction,
-    pollCongressTrendAction,
-    submitCongressTrendAction,
-} from '@/entities/analysis/actions';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { CongressTrendResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 
-vi.mock('@/entities/analysis/actions', () => ({
-    submitCongressTrendAction: vi.fn(),
-    pollCongressTrendAction: vi.fn(),
-    cancelCongressTrendJobAction: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+    runAnalysisStream: vi.fn(),
 }));
 
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockSubmit = submitCongressTrendAction as MockedFunction<
-    typeof submitCongressTrendAction
->;
-const mockPoll = pollCongressTrendAction as MockedFunction<
-    typeof pollCongressTrendAction
->;
-const mockCancel = cancelCongressTrendJobAction as MockedFunction<
-    typeof cancelCongressTrendJobAction
->;
+const mockSubmit = runAnalysisStream as Mock;
 
 const CONGRESS_RESULT: CongressTrendResponse = {
     summaryKo: '의회 매수세 우위',
@@ -57,9 +43,6 @@ function makeWrapper() {
 describe('useCongressTrend', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
-        mockPoll.mockReset();
-        mockCancel.mockReset();
-        mockCancel.mockResolvedValue(undefined);
         mockSubmit.mockResolvedValue({
             status: 'cached',
             result: CONGRESS_RESULT,
@@ -91,9 +74,14 @@ describe('useCongressTrend', () => {
         }
         expect(result.current.result).toEqual(CONGRESS_RESULT);
         expect(mockSubmit).toHaveBeenCalledWith(
-            'AAPL',
-            'gemini-2.5-flash-lite',
-            false
+            expect.objectContaining({
+                type: 'congress',
+                params: expect.objectContaining({
+                    symbol: 'AAPL',
+                    modelId: 'gemini-2.5-flash-lite',
+                    reasoning: false,
+                }),
+            })
         );
     });
 
@@ -165,12 +153,8 @@ describe('useCongressTrend', () => {
         expect(typeof result.current.trigger).toBe('function');
     });
 
-    it('submitted → poll → done 흐름', async () => {
+    it('done 흐름 — 단건 run 호출로 결과를 반환한다', async () => {
         mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-congress-123',
-        });
-        mockPoll.mockResolvedValueOnce({
             status: 'done',
             result: CONGRESS_RESULT,
         });
@@ -184,7 +168,7 @@ describe('useCongressTrend', () => {
         await waitFor(() => {
             expect(result.current.status).toBe('done');
         });
-        expect(mockPoll).toHaveBeenCalledWith('job-congress-123');
+        expect(mockSubmit).toHaveBeenCalledTimes(1);
     });
 
     it('miss_no_trigger → bot_blocked 상태', async () => {
@@ -213,9 +197,8 @@ describe('useCongressTrend', () => {
         await waitFor(() => {
             expect(result.current.status).toBe('no_trades');
         });
-        // LLM 잡을 enqueue하지 않으므로 poll/cancel은 호출되지 않는다.
-        expect(mockPoll).not.toHaveBeenCalled();
-        expect(mockCancel).not.toHaveBeenCalled();
+        // run* 함수가 직접 결과를 반환하므로 단건 호출만 발생한다.
+        expect(mockSubmit).toHaveBeenCalledTimes(1);
     });
 
     it('error 상태를 반환하고 retry로 복구된다', async () => {

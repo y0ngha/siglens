@@ -17,17 +17,10 @@ import {
     getFmpBudgetUsed,
     getInFlightMarker,
     isSkipped,
-    markInFlight,
 } from './lock';
-import {
-    TAB_SEAMS,
-    TAB_POLLS,
-    resolveHarvest,
-    type SeamOutcome,
-} from './harvest';
+import { TAB_SEAMS, resolveHarvest, type SeamOutcome } from './harvest';
 
 export interface PrewarmBatchCounts {
-    submitted: number;
     harvested: number;
     revalidated: number;
     remaining: number;
@@ -70,11 +63,6 @@ const TICK_ROTATION_MS = 5 * 60 * 1000;
 // `BATCH_DEADLINE_MS + 스케줄주기 ≤ 15분`을 반드시 함께 확인할 것. 현재 정확히
 // 경계값(600s + 300s = 900s)이라 여유가 없다.
 const BATCH_DEADLINE_MS = 600_000; // 10min
-// FIX Z(감사) — poll 간격/유닛(심볼×탭)당 상한. 60s 안에 못 끝나면 이번 tick은
-// 포기하고 in-flight(jobId) 마커를 남겨 다음 tick이 이어서 poll한다(배치를
-// 무기한 붙잡지 않는다).
-const POLL_INTERVAL_MS = 5000;
-const POLL_UNIT_CAP_MS = 60000;
 // overall을 마지막에 둬 bars/scorecard 등 다른 축이 이미 채운 Redis 캐시를 HIT로 재활용한다.
 const TAB_ORDER: readonly SeoSnapshotTab[] = [
     'technical',
@@ -153,7 +141,6 @@ export async function runPrewarmBatch(
         clock.now()
     );
     const counts: PrewarmBatchCounts = {
-        submitted: 0,
         harvested: 0,
         revalidated: 0,
         remaining: Math.max(0, staleSymbols.length - batch.length),
@@ -179,17 +166,14 @@ export async function runPrewarmBatch(
         const chunk = batch.slice(i, i + SYMBOL_CONCURRENCY);
         await Promise.all(
             chunk.map(u =>
-                processSymbol(
-                    u,
-                    boundary,
-                    generatedAtMap,
-                    repo,
-                    counts,
-                    clock,
-                    batchDeadline
-                ).catch(error => {
-                    console.error(`[seo-prewarm] ${u.symbol} failed:`, error);
-                })
+                processSymbol(u, boundary, generatedAtMap, repo, counts).catch(
+                    error => {
+                        console.error(
+                            `[seo-prewarm] ${u.symbol} failed:`,
+                            error
+                        );
+                    }
+                )
             )
         );
     }
@@ -277,25 +261,20 @@ async function selectFairBatch(
         )
     );
 
-    const resumable: PrewarmSymbol[] = [];
     const fresh: PrewarmSymbol[] = [];
     windowCandidates.forEach((candidate, i) => {
-        const candidacy = classifications[i];
-        if (candidacy === 'resumable') resumable.push(candidate);
-        else if (candidacy === 'fresh') fresh.push(candidate);
-        // 'blocked' → 배제(모든 stale 탭이 backoff 또는 legacy in-flight 중).
+        if (classifications[i] === 'fresh') fresh.push(candidate);
+        // 'blocked' → 배제(모든 stale 탭이 backoff 또는 in-flight 중).
     });
-    return [...resumable, ...fresh].slice(0, SYMBOLS_PER_TICK);
+    return fresh.slice(0, SYMBOLS_PER_TICK);
 }
 
-type SymbolCandidacy = 'resumable' | 'fresh' | 'blocked';
+type SymbolCandidacy = 'fresh' | 'blocked';
 
 /**
- * FIX 1(감사, PR #698 리뷰) — `selectFairBatch`의 후보 분류와 `processSymbol`의
- * 실제 처리가 반드시 같은 규칙을 써야 한다: 마커가 legacy(jobId 없음)인 탭은
- * "actionable"이 아니다(재제출 대상 아님) — `processSymbol`이 그 탭을 skip하는
- * 것과 동일하게, 여기서도 그런 탭만 있는 심볼은 'blocked'로 분류해 배치 슬롯을
- * 소비하지 않게 한다.
+ * 후보 분류: in-flight 마커가 있는 탭은 actionable 아님(재제출 대상 아님).
+ * `processSymbol`이 그 탭을 skip하는 것과 동일하게, 모든 stale 탭이 in-flight
+ * 또는 backoff 상태인 심볼은 'blocked'로 분류해 배치 슬롯을 소비하지 않게 한다.
  */
 async function classifySymbol(
     u: PrewarmSymbol,
@@ -314,37 +293,10 @@ async function classifySymbol(
     let anyActionable = false;
     for (const tab of staleTabs) {
         const marker = await getInFlightMarker(u.symbol, tab);
-        if (marker.jobId !== null) return 'resumable';
-        if (marker.present) continue; // legacy 마커 — 이번 tick엔 actionable 아님(TTL 대기).
+        if (marker.present) continue; // in-flight — 이번 tick엔 actionable 아님(TTL 대기).
         if (!(await isSkipped(u.symbol, tab))) anyActionable = true;
     }
     return anyActionable ? 'fresh' : 'blocked';
-}
-
-/**
- * FIX Z(감사) — jobId 하나를 `POLL_INTERVAL_MS` 간격으로 최대 `POLL_UNIT_CAP_MS`까지
- * poll한다(배치 전체 데드라인 `batchDeadline`도 함께 존중 — FIX G). 최초 1회는
- * 즉시 poll한다(워커가 이미 끝났을 수 있어 첫 5s를 낭비하지 않는다). 캡에
- * 도달해도 여전히 `processing`이면 그 상태 그대로 반환한다 — 호출부가 이미
- * 세팅해둔 in-flight(jobId) 마커는 건드리지 않고 다음 tick이 이어서 poll하게 둔다.
- */
-async function pollUntilSettled(
-    poll: () => Promise<SeamOutcome>,
-    batchDeadline: number,
-    clock: PrewarmClock
-): Promise<SeamOutcome> {
-    let elapsedMs = 0;
-    let outcome = await poll();
-    while (
-        outcome.status === 'processing' &&
-        elapsedMs < POLL_UNIT_CAP_MS &&
-        clock.now() < batchDeadline
-    ) {
-        await clock.sleep(POLL_INTERVAL_MS);
-        elapsedMs += POLL_INTERVAL_MS;
-        outcome = await poll();
-    }
-    return outcome;
 }
 
 async function processSymbol(
@@ -352,9 +304,7 @@ async function processSymbol(
     boundary: Date,
     generatedAtMap: Map<string, Date>,
     repo: DrizzleSeoSnapshotRepository,
-    counts: PrewarmBatchCounts,
-    clock: PrewarmClock,
-    batchDeadline: number
+    counts: PrewarmBatchCounts
 ): Promise<void> {
     const { assetInfo } = await getAssetInfoResilient(u.symbol);
     const companyName = assetInfo?.name ?? u.symbol;
@@ -381,57 +331,20 @@ async function processSymbol(
             const marker = await getInFlightMarker(u.symbol, tab);
             let outcome: SeamOutcome | null;
 
-            if (marker.jobId !== null) {
-                // FIX Z — 이전 tick이 submit만 하고 못 끝낸 job을 재제출하는
-                // 대신 이어서 poll한다(in-flight = "진행 중" → 실제로 진척시킨다.
-                // FIX A가 in-flight를 선별에서 배제하던 방식의 역방향 보완).
-                outcome = await pollUntilSettled(
-                    () => TAB_POLLS[tab](marker.jobId!),
-                    batchDeadline,
-                    clock
-                );
-            } else if (marker.present) {
-                // FIX 1(감사, PR #698 리뷰) — legacy 마커(jobId 없이 마킹된
-                // 경우 — 예: `pending_dependencies`)는 resume-poll은 못 하지만
-                // 여전히 in-flight다. `getInFlightJobId`만 쓰던 이전 코드는
-                // 이 경우를 "in-flight 아님"으로 오판해 매 tick 재제출했다
-                // (FMP 예산 재계상 포함) — `markInFlight`가 문서화한 "재개
-                // 불가, 자연 TTL 만료 후 재시도" 의도와 어긋났다. 여기서는
-                // 재제출하지 않고 이번 tick은 건너뛴다 — TTL(30min)이
-                // 만료되면 다음 tick이 마커 없음으로 보고 새로 submit한다.
+            if (marker.present) {
+                // FIX 1(감사, PR #698 리뷰) — in-flight 마커(jobId 유무 관계없이)는
+                // 재제출하지 않고 이번 tick은 건너뛴다 — TTL(30min)이 만료되면
+                // 다음 tick이 마커 없음으로 보고 새로 submit한다.
                 continue;
             } else {
                 if (await isSkipped(u.symbol, tab)) continue; // FIX C: terminal backoff 중.
 
                 seamsRunForSymbol++;
-                const submitResult = await TAB_SEAMS[tab]({
+                outcome = await TAB_SEAMS[tab]({
                     symbol: u.symbol,
                     companyName,
                     fmpSymbol,
                 });
-
-                if (
-                    submitResult !== null &&
-                    (submitResult.status === 'submitted' ||
-                        submitResult.status === 'pending_dependencies')
-                ) {
-                    counts.submitted++;
-                    const jobId = submitResult.jobId;
-                    await markInFlight(u.symbol, tab, jobId);
-                    if (jobId === undefined) {
-                        // pending_dependencies — 단일 jobId가 없어(축별
-                        // pendingJobs) resume-poll 대상이 아니다. 다음
-                        // tick(들)이 자연 재시도한다(기존 동작 유지).
-                        continue;
-                    }
-                    outcome = await pollUntilSettled(
-                        () => TAB_POLLS[tab](jobId),
-                        batchDeadline,
-                        clock
-                    );
-                } else {
-                    outcome = submitResult;
-                }
             }
 
             const harvested = await resolveHarvest(

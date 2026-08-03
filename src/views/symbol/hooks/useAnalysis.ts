@@ -19,26 +19,14 @@ import {
 } from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE, MS_PER_SECOND } from '@/shared/config/time';
 import { useSymbolHolding } from '@/features/portfolio-holding';
-import {
-    submitAnalysisAction,
-    type SubmitAnalysisActionResult,
-    pollAnalysisAction,
-    cancelAnalysisJobAction,
-} from '@/entities/analysis/actions';
+import type { RunAnalysisActionResult } from '@/entities/analysis/actions';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import {
     getReanalyzeCooldownMs as fetchReanalyzeCooldownMs,
     releaseReanalyzeCooldown,
     tryAcquireReanalyzeCooldown,
     normalizeAnalysisResponse,
 } from '@/entities/analysis';
-import { sleep } from '@/shared/lib/sleep';
-import {
-    ANALYSIS_POLL_TIMEOUT_MESSAGE,
-    CHART_ANALYSIS_POLL_INTERVAL_MS,
-} from '@/shared/config/pollingConfig';
-import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
-import { hasExceededPollCeiling } from '@/shared/lib/pollCeiling';
-import type { CancelJobEntry } from '@/shared/lib/types';
 
 interface AnalyzeMutationVariables {
     symbol: string;
@@ -139,7 +127,7 @@ export interface UseAnalysisResult {
     /**
      * 서버가 THIS 제출에서 실제로 개인화(포지션 버킷) 캐시 키를 사용했는지 여부
      * (personalized-analysis-by-position-bucket spec, Subsystem C — 배지 정직성
-     * 감사 이후). `submitAnalysisAction`이 반환하는 `personalized` 플래그를 그대로
+     * 감사 이후). `runAnalysisAction`이 반환하는 `personalized` 플래그를 그대로
      * 미러링한다 — 홀딩 존재 여부가 아니라, 서버가 실제로 `:pos=<bucket>` 키로
      * 분석을 조회/제출했는지가 유일한 진실값이다. `AnalysisPanel`의 배지가 이
      * 값으로 게이트되어야 한다(holding 존재만으로는 안 됨 — 서버 쿼트 읽기 실패나
@@ -174,11 +162,9 @@ export function useAnalysis({
     const [cooldownNotice, setCooldownNotice] = useState<CooldownNotice | null>(
         null
     );
-    const [isPolling, setIsPolling] = useState(false);
-    const [pollError, setPollError] = useState<string | null>(null);
     const [isBotBlocked, setIsBotBlocked] = useState(false);
     // 서버가 THIS 제출에서 개인화(포지션 버킷) 캐시 키를 실제로 썼는지 여부.
-    // submitAnalysisAction의 `personalized` 플래그를 그대로 미러링 — 배지의
+    // runAnalysisAction의 `personalized` 플래그를 그대로 미러링 — 배지의
     // 유일한 진실값(personalized-analysis-by-position-bucket spec, Subsystem C).
     const [isPersonalized, setIsPersonalized] = useState(false);
     // 초기 마운트 시 서버 분석 실패 여부를 캡처한다.
@@ -220,17 +206,12 @@ export function useAnalysis({
     const hasHandledReasoningHydrationRef = useRef(
         isReasoningHydrated !== false // undefined(추적 안 함)이면 처음부터 true로 취급
     );
-    // 현재 진행 중인 워커 job ID. 타임프레임 변경 시 취소 신호 전달에 사용.
-    const currentJobIdRef = useRef<string | null>(null);
-    // polling 완료 시 force 경로 쿨다운 처리를 위해 마지막 요청의 force 여부를 추적
-    const lastForceRef = useRef(false);
-    // submit이 'submitted'(캐시 미스 → 워커 enqueue)를 반환하면 서버가 이 제출을
-    // personalized(:pos=) 키로 enqueue했는지 여부를 여기 보관만 하고, 배지는 아직
-    // 켜지 않는다. 폴링 중 화면에 떠 있는 건 SSR의 no-bucket base 분석이라(page.tsx
-    // peekAnalysisStatic이 positionBucket=undefined로 고정) 결과가 실제로 도착하는
-    // poll 'done' 시점에 이 값을 적용해야 base 분석 위에 "개인화했어요"라고 거짓
-    // 주장하지 않는다.
-    const pendingPersonalizedRef = useRef(false);
+    /**
+     * In-flight SSE AbortController. Aborted on unmount and replaced on each
+     * new submit so a queued (not-yet-started) mutation cannot race with the
+     * just-started one's stream.
+     */
+    const streamAbortRef = useRef<AbortController | null>(null);
 
     // 3. useMutation — submit
     const {
@@ -239,11 +220,7 @@ export function useAnalysis({
         isPending: isSubmitting,
         reset,
         mutate,
-    } = useMutation<
-        SubmitAnalysisActionResult,
-        Error,
-        AnalyzeMutationVariables
-    >({
+    } = useMutation<RunAnalysisActionResult, Error, AnalyzeMutationVariables>({
         mutationFn: ({
             force,
             symbol: mutSymbol,
@@ -252,32 +229,81 @@ export function useAnalysis({
             modelId: mutModelId,
             reasoning: mutReasoning,
         }) => {
-            lastForceRef.current = force;
-            return submitAnalysisAction(
-                mutSymbol,
-                mutCompanyName,
-                latestTimeframeRef.current,
-                force,
-                mutFmpSymbol,
-                mutModelId,
-                mutReasoning
-            );
+            /**
+             * Cancel any still-open SSE connection from a previous submit before
+             * starting a new one. Without this, a slow prior request can race the
+             * current mutation's onSuccess and write stale data.
+             */
+            streamAbortRef.current?.abort();
+            const controller = new AbortController();
+            streamAbortRef.current = controller;
+
+            return runAnalysisStream<RunAnalysisActionResult>({
+                type: 'technical',
+                params: {
+                    symbol: mutSymbol,
+                    companyName: mutCompanyName,
+                    timeframe: latestTimeframeRef.current,
+                    force,
+                    fmpSymbol: mutFmpSymbol,
+                    modelId: mutModelId,
+                    reasoning: mutReasoning,
+                },
+                signal: controller.signal,
+            })
+                .then(result => {
+                    // Throw for non-success outcomes so they reach onError and
+                    // surface via submitError. Only 'cached', 'done', and
+                    // 'miss_no_trigger' are returned; everything else is an error.
+                    if (
+                        result.status === 'cached' ||
+                        result.status === 'done' ||
+                        result.status === 'miss_no_trigger'
+                    ) {
+                        return result;
+                    }
+                    if (result.status === 'key_error') {
+                        throw new Error(result.error);
+                    }
+                    if (result.status === 'error') {
+                        const msg =
+                            typeof result.error === 'object' &&
+                            result.error !== null
+                                ? ((result.error as { message?: string })
+                                      .message ??
+                                  '분석 중 오류가 발생했습니다.')
+                                : '분석 중 오류가 발생했습니다.';
+                        throw new Error(msg);
+                    }
+                    throw new Error('예상치 못한 오류가 발생했습니다.');
+                })
+                .catch((err: unknown) => {
+                    /**
+                     * Map the core retry-exhaustion sentinel to a user-facing message.
+                     * Thrown by `withRetry` when the AI provider stays unavailable after
+                     * all attempts; surfaces through SSE as an error event, then
+                     * re-thrown by `runAnalysisStream`. The `.then()` branch above handles
+                     * result-level errors; this catch covers SSE-level thrown errors only.
+                     */
+                    const msg =
+                        err instanceof Error ? err.message : String(err);
+                    if (msg === 'AI_SERVER_UNSTABLE') {
+                        throw new Error(
+                            '예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+                        );
+                    }
+                    throw err;
+                });
         },
         onMutate: () => {
-            setPollError(null);
             setAnalysisResult(null);
             setIsBotBlocked(false);
             // 새 제출이 시작됨 — 이전 결과의 personalized 여부는 더 이상 유효하지
             // 않다. 새 서버 응답이 올 때까지 false로 되돌린다.
             setIsPersonalized(false);
-            pendingPersonalizedRef.current = false;
         },
         onSuccess: (data, variables) => {
-            if (data.status === 'cached') {
-                currentJobIdRef.current = null;
-                // free 조기 반환 분기에서도 세팅 — free는 어차피 personalized가
-                // 항상 false이므로(resolveHoldingPositionBucket이 free를 스킵)
-                // 무해하지만, 두 분기 모두 명시적으로 서버 값을 반영해 둔다.
+            if (data.status === 'cached' || data.status === 'done') {
                 setIsPersonalized(data.personalized ?? false);
                 if (
                     latestTierRef.current === 'free' &&
@@ -293,8 +319,8 @@ export function useAnalysis({
                 // 여기 도달하는 member/pro 호출자에게 undefined가 그대로 저장되면
                 // buildChatState 등 하위 소비자의 .length 접근이 크래시한다.
                 setLockedInfoDepth(data.lockedInfoDepth ?? []);
-                // force 경로는 정상 5분 쿨다운, 일반 캐시 히트는 짧은
-                // 쿨다운(30s) — 같은 결과 즉시 재호출로 인한 스팸 방지.
+                // force 경로는 정상 5분 쿨다운, 일반 캐시 히트/신규 LLM 결과는
+                // 짧은 쿨다운(30s) — 같은 결과 즉시 재호출로 인한 스팸 방지.
                 setReanalyzeCooldownMs(prev =>
                     Math.max(
                         prev,
@@ -303,43 +329,13 @@ export function useAnalysis({
                             : CACHE_HIT_COOLDOWN_MS
                     )
                 );
-            } else if (data.status === 'submitted') {
-                currentJobIdRef.current = data.jobId;
-                setIsPolling(true);
-                // submitted 단계에서는 쿨다운을 시작하지 않는다.
-                // polling 완료(done) 시에만 쿨다운을 시작한다.
-                // 서버가 이미 이 제출을 personalized 캐시 키로 enqueue했는지
-                // 여부는 여기서 알 수 있지만, 배지는 아직 켜지 않는다 — 폴링이
-                // 끝날 때까지 화면에 떠 있는 건 SSR의 no-bucket base 분석이므로,
-                // 지금 켜면 base 분석 위에 "개인화했어요"라고 거짓 주장하게 된다.
-                // 값은 ref에만 보관해 두고, 아래 폴링 useEffect의 'done' 핸들러가
-                // 실제로 화면을 personalized 결과로 교체하는 시점에 적용한다.
-                pendingPersonalizedRef.current = data.personalized ?? false;
-                setIsPersonalized(false);
             } else if (data.status === 'miss_no_trigger') {
                 // 별도 boolean 상태로 추적하는 이유: 이 훅은 useMutation 기반이라
                 // useQuery처럼 에러 브랜치 narrowing으로 비-데이터 상태를 표현할
                 // 수 없다. 다른 세 분석 훅(fundamental/news/overall)은 useQuery
                 // 기반이라 BotBlockedError 던지기로 동일 의미를 표현한다.
-                currentJobIdRef.current = null;
                 setIsBotBlocked(true);
                 setIsPersonalized(false);
-            } else if (data.status === 'key_error') {
-                currentJobIdRef.current = null;
-                setPollError(data.error);
-                setIsPersonalized(false);
-            } else {
-                // tier gate / 일일 사용 한도 초과
-                currentJobIdRef.current = null;
-                setPollError(data.error.message);
-                setIsPersonalized(false);
-                if (variables.force) {
-                    void releaseReanalyzeCooldown(
-                        latestRef.current.symbol,
-                        latestTimeframeRef.current
-                    );
-                    setReanalyzeCooldownMs(0);
-                }
             }
         },
         onError: (_error, { force, symbol: mutSymbol }) => {
@@ -352,15 +348,7 @@ export function useAnalysis({
         },
     });
 
-    // 4. useMutation — cancel
-    const { mutate: cancelMutate } = useMutation({
-        mutationFn: (jobId: string) => cancelAnalysisJobAction(jobId),
-        onError: error => {
-            console.warn('[useAnalysis] cancel failed', error);
-        },
-    });
-
-    // 5. useSymbolHolding — personalized-analysis-by-position-bucket spec
+    // 4. useSymbolHolding — personalized-analysis-by-position-bucket spec
     // (Subsystem C). Source of the member's holding for THIS symbol. The SSR
     // `initialAnalysis` seed on mount is the shared no-bucket peek — a static
     // ISR page (`src/app/[symbol]/page.tsx`'s `peekAnalysisStatic`) can't read
@@ -404,20 +392,19 @@ export function useAnalysis({
         [analysisResult, initialAnalysis]
     );
 
-    // 6. Derived variables
+    // 5. Derived variables
     const isAnalyzing =
         isSubmitting ||
-        isPolling ||
         (initialAnalysisFailedAtMount &&
             (isModelHydrated === false ||
                 isReasoningHydrated === false ||
                 isTierHydrated === false ||
                 !isHoldingResolved));
-    const analysisError = submitError?.message ?? pollError ?? null;
+    const analysisError = submitError?.message ?? null;
     // 쿨다운 카운트다운이 활성화된 상태. effect deps에 사용해 불필요한 재시작을 방지한다.
     const isCountdownActive = reanalyzeCooldownMs > 0;
 
-    // 7. Handlers
+    // 6. Handlers
     // latestRef 패턴을 사용하므로 symbol을 deps에서 제외하고 안정적인 함수 참조를 유지한다.
     // Redis 기반 쿨다운을 atomic하게 점유한 뒤에만 mutation을 실행한다.
     const handleReanalyze = useCallback((): void => {
@@ -454,9 +441,6 @@ export function useAnalysis({
      */
     const restartAnalysis = useCallback(
         (modelIdOverride?: ModelId, reasoningOverride?: boolean): void => {
-            const jobId = currentJobIdRef.current;
-            currentJobIdRef.current = null;
-            if (jobId !== null) cancelMutate(jobId);
             reset();
             mutate({
                 symbol: latestRef.current.symbol,
@@ -467,19 +451,10 @@ export function useAnalysis({
                 reasoning: reasoningOverride ?? latestReasoningRef.current,
             });
         },
-        [cancelMutate, reset, mutate]
+        [reset, mutate]
     );
 
-    // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
-    const getPageHideJobs = useCallback((): CancelJobEntry[] | null => {
-        const jobId = currentJobIdRef.current;
-        if (jobId === null) return null;
-        currentJobIdRef.current = null;
-        return [{ jobId, type: 'analysis' as const }];
-    }, []);
-    usePageHideCancel(getPageHideJobs);
-
-    // 8. useLayoutEffect
+    // 7. useLayoutEffect
     // symbol, timeframe의 최신 렌더 값을 DOM 커밋 전에 동기 갱신하여
     // mutation 호출 시점에 stale closure를 방지한다.
     useLayoutEffect(() => {
@@ -490,129 +465,7 @@ export function useAnalysis({
         latestTierRef.current = tier;
     });
 
-    // 9. useEffect
-
-    // 폴링 — submit 결과가 'submitted'이면 polling 시작.
-    // setState는 async IIFE 내부에서 호출되므로 react-hooks/set-state-in-effect 규칙 위반이 아니다.
-    useEffect(() => {
-        if (
-            !submitData ||
-            submitData.status !== 'submitted' ||
-            !submitData.jobId
-        ) {
-            return;
-        }
-
-        const jobId = submitData.jobId;
-        let cancelled = false;
-        // financials/congress/macro-briefing 폴링과 동일한 천장 패턴 —
-        // 워커가 status를 한 번도 못 쓰고 stall되면 이 루프가 영원히 도는 것을
-        // 막는다. 초과 시 다른 error 분기와 동일한 가시적 오류 상태로 전환하고
-        // 쿨다운도 함께 해제한다(그렇지 않으면 5분 재분석 쿨다운에 추가로
-        // 잠겨 사용자가 재시도조차 못 한다).
-        const pollStartTime = Date.now();
-
-        void (async () => {
-            while (!cancelled) {
-                if (hasExceededPollCeiling(Date.now() - pollStartTime)) {
-                    currentJobIdRef.current = null;
-                    setPollError(ANALYSIS_POLL_TIMEOUT_MESSAGE);
-                    setIsPersonalized(false);
-                    if (lastForceRef.current) {
-                        void releaseReanalyzeCooldown(
-                            latestRef.current.symbol,
-                            latestTimeframeRef.current
-                        );
-                        setReanalyzeCooldownMs(0);
-                    }
-                    setIsPolling(false);
-                    return;
-                }
-                await sleep(CHART_ANALYSIS_POLL_INTERVAL_MS);
-                if (cancelled) break;
-
-                try {
-                    const result = await pollAnalysisAction(jobId);
-                    if (cancelled) break;
-
-                    if (result.status === 'done') {
-                        currentJobIdRef.current = null;
-                        if (
-                            latestTierRef.current === 'free' &&
-                            (result.lockedInfoDepth?.length ?? 0) === 0
-                        ) {
-                            setAnalysisResult(null);
-                            setLockedInfoDepth(FREE_LOCKED_INFO_DEPTH);
-                            setIsPolling(false);
-                            return;
-                        }
-                        setAnalysisResult(
-                            normalizeAnalysisResponse(result.result)
-                        );
-                        // 폴링이 실제로 personalized 결과를 화면에 반영하는 시점 —
-                        // submit 시점에 보관해 둔 서버 결정을 이제야 배지에 적용한다.
-                        setIsPersonalized(pendingPersonalizedRef.current);
-                        // cached 경로와 동일한 롤링 배포 안전망. member/pro 호출자가
-                        // lockedInfoDepth 없는 구버전 응답을 받아도 undefined가 아닌
-                        // 빈 배열을 저장한다.
-                        setLockedInfoDepth(result.lockedInfoDepth ?? []);
-                        if (lastForceRef.current) {
-                            setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
-                        }
-                        setIsPolling(false);
-                        return;
-                    }
-                    if (result.status === 'error') {
-                        currentJobIdRef.current = null;
-                        // worker/src/retry.ts AI_SERVER_UNSTABLE_CODE 센티넬과 동기화 필요
-                        const errorMessage =
-                            result.error === 'AI_SERVER_UNSTABLE'
-                                ? "죄송합니다. AI 서버가 불안정합니다. 잠시 후 다시 시도해 주세요. 반복해서 발생할 경우 하단 '오류 제보하기'를 이용해 주세요."
-                                : result.error;
-                        setPollError(errorMessage);
-                        // defensive: for the current flow the flag is already false
-                        // entering any poll (set false on 'submitted'); reset again
-                        // on failure so a future change that sets it earlier can't
-                        // leave a stale over-claim.
-                        setIsPersonalized(false);
-                        if (lastForceRef.current) {
-                            void releaseReanalyzeCooldown(
-                                latestRef.current.symbol,
-                                latestTimeframeRef.current
-                            );
-                            setReanalyzeCooldownMs(0);
-                        }
-                        setIsPolling(false);
-                        return;
-                    }
-                    // 'processing' → 다음 poll 계속
-                } catch {
-                    if (cancelled) break;
-                    currentJobIdRef.current = null;
-                    setPollError('분석 결과 조회에 실패했습니다.');
-                    // defensive: for the current flow the flag is already false
-                    // entering any poll (set false on 'submitted'); reset again
-                    // on failure so a future change that sets it earlier can't
-                    // leave a stale over-claim.
-                    setIsPersonalized(false);
-                    if (lastForceRef.current) {
-                        void releaseReanalyzeCooldown(
-                            latestRef.current.symbol,
-                            latestTimeframeRef.current
-                        );
-                        setReanalyzeCooldownMs(0);
-                    }
-                    setIsPolling(false);
-                    return;
-                }
-            }
-        })();
-
-        return () => {
-            cancelled = true;
-            setIsPolling(false);
-        };
-    }, [submitData]);
+    // 8. useEffect
 
     // 서버에서 초기 AI 분석이 실패한 경우, localStorage hydration이 완료된 뒤 자동으로 재분석을 실행한다.
     // isModelHydrated=false 동안에는 기본값(DEFAULT_MODEL)이 사용 중이므로 hydration 완료까지 대기한다.
@@ -646,7 +499,7 @@ export function useAnalysis({
         initialAnalysisFailedAtMount,
     ]);
 
-    // 타임프레임 변경 시 진행 중인 워커 작업을 취소하고, 이전 mutation 상태를 초기화한 뒤 새 분석을 자동 실행한다.
+    // 타임프레임 변경 시 이전 mutation 상태를 초기화한 뒤 새 분석을 자동 실행한다.
     useEffect(() => {
         if (timeframeChangeCount === prevTimeframeChangeCountRef.current) {
             return;
@@ -802,18 +655,18 @@ export function useAnalysis({
         };
     }, [symbol, timeframe]);
 
-    // fire-and-forget이므로 useMutation 없이 직접 호출한다.
+    // Abort the in-flight SSE stream on unmount so the ALB connection is
+    // released and the browser does not process stale events for an
+    // unmounted component.
     useEffect(() => {
         return () => {
-            const jobId = currentJobIdRef.current;
-            if (jobId !== null) {
-                currentJobIdRef.current = null;
-                void cancelAnalysisJobAction(jobId).catch(error => {
-                    console.warn('[useAnalysis] cancel failed', error);
-                });
-            }
+            streamAbortRef.current?.abort();
         };
-    }, [symbol]);
+    }, []);
+
+    // submitData is unused after removing the poll trigger — kept as a named
+    // binding so TypeScript does not warn about the destructured variable.
+    void submitData;
 
     return {
         analysis,

@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type {
     MarketBriefingResponse,
-    SubmitBriefingResult,
+    RunBriefingResult,
 } from '@y0ngha/siglens-core';
 import { submitMarketBriefingAction } from '@/entities/market-summary/actions';
 import { useHydrated } from '@/shared/hooks/useHydrated';
@@ -12,7 +12,7 @@ import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
 export interface UseMarketBriefingReturn {
     /** BriefingRegion input — undefined=미정, null=봇, cached/submitted=정상. */
-    input: SubmitBriefingResult | null | undefined;
+    input: RunBriefingResult | null | undefined;
 }
 
 /**
@@ -36,7 +36,7 @@ export function useMarketBriefing(
      * BriefingCard가 빈 generatedAt을 조건부 렌더로 가드한다.
      * useMemo로 peekSeed 참조가 바뀌지 않는 한 매 렌더마다 새 객체 생성을 막는다.
      */
-    const seedInput = useMemo<SubmitBriefingResult | undefined>(
+    const seedInput = useMemo<RunBriefingResult | undefined>(
         () =>
             peekSeed
                 ? { status: 'cached', briefing: peekSeed, generatedAt: '' }

@@ -1,5 +1,7 @@
 import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/shared/config/time';
-import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
+
+// poll 인터벌과 동일한 값 — 소비처가 여기 하나뿐이라 인라인한다(pollingConfig 삭제 후).
+const AUGMENT_AND_OVERALL_POLL_INTERVAL_MS = 5000;
 import type { OverallAxis } from '@y0ngha/siglens-core';
 import { EQUITY_AXIS_ORDER } from './utils/axesForAssetClass';
 

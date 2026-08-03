@@ -1,30 +1,23 @@
 /**
  * Branch coverage tests for useNewsAnalysis — targets uncovered branches in
  * fetchNewsAnalysis: error codes (no_news, usage_limit_exceeded, key_error,
- * gate blocked), poll error with/without error message, and aborted signal.
+ * gate blocked), non-Error query error wrapping, and the hydration gate path.
+ *
+ * Poll/cancel machinery has been removed; run* functions return results directly.
  */
 
-import type { MockedFunction, Mock } from 'vitest';
+import type { Mock } from 'vitest';
 import { useNewsAnalysis } from '@/widgets/news/hooks/useNewsAnalysis';
 import { useHydrated } from '@/shared/hooks/useHydrated';
-import {
-    pollNewsAnalysisAction,
-    submitNewsAnalysisAction,
-} from '@/entities/news-article/actions';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
-import {
-    ANALYSIS_POLL_MAX_DURATION_MS,
-    ANALYSIS_POLL_TIMEOUT_MESSAGE,
-} from '@/shared/config/pollingConfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 
-vi.mock('@/entities/news-article/actions', () => ({
-    submitNewsAnalysisAction: vi.fn(),
-    pollNewsAnalysisAction: vi.fn(),
-    cancelNewsAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+    runAnalysisStream: vi.fn(),
 }));
 
 vi.mock('@/entities/analysis', () => ({
@@ -35,22 +28,13 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/shared/hooks/usePageHideCancel', () => ({
-    usePageHideCancel: vi.fn(),
-}));
-
 // SSR hydration gate — default hydrated so existing tests fetch on mount; the
 // gate-closed test flips it to false to assert the auto-trigger is suppressed.
 vi.mock('@/shared/hooks/useHydrated', () => ({
     useHydrated: vi.fn(() => true),
 }));
 
-const mockSubmit = submitNewsAnalysisAction as MockedFunction<
-    typeof submitNewsAnalysisAction
->;
-const mockPoll = pollNewsAnalysisAction as MockedFunction<
-    typeof pollNewsAnalysisAction
->;
+const mockSubmit = runAnalysisStream as Mock;
 const mockIsGateBlocked = isGateBlockedResult as unknown as Mock;
 const mockUseHydrated = vi.mocked(useHydrated);
 
@@ -73,7 +57,6 @@ function makeWrapper() {
 describe('useNewsAnalysis — branch coverage', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
-        mockPoll.mockReset();
         mockIsGateBlocked.mockReturnValue(false);
         mockUseHydrated.mockReturnValue(true);
     });
@@ -205,133 +188,6 @@ describe('useNewsAnalysis — branch coverage', () => {
         expect(result.current.error.message).toBe('API key is missing');
     });
 
-    it('returns done when poll returns done', async () => {
-        const newsResult: NewsAnalysisResponse = {
-            overallSentiment: 'bullish',
-            currentDriverKo: '테스트',
-            keyEventsKo: [],
-            upcomingEventsKo: [],
-        };
-
-        mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-news-1',
-        } as never);
-        mockPoll.mockResolvedValueOnce({
-            status: 'done',
-            result: newsResult,
-        });
-
-        const { result } = renderHook(
-            () =>
-                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite'),
-            { wrapper: makeWrapper() }
-        );
-
-        await waitFor(() => {
-            expect(result.current.status).toBe('done');
-        });
-    });
-
-    it('returns error when poll returns error with message', async () => {
-        mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-news-1',
-        } as never);
-        mockPoll.mockResolvedValueOnce({
-            status: 'error',
-            error: '폴링 에러 메시지',
-        });
-
-        const { result } = renderHook(
-            () =>
-                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite'),
-            { wrapper: makeWrapper() }
-        );
-
-        await waitFor(() => {
-            expect(result.current.status).toBe('error');
-        });
-
-        if (result.current.status !== 'error')
-            throw new Error('expected error');
-        expect(result.current.error.message).toBe('폴링 에러 메시지');
-    });
-
-    it('returns generic error when poll returns error without message', async () => {
-        mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-news-1',
-        } as never);
-        mockPoll.mockResolvedValueOnce({
-            status: 'error',
-        } as { status: 'error'; error: string });
-
-        const { result } = renderHook(
-            () =>
-                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite'),
-            { wrapper: makeWrapper() }
-        );
-
-        await waitFor(() => {
-            expect(result.current.status).toBe('error');
-        });
-
-        if (result.current.status !== 'error')
-            throw new Error('expected error');
-        expect(result.current.error.message).toContain('오류가 발생했습니다');
-    });
-
-    it('poll ceiling → error state when job stalls beyond ANALYSIS_POLL_MAX_DURATION_MS', async () => {
-        // Job is submitted, then repeatedly polls as 'processing' (a
-        // genuinely stalled job). Date.now() is keyed off an observable
-        // event — the poll mock flipping `stalled` — rather than a raw
-        // Date.now() call count: counting calls is brittle because any extra
-        // Date.now() from React Query/React internals shifts the count and
-        // silently breaks the freeze.
-        mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-news-stalled',
-        } as never);
-        const frozenStart = Date.now();
-        let stalled = false;
-        mockPoll.mockImplementation(async () => {
-            stalled = true;
-            return { status: 'processing' } as never;
-        });
-        const dateSpy = vi
-            .spyOn(Date, 'now')
-            .mockImplementation(() =>
-                stalled
-                    ? frozenStart + ANALYSIS_POLL_MAX_DURATION_MS + 1
-                    : frozenStart
-            );
-
-        try {
-            const { result } = renderHook(
-                () =>
-                    useNewsAnalysis(
-                        'AAPL',
-                        'Apple Inc.',
-                        'gemini-2.5-flash-lite'
-                    ),
-                { wrapper: makeWrapper() }
-            );
-
-            await waitFor(() => {
-                expect(result.current.status).toBe('error');
-            });
-
-            if (result.current.status !== 'error')
-                throw new Error('expected error state');
-            expect(result.current.error.message).toBe(
-                ANALYSIS_POLL_TIMEOUT_MESSAGE
-            );
-        } finally {
-            dateSpy.mockRestore();
-        }
-    });
-
     it('error that is not an Error instance gets wrapped', async () => {
         mockSubmit.mockRejectedValue('string error');
 
@@ -353,9 +209,14 @@ describe('useNewsAnalysis — branch coverage', () => {
     it('does not fetch while the SSR hydration gate is closed (enabled defaults true)', async () => {
         mockUseHydrated.mockReturnValue(false);
         mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'gate-closed',
-        } as never);
+            status: 'cached',
+            result: {
+                overallSentiment: 'bullish',
+                currentDriverKo: '테스트',
+                keyEventsKo: [],
+                upcomingEventsKo: [],
+            } as NewsAnalysisResponse,
+        });
 
         const { result } = renderHook(
             () =>

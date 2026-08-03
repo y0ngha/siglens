@@ -307,10 +307,10 @@ function TrendBadge({ trend }: TrendBadgeProps) {
 
 /**
  * "내 평단 기준으로 분석했어요" 투명성 배지 — personalized-analysis-by-position-bucket
- * spec, Subsystem C. 서버(`submitAnalysisAction`)가 THIS 제출을 실제로 포지션
+ * spec, Subsystem C. 서버(`runAnalysisAction`)가 THIS 제출을 실제로 포지션
  * 버킷 캐시 키(`:pos=<bucket>`)로 조회/제출했을 때만 렌더된다(호출부 게이트:
  * `isPersonalized` prop — 서버-authoritative 플래그, `useAnalysis`가
- * `submitAnalysisAction`의 응답을 그대로 미러링해 threading한다).
+ * `runAnalysisAction`의 응답을 그대로 미러링해 threading한다).
  *
  * 과거에는 `tier !== 'free' && holding != null`(홀딩의 단순 존재 여부)로
  * 게이트했으나, 4건의 독립 사전-PR 감사에서 동일한 정직성 문제가 지적됐다: 홀딩이
@@ -795,9 +795,9 @@ interface AnalysisPanelProps {
      */
     skillCount?: number;
     /**
-     * 서버(`submitAnalysisAction`)가 THIS 제출에서 실제로 개인화(포지션 버킷)
+     * 서버(`runAnalysisAction`)가 THIS 제출에서 실제로 개인화(포지션 버킷)
      * 캐시 키를 사용했는지 여부 — personalized-analysis 투명성 배지(§FIX 2)의
-     * 유일한 게이트. `useAnalysis`가 `submitAnalysisAction`의 `personalized`
+     * 유일한 게이트. `useAnalysis`가 `runAnalysisAction`의 `personalized`
      * 응답 필드를 그대로 threading한다. 미전달 시 `false`로 취급해 배지를 숨긴다
      * (하위 호환 — 이 prop을 모르는 기존 호출부/테스트는 안전하게 배지 없음).
      */

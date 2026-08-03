@@ -2,9 +2,9 @@
 
 import { headers, cookies } from 'next/headers';
 import {
-    submitCongressTrend,
+    runCongressTrend,
     type SubmitCongressTrendOptions,
-    type SubmitCongressTrendResult,
+    type RunCongressTrendResult,
 } from '@y0ngha/siglens-core';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
@@ -19,10 +19,10 @@ import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 
 /**
  * Final return type — core's congress result union + our siglens-side gate
- * errors (mirrors submitFinancialsAnalysisAction / submitFundamentalAnalysisAction).
+ * errors (mirrors runFinancialsAnalysisAction / runFundamentalAnalysisAction).
  */
-export type SubmitCongressTrendActionResult =
-    | SubmitCongressTrendResult
+export type RunCongressTrendActionResult =
+    | RunCongressTrendResult
     | AnalysisGateBlockedResult;
 
 /**
@@ -51,14 +51,14 @@ export type SubmitCongressTrendActionResult =
  *
  * §E2E: when `E2E_TEST=1`, returns a deterministic cached fixture. The stub
  * imports are lazy/dynamic so they land in a server-only chunk that the prod
- * bundle never ships (mirrors submitFinancialsAnalysisAction).
+ * bundle never ships (mirrors runFinancialsAnalysisAction).
  *
  * §Reasoning: the "깊은 생각" toggle (member-reasoning-toggle spec Part A)
  * still requires the caller tier. `resolveReasoning` forces `false` for
  * anonymous/free callers, using the tier resolved by the gate above (so a
  * single DB round-trip serves both concerns).
  */
-export async function submitCongressTrendAction(
+export async function runCongressTrendAction(
     symbol: string,
     modelId: SubmitCongressTrendOptions['modelId'],
     /**
@@ -66,7 +66,7 @@ export async function submitCongressTrendAction(
      * for member/pro tiers.
      */
     reasoning?: boolean
-): Promise<SubmitCongressTrendActionResult> {
+): Promise<RunCongressTrendActionResult> {
     try {
         if (isE2E()) {
             const stub = await import('@/shared/api/e2eAnalysisStub');
@@ -91,7 +91,7 @@ export async function submitCongressTrendAction(
             return { status: 'error', error: gate.error };
         }
 
-        return await submitCongressTrend({
+        return await runCongressTrend({
             symbol,
             modelId,
             dataProvider: getCongressTradesProvider(),
@@ -106,7 +106,7 @@ export async function submitCongressTrendAction(
         // MISTAKES §0.7: server actions must not propagate raw exceptions to
         // the client. Mirrors the sibling submit actions' catch-all shape so
         // the hook's `isGateBlockedResult` check stays a reliable discriminant.
-        console.error('[submitCongressTrendAction] unexpected error:', error);
+        console.error('[runCongressTrendAction] unexpected error:', error);
         return { status: 'error', error: buildGateError('unexpected_error') };
     }
 }

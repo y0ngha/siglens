@@ -1,9 +1,9 @@
 import type { MockedFunction } from 'vitest';
 import { submitMarketBriefingAction } from '../actions/submitMarketBriefingAction';
 import {
-    submitBriefing,
+    runBriefing,
     type MarketSummaryData,
-    type SubmitBriefingResult,
+    type RunBriefingResult,
 } from '@y0ngha/siglens-core';
 import { isBot } from '@/shared/api/isBot';
 import { getCachedMarketSummary } from '../api/marketSummaryCache';
@@ -16,7 +16,7 @@ vi.mock('../api/marketSummaryCache', () => ({
 
 vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
-    submitBriefing: vi.fn(),
+    runBriefing: vi.fn(),
 }));
 
 vi.mock('next/headers', () => ({
@@ -35,9 +35,7 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
 const mockGetCachedMarketSummary = getCachedMarketSummary as MockedFunction<
     typeof getCachedMarketSummary
 >;
-const mockSubmitBriefing = submitBriefing as MockedFunction<
-    typeof submitBriefing
->;
+const mockRunBriefing = runBriefing as MockedFunction<typeof runBriefing>;
 const mockIsBot = isBot as MockedFunction<typeof isBot>;
 
 const summaryData: MarketSummaryData = {
@@ -62,9 +60,10 @@ const summaryData: MarketSummaryData = {
     ],
 };
 
-const briefingResult: SubmitBriefingResult = {
-    status: 'submitted',
-    jobId: 'test-job-id',
+const briefingResult: RunBriefingResult = {
+    status: 'done',
+    briefing: { summary: 'test-briefing' } as never,
+    generatedAt: '2025-01-01T00:00:00Z',
 };
 
 describe('submitMarketBriefingAction 함수는', () => {
@@ -76,10 +75,10 @@ describe('submitMarketBriefingAction 함수는', () => {
     describe('비봇 요청 시', () => {
         beforeEach(() => {
             mockIsBot.mockReturnValue(false);
-            mockSubmitBriefing.mockResolvedValue(briefingResult);
+            mockRunBriefing.mockResolvedValue(briefingResult);
         });
 
-        it('(Happy) submitBriefing 결과와 botBlocked: false를 반환한다', async () => {
+        it('(Happy) runBriefing 결과와 botBlocked: false를 반환한다', async () => {
             const result = await submitMarketBriefingAction();
 
             expect(result).toEqual({
@@ -88,13 +87,13 @@ describe('submitMarketBriefingAction 함수는', () => {
             });
         });
 
-        it('(Happy) getCachedMarketSummary와 submitBriefing(summary)를 호출한다', async () => {
+        it('(Happy) getCachedMarketSummary와 runBriefing(summary)를 호출한다', async () => {
             await submitMarketBriefingAction();
 
             expect(mockGetCachedMarketSummary).toHaveBeenCalledWith(
                 mockProvider
             );
-            expect(mockSubmitBriefing).toHaveBeenCalledWith(summaryData);
+            expect(mockRunBriefing).toHaveBeenCalledWith(summaryData);
         });
     });
 
@@ -109,19 +108,17 @@ describe('submitMarketBriefingAction 함수는', () => {
             expect(result).toEqual({ briefing: null, botBlocked: true });
         });
 
-        it('(Worst) submitBriefing을 호출하지 않는다', async () => {
+        it('(Worst) runBriefing을 호출하지 않는다', async () => {
             await submitMarketBriefingAction();
 
-            expect(mockSubmitBriefing).not.toHaveBeenCalled();
+            expect(mockRunBriefing).not.toHaveBeenCalled();
         });
     });
 
     describe('에러 발생 시', () => {
-        it('(Worst) submitBriefing이 throw하면 에러 결과를 반환한다', async () => {
+        it('(Worst) runBriefing이 throw하면 에러 결과를 반환한다', async () => {
             mockIsBot.mockReturnValue(false);
-            mockSubmitBriefing.mockRejectedValueOnce(
-                new Error('briefing failed')
-            );
+            mockRunBriefing.mockRejectedValueOnce(new Error('briefing failed'));
 
             const result = await submitMarketBriefingAction();
 

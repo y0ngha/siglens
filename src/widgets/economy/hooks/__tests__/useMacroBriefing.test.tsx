@@ -1,4 +1,4 @@
-vi.mock('@/entities/economy/actions/submitMacroBriefingAction');
+vi.mock('@/shared/hooks/useAnalysisStream');
 vi.mock('@/shared/hooks/useHydrated');
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
@@ -7,10 +7,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { MacroBriefingResponse } from '@y0ngha/siglens-core';
 
 import { useMacroBriefing } from '@/widgets/economy/hooks/useMacroBriefing';
-import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacroBriefingAction';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 
-const mockSubmit = vi.mocked(submitMacroBriefingAction);
+const mockSubmit = vi.mocked(runAnalysisStream);
 const mockUseHydrated = vi.mocked(useHydrated);
 
 const PEEK: MacroBriefingResponse = {
@@ -83,9 +83,13 @@ describe('useMacroBriefing', () => {
         );
     });
 
-    it('action이 submitted 반환 → input=submitted variant', async () => {
+    it('action이 done 반환 → input=done variant', async () => {
         mockSubmit.mockResolvedValue({
-            briefing: { status: 'submitted', jobId: 'job-1' },
+            briefing: {
+                status: 'done',
+                briefing: PEEK,
+                generatedAt: '2026-06-17T00:00:00Z',
+            },
             botBlocked: false,
         });
         const { result } = renderHook(() => useMacroBriefing(null), {
@@ -93,8 +97,9 @@ describe('useMacroBriefing', () => {
         });
         await waitFor(() =>
             expect(result.current.input).toEqual({
-                status: 'submitted',
-                jobId: 'job-1',
+                status: 'done',
+                briefing: PEEK,
+                generatedAt: '2026-06-17T00:00:00Z',
             })
         );
     });

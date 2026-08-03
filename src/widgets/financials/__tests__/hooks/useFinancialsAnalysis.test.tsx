@@ -1,37 +1,21 @@
-import type { MockedFunction, Mock } from 'vitest';
+import type { Mock } from 'vitest';
 import { useFinancialsAnalysis } from '@/widgets/financials/hooks/useFinancialsAnalysis';
-import {
-    cancelFinancialsAnalysisJobAction,
-    pollFinancialsAnalysisAction,
-    submitFinancialsAnalysisAction,
-} from '@/entities/analysis/actions';
-import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { FinancialsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
-import { readBlobText } from '@/shared/test-utils/readBlobText';
 
-vi.mock('@/entities/analysis/actions', () => ({
-    submitFinancialsAnalysisAction: vi.fn(),
-    pollFinancialsAnalysisAction: vi.fn(),
-    cancelFinancialsAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+    runAnalysisStream: vi.fn(),
 }));
 
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockSubmit = submitFinancialsAnalysisAction as MockedFunction<
-    typeof submitFinancialsAnalysisAction
->;
-const mockPoll = pollFinancialsAnalysisAction as MockedFunction<
-    typeof pollFinancialsAnalysisAction
->;
-const mockCancel = cancelFinancialsAnalysisJobAction as MockedFunction<
-    typeof cancelFinancialsAnalysisJobAction
->;
+const mockSubmit = runAnalysisStream as Mock;
 
 const FINANCIALS_RESULT: FinancialsAnalysisResponse = {
     overallSentiment: 'bullish',
@@ -67,9 +51,6 @@ function Probe() {
 describe('useFinancialsAnalysis', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
-        mockPoll.mockReset();
-        mockCancel.mockReset();
-        mockCancel.mockResolvedValue(undefined);
         mockSubmit.mockResolvedValue({
             status: 'cached',
             result: FINANCIALS_RESULT,
@@ -108,9 +89,14 @@ describe('useFinancialsAnalysis', () => {
             expect(result.current.status).toBe('done');
         });
         expect(mockSubmit).toHaveBeenCalledWith(
-            'AAPL',
-            'gemini-2.5-flash-lite',
-            false
+            expect.objectContaining({
+                type: 'financials',
+                params: expect.objectContaining({
+                    symbol: 'AAPL',
+                    modelId: 'gemini-2.5-flash-lite',
+                    reasoning: false,
+                }),
+            })
         );
     });
 
@@ -133,12 +119,8 @@ describe('useFinancialsAnalysis', () => {
         expect(typeof result.current.trigger).toBe('function');
     });
 
-    it('submitted → poll → done 흐름', async () => {
+    it('done 흐름 — 단건 run 호출로 결과를 반환한다', async () => {
         mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-financials-123',
-        });
-        mockPoll.mockResolvedValueOnce({
             status: 'done',
             result: FINANCIALS_RESULT,
         });
@@ -152,7 +134,7 @@ describe('useFinancialsAnalysis', () => {
         await waitFor(() => {
             expect(result.current.status).toBe('done');
         });
-        expect(mockPoll).toHaveBeenCalledWith('job-financials-123');
+        expect(mockSubmit).toHaveBeenCalledTimes(1);
     });
 
     it('miss_no_trigger → bot_blocked 상태', async () => {
@@ -224,171 +206,5 @@ describe('useFinancialsAnalysis', () => {
             expect(result.current.status).toBe('done');
         });
         expect(mockSubmit).toHaveBeenCalledTimes(2);
-    });
-
-    describe('cancel', () => {
-        it('polling 중 unmount 시 진행 중인 job을 cancel한다', async () => {
-            mockSubmit.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'job-financials-123',
-            });
-            // never resolves → 루프가 첫 poll 호출 직후 멈춰 OOM을 방지한다
-            mockPoll.mockImplementation(() => new Promise(() => {}));
-
-            const { unmount } = renderHook(
-                () => useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
-                { wrapper: makeWrapper() }
-            );
-
-            await waitFor(() => {
-                expect(mockPoll).toHaveBeenCalled();
-            });
-
-            unmount();
-
-            expect(mockCancel).toHaveBeenCalledWith('job-financials-123');
-        });
-
-        it('modelId 변경 시 이전 job을 cancel한다', async () => {
-            mockSubmit.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'job-financials-123',
-            });
-            mockPoll.mockImplementation(() => new Promise(() => {}));
-
-            const { rerender } = renderHook(
-                ({ modelId }: { modelId: string }) =>
-                    useFinancialsAnalysis('AAPL', modelId as never),
-                {
-                    wrapper: makeWrapper(),
-                    initialProps: { modelId: 'gemini-2.5-flash-lite' },
-                }
-            );
-
-            await waitFor(() => {
-                expect(mockPoll).toHaveBeenCalled();
-            });
-
-            rerender({ modelId: 'gemini-2.5-flash' });
-
-            expect(mockCancel).toHaveBeenCalledWith('job-financials-123');
-        });
-
-        it('cached 응답 시 cancel을 호출하지 않는다', async () => {
-            mockSubmit.mockResolvedValue({
-                status: 'cached',
-                result: FINANCIALS_RESULT,
-            });
-
-            const { unmount } = renderHook(
-                () => useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
-                { wrapper: makeWrapper() }
-            );
-
-            await waitFor(() => {
-                expect(mockSubmit).toHaveBeenCalled();
-            });
-
-            unmount();
-
-            expect(mockCancel).not.toHaveBeenCalled();
-        });
-
-        describe('pagehide', () => {
-            let sendBeaconMock: Mock;
-
-            beforeEach(() => {
-                sendBeaconMock = vi.fn();
-                Object.defineProperty(navigator, 'sendBeacon', {
-                    value: sendBeaconMock,
-                    configurable: true,
-                    writable: true,
-                });
-            });
-
-            it('polling 중 pagehide 발화 시 sendBeacon으로 cancel을 전송한다', async () => {
-                mockSubmit.mockResolvedValue({
-                    status: 'submitted',
-                    jobId: 'job-financials-123',
-                });
-                mockPoll.mockImplementation(() => new Promise(() => {}));
-
-                renderHook(
-                    () =>
-                        useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
-                    { wrapper: makeWrapper() }
-                );
-
-                await waitFor(() => {
-                    expect(mockPoll).toHaveBeenCalled();
-                });
-
-                window.dispatchEvent(new Event('pagehide'));
-
-                expect(sendBeaconMock).toHaveBeenCalledTimes(1);
-                const [url, blob] = sendBeaconMock.mock.calls[0] as [
-                    string,
-                    Blob,
-                ];
-                expect(url).toBe(CANCEL_JOBS_API_PATH);
-                expect(blob.type).toBe('application/json');
-
-                const text = await readBlobText(blob);
-                expect(JSON.parse(text)).toEqual({
-                    jobs: [
-                        {
-                            jobId: 'job-financials-123',
-                            type: 'financials',
-                        },
-                    ],
-                });
-            });
-
-            it('job 없을 때 pagehide 발화해도 sendBeacon을 호출하지 않는다', async () => {
-                mockSubmit.mockResolvedValue({
-                    status: 'cached',
-                    result: FINANCIALS_RESULT,
-                });
-
-                renderHook(
-                    () =>
-                        useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
-                    { wrapper: makeWrapper() }
-                );
-
-                await waitFor(() => {
-                    expect(mockSubmit).toHaveBeenCalled();
-                });
-
-                window.dispatchEvent(new Event('pagehide'));
-
-                expect(sendBeaconMock).not.toHaveBeenCalled();
-            });
-
-            it('pagehide 발화 후 unmount 시 이중 cancel이 발생하지 않는다', async () => {
-                mockSubmit.mockResolvedValue({
-                    status: 'submitted',
-                    jobId: 'job-financials-123',
-                });
-                mockPoll.mockImplementation(() => new Promise(() => {}));
-
-                const { unmount } = renderHook(
-                    () =>
-                        useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
-                    { wrapper: makeWrapper() }
-                );
-
-                await waitFor(() => {
-                    expect(mockPoll).toHaveBeenCalled();
-                });
-
-                window.dispatchEvent(new Event('pagehide'));
-                expect(sendBeaconMock).toHaveBeenCalledTimes(1);
-
-                unmount();
-
-                expect(mockCancel).not.toHaveBeenCalled();
-            });
-        });
     });
 });

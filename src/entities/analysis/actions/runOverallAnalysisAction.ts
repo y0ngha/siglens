@@ -3,13 +3,13 @@
 import { headers } from 'next/headers';
 import {
     isEtRegularSessionOpen,
-    submitOverallAnalysis,
+    runOverallAnalysis,
     computeFinancialsScorecard,
     type EnrichedNewsItem,
     type FinancialsScorecard,
     type OptionsSnapshot,
     type SubmitOverallAnalysisOptions,
-    type SubmitOverallAnalysisResult,
+    type RunOverallAnalysisResult,
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
@@ -39,8 +39,8 @@ import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestSt
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 
 /** Final return type — core's overall result + our siglens-side gate errors. */
-export type SubmitOverallAnalysisActionResult =
-    | SubmitOverallAnalysisResult
+export type RunOverallAnalysisActionResult =
+    | RunOverallAnalysisResult
     | AnalysisGateBlockedResult;
 
 /**
@@ -58,20 +58,20 @@ export interface SubmitOverallAnalysisActionOptions {
 }
 
 /** Server Action: tier + BYOK gate, then submit a 4-axis overall analysis job; loads enriched news + earnings from DB, options snapshot, injects FMP provider; returns `cached | submitted | pending_dependencies | error`. */
-export async function submitOverallAnalysisAction(
+export async function runOverallAnalysisAction(
     symbol: string,
     companyName: string,
     timeframe: Timeframe,
     modelId: SubmitOverallAnalysisOptions['modelId'],
     options: SubmitOverallAnalysisActionOptions = {}
-): Promise<SubmitOverallAnalysisActionResult> {
+): Promise<RunOverallAnalysisActionResult> {
     try {
         // E2E short-circuits the LLM/worker; returns a deterministic cached fixture
         // (see e2eAnalysisStub). The stub + JSON fixture load via a DYNAMIC import
         // under the inline E2E guard so they sit in a lazy chunk (not the prod main
         // bundle) and the branch stays resolvable by the vitest runner. Lives inside
         // try so a load failure can't propagate to the client (mirrors
-        // submitAnalysisAction).
+        // runAnalysisAction).
         if (isE2E()) {
             const { e2eCachedOverall } =
                 await import('@/shared/api/e2eAnalysisStub');
@@ -102,7 +102,7 @@ export async function submitOverallAnalysisAction(
                 ? Promise.resolve(null)
                 : fetchOptionsSnapshot(symbol).catch(error => {
                       console.warn(
-                          '[submitOverallAnalysisAction] options snapshot fetch failed:',
+                          '[runOverallAnalysisAction] options snapshot fetch failed:',
                           error
                       );
                       return null;
@@ -121,7 +121,7 @@ export async function submitOverallAnalysisAction(
                   .then(snapshot => computeFinancialsScorecard(snapshot))
                   .catch(error => {
                       console.warn(
-                          '[submitOverallAnalysisAction] financials scorecard fetch failed:',
+                          '[runOverallAnalysisAction] financials scorecard fetch failed:',
                           error
                       );
                       return undefined;
@@ -135,8 +135,8 @@ export async function submitOverallAnalysisAction(
                 financialsScorecardPromise,
             ]);
 
-        // Overall news axis는 core 안에서 동일한 `submitNewsAnalysis`를 호출한다
-        // (dependencyResolver → submitNewsAnalysis). `/news` 페이지의 호출과 동일한
+        // Overall news axis는 core 안에서 동일한 `runNewsAnalysis`를 호출한다
+        // (dependencyResolver → runNewsAnalysis). `/news` 페이지의 호출과 동일한
         // news input을 보내야 cache key가 일치해 axis 분석을 그대로 hit한다 —
         // 두 호출자 모두 `buildAnalysisNewsItems`를 통과해 input pipeline을 통일한다.
         const enrichedNews: ReadonlyArray<EnrichedNewsItem> =
@@ -159,7 +159,7 @@ export async function submitOverallAnalysisAction(
             sessionSpecFor(marketProfile)
         );
 
-        return await submitOverallAnalysis({
+        return await runOverallAnalysis({
             symbol,
             companyName,
             timeframe,
@@ -182,7 +182,7 @@ export async function submitOverallAnalysisAction(
             ...(options.force ? { force: true } : {}),
         });
     } catch (err) {
-        console.error('[submitOverallAnalysisAction] unexpected error:', err);
+        console.error('[runOverallAnalysisAction] unexpected error:', err);
         return { status: 'error', error: buildGateError('unexpected_error') };
     }
 }

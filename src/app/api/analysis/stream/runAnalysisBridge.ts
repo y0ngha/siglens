@@ -1,46 +1,27 @@
 /**
- * ponytail: @y0ngha/siglens-core#runAnalysis is not yet published.
+ * core `run*` 함수의 재노출 지점.
  *
- * This bridge exists so the route can be tested independently of the core import —
- * tests mock `'../runAnalysisBridge'` rather than the entire `@y0ngha/siglens-core`
- * package (which would clobber every other core export).
+ * SSE 라우트가 core를 직접 import하지 않고 이 파일을 거치는 이유는 테스트 때문이다 —
+ * 라우트 테스트는 `'../runAnalysisBridge'` 하나만 mock하면 되고, `@y0ngha/siglens-core`
+ * 전체를 mock해서 다른 모든 core export까지 함께 무력화하는 일을 피할 수 있다.
  *
- * Replace the `null` stub below with a real re-export once core ships runAnalysis:
- *
- * ```ts
- * export { runAnalysis } from '@y0ngha/siglens-core';
- * ```
- *
- * The `RunAnalysisResult` and `RunAnalysisOptions` types below reflect the
- * intended core signature (mirrors `SubmitAnalysisGatedResult` but `'submitted'`
- * becomes `'done'` — no Redis submit/poll loop in the SSE-native path).
+ * 타입은 core가 소유한다. 여기서 재선언하면 core 시그니처가 바뀔 때 조용히 어긋난다.
  */
 
-import type { SubmitAnalysisOptions, Timeframe } from '@y0ngha/siglens-core';
+export {
+    runAnalysis,
+    runBriefing,
+    runNewsAnalysis,
+    runNewsCardAnalysis,
+    runMarketNewsDigest,
+    runOverallAnalysis,
+    runCongressTrend,
+    runFundamentalAnalysis,
+    runFinancialsAnalysis,
+    runOptionsAnalysis,
+    runMacroBriefing,
+    runEconomicEventAnalysis,
+    runIndicatorTranslation,
+} from '@y0ngha/siglens-core';
 
-export type RunAnalysisResult =
-    | {
-          status: 'cached' | 'done';
-          result: unknown;
-          lockedInfoDepth: readonly unknown[];
-      }
-    | { status: 'miss_no_trigger' }
-    | { status: 'error'; error: unknown };
-
-export type RunAnalysisOptions = SubmitAnalysisOptions & {
-    /**
-     * Propagated from `request.signal`. When the client disconnects mid-stream,
-     * aborting here cancels the in-flight LLM call in core.
-     */
-    signal?: AbortSignal;
-};
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const runAnalysis = null as any as (
-    symbol: string,
-    companyName: string,
-    timeframe: Timeframe,
-    force?: boolean,
-    fmpSymbol?: string,
-    options?: RunAnalysisOptions
-) => Promise<RunAnalysisResult>;
+export type { SubmitAnalysisOptions } from '@y0ngha/siglens-core';

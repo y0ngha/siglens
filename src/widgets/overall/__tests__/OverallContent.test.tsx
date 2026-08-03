@@ -53,7 +53,7 @@ vi.mock('@/shared/ui/MarkdownText', () => ({
 // 훅이 import하는 server-only 체인을 끊기 위해 mock한다. seed(done) 경로에서는
 // submitOverallAnalysisAction이 호출되지 않음을 검증한다.
 vi.mock('@/entities/analysis/actions', () => ({
-    submitOverallAnalysisAction: vi.fn(),
+    runOverallAnalysisAction: vi.fn(),
     pollOverallAnalysisAction: vi.fn(),
     pollAnalysisAction: vi.fn(),
     pollFundamentalAnalysisAction: vi.fn(),
@@ -85,14 +85,14 @@ import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import { OverallContent } from '@/widgets/overall/OverallContent';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { useOverallAnalysis } from '@/widgets/overall/hooks/useOverallAnalysis';
-import { submitOverallAnalysisAction } from '@/entities/analysis/actions';
+import { runOverallAnalysisAction } from '@/entities/analysis/actions';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 
 const mockUseOverallAnalysis = useOverallAnalysis as MockedFunction<
     typeof useOverallAnalysis
 >;
-const mockSubmit = submitOverallAnalysisAction as MockedFunction<
-    typeof submitOverallAnalysisAction
+const mockSubmit = runOverallAnalysisAction as MockedFunction<
+    typeof runOverallAnalysisAction
 >;
 
 function makeDoneResult(

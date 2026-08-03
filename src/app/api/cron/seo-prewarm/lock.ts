@@ -66,30 +66,18 @@ const INFLIGHT_JOB_AGNOSTIC_SENTINEL = 'pending';
 const INFLIGHT_JOB_AGNOSTIC_LEGACY_SENTINEL = '1';
 
 /**
- * (symbol, tab) 조합을 in-flight로 마킹해 중복 워커 enqueue를 막는다.
+ * (symbol, tab) 조합을 in-flight로 마킹해 중복 submit을 막는다.
  *
- * FIX Z(감사) — `jobId`를 함께 저장하면(생략 시 job-agnostic sentinel) 다음
- * tick이 새 job을 다시 submit하는 대신 이 값으로 기존 job을 이어서 poll할 수
- * 있다(`getInFlightMarker` 참고). `pending_dependencies`처럼 단일 jobId가 없는
- * 경우엔 `jobId`를 생략해 job-agnostic 마커로 남긴다.
- *
- * FIX 1(감사, PR #698 리뷰) — job-agnostic 마커(jobId 없음)는 "재개 불가"이지만
- * "in-flight가 아님"은 아니다: 여전히 이 (symbol, tab)은 다른 워커가 처리
- * 중이거나 poll 불가능한 방식(예: `pending_dependencies`의 축별 pendingJobs)으로
- * 진행 중이므로, 소비자는 이를 "지금 이 tick엔 손대지 말고 TTL 만료를
- * 기다려라"로 해석해야 한다(재제출 금지). `getInFlightMarker`가 이 구분을
- * `{ present, jobId }`로 노출한다.
+ * run* 함수는 블로킹으로 결과를 반환하므로 jobId 추적이 필요 없다.
+ * 마커는 "진행 중 — 이 tick엔 재제출 금지"를 나타내는 단순 플래그다.
+ * TTL(30min) 만료 후 다음 tick이 새로 submit한다.
  */
-export async function markInFlight(
-    symbol: string,
-    tab: string,
-    jobId?: string
-): Promise<void> {
+export async function markInFlight(symbol: string, tab: string): Promise<void> {
     const redis = getRedisClient();
     if (redis === null) return;
     await redis.set(
         `seo-prewarm:inflight:${symbol.toUpperCase()}:${tab}`,
-        jobId ?? INFLIGHT_JOB_AGNOSTIC_SENTINEL,
+        INFLIGHT_JOB_AGNOSTIC_SENTINEL,
         {
             ex: INFLIGHT_TTL_SECONDS,
         }
@@ -123,30 +111,35 @@ export async function markInFlight(
  * 모두 구분해야 한다: jobId 있음(poll 재개) / present만 true(이번 tick엔
  * skip, TTL 만료 대기) / present도 false(신규 submit).
  */
+/**
+ * (symbol, tab) 마커 존재 여부를 단일 Redis GET으로 조회한다.
+ *
+ * FIX 3(감사, 실증) — @upstash/redis의 기본 `automaticDeserialization`이 GET
+ * 응답에 `JSON.parse`를 돌려 `'1'`을 number `1`로 반환한다. 비교 전 항상
+ * `String(value)`로 정규화해야 sentinel 비교가 실제로 매치된다.
+ * legacy sentinel(`'1'` → number `1`)도 계속 `present: true`로 인식한다.
+ */
 export async function getInFlightMarker(
     symbol: string,
     tab: string
-): Promise<{ present: boolean; jobId: string | null }> {
+): Promise<{ present: boolean }> {
     const redis = getRedisClient();
-    if (redis === null) return { present: false, jobId: null };
+    if (redis === null) return { present: false };
     const value = await redis.get<string>(
         `seo-prewarm:inflight:${symbol.toUpperCase()}:${tab}`
     );
     if (value === null || value === undefined) {
-        return { present: false, jobId: null };
+        return { present: false };
     }
-    // Upstash의 JSON.parse 기반 자동 역직렬화가 숫자로 파싱 가능한 문자열을
-    // number로 되돌리므로(예: 저장한 '1' → 조회 시 number 1), 비교 전 항상
-    // 문자열로 정규화한다 — 그렇지 않으면 sentinel 비교가 실제로 절대 매치되지
-    // 않는다(위 FIX 3 참고).
     const raw = String(value);
     if (
         raw === INFLIGHT_JOB_AGNOSTIC_SENTINEL ||
         raw === INFLIGHT_JOB_AGNOSTIC_LEGACY_SENTINEL
     ) {
-        return { present: true, jobId: null };
+        return { present: true };
     }
-    return { present: true, jobId: raw };
+    // 구버전 코드가 저장한 임의 값(예: jobId 문자열)도 present로 취급한다.
+    return { present: true };
 }
 
 /** in-flight 마커를 즉시 제거한다(FIX Z) — job이 done/error로 확정되면 다음 tick이

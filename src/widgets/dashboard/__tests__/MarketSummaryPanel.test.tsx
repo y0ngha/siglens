@@ -253,24 +253,24 @@ describe('MarketSummaryPanel', () => {
         expect(screen.getByTestId('index-XLF')).toBeInTheDocument();
     });
 
-    it('briefing submitted: 처리 중에는 로딩 카드를 렌더한다', () => {
-        mockUseBriefing.mockReturnValue({ status: 'processing' });
+    it('briefing/generatedAt이 없는 상태(miss_no_trigger 등)에서는 방어적으로 로딩 카드를 렌더한다', () => {
         mockUseMarketBriefing.mockReturnValue({
-            input: { status: 'submitted', jobId: 'job-1' },
+            input: { status: 'miss_no_trigger' },
         });
         mockUseMarketSummary.mockReturnValue(defaultSummaryReturn);
         render(<MarketSummaryPanel />);
         expect(screen.getByTestId('briefing-loading')).toBeInTheDocument();
     });
 
-    it('briefing submitted: 완료 시 브리핑 카드를 렌더한다', () => {
-        mockUseBriefing.mockReturnValue({
-            status: 'done',
-            briefing: 'AI briefing text',
-            generatedAt: '2025-01-01T00:00:00Z',
-        });
+    it('done 상태면 브리핑 카드를 렌더한다', () => {
+        // 구 구조에서는 submitted(jobId) → 별도 폴링 훅이 done을 받아왔지만,
+        // 이제 한 번의 호출이 briefing 본문까지 싣고 온다.
         mockUseMarketBriefing.mockReturnValue({
-            input: { status: 'submitted', jobId: 'job-1' },
+            input: {
+                status: 'done',
+                briefing: 'AI briefing text',
+                generatedAt: '2025-01-01T00:00:00Z',
+            },
         });
         mockUseMarketSummary.mockReturnValue(defaultSummaryReturn);
         render(<MarketSummaryPanel />);

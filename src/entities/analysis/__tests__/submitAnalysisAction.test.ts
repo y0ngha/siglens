@@ -10,7 +10,7 @@ const { MOCK_CRYPTO_SESSION, MOCK_EQUITY_SESSION } = vi.hoisted(() => ({
 }));
 
 vi.mock('@y0ngha/siglens-core', () => ({
-    submitAnalysis: vi.fn(),
+    runAnalysis: vi.fn(),
     CRYPTO_SESSION: MOCK_CRYPTO_SESSION,
     US_EQUITY_SESSION: MOCK_EQUITY_SESSION,
 }));
@@ -95,13 +95,13 @@ vi.mock('@/entities/portfolio/api', () => ({
 import { headers } from 'next/headers';
 import { resolveTierAndByok, resolveTierOnly } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
-import { submitAnalysisAction } from '../actions/submitAnalysisAction';
+import { runAnalysisAction } from '../actions/runAnalysisAction';
 import {
-    submitAnalysis,
+    runAnalysis,
     CRYPTO_SESSION,
     US_EQUITY_SESSION,
     type ModelId,
-    type SubmitAnalysisGatedResult,
+    type RunAnalysisResult,
 } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
@@ -120,9 +120,7 @@ const mockResolveTierAndByok = resolveTierAndByok as MockedFunction<
 const mockResolveTierOnly = resolveTierOnly as MockedFunction<
     typeof resolveTierOnly
 >;
-const mockSubmitAnalysis = submitAnalysis as MockedFunction<
-    typeof submitAnalysis
->;
+const mockRunAnalysis = runAnalysis as MockedFunction<typeof runAnalysis>;
 const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser
 >;
@@ -134,7 +132,7 @@ const mockResolveMarketProfile = resolveMarketProfile as MockedFunction<
     typeof resolveMarketProfile
 >;
 
-const cachedResult: SubmitAnalysisGatedResult = {
+const cachedResult: RunAnalysisResult = {
     status: 'cached',
     result: { summary: 'cached' } as never,
     lockedInfoDepth: [],
@@ -148,10 +146,10 @@ const gateError: AnalysisGateError = {
     message: 'mock-tier_premium_blocked',
 };
 
-describe('submitAnalysisAction tier + BYOK gate', () => {
+describe('runAnalysisAction tier + BYOK gate', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockSubmitAnalysis.mockResolvedValue(cachedResult);
+        mockRunAnalysis.mockResolvedValue(cachedResult);
         mockGetCurrentUser.mockResolvedValue(null);
         mockResolveTierOnly.mockResolvedValue('free');
         // Default: no holding, no quote — most tests are unrelated to
@@ -167,7 +165,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             error: gateError,
         });
 
-        const result = await submitAnalysisAction(
+        const result = await runAnalysisAction(
             'AAPL',
             'Apple',
             '1Day',
@@ -177,7 +175,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
         );
 
         expect(result).toEqual({ status: 'error', error: gateError });
-        expect(mockSubmitAnalysis).not.toHaveBeenCalled();
+        expect(mockRunAnalysis).not.toHaveBeenCalled();
     });
 
     it('forwards tierContext to siglens-core when modelId is set', async () => {
@@ -187,7 +185,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             tier: 'member' as never,
         });
 
-        await submitAnalysisAction(
+        await runAnalysisAction(
             'AAPL',
             'Apple',
             '1Day',
@@ -196,7 +194,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             FREE_MODEL
         );
 
-        expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+        expect(mockRunAnalysis).toHaveBeenCalledWith(
             'AAPL',
             'Apple',
             '1Day',
@@ -217,7 +215,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             userApiKey: 'usr-key',
         });
 
-        await submitAnalysisAction(
+        await runAnalysisAction(
             'AAPL',
             'Apple',
             '1Day',
@@ -226,7 +224,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             PREMIUM_MODEL
         );
 
-        expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+        expect(mockRunAnalysis).toHaveBeenCalledWith(
             'AAPL',
             'Apple',
             '1Day',
@@ -244,7 +242,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             // no userApiKey
         });
 
-        await submitAnalysisAction(
+        await runAnalysisAction(
             'AAPL',
             'Apple',
             '1Day',
@@ -253,7 +251,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             PREMIUM_MODEL
         );
 
-        const lastCall = mockSubmitAnalysis.mock.calls.at(-1);
+        const lastCall = mockRunAnalysis.mock.calls.at(-1);
         expect(lastCall).toBeDefined();
         const opts = lastCall![5] as Record<string, unknown>;
         expect(opts).not.toHaveProperty('userApiKey');
@@ -262,19 +260,19 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
     it('resolves and forwards tier context when modelId is undefined', async () => {
         mockGetCurrentUser.mockResolvedValue(null);
 
-        await submitAnalysisAction('AAPL', 'Apple', '1Day', true, '^AAPL');
+        await runAnalysisAction('AAPL', 'Apple', '1Day', true, '^AAPL');
 
         expect(mockResolveTierAndByok).not.toHaveBeenCalled();
         expect(mockResolveTierOnly).toHaveBeenCalledWith(null);
-        expect(mockSubmitAnalysis).toHaveBeenCalledTimes(1);
-        const lastCall = mockSubmitAnalysis.mock.calls.at(-1);
+        expect(mockRunAnalysis).toHaveBeenCalledTimes(1);
+        const lastCall = mockRunAnalysis.mock.calls.at(-1);
         const opts = lastCall![5] as Record<string, unknown>;
         expect(opts).toMatchObject({
             tierContext: { userId: null, tier: 'free' },
             reasoning: false,
         });
         expect(opts).not.toHaveProperty('userApiKey');
-        expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+        expect(mockRunAnalysis).toHaveBeenCalledWith(
             'AAPL',
             'Apple',
             '1Day',
@@ -291,7 +289,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             tier: 'free' as never,
         });
 
-        await submitAnalysisAction(
+        await runAnalysisAction(
             'AAPL',
             'Apple',
             '1Day',
@@ -301,7 +299,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
         );
 
         expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, FREE_MODEL);
-        expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+        expect(mockRunAnalysis).toHaveBeenCalledWith(
             'AAPL',
             'Apple',
             '1Day',
@@ -322,9 +320,9 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
         );
         mockGetCurrentUser.mockResolvedValue(null);
 
-        await submitAnalysisAction('AAPL', 'Apple', '1Day', false, '^AAPL');
+        await runAnalysisAction('AAPL', 'Apple', '1Day', false, '^AAPL');
 
-        expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+        expect(mockRunAnalysis).toHaveBeenCalledWith(
             'AAPL',
             'Apple',
             '1Day',
@@ -338,9 +336,9 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
         // default mock returns an empty Headers → isBot resolves to false.
         mockGetCurrentUser.mockResolvedValue(null);
 
-        await submitAnalysisAction('AAPL', 'Apple', '1Day', false, '^AAPL');
+        await runAnalysisAction('AAPL', 'Apple', '1Day', false, '^AAPL');
 
-        expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+        expect(mockRunAnalysis).toHaveBeenCalledWith(
             'AAPL',
             'Apple',
             '1Day',
@@ -356,7 +354,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             new Error('db connection failed')
         );
 
-        const result = await submitAnalysisAction(
+        const result = await runAnalysisAction(
             'AAPL',
             'Apple',
             '1Day',
@@ -374,9 +372,9 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
     describe('crypto symbol — session spec routing', () => {
         it('resolveMarketProfile가 "crypto"이면 getCachedMarketDataProvider를 CRYPTO_SESSION으로 호출한다', async () => {
             mockResolveMarketProfile.mockResolvedValueOnce('crypto');
-            mockSubmitAnalysis.mockResolvedValueOnce(cachedResult);
+            mockRunAnalysis.mockResolvedValueOnce(cachedResult);
 
-            await submitAnalysisAction('BTCUSD', 'Bitcoin', '1Day', false);
+            await runAnalysisAction('BTCUSD', 'Bitcoin', '1Day', false);
 
             expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(
                 CRYPTO_SESSION
@@ -385,9 +383,9 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
 
         it('resolveMarketProfile가 "us-equity"이면 getCachedMarketDataProvider를 US_EQUITY_SESSION으로 호출한다', async () => {
             mockResolveMarketProfile.mockResolvedValueOnce('us-equity');
-            mockSubmitAnalysis.mockResolvedValueOnce(cachedResult);
+            mockRunAnalysis.mockResolvedValueOnce(cachedResult);
 
-            await submitAnalysisAction('AAPL', 'Apple', '1Day', false);
+            await runAnalysisAction('AAPL', 'Apple', '1Day', false);
 
             expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(
                 US_EQUITY_SESSION
@@ -403,7 +401,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
                 tier: 'member' as never,
             });
 
-            await submitAnalysisAction(
+            await runAnalysisAction(
                 'AAPL',
                 'Apple',
                 '1Day',
@@ -413,7 +411,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
                 true
             );
 
-            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+            expect(mockRunAnalysis).toHaveBeenCalledWith(
                 'AAPL',
                 'Apple',
                 '1Day',
@@ -430,7 +428,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
                 tier: 'free' as never,
             });
 
-            await submitAnalysisAction(
+            await runAnalysisAction(
                 'AAPL',
                 'Apple',
                 '1Day',
@@ -440,7 +438,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
                 true
             );
 
-            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+            expect(mockRunAnalysis).toHaveBeenCalledWith(
                 'AAPL',
                 'Apple',
                 '1Day',
@@ -457,7 +455,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
                 tier: 'member' as never,
             });
 
-            await submitAnalysisAction(
+            await runAnalysisAction(
                 'AAPL',
                 'Apple',
                 '1Day',
@@ -466,7 +464,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
                 FREE_MODEL
             );
 
-            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+            expect(mockRunAnalysis).toHaveBeenCalledWith(
                 'AAPL',
                 'Apple',
                 '1Day',
@@ -478,13 +476,13 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
     });
 
     describe('assetClass forwarding', () => {
-        it('resolveMarketProfile가 "crypto"이면 submitAnalysis를 assetClass: "crypto"로 호출한다', async () => {
+        it('resolveMarketProfile가 "crypto"이면 runAnalysis를 assetClass: "crypto"로 호출한다', async () => {
             mockResolveMarketProfile.mockResolvedValueOnce('crypto');
-            mockSubmitAnalysis.mockResolvedValueOnce(cachedResult);
+            mockRunAnalysis.mockResolvedValueOnce(cachedResult);
 
-            await submitAnalysisAction('BTCUSD', 'Bitcoin', '1Day', false);
+            await runAnalysisAction('BTCUSD', 'Bitcoin', '1Day', false);
 
-            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+            expect(mockRunAnalysis).toHaveBeenCalledWith(
                 'BTCUSD',
                 'Bitcoin',
                 '1Day',
@@ -494,13 +492,13 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             );
         });
 
-        it('resolveMarketProfile가 "us-equity"이면 submitAnalysis를 assetClass: "equity"로 호출한다', async () => {
+        it('resolveMarketProfile가 "us-equity"이면 runAnalysis를 assetClass: "equity"로 호출한다', async () => {
             mockResolveMarketProfile.mockResolvedValueOnce('us-equity');
-            mockSubmitAnalysis.mockResolvedValueOnce(cachedResult);
+            mockRunAnalysis.mockResolvedValueOnce(cachedResult);
 
-            await submitAnalysisAction('AAPL', 'Apple', '1Day', false);
+            await runAnalysisAction('AAPL', 'Apple', '1Day', false);
 
-            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+            expect(mockRunAnalysis).toHaveBeenCalledWith(
                 'AAPL',
                 'Apple',
                 '1Day',
@@ -512,7 +510,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
     });
 
     describe('positionBucket personalization (personalized-analysis-by-position-bucket spec, Subsystem C)', () => {
-        it('member with a profitable holding → submitAnalysis called with positionBucket: "profit"', async () => {
+        it('member with a profitable holding → runAnalysis called with positionBucket: "profit"', async () => {
             mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
             mockResolveTierOnly.mockResolvedValue('member');
             mockFindByUserAndSymbol.mockResolvedValue({
@@ -520,11 +518,11 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             } as never);
             mockGetQuote.mockResolvedValue({ price: 110 });
 
-            await submitAnalysisAction('AAPL', 'Apple', '1Day', false, '^AAPL');
+            await runAnalysisAction('AAPL', 'Apple', '1Day', false, '^AAPL');
 
             expect(mockFindByUserAndSymbol).toHaveBeenCalledWith('u1', 'AAPL');
             expect(mockGetQuote).toHaveBeenCalledWith('^AAPL');
-            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+            expect(mockRunAnalysis).toHaveBeenCalledWith(
                 'AAPL',
                 'Apple',
                 '1Day',
@@ -538,11 +536,11 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
             mockResolveTierOnly.mockResolvedValue('free');
 
-            await submitAnalysisAction('AAPL', 'Apple', '1Day', false, '^AAPL');
+            await runAnalysisAction('AAPL', 'Apple', '1Day', false, '^AAPL');
 
             expect(mockFindByUserAndSymbol).not.toHaveBeenCalled();
             expect(mockGetQuote).not.toHaveBeenCalled();
-            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+            expect(mockRunAnalysis).toHaveBeenCalledWith(
                 'AAPL',
                 'Apple',
                 '1Day',
@@ -557,11 +555,11 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             mockResolveTierOnly.mockResolvedValue('member');
             mockFindByUserAndSymbol.mockResolvedValue(null);
 
-            await submitAnalysisAction('AAPL', 'Apple', '1Day', false, '^AAPL');
+            await runAnalysisAction('AAPL', 'Apple', '1Day', false, '^AAPL');
 
             expect(mockFindByUserAndSymbol).toHaveBeenCalledWith('u1', 'AAPL');
             expect(mockGetQuote).not.toHaveBeenCalled();
-            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+            expect(mockRunAnalysis).toHaveBeenCalledWith(
                 'AAPL',
                 'Apple',
                 '1Day',
@@ -579,7 +577,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             } as never);
             mockGetQuote.mockRejectedValue(new Error('quote fetch failed'));
 
-            const result = await submitAnalysisAction(
+            const result = await runAnalysisAction(
                 'AAPL',
                 'Apple',
                 '1Day',
@@ -588,7 +586,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             );
 
             expect(result).toEqual({ ...cachedResult, personalized: false });
-            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+            expect(mockRunAnalysis).toHaveBeenCalledWith(
                 'AAPL',
                 'Apple',
                 '1Day',
@@ -603,7 +601,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             mockResolveTierOnly.mockResolvedValue('member');
             mockFindByUserAndSymbol.mockRejectedValue(new Error('db down'));
 
-            const result = await submitAnalysisAction(
+            const result = await runAnalysisAction(
                 'AAPL',
                 'Apple',
                 '1Day',
@@ -613,7 +611,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
 
             expect(result).toEqual({ ...cachedResult, personalized: false });
             expect(mockGetQuote).not.toHaveBeenCalled();
-            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+            expect(mockRunAnalysis).toHaveBeenCalledWith(
                 'AAPL',
                 'Apple',
                 '1Day',
@@ -627,10 +625,10 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             mockGetCurrentUser.mockResolvedValue(null);
             mockResolveTierOnly.mockResolvedValue('free');
 
-            await submitAnalysisAction('AAPL', 'Apple', '1Day', false, '^AAPL');
+            await runAnalysisAction('AAPL', 'Apple', '1Day', false, '^AAPL');
 
             expect(mockFindByUserAndSymbol).not.toHaveBeenCalled();
-            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+            expect(mockRunAnalysis).toHaveBeenCalledWith(
                 'AAPL',
                 'Apple',
                 '1Day',
@@ -655,7 +653,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             } as never);
             mockGetQuote.mockResolvedValue({ price: 110 });
 
-            const result = await submitAnalysisAction(
+            const result = await runAnalysisAction(
                 'AAPL',
                 'Apple',
                 '1Day',
@@ -670,7 +668,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
             mockResolveTierOnly.mockResolvedValue('free');
 
-            const result = await submitAnalysisAction(
+            const result = await runAnalysisAction(
                 'AAPL',
                 'Apple',
                 '1Day',
@@ -686,7 +684,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             mockResolveTierOnly.mockResolvedValue('member');
             mockFindByUserAndSymbol.mockResolvedValue(null);
 
-            const result = await submitAnalysisAction(
+            const result = await runAnalysisAction(
                 'AAPL',
                 'Apple',
                 '1Day',
@@ -705,7 +703,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             } as never);
             mockGetQuote.mockRejectedValue(new Error('quote fetch failed'));
 
-            const result = await submitAnalysisAction(
+            const result = await runAnalysisAction(
                 'AAPL',
                 'Apple',
                 '1Day',
@@ -727,7 +725,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             } as never);
             mockGetQuote.mockResolvedValue({ price: 110 });
 
-            const result = await submitAnalysisAction(
+            const result = await runAnalysisAction(
                 'AAPL',
                 'Apple',
                 '1Day',

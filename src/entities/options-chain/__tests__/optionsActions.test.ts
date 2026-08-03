@@ -21,9 +21,7 @@ vi.mock('@/shared/api/e2eAnalysisStub', () => ({
 
 vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
-    submitOptionsAnalysis: vi.fn(),
-    pollOptionsAnalysis: vi.fn(),
-    cancelJob: vi.fn(),
+    runOptionsAnalysis: vi.fn(),
 }));
 
 vi.mock('../lib/optionsDataCache', () => ({
@@ -47,11 +45,9 @@ vi.mock('@/shared/lib/byokGate', () => ({
 }));
 
 import {
-    submitOptionsAnalysis,
-    pollOptionsAnalysis,
-    cancelJob,
+    runOptionsAnalysis,
     type ModelId,
-    type SubmitOptionsAnalysisResult,
+    type RunOptionsAnalysisResult,
     type OptionsSnapshot,
     type OptionsChain,
 } from '@y0ngha/siglens-core';
@@ -60,17 +56,10 @@ import { fetchOptionsSnapshot } from '../lib/optionsDataCache';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
-import {
-    submitOptionsAnalysisAction,
-    pollOptionsAnalysisAction,
-    cancelOptionsAnalysisJobAction,
-} from '../actions/optionsActions';
+import { submitOptionsAnalysisAction } from '../actions/optionsActions';
 
-const mockSubmitOptionsAnalysis = submitOptionsAnalysis as MockedFunction<
-    typeof submitOptionsAnalysis
->;
-const mockPollOptionsAnalysis = pollOptionsAnalysis as MockedFunction<
-    typeof pollOptionsAnalysis
+const mockRunOptionsAnalysis = runOptionsAnalysis as MockedFunction<
+    typeof runOptionsAnalysis
 >;
 const mockFetchOptionsSnapshot = fetchOptionsSnapshot as MockedFunction<
     typeof fetchOptionsSnapshot
@@ -81,7 +70,6 @@ const mockGetCurrentUser = getCurrentUser as MockedFunction<
 const mockResolveTierAndByok = resolveTierAndByok as MockedFunction<
     typeof resolveTierAndByok
 >;
-const mockCancelJob = cancelJob as MockedFunction<typeof cancelJob>;
 const mockCookies = cookies as MockedFunction<typeof cookies>;
 
 const MODEL_ID = 'gemini-2.5-flash' as ModelId;
@@ -106,14 +94,14 @@ const MOCK_SNAPSHOT: OptionsSnapshot = {
     chains: [MOCK_CHAIN],
 };
 
-const SUBMITTED_RESULT: SubmitOptionsAnalysisResult = {
-    status: 'submitted',
-    jobId: 'job-options-001',
+const CACHED_RESULT: RunOptionsAnalysisResult = {
+    status: 'cached',
+    result: {} as never,
 };
 
 describe('submitOptionsAnalysisAction', () => {
     beforeEach(() => {
-        mockSubmitOptionsAnalysis.mockReset();
+        mockRunOptionsAnalysis.mockReset();
         mockFetchOptionsSnapshot.mockReset();
         mockGetCurrentUser.mockReset();
         mockResolveTierAndByok.mockReset();
@@ -124,7 +112,7 @@ describe('submitOptionsAnalysisAction', () => {
             tier: 'free' as never,
         });
         mockFetchOptionsSnapshot.mockResolvedValue(MOCK_SNAPSHOT);
-        mockSubmitOptionsAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+        mockRunOptionsAnalysis.mockResolvedValue(CACHED_RESULT);
     });
 
     it('forwards symbol, companyName, expirationDate, and modelId to siglens-core', async () => {
@@ -135,7 +123,7 @@ describe('submitOptionsAnalysisAction', () => {
             MODEL_ID
         );
 
-        expect(mockSubmitOptionsAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOptionsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({
                 symbol: 'AAPL',
                 companyName: 'Apple Inc.',
@@ -160,7 +148,7 @@ describe('submitOptionsAnalysisAction', () => {
             status: 'no_chains_error',
             code: 'no_options_chains',
         });
-        expect(mockSubmitOptionsAnalysis).not.toHaveBeenCalled();
+        expect(mockRunOptionsAnalysis).not.toHaveBeenCalled();
     });
 
     it('returns blocked result when gate.kind === "blocked"', async () => {
@@ -178,7 +166,7 @@ describe('submitOptionsAnalysisAction', () => {
         );
 
         expect(result).toEqual({ status: 'error', error: gateError });
-        expect(mockSubmitOptionsAnalysis).not.toHaveBeenCalled();
+        expect(mockRunOptionsAnalysis).not.toHaveBeenCalled();
     });
 
     it('forwards tier to siglens-core when gate allowed', async () => {
@@ -195,7 +183,7 @@ describe('submitOptionsAnalysisAction', () => {
             MODEL_ID
         );
 
-        expect(mockSubmitOptionsAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOptionsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ tier: 'member' })
         );
     });
@@ -215,7 +203,7 @@ describe('submitOptionsAnalysisAction', () => {
             PREMIUM_MODEL
         );
 
-        expect(mockSubmitOptionsAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOptionsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ userApiKey: 'usr-key' })
         );
     });
@@ -234,7 +222,7 @@ describe('submitOptionsAnalysisAction', () => {
             MODEL_ID
         );
 
-        const callArg = mockSubmitOptionsAnalysis.mock.calls[0]?.[0];
+        const callArg = mockRunOptionsAnalysis.mock.calls[0]?.[0];
         expect(callArg).toBeDefined();
         expect(callArg).not.toHaveProperty('userApiKey');
     });
@@ -274,7 +262,7 @@ describe('submitOptionsAnalysisAction', () => {
                 true
             );
 
-            expect(mockSubmitOptionsAnalysis).toHaveBeenCalledWith(
+            expect(mockRunOptionsAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: true })
             );
         });
@@ -288,7 +276,7 @@ describe('submitOptionsAnalysisAction', () => {
                 true
             );
 
-            expect(mockSubmitOptionsAnalysis).toHaveBeenCalledWith(
+            expect(mockRunOptionsAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false })
             );
         });
@@ -307,78 +295,10 @@ describe('submitOptionsAnalysisAction', () => {
                 MODEL_ID
             );
 
-            expect(mockSubmitOptionsAnalysis).toHaveBeenCalledWith(
+            expect(mockRunOptionsAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false })
             );
         });
-    });
-});
-
-describe('pollOptionsAnalysisAction', () => {
-    it('delegates to pollOptionsAnalysis and returns result', async () => {
-        const polledResult = { status: 'processing' as const };
-        mockPollOptionsAnalysis.mockResolvedValueOnce(polledResult);
-
-        const result = await pollOptionsAnalysisAction('job-001');
-
-        expect(mockPollOptionsAnalysis).toHaveBeenCalledWith('job-001');
-        expect(result).toBe(polledResult);
-    });
-
-    it('returns unexpected_error and logs when pollOptionsAnalysis throws', async () => {
-        const consoleErrorSpy = vi
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
-        const pollError = new Error('queue down');
-        mockPollOptionsAnalysis.mockRejectedValueOnce(pollError);
-
-        const result = await pollOptionsAnalysisAction('job-err');
-
-        expect(result).toEqual({
-            status: 'error',
-            error: 'unexpected_error',
-        });
-        expect(consoleErrorSpy).toHaveBeenCalledWith(
-            '[pollOptionsAnalysisAction] poll failed:',
-            'job-err',
-            pollError
-        );
-
-        consoleErrorSpy.mockRestore();
-    });
-});
-
-describe('cancelOptionsAnalysisJobAction', () => {
-    beforeEach(() => {
-        mockCancelJob.mockReset();
-    });
-
-    it('delegates to cancelJob and resolves to undefined on success', async () => {
-        mockCancelJob.mockResolvedValueOnce(undefined);
-
-        const result = await cancelOptionsAnalysisJobAction('job-cancel-001');
-
-        expect(mockCancelJob).toHaveBeenCalledWith('job-cancel-001');
-        expect(result).toBeUndefined();
-    });
-
-    it('swallows errors and logs a warning when cancelJob rejects', async () => {
-        const consoleWarnSpy = vi
-            .spyOn(console, 'warn')
-            .mockImplementation(() => {});
-        const cancelError = new Error('worker unreachable');
-        mockCancelJob.mockRejectedValueOnce(cancelError);
-
-        await expect(
-            cancelOptionsAnalysisJobAction('job-cancel-err')
-        ).resolves.toBeUndefined();
-        expect(consoleWarnSpy).toHaveBeenCalledWith(
-            '[cancelOptionsAnalysisJobAction] 취소 신호 전송 실패:',
-            'job-cancel-err',
-            cancelError
-        );
-
-        consoleWarnSpy.mockRestore();
     });
 });
 
@@ -389,7 +309,7 @@ describe('submitOptionsAnalysisAction — E2E force-error cookie seam', () => {
         mockCookies.mockReset();
         // 누적 call count를 초기화 — not.toHaveBeenCalled()가 외부 describe의
         // 테스트 실행 순서에 묵시적으로 의존하지 않도록 한다(resetMocks 미설정).
-        mockSubmitOptionsAnalysis.mockReset();
+        mockRunOptionsAnalysis.mockReset();
         process.env.E2E_TEST = '1';
     });
 
@@ -416,7 +336,7 @@ describe('submitOptionsAnalysisAction — E2E force-error cookie seam', () => {
 
         expect(result.status).toBe('no_chains_error');
         // 강제 에러 경로는 core 제출을 건드리지 않는다.
-        expect(mockSubmitOptionsAnalysis).not.toHaveBeenCalled();
+        expect(mockRunOptionsAnalysis).not.toHaveBeenCalled();
     });
 
     it('returns the cached fixture when the force-error cookie is absent', async () => {
@@ -432,6 +352,6 @@ describe('submitOptionsAnalysisAction — E2E force-error cookie seam', () => {
         );
 
         expect(result.status).toBe('cached');
-        expect(mockSubmitOptionsAnalysis).not.toHaveBeenCalled();
+        expect(mockRunOptionsAnalysis).not.toHaveBeenCalled();
     });
 });

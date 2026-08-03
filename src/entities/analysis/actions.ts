@@ -1,24 +1,13 @@
-export { submitAnalysisAction } from './actions/submitAnalysisAction';
-export type { SubmitAnalysisActionResult } from './actions/submitAnalysisAction';
-export { pollAnalysisAction } from './actions/pollAnalysisAction';
-export { pollBriefingAction } from './actions/pollBriefingAction';
-export { submitFundamentalAnalysisAction } from './actions/submitFundamentalAnalysisAction';
-export type { SubmitFundamentalAnalysisActionResult } from './actions/submitFundamentalAnalysisAction';
-export { pollFundamentalAnalysisAction } from './actions/pollFundamentalAnalysisAction';
-export { submitOverallAnalysisAction } from './actions/submitOverallAnalysisAction';
+export { runAnalysisAction } from './actions/runAnalysisAction';
+export type { RunAnalysisActionResult } from './actions/runAnalysisAction';
+export { runFundamentalAnalysisAction } from './actions/runFundamentalAnalysisAction';
+export type { RunFundamentalAnalysisActionResult } from './actions/runFundamentalAnalysisAction';
+export { runOverallAnalysisAction } from './actions/runOverallAnalysisAction';
 export type {
-    SubmitOverallAnalysisActionResult,
+    RunOverallAnalysisActionResult,
     SubmitOverallAnalysisActionOptions,
-} from './actions/submitOverallAnalysisAction';
-export { pollOverallAnalysisAction } from './actions/pollOverallAnalysisAction';
-export { cancelAnalysisJobAction } from './actions/cancelAnalysisJobAction';
-export { cancelFundamentalAnalysisJobAction } from './actions/cancelFundamentalAnalysisJobAction';
-export { cancelOverallAnalysisJobAction } from './actions/cancelOverallAnalysisJobAction';
-export { submitFinancialsAnalysisAction } from './actions/submitFinancialsAnalysisAction';
-export type { SubmitFinancialsAnalysisActionResult } from './actions/submitFinancialsAnalysisAction';
-export { pollFinancialsAnalysisAction } from './actions/pollFinancialsAnalysisAction';
-export { cancelFinancialsAnalysisJobAction } from './actions/cancelFinancialsAnalysisJobAction';
-export { submitCongressTrendAction } from './actions/submitCongressTrendAction';
-export type { SubmitCongressTrendActionResult } from './actions/submitCongressTrendAction';
-export { pollCongressTrendAction } from './actions/pollCongressTrendAction';
-export { cancelCongressTrendJobAction } from './actions/cancelCongressTrendJobAction';
+} from './actions/runOverallAnalysisAction';
+export { runFinancialsAnalysisAction } from './actions/runFinancialsAnalysisAction';
+export type { RunFinancialsAnalysisActionResult } from './actions/runFinancialsAnalysisAction';
+export { runCongressTrendAction } from './actions/runCongressTrendAction';
+export type { RunCongressTrendActionResult } from './actions/runCongressTrendAction';

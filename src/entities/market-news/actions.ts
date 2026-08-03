@@ -11,5 +11,3 @@ export type {
     SubmitMarketNewsDigestActionResult,
     SubmitMarketNewsDigestActionError,
 } from './actions/submitMarketNewsDigestActionTypes';
-export { pollMarketNewsDigestAction } from './actions/pollMarketNewsDigestAction';
-export { cancelMarketNewsDigestAction } from './actions/cancelMarketNewsDigestAction';

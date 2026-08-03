@@ -83,7 +83,6 @@ describe('PATCH /api/cron/seo-prewarm', () => {
     it('예약된 after 콜백을 실행하면 runPrewarmBatch 후 releasePrewarmLock을 획득한 토큰으로 호출한다', async () => {
         vi.mocked(acquirePrewarmLock).mockResolvedValue('token-1');
         vi.mocked(runPrewarmBatch).mockResolvedValue({
-            submitted: 1,
             harvested: 2,
             revalidated: 3,
             remaining: 4,

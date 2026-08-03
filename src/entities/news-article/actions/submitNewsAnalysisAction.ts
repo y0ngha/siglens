@@ -2,10 +2,10 @@
 
 import { headers } from 'next/headers';
 import {
-    submitNewsAnalysis,
+    runNewsAnalysis,
     type EnrichedNewsItem,
     type SubmitNewsAnalysisOptions,
-    type SubmitNewsAnalysisResult,
+    type RunNewsAnalysisResult,
 } from '@y0ngha/siglens-core';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
@@ -25,7 +25,7 @@ import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
 
 /** Final return type — core's news result + our siglens-side gate errors. */
 export type SubmitNewsAnalysisActionResult =
-    | SubmitNewsAnalysisResult
+    | RunNewsAnalysisResult
     | AnalysisGateBlockedResult;
 
 /** Server Action: tier + BYOK gate, then load last-7d enriched news from DB + next earnings, then submit via siglens-core; returns `cached | submitted | error`. */
@@ -45,7 +45,7 @@ export async function submitNewsAnalysisAction(
         // under the inline E2E guard so they sit in a lazy chunk (not the prod main
         // bundle) and the branch stays resolvable by the vitest runner. Lives inside
         // try so a load failure can't propagate to the client (mirrors
-        // submitAnalysisAction).
+        // runAnalysisAction).
         if (isE2E()) {
             const { e2eCachedNews } =
                 await import('@/shared/api/e2eAnalysisStub');
@@ -77,7 +77,7 @@ export async function submitNewsAnalysisAction(
         const enrichedNews: ReadonlyArray<EnrichedNewsItem> =
             buildAnalysisNewsItems(rows);
 
-        return await submitNewsAnalysis({
+        return await runNewsAnalysis({
             symbol,
             companyName,
             modelId,

@@ -1,11 +1,9 @@
 /**
- * Re-export card-polling constants from the shared config so both
- * useMarketNewsCardPolling and useWaitForMarketNewsCards share identical
- * thresholds without reaching into another widget slice.
+ * Card-polling constants used by useMarketNewsCardPolling and
+ * useWaitForMarketNewsCards. Previously re-exported from shared/config/pollingConfig
+ * which has been deleted as part of the worker-removal migration.
  */
-export {
-    NEWS_CARD_POLL_INTERVAL_MS as POLL_INTERVAL_MS,
-    NEWS_CARD_MAX_CONSECUTIVE_FAILURES as MAX_CONSECUTIVE_FAILURES,
-    NEWS_CARD_EMPTY_SNAPSHOT_MAX_POLLS as EMPTY_SNAPSHOT_MAX_POLLS,
-    NEWS_CARD_MAX_POLL_DURATION_MS as MAX_POLL_DURATION_MS,
-} from '@/shared/config/pollingConfig';
+export const POLL_INTERVAL_MS = 3_000;
+export const MAX_CONSECUTIVE_FAILURES = 3;
+export const EMPTY_SNAPSHOT_MAX_POLLS = 20;
+export const MAX_POLL_DURATION_MS = 5 * 60_000;

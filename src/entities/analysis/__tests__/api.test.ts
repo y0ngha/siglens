@@ -9,18 +9,18 @@ const { MOCK_CRYPTO_SESSION, MOCK_EQUITY_SESSION } = vi.hoisted(() => ({
 }));
 
 // vi.mock은 vitest가 import 위로 hoist하지만, ESLint(import/first)와 가독성을
-// 위해 소스 코드에서도 모든 import보다 위에 둔다 (submitOverallAnalysisAction.test.ts와 동일 패턴).
+// 위해 소스 코드에서도 모든 import보다 위에 둔다 (runOverallAnalysisAction.test.ts와 동일 패턴).
 vi.mock('@y0ngha/siglens-core', async () => {
     const actual = await vi.importActual<typeof import('@y0ngha/siglens-core')>(
         '@y0ngha/siglens-core'
     );
     return {
         ...actual,
-        submitAnalysis: vi.fn(),
-        submitFundamentalAnalysis: vi.fn(),
-        submitFinancialsAnalysis: vi.fn(),
-        submitCongressTrend: vi.fn(),
-        submitOverallAnalysis: vi.fn(),
+        runAnalysis: vi.fn(),
+        runFundamentalAnalysis: vi.fn(),
+        runFinancialsAnalysis: vi.fn(),
+        runCongressTrend: vi.fn(),
+        runOverallAnalysis: vi.fn(),
         isEtRegularSessionOpen: vi.fn(),
         computeFinancialsScorecard: vi.fn(),
     };
@@ -84,19 +84,19 @@ vi.mock('@/shared/lib/options/openInterestStale', () => ({
 }));
 
 import {
-    submitAnalysis,
-    submitFundamentalAnalysis,
-    submitFinancialsAnalysis,
-    submitCongressTrend,
-    submitOverallAnalysis,
+    runAnalysis,
+    runFundamentalAnalysis,
+    runFinancialsAnalysis,
+    runCongressTrend,
+    runOverallAnalysis,
     isEtRegularSessionOpen,
     computeFinancialsScorecard,
     DEEPSEEK_V4_FLASH_MODEL,
-    type SubmitAnalysisGatedResult,
-    type SubmitFundamentalAnalysisResult,
-    type SubmitFinancialsAnalysisResult,
-    type SubmitCongressTrendResult,
-    type SubmitOverallAnalysisResult,
+    type RunAnalysisResult,
+    type RunFundamentalAnalysisResult,
+    type RunFinancialsAnalysisResult,
+    type RunCongressTrendResult,
+    type RunOverallAnalysisResult,
     type OptionsSnapshot,
     type FinancialsSnapshot,
     type FinancialsScorecard,
@@ -130,11 +130,11 @@ const mockFinancialsProvider =
 const mockCongressProvider =
     {} as import('@y0ngha/siglens-core').CongressTradesProvider;
 
-const mockSubmitAnalysis = vi.mocked(submitAnalysis);
-const mockSubmitFundamentalAnalysis = vi.mocked(submitFundamentalAnalysis);
-const mockSubmitFinancialsAnalysis = vi.mocked(submitFinancialsAnalysis);
-const mockSubmitCongressTrend = vi.mocked(submitCongressTrend);
-const mockSubmitOverallAnalysis = vi.mocked(submitOverallAnalysis);
+const mockRunAnalysis = vi.mocked(runAnalysis);
+const mockRunFundamentalAnalysis = vi.mocked(runFundamentalAnalysis);
+const mockRunFinancialsAnalysis = vi.mocked(runFinancialsAnalysis);
+const mockRunCongressTrend = vi.mocked(runCongressTrend);
+const mockRunOverallAnalysis = vi.mocked(runOverallAnalysis);
 const mockIsRegularSession = vi.mocked(isEtRegularSessionOpen);
 const mockComputeFinancialsScorecard = vi.mocked(computeFinancialsScorecard);
 const mockGetCachedMarketDataProvider = vi.mocked(getCachedMarketDataProvider);
@@ -167,7 +167,7 @@ function makeSnapshot(): OptionsSnapshot {
 }
 
 describe('prewarmTechnical', () => {
-    const cachedResult: SubmitAnalysisGatedResult = {
+    const cachedResult: RunAnalysisResult = {
         status: 'cached',
         result: { summary: 'cached' } as never,
         lockedInfoDepth: [],
@@ -175,15 +175,15 @@ describe('prewarmTechnical', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        mockSubmitAnalysis.mockResolvedValue(cachedResult);
+        mockRunAnalysis.mockResolvedValue(cachedResult);
         mockResolveMarketProfile.mockResolvedValue('us-equity');
         mockGetCachedMarketDataProvider.mockReturnValue(mockProvider);
     });
 
-    it('calls submitAnalysis with the anonymous-free branch shape (modelId default, skipEnqueueIfMiss:false, tier:free, reasoning:false, no bucket)', async () => {
+    it('calls runAnalysis with the anonymous-free branch shape (modelId default, skipEnqueueIfMiss:false, tier:free, reasoning:false, no bucket)', async () => {
         await prewarmTechnical('AAPL', 'Apple Inc.', undefined, false);
 
-        expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+        expect(mockRunAnalysis).toHaveBeenCalledWith(
             'AAPL',
             'Apple Inc.',
             '1Day',
@@ -204,7 +204,7 @@ describe('prewarmTechnical', () => {
     it('threads force=true as the 4th positional arg', async () => {
         await prewarmTechnical('AAPL', 'Apple Inc.', undefined, true);
 
-        const lastCall = mockSubmitAnalysis.mock.calls.at(-1);
+        const lastCall = mockRunAnalysis.mock.calls.at(-1);
         expect(lastCall).toBeDefined();
         expect(lastCall![3]).toBe(true);
     });
@@ -212,7 +212,7 @@ describe('prewarmTechnical', () => {
     it('forwards fmpSymbol through to submitAnalysis', async () => {
         await prewarmTechnical('BTCUSD', 'Bitcoin', '^BTCUSD', false);
 
-        expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+        expect(mockRunAnalysis).toHaveBeenCalledWith(
             'BTCUSD',
             'Bitcoin',
             '1Day',
@@ -224,21 +224,21 @@ describe('prewarmTechnical', () => {
 });
 
 describe('prewarmFundamental', () => {
-    const cachedResult: SubmitFundamentalAnalysisResult = {
+    const cachedResult: RunFundamentalAnalysisResult = {
         status: 'cached',
         result: { categories: [] } as never,
     };
 
     beforeEach(() => {
         vi.clearAllMocks();
-        mockSubmitFundamentalAnalysis.mockResolvedValue(cachedResult);
+        mockRunFundamentalAnalysis.mockResolvedValue(cachedResult);
         mockGetFundamentalDataProvider.mockReturnValue(mockFundamentalProvider);
     });
 
-    it('calls submitFundamentalAnalysis with the anonymous-free branch shape', async () => {
+    it('calls runFundamentalAnalysis with the anonymous-free branch shape', async () => {
         await prewarmFundamental('AAPL', false);
 
-        expect(mockSubmitFundamentalAnalysis).toHaveBeenCalledWith({
+        expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith({
             symbol: 'AAPL',
             modelId: DEEPSEEK_V4_FLASH_MODEL,
             dataProvider: mockFundamentalProvider,
@@ -251,7 +251,7 @@ describe('prewarmFundamental', () => {
     it('threads force:true when requested', async () => {
         await prewarmFundamental('AAPL', true);
 
-        expect(mockSubmitFundamentalAnalysis).toHaveBeenCalledWith(
+        expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ force: true })
         );
     });
@@ -259,29 +259,29 @@ describe('prewarmFundamental', () => {
     it('omits force when not requested', async () => {
         await prewarmFundamental('AAPL', false);
 
-        const callArg = mockSubmitFundamentalAnalysis.mock.calls[0]?.[0];
+        const callArg = mockRunFundamentalAnalysis.mock.calls[0]?.[0];
         expect(callArg).not.toHaveProperty('force');
     });
 });
 
 describe('prewarmFinancials', () => {
-    const cachedResult: SubmitFinancialsAnalysisResult = {
+    const cachedResult: RunFinancialsAnalysisResult = {
         status: 'cached',
         result: { categories: [] } as never,
     };
 
     beforeEach(() => {
         vi.clearAllMocks();
-        mockSubmitFinancialsAnalysis.mockResolvedValue(cachedResult);
+        mockRunFinancialsAnalysis.mockResolvedValue(cachedResult);
         mockGetFinancialStatementsProvider.mockReturnValue(
             mockFinancialsProvider
         );
     });
 
-    it('calls submitFinancialsAnalysis with the anonymous-free branch shape', async () => {
+    it('calls runFinancialsAnalysis with the anonymous-free branch shape', async () => {
         await prewarmFinancials('AAPL', false);
 
-        expect(mockSubmitFinancialsAnalysis).toHaveBeenCalledWith({
+        expect(mockRunFinancialsAnalysis).toHaveBeenCalledWith({
             symbol: 'AAPL',
             modelId: DEEPSEEK_V4_FLASH_MODEL,
             dataProvider: mockFinancialsProvider,
@@ -294,7 +294,7 @@ describe('prewarmFinancials', () => {
     it('threads force:true when requested', async () => {
         await prewarmFinancials('AAPL', true);
 
-        expect(mockSubmitFinancialsAnalysis).toHaveBeenCalledWith(
+        expect(mockRunFinancialsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ force: true })
         );
     });
@@ -302,27 +302,27 @@ describe('prewarmFinancials', () => {
     it('omits force when not requested', async () => {
         await prewarmFinancials('AAPL', false);
 
-        const callArg = mockSubmitFinancialsAnalysis.mock.calls[0]?.[0];
+        const callArg = mockRunFinancialsAnalysis.mock.calls[0]?.[0];
         expect(callArg).not.toHaveProperty('force');
     });
 });
 
 describe('prewarmCongress', () => {
-    const cachedResult: SubmitCongressTrendResult = {
+    const cachedResult: RunCongressTrendResult = {
         status: 'cached',
         result: { trades: [] } as never,
     };
 
     beforeEach(() => {
         vi.clearAllMocks();
-        mockSubmitCongressTrend.mockResolvedValue(cachedResult);
+        mockRunCongressTrend.mockResolvedValue(cachedResult);
         mockGetCongressTradesProvider.mockReturnValue(mockCongressProvider);
     });
 
-    it('calls submitCongressTrend with the anonymous-free branch shape (no BYOK gate)', async () => {
+    it('calls runCongressTrend with the anonymous-free branch shape (no BYOK gate)', async () => {
         await prewarmCongress('AAPL', false);
 
-        expect(mockSubmitCongressTrend).toHaveBeenCalledWith({
+        expect(mockRunCongressTrend).toHaveBeenCalledWith({
             symbol: 'AAPL',
             modelId: DEEPSEEK_V4_FLASH_MODEL,
             dataProvider: mockCongressProvider,
@@ -335,7 +335,7 @@ describe('prewarmCongress', () => {
     it('threads force:true when requested', async () => {
         await prewarmCongress('AAPL', true);
 
-        expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+        expect(mockRunCongressTrend).toHaveBeenCalledWith(
             expect.objectContaining({ force: true })
         );
     });
@@ -343,15 +343,15 @@ describe('prewarmCongress', () => {
     it('omits force when not requested', async () => {
         await prewarmCongress('AAPL', false);
 
-        const callArg = mockSubmitCongressTrend.mock.calls[0]?.[0];
+        const callArg = mockRunCongressTrend.mock.calls[0]?.[0];
         expect(callArg).not.toHaveProperty('force');
     });
 });
 
 describe('prewarmOverall', () => {
-    const SUBMITTED_RESULT: SubmitOverallAnalysisResult = {
-        status: 'submitted',
-        jobId: 'job-overall-001',
+    const SUBMITTED_RESULT: RunOverallAnalysisResult = {
+        status: 'done',
+        result: { summary: 'ok' } as never,
     };
 
     let mockListBySymbol: Mock;
@@ -361,7 +361,7 @@ describe('prewarmOverall', () => {
         mockResolveMarketProfile.mockResolvedValue('us-equity');
         mockGetCachedMarketDataProvider.mockReturnValue(mockProvider);
         mockGetFundamentalDataProvider.mockReturnValue(mockFundamentalProvider);
-        mockSubmitOverallAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+        mockRunOverallAnalysis.mockResolvedValue(SUBMITTED_RESULT);
         mockIsRegularSession.mockReturnValue(false);
         mockIsOiStale.mockReturnValue(false);
         mockFetchOptionsSnapshot.mockResolvedValue(null);
@@ -377,10 +377,10 @@ describe('prewarmOverall', () => {
         });
     });
 
-    it('calls submitOverallAnalysis with the anonymous-free branch shape', async () => {
+    it('calls runOverallAnalysis with the anonymous-free branch shape', async () => {
         await prewarmOverall('AAPL', 'Apple Inc.', false);
 
-        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({
                 symbol: 'AAPL',
                 companyName: 'Apple Inc.',
@@ -400,7 +400,7 @@ describe('prewarmOverall', () => {
     it('threads force:true when requested', async () => {
         await prewarmOverall('AAPL', 'Apple Inc.', true);
 
-        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ force: true })
         );
     });
@@ -408,7 +408,7 @@ describe('prewarmOverall', () => {
     it('omits force when not requested', async () => {
         await prewarmOverall('AAPL', 'Apple Inc.', false);
 
-        const callArg = mockSubmitOverallAnalysis.mock.calls[0]?.[0];
+        const callArg = mockRunOverallAnalysis.mock.calls[0]?.[0];
         expect(callArg).not.toHaveProperty('force');
     });
 
@@ -418,7 +418,7 @@ describe('prewarmOverall', () => {
         await prewarmOverall('AAPL', 'Apple Inc.', false);
 
         expect(mockFetchOptionsSnapshot).toHaveBeenCalledWith('AAPL');
-        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ optionsSnapshot: expect.any(Object) })
         );
     });
@@ -428,7 +428,7 @@ describe('prewarmOverall', () => {
 
         await prewarmOverall('AAPL', 'Apple Inc.', false);
 
-        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ optionsSnapshot: undefined })
         );
     });
@@ -445,7 +445,7 @@ describe('prewarmOverall', () => {
         await prewarmOverall('AAPL', 'Apple Inc.', false);
 
         expect(mockGetFinancialsSnapshot).toHaveBeenCalledWith('AAPL');
-        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ financialsScorecard: scorecard })
         );
     });
@@ -464,12 +464,12 @@ describe('prewarmOverall', () => {
 
         await prewarmOverall('AAPL', 'Apple Inc.', false);
 
-        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ upcomingCalendar: [next] })
         );
     });
 
-    it('fail-soft: when fetchOptionsSnapshot rejects, still calls submitOverallAnalysis with optionsSnapshot:undefined (does not throw)', async () => {
+    it('fail-soft: when fetchOptionsSnapshot rejects, still calls runOverallAnalysis with optionsSnapshot:undefined (does not throw)', async () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         mockFetchOptionsSnapshot.mockRejectedValueOnce(
             new Error('options fetch boom')
@@ -479,7 +479,7 @@ describe('prewarmOverall', () => {
             SUBMITTED_RESULT
         );
 
-        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ optionsSnapshot: undefined })
         );
         expect(warnSpy).toHaveBeenCalledWith(
@@ -489,7 +489,7 @@ describe('prewarmOverall', () => {
         warnSpy.mockRestore();
     });
 
-    it('fail-soft: when getFinancialsSnapshot rejects, still calls submitOverallAnalysis with financialsScorecard:undefined (does not throw)', async () => {
+    it('fail-soft: when getFinancialsSnapshot rejects, still calls runOverallAnalysis with financialsScorecard:undefined (does not throw)', async () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         mockGetFinancialsSnapshot.mockRejectedValueOnce(
             new Error('financials snapshot boom')
@@ -499,7 +499,7 @@ describe('prewarmOverall', () => {
             SUBMITTED_RESULT
         );
 
-        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ financialsScorecard: undefined })
         );
         expect(warnSpy).toHaveBeenCalledWith(
@@ -509,7 +509,7 @@ describe('prewarmOverall', () => {
         warnSpy.mockRestore();
     });
 
-    it('fail-soft: when computeFinancialsScorecard throws (post-fetch), still calls submitOverallAnalysis with financialsScorecard:undefined (does not throw)', async () => {
+    it('fail-soft: when computeFinancialsScorecard throws (post-fetch), still calls runOverallAnalysis with financialsScorecard:undefined (does not throw)', async () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         mockGetFinancialsSnapshot.mockResolvedValueOnce(
             {} as FinancialsSnapshot
@@ -522,7 +522,7 @@ describe('prewarmOverall', () => {
             SUBMITTED_RESULT
         );
 
-        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ financialsScorecard: undefined })
         );
         expect(warnSpy).toHaveBeenCalledWith(

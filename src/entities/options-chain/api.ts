@@ -1,11 +1,9 @@
 import 'server-only';
 import {
-    submitOptionsAnalysis,
-    pollOptionsAnalysis,
+    runOptionsAnalysis,
     mapExpirationsToSlots,
     DEEPSEEK_V4_FLASH_MODEL,
-    type SubmitOptionsAnalysisResult,
-    type PollOptionsAnalysisResult,
+    type RunOptionsAnalysisResult,
     type SlotMapping,
 } from '@y0ngha/siglens-core';
 import { fetchOptionsSnapshot } from './lib/optionsDataCache';
@@ -38,7 +36,7 @@ export async function prewarmOptions(
     symbol: string,
     companyName: string,
     force: boolean
-): Promise<SubmitOptionsAnalysisResult | null> {
+): Promise<RunOptionsAnalysisResult | null> {
     const snapshot = await fetchOptionsSnapshot(symbol);
     // 옵션 데이터가 없으면(NoChains) 스냅샷 생성 대상이 아니다 — submit 자체를 스킵한다.
     if (snapshot === null) return null;
@@ -47,7 +45,7 @@ export async function prewarmOptions(
     const slots = mapExpirationsToSlots(expirations, new Date());
     const expirationDate = slots.find(isSlotMapping)?.expirationDate ?? 'all';
 
-    return submitOptionsAnalysis({
+    return runOptionsAnalysis({
         symbol,
         companyName,
         expirationDate,
@@ -58,15 +56,4 @@ export async function prewarmOptions(
         skipEnqueueIfMiss: false,
         ...(force ? { force: true } : {}),
     });
-}
-
-/**
- * FIX Z(감사) — `prewarmOptions`와 짝을 이루는 pre-warm 전용 poll seam.
- * options의 poll은 request-context에 의존하는 별도 액션이 없다(현재
- * `OptionsPageClient`가 클라 훅으로 직접 polling) — 신규 server-only seam.
- */
-export async function prewarmPollOptions(
-    jobId: string
-): Promise<PollOptionsAnalysisResult> {
-    return pollOptionsAnalysis(jobId);
 }

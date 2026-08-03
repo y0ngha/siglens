@@ -1,12 +1,7 @@
-import type { MockedFunction, Mock } from 'vitest';
+import type { Mock } from 'vitest';
 import { useAnalysis } from '@/views/symbol/hooks/useAnalysis';
-import {
-    cancelAnalysisJobAction,
-    pollAnalysisAction,
-    submitAnalysisAction,
-} from '@/entities/analysis/actions';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { getReanalyzeCooldownMs } from '@/entities/analysis';
-import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type {
@@ -16,12 +11,9 @@ import type {
     Timeframe,
 } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
-import { readBlobText } from '@/shared/test-utils/readBlobText';
 
-vi.mock('@/entities/analysis/actions', () => ({
-    submitAnalysisAction: vi.fn(),
-    pollAnalysisAction: vi.fn(),
-    cancelAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+    runAnalysisStream: vi.fn(),
 }));
 
 vi.mock('@/entities/analysis', async importOriginal => {
@@ -47,15 +39,7 @@ vi.mock('@/features/portfolio-holding', () => ({
     useSymbolHolding: mockUseSymbolHolding,
 }));
 
-const mockSubmit = submitAnalysisAction as MockedFunction<
-    typeof submitAnalysisAction
->;
-const mockPoll = pollAnalysisAction as MockedFunction<
-    typeof pollAnalysisAction
->;
-const mockCancel = cancelAnalysisJobAction as MockedFunction<
-    typeof cancelAnalysisJobAction
->;
+const mockSubmit = runAnalysisStream as Mock;
 
 const INITIAL_ANALYSIS = {} as unknown as AnalysisResponse;
 
@@ -110,13 +94,8 @@ function makeOptions(overrides?: PartialOptions) {
 }
 
 describe('useAnalysis', () => {
-    let sendBeaconMock: Mock;
-
     beforeEach(() => {
         mockSubmit.mockReset();
-        mockPoll.mockReset();
-        mockCancel.mockReset();
-        mockCancel.mockResolvedValue(undefined);
         (getReanalyzeCooldownMs as Mock).mockResolvedValue(0);
         // 대부분의 기존 테스트는 personalization과 무관하므로, 홀딩 쿼리가 즉시
         // 해석 완료(hydrated, not loading)되고 홀딩이 없는 기본 상태로 둔다 —
@@ -128,13 +107,6 @@ describe('useAnalysis', () => {
             isLoading: false,
             isError: false,
             save: {} as never,
-        });
-
-        sendBeaconMock = vi.fn();
-        Object.defineProperty(navigator, 'sendBeacon', {
-            value: sendBeaconMock,
-            configurable: true,
-            writable: true,
         });
     });
 
@@ -300,14 +272,14 @@ describe('useAnalysis', () => {
             });
         });
 
-        it('does not render a legacy poll result without lock metadata for a resolved free tier', async () => {
+        it('does not render a result without lock metadata for a resolved free tier', async () => {
+            // A result without lockedInfoDepth (e.g. from a rolling-deploy older
+            // instance) must not be shown raw to a free-tier user — the hook must
+            // replace it with FREE_LOCKED_INFO_DEPTH and set result to null.
             mockSubmit.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'legacy-job',
-            });
-            mockPoll.mockResolvedValue({
                 status: 'done',
                 result: INITIAL_ANALYSIS,
+                // deliberately no lockedInfoDepth field
             } as never);
 
             const { result } = renderHook(
@@ -381,8 +353,9 @@ describe('useAnalysis', () => {
                         new Promise(resolve => {
                             resolveSecondSubmit = () =>
                                 resolve({
-                                    status: 'submitted',
-                                    jobId: 'free-refresh',
+                                    status: 'cached',
+                                    result: INITIAL_ANALYSIS,
+                                    lockedInfoDepth: [],
                                 });
                         })
                 );
@@ -418,7 +391,7 @@ describe('useAnalysis', () => {
     });
 
     describe('reasoning (member-reasoning-toggle spec Part A)', () => {
-        it('forwards reasoning to submitAnalysisAction', async () => {
+        it('forwards reasoning to runAnalysisAction', async () => {
             mockSubmit.mockResolvedValue({
                 status: 'cached',
                 result: INITIAL_ANALYSIS,
@@ -438,13 +411,13 @@ describe('useAnalysis', () => {
 
             await waitFor(() => {
                 expect(mockSubmit).toHaveBeenCalledWith(
-                    'AAPL',
-                    'Apple Inc.',
-                    '1Day',
-                    false,
-                    undefined,
-                    undefined,
-                    true
+                    expect.objectContaining({
+                        type: 'technical',
+                        params: expect.objectContaining({
+                            symbol: 'AAPL',
+                            reasoning: true,
+                        }),
+                    })
                 );
             });
         });
@@ -528,13 +501,13 @@ describe('useAnalysis', () => {
                 expect(mockSubmit).toHaveBeenCalledTimes(1);
             });
             expect(mockSubmit).toHaveBeenCalledWith(
-                'AAPL',
-                'Apple Inc.',
-                '1Day',
-                false,
-                undefined,
-                undefined,
-                true
+                expect.objectContaining({
+                    type: 'technical',
+                    params: expect.objectContaining({
+                        symbol: 'AAPL',
+                        reasoning: true,
+                    }),
+                })
             );
         });
 
@@ -797,132 +770,8 @@ describe('useAnalysis', () => {
         });
     });
 
-    describe('cancel', () => {
-        it('polling 중 unmount 시 진행 중인 job을 cancel한다', async () => {
-            mockSubmit.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'job-analysis-123',
-            });
-            // never resolves → 루프가 첫 poll 호출 직후 멈춰 OOM을 방지한다
-            mockPoll.mockImplementation(() => new Promise(() => {}));
-
-            const { unmount } = renderHook(
-                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
-                { wrapper: makeWrapper() }
-            );
-
-            await waitFor(() => {
-                expect(mockPoll).toHaveBeenCalled();
-            });
-
-            unmount();
-
-            expect(mockCancel).toHaveBeenCalledWith('job-analysis-123');
-        });
-
-        it('symbol 변경 시 진행 중인 job을 cancel한다', async () => {
-            mockSubmit.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'job-analysis-123',
-            });
-            mockPoll.mockImplementation(() => new Promise(() => {}));
-
-            const { rerender } = renderHook(
-                ({ symbol }: { symbol: string }) =>
-                    useAnalysis(
-                        makeOptions({ symbol, initialAnalysisFailed: true })
-                    ),
-                {
-                    wrapper: makeWrapper(),
-                    initialProps: { symbol: 'AAPL' },
-                }
-            );
-
-            await waitFor(() => {
-                expect(mockPoll).toHaveBeenCalled();
-            });
-
-            rerender({ symbol: 'MSFT' });
-
-            expect(mockCancel).toHaveBeenCalledWith('job-analysis-123');
-        });
-
-        it('polling 중 pagehide 발화 시 sendBeacon으로 cancel을 전송한다', async () => {
-            mockSubmit.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'job-analysis-123',
-            });
-            mockPoll.mockImplementation(() => new Promise(() => {}));
-
-            renderHook(
-                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
-                { wrapper: makeWrapper() }
-            );
-
-            await waitFor(() => {
-                expect(mockPoll).toHaveBeenCalled();
-            });
-
-            window.dispatchEvent(new Event('pagehide'));
-
-            expect(sendBeaconMock).toHaveBeenCalledTimes(1);
-            const [url, blob] = sendBeaconMock.mock.calls[0] as [string, Blob];
-            expect(url).toBe(CANCEL_JOBS_API_PATH);
-            expect(blob.type).toBe('application/json');
-
-            const text = await readBlobText(blob);
-            expect(JSON.parse(text)).toEqual({
-                jobs: [{ jobId: 'job-analysis-123', type: 'analysis' }],
-            });
-        });
-
-        it('job 없을 때 pagehide 발화해도 sendBeacon을 호출하지 않는다', async () => {
-            mockSubmit.mockResolvedValue({
-                status: 'cached',
-                result: INITIAL_ANALYSIS,
-                lockedInfoDepth: [],
-            });
-
-            renderHook(() => useAnalysis(makeOptions()), {
-                wrapper: makeWrapper(),
-            });
-
-            await waitFor(() => {
-                expect(getReanalyzeCooldownMs).toHaveBeenCalled();
-            });
-
-            window.dispatchEvent(new Event('pagehide'));
-
-            expect(sendBeaconMock).not.toHaveBeenCalled();
-        });
-
-        it('pagehide 발화 후 unmount 시 이중 cancel이 발생하지 않는다', async () => {
-            mockSubmit.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'job-analysis-123',
-            });
-            mockPoll.mockImplementation(() => new Promise(() => {}));
-
-            const { unmount } = renderHook(
-                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
-                { wrapper: makeWrapper() }
-            );
-
-            await waitFor(() => {
-                expect(mockPoll).toHaveBeenCalled();
-            });
-
-            window.dispatchEvent(new Event('pagehide'));
-            expect(sendBeaconMock).toHaveBeenCalledTimes(1);
-
-            unmount();
-
-            expect(mockCancel).not.toHaveBeenCalled();
-        });
-    });
-
     // 서버-authoritative `personalized` 플래그 threading (personalized-analysis-
-    // by-position-bucket spec, Subsystem C — 배지 정직성 수정). `submitAnalysisAction`의
+    // by-position-bucket spec, Subsystem C — 배지 정직성 수정). `runAnalysisAction`의
     // `personalized` 필드를 `isPersonalized`로 그대로 미러링한다 — 홀딩 존재
     // 여부가 아니라 서버가 실제로 포지션 버킷 캐시 키를 썼는지가 유일한 진실값.
     describe('isPersonalized (personalized-analysis-by-position-bucket spec, Subsystem C — 배지 정직성 수정)', () => {
@@ -985,28 +834,15 @@ describe('useAnalysis', () => {
             expect(result.current.isPersonalized).toBe(false);
         });
 
-        it('submitted + personalized: true → 폴링 중에는 false, poll이 done을 반환한 뒤에야 true가 된다', async () => {
-            // submit이 'submitted'를 반환한 시점엔 화면에 아직 SSR의 no-bucket
-            // base 분석이 떠 있다(personalized 결과는 폴링이 끝나야 도착) — 배지가
-            // base 분석 위에서 거짓 주장을 하지 않으려면 이 구간에서 false여야
-            // 한다. poll을 명시적으로 제어해(resolveSecondSubmit 패턴과 동일)
-            // "폴링 중" 상태와 "poll done 이후" 상태를 각각 단언한다.
-            mockSubmit.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'job-personalized-1',
-                personalized: true,
-            });
-            let resolvePoll:
-                | ((value: {
-                      status: 'done';
-                      result: AnalysisResponse;
-                      lockedInfoDepth: never[];
-                  }) => void)
-                | undefined;
-            mockPoll.mockImplementation(
+        it('SSE 스트림이 진행 중에는 isPersonalized가 false, 스트림 완료 후 true가 된다', async () => {
+            // onMutate resets isPersonalized to false on each new submit so the
+            // SSR no-bucket seed is never wrongly badged as personalized while
+            // the stream is still in flight.
+            let resolveStream: ((value: unknown) => void) | undefined;
+            mockSubmit.mockImplementation(
                 () =>
                     new Promise(resolve => {
-                        resolvePoll = resolve;
+                        resolveStream = resolve;
                     })
             );
 
@@ -1015,18 +851,18 @@ describe('useAnalysis', () => {
                 { wrapper: makeWrapper() }
             );
 
-            // submit이 resolve되어 폴링이 시작됐지만 poll 자체는 아직 pending —
-            // 이 구간에서는 isPersonalized가 false여야 한다.
+            // Stream in flight — isPersonalized must be false.
             await waitFor(() => {
-                expect(mockPoll).toHaveBeenCalled();
+                expect(mockSubmit).toHaveBeenCalled();
             });
             expect(result.current.isPersonalized).toBe(false);
             expect(result.current.analysisResult).toBeNull();
 
-            resolvePoll?.({
+            resolveStream?.({
                 status: 'done',
                 result: INITIAL_ANALYSIS,
                 lockedInfoDepth: [],
+                personalized: true,
             });
 
             await waitFor(() => {
@@ -1035,24 +871,11 @@ describe('useAnalysis', () => {
             expect(result.current.isPersonalized).toBe(true);
         });
 
-        it('submitted + personalized: true인 job의 폴링이 error로 끝나면 personalized 배지가 노출되지 않는다', async () => {
-            // 이 동작은 'submitted' 시점에 이미 isPersonalized가 false로 설정되고
-            // poll 'done' 전까지 아무도 true로 바꾸지 않기 때문에 성립한다 —
-            // 즉 이 테스트는 end-to-end 동작(에러로 끝난 폴링에는 personalized
-            // 배지가 뜨지 않는다)을 검증하는 것이지, error/catch 분기의
-            // setIsPersonalized(false) 리셋 메커니즘 자체를 lock하는 것은 아니다.
-            // 그 리셋들은 향후 변경으로 poll 진입 전에 플래그가 true가 되는
-            // 경로가 생기더라도 stale over-claim을 남기지 않기 위한
-            // defense-in-depth다.
-            mockSubmit.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'job-personalized-2',
-                personalized: true,
-            });
-            mockPoll.mockResolvedValue({
-                status: 'error',
-                error: '분석 실패',
-            });
+        it('SSE 스트림이 에러로 끝나면 personalized 배지가 노출되지 않는다', async () => {
+            // isPersonalized resets to false in onMutate and only becomes true
+            // on a done result — an error-terminated stream must not leave a
+            // stale true value from a previous successful submit.
+            mockSubmit.mockRejectedValue(new Error('분석 실패'));
 
             const { result } = renderHook(
                 () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
