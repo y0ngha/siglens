@@ -85,33 +85,6 @@ export async function markInFlight(symbol: string, tab: string): Promise<void> {
 }
 
 /**
- * (symbol, tab) 마커 상태를 단일 Redis GET으로 조회한다(FIX 1, 감사 PR #698
- * 리뷰). 이전엔 `isInFlight`(마커 존재?)와 `getInFlightJobId`(resumable
- * jobId?)가 별도 함수였는데, `isInFlight`는 프로덕션 어디서도 호출되지 않는
- * 죽은 코드였고 `getInFlightJobId`만 쓰였다. 그 결과 job-agnostic 마커(jobId
- * 없이 `markInFlight`된 경우 — 예: `overall`의 `pending_dependencies`)가 있는
- * (symbol, tab)도 `getInFlightJobId`가 null을 반환해 "in-flight 아님"으로
- * 오판되어 매 5분 tick마다 재제출됐다(FMP 예산 재계상 포함) — `markInFlight`의
- * 문서화된 의도("재개 불가, 자연 TTL 만료 후 재시도")와 정면으로 어긋났다.
- *
- * FIX 3(감사, 실증) — 그 "FIX 1" 자체가 실전에서 죽어 있었다: `markInFlight`가
- * jobId 없이 저장한 sentinel(`'1'`)을 여기서 `value === '1'`로 비교했는데,
- * @upstash/redis의 기본 `automaticDeserialization`이 GET 응답에 `JSON.parse`를
- * 돌려 `'1'`을 **number** `1`로 반환한다(실 REST 라운드트립으로 확인 —
- * `redis.get<string>('...')`의 타입 파라미터는 컴파일 타임 캐스트일 뿐 런타임
- * 값을 바꾸지 않는다). `1 === '1'`은 항상 false라 이 분기가 프로덕션에서 단
- * 한 번도 타지 않았고, 모든 job-agnostic 마커가 `jobId: '1'`(String(1))로
- * 오인식돼 존재하지 않는 job을 poll하다 실패 → terminal skip → 6h backoff로
- * 이어졌다(의도한 30분 TTL 대기 대신). `String(value)`로 먼저 정규화한 뒤
- * sentinel 비교해야 문자열/숫자 어느 쪽으로 오든 안전하다 — "단순화"해서
- * 되돌리지 말 것.
- *
- * `present`는 마커 존재 여부(job-agnostic 포함), `jobId`는 resume-poll 가능한
- * 값(마커가 없거나 job-agnostic sentinel이면 null)이다. 호출부는 세 상태를
- * 모두 구분해야 한다: jobId 있음(poll 재개) / present만 true(이번 tick엔
- * skip, TTL 만료 대기) / present도 false(신규 submit).
- */
-/**
  * (symbol, tab) 마커 존재 여부를 단일 Redis GET으로 조회한다.
  *
  * FIX 3(감사, 실증) — @upstash/redis의 기본 `automaticDeserialization`이 GET

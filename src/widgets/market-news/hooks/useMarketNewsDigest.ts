@@ -71,7 +71,7 @@ export function useMarketNewsDigest(
 
     const query = useQuery({
         queryKey: ['market-news-digest', category] as const,
-        queryFn: () => fetchMarketNewsDigest(category),
+        queryFn: ({ signal }) => fetchMarketNewsDigest(category, signal),
         // Wait for hydration + enriched cards before firing.
         // Firing on empty DB would give no_news immediately and staleTime: Infinity
         // would lock the error state until a hard refresh.

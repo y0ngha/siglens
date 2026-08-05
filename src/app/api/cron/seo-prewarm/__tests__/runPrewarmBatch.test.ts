@@ -342,7 +342,9 @@ describe('runPrewarmBatch', () => {
         const counts = await runPrewarmBatch();
 
         expect(mockUpsert).not.toHaveBeenCalled();
-        expect(mockMarkInFlight).not.toHaveBeenCalled();
+        // markInFlight is called before the seam, clearInFlight in finally.
+        expect(mockMarkInFlight).toHaveBeenCalledWith('D', 'options');
+        expect(mockClearInFlight).toHaveBeenCalledWith('D', 'options');
         expect(mockMarkSkipped).toHaveBeenCalledWith('D', 'options');
         expect(counts.harvested).toBe(0);
         expect(counts.revalidated).toBe(0);

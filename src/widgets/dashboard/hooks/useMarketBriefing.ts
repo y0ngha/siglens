@@ -6,7 +6,8 @@ import type {
     MarketBriefingResponse,
     RunBriefingResult,
 } from '@y0ngha/siglens-core';
-import { submitMarketBriefingAction } from '@/entities/market-summary/actions';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import type { MarketBriefingActionResult } from '@/shared/lib/types';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
@@ -16,8 +17,12 @@ export interface UseMarketBriefingReturn {
 }
 
 /**
- * 마운트 후 submitMarketBriefingAction을 호출해 briefing을 트리거한다. peekSeed가
- * 있으면 초기 표시에 쓰고, action 결과로 교체한다. 봇이면 null(BotBlockedNotice).
+ * 마운트 후 briefing을 트리거한다. peekSeed가 있으면 초기 표시에 쓰고, 결과로 교체한다.
+ * 봇이면 null(BotBlockedNotice).
+ *
+ * 서버 액션이 아니라 SSE를 거치는 이유 — 액션도 결국 단일 POST이고, LLM을 기다리는
+ * 동안 바이트가 흐르지 않아 ALB `idle_timeout` 60초에 잘린다(실측: 침묵 61.1초 절단).
+ * `runAnalysisStream`은 25초 heartbeat로 그 벽을 넘긴다.
  */
 export function useMarketBriefing(
     peekSeed?: MarketBriefingResponse | null
@@ -25,7 +30,12 @@ export function useMarketBriefing(
     const isHydrated = useHydrated();
     const { data } = useQuery({
         queryKey: QUERY_KEYS.marketBriefing(),
-        queryFn: submitMarketBriefingAction,
+        queryFn: ({ signal }) =>
+            runAnalysisStream<MarketBriefingActionResult>({
+                type: 'briefing',
+                params: {},
+                signal,
+            }),
         enabled: isHydrated,
         staleTime: Infinity,
     });

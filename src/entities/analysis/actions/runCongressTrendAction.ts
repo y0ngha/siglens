@@ -65,7 +65,8 @@ export async function runCongressTrendAction(
      * Client-requested "깊은 생각" (deep-thinking) toggle value. Only honored
      * for member/pro tiers.
      */
-    reasoning?: boolean
+    reasoning?: boolean,
+    signal?: AbortSignal
 ): Promise<RunCongressTrendActionResult> {
     try {
         if (isE2E()) {
@@ -98,6 +99,7 @@ export async function runCongressTrendAction(
             tier: gate.tier,
             reasoning: resolveReasoning(gate.tier, reasoning),
             skipEnqueueIfMiss,
+            signal,
             ...(gate.userApiKey !== undefined
                 ? { userApiKey: gate.userApiKey }
                 : {}),

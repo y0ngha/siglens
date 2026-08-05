@@ -27,14 +27,16 @@ import { getEconomySnapshot } from '../api/economySnapshotCache';
  * 도입해 이 action에 gate를 추가하면 된다(rate-limit 초과 시 `{ ok: false, error:
  * 'rate_limited' }` 반환으로 클라가 graceful 처리 가능).
  */
-export async function submitMacroBriefingAction(): Promise<MacroBriefingActionResult> {
+export async function submitMacroBriefingAction(
+    signal?: AbortSignal
+): Promise<MacroBriefingActionResult> {
     try {
         const requestHeaders = await headers();
         if (isBot(requestHeaders)) {
             return { briefing: null, botBlocked: true };
         }
         const snapshot = await getEconomySnapshot();
-        const briefing = await runMacroBriefing(snapshot);
+        const briefing = await runMacroBriefing(snapshot, { signal });
         return { briefing, botBlocked: false };
     } catch (e) {
         console.error('[submitMacroBriefingAction] failed:', e);

@@ -1,8 +1,6 @@
 import type {
-    CalendarImpact,
     ModelId,
     NewsFeedCategory,
-    NewsItem,
     PositionBucket,
     Timeframe,
 } from '@y0ngha/siglens-core';
@@ -24,13 +22,7 @@ import {
 } from '@/shared/lib/byokGate';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { heartbeatStream } from '@/shared/lib/sse/heartbeatStream';
-import {
-    runAnalysis,
-    runNewsCardAnalysis,
-    runEconomicEventAnalysis,
-    runIndicatorTranslation,
-    type SubmitAnalysisOptions,
-} from './runAnalysisBridge';
+import { runAnalysis, type SubmitAnalysisOptions } from './runAnalysisBridge';
 
 // Actions: gating + data-fetch already live in each entity's action file.
 // Calling them from the route (server-side) is safe — no browser connection means
@@ -61,14 +53,11 @@ type AnalysisType =
     | 'fundamental'
     | 'financials'
     | 'news'
-    | 'newsCard'
     | 'marketNewsDigest'
     | 'options'
     | 'congress'
     | 'briefing'
-    | 'macroBriefing'
-    | 'economicEvent'
-    | 'indicatorTranslation';
+    | 'macroBriefing';
 
 type TechnicalParams = {
     symbol: string;
@@ -105,22 +94,57 @@ const SSE_HEADERS: HeadersInit = {
 };
 
 /**
- * Dispatch table: maps each non-technical analysis type to a function that
- * receives the raw `params` bag and returns a Promise. The returned promise is
- * piped into `heartbeatStream`, keeping the browser SSE connection alive for
- * the full LLM round-trip. Each entry delegates to the entity action that
- * already owns auth, tier/BYOK gating, E2E short-circuit, bot detection, and
- * data-fetch — no logic is duplicated here.
+ * Stream duration upper bound: if the LLM round-trip exceeds 5 minutes the
+ * server emits an error event and closes the stream. This guards against
+ * runaway LLM calls that would otherwise hold an open SSE connection
+ * indefinitely and consume a Node worker slot.
  *
- * `newsCard`, `economicEvent`, `indicatorTranslation` have no client hook yet
- * and no action with the right signature, so they call core directly via the
- * bridge. These are wired for future use and for server-to-server SSE calls.
+ * ponytail: single shared timeout, not per-request. Acceptable because all
+ * in-flight analysis calls use the same model-tier cap. Reduce to 3 min if
+ * pro-tier fast models make 5 min feel long.
+ */
+const STREAM_DEADLINE_MS = 5 * 60 * 1_000;
+
+/**
+ * Races `work` against a fixed deadline. Rejects with a localized message on
+ * timeout so `heartbeatStream` emits an SSE `error` event instead of holding
+ * the connection open forever.
+ */
+function withDeadline<T>(work: Promise<T>): Promise<T> {
+    return Promise.race([
+        work,
+        new Promise<never>((_, reject) =>
+            setTimeout(
+                () =>
+                    reject(
+                        new Error(
+                            '분석 시간이 초과되었습니다. 다시 시도해 주세요.'
+                        )
+                    ),
+                STREAM_DEADLINE_MS
+            )
+        ),
+    ]);
+}
+
+/**
+ * Dispatch table: maps each non-technical analysis type to a function that
+ * receives the raw `params` bag and an optional `AbortSignal`, and returns a
+ * Promise. The returned promise is piped into `heartbeatStream`, keeping the
+ * browser SSE connection alive for the full LLM round-trip. Each entry
+ * delegates to the entity action that already owns auth, tier/BYOK gating,
+ * E2E short-circuit, bot detection, and data-fetch — no logic is duplicated
+ * here. `signal` is threaded so a client disconnect propagates all the way to
+ * the in-flight LLM call via each action's `run*` options.
  */
 const DISPATCH: Record<
     Exclude<AnalysisType, 'technical'>,
-    (params: Record<string, unknown>) => Promise<unknown>
+    (
+        params: Record<string, unknown>,
+        signal: AbortSignal | undefined
+    ) => Promise<unknown>
 > = {
-    overall: params =>
+    overall: (params, signal) =>
         runOverallAnalysisAction(
             params.symbol as string,
             params.companyName as string,
@@ -129,93 +153,86 @@ const DISPATCH: Record<
             {
                 force: params.force as boolean | undefined,
                 reasoning: params.reasoning as boolean | undefined,
-            }
+            },
+            signal
         ),
 
-    fundamental: params =>
+    fundamental: (params, signal) =>
         runFundamentalAnalysisAction(
             params.symbol as string,
             params.modelId as ModelId,
-            params.reasoning as boolean | undefined
+            params.reasoning as boolean | undefined,
+            signal
         ),
 
-    financials: params =>
+    financials: (params, signal) =>
         runFinancialsAnalysisAction(
             params.symbol as string,
             params.modelId as ModelId,
-            params.reasoning as boolean | undefined
+            params.reasoning as boolean | undefined,
+            signal
         ),
 
-    news: params =>
+    news: (params, signal) =>
         submitNewsAnalysisAction(
             params.symbol as string,
             params.companyName as string,
             params.modelId as ModelId,
-            params.reasoning as boolean | undefined
+            params.reasoning as boolean | undefined,
+            signal
         ),
 
-    /**
-     * newsCard: no client hook or gated action exists yet — calls core directly.
-     * Params must include a fully-serialized `NewsItem` and a `thinkingBudget`.
-     */
-    newsCard: params =>
-        runNewsCardAnalysis({
-            item: params.item as NewsItem,
-            thinkingBudget: params.thinkingBudget as number,
-        }),
+    marketNewsDigest: (params, signal) =>
+        submitMarketNewsDigestAction(
+            params.category as NewsFeedCategory,
+            signal
+        ),
 
-    marketNewsDigest: params =>
-        submitMarketNewsDigestAction(params.category as NewsFeedCategory),
-
-    options: params =>
+    options: (params, signal) =>
         submitOptionsAnalysisAction(
             params.symbol as string,
             params.companyName as string,
             params.expirationDate as OptionsExpirationSelector,
             params.modelId as ModelId,
-            params.reasoning as boolean | undefined
+            params.reasoning as boolean | undefined,
+            signal
         ),
 
-    congress: params =>
+    congress: (params, signal) =>
         runCongressTrendAction(
             params.symbol as string,
             params.modelId as ModelId,
-            params.reasoning as boolean | undefined
+            params.reasoning as boolean | undefined,
+            signal
         ),
 
     /**
      * briefing: delegates to the market-summary entity action that owns bot
      * detection and market-summary data loading.
      */
-    briefing: _params => submitMarketBriefingAction(),
+    briefing: (_params, signal) => submitMarketBriefingAction(signal),
 
-    macroBriefing: _params => submitMacroBriefingAction(),
-
-    /**
-     * economicEvent / indicatorTranslation: server-internal use only (cron, seeding
-     * scripts). No gating action exists — core is called directly.
-     */
-    economicEvent: params =>
-        runEconomicEventAnalysis({
-            event: params.event as string,
-            impact: params.impact as CalendarImpact,
-            actual: params.actual as number | null,
-            estimate: params.estimate as number | null,
-            previous: params.previous as number | null,
-            unit: params.unit as string,
-        }),
-
-    indicatorTranslation: params =>
-        runIndicatorTranslation(params.normalizedName as string),
+    macroBriefing: (_params, signal) => submitMacroBriefingAction(signal),
 };
+
+/*
+ * 의도적으로 여기 없는 것: `newsCard` / `economicEvent` / `indicatorTranslation`.
+ *
+ * 이 셋은 게이팅 액션이 없어 core를 직접 호출해야 하는데, 이 라우트는 인증 없는
+ * 공개 POST다(`proxy.ts`가 `/api`를 미들웨어 매처에서 제외). 브라우저 호출자도
+ * 없으므로 노출할 이유가 없고, 노출하면 익명 루프가 서버 키로 LLM 비용을 태우는
+ * 경로가 된다 — 특히 `newsCard`는 요청 본문의 `NewsItem`이 그대로 프롬프트에 들어간다.
+ *
+ * 서버 내부(크론·시딩)는 브라우저 연결이 없으므로 SSE가 필요 없고, core `run*`을
+ * 직접 `await`하면 된다. 나중에 브라우저에서 이 셋이 필요해지면 먼저 게이팅 액션을
+ * 만들고 그 액션을 여기에 등록할 것.
+ */
 
 /**
  * Resolves the position bucket for personalized analysis.
  *
- * ponytail: Logic mirrors `runAnalysisAction.resolveHoldingPositionBucket` (private).
- * Cannot extract to `shared/` because FSD prohibits shared from importing entities/portfolio.
- * Refactor both call sites into `entities/analysis/lib/` when `runAnalysis` lands in core
- * and `runAnalysisAction` is updated alongside.
+ * ponytail: Cannot extract to `shared/` because FSD prohibits shared from importing
+ * entities/portfolio. Refactor into `entities/analysis/lib/` if a second call site appears.
  *
  * Degrades to `undefined` (no bucket, i.e. shared/base analysis) on ANY failure —
  * a holding-read or price-read error must never block the underlying analysis call.
@@ -274,6 +291,15 @@ export async function POST(request: Request): Promise<Response> {
 
     // --- 2. Technical analysis: inline gating + personalization ---
     if (body.type === 'technical') {
+        // `params` 자체가 없을 수 있다(`{"type":"technical"}`). 구조분해를 try 밖에
+        // 두면 그 입력이 처리되지 않은 throw로 500이 된다 — 400이어야 한다.
+        if (body.params == null || typeof body.params !== 'object') {
+            return Response.json(
+                { error: 'technical requires a params object' },
+                { status: 400 }
+            );
+        }
+
         const {
             symbol,
             companyName,
@@ -289,7 +315,7 @@ export async function POST(request: Request): Promise<Response> {
             const user = await getCurrentUser();
             const userId = user?.id ?? null;
 
-            // --- 2b. E2E short-circuit (mirrors runAnalysisAction) ---
+            // --- 2b. E2E short-circuit ---
             if (isE2E()) {
                 if (isBot(request.headers)) {
                     return new Response(
@@ -303,7 +329,7 @@ export async function POST(request: Request): Promise<Response> {
                 }
                 const tier = await resolveTierOnly(userId);
                 // Dynamic import keeps the E2E stub out of the prod bundle (dead code
-                // when E2E_TEST is unset) — same guard as runAnalysisAction.
+                // when E2E_TEST is unset).
                 const { e2eCachedTechnical } =
                     await import('@/shared/api/e2eAnalysisStub');
                 return new Response(
@@ -380,17 +406,19 @@ export async function POST(request: Request): Promise<Response> {
              * `setIsPersonalized` gets the server-authoritative value
              * (personalized-analysis-by-position-bucket spec, Subsystem C).
              */
-            const work = runAnalysis(
-                symbol,
-                companyName,
-                timeframe,
-                force,
-                fmpSymbol,
-                options
-            ).then(result => ({
-                ...result,
-                personalized: positionBucket !== undefined,
-            }));
+            const work = withDeadline(
+                runAnalysis(
+                    symbol,
+                    companyName,
+                    timeframe,
+                    force,
+                    fmpSymbol,
+                    options
+                ).then(result => ({
+                    ...result,
+                    personalized: positionBucket !== undefined,
+                }))
+            );
 
             return new Response(heartbeatStream(work), {
                 headers: SSE_HEADERS,
@@ -405,7 +433,11 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     // --- 3. Dispatch for non-technical types ---
-    const handler = DISPATCH[body.type];
+    // Object.hasOwn: `body.type`이 'toString' 같은 프로토타입 멤버면 인덱싱이
+    // 상속된 함수를 반환해 `!handler` 가드를 통과한다 — 400이어야 할 입력이 500이 된다.
+    const handler = Object.hasOwn(DISPATCH, body.type)
+        ? DISPATCH[body.type]
+        : undefined;
     if (!handler) {
         return Response.json(
             { error: `unsupported analysis type: ${String(body.type)}` },
@@ -414,7 +446,7 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     try {
-        const work = handler(body.params);
+        const work = withDeadline(handler(body.params, request.signal));
         return new Response(heartbeatStream(work), { headers: SSE_HEADERS });
     } catch (err) {
         console.error('[streamAnalysisRoute] unexpected error:', err);

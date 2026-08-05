@@ -4,15 +4,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createElement } from 'react';
 import type { ReactNode } from 'react';
 import { useMarketBriefing } from '@/widgets/dashboard/hooks/useMarketBriefing';
-import { submitMarketBriefingAction } from '@/entities/market-summary/actions';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import type { MarketBriefingActionResult } from '@/shared/lib/types';
 import type { MarketBriefingResponse } from '@y0ngha/siglens-core';
 
-vi.mock('@/entities/market-summary/actions', () => ({
-    submitMarketBriefingAction: vi.fn(),
+vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+    runAnalysisStream: vi.fn(),
 }));
 
-const mockAction = submitMarketBriefingAction as ReturnType<typeof vi.fn>;
+const mockAction = runAnalysisStream as ReturnType<typeof vi.fn>;
 
 function makeWrapper() {
     const client = new QueryClient({

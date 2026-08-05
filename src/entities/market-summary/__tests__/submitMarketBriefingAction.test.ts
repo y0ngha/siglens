@@ -93,7 +93,9 @@ describe('submitMarketBriefingAction 함수는', () => {
             expect(mockGetCachedMarketSummary).toHaveBeenCalledWith(
                 mockProvider
             );
-            expect(mockRunBriefing).toHaveBeenCalledWith(summaryData);
+            expect(mockRunBriefing).toHaveBeenCalledWith(summaryData, {
+                signal: undefined,
+            });
         });
     });
 

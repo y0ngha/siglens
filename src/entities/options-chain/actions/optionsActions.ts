@@ -39,7 +39,8 @@ export async function submitOptionsAnalysisAction(
      * Client-requested "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
      * spec Part A). Only honored for member/pro tiers.
      */
-    reasoning?: boolean
+    reasoning?: boolean,
+    signal?: AbortSignal
 ): Promise<SubmitOptionsAnalysisActionResult> {
     try {
         // E2E short-circuits the LLM/worker with a deterministic fixture (see
@@ -88,6 +89,7 @@ export async function submitOptionsAnalysisAction(
             tier: gate.tier,
             reasoning: resolveReasoning(gate.tier, reasoning),
             skipEnqueueIfMiss,
+            signal,
             ...(gate.userApiKey !== undefined
                 ? { userApiKey: gate.userApiKey }
                 : {}),

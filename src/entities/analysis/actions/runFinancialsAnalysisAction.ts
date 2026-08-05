@@ -30,7 +30,8 @@ export async function runFinancialsAnalysisAction(
      * Client-requested "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
      * spec Part A). Only honored for member/pro tiers.
      */
-    reasoning?: boolean
+    reasoning?: boolean,
+    signal?: AbortSignal
 ): Promise<RunFinancialsAnalysisActionResult> {
     try {
         // E2E short-circuits the LLM/worker; returns a deterministic cached fixture
@@ -68,6 +69,7 @@ export async function runFinancialsAnalysisAction(
             tier: gate.tier,
             reasoning: resolveReasoning(gate.tier, reasoning),
             skipEnqueueIfMiss,
+            signal,
             ...(gate.userApiKey !== undefined
                 ? { userApiKey: gate.userApiKey }
                 : {}),

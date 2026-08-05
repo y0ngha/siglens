@@ -213,37 +213,6 @@ describe('OverallContent non-done branches', () => {
         ).toBeInTheDocument();
     });
 
-    it('renders DependencyProgress in pending_dependencies state', () => {
-        mockUseOverallAnalysis.mockReturnValue({
-            state: {
-                status: 'pending_dependencies',
-                pendingJobs: {
-                    technical: 'job-t',
-                    fundamental: undefined,
-                    news: 'job-n',
-                    options: undefined,
-                },
-                retryCount: 2,
-            },
-            trigger: vi.fn(),
-        });
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                hasEnrichedNews={true}
-            />
-        );
-        // DependencyProgress 헤딩(완료/총합 카운트)으로 렌더 확인. 2개 axis가
-        // pending이므로 완료 2/4.
-        expect(
-            screen.getByRole('region', {
-                name: /종합 분석에 필요한 데이터 수집 중/,
-            })
-        ).toBeInTheDocument();
-        expect(screen.getByText(/2\/4/)).toBeInTheDocument();
-    });
-
     it('renders submitting loading state', () => {
         mockUseOverallAnalysis.mockReturnValue({
             state: { status: 'submitting' },
@@ -257,21 +226,6 @@ describe('OverallContent non-done branches', () => {
             />
         );
         expect(screen.getByText('AI 종합 분석 요청 중…')).toBeInTheDocument();
-    });
-
-    it('renders polling loading state', () => {
-        mockUseOverallAnalysis.mockReturnValue({
-            state: { status: 'polling' },
-            trigger: vi.fn(),
-        });
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                hasEnrichedNews={true}
-            />
-        );
-        expect(screen.getByText('AI 종합 분석 생성 중…')).toBeInTheDocument();
     });
 
     it('renders error state with default message', () => {

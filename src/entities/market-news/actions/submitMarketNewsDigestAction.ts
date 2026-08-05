@@ -61,7 +61,8 @@ function toEnrichedMarketNewsItem(row: MarketNewsRow): EnrichedNewsItem | null {
  * `miss_no_trigger` without dispatching a worker job.
  */
 export async function submitMarketNewsDigestAction(
-    category: NewsFeedCategory
+    category: NewsFeedCategory,
+    signal?: AbortSignal
 ): Promise<SubmitMarketNewsDigestActionResult> {
     try {
         const requestHeaders = await headers();
@@ -83,6 +84,7 @@ export async function submitMarketNewsDigestAction(
             modelId: DEFAULT_DIGEST_MODEL_ID,
             news,
             skipEnqueueIfMiss,
+            signal,
         });
     } catch (error) {
         console.error('[submitMarketNewsDigestAction]', error);

@@ -68,11 +68,49 @@ vi.mock('../runAnalysisBridge', () => ({
     runAnalysis: vi.fn(),
 }));
 
+// DISPATCH action mocks — each entity action is mocked at its import path so
+// the route's DISPATCH table picks up the mock (vi.mock is hoisted).
+vi.mock('@/entities/analysis/actions', () => ({
+    runOverallAnalysisAction: vi.fn(),
+    runFundamentalAnalysisAction: vi.fn(),
+    runFinancialsAnalysisAction: vi.fn(),
+    runCongressTrendAction: vi.fn(),
+}));
+vi.mock('@/entities/news-article/actions', () => ({
+    submitNewsAnalysisAction: vi.fn(),
+}));
+vi.mock('@/entities/market-news/actions/submitMarketNewsDigestAction', () => ({
+    submitMarketNewsDigestAction: vi.fn(),
+}));
+vi.mock('@/entities/options-chain/actions', () => ({
+    submitOptionsAnalysisAction: vi.fn(),
+}));
+vi.mock('@/entities/market-summary/actions/submitMarketBriefingAction', () => ({
+    submitMarketBriefingAction: vi.fn(),
+}));
+vi.mock('@/entities/economy/actions/submitMacroBriefingAction', () => ({
+    submitMacroBriefingAction: vi.fn(),
+}));
+
 // --- Imports (after vi.mock declarations) ---
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { POST } from '../route';
 import { runAnalysis } from '../runAnalysisBridge';
+import { resolveTierAndByok } from '@/shared/lib/byokGate';
+import { isBot } from '@/shared/api/isBot';
+import { isE2E } from '@/shared/api/e2eEnv';
+import {
+    runOverallAnalysisAction,
+    runFundamentalAnalysisAction,
+    runFinancialsAnalysisAction,
+    runCongressTrendAction,
+} from '@/entities/analysis/actions';
+import { submitNewsAnalysisAction } from '@/entities/news-article/actions';
+import { submitMarketNewsDigestAction } from '@/entities/market-news/actions/submitMarketNewsDigestAction';
+import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions';
+import { submitMarketBriefingAction } from '@/entities/market-summary/actions/submitMarketBriefingAction';
+import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacroBriefingAction';
 
 const decoder = new TextDecoder();
 
@@ -259,6 +297,214 @@ describe('POST /api/analysis/stream', () => {
 
             // The ReadableStream cancel() callback must have called clearInterval.
             expect(clearIntervalSpy).toHaveBeenCalled();
+        });
+    });
+
+    describe('gate blocked (technical) — SSE error 이벤트로 게이트 메시지를 전달한다', () => {
+        it('resolveTierAndByok가 blocked를 반환하면 event: error에 gate message를 담는다', async () => {
+            vi.mocked(resolveTierAndByok).mockResolvedValue({
+                kind: 'blocked',
+                error: {
+                    code: 'tier_premium_blocked',
+                    message: '이 모델은 프리미엄 요금제에서만 사용 가능합니다.',
+                },
+            });
+
+            const body = JSON.stringify({
+                type: 'technical',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    timeframe: '1Day',
+                    modelId: 'claude-opus-4-5',
+                },
+            });
+
+            const response = await POST(makeRequest(undefined, body));
+            const events = await collectSseEvents(response);
+
+            const errorEvent = events.find(e => e.includes('event: error'));
+            expect(errorEvent).toBeDefined();
+            expect(errorEvent).toContain('프리미엄');
+        });
+    });
+
+    describe('E2E bot → miss_no_trigger (technical)', () => {
+        it('E2E 환경에서 봇이면 heartbeatStream으로 miss_no_trigger를 흘린다', async () => {
+            vi.mocked(isE2E).mockReturnValue(true);
+            vi.mocked(isBot).mockReturnValue(true);
+
+            const response = await POST(makeRequest());
+            const events = await collectSseEvents(response);
+
+            const doneEvent = events.find(e => e.includes('event: done'));
+            expect(doneEvent).toBeDefined();
+            expect(doneEvent).toContain('miss_no_trigger');
+        });
+    });
+
+    describe('DISPATCH — 각 타입이 올바른 액션으로 위임된다', () => {
+        /** 모든 DISPATCH 액션이 반환할 기본 성공 값. */
+        const MOCK_RESULT = { status: 'cached' as const, result: {} };
+
+        beforeEach(() => {
+            vi.mocked(isE2E).mockReturnValue(false);
+            vi.mocked(isBot).mockReturnValue(false);
+        });
+
+        it('overall → runOverallAnalysisAction', async () => {
+            vi.mocked(runOverallAnalysisAction).mockResolvedValue(
+                MOCK_RESULT as never
+            );
+
+            const body = JSON.stringify({
+                type: 'overall',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple',
+                    timeframe: '1Day',
+                    modelId: 'gemini-2.5-flash',
+                },
+            });
+            const response = await POST(makeRequest(undefined, body));
+            await collectSseEvents(response);
+
+            expect(vi.mocked(runOverallAnalysisAction)).toHaveBeenCalledOnce();
+        });
+
+        it('fundamental → runFundamentalAnalysisAction', async () => {
+            vi.mocked(runFundamentalAnalysisAction).mockResolvedValue(
+                MOCK_RESULT as never
+            );
+
+            const body = JSON.stringify({
+                type: 'fundamental',
+                params: { symbol: 'AAPL', modelId: 'gemini-2.5-flash' },
+            });
+            const response = await POST(makeRequest(undefined, body));
+            await collectSseEvents(response);
+
+            expect(
+                vi.mocked(runFundamentalAnalysisAction)
+            ).toHaveBeenCalledOnce();
+        });
+
+        it('financials → runFinancialsAnalysisAction', async () => {
+            vi.mocked(runFinancialsAnalysisAction).mockResolvedValue(
+                MOCK_RESULT as never
+            );
+
+            const body = JSON.stringify({
+                type: 'financials',
+                params: { symbol: 'AAPL', modelId: 'gemini-2.5-flash' },
+            });
+            const response = await POST(makeRequest(undefined, body));
+            await collectSseEvents(response);
+
+            expect(
+                vi.mocked(runFinancialsAnalysisAction)
+            ).toHaveBeenCalledOnce();
+        });
+
+        it('news → submitNewsAnalysisAction', async () => {
+            vi.mocked(submitNewsAnalysisAction).mockResolvedValue(
+                MOCK_RESULT as never
+            );
+
+            const body = JSON.stringify({
+                type: 'news',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple',
+                    modelId: 'gemini-2.5-flash',
+                },
+            });
+            const response = await POST(makeRequest(undefined, body));
+            await collectSseEvents(response);
+
+            expect(vi.mocked(submitNewsAnalysisAction)).toHaveBeenCalledOnce();
+        });
+
+        it('marketNewsDigest → submitMarketNewsDigestAction', async () => {
+            vi.mocked(submitMarketNewsDigestAction).mockResolvedValue(
+                MOCK_RESULT as never
+            );
+
+            const body = JSON.stringify({
+                type: 'marketNewsDigest',
+                params: { category: 'general' },
+            });
+            const response = await POST(makeRequest(undefined, body));
+            await collectSseEvents(response);
+
+            expect(
+                vi.mocked(submitMarketNewsDigestAction)
+            ).toHaveBeenCalledOnce();
+        });
+
+        it('options → submitOptionsAnalysisAction', async () => {
+            vi.mocked(submitOptionsAnalysisAction).mockResolvedValue(
+                MOCK_RESULT as never
+            );
+
+            const body = JSON.stringify({
+                type: 'options',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple',
+                    expirationDate: 'nearest',
+                    modelId: 'gemini-2.5-flash',
+                },
+            });
+            const response = await POST(makeRequest(undefined, body));
+            await collectSseEvents(response);
+
+            expect(
+                vi.mocked(submitOptionsAnalysisAction)
+            ).toHaveBeenCalledOnce();
+        });
+
+        it('congress → runCongressTrendAction', async () => {
+            vi.mocked(runCongressTrendAction).mockResolvedValue(
+                MOCK_RESULT as never
+            );
+
+            const body = JSON.stringify({
+                type: 'congress',
+                params: { symbol: 'AAPL', modelId: 'gemini-2.5-flash' },
+            });
+            const response = await POST(makeRequest(undefined, body));
+            await collectSseEvents(response);
+
+            expect(vi.mocked(runCongressTrendAction)).toHaveBeenCalledOnce();
+        });
+
+        it('briefing → submitMarketBriefingAction', async () => {
+            vi.mocked(submitMarketBriefingAction).mockResolvedValue({
+                briefing: null,
+                botBlocked: false,
+            } as never);
+
+            const body = JSON.stringify({ type: 'briefing', params: {} });
+            const response = await POST(makeRequest(undefined, body));
+            await collectSseEvents(response);
+
+            expect(
+                vi.mocked(submitMarketBriefingAction)
+            ).toHaveBeenCalledOnce();
+        });
+
+        it('macroBriefing → submitMacroBriefingAction', async () => {
+            vi.mocked(submitMacroBriefingAction).mockResolvedValue({
+                briefing: null,
+                botBlocked: false,
+            } as never);
+
+            const body = JSON.stringify({ type: 'macroBriefing', params: {} });
+            const response = await POST(makeRequest(undefined, body));
+            await collectSseEvents(response);
+
+            expect(vi.mocked(submitMacroBriefingAction)).toHaveBeenCalledOnce();
         });
     });
 });

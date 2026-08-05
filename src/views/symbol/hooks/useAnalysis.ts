@@ -13,13 +13,26 @@ import {
     TIER_CONFIG,
     type AnalysisResponse,
     type ModelId,
+    type RunAnalysisResult,
     type Tier,
     type TierInfoDepth,
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE, MS_PER_SECOND } from '@/shared/config/time';
 import { useSymbolHolding } from '@/features/portfolio-holding';
-import type { RunAnalysisActionResult } from '@/entities/analysis/actions';
+import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
+
+/**
+ * Final return type for the technical analysis SSE stream — core's gated
+ * result extended with `personalized`, or a siglens-side gate error.
+ *
+ * `personalized` is a server-authoritative flag: true when the server
+ * used a position-bucket cache key for THIS submission. Optional because
+ * `AnalysisGateBlockedResult` never carries it.
+ */
+type RunAnalysisActionResult =
+    | (RunAnalysisResult & { personalized?: boolean })
+    | AnalysisGateBlockedResult;
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import {
     getReanalyzeCooldownMs as fetchReanalyzeCooldownMs,
@@ -215,7 +228,6 @@ export function useAnalysis({
 
     // 3. useMutation — submit
     const {
-        data: submitData,
         error: submitError,
         isPending: isSubmitting,
         reset,
@@ -663,10 +675,6 @@ export function useAnalysis({
             streamAbortRef.current?.abort();
         };
     }, []);
-
-    // submitData is unused after removing the poll trigger — kept as a named
-    // binding so TypeScript does not warn about the destructured variable.
-    void submitData;
 
     return {
         analysis,

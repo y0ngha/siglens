@@ -49,7 +49,9 @@ describe('submitMacroBriefingAction', () => {
             generatedAt: '2025-01-01',
         });
         const result = await submitMacroBriefingAction();
-        expect(mockSubmit).toHaveBeenCalledWith(SNAPSHOT);
+        expect(mockSubmit).toHaveBeenCalledWith(SNAPSHOT, {
+            signal: undefined,
+        });
         expect(result).toEqual({
             briefing: {
                 status: 'done',

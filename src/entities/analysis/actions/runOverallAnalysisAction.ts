@@ -57,13 +57,14 @@ export interface SubmitOverallAnalysisActionOptions {
     reasoning?: boolean;
 }
 
-/** Server Action: tier + BYOK gate, then submit a 4-axis overall analysis job; loads enriched news + earnings from DB, options snapshot, injects FMP provider; returns `cached | submitted | pending_dependencies | error`. */
+/** Server Action: tier + BYOK gate, then submit a 4-axis overall analysis job; loads enriched news + earnings from DB, options snapshot, injects FMP provider; returns `cached | done | error`. */
 export async function runOverallAnalysisAction(
     symbol: string,
     companyName: string,
     timeframe: Timeframe,
     modelId: SubmitOverallAnalysisOptions['modelId'],
-    options: SubmitOverallAnalysisActionOptions = {}
+    options: SubmitOverallAnalysisActionOptions = {},
+    signal?: AbortSignal
 ): Promise<RunOverallAnalysisActionResult> {
     try {
         // E2E short-circuits the LLM/worker; returns a deterministic cached fixture
@@ -176,6 +177,7 @@ export async function runOverallAnalysisAction(
             optionsSnapshot: optionsSnapshot ?? undefined,
             optionsOiStale,
             financialsScorecard,
+            signal,
             ...(gate.userApiKey !== undefined
                 ? { userApiKey: gate.userApiKey }
                 : {}),

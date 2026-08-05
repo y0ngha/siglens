@@ -2,28 +2,23 @@
  * Unit tests for fetchMarketNewsDigest.
  *
  * Mocks:
- * - @/entities/market-news/actions — submitMarketNewsDigestAction (run* blocking,
- *   no poll loop, no cancel)
+ * - @/shared/hooks/useAnalysisStream — runAnalysisStream (SSE 한 연결, 폴 루프 없음)
  *
- * fetchMarketNewsDigest(category) returns a single promise — no AbortSignal,
- * no onJobId callback.
+ * fetchMarketNewsDigest(category, signal)은 단일 프로미스를 반환한다.
  */
 
 import type { MockedFunction } from 'vitest';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
-import { submitMarketNewsDigestAction } from '@/entities/market-news/actions';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { fetchMarketNewsDigest } from '../utils/fetchMarketNewsDigest';
 
-vi.mock('@/entities/market-news/actions', () => ({
-    submitMarketNewsDigestAction: vi.fn(),
-    getMarketNewsCardsAction: vi.fn(),
-    ensureMarketNewsCardsAnalyzedAction: vi.fn(),
+vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+    runAnalysisStream: vi.fn(),
 }));
 
-const mockSubmitMarketNewsDigestAction =
-    submitMarketNewsDigestAction as MockedFunction<
-        typeof submitMarketNewsDigestAction
-    >;
+const mockSubmitMarketNewsDigestAction = runAnalysisStream as MockedFunction<
+    typeof runAnalysisStream
+>;
 
 const DIGEST_RESULT: NewsAnalysisResponse = {
     overallSentiment: 'bullish',

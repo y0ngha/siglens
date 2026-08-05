@@ -12,14 +12,16 @@ import { getCachedMarketSummary } from '../api/marketSummaryCache';
  * summary 재조회 — redis HIT). cached/submitted 결과를 반환. headers()는 클라 호출
  * 경로라 ISR과 무관.
  */
-export async function submitMarketBriefingAction(): Promise<MarketBriefingActionResult> {
+export async function submitMarketBriefingAction(
+    signal?: AbortSignal
+): Promise<MarketBriefingActionResult> {
     try {
         const requestHeaders = await headers();
         if (isBot(requestHeaders)) {
             return { briefing: null, botBlocked: true };
         }
         const summary = await getCachedMarketSummary(getMarketDataProvider());
-        const briefing = await runBriefing(summary);
+        const briefing = await runBriefing(summary, { signal });
         return { briefing, botBlocked: false };
     } catch (e) {
         console.error('[submitMarketBriefingAction] failed:', e);

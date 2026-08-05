@@ -7,7 +7,11 @@
 import type { Mock } from 'vitest';
 import { useAnalysis } from '@/views/symbol/hooks/useAnalysis';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
-import type { RunAnalysisActionResult } from '@/entities/analysis/actions';
+import type { RunAnalysisResult } from '@y0ngha/siglens-core';
+import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
+type RunAnalysisActionResult =
+    | (RunAnalysisResult & { personalized?: boolean })
+    | AnalysisGateBlockedResult;
 import {
     getReanalyzeCooldownMs,
     tryAcquireReanalyzeCooldown,

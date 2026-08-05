@@ -14,11 +14,13 @@ import { getFmpErrorStatus } from '@/shared/api/fmp/fmpUserMessage';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import {
     addFmpBudget,
+    clearInFlight,
     getFmpBudgetUsed,
     getInFlightMarker,
     isSkipped,
+    markInFlight,
 } from './lock';
-import { TAB_SEAMS, resolveHarvest, type SeamOutcome } from './harvest';
+import { TAB_SEAMS, resolveHarvest } from './harvest';
 
 export interface PrewarmBatchCounts {
     harvested: number;
@@ -28,10 +30,10 @@ export interface PrewarmBatchCounts {
 }
 
 /**
- * FIX Z(감사) — 매 tick이 submit 후 즉시 poll까지 진행하므로(콜드 캐시를 실제로
- * 데운다) 심볼당 소요 시간이 늘었다. 원래 10 → 6으로 낮춰 청크(SYMBOL_CONCURRENCY=3
- * 기준 2청크)당 최악 대기가 과도해지지 않게 한다 — 실제 상한은 BATCH_DEADLINE_MS가
- * 건다(이 상수는 "정상 tick의 목표 처리량"일 뿐, 배치 전체를 막는 하드 캡이 아니다).
+ * FIX Z(감사) — run* 함수가 LLM 블로킹 호출이라 심볼당 소요 시간이 길다.
+ * 원래 10 → 6으로 낮춰 청크(SYMBOL_CONCURRENCY=3 기준 2청크)당 최악 대기가
+ * 과도해지지 않게 한다 — 실제 상한은 BATCH_DEADLINE_MS가 건다(이 상수는
+ * "정상 tick의 목표 처리량"일 뿐, 배치 전체를 막는 하드 캡이 아니다).
  */
 const SYMBOLS_PER_TICK = 6;
 // core fundamental이 Promise.all로 ~13개 FMP 호출을 한번에 쏨 → 3×13≈40 순간 버스트 캡 (spec §8).
@@ -76,10 +78,9 @@ const TAB_ORDER: readonly SeoSnapshotTab[] = [
 // spec §8 추정치 — 모니터링용, 정밀 계측 아님. 심볼 전체 탭 수 기준 총량을
 // 실제 seam이 "실행된"(=submit이 호출된) 탭 수에 비례 배분한다(탭 하나당 평균
 // FMP 호출수). equity: 22 calls / 7 tabs ≈ 3. crypto: 2 calls / 3 tabs(CRYPTO_TABS) ≈ 1.
-// 이미 fresh인 탭·backoff(skip) 중인 탭은 submit 자체가 안 불리므로 예산에서
-// 제외된다 — poll-resume(기존 job 이어받기)도 새 FMP 호출이 아니므로 제외.
-// 그렇지 않으면 실제 FMP 호출이 0건인데도 예산이 계상되어 getFmpBudgetUsed가
-// 실사용량을 과대평가한다.
+// 이미 fresh인 탭·backoff(skip) 중인 탭·in-flight 탭은 submit 자체가 안
+// 불리므로 예산에서 제외된다. 그렇지 않으면 실제 FMP 호출이 0건인데도 예산이
+// 계상되어 getFmpBudgetUsed가 실사용량을 과대평가한다.
 const FMP_CALLS_PER_TAB_EQUITY = 3;
 const FMP_CALLS_PER_TAB_CRYPTO = 1;
 
@@ -219,16 +220,9 @@ export async function runPrewarmBatch(
  * FIX 2(감사, PR #698 리뷰) — 이 창 안의 후보 분류(`classifySymbol`)는 서로
  * 독립적이고 순서에 의존하지 않으므로 `Promise.all`로 병렬 실행한다(이전엔
  * `for`-루프 안에서 순차 `await` — worst case 252회 왕복이 전부 직렬이었다).
- * 배치 결과의 순서는 "원래 후보(회전) 순서 안에서 resumable을 먼저, 그다음
- * fresh"로 재구성해 회전 정책의 결정성을 유지한다 — Promise.all은 완료 순서가
- * 아니라 입력 순서로 결과 배열을 반환하므로 이 재구성이 안전하다.
+ * 결과 배열은 Promise.all이 입력 순서 그대로 반환하므로 회전 결정성이 유지된다.
  *
- * FIX Z(감사) — in-flight는 더 이상 "배제" 대상이 아니다: 폴링을 도입한 뒤로는
- * in-flight(jobId 보유) 심볼이 "진행 중"이라 폴하면 실제로 진척이 있다. 그래서
- * resumable(in-flight jobId 보유) 심볼을 fresh(신규 stale) 심볼보다 먼저 채운다
- * — "in-flight 유닛을 먼저 poll하고, 남는 슬롯을 새 stale 심볼로 채운다."
- *
- * FIX C(감사) — 모든 stale 탭이 backoff(skip) 상태이거나 legacy in-flight
+ * FIX C(감사) — 모든 stale 탭이 backoff(skip) 상태이거나 in-flight
  * 마커로 막혀 있는 심볼은 'blocked'로 분류해 배제한다(terminal skip 또는
  * resume 불가 in-flight가 head 슬롯을 영구 점유하는 걸 막는다).
  */
@@ -329,32 +323,33 @@ async function processSymbol(
 
         try {
             const marker = await getInFlightMarker(u.symbol, tab);
-            let outcome: SeamOutcome | null;
+            // FIX 1(감사, PR #698 리뷰) — in-flight 마커가 있으면 이번 tick은
+            // 건너뛴다. TTL(30min) 만료 후 다음 tick이 새로 submit한다.
+            if (marker.present) continue;
+            if (await isSkipped(u.symbol, tab)) continue; // FIX C: terminal backoff 중.
 
-            if (marker.present) {
-                // FIX 1(감사, PR #698 리뷰) — in-flight 마커(jobId 유무 관계없이)는
-                // 재제출하지 않고 이번 tick은 건너뛴다 — TTL(30min)이 만료되면
-                // 다음 tick이 마커 없음으로 보고 새로 submit한다.
-                continue;
-            } else {
-                if (await isSkipped(u.symbol, tab)) continue; // FIX C: terminal backoff 중.
-
-                seamsRunForSymbol++;
-                outcome = await TAB_SEAMS[tab]({
+            seamsRunForSymbol++;
+            await markInFlight(u.symbol, tab);
+            try {
+                const outcome = await TAB_SEAMS[tab]({
                     symbol: u.symbol,
                     companyName,
                     fmpSymbol,
                 });
-            }
 
-            const harvested = await resolveHarvest(
-                u.symbol,
-                tab,
-                outcome,
-                repo,
-                counts
-            );
-            if (harvested) freshTabCount++;
+                const harvested = await resolveHarvest(
+                    u.symbol,
+                    tab,
+                    outcome,
+                    repo,
+                    counts
+                );
+                if (harvested) freshTabCount++;
+            } finally {
+                // 완료(done/error) 즉시 마커를 제거해 다음 tick이 TTL(30min) 만료를
+                // 기다리지 않고 바로 최신 상태를 반영하게 한다.
+                void clearInFlight(u.symbol, tab);
+            }
         } catch (error) {
             if (getFmpErrorStatus(error) === 402) {
                 // 402는 심볼 단위 이슈(플랜/쿼터) — 배치 중단 사유가 아니다.

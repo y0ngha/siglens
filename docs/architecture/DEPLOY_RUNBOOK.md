@@ -147,7 +147,7 @@ curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge
 | 한 페이지가 오래된 내용을 계속 보여준다 | `siglens-isr-tag-failures` 확인 → [ISR_CACHE_HANDLER.md](./ISR_CACHE_HANDLER.md), 그다음 [ISR_REVALIDATE.md](./ISR_REVALIDATE.md)로 의도된 TTL인지 확인 |
 | 디스크가 다시 차오른다 | `siglens-disk-high` 행 참고 — 캐시 외부화가 무력화된 것 |
 | SSH·SSM·EC2 Instance Connect 전부 안 된다 | 진입 복구를 시도하지 말고 §2 instance refresh. golden AMI가 minimal이면 접속 도구 자체가 없다(현재는 SSM param standard + 패키지 명시 설치로 수정됨) |
-| 분석이 계속 pending / 결과가 안 온다 | 외부 worker(`WORKER_URL`) 상태 — 공유 worker 레이트리밋은 플랫폼과 무관 |
+| 분석이 계속 pending / 결과가 안 온다 | ALB idle_timeout — 브라우저 SSE 연결이 60초 침묵 시 끊긴다. heartbeat(`/api/analysis/stream`)가 정상 작동 중인지 확인. 서버 오류면 CloudWatch Logs에서 `[streamAnalysisRoute]` 검색 |
 | 크론이 돌지 않는 것 같다 | [CRON.md](../reference/CRON.md)의 "정상 vs 진짜 막힌 상태" 절 — `submitted 0` 연속은 정상일 수 있다 |
 | 배포가 env 누락으로 중단됐다 | `check-env.sh`가 나열한 키를 `04-params.sh`로 SSM 적재. 비상시 `SKIP_ENV_CHECK=1`(권장하지 않음) |
 

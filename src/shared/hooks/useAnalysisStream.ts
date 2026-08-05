@@ -13,8 +13,9 @@
  * 그래서 브라우저 경로는 반드시 이 스트림을 거친다. 서버 내부 경로(크론·SSR·봇)는
  * 브라우저 연결이 없으므로 core `run*`을 그냥 `await`하면 된다.
  *
- * 취소는 fetch abort가 그대로 취소다 — 라우트가 `request.signal`을 core에 전달해
- * 진행 중인 LLM 호출까지 끊는다.
+ * 취소는 fetch abort가 그대로 취소다 — 라우트가 `request.signal`을 DISPATCH의 모든
+ * 분석 유형 액션에 전달하고 각 액션이 core `run*` 옵션의 `signal`로 넘겨 진행 중인
+ * LLM 호출까지 끊는다.
  */
 
 /** SSE `done` 이벤트가 싣고 오는 페이로드. `result`는 use-case별 결과 객체다. */

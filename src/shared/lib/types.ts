@@ -278,19 +278,3 @@ export type MacroBriefingActionResult =
     | { briefing: RunMacroBriefingResult; botBlocked: false }
     | { briefing: null; botBlocked: true }
     | { ok: false; error: string };
-
-export type JobType =
-    | 'analysis'
-    | 'financials'
-    | 'fundamental'
-    | 'news'
-    | 'options'
-    | 'overall'
-    | 'congress';
-export interface CancelJobEntry {
-    jobId: string;
-    type: JobType;
-}
-export interface CancelJobsBody {
-    jobs: CancelJobEntry[];
-}
