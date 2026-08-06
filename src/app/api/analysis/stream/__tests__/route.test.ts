@@ -3,7 +3,7 @@
  *
  * Covers the four scenarios specified in Task 3b:
  * 1. Heartbeat timer reclaimed when client disconnects.
- * 2. Abort signal propagates to runAnalysis.
+ * 2. Client abort does NOT propagate into core (shared dedupeInFlight work).
  * 3. Error path emits `event: error` rather than hanging.
  * 4. `miss_no_trigger` result terminates cleanly.
  *
@@ -231,33 +231,13 @@ describe('POST /api/analysis/stream', () => {
         });
     });
 
-    describe('abort — request.signal이 runAnalysis에 전파된다', () => {
-        it('AbortController.abort() 시 runAnalysis에 전달된 signal이 aborted 상태다', async () => {
-            const ac = new AbortController();
-
-            vi.mocked(runAnalysis).mockImplementation(
-                (_symbol, _name, _tf, _force, _fmp, options) =>
-                    // Resolve after a tick so signal state is observable
-                    Promise.resolve().then(() => {
-                        if (options?.signal?.aborted) {
-                            throw new DOMException('Aborted', 'AbortError');
-                        }
-                        return { status: 'miss_no_trigger' as const };
-                    })
-            );
-
-            ac.abort();
-
-            const response = await POST(makeRequest(ac.signal));
-            const events = await collectSseEvents(response);
-
-            // After abort the mock throws AbortError → heartbeatStream emits event: error
-            const errorEvent = events.find(e => e.includes('event: error'));
-            expect(errorEvent).toBeDefined();
-            expect(errorEvent).toContain('Aborted');
-        });
-
-        it('runAnalysis 호출 시 options.signal이 AbortSignal로 전달된다', async () => {
+    describe('client signal — core로 전파되지 않는다 (공유 작업 보호)', () => {
+        it('runAnalysis에 signal을 넘기지 않는다', async () => {
+            // core의 분석 실행은 dedupeInFlight로 공유된다 — 같은 캐시 키의 모든
+            // 호출자가 하나의 promise를 함께 기다린다. 여기에 특정 클라이언트의
+            // signal을 꽂으면 그 한 명이 이탈할 때 공유 promise가 reject되어
+            // 같은 심볼을 기다리던 SEO prewarm 크론까지 실패한다. 게다가 캐시
+            // write가 await 뒤에 있어 abort하면 캐시 워밍도 사라진다.
             const ac = new AbortController();
             let capturedSignal: AbortSignal | undefined;
 
@@ -273,8 +253,33 @@ describe('POST /api/analysis/stream', () => {
             const response = await POST(makeRequest(ac.signal));
             await collectSseEvents(response);
 
-            // The signal must be an AbortSignal (not undefined) so core can abort the LLM call.
-            expect(capturedSignal).toBeInstanceOf(AbortSignal);
+            expect(capturedSignal).toBeUndefined();
+        });
+
+        it('클라이언트가 abort해도 core 호출은 그대로 완주한다', async () => {
+            const ac = new AbortController();
+
+            vi.mocked(runAnalysis).mockImplementation(
+                (_symbol, _name, _tf, _force, _fmp, options) =>
+                    Promise.resolve().then(() => {
+                        // signal이 전달되지 않으므로 abort 여부를 알 수 없고,
+                        // 작업은 정상 완료되어 캐시를 채운다.
+                        if (options?.signal?.aborted) {
+                            throw new DOMException('Aborted', 'AbortError');
+                        }
+                        return { status: 'miss_no_trigger' as const };
+                    })
+            );
+
+            ac.abort();
+
+            const response = await POST(makeRequest(ac.signal));
+            const events = await collectSseEvents(response);
+
+            expect(
+                events.find(e => e.includes('event: error'))
+            ).toBeUndefined();
+            expect(events.some(e => e.includes('event: done'))).toBe(true);
         });
     });
 

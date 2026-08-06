@@ -152,19 +152,19 @@ describe('OverallContent 사용자 분석 플로우 (userEvent)', () => {
             await screen.findByText('AAPL 종합 분석 헤드라인')
         ).toBeInTheDocument();
 
-        // 훅은 첫 trigger에서 queryFnForceRef(false)를 그대로 params에 넘기므로
-        // force/reasoning은 정확히 false다(기본 reasoning=false) — done 상태에서의
-        // 재분석만 force:true.
+        // `force`는 전송하지 않는다 — 서버가 재분석 쿨다운에서 파생한다.
+        // 클라이언트가 캐시 우회를 지시할 수 있으면 인증 없는 공개 라우트에서
+        // 누구나 서버 키로 LLM을 무제한 태울 수 있다.
         expect(mockSubmit).toHaveBeenCalledTimes(1);
         const [firstCall] = mockSubmit.mock.calls[0]!;
         expect(firstCall).toMatchObject({
             type: 'overall',
             params: expect.objectContaining({
                 symbol: 'AAPL',
-                force: false,
                 reasoning: false,
             }),
         });
+        expect(firstCall.params).not.toHaveProperty('force');
     });
 
     it('CTA 클릭 → submit 에러 → "다시 시도" 클릭 → 재시도해 done이 된다', async () => {

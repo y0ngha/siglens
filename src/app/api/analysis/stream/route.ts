@@ -23,6 +23,7 @@ import {
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { heartbeatStream } from '@/shared/lib/sse/heartbeatStream';
 import { runAnalysis, type SubmitAnalysisOptions } from './runAnalysisBridge';
+import { tryAcquireReanalyzeCooldown } from '@/entities/analysis';
 
 // Actions: gating + data-fetch already live in each entity's action file.
 // Calling them from the route (server-side) is safe — no browser connection means
@@ -63,7 +64,6 @@ type TechnicalParams = {
     symbol: string;
     companyName: string;
     timeframe: Timeframe;
-    force?: boolean;
     fmpSymbol?: string;
     modelId?: ModelId;
     /**
@@ -106,25 +106,45 @@ const SSE_HEADERS: HeadersInit = {
 const STREAM_DEADLINE_MS = 5 * 60 * 1_000;
 
 /**
+ * ⚠️ `request.signal`을 core `run*`에 **의도적으로 전달하지 않는다.** 누락이 아니다.
+ *
+ * core의 분석 실행은 `dedupeInFlight(cacheKey, …)`로 공유된다 — 같은 캐시 키의 모든
+ * 호출자가 **하나의 promise**를 함께 기다린다. 여기에 특정 클라이언트의 signal을
+ * 꽂으면 그 한 명이 탭을 닫는 순간 공유 promise가 reject되고, 같은 심볼을 기다리던
+ * SEO prewarm 크론까지 실패한다(그 유닛은 6시간 backoff로 밀린다).
+ *
+ * 게다가 캐시 write는 `await callAnalysisAi` **뒤에** 있다. abort하면 캐시가 비므로,
+ * 방문자가 이탈할 때마다 캐시 워밍이 통째로 사라진다 — 구 worker 구조에서는 브라우저와
+ * 무관하게 job이 완주해 항상 캐시를 채웠다.
+ *
+ * 즉 이탈한 방문자의 LLM 호출은 낭비가 아니라 **다음 방문자와 크롤러를 위한 선투자**다.
+ * 취소가 필요하다면 먼저 core의 `dedupeInFlight`에 참조 카운팅을 넣어 마지막 대기자가
+ * 떠날 때만 abort되게 해야 한다. 그 전에는 여기서 signal을 넘기면 안 된다.
+ *
+ * 대신 폭주 방지는 `withDeadline`(5분)이 담당한다 — 클라이언트 유무와 무관한 상한이다.
+ */
+
+/**
  * Races `work` against a fixed deadline. Rejects with a localized message on
  * timeout so `heartbeatStream` emits an SSE `error` event instead of holding
  * the connection open forever.
  */
 function withDeadline<T>(work: Promise<T>): Promise<T> {
-    return Promise.race([
-        work,
-        new Promise<never>((_, reject) =>
-            setTimeout(
-                () =>
-                    reject(
-                        new Error(
-                            '분석 시간이 초과되었습니다. 다시 시도해 주세요.'
-                        )
-                    ),
-                STREAM_DEADLINE_MS
-            )
-        ),
-    ]);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const deadline = new Promise<never>((_, reject) => {
+        timer = setTimeout(
+            () =>
+                reject(
+                    new Error('분석 시간이 초과되었습니다. 다시 시도해 주세요.')
+                ),
+            STREAM_DEADLINE_MS
+        );
+    });
+    // work가 먼저 끝나면 타이머를 즉시 회수한다 — 없으면 매 요청이 5분짜리 타이머와
+    // 그 reject 클로저를 붙들고 있어, LLM 작업까지 떠안은 인스턴스에서 그대로 누적된다.
+    return Promise.race([work, deadline]).finally(() => {
+        if (timer !== undefined) clearTimeout(timer);
+    });
 }
 
 /**
@@ -151,7 +171,8 @@ const DISPATCH: Record<
             params.timeframe as Timeframe,
             params.modelId as ModelId,
             {
-                force: params.force as boolean | undefined,
+                // force는 클라이언트가 정하지 않는다 — 아래 파생 규칙 참조.
+                force: false,
                 reasoning: params.reasoning as boolean | undefined,
             },
             signal
@@ -304,7 +325,6 @@ export async function POST(request: Request): Promise<Response> {
             symbol,
             companyName,
             timeframe,
-            force,
             fmpSymbol,
             modelId,
             reasoning,
@@ -398,7 +418,6 @@ export async function POST(request: Request): Promise<Response> {
                 reasoning: resolveReasoning(tier, reasoning),
                 positionBucket,
                 ...(userApiKey !== undefined ? { userApiKey } : {}),
-                signal: request.signal,
             };
 
             /**
@@ -406,6 +425,21 @@ export async function POST(request: Request): Promise<Response> {
              * `setIsPersonalized` gets the server-authoritative value
              * (personalized-analysis-by-position-bucket spec, Subsystem C).
              */
+            /**
+             * `force`(캐시 우회)는 **클라이언트가 정하지 않는다.** 이 라우트는 인증 없는
+             * 공개 POST이므로, 본문에서 받은 `force:true`를 그대로 믿으면 누구나 캐시를
+             * 건너뛰고 매 요청마다 서버 키로 LLM을 태울 수 있다.
+             *
+             * 대신 서버가 재분석 쿨다운(Redis, 5분)을 획득했을 때만 캐시를 우회한다.
+             * 획득 실패는 에러가 아니라 `force:false`로 강등 — 사용자는 캐시된 결과를
+             * 정상적으로 받는다.
+             */
+            const cooldown = await tryAcquireReanalyzeCooldown(
+                symbol,
+                timeframe
+            );
+            const force = cooldown.ok;
+
             const work = withDeadline(
                 runAnalysis(
                     symbol,
@@ -446,7 +480,7 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     try {
-        const work = withDeadline(handler(body.params, request.signal));
+        const work = withDeadline(handler(body.params, undefined));
         return new Response(heartbeatStream(work), { headers: SSE_HEADERS });
     } catch (err) {
         console.error('[streamAnalysisRoute] unexpected error:', err);

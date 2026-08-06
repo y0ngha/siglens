@@ -252,11 +252,14 @@ export function useAnalysis({
 
             return runAnalysisStream<RunAnalysisActionResult>({
                 type: 'technical',
+                // `force`는 보내지 않는다 — 서버가 재분석 쿨다운(Redis)에서 직접
+                // 파생한다. 인증 없는 공개 라우트라 클라이언트가 캐시 우회를 지시할
+                // 수 있으면 누구나 서버 키로 LLM을 무제한 태울 수 있다. 아래
+                // `variables.force`는 쿨다운 표시용 클라이언트 상태로만 남는다.
                 params: {
                     symbol: mutSymbol,
                     companyName: mutCompanyName,
                     timeframe: latestTimeframeRef.current,
-                    force,
                     fmpSymbol: mutFmpSymbol,
                     modelId: mutModelId,
                     reasoning: mutReasoning,

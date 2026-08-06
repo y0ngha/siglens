@@ -46,9 +46,11 @@ async function fetchOverallAnalysis(
     companyName: string,
     timeframe: Timeframe,
     modelId: ModelId,
-    options: { force?: boolean; reasoning?: boolean } = {},
+    options: { reasoning?: boolean } = {},
     signal?: AbortSignal
 ): Promise<OverallAnalysisResponse> {
+    // `force`는 보내지 않는다 — 서버가 재분석 쿨다운에서 파생한다. 인증 없는 공개
+    // 라우트라 클라이언트가 캐시 우회를 지시할 수 있으면 안 된다.
     const result = await runAnalysisStream<RunOverallAnalysisActionResult>({
         type: 'overall',
         params: { symbol, companyName, timeframe, modelId, ...options },
@@ -120,9 +122,6 @@ export function useOverallAnalysis(
     const queryClient = useQueryClient();
     const isHydrated = useHydrated();
     const [triggered, setTriggered] = useState(initialResult !== undefined);
-    // 재분석 trigger가 다음 queryFn 호출에서 force=true를 사용해야 한다고 신호를
-    // 보내는 single-shot ref. queryFn 안에서 read 후 즉시 false로 reset한다.
-    const queryFnForceRef = useRef<boolean>(false);
     const queryKey = useMemo(
         () =>
             QUERY_KEYS.overallAnalysis(
@@ -150,14 +149,12 @@ export function useOverallAnalysis(
                 qReasoning,
             ],
         }) => {
-            const force = queryFnForceRef.current;
-            queryFnForceRef.current = false;
             return fetchOverallAnalysis(
                 qSymbol,
                 qCompanyName,
                 qTimeframe,
                 qModelId,
-                { force, reasoning: qReasoning },
+                { reasoning: qReasoning },
                 signal
             );
         },
@@ -195,9 +192,8 @@ export function useOverallAnalysis(
         if (!triggered) {
             setTriggered(true);
         } else {
-            // 이미 한 번 분석이 끝난 뒤의 사용자 행동은 항상 4-axis full force
-            // 재분석으로 간주한다 (spec §2: "재분석 = 4축 전체 force").
-            queryFnForceRef.current = true;
+            // 재분석은 refetch로 트리거하고, 캐시 우회 여부는 서버가 재분석
+            // 쿨다운에서 판단한다 — 클라이언트가 force를 지시하지 않는다.
             void refetch();
         }
     }, [triggered, refetch]);

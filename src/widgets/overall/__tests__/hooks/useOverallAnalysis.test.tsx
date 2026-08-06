@@ -110,8 +110,8 @@ describe('useOverallAnalysis', () => {
         });
     });
 
-    describe('trigger (force flag)', () => {
-        it('done 상태에서 trigger를 다시 호출하면 force=true를 action에 전달한다', async () => {
+    describe('trigger (재분석)', () => {
+        it('done 상태에서 trigger를 다시 호출하면 재요청하되 force는 보내지 않는다', async () => {
             mockSubmit.mockResolvedValue({
                 status: 'cached',
                 result: OVERALL_RESULT,
@@ -139,16 +139,15 @@ describe('useOverallAnalysis', () => {
                 expect(lastCall?.[0]).toEqual(
                     expect.objectContaining({
                         type: 'overall',
-                        params: expect.objectContaining({
-                            force: true,
-                            reasoning: false,
-                        }),
+                        params: expect.objectContaining({ reasoning: false }),
                     })
                 );
+                // 캐시 우회 여부는 서버가 재분석 쿨다운에서 판단한다.
+                expect(lastCall?.[0]?.params).not.toHaveProperty('force');
             });
         });
 
-        it('첫 trigger에는 force=false를 전달한다 (재분석이 아님)', async () => {
+        it('첫 trigger에도 force를 보내지 않는다 (서버가 쿨다운에서 파생)', async () => {
             mockSubmit.mockResolvedValue({
                 status: 'cached',
                 result: OVERALL_RESULT,
@@ -171,7 +170,6 @@ describe('useOverallAnalysis', () => {
                 expect.objectContaining({
                     type: 'overall',
                     params: expect.objectContaining({
-                        force: false,
                         reasoning: false,
                     }),
                 })
