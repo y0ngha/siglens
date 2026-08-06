@@ -13,9 +13,11 @@
  * 그래서 브라우저 경로는 반드시 이 스트림을 거친다. 서버 내부 경로(크론·SSR·봇)는
  * 브라우저 연결이 없으므로 core `run*`을 그냥 `await`하면 된다.
  *
- * 취소는 fetch abort가 그대로 취소다 — 라우트가 `request.signal`을 DISPATCH의 모든
- * 분석 유형 액션에 전달하고 각 액션이 core `run*` 옵션의 `signal`로 넘겨 진행 중인
- * LLM 호출까지 끊는다.
+ * ⚠️ abort는 **브라우저 쪽 연결만** 끊는다. 라우트는 클라이언트의 `request.signal`을
+ * core에 넘기지 않는다(의도적) — core는 같은 캐시 키의 호출자들이 `dedupeInFlight`로
+ * 하나의 promise를 공유하므로, 한 명의 이탈이 SEO prewarm 크론까지 실패시킨다.
+ * 자세한 근거는 `src/app/api/analysis/stream/route.ts`의 관련 주석 참고.
+ * 서버 쪽 상한은 라우트의 `withDeadline`(5분)이 담당한다.
  */
 
 /** SSE `done` 이벤트가 싣고 오는 페이로드. `result`는 use-case별 결과 객체다. */
@@ -95,6 +97,14 @@ type ParsedFrame<T> =
     | { kind: 'error'; message: string }
     | { kind: 'other' };
 
+function tryParse<T>(raw: string): T | null {
+    try {
+        return JSON.parse(raw) as T;
+    } catch {
+        return null;
+    }
+}
+
 function parseFrame<T>(frame: string): ParsedFrame<T> {
     let event = '';
     let data = '';
@@ -104,12 +114,26 @@ function parseFrame<T>(frame: string): ParsedFrame<T> {
     }
 
     if (event === 'done') {
-        const payload = JSON.parse(data) as StreamDonePayload<T>;
+        // 프레임이 잘렸거나 프록시가 본문을 건드리면 JSON.parse가 던진다. 그대로 두면
+        // 사용자에게 `Unexpected token …`이 그대로 노출된다 — 이 파일이 애써 보존하는
+        // 현지화 메시지 계약과 어긋나므로 한국어 메시지로 바꿔 error로 처리한다.
+        const payload = tryParse<StreamDonePayload<T>>(data);
+        if (payload === null) {
+            return {
+                kind: 'error',
+                message: '분석 결과를 읽지 못했습니다. 다시 시도해 주세요.',
+            };
+        }
         return { kind: 'done', result: payload.result };
     }
     if (event === 'error') {
-        const payload = JSON.parse(data) as StreamErrorPayload;
-        return { kind: 'error', message: payload.message };
+        const payload = tryParse<StreamErrorPayload>(data);
+        return {
+            kind: 'error',
+            message:
+                payload?.message ??
+                '분석 중 오류가 발생했습니다. 다시 시도해 주세요.',
+        };
     }
     return { kind: 'other' };
 }

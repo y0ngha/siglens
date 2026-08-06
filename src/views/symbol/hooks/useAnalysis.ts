@@ -32,12 +32,18 @@ import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
  */
 type RunAnalysisActionResult =
     | (RunAnalysisResult & { personalized?: boolean })
-    | AnalysisGateBlockedResult;
+    | AnalysisGateBlockedResult
+    /**
+     * 재분석 의도로 보낸 요청인데 서버가 쿨다운을 획득하지 못했다 — 새 분석을
+     * 태우지 않고 남은 시간만 알려준다. 쿨다운 획득은 서버가 단독으로 하므로
+     * (클라이언트가 미리 잡으면 서버 획득이 반드시 실패한다) 이 응답이 클라이언트가
+     * 쿨다운 상태를 알게 되는 유일한 경로다.
+     */
+    | { status: 'reanalyze_cooldown'; remainingMs: number };
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import {
     getReanalyzeCooldownMs as fetchReanalyzeCooldownMs,
     releaseReanalyzeCooldown,
-    tryAcquireReanalyzeCooldown,
     normalizeAnalysisResponse,
 } from '@/entities/analysis';
 
@@ -234,6 +240,7 @@ export function useAnalysis({
         mutate,
     } = useMutation<RunAnalysisActionResult, Error, AnalyzeMutationVariables>({
         mutationFn: ({
+            force: mutForce,
             symbol: mutSymbol,
             companyName: mutCompanyName,
             fmpSymbol: mutFmpSymbol,
@@ -251,10 +258,10 @@ export function useAnalysis({
 
             return runAnalysisStream<RunAnalysisActionResult>({
                 type: 'technical',
-                // `force`는 보내지 않는다 — 서버가 재분석 쿨다운(Redis)에서 직접
-                // 파생한다. 인증 없는 공개 라우트라 클라이언트가 캐시 우회를 지시할
-                // 수 있으면 누구나 서버 키로 LLM을 무제한 태울 수 있다. 아래
-                // `variables.force`는 쿨다운 표시용 클라이언트 상태로만 남는다.
+                // `force`(캐시 우회) 자체는 보내지 않는다 — 인증 없는 공개 라우트라
+                // 클라이언트가 우회를 지시할 수 있으면 누구나 서버 키로 LLM을 무제한
+                // 태울 수 있다. 대신 **의도**(`reanalyze`)만 보내고, 서버가 재분석
+                // 쿨다운을 획득했을 때만 실제로 우회한다.
                 params: {
                     symbol: mutSymbol,
                     companyName: mutCompanyName,
@@ -262,6 +269,7 @@ export function useAnalysis({
                     fmpSymbol: mutFmpSymbol,
                     modelId: mutModelId,
                     reasoning: mutReasoning,
+                    ...(mutForce ? { reanalyze: true } : {}),
                 },
                 signal: controller.signal,
             })
@@ -272,7 +280,8 @@ export function useAnalysis({
                     if (
                         result.status === 'cached' ||
                         result.status === 'done' ||
-                        result.status === 'miss_no_trigger'
+                        result.status === 'miss_no_trigger' ||
+                        result.status === 'reanalyze_cooldown'
                     ) {
                         return result;
                     }
@@ -343,6 +352,13 @@ export function useAnalysis({
                             : CACHE_HIT_COOLDOWN_MS
                     )
                 );
+            } else if (data.status === 'reanalyze_cooldown') {
+                // 서버가 쿨다운을 못 잡았다 — 기존 결과를 유지한 채 남은 시간만 알린다.
+                setReanalyzeCooldownMs(data.remainingMs);
+                setCooldownNotice({
+                    nonce: Date.now(),
+                    remainingMs: data.remainingMs,
+                });
             } else if (data.status === 'miss_no_trigger') {
                 // 별도 boolean 상태로 추적하는 이유: 이 훅은 useMutation 기반이라
                 // useQuery처럼 에러 브랜치 narrowing으로 비-데이터 상태를 표현할
@@ -420,32 +436,22 @@ export function useAnalysis({
 
     // 6. Handlers
     // latestRef 패턴을 사용하므로 symbol을 deps에서 제외하고 안정적인 함수 참조를 유지한다.
-    // Redis 기반 쿨다운을 atomic하게 점유한 뒤에만 mutation을 실행한다.
     const handleReanalyze = useCallback((): void => {
         if (isTierHydrated === false) return;
         const { symbol: latestSymbol, fmpSymbol: latestFmpSymbol } =
             latestRef.current;
-        const tf = latestTimeframeRef.current;
-        void (async () => {
-            const acquire = await tryAcquireReanalyzeCooldown(latestSymbol, tf);
-            if (!acquire.ok) {
-                setReanalyzeCooldownMs(acquire.remainingMs);
-                setCooldownNotice({
-                    nonce: Date.now(),
-                    remainingMs: acquire.remainingMs,
-                });
-                return;
-            }
-            reset();
-            mutate({
-                symbol: latestSymbol,
-                companyName: latestRef.current.companyName,
-                force: true,
-                fmpSymbol: latestFmpSymbol,
-                modelId: latestModelIdRef.current,
-                reasoning: latestReasoningRef.current,
-            });
-        })();
+        // 쿨다운은 **서버가 단독으로** 획득한다. 여기서 미리 잡으면 라우트의 획득이
+        // 반드시 실패해 재분석이 영원히 캐시 응답으로 강등된다. 쿨다운 중이면 서버가
+        // `reanalyze_cooldown`을 돌려주고 onSuccess가 안내를 띄운다.
+        reset();
+        mutate({
+            symbol: latestSymbol,
+            companyName: latestRef.current.companyName,
+            force: true,
+            fmpSymbol: latestFmpSymbol,
+            modelId: latestModelIdRef.current,
+            reasoning: latestReasoningRef.current,
+        });
     }, [isTierHydrated, reset, mutate]);
 
     /**

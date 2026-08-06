@@ -61,9 +61,13 @@ export function useMarketBriefing(
     );
 
     // 스트림이 error 이벤트로 끝나면 `runAnalysisStream`이 throw하므로 data가 없다 —
-    // 이때 seedInput(대개 undefined)으로 떨어지면 아무것도 렌더되지 않아 실패가
-    // 조용히 사라진다. /economy의 MacroBriefing과 동일하게 명시적 error를 노출한다.
-    if (isError) return { input: 'error' };
+    // 이때 그냥 seedInput으로 떨어지면 실패가 조용히 사라져 스켈레톤만 남는다.
+    //
+    // 다만 **seed가 있으면 seed가 이긴다.** seed는 서버가 peek로 읽어 온 실제 캐시
+    // 본문이라, 에러 카드보다 사용자에게도 크롤러에게도 낫다(크롤러는 이 fetch가
+    // 실패하는 게 기본값에 가깝다 — robots.txt가 /api/를 막고 있었다). seed가
+    // 없을 때만 명시적 error를 노출한다.
+    if (isError) return { input: seedInput ?? 'error' };
     if (!data) {
         return { input: seedInput };
     }

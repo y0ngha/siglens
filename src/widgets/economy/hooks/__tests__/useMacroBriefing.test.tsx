@@ -163,9 +163,21 @@ describe('useMacroBriefing', () => {
     });
 
     // 스트림 throw(SSE error 이벤트) — data가 없어 seed로 떨어지면 스켈레톤이 영원히 남는다.
-    it('스트림이 throw해도 input="error" — peekSeed로 되돌아가지 않는다', async () => {
+    // 스트림 throw(SSE error 이벤트) — data가 없다. seed가 있으면 seed가 이기고,
+    // 없으면 'error'를 노출해 스켈레톤이 영원히 남는 걸 막는다.
+    it('스트림이 throw해도 peekSeed가 있으면 seed를 계속 보여 준다', async () => {
         mockSubmit.mockRejectedValue(new Error('분석 시간이 초과되었습니다.'));
         const { result } = renderHook(() => useMacroBriefing(PEEK), {
+            wrapper: makeWrapper(),
+        });
+
+        await waitFor(() => expect(mockSubmit).toHaveBeenCalled());
+        expect(result.current.input).toMatchObject({ status: 'cached' });
+    });
+
+    it('스트림이 throw하고 seed도 없으면 input="error"', async () => {
+        mockSubmit.mockRejectedValue(new Error('분석 시간이 초과되었습니다.'));
+        const { result } = renderHook(() => useMacroBriefing(null), {
             wrapper: makeWrapper(),
         });
 

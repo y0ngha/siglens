@@ -195,7 +195,10 @@ describe('AI 응답 지연·연결 오류 최악 시나리오', () => {
 
         const errorEvent = events.find(e => e.includes('event: error'));
         expect(errorEvent).toBeDefined();
-        expect(errorEvent).toContain('ECONNREFUSED');
+        // 내부 영문 오류는 브라우저로 새지 않는다 — heartbeatStream이 제네릭 한국어
+        // 메시지로 바꾼다(원문은 `[analysis-stream] failed:` 로그에만 남는다).
+        expect(errorEvent).not.toContain('ECONNREFUSED');
+        expect(errorEvent).toContain('분석 중 오류가 발생했습니다');
 
         // collectSseEvents가 반환했다 = 스트림이 정상 종료됐다
         // (done=true에 도달하지 않으면 무한 루프로 타임아웃).

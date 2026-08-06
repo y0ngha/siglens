@@ -105,6 +105,28 @@ describe('runAnalysisStream', () => {
         ).rejects.toThrow(/완료 전에 끊겼습니다/);
     });
 
+    it('done 프레임의 data가 깨진 JSON이면 한국어 메시지로 실패한다', async () => {
+        // 프록시가 본문을 건드리거나 프레임이 잘리면 발생한다. 가드가 없으면
+        // `Unexpected token …`(영문 SyntaxError)이 사용자에게 그대로 노출된다.
+        fetchMock.mockResolvedValue(
+            sseResponse(['event: done\ndata: {"result":\n\n'])
+        );
+
+        await expect(
+            runAnalysisStream({ type: 'technical', params: {} })
+        ).rejects.toThrow('분석 결과를 읽지 못했습니다. 다시 시도해 주세요.');
+    });
+
+    it('error 프레임의 data가 깨져도 한국어 메시지로 실패한다', async () => {
+        fetchMock.mockResolvedValue(
+            sseResponse(['event: error\ndata: not-json\n\n'])
+        );
+
+        await expect(
+            runAnalysisStream({ type: 'technical', params: {} })
+        ).rejects.toThrow('분석 중 오류가 발생했습니다. 다시 시도해 주세요.');
+    });
+
     it('non-2xx 응답은 상태 코드를 담아 throw한다', async () => {
         fetchMock.mockResolvedValue(
             new Response('{"error":"bad request"}', { status: 400 })

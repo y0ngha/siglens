@@ -87,7 +87,11 @@ INSTANCE_ID=$(curl -sf -H "X-aws-ec2-metadata-token: $TOKEN" \
   "http://169.254.169.254/latest/meta-data/instance-id" || echo unknown)
 aws logs create-log-group --log-group-name "$LOG_GROUP" --region "$REGION" 2>/dev/null || true
 
-# systemd 유닛 (graceful stop 30s — Dockerfile tini가 SIGTERM 전달)
+# systemd 유닛 — Dockerfile tini가 SIGTERM을 컨테이너 프로세스에 전달.
+# graceful stop 타이밍(Fix 3, 06-alb-asg.sh와 정합):
+#   - deregistration_delay 185s  ≥  instrumentation drain deadline(180s)
+#   - docker stop -t 185s        >  drain deadline(SIGTERM → process.exit(0) 이후 멈춤)
+#   - TimeoutStopSec=190s        ≥  docker stop -t(systemd 안전망)
 # ExecStartPre order: fetch env first (re-populates /run/siglens/env after reboot),
 # then remove any stale container, then docker run.
 cat > /etc/systemd/system/siglens.service <<UNIT
@@ -102,7 +106,7 @@ Requires=docker.service
 StartLimitIntervalSec=120
 StartLimitBurst=5
 [Service]
-TimeoutStopSec=35
+TimeoutStopSec=190
 ExecStartPre=/usr/local/bin/siglens-fetch-env.sh
 ExecStartPre=-/usr/bin/docker rm -f siglens
 # --security-opt no-new-privileges 적용: 컨테이너 프로세스의 권한 상승 차단.
@@ -110,7 +114,7 @@ ExecStartPre=-/usr/bin/docker rm -f siglens
 # awslogs 드라이버로 stdout/stderr를 CloudWatch Logs($LOG_GROUP)로 전송(L4).
 # 인스턴스가 사라져도 로그가 보존된다.
 ExecStart=/usr/bin/docker run --rm --name siglens -p 3000:3000 --env-file /run/siglens/env --security-opt no-new-privileges:true --log-driver awslogs --log-opt awslogs-region=$REGION --log-opt awslogs-group=$LOG_GROUP --log-opt awslogs-stream=$INSTANCE_ID --log-opt awslogs-create-group=true $IMAGE
-ExecStop=/usr/bin/docker stop -t 30 siglens
+ExecStop=/usr/bin/docker stop -t 185 siglens
 Restart=always
 RestartSec=5
 [Install]

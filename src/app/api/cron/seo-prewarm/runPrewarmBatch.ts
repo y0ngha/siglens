@@ -19,6 +19,7 @@ import {
     getInFlightMarker,
     isSkipped,
     markInFlight,
+    markSkipped,
 } from './lock';
 import { TAB_SEAMS, resolveHarvest } from './harvest';
 
@@ -65,6 +66,21 @@ const TICK_ROTATION_MS = 5 * 60 * 1000;
 // `BATCH_DEADLINE_MS + 스케줄주기 ≤ 15분`을 반드시 함께 확인할 것. 현재 정확히
 // 경계값(600s + 300s = 900s)이라 여유가 없다.
 const BATCH_DEADLINE_MS = 600_000; // 10min
+/**
+ * 유닛(심볼×탭) 하나당 LLM 왕복 최대 대기 시간.
+ *
+ * LOCK_TTL_SECONDS(900s)와의 관계: BATCH_DEADLINE_MS(600s)가 더 작은 상한이라
+ * 락 보호는 실질적으로 BATCH_DEADLINE_MS가 담당한다. 그러나 BATCH_DEADLINE_MS는
+ * 탭 사이에서만 검사되므로, 마지막 유닛이 이 타임아웃 없이 무한정 블로킹하면
+ * LOCK_TTL(900s)까지 락이 안 풀릴 수 있고, 그 사이 다음 EventBridge tick이
+ * 새 락을 획득해 두 배치가 동시에 돌 수 있다.
+ *
+ * ⚠️ 이 타임아웃이 발동해도 core의 run* 호출은 취소되지 않는다 — prewarm* seam이
+ * AbortSignal을 받지 않으므로 orphaned promise가 백그라운드에서 계속 실행된다.
+ * 이 타임아웃의 목적은 배치 슬롯(락)을 보호하는 것이지, 작업을 취소하는 게 아니다.
+ * AbortSignal threading은 별도 작업으로 대응한다.
+ */
+const UNIT_TIMEOUT_MS = 120_000; // 2min
 // overall을 마지막에 둬 bars/scorecard 등 다른 축이 이미 채운 Redis 캐시를 HIT로 재활용한다.
 const TAB_ORDER: readonly SeoSnapshotTab[] = [
     'technical',
@@ -94,7 +110,12 @@ export interface PrewarmClock {
 }
 
 function defaultSleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise(resolve => {
+        // unref: 유닛 타임아웃 race에서 진 타이머가 최대 UNIT_TIMEOUT_MS 동안 남는다
+        // (유닛 하나당 하나, 배치당 수십 개). unref하지 않으면 그 타이머들이 이벤트
+        // 루프를 붙들어 배치가 끝나도 프로세스가 바로 정리되지 않는다.
+        setTimeout(resolve, ms).unref();
+    });
 }
 
 const DEFAULT_CLOCK: PrewarmClock = { now: Date.now, sleep: defaultSleep };
@@ -174,7 +195,8 @@ export async function runPrewarmBatch(
                     generatedAtMap,
                     repo,
                     counts,
-                    isPastDeadline
+                    isPastDeadline,
+                    clock
                 ).catch(error => {
                     console.error(`[seo-prewarm] ${u.symbol} failed:`, error);
                 })
@@ -305,7 +327,8 @@ async function processSymbol(
      * 넘길 수 있고, 그러면 락이 만료돼 다음 tick이 같은 심볼을 동시에 잡는다.
      * 탭 사이에서도 검사해 그 창을 닫는다.
      */
-    isPastDeadline: () => boolean
+    isPastDeadline: () => boolean,
+    clock: PrewarmClock
 ): Promise<void> {
     const { assetInfo } = await getAssetInfoResilient(u.symbol);
     const companyName = assetInfo?.name ?? u.symbol;
@@ -339,16 +362,33 @@ async function processSymbol(
             seamsRunForSymbol++;
             await markInFlight(u.symbol, tab);
             try {
-                const outcome = await TAB_SEAMS[tab]({
-                    symbol: u.symbol,
-                    companyName,
-                    fmpSymbol,
-                });
+                // FIX 1(감사) — 유닛 타임아웃: core run* 함수가 UNIT_TIMEOUT_MS 안에
+                // 반환하지 않으면 기다리기를 포기한다. 타임아웃이 발동해도 orphaned
+                // promise는 백그라운드에서 계속 실행된다 — UNIT_TIMEOUT_MS 상수 주석
+                // 참조(AbortSignal 미지원으로 취소 불가).
+                const raceResult = await Promise.race([
+                    TAB_SEAMS[tab]({
+                        symbol: u.symbol,
+                        companyName,
+                        fmpSymbol,
+                    }).then(r => ({ timedOut: false as const, value: r })),
+                    clock
+                        .sleep(UNIT_TIMEOUT_MS)
+                        .then(() => ({ timedOut: true as const })),
+                ]);
+
+                if (raceResult.timedOut) {
+                    console.warn(
+                        `[seo-prewarm] unit-timeout ${u.symbol}:${tab} — abandoned wait, core call still running in background`
+                    );
+                    await markSkipped(u.symbol, tab);
+                    continue;
+                }
 
                 const harvested = await resolveHarvest(
                     u.symbol,
                     tab,
-                    outcome,
+                    raceResult.value,
                     repo,
                     counts
                 );
@@ -361,12 +401,18 @@ async function processSymbol(
         } catch (error) {
             if (getFmpErrorStatus(error) === 402) {
                 // 402는 심볼 단위 이슈(플랜/쿼터) — 배치 중단 사유가 아니다.
+                // backoff 마커를 남기지 않는다: 플랜이 변경되면 다음 tick에 자동 재시도된다.
                 console.error(`[seo-prewarm] fmp-402 ${u.symbol}:${tab}`);
             } else {
                 console.error(
                     `[seo-prewarm] unit-error ${u.symbol}:${tab}`,
                     error
                 );
+                // FIX 2(감사) — worker 제거 이후 run* 함수가 {status:'error'}를 반환하는
+                // 대신 throw하게 됐다. resolveHarvest가 error 상태를 markSkipped로 변환하던
+                // 경로가 bypass되므로 여기서 동일하게 6h backoff 마커를 남긴다. backoff 없이
+                // 두면 실패한 유닛이 매 5분 tick마다 재시도되며 배치 슬롯을 영구 점유한다.
+                await markSkipped(u.symbol, tab);
             }
             // 오래된 스냅샷이 그대로 남는다(fail-open) — 여기서 rethrow하지 않는다.
         }

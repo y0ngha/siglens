@@ -52,7 +52,10 @@ vi.mock('@/entities/news-article/api', () => ({
 
 import type { MockedFunction, MockedClass, Mock } from 'vitest';
 import { ensureNewsCardsAnalyzedAction } from '../actions/ensureNewsCardsAnalyzedAction';
-import { DISABLED_THINKING_BUDGET } from '../lib/newsAnalysisConstants';
+import {
+    DISABLED_THINKING_BUDGET,
+    NEWS_CARD_ANALYSIS_PARALLEL_LIMIT,
+} from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import { runNewsCardAnalysis } from '@y0ngha/siglens-core';
 import { getNewsClient } from '../lib/getNewsClient';
@@ -621,6 +624,73 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             // skipAnalysis short-circuit). Guards against regressions that move
             // the call into the bot-only branch.
             expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
+        });
+    });
+
+    // ── FIX 3(감사) — 동시 LLM 호출 상한 ──
+
+    describe('동시 카드 분석 제한은', () => {
+        it('FIX 3 — unanalyzed 아이템이 NEWS_CARD_ANALYSIS_PARALLEL_LIMIT를 초과해도 전부 분석된다', async () => {
+            // NEWS_CARD_ANALYSIS_PARALLEL_LIMIT보다 많은 아이템을 주고 전부 처리됨을 검증.
+            // 청크 단위 병렬 실행의 순기능(처리 완전성) 확인.
+            const count = NEWS_CARD_ANALYSIS_PARALLEL_LIMIT + 3;
+            const manyItems: (typeof NEWS_ITEM_1)[] = Array.from(
+                { length: count },
+                (_, i) => ({
+                    id: `bulk-${i}`,
+                    symbol: 'AAPL',
+                    source: 'Reuters',
+                    url: `https://reuters.com/${i}`,
+                    publishedAt: '2025-07-01T10:00:00.000Z',
+                    titleEn: `Article ${i}`,
+                    bodyEn: `Body ${i}`,
+                })
+            );
+            mockFetchNewsForPeriod.mockResolvedValue(manyItems);
+            // 모두 미분석 상태.
+            mockListBySymbol.mockResolvedValue(
+                manyItems.map(item => ({ id: item.id, analyzedAt: null }))
+            );
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockRunNewsCardAnalysis).toHaveBeenCalledTimes(count);
+        });
+
+        it('FIX 3 — 일부 아이템 분석이 실패해도 나머지는 모두 처리된다(fail-open)', async () => {
+            const count = NEWS_CARD_ANALYSIS_PARALLEL_LIMIT + 2;
+            const items: (typeof NEWS_ITEM_1)[] = Array.from(
+                { length: count },
+                (_, i) => ({
+                    id: `failtest-${i}`,
+                    symbol: 'AAPL',
+                    source: 'Reuters',
+                    url: `https://reuters.com/fail-${i}`,
+                    publishedAt: '2025-07-01T10:00:00.000Z',
+                    titleEn: `Article ${i}`,
+                    bodyEn: `Body ${i}`,
+                })
+            );
+            mockFetchNewsForPeriod.mockResolvedValue(items);
+            mockListBySymbol.mockResolvedValue(
+                items.map(item => ({ id: item.id, analyzedAt: null }))
+            );
+            // 첫 번째 아이템만 실패.
+            mockRunNewsCardAnalysis
+                .mockRejectedValueOnce(new Error('LLM timeout'))
+                .mockResolvedValue(DONE_RESULT);
+
+            const errSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            await ensureNewsCardsAnalyzedAction('AAPL');
+            errSpy.mockRestore();
+
+            // 전체 아이템에 대해 분석이 시도된다.
+            expect(mockRunNewsCardAnalysis).toHaveBeenCalledTimes(count);
+            // 실패한 첫 항목을 제외한 나머지는 attachAnalysis 호출.
+            expect(mockAttachAnalysis).toHaveBeenCalledTimes(count - 1);
         });
     });
 

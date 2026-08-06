@@ -34,7 +34,6 @@
 | 응답 정규화 / 검증 / 후처리 룰 추가 | → core |
 | Skills (.md) 시스템 자체의 동작 변경 | → core |
 | 분석 캐시 키 / TTL / 만료 정책 변경 | → core |
-| 분석 Job 큐 라이프사이클 | → core |
 | 재분석 쿨다운 정책 | → core |
 | 대시보드 신호 스캐너 알고리즘 | → core |
 | 티어별 제한 정책 (TIER_CONFIG, isAllowed 등) | → core |
@@ -71,12 +70,12 @@
 - 무엇을 담는가:
   · 도메인 계산 (지표, 캔들/차트 패턴, 분석 프롬프트 빌더, 신호 감지)
   · 응답 정규화 / AI 레벨 보정 / 키레벨/추세선 보조
-  · 분석 use-case (submitAnalysis, pollAnalysis, submitBriefing,
-    pollBriefing, fetchBarsWithIndicators, requestChatCompletion 등)
+  · 분석 use-case (runAnalysis, runOverallAnalysis, runBriefing,
+    fetchBarsWithIndicators, requestChatCompletion 등 — 전부 블로킹 호출.
+    submit/poll 2단계 API와 job 신호 체계는 worker 제거와 함께 없어졌다)
   · 분석에 직결된 infrastructure:
-      - AI provider 호출 (Claude / Gemini wrapper)
-      - 분석 결과 캐시 (Upstash Redis)
-      - Job 큐 (분석 워커 라이프사이클)
+      - AI provider 호출 (Anthropic / Gemini / OpenAI / DeepSeek 어댑터 — 서버 키로 직접 호출)
+      - 분석 결과 캐시 (Upstash Redis) + 동일 캐시 키 in-flight 공유(`dedupeInFlight`)
       - 시장 데이터 provider 인터페이스 (실제 fetch는 consumer가 주입)
       - Skills 파일 로더 (`skills/*.md`)
   · Tier 게이팅 / 분석 사용량 IP 해싱(`hashUsageIp`) / 쿨다운
@@ -119,7 +118,7 @@
 - 무엇을 담지 않는가:
   · 지표 계산식, 캔들 패턴 판정 로직, 신호 감지 임계값 — core에만 존재
   · AI 프롬프트 문자열 조립 — core의 `buildAnalysisPrompt` 등을 호출
-  · 분석 결과 캐시 키 포맷 / TTL / Job 큐 라이프사이클 — core가 소유
+  · 분석 결과 캐시 키 포맷 / TTL / in-flight 공유(`dedupeInFlight`) — core가 소유
   · Skills 시스템 — core가 소유
   · 분석 티어 제한·사용량 카운트·쿨다운 비즈니스 규칙 — core가 소유
 ```
@@ -215,12 +214,11 @@ Skills 카탈로그
 (1) 워커/CLI 등 다른 consumer가 같은 로직을 재구현해야 한다.
 (2) 분석 비즈니스 규칙이 두 곳에 흩어져 일관성이 깨진다.
 
-### Step 5 — 분석에 직결된 외부 시스템 I/O인가? (AI provider / 분석 캐시 / 분석 Job 큐 / Skills 파일)
+### Step 5 — 분석에 직결된 외부 시스템 I/O인가? (AI provider / 분석 캐시 / Skills 파일)
 
 ```
-Anthropic / Gemini SDK 호출
+Anthropic / Gemini / OpenAI / DeepSeek SDK 호출
 Upstash Redis 명령(분석/브리핑 캐시 키)
-분석 Job 큐 enqueue / status / result
 skills/*.md 파일 읽기
 ```
 
@@ -277,7 +275,7 @@ i18n 메시지, 로딩 UI, 에러 토스트, 분석 결과 화면 포맷팅
 ❌ siglens 내부에 RSI 계산식, 캔들 패턴 임계값, AI 프롬프트 문자열을 복제
    → core에 같은 함수가 있다. 없다면 core에 PR을 올려 추가한 뒤 import.
 
-❌ siglens 내부에 분석 결과 캐시 키 빌더, 분석 Job 큐 키 패턴 정의
+❌ siglens 내부에 분석 결과 캐시 키 빌더 정의
    → 모두 core가 source-of-truth.
 
 ❌ siglens 내부에서 process.env(분석 인프라용)를 읽어 core 함수에

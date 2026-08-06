@@ -10,13 +10,22 @@ import {
     drainBackgroundTasks,
     stopAcceptingBackgroundTasks,
 } from '@/entities/ticker/lib/backgroundTask';
+import { waitForActiveStreams } from '@/shared/lib/sse/activeStreams';
 
 /**
- * Drain deadline(ms). `docker stop -t 30`의 30초 stop-timeout보다 짧게 잡아
- * SIGKILL 전에 정상 종료를 마칠 여유를 둔다. 06-alb-asg.sh의
- * deregistration_delay.timeout_seconds=30과도 정합한다.
+ * Drain deadline(ms).
+ *
+ * 분석 SSE 스트림의 최대 지속 시간(STREAM_DEADLINE_MS = 5분)을 고려해 180s로 설정한다.
+ * 5분보다 짧으므로 deadline 내 완주를 보장하지는 않지만, 통상 분석(30~90s)은 완주한다.
+ * 180s를 넘는 분석은 SIGKILL로 잘린다 — 허용된 트레이드오프.
+ *
+ * 인프라 타이밍과의 정합(06-alb-asg.sh, user-data.sh):
+ *   - deregistration_delay 185s  ≥  이 값(SIGTERM은 deregistration 완료 후 오므로
+ *                                      draining 중 새 연결이 들어오지 않는다)
+ *   - docker stop -t 185s        >  이 값(drain이 끝나고 process.exit(0) 후 docker가 멈춤)
+ *   - TimeoutStopSec 190s        ≥  docker stop -t(systemd 안전망)
  */
-const SHUTDOWN_DRAIN_DEADLINE_MS = 25_000;
+const SHUTDOWN_DRAIN_DEADLINE_MS = 180_000;
 
 /** 시그널당 핸들러 중복 등록 방지 가드(같은 프로세스에서 register 재호출 대비). */
 let shutdownHandlersRegistered = false;
@@ -33,11 +42,16 @@ export function registerShutdownHandlers(): void {
         shuttingDown = true;
 
         console.log(
-            `[instrumentation] ${signal} received — draining background tasks (deadline ${SHUTDOWN_DRAIN_DEADLINE_MS}ms)`
+            `[instrumentation] ${signal} received — draining background tasks and SSE streams (deadline ${SHUTDOWN_DRAIN_DEADLINE_MS}ms)`
         );
         stopAcceptingBackgroundTasks();
 
-        void drainBackgroundTasks(SHUTDOWN_DRAIN_DEADLINE_MS)
+        // 백그라운드 작업(캐시 쓰기, 번역 잡)과 in-flight SSE 스트림(LLM 분석)을
+        // 병렬로 drain한다 — 양쪽 모두 같은 deadline 안에서 완료를 기다린다.
+        void Promise.all([
+            drainBackgroundTasks(SHUTDOWN_DRAIN_DEADLINE_MS),
+            waitForActiveStreams(SHUTDOWN_DRAIN_DEADLINE_MS),
+        ])
             .catch(err => {
                 console.error('[instrumentation] drain error:', err);
             })

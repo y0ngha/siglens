@@ -67,4 +67,22 @@ aws logs put-metric-filter --log-group-name /siglens/app \
 aws cloudwatch put-metric-alarm --alarm-name siglens-isr-tag-failures --namespace Siglens/ISRCache \
   --metric-name IsrTagFailures --statistic Sum --period 900 --evaluation-periods 2 --threshold 5 \
   --comparison-operator GreaterThanOrEqualToThreshold --treat-missing-data notBreaching $ACTIONS
-log "alarms created (5xx, unhealthy, cpu-credits, disk, mem, isr-cache-failures, isr-tag-failures)"
+# 분석 스트림 실패 가시성 — heartbeatStream.ts reject 핸들러가 '[analysis-stream] failed:'를
+# 남긴다(Fix 1a). SSE는 항상 HTTP 200을 반환하므로 ALB 5xx 알람으로는 분석 전면 장애를
+# 포착할 수 없다 — 이 로그 기반 메트릭이 유일한 서버사이드 신호다.
+#
+# '[analysis-stream] failed' 로 필터(따옴표 포함): 접두 패턴이 ASCII만으로 구성돼
+# CloudWatch Logs 필터 매칭이 안정적이다(13-seo-prewarm.sh §FIX F 참조).
+#
+# 임계값: 5분간 50건 초과 → 알람.
+#   - 정상 노이즈: 산발적 LLM 오류·타임아웃은 시간당 수십 건 이하(5분당 ~5건 이하).
+#   - 전면 장애: API 키 미설정 등 100% 실패 시 활성 사용자가 있으면 수백 건/5분.
+# 50으로 잡으면 정상 노이즈를 충분히 흡수하면서 완전 장애는 빠르게(5분 내) 잡는다.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-analysis-stream-failed \
+  --filter-pattern '"[analysis-stream] failed"' \
+  --metric-transformations metricName=AnalysisStreamFailed,metricNamespace=Siglens/Analysis,metricValue=1
+aws cloudwatch put-metric-alarm --alarm-name siglens-analysis-stream-failed --namespace Siglens/Analysis \
+  --metric-name AnalysisStreamFailed --statistic Sum --period 300 --evaluation-periods 1 --threshold 50 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
+log "alarms created (5xx, unhealthy, cpu-credits, disk, mem, isr-cache-failures, isr-tag-failures, analysis-stream-failed)"

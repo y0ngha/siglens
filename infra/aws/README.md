@@ -28,17 +28,28 @@ SigLens는 AWS(ALB + ASG / EC2 `t4g.medium` arm64)에서 서빙된다. 런타임
 ## SIGTERM graceful drain (H1)
 
 `src/instrumentation.ts`의 `register()`가 Node 서버 부팅 시 SIGTERM/SIGINT 핸들러를
-등록한다. 배포 롤로 `docker stop -t 30` → 컨테이너 SIGTERM 수신 시:
+등록한다. 배포 롤로 `docker stop -t 185` → 컨테이너 SIGTERM 수신 시:
 
 1. 신규 백그라운드 작업(`fireAndForget`) 수락 중단
-2. 추적 중인 in-flight 작업을 25s deadline까지 drain
+2. 추적 중인 in-flight 작업과 **진행 중인 SSE 분석 스트림**을 180s deadline까지 drain
 3. `process.exit(0)`
 
-타임 예산 정합(셋이 맞물림):
+worker 제거로 LLM 호출이 앱 요청 안에서 돌기 때문에 예산을 30s대에서 180s대로 올렸다 —
+그 전 값이면 배포할 때마다 진행 중이던 분석이 전부 죽고(캐시 write는 LLM await 뒤에 있어
+그 비용이 통째로 버려진다), 사용자는 `분석 연결이 완료 전에 끊겼습니다`만 본다.
 
-- systemd `ExecStop=docker stop -t 30` (30s 후 SIGKILL)
-- instrumentation drain deadline **25s** (< 30s)
-- ALB `deregistration_delay.timeout_seconds=30` (06-alb-asg.sh, H2)
+타임 예산 정합(넷이 맞물림):
+
+- systemd `ExecStop=docker stop -t 185` (185s 후 SIGKILL), `TimeoutStopSec=190`
+- instrumentation drain deadline **180s** (< 185s)
+- ALB `deregistration_delay.timeout_seconds=185` (06-alb-asg.sh, H2)
+- 라우트 상한 `STREAM_DEADLINE_MS` **5분** — drain(180s)보다 길다. 즉 3분을 넘긴
+  분석은 배포 시 잘릴 수 있다(허용된 트레이드오프). 배포를 더 안전하게 하려면
+  STREAM_DEADLINE을 낮추거나 drain을 5분으로 올려야 하는데, 후자는 인스턴스당
+  롤 시간이 그만큼 늘어난다(`deploy.sh`의 폴 상한 1800s와 함께 봐야 함).
+
+in-flight SSE 스트림 수는 `src/shared/lib/sse/activeStreams.ts`가 센다 —
+`heartbeatStream`이 시작/종료(done·error·cancel) 시점에 증감시킨다.
 
 ## 골든 AMI 베이크 → 핀 → 배포 (M1/M2)
 

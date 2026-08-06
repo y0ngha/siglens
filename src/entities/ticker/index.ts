@@ -32,6 +32,12 @@ export {
     isKoreanInput,
 } from './lib/ticker';
 
+// fireAndForget — SIGTERM drain 카운터에 백그라운드 promise를 등록하는 유틸.
+// backgroundTask.ts는 Node.js 전용 API를 사용하지 않으므로 barrel에서 안전하게 노출 가능.
+// 클라이언트 번들에 포함돼도 module-level 상태(pendingTasks Set)만 초기화될 뿐 동작에
+// 영향 없음 — 클라이언트에서 SIGTERM drain이 의미 없으므로 no-op에 가깝다.
+export { fireAndForget } from './lib/backgroundTask';
+
 export {
     buildAssetAboutNode,
     classifyAsset,

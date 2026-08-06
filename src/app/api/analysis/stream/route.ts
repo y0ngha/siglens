@@ -71,6 +71,12 @@ type TechnicalParams = {
      * `resolveReasoning` forces `false` for anonymous/free callers regardless.
      */
     reasoning?: boolean;
+    /**
+     * 사용자가 "재분석"을 누른 요청이라는 **의도** 표시. 캐시 우회(`force`) 자체가
+     * 아니다 — 실제 우회 여부는 서버가 재분석 쿨다운을 획득했는지로 정한다.
+     * 그래서 이 값을 믿어도 (symbol, timeframe)당 5분에 한 번 이상 LLM을 태울 수 없다.
+     */
+    reanalyze?: boolean;
 };
 
 /**
@@ -104,6 +110,12 @@ const SSE_HEADERS: HeadersInit = {
  * pro-tier fast models make 5 min feel long.
  */
 const STREAM_DEADLINE_MS = 5 * 60 * 1_000;
+
+/**
+ * 포지션 버킷 파생용 시세 조회 상한. 이 조회는 첫 SSE 바이트 이전에 일어나 heartbeat의
+ * 보호를 받지 못하므로, ALB idle_timeout(60초)보다 훨씬 짧게 잡는다.
+ */
+const QUOTE_LOOKUP_TIMEOUT_MS = 5_000;
 
 /**
  * ⚠️ `request.signal`을 core `run*`에 **의도적으로 전달하지 않는다.** 누락이 아니다.
@@ -150,7 +162,11 @@ function withDeadline<T>(run: (signal: AbortSignal) => Promise<T>): Promise<T> {
     });
     // work가 먼저 끝나면 타이머를 즉시 회수한다 — 없으면 매 요청이 5분짜리 타이머와
     // 그 reject 클로저를 붙들고 있어, LLM 작업까지 떠안은 인스턴스에서 그대로 누적된다.
-    return Promise.race([run(controller.signal), deadline]).finally(() => {
+    // run()이 **동기적으로** throw할 수 있다(핸들러가 params를 즉시 구조분해하는 경우).
+    // 그대로 두면 Promise.race가 구성되지 않아 아래 finally가 붙지 않고, 타이머가
+    // 살아남아 5분 뒤 아무도 듣지 않는 deadline이 reject된다(unhandled rejection).
+    const started = (async () => run(controller.signal))();
+    return Promise.race([started, deadline]).finally(() => {
         if (timer !== undefined) clearTimeout(timer);
     });
 }
@@ -162,8 +178,9 @@ function withDeadline<T>(run: (signal: AbortSignal) => Promise<T>): Promise<T> {
  * browser SSE connection alive for the full LLM round-trip. Each entry
  * delegates to the entity action that already owns auth, tier/BYOK gating,
  * E2E short-circuit, bot detection, and data-fetch — no logic is duplicated
- * here. `signal` is threaded so a client disconnect propagates all the way to
- * the in-flight LLM call via each action's `run*` options.
+ * here. The `signal` each entry receives is the **deadline** controller owned by
+ * `withDeadline` — never the client's `request.signal`. See the long comment above
+ * `withDeadline` for why threading a per-client signal into core is forbidden.
  */
 const DISPATCH: Record<
     Exclude<AnalysisType, 'technical'>,
@@ -172,19 +189,35 @@ const DISPATCH: Record<
         signal: AbortSignal | undefined
     ) => Promise<unknown>
 > = {
-    overall: (params, signal) =>
-        runOverallAnalysisAction(
+    overall: async (params, signal) => {
+        // technical과 같은 규칙 — 클라이언트는 의도만 보내고, 캐시 우회 여부는
+        // 서버가 쿨다운 획득으로 판단한다. 키 namespace를 분리해(`<tf>:overall`)
+        // 기술적 분석 재분석이 종합 분석 재분석을 막지 않게 한다.
+        const cooldown =
+            params.reanalyze === true
+                ? await tryAcquireReanalyzeCooldown(
+                      params.symbol as string,
+                      `${params.timeframe as Timeframe}:overall` as Timeframe
+                  )
+                : null;
+        if (cooldown !== null && !cooldown.ok) {
+            return {
+                status: 'reanalyze_cooldown' as const,
+                remainingMs: cooldown.remainingMs,
+            };
+        }
+        return runOverallAnalysisAction(
             params.symbol as string,
             params.companyName as string,
             params.timeframe as Timeframe,
             params.modelId as ModelId,
             {
-                // force는 클라이언트가 정하지 않는다 — 아래 파생 규칙 참조.
-                force: false,
+                force: cooldown?.ok === true,
                 reasoning: params.reasoning as boolean | undefined,
             },
             signal
-        ),
+        );
+    },
 
     fundamental: (params, signal) =>
         runFundamentalAnalysisAction(
@@ -283,7 +316,22 @@ async function resolveHoldingPositionBucket(
         ).findByUserAndSymbol(userId, symbol.toUpperCase());
         if (holding === null) return undefined;
         const avgPrice = Number(holding.averagePrice);
-        const quote = await marketDataProvider.getQuote(fmpSymbol ?? symbol);
+        /**
+         * 이 조회는 **첫 SSE 바이트가 나가기 전**에 일어난다 — heartbeat가 아직 시작되지
+         * 않았으므로 여기서 오래 끌면 ALB idle_timeout(60초)이 연결을 끊는다. FMP 429
+         * 폭풍에서는 요청 타임아웃 10초 + 백오프 10/15/20초로 한 번의 getQuote가 85초까지
+         * 갈 수 있다. 개인화는 있으면 좋은 것이지 분석의 전제가 아니므로, 짧은 상한을
+         * 두고 넘기면 버킷 없이 진행한다.
+         */
+        const quote = await Promise.race([
+            marketDataProvider.getQuote(fmpSymbol ?? symbol),
+            new Promise<null>(resolve => {
+                setTimeout(
+                    () => resolve(null),
+                    QUOTE_LOOKUP_TIMEOUT_MS
+                ).unref();
+            }),
+        ]);
         const currentPrice = quote?.price ?? null;
         return resolvePositionBucket(tier, avgPrice, currentPrice ?? null);
     } catch (err) {
@@ -336,6 +384,7 @@ export async function POST(request: Request): Promise<Response> {
             fmpSymbol,
             modelId,
             reasoning,
+            reanalyze,
         } = body.params;
 
         try {
@@ -458,18 +507,36 @@ export async function POST(request: Request): Promise<Response> {
              */
             /**
              * `force`(캐시 우회)는 **클라이언트가 정하지 않는다.** 이 라우트는 인증 없는
-             * 공개 POST이므로, 본문에서 받은 `force:true`를 그대로 믿으면 누구나 캐시를
+             * 공개 POST이므로, 본문의 `force:true`를 그대로 믿으면 누구나 캐시를
              * 건너뛰고 매 요청마다 서버 키로 LLM을 태울 수 있다.
              *
-             * 대신 서버가 재분석 쿨다운(Redis, 5분)을 획득했을 때만 캐시를 우회한다.
-             * 획득 실패는 에러가 아니라 `force:false`로 강등 — 사용자는 캐시된 결과를
-             * 정상적으로 받는다.
+             * 클라이언트가 보내는 건 **의도**(`reanalyze`)뿐이고, 실제 우회 여부는
+             * 서버가 재분석 쿨다운(Redis `SET NX EX 300`)을 획득했는지로 판단한다.
+             * 즉 (symbol, timeframe)당 5분에 한 번만 강제 재분석이 가능하다.
+             *
+             * 획득은 **여기서만** 한다. 클라이언트가 미리 획득한 뒤 요청을 보내면
+             * 여기서의 획득이 반드시 실패해 재분석이 영원히 캐시로 강등되고, 반대로
+             * 의도 없는 일반 제출이 획득에 성공해 캐시를 우회하는 정반대 동작이 된다.
              */
-            const cooldown = await tryAcquireReanalyzeCooldown(
-                symbol,
-                timeframe
-            );
-            const force = cooldown.ok;
+            const wantsReanalyze = reanalyze === true;
+            const cooldown = wantsReanalyze
+                ? await tryAcquireReanalyzeCooldown(symbol, timeframe)
+                : null;
+
+            if (cooldown !== null && !cooldown.ok) {
+                // 쿨다운 중 — 새 분석을 태우지 않고 남은 시간을 알려준다.
+                return new Response(
+                    heartbeatStream(
+                        Promise.resolve({
+                            status: 'reanalyze_cooldown' as const,
+                            remainingMs: cooldown.remainingMs,
+                        })
+                    ),
+                    { headers: SSE_HEADERS }
+                );
+            }
+
+            const force = cooldown?.ok === true;
 
             const work = withDeadline(deadlineSignal =>
                 runAnalysis(symbol, companyName, timeframe, force, fmpSymbol, {
@@ -496,6 +563,15 @@ export async function POST(request: Request): Promise<Response> {
     // --- 3. Dispatch for non-technical types ---
     // Object.hasOwn: `body.type`이 'toString' 같은 프로토타입 멤버면 인덱싱이
     // 상속된 함수를 반환해 `!handler` 가드를 통과한다 — 400이어야 할 입력이 500이 된다.
+    // technical과 동일한 가드를 나머지 타입에도 적용한다 — 핸들러가 params를 즉시
+    // 구조분해하므로, 없으면 TypeError가 500으로 새어 나간다(400이어야 한다).
+    if (body.params == null || typeof body.params !== 'object') {
+        return Response.json(
+            { error: 'params must be an object' },
+            { status: 400 }
+        );
+    }
+
     const handler = Object.hasOwn(DISPATCH, body.type)
         ? DISPATCH[body.type]
         : undefined;

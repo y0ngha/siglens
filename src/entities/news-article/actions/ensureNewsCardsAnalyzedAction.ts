@@ -6,8 +6,12 @@ import {
     ingestNewsForSymbol,
     NewsIngestWriteError,
 } from '../lib/ingestNewsForSymbol';
-import { DISABLED_THINKING_BUDGET } from '../lib/newsAnalysisConstants';
+import {
+    DISABLED_THINKING_BUDGET,
+    NEWS_CARD_ANALYSIS_PARALLEL_LIMIT,
+} from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
+import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
 import { isRecentlyFetched } from '../lib/newsRefreshFlag';
 import { revalidateTag } from 'next/cache';
 import { isE2E } from '@/shared/api/e2eEnv';
@@ -119,9 +123,13 @@ export async function ensureNewsCardsAnalyzedAction(
 
     if (unanalyzed.length === 0) return;
 
-    // Each item polls its own background worker independently.
-    const analyzeSettled = await Promise.allSettled(
-        unanalyzed.map(item => analyzeAndPersist(item, repo))
+    // `runNewsCardAnalysis`는 블로킹 LLM 왕복이다(worker 제거 이후). 무제한 병렬
+    // 실행은 2-vCPU 서버에서 커넥션 풀 고갈 / 메모리 압박을 유발하므로
+    // NEWS_CARD_ANALYSIS_PARALLEL_LIMIT개씩 청크 단위로 실행한다.
+    const analyzeSettled = await withConcurrencyLimit(
+        unanalyzed,
+        NEWS_CARD_ANALYSIS_PARALLEL_LIMIT,
+        item => analyzeAndPersist(item, repo)
     );
     const analyzeFailures = analyzeSettled.filter(r => r.status === 'rejected');
     if (analyzeFailures.length > 0) {

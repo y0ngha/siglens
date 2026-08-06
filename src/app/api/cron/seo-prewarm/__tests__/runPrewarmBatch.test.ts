@@ -800,4 +800,76 @@ describe('runPrewarmBatch', () => {
 
         warnSpy.mockRestore();
     });
+
+    // ── FIX 1(감사) — 유닛 타임아웃 ──
+
+    it('FIX 1 — seam이 UNIT_TIMEOUT_MS 내에 반환하지 않으면 포기하고 backoff 마커를 남긴다', async () => {
+        // sim clock: sleep이 즉시 advance되므로 타임아웃이 즉각 발동한다.
+        // seam은 절대 resolve되지 않는 프로미스를 반환해 "hung LLM call"을 시뮬레이션.
+        universe({ symbol: 'HUNG', tabs: ['technical'] });
+        mockPrewarmTechnical.mockReturnValue(new Promise(() => {}));
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const clock = makeSimClock(FIXED_NOW.getTime());
+        const counts = await runPrewarmBatch(clock);
+
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[seo-prewarm] unit-timeout HUNG:technical')
+        );
+        expect(mockMarkSkipped).toHaveBeenCalledWith('HUNG', 'technical');
+        // clearInFlight는 finally 블록에서 타임아웃 경로에도 반드시 호출된다.
+        expect(mockClearInFlight).toHaveBeenCalledWith('HUNG', 'technical');
+        expect(counts.harvested).toBe(0);
+
+        warnSpy.mockRestore();
+    });
+
+    it('FIX 1 — 타임아웃된 탭 이후 다음 탭은 정상 처리된다(배치 중단 없음)', async () => {
+        universe({ symbol: 'HUNG2', tabs: ['technical', 'overall'] });
+        // technical만 타임아웃, overall은 정상 완료.
+        mockPrewarmTechnical.mockReturnValue(new Promise(() => {}));
+        mockPrewarmOverall.mockResolvedValue({ status: 'cached', result: {} });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const clock = makeSimClock(FIXED_NOW.getTime());
+        const counts = await runPrewarmBatch(clock);
+
+        expect(mockMarkSkipped).toHaveBeenCalledWith('HUNG2', 'technical');
+        expect(mockPrewarmOverall).toHaveBeenCalled();
+        // overall만 harvest.
+        expect(counts.harvested).toBe(1);
+
+        warnSpy.mockRestore();
+    });
+
+    // ── FIX 2(감사) — throw 시 backoff 마커 ──
+
+    it('FIX 2 — throw(비-402)에서 6h backoff 마커를 남긴다(매 tick 무한 재시도 방지)', async () => {
+        universe({ symbol: 'THROWSYM', tabs: ['technical'] });
+        mockPrewarmTechnical.mockRejectedValue(new Error('content filter'));
+        mockGetFmpErrorStatus.mockReturnValue(null);
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        await runPrewarmBatch();
+
+        expect(mockMarkSkipped).toHaveBeenCalledWith('THROWSYM', 'technical');
+
+        errSpy.mockRestore();
+    });
+
+    it('FIX 2 — FMP 402 에러는 backoff 마커를 남기지 않는다(플랜 변경 시 자동 재시도 가능)', async () => {
+        universe({ symbol: '402SYM', tabs: ['technical'] });
+        const err402 = new Error('FMP /profile 402');
+        mockPrewarmTechnical.mockRejectedValue(err402);
+        mockGetFmpErrorStatus.mockImplementation(err =>
+            err === err402 ? 402 : null
+        );
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        await runPrewarmBatch();
+
+        expect(mockMarkSkipped).not.toHaveBeenCalled();
+
+        errSpy.mockRestore();
+    });
 });

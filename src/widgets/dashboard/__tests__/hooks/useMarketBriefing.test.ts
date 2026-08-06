@@ -157,7 +157,23 @@ describe('useMarketBriefing', () => {
         client.clear();
     });
 
-    it("(Worst) 스트림이 throw하면 input 'error' — 스켈레톤이 영원히 남지 않는다", async () => {
+    it('(Worst) 스트림이 throw해도 peekSeed가 있으면 seed를 계속 보여 준다', async () => {
+        // seed는 서버 peek로 읽은 실제 캐시 본문이다 — 에러 카드보다 낫다.
+        const PEEK = { headlineKo: '시드 브리핑' } as never;
+        mockAction.mockRejectedValue(new Error('분석 시간이 초과되었습니다.'));
+        const { client, wrapper } = makeWrapper();
+        const { result } = renderHook(() => useMarketBriefing(PEEK), {
+            wrapper,
+        });
+
+        await waitFor(() => {
+            expect(mockAction).toHaveBeenCalled();
+        });
+        expect(result.current.input).toMatchObject({ status: 'cached' });
+        client.clear();
+    });
+
+    it("(Worst) 스트림이 throw하고 seed도 없으면 input 'error' — 스켈레톤이 영원히 남지 않는다", async () => {
         // SSE가 error 이벤트로 끝나면 runAnalysisStream이 throw한다. 이때 data가
         // 없어 seedInput(undefined)으로 떨어지면 실패가 조용히 사라진다.
         mockAction.mockRejectedValue(new Error('분석 시간이 초과되었습니다.'));

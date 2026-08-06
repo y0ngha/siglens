@@ -261,8 +261,15 @@ describe('useAnalysis — branch coverage', () => {
 
     describe('handleReanalyze cooldown (L262-285)', () => {
         it('shows cooldown notice when acquire fails', async () => {
-            mockTryAcquire.mockResolvedValue({
-                ok: false,
+            /**
+             * 클라이언트가 직접 쿨다운을 획득하던 로직이 서버로 이전됐다.
+             * `handleReanalyze`는 이제 `tryAcquireReanalyzeCooldown`을 호출하지 않고
+             * 바로 `mutate`를 실행한다. 서버가 쿨다운을 획득하지 못하면
+             * `{ status: 'reanalyze_cooldown', remainingMs }` 응답을 돌려주고,
+             * `onSuccess`가 `cooldownNotice`를 설정한다.
+             */
+            mockSubmit.mockResolvedValue({
+                status: 'reanalyze_cooldown',
                 remainingMs: 180000,
             });
 
@@ -320,6 +327,65 @@ describe('useAnalysis — branch coverage', () => {
             await waitFor(() => {
                 expect(mockSubmit).toHaveBeenCalledTimes(2);
             });
+        });
+
+        it('timeframe 변경 시 첫 번째 스트림의 signal이 abort된다 — stale 데이터 덮어쓰기 방지', async () => {
+            /**
+             * `streamAbortRef.current?.abort()`를 삭제하면 이 테스트가 실패한다.
+             * abort가 없으면 느린 첫 번째 스트림이 두 번째 스트림이 받은 fresher 데이터를
+             * onSuccess에서 덮어쓸 수 있다.
+             *
+             * 첫 번째 mock은 결코 resolve되지 않는 promise를 반환해 abort 발화 전에
+             * 완료되지 않게 한다. signal은 mock.calls에서 읽어낸다.
+             */
+            mockSubmit
+                .mockImplementationOnce(() => new Promise(() => {})) // 영구 대기
+                .mockImplementationOnce(() =>
+                    Promise.resolve({
+                        status: 'cached' as const,
+                        result: CACHED_RESULT,
+                        lockedInfoDepth: [],
+                    })
+                );
+
+            const { rerender } = renderHook(
+                ({ timeframeChangeCount }: { timeframeChangeCount: number }) =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            timeframeChangeCount,
+                        })
+                    ),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: { timeframeChangeCount: 0 },
+                }
+            );
+
+            // 첫 번째 submit이 호출될 때까지 기다린다.
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalledTimes(1);
+            });
+
+            // timeframe 변경 → streamAbortRef.current?.abort() → 새 스트림 시작.
+            rerender({ timeframeChangeCount: 1 });
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalledTimes(2);
+            });
+
+            // 각 호출의 signal을 mock.calls에서 추출한다.
+            const calls = mockSubmit.mock.calls as Array<
+                [{ signal?: AbortSignal }]
+            >;
+            const firstSignal = calls[0]?.[0]?.signal;
+            const secondSignal = calls[1]?.[0]?.signal;
+
+            expect(firstSignal).toBeInstanceOf(AbortSignal);
+            // 첫 번째 signal은 timeframe 변경 시 abort되었다.
+            expect(firstSignal?.aborted).toBe(true);
+            // 두 번째 signal은 아직 abort되지 않았다.
+            expect(secondSignal?.aborted).toBe(false);
         });
     });
 

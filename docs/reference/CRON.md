@@ -12,13 +12,14 @@
 - **인증**: EventBridge Connection(`siglens-seo-prewarm`, API_KEY 인증)이 `Authorization: Bearer <CRON_SECRET>` 헤더를 자동 주입한다. `CRON_SECRET`은 `.env.example`에 필수 키로 등록돼 있고, `04-params.sh`가 SSM `/siglens/CRON_SECRET`에 이미 게시한다(check-env.sh의 OPTIONAL_KEYS에 없음 — 배포 게이트가 강제). `13-seo-prewarm.sh`는 이 값을 SSM에서 읽기만 하고 새로 만들지 않는다.
 - **202/after() 설계**: 라우트는 인증·락 확인 후 즉시 `202 Accepted`를 반환하고, 실제 배치(`runPrewarmBatch`)는 `next/server`의 `after()`로 백그라운드 실행된다. API Destination의 짧은 타임아웃(~5s)이나 ALB idle timeout(60s)에 걸리지 않기 위함. 중첩 실행은 Redis 루트 락이 차단하며, 락 보유 중이면 `204`(2xx라 EventBridge가 재시도 폭풍을 일으키지 않음)를 반환한다.
   - **FIX H(감사) — 락 획득 자체가 던지는 경우**: `getRedisClient()`는 연결 상태를 미리 검증하지 않으므로, Upstash 장애/타임아웃이면 `acquirePrewarmLock()`의 `redis.set()`이 REJECT할 수 있다(redis 미구성 시의 "fail-closed로 null 반환"과는 다른 경로). 이를 try/catch 없이 두면 예외가 라우트 밖으로 전파되어 500이 나가고, EventBridge는 5xx를 공격적으로 재시도한다(기본 최대 185회/24h) — 락 보유 중 204를 반환하는 설계 의도(재시도 폭풍 방지)와 정확히 반대다. `route.ts`는 이 예외를 잡아 `[seo-prewarm] redis unavailable — lock acquire threw:` 로그와 함께 204로 흡수한다(after는 예약되지 않는다).
-- **배치 wall-clock 상한(FIX G, 감사)**: `runPrewarmBatch`는 `BATCH_DEADLINE_MS = 600_000`(10분)의 wall-clock 데드라인을 갖는다. FMP 429/5xx 폭풍 중엔 심볼당 최악 ~75s(10s 타임아웃 + 10/15/20s 재시도)가 들 수 있어, 데드라인 없이는 10심볼 배치가 락 TTL(900s)을 넘겨 락이 만료되고 다음 tick이 새 락으로 두 번째 배치를 동시에 띄우는 오버랩이 생길 수 있었다(CAS 락 해제는 락 "탈취"는 막지만 "오버랩"은 못 막는다). 데드라인은 **청크 경계와 심볼 내부의 탭 경계 양쪽**에서 검사한다 — `run*`이 LLM 왕복만큼 블로킹하므로 청크 경계에서만 보면 마지막 청크가 탭을 연달아 돌며 락 TTL을 넘길 수 있다. 어느 쪽이든 진행 중인 유닛은 끝까지 완료하고(upsert 유실 없음) 멈추며, `[seo-prewarm] batch deadline reached — N symbols processed, M remaining` 로그를 남긴다. 못 다 한 심볼은 여전히 stale이므로 다음 tick이 자연스럽게 이어받는다.
+- **배치 wall-clock 상한(FIX G, 감사)**: `runPrewarmBatch`는 `BATCH_DEADLINE_MS = 600_000`(10분)의 wall-clock 데드라인을 갖는다. FMP 429/5xx 폭풍 중엔 심볼당 최악 ~75s(10s 타임아웃 + 10/15/20s 재시도)가 들 수 있어, 데드라인 없이는 10심볼 배치가 락 TTL(900s)을 넘겨 락이 만료되고 다음 tick이 새 락으로 두 번째 배치를 동시에 띄우는 오버랩이 생길 수 있었다(CAS 락 해제는 락 "탈취"는 막지만 "오버랩"은 못 막는다). 유닛(심볼×탭) 하나는 `UNIT_TIMEOUT_MS`(120초)를 넘기면 **기다리기를 포기**하고 backoff 마커를 남긴 뒤 다음 유닛으로 넘어간다 — core `run*`에 AbortSignal을 넘기지 않으므로 그 호출 자체는 백그라운드에서 계속 돈다(락을 지키는 게 목적이지 작업을 회수하는 게 아니다). 배치 데드라인은 **청크 경계와 심볼 내부의 탭 경계 양쪽**에서 검사한다 — `run*`이 LLM 왕복만큼 블로킹하므로 청크 경계에서만 보면 마지막 청크가 탭을 연달아 돌며 락 TTL을 넘길 수 있다. 어느 쪽이든 진행 중인 유닛은 끝까지 완료하고(upsert 유실 없음) 멈추며, `[seo-prewarm] batch deadline reached — N symbols processed, M remaining` 로그를 남긴다. 못 다 한 심볼은 여전히 stale이므로 다음 tick이 자연스럽게 이어받는다.
 - **모니터링 신호**:
   - 정상 완료: `[seo-prewarm] batch done: {counts}` (harvested/revalidated/remaining/fmpBudgetUsed)
   - 배치 전체 실패: `[seo-prewarm] batch failed: ...` → CloudWatch 알람 `siglens-seo-prewarm-batch-failed`(1시간 3회 초과 시)
   - redis 불가용(미구성 또는 락 획득 예외): `[seo-prewarm] redis unavailable ...` → CloudWatch 알람 `siglens-seo-prewarm-redis-unavailable`(1시간 1회 초과 시). 필터 패턴은 ASCII 접두 `"[seo-prewarm] redis unavailable"`만 쓴다(FIX F, 감사) — 원문 로그의 em-dash(—)가 CloudWatch Logs 필터의 따옴표 안 non-ASCII 토큰 매칭에서 검증되지 않은 동작이라 신뢰하지 않는다. `grep`으로 이 저장소에서 두 로그 라인(lock.ts 미구성 케이스 / route.ts 락 획득 예외 케이스)에만 등장함을 확인했다.
   - 배치 데드라인 도달(FIX G): `[seo-prewarm] batch deadline reached — N symbols processed, M remaining` — 알람 없음(정상 운영에선 발생하지 않는 방어선이라 산발적 발생은 배치-실패 알람 임계값에 못 미친다. 반복되면 batch-failed·FMP 429 로그와 함께 봐야 한다).
   - 심볼/탭 단위 실패는 fail-open으로 격리되어 배치를 중단시키지 않는다(`[seo-prewarm] unit-error ...`, `[seo-prewarm] fmp-402 ...`). 402는 심볼별 플랜/쿼터 이슈라 정책상 알람을 걸지 않는다.
+  - 유닛 타임아웃: `[seo-prewarm] unit-timeout {symbol}:{tab} — ...` — 해당 유닛은 6시간 backoff. 반복되면 provider 지연이나 특정 심볼의 데이터 문제를 의심할 것.
   - terminal skip(backoff, FIX C 감사): `[seo-prewarm] skip {symbol}:{tab} — status=...`(또는 `— null result`)를 `console.warn`으로 남긴다(기존 `console.debug`는 로그 파이프라인에서 조용히 사라져 운영자가 "막힌" 유닛을 볼 수 없었다). 해당 (symbol, tab)은 6시간 backoff에 들어가 다음 몇 tick 동안 재선별되지 않는다 — **하룻밤에 이 로그가 몇 번 보이는 건 정상**이다(영구 실패 유닛도 있을 수 있다: 예 — 옵션 체인이 없는 심볼의 `options` 탭). 특정 (symbol, tab)이 여러 밤 연속 반복되면 원인(정규화 실패, no_trades 등)을 살펴볼 것.
   - FMP 429(rate limit)는 `fmpRetry.ts`가 10s/15s/20s로 자동 재시도하지만, 재시도 자체를 로그로 남기지 않는다 — 안정적인 429 로그 문자열이 없어 전용 알람은 아직 없다(best-effort, `13-seo-prewarm.sh`에 TODO로 남겨둠). 429가 배치에 영향을 줄 만큼 누적되면 batch-failed 알람이 구조적 실패로 잡아낸다.
   - **정상 vs 진짜로 막힌 상태 구분**(운영 참고): `harvested 0`인 tick 자체는 정상일 수 있다 — 그 tick의 후보 창에 신규 stale 심볼이 없었을 뿐이다. **진짜로 막힌 상태**는 다음 중 하나: (a) `remaining > 0`인데 `harvested`가 여러 tick 연속 계속 0이면서 `batch deadline reached`가 매번 찍힘(유닛이 LLM 마감까지 끌려가는 중 — provider 지연/키 문제 의심), (b) 같은 (symbol, tab)에 대해 `skip ... status=` 로그가 여러 밤 연속 반복(terminal skip이 self-heal 안 됨).
@@ -60,7 +61,7 @@ Redis 비용은 bounded 후보 창(`SYMBOLS_PER_TICK * 3` = 18개 심볼)으로 
 
 in-flight 마커는 남아 있지만 역할이 바뀌었다 — 재개 지점(jobId)을 들고 있는 게 아니라, 같은 (symbol, tab)에 대해 **두 tick이 동시에 LLM을 태우는 것만** 막는다(TTL 30분, 완료 즉시 해제).
 
-이 폴링 도입으로 심볼당 소요 시간이 늘어 `SYMBOLS_PER_TICK`을 10 → **6**으로 낮췄다. 스케줄이 20:30 시작으로 30분 밀리면서(위 FIX Z 참고) 하룻밤 tick 수는 `(20:30–23:59)+(00:00–03:59)` ≈ 90회(5분 간격). tick당 6심볼을 "이번 tick 안에" 목표로 하면(캐시가 이미 대부분 warm인 흔한 경우 대다수 유닛이 poll 캡을 다 쓰지 않고 끝난다) 하룻밤 처리량은 유니버스(290심볼)를 여유 있게 커버할 수 있는 규모다(90 tick × 6 = 540 심볼-시도/night, 약 1.5~2배 여유). 이전 head-of-line 방식의 실측 처리량(~160심볼/night, 그마저도 유니버스 head에 편중)과 대비된다 — 정확한 실측치는 배포 후 `SELECT count(*), count(DISTINCT symbol) FROM seo_analysis_snapshots`로 재확인할 것.
+`run*`이 LLM 응답까지 블로킹해 심볼당 소요 시간이 길어져 `SYMBOLS_PER_TICK`을 10 → **6**으로 낮췄다. 스케줄이 20:30 시작으로 30분 밀리면서(위 FIX Z 참고) 하룻밤 tick 수는 `(20:30–23:59)+(00:00–03:59)` ≈ 90회(5분 간격). tick당 6심볼을 "이번 tick 안에" 목표로 하면(캐시가 이미 대부분 warm인 흔한 경우 대다수 유닛이 즉시 끝난다) 하룻밤 처리량은 유니버스(290심볼)를 여유 있게 커버할 수 있는 규모다(90 tick × 6 = 540 심볼-시도/night, 약 1.5~2배 여유). 이전 head-of-line 방식의 실측 처리량(~160심볼/night, 그마저도 유니버스 head에 편중)과 대비된다 — 정확한 실측치는 배포 후 `SELECT count(*), count(DISTINCT symbol) FROM seo_analysis_snapshots`로 재확인할 것.
 
 ### Phase 2 — SSR prewarm rendering 배포 런북
 
@@ -75,7 +76,7 @@ Phase 1(위 `seo-prewarm` cron — 스냅샷을 `seo_analysis_snapshots`에 적�
    ```sql
    SELECT count(*), count(DISTINCT symbol) FROM seo_analysis_snapshots;
    ```
-   유니버스는 290개 심볼 / 1913개 심볼×탭 조합이다. 공정 선별(위 §"공정 선별")+콜드 캐시 폴링(FIX Z) 적용 후 steady state에서는 하룻밤에 유니버스 전체를 커버할 수 있어야 한다(정확한 실측치는 위 참고).
+   유니버스는 290개 심볼 / 1913개 심볼×탭 조합이다. 공정 선별(위 §"공정 선별") 적용 후 steady state에서는 하룻밤에 유니버스 전체를 커버할 수 있어야 한다(정확한 실측치는 위 참고).
 5. Phase 2를 배포한다.
 
 **Phase 2를 일찍 배포해도 안전하다** — fail-open 설계(`getSeoSnapshotsStatic`가 읽기 실패·빈 결과 시 `[]`로 degrade)라 행이 없으면 각 렌더러가 `null`을 반환해 기존 placeholder(peek/FactsSummary 등)로 자연스럽게 폴백한다. 다만 행이 쌓이기 전까지는 아무것도 렌더하지 않는다 — "안전"과 "효과 있음"은 다른 질문이다.

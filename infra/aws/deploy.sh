@@ -44,8 +44,12 @@ REFRESH_ID=$(aws autoscaling start-instance-refresh \
 log "instance refresh started for $TAG (refresh-id: $REFRESH_ID)"
 
 # Poll until the refresh reaches a terminal state.
-# Max ~20 minutes (60 iterations × 20 s = 1200 s).
-MAX_ITERATIONS=60
+# 상한 산정(Fix 3): 새 인스턴스 warmup(InstanceWarmup=300s) + deregistration(185s) +
+# docker stop -t 185s = 최대 ~670s/인스턴스. desired=2일 때 ~1350s < 1800s(90×20s).
+# Fix 3 이전(deregistration 30s + stop 30s)에는 최대 ~360s/인스턴스으로 1200s 안에
+# 충분했지만 drain 예산이 늘어 여유를 30분으로 확장한다.
+# Max ~30 minutes (90 iterations × 20 s = 1800 s).
+MAX_ITERATIONS=90
 SLEEP_SECONDS=20
 
 for i in $(seq 1 "$MAX_ITERATIONS"); do

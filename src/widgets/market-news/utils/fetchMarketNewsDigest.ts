@@ -12,8 +12,10 @@ import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
  * 바이트가 흐르지 않아 ALB `idle_timeout` 60초에 잘린다(실측: 침묵 61.1초 절단,
  * 25~30초 heartbeat면 286초까지 완주).
  *
- * `signal`은 react-query가 넘겨준다 — 쿼리가 취소되면 fetch가 끊기고, 라우트가 그
- * 신호를 core에 전달해 진행 중인 LLM 호출까지 취소한다.
+ * `signal`은 react-query가 넘겨준다 — 쿼리가 취소되면 fetch가 끊긴다. 다만 서버 쪽
+ * LLM 호출은 그대로 완주한다: 라우트가 클라이언트 signal을 core에 넘기지 않기 때문이다
+ * (공유 `dedupeInFlight` promise를 남이 취소하면 안 된다 — route.ts 주석 참고).
+ * 이탈한 방문자의 호출은 캐시를 채워 다음 방문자와 크롤러에게 쓰인다.
  */
 export async function fetchMarketNewsDigest(
     category: NewsFeedCategory,

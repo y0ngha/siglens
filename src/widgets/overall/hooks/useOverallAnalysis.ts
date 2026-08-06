@@ -9,7 +9,15 @@ import type {
     Timeframe,
 } from '@y0ngha/siglens-core';
 import type { AssetClass } from '@/shared/config/marketProfile';
-import type { RunOverallAnalysisActionResult } from '@/entities/analysis/actions';
+import type { RunOverallAnalysisActionResult as CoreOverallResult } from '@/entities/analysis/actions';
+
+/**
+ * 재분석 의도로 보낸 요청인데 서버가 쿨다운을 획득하지 못한 경우의 응답.
+ * 쿨다운 획득은 서버가 단독으로 하므로 이 응답이 클라이언트가 쿨다운을 아는 유일한 경로다.
+ */
+type RunOverallAnalysisActionResult =
+    | CoreOverallResult
+    | { status: 'reanalyze_cooldown'; remainingMs: number };
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
@@ -46,16 +54,23 @@ async function fetchOverallAnalysis(
     companyName: string,
     timeframe: Timeframe,
     modelId: ModelId,
-    options: { reasoning?: boolean } = {},
+    options: { reasoning?: boolean; reanalyze?: boolean } = {},
     signal?: AbortSignal
 ): Promise<OverallAnalysisResponse> {
-    // `force`는 보내지 않는다 — 서버가 재분석 쿨다운에서 파생한다. 인증 없는 공개
-    // 라우트라 클라이언트가 캐시 우회를 지시할 수 있으면 안 된다.
+    // `force`(캐시 우회) 자체는 보내지 않는다 — 인증 없는 공개 라우트라 클라이언트가
+    // 우회를 지시할 수 있으면 안 된다. 대신 **의도**(`reanalyze`)만 보내고, 서버가
+    // 재분석 쿨다운을 획득했을 때만 실제로 우회한다.
     const result = await runAnalysisStream<RunOverallAnalysisActionResult>({
         type: 'overall',
         params: { symbol, companyName, timeframe, modelId, ...options },
         signal,
     });
+
+    if (result.status === 'reanalyze_cooldown') {
+        throw new OverallAnalysisError(
+            `재분석은 잠시 후에 가능해요. ${Math.ceil(result.remainingMs / 1000)}초 뒤에 다시 시도해 주세요.`
+        );
+    }
 
     if (result.status === 'cached' || result.status === 'done')
         return result.result;
@@ -122,6 +137,9 @@ export function useOverallAnalysis(
     const queryClient = useQueryClient();
     const isHydrated = useHydrated();
     const [triggered, setTriggered] = useState(initialResult !== undefined);
+    // 다음 queryFn 호출이 "사용자가 누른 재분석"인지 표시한다. state가 아니라 ref인
+    // 이유: 값이 바뀌어도 렌더는 필요 없고, refetch가 곧바로 읽어가야 한다.
+    const reanalyzeIntentRef = useRef(false);
     const queryKey = useMemo(
         () =>
             QUERY_KEYS.overallAnalysis(
@@ -149,12 +167,14 @@ export function useOverallAnalysis(
                 qReasoning,
             ],
         }) => {
+            const reanalyze = reanalyzeIntentRef.current;
+            reanalyzeIntentRef.current = false;
             return fetchOverallAnalysis(
                 qSymbol,
                 qCompanyName,
                 qTimeframe,
                 qModelId,
-                { reasoning: qReasoning },
+                { reasoning: qReasoning, ...(reanalyze ? { reanalyze } : {}) },
                 signal
             );
         },
@@ -192,8 +212,9 @@ export function useOverallAnalysis(
         if (!triggered) {
             setTriggered(true);
         } else {
-            // 재분석은 refetch로 트리거하고, 캐시 우회 여부는 서버가 재분석
-            // 쿨다운에서 판단한다 — 클라이언트가 force를 지시하지 않는다.
+            // 이미 결과가 있는 상태의 trigger = 사용자가 누른 재분석. 의도를 표시하고
+            // refetch한다. 캐시 우회 여부는 서버가 쿨다운 획득으로 판단한다.
+            reanalyzeIntentRef.current = true;
             void refetch();
         }
     }, [triggered, refetch]);
