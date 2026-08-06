@@ -85,6 +85,10 @@ describe('useOptionsAnalysis — trigger coverage', () => {
             expect(result.current.status).toBe('done');
         });
         expect(typeof result.current.trigger).toBe('function');
+        // type 문자열이 잘못되면 SSE 라우트가 400을 반환한다 — 프로덕션 버그를 테스트에서 잡는다.
+        expect(mockSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({ type: 'options' })
+        );
     });
 
     it('bot_blocked 상태에서 trigger 함수를 노출한다', async () => {

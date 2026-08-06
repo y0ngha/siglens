@@ -19,11 +19,6 @@ vi.mock('@/widgets/dashboard/MarketDataErrorNotice', () => ({
     ),
 }));
 
-const mockUseBriefing = vi.fn();
-vi.mock('@/widgets/dashboard/hooks/useBriefing', () => ({
-    useBriefing: () => mockUseBriefing(),
-}));
-
 vi.mock('@/widgets/dashboard/MarketSummaryPanelSkeleton', () => ({
     MarketSummaryPanelSkeleton: () => (
         <div data-testid="skeleton">Loading...</div>
@@ -81,7 +76,6 @@ describe('MarketSummaryPanel', () => {
     afterEach(() => {
         mockUseMarketSummary.mockReset();
         mockUseMarketBriefing.mockReset();
-        mockUseBriefing.mockReset();
     });
 
     it('renders skeleton while pending', () => {

@@ -41,6 +41,10 @@ describe('fetchMarketNewsDigest', () => {
         const result = await fetchMarketNewsDigest('general');
 
         expect(result).toEqual(DIGEST_RESULT);
+        // type 문자열이 잘못되면 SSE 라우트가 400을 반환한다 — 프로덕션 버그를 테스트에서 잡는다.
+        expect(mockSubmitMarketNewsDigestAction).toHaveBeenCalledWith(
+            expect.objectContaining({ type: 'marketNewsDigest' })
+        );
     });
 
     it("status 'done' → returns result immediately", async () => {

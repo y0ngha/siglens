@@ -185,6 +185,61 @@ describe('heartbeatStream', () => {
         });
     });
 
+    describe('safely — enqueue가 throw할 때 타이머를 회수한다', () => {
+        it('heartbeat 중 enqueue가 throw하면 safely catch가 타이머를 정리한다', async () => {
+            const setIntervalSpy = vi.spyOn(globalThis, 'setInterval');
+            const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval');
+
+            /**
+             * 클라이언트 연결 끊김 시뮬레이션:
+             * open 이벤트(1회째)만 실제 enqueue를 통과시키고, 이후 호출은 throw한다.
+             * safely()가 catch하여 closed=true + clearTimer()를 호출해야 한다.
+             *
+             * ReadableStreamDefaultController.prototype.enqueue를 스파이하면
+             * 실 스트림 내부 상태를 건드리지 않고도 throw 경로를 재현할 수 있다.
+             */
+            const realEnqueue =
+                ReadableStreamDefaultController.prototype.enqueue;
+            let enqueueCount = 0;
+            vi.spyOn(
+                ReadableStreamDefaultController.prototype,
+                'enqueue'
+            ).mockImplementation(function (
+                this: ReadableStreamDefaultController<unknown>,
+                chunk: unknown
+            ) {
+                enqueueCount++;
+                if (enqueueCount === 1) {
+                    // open 이벤트 — 실제 구현에 위임한다.
+                    return realEnqueue.call(this, chunk);
+                }
+                // heartbeat 이벤트부터 throw — 연결 끊김 후 enqueue가 실패하는 상황.
+                throw new TypeError(
+                    'Cannot enqueue a chunk into a closed readable stream controller'
+                );
+            });
+
+            const stream = heartbeatStream(new Promise<never>(() => {}));
+            const reader = stream.getReader();
+
+            await reader.read(); // open 소비 — timer가 이미 설정됐다.
+
+            const timerId = setIntervalSpy.mock.results[0]?.value;
+
+            // heartbeat 발화 → enqueue throw → safely catch → clearTimer() 호출.
+            vi.advanceTimersByTime(HEARTBEAT_INTERVAL_MS);
+
+            expect(clearIntervalSpy).toHaveBeenCalledWith(timerId);
+
+            // closed=true이므로 이후 타이머 발화에서 enqueue 재시도가 없어야 한다.
+            const countBeforeExtraAdvance = enqueueCount;
+            vi.advanceTimersByTime(HEARTBEAT_INTERVAL_MS * 3);
+            expect(enqueueCount).toBe(countBeforeExtraAdvance);
+
+            reader.releaseLock();
+        });
+    });
+
     describe('cancel — 클라이언트 연결 끊김', () => {
         it('cancel 시 clearInterval을 호출해 타이머를 즉시 회수한다', async () => {
             const setIntervalSpy = vi.spyOn(globalThis, 'setInterval');

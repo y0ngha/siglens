@@ -68,6 +68,12 @@ export async function submitMarketNewsDigestAction(
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);
 
+        // 알 수 없는 카테고리는 CATEGORY_CONFIG 접근 전에 차단한다.
+        // TypeScript 타입으로는 방어되지만, 런타임 직렬화(SSE JSON 파라미터 등)에서
+        // 타입이 우회될 수 있으므로 명시적 가드를 추가한다.
+        if (!Object.hasOwn(CATEGORY_CONFIG, category)) {
+            return { status: 'error', error: 'Failed to submit digest' };
+        }
         const { sentinel, koLabel } = CATEGORY_CONFIG[category];
         const rows = await getMarketNewsList(sentinel);
 

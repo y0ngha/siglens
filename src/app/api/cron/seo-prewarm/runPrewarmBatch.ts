@@ -119,6 +119,7 @@ export async function runPrewarmBatch(
     clock: PrewarmClock = DEFAULT_CLOCK
 ): Promise<PrewarmBatchCounts> {
     const batchDeadline = clock.now() + BATCH_DEADLINE_MS;
+    const isPastDeadline = () => clock.now() > batchDeadline;
     const boundary = lastCompletedEtCloseWithBuffer(new Date());
     const universe = buildPrewarmUniverse();
     const repo = new DrizzleSeoSnapshotRepository(getDatabaseClient().db);
@@ -156,7 +157,7 @@ export async function runPrewarmBatch(
     // 루프로 청크 경계마다 데드라인을 검사한다. 격리는 각 processSymbol 호출의
     // `.catch`가 보장하므로 Promise.all 기반 청크 처리와 동일하게 안전하다.
     for (let i = 0; i < batch.length; i += SYMBOL_CONCURRENCY) {
-        if (clock.now() > batchDeadline) {
+        if (isPastDeadline()) {
             const remainingCount = batch.length - i;
             counts.remaining += remainingCount;
             console.warn(
@@ -167,14 +168,16 @@ export async function runPrewarmBatch(
         const chunk = batch.slice(i, i + SYMBOL_CONCURRENCY);
         await Promise.all(
             chunk.map(u =>
-                processSymbol(u, boundary, generatedAtMap, repo, counts).catch(
-                    error => {
-                        console.error(
-                            `[seo-prewarm] ${u.symbol} failed:`,
-                            error
-                        );
-                    }
-                )
+                processSymbol(
+                    u,
+                    boundary,
+                    generatedAtMap,
+                    repo,
+                    counts,
+                    isPastDeadline
+                ).catch(error => {
+                    console.error(`[seo-prewarm] ${u.symbol} failed:`, error);
+                })
             )
         );
     }
@@ -211,11 +214,8 @@ export async function runPrewarmBatch(
  * 대신 후보 폭을 `SYMBOLS_PER_TICK * CANDIDATE_WINDOW_MULTIPLIER`개로 제한하고,
  * 그 창 안에서만 심볼당 최대 2회(마커 조회 1 + 마커가 아예 없을 때만 skip 조회 1)×stale
  * 탭 수를 조회한다 — worst case `SYMBOLS_PER_TICK * CANDIDATE_WINDOW_MULTIPLIER
- * (=18) × 7탭 × 2 = 252회/tick`(≪1900). 탭 하나에서라도 resumable jobId를
- * 찾으면 그 시점에서 심볼을 즉시 'resumable' 분류하고 나머지 탭은 조회하지
- * 않는다(조기 종료로 실제 평균은 이보다 훨씬 낮다). FIX 1(감사, PR #698
- * 리뷰) — 마커가 legacy(jobId 없이 존재)면 skip 조회 자체를 생략하므로
- * (present 자체가 "이번 tick엔 손대지 마라"는 뜻) 실측 평균은 이보다 더 낮다.
+ * (=18) × 7탭 × 2 = 252회/tick`(≪1900). 마커가 present면 skip 조회를 생략하므로
+ * (present 자체가 "이번 tick엔 손대지 마라"는 뜻) 실측 평균은 이보다 낮다.
  *
  * FIX 2(감사, PR #698 리뷰) — 이 창 안의 후보 분류(`classifySymbol`)는 서로
  * 독립적이고 순서에 의존하지 않으므로 `Promise.all`로 병렬 실행한다(이전엔
@@ -224,7 +224,7 @@ export async function runPrewarmBatch(
  *
  * FIX C(감사) — 모든 stale 탭이 backoff(skip) 상태이거나 in-flight
  * 마커로 막혀 있는 심볼은 'blocked'로 분류해 배제한다(terminal skip 또는
- * resume 불가 in-flight가 head 슬롯을 영구 점유하는 걸 막는다).
+ * 살아 있는 in-flight가 head 슬롯을 점유하는 걸 막는다).
  */
 async function selectFairBatch(
     staleSymbols: PrewarmSymbol[],
@@ -298,7 +298,14 @@ async function processSymbol(
     boundary: Date,
     generatedAtMap: Map<string, Date>,
     repo: DrizzleSeoSnapshotRepository,
-    counts: PrewarmBatchCounts
+    counts: PrewarmBatchCounts,
+    /**
+     * 탭 하나하나가 LLM 왕복만큼(수십 초~수 분) 블로킹한다. 청크 경계에서만
+     * 데드라인을 보면 마지막 청크가 4탭을 연달아 돌며 LOCK_TTL_SECONDS(900s)를
+     * 넘길 수 있고, 그러면 락이 만료돼 다음 tick이 같은 심볼을 동시에 잡는다.
+     * 탭 사이에서도 검사해 그 창을 닫는다.
+     */
+    isPastDeadline: () => boolean
 ): Promise<void> {
     const { assetInfo } = await getAssetInfoResilient(u.symbol);
     const companyName = assetInfo?.name ?? u.symbol;
@@ -311,6 +318,7 @@ async function processSymbol(
 
     for (const tab of TAB_ORDER) {
         if (!u.tabs.includes(tab)) continue;
+        if (isPastDeadline()) break;
 
         const alreadyFresh = isSnapshotFresh(
             generatedAtMap.get(snapshotKey(u.symbol, tab)),

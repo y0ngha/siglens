@@ -711,13 +711,13 @@ describe('runPrewarmBatch', () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
         const base = FIXED_NOW.getTime();
-        let calls = 0;
-        const now = () => {
-            calls++;
-            // 1=데드라인 계산, 2=회전 오프셋, 3=청크0 사전체크(아직 여유),
-            // 4=청크1 사전체크(데드라인 초과).
-            return calls <= 3 ? base : base + BATCH_DEADLINE_MS + 1;
-        };
+        // 호출 횟수가 아니라 **진행도**로 시각을 만든다 — 데드라인 검사 지점이
+        // 늘어도(탭 루프 안에도 검사가 생겼다) 테스트가 깨지지 않는다.
+        // 청크0의 3심볼이 처리된 직후부터 데드라인을 넘긴 것으로 본다.
+        const now = () =>
+            mockPrewarmTechnical.mock.calls.length >= 3
+                ? base + BATCH_DEADLINE_MS + 1
+                : base;
         const sleep = vi.fn().mockResolvedValue(undefined);
 
         const counts = await runPrewarmBatch({ now, sleep });

@@ -21,12 +21,13 @@ import type {
 } from '@y0ngha/siglens-core';
 
 interface BriefingRegionProps {
-    input: RunBriefingResult | null | undefined;
+    input: RunBriefingResult | null | 'error' | undefined;
 }
 
 function BriefingRegion({ input }: BriefingRegionProps) {
     if (input === undefined) return null;
     if (input === null) return <BotBlockedNotice />;
+    if (input === 'error') return <BriefingErrorCard />;
     // Both 'cached' and 'done' have briefing + generatedAt — no Suspense needed
     // because run* is blocking and always returns a complete result.
     if (input.status === 'cached' || input.status === 'done') {

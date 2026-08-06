@@ -125,24 +125,32 @@ const STREAM_DEADLINE_MS = 5 * 60 * 1_000;
  */
 
 /**
- * Races `work` against a fixed deadline. Rejects with a localized message on
- * timeout so `heartbeatStream` emits an SSE `error` event instead of holding
- * the connection open forever.
+ * `run(signal)`을 고정 마감과 경주시킨다. 마감을 넘기면 localized 메시지로 reject해
+ * `heartbeatStream`이 SSE `error` 이벤트를 내보내고 연결을 닫는다.
+ *
+ * 마감이 **자체 `AbortController`로 작업을 실제 취소**하는 게 핵심이다. 취소하지 않으면
+ * 스트림만 닫히고 core의 호출은 provider 타임아웃(어댑터 기본 1시간)까지 계속 살아 있다.
+ * 그 promise는 `dedupeInFlight` Map에 남으므로, 같은 캐시 키의 이후 요청이 전부 죽은
+ * promise에 합류해 5분씩 기다렸다 실패한다 — 한 번의 provider 행이 그 키를 최대 한 시간
+ * 봉인한다.
+ *
+ * 이 signal은 클라이언트별이 아니라 **작업별**이라, 위에서 설명한 공유 abort 문제가 없다:
+ * 누가 듣고 있든 5분이 지나면 그 작업 자체가 가망이 없다.
  */
-function withDeadline<T>(work: Promise<T>): Promise<T> {
+function withDeadline<T>(run: (signal: AbortSignal) => Promise<T>): Promise<T> {
+    const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const deadline = new Promise<never>((_, reject) => {
-        timer = setTimeout(
-            () =>
-                reject(
-                    new Error('분석 시간이 초과되었습니다. 다시 시도해 주세요.')
-                ),
-            STREAM_DEADLINE_MS
-        );
+        timer = setTimeout(() => {
+            controller.abort();
+            reject(
+                new Error('분석 시간이 초과되었습니다. 다시 시도해 주세요.')
+            );
+        }, STREAM_DEADLINE_MS);
     });
     // work가 먼저 끝나면 타이머를 즉시 회수한다 — 없으면 매 요청이 5분짜리 타이머와
     // 그 reject 클로저를 붙들고 있어, LLM 작업까지 떠안은 인스턴스에서 그대로 누적된다.
-    return Promise.race([work, deadline]).finally(() => {
+    return Promise.race([run(controller.signal), deadline]).finally(() => {
         if (timer !== undefined) clearTimeout(timer);
     });
 }
@@ -352,11 +360,34 @@ export async function POST(request: Request): Promise<Response> {
                 // when E2E_TEST is unset).
                 const { e2eCachedTechnical } =
                     await import('@/shared/api/e2eAnalysisStub');
+                // E2E 스텁은 버킷이 계산되기 **전에** fixture를 돌려주므로
+                // (`runAnalysis`/`resolveHoldingPositionBucket`이 이 분기에선
+                // 아예 돌지 않는다) `personalized`를 평소처럼 파생할 수 없다.
+                // 배지 배선을 E2E에서 검증 가능하게 유지하되 거짓말은 하지
+                // 않도록, `resolveHoldingPositionBucket`과 같은 조건(free가
+                // 아니고 홀딩이 존재)으로 근사한다 — fixture가 어차피 실제
+                // 버킷/시세를 반영하지 않으니 그 해석은 E2E에서 무의미하다.
+                let personalized = false;
+                if (tier !== 'free' && userId !== null) {
+                    try {
+                        const { db } = getDatabaseClient();
+                        const holding = await new DrizzlePortfolioRepository(
+                            db
+                        ).findByUserAndSymbol(userId, symbol.toUpperCase());
+                        personalized = holding !== null;
+                    } catch (error) {
+                        console.error(
+                            '[streamAnalysisRoute] E2E personalized-flag holding read failed, degrading to false:',
+                            error
+                        );
+                        personalized = false;
+                    }
+                }
                 return new Response(
                     heartbeatStream(
                         Promise.resolve({
                             ...e2eCachedTechnical(tier),
-                            personalized: false,
+                            personalized,
                         })
                     ),
                     { headers: SSE_HEADERS }
@@ -440,15 +471,11 @@ export async function POST(request: Request): Promise<Response> {
             );
             const force = cooldown.ok;
 
-            const work = withDeadline(
-                runAnalysis(
-                    symbol,
-                    companyName,
-                    timeframe,
-                    force,
-                    fmpSymbol,
-                    options
-                ).then(result => ({
+            const work = withDeadline(deadlineSignal =>
+                runAnalysis(symbol, companyName, timeframe, force, fmpSymbol, {
+                    ...options,
+                    signal: deadlineSignal,
+                }).then(result => ({
                     ...result,
                     personalized: positionBucket !== undefined,
                 }))
@@ -480,7 +507,9 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     try {
-        const work = withDeadline(handler(body.params, undefined));
+        const work = withDeadline(deadlineSignal =>
+            handler(body.params, deadlineSignal)
+        );
         return new Response(heartbeatStream(work), { headers: SSE_HEADERS });
     } catch (err) {
         console.error('[streamAnalysisRoute] unexpected error:', err);

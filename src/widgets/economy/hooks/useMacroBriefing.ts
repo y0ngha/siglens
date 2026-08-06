@@ -62,7 +62,11 @@ export function useMacroBriefing(
 
     // §17 exception: `refetch` is destructured immediately after useQuery
     // because it feeds the useCallback below.
-    const { data, refetch: queryRefetch } = useQuery({
+    const {
+        data,
+        isError,
+        refetch: queryRefetch,
+    } = useQuery({
         queryKey: QUERY_KEYS.macroBriefing(),
         queryFn: ({ signal }) =>
             runAnalysisStream<MacroBriefingActionResult>({
@@ -71,6 +75,9 @@ export function useMacroBriefing(
                 signal,
             }),
         enabled: isHydrated,
+        // 전역 기본값 retry:1을 끈다 — 실패한 분석을 자동 재시도하면 방문자마다
+        // LLM 왕복이 두 번 돈다. 재시도는 사용자가 명시적으로 요청할 때만.
+        retry: false,
         staleTime: Infinity,
     });
 
@@ -86,6 +93,9 @@ export function useMacroBriefing(
         [peekSeed]
     );
 
+    // 스트림이 error 이벤트로 끝나면 `runAnalysisStream`이 throw하므로 data가 없다 —
+    // 이때 seedInput(대개 undefined)으로 떨어지면 스켈레톤이 영원히 남는다.
+    if (isError) return { input: 'error', refetch };
     if (!data) return { input: seedInput, refetch };
     if ('ok' in data) return { input: 'error', refetch };
     if (data.botBlocked) return { input: null, refetch };

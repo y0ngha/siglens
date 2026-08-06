@@ -12,8 +12,11 @@ import { useHydrated } from '@/shared/hooks/useHydrated';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
 export interface UseMarketBriefingReturn {
-    /** BriefingRegion input — undefined=미정, null=봇, cached/submitted=정상. */
-    input: RunBriefingResult | null | undefined;
+    /**
+     * BriefingRegion input — undefined=미정, null=봇, 'error'=실패,
+     * cached/done=정상.
+     */
+    input: RunBriefingResult | null | 'error' | undefined;
 }
 
 /**
@@ -28,7 +31,7 @@ export function useMarketBriefing(
     peekSeed?: MarketBriefingResponse | null
 ): UseMarketBriefingReturn {
     const isHydrated = useHydrated();
-    const { data } = useQuery({
+    const { data, isError } = useQuery({
         queryKey: QUERY_KEYS.marketBriefing(),
         queryFn: ({ signal }) =>
             runAnalysisStream<MarketBriefingActionResult>({
@@ -37,6 +40,9 @@ export function useMarketBriefing(
                 signal,
             }),
         enabled: isHydrated,
+        // 전역 기본값 retry:1을 끈다 — 실패한 분석을 자동 재시도하면 방문자마다
+        // LLM 왕복이 두 번 돈다. 재시도는 사용자가 명시적으로 요청할 때만.
+        retry: false,
         staleTime: Infinity,
     });
 
@@ -54,10 +60,14 @@ export function useMarketBriefing(
         [peekSeed]
     );
 
+    // 스트림이 error 이벤트로 끝나면 `runAnalysisStream`이 throw하므로 data가 없다 —
+    // 이때 seedInput(대개 undefined)으로 떨어지면 아무것도 렌더되지 않아 실패가
+    // 조용히 사라진다. /economy의 MacroBriefing과 동일하게 명시적 error를 노출한다.
+    if (isError) return { input: 'error' };
     if (!data) {
         return { input: seedInput };
     }
-    if ('ok' in data) return { input: undefined };
+    if ('ok' in data) return { input: 'error' };
     if (data.botBlocked) return { input: null };
     return { input: data.briefing };
 }

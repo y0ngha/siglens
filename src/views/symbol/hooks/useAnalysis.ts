@@ -234,7 +234,6 @@ export function useAnalysis({
         mutate,
     } = useMutation<RunAnalysisActionResult, Error, AnalyzeMutationVariables>({
         mutationFn: ({
-            force,
             symbol: mutSymbol,
             companyName: mutCompanyName,
             fmpSymbol: mutFmpSymbol,

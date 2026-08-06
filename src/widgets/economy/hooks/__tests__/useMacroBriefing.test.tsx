@@ -81,6 +81,10 @@ describe('useMacroBriefing', () => {
                 generatedAt: '2026-06-17T00:00:00Z',
             })
         );
+        // type 문자열이 잘못되면 SSE 라우트가 400을 반환한다 — 프로덕션 버그를 테스트에서 잡는다.
+        expect(mockSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({ type: 'macroBriefing' })
+        );
     });
 
     it('action이 done 반환 → input=done variant', async () => {
@@ -155,6 +159,16 @@ describe('useMacroBriefing', () => {
             wrapper: makeWrapper(),
         });
         // action 완료 후 seedInput이 아닌 'error'가 반환되어야 한다
+        await waitFor(() => expect(result.current.input).toBe('error'));
+    });
+
+    // 스트림 throw(SSE error 이벤트) — data가 없어 seed로 떨어지면 스켈레톤이 영원히 남는다.
+    it('스트림이 throw해도 input="error" — peekSeed로 되돌아가지 않는다', async () => {
+        mockSubmit.mockRejectedValue(new Error('분석 시간이 초과되었습니다.'));
+        const { result } = renderHook(() => useMacroBriefing(PEEK), {
+            wrapper: makeWrapper(),
+        });
+
         await waitFor(() => expect(result.current.input).toBe('error'));
     });
 });

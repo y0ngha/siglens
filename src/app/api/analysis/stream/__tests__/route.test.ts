@@ -43,9 +43,16 @@ vi.mock('@/shared/config/marketProfile', () => ({
     getDescriptor: vi.fn().mockReturnValue({ assetClass: 'equity' }),
 }));
 
+// resolveHoldingPositionBucket 경로를 테스트하려면 findByUserAndSymbol 와 getQuote를
+// 호이스팅해서 개별 테스트에서 반환값을 제어할 수 있어야 한다.
+const { mockFindByUserAndSymbol, mockGetQuote } = vi.hoisted(() => ({
+    mockFindByUserAndSymbol: vi.fn(),
+    mockGetQuote: vi.fn(),
+}));
+
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: vi.fn().mockReturnValue({
-        getQuote: vi.fn().mockResolvedValue(null),
+        getQuote: mockGetQuote,
     }),
 }));
 
@@ -58,9 +65,19 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 vi.mock('@/entities/portfolio/api', () => ({
-    DrizzlePortfolioRepository: vi.fn().mockImplementation(() => ({
-        findByUserAndSymbol: vi.fn().mockResolvedValue(null),
-    })),
+    // Vitest 4.x는 `new` 호출 시 arrow function 구현을 거부한다 — 일반 function을 사용한다.
+    DrizzlePortfolioRepository: vi.fn().mockImplementation(function () {
+        return { findByUserAndSymbol: mockFindByUserAndSymbol };
+    }),
+}));
+
+// E2E 단락은 이 모듈을 동적 import한다 — prod 번들에서 스텁을 제외하기 위한 구조라
+// 정적 import가 아니지만, vi.mock은 동적 import에도 동일하게 적용된다.
+vi.mock('@/shared/api/e2eAnalysisStub', () => ({
+    e2eCachedTechnical: vi.fn().mockReturnValue({
+        status: 'cached',
+        result: { headlineKo: 'E2E fixture' },
+    }),
 }));
 
 // runAnalysis is mocked via the bridge so we don't disturb the rest of @y0ngha/siglens-core.
@@ -97,9 +114,16 @@ vi.mock('@/entities/economy/actions/submitMacroBriefingAction', () => ({
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { POST } from '../route';
 import { runAnalysis } from '../runAnalysisBridge';
-import { resolveTierAndByok } from '@/shared/lib/byokGate';
+import {
+    resolveTierAndByok,
+    resolveTierOnly,
+    resolvePositionBucket,
+} from '@/shared/lib/byokGate';
+import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
+import { e2eCachedTechnical } from '@/shared/api/e2eAnalysisStub';
 import {
     runOverallAnalysisAction,
     runFundamentalAnalysisAction,
@@ -168,6 +192,25 @@ describe('POST /api/analysis/stream', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.useFakeTimers();
+        // clearAllMocks는 호출 기록만 지우고 구현/반환값은 남긴다 — 테스트가 켜 둔
+        // isE2E/isBot이 다음 테스트로 새는 걸 막기 위해 기본값을 매번 되돌린다.
+        vi.mocked(isE2E).mockReturnValue(false);
+        vi.mocked(isBot).mockReturnValue(false);
+        vi.mocked(resolveTierOnly).mockResolvedValue('free' as never);
+        vi.mocked(getCurrentUser).mockResolvedValue(null);
+        vi.mocked(e2eCachedTechnical).mockReturnValue({
+            status: 'cached',
+            result: { headlineKo: 'E2E fixture' },
+        } as never);
+        // 기본값: 홀딩 없음, 시세 없음 — 기존 테스트는 tier='free'라 이 경로를 거치지 않는다.
+        mockFindByUserAndSymbol.mockResolvedValue(null);
+        mockGetQuote.mockResolvedValue(null);
+        // vi.clearAllMocks()이 Vitest 4.x에서 mockImplementation도 초기화하는 경우를 대비해
+        // DrizzlePortfolioRepository 구현을 명시적으로 재설정한다.
+        // Vitest 4.x는 `new` 호출 시 arrow function 구현을 거부하므로 일반 function을 사용한다.
+        vi.mocked(DrizzlePortfolioRepository).mockImplementation(function () {
+            return { findByUserAndSymbol: mockFindByUserAndSymbol };
+        } as never);
     });
 
     afterEach(() => {
@@ -232,7 +275,7 @@ describe('POST /api/analysis/stream', () => {
     });
 
     describe('client signal — core로 전파되지 않는다 (공유 작업 보호)', () => {
-        it('runAnalysis에 signal을 넘기지 않는다', async () => {
+        it('core가 받는 signal은 클라이언트 것이 아니라 마감용이다', async () => {
             // core의 분석 실행은 dedupeInFlight로 공유된다 — 같은 캐시 키의 모든
             // 호출자가 하나의 promise를 함께 기다린다. 여기에 특정 클라이언트의
             // signal을 꽂으면 그 한 명이 이탈할 때 공유 promise가 reject되어
@@ -250,10 +293,15 @@ describe('POST /api/analysis/stream', () => {
                 }
             );
 
+            ac.abort();
             const response = await POST(makeRequest(ac.signal));
             await collectSseEvents(response);
 
-            expect(capturedSignal).toBeUndefined();
+            // core는 signal을 받지만 그것은 withDeadline이 만든 작업별 signal이다.
+            // 클라이언트가 이미 abort된 상태로 들어와도 그 상태가 전파되지 않는다.
+            expect(capturedSignal).toBeInstanceOf(AbortSignal);
+            expect(capturedSignal).not.toBe(ac.signal);
+            expect(capturedSignal?.aborted).toBe(false);
         });
 
         it('클라이언트가 abort해도 core 호출은 그대로 완주한다', async () => {
@@ -510,6 +558,363 @@ describe('POST /api/analysis/stream', () => {
             await collectSseEvents(response);
 
             expect(vi.mocked(submitMacroBriefingAction)).toHaveBeenCalledOnce();
+        });
+    });
+
+    /**
+     * resolveHoldingPositionBucket — 내부 헬퍼의 네 가지 경로를 커버한다.
+     *
+     * 이 describe 블록에서는 `resolveTierOnly`를 'member'로 오버라이드하고
+     * `getCurrentUser`를 실제 유저로 설정해, 기존 글로벌 mock이 'free'를 반환해
+     * 조기 리턴하던 경로를 우회한다.
+     *
+     * positionBucket 검증은 `runAnalysis.mock.calls[0][5].positionBucket`으로
+     * 직접 접근한다 — `expect.objectContaining({ positionBucket: undefined })`는
+     * Vitest 4.x에서 undefined 비교가 불안정하고, `expect.anything()`은 undefined를
+     * 매칭하지 않아(null/undefined 제외) fmpSymbol 위치에서 실패한다.
+     */
+    describe('resolveHoldingPositionBucket — 포지션 버킷 분기', () => {
+        const MEMBER_BODY = JSON.stringify({
+            type: 'technical',
+            params: {
+                symbol: 'AAPL',
+                companyName: 'Apple Inc.',
+                timeframe: '1Day',
+            },
+        });
+
+        beforeEach(() => {
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'miss_no_trigger' as const,
+            });
+            // member tier + 실제 userId 기본값 — 각 테스트에서 필요시 오버라이드한다.
+            vi.mocked(resolveTierOnly).mockResolvedValue('member' as never);
+            vi.mocked(getCurrentUser).mockResolvedValue({ id: 'u1' } as never);
+        });
+
+        it('userId === null 이면 홀딩을 조회하지 않고 positionBucket: undefined를 반환한다', async () => {
+            // null userId → 조기 리턴, DB 조회 없음
+            vi.mocked(getCurrentUser).mockResolvedValue(null);
+
+            const response = await POST(makeRequest(undefined, MEMBER_BODY));
+            await collectSseEvents(response);
+
+            expect(mockFindByUserAndSymbol).not.toHaveBeenCalled();
+            expect(vi.mocked(runAnalysis)).toHaveBeenCalledTimes(1);
+            // positionBucket은 undefined — 직접 접근으로 검증
+            const opts = vi.mocked(runAnalysis).mock.calls[0]?.[5] as Record<
+                string,
+                unknown
+            >;
+            expect(opts?.positionBucket).toBeUndefined();
+        });
+
+        it('member + 홀딩 없음 → DB 조회 후 positionBucket undefined, 시세 조회 스킵', async () => {
+            mockFindByUserAndSymbol.mockResolvedValue(null); // 홀딩 없음
+
+            const response = await POST(makeRequest(undefined, MEMBER_BODY));
+            await collectSseEvents(response);
+
+            expect(mockFindByUserAndSymbol).toHaveBeenCalledWith('u1', 'AAPL');
+            expect(mockGetQuote).not.toHaveBeenCalled();
+            expect(vi.mocked(runAnalysis)).toHaveBeenCalledTimes(1);
+            const opts = vi.mocked(runAnalysis).mock.calls[0]?.[5] as Record<
+                string,
+                unknown
+            >;
+            expect(opts?.positionBucket).toBeUndefined();
+        });
+
+        it('member + 홀딩 있음 + 시세 조회 성공 → resolvePositionBucket 결과로 버킷 파생', async () => {
+            mockFindByUserAndSymbol.mockResolvedValue({
+                averagePrice: '100',
+            } as never);
+            mockGetQuote.mockResolvedValue({ price: 110 });
+            // 이 테스트에서만 실제 버킷('profit')을 반환하도록 오버라이드한다.
+            vi.mocked(resolvePositionBucket).mockReturnValue('profit' as never);
+
+            const response = await POST(makeRequest(undefined, MEMBER_BODY));
+            await collectSseEvents(response);
+
+            expect(mockFindByUserAndSymbol).toHaveBeenCalledWith('u1', 'AAPL');
+            expect(mockGetQuote).toHaveBeenCalled();
+            expect(vi.mocked(runAnalysis)).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                expect.any(Boolean),
+                undefined,
+                expect.objectContaining({ positionBucket: 'profit' })
+            );
+        });
+
+        it('시세 조회가 null이면 currentPrice를 null로 넘긴다 — 홀딩이 있어도 버킷은 파생 못 함', async () => {
+            mockFindByUserAndSymbol.mockResolvedValue({
+                averagePrice: '100',
+            } as never);
+            mockGetQuote.mockResolvedValue(null);
+
+            const response = await POST(makeRequest(undefined, MEMBER_BODY));
+            await collectSseEvents(response);
+
+            expect(vi.mocked(resolvePositionBucket)).toHaveBeenCalledWith(
+                'member',
+                100,
+                null
+            );
+        });
+
+        it('fmpSymbol이 있으면 그 심볼로 시세를 조회한다 (없으면 symbol 폴백)', async () => {
+            mockFindByUserAndSymbol.mockResolvedValue({
+                averagePrice: '100',
+            } as never);
+            mockGetQuote.mockResolvedValue({ price: 110 });
+
+            const response = await POST(
+                makeRequest(
+                    undefined,
+                    JSON.stringify({
+                        type: 'technical',
+                        params: {
+                            symbol: 'BTCUSD',
+                            companyName: 'Bitcoin',
+                            timeframe: '1Day',
+                            fmpSymbol: 'BTCUSD.CC',
+                        },
+                    })
+                )
+            );
+            await collectSseEvents(response);
+
+            expect(mockGetQuote).toHaveBeenCalledWith('BTCUSD.CC');
+        });
+
+        it('포트폴리오 레포지토리가 throw하면 버킷을 undefined로 강등하고 분석은 정상 진행된다', async () => {
+            mockFindByUserAndSymbol.mockRejectedValue(new Error('db down'));
+
+            const response = await POST(makeRequest(undefined, MEMBER_BODY));
+            await collectSseEvents(response);
+
+            // 에러를 삼키고 분석은 계속된다 — 포지션 버킷 실패가 분석 전체를 막으면 안 된다.
+            expect(vi.mocked(runAnalysis)).toHaveBeenCalledTimes(1);
+            const opts = vi.mocked(runAnalysis).mock.calls[0]?.[5] as Record<
+                string,
+                unknown
+            >;
+            expect(opts?.positionBucket).toBeUndefined();
+        });
+    });
+
+    /**
+     * E2E 단락 — `isE2E()`가 true면 core를 전혀 호출하지 않고 fixture로 응답한다.
+     * `personalized`는 버킷 계산 전에 반환하므로 평소처럼 파생할 수 없어,
+     * `resolveHoldingPositionBucket`과 같은 조건(free 아님 + 홀딩 존재)으로 근사한다.
+     */
+    describe('E2E 단락', () => {
+        beforeEach(() => {
+            vi.mocked(isE2E).mockReturnValue(true);
+        });
+
+        it('봇 요청은 miss_no_trigger로 끝내고 core를 부르지 않는다', async () => {
+            vi.mocked(isBot).mockReturnValue(true);
+
+            const response = await POST(makeRequest());
+            const events = await collectSseEvents(response);
+
+            expect(events.some(e => e.includes('miss_no_trigger'))).toBe(true);
+            expect(vi.mocked(runAnalysis)).not.toHaveBeenCalled();
+            expect(vi.mocked(e2eCachedTechnical)).not.toHaveBeenCalled();
+        });
+
+        it('비봇 요청은 fixture를 반환하고 core를 부르지 않는다', async () => {
+            const response = await POST(makeRequest());
+            const events = await collectSseEvents(response);
+
+            expect(vi.mocked(e2eCachedTechnical)).toHaveBeenCalledWith('free');
+            expect(vi.mocked(runAnalysis)).not.toHaveBeenCalled();
+            const doneEvent = events.find(e => e.includes('event: done'));
+            expect(doneEvent).toContain('E2E fixture');
+        });
+
+        it('free tier는 홀딩을 조회하지 않고 personalized:false로 응답한다', async () => {
+            const response = await POST(makeRequest());
+            const events = await collectSseEvents(response);
+
+            expect(mockFindByUserAndSymbol).not.toHaveBeenCalled();
+            expect(events.find(e => e.includes('event: done'))).toContain(
+                '"personalized":false'
+            );
+        });
+
+        it('member + 홀딩 존재면 personalized:true로 응답한다 — 배지 배선 검증용', async () => {
+            vi.mocked(resolveTierOnly).mockResolvedValue('member' as never);
+            vi.mocked(getCurrentUser).mockResolvedValue({ id: 'u1' } as never);
+            mockFindByUserAndSymbol.mockResolvedValue({
+                averagePrice: '100',
+            } as never);
+
+            const response = await POST(makeRequest());
+            const events = await collectSseEvents(response);
+
+            expect(mockFindByUserAndSymbol).toHaveBeenCalledWith('u1', 'AAPL');
+            expect(events.find(e => e.includes('event: done'))).toContain(
+                '"personalized":true'
+            );
+        });
+
+        it('홀딩 조회가 throw해도 personalized:false로 강등하고 응답은 정상이다', async () => {
+            vi.mocked(resolveTierOnly).mockResolvedValue('member' as never);
+            vi.mocked(getCurrentUser).mockResolvedValue({ id: 'u1' } as never);
+            mockFindByUserAndSymbol.mockRejectedValue(new Error('db down'));
+
+            const response = await POST(makeRequest());
+            const events = await collectSseEvents(response);
+
+            expect(events.find(e => e.includes('event: done'))).toContain(
+                '"personalized":false'
+            );
+        });
+    });
+
+    describe('BYOK 게이트', () => {
+        const MODEL_BODY = JSON.stringify({
+            type: 'technical',
+            params: {
+                symbol: 'AAPL',
+                companyName: 'Apple Inc.',
+                timeframe: '1Day',
+                modelId: 'claude-opus-5',
+            },
+        });
+
+        it('blocked면 403이 아니라 SSE error 이벤트로 게이트 메시지를 전달한다', async () => {
+            // 403을 쓰면 클라이언트가 게이트 메시지 대신 "분석 요청이 실패했습니다 (403)"을
+            // 던지게 된다 — 그래서 의도적으로 200 + error 이벤트다.
+            vi.mocked(resolveTierAndByok).mockResolvedValue({
+                kind: 'blocked',
+                error: {
+                    code: 'model_not_allowed',
+                    message: '이 모델은 사용할 수 없어요.',
+                },
+            } as never);
+
+            const response = await POST(makeRequest(undefined, MODEL_BODY));
+
+            expect(response.status).toBe(200);
+            const events = await collectSseEvents(response);
+            const errorEvent = events.find(e => e.includes('event: error'));
+            expect(errorEvent).toContain('이 모델은 사용할 수 없어요.');
+            expect(vi.mocked(runAnalysis)).not.toHaveBeenCalled();
+        });
+
+        it('userApiKey가 있으면 core 옵션에 전달한다', async () => {
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'miss_no_trigger' as const,
+            });
+            vi.mocked(resolveTierAndByok).mockResolvedValue({
+                kind: 'ok',
+                tier: 'member',
+                userApiKey: 'sk-user',
+            } as never);
+
+            const response = await POST(makeRequest(undefined, MODEL_BODY));
+            await collectSseEvents(response);
+
+            const opts = vi.mocked(runAnalysis).mock.calls[0]?.[5] as Record<
+                string,
+                unknown
+            >;
+            expect(opts?.userApiKey).toBe('sk-user');
+        });
+
+        it('userApiKey가 없으면 옵션에 키 자체가 없다 — undefined로도 넣지 않는다', async () => {
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'miss_no_trigger' as const,
+            });
+            vi.mocked(resolveTierAndByok).mockResolvedValue({
+                kind: 'ok',
+                tier: 'member',
+                userApiKey: undefined,
+            } as never);
+
+            const response = await POST(makeRequest(undefined, MODEL_BODY));
+            await collectSseEvents(response);
+
+            const opts = vi.mocked(runAnalysis).mock.calls[0]?.[5] as Record<
+                string,
+                unknown
+            >;
+            expect(Object.hasOwn(opts, 'userApiKey')).toBe(false);
+        });
+    });
+
+    describe('예기치 못한 예외 → JSON 500', () => {
+        it('technical 경로에서 스트림 생성 전에 throw하면 SSE가 아니라 JSON 500이다', async () => {
+            vi.mocked(getCurrentUser).mockRejectedValue(new Error('auth down'));
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+
+            const response = await POST(makeRequest());
+
+            expect(response.status).toBe(500);
+            expect(response.headers.get('Content-Type')).toContain(
+                'application/json'
+            );
+            await expect(response.json()).resolves.toMatchObject({
+                status: 'error',
+            });
+
+            errorSpy.mockRestore();
+        });
+
+        it('dispatch 핸들러가 동기적으로 throw하면 JSON 500이다', async () => {
+            vi.mocked(runOverallAnalysisAction).mockImplementation(() => {
+                throw new Error('sync boom');
+            });
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+
+            const response = await POST(
+                makeRequest(
+                    undefined,
+                    JSON.stringify({
+                        type: 'overall',
+                        params: { symbol: 'AAPL' },
+                    })
+                )
+            );
+
+            expect(response.status).toBe(500);
+            expect(response.headers.get('Content-Type')).toContain(
+                'application/json'
+            );
+
+            errorSpy.mockRestore();
+        });
+    });
+
+    describe('technical params 400 가드', () => {
+        it('params 키가 아예 없으면 400', async () => {
+            const response = await POST(
+                makeRequest(undefined, JSON.stringify({ type: 'technical' }))
+            );
+
+            expect(response.status).toBe(400);
+            expect(vi.mocked(runAnalysis)).not.toHaveBeenCalled();
+        });
+
+        it('params가 객체가 아니면 400', async () => {
+            const response = await POST(
+                makeRequest(
+                    undefined,
+                    JSON.stringify({ type: 'technical', params: 'AAPL' })
+                )
+            );
+
+            expect(response.status).toBe(400);
+            expect(vi.mocked(runAnalysis)).not.toHaveBeenCalled();
         });
     });
 });

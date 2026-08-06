@@ -106,6 +106,10 @@ describe('useMarketBriefing', () => {
                 generatedAt: '2025-01-01T10:00:00Z',
             });
         });
+        // type 문자열이 잘못되면 SSE 라우트가 400을 반환한다 — 프로덕션 버그를 테스트에서 잡는다.
+        expect(mockAction).toHaveBeenCalledWith(
+            expect.objectContaining({ type: 'briefing' })
+        );
         client.clear();
     });
 
@@ -138,7 +142,7 @@ describe('useMarketBriefing', () => {
         client.clear();
     });
 
-    it('(Worst) action {ok:false} → input undefined (렌더 안 함)', async () => {
+    it("(Worst) action {ok:false} → input 'error'", async () => {
         const errorResult: MarketBriefingActionResult = {
             ok: false,
             error: 'server_error',
@@ -148,9 +152,21 @@ describe('useMarketBriefing', () => {
         const { result } = renderHook(() => useMarketBriefing(), { wrapper });
 
         await waitFor(() => {
-            expect(mockAction).toHaveBeenCalled();
+            expect(result.current.input).toBe('error');
         });
-        expect(result.current.input).toBeUndefined();
+        client.clear();
+    });
+
+    it("(Worst) 스트림이 throw하면 input 'error' — 스켈레톤이 영원히 남지 않는다", async () => {
+        // SSE가 error 이벤트로 끝나면 runAnalysisStream이 throw한다. 이때 data가
+        // 없어 seedInput(undefined)으로 떨어지면 실패가 조용히 사라진다.
+        mockAction.mockRejectedValue(new Error('분석 시간이 초과되었습니다.'));
+        const { client, wrapper } = makeWrapper();
+        const { result } = renderHook(() => useMarketBriefing(), { wrapper });
+
+        await waitFor(() => {
+            expect(result.current.input).toBe('error');
+        });
         client.clear();
     });
 });
