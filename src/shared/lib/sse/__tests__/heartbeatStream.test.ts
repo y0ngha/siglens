@@ -503,7 +503,10 @@ describe('heartbeatStream', () => {
             expect(__activeStreamCount()).toBe(0);
         });
 
-        it('cancel 시 카운터가 감소한다', async () => {
+        it('cancel만으로는 카운터가 줄지 않는다 — 서버 작업은 아직 살아 있다', async () => {
+            // 카운터는 브라우저 연결 수가 아니라 "끝나지 않은 서버 작업 수"다.
+            // 탭을 닫아도 LLM 호출은 계속 돌아 캐시를 채우므로, 여기서 0이 되면
+            // 마침 겹친 배포의 drain이 그 작업을 그대로 죽인다.
             const stream = heartbeatStream(new Promise<never>(() => {}));
             const reader = stream.getReader();
 
@@ -511,10 +514,10 @@ describe('heartbeatStream', () => {
             expect(__activeStreamCount()).toBe(1);
 
             await reader.cancel();
-            expect(__activeStreamCount()).toBe(0);
+            expect(__activeStreamCount()).toBe(1);
         });
 
-        it('cancel 후 promise가 resolve돼도 카운터가 두 번 감소하지 않는다', async () => {
+        it('cancel 뒤 work가 settle되면 그때 카운터가 줄고, 두 번 줄지는 않는다', async () => {
             const { promise, resolve } = deferred<string>();
             const stream = heartbeatStream(promise);
             const reader = stream.getReader();
@@ -522,13 +525,13 @@ describe('heartbeatStream', () => {
             await reader.read(); // open
             expect(__activeStreamCount()).toBe(1);
 
-            await reader.cancel(); // cancel first
-            expect(__activeStreamCount()).toBe(0);
+            await reader.cancel(); // 연결만 끊긴 상태
+            expect(__activeStreamCount()).toBe(1);
 
-            resolve('late'); // promise resolves after cancel
-            await Promise.resolve(); // flush microtask
+            resolve('late'); // 서버 작업이 뒤늦게 완료
+            await Promise.resolve();
+            await Promise.resolve();
 
-            // 0 미만으로 떨어지지 않아야 한다.
             expect(__activeStreamCount()).toBe(0);
         });
     });

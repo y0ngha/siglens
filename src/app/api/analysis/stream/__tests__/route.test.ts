@@ -152,6 +152,11 @@ import { submitMarketBriefingAction } from '@/entities/market-summary/actions/su
 import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacroBriefingAction';
 import { tryAcquireReanalyzeCooldown } from '@/entities/analysis';
 import { releaseReanalyzeCooldown } from '@y0ngha/siglens-core';
+import {
+    MAX_CONCURRENT_ANALYSIS_STREAMS,
+    incrementActiveStreams,
+    __resetActiveStreamsForTests,
+} from '@/shared/lib/sse/activeStreams';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getDescriptor } from '@/shared/config/marketProfile';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
@@ -1006,6 +1011,37 @@ describe('POST /api/analysis/stream', () => {
 
             expect(response.status).toBe(400);
             expect(vi.mocked(runOverallAnalysisAction)).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('동시성 상한', () => {
+        it('in-flight 스트림이 상한에 도달하면 503으로 거절한다', async () => {
+            // 공개 라우트라 심볼만 바꾸면 캐시·dedupe를 모두 비켜 간다. 인스턴스
+            // 레벨에서 막지 않으면 루프 하나가 t4g.medium을 고갈시킨다.
+            __resetActiveStreamsForTests();
+            for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS; i++) {
+                incrementActiveStreams();
+            }
+
+            const response = await POST(makeRequest());
+
+            expect(response.status).toBe(503);
+            expect(response.headers.get('Retry-After')).toBe('30');
+            expect(vi.mocked(runAnalysis)).not.toHaveBeenCalled();
+
+            __resetActiveStreamsForTests();
+        });
+
+        it('상한 미만이면 정상 처리한다', async () => {
+            __resetActiveStreamsForTests();
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'miss_no_trigger',
+            });
+
+            const response = await POST(makeRequest());
+            await collectSseEvents(response);
+
+            expect(response.status).toBe(200);
         });
     });
 

@@ -22,6 +22,7 @@ import {
 } from '@/shared/lib/byokGate';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { heartbeatStream } from '@/shared/lib/sse/heartbeatStream';
+import { canAcceptAnalysisStream } from '@/shared/lib/sse/activeStreams';
 import { runAnalysis, type SubmitAnalysisOptions } from './runAnalysisBridge';
 import { tryAcquireReanalyzeCooldown } from '@/entities/analysis';
 // core에서 직접 import — 해제는 서버 전용이어야 한다(클라이언트가 호출할 수 있으면
@@ -219,7 +220,25 @@ const DISPATCH: Record<
                 reasoning: params.reasoning as boolean | undefined,
             },
             signal
-        );
+        ).catch(async (err: unknown) => {
+            // technical 분기의 `releaseOnFailure`와 같은 이유 — 실패하면 획득한
+            // 쿨다운을 되돌린다. 안 되돌리면 사용자는 결과도 못 받은 채 5분간
+            // 재분석이 막힌다.
+            if (cooldown?.ok === true) {
+                try {
+                    await releaseReanalyzeCooldown(
+                        params.symbol as string,
+                        `${params.timeframe as Timeframe}:overall` as Timeframe
+                    );
+                } catch (releaseErr) {
+                    console.error(
+                        '[streamAnalysisRoute] overall cooldown release failed:',
+                        releaseErr
+                    );
+                }
+            }
+            throw err;
+        });
     },
 
     fundamental: (params, signal) =>
@@ -370,6 +389,17 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     // --- 2. Technical analysis: inline gating + personalization ---
+    // 동시 분석 상한 — 자세한 근거는 `canAcceptAnalysisStream` 주석 참고.
+    // JSON 503으로 거절한다(SSE를 열어 error를 흘리면 클라이언트가 "분석 실패"로
+    // 표시하지만, 이건 실패가 아니라 "지금 말고 나중에"라 재시도 가능함을 알려야 한다).
+    if (!canAcceptAnalysisStream()) {
+        console.warn('[analysis-stream] rejected: concurrency cap reached');
+        return Response.json(
+            { error: '지금 분석 요청이 많습니다. 잠시 후 다시 시도해 주세요.' },
+            { status: 503, headers: { 'Retry-After': '30' } }
+        );
+    }
+
     if (body.type === 'technical') {
         // `params` 자체가 없을 수 있다(`{"type":"technical"}`). 구조분해를 try 밖에
         // 두면 그 입력이 처리되지 않은 throw로 500이 된다 — 400이어야 한다.
@@ -471,9 +501,19 @@ export async function POST(request: Request): Promise<Response> {
                      * `runAnalysisStream` to throw a generic "분석 요청이 실패했습니다 (403)"
                      * instead of the gate-specific message.
                      */
+                    // 게이트 거부는 **가용성 장애가 아니다**(사용자가 허용되지 않은
+                    // 모델을 고른 정상 동작). `[analysis-stream] failed` 알람이 이걸
+                    // 세면 프리티어 사용자 몇 명이 프리미엄 모델을 눌렀다는 이유로
+                    // 페이지가 울리고, 그 알람은 SSE가 항상 200이라 진짜 분석 장애를
+                    // 잡는 **유일한** 신호다. 따로 로깅해 구분한다.
+                    console.warn(
+                        '[analysis-stream] gate-denied:',
+                        gate.error.code
+                    );
                     return new Response(
                         heartbeatStream(
-                            Promise.reject(new Error(gate.error.message))
+                            Promise.reject(new Error(gate.error.message)),
+                            { logFailures: false }
                         ),
                         { headers: SSE_HEADERS }
                     );

@@ -31,8 +31,11 @@ aws autoscaling put-scaling-policy \
 #     ALBRequestCountPerTarget만으로는 이 구조의 병목에 영원히 반응하지 못한다.
 #     CPU 정책을 함께 걸어 LLM 바운드 부하에도 스케일아웃되게 한다.
 #     (siglens-cpu-credits-low는 알람일 뿐 스케일링 트리거가 아니다.)
+# TargetValue 30: t4g.medium의 baseline은 vCPU당 20%다. 60으로 잡으면 baseline의 3배에서
+# "정상"으로 판정해 스케일아웃을 하지 않고, unlimited 모드라 크레딧이 바닥난 채 초과 요금만
+# 나간다(그리고 siglens-cpu-credits-low 알람이 상시 ALARM으로 굳어 무뎌진다).
 CPU_CONFIG=$(jq -n \
-  --argjson target 60 \
+  --argjson target 30 \
   '{PredefinedMetricSpecification:{PredefinedMetricType:"ASGAverageCPUUtilization"},TargetValue:$target}')
 
 aws autoscaling put-scaling-policy \
@@ -41,4 +44,4 @@ aws autoscaling put-scaling-policy \
   --policy-type TargetTrackingScaling \
   --target-tracking-configuration "$CPU_CONFIG"
 
-log "scaling policies set: siglens-tt-albreq (1000 req/target) + siglens-tt-cpu (60% CPU); ASG max-size owned by 06-alb-asg.sh (=4) | resource-label: $RES_LABEL"
+log "scaling policies set: siglens-tt-albreq (1000 req/target) + siglens-tt-cpu (30% CPU); ASG max-size owned by 06-alb-asg.sh (=4) | resource-label: $RES_LABEL"

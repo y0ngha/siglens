@@ -53,8 +53,20 @@ export const HEARTBEAT_INTERVAL_MS = 25_000;
  * SIGTERM 핸들러(`instrumentation.node.ts`)가 `waitForActiveStreams`를 통해 이 카운터가
  * 0에 도달할 때까지 대기하므로, 배포 롤링 중 진행 중인 분석이 완주할 기회를 얻는다.
  */
+interface HeartbeatStreamOptions {
+    /**
+     * `[analysis-stream] failed:` 로그를 남길지. 기본 true.
+     *
+     * false로 두는 건 **가용성 장애가 아닌 거부**뿐이다(BYOK/tier 게이트 등). 그 로그에
+     * CloudWatch 알람이 걸려 있고, SSE가 항상 HTTP 200이라 그게 분석 전면 장애를 잡는
+     * 유일한 신호다 — 정상 거부가 섞이면 오탐으로 알람이 무뎌진다.
+     */
+    logFailures?: boolean;
+}
+
 export function heartbeatStream<T>(
-    work: Promise<T>
+    work: Promise<T>,
+    { logFailures = true }: HeartbeatStreamOptions = {}
 ): ReadableStream<Uint8Array> {
     const encoder = new TextEncoder();
     let timer: ReturnType<typeof setInterval> | undefined;
@@ -142,7 +154,9 @@ export function heartbeatStream<T>(
                     clearTimer();
                     // [analysis-stream] failed: 접두는 07-alarms.sh CloudWatch 메트릭
                     // 필터와 정합하는 안정 ASCII 마커다 — non-ASCII 변경 금지.
-                    console.error('[analysis-stream] failed:', err);
+                    if (logFailures) {
+                        console.error('[analysis-stream] failed:', err);
+                    }
                     const rawMessage =
                         err instanceof Error ? err.message : String(err);
                     // 한글이 포함된 메시지는 이미 현지화된 사용자 메시지 — 그대로 전달한다
@@ -174,10 +188,22 @@ export function heartbeatStream<T>(
             // Client disconnected or the response was aborted. Reclaim the timer
             // immediately so it does not keep firing into a dead stream.
             if (timer !== undefined) clearInterval(timer);
-            // 클라이언트 연결 해제 — 카운터를 감소한다.
-            // work promise가 아직 in-flight이면 나중에 resolve/reject 경로도
-            // decrement()를 호출하지만 decremented 플래그로 중복을 막는다.
-            decrement();
+            /**
+             * ⚠️ 여기서 카운터를 **감소시키지 않는다.**
+             *
+             * 이 카운터는 "브라우저 연결 수"가 아니라 "아직 끝나지 않은 서버 작업 수"다.
+             * 라우트는 클라이언트 signal을 core에 넘기지 않으므로(공유 `dedupeInFlight`
+             * 때문), 탭을 닫아도 LLM 호출은 계속 돌아 캐시를 채운다. 여기서 감소시키면
+             * 그 시점에 카운터가 0이 되고, 마침 배포가 겹치면 drain이 즉시 통과해
+             * 진행 중인 LLM 작업이 그대로 죽는다 — drain을 180초로 올린 이유가 사라진다.
+             *
+             * 롤 중에는 ALB가 `deregistration_delay` 만료 시 남은 연결을 전부 끊으므로
+             * 이 경로가 **모든** 스트림에서 동시에 발화한다. 그때 카운터가 0이 되면
+             * drain은 아무것도 기다리지 않는다.
+             *
+             * 감소는 `work`가 settle될 때만 한다(위 resolve/reject 경로). `work`는
+             * `withDeadline`로 상한이 있으므로 drain deadline을 넘겨 매달리지 않는다.
+             */
         },
     });
 }

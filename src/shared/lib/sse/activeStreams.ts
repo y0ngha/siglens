@@ -76,3 +76,26 @@ export function __resetActiveStreamsForTests(): void {
 export function __activeStreamCount(): number {
     return count;
 }
+
+/**
+ * 인스턴스당 동시 분석 상한.
+ *
+ * `/api/analysis/stream`은 인증 없는 공개 POST고, 요청 하나가 LLM 왕복 내내(최대 5분)
+ * Node 요청 슬롯을 붙든다. 심볼만 바꾸면 캐시도 `dedupeInFlight`도 비켜 가므로,
+ * 루프 하나가 t4g.medium의 메모리·소켓을 고갈시킬 수 있다. ASG의 요청 수 기반 스케일링은
+ * 이 부하를 거의 감지하지 못하고(90초 분석 200개 = 분당 ~133요청), CPU 정책도
+ * warmup까지 수 분이 걸린다.
+ *
+ * 그래서 인스턴스 레벨에서 먼저 막는다. 정상 트래픽은 이 근처에 오지 않는다 —
+ * 넘으면 과부하이거나 남용이다.
+ *
+ * ponytail: 프로세스 로컬 카운터다. 인스턴스가 늘면 상한도 같이 늘어난다(의도).
+ * 사용자·IP 단위 제한이 필요하면 Cloudflare rate limiting이나 Upstash 토큰 버킷으로
+ * 별도로 올려야 한다.
+ */
+export const MAX_CONCURRENT_ANALYSIS_STREAMS = 24;
+
+/** 새 분석 스트림을 받아도 되는지. false면 호출부는 503으로 거절해야 한다. */
+export function canAcceptAnalysisStream(): boolean {
+    return count < MAX_CONCURRENT_ANALYSIS_STREAMS;
+}
