@@ -109,7 +109,13 @@ export function heartbeatStream<T>(
             // If the initial send already failed (stream died before start completed)
             // there is no point in setting up the timer or attaching the promise handler.
             // 스트림이 첫 전송부터 죽었으면 drain 카운터에 등록하지 않는다.
-            if (closed) return;
+            if (closed) {
+                // work의 거부를 반드시 소비한다 — 아래 `work.then(...)`을 붙이지 못하고
+                // 빠져나가므로, 잡아 주지 않으면 unhandled rejection이 된다.
+                // (LLM 실패는 흔하고, 첫 바이트 전 클라이언트 이탈도 실제로 발생한다.)
+                void work.catch(() => {});
+                return;
+            }
 
             // 스트림이 살아있음을 확인 — drain 카운터에 등록한다.
             incrementActiveStreams();

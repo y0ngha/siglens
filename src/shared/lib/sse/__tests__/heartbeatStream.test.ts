@@ -337,6 +337,22 @@ describe('heartbeatStream', () => {
         });
     });
 
+    it('첫 전송이 실패하면 drain 카운터에 등록하지 않고 work 거부도 삼킨다', async () => {
+        // 첫 바이트 전에 클라이언트가 끊긴 경우. work.then을 붙이지 못하고 빠져나가므로
+        // 거부를 소비하지 않으면 unhandled rejection이 된다.
+        __resetActiveStreamsForTests();
+        const rejection = new Error('LLM down');
+        const stream = heartbeatStream(Promise.reject(rejection));
+        const reader = stream.getReader();
+        await reader.cancel();
+
+        // 마이크로태스크를 소진시켜 unhandled rejection 여부를 확인한다(가짜 타이머라
+        // setTimeout은 못 쓴다). 거부가 소비되지 않았다면 여기서 프로세스 경고가 뜬다.
+        await Promise.resolve();
+        await Promise.resolve();
+        expect(__activeStreamCount()).toBe(0);
+    });
+
     describe('Fix 1a — 거부 시 로깅 및 메시지 마스킹', () => {
         it('promise reject 시 [analysis-stream] failed: 접두로 console.error를 호출한다', async () => {
             const consoleErrorSpy = vi

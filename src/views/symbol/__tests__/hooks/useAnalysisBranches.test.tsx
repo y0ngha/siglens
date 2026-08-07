@@ -288,6 +288,44 @@ describe('useAnalysis — branch coverage', () => {
                 expect(result.current.reanalyzeCooldownMs).toBe(180000);
             });
         });
+
+        it('쿨다운으로 거절돼도 보고 있던 분석을 잃지 않는다', async () => {
+            // onMutate가 화면을 비우는데 쿨다운 응답에는 새 결과가 없다. 되돌리지
+            // 않으면 재분석을 눌렀다는 이유만으로 기존 분석이 사라진다.
+            const DONE = {
+                status: 'done' as const,
+                result: { summaryKo: '최초 분석' },
+                lockedInfoDepth: [],
+                personalized: false,
+            };
+            mockSubmit.mockResolvedValueOnce(DONE);
+
+            const { result } = renderHook(() => useAnalysis(makeOptions()), {
+                wrapper: makeWrapper(),
+            });
+
+            await act(async () => {});
+            act(() => {
+                result.current.handleReanalyze();
+            });
+            await waitFor(() => {
+                expect(result.current.analysis).not.toBeNull();
+            });
+            const before = result.current.analysis;
+
+            mockSubmit.mockResolvedValueOnce({
+                status: 'reanalyze_cooldown',
+                remainingMs: 120000,
+            });
+            act(() => {
+                result.current.handleReanalyze();
+            });
+
+            await waitFor(() => {
+                expect(result.current.reanalyzeCooldownMs).toBe(120000);
+            });
+            expect(result.current.analysis).toEqual(before);
+        });
     });
 
     describe('timeframe change (L396-414)', () => {

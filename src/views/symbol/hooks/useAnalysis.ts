@@ -186,6 +186,21 @@ export function useAnalysis({
     // runAnalysisAction의 `personalized` 플래그를 그대로 미러링 — 배지의
     // 유일한 진실값(personalized-analysis-by-position-bucket spec, Subsystem C).
     const [isPersonalized, setIsPersonalized] = useState(false);
+    /**
+     * onMutate가 화면을 비우기 직전의 상태 스냅샷.
+     *
+     * 서버가 `reanalyze_cooldown`으로 거절하면 새 결과가 오지 않으므로, 이 값으로
+     * 되돌려 사용자가 보고 있던 분석을 잃지 않게 한다. ref인 이유: 렌더에 쓰이지 않고
+     * mutation 콜백 사이에서만 전달되는 값이라 state로 두면 불필요한 렌더가 생긴다.
+     */
+    const previousStateRef = useRef<{
+        result: AnalysisResponse | null;
+        personalized: boolean;
+    } | null>(null);
+    // onMutate는 렌더 스코프 밖에서 실행되므로 최신 값을 ref로 미러링한다
+    // (갱신은 아래 useLayoutEffect에서 — 렌더 중 ref 쓰기는 금지).
+    const analysisResultRef = useRef<AnalysisResponse | null>(analysisResult);
+    const isPersonalizedRef = useRef(isPersonalized);
     // 초기 마운트 시 서버 분석 실패 여부를 캡처한다.
     // useState 초기화로 마운트 시 1회만 평가되며, 이후 prop 변경이 있어도 갱신되지 않는다.
     // useRef를 쓰지 않는 이유: 렌더 중 접근이 필요해 react-hooks/refs 룰을 위반하기 때문.
@@ -319,6 +334,13 @@ export function useAnalysis({
                 });
         },
         onMutate: () => {
+            // 서버가 쿨다운을 이유로 새 분석을 거절할 수 있다(`reanalyze_cooldown`).
+            // 그 경우 화면을 비운 채 아무 결과도 오지 않으므로, 되돌릴 수 있도록
+            // 직전 상태를 스냅샷해 둔다.
+            previousStateRef.current = {
+                result: analysisResultRef.current,
+                personalized: isPersonalizedRef.current,
+            };
             setAnalysisResult(null);
             setIsBotBlocked(false);
             // 새 제출이 시작됨 — 이전 결과의 personalized 여부는 더 이상 유효하지
@@ -353,7 +375,14 @@ export function useAnalysis({
                     )
                 );
             } else if (data.status === 'reanalyze_cooldown') {
-                // 서버가 쿨다운을 못 잡았다 — 기존 결과를 유지한 채 남은 시간만 알린다.
+                // 서버가 쿨다운을 못 잡았다 — 새 분석은 없다. onMutate가 비워 둔 화면을
+                // 직전 결과로 되돌린 뒤 남은 시간만 알린다(비우고 끝내면 사용자가
+                // 재분석을 눌렀다는 이유로 보고 있던 분석을 잃는다).
+                const previous = previousStateRef.current;
+                if (previous !== null) {
+                    setAnalysisResult(previous.result);
+                    setIsPersonalized(previous.personalized);
+                }
                 setReanalyzeCooldownMs(data.remainingMs);
                 setCooldownNotice({
                     nonce: Date.now(),
@@ -483,6 +512,8 @@ export function useAnalysis({
         latestModelIdRef.current = modelId;
         latestReasoningRef.current = reasoning;
         latestTierRef.current = tier;
+        analysisResultRef.current = analysisResult;
+        isPersonalizedRef.current = isPersonalized;
     });
 
     // 8. useEffect
