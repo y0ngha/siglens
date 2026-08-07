@@ -96,9 +96,13 @@ export function useMacroBriefing(
     // 스트림이 error 이벤트로 끝나면 `runAnalysisStream`이 throw하므로 data가 없다 —
     // 이때 그냥 떨어지면 스켈레톤이 영원히 남는다. 단 seed가 있으면 seed가 이긴다 —
     // 서버가 peek로 읽어 온 실제 캐시 본문이라 에러 카드보다 낫다(MarketBriefing 동일).
+    //
+    // seed 우선은 실패 분기 **전부**에 적용한다 — 특히 `botBlocked`. Googlebot WRS의
+    // 렌더에서 이 fetch는 봇으로 판정되므로, 여기서 seed를 버리면 SSR HTML의 거시
+    // 브리핑이 렌더된 DOM에서 안내문으로 교체돼 색인 대상 텍스트가 사라진다.
     if (isError) return { input: seedInput ?? 'error', refetch };
     if (!data) return { input: seedInput, refetch };
-    if ('ok' in data) return { input: 'error', refetch };
-    if (data.botBlocked) return { input: null, refetch };
+    if ('ok' in data) return { input: seedInput ?? 'error', refetch };
+    if (data.botBlocked) return { input: seedInput ?? null, refetch };
     return { input: data.briefing, refetch };
 }

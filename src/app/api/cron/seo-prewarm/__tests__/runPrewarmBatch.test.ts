@@ -424,7 +424,7 @@ describe('runPrewarmBatch', () => {
     });
 
     it('청크 내 한 심볼이 예외를 던져도(getAssetInfoResilient throw) 형제 심볼들은 정상 처리된다', async () => {
-        // SYMBOL_CONCURRENCY=3 — 동일 청크에 3개를 넣어 BAD가 outer catch로
+        // 동일 청크에 3개를 넣어 BAD가 outer catch로
         // 격리되고 GOOD1/GOOD2는 영향받지 않음을 검증한다.
         universe(
             { symbol: 'GOOD1', tabs: ['technical'] },
@@ -788,12 +788,10 @@ describe('runPrewarmBatch', () => {
 
     // ── FIX G(감사) — 배치 wall-clock 데드라인 ──
 
-    it('배치 데드라인 초과 시 남은 청크를 건너뛰고 부분 counts를 반환하며 로그를 남긴다', async () => {
-        // 6개 stale 심볼(SYMBOL_CONCURRENCY=3 → 2청크), 전부 즉시 cached로 끝나
-        // 폴링 없음 → clock.now() 호출은 [배치데드라인 계산, 회전 오프셋 산출,
-        // 청크0 사전체크, 청크1 사전체크] 정확히 4회뿐이라 call-count 기반 목이
-        // 안전하다. (회전 오프셋도 clock에서 뽑으므로 3회가 아니라 4회다 —
-        // livelock 수정으로 offset이 시각 파생이 되면서 한 칸 늘었다.)
+    it('청크 진입 시 데드라인을 넘겼으면 그 청크를 통째로 건너뛰고 로그를 남긴다', async () => {
+        // SYMBOLS_PER_TICK === SYMBOL_CONCURRENCY(=6)이라 현재 상수 조합에서는 배치가
+        // 항상 1청크다. 이 검사는 두 상수가 다시 갈라질 때를 위한 가드이므로, 시계를
+        // 청크 진입 직전에 앞당겨 그 경로를 직접 태운다.
         const symbols: PrewarmSymbol[] = Array.from({ length: 6 }, (_, i) => ({
             symbol: `SYM${i}`,
             tabs: ['technical'] as SeoSnapshotTab[],
@@ -806,21 +804,20 @@ describe('runPrewarmBatch', () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
         const base = FIXED_NOW.getTime();
-        // 호출 횟수가 아니라 **진행도**로 시각을 만든다 — 데드라인 검사 지점이
-        // 늘어도(탭 루프 안에도 검사가 생겼다) 테스트가 깨지지 않는다.
-        // 청크0의 3심볼이 처리된 직후부터 데드라인을 넘긴 것으로 본다.
-        const now = () =>
-            mockPrewarmTechnical.mock.calls.length >= 3
-                ? base + BATCH_DEADLINE_MS + 1
-                : base;
+        let calls = 0;
+        // 1=배치 데드라인 계산, 2=회전 오프셋, 3번째부터(=청크0 진입 검사) 초과.
+        const now = (): number => {
+            calls++;
+            return calls <= 2 ? base : base + BATCH_DEADLINE_MS + 1;
+        };
         const sleep = vi.fn().mockResolvedValue(undefined);
 
         const counts = await runPrewarmBatch({ now, sleep });
 
-        expect(mockPrewarmTechnical).toHaveBeenCalledTimes(3); // 청크0(3개)만 처리됨
-        expect(counts.remaining).toBe(3); // 청크1의 3개가 remaining으로
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+        expect(counts.remaining).toBe(6);
         expect(warnSpy).toHaveBeenCalledWith(
-            '[seo-prewarm] batch deadline reached — 3 symbols processed, 3 remaining'
+            '[seo-prewarm] batch deadline reached — 0 symbols processed, 6 remaining'
         );
 
         warnSpy.mockRestore();

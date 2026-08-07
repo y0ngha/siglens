@@ -67,11 +67,18 @@ export function useMarketBriefing(
     // 본문이라, 에러 카드보다 사용자에게도 크롤러에게도 낫다(크롤러는 이 fetch가
     // 실패하는 게 기본값에 가깝다 — robots.txt가 /api/를 막고 있었다). seed가
     // 없을 때만 명시적 error를 노출한다.
+    //
+    // ⚠️ seed 우선은 **실패 분기 전부**에 적용해야 한다. 특히 `botBlocked`가 중요하다:
+    // Googlebot의 WRS가 페이지를 렌더하면 이 fetch가 봇으로 판정돼 botBlocked로 돌아오는데,
+    // 여기서 seed를 버리면 SSR HTML에 있던 브리핑 본문이 **렌더된 DOM에서 안내문으로
+    // 교체된다**. 색인되는 건 렌더된 DOM이므로 그 페이지의 유일한 AI 서술이 사라진다
+    // (종목 차트 페이지가 같은 이유로 이미 "교체가 아니라 추가"로 고쳐져 있다 —
+    // `ChartContent`의 봇 안내 처리 참고).
     if (isError) return { input: seedInput ?? 'error' };
     if (!data) {
         return { input: seedInput };
     }
-    if ('ok' in data) return { input: 'error' };
-    if (data.botBlocked) return { input: null };
+    if ('ok' in data) return { input: seedInput ?? 'error' };
+    if (data.botBlocked) return { input: seedInput ?? null };
     return { input: data.briefing };
 }

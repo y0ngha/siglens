@@ -286,6 +286,25 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-unit-error \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching \
   --region "$REGION" $ACTIONS
 
+# 배치 데드라인 도달 — 커버리지 부족의 유일한 신호.
+#
+# 배치가 데드라인에 걸려 남은 심볼을 버려도 그건 "실패"가 아니라 부분 성공이라
+# batch-failed에도, unit-error/unit-timeout에도 안 걸린다. 매일 밤 조금씩 덜 도는 상태가
+# 조용히 굳으면 크롤러가 보는 SSR 서술이 그만큼 낡는다(2026-07 노출 절벽의 재발 경로).
+#
+# 임계값: 하룻밤(6시간) 3회 초과. 산발적 1~2회는 느린 프로바이더로 정상 범위지만,
+# 반복되면 SYMBOL_CONCURRENCY/스케줄 폭을 재검토해야 한다.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-seo-prewarm-deadline-reached \
+  --filter-pattern '"[seo-prewarm] batch deadline reached"' \
+  --metric-transformations metricName=SeoPrewarmDeadlineReached,metricNamespace=Siglens/SeoPrewarm,metricValue=1 \
+  --region "$REGION" || true
+aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-deadline-reached \
+  --namespace Siglens/SeoPrewarm --metric-name SeoPrewarmDeadlineReached \
+  --statistic Sum --period 21600 --evaluation-periods 1 --threshold 3 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching \
+  --region "$REGION" $ACTIONS
+
 log "skipped fmp-429 alarm: no stable log marker exists yet (see comment above) — batch-failed alarm covers structural failure in the meantime"
 
 log "seo-prewarm alarms ready (batch-failed, redis-unavailable; fmp-429 skipped, see log above)"

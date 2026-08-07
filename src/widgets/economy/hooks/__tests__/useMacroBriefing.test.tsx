@@ -147,19 +147,42 @@ describe('useMacroBriefing', () => {
         expect(mockSubmit).toHaveBeenCalledTimes(1);
     });
 
-    // T2: peekSeed 잔존 + action error 도착 → stale seed 회귀 방지
-    it('peekSeed 잔존 + action error 도착 → input="error" (stale seed 회귀 가드)', async () => {
+    it('peekSeed 잔존 + action error 도착 → seed를 계속 보여 준다', async () => {
         /**
-         * peekSeed가 있는 상태에서 action이 ok=false를 반환하면,
-         * seedInput(cached variant)이 아니라 'error'로 교체되어야 한다.
-         * 이를 검증해 "에러를 무시하고 stale seed를 계속 표시"하는 회귀를 방지한다.
+         * 예전엔 여기서 'error'로 교체하는 게 맞다고 봤다("stale seed를 계속 보여주지
+         * 말 것"). SEO 감사에서 그 판단이 뒤집혔다 — seed는 서버가 peek로 읽어 온
+         * **실제 캐시 본문**이고, 이걸 버리면 Googlebot WRS가 렌더한 DOM에서 이 페이지의
+         * 유일한 AI 서술이 안내문으로 교체돼 색인 대상 텍스트가 사라진다.
+         *
+         * "오래됨"은 seed variant의 `generatedAt: null`로 이미 표현된다(뷰가 타임스탬프를
+         * 표시하지 않는다) — 신선한 척하지 않으면서 내용은 지키는 쪽이 맞다.
          */
         mockSubmit.mockResolvedValue({ ok: false, error: 'server_error' });
         const { result } = renderHook(() => useMacroBriefing(PEEK), {
             wrapper: makeWrapper(),
         });
-        // action 완료 후 seedInput이 아닌 'error'가 반환되어야 한다
-        await waitFor(() => expect(result.current.input).toBe('error'));
+
+        await waitFor(() => expect(mockSubmit).toHaveBeenCalled());
+        expect(result.current.input).toMatchObject({ status: 'cached' });
+    });
+
+    it('봇 차단 응답이어도 seed가 있으면 seed를 보여 준다 (색인 텍스트 보존)', async () => {
+        mockSubmit.mockResolvedValue({ briefing: null, botBlocked: true });
+        const { result } = renderHook(() => useMacroBriefing(PEEK), {
+            wrapper: makeWrapper(),
+        });
+
+        await waitFor(() => expect(mockSubmit).toHaveBeenCalled());
+        expect(result.current.input).toMatchObject({ status: 'cached' });
+    });
+
+    it('봇 차단이고 seed도 없으면 봇 안내를 노출한다', async () => {
+        mockSubmit.mockResolvedValue({ briefing: null, botBlocked: true });
+        const { result } = renderHook(() => useMacroBriefing(null), {
+            wrapper: makeWrapper(),
+        });
+
+        await waitFor(() => expect(result.current.input).toBeNull());
     });
 
     // 스트림 throw(SSE error 이벤트) — data가 없어 seed로 떨어지면 스켈레톤이 영원히 남는다.

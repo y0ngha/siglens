@@ -37,8 +37,26 @@ export interface PrewarmBatchCounts {
  * "정상 tick의 목표 처리량"일 뿐, 배치 전체를 막는 하드 캡이 아니다).
  */
 const SYMBOLS_PER_TICK = 6;
-// core fundamental이 Promise.all로 ~13개 FMP 호출을 한번에 쏨 → 3×13≈40 순간 버스트 캡 (spec §8).
-const SYMBOL_CONCURRENCY = 3;
+/**
+ * 한 청크에서 병렬 처리할 심볼 수.
+ *
+ * 3 → 6으로 올렸다. worker 시절에는 seam이 submit만 하고 즉시 반환해(LLM은 워커에서
+ * 돌고, 못 끝낸 유닛은 jobId로 다음 tick이 이어받았다) 배치 wall-clock이 LLM 지연과
+ * 무관했다. 지금은 `run*`가 LLM 왕복 내내 블로킹하므로 배치 시간이 그대로 지연에 비례한다.
+ *
+ * 탭 루프는 심볼 안에서 **직렬**이므로(캐시 재사용 목적), 배치 시간 ≈
+ * `ceil(SYMBOLS_PER_TICK / SYMBOL_CONCURRENCY) × 탭수 × 유닛지연`이다. 3이면 2청크라
+ * 유닛당 ~21초만 넘어도 하룻밤에 유니버스(294심볼)를 못 돈다. 실측 유닛 지연은
+ * 콜드 상태에서 30초대(dev 서버 계측: technical 31.8s/34.3s, market briefing 46s)라
+ * 그 선을 이미 넘는다. 6이면 1청크가 되어 배치 시간이 절반이 되고 tick 간격(5분)
+ * 안에 들어온다.
+ *
+ * 비용: core fundamental이 Promise.all로 ~13개 FMP 호출을 한번에 쏘므로 순간 버스트가
+ * 3×13≈40 → 6×13≈78로 는다. FMP 예산 집계(`addFmpBudget`)와 429 백오프(`fmpRetry`)가
+ * 그대로 받는다. 버스트가 문제가 되면 이 값이 아니라 스케줄 폭을 넓히는 쪽이 맞다 —
+ * `BATCH_DEADLINE_MS`는 회전 불변식(아래) 때문에 못 올린다.
+ */
+const SYMBOL_CONCURRENCY = 6;
 // FIX A(감사) — bounded in-flight/backoff 후보 스캔 폭. selectFairBatch 참고.
 const CANDIDATE_WINDOW_MULTIPLIER = 3;
 // 회전 오프셋의 시간 눈금 — EventBridge 스케줄 간격(5분, 13-seo-prewarm.sh)과 맞춘다.

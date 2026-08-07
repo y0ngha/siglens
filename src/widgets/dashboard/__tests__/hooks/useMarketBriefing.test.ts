@@ -127,6 +127,21 @@ describe('useMarketBriefing', () => {
         client.clear();
     });
 
+    it('(Worst) botBlocked인데 seed가 있으면 seed를 보여 준다 (색인 텍스트 보존)', async () => {
+        // Googlebot WRS 렌더에서 이 fetch는 봇으로 판정된다. seed를 버리면 SSR HTML에
+        // 있던 브리핑이 렌더된 DOM에서 안내문으로 교체돼 색인 대상 텍스트가 사라진다.
+        const PEEK = { headlineKo: '시드 브리핑' } as never;
+        mockAction.mockResolvedValue({ briefing: null, botBlocked: true });
+        const { client, wrapper } = makeWrapper();
+        const { result } = renderHook(() => useMarketBriefing(PEEK), {
+            wrapper,
+        });
+
+        await waitFor(() => expect(mockAction).toHaveBeenCalled());
+        expect(result.current.input).toMatchObject({ status: 'cached' });
+        client.clear();
+    });
+
     it('(Worst) botBlocked → input null', async () => {
         const botResult: MarketBriefingActionResult = {
             briefing: null,

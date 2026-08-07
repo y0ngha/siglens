@@ -389,17 +389,6 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     // --- 2. Technical analysis: inline gating + personalization ---
-    // 동시 분석 상한 — 자세한 근거는 `canAcceptAnalysisStream` 주석 참고.
-    // JSON 503으로 거절한다(SSE를 열어 error를 흘리면 클라이언트가 "분석 실패"로
-    // 표시하지만, 이건 실패가 아니라 "지금 말고 나중에"라 재시도 가능함을 알려야 한다).
-    if (!canAcceptAnalysisStream()) {
-        console.warn('[analysis-stream] rejected: concurrency cap reached');
-        return Response.json(
-            { error: '지금 분석 요청이 많습니다. 잠시 후 다시 시도해 주세요.' },
-            { status: 503, headers: { 'Retry-After': '30' } }
-        );
-    }
-
     if (body.type === 'technical') {
         // `params` 자체가 없을 수 있다(`{"type":"technical"}`). 구조분해를 try 밖에
         // 두면 그 입력이 처리되지 않은 throw로 500이 된다 — 400이어야 한다.
@@ -609,6 +598,31 @@ export async function POST(request: Request): Promise<Response> {
                 }
             };
 
+            /**
+             * 동시 분석 상한 — 근거는 `canAcceptAnalysisStream` 주석 참고.
+             *
+             * 검사를 **작업 생성 직전**에 둔다. 진입부에서 검사하면 게이팅 await
+             * 대여섯 개를 사이에 두게 되고, 그 창에 몰려든 요청이 전부 증가 전의 같은
+             * 카운트를 읽어 모두 통과한다(정확히 이 상한이 막으려던 버스트다).
+             * 여기서는 검사 → `heartbeatStream` 사이에 await가 없어 단일 스레드에서
+             * 원자적이다(카운터 증가는 `heartbeatStream`의 start에서 일어난다).
+             *
+             * JSON 503으로 거절한다 — SSE로 error를 흘리면 클라이언트가 "분석 실패"로
+             * 표시하지만, 이건 실패가 아니라 "지금 말고 나중에"다.
+             */
+            if (!canAcceptAnalysisStream()) {
+                console.warn(
+                    '[analysis-stream] rejected: concurrency cap reached'
+                );
+                await releaseOnFailure();
+                return Response.json(
+                    {
+                        error: '지금 분석 요청이 많습니다. 잠시 후 다시 시도해 주세요.',
+                    },
+                    { status: 503, headers: { 'Retry-After': '30' } }
+                );
+            }
+
             const work = withDeadline(deadlineSignal =>
                 runAnalysis(symbol, companyName, timeframe, force, fmpSymbol, {
                     ...options,
@@ -653,6 +667,16 @@ export async function POST(request: Request): Promise<Response> {
         return Response.json(
             { error: `unsupported analysis type: ${String(body.type)}` },
             { status: 400 }
+        );
+    }
+
+    // 동시 분석 상한 — 위 technical 분기의 주석 참고(검사와 스트림 생성 사이에
+    // await를 두지 않는 게 핵심이다).
+    if (!canAcceptAnalysisStream()) {
+        console.warn('[analysis-stream] rejected: concurrency cap reached');
+        return Response.json(
+            { error: '지금 분석 요청이 많습니다. 잠시 후 다시 시도해 주세요.' },
+            { status: 503, headers: { 'Retry-After': '30' } }
         );
     }
 
