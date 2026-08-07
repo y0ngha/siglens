@@ -5,6 +5,7 @@ import {
     isRemovalSitemapKind,
     SITEMAP_MAX_URLS_PER_FILE,
     toRemovalUrlSetXml,
+    type RemovalSitemapEntry,
 } from '@/entities/sitemap-entry';
 import { loadRemovalSitemapEntries } from '@/entities/sitemap-entry/server';
 
@@ -26,6 +27,19 @@ const {
 
 export const dynamic = 'force-dynamic';
 
+function getErrorName(error: unknown): string {
+    return error instanceof Error ? error.name : 'UnknownError';
+}
+
+function unavailableResponse(): NextResponse {
+    return new NextResponse(SITEMAP_UNAVAILABLE_BODY, {
+        status: HTTP_STATUS_SERVICE_UNAVAILABLE,
+        headers: {
+            'Retry-After': SITEMAP_RETRY_AFTER_SECONDS,
+        },
+    });
+}
+
 export async function GET(
     _request: Request,
     { params }: RouteContext
@@ -36,32 +50,43 @@ export async function GET(
         return new NextResponse(null, { status: HTTP_STATUS_NOT_FOUND });
     }
 
+    let entries: RemovalSitemapEntry[];
     try {
-        const entries = await loadRemovalSitemapEntries(kind);
+        entries = await loadRemovalSitemapEntries(kind);
+    } catch (error) {
+        console.error('[removal-sitemap] entry loading failed', {
+            kind,
+            errorName: getErrorName(error),
+        });
+        return unavailableResponse();
+    }
 
-        if (entries.length > SITEMAP_MAX_URLS_PER_FILE) {
-            console.error('[removal-sitemap] entry limit exceeded', {
-                kind,
-                count: entries.length,
-            });
-            return new NextResponse(null, {
-                status: HTTP_STATUS_INTERNAL_SERVER_ERROR,
-            });
-        }
+    if (entries.length > SITEMAP_MAX_URLS_PER_FILE) {
+        console.error('[removal-sitemap] entry limit exceeded', {
+            kind,
+            count: entries.length,
+        });
+        return new NextResponse(null, {
+            status: HTTP_STATUS_INTERNAL_SERVER_ERROR,
+        });
+    }
 
-        return new NextResponse(toRemovalUrlSetXml(entries), {
+    const count = entries.length;
+    try {
+        const xml = toRemovalUrlSetXml(entries);
+        console.info('[removal-sitemap] generated', { kind, count });
+        return new NextResponse(xml, {
             headers: {
                 'Content-Type': 'application/xml; charset=utf-8',
                 'Cache-Control': SITEMAP_CACHE_CONTROL,
             },
         });
-    } catch {
-        console.error('[removal-sitemap] entry loading failed', { kind });
-        return new NextResponse(SITEMAP_UNAVAILABLE_BODY, {
-            status: HTTP_STATUS_SERVICE_UNAVAILABLE,
-            headers: {
-                'Retry-After': SITEMAP_RETRY_AFTER_SECONDS,
-            },
+    } catch (error) {
+        console.error('[removal-sitemap] XML serialization failed', {
+            kind,
+            count,
+            errorName: getErrorName(error),
         });
+        return unavailableResponse();
     }
 }

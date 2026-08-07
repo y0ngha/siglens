@@ -19,13 +19,12 @@ import {
 
 const REMOVAL_SITEMAP_CACHE_KEY_PREFIX = 'temporary-removal-sitemap:v1';
 
-const protectedSymbols: readonly string[] = Object.freeze([
-    ...new Set([
-        ...POPULAR_TICKERS,
-        ...POPULAR_CRYPTOS,
-        ...APPROVED_LONGTAIL_TICKERS,
-    ]),
-]);
+const protectedSymbolSet = new Set(
+    [...POPULAR_TICKERS, ...POPULAR_CRYPTOS, ...APPROVED_LONGTAIL_TICKERS].map(
+        symbol => symbol.toUpperCase()
+    )
+);
+const protectedSymbols: readonly string[] = [...protectedSymbolSet].toSorted();
 
 function cutoffIsoFor(kind: RemovalSitemapKind): string {
     return kind === 'chart'
@@ -33,9 +32,15 @@ function cutoffIsoFor(kind: RemovalSitemapKind): string {
         : REMOVAL_LEGACY_TAB_CUTOFF_ISO;
 }
 
-async function loadUncached(
+function excludeProtectedSymbols(symbols: readonly string[]): string[] {
+    return symbols.filter(
+        symbol => !protectedSymbolSet.has(symbol.toUpperCase())
+    );
+}
+
+async function loadUncachedSymbols(
     kind: RemovalSitemapKind
-): Promise<RemovalSitemapEntry[]> {
+): Promise<string[]> {
     const source = new DrizzleRemovalSitemapCandidateSource(
         getDatabaseClient().db
     );
@@ -46,7 +51,7 @@ async function loadUncached(
 
     if (kind !== 'chart') {
         const stockSymbols = await stockSymbolsPromise;
-        return buildRemovalEntries(kind, stockSymbols);
+        return excludeProtectedSymbols(stockSymbols);
     }
 
     const [stockSymbols, cryptoSymbols] = await Promise.all([
@@ -57,7 +62,7 @@ async function loadUncached(
         ),
     ]);
 
-    return buildRemovalEntries(kind, [...stockSymbols, ...cryptoSymbols]);
+    return excludeProtectedSymbols([...stockSymbols, ...cryptoSymbols]);
 }
 
 export async function loadRemovalSitemapEntries(
@@ -66,7 +71,13 @@ export async function loadRemovalSitemapEntries(
     const cutoffIso = cutoffIsoFor(kind);
     const cacheKey = `${REMOVAL_SITEMAP_CACHE_KEY_PREFIX}:${kind}:${cutoffIso}`;
 
-    return unstable_cache(() => loadUncached(kind), [cacheKey], {
-        revalidate: false,
-    })();
+    const symbols = await unstable_cache(
+        () => loadUncachedSymbols(kind),
+        [cacheKey],
+        {
+            revalidate: false,
+        }
+    )();
+
+    return buildRemovalEntries(kind, symbols);
 }

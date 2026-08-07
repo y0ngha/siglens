@@ -51,6 +51,7 @@ const entry: RemovalSitemapEntry = {
 };
 
 let errorSpy: MockInstance;
+let infoSpy: MockInstance;
 
 function callGET(kind: string): Promise<NextResponse> {
     return GET(new Request(`https://siglens.io/api/sitemap/removal/${kind}`), {
@@ -64,11 +65,13 @@ describe('GET /api/sitemap/removal/[kind]', () => {
         errorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => undefined);
+        infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
         mockLoadRemovalSitemapEntries.mockResolvedValue([entry]);
     });
 
     afterEach(() => {
         errorSpy.mockRestore();
+        infoSpy.mockRestore();
     });
 
     describe('when the route module is loaded', () => {
@@ -98,6 +101,10 @@ describe('GET /api/sitemap/removal/[kind]', () => {
                 );
                 expect(mockToRemovalUrlSetXml).toHaveBeenCalledWith([entry]);
                 expect(errorSpy).not.toHaveBeenCalled();
+                expect(infoSpy).toHaveBeenCalledWith(
+                    '[removal-sitemap] generated',
+                    { kind, count: 1 }
+                );
             }
         );
     });
@@ -110,11 +117,12 @@ describe('GET /api/sitemap/removal/[kind]', () => {
             expect(mockLoadRemovalSitemapEntries).not.toHaveBeenCalled();
             expect(mockToRemovalUrlSetXml).not.toHaveBeenCalled();
             expect(errorSpy).not.toHaveBeenCalled();
+            expect(infoSpy).not.toHaveBeenCalled();
         });
     });
 
     describe('when the removal sitemap loader rejects', () => {
-        it('returns a retryable unavailable response and logs the kind only', async () => {
+        it('returns a retryable unavailable response and logs sanitized loading diagnostics', async () => {
             mockLoadRemovalSitemapEntries.mockRejectedValue(
                 new Error('database credentials')
             );
@@ -130,9 +138,49 @@ describe('GET /api/sitemap/removal/[kind]', () => {
             );
             expect(errorSpy).toHaveBeenCalledWith(
                 '[removal-sitemap] entry loading failed',
-                { kind: 'chart' }
+                { kind: 'chart', errorName: 'Error' }
             );
+            expect(errorSpy).toHaveBeenCalledOnce();
             expect(mockToRemovalUrlSetXml).not.toHaveBeenCalled();
+            expect(infoSpy).not.toHaveBeenCalled();
+        });
+
+        it('sanitizes non-Error loader rejections', async () => {
+            mockLoadRemovalSitemapEntries.mockRejectedValue(
+                'postgres://private-database'
+            );
+
+            await callGET('news');
+
+            expect(errorSpy).toHaveBeenCalledWith(
+                '[removal-sitemap] entry loading failed',
+                { kind: 'news', errorName: 'UnknownError' }
+            );
+            expect(errorSpy).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe('when XML serialization fails', () => {
+        it('returns a retryable unavailable response and logs sanitized phase diagnostics', async () => {
+            mockToRemovalUrlSetXml.mockImplementationOnce(() => {
+                throw new TypeError('private symbol payload');
+            });
+
+            const response = await callGET('chart');
+
+            expect(response.status).toBe(HTTP_STATUS_SERVICE_UNAVAILABLE);
+            expect(response.headers.get('Retry-After')).toBe(
+                SITEMAP_RETRY_AFTER_SECONDS
+            );
+            await expect(response.text()).resolves.toBe(
+                SITEMAP_UNAVAILABLE_BODY
+            );
+            expect(errorSpy).toHaveBeenCalledWith(
+                '[removal-sitemap] XML serialization failed',
+                { kind: 'chart', count: 1, errorName: 'TypeError' }
+            );
+            expect(errorSpy).toHaveBeenCalledOnce();
+            expect(infoSpy).not.toHaveBeenCalled();
         });
     });
 
@@ -152,6 +200,7 @@ describe('GET /api/sitemap/removal/[kind]', () => {
                 { kind: 'chart', count: SITEMAP_MAX_URLS_PER_FILE + 1 }
             );
             expect(mockToRemovalUrlSetXml).not.toHaveBeenCalled();
+            expect(infoSpy).not.toHaveBeenCalled();
         });
     });
 
@@ -168,6 +217,10 @@ describe('GET /api/sitemap/removal/[kind]', () => {
             expect(response.status).toBe(HTTP_STATUS_OK);
             expect(mockToRemovalUrlSetXml).toHaveBeenCalledWith(entries);
             expect(errorSpy).not.toHaveBeenCalled();
+            expect(infoSpy).toHaveBeenCalledWith(
+                '[removal-sitemap] generated',
+                { kind: 'chart', count: SITEMAP_MAX_URLS_PER_FILE }
+            );
         });
     });
 });

@@ -1,13 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { APPROVED_LONGTAIL_TICKERS } from '@/entities/symbol-indexability';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
-import { APPROVED_LONGTAIL_TICKERS } from '@/entities/symbol-indexability';
 
 const mocks = vi.hoisted(() => ({
     unstableCache: vi.fn(
-        (loader: () => Promise<unknown>) => async (): Promise<unknown> =>
-            loader()
+        (loader: () => Promise<unknown>) => async (): Promise<unknown> => {
+            const result = await loader();
+            return JSON.parse(JSON.stringify(result)) as unknown;
+        }
     ),
     getDatabaseClient: vi.fn(() => ({ db: { name: 'database' } })),
     adapterConstructor: vi.fn(),
@@ -52,12 +54,14 @@ const LEGACY_KINDS = [
 ] as const satisfies readonly RemovalSitemapKind[];
 
 const expectedProtectedSymbols = [
-    ...new Set([
-        ...POPULAR_TICKERS,
-        ...POPULAR_CRYPTOS,
-        ...APPROVED_LONGTAIL_TICKERS,
-    ]),
-];
+    ...new Set(
+        [
+            ...POPULAR_TICKERS,
+            ...POPULAR_CRYPTOS,
+            ...APPROVED_LONGTAIL_TICKERS,
+        ].map(symbol => symbol.toUpperCase())
+    ),
+].toSorted();
 
 describe('loadRemovalSitemapEntries', () => {
     beforeEach(() => {
@@ -71,15 +75,14 @@ describe('loadRemovalSitemapEntries', () => {
             mocks.loadStockSymbolsBefore.mockResolvedValue(['AAA', 'BTCUSD']);
             mocks.loadHistoricalCryptoSymbols.mockResolvedValue([
                 'BTCUSD',
-                'ETHUSD',
+                'ZZZUSD',
             ]);
 
             const entries = await loadRemovalSitemapEntries('chart');
 
             expect(entries.map(entry => entry.url)).toEqual([
                 'https://siglens.io/AAA',
-                'https://siglens.io/BTCUSD',
-                'https://siglens.io/ETHUSD',
+                'https://siglens.io/ZZZUSD',
             ]);
             expect(mocks.getDatabaseClient).toHaveBeenCalledOnce();
             expect(mocks.adapterConstructor).toHaveBeenCalledWith({
@@ -93,6 +96,30 @@ describe('loadRemovalSitemapEntries', () => {
                 REMOVAL_CRYPTO_LIMIT,
                 expectedProtectedSymbols
             );
+        });
+
+        it('rebuilds Date values after the cached symbol payload is JSON round-tripped', async () => {
+            mocks.loadStockSymbolsBefore.mockResolvedValue(['AAA']);
+
+            const entries = await loadRemovalSitemapEntries('chart');
+
+            expect(entries).toHaveLength(1);
+            expect(entries[0]?.lastModified).toBeInstanceOf(Date);
+        });
+
+        it('removes every protected symbol regardless of candidate casing', async () => {
+            const protectedCandidates = expectedProtectedSymbols.map(symbol =>
+                symbol.toLowerCase()
+            );
+            mocks.loadStockSymbolsBefore.mockResolvedValue(protectedCandidates);
+            mocks.loadHistoricalCryptoSymbols.mockResolvedValue([
+                'bTcUsD',
+                'eThUsD',
+            ]);
+
+            const entries = await loadRemovalSitemapEntries('chart');
+
+            expect(entries).toEqual([]);
         });
 
         it('uses the versioned kind and cutoff cache key without revalidation', async () => {
