@@ -26,6 +26,22 @@ git push              # 커밋 push
 git push --tags       # ← 이 순간 배포가 시작된다
 ```
 
+> ⚠️ **`infra/aws/06`·`07`·`08`은 파이프라인이 돌리지 않는다.** `deploy.sh`는
+> `check-env.sh`와 `05-launch-template.sh`만 실행한다. 즉 ALB 속성(`deregistration_delay`,
+> `idle_timeout`), CloudWatch 알람, ASG 스케일링 정책은 **태그를 밀어도 반영되지 않는다.**
+>
+> 코드와 인프라 타이밍이 맞물리는 변경(예: graceful drain 예산 조정)을 배포할 때는
+> 태그 push **전에** 해당 스크립트를 수동 실행할 것. 안 하면 컨테이너는 180초를
+> 기다리는데 ALB는 30초에 연결을 끊는 식으로 양쪽 설정이 어긋나고, 그 상태는
+> 어떤 알람에도 안 잡힌다(전부 멱등이라 재실행 안전).
+>
+> ```bash
+> bash infra/aws/06-alb-asg.sh    # ALB 속성 + ASG 용량
+> bash infra/aws/07-alarms.sh     # 알람 (analysis-stream-failed 포함)
+> bash infra/aws/08-scaling.sh    # 스케일링 정책 (요청수 + CPU)
+> bash infra/aws/13-seo-prewarm.sh # 크론 알람 (unit-error 포함)
+> ```
+
 `concurrency: {group: deploy, cancel-in-progress: false}`이므로 두 태그가 겹치면 **취소가 아니라 대기**한다. 부분 롤아웃이 대기보다 나쁘기 때문이다.
 
 ### 파이프라인이 실제로 하는 일
@@ -34,7 +50,7 @@ git push --tags       # ← 이 순간 배포가 시작된다
 2. **이미지 빌드** — `linux/arm64` 네이티브 빌드, `--load`로 러너 데몬에 적재. 시크릿은 BuildKit secret mount로 주입되어 레이어·로그에 남지 않는다.
 3. **스모크 테스트** — arm64 이미지 안에서 `/sbin/tini`로 `node -e`를 실행. amd64 이미지를 Graviton에 배포했을 때의 exec-format 에러를 **push 전에** 잡는다.
 4. **ECR push** — 불변 버전 태그만(`:0.48.0`). `:latest`는 의도적으로 push하지 않는다(런타임은 명시 태그를 핀하고, ECR lifecycle은 최근 3개 태그만 보존).
-5. **ASG 롤** — `infra/aws/deploy.sh`. `check-env.sh`로 SSM env 완전성을 먼저 검증한 뒤 instance refresh(`MinHealthyPercentage 100` / `MaxHealthyPercentage 200` / `InstanceWarmup 300`)를 시작하고, 터미널 상태까지 최대 ~20분 폴링한다. 실패 시 non-zero로 종료한다.
+5. **ASG 롤** — `infra/aws/deploy.sh`. `check-env.sh`로 SSM env 완전성을 먼저 검증한 뒤 instance refresh(`MinHealthyPercentage 100` / `MaxHealthyPercentage 200` / `InstanceWarmup 300`)를 시작하고, 터미널 상태까지 최대 ~30분 폴링한다. 실패 시 non-zero로 종료한다.
 6. **Cloudflare 퍼지** — `purge_everything`. `continue-on-error: true`이므로 **퍼지 실패는 이미 끝난 롤아웃을 실패로 만들지 않는다.** 대신 배포는 성공했는데 구 HTML이 서빙될 수 있으니, 워크플로 로그에 `⚠️ Cloudflare purge failed`가 있으면 수동 퍼지할 것.
 
 ### 빌드타임에 env가 필요한 이유

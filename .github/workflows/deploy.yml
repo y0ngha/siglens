@@ -53,7 +53,11 @@ jobs:
 
     deploy:
         needs: test-gate
-        timeout-minutes: 30
+        # 45분: deploy.sh의 인스턴스 리프레시 폴 상한이 1800s(=30분)로 늘었다(SSE drain
+        # 예산 180s 반영). 여기에 빌드·푸시 5~7분이 같은 job 안에서 앞에 붙으므로 30분
+        # 천장은 실제로는 성공한 롤을 취소해 버릴 수 있고, 그러면 아래 Cloudflare purge
+        # 스텝이 실행되지 않아 옛 HTML이 s-maxage 만료까지 서빙된다.
+        timeout-minutes: 45
         runs-on: ubuntu-24.04-arm
         steps:
             - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -77,6 +81,12 @@ jobs:
 
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+            # env 완전성 게이트를 빌드 **앞**에서 돌린다. deploy.sh도 롤 직전에 같은
+            # 검사를 하지만(이중 안전망), 거기서 처음 걸리면 10분짜리 Docker 빌드와 ECR
+            # 푸시를 모두 태운 뒤 실패한다. 키 하나 누락으로 이미지 태그를 낭비할 이유가 없다.
+            - name: Check env completeness (pre-build gate)
+              run: bash infra/aws/check-env.sh
 
             # Build and push the Docker image.
             #

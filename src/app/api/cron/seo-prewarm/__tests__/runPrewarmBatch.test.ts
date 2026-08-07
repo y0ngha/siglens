@@ -939,7 +939,7 @@ describe('runPrewarmBatch', () => {
 
     // ── FIX 2(감사) — throw 시 backoff 마커 ──
 
-    it('FIX 2 — throw(비-402)에서 6h backoff 마커를 남긴다(매 tick 무한 재시도 방지)', async () => {
+    it('FIX 2 — throw(비-402)에서 짧은 backoff 마커를 남긴다(매 tick 무한 재시도 방지)', async () => {
         universe({ symbol: 'THROWSYM', tabs: ['technical'] });
         mockPrewarmTechnical.mockRejectedValue(new Error('content filter'));
         mockGetFmpErrorStatus.mockReturnValue(null);
@@ -947,7 +947,13 @@ describe('runPrewarmBatch', () => {
 
         await runPrewarmBatch();
 
-        expect(mockMarkSkipped).toHaveBeenCalledWith('THROWSYM', 'technical');
+        // TTL은 기본 6시간이 아니라 30분이어야 한다 — throw의 대다수가 프로바이더
+        // 장애 같은 일시적 실패라, 6시간을 걸면 짧은 장애가 prewarm을 반나절 세운다.
+        expect(mockMarkSkipped).toHaveBeenCalledWith(
+            'THROWSYM',
+            'technical',
+            1800
+        );
 
         errSpy.mockRestore();
     });

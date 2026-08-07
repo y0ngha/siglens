@@ -81,6 +81,11 @@ const BATCH_DEADLINE_MS = 600_000; // 10min
  * AbortSignal threading은 별도 작업으로 대응한다.
  */
 const UNIT_TIMEOUT_MS = 120_000; // 2min
+/**
+ * throw로 실패한 유닛의 backoff TTL. `lock.ts`의 기본 6시간과 달리 짧게 잡는다 —
+ * 근거는 아래 catch 블록 주석 참고.
+ */
+const TRANSIENT_SKIP_TTL_SECONDS = 1800; // 30min
 // overall을 마지막에 둬 bars/scorecard 등 다른 축이 이미 채운 Redis 캐시를 HIT로 재활용한다.
 const TAB_ORDER: readonly SeoSnapshotTab[] = [
     'technical',
@@ -410,9 +415,15 @@ async function processSymbol(
                 );
                 // FIX 2(감사) — worker 제거 이후 run* 함수가 {status:'error'}를 반환하는
                 // 대신 throw하게 됐다. resolveHarvest가 error 상태를 markSkipped로 변환하던
-                // 경로가 bypass되므로 여기서 동일하게 6h backoff 마커를 남긴다. backoff 없이
-                // 두면 실패한 유닛이 매 5분 tick마다 재시도되며 배치 슬롯을 영구 점유한다.
-                await markSkipped(u.symbol, tab);
+                // 경로가 bypass되므로 여기서 backoff 마커를 남긴다. 없으면 실패한 유닛이
+                // 매 5분 tick마다 재시도되며 배치 슬롯을 영구 점유한다.
+                //
+                // 단 TTL은 6시간이 아니라 30분이다. throw의 대다수는 프로바이더 장애·
+                // 타임아웃 같은 **일시적** 실패인데, 장애 중엔 모든 유닛이 동시에 throw하므로
+                // 6시간을 걸면 20분짜리 장애가 prewarm을 반나절 멈춰 세운다. 30분이면
+                // 슬롯 점유(매 tick 재시도)는 막으면서 회복 후 복귀도 빠르다. 구조적으로
+                // 불가능한 유닛의 6시간 backoff는 `resolveHarvest`의 상태 기반 경로가 계속 담당한다.
+                await markSkipped(u.symbol, tab, TRANSIENT_SKIP_TTL_SECONDS);
             }
             // 오래된 스냅샷이 그대로 남는다(fail-open) — 여기서 rethrow하지 않는다.
         }

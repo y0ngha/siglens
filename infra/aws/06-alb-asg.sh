@@ -32,17 +32,26 @@ fi
 #   - TimeoutStopSec=190s                     ≥  docker stop -t (systemd 안전망)
 #
 # 180s drain < STREAM_DEADLINE_MS(5분) = 5분짜리 분석은 잘릴 수 있다 — 허용된 트레이드오프.
-# modify-target-group-attributes는 upsert라 매 실행 안전(멱등).
+# modify-*-attributes는 upsert라 매 실행 안전(멱등).
+#
+# ⚠️ 두 속성은 **소속이 다르다.** deregistration_delay는 타깃그룹, idle_timeout은
+# 로드밸런서 속성이다(botocore ELBv2 모델에서 확인: TargetGroupAttribute에는
+# idle_timeout이 없고 LoadBalancerAttribute에만 있다). 한 호출에 섞으면
+# modify-target-group-attributes가 원자적이라 ValidationError로 **둘 다** 적용되지
+# 않고, `set -euo pipefail` 때문에 여기서 스크립트가 죽어 아래 리스너·ASG 설정까지
+# 통째로 건너뛴다. 반드시 분리해서 호출할 것.
 aws elbv2 modify-target-group-attributes --target-group-arn "$TG_ARN" \
-  --attributes \
-    Key=deregistration_delay.timeout_seconds,Value=185 \
-    Key=idle_timeout.timeout_seconds,Value=60 \
+  --attributes Key=deregistration_delay.timeout_seconds,Value=185 \
   >/dev/null
+
 # idle_timeout.timeout_seconds=60: ALB idle timeout을 명시 고정한다.
 # heartbeatStream.ts의 HEARTBEAT_INTERVAL_MS=25s는 이 60s 값을 기준으로 산정됐다
 # (실측: heartbeat 없이 61.1s에 연결 끊김 — project_sse_streaming_verified_alb_wall.md).
 # AWS 기본값도 60s이나 스크립트에 명시하지 않으면 "AWS 기본"에 의존하게 되어
 # 향후 기본값 변경이 heartbeat 설계와 조용히 어긋날 수 있다.
+aws elbv2 modify-load-balancer-attributes --load-balancer-arn "$ALB_ARN" \
+  --attributes Key=idle_timeout.timeout_seconds,Value=60 \
+  >/dev/null
 # HTTPS 443 리스너 (ACM)
 if ! aws elbv2 describe-listeners --load-balancer-arn "$ALB_ARN" --query 'Listeners[?Port==`443`]' --output text | grep -q .; then
   aws elbv2 create-listener --load-balancer-arn "$ALB_ARN" --protocol HTTPS --port 443 \

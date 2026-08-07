@@ -126,12 +126,23 @@ export async function clearInFlight(
     await redis.del(`seo-prewarm:inflight:${symbol.toUpperCase()}:${tab}`);
 }
 
-/** (symbol, tab) 조합을 terminal-skip(backoff) 상태로 마킹한다(FIX C, TTL 6h). */
-export async function markSkipped(symbol: string, tab: string): Promise<void> {
+/**
+ * (symbol, tab) 조합을 skip(backoff) 상태로 마킹한다(FIX C).
+ *
+ * 기본 TTL은 6시간 — "이 유닛은 구조적으로 못 만든다"(옵션 체인 없는 심볼의 options
+ * 탭 등)에 맞춘 값이다. 프로바이더 장애처럼 **일시적인** 실패에는 짧은 TTL을 넘겨야
+ * 한다: 20분짜리 장애가 전 유닛에 6시간 마커를 남기면 프로바이더가 회복된 뒤에도
+ * prewarm이 반나절 멈춘다.
+ */
+export async function markSkipped(
+    symbol: string,
+    tab: string,
+    ttlSeconds: number = SKIP_TTL_SECONDS
+): Promise<void> {
     const redis = getRedisClient();
     if (redis === null) return;
     await redis.set(`seo-prewarm:skip:${symbol.toUpperCase()}:${tab}`, '1', {
-        ex: SKIP_TTL_SECONDS,
+        ex: ttlSeconds,
     });
 }
 

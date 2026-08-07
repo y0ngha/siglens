@@ -27,6 +27,12 @@ import { waitForActiveStreams } from '@/shared/lib/sse/activeStreams';
  */
 const SHUTDOWN_DRAIN_DEADLINE_MS = 180_000;
 
+/**
+ * drain이 끝난 뒤 exit까지의 유예. core의 fire-and-forget 캐시 write가 빠져나갈
+ * 시간을 준다 — 자세한 근거는 아래 `.finally` 주석 참고.
+ */
+const POST_DRAIN_GRACE_MS = 1_000;
+
 /** 시그널당 핸들러 중복 등록 방지 가드(같은 프로세스에서 register 재호출 대비). */
 let shutdownHandlersRegistered = false;
 
@@ -56,8 +62,22 @@ export function registerShutdownHandlers(): void {
                 console.error('[instrumentation] drain error:', err);
             })
             .finally(() => {
-                console.log('[instrumentation] drain complete — exiting');
-                process.exit(0);
+                /**
+                 * 스트림이 0이 된 직후 바로 exit하면 **캐시 write가 유실된다.**
+                 * core의 분석 캐시 저장은 의도적으로 fire-and-forget이고
+                 * (`cache.set(...).catch(...)`, await하지 않음) siglens의
+                 * `pendingTasks` 레지스트리에도 등록되지 않는다. 즉 `run*`는 Upstash
+                 * HTTP 요청이 아직 날아가는 중에 반환하고, 그 직후 done 프레임이 나가고
+                 * 카운터가 0이 된다. 여기서 즉시 exit하면 방금 태운 LLM 결과가 캐시에
+                 * 안 남아, 180초 drain으로 지켜낸 그 분석이 다음 방문자에겐 없는 셈이 된다.
+                 *
+                 * 짧은 유예로 그 in-flight write를 흘려보낸다. drain 예산(180s) 대비
+                 * 무시할 수 있는 비용이고, docker stop -t 185s 안에 충분히 들어간다.
+                 */
+                setTimeout(() => {
+                    console.log('[instrumentation] drain complete — exiting');
+                    process.exit(0);
+                }, POST_DRAIN_GRACE_MS);
             });
     };
 
