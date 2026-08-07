@@ -144,7 +144,71 @@ describe('useOverallAnalysis', () => {
                 );
                 // 캐시 우회 여부는 서버가 재분석 쿨다운에서 판단한다.
                 expect(lastCall?.[0]?.params).not.toHaveProperty('force');
+                // 다만 "사용자가 누른 재분석"이라는 의도는 보내야 한다 — 안 보내면
+                // 서버가 쿨다운을 잡지 않아 종합 탭 재분석이 영원히 캐시만 돌려준다.
+                expect(lastCall?.[0]?.params).toMatchObject({
+                    reanalyze: true,
+                });
             });
+        });
+
+        it('첫 trigger에는 reanalyze 의도를 보내지 않는다 — 최초 분석은 재분석이 아니다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: OVERALL_RESULT,
+            });
+
+            const { result } = renderHook(
+                () => useOverallAnalysis(...hookArgs()),
+                { wrapper: makeWrapper() }
+            );
+
+            act(() => {
+                result.current.trigger();
+            });
+            await waitFor(() =>
+                expect(result.current.state.status).toBe('done')
+            );
+
+            expect(mockSubmit.mock.calls[0]?.[0]?.params).not.toHaveProperty(
+                'reanalyze'
+            );
+        });
+
+        it('서버가 쿨다운으로 거절하면 남은 시간을 담은 에러로 알린다', async () => {
+            mockSubmit
+                .mockResolvedValueOnce({
+                    status: 'cached',
+                    result: OVERALL_RESULT,
+                })
+                .mockResolvedValueOnce({
+                    status: 'reanalyze_cooldown',
+                    remainingMs: 120_000,
+                });
+
+            const { result } = renderHook(
+                () => useOverallAnalysis(...hookArgs()),
+                { wrapper: makeWrapper() }
+            );
+
+            act(() => {
+                result.current.trigger();
+            });
+            await waitFor(() =>
+                expect(result.current.state.status).toBe('done')
+            );
+
+            act(() => {
+                result.current.trigger();
+            });
+
+            await waitFor(() => {
+                expect(result.current.state.status).toBe('error');
+            });
+            expect(
+                result.current.state.status === 'error' &&
+                    result.current.state.error
+            ).toContain('120');
         });
 
         it('첫 trigger에도 force를 보내지 않는다 (서버가 쿨다운에서 파생)', async () => {
