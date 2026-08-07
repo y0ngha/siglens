@@ -52,7 +52,7 @@ export async function PATCH(request: Request): Promise<Response> {
     // SIGTERM 시 Redis 락 해제가 완료될 때까지 drain이 대기하도록 배치 promise를
     // fireAndForget에 등록한다. after()만 사용하면 SIGTERM이 process.exit를 호출한
     // 직후 after() 콜백이 고아가 되어 락이 TTL까지 잠긴다 — 다음 invocation이 최대
-    // LOCK_TTL(300s)을 기다렸다가 실행된다.
+    // LOCK_TTL(900s)을 기다렸다가 실행된다.
     let resolveBatch!: () => void;
     const batchDone = new Promise<void>(resolve => {
         resolveBatch = resolve;

@@ -691,6 +691,101 @@ describe('runPrewarmBatch', () => {
         warnSpy.mockRestore();
     });
 
+    it('in-flight 마커가 있는 탭은 seam을 호출하지 않고 건너뛴다', async () => {
+        // 같은 (symbol, tab)을 두 tick이 동시에 LLM에 태우지 않게 막는 가드.
+        universe({ symbol: 'INFLIGHT', tabs: ['technical'] });
+        mockGetInFlightMarker.mockResolvedValue({ present: true });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        const counts = await runPrewarmBatch();
+
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+        expect(counts.harvested).toBe(0);
+    });
+
+    it('선별 이후에 in-flight 마커가 생기면 그 탭은 seam을 호출하지 않는다', async () => {
+        // classifySymbol이 통과시킨 뒤 processSymbol이 다시 확인하는 이유 — 두 시점
+        // 사이에 다른 tick이 같은 (symbol, tab)을 잡을 수 있다. 이 가드가 없으면
+        // 같은 유닛에 LLM이 두 번 태워진다.
+        universe({ symbol: 'RACED', tabs: ['technical'] });
+        let call = 0;
+        mockGetInFlightMarker.mockImplementation(async () => {
+            call++;
+            // 1회차(선별)는 비어 있고, 2회차(처리)에는 마커가 생겨 있다.
+            return call === 1
+                ? { present: false, jobId: null }
+                : { present: true, jobId: null };
+        });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        const counts = await runPrewarmBatch();
+
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+        // seam이 하나도 안 돌았으므로 FMP 예산도 가산하지 않는다.
+        expect(mockAddFmpBudget).not.toHaveBeenCalled();
+        expect(counts.harvested).toBe(0);
+    });
+
+    it('탭 사이에서 데드라인을 넘기면 남은 탭을 중단한다', async () => {
+        // 유닛 하나가 LLM 왕복만큼 블로킹하므로 청크 경계 검사만으로는 락 TTL을
+        // 넘길 수 있다 — 탭 경계에서도 끊어야 한다.
+        universe({ symbol: 'MULTI', tabs: ['technical', 'fundamental'] });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+        mockPrewarmFundamental.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        const base = FIXED_NOW.getTime();
+        // technical 탭이 끝난 뒤부터 데드라인을 넘긴 것으로 본다.
+        const now = (): number =>
+            mockPrewarmTechnical.mock.calls.length >= 1
+                ? base + BATCH_DEADLINE_MS + 1
+                : base;
+
+        await runPrewarmBatch({
+            now,
+            sleep: vi.fn().mockResolvedValue(undefined),
+        });
+
+        expect(mockPrewarmTechnical).toHaveBeenCalledTimes(1);
+        expect(mockPrewarmFundamental).not.toHaveBeenCalled();
+    });
+
+    it('크립토 심볼은 탭당 FMP 호출 추정치를 주식과 다르게 잡는다', async () => {
+        // FMP 예산 집계가 자산군을 구분하지 않으면 크립토 배치의 사용량이 과대 계상돼
+        // 예산 알람이 잘못 뜬다.
+        universe({ symbol: 'BTCUSD', tabs: ['technical'] });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        const cryptoCounts = await runPrewarmBatch();
+        const cryptoBudgetCall = mockAddFmpBudget.mock.calls[0]?.[0] as number;
+
+        // 두 번째 배치를 위해 기본 목 상태를 되돌린다(clearAllMocks는 호출 기록만 지운다).
+        mockAddFmpBudget.mockClear();
+        universe({ symbol: 'AAPL', tabs: ['technical'] });
+
+        const equityCounts = await runPrewarmBatch();
+
+        const equityBudgetCall = mockAddFmpBudget.mock.calls[0]?.[0] as number;
+        expect(cryptoBudgetCall).toBeLessThan(equityBudgetCall);
+        // counts 자체는 getFmpBudgetUsed 목이 0을 주므로 동일하다 — 자산군 구분은
+        // addFmpBudget에 넘기는 추정치에서 드러난다.
+        expect(cryptoCounts.harvested).toBe(equityCounts.harvested);
+    });
+
     // ── FIX G(감사) — 배치 wall-clock 데드라인 ──
 
     it('배치 데드라인 초과 시 남은 청크를 건너뛰고 부분 counts를 반환하며 로그를 남긴다', async () => {
