@@ -16,7 +16,9 @@ export {
     SITEMAP_MAX_URLS_PER_FILE,
 } from './model';
 
-export { toUrlSetXml, toSitemapIndexXml } from './lib/xml';
+export { escapeXml, toUrlSetXml, toSitemapIndexXml } from './lib/xml';
+export { buildRemovalEntries } from './lib/buildRemovalEntries';
+export { toRemovalUrlSetXml } from './lib/removalXml';
 export { buildPopularEntries } from './lib/buildPopularEntries';
 export { buildCryptoPopularEntries } from './lib/buildCryptoPopularEntries';
 export { buildStaticEntries } from './lib/buildStaticEntries';

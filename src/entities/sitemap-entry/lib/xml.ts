@@ -5,7 +5,7 @@ import type { SitemapEntry, SitemapIndexEntry } from '../model';
  * URL에 query string이나 fragment가 들어오는 경우(`?q=a&b=c` 등)를 대비.
  * sitemap.org spec 권장: entity reference로 변환.
  */
-function escapeXml(value: string): string {
+export function escapeXml(value: string): string {
     return value
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
