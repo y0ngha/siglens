@@ -6,21 +6,23 @@ import {
 import { srhCommand } from '../support/srhClient';
 
 /**
- * Analysis-jobs E2E: the two job-lifecycle branches that the cached-fixture
- * happy path (symbol-analysis.spec) does NOT exercise —
+ * Analysis E2E: the two branches that the cached-fixture happy path
+ * (symbol-analysis.spec) does NOT exercise —
  *   1. the bot-blocked branch (`miss_no_trigger` → `BotBlockedNotice`), and
  *   2. the user-initiated force re-analysis branch (`handleReanalyze`).
  *
- * Both run against the E2E short-circuit in `submitAnalysisAction`, which is
+ * Both run against the E2E short-circuit in the SSE route
+ * (`src/app/api/analysis/stream/route.ts`), which is
  * bot-aware: under E2E_TEST=1 a crawler User-Agent yields the core
  * `{ status: 'miss_no_trigger' }` shape (mirroring prod's `skipEnqueueIfMiss`
  * + cache miss), while a normal UA yields the deterministic cached fixture.
- * No worker / LLM round-trip, no external browser request — the
+ * No LLM round-trip, no external browser request — the
  * support/fixtures network guard enforces zero non-app traffic.
  *
  * Render path reminder (see symbol-analysis.spec for the full write-up): the
  * SSR page always passes `initialAnalysisFailed={true}`, so on client mount
- * `useAnalysis` auto-runs `submitAnalysisAction(force=false)`. For a normal UA
+ * `useAnalysis` auto-submits without a `reanalyze` intent (so the server
+ * derives `force=false`). For a normal UA
  * that returns the cached fixture; the fixture `summary` only surfaces after
  * the ~9s progress-finishing animation (real `setTimeout`s — we do NOT freeze
  * the clock). For a bot UA it returns `miss_no_trigger`, and `useAnalysis`
@@ -69,7 +71,7 @@ async function clearReanalyzeCooldown(
 test.describe('analysis jobs: bot-block + force re-analysis', () => {
     test.describe('bot-blocked notice', () => {
         // 봇 UA로 컨텍스트를 띄워 isBot()이 true가 되도록 한다 →
-        // submitAnalysisAction E2E 단락이 miss_no_trigger를 반환 →
+        // SSE 라우트의 E2E 단락이 miss_no_trigger를 반환 →
         // useAnalysis가 isBotBlocked=true → ChartContent가 BotBlockedNotice 렌더.
         test.use({ userAgent: GOOGLEBOT_UA });
 

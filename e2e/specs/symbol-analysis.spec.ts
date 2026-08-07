@@ -18,7 +18,7 @@ import { signupThrowawayUser } from '../support/signupThrowawayUser';
  *     short-circuit — it calls read-only `peekAnalysisCache`, which misses under
  *     E2E, so `initialAnalysis = FALLBACK_ANALYSIS`. The page always passes
  *     `initialAnalysisFailed={true}`, so on client mount `useAnalysis` auto-runs
- *     `submitAnalysisAction(force=false)`, which under E2E returns
+ *     the SSE route without a `reanalyze` intent, which under E2E returns
  *     `{ status: 'cached', result: <fixture.technical> }`. `setAnalysisResult`
  *     then swaps `analysis` to the fixture (a fresh object, so
  *     `isFallbackAnalysis` is false) and `ChartContent` renders the real

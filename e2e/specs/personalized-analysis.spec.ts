@@ -24,8 +24,8 @@ import {
  *    `ChartContent.tsx`) resolve the identical value, so there is no
  *    server/client tier mismatch to worry about.
  *
- * 2. Non-fallback analysis: `submitAnalysisAction`'s `isE2E()` short-circuit
- *    (`src/entities/analysis/actions/submitAnalysisAction.ts`) returns
+ * 2. Non-fallback analysis: the SSE route's `isE2E()` short-circuit
+ *    (`src/app/api/analysis/stream/route.ts`) returns
  *    `e2eCachedTechnical(tier)`, which is `filterAnalysisResult(fixture.technical,
  *    tier)` — a real fixture-shaped `AnalysisResponse`
  *    (`e2e/fixtures/analysis.json`'s `technical` key: summary "E2E 고정 분석
@@ -35,8 +35,7 @@ import {
  *    `isFallbackAnalysis` compares against that sentinel shape, so the fixture
  *    analysis is NOT a fallback — `symbol-analysis.spec.ts` already proves this
  *    same fixture renders the real `AnalysisPanel` branch (not
- *    `TechnicalFactsSummary`) once the client-side `submitAnalysisAction`
- *    auto-run resolves.
+ *    `TechnicalFactsSummary`) once the client-side auto-submit resolves.
  *
  * So both gate conditions ARE independently reachable in this harness, and the
  * POSITIVE badge-visible path is exercised directly below (not just the
@@ -44,7 +43,7 @@ import {
  *
  * Render path / timing: the SSR page always seeds `initialAnalysis =
  * FALLBACK_ANALYSIS` (E2E has no `peekAnalysisCache` hit), so on client mount
- * `useAnalysis` auto-runs `submitAnalysisAction`, which resolves to the fixture
+ * `useAnalysis` auto-submits to the SSE route, which resolves to the fixture
  * — the ~9s progress-finishing animation still runs first
  * (`AnalysisPanel`'s `showProgress`/`displayAnalyzing`), so the badge only
  * appears once that settles. We wait on the fixture summary text appearing

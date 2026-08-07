@@ -43,7 +43,7 @@ import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestSt
  * `useSelectedModel` 기본값(`DEFAULT_MODEL = DEEPSEEK_V4_FLASH_MODEL`)과
  * 동일 — `[symbol]/page.tsx`·`[symbol]/overall/page.tsx`의 SSR peek도 이
  * 값으로 캐시를 읽는다. core의 각 submit 함수는 `modelId`를 옵션으로 받을 때
- * "생략(undefined)"에 대해 서로 다르게 동작한다: technical(`submitAnalysis`)만
+ * "생략(undefined)"에 대해 서로 다르게 동작한다: technical(`runAnalysis`)만
  * 내부적으로 `DEFAULT_ANALYSIS_MODEL_ID`('analysis-worker')로 폴백하고, 나머지
  * 축(fundamental/financials/congress/news/options/overall)은 `modelId`를
  * 캐시 키에 그대로 사용하므로 생략 시 실제 방문자가 쓰는 키와 어긋난다. 그래서
