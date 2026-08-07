@@ -15,7 +15,6 @@ type RunAnalysisActionResult =
 import {
     getReanalyzeCooldownMs,
     tryAcquireReanalyzeCooldown,
-    releaseReanalyzeCooldown,
 } from '@/entities/analysis';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor, act } from '@testing-library/react';
@@ -32,7 +31,6 @@ vi.mock('@/entities/analysis', async importOriginal => {
         // 쿨다운 I/O만 스텁하고, normalizeAnalysisResponse 등 순수 함수는 실제 구현을 사용한다.
         ...actual,
         getReanalyzeCooldownMs: vi.fn().mockResolvedValue(0),
-        releaseReanalyzeCooldown: vi.fn().mockResolvedValue(undefined),
         tryAcquireReanalyzeCooldown: vi.fn().mockResolvedValue({ ok: true }),
     };
 });
@@ -43,7 +41,6 @@ vi.mock('@/shared/lib/sleep', () => ({
 
 const mockSubmit = runAnalysisStream as Mock;
 const mockTryAcquire = tryAcquireReanalyzeCooldown as Mock;
-const mockRelease = releaseReanalyzeCooldown as Mock;
 
 const INITIAL_ANALYSIS = {} as unknown as AnalysisResponse;
 const CACHED_RESULT = { summary: 'test' } as unknown as AnalysisResponse;
@@ -96,8 +93,6 @@ describe('useAnalysis — branch coverage', () => {
         // otherwise see calls made by an earlier test in this file.
         mockTryAcquire.mockReset();
         mockTryAcquire.mockResolvedValue({ ok: true });
-        mockRelease.mockReset();
-        mockRelease.mockResolvedValue(undefined);
         (getReanalyzeCooldownMs as Mock).mockResolvedValue(0);
     });
 
@@ -182,8 +177,12 @@ describe('useAnalysis — branch coverage', () => {
         });
     });
 
-    describe('submit onError: force request releases cooldown (L231-238)', () => {
-        it('releases cooldown on mutation error when force=true', async () => {
+    describe('submit onError: 쿨다운 해제는 클라이언트가 하지 않는다', () => {
+        it('force 제출이 실패해도 클라이언트는 쿨다운을 해제하지 않고 카운트다운만 되돌린다', async () => {
+            // 해제를 클라이언트에 두면 (a) 인증 없는 공개 액션이 필요해져 "해제 →
+            // 재요청" 루프로 쿨다운이 무력화되고, (b) 새 제출이 이전 스트림을 abort할
+            // 때도 onError가 돌아 살아 있는 서버 작업의 쿨다운까지 지운다.
+            // 실패 시 해제는 라우트의 `releaseOnFailure`가 서버에서 담당한다.
             mockSubmit.mockRejectedValue(new Error('Network error'));
             mockTryAcquire.mockResolvedValue({ ok: true });
 
@@ -193,19 +192,14 @@ describe('useAnalysis — branch coverage', () => {
 
             await act(async () => {});
 
-            // Trigger handleReanalyze which uses force=true
             act(() => {
                 result.current.handleReanalyze();
             });
 
             await waitFor(() => {
-                expect(mockSubmit).toHaveBeenCalled();
+                expect(result.current.analysisError).not.toBeNull();
             });
-
-            // Wait for the error to be processed
-            await waitFor(() => {
-                expect(mockRelease).toHaveBeenCalled();
-            });
+            expect(result.current.reanalyzeCooldownMs).toBe(0);
         });
     });
 

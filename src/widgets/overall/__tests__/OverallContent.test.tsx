@@ -54,20 +54,12 @@ vi.mock('@/shared/ui/MarkdownText', () => ({
 // submitOverallAnalysisAction이 호출되지 않음을 검증한다.
 vi.mock('@/entities/analysis/actions', () => ({
     runOverallAnalysisAction: vi.fn(),
-    pollOverallAnalysisAction: vi.fn(),
-    pollAnalysisAction: vi.fn(),
-    pollFundamentalAnalysisAction: vi.fn(),
-    cancelAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
-    cancelFundamentalAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
-    cancelOverallAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('@/entities/news-article/actions', () => ({
-    pollNewsAnalysisAction: vi.fn(),
-    cancelNewsAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
+    submitNewsAnalysisAction: vi.fn(),
 }));
 vi.mock('@/entities/options-chain/actions', () => ({
-    pollOptionsAnalysisAction: vi.fn(),
-    cancelOptionsAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
+    submitOptionsAnalysisAction: vi.fn(),
 }));
 // useSearchParams를 테스트별로 바꿀 수 있도록 mutable ref로 모킹한다(§18 tf 분기 검증용).
 const { searchParamsRef } = vi.hoisted(() => ({

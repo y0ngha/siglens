@@ -39,7 +39,7 @@ export async function runFinancialsAnalysisAction(
         // under the inline E2E guard so they sit in a lazy chunk (not the prod main
         // bundle) and the branch stays resolvable by the vitest runner. Lives inside
         // try so a load failure can't propagate to the client (mirrors
-        // runAnalysisAction).
+        // SSE 분석 라우트의 technical 분기).
         if (isE2E()) {
             const stub = await import('@/shared/api/e2eAnalysisStub');
             // resilience 스펙이 설정하는 force-error 쿠키가 있으면 일시적 실패를

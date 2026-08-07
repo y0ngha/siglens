@@ -391,7 +391,7 @@ describe('useAnalysis', () => {
     });
 
     describe('reasoning (member-reasoning-toggle spec Part A)', () => {
-        it('forwards reasoning to runAnalysisAction', async () => {
+        it('forwards reasoning to the analysis stream route', async () => {
             mockSubmit.mockResolvedValue({
                 status: 'cached',
                 result: INITIAL_ANALYSIS,
@@ -771,7 +771,7 @@ describe('useAnalysis', () => {
     });
 
     // 서버-authoritative `personalized` 플래그 threading (personalized-analysis-
-    // by-position-bucket spec, Subsystem C — 배지 정직성 수정). `runAnalysisAction`의
+    // by-position-bucket spec, Subsystem C — 배지 정직성 수정). SSE 분석 라우트의
     // `personalized` 필드를 `isPersonalized`로 그대로 미러링한다 — 홀딩 존재
     // 여부가 아니라 서버가 실제로 포지션 버킷 캐시 키를 썼는지가 유일한 진실값.
     describe('isPersonalized (personalized-analysis-by-position-bucket spec, Subsystem C — 배지 정직성 수정)', () => {

@@ -6,7 +6,6 @@ export {
 // lib
 export {
     tryAcquireReanalyzeCooldown,
-    releaseReanalyzeCooldown,
     getReanalyzeCooldownMs,
 } from './lib/reanalyzeCooldown';
 

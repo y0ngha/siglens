@@ -175,7 +175,8 @@ describe('useOverallAnalysis', () => {
             );
         });
 
-        it('서버가 쿨다운으로 거절하면 남은 시간을 담은 에러로 알린다', async () => {
+        it('쿨다운으로 거절돼도 직전 분석을 계속 보여 준다', async () => {
+            // 재분석을 눌렀다는 이유만으로 읽고 있던 분석이 사라지면 안 된다.
             mockSubmit
                 .mockResolvedValueOnce({
                     status: 'cached',
@@ -196,6 +197,28 @@ describe('useOverallAnalysis', () => {
             });
             await waitFor(() =>
                 expect(result.current.state.status).toBe('done')
+            );
+
+            act(() => {
+                result.current.trigger();
+            });
+
+            await waitFor(() => expect(mockSubmit).toHaveBeenCalledTimes(2));
+            expect(result.current.state).toEqual({
+                status: 'done',
+                result: OVERALL_RESULT,
+            });
+        });
+
+        it('직전 결과가 없는 상태의 쿨다운 거절은 남은 시간을 담은 에러로 알린다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'reanalyze_cooldown',
+                remainingMs: 120_000,
+            });
+
+            const { result } = renderHook(
+                () => useOverallAnalysis(...hookArgs()),
+                { wrapper: makeWrapper() }
             );
 
             act(() => {

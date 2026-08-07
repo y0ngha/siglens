@@ -911,7 +911,7 @@ describe('runPrewarmBatch', () => {
         expect(warnSpy).toHaveBeenCalledWith(
             expect.stringContaining('[seo-prewarm] unit-timeout HUNG:technical')
         );
-        expect(mockMarkSkipped).toHaveBeenCalledWith('HUNG', 'technical');
+        expect(mockMarkSkipped).toHaveBeenCalledWith('HUNG', 'technical', 1800);
         // clearInFlight는 finally 블록에서 타임아웃 경로에도 반드시 호출된다.
         expect(mockClearInFlight).toHaveBeenCalledWith('HUNG', 'technical');
         expect(counts.harvested).toBe(0);
@@ -929,7 +929,11 @@ describe('runPrewarmBatch', () => {
         const clock = makeSimClock(FIXED_NOW.getTime());
         const counts = await runPrewarmBatch(clock);
 
-        expect(mockMarkSkipped).toHaveBeenCalledWith('HUNG2', 'technical');
+        expect(mockMarkSkipped).toHaveBeenCalledWith(
+            'HUNG2',
+            'technical',
+            1800
+        );
         expect(mockPrewarmOverall).toHaveBeenCalled();
         // overall만 harvest.
         expect(counts.harvested).toBe(1);

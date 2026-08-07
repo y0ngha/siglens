@@ -43,7 +43,6 @@ type RunAnalysisActionResult =
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import {
     getReanalyzeCooldownMs as fetchReanalyzeCooldownMs,
-    releaseReanalyzeCooldown,
     normalizeAnalysisResponse,
 } from '@/entities/analysis';
 
@@ -146,7 +145,7 @@ export interface UseAnalysisResult {
     /**
      * 서버가 THIS 제출에서 실제로 개인화(포지션 버킷) 캐시 키를 사용했는지 여부
      * (personalized-analysis-by-position-bucket spec, Subsystem C — 배지 정직성
-     * 감사 이후). `runAnalysisAction`이 반환하는 `personalized` 플래그를 그대로
+     * 감사 이후). SSE 분석 라우트가 반환하는 `personalized` 플래그를 그대로
      * 미러링한다 — 홀딩 존재 여부가 아니라, 서버가 실제로 `:pos=<bucket>` 키로
      * 분석을 조회/제출했는지가 유일한 진실값이다. `AnalysisPanel`의 배지가 이
      * 값으로 게이트되어야 한다(holding 존재만으로는 안 됨 — 서버 쿼트 읽기 실패나
@@ -183,7 +182,7 @@ export function useAnalysis({
     );
     const [isBotBlocked, setIsBotBlocked] = useState(false);
     // 서버가 THIS 제출에서 개인화(포지션 버킷) 캐시 키를 실제로 썼는지 여부.
-    // runAnalysisAction의 `personalized` 플래그를 그대로 미러링 — 배지의
+    // SSE 분석 라우트의 `personalized` 플래그를 그대로 미러링 — 배지의
     // 유일한 진실값(personalized-analysis-by-position-bucket spec, Subsystem C).
     const [isPersonalized, setIsPersonalized] = useState(false);
     /**
@@ -397,12 +396,13 @@ export function useAnalysis({
                 setIsPersonalized(false);
             }
         },
-        onError: (_error, { force, symbol: mutSymbol }) => {
+        onError: (_error, { force }) => {
+            // 쿨다운 **해제는 서버가 한다**(라우트의 `releaseOnFailure`). 여기서 하면
+            // (a) 클라이언트가 호출 가능한 공개 액션이 필요해져 "해제 → 재요청" 루프로
+            // 쿨다운이 무력화되고, (b) 새 제출이 이전 스트림을 abort할 때도 onError가
+            // 도는데 그건 서버 작업이 살아 있는 상태라 해제 대상이 아니다.
+            // 여기서는 카운트다운 표시만 되돌린다.
             if (!force) return;
-            void releaseReanalyzeCooldown(
-                mutSymbol,
-                latestTimeframeRef.current
-            );
             setReanalyzeCooldownMs(0);
         },
     });

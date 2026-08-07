@@ -35,6 +35,18 @@ export interface UseOverallAnalysisReturn {
  * 커스텀 에러 클래스로 axis를 보존한다. 게이트 오류(AnalysisGateBlockedResult)는
  * axis가 없으므로 undefined로 전달된다.
  */
+/**
+ * 서버가 재분석 쿨다운을 못 잡아 새 분석을 거절한 경우. 일반 에러와 구분하는 이유는
+ * 아래 state 파생에서 **직전 결과를 지우지 않기** 위해서다 — 재분석을 눌렀다는 이유로
+ * 보고 있던 분석을 잃으면 안 된다(`useAnalysis`도 같은 계약을 따른다).
+ */
+class OverallCooldownError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'OverallCooldownError';
+    }
+}
+
 class OverallAnalysisError extends Error {
     constructor(
         message: string,
@@ -67,7 +79,7 @@ async function fetchOverallAnalysis(
     });
 
     if (result.status === 'reanalyze_cooldown') {
-        throw new OverallAnalysisError(
+        throw new OverallCooldownError(
             `재분석은 잠시 후에 가능해요. ${Math.ceil(result.remainingMs / 1000)}초 뒤에 다시 시도해 주세요.`
         );
     }
@@ -192,6 +204,11 @@ export function useOverallAnalysis(
             if (err instanceof BotBlockedError) {
                 return { status: 'bot_blocked' };
             }
+            // 쿨다운 거절인데 직전 결과가 남아 있으면 그 결과를 계속 보여 준다.
+            // 새 분석이 없을 뿐 기존 분석은 여전히 유효하다 — 여기서 error로 넘기면
+            // OverallContent가 결과 섹션을 감춰 사용자가 읽던 분석이 사라진다.
+            if (err instanceof OverallCooldownError && query.data !== undefined)
+                return { status: 'done', result: query.data };
             return {
                 status: 'error',
                 error:

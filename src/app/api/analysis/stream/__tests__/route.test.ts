@@ -112,6 +112,13 @@ vi.mock('@/entities/economy/actions/submitMacroBriefingAction', () => ({
 // Gap 7: tryAcquireReanalyzeCooldown 배선 — 재분석 쿨다운이 force를 파생한다.
 // 이 mock이 없으면 Upstash 환경 변수가 없을 때 core 쿨다운이 fail-open({ok:true})으로
 // 작동해 테스트가 항상 통과해 보이지만 실제 배선이 깨져도 알 수 없다.
+// 쿨다운 해제는 **서버 전용**이라 core에서 직접 import한다 — 클라이언트가 호출
+// 가능한 액션으로 열면 "해제 → 재요청" 루프로 쿨다운이 무력화된다.
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
+    releaseReanalyzeCooldown: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('@/entities/analysis', () => ({
     tryAcquireReanalyzeCooldown: vi.fn().mockResolvedValue({ ok: true }),
 }));
@@ -144,6 +151,7 @@ import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions';
 import { submitMarketBriefingAction } from '@/entities/market-summary/actions/submitMarketBriefingAction';
 import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacroBriefingAction';
 import { tryAcquireReanalyzeCooldown } from '@/entities/analysis';
+import { releaseReanalyzeCooldown } from '@y0ngha/siglens-core';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getDescriptor } from '@/shared/config/marketProfile';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
@@ -1368,6 +1376,44 @@ describe('POST /api/analysis/stream', () => {
                 status: 'cached',
                 result: {},
             } as never);
+        });
+
+        it('force 분석이 실패하면 서버가 쿨다운을 되돌린다', async () => {
+            // 되돌리지 않으면 사용자는 아무 결과도 못 받은 채 5분을 기다린다.
+            vi.mocked(tryAcquireReanalyzeCooldown).mockResolvedValue({
+                ok: true,
+            } as never);
+            vi.mocked(runAnalysis).mockRejectedValue(new Error('LLM down'));
+
+            const response = await POST(
+                makeRequest(
+                    undefined,
+                    JSON.stringify({
+                        type: 'technical',
+                        params: {
+                            symbol: 'AAPL',
+                            companyName: 'Apple Inc.',
+                            timeframe: '1Day',
+                            reanalyze: true,
+                        },
+                    })
+                )
+            );
+            await collectSseEvents(response);
+
+            expect(vi.mocked(releaseReanalyzeCooldown)).toHaveBeenCalledWith(
+                'AAPL',
+                '1Day'
+            );
+        });
+
+        it('force가 아닌 분석이 실패하면 쿨다운을 건드리지 않는다', async () => {
+            vi.mocked(runAnalysis).mockRejectedValue(new Error('LLM down'));
+
+            const response = await POST(makeRequest());
+            await collectSseEvents(response);
+
+            expect(vi.mocked(releaseReanalyzeCooldown)).not.toHaveBeenCalled();
         });
 
         it('reanalyze 없음 → tryAcquireReanalyzeCooldown 미호출, force: false', async () => {

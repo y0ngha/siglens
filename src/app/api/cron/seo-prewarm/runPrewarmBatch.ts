@@ -386,7 +386,14 @@ async function processSymbol(
                     console.warn(
                         `[seo-prewarm] unit-timeout ${u.symbol}:${tab} — abandoned wait, core call still running in background`
                     );
-                    await markSkipped(u.symbol, tab);
+                    // 타임아웃도 일시적 실패로 본다 — 포기한 core 호출은 백그라운드에서
+                    // 계속 돌아 대개 곧 캐시를 채우므로, 다음 tick이면 값싼 HIT가 된다.
+                    // 6시간을 걸면 그 HIT 기회를 통째로 버린다.
+                    await markSkipped(
+                        u.symbol,
+                        tab,
+                        TRANSIENT_SKIP_TTL_SECONDS
+                    );
                     continue;
                 }
 

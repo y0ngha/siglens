@@ -24,6 +24,9 @@ import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { heartbeatStream } from '@/shared/lib/sse/heartbeatStream';
 import { runAnalysis, type SubmitAnalysisOptions } from './runAnalysisBridge';
 import { tryAcquireReanalyzeCooldown } from '@/entities/analysis';
+// core에서 직접 import — 해제는 서버 전용이어야 한다(클라이언트가 호출할 수 있으면
+// 쿨다운을 지우고 재요청하는 루프로 무력화된다). 아래 `releaseOnFailure` 참고.
+import { releaseReanalyzeCooldown } from '@y0ngha/siglens-core';
 
 // Actions: gating + data-fetch already live in each entity's action file.
 // Calling them from the route (server-side) is safe — no browser connection means
@@ -512,7 +515,13 @@ export async function POST(request: Request): Promise<Response> {
              *
              * 클라이언트가 보내는 건 **의도**(`reanalyze`)뿐이고, 실제 우회 여부는
              * 서버가 재분석 쿨다운(Redis `SET NX EX 300`)을 획득했는지로 판단한다.
-             * 즉 (symbol, timeframe)당 5분에 한 번만 강제 재분석이 가능하다.
+             * 정상 경로에서 (symbol, timeframe)당 5분에 한 번으로 제한된다.
+             *
+             * 보장의 한계를 분명히 해 둔다 — 이건 **비용 상한이지 보안 경계가 아니다**:
+             * `tryAcquireReanalyzeCooldown`은 Redis 장애 시 fail-open(`{ok:true}`)이라
+             * Upstash가 죽으면 모든 reanalyze 요청이 force가 된다. 반대로 fail-closed로
+             * 두면 Redis 장애가 재분석 기능 전체를 막는다. 진짜 상한이 필요해지면
+             * 여기가 아니라 요청 단위 rate limit(IP/세션)으로 올려야 한다.
              *
              * 획득은 **여기서만** 한다. 클라이언트가 미리 획득한 뒤 요청을 보내면
              * 여기서의 획득이 반드시 실패해 재분석이 영원히 캐시로 강등되고, 반대로
@@ -538,6 +547,28 @@ export async function POST(request: Request): Promise<Response> {
 
             const force = cooldown?.ok === true;
 
+            /**
+             * 분석이 실패하면 획득했던 쿨다운을 **서버가** 되돌린다. 안 되돌리면 사용자는
+             * 아무 결과도 못 받은 채 5분을 기다려야 한다.
+             *
+             * 해제를 클라이언트에 맡기지 않는 이유: 그러려면 인증 없는 공개 서버 액션으로
+             * 열어야 하는데, 그 순간 "해제 → 재요청"을 반복해 쿨다운 자체를 무력화할 수
+             * 있다 — 이 쿨다운이 공개 라우트에서 캐시 우회 LLM 호출을 막는 유일한 장치다.
+             * 또 클라이언트 쪽 실패(탭 이동으로 인한 fetch abort 등)는 서버 작업이 여전히
+             * 살아 있는 상태라 해제 대상이 아니다.
+             */
+            const releaseOnFailure = async (): Promise<void> => {
+                if (!force) return;
+                try {
+                    await releaseReanalyzeCooldown(symbol, timeframe);
+                } catch (err) {
+                    console.error(
+                        '[streamAnalysisRoute] cooldown release failed:',
+                        err
+                    );
+                }
+            };
+
             const work = withDeadline(deadlineSignal =>
                 runAnalysis(symbol, companyName, timeframe, force, fmpSymbol, {
                     ...options,
@@ -546,7 +577,10 @@ export async function POST(request: Request): Promise<Response> {
                     ...result,
                     personalized: positionBucket !== undefined,
                 }))
-            );
+            ).catch(async (err: unknown) => {
+                await releaseOnFailure();
+                throw err;
+            });
 
             return new Response(heartbeatStream(work), {
                 headers: SSE_HEADERS,
