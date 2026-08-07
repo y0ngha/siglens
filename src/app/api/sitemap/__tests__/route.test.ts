@@ -11,6 +11,8 @@ import { GET } from '@/app/api/sitemap/route';
 import { toSitemapIndexXml } from '@/entities/sitemap-entry';
 import type { MockedFunction } from 'vitest';
 
+import nextConfig from '../../../../../next.config';
+
 const mockToSitemapIndexXml = toSitemapIndexXml as MockedFunction<
     typeof toSitemapIndexXml
 >;
@@ -26,25 +28,49 @@ describe('GET /api/sitemap (index)', () => {
         vi.useRealTimers();
     });
 
-    it('returns XML with correct content-type and cache headers', async () => {
-        const res = await GET();
+    describe('when the permanent sitemap index is requested', () => {
+        it('returns XML with correct content-type and cache headers', async () => {
+            const res = await GET();
 
-        expect(res.headers.get('Content-Type')).toBe(
-            'application/xml; charset=utf-8'
-        );
-        expect(res.headers.get('Cache-Control')).toContain('max-age=3600');
+            expect(res.headers.get('Content-Type')).toBe(
+                'application/xml; charset=utf-8'
+            );
+            expect(res.headers.get('Cache-Control')).toContain('max-age=3600');
+        });
+
+        it('passes only static, popular, and crypto sitemap entries', async () => {
+            await GET();
+
+            const entries = mockToSitemapIndexXml.mock.calls[0][0];
+            expect(entries).toHaveLength(3);
+            expect(entries[0].url).toBe(
+                'https://siglens.io/sitemap-static.xml'
+            );
+            expect(entries[1].url).toBe(
+                'https://siglens.io/sitemap-popular.xml'
+            );
+            expect(entries[2].url).toBe(
+                'https://siglens.io/sitemap-crypto.xml'
+            );
+            expect(entries.map(entry => entry.url).join('\n')).not.toContain(
+                'sitemap-longtail'
+            );
+            expect(entries.map(entry => entry.url).join('\n')).not.toContain(
+                'sitemap-removal'
+            );
+        });
     });
+});
 
-    it('passes only static, popular, and crypto sitemap entries', async () => {
-        await GET();
+describe('nextConfig sitemap rewrites', () => {
+    describe('when temporary removal sitemaps are requested', () => {
+        it('rewrites the public XML path to the removal endpoint', async () => {
+            const rewrites = await nextConfig.rewrites?.();
 
-        const entries = mockToSitemapIndexXml.mock.calls[0][0];
-        expect(entries).toHaveLength(3);
-        expect(entries[0].url).toBe('https://siglens.io/sitemap-static.xml');
-        expect(entries[1].url).toBe('https://siglens.io/sitemap-popular.xml');
-        expect(entries[2].url).toBe('https://siglens.io/sitemap-crypto.xml');
-        expect(entries.map(entry => entry.url).join('\n')).not.toContain(
-            'sitemap-longtail'
-        );
+            expect(rewrites).toContainEqual({
+                source: '/sitemap-removal-:kind.xml',
+                destination: '/api/sitemap/removal/:kind',
+            });
+        });
     });
 });

@@ -96,6 +96,10 @@ const nextConfig: NextConfig = {
         { source: '/sitemap-popular.xml', destination: '/api/sitemap/popular' },
         { source: '/sitemap-crypto.xml', destination: '/api/sitemap/crypto' },
         {
+            source: '/sitemap-removal-:kind.xml',
+            destination: '/api/sitemap/removal/:kind',
+        },
+        {
             source: '/sitemap-longtail-:page.xml',
             destination: '/api/sitemap/longtail/:page',
         },
