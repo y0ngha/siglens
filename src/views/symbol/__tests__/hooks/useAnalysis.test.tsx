@@ -20,10 +20,12 @@ vi.mock('@/entities/analysis', async importOriginal => {
     const actual = await importOriginal<typeof import('@/entities/analysis')>();
     return {
         // 쿨다운 I/O만 스텁하고, normalizeAnalysisResponse 등 순수 함수는 실제 구현을 사용한다.
+        // `releaseReanalyzeCooldown`과 `tryAcquireReanalyzeCooldown`은 이 barrel에서
+        // 더 이상 export되지 않는다 — release는 서버 전용(route.ts `releaseOnFailure`),
+        // acquire는 서버 액션으로만 노출. 클라이언트가 호출할 수 없다는 설계 의도가
+        // 여기서도 반영된다(누락된 mock이 경고 없이 통과하면 설계 위반을 감지 못 함).
         ...actual,
         getReanalyzeCooldownMs: vi.fn().mockResolvedValue(0),
-        releaseReanalyzeCooldown: vi.fn().mockResolvedValue(undefined),
-        tryAcquireReanalyzeCooldown: vi.fn().mockResolvedValue({ ok: true }),
     };
 });
 
@@ -1030,6 +1032,69 @@ describe('useAnalysis', () => {
             await new Promise(resolve => setTimeout(resolve, 0));
 
             expect(result.current.isPersonalized).toBe(false);
+        });
+    });
+
+    /**
+     * Task 8: 클라이언트 쿨다운 해제 금지.
+     *
+     * `onError`는 쿨다운 해제를 **의도적으로** 하지 않는다. 이유:
+     * (a) 해제를 클라이언트에 맡기려면 인증 없는 공개 서버 액션이 필요해,
+     *     "해제 → 재요청" 루프로 쿨다운이 무력화된다.
+     * (b) 새 제출이 이전 스트림을 abort할 때도 onError가 도는데, 그 시점엔
+     *     서버 작업이 살아 있어 해제 대상이 아니다.
+     *
+     * `@/entities/analysis`는 `releaseReanalyzeCooldown`과 `tryAcquireReanalyzeCooldown`을
+     * 더 이상 export하지 않으므로, 이 테스트는 클라이언트가 그 두 함수를
+     * 호출하지 않는다는 것을 mock 없이 정적으로 검증한다. mock이 없으면 실제
+     * 존재하지 않는 export를 호출하는 코드는 런타임 오류를 일으킨다.
+     */
+    describe('onError — 클라이언트가 쿨다운 관련 서버 액션을 호출하지 않는다', () => {
+        it('force 분석 실패 시 analysisError가 세팅되고 reanalyzeCooldownMs는 0으로 복원된다', async () => {
+            // force=true 제출이 실패하면 onError가 setReanalyzeCooldownMs(0)을 호출한다.
+            // 클라이언트가 쿨다운을 직접 해제/획득하지 않는다는 설계를 검증한다.
+            // (`@/entities/analysis` mock에 releaseReanalyzeCooldown/tryAcquireReanalyzeCooldown이
+            //  없으므로 호출하면 런타임 오류 → 테스트가 즉시 실패한다.)
+            mockSubmit.mockRejectedValue(new Error('분석 실패'));
+
+            const { result } = renderHook(
+                () =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            isTierHydrated: true,
+                        })
+                    ),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(result.current.analysisError).toBe('분석 실패');
+                expect(result.current.reanalyzeCooldownMs).toBe(0);
+            });
+        });
+
+        it('force=false 분석 실패 시에도 쿨다운 관련 함수가 호출되지 않는다', async () => {
+            // force=false 일반 제출 실패 — onError가 `if (!force) return` 으로 단락.
+            // 쿨다운 상태를 건드리지 않는다.
+            mockSubmit.mockRejectedValue(new Error('네트워크 오류'));
+
+            const { result } = renderHook(
+                () =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            isTierHydrated: true,
+                        })
+                    ),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(result.current.analysisError).toBe('네트워크 오류');
+            });
+            // reanalyzeCooldownMs는 0 그대로 — force=false이므로 onError가 건드리지 않는다.
+            expect(result.current.reanalyzeCooldownMs).toBe(0);
         });
     });
 

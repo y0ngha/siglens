@@ -176,7 +176,23 @@ describe('useOverallAnalysis', () => {
         });
 
         it('쿨다운으로 거절돼도 직전 분석을 계속 보여 준다', async () => {
-            // 재분석을 눌렀다는 이유만으로 읽고 있던 분석이 사라지면 안 된다.
+            /**
+             * 이 테스트는 useOverallAnalysis의 OverallCooldownError 가드를 검증한다:
+             *
+             *   if (err instanceof OverallCooldownError && query.data !== undefined)
+             *       return { status: 'done', result: query.data };
+             *
+             * 가드를 삭제하면 query.isError=true + data 보존 상태에서 일반 error 경로로
+             * 빠져 state.status === 'error'가 되어 이 테스트가 실패한다.
+             *
+             * 이전 버전의 이 테스트는 `waitFor(() => mockSubmit.toHaveBeenCalledTimes(2))`
+             * 로 두 번째 호출만 대기했다 — mockSubmit이 두 번 호출됐다고 해서 React Query가
+             * 에러를 처리하고 state를 재계산했다는 보장이 없어, 가드를 삭제해도 테스트가
+             * 여전히 통과하는 구조였다.
+             *
+             * 수정: `act(async () => {})` 로 마이크로태스크/promises를 명시적으로 플러시해
+             * React Query가 에러를 완전히 처리하고 state 재계산까지 마친 뒤 단언한다.
+             */
             mockSubmit
                 .mockResolvedValueOnce({
                     status: 'cached',
@@ -203,7 +219,16 @@ describe('useOverallAnalysis', () => {
                 result.current.trigger();
             });
 
+            // mockSubmit이 두 번 호출될 때까지 대기한다.
             await waitFor(() => expect(mockSubmit).toHaveBeenCalledTimes(2));
+
+            // React Query가 OverallCooldownError를 처리해 state를 재계산하도록
+            // 남은 마이크로태스크/프로미스를 모두 플러시한다. 이 없으면 단언이
+            // 에러 settle 이전에 통과해 가드 삭제를 감지하지 못한다.
+            await act(async () => {});
+
+            // 가드가 있으면: query.isError=true + query.data=OVERALL_RESULT → done 유지
+            // 가드가 없으면: query.isError=true → error 경로 → state.status === 'error' → 실패 ✓
             expect(result.current.state).toEqual({
                 status: 'done',
                 result: OVERALL_RESULT,

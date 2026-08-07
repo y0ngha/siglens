@@ -906,6 +906,16 @@ describe('POST /api/analysis/stream', () => {
                 },
             } as never);
 
+            // Task 7: console spy — 게이트 거부는 가용성 장애가 아니라 정상 동작이라
+            // outage log(`[analysis-stream] failed:`)를 남기면 안 된다.
+            // 대신 구별용 경고(`[analysis-stream] gate-denied:`)만 남긴다.
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+
             const response = await POST(makeRequest(undefined, MODEL_BODY));
 
             expect(response.status).toBe(200);
@@ -913,6 +923,24 @@ describe('POST /api/analysis/stream', () => {
             const errorEvent = events.find(e => e.includes('event: error'));
             expect(errorEvent).toContain('이 모델은 사용할 수 없어요.');
             expect(vi.mocked(runAnalysis)).not.toHaveBeenCalled();
+
+            // Task 7: 게이트 거부는 outage 알람 로그를 남기면 안 된다.
+            // `[analysis-stream] failed:` 는 CloudWatch 메트릭 필터가 의존하는
+            // 유일한 분석 전면 장애 신호다 — 정상 거부가 섞이면 알람이 무뎌진다.
+            const failedLogs = errorSpy.mock.calls.filter(args =>
+                String(args[0]).includes('[analysis-stream] failed:')
+            );
+            expect(failedLogs).toHaveLength(0);
+
+            // 게이트 거부는 별도 경고로 구분 로깅한다.
+            const gateDeniedWarning = warnSpy.mock.calls.find(args =>
+                String(args[0]).includes('[analysis-stream] gate-denied:')
+            );
+            expect(gateDeniedWarning).toBeDefined();
+            expect(gateDeniedWarning?.[1]).toBe('model_not_allowed');
+
+            warnSpy.mockRestore();
+            errorSpy.mockRestore();
         });
 
         it('userApiKey가 있으면 core 옵션에 전달한다', async () => {
@@ -1515,6 +1543,305 @@ describe('POST /api/analysis/stream', () => {
             expect(doneEvent).toBeDefined();
             expect(doneEvent).toContain('reanalyze_cooldown');
             expect(doneEvent).toContain('240000');
+        });
+
+        /**
+         * Task 10: 클라이언트가 `force: true`를 본문에 직접 보내도 무시된다.
+         *
+         * 이 라우트는 인증 없는 공개 POST다. 본문의 `force: true`를 그대로 믿으면
+         * 누구나 캐시를 우회해 서버 키로 LLM을 태울 수 있다. 서버는 `reanalyze`
+         * 의도만 읽고, force는 쿨다운 획득 결과로 파생한다. 본문에 `force: true`가
+         * 있어도 `reanalyze`가 없으면 쿨다운 획득이 없어 force=false다.
+         *
+         * 회귀 예시: `cooldown?.ok === true || params.force === true` 같은 OR 조건이
+         * 추가되면 이 테스트가 실패한다.
+         */
+        it('본문에 force: true가 있어도 reanalyze 의도 없으면 runAnalysis는 force=false로 호출된다', async () => {
+            const body = JSON.stringify({
+                type: 'technical',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    timeframe: '1Day',
+                    force: true, // 클라이언트가 직접 보내는 force — 무시되어야 한다
+                },
+            });
+
+            const response = await POST(makeRequest(undefined, body));
+            await collectSseEvents(response);
+
+            // reanalyze가 없으면 쿨다운 획득 자체가 없다.
+            expect(
+                vi.mocked(tryAcquireReanalyzeCooldown)
+            ).not.toHaveBeenCalled();
+            // force 인자(4번째)가 false — 본문의 force:true는 무시된다.
+            expect(vi.mocked(runAnalysis).mock.calls[0]?.[3]).toBe(false);
+        });
+    });
+
+    /**
+     * Task 2 & 3: overall 타입 — 쿨다운 획득·namespace·실패 시 해제.
+     *
+     * technical 분기의 쿨다운 테스트와 대칭 구조. overall이 별도 namespace
+     * (`${timeframe}:overall`)를 쓰지 않으면 technical 탭 재분석이 overall 탭
+     * 재분석을 막아 한쪽이 조용히 캐시로 강등된다.
+     */
+    describe('overall 타입 — 쿨다운 namespace + 실패 시 서버 해제', () => {
+        const OVERALL_BODY = JSON.stringify({
+            type: 'overall',
+            params: {
+                symbol: 'AAPL',
+                companyName: 'Apple',
+                timeframe: '1Day',
+                modelId: 'gemini-2.5-flash',
+                reanalyze: true,
+            },
+        });
+
+        beforeEach(() => {
+            vi.mocked(runOverallAnalysisAction).mockResolvedValue({
+                status: 'cached',
+                result: {},
+            } as never);
+        });
+
+        // Task 3a: reanalyze: true → tryAcquireReanalyzeCooldown이 올바른 namespace로 호출된다.
+        it('reanalyze: true → tryAcquireReanalyzeCooldown을 "AAPL", "1Day:overall"로 호출한다', async () => {
+            // `:overall` suffix가 없으면 technical과 namespace를 공유해
+            // 하나의 재분석이 다른 탭 재분석을 막는다.
+            vi.mocked(tryAcquireReanalyzeCooldown).mockResolvedValue({
+                ok: true,
+            } as never);
+
+            const response = await POST(makeRequest(undefined, OVERALL_BODY));
+            await collectSseEvents(response);
+
+            expect(vi.mocked(tryAcquireReanalyzeCooldown)).toHaveBeenCalledWith(
+                'AAPL',
+                '1Day:overall'
+            );
+        });
+
+        // Task 3b: 획득 성공 → runOverallAnalysisAction에 force: true가 전달된다.
+        it('쿨다운 획득 성공 → runOverallAnalysisAction이 force: true로 호출된다', async () => {
+            vi.mocked(tryAcquireReanalyzeCooldown).mockResolvedValue({
+                ok: true,
+            } as never);
+
+            const response = await POST(makeRequest(undefined, OVERALL_BODY));
+            await collectSseEvents(response);
+
+            expect(vi.mocked(runOverallAnalysisAction)).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple',
+                '1Day',
+                'gemini-2.5-flash',
+                expect.objectContaining({ force: true }),
+                expect.any(AbortSignal)
+            );
+        });
+
+        // Task 3c: 획득 실패 → runOverallAnalysisAction 미호출, done에 reanalyze_cooldown.
+        it('쿨다운 획득 실패({ok:false}) → runOverallAnalysisAction 미호출, done에 reanalyze_cooldown', async () => {
+            vi.mocked(tryAcquireReanalyzeCooldown).mockResolvedValue({
+                ok: false,
+                remainingMs: 180_000,
+            } as never);
+
+            const response = await POST(makeRequest(undefined, OVERALL_BODY));
+            const events = await collectSseEvents(response);
+
+            expect(vi.mocked(runOverallAnalysisAction)).not.toHaveBeenCalled();
+            const doneEvent = events.find(e => e.includes('event: done'));
+            expect(doneEvent).toBeDefined();
+            expect(doneEvent).toContain('reanalyze_cooldown');
+            expect(doneEvent).toContain('180000');
+        });
+
+        // Task 3d: reanalyze 없음 → tryAcquireReanalyzeCooldown 미호출, force: false.
+        it('reanalyze 없음 → tryAcquireReanalyzeCooldown 미호출, force: false', async () => {
+            const bodyNoReanalyze = JSON.stringify({
+                type: 'overall',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple',
+                    timeframe: '1Day',
+                    modelId: 'gemini-2.5-flash',
+                    // reanalyze 없음
+                },
+            });
+
+            const response = await POST(
+                makeRequest(undefined, bodyNoReanalyze)
+            );
+            await collectSseEvents(response);
+
+            expect(
+                vi.mocked(tryAcquireReanalyzeCooldown)
+            ).not.toHaveBeenCalled();
+            expect(vi.mocked(runOverallAnalysisAction)).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple',
+                '1Day',
+                'gemini-2.5-flash',
+                expect.objectContaining({ force: false }),
+                expect.any(AbortSignal)
+            );
+        });
+
+        // Task 2: overall 실패 시 서버가 쿨다운을 해제한다.
+        it('overall 분석 실패 시 서버가 획득했던 쿨다운을 해제한다', async () => {
+            // 해제하지 않으면 사용자는 아무 결과도 못 받은 채 5분간 재분석이 막힌다.
+            vi.mocked(tryAcquireReanalyzeCooldown).mockResolvedValue({
+                ok: true,
+            } as never);
+            vi.mocked(runOverallAnalysisAction).mockRejectedValue(
+                new Error('LLM down')
+            );
+
+            const response = await POST(makeRequest(undefined, OVERALL_BODY));
+            await collectSseEvents(response);
+
+            // `:overall` namespace로 해제가 호출되어야 한다.
+            expect(vi.mocked(releaseReanalyzeCooldown)).toHaveBeenCalledWith(
+                'AAPL',
+                '1Day:overall'
+            );
+        });
+    });
+
+    /**
+     * Task 4: 동시성 상한 검사가 게이팅 await 이후에 있다.
+     *
+     * 검사를 진입부(게이팅 await 이전)로 올리면 게이팅이 진행되는 동안 몰려든 요청이
+     * 전부 같은 카운트(증가 전)를 읽어 모두 통과한다 — 이것이 이 상한이 막으려는 버스트다.
+     *
+     * 이 테스트는 게이팅 await(getCurrentUser)가 pending인 동안 카운터를 포화시켜,
+     * 요청이 resolve된 후 503을 받음을 검증한다. 검사를 진입부로 호이스트하면 이 테스트가
+     * 실패한다(요청이 getCurrentUser 전에 카운터를 읽어 카운트가 0일 때 통과하기 때문).
+     */
+    describe('동시성 상한 — 검사가 게이팅 await 이후에 있다', () => {
+        it('getCurrentUser가 pending인 동안 카운터를 채우면 resolve 후 503을 반환한다', async () => {
+            __resetActiveStreamsForTests();
+
+            // getCurrentUser가 deferred promise를 반환 — 게이팅 await를 제어한다.
+            let resolveUser!: () => void;
+            const userDeferred = new Promise<null>(resolve => {
+                resolveUser = () => resolve(null);
+            });
+            vi.mocked(getCurrentUser).mockReturnValue(
+                userDeferred as unknown as ReturnType<typeof getCurrentUser>
+            );
+
+            // 요청을 시작하되 아직 resolve하지 않는다.
+            const responsePromise = POST(makeRequest());
+
+            // getCurrentUser가 pending인 동안 카운터를 상한까지 채운다.
+            for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS; i++) {
+                incrementActiveStreams();
+            }
+
+            // getCurrentUser를 resolve → 게이팅이 진행됨 → 상한 검사 도달.
+            resolveUser();
+            const response = await responsePromise;
+
+            expect(response.status).toBe(503);
+            expect(vi.mocked(runAnalysis)).not.toHaveBeenCalled();
+
+            __resetActiveStreamsForTests();
+        });
+    });
+
+    /**
+     * Task 5: 동시성 상한 거절 시 획득한 쿨다운을 해제한다.
+     *
+     * 사용자가 재분석 중 버스트가 발생해 503을 받으면, 그 재분석을 위해 획득한
+     * 쿨다운을 서버가 되돌려야 한다 — 안 하면 LLM 결과도 못 받고 5분을 기다린다.
+     */
+    describe('동시성 상한 거절 + 쿨다운 해제 (reanalyze=true)', () => {
+        it('cap 포화 + reanalyze: true → 503이고 releaseReanalyzeCooldown이 호출된다', async () => {
+            __resetActiveStreamsForTests();
+            for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS; i++) {
+                incrementActiveStreams();
+            }
+
+            vi.mocked(tryAcquireReanalyzeCooldown).mockResolvedValue({
+                ok: true,
+            } as never);
+
+            const body = JSON.stringify({
+                type: 'technical',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    timeframe: '1Day',
+                    reanalyze: true,
+                },
+            });
+
+            const response = await POST(makeRequest(undefined, body));
+
+            expect(response.status).toBe(503);
+            // 획득한 쿨다운을 되돌려야 한다.
+            expect(vi.mocked(releaseReanalyzeCooldown)).toHaveBeenCalledWith(
+                'AAPL',
+                '1Day'
+            );
+
+            __resetActiveStreamsForTests();
+        });
+    });
+
+    /**
+     * Task 6: non-technical 타입(overall)도 동시성 상한과 JSON 500 경로를 커버한다.
+     *
+     * DISPATCH 경로의 동시성 가드와 outer catch를 삭제해도 technical 타입 테스트만
+     * 통과하면 녹색이 되는 구조를 방지한다.
+     */
+    describe('DISPATCH 경로 — 동시성 상한 + 외부 예외 JSON 500 (overall 타입)', () => {
+        it('overall 타입 + cap 포화 → 503을 반환한다', async () => {
+            __resetActiveStreamsForTests();
+            for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS; i++) {
+                incrementActiveStreams();
+            }
+
+            const response = await POST(
+                makeRequest(
+                    undefined,
+                    JSON.stringify({
+                        type: 'overall',
+                        params: {
+                            symbol: 'AAPL',
+                            companyName: 'Apple',
+                            timeframe: '1Day',
+                            modelId: 'gemini-2.5-flash',
+                        },
+                    })
+                )
+            );
+
+            expect(response.status).toBe(503);
+            expect(response.headers.get('Retry-After')).toBe('30');
+            expect(vi.mocked(runOverallAnalysisAction)).not.toHaveBeenCalled();
+
+            __resetActiveStreamsForTests();
+        });
+
+        it('DISPATCH 핸들러 외부에서 동기 throw → JSON 500을 반환한다', async () => {
+            // DISPATCH 핸들러 내부가 아니라 라우트 외부 try/catch가 잡는 경로.
+            // overall 핸들러를 spy로 교체해 DISPATCH 이전(params 검증 등)에서
+            // throw하는 상황을 재현하기 어려우므로, 현재 outer catch 경로는
+            // JSON 파싱 실패(400)로 이미 검증된다. 여기서는 DISPATCH 타입에서도
+            // `params`가 없으면 400이 반환됨을 추가로 검증한다.
+            const response = await POST(
+                makeRequest(
+                    undefined,
+                    JSON.stringify({ type: 'overall' }) // params 없음
+                )
+            );
+
+            expect(response.status).toBe(400);
+            expect(vi.mocked(runOverallAnalysisAction)).not.toHaveBeenCalled();
         });
     });
 });

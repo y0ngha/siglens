@@ -53,13 +53,16 @@ const FORCE_REANALYZE_TEST_TIMEOUT_MS = 90_000;
 const REANALYZE_ENABLED_TIMEOUT_MS = 45_000;
 
 /**
- * 재분석 쿨다운은 Redis(`analysis:cooldown:<symbol>:<timeframe>`, 5분 TTL)에
- * 저장된다(@y0ngha/siglens-core reanalyzeCooldown). 컨테이너가 테스트 런 사이에
- * 유지되므로 직전 force 클릭의 락이 남아 `tryAcquireReanalyzeCooldown`이 실패하면
- * 클릭이 mutation을 발동하지 못한다. force 테스트가 결정적이도록 해당 키를 미리
- * 비운다. 공유 SRH 클라이언트(`../support/srhClient`)를 통해 Node(테스트 프로세스)
- * 에서 SRH로 직접 보내므로 page 네트워크 가드(브라우저 요청만 감시)에 걸리지 않고,
- * env 폴백(UPSTASH_REDIS_REST_URL/TOKEN)도 resetChatTokens와 동일하게 공유한다.
+ * 재분석 쿨다운 Redis 키(`analysis:cooldown:<symbol>:<timeframe>`, 5분 TTL)를 비운다.
+ *
+ * 이 브랜치(feat/worker-removal-sse)에서 클라이언트(`useAnalysis`)는 쿨다운을 직접
+ * 획득하지 않는다 — 획득은 SSE 라우트 서버 측에서만 수행한다. 또한 `isE2E()`가
+ * true이면 라우트가 쿨다운 코드 도달 전에 단락(short-circuit)해 fixture를 반환한다.
+ * 따라서 이 헬퍼가 지우는 키는 E2E 런 중에 `tryAcquireReanalyzeCooldown`을 막지
+ * 않는다. 대신 **컨테이너가 런 사이에 유지**될 때 직전 비-E2E 테스트(또는 수동 개발
+ * 실행)가 남긴 키를 비워 force-reanalyze 경로가 결정적으로 클린 상태에서 시작하도록
+ * 보장한다. 공유 SRH 클라이언트를 통해 Node에서 직접 보내므로 브라우저 네트워크 가드에
+ * 걸리지 않는다.
  */
 async function clearReanalyzeCooldown(
     symbol: string,

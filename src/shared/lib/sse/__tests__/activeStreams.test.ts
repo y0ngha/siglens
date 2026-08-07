@@ -5,7 +5,49 @@ import {
     waitForActiveStreams,
     __resetActiveStreamsForTests,
     __activeStreamCount,
+    canAcceptAnalysisStream,
+    MAX_CONCURRENT_ANALYSIS_STREAMS,
 } from '../activeStreams';
+
+/**
+ * Task 11: MAX_CONCURRENT_ANALYSIS_STREAMS 상한 리터럴 고정.
+ *
+ * 기존 테스트는 상수를 import해서 루프에 쓰므로 값이 10 000이 돼도 녹색이 된다.
+ * 이 단언이 없으면 미래 리팩터가 실수로 상한을 올려도 아무 게이트도 잡지 못한다.
+ *
+ * 실측 근거(2026-08): t4g.medium 기준으로 정상 트래픽은 이 근처에 오지 않는다.
+ * 넘으면 과부하이거나 남용이다. 이 값보다 훨씬 큰 값을 쓰면 인스턴스가 고갈된다.
+ */
+it('MAX_CONCURRENT_ANALYSIS_STREAMS가 합리적인 상한(100 이하)을 유지한다', () => {
+    // heartbeatStream 테스트의 HEARTBEAT_INTERVAL_MS 단언과 같은 패턴 —
+    // 리터럴을 직접 비교해 상수 자체에 대한 회귀를 잡는다.
+    expect(MAX_CONCURRENT_ANALYSIS_STREAMS).toBeLessThanOrEqual(100);
+    expect(MAX_CONCURRENT_ANALYSIS_STREAMS).toBeGreaterThan(0);
+});
+
+describe('canAcceptAnalysisStream — 동시 상한 경계', () => {
+    beforeEach(() => {
+        __resetActiveStreamsForTests();
+    });
+
+    afterEach(() => {
+        __resetActiveStreamsForTests();
+    });
+
+    it('count === MAX - 1 이면 true를 반환한다(아직 여유가 있다)', () => {
+        for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS - 1; i++) {
+            incrementActiveStreams();
+        }
+        expect(canAcceptAnalysisStream()).toBe(true);
+    });
+
+    it('count === MAX 이면 false를 반환한다(상한 도달)', () => {
+        for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS; i++) {
+            incrementActiveStreams();
+        }
+        expect(canAcceptAnalysisStream()).toBe(false);
+    });
+});
 
 describe('activeStreams', () => {
     beforeEach(() => {
