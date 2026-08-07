@@ -23,6 +23,43 @@ export interface SitemapIndexEntry {
     lastModified: Date;
 }
 
+export const REMOVAL_SITEMAP_KINDS = [
+    'chart',
+    'news',
+    'overall',
+    'fundamental',
+    'fear-greed',
+] as const;
+
+export type RemovalSitemapKind = (typeof REMOVAL_SITEMAP_KINDS)[number];
+
+export interface RemovalSitemapEntry {
+    url: string;
+    lastModified: Date;
+}
+
+export interface RemovalSitemapCandidateSource {
+    loadStockSymbolsBefore(
+        cutoff: Date,
+        excludedSymbols: readonly string[]
+    ): Promise<readonly string[]>;
+    loadHistoricalCryptoSymbols(
+        limit: number,
+        excludedSymbols: readonly string[]
+    ): Promise<readonly string[]>;
+}
+
+export const REMOVAL_CHART_CUTOFF_ISO = '2026-07-07T16:25:18.000Z';
+export const REMOVAL_LEGACY_TAB_CUTOFF_ISO = '2026-06-15T08:36:58.000Z';
+export const REMOVAL_LAST_MODIFIED_ISO = '2026-07-08T00:00:00.000Z';
+export const REMOVAL_CRYPTO_LIMIT = 1_000;
+
+export function isRemovalSitemapKind(
+    value: string
+): value is RemovalSitemapKind {
+    return REMOVAL_SITEMAP_KINDS.some(kind => kind === value);
+}
+
 /**
  * 한 sub-sitemap 파일에 넣을 수 있는 URL 상한. sitemap.org 표준은 50,000이지만
  * 그 한계까지 채우면 단일 실패 비용이 커지고, lastmod 갱신 신호도 무뎌진다.
