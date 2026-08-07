@@ -1,5 +1,21 @@
 # Changelog
 
+# [0.51.0](https://github.com/y0ngha/siglens/compare/v0.50.1...v0.51.0) (2026-08-07)
+
+
+### Bug Fixes
+
+* **sitemap:** harden cached removal generation ([c57ecb1](https://github.com/y0ngha/siglens/commit/c57ecb139c2e1262bc875e809d7b1d01ccd0e960))
+
+
+### Features
+
+* **sitemap:** build minimal removal sitemap XML ([f723edd](https://github.com/y0ngha/siglens/commit/f723edd5ca8ab4920c7b8a65dd46b2307303ca9a))
+* **sitemap:** define removal sitemap contracts ([16c995e](https://github.com/y0ngha/siglens/commit/16c995ec184c8226f082f7648daa6d4672305b6a))
+* **sitemap:** expose staged removal endpoints ([f830c03](https://github.com/y0ngha/siglens/commit/f830c0312bcd0ad1839fa17dd7ac279c52f59465))
+* **sitemap:** freeze protected removal candidates ([225e3ef](https://github.com/y0ngha/siglens/commit/225e3efaa3ac2e4592bd897762e241e8a6e06f71))
+* **sitemap:** query historical removal candidates ([bab7233](https://github.com/y0ngha/siglens/commit/bab72336a32ce8fd25485e7c3e2cb1795687179e))
+
 ## [0.50.1](https://github.com/y0ngha/siglens/compare/v0.50.0...v0.50.1) (2026-08-02)
 
 
