@@ -143,4 +143,24 @@ describe('activeStreams', () => {
             expect(settled2).toHaveBeenCalled();
         });
     });
+
+    it('봇은 더 높은 천장을 쓴다 — 사람 상한이 찼어도 크롤러는 통과한다', () => {
+        // 사람 트래픽이 슬롯을 채운 동안 Googlebot이 503을 받으면 렌더된 DOM에
+        // 실패 배너만 남고, robots.txt에 이 경로를 연 의미가 사라진다.
+        for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS; i++) {
+            incrementActiveStreams();
+        }
+
+        expect(canAcceptAnalysisStream(false)).toBe(false);
+        expect(canAcceptAnalysisStream(true)).toBe(true);
+    });
+
+    it('봇도 무제한은 아니다 — 배수 천장에서 막힌다', () => {
+        // `isBot`은 순수 UA 매칭이라 예외로 두면 UA에 'bot'만 넣어 우회할 수 있다.
+        for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS * 2; i++) {
+            incrementActiveStreams();
+        }
+
+        expect(canAcceptAnalysisStream(true)).toBe(false);
+    });
 });

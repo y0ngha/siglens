@@ -11,7 +11,7 @@ import {
 } from '@/entities/analysis/api';
 import { prewarmNews } from '@/entities/news-article/api';
 import { prewarmOptions } from '@/entities/options-chain/api';
-import { markSkipped, clearInFlight } from './lock';
+import { markSkipped, clearInFlight, TRANSIENT_SKIP_TTL_SECONDS } from './lock';
 import type { PrewarmBatchCounts } from './runPrewarmBatch';
 
 interface TabSeamContext {
@@ -106,10 +106,26 @@ export async function resolveHarvest(
         return true;
     }
 
+    /**
+     * `status:'error'`는 **일시적 실패**로 본다 — core의 fundamental/financials/congress
+     * 축은 FMP fetch 실패를 throw가 아니라 `{status:'error', code:'fetch_failed'}`로
+     * **반환**한다(overall은 fundamental 축 실패를 그대로 전파). 즉 FMP 장애 한 번이
+     * 이 경로로 들어오는데, 여기에 기본 6시간 backoff를 걸면 4개 축이 그날 밤 내내
+     * (창이 7.5시간) 배제된다 — 스냅샷이 24시간 더 낡고, 그게 2026-07 노출 절벽의
+     * 느린 붕괴 경로다.
+     *
+     * 구조적으로 불가능한 유닛(`no_trades`, `no_chains_error`, `miss_no_trigger`,
+     * null 결과)만 6시간 기본값을 유지한다.
+     */
+    const isTransient = result.status === 'error';
     console.warn(
         `[seo-prewarm] skip ${symbol}:${tab} — status=${result.status}`
     );
-    await markSkipped(symbol, tab);
+    await markSkipped(
+        symbol,
+        tab,
+        isTransient ? TRANSIENT_SKIP_TTL_SECONDS : undefined
+    );
     await clearInFlight(symbol, tab);
     return false;
 }

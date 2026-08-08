@@ -27,6 +27,8 @@ const {
 vi.mock('../lock', () => ({
     markSkipped: mockMarkSkipped,
     clearInFlight: mockClearInFlight,
+    // 구현과 동일한 값(lock.ts). 일시적 실패 backoff TTL.
+    TRANSIENT_SKIP_TTL_SECONDS: 1800,
 }));
 
 vi.mock('@/entities/analysis/api', () => ({
@@ -59,6 +61,8 @@ function makeCounts(): PrewarmBatchCounts {
         revalidated: 0,
         remaining: 0,
         fmpBudgetUsed: 0,
+        staleTotal: 0,
+        durationMs: 0,
     };
 }
 
@@ -221,7 +225,9 @@ describe('resolveHarvest', () => {
 
         expect(ok).toBe(false);
         expect(repo.upsert).not.toHaveBeenCalled();
-        expect(mockMarkSkipped).toHaveBeenCalledWith('AAPL', 'congress');
+        // FMP fetch 실패는 throw가 아니라 이 status로 **반환**된다. 6시간을 걸면
+        // FMP 장애 한 번이 4개 축을 그날 밤 내내 배제한다 — 30분이어야 한다.
+        expect(mockMarkSkipped).toHaveBeenCalledWith('AAPL', 'congress', 1800);
         expect(mockClearInFlight).toHaveBeenCalledWith('AAPL', 'congress');
         expect(warnSpy).toHaveBeenCalledWith(
             '[seo-prewarm] skip AAPL:congress — status=error'
@@ -244,7 +250,8 @@ describe('resolveHarvest', () => {
 
         expect(ok).toBe(false);
         expect(repo.upsert).not.toHaveBeenCalled();
-        expect(mockMarkSkipped).toHaveBeenCalledWith('AAPL', 'news');
+        // 구조적으로 불가능한 케이스는 기본 6시간을 유지한다(TTL 인자 없음).
+        expect(mockMarkSkipped).toHaveBeenCalledWith('AAPL', 'news', undefined);
         expect(mockClearInFlight).toHaveBeenCalledWith('AAPL', 'news');
         expect(counts).toEqual(makeCounts());
 

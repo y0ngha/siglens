@@ -95,7 +95,29 @@ export function __activeStreamCount(): number {
  */
 export const MAX_CONCURRENT_ANALYSIS_STREAMS = 24;
 
-/** 새 분석 스트림을 받아도 되는지. false면 호출부는 503으로 거절해야 한다. */
-export function canAcceptAnalysisStream(): boolean {
-    return count < MAX_CONCURRENT_ANALYSIS_STREAMS;
+/**
+ * 봇의 상한 배수.
+ *
+ * 봇은 상한에서 아예 빼지 않고 더 높은 천장을 준다. 빼면 `isBot`이 순수 User-Agent
+ * 매칭이라(`shared/api/isBot.ts`) UA에 'bot'만 넣으면 무제한이 된다. LLM·FMP 비용은
+ * `skipEnqueueIfMiss`가 막지만(봇의 캐시 미스는 provider 호출 전에 끝난다) 게이팅
+ * 단계의 DB·Redis 조회는 그대로 돌아, 위조 봇 부하가 진짜 Googlebot의 응답을 느리게
+ * 만들 수 있다.
+ *
+ * 배수를 두는 이유는 반대 방향의 사고를 막기 위해서다: 사람 트래픽이 상한을 채운
+ * 동안 Googlebot이 503을 받으면 렌더된 DOM에 실패 배너만 남고, robots.txt에 이
+ * 경로를 연 의미가 사라진다.
+ */
+const BOT_STREAM_LIMIT_MULTIPLIER = 2;
+
+/**
+ * 새 분석 스트림을 받아도 되는지. false면 호출부는 503으로 거절해야 한다.
+ *
+ * @param isBot 봇 요청이면 더 높은 천장을 적용한다(위 주석 참고).
+ */
+export function canAcceptAnalysisStream(isBot = false): boolean {
+    const limit = isBot
+        ? MAX_CONCURRENT_ANALYSIS_STREAMS * BOT_STREAM_LIMIT_MULTIPLIER
+        : MAX_CONCURRENT_ANALYSIS_STREAMS;
+    return count < limit;
 }

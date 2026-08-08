@@ -62,6 +62,8 @@ vi.mock('../lock', () => ({
     clearInFlight: mockClearInFlight,
     addFmpBudget: mockAddFmpBudget,
     getFmpBudgetUsed: mockGetFmpBudgetUsed,
+    // 구현과 동일한 값(lock.ts). 일시적 실패 backoff TTL.
+    TRANSIENT_SKIP_TTL_SECONDS: 1800,
 }));
 
 vi.mock('next/cache', () => ({
@@ -678,7 +680,12 @@ describe('runPrewarmBatch', () => {
         // tick 1 — terminal skip → markSkipped가 실제로 호출된다.
         await runPrewarmBatch();
         expect(mockPrewarmTechnical).toHaveBeenCalledTimes(1);
-        expect(mockMarkSkipped).toHaveBeenCalledWith('ERRSYM', 'technical');
+        // status:'error'는 FMP fetch 실패 등 일시적 실패라 30분 backoff다.
+        expect(mockMarkSkipped).toHaveBeenCalledWith(
+            'ERRSYM',
+            'technical',
+            1800
+        );
 
         // tick 2 — 방금 세팅된 backoff 마커가 있다고 가정(isSkipped=true)하면
         // 선별 단계에서 배제되어 seam이 다시 호출되지 않아야 한다.
@@ -916,7 +923,11 @@ describe('runPrewarmBatch', () => {
 
         const counts = await runPrewarmBatch();
 
-        expect(mockMarkSkipped).toHaveBeenCalledWith('SEAM_BAD', 'technical');
+        expect(mockMarkSkipped).toHaveBeenCalledWith(
+            'SEAM_BAD',
+            'technical',
+            1800
+        );
         expect(counts.harvested).toBe(0);
 
         warnSpy.mockRestore();

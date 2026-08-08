@@ -18,6 +18,15 @@ const FMP_BUDGET_TTL_SECONDS = 172800; // 2d — 날짜 키 자연 롤오버, TT
 const SKIP_TTL_SECONDS = 21600; // 6h
 
 /**
+ * 일시적 실패(프로바이더 장애·타임아웃·FMP fetch 실패)의 backoff TTL.
+ *
+ * 기본 6시간은 "이 유닛은 구조적으로 못 만든다"(옵션 체인 없는 심볼의 options 탭 등)에
+ * 맞춘 값이다. 장애는 성격이 다르다 — 장애 중엔 **모든** 유닛이 동시에 실패하므로
+ * 6시간을 걸면 20분짜리 FMP 장애가 그날 밤 prewarm을 통째로 날린다(야간 창이 7.5시간).
+ */
+export const TRANSIENT_SKIP_TTL_SECONDS = 1800; // 30min
+
+/**
  * SET NX EX로 루트 락을 획득하고, 성공 시 이번 실행 고유의 소유 토큰을 반환한다.
  *
  * EventBridge가 겹쳐 트리거되더라도 단일 인스턴스만 pre-warm 배치를 실행하도록

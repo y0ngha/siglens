@@ -86,6 +86,8 @@ describe('PATCH /api/cron/seo-prewarm', () => {
             harvested: 2,
             revalidated: 3,
             remaining: 4,
+            staleTotal: 10,
+            durationMs: 1234,
             fmpBudgetUsed: 5,
         });
         await PATCH(makeRequest('Bearer test-secret'));

@@ -20,11 +20,22 @@ import {
     isSkipped,
     markInFlight,
     markSkipped,
+    TRANSIENT_SKIP_TTL_SECONDS,
 } from './lock';
 import { TAB_SEAMS, resolveHarvest } from './harvest';
 
 export interface PrewarmBatchCounts {
     harvested: number;
+    /**
+     * 이번 tick 시작 시점의 stale 심볼 총량과 배치 wall-clock(ms).
+     *
+     * 커버리지 침식은 데드라인에 **걸리기 전부터** 시작된다: 유닛 지연이 늘어 배치가
+     * tick 주기(5분)를 넘기면 Redis 락 때문에 다음 배치가 한 tick 밀리고, 하룻밤
+     * 처리량이 반토막 난다 — 그런데 `BATCH_DEADLINE_MS`(10분)에는 안 걸리니
+     * deadline 알람도 안 뜬다. 이 두 값이 그 구간을 보는 유일한 창이다.
+     */
+    staleTotal: number;
+    durationMs: number;
     revalidated: number;
     remaining: number;
     fmpBudgetUsed: number;
@@ -99,11 +110,6 @@ const BATCH_DEADLINE_MS = 600_000; // 10min
  * AbortSignal threading은 별도 작업으로 대응한다.
  */
 const UNIT_TIMEOUT_MS = 120_000; // 2min
-/**
- * throw로 실패한 유닛의 backoff TTL. `lock.ts`의 기본 6시간과 달리 짧게 잡는다 —
- * 근거는 아래 catch 블록 주석 참고.
- */
-const TRANSIENT_SKIP_TTL_SECONDS = 1800; // 30min
 // overall을 마지막에 둬 bars/scorecard 등 다른 축이 이미 채운 Redis 캐시를 HIT로 재활용한다.
 const TAB_ORDER: readonly SeoSnapshotTab[] = [
     'technical',
@@ -188,6 +194,8 @@ export async function runPrewarmBatch(
     );
     const counts: PrewarmBatchCounts = {
         harvested: 0,
+        staleTotal: staleSymbols.length,
+        durationMs: 0,
         revalidated: 0,
         remaining: Math.max(0, staleSymbols.length - batch.length),
         fmpBudgetUsed: 0,
@@ -246,6 +254,7 @@ export async function runPrewarmBatch(
     }
 
     counts.fmpBudgetUsed = await getFmpBudgetUsed();
+    counts.durationMs = clock.now() - (batchDeadline - BATCH_DEADLINE_MS);
     return counts;
 }
 
@@ -383,20 +392,27 @@ async function processSymbol(
     let tabsDroppedByDeadline = 0;
     for (const tab of TAB_ORDER) {
         if (!u.tabs.includes(tab)) continue;
-        if (isPastDeadline()) {
-            // 남은 탭 수를 세어 호출부가 집계·로깅할 수 있게 한다. 여기서 조용히
-            // break만 하면 데드라인으로 버려진 작업이 어떤 카운트에도, 어떤 로그에도
-            // 남지 않는다 — 알람이 붙어 있어도 영원히 발화하지 않는다.
-            tabsDroppedByDeadline += 1;
-            continue;
-        }
 
+        // 데드라인 검사보다 **먼저** 신선도를 본다. 순서가 반대면 두 가지가 깨진다:
+        // ① 이미 fresh한 탭까지 "데드라인으로 버려짐"으로 세어 마커 수치가 부풀고,
+        // ② `freshTabCount`가 안 올라가 아래 "전 탭 fresh" 게이트가 실패한다 —
+        //    그러면 방금 harvest한 스냅샷의 `revalidateTag`가 안 돌고, 다음 tick엔
+        //    그 심볼이 stale 목록에서 빠져 페이지 revalidate TTL(6~24h)까지 노출이
+        //    지연된다. 신선도 판정은 로컬 맵 조회라 비용도 없다.
         const alreadyFresh = isSnapshotFresh(
             generatedAtMap.get(snapshotKey(u.symbol, tab)),
             boundary
         );
         if (alreadyFresh) {
             freshTabCount++;
+            continue;
+        }
+
+        if (isPastDeadline()) {
+            // 실제로 할 일이 남은 탭만 센다. 조용히 건너뛰기만 하면 데드라인으로
+            // 버려진 작업이 어떤 카운트에도, 어떤 로그에도 남지 않아 알람이 붙어
+            // 있어도 영원히 발화하지 않는다.
+            tabsDroppedByDeadline += 1;
             continue;
         }
 

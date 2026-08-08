@@ -620,7 +620,7 @@ export async function POST(request: Request): Promise<Response> {
              * 트래픽이 슬롯을 채운 동안 Googlebot이 503을 받으면 렌더된 DOM에 실패
              * 배너만 남는다. robots 예외를 넣은 이유가 그대로 무너진다.
              */
-            if (!skipEnqueueIfMiss && !canAcceptAnalysisStream()) {
+            if (!canAcceptAnalysisStream(skipEnqueueIfMiss)) {
                 console.warn(
                     '[analysis-stream] rejected: concurrency cap reached'
                 );
@@ -682,8 +682,8 @@ export async function POST(request: Request): Promise<Response> {
 
     // 동시 분석 상한 — 위 technical 분기의 주석 참고(검사와 스트림 생성 사이에
     // await를 두지 않는 게 핵심이다).
-    // 봇 예외 — 근거는 technical 분기 주석 참고.
-    if (!isBot(request.headers) && !canAcceptAnalysisStream()) {
+    // 봇은 더 높은 천장 — 근거는 `canAcceptAnalysisStream` 주석 참고.
+    if (!canAcceptAnalysisStream(isBot(request.headers))) {
         console.warn('[analysis-stream] rejected: concurrency cap reached');
         return Response.json(
             { error: '지금 분석 요청이 많습니다. 잠시 후 다시 시도해 주세요.' },
