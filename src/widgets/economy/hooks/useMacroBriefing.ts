@@ -100,6 +100,14 @@ export function useMacroBriefing(
     // seed 우선은 실패 분기 **전부**에 적용한다 — 특히 `botBlocked`. Googlebot WRS의
     // 렌더에서 이 fetch는 봇으로 판정되므로, 여기서 seed를 버리면 SSR HTML의 거시
     // 브리핑이 렌더된 DOM에서 안내문으로 교체돼 색인 대상 텍스트가 사라진다.
+    // ⚠️ 귀결 하나를 분명히 해 둔다: seed가 있으면 `input`이 'error'가 되지 않으므로
+    // `MacroBriefingError`의 "다시 시도" 버튼은 그 세션에서 도달할 수 없다. `staleTime:
+    // Infinity` + `retry:false`라 새 요청도 자동으로 나가지 않는다 — 즉 사용자는 페이지를
+    // 새로고침할 때까지 seed(서버가 peek로 읽은 캐시 본문)를 계속 본다.
+    //
+    // 그래도 이쪽이 맞다. 대안은 실제 내용이 있는데도 에러 카드를 띄우는 것이고, 그러면
+    // 크롤러가 렌더한 DOM에서 이 페이지의 유일한 AI 서술이 사라진다. seed는 "오래됐을 수
+    // 있는 진짜 내용"이지 거짓이 아니며, `generatedAt: null`로 신선한 척도 하지 않는다.
     if (isError) return { input: seedInput ?? 'error', refetch };
     if (!data) return { input: seedInput, refetch };
     if ('ok' in data) return { input: seedInput ?? 'error', refetch };
