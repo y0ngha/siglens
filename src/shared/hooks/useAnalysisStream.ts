@@ -57,6 +57,24 @@ export async function runAnalysisStream<T>({
     });
 
     if (!response.ok || response.body === null) {
+        /**
+         * 503은 실패가 아니라 "지금 말고 나중에"다 — 서버가 동시 분석 상한에 걸려
+         * 거절한 것이고, 본문에 사용자용 한국어 메시지가 들어 있다. 상태 코드만 찍어
+         * 던지면 사용자는 원인도 모르는 실패를 보고 즉시 재시도해 다시 상한에 부딪힌다.
+         * (라우트가 SSE error 대신 JSON 503을 고른 이유가 바로 이 구분이다.)
+         */
+        if (response.status === 503) {
+            const message = await response
+                .json()
+                .then((body: { error?: unknown }) =>
+                    typeof body.error === 'string' ? body.error : null
+                )
+                .catch(() => null);
+            throw new Error(
+                message ??
+                    '지금 분석 요청이 많습니다. 잠시 후 다시 시도해 주세요.'
+            );
+        }
         throw new Error(`분석 요청이 실패했습니다 (${response.status})`);
     }
 

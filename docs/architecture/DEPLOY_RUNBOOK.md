@@ -36,6 +36,10 @@ git push --tags       # ← 이 순간 배포가 시작된다
 > 어떤 알람에도 안 잡힌다(전부 멱등이라 재실행 안전).
 >
 > ```bash
+> # 0. provider 키 4종을 SSM에 올린다. check-env.sh가 이 넷을 필수로 요구하고,
+> #    그 게이트는 Docker 빌드 **앞**에서 돌기 때문에 없으면 첫 태그 배포가 즉시 실패한다.
+> bash infra/aws/04-params.sh <env-file>
+>
 > bash infra/aws/06-alb-asg.sh    # ALB 속성 + ASG 용량
 > bash infra/aws/07-alarms.sh     # 알람 (analysis-stream-failed 포함)
 > bash infra/aws/08-scaling.sh    # 스케일링 정책 (요청수 + CPU)
@@ -152,7 +156,9 @@ curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge
 | `siglens-disk-high` | disk_used_percent > 85 (5분 Max ×2) | **ISR 외부화 회귀 카나리다.** 캐시가 S3로 안 나가고 로컬에 쌓인다는 뜻 → `siglens-isr-cache-failures`와 함께 보고 [ISR_CACHE_HANDLER.md](./ISR_CACHE_HANDLER.md)로 |
 | `siglens-isr-cache-failures` | IsrCacheFailures 5분 합계 > 5 | S3 권한/버킷/IMDS 확인. fail-open이라 사이트는 살아 있지만 캐시는 사실상 죽은 상태 |
 | `siglens-isr-tag-failures` | IsrTagFailures 15분 합계 ≥ 5 ×2주기 | 태그 동기화 실패 = 다른 인스턴스의 무효화를 놓쳐 **stale HTML을 revalidate TTL(6~24h) 동안 서빙**. 조용히 degrade하므로 이 알람이 유일한 신호 |
-| `siglens-analysis-stream-failed` | `[analysis-stream] failed` 5분 합계 > 5가 연속 2주기 | **분석 전면 장애의 유일한 신호다.** SSE는 실패해도 HTTP 200이라 5xx 알람이 안 뜬다. 1순위 의심: 프로바이더 키(SSM `/siglens/{DEEPSEEK,GEMINI,ANTHROPIC,OPENAI}_API_KEY`) 누락·만료. Logs Insights에서 `[analysis-stream] failed` 원문 확인 → 키 문제면 SSM 갱신 후 인스턴스 재시작, 프로바이더 장애면 회복 대기 |
+| `siglens-analysis-stream-failed` | `[analysis-stream] failed` 15분 합계 > 2가 연속 2주기 | **분석 전면 장애의 유일한 신호다.** SSE는 실패해도 HTTP 200이라 5xx 알람이 안 뜬다. 1순위 의심: 프로바이더 키(SSM `/siglens/{DEEPSEEK,GEMINI,ANTHROPIC,OPENAI}_API_KEY`) 누락·만료. Logs Insights에서 `[analysis-stream] failed` 원문 확인 → 키 문제면 SSM 갱신 후 인스턴스 재시작, 프로바이더 장애면 회복 대기 |
+| `siglens-seo-prewarm-unit-error` | `[seo-prewarm] unit-error` 또는 `unit-timeout` 15분 20건 초과 ×2주기 | 야간 prewarm 유닛이 대량 실패 중. 배치는 fail-open이라 `batch failed`가 안 뜨므로 이게 유일한 신호다. 프로바이더 키·장애를 먼저 의심 |
+| `siglens-seo-prewarm-deadline-reached` | `[seo-prewarm] batch deadline reached` 6시간 3건 초과 | 배치가 데드라인에 걸려 심볼을 버리고 있다 = 커버리지가 조용히 줄고 있다. `SYMBOL_CONCURRENCY`/스케줄 폭 재검토, 유닛 지연 실측 |
 | `siglens-seo-prewarm-batch-failed` | `[seo-prewarm] batch failed` 1시간 3회 초과 | [CRON.md](../reference/CRON.md) — 배치 내부 실패 |
 | `siglens-seo-prewarm-redis-unavailable` | `[seo-prewarm] redis unavailable` 1시간 1회 초과 | Upstash 도달성 확인 |
 | `siglens-seo-prewarm-{evening,evening-late,early}-failed` | EventBridge FailedInvocations 5분 1건 초과 | 타겟 호출 자체가 실패 — Connection `AUTHORIZED` 상태, IAM, API Destination 확인 |

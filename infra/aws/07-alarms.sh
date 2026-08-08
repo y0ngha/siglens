@@ -74,17 +74,19 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-isr-tag-failures --namespac
 # '[analysis-stream] failed' 로 필터(따옴표 포함): 접두 패턴이 ASCII만으로 구성돼
 # CloudWatch Logs 필터 매칭이 안정적이다(13-seo-prewarm.sh §FIX F 참조).
 #
-# 임계값: 5분 5건 초과가 **연속 2주기**(=10분) → 알람.
-#   - 임계를 트래픽 규모에 맞춰 잡으면 안 된다: 심야·평일 저트래픽 구간의 100% 장애는
-#     분당 몇 건밖에 못 만든다. 예전 값(5분 50건)은 그 시간대 전면 장애를 영원히 놓친다
-#     — isr-tag-failures 주석(위)이 경계하는 "도달 불가능한 임계"와 같은 실수다.
-#   - 대신 연속 2주기로 산발적 단발 실패(사용자 1명의 프로바이더 타임아웃)를 걸러낸다.
-#   - 게이트 거부(BYOK/tier)도 이 로그를 타므로 임계를 0으로 두지는 않는다.
+# 임계값: 15분 2건 초과가 **연속 2주기**(=30분) → 알람.
+#
+# 창을 5분→15분으로 넓히고 임계를 낮춘 이유: 임계가 트래픽 규모에 묶여 있으면 저트래픽
+# 구간의 100% 장애를 못 잡는다. 심야에 5분당 4건씩 전부 실패하면 5분/5건 임계는 영원히
+# 안 넘는다. 15분/2건이면 "장애 중 시도 자체가 드문" 시간대도 잡히고, 연속 2주기로
+# 산발적 단발 실패는 여전히 걸러진다.
+#   - isr-tag-failures 주석(위)이 경계하는 "도달 불가능한 임계"와 같은 실수를 피한다.
+#   - 게이트 거부(BYOK/tier)는 `gate-denied`로 분리 로깅해 이 지표에 안 섞인다.
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-analysis-stream-failed \
   --filter-pattern '"[analysis-stream] failed"' \
   --metric-transformations metricName=AnalysisStreamFailed,metricNamespace=Siglens/Analysis,metricValue=1
 aws cloudwatch put-metric-alarm --alarm-name siglens-analysis-stream-failed --namespace Siglens/Analysis \
-  --metric-name AnalysisStreamFailed --statistic Sum --period 300 --evaluation-periods 2 --threshold 5 \
+  --metric-name AnalysisStreamFailed --statistic Sum --period 900 --evaluation-periods 2 --threshold 2 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
 log "alarms created (5xx, unhealthy, cpu-credits, disk, mem, isr-cache-failures, isr-tag-failures, analysis-stream-failed)"

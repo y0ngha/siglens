@@ -32,7 +32,7 @@ export interface PrewarmBatchCounts {
 
 /**
  * FIX Z(감사) — run* 함수가 LLM 블로킹 호출이라 심볼당 소요 시간이 길다.
- * 원래 10 → 6으로 낮춰 청크(SYMBOL_CONCURRENCY=3 기준 2청크)당 최악 대기가
+ * 원래 10 → 6으로 낮춰 청크(SYMBOL_CONCURRENCY와 같아 1청크)당 최악 대기가
  * 과도해지지 않게 한다 — 실제 상한은 BATCH_DEADLINE_MS가 건다(이 상수는
  * "정상 tick의 목표 처리량"일 뿐, 배치 전체를 막는 하드 캡이 아니다).
  */
@@ -200,6 +200,7 @@ export async function runPrewarmBatch(
     // 시그니처는 그 두 값을 청크마다 다시 넘길 자리가 없다. 대신 아래 명시적
     // 루프로 청크 경계마다 데드라인을 검사한다. 격리는 각 processSymbol 호출의
     // `.catch`가 보장하므로 Promise.all 기반 청크 처리와 동일하게 안전하다.
+    let droppedByDeadline = 0;
     for (let i = 0; i < batch.length; i += SYMBOL_CONCURRENCY) {
         if (isPastDeadline()) {
             const remainingCount = batch.length - i;
@@ -210,7 +211,7 @@ export async function runPrewarmBatch(
             break;
         }
         const chunk = batch.slice(i, i + SYMBOL_CONCURRENCY);
-        await Promise.all(
+        const dropped = await Promise.all(
             chunk.map(u =>
                 processSymbol(
                     u,
@@ -222,8 +223,25 @@ export async function runPrewarmBatch(
                     clock
                 ).catch(error => {
                     console.error(`[seo-prewarm] ${u.symbol} failed:`, error);
+                    return 0;
                 })
             )
+        );
+        droppedByDeadline += dropped.reduce((sum, n) => sum + n, 0);
+    }
+
+    /**
+     * 데드라인으로 버려진 작업을 **여기서** 로깅한다.
+     *
+     * 위 청크 경계 검사는 `SYMBOLS_PER_TICK === SYMBOL_CONCURRENCY`인 현재 상수 조합에서
+     * 배치가 항상 1청크라 도달하지 않는다. 실제로 발동하는 건 심볼 안의 탭 경계 검사인데
+     * 그건 조용히 건너뛰기만 했다 — 즉 알람을 붙여 놔도 영원히 발화하지 않는 상태였다.
+     * 커버리지가 야금야금 줄어드는 걸 잡는 유일한 신호이므로 마커를 반드시 남긴다.
+     */
+    if (droppedByDeadline > 0) {
+        counts.remaining += droppedByDeadline;
+        console.warn(
+            `[seo-prewarm] batch deadline reached — ${droppedByDeadline} tabs dropped`
         );
     }
 
@@ -352,7 +370,7 @@ async function processSymbol(
      */
     isPastDeadline: () => boolean,
     clock: PrewarmClock
-): Promise<void> {
+): Promise<number> {
     const { assetInfo } = await getAssetInfoResilient(u.symbol);
     const companyName = assetInfo?.name ?? u.symbol;
     const fmpSymbol = assetInfo?.fmpSymbol;
@@ -362,9 +380,16 @@ async function processSymbol(
     // 이미 fresh거나 backoff(skip) 중인 탭, 그리고 poll-resume(신규 submit 아님)은 제외한다.
     let seamsRunForSymbol = 0;
 
+    let tabsDroppedByDeadline = 0;
     for (const tab of TAB_ORDER) {
         if (!u.tabs.includes(tab)) continue;
-        if (isPastDeadline()) break;
+        if (isPastDeadline()) {
+            // 남은 탭 수를 세어 호출부가 집계·로깅할 수 있게 한다. 여기서 조용히
+            // break만 하면 데드라인으로 버려진 작업이 어떤 카운트에도, 어떤 로그에도
+            // 남지 않는다 — 알람이 붙어 있어도 영원히 발화하지 않는다.
+            tabsDroppedByDeadline += 1;
+            continue;
+        }
 
         const alreadyFresh = isSnapshotFresh(
             generatedAtMap.get(snapshotKey(u.symbol, tab)),
@@ -473,4 +498,6 @@ async function processSymbol(
         revalidateTag(`seo-snapshot:${u.symbol.toUpperCase()}`, 'max');
         counts.revalidated++;
     }
+
+    return tabsDroppedByDeadline;
 }

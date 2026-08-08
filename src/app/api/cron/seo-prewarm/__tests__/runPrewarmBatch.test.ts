@@ -732,6 +732,35 @@ describe('runPrewarmBatch', () => {
         expect(counts.harvested).toBe(0);
     });
 
+    it('탭 데드라인으로 버린 작업은 counts.remaining과 로그에 남는다', async () => {
+        // 조용히 건너뛰기만 하면 커버리지가 야금야금 줄어드는 걸 볼 방법이 없다 —
+        // CloudWatch 알람이 이 마커에 걸려 있어서, 로그가 없으면 알람도 영원히 안 뜬다.
+        universe({ symbol: 'MULTI', tabs: ['technical', 'fundamental'] });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const base = FIXED_NOW.getTime();
+        const now = (): number =>
+            mockPrewarmTechnical.mock.calls.length >= 1
+                ? base + BATCH_DEADLINE_MS + 1
+                : base;
+
+        const counts = await runPrewarmBatch({
+            now,
+            sleep: vi.fn().mockResolvedValue(undefined),
+        });
+
+        expect(counts.remaining).toBeGreaterThan(0);
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[seo-prewarm] batch deadline reached')
+        );
+
+        warnSpy.mockRestore();
+    });
+
     it('탭 사이에서 데드라인을 넘기면 남은 탭을 중단한다', async () => {
         // 유닛 하나가 LLM 왕복만큼 블로킹하므로 청크 경계 검사만으로는 락 TTL을
         // 넘길 수 있다 — 탭 경계에서도 끊어야 한다.

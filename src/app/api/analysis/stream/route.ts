@@ -610,7 +610,17 @@ export async function POST(request: Request): Promise<Response> {
              * JSON 503으로 거절한다 — SSE로 error를 흘리면 클라이언트가 "분석 실패"로
              * 표시하지만, 이건 실패가 아니라 "지금 말고 나중에"다.
              */
-            if (!canAcceptAnalysisStream()) {
+            /**
+             * 봇은 상한에서 제외한다. `skipEnqueueIfMiss`(위) 때문에 봇의 캐시 미스는
+             * LLM을 태우지 않고 즉시 `miss_no_trigger`로 끝나므로, 봇 요청이 슬롯을
+             * 붙드는 시간은 밀리초 단위다 — 상한이 막으려는 부하가 아니다.
+             *
+             * 반대로 막으면 손해가 크다: 이 브랜치는 크롤러 렌더러가 분석을 받게
+             * 하려고 robots.txt에 `/api/analysis/stream`을 일부러 열었는데, 사람
+             * 트래픽이 슬롯을 채운 동안 Googlebot이 503을 받으면 렌더된 DOM에 실패
+             * 배너만 남는다. robots 예외를 넣은 이유가 그대로 무너진다.
+             */
+            if (!skipEnqueueIfMiss && !canAcceptAnalysisStream()) {
                 console.warn(
                     '[analysis-stream] rejected: concurrency cap reached'
                 );
@@ -672,7 +682,8 @@ export async function POST(request: Request): Promise<Response> {
 
     // 동시 분석 상한 — 위 technical 분기의 주석 참고(검사와 스트림 생성 사이에
     // await를 두지 않는 게 핵심이다).
-    if (!canAcceptAnalysisStream()) {
+    // 봇 예외 — 근거는 technical 분기 주석 참고.
+    if (!isBot(request.headers) && !canAcceptAnalysisStream()) {
         console.warn('[analysis-stream] rejected: concurrency cap reached');
         return Response.json(
             { error: '지금 분석 요청이 많습니다. 잠시 후 다시 시도해 주세요.' },

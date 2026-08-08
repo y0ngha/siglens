@@ -127,6 +127,31 @@ describe('runAnalysisStream', () => {
         ).rejects.toThrow('분석 중 오류가 발생했습니다. 다시 시도해 주세요.');
     });
 
+    it('503은 서버가 준 한국어 안내를 그대로 전달한다 — 실패가 아니라 재시도 안내다', async () => {
+        fetchMock.mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    error: '지금 분석 요청이 많습니다. 잠시 후 다시 시도해 주세요.',
+                }),
+                { status: 503, headers: { 'Retry-After': '30' } }
+            )
+        );
+
+        await expect(
+            runAnalysisStream({ type: 'technical', params: {} })
+        ).rejects.toThrow(
+            '지금 분석 요청이 많습니다. 잠시 후 다시 시도해 주세요.'
+        );
+    });
+
+    it('503 본문이 깨져 있어도 한국어 안내로 폴백한다', async () => {
+        fetchMock.mockResolvedValue(new Response('not-json', { status: 503 }));
+
+        await expect(
+            runAnalysisStream({ type: 'technical', params: {} })
+        ).rejects.toThrow('지금 분석 요청이 많습니다');
+    });
+
     it('non-2xx 응답은 상태 코드를 담아 throw한다', async () => {
         fetchMock.mockResolvedValue(
             new Response('{"error":"bad request"}', { status: 400 })
