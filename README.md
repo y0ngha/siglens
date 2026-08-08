@@ -157,12 +157,13 @@ Requires **Node.js 25.2.1** and **yarn 4.12.0**. `yarn install` resolves `@y0ngh
 | Variable | Where to get it | Used for |
 |---|---|---|
 | `FMP_API_KEY` | [Financial Modeling Prep](https://site.financialmodelingprep.com/developer) | Prices, search, fundamentals, news |
+| `DEEPSEEK_API_KEY` / `GEMINI_API_KEY` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` | Same consoles as the `*_CHAT_API_KEY` rows below | Server-side LLM calls for analysis. The app now calls providers directly — no worker. At least the one matching the default analysis model must be set, or the first analysis fails |
 | `DEEPSEEK_CHAT_API_KEY` | [DeepSeek](https://platform.deepseek.com/api_keys) | DeepSeek models — the default analysis provider |
 | `GEMINI_CHAT_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) | Gemini models, chatbot, options/news/macro reads |
 | `ANTHROPIC_CHAT_API_KEY` | [Anthropic Console](https://console.anthropic.com/) | Claude models |
 | `OPENAI_CHAT_API_KEY` | [OpenAI Platform](https://platform.openai.com/api-keys) | ChatGPT models |
 | `DATABASE_URL` | [Neon](https://neon.tech) | PostgreSQL |
-| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | [Upstash](https://upstash.com) | Analysis cache, job state, ISR tag store |
+| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | [Upstash](https://upstash.com) | Analysis cache, quote cache, ISR tag store |
 | `OAUTH_TOKEN_ENCRYPTION_KEY`, `LLM_API_KEY_ENCRYPTION_KEY`, `OAUTH_STATE_HMAC_SECRET` | `openssl rand -hex 32` | Encrypt stored tokens and user keys; sign OAuth state |
 | `CRON_SECRET` | Generate one | Bearer token guarding cron routes and actions |
 | `SIGLENS_GITHUB_TOKEN` | [GitHub Tokens](https://github.com/settings/tokens) | Installing `@y0ngha/siglens-core` |
@@ -180,7 +181,6 @@ Requires **Node.js 25.2.1** and **yarn 4.12.0**. `yarn install` resolves `@y0ngh
 | `RESEND_API_KEY` / `EMAIL_FROM` | Email delivery |
 | `NEXT_PUBLIC_SITE_URL` | Canonical site URL |
 | `NEXT_PUBLIC_ADSENSE_PUBLISHER_ID` / `NEXT_PUBLIC_ADSENSE_SLOT_*` / `NEXT_PUBLIC_ADSENSE_ENABLED` | Google AdSense |
-| `WORKER_URL` / `WORKER_SECRET` | Cloud Run analysis worker |
 | `ISR_CACHE_BUCKET` | S3-backed ISR/fetch cache handler |
 | `ALARM_EMAIL` | CloudWatch alarm SNS subscription |
 | `DEBUG_VERBOSE_LOGS` | Server-only verbose logging |

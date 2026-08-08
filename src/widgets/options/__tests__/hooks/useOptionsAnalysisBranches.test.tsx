@@ -1,30 +1,23 @@
 /**
  * Branch coverage tests for useOptionsAnalysis — targets uncovered branches in
- * fetchOptionsAnalysis: aborted signal, no_chains_error, gate blocked, key_error,
- * poll error with/without message, non-Error wrapping, onJobId guard.
+ * fetchOptionsAnalysis: no_chains_error, gate blocked, key_error,
+ * non-Error wrapping, and the hydration gate path.
+ *
+ * Poll/cancel machinery has been removed; run* functions return results directly.
  */
 
-import type { MockedFunction, Mock } from 'vitest';
+import type { Mock } from 'vitest';
 import { useOptionsAnalysis } from '@/widgets/options/hooks/useOptionsAnalysis';
 import { useHydrated } from '@/shared/hooks/useHydrated';
-import {
-    pollOptionsAnalysisAction,
-    submitOptionsAnalysisAction,
-} from '@/entities/options-chain/actions';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
-import {
-    ANALYSIS_POLL_MAX_DURATION_MS,
-    ANALYSIS_POLL_TIMEOUT_MESSAGE,
-} from '@/shared/config/pollingConfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { OptionsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 
-vi.mock('@/entities/options-chain/actions', () => ({
-    submitOptionsAnalysisAction: vi.fn(),
-    pollOptionsAnalysisAction: vi.fn(),
-    cancelOptionsAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+    runAnalysisStream: vi.fn(),
 }));
 
 vi.mock('@/entities/analysis', () => ({
@@ -35,22 +28,13 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/shared/hooks/usePageHideCancel', () => ({
-    usePageHideCancel: vi.fn(),
-}));
-
 // SSR hydration gate — default hydrated so existing tests fetch on mount; the
 // gate-closed test flips it to false to assert the auto-trigger is suppressed.
 vi.mock('@/shared/hooks/useHydrated', () => ({
     useHydrated: vi.fn(() => true),
 }));
 
-const mockSubmit = submitOptionsAnalysisAction as MockedFunction<
-    typeof submitOptionsAnalysisAction
->;
-const mockPoll = pollOptionsAnalysisAction as MockedFunction<
-    typeof pollOptionsAnalysisAction
->;
+const mockSubmit = runAnalysisStream as Mock;
 const mockIsGateBlocked = isGateBlockedResult as unknown as Mock;
 const mockUseHydrated = vi.mocked(useHydrated);
 
@@ -87,7 +71,6 @@ const DEFAULT_PROPS = {
 describe('useOptionsAnalysis — branch coverage', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
-        mockPoll.mockReset();
         mockIsGateBlocked.mockReturnValue(false);
         mockUseHydrated.mockReturnValue(true);
     });
@@ -174,70 +157,6 @@ describe('useOptionsAnalysis — branch coverage', () => {
         expect(result.current.error.message).toBe('API key invalid');
     });
 
-    it('returns done when poll returns done after submitted', async () => {
-        mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'opt-job-1',
-        } as never);
-        mockPoll.mockResolvedValueOnce({
-            status: 'done',
-            result: RESULT,
-        });
-
-        const { result } = renderHook(() => useOptionsAnalysis(DEFAULT_PROPS), {
-            wrapper: makeWrapper(),
-        });
-
-        await waitFor(() => {
-            expect(result.current.status).toBe('done');
-        });
-    });
-
-    it('returns error when poll returns error with message', async () => {
-        mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'opt-job-1',
-        } as never);
-        mockPoll.mockResolvedValueOnce({
-            status: 'error',
-            error: '분석 실패',
-        });
-
-        const { result } = renderHook(() => useOptionsAnalysis(DEFAULT_PROPS), {
-            wrapper: makeWrapper(),
-        });
-
-        await waitFor(() => {
-            expect(result.current.status).toBe('error');
-        });
-
-        if (result.current.status !== 'error')
-            throw new Error('expected error');
-        expect(result.current.error.message).toBe('분석 실패');
-    });
-
-    it('returns generic error when poll error has no message', async () => {
-        mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'opt-job-1',
-        } as never);
-        mockPoll.mockResolvedValueOnce({
-            status: 'error',
-        } as { status: 'error'; error: string });
-
-        const { result } = renderHook(() => useOptionsAnalysis(DEFAULT_PROPS), {
-            wrapper: makeWrapper(),
-        });
-
-        await waitFor(() => {
-            expect(result.current.status).toBe('error');
-        });
-
-        if (result.current.status !== 'error')
-            throw new Error('expected error');
-        expect(result.current.error.message).toContain('오류가 발생했습니다');
-    });
-
     it('wraps non-Error thrown value', async () => {
         mockSubmit.mockRejectedValue('string error');
 
@@ -257,9 +176,9 @@ describe('useOptionsAnalysis — branch coverage', () => {
     it('does not fetch while the SSR hydration gate is closed', async () => {
         mockUseHydrated.mockReturnValue(false);
         mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'gate-closed',
-        } as never);
+            status: 'cached',
+            result: RESULT,
+        });
 
         const { result } = renderHook(() => useOptionsAnalysis(DEFAULT_PROPS), {
             wrapper: makeWrapper(),
@@ -271,78 +190,5 @@ describe('useOptionsAnalysis — branch coverage', () => {
 
         expect(mockSubmit).not.toHaveBeenCalled();
         expect(result.current.status).toBe('loading');
-    });
-
-    it('poll ceiling → error state when job stalls beyond ANALYSIS_POLL_MAX_DURATION_MS', async () => {
-        // Mirrors useFinancialsAnalysisBranches's poll-ceiling test: job is
-        // submitted, then repeatedly polls as 'processing' (a genuinely
-        // stalled job). Date.now() is keyed off an observable event — the
-        // poll mock flipping `stalled` — rather than a raw Date.now() call
-        // count: counting calls is brittle because any extra Date.now() from
-        // React Query/React internals shifts the count and silently breaks
-        // the freeze.
-        mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'opt-job-stalled',
-        } as never);
-        const frozenStart = Date.now();
-        let stalled = false;
-        mockPoll.mockImplementation(async () => {
-            stalled = true;
-            return { status: 'processing' } as never;
-        });
-        const dateSpy = vi
-            .spyOn(Date, 'now')
-            .mockImplementation(() =>
-                stalled
-                    ? frozenStart + ANALYSIS_POLL_MAX_DURATION_MS + 1
-                    : frozenStart
-            );
-
-        try {
-            const { result } = renderHook(
-                () => useOptionsAnalysis(DEFAULT_PROPS),
-                { wrapper: makeWrapper() }
-            );
-
-            await waitFor(() => {
-                expect(result.current.status).toBe('error');
-            });
-
-            if (result.current.status !== 'error')
-                throw new Error('expected error state');
-            expect(result.current.error.message).toBe(
-                ANALYSIS_POLL_TIMEOUT_MESSAGE
-            );
-        } finally {
-            dateSpy.mockRestore();
-        }
-    });
-
-    it('cancels job on unmount when polling', async () => {
-        const mockCancelOptions = (
-            await import('@/entities/options-chain/actions')
-        ).cancelOptionsAnalysisJobAction as MockedFunction<
-            typeof import('@/entities/options-chain/actions').cancelOptionsAnalysisJobAction
-        >;
-
-        mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'opt-job-cancel',
-        } as never);
-        mockPoll.mockImplementation(() => new Promise(() => {}));
-
-        const { unmount } = renderHook(
-            () => useOptionsAnalysis(DEFAULT_PROPS),
-            { wrapper: makeWrapper() }
-        );
-
-        await waitFor(() => {
-            expect(mockPoll).toHaveBeenCalled();
-        });
-
-        unmount();
-
-        expect(mockCancelOptions).toHaveBeenCalledWith('opt-job-cancel');
     });
 });

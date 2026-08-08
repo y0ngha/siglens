@@ -4,15 +4,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createElement } from 'react';
 import type { ReactNode } from 'react';
 import { useMarketBriefing } from '@/widgets/dashboard/hooks/useMarketBriefing';
-import { submitMarketBriefingAction } from '@/entities/market-summary/actions';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import type { MarketBriefingActionResult } from '@/shared/lib/types';
 import type { MarketBriefingResponse } from '@y0ngha/siglens-core';
 
-vi.mock('@/entities/market-summary/actions', () => ({
-    submitMarketBriefingAction: vi.fn(),
+vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+    runAnalysisStream: vi.fn(),
 }));
 
-const mockAction = submitMarketBriefingAction as ReturnType<typeof vi.fn>;
+const mockAction = runAnalysisStream as ReturnType<typeof vi.fn>;
 
 function makeWrapper() {
     const client = new QueryClient({
@@ -38,10 +38,15 @@ const CACHED_BRIEFING_RESULT: MarketBriefingActionResult = {
     botBlocked: false,
 };
 
-const SUBMITTED_BRIEFING_RESULT: MarketBriefingActionResult = {
+const DONE_BRIEFING_RESULT: MarketBriefingActionResult = {
     briefing: {
-        status: 'submitted',
-        jobId: 'job-123',
+        status: 'done',
+        briefing: {
+            summary: 'AI market overview done',
+            sectors: [],
+            volatility: null,
+        } as unknown as MarketBriefingResponse,
+        generatedAt: '2025-01-01T11:00:00Z',
     },
     botBlocked: false,
 };
@@ -101,20 +106,39 @@ describe('useMarketBriefing', () => {
                 generatedAt: '2025-01-01T10:00:00Z',
             });
         });
+        // type 문자열이 잘못되면 SSE 라우트가 400을 반환한다 — 프로덕션 버그를 테스트에서 잡는다.
+        expect(mockAction).toHaveBeenCalledWith(
+            expect.objectContaining({ type: 'briefing' })
+        );
         client.clear();
     });
 
-    it('(Happy) action done (submitted) → input = submitted briefing', async () => {
-        mockAction.mockResolvedValue(SUBMITTED_BRIEFING_RESULT);
+    it('(Happy) action done (done) → input = done briefing', async () => {
+        mockAction.mockResolvedValue(DONE_BRIEFING_RESULT);
         const { client, wrapper } = makeWrapper();
         const { result } = renderHook(() => useMarketBriefing(), { wrapper });
 
         await waitFor(() => {
             expect(result.current.input).toMatchObject({
-                status: 'submitted',
-                jobId: 'job-123',
+                status: 'done',
+                generatedAt: '2025-01-01T11:00:00Z',
             });
         });
+        client.clear();
+    });
+
+    it('(Worst) botBlocked인데 seed가 있으면 seed를 보여 준다 (색인 텍스트 보존)', async () => {
+        // Googlebot WRS 렌더에서 이 fetch는 봇으로 판정된다. seed를 버리면 SSR HTML에
+        // 있던 브리핑이 렌더된 DOM에서 안내문으로 교체돼 색인 대상 텍스트가 사라진다.
+        const PEEK = { headlineKo: '시드 브리핑' } as never;
+        mockAction.mockResolvedValue({ briefing: null, botBlocked: true });
+        const { client, wrapper } = makeWrapper();
+        const { result } = renderHook(() => useMarketBriefing(PEEK), {
+            wrapper,
+        });
+
+        await waitFor(() => expect(mockAction).toHaveBeenCalled());
+        expect(result.current.input).toMatchObject({ status: 'cached' });
         client.clear();
     });
 
@@ -133,7 +157,7 @@ describe('useMarketBriefing', () => {
         client.clear();
     });
 
-    it('(Worst) action {ok:false} → input undefined (렌더 안 함)', async () => {
+    it("(Worst) action {ok:false} → input 'error'", async () => {
         const errorResult: MarketBriefingActionResult = {
             ok: false,
             error: 'server_error',
@@ -143,9 +167,37 @@ describe('useMarketBriefing', () => {
         const { result } = renderHook(() => useMarketBriefing(), { wrapper });
 
         await waitFor(() => {
+            expect(result.current.input).toBe('error');
+        });
+        client.clear();
+    });
+
+    it('(Worst) 스트림이 throw해도 peekSeed가 있으면 seed를 계속 보여 준다', async () => {
+        // seed는 서버 peek로 읽은 실제 캐시 본문이다 — 에러 카드보다 낫다.
+        const PEEK = { headlineKo: '시드 브리핑' } as never;
+        mockAction.mockRejectedValue(new Error('분석 시간이 초과되었습니다.'));
+        const { client, wrapper } = makeWrapper();
+        const { result } = renderHook(() => useMarketBriefing(PEEK), {
+            wrapper,
+        });
+
+        await waitFor(() => {
             expect(mockAction).toHaveBeenCalled();
         });
-        expect(result.current.input).toBeUndefined();
+        expect(result.current.input).toMatchObject({ status: 'cached' });
+        client.clear();
+    });
+
+    it("(Worst) 스트림이 throw하고 seed도 없으면 input 'error' — 스켈레톤이 영원히 남지 않는다", async () => {
+        // SSE가 error 이벤트로 끝나면 runAnalysisStream이 throw한다. 이때 data가
+        // 없어 seedInput(undefined)으로 떨어지면 실패가 조용히 사라진다.
+        mockAction.mockRejectedValue(new Error('분석 시간이 초과되었습니다.'));
+        const { client, wrapper } = makeWrapper();
+        const { result } = renderHook(() => useMarketBriefing(), { wrapper });
+
+        await waitFor(() => {
+            expect(result.current.input).toBe('error');
+        });
         client.clear();
     });
 });

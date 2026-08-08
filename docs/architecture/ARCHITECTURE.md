@@ -156,7 +156,7 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
     ├── shared
     │   ├── api/          # HTTP client, bot detection
     │   ├── cache/        # Redis client
-    │   ├── config/       # queryKeys, pollingConfig, cookieNames, market, time 상수
+    │   ├── config/       # queryKeys, cookieNames, market, time 상수
     │   ├── db/           # Drizzle/Neon client, schema, token encryption
     │   ├── email/        # Email dispatcher (Resend/Noop)
     │   ├── hooks/        # 범용 React hooks (useDialog, useEscapeKey 등)
@@ -220,15 +220,16 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
 
 ```
 재분석 버튼 클릭 (또는 자동 트리거)
-  → useAnalysis 훅 → entities/analysis/actions/submitAnalysisAction (Server Action)
-    → Upstash Redis 캐시 조회 (캐시 히트 시 즉시 반환)
-    → entities/bars → fetchBarsWithIndicators (서버 재구성)
-    → entities/skill → Skills 파일 로드
-    → @y0ngha/siglens-core → 프롬프트 구성
-    → 내부 worker 처리 트리거 (fire-and-forget via Vercel `waitUntil` — @vercel/functions)
-  → useAnalysis 훅 → pollAnalysisAction (10초 간격 polling)
-    → Redis에서 완료된 분석 결과 반환
-  → AnalysisPanel 업데이트
+  → useAnalysis 훅 → POST /api/analysis/stream (SSE, shared/hooks/useAnalysisStream)
+    → 라우트가 tier/BYOK 게이트 + 봇 판정 + 포지션 버킷 해석
+    → 재분석 쿨다운(Redis) 획득 여부로 force 파생 — 클라이언트는 의도만 보낸다
+    → @y0ngha/siglens-core `runAnalysis` (요청 안에서 블로킹)
+      → Upstash Redis 캐시 조회 (히트 시 즉시 반환)
+      → entities/bars → fetchBarsWithIndicators (서버 재구성)
+      → entities/skill → Skills 파일 로드
+      → 프롬프트 구성 → LLM provider 직접 호출 (서버 키)
+    → 25초 heartbeat로 ALB idle_timeout(60초)을 넘기며 대기
+  → SSE `done` 이벤트로 결과 수신 → AnalysisPanel 업데이트
 ```
 
 ---

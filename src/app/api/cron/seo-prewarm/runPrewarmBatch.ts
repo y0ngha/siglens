@@ -14,35 +14,60 @@ import { getFmpErrorStatus } from '@/shared/api/fmp/fmpUserMessage';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import {
     addFmpBudget,
+    clearInFlight,
     getFmpBudgetUsed,
     getInFlightMarker,
     isSkipped,
     markInFlight,
+    markSkipped,
+    TRANSIENT_SKIP_TTL_SECONDS,
 } from './lock';
-import {
-    TAB_SEAMS,
-    TAB_POLLS,
-    resolveHarvest,
-    type SeamOutcome,
-} from './harvest';
+import { TAB_SEAMS, resolveHarvest } from './harvest';
 
 export interface PrewarmBatchCounts {
-    submitted: number;
     harvested: number;
+    /**
+     * 이번 tick 시작 시점의 stale 심볼 총량과 배치 wall-clock(ms).
+     *
+     * 커버리지 침식은 데드라인에 **걸리기 전부터** 시작된다: 유닛 지연이 늘어 배치가
+     * tick 주기(5분)를 넘기면 Redis 락 때문에 다음 배치가 한 tick 밀리고, 하룻밤
+     * 처리량이 반토막 난다 — 그런데 `BATCH_DEADLINE_MS`(10분)에는 안 걸리니
+     * deadline 알람도 안 뜬다. 이 두 값이 그 구간을 보는 유일한 창이다.
+     */
+    staleTotal: number;
+    durationMs: number;
     revalidated: number;
     remaining: number;
     fmpBudgetUsed: number;
 }
 
 /**
- * FIX Z(감사) — 매 tick이 submit 후 즉시 poll까지 진행하므로(콜드 캐시를 실제로
- * 데운다) 심볼당 소요 시간이 늘었다. 원래 10 → 6으로 낮춰 청크(SYMBOL_CONCURRENCY=3
- * 기준 2청크)당 최악 대기가 과도해지지 않게 한다 — 실제 상한은 BATCH_DEADLINE_MS가
- * 건다(이 상수는 "정상 tick의 목표 처리량"일 뿐, 배치 전체를 막는 하드 캡이 아니다).
+ * FIX Z(감사) — run* 함수가 LLM 블로킹 호출이라 심볼당 소요 시간이 길다.
+ * 원래 10 → 6으로 낮춰 청크(SYMBOL_CONCURRENCY와 같아 1청크)당 최악 대기가
+ * 과도해지지 않게 한다 — 실제 상한은 BATCH_DEADLINE_MS가 건다(이 상수는
+ * "정상 tick의 목표 처리량"일 뿐, 배치 전체를 막는 하드 캡이 아니다).
  */
 const SYMBOLS_PER_TICK = 6;
-// core fundamental이 Promise.all로 ~13개 FMP 호출을 한번에 쏨 → 3×13≈40 순간 버스트 캡 (spec §8).
-const SYMBOL_CONCURRENCY = 3;
+/**
+ * 한 청크에서 병렬 처리할 심볼 수.
+ *
+ * 3 → 6으로 올렸다. worker 시절에는 seam이 submit만 하고 즉시 반환해(LLM은 워커에서
+ * 돌고, 못 끝낸 유닛은 jobId로 다음 tick이 이어받았다) 배치 wall-clock이 LLM 지연과
+ * 무관했다. 지금은 `run*`가 LLM 왕복 내내 블로킹하므로 배치 시간이 그대로 지연에 비례한다.
+ *
+ * 탭 루프는 심볼 안에서 **직렬**이므로(캐시 재사용 목적), 배치 시간 ≈
+ * `ceil(SYMBOLS_PER_TICK / SYMBOL_CONCURRENCY) × 탭수 × 유닛지연`이다. 3이면 2청크라
+ * 유닛당 ~21초만 넘어도 하룻밤에 유니버스(294심볼)를 못 돈다. 실측 유닛 지연은
+ * 콜드 상태에서 30초대(dev 서버 계측: technical 31.8s/34.3s, market briefing 46s)라
+ * 그 선을 이미 넘는다. 6이면 1청크가 되어 배치 시간이 절반이 되고 tick 간격(5분)
+ * 안에 들어온다.
+ *
+ * 비용: core fundamental이 Promise.all로 ~13개 FMP 호출을 한번에 쏘므로 순간 버스트가
+ * 3×13≈40 → 6×13≈78로 는다. FMP 예산 집계(`addFmpBudget`)와 429 백오프(`fmpRetry`)가
+ * 그대로 받는다. 버스트가 문제가 되면 이 값이 아니라 스케줄 폭을 넓히는 쪽이 맞다 —
+ * `BATCH_DEADLINE_MS`는 회전 불변식(아래) 때문에 못 올린다.
+ */
+const SYMBOL_CONCURRENCY = 6;
 // FIX A(감사) — bounded in-flight/backoff 후보 스캔 폭. selectFairBatch 참고.
 const CANDIDATE_WINDOW_MULTIPLIER = 3;
 // 회전 오프셋의 시간 눈금 — EventBridge 스케줄 간격(5분, 13-seo-prewarm.sh)과 맞춘다.
@@ -70,11 +95,21 @@ const TICK_ROTATION_MS = 5 * 60 * 1000;
 // `BATCH_DEADLINE_MS + 스케줄주기 ≤ 15분`을 반드시 함께 확인할 것. 현재 정확히
 // 경계값(600s + 300s = 900s)이라 여유가 없다.
 const BATCH_DEADLINE_MS = 600_000; // 10min
-// FIX Z(감사) — poll 간격/유닛(심볼×탭)당 상한. 60s 안에 못 끝나면 이번 tick은
-// 포기하고 in-flight(jobId) 마커를 남겨 다음 tick이 이어서 poll한다(배치를
-// 무기한 붙잡지 않는다).
-const POLL_INTERVAL_MS = 5000;
-const POLL_UNIT_CAP_MS = 60000;
+/**
+ * 유닛(심볼×탭) 하나당 LLM 왕복 최대 대기 시간.
+ *
+ * LOCK_TTL_SECONDS(900s)와의 관계: BATCH_DEADLINE_MS(600s)가 더 작은 상한이라
+ * 락 보호는 실질적으로 BATCH_DEADLINE_MS가 담당한다. 그러나 BATCH_DEADLINE_MS는
+ * 탭 사이에서만 검사되므로, 마지막 유닛이 이 타임아웃 없이 무한정 블로킹하면
+ * LOCK_TTL(900s)까지 락이 안 풀릴 수 있고, 그 사이 다음 EventBridge tick이
+ * 새 락을 획득해 두 배치가 동시에 돌 수 있다.
+ *
+ * ⚠️ 이 타임아웃이 발동해도 core의 run* 호출은 취소되지 않는다 — prewarm* seam이
+ * AbortSignal을 받지 않으므로 orphaned promise가 백그라운드에서 계속 실행된다.
+ * 이 타임아웃의 목적은 배치 슬롯(락)을 보호하는 것이지, 작업을 취소하는 게 아니다.
+ * AbortSignal threading은 별도 작업으로 대응한다.
+ */
+const UNIT_TIMEOUT_MS = 120_000; // 2min
 // overall을 마지막에 둬 bars/scorecard 등 다른 축이 이미 채운 Redis 캐시를 HIT로 재활용한다.
 const TAB_ORDER: readonly SeoSnapshotTab[] = [
     'technical',
@@ -88,10 +123,9 @@ const TAB_ORDER: readonly SeoSnapshotTab[] = [
 // spec §8 추정치 — 모니터링용, 정밀 계측 아님. 심볼 전체 탭 수 기준 총량을
 // 실제 seam이 "실행된"(=submit이 호출된) 탭 수에 비례 배분한다(탭 하나당 평균
 // FMP 호출수). equity: 22 calls / 7 tabs ≈ 3. crypto: 2 calls / 3 tabs(CRYPTO_TABS) ≈ 1.
-// 이미 fresh인 탭·backoff(skip) 중인 탭은 submit 자체가 안 불리므로 예산에서
-// 제외된다 — poll-resume(기존 job 이어받기)도 새 FMP 호출이 아니므로 제외.
-// 그렇지 않으면 실제 FMP 호출이 0건인데도 예산이 계상되어 getFmpBudgetUsed가
-// 실사용량을 과대평가한다.
+// 이미 fresh인 탭·backoff(skip) 중인 탭·in-flight 탭은 submit 자체가 안
+// 불리므로 예산에서 제외된다. 그렇지 않으면 실제 FMP 호출이 0건인데도 예산이
+// 계상되어 getFmpBudgetUsed가 실사용량을 과대평가한다.
 const FMP_CALLS_PER_TAB_EQUITY = 3;
 const FMP_CALLS_PER_TAB_CRYPTO = 1;
 
@@ -105,7 +139,12 @@ export interface PrewarmClock {
 }
 
 function defaultSleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise(resolve => {
+        // unref: 유닛 타임아웃 race에서 진 타이머가 최대 UNIT_TIMEOUT_MS 동안 남는다
+        // (유닛 하나당 하나, 배치당 수십 개). unref하지 않으면 그 타이머들이 이벤트
+        // 루프를 붙들어 배치가 끝나도 프로세스가 바로 정리되지 않는다.
+        setTimeout(resolve, ms).unref();
+    });
 }
 
 const DEFAULT_CLOCK: PrewarmClock = { now: Date.now, sleep: defaultSleep };
@@ -130,6 +169,7 @@ export async function runPrewarmBatch(
     clock: PrewarmClock = DEFAULT_CLOCK
 ): Promise<PrewarmBatchCounts> {
     const batchDeadline = clock.now() + BATCH_DEADLINE_MS;
+    const isPastDeadline = () => clock.now() > batchDeadline;
     const boundary = lastCompletedEtCloseWithBuffer(new Date());
     const universe = buildPrewarmUniverse();
     const repo = new DrizzleSeoSnapshotRepository(getDatabaseClient().db);
@@ -153,8 +193,9 @@ export async function runPrewarmBatch(
         clock.now()
     );
     const counts: PrewarmBatchCounts = {
-        submitted: 0,
         harvested: 0,
+        staleTotal: staleSymbols.length,
+        durationMs: 0,
         revalidated: 0,
         remaining: Math.max(0, staleSymbols.length - batch.length),
         fmpBudgetUsed: 0,
@@ -167,8 +208,9 @@ export async function runPrewarmBatch(
     // 시그니처는 그 두 값을 청크마다 다시 넘길 자리가 없다. 대신 아래 명시적
     // 루프로 청크 경계마다 데드라인을 검사한다. 격리는 각 processSymbol 호출의
     // `.catch`가 보장하므로 Promise.all 기반 청크 처리와 동일하게 안전하다.
+    let droppedByDeadline = 0;
     for (let i = 0; i < batch.length; i += SYMBOL_CONCURRENCY) {
-        if (clock.now() > batchDeadline) {
+        if (isPastDeadline()) {
             const remainingCount = batch.length - i;
             counts.remaining += remainingCount;
             console.warn(
@@ -177,7 +219,7 @@ export async function runPrewarmBatch(
             break;
         }
         const chunk = batch.slice(i, i + SYMBOL_CONCURRENCY);
-        await Promise.all(
+        const dropped = await Promise.all(
             chunk.map(u =>
                 processSymbol(
                     u,
@@ -185,16 +227,34 @@ export async function runPrewarmBatch(
                     generatedAtMap,
                     repo,
                     counts,
-                    clock,
-                    batchDeadline
+                    isPastDeadline,
+                    clock
                 ).catch(error => {
                     console.error(`[seo-prewarm] ${u.symbol} failed:`, error);
+                    return 0;
                 })
             )
+        );
+        droppedByDeadline += dropped.reduce((sum, n) => sum + n, 0);
+    }
+
+    /**
+     * 데드라인으로 버려진 작업을 **여기서** 로깅한다.
+     *
+     * 위 청크 경계 검사는 `SYMBOLS_PER_TICK === SYMBOL_CONCURRENCY`인 현재 상수 조합에서
+     * 배치가 항상 1청크라 도달하지 않는다. 실제로 발동하는 건 심볼 안의 탭 경계 검사인데
+     * 그건 조용히 건너뛰기만 했다 — 즉 알람을 붙여 놔도 영원히 발화하지 않는 상태였다.
+     * 커버리지가 야금야금 줄어드는 걸 잡는 유일한 신호이므로 마커를 반드시 남긴다.
+     */
+    if (droppedByDeadline > 0) {
+        counts.remaining += droppedByDeadline;
+        console.warn(
+            `[seo-prewarm] batch deadline reached — ${droppedByDeadline} tabs dropped`
         );
     }
 
     counts.fmpBudgetUsed = await getFmpBudgetUsed();
+    counts.durationMs = clock.now() - (batchDeadline - BATCH_DEADLINE_MS);
     return counts;
 }
 
@@ -226,27 +286,17 @@ export async function runPrewarmBatch(
  * 대신 후보 폭을 `SYMBOLS_PER_TICK * CANDIDATE_WINDOW_MULTIPLIER`개로 제한하고,
  * 그 창 안에서만 심볼당 최대 2회(마커 조회 1 + 마커가 아예 없을 때만 skip 조회 1)×stale
  * 탭 수를 조회한다 — worst case `SYMBOLS_PER_TICK * CANDIDATE_WINDOW_MULTIPLIER
- * (=18) × 7탭 × 2 = 252회/tick`(≪1900). 탭 하나에서라도 resumable jobId를
- * 찾으면 그 시점에서 심볼을 즉시 'resumable' 분류하고 나머지 탭은 조회하지
- * 않는다(조기 종료로 실제 평균은 이보다 훨씬 낮다). FIX 1(감사, PR #698
- * 리뷰) — 마커가 legacy(jobId 없이 존재)면 skip 조회 자체를 생략하므로
- * (present 자체가 "이번 tick엔 손대지 마라"는 뜻) 실측 평균은 이보다 더 낮다.
+ * (=18) × 7탭 × 2 = 252회/tick`(≪1900). 마커가 present면 skip 조회를 생략하므로
+ * (present 자체가 "이번 tick엔 손대지 마라"는 뜻) 실측 평균은 이보다 낮다.
  *
  * FIX 2(감사, PR #698 리뷰) — 이 창 안의 후보 분류(`classifySymbol`)는 서로
  * 독립적이고 순서에 의존하지 않으므로 `Promise.all`로 병렬 실행한다(이전엔
  * `for`-루프 안에서 순차 `await` — worst case 252회 왕복이 전부 직렬이었다).
- * 배치 결과의 순서는 "원래 후보(회전) 순서 안에서 resumable을 먼저, 그다음
- * fresh"로 재구성해 회전 정책의 결정성을 유지한다 — Promise.all은 완료 순서가
- * 아니라 입력 순서로 결과 배열을 반환하므로 이 재구성이 안전하다.
+ * 결과 배열은 Promise.all이 입력 순서 그대로 반환하므로 회전 결정성이 유지된다.
  *
- * FIX Z(감사) — in-flight는 더 이상 "배제" 대상이 아니다: 폴링을 도입한 뒤로는
- * in-flight(jobId 보유) 심볼이 "진행 중"이라 폴하면 실제로 진척이 있다. 그래서
- * resumable(in-flight jobId 보유) 심볼을 fresh(신규 stale) 심볼보다 먼저 채운다
- * — "in-flight 유닛을 먼저 poll하고, 남는 슬롯을 새 stale 심볼로 채운다."
- *
- * FIX C(감사) — 모든 stale 탭이 backoff(skip) 상태이거나 legacy in-flight
+ * FIX C(감사) — 모든 stale 탭이 backoff(skip) 상태이거나 in-flight
  * 마커로 막혀 있는 심볼은 'blocked'로 분류해 배제한다(terminal skip 또는
- * resume 불가 in-flight가 head 슬롯을 영구 점유하는 걸 막는다).
+ * 살아 있는 in-flight가 head 슬롯을 점유하는 걸 막는다).
  */
 async function selectFairBatch(
     staleSymbols: PrewarmSymbol[],
@@ -277,25 +327,20 @@ async function selectFairBatch(
         )
     );
 
-    const resumable: PrewarmSymbol[] = [];
     const fresh: PrewarmSymbol[] = [];
     windowCandidates.forEach((candidate, i) => {
-        const candidacy = classifications[i];
-        if (candidacy === 'resumable') resumable.push(candidate);
-        else if (candidacy === 'fresh') fresh.push(candidate);
-        // 'blocked' → 배제(모든 stale 탭이 backoff 또는 legacy in-flight 중).
+        if (classifications[i] === 'fresh') fresh.push(candidate);
+        // 'blocked' → 배제(모든 stale 탭이 backoff 또는 in-flight 중).
     });
-    return [...resumable, ...fresh].slice(0, SYMBOLS_PER_TICK);
+    return fresh.slice(0, SYMBOLS_PER_TICK);
 }
 
-type SymbolCandidacy = 'resumable' | 'fresh' | 'blocked';
+type SymbolCandidacy = 'fresh' | 'blocked';
 
 /**
- * FIX 1(감사, PR #698 리뷰) — `selectFairBatch`의 후보 분류와 `processSymbol`의
- * 실제 처리가 반드시 같은 규칙을 써야 한다: 마커가 legacy(jobId 없음)인 탭은
- * "actionable"이 아니다(재제출 대상 아님) — `processSymbol`이 그 탭을 skip하는
- * 것과 동일하게, 여기서도 그런 탭만 있는 심볼은 'blocked'로 분류해 배치 슬롯을
- * 소비하지 않게 한다.
+ * 후보 분류: in-flight 마커가 있는 탭은 actionable 아님(재제출 대상 아님).
+ * `processSymbol`이 그 탭을 skip하는 것과 동일하게, 모든 stale 탭이 in-flight
+ * 또는 backoff 상태인 심볼은 'blocked'로 분류해 배치 슬롯을 소비하지 않게 한다.
  */
 async function classifySymbol(
     u: PrewarmSymbol,
@@ -314,37 +359,10 @@ async function classifySymbol(
     let anyActionable = false;
     for (const tab of staleTabs) {
         const marker = await getInFlightMarker(u.symbol, tab);
-        if (marker.jobId !== null) return 'resumable';
-        if (marker.present) continue; // legacy 마커 — 이번 tick엔 actionable 아님(TTL 대기).
+        if (marker.present) continue; // in-flight — 이번 tick엔 actionable 아님(TTL 대기).
         if (!(await isSkipped(u.symbol, tab))) anyActionable = true;
     }
     return anyActionable ? 'fresh' : 'blocked';
-}
-
-/**
- * FIX Z(감사) — jobId 하나를 `POLL_INTERVAL_MS` 간격으로 최대 `POLL_UNIT_CAP_MS`까지
- * poll한다(배치 전체 데드라인 `batchDeadline`도 함께 존중 — FIX G). 최초 1회는
- * 즉시 poll한다(워커가 이미 끝났을 수 있어 첫 5s를 낭비하지 않는다). 캡에
- * 도달해도 여전히 `processing`이면 그 상태 그대로 반환한다 — 호출부가 이미
- * 세팅해둔 in-flight(jobId) 마커는 건드리지 않고 다음 tick이 이어서 poll하게 둔다.
- */
-async function pollUntilSettled(
-    poll: () => Promise<SeamOutcome>,
-    batchDeadline: number,
-    clock: PrewarmClock
-): Promise<SeamOutcome> {
-    let elapsedMs = 0;
-    let outcome = await poll();
-    while (
-        outcome.status === 'processing' &&
-        elapsedMs < POLL_UNIT_CAP_MS &&
-        clock.now() < batchDeadline
-    ) {
-        await clock.sleep(POLL_INTERVAL_MS);
-        elapsedMs += POLL_INTERVAL_MS;
-        outcome = await poll();
-    }
-    return outcome;
 }
 
 async function processSymbol(
@@ -353,9 +371,15 @@ async function processSymbol(
     generatedAtMap: Map<string, Date>,
     repo: DrizzleSeoSnapshotRepository,
     counts: PrewarmBatchCounts,
-    clock: PrewarmClock,
-    batchDeadline: number
-): Promise<void> {
+    /**
+     * 탭 하나하나가 LLM 왕복만큼(수십 초~수 분) 블로킹한다. 청크 경계에서만
+     * 데드라인을 보면 마지막 청크가 4탭을 연달아 돌며 LOCK_TTL_SECONDS(900s)를
+     * 넘길 수 있고, 그러면 락이 만료돼 다음 tick이 같은 심볼을 동시에 잡는다.
+     * 탭 사이에서도 검사해 그 창을 닫는다.
+     */
+    isPastDeadline: () => boolean,
+    clock: PrewarmClock
+): Promise<number> {
     const { assetInfo } = await getAssetInfoResilient(u.symbol);
     const companyName = assetInfo?.name ?? u.symbol;
     const fmpSymbol = assetInfo?.fmpSymbol;
@@ -365,9 +389,16 @@ async function processSymbol(
     // 이미 fresh거나 backoff(skip) 중인 탭, 그리고 poll-resume(신규 submit 아님)은 제외한다.
     let seamsRunForSymbol = 0;
 
+    let tabsDroppedByDeadline = 0;
     for (const tab of TAB_ORDER) {
         if (!u.tabs.includes(tab)) continue;
 
+        // 데드라인 검사보다 **먼저** 신선도를 본다. 순서가 반대면 두 가지가 깨진다:
+        // ① 이미 fresh한 탭까지 "데드라인으로 버려짐"으로 세어 마커 수치가 부풀고,
+        // ② `freshTabCount`가 안 올라가 아래 "전 탭 fresh" 게이트가 실패한다 —
+        //    그러면 방금 harvest한 스냅샷의 `revalidateTag`가 안 돌고, 다음 tick엔
+        //    그 심볼이 stale 목록에서 빠져 페이지 revalidate TTL(6~24h)까지 노출이
+        //    지연된다. 신선도 판정은 로컬 맵 조회라 비용도 없다.
         const alreadyFresh = isSnapshotFresh(
             generatedAtMap.get(snapshotKey(u.symbol, tab)),
             boundary
@@ -377,80 +408,88 @@ async function processSymbol(
             continue;
         }
 
+        if (isPastDeadline()) {
+            // 실제로 할 일이 남은 탭만 센다. 조용히 건너뛰기만 하면 데드라인으로
+            // 버려진 작업이 어떤 카운트에도, 어떤 로그에도 남지 않아 알람이 붙어
+            // 있어도 영원히 발화하지 않는다.
+            tabsDroppedByDeadline += 1;
+            continue;
+        }
+
         try {
             const marker = await getInFlightMarker(u.symbol, tab);
-            let outcome: SeamOutcome | null;
+            // FIX 1(감사, PR #698 리뷰) — in-flight 마커가 있으면 이번 tick은
+            // 건너뛴다. TTL(30min) 만료 후 다음 tick이 새로 submit한다.
+            if (marker.present) continue;
+            if (await isSkipped(u.symbol, tab)) continue; // FIX C: terminal backoff 중.
 
-            if (marker.jobId !== null) {
-                // FIX Z — 이전 tick이 submit만 하고 못 끝낸 job을 재제출하는
-                // 대신 이어서 poll한다(in-flight = "진행 중" → 실제로 진척시킨다.
-                // FIX A가 in-flight를 선별에서 배제하던 방식의 역방향 보완).
-                outcome = await pollUntilSettled(
-                    () => TAB_POLLS[tab](marker.jobId!),
-                    batchDeadline,
+            seamsRunForSymbol++;
+            await markInFlight(u.symbol, tab);
+            try {
+                // FIX 1(감사) — 유닛 타임아웃: core run* 함수가 UNIT_TIMEOUT_MS 안에
+                // 반환하지 않으면 기다리기를 포기한다. 타임아웃이 발동해도 orphaned
+                // promise는 백그라운드에서 계속 실행된다 — UNIT_TIMEOUT_MS 상수 주석
+                // 참조(AbortSignal 미지원으로 취소 불가).
+                const raceResult = await Promise.race([
+                    TAB_SEAMS[tab]({
+                        symbol: u.symbol,
+                        companyName,
+                        fmpSymbol,
+                    }).then(r => ({ timedOut: false as const, value: r })),
                     clock
-                );
-            } else if (marker.present) {
-                // FIX 1(감사, PR #698 리뷰) — legacy 마커(jobId 없이 마킹된
-                // 경우 — 예: `pending_dependencies`)는 resume-poll은 못 하지만
-                // 여전히 in-flight다. `getInFlightJobId`만 쓰던 이전 코드는
-                // 이 경우를 "in-flight 아님"으로 오판해 매 tick 재제출했다
-                // (FMP 예산 재계상 포함) — `markInFlight`가 문서화한 "재개
-                // 불가, 자연 TTL 만료 후 재시도" 의도와 어긋났다. 여기서는
-                // 재제출하지 않고 이번 tick은 건너뛴다 — TTL(30min)이
-                // 만료되면 다음 tick이 마커 없음으로 보고 새로 submit한다.
-                continue;
-            } else {
-                if (await isSkipped(u.symbol, tab)) continue; // FIX C: terminal backoff 중.
+                        .sleep(UNIT_TIMEOUT_MS)
+                        .then(() => ({ timedOut: true as const })),
+                ]);
 
-                seamsRunForSymbol++;
-                const submitResult = await TAB_SEAMS[tab]({
-                    symbol: u.symbol,
-                    companyName,
-                    fmpSymbol,
-                });
-
-                if (
-                    submitResult !== null &&
-                    (submitResult.status === 'submitted' ||
-                        submitResult.status === 'pending_dependencies')
-                ) {
-                    counts.submitted++;
-                    const jobId = submitResult.jobId;
-                    await markInFlight(u.symbol, tab, jobId);
-                    if (jobId === undefined) {
-                        // pending_dependencies — 단일 jobId가 없어(축별
-                        // pendingJobs) resume-poll 대상이 아니다. 다음
-                        // tick(들)이 자연 재시도한다(기존 동작 유지).
-                        continue;
-                    }
-                    outcome = await pollUntilSettled(
-                        () => TAB_POLLS[tab](jobId),
-                        batchDeadline,
-                        clock
+                if (raceResult.timedOut) {
+                    console.warn(
+                        `[seo-prewarm] unit-timeout ${u.symbol}:${tab} — abandoned wait, core call still running in background`
                     );
-                } else {
-                    outcome = submitResult;
+                    // 타임아웃도 일시적 실패로 본다 — 포기한 core 호출은 백그라운드에서
+                    // 계속 돌아 대개 곧 캐시를 채우므로, 다음 tick이면 값싼 HIT가 된다.
+                    // 6시간을 걸면 그 HIT 기회를 통째로 버린다.
+                    await markSkipped(
+                        u.symbol,
+                        tab,
+                        TRANSIENT_SKIP_TTL_SECONDS
+                    );
+                    continue;
                 }
-            }
 
-            const harvested = await resolveHarvest(
-                u.symbol,
-                tab,
-                outcome,
-                repo,
-                counts
-            );
-            if (harvested) freshTabCount++;
+                const harvested = await resolveHarvest(
+                    u.symbol,
+                    tab,
+                    raceResult.value,
+                    repo,
+                    counts
+                );
+                if (harvested) freshTabCount++;
+            } finally {
+                // 완료(done/error) 즉시 마커를 제거해 다음 tick이 TTL(30min) 만료를
+                // 기다리지 않고 바로 최신 상태를 반영하게 한다.
+                void clearInFlight(u.symbol, tab);
+            }
         } catch (error) {
             if (getFmpErrorStatus(error) === 402) {
                 // 402는 심볼 단위 이슈(플랜/쿼터) — 배치 중단 사유가 아니다.
+                // backoff 마커를 남기지 않는다: 플랜이 변경되면 다음 tick에 자동 재시도된다.
                 console.error(`[seo-prewarm] fmp-402 ${u.symbol}:${tab}`);
             } else {
                 console.error(
                     `[seo-prewarm] unit-error ${u.symbol}:${tab}`,
                     error
                 );
+                // FIX 2(감사) — worker 제거 이후 run* 함수가 {status:'error'}를 반환하는
+                // 대신 throw하게 됐다. resolveHarvest가 error 상태를 markSkipped로 변환하던
+                // 경로가 bypass되므로 여기서 backoff 마커를 남긴다. 없으면 실패한 유닛이
+                // 매 5분 tick마다 재시도되며 배치 슬롯을 영구 점유한다.
+                //
+                // 단 TTL은 6시간이 아니라 30분이다. throw의 대다수는 프로바이더 장애·
+                // 타임아웃 같은 **일시적** 실패인데, 장애 중엔 모든 유닛이 동시에 throw하므로
+                // 6시간을 걸면 20분짜리 장애가 prewarm을 반나절 멈춰 세운다. 30분이면
+                // 슬롯 점유(매 tick 재시도)는 막으면서 회복 후 복귀도 빠르다. 구조적으로
+                // 불가능한 유닛의 6시간 backoff는 `resolveHarvest`의 상태 기반 경로가 계속 담당한다.
+                await markSkipped(u.symbol, tab, TRANSIENT_SKIP_TTL_SECONDS);
             }
             // 오래된 스냅샷이 그대로 남는다(fail-open) — 여기서 rethrow하지 않는다.
         }
@@ -475,4 +514,6 @@ async function processSymbol(
         revalidateTag(`seo-snapshot:${u.symbol.toUpperCase()}`, 'max');
         counts.revalidated++;
     }
+
+    return tabsDroppedByDeadline;
 }

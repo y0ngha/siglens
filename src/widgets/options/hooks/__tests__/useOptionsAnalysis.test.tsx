@@ -1,34 +1,20 @@
-import type { MockedFunction } from 'vitest';
+import type { Mock } from 'vitest';
 import { useOptionsAnalysis } from '@/widgets/options/hooks/useOptionsAnalysis';
-import {
-    submitOptionsAnalysisAction,
-    pollOptionsAnalysisAction,
-    cancelOptionsAnalysisJobAction,
-} from '@/entities/options-chain/actions';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { OptionsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 
-vi.mock('@/entities/options-chain/actions', () => ({
-    submitOptionsAnalysisAction: vi.fn(),
-    pollOptionsAnalysisAction: vi.fn(),
-    cancelOptionsAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+    runAnalysisStream: vi.fn(),
 }));
 
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockSubmit = submitOptionsAnalysisAction as MockedFunction<
-    typeof submitOptionsAnalysisAction
->;
-const mockPoll = pollOptionsAnalysisAction as MockedFunction<
-    typeof pollOptionsAnalysisAction
->;
-const mockCancel = cancelOptionsAnalysisJobAction as MockedFunction<
-    typeof cancelOptionsAnalysisJobAction
->;
+const mockSubmit = runAnalysisStream as Mock;
 
 const OPTIONS_RESULT: OptionsAnalysisResponse = {
     summary: 'Bullish options flow',
@@ -64,9 +50,6 @@ const INPUT = {
 describe('useOptionsAnalysis — trigger coverage', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
-        mockPoll.mockReset();
-        mockCancel.mockReset();
-        mockCancel.mockResolvedValue(undefined);
     });
 
     afterEach(() => {
@@ -102,6 +85,10 @@ describe('useOptionsAnalysis — trigger coverage', () => {
             expect(result.current.status).toBe('done');
         });
         expect(typeof result.current.trigger).toBe('function');
+        // type 문자열이 잘못되면 SSE 라우트가 400을 반환한다 — 프로덕션 버그를 테스트에서 잡는다.
+        expect(mockSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({ type: 'options' })
+        );
     });
 
     it('bot_blocked 상태에서 trigger 함수를 노출한다', async () => {

@@ -61,12 +61,9 @@ export const QUERY_KEYS = {
     ],
     tickerSearch: (query: string) => ['ticker-search', query] as const,
     assetInfo: (symbol: string) => ['asset-info', upper(symbol)] as const,
-    briefing: (jobId: string) => ['briefing', jobId] as const,
     marketSummary: () => ['market-summary'] as const,
     marketBriefing: () => ['market-briefing'] as const,
     macroBriefing: () => ['macro-briefing'] as const,
-    macroBriefingPoll: (jobId: string) =>
-        ['macro-briefing-poll', jobId] as const,
     currentUser: () => ['current-user'] as const,
     userTier: () => ['user-tier'] as const,
     remainingTokens: () => ['chat', 'remaining-tokens'] as const,

@@ -57,21 +57,15 @@ export type ByokOutcome =
  *
  * Direct callers:
  *
- * - `submitAnalysisAction` — two branches call it. The `modelId === undefined`
- *   branch is genuinely modelId-less (chart/technical analysis submitted
- *   with no model selection at all, so there is nothing to gate on). The
+ * - the SSE route (`src/app/api/analysis/stream/route.ts`) — two branches call
+ *   it. The `modelId === undefined` branch is genuinely modelId-less
+ *   (chart/technical analysis submitted with no model selection at all, so
+ *   there is nothing to gate on). The
  *   `isE2E()` branch is entered regardless of `modelId` — a caller can still
  *   pass a premium model there — but it short-circuits to a stub fixture
  *   before any `modelId` gating would run, so no gate applies on that branch
  *   either, just not because it is modelId-less.
- * - `resolveCallerTier`, consumed by `pollAnalysisAction` and
- *   `pollOverallAnalysisAction` — these are poll/read paths that never
- *   submit a job themselves (the gate already ran at submit time), so they
- *   only need `tier` to pass into `pollAnalysis`/`pollOverallAnalysis` for
- *   read-side result filtering, not a BYOK check.
- * - `resolveCallerTier`, also consumed by `getBarsAction` — for a different
- *   reason than the poll actions above: it is not a poll of a
- *   previously-submitted job, and it DOES gate — `isTimeframeAllowed(tier,
+ * - `resolveCallerTier`, consumed by `getBarsAction` — it DOES gate: `isTimeframeAllowed(tier,
  *   timeframe)` throws when the resolved tier can't access the requested
  *   timeframe. It never goes through `resolveTierAndByok` because that gate
  *   is unrelated to `modelId`/premium-model BYOK: `getBarsAction` has no
@@ -79,8 +73,8 @@ export type ByokOutcome =
  *
  * Indirect caller: `resolveTierAndByok` (below) calls this function first to
  * get `tier`, then layers the premium-model/BYOK check on top. Every gated
- * submit action (e.g. `submitCongressTrendAction`, and the gated branch of
- * `submitAnalysisAction`) reaches `resolveTierOnly` this way.
+ * analysis action (e.g. `submitCongressTrendAction`, and the gated branch of
+ * the SSE route) reaches `resolveTierOnly` this way.
  *
  * Congress trend analysis used to be gated this way too (public filings, "no
  * premium gate" was the assumption) but that was a bug: a congress caller CAN

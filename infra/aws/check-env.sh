@@ -31,6 +31,16 @@ EXCLUDE='^(NEXT_PUBLIC_|SIGLENS_GITHUB_TOKEN)'
 #
 # DEBUG_VERBOSE_LOGS is an optional debug flag (defaults off when unset); it is never
 # provisioned in prod SSM and must likewise not block deploy.
+#
+# NOTE on the *_API_KEY (no CHAT) quartet — the asymmetry with the *_CHAT_API_KEY rows
+# above is DELIBERATE, not an oversight. ANTHROPIC/GEMINI/OPENAI/DEEPSEEK_API_KEY are the
+# analysis-side server keys read by @y0ngha/siglens-core's resolveServerApiKey. Every one
+# of the four providers appears in TIER_CONFIG.models.free (claude-haiku-4-5 -> Anthropic,
+# gpt-5-mini -> OpenAI, gemini-2.5-flash* -> Gemini, deepseek-v4-* -> DeepSeek), i.e. the
+# server pays for all four. Core validates them lazily at call time, so a missing key does
+# not crash startup — it fails the first analysis that routes to that provider, over SSE,
+# with HTTP 200. That is exactly the silent failure this gate exists to catch. Keep all
+# four REQUIRED.
 OPTIONAL_KEYS=(
   ANTHROPIC_CHAT_API_KEY
   OPENAI_CHAT_API_KEY

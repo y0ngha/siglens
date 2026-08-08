@@ -12,7 +12,7 @@ describe('robots', () => {
         expect(result.rules).toContainEqual(
             expect.objectContaining({
                 userAgent: '*',
-                allow: '/',
+                allow: ['/', '/api/analysis/stream'],
                 disallow: ['/api/'],
             })
         );
@@ -46,7 +46,7 @@ describe('robots', () => {
                     'GoogleOther-Image',
                     'GoogleOther-Video',
                 ]),
-                allow: '/',
+                allow: ['/', '/api/analysis/stream'],
                 disallow: ['/api/'],
                 crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,
             })
@@ -111,7 +111,7 @@ describe('robots', () => {
                 'PerplexityBot',
                 'OAI-SearchBot',
             ],
-            allow: '/',
+            allow: ['/', '/api/analysis/stream'],
             disallow: ['/api/'],
             crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,
         });
@@ -153,13 +153,15 @@ describe('robots', () => {
             );
         });
 
-        it('Googlebot 그룹은 여전히 allow: "/" 로 검색 색인을 보존한다', () => {
+        it('Googlebot 그룹은 여전히 루트를 allow해 검색 색인을 보존한다', () => {
             const result = robots();
             const googlebotGroup = findGroupByUserAgent(
                 result.rules,
                 'Googlebot'
             );
-            expect(googlebotGroup?.allow).toBe('/');
+            expect(googlebotGroup?.allow).toContain('/');
+            // 분석 SSE 라우트 예외 — 막히면 렌더러가 캐시 HIT조차 못 받는다.
+            expect(googlebotGroup?.allow).toContain('/api/analysis/stream');
         });
 
         it('foot-gun guard: Googlebot 그룹이 `*` 그룹의 baseline(allow/disallow)을 그대로 replicate한다 — Googlebot은 `*` 그룹을 상속하지 않으므로 이 parity가 깨지면 향후 `*` 전용 규칙이 Googlebot에는 적용되지 않는다', () => {
@@ -211,7 +213,7 @@ describe('robots', () => {
                     'Omgilibot',
                     'ImagesiftBot',
                 ]),
-                allow: '/',
+                allow: ['/', '/api/analysis/stream'],
                 disallow: ['/api/'],
                 crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,
             })
@@ -226,7 +228,7 @@ describe('robots', () => {
                     'PerplexityBot',
                     'OAI-SearchBot',
                 ]),
-                allow: '/',
+                allow: ['/', '/api/analysis/stream'],
                 disallow: ['/api/'],
                 crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,
             })

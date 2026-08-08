@@ -9,7 +9,7 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-// prewarmNews만 부분 목킹 대상 — submitNewsAnalysis(core)는 대체하고 나머지는
+// prewarmNews만 부분 목킹 대상 — runNewsAnalysis(core)는 대체하고 나머지는
 // 실제 구현을 통과시켜 DrizzleNewsRepository 등 이 파일이 검증하는 실제
 // 클래스와 충돌하지 않는다(같은 모듈이라 전체 목킹은 self-mock 문제를 만든다).
 vi.mock('@y0ngha/siglens-core', async () => {
@@ -18,7 +18,7 @@ vi.mock('@y0ngha/siglens-core', async () => {
     );
     return {
         ...actual,
-        submitNewsAnalysis: vi.fn(),
+        runNewsAnalysis: vi.fn(),
     };
 });
 
@@ -55,13 +55,10 @@ vi.mock('next/cache', () => ({ revalidateTag: mockRevalidateTag }));
 import type {
     NewsCardAnalysis,
     NewsItem,
-    SubmitNewsAnalysisResult,
+    RunNewsAnalysisResult,
     EarningsCalendarItem,
 } from '@y0ngha/siglens-core';
-import {
-    submitNewsAnalysis,
-    DEEPSEEK_V4_FLASH_MODEL,
-} from '@y0ngha/siglens-core';
+import { runNewsAnalysis, DEEPSEEK_V4_FLASH_MODEL } from '@y0ngha/siglens-core';
 import type { SiglensDatabase } from '@/shared/db/types';
 import {
     DrizzleNewsRepository,
@@ -411,7 +408,7 @@ describe('DrizzleNewsRepository', () => {
 });
 
 describe('prewarmNews', () => {
-    const mockSubmitNewsAnalysis = vi.mocked(submitNewsAnalysis);
+    const mockRunNewsAnalysis = vi.mocked(runNewsAnalysis);
     const mockGetDatabaseClient = vi.mocked(getDatabaseClient);
     const mockGetNextEarningsReport = vi.mocked(getNextEarningsReport);
     const mockResolveMarketProfile = vi.mocked(resolveMarketProfile);
@@ -456,14 +453,14 @@ describe('prewarmNews', () => {
         lastUpdated: '2025-07-15',
     };
 
-    const SUBMITTED_RESULT: SubmitNewsAnalysisResult = {
-        status: 'submitted',
-        jobId: 'job-news-001',
+    const SUBMITTED_RESULT: RunNewsAnalysisResult = {
+        status: 'done',
+        result: { summary: 'news ok' } as never,
     };
 
     beforeEach(() => {
         vi.clearAllMocks();
-        mockSubmitNewsAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+        mockRunNewsAnalysis.mockResolvedValue(SUBMITTED_RESULT);
         // 'us-equity' → getDescriptor('us-equity').assetClass === 'equity'
         // (실제 getDescriptor를 그대로 통과시켜 assetClass를 파생시킨다).
         mockResolveMarketProfile.mockResolvedValue('us-equity');
@@ -475,10 +472,10 @@ describe('prewarmNews', () => {
         } as unknown as ReturnType<typeof getDatabaseClient>);
     });
 
-    it('calls submitNewsAnalysis with the anonymous-free branch shape', async () => {
+    it('calls runNewsAnalysis with the anonymous-free branch shape', async () => {
         await prewarmNews('AAPL', 'Apple Inc.', false);
 
-        expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+        expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({
                 symbol: 'AAPL',
                 companyName: 'Apple Inc.',
@@ -494,7 +491,7 @@ describe('prewarmNews', () => {
     it('threads force:true when requested', async () => {
         await prewarmNews('AAPL', 'Apple Inc.', true);
 
-        expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+        expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ force: true })
         );
     });
@@ -502,7 +499,7 @@ describe('prewarmNews', () => {
     it('omits force when not requested', async () => {
         await prewarmNews('AAPL', 'Apple Inc.', false);
 
-        const callArg = mockSubmitNewsAnalysis.mock.calls[0]?.[0];
+        const callArg = mockRunNewsAnalysis.mock.calls[0]?.[0];
         expect(callArg).not.toHaveProperty('force');
     });
 
@@ -514,7 +511,7 @@ describe('prewarmNews', () => {
 
         await prewarmNews('AAPL', 'Apple Inc.', false);
 
-        const callArg = mockSubmitNewsAnalysis.mock.calls[0]?.[0];
+        const callArg = mockRunNewsAnalysis.mock.calls[0]?.[0];
         expect(callArg?.news).toHaveLength(1);
     });
 
@@ -523,7 +520,7 @@ describe('prewarmNews', () => {
 
         await prewarmNews('AAPL', 'Apple Inc.', false);
 
-        expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+        expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ upcomingCalendar: [NEXT_EARNINGS] })
         );
     });
@@ -531,7 +528,7 @@ describe('prewarmNews', () => {
     it('upcomingCalendar is empty when there is no next earnings', async () => {
         await prewarmNews('AAPL', 'Apple Inc.', false);
 
-        expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+        expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ upcomingCalendar: [] })
         );
     });
@@ -627,7 +624,7 @@ describe('prewarmNews', () => {
                 prewarmNews('AAPL', 'Apple Inc.', false)
             ).resolves.toEqual(SUBMITTED_RESULT);
 
-            expect(mockSubmitNewsAnalysis).toHaveBeenCalledTimes(1);
+            expect(mockRunNewsAnalysis).toHaveBeenCalledTimes(1);
             errorSpy.mockRestore();
         });
 
@@ -671,7 +668,7 @@ describe('prewarmNews', () => {
         it('submit 페이로드(model/tier/reasoning)는 ingest 도입 전과 동일하다', async () => {
             await prewarmNews('AAPL', 'Apple Inc.', false);
 
-            expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+            expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({
                     modelId: DEEPSEEK_V4_FLASH_MODEL,
                     tier: 'free',

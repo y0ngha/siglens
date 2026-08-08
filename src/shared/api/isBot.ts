@@ -9,7 +9,7 @@ const AI_BOT_RE =
  * sites stay simple and so the detection can be swapped out later if needed.
  *
  * Used by Server Actions to suppress Redis worker dispatch on crawler
- * traffic (see `submitAnalysisAction` and siblings).
+ * traffic (see the SSE analysis route and the gated entity actions).
  */
 export function isBot(headers: Headers): boolean {
     const userAgentHeader = headers.get('user-agent') ?? '';

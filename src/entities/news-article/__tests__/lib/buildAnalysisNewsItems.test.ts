@@ -1,7 +1,7 @@
 /**
  * buildAnalysisNewsItems — AI 분석 axis가 공통으로 받는 news input pipeline 검증.
  *
- * /news (submitNewsAnalysisAction) + /overall (submitOverallAnalysisAction news axis)이
+ * /news (submitNewsAnalysisAction) + /overall (runOverallAnalysisAction news axis)이
  * 같은 함수를 호출해 동일 `news IDs hash` cache key를 만들어야 axis 분석이 공유된다.
  *
  * - filter: titleKo/bodyKo/priceImpact 등 분석 결과 누락된 row 제거

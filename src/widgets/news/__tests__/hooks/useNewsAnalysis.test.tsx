@@ -1,38 +1,22 @@
-import type { MockedFunction, Mock } from 'vitest';
+import type { Mock } from 'vitest';
 import { useNewsAnalysis } from '@/widgets/news/hooks/useNewsAnalysis';
-import {
-    cancelNewsAnalysisJobAction,
-    pollNewsAnalysisAction,
-    submitNewsAnalysisAction,
-} from '@/entities/news-article/actions';
-import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import type { ModelId, NewsAnalysisResponse } from '@y0ngha/siglens-core';
+import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
-import { readBlobText } from '@/shared/test-utils/readBlobText';
 
-vi.mock('@/entities/news-article/actions', () => ({
-    submitNewsAnalysisAction: vi.fn(),
-    pollNewsAnalysisAction: vi.fn(),
-    cancelNewsAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+    runAnalysisStream: vi.fn(),
 }));
 
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockSubmit = submitNewsAnalysisAction as MockedFunction<
-    typeof submitNewsAnalysisAction
->;
-const mockPoll = pollNewsAnalysisAction as MockedFunction<
-    typeof pollNewsAnalysisAction
->;
-const mockCancel = cancelNewsAnalysisJobAction as MockedFunction<
-    typeof cancelNewsAnalysisJobAction
->;
+const mockSubmit = runAnalysisStream as Mock;
 
 const NEWS_RESULT: NewsAnalysisResponse = {
     overallSentiment: 'bullish',
@@ -68,9 +52,6 @@ function Probe() {
 describe('useNewsAnalysis', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
-        mockPoll.mockReset();
-        mockCancel.mockReset();
-        mockCancel.mockResolvedValue(undefined);
         mockSubmit.mockResolvedValue({
             status: 'cached',
             result: NEWS_RESULT,
@@ -110,10 +91,15 @@ describe('useNewsAnalysis', () => {
             expect(result.current.status).toBe('done');
         });
         expect(mockSubmit).toHaveBeenCalledWith(
-            'AAPL',
-            'Apple Inc.',
-            'gemini-2.5-flash-lite',
-            false
+            expect.objectContaining({
+                type: 'news',
+                params: expect.objectContaining({
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    modelId: 'gemini-2.5-flash-lite',
+                    reasoning: false,
+                }),
+            })
         );
     });
 
@@ -284,189 +270,6 @@ describe('useNewsAnalysis', () => {
             rerender();
 
             expect(mockSubmit).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    describe('cancel', () => {
-        it('polling 중 unmount 시 진행 중인 job을 cancel한다', async () => {
-            mockSubmit.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'job-news-123',
-            });
-            // never resolves → 루프가 첫 poll 호출 직후 멈춰 OOM을 방지한다
-            mockPoll.mockImplementation(() => new Promise(() => {}));
-
-            const { unmount } = renderHook(
-                () =>
-                    useNewsAnalysis(
-                        'AAPL',
-                        'Apple Inc.',
-                        'gemini-2.5-flash-lite'
-                    ),
-                { wrapper: makeWrapper() }
-            );
-
-            await waitFor(() => {
-                expect(mockPoll).toHaveBeenCalled();
-            });
-
-            unmount();
-
-            expect(mockCancel).toHaveBeenCalledWith('job-news-123');
-        });
-
-        it('modelId 변경 시 이전 job을 cancel한다', async () => {
-            mockSubmit.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'job-news-123',
-            });
-            mockPoll.mockImplementation(() => new Promise(() => {}));
-
-            const { rerender } = renderHook(
-                ({ modelId }: { modelId: ModelId }) =>
-                    useNewsAnalysis('AAPL', 'Apple Inc.', modelId),
-                {
-                    wrapper: makeWrapper(),
-                    initialProps: { modelId: 'gemini-2.5-flash-lite' },
-                }
-            );
-
-            await waitFor(() => {
-                expect(mockPoll).toHaveBeenCalled();
-            });
-
-            rerender({ modelId: 'gemini-2.5-flash' });
-
-            expect(mockCancel).toHaveBeenCalledWith('job-news-123');
-        });
-
-        it('cached 응답 시 cancel을 호출하지 않는다', async () => {
-            mockSubmit.mockResolvedValue({
-                status: 'cached',
-                result: NEWS_RESULT,
-            });
-
-            const { unmount } = renderHook(
-                () =>
-                    useNewsAnalysis(
-                        'AAPL',
-                        'Apple Inc.',
-                        'gemini-2.5-flash-lite'
-                    ),
-                { wrapper: makeWrapper() }
-            );
-
-            await waitFor(() => {
-                expect(mockSubmit).toHaveBeenCalled();
-            });
-
-            unmount();
-
-            expect(mockCancel).not.toHaveBeenCalled();
-        });
-
-        describe('pagehide', () => {
-            let sendBeaconMock: Mock;
-
-            beforeEach(() => {
-                sendBeaconMock = vi.fn();
-                Object.defineProperty(navigator, 'sendBeacon', {
-                    value: sendBeaconMock,
-                    configurable: true,
-                    writable: true,
-                });
-            });
-
-            it('polling 중 pagehide 발화 시 sendBeacon으로 cancel을 전송한다', async () => {
-                mockSubmit.mockResolvedValue({
-                    status: 'submitted',
-                    jobId: 'job-news-123',
-                });
-                mockPoll.mockImplementation(() => new Promise(() => {}));
-
-                renderHook(
-                    () =>
-                        useNewsAnalysis(
-                            'AAPL',
-                            'Apple Inc.',
-                            'gemini-2.5-flash-lite'
-                        ),
-                    { wrapper: makeWrapper() }
-                );
-
-                await waitFor(() => {
-                    expect(mockPoll).toHaveBeenCalled();
-                });
-
-                window.dispatchEvent(new Event('pagehide'));
-
-                expect(sendBeaconMock).toHaveBeenCalledTimes(1);
-                const [url, blob] = sendBeaconMock.mock.calls[0] as [
-                    string,
-                    Blob,
-                ];
-                expect(url).toBe(CANCEL_JOBS_API_PATH);
-                expect(blob.type).toBe('application/json');
-
-                const text = await readBlobText(blob);
-                expect(JSON.parse(text)).toEqual({
-                    jobs: [{ jobId: 'job-news-123', type: 'news' }],
-                });
-            });
-
-            it('job 없을 때 pagehide 발화해도 sendBeacon을 호출하지 않는다', async () => {
-                mockSubmit.mockResolvedValue({
-                    status: 'cached',
-                    result: NEWS_RESULT,
-                });
-
-                renderHook(
-                    () =>
-                        useNewsAnalysis(
-                            'AAPL',
-                            'Apple Inc.',
-                            'gemini-2.5-flash-lite'
-                        ),
-                    { wrapper: makeWrapper() }
-                );
-
-                await waitFor(() => {
-                    expect(mockSubmit).toHaveBeenCalled();
-                });
-
-                window.dispatchEvent(new Event('pagehide'));
-
-                expect(sendBeaconMock).not.toHaveBeenCalled();
-            });
-
-            it('pagehide 발화 후 unmount 시 이중 cancel이 발생하지 않는다', async () => {
-                mockSubmit.mockResolvedValue({
-                    status: 'submitted',
-                    jobId: 'job-news-123',
-                });
-                mockPoll.mockImplementation(() => new Promise(() => {}));
-
-                const { unmount } = renderHook(
-                    () =>
-                        useNewsAnalysis(
-                            'AAPL',
-                            'Apple Inc.',
-                            'gemini-2.5-flash-lite'
-                        ),
-                    { wrapper: makeWrapper() }
-                );
-
-                await waitFor(() => {
-                    expect(mockPoll).toHaveBeenCalled();
-                });
-
-                window.dispatchEvent(new Event('pagehide'));
-                expect(sendBeaconMock).toHaveBeenCalledTimes(1);
-
-                unmount();
-
-                expect(mockCancel).not.toHaveBeenCalled();
-            });
         });
     });
 });

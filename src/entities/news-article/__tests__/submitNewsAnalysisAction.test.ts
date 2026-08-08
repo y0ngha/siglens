@@ -6,7 +6,7 @@ vi.mock('next/headers', () => ({
 
 vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
-    submitNewsAnalysis: vi.fn(),
+    runNewsAnalysis: vi.fn(),
 }));
 
 vi.mock('@/shared/db/client', () => ({
@@ -49,9 +49,9 @@ import { headers } from 'next/headers';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { getNextEarningsReport } from '@/entities/earnings-report';
 import {
-    submitNewsAnalysis,
+    runNewsAnalysis,
     type ModelId,
-    type SubmitNewsAnalysisResult,
+    type RunNewsAnalysisResult,
     type EnrichedNewsItem,
     type EarningsCalendarItem,
 } from '@y0ngha/siglens-core';
@@ -69,8 +69,8 @@ const mockGetNextEarningsReport = getNextEarningsReport as MockedFunction<
     typeof getNextEarningsReport
 >;
 
-const mockSubmitNewsAnalysis = submitNewsAnalysis as MockedFunction<
-    typeof submitNewsAnalysis
+const mockRunNewsAnalysis = runNewsAnalysis as MockedFunction<
+    typeof runNewsAnalysis
 >;
 const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser
@@ -123,9 +123,9 @@ const NEXT_EARNINGS: EarningsCalendarItem = {
     lastUpdated: '2025-07-15',
 };
 
-const SUBMITTED_RESULT: SubmitNewsAnalysisResult = {
-    status: 'submitted',
-    jobId: 'job-news-001',
+const DONE_RESULT: RunNewsAnalysisResult = {
+    status: 'done',
+    result: {} as never,
 };
 
 const MODEL_ID = 'gemini-2.5-flash' as ModelId;
@@ -140,7 +140,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
     let mockListBySymbol: Mock;
 
     beforeEach(() => {
-        mockSubmitNewsAnalysis.mockReset();
+        mockRunNewsAnalysis.mockReset();
         MockNewsRepository.mockClear();
         mockGetNextEarningsReport.mockReset();
         mockGetCurrentUser.mockReset();
@@ -160,17 +160,17 @@ describe('submitNewsAnalysisAction 함수는', () => {
             kind: 'allowed',
             tier: 'free' as never,
         });
-        mockSubmitNewsAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+        mockRunNewsAnalysis.mockResolvedValue(DONE_RESULT);
     });
 
-    it('symbol과 modelId를 siglens-core submitNewsAnalysis에 전달한다', async () => {
+    it('symbol과 modelId를 siglens-core runNewsAnalysis에 전달한다', async () => {
         mockListBySymbol.mockResolvedValue([ANALYZED_ROW]);
         mockGetNextEarningsReport.mockResolvedValue(null);
-        mockSubmitNewsAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+        mockRunNewsAnalysis.mockResolvedValueOnce(DONE_RESULT);
 
         await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
 
-        expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+        expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ symbol: 'AAPL', modelId: MODEL_ID })
         );
     });
@@ -178,11 +178,11 @@ describe('submitNewsAnalysisAction 함수는', () => {
     it('titleKo가 null인 미분석 뉴스를 필터링하고 enrichedNews만 전달한다', async () => {
         mockListBySymbol.mockResolvedValue([ANALYZED_ROW, UNANALYZED_ROW]);
         mockGetNextEarningsReport.mockResolvedValue(null);
-        mockSubmitNewsAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+        mockRunNewsAnalysis.mockResolvedValueOnce(DONE_RESULT);
 
         await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
 
-        const callArg = mockSubmitNewsAnalysis.mock.calls[0]?.[0];
+        const callArg = mockRunNewsAnalysis.mock.calls[0]?.[0];
         expect(callArg?.news).toHaveLength(1);
         const item = callArg?.news[0] as EnrichedNewsItem;
         expect(item.id).toBe('abc123');
@@ -205,11 +205,11 @@ describe('submitNewsAnalysisAction 함수는', () => {
         }));
         mockListBySymbol.mockResolvedValue([...lowRows, ...highRows]);
         mockGetNextEarningsReport.mockResolvedValue(null);
-        mockSubmitNewsAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+        mockRunNewsAnalysis.mockResolvedValueOnce(DONE_RESULT);
 
         await submitNewsAnalysisAction('NVDA', 'Nvidia Corp.', MODEL_ID);
 
-        const callArg = mockSubmitNewsAnalysis.mock.calls[0]?.[0];
+        const callArg = mockRunNewsAnalysis.mock.calls[0]?.[0];
         const news = callArg?.news as EnrichedNewsItem[];
         expect(news).toHaveLength(25);
         // All 5 high-impact articles survive and lead the list.
@@ -228,11 +228,11 @@ describe('submitNewsAnalysisAction 함수는', () => {
     it('다음 실적 발표가 있으면 upcomingCalendar에 포함한다', async () => {
         mockListBySymbol.mockResolvedValue([ANALYZED_ROW]);
         mockGetNextEarningsReport.mockResolvedValue(NEXT_EARNINGS);
-        mockSubmitNewsAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+        mockRunNewsAnalysis.mockResolvedValueOnce(DONE_RESULT);
 
         await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
 
-        expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+        expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({
                 upcomingCalendar: [NEXT_EARNINGS],
             })
@@ -242,11 +242,11 @@ describe('submitNewsAnalysisAction 함수는', () => {
     it('다음 실적 발표가 없으면 upcomingCalendar를 빈 배열로 전달한다', async () => {
         mockListBySymbol.mockResolvedValue([ANALYZED_ROW]);
         mockGetNextEarningsReport.mockResolvedValue(null);
-        mockSubmitNewsAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+        mockRunNewsAnalysis.mockResolvedValueOnce(DONE_RESULT);
 
         await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
 
-        expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+        expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ upcomingCalendar: [] })
         );
     });
@@ -254,12 +254,12 @@ describe('submitNewsAnalysisAction 함수는', () => {
     it('underlying 함수의 결과를 그대로 반환한다', async () => {
         mockListBySymbol.mockResolvedValue([]);
         mockGetNextEarningsReport.mockResolvedValue(null);
-        const noNewsResult: SubmitNewsAnalysisResult = {
+        const noNewsResult: RunNewsAnalysisResult = {
             status: 'error',
             code: 'no_news',
             error: 'No news items provided.',
         };
-        mockSubmitNewsAnalysis.mockResolvedValueOnce(noNewsResult);
+        mockRunNewsAnalysis.mockResolvedValueOnce(noNewsResult);
 
         const result = await submitNewsAnalysisAction(
             'AAPL',
@@ -284,7 +284,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
         );
 
         expect(result).toEqual({ status: 'error', error: gateError });
-        expect(mockSubmitNewsAnalysis).not.toHaveBeenCalled();
+        expect(mockRunNewsAnalysis).not.toHaveBeenCalled();
         // Gate fires before expensive DB fetches
         expect(mockListBySymbol).not.toHaveBeenCalled();
     });
@@ -298,7 +298,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
 
         await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
 
-        expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+        expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ tier: 'member' })
         );
     });
@@ -313,7 +313,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
 
         await submitNewsAnalysisAction('AAPL', 'Apple Inc.', PREMIUM_MODEL);
 
-        expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+        expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ userApiKey: 'usr-key' })
         );
     });
@@ -328,7 +328,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
 
         await submitNewsAnalysisAction('AAPL', 'Apple Inc.', PREMIUM_MODEL);
 
-        const callArg = mockSubmitNewsAnalysis.mock.calls[0]?.[0];
+        const callArg = mockRunNewsAnalysis.mock.calls[0]?.[0];
         expect(callArg).toBeDefined();
         expect(callArg).not.toHaveProperty('userApiKey');
     });
@@ -373,7 +373,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
 
         await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
 
-        expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+        expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: true })
         );
     });
@@ -381,7 +381,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
     it('passes skipEnqueueIfMiss: false to siglens-core when request UA is not a bot', async () => {
         await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
 
-        expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+        expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: false })
         );
     });
@@ -401,7 +401,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
                 true
             );
 
-            expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+            expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: true })
             );
         });
@@ -414,7 +414,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
                 true
             );
 
-            expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+            expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false })
             );
         });
@@ -428,24 +428,24 @@ describe('submitNewsAnalysisAction 함수는', () => {
 
             await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
 
-            expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+            expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false })
             );
         });
     });
 
     describe('assetClass forwarding', () => {
-        it('forwards default equity to submitNewsAnalysis', async () => {
+        it('forwards default equity to runNewsAnalysis', async () => {
             // default resolveAssetClass mock returns 'equity'
             await submitNewsAnalysisAction('AAPL', 'Apple', MODEL_ID);
-            expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+            expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ assetClass: 'equity' })
             );
         });
         it('forwards crypto when resolveAssetClass returns "crypto"', async () => {
             mockResolveAssetClass.mockResolvedValueOnce('crypto');
             await submitNewsAnalysisAction('BTCUSD', 'Bitcoin', MODEL_ID);
-            expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+            expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ assetClass: 'crypto' })
             );
         });

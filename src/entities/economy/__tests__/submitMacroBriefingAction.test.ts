@@ -8,21 +8,18 @@ vi.mock('@y0ngha/siglens-core', async () => {
     const actual = await vi.importActual<typeof import('@y0ngha/siglens-core')>(
         '@y0ngha/siglens-core'
     );
-    return { ...actual, submitMacroBriefing: vi.fn() };
+    return { ...actual, runMacroBriefing: vi.fn() };
 });
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacroBriefingAction';
 import { isBot } from '@/shared/api/isBot';
 import { getEconomySnapshot } from '@/entities/economy/api/economySnapshotCache';
-import {
-    submitMacroBriefing,
-    type EconomySnapshot,
-} from '@y0ngha/siglens-core';
+import { runMacroBriefing, type EconomySnapshot } from '@y0ngha/siglens-core';
 
 const mockIsBot = vi.mocked(isBot);
 const mockGetSnapshot = vi.mocked(getEconomySnapshot);
-const mockSubmit = vi.mocked(submitMacroBriefing);
+const mockSubmit = vi.mocked(runMacroBriefing);
 
 const SNAPSHOT: EconomySnapshot = {
     indicators: [],
@@ -44,13 +41,23 @@ describe('submitMacroBriefingAction', () => {
         expect(mockSubmit).not.toHaveBeenCalled();
     });
 
-    it('비봇이면 snapshot을 입력으로 submitMacroBriefing 호출', async () => {
+    it('비봇이면 snapshot을 입력으로 runMacroBriefing 호출', async () => {
         mockIsBot.mockReturnValue(false);
-        mockSubmit.mockResolvedValue({ status: 'submitted', jobId: 'job-1' });
+        mockSubmit.mockResolvedValue({
+            status: 'done',
+            briefing: { summary: 'ok' } as never,
+            generatedAt: '2025-01-01',
+        });
         const result = await submitMacroBriefingAction();
-        expect(mockSubmit).toHaveBeenCalledWith(SNAPSHOT);
+        expect(mockSubmit).toHaveBeenCalledWith(SNAPSHOT, {
+            signal: undefined,
+        });
         expect(result).toEqual({
-            briefing: { status: 'submitted', jobId: 'job-1' },
+            briefing: {
+                status: 'done',
+                briefing: { summary: 'ok' },
+                generatedAt: '2025-01-01',
+            },
             botBlocked: false,
         });
     });

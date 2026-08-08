@@ -260,6 +260,51 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-redis-unavailab
 # 429가 배치에 영향을 줄 정도로 누적되면 unit-error 경로('[seo-prewarm] unit-error ...')
 # 로 흘러들 가능성이 있으나 이는 429 전용 신호가 아니라 범용 실패 신호라 오탐이 크다.
 # TODO: fmpRetry.ts / withRetry.ts에 429 전용 로그 라인이 추가되면 이 알람을 채운다.
+# 유닛 실패 대량 발생 — worker 제거로 성격이 바뀐 신호다.
+#
+# 예전엔 core `submit*`가 {status:'error'}를 **반환**했고 실패는 harvest 단계에서
+# 흡수돼 unit-error는 "가끔 나오는 심볼별 특이 케이스"였다(그래서 알람 대상이 아니었다).
+# 지금은 `run*`가 **throw**하므로 프로바이더 장애·키 만료가 전부 이 라인으로 떨어진다.
+# 그런데 배치 자체는 fail-open이라 'batch failed'를 남기지 않고 harvested:0으로
+# "성공"한다 — 즉 이 필터가 없으면 야간 prewarm 전면 실패가 어떤 알람에도 안 걸린다.
+#
+# `unit-timeout`도 함께 잡는다(OR 패턴). 프로바이더가 에러를 주지 않고 **그냥 멈추는**
+# 형태(용량 사고에서 흔하다)면 전 유닛이 unit-error가 아니라 unit-timeout으로 떨어지는데,
+# 배치는 fail-open이라 'batch failed'도 안 남는다 — 그 조합이면 야간 prewarm이 산출 0으로
+# 조용히 죽는다.
+#
+# 임계값: 15분 20건 초과가 연속 2주기. tick당 유닛 수(SYMBOLS_PER_TICK 6 × 최대 7탭)를
+# 감안하면 전면 장애는 배치마다 수십 건을 만들고, 심볼 한둘의 고질적 실패는 이 밑에 머문다.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-seo-prewarm-unit-error \
+  --filter-pattern '?"[seo-prewarm] unit-error" ?"[seo-prewarm] unit-timeout"' \
+  --metric-transformations metricName=SeoPrewarmUnitError,metricNamespace=Siglens/SeoPrewarm,metricValue=1 \
+  --region "$REGION" || true
+aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-unit-error \
+  --namespace Siglens/SeoPrewarm --metric-name SeoPrewarmUnitError \
+  --statistic Sum --period 900 --evaluation-periods 2 --threshold 20 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching \
+  --region "$REGION" $ACTIONS
+
+# 배치 데드라인 도달 — 커버리지 부족의 유일한 신호.
+#
+# 배치가 데드라인에 걸려 남은 심볼을 버려도 그건 "실패"가 아니라 부분 성공이라
+# batch-failed에도, unit-error/unit-timeout에도 안 걸린다. 매일 밤 조금씩 덜 도는 상태가
+# 조용히 굳으면 크롤러가 보는 SSR 서술이 그만큼 낡는다(2026-07 노출 절벽의 재발 경로).
+#
+# 임계값: 하룻밤(6시간) 3회 초과. 산발적 1~2회는 느린 프로바이더로 정상 범위지만,
+# 반복되면 SYMBOL_CONCURRENCY/스케줄 폭을 재검토해야 한다.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-seo-prewarm-deadline-reached \
+  --filter-pattern '"[seo-prewarm] batch deadline reached"' \
+  --metric-transformations metricName=SeoPrewarmDeadlineReached,metricNamespace=Siglens/SeoPrewarm,metricValue=1 \
+  --region "$REGION" || true
+aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-deadline-reached \
+  --namespace Siglens/SeoPrewarm --metric-name SeoPrewarmDeadlineReached \
+  --statistic Sum --period 21600 --evaluation-periods 1 --threshold 3 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching \
+  --region "$REGION" $ACTIONS
+
 log "skipped fmp-429 alarm: no stable log marker exists yet (see comment above) — batch-failed alarm covers structural failure in the meantime"
 
 log "seo-prewarm alarms ready (batch-failed, redis-unavailable; fmp-429 skipped, see log above)"

@@ -15,22 +15,14 @@ import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
  *
  * vi.mock은 hoist되지만 ESLint(import/first)와 가독성을 위해 import 위에 둔다.
  */
-vi.mock('@/entities/analysis/actions', () => ({
-    submitOverallAnalysisAction: vi.fn(),
-    pollOverallAnalysisAction: vi.fn(),
-    pollAnalysisAction: vi.fn(),
-    pollFundamentalAnalysisAction: vi.fn(),
-    cancelAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
-    cancelFundamentalAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
-    cancelOverallAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+    runAnalysisStream: vi.fn(),
 }));
 vi.mock('@/entities/news-article/actions', () => ({
-    pollNewsAnalysisAction: vi.fn(),
-    cancelNewsAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
+    submitNewsAnalysisAction: vi.fn(),
 }));
 vi.mock('@/entities/options-chain/actions', () => ({
-    pollOptionsAnalysisAction: vi.fn(),
-    cancelOptionsAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
+    submitOptionsAnalysisAction: vi.fn(),
 }));
 // polling 루프의 sleep을 즉시 resolve해 테스트가 done까지 빠르게 진행되게 한다.
 vi.mock('@/shared/lib/sleep', () => ({
@@ -69,17 +61,11 @@ vi.mock('@/shared/ui/MarkdownText', () => ({
 }));
 
 import { OverallContent } from '@/widgets/overall/OverallContent';
-import {
-    submitOverallAnalysisAction,
-    pollOverallAnalysisAction,
-} from '@/entities/analysis/actions';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 
-const mockSubmit = submitOverallAnalysisAction as MockedFunction<
-    typeof submitOverallAnalysisAction
->;
-const mockPollOverall = pollOverallAnalysisAction as MockedFunction<
-    typeof pollOverallAnalysisAction
+const mockSubmit = runAnalysisStream as MockedFunction<
+    typeof runAnalysisStream
 >;
 
 const DONE_RESULT: OverallAnalysisResponse = {
@@ -113,7 +99,6 @@ function renderOverall() {
 describe('OverallContent 사용자 분석 플로우 (userEvent)', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
-        mockPollOverall.mockReset();
         searchParamsRef.value = new URLSearchParams();
     });
 
@@ -127,10 +112,6 @@ describe('OverallContent 사용자 분석 플로우 (userEvent)', () => {
         const user = userEvent.setup();
         searchParamsRef.value = new URLSearchParams('tf=1Hour');
         mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'overall-job',
-        });
-        mockPollOverall.mockResolvedValueOnce({
             status: 'done',
             result: DONE_RESULT,
         });
@@ -142,23 +123,23 @@ describe('OverallContent 사용자 분석 플로우 (userEvent)', () => {
         await screen.findByText('AAPL 종합 분석 헤드라인');
 
         expect(mockSubmit).toHaveBeenCalledWith(
-            'AAPL',
-            'Apple Inc.',
-            '1Hour',
-            expect.anything(),
-            expect.anything()
+            expect.objectContaining({
+                type: 'overall',
+                params: expect.objectContaining({
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    timeframe: '1Hour',
+                }),
+            })
         );
     });
 
-    it('CTA 클릭 → submit → polling → done 서사를 렌더한다', async () => {
+    it('CTA 클릭 → submit → done 서사를 렌더한다', async () => {
         const user = userEvent.setup();
         mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'overall-job',
+            status: 'done',
+            result: DONE_RESULT,
         });
-        mockPollOverall
-            .mockResolvedValueOnce({ status: 'processing' })
-            .mockResolvedValueOnce({ status: 'done', result: DONE_RESULT });
 
         renderOverall();
 
@@ -171,16 +152,19 @@ describe('OverallContent 사용자 분석 플로우 (userEvent)', () => {
             await screen.findByText('AAPL 종합 분석 헤드라인')
         ).toBeInTheDocument();
 
-        // 훅은 첫 trigger에서 queryFnForceRef(false)를 그대로 options로 넘기므로
-        // 5번째 인자는 정확히 { force: false, reasoning: false }다(기본
-        // reasoning=false) — done 상태에서의 재분석만 force:true.
+        // `force`는 전송하지 않는다 — 서버가 재분석 쿨다운에서 파생한다.
+        // 클라이언트가 캐시 우회를 지시할 수 있으면 인증 없는 공개 라우트에서
+        // 누구나 서버 키로 LLM을 무제한 태울 수 있다.
         expect(mockSubmit).toHaveBeenCalledTimes(1);
-        const firstArgs = mockSubmit.mock.calls[0]!;
-        expect(firstArgs[0]).toBe('AAPL');
-        expect(firstArgs[4]).toEqual({ force: false, reasoning: false });
-
-        expect(mockPollOverall).toHaveBeenCalledWith('overall-job');
-        expect(mockPollOverall).toHaveBeenCalledTimes(2);
+        const [firstCall] = mockSubmit.mock.calls[0]!;
+        expect(firstCall).toMatchObject({
+            type: 'overall',
+            params: expect.objectContaining({
+                symbol: 'AAPL',
+                reasoning: false,
+            }),
+        });
+        expect(firstCall.params).not.toHaveProperty('force');
     });
 
     it('CTA 클릭 → submit 에러 → "다시 시도" 클릭 → 재시도해 done이 된다', async () => {

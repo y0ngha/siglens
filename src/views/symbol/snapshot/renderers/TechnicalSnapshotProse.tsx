@@ -7,7 +7,7 @@ import { LIVE_ANALYSIS_CROSS_REF } from '../lib/liveAnalysisCrossRef';
 interface TechnicalSnapshotProseProps {
     /**
      * `seo_analysis_snapshots.content` — 저장소에는 `unknown`으로 보관된다
-     * (harvest.ts가 core `submitAnalysis`의 `status==='cached'` 분기에서 얻은
+     * (harvest.ts가 core `runAnalysis`의 `status==='cached'` 분기에서 얻은
      * `result.result: AnalysisResponse | FilteredAnalysisResponse`를 그대로
      * 저장, `src/app/api/cron/seo-prewarm/harvest.ts:91`). 여기서 다시
      * 방어적으로 좁힌다.

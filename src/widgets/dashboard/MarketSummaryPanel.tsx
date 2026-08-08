@@ -1,8 +1,7 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { useState } from 'react';
 import { cn } from '@/shared/lib/cn';
-import { ErrorBoundary } from 'react-error-boundary';
 import { IndexCard } from './IndexCard';
 import {
     BriefingCard,
@@ -10,7 +9,6 @@ import {
     BriefingLoadingCard,
 } from './BriefingCard';
 import { MarketDataErrorNotice } from './MarketDataErrorNotice';
-import { useBriefing } from './hooks/useBriefing';
 import { useMarketSummary } from './hooks/useMarketSummary';
 import { useMarketBriefing } from './hooks/useMarketBriefing';
 import { MarketSummaryPanelSkeleton } from './MarketSummaryPanelSkeleton';
@@ -19,32 +17,20 @@ import { SECTOR_GROUPS } from '@/shared/config/dashboard-tickers';
 import type {
     MarketBriefingResponse,
     MarketSectorData,
-    SubmitBriefingResult,
+    RunBriefingResult,
 } from '@y0ngha/siglens-core';
 
-interface BriefingContentProps {
-    jobId: string;
-}
-
-function BriefingContent({ jobId }: BriefingContentProps) {
-    const result = useBriefing(jobId);
-    if (result.status === 'processing') return <BriefingLoadingCard />;
-    return (
-        <BriefingCard
-            briefing={result.briefing}
-            generatedAt={result.generatedAt}
-        />
-    );
-}
-
 interface BriefingRegionProps {
-    input: SubmitBriefingResult | null | undefined;
+    input: RunBriefingResult | null | 'error' | undefined;
 }
 
 function BriefingRegion({ input }: BriefingRegionProps) {
     if (input === undefined) return null;
     if (input === null) return <BotBlockedNotice />;
-    if (input.status === 'cached') {
+    if (input === 'error') return <BriefingErrorCard />;
+    // Both 'cached' and 'done' have briefing + generatedAt — no Suspense needed
+    // because run* is blocking and always returns a complete result.
+    if (input.status === 'cached' || input.status === 'done') {
         return (
             <BriefingCard
                 briefing={input.briefing}
@@ -52,13 +38,8 @@ function BriefingRegion({ input }: BriefingRegionProps) {
             />
         );
     }
-    return (
-        <ErrorBoundary fallback={<BriefingErrorCard />}>
-            <Suspense fallback={<BriefingLoadingCard />}>
-                <BriefingContent jobId={input.jobId} />
-            </Suspense>
-        </ErrorBoundary>
-    );
+    // Fallback: unexpected status — render loading skeleton (defensive)
+    return <BriefingLoadingCard />;
 }
 
 interface MarketSummaryPanelProps {

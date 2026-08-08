@@ -18,6 +18,15 @@ const FMP_BUDGET_TTL_SECONDS = 172800; // 2d — 날짜 키 자연 롤오버, TT
 const SKIP_TTL_SECONDS = 21600; // 6h
 
 /**
+ * 일시적 실패(프로바이더 장애·타임아웃·FMP fetch 실패)의 backoff TTL.
+ *
+ * 기본 6시간은 "이 유닛은 구조적으로 못 만든다"(옵션 체인 없는 심볼의 options 탭 등)에
+ * 맞춘 값이다. 장애는 성격이 다르다 — 장애 중엔 **모든** 유닛이 동시에 실패하므로
+ * 6시간을 걸면 20분짜리 FMP 장애가 그날 밤 prewarm을 통째로 날린다(야간 창이 7.5시간).
+ */
+export const TRANSIENT_SKIP_TTL_SECONDS = 1800; // 30min
+
+/**
  * SET NX EX로 루트 락을 획득하고, 성공 시 이번 실행 고유의 소유 토큰을 반환한다.
  *
  * EventBridge가 겹쳐 트리거되더라도 단일 인스턴스만 pre-warm 배치를 실행하도록
@@ -66,30 +75,18 @@ const INFLIGHT_JOB_AGNOSTIC_SENTINEL = 'pending';
 const INFLIGHT_JOB_AGNOSTIC_LEGACY_SENTINEL = '1';
 
 /**
- * (symbol, tab) 조합을 in-flight로 마킹해 중복 워커 enqueue를 막는다.
+ * (symbol, tab) 조합을 in-flight로 마킹해 중복 submit을 막는다.
  *
- * FIX Z(감사) — `jobId`를 함께 저장하면(생략 시 job-agnostic sentinel) 다음
- * tick이 새 job을 다시 submit하는 대신 이 값으로 기존 job을 이어서 poll할 수
- * 있다(`getInFlightMarker` 참고). `pending_dependencies`처럼 단일 jobId가 없는
- * 경우엔 `jobId`를 생략해 job-agnostic 마커로 남긴다.
- *
- * FIX 1(감사, PR #698 리뷰) — job-agnostic 마커(jobId 없음)는 "재개 불가"이지만
- * "in-flight가 아님"은 아니다: 여전히 이 (symbol, tab)은 다른 워커가 처리
- * 중이거나 poll 불가능한 방식(예: `pending_dependencies`의 축별 pendingJobs)으로
- * 진행 중이므로, 소비자는 이를 "지금 이 tick엔 손대지 말고 TTL 만료를
- * 기다려라"로 해석해야 한다(재제출 금지). `getInFlightMarker`가 이 구분을
- * `{ present, jobId }`로 노출한다.
+ * run* 함수는 블로킹으로 결과를 반환하므로 jobId 추적이 필요 없다.
+ * 마커는 "진행 중 — 이 tick엔 재제출 금지"를 나타내는 단순 플래그다.
+ * TTL(30min) 만료 후 다음 tick이 새로 submit한다.
  */
-export async function markInFlight(
-    symbol: string,
-    tab: string,
-    jobId?: string
-): Promise<void> {
+export async function markInFlight(symbol: string, tab: string): Promise<void> {
     const redis = getRedisClient();
     if (redis === null) return;
     await redis.set(
         `seo-prewarm:inflight:${symbol.toUpperCase()}:${tab}`,
-        jobId ?? INFLIGHT_JOB_AGNOSTIC_SENTINEL,
+        INFLIGHT_JOB_AGNOSTIC_SENTINEL,
         {
             ex: INFLIGHT_TTL_SECONDS,
         }
@@ -97,56 +94,34 @@ export async function markInFlight(
 }
 
 /**
- * (symbol, tab) 마커 상태를 단일 Redis GET으로 조회한다(FIX 1, 감사 PR #698
- * 리뷰). 이전엔 `isInFlight`(마커 존재?)와 `getInFlightJobId`(resumable
- * jobId?)가 별도 함수였는데, `isInFlight`는 프로덕션 어디서도 호출되지 않는
- * 죽은 코드였고 `getInFlightJobId`만 쓰였다. 그 결과 job-agnostic 마커(jobId
- * 없이 `markInFlight`된 경우 — 예: `overall`의 `pending_dependencies`)가 있는
- * (symbol, tab)도 `getInFlightJobId`가 null을 반환해 "in-flight 아님"으로
- * 오판되어 매 5분 tick마다 재제출됐다(FMP 예산 재계상 포함) — `markInFlight`의
- * 문서화된 의도("재개 불가, 자연 TTL 만료 후 재시도")와 정면으로 어긋났다.
+ * (symbol, tab) 마커 존재 여부를 단일 Redis GET으로 조회한다.
  *
- * FIX 3(감사, 실증) — 그 "FIX 1" 자체가 실전에서 죽어 있었다: `markInFlight`가
- * jobId 없이 저장한 sentinel(`'1'`)을 여기서 `value === '1'`로 비교했는데,
- * @upstash/redis의 기본 `automaticDeserialization`이 GET 응답에 `JSON.parse`를
- * 돌려 `'1'`을 **number** `1`로 반환한다(실 REST 라운드트립으로 확인 —
- * `redis.get<string>('...')`의 타입 파라미터는 컴파일 타임 캐스트일 뿐 런타임
- * 값을 바꾸지 않는다). `1 === '1'`은 항상 false라 이 분기가 프로덕션에서 단
- * 한 번도 타지 않았고, 모든 job-agnostic 마커가 `jobId: '1'`(String(1))로
- * 오인식돼 존재하지 않는 job을 poll하다 실패 → terminal skip → 6h backoff로
- * 이어졌다(의도한 30분 TTL 대기 대신). `String(value)`로 먼저 정규화한 뒤
- * sentinel 비교해야 문자열/숫자 어느 쪽으로 오든 안전하다 — "단순화"해서
- * 되돌리지 말 것.
- *
- * `present`는 마커 존재 여부(job-agnostic 포함), `jobId`는 resume-poll 가능한
- * 값(마커가 없거나 job-agnostic sentinel이면 null)이다. 호출부는 세 상태를
- * 모두 구분해야 한다: jobId 있음(poll 재개) / present만 true(이번 tick엔
- * skip, TTL 만료 대기) / present도 false(신규 submit).
+ * FIX 3(감사, 실증) — @upstash/redis의 기본 `automaticDeserialization`이 GET
+ * 응답에 `JSON.parse`를 돌려 `'1'`을 number `1`로 반환한다. 비교 전 항상
+ * `String(value)`로 정규화해야 sentinel 비교가 실제로 매치된다.
+ * legacy sentinel(`'1'` → number `1`)도 계속 `present: true`로 인식한다.
  */
 export async function getInFlightMarker(
     symbol: string,
     tab: string
-): Promise<{ present: boolean; jobId: string | null }> {
+): Promise<{ present: boolean }> {
     const redis = getRedisClient();
-    if (redis === null) return { present: false, jobId: null };
+    if (redis === null) return { present: false };
     const value = await redis.get<string>(
         `seo-prewarm:inflight:${symbol.toUpperCase()}:${tab}`
     );
     if (value === null || value === undefined) {
-        return { present: false, jobId: null };
+        return { present: false };
     }
-    // Upstash의 JSON.parse 기반 자동 역직렬화가 숫자로 파싱 가능한 문자열을
-    // number로 되돌리므로(예: 저장한 '1' → 조회 시 number 1), 비교 전 항상
-    // 문자열로 정규화한다 — 그렇지 않으면 sentinel 비교가 실제로 절대 매치되지
-    // 않는다(위 FIX 3 참고).
     const raw = String(value);
     if (
         raw === INFLIGHT_JOB_AGNOSTIC_SENTINEL ||
         raw === INFLIGHT_JOB_AGNOSTIC_LEGACY_SENTINEL
     ) {
-        return { present: true, jobId: null };
+        return { present: true };
     }
-    return { present: true, jobId: raw };
+    // 구버전 코드가 저장한 임의 값(예: jobId 문자열)도 present로 취급한다.
+    return { present: true };
 }
 
 /** in-flight 마커를 즉시 제거한다(FIX Z) — job이 done/error로 확정되면 다음 tick이
@@ -160,12 +135,23 @@ export async function clearInFlight(
     await redis.del(`seo-prewarm:inflight:${symbol.toUpperCase()}:${tab}`);
 }
 
-/** (symbol, tab) 조합을 terminal-skip(backoff) 상태로 마킹한다(FIX C, TTL 6h). */
-export async function markSkipped(symbol: string, tab: string): Promise<void> {
+/**
+ * (symbol, tab) 조합을 skip(backoff) 상태로 마킹한다(FIX C).
+ *
+ * 기본 TTL은 6시간 — "이 유닛은 구조적으로 못 만든다"(옵션 체인 없는 심볼의 options
+ * 탭 등)에 맞춘 값이다. 프로바이더 장애처럼 **일시적인** 실패에는 짧은 TTL을 넘겨야
+ * 한다: 20분짜리 장애가 전 유닛에 6시간 마커를 남기면 프로바이더가 회복된 뒤에도
+ * prewarm이 반나절 멈춘다.
+ */
+export async function markSkipped(
+    symbol: string,
+    tab: string,
+    ttlSeconds: number = SKIP_TTL_SECONDS
+): Promise<void> {
     const redis = getRedisClient();
     if (redis === null) return;
     await redis.set(`seo-prewarm:skip:${symbol.toUpperCase()}:${tab}`, '1', {
-        ex: SKIP_TTL_SECONDS,
+        ex: ttlSeconds,
     });
 }
 

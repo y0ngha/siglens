@@ -23,9 +23,3 @@ export const INDICATOR_TRANSLATION_FLAG_TTL_SECONDS =
  * TTL 공유. 신선도는 `ensureIndicatorTranslatedAction`의 revalidateTag가 책임진다.
  */
 export const INDICATOR_TRANSLATION_REVALIDATE_SECONDS = SECONDS_PER_DAY;
-
-/** poll loop 간격 — core 번역 워커 완료 대기. news 분석 패턴 미러. */
-export const INDICATOR_TRANSLATION_POLL_INTERVAL_MS = 2_000;
-
-/** poll 최대 시도 횟수 — 이 초 수(×interval) 후 timeout 경고 + 포기. */
-export const INDICATOR_TRANSLATION_POLL_MAX_ATTEMPTS = 30;

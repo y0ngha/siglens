@@ -206,7 +206,13 @@ GET /stable/income-statement?symbol=AAPL&period=annual&limit=5&apikey={key}
 # Market Data
 FMP_API_KEY=
 
-# AI
+# AI — 분석용 서버 키(core가 프로바이더를 직접 호출)
+ANTHROPIC_API_KEY=
+GEMINI_API_KEY=
+OPENAI_API_KEY=
+DEEPSEEK_API_KEY=
+
+# AI — 챗봇/번역 키
 GEMINI_CHAT_API_KEY=
 ANTHROPIC_CHAT_API_KEY=
 OPENAI_CHAT_API_KEY=
@@ -249,10 +255,6 @@ NEXT_PUBLIC_ADSENSE_ENABLED=false
 
 # Package Registry
 SIGLENS_GITHUB_TOKEN=
-
-# Worker
-WORKER_URL=
-WORKER_SECRET=
 
 # Debug
 DEBUG_VERBOSE_LOGS=
@@ -317,76 +319,45 @@ TRANSLATE_MODEL=gemini-2.5-flash-lite # 기본값 — 프로덕션 실측값(사
 1회만).
 
 ---
+## 분석 SSE 라우트 — `POST /api/analysis/stream`
 
-## Worker Internal API
-
-Worker(`/worker`)는 siglens-core의 `submitAnalysis` / `submitBriefing` / `cancelAnalysisJob`이 호출하는 내부 서비스이다.
-
-### POST `/analyze`
-
-**Headers**
-
-| 이름 | 필수 | 설명 |
-|---|---|---|
-| `X-Worker-Secret` | ✅ | `WORKER_SECRET` env와 일치해야 한다. |
-| `X-AI-API-KEY` | 조건부 | `model`이 siglens 제공 모델(아래 표)이 아니면 필수. siglens 제공 모델이면 무시되고 유료 키 사용. |
+worker(`/analyze`, `/briefing`, `/cancel`)와 Redis job 신호 체계는 제거됐다. 지금은 이
+라우트 하나가 요청을 받아 **그 요청 안에서** core의 `run*` 함수를 호출하고, LLM 응답까지
+기다렸다가 결과를 SSE로 돌려준다. 프로바이더 호출은 core가 서버 키(`ANTHROPIC_API_KEY` /
+`GEMINI_API_KEY` / `OPENAI_API_KEY` / `DEEPSEEK_API_KEY`)로 직접 수행한다.
 
 **Body**
 
 ```typescript
-interface AnalyzeRequest {
-    jobId: string;
-    prompt: string;
-    model: AIModel;     // siglens-core의 TierModel — 아래 19종 중 하나
+interface AnalysisStreamRequest {
+    type: AnalysisType; // 'technical' | 'overall' | 'news' | 'options' | ... (라우트의 DISPATCH 테이블)
+    params: Record<string, unknown>; // type별 파라미터
 }
 ```
 
-**지원 모델 및 키 정책**
+`force`는 받지 않는다 — 인증 없는 공개 라우트라 클라이언트가 캐시 우회를 지시할 수 없어야
+한다. 서버가 재분석 쿨다운(`tryAcquireReanalyzeCooldown`)에서 직접 파생한다.
 
-| 모델 | Provider | siglens 제공 (유료 키) |
+**이벤트**
+
+| event | data | 의미 |
 |---|---|---|
-| `gemini-2.5-flash` | Gemini | ✅ |
-| `gemini-2.5-flash-lite` | Gemini | ✅ |
-| `claude-haiku-4-5` | Claude | ✅ |
-| `gpt-5-mini` | ChatGPT | ✅ |
-| `deepseek-v4-flash` | DeepSeek | ✅ |
-| `deepseek-v4-pro` | DeepSeek | ✅ |
-| `gemini-2.5-pro` | Gemini | ❌ user key |
-| `gemini-3-flash-preview` | Gemini | ❌ user key |
-| `gemini-3.1-pro-preview` | Gemini | ❌ user key |
-| `gemini-3.5-flash-lite` | Gemini | ❌ user key |
-| `gemini-3.6-flash` | Gemini | ❌ user key |
-| `claude-sonnet-4-6` | Claude | ❌ user key |
-| `claude-opus-4-7` | Claude | ❌ user key |
-| `claude-sonnet-5` | Claude | ❌ user key |
-| `claude-opus-5` | Claude | ❌ user key |
-| `gpt-5.4` | ChatGPT | ❌ user key |
-| `gpt-5.5` | ChatGPT | ❌ user key |
-| `gpt-5.6-terra` | ChatGPT | ❌ user key |
-| `gpt-5.6-sol` | ChatGPT | ❌ user key |
+| `open` | `{}` | 스트림 수립. 즉시 전송해 프록시가 첫 바이트를 보게 한다. |
+| `heartbeat` | `{}` | 25초 주기. idle 타임아웃 방지용이며 클라이언트는 조용히 버린다. |
+| `done` | `{ result }` | 분석 완료. `result`는 해당 `run*`의 반환값. |
+| `error` | `{ message }` | 실패. 게이트 차단·한도 초과·LLM 실패·마감 초과를 모두 포함한다. |
 
-`siglens 제공` 모델은 `siglens-core`의 `TIER_CONFIG.models.free`와 동일하다. 갱신 시 worker `models.ts`의 `SIGLENS_PROVIDED_MODELS`도 자동 동기화된다.
+**타임아웃 계층**
 
-**Response**
+| 구간 | 값 | 근거 |
+|---|---|---|
+| heartbeat 간격 | 25s | 아래 두 상한 모두보다 충분히 짧다. |
+| ALB idle timeout | 60s | **실측된 진짜 벽**. 침묵이 61.1초면 연결이 끊긴다(v0.50.1 `/api/sse-probe` 프로덕션 측정). 최대 4000s까지 조정 가능. |
+| Cloudflare Proxy Read Timeout | 125s | 침묵 구간에만 적용되며 총 소요시간엔 무관. 실측상 `text/event-stream`을 버퍼링하지 않는다(286초 완주 확인). |
+| 라우트 마감(`STREAM_DEADLINE_MS`) | 5min | 초과 시 라우트 소유 `AbortController`가 작업을 실제로 취소한다. 취소하지 않으면 죽은 promise가 `dedupeInFlight` 맵에 남아 같은 캐시 키를 프로바이더 타임아웃(1시간)까지 봉인한다. |
 
-| 코드 | Body |
-|---|---|
-| 200 | `{ status: 'done', jobId }` |
-| 400 | `{ error: '...' }` — model 누락/미지원 또는 user key 누락 |
-| 401 | `{ error: 'Unauthorized' }` |
-| 500 | `{ status: 'error', jobId }` |
+**모델별 키 정책**
 
-처리 결과는 Upstash Redis에 `job:{jobId}:status` / `job:{jobId}:result` 키로 저장되며 호출 측은 `pollAnalysisAction`으로 조회한다.
-
-### POST `/briefing`
-
-**Headers**: `X-Worker-Secret`만 사용. user key 없음.
-**Body**: `{ jobId, prompt }`
-**Provider**: `AI_PROVIDER` env에 의해 결정 (`claude` | `gemini`).
-**Model**: `BRIEFING_CLAUDE_MODEL` 또는 `BRIEFING_GEMINI_MODEL` env로 결정.
-
-### POST `/cancel`
-
-**Headers**: `X-Worker-Secret`만 사용.
-**Body**: `{ jobId }`
-실행 중인 job의 `AbortController.abort()`를 호출한다.
+siglens 제공 모델(`TIER_CONFIG.models.free`)은 서버 키로 호출하고, 그 외 모델은 사용자
+키가 필요하다. 사용자 키가 없으면 `error` 이벤트로 알린다. 목록은 siglens-core의
+`TIER_CONFIG`가 단일 출처다 — 이 문서에 복제하지 않는다.

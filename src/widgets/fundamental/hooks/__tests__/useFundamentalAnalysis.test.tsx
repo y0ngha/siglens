@@ -1,34 +1,20 @@
-import type { MockedFunction } from 'vitest';
+import type { Mock } from 'vitest';
 import { useFundamentalAnalysis } from '@/widgets/fundamental/hooks/useFundamentalAnalysis';
-import {
-    submitFundamentalAnalysisAction,
-    pollFundamentalAnalysisAction,
-    cancelFundamentalAnalysisJobAction,
-} from '@/entities/analysis/actions';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { FundamentalAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 
-vi.mock('@/entities/analysis/actions', () => ({
-    submitFundamentalAnalysisAction: vi.fn(),
-    pollFundamentalAnalysisAction: vi.fn(),
-    cancelFundamentalAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+    runAnalysisStream: vi.fn(),
 }));
 
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockSubmit = submitFundamentalAnalysisAction as MockedFunction<
-    typeof submitFundamentalAnalysisAction
->;
-const mockPoll = pollFundamentalAnalysisAction as MockedFunction<
-    typeof pollFundamentalAnalysisAction
->;
-const mockCancel = cancelFundamentalAnalysisJobAction as MockedFunction<
-    typeof cancelFundamentalAnalysisJobAction
->;
+const mockSubmit = runAnalysisStream as Mock;
 
 const FUNDAMENTAL_RESULT: FundamentalAnalysisResponse = {
     overallSentiment: 'bullish',
@@ -57,9 +43,6 @@ function makeWrapper() {
 describe('useFundamentalAnalysis — trigger coverage', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
-        mockPoll.mockReset();
-        mockCancel.mockReset();
-        mockCancel.mockResolvedValue(undefined);
     });
 
     afterEach(() => {

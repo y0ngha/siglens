@@ -6,7 +6,7 @@ vi.mock('next/headers', () => ({
 
 vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
-    submitCongressTrend: vi.fn(),
+    runCongressTrend: vi.fn(),
 }));
 
 vi.mock('@/shared/api/fmp/getCongressTradesProvider', () => ({
@@ -42,19 +42,19 @@ vi.mock('@/shared/api/e2eAnalysisStub', () => ({
 import type { MockedFunction } from 'vitest';
 import { headers } from 'next/headers';
 import {
-    submitCongressTrend,
+    runCongressTrend,
     type ModelId,
-    type SubmitCongressTrendResult,
+    type RunCongressTrendResult,
 } from '@y0ngha/siglens-core';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
-import { submitCongressTrendAction } from '../actions/submitCongressTrendAction';
+import { runCongressTrendAction } from '../actions/runCongressTrendAction';
 
 const mockHeaders = headers as MockedFunction<typeof headers>;
-const mockSubmitCongressTrend = submitCongressTrend as MockedFunction<
-    typeof submitCongressTrend
+const mockRunCongressTrend = runCongressTrend as MockedFunction<
+    typeof runCongressTrend
 >;
 const mockGetCongressTradesProvider =
     getCongressTradesProvider as MockedFunction<
@@ -67,7 +67,7 @@ const mockResolveTierAndByok = resolveTierAndByok as MockedFunction<
     typeof resolveTierAndByok
 >;
 
-const CACHED_RESULT: SubmitCongressTrendResult = {
+const CACHED_RESULT: RunCongressTrendResult = {
     status: 'cached',
     result: {
         summaryKo: 'E2E 동향 요약',
@@ -77,9 +77,14 @@ const CACHED_RESULT: SubmitCongressTrendResult = {
     },
 };
 
-const SUBMITTED_RESULT: SubmitCongressTrendResult = {
-    status: 'submitted',
-    jobId: 'job-congress-001',
+const DONE_RESULT: RunCongressTrendResult = {
+    status: 'done',
+    result: {
+        summaryKo: '의회 매수세 우위',
+        notableMembersKo: [],
+        riskNoteKo: '공시 지연 위험',
+        overallSentiment: 'bullish',
+    },
 };
 
 const MODEL_ID = 'gemini-2.5-flash' as ModelId;
@@ -90,12 +95,12 @@ const gateError: AnalysisGateError = {
     message: 'mock-tier_premium_blocked',
 };
 
-describe('submitCongressTrendAction 함수는', () => {
+describe('runCongressTrendAction 함수는', () => {
     beforeEach(() => {
-        mockSubmitCongressTrend.mockReset();
+        mockRunCongressTrend.mockReset();
         mockGetCongressTradesProvider.mockReset();
         mockGetCongressTradesProvider.mockReturnValue({} as never);
-        mockSubmitCongressTrend.mockResolvedValue(SUBMITTED_RESULT);
+        mockRunCongressTrend.mockResolvedValue(DONE_RESULT);
         mockGetCurrentUser.mockReset();
         mockResolveTierAndByok.mockReset();
         mockGetCurrentUser.mockResolvedValue(null);
@@ -105,12 +110,12 @@ describe('submitCongressTrendAction 함수는', () => {
         });
     });
 
-    it('siglens-core submitCongressTrend에 symbol과 modelId를 전달한다', async () => {
-        mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+    it('siglens-core runCongressTrend에 symbol과 modelId를 전달한다', async () => {
+        mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-        await submitCongressTrendAction('AAPL', MODEL_ID);
+        await runCongressTrendAction('AAPL', MODEL_ID);
 
-        expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+        expect(mockRunCongressTrend).toHaveBeenCalledWith(
             expect.objectContaining({
                 symbol: 'AAPL',
                 modelId: MODEL_ID,
@@ -120,40 +125,40 @@ describe('submitCongressTrendAction 함수는', () => {
     });
 
     it('getCongressTradesProvider 인스턴스를 dataProvider로 전달한다', async () => {
-        mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+        mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-        await submitCongressTrendAction('TSLA', MODEL_ID);
+        await runCongressTrendAction('TSLA', MODEL_ID);
 
-        const call = mockSubmitCongressTrend.mock.calls[0]?.[0];
+        const call = mockRunCongressTrend.mock.calls[0]?.[0];
         expect(call?.dataProvider).toBeDefined();
         expect(mockGetCongressTradesProvider).toHaveBeenCalled();
     });
 
     it('underlying 함수의 cached 결과를 그대로 반환한다', async () => {
-        mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+        mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-        const result = await submitCongressTrendAction('AAPL', MODEL_ID);
+        const result = await runCongressTrendAction('AAPL', MODEL_ID);
 
         expect(result).toBe(CACHED_RESULT);
     });
 
-    it('underlying 함수의 submitted 결과를 그대로 반환한다', async () => {
-        mockSubmitCongressTrend.mockResolvedValueOnce(SUBMITTED_RESULT);
+    it('underlying 함수의 done 결과를 그대로 반환한다', async () => {
+        mockRunCongressTrend.mockResolvedValueOnce(DONE_RESULT);
 
-        const result = await submitCongressTrendAction('AAPL', MODEL_ID);
+        const result = await runCongressTrendAction('AAPL', MODEL_ID);
 
-        expect(result).toBe(SUBMITTED_RESULT);
+        expect(result).toBe(DONE_RESULT);
     });
 
     it('underlying 함수의 error(fetch_failed) 결과를 그대로 반환한다', async () => {
-        const FETCH_FAILED_RESULT: SubmitCongressTrendResult = {
+        const FETCH_FAILED_RESULT: RunCongressTrendResult = {
             status: 'error',
             code: 'fetch_failed',
             error: 'FMP congress trades fetch failed',
         };
-        mockSubmitCongressTrend.mockResolvedValueOnce(FETCH_FAILED_RESULT);
+        mockRunCongressTrend.mockResolvedValueOnce(FETCH_FAILED_RESULT);
 
-        const result = await submitCongressTrendAction('AAPL', MODEL_ID);
+        const result = await runCongressTrendAction('AAPL', MODEL_ID);
 
         expect(result).toBe(FETCH_FAILED_RESULT);
     });
@@ -165,21 +170,21 @@ describe('submitCongressTrendAction 함수는', () => {
                     'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
             })
         );
-        mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+        mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-        await submitCongressTrendAction('AAPL', MODEL_ID);
+        await runCongressTrendAction('AAPL', MODEL_ID);
 
-        expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+        expect(mockRunCongressTrend).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: true })
         );
     });
 
     it('passes skipEnqueueIfMiss: false to siglens-core when request UA is not a bot', async () => {
-        mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+        mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-        await submitCongressTrendAction('AAPL', MODEL_ID);
+        await runCongressTrendAction('AAPL', MODEL_ID);
 
-        expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+        expect(mockRunCongressTrend).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: false })
         );
     });
@@ -192,14 +197,11 @@ describe('submitCongressTrendAction 함수는', () => {
                 error: gateError,
             });
 
-            const result = await submitCongressTrendAction(
-                'AAPL',
-                PREMIUM_MODEL
-            );
+            const result = await runCongressTrendAction('AAPL', PREMIUM_MODEL);
 
             expect(result).toEqual({ status: 'error', error: gateError });
             // Gate fires before the (expensive) core submit call.
-            expect(mockSubmitCongressTrend).not.toHaveBeenCalled();
+            expect(mockRunCongressTrend).not.toHaveBeenCalled();
         });
 
         it('returns blocked result for a member with a premium model but no stored key', async () => {
@@ -209,17 +211,14 @@ describe('submitCongressTrendAction 함수는', () => {
                 error: gateError,
             });
 
-            const result = await submitCongressTrendAction(
-                'AAPL',
-                PREMIUM_MODEL
-            );
+            const result = await runCongressTrendAction('AAPL', PREMIUM_MODEL);
 
             expect(result).toEqual({ status: 'error', error: gateError });
             expect(mockResolveTierAndByok).toHaveBeenCalledWith(
                 'u1',
                 PREMIUM_MODEL
             );
-            expect(mockSubmitCongressTrend).not.toHaveBeenCalled();
+            expect(mockRunCongressTrend).not.toHaveBeenCalled();
         });
 
         it('forwards userApiKey when a member has a stored BYOK key for a premium model', async () => {
@@ -229,11 +228,11 @@ describe('submitCongressTrendAction 함수는', () => {
                 tier: 'member' as never,
                 userApiKey: 'usr-key',
             });
-            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+            mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-            await submitCongressTrendAction('AAPL', PREMIUM_MODEL);
+            await runCongressTrendAction('AAPL', PREMIUM_MODEL);
 
-            expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+            expect(mockRunCongressTrend).toHaveBeenCalledWith(
                 expect.objectContaining({
                     userApiKey: 'usr-key',
                     tier: 'member',
@@ -248,11 +247,11 @@ describe('submitCongressTrendAction 함수는', () => {
                 tier: 'pro' as never,
                 // no userApiKey
             });
-            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+            mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-            await submitCongressTrendAction('AAPL', PREMIUM_MODEL);
+            await runCongressTrendAction('AAPL', PREMIUM_MODEL);
 
-            const callArg = mockSubmitCongressTrend.mock.calls[0]?.[0];
+            const callArg = mockRunCongressTrend.mock.calls[0]?.[0];
             expect(callArg).toBeDefined();
             expect(callArg).not.toHaveProperty('userApiKey');
         });
@@ -263,15 +262,12 @@ describe('submitCongressTrendAction 함수는', () => {
                 kind: 'allowed',
                 tier: 'pro' as never,
             });
-            mockSubmitCongressTrend.mockResolvedValueOnce(SUBMITTED_RESULT);
+            mockRunCongressTrend.mockResolvedValueOnce(DONE_RESULT);
 
-            const result = await submitCongressTrendAction(
-                'AAPL',
-                PREMIUM_MODEL
-            );
+            const result = await runCongressTrendAction('AAPL', PREMIUM_MODEL);
 
-            expect(result).toBe(SUBMITTED_RESULT);
-            expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+            expect(result).toBe(DONE_RESULT);
+            expect(mockRunCongressTrend).toHaveBeenCalledWith(
                 expect.objectContaining({ tier: 'pro' })
             );
         });
@@ -282,17 +278,17 @@ describe('submitCongressTrendAction 함수는', () => {
                 kind: 'allowed',
                 tier: 'free' as never,
             });
-            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+            mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-            const result = await submitCongressTrendAction('AAPL', MODEL_ID);
+            const result = await runCongressTrendAction('AAPL', MODEL_ID);
 
             expect(result).toBe(CACHED_RESULT);
-            expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+            expect(mockRunCongressTrend).toHaveBeenCalledWith(
                 expect.objectContaining({ tier: 'free', modelId: MODEL_ID })
             );
-            expect(
-                mockSubmitCongressTrend.mock.calls[0]?.[0]
-            ).not.toHaveProperty('userApiKey');
+            expect(mockRunCongressTrend.mock.calls[0]?.[0]).not.toHaveProperty(
+                'userApiKey'
+            );
         });
 
         it('passes null userId when getCurrentUser returns null', async () => {
@@ -301,9 +297,9 @@ describe('submitCongressTrendAction 함수는', () => {
                 kind: 'allowed',
                 tier: 'free' as never,
             });
-            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+            mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-            await submitCongressTrendAction('AAPL', MODEL_ID);
+            await runCongressTrendAction('AAPL', MODEL_ID);
 
             expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
         });
@@ -314,7 +310,7 @@ describe('submitCongressTrendAction 함수는', () => {
                 new Error('db connection failed')
             );
 
-            const result = await submitCongressTrendAction('AAPL', MODEL_ID);
+            const result = await runCongressTrendAction('AAPL', MODEL_ID);
 
             expect(result).toMatchObject({
                 status: 'error',
@@ -330,12 +326,12 @@ describe('submitCongressTrendAction 함수는', () => {
                 kind: 'allowed',
                 tier: 'member' as never,
             });
-            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+            mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-            await submitCongressTrendAction('AAPL', MODEL_ID, true);
+            await runCongressTrendAction('AAPL', MODEL_ID, true);
 
             expect(mockResolveTierAndByok).toHaveBeenCalledWith('u1', MODEL_ID);
-            expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+            expect(mockRunCongressTrend).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: true })
             );
         });
@@ -346,12 +342,12 @@ describe('submitCongressTrendAction 함수는', () => {
                 kind: 'allowed',
                 tier: 'free' as never,
             });
-            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+            mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-            await submitCongressTrendAction('AAPL', MODEL_ID, true);
+            await runCongressTrendAction('AAPL', MODEL_ID, true);
 
             expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
-            expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+            expect(mockRunCongressTrend).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false })
             );
         });
@@ -362,35 +358,35 @@ describe('submitCongressTrendAction 함수는', () => {
                 kind: 'allowed',
                 tier: 'member' as never,
             });
-            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+            mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-            await submitCongressTrendAction('AAPL', MODEL_ID);
+            await runCongressTrendAction('AAPL', MODEL_ID);
 
-            expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+            expect(mockRunCongressTrend).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false })
             );
         });
 
         it('forwards tier when reasoning is not requested (omitted)', async () => {
-            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+            mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-            await submitCongressTrendAction('AAPL', MODEL_ID);
+            await runCongressTrendAction('AAPL', MODEL_ID);
 
             expect(mockGetCurrentUser).toHaveBeenCalled();
             expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
-            expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+            expect(mockRunCongressTrend).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false, tier: 'free' })
             );
         });
 
         it('forwards tier when reasoning is explicitly false', async () => {
-            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+            mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-            await submitCongressTrendAction('AAPL', MODEL_ID, false);
+            await runCongressTrendAction('AAPL', MODEL_ID, false);
 
             expect(mockGetCurrentUser).toHaveBeenCalled();
             expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
-            expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+            expect(mockRunCongressTrend).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false, tier: 'free' })
             );
         });
@@ -411,10 +407,10 @@ describe('submitCongressTrendAction 함수는', () => {
             };
             mockE2ECached.mockReturnValueOnce(e2eFixture);
 
-            const result = await submitCongressTrendAction('AAPL', MODEL_ID);
+            const result = await runCongressTrendAction('AAPL', MODEL_ID);
 
             expect(result).toEqual(e2eFixture);
-            expect(mockSubmitCongressTrend).not.toHaveBeenCalled();
+            expect(mockRunCongressTrend).not.toHaveBeenCalled();
             expect(mockGetCongressTradesProvider).not.toHaveBeenCalled();
         } finally {
             if (originalE2E === undefined) {
@@ -450,10 +446,10 @@ describe('submitCongressTrendAction 함수는', () => {
             };
             mockE2EError.mockReturnValueOnce(errorFixture);
 
-            const result = await submitCongressTrendAction('AAPL', MODEL_ID);
+            const result = await runCongressTrendAction('AAPL', MODEL_ID);
 
             expect(result).toEqual(errorFixture);
-            expect(mockSubmitCongressTrend).not.toHaveBeenCalled();
+            expect(mockRunCongressTrend).not.toHaveBeenCalled();
         } finally {
             if (originalE2E === undefined) {
                 delete process.env.E2E_TEST;

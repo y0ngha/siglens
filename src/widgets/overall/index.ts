@@ -6,6 +6,5 @@ export { OverallFactsSummary } from './OverallFactsSummary';
 export { OverallFactualFallback } from './OverallFactualFallback';
 export { OverallTriggerCta } from './OverallTriggerCta';
 export { ReanalyzeButton } from './ReanalyzeButton';
-export { DependencyProgress } from './DependencyProgress';
 // 'use client' presentational view — used by share panel registry.
 export { OverallView } from './OverallView';

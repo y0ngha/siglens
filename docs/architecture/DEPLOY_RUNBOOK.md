@@ -26,6 +26,33 @@ git push              # 커밋 push
 git push --tags       # ← 이 순간 배포가 시작된다
 ```
 
+> ⚠️ **`infra/aws/06`·`07`·`08`은 파이프라인이 돌리지 않는다.** `deploy.sh`는
+> `check-env.sh`와 `05-launch-template.sh`만 실행한다. 즉 ALB 속성(`deregistration_delay`,
+> `idle_timeout`), CloudWatch 알람, ASG 스케일링 정책은 **태그를 밀어도 반영되지 않는다.**
+>
+> 코드와 인프라 타이밍이 맞물리는 변경(예: graceful drain 예산 조정)을 배포할 때는
+> 태그 push **전에** 해당 스크립트를 수동 실행할 것. 안 하면 컨테이너는 180초를
+> 기다리는데 ALB는 30초에 연결을 끊는 식으로 양쪽 설정이 어긋나고, 그 상태는
+> 어떤 알람에도 안 잡힌다(전부 멱등이라 재실행 안전).
+>
+> ```bash
+> # 0. provider 키 4종을 SSM에 올린다. check-env.sh가 이 넷을 필수로 요구하고,
+> #    그 게이트는 Docker 빌드 **앞**에서 돌기 때문에 없으면 첫 태그 배포가 즉시 실패한다.
+> bash infra/aws/04-params.sh <env-file>
+>
+> bash infra/aws/06-alb-asg.sh    # ALB 속성 + ASG 용량
+> bash infra/aws/07-alarms.sh     # 알람 (analysis-stream-failed 포함)
+> bash infra/aws/08-scaling.sh    # 스케일링 정책 (요청수 + CPU)
+> bash infra/aws/13-seo-prewarm.sh # 크론 알람 (unit-error/unit-timeout 포함)
+> ```
+>
+> 워커 제거 릴리스가 한 번 이상 안정화된 뒤에는 죽은 SSM 파라미터도 정리한다
+> (그 전엔 **삭제 금지** — 이전 릴리스로 롤백하면 `check-env.sh`가 요구한다):
+>
+> ```bash
+> aws ssm delete-parameters --names /siglens/WORKER_URL /siglens/WORKER_SECRET
+> ```
+
 `concurrency: {group: deploy, cancel-in-progress: false}`이므로 두 태그가 겹치면 **취소가 아니라 대기**한다. 부분 롤아웃이 대기보다 나쁘기 때문이다.
 
 ### 파이프라인이 실제로 하는 일
@@ -34,7 +61,7 @@ git push --tags       # ← 이 순간 배포가 시작된다
 2. **이미지 빌드** — `linux/arm64` 네이티브 빌드, `--load`로 러너 데몬에 적재. 시크릿은 BuildKit secret mount로 주입되어 레이어·로그에 남지 않는다.
 3. **스모크 테스트** — arm64 이미지 안에서 `/sbin/tini`로 `node -e`를 실행. amd64 이미지를 Graviton에 배포했을 때의 exec-format 에러를 **push 전에** 잡는다.
 4. **ECR push** — 불변 버전 태그만(`:0.48.0`). `:latest`는 의도적으로 push하지 않는다(런타임은 명시 태그를 핀하고, ECR lifecycle은 최근 3개 태그만 보존).
-5. **ASG 롤** — `infra/aws/deploy.sh`. `check-env.sh`로 SSM env 완전성을 먼저 검증한 뒤 instance refresh(`MinHealthyPercentage 100` / `MaxHealthyPercentage 200` / `InstanceWarmup 300`)를 시작하고, 터미널 상태까지 최대 ~20분 폴링한다. 실패 시 non-zero로 종료한다.
+5. **ASG 롤** — `infra/aws/deploy.sh`. `check-env.sh`로 SSM env 완전성을 먼저 검증한 뒤 instance refresh(`MinHealthyPercentage 100` / `MaxHealthyPercentage 200` / `InstanceWarmup 300`)를 시작하고, 터미널 상태까지 최대 ~30분 폴링한다. 실패 시 non-zero로 종료한다.
 6. **Cloudflare 퍼지** — `purge_everything`. `continue-on-error: true`이므로 **퍼지 실패는 이미 끝난 롤아웃을 실패로 만들지 않는다.** 대신 배포는 성공했는데 구 HTML이 서빙될 수 있으니, 워크플로 로그에 `⚠️ Cloudflare purge failed`가 있으면 수동 퍼지할 것.
 
 ### 빌드타임에 env가 필요한 이유
@@ -129,6 +156,9 @@ curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge
 | `siglens-disk-high` | disk_used_percent > 85 (5분 Max ×2) | **ISR 외부화 회귀 카나리다.** 캐시가 S3로 안 나가고 로컬에 쌓인다는 뜻 → `siglens-isr-cache-failures`와 함께 보고 [ISR_CACHE_HANDLER.md](./ISR_CACHE_HANDLER.md)로 |
 | `siglens-isr-cache-failures` | IsrCacheFailures 5분 합계 > 5 | S3 권한/버킷/IMDS 확인. fail-open이라 사이트는 살아 있지만 캐시는 사실상 죽은 상태 |
 | `siglens-isr-tag-failures` | IsrTagFailures 15분 합계 ≥ 5 ×2주기 | 태그 동기화 실패 = 다른 인스턴스의 무효화를 놓쳐 **stale HTML을 revalidate TTL(6~24h) 동안 서빙**. 조용히 degrade하므로 이 알람이 유일한 신호 |
+| `siglens-analysis-stream-failed` | `[analysis-stream] failed` 15분 합계 > 2가 연속 2주기 | **분석 전면 장애의 유일한 신호다.** SSE는 실패해도 HTTP 200이라 5xx 알람이 안 뜬다. 1순위 의심: 프로바이더 키(SSM `/siglens/{DEEPSEEK,GEMINI,ANTHROPIC,OPENAI}_API_KEY`) 누락·만료. Logs Insights에서 `[analysis-stream] failed` 원문 확인 → 키 문제면 SSM 갱신 후 인스턴스 재시작, 프로바이더 장애면 회복 대기 |
+| `siglens-seo-prewarm-unit-error` | `[seo-prewarm] unit-error` 또는 `unit-timeout` 15분 20건 초과 ×2주기 | 야간 prewarm 유닛이 대량 실패 중. 배치는 fail-open이라 `batch failed`가 안 뜨므로 이게 유일한 신호다. 프로바이더 키·장애를 먼저 의심 |
+| `siglens-seo-prewarm-deadline-reached` | `[seo-prewarm] batch deadline reached` 6시간 3건 초과 | 배치가 데드라인에 걸려 심볼을 버리고 있다 = 커버리지가 조용히 줄고 있다. `SYMBOL_CONCURRENCY`/스케줄 폭 재검토, 유닛 지연 실측 |
 | `siglens-seo-prewarm-batch-failed` | `[seo-prewarm] batch failed` 1시간 3회 초과 | [CRON.md](../reference/CRON.md) — 배치 내부 실패 |
 | `siglens-seo-prewarm-redis-unavailable` | `[seo-prewarm] redis unavailable` 1시간 1회 초과 | Upstash 도달성 확인 |
 | `siglens-seo-prewarm-{evening,evening-late,early}-failed` | EventBridge FailedInvocations 5분 1건 초과 | 타겟 호출 자체가 실패 — Connection `AUTHORIZED` 상태, IAM, API Destination 확인 |
@@ -147,7 +177,7 @@ curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge
 | 한 페이지가 오래된 내용을 계속 보여준다 | `siglens-isr-tag-failures` 확인 → [ISR_CACHE_HANDLER.md](./ISR_CACHE_HANDLER.md), 그다음 [ISR_REVALIDATE.md](./ISR_REVALIDATE.md)로 의도된 TTL인지 확인 |
 | 디스크가 다시 차오른다 | `siglens-disk-high` 행 참고 — 캐시 외부화가 무력화된 것 |
 | SSH·SSM·EC2 Instance Connect 전부 안 된다 | 진입 복구를 시도하지 말고 §2 instance refresh. golden AMI가 minimal이면 접속 도구 자체가 없다(현재는 SSM param standard + 패키지 명시 설치로 수정됨) |
-| 분석이 계속 pending / 결과가 안 온다 | 외부 worker(`WORKER_URL`) 상태 — 공유 worker 레이트리밋은 플랫폼과 무관 |
+| 분석이 계속 pending / 결과가 안 온다 | ALB idle_timeout — 브라우저 SSE 연결이 60초 침묵 시 끊긴다. heartbeat(`/api/analysis/stream`)가 정상 작동 중인지 확인. 서버 오류면 CloudWatch Logs에서 `[streamAnalysisRoute]` 검색 |
 | 크론이 돌지 않는 것 같다 | [CRON.md](../reference/CRON.md)의 "정상 vs 진짜 막힌 상태" 절 — `submitted 0` 연속은 정상일 수 있다 |
 | 배포가 env 누락으로 중단됐다 | `check-env.sh`가 나열한 키를 `04-params.sh`로 SSM 적재. 비상시 `SKIP_ENV_CHECK=1`(권장하지 않음) |
 

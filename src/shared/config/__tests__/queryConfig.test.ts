@@ -146,17 +146,6 @@ describe('QUERY_KEYS — 나머지 키 팩토리', () => {
         expect(QUERY_KEYS.assetInfo('tsla')).toEqual(['asset-info', 'TSLA']);
     });
 
-    it('briefing: jobId를 그대로 포함한다', () => {
-        expect(QUERY_KEYS.briefing('job-123')).toEqual(['briefing', 'job-123']);
-    });
-
-    it('macroBriefingPoll: jobId를 포함한다', () => {
-        expect(QUERY_KEYS.macroBriefingPoll('job-abc')).toEqual([
-            'macro-briefing-poll',
-            'job-abc',
-        ]);
-    });
-
     it('fundamentalAnalysis: symbol 대문자 정규화 + modelId + reasoning(기본 false)', () => {
         expect(QUERY_KEYS.fundamentalAnalysis('aapl', MODEL_ID)).toEqual([
             'fundamental-analysis',
