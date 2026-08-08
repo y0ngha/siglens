@@ -943,6 +943,15 @@ describe('runPrewarmBatch', () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
         const clock = makeSimClock(FIXED_NOW.getTime());
+        /**
+         * Task 8: UNIT_TIMEOUT_MS 값 고정.
+         *
+         * `UNIT_TIMEOUT_MS`는 private 상수지만 처리 단위당 최대 비용을 결정한다.
+         * 리팩터가 실수로 값을 바꿔도 기존 테스트는 "타임아웃이 발동했다"만 볼 뿐
+         * 어떤 값으로 sleep이 호출됐는지 검증하지 않아 조용히 통과한다.
+         * spy로 호출 인자를 단언해 120_000ms라는 계약을 고정한다.
+         */
+        vi.spyOn(clock, 'sleep');
         const counts = await runPrewarmBatch(clock);
 
         expect(warnSpy).toHaveBeenCalledWith(
@@ -952,6 +961,9 @@ describe('runPrewarmBatch', () => {
         // clearInFlight는 finally 블록에서 타임아웃 경로에도 반드시 호출된다.
         expect(mockClearInFlight).toHaveBeenCalledWith('HUNG', 'technical');
         expect(counts.harvested).toBe(0);
+        // Task 8: UNIT_TIMEOUT_MS = 120_000ms. 이 값을 올리면 타임아웃이 느려지고
+        // 낮추면 정상 LLM 호출이 잘린다 — 리터럴로 단언해 실수를 잡는다.
+        expect(clock.sleep).toHaveBeenCalledWith(120_000);
 
         warnSpy.mockRestore();
     });
@@ -1013,5 +1025,142 @@ describe('runPrewarmBatch', () => {
         expect(mockMarkSkipped).not.toHaveBeenCalled();
 
         errSpy.mockRestore();
+    });
+
+    /**
+     * Task 7: counts.staleTotal / counts.durationMs 회귀 가드.
+     *
+     * 두 필드가 아예 없거나 초기화된 채로 반환돼도 기존 테스트는 검사하지 않는다.
+     * - `staleTotal`을 누락하면 모니터링 알람의 근거가 사라진다.
+     * - `durationMs`를 누락하면 배치 소요 시간 추적이 불가하다.
+     */
+    it('Task 7 — counts.staleTotal과 counts.durationMs가 올바르게 설정된다', async () => {
+        // 3개의 stale 심볼. staleTotal은 처음부터 이 값으로 초기화된다.
+        universe(
+            { symbol: 'BULK1', tabs: ['technical'] },
+            { symbol: 'BULK2', tabs: ['technical'] },
+            { symbol: 'BULK3', tabs: ['technical'] }
+        );
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: {
+                symbol: 'BULK',
+                name: 'Bulk Co.',
+                fmpSymbol: undefined,
+            },
+            degraded: false,
+        });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        // makeSimClock: sleep 호출마다 t를 즉시 advance한다.
+        const clock = makeSimClock(FIXED_NOW.getTime());
+        const counts = await runPrewarmBatch(clock);
+
+        // staleTotal은 runPrewarmBatch 진입 시 staleSymbols.length로 고정된다.
+        expect(counts.staleTotal).toBe(3);
+        // durationMs는 배치 시작 시각과 종료 시각의 차이다.
+        // makeSimClock에서 sleep 호출마다 t가 advance되므로 0보다 크다.
+        expect(counts.durationMs).toBeGreaterThan(0);
+    });
+
+    /**
+     * Task 9: processSymbol의 탭별 isSkipped 가드가 실제로 seam을 차단한다.
+     *
+     * 2탭 심볼에서 기술적(technical) 탭만 isSkipped=true로 만들고, overall 탭은
+     * 정상 처리되는지 확인한다. 이 가드가 없으면 terminal backoff 마커를 무시하고
+     * 매 배치마다 동일 분석을 재시도해 I/O 비용이 낭비된다.
+     */
+    it('Task 9 — isSkipped가 true인 탭의 seam은 호출되지 않고 다른 탭은 정상 처리된다', async () => {
+        universe({ symbol: 'SKIPTEST', tabs: ['technical', 'overall'] });
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: {
+                symbol: 'SKIPTEST',
+                name: 'Skip Test Inc.',
+                fmpSymbol: undefined,
+            },
+            degraded: false,
+        });
+        mockPrewarmOverall.mockResolvedValue({ status: 'cached', result: {} });
+
+        // technical 탭만 isSkipped=true. overall은 false.
+        mockIsSkipped.mockImplementation((_symbol: string, tab: string) =>
+            Promise.resolve(tab === 'technical')
+        );
+
+        const counts = await runPrewarmBatch();
+
+        // technical 탭은 isSkipped=true → seam 미호출.
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+        // overall 탭은 isSkipped=false → 정상 처리.
+        expect(mockPrewarmOverall).toHaveBeenCalledWith(
+            'SKIPTEST',
+            'Skip Test Inc.',
+            false
+        );
+        expect(counts.harvested).toBe(1);
+    });
+
+    /**
+     * Task 4: alreadyFresh 검사가 isPastDeadline() 검사보다 먼저 실행된다.
+     *
+     * 두 블록의 순서를 바꾸면(isPastDeadline 먼저) 이미 fresh한 탭도 "데드라인으로
+     * 버려짐"으로 계산되어 counts.remaining이 부풀고, 경고 메시지에 실제보다
+     * 많은 탭 수가 찍힌다.
+     *
+     * 검증 방식:
+     * - symbol ORDTEST: technical(fresh in map) + overall(stale).
+     * - 3번째 clock.now() 호출(청크 진입 검사)은 정상 시각 → 청크 진행.
+     * - 4번째+ 호출(processSymbol 탭 루프 내 isPastDeadline)은 데드라인 초과.
+     * - 올바른 순서: technical → alreadyFresh → continue(isPastDeadline 미호출);
+     *                 overall → alreadyFresh=false → isPastDeadline=true → dropped.
+     *   → droppedByDeadline=1, counts.remaining=1, warn "1 tabs dropped".
+     * - 잘못된 순서: technical → isPastDeadline=true → dropped(fresh 체크 안함);
+     *                 overall → isPastDeadline=true → dropped.
+     *   → droppedByDeadline=2, counts.remaining=2, warn "2 tabs dropped".
+     */
+    it('Task 4 — alreadyFresh 검사가 isPastDeadline보다 먼저 실행된다(신선도 우선 순서 보장)', async () => {
+        universe({ symbol: 'ORDTEST', tabs: ['technical', 'overall'] });
+        mockFindGeneratedAtMap.mockResolvedValue(
+            // technical은 이미 fresh, overall은 stale(맵에 없음).
+            new Map([[key('ORDTEST', 'technical'), BOUNDARY]])
+        );
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: {
+                symbol: 'ORDTEST',
+                name: 'Order Test Inc.',
+                fmpSymbol: undefined,
+            },
+            degraded: false,
+        });
+
+        const base = FIXED_NOW.getTime();
+        let nowCalls = 0;
+        // 호출 순서:
+        //   1: batchDeadline = base + BATCH_DEADLINE_MS
+        //   2: selectFairBatch의 회전 오프셋
+        //   3: 청크 진입 isPastDeadline → base → 미초과(청크 진행)
+        //   4+: processSymbol 내 탭 루프 isPastDeadline → 초과
+        const now = (): number => {
+            nowCalls++;
+            return nowCalls <= 3 ? base : base + BATCH_DEADLINE_MS + 1;
+        };
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const counts = await runPrewarmBatch({
+            now,
+            sleep: vi.fn().mockResolvedValue(undefined),
+        });
+
+        // 올바른 순서: fresh 탭(technical)은 isPastDeadline 없이 처리되므로
+        // droppedByDeadline=1(overall만)이고, counts.remaining=1.
+        // 잘못된 순서(deadline-first)에서는 remaining=2.
+        expect(counts.remaining).toBe(1);
+        expect(warnSpy).toHaveBeenCalledWith(
+            '[seo-prewarm] batch deadline reached — 1 tabs dropped'
+        );
+
+        warnSpy.mockRestore();
     });
 });

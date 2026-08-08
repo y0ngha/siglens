@@ -575,4 +575,68 @@ describe('useAnalysis — branch coverage', () => {
             expect(mockSubmit).not.toHaveBeenCalled();
         });
     });
+
+    /**
+     * Task 1: reanalyze intent가 technical 탭 전송 파라미터에 올바르게 반영되는지 검증한다.
+     *
+     * runAnalysisStream params에서:
+     * - `force` 키는 절대 포함되지 않는다 (보안: 공개 라우트라 클라이언트가 캐시 우회를
+     *   지시하면 누구나 LLM을 무제한으로 태울 수 있다).
+     * - `reanalyze: true`는 handleReanalyze() 호출 시에만 포함된다.
+     * - 마운트 자동 제출(force=false 경로)은 reanalyze 키를 포함하지 않는다.
+     */
+    describe('reanalyze intent — transport contract (Task 1)', () => {
+        it('handleReanalyze()가 runAnalysisStream에 reanalyze: true를 전달하고 force 키는 포함하지 않는다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'done',
+                result: CACHED_RESULT,
+            } as unknown as RunAnalysisActionResult);
+
+            const { result } = renderHook(() => useAnalysis(makeOptions()), {
+                wrapper: makeWrapper(),
+            });
+
+            // initialAnalysisFailed=false(기본값)이므로 마운트 자동 제출 없음.
+            act(() => {
+                result.current.handleReanalyze();
+            });
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalled();
+            });
+
+            const lastCall =
+                mockSubmit.mock.calls[mockSubmit.mock.calls.length - 1][0];
+
+            // force는 클라이언트 내부 변수 — API params에 실려선 안 된다.
+            expect(lastCall.params).not.toHaveProperty('force');
+            // 의도(reanalyze)만 보낸다 — 서버가 쿨다운 획득 여부에 따라 우회를 결정한다.
+            expect(lastCall.params).toHaveProperty('reanalyze', true);
+        });
+
+        it('마운트 자동 제출(force=false 경로)은 reanalyze 키 없이 runAnalysisStream을 호출한다', async () => {
+            /**
+             * initialAnalysisFailed=true로 트리거되는 자동 제출은 재분석 의도가 없다.
+             * reanalyze가 빠져야 서버가 캐시 히트 시 그대로 반환한다 — 있으면
+             * tryAcquireReanalyzeCooldown까지 실행해 쿨다운 슬롯이 낭비된다.
+             */
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: CACHED_RESULT,
+                lockedInfoDepth: [],
+            });
+
+            renderHook(
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalled();
+            });
+
+            const firstCall = mockSubmit.mock.calls[0][0];
+            expect(firstCall.params).not.toHaveProperty('reanalyze');
+        });
+    });
 });

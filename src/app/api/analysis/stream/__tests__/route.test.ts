@@ -161,6 +161,7 @@ import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getDescriptor } from '@/shared/config/marketProfile';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 
 const decoder = new TextDecoder();
 
@@ -1071,6 +1072,114 @@ describe('POST /api/analysis/stream', () => {
 
             expect(response.status).toBe(200);
         });
+
+        /**
+         * Task 3: 봇 ×2 천장 — technical + DISPATCH(overall) 경로 양쪽.
+         *
+         * 봇(isBot=true)은 `MAX_CONCURRENT_ANALYSIS_STREAMS`의 두 배 천장을 사용한다.
+         * 사람 트래픽이 상한을 채운 상태에서도 Googlebot이 503을 받으면 robots.txt에
+         * 이 경로를 열어 둔 의미가 사라진다.
+         *
+         * 이 테스트가 없으면 `canAcceptAnalysisStream(skipEnqueueIfMiss)` 호출에서
+         * `skipEnqueueIfMiss` 인자가 제거돼 상수 `false`로 대체되어도 기존 사람 경계
+         * 테스트는 여전히 녹색이 된다.
+         */
+        describe('봇 ×2 천장 (Task 3)', () => {
+            afterEach(() => {
+                __resetActiveStreamsForTests();
+            });
+
+            it('technical 경로: MAX 포화 + 봇 요청 → 200 (봇 천장 미도달)', async () => {
+                __resetActiveStreamsForTests();
+                for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS; i++) {
+                    incrementActiveStreams();
+                }
+                vi.mocked(isBot).mockReturnValue(true);
+                vi.mocked(runAnalysis).mockResolvedValue({
+                    status: 'miss_no_trigger' as const,
+                });
+
+                const response = await POST(makeRequest());
+                await collectSseEvents(response);
+
+                // 봇 천장(MAX × 2)에 아직 여유가 있으므로 통과해야 한다.
+                expect(response.status).toBe(200);
+            });
+
+            it('technical 경로: MAX×2 포화 + 봇 요청 → 503 (봇 천장 초과)', async () => {
+                __resetActiveStreamsForTests();
+                for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS * 2; i++) {
+                    incrementActiveStreams();
+                }
+                vi.mocked(isBot).mockReturnValue(true);
+
+                const response = await POST(makeRequest());
+
+                expect(response.status).toBe(503);
+                expect(response.headers.get('Retry-After')).toBe('30');
+                expect(vi.mocked(runAnalysis)).not.toHaveBeenCalled();
+            });
+
+            it('DISPATCH 경로(overall): MAX 포화 + 봇 요청 → 200 (봇 천장 미도달)', async () => {
+                __resetActiveStreamsForTests();
+                for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS; i++) {
+                    incrementActiveStreams();
+                }
+                vi.mocked(isBot).mockReturnValue(true);
+                vi.mocked(runOverallAnalysisAction).mockResolvedValue({
+                    status: 'cached',
+                    result: {},
+                } as never);
+
+                const response = await POST(
+                    makeRequest(
+                        undefined,
+                        JSON.stringify({
+                            type: 'overall',
+                            params: {
+                                symbol: 'AAPL',
+                                companyName: 'Apple',
+                                timeframe: '1Day',
+                                modelId: 'gemini-2.5-flash',
+                            },
+                        })
+                    )
+                );
+                await collectSseEvents(response);
+
+                // DISPATCH도 `canAcceptAnalysisStream(isBot(request.headers))`로 같은 봇 천장을 써야 한다.
+                expect(response.status).toBe(200);
+            });
+
+            it('DISPATCH 경로(overall): MAX×2 포화 + 봇 요청 → 503 (봇 천장 초과)', async () => {
+                __resetActiveStreamsForTests();
+                for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS * 2; i++) {
+                    incrementActiveStreams();
+                }
+                vi.mocked(isBot).mockReturnValue(true);
+
+                const response = await POST(
+                    makeRequest(
+                        undefined,
+                        JSON.stringify({
+                            type: 'overall',
+                            params: {
+                                symbol: 'AAPL',
+                                companyName: 'Apple',
+                                timeframe: '1Day',
+                                modelId: 'gemini-2.5-flash',
+                            },
+                        })
+                    )
+                );
+
+                expect(response.status).toBe(503);
+                expect(response.headers.get('Retry-After')).toBe('30');
+                expect(
+                    vi.mocked(runOverallAnalysisAction)
+                ).not.toHaveBeenCalled();
+            });
+        });
     });
 
     describe('technical params 400 가드', () => {
@@ -1708,6 +1817,44 @@ describe('POST /api/analysis/stream', () => {
                 '1Day:overall'
             );
         });
+
+        /**
+         * Task 6: overall의 `if (cooldown?.ok === true)` 가드 — 거짓 분기.
+         *
+         * reanalyze 의도 없이 overall 분석이 실패하면 cooldown = undefined이므로
+         * `cooldown?.ok === true`가 false다 — `releaseReanalyzeCooldown`을 호출해선 안 된다.
+         *
+         * 이 분기가 없으면 reanalyze 없는 요청도 오류 시 releaseReanalyzeCooldown을 호출해
+         * 다른 사용자의 쿨다운 슬롯을 조용히 해제할 수 있다.
+         *
+         * 기존 실패 테스트는 `reanalyze: true` + `cooldown.ok: true` 조합만 커버한다
+         * (OVERALL_BODY에 reanalyze가 있다). 이 테스트가 없으면 false 분기를 삭제하는
+         * 회귀가 기존 테스트에서 잡히지 않는다.
+         */
+        it('reanalyze 없는 overall 분석이 실패해도 releaseReanalyzeCooldown을 호출하지 않는다 (Task 6)', async () => {
+            vi.mocked(runOverallAnalysisAction).mockRejectedValue(
+                new Error('LLM down')
+            );
+
+            const bodyNoReanalyze = JSON.stringify({
+                type: 'overall',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple',
+                    timeframe: '1Day',
+                    modelId: 'gemini-2.5-flash',
+                    // reanalyze 없음 → cooldown = undefined → cooldown?.ok = undefined ≠ true
+                },
+            });
+
+            const response = await POST(
+                makeRequest(undefined, bodyNoReanalyze)
+            );
+            await collectSseEvents(response);
+
+            // cooldown이 없으므로 해제도 없어야 한다.
+            expect(vi.mocked(releaseReanalyzeCooldown)).not.toHaveBeenCalled();
+        });
     });
 
     /**
@@ -1789,6 +1936,80 @@ describe('POST /api/analysis/stream', () => {
             );
 
             __resetActiveStreamsForTests();
+        });
+    });
+
+    /**
+     * Task 10: Route ↔ client transport contract — runAnalysisStream 통합 테스트.
+     *
+     * route가 보내는 SSE 프레임 포맷과 `runAnalysisStream`의 파싱 로직이
+     * 진정으로 맞물리는지를 vitest 안에서 검증한다.
+     *
+     * global.fetch를 가로채 POST(request)의 실제 Response를 반환하면,
+     * `runAnalysisStream`은 production 경로 그대로 실행된다:
+     * - route → heartbeatStream → `event: done\ndata: {"result":...}`
+     * - runAnalysisStream → TextDecoderStream → frame 파싱 → payload.result 반환
+     *
+     * heartbeatStream의 SSE 포맷 또는 runAnalysisStream의 parseFrame을 변경하면
+     * 이 테스트가 실패한다.
+     */
+    describe('Route ↔ client transport contract — runAnalysisStream (Task 10)', () => {
+        it('runAnalysisStream이 route POST 응답에서 done 이벤트 result를 추출한다', async () => {
+            const runAnalysisResult = {
+                status: 'cached' as const,
+                result: { headlineKo: 'transport contract test' },
+            };
+            /**
+             * route는 runAnalysis 반환값에 `personalized` 플래그를 합쳐
+             * heartbeatStream의 work promise를 resolve한다:
+             * `{ ...runAnalysisResult, personalized: positionBucket !== undefined }`
+             * 따라서 SSE done 이벤트의 payload.result에는 personalized가 포함된다.
+             */
+            const expectedResult = {
+                ...runAnalysisResult,
+                personalized: false,
+            };
+            vi.mocked(runAnalysis).mockResolvedValue(
+                runAnalysisResult as never
+            );
+
+            /**
+             * global.fetch를 가로채 `POST(request)`의 실제 Response를 반환한다.
+             * runAnalysisStream은 `/api/analysis/stream`으로 fetch를 날리므로,
+             * 여기서 라우트에 직접 연결하면 SSE 스택 전체가 실제로 실행된다.
+             */
+            const fetchSpy = vi
+                .spyOn(globalThis, 'fetch')
+                .mockImplementation(async (_input, init) => {
+                    const body =
+                        typeof init?.body === 'string' ? init.body : '';
+                    return POST(
+                        new Request('http://localhost/api/analysis/stream', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body,
+                        })
+                    );
+                });
+
+            try {
+                const result = await runAnalysisStream<typeof expectedResult>({
+                    type: 'technical',
+                    params: {
+                        symbol: 'AAPL',
+                        companyName: 'Apple Inc.',
+                        timeframe: '1Day',
+                    },
+                });
+
+                // heartbeatStream이 JSON.stringify({ result: runAnalysis반환값 })으로
+                // 감싸고, runAnalysisStream이 payload.result를 꺼내야 원래 값이 된다.
+                expect(result).toEqual(expectedResult);
+            } finally {
+                fetchSpy.mockRestore();
+            }
         });
     });
 

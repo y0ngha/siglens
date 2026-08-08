@@ -31,6 +31,18 @@ vi.mock('@/entities/ticker/lib/backgroundTask', () => ({
     stopAcceptingBackgroundTasks: mockStopAcceptingBackgroundTasks,
 }));
 
+/**
+ * `activeStreams`를 실제 구현으로 고정한다(vi.importActual).
+ *
+ * `vi.resetModules()`는 모듈 레지스트리를 초기화하지만 vi.mock 등록은 유지한다.
+ * 고정 없이 `await import('@/instrumentation.node')`를 하면 instrumentation이
+ * 로드할 때 activeStreams도 새 인스턴스를 얻어, 이 테스트 파일의 정적 import와
+ * 별개의 카운터를 가진다. 고정하면 양쪽이 동일한 인스턴스를 참조한다.
+ */
+vi.mock('@/shared/lib/sse/activeStreams', async () =>
+    vi.importActual('@/shared/lib/sse/activeStreams')
+);
+
 // activeStreams는 실제 구현을 사용한다 — 카운터를 조작해 drain 대기를 제어한다.
 import {
     incrementActiveStreams,
@@ -73,7 +85,26 @@ describe('registerShutdownHandlers()', () => {
     });
 
     it('in-flight 카운터 1 → 카운터가 0이 되고 POST_DRAIN_GRACE_MS 경과 후 exit(0)를 호출한다', async () => {
-        // 스트림이 1개 진행 중이면 drain이 완료될 때까지 exit를 미뤄야 한다.
+        /**
+         * Task 2: 이 단일 테스트가 두 가지 독립적인 회귀를 잡는다.
+         *
+         * 회귀 A — `waitForActiveStreams` 삭제:
+         *   drainBackgroundTasks만 await하면 drain이 즉시 완료된다.
+         *   그러면 count=1인 상태에서 5 000ms 후 setTimeout이 발화해
+         *   "exit NOT called" 단언이 실패한다.
+         *
+         * 회귀 B — `setTimeout` grace 래퍼 삭제:
+         *   drain 완료 시 `process.exit(0)`을 직접 호출하면,
+         *   decrement 이후 microtask flush(advanceTimersByTimeAsync)에서
+         *   즉시 exit가 발화해 "999ms 후 exit NOT called" 단언이 실패한다.
+         *
+         * 5 000ms를 선택한 이유: POST_DRAIN_GRACE_MS(1 000ms) < 5 000ms
+         * 이므로 회귀 A(setTimeout 즉시 발화)를 잡을 수 있고,
+         * SHUTDOWN_DRAIN_DEADLINE_MS(180 000ms) > 5 000ms이므로
+         * 올바른 구현에서는 waitForActiveStreams deadline이 여기서 발화하지 않는다.
+         */
+
+        // 스트림 1개 진행 중.
         incrementActiveStreams();
 
         const { registerShutdownHandlers } =
@@ -86,12 +117,25 @@ describe('registerShutdownHandlers()', () => {
         await Promise.resolve();
         expect(exitSpy).not.toHaveBeenCalled();
 
+        // count=1이므로 waitForActiveStreams 미resolve.
+        // 5 000ms 경과 후에도 exit 없어야 한다.
+        // waitForActiveStreams를 삭제하면 drain이 즉시 완료돼
+        // setTimeout(1 000ms)가 이미 발화 → 이 단언 실패 (회귀 A 감지).
+        await vi.advanceTimersByTimeAsync(5_000);
+        expect(exitSpy).not.toHaveBeenCalled();
+
         // 카운터를 0으로 내리면 waitForActiveStreams가 resolve된다.
         decrementActiveStreams();
 
-        // POST_DRAIN_GRACE_MS(1000ms)를 진행해 setTimeout 콜백이 발화된다.
-        await vi.advanceTimersByTimeAsync(1_000);
+        // POST_DRAIN_GRACE_MS - 1ms = 999ms 경과.
+        // 올바른 구현: setTimeout(exit, 1 000ms)가 아직 미발화 → exit 없어야 한다.
+        // setTimeout을 삭제하면 decrement 직후 microtask flush에서 exit가 바로 발화해
+        // 이 단언이 실패한다 (회귀 B 감지).
+        await vi.advanceTimersByTimeAsync(999);
+        expect(exitSpy).not.toHaveBeenCalled();
 
+        // 마지막 1ms — POST_DRAIN_GRACE_MS(1 000ms) 완성 → exit(0).
+        await vi.advanceTimersByTimeAsync(1);
         expect(exitSpy).toHaveBeenCalledWith(0);
     });
 

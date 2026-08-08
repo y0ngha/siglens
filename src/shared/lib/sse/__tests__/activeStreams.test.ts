@@ -16,12 +16,16 @@ import {
  * 이 단언이 없으면 미래 리팩터가 실수로 상한을 올려도 아무 게이트도 잡지 못한다.
  *
  * 실측 근거(2026-08): t4g.medium 기준으로 정상 트래픽은 이 근처에 오지 않는다.
- * 넘으면 과부하이거나 남용이다. 이 값보다 훨씬 큰 값을 쓰면 인스턴스가 고갈된다.
+ * 넘으면 과부하이거나 남용이다.
+ *
+ * 32를 상한으로 쓰는 이유: 현재 값(24)의 근거가 된 t4g.medium 실측 트래픽 분석에서
+ * 정상 최대치가 이 범위에 들어온다. 100으로 느슨하게 두면 3배 인상(24→100)이
+ * 아무 게이트에도 안 잡혀 인스턴스 고갈로 이어질 수 있다.
+ * heartbeatStream 테스트의 HEARTBEAT_INTERVAL_MS 단언과 같은 패턴 —
+ * 리터럴을 직접 비교해 상수 자체에 대한 회귀를 잡는다.
  */
-it('MAX_CONCURRENT_ANALYSIS_STREAMS가 합리적인 상한(100 이하)을 유지한다', () => {
-    // heartbeatStream 테스트의 HEARTBEAT_INTERVAL_MS 단언과 같은 패턴 —
-    // 리터럴을 직접 비교해 상수 자체에 대한 회귀를 잡는다.
-    expect(MAX_CONCURRENT_ANALYSIS_STREAMS).toBeLessThanOrEqual(100);
+it('MAX_CONCURRENT_ANALYSIS_STREAMS가 합리적인 상한(32 이하)을 유지한다', () => {
+    expect(MAX_CONCURRENT_ANALYSIS_STREAMS).toBeLessThanOrEqual(32);
     expect(MAX_CONCURRENT_ANALYSIS_STREAMS).toBeGreaterThan(0);
 });
 
