@@ -53,7 +53,11 @@ jobs:
 
     deploy:
         needs: test-gate
-        timeout-minutes: 30
+        # 45분: deploy.sh의 인스턴스 리프레시 폴 상한이 1800s(=30분)로 늘었다(SSE drain
+        # 예산 180s 반영). 여기에 빌드·푸시 5~7분이 같은 job 안에서 앞에 붙으므로 30분
+        # 천장은 실제로는 성공한 롤을 취소해 버릴 수 있고, 그러면 아래 Cloudflare purge
+        # 스텝이 실행되지 않아 옛 HTML이 s-maxage 만료까지 서빙된다.
+        timeout-minutes: 45
         runs-on: ubuntu-24.04-arm
         steps:
             - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -74,6 +78,49 @@ jobs:
             - name: Login to Amazon ECR
               id: ecr
               uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 # v2
+
+
+            # Roll the ASG by reusing the existing infra scripts.
+            #
+            # On the CI runner, infra/aws/.env and infra/aws/.ids are gitignored and absent.
+            # We regenerate minimal equivalents here before calling deploy.sh.
+            #
+            # .env is written WITHOUT AWS_PROFILE: the OIDC credential chain populates
+            # AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_SESSION_TOKEN automatically
+            # via configure-aws-credentials above. Setting AWS_PROFILE=siglens would
+            # cause the AWS CLI to look for a named profile that doesn't exist on the runner
+            # and fail immediately.
+            #
+            # EC2_SG is looked up by security-group name rather than hardcoding the ID,
+            # because group IDs are mutable (can be recreated) while names are stable
+            # by convention in this infra.
+            - name: Regenerate infra env files for CI (no AWS_PROFILE)
+              run: |
+                  # Heredoc uses a tab-stripped form (<<-) so the closing EOF can be indented.
+                  # The content lines must still start with a real tab for <<- stripping to work;
+                  # here we write via printf to avoid any heredoc indentation ambiguity.
+                  printf '%s\n' \
+                      'export AWS_REGION=ap-northeast-2' \
+                      'export APP=siglens' \
+                      'export ECR_REPO=siglens' \
+                      'export INSTANCE_TYPE=t4g.medium' \
+                      'export EC2_ROLE=siglens-ec2-role' \
+                      > infra/aws/.env
+
+                  EC2_SG=$(aws ec2 describe-security-groups \
+                      --filters Name=group-name,Values=siglens-ec2-sg \
+                      --query 'SecurityGroups[0].GroupId' \
+                      --output text)
+                  printf 'export EC2_SG=%s\n' "${EC2_SG}" > infra/aws/.ids
+
+            # env 완전성 게이트. `check-env.sh`는 `infra/aws/.env`를 source하므로 위
+            # 재생성 스텝 **뒤**에 와야 한다 — 앞에 두면 CI 러너에는 그 파일이 없어
+            # (gitignore) `set -euo pipefail`에 걸려 모든 태그 배포가 빌드 전에 죽는다.
+            #
+            # deploy.sh도 롤 직전에 같은 검사를 하지만(이중 안전망), 여기서 한 번 더
+            # 도는 이유는 SSM 키 누락을 ASG를 건드리기 전에 확정하기 위해서다.
+            - name: Check env completeness
+              run: bash infra/aws/check-env.sh
 
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
@@ -143,39 +190,6 @@ jobs:
             - name: Push image to ECR
               run: |
                   docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com/siglens:${IMAGE_TAG}
-
-            # Roll the ASG by reusing the existing infra scripts.
-            #
-            # On the CI runner, infra/aws/.env and infra/aws/.ids are gitignored and absent.
-            # We regenerate minimal equivalents here before calling deploy.sh.
-            #
-            # .env is written WITHOUT AWS_PROFILE: the OIDC credential chain populates
-            # AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_SESSION_TOKEN automatically
-            # via configure-aws-credentials above. Setting AWS_PROFILE=siglens would
-            # cause the AWS CLI to look for a named profile that doesn't exist on the runner
-            # and fail immediately.
-            #
-            # EC2_SG is looked up by security-group name rather than hardcoding the ID,
-            # because group IDs are mutable (can be recreated) while names are stable
-            # by convention in this infra.
-            - name: Regenerate infra env files for CI (no AWS_PROFILE)
-              run: |
-                  # Heredoc uses a tab-stripped form (<<-) so the closing EOF can be indented.
-                  # The content lines must still start with a real tab for <<- stripping to work;
-                  # here we write via printf to avoid any heredoc indentation ambiguity.
-                  printf '%s\n' \
-                      'export AWS_REGION=ap-northeast-2' \
-                      'export APP=siglens' \
-                      'export ECR_REPO=siglens' \
-                      'export INSTANCE_TYPE=t4g.medium' \
-                      'export EC2_ROLE=siglens-ec2-role' \
-                      > infra/aws/.env
-
-                  EC2_SG=$(aws ec2 describe-security-groups \
-                      --filters Name=group-name,Values=siglens-ec2-sg \
-                      --query 'SecurityGroups[0].GroupId' \
-                      --output text)
-                  printf 'export EC2_SG=%s\n' "${EC2_SG}" > infra/aws/.ids
 
             # PINNED_AMI (M1): the launch template uses a deliberately pinned AMI, not
             # "latest AL2023" resolved fresh each deploy. The pin lives in the repo

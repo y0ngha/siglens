@@ -6,7 +6,7 @@ vi.mock('next/headers', () => ({
 
 vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
-    submitFundamentalAnalysis: vi.fn(),
+    runFundamentalAnalysis: vi.fn(),
 }));
 
 vi.mock('@/shared/api/fmp/fundamentalClient', async importOriginal => ({
@@ -36,21 +36,20 @@ vi.mock('@/shared/lib/byokGate', () => ({
 
 import { headers } from 'next/headers';
 import {
-    submitFundamentalAnalysis,
+    runFundamentalAnalysis,
     type ModelId,
-    type SubmitFundamentalAnalysisResult,
+    type RunFundamentalAnalysisResult,
 } from '@y0ngha/siglens-core';
 import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
-import { submitFundamentalAnalysisAction } from '../actions/submitFundamentalAnalysisAction';
+import { runFundamentalAnalysisAction } from '../actions/runFundamentalAnalysisAction';
 
 const mockHeaders = headers as MockedFunction<typeof headers>;
-const mockSubmitFundamentalAnalysis =
-    submitFundamentalAnalysis as MockedFunction<
-        typeof submitFundamentalAnalysis
-    >;
+const mockRunFundamentalAnalysis = runFundamentalAnalysis as MockedFunction<
+    typeof runFundamentalAnalysis
+>;
 const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser
 >;
@@ -58,14 +57,14 @@ const mockResolveTierAndByok = resolveTierAndByok as MockedFunction<
     typeof resolveTierAndByok
 >;
 
-const CACHED_RESULT: SubmitFundamentalAnalysisResult = {
+const CACHED_RESULT: RunFundamentalAnalysisResult = {
     status: 'cached',
     result: { categories: [] } as never,
 };
 
-const SUBMITTED_RESULT: SubmitFundamentalAnalysisResult = {
-    status: 'submitted',
-    jobId: 'job-fundamental-001',
+const DONE_RESULT: RunFundamentalAnalysisResult = {
+    status: 'done',
+    result: { categories: [] } as never,
 };
 
 const MODEL_ID = 'gemini-2.5-flash' as ModelId;
@@ -76,9 +75,9 @@ const gateError: AnalysisGateError = {
     message: 'mock-tier_premium_blocked',
 };
 
-describe('submitFundamentalAnalysisAction 함수는', () => {
+describe('runFundamentalAnalysisAction 함수는', () => {
     beforeEach(() => {
-        mockSubmitFundamentalAnalysis.mockReset();
+        mockRunFundamentalAnalysis.mockReset();
         mockGetCurrentUser.mockReset();
         mockResolveTierAndByok.mockReset();
 
@@ -87,15 +86,15 @@ describe('submitFundamentalAnalysisAction 함수는', () => {
             kind: 'allowed',
             tier: 'free' as never,
         });
-        mockSubmitFundamentalAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+        mockRunFundamentalAnalysis.mockResolvedValue(DONE_RESULT);
     });
 
-    it('siglens-core submitFundamentalAnalysis에 symbol과 modelId를 전달한다', async () => {
-        mockSubmitFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
+    it('siglens-core runFundamentalAnalysis에 symbol과 modelId를 전달한다', async () => {
+        mockRunFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
 
-        await submitFundamentalAnalysisAction('AAPL', MODEL_ID);
+        await runFundamentalAnalysisAction('AAPL', MODEL_ID);
 
-        expect(mockSubmitFundamentalAnalysis).toHaveBeenCalledWith(
+        expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({
                 symbol: 'AAPL',
                 modelId: MODEL_ID,
@@ -104,29 +103,29 @@ describe('submitFundamentalAnalysisAction 함수는', () => {
     });
 
     it('FmpFundamentalClient 인스턴스를 dataProvider로 전달한다', async () => {
-        mockSubmitFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
+        mockRunFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
 
-        await submitFundamentalAnalysisAction('TSLA', MODEL_ID);
+        await runFundamentalAnalysisAction('TSLA', MODEL_ID);
 
-        const call = mockSubmitFundamentalAnalysis.mock.calls[0]?.[0];
+        const call = mockRunFundamentalAnalysis.mock.calls[0]?.[0];
         expect(call?.dataProvider).toBeDefined();
         expect(FmpFundamentalClient).toHaveBeenCalled();
     });
 
     it('underlying 함수의 cached 결과를 그대로 반환한다', async () => {
-        mockSubmitFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
+        mockRunFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
 
-        const result = await submitFundamentalAnalysisAction('AAPL', MODEL_ID);
+        const result = await runFundamentalAnalysisAction('AAPL', MODEL_ID);
 
         expect(result).toBe(CACHED_RESULT);
     });
 
-    it('underlying 함수의 submitted 결과를 그대로 반환한다', async () => {
-        mockSubmitFundamentalAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+    it('underlying 함수의 done 결과를 그대로 반환한다', async () => {
+        mockRunFundamentalAnalysis.mockResolvedValueOnce(DONE_RESULT);
 
-        const result = await submitFundamentalAnalysisAction('AAPL', MODEL_ID);
+        const result = await runFundamentalAnalysisAction('AAPL', MODEL_ID);
 
-        expect(result).toBe(SUBMITTED_RESULT);
+        expect(result).toBe(DONE_RESULT);
     });
 
     it('returns blocked result when gate.kind === "blocked"', async () => {
@@ -136,14 +135,14 @@ describe('submitFundamentalAnalysisAction 함수는', () => {
             error: gateError,
         });
 
-        const result = await submitFundamentalAnalysisAction(
+        const result = await runFundamentalAnalysisAction(
             'AAPL',
             PREMIUM_MODEL
         );
 
         expect(result).toEqual({ status: 'error', error: gateError });
         // Gate fires before expensive provider fetch
-        expect(mockSubmitFundamentalAnalysis).not.toHaveBeenCalled();
+        expect(mockRunFundamentalAnalysis).not.toHaveBeenCalled();
     });
 
     it('forwards tier="member" to siglens-core when gate allowed', async () => {
@@ -153,9 +152,9 @@ describe('submitFundamentalAnalysisAction 함수는', () => {
             tier: 'member' as never,
         });
 
-        await submitFundamentalAnalysisAction('AAPL', MODEL_ID);
+        await runFundamentalAnalysisAction('AAPL', MODEL_ID);
 
-        expect(mockSubmitFundamentalAnalysis).toHaveBeenCalledWith(
+        expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ tier: 'member' })
         );
     });
@@ -168,9 +167,9 @@ describe('submitFundamentalAnalysisAction 함수는', () => {
             userApiKey: 'usr-key',
         });
 
-        await submitFundamentalAnalysisAction('AAPL', PREMIUM_MODEL);
+        await runFundamentalAnalysisAction('AAPL', PREMIUM_MODEL);
 
-        expect(mockSubmitFundamentalAnalysis).toHaveBeenCalledWith(
+        expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ userApiKey: 'usr-key' })
         );
     });
@@ -183,9 +182,9 @@ describe('submitFundamentalAnalysisAction 함수는', () => {
             // no userApiKey
         });
 
-        await submitFundamentalAnalysisAction('AAPL', PREMIUM_MODEL);
+        await runFundamentalAnalysisAction('AAPL', PREMIUM_MODEL);
 
-        const callArg = mockSubmitFundamentalAnalysis.mock.calls[0]?.[0];
+        const callArg = mockRunFundamentalAnalysis.mock.calls[0]?.[0];
         expect(callArg).toBeDefined();
         expect(callArg).not.toHaveProperty('userApiKey');
     });
@@ -197,7 +196,7 @@ describe('submitFundamentalAnalysisAction 함수는', () => {
             tier: 'free' as never,
         });
 
-        await submitFundamentalAnalysisAction('AAPL', MODEL_ID);
+        await runFundamentalAnalysisAction('AAPL', MODEL_ID);
 
         expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
     });
@@ -208,7 +207,7 @@ describe('submitFundamentalAnalysisAction 함수는', () => {
             new Error('db connection failed')
         );
 
-        const result = await submitFundamentalAnalysisAction('AAPL', MODEL_ID);
+        const result = await runFundamentalAnalysisAction('AAPL', MODEL_ID);
 
         expect(result).toMatchObject({
             status: 'error',
@@ -223,11 +222,11 @@ describe('submitFundamentalAnalysisAction 함수는', () => {
                     'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
             })
         );
-        mockSubmitFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
+        mockRunFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
 
-        await submitFundamentalAnalysisAction('AAPL', MODEL_ID);
+        await runFundamentalAnalysisAction('AAPL', MODEL_ID);
 
-        expect(mockSubmitFundamentalAnalysis).toHaveBeenCalledWith(
+        expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: true })
         );
     });
@@ -240,17 +239,17 @@ describe('submitFundamentalAnalysisAction 함수는', () => {
                 tier: 'member' as never,
             });
 
-            await submitFundamentalAnalysisAction('AAPL', MODEL_ID, true);
+            await runFundamentalAnalysisAction('AAPL', MODEL_ID, true);
 
-            expect(mockSubmitFundamentalAnalysis).toHaveBeenCalledWith(
+            expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: true })
             );
         });
 
         it('forces reasoning: false for free tier even when client requests true', async () => {
-            await submitFundamentalAnalysisAction('AAPL', MODEL_ID, true);
+            await runFundamentalAnalysisAction('AAPL', MODEL_ID, true);
 
-            expect(mockSubmitFundamentalAnalysis).toHaveBeenCalledWith(
+            expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false })
             );
         });
@@ -262,20 +261,20 @@ describe('submitFundamentalAnalysisAction 함수는', () => {
                 tier: 'member' as never,
             });
 
-            await submitFundamentalAnalysisAction('AAPL', MODEL_ID);
+            await runFundamentalAnalysisAction('AAPL', MODEL_ID);
 
-            expect(mockSubmitFundamentalAnalysis).toHaveBeenCalledWith(
+            expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false })
             );
         });
     });
 
     it('passes skipEnqueueIfMiss: false to siglens-core when request UA is not a bot', async () => {
-        mockSubmitFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
+        mockRunFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
 
-        await submitFundamentalAnalysisAction('AAPL', MODEL_ID);
+        await runFundamentalAnalysisAction('AAPL', MODEL_ID);
 
-        expect(mockSubmitFundamentalAnalysis).toHaveBeenCalledWith(
+        expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: false })
         );
     });

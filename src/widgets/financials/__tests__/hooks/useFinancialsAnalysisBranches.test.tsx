@@ -1,31 +1,23 @@
 /**
  * Branch coverage tests for useFinancialsAnalysis — targets uncovered branches in
  * fetchFinancialsAnalysis: miss_no_trigger, gate blocked, fetch_failed, key_error,
- * poll error with/without message, non-Error query error wrapping, query data,
- * and the poll-ceiling path (ANALYSIS_POLL_MAX_DURATION_MS exceeded).
+ * non-Error query error wrapping, and the hydration gate path.
+ *
+ * Poll/cancel machinery has been removed; run* functions return results directly.
  */
 
-import type { MockedFunction, Mock } from 'vitest';
+import type { Mock } from 'vitest';
 import { useFinancialsAnalysis } from '@/widgets/financials/hooks/useFinancialsAnalysis';
 import { useHydrated } from '@/shared/hooks/useHydrated';
-import {
-    pollFinancialsAnalysisAction,
-    submitFinancialsAnalysisAction,
-} from '@/entities/analysis/actions';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
-import {
-    ANALYSIS_POLL_MAX_DURATION_MS,
-    ANALYSIS_POLL_TIMEOUT_MESSAGE,
-} from '@/shared/config/pollingConfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { FinancialsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 
-vi.mock('@/entities/analysis/actions', () => ({
-    submitFinancialsAnalysisAction: vi.fn(),
-    pollFinancialsAnalysisAction: vi.fn(),
-    cancelFinancialsAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+    runAnalysisStream: vi.fn(),
 }));
 
 vi.mock('@/entities/analysis', () => ({
@@ -36,22 +28,13 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/shared/hooks/usePageHideCancel', () => ({
-    usePageHideCancel: vi.fn(),
-}));
-
 // SSR hydration gate — default hydrated so existing tests fetch on mount; the
 // gate-closed test flips it to false to assert the auto-trigger is suppressed.
 vi.mock('@/shared/hooks/useHydrated', () => ({
     useHydrated: vi.fn(() => true),
 }));
 
-const mockSubmit = submitFinancialsAnalysisAction as MockedFunction<
-    typeof submitFinancialsAnalysisAction
->;
-const mockPoll = pollFinancialsAnalysisAction as MockedFunction<
-    typeof pollFinancialsAnalysisAction
->;
+const mockSubmit = runAnalysisStream as Mock;
 const mockIsGateBlocked = isGateBlockedResult as unknown as Mock;
 const mockUseHydrated = vi.mocked(useHydrated);
 
@@ -81,7 +64,6 @@ function makeWrapper() {
 describe('useFinancialsAnalysis — branch coverage', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
-        mockPoll.mockReset();
         mockIsGateBlocked.mockReturnValue(false);
         mockUseHydrated.mockReturnValue(true);
     });
@@ -218,73 +200,6 @@ describe('useFinancialsAnalysis — branch coverage', () => {
         expect(result.current.error.message).toBe('API key missing');
     });
 
-    it('returns done when poll returns done', async () => {
-        mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-financials-1',
-        } as never);
-        mockPoll.mockResolvedValueOnce({
-            status: 'done',
-            result: RESULT,
-        });
-
-        const { result } = renderHook(
-            () => useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
-            { wrapper: makeWrapper() }
-        );
-
-        await waitFor(() => {
-            expect(result.current.status).toBe('done');
-        });
-    });
-
-    it('returns error when poll returns error with message', async () => {
-        mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-financials-1',
-        } as never);
-        mockPoll.mockResolvedValueOnce({
-            status: 'error',
-            error: '분석 실패',
-        });
-
-        const { result } = renderHook(
-            () => useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
-            { wrapper: makeWrapper() }
-        );
-
-        await waitFor(() => {
-            expect(result.current.status).toBe('error');
-        });
-
-        if (result.current.status !== 'error')
-            throw new Error('expected error');
-        expect(result.current.error.message).toBe('분석 실패');
-    });
-
-    it('returns generic error when poll returns error without message', async () => {
-        mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-financials-1',
-        } as never);
-        mockPoll.mockResolvedValueOnce({
-            status: 'error',
-        } as { status: 'error'; error: string });
-
-        const { result } = renderHook(
-            () => useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
-            { wrapper: makeWrapper() }
-        );
-
-        await waitFor(() => {
-            expect(result.current.status).toBe('error');
-        });
-
-        if (result.current.status !== 'error')
-            throw new Error('expected error');
-        expect(result.current.error.message).toContain('오류가 발생했습니다');
-    });
-
     it('non-Error query error gets wrapped', async () => {
         mockSubmit.mockRejectedValue('string error');
 
@@ -304,10 +219,7 @@ describe('useFinancialsAnalysis — branch coverage', () => {
 
     it('does not fetch while the SSR hydration gate is closed', async () => {
         mockUseHydrated.mockReturnValue(false);
-        mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'gate-closed',
-        } as never);
+        mockSubmit.mockResolvedValue({ status: 'cached', result: RESULT });
 
         const { result } = renderHook(
             () => useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
@@ -336,53 +248,5 @@ describe('useFinancialsAnalysis — branch coverage', () => {
         rerender();
 
         expect(mockSubmit).toHaveBeenCalledTimes(1);
-    });
-
-    it('poll ceiling → error state when job stalls beyond ANALYSIS_POLL_MAX_DURATION_MS', async () => {
-        // Mirrors the overall/options/fundamental/news poll-ceiling tests
-        // (congress remains on the older call-count pattern — see
-        // useCongressTrendBranches.test.tsx — it was not touched by this
-        // branch): job is submitted, then repeatedly polls as 'processing'
-        // (a genuinely stalled job). Date.now() is keyed off an observable
-        // event — the poll mock flipping `stalled` — rather than a raw
-        // Date.now() call count: counting calls is brittle because any extra
-        // Date.now() from React Query/React internals shifts the count and
-        // silently breaks the freeze.
-        mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-stalled',
-        } as never);
-        const frozenStart = Date.now();
-        let stalled = false;
-        mockPoll.mockImplementation(async () => {
-            stalled = true;
-            return { status: 'processing' } as never;
-        });
-        const dateSpy = vi
-            .spyOn(Date, 'now')
-            .mockImplementation(() =>
-                stalled
-                    ? frozenStart + ANALYSIS_POLL_MAX_DURATION_MS + 1
-                    : frozenStart
-            );
-
-        try {
-            const { result } = renderHook(
-                () => useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
-                { wrapper: makeWrapper() }
-            );
-
-            await waitFor(() => {
-                expect(result.current.status).toBe('error');
-            });
-
-            if (result.current.status !== 'error')
-                throw new Error('expected error state');
-            expect(result.current.error.message).toBe(
-                ANALYSIS_POLL_TIMEOUT_MESSAGE
-            );
-        } finally {
-            dateSpy.mockRestore();
-        }
     });
 });

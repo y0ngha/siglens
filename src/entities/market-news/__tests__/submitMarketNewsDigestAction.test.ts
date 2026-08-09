@@ -1,13 +1,15 @@
+// 1. vi.mock 선언 — Vitest가 정적 import 전에 호이스팅한다.
+
 vi.mock('next/headers', () => ({ headers: vi.fn(async () => new Headers()) }));
 vi.mock('@/shared/api/isBot', () => ({ isBot: vi.fn(() => false) }));
+
+// runMarketNewsDigest만 스텁하고 나머지 core 모듈은 원본을 유지한다.
 vi.mock('@y0ngha/siglens-core', async orig => ({
     ...(await orig()),
-    submitMarketNewsDigest: vi.fn(),
-    pollMarketNewsDigest: vi.fn(),
-    cancelNewsAnalysisJob: vi.fn(),
+    runMarketNewsDigest: vi.fn(),
 }));
 
-// Mock getMarketNewsList to return 1 enriched row
+// getMarketNewsList는 enriched row 형태의 최소 픽스처를 반환한다.
 vi.mock('../api', () => ({
     getMarketNewsList: vi.fn(async () => [
         {
@@ -18,7 +20,7 @@ vi.mock('../api', () => ({
             publishedAt: '2026-06-15T10:00:00.000Z',
             titleEn: 'BTC ETF inflows',
             titleKo: 'BTC ETF 유입',
-            bodyEn: null,
+            bodyEn: 'body text',
             bodyKo: null,
             summaryKo: '유입',
             sentiment: 'bullish',
@@ -30,16 +32,31 @@ vi.mock('../api', () => ({
     ]),
 }));
 
+// isEnrichedRow / toEnrichedNewsItem / selectAggregateNewsItems는 픽스처 row를
+// 그대로 통과시킨다 — 이 파일이 테스트하는 대상은 데이터 변환 로직이 아니라
+// skipEnqueueIfMiss 분기와 core 위임 동작이다.
+vi.mock('@/entities/news-article', async orig => ({
+    ...(await orig()),
+    isEnrichedRow: vi.fn(() => true),
+    toEnrichedNewsItem: vi.fn((row: unknown) => row),
+    selectAggregateNewsItems: vi.fn((items: unknown[]) => items),
+}));
+
+// 2. 정적 import — vi.mock 선언 이후에 배치한다.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { isBot } from '@/shared/api/isBot';
+import * as core from '@y0ngha/siglens-core';
+
+// 3. 테스트
 
 describe('submitMarketNewsDigestAction은', () => {
-    beforeEach(() => vi.clearAllMocks());
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
 
     it('봇이면 skipEnqueueIfMiss=true로 core를 호출한다', async () => {
-        const { isBot } = await import('@/shared/api/isBot');
         vi.mocked(isBot).mockReturnValue(true);
-        const core = await import('@y0ngha/siglens-core');
-        vi.mocked(core.submitMarketNewsDigest).mockResolvedValue({
+        vi.mocked(core.runMarketNewsDigest).mockResolvedValue({
             status: 'miss_no_trigger',
         });
 
@@ -47,40 +64,43 @@ describe('submitMarketNewsDigestAction은', () => {
             await import('../actions/submitMarketNewsDigestAction');
         await submitMarketNewsDigestAction('crypto');
 
-        expect(core.submitMarketNewsDigest).toHaveBeenCalledWith(
+        expect(core.runMarketNewsDigest).toHaveBeenCalledWith(
             expect.objectContaining({
                 skipEnqueueIfMiss: true,
                 category: 'crypto',
+                // CATEGORY_CONFIG['crypto'].koLabel — 실제 값으로 검증한다.
                 categoryLabel: '미국 암호화폐',
             })
         );
     });
 
-    it('사람 + 캐시 미스면 submitted(jobId)를 반환한다', async () => {
-        // Pin isBot to false so this human-path test is independent of the bot
-        // test's mockReturnValue(true) (clearAllMocks resets call history, not impl).
-        const { isBot } = await import('@/shared/api/isBot');
+    it('사람이면 skipEnqueueIfMiss=false로 core를 호출한다', async () => {
+        // isBot 기본값은 false이지만, 봇 테스트와 독립적임을 명시한다.
         vi.mocked(isBot).mockReturnValue(false);
-        const core = await import('@y0ngha/siglens-core');
-        vi.mocked(core.submitMarketNewsDigest).mockResolvedValue({
-            status: 'submitted',
-            jobId: 'j1',
+        vi.mocked(core.runMarketNewsDigest).mockResolvedValue({
+            status: 'done',
+            result: {
+                currentDriverKo: '흐름',
+                keyEventsKo: [],
+                upcomingEventsKo: [],
+                overallSentiment: 'bullish',
+            },
         });
 
         const { submitMarketNewsDigestAction } =
             await import('../actions/submitMarketNewsDigestAction');
         const r = await submitMarketNewsDigestAction('crypto');
 
-        expect(r.status).toBe('submitted');
-        // Symmetric guard for the bot test: a non-bot must pass skipEnqueueIfMiss=false.
-        expect(core.submitMarketNewsDigest).toHaveBeenCalledWith(
+        // 결과가 core의 반환값을 그대로 전달한다.
+        expect(r.status).toBe('done');
+        // 사람 경로에서 enqueue를 차단하면 안 된다.
+        expect(core.runMarketNewsDigest).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: false })
         );
     });
 
     it('core가 cached를 반환하면 그대로 전달한다', async () => {
-        const core = await import('@y0ngha/siglens-core');
-        vi.mocked(core.submitMarketNewsDigest).mockResolvedValue({
+        vi.mocked(core.runMarketNewsDigest).mockResolvedValue({
             status: 'cached',
             result: {
                 currentDriverKo: '흐름',
@@ -98,8 +118,7 @@ describe('submitMarketNewsDigestAction은', () => {
     });
 
     it('예외 발생 시 throw하지 않고 error 상태를 반환한다', async () => {
-        const core = await import('@y0ngha/siglens-core');
-        vi.mocked(core.submitMarketNewsDigest).mockRejectedValue(
+        vi.mocked(core.runMarketNewsDigest).mockRejectedValue(
             new Error('core error')
         );
 
@@ -112,68 +131,17 @@ describe('submitMarketNewsDigestAction은', () => {
             'Failed to submit digest'
         );
     });
-});
 
-describe('pollMarketNewsDigestAction은', () => {
-    beforeEach(() => vi.clearAllMocks());
-
-    it('core pollMarketNewsDigest를 위임하고 결과를 반환한다', async () => {
-        const core = await import('@y0ngha/siglens-core');
-        vi.mocked(core.pollMarketNewsDigest).mockResolvedValue({
-            status: 'processing',
-        });
-
-        const { pollMarketNewsDigestAction } =
-            await import('../actions/pollMarketNewsDigestAction');
-        const r = await pollMarketNewsDigestAction('job-1');
-
-        expect(core.pollMarketNewsDigest).toHaveBeenCalledWith('job-1');
-        expect(r.status).toBe('processing');
-    });
-
-    it('예외 발생 시 throw하지 않고 error 상태를 반환한다', async () => {
-        const core = await import('@y0ngha/siglens-core');
-        vi.mocked(core.pollMarketNewsDigest).mockRejectedValue(
-            new Error('poll network error')
+    it('알 수 없는 카테고리는 core 호출 없이 error 상태를 반환한다', async () => {
+        // TypeScript 타입 경계 밖의 값 — 런타임 직렬화(SSE 파라미터 등)에서 발생할 수 있다.
+        const { submitMarketNewsDigestAction } =
+            await import('../actions/submitMarketNewsDigestAction');
+        const r = await submitMarketNewsDigestAction(
+            'unknown_category' as unknown as import('@y0ngha/siglens-core').NewsFeedCategory
         );
-
-        const { pollMarketNewsDigestAction } =
-            await import('../actions/pollMarketNewsDigestAction');
-        const r = await pollMarketNewsDigestAction('job-1');
 
         expect(r.status).toBe('error');
-        expect((r as { status: 'error'; error: string }).error).toBe(
-            'Poll failed'
-        );
-    });
-});
-
-describe('cancelMarketNewsDigestAction은', () => {
-    beforeEach(() => vi.clearAllMocks());
-
-    it('core cancelNewsAnalysisJob을 호출한다', async () => {
-        const core = await import('@y0ngha/siglens-core');
-        vi.mocked(core.cancelNewsAnalysisJob).mockResolvedValue(undefined);
-
-        const { cancelMarketNewsDigestAction } =
-            await import('../actions/cancelMarketNewsDigestAction');
-        await cancelMarketNewsDigestAction('job-1');
-
-        expect(core.cancelNewsAnalysisJob).toHaveBeenCalledWith('job-1');
-    });
-
-    it('취소 중 에러를 삼킨다 (swallow)', async () => {
-        const core = await import('@y0ngha/siglens-core');
-        vi.mocked(core.cancelNewsAnalysisJob).mockRejectedValue(
-            new Error('network error')
-        );
-
-        const { cancelMarketNewsDigestAction } =
-            await import('../actions/cancelMarketNewsDigestAction');
-
-        // Should not throw
-        await expect(
-            cancelMarketNewsDigestAction('job-1')
-        ).resolves.toBeUndefined();
+        // CATEGORY_CONFIG에 없는 키이므로 core가 호출되어서는 안 된다.
+        expect(core.runMarketNewsDigest).not.toHaveBeenCalled();
     });
 });

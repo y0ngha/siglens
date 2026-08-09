@@ -2,9 +2,7 @@
 
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { useNewsAnalysisTrigger, useWaitForNewsCards } from '@/widgets/news';
-import { DependencyProgress } from './DependencyProgress';
 import { useOverallAnalysis } from './hooks/useOverallAnalysis';
-import { axesForAssetClass } from './utils/axesForAssetClass';
 import { OverallTriggerCta } from './OverallTriggerCta';
 import { ReanalyzeButton } from './ReanalyzeButton';
 import { buildChatState } from './utils/buildChatState';
@@ -103,10 +101,6 @@ export function OverallContent({
         trigger,
     });
 
-    // §17 hook order: derived variables go after all hook calls.
-    // applicableAxes is consumed in the pending_dependencies branch.
-    const applicableAxes = axesForAssetClass(assetClass);
-
     // useWaitForNewsCards가 누적 polling 실패 임계를 넘으면 inline fallback으로 회복한다 —
     // OverallContent는 ErrorBoundary로 감싸지 않으므로(throw하면 페이지 전체 crash),
     // 자체 fallback UI로 사용자에게 안내하고 새로고침 기회를 준다.
@@ -153,21 +147,8 @@ export function OverallContent({
         return <BotBlockedNotice />;
     }
 
-    if (state.status === 'pending_dependencies') {
-        return (
-            <DependencyProgress
-                pendingJobs={state.pendingJobs}
-                retryCount={state.retryCount}
-                applicableAxes={applicableAxes}
-            />
-        );
-    }
-
-    if (state.status === 'submitting' || state.status === 'polling') {
-        const loadingLabel =
-            state.status === 'submitting'
-                ? 'AI 종합 분석 요청 중…'
-                : 'AI 종합 분석 생성 중…';
+    if (state.status === 'submitting') {
+        const loadingLabel = 'AI 종합 분석 요청 중…';
         return (
             <section
                 aria-labelledby="overall-loading-heading"

@@ -8,7 +8,7 @@ vi.mock('@y0ngha/siglens-core', async () => {
     );
     return {
         ...actual,
-        submitOptionsAnalysis: vi.fn(),
+        runOptionsAnalysis: vi.fn(),
     };
 });
 
@@ -17,9 +17,9 @@ vi.mock('../lib/optionsDataCache', () => ({
 }));
 
 import {
-    submitOptionsAnalysis,
+    runOptionsAnalysis,
     DEEPSEEK_V4_FLASH_MODEL,
-    type SubmitOptionsAnalysisResult,
+    type RunOptionsAnalysisResult,
     type OptionsSnapshot,
     type OptionsChain,
 } from '@y0ngha/siglens-core';
@@ -31,12 +31,12 @@ const SEAM_SOURCE = readFileSync(
     'utf8'
 );
 
-const mockSubmitOptionsAnalysis = vi.mocked(submitOptionsAnalysis);
+const mockRunOptionsAnalysis = vi.mocked(runOptionsAnalysis);
 const mockFetchOptionsSnapshot = vi.mocked(fetchOptionsSnapshot);
 
-const SUBMITTED_RESULT: SubmitOptionsAnalysisResult = {
-    status: 'submitted',
-    jobId: 'job-options-001',
+const DONE_RESULT: RunOptionsAnalysisResult = {
+    status: 'done',
+    result: {} as never,
 };
 
 const NOW = new Date('2026-07-25T12:00:00Z');
@@ -64,29 +64,29 @@ describe('prewarmOptions', () => {
         vi.clearAllMocks();
         vi.useFakeTimers();
         vi.setSystemTime(NOW);
-        mockSubmitOptionsAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+        mockRunOptionsAnalysis.mockResolvedValue(DONE_RESULT);
     });
 
     afterEach(() => {
         vi.useRealTimers();
     });
 
-    it('returns null without calling submitOptionsAnalysis when the snapshot is null (NoChains)', async () => {
+    it('returns null without calling runOptionsAnalysis when the snapshot is null (NoChains)', async () => {
         mockFetchOptionsSnapshot.mockResolvedValueOnce(null);
 
         const result = await prewarmOptions('AAPL', 'Apple Inc.', false);
 
         expect(result).toBeNull();
-        expect(mockSubmitOptionsAnalysis).not.toHaveBeenCalled();
+        expect(mockRunOptionsAnalysis).not.toHaveBeenCalled();
     });
 
-    it('calls submitOptionsAnalysis with the anonymous-free branch shape and the snapshot threaded', async () => {
+    it('calls runOptionsAnalysis with the anonymous-free branch shape and the snapshot threaded', async () => {
         const snapshot = makeSnapshot([makeChain('2026-08-01')]);
         mockFetchOptionsSnapshot.mockResolvedValueOnce(snapshot);
 
         await prewarmOptions('AAPL', 'Apple Inc.', false);
 
-        expect(mockSubmitOptionsAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOptionsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({
                 symbol: 'AAPL',
                 companyName: 'Apple Inc.',
@@ -106,7 +106,7 @@ describe('prewarmOptions', () => {
 
         await prewarmOptions('AAPL', 'Apple Inc.', true);
 
-        expect(mockSubmitOptionsAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOptionsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ force: true })
         );
     });
@@ -118,7 +118,7 @@ describe('prewarmOptions', () => {
 
         await prewarmOptions('AAPL', 'Apple Inc.', false);
 
-        const callArg = mockSubmitOptionsAnalysis.mock.calls[0]?.[0];
+        const callArg = mockRunOptionsAnalysis.mock.calls[0]?.[0];
         expect(callArg).not.toHaveProperty('force');
     });
 
@@ -134,7 +134,7 @@ describe('prewarmOptions', () => {
 
         await prewarmOptions('AAPL', 'Apple Inc.', false);
 
-        expect(mockSubmitOptionsAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOptionsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ expirationDate: nearExpiration })
         );
     });
@@ -148,7 +148,7 @@ describe('prewarmOptions', () => {
 
         await prewarmOptions('AAPL', 'Apple Inc.', false);
 
-        expect(mockSubmitOptionsAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOptionsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ expirationDate: 'all' })
         );
     });

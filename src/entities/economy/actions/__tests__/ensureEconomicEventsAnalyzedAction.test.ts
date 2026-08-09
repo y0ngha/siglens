@@ -2,8 +2,7 @@ const {
     revalidateTag,
     isAnalysisRecentlyRun,
     markAnalysisRun,
-    submitEconomicEventAnalysis,
-    pollEconomicEventAnalysis,
+    runEconomicEventAnalysis,
     listUnanalyzedAnnounced,
     attachEventAnalysis,
     isE2E,
@@ -11,8 +10,7 @@ const {
     revalidateTag: vi.fn(),
     isAnalysisRecentlyRun: vi.fn(),
     markAnalysisRun: vi.fn(),
-    submitEconomicEventAnalysis: vi.fn(),
-    pollEconomicEventAnalysis: vi.fn(),
+    runEconomicEventAnalysis: vi.fn(),
     listUnanalyzedAnnounced: vi.fn(),
     attachEventAnalysis: vi.fn(),
     isE2E: vi.fn(() => false),
@@ -25,8 +23,7 @@ vi.mock('@/entities/economy/api/calendarAnalysisRefreshFlag', () => ({
     markAnalysisRun,
 }));
 vi.mock('@y0ngha/siglens-core', () => ({
-    submitEconomicEventAnalysis,
-    pollEconomicEventAnalysis,
+    runEconomicEventAnalysis,
 }));
 vi.mock('@/entities/economy/api/economicCalendarRepository', () => ({
     DrizzleEconomicCalendarRepository: class {
@@ -78,13 +75,8 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
         isAnalysisRecentlyRun.mockResolvedValue(false);
         markAnalysisRun.mockResolvedValue(undefined);
         listUnanalyzedAnnounced.mockResolvedValue([ROW]);
-        // Default: cache hit (simplest path, avoids poll complexity in most tests)
-        submitEconomicEventAnalysis.mockResolvedValue({
+        runEconomicEventAnalysis.mockResolvedValue({
             status: 'cached',
-            result: ANALYSIS,
-        });
-        pollEconomicEventAnalysis.mockResolvedValue({
-            status: 'done',
             result: ANALYSIS,
         });
         attachEventAnalysis.mockResolvedValue(undefined);
@@ -94,13 +86,13 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
         isAnalysisRecentlyRun.mockResolvedValue(true);
         await ensureEconomicEventsAnalyzedAction();
         expect(listUnanalyzedAnnounced).not.toHaveBeenCalled();
-        expect(submitEconomicEventAnalysis).not.toHaveBeenCalled();
+        expect(runEconomicEventAnalysis).not.toHaveBeenCalled();
     });
 
     it('short-circuits under E2E (no LLM calls)', async () => {
         isE2E.mockReturnValue(true);
         await ensureEconomicEventsAnalyzedAction();
-        expect(submitEconomicEventAnalysis).not.toHaveBeenCalled();
+        expect(runEconomicEventAnalysis).not.toHaveBeenCalled();
         expect(revalidateTag).not.toHaveBeenCalled();
     });
 
@@ -110,7 +102,7 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
         expect(listUnanalyzedAnnounced).toHaveBeenCalledWith([
             ...CALENDAR_ANALYZED_IMPACTS,
         ]);
-        expect(submitEconomicEventAnalysis).toHaveBeenCalledWith({
+        expect(runEconomicEventAnalysis).toHaveBeenCalledWith({
             event: 'Core CPI MoM (May)',
             impact: 'High',
             actual: 0.4,
@@ -125,17 +117,12 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
         );
     });
 
-    it('analyzes via poll when submit returns submitted status', async () => {
-        submitEconomicEventAnalysis.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-abc',
-        });
-        pollEconomicEventAnalysis.mockResolvedValue({
+    it('done 상태도 cached와 동일하게 저장·revalidate한다', async () => {
+        runEconomicEventAnalysis.mockResolvedValue({
             status: 'done',
             result: ANALYSIS,
         });
         await ensureEconomicEventsAnalyzedAction();
-        expect(pollEconomicEventAnalysis).toHaveBeenCalledWith('job-abc');
         expect(attachEventAnalysis).toHaveBeenCalledWith('id1', ANALYSIS);
         expect(revalidateTag).toHaveBeenCalledWith(
             ECONOMY_CALENDAR_CACHE_TAG,
@@ -146,12 +133,12 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
     it('does not revalidate when there is nothing to analyze', async () => {
         listUnanalyzedAnnounced.mockResolvedValue([]);
         await ensureEconomicEventsAnalyzedAction();
-        expect(submitEconomicEventAnalysis).not.toHaveBeenCalled();
+        expect(runEconomicEventAnalysis).not.toHaveBeenCalled();
         expect(revalidateTag).not.toHaveBeenCalled();
     });
 
     it('swallows a core failure without throwing and skips persist for that event', async () => {
-        submitEconomicEventAnalysis.mockRejectedValue(new Error('llm down'));
+        runEconomicEventAnalysis.mockRejectedValue(new Error('llm down'));
         await expect(
             ensureEconomicEventsAnalyzedAction()
         ).resolves.toBeUndefined();
@@ -159,13 +146,8 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
         expect(revalidateTag).not.toHaveBeenCalled();
     });
 
-    it('does not attach or revalidate when poll returns error status (§18)', async () => {
-        // submit → submitted path; poll → error
-        submitEconomicEventAnalysis.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-err',
-        });
-        pollEconomicEventAnalysis.mockResolvedValue({
+    it('error 상태면 저장도 revalidate도 하지 않는다 (§18)', async () => {
+        runEconomicEventAnalysis.mockResolvedValue({
             status: 'error',
             error: 'llm down',
         });
@@ -178,28 +160,11 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
         expect(revalidateTag).not.toHaveBeenCalled();
     });
 
-    it('does not attach or revalidate when poll times out (§18)', async () => {
-        // submit → submitted path; poll always returns processing (loop exhausts)
-        submitEconomicEventAnalysis.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-timeout',
-        });
-        pollEconomicEventAnalysis.mockResolvedValue({ status: 'processing' });
-
-        // sleep is already mocked as a no-op — 30 iterations run instantly
-        await expect(
-            ensureEconomicEventsAnalyzedAction()
-        ).resolves.toBeUndefined();
-
-        expect(attachEventAnalysis).not.toHaveBeenCalled();
-        expect(revalidateTag).not.toHaveBeenCalled();
-    });
-
     it('logs console.error and skips revalidate when majority of events fail (§18)', async () => {
         // Two unanalyzed events; both submit calls reject → failures (2) > pending (2) / 2
         const ROW_2 = { ...ROW, id: 'id2', event: 'PPI MoM (May)' };
         listUnanalyzedAnnounced.mockResolvedValue([ROW, ROW_2]);
-        submitEconomicEventAnalysis.mockRejectedValue(new Error('llm down'));
+        runEconomicEventAnalysis.mockRejectedValue(new Error('llm down'));
 
         const consoleWarn = vi
             .spyOn(console, 'warn')
@@ -227,7 +192,7 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
     it('skips persist and revalidate when cached result has empty summaryKo (C1 guard)', async () => {
         // core normalizeEconomicEventAnalysis crash-safe fallback: empty summaryKo.
         // Must NOT call attachEventAnalysis (write-once guard) or revalidateTag.
-        submitEconomicEventAnalysis.mockResolvedValue({
+        runEconomicEventAnalysis.mockResolvedValue({
             status: 'cached',
             result: {
                 sentiment: 'neutral',
@@ -243,7 +208,7 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
     });
 
     it('skips persist and revalidate when summaryKo is whitespace-only (C1 guard)', async () => {
-        submitEconomicEventAnalysis.mockResolvedValue({
+        runEconomicEventAnalysis.mockResolvedValue({
             status: 'cached',
             result: {
                 sentiment: 'neutral',
@@ -261,7 +226,7 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
         const ROW_2 = { ...ROW, id: 'id2', event: 'PPI MoM (May)' };
         const ROW_3 = { ...ROW, id: 'id3', event: 'Retail Sales MoM (May)' };
         listUnanalyzedAnnounced.mockResolvedValue([ROW, ROW_2, ROW_3]);
-        submitEconomicEventAnalysis
+        runEconomicEventAnalysis
             .mockRejectedValueOnce(new Error('llm down'))
             .mockResolvedValue({ status: 'cached', result: ANALYSIS });
         const consoleWarn = vi

@@ -1757,9 +1757,8 @@ interface FilteredAnalysisResult {
 
 ### 앱 측 소비 지점
 
-- `src/entities/analysis/actions/submitAnalysisAction.ts` / `pollAnalysisAction.ts` /
-  `pollOverallAnalysisAction.ts`: 호출자 tier를 해석해 core의 submit/poll 함수에
-  전달한다. tier 해석 실패 시 항상 `free`로 fail-closed 처리한다(잠재적 상위 tier로
+- `src/app/api/analysis/stream/route.ts`(technical) 및 `src/entities/*/actions/run*Action.ts`:
+  호출자 tier를 해석해 core의 `run*` 함수에 전달한다. tier 해석 실패 시 항상 `free`로 fail-closed 처리한다(잠재적 상위 tier로
   오인해 잠긴 상세를 노출하는 쪽보다 안전).
 - `src/views/symbol/hooks/useAnalysis.ts`: `lockedInfoDepth`를 상태로 보관한다.
   free 호출자가 캐시/폴링 결과에서 `lockedInfoDepth`가 비어 있는 구버전(롤링 배포 중)

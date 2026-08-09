@@ -199,8 +199,8 @@ async function seed(): Promise<void> {
         .delete(marketNews)
         .where(like(marketNews.url, `${E2E_NEWS_URL_PREFIX}%`));
     // Seed rows are AI-enriched (sentiment + priceImpact non-null + analyzedAt)
-    // so the cards render the sentiment badge in SSR. The E2E AI worker is
-    // unavailable (WORKER_URL unset), so client-side analysis never completes —
+    // so the cards render the sentiment badge in SSR. E2E runs without provider
+    // API keys, so client-side analysis never produces a result —
     // `MarketNewsCard` treats `sentiment === null || priceImpact === null` as
     // pending (skeleton, no badge), which is what `news-hub.spec.ts:58` asserts
     // against. `titleKo` is left null so the card shows the English `titleEn`

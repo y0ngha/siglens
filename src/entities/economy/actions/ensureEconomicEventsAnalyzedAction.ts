@@ -1,16 +1,11 @@
 'use server';
 
 import { revalidateTag } from 'next/cache';
-import {
-    submitEconomicEventAnalysis,
-    pollEconomicEventAnalysis,
-} from '@y0ngha/siglens-core';
+import { runEconomicEventAnalysis } from '@y0ngha/siglens-core';
 import type { EconomicEventAnalysis } from '@y0ngha/siglens-core';
 
 import { isE2E } from '@/shared/api/e2eEnv';
-import { MS_PER_SECOND } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
-import { sleep } from '@/shared/lib/sleep';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
 
 import {
@@ -23,8 +18,6 @@ import {
 } from '../api/calendarAnalysisRefreshFlag';
 import {
     CALENDAR_ANALYSIS_PARALLEL_LIMIT,
-    CALENDAR_ANALYSIS_POLL_INTERVAL_MS,
-    CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS,
     CALENDAR_ANALYZED_IMPACTS,
     ECONOMY_CALENDAR_CACHE_TAG,
 } from '../lib/economyCalendarConstants';
@@ -33,18 +26,13 @@ import {
 const MAJORITY_DIVISOR = 2;
 
 /**
- * 한 이벤트를 core submit→poll로 분석하고 DB에 write-once 기록한다.
+ * 한 이벤트를 core로 분석하고 DB에 write-once 기록한다.
  *
- * core는 submit/poll 워커 잡 구조(`submitEconomicEventAnalysis` /
- * `pollEconomicEventAnalysis`)를 사용한다. 캐시 히트(`status:'cached'`)면
- * 즉시 결과를 얻고, 미스(`status:'submitted'`)면 jobId로 폴링한다(market-news
- * `analyzeAndPersist` 미러). 실패는 reject로 전파 — caller(allSettled)가 수거.
+ * `runEconomicEventAnalysis`는 cached 또는 done 결과를 직접 반환한다 — 폴링 없음.
+ * 실패는 reject로 전파 — caller(allSettled)가 수거.
  *
- * `result` 필드가 분석 결과 키(`SubmitEconomicEventAnalysisCached.result`,
- * `PollEconomicEventAnalysisDone.result`)이다 — 타입 정의 확인 완료.
- *
- * @returns `true` — `attachEventAnalysis` 성공(실제 persist); `false` — poll 오류·타임아웃으로
- *   persist 없이 조기 반환. caller가 `true`만 카운트해 `revalidateTag` 호출 여부를 결정한다.
+ * @returns `true` — `attachEventAnalysis` 성공(실제 persist); `false` — 조기 반환.
+ *   caller가 `true`만 카운트해 `revalidateTag` 호출 여부를 결정한다.
  */
 async function analyzeAndPersistEvent(
     row: UnanalyzedAnnouncedEvent,
@@ -59,38 +47,19 @@ async function analyzeAndPersistEvent(
         unit: row.unit,
     };
 
-    const submitted = await submitEconomicEventAnalysis(input);
+    const runResult = await runEconomicEventAnalysis(input);
 
     let analysis: EconomicEventAnalysis | null = null;
 
-    if (submitted.status === 'cached') {
-        analysis = submitted.result;
-    } else {
-        const { jobId } = submitted;
-        for (
-            let attempt = 0;
-            attempt < CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS;
-            attempt++
-        ) {
-            await sleep(CALENDAR_ANALYSIS_POLL_INTERVAL_MS);
-            const polled = await pollEconomicEventAnalysis(jobId);
-            if (polled.status === 'done') {
-                analysis = polled.result;
-                break;
-            }
-            if (polled.status === 'error') {
-                console.error(
-                    `[ensureEconomicEventsAnalyzedAction] poll error ${row.id}: ${polled.error}`
-                );
-                return false;
-            }
-        }
-        if (analysis === null) {
-            console.warn(
-                `[ensureEconomicEventsAnalyzedAction] poll timeout after ${(CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS * CALENDAR_ANALYSIS_POLL_INTERVAL_MS) / MS_PER_SECOND}s — ${row.id}`
-            );
-            return false;
-        }
+    if (runResult.status === 'cached' || runResult.status === 'done') {
+        analysis = runResult.result;
+    }
+
+    if (analysis === null) {
+        console.warn(
+            `[ensureEconomicEventsAnalyzedAction] unexpected result status "${runResult.status}" for ${row.id}`
+        );
+        return false;
     }
 
     // 빈 summaryKo는 core normalizer의 crash-safe fallback 결과 — write-once로 영구
@@ -114,9 +83,8 @@ async function analyzeAndPersistEvent(
  *  - SEED: 백필용 tsx 스크립트(scripts/seedEconomicEventAnalysis.ts)
  *  - ON-ACCESS: /economy 마운트 시 `useEconomicCalendarTrigger`가 fire-and-forget으로 호출(봇 포함)
  *
- * core는 submit/poll 워커 잡 구조(`submitEconomicEventAnalysis` +
- * `pollEconomicEventAnalysis`)를 사용한다. 캐시 히트는 즉시 결과를 얻고,
- * 미스는 jobId로 폴링한다(market-news `ensureNewsCardsAnalyzedAction` 미러).
+ * `runEconomicEventAnalysis` 한 번으로 cached/done 결과가 확정된다 — 폴링 없음.
+ * 서버 내부(액션) 경로라 브라우저 연결이 없고, 따라서 SSE도 필요 없다.
  *
  * 멱등성: `analyzed_at IS NULL` DB 가드 + refresh-flag(30분 TTL)로 이중 보호.
  * 과반 실패는 경고 로깅만 — 다음 접속/플래그 만료 시 재시도된다.

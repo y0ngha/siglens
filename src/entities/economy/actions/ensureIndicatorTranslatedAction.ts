@@ -2,18 +2,11 @@
 
 import { revalidateTag } from 'next/cache';
 // CORE DEPENDENCY (separate repo, user publishes): analysis-domain AI translation
-// of an unmapped indicator name. See SP-B plan CROSS-REPO note. The actual core
-// export is a submit/poll pair (not a synchronous `translateIndicatorName`);
-// this file implements the bounded poll loop mirroring ensureNewsCardsAnalyzedAction.
-import {
-    submitIndicatorTranslation,
-    pollIndicatorTranslation,
-} from '@y0ngha/siglens-core';
+// of an unmapped indicator name. See SP-B plan CROSS-REPO note.
+import { runIndicatorTranslation } from '@y0ngha/siglens-core';
 
 import { isE2E } from '@/shared/api/e2eEnv';
 import { getDatabaseClient } from '@/shared/db/client';
-import { sleep } from '@/shared/lib/sleep';
-import { MS_PER_SECOND } from '@/shared/config/time';
 
 import { DrizzleIndicatorTranslationRepository } from '../api/indicatorTranslationRepository';
 import {
@@ -21,52 +14,17 @@ import {
     markIndicatorTranslationPending,
 } from '../api/indicatorTranslationFlag';
 import { INDICATOR_NAME_KO } from '../lib/indicatorNameKo';
-import {
-    INDICATOR_TRANSLATION_CACHE_TAG,
-    INDICATOR_TRANSLATION_POLL_INTERVAL_MS,
-    INDICATOR_TRANSLATION_POLL_MAX_ATTEMPTS,
-} from '../lib/indicatorTranslationConstants';
+import { INDICATOR_TRANSLATION_CACHE_TAG } from '../lib/indicatorTranslationConstants';
 
 /**
- * submit → poll 루프를 실행해 번역 결과를 얻는다. core 캐시 hit이면 즉시 반환
- * (poll 없음). submitted면 최대 POLL_MAX_ATTEMPTS 회 polling. done이면 nameKo,
- * error/timeout이면 null(호출자가 upsert 생략).
- *
- * `ensureNewsCardsAnalyzedAction`의 `analyzeAndPersist` 패턴 미러.
+ * `runIndicatorTranslation`을 호출해 번역 결과를 얻는다. cached/done이면 nameKo,
+ * 그 외(error 등)는 null — 호출자가 upsert 생략.
  */
 async function submitAndPoll(normalizedName: string): Promise<string | null> {
-    const sub = await submitIndicatorTranslation(normalizedName);
-
-    if (sub.status === 'cached') {
-        return sub.nameKo;
+    const result = await runIndicatorTranslation(normalizedName);
+    if (result.status === 'cached' || result.status === 'done') {
+        return result.nameKo;
     }
-
-    const { jobId } = sub;
-    for (
-        let attempt = 0;
-        attempt < INDICATOR_TRANSLATION_POLL_MAX_ATTEMPTS;
-        attempt++
-    ) {
-        await sleep(INDICATOR_TRANSLATION_POLL_INTERVAL_MS);
-        const polled = await pollIndicatorTranslation(jobId);
-        if (polled.status === 'done') {
-            return polled.nameKo;
-        }
-        if (polled.status === 'error') {
-            console.error(
-                `[ensureIndicatorTranslatedAction] poll error "${normalizedName}": ${polled.error}`
-            );
-            return null;
-        }
-    }
-
-    const timeoutSecs =
-        (INDICATOR_TRANSLATION_POLL_MAX_ATTEMPTS *
-            INDICATOR_TRANSLATION_POLL_INTERVAL_MS) /
-        MS_PER_SECOND;
-    console.warn(
-        `[ensureIndicatorTranslatedAction] poll timeout after ${timeoutSecs}s — "${normalizedName}"`
-    );
     return null;
 }
 

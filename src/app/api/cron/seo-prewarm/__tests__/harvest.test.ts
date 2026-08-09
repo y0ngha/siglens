@@ -3,7 +3,6 @@ import type { PrewarmBatchCounts } from '../runPrewarmBatch';
 import type { SeamOutcome } from '../harvest';
 
 const {
-    mockMarkInFlight,
     mockMarkSkipped,
     mockClearInFlight,
     mockPrewarmTechnical,
@@ -13,15 +12,7 @@ const {
     mockPrewarmCongress,
     mockPrewarmNews,
     mockPrewarmOptions,
-    mockPrewarmPollTechnical,
-    mockPrewarmPollOverall,
-    mockPrewarmPollFundamental,
-    mockPrewarmPollFinancials,
-    mockPrewarmPollCongress,
-    mockPrewarmPollNews,
-    mockPrewarmPollOptions,
 } = vi.hoisted(() => ({
-    mockMarkInFlight: vi.fn(),
     mockMarkSkipped: vi.fn(),
     mockClearInFlight: vi.fn(),
     mockPrewarmTechnical: vi.fn(),
@@ -31,19 +22,13 @@ const {
     mockPrewarmCongress: vi.fn(),
     mockPrewarmNews: vi.fn(),
     mockPrewarmOptions: vi.fn(),
-    mockPrewarmPollTechnical: vi.fn(),
-    mockPrewarmPollOverall: vi.fn(),
-    mockPrewarmPollFundamental: vi.fn(),
-    mockPrewarmPollFinancials: vi.fn(),
-    mockPrewarmPollCongress: vi.fn(),
-    mockPrewarmPollNews: vi.fn(),
-    mockPrewarmPollOptions: vi.fn(),
 }));
 
 vi.mock('../lock', () => ({
-    markInFlight: mockMarkInFlight,
     markSkipped: mockMarkSkipped,
     clearInFlight: mockClearInFlight,
+    // 구현과 동일한 값(lock.ts). 일시적 실패 backoff TTL.
+    TRANSIENT_SKIP_TTL_SECONDS: 1800,
 }));
 
 vi.mock('@/entities/analysis/api', () => ({
@@ -52,24 +37,17 @@ vi.mock('@/entities/analysis/api', () => ({
     prewarmFundamental: mockPrewarmFundamental,
     prewarmFinancials: mockPrewarmFinancials,
     prewarmCongress: mockPrewarmCongress,
-    prewarmPollTechnical: mockPrewarmPollTechnical,
-    prewarmPollOverall: mockPrewarmPollOverall,
-    prewarmPollFundamental: mockPrewarmPollFundamental,
-    prewarmPollFinancials: mockPrewarmPollFinancials,
-    prewarmPollCongress: mockPrewarmPollCongress,
 }));
 
 vi.mock('@/entities/news-article/api', () => ({
     prewarmNews: mockPrewarmNews,
-    prewarmPollNews: mockPrewarmPollNews,
 }));
 
 vi.mock('@/entities/options-chain/api', () => ({
     prewarmOptions: mockPrewarmOptions,
-    prewarmPollOptions: mockPrewarmPollOptions,
 }));
 
-import { TAB_SEAMS, TAB_POLLS, resolveHarvest } from '../harvest';
+import { TAB_SEAMS, resolveHarvest } from '../harvest';
 
 const CTX = {
     symbol: 'AAPL',
@@ -79,24 +57,25 @@ const CTX = {
 
 function makeCounts(): PrewarmBatchCounts {
     return {
-        submitted: 0,
         harvested: 0,
         revalidated: 0,
         remaining: 0,
         fmpBudgetUsed: 0,
+        staleTotal: 0,
+        durationMs: 0,
     };
 }
 
 describe('TAB_SEAMS', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockPrewarmTechnical.mockResolvedValue({ status: 'submitted' });
-        mockPrewarmOverall.mockResolvedValue({ status: 'submitted' });
-        mockPrewarmFundamental.mockResolvedValue({ status: 'submitted' });
-        mockPrewarmFinancials.mockResolvedValue({ status: 'submitted' });
-        mockPrewarmCongress.mockResolvedValue({ status: 'submitted' });
-        mockPrewarmNews.mockResolvedValue({ status: 'submitted' });
-        mockPrewarmOptions.mockResolvedValue({ status: 'submitted' });
+        mockPrewarmTechnical.mockResolvedValue({ status: 'cached' });
+        mockPrewarmOverall.mockResolvedValue({ status: 'cached' });
+        mockPrewarmFundamental.mockResolvedValue({ status: 'cached' });
+        mockPrewarmFinancials.mockResolvedValue({ status: 'cached' });
+        mockPrewarmCongress.mockResolvedValue({ status: 'cached' });
+        mockPrewarmNews.mockResolvedValue({ status: 'cached' });
+        mockPrewarmOptions.mockResolvedValue({ status: 'cached' });
     });
 
     it('dispatches technical with force=false', async () => {
@@ -152,54 +131,6 @@ describe('TAB_SEAMS', () => {
     });
 });
 
-describe('TAB_POLLS (FIX Z)', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        mockPrewarmPollTechnical.mockResolvedValue({ status: 'processing' });
-        mockPrewarmPollOverall.mockResolvedValue({ status: 'processing' });
-        mockPrewarmPollFundamental.mockResolvedValue({ status: 'processing' });
-        mockPrewarmPollFinancials.mockResolvedValue({ status: 'processing' });
-        mockPrewarmPollCongress.mockResolvedValue({ status: 'processing' });
-        mockPrewarmPollNews.mockResolvedValue({ status: 'processing' });
-        mockPrewarmPollOptions.mockResolvedValue({ status: 'processing' });
-    });
-
-    it('dispatches technical poll with jobId', async () => {
-        await TAB_POLLS.technical('job-1');
-        expect(mockPrewarmPollTechnical).toHaveBeenCalledWith('job-1');
-    });
-
-    it('dispatches overall poll with jobId', async () => {
-        await TAB_POLLS.overall('job-1');
-        expect(mockPrewarmPollOverall).toHaveBeenCalledWith('job-1');
-    });
-
-    it('dispatches fundamental poll with jobId', async () => {
-        await TAB_POLLS.fundamental('job-1');
-        expect(mockPrewarmPollFundamental).toHaveBeenCalledWith('job-1');
-    });
-
-    it('dispatches financials poll with jobId', async () => {
-        await TAB_POLLS.financials('job-1');
-        expect(mockPrewarmPollFinancials).toHaveBeenCalledWith('job-1');
-    });
-
-    it('dispatches congress poll with jobId', async () => {
-        await TAB_POLLS.congress('job-1');
-        expect(mockPrewarmPollCongress).toHaveBeenCalledWith('job-1');
-    });
-
-    it('dispatches news poll with jobId', async () => {
-        await TAB_POLLS.news('job-1');
-        expect(mockPrewarmPollNews).toHaveBeenCalledWith('job-1');
-    });
-
-    it('dispatches options poll with jobId', async () => {
-        await TAB_POLLS.options('job-1');
-        expect(mockPrewarmPollOptions).toHaveBeenCalledWith('job-1');
-    });
-});
-
 describe('resolveHarvest', () => {
     let repo: { upsert: ReturnType<typeof vi.fn> };
     let counts: PrewarmBatchCounts;
@@ -223,7 +154,6 @@ describe('resolveHarvest', () => {
 
         expect(ok).toBe(false);
         expect(repo.upsert).not.toHaveBeenCalled();
-        expect(mockMarkInFlight).not.toHaveBeenCalled();
         expect(mockMarkSkipped).toHaveBeenCalledWith('AAPL', 'technical');
         expect(mockClearInFlight).toHaveBeenCalledWith('AAPL', 'technical');
         expect(warnSpy).toHaveBeenCalledWith(
@@ -262,7 +192,7 @@ describe('resolveHarvest', () => {
         expect(mockClearInFlight).toHaveBeenCalledWith('AAPL', 'overall');
     });
 
-    it('status=done(poll 완료, FIX Z)도 cached와 동일하게 upsert하고 true를 반환한다', async () => {
+    it('status=done도 cached와 동일하게 upsert하고 true를 반환한다', async () => {
         const done: SeamOutcome = {
             status: 'done',
             result: { foo: 'bar' },
@@ -282,53 +212,6 @@ describe('resolveHarvest', () => {
         expect(mockClearInFlight).toHaveBeenCalledWith('AAPL', 'overall');
     });
 
-    it('status=processing(poll 진행 중, FIX Z)은 아무 상태도 바꾸지 않고 false를 반환한다', async () => {
-        const ok = await resolveHarvest(
-            'AAPL',
-            'overall',
-            { status: 'processing' },
-            repo as never,
-            counts
-        );
-
-        expect(ok).toBe(false);
-        expect(repo.upsert).not.toHaveBeenCalled();
-        expect(mockMarkInFlight).not.toHaveBeenCalled();
-        expect(mockMarkSkipped).not.toHaveBeenCalled();
-        expect(mockClearInFlight).not.toHaveBeenCalled();
-        expect(counts).toEqual(makeCounts());
-    });
-
-    it('marks in-flight and counts submitted for status=submitted, returns false', async () => {
-        const ok = await resolveHarvest(
-            'AAPL',
-            'fundamental',
-            { status: 'submitted' },
-            repo as never,
-            counts
-        );
-
-        expect(ok).toBe(false);
-        expect(mockMarkInFlight).toHaveBeenCalledWith('AAPL', 'fundamental');
-        expect(counts.submitted).toBe(1);
-        expect(repo.upsert).not.toHaveBeenCalled();
-    });
-
-    it('marks in-flight and counts submitted for status=pending_dependencies, returns false', async () => {
-        const ok = await resolveHarvest(
-            'AAPL',
-            'financials',
-            { status: 'pending_dependencies' },
-            repo as never,
-            counts
-        );
-
-        expect(ok).toBe(false);
-        expect(mockMarkInFlight).toHaveBeenCalledWith('AAPL', 'financials');
-        expect(counts.submitted).toBe(1);
-        expect(repo.upsert).not.toHaveBeenCalled();
-    });
-
     it('terminal status=error: markSkipped + clearInFlight + warn, returns false (FIX C)', async () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -342,8 +225,9 @@ describe('resolveHarvest', () => {
 
         expect(ok).toBe(false);
         expect(repo.upsert).not.toHaveBeenCalled();
-        expect(mockMarkInFlight).not.toHaveBeenCalled();
-        expect(mockMarkSkipped).toHaveBeenCalledWith('AAPL', 'congress');
+        // FMP fetch 실패는 throw가 아니라 이 status로 **반환**된다. 6시간을 걸면
+        // FMP 장애 한 번이 4개 축을 그날 밤 내내 배제한다 — 30분이어야 한다.
+        expect(mockMarkSkipped).toHaveBeenCalledWith('AAPL', 'congress', 1800);
         expect(mockClearInFlight).toHaveBeenCalledWith('AAPL', 'congress');
         expect(warnSpy).toHaveBeenCalledWith(
             '[seo-prewarm] skip AAPL:congress — status=error'
@@ -366,8 +250,8 @@ describe('resolveHarvest', () => {
 
         expect(ok).toBe(false);
         expect(repo.upsert).not.toHaveBeenCalled();
-        expect(mockMarkInFlight).not.toHaveBeenCalled();
-        expect(mockMarkSkipped).toHaveBeenCalledWith('AAPL', 'news');
+        // 구조적으로 불가능한 케이스는 기본 6시간을 유지한다(TTL 인자 없음).
+        expect(mockMarkSkipped).toHaveBeenCalledWith('AAPL', 'news', undefined);
         expect(mockClearInFlight).toHaveBeenCalledWith('AAPL', 'news');
         expect(counts).toEqual(makeCounts());
 

@@ -1,36 +1,20 @@
-import type { MockedFunction } from 'vitest';
+import type { Mock } from 'vitest';
 import { useNewsAnalysis } from '@/widgets/news/hooks/useNewsAnalysis';
-import {
-    submitNewsAnalysisAction,
-    pollNewsAnalysisAction,
-    cancelNewsAnalysisJobAction,
-} from '@/entities/news-article/actions';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 
-vi.mock('@/entities/news-article/actions', () => ({
-    submitNewsAnalysisAction: vi.fn(),
-    pollNewsAnalysisAction: vi.fn(),
-    cancelNewsAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
-    ensureNewsCardsAnalyzedAction: vi.fn().mockResolvedValue(undefined),
-    getNewsCardsAction: vi.fn().mockResolvedValue([]),
+vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+    runAnalysisStream: vi.fn(),
 }));
 
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockSubmit = submitNewsAnalysisAction as MockedFunction<
-    typeof submitNewsAnalysisAction
->;
-const mockPoll = pollNewsAnalysisAction as MockedFunction<
-    typeof pollNewsAnalysisAction
->;
-const mockCancel = cancelNewsAnalysisJobAction as MockedFunction<
-    typeof cancelNewsAnalysisJobAction
->;
+const mockSubmit = runAnalysisStream as Mock;
 
 const NEWS_RESULT: NewsAnalysisResponse = {
     overallSentiment: 'bullish',
@@ -59,9 +43,6 @@ function makeWrapper() {
 describe('useNewsAnalysis — trigger coverage', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
-        mockPoll.mockReset();
-        mockCancel.mockReset();
-        mockCancel.mockResolvedValue(undefined);
     });
 
     afterEach(() => {

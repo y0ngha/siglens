@@ -19,6 +19,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@anthropic-ai/sdk@npm:^0.110.0":
+  version: 0.110.0
+  resolution: "@anthropic-ai/sdk@npm:0.110.0"
+  dependencies:
+    json-schema-to-ts: "npm:^3.1.1"
+    standardwebhooks: "npm:^1.0.0"
+  peerDependencies:
+    zod: ^3.25.0 || ^4.0.0
+  peerDependenciesMeta:
+    zod:
+      optional: true
+  bin:
+    anthropic-ai-sdk: bin/cli
+  checksum: 10c0/c62fc7aa3570d6e00395f8d0262eca149191366fb868ba7389e601e9ee2280dc2220d4f9692a0a50a0c220ff3e6341ecabfc7bcb193aa36434f42b5fd574aeff
+  languageName: node
+  linkType: hard
+
 "@anthropic-ai/sdk@npm:^0.92.0":
   version: 0.92.0
   resolution: "@anthropic-ai/sdk@npm:0.92.0"
@@ -1518,6 +1535,23 @@ __metadata:
     "@modelcontextprotocol/sdk":
       optional: true
   checksum: 10c0/2d22f6bd4baa915a402289dae4797410acbd5c5add1ed0c8d1bedef3ac7871fe1f04640d0612aa793fe7055f086719487491f55474a5b21597addfdea8631fa6
+  languageName: node
+  linkType: hard
+
+"@google/genai@npm:^2.10.0":
+  version: 2.15.0
+  resolution: "@google/genai@npm:2.15.0"
+  dependencies:
+    google-auth-library: "npm:^10.3.0"
+    p-retry: "npm:^4.6.2"
+    protobufjs: "npm:^7.5.4"
+    ws: "npm:^8.18.0"
+  peerDependencies:
+    "@modelcontextprotocol/sdk": ^1.25.2
+  peerDependenciesMeta:
+    "@modelcontextprotocol/sdk":
+      optional: true
+  checksum: 10c0/70a70d25149c228e88a561651188bee8ce7a29ca7ecae50f2b90be6608f72ec6b456d7769f62b9f3d4ecbd60b0b59ff03d0c7601d992b54d77b29a274ca59963
   languageName: node
   linkType: hard
 
@@ -4396,14 +4430,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@y0ngha/siglens-core@npm:0.41.0":
-  version: 0.41.0
-  resolution: "@y0ngha/siglens-core@npm:0.41.0::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40y0ngha%2Fsiglens-core%2F0.41.0%2Ffb6c28d39d8b3682b8861e1318cd303543d12733"
+"@y0ngha/siglens-core@npm:0.42.2":
+  version: 0.42.2
+  resolution: "@y0ngha/siglens-core@npm:0.42.2::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40y0ngha%2Fsiglens-core%2F0.42.2%2F0ec4f97a94589a25f32b1f7da7a353b6015c9942"
   dependencies:
+    "@anthropic-ai/sdk": "npm:^0.110.0"
+    "@google/genai": "npm:^2.10.0"
     jsonrepair: "npm:^3.14.0"
+    openai: "npm:6.35.0"
   peerDependencies:
     "@upstash/redis": ^1.37.0
-  checksum: 10c0/f7c7acbe7cfe97fbdb0f31788ae97da630ce9e182c76e9656adc283a8668c831710e8668e1d595ca1746f62ff063d88cbe7b220257b37faf462f5a897dcc9b7e
+  checksum: 10c0/5c80ff8a835f6db2fbc64aa33fe2dd020b2dfa35dd548e49d8618a82d40c932085ce4b3aa429c57d53af3fabb9a52bd5bf4463861709f890753bd1fa71b1457b
   languageName: node
   linkType: hard
 
@@ -10212,6 +10249,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"openai@npm:6.35.0":
+  version: 6.35.0
+  resolution: "openai@npm:6.35.0"
+  peerDependencies:
+    ws: ^8.18.0
+    zod: ^3.25 || ^4.0
+  peerDependenciesMeta:
+    ws:
+      optional: true
+    zod:
+      optional: true
+  bin:
+    openai: bin/cli
+  checksum: 10c0/b5be8c9c26b8991bc06e94d2de9ec046d7e8497f3828f8ff3cd7796cfd5e39e464a52afa2f4959003183e61a909c6ee261ca4380a61cb1f2e9a56629058314ed
+  languageName: node
+  linkType: hard
+
 "openai@npm:^6.35.0":
   version: 6.39.0
   resolution: "openai@npm:6.39.0"
@@ -11888,7 +11942,7 @@ __metadata:
     "@typescript/native-preview": "npm:7.0.0-dev.20260704.1"
     "@upstash/redis": "npm:^1.37.0"
     "@vitest/coverage-v8": "npm:^4.1.9"
-    "@y0ngha/siglens-core": "npm:0.41.0"
+    "@y0ngha/siglens-core": "npm:0.42.2"
     babel-plugin-react-compiler: "npm:^1.0.0"
     bcryptjs: "npm:^3.0.3"
     clsx: "npm:^2.1.1"
@@ -12104,7 +12158,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"standardwebhooks@npm:1.0.0":
+"standardwebhooks@npm:1.0.0, standardwebhooks@npm:^1.0.0":
   version: 1.0.0
   resolution: "standardwebhooks@npm:1.0.0"
   dependencies:

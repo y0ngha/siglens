@@ -7,17 +7,13 @@ vi.mock('@/shared/db/client', () => ({
 vi.mock('@/shared/lib/sleep', () => ({ sleep: vi.fn() }));
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: vi.fn(() => false) }));
 
-// Mock submitNewsCardAnalysis / pollNewsCardAnalysis from core
+// Mock runNewsCardAnalysis from core (replaces submit+poll pattern)
 vi.mock('@y0ngha/siglens-core', async importOriginal => {
     const original =
         await importOriginal<typeof import('@y0ngha/siglens-core')>();
     return {
         ...original,
-        submitNewsCardAnalysis: vi.fn(async () => ({
-            status: 'submitted' as const,
-            jobId: 'job-1',
-        })),
-        pollNewsCardAnalysis: vi.fn(async () => ({
+        runNewsCardAnalysis: vi.fn(async () => ({
             status: 'done',
             result: {
                 titleKo: 'BTC 상승',
@@ -130,11 +126,7 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         vi.mocked(api.isRecentlyFetched).mockResolvedValue(false);
         vi.mocked(api.markFetched).mockResolvedValue(undefined);
         // Reset core mocks
-        vi.mocked(core.submitNewsCardAnalysis).mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-1',
-        });
-        vi.mocked(core.pollNewsCardAnalysis).mockResolvedValue({
+        vi.mocked(core.runNewsCardAnalysis).mockResolvedValue({
             status: 'done',
             result: {
                 titleKo: 'BTC 상승',
@@ -240,7 +232,7 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
             getMarketNewsClientModule.getMarketNewsClient
         ).toHaveBeenCalled();
         // LLM analysis was triggered
-        expect(core.submitNewsCardAnalysis).toHaveBeenCalled();
+        expect(core.runNewsCardAnalysis).toHaveBeenCalled();
         // Refresh flag was marked at the start (before fetch)
         expect(api.markFetched).toHaveBeenCalledWith('__NEWS_CRYPTO__');
     });
@@ -301,7 +293,7 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         await ensureMarketNewsCardsAnalyzedAction('crypto');
 
         // Majority branch should fire and abort before LLM analysis
-        expect(core.submitNewsCardAnalysis).not.toHaveBeenCalled();
+        expect(core.runNewsCardAnalysis).not.toHaveBeenCalled();
         // console.error should have been called at least once mentioning majority-failure
         const calls = errorSpy.mock.calls.map(c => String(c[0]));
         expect(calls.some(msg => msg.includes('majority upsert failure'))).toBe(
@@ -346,10 +338,10 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
 
         await ensureMarketNewsCardsAnalyzedAction('crypto');
         // minority failure should NOT abort — LLM analysis should still run
-        expect(core.submitNewsCardAnalysis).toHaveBeenCalled();
+        expect(core.runNewsCardAnalysis).toHaveBeenCalled();
     });
 
-    it('upsert 실패 아이템은 LLM 제출에서 제외된다 — 5개 중 1개 upsert 실패 시 submitNewsCardAnalysis 4회 호출', async () => {
+    it('upsert 실패 아이템은 LLM 제출에서 제외된다 — 5개 중 1개 upsert 실패 시 runNewsCardAnalysis 4회 호출', async () => {
         vi.mocked(
             getMarketNewsClientModule.getMarketNewsClient
         ).mockReturnValue({
@@ -392,12 +384,12 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         await ensureMarketNewsCardsAnalyzedAction('crypto');
 
         // Only the 4 successfully upserted items should be submitted to LLM
-        expect(core.submitNewsCardAnalysis).toHaveBeenCalledTimes(4);
+        expect(core.runNewsCardAnalysis).toHaveBeenCalledTimes(4);
 
         errorSpy.mockRestore();
     });
 
-    it('LLM 분석이 chunked-parallel로 호출된다 — N개 아이템에 submitNewsCardAnalysis N번 호출', async () => {
+    it('LLM 분석이 chunked-parallel로 호출된다 — N개 아이템에 runNewsCardAnalysis N번 호출', async () => {
         vi.mocked(
             getMarketNewsClientModule.getMarketNewsClient
         ).mockReturnValue({
@@ -429,7 +421,7 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
 
         await ensureMarketNewsCardsAnalyzedAction('crypto');
         // All 5 items submitted (within LLM_PARALLEL_LIMIT=8 single chunk for 5 items)
-        expect(core.submitNewsCardAnalysis).toHaveBeenCalledTimes(5);
+        expect(core.runNewsCardAnalysis).toHaveBeenCalledTimes(5);
     });
 
     it('LLM 동시 실행은 LLM_PARALLEL_LIMIT=8을 초과하지 않는다 — 20개 중 동시 최대 8개', async () => {
@@ -445,7 +437,7 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         let maxConcurrent = 0;
         let currentConcurrent = 0;
 
-        vi.mocked(core.submitNewsCardAnalysis).mockImplementation(async () => {
+        vi.mocked(core.runNewsCardAnalysis).mockImplementation(async () => {
             currentConcurrent++;
             if (currentConcurrent > maxConcurrent) {
                 maxConcurrent = currentConcurrent;
@@ -453,7 +445,17 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
             // Simulate async work
             await Promise.resolve();
             currentConcurrent--;
-            return { status: 'submitted' as const, jobId: 'job-ok' };
+            return {
+                status: 'done' as const,
+                result: {
+                    titleKo: 'ok',
+                    bodyKo: null,
+                    summaryKo: 'ok',
+                    sentiment: 'neutral' as const,
+                    category: 'other' as const,
+                    priceImpact: 'low' as const,
+                },
+            };
         });
 
         vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(function (
@@ -482,7 +484,7 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
 
         await ensureMarketNewsCardsAnalyzedAction('crypto');
 
-        expect(core.submitNewsCardAnalysis).toHaveBeenCalledTimes(20);
+        expect(core.runNewsCardAnalysis).toHaveBeenCalledTimes(20);
         // Each chunk is at most LLM_PARALLEL_LIMIT=8 concurrent
         expect(maxConcurrent).toBeLessThanOrEqual(8);
     });
@@ -490,10 +492,20 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
     it('majority analyze failure이면 console.error를 호출하고 void로 resolve한다', async () => {
         // 3 of 5 analyses fail → majority failure
         let callCount = 0;
-        vi.mocked(core.submitNewsCardAnalysis).mockImplementation(async () => {
+        vi.mocked(core.runNewsCardAnalysis).mockImplementation(async () => {
             callCount++;
             if (callCount <= 3) throw new Error('LLM worker error');
-            return { status: 'submitted' as const, jobId: 'job-ok' };
+            return {
+                status: 'done' as const,
+                result: {
+                    titleKo: 'ok',
+                    bodyKo: null,
+                    summaryKo: 'ok',
+                    sentiment: 'neutral' as const,
+                    category: 'other' as const,
+                    priceImpact: 'low' as const,
+                },
+            };
         });
 
         vi.mocked(
@@ -556,99 +568,5 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         expect(
             getMarketNewsClientModule.getMarketNewsClient
         ).toHaveBeenCalledTimes(1);
-    });
-});
-
-// analyzeAndPersist internal polling branches — tested indirectly via the public action.
-describe('analyzeAndPersist polling 분기 (간접 테스트)', () => {
-    const POLL_ITEM = {
-        id: 'poll-item-1',
-        symbol: '__NEWS_CRYPTO__',
-        source: 'CoinWire',
-        url: 'https://x/poll',
-        publishedAt: '2026-06-15T10:00:00.000Z',
-        titleEn: 'Poll test item',
-        bodyEn: 'body',
-        tickers: [] as string[],
-    };
-    const POLL_ITEM_DB = {
-        ...POLL_ITEM,
-        titleKo: null,
-        bodyKo: null,
-        summaryKo: null,
-        sentiment: null,
-        category: null,
-        priceImpact: null,
-        analyzedAt: null,
-    };
-
-    let mockAttachAnalysis: ReturnType<typeof vi.fn>;
-
-    beforeEach(() => {
-        vi.clearAllMocks();
-        vi.mocked(api.isRecentlyFetched).mockResolvedValue(false);
-        vi.mocked(api.markFetched).mockResolvedValue(undefined);
-        vi.mocked(core.submitNewsCardAnalysis).mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-timeout',
-        });
-        vi.mocked(
-            getMarketNewsClientModule.getMarketNewsClient
-        ).mockReturnValue({
-            fetchCategoryNews: vi.fn(async () => [POLL_ITEM]),
-        });
-
-        mockAttachAnalysis = vi.fn(async () => undefined);
-        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(function (
-            this: unknown
-        ) {
-            (this as Record<string, unknown>).upsertMarketNewsItem = vi.fn(
-                async () => true
-            );
-            (this as Record<string, unknown>).attachAnalysis =
-                mockAttachAnalysis;
-            (this as Record<string, unknown>).listByCategory = vi.fn(
-                async () => [POLL_ITEM_DB]
-            );
-            return this;
-        });
-    });
-
-    it('pollNewsCardAnalysis가 status=error를 반환하면 attachAnalysis를 호출하지 않는다', async () => {
-        vi.mocked(core.pollNewsCardAnalysis).mockResolvedValue({
-            status: 'error',
-            error: 'worker crash',
-        });
-
-        const errorSpy = vi
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
-
-        await ensureMarketNewsCardsAnalyzedAction('crypto');
-
-        expect(mockAttachAnalysis).not.toHaveBeenCalled();
-        expect(errorSpy).toHaveBeenCalledWith(
-            expect.stringContaining('poll error')
-        );
-
-        errorSpy.mockRestore();
-    });
-
-    it('pollNewsCardAnalysis가 POLL_MAX_ATTEMPTS번 모두 processing이면 console.warn 후 attachAnalysis를 호출하지 않는다', async () => {
-        // Always return processing — never done or error
-        vi.mocked(core.pollNewsCardAnalysis).mockResolvedValue({
-            status: 'processing',
-        });
-
-        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-        await ensureMarketNewsCardsAnalyzedAction('crypto');
-
-        expect(mockAttachAnalysis).not.toHaveBeenCalled();
-        expect(warnSpy).toHaveBeenCalledWith(
-            expect.stringContaining('poll timeout')
-        );
-
-        warnSpy.mockRestore();
     });
 });

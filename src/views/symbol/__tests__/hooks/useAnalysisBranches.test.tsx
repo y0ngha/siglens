@@ -4,31 +4,25 @@
  * and timeframe change flows.
  */
 
-import type { MockedFunction, Mock } from 'vitest';
+import type { Mock } from 'vitest';
 import { useAnalysis } from '@/views/symbol/hooks/useAnalysis';
-import {
-    cancelAnalysisJobAction,
-    pollAnalysisAction,
-    submitAnalysisAction,
-} from '@/entities/analysis/actions';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import type { RunAnalysisResult } from '@y0ngha/siglens-core';
+import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
+type RunAnalysisActionResult =
+    | (RunAnalysisResult & { personalized?: boolean })
+    | AnalysisGateBlockedResult;
 import {
     getReanalyzeCooldownMs,
     tryAcquireReanalyzeCooldown,
-    releaseReanalyzeCooldown,
 } from '@/entities/analysis';
-import {
-    ANALYSIS_POLL_MAX_DURATION_MS,
-    ANALYSIS_POLL_TIMEOUT_MESSAGE,
-} from '@/shared/config/pollingConfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 
-vi.mock('@/entities/analysis/actions', () => ({
-    submitAnalysisAction: vi.fn(),
-    pollAnalysisAction: vi.fn(),
-    cancelAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+    runAnalysisStream: vi.fn(),
 }));
 
 vi.mock('@/entities/analysis', async importOriginal => {
@@ -37,7 +31,6 @@ vi.mock('@/entities/analysis', async importOriginal => {
         // 쿨다운 I/O만 스텁하고, normalizeAnalysisResponse 등 순수 함수는 실제 구현을 사용한다.
         ...actual,
         getReanalyzeCooldownMs: vi.fn().mockResolvedValue(0),
-        releaseReanalyzeCooldown: vi.fn().mockResolvedValue(undefined),
         tryAcquireReanalyzeCooldown: vi.fn().mockResolvedValue({ ok: true }),
     };
 });
@@ -46,21 +39,8 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/shared/hooks/usePageHideCancel', () => ({
-    usePageHideCancel: vi.fn(),
-}));
-
-const mockSubmit = submitAnalysisAction as MockedFunction<
-    typeof submitAnalysisAction
->;
-const mockPoll = pollAnalysisAction as MockedFunction<
-    typeof pollAnalysisAction
->;
-const mockCancel = cancelAnalysisJobAction as MockedFunction<
-    typeof cancelAnalysisJobAction
->;
+const mockSubmit = runAnalysisStream as Mock;
 const mockTryAcquire = tryAcquireReanalyzeCooldown as Mock;
-const mockRelease = releaseReanalyzeCooldown as Mock;
 
 const INITIAL_ANALYSIS = {} as unknown as AnalysisResponse;
 const CACHED_RESULT = { summary: 'test' } as unknown as AnalysisResponse;
@@ -108,16 +88,11 @@ function makeOptions(overrides?: PartialOptions) {
 describe('useAnalysis — branch coverage', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
-        mockPoll.mockReset();
-        mockCancel.mockReset();
-        mockCancel.mockResolvedValue(undefined);
         // mockReset (not just re-stubbing) so call history cannot leak between
         // tests: a `not.toHaveBeenCalled()` assertion further down would
         // otherwise see calls made by an earlier test in this file.
         mockTryAcquire.mockReset();
         mockTryAcquire.mockResolvedValue({ ok: true });
-        mockRelease.mockReset();
-        mockRelease.mockResolvedValue(undefined);
         (getReanalyzeCooldownMs as Mock).mockResolvedValue(0);
     });
 
@@ -202,8 +177,12 @@ describe('useAnalysis — branch coverage', () => {
         });
     });
 
-    describe('submit onError: force request releases cooldown (L231-238)', () => {
-        it('releases cooldown on mutation error when force=true', async () => {
+    describe('submit onError: 쿨다운 해제는 클라이언트가 하지 않는다', () => {
+        it('force 제출이 실패해도 클라이언트는 쿨다운을 해제하지 않고 카운트다운만 되돌린다', async () => {
+            // 해제를 클라이언트에 두면 (a) 인증 없는 공개 액션이 필요해져 "해제 →
+            // 재요청" 루프로 쿨다운이 무력화되고, (b) 새 제출이 이전 스트림을 abort할
+            // 때도 onError가 돌아 살아 있는 서버 작업의 쿨다운까지 지운다.
+            // 실패 시 해제는 라우트의 `releaseOnFailure`가 서버에서 담당한다.
             mockSubmit.mockRejectedValue(new Error('Network error'));
             mockTryAcquire.mockResolvedValue({ ok: true });
 
@@ -213,56 +192,22 @@ describe('useAnalysis — branch coverage', () => {
 
             await act(async () => {});
 
-            // Trigger handleReanalyze which uses force=true
             act(() => {
                 result.current.handleReanalyze();
             });
 
             await waitFor(() => {
-                expect(mockSubmit).toHaveBeenCalled();
+                expect(result.current.analysisError).not.toBeNull();
             });
-
-            // Wait for the error to be processed
-            await waitFor(() => {
-                expect(mockRelease).toHaveBeenCalled();
-            });
+            expect(result.current.reanalyzeCooldownMs).toBe(0);
         });
     });
 
-    describe('polling: done status (L330-338)', () => {
-        it('sets analysis result when poll returns done', async () => {
+    describe('SSE stream error handling', () => {
+        it('sets analysisError when stream resolves with error status', async () => {
             mockSubmit.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'job-1',
-            });
-            mockPoll.mockResolvedValueOnce({
-                status: 'done',
-                result: CACHED_RESULT,
-                lockedInfoDepth: [],
-            });
-
-            const { result } = renderHook(
-                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
-                { wrapper: makeWrapper() }
-            );
-
-            await waitFor(() => {
-                expect(result.current.analysisResult).toMatchObject(
-                    CACHED_RESULT
-                );
-            });
-        });
-    });
-
-    describe('polling: error status (L339-356)', () => {
-        it('sets pollError when poll returns error', async () => {
-            mockSubmit.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'job-1',
-            });
-            mockPoll.mockResolvedValueOnce({
                 status: 'error',
-                error: '분석 실패',
+                error: { code: 'unexpected_error', message: '분석 실패' },
             });
 
             const { result } = renderHook(
@@ -275,15 +220,12 @@ describe('useAnalysis — branch coverage', () => {
             });
         });
 
-        it('uses AI_SERVER_UNSTABLE message when error is AI_SERVER_UNSTABLE', async () => {
-            mockSubmit.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'job-1',
-            });
-            mockPoll.mockResolvedValueOnce({
-                status: 'error',
-                error: 'AI_SERVER_UNSTABLE',
-            });
+        it('maps AI_SERVER_UNSTABLE thrown error to a Korean user message', async () => {
+            // core's withRetry throws new Error('AI_SERVER_UNSTABLE') when the
+            // AI provider stays unavailable after all retry attempts. The SSE
+            // heartbeatStream re-emits this as an SSE error event, runAnalysisStream
+            // re-throws it, and the hook's mutationFn .catch() maps it to Korean.
+            mockSubmit.mockRejectedValue(new Error('AI_SERVER_UNSTABLE'));
 
             const { result } = renderHook(
                 () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
@@ -292,19 +234,13 @@ describe('useAnalysis — branch coverage', () => {
 
             await waitFor(() => {
                 expect(result.current.analysisError).toContain(
-                    'AI 서버가 불안정합니다'
+                    '예상치 못한 오류가 발생했습니다'
                 );
             });
         });
-    });
 
-    describe('polling: catch block (L358-371)', () => {
-        it('sets generic error when poll throws', async () => {
-            mockSubmit.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'job-1',
-            });
-            mockPoll.mockRejectedValueOnce(new Error('Network failure'));
+        it('surfaces a network-level throw from runAnalysisStream as analysisError', async () => {
+            mockSubmit.mockRejectedValue(new Error('Network failure'));
 
             const { result } = renderHook(
                 () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
@@ -312,17 +248,22 @@ describe('useAnalysis — branch coverage', () => {
             );
 
             await waitFor(() => {
-                expect(result.current.analysisError).toBe(
-                    '분석 결과 조회에 실패했습니다.'
-                );
+                expect(result.current.analysisError).toBe('Network failure');
             });
         });
     });
 
     describe('handleReanalyze cooldown (L262-285)', () => {
         it('shows cooldown notice when acquire fails', async () => {
-            mockTryAcquire.mockResolvedValue({
-                ok: false,
+            /**
+             * 클라이언트가 직접 쿨다운을 획득하던 로직이 서버로 이전됐다.
+             * `handleReanalyze`는 이제 `tryAcquireReanalyzeCooldown`을 호출하지 않고
+             * 바로 `mutate`를 실행한다. 서버가 쿨다운을 획득하지 못하면
+             * `{ status: 'reanalyze_cooldown', remainingMs }` 응답을 돌려주고,
+             * `onSuccess`가 `cooldownNotice`를 설정한다.
+             */
+            mockSubmit.mockResolvedValue({
+                status: 'reanalyze_cooldown',
                 remainingMs: 180000,
             });
 
@@ -341,21 +282,59 @@ describe('useAnalysis — branch coverage', () => {
                 expect(result.current.reanalyzeCooldownMs).toBe(180000);
             });
         });
+
+        it('쿨다운으로 거절돼도 보고 있던 분석을 잃지 않는다', async () => {
+            // onMutate가 화면을 비우는데 쿨다운 응답에는 새 결과가 없다. 되돌리지
+            // 않으면 재분석을 눌렀다는 이유만으로 기존 분석이 사라진다.
+            const DONE = {
+                status: 'done' as const,
+                result: { summaryKo: '최초 분석' },
+                lockedInfoDepth: [],
+                personalized: false,
+            };
+            mockSubmit.mockResolvedValueOnce(DONE);
+
+            const { result } = renderHook(() => useAnalysis(makeOptions()), {
+                wrapper: makeWrapper(),
+            });
+
+            await act(async () => {});
+            act(() => {
+                result.current.handleReanalyze();
+            });
+            await waitFor(() => {
+                expect(result.current.analysis).not.toBeNull();
+            });
+            const before = result.current.analysis;
+
+            mockSubmit.mockResolvedValueOnce({
+                status: 'reanalyze_cooldown',
+                remainingMs: 120000,
+            });
+            act(() => {
+                result.current.handleReanalyze();
+            });
+
+            await waitFor(() => {
+                expect(result.current.reanalyzeCooldownMs).toBe(120000);
+            });
+            expect(result.current.analysis).toEqual(before);
+        });
     });
 
     describe('timeframe change (L396-414)', () => {
-        it('cancels current job and resubmits on timeframe change', async () => {
+        it('aborts in-flight stream and resubmits on timeframe change', async () => {
             mockSubmit
                 .mockResolvedValueOnce({
-                    status: 'submitted',
-                    jobId: 'job-old',
+                    status: 'cached',
+                    result: CACHED_RESULT,
+                    lockedInfoDepth: [],
                 })
                 .mockResolvedValueOnce({
                     status: 'cached',
                     result: CACHED_RESULT,
                     lockedInfoDepth: [],
                 });
-            mockPoll.mockImplementation(() => new Promise(() => {}));
 
             const { rerender } = renderHook(
                 ({ timeframeChangeCount }: { timeframeChangeCount: number }) =>
@@ -380,6 +359,65 @@ describe('useAnalysis — branch coverage', () => {
             await waitFor(() => {
                 expect(mockSubmit).toHaveBeenCalledTimes(2);
             });
+        });
+
+        it('timeframe 변경 시 첫 번째 스트림의 signal이 abort된다 — stale 데이터 덮어쓰기 방지', async () => {
+            /**
+             * `streamAbortRef.current?.abort()`를 삭제하면 이 테스트가 실패한다.
+             * abort가 없으면 느린 첫 번째 스트림이 두 번째 스트림이 받은 fresher 데이터를
+             * onSuccess에서 덮어쓸 수 있다.
+             *
+             * 첫 번째 mock은 결코 resolve되지 않는 promise를 반환해 abort 발화 전에
+             * 완료되지 않게 한다. signal은 mock.calls에서 읽어낸다.
+             */
+            mockSubmit
+                .mockImplementationOnce(() => new Promise(() => {})) // 영구 대기
+                .mockImplementationOnce(() =>
+                    Promise.resolve({
+                        status: 'cached' as const,
+                        result: CACHED_RESULT,
+                        lockedInfoDepth: [],
+                    })
+                );
+
+            const { rerender } = renderHook(
+                ({ timeframeChangeCount }: { timeframeChangeCount: number }) =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            timeframeChangeCount,
+                        })
+                    ),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: { timeframeChangeCount: 0 },
+                }
+            );
+
+            // 첫 번째 submit이 호출될 때까지 기다린다.
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalledTimes(1);
+            });
+
+            // timeframe 변경 → streamAbortRef.current?.abort() → 새 스트림 시작.
+            rerender({ timeframeChangeCount: 1 });
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalledTimes(2);
+            });
+
+            // 각 호출의 signal을 mock.calls에서 추출한다.
+            const calls = mockSubmit.mock.calls as Array<
+                [{ signal?: AbortSignal }]
+            >;
+            const firstSignal = calls[0]?.[0]?.signal;
+            const secondSignal = calls[1]?.[0]?.signal;
+
+            expect(firstSignal).toBeInstanceOf(AbortSignal);
+            // 첫 번째 signal은 timeframe 변경 시 abort되었다.
+            expect(firstSignal?.aborted).toBe(true);
+            // 두 번째 signal은 아직 abort되지 않았다.
+            expect(secondSignal?.aborted).toBe(false);
         });
     });
 
@@ -491,114 +529,18 @@ describe('useAnalysis — branch coverage', () => {
         });
     });
 
-    describe('poll loop: processing keeps polling', () => {
-        it('keeps polling while status is processing and settles on done', async () => {
-            mockSubmit.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'job-processing',
-            });
-            mockPoll
-                .mockResolvedValueOnce({ status: 'processing' })
-                .mockResolvedValueOnce({ status: 'processing' })
-                .mockResolvedValueOnce({
-                    status: 'done',
-                    result: CACHED_RESULT,
-                    lockedInfoDepth: [],
-                });
-
-            const { result } = renderHook(
-                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
-                { wrapper: makeWrapper() }
-            );
-
-            await waitFor(() => {
-                expect(result.current.analysisResult).toMatchObject(
-                    CACHED_RESULT
-                );
-            });
-            // The two 'processing' ticks must not have terminated the loop.
-            expect(mockPoll).toHaveBeenCalledTimes(3);
-            expect(result.current.isAnalyzing).toBe(false);
-        });
-    });
-
-    describe('poll ceiling — stalled job beyond ANALYSIS_POLL_MAX_DURATION_MS', () => {
-        it('surfaces a visible error and releases the cooldown for a forced request', async () => {
-            // Mirrors the financials/options/fundamental/news/overall
-            // poll-ceiling tests (congress remains on the older call-count
-            // pattern — see useCongressTrendBranches.test.tsx — it was not
-            // touched by this branch). Job is submitted, then repeatedly
-            // polls as 'processing' (a genuinely stalled job). Date.now() is
-            // keyed off an observable event — the poll mock flipping
-            // `stalled` — rather than a raw Date.now() call count: counting
-            // calls is brittle because any extra Date.now() from React
-            // Query/React internals (or a future line earlier in the hook)
-            // shifts the count and silently breaks the freeze.
-            mockSubmit.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'job-stalled',
-            });
-            const frozenStart = Date.now();
-            let stalled = false;
-            mockPoll.mockImplementation(async () => {
-                stalled = true;
-                return { status: 'processing' };
-            });
-            const dateSpy = vi
-                .spyOn(Date, 'now')
-                .mockImplementation(() =>
-                    stalled
-                        ? frozenStart + ANALYSIS_POLL_MAX_DURATION_MS + 1
-                        : frozenStart
-                );
-
-            try {
-                const { result } = renderHook(
-                    () => useAnalysis(makeOptions()),
-                    {
-                        wrapper: makeWrapper(),
-                    }
-                );
-
-                act(() => {
-                    result.current.handleReanalyze();
-                });
-
-                await waitFor(() => {
-                    expect(result.current.analysisError).toBe(
-                        ANALYSIS_POLL_TIMEOUT_MESSAGE
-                    );
-                });
-
-                expect(result.current.isAnalyzing).toBe(false);
-                // handleReanalyze always submits with force=true, so the
-                // ceiling timeout must release the Redis cooldown the same
-                // way the other error branches do — otherwise the user is
-                // locked out of retrying for the full 5-minute window.
-                expect(mockRelease).toHaveBeenCalled();
-                expect(result.current.reanalyzeCooldownMs).toBe(0);
-            } finally {
-                dateSpy.mockRestore();
-            }
-        });
-    });
-
     describe('forced reanalyze', () => {
-        it('starts the full cooldown when a forced poll completes, tolerating a legacy response with no lock metadata', async () => {
-            mockSubmit.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'job-forced',
-            });
+        it('starts the full cooldown when a forced stream completes, tolerating a response with no lock metadata', async () => {
             // `lockedInfoDepth` is intentionally absent: a rolling deploy can
-            // serve this shape from an older instance, and `undefined` reaching
-            // state would crash downstream `.length` consumers.
-            // The cast is the point of the test: `PollAnalysisResult` declares
-            // `lockedInfoDepth` as required, but a rolling deploy can serve a
-            // payload without it, and TypeScript cannot stop that at runtime.
-            mockPoll.mockResolvedValueOnce({
+            // serve this shape from an older server instance, and `undefined`
+            // reaching state would crash downstream `.length` consumers.
+            // The stream now resolves directly (no poll), so the shape is the
+            // same — we just mock runAnalysisStream to resolve with the legacy
+            // payload.
+            mockSubmit.mockResolvedValue({
                 status: 'done',
                 result: CACHED_RESULT,
-            } as unknown as Awaited<ReturnType<typeof pollAnalysisAction>>);
+            } as unknown as RunAnalysisActionResult);
 
             const { result } = renderHook(() => useAnalysis(makeOptions()), {
                 wrapper: makeWrapper(),
@@ -634,50 +576,67 @@ describe('useAnalysis — branch coverage', () => {
         });
     });
 
-    describe('cancel failures stay silent', () => {
-        it('warns instead of throwing when the unmount cancel rejects', async () => {
-            const warnSpy = vi
-                .spyOn(console, 'warn')
-                .mockImplementation(() => {});
+    /**
+     * Task 1: reanalyze intent가 technical 탭 전송 파라미터에 올바르게 반영되는지 검증한다.
+     *
+     * runAnalysisStream params에서:
+     * - `force` 키는 절대 포함되지 않는다 (보안: 공개 라우트라 클라이언트가 캐시 우회를
+     *   지시하면 누구나 LLM을 무제한으로 태울 수 있다).
+     * - `reanalyze: true`는 handleReanalyze() 호출 시에만 포함된다.
+     * - 마운트 자동 제출(force=false 경로)은 reanalyze 키를 포함하지 않는다.
+     */
+    describe('reanalyze intent — transport contract (Task 1)', () => {
+        it('handleReanalyze()가 runAnalysisStream에 reanalyze: true를 전달하고 force 키는 포함하지 않는다', async () => {
             mockSubmit.mockResolvedValue({
-                status: 'submitted',
-                jobId: 'job-unmount',
-            });
-            // One 'processing' tick, then a poll that never settles: `sleep` is
-            // mocked to resolve immediately, so a repeating 'processing' would
-            // spin the loop hot and kill the worker.
-            mockPoll
-                .mockResolvedValueOnce({ status: 'processing' })
-                .mockImplementation(() => new Promise(() => {}));
-            mockCancel.mockRejectedValue(new Error('cancel boom'));
+                status: 'done',
+                result: CACHED_RESULT,
+            } as unknown as RunAnalysisActionResult);
 
-            const { unmount } = renderHook(
+            const { result } = renderHook(() => useAnalysis(makeOptions()), {
+                wrapper: makeWrapper(),
+            });
+
+            // initialAnalysisFailed=false(기본값)이므로 마운트 자동 제출 없음.
+            act(() => {
+                result.current.handleReanalyze();
+            });
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalled();
+            });
+
+            const lastCall =
+                mockSubmit.mock.calls[mockSubmit.mock.calls.length - 1][0];
+
+            // force는 클라이언트 내부 변수 — API params에 실려선 안 된다.
+            expect(lastCall.params).not.toHaveProperty('force');
+            // 의도(reanalyze)만 보낸다 — 서버가 쿨다운 획득 여부에 따라 우회를 결정한다.
+            expect(lastCall.params).toHaveProperty('reanalyze', true);
+        });
+
+        it('마운트 자동 제출(force=false 경로)은 reanalyze 키 없이 runAnalysisStream을 호출한다', async () => {
+            /**
+             * initialAnalysisFailed=true로 트리거되는 자동 제출은 재분석 의도가 없다.
+             * reanalyze가 빠져야 서버가 캐시 히트 시 그대로 반환한다 — 있으면
+             * tryAcquireReanalyzeCooldown까지 실행해 쿨다운 슬롯이 낭비된다.
+             */
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: CACHED_RESULT,
+                lockedInfoDepth: [],
+            });
+
+            renderHook(
                 () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
                 { wrapper: makeWrapper() }
             );
 
-            // Wait for the poll to actually start: that proves the submit
-            // resolved to 'submitted' and the job id ref is populated, which is
-            // what the unmount cleanup keys off. Waiting on `isAnalyzing` alone
-            // is satisfied while the submit is still in flight, so the unmount
-            // could land before there is any job to cancel.
             await waitFor(() => {
-                expect(mockPoll).toHaveBeenCalled();
+                expect(mockSubmit).toHaveBeenCalled();
             });
 
-            // Unmounting with a job in flight fires the fire-and-forget cancel.
-            // Its rejection must be swallowed — an unhandled rejection here
-            // would surface as a test-environment crash in production too.
-            unmount();
-
-            await waitFor(() => {
-                expect(warnSpy).toHaveBeenCalledWith(
-                    '[useAnalysis] cancel failed',
-                    expect.any(Error)
-                );
-            });
-
-            warnSpy.mockRestore();
+            const firstCall = mockSubmit.mock.calls[0][0];
+            expect(firstCall.params).not.toHaveProperty('reanalyze');
         });
     });
 });

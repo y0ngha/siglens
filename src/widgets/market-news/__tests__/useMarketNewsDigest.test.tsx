@@ -18,7 +18,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 import {
-    cancelMarketNewsDigestAction,
     getMarketNewsCardsAction,
     ensureMarketNewsCardsAnalyzedAction,
 } from '@/entities/market-news/actions';
@@ -29,8 +28,6 @@ vi.mock('@/entities/market-news/actions', () => ({
     ensureMarketNewsCardsAnalyzedAction: vi.fn().mockResolvedValue(undefined),
     getMarketNewsCardsAction: vi.fn(),
     submitMarketNewsDigestAction: vi.fn(),
-    pollMarketNewsDigestAction: vi.fn(),
-    cancelMarketNewsDigestAction: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/widgets/market-news/utils/fetchMarketNewsDigest', () => ({
@@ -43,11 +40,6 @@ vi.mock('@/shared/lib/sleep', () => ({
 
 const mockFetchMarketNewsDigest = fetchMarketNewsDigest as MockedFunction<
     typeof fetchMarketNewsDigest
->;
-// The hook imports cancelMarketNewsDigestAction directly from
-// @/entities/market-news/actions — that is the mock we must assert against.
-const mockCancelAction = cancelMarketNewsDigestAction as MockedFunction<
-    typeof cancelMarketNewsDigestAction
 >;
 const mockGetMarketNewsCardsAction = getMarketNewsCardsAction as MockedFunction<
     typeof getMarketNewsCardsAction
@@ -83,8 +75,6 @@ function makeWrapper() {
 describe('useMarketNewsDigest', () => {
     beforeEach(() => {
         mockFetchMarketNewsDigest.mockReset();
-        mockCancelAction.mockReset();
-        mockCancelAction.mockResolvedValue(undefined);
         mockGetMarketNewsCardsAction.mockReset();
         mockEnsureMarketNewsCardsAnalyzedAction.mockReset();
         mockEnsureMarketNewsCardsAnalyzedAction.mockResolvedValue(undefined);
@@ -197,44 +187,6 @@ describe('useMarketNewsDigest', () => {
         expect(result.current.status).toBe('loading');
 
         unmount();
-    });
-
-    it('unmount with jobId present → cancelMarketNewsDigestAction called', async () => {
-        // fetchMarketNewsDigest is a thin wrapper; we simulate a job being in
-        // flight by making the queryFn set the jobId ref via onJobId and then
-        // hang. The actual cancellation path in the hook uses the
-        // cancelMarketNewsDigestAction imported from the same utils module.
-        //
-        // Instead, we test the effect cleanup path: the hook calls
-        // cancelMarketNewsDigestAction(jobId) on unmount. We mock the module so
-        // that fetchMarketNewsDigest internally calls the onJobId callback and
-        // then hangs, simulating a submitted-but-not-yet-done job.
-        mockFetchMarketNewsDigest.mockImplementation(
-            async (_cat, _signal, onJobId) => {
-                onJobId('job-market-456');
-                return new Promise<NewsAnalysisResponse>(() => {});
-            }
-        );
-
-        const { unmount } = renderHook(
-            () => useMarketNewsDigest('forex', true),
-            { wrapper: makeWrapper() }
-        );
-
-        // Wait for queryFn to be called and onJobId to set the ref.
-        await waitFor(() => {
-            expect(mockFetchMarketNewsDigest).toHaveBeenCalled();
-        });
-
-        unmount();
-
-        // The hook's cleanup effect calls cancelMarketNewsDigestAction with the
-        // stored jobId. Give microtasks a chance to flush.
-        await act(async () => {
-            await new Promise(resolve => setTimeout(resolve, 0));
-        });
-
-        expect(mockCancelAction).toHaveBeenCalledWith('job-market-456');
     });
 
     it('retry() calls query.refetch() (triggers a second queryFn call)', async () => {

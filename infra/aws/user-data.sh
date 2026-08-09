@@ -87,7 +87,11 @@ INSTANCE_ID=$(curl -sf -H "X-aws-ec2-metadata-token: $TOKEN" \
   "http://169.254.169.254/latest/meta-data/instance-id" || echo unknown)
 aws logs create-log-group --log-group-name "$LOG_GROUP" --region "$REGION" 2>/dev/null || true
 
-# systemd 유닛 (graceful stop 30s — Dockerfile tini가 SIGTERM 전달)
+# systemd 유닛 — Dockerfile tini가 SIGTERM을 컨테이너 프로세스에 전달.
+# graceful stop 타이밍(Fix 3, 06-alb-asg.sh와 정합):
+#   - deregistration_delay 185s  ≥  instrumentation drain deadline(180s)
+#   - docker stop -t 185s        >  drain deadline(SIGTERM → process.exit(0) 이후 멈춤)
+#   - TimeoutStopSec=190s        ≥  docker stop -t(systemd 안전망)
 # ExecStartPre order: fetch env first (re-populates /run/siglens/env after reboot),
 # then remove any stale container, then docker run.
 cat > /etc/systemd/system/siglens.service <<UNIT
@@ -102,15 +106,41 @@ Requires=docker.service
 StartLimitIntervalSec=120
 StartLimitBurst=5
 [Service]
-TimeoutStopSec=35
+TimeoutStopSec=190
 ExecStartPre=/usr/local/bin/siglens-fetch-env.sh
 ExecStartPre=-/usr/bin/docker rm -f siglens
 # --security-opt no-new-privileges 적용: 컨테이너 프로세스의 권한 상승 차단.
 # --cap-drop / --read-only 는 런타임 검증 후 적용 예정 (현재 보류).
 # awslogs 드라이버로 stdout/stderr를 CloudWatch Logs($LOG_GROUP)로 전송(L4).
 # 인스턴스가 사라져도 로그가 보존된다.
-ExecStart=/usr/bin/docker run --rm --name siglens -p 3000:3000 --env-file /run/siglens/env --security-opt no-new-privileges:true --log-driver awslogs --log-opt awslogs-region=$REGION --log-opt awslogs-group=$LOG_GROUP --log-opt awslogs-stream=$INSTANCE_ID --log-opt awslogs-create-group=true $IMAGE
-ExecStop=/usr/bin/docker stop -t 30 siglens
+#
+# 메모리 상한 2층 (worker 제거 이후 도입). 값은 프로덕션 실측 기반이다:
+#
+#   CWAgent mem_used_percent 7일(2026-08-02~08-09), t4g.medium 실사용 ~3.8GiB 기준
+#     평균 24.1% =  938MiB (호스트+컨테이너 전체)
+#     최대 44.2% = 1720MiB
+#   호스트(AL2023+dockerd+CloudWatch/SSM agent)를 ~500MiB로 보면 컨테이너 피크는 ~1220MiB.
+#   여기에 분석 인플라이트(동시 24건 × bars+지표+프롬프트, GC 지연 포함 +200~300MiB)를
+#   더해 배포 후 예상 피크 ~1.5GiB.
+#
+#   --memory=2.5g        컨테이너 하드 리밋. 예상 피크의 ~1.7배 여유이면서 호스트에
+#                        1.3GiB를 남긴다. (3g로 잡으면 호스트 여유가 300MiB뿐이라,
+#                        컨테이너가 한계에 근접할 때 커널이 dockerd나 CW agent를 죽일 수
+#                        있다 — 앱이 죽는 것보다 진단이 어렵다.)
+#   --memory-swap=2.5g   memory와 같은 값 = 스왑 사용 안 함. 다르면 한계 도달 시
+#                        스와핑으로 늘어지며 응답이 조용히 느려진다 — 차라리 빨리 죽는 게 낫다.
+#   --max-old-space-size Node 힙 상한 1536MiB. **컨테이너 리밋보다 낮게** 잡는 게 핵심이다.
+#     =1536              나머지 ~1GiB는 힙 밖(Buffer, 네이티브, 코드, 스택) 몫이다.
+#
+# 왜 Node 상한이 더 낮아야 하나: 힙이 먼저 차면 Node가 GC를 공격적으로 돌려 버티고,
+# 그래도 안 되면 "JavaScript heap out of memory"를 **로그에 남기고** 종료한다. 반대로
+# 컨테이너 리밋이 먼저 닿으면 커널 OOM killer가 프로세스를 조용히 죽여 원인이 안 남는다.
+#
+# 이 상한이 필요해진 이유: worker 제거로 LLM 호출이 앱 프로세스 안에서 돌면서, 요청당
+# bars(252봉)+지표 39종+프롬프트를 동시 분석 수만큼 들고 있게 됐다. 앞단의 동시 분석
+# 상한(24, activeStreams.ts)이 1차 방어이고 이건 그게 뚫렸을 때의 안전망이다.
+ExecStart=/usr/bin/docker run --rm --name siglens -p 3000:3000 --memory=2.5g --memory-swap=2.5g -e NODE_OPTIONS=--max-old-space-size=1536 --env-file /run/siglens/env --security-opt no-new-privileges:true --log-driver awslogs --log-opt awslogs-region=$REGION --log-opt awslogs-group=$LOG_GROUP --log-opt awslogs-stream=$INSTANCE_ID --log-opt awslogs-create-group=true $IMAGE
+ExecStop=/usr/bin/docker stop -t 185 siglens
 Restart=always
 RestartSec=5
 [Install]

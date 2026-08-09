@@ -8,53 +8,30 @@ import {
 } from '../lib/ingestNewsForSymbol';
 import {
     DISABLED_THINKING_BUDGET,
-    NEWS_CARD_ANALYSIS_POLL_INTERVAL_MS as POLL_INTERVAL_MS,
-    POLL_MAX_ATTEMPTS,
+    NEWS_CARD_ANALYSIS_PARALLEL_LIMIT,
 } from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
+import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
 import { isRecentlyFetched } from '../lib/newsRefreshFlag';
 import { revalidateTag } from 'next/cache';
-import { sleep } from '@/shared/lib/sleep';
-import { MS_PER_SECOND } from '@/shared/config/time';
 import { isE2E } from '@/shared/api/e2eEnv';
-import {
-    pollNewsCardAnalysis,
-    submitNewsCardAnalysis,
-    type NewsItem,
-} from '@y0ngha/siglens-core';
+import { runNewsCardAnalysis, type NewsItem } from '@y0ngha/siglens-core';
 
 /**
- * Submit card analysis for a single item and wait for the worker to finish,
- * then persist the result to DB via `attachAnalysis`.
+ * Run card analysis for a single item and persist the result to DB.
  *
  * Caller guarantees that `item` has not been analyzed yet (analyzedAt === null).
+ * `runNewsCardAnalysis` returns `{ status: 'done', result }` directly — no polling.
  */
 async function analyzeAndPersist(
     item: NewsItem,
     repo: DrizzleNewsRepository
 ): Promise<void> {
-    const { jobId } = await submitNewsCardAnalysis({
+    const analyzed = await runNewsCardAnalysis({
         item,
         thinkingBudget: DISABLED_THINKING_BUDGET,
     });
-
-    for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
-        await sleep(POLL_INTERVAL_MS);
-        const polled = await pollNewsCardAnalysis(jobId);
-        if (polled.status === 'done') {
-            await repo.attachAnalysis(item.id, polled.result, new Date());
-            return;
-        }
-        if (polled.status === 'error') {
-            console.error(
-                `[ensureNewsCardsAnalyzedAction] poll error ${item.id}: ${polled.error}`
-            );
-            return;
-        }
-    }
-    console.warn(
-        `[ensureNewsCardsAnalyzedAction] poll timeout after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / MS_PER_SECOND}s — ${item.id}`
-    );
+    await repo.attachAnalysis(item.id, analyzed.result, new Date());
 }
 
 /**
@@ -146,9 +123,13 @@ export async function ensureNewsCardsAnalyzedAction(
 
     if (unanalyzed.length === 0) return;
 
-    // Each item polls its own background worker independently.
-    const analyzeSettled = await Promise.allSettled(
-        unanalyzed.map(item => analyzeAndPersist(item, repo))
+    // `runNewsCardAnalysis`는 블로킹 LLM 왕복이다(worker 제거 이후). 무제한 병렬
+    // 실행은 2-vCPU 서버에서 커넥션 풀 고갈 / 메모리 압박을 유발하므로
+    // NEWS_CARD_ANALYSIS_PARALLEL_LIMIT개씩 청크 단위로 실행한다.
+    const analyzeSettled = await withConcurrencyLimit(
+        unanalyzed,
+        NEWS_CARD_ANALYSIS_PARALLEL_LIMIT,
+        item => analyzeAndPersist(item, repo)
     );
     const analyzeFailures = analyzeSettled.filter(r => r.status === 'rejected');
     if (analyzeFailures.length > 0) {

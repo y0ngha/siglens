@@ -20,15 +20,38 @@ if [ "$TG_ARN" = "None" ] || [ -z "$TG_ARN" ]; then
     --healthy-threshold-count 2 --unhealthy-threshold-count 3 --query 'TargetGroups[0].TargetGroupArn' --output text)
 fi
 # Deregistration delay: 인스턴스 refresh로 타깃이 draining 상태가 되면 ALB가
-# 새 연결을 끊고 in-flight 요청만 흘려보낸 뒤 dereg을 완료한다. 기본 300s는
-# 우리 graceful-shutdown 예산과 맞지 않으므로 30s로 낮춘다:
-#   - systemd ExecStop=docker stop -t 30 (컨테이너 30s 후 SIGKILL)
-#   - instrumentation SIGTERM drain deadline 25s
-#   - 이 dereg delay 30s
-# 셋이 정합해야 롤 시 in-flight 요청·백그라운드 작업이 깔끔히 비워진다.
-# modify-target-group-attributes는 upsert라 매 실행 안전(멱등).
+# 새 연결을 끊고 in-flight 요청만 흘려보낸 뒤 dereg을 완료한다.
+#
+# SSE 분석 스트림이 최대 5분(STREAM_DEADLINE_MS)까지 지속될 수 있으므로 drain 체인을
+# 180s 기준으로 재조정한다(Fix 3). 3값 정합 필수:
+#   - instrumentation SIGTERM drain deadline: 180s  (instrumentation.node.ts)
+#   - 이 dereg delay:                         185s  ≥ drain deadline
+#     (SIGTERM은 deregistration 완료 후 오므로, drain 동안 새 연결이 들어오지 않는다)
+#   - systemd ExecStop=docker stop -t 185s    >  drain deadline
+#     (drain이 끝나 process.exit(0) 후 docker가 멈춤; user-data.sh)
+#   - TimeoutStopSec=190s                     ≥  docker stop -t (systemd 안전망)
+#
+# 180s drain < STREAM_DEADLINE_MS(5분) = 5분짜리 분석은 잘릴 수 있다 — 허용된 트레이드오프.
+# modify-*-attributes는 upsert라 매 실행 안전(멱등).
+#
+# ⚠️ 두 속성은 **소속이 다르다.** deregistration_delay는 타깃그룹, idle_timeout은
+# 로드밸런서 속성이다(botocore ELBv2 모델에서 확인: TargetGroupAttribute에는
+# idle_timeout이 없고 LoadBalancerAttribute에만 있다). 한 호출에 섞으면
+# modify-target-group-attributes가 원자적이라 ValidationError로 **둘 다** 적용되지
+# 않고, `set -euo pipefail` 때문에 여기서 스크립트가 죽어 아래 리스너·ASG 설정까지
+# 통째로 건너뛴다. 반드시 분리해서 호출할 것.
 aws elbv2 modify-target-group-attributes --target-group-arn "$TG_ARN" \
-  --attributes Key=deregistration_delay.timeout_seconds,Value=30 >/dev/null
+  --attributes Key=deregistration_delay.timeout_seconds,Value=185 \
+  >/dev/null
+
+# idle_timeout.timeout_seconds=60: ALB idle timeout을 명시 고정한다.
+# heartbeatStream.ts의 HEARTBEAT_INTERVAL_MS=25s는 이 60s 값을 기준으로 산정됐다
+# (실측: heartbeat 없이 61.1s에 연결 끊김 — project_sse_streaming_verified_alb_wall.md).
+# AWS 기본값도 60s이나 스크립트에 명시하지 않으면 "AWS 기본"에 의존하게 되어
+# 향후 기본값 변경이 heartbeat 설계와 조용히 어긋날 수 있다.
+aws elbv2 modify-load-balancer-attributes --load-balancer-arn "$ALB_ARN" \
+  --attributes Key=idle_timeout.timeout_seconds,Value=60 \
+  >/dev/null
 # HTTPS 443 리스너 (ACM)
 if ! aws elbv2 describe-listeners --load-balancer-arn "$ALB_ARN" --query 'Listeners[?Port==`443`]' --output text | grep -q .; then
   aws elbv2 create-listener --load-balancer-arn "$ALB_ARN" --protocol HTTPS --port 443 \

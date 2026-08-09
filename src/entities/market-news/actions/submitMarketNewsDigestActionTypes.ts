@@ -1,4 +1,4 @@
-import type { SubmitMarketNewsDigestResult } from '@y0ngha/siglens-core';
+import type { RunMarketNewsDigestResult } from '@y0ngha/siglens-core';
 
 export interface SubmitMarketNewsDigestActionError {
     status: 'error';
@@ -6,10 +6,10 @@ export interface SubmitMarketNewsDigestActionError {
 }
 
 /**
- * Action wrapper around core's SubmitMarketNewsDigestResult — adds an honest
+ * Action wrapper around core's RunMarketNewsDigestResult — adds an honest
  * 'error' variant for client-visible failures (e.g. DB errors) that must not
  * be silently collapsed to 'no_news'.
  */
 export type SubmitMarketNewsDigestActionResult =
-    | SubmitMarketNewsDigestResult
+    | RunMarketNewsDigestResult
     | SubmitMarketNewsDigestActionError;

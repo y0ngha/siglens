@@ -4,16 +4,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createElement } from 'react';
 import type { ReactNode } from 'react';
 import { useOptionsAnalysis } from '@/widgets/options/hooks/useOptionsAnalysis';
-import {
-    submitOptionsAnalysisAction,
-    pollOptionsAnalysisAction,
-} from '@/entities/options-chain/actions';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import type { OptionsAnalysisResponse } from '@y0ngha/siglens-core';
 
-vi.mock('@/entities/options-chain/actions', () => ({
-    submitOptionsAnalysisAction: vi.fn(),
-    pollOptionsAnalysisAction: vi.fn(),
-    cancelOptionsAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+    runAnalysisStream: vi.fn(),
 }));
 
 vi.mock('@/entities/analysis', () => ({
@@ -24,12 +19,7 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/shared/hooks/usePageHideCancel', () => ({
-    usePageHideCancel: vi.fn(),
-}));
-
-const mockSubmit = submitOptionsAnalysisAction as ReturnType<typeof vi.fn>;
-const mockPoll = pollOptionsAnalysisAction as ReturnType<typeof vi.fn>;
+const mockSubmit = runAnalysisStream as ReturnType<typeof vi.fn>;
 
 const RESULT: OptionsAnalysisResponse = {
     summary: 'Bullish outlook',
@@ -52,7 +42,6 @@ function makeWrapper() {
 describe('useOptionsAnalysis', () => {
     afterEach(() => {
         mockSubmit.mockReset();
-        mockPoll.mockReset();
     });
 
     it('returns loading initially and auto-triggers on mount', () => {
@@ -169,34 +158,6 @@ describe('useOptionsAnalysis', () => {
 
         await waitFor(() => {
             expect(result.current.status).toBe('bot_blocked');
-        });
-        client.clear();
-    });
-
-    it('polls and returns done when poll resolves', async () => {
-        mockSubmit.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'opt-job-1',
-        });
-        mockPoll.mockResolvedValueOnce({
-            status: 'done',
-            result: RESULT,
-        });
-
-        const { client, wrapper } = makeWrapper();
-        const { result } = renderHook(
-            () =>
-                useOptionsAnalysis({
-                    symbol: 'AAPL',
-                    companyName: 'Apple Inc.',
-                    expirationDate: '2025-06-20',
-                    modelId: 'gemini-2.5-flash-lite',
-                }),
-            { wrapper }
-        );
-
-        await waitFor(() => {
-            expect(result.current.status).toBe('done');
         });
         client.clear();
     });

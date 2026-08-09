@@ -120,7 +120,7 @@ function buildBarsRawKey(o: GetBarsOptions): string {
 /**
  * `MarketDataProvider`를 감싸 getBars/getQuote에 provider 레벨 Redis 캐싱을 주입하는
  * 데코레이터. 분석/차트 경로가 동일 provider를 거치므로(차트 getBarsAction, 분석
- * submitAnalysis/submitOverallAnalysis), 여기서 캐싱하면 차트·분석·today-quote·
+ * runAnalysis/runOverallAnalysis), 여기서 캐싱하면 차트·분석·today-quote·
  * fear&greed 1Day가 같은 캐시를 공유한다 — 분석 결과 cache-miss 시 차트가 워밍한
  * bars를 재사용해 FMP 직격을 막는다. `CachedFundamentalProvider` 패턴과 동형이다.
  *

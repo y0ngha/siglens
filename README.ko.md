@@ -157,12 +157,13 @@ yarn dev              # → http://localhost:4200
 | 변수 | 발급처 | 용도 |
 |---|---|---|
 | `FMP_API_KEY` | [Financial Modeling Prep](https://site.financialmodelingprep.com/developer) | 시세, 검색, 펀더멘털, 뉴스 |
+| `DEEPSEEK_API_KEY` / `GEMINI_API_KEY` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` | 아래 `*_CHAT_API_KEY` 행과 동일한 콘솔 | 분석용 서버사이드 LLM 호출. 이제 앱이 프로바이더를 직접 호출한다(worker 없음). 최소한 기본 분석 모델에 해당하는 키는 있어야 하며, 없으면 첫 분석이 실패한다 |
 | `DEEPSEEK_CHAT_API_KEY` | [DeepSeek](https://platform.deepseek.com/api_keys) | DeepSeek 모델 — 기본 분석 프로바이더 |
 | `GEMINI_CHAT_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) | Gemini 모델, 챗봇, 옵션·뉴스·매크로 해석 |
 | `ANTHROPIC_CHAT_API_KEY` | [Anthropic Console](https://console.anthropic.com/) | Claude 모델 |
 | `OPENAI_CHAT_API_KEY` | [OpenAI Platform](https://platform.openai.com/api-keys) | ChatGPT 모델 |
 | `DATABASE_URL` | [Neon](https://neon.tech) | PostgreSQL |
-| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | [Upstash](https://upstash.com) | 분석 캐시, Job 상태, ISR 태그 스토어 |
+| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | [Upstash](https://upstash.com) | 분석 캐시, 시세 캐시, ISR 태그 스토어 |
 | `OAUTH_TOKEN_ENCRYPTION_KEY`, `LLM_API_KEY_ENCRYPTION_KEY`, `OAUTH_STATE_HMAC_SECRET` | `openssl rand -hex 32` | 저장 토큰·사용자 키 암호화, OAuth state 서명 |
 | `CRON_SECRET` | 직접 생성 | cron 라우트·액션 보호용 bearer token |
 | `SIGLENS_GITHUB_TOKEN` | [GitHub Tokens](https://github.com/settings/tokens) | `@y0ngha/siglens-core` 설치 |
@@ -180,7 +181,6 @@ yarn dev              # → http://localhost:4200
 | `RESEND_API_KEY` / `EMAIL_FROM` | 이메일 발송 |
 | `NEXT_PUBLIC_SITE_URL` | 사이트 canonical URL |
 | `NEXT_PUBLIC_ADSENSE_PUBLISHER_ID` / `NEXT_PUBLIC_ADSENSE_SLOT_*` / `NEXT_PUBLIC_ADSENSE_ENABLED` | Google AdSense |
-| `WORKER_URL` / `WORKER_SECRET` | Cloud Run 분석 worker |
 | `ISR_CACHE_BUCKET` | S3 기반 ISR/fetch cache handler |
 | `ALARM_EMAIL` | CloudWatch 알람 SNS 구독 |
 | `DEBUG_VERBOSE_LOGS` | 서버 전용 상세 로그 |

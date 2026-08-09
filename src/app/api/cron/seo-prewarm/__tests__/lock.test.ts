@@ -152,20 +152,11 @@ describe('seo-prewarm lock', () => {
     });
 
     describe('markInFlight', () => {
-        it("ex:1800과 대문자화된 심볼 키로 SET을 호출한다(jobId 생략 시 job-agnostic sentinel 'pending')", async () => {
+        it("ex:1800과 대문자화된 심볼 키로 job-agnostic sentinel 'pending'을 SET한다", async () => {
             await markInFlight('aapl', 'overall');
             expect(mockSet).toHaveBeenCalledWith(
                 'seo-prewarm:inflight:AAPL:overall',
                 'pending',
-                { ex: 1800 }
-            );
-        });
-
-        it('jobId를 전달하면 그 값을 SET한다(FIX Z — 다음 tick이 resume-poll할 수 있게)', async () => {
-            await markInFlight('aapl', 'overall', 'job-99');
-            expect(mockSet).toHaveBeenCalledWith(
-                'seo-prewarm:inflight:AAPL:overall',
-                'job-99',
                 { ex: 1800 }
             );
         });
@@ -180,11 +171,10 @@ describe('seo-prewarm lock', () => {
     });
 
     describe('getInFlightMarker (FIX 1, PR #698 리뷰; FIX 3, 실증)', () => {
-        it('get이 (uuid) jobId 문자열을 반환하면 { present: true, jobId }를 반환한다', async () => {
+        it('get이 임의 문자열을 반환하면 { present: true }를 반환한다', async () => {
             mockGet.mockResolvedValue('a1b2c3d4-uuid');
             expect(await getInFlightMarker('aapl', 'overall')).toEqual({
                 present: true,
-                jobId: 'a1b2c3d4-uuid',
             });
             expect(mockGet).toHaveBeenCalledWith(
                 'seo-prewarm:inflight:AAPL:overall'
@@ -198,42 +188,38 @@ describe('seo-prewarm lock', () => {
         // 프로덕션이 절대 만들지 않는 상태를 검증했고, 그 결과 `value === '1'`
         // 분기가 죽은 코드인 채로 그린을 받았다 — 이 fixture가 그 결함의
         // 재발 방지선이다.
-        it('get이 number 1(실제 Upstash JSON.parse 역직렬화 결과)을 반환하면 { present: true, jobId: null }을 반환한다', async () => {
+        it('get이 number 1(실제 Upstash JSON.parse 역직렬화 결과)을 반환하면 { present: true }를 반환한다', async () => {
             mockGet.mockResolvedValue(1);
             expect(await getInFlightMarker('aapl', 'overall')).toEqual({
                 present: true,
-                jobId: null,
             });
         });
 
-        it("get이 job-agnostic sentinel 문자열 'pending'을 반환하면 { present: true, jobId: null }을 반환한다", async () => {
+        it("get이 job-agnostic sentinel 문자열 'pending'을 반환하면 { present: true }를 반환한다", async () => {
             mockGet.mockResolvedValue('pending');
             expect(await getInFlightMarker('aapl', 'overall')).toEqual({
                 present: true,
-                jobId: null,
             });
         });
 
-        it("get이 legacy 문자열 '1'을 반환해도(구버전 마커와의 하위호환) { present: true, jobId: null }을 반환한다", async () => {
+        it("get이 legacy 문자열 '1'을 반환해도(구버전 마커와의 하위호환) { present: true }를 반환한다", async () => {
             mockGet.mockResolvedValue('1');
             expect(await getInFlightMarker('aapl', 'overall')).toEqual({
                 present: true,
-                jobId: null,
             });
         });
 
-        it('get이 null을 반환하면 { present: false, jobId: null }을 반환한다', async () => {
+        it('get이 null을 반환하면 { present: false }를 반환한다', async () => {
             mockGet.mockResolvedValue(null);
             expect(await getInFlightMarker('aapl', 'overall')).toEqual({
                 present: false,
-                jobId: null,
             });
         });
 
-        it('redis null이면 { present: false, jobId: null } 반환, throw 없음', async () => {
+        it('redis null이면 { present: false } 반환, throw 없음', async () => {
             vi.mocked(getRedisClient).mockReturnValue(null);
             await expect(getInFlightMarker('aapl', 'overall')).resolves.toEqual(
-                { present: false, jobId: null }
+                { present: false }
             );
             expect(mockGet).not.toHaveBeenCalled();
         });

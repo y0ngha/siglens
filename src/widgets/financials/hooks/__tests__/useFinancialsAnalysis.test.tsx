@@ -1,34 +1,20 @@
-import type { MockedFunction } from 'vitest';
+import type { Mock } from 'vitest';
 import { useFinancialsAnalysis } from '@/widgets/financials/hooks/useFinancialsAnalysis';
-import {
-    submitFinancialsAnalysisAction,
-    pollFinancialsAnalysisAction,
-    cancelFinancialsAnalysisJobAction,
-} from '@/entities/analysis/actions';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { FinancialsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 
-vi.mock('@/entities/analysis/actions', () => ({
-    submitFinancialsAnalysisAction: vi.fn(),
-    pollFinancialsAnalysisAction: vi.fn(),
-    cancelFinancialsAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+    runAnalysisStream: vi.fn(),
 }));
 
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockSubmit = submitFinancialsAnalysisAction as MockedFunction<
-    typeof submitFinancialsAnalysisAction
->;
-const mockPoll = pollFinancialsAnalysisAction as MockedFunction<
-    typeof pollFinancialsAnalysisAction
->;
-const mockCancel = cancelFinancialsAnalysisJobAction as MockedFunction<
-    typeof cancelFinancialsAnalysisJobAction
->;
+const mockSubmit = runAnalysisStream as Mock;
 
 const FINANCIALS_RESULT: FinancialsAnalysisResponse = {
     overallSentiment: 'bullish',
@@ -57,9 +43,6 @@ function makeWrapper() {
 describe('useFinancialsAnalysis — trigger coverage', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
-        mockPoll.mockReset();
-        mockCancel.mockReset();
-        mockCancel.mockResolvedValue(undefined);
     });
 
     afterEach(() => {

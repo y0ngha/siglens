@@ -2,11 +2,8 @@
 
 import { headers, cookies } from 'next/headers';
 import {
-    submitOptionsAnalysis,
-    pollOptionsAnalysis,
-    cancelJob,
-    type SubmitOptionsAnalysisResult,
-    type PollOptionsAnalysisResult,
+    runOptionsAnalysis,
+    type RunOptionsAnalysisResult,
     type ModelId,
 } from '@y0ngha/siglens-core';
 import { fetchOptionsSnapshot } from '../lib/optionsDataCache';
@@ -25,7 +22,7 @@ import type {
 
 /** Final return type — core's options result + our siglens-side gate errors. */
 export type SubmitOptionsAnalysisActionResult =
-    | SubmitOptionsAnalysisResult
+    | RunOptionsAnalysisResult
     | AnalysisGateBlockedResult;
 
 /**
@@ -42,7 +39,8 @@ export async function submitOptionsAnalysisAction(
      * Client-requested "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
      * spec Part A). Only honored for member/pro tiers.
      */
-    reasoning?: boolean
+    reasoning?: boolean,
+    signal?: AbortSignal
 ): Promise<SubmitOptionsAnalysisActionResult> {
     try {
         // E2E short-circuits the LLM/worker with a deterministic fixture (see
@@ -82,7 +80,7 @@ export async function submitOptionsAnalysisAction(
             };
         }
 
-        return await submitOptionsAnalysis({
+        return await runOptionsAnalysis({
             symbol,
             companyName,
             expirationDate,
@@ -91,6 +89,7 @@ export async function submitOptionsAnalysisAction(
             tier: gate.tier,
             reasoning: resolveReasoning(gate.tier, reasoning),
             skipEnqueueIfMiss,
+            signal,
             ...(gate.userApiKey !== undefined
                 ? { userApiKey: gate.userApiKey }
                 : {}),
@@ -98,39 +97,5 @@ export async function submitOptionsAnalysisAction(
     } catch (err) {
         console.error('[submitOptionsAnalysisAction] unexpected error:', err);
         return { status: 'error', error: buildGateError('unexpected_error') };
-    }
-}
-
-/**
- * Server Action: poll a previously submitted options analysis job.
- * Returns `processing`, `done`, or `error`.
- */
-export async function pollOptionsAnalysisAction(
-    jobId: string
-): Promise<PollOptionsAnalysisResult> {
-    try {
-        return await pollOptionsAnalysis(jobId);
-    } catch (error) {
-        console.error('[pollOptionsAnalysisAction] poll failed:', jobId, error);
-        return { status: 'error', error: 'unexpected_error' };
-    }
-}
-
-/**
- * Server Action: best-effort cancel for a running options analysis job.
- * Uses the generic queue cancelJob since siglens-core does not expose a
- * dedicated cancelOptionsAnalysisJob helper. Errors are swallowed.
- */
-export async function cancelOptionsAnalysisJobAction(
-    jobId: string
-): Promise<void> {
-    try {
-        return await cancelJob(jobId);
-    } catch (error) {
-        console.warn(
-            '[cancelOptionsAnalysisJobAction] 취소 신호 전송 실패:',
-            jobId,
-            error
-        );
     }
 }

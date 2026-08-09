@@ -18,7 +18,6 @@ const {
     mockPrewarmCongress,
     mockPrewarmNews,
     mockPrewarmOptions,
-    mockPrewarmPollTechnical,
     mockPrewarmPollOverall,
     mockPrewarmPollFundamental,
     mockPrewarmPollFinancials,
@@ -46,7 +45,6 @@ const {
     mockPrewarmCongress: vi.fn(),
     mockPrewarmNews: vi.fn(),
     mockPrewarmOptions: vi.fn(),
-    mockPrewarmPollTechnical: vi.fn(),
     mockPrewarmPollOverall: vi.fn(),
     mockPrewarmPollFundamental: vi.fn(),
     mockPrewarmPollFinancials: vi.fn(),
@@ -64,6 +62,8 @@ vi.mock('../lock', () => ({
     clearInFlight: mockClearInFlight,
     addFmpBudget: mockAddFmpBudget,
     getFmpBudgetUsed: mockGetFmpBudgetUsed,
+    // 구현과 동일한 값(lock.ts). 일시적 실패 backoff TTL.
+    TRANSIENT_SKIP_TTL_SECONDS: 1800,
 }));
 
 vi.mock('next/cache', () => ({
@@ -101,7 +101,6 @@ vi.mock('@/entities/analysis/api', () => ({
     prewarmFundamental: mockPrewarmFundamental,
     prewarmFinancials: mockPrewarmFinancials,
     prewarmCongress: mockPrewarmCongress,
-    prewarmPollTechnical: mockPrewarmPollTechnical,
     prewarmPollOverall: mockPrewarmPollOverall,
     prewarmPollFundamental: mockPrewarmPollFundamental,
     prewarmPollFinancials: mockPrewarmPollFinancials,
@@ -185,7 +184,6 @@ describe('runPrewarmBatch', () => {
 
         const counts = await runPrewarmBatch();
 
-        expect(counts.submitted).toBe(0);
         expect(counts.harvested).toBe(0);
         expect(counts.remaining).toBe(0);
         expect(mockPrewarmTechnical).not.toHaveBeenCalled();
@@ -217,7 +215,6 @@ describe('runPrewarmBatch', () => {
 
         const counts = await runPrewarmBatch();
 
-        expect(counts.submitted).toBe(0);
         expect(counts.harvested).toBe(0);
         expect(mockPrewarmTechnical).not.toHaveBeenCalled();
     });
@@ -321,17 +318,16 @@ describe('runPrewarmBatch', () => {
         errSpy.mockRestore();
     });
 
-    it('SYMBOLS_PER_TICK(6, FIX Z 재조정)을 초과하면 나머지는 remaining으로 잡힌다', async () => {
+    it('SYMBOLS_PER_TICK(6)을 초과하면 나머지는 remaining으로 잡힌다', async () => {
         const symbols: PrewarmSymbol[] = Array.from({ length: 15 }, (_, i) => ({
             symbol: `SYM${i}`,
             tabs: ['technical'] as SeoSnapshotTab[],
         }));
         universe(...symbols);
         mockPrewarmTechnical.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job',
+            status: 'done',
+            result: {},
         });
-        mockPrewarmPollTechnical.mockResolvedValue({ status: 'processing' });
 
         const clock = makeSimClock(FIXED_NOW.getTime());
         const counts = await runPrewarmBatch(clock);
@@ -348,9 +344,10 @@ describe('runPrewarmBatch', () => {
         const counts = await runPrewarmBatch();
 
         expect(mockUpsert).not.toHaveBeenCalled();
-        expect(mockMarkInFlight).not.toHaveBeenCalled();
+        // markInFlight is called before the seam, clearInFlight in finally.
+        expect(mockMarkInFlight).toHaveBeenCalledWith('D', 'options');
+        expect(mockClearInFlight).toHaveBeenCalledWith('D', 'options');
         expect(mockMarkSkipped).toHaveBeenCalledWith('D', 'options');
-        expect(counts.submitted).toBe(0);
         expect(counts.harvested).toBe(0);
         expect(counts.revalidated).toBe(0);
 
@@ -429,7 +426,7 @@ describe('runPrewarmBatch', () => {
     });
 
     it('청크 내 한 심볼이 예외를 던져도(getAssetInfoResilient throw) 형제 심볼들은 정상 처리된다', async () => {
-        // SYMBOL_CONCURRENCY=3 — 동일 청크에 3개를 넣어 BAD가 outer catch로
+        // 동일 청크에 3개를 넣어 BAD가 outer catch로
         // 격리되고 GOOD1/GOOD2는 영향받지 않음을 검증한다.
         universe(
             { symbol: 'GOOD1', tabs: ['technical'] },
@@ -494,24 +491,20 @@ describe('runPrewarmBatch', () => {
         expect(mockAddFmpBudget).toHaveBeenCalledWith(3);
     });
 
-    it('한 심볼의 일부 탭이 stale로 남으면 revalidate하지 않는다(FIX Z — submitted+jobId는 즉시 poll된다)', async () => {
+    it('한 심볼의 일부 탭이 miss_no_trigger로 남으면 revalidate하지 않는다', async () => {
         universe({ symbol: 'G', tabs: ['technical', 'overall'] });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
             result: {},
         });
         mockPrewarmOverall.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job',
+            status: 'miss_no_trigger',
         });
-        mockPrewarmPollOverall.mockResolvedValue({ status: 'processing' });
 
         const clock = makeSimClock(FIXED_NOW.getTime());
         const counts = await runPrewarmBatch(clock);
 
         expect(counts.harvested).toBe(1);
-        expect(counts.submitted).toBe(1);
-        expect(mockPrewarmPollOverall).toHaveBeenCalledWith('job');
         expect(mockRevalidateTag).not.toHaveBeenCalled();
         expect(counts.revalidated).toBe(0);
     });
@@ -584,63 +577,6 @@ describe('runPrewarmBatch', () => {
         expect(second.some(s => !first.includes(s))).toBe(true);
     });
 
-    it('resumable(in-flight jobId 보유) 심볼을 신규 stale 심볼보다 먼저 채운다(FIX A/Z)', async () => {
-        const freshOnes: PrewarmSymbol[] = Array.from(
-            { length: 6 },
-            (_, i) => ({
-                symbol: `F${i}`,
-                tabs: ['technical'] as SeoSnapshotTab[],
-            })
-        );
-        universe({ symbol: 'RESUME', tabs: ['technical'] }, ...freshOnes);
-        mockGetInFlightMarker.mockImplementation(async (symbol: string) =>
-            symbol === 'RESUME'
-                ? { present: true, jobId: 'job-x' }
-                : { present: false, jobId: null }
-        );
-        mockPrewarmPollTechnical.mockResolvedValue({ status: 'processing' });
-        mockPrewarmTechnical.mockResolvedValue({
-            status: 'cached',
-            result: {},
-        });
-
-        const clock = makeSimClock(FIXED_NOW.getTime());
-        const counts = await runPrewarmBatch(clock);
-
-        expect(mockPrewarmTechnical).not.toHaveBeenCalledWith(
-            'RESUME',
-            expect.anything(),
-            expect.anything(),
-            expect.anything()
-        );
-        expect(mockPrewarmPollTechnical).toHaveBeenCalledWith('job-x');
-        // 7개 stale(RESUME + F0..F5) 중 배치 6자리 = RESUME(resumable, 항상 포함) +
-        // fresh 5개(6개 중 1개는 이번 tick에서 밀려난다).
-        expect(mockPrewarmTechnical).toHaveBeenCalledTimes(5);
-        expect(counts.remaining).toBe(1);
-    });
-
-    it('기존 in-flight jobId가 있으면 재제출 대신 poll-resume한다(FIX Z) — submit(seam)은 호출되지 않고 예산도 계상되지 않는다', async () => {
-        universe({ symbol: 'GOOGL', tabs: ['technical'] });
-        mockGetInFlightMarker.mockResolvedValue({
-            present: true,
-            jobId: 'existing-job',
-        });
-        mockPrewarmPollTechnical.mockResolvedValue({
-            status: 'done',
-            result: { a: 1 },
-        });
-
-        const counts = await runPrewarmBatch();
-
-        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
-        expect(mockPrewarmPollTechnical).toHaveBeenCalledWith('existing-job');
-        expect(mockUpsert).toHaveBeenCalled();
-        expect(counts.harvested).toBe(1);
-        // resume-poll은 새 FMP 호출이 아니다 — 예산에 계상되지 않는다.
-        expect(mockAddFmpBudget).not.toHaveBeenCalled();
-    });
-
     // ── FIX 1(감사, PR #698 리뷰) — legacy in-flight 마커(present, jobId 없음) ──
 
     it('legacy 마커(present, jobId 없음)가 있는 유닛은 재제출되지 않는다(seam 미호출) — 회귀 가드', async () => {
@@ -668,8 +604,6 @@ describe('runPrewarmBatch', () => {
         // 그런 매처들과 섞이면 무조건 통과하는 약한 단언이 되므로 피한다).
         const calledSymbols = mockPrewarmTechnical.mock.calls.map(c => c[0]);
         expect(calledSymbols).not.toContain('LEGACY');
-        // poll도 호출되지 않는다 — legacy 마커는 resume-poll 대상이 아니다.
-        expect(mockPrewarmPollTechnical).not.toHaveBeenCalled();
         // NEXT는 정상 처리된다.
         expect(mockPrewarmTechnical).toHaveBeenCalledWith(
             'NEXT',
@@ -687,24 +621,6 @@ describe('runPrewarmBatch', () => {
             'technical',
             expect.anything()
         );
-    });
-
-    it('jobId 있는 마커는 여전히 poll-resume된다(legacy 마커와의 회귀 구분 가드)', async () => {
-        universe({ symbol: 'RESUMABLE', tabs: ['technical'] });
-        mockGetInFlightMarker.mockResolvedValue({
-            present: true,
-            jobId: 'job-resume',
-        });
-        mockPrewarmPollTechnical.mockResolvedValue({
-            status: 'done',
-            result: { warmed: true },
-        });
-
-        const counts = await runPrewarmBatch();
-
-        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
-        expect(mockPrewarmPollTechnical).toHaveBeenCalledWith('job-resume');
-        expect(counts.harvested).toBe(1);
     });
 
     it('마커가 아예 없는 유닛은 오늘도 정상 submit된다(회귀 없음 가드)', async () => {
@@ -764,7 +680,12 @@ describe('runPrewarmBatch', () => {
         // tick 1 — terminal skip → markSkipped가 실제로 호출된다.
         await runPrewarmBatch();
         expect(mockPrewarmTechnical).toHaveBeenCalledTimes(1);
-        expect(mockMarkSkipped).toHaveBeenCalledWith('ERRSYM', 'technical');
+        // status:'error'는 FMP fetch 실패 등 일시적 실패라 30분 backoff다.
+        expect(mockMarkSkipped).toHaveBeenCalledWith(
+            'ERRSYM',
+            'technical',
+            1800
+        );
 
         // tick 2 — 방금 세팅된 backoff 마커가 있다고 가정(isSkipped=true)하면
         // 선별 단계에서 배제되어 seam이 다시 호출되지 않아야 한다.
@@ -777,14 +698,136 @@ describe('runPrewarmBatch', () => {
         warnSpy.mockRestore();
     });
 
+    it('in-flight 마커가 있는 탭은 seam을 호출하지 않고 건너뛴다', async () => {
+        // 같은 (symbol, tab)을 두 tick이 동시에 LLM에 태우지 않게 막는 가드.
+        universe({ symbol: 'INFLIGHT', tabs: ['technical'] });
+        mockGetInFlightMarker.mockResolvedValue({ present: true });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        const counts = await runPrewarmBatch();
+
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+        expect(counts.harvested).toBe(0);
+    });
+
+    it('선별 이후에 in-flight 마커가 생기면 그 탭은 seam을 호출하지 않는다', async () => {
+        // classifySymbol이 통과시킨 뒤 processSymbol이 다시 확인하는 이유 — 두 시점
+        // 사이에 다른 tick이 같은 (symbol, tab)을 잡을 수 있다. 이 가드가 없으면
+        // 같은 유닛에 LLM이 두 번 태워진다.
+        universe({ symbol: 'RACED', tabs: ['technical'] });
+        let call = 0;
+        mockGetInFlightMarker.mockImplementation(async () => {
+            call++;
+            // 1회차(선별)는 비어 있고, 2회차(처리)에는 마커가 생겨 있다.
+            return call === 1
+                ? { present: false, jobId: null }
+                : { present: true, jobId: null };
+        });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        const counts = await runPrewarmBatch();
+
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+        // seam이 하나도 안 돌았으므로 FMP 예산도 가산하지 않는다.
+        expect(mockAddFmpBudget).not.toHaveBeenCalled();
+        expect(counts.harvested).toBe(0);
+    });
+
+    it('탭 데드라인으로 버린 작업은 counts.remaining과 로그에 남는다', async () => {
+        // 조용히 건너뛰기만 하면 커버리지가 야금야금 줄어드는 걸 볼 방법이 없다 —
+        // CloudWatch 알람이 이 마커에 걸려 있어서, 로그가 없으면 알람도 영원히 안 뜬다.
+        universe({ symbol: 'MULTI', tabs: ['technical', 'fundamental'] });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const base = FIXED_NOW.getTime();
+        const now = (): number =>
+            mockPrewarmTechnical.mock.calls.length >= 1
+                ? base + BATCH_DEADLINE_MS + 1
+                : base;
+
+        const counts = await runPrewarmBatch({
+            now,
+            sleep: vi.fn().mockResolvedValue(undefined),
+        });
+
+        expect(counts.remaining).toBeGreaterThan(0);
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[seo-prewarm] batch deadline reached')
+        );
+
+        warnSpy.mockRestore();
+    });
+
+    it('탭 사이에서 데드라인을 넘기면 남은 탭을 중단한다', async () => {
+        // 유닛 하나가 LLM 왕복만큼 블로킹하므로 청크 경계 검사만으로는 락 TTL을
+        // 넘길 수 있다 — 탭 경계에서도 끊어야 한다.
+        universe({ symbol: 'MULTI', tabs: ['technical', 'fundamental'] });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+        mockPrewarmFundamental.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        const base = FIXED_NOW.getTime();
+        // technical 탭이 끝난 뒤부터 데드라인을 넘긴 것으로 본다.
+        const now = (): number =>
+            mockPrewarmTechnical.mock.calls.length >= 1
+                ? base + BATCH_DEADLINE_MS + 1
+                : base;
+
+        await runPrewarmBatch({
+            now,
+            sleep: vi.fn().mockResolvedValue(undefined),
+        });
+
+        expect(mockPrewarmTechnical).toHaveBeenCalledTimes(1);
+        expect(mockPrewarmFundamental).not.toHaveBeenCalled();
+    });
+
+    it('크립토 심볼은 탭당 FMP 호출 추정치를 주식과 다르게 잡는다', async () => {
+        // FMP 예산 집계가 자산군을 구분하지 않으면 크립토 배치의 사용량이 과대 계상돼
+        // 예산 알람이 잘못 뜬다.
+        universe({ symbol: 'BTCUSD', tabs: ['technical'] });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        const cryptoCounts = await runPrewarmBatch();
+        const cryptoBudgetCall = mockAddFmpBudget.mock.calls[0]?.[0] as number;
+
+        // 두 번째 배치를 위해 기본 목 상태를 되돌린다(clearAllMocks는 호출 기록만 지운다).
+        mockAddFmpBudget.mockClear();
+        universe({ symbol: 'AAPL', tabs: ['technical'] });
+
+        const equityCounts = await runPrewarmBatch();
+
+        const equityBudgetCall = mockAddFmpBudget.mock.calls[0]?.[0] as number;
+        expect(cryptoBudgetCall).toBeLessThan(equityBudgetCall);
+        // counts 자체는 getFmpBudgetUsed 목이 0을 주므로 동일하다 — 자산군 구분은
+        // addFmpBudget에 넘기는 추정치에서 드러난다.
+        expect(cryptoCounts.harvested).toBe(equityCounts.harvested);
+    });
+
     // ── FIX G(감사) — 배치 wall-clock 데드라인 ──
 
-    it('배치 데드라인 초과 시 남은 청크를 건너뛰고 부분 counts를 반환하며 로그를 남긴다', async () => {
-        // 6개 stale 심볼(SYMBOL_CONCURRENCY=3 → 2청크), 전부 즉시 cached로 끝나
-        // 폴링 없음 → clock.now() 호출은 [배치데드라인 계산, 회전 오프셋 산출,
-        // 청크0 사전체크, 청크1 사전체크] 정확히 4회뿐이라 call-count 기반 목이
-        // 안전하다. (회전 오프셋도 clock에서 뽑으므로 3회가 아니라 4회다 —
-        // livelock 수정으로 offset이 시각 파생이 되면서 한 칸 늘었다.)
+    it('청크 진입 시 데드라인을 넘겼으면 그 청크를 통째로 건너뛰고 로그를 남긴다', async () => {
+        // SYMBOLS_PER_TICK === SYMBOL_CONCURRENCY(=6)이라 현재 상수 조합에서는 배치가
+        // 항상 1청크다. 이 검사는 두 상수가 다시 갈라질 때를 위한 가드이므로, 시계를
+        // 청크 진입 직전에 앞당겨 그 경로를 직접 태운다.
         const symbols: PrewarmSymbol[] = Array.from({ length: 6 }, (_, i) => ({
             symbol: `SYM${i}`,
             tabs: ['technical'] as SeoSnapshotTab[],
@@ -798,20 +841,19 @@ describe('runPrewarmBatch', () => {
 
         const base = FIXED_NOW.getTime();
         let calls = 0;
-        const now = () => {
+        // 1=배치 데드라인 계산, 2=회전 오프셋, 3번째부터(=청크0 진입 검사) 초과.
+        const now = (): number => {
             calls++;
-            // 1=데드라인 계산, 2=회전 오프셋, 3=청크0 사전체크(아직 여유),
-            // 4=청크1 사전체크(데드라인 초과).
-            return calls <= 3 ? base : base + BATCH_DEADLINE_MS + 1;
+            return calls <= 2 ? base : base + BATCH_DEADLINE_MS + 1;
         };
         const sleep = vi.fn().mockResolvedValue(undefined);
 
         const counts = await runPrewarmBatch({ now, sleep });
 
-        expect(mockPrewarmTechnical).toHaveBeenCalledTimes(3); // 청크0(3개)만 처리됨
-        expect(counts.remaining).toBe(3); // 청크1의 3개가 remaining으로
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+        expect(counts.remaining).toBe(6);
         expect(warnSpy).toHaveBeenCalledWith(
-            '[seo-prewarm] batch deadline reached — 3 symbols processed, 3 remaining'
+            '[seo-prewarm] batch deadline reached — 0 symbols processed, 6 remaining'
         );
 
         warnSpy.mockRestore();
@@ -834,27 +876,17 @@ describe('runPrewarmBatch', () => {
         warnSpy.mockRestore();
     });
 
-    // ── FIX Z(감사) — submit 후 즉시 poll(콜드 캐시를 실제로 데운다) ──
+    // ── run* 블로킹 결과 — 콜드 캐시 워밍 회귀 가드 ──
 
-    it('submitted+jobId → poll이 done을 반환하면 upsert가 일어나고 counts.harvested가 증가한다(콜드 캐시 워밍의 핵심 회귀 가드)', async () => {
+    it('seam이 done을 반환하면 upsert가 일어나고 counts.harvested가 증가한다', async () => {
         universe({ symbol: 'COLD', tabs: ['technical'] });
         mockPrewarmTechnical.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-cold',
-        });
-        mockPrewarmPollTechnical.mockResolvedValue({
             status: 'done',
             result: { warmed: true },
         });
 
         const counts = await runPrewarmBatch();
 
-        expect(mockMarkInFlight).toHaveBeenCalledWith(
-            'COLD',
-            'technical',
-            'job-cold'
-        );
-        expect(mockPrewarmPollTechnical).toHaveBeenCalledWith('job-cold');
         expect(mockUpsert).toHaveBeenCalledWith(
             expect.objectContaining({
                 symbol: 'COLD',
@@ -863,98 +895,272 @@ describe('runPrewarmBatch', () => {
             })
         );
         expect(counts.harvested).toBe(1);
-        expect(counts.submitted).toBe(1);
     });
 
-    it('poll이 cap(60s)까지 processing이면 harvest 없이 counts.submitted만 늘어나고 in-flight 마커는 유지된다', async () => {
-        universe({ symbol: 'SLOW', tabs: ['technical'] });
-        mockPrewarmTechnical.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-slow',
-        });
-        mockPrewarmPollTechnical.mockResolvedValue({ status: 'processing' });
-
-        const clock = makeSimClock(FIXED_NOW.getTime());
-        const counts = await runPrewarmBatch(clock);
-
-        expect(mockMarkInFlight).toHaveBeenCalledWith(
-            'SLOW',
-            'technical',
-            'job-slow'
-        );
-        // 최초 1회 + elapsedMs가 0,5000,...,55000일 때마다 재시도(12회) = 13회에서
-        // elapsedMs가 60000에 도달해 캡에 걸려 멈춘다.
-        expect(mockPrewarmPollTechnical).toHaveBeenCalledTimes(13);
-        expect(mockUpsert).not.toHaveBeenCalled();
-        expect(counts.submitted).toBe(1);
-        expect(counts.harvested).toBe(0);
-        // "여전히 processing"은 markSkipped/clearInFlight 어느 쪽도 건드리지 않는다
-        // (다음 tick이 이어서 poll할 수 있게 in-flight 마커를 그대로 둔다).
-        expect(mockMarkSkipped).not.toHaveBeenCalled();
-        expect(mockClearInFlight).not.toHaveBeenCalled();
-    });
-
-    it('poll이 throw하면 해당 유닛만 격리되고 배치는 계속 진행한다(fail-open)', async () => {
-        universe({ symbol: 'POLLTHROW', tabs: ['technical'] });
-        mockPrewarmTechnical.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-e',
-        });
-        mockPrewarmPollTechnical.mockRejectedValue(new Error('poll boom'));
+    it('seam이 throw하면 해당 유닛만 격리되고 배치는 계속 진행한다(fail-open)', async () => {
+        universe({ symbol: 'SEAM_THROW', tabs: ['technical'] });
+        mockPrewarmTechnical.mockRejectedValue(new Error('seam boom'));
         const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
         const counts = await runPrewarmBatch();
 
         expect(errSpy).toHaveBeenCalledWith(
-            '[seo-prewarm] unit-error POLLTHROW:technical',
+            '[seo-prewarm] unit-error SEAM_THROW:technical',
             expect.any(Error)
         );
         expect(counts.harvested).toBe(0);
         errSpy.mockRestore();
     });
 
-    it('poll이 status=error를 반환하면(throw 아님) terminal skip 처리되고 배치는 계속 진행한다', async () => {
-        universe({ symbol: 'POLLBAD', tabs: ['technical'] });
+    it('seam이 status=error를 반환하면 terminal skip 처리되고 배치는 계속 진행한다', async () => {
+        universe({ symbol: 'SEAM_BAD', tabs: ['technical'] });
         mockPrewarmTechnical.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-b',
-        });
-        mockPrewarmPollTechnical.mockResolvedValue({
             status: 'error',
+            code: 'fetch_failed',
             error: 'worker failed',
         });
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
         const counts = await runPrewarmBatch();
 
-        expect(mockMarkSkipped).toHaveBeenCalledWith('POLLBAD', 'technical');
+        expect(mockMarkSkipped).toHaveBeenCalledWith(
+            'SEAM_BAD',
+            'technical',
+            1800
+        );
         expect(counts.harvested).toBe(0);
 
         warnSpy.mockRestore();
     });
 
-    it('poll 루프 중 배치 데드라인에 걸리면 processing 상태 그대로 정리하고 남긴다(FIX G × Z)', async () => {
-        universe({ symbol: 'DEADPOLL', tabs: ['technical'] });
-        mockPrewarmTechnical.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-d',
+    // ── FIX 1(감사) — 유닛 타임아웃 ──
+
+    it('FIX 1 — seam이 UNIT_TIMEOUT_MS 내에 반환하지 않으면 포기하고 backoff 마커를 남긴다', async () => {
+        // sim clock: sleep이 즉시 advance되므로 타임아웃이 즉각 발동한다.
+        // seam은 절대 resolve되지 않는 프로미스를 반환해 "hung LLM call"을 시뮬레이션.
+        universe({ symbol: 'HUNG', tabs: ['technical'] });
+        mockPrewarmTechnical.mockReturnValue(new Promise(() => {}));
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const clock = makeSimClock(FIXED_NOW.getTime());
+        /**
+         * Task 8: UNIT_TIMEOUT_MS 값 고정.
+         *
+         * `UNIT_TIMEOUT_MS`는 private 상수지만 처리 단위당 최대 비용을 결정한다.
+         * 리팩터가 실수로 값을 바꿔도 기존 테스트는 "타임아웃이 발동했다"만 볼 뿐
+         * 어떤 값으로 sleep이 호출됐는지 검증하지 않아 조용히 통과한다.
+         * spy로 호출 인자를 단언해 120_000ms라는 계약을 고정한다.
+         */
+        vi.spyOn(clock, 'sleep');
+        const counts = await runPrewarmBatch(clock);
+
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[seo-prewarm] unit-timeout HUNG:technical')
+        );
+        expect(mockMarkSkipped).toHaveBeenCalledWith('HUNG', 'technical', 1800);
+        // clearInFlight는 finally 블록에서 타임아웃 경로에도 반드시 호출된다.
+        expect(mockClearInFlight).toHaveBeenCalledWith('HUNG', 'technical');
+        expect(counts.harvested).toBe(0);
+        // Task 8: UNIT_TIMEOUT_MS = 120_000ms. 이 값을 올리면 타임아웃이 느려지고
+        // 낮추면 정상 LLM 호출이 잘린다 — 리터럴로 단언해 실수를 잡는다.
+        expect(clock.sleep).toHaveBeenCalledWith(120_000);
+
+        warnSpy.mockRestore();
+    });
+
+    it('FIX 1 — 타임아웃된 탭 이후 다음 탭은 정상 처리된다(배치 중단 없음)', async () => {
+        universe({ symbol: 'HUNG2', tabs: ['technical', 'overall'] });
+        // technical만 타임아웃, overall은 정상 완료.
+        mockPrewarmTechnical.mockReturnValue(new Promise(() => {}));
+        mockPrewarmOverall.mockResolvedValue({ status: 'cached', result: {} });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const clock = makeSimClock(FIXED_NOW.getTime());
+        const counts = await runPrewarmBatch(clock);
+
+        expect(mockMarkSkipped).toHaveBeenCalledWith(
+            'HUNG2',
+            'technical',
+            1800
+        );
+        expect(mockPrewarmOverall).toHaveBeenCalled();
+        // overall만 harvest.
+        expect(counts.harvested).toBe(1);
+
+        warnSpy.mockRestore();
+    });
+
+    // ── FIX 2(감사) — throw 시 backoff 마커 ──
+
+    it('FIX 2 — throw(비-402)에서 짧은 backoff 마커를 남긴다(매 tick 무한 재시도 방지)', async () => {
+        universe({ symbol: 'THROWSYM', tabs: ['technical'] });
+        mockPrewarmTechnical.mockRejectedValue(new Error('content filter'));
+        mockGetFmpErrorStatus.mockReturnValue(null);
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        await runPrewarmBatch();
+
+        // TTL은 기본 6시간이 아니라 30분이어야 한다 — throw의 대다수가 프로바이더
+        // 장애 같은 일시적 실패라, 6시간을 걸면 짧은 장애가 prewarm을 반나절 세운다.
+        expect(mockMarkSkipped).toHaveBeenCalledWith(
+            'THROWSYM',
+            'technical',
+            1800
+        );
+
+        errSpy.mockRestore();
+    });
+
+    it('FIX 2 — FMP 402 에러는 backoff 마커를 남기지 않는다(플랜 변경 시 자동 재시도 가능)', async () => {
+        universe({ symbol: '402SYM', tabs: ['technical'] });
+        const err402 = new Error('FMP /profile 402');
+        mockPrewarmTechnical.mockRejectedValue(err402);
+        mockGetFmpErrorStatus.mockImplementation(err =>
+            err === err402 ? 402 : null
+        );
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        await runPrewarmBatch();
+
+        expect(mockMarkSkipped).not.toHaveBeenCalled();
+
+        errSpy.mockRestore();
+    });
+
+    /**
+     * Task 7: counts.staleTotal / counts.durationMs 회귀 가드.
+     *
+     * 두 필드가 아예 없거나 초기화된 채로 반환돼도 기존 테스트는 검사하지 않는다.
+     * - `staleTotal`을 누락하면 모니터링 알람의 근거가 사라진다.
+     * - `durationMs`를 누락하면 배치 소요 시간 추적이 불가하다.
+     */
+    it('Task 7 — counts.staleTotal과 counts.durationMs가 올바르게 설정된다', async () => {
+        // 3개의 stale 심볼. staleTotal은 처음부터 이 값으로 초기화된다.
+        universe(
+            { symbol: 'BULK1', tabs: ['technical'] },
+            { symbol: 'BULK2', tabs: ['technical'] },
+            { symbol: 'BULK3', tabs: ['technical'] }
+        );
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: {
+                symbol: 'BULK',
+                name: 'Bulk Co.',
+                fmpSymbol: undefined,
+            },
+            degraded: false,
         });
-        mockPrewarmPollTechnical.mockResolvedValue({ status: 'processing' });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        // makeSimClock: sleep 호출마다 t를 즉시 advance한다.
+        const clock = makeSimClock(FIXED_NOW.getTime());
+        const counts = await runPrewarmBatch(clock);
+
+        // staleTotal은 runPrewarmBatch 진입 시 staleSymbols.length로 고정된다.
+        expect(counts.staleTotal).toBe(3);
+        // durationMs는 배치 시작 시각과 종료 시각의 차이다.
+        // makeSimClock에서 sleep 호출마다 t가 advance되므로 0보다 크다.
+        expect(counts.durationMs).toBeGreaterThan(0);
+    });
+
+    /**
+     * Task 9: processSymbol의 탭별 isSkipped 가드가 실제로 seam을 차단한다.
+     *
+     * 2탭 심볼에서 기술적(technical) 탭만 isSkipped=true로 만들고, overall 탭은
+     * 정상 처리되는지 확인한다. 이 가드가 없으면 terminal backoff 마커를 무시하고
+     * 매 배치마다 동일 분석을 재시도해 I/O 비용이 낭비된다.
+     */
+    it('Task 9 — isSkipped가 true인 탭의 seam은 호출되지 않고 다른 탭은 정상 처리된다', async () => {
+        universe({ symbol: 'SKIPTEST', tabs: ['technical', 'overall'] });
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: {
+                symbol: 'SKIPTEST',
+                name: 'Skip Test Inc.',
+                fmpSymbol: undefined,
+            },
+            degraded: false,
+        });
+        mockPrewarmOverall.mockResolvedValue({ status: 'cached', result: {} });
+
+        // technical 탭만 isSkipped=true. overall은 false.
+        mockIsSkipped.mockImplementation((_symbol: string, tab: string) =>
+            Promise.resolve(tab === 'technical')
+        );
+
+        const counts = await runPrewarmBatch();
+
+        // technical 탭은 isSkipped=true → seam 미호출.
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+        // overall 탭은 isSkipped=false → 정상 처리.
+        expect(mockPrewarmOverall).toHaveBeenCalledWith(
+            'SKIPTEST',
+            'Skip Test Inc.',
+            false
+        );
+        expect(counts.harvested).toBe(1);
+    });
+
+    /**
+     * Task 4: alreadyFresh 검사가 isPastDeadline() 검사보다 먼저 실행된다.
+     *
+     * 두 블록의 순서를 바꾸면(isPastDeadline 먼저) 이미 fresh한 탭도 "데드라인으로
+     * 버려짐"으로 계산되어 counts.remaining이 부풀고, 경고 메시지에 실제보다
+     * 많은 탭 수가 찍힌다.
+     *
+     * 검증 방식:
+     * - symbol ORDTEST: technical(fresh in map) + overall(stale).
+     * - 3번째 clock.now() 호출(청크 진입 검사)은 정상 시각 → 청크 진행.
+     * - 4번째+ 호출(processSymbol 탭 루프 내 isPastDeadline)은 데드라인 초과.
+     * - 올바른 순서: technical → alreadyFresh → continue(isPastDeadline 미호출);
+     *                 overall → alreadyFresh=false → isPastDeadline=true → dropped.
+     *   → droppedByDeadline=1, counts.remaining=1, warn "1 tabs dropped".
+     * - 잘못된 순서: technical → isPastDeadline=true → dropped(fresh 체크 안함);
+     *                 overall → isPastDeadline=true → dropped.
+     *   → droppedByDeadline=2, counts.remaining=2, warn "2 tabs dropped".
+     */
+    it('Task 4 — alreadyFresh 검사가 isPastDeadline보다 먼저 실행된다(신선도 우선 순서 보장)', async () => {
+        universe({ symbol: 'ORDTEST', tabs: ['technical', 'overall'] });
+        mockFindGeneratedAtMap.mockResolvedValue(
+            // technical은 이미 fresh, overall은 stale(맵에 없음).
+            new Map([[key('ORDTEST', 'technical'), BOUNDARY]])
+        );
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: {
+                symbol: 'ORDTEST',
+                name: 'Order Test Inc.',
+                fmpSymbol: undefined,
+            },
+            degraded: false,
+        });
 
         const base = FIXED_NOW.getTime();
-        let t = base;
-        // 첫 sleep에서 배치 데드라인(10min)을 훌쩍 넘겨버린다 — poll 루프가
-        // 유닛 캡(60s)까지 다 못 가고 배치 데드라인에 먼저 걸려야 한다.
-        const now = () => t;
-        const sleep = vi.fn().mockImplementation(async () => {
-            t += BATCH_DEADLINE_MS;
+        let nowCalls = 0;
+        // 호출 순서:
+        //   1: batchDeadline = base + BATCH_DEADLINE_MS
+        //   2: selectFairBatch의 회전 오프셋
+        //   3: 청크 진입 isPastDeadline → base → 미초과(청크 진행)
+        //   4+: processSymbol 내 탭 루프 isPastDeadline → 초과
+        const now = (): number => {
+            nowCalls++;
+            return nowCalls <= 3 ? base : base + BATCH_DEADLINE_MS + 1;
+        };
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const counts = await runPrewarmBatch({
+            now,
+            sleep: vi.fn().mockResolvedValue(undefined),
         });
 
-        const counts = await runPrewarmBatch({ now, sleep });
+        // 올바른 순서: fresh 탭(technical)은 isPastDeadline 없이 처리되므로
+        // droppedByDeadline=1(overall만)이고, counts.remaining=1.
+        // 잘못된 순서(deadline-first)에서는 remaining=2.
+        expect(counts.remaining).toBe(1);
+        expect(warnSpy).toHaveBeenCalledWith(
+            '[seo-prewarm] batch deadline reached — 1 tabs dropped'
+        );
 
-        // 최초 1회(즉시) + sleep 후 재확인 1회 = 2회에서 멈춘다(12회까지 안 감).
-        expect(mockPrewarmPollTechnical).toHaveBeenCalledTimes(2);
-        expect(counts.submitted).toBe(1);
-        expect(counts.harvested).toBe(0);
+        warnSpy.mockRestore();
     });
 });

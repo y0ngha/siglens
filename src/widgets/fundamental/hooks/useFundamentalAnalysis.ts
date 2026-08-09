@@ -1,28 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
     FundamentalAnalysisResponse,
     ModelId,
 } from '@y0ngha/siglens-core';
-import {
-    submitFundamentalAnalysisAction,
-    pollFundamentalAnalysisAction,
-    cancelFundamentalAnalysisJobAction,
-} from '@/entities/analysis/actions';
+import type { RunFundamentalAnalysisActionResult } from '@/entities/analysis/actions';
+import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
-import { sleep } from '@/shared/lib/sleep';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import {
-    ANALYSIS_POLL_INTERVAL_MS,
-    ANALYSIS_POLL_TIMEOUT_MESSAGE,
-} from '@/shared/config/pollingConfig';
-import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { BotBlockedError } from '@/shared/lib/BotBlockedError';
-import { hasExceededPollCeiling } from '@/shared/lib/pollCeiling';
-import type { CancelJobEntry } from '@/shared/lib/types';
 
 export type FundamentalAnalysisState =
     | { status: 'loading'; trigger: () => void }
@@ -34,63 +23,41 @@ export type FundamentalAnalysisState =
     | { status: 'bot_blocked'; trigger: () => void }
     | { status: 'error'; error: Error; retry: () => void; trigger: () => void };
 
-// AbortSignal로 unmount 시 폴링을 즉시 종료한다.
-// onJobId는 두 번째 인자(expectedCurrent)를 받으면 ref가 일치할 때만 갱신한다 →
-// retry/queryKey 변경으로 새 실행이 시작된 뒤에도 이전 실행의 finally가
-// 새 jobId를 null로 덮어쓰지 않는다.
+/**
+ * run* 함수는 블로킹으로 결과를 반환하므로 poll 루프가 필요 없다.
+ * `done`은 `cached`와 동일하게 `result`를 반환한다.
+ */
 async function fetchFundamentalAnalysis(
     symbol: string,
     modelId: ModelId,
     reasoning: boolean,
-    signal: AbortSignal,
-    onJobId: (jobId: string | null, expectedCurrent?: string | null) => void
+    signal?: AbortSignal
 ): Promise<FundamentalAnalysisResponse> {
-    const submitted = await submitFundamentalAnalysisAction(
-        symbol,
-        modelId,
-        reasoning
-    );
+    const result = await runAnalysisStream<RunFundamentalAnalysisActionResult>({
+        type: 'fundamental',
+        params: { symbol, modelId, reasoning },
+        signal,
+    });
 
-    if (submitted.status === 'cached') return submitted.result;
-    if (submitted.status === 'miss_no_trigger') {
+    if (result.status === 'cached' || result.status === 'done')
+        return result.result;
+    if (result.status === 'miss_no_trigger') {
         throw new BotBlockedError();
     }
-    if (submitted.status === 'error') {
-        // Handle before the existing SubmitFundamentalAnalysisResult variants.
-        if (isGateBlockedResult(submitted)) {
-            throw new Error(submitted.error.message);
+    if (result.status === 'error') {
+        if (isGateBlockedResult(result)) {
+            throw new Error(result.error.message);
         }
         const message =
-            submitted.code === 'fetch_failed'
-                ? (submitted.error ?? '데이터를 불러오지 못했습니다.')
+            result.code === 'fetch_failed'
+                ? (result.error ?? '데이터를 불러오지 못했습니다.')
                 : '사용량 한도를 초과했습니다.';
         throw new Error(message);
     }
-    if (submitted.status === 'key_error') {
-        throw new Error(submitted.error);
+    if (result.status === 'key_error') {
+        throw new Error(result.error);
     }
-
-    onJobId(submitted.jobId);
-    const pollStartTime = Date.now();
-    try {
-        const { jobId } = submitted;
-        while (!signal.aborted) {
-            if (hasExceededPollCeiling(Date.now() - pollStartTime)) {
-                throw new Error(ANALYSIS_POLL_TIMEOUT_MESSAGE);
-            }
-            await sleep(ANALYSIS_POLL_INTERVAL_MS);
-            if (signal.aborted) break;
-            const polled = await pollFundamentalAnalysisAction(jobId);
-            if (polled.status === 'done') return polled.result;
-            if (polled.status === 'error') {
-                throw new Error(polled.error ?? '분석 중 오류가 발생했습니다.');
-            }
-        }
-    } finally {
-        // 이 실행이 설정한 jobId가 ref에 그대로 있을 때만 null로 비운다.
-        onJobId(null, submitted.jobId);
-    }
-    throw new Error('aborted');
+    throw new Error('예상치 못한 오류가 발생했습니다.');
 }
 
 export function useFundamentalAnalysis(
@@ -105,7 +72,6 @@ export function useFundamentalAnalysis(
 ): FundamentalAnalysisState {
     const queryClient = useQueryClient();
     const isHydrated = useHydrated();
-    const currentJobIdRef = useRef<string | null>(null);
     const queryKey = useMemo(
         () => QUERY_KEYS.fundamentalAnalysis(symbol, modelId, reasoning),
         [symbol, modelId, reasoning]
@@ -114,21 +80,7 @@ export function useFundamentalAnalysis(
     const query = useQuery({
         queryKey,
         queryFn: ({ signal, queryKey: [, qSymbol, qModelId, qReasoning] }) =>
-            fetchFundamentalAnalysis(
-                qSymbol,
-                qModelId,
-                qReasoning,
-                signal,
-                (jobId, expectedCurrent) => {
-                    if (
-                        expectedCurrent !== undefined &&
-                        currentJobIdRef.current !== expectedCurrent
-                    ) {
-                        return;
-                    }
-                    currentJobIdRef.current = jobId;
-                }
-            ),
+            fetchFundamentalAnalysis(qSymbol, qModelId, qReasoning, signal),
         enabled: false,
         retry: false,
         staleTime: Infinity,
@@ -144,38 +96,12 @@ export function useFundamentalAnalysis(
         void refetch();
     }, [refetch]);
 
-    // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
-    const getPageHideJobs = useCallback((): CancelJobEntry[] | null => {
-        const jobId = currentJobIdRef.current;
-        if (jobId === null) return null;
-        currentJobIdRef.current = null;
-        return [{ jobId, type: 'fundamental' as const }];
-    }, []);
-    usePageHideCancel(getPageHideJobs);
-
     useEffect(() => {
         if (!isHydrated) return;
         if (queryClient.getQueryData(queryKey) === undefined) {
             void refetch();
         }
     }, [isHydrated, queryClient, queryKey, refetch]);
-
-    // symbol 또는 modelId 변경(queryKey 교체) 시, unmount 시 진행 중인 job을 cancel한다.
-    // fire-and-forget이므로 useMutation 없이 직접 호출한다.
-    useEffect(() => {
-        return () => {
-            const jobId = currentJobIdRef.current;
-            if (jobId !== null) {
-                currentJobIdRef.current = null;
-                void cancelFundamentalAnalysisJobAction(jobId).catch(error => {
-                    console.warn(
-                        '[useFundamentalAnalysis] cancel failed',
-                        error
-                    );
-                });
-            }
-        };
-    }, [queryKey]);
 
     if (query.isError) {
         if (query.error instanceof BotBlockedError) {

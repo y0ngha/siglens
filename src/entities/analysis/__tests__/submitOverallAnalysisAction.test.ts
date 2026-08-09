@@ -13,7 +13,7 @@ vi.mock('@y0ngha/siglens-core', async () => {
     );
     return {
         ...actual,
-        submitOverallAnalysis: vi.fn(),
+        runOverallAnalysis: vi.fn(),
         isEtRegularSessionOpen: vi.fn(),
         computeFinancialsScorecard: vi.fn(),
     };
@@ -95,16 +95,16 @@ vi.mock('@/shared/api/market/sessionSpecFor', async () => {
     };
 });
 
-import { submitOverallAnalysisAction } from '../actions/submitOverallAnalysisAction';
+import { runOverallAnalysisAction } from '../actions/runOverallAnalysisAction';
 import {
     isEtRegularSessionOpen,
-    submitOverallAnalysis,
+    runOverallAnalysis,
     computeFinancialsScorecard,
     CRYPTO_SESSION,
     US_EQUITY_SESSION,
     type ModelId,
     type OptionsSnapshot,
-    type SubmitOverallAnalysisResult,
+    type RunOverallAnalysisResult,
     type EnrichedNewsItem,
     type EarningsCalendarItem,
     type FinancialsSnapshot,
@@ -133,8 +133,8 @@ const mockGetNextEarningsReport = getNextEarningsReport as MockedFunction<
     typeof getNextEarningsReport
 >;
 
-const mockSubmitOverallAnalysis = submitOverallAnalysis as MockedFunction<
-    typeof submitOverallAnalysis
+const mockRunOverallAnalysis = runOverallAnalysis as MockedFunction<
+    typeof runOverallAnalysis
 >;
 const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser
@@ -214,9 +214,9 @@ const NEXT_EARNINGS: EarningsCalendarItem = {
     lastUpdated: '2025-07-15',
 };
 
-const SUBMITTED_RESULT: SubmitOverallAnalysisResult = {
-    status: 'submitted',
-    jobId: 'job-overall-001',
+const SUBMITTED_RESULT: RunOverallAnalysisResult = {
+    status: 'done',
+    result: { summary: 'ok' } as never,
 };
 
 const MODEL_ID = 'gemini-2.5-flash' as ModelId;
@@ -227,11 +227,11 @@ const gateError: AnalysisGateError = {
     message: 'mock-tier_premium_blocked',
 };
 
-describe('submitOverallAnalysisAction 함수는', () => {
+describe('runOverallAnalysisAction 함수는', () => {
     let mockListBySymbol: Mock;
 
     beforeEach(() => {
-        mockSubmitOverallAnalysis.mockReset();
+        mockRunOverallAnalysis.mockReset();
         mockGetCurrentUser.mockReset();
         mockResolveTierAndByok.mockReset();
         MockNewsRepository.mockClear();
@@ -259,7 +259,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
         mockFetchSnapshot.mockResolvedValue(null);
         mockIsRegularSession.mockReturnValue(false);
         mockIsOiStale.mockReturnValue(false);
-        mockSubmitOverallAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+        mockRunOverallAnalysis.mockResolvedValue(SUBMITTED_RESULT);
         // 기본값: financials 스냅샷 없음 + scorecard undefined (기존 테스트 영향 방지)
         mockGetFinancialsSnapshot.mockResolvedValue({} as FinancialsSnapshot);
         mockComputeFinancialsScorecard.mockReturnValue(
@@ -267,17 +267,12 @@ describe('submitOverallAnalysisAction 함수는', () => {
         );
     });
 
-    it('symbol, timeframe, modelId를 submitOverallAnalysis에 전달한다', async () => {
-        mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+    it('symbol, timeframe, modelId를 runOverallAnalysis에 전달한다', async () => {
+        mockRunOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        await submitOverallAnalysisAction(
-            'AAPL',
-            'Apple Inc.',
-            '1Day',
-            MODEL_ID
-        );
+        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
 
-        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({
                 symbol: 'AAPL',
                 timeframe: '1Day',
@@ -289,16 +284,11 @@ describe('submitOverallAnalysisAction 함수는', () => {
 
     it('titleKo가 null인 미분석 뉴스를 필터링하고 enrichedNews만 전달한다', async () => {
         mockListBySymbol.mockResolvedValue([ANALYZED_ROW, UNANALYZED_ROW]);
-        mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+        mockRunOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        await submitOverallAnalysisAction(
-            'AAPL',
-            'Apple Inc.',
-            '1Day',
-            MODEL_ID
-        );
+        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
 
-        const callArg = mockSubmitOverallAnalysis.mock.calls[0]?.[0];
+        const callArg = mockRunOverallAnalysis.mock.calls[0]?.[0];
         expect(callArg?.newsItems).toHaveLength(1);
         const item = callArg?.newsItems?.[0] as EnrichedNewsItem;
         expect(item.card.titleKo).toBe('애플 실적 예상치 상회');
@@ -315,54 +305,39 @@ describe('submitOverallAnalysisAction 함수는', () => {
             })
         );
         mockListBySymbol.mockResolvedValue(rows);
-        mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+        mockRunOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        await submitOverallAnalysisAction(
-            'AAPL',
-            'Apple Inc.',
-            '1Day',
-            MODEL_ID
-        );
+        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
 
-        const callArg = mockSubmitOverallAnalysis.mock.calls[0]?.[0];
+        const callArg = mockRunOverallAnalysis.mock.calls[0]?.[0];
         expect(callArg?.newsItems).toHaveLength(MAX_AGGREGATE_NEWS_ITEMS);
     });
 
     it('다음 실적 발표가 있으면 upcomingCalendar에 포함한다', async () => {
         mockGetNextEarningsReport.mockResolvedValue(NEXT_EARNINGS);
-        mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+        mockRunOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        await submitOverallAnalysisAction(
-            'AAPL',
-            'Apple Inc.',
-            '1Day',
-            MODEL_ID
-        );
+        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
 
-        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ upcomingCalendar: [NEXT_EARNINGS] })
         );
     });
 
     it('다음 실적 발표가 없으면 upcomingCalendar는 빈 배열이다', async () => {
-        mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+        mockRunOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        await submitOverallAnalysisAction(
-            'AAPL',
-            'Apple Inc.',
-            '1Day',
-            MODEL_ID
-        );
+        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
 
-        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ upcomingCalendar: [] })
         );
     });
 
     it('underlying 함수의 결과를 그대로 반환한다', async () => {
-        mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+        mockRunOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        const result = await submitOverallAnalysisAction(
+        const result = await runOverallAnalysisAction(
             'AAPL',
             'Apple Inc.',
             '1Day',
@@ -373,11 +348,9 @@ describe('submitOverallAnalysisAction 함수는', () => {
     });
 
     it('내부에서 예외가 발생하면 status: error를 반환한다', async () => {
-        mockSubmitOverallAnalysis.mockRejectedValueOnce(
-            new Error('unexpected')
-        );
+        mockRunOverallAnalysis.mockRejectedValueOnce(new Error('unexpected'));
 
-        const result = await submitOverallAnalysisAction(
+        const result = await runOverallAnalysisAction(
             'AAPL',
             'Apple Inc.',
             '1Day',
@@ -397,7 +370,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
             error: gateError,
         });
 
-        const result = await submitOverallAnalysisAction(
+        const result = await runOverallAnalysisAction(
             'AAPL',
             'Apple Inc.',
             '1Day',
@@ -405,7 +378,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
         );
 
         expect(result).toEqual({ status: 'error', error: gateError });
-        expect(mockSubmitOverallAnalysis).not.toHaveBeenCalled();
+        expect(mockRunOverallAnalysis).not.toHaveBeenCalled();
     });
 
     it('forwards tier as top-level and technical axis tierContext when gate allowed', async () => {
@@ -415,14 +388,9 @@ describe('submitOverallAnalysisAction 함수는', () => {
             tier: 'member' as never,
         });
 
-        await submitOverallAnalysisAction(
-            'AAPL',
-            'Apple Inc.',
-            '1Day',
-            MODEL_ID
-        );
+        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
 
-        const callArg = mockSubmitOverallAnalysis.mock.calls[0]?.[0];
+        const callArg = mockRunOverallAnalysis.mock.calls[0]?.[0];
         expect(callArg).toMatchObject({
             tier: 'member',
             technical: { tierContext: { tier: 'member' } },
@@ -437,14 +405,14 @@ describe('submitOverallAnalysisAction 함수는', () => {
             userApiKey: 'usr-key',
         });
 
-        await submitOverallAnalysisAction(
+        await runOverallAnalysisAction(
             'AAPL',
             'Apple Inc.',
             '1Day',
             PREMIUM_MODEL
         );
 
-        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ userApiKey: 'usr-key' })
         );
     });
@@ -457,14 +425,14 @@ describe('submitOverallAnalysisAction 함수는', () => {
             // no userApiKey
         });
 
-        await submitOverallAnalysisAction(
+        await runOverallAnalysisAction(
             'AAPL',
             'Apple Inc.',
             '1Day',
             PREMIUM_MODEL
         );
 
-        const callArg = mockSubmitOverallAnalysis.mock.calls[0]?.[0];
+        const callArg = mockRunOverallAnalysis.mock.calls[0]?.[0];
         expect(callArg).toBeDefined();
         expect(callArg).not.toHaveProperty('userApiKey');
     });
@@ -476,12 +444,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
             tier: 'free' as never,
         });
 
-        await submitOverallAnalysisAction(
-            'AAPL',
-            'Apple Inc.',
-            '1Day',
-            MODEL_ID
-        );
+        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
 
         expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
     });
@@ -493,14 +456,9 @@ describe('submitOverallAnalysisAction 함수는', () => {
             tier: 'pro' as never,
         });
 
-        await submitOverallAnalysisAction(
-            'AAPL',
-            'Apple Inc.',
-            '1Day',
-            MODEL_ID
-        );
+        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
 
-        const callArg = mockSubmitOverallAnalysis.mock.calls[0]?.[0];
+        const callArg = mockRunOverallAnalysis.mock.calls[0]?.[0];
         expect(callArg?.technical).toMatchObject({
             tierContext: { userId: 'user-abc', tier: 'pro' },
         });
@@ -514,27 +472,17 @@ describe('submitOverallAnalysisAction 함수는', () => {
             })
         );
 
-        await submitOverallAnalysisAction(
-            'AAPL',
-            'Apple Inc.',
-            '1Day',
-            MODEL_ID
-        );
+        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
 
-        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: true })
         );
     });
 
     it('passes skipEnqueueIfMiss: false to siglens-core when request UA is not a bot', async () => {
-        await submitOverallAnalysisAction(
-            'AAPL',
-            'Apple Inc.',
-            '1Day',
-            MODEL_ID
-        );
+        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
 
-        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: false })
         );
     });
@@ -545,14 +493,14 @@ describe('submitOverallAnalysisAction 함수는', () => {
             mockIsRegularSession.mockReturnValueOnce(false);
             mockIsOiStale.mockReturnValueOnce(true);
 
-            await submitOverallAnalysisAction(
+            await runOverallAnalysisAction(
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
                 MODEL_ID
             );
 
-            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({
                     optionsSnapshot: expect.any(Object),
                     optionsOiStale: true,
@@ -563,20 +511,15 @@ describe('submitOverallAnalysisAction 함수는', () => {
         it('passes optionsSnapshot=undefined for NoChains symbols', async () => {
             mockFetchSnapshot.mockResolvedValueOnce(null);
 
-            await submitOverallAnalysisAction(
-                'SPXUSD',
-                'S&P',
-                '1Day',
-                MODEL_ID
-            );
+            await runOverallAnalysisAction('SPXUSD', 'S&P', '1Day', MODEL_ID);
 
-            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ optionsSnapshot: undefined })
             );
         });
 
         it('forwards force=true through to core', async () => {
-            await submitOverallAnalysisAction(
+            await runOverallAnalysisAction(
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
@@ -584,20 +527,20 @@ describe('submitOverallAnalysisAction 함수는', () => {
                 { force: true }
             );
 
-            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ force: true })
             );
         });
 
         it('does not force when called without options arg', async () => {
-            await submitOverallAnalysisAction(
+            await runOverallAnalysisAction(
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
                 MODEL_ID
             );
 
-            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
                 expect.not.objectContaining({ force: true })
             );
         });
@@ -607,14 +550,14 @@ describe('submitOverallAnalysisAction 함수는', () => {
             mockIsRegularSession.mockReturnValueOnce(true);
             mockIsOiStale.mockReturnValueOnce(true);
 
-            await submitOverallAnalysisAction(
+            await runOverallAnalysisAction(
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
                 MODEL_ID
             );
 
-            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ optionsOiStale: false })
             );
         });
@@ -624,14 +567,14 @@ describe('submitOverallAnalysisAction 함수는', () => {
             // 종합 분석을 계속 진행해야 한다 (spec §2 row 1 NoChains와 동일 경로).
             mockFetchSnapshot.mockRejectedValueOnce(new Error('timeout'));
 
-            const result = await submitOverallAnalysisAction(
+            const result = await runOverallAnalysisAction(
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
                 MODEL_ID
             );
 
-            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({
                     optionsSnapshot: undefined,
                     optionsOiStale: false,
@@ -666,7 +609,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
             mockGetFinancialsSnapshot.mockResolvedValueOnce(snapshot);
             mockComputeFinancialsScorecard.mockReturnValueOnce(scorecard);
 
-            await submitOverallAnalysisAction(
+            await runOverallAnalysisAction(
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
@@ -677,7 +620,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
             expect(mockComputeFinancialsScorecard).toHaveBeenCalledWith(
                 snapshot
             );
-            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ financialsScorecard: scorecard })
             );
         });
@@ -690,7 +633,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
                 })
             );
 
-            await submitOverallAnalysisAction(
+            await runOverallAnalysisAction(
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
@@ -699,7 +642,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
 
             // bot 트래픽은 financials fetch를 하지 않는다
             expect(mockGetFinancialsSnapshot).not.toHaveBeenCalled();
-            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ financialsScorecard: undefined })
             );
         });
@@ -709,7 +652,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
                 new Error('financials fetch failed')
             );
 
-            const result = await submitOverallAnalysisAction(
+            const result = await runOverallAnalysisAction(
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
@@ -718,7 +661,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
 
             // graceful degradation — error 상태로 빠지지 않는다
             expect(result).toBe(SUBMITTED_RESULT);
-            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ financialsScorecard: undefined })
             );
         });
@@ -732,7 +675,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
                 tier: 'member' as never,
             });
 
-            await submitOverallAnalysisAction(
+            await runOverallAnalysisAction(
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
@@ -740,13 +683,13 @@ describe('submitOverallAnalysisAction 함수는', () => {
                 { reasoning: true }
             );
 
-            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: true })
             );
         });
 
         it('forces reasoning: false for free tier even when client requests true', async () => {
-            await submitOverallAnalysisAction(
+            await runOverallAnalysisAction(
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
@@ -754,7 +697,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
                 { reasoning: true }
             );
 
-            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false })
             );
         });
@@ -766,14 +709,14 @@ describe('submitOverallAnalysisAction 함수는', () => {
                 tier: 'member' as never,
             });
 
-            await submitOverallAnalysisAction(
+            await runOverallAnalysisAction(
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
                 MODEL_ID
             );
 
-            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false })
             );
         });
@@ -782,9 +725,9 @@ describe('submitOverallAnalysisAction 함수는', () => {
     describe('crypto symbol — session spec routing', () => {
         it('resolveMarketProfile가 "crypto"이면 getCachedMarketDataProvider를 CRYPTO_SESSION으로 호출한다', async () => {
             mockResolveMarketProfile.mockResolvedValueOnce('crypto');
-            mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+            mockRunOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-            await submitOverallAnalysisAction(
+            await runOverallAnalysisAction(
                 'BTCUSD',
                 'Bitcoin',
                 '1Day',
@@ -798,9 +741,9 @@ describe('submitOverallAnalysisAction 함수는', () => {
 
         it('resolveMarketProfile가 "us-equity"이면 getCachedMarketDataProvider를 US_EQUITY_SESSION으로 호출한다', async () => {
             mockResolveMarketProfile.mockResolvedValueOnce('us-equity');
-            mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+            mockRunOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-            await submitOverallAnalysisAction(
+            await runOverallAnalysisAction(
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
@@ -814,34 +757,34 @@ describe('submitOverallAnalysisAction 함수는', () => {
     });
 
     describe('assetClass forwarding', () => {
-        it('resolveMarketProfile가 "crypto"이면 submitOverallAnalysis를 assetClass: "crypto"로 호출한다', async () => {
+        it('resolveMarketProfile가 "crypto"이면 runOverallAnalysis를 assetClass: "crypto"로 호출한다', async () => {
             mockResolveMarketProfile.mockResolvedValueOnce('crypto');
-            mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+            mockRunOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-            await submitOverallAnalysisAction(
+            await runOverallAnalysisAction(
                 'BTCUSD',
                 'Bitcoin',
                 '1Day',
                 MODEL_ID
             );
 
-            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ assetClass: 'crypto' })
             );
         });
 
-        it('resolveMarketProfile가 "us-equity"이면 submitOverallAnalysis를 assetClass: "equity"로 호출한다', async () => {
+        it('resolveMarketProfile가 "us-equity"이면 runOverallAnalysis를 assetClass: "equity"로 호출한다', async () => {
             mockResolveMarketProfile.mockResolvedValueOnce('us-equity');
-            mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+            mockRunOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-            await submitOverallAnalysisAction(
+            await runOverallAnalysisAction(
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
                 MODEL_ID
             );
 
-            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ assetClass: 'equity' })
             );
         });

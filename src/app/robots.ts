@@ -59,7 +59,12 @@ export default function robots(): MetadataRoute.Robots {
         rules: [
             {
                 userAgent: '*',
-                allow: '/',
+                // ⚠️ `/api/analysis/stream`만 예외로 허용한다. 분석 요청은 예전엔
+                // Server Action(현재 페이지 URL로 POST — 허용 경로)이었지만 지금은 이
+                // API 라우트로 간다. 여기가 막히면 Googlebot 렌더러가 요청 자체를
+                // 못 보내 캐시 HIT조차 못 받고, 렌더된 DOM에 에러 배너만 남는다.
+                // Allow는 더 긴 경로 매칭이 이기므로 아래 `/api/` disallow보다 우선한다.
+                allow: ['/', '/api/analysis/stream'],
                 // API 라우트는 disallow로 유지 — 응답이 JSON/이미지 등 SEO 가치
                 // 없는 자원이라 crawl budget 절약 목적.
                 //
@@ -97,7 +102,8 @@ export default function robots(): MetadataRoute.Robots {
                 // 반드시 fetch해야 하지만 영향 없음 — 이들은 자체 그룹을 갖거나(별도 UA)
                 // robots.txt 자체를 사실상 무시하고 OG 메타 태그 fetch를 강행한다.
                 userAgent: 'Googlebot',
-                allow: '/',
+                // `*` 그룹과 동일한 예외 — 분석 SSE 라우트만 허용(위 주석 참조).
+                allow: ['/', '/api/analysis/stream'],
                 disallow: ['/api/', '/*/opengraph-image', '/*/twitter-image'],
             },
             {
@@ -107,7 +113,8 @@ export default function robots(): MetadataRoute.Robots {
                     ...AI_TRAINING_CRAWLER_USER_AGENTS,
                     ...AI_SEARCH_CRAWLER_USER_AGENTS,
                 ],
-                allow: '/',
+                // `*` 그룹과 동일한 예외 — 분석 SSE 라우트만 허용(위 주석 참조).
+                allow: ['/', '/api/analysis/stream'],
                 // robots.txt는 가장 구체적인 그룹만 적용하고 `*` 그룹을 상속하지 않으므로,
                 // crawl-delay 그룹에도 /api/ disallow를 명시해야 한다(미명시 시 API 크롤 허용됨).
                 disallow: ['/api/'],

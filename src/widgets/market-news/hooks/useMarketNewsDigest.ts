@@ -12,10 +12,7 @@ import type {
     NewsAnalysisResponse,
     NewsFeedCategory,
 } from '@y0ngha/siglens-core';
-import {
-    cancelMarketNewsDigestAction,
-    ensureMarketNewsCardsAnalyzedAction,
-} from '@/entities/market-news/actions';
+import { ensureMarketNewsCardsAnalyzedAction } from '@/entities/market-news/actions';
 import { fetchMarketNewsDigest } from '../utils/fetchMarketNewsDigest';
 import { useWaitForMarketNewsCards } from './useWaitForMarketNewsCards';
 
@@ -54,9 +51,8 @@ function useMarketNewsAnalysisTrigger(category: NewsFeedCategory): void {
  *    (fire-and-forget) to ingest and enrich cards.
  * 2. Waits for ≥1 enriched card (polls `getMarketNewsCardsAction` at 3s interval)
  *    unless `hasEnrichedNews` is already true from SSR.
- * 3. When ready, calls `submitMarketNewsDigestAction(category)` and polls via
- *    `pollMarketNewsDigestAction` until done or error.
- * 4. On unmount (or category change) cancels any in-flight job via `cancelMarketNewsDigestAction`.
+ * 3. When ready, calls `submitMarketNewsDigestAction(category)` and awaits
+ *    result directly (run* is blocking — no poll loop needed).
  *
  * Output: discriminated union `loading | done | error`.
  * No `usePublishSymbolChat` — this is a category page, not a per-symbol page.
@@ -66,7 +62,6 @@ export function useMarketNewsDigest(
     hasEnrichedNews: boolean
 ): MarketNewsDigestState {
     const [isHydrated, setIsHydrated] = useState(false);
-    const currentJobIdRef = useRef<string | null>(null);
 
     // Single custom hook that drives the `enabled` flag (input-provider pattern).
     const { isReady: isCardsReady, waitError } = useWaitForMarketNewsCards(
@@ -76,20 +71,7 @@ export function useMarketNewsDigest(
 
     const query = useQuery({
         queryKey: ['market-news-digest', category] as const,
-        queryFn: ({ signal }) =>
-            fetchMarketNewsDigest(
-                category,
-                signal,
-                (jobId, expectedCurrent) => {
-                    if (
-                        expectedCurrent !== undefined &&
-                        currentJobIdRef.current !== expectedCurrent
-                    ) {
-                        return;
-                    }
-                    currentJobIdRef.current = jobId;
-                }
-            ),
+        queryFn: ({ signal }) => fetchMarketNewsDigest(category, signal),
         // Wait for hydration + enriched cards before firing.
         // Firing on empty DB would give no_news immediately and staleTime: Infinity
         // would lock the error state until a hard refresh.
@@ -109,19 +91,6 @@ export function useMarketNewsDigest(
     const retry = useCallback(() => {
         void refetch();
     }, [refetch]);
-
-    // Cancel in-flight digest job on unmount or category change.
-    useEffect(() => {
-        return () => {
-            const jobId = currentJobIdRef.current;
-            if (jobId !== null) {
-                currentJobIdRef.current = null;
-                void cancelMarketNewsDigestAction(jobId).catch(error => {
-                    console.warn('[useMarketNewsDigest] cancel failed', error);
-                });
-            }
-        };
-    }, [category]);
 
     // Hydration gate — set after first client render so SSR and client
     // render match (avoids useQuery firing during hydration).

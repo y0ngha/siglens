@@ -5,7 +5,6 @@ import type { MacroBriefingResponse } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 
 import { useMacroBriefing } from '../hooks/useMacroBriefing';
-import { useMacroBriefingPoll } from '../hooks/useMacroBriefingPoll';
 
 const REGIME_LABELS: Record<MacroBriefingResponse['regime'], string> = {
     expansion: '확장',
@@ -27,10 +26,6 @@ interface MacroBriefingProps {
     peekSeed: MacroBriefingResponse | null;
 }
 
-interface MacroBriefingPollingViewProps {
-    jobId: string;
-}
-
 interface MacroBriefingViewProps {
     briefing: MacroBriefingResponse;
     /** null when displaying peekSeed before the real generatedAt is available from the server. */
@@ -45,11 +40,10 @@ interface MacroBriefingErrorProps {
  * /economy 상단 거시 AI 브리핑 위젯.
  *
  * 흐름:
- * 1. mount → submit action(`useMacroBriefing`) — peekSeed가 있으면 그걸 먼저 표시.
- * 2. submitted면 jobId로 polling(`useMacroBriefingPoll`) → done까지 5s 간격.
- * 3. cached/done이면 briefing 본문 표시. error/봇 차단/미정 시 안내.
+ * 1. mount → `useMacroBriefing` — peekSeed가 있으면 그걸 먼저 표시.
+ * 2. cached/done이면 briefing 본문 표시. error/봇 차단/미정 시 안내.
  *
- * 폴링 error는 위젯이 inline notice로 처리한다 — throw로 라우트 단위 boundary에
+ * error는 위젯이 inline notice로 처리한다 — throw로 라우트 단위 boundary에
  * 빠지면 indicator grid·calendar까지 unmount되므로 회피.
  */
 export function MacroBriefing({ peekSeed }: MacroBriefingProps) {
@@ -58,26 +52,12 @@ export function MacroBriefing({ peekSeed }: MacroBriefingProps) {
     if (input === undefined) return <MacroBriefingSkeleton />;
     if (input === null) return <MacroBriefingBotBlocked />;
     if (input === 'error') return <MacroBriefingError onRetry={refetch} />;
-    if (input.status === 'cached') {
-        return (
-            <MacroBriefingView
-                briefing={input.briefing}
-                generatedAt={input.generatedAt}
-            />
-        );
-    }
-    return <MacroBriefingPollingView jobId={input.jobId} />;
-}
-
-function MacroBriefingPollingView({ jobId }: MacroBriefingPollingViewProps) {
-    const poll = useMacroBriefingPoll(jobId);
-    if (poll.status === 'processing') return <MacroBriefingSkeleton />;
-    if (poll.status === 'error')
-        return <MacroBriefingError onRetry={poll.refetch} />;
+    // `cached`와 `done`은 둘 다 briefing 본문을 들고 온다 — 구 구조에서는 `done`이
+    // jobId만 주고 별도 폴링 뷰가 결과를 받아왔지만, 이제 한 번의 호출로 완결된다.
     return (
         <MacroBriefingView
-            briefing={poll.briefing}
-            generatedAt={poll.generatedAt}
+            briefing={input.briefing}
+            generatedAt={input.generatedAt}
         />
     );
 }

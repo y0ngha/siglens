@@ -67,4 +67,43 @@ aws logs put-metric-filter --log-group-name /siglens/app \
 aws cloudwatch put-metric-alarm --alarm-name siglens-isr-tag-failures --namespace Siglens/ISRCache \
   --metric-name IsrTagFailures --statistic Sum --period 900 --evaluation-periods 2 --threshold 5 \
   --comparison-operator GreaterThanOrEqualToThreshold --treat-missing-data notBreaching $ACTIONS
-log "alarms created (5xx, unhealthy, cpu-credits, disk, mem, isr-cache-failures, isr-tag-failures)"
+# 분석 스트림 실패 가시성 — heartbeatStream.ts reject 핸들러가 '[analysis-stream] failed:'를
+# 남긴다(Fix 1a). SSE는 항상 HTTP 200을 반환하므로 ALB 5xx 알람으로는 분석 전면 장애를
+# 포착할 수 없다 — 이 로그 기반 메트릭이 유일한 서버사이드 신호다.
+#
+# '[analysis-stream] failed' 로 필터(따옴표 포함): 접두 패턴이 ASCII만으로 구성돼
+# CloudWatch Logs 필터 매칭이 안정적이다(13-seo-prewarm.sh §FIX F 참조).
+#
+# 임계값: 15분 2건 초과가 **연속 2주기**(=30분) → 알람.
+#
+# 창을 5분→15분으로 넓히고 임계를 낮춘 이유: 임계가 트래픽 규모에 묶여 있으면 저트래픽
+# 구간의 100% 장애를 못 잡는다. 심야에 5분당 4건씩 전부 실패하면 5분/5건 임계는 영원히
+# 안 넘는다. 15분/2건이면 "장애 중 시도 자체가 드문" 시간대도 잡히고, 연속 2주기로
+# 산발적 단발 실패는 여전히 걸러진다.
+#   - isr-tag-failures 주석(위)이 경계하는 "도달 불가능한 임계"와 같은 실수를 피한다.
+#   - 게이트 거부(BYOK/tier)는 `gate-denied`로 분리 로깅해 이 지표에 안 섞인다.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-analysis-stream-failed \
+  --filter-pattern '"[analysis-stream] failed"' \
+  --metric-transformations metricName=AnalysisStreamFailed,metricNamespace=Siglens/Analysis,metricValue=1
+aws cloudwatch put-metric-alarm --alarm-name siglens-analysis-stream-failed --namespace Siglens/Analysis \
+  --metric-name AnalysisStreamFailed --statistic Sum --period 900 --evaluation-periods 2 --threshold 2 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
+# Node 힙 고갈 — worker 제거 이후 새로 생긴 실패 모드.
+#
+# LLM 호출이 앱 프로세스 안에서 돌면서 요청당 bars+지표+프롬프트를 들고 있게 됐다.
+# `user-data.sh`가 Node 힙을 컨테이너 리밋보다 낮게 잡아 뒀으므로, 한계에 닿으면
+# 커널 OOM killer가 조용히 죽이는 대신 Node가 이 문자열을 stderr에 남기고 종료한다
+# (awslogs 드라이버가 CloudWatch로 보낸다). systemd가 재시작하지만 진행 중이던
+# 분석은 전멸하므로, 한 번이라도 뜨면 신호다.
+#
+# 임계값 0 초과 = 1시간에 1회라도 발생하면 알람. 정상 운영에선 절대 안 나온다.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-node-heap-oom \
+  --filter-pattern '"JavaScript heap out of memory"' \
+  --metric-transformations metricName=NodeHeapOom,metricNamespace=Siglens/Runtime,metricValue=1
+aws cloudwatch put-metric-alarm --alarm-name siglens-node-heap-oom --namespace Siglens/Runtime \
+  --metric-name NodeHeapOom --statistic Sum --period 3600 --evaluation-periods 1 --threshold 0 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
+
+log "alarms created (5xx, unhealthy, cpu-credits, disk, mem, isr-cache-failures, isr-tag-failures, analysis-stream-failed, node-heap-oom)"
