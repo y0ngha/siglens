@@ -89,4 +89,21 @@ aws logs put-metric-filter --log-group-name /siglens/app \
 aws cloudwatch put-metric-alarm --alarm-name siglens-analysis-stream-failed --namespace Siglens/Analysis \
   --metric-name AnalysisStreamFailed --statistic Sum --period 900 --evaluation-periods 2 --threshold 2 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
-log "alarms created (5xx, unhealthy, cpu-credits, disk, mem, isr-cache-failures, isr-tag-failures, analysis-stream-failed)"
+# Node 힙 고갈 — worker 제거 이후 새로 생긴 실패 모드.
+#
+# LLM 호출이 앱 프로세스 안에서 돌면서 요청당 bars+지표+프롬프트를 들고 있게 됐다.
+# `user-data.sh`가 Node 힙을 컨테이너 리밋보다 낮게 잡아 뒀으므로, 한계에 닿으면
+# 커널 OOM killer가 조용히 죽이는 대신 Node가 이 문자열을 stderr에 남기고 종료한다
+# (awslogs 드라이버가 CloudWatch로 보낸다). systemd가 재시작하지만 진행 중이던
+# 분석은 전멸하므로, 한 번이라도 뜨면 신호다.
+#
+# 임계값 0 초과 = 1시간에 1회라도 발생하면 알람. 정상 운영에선 절대 안 나온다.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-node-heap-oom \
+  --filter-pattern '"JavaScript heap out of memory"' \
+  --metric-transformations metricName=NodeHeapOom,metricNamespace=Siglens/Runtime,metricValue=1
+aws cloudwatch put-metric-alarm --alarm-name siglens-node-heap-oom --namespace Siglens/Runtime \
+  --metric-name NodeHeapOom --statistic Sum --period 3600 --evaluation-periods 1 --threshold 0 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
+
+log "alarms created (5xx, unhealthy, cpu-credits, disk, mem, isr-cache-failures, isr-tag-failures, analysis-stream-failed, node-heap-oom)"

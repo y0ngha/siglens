@@ -113,7 +113,24 @@ ExecStartPre=-/usr/bin/docker rm -f siglens
 # --cap-drop / --read-only 는 런타임 검증 후 적용 예정 (현재 보류).
 # awslogs 드라이버로 stdout/stderr를 CloudWatch Logs($LOG_GROUP)로 전송(L4).
 # 인스턴스가 사라져도 로그가 보존된다.
-ExecStart=/usr/bin/docker run --rm --name siglens -p 3000:3000 --env-file /run/siglens/env --security-opt no-new-privileges:true --log-driver awslogs --log-opt awslogs-region=$REGION --log-opt awslogs-group=$LOG_GROUP --log-opt awslogs-stream=$INSTANCE_ID --log-opt awslogs-create-group=true $IMAGE
+#
+# 메모리 상한 2층 (worker 제거 이후 도입):
+#
+#   --memory=3g          컨테이너 하드 리밋. t4g.medium 4GiB 중 ~1GiB를 호스트
+#                        (AL2023 + dockerd + CloudWatch/SSM agent)에 남긴다.
+#   --memory-swap=3g     memory와 같은 값 = 스왑 사용 안 함. 다르면 한계 도달 시
+#                        스와핑으로 늘어지며 응답이 조용히 느려진다 — 차라리 빨리 죽는 게 낫다.
+#   --max-old-space-size Node 힙 상한 2048MiB. **컨테이너 리밋보다 낮게** 잡는 게 핵심이다.
+#     =2048              나머지 ~1GiB는 힙 밖(Buffer, 네이티브, 코드, 스택) 몫이다.
+#
+# 왜 Node 상한이 더 낮아야 하나: 힙이 먼저 차면 Node가 GC를 공격적으로 돌려 버티고,
+# 그래도 안 되면 "JavaScript heap out of memory"를 **로그에 남기고** 종료한다. 반대로
+# 컨테이너 리밋이 먼저 닿으면 커널 OOM killer가 프로세스를 조용히 죽여 원인이 안 남는다.
+#
+# 이 상한이 필요해진 이유: worker 제거로 LLM 호출이 앱 프로세스 안에서 돌면서, 요청당
+# bars(252봉)+지표 39종+프롬프트를 동시 분석 수만큼 들고 있게 됐다. 앞단의 동시 분석
+# 상한(24, activeStreams.ts)이 1차 방어이고 이건 그게 뚫렸을 때의 안전망이다.
+ExecStart=/usr/bin/docker run --rm --name siglens -p 3000:3000 --memory=3g --memory-swap=3g -e NODE_OPTIONS=--max-old-space-size=2048 --env-file /run/siglens/env --security-opt no-new-privileges:true --log-driver awslogs --log-opt awslogs-region=$REGION --log-opt awslogs-group=$LOG_GROUP --log-opt awslogs-stream=$INSTANCE_ID --log-opt awslogs-create-group=true $IMAGE
 ExecStop=/usr/bin/docker stop -t 185 siglens
 Restart=always
 RestartSec=5

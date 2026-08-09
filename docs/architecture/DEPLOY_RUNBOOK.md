@@ -157,6 +157,7 @@ curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge
 | `siglens-isr-cache-failures` | IsrCacheFailures 5분 합계 > 5 | S3 권한/버킷/IMDS 확인. fail-open이라 사이트는 살아 있지만 캐시는 사실상 죽은 상태 |
 | `siglens-isr-tag-failures` | IsrTagFailures 15분 합계 ≥ 5 ×2주기 | 태그 동기화 실패 = 다른 인스턴스의 무효화를 놓쳐 **stale HTML을 revalidate TTL(6~24h) 동안 서빙**. 조용히 degrade하므로 이 알람이 유일한 신호 |
 | `siglens-analysis-stream-failed` | `[analysis-stream] failed` 15분 합계 > 2가 연속 2주기 | **분석 전면 장애의 유일한 신호다.** SSE는 실패해도 HTTP 200이라 5xx 알람이 안 뜬다. 1순위 의심: 프로바이더 키(SSM `/siglens/{DEEPSEEK,GEMINI,ANTHROPIC,OPENAI}_API_KEY`) 누락·만료. Logs Insights에서 `[analysis-stream] failed` 원문 확인 → 키 문제면 SSM 갱신 후 인스턴스 재시작, 프로바이더 장애면 회복 대기 |
+| `siglens-node-heap-oom` | `JavaScript heap out of memory` 1시간 1건 초과 | 앱 프로세스가 힙 상한(2GiB)에 닿아 죽었다 = 진행 중이던 분석 전멸 후 systemd 재시작. worker 제거로 LLM 호출이 앱 안에서 돌면서 생긴 실패 모드다. 동시 분석 상한(24)이 뚫렸는지, 특정 심볼의 bars가 비정상적으로 큰지 확인. 반복되면 인스턴스 타입 상향 또는 상한 하향 |
 | `siglens-seo-prewarm-unit-error` | `[seo-prewarm] unit-error` 또는 `unit-timeout` 15분 20건 초과 ×2주기 | 야간 prewarm 유닛이 대량 실패 중. 배치는 fail-open이라 `batch failed`가 안 뜨므로 이게 유일한 신호다. 프로바이더 키·장애를 먼저 의심 |
 | `siglens-seo-prewarm-deadline-reached` | `[seo-prewarm] batch deadline reached` 6시간 3건 초과 | 배치가 데드라인에 걸려 심볼을 버리고 있다 = 커버리지가 조용히 줄고 있다. `SYMBOL_CONCURRENCY`/스케줄 폭 재검토, 유닛 지연 실측 |
 | `siglens-seo-prewarm-batch-failed` | `[seo-prewarm] batch failed` 1시간 3회 초과 | [CRON.md](../reference/CRON.md) — 배치 내부 실패 |
