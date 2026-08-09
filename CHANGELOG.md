@@ -1,5 +1,30 @@
 # Changelog
 
+# [0.52.0](https://github.com/y0ngha/siglens/compare/v0.51.0...v0.52.0) (2026-08-09)
+
+
+### Bug Fixes
+
+* 감사 지적 반영 — SSE 누락 경로·공개 LLM 엔드포인트·죽은 코드 ([da85e15](https://github.com/y0ngha/siglens/commit/da85e15e6d077f2a8b592e830ac8c1b5b63e9634))
+* 감사 지적 반영 2차 — force 캐시 우회·타이머 누수·공유 abort ([d6bb77c](https://github.com/y0ngha/siglens/commit/d6bb77c3ff70912e54914394cae1cbbcb3752163))
+* 감사 지적 반영 3차 — 마감 취소·E2E 배지·브리핑 에러 표면화 ([497c5dc](https://github.com/y0ngha/siglens/commit/497c5dc9fcc2b5529504abbab8e7ea2c886bc833))
+* 감사 지적 반영 4차 — 재분석 의도·크롤러 접근·운영 가시성 ([d42cafd](https://github.com/y0ngha/siglens/commit/d42cafdab4464e3e6b3850fbfe363900848dfeb7))
+* 라운드4 배포 감사 반영 — 죽은 알람 되살리기·봇 상한 예외 ([493130e](https://github.com/y0ngha/siglens/commit/493130ee3d7299e0e927882a91be7dbb3a289c52))
+* 라운드4 SEO 감사 반영 — 반환된 실패도 일시적 backoff, 신선도 우선 판정 ([1b4f25b](https://github.com/y0ngha/siglens/commit/1b4f25b26fbc75c2508ab5f750360b335ddae808))
+* 메모리 상한을 실측 기반으로 재조정 (3g/2g → 2.5g/1.5g) ([a8af1d6](https://github.com/y0ngha/siglens/commit/a8af1d63a46ec5b4cdc30ac4bf31c045ab33d5ad))
+* 배포 안정성 감사 반영 — 배포 차단 게이트·drain 카운터 의미 교정 ([b139845](https://github.com/y0ngha/siglens/commit/b139845ec6676315c81c949d7935f3aaf46d4665))
+* 배포 직전 감사 반영 — ALB 속성 호출 분리·알람 임계·backoff 독성 ([f108d47](https://github.com/y0ngha/siglens/commit/f108d47654ca9b4d68df568411b58d1d6b0a6868))
+* 앱 컨테이너 메모리 상한 2층 + 힙 고갈 알람 ([8aacd2b](https://github.com/y0ngha/siglens/commit/8aacd2b65ee40ccb87fff50c7955b2e54958a5a9))
+* 재분석 쿨다운 거절 시 화면 비움 회귀 + SSE 미소비 rejection ([7d7af2c](https://github.com/y0ngha/siglens/commit/7d7af2c8f5470851494ec7fb03f9121319bf8728))
+* 코드 감사 반영 — 쿨다운 해제를 서버로, 쿨다운 거절 시 결과 보존 ([f438e96](https://github.com/y0ngha/siglens/commit/f438e960c4284cacfe8d56cc0eb07a4c4104aba9))
+* SEO 감사 반영 — 봇 분기 seed 보존·prewarm 커버리지·상한 TOCTOU ([1e6543a](https://github.com/y0ngha/siglens/commit/1e6543a2b62fea69cb7ef66a1992196852fa13ff))
+
+
+### Features
+
+* 분석 SSE 엔드포인트 추가 ([02a9e63](https://github.com/y0ngha/siglens/commit/02a9e63fc0d41db9e8e12421a9c32cdbf349bcf2))
+* SSE heartbeat 스트림 헬퍼 추가 ([329fc45](https://github.com/y0ngha/siglens/commit/329fc45c56fce69ebd60525579ca909581b1565b))
+
 # [0.51.0](https://github.com/y0ngha/siglens/compare/v0.50.1...v0.51.0) (2026-08-07)
 
 
