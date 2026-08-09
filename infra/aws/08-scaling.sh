@@ -31,14 +31,32 @@ aws autoscaling put-scaling-policy \
 #     ALBRequestCountPerTarget만으로는 이 구조의 병목에 영원히 반응하지 못한다.
 #     CPU 정책을 함께 걸어 LLM 바운드 부하에도 스케일아웃되게 한다.
 #     (siglens-cpu-credits-low는 알람일 뿐 스케일링 트리거가 아니다.)
-# TargetValue 20 = t4g.medium의 baseline(vCPU당 20%).
+# TargetValue 50 — 실측 기반. 이 값은 두 제약 사이의 절충이다.
 #
-# 타깃 트래킹은 평균을 목표치 "아래"가 아니라 목표치 "에" 붙든다. baseline보다 높게 잡으면
-# (60은 3배, 30은 1.5배) 그 상태가 정상 판정이라 스케일아웃이 안 일어나고, unlimited 모드라
-# 크레딧이 계속 순감해 결국 초과 요금 + siglens-cpu-credits-low 상시 ALARM으로 굳는다.
-# baseline에 맞추면 크레딧이 수지균형이고, 그보다 부하가 높아지는 순간 스케일아웃이 돈다.
+# 실측(2026-08 첫 주, CWAgent/EC2): CPU 시간평균 5~10%, 하루 최대도 10.5%.
+# t4g.medium baseline(vCPU당 20%)의 절반이라 정상 상태에서는 크레딧이 만점(576)에 머문다.
+# 크레딧이 1.5까지 떨어진 날들이 있었지만 그건 부하가 아니라 **배포로 뜬 새 인스턴스가
+# 0에서 적립을 시작**한 것이다(CPUSurplusCreditBalance는 내내 0 = 초과 요금 발생 없음).
+#
+# 왜 baseline(20%)이 아닌가: 타깃 트래킹은 평균을 목표치 "에" 붙든다. 20%로 잡으면 정상
+# 부하의 3배만 돼도 스케일아웃이 돈다 — 한 대가 충분히 감당하는 구간에서 인스턴스를
+# 늘리는 셈이라 과민하다.
+#
+# 왜 80%가 아닌가: 목표치에 붙드는 성질 때문에, 80%로 잡으면 발동 후 플릿이 80%에 머물며
+# 크레딧을 시간당 -72씩 태운다(적립 24 - 소비 96). 576이 8시간이면 바닥나고 그때부터
+# unlimited 모드 초과 요금이 계속 나간다.
+#
+#   타깃   소비/h   순증감   576 소진   발화 조건(정상 5~10% 대비)
+#    20%      24      +0    무한 적립      3배  ← 과민
+#    50%      60     -36      16시간      7배  ← 선택
+#    80%      96     -72       8시간     11배  ← runway 부족
+#
+# 50%는 "정상 대비 7배 = 진짜 이상 상황"에서만 발동하고, 발동 후에도 16시간의 대응
+# 여유를 준다. 만약 앞으로 baseline 위에서 상시 운영하게 되면 이 숫자를 올릴 게 아니라
+# 인스턴스 타입을 non-burstable(m7g 등)로 바꾸는 게 맞다 — 버스터블에서 baseline 초과가
+# 상시화되면 어떤 타깃값을 쓰든 크레딧 경제가 성립하지 않는다.
 CPU_CONFIG=$(jq -n \
-  --argjson target 20 \
+  --argjson target 50 \
   '{PredefinedMetricSpecification:{PredefinedMetricType:"ASGAverageCPUUtilization"},TargetValue:$target}')
 
 aws autoscaling put-scaling-policy \
@@ -47,4 +65,4 @@ aws autoscaling put-scaling-policy \
   --policy-type TargetTrackingScaling \
   --target-tracking-configuration "$CPU_CONFIG"
 
-log "scaling policies set: siglens-tt-albreq (1000 req/target) + siglens-tt-cpu (20% CPU = t4g baseline); ASG max-size owned by 06-alb-asg.sh (=4) | resource-label: $RES_LABEL"
+log "scaling policies set: siglens-tt-albreq (1000 req/target) + siglens-tt-cpu (50% CPU); ASG max-size owned by 06-alb-asg.sh (=4) | resource-label: $RES_LABEL"
