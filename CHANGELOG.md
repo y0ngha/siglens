@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.52.1](https://github.com/y0ngha/siglens/compare/v0.52.0...v0.52.1) (2026-08-09)
+
+
+### Bug Fixes
+
+* 티어 하이드레이션 후 사용자 모델 선택 복원 ([3a1c61a](https://github.com/y0ngha/siglens/commit/3a1c61a6d94b7c25dee3a13ff1bb0a8fde916cdf))
+* **infra:** CPU 스케일링 타깃 20% → 50% (실측 기반) ([03bbeba](https://github.com/y0ngha/siglens/commit/03bbebaa15417d32681e05f56b078b84be4813e8))
+
 # [0.52.0](https://github.com/y0ngha/siglens/compare/v0.51.0...v0.52.0) (2026-08-09)
 
 
