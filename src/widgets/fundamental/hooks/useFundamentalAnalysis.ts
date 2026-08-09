@@ -10,7 +10,6 @@ import type { RunFundamentalAnalysisActionResult } from '@/entities/analysis/act
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { useHydrated } from '@/shared/hooks/useHydrated';
 import { BotBlockedError } from '@/shared/lib/BotBlockedError';
 
 export type FundamentalAnalysisState =
@@ -68,10 +67,16 @@ export function useFundamentalAnalysis(
      * spec Part A). Defaults to `false`. Part of the query key so toggling
      * re-submits analysis (distinct cache key).
      */
-    reasoning = false
+    reasoning = false,
+    /**
+     * `modelId`/`reasoning`이 확정값인지 여부 — 호출부에서
+     * `useAnalysisSettingsHydrated()`로 넘긴다. tier가 서버에서 확정되기 전에
+     * 제출하면 DEFAULT 모델로 LLM을 한 번 태운 뒤 확정값으로 다시 태우게 된다.
+     * 기본값 `true`는 게이트가 필요 없는 단위 테스트용이다.
+     */
+    isSettingsHydrated = true
 ): FundamentalAnalysisState {
     const queryClient = useQueryClient();
-    const isHydrated = useHydrated();
     const queryKey = useMemo(
         () => QUERY_KEYS.fundamentalAnalysis(symbol, modelId, reasoning),
         [symbol, modelId, reasoning]
@@ -97,11 +102,11 @@ export function useFundamentalAnalysis(
     }, [refetch]);
 
     useEffect(() => {
-        if (!isHydrated) return;
+        if (!isSettingsHydrated) return;
         if (queryClient.getQueryData(queryKey) === undefined) {
             void refetch();
         }
-    }, [isHydrated, queryClient, queryKey, refetch]);
+    }, [isSettingsHydrated, queryClient, queryKey, refetch]);
 
     if (query.isError) {
         if (query.error instanceof BotBlockedError) {

@@ -7,7 +7,6 @@ import type { RunCongressTrendActionResult } from '@/entities/analysis/actions';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { useHydrated } from '@/shared/hooks/useHydrated';
 import { BotBlockedError } from '@/shared/lib/BotBlockedError';
 
 /**
@@ -79,10 +78,14 @@ export function useCongressTrend(
      * spec Part A). Defaults to `false`. Part of the query key so toggling
      * re-submits analysis (distinct cache key).
      */
-    reasoning = false
+    reasoning = false,
+    /**
+     * `modelId`/`reasoning`이 확정값인지 여부 — 호출부에서
+     * `useAnalysisSettingsHydrated()`로 넘긴다. 기본값 `true`는 단위 테스트용.
+     */
+    isSettingsHydrated = true
 ): CongressTrendState {
     const queryClient = useQueryClient();
-    const isHydrated = useHydrated();
 
     // queryKey는 인라인으로 둔다(§17 훅 순서). React Query는 queryKey를
     // deep-equality로 비교하므로 매 렌더 새 배열 참조가 생성돼도 불필요한
@@ -103,7 +106,7 @@ export function useCongressTrend(
     }, [refetch]);
 
     useEffect(() => {
-        if (!isHydrated) return;
+        if (!isSettingsHydrated) return;
         if (
             queryClient.getQueryData(
                 QUERY_KEYS.congressTrend(symbol, modelId, reasoning)
@@ -111,7 +114,7 @@ export function useCongressTrend(
         ) {
             void refetch();
         }
-    }, [isHydrated, queryClient, symbol, modelId, reasoning, refetch]);
+    }, [isSettingsHydrated, queryClient, symbol, modelId, reasoning, refetch]);
 
     if (query.isError) {
         if (query.error instanceof BotBlockedError) {

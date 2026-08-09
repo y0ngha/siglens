@@ -11,6 +11,7 @@ import { cn } from '@/shared/lib/cn';
 import {
     useDefaultModelId,
     useDefaultReasoning,
+    useAnalysisSettingsHydrated,
 } from '@/features/symbol-model';
 import { useFundamentalAnalysis } from './hooks/useFundamentalAnalysis';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
@@ -132,7 +133,13 @@ interface FundamentalAiSummaryProps {
 export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
     const modelId = useDefaultModelId();
     const reasoning = useDefaultReasoning();
-    const state = useFundamentalAnalysis(symbol, modelId, reasoning);
+    const isSettingsHydrated = useAnalysisSettingsHydrated();
+    const state = useFundamentalAnalysis(
+        symbol,
+        modelId,
+        reasoning,
+        isSettingsHydrated
+    );
 
     // bot_blocked/loading/error 시에도 chatState를 명시적으로 publish하여 챗봇이
     // 이전 페이지의 stale context를 그대로 들고 가지 않게 한다.

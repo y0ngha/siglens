@@ -31,7 +31,9 @@ describe('useSelectedModel — branch coverage', () => {
             'gemini-2.5-flash-lite',
             'gemini-2.5-flash',
         ];
-        const { result } = renderHook(() => useSelectedModel(allowedModels));
+        const { result } = renderHook(() =>
+            useSelectedModel(allowedModels, true)
+        );
 
         // Wait for hydration effect
         await act(async () => {});
@@ -48,7 +50,9 @@ describe('useSelectedModel — branch coverage', () => {
             'gemini-2.5-flash-lite',
             'gemini-2.5-flash',
         ];
-        const { result } = renderHook(() => useSelectedModel(allowedModels));
+        const { result } = renderHook(() =>
+            useSelectedModel(allowedModels, true)
+        );
 
         await act(async () => {});
 
@@ -60,7 +64,9 @@ describe('useSelectedModel — branch coverage', () => {
             'gemini-2.5-flash-lite',
             'gemini-2.5-flash',
         ];
-        const { result } = renderHook(() => useSelectedModel(allowedModels));
+        const { result } = renderHook(() =>
+            useSelectedModel(allowedModels, true)
+        );
 
         act(() => {
             result.current[1]('gemini-2.5-flash');
@@ -74,7 +80,8 @@ describe('useSelectedModel — branch coverage', () => {
 
     it('re-validates when allowedModels changes and current model is not allowed', async () => {
         const { result, rerender } = renderHook(
-            ({ allowed }: { allowed: ModelId[] }) => useSelectedModel(allowed),
+            ({ allowed }: { allowed: ModelId[] }) =>
+                useSelectedModel(allowed, true),
             {
                 initialProps: {
                     allowed: [
@@ -108,7 +115,8 @@ describe('useSelectedModel — branch coverage', () => {
 
     it('falls back to first allowed model when DEFAULT_MODEL is not in allowedModels', async () => {
         const { result, rerender } = renderHook(
-            ({ allowed }: { allowed: ModelId[] }) => useSelectedModel(allowed),
+            ({ allowed }: { allowed: ModelId[] }) =>
+                useSelectedModel(allowed, true),
             {
                 initialProps: {
                     allowed: [

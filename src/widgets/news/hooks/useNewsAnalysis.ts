@@ -7,7 +7,6 @@ import type { SubmitNewsAnalysisActionResult } from '@/entities/news-article/act
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { useHydrated } from '@/shared/hooks/useHydrated';
 import { BotBlockedError } from '@/shared/lib/BotBlockedError';
 
 export type NewsAnalysisState =
@@ -73,15 +72,23 @@ interface UseNewsAnalysisOptions {
      * re-submits analysis (distinct cache key).
      */
     reasoning?: boolean;
+    /**
+     * `modelId`/`reasoning`이 확정값인지 여부 — 호출부에서
+     * `useAnalysisSettingsHydrated()`로 넘긴다. 기본값 `true`는 단위 테스트용.
+     */
+    isSettingsHydrated?: boolean;
 }
 
 export function useNewsAnalysis(
     symbol: string,
     companyName: string,
     modelId: ModelId,
-    { enabled = true, reasoning = false }: UseNewsAnalysisOptions = {}
+    {
+        enabled = true,
+        reasoning = false,
+        isSettingsHydrated = true,
+    }: UseNewsAnalysisOptions = {}
 ): NewsAnalysisState {
-    const isHydrated = useHydrated();
     const queryKey = useMemo(
         () => QUERY_KEYS.newsAnalysis(symbol, companyName, modelId, reasoning),
         [symbol, companyName, modelId, reasoning]
@@ -100,7 +107,7 @@ export function useNewsAnalysis(
                 qReasoning,
                 signal
             ),
-        enabled: isHydrated && enabled,
+        enabled: isSettingsHydrated && enabled,
         retry: false,
         staleTime: Infinity,
     });

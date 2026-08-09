@@ -7,3 +7,4 @@ export {
 } from './model/SymbolModelContext';
 export { useDefaultModelId } from './hooks/useDefaultModelId';
 export { useDefaultReasoning } from './hooks/useDefaultReasoning';
+export { useAnalysisSettingsHydrated } from './hooks/useAnalysisSettingsHydrated';

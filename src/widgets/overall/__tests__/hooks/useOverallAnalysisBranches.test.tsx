@@ -9,7 +9,6 @@
 
 import type { Mock } from 'vitest';
 import { useOverallAnalysis } from '@/widgets/overall/hooks/useOverallAnalysis';
-import { useHydrated } from '@/shared/hooks/useHydrated';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -25,15 +24,9 @@ vi.mock('@/entities/analysis', () => ({
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
-// SSR hydration gate — default hydrated so existing tests fetch on trigger; the
-// gate-closed test flips it to false to assert the query stays disabled.
-vi.mock('@/shared/hooks/useHydrated', () => ({
-    useHydrated: vi.fn(() => true),
-}));
 
 const mockSubmit = runAnalysisStream as Mock;
 const mockIsGateBlocked = isGateBlockedResult as unknown as Mock;
-const mockUseHydrated = vi.mocked(useHydrated);
 
 const queryClients: QueryClient[] = [];
 
@@ -59,11 +52,71 @@ describe('useOverallAnalysis — branch coverage', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
         mockIsGateBlocked.mockReturnValue(false);
-        mockUseHydrated.mockReturnValue(true);
     });
 
     afterEach(() => {
         queryClients.splice(0).forEach(client => client.clear());
+    });
+
+    it('SSR seed는 마운트 key에만 적용된다 — tier 확정으로 modelId가 바뀌면 회원 모델로 새로 분석한다', async () => {
+        // 회귀 가드: React Query는 `initialData`를 활성 queryKey에 다시 적용한다.
+        // 가드가 없으면 DEFAULT 모델로 만든 SSR seed가 회원 모델 key까지 채우고
+        // staleTime: Infinity가 그걸 fresh로 취급해 fetch가 영영 일어나지 않는다.
+        const SEED = { headlineKo: 'SSR seed' } as never;
+        mockSubmit.mockResolvedValue({
+            status: 'cached',
+            result: { headlineKo: '회원 모델 분석' },
+        });
+
+        const wrapper = makeWrapper();
+        const { result, rerender } = renderHook(
+            ({
+                modelId,
+                settingsHydrated,
+            }: {
+                modelId: string;
+                settingsHydrated: boolean;
+            }) =>
+                useOverallAnalysis(
+                    'AAPL',
+                    'Apple Inc.',
+                    '1Day',
+                    modelId as never,
+                    SEED,
+                    'equity',
+                    false,
+                    settingsHydrated
+                ),
+            {
+                wrapper,
+                // tier 미확정: DEFAULT 모델 + 게이트 닫힘
+                initialProps: {
+                    modelId: 'deepseek-v4-flash',
+                    settingsHydrated: false,
+                },
+            }
+        );
+
+        // seed 덕분에 마운트 즉시 done, 생성은 트리거되지 않는다.
+        expect(result.current.state.status).toBe('done');
+        expect(mockSubmit).not.toHaveBeenCalled();
+
+        // tier 확정 — modelId가 회원의 저장 모델로 넓어지고 게이트가 열린다.
+        rerender({ modelId: 'claude-sonnet-5', settingsHydrated: true });
+
+        await waitFor(() => {
+            expect(mockSubmit).toHaveBeenCalledTimes(1);
+        });
+        expect(mockSubmit.mock.calls[0]?.[0]?.params?.modelId).toBe(
+            'claude-sonnet-5'
+        );
+        await waitFor(() => {
+            if (result.current.state.status !== 'done')
+                throw new Error('expected done');
+            expect(result.current.state.result.headlineKo).toBe(
+                '회원 모델 분석'
+            );
+        });
     });
 
     it('returns bot_blocked when submit returns miss_no_trigger', async () => {
@@ -84,8 +137,7 @@ describe('useOverallAnalysis — branch coverage', () => {
         });
     });
 
-    it('does not submit while the SSR hydration gate is closed even after trigger', async () => {
-        mockUseHydrated.mockReturnValue(false);
+    it('does not submit while the settings-hydration gate is closed even after trigger', async () => {
         mockSubmit.mockResolvedValue({
             status: 'cached',
             result: {
@@ -101,9 +153,17 @@ describe('useOverallAnalysis — branch coverage', () => {
             } as never,
         });
 
-        const { result } = renderHook(() => useOverallAnalysis(...hookArgs()), {
-            wrapper: makeWrapper(),
-        });
+        const { result } = renderHook(
+            () =>
+                useOverallAnalysis(
+                    ...hookArgs(),
+                    undefined,
+                    'equity',
+                    false,
+                    false
+                ),
+            { wrapper: makeWrapper() }
+        );
 
         act(() => {
             result.current.trigger();

@@ -90,7 +90,11 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
 
     const { tier, isLoading: isTierLoading } = useUserTier();
     const allowedModels = useMemo(() => getAllowedModels(tier), [tier]);
-    const [modelId, setModelId, isHydrated] = useSelectedModel(allowedModels);
+    const isTierHydrated = !isTierLoading;
+    const [modelId, setModelId, isHydrated] = useSelectedModel(
+        allowedModels,
+        isTierHydrated
+    );
     const { gateModal, dismissGate, handleModelChange } = useModelGate({
         onAllow: setModelId,
     });
@@ -111,7 +115,7 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
             allowedModels,
             isHydrated,
             tier,
-            isTierHydrated: !isTierLoading,
+            isTierHydrated,
             gateModal,
             dismissGate,
             handleModelChange,
@@ -127,7 +131,7 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
             allowedModels,
             isHydrated,
             tier,
-            isTierLoading,
+            isTierHydrated,
             gateModal,
             dismissGate,
             handleModelChange,

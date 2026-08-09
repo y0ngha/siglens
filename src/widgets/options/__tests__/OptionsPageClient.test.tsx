@@ -10,6 +10,7 @@ vi.mock('react-error-boundary', () => ({
 
 vi.mock('@/features/symbol-model', () => ({
     useSymbolModel: () => ({ modelId: 'gemini-2.5-flash-lite' }),
+    useAnalysisSettingsHydrated: () => true,
 }));
 
 vi.mock('@/shared/ui/CrossLinkCards', () => ({

@@ -222,6 +222,8 @@ interface OptionsAiAnalysisProps {
     modelId: ModelId;
     /** Member "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle spec Part A). */
     reasoning?: boolean;
+    /** `modelId`/`reasoning`이 확정값인지 여부 — 확정 전에는 제출하지 않는다. */
+    isSettingsHydrated?: boolean;
 }
 
 export function OptionsAiAnalysis({
@@ -230,6 +232,7 @@ export function OptionsAiAnalysis({
     expirationDate,
     modelId,
     reasoning,
+    isSettingsHydrated,
 }: OptionsAiAnalysisProps) {
     const state = useOptionsAnalysis({
         symbol,
@@ -237,6 +240,7 @@ export function OptionsAiAnalysis({
         expirationDate,
         modelId,
         reasoning,
+        isSettingsHydrated,
     });
 
     // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생
