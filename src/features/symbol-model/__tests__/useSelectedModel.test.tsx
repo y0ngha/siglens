@@ -23,7 +23,7 @@ describe('useSelectedModel', () => {
 
     it('defaults to the default model', () => {
         const { result } = renderHook(() =>
-            useSelectedModel([DEFAULT_MODEL, PREMIUM_MODEL])
+            useSelectedModel([DEFAULT_MODEL, PREMIUM_MODEL], true)
         );
 
         expect(result.current[0]).toBe(DEFAULT_MODEL);
@@ -31,7 +31,7 @@ describe('useSelectedModel', () => {
 
     it('persists model selection to localStorage', () => {
         const { result } = renderHook(() =>
-            useSelectedModel([DEFAULT_MODEL, PREMIUM_MODEL])
+            useSelectedModel([DEFAULT_MODEL, PREMIUM_MODEL], true)
         );
 
         act(() => {
@@ -48,7 +48,7 @@ describe('useSelectedModel', () => {
         localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, PREMIUM_MODEL);
 
         const { result } = renderHook(() =>
-            useSelectedModel([DEFAULT_MODEL, PREMIUM_MODEL])
+            useSelectedModel([DEFAULT_MODEL, PREMIUM_MODEL], true)
         );
 
         await waitFor(() => {
@@ -65,7 +65,7 @@ describe('useSelectedModel', () => {
         );
 
         const { result } = renderHook(() =>
-            useSelectedModel([DEFAULT_MODEL, PREMIUM_MODEL])
+            useSelectedModel([DEFAULT_MODEL, PREMIUM_MODEL], true)
         );
 
         await waitFor(() => {
@@ -77,7 +77,7 @@ describe('useSelectedModel', () => {
 
     it('re-validates when allowedModels changes to exclude current model', async () => {
         const { result, rerender } = renderHook(
-            ({ allowed }) => useSelectedModel(allowed),
+            ({ allowed }) => useSelectedModel(allowed, true),
             {
                 initialProps: {
                     allowed: [
@@ -101,8 +101,44 @@ describe('useSelectedModel', () => {
         });
     });
 
+    it('waits for tier hydration before reading storage, then keeps the member-only stored model', async () => {
+        // 회귀 가드: tier는 서버 왕복이라 마운트 직후엔 free 목록만 알 수 있다.
+        // 그 시점에 저장값을 검증하면 member 전용 모델이 DEFAULT로 강등되고
+        // (tier 확정 후 복원 경로가 없어) 회원 선택이 매 로드마다 사라졌다.
+        localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, PREMIUM_MODEL);
+
+        const { result, rerender } = renderHook(
+            ({ allowed, tierHydrated }) =>
+                useSelectedModel(allowed, tierHydrated),
+            {
+                initialProps: {
+                    // tier 미확정: free 목록만 보이는 상태
+                    allowed: [DEFAULT_MODEL] as readonly ModelId[],
+                    tierHydrated: false,
+                },
+            }
+        );
+
+        // tier 확정 전에는 읽지 않는다 — 아직 hydration 미완료.
+        expect(result.current[2]).toBe(false);
+        expect(result.current[0]).toBe(DEFAULT_MODEL);
+
+        // tier가 member로 확정되어 허용 목록이 넓어진다.
+        rerender({
+            allowed: [DEFAULT_MODEL, PREMIUM_MODEL] as readonly ModelId[],
+            tierHydrated: true,
+        });
+
+        await waitFor(() => {
+            expect(result.current[2]).toBe(true);
+        });
+        expect(result.current[0]).toBe(PREMIUM_MODEL);
+    });
+
     it('becomes hydrated after effect runs', async () => {
-        const { result } = renderHook(() => useSelectedModel([DEFAULT_MODEL]));
+        const { result } = renderHook(() =>
+            useSelectedModel([DEFAULT_MODEL], true)
+        );
 
         await waitFor(() => {
             expect(result.current[2]).toBe(true);
@@ -120,7 +156,7 @@ describe('useSelectedModel', () => {
         ).toBeNull();
 
         const { result } = renderHook(() =>
-            useSelectedModel([DEFAULT_MODEL, PREMIUM_MODEL])
+            useSelectedModel([DEFAULT_MODEL, PREMIUM_MODEL], true)
         );
 
         await waitFor(() => {

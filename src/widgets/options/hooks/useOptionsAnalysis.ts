@@ -7,7 +7,6 @@ import type { SubmitOptionsAnalysisActionResult } from '@/entities/options-chain
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { useHydrated } from '@/shared/hooks/useHydrated';
 import { BotBlockedError } from '@/shared/lib/BotBlockedError';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 
@@ -66,6 +65,11 @@ interface UseOptionsAnalysisInput {
      * re-submits analysis (distinct cache key).
      */
     reasoning?: boolean;
+    /**
+     * `modelId`/`reasoning`이 확정값인지 여부 — 호출부에서
+     * `useAnalysisSettingsHydrated()`로 넘긴다. 기본값 `true`는 단위 테스트용.
+     */
+    isSettingsHydrated?: boolean;
 }
 
 /**
@@ -80,9 +84,9 @@ export function useOptionsAnalysis({
     expirationDate,
     modelId,
     reasoning = false,
+    isSettingsHydrated = true,
 }: UseOptionsAnalysisInput): OptionsAnalysisState {
     const queryClient = useQueryClient();
-    const isHydrated = useHydrated();
     const queryKey = useMemo(
         () =>
             QUERY_KEYS.optionsAnalysis(
@@ -134,11 +138,11 @@ export function useOptionsAnalysis({
     }, [refetch]);
 
     useEffect(() => {
-        if (!isHydrated) return;
+        if (!isSettingsHydrated) return;
         if (queryClient.getQueryData(queryKey) === undefined) {
             void refetch();
         }
-    }, [isHydrated, queryClient, queryKey, refetch]);
+    }, [isSettingsHydrated, queryClient, queryKey, refetch]);
 
     if (query.isError) {
         if (query.error instanceof BotBlockedError) {

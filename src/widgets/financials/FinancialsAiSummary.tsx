@@ -11,6 +11,7 @@ import { AXIS_LABEL_KO } from './axisLabels';
 import {
     useDefaultModelId,
     useDefaultReasoning,
+    useAnalysisSettingsHydrated,
 } from '@/features/symbol-model';
 import { useFinancialsAnalysis } from './hooks/useFinancialsAnalysis';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
@@ -124,7 +125,13 @@ interface FinancialsAiSummaryProps {
 export function FinancialsAiSummary({ symbol }: FinancialsAiSummaryProps) {
     const modelId = useDefaultModelId();
     const reasoning = useDefaultReasoning();
-    const state = useFinancialsAnalysis(symbol, modelId, reasoning);
+    const isSettingsHydrated = useAnalysisSettingsHydrated();
+    const state = useFinancialsAnalysis(
+        symbol,
+        modelId,
+        reasoning,
+        isSettingsHydrated
+    );
 
     // bot_blocked/loading/error 시에도 chatState를 명시적으로 publish하여 챗봇이
     // 이전 페이지의 stale context를 그대로 들고 가지 않게 한다.

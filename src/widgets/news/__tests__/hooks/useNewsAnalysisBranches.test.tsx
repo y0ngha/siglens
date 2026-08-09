@@ -8,7 +8,6 @@
 
 import type { Mock } from 'vitest';
 import { useNewsAnalysis } from '@/widgets/news/hooks/useNewsAnalysis';
-import { useHydrated } from '@/shared/hooks/useHydrated';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -28,15 +27,8 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-// SSR hydration gate — default hydrated so existing tests fetch on mount; the
-// gate-closed test flips it to false to assert the auto-trigger is suppressed.
-vi.mock('@/shared/hooks/useHydrated', () => ({
-    useHydrated: vi.fn(() => true),
-}));
-
 const mockSubmit = runAnalysisStream as Mock;
 const mockIsGateBlocked = isGateBlockedResult as unknown as Mock;
-const mockUseHydrated = vi.mocked(useHydrated);
 
 const queryClients: QueryClient[] = [];
 
@@ -58,7 +50,6 @@ describe('useNewsAnalysis — branch coverage', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
         mockIsGateBlocked.mockReturnValue(false);
-        mockUseHydrated.mockReturnValue(true);
     });
 
     afterEach(() => {
@@ -206,8 +197,7 @@ describe('useNewsAnalysis — branch coverage', () => {
         expect(result.current.error).toBeInstanceOf(Error);
     });
 
-    it('does not fetch while the SSR hydration gate is closed (enabled defaults true)', async () => {
-        mockUseHydrated.mockReturnValue(false);
+    it('does not fetch while the settings-hydration gate is closed (enabled defaults true)', async () => {
         mockSubmit.mockResolvedValue({
             status: 'cached',
             result: {
@@ -220,7 +210,9 @@ describe('useNewsAnalysis — branch coverage', () => {
 
         const { result } = renderHook(
             () =>
-                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite'),
+                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite', {
+                    isSettingsHydrated: false,
+                }),
             { wrapper: makeWrapper() }
         );
 

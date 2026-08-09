@@ -8,7 +8,6 @@
 
 import type { Mock, MockedFunction } from 'vitest';
 import { useCongressTrend } from '@/widgets/congress/hooks/useCongressTrend';
-import { useHydrated } from '@/shared/hooks/useHydrated';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -28,13 +27,7 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-// SSR hydration gate — default hydrated so tests auto-trigger on mount.
-vi.mock('@/shared/hooks/useHydrated', () => ({
-    useHydrated: vi.fn(() => true),
-}));
-
 const mockSubmit = runAnalysisStream as Mock;
-const mockUseHydrated = vi.mocked(useHydrated);
 const mockIsGateBlocked = isGateBlockedResult as unknown as MockedFunction<
     typeof isGateBlockedResult
 >;
@@ -65,7 +58,6 @@ function makeWrapper() {
 describe('useCongressTrend — branch coverage', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
-        mockUseHydrated.mockReturnValue(true);
         mockIsGateBlocked.mockReturnValue(false);
     });
 
@@ -129,12 +121,16 @@ describe('useCongressTrend — branch coverage', () => {
     });
 
     describe('hydration gate', () => {
-        it('SSR 하이드레이션 게이트가 닫혀 있으면 fetch를 실행하지 않는다', async () => {
-            mockUseHydrated.mockReturnValue(false);
-
+        it('설정(모델/reasoning) 확정 게이트가 닫혀 있으면 fetch를 실행하지 않는다', async () => {
             const wrapper = makeWrapper();
             const { result } = renderHook(
-                () => useCongressTrend('AAPL', 'gemini-2.5-flash-lite'),
+                () =>
+                    useCongressTrend(
+                        'AAPL',
+                        'gemini-2.5-flash-lite',
+                        false,
+                        false
+                    ),
                 { wrapper }
             );
 

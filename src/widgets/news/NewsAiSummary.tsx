@@ -12,6 +12,7 @@ import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import {
     useDefaultModelId,
     useDefaultReasoning,
+    useAnalysisSettingsHydrated,
 } from '@/features/symbol-model';
 import { cn } from '@/shared/lib/cn';
 import {
@@ -257,6 +258,7 @@ export function NewsAiSummary({
     );
     const modelId = useDefaultModelId();
     const reasoning = useDefaultReasoning();
+    const isSettingsHydrated = useAnalysisSettingsHydrated();
     // enabled 게이트: enriched news cards가 DB에 적어도 1개 있을 때까지 submit을
     // 미룬다. 이 게이트가 없으면 빈 DB에 대해 submit이 즉시 fire되어 core가
     // no_news 결과를 돌려주고, retry:false + staleTime:Infinity 정책에 의해
@@ -264,6 +266,7 @@ export function NewsAiSummary({
     const analysis = useNewsAnalysis(symbol, companyName, modelId, {
         enabled: isCardsReady,
         reasoning,
+        isSettingsHydrated,
     });
 
     // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를

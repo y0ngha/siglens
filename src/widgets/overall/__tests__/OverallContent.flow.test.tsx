@@ -34,6 +34,7 @@ vi.mock('@/features/symbol-chat', () => ({
 vi.mock('@/features/symbol-model', () => ({
     useDefaultModelId: vi.fn(() => 'gemini-2.5-flash-lite'),
     useDefaultReasoning: vi.fn(() => false),
+    useAnalysisSettingsHydrated: vi.fn(() => true),
     useSymbolModel: vi.fn(() => ({ tier: 'member', isTierHydrated: true })),
 }));
 // /news와 동일 게이트 적용 후 mock 필요. flow 테스트는 hasEnrichedNews=true 전제로

@@ -8,7 +8,10 @@ import {
     useState,
 } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import { useSymbolModel } from '@/features/symbol-model';
+import {
+    useAnalysisSettingsHydrated,
+    useSymbolModel,
+} from '@/features/symbol-model';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { ExpirationSelector } from './ExpirationSelector';
 import { OptionsAiAnalysis } from './OptionsAiAnalysis';
@@ -78,6 +81,7 @@ export function OptionsPageClient({
     //   상태로 통일한다. snapshot 참조가 갱신되면 자동으로 재평가된다.
     const [now, setNow] = useState<Date | null>(null);
     const { modelId, reasoning } = useSymbolModel();
+    const isSettingsHydrated = useAnalysisSettingsHydrated();
     const validSlots = useMemo(() => slots.filter(isSlotMapping), [slots]);
     // 단일 호출로 (chain, metrics)을 산출하고 세 자식에 prop-drill 한다 —
     // 이전엔 OptionsMetricsRow / OpenInterestChart / OptionsChainTable이
@@ -145,6 +149,7 @@ export function OptionsPageClient({
                             expirationDate={expirationDate}
                             modelId={modelId}
                             reasoning={reasoning}
+                            isSettingsHydrated={isSettingsHydrated}
                         />
                     </ErrorBoundary>
                 ))}

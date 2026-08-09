@@ -21,7 +21,6 @@ type RunOverallAnalysisActionResult =
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { useHydrated } from '@/shared/hooks/useHydrated';
 import { BotBlockedError } from '@/shared/lib/BotBlockedError';
 import type { OverallAnalysisState } from '../types';
 
@@ -125,10 +124,11 @@ export function useOverallAnalysis(
      * done 상태로 보여 준다. staleTime: Infinity가 자동 재요청을 막으므로
      * seed가 있어도 LLM 생성은 트리거되지 않는다(순수 additive).
      *
-     * staleTime: Infinity라 seed된 query는 자동 갱신되지 않는다. 그러나 timeframe
-     * 변경 시 queryKey가 바뀌어 이 initialData(seed)는 옛 key에만 적용되고 새 key는
-     * 빈 상태에서 시작하므로, "절대 갱신 안 됨" 사각지대는 생기지 않는다. 동일
-     * 세션·동일 timeframe에서의 명시적 갱신은 재분석(trigger force)으로 처리된다.
+     * staleTime: Infinity라 seed된 query는 자동 갱신되지 않는다. queryKey가 바뀌면
+     * (timeframe·modelId·reasoning 변경) 새 key는 빈 상태에서 시작해야 하는데,
+     * React Query는 `initialData`를 활성 key에 다시 적용하므로 아래 `isMountQueryKey`
+     * 가드로 seed를 마운트 key에 한정한다. 동일 세션·동일 key에서의 명시적 갱신은
+     * 재분석(trigger force)으로 처리된다.
      */
     initialResult?: OverallAnalysisResponse,
     /**
@@ -144,10 +144,14 @@ export function useOverallAnalysis(
      * spec Part A). Defaults to `false`. Part of the query key so toggling
      * re-submits analysis (distinct cache key).
      */
-    reasoning = false
+    reasoning = false,
+    /**
+     * `modelId`/`reasoning`이 확정값인지 여부 — 호출부에서
+     * `useAnalysisSettingsHydrated()`로 넘긴다. 기본값 `true`는 단위 테스트용.
+     */
+    isSettingsHydrated = true
 ): UseOverallAnalysisReturn {
     const queryClient = useQueryClient();
-    const isHydrated = useHydrated();
     const [triggered, setTriggered] = useState(initialResult !== undefined);
     // 다음 queryFn 호출이 "사용자가 누른 재분석"인지 표시한다. state가 아니라 ref인
     // 이유: 값이 바뀌어도 렌더는 필요 없고, refetch가 곧바로 읽어가야 한다.
@@ -165,6 +169,24 @@ export function useOverallAnalysis(
     );
     // queryKey를 ref에 캡처해 mount 시 최초 렌더 기준으로 캐시를 확인한다.
     const queryKeyRef = useRef(queryKey);
+    /**
+     * SSR seed는 **마운트 시점의 queryKey에만** 적용해야 한다. React Query는
+     * `initialData`를 "지금 활성화된 key"에 다시 적용하므로(실측 확인), key가
+     * 바뀌어도 옛 seed가 새 key를 채우고 `staleTime: Infinity`가 그걸 fresh로
+     * 취급해 fetch를 건너뛴다. 그러면 tier 확정으로 modelId가 회원의 저장 모델로
+     * 바뀐 직후, DEFAULT 모델로 생성된 SSR 서사가 회원 모델의 결과인 척 굳어
+     * 버린다(재분석 버튼을 눌러야만 갱신). 마운트 key가 아니면 seed를 떼서
+     * 새 key가 빈 상태로 시작하게 한다.
+     */
+    // 마운트 시점 key는 state로 잡는다 — 렌더 중 읽어야 하므로 ref는 쓸 수 없다
+    // (react-hooks/refs: 렌더 중 ref 읽기 금지). 아래 mount 캐시 확인 effect는
+    // 반대로 ref(queryKeyRef)를 쓴다 — 같은 값이지만 effect에서 이 state를 읽으면
+    // effect가 reactive 값을 읽는 것이 되어 react-hooks/set-state-in-effect가
+    // 걸린다. 하나로 합치려면 lint 예외가 필요해 의도적으로 분리해 둔다.
+    const [mountQueryKey] = useState(queryKey);
+    const isMountQueryKey = queryKey.every(
+        (part, i) => part === mountQueryKey[i]
+    );
 
     const query = useQuery({
         queryKey,
@@ -190,11 +212,12 @@ export function useOverallAnalysis(
                 signal
             );
         },
-        enabled: isHydrated && triggered,
+        enabled: isSettingsHydrated && triggered,
         retry: false,
         staleTime: Infinity,
         // SSR seed: 캐시 HIT면 마운트 시점부터 query.data가 채워져 있어 즉시 done.
-        initialData: initialResult,
+        // 마운트 key에서만 — 위 `isMountQueryKey` 주석 참조.
+        initialData: isMountQueryKey ? initialResult : undefined,
     });
 
     const state = useMemo((): OverallAnalysisState => {

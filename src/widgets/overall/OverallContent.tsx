@@ -10,6 +10,7 @@ import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import {
     useDefaultModelId,
     useDefaultReasoning,
+    useAnalysisSettingsHydrated,
     useSymbolModel,
 } from '@/features/symbol-model';
 import { cn } from '@/shared/lib/cn';
@@ -71,6 +72,7 @@ export function OverallContent({
     );
     const modelId = useDefaultModelId();
     const reasoning = useDefaultReasoning();
+    const isSettingsHydrated = useAnalysisSettingsHydrated();
     const { state, trigger } = useOverallAnalysis(
         symbol,
         companyName,
@@ -78,7 +80,8 @@ export function OverallContent({
         modelId,
         initialAnalysis,
         assetClass,
-        reasoning
+        reasoning,
+        isSettingsHydrated
     );
 
     // usePublishSymbolChat은 chatState(useMemo 반환값)를 인자로 받으므로 useMemo 뒤에 둔다(§17 의존 순서).

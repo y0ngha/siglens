@@ -8,7 +8,6 @@
 
 import type { Mock } from 'vitest';
 import { useOptionsAnalysis } from '@/widgets/options/hooks/useOptionsAnalysis';
-import { useHydrated } from '@/shared/hooks/useHydrated';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -28,15 +27,8 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-// SSR hydration gate — default hydrated so existing tests fetch on mount; the
-// gate-closed test flips it to false to assert the auto-trigger is suppressed.
-vi.mock('@/shared/hooks/useHydrated', () => ({
-    useHydrated: vi.fn(() => true),
-}));
-
 const mockSubmit = runAnalysisStream as Mock;
 const mockIsGateBlocked = isGateBlockedResult as unknown as Mock;
-const mockUseHydrated = vi.mocked(useHydrated);
 
 const RESULT: OptionsAnalysisResponse = {
     summary: 'Bullish outlook',
@@ -72,7 +64,6 @@ describe('useOptionsAnalysis — branch coverage', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
         mockIsGateBlocked.mockReturnValue(false);
-        mockUseHydrated.mockReturnValue(true);
     });
 
     afterEach(() => {
@@ -173,16 +164,20 @@ describe('useOptionsAnalysis — branch coverage', () => {
         expect(result.current.error).toBeInstanceOf(Error);
     });
 
-    it('does not fetch while the SSR hydration gate is closed', async () => {
-        mockUseHydrated.mockReturnValue(false);
+    it('does not fetch while the settings-hydration gate is closed', async () => {
         mockSubmit.mockResolvedValue({
             status: 'cached',
             result: RESULT,
         });
 
-        const { result } = renderHook(() => useOptionsAnalysis(DEFAULT_PROPS), {
-            wrapper: makeWrapper(),
-        });
+        const { result } = renderHook(
+            () =>
+                useOptionsAnalysis({
+                    ...DEFAULT_PROPS,
+                    isSettingsHydrated: false,
+                }),
+            { wrapper: makeWrapper() }
+        );
 
         // Flush any (incorrectly) queued async work — if the gate leaked, the
         // auto-trigger effect would have called submit within this tick.

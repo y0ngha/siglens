@@ -7,7 +7,6 @@ import type { RunFinancialsAnalysisActionResult } from '@/entities/analysis/acti
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { useHydrated } from '@/shared/hooks/useHydrated';
 import { BotBlockedError } from '@/shared/lib/BotBlockedError';
 
 export type FinancialsAnalysisState =
@@ -66,10 +65,14 @@ export function useFinancialsAnalysis(
      * to the exact same query key as before. Part of the query key so
      * toggling re-submits analysis (distinct cache key).
      */
-    reasoning = false
+    reasoning = false,
+    /**
+     * `modelId`/`reasoning`이 확정값인지 여부 — 호출부에서
+     * `useAnalysisSettingsHydrated()`로 넘긴다. 기본값 `true`는 단위 테스트용.
+     */
+    isSettingsHydrated = true
 ): FinancialsAnalysisState {
     const queryClient = useQueryClient();
-    const isHydrated = useHydrated();
 
     // queryKey는 인라인으로 둔다(§17 훅 순서: useMemo는 useQuery보다 뒤여야 함).
     // React Query는 queryKey를 deep-equality로 비교하므로 매 렌더 새 배열 참조가
@@ -90,7 +93,7 @@ export function useFinancialsAnalysis(
     }, [refetch]);
 
     useEffect(() => {
-        if (!isHydrated) return;
+        if (!isSettingsHydrated) return;
         if (
             queryClient.getQueryData(
                 QUERY_KEYS.financialsAnalysis(symbol, modelId, reasoning)
@@ -98,7 +101,7 @@ export function useFinancialsAnalysis(
         ) {
             void refetch();
         }
-    }, [isHydrated, queryClient, symbol, modelId, reasoning, refetch]);
+    }, [isSettingsHydrated, queryClient, symbol, modelId, reasoning, refetch]);
 
     if (query.isError) {
         if (query.error instanceof BotBlockedError) {
