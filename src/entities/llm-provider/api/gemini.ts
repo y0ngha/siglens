@@ -1,11 +1,8 @@
 import { GoogleGenAI } from '@google/genai';
-import type {
-    AiContents,
-    CallAiProviderOptions,
-    ConversationTurn,
-} from '@y0ngha/siglens-core';
+import type { AiContents, ConversationTurn } from '@y0ngha/siglens-core';
+import type { ProviderCallOptions } from '../model';
 
-interface GeminiChatOptions extends CallAiProviderOptions {
+interface GeminiChatOptions extends ProviderCallOptions {
     /**
      * Gemini thinking budget (token count). Pass `0` to explicitly disable
      * extended thinking for deterministic tasks (translation, classification).
@@ -36,13 +33,13 @@ function toGeminiContents(contents: AiContents): string | GeminiTurn[] {
 }
 
 export async function callGeminiChat({
-    serverApiKey,
+    apiKey,
     model,
     contents,
     systemInstruction,
     thinkingBudget,
 }: GeminiChatOptions): Promise<string> {
-    const genai = new GoogleGenAI({ apiKey: serverApiKey });
+    const genai = new GoogleGenAI({ apiKey });
 
     const hasSystemInstruction = systemInstruction !== undefined;
     const hasThinkingBudget = thinkingBudget !== undefined;

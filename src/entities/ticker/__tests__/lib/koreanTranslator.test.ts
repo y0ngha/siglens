@@ -57,8 +57,7 @@ describe('translateCompanyNames', () => {
         expect(result).toEqual({ AAPL: '애플', NVDA: '엔비디아' });
         expect(callGeminiMock).toHaveBeenCalledTimes(1);
         expect(callGeminiMock).toHaveBeenCalledWith({
-            serverApiKey: 'server-api-key',
-            userApiKey: undefined,
+            apiKey: 'server-api-key',
             // 리터럴이 아니라 MODEL_SPECS에서 파생한 값과 비교한다 — REQUIRED 6.
             model: MODEL_SPECS['gemini-2.5-flash'].apiModelId,
             contents: expect.stringContaining('AAPL: Apple Inc.'),
@@ -154,7 +153,7 @@ describe('translateCompanyDescription', () => {
         expect(callGeminiMock).toHaveBeenCalledTimes(1);
         expect(callGeminiMock).toHaveBeenCalledWith(
             expect.objectContaining({
-                serverApiKey: 'server-api-key',
+                apiKey: 'server-api-key',
                 thinkingBudget: 0,
                 contents: expect.stringContaining(
                     'Apple designs consumer electronics.'

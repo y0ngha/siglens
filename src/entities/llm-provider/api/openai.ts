@@ -1,5 +1,6 @@
 import { toProviderTurns, findSpecByApiModelId } from '../lib/utils';
-import type { AiContents, CallAiProviderOptions } from '@y0ngha/siglens-core';
+import type { AiContents } from '@y0ngha/siglens-core';
+import type { ProviderCallOptions } from '../model';
 import OpenAI from 'openai';
 
 function toResponsesInput(
@@ -14,16 +15,16 @@ function toResponsesInput(
 }
 
 export async function callOpenaiChat({
-    serverApiKey,
+    apiKey,
     model,
     contents,
     systemInstruction,
-}: CallAiProviderOptions): Promise<string> {
+}: ProviderCallOptions): Promise<string> {
     const spec = findSpecByApiModelId(model);
     if (!spec) {
         throw new Error(`Unknown model: ${model}`);
     }
-    const client = new OpenAI({ apiKey: serverApiKey });
+    const client = new OpenAI({ apiKey });
 
     const response = await client.responses.create({
         model,

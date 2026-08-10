@@ -5,14 +5,20 @@ import { callDeepseekChat } from './deepseek';
 import type { CallAiProviderOptions } from '@y0ngha/siglens-core';
 import { MODEL_SPECS, getProviderForModel } from '@y0ngha/siglens-core';
 import { isActiveModelId } from '@/shared/lib/isActiveModelId';
+import type { ProviderCallOptions } from '../model';
 
 /**
  * Route a provider-neutral AI call to the correct SDK adapter.
  *
- * NOTE: `options.userApiKey` is currently passed through but unused by
- * providers (BYOK disabled until siglens-core integration). The parameter
- * stays on the options shape for future-proofing — when BYOK lands, the
- * adapters can read it without changing this router signature.
+ * **Key routing.** siglens-core hands over exactly one of `userApiKey` (BYOK,
+ * charged to the user) / `serverApiKey` (charged to us) per call and leaves the
+ * other `undefined` — see `resolveApiKeys` in core's `requestChatCompletion`.
+ * This router collapses the pair into a single `apiKey` before dispatching, so
+ * no adapter can pick the wrong one. It also throws when both are missing
+ * rather than letting the call proceed: the Anthropic and OpenAI SDKs silently
+ * fall back to the `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` env vars when handed
+ * `undefined`, which would bill a BYOK user's request to the server's
+ * analysis-side key.
  */
 export async function callAiProviderRouter(
     options: CallAiProviderOptions
@@ -27,13 +33,22 @@ export async function callAiProviderRouter(
         throw new Error(`[router] Unknown model: ${options.model}`);
     }
 
+    const { userApiKey, serverApiKey, ...rest } = options;
+    const apiKey = userApiKey ?? serverApiKey;
+    if (apiKey === undefined) {
+        throw new Error(
+            `[router] No API key supplied for model: ${options.model}`
+        );
+    }
+
     const provider = getProviderForModel(options.model);
 
     // Internal model key (e.g. 'claude-haiku-4-5') → provider API model ID
     // (e.g. 'claude-haiku-4-5-20251001'). The two may differ; always use apiModelId
     // for the actual SDK call so the provider recognises the model.
-    const apiOptions: CallAiProviderOptions = {
-        ...options,
+    const apiOptions: ProviderCallOptions = {
+        ...rest,
+        apiKey,
         model: MODEL_SPECS[options.model].apiModelId,
     };
 

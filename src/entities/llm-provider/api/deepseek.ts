@@ -1,5 +1,5 @@
 import { toProviderTurns, findSpecByApiModelId } from '../lib/utils';
-import type { CallAiProviderOptions } from '@y0ngha/siglens-core';
+import type { ProviderCallOptions } from '../model';
 import OpenAI from 'openai';
 
 /**
@@ -28,11 +28,11 @@ type DeepSeekChatCompletionParams =
     };
 
 export async function callDeepseekChat({
-    serverApiKey,
+    apiKey,
     model,
     contents,
     systemInstruction,
-}: CallAiProviderOptions): Promise<string> {
+}: ProviderCallOptions): Promise<string> {
     const spec = findSpecByApiModelId(model);
     if (!spec) {
         throw new Error(`Unknown model: ${model}`);
@@ -42,7 +42,7 @@ export async function callDeepseekChat({
     }
 
     const client = new OpenAI({
-        apiKey: serverApiKey,
+        apiKey,
         baseURL: 'https://api.deepseek.com',
     });
 

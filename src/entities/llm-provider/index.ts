@@ -12,6 +12,7 @@ export {
 } from './lib/parseJsonResponse';
 export { toProviderTurns } from './lib/utils';
 export type { ProviderTurn } from './lib/utils';
+export type { ProviderCallOptions } from './model';
 export {
     CLAUDE_MODEL_PRIORITY,
     CHATGPT_MODEL_PRIORITY,

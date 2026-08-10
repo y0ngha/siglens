@@ -1,23 +1,21 @@
-const { mockGenerateContent } = vi.hoisted(() => ({
-    mockGenerateContent: vi.fn(),
-}));
-
-vi.mock('@google/genai', () => {
-    const MockGoogleGenAI = vi.fn(function () {
-        return {
-            models: {
-                generateContent: mockGenerateContent,
-            },
-        };
-    });
-    return { GoogleGenAI: MockGoogleGenAI };
+// `MockGoogleGenAI`는 hoisted 블록에 둔다 — 생성자 인자(= 실제로 사용된 API 키)를
+// 단언하려면 팩토리 스코프 밖에서도 mock에 접근할 수 있어야 한다.
+const { mockGenerateContent, MockGoogleGenAI } = vi.hoisted(() => {
+    const mockGenerateContent = vi.fn();
+    return {
+        mockGenerateContent,
+        MockGoogleGenAI: vi.fn(function () {
+            return { models: { generateContent: mockGenerateContent } };
+        }),
+    };
 });
+
+vi.mock('@google/genai', () => ({ GoogleGenAI: MockGoogleGenAI }));
 
 import { callGeminiChat } from '@/entities/llm-provider/api/gemini';
 
 const BASE_OPTIONS = {
-    userApiKey: undefined,
-    serverApiKey: 'server-key',
+    apiKey: 'server-key',
     model: 'gemini-2.0-flash',
     contents: 'Hello',
 } as const;
@@ -25,10 +23,11 @@ const BASE_OPTIONS = {
 describe('callGeminiChat', () => {
     beforeEach(() => {
         mockGenerateContent.mockClear();
+        MockGoogleGenAI.mockClear();
     });
 
     describe('API 키 라우팅', () => {
-        it('serverApiKey로 Gemini를 호출한다', async () => {
+        it('apiKey로 Gemini를 호출한다', async () => {
             mockGenerateContent.mockResolvedValue({ text: 'response' });
 
             const result = await callGeminiChat(BASE_OPTIONS);
@@ -37,11 +36,14 @@ describe('callGeminiChat', () => {
             expect(mockGenerateContent).toHaveBeenCalledTimes(1);
         });
 
-        it('userApiKey가 있어도 serverApiKey만 사용한다', async () => {
+        it('BYOK 키를 받으면 그 키로 클라이언트를 만든다 (환경변수 폴백 금지)', async () => {
             mockGenerateContent.mockResolvedValue({ text: 'response' });
 
-            await callGeminiChat({ ...BASE_OPTIONS, userApiKey: 'user-key' });
+            await callGeminiChat({ ...BASE_OPTIONS, apiKey: 'user-key' });
 
+            expect(MockGoogleGenAI).toHaveBeenCalledWith({
+                apiKey: 'user-key',
+            });
             expect(mockGenerateContent).toHaveBeenCalledTimes(1);
         });
 

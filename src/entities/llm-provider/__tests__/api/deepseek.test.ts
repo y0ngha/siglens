@@ -13,8 +13,7 @@ vi.mock('openai', () => ({
 import { callDeepseekChat } from '@/entities/llm-provider/api/deepseek';
 
 const FLASH_OPTIONS = {
-    serverApiKey: 'server-key',
-    userApiKey: undefined,
+    apiKey: 'server-key',
     model: 'deepseek-v4-flash', // apiModelId, non-thinking
     contents: 'Hello',
 } as const;
@@ -67,16 +66,16 @@ describe('callDeepseekChat', () => {
             expect(mockCreate).toHaveBeenCalledTimes(1);
         });
 
-        it('userApiKey가 있어도 serverApiKey만 사용한다', async () => {
+        it('BYOK 키를 받으면 그 키로 호출한다 (환경변수 폴백 금지)', async () => {
             mockCreate.mockResolvedValue(okResponse('Hi'));
 
             await callDeepseekChat({
                 ...FLASH_OPTIONS,
-                userApiKey: 'user-key',
+                apiKey: 'user-key',
             });
 
             expect(MockOpenAI).toHaveBeenCalledWith({
-                apiKey: 'server-key',
+                apiKey: 'user-key',
                 baseURL: 'https://api.deepseek.com',
             });
             expect(MockOpenAI).toHaveBeenCalledTimes(1);

@@ -21,6 +21,7 @@ import {
     DEFAULT_TIER,
     getProviderForModel,
     requestChatCompletion,
+    requiresByokKey,
 } from '@y0ngha/siglens-core';
 import type { AssetClass } from '@/shared/config/marketProfile';
 import {
@@ -123,14 +124,26 @@ export async function chatAction(
         const provider = getProviderForModel(model);
         const serverApiKey = getServerPrimaryKey(provider);
 
-        if (!serverApiKey) {
-            return { ok: false, error: 'server_error' };
-        }
-
         const [{ tierContext, userApiKey }, clientIp] = await Promise.all([
             resolveUserContext(provider),
             getClientIp(),
         ]);
+
+        /**
+         * The server key is only required when *we* pay: free models on any
+         * tier, and pro-tier premium models. A non-pro caller on a premium
+         * model pays with their own BYOK key, so a missing server key must not
+         * block them — `ANTHROPIC_CHAT_API_KEY` / `OPENAI_CHAT_API_KEY` are
+         * deliberately absent from production SSM (see `infra/aws/check-env.sh`),
+         * and bailing here used to make every Claude/ChatGPT BYOK chat fail.
+         *
+         * When BYOK *is* required but no key is registered, core answers with
+         * `user_api_key_required` — a far more actionable error than the generic
+         * `server_error` this guard would return.
+         */
+        if (!serverApiKey && !requiresByokKey(tierContext.tier, model)) {
+            return { ok: false, error: 'server_error' };
+        }
 
         const r = await requestChatCompletion(
             {
