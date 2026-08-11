@@ -93,6 +93,10 @@ next-env.d.ts
 !/scripts/seedIndicatorTranslationsBatch.ts
 # Plan 1: FMP cryptocurrency-list sync script.
 !/scripts/seed-crypto-assets.ts
+# Tracked because scripts/__tests__/ imports them — untracking these two while
+# keeping their test files broke every fresh checkout and CI run.
+!/scripts/seed-crypto-korean-names.ts
+!/scripts/update-popular-cryptos.ts
 # Infra: post-build assertion script for standalone skills/ inclusion.
 !/scripts/assert-standalone-skills.mjs
 !/scripts/lib/
