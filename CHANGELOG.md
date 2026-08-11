@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.52.4](https://github.com/y0ngha/siglens/compare/v0.52.3...v0.52.4) (2026-08-11)
+
+
+### Features
+
+* **stream:** raise the analysis deadline to 10 minutes ([4732e52](https://github.com/y0ngha/siglens/commit/4732e522a33825fca042207bd4026256d52bbccb))
+
 ## [0.52.3](https://github.com/y0ngha/siglens/compare/v0.52.2...v0.52.3) (2026-08-11)
 
 ## [0.52.2](https://github.com/y0ngha/siglens/compare/v0.52.1...v0.52.2) (2026-08-11)
