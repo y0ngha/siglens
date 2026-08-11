@@ -131,15 +131,19 @@ export async function chatAction(
 
         /**
          * The server key is only required when *we* pay: free models on any
-         * tier, and pro-tier premium models. A non-pro caller on a premium
-         * model pays with their own BYOK key, so a missing server key must not
-         * block them — `ANTHROPIC_CHAT_API_KEY` / `OPENAI_CHAT_API_KEY` are
-         * deliberately absent from production SSM (see `infra/aws/check-env.sh`),
-         * and bailing here used to make every Claude/ChatGPT BYOK chat fail.
+         * tier, and pro-tier premium models. A non-pro caller on a premium model
+         * pays with their own BYOK key, so a missing server key must not block
+         * them — this guard used to run before the tier was even known, turning
+         * every such request into a generic `server_error`.
          *
          * When BYOK *is* required but no key is registered, core answers with
          * `user_api_key_required` — a far more actionable error than the generic
          * `server_error` this guard would return.
+         *
+         * All four `*_CHAT_API_KEY` are provisioned in production SSM and are
+         * REQUIRED by `infra/aws/check-env.sh`; the condition below is about who
+         * pays for a given request, not about which keys the environment happens
+         * to carry.
          */
         if (!serverApiKey && !requiresByokKey(tierContext.tier, model)) {
             return { ok: false, error: 'server_error' };
