@@ -353,8 +353,9 @@ interface AnalysisStreamRequest {
 |---|---|---|
 | heartbeat 간격 | 25s | 아래 두 상한 모두보다 충분히 짧다. |
 | ALB idle timeout | 60s | **실측된 진짜 벽**. 침묵이 61.1초면 연결이 끊긴다(v0.50.1 `/api/sse-probe` 프로덕션 측정). 최대 4000s까지 조정 가능. |
-| Cloudflare Proxy Read Timeout | 125s | 침묵 구간에만 적용되며 총 소요시간엔 무관. 실측상 `text/event-stream`을 버퍼링하지 않는다(286초 완주 확인). |
-| 라우트 마감(`STREAM_DEADLINE_MS`) | 5min | 초과 시 라우트 소유 `AbortController`가 작업을 실제로 취소한다. 취소하지 않으면 죽은 promise가 `dedupeInFlight` 맵에 남아 같은 캐시 키를 프로바이더 타임아웃(1시간)까지 봉인한다. |
+| Cloudflare Proxy Read Timeout | 125s | 침묵 구간에만 적용되며 총 소요시간엔 무관. 실측상 `text/event-stream`을 버퍼링하지 않는다 — v0.52.3에서 `duration=600&interval=25`로 2회(601.4s/601.2s, PoP LAX·SJC) 완주, drift 1초 미만 고정에 도착 간격 24.9~25.3s. |
+| 라우트 마감(`STREAM_DEADLINE_MS`) | 10min | 초과 시 라우트 소유 `AbortController`가 작업을 실제로 취소한다. 취소하지 않으면 죽은 promise가 `dedupeInFlight` 맵에 남아 같은 캐시 키를 프로바이더 타임아웃(1시간)까지 봉인한다. 5min이던 것을 올렸다 — `deepseek-v4-pro`가 PLTR(promptTokens 29k)에서 248.5초를 써 여유가 52초뿐이었고, 그 뒤 요청이 300초에 잘렸다(2026-08-09). |
+| AI 재시도 예산(core `RETRY_WALL_CLOCK_BUDGET_MS`) | 4min | `fn()` 실행시간까지 포함한 wall-clock 예산. 마감을 따라 올리지 **않는다** — 10분의 여유는 느린 첫 시도 하나를 완주시키는 데 쓰고, 248초 실패를 한 번 더 반복하는 데 쓰지 않는다. |
 
 **모델별 키 정책**
 

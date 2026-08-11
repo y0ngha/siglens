@@ -104,16 +104,35 @@ const SSE_HEADERS: HeadersInit = {
 };
 
 /**
- * Stream duration upper bound: if the LLM round-trip exceeds 5 minutes the
- * server emits an error event and closes the stream. This guards against
- * runaway LLM calls that would otherwise hold an open SSE connection
- * indefinitely and consume a Node worker slot.
+ * Stream duration upper bound: if the LLM round-trip exceeds this, the server
+ * emits an error event and closes the stream. This guards against runaway LLM
+ * calls that would otherwise hold an open SSE connection indefinitely and
+ * consume a Node worker slot.
+ *
+ * **Why 10 minutes.** 5 minutes was measurably too tight for the premium models.
+ * On 2026-08-09 a `deepseek-v4-pro` call on PLTR (promptTokens 29k) returned in
+ * 248.5s — 52s of headroom — and the next request on the same key was cut at the
+ * 300s mark. The ceiling has to clear the slowest legitimate call, not sit beside it.
+ *
+ * 10 minutes is measured, not assumed. `/api/sse-probe` at `duration=600&interval=25`
+ * completed twice through production (601.4s / 601.2s, CF PoPs LAX and SJC) with
+ * constant sub-second drift and 24.9–25.3s arrival gaps — no edge buffering. The
+ * control run with a 90s silence gap was severed at exactly 61.0s, confirming the
+ * ALB idle timeout is still the live wall and that `HEARTBEAT_INTERVAL_MS` (25s) is
+ * what clears it. Raising this bound past ~10 min would need a fresh measurement.
+ *
+ * **Deliberately NOT matched to the shutdown drain** (`SHUTDOWN_DRAIN_DEADLINE_MS`,
+ * 180s). Aligning them would mean raising `deregistration_delay` from 185s to 605s,
+ * which adds ~7 minutes per instance replacement and pushes a two-instance roll from
+ * ~18 min to ~30 min. What that buys is "an in-flight analysis survives a deploy" —
+ * and deploys are a handful per week against ~19 LLM calls per day. The 180s < deadline
+ * gap already existed at 5 minutes and has produced no observed failure; widening it
+ * adds no new failure mode, only slightly more exposure to an existing one.
  *
  * ponytail: single shared timeout, not per-request. Acceptable because all
- * in-flight analysis calls use the same model-tier cap. Reduce to 3 min if
- * pro-tier fast models make 5 min feel long.
+ * in-flight analysis calls use the same model-tier cap.
  */
-const STREAM_DEADLINE_MS = 5 * 60 * 1_000;
+const STREAM_DEADLINE_MS = 10 * 60 * 1_000;
 
 /**
  * 포지션 버킷 파생용 시세 조회 상한. 이 조회는 첫 SSE 바이트 이전에 일어나 heartbeat의

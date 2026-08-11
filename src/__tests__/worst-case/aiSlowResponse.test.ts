@@ -4,9 +4,9 @@
  * SSE 라우트 POST 핸들러를 통해 end-to-end로 검증한다. 분석 실행
  * 레이어(runAnalysisBridge)만 목킹하고 나머지는 happy-path 기본값을 쓴다.
  *
- * `withDeadline`은 5분(STREAM_DEADLINE_MS) 후 자체 AbortController를 abort하고
+ * `withDeadline`은 10분(STREAM_DEADLINE_MS) 후 자체 AbortController를 abort하고
  * deadline promise를 reject한다. heartbeatStream이 그 rejection을 받아
- * `event: error`로 변환한다. fake timer로 5분을 앞당겨 이 경로를 검증한다.
+ * `event: error`로 변환한다. fake timer로 10분을 앞당겨 이 경로를 검증한다.
  */
 
 // --- Module mocks (hoisted before imports) ---
@@ -86,10 +86,11 @@ vi.mock('@/entities/economy/actions/submitMacroBriefingAction', () => ({
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { POST } from '@/app/api/analysis/stream/route';
 import { runAnalysis } from '@/app/api/analysis/stream/runAnalysisBridge';
+import { HEARTBEAT_INTERVAL_MS } from '@/shared/lib/sse/heartbeatStream';
 
-// 5분 — route.ts의 STREAM_DEADLINE_MS와 동기화한다.
+// 10분 — route.ts의 STREAM_DEADLINE_MS와 동기화한다.
 // 미export 상수이므로 값을 직접 선언한다. 값이 바뀌면 이 테스트도 실패해 불일치를 잡아준다.
-const STREAM_DEADLINE_MS = 5 * 60 * 1_000;
+const STREAM_DEADLINE_MS = 10 * 60 * 1_000;
 
 const decoder = new TextDecoder();
 
@@ -131,7 +132,7 @@ describe('AI 응답 지연·연결 오류 최악 시나리오', () => {
         vi.useRealTimers();
     });
 
-    it('5분 마감 초과 → event:error 방출 + withDeadline 내부 signal이 abort된다', async () => {
+    it('10분 마감 초과 → event:error 방출 + withDeadline 내부 signal이 abort된다', async () => {
         /**
          * runAnalysis는 절대 resolve하지 않는 promise를 반환한다 — LLM 응답이
          * 끝없이 지연되는 상황을 시뮬레이션한다. withDeadline이 5분 뒤 자체
@@ -140,7 +141,7 @@ describe('AI 응답 지연·연결 오류 최악 시나리오', () => {
          * capturedSignal은 route가 runAnalysis에 전달한 signal이다.
          * withDeadline이 abort하면 이 signal도 aborted 상태가 되어야 한다.
          *
-         * 주의: vi.advanceTimersByTime(300_000)은 heartbeat interval(25s)도 12번
+         * 주의: vi.advanceTimersByTime(600_000)은 heartbeat interval(25s)도 24번
          * 발화시켜 heartbeat 청크들이 error 청크보다 앞에 큐에 쌓인다. await로
          * 마이크로태스크를 소비하며 error 이벤트를 찾을 때까지 드레인한다.
          */
@@ -157,13 +158,19 @@ describe('AI 응답 지연·연결 오류 최악 시나리오', () => {
 
         await reader.read(); // event: open 소비
 
-        // 5분 마감을 발화시킨다 — withDeadline의 setTimeout + heartbeat interval 12회.
+        // 10분 마감을 발화시킨다 — withDeadline의 setTimeout + heartbeat interval 24회.
         vi.advanceTimersByTime(STREAM_DEADLINE_MS);
 
         // heartbeat 청크들을 건너뛰고 error 청크를 찾는다.
         // 각 await reader.read()는 마이크로태스크를 소비해 promise chain이 정착할 기회를 준다.
+        //
+        // 드레인 상한은 상수에서 유도한다 — 마감을 늘리면 heartbeat 개수도 함께 늘어나므로,
+        // 고정 숫자로 두면 마감 변경 때마다 이 루프가 조용히 모자라 error 청크에 닿지 못한다
+        // (실제로 5분→10분 변경에서 20회 상한이 24개 heartbeat에 막혔다).
+        const maxChunks =
+            Math.ceil(STREAM_DEADLINE_MS / HEARTBEAT_INTERVAL_MS) + 5;
         let errorText: string | undefined;
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < maxChunks; i++) {
             const { value, done } = await reader.read();
             if (done) break;
             const text = decoder.decode(value);
