@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.52.2](https://github.com/y0ngha/siglens/compare/v0.52.1...v0.52.2) (2026-08-11)
+
+
+### Bug Fixes
+
+* **chat:** route BYOK key to provider adapters instead of server key ([503a87a](https://github.com/y0ngha/siglens/commit/503a87ad1270abb7608d8dae31e2ddc75ccba0bf))
+* **scripts:** re-track crypto seed scripts imported by tests ([d490dc1](https://github.com/y0ngha/siglens/commit/d490dc183fa5dfd7334baec472188ba5984591a1))
+
 ## [0.52.1](https://github.com/y0ngha/siglens/compare/v0.52.0...v0.52.1) (2026-08-09)
 
 
