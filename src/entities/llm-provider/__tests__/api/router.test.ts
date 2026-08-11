@@ -57,6 +57,17 @@ const BASE_OPTIONS = {
     contents: 'Hello',
 } as const;
 
+/**
+ * Shape the router hands to an adapter: the `userApiKey`/`serverApiKey` pair is
+ * collapsed into a single `apiKey` (BYOK key wins) and the internal model key is
+ * translated to the provider's `apiModelId`.
+ */
+const expectedAdapterCall = (apiModelId: string) => ({
+    contents: BASE_OPTIONS.contents,
+    apiKey: BASE_OPTIONS.userApiKey,
+    model: apiModelId,
+});
+
 describe('callAiProviderRouter', () => {
     beforeEach(async () => {
         vi.clearAllMocks();
@@ -78,10 +89,9 @@ describe('callAiProviderRouter', () => {
 
             expect(result).toBe('anthropic response');
             expect(mockCallAnthropicChat).toHaveBeenCalledTimes(1);
-            expect(mockCallAnthropicChat).toHaveBeenCalledWith({
-                ...options,
-                model: 'claude-haiku-4-5-20251001',
-            });
+            expect(mockCallAnthropicChat).toHaveBeenCalledWith(
+                expectedAdapterCall('claude-haiku-4-5-20251001')
+            );
             expect(mockCallOpenaiChat).not.toHaveBeenCalled();
             expect(mockCallGeminiWithKeyFallback).not.toHaveBeenCalled();
         });
@@ -95,10 +105,9 @@ describe('callAiProviderRouter', () => {
 
             expect(result).toBe('gemini response');
             expect(mockCallGeminiWithKeyFallback).toHaveBeenCalledTimes(1);
-            expect(mockCallGeminiWithKeyFallback).toHaveBeenCalledWith({
-                ...options,
-                model: 'gemini-2.5-flash',
-            });
+            expect(mockCallGeminiWithKeyFallback).toHaveBeenCalledWith(
+                expectedAdapterCall('gemini-2.5-flash')
+            );
             expect(mockCallAnthropicChat).not.toHaveBeenCalled();
             expect(mockCallOpenaiChat).not.toHaveBeenCalled();
         });
@@ -112,10 +121,9 @@ describe('callAiProviderRouter', () => {
 
             expect(result).toBe('openai response');
             expect(mockCallOpenaiChat).toHaveBeenCalledTimes(1);
-            expect(mockCallOpenaiChat).toHaveBeenCalledWith({
-                ...options,
-                model: 'gpt-5-mini',
-            });
+            expect(mockCallOpenaiChat).toHaveBeenCalledWith(
+                expectedAdapterCall('gpt-5-mini')
+            );
             expect(mockCallAnthropicChat).not.toHaveBeenCalled();
             expect(mockCallGeminiWithKeyFallback).not.toHaveBeenCalled();
         });
@@ -129,13 +137,63 @@ describe('callAiProviderRouter', () => {
 
             expect(result).toBe('deepseek response');
             expect(mockCallDeepseekChat).toHaveBeenCalledTimes(1);
-            expect(mockCallDeepseekChat).toHaveBeenCalledWith({
-                ...options,
-                model: 'deepseek-v4-flash',
-            });
+            expect(mockCallDeepseekChat).toHaveBeenCalledWith(
+                expectedAdapterCall('deepseek-v4-flash')
+            );
             expect(mockCallAnthropicChat).not.toHaveBeenCalled();
             expect(mockCallOpenaiChat).not.toHaveBeenCalled();
             expect(mockCallGeminiWithKeyFallback).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('API 키 라우팅', () => {
+        it('BYOK 키가 있으면 서버 키가 아니라 사용자 키를 어댑터에 전달한다', async () => {
+            await callAiProviderRouter({
+                userApiKey: 'user-key',
+                serverApiKey: 'server-key',
+                contents: 'Hello',
+                model: 'claude-haiku-4-5',
+            });
+
+            expect(mockCallAnthropicChat).toHaveBeenCalledWith(
+                expect.objectContaining({ apiKey: 'user-key' })
+            );
+        });
+
+        it('BYOK 키가 없으면 서버 키를 어댑터에 전달한다', async () => {
+            await callAiProviderRouter({
+                userApiKey: undefined,
+                serverApiKey: 'server-key',
+                contents: 'Hello',
+                model: 'claude-haiku-4-5',
+            });
+
+            expect(mockCallAnthropicChat).toHaveBeenCalledWith(
+                expect.objectContaining({ apiKey: 'server-key' })
+            );
+        });
+
+        /**
+         * 두 키가 모두 없을 때 어댑터를 호출하면 SDK가 `ANTHROPIC_API_KEY` 등
+         * 환경변수로 폴백해 BYOK 요청이 조용히 서버 키로 과금된다. 라우터에서
+         * 던져 그 폴백에 도달하지 못하게 한다.
+         */
+        it('키가 하나도 없으면 어댑터를 호출하지 않고 에러를 던진다', async () => {
+            await expect(
+                callAiProviderRouter({
+                    userApiKey: undefined,
+                    serverApiKey: undefined,
+                    contents: 'Hello',
+                    model: 'claude-haiku-4-5',
+                })
+            ).rejects.toThrow(
+                '[router] No API key supplied for model: claude-haiku-4-5'
+            );
+
+            expect(mockCallAnthropicChat).not.toHaveBeenCalled();
+            expect(mockCallOpenaiChat).not.toHaveBeenCalled();
+            expect(mockCallGeminiWithKeyFallback).not.toHaveBeenCalled();
+            expect(mockCallDeepseekChat).not.toHaveBeenCalled();
         });
     });
 

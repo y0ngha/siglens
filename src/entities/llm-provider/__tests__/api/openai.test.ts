@@ -13,8 +13,7 @@ vi.mock('openai', () => ({
 import { callOpenaiChat } from '@/entities/llm-provider/api/openai';
 
 const BASE_OPTIONS = {
-    serverApiKey: 'server-key',
-    userApiKey: undefined,
+    apiKey: 'server-key',
     model: 'gpt-5-mini', // apiModelId
     contents: 'Hello',
 } as const;
@@ -30,7 +29,7 @@ describe('callOpenaiChat', () => {
     });
 
     describe('API 키 라우팅', () => {
-        it('serverApiKey로 OpenAI를 호출한다', async () => {
+        it('apiKey로 OpenAI를 호출한다', async () => {
             mockCreate.mockResolvedValue({ output_text: 'Hi' });
 
             const result = await callOpenaiChat(BASE_OPTIONS);
@@ -40,12 +39,12 @@ describe('callOpenaiChat', () => {
             expect(mockCreate).toHaveBeenCalledTimes(1);
         });
 
-        it('userApiKey가 있어도 serverApiKey만 사용한다', async () => {
+        it('BYOK 키를 받으면 그 키로 호출한다 (환경변수 폴백 금지)', async () => {
             mockCreate.mockResolvedValue({ output_text: 'Hi' });
 
-            await callOpenaiChat({ ...BASE_OPTIONS, userApiKey: 'user-key' });
+            await callOpenaiChat({ ...BASE_OPTIONS, apiKey: 'user-key' });
 
-            expect(MockOpenAI).toHaveBeenCalledWith({ apiKey: 'server-key' });
+            expect(MockOpenAI).toHaveBeenCalledWith({ apiKey: 'user-key' });
             expect(MockOpenAI).toHaveBeenCalledTimes(1);
         });
 

@@ -402,6 +402,50 @@ describe('chatAction 함수는', () => {
                 expect.anything()
             );
         });
+
+        /**
+         * 프로덕션 SSM에는 `ANTHROPIC_CHAT_API_KEY` / `OPENAI_CHAT_API_KEY`가
+         * 의도적으로 없다(`infra/aws/check-env.sh`). 서버 키는 우리가 비용을
+         * 부담할 때만 필요하므로, BYOK로 결제하는 non-pro 사용자의 premium 요청은
+         * 서버 키 부재로 막히면 안 된다.
+         */
+        it('서버 chat 키가 없어도 non-pro premium 요청은 core로 넘긴다 (BYOK 경로)', async () => {
+            delete process.env.ANTHROPIC_CHAT_API_KEY;
+            const mockFindByUserAndProvider = vi
+                .fn()
+                .mockResolvedValue({ apiKey: 'user-personal-key' });
+            (
+                DrizzleUserApiKeyRepository as MockedClass<
+                    typeof DrizzleUserApiKeyRepository
+                >
+            ).mockImplementation(function () {
+                return {
+                    findByUserAndProvider: mockFindByUserAndProvider,
+                } as unknown as DrizzleUserApiKeyRepository;
+            });
+            (getDatabaseClient as Mock).mockReturnValue({ db: {} });
+            mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as Awaited<
+                ReturnType<typeof getCurrentUser>
+            >);
+
+            await chatAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'claude-opus-4-7'
+            );
+
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    serverApiKey: undefined,
+                    userApiKey: 'user-personal-key',
+                }),
+                expect.anything()
+            );
+        });
     });
 
     describe('클라이언트 IP 처리', () => {

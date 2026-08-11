@@ -45,8 +45,7 @@ async function callTranslateGemini(
     contents: string
 ): Promise<string> {
     return callGeminiChat({
-        serverApiKey: config.apiKey,
-        userApiKey: undefined,
+        apiKey: config.apiKey,
         model: config.model,
         contents,
         thinkingBudget: DISABLED_THINKING_BUDGET,
