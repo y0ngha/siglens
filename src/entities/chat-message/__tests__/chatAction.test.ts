@@ -404,10 +404,10 @@ describe('chatAction 함수는', () => {
         });
 
         /**
-         * 프로덕션 SSM에는 `ANTHROPIC_CHAT_API_KEY` / `OPENAI_CHAT_API_KEY`가
-         * 의도적으로 없다(`infra/aws/check-env.sh`). 서버 키는 우리가 비용을
-         * 부담할 때만 필요하므로, BYOK로 결제하는 non-pro 사용자의 premium 요청은
-         * 서버 키 부재로 막히면 안 된다.
+         * 서버 키는 우리가 비용을 부담할 때만 필요하다. BYOK로 결제하는 non-pro
+         * 사용자의 premium 요청은 서버 키 유무와 무관하므로, 서버 키가 없다는
+         * 이유로 막히면 안 된다 — 이전 구현은 tier를 알기도 전에 이 검사를 해서
+         * 그런 요청을 전부 `server_error`로 떨어뜨렸다.
          */
         it('서버 chat 키가 없어도 non-pro premium 요청은 core로 넘긴다 (BYOK 경로)', async () => {
             delete process.env.ANTHROPIC_CHAT_API_KEY;

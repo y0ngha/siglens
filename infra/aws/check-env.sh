@@ -22,28 +22,29 @@ EXCLUDE='^(NEXT_PUBLIC_|SIGLENS_GITHUB_TOKEN)'
 
 # Optional keys: present in .env.example but intentionally absent from SSM in production.
 #
-# Rationale: DeepSeek is the default chat/analysis provider (DEEPSEEK_CHAT_API_KEY,
-# like GEMINI_CHAT_API_KEY, is a server-paid key in SSM). ANTHROPIC_CHAT_API_KEY and
-# OPENAI_CHAT_API_KEY are BYOK (bring-your-own-key) alternative providers read lazily in
-# src/entities/chat-message/actions/chatAction.ts only when a user explicitly selects
-# that model. Their absence from SSM is intentional and must NOT block deploy — missing
-# them here would be a false positive deploy-gate.
+# ANTHROPIC_CHAT_API_KEY / OPENAI_CHAT_API_KEY used to sit in this list, on the premise
+# that they were BYOK-only and deliberately unprovisioned. That premise was wrong: both
+# have existed in /siglens/* since 2026-06-29, holding the same values as their
+# analysis-side counterparts. They are server-paid keys like GEMINI_CHAT_API_KEY and
+# DEEPSEEK_CHAT_API_KEY — `getServerPrimaryKey` in
+# src/entities/chat-message/actions/chatAction.ts reads them for every chat request whose
+# model routes to that provider, including the free-tier models claude-haiku-4-5 and
+# gpt-5-mini. Listing them as optional meant this gate would wave through a deploy that
+# had silently lost them, breaking Claude/ChatGPT chat for every non-BYOK caller. All four
+# *_CHAT_API_KEY are REQUIRED.
 #
 # DEBUG_VERBOSE_LOGS is an optional debug flag (defaults off when unset); it is never
 # provisioned in prod SSM and must likewise not block deploy.
 #
-# NOTE on the *_API_KEY (no CHAT) quartet — the asymmetry with the *_CHAT_API_KEY rows
-# above is DELIBERATE, not an oversight. ANTHROPIC/GEMINI/OPENAI/DEEPSEEK_API_KEY are the
-# analysis-side server keys read by @y0ngha/siglens-core's resolveServerApiKey. Every one
-# of the four providers appears in TIER_CONFIG.models.free (claude-haiku-4-5 -> Anthropic,
-# gpt-5-mini -> OpenAI, gemini-2.5-flash* -> Gemini, deepseek-v4-* -> DeepSeek), i.e. the
-# server pays for all four. Core validates them lazily at call time, so a missing key does
-# not crash startup — it fails the first analysis that routes to that provider, over SSE,
-# with HTTP 200. That is exactly the silent failure this gate exists to catch. Keep all
-# four REQUIRED.
+# The *_API_KEY (no CHAT) quartet is REQUIRED for the same class of reason:
+# ANTHROPIC/GEMINI/OPENAI/DEEPSEEK_API_KEY are the analysis-side server keys read by
+# @y0ngha/siglens-core's resolveServerApiKey, and every one of the four providers appears
+# in TIER_CONFIG.models.free (claude-haiku-4-5 -> Anthropic, gpt-5-mini -> OpenAI,
+# gemini-2.5-flash* -> Gemini, deepseek-v4-* -> DeepSeek), i.e. the server pays for all
+# four. Core validates them lazily at call time, so a missing key does not crash startup —
+# it fails the first analysis that routes to that provider, over SSE, with HTTP 200. That
+# is exactly the silent failure this gate exists to catch.
 OPTIONAL_KEYS=(
-  ANTHROPIC_CHAT_API_KEY
-  OPENAI_CHAT_API_KEY
   DEBUG_VERBOSE_LOGS
   # Optional SNS email subscription address for ISR cache alarms. The SNS topic
   # and CloudWatch alarm wiring (07-alarms.sh) are created regardless; only the
