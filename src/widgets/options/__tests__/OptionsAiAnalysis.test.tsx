@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { OptionsAiAnalysis } from '@/widgets/options/OptionsAiAnalysis';
 import type { OptionsAnalysisResponse } from '@y0ngha/siglens-core';
 
@@ -59,6 +60,48 @@ const RESULT: OptionsAnalysisResponse = {
 };
 
 describe('OptionsAiAnalysis', () => {
+    /**
+     * 스냅샷 프로즈가 보이는 동안에도 위젯은 마운트된 채 `hideView`로 UI만 끈다.
+     * 언마운트하면 `usePublishSymbolChat`이 돌지 않아 챗 입력이 잠긴다.
+     */
+    describe('hideView', () => {
+        it('UI를 렌더하지 않는다', () => {
+            mockState.mockReturnValue({ status: 'loading', trigger: vi.fn() });
+
+            const { container } = render(
+                <OptionsAiAnalysis
+                    symbol="AAPL"
+                    companyName="Apple"
+                    expirationDate="all"
+                    modelId="deepseek-v4-flash"
+                    hideView
+                />
+            );
+
+            expect(container).toBeEmptyDOMElement();
+        });
+
+        it('UI를 숨겨도 챗 컨텍스트 publish는 계속된다', () => {
+            mockState.mockReturnValue({
+                status: 'done',
+                result: RESULT,
+                trigger: vi.fn(),
+            });
+
+            render(
+                <OptionsAiAnalysis
+                    symbol="AAPL"
+                    companyName="Apple"
+                    expirationDate="all"
+                    modelId="deepseek-v4-flash"
+                    hideView
+                />
+            );
+
+            expect(vi.mocked(usePublishSymbolChat)).toHaveBeenCalled();
+        });
+    });
+
     afterEach(() => {
         mockState.mockReset();
     });

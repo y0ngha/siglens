@@ -58,6 +58,50 @@ describe('useOptionsAnalysis — trigger coverage', () => {
         });
     });
 
+    /**
+     * `cacheOnly`는 OI가 stale할 때 "캐시에 있으면 읽고 없으면 만들지 않는다"를
+     * 보장하는 유일한 장치다. 훅이 이 값을 스트림 params에 싣지 않으면 서버는
+     * 평소대로 열화된 입력으로 새 분석을 만들어버린다.
+     */
+    it('cacheOnly를 runAnalysisStream params로 전달한다', async () => {
+        mockSubmit.mockResolvedValue({
+            status: 'cached',
+            result: OPTIONS_RESULT,
+        });
+
+        const wrapper = makeWrapper();
+        renderHook(() => useOptionsAnalysis({ ...INPUT, cacheOnly: true }), {
+            wrapper,
+        });
+
+        await waitFor(() => {
+            expect(mockSubmit).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: 'options',
+                    params: expect.objectContaining({ cacheOnly: true }),
+                })
+            );
+        });
+    });
+
+    it('cacheOnly를 넘기지 않으면 params에 undefined로 실린다', async () => {
+        mockSubmit.mockResolvedValue({
+            status: 'cached',
+            result: OPTIONS_RESULT,
+        });
+
+        const wrapper = makeWrapper();
+        renderHook(() => useOptionsAnalysis(INPUT), { wrapper });
+
+        await waitFor(() => {
+            expect(mockSubmit).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    params: expect.objectContaining({ cacheOnly: false }),
+                })
+            );
+        });
+    });
+
     it('loading 상태에서 trigger 함수를 노출한다', async () => {
         mockSubmit.mockReturnValue(new Promise(() => undefined));
 

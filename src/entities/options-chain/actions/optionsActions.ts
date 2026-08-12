@@ -40,7 +40,19 @@ export async function submitOptionsAnalysisAction(
      * spec Part A). Only honored for member/pro tiers.
      */
     reasoning?: boolean,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    /**
+     * 캐시에 이미 결과가 있을 때만 돌려주고, 없으면 **새 분석을 만들지 않는다**.
+     *
+     * OI/호가가 stale한 상태(정규장 밖 등)에서 쓰인다: 그 입력으로 분석을 새로
+     * 태우면 프롬프트의 핵심 지표(Max Pain, P/C, top OI/IV)가 모두 무력화된
+     * 저품질 결과에 비용까지 든다. 반면 장중에 만들어둔 캐시가 있으면 그건
+     * 정상적인 결과이므로, 읽어서 챗봇 분석 컨텍스트로 올릴 가치가 있다.
+     *
+     * 클라이언트가 켤 수 있지만 서버 작업량을 **줄이는 방향**으로만 작동하므로
+     * (miss 시 enqueue를 건너뜀) 비용 증폭에 악용될 수 없다.
+     */
+    cacheOnly?: boolean
 ): Promise<SubmitOptionsAnalysisActionResult> {
     try {
         // E2E short-circuits the LLM/worker with a deterministic fixture (see
@@ -61,7 +73,7 @@ export async function submitOptionsAnalysisAction(
                 : stub.e2eCachedOptions();
         }
         const requestHeaders = await headers();
-        const skipEnqueueIfMiss = isBot(requestHeaders);
+        const skipEnqueueIfMiss = isBot(requestHeaders) || cacheOnly === true;
 
         const user = await getCurrentUser();
         const userId = user?.id ?? null;

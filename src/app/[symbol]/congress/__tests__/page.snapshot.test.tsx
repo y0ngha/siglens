@@ -120,7 +120,7 @@ describe('CongressPage — SEO snapshot prose (Task 7b)', () => {
         } as Awaited<ReturnType<typeof getCongressPageData>>);
     });
 
-    it('스냅샷 있으면 CongressSnapshotProse를 렌더하고, 중복되는 AI 위젯(CongressTrendSummary)은 렌더하지 않는다 (audit fix FIX 2)', async () => {
+    it('스냅샷 있으면 CongressSnapshotProse를 렌더하고, 중복되는 AI 위젯(CongressTrendSummary)은 hideView로 UI만 끈다 (audit fix FIX 2)', async () => {
         mockGetSeoSnapshotsStatic.mockResolvedValue([
             {
                 symbol: 'AAPL',
@@ -146,7 +146,9 @@ describe('CongressPage — SEO snapshot prose (Task 7b)', () => {
         expect((prose?.props as { generatedAt?: Date }).generatedAt).toEqual(
             new Date('2026-07-24')
         );
-        expect(findElementByType(tree, CongressTrendSummary)).toBeNull();
+        const widget = findElementByType(tree, CongressTrendSummary);
+        expect(widget).not.toBeNull();
+        expect(widget?.props).toMatchObject({ hideView: true });
     });
 
     it('스냅샷 없으면(빈 배열) 렌더러가 자체 null을 반환하는 CongressSnapshotProse 대신 CongressTrendSummary(AI 위젯)를 렌더한다 (audit fix FIX 2)', async () => {

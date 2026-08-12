@@ -162,7 +162,7 @@ describe('FundamentalPage — SEO snapshot prose (Task 7b)', () => {
         mockGetProfileResilient.mockResolvedValue(PROFILE_OK);
     });
 
-    it('스냅샷 있으면 FundamentalSnapshotProse를 렌더하고, 중복되는 AI 위젯(FundamentalAiSummary)은 렌더하지 않는다 (audit fix FIX 2)', async () => {
+    it('스냅샷 있으면 FundamentalSnapshotProse를 렌더하고, 중복되는 AI 위젯(FundamentalAiSummary)은 hideView로 UI만 끈다 (audit fix FIX 2)', async () => {
         mockGetSeoSnapshotsStatic.mockResolvedValue([
             {
                 symbol: 'AAPL',
@@ -188,7 +188,9 @@ describe('FundamentalPage — SEO snapshot prose (Task 7b)', () => {
         expect((prose?.props as { generatedAt?: Date }).generatedAt).toEqual(
             new Date('2026-07-24')
         );
-        expect(findElementByType(tree, FundamentalAiSummary)).toBeNull();
+        const widget = findElementByType(tree, FundamentalAiSummary);
+        expect(widget).not.toBeNull();
+        expect(widget?.props).toMatchObject({ hideView: true });
     });
 
     it('스냅샷 없으면(빈 배열) FundamentalSnapshotProse 대신 FundamentalAiSummary(AI 위젯)를 렌더한다 (audit fix FIX 2)', async () => {

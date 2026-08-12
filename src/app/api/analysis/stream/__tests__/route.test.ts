@@ -584,14 +584,50 @@ describe('POST /api/analysis/stream', () => {
             const response = await POST(makeRequest(undefined, body));
             await collectSseEvents(response);
 
-            // options 핸들러 시그니처: (symbol, companyName, expirationDate, modelId, reasoning, signal)
+            // options 핸들러 시그니처:
+            // (symbol, companyName, expirationDate, modelId, reasoning, signal, cacheOnly)
             expect(vi.mocked(submitOptionsAnalysisAction)).toHaveBeenCalledWith(
                 'AAPL',
                 'Apple',
                 'nearest',
                 'gemini-2.5-flash',
                 undefined,
-                expect.any(AbortSignal)
+                expect.any(AbortSignal),
+                undefined
+            );
+        });
+
+        /**
+         * `cacheOnly`는 OI가 stale할 때 클라이언트가 켠다 — 캐시에 있으면 읽고
+         * 없으면 새 분석을 만들지 않는다. 라우트가 이 파라미터를 흘리지 않으면
+         * 열화된 입력으로 분석이 새로 돌아간다.
+         */
+        it('options → cacheOnly 파라미터를 액션으로 전달한다', async () => {
+            vi.mocked(submitOptionsAnalysisAction).mockResolvedValue(
+                MOCK_RESULT as never
+            );
+
+            const body = JSON.stringify({
+                type: 'options',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple',
+                    expirationDate: 'nearest',
+                    modelId: 'gemini-2.5-flash',
+                    cacheOnly: true,
+                },
+            });
+            const response = await POST(makeRequest(undefined, body));
+            await collectSseEvents(response);
+
+            expect(vi.mocked(submitOptionsAnalysisAction)).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple',
+                'nearest',
+                'gemini-2.5-flash',
+                undefined,
+                expect.any(AbortSignal),
+                true
             );
         });
 

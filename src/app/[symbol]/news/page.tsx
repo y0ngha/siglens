@@ -322,7 +322,9 @@ export default async function NewsPage({ params }: Props) {
     ]);
     const newsSnapshot = snapshots.find(s => s.tab === 'news');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasNewsProse)
-    // 그것만 보여주고, 클라이언트 AI 위젯(NewsAiSummary)은 렌더하지 않는다. 두
+    // 그것만 보여준다. 클라이언트 AI 위젯은 계속 마운트하되 `hideView`로 UI만 끈다 —
+    // 위젯을 아예 렌더하지 않으면 `usePublishSymbolChat`이 돌지 않아 챗봇의 분석
+    // 컨텍스트가 비어 입력이 잠긴다(스냅샷이 있을수록 챗이 막히는 역전). 두
     // 소스가 동일 필드(currentDriverKo/keyEventsKo/upcomingEventsKo)를 같은
     // 순서로 중복 렌더하던 문제(같은 결론을 사용자에게 두 번, 스크린리더에 두
     // 번, 중복 콘텐츠 SEO 리스크)를 해소한다. NewsFactsSummary(결정론적 DB
@@ -399,24 +401,28 @@ export default async function NewsPage({ params }: Props) {
                     conclusion (currentDriverKo/keyEventsKo/upcomingEventsKo).
                     Showing both duplicated the text for sighted users and
                     screen readers and doubled as a duplicate-content SEO risk.
-                    When the snapshot is renderable, skip the widget; it stays
+                    When the snapshot is renderable, the widget renders nothing (`hideView`)
+                    but stays mounted so chat context keeps publishing; it stays
                     the fallback for when no snapshot exists — NewsAiSummary is
                     a client component that fetches its aggregate analysis via a
                     client-side hook, so during ISR generation it bakes its
                     loading skeleton into the static HTML (no crawlable AI text)
                     until it hydrates. NewsFactsSummary above is unaffected —
                     it's deterministic DB-list facts, not an AI conclusion. */}
-                {!showNewsProse && (
-                    <NewsAiSummaryErrorBoundary>
-                        <Suspense fallback={<NewsAiSummarySkeleton />}>
-                            <NewsAiSummary
-                                symbol={upper}
-                                companyName={assetInfo.name}
-                                hasEnrichedNews={hasEnrichedNews}
-                            />
-                        </Suspense>
-                    </NewsAiSummaryErrorBoundary>
-                )}
+                <NewsAiSummaryErrorBoundary>
+                    <Suspense
+                        fallback={
+                            showNewsProse ? null : <NewsAiSummarySkeleton />
+                        }
+                    >
+                        <NewsAiSummary
+                            symbol={upper}
+                            companyName={assetInfo.name}
+                            hasEnrichedNews={hasEnrichedNews}
+                            hideView={showNewsProse}
+                        />
+                    </Suspense>
+                </NewsAiSummaryErrorBoundary>
 
                 <Suspense fallback={<SectionSkeleton />}>
                     <NewsListSection symbol={upper} />

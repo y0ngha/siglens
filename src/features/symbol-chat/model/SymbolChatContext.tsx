@@ -40,6 +40,29 @@ export interface SymbolChatContextValue extends SymbolChatState {
     clear: () => void;
 }
 
+/**
+ * Dispatch-only half of the chat context (`{ publish, clear }`).
+ *
+ * **Split on purpose.** `usePublishSymbolChat` writes into this context; if it
+ * also *subscribed* to the state half it would re-render on its own write, and
+ * the analysis hooks return a fresh state object every render — so the memoized
+ * chat state gets a new identity, the `===` dedupe in `publish` misses, and the
+ * publisher loops until React throws "Maximum update depth exceeded"
+ * (reproduced: 400+ renders with the real provider before this split).
+ *
+ * Both values here are `useCallback`-stable for the provider's lifetime, so
+ * this context never changes identity and publishers never re-render because of
+ * a publish.
+ */
+export const SymbolChatDispatchContext =
+    createContext<SymbolChatDispatch | null>(null);
+
+/** Publisher-facing API — stable for the provider's lifetime. */
+export interface SymbolChatDispatch {
+    publish: (next: SymbolChatState) => void;
+    clear: () => void;
+}
+
 export const SymbolChatContext = createContext<SymbolChatContextValue | null>(
     null
 );
@@ -86,9 +109,16 @@ export function SymbolChatProvider({ children }: SymbolChatProviderProps) {
         [state, publish, clear]
     );
 
+    // `publish`/`clear`는 useCallback으로 고정돼 있으므로 이 객체는 provider가
+    // 사는 동안 identity가 바뀌지 않는다 — publisher가 publish 때문에 재렌더되지
+    // 않게 하는 핵심.
+    const dispatch = useMemo(() => ({ publish, clear }), [publish, clear]);
+
     return (
-        <SymbolChatContext.Provider value={value}>
-            {children}
-        </SymbolChatContext.Provider>
+        <SymbolChatDispatchContext.Provider value={dispatch}>
+            <SymbolChatContext.Provider value={value}>
+                {children}
+            </SymbolChatContext.Provider>
+        </SymbolChatDispatchContext.Provider>
     );
 }

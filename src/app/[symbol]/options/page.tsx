@@ -172,7 +172,8 @@ export default async function OptionsPage({ params }: Props) {
     const optionsSnapshot = snapshots.find(s => s.tab === 'options');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasOptionsProse)
     // 그것만 보여주고, 클라이언트 AI 위젯(OptionsAiAnalysis, OptionsPageClient
-    // 내부)은 렌더하지 않는다. 두 소스가 동일 필드(summary/perExpiration/
+    // 내부)는 계속 마운트하되 `hideView`로 UI만 끈다 — 렌더 자체를 건너뛰면
+    // `usePublishSymbolChat`이 돌지 않아 챗봇 컨텍스트가 빈다. 두 소스가 동일 필드(summary/perExpiration/
     // signals)를 같은 순서로 중복 렌더하던 문제(같은 결론을 사용자에게 두 번,
     // 스크린리더에 두 번, 중복 콘텐츠 SEO 리스크)를 해소한다.
     // `OverallSnapshotProse.hasOverallProse` 패턴과 동일 — narrowOptionsContent를
