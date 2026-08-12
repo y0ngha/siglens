@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.52.5](https://github.com/y0ngha/siglens/compare/v0.52.4...v0.52.5) (2026-08-12)
+
+
+### Bug Fixes
+
+* **cdn:** 미들웨어에서 동작 불가능한 _rsc 가드 제거 ([728b30a](https://github.com/y0ngha/siglens/commit/728b30aa49ea8cb0c47262cbd24270f002a1a8ad))
+* **infra:** require ANTHROPIC/OPENAI chat keys in the env gate ([6c24e29](https://github.com/y0ngha/siglens/commit/6c24e29d32b948667116932cc2133ece4d9813c7))
+
+
+### Performance Improvements
+
+* **cdn:** 캐시 히트율 개선 — prefetch 비활성화 + RSC 정규화 가드 ([73b425f](https://github.com/y0ngha/siglens/commit/73b425fe203e88d8c284774b1e772ba577a9675f))
+
 ## [0.52.4](https://github.com/y0ngha/siglens/compare/v0.52.3...v0.52.4) (2026-08-11)
 
 
