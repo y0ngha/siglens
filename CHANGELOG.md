@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.53.0](https://github.com/y0ngha/siglens/compare/v0.52.5...v0.53.0) (2026-08-12)
+
+
+### Features
+
+* **llm-provider:** emit [Usage] telemetry from chat adapters ([a5c96b9](https://github.com/y0ngha/siglens/commit/a5c96b93111f9a1419e2678fb9b13eb4b3093c84))
+
 ## [0.52.5](https://github.com/y0ngha/siglens/compare/v0.52.4...v0.52.5) (2026-08-12)
 
 
