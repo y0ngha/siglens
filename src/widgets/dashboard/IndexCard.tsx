@@ -35,6 +35,8 @@ export function IndexCard({ data, href }: IndexCardProps) {
             <Link
                 href={href}
                 title={`${label} 분석`}
+                // 카드 그리드로 다수 렌더 — docs/architecture/CDN_CACHING.md §1
+                prefetch={false}
                 className={CARD_LINK_CLASSES}
             >
                 {inner}

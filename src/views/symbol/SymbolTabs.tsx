@@ -56,6 +56,14 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
                     <Link
                         key={t.key}
                         href={href}
+                        // 탭은 전부 같은 심볼의 형제 라우트라 viewport에 동시에 들어온다.
+                        // 기본 prefetch는 마운트 즉시 탭 수만큼 RSC 페이로드를 당겨오는데,
+                        // 종목 라우트 페이로드는 개당 0.9~2.7MB다(2026-08-12 실측). 한 번의
+                        // 클릭을 위해 페이지뷰마다 ~10MB를 origin에서 끌어오는 셈이고, 그
+                        // 요청은 전부 `cf-cache-status: DYNAMIC`(엣지 우회)이라 CDN 히트율까지
+                        // 같이 깎는다. 클릭 시점 fetch로 미루고 엣지 캐시가 받아내게 한다.
+                        // 근거·측정: docs/architecture/CDN_CACHING.md §1
+                        prefetch={false}
                         aria-current={active ? 'page' : undefined}
                         className={cn(
                             'focus-visible:ring-primary-500 -mb-px flex min-h-11 touch-manipulation items-center border-b-2 border-transparent px-4 py-2 text-sm whitespace-nowrap focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',

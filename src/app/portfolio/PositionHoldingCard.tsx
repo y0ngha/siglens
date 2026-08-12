@@ -162,6 +162,8 @@ export function PositionHoldingCard({ holding }: PositionHoldingCardProps) {
         // 보존한다. IntersectionObserver 대상(ref)도 안쪽 div에 그대로 둔다.
         <Link
             href={`/${holding.symbol}/position`}
+            // 보유 종목 수만큼 카드가 렌더된다 — docs/architecture/CDN_CACHING.md §1
+            prefetch={false}
             className="focus-visible:ring-primary-500 group block rounded-xl transition-shadow focus-visible:ring-2 focus-visible:outline-none"
         >
             <div

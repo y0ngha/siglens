@@ -66,6 +66,11 @@ export function CategoryCardGrid({
                                     <Link
                                         href={`/${item.symbol}`}
                                         title={`${item.symbol} 분석`}
+                                        // 랜딩 그리드는 종목 링크를 수십 개 렌더한다.
+                                        // 스크롤만 해도 그 수만큼 1.7MB짜리 RSC 페이로드를
+                                        // origin에서 당겨오므로 prefetch를 끈다
+                                        // (docs/architecture/CDN_CACHING.md §1).
+                                        prefetch={false}
                                         className="border-secondary-700 text-secondary-300 hover:border-primary-600/40 hover:text-primary-400 focus-visible:ring-primary-500 inline-flex items-baseline gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none"
                                     >
                                         <span>{item.name}</span>

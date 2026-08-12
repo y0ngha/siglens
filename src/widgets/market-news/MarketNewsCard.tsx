@@ -83,6 +83,9 @@ function TickerChips({ category, tickers }: TickerChipsProps) {
                         key={ticker}
                         href={`/${ticker}`}
                         aria-label={`${ticker} 종목 페이지로 이동`}
+                        // 뉴스 카드마다 티커 칩이 붙어 다수 렌더 —
+                        // docs/architecture/CDN_CACHING.md §1
+                        prefetch={false}
                         data-testid="ticker-chip"
                         className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 inline-flex min-h-6 min-w-6 items-center justify-center rounded px-1.5 py-0.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
                     >

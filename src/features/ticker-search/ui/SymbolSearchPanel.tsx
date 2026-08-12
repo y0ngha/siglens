@@ -37,6 +37,9 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                             <Link
                                 href={`/${ticker}`}
                                 onClick={() => addSearch(ticker)}
+                                // 최근 검색 목록으로 다수 렌더 —
+                                // docs/architecture/CDN_CACHING.md §1
+                                prefetch={false}
                                 className="focus-visible:ring-primary-500 inline-flex min-h-6 items-center rounded py-1.5 focus-visible:ring-1 focus-visible:outline-none"
                             >
                                 {ticker}
