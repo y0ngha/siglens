@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import type { AiContents, ConversationTurn } from '@y0ngha/siglens-core';
 import type { ProviderCallOptions } from '../model';
+import { CHAT_JOB_ID, extractGeminiUsage, logUsage } from '../lib/usage';
 
 interface GeminiChatOptions extends ProviderCallOptions {
     /**
@@ -38,7 +39,9 @@ export async function callGeminiChat({
     contents,
     systemInstruction,
     thinkingBudget,
+    jobId = CHAT_JOB_ID,
 }: GeminiChatOptions): Promise<string> {
+    const startedAt = Date.now();
     const genai = new GoogleGenAI({ apiKey });
 
     const hasSystemInstruction = systemInstruction !== undefined;
@@ -58,6 +61,13 @@ export async function callGeminiChat({
               }
             : {}),
     });
+    logUsage({
+        jobId,
+        model,
+        latencyMs: Date.now() - startedAt,
+        ...extractGeminiUsage(response.usageMetadata),
+    });
+
     if (response.text === null || response.text === undefined) {
         throw new Error('[gemini] Provider returned null/undefined response');
     }

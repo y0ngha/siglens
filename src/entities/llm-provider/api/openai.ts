@@ -1,6 +1,7 @@
 import { toProviderTurns, findSpecByApiModelId } from '../lib/utils';
 import type { AiContents } from '@y0ngha/siglens-core';
 import type { ProviderCallOptions } from '../model';
+import { CHAT_JOB_ID, extractOpenAIUsage, logUsage } from '../lib/usage';
 import OpenAI from 'openai';
 
 function toResponsesInput(
@@ -19,11 +20,13 @@ export async function callOpenaiChat({
     model,
     contents,
     systemInstruction,
+    jobId = CHAT_JOB_ID,
 }: ProviderCallOptions): Promise<string> {
     const spec = findSpecByApiModelId(model);
     if (!spec) {
         throw new Error(`Unknown model: ${model}`);
     }
+    const startedAt = Date.now();
     const client = new OpenAI({ apiKey });
 
     const response = await client.responses.create({
@@ -39,6 +42,13 @@ export async function callOpenaiChat({
         ...(spec.effort !== undefined && {
             reasoning: { effort: spec.effort },
         }),
+    });
+
+    logUsage({
+        jobId,
+        model,
+        latencyMs: Date.now() - startedAt,
+        ...extractOpenAIUsage(response.usage),
     });
 
     const text = response.output_text;

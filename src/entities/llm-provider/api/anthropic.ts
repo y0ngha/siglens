@@ -2,6 +2,7 @@ import { toProviderTurns, findSpecByApiModelId } from '../lib/utils';
 import Anthropic from '@anthropic-ai/sdk';
 import type { AiContents, ModelSpec } from '@y0ngha/siglens-core';
 import type { ProviderCallOptions } from '../model';
+import { CHAT_JOB_ID, extractClaudeUsage, logUsage } from '../lib/usage';
 
 /**
  * Allowed reasoning effort values accepted by the Anthropic adaptive thinking
@@ -87,6 +88,7 @@ export async function callAnthropicChat({
     model,
     contents,
     systemInstruction,
+    jobId = CHAT_JOB_ID,
 }: ProviderCallOptions): Promise<string> {
     const spec = findSpecByApiModelId(model);
     if (!spec) {
@@ -98,6 +100,7 @@ export async function callAnthropicChat({
     const adaptiveThinking = spec.effort !== undefined;
     const maxTokens = spec.maxOutputTokens;
 
+    const startedAt = Date.now();
     const client = new Anthropic({ apiKey });
     // Two prompt-cache breakpoints keep repeated chat turns cheap: the stable
     // system prefix (persona + analysis context + few-shot) and the conversation
@@ -130,6 +133,13 @@ export async function callAnthropicChat({
             : { temperature: spec.temperature }),
     });
     const response = await stream.finalMessage();
+
+    logUsage({
+        jobId,
+        model,
+        latencyMs: Date.now() - startedAt,
+        ...extractClaudeUsage(response.usage),
+    });
 
     const block = response.content.find(b => b.type === 'text') as
         | Anthropic.TextBlock
