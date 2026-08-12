@@ -36,11 +36,11 @@ probe 'HTML (symbol tab)' "$ORIGIN/AAPL/overall"
 probe 'RSC (prefetch)' "$ORIGIN/AAPL?_rsc=probe1" -H 'RSC: 1' -H 'Next-Router-Prefetch: 1'
 probe 'RSC (navigation)' "$ORIGIN/AAPL/overall?_rsc=probe2" -H 'RSC: 1'
 
-# `_rsc`가 붙었는데 RSC 헤더가 없는 요청 — proxy.ts가 307로 파라미터를 떼야 한다.
-# (캐시 상태가 아니라 status/location을 본다.)
-printf '\n_rsc 오염 가드: '
-curl -s -o /dev/null -w 'status=%{http_code} location=%{redirect_url}\n' \
-    "$ORIGIN/AAPL?_rsc=probe1" -H "user-agent: $UA"
+# 오염 경로: `_rsc`가 붙었는데 RSC 헤더가 없는 요청. origin은 이때 전체 HTML을 돌려주는데
+# (미들웨어에서는 막을 수 없다 — CDN_CACHING.md §3 참고), 그 HTML이 RSC 캐시 키에 저장되면
+# 클라이언트 내비게이션이 깨진다. R1에 `_rsc=` 제외 조건이 들어가면 저장 자체가 안 되므로
+# 여기서 MISS/HIT이 아니라 DYNAMIC(또는 BYPASS)이 나와야 정상이다.
+probe 'RSC키 오염(헤더 없음)' "$ORIGIN/AAPL?_rsc=probe1"
 
 # 우회가 정상인 것들
 probe 'API (bypass 기대)' "$ORIGIN/api/health"

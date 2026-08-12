@@ -25,8 +25,7 @@ const mockNext = NextResponse.next as MockedFunction<typeof NextResponse.next>;
 
 function makeRequest(
     sessionValue: string | undefined,
-    path = '/login',
-    headers: Record<string, string> = {}
+    path = '/login'
 ): NextRequest {
     return {
         url: `https://example.com${path}`,
@@ -36,9 +35,6 @@ function makeRequest(
                     ? { value: sessionValue }
                     : undefined
             ),
-        },
-        headers: {
-            get: vi.fn((name: string) => headers[name.toLowerCase()] ?? null),
         },
     } as unknown as NextRequest;
 }
@@ -200,57 +196,6 @@ describe('Ticker 케이스 정규화 — 소문자/혼합 케이스 → 대문�
             }
         }
     );
-});
-
-describe('`?_rsc=` 캐시 버스팅 파라미터 정규화', () => {
-    beforeEach(() => {
-        mockRedirect.mockClear();
-        mockNext.mockClear();
-    });
-
-    it.each([
-        ['/AAPL?_rsc=abc12', '/AAPL', ''],
-        ['/AAPL/overall?_rsc=abc12', '/AAPL/overall', ''],
-        ['/?_rsc=abc12', '/', ''],
-        // 다른 쿼리는 보존한다 — `_rsc`만 떼낸다.
-        ['/market?tab=gainers&_rsc=abc12', '/market', 'tab=gainers'],
-    ])(
-        'RSC 헤더 없는 %s 는 307로 파라미터를 떼고 돌려보낸다',
-        (path, expectedPath, expectedQuery) => {
-            proxy(makeRequest(undefined, path));
-            expect(mockRedirect).toHaveBeenCalledTimes(1);
-            const [calledUrl, status] = mockRedirect.mock.calls[0]!;
-            expect((calledUrl as URL).pathname).toBe(expectedPath);
-            expect((calledUrl as URL).searchParams.has('_rsc')).toBe(false);
-            expect((calledUrl as URL).searchParams.toString()).toBe(
-                expectedQuery
-            );
-            expect(status).toBe(307);
-            expect(mockNext).not.toHaveBeenCalled();
-        }
-    );
-
-    it('RSC 헤더가 있으면 그대로 통과시킨다 (진짜 prefetch/내비게이션)', () => {
-        proxy(makeRequest(undefined, '/AAPL?_rsc=abc12', { rsc: '1' }));
-        expect(mockRedirect).not.toHaveBeenCalled();
-        expect(mockNext).toHaveBeenCalledTimes(1);
-    });
-
-    it('`_rsc`가 없으면 정규화 대상이 아니다', () => {
-        proxy(makeRequest(undefined, '/AAPL?utm_source=x'));
-        expect(mockRedirect).not.toHaveBeenCalled();
-        expect(mockNext).toHaveBeenCalledTimes(1);
-    });
-
-    it('소문자 ticker + `_rsc`는 301 대문자 정규화보다 먼저 처리된다', () => {
-        // 순서를 뒤집으면 301 Location에 `_rsc`가 실려 나간다(canonicalUrl은 pathname만
-        // 교체). 301은 영구 캐싱되는 응답이라 일회성 `_rsc` URL이 canonical로 각인된다.
-        proxy(makeRequest(undefined, '/aapl?_rsc=abc12'));
-        expect(mockRedirect).toHaveBeenCalledTimes(1);
-        const [calledUrl, status] = mockRedirect.mock.calls[0]!;
-        expect((calledUrl as URL).pathname).toBe('/aapl');
-        expect(status).toBe(307);
-    });
 });
 
 describe('/share 라우트 — base64url id 대문자화 방지 회귀 테스트', () => {

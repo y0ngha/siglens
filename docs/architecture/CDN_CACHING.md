@@ -40,7 +40,18 @@ App Router의 `<Link>`는 기본값(`prefetch={null}` = auto)에서 **뷰포트�
 **코드 대응(이 PR)**: 무거운 심볼 라우트로 가는 링크에 `prefetch={false}`.
 `SymbolTabs`, `CrossLinkCards`, `CategoryCardGrid`, `SignalStockCard`, `IndexCard`, `PeersTable`,
 `MarketNewsCard`, `SymbolSearchPanel`, `PositionHoldingCard`, `OptionsEmptyState`.
-헤더/푸터/뉴스 카테고리처럼 **가벼운 라우트(65~130KB)로 가는 소수 링크는 그대로 둔다**.
+헤더/푸터/뉴스 카테고리처럼 **가벼운 라우트(65~130KB)로 가는 소수 링크는 그대로 둔다** — 이쪽은
+전 사용자가 같은 8개 URL을 공유하므로 §3 R2가 적용되면 곧바로 엣지 HIT이 된다.
+예외로 `/share/[id]`의 CTA 링크 1개는 prefetch를 유지한다(공유 페이지의 단일 주요 행동, 클릭률이 높다).
+
+**실측 효과**(Playwright, `/AAPL` 1회 조회 + 끝까지 스크롤 + 탭 1회 클릭):
+
+| | 초기 로드 심볼 RSC | 탭 클릭 후 발생 |
+|---|---:|---:|
+| master (프로덕션) | 8건 (형제 탭 전부) | 27건 |
+| 이 PR (로컬 prod 빌드) | **0건** | **1건** |
+
+탭 클릭 내비게이션은 양쪽 모두 정상(같은 경로 도달, 본문 3438자 동일).
 
 > ⚠️ Next 16에서 `prefetch={false}`는 뷰포트 prefetch뿐 아니라 **hover prefetch도 끈다**
 > (`link.js`: `prefetchEnabled = prefetchProp !== false`). 클릭 시점에 RSC를 받아오므로
@@ -67,7 +78,7 @@ POST는 CDN이 캐시하지 않으므로 페이지뷰마다 여러 건의 "미�
 
 | # | 레버 | 적용 주체 | 기대 효과 |
 |---|---|---|---|
-| L1 | 무거운 링크 `prefetch={false}` | 코드(이 PR) | 페이지뷰당 오리진 RSC 요청 ~10MB → 클릭당 1건 |
+| L1 | 무거운 링크 `prefetch={false}` | 코드(이 PR) | 심볼 라우트 RSC를 조회당 8건 → 0건, 내비게이션당 27건 → 1건 (실측, §1) |
 | L2 | RSC 응답 엣지 캐싱(§3 R2) | CF 대시보드 | 남은 RSC 요청이 `DYNAMIC` → `HIT`. L1의 체감 속도 회복 |
 | L3 | Tiered Cache(Smart) 켜기 | CF 대시보드 | 롱테일 콜드 미스 감소 — 하위 콜로가 상위 콜로에서 채움 |
 | L4 | 엣지 TTL을 blanket 2h override → **origin `cache-control` 존중**으로 | CF 대시보드 | 라우트별 `s-maxage`(1h~24h)를 그대로 사용 + 인증 셸 오버캐싱 제거 |
@@ -83,8 +94,19 @@ App Router는 같은 URL에서 완전 HTML과 RSC 페이로드를 요청 헤더(
 서로 다른 URL 공간(`_rsc` 파라미터 유무)으로 갈라 각각 캐시한다.
 
 > 핵심 불변식: **`?_rsc=` 가 붙은 URL은 RSC 전용 캐시 공간이다.** 그 키에 HTML이 한 번이라도
-> 저장되면 진짜 prefetch가 HTML을 받아 클라이언트 내비게이션이 깨진다. 아래 R1의 제외 조건과
-> `src/proxy.ts`의 307 정규화가 그 불변식을 양쪽에서 지킨다.
+> 저장되면 진짜 prefetch가 HTML을 받아 클라이언트 내비게이션이 깨진다.
+
+⚠️ **이 불변식은 엣지에서만 지킬 수 있다 — origin(미들웨어)에서는 불가능하다.** 처음엔
+`src/proxy.ts`에서 "`_rsc`가 있는데 `RSC` 헤더가 없으면 307로 파라미터를 떼는" 가드를 넣으려 했는데,
+로컬 prod 빌드 실측 결과 **발화하지 않았다**. Next가 미들웨어 진입 전에 양쪽을 다 지워버리기 때문이다
+(`next/dist/server/web/adapter.js`):
+
+- L153 `stripInternalSearchParams(normalizeURL)` — `_rsc`를 URL에서 제거한 뒤 `NextRequest`를 만든다.
+- L139~147 — `FLIGHT_HEADERS`(`RSC` 포함)를 미들웨어용으로 요청 헤더에서 **삭제**한다.
+
+즉 미들웨어는 `_rsc`도 `RSC` 헤더도 볼 수 없다(실측: `/aapl?_rsc=probe` → 301 `Location: /AAPL`,
+`_rsc`가 이미 사라진 상태). 따라서 **R1의 `_rsc=` 제외 조건이 유일한 방어선**이다. §3 적용 순서를
+반드시 지킬 것.
 
 ### R1 — Cache HTML documents (non-RSC) · **수정 필요**
 
@@ -180,7 +202,7 @@ scripts/probe-cdn-cache.sh https://…       # 다른 오리진
 |---|---|---|---|
 | HTML (landing/symbol/tab) | MISS 또는 HIT | **HIT** | R1 정상 |
 | RSC (prefetch/navigation) | MISS | **HIT** | R2 정상 — 적용 전에는 `DYNAMIC DYNAMIC` |
-| `_rsc` 오염 가드 | — | `status=307` | `proxy.ts` 정규화 배포됨 |
+| RSC키 오염(헤더 없음) | **DYNAMIC** | **DYNAMIC** | R1의 `_rsc=` 제외 조건 정상. `MISS`/`HIT`이 나오면 HTML이 RSC 키에 저장되고 있다는 뜻 → 즉시 R2 비활성화 + Purge |
 | API | DYNAMIC | DYNAMIC | 의도된 우회 |
 | static chunk | HIT | HIT | 확장자 기본 캐싱 |
 
