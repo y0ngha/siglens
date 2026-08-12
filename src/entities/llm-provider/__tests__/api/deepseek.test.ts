@@ -52,6 +52,65 @@ describe('callDeepseekChat', () => {
         vi.clearAllMocks();
     });
 
+    describe('usage 텔레메트리', () => {
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        /**
+         * usage는 `stream_options.include_usage`가 붙인 **마지막 청크**에만 실려 온다
+         * (choices는 빈 배열). 델타만 읽고 지나가면 조용히 0이 찍히므로, 청크를 끝까지
+         * 훑어 usage를 집는지 검증한다.
+         */
+        it('스트림 마지막 청크의 usage로 [Usage] 라인을 남긴다', async () => {
+            const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+            mockCreate.mockResolvedValue(
+                toStream([
+                    { choices: [{ delta: { content: 'Hi' } }] },
+                    {
+                        choices: [],
+                        usage: {
+                            prompt_tokens: 900,
+                            prompt_cache_hit_tokens: 400,
+                            completion_tokens: 60,
+                        },
+                    },
+                ])
+            );
+
+            await callDeepseekChat(FLASH_OPTIONS);
+
+            expect(info).toHaveBeenCalledWith(
+                '[Usage]',
+                expect.stringContaining('"model":"deepseek-v4-flash"')
+            );
+            const payload: unknown = JSON.parse(
+                (info.mock.calls[0]?.[1] as string) ?? '{}'
+            );
+            expect(payload).toMatchObject({
+                jobId: 'chat',
+                promptTokens: 500,
+                cachedTokens: 400,
+                outputTokens: 60,
+            });
+        });
+
+        it('usage 청크가 없으면 0으로 기록하고 응답은 정상 반환한다', async () => {
+            const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+            mockCreate.mockResolvedValue(
+                toStream([{ choices: [{ delta: { content: 'Hi' } }] }])
+            );
+
+            const result = await callDeepseekChat(FLASH_OPTIONS);
+
+            expect(result).toBe('Hi');
+            expect(info).toHaveBeenCalledWith(
+                '[Usage]',
+                expect.stringContaining('"promptTokens":0')
+            );
+        });
+    });
+
     describe('API 키 및 baseURL 라우팅', () => {
         it('serverApiKey와 DeepSeek baseURL로 클라이언트를 생성한다', async () => {
             mockCreate.mockResolvedValue(okResponse('Hi'));

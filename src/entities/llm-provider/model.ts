@@ -19,4 +19,10 @@ export interface ProviderCallOptions extends Omit<
 > {
     /** Effective key for this call — BYOK key when present, server key otherwise. */
     apiKey: string;
+    /**
+     * Label identifying the calling surface in `[Usage]` telemetry. Defaults to
+     * `CHAT_JOB_ID` when omitted, which is what router-dispatched chat calls
+     * want; direct adapter callers (e.g. the Korean translator) pass their own.
+     */
+    jobId?: string;
 }

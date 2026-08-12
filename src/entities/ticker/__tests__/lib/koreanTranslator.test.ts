@@ -62,6 +62,8 @@ describe('translateCompanyNames', () => {
             model: MODEL_SPECS['gemini-2.5-flash'].apiModelId,
             contents: expect.stringContaining('AAPL: Apple Inc.'),
             thinkingBudget: 0,
+            // 번역 비용이 챗 비용과 섞이지 않도록 별도 라벨로 집계된다.
+            jobId: 'translate',
         });
     });
 

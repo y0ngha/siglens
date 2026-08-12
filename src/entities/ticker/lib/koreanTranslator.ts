@@ -46,6 +46,8 @@ async function callTranslateGemini(
 ): Promise<string> {
     return callGeminiChat({
         apiKey: config.apiKey,
+        // Distinguishes translator spend from chat spend in `[Usage]` telemetry.
+        jobId: 'translate',
         model: config.model,
         contents,
         thinkingBudget: DISABLED_THINKING_BUDGET,

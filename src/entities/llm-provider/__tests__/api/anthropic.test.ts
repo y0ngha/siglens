@@ -80,6 +80,35 @@ describe('callAnthropicChat', () => {
             expect(MockAnthropic).toHaveBeenCalledTimes(1);
         });
 
+        it('응답 usage로 [Usage] 라인을 남긴다', async () => {
+            const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+            mockFinalMessage.mockResolvedValue({
+                content: [{ type: 'text', text: 'Hello' }],
+                stop_reason: 'end_turn',
+                usage: {
+                    input_tokens: 120,
+                    cache_read_input_tokens: 40,
+                    cache_creation_input_tokens: 10,
+                    output_tokens: 33,
+                },
+            });
+
+            await callAnthropicChat(BASE_OPTIONS);
+
+            const payload: unknown = JSON.parse(
+                (info.mock.calls[0]?.[1] as string) ?? '{}'
+            );
+            expect(payload).toMatchObject({
+                jobId: 'chat',
+                model: 'claude-haiku-4-5-20251001',
+                promptTokens: 120,
+                cachedTokens: 40,
+                cacheWriteTokens: 10,
+                outputTokens: 33,
+            });
+            info.mockRestore();
+        });
+
         it('호출이 실패하면 에러가 전파된다', async () => {
             mockFinalMessage.mockRejectedValue(new Error('api error'));
 
