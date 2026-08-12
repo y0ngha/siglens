@@ -62,11 +62,6 @@
   - Context: SkillCardExpandable renders an info icon as a nested `<button>` inside a `<div role="button">`. The card's onKeyDown handler used preventDefault without guarding, which blocked the nested button's Enter/Space activation. Fixed by adding `if (e.target !== e.currentTarget) return;` to handleKeyDown, allowing events from nested interactives to bubble normally.
 
 ## [feat/ticker-search-relevance Round 2 | feat/ticker-search-relevance | 2026-06-23]
-- Violation: JSDoc claimed "matched in DB somehow" for ticker search candidates, but the function is called from multiple contexts where the behavior differs or the claim does not hold
-  - Rule: MISTAKES.md §15.6 — Comments/JSDoc making factually inaccurate claims about the code they describe
-  - Context: searchTickersByRelevance JSDoc made a narrow claim about DB behavior that didn't account for all call sites. Removed the inaccurate claim; JSDoc now describes only what is universally true across all callers.
-
-## [feat/ticker-search-relevance Round 2 | feat/ticker-search-relevance | 2026-06-23]
 - Violation: Pure calculation helper used imperative for...of + mutable accumulators instead of declarative map/filter/reduce
   - Rule: MISTAKES.md §21 — Pure calculation functions using imperative for-loop + push instead of higher-order functions
   - Context: computeRelevanceScores iterated with for...of and pushed results into accumulator array. Refactored to use .map() for clarity and immutability.
@@ -131,4 +126,20 @@
   - Rule: Test data must not be duplicated from production without continuous sync; outdated comments hide test/prod divergence
   - Context: Deleted the enumeration and replaced it with a prose pointer to siglens-core `src/domain/tier.ts` (TIER_CONFIG.models), plus a note that "free" means server-key-funded rather than cheap. No code change — the spec's assertions already read the list at runtime.
   - Correction (2026-07-31): this entry originally cited a model id `claude-opus-4-turbo` and a replacement helper `getModelsFor('free_tier')`. Neither exists in any of the three repos; both were fabricated when the entry was written. A deployment audit caught it. Fix-log entries feed MISTAKES.md promotion, so an invented detail here becomes a permanent false "recurring pattern" — verify every symbol name in an entry against the repo before writing it.
+
+## [perf/cdn-cache-hit-rate | perf/cdn-cache-hit-rate | 2026-08-12]
+- Violation: `.gitignore` — new script `scripts/probe-cdn-cache.sh` invisible to git because `/scripts/**` ignored without `!` allowlist exception
+  - Rule: (new) — Deployment/ops scripts must be committed to version control; .gitignore must include allowlist exceptions for tracked tools
+  - Context: Added `!scripts/probe-cdn-cache.sh` exception to .gitignore to allow the probe script to be version-controlled
+- Violation: `src/proxy.ts` — `NextResponse.redirect(url, 307)` lacks documented WHY for status choice; adjacent redirects in the same file document theirs
+  - Rule: MISTAKES.md Predictability §8 — Non-obvious operational choices must document WHY at the decision point (status codes, cacheability, workarounds)
+  - Context: Added JSDoc explaining "307 prevents permanent browser caching of search-query parameter redirects"
+- Violation: `src/proxy.ts` + `src/app/__tests__/proxy.test.ts` — WHY-comment made a factual claim (redirect hop count) that did not match actual runtime behavior (both orderings produce 2 hops)
+  - Rule: MISTAKES.md §15.6 — Comments/JSDoc making factually inaccurate claims about the code they describe
+  - Context: Removed factually incorrect hop-count claim; comment now states only verified facts
+- Finding: Reviewer claimed Cloudflare rule `len(http.request.headers["rsc"]) > 0` uses invalid type. Cloudflare docs and production deployment verify `len()` supports String|Bytes|Array.
+  - Status: REJECTED — false positive; reviewer claim was incorrect
+- Finding (R3 - runtime verification, after 2 review rounds approved): `src/proxy.ts` guard checked `reqUrl.searchParams.has('_rsc')` + `req.headers.get('rsc')`, but Next.js strips both before middleware runs (next/dist/server/web/adapter.js: line 153 calls stripInternalSearchParams; lines 139-147 delete FLIGHT_HEADERS including RSC). Guard was dead code. Unit tests passed because mock NextRequest still had param + header — mock encoded false assumption about runtime.
+  - Rule: (new) — Middleware/proxy logic inspecting framework-internal request state (_rsc param, RSC/FLIGHT headers) cannot be validated by unit tests with hand-built mock requests. Mock defines the reality being asserted. Such logic requires production build + real HTTP request to verify firing. Origin-side enforcement is impossible; defense must move to edge (Cloudflare cache rule).
+  - Context: Guard + tests reverted to master. Defense moved entirely to Cloudflare cache rule. docs/architecture/CDN_CACHING.md updated documenting why origin-side enforcement is impossible.
 
