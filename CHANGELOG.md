@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.53.1](https://github.com/y0ngha/siglens/compare/v0.53.0...v0.53.1) (2026-08-12)
+
+
+### Bug Fixes
+
+* **chat:** keep analysis context published when snapshot prose renders ([bc521d8](https://github.com/y0ngha/siglens/commit/bc521d83dca28585eecb41a736f1a29fce1d8e9e))
+
 # [0.53.0](https://github.com/y0ngha/siglens/compare/v0.52.5...v0.53.0) (2026-08-12)
 
 
