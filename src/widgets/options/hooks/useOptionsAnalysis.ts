@@ -26,11 +26,19 @@ async function fetchOptionsAnalysis(
     expirationDate: OptionsExpirationSelector,
     modelId: ModelId,
     reasoning: boolean,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    cacheOnly?: boolean
 ): Promise<OptionsAnalysisResponse> {
     const result = await runAnalysisStream<SubmitOptionsAnalysisActionResult>({
         type: 'options',
-        params: { symbol, companyName, expirationDate, modelId, reasoning },
+        params: {
+            symbol,
+            companyName,
+            expirationDate,
+            modelId,
+            reasoning,
+            cacheOnly,
+        },
         signal,
     });
 
@@ -70,6 +78,17 @@ interface UseOptionsAnalysisInput {
      * `useAnalysisSettingsHydrated()`로 넘긴다. 기본값 `true`는 단위 테스트용.
      */
     isSettingsHydrated?: boolean;
+    /**
+     * 캐시에 있으면 읽고, 없으면 새 분석을 만들지 않는다(miss → `bot_blocked`).
+     *
+     * OI가 stale할 때 쓴다: 그 입력으로 새 분석을 태우면 저품질 결과에 비용까지
+     * 드는 반면, 장중에 만들어둔 캐시는 정상 결과라 챗봇 컨텍스트로 쓸 수 있다.
+     *
+     * queryKey에는 넣지 않는다 — 같은 (symbol, expiration, model, reasoning)에
+     * 대해 payload가 달라지지 않고, `oiStale`은 한 페이지 렌더 안에서 고정이라
+     * 한 세션에서 두 모드가 같은 키를 두고 경쟁하지 않는다.
+     */
+    cacheOnly?: boolean;
 }
 
 /**
@@ -85,6 +104,7 @@ export function useOptionsAnalysis({
     modelId,
     reasoning = false,
     isSettingsHydrated = true,
+    cacheOnly = false,
 }: UseOptionsAnalysisInput): OptionsAnalysisState {
     const queryClient = useQueryClient();
     const queryKey = useMemo(
@@ -118,7 +138,8 @@ export function useOptionsAnalysis({
                 qExpiration,
                 qModelId,
                 qReasoning,
-                signal
+                signal,
+                cacheOnly
             ),
         enabled: false,
         retry: false,

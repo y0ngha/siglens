@@ -143,7 +143,9 @@ export default async function CongressPage({ params }: Props) {
     ]);
     const congressSnapshot = snapshots.find(s => s.tab === 'congress');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasCongressProse)
-    // 그것만 보여주고, 클라이언트 AI 위젯(CongressTrendSummary)은 렌더하지 않는다.
+    // 그것만 보여준다. 클라이언트 AI 위젯은 계속 마운트하되 `hideView`로 UI만 끈다 —
+    // 위젯을 아예 렌더하지 않으면 `usePublishSymbolChat`이 돌지 않아 챗봇의 분석
+    // 컨텍스트가 비어 입력이 잠긴다(스냅샷이 있을수록 챗이 막히는 역전).
     // 두 소스가 동일 필드(summaryKo/notableMembersKo/riskNoteKo)를 같은 순서로
     // 중복 렌더하던 문제(같은 결론을 사용자에게 두 번, 스크린리더에 두 번, 중복
     // 콘텐츠 SEO 리스크)를 해소한다. `OverallSnapshotProse.hasOverallProse` 패턴과
@@ -278,21 +280,25 @@ export default async function CongressPage({ params }: Props) {
                     conclusion (summaryKo/notableMembersKo/riskNoteKo). Showing
                     both duplicated the text for sighted users and screen readers
                     and doubled as a duplicate-content SEO risk. When the snapshot
-                    is renderable, show the prose only; the widget stays the
-                    fallback for when no snapshot exists — CongressTrendSummary is
-                    a client component that fetches its analysis via a client-side
-                    hook, so during ISR generation it bakes its loading skeleton
-                    into the static HTML (no crawlable AI text) until it hydrates. */}
-                {showCongressProse ? (
+                    is renderable, show the prose only; the widget stays mounted
+                    with `hideView` so it keeps publishing chat context, and
+                    renders its own view only when no snapshot exists —
+                    CongressTrendSummary is a client component that fetches its
+                    analysis via a client-side hook, so during ISR generation it
+                    bakes its loading skeleton into the static HTML (no crawlable
+                    AI text) until it hydrates. */}
+                {showCongressProse && (
                     <CongressSnapshotProse
                         content={congressSnapshot?.content}
                         symbol={upper}
                         displayName={displayName}
                         generatedAt={congressSnapshot?.generatedAt}
                     />
-                ) : (
-                    <CongressTrendSummary symbol={upper} />
                 )}
+                <CongressTrendSummary
+                    symbol={upper}
+                    hideView={showCongressProse}
+                />
 
                 <CongressTradesTable trades={trades} />
 

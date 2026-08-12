@@ -234,6 +234,13 @@ interface NewsAiSummaryProps {
      * to produce the first enriched card before triggering aggregate analysis.
      */
     hasEnrichedNews: boolean;
+    /**
+     * SSR 스냅샷 프로즈가 같은 AI 결론을 이미 렌더 중일 때 `true`.
+     *
+     * UI만 숨기고 마운트는 유지한다 — 페이지가 위젯을 렌더하지 않으면
+     * `usePublishSymbolChat`이 돌지 않아 챗봇 컨텍스트가 비고 입력이 잠긴다.
+     */
+    hideView?: boolean;
 }
 
 // cards 대기/poll error 동안 publish할 stale-safe chatState.
@@ -249,6 +256,7 @@ export function NewsAiSummary({
     symbol,
     companyName,
     hasEnrichedNews,
+    hideView = false,
 }: NewsAiSummaryProps) {
     useNewsAnalysisTrigger(symbol);
 
@@ -308,6 +316,9 @@ export function NewsAiSummary({
     if (pollError !== null) {
         throw pollError;
     }
+
+    // 훅과 pollError 전파는 그대로 두고 렌더만 건너뛴다 — publish는 유지된다.
+    if (hideView) return null;
 
     if (!isCardsReady) {
         return <StatusCard phase="fetching" />;

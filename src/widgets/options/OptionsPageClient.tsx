@@ -39,11 +39,18 @@ interface OptionsPageClientProps {
     /**
      * `true` when the SSR-persistent `<OptionsSnapshotProse>` (rendered by
      * `options/page.tsx` above this component) is already showing the same AI
-     * conclusion. Suppresses the client `OptionsAiAnalysis` widget (and its
-     * stale-data notice) to avoid rendering the same summary/perExpiration/
-     * signals content twice (audit fix FIX 2 — mirrors the XOR gating used by
-     * the other 4 duplicated tabs). Defaults to `false` so existing callers
-     * that don't pass it keep today's behavior.
+     * conclusion.
+     *
+     * Hides the client widget's **view** (`hideView`) and its stale-data notice
+     * so summary/perExpiration/signals are not rendered twice — but the widget
+     * itself stays mounted, because it is the only caller of
+     * `usePublishSymbolChat` on this tab and unmounting it locks the chat input
+     * with "분석이 완료된 후 질문할 수 있어요" on exactly the symbols that DO
+     * have a finished analysis.
+     *
+     * So this is no longer a true XOR: it selects which of {prose, live view} is
+     * visible, not whether the widget runs. Defaults to `false` so callers that
+     * don't pass it keep the live-view behavior.
      */
     hasSnapshotProse?: boolean;
 }
@@ -126,33 +133,37 @@ export function OptionsPageClient({
 
             {oiStale && <OptionsStaleDataBanner />}
 
-            {/* audit fix FIX 2: XOR — OptionsAiAnalysis (client widget) and the
-                SSR-persistent OptionsSnapshotProse (rendered by page.tsx above
-                this component) both render the same AI conclusion (summary/
-                perExpiration/signals). Showing both duplicated the text for
-                sighted users and screen readers and doubled as a
-                duplicate-content SEO risk. When the snapshot prose is already
-                showing that content, skip this whole block — the stale notice
-                is moot too, since there's no live widget analysis to warn
-                about. OI/호가가 비어 있으면 prompt에 들어가는 핵심 지표(Max
-                Pain, P/C, top OI/IV/mid·spread)가 모두 무력화되므로, 분석 호출
-                자체를 건너뛰고 안내 카드를 보여준다. ErrorBoundary 분기는 정상
-                경로에서만 필요. */}
-            {!hasSnapshotProse &&
-                (oiStale ? (
-                    <OptionsAiAnalysisStaleNotice />
-                ) : (
-                    <ErrorBoundary FallbackComponent={OptionsAiAnalysisError}>
-                        <OptionsAiAnalysis
-                            symbol={symbol}
-                            companyName={companyName}
-                            expirationDate={expirationDate}
-                            modelId={modelId}
-                            reasoning={reasoning}
-                            isSettingsHydrated={isSettingsHydrated}
-                        />
-                    </ErrorBoundary>
-                ))}
+            {/* OptionsAiAnalysis(클라 위젯)와 OptionsSnapshotProse(page.tsx가
+                위에 렌더하는 SSR 프로즈)는 같은 AI 결론(summary/perExpiration/
+                signals)을 그린다. 둘 다 보이면 사용자·스크린리더에 중복이고
+                중복 콘텐츠 SEO 리스크라, 프로즈가 있으면 위젯은 `hideView`로
+                **뷰만** 끈다. 마운트는 유지한다 — 이 탭에서 usePublishSymbolChat을
+                호출하는 곳이 여기뿐이라, 언마운트하면 완료된 분석이 있는 종목일수록
+                챗이 잠긴다.
+
+                OI/호가가 stale하면(정규장 밖 + 스냅샷 stale) 핵심 지표(Max Pain,
+                P/C, top OI/IV/mid·spread)가 무력화되므로 그 입력으로 **새** 분석을
+                만들지는 않는다. 대신 프로즈가 보이는 상황이면 장중에 만들어둔 캐시가
+                있다는 뜻이므로 `cacheOnly`로 그것만 읽어 챗 컨텍스트를 채운다(미스면
+                아무것도 만들지 않고 챗은 잠긴 채로 둔다).
+
+                따라서 안내 카드는 "stale인데 보여줄 프로즈도 없는" 경우에만 띄운다.
+                ErrorBoundary 분기는 위젯이 실제로 도는 경로에만 필요하다. */}
+            {oiStale && !hasSnapshotProse && <OptionsAiAnalysisStaleNotice />}
+            {(!oiStale || hasSnapshotProse) && (
+                <ErrorBoundary FallbackComponent={OptionsAiAnalysisError}>
+                    <OptionsAiAnalysis
+                        symbol={symbol}
+                        companyName={companyName}
+                        expirationDate={expirationDate}
+                        modelId={modelId}
+                        reasoning={reasoning}
+                        isSettingsHydrated={isSettingsHydrated}
+                        hideView={hasSnapshotProse}
+                        cacheOnly={oiStale}
+                    />
+                </ErrorBoundary>
+            )}
 
             <OptionsMetricsRow
                 expirationDate={expirationDate}

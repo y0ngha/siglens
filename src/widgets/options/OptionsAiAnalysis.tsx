@@ -224,6 +224,18 @@ interface OptionsAiAnalysisProps {
     reasoning?: boolean;
     /** `modelId`/`reasoning`이 확정값인지 여부 — 확정 전에는 제출하지 않는다. */
     isSettingsHydrated?: boolean;
+    /**
+     * SSR 스냅샷 프로즈가 같은 AI 결론을 이미 렌더 중일 때 `true`.
+     *
+     * UI만 숨기고 마운트는 유지한다 — 렌더 자체를 건너뛰면
+     * `usePublishSymbolChat`이 돌지 않아 챗봇 컨텍스트가 비고 입력이 잠긴다.
+     */
+    hideView?: boolean;
+    /**
+     * 캐시에 있는 분석만 읽고 새로 만들지 않는다 — OI가 stale할 때 사용.
+     * 자세한 근거는 `useOptionsAnalysis`의 동명 옵션 JSDoc 참조.
+     */
+    cacheOnly?: boolean;
 }
 
 export function OptionsAiAnalysis({
@@ -233,6 +245,8 @@ export function OptionsAiAnalysis({
     modelId,
     reasoning,
     isSettingsHydrated,
+    hideView = false,
+    cacheOnly = false,
 }: OptionsAiAnalysisProps) {
     const state = useOptionsAnalysis({
         symbol,
@@ -241,6 +255,7 @@ export function OptionsAiAnalysis({
         modelId,
         reasoning,
         isSettingsHydrated,
+        cacheOnly,
     });
 
     // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생
@@ -260,6 +275,9 @@ export function OptionsAiAnalysis({
         },
         trigger: state.trigger,
     });
+
+    // 훅은 모두 실행된 뒤에 렌더만 건너뛴다 — publish는 유지된다.
+    if (hideView) return null;
 
     if (state.status === 'loading') {
         return <OptionsAiAnalysisSkeleton />;

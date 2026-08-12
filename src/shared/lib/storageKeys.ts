@@ -30,6 +30,19 @@ export const LOCAL_STORAGE_CHAT_MODEL_MIGRATION_KEY =
     'siglens_chat_model_deepseek_migrated';
 
 /**
+ * Second one-time flag for the chat-model migration, covering
+ * `gemini-2.5-flash-lite` in addition to the `gemini-2.5-flash` handled by
+ * {@link LOCAL_STORAGE_CHAT_MODEL_MIGRATION_KEY}.
+ *
+ * A separate key is required, not optional: every browser that already ran the
+ * first pass has that flag set, so widening the first pass's model list would
+ * never execute for exactly the users who need it. The v2 flag re-opens the
+ * migration exactly once more.
+ */
+export const LOCAL_STORAGE_CHAT_MODEL_MIGRATION_V2_KEY =
+    'siglens_chat_model_deepseek_migrated_v2';
+
+/**
  * Member "깊은 생각"(reasoning) toggle — member-reasoning-toggle spec Part A.
  * Persists the user's opt-in intent across sessions. Default OFF. The
  * *effective* value sent to the server is still gated by tier (free/anon

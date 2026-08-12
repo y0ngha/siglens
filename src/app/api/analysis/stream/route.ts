@@ -298,7 +298,8 @@ const DISPATCH: Record<
             params.expirationDate as OptionsExpirationSelector,
             params.modelId as ModelId,
             params.reasoning as boolean | undefined,
-            signal
+            signal,
+            params.cacheOnly as boolean | undefined
         ),
 
     congress: (params, signal) =>

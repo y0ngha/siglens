@@ -2,9 +2,11 @@ import { migrateLegacyChatModel } from '@/features/symbol-model/lib/migrateChatM
 import {
     LOCAL_STORAGE_CHAT_MODEL_KEY,
     LOCAL_STORAGE_CHAT_MODEL_MIGRATION_KEY,
+    LOCAL_STORAGE_CHAT_MODEL_MIGRATION_V2_KEY,
 } from '@/shared/lib/storageKeys';
 
 const OLD_DEFAULT = 'gemini-2.5-flash';
+const FLASH_LITE = 'gemini-2.5-flash-lite';
 const NEW_DEFAULT = 'deepseek-v4-flash';
 
 function readStored(): string | null {
@@ -15,6 +17,18 @@ function isFlagSet(): boolean {
     return (
         localStorage.getItem(LOCAL_STORAGE_CHAT_MODEL_MIGRATION_KEY) !== null
     );
+}
+
+function isV2FlagSet(): boolean {
+    return (
+        localStorage.getItem(LOCAL_STORAGE_CHAT_MODEL_MIGRATION_V2_KEY) !== null
+    );
+}
+
+/** Marks every pass as already run — the state of a fully migrated browser. */
+function setAllFlags(): void {
+    localStorage.setItem(LOCAL_STORAGE_CHAT_MODEL_MIGRATION_KEY, '1');
+    localStorage.setItem(LOCAL_STORAGE_CHAT_MODEL_MIGRATION_V2_KEY, '1');
 }
 
 describe('migrateLegacyChatModel', () => {
@@ -36,14 +50,29 @@ describe('migrateLegacyChatModel', () => {
         expect(isFlagSet()).toBe(true);
     });
 
-    it('leaves a deliberate post-flip gemini-2.5-flash choice untouched when the flag is already set', () => {
-        // User deliberately picked gemini-2.5-flash AFTER the flip → flag already set.
-        localStorage.setItem(LOCAL_STORAGE_CHAT_MODEL_MIGRATION_KEY, '1');
+    it('leaves a deliberate gemini-2.5-flash choice untouched once every pass has run', () => {
+        // Picked deliberately after both passes → all flags already set.
+        setAllFlags();
         localStorage.setItem(LOCAL_STORAGE_CHAT_MODEL_KEY, OLD_DEFAULT);
 
         migrateLegacyChatModel();
 
         expect(readStored()).toBe(OLD_DEFAULT);
+    });
+
+    /**
+     * The whole reason pass 2 carries its own flag: browsers that already ran
+     * pass 1 have that flag set, so widening pass 1's model list instead would
+     * never execute for exactly the users holding a stale gemini choice.
+     */
+    it('still migrates flash-lite in a browser that already ran pass 1', () => {
+        localStorage.setItem(LOCAL_STORAGE_CHAT_MODEL_MIGRATION_KEY, '1');
+        localStorage.setItem(LOCAL_STORAGE_CHAT_MODEL_KEY, FLASH_LITE);
+
+        migrateLegacyChatModel();
+
+        expect(readStored()).toBe(NEW_DEFAULT);
+        expect(isV2FlagSet()).toBe(true);
     });
 
     it('leaves the new default (deepseek-v4-flash) unchanged and sets the flag', () => {
@@ -64,16 +93,23 @@ describe('migrateLegacyChatModel', () => {
         expect(isFlagSet()).toBe(true);
     });
 
-    it('does NOT migrate gemini-2.5-flash-lite (the old ANALYSIS default, not the chat default)', () => {
-        localStorage.setItem(
-            LOCAL_STORAGE_CHAT_MODEL_KEY,
-            'gemini-2.5-flash-lite'
-        );
+    it('migrates gemini-2.5-flash-lite to the new default and sets both flags', () => {
+        localStorage.setItem(LOCAL_STORAGE_CHAT_MODEL_KEY, FLASH_LITE);
 
         migrateLegacyChatModel();
 
-        expect(readStored()).toBe('gemini-2.5-flash-lite');
+        expect(readStored()).toBe(NEW_DEFAULT);
         expect(isFlagSet()).toBe(true);
+        expect(isV2FlagSet()).toBe(true);
+    });
+
+    it('leaves flash-lite alone after every pass has already run', () => {
+        setAllFlags();
+        localStorage.setItem(LOCAL_STORAGE_CHAT_MODEL_KEY, FLASH_LITE);
+
+        migrateLegacyChatModel();
+
+        expect(readStored()).toBe(FLASH_LITE);
     });
 
     it('does not error when there is no stored value and still sets the flag', () => {

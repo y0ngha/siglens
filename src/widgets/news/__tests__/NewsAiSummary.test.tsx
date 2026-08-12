@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 
@@ -61,6 +62,75 @@ describe('NewsAiSummary', () => {
     afterEach(() => {
         mockWaitResult.mockReset();
         mockAnalysisResult.mockReset();
+    });
+
+    /**
+     * 스냅샷 프로즈가 보이는 동안에도 위젯은 마운트된 채 `hideView`로 UI만 끈다.
+     * 언마운트하면 `usePublishSymbolChat`이 돌지 않아 챗 입력이 잠긴다.
+     */
+    describe('hideView', () => {
+        it('UI를 렌더하지 않는다', () => {
+            mockWaitResult.mockReturnValue({ isReady: true, pollError: null });
+            mockAnalysisResult.mockReturnValue({
+                status: 'done',
+                result: RESULT,
+                trigger: vi.fn(),
+            });
+
+            const { container } = render(
+                <NewsAiSummary
+                    symbol="AAPL"
+                    companyName="Apple"
+                    hasEnrichedNews
+                    hideView
+                />
+            );
+
+            expect(container).toBeEmptyDOMElement();
+        });
+
+        it('UI를 숨겨도 챗 컨텍스트 publish는 계속된다', () => {
+            mockWaitResult.mockReturnValue({ isReady: true, pollError: null });
+            mockAnalysisResult.mockReturnValue({
+                status: 'done',
+                result: RESULT,
+                trigger: vi.fn(),
+            });
+
+            render(
+                <NewsAiSummary
+                    symbol="AAPL"
+                    companyName="Apple"
+                    hasEnrichedNews
+                    hideView
+                />
+            );
+
+            expect(vi.mocked(usePublishSymbolChat)).toHaveBeenCalled();
+        });
+
+        /** pollError는 hideView와 무관하게 에러 바운더리로 전파돼야 한다. */
+        it('hideView여도 pollError는 전파한다', () => {
+            mockWaitResult.mockReturnValue({
+                isReady: false,
+                pollError: new Error('poll failed'),
+            });
+            mockAnalysisResult.mockReturnValue({
+                status: 'loading',
+                trigger: vi.fn(),
+            });
+
+            expect(() =>
+                render(
+                    <NewsAiSummary
+                        symbol="AAPL"
+                        companyName="Apple"
+                        hasEnrichedNews
+                        hideView
+                    />
+                )
+            ).toThrow('poll failed');
+        });
     });
 
     it('renders fetching phase while waiting for cards', () => {
