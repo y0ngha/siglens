@@ -52,6 +52,10 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                 <div className="flex min-w-0 items-center gap-2 sm:flex-1">
                     <Link
                         href="/"
+                        // 모든 심볼 페이지의 브레드크럼에 렌더되므로 사실상 전역 링크다.
+                        // 진입 심볼마다 다른 `_rsc` 해시로 `/`의 캐시를 파편화시킨다
+                        // (docs/architecture/CDN_CACHING.md §1).
+                        prefetch={false}
                         className="text-secondary-400 hover:text-secondary-300 font-mono text-xs tracking-[0.2em] uppercase transition-colors"
                     >
                         SIGLENS

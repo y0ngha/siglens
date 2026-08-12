@@ -15,6 +15,7 @@ import {
     OG_LABEL_FONT_SIZE,
     OG_LABEL_MARGIN_TOP,
     OG_SUBTITLE_FONT_SIZE,
+    OG_IMAGE_CACHE_CONTROL,
 } from '@/shared/lib/og';
 import { SITE_NAME } from '@/shared/lib/seo';
 
@@ -91,6 +92,8 @@ export default async function Image({ params }: Props) {
         {
             width: OG_IMAGE_WIDTH,
             height: OG_IMAGE_HEIGHT,
+            // ImageResponse 기본 헤더는 CDN 캐시를 막는다 — og.ts JSDoc 참조.
+            headers: { 'cache-control': OG_IMAGE_CACHE_CONTROL },
             fonts: fontData
                 ? [
                       {

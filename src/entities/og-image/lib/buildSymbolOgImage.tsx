@@ -9,6 +9,7 @@ import {
     OG_IMAGE_WIDTH,
     OG_LABEL_FONT_SIZE,
     OG_LABEL_MARGIN_TOP,
+    OG_IMAGE_CACHE_CONTROL,
     OG_MUTED,
     OG_SITE_NAME_FONT_SIZE,
     OG_SITE_NAME_RIGHT,
@@ -20,11 +21,18 @@ import { loadKoreanFont } from './loadKoreanFont';
 export interface SymbolOgImageOptions {
     ticker: string;
     label: string;
+    /**
+     * 응답의 `Cache-Control`. 기본값은 CDN 장기 캐시(`OG_IMAGE_CACHE_CONTROL`)다 —
+     * 심볼 OG 이미지는 `(ticker, label)` 순수 함수라 신선도 개념이 없다.
+     * `/share/[id]`처럼 요청 시점 데이터로 그리는 이미지는 이 값을 넘겨 재정의한다.
+     */
+    cacheControl?: string;
 }
 
 export async function buildSymbolOgImage({
     ticker,
     label,
+    cacheControl = OG_IMAGE_CACHE_CONTROL,
 }: SymbolOgImageOptions): Promise<ImageResponse> {
     const fontData = await loadKoreanFont();
     return new ImageResponse(
@@ -82,6 +90,7 @@ export async function buildSymbolOgImage({
         {
             width: OG_IMAGE_WIDTH,
             height: OG_IMAGE_HEIGHT,
+            headers: { 'cache-control': cacheControl },
             fonts: fontData
                 ? [
                       {
