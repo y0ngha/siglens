@@ -99,6 +99,8 @@ next-env.d.ts
 !/scripts/update-popular-cryptos.ts
 # Infra: post-build assertion script for standalone skills/ inclusion.
 !/scripts/assert-standalone-skills.mjs
+# Infra: CDN 엣지 캐시 실측 프로브 (docs/architecture/CDN_CACHING.md §6에서 참조).
+!/scripts/probe-cdn-cache.sh
 !/scripts/lib/
 !/scripts/lib/**
 

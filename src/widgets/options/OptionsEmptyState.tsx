@@ -67,6 +67,8 @@ export function OptionsEmptyState({
                         <Link
                             key={key}
                             href={href(symbol)}
+                            // 형제 탭 4개를 한 번에 노출 — docs/architecture/CDN_CACHING.md §1
+                            prefetch={false}
                             className={FALLBACK_LINK_CLASSES}
                         >
                             <p className="font-semibold">{label}</p>

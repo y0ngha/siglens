@@ -14,6 +14,8 @@ export function SignalStockCard({ data }: SignalStockCardProps) {
         <Link
             href={`/${data.symbol}`}
             title={`${data.koreanName} 분석`}
+            // 카드 그리드로 다수 렌더 — docs/architecture/CDN_CACHING.md §1
+            prefetch={false}
             className={cn(
                 'border-secondary-700 bg-secondary-800/50 border p-3',
                 CARD_LINK_CLASSES

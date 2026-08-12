@@ -122,6 +122,10 @@ export function CrossLinkCards({
                     <Link
                         key={p}
                         href={HREF[p](symbol)}
+                        // SymbolTabs와 같은 형제 탭 집합을 카드로 한 번 더 노출하는
+                        // 섹션이다. prefetch를 켜두면 같은 페이로드를 탭에 이어 두 번째로
+                        // 예약하게 되므로 끈다 (docs/architecture/CDN_CACHING.md §1).
+                        prefetch={false}
                         className="border-secondary-700 hover:border-primary-500 focus-visible:ring-primary-500 rounded-xl border p-6 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                     >
                         <h3 className="font-semibold">{LABEL[p]}</h3>
