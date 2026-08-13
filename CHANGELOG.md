@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.53.2](https://github.com/y0ngha/siglens/compare/v0.53.1...v0.53.2) (2026-08-13)
+
+
+### Performance Improvements
+
+* **cdn:** RSC prefetch 파편화 제거 + OG 이미지 캐시 헤더 수정 ([b372b8f](https://github.com/y0ngha/siglens/commit/b372b8f20e2d7b31fac41eb33e2dc20d35a8c680))
+
 ## [0.53.1](https://github.com/y0ngha/siglens/compare/v0.53.0...v0.53.1) (2026-08-12)
 
 
