@@ -4,8 +4,9 @@
  * Verifies two call sites added during the crypto audit:
  *   (a) buildAssetAboutNode receives assetClass 'crypto' for a crypto asset,
  *       causing the about node to be omitted from the JSON-LD output.
- *   (b) quantizeBarsDataToLastClosed is called with CRYPTO_SESSION ({kind:'always-open'})
- *       for crypto and US_EQUITY_SESSION for equity.
+ *   (b) getQuantizedBarsStatic receives the right marketProfile string
+ *       ('crypto' / 'us-equity'). 세션 spec 매핑 자체는 그 헬퍼 내부 책임이라
+ *       src/entities/bars/__tests__/lib/barsStaticCache.test.ts가 검증한다.
  *
  * Mirrors the mocking style of src/app/[symbol]/__tests__/layout.test.tsx.
  */
@@ -14,15 +15,13 @@
 const {
     mockSetQueryData,
     mockGetAssetInfoResilient,
-    mockGetBarsStatic,
-    mockQuantize,
     mockBuildAssetAboutNode,
+    mockGetQuantizedBarsStatic,
 } = vi.hoisted(() => ({
     mockSetQueryData: vi.fn(),
     mockGetAssetInfoResilient: vi.fn(),
-    mockGetBarsStatic: vi.fn(),
-    mockQuantize: vi.fn(),
     mockBuildAssetAboutNode: vi.fn(),
+    mockGetQuantizedBarsStatic: vi.fn(),
 }));
 
 vi.mock('@y0ngha/siglens-core', () => ({
@@ -57,14 +56,10 @@ vi.mock('@/entities/ticker', () => ({
 }));
 
 vi.mock('@/entities/bars', () => ({
-    getBarsStatic: (symbol: string, timeframe: string, fmpSymbol?: string) =>
-        mockGetBarsStatic(symbol, timeframe, fmpSymbol),
-    // Capture all 3 args (data, now, session) so tests can assert session threading.
-    quantizeBarsDataToLastClosed: (
-        data: unknown,
-        now: Date,
-        session?: unknown
-    ) => mockQuantize(data, now, session),
+    // 세션 spec 유도는 이제 헬퍼 내부 책임이라 여기서는 위임 인자
+    // (ticker, timeframe, marketProfile, fmpSymbol)만 포착한다.
+
+    getQuantizedBarsStatic: mockGetQuantizedBarsStatic,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -109,10 +104,6 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import SymbolFearGreedPage from '@/app/[symbol]/fear-greed/page';
 
 const LAST_BAR_TIME = 1717718400;
-const RAW_BARS = {
-    bars: [{ time: 1717632000 }, { time: LAST_BAR_TIME }],
-    indicators: {},
-};
 const QUANTIZED = { bars: [{ time: LAST_BAR_TIME }], indicators: {} };
 
 const CRYPTO_ASSET_INFO = {
@@ -133,11 +124,9 @@ describe('SymbolFearGreedPage — crypto branching', () => {
     beforeEach(() => {
         mockSetQueryData.mockClear();
         mockGetAssetInfoResilient.mockReset();
-        mockGetBarsStatic.mockReset();
-        mockQuantize.mockReset();
+        mockGetQuantizedBarsStatic.mockReset();
         mockBuildAssetAboutNode.mockReset();
-        mockGetBarsStatic.mockResolvedValue(RAW_BARS);
-        mockQuantize.mockReturnValue(QUANTIZED);
+        mockGetQuantizedBarsStatic.mockResolvedValue(QUANTIZED);
         // Default: about node returns undefined (crypto / non-stock).
         mockBuildAssetAboutNode.mockReturnValue(undefined);
     });
@@ -183,7 +172,7 @@ describe('SymbolFearGreedPage — crypto branching', () => {
         );
     });
 
-    it('(b) crypto asset → quantizeBarsDataToLastClosed called with CRYPTO_SESSION ({kind:"always-open"})', async () => {
+    it('(b) crypto asset → 헬퍼에 marketProfile "crypto"를 넘긴다', async () => {
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: CRYPTO_ASSET_INFO,
             degraded: false,
@@ -193,13 +182,18 @@ describe('SymbolFearGreedPage — crypto branching', () => {
             params: Promise.resolve({ symbol: 'BTCUSD' }),
         });
 
-        // sessionSpecFor(marketProfileOf(cryptoAssetInfo)) must resolve to CRYPTO_SESSION.
-        expect(mockQuantize).toHaveBeenCalledWith(RAW_BARS, expect.any(Date), {
-            kind: 'always-open',
-        });
+        // 세션 매핑(crypto → always-open)은 `getQuantizedBarsStatic` 내부 책임으로
+        // 옮겨졌다(barsStaticCache.test.ts가 검증). 여기서는 페이지가 crypto
+        // marketProfile을 헬퍼에 정확히 넘기는지만 본다.
+        expect(mockGetQuantizedBarsStatic).toHaveBeenCalledWith(
+            'BTCUSD',
+            '1Day',
+            'crypto',
+            expect.anything()
+        );
     });
 
-    it('(b) equity asset → quantizeBarsDataToLastClosed called with US_EQUITY_SESSION', async () => {
+    it('(b) equity asset → 헬퍼에 marketProfile "us-equity"를 넘긴다', async () => {
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: EQUITY_ASSET_INFO,
             degraded: false,
@@ -209,13 +203,11 @@ describe('SymbolFearGreedPage — crypto branching', () => {
             params: Promise.resolve({ symbol: 'AAPL' }),
         });
 
-        // sessionSpecFor(marketProfileOf(equityAssetInfo)) must resolve to US_EQUITY_SESSION.
-        expect(mockQuantize).toHaveBeenCalledWith(RAW_BARS, expect.any(Date), {
-            kind: 'scheduled',
-            timeZone: 'America/New_York',
-            openMinute: 570,
-            closeMinute: 960,
-            weekendDays: [0, 6],
-        });
+        expect(mockGetQuantizedBarsStatic).toHaveBeenCalledWith(
+            'AAPL',
+            '1Day',
+            'us-equity',
+            expect.anything()
+        );
     });
 });

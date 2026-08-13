@@ -5,16 +5,19 @@
  * element tree to assert that:
  * - Happy: bars present → TechnicalFactsSummary appears in Suspense fallback
  * - Worst: empty bars → TechnicalFactsSummary absent, page still resolves
- * - Worst: getBarsStatic throws → page resolves (null degrade, no crash)
+ * - Worst: getQuantizedBarsStatic throws → page resolves (null degrade, no crash)
  *
  * NOTE: TechnicalFactsSummary lives in the Suspense `fallback` prop, not in
  * `children`, so we first locate the Suspense element then inspect its fallback.
  */
 
 // spy → vi.mock → imports order (MISTAKES.md Tests §17).
-const { mockGetSeoSnapshotsStatic } = vi.hoisted(() => ({
-    mockGetSeoSnapshotsStatic: vi.fn(),
-}));
+const { mockGetSeoSnapshotsStatic, mockGetQuantizedBarsStatic } = vi.hoisted(
+    () => ({
+        mockGetSeoSnapshotsStatic: vi.fn(),
+        mockGetQuantizedBarsStatic: vi.fn(),
+    })
+);
 
 vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,
@@ -52,16 +55,16 @@ vi.mock('@/entities/ticker', () => ({
         degraded: false,
     }),
 }));
-// getBarsStatic is the subject under test — mocked directly so each case can
+// getQuantizedBarsStatic is the subject under test — mocked directly so each case can
 // return different bars data without going through the unstable_cache chain.
 // quantizeBarsDataToLastClosed는 별도 unit 테스트에서 완전 커버된다.
 // 이 스위트는 FactLayer SSR 배선을 검증하므로, 시장 시간 의존을 제거해 결정론적으로 유지한다.
 // production page.tsx와 동일하게 barrel `@/entities/bars`를 mock해 경로 일관성 유지.
 vi.mock('@/entities/bars', () => ({
-    getBarsStatic: vi.fn(),
-    quantizeBarsDataToLastClosed: (d: unknown) => d,
+    getQuantizedBarsStatic: mockGetQuantizedBarsStatic,
 }));
-// page.tsx calls sessionSpecFor(marketProfile) before quantize — stub it out so the
+// page.tsx는 더 이상 sessionSpecFor를 직접 부르지 않는다(그 호출은 이제
+// getQuantizedBarsStatic 내부에 있다). 다만 다른 모듈이 전이적으로 끌어올 때
 // core-level constants (US_EQUITY_SESSION) are not required in the partial core mock above.
 vi.mock('@/shared/api/market/sessionSpecFor', () => ({
     sessionSpecFor: vi.fn(() => ({})),
@@ -118,11 +121,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { default as SymbolPage } from '@/app/[symbol]/page';
 import { TechnicalFactsSummary } from '@/views/symbol';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
-import { getBarsStatic } from '@/entities/bars';
+import { getQuantizedBarsStatic } from '@/entities/bars';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 
-const mockBarsStatic = vi.mocked(getBarsStatic);
+const mockBarsStatic = vi.mocked(getQuantizedBarsStatic);
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
 
 const DEFAULT_ASSET_INFO = {
@@ -246,7 +249,7 @@ describe('SymbolPage — FactLayer SSR integration', () => {
         expect(fact).toBeNull();
     });
 
-    it('Worst: getBarsStatic 실패(throw)해도 페이지가 깨지지 않는다(null degrade)', async () => {
+    it('Worst: getQuantizedBarsStatic 실패(throw)해도 페이지가 깨지지 않는다(null degrade)', async () => {
         mockBarsStatic.mockRejectedValue(new Error('bars infra down'));
 
         // Page must still resolve — the .catch(→null) in page.tsx absorbs the error.
@@ -255,7 +258,7 @@ describe('SymbolPage — FactLayer SSR integration', () => {
         ).resolves.toBeTruthy();
     });
 
-    it('Worst: getBarsStatic 실패 시 fallback은 빈 div (FactLayer 없음)', async () => {
+    it('Worst: getQuantizedBarsStatic 실패 시 fallback은 빈 div (FactLayer 없음)', async () => {
         mockBarsStatic.mockRejectedValue(new Error('bars infra down'));
 
         const tree = await SymbolPage({

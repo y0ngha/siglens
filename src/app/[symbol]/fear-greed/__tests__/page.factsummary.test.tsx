@@ -5,7 +5,7 @@
  * see Task 9) is mounted as a server sibling in the initial HTML:
  * - Happy: bars present → factor summary text appears in the rendered SSR tree.
  * - Worst: bars empty → factor summary absent, page still resolves.
- * - Worst: getBarsStatic throws → factor summary absent, page still resolves
+ * - Worst: getQuantizedBarsStatic throws → factor summary absent, page still resolves
  *   (existing .catch(→null) degrade path, unchanged by this feature).
  *
  * `computeFearGreedIndex` itself is unit-tested by
@@ -16,10 +16,12 @@
  */
 
 // MISTAKES §17: all vi.mock + vi.hoisted declarations must come before imports.
-const { mockGetAssetInfoResilient, mockGetBarsStatic } = vi.hoisted(() => ({
-    mockGetAssetInfoResilient: vi.fn(),
-    mockGetBarsStatic: vi.fn(),
-}));
+const { mockGetAssetInfoResilient, mockGetQuantizedBarsStatic } = vi.hoisted(
+    () => ({
+        mockGetAssetInfoResilient: vi.fn(),
+        mockGetQuantizedBarsStatic: vi.fn(),
+    })
+);
 
 vi.mock('@y0ngha/siglens-core', async () => {
     const actual = await vi.importActual('@y0ngha/siglens-core');
@@ -86,10 +88,7 @@ vi.mock('@/entities/ticker', () => ({
 }));
 
 vi.mock('@/entities/bars', () => ({
-    getBarsStatic: (symbol: string, timeframe: string, fmpSymbol?: string) =>
-        mockGetBarsStatic(symbol, timeframe, fmpSymbol),
-    // page-level unit under test is the wiring, not quantization — pass through.
-    quantizeBarsDataToLastClosed: (data: unknown) => data,
+    getQuantizedBarsStatic: mockGetQuantizedBarsStatic,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -158,7 +157,9 @@ const BARS_WITH_DATA = {
 describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
     beforeEach(() => {
         mockGetAssetInfoResilient.mockReset();
-        mockGetBarsStatic.mockReset();
+        // 리셋하지 않으면 앞 테스트의 mockResolvedValue가 새어 들어와, 실패 경로
+        // 테스트가 실제로는 성공 경로를 타면서 통과한다(리뷰 R2에서 적발).
+        mockGetQuantizedBarsStatic.mockReset();
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: EQUITY_ASSET_INFO,
             degraded: false,
@@ -166,7 +167,7 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
     });
 
     it('Happy: bars 있으면 SSR HTML에 FearGreedFactsSummary 텍스트(점수·factor)가 렌더된다', async () => {
-        mockGetBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+        mockGetQuantizedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
 
         const tree = await SymbolFearGreedPage({
             params: Promise.resolve({ symbol: 'aapl' }),
@@ -186,7 +187,10 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
     });
 
     it('Worst: bars 빈 배열이면 factor summary가 없고 페이지는 정상 resolve된다', async () => {
-        mockGetBarsStatic.mockResolvedValue({ bars: [], indicators: {} });
+        mockGetQuantizedBarsStatic.mockResolvedValue({
+            bars: [],
+            indicators: {},
+        });
 
         const tree = await SymbolFearGreedPage({
             params: Promise.resolve({ symbol: 'aapl' }),
@@ -198,8 +202,10 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
         ).not.toBeInTheDocument();
     });
 
-    it('Worst: getBarsStatic 실패(throw)해도 페이지가 깨지지 않고 factor summary는 생략된다', async () => {
-        mockGetBarsStatic.mockRejectedValue(new Error('bars infra down'));
+    it('Worst: getQuantizedBarsStatic 실패(throw)해도 페이지가 깨지지 않고 factor summary는 생략된다', async () => {
+        mockGetQuantizedBarsStatic.mockRejectedValue(
+            new Error('bars infra down')
+        );
 
         const tree = await SymbolFearGreedPage({
             params: Promise.resolve({ symbol: 'aapl' }),

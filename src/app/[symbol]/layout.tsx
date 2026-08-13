@@ -17,10 +17,9 @@ import {
     isAdmissibleSymbolShape,
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
-import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
+import { getQuantizedBarsStatic } from '@/entities/bars';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { marketProfileOf } from '@/shared/config/marketProfile';
-import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import { EMPTY_INDICATOR_RESULT, type BarsData } from '@y0ngha/siglens-core';
@@ -57,7 +56,7 @@ interface SymbolLayoutProps {
 // 여부를 확정해야 하기 때문이다(바로 아래 soft 404 설명 참조). 예전 주석은 "children이
 // Suspense 밖이라 page LCP가 레이아웃 async 작업을 기다리지 않는다"고 했지만, 이제
 // `getAssetInfoResilient` **한 번**은 문서 shell 전체가 기다린다. 여전히 Suspense 뒤에
-// 남는 건 `getBarsStatic`(느린 쪽)이다.
+// 남는 건 `getQuantizedBarsStatic`(느린 쪽)이다.
 //
 // 비용이 감당 가능한 이유: 이 라우트들은 `generateStaticParams: []` ISR이라 blocking은
 // **cold-gen/재검증 렌더에만** 발생하고, 워엄 요청은 캐시된 HTML로 응답한다. 게다가
@@ -151,7 +150,7 @@ interface SymbolLayoutChromeProps extends SymbolLayoutSegmentProps {
  * S3로 외부화된 cache-handler에서는 그게 실제 네트워크 왕복이다. 게다가 "두 번째 호출이
  * 반드시 HIT"이라는 건 어떤 테스트도 고정하지 않는 암묵적 불변식이었다. prop으로 내리면
  * 의존 자체가 사라진다. 스트리밍에는 영향 없다 — 값은 Suspense 서브트리가 렌더되기 전에
- * 이미 확정돼 있고, 느린 `getBarsStatic`은 그대로 경계 뒤에 남는다.
+ * 이미 확정돼 있고, 느린 `getQuantizedBarsStatic`은 그대로 경계 뒤에 남는다.
  */
 export async function SymbolLayoutChrome({
     assetInfo,
@@ -165,7 +164,7 @@ export async function SymbolLayoutChrome({
     // the header chip satisfies the query from cache instead of calling getBarsAction
     // during initial render.
     //
-    // ISR static-safe: prefetch는 getBarsStatic(=unstable_cache(getBarsAction))으로
+    // ISR static-safe: prefetch는 getQuantizedBarsStatic(=React.cache(unstable_cache(getBarsAction)))으로
     // 통일한다 — static gen 중 redis no-store fetch가 DYNAMIC_SERVER_USAGE를 throw하지 않게.
     const queryClient = new QueryClient({
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
@@ -182,25 +181,20 @@ export async function SymbolLayoutChrome({
     // 명시. prefetchQuery는 dataUpdatedAt 옵션이 없어 매 ISR 재생성마다 다른 timestamp가
     // dehydrate 상태에 박혀 HTML hash가 달라진다(2026-06-06 실측). setQueryData는
     // updatedAt 옵션 지원 → 마지막 완료 봉의 timestamp로 고정해 ISR HTML 결정성 보장.
-    const headerBars = await getBarsStatic(
-        symbol,
+    // page.tsx와 **같은 인자**(대문자 ticker)로 호출해야 요청 스코프 메모가 접힌다 —
+    // 갈리면 지표가 RSC 페이로드에 두 벌 실린다(getQuantizedBarsStatic JSDoc).
+    // quantize도 이 헬퍼 안에서 수행되므로, 장중·크립토에서 새 객체가 갈리던 문제까지
+    // 함께 해소된다(세션 spec은 marketProfile에서 유도).
+    const quantized = await getQuantizedBarsStatic(
+        symbol.toUpperCase(),
         DEFAULT_TIMEFRAME,
+        marketProfileOf(assetInfo),
         assetInfo.fmpSymbol
     ).catch((e: unknown) => {
-        console.error('[SymbolLayout] getBarsStatic failed:', e);
+        console.error('[SymbolLayout] getQuantizedBarsStatic failed:', e);
         return null;
     });
-    if (headerBars !== null) {
-        // Derive the session spec from assetInfo so crypto (always-open) strips
-        // the forming bar consistently with the chart page. Without the session
-        // arg the call defaulted to US_EQUITY_SESSION even for crypto symbols,
-        // causing divergent seed bars and ISR write-churn on the shared bars key.
-        const session = sessionSpecFor(marketProfileOf(assetInfo));
-        const quantized = quantizeBarsDataToLastClosed(
-            headerBars,
-            new Date(),
-            session
-        );
+    if (quantized !== null) {
         // Bar.time은 seconds (epoch) — RQ dataUpdatedAt은 milliseconds 기대.
         const lastBarSec = quantized.bars.at(-1)?.time ?? 0;
         const stableUpdatedAt = lastBarSec * MS_PER_SECOND;

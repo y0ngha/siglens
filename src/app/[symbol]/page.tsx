@@ -17,13 +17,12 @@ import {
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
-import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import {
     buildAssetAboutNode,
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
-import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
+import { getQuantizedBarsStatic } from '@/entities/bars';
 import { countSkillFiles } from '@/entities/skill';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
@@ -145,22 +144,18 @@ export default async function SymbolPage({ params }: Props) {
     // 분기하므로 정규장 안에서는 분/초 차이가 결과에 영향 없음(cache content 동일).
     // crypto(CRYPTO_SESSION)은 24/7 always-open이라 isRegularSessionOpen이 항상 true를
     // 반환 → forming 봉을 항상 제거해 ISR write churn을 방지한다.
-    const factBars = await getBarsStatic(
+    //
+    // layout.tsx와 **같은 인자**(대문자 ticker)로 이 헬퍼를 호출해야 요청 스코프 메모가
+    // 접혀 지표가 한 벌만 직렬화된다(getQuantizedBarsStatic JSDoc).
+    const quantizedFactBars = await getQuantizedBarsStatic(
         ticker,
         DEFAULT_TIMEFRAME,
+        marketProfile,
         assetInfo.fmpSymbol
     ).catch((e: unknown) => {
-        console.error('[SymbolPage] getBarsStatic failed:', e);
+        console.error('[SymbolPage] getQuantizedBarsStatic failed:', e);
         return null;
     });
-    const quantizedFactBars =
-        factBars === null
-            ? null
-            : quantizeBarsDataToLastClosed(
-                  factBars,
-                  new Date(),
-                  sessionSpecFor(marketProfile)
-              );
 
     const displayName = buildDisplayName(assetInfo, ticker);
     const pageSeo = resolveSymbolSeoContent(ticker, assetClass, {
@@ -201,13 +196,13 @@ export default async function SymbolPage({ params }: Props) {
         updatedAt: 0,
     });
 
-    // prefetchQuery(getBarsStatic 재호출)는 제거 — forming 봉이 포함된 라이브 bars가
+    // prefetchQuery(bars 재호출)는 제거 — forming 봉이 포함된 라이브 bars가
     // dehydrate seed로 박히면 ISR write churn이 발생하므로, quantize 후 동기 주입으로 대체.
     // 차트 페이지는 ISR로 캐시되므로 기본 timeframe만 seed한다.
     // ?tf= 딥링크는 클라(useTimeframeChange→useSearchParams)가 마운트 시 읽어
     // 해당 timeframe bars를 fetch한다.
     //
-    // null guard: getBarsStatic 실패 시 quantizedFactBars는 null이다. null을 setQueryData에
+    // null guard: getQuantizedBarsStatic 실패 시 quantizedFactBars는 null이다. null을 setQueryData에
     // 넘기면 null "success" 값이 dehydrate 캐시에 박혀 클라 useSuspenseQuery가 data.bars를
     // null에서 읽으려다 crash하고, null은 stale 트리거가 아니므로 재fetch도 안 된다.
     // null인 경우는 seed를 생략해 클라 useBars/getBarsAction이 라이브로 fetch하게 한다.

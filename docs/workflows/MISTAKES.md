@@ -737,6 +737,19 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ it('default budget for unclassified Gemini models', () => derived.forEach(...))  // name matches implementation (derived, not hardcoded)
     ✅ it('ensures model label and fullName uniqueness', () => { expect(new Set(getLabels()).size).toBe(getLabels().length); expect(new Set(getFullNames()).size).toBe(getFullNames().length); })  // name and assertions aligned
     → Recurring: 3+ occurrences across siglens-core and siglens PR review cycles
+
+21. Gate verification claims must be backed by actual command execution, not visual inspection
+    → When reporting that a gate (test scope, lint, format, build) passed, the command must actually be invoked and the full output examined
+    → False gate reporting (claiming verification completed when it was not run, run with wrong scope, or output misread) hides broken code and causes broken branches to nearly ship
+    → Common failure modes: prettier never invoked, vitest scope omitted bracketed-path directories, lint output misread (count off by 1)
+    → All pre-commit/pre-ship gates must have documented execution steps and actual command logs before approval
+    ❌ Report "yarn lint exit 0, 0 warnings" without checking actual output — 1 warning exists
+    ❌ Gate "tests pass" with `yarn vitest run src/a src/b src/c` while missing `src/[dynamic]/__tests__` — 24 tests actually failing
+    ❌ Gate "all checks green" without ever running `prettier --check` — 4 files fail format check
+    ✅ Run each gate command explicitly; capture and verify output before reporting success
+    ✅ Test scope derived from file graph (changed files + consumers), not hand-typed path list; always verify bracketed/dynamic routes included
+    ✅ Documented gate execution: `yarn tsc`, `yarn lint`, `yarn format:check`, `yarn test`, `yarn build` with actual exit codes and warnings counted
+    → Recurring: PR #725 R3-R4 (misread lint, omitted vitest scope, prettier never run — 5 total false-gate incidents across 2 rounds)
 ```
 
 ---
