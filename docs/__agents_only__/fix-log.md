@@ -134,9 +134,6 @@
 - Violation: `src/proxy.ts` — `NextResponse.redirect(url, 307)` lacks documented WHY for status choice; adjacent redirects in the same file document theirs
   - Rule: MISTAKES.md Predictability §8 — Non-obvious operational choices must document WHY at the decision point (status codes, cacheability, workarounds)
   - Context: Added JSDoc explaining "307 prevents permanent browser caching of search-query parameter redirects"
-- Violation: `src/proxy.ts` + `src/app/__tests__/proxy.test.ts` — WHY-comment made a factual claim (redirect hop count) that did not match actual runtime behavior (both orderings produce 2 hops)
-  - Rule: MISTAKES.md §15.6 — Comments/JSDoc making factually inaccurate claims about the code they describe
-  - Context: Removed factually incorrect hop-count claim; comment now states only verified facts
 - Finding: Reviewer claimed Cloudflare rule `len(http.request.headers["rsc"]) > 0` uses invalid type. Cloudflare docs and production deployment verify `len()` supports String|Bytes|Array.
   - Status: REJECTED — false positive; reviewer claim was incorrect
 - Finding (R3 - runtime verification, after 2 review rounds approved): `src/proxy.ts` guard checked `reqUrl.searchParams.has('_rsc')` + `req.headers.get('rsc')`, but Next.js strips both before middleware runs (next/dist/server/web/adapter.js: line 153 calls stripInternalSearchParams; lines 139-147 delete FLIGHT_HEADERS including RSC). Guard was dead code. Unit tests passed because mock NextRequest still had param + header — mock encoded false assumption about runtime.
@@ -152,3 +149,14 @@
 - Violation: `src/shared/ui/auth/ConsentCheckboxGroup.tsx` — privacy/terms links omitted from the prefetch policy sweep despite being in the same navigation tier. Oversight, not a deliberate exception.
   - Status: FIXED — links now respect prefetch policy consistently.
 
+
+## [perf/indicator-precision Round 1 | perf/indicator-precision | 2026-08-13]
+- Violation: Fixed-precision formatting (toFixed()) truncated sub-penny assets (SHIBUSD trade price ~0.00000XXX) to 0, and reversed MACD histogram sign in candle serialization
+  - Rule: Numeric formatting must not lose precision on low-value assets; histogram sign must be preserved from calculation
+  - Context: Review caught two precision defects before deployment. Both fixed by switching from fixed decimal places to significant figures, preserving data fidelity while maintaining payload reduction (-34.0% consistent with original measurement).
+- Violation (documentation): docs/product/DOMAIN.md §15.6 candle spec listed incorrect formula for histogram sign; code had corrected it after earlier cycle but docs were not updated in sync
+  - Rule: MISTAKES.md §Code Review — API/domain documentation must be kept in sync with implementation; documentation drift hides regressions
+  - Context: Synced docs/product/DOMAIN.md §15.6 with current implementation.
+- Violation (documentation): docs/product/DOMAIN.md §15.6 listed a histogram aggregation formula that is not implemented in the live serialization path
+  - Rule: Documentation must reflect actual implementation, not aspirational future code
+  - Context: Corrected formula in docs to match live code path.
