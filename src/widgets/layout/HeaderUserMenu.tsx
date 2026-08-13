@@ -58,14 +58,25 @@ export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
     if (!currentUser) {
         return (
             <nav aria-label="인증" className="flex items-center gap-2">
+                {/*
+                    전역 헤더의 인증 CTA — 비로그인 방문자의 **모든** 페이지뷰에 렌더되므로
+                    NAV_ITEMS·로고와 같은 범주다. 전환 행동이라 prefetch를 남길지 검토했으나
+                    실측이 반대였다(2026-08-13, 12h): `/login` 히트율 22.2%(miss 54),
+                    `/signup` 44.0%(miss 38) — 진입 페이지별 `_rsc` 해시 파편화로 캐시가
+                    재사용되지 않고 미스만 쌓이고 있었다. 두 페이지 HTML은 엣지에 캐시돼
+                    있어 클릭 시점 fetch로도 충분히 빠르다.
+                    (docs/architecture/CDN_CACHING.md §1)
+                */}
                 <Link
                     href="/login"
+                    prefetch={false}
                     className="text-secondary-200 hover:text-secondary-50 focus-visible:ring-primary-500 hidden min-h-11 items-center rounded px-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none sm:inline-flex"
                 >
                     로그인
                 </Link>
                 <Link
                     href="/signup"
+                    prefetch={false}
                     className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 inline-flex min-h-11 items-center rounded px-3 text-sm font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 >
                     회원가입

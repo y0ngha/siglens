@@ -70,6 +70,8 @@ export function CategoryCard({
 
             <Link
                 href={`/news/${slug}`}
+                // 카드 그리드로 다수 렌더 — docs/architecture/CDN_CACHING.md §1
+                prefetch={false}
                 className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 mt-auto text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 aria-label={`${koLabel} 뉴스 더보기`}
             >

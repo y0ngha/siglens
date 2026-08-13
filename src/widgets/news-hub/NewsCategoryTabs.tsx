@@ -45,6 +45,10 @@ export function NewsCategoryTabs({ activeCategory }: NewsCategoryTabsProps) {
                     <Link
                         key={category}
                         href={`/news/${category}`}
+                        // 카테고리 탭 전체가 한 화면에 있어 마운트 즉시 전부 prefetch된다.
+                        // `_rsc` 해시가 진입 경로마다 달라 캐시 재사용이 안 되므로
+                        // (docs/architecture/CDN_CACHING.md §1) 클릭 시점으로 미룬다.
+                        prefetch={false}
                         aria-current={active ? 'page' : undefined}
                         className={cn(
                             'focus-visible:ring-primary-500 flex min-h-11 touch-manipulation items-center border-b-2 border-transparent px-4 py-2 text-sm whitespace-nowrap focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',

@@ -37,12 +37,63 @@ App Router의 `<Link>`는 기본값(`prefetch={null}` = auto)에서 **뷰포트�
 - 랜딩(`/`)은 내부 링크가 95개다. 스크롤만 해도 그 수만큼 1.7MB짜리 페이로드를 예약한다.
 - 오리진은 `next.config.ts`에서 `compress: false`(엣지 brotli에 위임)라, 오리진→엣지 구간은 위 비압축 크기 그대로다.
 
-**코드 대응(이 PR)**: 무거운 심볼 라우트로 가는 링크에 `prefetch={false}`.
-`SymbolTabs`, `CrossLinkCards`, `CategoryCardGrid`, `SignalStockCard`, `IndexCard`, `PeersTable`,
-`MarketNewsCard`, `SymbolSearchPanel`, `PositionHoldingCard`, `OptionsEmptyState`.
-헤더/푸터/뉴스 카테고리처럼 **가벼운 라우트(65~130KB)로 가는 소수 링크는 그대로 둔다** — 이쪽은
-전 사용자가 같은 8개 URL을 공유하므로 §3 R2가 적용되면 곧바로 엣지 HIT이 된다.
-예외로 `/share/[id]`의 CTA 링크 1개는 prefetch를 유지한다(공유 페이지의 단일 주요 행동, 클릭률이 높다).
+#### ⚠️ `_rsc` 해시는 진입 페이지마다 다르다 — prefetch는 캐시를 데우지 못한다
+
+**2026-08-13 실측으로 밝혀진 결정적 사실.** prefetch 요청 URL에 붙는 `_rsc=<hash>`는
+`computeCacheBustingSearchParam(prefetch, segment-prefetch, **router-state-tree**, next-url)`로
+계산된다. 라우터 상태 트리가 인자에 들어가므로 **같은 목적지라도 사용자가 어느 페이지에 있느냐에
+따라 값이 달라진다**:
+
+```
+/news 로 가는 prefetch 요청 URL
+  /      에서 진입 → /news?_rsc=1r34m
+  /AAPL  에서 진입 → /news?_rsc=3gi0o
+  /market에서 진입 → /news?_rsc=umnn7
+  /news  에서 진입 → /news?_rsc=wymdp
+```
+
+CDN 캐시 키는 URL이다. 따라서 **prefetch가 캐시를 데우는 게 아니라, 재사용되지 않을 캐시
+엔트리를 사용자마다 새로 만든다**. 저장은 되지만 다음 사용자는 다른 키를 요청하므로 항상 MISS다.
+무료 플랜은 캐시 키에서 쿼리 파라미터를 제거할 수 없어(Enterprise 전용) **엣지에서 고칠 방법이 없다 —
+prefetch를 끄는 것이 유일한 해법**이다.
+
+실측된 피해(2026-08-13, 9시간, 5xx 제외 실사용자 GET):
+
+| 경로 | 요청 | miss | 히트율 | 비고 |
+|---|---:|---:|---:|---|
+| `/news` | 67 | 63 | **1%** | 헤더 네비 대상 |
+| `/economy` | 30 | 27 | **0%** | 헤더 네비 대상 |
+| `/market` | 37 | 32 | **3%** | 헤더 네비 대상 |
+| `/` | 74 | 29 | **38%** | 직접 방문(HTML) 비중이 커서 유일하게 높다 |
+
+**코드 대응**:
+- 1차(v0.52.5): 무거운 심볼 라우트 링크 — `SymbolTabs`, `CrossLinkCards`, `CategoryCardGrid`,
+  `SignalStockCard`, `IndexCard`, `PeersTable`, `MarketNewsCard`, `SymbolSearchPanel`,
+  `PositionHoldingCard`, `OptionsEmptyState`.
+- 2차(이 PR): **전역 네비게이션** — `Header`(로고), `HeaderNav`, `HeaderNavStatic`,
+  `HeaderMobileMenu`, `Footer`, `NewsCategoryTabs`, `CategoryCard`, 랜딩의 `HERO_QUICK_LINKS`와
+  `/backtesting` CTA. 1차에서 "가벼운 라우트라 R2가 받아준다"고 남겨둔 판단이 위 실측으로
+  뒤집혔다 — 파편화 때문에 R2는 이들을 구제하지 못한다.
+
+  전역 헤더의 인증 CTA(`HeaderUserMenu`의 로그인·회원가입)와 동의 화면의 `/privacy`·`/terms`
+  링크(`ConsentCheckboxGroup`)도 포함한다 — 처음엔 "전환 행동이라 prefetch 이득이 크다"고
+  예외로 두려 했으나 실측이 반대였다: `/login` 히트율 22.2%(miss 54), `/signup` 44.0%(miss 38).
+  게스트의 모든 페이지뷰에 렌더되므로 NAV_ITEMS와 같은 범주다.
+
+**유지하는 예외**: `/share/[id]`의 CTA 하나. 공유 링크로 유입된 방문자의 단일 주요 행동이고,
+전역 렌더가 아니라 그 페이지에서만 1회 렌더된다(파편화 기여가 사실상 없다).
+에러 바운더리(`error.tsx`·`not-found.tsx`·`global-error.tsx`)의 `/` 링크도 그대로 둔다 —
+에러 시에만 렌더되므로 트래픽이 무시할 수준이다.
+
+**이 PR의 검증**(Playwright, 진입 4곳 `/`·`/AAPL`·`/market`·`/news`, 각각 로드 + 끝까지 스크롤):
+
+| | 총 RSC 요청 | 목표 페이지로 간 prefetch |
+|---|---:|---|
+| master (프로덕션) | 125건 | `/market`·`/news`·`/economy`·`/privacy`·`/terms` 각 진입점마다 3~5건씩 |
+| 이 PR (로컬 prod 빌드) | **0건** | **없음** |
+
+전역 링크를 모두 정리한 결과 초기 로드 단계의 RSC prefetch가 완전히 사라졌다. 라우트 이동은
+클릭 시점 fetch로 정상 동작하며, 그 요청은 §3 R2가 캐시 대상으로 받는다.
 
 **실측 효과**(Playwright, `/AAPL` 1회 조회 + 끝까지 스크롤 + 탭 1회 클릭):
 
@@ -72,17 +123,39 @@ POST는 CDN이 캐시하지 않으므로 페이지뷰마다 여러 건의 "미�
 
 봇은 HTML만 받고 JS/정적 자산을 안 받는다. 즉 봇 요청은 히트율 분모에 롱테일 미스만 더한다.
 
+### (5) OG/트위터 이미지가 캐시 불가 헤더로 나갔다
+
+`/[symbol]/opengraph-image`·`twitter-image`가 **히트율 0%**였다(2026-08-13, 221요청 전량 miss).
+
+원인은 `next/og`의 `ImageResponse`다 — 응답에
+`cache-control: public, max-age=0, must-revalidate`를 **하드코딩된 기본값**으로 붙인다
+(`next/dist/server/og/image-response.js`). 라우트에 선언한 `export const revalidate = 2592000`은
+Next 쪽 재생성 주기일 뿐 이 헤더에 반영되지 않아, CDN에는 "매번 오리진에 재검증하라"는 지시가
+전달됐다. §3 R1의 엣지 TTL이 `respect_origin`이므로 이 헤더를 그대로 존중해 캐시가 되지 않았다.
+
+같은 파일에서 `options.headers`가 기본값을 덮어쓰므로, `OG_IMAGE_CACHE_CONTROL`
+(`shared/lib/og.ts`)을 명시해 해결했다: `public, max-age=0, s-maxage=604800,
+stale-while-revalidate=86400`. 브라우저는 종전대로 매번 재검증하고, CDN만 7일 보관한다.
+
+⚠️ **배포로는 이 URL의 엣지 캐시가 무효화되지 않는다**(경로가 그대로다). OG 템플릿을 바꾸고
+즉시 반영해야 하면 CF Purge를 쓴다. 7일로 제한한 이유가 이것이다.
+
+`/share/[id]/opengraph-image`는 예외로 원래 헤더를 유지한다 — 공유 만료 여부에 따라 그림이
+바뀌므로 엣지에 며칠씩 남으면 만료된 공유가 정상 카드로 계속 노출된다.
+
 ---
 
 ## 2. 개선 레버 (우선순위)
 
 | # | 레버 | 적용 주체 | 기대 효과 |
 |---|---|---|---|
-| L1 | 무거운 링크 `prefetch={false}` | 코드(이 PR) | 심볼 라우트 RSC를 조회당 8건 → 0건, 내비게이션당 27건 → 1건 (실측, §1) |
+| L1 | 무거운 링크 `prefetch={false}` | 코드(v0.52.5) | 심볼 라우트 RSC를 조회당 8건 → 0건, 내비게이션당 27건 → 1건 (실측, §1) |
+| L1b | 전역 네비 `prefetch={false}` | 코드(이 PR) | `_rsc` 파편화로 재사용 0인 캐시 엔트리 생성을 중단 — `/news`·`/market`·`/economy` 대상 (§1) |
 | L2 | RSC 응답 엣지 캐싱(§3 R2) | CF 대시보드 | 남은 RSC 요청이 `DYNAMIC` → `HIT`. L1의 체감 속도 회복 |
 | L3 | Tiered Cache(Smart) 켜기 | CF 대시보드 | 롱테일 콜드 미스 감소 — 하위 콜로가 상위 콜로에서 채움 |
 | L4 | 엣지 TTL을 blanket 2h override → **origin `cache-control` 존중**으로 | CF 대시보드 | 라우트별 `s-maxage`(1h~24h)를 그대로 사용 + 인증 셸 오버캐싱 제거 |
 | L5 | RSC 페이로드 자체 축소 | 백로그 | 1.7MB의 대부분이 `IndicatorResult` 직렬화. 클라 경계에서 화이트리스트 trim |
+| L6 | 메타데이터 이미지 캐싱 | 코드(이 PR) | OG/트위터 이미지 히트율 **0% → 캐시 가능**. 아래 (5) 참조 |
 
 ---
 

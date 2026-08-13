@@ -32,6 +32,10 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                 <Link
                     href="/"
                     title="홈으로"
+                    // 전역 헤더 로고 — 모든 페이지에서 렌더된다. prefetch는 진입 페이지마다
+                    // 다른 `_rsc` 해시를 만들어 `/`의 캐시를 파편화시킨다
+                    // (docs/architecture/CDN_CACHING.md §1).
+                    prefetch={false}
                     // Visible brand text is `text-...uppercase` (renders "SIGLENS"),
                     // so the accessible name must match what users see (WCAG 2.5.3).
                     aria-label={`${SITE_NAME.toUpperCase()} 홈`}

@@ -17,6 +17,9 @@ export function HeaderNavStatic({ items }: HeaderNavStaticProps) {
                 <Link
                     key={item.href}
                     href={item.href}
+                    // HeaderNav와 동일 — 전역 네비 prefetch는 `_rsc` 해시 파편화로
+                    // 캐시 미스만 늘린다 (docs/architecture/CDN_CACHING.md §1).
+                    prefetch={false}
                     className="focus-visible:ring-primary-500 text-secondary-400 hover:text-secondary-100 -mb-px flex min-h-11 touch-manipulation items-center border-b-2 border-transparent px-2 text-xs font-semibold tracking-[0.12em] uppercase transition-colors focus-visible:rounded focus-visible:ring-2 focus-visible:outline-none"
                 >
                     {item.label}

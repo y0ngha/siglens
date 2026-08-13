@@ -12,6 +12,8 @@ export function LegalBreadcrumb({ pageTitle }: LegalBreadcrumbProps) {
                 <li>
                     <Link
                         href="/"
+                        // /privacy·/terms 양쪽에 공통 렌더 — CDN_CACHING.md §1
+                        prefetch={false}
                         className="hover:text-secondary-300 transition-colors"
                     >
                         {SITE_NAME}

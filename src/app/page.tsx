@@ -328,6 +328,11 @@ export default async function Home() {
                                     <Link
                                         key={href}
                                         href={href}
+                                        // 헤더 네비와 같은 목적지(/market·/news·/economy)를
+                                        // 랜딩에서 한 번 더 노출한다. prefetch를 켜두면 같은
+                                        // 목적지에 대해 진입 경로별로 다른 `_rsc` 키가 또
+                                        // 쌓인다 (docs/architecture/CDN_CACHING.md §1).
+                                        prefetch={false}
                                         className="text-primary-400 hover:text-primary-300 inline-flex items-center gap-1 text-sm font-semibold transition-colors"
                                     >
                                         {label}{' '}
@@ -357,6 +362,9 @@ export default async function Home() {
                         </div>
                         <Link
                             href="/backtesting"
+                            // 랜딩은 트래픽이 가장 많은 페이지라 이 링크 하나가 대량의
+                            // 파편화된 `_rsc` 요청을 만든다 (CDN_CACHING.md §1).
+                            prefetch={false}
                             className="bg-secondary-700 text-secondary-200 hover:bg-secondary-600 shrink-0 rounded-md px-4 py-2 text-xs font-medium transition-colors"
                         >
                             백테스팅 결과 보기 →

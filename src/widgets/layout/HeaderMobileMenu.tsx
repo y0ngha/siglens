@@ -188,6 +188,9 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                         <Link
                                             key={item.href}
                                             href={item.href}
+                                            // HeaderNav와 동일 — `_rsc` 해시 파편화로 캐시
+                                            // 미스만 늘어난다 (CDN_CACHING.md §1).
+                                            prefetch={false}
                                             aria-current={
                                                 isActive ? 'page' : undefined
                                             }

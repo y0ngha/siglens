@@ -169,6 +169,11 @@ function ConsentRow({
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
+                // `/privacy`·`/terms`로 가는 링크 — 회원가입·OAuth 동의 화면마다 렌더된다.
+                // `_rsc` 해시가 진입 경로마다 달라 캐시가 파편화되므로 prefetch를 끈다
+                // (docs/architecture/CDN_CACHING.md §1). `target="_blank"`라 어차피 새 탭
+                // 문서 요청으로 열리고, prefetch한 RSC 페이로드는 쓰이지도 않는다.
+                prefetch={false}
                 aria-label={detailLabel}
                 onClick={e => e.stopPropagation()}
                 className="text-secondary-400 hover:text-primary-400 focus-visible:ring-primary-400 focus-visible:ring-offset-secondary-950 inline-flex shrink-0 items-center rounded-sm px-1 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
