@@ -4,8 +4,9 @@
  * Verifies two call sites added during the crypto audit:
  *   (a) buildAssetAboutNode receives assetClass 'crypto' for a crypto asset,
  *       causing the about node to be omitted from the JSON-LD output.
- *   (b) quantizeBarsDataToLastClosed is called with CRYPTO_SESSION ({kind:'always-open'})
- *       for crypto and US_EQUITY_SESSION for equity.
+ *   (b) getQuantizedBarsStatic receives the right marketProfile string
+ *       ('crypto' / 'us-equity'). 세션 spec 매핑 자체는 그 헬퍼 내부 책임이라
+ *       src/entities/bars/__tests__/lib/barsStaticCache.test.ts가 검증한다.
  *
  * Mirrors the mocking style of src/app/[symbol]/__tests__/layout.test.tsx.
  */

@@ -61,7 +61,6 @@ vi.mock('@/entities/ticker', () => ({
 // 이 스위트는 FactLayer SSR 배선을 검증하므로, 시장 시간 의존을 제거해 결정론적으로 유지한다.
 // production page.tsx와 동일하게 barrel `@/entities/bars`를 mock해 경로 일관성 유지.
 vi.mock('@/entities/bars', () => ({
-    quantizeBarsDataToLastClosed: (d: unknown) => d,
     getQuantizedBarsStatic: mockGetQuantizedBarsStatic,
 }));
 // page.tsx는 더 이상 sessionSpecFor를 직접 부르지 않는다(그 호출은 이제
