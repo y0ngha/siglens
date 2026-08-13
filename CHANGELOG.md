@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.53.4](https://github.com/y0ngha/siglens/compare/v0.53.3...v0.53.4) (2026-08-13)
+
+
+### Bug Fixes
+
+* **bars:** RSC 페이로드에 지표가 두 벌 실리는 문제 해결 ([94c0bd6](https://github.com/y0ngha/siglens/commit/94c0bd60ef38665c644a76d81f891dde6acf2872))
+
 ## [0.53.3](https://github.com/y0ngha/siglens/compare/v0.53.2...v0.53.3) (2026-08-13)
 
 
