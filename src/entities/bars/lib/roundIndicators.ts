@@ -16,7 +16,10 @@ import type { IndicatorResult } from '@y0ngha/siglens-core';
  *   atr·supertrend·ichimoku·volumeProfile 등)가 전부 0이 되어 차트가 평평해진다.
  * - `macd[].histogram`은 부호로 모멘텀 라벨이 갈리는데(`views/symbol/utils/
  *   technicalFacts.ts`의 `> 0` / `< 0` 분기), 0 교차 구간의 미세값이 0으로 뭉개지면
- *   '상승'/'하락'이 '중립'으로 뒤집힌다. 이 텍스트는 SSR로도 나가고 AI 프롬프트에도 쓰인다.
+ *   '상승'/'하락'이 '중립'으로 뒤집힌다. 이 텍스트는 AI 서사가 아직 없을 때(cold-miss)
+ *   AI 패널 슬롯을 채우는 SSR 대체 UI로 나간다 — 크롤러가 읽는 색인 대상이기도 하다.
+ *   (실제 LLM 프롬프트는 영향받지 않는다: core의 `runAnalysis`가 `fetchBarsWithIndicators`로
+ *   원본 지표를 따로 재조회하므로 이 직렬화 경계를 거치지 않는다.)
  *
  * 유효숫자 방식은 크기에 비례해 자릿수를 잡으므로 두 경우 모두 보존된다
  * (실측: `0.0000123456789` → `1.23457e-5`, `0.00003` → `3e-5`).
