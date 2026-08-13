@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.53.3](https://github.com/y0ngha/siglens/compare/v0.53.2...v0.53.3) (2026-08-13)
+
+
+### Bug Fixes
+
+* **bars:** roundDeep safe-cast 근거 코멘트 추가 ([d056d7f](https://github.com/y0ngha/siglens/commit/d056d7f300dcfc79600bfb4ea1c14943e70b5924))
+
+
+### Performance Improvements
+
+* **bars:** 지표 페이로드 유효숫자 6자리로 축소 (-34%) ([f06ba23](https://github.com/y0ngha/siglens/commit/f06ba2316d114427b8d6c361409073d5f7ad403d))
+
 ## [0.53.2](https://github.com/y0ngha/siglens/compare/v0.53.1...v0.53.2) (2026-08-13)
 
 
