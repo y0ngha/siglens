@@ -2,7 +2,7 @@
  * `[symbol]/position` page tests — mirrors overall/fear-greed sibling patterns:
  * revalidate literal, generateMetadata branches (always noindex), body guards
  * (invalid ticker / unresolvable-degraded / missing asset → notFound), the
- * static-path server data composition (getBarsStatic → quantize →
+ * static-path server data composition (getQuantizedBarsStatic →
  * buildTechnicalFacts, never getBarsAction/cookies), and an SSR crawl-safety
  * check that no personalized marker (★/평단/수익률) ever appears in the
  * server-rendered shell.
@@ -16,8 +16,7 @@ vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
 }));
 vi.mock('@/entities/bars', () => ({
-    getBarsStatic: vi.fn(),
-    quantizeBarsDataToLastClosed: vi.fn((data: unknown) => data),
+    getQuantizedBarsStatic: vi.fn(),
 }));
 vi.mock('@/views/symbol', () => ({
     SymbolPageHeading: ({ children }: { children: React.ReactNode }) =>
@@ -54,7 +53,7 @@ import {
 } from '@/app/[symbol]/position/page';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
+import { getQuantizedBarsStatic } from '@/entities/bars';
 import { PositionTabContent } from '@/widgets/portfolio-position';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seo';
@@ -66,9 +65,8 @@ const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
 const mockIsTabAllowedForSymbol = isTabAllowedForSymbol as MockedFunction<
     typeof isTabAllowedForSymbol
 >;
-const mockGetBarsStatic = getBarsStatic as MockedFunction<typeof getBarsStatic>;
-const mockQuantize = quantizeBarsDataToLastClosed as MockedFunction<
-    typeof quantizeBarsDataToLastClosed
+const mockGetQuantizedBarsStatic = getQuantizedBarsStatic as MockedFunction<
+    typeof getQuantizedBarsStatic
 >;
 
 const AAPL_ASSET_INFO = {
@@ -224,8 +222,7 @@ describe('PositionPage body guards', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockIsTabAllowedForSymbol.mockResolvedValue(true);
-        mockGetBarsStatic.mockResolvedValue(RAW_BARS as never);
-        mockQuantize.mockImplementation((data: unknown) => data as never);
+        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
     });
 
     it('notFound() for an invalid ticker shape', async () => {
@@ -276,16 +273,21 @@ describe('PositionPage server data path (static, cookies-free)', () => {
         mockIsTabAllowedForSymbol.mockResolvedValue(true);
     });
 
-    it('uses getBarsStatic (never getBarsAction) → quantizeBarsDataToLastClosed → buildTechnicalFacts, and threads low/high/lastClose/volumeByBand into PositionTabContent', async () => {
-        mockGetBarsStatic.mockResolvedValue(RAW_BARS as never);
-        mockQuantize.mockReturnValue(RAW_BARS as never);
+    it('uses getQuantizedBarsStatic (never getBarsAction) → buildTechnicalFacts, and threads low/high/lastClose/volumeByBand into PositionTabContent', async () => {
+        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
 
         const tree = await PositionPage({
             params: Promise.resolve({ symbol: 'aapl' }),
         });
 
-        expect(mockGetBarsStatic).toHaveBeenCalledWith('AAPL', '1Day', 'AAPL');
-        expect(mockQuantize).toHaveBeenCalled();
+        // quantize는 이제 헬퍼 내부에서 수행된다 — 여기서는 위임 인자만 고정한다
+        // (marketProfile까지 넘겨야 헬퍼가 세션 spec을 유도할 수 있다).
+        expect(mockGetQuantizedBarsStatic).toHaveBeenCalledWith(
+            'AAPL',
+            '1Day',
+            'us-equity',
+            'AAPL'
+        );
 
         const island = findElementByType(tree, PositionTabContent);
         expect(island).not.toBeNull();
@@ -306,8 +308,8 @@ describe('PositionPage server data path (static, cookies-free)', () => {
         expect(props.volumeByBand).toEqual([0, 50, 0, 50, 0]);
     });
 
-    it('degrades to null low/high/lastClose/volumeByBand (never throws) when getBarsStatic fails', async () => {
-        mockGetBarsStatic.mockRejectedValue(new Error('FMP down'));
+    it('degrades to null low/high/lastClose/volumeByBand (never throws) when getQuantizedBarsStatic fails', async () => {
+        mockGetQuantizedBarsStatic.mockRejectedValue(new Error('FMP down'));
 
         const tree = await PositionPage({
             params: Promise.resolve({ symbol: 'aapl' }),
@@ -327,11 +329,10 @@ describe('PositionPage server data path (static, cookies-free)', () => {
     });
 
     it('degrades to null when buildTechnicalFacts cannot compute (e.g. <2 bars)', async () => {
-        mockGetBarsStatic.mockResolvedValue({
+        mockGetQuantizedBarsStatic.mockResolvedValue({
             bars: [{ time: 1, open: 1, high: 1, low: 1, close: 1, volume: 1 }],
             indicators: {},
         } as never);
-        mockQuantize.mockImplementation((data: unknown) => data as never);
 
         const tree = await PositionPage({
             params: Promise.resolve({ symbol: 'aapl' }),
@@ -343,7 +344,7 @@ describe('PositionPage server data path (static, cookies-free)', () => {
     });
 
     it('degrades volumeByBand to null (while low/high/lastClose still resolve) when the recent bars carry zero total volume', async () => {
-        mockGetBarsStatic.mockResolvedValue({
+        mockGetQuantizedBarsStatic.mockResolvedValue({
             bars: [
                 { time: 1, open: 90, high: 95, low: 85, close: 90, volume: 0 },
                 {
@@ -357,7 +358,6 @@ describe('PositionPage server data path (static, cookies-free)', () => {
             ],
             indicators: { rsi: [null, null], macd: [{ histogram: null }] },
         } as never);
-        mockQuantize.mockImplementation((data: unknown) => data as never);
 
         const tree = await PositionPage({
             params: Promise.resolve({ symbol: 'aapl' }),
@@ -381,8 +381,7 @@ describe('PositionPage — SSR crawl safety (no personalized data in the server 
             degraded: false,
         } as never);
         mockIsTabAllowedForSymbol.mockResolvedValue(true);
-        mockGetBarsStatic.mockResolvedValue(RAW_BARS as never);
-        mockQuantize.mockReturnValue(RAW_BARS as never);
+        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
     });
 
     it('the server-rendered element tree never contains ★/평단/수익률 — those only ever render inside the client-only PositionTabContent', async () => {
@@ -399,7 +398,7 @@ describe('PositionPage — SSR crawl safety (no personalized data in the server 
 
     // ISR cold-gen-500 규약(§Task): getBarsAction은 cookies()를 읽어 request-scope
     // 밖(unstable_cache 내부/이 vitest 노드 환경)에서 호출되면 즉시 throw한다.
-    // 위 "server data path" describe 블록의 모든 케이스가 getBarsStatic만 mock한
+    // 위 "server data path" describe 블록의 모든 케이스가 getQuantizedBarsStatic만 mock한
     // 채로(getBarsAction은 손대지 않은 채) 정상적으로 resolve/degrade하는 것 자체가
     // 이 셸이 cookies()/connection()을 요구하는 경로를 타지 않는다는 행동 증거다 —
     // 소스 grep 단언은 구현 세부 검사라 이 레포 컨벤션상 지양한다(financials 선례).
@@ -413,8 +412,7 @@ describe('PositionPage — <main> is a flex-item-safe full width (regression gua
             degraded: false,
         } as never);
         mockIsTabAllowedForSymbol.mockResolvedValue(true);
-        mockGetBarsStatic.mockResolvedValue(RAW_BARS as never);
-        mockQuantize.mockReturnValue(RAW_BARS as never);
+        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
     });
 
     // <main> is a direct flex item of SymbolLayoutJail's `flex flex-col` container.

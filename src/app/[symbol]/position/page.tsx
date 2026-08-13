@@ -15,9 +15,8 @@ import { buildDisplayName, getAssetInfoResilient } from '@/entities/ticker';
 // isTabAllowedForSymbol은 barrel에서 제외 — fundamental page.tsx와 동일하게
 // api.ts에서 직접 deep import한다 (entities/ticker/index.ts 상단 주석 참고).
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
+import { getQuantizedBarsStatic } from '@/entities/bars';
 import { marketProfileOf } from '@/shared/config/marketProfile';
-import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import {
     buildTechnicalFacts,
     RECENT_BARS_WINDOW,
@@ -81,7 +80,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // seo-audit 재검토(2026-07): 이 노인덱스 결정을 뒤집을 만한 근거가 없어 유지한다.
     // 익명 방문자에게 SSR로 실리는 유일한 공개 콘텐츠는 low52w/high52w/lastClose
     // 세 숫자뿐이고(sr-only 섹션 + PositionCta), 그마저도 동일한
-    // `buildTechnicalFacts`/`getBarsStatic` 파생값이 이미 인덱싱된 `[symbol]`(차트)·
+    // `buildTechnicalFacts`/`getQuantizedBarsStatic` 파생값이 이미 인덱싱된 `[symbol]`(차트)·
     // `overall`(기술적 요약) 페이지에 노출돼 있어 새 콘텐츠가 아니라 중복이다. 회원의
     // 실제 평단·수익률(이 페이지의 핵심 가치)은 client-only라 크롤러는 절대 볼 수
     // 없고, 대신 "보유종목 등록하기" CTA만 보게 된다 — 수천 심볼 × 이 얇은 템플릿은
@@ -150,10 +149,14 @@ interface PriceRange {
 }
 
 /**
- * 최근 가격 범위(공개 데이터)만 서버에서 계산한다. getBarsStatic은
- * cookies()를 읽지 않는 정적 캐시 경로라 ISR cold-gen에서 안전하다
- * (getBarsAction을 직접 호출하면 cookies() → DYNAMIC_SERVER_USAGE로
- * ISR cold-gen이 500을 낸다 — 반드시 getBarsStatic을 거칠 것).
+ * 최근 가격 범위(공개 데이터)만 서버에서 계산한다. `getQuantizedBarsStatic`은
+ * cookies()를 읽지 않는 정적 캐시 경로라 ISR cold-gen에서 안전하다.
+ *
+ * ⚠️ 반드시 이 헬퍼를 거친다. 이유가 둘이다:
+ * 1. `getBarsAction`을 직접 부르면 cookies() → DYNAMIC_SERVER_USAGE로 ISR
+ *    cold-gen이 500을 낸다.
+ * 2. `getBarsStatic` + quantize를 따로 부르면 요청 스코프 dedup을 건너뛰어
+ *    지표가 RSC 페이로드에 두 벌 실린다(barsStaticCache.ts JSDoc).
  * 실패는 null로 degrade해 페이지 자체가 throw하지 않게 한다 — client의
  * PositionTabContent는 low/high/lastClose가 null이어도 CTA/데이터 부족
  * 안내로 graceful 폴백한다.
@@ -164,15 +167,14 @@ async function resolvePriceRange(
     marketProfile: ReturnType<typeof marketProfileOf>
 ): Promise<PriceRange | null> {
     try {
-        const rawBars = await getBarsStatic(
+        // layout/page와 같은 헬퍼를 쓴다 — 이 라우트는 bars를 query 캐시에 seed하지
+        // 않아 RSC 중복 직렬화와는 무관하지만, 같은 요청 안에서 layout이 이미 부른
+        // 동일 인자 호출을 재사용해 unstable_cache 조회와 quantize 계산을 아낀다.
+        const quantized = await getQuantizedBarsStatic(
             ticker,
             DEFAULT_TIMEFRAME,
+            marketProfile,
             fmpSymbol
-        );
-        const quantized = quantizeBarsDataToLastClosed(
-            rawBars,
-            new Date(),
-            sessionSpecFor(marketProfile)
         );
         const facts = buildTechnicalFacts(quantized.bars, quantized.indicators);
         if (facts === null) return null;

@@ -160,3 +160,21 @@
 - Violation (documentation): docs/product/DOMAIN.md §15.6 listed a histogram aggregation formula that is not implemented in the live serialization path
   - Rule: Documentation must reflect actual implementation, not aspirational future code
   - Context: Corrected formula in docs to match live code path.
+
+## [fix/bars-seed-fold Round 1 | Fold index mechanism in bars query | 2026-08-13]
+- Violation: Test runner invocation `yarn vitest run src/entities/bars src/app/__tests__ src/views/symbol` omitted bracketed-path directory `src/app/[symbol]/__tests__`, causing 24 actual test failures to go unreported
+  - Rule: (new) — Test scope for refactoring must be derived from file graph (changed files + consumers), not hand-typed path list; [bracketed] dynamic-route directories are easy to miss
+  - Context: Reported 648 passed; actual suite had failures invisible to reported scope. Additionally, getQuantizedBarsStatic (the refactored function) had zero unit tests before merge attempt.
+- Violation: New refactored function `getQuantizedBarsStatic` had no unit tests
+  - Rule: (new) — Core refactored functions must include unit tests before merge
+
+## [fix/bars-seed-fold Round 2 | Fold index mechanism in bars query | 2026-08-13]
+- Violation: Mock not reset in `beforeEach`; failure-path test passed in full suite (`yarn vitest run`) but failed in isolation (`yarn vitest run -t "실패"`), leaking previous test's resolved value
+  - Rule: Test best practices — After repointing a mock during refactor, failure-path tests must be re-run in isolation (`-t "pattern"`) to detect unreset-leak bugs masked by full-suite runs
+
+## [fix/bars-seed-fold Round 3 | Fold index mechanism in bars query | 2026-08-13]
+- Violation: Claimed dead mocks removed from 2 files; only 1 was actually cleaned
+  - Rule: (new) — Cleanup assertions must be verified exhaustively; missed files hide dead code
+
+## [fix/bars-seed-fold Round 5 | Fold index mechanism in bars query | 2026-08-13]
+- Status: APPROVED (zero findings)

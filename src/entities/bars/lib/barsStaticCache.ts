@@ -1,4 +1,8 @@
+import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
+import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import type { MarketProfileId } from '@/shared/config/marketProfile';
+import { quantizeBarsDataToLastClosed } from './quantizeBars';
 import type { BarsData, Timeframe } from '@y0ngha/siglens-core';
 import { getBarsAction } from '../actions';
 import { SECONDS_PER_QUARTER_DAY } from '@/shared/config/time';
@@ -35,3 +39,43 @@ export function getBarsStatic(
         { revalidate: SECONDS_PER_QUARTER_DAY, tags: [`symbol:${ticker}`] }
     )();
 }
+
+/**
+ * `getBarsStatic` + `quantizeBarsDataToLastClosed`를 요청 단위로 **한 번만** 수행한다.
+ * `/[symbol]` 트리에서 bars를 seed하는 호출부는 모두 이 함수를 써야 한다.
+ *
+ * ## 왜 필요한가 — RSC 페이로드에 지표가 두 벌 실리는 문제
+ *
+ * layout(`SymbolLayoutChrome`)과 page가 각각 같은 쿼리 키로 `setQueryData` → `dehydrate`
+ * 한다. Flight 직렬화기는 **동일 객체 참조**일 때만 두 번째 등장을
+ * `"$2d:props:state:queries:1:state:data:bars"` 같은 참조로 접는다. 접히지 않으면
+ * 지표 한 벌(약 507KB)이 통째로 더 실린다.
+ *
+ * 참조가 갈리는 지점이 둘이었다:
+ * 1. `getBarsAction`이 `roundIndicators`로 매 호출 새 `indicators`를 만든다(v0.53.3).
+ * 2. `quantizeBarsDataToLastClosed`가 **정규장 중일 때** 새 객체를 할당한다
+ *    (`quantizeBars.ts` — 장 마감엔 입력을 그대로 통과시킨다). 크립토는 24/7이라 상시 해당.
+ *
+ * 그래서 v0.53.3 이전에도 **장중·크립토에서는 이미 두 벌**이었고, 장 마감에만 한 벌이었다.
+ * 이 함수가 두 단계를 함께 감싸 요청 스코프에서 접으므로, 세션 상태·자산군과 무관하게
+ * 항상 한 벌이 된다.
+ *
+ * ⚠️ 인자는 전부 원시값이어야 하고(`React.cache`는 인자를 `Object.is`로 키잉한다),
+ * 호출부는 **대문자 ticker**로 통일해 넘긴다 — `'aapl'`과 `'AAPL'`이 갈리면 접기가 깨진다.
+ * `now`를 인자로 받지 않는 것도 같은 이유다(매 호출 다른 `Date`는 키를 무조건 깨뜨린다).
+ */
+export const getQuantizedBarsStatic = cache(
+    async (
+        ticker: string,
+        timeframe: Timeframe,
+        marketProfile: MarketProfileId,
+        fmpSymbol?: string
+    ): Promise<BarsData> => {
+        const data = await getBarsStatic(ticker, timeframe, fmpSymbol);
+        return quantizeBarsDataToLastClosed(
+            data,
+            new Date(),
+            sessionSpecFor(marketProfile)
+        );
+    }
+);

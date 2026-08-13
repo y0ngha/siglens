@@ -16,9 +16,8 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
-import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
+import { getQuantizedBarsStatic } from '@/entities/bars';
 import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
-import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
@@ -168,28 +167,29 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo, {
         updatedAt: 0,
     });
-    const fgBars = await getBarsStatic(
-        symbol,
+    // layout.tsx와 같은 인자(대문자 ticker)로 호출 — 요청 스코프 메모가 접혀야
+    // 지표가 한 벌만 직렬화된다(getQuantizedBarsStatic JSDoc).
+    const quantizedFromHelper = await getQuantizedBarsStatic(
+        ticker,
         DEFAULT_TIMEFRAME,
+        marketProfileOf(assetInfo),
         assetInfo.fmpSymbol
     ).catch((e: unknown) => {
-        console.error('[FearGreedPage] getBarsStatic failed:', e);
+        console.error('[FearGreedPage] getQuantizedBarsStatic failed:', e);
         return null;
     });
     // quantizedFgBars also feeds FearGreedFactsSummary (SSR factor summary below) —
     // hoisted out of the if-block so both the RQ seed and the SSR fact layer share
     // the same lockstep-quantized bars/indicators.
     let quantizedFgBars: BarsData | null = null;
-    if (fgBars !== null) {
+    if (quantizedFromHelper !== null) {
         // updatedAt 명시: RQ dehydrate 기본은 Date.now()라 매 ISR 재생성마다 다른 timestamp가
         // HTML에 박혀 ISR write churn 발생. 마지막 완료 봉의 time으로 고정.
         // Session arg mirrors the chart page pattern: crypto (always-open) must strip
         // the forming bar with CRYPTO_SESSION, not US_EQUITY_SESSION (the default).
-        quantizedFgBars = quantizeBarsDataToLastClosed(
-            fgBars,
-            new Date(),
-            sessionSpecFor(marketProfileOf(assetInfo))
-        );
+        // 헬퍼가 이미 quantize까지 마쳤다 — 여기서 다시 감싸면 새 객체가 생겨
+        // layout seed와 참조가 갈리고 지표가 두 벌 실린다.
+        quantizedFgBars = quantizedFromHelper;
         // Bar.time은 seconds (epoch) — RQ dataUpdatedAt은 milliseconds.
         const lastBarSec = quantizedFgBars.bars.at(-1)?.time ?? 0;
         const stableUpdatedAt = lastBarSec * MS_PER_SECOND;
