@@ -29,3 +29,14 @@ production build (`yarn build && yarn start`, not `next dev`) that the branch ac
 `next dev` doesn't reproduce the same adapter stripping timing as reliably. Cache-key invariants that
 depend on distinguishing RSC vs HTML requests belong at the CDN/edge layer in this codebase, not in
 `proxy.ts`.
+
+**Round 3 addendum (2026-08-13, same PR):** New scope in this PR fixed OG/Twitter image 0% cache
+hit ratio — `next/og`'s `ImageResponse` hardcodes `cache-control: public, max-age=0,
+must-revalidate` (`next/dist/server/og/image-response.js`), unrelated to the route's `revalidate`
+export. Fixed via `options.headers` override (`OG_IMAGE_CACHE_CONTROL` in `src/shared/lib/og.ts`,
+threaded through `buildSymbolOgImage`'s optional `cacheControl` param). Verified all 23
+opengraph-image/twitter-image files route through either `buildSymbolOgImage` or a direct
+`ImageResponse` header; twitter-image files are `export { default } from './opengraph-image'`
+re-exports, so they inherit the same response/header — no separate header needed there.
+`/share/[id]/opengraph-image.tsx` intentionally keeps the original must-revalidate header (content
+flips on share expiry) — both call sites (found/expired branches) pass the override, confirmed.

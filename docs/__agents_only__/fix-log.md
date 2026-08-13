@@ -143,3 +143,12 @@
   - Rule: (new) — Middleware/proxy logic inspecting framework-internal request state (_rsc param, RSC/FLIGHT headers) cannot be validated by unit tests with hand-built mock requests. Mock defines the reality being asserted. Such logic requires production build + real HTTP request to verify firing. Origin-side enforcement is impossible; defense must move to edge (Cloudflare cache rule).
   - Context: Guard + tests reverted to master. Defense moved entirely to Cloudflare cache rule. docs/architecture/CDN_CACHING.md updated documenting why origin-side enforcement is impossible.
 
+## [perf/rsc-prefetch-fragmentation Round 1 | perf/rsc-prefetch-fragmentation | 2026-08-12]
+- Violation: Global-render navigation links (/login, /signup) left with default prefetch enabled while the PR justifies the exception with an undocumented assertion ("single conversion action") rather than measurement data. When Cloudflare metrics were pulled, both showed cache misses: /login 22.2% hit ratio (54 misses), /signup 44.0% (38 misses).
+  - Rule: (new) — When a PR establishes a policy and then carves out an exception to that policy, the exception must be backed by measurement or explicit data analysis, not assertion or assumption.
+  - Context: Removed prefetch from /login and /signup to match the policy established by the rest of the PR. Added comment referencing Cloudflare hit-rate data.
+
+## [perf/rsc-prefetch-fragmentation Round 1 | perf/rsc-prefetch-fragmentation | 2026-08-12]
+- Violation: `src/shared/ui/auth/ConsentCheckboxGroup.tsx` — privacy/terms links omitted from the prefetch policy sweep despite being in the same navigation tier. Oversight, not a deliberate exception.
+  - Status: FIXED — links now respect prefetch policy consistently.
+
