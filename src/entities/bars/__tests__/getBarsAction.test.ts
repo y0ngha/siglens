@@ -149,7 +149,10 @@ describe('getBarsAction 함수는', () => {
         vi.restoreAllMocks();
     });
     describe('정상 응답일 때', () => {
-        it('fetchBarsWithIndicators에 올바른 인자를 전달하고 결과를 그대로 반환한다', async () => {
+        // 반환 객체는 더 이상 캐시가 준 참조가 아니다 — 직렬화 경계에서
+        // `roundIndicators`가 지표를 새 객체로 다시 만든다(페이로드 -34%).
+        // 값은 동등해야 하므로 `toStrictEqual`로 검증한다.
+        it('fetchBarsWithIndicators에 올바른 인자를 전달하고 동등한 결과를 반환한다', async () => {
             mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);
 
             const result = await getBarsAction('AAPL', '1Day');
@@ -160,7 +163,22 @@ describe('getBarsAction 함수는', () => {
                 '1Day',
                 undefined
             );
-            expect(result).toBe(mockBarsData);
+            expect(result).toStrictEqual(mockBarsData);
+        });
+
+        it('지표 실수를 유효숫자 6자리로 줄여 내려보낸다 (bars는 그대로)', async () => {
+            mockFetchBarsWithIndicators.mockResolvedValueOnce({
+                ...mockBarsData,
+                indicators: {
+                    ...mockBarsData.indicators,
+                    rsi: [78.09897109260167, null],
+                },
+            });
+
+            const result = await getBarsAction('AAPL', '1Day');
+
+            expect(result.indicators.rsi).toEqual([78.099, null]);
+            expect(result.bars).toStrictEqual(mockBarsData.bars);
         });
 
         it('member는 분봉도 올바르게 위임한다', async () => {
