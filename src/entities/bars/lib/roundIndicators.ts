@@ -57,6 +57,8 @@ function roundDeep(value: unknown): unknown {
     if (Array.isArray(value)) return value.map(roundDeep);
     if (value !== null && typeof value === 'object') {
         return Object.fromEntries(
+            // safe: guarded by `typeof value === 'object' && value !== null` above —
+            // any non-null object is string-indexable, so Object.entries accepts it.
             Object.entries(value as Record<string, unknown>).map(([k, v]) => [
                 k,
                 roundDeep(v),
