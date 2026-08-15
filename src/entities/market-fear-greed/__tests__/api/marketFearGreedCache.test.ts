@@ -71,6 +71,9 @@ describe('getCachedMarketFearGreed', () => {
 
         expect(mockFetchDailyCloses).toHaveBeenCalledTimes(6);
 
+        // safe: 위 assertion으로 6회 호출을 확인했고, fetchDailyCloses의 시그니처는
+        // (symbol, from, to) 3-tuple이다. vi.fn의 mock.calls는 unknown[][]로 넓어져
+        // 인자 위치를 잃으므로 시그니처대로 되돌린다.
         const calls = mockFetchDailyCloses.mock.calls as [
             string,
             string,
@@ -93,6 +96,7 @@ describe('getCachedMarketFearGreed', () => {
         try {
             await getCachedMarketFearGreed();
 
+            // safe: 위와 동일 — fetchDailyCloses(symbol, from, to) 시그니처 복원.
             const calls = mockFetchDailyCloses.mock.calls as [
                 string,
                 string,
@@ -209,6 +213,8 @@ describe('entity ↔ core 배선 (실제 core 계산)', () => {
             '1y',
         ]);
         expect(view.comparisons[0].date).toBe(view.snapshot?.asOf);
+        // safe: 바로 위에서 comparisons[0].date === snapshot.asOf를 단언했으므로
+        // snapshot이 null이 아님이 확정된다(null이면 comparisons도 빈 배열이다).
         expect(view.comparisons[0].score).toBeCloseTo(
             view.snapshot?.score as number,
             10

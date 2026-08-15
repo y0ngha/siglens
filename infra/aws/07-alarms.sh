@@ -115,14 +115,16 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-node-heap-oom --namespace S
 # DEPLOY_RUNBOOK §7이 말하는 "fail-open이 실패를 조용하게 만드는" 바로 그 사례라
 # 로그 문자열을 유일한 신호로 삼는다.
 #
-# 임계값: 1시간에 2회 초과. 재생성 주기가 1시간이므로 한두 번은 일시 장애로 보고,
-# 지속되면 알람.
+# ⚠️ 실패 **1회당 로그가 2줄** 남는다 — `generateMetadata`와 페이지 본문이 각각
+# `getMarketFearGreedStatic()`을 호출하고 각각 catch한다(`React.cache`가 프라미스는
+# 공유하지만 reject되면 두 catch가 모두 돈다). 임계값 4 초과 = **시간당 실패 렌더 2회
+# 초과**. 재생성 주기가 1시간이라 일시 장애 1회는 넘기고, 연속 2주기 지속되면 알람.
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-fear-greed-loader-failed \
   --filter-pattern '"[FearGreedRoute] getMarketFearGreedStatic failed"' \
   --metric-transformations metricName=FearGreedLoaderFailed,metricNamespace=Siglens/MarketFearGreed,metricValue=1
 aws cloudwatch put-metric-alarm --alarm-name siglens-fear-greed-loader-failed --namespace Siglens/MarketFearGreed \
-  --metric-name FearGreedLoaderFailed --statistic Sum --period 3600 --evaluation-periods 2 --threshold 2 \
+  --metric-name FearGreedLoaderFailed --statistic Sum --period 3600 --evaluation-periods 2 --threshold 4 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
 
 log "alarms created (5xx, unhealthy, cpu-credits, disk, mem, isr-cache-failures, isr-tag-failures, analysis-stream-failed, node-heap-oom, fear-greed-loader-failed)"
