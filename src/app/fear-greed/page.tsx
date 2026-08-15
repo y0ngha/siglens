@@ -221,7 +221,7 @@ export default async function FearGreedRoutePage() {
                         id="market-fear-greed-guide-heading"
                         className="text-secondary-300 text-base font-semibold"
                     >
-                        지수 읽는 법
+                        공포탐욕지수 읽는 법
                     </h2>
                     <ul className="text-secondary-400 space-y-1 text-sm leading-relaxed">
                         {FEAR_GREED_BANDS.map(band => (

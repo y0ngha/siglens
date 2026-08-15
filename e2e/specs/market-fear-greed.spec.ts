@@ -34,7 +34,10 @@ test.describe('market fear & greed', () => {
         ).toBeVisible();
 
         await expect(
-            page.getByRole('heading', { level: 2, name: '지수 읽는 법' })
+            page.getByRole('heading', {
+                level: 2,
+                name: '공포탐욕지수 읽는 법',
+            })
         ).toBeVisible();
     });
 
@@ -49,7 +52,7 @@ test.describe('market fear & greed', () => {
         expect(res.status()).toBe(200);
         const html = await res.text();
 
-        expect(html).toContain('지수 읽는 법');
+        expect(html).toContain('공포탐욕지수 읽는 법');
         expect(html).toContain('극심한 탐욕');
         expect(html).toContain('시장 모멘텀');
         expect(html).toContain('시장 변동성');

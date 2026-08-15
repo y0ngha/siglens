@@ -20,7 +20,7 @@ export const MARKET_FACTOR_LABEL: Record<MarketFearGreedFactorKey, string> = {
 /**
  * Factor key → 입력값과 방향을 설명하는 한 줄 한글 설명.
  *
- * 요인 막대와 페이지의 "지수 읽는 법" 가이드가 같은 문장을 쓴다 — 설명이 두
+ * 요인 막대와 페이지의 "공포탐욕지수 읽는 법" 가이드가 같은 문장을 쓴다 — 설명이 두
  * 벌이면 계산식을 바꿀 때 한쪽만 갱신되어 조용히 어긋난다.
  */
 export const MARKET_FACTOR_DESCRIPTION: Record<

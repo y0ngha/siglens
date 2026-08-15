@@ -151,9 +151,11 @@ describe('/fear-greed page', () => {
             );
         });
 
-        it('renders the 지수 읽는 법 guide with all five score bands', async () => {
+        it('renders the 공포탐욕지수 읽는 법 guide with all five score bands', async () => {
             render(await FearGreedRoutePage());
-            expect(screen.getByText('지수 읽는 법')).toBeInTheDocument();
+            expect(
+                screen.getByText('공포탐욕지수 읽는 법')
+            ).toBeInTheDocument();
             expect(screen.getByText(/0~24점/)).toBeInTheDocument();
             expect(screen.getByText(/25~44점/)).toBeInTheDocument();
             expect(screen.getByText(/45~54점/)).toBeInTheDocument();
