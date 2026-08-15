@@ -1,5 +1,17 @@
 # Changelog
 
+# [0.54.0](https://github.com/y0ngha/siglens/compare/v0.53.4...v0.54.0) (2026-08-15)
+
+
+### Bug Fixes
+
+* market-fear-greed 캐시 일관성 및 동시성 문서화 ([e318e10](https://github.com/y0ngha/siglens/commit/e318e102a493fb4cbf1652813cc1f348a87560ac))
+
+
+### Features
+
+* 시장 전체 공포탐욕지수 페이지 구현 ([0967845](https://github.com/y0ngha/siglens/commit/096784504f3ebddbf2d2288b0fe41b874235d68d))
+
 ## [0.53.4](https://github.com/y0ngha/siglens/compare/v0.53.3...v0.53.4) (2026-08-13)
 
 
