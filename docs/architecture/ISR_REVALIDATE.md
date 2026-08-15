@@ -40,6 +40,7 @@ ISR `revalidate`는 **"크롤러가 보는 SSR HTML을 이만큼 묵혀도 되�
 | `/[symbol]/fear-greed` | **86400 (24h)** | SSR은 정적 가이드뿐(점수는 클라가 bars로 계산) |
 | `/[symbol]/options` | **43200 (12h)** | SSR은 만기일뿐(Max Pain/IV/OI는 클라) |
 | `/market` | **3600 (1h)** | **단일 페이지**라 재생성 비용이 작고, 장중 섹터 신호 신선도를 위해 짧게 유지 |
+| `/fear-greed` (시장 공포·탐욕) | **3600 (1h)** | **단일 페이지**라 재생성 비용이 작다. 입력이 EOD 종가라 값은 하루 1회만 바뀌지만, 그 새 종가는 장마감 **뒤**에 도착하므로 긴 revalidate는 "당일 종가를 하루 늦게 보여주는" 지연이 된다. ⚠️ 이 페이지는 **클라 refetch가 없다**(전부 서버 컴포넌트)라 §1 전제("사용자 신선도=클라 refetch")가 적용되지 않는다 — 엣지가 들고 있는 것이 곧 모든 사용자가 보는 것이다. Redis 1h + ISR 1h + CF 엣지 2h(CDN_CACHING.md의 blanket Edge TTL) = 최대 ~4h 지연 |
 | `/[symbol]/{og,twitter}-image` | 2592000 (30d) | (ticker, label) 순수 함수 — 템플릿 변경은 배포가 무효화 |
 
 > 트래픽 대부분인 종목 페이지를 6~24h로 늘려 백그라운드 재생성(Fast Origin Transfer)을 줄이고,
@@ -62,6 +63,7 @@ Transfer/ISR Writes가 최대 24배). 2026-06-19 이를 데이터 신선도 근�
 | `peekAnalysisStatic` (`[symbol]` 차트) | 6h | base 페이지 선언(6h) 정렬, 클라 `useAnalysis` 재요청이 신선도 책임 |
 | fundamental/overall/options/news 데이터 (`staticSymbolCache` 5번째 인자) | 24h/12h | 각 페이지 선언값 |
 | `marketSummary`/`sectorSignals`/`briefing` (`/market`) | **1h 유지** | 장중 시간당 스캐너 — 올리면 stale 회귀 |
+| `marketFearGreedStatic` (`/fear-greed`) | **1h** | 페이지 선언값과 동일. Redis TTL도 같은 1h 고정 — `computeBarsEffectiveTtl`은 장마감 직후 최대 24h로 캡되어 그날 종가를 놓치므로 쓰지 않는다 |
 
 **결과적으로 공유 layout의 `barsStaticCache`(6h)가 모든 `[symbol]/*` 라우트의 실효 하한**이 된다 →
 선언이 24h인 fundamental/financials/congress/fear-greed도 **실효 6h**로 재생성된다(1h→6h, ~6배 절감).

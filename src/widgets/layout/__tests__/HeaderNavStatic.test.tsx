@@ -31,10 +31,10 @@ describe('HeaderNavStatic', () => {
         expect(newsLink).toHaveAttribute('href', '/news');
     });
 
-    it('renders 3 nav items', () => {
+    it('renders 4 nav items', () => {
         render(<HeaderNavStatic items={NAV_ITEMS} />);
 
-        expect(screen.getAllByRole('link')).toHaveLength(3);
+        expect(screen.getAllByRole('link')).toHaveLength(4);
 
         const economyLink = screen.getByRole('link', { name: /미국 경제/ });
         expect(economyLink).toHaveAttribute('href', '/economy');

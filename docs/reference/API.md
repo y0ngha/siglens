@@ -127,6 +127,49 @@ interface FmpDailyBar {
 
 ---
 
+### 2-1. Historical Price EOD Light (종가만)
+
+```
+GET /stable/historical-price-eod/light?symbol={symbol}&apikey={key}&from={from}&to={to}
+```
+
+`full`과 같은 일봉 시계열이지만 **종가와 거래량만** 돌려준다. 시장 전체 공포·탐욕 지수
+(`src/entities/market-fear-greed/lib/fetchDailyCloses.ts`)처럼 OHLC가 필요 없고 심볼 수가
+많은 소비자를 위한 경량 변형이다 — 6개 심볼 × 3년을 받아도 페이로드가 작다.
+
+**Query Parameters**
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|----------|------|------|------|
+| symbol | string | ✅ | 종목 심볼. 지수(`^VIX`)·ETF(`SPY`, `TLT`, `HYG`, `LQD`, `RSP`) 모두 지원 |
+| apikey | string | ✅ | FMP API 키 |
+| from | string | - | YYYY-MM-DD 형식 시작일 |
+| to | string | - | YYYY-MM-DD 형식 종료일 |
+
+**Response**
+
+```typescript
+interface FmpLightEodBar {
+    symbol: string;
+    date: string;    // "2026-08-14" (YYYY-MM-DD)
+    price: number;   // 종가 — `full`의 `close`에 해당한다
+    volume: number;  // 지수(^VIX 등)는 0
+}
+
+// 응답: FmpLightEodBar[] (newest-first 정렬)
+```
+
+**주의사항**
+- 종가 필드명이 `close`가 아니라 **`price`**다 — `full`과 다르다.
+- ⚠️ **`to`를 생략하면 진행 중인 세션의 행이 실시간가로 딸려온다.** 24시간 거래 심볼로
+  실측 확인. 종가가 필요하면 `to`를 마지막 마감 세션으로 묶어야 한다
+  (`lastClosedSessionDateEt`, 4시간 발행 버퍼 포함).
+- 지수 심볼은 `volume: 0`이므로 거래량 기반 판정에 쓸 수 없다.
+- 알 수 없는/상장폐지 심볼에 **HTTP 200 + `[]`**로 응답한다 — 에러가 아니라 빈 배열이라
+  호출부가 명시적으로 걸러야 한다.
+
+---
+
 ### 3. Quote (당일 실시간 시세)
 
 ```

@@ -36,6 +36,7 @@ import {
 import type { BarsData } from '@y0ngha/siglens-core';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 
 // 종목당 SEO 콘텐츠는 고정이고 동적 데이터는 클라가 재hydrate한다. 엣지 캐시로
 // compute 호출을 줄인다. (일시 인프라 장애의 404 캐싱은 getAssetInfo strict로 차단)
@@ -230,10 +231,17 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                     </h2>
                     <p className="text-secondary-400 text-sm leading-relaxed">
                         {displayName} 한 종목의 단기 매매 심리를 0~100 점수로
-                        나타냅니다. CNN의 시장 전체 Fear &amp; Greed Index가
-                        여러 자산을 합쳐 시장 감정을 보여 준다면, 이 페이지는 한
-                        종목의 거래량 흐름과 체결 흐름, 가격 위치를 그 종목의
-                        자체 분포 안에서 환산해 점수로 만듭니다.
+                        나타냅니다.{' '}
+                        <Link
+                            href="/fear-greed"
+                            className="text-primary-400 hover:text-primary-300 underline-offset-4 hover:underline"
+                        >
+                            시장 전체 공포·탐욕 지수
+                        </Link>
+                        가 여러 자산을 합쳐 미국 증시 전반의 감정을 보여 준다면,
+                        이 페이지는 한 종목의 거래량 흐름과 체결 흐름, 가격
+                        위치를 그 종목의 자체 분포 안에서 환산해 점수로
+                        만듭니다.
                     </p>
                     <p className="text-secondary-400 text-sm leading-relaxed">
                         Volume z-score, Buy/Sell volume 불균형, Volume Profile

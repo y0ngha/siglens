@@ -33,7 +33,8 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
 # 빌드 타임 ISR prerender에 필요한 자격증명. secret mount로 주입해 빌드 로그·이미지
 # 레이어에 자격증명이 남지 않게 한다.
 #   - DATABASE_URL: news/[category]·legal 등 DB-backed prerender
-#   - FMP_API_KEY: /economy(거시경제 지표/treasury)·/market(지수·섹터 quote) prerender.
+#   - FMP_API_KEY: /economy(거시경제 지표/treasury)·/market(지수·섹터 quote)·
+#     /fear-greed(SPY·^VIX·TLT·HYG·LQD·RSP 일간 종가) prerender.
 #     없으면 빌드타임 FMP fetch가 실패해 EconomyDegraded/빈 패널이 이미지에 baked되고,
 #     ISR revalidate(24h)까지 degraded 페이지가 서빙된다. (런타임 SSM에는 이미 존재)
 RUN --mount=type=secret,id=SIGLENS_GITHUB_TOKEN,required=true \

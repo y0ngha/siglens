@@ -170,6 +170,14 @@ export default async function Home() {
             },
             {
                 '@type': 'Question',
+                name: '개별 종목 말고 미국 증시 전체 분위기는 어디서 보나요?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: '시장 전체 공포탐욕지수 페이지(/fear-greed)에서 S&P500, VIX, 장기국채, 하이일드·투자등급 회사채, 동일가중 지수 5개 요인을 묶어 미국 증시 전체의 단기 매수 심리를 0~100 점수로 보여줍니다. 종목별 지수가 한 종목의 수급을 본다면, 이 페이지는 시장 전반이 과열인지 공포인지를 봅니다.',
+                },
+            },
+            {
+                '@type': 'Question',
                 name: '옵션 시장에서 기관이나 큰손들이 어디에 베팅하고 있는지 알 수 있나요?',
                 acceptedAnswer: {
                     '@type': 'Answer',

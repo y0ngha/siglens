@@ -14,6 +14,7 @@ export interface HeaderNavItem {
 
 export const NAV_ITEMS: ReadonlyArray<HeaderNavItem> = [
     { href: '/market', label: '시장 분석' },
+    { href: '/fear-greed', label: '공포·탐욕 지수' },
     { href: '/news', label: '마켓 뉴스' },
     { href: '/economy', label: '미국 경제' },
 ] as const;

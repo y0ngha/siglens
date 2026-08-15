@@ -107,7 +107,7 @@ describe('HeaderMobileMenu', () => {
         // the drawer has aria-hidden when closed.
         const links = screen.getAllByRole('link', { hidden: true });
         const hrefs = links.map(l => l.getAttribute('href'));
-        expect(hrefs).toEqual(['/market', '/news', '/economy']);
+        expect(hrefs).toEqual(['/market', '/fear-greed', '/news', '/economy']);
     });
 
     it('nav links have aria-hidden="true" on the drawer when closed', () => {
