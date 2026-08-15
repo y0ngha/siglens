@@ -136,7 +136,7 @@ jobs:
             # Secrets are passed via BuildKit secret mounts so they never appear
             # in image layers or build logs (see Dockerfile RUN --mount=type=secret).
             # DATABASE_URL is needed at build time for ISR prerender of news/[category] + legal routes.
-            # FMP_API_KEY is needed at build time for ISR prerender of /economy + /market (without it,
+            # FMP_API_KEY is needed at build time for ISR prerender of /economy + /market + /fear-greed (without it,
             # the snapshot/quote fetches fail and a degraded page is baked into the image until the
             # 24h revalidation re-renders it at runtime).
             #
@@ -153,7 +153,7 @@ jobs:
               env:
                   SIGLENS_GITHUB_TOKEN: ${{ secrets.SIGLENS_GITHUB_TOKEN }}
                   DATABASE_URL: ${{ secrets.DATABASE_URL }}
-                  # FMP_API_KEY: /economy·/market 빌드타임 prerender에 필요(없으면 degraded baked).
+                  # FMP_API_KEY: /economy·/market·/fear-greed 빌드타임 prerender에 필요(없으면 degraded baked).
                   FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
               run: |
                   docker buildx build \

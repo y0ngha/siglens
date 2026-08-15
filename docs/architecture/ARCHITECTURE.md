@@ -110,6 +110,7 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
     │   ├── account
     │   ├── api
     │   ├── backtesting
+    │   ├── fear-greed    # 시장 전체 공포·탐욕 지수 (단일 페이지)
     │   ├── forgot-password
     │   ├── login
     │   ├── market
@@ -127,6 +128,7 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
     │   ├── email-token/  # 이메일 인증/비밀번호 토큰
     │   ├── inquiry/      # 문의(contact) 저장
     │   ├── llm-provider/ # AI provider 어댑터 (Anthropic, Gemini, OpenAI)
+    │   ├── market-fear-greed/ # 시장 전체 공포·탐욕 지수 (FMP 일간 종가 6종 + 2단 캐시)
     │   ├── market-summary/ # 시장 요약
     │   ├── news-article/ # 뉴스 fetch + AI 분석
     │   ├── notice/       # 사이트 공지 팝업 (notices DB 테이블, matchPath, storage)
@@ -143,7 +145,8 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
     │   ├── user/         # 사용자 CRUD
     │   └── user-tier/    # 사용자 등급
     │
-    │   (fear-greed는 entity가 아니라 widget이다 — widgets/ 참조)
+    │   (종목별 fear-greed는 entity가 아니라 widget이다 — widgets/ 참조.
+    │    시장 전체 지수는 위 market-fear-greed entity + widgets/market-fear-greed)
     ├── features
     │   ├── auth-*/       # 인증 관련 features (login, signup, oauth, password-reset 등)
     │   ├── account-delete/
@@ -172,11 +175,12 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
         ├── chart/
         ├── chat/
         ├── dashboard/
-        ├── fear-greed/   # 공포탐욕지수 위젯
+        ├── fear-greed/   # 종목별 공포탐욕지수 위젯
         ├── fundamental/
         ├── home/
         ├── layout/
         ├── legal/
+        ├── market-fear-greed/ # 시장 전체 공포탐욕지수 위젯 (게이지는 fear-greed/ 재사용)
         ├── news/
         ├── notice-popup/ # 긴급 공지 모달 (경로 매칭, localStorage dismiss, 우선순위)
         ├── options/

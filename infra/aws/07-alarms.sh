@@ -106,4 +106,23 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-node-heap-oom --namespace S
   --metric-name NodeHeapOom --statistic Sum --period 3600 --evaluation-periods 1 --threshold 0 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
 
-log "alarms created (5xx, unhealthy, cpu-credits, disk, mem, isr-cache-failures, isr-tag-failures, analysis-stream-failed, node-heap-oom)"
+# 시장 공포·탐욕 지수 로더 실패 — fail-open 설계라 알람 없이는 아무 신호가 없다.
+#
+# `/fear-greed`는 로더 예외를 삼키고 200 + "표본이 부족합니다"를 렌더한다(0바이트 ISR
+# 캐시 동결 방지). 문제는 그 결과가 정상 HTML이라 ISR/S3 캐시에 그대로 저장되고,
+# FMP 402/403처럼 재시도 대상이 아닌 오류(`isFmpTransientError`가 false)면 매시 재생성이
+# 똑같이 실패해 **영구히 빈 페이지**가 된다 — 5xx도, 헬스체크 실패도 안 뜬다.
+# DEPLOY_RUNBOOK §7이 말하는 "fail-open이 실패를 조용하게 만드는" 바로 그 사례라
+# 로그 문자열을 유일한 신호로 삼는다.
+#
+# 임계값: 1시간에 2회 초과. 재생성 주기가 1시간이므로 한두 번은 일시 장애로 보고,
+# 지속되면 알람.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-fear-greed-loader-failed \
+  --filter-pattern '"[FearGreedRoute] getMarketFearGreedStatic failed"' \
+  --metric-transformations metricName=FearGreedLoaderFailed,metricNamespace=Siglens/MarketFearGreed,metricValue=1
+aws cloudwatch put-metric-alarm --alarm-name siglens-fear-greed-loader-failed --namespace Siglens/MarketFearGreed \
+  --metric-name FearGreedLoaderFailed --statistic Sum --period 3600 --evaluation-periods 2 --threshold 2 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
+
+log "alarms created (5xx, unhealthy, cpu-credits, disk, mem, isr-cache-failures, isr-tag-failures, analysis-stream-failed, node-heap-oom, fear-greed-loader-failed)"

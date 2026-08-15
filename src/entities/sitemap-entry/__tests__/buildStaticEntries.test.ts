@@ -11,15 +11,16 @@ import { MS_PER_HOUR } from '@/shared/config/time';
 const NOW = new Date('2026-05-23T15:30:00.000Z');
 
 describe('buildStaticEntries', () => {
-    it('home / market / backtesting / economy / news hub + 5 categories / privacy / terms 12개 엔트리를 반환한다', () => {
+    it('home / market / fear-greed / backtesting / economy / news hub + 5 categories / privacy / terms 13개 엔트리를 반환한다', () => {
         const entries = buildStaticEntries(NOW);
-        expect(entries).toHaveLength(12);
+        expect(entries).toHaveLength(13);
 
         const urls = entries.map(e => e.url);
         expect(urls).toEqual(
             expect.arrayContaining([
                 expect.stringMatching(/\/$|siglens\.io$/), // home
                 expect.stringContaining('/market'),
+                expect.stringContaining('/fear-greed'),
                 expect.stringContaining('/backtesting'),
                 expect.stringContaining('/economy'),
                 expect.stringContaining('/news'),
@@ -27,6 +28,15 @@ describe('buildStaticEntries', () => {
                 expect.stringContaining('/terms'),
             ])
         );
+    });
+
+    it('/fear-greed는 daily·priority 0.8, now를 lastmod로 사용한다', () => {
+        const entries = buildStaticEntries(NOW);
+        const fearGreed = entries.find(e => e.url.endsWith('/fear-greed'));
+        expect(fearGreed).toBeDefined();
+        expect(fearGreed!.changeFrequency).toBe('daily');
+        expect(fearGreed!.priority).toBe(0.8);
+        expect(fearGreed!.lastModified.getTime()).toBe(NOW.getTime());
     });
 
     it('/economy는 daily·priority 0.8로 둔다', () => {

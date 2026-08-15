@@ -7,7 +7,18 @@ import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { NextResponse, type NextRequest } from 'next/server';
 
+/**
+ * 첫 segment가 여기 있으면 ticker 케이스 정규화를 건너뛴다.
+ *
+ * **`src/app/`의 모든 정적 최상위 라우트 디렉터리가 빠짐없이 들어 있어야 한다.**
+ * `isAdmissibleSymbolShape`은 하이픈 ticker(`PBR-A`)를 허용하므로 `fear-greed`
+ * 같은 라우트명도 심볼 형상 검사를 통과해 `/FEAR-GREED`로 301되어 버린다 —
+ * 라우트는 정적 세그먼트 우선이라 빌드에서는 정상으로 보이고, 프록시가 라우팅보다
+ * 먼저 도는 런타임에서만 깨진다. 새 최상위 라우트를 추가하면 여기도 추가한다
+ * (`src/app/__tests__/proxy.test.ts`가 디렉터리 목록과 대조해 강제한다).
+ */
 const RESERVED_FIRST_SEGMENTS = new Set([
+    'fear-greed',
     'login',
     'signup',
     'forgot-password',

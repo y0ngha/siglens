@@ -15,6 +15,8 @@ vi.mock('next/server', () => ({
     },
 }));
 
+import { existsSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { NextResponse, type NextRequest } from 'next/server';
 import { proxy } from '@/proxy';
 
@@ -333,4 +335,55 @@ describe('랜딩 ?q= redirect — proxy가 page.tsx 대신 처리 (ISR 보존)',
         expect(mockRedirect).not.toHaveBeenCalled();
         expect(mockNext).toHaveBeenCalledTimes(1);
     });
+});
+
+/**
+ * `/fear-greed` 회귀 가드.
+ *
+ * `isAdmissibleSymbolShape`은 하이픈 ticker(`PBR-A`)를 허용하므로, 하이픈이 든
+ * 최상위 라우트명은 `RESERVED_FIRST_SEGMENTS`에 없으면 심볼로 오인되어 대문자
+ * 경로로 301된다. App Router는 정적 세그먼트를 우선하므로 빌드 산출물만 봐서는
+ * 정상으로 보이고, 프록시가 라우팅보다 먼저 도는 런타임에서만 깨진다 — 실제로
+ * `/fear-greed`가 `/FEAR-GREED`로 301되는 것을 로컬 프로덕션 서버에서 잡았다.
+ *
+ * auth 가드가 걸린 라우트(`/account`, `/portfolio`)는 정상적으로 `/login`으로
+ * redirect되므로 "redirect 없음"이 아니라 "대문자 정규화 redirect 없음"을 단언한다.
+ */
+describe('정적 최상위 라우트는 ticker로 오인되지 않는다', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    // page/route 파일이 있는 디렉터리만 라우트다 — `src/app/fonts`처럼 asset만
+    // 담은 디렉터리는 진입점이 없어 예약할 필요가 없다.
+    const APP_DIR = join(process.cwd(), 'src/app');
+    const ROUTE_ENTRY_FILES = ['page.tsx', 'page.ts', 'route.ts', 'route.tsx'];
+
+    const staticTopLevelRoutes = readdirSync(APP_DIR, { withFileTypes: true })
+        .filter(entry => entry.isDirectory())
+        .map(entry => entry.name)
+        .filter(name => !name.startsWith('[') && !name.startsWith('_'))
+        .filter(name =>
+            ROUTE_ENTRY_FILES.some(file =>
+                existsSync(join(APP_DIR, name, file))
+            )
+        );
+
+    it('src/app 하위 라우트 디렉터리를 실제로 찾아낸다', () => {
+        // 목록이 비면 아래 it.each가 통째로 사라져 가드가 조용히 무력화된다.
+        expect(staticTopLevelRoutes).toContain('fear-greed');
+        expect(staticTopLevelRoutes.length).toBeGreaterThan(5);
+    });
+
+    it.each(staticTopLevelRoutes)(
+        '/%s 는 대문자 경로로 301되지 않는다',
+        route => {
+            proxy(makeRequest(undefined, `/${route}`));
+
+            const uppercased = mockRedirect.mock.calls.filter(
+                ([url]) => (url as URL).pathname === `/${route.toUpperCase()}`
+            );
+            expect(uppercased).toEqual([]);
+        }
+    );
 });
