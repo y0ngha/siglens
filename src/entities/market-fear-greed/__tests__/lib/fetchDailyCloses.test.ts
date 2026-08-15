@@ -169,7 +169,7 @@ describe('lookbackStartDate', () => {
 });
 
 // `lastPublishedSessionDate`는 `lastClosedSessionDateEt`의 얇은 wrapper.
-// 아래 고정 시각들은 CachedMarketDataProvider.test.ts의
+// 아래 고정 시각들은 src/shared/lib/__tests__/marketSessionDate.test.ts의
 // `lastClosedSessionDateEt — DST-aware key boundary` 스위트에서 이미 검증된
 // 값과 동일하다(마감=16:00 ET + 발행버퍼 4h → 20:00 ET에만 롤오버) — 여기서
 // 새로 추측하지 않고 그 근거를 그대로 재사용한다.

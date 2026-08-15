@@ -61,6 +61,26 @@ describe('maxLastModified', () => {
         expect(Number.isNaN(result.getTime())).toBe(false);
     });
 
+    it('lastModified가 Unix epoch여도 유효한 값으로 취급한다 (센티널 혼동 금지)', () => {
+        // 누적값 0을 "없음"의 센티널로 쓰면 epoch 엔트리가 fallback으로 뒤바뀐다.
+        const result = maxLastModified(
+            [entry('1970-01-01T00:00:00.000Z')],
+            FALLBACK
+        );
+
+        expect(result.toISOString()).toBe('1970-01-01T00:00:00.000Z');
+        expect(result.getTime()).not.toBe(FALLBACK.getTime());
+    });
+
+    it('fallback 분기도 새 Date를 돌려준다 (호출자 변경 격리)', () => {
+        const fallback = new Date(FALLBACK.getTime());
+        const result = maxLastModified([], fallback);
+
+        expect(result).not.toBe(fallback);
+        result.setUTCFullYear(1999);
+        expect(fallback.getTime()).toBe(FALLBACK.getTime());
+    });
+
     it('입력 엔트리의 Date 객체를 그대로 돌려주지 않는다 (호출자 변경 격리)', () => {
         const source = entry('2026-05-22T20:00:00.000Z');
         const result = maxLastModified([source], FALLBACK);
