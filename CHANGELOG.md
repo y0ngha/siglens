@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.54.1](https://github.com/y0ngha/siglens/compare/v0.54.0...v0.54.1) (2026-08-15)
+
+
+### Bug Fixes
+
+* epoch 값 엔트리와 빈 목록 구분 ([95ccce4](https://github.com/y0ngha/siglens/commit/95ccce44e32248aa921e3ce5f6a36981e41af53c))
+* robots.txt 크롤러 정책 재설정 및 보호 가드 추가 ([f6647a1](https://github.com/y0ngha/siglens/commit/f6647a129b70a826ea5e64263732806f2a73fef0))
+* sitemap lastmod 정확성 개선 — 인덱스/세션/뉴스 계산 통합 ([01820ea](https://github.com/y0ngha/siglens/commit/01820eae170fab7bce5e986c648e9bad4c3b0cb8))
+
 # [0.54.0](https://github.com/y0ngha/siglens/compare/v0.53.4...v0.54.0) (2026-08-15)
 
 
