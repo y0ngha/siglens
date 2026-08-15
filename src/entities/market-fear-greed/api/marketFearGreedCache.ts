@@ -51,7 +51,15 @@ const MARKET_FEAR_GREED_CACHE_KEY = `market:fear-greed:${MARKET_FEAR_GREED_CONFI
  */
 const MARKET_FEAR_GREED_TTL_SECONDS = SECONDS_PER_HOUR;
 
-/** Fetch all six series and reduce them to what the page renders. */
+/**
+ * Fetch all six series and reduce them to what the page renders.
+ *
+ * MISTAKES §0.8 검토: 이 레포에는 `FETCH_CONCURRENCY` 상수가 없고, 가장 가까운
+ * 동시성 정책은 peer 페이지들의 `Promise.all` 패턴이다 — `getMarketSummary`(지수 +
+ * 섹터 ETF, 통상 11+), `economySnapshotCache`(11), financials(6)이 모두 같은 모양으로
+ * production에서 돌고 있다. 여기는 6개이고 1시간 Redis 캐시 뒤에 있어 cold-gen 시
+ * 시간당 6 calls — FMP 분당 한도 대비 무시 가능하다. `fetchInChunks` 분할 이득이 없다.
+ */
 async function buildMarketFearGreedView(
     now: Date
 ): Promise<MarketFearGreedView> {
