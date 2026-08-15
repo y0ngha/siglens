@@ -72,6 +72,35 @@ Transfer/ISR Writes가 최대 24배). 2026-06-19 이를 데이터 신선도 근�
 
 > 검증: `curl -sI <route> | grep s-maxage`. 빌드 output의 `●`(SSG)나 표의 선언값이 아니라 **런타임 s-maxage**가 ground truth다.
 
+## 2-2. sitemap `lastmod`는 revalidate 주기를 따라간다
+
+sitemap 라우트는 전부 `force-dynamic`이다. 그래서 `lastmod`에 **요청 시각을 그대로
+쓰면 크롤러가 가져갈 때마다 값이 바뀐다** — 실제로는 바뀌지 않은 페이지에도 매번
+"방금 갱신됨" 신호를 보내는 셈이고, Googlebot이 이 사이트의 `lastmod`를 통째로
+신뢰하지 않게 만든다. 그래서 각 엔트리의 lastmod는 **그 페이지가 실제로 다시
+생성되는 주기**에 맞춰 양자화한다.
+
+| 대상 | lastmod | 근거 |
+|---|---|---|
+| sitemap index (`/sitemap.xml`) | 자식 엔트리 lastmod의 **최댓값** | 인덱스 lastmod의 유일한 용도가 "이 자식 다시 열어볼 가치 있나" 판단이다. 셋 다 `now`면 그 신호가 죽는다 |
+| `/`, `/backtesting`, `/economy`, legal | `SITE_BUILD_DATE` | 배포로만 바뀐다 |
+| `/market` | `now − 1h` (슬라이딩) | 유일한 슬라이딩 예외. 장중 스캐너 + ISR 1h라 슬라이딩이 실제 주기와 맞는다 |
+| `/fear-greed` | **직전 마감 세션의 마감 순간** | 입력이 EOD 종가라 "마지막으로 바뀐 시점" = 직전 마감 |
+| `/news` hub + 카테고리 5 | UTC 일 경계 | ISR 24h. 하루 1회만 바뀐다 |
+| `/{ticker}/*` (news 제외) | 직전 마감 세션의 마감 순간 | 시세·지표가 세션 단위로 바뀐다 |
+| `/{ticker}/news`, `/{sym}/news` | `now − 1h` (슬라이딩) | 뉴스는 실제로 시간 단위 + on-demand `revalidateTag`(§3)가 ISR 창 안에서도 갱신 |
+| crypto `/{sym}/*` (news 제외) | UTC 6h 경계 | 24시간 거래라 마감 개념이 없다. 차트 ISR(6h) 주기에 맞춘 보수적 baseline |
+
+**"직전 마감 세션"은 `shared/lib/marketSessionDate`의 `lastClosedSessionCloseUtc`
+하나로만 계산한다.** 주말 되감기 + DST + EOD 발행 버퍼(4h)가 여기 다 들어 있고,
+bars EOD 캐시 키(`CachedMarketDataProvider`)와 시장 공포·탐욕 fetch 경계
+(`fetchDailyCloses`)가 같은 함수를 쓴다. 예전에 sitemap이 자체 계산을 갖고 있었을
+때는 요일을 안 봐서 **토·일에 열리지도 않은 장의 마감 시각**을 1800여 URL에
+발행했다. 새 sitemap을 추가할 때 이 계산을 다시 구현하지 말 것.
+
+> 공휴일은 어느 구현도 보정하지 않는다(휴장일 캘린더가 앱 전체에 없다). 그 날짜로
+> lastmod가 하루 앞서는 정도라 영향이 작아 의도적으로 남겨 둔 간극이다.
+
 ## 3. On-demand 무효화 (news)
 
 `/[symbol]/news`는 시간 기반 외에 **이벤트 기반 무효화**가 신선도를 책임진다:

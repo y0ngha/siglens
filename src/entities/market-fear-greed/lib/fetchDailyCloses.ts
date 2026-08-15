@@ -1,7 +1,7 @@
 import type { MarketDailyClose } from '@y0ngha/siglens-core';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
-import { lastClosedSessionDateEt } from '@/shared/api/market/CachedMarketDataProvider';
+import { lastClosedSessionDateEt } from '@/shared/lib/marketSessionDate';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { e2eDailyCloses } from './e2eFearGreedFixture';
 import { MARKET_FEAR_GREED_LOOKBACK_DAYS } from './marketFearGreedSymbols';
@@ -40,8 +40,8 @@ export function lookbackStartDate(now: Date): string {
  * value it settles on would be whichever intraday tick the last ISR
  * regeneration happened to catch.
  *
- * `lastClosedSessionDateEt` is the same helper the bars cache uses for exactly
- * this reason, including its 4h publish buffer and DST handling.
+ * `lastClosedSessionDateEt` is the same helper the bars EOD cache and the sitemap
+ * `lastmod` builders use, including its 4h publish buffer, DST, and weekend rewind.
  */
 export function lastPublishedSessionDate(now: Date): string {
     return lastClosedSessionDateEt(now);

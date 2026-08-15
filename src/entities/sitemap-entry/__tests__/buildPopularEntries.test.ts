@@ -4,9 +4,10 @@ import { MS_PER_HOUR } from '@/shared/config/time';
 import { SITE_URL } from '@/shared/lib/seo';
 import { buildPopularEntries } from '../lib/buildPopularEntries';
 
-// 미국 장 마감 직후 시각이라 todayClose가 오늘 close가 되도록 21:00 UTC로 고정
-// (시장 마감 20:00 UTC 직후).
+// 2026-05-23은 **토요일**이다. 직전 마감 세션은 금요일(2026-05-22) 20:00 UTC.
 const NOW = new Date('2026-05-23T21:00:00.000Z');
+/** 직전 마감 세션(금 2026-05-22) 마감 순간. 여름이라 20:00 UTC. */
+const LAST_SESSION_CLOSE = new Date('2026-05-22T20:00:00.000Z');
 
 describe('buildPopularEntries', () => {
     it('모든 POPULAR_TICKERS에 대해 7축 기본 라우트를 생성하고 options는 generated list에 맞춘다', () => {
@@ -69,15 +70,61 @@ describe('buildPopularEntries', () => {
         expect(fundamental?.changeFrequency).toBe('weekly');
     });
 
-    it('하루 중 시장 마감 전(20:00 UTC 이전) 호출이면 어제 close로 클램프된다', () => {
-        const beforeClose = new Date('2026-05-23T15:00:00.000Z'); // 미국 장중
+    it('마감 전 호출이면 직전 마감 세션으로 클램프된다', () => {
+        const beforeClose = new Date('2026-05-23T15:00:00.000Z');
         const entries = buildPopularEntries(beforeClose);
 
         const chart = entries.find(
             e => e.url === `${SITE_URL}/${POPULAR_TICKERS[0]}`
         );
-        // 어제 20:00 UTC
-        const yesterdayClose = new Date('2026-05-22T20:00:00.000Z');
-        expect(chart!.lastModified.getTime()).toBe(yesterdayClose.getTime());
+        expect(chart!.lastModified.getTime()).toBe(
+            LAST_SESSION_CLOSE.getTime()
+        );
+    });
+
+    /**
+     * 회귀 가드: 예전 `computeTodayAtMarketClose`는 요일을 보지 않아, 토요일
+     * 20:00 UTC를 넘긴 시각에 크롤되면 **열리지도 않은 토요일 장의 마감 시각**을
+     * lastmod로 발행했다(POPULAR_TICKERS × 7축 ≈ 1800여 URL 전부).
+     *
+     * `/news`는 의도적으로 1시간 슬라이딩이라 주말 날짜가 나오는 게 정상 — 제외한다.
+     */
+    it.each([
+        ['토요일 늦은 시각', '2026-05-23T23:00:00.000Z'],
+        ['일요일', '2026-05-24T12:00:00.000Z'],
+    ])('%s에도 세션 기반 엔트리는 주말 날짜를 쓰지 않는다', (_label, iso) => {
+        const sessionEntries = buildPopularEntries(new Date(iso)).filter(
+            e => !e.url.endsWith('/news')
+        );
+        expect(sessionEntries.length).toBeGreaterThan(0);
+
+        for (const entry of sessionEntries) {
+            const day = entry.lastModified.getUTCDay();
+            expect(day).not.toBe(0); // Sunday
+            expect(day).not.toBe(6); // Saturday
+        }
+    });
+
+    it('주말 내내 lastmod가 직전 금요일 마감으로 고정된다 (슬라이딩 아님)', () => {
+        const sat = buildPopularEntries(new Date('2026-05-23T23:00:00.000Z'));
+        const sun = buildPopularEntries(new Date('2026-05-24T12:00:00.000Z'));
+        const pick = (es: ReturnType<typeof buildPopularEntries>) =>
+            es
+                .find(e => e.url === `${SITE_URL}/${POPULAR_TICKERS[0]}`)!
+                .lastModified.getTime();
+
+        expect(pick(sat)).toBe(LAST_SESSION_CLOSE.getTime());
+        expect(pick(sun)).toBe(LAST_SESSION_CLOSE.getTime());
+    });
+
+    it('겨울(EST) 세션은 21:00 UTC 마감으로 나온다', () => {
+        // 2026-01-13 01:30Z = 20:30 EST Mon 1/12 (마감+버퍼 경과) → 세션 1/12
+        const entries = buildPopularEntries(new Date('2026-01-13T01:30:00Z'));
+        const chart = entries.find(
+            e => e.url === `${SITE_URL}/${POPULAR_TICKERS[0]}`
+        );
+        expect(chart!.lastModified.toISOString()).toBe(
+            '2026-01-12T21:00:00.000Z'
+        );
     });
 });
