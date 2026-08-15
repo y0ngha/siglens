@@ -7,6 +7,7 @@ vi.mock('@/shared/lib/seo', () => ({
 import { buildStaticEntries } from '../lib/buildStaticEntries';
 import { SITE_URL } from '@/shared/lib/seo';
 import { MS_PER_HOUR } from '@/shared/config/time';
+import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 
 const NOW = new Date('2026-05-23T15:30:00.000Z');
 
@@ -30,13 +31,27 @@ describe('buildStaticEntries', () => {
         );
     });
 
-    it('/fear-greed는 daily·priority 0.8, now를 lastmod로 사용한다', () => {
+    it('/fear-greed는 daily·priority 0.8, 직전 마감 세션을 lastmod로 사용한다', () => {
         const entries = buildStaticEntries(NOW);
         const fearGreed = entries.find(e => e.url.endsWith('/fear-greed'));
         expect(fearGreed).toBeDefined();
         expect(fearGreed!.changeFrequency).toBe('daily');
         expect(fearGreed!.priority).toBe(0.8);
-        expect(fearGreed!.lastModified.getTime()).toBe(NOW.getTime());
+        expect(fearGreed!.lastModified.getTime()).toBe(
+            lastClosedSessionCloseUtc(NOW).getTime()
+        );
+        // 요청 시각을 그대로 쓰면 크롤러가 가져갈 때마다 freshness가 갱신된다.
+        expect(fearGreed!.lastModified.getTime()).toBeLessThan(NOW.getTime());
+    });
+
+    it('/fear-greed lastmod는 같은 세션 안에서 호출 시각이 달라도 동일하다', () => {
+        // NOW(2026-05-23 15:30Z)는 토요일 — 같은 날 다른 시각에 두 번 만들어도
+        // 직전 금요일 마감으로 고정돼야 한다.
+        const a = buildStaticEntries(new Date('2026-05-23T00:10:00.000Z'));
+        const b = buildStaticEntries(new Date('2026-05-23T23:50:00.000Z'));
+        const pick = (es: ReturnType<typeof buildStaticEntries>) =>
+            es.find(e => e.url.endsWith('/fear-greed'))!.lastModified.getTime();
+        expect(pick(a)).toBe(pick(b));
     });
 
     it('/economy는 daily·priority 0.8로 둔다', () => {
@@ -91,12 +106,12 @@ describe('buildStaticEntries', () => {
         }
     });
 
-    it('/news hub과 5개 카테고리 entries는 now를 lastModified로 사용한다', () => {
+    it('/news hub과 5개 카테고리 entries는 UTC 일 경계를 lastModified로 사용한다', () => {
+        const startOfDay = new Date('2026-05-23T00:00:00.000Z');
         const entries = buildStaticEntries(NOW);
         const newsHub = entries.find(e => e.url === `${SITE_URL}/news`);
         expect(newsHub).toBeDefined();
-        expect(newsHub!.lastModified).toBeInstanceOf(Date);
-        expect(newsHub!.lastModified.getTime()).toBe(NOW.getTime());
+        expect(newsHub!.lastModified.getTime()).toBe(startOfDay.getTime());
 
         for (const slug of [
             'general',
@@ -107,8 +122,25 @@ describe('buildStaticEntries', () => {
         ]) {
             const cat = entries.find(e => e.url === `${SITE_URL}/news/${slug}`);
             expect(cat).toBeDefined();
-            expect(cat!.lastModified).toBeInstanceOf(Date);
-            expect(cat!.lastModified.getTime()).toBe(NOW.getTime());
+            expect(cat!.lastModified.getTime()).toBe(startOfDay.getTime());
         }
+    });
+
+    /**
+     * 회귀 가드: sitemap 라우트가 `force-dynamic`이라 lastmod에 요청 시각을 쓰면
+     * 크롤러가 가져갈 때마다 값이 바뀐다. `/market`(장중 스캐너, ISR 1h)만 슬라이딩을
+     *허용하고 나머지는 전부 요청 시각보다 과거의 고정 시점이어야 한다.
+     */
+    it('/market 외에는 어떤 엔트리도 요청 시각을 그대로 lastmod로 쓰지 않는다', () => {
+        const entries = buildStaticEntries(NOW);
+        const usingNow = entries.filter(
+            e => e.lastModified.getTime() === NOW.getTime()
+        );
+        expect(usingNow).toEqual([]);
+
+        const market = entries.find(e => e.url === `${SITE_URL}/market`);
+        expect(market!.lastModified.getTime()).toBe(
+            NOW.getTime() - MS_PER_HOUR
+        );
     });
 });

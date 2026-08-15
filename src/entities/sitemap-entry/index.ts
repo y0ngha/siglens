@@ -17,6 +17,7 @@ export {
 } from './model';
 
 export { escapeXml, toUrlSetXml, toSitemapIndexXml } from './lib/xml';
+export { maxLastModified } from './lib/maxLastModified';
 export { buildRemovalEntries } from './lib/buildRemovalEntries';
 export { toRemovalUrlSetXml } from './lib/removalXml';
 export { buildPopularEntries } from './lib/buildPopularEntries';

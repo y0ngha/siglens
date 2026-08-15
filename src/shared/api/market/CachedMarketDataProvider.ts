@@ -6,17 +6,15 @@ import {
     type MarketQuote,
     type MarketSessionSpec,
     type Timeframe,
-    MARKET_CLOSE_HOUR,
     US_EQUITY_SESSION,
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
-import { getEasternOffsetHours } from '@/shared/lib/eastern';
 import {
-    MS_PER_HOUR,
-    SECONDS_PER_DAY,
-    SECONDS_PER_HOUR,
-} from '@/shared/config/time';
+    EOD_PUBLISH_BUFFER_HOURS,
+    lastClosedSessionDateEt,
+} from '@/shared/lib/marketSessionDate';
+import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from '@/shared/config/time';
 import { mergeBarsByTime } from './mergeBarsByTime';
 import type { SiglensMarketProvider } from './marketProvider.types';
 
@@ -26,11 +24,6 @@ import type { SiglensMarketProvider } from './marketProvider.types';
  * 최근 윈도우(오늘−N일 이내)이면 단일 키 경로를 사용한다.
  */
 const EOD_LONG_WINDOW_GATE_DAYS = 10;
-
-/** 마감(16:00 ET) 후 FMP EOD 발행까지의 안전 버퍼(시간). 이 시간 전에는 당일을
- * lastClosed로 롤하지 않아, 발행 전 불완전 EOD가 당일 키에 캐시되는 것을 막는다.
- * 버퍼 구간에도 당일 봉은 quote(최종 OHLCV)로 온전히 표시된다. */
-const EOD_PUBLISH_BUFFER_HOURS = 4;
 
 /**
  * EOD history 캐시 TTL. 세션-날짜 키(bars:eodhist:<SYM>:<date>)가 미국 마감마다
@@ -67,38 +60,6 @@ function sliceFrom(bars: Bar[], from: string | undefined): Bar[] {
     if (from === undefined) return bars;
     const threshold = utcMidnightSeconds(from);
     return bars.filter(b => b.time >= threshold);
-}
-
-/**
- * 마지막으로 마감된(16:00 ET 경과) 미국 정규 세션의 ET 날짜(YYYY-MM-DD)를 반환한다.
- * 서머타임은 getEasternOffsetHours로 반영(여름 마감=20:00 UTC, 겨울=21:00 UTC). 주말은
- * 직전 금요일로 되감는다(공휴일은 미보정 — 그 날짜로 키가 한 번 더 versioning될 뿐 EOD
- * 조회는 실제 마지막 거래일까지 반환하므로 데이터는 정확). EOD history 캐시 키에 넣어
- * 미국 마감마다 캐시가 자연 롤(=세션당 1회 재조회)되게 한다.
- *
- * EOD_PUBLISH_BUFFER_HOURS: 마감 직후 FMP가 당일 EOD를 아직 발행하지 않았을 수 있으므로,
- * 16:00 ET + 4h(20:00 ET)가 지나야 당일을 lastClosed로 롤한다. 버퍼 구간에는 직전 거래일이
- * lastClosed로 유지되어, 불완전 EOD가 당일 키에 캐시되는 갭을 방지한다.
- */
-export function lastClosedSessionDateEt(now: Date): string {
-    const et = new Date(
-        now.getTime() + getEasternOffsetHours(now) * MS_PER_HOUR
-    );
-    const dow = et.getUTCDay(); // 0=Sun..6=Sat (ET wall-clock via shifted UTC getters)
-    const closedToday =
-        1 <= dow &&
-        dow <= 5 &&
-        et.getUTCHours() >= MARKET_CLOSE_HOUR + EOD_PUBLISH_BUFFER_HOURS;
-    const cursor = new Date(
-        Date.UTC(et.getUTCFullYear(), et.getUTCMonth(), et.getUTCDate())
-    );
-    if (!closedToday) cursor.setUTCDate(cursor.getUTCDate() - 1);
-    let day = cursor.getUTCDay();
-    while (day === 0 || day === 6) {
-        cursor.setUTCDate(cursor.getUTCDate() - 1);
-        day = cursor.getUTCDay();
-    }
-    return cursor.toISOString().slice(0, 10);
 }
 
 /** quote TTL은 bars 일봉 개장-경계 정책을 재사용 — timeframe과 무관한 placeholder. */
