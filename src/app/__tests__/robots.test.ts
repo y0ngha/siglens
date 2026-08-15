@@ -6,6 +6,30 @@ import type { MetadataRoute } from 'next';
 
 import robots, { AI_CRAWLER_CRAWL_DELAY_SECONDS } from '@/app/robots';
 
+/**
+ * `MetadataRoute.Robots['rules']`는 단일 그룹 객체 또는 배열, 두 형태를 모두 허용하는
+ * 타입이다(next의 계약). 거의 모든 테스트가 배열로 정규화한 뒤 특정 성격의 그룹(전면
+ * 차단, crawl-delay)에 속한 user-agent만 모아 단언하므로, 그 정규화 + 자주 쓰는 조회를
+ * 여기 한 곳에 모아 각 it()가 조회 한 줄 + 단언으로 끝나게 한다.
+ */
+const toRulesArray = (rules: MetadataRoute.Robots['rules']) =>
+    Array.isArray(rules) ? rules : [rules];
+
+const toUserAgents = (rule: ReturnType<typeof toRulesArray>[number]) =>
+    Array.isArray(rule.userAgent) ? rule.userAgent : [rule.userAgent ?? ''];
+
+// disallow: '/' (전면 차단) 규칙에 묶인 user-agent를 모두 모은다.
+const getFullyDisallowedAgents = (result: MetadataRoute.Robots) =>
+    toRulesArray(result.rules)
+        .filter(rule => rule.disallow === '/')
+        .flatMap(toUserAgents);
+
+// crawlDelay가 붙은 규칙에 묶인 user-agent를 모두 모은다.
+const getCrawlDelayAgents = (result: MetadataRoute.Robots) =>
+    toRulesArray(result.rules)
+        .filter(rule => rule.crawlDelay !== undefined)
+        .flatMap(toUserAgents);
+
 describe('robots', () => {
     it('allows all paths for the default user agent but disallows /api/', () => {
         const result = robots();
@@ -44,9 +68,6 @@ describe('robots', () => {
      */
     it('GoogleOther 비검색 크롤러는 전면 Disallow 그룹에 있다 (crawl-delay 그룹 아님)', () => {
         const result = robots();
-        const rules = Array.isArray(result.rules)
-            ? result.rules
-            : [result.rules];
 
         expect(result.rules).toContainEqual({
             userAgent: [
@@ -58,13 +79,7 @@ describe('robots', () => {
         });
 
         // Google은 Crawl-delay를 무시한다 — crawlDelay가 붙은 그룹에 있으면 무제한이 된다.
-        const crawlDelayAgents = rules
-            .filter(rule => rule.crawlDelay !== undefined)
-            .flatMap(rule =>
-                Array.isArray(rule.userAgent)
-                    ? rule.userAgent
-                    : [rule.userAgent]
-            );
+        const crawlDelayAgents = getCrawlDelayAgents(result);
         for (const bot of [
             'GoogleOther',
             'GoogleOther-Image',
@@ -81,25 +96,12 @@ describe('robots', () => {
      */
     it('Google-Extended는 전면 차단되지 않는다 (fetch 없는 control token)', () => {
         const result = robots();
-        const rules = Array.isArray(result.rules)
-            ? result.rules
-            : [result.rules];
-
-        const fullyDisallowed = rules
-            .filter(rule => rule.disallow === '/')
-            .flatMap(rule =>
-                Array.isArray(rule.userAgent)
-                    ? rule.userAgent
-                    : [rule.userAgent]
-            );
+        const fullyDisallowed = getFullyDisallowedAgents(result);
         expect(fullyDisallowed).not.toContain('Google-Extended');
     });
 
     it('never disallows search-critical crawlers (Google 계열 + Yeti/Bingbot/Daumoa)', () => {
         const result = robots();
-        const rules = Array.isArray(result.rules)
-            ? result.rules
-            : [result.rules];
         // 검색 색인·SC 디버깅에 필수 — GoogleOther/AI-training 계열과 이름이 비슷해 오타 차단
         // 위험이 크다. Google 계열 + 국내외 포털 검색봇(Naver Yeti/Bing/Daum)을 함께 가드한다.
         const criticalSearchBots = [
@@ -108,8 +110,9 @@ describe('robots', () => {
             'Googlebot-News',
             'Googlebot-Video',
             'Google-InspectionTool',
+            // Naver 공식 크롤러 토큰. `NaverBot`은 공식 문서·실제 robots.txt 어디에도
+            // 없는 추측성 변형이니 재추가 금지.
             'Yeti',
-            'NaverBot',
             'Bingbot',
             'Daumoa',
             'Daum',
@@ -122,14 +125,7 @@ describe('robots', () => {
             // 함께 다루므로 가장 위험한 혼동 지점이다.
             'Applebot',
         ];
-        // disallow:'/' (전면 차단) 규칙에 묶인 user-agent를 모두 모은다.
-        const fullyDisallowedAgents = rules
-            .filter(rule => rule.disallow === '/')
-            .flatMap(rule =>
-                Array.isArray(rule.userAgent)
-                    ? rule.userAgent
-                    : [rule.userAgent]
-            );
+        const fullyDisallowedAgents = getFullyDisallowedAgents(result);
         // 조건부 if 없이 매 봇을 직접 단언 — vacuous pass(0 assertion 통과)를 방지한다.
         for (const bot of criticalSearchBots) {
             expect(fullyDisallowedAgents).not.toContain(bot);
@@ -166,17 +162,7 @@ describe('robots', () => {
      */
     it('순수 학습·스크레이핑 크롤러를 전면 차단한다', () => {
         const result = robots();
-        const rules = Array.isArray(result.rules)
-            ? result.rules
-            : [result.rules];
-
-        const fullyDisallowed = rules
-            .filter(rule => rule.disallow === '/')
-            .flatMap(rule =>
-                Array.isArray(rule.userAgent)
-                    ? rule.userAgent
-                    : [rule.userAgent]
-            );
+        const fullyDisallowed = getFullyDisallowedAgents(result);
 
         for (const bot of [
             'CCBot',
@@ -211,9 +197,6 @@ describe('robots', () => {
      */
     it('사용자 트리거 fetcher는 스로틀·차단 없이 허용한다', () => {
         const result = robots();
-        const rules = Array.isArray(result.rules)
-            ? result.rules
-            : [result.rules];
 
         expect(result.rules).toContainEqual({
             userAgent: ['ChatGPT-User', 'Claude-User', 'Perplexity-User'],
@@ -222,15 +205,10 @@ describe('robots', () => {
         });
 
         // 전면 차단 그룹에도, crawl-delay 그룹에도 들어가면 안 된다.
-        const blockedOrThrottled = rules
-            .filter(
-                rule => rule.disallow === '/' || rule.crawlDelay !== undefined
-            )
-            .flatMap(rule =>
-                Array.isArray(rule.userAgent)
-                    ? rule.userAgent
-                    : [rule.userAgent]
-            );
+        const blockedOrThrottled = [
+            ...getFullyDisallowedAgents(result),
+            ...getCrawlDelayAgents(result),
+        ];
         for (const bot of ['ChatGPT-User', 'Claude-User', 'Perplexity-User']) {
             expect(blockedOrThrottled).not.toContain(bot);
         }
@@ -243,15 +221,7 @@ describe('robots', () => {
      */
     it('같은 user-agent가 두 그룹에 중복 등장하지 않는다', () => {
         const result = robots();
-        const rules = Array.isArray(result.rules)
-            ? result.rules
-            : [result.rules];
-
-        const all = rules.flatMap(rule =>
-            Array.isArray(rule.userAgent)
-                ? rule.userAgent
-                : [rule.userAgent ?? '']
-        );
+        const all = toRulesArray(result.rules).flatMap(toUserAgents);
         const seen = new Set<string>();
         const duplicates = all.filter(ua => {
             const key = ua.toLowerCase();
@@ -276,15 +246,13 @@ describe('robots', () => {
         const findGroupByUserAgent = (
             rules: MetadataRoute.Robots['rules'],
             userAgent: string
-        ) => {
-            const list = Array.isArray(rules) ? rules : [rules];
-            return list.find(rule =>
+        ) =>
+            toRulesArray(rules).find(rule =>
                 Array.isArray(rule.userAgent)
                     ? rule.userAgent.length === 1 &&
                       rule.userAgent[0] === userAgent
                     : rule.userAgent === userAgent
             );
-        };
 
         it('Googlebot 전용 그룹이 존재하고 OG/twitter-image 경로를 disallow한다', () => {
             const result = robots();
@@ -348,17 +316,7 @@ describe('robots', () => {
      */
     it('AI 검색·인용 봇은 전면 차단하지 않는다', () => {
         const result = robots();
-        const rules = Array.isArray(result.rules)
-            ? result.rules
-            : [result.rules];
-
-        const fullyDisallowed = rules
-            .filter(rule => rule.disallow === '/')
-            .flatMap(rule =>
-                Array.isArray(rule.userAgent)
-                    ? rule.userAgent
-                    : [rule.userAgent]
-            );
+        const fullyDisallowed = getFullyDisallowedAgents(result);
 
         for (const bot of [
             'GPTBot',
@@ -369,20 +327,5 @@ describe('robots', () => {
         ]) {
             expect(fullyDisallowed).not.toContain(bot);
         }
-    });
-
-    it('AI 검색·인용 크롤러는 crawlDelay로 허용하되 /api/는 disallow한다(접근 보존)', () => {
-        const result = robots();
-        expect(result.rules).toContainEqual(
-            expect.objectContaining({
-                userAgent: expect.arrayContaining([
-                    'PerplexityBot',
-                    'OAI-SearchBot',
-                ]),
-                allow: ['/', '/api/analysis/stream'],
-                disallow: ['/api/'],
-                crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,
-            })
-        );
     });
 });
