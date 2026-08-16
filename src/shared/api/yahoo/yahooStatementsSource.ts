@@ -87,6 +87,11 @@ async function fetchModule(
         });
         // yahoo는 오래된 기간부터 반환한다. 도메인 계약(newest first)에 맞춰 뒤집는다 —
         // 이 순서를 어기면 성장률이 부호까지 반대로 계산된다.
+        //
+        // Safe cast: `fundamentalsTimeSeries`의 반환 타입은 module 인자에 따라 필드가
+        // 완전히 달라지는 넓은 형태라 세 제표의 합집합인 우리 타입과 구조적으로
+        // 대응하지 않는다. `YahooStatementRaw`는 모든 필드를 optional로 선언하고
+        // 매핑 단계가 결측을 `null`로 흡수하므로 형상이 어긋나도 런타임에서 안전하다.
         return (rows as unknown as YahooStatementRaw[]).toReversed();
     } catch (e) {
         console.warn('[yahooStatements] fetch failed', symbol, module, e);

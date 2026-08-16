@@ -23,7 +23,7 @@ function build(over: Partial<YahooFundamentals> = {}): YahooFundamentals {
     };
 }
 
-/** yahoo는 오래된 연도부터 반환한다 — 배열 끝이 최신이다. */
+/** 소스가 최신순으로 뒤집어 넘기므로 **첫 인자가 최신 회계연도**다. */
 function years(...rows: YahooStatementRow[]): YahooStatementRow[] {
     return rows;
 }
@@ -215,8 +215,8 @@ describe('mapKeyMetrics', () => {
             build({
                 summary,
                 balance: years(
-                    { stockholdersEquity: 1 },
-                    { stockholdersEquity: 424_313_255_000_000 }
+                    { stockholdersEquity: 424_313_255_000_000 },
+                    { stockholdersEquity: 1 }
                 ),
             } as never)
         );
@@ -281,8 +281,8 @@ describe('mapCashFlow', () => {
             mapCashFlow(
                 build({
                     cashFlow: years(
-                        { operatingCashFlow: 1 },
-                        { operatingCashFlow: 85_315_148_000_000 }
+                        { operatingCashFlow: 85_315_148_000_000 },
+                        { operatingCashFlow: 1 }
                     ),
                 })
             )
@@ -305,8 +305,8 @@ describe('mapIncomeGrowth', () => {
         const result = mapIncomeGrowth(
             build({
                 income: years(
-                    { totalRevenue: 300_870_903_000_000, basicEPS: 4950 },
-                    { totalRevenue: 333_605_938_000_000, basicEPS: 6605 }
+                    { totalRevenue: 333_605_938_000_000, basicEPS: 6605 },
+                    { totalRevenue: 300_870_903_000_000, basicEPS: 4950 }
                 ),
             })
         );
@@ -317,7 +317,7 @@ describe('mapIncomeGrowth', () => {
     it('keeps a loss-to-profit swing positive by dividing by the absolute prior', () => {
         // 부호를 그대로 나누면 흑자 전환이 음수 성장률로 표시된다.
         const result = mapIncomeGrowth(
-            build({ income: years({ basicEPS: -100 }, { basicEPS: 50 }) })
+            build({ income: years({ basicEPS: 50 }, { basicEPS: -100 }) })
         );
         expect(result!.growthEPS).toBeCloseTo(1.5, 4);
     });
@@ -326,8 +326,8 @@ describe('mapIncomeGrowth', () => {
         const result = mapIncomeGrowth(
             build({
                 income: years(
-                    { totalRevenue: 0, basicEPS: 10 },
-                    { totalRevenue: 100, basicEPS: 20 }
+                    { totalRevenue: 100, basicEPS: 20 },
+                    { totalRevenue: 0, basicEPS: 10 }
                 ),
             })
         );

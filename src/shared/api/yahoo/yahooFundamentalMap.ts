@@ -38,14 +38,20 @@ function toNullable(v: number | undefined): number | null {
     return v ?? null;
 }
 
-/** 최신 회계연도 행(yahoo는 오래된 연도부터 정렬해 반환한다). */
+/**
+ * 최신 회계연도 행.
+ *
+ * `yahooStatementsSource`가 이미 최신순으로 뒤집어 넘기므로 **맨 앞이 최신**이다.
+ * (예전에는 이 모듈만 oldest-first를 가정해 `.at(-1)`을 썼고, 같은 데이터를 다루는
+ * 두 모듈의 규약이 반대라 성장률 부호가 뒤집힐 소지가 있었다.)
+ */
 function latest(rows: YahooStatementRow[]): YahooStatementRow | undefined {
-    return rows.at(-1);
+    return rows[0];
 }
 
 /** 직전 회계연도 행 — 성장률 계산의 기준. */
 function previous(rows: YahooStatementRow[]): YahooStatementRow | undefined {
-    return rows.at(-2);
+    return rows[1];
 }
 
 const CEO_TITLE_RE = /\bCEO\b|Chief Executive/i;

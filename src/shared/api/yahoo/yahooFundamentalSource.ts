@@ -1,15 +1,16 @@
 import 'server-only';
 import YahooFinance from 'yahoo-finance2';
 import { MS_PER_SECOND } from '@/shared/config/time';
+import {
+    getYahooStatements,
+    type YahooStatementRaw,
+} from './yahooStatementsSource';
 
 // 설정 근거는 YahooMarketProvider / YahooOptionsAdapter 주석 참조.
 const yahooFinance = new YahooFinance({
     suppressNotices: ['yahooSurvey'],
     validation: { logErrors: false },
 });
-
-/** 재무 시계열 조회 하한. 성장률은 직전 회계연도 대비이므로 3개년이면 충분하다. */
-const STATEMENT_LOOKBACK_YEARS = 3;
 
 /**
  * 같은 심볼에 대한 중복 조회를 접는 시간(ms).
@@ -99,18 +100,20 @@ export interface YahooSummary {
     };
 }
 
-export interface YahooStatementRow {
-    date?: Date;
-    totalRevenue?: number;
-    netIncome?: number;
-    basicEPS?: number;
-    totalAssets?: number;
-    stockholdersEquity?: number;
-    operatingCashFlow?: number;
-}
+/**
+ * 재무제표 행 타입은 `yahooStatementsSource`가 단독으로 소유한다.
+ *
+ * 예전에는 이 모듈이 자체 `YahooStatementRow`와 자체 fetch 로직을 들고 있었는데,
+ * 두 모듈의 **정렬 규약이 서로 반대**여서(여기는 oldest-first, 저기는 newest-first)
+ * 유지보수 중 성장률 부호가 뒤집힐 소지가 있었다. 게다가 같은 종목의 fundamental·
+ * financials 탭을 함께 열면 캐시가 공유되지 않아 yahoo 호출이 두 배가 됐다.
+ * 지금은 조회를 `getYahooStatements`에 위임해 소스·캐시·정렬 규약을 하나로 모은다.
+ */
+export type YahooStatementRow = YahooStatementRaw;
 
 export interface YahooFundamentals {
     summary: YahooSummary | null;
+    /** 전부 최신순(newest first) — `yahooStatementsSource`의 규약을 그대로 따른다. */
     income: YahooStatementRow[];
     balance: YahooStatementRow[];
     cashFlow: YahooStatementRow[];
@@ -142,17 +145,11 @@ export function _resetYahooFundamentalCacheForTest(): void {
     cache.clear();
 }
 
-function lookbackStart(): string {
-    const d = new Date();
-    d.setUTCFullYear(d.getUTCFullYear() - STATEMENT_LOOKBACK_YEARS);
-    return d.toISOString().slice(0, 10);
-}
-
 async function fetchAll(symbol: string): Promise<YahooFundamentals> {
-    const period1 = lookbackStart();
-    // 네 소스는 서로 독립이라 하나가 실패해도 나머지는 살린다 — 재무 시계열이 없는
-    // 종목에서도 프로필/비율은 렌더되어야 한다.
-    const [summary, income, balance, cashFlow] = await Promise.all([
+    // 두 소스는 서로 독립이라 하나가 실패해도 나머지는 살린다 — 재무 시계열이 없는
+    // 종목에서도 프로필/비율은 렌더되어야 한다. 재무제표는 `getYahooStatements`가
+    // 자체 dedup 캐시를 들고 있어, financials 탭이 이미 조회했다면 재호출이 없다.
+    const [summary, statements] = await Promise.all([
         yahooFinance
             .quoteSummary(symbol, {
                 modules: [
@@ -175,36 +172,17 @@ async function fetchAll(symbol: string): Promise<YahooFundamentals> {
                 );
                 return null;
             }),
-        fetchStatement(symbol, 'financials', period1),
-        fetchStatement(symbol, 'balance-sheet', period1),
-        fetchStatement(symbol, 'cash-flow', period1),
+        getYahooStatements(symbol, 'annual'),
     ]);
 
     return {
+        // Safe cast: `quoteSummary`의 반환 타입은 요청한 모듈 조합에 따라 라이브러리가
+        // 넓게 정의해 두어 우리가 소비하는 부분집합(`YahooSummary`)과 구조적으로
+        // 대응하지 않는다. 위 `modules` 목록이 이 인터페이스의 필드와 1:1이며,
+        // 모든 필드를 optional로 선언해 결측을 런타임에서 흡수한다.
         summary: summary as unknown as YahooSummary | null,
-        income,
-        balance,
-        cashFlow,
+        ...statements,
     };
-}
-
-async function fetchStatement(
-    symbol: string,
-    module: 'financials' | 'balance-sheet' | 'cash-flow',
-    period1: string
-): Promise<YahooStatementRow[]> {
-    try {
-        const rows = await yahooFinance.fundamentalsTimeSeries(symbol, {
-            period1,
-            module,
-            type: 'annual',
-        });
-        // yahoo는 오래된 연도부터 반환한다 — 호출부가 `.at(-1)`로 최신을 집는 전제.
-        return rows as unknown as YahooStatementRow[];
-    } catch (e) {
-        console.warn('[yahooFundamental] statement failed', symbol, module, e);
-        return [];
-    }
 }
 
 /**

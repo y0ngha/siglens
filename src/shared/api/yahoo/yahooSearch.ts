@@ -33,6 +33,10 @@ export async function searchYahooQuotes(
             quotesCount: SEARCH_QUOTES_COUNT,
             newsCount: 0,
         });
+        // Safe cast: `search`의 quotes는 자산군별(주식/ETF/크립토/펀드) 유니온이라
+        // 공통 부분집합만 쓰는 우리 타입과 구조적으로 대응하지 않는다.
+        // `YahooSearchQuote`는 `symbol`을 제외한 모든 필드를 optional로 두고,
+        // 호출부가 `isKrEquitySymbol`로 형상을 다시 검증한 뒤에만 사용한다.
         return result.quotes as unknown as YahooSearchQuote[];
     } catch (e) {
         console.warn('[yahooSearch] search failed', query, e);

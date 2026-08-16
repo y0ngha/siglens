@@ -115,6 +115,10 @@ export class YahooMarketProvider implements SiglensMarketProvider {
             interval,
         });
 
+        // Safe cast: 라이브러리의 `chart` 반환 타입은 interval에 따라 필드가 달라지는
+        // 넓은 유니온이라 우리가 소비하는 부분집합과 구조적으로 대응하지 않는다.
+        // `YahooChartQuote`는 OHLCV를 전부 nullable로 선언하고 `toBar`가 결측을
+        // 걸러내므로, 실제 응답이 이 형상을 벗어나도 런타임에서 흡수된다.
         const quotes = result.quotes as unknown as YahooChartQuote[];
         return quotes.map(toBar).filter((bar): bar is Bar => bar !== null);
     }

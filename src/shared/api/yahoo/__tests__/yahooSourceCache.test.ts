@@ -82,6 +82,19 @@ describe('getYahooFundamentals dedup', () => {
         });
     });
 
+    it('shares the statements cache with getYahooStatements', async () => {
+        // fundamental 탭과 financials 탭을 함께 열면 같은 연간 재무제표를 두 번
+        // 가져오던 문제를 막는 지점 — 두 소스가 한 캐시를 공유해야 한다.
+        await getYahooStatements('005930.KS', 'annual');
+        const callsAfterStatements = fundamentalsTimeSeries.mock.calls.length;
+
+        await getYahooFundamentals('005930.KS');
+
+        expect(fundamentalsTimeSeries.mock.calls.length).toBe(
+            callsAfterStatements
+        );
+    });
+
     it('keeps other statements when one module fails', async () => {
         fundamentalsTimeSeries
             .mockRejectedValueOnce(new Error('income down'))
