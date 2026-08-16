@@ -9,7 +9,11 @@ import type {
     ScoreMetricUnit,
 } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
-import { usdFormatter } from './utils/numberFormat';
+import {
+    formatCurrencyCompact,
+    DEFAULT_STATEMENT_CURRENCY,
+    type StatementCurrency,
+} from './utils/numberFormat';
 
 interface AxisScoreCardProps {
     /** Korean axis title displayed as the card heading. */
@@ -18,6 +22,8 @@ interface AxisScoreCardProps {
     axisKey: FinancialsAxis;
     /** Axis score object from the financials scorecard. */
     axis: AxisScore;
+    /** 금액 지표에 적용할 통화. 생략하면 USD — 미국 종목의 기존 동작. */
+    currency?: StatementCurrency;
 }
 
 /** Grade badge background + text colors (grade-ramp tokens). */
@@ -48,7 +54,8 @@ const SIGNAL_CHIP_CLASS: Record<FinancialSignalDirection, string> = {
  */
 function formatMetricValue(
     value: number | null,
-    unit: ScoreMetricUnit
+    unit: ScoreMetricUnit,
+    currency: StatementCurrency
 ): string {
     if (value === null) return '—';
 
@@ -57,8 +64,9 @@ function formatMetricValue(
             return `${value.toFixed(1)}%`;
         case 'ratio':
             return `${value.toFixed(2)}x`;
+        // 'usd'는 "금액" 단위를 뜻하는 레거시 라벨이다 — 실제 통화는 `currency`가 정한다.
         case 'usd':
-            return usdFormatter.format(value);
+            return formatCurrencyCompact(value, currency);
         case 'score':
             return String(Math.round(value));
     }
@@ -92,14 +100,15 @@ function SignalChip({ signal }: SignalChipProps) {
 
 interface MetricRowProps {
     metric: ScoreMetric;
+    currency: StatementCurrency;
 }
 
-function MetricRow({ metric }: MetricRowProps) {
+function MetricRow({ metric, currency }: MetricRowProps) {
     return (
         <div className="border-secondary-700 flex items-baseline justify-between gap-2 border-b py-1.5 last:border-b-0">
             <span className="text-secondary-300 text-xs">{metric.labelKo}</span>
             <span className="font-mono text-xs font-medium tabular-nums">
-                {formatMetricValue(metric.value, metric.unit)}
+                {formatMetricValue(metric.value, metric.unit, currency)}
             </span>
         </div>
     );
@@ -114,7 +123,12 @@ function MetricRow({ metric }: MetricRowProps) {
  * - Signal chips (each colored by direction: positive/negative/neutral)
  * - Key metrics list (value formatted by unit)
  */
-export function AxisScoreCard({ title, axisKey, axis }: AxisScoreCardProps) {
+export function AxisScoreCard({
+    title,
+    axisKey,
+    axis,
+    currency = DEFAULT_STATEMENT_CURRENCY,
+}: AxisScoreCardProps) {
     const { score, grade, signals, metrics } = axis;
     const gradeBadgeClass = GRADE_BADGE_CLASS[grade];
     const progressColorClass = PROGRESS_GRADE_COLOR[grade];
@@ -176,7 +190,11 @@ export function AxisScoreCard({ title, axisKey, axis }: AxisScoreCardProps) {
             {metrics.length > 0 && (
                 <div>
                     {metrics.map(metric => (
-                        <MetricRow key={metric.labelKo} metric={metric} />
+                        <MetricRow
+                            key={metric.labelKo}
+                            metric={metric}
+                            currency={currency}
+                        />
                     ))}
                 </div>
             )}

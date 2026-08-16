@@ -27,6 +27,7 @@ import { withRetry } from '@/shared/lib/withRetry';
 import { isCryptoSymbolStatic } from './lib/isCryptoSymbolStatic';
 import {
     getDescriptor,
+    isKrEquitySymbol,
     DEFAULT_MARKET_PROFILE,
     type TabKey,
 } from '@/shared/config/marketProfile';
@@ -233,6 +234,11 @@ export async function fetchCryptoAssetList(): Promise<CryptoAssetRow[]> {
  * Hot paths (getAssetInfo, search) continue to use `isCryptoSymbol` directly —
  * those callers are not wrapped here and are unaffected by this change.
  *
+ * 한국 상장 종목은 심볼 형상(`005930.KS`)만으로 판정되므로 DB 조회 이전에 분기한다 —
+ * `unstable_cache` 왕복이 통째로 생략된다. 이 분기가 없으면 kr-equity 심볼이
+ * `DEFAULT_MARKET_PROFILE`(us-equity)로 떨어져 국내에 존재하지 않는 options/congress
+ * 탭이 200으로 열린다.
+ *
  * The `notFound()` side-effect intentionally lives in the calling page (app layer),
  * not here — this function is a pure predicate.
  *
@@ -245,6 +251,12 @@ export async function isTabAllowedForSymbol(
     symbol: string,
     tab: TabKey
 ): Promise<boolean> {
+    // 한국 종목은 형상만으로 확정되므로 먼저 반환한다 — DB를 때리는
+    // `isCryptoSymbolStatic` 호출 자체를 건너뛴다.
+    if (isKrEquitySymbol(symbol)) {
+        return getDescriptor('kr-equity').tabs.includes(tab);
+    }
+
     const profile = (await isCryptoSymbolStatic(symbol))
         ? 'crypto'
         : DEFAULT_MARKET_PROFILE;

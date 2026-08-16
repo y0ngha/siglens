@@ -84,4 +84,51 @@ describe('getCachedMarketDataProvider', () => {
         const equity = getCachedMarketDataProvider(US_EQUITY_SESSION);
         expect(crypto).not.toBe(equity);
     });
+
+    it('KR_EQUITY_SESSION — kr 싱글톤을 반복 호출에 재사용한다', async () => {
+        const { getCachedMarketDataProvider } =
+            await import('@/shared/api/market/getCachedMarketDataProvider');
+        const { KR_EQUITY_SESSION } =
+            await import('@/shared/api/market/sessionSpecFor');
+        expect(getCachedMarketDataProvider(KR_EQUITY_SESSION)).toBe(
+            getCachedMarketDataProvider(KR_EQUITY_SESSION)
+        );
+    });
+
+    it('KR_EQUITY_SESSION은 us/crypto와 다른 인스턴스다', async () => {
+        // 크립토는 세션만 바꿔 같은 FmpMarketProvider를 감싸지만, 한국은 provider
+        // 자체가 yahoo라 분기가 반드시 갈려야 한다.
+        const { getCachedMarketDataProvider } =
+            await import('@/shared/api/market/getCachedMarketDataProvider');
+        const { KR_EQUITY_SESSION } =
+            await import('@/shared/api/market/sessionSpecFor');
+        const kr = getCachedMarketDataProvider(KR_EQUITY_SESSION);
+        expect(kr).not.toBe(getCachedMarketDataProvider(US_EQUITY_SESSION));
+        expect(kr).not.toBe(getCachedMarketDataProvider(CRYPTO_SESSION));
+    });
+
+    it('KR_EQUITY_SESSION도 비-E2E면 CachedMarketDataProvider로 감싼다', async () => {
+        const { getCachedMarketDataProvider } =
+            await import('@/shared/api/market/getCachedMarketDataProvider');
+        const { CachedMarketDataProvider } =
+            await import('@/shared/api/market/CachedMarketDataProvider');
+        const { KR_EQUITY_SESSION } =
+            await import('@/shared/api/market/sessionSpecFor');
+        expect(getCachedMarketDataProvider(KR_EQUITY_SESSION)).toBeInstanceOf(
+            CachedMarketDataProvider
+        );
+    });
+
+    it('E2E면 KR_EQUITY_SESSION도 raw provider를 반환한다(네트워크 차단)', async () => {
+        mockIsE2E.mockReturnValue(true);
+        const { getCachedMarketDataProvider } =
+            await import('@/shared/api/market/getCachedMarketDataProvider');
+        const { getMarketDataProvider } =
+            await import('@/shared/api/market/getMarketDataProvider');
+        const { KR_EQUITY_SESSION } =
+            await import('@/shared/api/market/sessionSpecFor');
+        expect(getCachedMarketDataProvider(KR_EQUITY_SESSION)).toBe(
+            getMarketDataProvider()
+        );
+    });
 });

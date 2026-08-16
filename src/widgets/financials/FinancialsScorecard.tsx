@@ -1,11 +1,17 @@
 import type { FinancialsScorecard } from '@y0ngha/siglens-core';
 import { CompositeGradeGauge } from './CompositeGradeGauge';
 import { AxisScoreCard } from './AxisScoreCard';
+import {
+    DEFAULT_STATEMENT_CURRENCY,
+    type StatementCurrency,
+} from './utils/numberFormat';
 import { AXIS_LABEL_KO } from './axisLabels';
 
 interface FinancialsScorecardProps {
     /** The complete 4-axis financials scorecard from computeFinancialsScorecard. */
     scorecard: FinancialsScorecard;
+    /** 금액 지표에 적용할 통화. 생략하면 USD — 미국 종목의 기존 동작. */
+    currency?: StatementCurrency;
 }
 
 /**
@@ -17,7 +23,10 @@ interface FinancialsScorecardProps {
  * - `CompositeGradeGauge` hero showing the composite score + grade + summary
  * - 4× `AxisScoreCard` in a responsive grid (2-col mobile / 4-col desktop)
  */
-export function FinancialsScorecard({ scorecard }: FinancialsScorecardProps) {
+export function FinancialsScorecard({
+    scorecard,
+    currency = DEFAULT_STATEMENT_CURRENCY,
+}: FinancialsScorecardProps) {
     const { composite, growth, quality, solvency, cash } = scorecard;
 
     const axes = [
@@ -62,6 +71,7 @@ export function FinancialsScorecard({ scorecard }: FinancialsScorecardProps) {
                         axisKey={key}
                         title={title}
                         axis={axis}
+                        currency={currency}
                     />
                 ))}
             </div>

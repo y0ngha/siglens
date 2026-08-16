@@ -7,12 +7,18 @@ import {
 } from '@/widgets/financials/financialsTooltips';
 import { EmptySectionCard } from './EmptySectionCard';
 import { StatementTable } from './StatementTable';
+import {
+    DEFAULT_STATEMENT_CURRENCY,
+    type StatementCurrency,
+} from '../utils/numberFormat';
 import { FinancialTrendChart } from './FinancialTrendChart';
 import { toDisplayOrder } from './toDisplayOrder';
 import { HEADING_CLASS_NAME } from './constants';
 
 interface CashFlowSectionProps {
     rows: CashFlowRow[];
+    /** 금액 표기에 적용할 통화. 생략하면 USD — 미국 종목의 기존 동작. */
+    currency?: StatementCurrency;
 }
 
 const HEADING_ID = 'cash-flow-heading';
@@ -31,7 +37,10 @@ const TITLE = '현금흐름표';
  * coloring. The chart series still uses 'bearish' for CapEx to distinguish
  * it visually from 영업CF and FCF in the trend line.
  */
-export function CashFlowSection({ rows }: CashFlowSectionProps) {
+export function CashFlowSection({
+    rows,
+    currency = DEFAULT_STATEMENT_CURRENCY,
+}: CashFlowSectionProps) {
     if (rows.length === 0) {
         return <EmptySectionCard title={TITLE} />;
     }
@@ -99,9 +108,17 @@ export function CashFlowSection({ rows }: CashFlowSectionProps) {
                 {TITLE}
             </h2>
             <div className="mb-6">
-                <FinancialTrendChart series={chartSeries} periods={columns} />
+                <FinancialTrendChart
+                    series={chartSeries}
+                    periods={columns}
+                    currency={currency}
+                />
             </div>
-            <StatementTable columns={columns} rows={tableRows} />
+            <StatementTable
+                columns={columns}
+                rows={tableRows}
+                currency={currency}
+            />
         </section>
     );
 }

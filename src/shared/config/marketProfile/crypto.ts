@@ -10,6 +10,7 @@ export const CRYPTO_DESCRIPTOR: MarketProfileDescriptor = {
         precision: { kind: 'dynamic-by-magnitude' },
     },
     sessionModel: 'always-open',
+    quoteDelayMinutes: 0, // 24/7 실시간
     dataProvider: 'fmp',
     toProviderSymbol: canonical => canonical, // FMP crypto symbols are already canonical (BTCUSD) — no mapping needed
     newsSource: 'crypto',

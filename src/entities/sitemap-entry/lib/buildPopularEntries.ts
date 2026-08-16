@@ -3,6 +3,7 @@ import { MS_PER_HOUR } from '@/shared/config/time';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 import { POPULAR_OPTIONS_TICKERS } from '../config/popular-options-tickers';
 import { SITE_URL } from '@/shared/lib/seo';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile';
 import type { SitemapEntry } from '../model';
 
 const POPULAR_OPTIONS_SET = new Set<string>(POPULAR_OPTIONS_TICKERS);
@@ -78,11 +79,19 @@ export function buildPopularEntries(now: Date): SitemapEntry[] {
             changeFrequency: 'daily',
             priority: 0.78,
         },
-        {
-            url: `${SITE_URL}/${ticker}/congress`,
-            lastModified: todayClose,
-            changeFrequency: 'weekly',
-            priority: 0.75,
-        },
+        // 국내 상장 종목은 공직자 매매 공시 제도가 없어 `/congress`가 404다
+        // (`KR_EQUITY_DESCRIPTOR.tabs`에서 제외). 404 URL을 sitemap에 실으면
+        // 크롤 예산만 태우고 색인 품질 신호가 나빠진다.
+        ...(isKrEquitySymbol(ticker)
+            ? []
+            : [
+                  {
+                      url: `${SITE_URL}/${ticker}/congress`,
+                      lastModified: todayClose,
+                      // 위 options 분기와 같은 이유로 `as const`가 필요하다.
+                      changeFrequency: 'weekly' as const,
+                      priority: 0.75,
+                  },
+              ]),
     ]);
 }

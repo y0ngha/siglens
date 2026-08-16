@@ -178,3 +178,8 @@
 
 ## [fix/bars-seed-fold Round 5 | Fold index mechanism in bars query | 2026-08-13]
 - Status: APPROVED (zero findings)
+
+## [feat/kr-equity Round 2 | Korean stock support | 2026-08-16]
+- Violation: isTabAllowedForSymbol used nested ternary (ternary ? ternary : value) pattern, obscuring control flow
+  - Rule: FF.md Readability 1-E — no nested ternaries; early returns preserve clarity
+  - Context: Refactored to early return, also eliminating unnecessary DB call for KR symbols (now skips isCryptoSymbolStatic check for all KR market profiles)

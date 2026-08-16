@@ -165,7 +165,7 @@ export async function runOverallAnalysisAction(
             companyName,
             timeframe,
             modelId,
-            fundamentalProvider: getFundamentalDataProvider(),
+            fundamentalProvider: getFundamentalDataProvider(symbol),
             marketDataProvider,
             newsItems: enrichedNews,
             upcomingCalendar: next !== null ? [next] : [],

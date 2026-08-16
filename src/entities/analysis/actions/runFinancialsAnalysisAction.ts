@@ -65,7 +65,7 @@ export async function runFinancialsAnalysisAction(
         return await runFinancialsAnalysis({
             symbol,
             modelId,
-            dataProvider: getFinancialStatementsProvider(),
+            dataProvider: getFinancialStatementsProvider(symbol),
             tier: gate.tier,
             reasoning: resolveReasoning(gate.tier, reasoning),
             skipEnqueueIfMiss,

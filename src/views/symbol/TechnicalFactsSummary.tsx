@@ -61,6 +61,7 @@ export function TechnicalFactsSummary({
     if (!facts) return null;
 
     const change = formatVisibleChange(facts.changePercent);
+    const { quoteDelayMinutes, priceFormat } = getDescriptor(marketProfile);
     const narrative = buildTechnicalFactsNarrative(
         symbol,
         facts,
@@ -80,12 +81,19 @@ export function TechnicalFactsSummary({
             </h2>
             <dl className="text-secondary-300 grid grid-cols-1 gap-2 text-sm">
                 <div className="flex justify-between gap-4">
-                    <dt className="text-secondary-400">현재가</dt>
+                    <dt className="text-secondary-400">
+                        현재가
+                        {/* 지연 시세를 실시간으로 오독하지 않도록 라벨에 바로 붙인다.
+                            값 옆이 아니라 라벨에 두는 이유: 가격·등락률과 한 줄에 섞이면
+                            숫자의 일부처럼 읽힌다. */}
+                        {quoteDelayMinutes > 0 && (
+                            <span className="text-secondary-500 ml-1 text-xs font-normal">
+                                ({quoteDelayMinutes}분 지연)
+                            </span>
+                        )}
+                    </dt>
                     <dd>
-                        {formatPrice(
-                            facts.lastClose,
-                            getDescriptor(marketProfile).priceFormat
-                        )}{' '}
+                        {formatPrice(facts.lastClose, priceFormat)}{' '}
                         <span className={change.colorClass}>{change.text}</span>
                     </dd>
                 </div>

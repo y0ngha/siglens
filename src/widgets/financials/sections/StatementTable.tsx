@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
-import { usdFormatter } from '../utils/numberFormat';
+import {
+    formatCurrencyCompact,
+    DEFAULT_STATEMENT_CURRENCY,
+    type StatementCurrency,
+} from '../utils/numberFormat';
 
 type FormatType = 'usd' | 'pct' | 'num';
 
@@ -32,15 +36,22 @@ interface StatementTableProps {
      */
     columns: string[];
     rows: TableRow[];
+    /** 금액 축(`format: 'usd'`)에 적용할 통화. 생략하면 USD — 미국 종목의 기존 동작. */
+    currency?: StatementCurrency;
 }
 
 /** Format a financial value based on its type. Returns '—' for null. */
-function formatValue(value: number | null, format: FormatType = 'num'): string {
+function formatValue(
+    value: number | null,
+    format: FormatType = 'num',
+    currency: StatementCurrency = DEFAULT_STATEMENT_CURRENCY
+): string {
     if (value === null) return '—';
 
     switch (format) {
+        // 'usd'는 "금액" 축을 뜻하는 레거시 라벨이다 — 실제 통화는 `currency`가 정한다.
         case 'usd':
-            return usdFormatter.format(value);
+            return formatCurrencyCompact(value, currency);
         case 'pct':
             return `${value.toFixed(1)}%`;
         case 'num':
@@ -59,6 +70,7 @@ export function StatementTable({
     caption,
     columns,
     rows,
+    currency = DEFAULT_STATEMENT_CURRENCY,
 }: StatementTableProps) {
     return (
         <>
@@ -120,7 +132,8 @@ export function StatementTable({
                                 {row.values.map((v, j) => {
                                     const formatted = formatValue(
                                         v,
-                                        row.format
+                                        row.format,
+                                        currency
                                     );
                                     const shouldColorize =
                                         row.colorize !== false;

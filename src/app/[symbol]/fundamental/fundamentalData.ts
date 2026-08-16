@@ -23,11 +23,14 @@ import type {
 // (getFundamentalDataProvider가 반환)로 이관됐다. 페이지·core 분석 경로가 동일
 // provider를 통과해 같은 캐시를 공유한다. 이 파일은 provider 위임 + DB 번역
 // (getProfileDescriptionKo)만 담당한다.
-const fundamentalClient = getFundamentalDataProvider();
-
+//
+// provider는 호출 시점에 심볼로 고른다 — 한국 종목(`005930.KS`)은 FMP 플랜이 커버하지
+// 않아 yahoo 백엔드로 가야 하므로, 모듈 레벨 상수 하나로 고정할 수 없다. 양쪽 provider
+// 모두 싱글턴이라 호출마다 인스턴스가 생기지는 않는다.
 export const getProfile = (
     symbol: string
-): Promise<FundamentalProfile | null> => fundamentalClient.getProfile(symbol);
+): Promise<FundamentalProfile | null> =>
+    getFundamentalDataProvider(symbol).getProfile(symbol);
 
 /**
  * 회사 설명의 한국어 번역을 반환하고, 최초 호출 시 DB에 저장해 배포 간에도
@@ -62,7 +65,7 @@ export const getProfileDescriptionKo = cache(
 export const getKeyMetricsTtm = (
     symbol: string
 ): Promise<FundamentalValuationMetrics | null> =>
-    fundamentalClient.getKeyMetricsTtm(symbol);
+    getFundamentalDataProvider(symbol).getKeyMetricsTtm(symbol);
 
 // 페이지 PeersTable은 티커·회사명·시총만 렌더하므로 per/psr enrich가 불필요하다 →
 // raw 경로로 위임해 peer valuation fan-out을 제거한다. enriched getStockPeers는
@@ -70,44 +73,44 @@ export const getKeyMetricsTtm = (
 export const getStockPeers = (
     symbol: string
 ): Promise<FundamentalPeerInput[]> =>
-    fundamentalClient.getStockPeersRaw(symbol);
+    getFundamentalDataProvider(symbol).getStockPeersRaw(symbol);
 
 export const getRatiosTtm = (
     symbol: string
 ): Promise<FundamentalRatiosInput | null> =>
-    fundamentalClient.getRatiosTtm(symbol);
+    getFundamentalDataProvider(symbol).getRatiosTtm(symbol);
 
 export const getIncomeStatementGrowth = (
     symbol: string
 ): Promise<FundamentalGrowthInput | null> =>
-    fundamentalClient.getIncomeStatementGrowth(symbol);
+    getFundamentalDataProvider(symbol).getIncomeStatementGrowth(symbol);
 
 export const getFinancialScores = (
     symbol: string
 ): Promise<FundamentalFinancialScoresInput | null> =>
-    fundamentalClient.getFinancialScores(symbol);
+    getFundamentalDataProvider(symbol).getFinancialScores(symbol);
 
 export const getCashFlowStatement = (
     symbol: string
 ): Promise<FundamentalCashFlowInput | null> =>
-    fundamentalClient.getCashFlowStatement(symbol);
+    getFundamentalDataProvider(symbol).getCashFlowStatement(symbol);
 
 export const getAnalystEstimates = (
     symbol: string
 ): Promise<FundamentalAnalystEstimateInput | null> =>
-    fundamentalClient.getAnalystEstimates(symbol);
+    getFundamentalDataProvider(symbol).getAnalystEstimates(symbol);
 
 export const getGradesConsensus = (
     symbol: string
 ): Promise<FundamentalGradesConsensusInput | null> =>
-    fundamentalClient.getGradesConsensus(symbol);
+    getFundamentalDataProvider(symbol).getGradesConsensus(symbol);
 
 export const getPriceTargetConsensus = (
     symbol: string
 ): Promise<FundamentalPriceTargetConsensusInput | null> =>
-    fundamentalClient.getPriceTargetConsensus(symbol);
+    getFundamentalDataProvider(symbol).getPriceTargetConsensus(symbol);
 
 export const getPriceTargetSummary = (
     symbol: string
 ): Promise<FundamentalPriceTargetSummaryInput | null> =>
-    fundamentalClient.getPriceTargetSummary(symbol);
+    getFundamentalDataProvider(symbol).getPriceTargetSummary(symbol);

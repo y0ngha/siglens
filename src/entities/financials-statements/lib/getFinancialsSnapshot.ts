@@ -124,7 +124,7 @@ export const getFinancialsSnapshot = cache(
         period: StatementPeriod = 'annual',
         limit = ANNUAL_LIMIT
     ): Promise<FinancialsSnapshot> => {
-        const p = getFinancialStatementsProvider();
+        const p = getFinancialStatementsProvider(symbol);
         const extraTags = tag(symbol);
 
         const [
