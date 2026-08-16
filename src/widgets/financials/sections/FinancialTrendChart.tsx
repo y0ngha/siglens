@@ -2,7 +2,11 @@
 
 import { useState, type CSSProperties } from 'react';
 import { cn } from '@/shared/lib/cn';
-import { usdFormatter } from '../utils/numberFormat';
+import {
+    formatCurrencyCompact,
+    DEFAULT_STATEMENT_CURRENCY,
+    type StatementCurrency,
+} from '../utils/numberFormat';
 import { placeTooltip, type TooltipPosition } from '../utils/tooltipPosition';
 
 type SeriesColor = 'bullish' | 'bearish' | 'neutral';
@@ -23,6 +27,8 @@ interface FinancialTrendChartProps {
      * Period labels — oldest first (left-to-right display order).
      */
     periods: string[];
+    /** 툴팁 금액에 적용할 통화. 생략하면 USD — 미국 종목의 기존 동작. */
+    currency?: StatementCurrency;
 }
 
 const SVG_HEIGHT = 120;
@@ -95,8 +101,8 @@ function resolveColor(
     return COLOR_CLASSES[c];
 }
 
-function fmt(value: number | null): string {
-    return value === null ? '—' : usdFormatter.format(value);
+function fmt(value: number | null, currency: StatementCurrency): string {
+    return value === null ? '—' : formatCurrencyCompact(value, currency);
 }
 
 interface HoverState extends TooltipPosition {
@@ -116,6 +122,7 @@ interface HoverState extends TooltipPosition {
 export function FinancialTrendChart({
     series,
     periods,
+    currency = DEFAULT_STATEMENT_CURRENCY,
 }: FinancialTrendChartProps) {
     const [hover, setHover] = useState<HoverState | null>(null);
 
@@ -302,7 +309,7 @@ export function FinancialTrendChart({
                                         </span>
                                     </span>
                                     <span className="font-mono tabular-nums">
-                                        {fmt(v)}
+                                        {fmt(v, currency)}
                                     </span>
                                 </li>
                             );

@@ -7,6 +7,7 @@ import { IncomeStatementSection } from './sections/IncomeStatementSection';
 import { BalanceSheetSection } from './sections/BalanceSheetSection';
 import { CashFlowSection } from './sections/CashFlowSection';
 import { GrowthAnalysisSection } from './sections/GrowthAnalysisSection';
+import { statementCurrencyOf } from './utils/numberFormat';
 
 interface FinancialsStatementsProps {
     /** Ticker symbol (already uppercased). */
@@ -32,6 +33,9 @@ export function FinancialsStatements({
         symbol,
         annualSnapshot
     );
+    // 재무제표 금액의 통화는 심볼 형상만으로 결정된다 — 한국 종목은 원화라
+    // `$333T`가 아니라 `₩333조`로 표기돼야 한다. 별도 조회나 prop이 필요 없다.
+    const currency = statementCurrencyOf(symbol);
 
     return (
         <div className="space-y-6">
@@ -51,9 +55,13 @@ export function FinancialsStatements({
                     </span>
                 )}
             </div>
-            <IncomeStatementSection rows={snapshot.income} />
-            <BalanceSheetSection rows={snapshot.balance} />
-            <CashFlowSection rows={snapshot.cashFlow} />
+            <IncomeStatementSection
+                rows={snapshot.income}
+                currency={currency}
+            />
+            <BalanceSheetSection rows={snapshot.balance} currency={currency} />
+            <CashFlowSection rows={snapshot.cashFlow} currency={currency} />
+            {/* 성장 분석은 전부 %/배수라 통화가 없다 — currency를 넘기지 않는다. */}
             <GrowthAnalysisSection rows={snapshot.financialGrowth} />
         </div>
     );

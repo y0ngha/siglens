@@ -13,8 +13,12 @@ describe('buildPopularEntries', () => {
     it('모든 POPULAR_TICKERS에 대해 7축 기본 라우트를 생성하고 options는 generated list에 맞춘다', () => {
         const entries = buildPopularEntries(NOW);
 
+        // 한국 종목은 `/congress`가 없어(국내에 공직자 매매 공시 제도가 없다) 6축이다.
+        const krCount = POPULAR_TICKERS.filter(t => /\.K[SQ]$/.test(t)).length;
         expect(entries).toHaveLength(
-            POPULAR_TICKERS.length * 7 + POPULAR_OPTIONS_TICKERS.length
+            POPULAR_TICKERS.length * 7 -
+                krCount +
+                POPULAR_OPTIONS_TICKERS.length
         );
 
         const first = POPULAR_TICKERS[0];
@@ -29,6 +33,16 @@ describe('buildPopularEntries', () => {
                 `${base}/overall`,
                 `${base}/fear-greed`,
                 `${base}/congress`,
+            ])
+        );
+
+        // 한국 종목은 존재하지 않는 `/congress`가 sitemap에 실리면 안 된다 —
+        // 404 URL은 크롤 예산을 태우고 색인 품질 신호를 떨어뜨린다.
+        expect(urls).not.toContain(`${SITE_URL}/005930.KS/congress`);
+        expect(urls).toEqual(
+            expect.arrayContaining([
+                `${SITE_URL}/005930.KS`,
+                `${SITE_URL}/005930.KS/financials`,
             ])
         );
 

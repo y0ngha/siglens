@@ -92,7 +92,7 @@ export async function prewarmFundamental(
     return runFundamentalAnalysis({
         symbol,
         modelId: DEEPSEEK_V4_FLASH_MODEL,
-        dataProvider: getFundamentalDataProvider(),
+        dataProvider: getFundamentalDataProvider(symbol),
         tier: 'free',
         reasoning: false,
         skipEnqueueIfMiss: false,
@@ -111,7 +111,7 @@ export async function prewarmFinancials(
     return runFinancialsAnalysis({
         symbol,
         modelId: DEEPSEEK_V4_FLASH_MODEL,
-        dataProvider: getFinancialStatementsProvider(),
+        dataProvider: getFinancialStatementsProvider(symbol),
         tier: 'free',
         reasoning: false,
         skipEnqueueIfMiss: false,
@@ -204,7 +204,7 @@ export async function prewarmOverall(
         companyName,
         timeframe: '1Day',
         modelId: DEEPSEEK_V4_FLASH_MODEL,
-        fundamentalProvider: getFundamentalDataProvider(),
+        fundamentalProvider: getFundamentalDataProvider(symbol),
         marketDataProvider,
         newsItems: enrichedNews,
         upcomingCalendar: next !== null ? [next] : [],

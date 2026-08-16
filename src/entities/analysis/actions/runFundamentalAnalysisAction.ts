@@ -59,7 +59,7 @@ export async function runFundamentalAnalysisAction(
         return await runFundamentalAnalysis({
             symbol,
             modelId,
-            dataProvider: getFundamentalDataProvider(),
+            dataProvider: getFundamentalDataProvider(symbol),
             tier: gate.tier,
             reasoning: resolveReasoning(gate.tier, reasoning),
             skipEnqueueIfMiss,

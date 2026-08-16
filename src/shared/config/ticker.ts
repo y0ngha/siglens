@@ -24,6 +24,24 @@ export const TICKER_RE = /^[A-Z][A-Z.-]{0,7}$/;
 export const SYMBOL_EDGE_RE = /^[A-Z0-9][A-Z0-9.-]{0,15}$/;
 
 /**
+ * 한국 상장 종목 canonical 형상 — 6자리 종목코드 + 거래소 접미사(`.KS` 유가증권 / `.KQ` 코스닥).
+ *
+ * **{@link SUPPORTED_DOT_SUFFIXES}에 `KS`/`KQ`를 추가하지 않고 독립 정규식을 두는 이유**:
+ * 그 집합은 미국 dual-class 구분자(`BRK.B`)만 허용해 `.L`/`.TO`/`.V`/`.CN` 같은 해외
+ * 거래소 접미사를 FMP 호출 이전에 차단하는 역할을 한다(해당 JSDoc의 402 낭비 실측 참조).
+ * 거기에 `KS`/`KQ`를 넣으면 "해외 접미사는 전부 막는다"는 불변식이 깨지고, 한국 심볼이
+ * 미국 클래스 구분자용 하이픈 정규화(`toFmpSearchSymbol`) 경로로 흘러들어 간다.
+ *
+ * 두 규칙의 교집합은 공집합이다 — 미국 티커는 영문 대문자로 시작하고(`TICKER_RE`),
+ * 한국 종목코드는 숫자 6자리로 고정이다. 따라서 서로의 동작을 바꾸지 않는다.
+ *
+ * 접미사를 canonical 심볼에 내장하는 설계 의도: 이 정규식 하나로 DB 조회 없이
+ * `kr-equity` 판정이 끝난다. 크립토가 `crypto_assets` 멤버십 조회를 필요로 하는 것과
+ * 달리, 미들웨어·ISR cold-gen·탭 가드가 전부 순수 함수로 해결된다.
+ */
+export const KR_SYMBOL_RE = /^\d{6}\.K[SQ]$/;
+
+/**
  * 점(.) 뒤에 올 수 있는 접미사 화이트리스트 — 미국 주식의 **클래스 구분자**만 허용한다.
  *
  * `SYMBOL_EDGE_RE`가 점을 허용하는 유일한 이유는 `BRK.B` 같은 dual-class 주식이다
@@ -100,8 +118,15 @@ function hasSupportedDotSuffix(upper: string): boolean {
  *
  * 형상 통과 후 해외 거래소 접미사를 추가로 걸러낸다 — FMP 호출 **이전** 단계라
  * 402가 원천적으로 발생하지 않는다.
+ *
+ * 한국 종목(`005930.KS`)은 {@link KR_SYMBOL_RE}로 먼저 통과시킨다. 형상 자체는
+ * `SYMBOL_EDGE_RE`도 만족하지만 `KS`/`KQ`가 미국 클래스 구분자 화이트리스트에 없어
+ * `hasSupportedDotSuffix`에서 탈락하기 때문이다 — 이는 해외 접미사 차단이라는 그
+ * 규칙의 의도대로 동작한 것이고, 한국 심볼은 FMP가 아닌 yahoo로 라우팅되므로
+ * 402 낭비 우려가 애초에 없다.
  */
 export function isAdmissibleSymbolShape(symbol: string): boolean {
     const upper = symbol.toUpperCase();
+    if (KR_SYMBOL_RE.test(upper)) return true;
     return SYMBOL_EDGE_RE.test(upper) && hasSupportedDotSuffix(upper);
 }

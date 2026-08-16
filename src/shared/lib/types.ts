@@ -87,7 +87,8 @@ export type CategoryId =
     | 'quantum-computing'
     | 'space'
     | 'ev-mobility'
-    | 'energy-industrial';
+    | 'energy-industrial'
+    | 'korea-equity';
 
 /** Curated ticker category (id + label + member tickers with Korean names). */
 export interface TickerCategory {
