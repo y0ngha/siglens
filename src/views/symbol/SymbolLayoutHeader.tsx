@@ -6,6 +6,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { SymbolTabs } from './SymbolTabs';
 import { SymbolTabsSkeleton } from './SymbolTabsSkeleton';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile';
 import { useSymbolModel } from '@/features/symbol-model';
 import { AnalysisSettingsMenu } from '@/widgets/analysis';
 import { ShareButton } from '@/widgets/share';
@@ -32,7 +33,15 @@ interface SymbolLayoutHeaderProps {
 export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
     const assetInfo = useAssetInfo(symbol);
     const ticker = symbol.toUpperCase();
-    const hasCompanyName = !!assetInfo && assetInfo.name !== ticker;
+    // `buildDisplayName`과 같은 규칙이다 — 국내 상장 종목은 영문 법인명을 붙이지 않고,
+    // 한글명과 같은 값이면 두 번 쓰지 않는다(종목 마스터 시드가 `name`에 한글명을 넣는다).
+    // 그쪽은 문자열 하나를 만들고 여기는 색을 나눠 span으로 렌더해서 함수를 공유할 수
+    // 없지만, 판정이 갈리면 같은 페이지의 메타와 헤더가 서로 다른 이름을 말하게 된다.
+    const hasCompanyName =
+        !!assetInfo &&
+        assetInfo.name !== ticker &&
+        assetInfo.name !== assetInfo.koreanName &&
+        !isKrEquitySymbol(ticker);
 
     const {
         modelId,
