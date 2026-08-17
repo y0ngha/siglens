@@ -2,13 +2,13 @@
 
 <div align="center">
 
-**AI technical analysis for US stocks and crypto — enter a ticker, get the read.**
+**AI technical analysis for US stocks, Korean stocks, and crypto — enter a ticker, get the read.**
 
 ![Status](https://img.shields.io/badge/status-production-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-16.2-black)
 ![React](https://img.shields.io/badge/React-19.2-61dafb?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x%20%C2%B7%20tsgo-blue)
 ![Node.js](https://img.shields.io/badge/node-25.2.1-green)
 
 [![Website](https://img.shields.io/badge/Website-siglens.io-blue?style=for-the-badge)](https://siglens.io)
@@ -27,7 +27,7 @@ The usual way    add indicators manually → read volume → inspect patterns �
 Siglens          enter a ticker → chart and indicators render → read the AI report
 ```
 
-Type `AAPL` and you get candles with indicators, a pattern scan, an AI analysis report, a news digest, a fear-greed reading, and a consolidated scenario — on one page. Equities add fundamentals, financial statements, congressional trading, and the options market. Crypto stays on the 24/7 axes: chart, news, fear-greed, overall.
+Type `AAPL`, `005930.KS`, or `BTCUSD` and you get candles with indicators, a pattern scan, an AI analysis report, a news digest, a fear-greed reading, and a consolidated scenario — on one page. Equities add fundamentals and financial statements; US equities go further with congressional trading and the options market. Crypto stays on the 24/7 axes: chart, news, fear-greed, overall.
 
 **Siglens never places an order.** It is analysis only, and every investment decision is the reader's own.
 
@@ -35,7 +35,7 @@ Live in production at **[siglens.io](https://siglens.io)**. The UI and every AI 
 
 ### Contents
 
-[Features](#features) · [Pages](#pages) · [Quick Start](#quick-start) · [Architecture](#architecture) · [Skills](#skills-system) · [Operations](#operations) · [Docs](#documentation) · [Testing](#testing) · [Commands](#commands)
+[Features](#features) · [Markets](#markets) · [Pages](#pages) · [Quick Start](#quick-start) · [Architecture](#architecture) · [Skills](#skills-system) · [Operations](#operations) · [Docs](#documentation) · [Testing](#testing) · [Commands](#commands)
 
 ---
 
@@ -43,10 +43,11 @@ Live in production at **[siglens.io](https://siglens.io)**. The UI and every AI 
 
 **The analysis itself**
 
-- **AI reports in Korean** that fuse technical signals, news, and fear-greed — extended for equities with fundamentals, financials, options, and congressional trading
+- **AI reports in Korean** that fuse technical signals, news, and fear-greed — extended for equities with fundamentals and financials, and for US equities with options and congressional trading
 - **Pattern detection** driven by Skills: single and multi-candle patterns, head and shoulders, wedges, double tops/bottoms, triangles, flags, cup and handle
-- **Charts** on Lightweight Charts v5 — candles, volume, indicator overlays, and timeframes that adapt per asset class
-- **Equity-only depth**: valuation and analyst consensus, income/balance/cash-flow statements, options chains with Max Pain, Put/Call Ratio, ATM IV, Implied Move, and Senate/House disclosure trends
+- **Charts** on Lightweight Charts v5 — candles, volume, indicator overlays, and timeframes that adapt per market
+- **Streaming, not polling** — analysis runs inside the app over SSE (`/api/analysis/stream`) with a 10-minute deadline and 25-second heartbeats. There is no external worker and no Redis job queue
+- **Truncated-source awareness** — feed bodies that stop mid-sentence are detected and flagged to the prompt, so the model reports less instead of inventing the cut-off numbers
 
 **Choosing how it thinks**
 
@@ -63,6 +64,7 @@ Live in production at **[siglens.io](https://siglens.io)**. The UI and every AI 
 **Market-wide**
 
 - **Sector dashboard** scanning 81 large-cap stocks across 11 sectors for golden crosses, RSI divergence, and Bollinger squeezes
+- **Market fear-greed index** at `/fear-greed` — S&P 500 momentum, VIX, Treasuries, corporate bonds, and equal-weight breadth folded into one 0–100 score
 - **News hub** with AI digests for general US, stocks, crypto, forex, and market articles
 - **Macro dashboard** — rates, CPI, employment, GDP, Treasury yields, economic calendar, AI briefing
 - **Backtesting** — real returns for 100 historical AI analyses entered between 2024.11 and 2026.03
@@ -76,27 +78,54 @@ Calculation specs live in [DOMAIN.md](./docs/product/DOMAIN.md).
 
 </details>
 
+## Markets
+
+Every symbol resolves to one **market profile**, and the profile decides currency, session clock, timeframes, data source, and which tabs exist. Profiles live in `src/shared/config/marketProfile/`.
+
+| | US equities | Korean equities | Crypto |
+|---|---|---|---|
+| Symbol | `AAPL` | `005930.KS` (KOSPI) · `247540.KQ` (KOSDAQ) | `BTCUSD` |
+| Price | USD, 2 decimals | KRW, integer | USD, magnitude-scaled |
+| Session | NYSE/NASDAQ (ET) | KRX (KST) | 24/7 |
+| Quote delay | real time | 20 minutes | real time |
+| Timeframes | 5m · 15m · 30m · 1h · 4h · 1D | 5m · 15m · 30m · 1h · 1D | 5m · 1h · 1D |
+| Prices, fundamentals | FMP | yahoo-finance2 | FMP |
+| News | FMP | Naver Search API | FMP |
+| Tabs | 9 | 7 | 5 |
+
+**Korean equities** (`kr-equity`) landed in 2026-08. Notes worth knowing before you read the code:
+
+- The exchange suffix is part of the canonical symbol, so `/^\d{6}\.K[SQ]$/` classifies a Korean symbol with no DB lookup — middleware, ISR cold generation, and tab guards all stay pure functions.
+- `4h` is absent because yahoo's chart interval enum has no such bucket. Bars containing `null` OHLCV are filtered before they reach indicator math.
+- PER/PBR are derived from market cap: yahoo returns `trailingPE`, `priceToBook`, and `epsTrailingTwelveMonths` as `undefined` for KRX listings.
+- Korean news skips the translation step the US pipeline runs — the source is already Korean.
+- Korean-name search needs the `korean_tickers` master seeded by `yarn db:seed:kr-names`; yahoo's own `search` rejects Hangul queries outright.
+- No options tab (KRX single-stock options are effectively illiquid) and no congress tab (Korean public-official blind-trust filings are published as gazette PDFs, with no API behind them).
+
+Source-by-source coverage and what was rejected is in [FMP_INVENTORY_KR.md](./docs/architecture/FMP_INVENTORY_KR.md).
+
 ## Pages
 
 ### Symbol pages
 
-| Route | Equities | Crypto | What it shows |
-|---|:---:|:---:|---|
-| `/[symbol]` | ✓ | ✓ | Chart, technical analysis, AI report |
-| `/[symbol]/news` | ✓ | ✓ | Symbol news and AI sentiment |
-| `/[symbol]/fear-greed` | ✓ | ✓ | Symbol-level fear-greed index |
-| `/[symbol]/overall` | ✓ | ✓ | Every axis the asset class supports, consolidated |
-| `/[symbol]/position` | ✓ | ✓ | Where your average cost sits in the volume-by-price bands |
-| `/[symbol]/fundamental` | ✓ | — | Fundamentals, valuation, analyst consensus |
-| `/[symbol]/financials` | ✓ | — | Income statement, balance sheet, cash flow, growth |
-| `/[symbol]/congress` | ✓ | — | Congressional trading trends from US disclosures |
-| `/[symbol]/options` | ✓ | — | Options chain, OI distribution, Max Pain, IV analysis |
+| Route | US | KR | Crypto | What it shows |
+|---|:---:|:---:|:---:|---|
+| `/[symbol]` | ✓ | ✓ | ✓ | Chart, technical analysis, AI report |
+| `/[symbol]/news` | ✓ | ✓ | ✓ | Symbol news and AI sentiment |
+| `/[symbol]/fear-greed` | ✓ | ✓ | ✓ | Symbol-level fear-greed index |
+| `/[symbol]/overall` | ✓ | ✓ | ✓ | Every axis the market supports, consolidated |
+| `/[symbol]/position` | ✓ | ✓ | ✓ | Where your average cost sits in the volume-by-price bands |
+| `/[symbol]/fundamental` | ✓ | ✓ | — | Fundamentals, valuation, analyst consensus |
+| `/[symbol]/financials` | ✓ | ✓ | — | Income statement, balance sheet, cash flow, growth |
+| `/[symbol]/congress` | ✓ | — | — | Congressional trading trends from US disclosures |
+| `/[symbol]/options` | ✓ | — | — | Options chain, OI distribution, Max Pain, IV analysis |
 
 ### Product pages
 
 | Route | What it shows |
 |---|---|
 | `/market` | Sector signal dashboard |
+| `/fear-greed` | Market-wide fear-greed index and its factors |
 | `/economy` | Macro indicators, Treasury yields, calendar, AI briefing |
 | `/news`, `/news/[category]` | News hub — general, stock, crypto, forex, market |
 | `/backtesting` | AI analysis backtesting results |
@@ -122,11 +151,12 @@ Calculation specs live in [DOMAIN.md](./docs/product/DOMAIN.md).
 
 | Route | Purpose |
 |---|---|
+| `/api/analysis/stream` | SSE analysis stream — tier gate, BYOK resolution, heartbeats, 10-minute deadline |
 | `/api/health` | Shallow liveness probe — the ALB target group polls this |
 | `/api/ready` | Deep readiness probe (DB and Redis reachability) |
+| `/api/sse-probe` | Streaming-path diagnostic used to measure proxy idle timeouts |
 | `/api/cron/seo-prewarm` | EventBridge-driven pre-warm batch (Bearer `CRON_SECRET`) |
-| `/api/sitemap`, `/api/sitemap/{static,popular,crypto,longtail/[page]}` | Sitemap index and segments |
-| `/api/jobs/cancel` | Cancel an in-flight analysis job |
+| `/api/sitemap`, `/api/sitemap/{static,popular,crypto,longtail/[page],removal/[kind]}` | Sitemap index, segments, and temporary removal lists |
 | `/api/auth/[provider]/start`, `/api/auth/callback/[provider]` | OAuth start and callback |
 
 </details>
@@ -135,9 +165,12 @@ Calculation specs live in [DOMAIN.md](./docs/product/DOMAIN.md).
 
 | Data | Source | Notes |
 |---|---|---|
-| Stock/crypto OHLCV | [Financial Modeling Prep](https://site.financialmodelingprep.com) | Stocks 5-minute→daily; crypto 5-minute, 1-hour, daily |
-| Fundamentals, statements, news, congressional trades | FMP `/stable` | News sentiment is scored in-house with Gemini Flash-Lite |
-| Options chain | yahoo-finance2 | Snapshots, OI, IV, Greeks |
+| US stock / crypto OHLCV | [Financial Modeling Prep](https://site.financialmodelingprep.com) | Stocks 5-minute→daily; crypto 5-minute, 1-hour, daily |
+| US fundamentals, statements, news, congressional trades | FMP `/stable` | News sentiment is scored in-house |
+| Korean OHLCV, quotes, fundamentals, statements, code search | [yahoo-finance2](https://github.com/gadicc/node-yahoo-finance2) | `chart`, `quoteSummary`, `fundamentalsTimeSeries`, `search`. No key required |
+| Korean listing master and Hangul search | [공공데이터포털 KRX 상장종목정보](https://www.data.go.kr/data/15094775/openapi.do) | Seeded into `korean_tickers` by `yarn db:seed:kr-names` |
+| Korean news | [Naver Search API](https://developers.naver.com/docs/serviceapi/search/news/news.md) | Issued through NAVER API HUB — Developers signups closed 2026-07-31 |
+| Options chain | yahoo-finance2 | US only. Snapshots, OI, IV, Greeks |
 | Macroeconomics | FMP + Siglens DB | Indicators, Treasury yields, economic calendar |
 
 ## Quick Start
@@ -150,23 +183,27 @@ cp .env.example .env.local
 yarn dev              # → http://localhost:4200
 ```
 
-Requires **Node.js 25.2.1** and **yarn 4.12.0**. `yarn install` resolves `@y0ngha/siglens-core` from GitHub Packages, so `SIGLENS_GITHUB_TOKEN` must exist before you install.
+Requires **Node.js 25.2.1** (`.nvmrc`) and **yarn 4.12.0**. `yarn install` resolves `@y0ngha/siglens-core` from GitHub Packages, so `SIGLENS_GITHUB_TOKEN` must exist before you install.
 
 **Keys you cannot boot without:**
 
 | Variable | Where to get it | Used for |
 |---|---|---|
-| `FMP_API_KEY` | [Financial Modeling Prep](https://site.financialmodelingprep.com/developer) | Prices, search, fundamentals, news |
-| `DEEPSEEK_API_KEY` / `GEMINI_API_KEY` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` | Same consoles as the `*_CHAT_API_KEY` rows below | Server-side LLM calls for analysis. The app now calls providers directly — no worker. At least the one matching the default analysis model must be set, or the first analysis fails |
+| `FMP_API_KEY` | [Financial Modeling Prep](https://site.financialmodelingprep.com/developer) | US prices, search, fundamentals, news |
+| `DEEPSEEK_API_KEY` / `GEMINI_API_KEY` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` | Same consoles as the `*_CHAT_API_KEY` rows below | Server-side LLM calls for analysis. The app calls providers directly — no worker. At least the one matching the default analysis model must be set, or the first analysis fails |
 | `DEEPSEEK_CHAT_API_KEY` | [DeepSeek](https://platform.deepseek.com/api_keys) | DeepSeek models — the default analysis provider |
 | `GEMINI_CHAT_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) | Gemini models, chatbot, options/news/macro reads |
 | `ANTHROPIC_CHAT_API_KEY` | [Anthropic Console](https://console.anthropic.com/) | Claude models |
 | `OPENAI_CHAT_API_KEY` | [OpenAI Platform](https://platform.openai.com/api-keys) | ChatGPT models |
 | `DATABASE_URL` | [Neon](https://neon.tech) | PostgreSQL |
 | `UPSTASH_REDIS_REST_URL` / `_TOKEN` | [Upstash](https://upstash.com) | Analysis cache, quote cache, ISR tag store |
+| `DATA_GO_KR_SERVICE_KEY` | [공공데이터포털](https://www.data.go.kr/data/15094775/openapi.do) | Korean listing master. Use the **Decoding** key — the Encoding one gets double-encoded and 403s |
+| `NAVER_CLIENT_ID` / `NAVER_CLIENT_SECRET` | [NAVER API HUB](https://www.ncloud.com/product/applicationService/apiGateway) | Korean symbol news |
 | `OAUTH_TOKEN_ENCRYPTION_KEY`, `LLM_API_KEY_ENCRYPTION_KEY`, `OAUTH_STATE_HMAC_SECRET` | `openssl rand -hex 32` | Encrypt stored tokens and user keys; sign OAuth state |
 | `CRON_SECRET` | Generate one | Bearer token guarding cron routes and actions |
 | `SIGLENS_GITHUB_TOKEN` | [GitHub Tokens](https://github.com/settings/tokens) | Installing `@y0ngha/siglens-core` |
+
+The three Korean keys are enforced by `infra/aws/check-env.sh` even though the code does not crash without them. Missing keys degrade silently — the Korean news tab renders empty and Hangul search falls back to nine curated symbols, with no error anywhere. Failing the deploy gate beats shipping that.
 
 <details>
 <summary><b>Optional and operational variables</b></summary>
@@ -174,7 +211,7 @@ Requires **Node.js 25.2.1** and **yarn 4.12.0**. `yarn install` resolves `@y0ngh
 | Variable | Purpose |
 |---|---|
 | `UPSTASH_REDIS_REST_READONLY_TOKEN` | Redis readonly access |
-| `TRANSLATE_MODEL` | Korean asset-name and profile translation model (runs on `DEEPSEEK_API_KEY`) |
+| `TRANSLATE_MODEL` | Korean asset-name and profile translation model (runs on `DEEPSEEK_API_KEY`; DeepSeek model ids only) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth login |
 | `KAKAO_REST_API_KEY` / `KAKAO_CLIENT_SECRET` | Kakao OAuth login |
 | `OAUTH_REDIRECT_BASE_URL` | OAuth redirect base |
@@ -205,7 +242,7 @@ siglens/
 │   ├── widgets/          Charts, analysis panels, dashboards
 │   ├── features/         Auth, search, chat, portfolio, premium gate
 │   ├── entities/         user, session, bars, analysis, ticker, portfolio…
-│   └── shared/           UI, config, db, email, api, hooks, lib
+│   └── shared/           UI, config, db, email, api (fmp, yahoo, dataGoKr), hooks, lib
 ├── skills/               Analysis techniques as Markdown
 ├── docs/                 Architecture, product, domain, conventions
 ├── e2e/                  Playwright specs and harness
@@ -214,11 +251,13 @@ siglens/
 └── refs/                 Indicator and investment-theory references
 ```
 
-Two things about this tree surprise people:
+Three things about this tree surprise people:
 
 **The `pages` layer lives in `src/views/`.** Creating `src/pages/` in an App Router project would activate the legacy Pages Router, so the FSD layer is named `views` instead. The mapping is enforced by `eslint-plugin-boundaries` in `eslint.config.mjs` — violations fail the build, not review.
 
 **`@y0ngha/siglens-core` is not a third-party dependency.** It is Siglens' own analysis domain, extracted into a package: indicator math, pattern detection, signal logic, prompt building. Any layer may import it directly. What belongs there versus here is decided in [SCOPE.md](./docs/architecture/SCOPE.md); the layer rules themselves are in [ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md).
+
+**Providers sit behind adapters, not call sites.** `shared/api/{fmp,yahoo,dataGoKr}` implement the same market, fundamental, and statements ports, and the market profile picks one. That is why adding KRX meant adding a descriptor and a provider rather than branching pages — and why swapping the Korean statements source later is one adapter, not a migration.
 
 ## Skills System
 
@@ -245,7 +284,7 @@ add skills/<category>/my-strategy.md  →  the technique is live
 
 Deployment is tag-driven. Pushing a `v*` tag runs `.github/workflows/deploy.yml`, which gates on typecheck and unit tests, builds and pushes the image to ECR, then rolls the ASG through an instance refresh.
 
-Runs on AWS (ALB + ASG/EC2, ECR, SSM, EventBridge, CloudWatch, S3 ISR cache) with Upstash Redis, Neon PostgreSQL, Resend email, Cloudflare in front, and a Cloud Run worker for long AI jobs.
+Runs on AWS (ALB + ASG/EC2, ECR, SSM, EventBridge, CloudWatch, S3 ISR cache) with Upstash Redis, Neon PostgreSQL, Resend email, and Cloudflare in front. Long AI jobs stream from the app itself; the former Cloud Run worker and its Redis job queue are gone.
 
 | When you need to… | Read |
 |---|---|
@@ -266,6 +305,7 @@ Start at **[docs/README.md](./docs/README.md)** for the full index. The ones you
 | [ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md) | Layer structure, dependency rules, data flow |
 | [SCOPE.md](./docs/architecture/SCOPE.md) | What belongs in siglens vs siglens-core |
 | [DOMAIN.md](./docs/product/DOMAIN.md) | Indicator specs, candle patterns, business rules |
+| [FMP_INVENTORY_KR.md](./docs/architecture/FMP_INVENTORY_KR.md) | Every FMP dataset and how Korean symbols source it |
 | [AUTH.md](./docs/product/AUTH.md) | Auth, sessions, OAuth, email tokens |
 | [API.md](./docs/reference/API.md) | Data/AI APIs and environment variables |
 | [CONVENTIONS.md](./docs/conventions/CONVENTIONS.md) | Coding conventions, naming, testing policy |
@@ -283,7 +323,7 @@ yarn test-coverage   # with coverage
 yarn test:e2e        # Playwright
 ```
 
-Roughly 1,000 Vitest files and 41 Playwright specs. The coverage target is **90%**, measured over `entities/`, `features/`, `shared/`, `widgets/`, `app/`, `src/proxy.ts`, and `cache-handler/` — the last one because it is production code living outside `src/`, and leaving it out would let its coverage rot silently. Note that `src/views/` is not currently in the measured set.
+Roughly 1,000 Vitest files and 43 Playwright specs. The coverage target is **90%**, measured over `entities/`, `features/`, `shared/`, `widgets/`, `app/`, `src/proxy.ts`, and `cache-handler/` — the last one because it is production code living outside `src/`, and leaving it out would let its coverage rot silently. Note that `src/views/` is not currently in the measured set.
 
 E2E runs against a real production build in a browser, separately from Vitest; see [E2E.md](./docs/qa/E2E.md). Note that `git push` triggers a Husky gate running format check, lint, typecheck, unit tests, and a full production build — expect it to take a while.
 
@@ -301,6 +341,8 @@ yarn test            # Vitest
 ```
 
 Always install with `yarn`. `npm` and `pnpm` are not used.
+
+**Toolchain, in transit.** `yarn typecheck` already runs `tsgo` from `@typescript/native-preview` — the Go port that becomes TypeScript 7 — with `yarn typecheck:tsc` kept as the `tsc` escape hatch. ESLint and Prettier are next: both are slated for replacement by OXC (`oxlint`, `oxfmt`). Until that lands, `yarn lint` and `yarn format` are still the real gates, and the Husky pre-push hook still calls them.
 
 <details>
 <summary><b>Every script in package.json</b></summary>
@@ -328,7 +370,8 @@ Always install with `yarn`. `npm` and `pnpm` are not used.
 | `yarn db:generate` | Generate Drizzle migrations |
 | `yarn db:migrate` | Run migrations |
 | `yarn db:seed:terms` | Seed terms data |
-| `yarn db:migrate:tickers` | Seed/update Korean ticker data |
+| `yarn db:migrate:tickers` | Move cached Korean ticker names from Redis into `korean_tickers` / `asset_translations` |
+| `yarn db:seed:kr-names` | Seed KRX listings (Hangul names) from 공공데이터포털 |
 | `yarn db:seed:crypto` | Seed the FMP crypto universe into `crypto_assets` |
 | `yarn db:seed:crypto-korean` | Seed Korean crypto names |
 | `yarn db:backfill:calendar` | Backfill the economic calendar |
