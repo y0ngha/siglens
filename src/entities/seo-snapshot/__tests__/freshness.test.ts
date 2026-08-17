@@ -90,3 +90,45 @@ describe('isSnapshotFresh', () => {
         expect(isSnapshotFresh(undefined, boundary)).toBe(false);
     });
 });
+
+/**
+ * NYSE 캘린더 회귀 가드.
+ *
+ * 휴장일에 경계가 그날 16:00 ET로 롤하면 **전 코퍼스**(심볼×탭 ≈ 1,900유닛)가 한꺼번에
+ * stale로 뒤집혀 LLM 재생성이 돈다. 주말은 경계가 금요일에 고정돼 no-op이라 이 결함이
+ * 드러나지 않았고, prewarm cron에는 요일 필터가 없어 연 9회 그대로 태워 왔다.
+ */
+describe('lastCompletedEtCloseWithBuffer — 휴장일/반장', () => {
+    it('추수감사절(2026-11-26) 밤에는 경계가 직전 거래일(11/25) 마감에 머문다', () => {
+        // 2026-11-27 02:00Z = 11/26 21:00 EST — 정규 마감+30분을 한참 넘긴 시각.
+        expect(
+            lastCompletedEtCloseWithBuffer(
+                new Date('2026-11-27T02:00:00Z')
+            ).toISOString()
+        ).toBe('2026-11-25T21:00:00.000Z');
+    });
+
+    it('반장(2026-11-27)은 13:30 ET에 경계가 롤한다 — 16:30이 아니다', () => {
+        // 11/27 18:35Z = 13:35 EST — 반장 마감(13:00)+30분 경과.
+        expect(
+            lastCompletedEtCloseWithBuffer(
+                new Date('2026-11-27T18:35:00Z')
+            ).toISOString()
+        ).toBe('2026-11-27T18:00:00.000Z');
+        // 마감 직후 정착 버퍼 안에서는 아직 직전 거래일(11/25)이다.
+        expect(
+            lastCompletedEtCloseWithBuffer(
+                new Date('2026-11-27T18:10:00Z')
+            ).toISOString()
+        ).toBe('2026-11-25T21:00:00.000Z');
+    });
+
+    it('평일 정규 마감+30분은 종전대로 당일로 롤한다', () => {
+        // 2026-11-25(수) 21:35Z = 16:35 EST.
+        expect(
+            lastCompletedEtCloseWithBuffer(
+                new Date('2026-11-25T21:35:00Z')
+            ).toISOString()
+        ).toBe('2026-11-25T21:00:00.000Z');
+    });
+});

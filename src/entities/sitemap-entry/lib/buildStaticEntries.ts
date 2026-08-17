@@ -1,6 +1,7 @@
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { PRIVACY_PATH, TERMS_PATH } from '@/shared/lib/legal';
 import { SITE_BUILD_DATE, SITE_URL } from '@/shared/lib/seo';
+import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 import { CATEGORY_CONFIG, type NewsFeedCategory } from '@/entities/market-news';
 import type { SitemapEntry } from '../model';
@@ -37,7 +38,8 @@ function startOfUtcDay(now: Date): Date {
 export function buildStaticEntries(now: Date): SitemapEntry[] {
     const oneHourAgo = new Date(now.getTime() - MS_PER_HOUR);
     const todayUtc = startOfUtcDay(now);
-    const lastSessionClose = lastClosedSessionCloseUtc(now);
+    // `/fear-greed`는 미국 지수·ETF의 EOD 종가가 입력이므로 NYSE 세션 기준이다.
+    const lastSessionClose = lastClosedSessionCloseUtc(US_EQUITY_SESSION, now);
     // safe: CATEGORY_CONFIG is Record<NewsFeedCategory, CategoryConfig>, so Object.keys is exactly the union — TS just widens to string[].
     const newsCategoryEntries: SitemapEntry[] = (
         Object.keys(CATEGORY_CONFIG) as NewsFeedCategory[]

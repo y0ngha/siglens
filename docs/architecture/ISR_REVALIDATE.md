@@ -98,8 +98,13 @@ bars EOD 캐시 키(`CachedMarketDataProvider`)와 시장 공포·탐욕 fetch �
 때는 요일을 안 봐서 **토·일에 열리지도 않은 장의 마감 시각**을 1800여 URL에
 발행했다. 새 sitemap을 추가할 때 이 계산을 다시 구현하지 말 것.
 
-> 공휴일은 어느 구현도 보정하지 않는다(휴장일 캘린더가 앱 전체에 없다). 그 날짜로
-> lastmod가 하루 앞서는 정도라 영향이 작아 의도적으로 남겨 둔 간극이다.
+> ~~공휴일은 어느 구현도 보정하지 않는다(휴장일 캘린더가 앱 전체에 없다). 그 날짜로
+> lastmod가 하루 앞서는 정도라 영향이 작아 의도적으로 남겨 둔 간극이다.~~
+
+> **2026-08 갱신.** 휴장일 캘린더가 들어왔다. `lastClosedSessionDate(spec, now)`가
+> `spec.closeMinuteFor`(NYSE는 core 규칙 캘린더)로 휴장일·반장을 되감고, 한국 종목은
+> `KR_EQUITY_SESSION`으로 따로 계산한다 — 한 벌만 쓰면 NYSE만 쉬는 날 KRX lastmod가
+> 하루 뒤로 밀린다.
 
 ## 3. On-demand 무효화 (news)
 

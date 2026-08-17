@@ -226,6 +226,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ Comments either match reality exactly, or are removed and the WHY moved to commit/PR description
     → Recurring: PR #420 Phase 7 R1, PR #428 R16 S1, PR #442 R5 S1, PR #453 R3/R4, PR #459, feat/seo-followup B5, PR #562 R2
 
+15.65. UTC/timezone comments asserting time conversions that contradict the literal
+    → When a comment explains a UTC timestamp's local-time equivalent, the literal and conversion must match exactly
+    → Common source: DST transitions, timezone offset changes, or copy-paste edits where one half was updated but not the other
+    → Verify with: `new Date('2026-03-08T17:00:00Z').toLocaleString('en-US', { timeZone: 'America/New_York' })` before committing the comment
+    ❌ // 2026-03-08T17:00:00Z → 12:00 EST (actual: 13:00 EDT — DST active on that date)
+    ❌ // UTC 00:30Z closes at (code uses 02:00Z; comment contradicts literal)
+    ❌ // 01:00Z in UTC converts to 5:00 local (code uses 01:30Z; mismatch)
+    ✅ // 2026-03-08T17:00:00Z → 13:00 EDT
+    ✅ // UTC 02:00Z closes at 9:00 ET (verify this matches the actual literal in code)
+    → Recurring: feat/market-calendar-adoption R3 + R4 (3 instances across both rounds)
+
 15.4. Visual section separator comments (`// ─── Title ───────────`) inside source files
     → Box-drawing characters used to "organize" sections in code are WHAT-comments in disguise (they label what's below).
     → Function/interface/type names already organize the file; section labels add visual noise that drifts whenever sections move.

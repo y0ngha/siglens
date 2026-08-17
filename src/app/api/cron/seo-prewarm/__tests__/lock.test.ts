@@ -287,11 +287,11 @@ describe('seo-prewarm lock', () => {
             mockIncrby.mockResolvedValue(42);
             const result = await addFmpBudget(5);
             expect(mockIncrby).toHaveBeenCalledWith(
-                'seo-prewarm:fmp-budget:2026-07-25',
+                'seo-prewarm:fmp-budget:2026-07-24',
                 5
             );
             expect(mockExpire).toHaveBeenCalledWith(
-                'seo-prewarm:fmp-budget:2026-07-25',
+                'seo-prewarm:fmp-budget:2026-07-24',
                 172800
             );
             expect(result).toBe(42);
@@ -302,6 +302,26 @@ describe('seo-prewarm lock', () => {
             expect(await addFmpBudget(5)).toBe(0);
             expect(mockIncrby).not.toHaveBeenCalled();
         });
+
+        /**
+         * prewarm 창은 20:30~03:59 UTC로 **UTC 자정을 가로지른다**. 버킷이 UTC 날짜면
+         * 하룻밤이 항상 두 키로 쪼개져 각 키가 상한을 따로 세고, 실질 FMP 호출이 상한의
+         * 두 배까지 늘어난다. ET 날짜로 잡으면 창 전체가 16:30~23:59 ET 하루에 들어간다.
+         */
+        it('[회귀] UTC 자정을 사이에 둔 같은 prewarm 밤은 같은 키를 쓴다', async () => {
+            mockIncrby.mockResolvedValue(1);
+
+            vi.setSystemTime(new Date('2026-07-24T21:00:00.000Z')); // 17:00 ET 7/24
+            await addFmpBudget(1);
+            vi.setSystemTime(new Date('2026-07-25T03:00:00.000Z')); // 23:00 ET 7/24
+            await addFmpBudget(1);
+
+            const keys = mockIncrby.mock.calls.map(call => call[0]);
+            expect(keys).toEqual([
+                'seo-prewarm:fmp-budget:2026-07-24',
+                'seo-prewarm:fmp-budget:2026-07-24',
+            ]);
+        });
     });
 
     describe('getFmpBudgetUsed', () => {
@@ -309,7 +329,7 @@ describe('seo-prewarm lock', () => {
             mockGet.mockResolvedValue(42);
             expect(await getFmpBudgetUsed()).toBe(42);
             expect(mockGet).toHaveBeenCalledWith(
-                'seo-prewarm:fmp-budget:2026-07-25'
+                'seo-prewarm:fmp-budget:2026-07-24'
             );
         });
 

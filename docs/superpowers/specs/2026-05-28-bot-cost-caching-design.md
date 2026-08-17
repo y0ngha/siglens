@@ -47,7 +47,8 @@
 
 - `isEtRegularSessionOpen(now): boolean` — 평일 09:30–16:00 ET.
 - `secondsUntilNextEtSessionOpen(now): number` — 다음 평일 09:30 ET까지 남은 초. 개장 전(오늘 개장)·개장 후(다음 평일)·금요일 마감→월요일·주말을 처리. 분 단위 해상도(캐시 TTL 용도라 무해).
-- 미 증시 휴장일 캘린더는 도입하지 않는다(기존 options/analysis 캐시와 동일). 휴장일엔 개장으로 간주 → 불필요 재fetch 소수 발생하나 stale-into-open 위험 없음.
+- ~~미 증시 휴장일 캘린더는 도입하지 않는다(기존 options/analysis 캐시와 동일). 휴장일엔 개장으로 간주 → 불필요 재fetch 소수 발생하나 stale-into-open 위험 없음.~~
+  - **2026-08 갱신 — 뒤집힘.** core 0.44의 `US_EQUITY_SESSION.closeMinuteFor`가 휴장일 `0`·반장 `780`을 반환하므로 `computeBarsEffectiveTtl`을 포함한 세션 판정 전 경로가 자동으로 휴장일을 인식한다.
 
 ### 5.2 `computeBarsEffectiveTtl(timeframe, now): number` (신규, `infrastructure/cache/config.ts`)
 
@@ -109,7 +110,7 @@ SCOPE §5 "core → siglens" 준수.
 
 ## 8. 비-목표 (YAGNI)
 
-- 미 증시 휴장일 캘린더 도입 안 함.
+- ~~미 증시 휴장일 캘린더 도입 안 함.~~ → 2026-08 도입됨(core 0.44 `closeMinuteFor`). §5.1 각주 참조.
 - 라우트 레벨 ISR/`generateStaticParams` 안 함(#439 리스크).
 - market summary 캐싱(core 별도 작업).
 - 사람 경로 뉴스 캐싱 안 함(봇 경로만 가드).
