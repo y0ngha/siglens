@@ -51,6 +51,32 @@ function collectColumnNames(node: SqlLike): string[] {
     );
 }
 
+/** 순환 참조 방어 + 무한 재귀 방어용 깊이 상한. Drizzle 조건식은 이보다 훨씬 얕다. */
+const SQL_WALK_MAX_DEPTH = 8;
+
+/**
+ * 조건식 객체 그래프에 들어 있는 **모든 문자열**을 모은다.
+ *
+ * 컬럼 이름만 보면 조건이 어떤 컬럼을 쓰는지는 알아도 *무엇과* 비교하는지는 모른다 —
+ * 접미사 필터처럼 값 자체가 계약인 경우엔 그것만으로 부족하다. Drizzle이 바인딩 값을
+ * 어느 노드 타입에 담는지는 버전마다 다르므로(`Param`/`StringChunk`/중첩 `SQL`),
+ * 특정 형태를 가정하지 않고 그래프 전체를 훑는다.
+ */
+function collectSqlStrings(
+    node: unknown,
+    depth = 0,
+    seen = new Set<unknown>()
+): string[] {
+    if (depth > SQL_WALK_MAX_DEPTH || node === null) return [];
+    if (typeof node === 'string') return [node];
+    if (typeof node !== 'object') return [];
+    if (seen.has(node)) return [];
+    seen.add(node);
+    return Object.values(node as Record<string, unknown>).flatMap(value =>
+        collectSqlStrings(value, depth + 1, seen)
+    );
+}
+
 const apple: KoreanTickerEntry = {
     symbol: 'AAPL',
     name: 'Apple Inc.',
@@ -170,8 +196,15 @@ describe('DrizzleKoreanTickerRepository', () => {
         const { db, where } = makeSelectFromDb(rows);
         const repo = new DrizzleKoreanTickerRepository(db);
         await expect(repo.findAllListingStatuses()).resolves.toEqual(rows);
-        // 접미사 필터가 반드시 걸려야 한다 — 빠지면 미국 종목이 섞인다.
+
+        // `.where()`가 불렸다는 것만 보면 **아무 조건이나** 통과한다 — 오타 난 접미사도,
+        // 엉뚱한 컬럼도. 실제 조건식을 열어 컬럼과 바인딩 값을 둘 다 확인한다.
         expect(where).toHaveBeenCalledTimes(1);
+        const condition = where.mock.calls[0][0] as SqlLike;
+        expect(collectColumnNames(condition)).toContain('symbol');
+        expect(collectSqlStrings(condition)).toEqual(
+            expect.arrayContaining(['%.KS', '%.KQ'])
+        );
     });
 
     it('findBySymbols 는 빈 입력에서 select 를 호출하지 않는다', async () => {
