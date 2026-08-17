@@ -120,6 +120,20 @@ describe('NaverNewsClient', () => {
         expect(url).not.toContain('openapi.naver.com');
     });
 
+    it('marks articles as Korean so the prompt skips translation', async () => {
+        // core는 `sourceLanguage`가 없으면 영문으로 간주해 "한국어로 번역하라"고
+        // 지시한다 — 한국어 기사에는 토큰 낭비이고, 모델이 이미 정확한 제목을
+        // 고쳐 쓸 여지를 준다.
+        fetchSpy.mockResolvedValue(mockNaverResponse([naverItem()]));
+
+        const [item] = await new NaverNewsClient(resolveQuery).fetchNews(
+            SYMBOL,
+            '7d'
+        );
+
+        expect(item!.sourceLanguage).toBe('ko');
+    });
+
     it('prefers the original link over the Naver mirror', async () => {
         // 네이버 링크는 기사 이관 시 만료되지만 원문 URL은 남는다.
         fetchSpy.mockResolvedValue(mockNaverResponse([naverItem()]));

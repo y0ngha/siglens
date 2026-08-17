@@ -214,11 +214,16 @@ export class NaverNewsClient implements NewsClientPort {
             url,
             publishedAt,
             // 필드명은 `titleEn`/`bodyEn`이지만 실제로는 "원문 언어"를 담는다 — 크립토·미국
-            // 종목은 영문, 국내 종목은 한국어다. 하위 번역 단계가 원문 언어를 가리지 않는다.
+            // 종목은 영문, 국내 종목은 한국어다. 어느 언어인지는 `sourceLanguage`가 알린다.
             titleEn: stripNaverMarkup(raw.title),
             // 본문은 제공되지 않는다(클래스 주석 참조). 요약이라도 넣어야 AI 분석이
             // 제목 한 줄만 보고 판단하지 않는다. 빈 문자열은 null로 정규화한다.
             bodyEn: description || null,
+            // 네이버 기사는 이미 한국어다. 이 값이 없으면 core 프롬프트가 "영문을
+            // 한국어로 번역하라"고 지시해, 토큰을 낭비할 뿐 아니라 이미 정확한 제목을
+            // 모델이 조용히 고쳐 쓸 여지를 준다(core v0.45.0 `NewsItem.sourceLanguage`).
+            // 요약·감성·분류는 언어와 무관하게 그대로 수행된다.
+            sourceLanguage: 'ko',
         };
     }
 }
