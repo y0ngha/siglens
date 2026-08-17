@@ -41,8 +41,8 @@ export function OptionsSummary({ bullets, oiStale }: OptionsSummaryProps) {
                 </p>
             ) : (
                 <ul aria-label="옵션 분석 항목" className="space-y-2">
-                    {bullets.map((bullet, i) => (
-                        <li key={i} className="flex gap-2 text-sm">
+                    {bullets.map(bullet => (
+                        <li key={bullet} className="flex gap-2 text-sm">
                             <span
                                 aria-hidden="true"
                                 className="mt-0.5 shrink-0 text-secondary-400"

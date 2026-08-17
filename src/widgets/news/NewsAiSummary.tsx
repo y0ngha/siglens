@@ -19,7 +19,7 @@ import {
     type NewsAnalysisResponse,
     type NewsSentiment,
 } from '@y0ngha/siglens-core';
-import { useMemo } from 'react';
+
 import { NEWS_ANALYSIS_PERIOD_LABEL } from '@/shared/lib/news/periodLabels';
 import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
 
@@ -134,9 +134,9 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                 <div className="mb-4">
                     <h3 className="mb-2 text-sm font-semibold">핵심 이벤트</h3>
                     <ul className="space-y-1.5" aria-label="핵심 이벤트 목록">
-                        {result.keyEventsKo.map((event, i) => (
+                        {result.keyEventsKo.map(event => (
                             <li
-                                key={i}
+                                key={event}
                                 className="flex min-w-0 gap-2 text-sm wrap-break-word text-secondary-400"
                             >
                                 <span
@@ -163,9 +163,9 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                         className="space-y-1.5"
                         aria-label="다가오는 주요 일정 목록"
                     >
-                        {result.upcomingEventsKo.map((event, i) => (
+                        {result.upcomingEventsKo.map(event => (
                             <li
-                                key={i}
+                                key={event}
                                 className="flex min-w-0 gap-2 text-sm wrap-break-word text-secondary-400"
                             >
                                 <span

@@ -126,6 +126,13 @@ const nextConfig: NextConfig = {
                     value: 'DENY',
                 },
                 {
+                    // X-Frame-Options의 현대적 대체(레거시 브라우저용으로 둘 다 보낸다).
+                    // 우리 페이지를 iframe에 넣는 경로는 없고, 클릭재킹으로 로그인/설정
+                    // 같은 인증 화면을 감싸는 공격을 CSP 레벨에서 차단한다.
+                    key: 'Content-Security-Policy',
+                    value: "frame-ancestors 'none'",
+                },
+                {
                     key: 'Referrer-Policy',
                     value: 'strict-origin-when-cross-origin',
                 },

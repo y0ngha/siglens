@@ -199,8 +199,8 @@ export function FundamentalSnapshotProse({
                             aria-label={`${symbol} 카테고리별 평가 목록`}
                             className="space-y-2"
                         >
-                            {narrowed.categoryAssessments.map((a, i) => (
-                                <li key={`${a.category}-${i}`}>
+                            {narrowed.categoryAssessments.map(a => (
+                                <li key={a.category}>
                                     <span className="font-medium text-secondary-200">
                                         {CATEGORY_LABEL[a.category]}
                                         {a.sentiment !== null &&

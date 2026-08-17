@@ -317,9 +317,9 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                         </tr>
                     </thead>
                     <tbody>
-                        {rows.map((trade, i) => (
+                        {rows.map(trade => (
                             <tr
-                                key={`${trade.office}-${trade.transactionDate}-${i}`}
+                                key={`${trade.office}-${trade.transactionDate}-${trade.side}-${trade.amount}`}
                                 className="border-b border-secondary-700/50 transition-colors last:border-b-0 hover:bg-secondary-700/30"
                             >
                                 <td className="px-4 py-3 whitespace-nowrap">

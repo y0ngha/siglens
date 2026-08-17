@@ -44,9 +44,9 @@ export function BacktestCaseList({ cases }: BacktestCaseListProps) {
                         {group.label}
                     </div>
                     <div className="flex flex-col gap-2">
-                        {group.items.map((c, i) => (
+                        {group.items.map(c => (
                             <BacktestCaseCard
-                                key={`${c.ticker}-${c.entryDate}-${i}`}
+                                key={`${c.ticker}-${c.entryDate}`}
                                 case_={c}
                             />
                         ))}

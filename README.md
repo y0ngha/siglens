@@ -287,6 +287,14 @@ Roughly 1,000 Vitest files and 41 Playwright specs. The coverage target is **90%
 
 E2E runs against a real production build in a browser, separately from Vitest; see [E2E.md](./docs/qa/E2E.md). Note that `git push` triggers a Husky gate running format check, lint, typecheck, unit tests, and a full production build — expect it to take a while.
 
+### React Doctor
+
+`npx react-doctor@latest` audits the React codebase (security, correctness, a11y,
+performance, architecture). CI runs it on every pull request via
+`.github/workflows/react-doctor.yml` and fails the check on **new error-level**
+findings a change introduces. Project-level rule policy lives in
+`doctor.config.json`; every disabled rule there carries the reason inline.
+
 ## Commands
 
 Day to day:

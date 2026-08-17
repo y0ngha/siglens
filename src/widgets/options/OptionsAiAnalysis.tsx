@@ -6,7 +6,7 @@ import type {
     OptionsSignalKind,
     OptionsTone,
 } from '@y0ngha/siglens-core';
-import { useMemo } from 'react';
+
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { cn } from '@/shared/lib/cn';

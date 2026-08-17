@@ -287,6 +287,13 @@ Vitest 테스트 파일 약 1,000개, Playwright 스펙 41개. 커버리지 목�
 
 E2E는 실제 프로덕션 빌드를 브라우저로 검증하며 Vitest와 별도로 돕니다([E2E.md](./docs/qa/E2E.md)). 참고로 `git push`는 Husky 게이트를 발화해 format check·lint·typecheck·단위 테스트·프로덕션 빌드를 전부 돌리므로 시간이 꽤 걸립니다.
 
+### React Doctor
+
+`npx react-doctor@latest`가 React 코드베이스를 감사한다(보안·정확성·접근성·성능·구조).
+CI는 `.github/workflows/react-doctor.yml`로 모든 PR에서 실행되며, 그 PR이 **새로 추가한
+error 등급** 지적이 있을 때만 실패시킨다. 룰 정책은 `doctor.config.json`에 있고 끈 룰마다
+근거를 주석으로 남긴다.
+
 ## 명령어
 
 자주 쓰는 것:

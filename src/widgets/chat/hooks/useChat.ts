@@ -302,12 +302,14 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     });
 
     // 하이드레이션 후 localStorage 로드 (SSR/client mismatch 방지 — 마운트 1회만 실행)
+    // initialStorageKey는 마운트 시 한 번 계산되고 이후 바뀌지 않으므로 deps에 넣어도
+    // 마운트 1회 의미가 그대로 유지된다.
     useEffect(() => {
         const loaded = loadSession(initialStorageKey);
         startTransition(() => {
             setMessages(loaded);
         });
-    }, []);
+    }, [initialStorageKey]);
 
     // 하이드레이션 후 저장된 모델 로드 (SSR/client mismatch 방지 — 마운트 1회만 실행)
     // 선언 순서가 write effect보다 앞이어야 저장된 값을 읽을 수 있음.

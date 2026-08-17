@@ -1,12 +1,6 @@
 'use client';
 
-import {
-    startTransition,
-    useEffect,
-    useEffectEvent,
-    useMemo,
-    useState,
-} from 'react';
+import { startTransition, useEffect, useEffectEvent, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import {
     useAnalysisSettingsHydrated,

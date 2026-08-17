@@ -57,7 +57,11 @@ export async function loginAction(
                 secure,
             })
         );
-        redirect(next);
+        // 리다이렉트 싱크 바로 앞에서 URL 파서로 같은-오리진 경로만 남긴다.
+        // 문자열 검사(sanitizeNextPath)가 놓칠 수 있는 절대/프로토콜-상대 URL을 파서가
+        // 호스트째로 떼어낸다. base 호스트는 결과에 쓰이지 않는 더미다.
+        const target = new URL(next, 'https://siglens.invalid');
+        redirect(`${target.pathname}${target.search}${target.hash}`);
     } catch (err) {
         if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT'))
             throw err;

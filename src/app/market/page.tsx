@@ -118,16 +118,17 @@ export async function MarketContent(): Promise<ReactElement> {
     // 외부 I/O(FMP/Redis) 오류는 graceful 처리 — 빈 캐시 동결 방지를 위해 throw 대신
     // empty safe default로 폴백한다. MarketSummaryPanel / SectorSignalPanel은
     // 빈 indices/sectors/stocks 배열을 정상적으로 렌더한다(non-empty degraded view).
-    const summary = await getMarketSummaryStatic().catch(e => {
-        console.error('[MarketContent] getMarketSummaryStatic failed:', e);
-        return { indices: [], sectors: [] };
-    });
-    const sectorData = await getSectorSignalsStatic(
-        DEFAULT_DASHBOARD_TIMEFRAME
-    ).catch(e => {
-        console.error('[MarketContent] getSectorSignalsStatic failed:', e);
-        return { computedAt: dateHour, stocks: [] };
-    });
+    // 두 fetch는 서로 독립이므로 병렬로 기다린다(직렬이면 TTFB에 두 지연이 더해진다).
+    const [summary, sectorData] = await Promise.all([
+        getMarketSummaryStatic().catch(e => {
+            console.error('[MarketContent] getMarketSummaryStatic failed:', e);
+            return { indices: [], sectors: [] };
+        }),
+        getSectorSignalsStatic(DEFAULT_DASHBOARD_TIMEFRAME).catch(e => {
+            console.error('[MarketContent] getSectorSignalsStatic failed:', e);
+            return { computedAt: dateHour, stocks: [] };
+        }),
+    ]);
     // peekBriefingStatic is read-only — null on cache miss (client will trigger submit)
     const peekSeed = await peekBriefingStatic(summary, dateHour).catch(
         () => null

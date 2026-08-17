@@ -18,8 +18,8 @@ export function RiskFactors({ factors }: RiskFactorsProps) {
                 위험 요인
             </h2>
             <ul aria-label="위험 요인 목록" className="space-y-2">
-                {factors.map((factor, i) => (
-                    <li key={i} className="flex gap-2 text-sm">
+                {factors.map(factor => (
+                    <li key={factor} className="flex gap-2 text-sm">
                         <span
                             aria-hidden="true"
                             className="mt-0.5 shrink-0 text-secondary-400"

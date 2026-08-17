@@ -45,13 +45,6 @@ jobs:
         needs: changes
         if: needs.changes.outputs.run == 'true'
         runs-on: ubuntu-latest
-        # .yarnrc.yml authenticates the @y0ngha scope to GitHub Packages via
-        # ${SIGLENS_GITHUB_TOKEN}; yarn (even `yarn --version`) fails without it.
-        # The built-in GITHUB_TOKEN cannot read this user-scoped GitHub Packages
-        # package (it 403s), so the repo MUST define a SIGLENS_GITHUB_TOKEN secret
-        # (a PAT with read:packages) for CI to install @y0ngha/siglens-core.
-        env:
-            SIGLENS_GITHUB_TOKEN: ${{ secrets.SIGLENS_GITHUB_TOKEN }}
         # Single job is sufficient for this foundation PR (one smoke spec).
         # When the spec count grows, add Playwright sharding via a matrix
         # (e.g. strategy.matrix.shard: [1, 2] + `--shard=${{ matrix.shard }}/2`).
@@ -70,7 +63,15 @@ jobs:
                   node-version-file: '.nvmrc'
                   cache: yarn
 
+            # .yarnrc.yml authenticates the @y0ngha scope to GitHub Packages via
+            # ${SIGLENS_GITHUB_TOKEN}. 내장 GITHUB_TOKEN은 이 user-scoped 패키지를
+            # 읽을 수 없어(403) 저장소에 SIGLENS_GITHUB_TOKEN(read:packages PAT)이
+            # 반드시 있어야 한다. 토큰은 install 스텝에만 노출한다(최소 권한) —
+            # .yarnrc.yml의 `${SIGLENS_GITHUB_TOKEN:-}` 기본값 덕에 나머지 스텝은
+            # 토큰 없이도 yarn을 쓸 수 있다.
             - name: Install dependencies
+              env:
+                  SIGLENS_GITHUB_TOKEN: ${{ secrets.SIGLENS_GITHUB_TOKEN }}
               run: yarn install --immutable
 
             - name: Install Playwright browsers

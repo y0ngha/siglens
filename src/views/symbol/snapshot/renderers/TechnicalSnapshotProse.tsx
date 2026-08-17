@@ -190,8 +190,8 @@ export function TechnicalSnapshotProse({
                             aria-label={`${symbol} 차트 패턴 목록`}
                             className="space-y-2"
                         >
-                            {narrowed.patternSummaries.map((p, i) => (
-                                <li key={`${p.name}-${i}`}>
+                            {narrowed.patternSummaries.map(p => (
+                                <li key={`${p.name}-${p.summary.slice(0, 32)}`}>
                                     <span className="font-medium text-secondary-200">
                                         {p.name}
                                         {p.trend !== null &&
@@ -214,8 +214,8 @@ export function TechnicalSnapshotProse({
                             aria-label={`${symbol} 전략 시그널 목록`}
                             className="space-y-2"
                         >
-                            {narrowed.strategyResults.map((s, i) => (
-                                <li key={`${s.name}-${i}`}>
+                            {narrowed.strategyResults.map(s => (
+                                <li key={`${s.name}-${s.summary.slice(0, 32)}`}>
                                     <span className="font-medium text-secondary-200">
                                         {s.name}
                                         {s.trend !== null &&

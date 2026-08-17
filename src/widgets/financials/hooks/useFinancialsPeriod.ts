@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { FinancialsSnapshot, StatementPeriod } from '@y0ngha/siglens-core';
 import { fetchAndApplyQuarterSnapshot } from '../utils/financialsPeriodUtils';
 

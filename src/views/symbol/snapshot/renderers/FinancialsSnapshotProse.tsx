@@ -193,8 +193,8 @@ export function FinancialsSnapshotProse({
                             aria-label={`${symbol} 축별 평가 목록`}
                             className="space-y-2"
                         >
-                            {narrowed.axisAssessments.map((a, i) => (
-                                <li key={`${a.axis}-${i}`}>
+                            {narrowed.axisAssessments.map(a => (
+                                <li key={a.axis}>
                                     <span className="font-medium text-secondary-200">
                                         {AXIS_LABEL[a.axis]}
                                         {a.sentiment !== null &&

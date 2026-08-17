@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import {
     useDefaultModelId,
     useDefaultReasoning,

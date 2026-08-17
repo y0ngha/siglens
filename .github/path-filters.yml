@@ -41,6 +41,8 @@ e2e_irrelevant:
     - '.oxlintrc.json'
     - '.stylelintrc.cjs'
     - '.oxfmtrc.json'
+    - 'doctor.config.json'
+    - '.github/workflows/react-doctor.yml'
     - 'vitest.config.ts'
     - 'vitest.setup.*.ts'
     - 'lint-staged.config.mjs'

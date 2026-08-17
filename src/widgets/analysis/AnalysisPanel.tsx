@@ -419,9 +419,9 @@ function ConfluenceInfo({ level }: ConfluenceInfoProps) {
     return (
         <InfoTooltip>
             <div className="flex flex-col gap-1">
-                {level.sources.map((source, index) => (
+                {level.sources.map(source => (
                     <div
-                        key={`${source.price}-${source.reason}-${index}`}
+                        key={`${source.price}-${source.reason}`}
                         className="flex items-baseline gap-2 whitespace-nowrap"
                     >
                         <span className="shrink-0 text-secondary-300">
@@ -689,9 +689,9 @@ function PriceScenarioSection({
             <MarkdownText className="text-xs text-secondary-500">
                 {scenario.condition}
             </MarkdownText>
-            {scenario.targets.map((target, index) => (
+            {scenario.targets.map(target => (
                 <div
-                    key={`target-${index}-${target.price}`}
+                    key={`target-${target.price}`}
                     className="flex items-baseline gap-2"
                 >
                     <span
@@ -867,11 +867,18 @@ export function AnalysisPanel({
     const handleCopyReport = async (): Promise<void> => {
         if (showProgress || isAnalyzing || hasLockedDetails) return;
 
-        try {
-            if (typeof navigator === 'undefined' || !navigator.clipboard) {
-                throw new Error('Clipboard API unavailable');
-            }
+        // Clipboard API 부재는 try 안에서 throw하지 않고 먼저 걸러낸다.
+        // React Compiler는 try/catch 안의 ThrowStatement를 아직 컴파일하지 못해
+        // (BuildHIR: Support ThrowStatement inside of try/catch) 이 컴포넌트 전체가
+        // 자동 메모화 대상에서 빠졌다. 동작은 동일하고(실패 상태 + 리셋 타이머),
+        // 컴파일러가 이 컴포넌트를 최적화할 수 있게 된다.
+        if (typeof navigator === 'undefined' || !navigator.clipboard) {
+            setCopyState('failed');
+            resetCopyStateLater();
+            return;
+        }
 
+        try {
             const report = buildExpertAnalysisReport({
                 symbol,
                 analysis,

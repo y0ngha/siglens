@@ -196,8 +196,8 @@ export function OptionsSnapshotProse({
                             aria-label={`${symbol} 만기별 해석 목록`}
                             className="space-y-2"
                         >
-                            {narrowed.perExpiration.map((item, i) => (
-                                <li key={`${item.expirationDate}-${i}`}>
+                            {narrowed.perExpiration.map(item => (
+                                <li key={item.expirationDate}>
                                     <span className="font-medium text-secondary-200">
                                         {item.expirationDate}
                                         {item.tone !== null &&
@@ -220,9 +220,9 @@ export function OptionsSnapshotProse({
                             aria-label={`${symbol} 옵션 시그널 목록`}
                             className="space-y-1"
                         >
-                            {narrowed.signals.map((signal, i) => (
+                            {narrowed.signals.map(signal => (
                                 <li
-                                    key={`${signal.kind ?? 'unknown'}-${i}`}
+                                    key={`${signal.kind ?? 'unknown'}-${signal.message}`}
                                     className="flex gap-2"
                                 >
                                     <span

@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback } from 'react';
 import { useCurrentUser } from '@/entities/auth';
 import {
     recordAnonSymbolAnalysis,

@@ -18,8 +18,8 @@ export function NewsSummary({ bullets }: NewsSummaryProps) {
                 뉴스 분석 요약
             </h2>
             <ul aria-label="뉴스 분석 항목" className="space-y-2">
-                {bullets.map((bullet, i) => (
-                    <li key={i} className="flex gap-2 text-sm">
+                {bullets.map(bullet => (
+                    <li key={bullet} className="flex gap-2 text-sm">
                         <span
                             aria-hidden="true"
                             className="mt-0.5 shrink-0 text-secondary-400"

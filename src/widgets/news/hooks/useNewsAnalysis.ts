@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { NewsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import type { SubmitNewsAnalysisActionResult } from '@/entities/news-article/actions';

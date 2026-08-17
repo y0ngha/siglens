@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/shared/config/market';
 
@@ -17,7 +17,6 @@ export function useTimeframeFromUrl(
     isTierHydrated: boolean
 ): Timeframe {
     const tfParam = useSearchParams().get('tf');
-    const router = useRouter();
     const requestedTimeframe = isValidTimeframe(tfParam)
         ? tfParam
         : DEFAULT_TIMEFRAME;
@@ -37,10 +36,16 @@ export function useTimeframeFromUrl(
             return;
         }
 
-        router.replace(`/${symbol}/overall?tf=${DEFAULT_TIMEFRAME}`, {
-            scroll: false,
-        });
-    }, [isFreeTier, isTierHydrated, router, symbol, tfParam]);
+        // router.replace는 라우터 내비게이션을 유발해 이미 렌더된 화면이 다시 그려진다
+        // (잘못된 tf가 잠깐 보이는 깜빡임의 원인). 반환값 timeframe은 이미 위에서
+        // DEFAULT로 강제됐으므로 여기서는 주소만 맞춰 주면 된다 — Next가 공식 지원하는
+        // history.replaceState로 내비게이션 없이 쿼리만 교체한다(useSearchParams에 반영됨).
+        window.history.replaceState(
+            null,
+            '',
+            `/${symbol}/overall?tf=${DEFAULT_TIMEFRAME}`
+        );
+    }, [isFreeTier, isTierHydrated, symbol, tfParam]);
 
     return timeframe;
 }

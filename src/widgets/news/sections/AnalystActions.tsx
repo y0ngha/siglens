@@ -131,9 +131,9 @@ export function AnalystActions({ events }: AnalystActionsProps) {
                 애널리스트 등급 변경
             </h2>
             <ul className="space-y-2" aria-label="애널리스트 등급 변경 목록">
-                {visible.map((event, idx) => (
+                {visible.map(event => (
                     <GradeRow
-                        key={`${event.date}-${event.gradingCompany}-${event.newGrade}-${idx}`}
+                        key={`${event.date}-${event.gradingCompany}-${event.newGrade}`}
                         event={event}
                     />
                 ))}

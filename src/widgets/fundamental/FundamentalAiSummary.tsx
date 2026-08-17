@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import {
     type FundamentalAnalysisResponse,
     type FundamentalCategory,
@@ -105,9 +104,9 @@ export function FundamentalAiSummaryView({
                 <div>
                     <h3 className="mb-2 text-sm font-semibold">위험 요인</h3>
                     <ul className="space-y-1.5">
-                        {result.riskFactorsKo.map((risk, i) => (
+                        {result.riskFactorsKo.map(risk => (
                             <li
-                                key={i}
+                                key={risk}
                                 className="flex gap-2 text-sm text-secondary-400"
                             >
                                 <span

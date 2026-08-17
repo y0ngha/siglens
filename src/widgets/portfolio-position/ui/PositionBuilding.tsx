@@ -1,7 +1,7 @@
 'use client';
 
 import type React from 'react';
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/shared/lib/cn';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';

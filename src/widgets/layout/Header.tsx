@@ -22,12 +22,10 @@ interface HeaderProps {
 }
 
 /** Presentational shell; receives resolved current user as a prop so layer rules forbid direct infrastructure access here. */
+// 최상위 <header>는 암시적으로 role="banner"이므로 role을 명시하지 않는다(중복 ARIA).
 export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
     return (
-        <header
-            className="sticky top-0 z-50 border-b border-secondary-800 bg-secondary-900/90 backdrop-blur-md supports-backdrop-filter:bg-secondary-900/75"
-            role="banner"
-        >
+        <header className="sticky top-0 z-50 border-b border-secondary-800 bg-secondary-900/90 backdrop-blur-md supports-backdrop-filter:bg-secondary-900/75">
             <div className="flex h-14 items-center gap-2 px-3 sm:gap-4 sm:px-6">
                 <Link
                     href="/"

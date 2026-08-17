@@ -1,12 +1,6 @@
 'use client';
 
-import {
-    useState,
-    startTransition,
-    useEffect,
-    useRef,
-    useCallback,
-} from 'react';
+import { useState, startTransition, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type {
     NewsAnalysisResponse,

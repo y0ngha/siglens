@@ -34,7 +34,7 @@ export function SignalStockCard({ data }: SignalStockCardProps) {
                 {data.signals.length > 0 && (
                     <div className="flex flex-wrap gap-x-1.5 gap-y-0.5 pt-1">
                         {data.signals.map((s, i) => (
-                            <span key={`${s.type}-${i}`} className="contents">
+                            <span key={s.type} className="contents">
                                 {i > 0 && (
                                     <span
                                         className="text-secondary-600"

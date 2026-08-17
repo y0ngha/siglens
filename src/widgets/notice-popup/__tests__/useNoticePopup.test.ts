@@ -63,7 +63,7 @@ describe('useNoticePopup', () => {
             JSON.parse(
                 localStorage.getItem(DISMISSED_NOTICES_STORAGE_KEY) ?? '[]'
             )
-        ).toEqual(['dismiss-me']);
+        ).toEqual({ v: 1, ids: ['dismiss-me'] });
     });
 
     it('dontShowAgain을 빈 큐에서 호출해도 예외가 없다(guard branch)', async () => {

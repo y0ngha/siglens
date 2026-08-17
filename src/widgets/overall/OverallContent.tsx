@@ -15,7 +15,7 @@ import {
 } from '@/features/symbol-model';
 import { cn } from '@/shared/lib/cn';
 import { type OverallAnalysisResponse } from '@y0ngha/siglens-core';
-import { type CSSProperties, useMemo } from 'react';
+import { type CSSProperties } from 'react';
 import { useTimeframeFromUrl } from './hooks/useTimeframeFromUrl';
 import type { AssetClass } from '@/shared/config/marketProfile';
 import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
