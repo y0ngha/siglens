@@ -87,4 +87,4 @@ oxlint는 자체 파서라 무관하고, 저장소 전체 린트가 1초대에 �
 | `query-mutation-missing-invalidation` | 2 | 무효화 추가 시 추가 refetch가 발생 — 캐시 정책 결정 필요 |
 | `no-array-index-as-key` (ChatPanel) | 2 | `ChatMessage`(siglens-core 소유 타입)에 안정적 id가 없다. 내용이 같은 메시지가 반복될 수 있어 콘텐츠 key도 불가 → core 타입 변경이 선행돼야 한다 |
 | `set-state-in-effect` (usePersistentState, useSectorSignalState) | 2 | `useSyncExternalStore` 전환이 정답이지만 여러 위젯이 공유하는 훅이라 별도 검증 필요 |
-| `immutability` (렌더 폭주 재현 테스트) | 1 | 렌더마다 카운터를 증가시키는 것이 테스트의 목적 자체다 |
+| `todo`(React Compiler 미최적화, 렌더 폭주 재현 테스트) | 1 | 렌더마다 카운터를 증가시키는 것이 테스트의 목적 자체라 컴파일러가 최적화할 수 있는 형태로 바꿀 수 없다. 객체 카운터로 바꿔 봤으나 `immutability` 오류로 바뀔 뿐이라 원복했다 |
