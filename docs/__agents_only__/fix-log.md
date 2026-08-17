@@ -188,3 +188,14 @@
 - Violation: Guard condition to skip persisting empty analysis (when titleKo + summaryKo both blank) is too broad; applies only to bot branch but skips re-submission check on human page view → permanently malformed articles re-submitted to LLM on every view for 180-day FMP lookback
   - Rule: Pattern copied from sibling files without verifying destination's invariant holds
   - Context: src/entities/news-article/actions/ensureNewsCardsAnalyzedAction.ts. Sibling economy paths pair the skip guard with unconditional TTL flag (cost-bounded), but destination only gates on isRecentlyFetched/markFetched (applies to bot branch only, leaving human path unguarded). Fixed by narrowing skip condition to exact normalizer-fallback signature only so responses model genuinely produced still persist.
+
+## [feat/market-calendar-adoption Round 1 | Stock market calendar adoption | 2026-08-18]
+- Violation: MAX_REWIND_DAYS infinite-loop guard had no unit test
+  - Rule: MISTAKES.md §Tests §22 — Every new pure helper must have dedicated unit tests achieving the project's coverage target
+  - Context: Added test verifying MAX_REWIND_DAYS guard terminates the rewind loop on the boundary (no test before)
+- Violation: DST transition date tests used a 16:00 market close on dates adjacent to the transition, not within the divergent wall-clock window (02:00–07:00 local); one-pass vs two-pass offset correction only diverge inside that window
+  - Rule: MISTAKES.md §Tests §18 — New threshold/conditional branch introduced without test cases covering both true and false paths; boundary test cases must account for the actual divergence range
+  - Context: Round 1 looked like it closed the gap but did not. Round 2 added synthetic spec with close time inside the divergent window, confirmed by mutation testing (deleting second offset pass fails exactly those two tests)
+
+## [feat/market-calendar-adoption Round 5 | Stock market calendar adoption | 2026-08-18]
+- Status: APPROVED (zero findings)

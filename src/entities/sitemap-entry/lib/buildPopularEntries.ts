@@ -1,5 +1,7 @@
+import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { MS_PER_HOUR } from '@/shared/config/time';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 import { POPULAR_OPTIONS_TICKERS } from '../config/popular-options-tickers';
 import { SITE_URL } from '@/shared/lib/seo';
@@ -14,8 +16,11 @@ const POPULAR_OPTIONS_SET = new Set<string>(POPULAR_OPTIONS_TICKERS);
  * 포함된 ticker만 포함 — 옵션 없는 종목 페이지는 noindex라 sitemap에 두면
  * 품질 신호가 약해진다.
  *
- * `lastmod`는 `lastClosedSessionCloseUtc` — **마지막으로 마감된 미국 정규 세션의 마감
- * 순간**이다. 이전에는 "오늘 20:00 UTC(미래면 어제로 클램프)"를 직접 계산했는데,
+ * `lastmod`는 `lastClosedSessionCloseUtc` — **마지막으로 마감된 정규 세션의 마감
+ * 순간**이다. 국내 상장 종목은 KRX 세션(15:30 KST), 나머지는 NYSE 세션(16:00 ET,
+ * 반장은 13:00)으로 각각 계산한다. 한 벌만 쓰면 한국 종목 lastmod가 미국 마감 시각으로
+ * 나가고, NYSE 휴장일(KRX는 개장)에는 하루 전으로 되감겨 실제보다 오래된 신호를 준다.
+ * 이전에는 "오늘 20:00 UTC(미래면 어제로 클램프)"를 직접 계산했는데,
  * 요일을 보지 않아 **토·일에는 열리지도 않은 장의 마감 시각**을 lastmod로 발행했다
  * (토 20:00 UTC 이후 크롤되면 1800여 URL이 전부 그렇게 나간다). 또 DST를 무시해
  * 겨울에는 실제 마감보다 1시간 일렀다. 공유 헬퍼는 주말 되감기와 DST를 모두 처리하고,
@@ -25,73 +30,78 @@ const POPULAR_OPTIONS_SET = new Set<string>(POPULAR_OPTIONS_TICKERS);
  * on-demand `revalidateTag`가 ISR 창 안에서도 갱신하므로 슬라이딩이 사실에 가깝다.
  */
 export function buildPopularEntries(now: Date): SitemapEntry[] {
-    const todayClose = lastClosedSessionCloseUtc(now);
+    const usClose = lastClosedSessionCloseUtc(US_EQUITY_SESSION, now);
+    const krClose = lastClosedSessionCloseUtc(KR_EQUITY_SESSION, now);
     const oneHourAgo = new Date(now.getTime() - MS_PER_HOUR);
 
-    return POPULAR_TICKERS.flatMap((ticker): SitemapEntry[] => [
-        {
-            url: `${SITE_URL}/${ticker}`,
-            lastModified: todayClose,
-            changeFrequency: 'daily',
-            priority: 0.8,
-        },
-        {
-            url: `${SITE_URL}/${ticker}/news`,
-            lastModified: oneHourAgo,
-            changeFrequency: 'hourly',
-            priority: 0.78,
-        },
-        {
-            url: `${SITE_URL}/${ticker}/fundamental`,
-            lastModified: todayClose,
-            changeFrequency: 'weekly',
-            priority: 0.75,
-        },
-        {
-            url: `${SITE_URL}/${ticker}/financials`,
-            lastModified: todayClose,
-            changeFrequency: 'monthly',
-            priority: 0.73,
-        },
-        ...(POPULAR_OPTIONS_SET.has(ticker)
-            ? [
-                  {
-                      url: `${SITE_URL}/${ticker}/options`,
-                      lastModified: todayClose,
-                      // ternary 안의 inline array literal은 outer flatMap의
-                      // SitemapEntry[] annotation이 닿지 않아 'daily'가 string
-                      // 으로 widening된다. 런타임 값은 항상 'daily'(=valid
-                      // SitemapChangeFrequency)이므로 `as const`로 좁혀 safe.
-                      changeFrequency: 'daily' as const,
-                      priority: 0.75,
-                  },
-              ]
-            : []),
-        {
-            url: `${SITE_URL}/${ticker}/overall`,
-            lastModified: todayClose,
-            changeFrequency: 'weekly',
-            priority: 0.85,
-        },
-        {
-            url: `${SITE_URL}/${ticker}/fear-greed`,
-            lastModified: todayClose,
-            changeFrequency: 'daily',
-            priority: 0.78,
-        },
-        // 국내 상장 종목은 공직자 매매 공시 제도가 없어 `/congress`가 404다
-        // (`KR_EQUITY_DESCRIPTOR.tabs`에서 제외). 404 URL을 sitemap에 실으면
-        // 크롤 예산만 태우고 색인 품질 신호가 나빠진다.
-        ...(isKrEquitySymbol(ticker)
-            ? []
-            : [
-                  {
-                      url: `${SITE_URL}/${ticker}/congress`,
-                      lastModified: todayClose,
-                      // 위 options 분기와 같은 이유로 `as const`가 필요하다.
-                      changeFrequency: 'weekly' as const,
-                      priority: 0.75,
-                  },
-              ]),
-    ]);
+    return POPULAR_TICKERS.flatMap((ticker): SitemapEntry[] => {
+        const isKr = isKrEquitySymbol(ticker);
+        const todayClose = isKr ? krClose : usClose;
+        return [
+            {
+                url: `${SITE_URL}/${ticker}`,
+                lastModified: todayClose,
+                changeFrequency: 'daily',
+                priority: 0.8,
+            },
+            {
+                url: `${SITE_URL}/${ticker}/news`,
+                lastModified: oneHourAgo,
+                changeFrequency: 'hourly',
+                priority: 0.78,
+            },
+            {
+                url: `${SITE_URL}/${ticker}/fundamental`,
+                lastModified: todayClose,
+                changeFrequency: 'weekly',
+                priority: 0.75,
+            },
+            {
+                url: `${SITE_URL}/${ticker}/financials`,
+                lastModified: todayClose,
+                changeFrequency: 'monthly',
+                priority: 0.73,
+            },
+            ...(POPULAR_OPTIONS_SET.has(ticker)
+                ? [
+                      {
+                          url: `${SITE_URL}/${ticker}/options`,
+                          lastModified: todayClose,
+                          // ternary 안의 inline array literal은 outer flatMap의
+                          // SitemapEntry[] annotation이 닿지 않아 'daily'가 string
+                          // 으로 widening된다. 런타임 값은 항상 'daily'(=valid
+                          // SitemapChangeFrequency)이므로 `as const`로 좁혀 safe.
+                          changeFrequency: 'daily' as const,
+                          priority: 0.75,
+                      },
+                  ]
+                : []),
+            {
+                url: `${SITE_URL}/${ticker}/overall`,
+                lastModified: todayClose,
+                changeFrequency: 'weekly',
+                priority: 0.85,
+            },
+            {
+                url: `${SITE_URL}/${ticker}/fear-greed`,
+                lastModified: todayClose,
+                changeFrequency: 'daily',
+                priority: 0.78,
+            },
+            // 국내 상장 종목은 공직자 매매 공시 제도가 없어 `/congress`가 404다
+            // (`KR_EQUITY_DESCRIPTOR.tabs`에서 제외). 404 URL을 sitemap에 실으면
+            // 크롤 예산만 태우고 색인 품질 신호가 나빠진다.
+            ...(isKr
+                ? []
+                : [
+                      {
+                          url: `${SITE_URL}/${ticker}/congress`,
+                          lastModified: todayClose,
+                          // 위 options 분기와 같은 이유로 `as const`가 필요하다.
+                          changeFrequency: 'weekly' as const,
+                          priority: 0.75,
+                      },
+                  ]),
+        ];
+    });
 }

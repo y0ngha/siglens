@@ -116,7 +116,8 @@ seo_analysis_snapshots {
 
 **신선도 엔진 (v2 명세)**:
 - "최근 완료된 ET 정규장 마감" 시각은 **siglens가 직접 계산**한다 — core `getEtSessionStatus`는 open/closed/weekend 상태만 반환하고 마감 타임스탬프를 주지 않는다. 계산: 현재 ET 기준 가장 최근의 평일 16:00 ET (+**정착 버퍼 30분** — EOD 데이터 확정 대기, EDT 첫 유효 틱 ≈ 20:30 UTC).
-- **미국 휴장일 캘린더는 도입하지 않는다**: 휴장일에 마감 경계를 잘못 산정해도 결과는 "전 거래일과 동일 데이터로 1회 재생성 또는 캐시 HIT 수확" — 무해한 낭비로 명시적 허용.
+- ~~**미국 휴장일 캘린더는 도입하지 않는다**: 휴장일에 마감 경계를 잘못 산정해도 결과는 "전 거래일과 동일 데이터로 1회 재생성 또는 캐시 HIT 수확" — 무해한 낭비로 명시적 허용.~~
+  - **2026-08 갱신 — 뒤집힘.** 그 "1회 재생성"이 실제로는 전 코퍼스(심볼×탭 ≈ 1,900유닛)의 LLM 재생성이었다. 주말은 경계가 금요일에 고정돼 no-op이지만 휴장일은 평일이라 경계가 롤하면서 전 심볼이 stale로 뒤집히고, cron에 요일 필터가 없어 연 9회 그대로 돌았다. 반장일에는 반대로 경계가 16:30 ET에야 롤해 첫 세 시간이 헛돌았다. 지금은 `freshness.ts`가 `lastClosedSessionCloseUtc(US_EQUITY_SESSION, now, 30)`로 core 캘린더를 따른다.
 - 크립토는 동일 일일 앵커 사용.
 - **탭별 캐시 만료 비균일 대응 (v3.2 — 구현 중 재설계)**: ⚠️ 구현 중 실측으로 **5탭(overall·fundamental·financials·congress·news)의 cached 결과에 타임스탬프 필드가 없음**이 확인됨(technical·options만 `analyzedAt` 보유). 따라서 "콘텐츠 자체 시각으로 신선도 판정" 불가 → 폐기. **최종 설계: 신선도는 오직 우리 `seo_analysis_snapshots.generatedAt`으로만 판정**한다. 배치는 우리 스냅샷이 stale/없음인 유닛만 선정하고, `force=false`로 submit → `cached`면 즉시 수확(`generatedAt = 수확 시각` 스탬프) → 다음 거래일 boundary에 자동 stale 재처리. 근거: technical·overall은 core KST-05 앵커(=장마감)로 만료돼 마감 후 cron엔 이미 만료 → miss→submit→**자연히 매일 신선 재생성**(§6 "필수 매일 재생성" 충족). fundamental·financials·congress는 느린 데이터라 cached(전일) 수확 무방. news는 최대 ~1일 stale 가능하나 §2("일 단위 수렴")·§12("즉시 회복 아님") 허용. `force` 파라미터는 7탭 전부 지원되나(향후 수동 재warm용) 본 배치에선 미사용(항상 false). overall union의 `pending_dependencies` 상태는 `submitted`와 동일 처리(in-flight 마킹).
 

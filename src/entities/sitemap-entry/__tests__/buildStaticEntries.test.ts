@@ -7,6 +7,7 @@ vi.mock('@/shared/lib/seo', () => ({
 import { buildStaticEntries } from '../lib/buildStaticEntries';
 import { SITE_URL } from '@/shared/lib/seo';
 import { MS_PER_HOUR } from '@/shared/config/time';
+import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 
 const NOW = new Date('2026-05-23T15:30:00.000Z');
@@ -38,7 +39,7 @@ describe('buildStaticEntries', () => {
         expect(fearGreed!.changeFrequency).toBe('daily');
         expect(fearGreed!.priority).toBe(0.8);
         expect(fearGreed!.lastModified.getTime()).toBe(
-            lastClosedSessionCloseUtc(NOW).getTime()
+            lastClosedSessionCloseUtc(US_EQUITY_SESSION, NOW).getTime()
         );
         // 요청 시각을 그대로 쓰면 크롤러가 가져갈 때마다 freshness가 갱신된다.
         expect(fearGreed!.lastModified.getTime()).toBeLessThan(NOW.getTime());
