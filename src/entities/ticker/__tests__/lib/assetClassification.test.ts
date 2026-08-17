@@ -138,6 +138,21 @@ describe('classifyAsset — 국내 ETF', () => {
         expect(classifyAsset('005930.KS', undefined, '삼성전자')).toBe('stock');
     });
 
+    it('[회귀] 사명에 브랜드명이 부분 문자열로 들어간 종목을 ETF로 보지 않는다', () => {
+        // `LG UPLUS`가 `PLUS`를 품는다. 부분 문자열 매칭이면 정상 종목의
+        // `Corporation` about 노드가 조용히 사라진다.
+        expect(classifyAsset('032640.KS', undefined, 'LG UPLUS CORP')).toBe(
+            'stock'
+        );
+        expect(classifyAsset('005930.KS', undefined, 'SOLUTION ADVANCED')).toBe(
+            'stock'
+        );
+        expect(classifyAsset('000000.KQ', undefined, 'ACEHIGH CO')).toBe(
+            'stock'
+        );
+        expect(buildAssetAboutNode('032640.KS', 'LG UPLUS CORP')).toBeDefined();
+    });
+
     it('이름이 없으면 종전대로 stock으로 떨어진다', () => {
         expect(classifyAsset('005930.KS')).toBe('stock');
     });

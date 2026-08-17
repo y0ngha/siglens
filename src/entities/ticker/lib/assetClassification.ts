@@ -101,7 +101,7 @@ const KNOWN_ETF_TICKERS: ReadonlySet<string> = new Set([
  * 떨어져 `Corporation` 노드가 붙는다 — 이 함수의 JSDoc이 막으려던 바로 그 오분류다.
  * 지금 `POPULAR_TICKERS`에는 국내 ETF가 없어 발현되지 않지만, 하나 추가되는 순간 샌다.
  */
-const KR_ETF_NAME_MARKERS = [
+const KR_ETF_BRAND_PREFIXES = [
     'KODEX',
     'TIGER',
     'KBSTAR',
@@ -109,15 +109,22 @@ const KR_ETF_NAME_MARKERS = [
     'HANARO',
     'PLUS',
     'RISE',
-    'SOL ',
-    'ACE ',
-    'ETN',
+    'SOL',
+    'ACE',
 ];
 
+/**
+ * **선두 토큰만 본다.** 부분 문자열로 찾으면 정상 종목이 ETF로 오분류된다 —
+ * `LG UPLUS CORP`가 `PLUS`를, 다른 사명들이 `ACE`·`SOL`을 품는다. 오분류의 대가는
+ * `Corporation` about 노드가 통째로 사라지는 것이라 조용하고 되돌리기 어렵다.
+ *
+ * 선두 토큰이 옳은 판정인 이유: KRX ETF 명명 규약이 `<브랜드> <기초지수>`
+ * (`KODEX 200`, `TIGER 미국나스닥100`)로 브랜드를 항상 맨 앞에 둔다.
+ */
 function isKrEtfName(name: string | undefined): boolean {
     if (!name) return false;
-    const upper = name.toUpperCase();
-    return KR_ETF_NAME_MARKERS.some(marker => upper.includes(marker));
+    const firstToken = name.trim().toUpperCase().split(/\s+/)[0] ?? '';
+    return KR_ETF_BRAND_PREFIXES.includes(firstToken);
 }
 
 export function classifyAsset(

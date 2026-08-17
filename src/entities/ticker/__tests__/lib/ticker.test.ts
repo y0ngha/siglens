@@ -182,6 +182,17 @@ describe('buildDisplayName — 국내 상장 종목', () => {
         ).toBe('Samsung Electronics Co., Ltd. (005930.KS)');
     });
 
+    it('미국 종목이라도 영문명이 한글명과 같으면 한 번만 쓴다', () => {
+        // KR 분기와 confound되지 않도록 미국 티커로 검증한다 — 이 조건이 없으면
+        // 번역이 원문을 그대로 돌려준 종목에서 `애플, 애플 (AAPL)`이 나온다.
+        expect(
+            buildDisplayName(
+                { symbol: 'AAPL', name: '애플', koreanName: '애플' },
+                'AAPL'
+            )
+        ).toBe('애플 (AAPL)');
+    });
+
     it('미국 종목은 영문 법인명을 그대로 유지한다', () => {
         expect(
             buildDisplayName(
