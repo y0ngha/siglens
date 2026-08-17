@@ -60,7 +60,8 @@ export function OptionsStaleDataBanner() {
                 </p>
                 <p>
                     정확한 수치는 미국 정규장 시간({ET_MARKET_HOURS_DISPLAY},
-                    평일)에 다시 확인해 주세요.
+                    휴장일을 뺀 평일)에 다시 확인해 주세요. 미국 증시 휴장일과
+                    조기 마감일(13:00 ET)에는 그 시간대에도 갱신되지 않아요.
                 </p>
                 <p>
                     한국 시간으로는 서머타임(EDT) 기간이면{' '}

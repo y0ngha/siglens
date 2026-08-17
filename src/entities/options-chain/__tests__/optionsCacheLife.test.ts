@@ -115,3 +115,34 @@ describe('getOptionsCacheLifeProfile — default parameter', () => {
         expect(validProfiles).toContain(result);
     });
 });
+
+/**
+ * NYSE 휴장일은 토요일과 같은 상황이다 — Yahoo가 다음 개장까지 새 스냅샷을 내지 않는다.
+ * 30분짜리 `options-market-closed`로 떨어지면 같은 데이터를 하루 ~48회 다시 가져오고,
+ * 그 TTL은 Redis TTL(`optionsDataCache`)로도 직접 쓰인다.
+ */
+describe('getOptionsCacheLifeProfile — NYSE 휴장일/반장', () => {
+    it('추수감사절 장중 시각도 weekend 프로파일로 떨어진다', () => {
+        // 2026-11-26 15:00Z = 10:00 EST — 평소라면 정규장 한복판.
+        expect(
+            getOptionsCacheLifeProfile(new Date('2026-11-26T15:00:00Z'))
+        ).toBe('options-weekend');
+    });
+
+    it('성금요일(2026-04-03)도 weekend 프로파일', () => {
+        expect(
+            getOptionsCacheLifeProfile(new Date('2026-04-03T15:00:00Z'))
+        ).toBe('options-weekend');
+    });
+
+    it('반장일 13:00 ET 이후는 closed — open이 아니다', () => {
+        // 11/27 18:05Z = 13:05 EST.
+        expect(
+            getOptionsCacheLifeProfile(new Date('2026-11-27T18:05:00Z'))
+        ).toBe('options-market-closed');
+        // 12:50 EST는 아직 개장.
+        expect(
+            getOptionsCacheLifeProfile(new Date('2026-11-27T17:50:00Z'))
+        ).toBe('options-market-open');
+    });
+});

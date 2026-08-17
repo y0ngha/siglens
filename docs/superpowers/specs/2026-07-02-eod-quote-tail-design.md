@@ -38,7 +38,7 @@
 ## 3. 갭-free 보장
 - history는 항상 `<lastClosed>` 키로 fresh(키가 곧 날짜) → 최신 = lastClosed. today = lastClosed의 다음 세션(또는 동일, dedup). **항상 연속** — "9+11에 10 빠짐" 불가.
 - **발행 지연**: 버퍼(1차) + 완전성 검증→short-TTL 재시도(2차). 지연 갭은 **일시적**(≤15m)이며 FMP 발행 시 자가치유. 극단적 >16h FMP 장애 시에만 일시 갭(데이터가 실제로 없는 것).
-- **휴장일**: lastClosed가 휴장일 라벨이어도 `before`가 실제 마지막 거래일 반환 → today와 연속(휴장일은 거래 없음). short-TTL 재시도는 그날 bounded.
+- **휴장일**: ~~lastClosed가 휴장일 라벨이어도~~ **2026-08부터 lastClosed는 휴장일 라벨이 되지 않는다** — `lastClosedSessionDate`가 `spec.closeMinuteFor`로 휴장일·반장을 되감기 때문이다. 종전에는 휴장일 키의 완전성 검증이 항상 실패해 4h 쿨다운 TTL로 떨어졌고(≈6회/일/심볼 재조회), 지금은 직전 거래일 키로 바로 7일 TTL에 든다. 갭-free 보장은 그대로다(휴장일은 거래가 없다).
 - **크립토 주말**: `before=어제(UTC)`가 토·일 봉 포함 → 갭 없음.
 
 ## 4. 동작별 호출

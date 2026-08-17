@@ -165,8 +165,19 @@ export async function isSkipped(symbol: string, tab: string): Promise<boolean> {
     );
 }
 
+/**
+ * 예산 버킷은 **ET 날짜**다. prewarm 창(20:30~03:59 UTC)이 UTC 자정을 가로지르기 때문에
+ * UTC 날짜로 버킷을 잡으면 하룻밤이 항상 두 키로 쪼개진다 — 각 키가 예산 상한을 따로
+ * 세므로 실제로는 상한의 두 배까지 FMP를 호출할 수 있다. ET 기준으로는 창 전체가
+ * 16:30~23:59 ET 한 날짜 안에 들어간다.
+ *
+ * `en-CA`는 `YYYY-MM-DD`를 낸다.
+ */
 function fmpBudgetKey(now = new Date()): string {
-    return `seo-prewarm:fmp-budget:${now.toISOString().slice(0, 10)}`;
+    const etDate = now.toLocaleDateString('en-CA', {
+        timeZone: 'America/New_York',
+    });
+    return `seo-prewarm:fmp-budget:${etDate}`;
 }
 
 /** 오늘자 FMP 호출 카운터에 calls를 더하고 누적값을 반환한다(모니터링용). */

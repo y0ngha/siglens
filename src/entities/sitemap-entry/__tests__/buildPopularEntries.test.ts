@@ -142,3 +142,44 @@ describe('buildPopularEntries', () => {
         );
     });
 });
+
+/**
+ * lastmod는 종목이 상장된 거래소의 세션을 따라야 한다.
+ *
+ * 한 벌(미국)만 쓰면 한국 종목 lastmod가 KRX 마감이 아니라 NYSE 마감으로 나가고,
+ * NYSE만 쉬는 날(추수감사절 등)에는 KRX가 정상 개장했는데도 하루 전으로 되감긴다.
+ */
+describe('buildPopularEntries — 거래소별 lastmod', () => {
+    const KR_TICKER = POPULAR_TICKERS.find(t => /\.K[SQ]$/.test(t));
+    const US_TICKER = POPULAR_TICKERS.find(t => !/\.K[SQ]$/.test(t));
+
+    const lastModOf = (
+        entries: ReturnType<typeof buildPopularEntries>,
+        url: string
+    ) => entries.find(e => e.url === url)!.lastModified;
+
+    it('한국 종목은 KRX 마감(15:30 KST = 06:30 UTC)을 lastmod로 쓴다', () => {
+        expect(KR_TICKER).toBeDefined();
+        // 2026-11-27(금) 01:00Z = 10:00 KST — KRX 11/26 세션 마감+버퍼 경과.
+        const entries = buildPopularEntries(
+            new Date('2026-11-27T01:00:00.000Z')
+        );
+        expect(
+            lastModOf(entries, `${SITE_URL}/${KR_TICKER}`).toISOString()
+        ).toBe('2026-11-26T06:30:00.000Z');
+    });
+
+    it('추수감사절에 미국 종목만 되감기고 한국 종목은 당일 마감을 유지한다', () => {
+        const entries = buildPopularEntries(
+            new Date('2026-11-27T01:00:00.000Z')
+        );
+        // 미국: 11/26 휴장 → 11/25 16:00 EST = 21:00 UTC
+        expect(
+            lastModOf(entries, `${SITE_URL}/${US_TICKER}`).toISOString()
+        ).toBe('2026-11-25T21:00:00.000Z');
+        // 한국: 11/26 정상 개장
+        expect(
+            lastModOf(entries, `${SITE_URL}/${KR_TICKER}`).toISOString()
+        ).toBe('2026-11-26T06:30:00.000Z');
+    });
+});

@@ -83,7 +83,7 @@ export function AtmIvTooltip() {
                 후나 pre-market에는 Yahoo가 ATM 옵션의 IV를 0으로 클리어해
                 보내는 경우가 있어서 정확한 수치를 받을 수 없어요. 한국 시간
                 기준으로 평일 {kstWindow}(미국 정규장, {ET_MARKET_HOURS_DISPLAY}
-                ) 에 다시 확인해 주세요.{' '}
+                ) 에 다시 확인해 주세요. 미국 증시 휴장일은 제외예요.{' '}
                 {/* 현재 DST 레이블은 마운트 후에만 렌더 — React #418 방지 */}
                 {isHydrated && `지금은 ${label} 기간이에요.`}
             </p>
@@ -115,7 +115,7 @@ export function ImpliedMoveTooltip() {
                 계산하기 때문에 ATM IV가 비어 있으면(정규장 외 시간 등) 같이
                 비워져요. 또 만기 당일이면 남은 시간이 0이라 계산이 불가능해
                 비어 보일 수 있어요. 한국 시간 기준으로 평일 {kstWindow}(미국
-                정규장)에 다시 확인해 주세요.{' '}
+                정규장)에 다시 확인해 주세요. 미국 증시 휴장일은 제외예요.{' '}
                 {/* 현재 DST 레이블은 마운트 후에만 렌더 — React #418 방지 */}
                 {isHydrated && `지금은 ${label} 기간이에요.`}
             </p>

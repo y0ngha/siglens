@@ -12,7 +12,7 @@ import {
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import {
     EOD_PUBLISH_BUFFER_HOURS,
-    lastClosedSessionDateEt,
+    lastClosedSessionDate,
 } from '@/shared/lib/marketSessionDate';
 import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from '@/shared/config/time';
 import { mergeBarsByTime } from './mergeBarsByTime';
@@ -154,9 +154,10 @@ export class CachedMarketDataProvider implements MarketDataProvider {
      * 1Day 일봉을 불변 과거(history, EOD)와 오늘(today, quote)로 나눠 병렬 fetch 후 병합한다.
      * - history `bars:eodhist:<SYM>:<lastClosed>`: 세션-날짜 키가 세션 마감마다 자동 롤 →
      *   세션당 1회 재조회. `before=lastClosed`로 완료된 EOD까지만 fetch.
-     *   `lastClosed`는 세션 종류에 따라 다르게 계산된다:
-     *   - US 주식(`non-always-open` / US equity): 16:00 ET 마감 + EOD_PUBLISH_BUFFER_HOURS(4h) 버퍼 + 주말 되감기.
-     *   - 크립토(`always-open`): 어제 UTC 날짜 — 24/7이므로 주말 되감기·ET 버퍼 없음.
+     *   `lastClosed`는 `lastClosedSessionDate(this.session, now)`가 세션 스펙에서 유도한다:
+     *   - US 주식: 16:00 ET(반장은 13:00) 마감 + EOD_PUBLISH_BUFFER_HOURS(4h) 버퍼 + 주말·NYSE 휴장일 되감기.
+     *   - 한국 주식: 15:30 KST 마감 + 같은 버퍼 + 주말 되감기(한국 공휴일은 스펙에 없음).
+     *   - 크립토(`always-open`): 어제 UTC 날짜 — 24/7이므로 주말 되감기·버퍼 없음.
      *   TTL은 fetch된 bars가 lastClosed까지 도달했는지에 따라 분기한다:
      *   - 도달했으면(newest.time >= lastClosedThreshold) 7일 long TTL(EOD_HIST_TTL_SECONDS).
      *   - 미도달이면(FMP EOD 미발행/지연, 상장폐지, 휴장일 키) 4h 쿨다운 TTL(EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS)로
@@ -179,12 +180,11 @@ export class CachedMarketDataProvider implements MarketDataProvider {
         options: GetBarsOptions,
         now: Date = new Date()
     ): Promise<Bar[]> {
-        // 24/7 크립토: 주말도 거래일 → 어제 UTC가 마지막 완료 일봉.
-        // US 주식: 16:00 ET 마감 + 4h 버퍼 + 주말 되감기.
-        const lastClosed =
-            this.session.kind === 'always-open'
-                ? isoDateDaysAgo(now, 1)
-                : lastClosedSessionDateEt(now);
+        // 세션 스펙이 시장 차이를 흡수한다: 크립토는 어제 UTC, 미국은 16:00 ET 마감 +
+        // 4h 버퍼 + 주말·NYSE 휴장일 되감기, 한국은 15:30 KST 마감 + 주말 되감기.
+        // **`this.session`을 넘기는 것이 핵심** — ET 고정 헬퍼를 쓰면 추수감사절처럼
+        // NYSE만 쉬는 날 KRX 봉이 `before=lastClosed`에 잘려 나간다.
+        const lastClosed = lastClosedSessionDate(this.session, now);
         const lastClosedThreshold = utcMidnightSeconds(lastClosed);
         const fromThreshold =
             options.from !== undefined
