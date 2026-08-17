@@ -8,6 +8,7 @@ function data(summary: unknown): YahooFundamentals {
         income: [],
         balance: [],
         cashFlow: [],
+        quarterlyBalance: [],
     };
 }
 
