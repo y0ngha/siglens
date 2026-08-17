@@ -254,7 +254,7 @@ siglens/
 
 Three things about this tree surprise people:
 
-**The `pages` layer lives in `src/views/`.** Creating `src/pages/` in an App Router project would activate the legacy Pages Router, so the FSD layer is named `views` instead. The mapping is enforced by `eslint-plugin-boundaries` in `eslint.config.mjs` — violations fail the build, not review.
+**The `pages` layer lives in `src/views/`.** Creating `src/pages/` in an App Router project would activate the legacy Pages Router, so the FSD layer is named `views` instead. The mapping is enforced by the repo's lint boundary rules — violations fail the build, not review.
 
 **`@y0ngha/siglens-core` is not a third-party dependency.** It is Siglens' own analysis domain, extracted into a package: indicator math, pattern detection, signal logic, prompt building. Any layer may import it directly. What belongs there versus here is decided in [SCOPE.md](./docs/architecture/SCOPE.md); the layer rules themselves are in [ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md).
 
@@ -335,15 +335,15 @@ Day to day:
 ```bash
 yarn dev             # dev server on :4200
 yarn build           # production build
-yarn lint            # ESLint → oxlint  (lint:fix to autofix)
-yarn typecheck       # tsgo             (typecheck:tsc for tsc)
-yarn format          # Prettier → oxfmt (format:check to verify)
+yarn lint            # oxlint          (lint:fix to autofix)
+yarn typecheck       # tsgo            (typecheck:tsc for tsc)
+yarn format          # oxfmt           (format:check to verify)
 yarn test            # Vitest
 ```
 
 Always install with `yarn`. `npm` and `pnpm` are not used.
 
-**Toolchain, mid-swap.** The type checker has already moved: `yarn typecheck` runs `tsgo` from `@typescript/native-preview` — the Go port that becomes TypeScript 7 — and `yarn typecheck:tsc` is the `tsc` escape hatch left behind. ESLint and Prettier are being replaced the same way, by OXC — `oxlint` and `oxfmt`. The script names do not change: `yarn lint` and `yarn format` stay the gates the Husky pre-push hook calls, and they swap out from under you as each tool lands.
+**The toolchain is TypeScript 7 and OXC.** Type checking runs on `tsgo` from `@typescript/native-preview` — the Go port that becomes TypeScript 7 — with `yarn typecheck:tsc` kept as the legacy `tsc` path. Linting and formatting run on OXC: `yarn lint` is `oxlint`, `yarn format` is `oxfmt`. Script names are unchanged, so the Husky pre-push hook and CI call the same gates they always did.
 
 <details>
 <summary><b>Every script in package.json</b></summary>
@@ -358,14 +358,14 @@ Always install with `yarn`. `npm` and `pnpm` are not used.
 | `yarn copy:backtesting` | Copy backtesting JSON into `public/backtesting` |
 | `yarn clear:backtesting` | Remove generated `public/backtesting` files |
 | `yarn predev` / `yarn prebuild` | Regenerate backtesting files before dev/build |
-| `yarn lint` | ESLint — swapping to `oxlint` |
-| `yarn lint:fix` | ESLint with autofix |
-| `yarn lint:staged` | ESLint autofix for staged files |
+| `yarn lint` | oxlint |
+| `yarn lint:fix` | oxlint with autofix |
+| `yarn lint:staged` | oxlint autofix for staged files |
 | `yarn lint:style` | Stylelint |
 | `yarn lint:style-fix` | Stylelint with autofix |
-| `yarn format` | Prettier write — swapping to `oxfmt` |
-| `yarn format:staged` | Prettier for staged files |
-| `yarn format:check` | Prettier check |
+| `yarn format` | oxfmt write |
+| `yarn format:staged` | oxfmt for staged files |
+| `yarn format:check` | oxfmt check |
 | `yarn typecheck` | Typecheck with `tsgo` |
 | `yarn typecheck:tsc` | Typecheck with `tsc` |
 | `yarn db:generate` | Generate Drizzle migrations |

@@ -254,7 +254,7 @@ siglens/
 
 이 트리에서 처음 보면 놀라는 지점이 셋 있습니다.
 
-**`pages` 레이어가 `src/views/`에 있습니다.** App Router 프로젝트에서 `src/pages/`를 만들면 레거시 Pages Router가 활성화되기 때문에 FSD 레이어 이름을 `views`로 뒀습니다. 이 매핑은 `eslint.config.mjs`의 `eslint-plugin-boundaries`가 강제합니다 — 위반은 리뷰가 아니라 빌드에서 막힙니다.
+**`pages` 레이어가 `src/views/`에 있습니다.** App Router 프로젝트에서 `src/pages/`를 만들면 레거시 Pages Router가 활성화되기 때문에 FSD 레이어 이름을 `views`로 뒀습니다. 이 매핑은 레포의 린트 boundary 규칙이 강제합니다 — 위반은 리뷰가 아니라 빌드에서 막힙니다.
 
 **`@y0ngha/siglens-core`는 서드파티 의존성이 아닙니다.** Siglens 자신의 분석 도메인을 패키지로 분리한 것입니다 — 지표 계산, 패턴 탐지, 시그널 로직, 프롬프트 빌딩. 어느 레이어에서든 직접 import할 수 있습니다. 무엇이 core에 속하고 무엇이 여기 남는지는 [SCOPE.md](./docs/architecture/SCOPE.md), 레이어 규칙 자체는 [ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md)에 있습니다.
 
@@ -335,15 +335,15 @@ E2E는 Vitest와 별개로 실제 프로덕션 빌드를 브라우저에서 검�
 ```bash
 yarn dev             # :4200 개발 서버
 yarn build           # 프로덕션 빌드
-yarn lint            # ESLint → oxlint  (lint:fix로 자동 수정)
-yarn typecheck       # tsgo             (typecheck:tsc는 tsc)
-yarn format          # Prettier → oxfmt (format:check로 검사만)
+yarn lint            # oxlint          (lint:fix로 자동 수정)
+yarn typecheck       # tsgo            (typecheck:tsc는 tsc)
+yarn format          # oxfmt           (format:check로 검사만)
 yarn test            # Vitest
 ```
 
 설치는 항상 `yarn`으로 합니다. `npm`과 `pnpm`은 쓰지 않습니다.
 
-**교체 중인 툴체인.** 타입 체커는 이미 옮겼습니다 — `yarn typecheck`는 `@typescript/native-preview`의 `tsgo`(TypeScript 7이 될 Go 포팅)로 돌고, `yarn typecheck:tsc`가 `tsc` 비상구로 남아 있습니다. ESLint와 Prettier도 같은 방식으로 OXC(`oxlint`, `oxfmt`)로 교체하는 중입니다. 스크립트 이름은 그대로입니다 — `yarn lint`·`yarn format`이 계속 Husky pre-push 훅이 호출하는 게이트이고, 각 도구가 들어올 때마다 그 아래 구현만 바뀝니다.
+**툴체인은 TypeScript 7과 OXC입니다.** 타입 체크는 `@typescript/native-preview`의 `tsgo`(TypeScript 7이 될 Go 포팅)로 돌고, `yarn typecheck:tsc`가 레거시 `tsc` 경로로 남아 있습니다. 린트와 포맷은 OXC입니다 — `yarn lint`가 `oxlint`, `yarn format`이 `oxfmt`입니다. 스크립트 이름은 그대로라 Husky pre-push 훅과 CI는 예전과 같은 게이트를 호출합니다.
 
 <details>
 <summary><b>package.json 전체 스크립트</b></summary>
@@ -358,14 +358,14 @@ yarn test            # Vitest
 | `yarn copy:backtesting` | 백테스팅 JSON을 `public/backtesting`으로 복사 |
 | `yarn clear:backtesting` | 생성된 `public/backtesting` 파일 제거 |
 | `yarn predev` / `yarn prebuild` | dev/build 전 백테스팅 파일 재생성 |
-| `yarn lint` | ESLint — `oxlint`로 교체 중 |
-| `yarn lint:fix` | ESLint 자동 수정 |
-| `yarn lint:staged` | staged 파일 ESLint 자동 수정 |
+| `yarn lint` | oxlint |
+| `yarn lint:fix` | oxlint 자동 수정 |
+| `yarn lint:staged` | staged 파일 oxlint 자동 수정 |
 | `yarn lint:style` | Stylelint |
 | `yarn lint:style-fix` | Stylelint 자동 수정 |
-| `yarn format` | Prettier 적용 — `oxfmt`로 교체 중 |
-| `yarn format:staged` | staged 파일 Prettier |
-| `yarn format:check` | Prettier 검사 |
+| `yarn format` | oxfmt 적용 |
+| `yarn format:staged` | staged 파일 oxfmt |
+| `yarn format:check` | oxfmt 검사 |
 | `yarn typecheck` | `tsgo` 타입 체크 |
 | `yarn typecheck:tsc` | `tsc` 타입 체크 |
 | `yarn db:generate` | Drizzle 마이그레이션 생성 |
