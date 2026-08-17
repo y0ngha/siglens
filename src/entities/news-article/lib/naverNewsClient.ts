@@ -6,7 +6,18 @@ import type {
 import type { NewsClientPort } from './newsClientPort';
 import { computeCutoff, hashUrlToId } from './fmpNewsClient';
 
-const NAVER_NEWS_ENDPOINT = 'https://openapi.naver.com/v1/search/news.json';
+/**
+ * NAVER API HUB의 뉴스 검색 엔드포인트.
+ *
+ * 구 개발자센터(`openapi.naver.com/v1/search/news.json`)는 2026-07-31부로 **신규 신청이
+ * 마감**됐고 검색 API가 네이버 클라우드의 API HUB로 이관됐다(레거시 인증 지원은
+ * 2027-06-30 종료). 도메인·경로·헤더가 모두 바뀌어 도메인만 갈아끼우는 것으로는 안 된다.
+ *
+ * **실측(2026-08-17)**: 새로 발급한 키로 구 엔드포인트를 호출하면
+ * `401 NID AUTH Result Invalid`, HUB 엔드포인트는 `200 OK`(총 4,427,608건).
+ */
+const NAVER_NEWS_ENDPOINT =
+    'https://naverapihub.apigw.ntruss.com/search/v1/news';
 
 /** 네이버 검색 API의 `display` 상한. 이보다 큰 값을 보내면 400이 돌아온다. */
 const MAX_DISPLAY = 100;
@@ -137,17 +148,30 @@ export class NaverNewsClient implements NewsClientPort {
         const url = `${NAVER_NEWS_ENDPOINT}?${new URLSearchParams({
             query,
             display: String(Math.min(display, MAX_DISPLAY)),
-            // 'date' = 최신순. 'sim'(정확도순)은 오래된 기사가 상위에 올라와
-            // cutoff 필터를 통과하는 기사 수가 요청량에 비해 급감한다.
-            sort: 'date',
+            // 'sim' = 정확도순. **최신순('date')을 쓰면 안 된다.**
+            //
+            // 네이버 뉴스 검색은 본문까지 대상으로 하므로, 종목명이 스쳐 지나가듯
+            // 한 번 언급된 정치·연예 기사도 결과에 들어온다. 최신순은 그런 기사를
+            // 관련성과 무관하게 상위에 올린다.
+            //
+            // 실측(2026-08-17, 40건 기준 제목에 종목명이 포함된 비율):
+            //   sort=date → 삼성전자 18% / 카카오 15% / 에코프로비엠 18% / 현대차 23%
+            //   sort=sim  → 삼성전자 90% / 카카오 98% / 에코프로비엠 95% / 현대차 98%
+            //
+            // 처음에는 "정확도순은 오래된 기사가 올라와 cutoff를 통과하는 수가 준다"는
+            // 이유로 최신순을 골랐는데, 실측해 보니 정반대였다 — 정확도순도 최근
+            // 기사로 채워지고 관련성만 크게 높아진다.
+            sort: 'sim',
         })}`;
 
         let response: Response;
         try {
             response = await fetch(url, {
                 headers: {
-                    'X-Naver-Client-Id': creds.id,
-                    'X-Naver-Client-Secret': creds.secret,
+                    // API HUB는 NCP API Gateway 규약을 쓴다 — 구 개발자센터의
+                    // `X-Naver-Client-*` 헤더로는 401이 떨어진다(엔드포인트 주석 참조).
+                    'X-NCP-APIGW-API-KEY-ID': creds.id,
+                    'X-NCP-APIGW-API-KEY': creds.secret,
                 },
                 // 뉴스는 신선도가 핵심이라 상위 계층(news 테이블 + ISR 태그)이 캐싱을 맡는다.
                 cache: 'no-store',

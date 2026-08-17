@@ -89,20 +89,35 @@ describe('NaverNewsClient', () => {
         const url = String(fetchSpy.mock.calls[0]![0]);
         expect(url).toContain(`query=${encodeURIComponent(KOREAN_NAME)}`);
         expect(url).not.toContain('005930');
-        expect(url).toContain('sort=date');
+        // 정확도순이어야 한다 — 최신순은 종목명이 스쳐 지나가는 정치·연예 기사를
+        // 상위에 올린다(실측: 제목 매치율 date 15~23% vs sim 90~98%).
+        expect(url).toContain('sort=sim');
     });
 
-    it('authenticates with the Naver client headers', async () => {
+    it('authenticates with the API HUB gateway headers', async () => {
+        // 구 개발자센터의 `X-Naver-Client-*`로는 401이 떨어진다(2026-08-17 실측).
+        // 검색 API가 NAVER API HUB로 이관되면서 NCP API Gateway 규약을 쓴다.
         fetchSpy.mockResolvedValue(mockNaverResponse([]));
 
         await new NaverNewsClient(resolveQuery).fetchNews(SYMBOL, '24h');
 
         expect(fetchSpy.mock.calls[0]![1]).toMatchObject({
             headers: {
-                'X-Naver-Client-Id': 'test-id',
-                'X-Naver-Client-Secret': 'test-secret',
+                'X-NCP-APIGW-API-KEY-ID': 'test-id',
+                'X-NCP-APIGW-API-KEY': 'test-secret',
             },
         });
+    });
+
+    it('calls the API HUB endpoint, not the retired developer-center one', async () => {
+        // 구 도메인은 2026-07-31부로 신규 신청이 막혔다 — 새 키로는 호출 자체가 안 된다.
+        fetchSpy.mockResolvedValue(mockNaverResponse([]));
+
+        await new NaverNewsClient(resolveQuery).fetchNews(SYMBOL, '24h');
+
+        const url = String(fetchSpy.mock.calls[0]![0]);
+        expect(url).toContain('naverapihub.apigw.ntruss.com/search/v1/news');
+        expect(url).not.toContain('openapi.naver.com');
     });
 
     it('prefers the original link over the Naver mirror', async () => {

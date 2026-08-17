@@ -1,5 +1,3 @@
-import 'server-only';
-
 /**
  * 공공데이터포털 — 금융위원회 KRX상장종목정보.
  *
@@ -16,6 +14,13 @@ import 'server-only';
  * - 응답에 단축코드·ISIN·시장구분·한글 종목명이 모두 들어 있다
  *
  * 갱신은 일 1회(기준일 다음 영업일 13시 이후)이므로 시드도 하루 1회면 충분하다.
+ *
+ * **`server-only`를 선언하지 않는다.** 이 모듈의 주 소비자는 Next 런타임 밖에서 `tsx`로
+ * 도는 시드 스크립트(`scripts/seed-kr-listed-names.ts`)다. `server-only`는 번들러가
+ * 제공하는 가상 패키지라 `node_modules`에 실체가 없어, 선언하면 시드가
+ * `MODULE_NOT_FOUND`로 즉시 죽는다. 대신 이 파일은 `fetch`와 순수 매핑만 쓰고
+ * DB·비밀키 접근이 없어 클라이언트 번들에 섞여도 위험이 없다 — API 키는
+ * 호출 시점에 `process.env`에서 읽으므로 클라이언트에서는 자연히 비어 빈 배열로 끝난다.
  */
 
 const ENDPOINT =
@@ -64,22 +69,38 @@ interface RawResponse {
 /** 성공 코드. 공공데이터포털은 HTTP 200에 에러 코드를 실어 보내는 경우가 있다. */
 const RESULT_CODE_OK = '00';
 
-function serviceKey(): string | null {
-    return process.env.DATA_GO_KR_SERVICE_KEY || null;
+/**
+ * 인증키를 Decoding 형태로 정규화한다.
+ *
+ * 공공데이터포털은 같은 키를 Encoding·Decoding 두 형태로 함께 발급한다. Encoding 키는
+ * 이미 percent-encoding이 적용된 문자열(`…%2B…%3D`)인데, 이 클라이언트는
+ * `URLSearchParams`로 쿼리를 만들면서 값을 한 번 더 인코딩한다. 그대로 두면 `%`가
+ * `%25`로 이중 인코딩되어 서버가 다른 키로 인식한다.
+ *
+ * **실측(2026-08-17)**: 같은 키를 Decoding 형태로 보내면 `200 OK`(총 4,166,892건),
+ * Encoding 형태 그대로 보내면 `403`이었다.
+ *
+ * "Decoding 키를 넣으세요"라고 문서로만 요구하지 않고 코드가 흡수하는 이유: 포털 화면이
+ * 두 키를 나란히 보여 주고 이름도 비슷해 잘못 고르기 쉽다. 실제로 이 프로젝트에서도
+ * 처음 전달된 키가 Encoding 형태였다. 사람이 매번 옳게 고르길 기대하는 대신,
+ * 양쪽 다 받아 주는 편이 안전하다.
+ *
+ * `decodeURIComponent`는 이미 디코딩된 문자열에 대해 멱등이다 — Decoding 키에는
+ * `%`가 없으므로 그대로 통과한다. 다만 키에 `%`가 들어 있는데 유효한 이스케이프가
+ * 아니면 `URIError`를 던지므로, 그 경우 원본을 그대로 쓴다.
+ */
+function normalizeServiceKey(key: string): string {
+    try {
+        return decodeURIComponent(key);
+    } catch {
+        return key;
+    }
 }
 
-/**
- * ⚠️ `DATA_GO_KR_SERVICE_KEY`에는 공공데이터포털의 **일반 인증키(Decoding)** 를 넣어야 한다.
- *
- * 포털은 Encoding·Decoding 두 형태를 함께 발급하는데, Encoding 키는 이미 percent-encoding이
- * 적용된 문자열이다. 이 클라이언트는 `URLSearchParams`로 쿼리를 만들고 그 과정에서 값이
- * 한 번 더 인코딩되므로(`+` → `%2B`, `/` → `%2F`), Encoding 키를 넣으면 이중 인코딩되어
- * 서버가 다른 키로 인식한다.
- *
- * 증상이 조용하다는 점이 함정이다 — HTTP는 200으로 떨어지고 본문 `resultCode`만
- * `SERVICE_KEY_IS_NOT_REGISTERED_ERROR`가 된다. `fetchPage`가 그 코드를 검사해 throw하므로
- * 시드 스크립트에서는 실패로 드러나지만, 원인을 모르면 키 자체를 의심하게 된다.
- */
+function serviceKey(): string | null {
+    const raw = process.env.DATA_GO_KR_SERVICE_KEY;
+    return raw ? normalizeServiceKey(raw) : null;
+}
 
 /** 자격증명 유무 — 시드 스크립트와 호출부가 사전 확인에 쓴다. */
 export function hasDataGoKrCredentials(): boolean {
@@ -92,15 +113,30 @@ function toMarket(raw: string | undefined): KrxMarket | null {
     return v === 'KOSPI' || v === 'KOSDAQ' || v === 'KONEX' ? v : null;
 }
 
+/**
+ * 단축코드에서 앞의 `A` 접두사를 떼어 6자리 종목코드만 남긴다.
+ *
+ * 실측(2026-08-17): 이 API의 `srtnCd`는 `A900110` 형태로 온다 — KRX 내부 표기라
+ * 앞에 종목 구분 문자가 붙는다. 우리 canonical 심볼(`005930.KS`)은 순수 6자리를
+ * 쓰므로 여기서 정규화해야 한다. 접두사를 그대로 두면 형상 검사에서 전부 탈락해
+ * **시드 결과가 조용히 0건이 된다**(실제로 그렇게 실패했다).
+ *
+ * 접두사가 없는 형태로 바뀌어도 동작하도록 있을 때만 떼어낸다.
+ */
+function toShortCode(raw: string | undefined): string | null {
+    const trimmed = raw?.trim().toUpperCase();
+    if (!trimmed) return null;
+    const digits = trimmed.startsWith('A') ? trimmed.slice(1) : trimmed;
+    return /^\d{6}$/.test(digits) ? digits : null;
+}
+
 function toItem(raw: RawItem): KrxListedItem[] {
-    const shortCode = raw.srtnCd?.trim();
+    const shortCode = toShortCode(raw.srtnCd);
     const koreanName = raw.itmsNm?.trim();
     const market = toMarket(raw.mrktCtg);
 
     // 셋 중 하나라도 없으면 검색 인덱스로 쓸 수 없다 — 조용히 버린다.
-    // 단축코드는 6자리 숫자만 유효하다(우선주·신주인수권도 이 형상을 지킨다).
     if (!shortCode || !koreanName || !market) return [];
-    if (!/^\d{6}$/.test(shortCode)) return [];
 
     return [
         {
@@ -155,10 +191,32 @@ async function fetchPage(
 }
 
 /**
+ * 최근 영업일 후보를 오늘부터 거슬러 올라가며 만든다.
+ *
+ * `basDt`를 생략하면 API가 **전 기간 누적**(실측 totalCount 4,166,892건)을 돌려주므로
+ * 반드시 하루를 지정해야 한다. 다만 어느 날짜에 데이터가 있는지는 미리 알 수 없다 —
+ * 주말·공휴일은 비고, 갱신도 "기준일 다음 영업일 13시 이후"라 오늘 날짜는 대개 이르다.
+ * 그래서 하루씩 뒤로 물러나며 첫 번째로 결과가 있는 날을 쓴다.
+ */
+function recentDateCandidates(days: number): string[] {
+    const out: string[] = [];
+    for (let i = 1; i <= days; i++) {
+        const d = new Date();
+        d.setUTCDate(d.getUTCDate() - i);
+        out.push(d.toISOString().slice(0, 10).replace(/-/g, ''));
+    }
+    return out;
+}
+
+/** 데이터가 있는 기준일을 찾기 위해 거슬러 올라갈 최대 일수(연휴를 넉넉히 커버). */
+const MAX_DATE_LOOKBACK_DAYS = 10;
+
+/**
  * 상장 종목 전체를 페이지네이션으로 수집한다.
  *
- * `basDt`(기준일자, `YYYYMMDD`)를 생략하면 API가 최신 기준일을 쓴다. 주말·공휴일에
- * 호출하면 직전 영업일 데이터가 돌아온다.
+ * `basDt`(기준일자, `YYYYMMDD`)를 명시하면 그 날짜만 조회한다. 생략하면 최근 영업일을
+ * 자동으로 찾는다 — API는 기준일을 지정하지 않으면 전 기간 누적을 돌려주기 때문에
+ * 생략을 "최신"으로 해석하면 안 된다.
  *
  * 자격증명이 없으면 **빈 배열**을 돌려준다 — 시드는 선택 기능이고, 키가 없다고
  * 앱이 죽어서는 안 된다(뉴스 provider와 같은 degrade 규약).
@@ -176,6 +234,27 @@ export async function fetchKrxListedItems(
         return [];
     }
 
+    const candidates = basDt
+        ? [basDt]
+        : recentDateCandidates(MAX_DATE_LOOKBACK_DAYS);
+
+    for (const date of candidates) {
+        const items = await collectAllPages(key, date);
+        if (items.length > 0) return items;
+        // 주말·공휴일이거나 아직 갱신 전이다 — 하루 더 거슬러 올라간다.
+    }
+
+    console.warn(
+        `[krxListedInfo] 최근 ${MAX_DATE_LOOKBACK_DAYS}일 안에서 데이터를 찾지 못했다`
+    );
+    return [];
+}
+
+/** 한 기준일의 전 페이지를 모은다. */
+async function collectAllPages(
+    key: string,
+    basDt: string
+): Promise<KrxListedItem[]> {
     const collected: KrxListedItem[] = [];
     let pageNo = 1;
 
@@ -183,10 +262,11 @@ export async function fetchKrxListedItems(
         const { items, totalCount } = await fetchPage(key, pageNo, basDt);
         collected.push(...items);
 
-        // 마지막 페이지 판정: 누적이 총계에 도달했거나 이번 페이지가 비었을 때.
-        // totalCount를 못 받은 경우(0)에도 빈 페이지에서 멈춘다.
+        // 마지막 페이지 판정: 이번 페이지가 비었거나 총계에 도달했을 때.
+        // `totalCount`는 형상 검사로 걸러지기 전의 원본 건수라 `collected.length`가
+        // 그보다 작을 수 있다 — 빈 페이지 조건이 실질적인 종료 신호다.
         if (items.length === 0) break;
-        if (totalCount > 0 && collected.length >= totalCount) break;
+        if (totalCount > 0 && pageNo * MAX_ROWS_PER_PAGE >= totalCount) break;
     }
 
     if (pageNo > MAX_PAGES) {
