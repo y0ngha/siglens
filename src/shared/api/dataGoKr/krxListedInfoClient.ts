@@ -68,6 +68,19 @@ function serviceKey(): string | null {
     return process.env.DATA_GO_KR_SERVICE_KEY || null;
 }
 
+/**
+ * ⚠️ `DATA_GO_KR_SERVICE_KEY`에는 공공데이터포털의 **일반 인증키(Decoding)** 를 넣어야 한다.
+ *
+ * 포털은 Encoding·Decoding 두 형태를 함께 발급하는데, Encoding 키는 이미 percent-encoding이
+ * 적용된 문자열이다. 이 클라이언트는 `URLSearchParams`로 쿼리를 만들고 그 과정에서 값이
+ * 한 번 더 인코딩되므로(`+` → `%2B`, `/` → `%2F`), Encoding 키를 넣으면 이중 인코딩되어
+ * 서버가 다른 키로 인식한다.
+ *
+ * 증상이 조용하다는 점이 함정이다 — HTTP는 200으로 떨어지고 본문 `resultCode`만
+ * `SERVICE_KEY_IS_NOT_REGISTERED_ERROR`가 된다. `fetchPage`가 그 코드를 검사해 throw하므로
+ * 시드 스크립트에서는 실패로 드러나지만, 원인을 모르면 키 자체를 의심하게 된다.
+ */
+
 /** 자격증명 유무 — 시드 스크립트와 호출부가 사전 확인에 쓴다. */
 export function hasDataGoKrCredentials(): boolean {
     return serviceKey() !== null;

@@ -79,12 +79,19 @@ async function fetchModule(
     period: StatementPeriod
 ): Promise<YahooStatementRaw[]> {
     try {
-        const rows = await yahooFinance.fundamentalsTimeSeries(symbol, {
-            period1: lookbackStart(period),
-            module,
-            // 도메인의 `'quarter'`와 yahoo의 `'quarterly'`는 표기가 다르다.
-            type: period === 'annual' ? 'annual' : 'quarterly',
-        });
+        const rows = await yahooFinance.fundamentalsTimeSeries(
+            symbol,
+            {
+                period1: lookbackStart(period),
+                module,
+                // 도메인의 `'quarter'`와 yahoo의 `'quarterly'`는 표기가 다르다.
+                type: period === 'annual' ? 'annual' : 'quarterly',
+            },
+            // 스키마 검증을 끄는 근거는 `yahooFundamentalSource`의
+            // `SKIP_SCHEMA_VALIDATION` 주석 참조 — 필드 하나의 결측이 제표 전체를
+            // 버리게 두지 않는다.
+            { validateResult: false }
+        );
         // yahoo는 오래된 기간부터 반환한다. 도메인 계약(newest first)에 맞춰 뒤집는다 —
         // 이 순서를 어기면 성장률이 부호까지 반대로 계산된다.
         //

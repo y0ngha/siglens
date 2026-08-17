@@ -13,6 +13,22 @@ const yahooFinance = new YahooFinance({
 });
 
 /**
+ * 라이브러리의 응답 스키마 검증을 끈다.
+ *
+ * **끄지 않으면 모듈 하나의 결측이 요청 전체를 죽인다.** 실측(2026-08-17, `035420.KS`
+ * NAVER): 아직 실적이 확정되지 않은 분기 하나에 `epsActual`이 없다는 이유로
+ * `earningsHistory`가 `Missing required properties`로 검증 실패했고, 그 여파로
+ * `quoteSummary` 응답 전체가 throw되어 프로필·밸류에이션·비율이 **통째로 null**이 됐다.
+ * 나머지 8개 모듈은 정상이었는데도 함께 버려진 것이다.
+ *
+ * 끄는 것이 안전한 이유: `YahooSummary`가 모든 필드를 optional로 선언하고 매핑 단계가
+ * 결측을 `null`로 흡수한다. 즉 우리는 라이브러리 스키마에 의존해 안전성을 얻지 않는다.
+ * 반대로 yahoo는 필드를 자주 누락하므로, 라이브러리의 엄격한 스키마가 실제 응답보다
+ * 좁아 정상 데이터까지 막는다.
+ */
+const SKIP_SCHEMA_VALIDATION = { validateResult: false } as const;
+
+/**
  * 같은 심볼에 대한 중복 조회를 접는 시간(ms).
  *
  * `FundamentalProvider`는 16개 메서드를 가지며 fundamental 페이지는 이들을 **병렬로**
@@ -117,6 +133,14 @@ export interface YahooFundamentals {
     income: YahooStatementRow[];
     balance: YahooStatementRow[];
     cashFlow: YahooStatementRow[];
+    /**
+     * 분기 재무상태표(최신순).
+     *
+     * PBR·부채비율의 분모는 **최근 보고 시점**이어야 한다. 연간 값만 쓰면 결산 이후
+     * 분기가 반영되지 않아 자본이 빠르게 느는 기업에서 지표가 과대해진다.
+     * 성장률 계산에는 연간(`balance`)을 그대로 쓴다 — 그쪽은 YoY 비교라 기간이 맞아야 한다.
+     */
+    quarterlyBalance: YahooStatementRow[];
 }
 
 const EMPTY: YahooFundamentals = {
@@ -124,6 +148,7 @@ const EMPTY: YahooFundamentals = {
     income: [],
     balance: [],
     cashFlow: [],
+    quarterlyBalance: [],
 };
 
 interface CacheEntry {
@@ -146,24 +171,33 @@ export function _resetYahooFundamentalCacheForTest(): void {
 }
 
 async function fetchAll(symbol: string): Promise<YahooFundamentals> {
-    // 두 소스는 서로 독립이라 하나가 실패해도 나머지는 살린다 — 재무 시계열이 없는
+    // 세 소스는 서로 독립이라 하나가 실패해도 나머지는 살린다 — 재무 시계열이 없는
     // 종목에서도 프로필/비율은 렌더되어야 한다. 재무제표는 `getYahooStatements`가
     // 자체 dedup 캐시를 들고 있어, financials 탭이 이미 조회했다면 재호출이 없다.
-    const [summary, statements] = await Promise.all([
+    //
+    // 분기 재무제표를 함께 가져오는 이유: PBR·부채비율의 분모(자기자본·총자산)는
+    // **가장 최근 보고 시점**을 써야 한다. 연간 값만 쓰면 결산 이후 분기 실적이
+    // 반영되지 않아, 자본이 빠르게 느는 기업에서 지표가 크게 과대해진다
+    // (실측: SK하이닉스 PBR 9.69 → 7.11, 36% 과대).
+    const [summary, annual, quarterly] = await Promise.all([
         yahooFinance
-            .quoteSummary(symbol, {
-                modules: [
-                    'price',
-                    'assetProfile',
-                    'summaryDetail',
-                    'defaultKeyStatistics',
-                    'financialData',
-                    'recommendationTrend',
-                    'earningsTrend',
-                    'calendarEvents',
-                    'earningsHistory',
-                ],
-            })
+            .quoteSummary(
+                symbol,
+                {
+                    modules: [
+                        'price',
+                        'assetProfile',
+                        'summaryDetail',
+                        'defaultKeyStatistics',
+                        'financialData',
+                        'recommendationTrend',
+                        'earningsTrend',
+                        'calendarEvents',
+                        'earningsHistory',
+                    ],
+                },
+                SKIP_SCHEMA_VALIDATION
+            )
             .catch((e: unknown) => {
                 console.warn(
                     '[yahooFundamental] quoteSummary failed',
@@ -173,7 +207,9 @@ async function fetchAll(symbol: string): Promise<YahooFundamentals> {
                 return null;
             }),
         getYahooStatements(symbol, 'annual'),
+        getYahooStatements(symbol, 'quarter'),
     ]);
+    const statements = { ...annual, quarterlyBalance: quarterly.balance };
 
     return {
         // Safe cast: `quoteSummary`의 반환 타입은 요청한 모듈 조합에 따라 라이브러리가

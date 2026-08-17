@@ -83,15 +83,30 @@ describe('getYahooFundamentals dedup', () => {
     });
 
     it('shares the statements cache with getYahooStatements', async () => {
-        // fundamental 탭과 financials 탭을 함께 열면 같은 연간 재무제표를 두 번
-        // 가져오던 문제를 막는 지점 — 두 소스가 한 캐시를 공유해야 한다.
+        // fundamental 탭과 financials 탭을 함께 열면 같은 재무제표를 두 번 가져오던
+        // 문제를 막는 지점 — 두 소스가 한 캐시를 공유해야 한다.
+        // fundamental은 연간(성장률용) + 분기(PBR·부채비율 분모용)를 모두 쓰므로
+        // 양쪽을 미리 채워 두면 추가 호출이 0이어야 한다.
         await getYahooStatements('005930.KS', 'annual');
+        await getYahooStatements('005930.KS', 'quarter');
         const callsAfterStatements = fundamentalsTimeSeries.mock.calls.length;
 
         await getYahooFundamentals('005930.KS');
 
         expect(fundamentalsTimeSeries.mock.calls.length).toBe(
             callsAfterStatements
+        );
+    });
+
+    it('fetches quarterly balance so PBR uses the latest reported equity', async () => {
+        // 연간 자본만 쓰면 결산 이후 분기가 빠져 PBR이 과대해진다(SK하이닉스 실측 +36%).
+        const result = await getYahooFundamentals('005930.KS');
+
+        expect(result.quarterlyBalance).toBeDefined();
+        expect(fundamentalsTimeSeries).toHaveBeenCalledWith(
+            '005930.KS',
+            expect.objectContaining({ type: 'quarterly' }),
+            expect.anything()
         );
     });
 
@@ -130,7 +145,20 @@ describe('getYahooStatements dedup', () => {
 
         expect(fundamentalsTimeSeries).toHaveBeenCalledWith(
             '005930.KS',
-            expect.objectContaining({ type: 'quarterly' })
+            expect.objectContaining({ type: 'quarterly' }),
+            // 스키마 검증 우회 옵션이 3번째 인자로 붙는다.
+            expect.objectContaining({ validateResult: false })
+        );
+    });
+
+    it('skips library schema validation so one missing field cannot drop the statement', async () => {
+        // 실측: NAVER는 미확정 분기의 epsActual 결측만으로 응답 전체가 throw됐다.
+        await getYahooStatements('005930.KS', 'annual');
+
+        expect(fundamentalsTimeSeries).toHaveBeenCalledWith(
+            '005930.KS',
+            expect.anything(),
+            expect.objectContaining({ validateResult: false })
         );
     });
 
