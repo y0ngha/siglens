@@ -1,5 +1,9 @@
 import type { Metadata } from 'next';
-import type { AssetClass } from '@/shared/config/marketProfile';
+import {
+    isKrEquitySymbol,
+    type AssetClass,
+} from '@/shared/config/marketProfile';
+import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
 
 export interface BreadcrumbItem {
     name: string;
@@ -261,12 +265,29 @@ export function clampSeoTitle(
  * 낭비다.
  */
 export function buildTitleSubject(ticker: string, koreanName?: string): string {
-    const upper = ticker.toUpperCase();
+    const upper = titleTicker(ticker);
     const kr = koreanName?.trim();
     if (!kr) return upper;
     if (!upper) return kr;
     if (kr.toUpperCase() === upper) return upper;
     return `${kr}(${upper})`;
+}
+
+/**
+ * title에 노출할 티커 표기. 국내 상장 종목은 거래소 접미사(`.KS`/`.KQ`)를 뗀다.
+ *
+ * 접미사는 yahoo 벤더 규약이고 한국 검색량이 0이다 — 실제로 검색되는 건 6자리 코드다.
+ * 반면 폭 예산은 3단위를 먹어서, 실측상 KR 타이틀 120개(20종목 × 6탭) 중 21개가
+ * 서술 tail을 떨어뜨리고 있었고 그중 15개가 접미사만 빼면 되살아난다.
+ *
+ * **표기에만 적용한다.** canonical·URL·라우팅·JSON-LD 식별자는 접미사가 있어야
+ * 종목을 특정할 수 있으므로 그대로 둔다.
+ */
+function titleTicker(ticker: string): string {
+    const upper = ticker.toUpperCase();
+    return isKrEquitySymbol(upper)
+        ? upper.replace(KR_EXCHANGE_SUFFIX_RE, '')
+        : upper;
 }
 
 export interface ComposeSymbolTitleArgs {
@@ -450,10 +471,15 @@ export function buildSnapshotMetaDescription(
 // "보조지표 25종" 같은 동적 숫자는 Skills 개수가 바뀌면 stale되므로 질적 표현으로 둔다
 // (M7에서 FAQ JSON-LD에 적용한 정책을 SITE_DESCRIPTION에도 일관 적용).
 export const SITE_DESCRIPTION = clampSeoDescription(
-    '미국 주식과 암호화폐를 티커 하나로 종합 분석합니다. 다양한 보조지표 차트와 매매 신호, 펀더멘털·뉴스, 공포 탐욕 지수를 묶은 AI 종합 결론을 한 화면에서.'
+    '미국·한국 주식과 암호화폐를 티커 하나로 종합 분석합니다. 다양한 보조지표 차트와 매매 신호, 펀더멘털·뉴스, 공포 탐욕 지수를 묶은 AI 종합 결론을 한 화면에서.'
 );
 
-export const ROOT_TITLE = `미국 주식·암호화폐 AI 분석 — 차트·뉴스로 투자 결론까지 | ${SITE_NAME}`;
+/**
+ * 홈은 사이트 전체의 주제를 선언하는 가장 강한 신호다. 국내 상장 종목을 서비스하면서
+ * 여기서 "미국 주식과 암호화폐"라고만 말하면 KR 클러스터 전체의 주제 관련성이 눌린다
+ * (홈 본문에는 `한국 주식` 카테고리 카드가 이미 렌더된다 — 본문과 메타가 어긋난 상태였다).
+ */
+export const ROOT_TITLE = `미국·한국 주식·암호화폐 AI 분석 — 차트·뉴스로 투자 결론 | ${SITE_NAME}`;
 
 // 한글 SERP는 80~120자가 안전권이라 키워드는 핵심 검색의도 위주로 추렸다.
 export const ROOT_KEYWORDS = [
@@ -469,6 +495,10 @@ export const ROOT_KEYWORDS = [
     '오늘의 미국 주식',
     '섹터별 주식 분석',
     '미국 주식 PER',
+    '한국 주식 AI 분석',
+    '코스피 종목 분석',
+    '코스닥 종목 분석',
+    '국내 주식 차트 분석',
     '암호화폐 분석',
     '비트코인 시세',
     '이더리움 시세',

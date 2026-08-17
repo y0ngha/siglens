@@ -1,4 +1,8 @@
-import type { AssetClass } from '@/shared/config/marketProfile';
+import {
+    isKrEquitySymbol,
+    type AssetClass,
+} from '@/shared/config/marketProfile';
+import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
 
 /**
  * 티커가 주식(stock)인지 ETF/지수(non-stock)인지 분류한다.
@@ -88,12 +92,42 @@ const KNOWN_ETF_TICKERS: ReadonlySet<string> = new Set([
     'ETHA',
 ]);
 
+/**
+ * 국내 상장 ETF 코드 접두. KRX는 ETF/ETN에 별도 코드 대역을 쓴다 — ETF는 대부분
+ * `069500`(KODEX 200)처럼 069/07x/08x 대역이지만 규칙이 완전하지 않아, 접두만으로는
+ * 판정하지 않고 이름에 붙는 브랜드로 함께 본다.
+ *
+ * `KNOWN_ETF_TICKERS`는 미국 티커 allowlist라 KODEX/TIGER가 들어오면 `stock`으로
+ * 떨어져 `Corporation` 노드가 붙는다 — 이 함수의 JSDoc이 막으려던 바로 그 오분류다.
+ * 지금 `POPULAR_TICKERS`에는 국내 ETF가 없어 발현되지 않지만, 하나 추가되는 순간 샌다.
+ */
+const KR_ETF_NAME_MARKERS = [
+    'KODEX',
+    'TIGER',
+    'KBSTAR',
+    'ARIRANG',
+    'HANARO',
+    'PLUS',
+    'RISE',
+    'SOL ',
+    'ACE ',
+    'ETN',
+];
+
+function isKrEtfName(name: string | undefined): boolean {
+    if (!name) return false;
+    const upper = name.toUpperCase();
+    return KR_ETF_NAME_MARKERS.some(marker => upper.includes(marker));
+}
+
 export function classifyAsset(
     symbol: string,
-    fmpSymbol?: string
+    fmpSymbol?: string,
+    name?: string
 ): AssetCategory {
     if (fmpSymbol?.startsWith('^')) return 'index';
     if (KNOWN_ETF_TICKERS.has(symbol.toUpperCase())) return 'etf';
+    if (isKrEquitySymbol(symbol) && isKrEtfName(name)) return 'etf';
     return 'stock';
 }
 
@@ -123,11 +157,25 @@ export function buildAssetAboutNode(
 ): CorporationAboutNode | undefined {
     // Crypto has no standard schema.org type → omit the about node entirely.
     if (assetClass === 'crypto') return undefined;
-    const category = classifyAsset(symbol, fmpSymbol);
+    const category = classifyAsset(symbol, fmpSymbol, name);
     if (category !== 'stock') return undefined;
     return {
         '@type': 'Corporation',
         name,
-        tickerSymbol: symbol.toUpperCase(),
+        tickerSymbol: toSchemaTickerSymbol(symbol),
     };
+}
+
+/**
+ * schema.org `tickerSymbol`은 "거래소 + 종목"을 기대한다(Google이 읽는 통용 형태는
+ * `KRX:005930`). `005930.KS`는 yahoo 벤더 규약이라 둘 중 어느 쪽도 아니고, 미국 티커와
+ * 달리 실제 종목 코드조차 아니다(`005930`이 코드다). 국내 종목은 이 표기가 "한국 상장"을
+ * 알리는 몇 안 되는 구조화 신호이므로 접두를 붙여 준다.
+ *
+ * 미국 티커는 손대지 않는다 — `AAPL`은 그 자체로 통용 식별자다.
+ */
+function toSchemaTickerSymbol(symbol: string): string {
+    const upper = symbol.toUpperCase();
+    if (!isKrEquitySymbol(upper)) return upper;
+    return `KRX:${upper.replace(KR_EXCHANGE_SUFFIX_RE, '')}`;
 }

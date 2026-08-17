@@ -42,6 +42,19 @@ export const SYMBOL_EDGE_RE = /^[A-Z0-9][A-Z0-9.-]{0,15}$/;
 export const KR_SYMBOL_RE = /^\d{6}\.K[SQ]$/;
 
 /**
+ * 거래소 접미사만 떼기 위한 부분 정규식 — canonical 심볼에서 **표기용 코드**를 얻는다.
+ *
+ * `.KS`/`.KQ`는 yahoo 벤더 규약이고 한국 검색량이 0이다. 실제로 검색되는 건 6자리
+ * 코드이고, schema.org `tickerSymbol`이 기대하는 것도 거래소 코드와 종목 코드의 조합
+ * (`KRX:005930`)이지 이 형태가 아니다. 그래서 title 표기(`shared/lib/seo`)와 JSON-LD
+ * 식별자(`entities/ticker/lib/assetClassification`) 두 곳이 같은 절단을 한다.
+ *
+ * 한 곳에 두는 이유: 접미사 집합이 바뀌면(신규 시장 등) 두 경로가 조용히 어긋난다.
+ * **canonical 심볼·URL·라우팅에는 쓰지 말 것** — 거기서는 접미사가 있어야 종목이 특정된다.
+ */
+export const KR_EXCHANGE_SUFFIX_RE = /\.K[SQ]$/;
+
+/**
  * 점(.) 뒤에 올 수 있는 접미사 화이트리스트 — 미국 주식의 **클래스 구분자**만 허용한다.
  *
  * `SYMBOL_EDGE_RE`가 점을 허용하는 유일한 이유는 `BRK.B` 같은 dual-class 주식이다

@@ -136,3 +136,58 @@ describe('deduplicateResults', () => {
         });
     });
 });
+
+/**
+ * 국내 상장 종목의 표시명에서 영문 법인명을 뺀다.
+ *
+ * `displayName`은 meta description의 주어로 그대로 들어간다. 고정 후미가 90자인데
+ * `삼성전자, Samsung Electronics Co., Ltd. (005930.KS)`가 47자라 합이 137자 —
+ * 상한 120자를 넘겨 **모든 국내 종목 페이지에서 설명 끝문장이 잘려 나갔다**.
+ * 한국어 SERP에서 영문 법인명이 보태는 것도 없다.
+ */
+describe('buildDisplayName — 국내 상장 종목', () => {
+    it('영문 법인명을 빼고 한글명 + 티커만 남긴다', () => {
+        expect(
+            buildDisplayName(
+                {
+                    symbol: '005930.KS',
+                    name: 'Samsung Electronics Co., Ltd.',
+                    koreanName: '삼성전자',
+                },
+                '005930.KS'
+            )
+        ).toBe('삼성전자 (005930.KS)');
+    });
+
+    it('종목 마스터 시드가 name에 한글명을 넣어 둔 행도 중복 표기하지 않는다', () => {
+        // 시드는 영문명을 주지 않아 `name`에 한글명을 채운다 — 방문 전 종목이 이 상태다.
+        expect(
+            buildDisplayName(
+                {
+                    symbol: '247540.KQ',
+                    name: '에코프로비엠',
+                    koreanName: '에코프로비엠',
+                },
+                '247540.KQ'
+            )
+        ).toBe('에코프로비엠 (247540.KQ)');
+    });
+
+    it('한글명이 없으면 종전대로 영문명을 쓴다', () => {
+        expect(
+            buildDisplayName(
+                { symbol: '005930.KS', name: 'Samsung Electronics Co., Ltd.' },
+                '005930.KS'
+            )
+        ).toBe('Samsung Electronics Co., Ltd. (005930.KS)');
+    });
+
+    it('미국 종목은 영문 법인명을 그대로 유지한다', () => {
+        expect(
+            buildDisplayName(
+                { symbol: 'AAPL', name: 'Apple Inc.', koreanName: '애플' },
+                'AAPL'
+            )
+        ).toBe('애플, Apple Inc. (AAPL)');
+    });
+});

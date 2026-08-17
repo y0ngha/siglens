@@ -1,4 +1,5 @@
 import {
+    CURATED_KOREAN_NAMES,
     POPULAR_TICKERS,
     TICKER_CATEGORIES,
 } from '@/shared/config/popular-tickers';
@@ -91,5 +92,28 @@ describe('POPULAR_TICKERS', () => {
 
     it('100개 이상의 티커를 포함한다', () => {
         expect(POPULAR_TICKERS.length).toBeGreaterThanOrEqual(100);
+    });
+});
+
+/**
+ * `korea-equity` 카테고리는 저장소 전체에서 한국 종목 페이지로 가는 **유일한 크롤 가능한
+ * 링크**다(검색 자동완성은 `<button>` + `router.push`, 크로스링크는 같은 심볼의 다른 탭만).
+ * 동시에 `CURATED_KOREAN_NAMES`의 원천이라, 여기 빠진 종목은 콜드 ISR에서 영문 티커 제목이
+ * 캐시에 굳는다. 두 목록이 어긋나면 그 종목은 sitemap에만 있는 고아가 된다.
+ */
+describe('korea-equity 카테고리 ↔ POPULAR_TICKERS KR 블록', () => {
+    const krPopular = POPULAR_TICKERS.filter(t => /\.K[SQ]$/.test(t));
+    const krCategory = TICKER_CATEGORIES.find(c => c.id === 'korea-equity');
+
+    it('두 목록이 정확히 같은 심볼 집합이다', () => {
+        expect(krCategory).toBeDefined();
+        const categorySymbols = krCategory!.items.map(i => i.symbol);
+        expect([...categorySymbols].sort()).toEqual([...krPopular].sort());
+    });
+
+    it('모든 KR 인기 종목에 한글명 폴백이 있다', () => {
+        for (const symbol of krPopular) {
+            expect(CURATED_KOREAN_NAMES.get(symbol)).toBeTruthy();
+        }
     });
 });

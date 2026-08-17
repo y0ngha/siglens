@@ -1,4 +1,6 @@
 import type { MarketQuote } from '@y0ngha/siglens-core';
+import { isE2E } from '@/shared/api/e2eEnv';
+import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
 
 /**
  * 한국 상장 종목의 표시명을 yahoo quote로 조회한다. `fetchCryptoQuoteName`의 대응물.
@@ -26,6 +28,13 @@ import type { MarketQuote } from '@y0ngha/siglens-core';
 export async function fetchKrEquityQuoteName(
     symbol: string
 ): Promise<string | null> {
+    // E2E는 외부 네트워크를 타지 않는다(다른 provider는 전부 FakeMarketProvider로 가고
+    // 여기만 yahoo에 직접 붙어 있었다). 큐레이션 카탈로그를 실재 여부의 근거로 삼으면
+    // "시드된 종목은 렌더, 형상만 맞는 가짜 티커는 404"라는 실제 계약이 그대로 재현된다.
+    if (isE2E()) {
+        return CURATED_KOREAN_NAMES.get(symbol.toUpperCase()) ?? null;
+    }
+
     try {
         const quote = await getYahooQuote(symbol);
         return quote?.name ?? null;

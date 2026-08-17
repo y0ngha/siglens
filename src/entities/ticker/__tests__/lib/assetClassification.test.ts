@@ -88,3 +88,57 @@ describe('buildAssetAboutNode', () => {
         });
     });
 });
+
+/**
+ * schema.org `tickerSymbol`은 "거래소 + 종목"을 기대한다. `005930.KS`는 yahoo 벤더
+ * 규약이라 그 형태가 아니고, 미국 티커와 달리 실제 종목 코드조차 아니다(`005930`이 코드).
+ * 국내 종목에는 이 필드가 "한국 상장"을 알리는 몇 안 되는 구조화 신호다.
+ */
+describe('buildAssetAboutNode — 국내 상장 종목', () => {
+    it('tickerSymbol을 KRX:<코드> 형태로 낸다', () => {
+        const node = buildAssetAboutNode('005930.KS', '삼성전자');
+        expect(node).toEqual({
+            '@type': 'Corporation',
+            name: '삼성전자',
+            tickerSymbol: 'KRX:005930',
+        });
+    });
+
+    it('KOSDAQ도 같은 접두를 쓴다 — 거래소 운영 주체가 KRX로 동일하다', () => {
+        expect(
+            buildAssetAboutNode('247540.KQ', '에코프로비엠')?.tickerSymbol
+        ).toBe('KRX:247540');
+    });
+
+    it('미국 티커는 손대지 않는다', () => {
+        expect(buildAssetAboutNode('AAPL', 'Apple Inc.')?.tickerSymbol).toBe(
+            'AAPL'
+        );
+    });
+});
+
+/**
+ * `KNOWN_ETF_TICKERS`는 미국 티커 allowlist다. KODEX/TIGER 같은 국내 ETF가
+ * `POPULAR_TICKERS`에 들어오는 순간 `stock`으로 떨어져 `Corporation` 노드가 붙는다 —
+ * 이 함수의 JSDoc이 막으려던 바로 그 오분류다. 현재 목록엔 국내 ETF가 없어 잠복 상태다.
+ */
+describe('classifyAsset — 국내 ETF', () => {
+    it('국내 ETF 브랜드명이 붙으면 etf로 분류한다', () => {
+        expect(classifyAsset('069500.KS', undefined, 'KODEX 200')).toBe('etf');
+        expect(classifyAsset('102110.KS', undefined, 'TIGER 200')).toBe('etf');
+    });
+
+    it('etf로 분류되면 Corporation about 노드를 만들지 않는다', () => {
+        expect(
+            buildAssetAboutNode('069500.KS', 'KODEX 200', undefined)
+        ).toBeUndefined();
+    });
+
+    it('일반 국내 종목은 그대로 stock이다', () => {
+        expect(classifyAsset('005930.KS', undefined, '삼성전자')).toBe('stock');
+    });
+
+    it('이름이 없으면 종전대로 stock으로 떨어진다', () => {
+        expect(classifyAsset('005930.KS')).toBe('stock');
+    });
+});
