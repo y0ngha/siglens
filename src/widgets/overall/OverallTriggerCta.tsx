@@ -34,7 +34,7 @@ export function OverallTriggerCta({
         <section
             aria-labelledby="overall-cta-heading"
             aria-busy={disabled}
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-12 text-center"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-12 text-center"
         >
             <h2
                 id="overall-cta-heading"
@@ -42,7 +42,7 @@ export function OverallTriggerCta({
             >
                 AI 종합 분석
             </h2>
-            <p className="text-secondary-400 mt-3 text-sm leading-relaxed">
+            <p className="mt-3 text-sm leading-relaxed text-secondary-400">
                 {subtitle}
             </p>
             <button
@@ -60,7 +60,7 @@ export function OverallTriggerCta({
             </button>
             {disabled && (
                 <p
-                    className="text-secondary-500 mt-3 text-xs"
+                    className="mt-3 text-xs text-secondary-500"
                     aria-live="polite"
                 >
                     개별 뉴스 분석이 완료되면 자동으로 종합 분석을 받을 수

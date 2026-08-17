@@ -128,15 +128,15 @@ export function TickerAutocomplete({
                         ref={dropdownRef}
                         id={LISTBOX_ID}
                         role="listbox"
-                        className="border-secondary-700 bg-secondary-800 absolute top-full left-0 z-50 mt-1 w-full overflow-hidden rounded-lg border shadow-lg"
+                        className="absolute top-full left-0 z-50 mt-1 w-full overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 shadow-lg"
                     >
                         {isSearching && (
-                            <div className="text-secondary-400 px-4 py-3 text-sm">
+                            <div className="px-4 py-3 text-sm text-secondary-400">
                                 검색 중…
                             </div>
                         )}
                         {!isSearching && results.length === 0 && (
-                            <div className="text-secondary-400 px-4 py-3 text-sm">
+                            <div className="px-4 py-3 text-sm text-secondary-400">
                                 {isKorean
                                     ? '검색 결과 없음 — 티커(예: AAPL)로 검색해 보세요'
                                     : '검색 결과 없음'}
@@ -170,7 +170,7 @@ export function TickerAutocomplete({
 
 export function CryptoBadge() {
     return (
-        <span className="bg-primary-900/40 text-primary-300 shrink-0 rounded px-1.5 py-0.5 text-[0.625rem] font-semibold">
+        <span className="shrink-0 rounded bg-primary-900/40 px-1.5 py-0.5 text-[0.625rem] font-semibold text-primary-300">
             코인
         </span>
     );
@@ -209,15 +209,15 @@ function ResultItem({
             )}
         >
             <div className="flex items-baseline gap-2">
-                <span className="text-secondary-100 shrink-0 font-medium">
+                <span className="shrink-0 font-medium text-secondary-100">
                     {result.symbol}
                 </span>
                 {result.marketProfile === 'crypto' && <CryptoBadge />}
-                <span className="text-secondary-400 truncate text-sm">
+                <span className="truncate text-sm text-secondary-400">
                     {displayName}
                 </span>
             </div>
-            <div className="text-secondary-500 text-xs">
+            <div className="text-xs text-secondary-500">
                 {result.exchangeFullName}
             </div>
         </button>

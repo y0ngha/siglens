@@ -105,8 +105,8 @@ interface MetricRowProps {
 
 function MetricRow({ metric, currency }: MetricRowProps) {
     return (
-        <div className="border-secondary-700 flex items-baseline justify-between gap-2 border-b py-1.5 last:border-b-0">
-            <span className="text-secondary-300 text-xs">{metric.labelKo}</span>
+        <div className="flex items-baseline justify-between gap-2 border-b border-secondary-700 py-1.5 last:border-b-0">
+            <span className="text-xs text-secondary-300">{metric.labelKo}</span>
             <span className="font-mono text-xs font-medium tabular-nums">
                 {formatMetricValue(metric.value, metric.unit, currency)}
             </span>
@@ -136,12 +136,12 @@ export function AxisScoreCard({
     return (
         <section
             aria-labelledby={`axis-${axisKey}-heading`}
-            className="border-secondary-700 bg-secondary-800 flex flex-col gap-4 rounded-xl border p-4 sm:p-6"
+            className="flex flex-col gap-4 rounded-xl border border-secondary-700 bg-secondary-800 p-4 sm:p-6"
         >
             <div className="flex items-center justify-between">
                 <h3
                     id={`axis-${axisKey}-heading`}
-                    className="text-secondary-100 text-base font-semibold tracking-tight"
+                    className="text-base font-semibold tracking-tight text-secondary-100"
                 >
                     {title}
                 </h3>
@@ -157,13 +157,13 @@ export function AxisScoreCard({
 
             <div>
                 <div className="mb-1 flex items-baseline justify-between">
-                    <span className="text-secondary-400 text-xs">점수</span>
-                    <span className="text-secondary-100 font-mono text-sm font-semibold tabular-nums">
+                    <span className="text-xs text-secondary-400">점수</span>
+                    <span className="font-mono text-sm font-semibold text-secondary-100 tabular-nums">
                         {score}
                     </span>
                 </div>
                 <div
-                    className="bg-secondary-700 h-1.5 w-full overflow-hidden rounded-full"
+                    className="h-1.5 w-full overflow-hidden rounded-full bg-secondary-700"
                     style={
                         {
                             '--axis-score-pct': `${score}%`,

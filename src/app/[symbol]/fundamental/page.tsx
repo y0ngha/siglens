@@ -145,14 +145,14 @@ function ProfileDescriptionSkeleton() {
     return (
         <div className="mt-4 space-y-2">
             <div className="flex items-center gap-1.5">
-                <div className="border-secondary-500 h-2.5 w-2.5 animate-spin rounded-full border-2 border-t-transparent" />
-                <span className="text-secondary-500 text-xs">번역 중...</span>
+                <div className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-secondary-500 border-t-transparent" />
+                <span className="text-xs text-secondary-500">번역 중...</span>
             </div>
             <div className="animate-pulse space-y-1.5">
-                <div className="bg-secondary-700 h-3 w-full rounded" />
-                <div className="bg-secondary-700 h-3 w-[92%] rounded" />
-                <div className="bg-secondary-700 h-3 w-4/5 rounded" />
-                <div className="bg-secondary-700 h-3 w-3/5 rounded" />
+                <div className="h-3 w-full rounded bg-secondary-700" />
+                <div className="h-3 w-[92%] rounded bg-secondary-700" />
+                <div className="h-3 w-4/5 rounded bg-secondary-700" />
+                <div className="h-3 w-3/5 rounded bg-secondary-700" />
             </div>
         </div>
     );
@@ -166,7 +166,7 @@ function ProfileCardSkeleton({ symbol }: ProfileCardSkeletonProps) {
     return (
         <section
             aria-labelledby="profile-heading"
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -174,36 +174,36 @@ function ProfileCardSkeleton({ symbol }: ProfileCardSkeletonProps) {
                         id="profile-heading"
                         className="text-xl font-semibold tracking-tight"
                     >
-                        <span className="bg-secondary-700 inline-block h-5 w-36 animate-pulse rounded align-middle" />
-                        <span className="text-secondary-400 ml-2 text-base font-normal">
+                        <span className="inline-block h-5 w-36 animate-pulse rounded bg-secondary-700 align-middle" />
+                        <span className="ml-2 text-base font-normal text-secondary-400">
                             ({symbol})
                         </span>
                     </h2>
-                    <div className="bg-secondary-700 mt-1 h-4 w-28 animate-pulse rounded" />
+                    <div className="mt-1 h-4 w-28 animate-pulse rounded bg-secondary-700" />
                 </div>
                 <div className="text-right">
-                    <span className="text-secondary-400 text-xs tracking-widest uppercase">
+                    <span className="text-xs tracking-widest text-secondary-400 uppercase">
                         시가총액
                     </span>
-                    <div className="bg-secondary-700 mt-0.5 h-6 w-20 animate-pulse rounded" />
+                    <div className="mt-0.5 h-6 w-20 animate-pulse rounded bg-secondary-700" />
                 </div>
             </div>
 
             <dl className="mt-4 grid grid-cols-1 gap-y-2 sm:grid-cols-2">
                 <div className="flex gap-2">
-                    <dt className="text-secondary-400 w-10 shrink-0 text-sm">
+                    <dt className="w-10 shrink-0 text-sm text-secondary-400">
                         CEO
                     </dt>
                     <dd>
-                        <div className="bg-secondary-700 h-4 w-32 animate-pulse rounded" />
+                        <div className="h-4 w-32 animate-pulse rounded bg-secondary-700" />
                     </dd>
                 </div>
                 <div className="flex gap-2">
-                    <dt className="text-secondary-400 w-10 shrink-0 text-sm">
+                    <dt className="w-10 shrink-0 text-sm text-secondary-400">
                         웹
                     </dt>
                     <dd>
-                        <div className="bg-secondary-700 h-4 w-40 animate-pulse rounded" />
+                        <div className="h-4 w-40 animate-pulse rounded bg-secondary-700" />
                     </dd>
                 </div>
             </dl>
@@ -238,7 +238,7 @@ export async function ProfileDescriptionSection({
         return null;
     });
     return (
-        <p className="text-secondary-400 mt-4 line-clamp-4 text-sm leading-relaxed">
+        <p className="mt-4 line-clamp-4 text-sm leading-relaxed text-secondary-400">
             {descriptionKo ?? fallback}
         </p>
     );

@@ -105,7 +105,7 @@ export function NewsCardShell({
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary-400 focus-visible:ring-primary-500 mt-2 inline-block text-xs transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-none"
+                    className="mt-2 inline-block text-xs text-primary-400 transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     {linkChildren}
                 </a>

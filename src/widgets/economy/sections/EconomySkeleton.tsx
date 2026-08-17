@@ -25,24 +25,24 @@ export function EconomySkeleton() {
             aria-busy="true"
         >
             <section
-                className="border-secondary-700 bg-secondary-800 animate-pulse rounded-xl border p-6 motion-reduce:animate-none"
+                className="animate-pulse rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
                 aria-hidden="true"
             >
-                <div className="bg-secondary-700 mb-3 h-6 w-36 rounded" />
-                <div className="bg-secondary-700 h-4 w-full rounded" />
+                <div className="mb-3 h-6 w-36 rounded bg-secondary-700" />
+                <div className="h-4 w-full rounded bg-secondary-700" />
             </section>
 
             <section
-                className="border-secondary-700 bg-secondary-800 animate-pulse rounded-xl border p-6 motion-reduce:animate-none"
+                className="animate-pulse rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
                 aria-hidden="true"
             >
                 <div className="mb-4 flex items-center gap-3">
-                    <div className="bg-secondary-700 h-6 w-28 rounded" />
-                    <div className="bg-secondary-700 h-5 w-14 rounded" />
+                    <div className="h-6 w-28 rounded bg-secondary-700" />
+                    <div className="h-5 w-14 rounded bg-secondary-700" />
                 </div>
-                <div className="bg-secondary-700 mb-2 h-4 w-full rounded" />
-                <div className="bg-secondary-700 mb-2 h-4 w-5/6 rounded" />
-                <div className="bg-secondary-700 h-4 w-4/5 rounded" />
+                <div className="mb-2 h-4 w-full rounded bg-secondary-700" />
+                <div className="mb-2 h-4 w-5/6 rounded bg-secondary-700" />
+                <div className="h-4 w-4/5 rounded bg-secondary-700" />
             </section>
 
             <div
@@ -52,17 +52,17 @@ export function EconomySkeleton() {
                 {Array.from({ length: 4 }).map((_, i) => (
                     <section
                         key={i}
-                        className="border-secondary-700 bg-secondary-800 animate-pulse rounded-xl border p-6 motion-reduce:animate-none"
+                        className="animate-pulse rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
                     >
-                        <div className="bg-secondary-700 mb-4 h-5 w-20 rounded" />
+                        <div className="mb-4 h-5 w-20 rounded bg-secondary-700" />
                         <div className="space-y-3">
                             {Array.from({ length: 3 }).map((_, j) => (
                                 <div
                                     key={j}
-                                    className="bg-secondary-700/60 flex items-center justify-between rounded p-3"
+                                    className="flex items-center justify-between rounded bg-secondary-700/60 p-3"
                                 >
-                                    <div className="bg-secondary-700 h-4 w-24 rounded" />
-                                    <div className="bg-secondary-700 h-4 w-16 rounded" />
+                                    <div className="h-4 w-24 rounded bg-secondary-700" />
+                                    <div className="h-4 w-16 rounded bg-secondary-700" />
                                 </div>
                             ))}
                         </div>
@@ -71,19 +71,19 @@ export function EconomySkeleton() {
             </div>
 
             <section
-                className="border-secondary-700 bg-secondary-800 animate-pulse rounded-xl border p-6 motion-reduce:animate-none"
+                className="animate-pulse rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
                 aria-hidden="true"
             >
-                <div className="bg-secondary-700 mb-4 h-5 w-32 rounded" />
+                <div className="mb-4 h-5 w-32 rounded bg-secondary-700" />
                 <div className="space-y-2">
                     {Array.from({ length: 4 }).map((_, i) => (
                         <div
                             key={i}
-                            className="bg-secondary-700/60 flex items-center gap-4 rounded p-3"
+                            className="flex items-center gap-4 rounded bg-secondary-700/60 p-3"
                         >
-                            <div className="bg-secondary-700 h-4 w-20 rounded" />
-                            <div className="bg-secondary-700 h-4 w-40 rounded" />
-                            <div className="bg-secondary-700 ml-auto h-4 w-12 rounded" />
+                            <div className="h-4 w-20 rounded bg-secondary-700" />
+                            <div className="h-4 w-40 rounded bg-secondary-700" />
+                            <div className="ml-auto h-4 w-12 rounded bg-secondary-700" />
                         </div>
                     ))}
                 </div>

@@ -70,7 +70,7 @@ export function ShareSheet({
     return (
         <div
             ref={panelRef}
-            className="bg-secondary-900 border-secondary-800 absolute right-0 z-50 mt-2 w-72 rounded-lg border p-2 shadow-2xl"
+            className="absolute right-0 z-50 mt-2 w-72 rounded-lg border border-secondary-800 bg-secondary-900 p-2 shadow-2xl"
             role="dialog"
             aria-label={title}
         >
@@ -87,7 +87,7 @@ export function ShareSheet({
                 className={cn(ROW_BASE, 'touch-manipulation')}
             >
                 {copied ? (
-                    <CheckIcon className="text-primary-300 h-5 w-5" />
+                    <CheckIcon className="h-5 w-5 text-primary-300" />
                 ) : (
                     <LinkIcon className="h-5 w-5" />
                 )}
@@ -101,7 +101,7 @@ export function ShareSheet({
                         type="text"
                         readOnly
                         value={shareUrl}
-                        className="bg-secondary-800 border-secondary-700 text-secondary-200 w-full rounded border px-2 py-1 text-xs"
+                        className="w-full rounded border border-secondary-700 bg-secondary-800 px-2 py-1 text-xs text-secondary-200"
                         onClick={e => (e.target as HTMLInputElement).select()}
                         aria-label="공유 링크 (직접 복사)"
                     />

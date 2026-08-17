@@ -74,7 +74,7 @@ export function MobileAnalysisSheet({
                     // h-[97svh] 고정 — vaul의 snap translateY는 뷰포트 고정값(예: PEEK 654.5px)이므로
                     // max-h로 두면 콘텐츠가 줄어들 때 드로어가 함께 축소되어 PEEK 위치에서
                     // 완전히 뷰포트 밖으로 밀려나는 "사라짐" 버그가 발생한다.
-                    className="bg-secondary-900 border-secondary-700 fixed inset-x-0 bottom-0 z-50 flex h-[97svh] flex-col overflow-hidden overscroll-contain rounded-t-2xl border-t pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.6)] md:hidden"
+                    className="fixed inset-x-0 bottom-0 z-50 flex h-[97svh] flex-col overflow-hidden overscroll-contain rounded-t-2xl border-t border-secondary-700 bg-secondary-900 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.6)] md:hidden"
                     aria-live="polite"
                 >
                     <Drawer.Handle

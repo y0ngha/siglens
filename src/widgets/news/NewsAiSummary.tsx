@@ -19,7 +19,7 @@ import {
     type NewsAnalysisResponse,
     type NewsSentiment,
 } from '@y0ngha/siglens-core';
-import { useMemo } from 'react';
+
 import { NEWS_ANALYSIS_PERIOD_LABEL } from '@/shared/lib/news/periodLabels';
 import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
 
@@ -46,7 +46,7 @@ function StatusCard({ phase }: StatusCardProps) {
         <section
             aria-labelledby="news-ai-summary-status-heading"
             aria-busy="true"
-            className="border-secondary-700 bg-secondary-800 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
+            className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
         >
             <div className="mb-4 flex items-center gap-2">
                 <h2
@@ -55,7 +55,7 @@ function StatusCard({ phase }: StatusCardProps) {
                 >
                     뉴스 AI 종합 분석
                 </h2>
-                <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
+                <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
                     {NEWS_ANALYSIS_PERIOD_LABEL}
                 </span>
             </div>
@@ -71,7 +71,7 @@ function StatusCard({ phase }: StatusCardProps) {
                     )}
                 />
                 <p
-                    className="text-secondary-400 text-sm"
+                    className="text-sm text-secondary-400"
                     aria-live="polite"
                     aria-atomic="true"
                 >
@@ -80,15 +80,15 @@ function StatusCard({ phase }: StatusCardProps) {
                         : 'AI 종합 분석 중이에요…'}
                 </p>
             </div>
-            <p className="text-secondary-500 mt-2 text-xs">
+            <p className="mt-2 text-xs text-secondary-500">
                 {isFetching
                     ? '최신 뉴스를 가져온 뒤에 AI 분석을 시작해요.'
                     : '수집한 뉴스를 종합 분석하고 있어요. 잠시만 기다려 주세요.'}
             </p>
             <div className="mt-4 space-y-2" aria-hidden="true">
-                <div className="bg-secondary-700 h-4 w-[91%] animate-pulse rounded motion-reduce:animate-none" />
-                <div className="bg-secondary-700 h-4 w-[67%] animate-pulse rounded motion-reduce:animate-none" />
-                <div className="bg-secondary-700 h-4 w-[79%] animate-pulse rounded motion-reduce:animate-none" />
+                <div className="h-4 w-[91%] animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
+                <div className="h-4 w-[67%] animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
+                <div className="h-4 w-[79%] animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             </div>
         </section>
     );
@@ -102,7 +102,7 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
     return (
         <section
             aria-labelledby="news-ai-summary-heading"
-            className="border-secondary-700 bg-secondary-800 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
+            className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
         >
             <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">
@@ -112,7 +112,7 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                     >
                         뉴스 AI 종합 분석
                     </h2>
-                    <span className="bg-secondary-700 text-secondary-400 shrink-0 rounded px-2 py-0.5 text-xs">
+                    <span className="shrink-0 rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
                         {NEWS_ANALYSIS_PERIOD_LABEL}
                     </span>
                 </div>
@@ -126,7 +126,7 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                 </span>
             </div>
 
-            <p className="text-secondary-400 mb-4 text-sm leading-relaxed wrap-break-word">
+            <p className="mb-4 text-sm leading-relaxed wrap-break-word text-secondary-400">
                 {result.currentDriverKo}
             </p>
 
@@ -134,10 +134,10 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                 <div className="mb-4">
                     <h3 className="mb-2 text-sm font-semibold">핵심 이벤트</h3>
                     <ul className="space-y-1.5" aria-label="핵심 이벤트 목록">
-                        {result.keyEventsKo.map((event, i) => (
+                        {result.keyEventsKo.map(event => (
                             <li
-                                key={i}
-                                className="text-secondary-400 flex min-w-0 gap-2 text-sm wrap-break-word"
+                                key={event}
+                                className="flex min-w-0 gap-2 text-sm wrap-break-word text-secondary-400"
                             >
                                 <span
                                     aria-hidden="true"
@@ -163,14 +163,14 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                         className="space-y-1.5"
                         aria-label="다가오는 주요 일정 목록"
                     >
-                        {result.upcomingEventsKo.map((event, i) => (
+                        {result.upcomingEventsKo.map(event => (
                             <li
-                                key={i}
-                                className="text-secondary-400 flex min-w-0 gap-2 text-sm wrap-break-word"
+                                key={event}
+                                className="flex min-w-0 gap-2 text-sm wrap-break-word text-secondary-400"
                             >
                                 <span
                                     aria-hidden="true"
-                                    className="text-ui-warning mt-0.5 shrink-0"
+                                    className="mt-0.5 shrink-0 text-ui-warning"
                                 >
                                     ⚠
                                 </span>
@@ -198,7 +198,7 @@ function NewsAiSummaryInlineError({
     return (
         <section
             aria-labelledby="news-ai-summary-error-heading"
-            className="border-ui-danger/30 bg-secondary-800 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-6"
+            className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-ui-danger/30 bg-secondary-800 p-6"
         >
             <div className="mb-2 flex items-center gap-2">
                 <h2
@@ -207,17 +207,17 @@ function NewsAiSummaryInlineError({
                 >
                     뉴스 AI 종합 분석
                 </h2>
-                <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
+                <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
                     {NEWS_ANALYSIS_PERIOD_LABEL}
                 </span>
             </div>
-            <p className="text-ui-danger text-sm wrap-break-word" role="alert">
+            <p className="text-sm wrap-break-word text-ui-danger" role="alert">
                 {error.message}
             </p>
             <button
                 type="button"
                 onClick={onRetry}
-                className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-800 mt-4 rounded px-3 py-1.5 text-xs text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                className="mt-4 rounded bg-primary-600 px-3 py-1.5 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
             >
                 다시 시도
             </button>
@@ -288,10 +288,9 @@ export function NewsAiSummary({
     // `analysis`는 discriminated union이라 deps에는 객체 전체를 둔다. React Query가
     // `query.data`를 memoize하므로 동일 분석에 대한 reference는 안정적 — 실제
     // 데이터가 바뀔 때만 재계산된다.
-    const chatState = useMemo(
-        () => (isCardsReady ? buildChatState(analysis) : WAITING_CHAT_STATE),
-        [isCardsReady, analysis]
-    );
+    const chatState = isCardsReady
+        ? buildChatState(analysis)
+        : WAITING_CHAT_STATE;
     usePublishSymbolChat(chatState);
     // When enriched news cards are not yet ready the analysis query is disabled
     // (enabled: false → useNewsAnalysis returns status 'loading' immediately).

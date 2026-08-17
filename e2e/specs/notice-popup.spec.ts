@@ -5,14 +5,14 @@ import { seedNotices } from '../support/noticeSeeder';
  * 공지 팝업 (`NoticePopup`) E2E — Tier 3 클라이언트 행동.
  *
  * `notices` 테이블 행을 per-test로 직접 시딩하고 afterEach에서 삭제해
- * 테스트 간 독립성을 보장한다. localStorage(siglens_dismissed_notices)는
+ * 테스트 간 독립성을 보장한다. localStorage(siglens_dismissed_notices_v1)는
  * beforeEach에서 초기화해 dismiss 상태 누출을 차단한다.
  *
  * NoticePopup 동작 요약:
  *   - 마운트 시 `getActiveNoticesAction()` (서버 액션) 호출 → 경로 매칭 + dismiss 필터 후 큐
  *   - X 버튼(aria-label="팝업 닫기") / "닫기" 버튼 / Esc / 배경 클릭 = 임시 닫기
  *     (localStorage에 저장되지 않으므로 다음 방문 시 재노출)
- *   - "다시 보지 않기" = id를 localStorage(`siglens_dismissed_notices`)에 영구 저장
+ *   - "다시 보지 않기" = id를 localStorage(`siglens_dismissed_notices_v1`)에 영구 저장
  *     → 다음 방문에서도 표시 안 됨
  *   - pathPattern = null이면 전역(모든 경로), '/market'이면 해당 경로에서만 표시
  *
@@ -55,13 +55,21 @@ const LONG_BODY = Array.from(
  * Playwright 스펙은 src의 server-only 체인을 import할 수 없어 리터럴을 복제한다.
  * noticeStorage.ts에서 키를 바꾸면 이 값도 함께 갱신할 것 (update both if changed).
  */
-const DISMISSED_KEY = 'siglens_dismissed_notices';
+// 저장 키에 포맷 버전이 들어간다(src/widgets/notice-popup/utils/noticeStorage.ts).
+// 값은 `{ v: 1, ids: [...] }` 형태이며, 버전 없는 구 키는 읽기만 지원한다.
+const DISMISSED_KEY = 'siglens_dismissed_notices_v1';
+const LEGACY_DISMISSED_KEY = 'siglens_dismissed_notices';
 
 test.describe('공지 팝업', () => {
     // localStorage를 초기화해 이전 테스트의 dismiss 상태가 남지 않도록 함.
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
-        await page.evaluate(key => localStorage.removeItem(key), DISMISSED_KEY);
+        await page.evaluate(
+            keys => {
+                for (const key of keys) localStorage.removeItem(key);
+            },
+            [DISMISSED_KEY, LEGACY_DISMISSED_KEY]
+        );
     });
 
     /**
@@ -137,9 +145,9 @@ test.describe('공지 팝업', () => {
                 DISMISSED_KEY
             );
             expect(stored).not.toBeNull();
-            const parsed: unknown = JSON.parse(stored!);
-            expect(Array.isArray(parsed)).toBe(true);
-            expect(parsed as string[]).toContain(GLOBAL_NOTICE_ID);
+            const parsed = JSON.parse(stored!) as { v: number; ids: string[] };
+            expect(parsed.v).toBe(1);
+            expect(parsed.ids).toContain(GLOBAL_NOTICE_ID);
 
             // 새로고침 후에도 모달이 나타나지 않아야 함
             await page.reload();

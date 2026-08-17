@@ -18,7 +18,7 @@ export function IndexCard({ data, href }: IndexCardProps) {
     const label = getLabel(data);
 
     const inner = (
-        <div className="bg-secondary-800/50 border-secondary-700 flex flex-col gap-1 rounded-lg border p-3">
+        <div className="flex flex-col gap-1 rounded-lg border border-secondary-700 bg-secondary-800/50 p-3">
             <QuoteHeader
                 data={{
                     symbol: data.symbol,

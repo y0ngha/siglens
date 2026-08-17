@@ -1,13 +1,7 @@
 'use client';
 
 import { SNAP_FULL, SNAP_PEEK, type SnapPoint } from '../constants/mobileSheet';
-import {
-    type RefObject,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from 'react';
+import { type RefObject, useEffect, useRef, useState } from 'react';
 
 interface UseMobileAnalysisSheetOptions {
     activeSnap: SnapPoint;
@@ -66,15 +60,12 @@ export function useMobileAnalysisSheet({
         };
     }, []);
 
-    const handleOpenChange = useCallback(
-        (open: boolean) => {
-            if (!open) {
-                onActiveSnapChange(SNAP_PEEK);
-                setIsOpen(true);
-            }
-        },
-        [onActiveSnapChange]
-    );
+    const handleOpenChange = (open: boolean) => {
+        if (!open) {
+            onActiveSnapChange(SNAP_PEEK);
+            setIsOpen(true);
+        }
+    };
 
     return {
         isOpen,

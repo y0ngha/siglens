@@ -34,7 +34,7 @@ export function AnalysisSignupNudgeModal({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             {/* backdrop */}
             <div
-                className="bg-secondary-950/80 absolute inset-0 backdrop-blur-sm"
+                className="absolute inset-0 bg-secondary-950/80 backdrop-blur-sm"
                 onClick={onClose}
                 aria-hidden="true"
             />
@@ -45,7 +45,7 @@ export function AnalysisSignupNudgeModal({
                 aria-modal="true"
                 aria-labelledby={TITLE_ID}
                 tabIndex={-1}
-                className="bg-secondary-900 ring-secondary-800 relative w-full max-w-sm rounded-2xl p-6 shadow-2xl ring-1 outline-none"
+                className="relative w-full max-w-sm rounded-2xl bg-secondary-900 p-6 shadow-2xl ring-1 ring-secondary-800 outline-none"
             >
                 <div className="mb-4 flex flex-col items-center gap-3 text-center">
                     {/* inline SVG avoids lucide-react dependency, mirrors PremiumModelGateModal */}
@@ -57,7 +57,7 @@ export function AnalysisSignupNudgeModal({
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className="text-primary-400 h-8 w-8"
+                        className="h-8 w-8 text-primary-400"
                         aria-hidden="true"
                     >
                         <path d="M12 2 2 7l10 5 10-5-10-5Z" />
@@ -66,11 +66,11 @@ export function AnalysisSignupNudgeModal({
                     </svg>
                     <h2
                         id={TITLE_ID}
-                        className="text-secondary-50 font-semibold"
+                        className="font-semibold text-secondary-50"
                     >
                         더 깊은 분석을 원하세요?
                     </h2>
-                    <p className="text-secondary-300 text-sm leading-relaxed">
+                    <p className="text-sm leading-relaxed text-secondary-300">
                         {/* The object-particle `을` assumes REASONING_FEATURE_LABEL
                             ends in a consonant (batchim) — true for '상세 분석'
                             (분석 ends in 석). Revisit the particle (을/를) if the
@@ -84,14 +84,14 @@ export function AnalysisSignupNudgeModal({
                     <Link
                         href="/signup"
                         onClick={onClose}
-                        className="bg-primary-600 hover:bg-primary-500 focus-visible:ring-primary-500 flex h-10 items-center justify-center rounded-lg px-4 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        className="flex h-10 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-medium text-white transition-colors hover:bg-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         회원가입 하러 가기
                     </Link>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 flex h-10 items-center justify-center rounded-lg px-4 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        className="flex h-10 items-center justify-center rounded-lg px-4 text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         닫기
                     </button>

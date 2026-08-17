@@ -26,7 +26,7 @@ export function FearGreedShareView({ snapshot }: FearGreedShareViewProps) {
         <div className="flex flex-col gap-6 p-4 md:p-6">
             <div className="grid gap-6 md:grid-cols-2">
                 <section className="flex flex-col gap-3">
-                    <h2 className="text-secondary-300 text-sm font-medium">
+                    <h2 className="text-sm font-medium text-secondary-300">
                         현재 공포 탐욕 지수
                     </h2>
                     <FearGreedHero snapshot={snapshot} />

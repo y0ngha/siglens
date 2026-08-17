@@ -55,8 +55,8 @@ const VolumeChart = dynamic(
 
 function AnalyzingBanner() {
     return (
-        <div className="bg-secondary-700/40 flex items-center gap-2 rounded px-3 py-2">
-            <span className="text-secondary-400 text-sm">AI 분석 중…</span>
+        <div className="flex items-center gap-2 rounded bg-secondary-700/40 px-3 py-2">
+            <span className="text-sm text-secondary-400">AI 분석 중…</span>
         </div>
     );
 }
@@ -67,8 +67,8 @@ interface ErrorBannerProps {
 
 function ErrorBanner({ message }: ErrorBannerProps) {
     return (
-        <div className="bg-secondary-700/40 rounded px-3 py-2">
-            <span className="text-chart-bearish text-sm">{message}</span>
+        <div className="rounded bg-secondary-700/40 px-3 py-2">
+            <span className="text-sm text-chart-bearish">{message}</span>
         </div>
     );
 }
@@ -508,7 +508,7 @@ export function ChartContent({
                 </div>
 
                 {/* Buy/Sell Volume 차트 */}
-                <div className="border-secondary-700 relative flex-1 border-t">
+                <div className="relative flex-1 border-t border-secondary-700">
                     <VolumeChart
                         bars={bars}
                         buySellVolume={indicators.buySellVolume}
@@ -519,7 +519,7 @@ export function ChartContent({
                 </div>
 
                 {/* 안내 */}
-                <p className="text-secondary-500 px-2 py-1 text-right text-[10px]">
+                <p className="px-2 py-1 text-right text-[10px] text-secondary-500">
                     {/*
                      * Pre-market/After-market 안내는 미국 주식(equity)에만 해당한다.
                      * 암호화폐는 24/7 거래라 장전·장후 세션 구분 자체가 없으므로
@@ -552,7 +552,7 @@ export function ChartContent({
                 않게 하되, scrollbar-none으로 스크롤바 자체는 감춰 페이지 스크롤과
                 시각적으로 겹쳐 보이지 않게 한다. */}
             <aside
-                className="border-secondary-700 relative hidden min-h-0 flex-none scrollbar-none overflow-y-auto border-l p-4 md:flex md:h-full md:w-(--panel-width) md:flex-col"
+                className="relative hidden min-h-0 flex-none scrollbar-none overflow-y-auto border-l border-secondary-700 p-4 md:flex md:h-full md:w-(--panel-width) md:flex-col"
                 style={
                     {
                         // panelWidth는 드래그 상태에서 런타임에 결정되므로 정적 Tailwind 클래스로 표현 불가

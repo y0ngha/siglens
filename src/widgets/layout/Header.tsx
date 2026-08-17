@@ -22,12 +22,10 @@ interface HeaderProps {
 }
 
 /** Presentational shell; receives resolved current user as a prop so layer rules forbid direct infrastructure access here. */
+// 최상위 <header>는 암시적으로 role="banner"이므로 role을 명시하지 않는다(중복 ARIA).
 export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
     return (
-        <header
-            className="bg-secondary-900/90 supports-backdrop-filter:bg-secondary-900/75 border-secondary-800 sticky top-0 z-50 border-b backdrop-blur-md"
-            role="banner"
-        >
+        <header className="sticky top-0 z-50 border-b border-secondary-800 bg-secondary-900/90 backdrop-blur-md supports-backdrop-filter:bg-secondary-900/75">
             <div className="flex h-14 items-center gap-2 px-3 sm:gap-4 sm:px-6">
                 <Link
                     href="/"
@@ -39,7 +37,7 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                     // Visible brand text is `text-...uppercase` (renders "SIGLENS"),
                     // so the accessible name must match what users see (WCAG 2.5.3).
                     aria-label={`${SITE_NAME.toUpperCase()} 홈`}
-                    className="focus-visible:ring-primary-500 -mx-1 flex min-h-11 shrink-0 touch-manipulation items-center gap-2 rounded px-1 focus-visible:ring-2 focus-visible:outline-none"
+                    className="-mx-1 flex min-h-11 shrink-0 touch-manipulation items-center gap-2 rounded px-1 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     {/*
                         icon96.png(96×96)을 24×24로 렌더 — Lighthouse의
@@ -59,7 +57,7 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                     />
                     <span
                         translate="no"
-                        className="text-secondary-100 hidden font-mono text-sm font-semibold tracking-[0.15em] uppercase sm:inline"
+                        className="hidden font-mono text-sm font-semibold tracking-[0.15em] text-secondary-100 uppercase sm:inline"
                     >
                         {SITE_NAME}
                     </span>

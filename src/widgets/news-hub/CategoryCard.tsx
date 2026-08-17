@@ -38,11 +38,11 @@ export function CategoryCard({
     previewHeadlines,
 }: CategoryCardProps) {
     return (
-        <article className="border-secondary-700 bg-secondary-800 hover:border-primary-500/50 flex w-full min-w-0 flex-col overflow-hidden rounded-xl border p-5 transition-colors">
+        <article className="flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-5 transition-colors hover:border-primary-500/50">
             <h2 className="mb-1 text-base font-semibold tracking-tight text-balance">
                 {koLabel}
             </h2>
-            <p className="text-secondary-400 mb-3 text-xs leading-relaxed">
+            <p className="mb-3 text-xs leading-relaxed text-secondary-400">
                 {koDescription}
             </p>
 
@@ -51,10 +51,10 @@ export function CategoryCard({
                     className="mb-4 min-w-0 space-y-2"
                     aria-label={`${koLabel} 최신 뉴스 미리보기`}
                 >
-                    {previewHeadlines.map((headline, i) => (
+                    {previewHeadlines.map(headline => (
                         <li
-                            key={i}
-                            className="text-secondary-400 min-w-0 text-sm"
+                            key={headline}
+                            className="min-w-0 text-sm text-secondary-400"
                         >
                             <span className="line-clamp-1 wrap-break-word">
                                 {headline}
@@ -63,7 +63,7 @@ export function CategoryCard({
                     ))}
                 </ul>
             ) : (
-                <p className="text-secondary-400 mb-4 text-sm">
+                <p className="mb-4 text-sm text-secondary-400">
                     최신 뉴스를 불러오고 있어요.
                 </p>
             )}
@@ -72,7 +72,7 @@ export function CategoryCard({
                 href={`/news/${slug}`}
                 // 카드 그리드로 다수 렌더 — docs/architecture/CDN_CACHING.md §1
                 prefetch={false}
-                className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 mt-auto text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                className="mt-auto text-sm text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 aria-label={`${koLabel} 뉴스 더보기`}
             >
                 더보기 <span aria-hidden="true">→</span>

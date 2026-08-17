@@ -27,8 +27,6 @@ jobs:
     test-gate:
         runs-on: ubuntu-latest
         timeout-minutes: 15
-        env:
-            SIGLENS_GITHUB_TOKEN: ${{ secrets.SIGLENS_GITHUB_TOKEN }}
         permissions:
             contents: read
         steps:
@@ -43,7 +41,13 @@ jobs:
                   cache: yarn
 
             - name: Install dependencies
-              run: yarn install --immutable
+              # 레지스트리 토큰은 install 스텝에만 노출한다(최소 권한). .yarnrc.yml이
+              # `${SIGLENS_GITHUB_TOKEN:-}`로 기본값을 두므로 이후 스텝은 토큰 없이 돈다.
+              # --mode=skip-build: 이 잡은 typecheck + unit test만 실행해 네이티브 빌드가
+              # 필요 없고, 시크릿이 있는 동안 패키지 lifecycle 코드를 실행하지 않는다.
+              env:
+                  SIGLENS_GITHUB_TOKEN: ${{ secrets.SIGLENS_GITHUB_TOKEN }}
+              run: yarn install --immutable --mode=skip-build
 
             - name: Type check
               run: yarn typecheck

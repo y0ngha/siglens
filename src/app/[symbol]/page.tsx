@@ -314,7 +314,7 @@ export default async function SymbolPage({ params }: Props) {
                                         />
                                     ) : (
                                         <div
-                                            className="bg-secondary-900 flex min-h-0 flex-1 flex-col overflow-hidden"
+                                            className="flex min-h-0 flex-1 flex-col overflow-hidden bg-secondary-900"
                                             aria-hidden="true"
                                         />
                                     )}

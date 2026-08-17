@@ -127,9 +127,9 @@ export function CongressSnapshotProse({
             displayName={displayName}
             asOf={generatedAt}
         >
-            <div className="text-secondary-300 space-y-4 text-sm leading-6">
+            <div className="space-y-4 text-sm leading-6 text-secondary-300">
                 {narrowed.overallSentiment !== null && (
-                    <p className="text-secondary-200 font-medium">
+                    <p className="font-medium text-secondary-200">
                         {symbol} 의회 거래 동향:{' '}
                         {SENTIMENT_LABEL[narrowed.overallSentiment]}
                     </p>
@@ -153,7 +153,7 @@ export function CongressSnapshotProse({
 
                 {narrowed.riskNoteKo.length > 0 && (
                     <div>
-                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
+                        <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
                             참고 사항
                         </h3>
                         <p>{narrowed.riskNoteKo}</p>

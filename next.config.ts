@@ -8,6 +8,14 @@ const withBundleAnalyzer = bundleAnalyzer({
     enabled: process.env.ANALYZE === 'true',
 });
 
+// ⚠️ TypeScript 7 + Next 16.2 조합 주의
+// Next의 빌드타임 타입체크는 레거시 JS API(`typescript/lib/typescript.js`)를 require하는데,
+// TypeScript 7(네이티브 Go 컴파일러)은 그 파일을 배포하지 않는다. Next는 대신
+// `@typescript/native-preview`가 설치돼 있으면 "네이티브 컴파일러 사용 중"으로 인식하고
+// 자기 타입체크를 건너뛴다(next/dist/lib/verify-typescript-setup.js).
+// 따라서 devDependencies의 `@typescript/native-preview`는 미사용 패키지가 아니라 이 신호용이다 —
+// 제거하면 `yarn build`가 "trying to use TypeScript but do not have the required package(s)"로 깨진다.
+// 타입 안전성은 `yarn typecheck`(tsc --noEmit, TS7)가 pre-push + CI에서 담당한다.
 const nextConfig: NextConfig = {
     // self-host: Docker 최소 번들(.next/standalone + server.js)
     output: 'standalone',
@@ -116,6 +124,13 @@ const nextConfig: NextConfig = {
                 {
                     key: 'X-Frame-Options',
                     value: 'DENY',
+                },
+                {
+                    // X-Frame-Options의 현대적 대체(레거시 브라우저용으로 둘 다 보낸다).
+                    // 우리 페이지를 iframe에 넣는 경로는 없고, 클릭재킹으로 로그인/설정
+                    // 같은 인증 화면을 감싸는 공격을 CSP 레벨에서 차단한다.
+                    key: 'Content-Security-Policy',
+                    value: "frame-ancestors 'none'",
                 },
                 {
                     key: 'Referrer-Policy',

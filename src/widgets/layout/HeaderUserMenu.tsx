@@ -50,7 +50,7 @@ export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
             <div
                 role="status"
                 aria-label="로딩 중"
-                className="bg-secondary-800 size-10 animate-pulse rounded-full motion-reduce:animate-none"
+                className="size-10 animate-pulse rounded-full bg-secondary-800 motion-reduce:animate-none"
             />
         );
     }
@@ -70,14 +70,14 @@ export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
                 <Link
                     href="/login"
                     prefetch={false}
-                    className="text-secondary-200 hover:text-secondary-50 focus-visible:ring-primary-500 hidden min-h-11 items-center rounded px-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none sm:inline-flex"
+                    className="hidden min-h-11 items-center rounded px-3 text-sm font-medium text-secondary-200 transition-colors hover:text-secondary-50 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none sm:inline-flex"
                 >
                     로그인
                 </Link>
                 <Link
                     href="/signup"
                     prefetch={false}
-                    className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 inline-flex min-h-11 items-center rounded px-3 text-sm font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                    className="inline-flex min-h-11 items-center rounded bg-primary-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     회원가입
                 </Link>
@@ -96,7 +96,7 @@ export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
                 aria-haspopup="menu"
                 aria-expanded={isOpen}
                 aria-label={`사용자 메뉴 (${tierLabel})`}
-                className="bg-secondary-800 text-secondary-100 hover:bg-secondary-700 focus-visible:ring-primary-500 relative flex size-10 items-center justify-center rounded-full text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                className="relative flex size-10 items-center justify-center rounded-full bg-secondary-800 text-sm font-semibold text-secondary-100 transition-colors hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
                 {currentUser.avatarUrl ? (
                     <Image
@@ -121,18 +121,18 @@ export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
                 <div
                     role="menu"
                     aria-label="사용자 메뉴"
-                    className="border-secondary-800 bg-secondary-900 absolute right-0 z-50 mt-2 w-64 rounded-lg border p-2 shadow-2xl"
+                    className="absolute right-0 z-50 mt-2 w-64 rounded-lg border border-secondary-800 bg-secondary-900 p-2 shadow-2xl"
                 >
-                    <div className="border-secondary-800 border-b px-3 py-2 text-sm">
-                        <p className="text-secondary-50 font-semibold">
+                    <div className="border-b border-secondary-800 px-3 py-2 text-sm">
+                        <p className="font-semibold text-secondary-50">
                             {currentUser.name ?? currentUser.email}
                         </p>
                         {currentUser.name ? (
-                            <p className="text-secondary-400 text-xs">
+                            <p className="text-xs text-secondary-400">
                                 {currentUser.email}
                             </p>
                         ) : null}
-                        <p className="text-secondary-400 mt-1 flex items-center gap-1.5 text-xs">
+                        <p className="mt-1 flex items-center gap-1.5 text-xs text-secondary-400">
                             <span
                                 aria-hidden
                                 className={cn(
@@ -148,7 +148,7 @@ export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
                             href="/account"
                             role="menuitem"
                             onClick={close}
-                            className="text-secondary-200 hover:bg-secondary-800 focus-visible:ring-primary-500 flex w-full items-center rounded px-3 py-2 text-left text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                            className="flex w-full items-center rounded px-3 py-2 text-left text-sm text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             계정 설정
                         </Link>

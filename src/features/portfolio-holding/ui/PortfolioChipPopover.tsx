@@ -134,7 +134,7 @@ export function PortfolioChipPopover({
         >
             <h2
                 id={titleId}
-                className="text-secondary-100 mb-3 text-sm font-semibold"
+                className="mb-3 text-sm font-semibold text-secondary-100"
             >
                 {symbol.toUpperCase()} 평단 설정
             </h2>

@@ -4,7 +4,7 @@ import { registerServiceWorker } from '../lib/registerServiceWorker';
 import { type PwaEnvironment } from '@/shared/lib/types';
 import { detectPwaEnvironment } from '../lib/detectPwaEnvironment';
 import { PWA_TRIGGER_EVENT } from '@/shared/lib/pwaEvents';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type PromptOutcome = 'accepted' | 'dismissed';
 
@@ -53,7 +53,7 @@ export function usePwaInstall(): UsePwaInstallReturn {
     const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const handleInstall = useCallback(async () => {
+    const handleInstall = async () => {
         if (env.isIos) {
             setShowIosModal(true);
         } else if (deferredPromptRef.current) {
@@ -69,17 +69,17 @@ export function usePwaInstall(): UsePwaInstallReturn {
                 console.warn('[PWA] prompt 실패', err);
             }
         }
-    }, [env.isIos]);
+    };
 
-    const handleDismiss = useCallback(() => {
+    const handleDismiss = () => {
         setShowBanner(false);
         if (timerRef.current) {
             clearTimeout(timerRef.current);
             timerRef.current = null;
         }
-    }, []);
+    };
 
-    const handleModalClose = useCallback(() => setShowIosModal(false), []);
+    const handleModalClose = () => setShowIosModal(false);
 
     useEffect(() => {
         registerServiceWorker();

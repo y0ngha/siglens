@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import { useFearGreedFromSymbol } from './hooks/useFearGreedFromSymbol';
 import { FearGreedHero } from './FearGreedHero';
 import { FearGreedComparisonGauges } from './FearGreedComparisonGauges';
@@ -44,18 +43,18 @@ function FearGreedPageSkeleton() {
         >
             <div className="grid gap-6 md:grid-cols-2">
                 <section className="flex flex-col gap-3">
-                    <div className="bg-secondary-700/40 h-4 w-40 animate-pulse rounded" />
-                    <div className="bg-secondary-700/40 h-48 w-full animate-pulse rounded" />
-                    <div className="bg-secondary-700/40 h-16 w-full animate-pulse rounded" />
+                    <div className="h-4 w-40 animate-pulse rounded bg-secondary-700/40" />
+                    <div className="h-48 w-full animate-pulse rounded bg-secondary-700/40" />
+                    <div className="h-16 w-full animate-pulse rounded bg-secondary-700/40" />
                 </section>
                 <section className="flex flex-col gap-3">
-                    <div className="bg-secondary-700/40 h-20 w-full animate-pulse rounded" />
-                    <div className="bg-secondary-700/40 h-20 w-full animate-pulse rounded" />
+                    <div className="h-20 w-full animate-pulse rounded bg-secondary-700/40" />
+                    <div className="h-20 w-full animate-pulse rounded bg-secondary-700/40" />
                 </section>
             </div>
             <section className="flex flex-col gap-2">
-                <div className="bg-secondary-700/40 h-4 w-32 animate-pulse rounded" />
-                <div className="bg-secondary-700/40 h-40 w-full animate-pulse rounded" />
+                <div className="h-4 w-32 animate-pulse rounded bg-secondary-700/40" />
+                <div className="h-40 w-full animate-pulse rounded bg-secondary-700/40" />
             </section>
         </div>
     );
@@ -65,7 +64,7 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
     const isHydrated = useHydrated();
     const { snapshot, history } = useFearGreedFromSymbol({ symbol, fmpSymbol });
 
-    const chatState = useMemo(() => buildChatState(snapshot), [snapshot]);
+    const chatState = buildChatState(snapshot);
     usePublishSymbolChat(chatState);
     useRegisterShareable({
         kind: 'fear-greed',
@@ -95,9 +94,9 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
 
     if (!snapshot) {
         return (
-            <div className="text-secondary-400 flex flex-col gap-2 p-6 text-sm">
+            <div className="flex flex-col gap-2 p-6 text-sm text-secondary-400">
                 <p>공포 탐욕 지수 산출에 필요한 데이터가 부족합니다.</p>
-                <p className="text-secondary-500 text-xs">
+                <p className="text-xs text-secondary-500">
                     상장한 지 얼마 되지 않았거나 거래량 데이터가 비어 있는
                     종목일 수 있습니다. 며칠 뒤 다시 확인하거나, 같은 섹터의
                     다른 종목을 살펴보세요.
@@ -110,7 +109,7 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
         <div className="flex flex-col gap-6 p-4 md:p-6">
             <div className="grid gap-6 md:grid-cols-2">
                 <section className="flex flex-col gap-3">
-                    <h2 className="text-secondary-300 text-sm font-medium">
+                    <h2 className="text-sm font-medium text-secondary-300">
                         현재 공포 탐욕 지수와 기간별 비교
                     </h2>
                     <FearGreedHero snapshot={snapshot} />
@@ -129,13 +128,13 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
             </div>
 
             <section className="flex flex-col gap-2">
-                <h2 className="text-secondary-300 text-sm font-medium">
+                <h2 className="text-sm font-medium text-secondary-300">
                     공포 탐욕 지수 추이 (최근 1년)
                 </h2>
                 <FearGreedHistoricalChart history={history} />
             </section>
 
-            <footer className="text-secondary-500 text-xs">
+            <footer className="text-xs text-secondary-500">
                 {formatConfidenceFooter(
                     snapshot.sampleSize,
                     snapshot.confidence

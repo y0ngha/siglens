@@ -18,7 +18,7 @@ export function StatsBar({ skills }: StatsBarProps) {
     return (
         <ul
             aria-label="Siglens 분석 규모"
-            className="text-secondary-400 mt-6 flex list-none flex-wrap items-center justify-center gap-x-2 p-0 font-mono text-xs lg:justify-start"
+            className="mt-6 flex list-none flex-wrap items-center justify-center gap-x-2 p-0 font-mono text-xs text-secondary-400 lg:justify-start"
         >
             {stats.map((stat, i) => (
                 <Fragment key={stat.label}>
@@ -49,7 +49,7 @@ export function StatsBarSkeleton() {
                 <Fragment key={i}>
                     {i > 0 && <DotSeparator />}
                     <div
-                        className="bg-secondary-700/50 h-3 w-[var(--stat-w)] animate-pulse rounded"
+                        className="h-3 w-[var(--stat-w)] animate-pulse rounded bg-secondary-700/50"
                         style={{ '--stat-w': `${w}px` } as CSSProperties}
                     />
                 </Fragment>

@@ -92,7 +92,7 @@ export function ModelSelect({
     return (
         <div className="relative">
             {!isHydrated ? (
-                <div className="bg-secondary-700 w-16 animate-pulse rounded px-1.5 py-0.5 text-[10px]">
+                <div className="w-16 animate-pulse rounded bg-secondary-700 px-1.5 py-0.5 text-[10px]">
                     &nbsp;
                 </div>
             ) : (
@@ -100,7 +100,7 @@ export function ModelSelect({
                     ref={triggerRef}
                     type="button"
                     onClick={handleDropdownToggle}
-                    className="bg-secondary-700 hover:bg-secondary-600 text-secondary-400 focus-visible:ring-primary-500 flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                    className="flex items-center gap-1 rounded bg-secondary-700 px-1.5 py-0.5 text-secondary-400 transition-colors hover:bg-secondary-600 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     aria-haspopup="listbox"
                     aria-expanded={isOpen}
                     aria-label="AI 모델 선택"
@@ -123,6 +123,9 @@ export function ModelSelect({
                     ref={dropdownRef}
                     role="listbox"
                     aria-label="AI 모델 목록"
+                    // listbox는 인터랙티브 role이라 포커스 가능해야 한다.
+                    // -1이므로 탭 순서는 그대로(트리거 버튼만 탭 대상).
+                    tabIndex={-1}
                     onKeyDown={handleListboxKeyDown}
                     className={cn(
                         'border-secondary-600 bg-secondary-800 absolute left-0 z-10 min-w-40 rounded-lg border shadow-lg',
@@ -167,12 +170,12 @@ export function ModelSelect({
                                         <div className="text-[11px] font-medium">
                                             {option.label}
                                         </div>
-                                        <div className="text-secondary-500 text-[10px]">
+                                        <div className="text-[10px] text-secondary-500">
                                             {option.fullName}
                                         </div>
                                     </div>
                                     {!isFreeModel(option.id) && (
-                                        <span className="text-ui-warning text-[9px] leading-none font-semibold uppercase">
+                                        <span className="text-[9px] leading-none font-semibold text-ui-warning uppercase">
                                             PRO
                                         </span>
                                     )}

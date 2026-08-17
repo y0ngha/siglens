@@ -6,7 +6,7 @@ import type {
     OptionsSignalKind,
     OptionsTone,
 } from '@y0ngha/siglens-core';
-import { useMemo } from 'react';
+
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { cn } from '@/shared/lib/cn';
@@ -128,7 +128,7 @@ export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
     return (
         <section
             aria-labelledby="options-ai-analysis-heading"
-            className="border-primary-500/30 from-secondary-800 to-secondary-900 ring-primary-500/10 shadow-primary-500/5 rounded-xl border bg-gradient-to-br p-6 shadow-lg ring-1"
+            className="rounded-xl border border-primary-500/30 bg-gradient-to-br from-secondary-800 to-secondary-900 p-6 shadow-lg ring-1 shadow-primary-500/5 ring-primary-500/10"
         >
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <h2
@@ -140,7 +140,7 @@ export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
                 {result.analyzedAt ? (
                     <time
                         dateTime={result.analyzedAt}
-                        className="text-secondary-500 text-xs"
+                        className="text-xs text-secondary-500"
                     >
                         {formatAnalyzedAt(result.analyzedAt)}
                     </time>
@@ -148,29 +148,29 @@ export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
             </div>
 
             {result.summary ? (
-                <p className="text-secondary-300 mb-5 text-sm leading-relaxed">
+                <p className="mb-5 text-sm leading-relaxed text-secondary-300">
                     {result.summary}
                 </p>
             ) : null}
 
             {result.perExpiration.length > 0 && (
                 <div className="mb-5">
-                    <h3 className="text-secondary-200 mb-3 text-xs font-semibold tracking-wider uppercase">
+                    <h3 className="mb-3 text-xs font-semibold tracking-wider text-secondary-200 uppercase">
                         ▸ 만기별 해석
                     </h3>
                     <ul className="space-y-3" aria-label="만기별 옵션 해석">
                         {result.perExpiration.map(item => (
                             <li
                                 key={item.expirationDate}
-                                className="border-secondary-700 rounded-lg border p-3"
+                                className="rounded-lg border border-secondary-700 p-3"
                             >
                                 <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                                    <span className="text-secondary-200 text-xs font-medium tabular-nums">
+                                    <span className="text-xs font-medium text-secondary-200 tabular-nums">
                                         {item.expirationDate}
                                     </span>
                                     <ToneBadge tone={item.tone} />
                                 </div>
-                                <p className="text-secondary-400 text-sm leading-relaxed">
+                                <p className="text-sm leading-relaxed text-secondary-400">
                                     {item.commentary}
                                 </p>
                             </li>
@@ -181,7 +181,7 @@ export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
 
             {result.signals.length > 0 && (
                 <div>
-                    <h3 className="text-secondary-200 mb-3 text-xs font-semibold tracking-wider uppercase">
+                    <h3 className="mb-3 text-xs font-semibold tracking-wider text-secondary-200 uppercase">
                         ▸ 시그널
                     </h3>
                     <ul className="space-y-2" aria-label="옵션 시그널 목록">
@@ -191,11 +191,11 @@ export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
                                 // duplicate `${kind}::${message}` pairs; using the
                                 // composite as key avoids the index-key anti-pattern.
                                 key={`${signal.kind}::${signal.message}`}
-                                className="text-secondary-400 flex min-w-0 items-start gap-2 text-sm"
+                                className="flex min-w-0 items-start gap-2 text-sm text-secondary-400"
                             >
                                 <span
                                     aria-hidden="true"
-                                    className="text-secondary-600 mt-0.5 shrink-0"
+                                    className="mt-0.5 shrink-0 text-secondary-600"
                                 >
                                     •
                                 </span>
@@ -261,7 +261,7 @@ export function OptionsAiAnalysis({
     // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생
     // 변수)를 인자로 받으므로 useMemo 뒤에 위치해야 한다. 다른 페이지
     // (overall/fundamental/news/chart) 모두 동일 패턴.
-    const chatState = useMemo(() => buildChatState(state), [state]);
+    const chatState = buildChatState(state);
     usePublishSymbolChat(chatState);
     useRegisterShareable({
         kind: 'options',
@@ -287,11 +287,11 @@ export function OptionsAiAnalysis({
         return (
             <section
                 aria-labelledby="options-ai-analysis-heading"
-                className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+                className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
             >
                 <h2
                     id="options-ai-analysis-heading"
-                    className="text-secondary-400 mb-3 text-xs tracking-widest uppercase"
+                    className="mb-3 text-xs tracking-widest text-secondary-400 uppercase"
                 >
                     AI 옵션 분석
                 </h2>

@@ -32,7 +32,7 @@ function MetricBar({ label, value, description, tooltip }: MetricBarProps) {
                     {tooltip !== undefined && (
                         <InfoTooltip>{tooltip}</InfoTooltip>
                     )}
-                    <span className="text-secondary-400 ml-1.5 text-xs">
+                    <span className="ml-1.5 text-xs text-secondary-400">
                         {description}
                     </span>
                 </div>
@@ -44,10 +44,10 @@ function MetricBar({ label, value, description, tooltip }: MetricBarProps) {
                 <div
                     role="presentation"
                     aria-hidden="true"
-                    className="bg-secondary-700 mt-1.5 h-1.5 w-full overflow-hidden rounded-full"
+                    className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-secondary-700"
                 >
                     <div
-                        className="bg-primary-600 h-full w-(--fill-pct) rounded-full transition-all"
+                        className="h-full w-(--fill-pct) rounded-full bg-primary-600 transition-[width]"
                         style={
                             {
                                 '--fill-pct': `${fillPct}%`,
@@ -74,12 +74,12 @@ export function ProfitabilityCard({ ratios }: ProfitabilityCardProps) {
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 수익성
             </h2>
-            <div className="divide-secondary-700/50 divide-y">
+            <div className="divide-y divide-secondary-700/50">
                 <MetricBar
                     label="ROE"
                     value={ratios.returnOnEquityTTM}

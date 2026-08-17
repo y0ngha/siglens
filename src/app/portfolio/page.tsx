@@ -85,18 +85,18 @@ export function PortfolioEmptyState() {
     return (
         <section
             data-testid="portfolio-empty-state"
-            className="border-secondary-700 bg-secondary-800/40 flex flex-col items-start gap-3 rounded-xl border p-6"
+            className="flex flex-col items-start gap-3 rounded-xl border border-secondary-700 bg-secondary-800/40 p-6"
         >
-            <p className="text-secondary-100 text-sm font-semibold">
+            <p className="text-sm font-semibold text-secondary-100">
                 아직 등록한 보유종목이 없어요
             </p>
-            <p className="text-secondary-400 text-sm leading-relaxed">
+            <p className="text-sm leading-relaxed text-secondary-400">
                 보유종목을 등록하면 최근 가격 범위 안에서 내 평단이 어디에
                 있는지 종목별 빌딩으로 확인할 수 있어요.
             </p>
             <Link
                 href="/onboarding"
-                className="border-primary-500 text-primary-300 hover:bg-primary-500/10 focus-visible:ring-primary-500 inline-flex min-h-11 touch-manipulation items-center rounded-lg border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                className="inline-flex min-h-11 touch-manipulation items-center rounded-lg border border-primary-500 px-4 text-sm font-medium text-primary-300 transition-colors hover:bg-primary-500/10 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
                 보유종목 등록해보기
             </Link>
@@ -111,12 +111,12 @@ export function PortfolioErrorState() {
     return (
         <section
             data-testid="portfolio-error-state"
-            className="border-secondary-700 bg-secondary-800/40 flex flex-col items-start gap-3 rounded-xl border p-6"
+            className="flex flex-col items-start gap-3 rounded-xl border border-secondary-700 bg-secondary-800/40 p-6"
         >
-            <p className="text-secondary-100 text-sm font-semibold">
+            <p className="text-sm font-semibold text-secondary-100">
                 포트폴리오를 불러오지 못했어요
             </p>
-            <p className="text-secondary-400 text-sm leading-relaxed">
+            <p className="text-sm leading-relaxed text-secondary-400">
                 잠시 후 다시 시도해 주세요.
             </p>
         </section>
@@ -127,7 +127,7 @@ function SkeletonCard() {
     return (
         <div
             aria-hidden="true"
-            className="bg-secondary-800/60 h-64 animate-pulse rounded-xl"
+            className="h-64 animate-pulse rounded-xl bg-secondary-800/60"
         />
     );
 }
@@ -152,13 +152,13 @@ function PortfolioSkeleton() {
 
 export default function PortfolioPage() {
     return (
-        <main className="bg-secondary-950 min-h-[calc(100dvh-3.5rem)] px-4 py-12">
+        <main className="min-h-[calc(100dvh-3.5rem)] bg-secondary-950 px-4 py-12">
             <div className="mx-auto w-full max-w-5xl space-y-6">
                 <header>
-                    <h1 className="text-secondary-50 text-2xl font-semibold">
+                    <h1 className="text-2xl font-semibold text-secondary-50">
                         내 포트폴리오 위치
                     </h1>
-                    <p className="text-secondary-400 mt-1 text-sm">
+                    <p className="mt-1 text-sm text-secondary-400">
                         보유종목별 최근 가격 범위에서 내 평단이 어디에 있는지
                         확인하세요.
                     </p>

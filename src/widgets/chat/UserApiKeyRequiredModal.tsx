@@ -51,19 +51,19 @@ export function UserApiKeyRequiredModal({
         : '회원가입하고 본인의 API 키를 등록하면 이 모델을 사용할 수 있어요.';
 
     return (
-        <div className="bg-secondary-950/80 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-secondary-950/80 p-4 backdrop-blur-sm">
             <div
                 ref={dialogRef}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="api-key-modal-title"
                 tabIndex={-1}
-                className="border-secondary-700 bg-secondary-800 w-full max-w-sm rounded-xl border shadow-2xl outline-none"
+                className="w-full max-w-sm rounded-xl border border-secondary-700 bg-secondary-800 shadow-2xl outline-none"
             >
-                <div className="border-secondary-700 flex items-center justify-between border-b px-5 py-4">
+                <div className="flex items-center justify-between border-b border-secondary-700 px-5 py-4">
                     <h2
                         id="api-key-modal-title"
-                        className="text-secondary-100 text-sm font-semibold"
+                        className="text-sm font-semibold text-secondary-100"
                     >
                         {PROVIDER_DISPLAY[provider]} API 키 등록이 필요해요
                     </h2>
@@ -71,14 +71,14 @@ export function UserApiKeyRequiredModal({
                         type="button"
                         onClick={onClose}
                         aria-label="닫기"
-                        className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 rounded p-1 transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                        className="rounded p-1 text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         ✕
                     </button>
                 </div>
 
                 <div className="flex flex-col gap-4 px-5 py-4">
-                    <p className="text-secondary-400 text-sm leading-relaxed">
+                    <p className="text-sm leading-relaxed text-secondary-400">
                         {bodyText}
                     </p>
 
@@ -86,7 +86,7 @@ export function UserApiKeyRequiredModal({
                         <Link
                             href={ctaHref}
                             onClick={onClose}
-                            className="bg-primary-600 hover:bg-primary-500 focus-visible:ring-primary-500 text-secondary-50 flex h-9 items-center justify-center rounded-lg px-4 text-sm font-medium transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                            className="flex h-9 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-medium text-secondary-50 transition-colors hover:bg-primary-500 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             {ctaLabel}
                         </Link>
@@ -94,7 +94,7 @@ export function UserApiKeyRequiredModal({
                         <button
                             type="button"
                             onClick={onSwitchToFree}
-                            className="text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 border-secondary-700 flex h-9 items-center justify-center rounded-lg border px-4 text-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                            className="flex h-9 items-center justify-center rounded-lg border border-secondary-700 px-4 text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             무료 모델로 계속하기
                         </button>

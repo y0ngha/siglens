@@ -59,10 +59,10 @@ export function AiSummarySkeleton({
             <div className="flex items-center gap-3">
                 <div
                     aria-hidden="true"
-                    className="border-primary-500 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent motion-reduce:animate-none"
+                    className="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent motion-reduce:animate-none"
                 />
                 <p
-                    className="text-secondary-400 text-sm"
+                    className="text-sm text-secondary-400"
                     aria-live="polite"
                     aria-atomic="true"
                 >
@@ -73,7 +73,7 @@ export function AiSummarySkeleton({
                 {[...Array(SKELETON_LINE_COUNT)].map((_, i) => (
                     <div
                         key={`skeleton-line-${i}`}
-                        className="bg-secondary-700 h-4 w-(--skeleton-w) animate-pulse rounded motion-reduce:animate-none"
+                        className="h-4 w-(--skeleton-w) animate-pulse rounded bg-secondary-700 motion-reduce:animate-none"
                         style={
                             {
                                 '--skeleton-w': `${SKELETON_WIDTH_START_PCT - i * SKELETON_WIDTH_STEP_PCT}%`,

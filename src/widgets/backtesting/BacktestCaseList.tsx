@@ -18,32 +18,35 @@ interface MonthGroup {
 export function BacktestCaseList({ cases }: BacktestCaseListProps) {
     if (cases.length === 0) {
         return (
-            <p className="text-secondary-500 py-10 text-center text-sm">
+            <p className="py-10 text-center text-sm text-secondary-500">
                 해당 종목의 케이스가 없습니다.
             </p>
         );
     }
 
-    const groups = cases.reduce<MonthGroup[]>((acc, c) => {
+    // 케이스마다 배열을 복제하지 않고 마지막 그룹에 밀어 넣는다(O(n)).
+    const groups: MonthGroup[] = [];
+    for (const c of cases) {
         const label = getMonthLabel(c.entryDate);
-        const last = acc[acc.length - 1];
+        const last = groups[groups.length - 1];
         if (!last || last.label !== label) {
-            return [...acc, { label, items: [c] }];
+            groups.push({ label, items: [c] });
+        } else {
+            last.items.push(c);
         }
-        return [...acc.slice(0, -1), { label, items: [...last.items, c] }];
-    }, []);
+    }
 
     return (
         <div className="flex flex-col gap-2 px-4 pb-6">
             {groups.map(group => (
                 <div key={group.label}>
-                    <div className="text-secondary-600 pt-3 pb-1 text-[10px] tracking-widest uppercase">
+                    <div className="pt-3 pb-1 text-[10px] tracking-widest text-secondary-600 uppercase">
                         {group.label}
                     </div>
                     <div className="flex flex-col gap-2">
-                        {group.items.map((c, i) => (
+                        {group.items.map(c => (
                             <BacktestCaseCard
-                                key={`${c.ticker}-${c.entryDate}-${i}`}
+                                key={`${c.ticker}-${c.entryDate}`}
                                 case_={c}
                             />
                         ))}

@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type {
     MacroBriefingResponse,
@@ -81,17 +80,13 @@ export function useMacroBriefing(
         staleTime: Infinity,
     });
 
-    const refetch = useCallback(() => {
+    const refetch = () => {
         void queryRefetch();
-    }, [queryRefetch]);
+    };
 
-    const seedInput = useMemo<SeedMacroBriefingCached | undefined>(
-        () =>
-            peekSeed
-                ? { status: 'cached', briefing: peekSeed, generatedAt: null }
-                : undefined,
-        [peekSeed]
-    );
+    const seedInput: SeedMacroBriefingCached | undefined = peekSeed
+        ? { status: 'cached', briefing: peekSeed, generatedAt: null }
+        : undefined;
 
     // 스트림이 error 이벤트로 끝나면 `runAnalysisStream`이 throw하므로 data가 없다 —
     // 이때 그냥 떨어지면 스켈레톤이 영원히 남는다. 단 seed가 있으면 seed가 이긴다 —

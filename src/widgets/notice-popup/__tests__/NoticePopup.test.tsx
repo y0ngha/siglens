@@ -156,7 +156,7 @@ describe('NoticePopup', () => {
             JSON.parse(
                 localStorage.getItem(DISMISSED_NOTICES_STORAGE_KEY) ?? '[]'
             )
-        ).toEqual(['n1']);
+        ).toEqual({ v: 1, ids: ['n1'] });
     });
 
     it('마지막 공지를 닫으면 모달이 사라진다', async () => {
@@ -229,6 +229,6 @@ describe('NoticePopup', () => {
             JSON.parse(
                 localStorage.getItem(DISMISSED_NOTICES_STORAGE_KEY) ?? '[]'
             )
-        ).toEqual(['dismiss-guard']);
+        ).toEqual({ v: 1, ids: ['dismiss-guard'] });
     });
 });

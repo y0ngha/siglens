@@ -138,28 +138,25 @@ function buildKeyLevelsBlock(
 function buildEvidenceBlock(analysis: AnalysisResponse): string | null {
     const lines: string[] = [];
 
-    const indicatorLines = (analysis.indicatorResults ?? [])
-        .flatMap(result =>
-            result.signals.map(signal => ({
-                title: result.indicatorName,
-                body: signal.description,
-            }))
-        )
-        .filter(item => item.title !== '')
-        .map(
-            item =>
-                `- ${item.title}\n  - ${normalizeWhitespace(item.body).replace(/\*/g, '')}`
-        );
+    const indicatorLines = (analysis.indicatorResults ?? []).flatMap(result =>
+        result.indicatorName === ''
+            ? []
+            : result.signals.map(
+                  signal =>
+                      `- ${result.indicatorName}\n  - ${normalizeWhitespace(signal.description).replace(/\*/g, '')}`
+              )
+    );
     lines.push(...indicatorLines);
 
-    const patternLines = (analysis.patternSummaries ?? [])
-        .filter(pattern => pattern.detected)
-        .map(
-            pattern =>
-                `- ${pattern.skillName}\n  - ${normalizeWhitespace(
-                    pattern.summary
-                ).replace(/\*/g, '')}`
-        );
+    const patternLines = (analysis.patternSummaries ?? []).flatMap(pattern =>
+        pattern.detected
+            ? [
+                  `- ${pattern.skillName}\n  - ${normalizeWhitespace(
+                      pattern.summary
+                  ).replace(/\*/g, '')}`,
+              ]
+            : []
+    );
     lines.push(...patternLines);
 
     const strategyLines = (analysis.strategyResults ?? []).map(

@@ -34,7 +34,7 @@ export function SignalStockCard({ data }: SignalStockCardProps) {
                 {data.signals.length > 0 && (
                     <div className="flex flex-wrap gap-x-1.5 gap-y-0.5 pt-1">
                         {data.signals.map((s, i) => (
-                            <span key={`${s.type}-${i}`} className="contents">
+                            <span key={s.type} className="contents">
                                 {i > 0 && (
                                     <span
                                         className="text-secondary-600"
@@ -49,7 +49,7 @@ export function SignalStockCard({ data }: SignalStockCardProps) {
                     </div>
                 )}
                 {data.conflict && (
-                    <p className="text-secondary-500 mt-1 text-xs">
+                    <p className="mt-1 text-xs text-secondary-500">
                         상승 {data.conflict.bullishCount}건 / 하락{' '}
                         {data.conflict.bearishCount}건 감지
                     </p>

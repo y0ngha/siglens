@@ -13,11 +13,11 @@ export function AuthFormSkeleton({ rows = 2 }: AuthFormSkeletonProps) {
         <div className="space-y-4" aria-hidden="true">
             {Array.from({ length: rows }).map((_, i) => (
                 <div key={i} className="space-y-2">
-                    <div className="bg-secondary-800 h-3 w-20 rounded motion-safe:animate-pulse" />
-                    <div className="bg-secondary-800 h-10 w-full rounded-md motion-safe:animate-pulse" />
+                    <div className="h-3 w-20 rounded bg-secondary-800 motion-safe:animate-pulse" />
+                    <div className="h-10 w-full rounded-md bg-secondary-800 motion-safe:animate-pulse" />
                 </div>
             ))}
-            <div className="bg-secondary-800 h-10 w-full rounded-md motion-safe:animate-pulse" />
+            <div className="h-10 w-full rounded-md bg-secondary-800 motion-safe:animate-pulse" />
         </div>
     );
 }

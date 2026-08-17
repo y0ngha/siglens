@@ -81,12 +81,11 @@ async function fetchSnapshot(
  * 캐시는 더 엄격한 quorum(지표 6/9 + treasury or calendar)을 요구한다.
  * 8개 지표 실패처럼 "비어있지 않지만 거의 비어있는" 스냅샷이 24h 고정되는 것을 막기 위함.
  */
-export const getEconomySnapshot = cache(
-    (): Promise<EconomySnapshot> =>
-        getOrSetCache(
-            CACHE_KEY,
-            SECONDS_PER_DAY,
-            () => fetchSnapshot(getEconomyProvider()),
-            shouldCacheEconomySnapshot
-        )
+export const getEconomySnapshot = cache((): Promise<EconomySnapshot> =>
+    getOrSetCache(
+        CACHE_KEY,
+        SECONDS_PER_DAY,
+        () => fetchSnapshot(getEconomyProvider()),
+        shouldCacheEconomySnapshot
+    )
 );

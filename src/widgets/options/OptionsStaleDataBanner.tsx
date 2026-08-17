@@ -50,10 +50,10 @@ export function OptionsStaleDataBanner() {
     return (
         <div
             role="status"
-            className="border-ui-warning bg-ui-warning/10 text-ui-warning rounded-lg border px-3 py-2 text-xs leading-relaxed"
+            className="rounded-lg border border-ui-warning bg-ui-warning/10 px-3 py-2 text-xs leading-relaxed text-ui-warning"
         >
             <p className="font-semibold">옵션 OI 데이터가 비어 있어요</p>
-            <div className="text-ui-warning/90 mt-1 space-y-1">
+            <div className="mt-1 space-y-1 text-ui-warning/90">
                 <p>
                     미국 정규장 마감 후에는 Yahoo가 Open Interest, 호가, IV 같은
                     수치를 갱신하지 않아 일시적으로 공백이에요.

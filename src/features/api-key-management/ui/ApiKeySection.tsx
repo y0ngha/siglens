@@ -6,7 +6,7 @@ import type { ApiKeyActionState } from '@/entities/api-key';
 import { LLM_PROVIDER_VALUES, type LlmProvider } from '@/entities/api-key';
 import { cn } from '@/shared/lib/cn';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useFormStatus } from 'react-dom';
 
 const PROVIDER_PLACEHOLDERS: Record<LlmProvider, string> = {
@@ -94,18 +94,18 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
     const deleteStatusId = `api-key-delete-status-${provider}`;
 
     return (
-        <div className="ring-secondary-800 bg-secondary-900/60 rounded-xl p-4 ring-1">
+        <div className="rounded-xl bg-secondary-900/60 p-4 ring-1 ring-secondary-800">
             <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                    <span className="text-secondary-100 text-sm font-semibold">
+                    <span className="text-sm font-semibold text-secondary-100">
                         {LLM_PROVIDER_LABELS[provider]}
                     </span>
                     {isRegistered ? (
-                        <span className="bg-ui-success/10 text-ui-success ring-ui-success/30 rounded-full px-2 py-0.5 text-xs ring-1">
+                        <span className="rounded-full bg-ui-success/10 px-2 py-0.5 text-xs text-ui-success ring-1 ring-ui-success/30">
                             등록됨
                         </span>
                     ) : (
-                        <span className="bg-secondary-800 text-secondary-400 rounded-full px-2 py-0.5 text-xs">
+                        <span className="rounded-full bg-secondary-800 px-2 py-0.5 text-xs text-secondary-400">
                             미등록
                         </span>
                     )}
@@ -115,7 +115,7 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                         <button
                             type="button"
                             onClick={() => setEditMode(true)}
-                            className="border-secondary-700 text-secondary-300 hover:bg-secondary-800 focus-visible:ring-primary-500 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                            className="rounded-md border border-secondary-700 px-3 py-1.5 text-xs font-medium text-secondary-300 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             재등록
                         </button>
@@ -129,7 +129,7 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                                 label="삭제"
                                 pendingLabel="삭제 중…"
                                 aria-describedby={deleteStatusId}
-                                className="text-ui-danger border-ui-danger/40 hover:bg-ui-danger/10 focus-visible:ring-ui-danger inline-flex h-7 items-center justify-center rounded-md border px-3 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
+                                className="inline-flex h-7 items-center justify-center rounded-md border border-ui-danger/40 px-3 text-xs font-medium text-ui-danger transition-colors hover:bg-ui-danger/10 focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none disabled:opacity-50"
                             />
                         </form>
                     </div>
@@ -152,13 +152,13 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                     <SubmitButton
                         label="저장"
                         pendingLabel="저장 중…"
-                        className="border-secondary-700 text-secondary-200 hover:bg-secondary-800 focus-visible:ring-primary-500 inline-flex h-10 shrink-0 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
+                        className="inline-flex h-10 shrink-0 items-center justify-center rounded-md border border-secondary-700 px-4 text-sm font-medium text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none disabled:opacity-50"
                     />
                     {isRegistered && (
                         <button
                             type="button"
                             onClick={() => setEditMode(false)}
-                            className="text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 inline-flex h-10 shrink-0 items-center justify-center px-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                            className="inline-flex h-10 shrink-0 items-center justify-center px-2 text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             취소
                         </button>
@@ -190,18 +190,15 @@ interface ApiKeySectionProps {
 }
 
 export function ApiKeySection({ registeredProviders }: ApiKeySectionProps) {
-    const registeredSet = useMemo(
-        () => new Set(registeredProviders),
-        [registeredProviders]
-    );
+    const registeredSet = new Set(registeredProviders);
 
     return (
         <div className="space-y-4">
             <div>
-                <h2 className="text-secondary-100 text-lg font-semibold">
+                <h2 className="text-lg font-semibold text-secondary-100">
                     AI 모델 API 키
                 </h2>
-                <p className="text-secondary-400 mt-1 text-sm">
+                <p className="mt-1 text-sm text-secondary-400">
                     등록한 키는 계정에만 저장되며 안전한 방식으로 암호화됩니다.
                 </p>
             </div>

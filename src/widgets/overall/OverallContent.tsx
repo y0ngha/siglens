@@ -15,7 +15,7 @@ import {
 } from '@/features/symbol-model';
 import { cn } from '@/shared/lib/cn';
 import { type OverallAnalysisResponse } from '@y0ngha/siglens-core';
-import { type CSSProperties, useMemo } from 'react';
+import { type CSSProperties } from 'react';
 import { useTimeframeFromUrl } from './hooks/useTimeframeFromUrl';
 import type { AssetClass } from '@/shared/config/marketProfile';
 import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
@@ -85,10 +85,7 @@ export function OverallContent({
     );
 
     // usePublishSymbolChat은 chatState(useMemo 반환값)를 인자로 받으므로 useMemo 뒤에 둔다(§17 의존 순서).
-    const chatState = useMemo(
-        () => buildChatState(state, timeframe),
-        [state, timeframe]
-    );
+    const chatState = buildChatState(state, timeframe);
     usePublishSymbolChat(chatState);
     useRegisterShareable({
         kind: 'overall',
@@ -112,7 +109,7 @@ export function OverallContent({
             <section
                 aria-labelledby="overall-cta-poll-error-heading"
                 role="alert"
-                className="border-ui-danger/30 bg-secondary-800 rounded-xl border p-6 text-center"
+                className="rounded-xl border border-ui-danger/30 bg-secondary-800 p-6 text-center"
             >
                 <h2
                     id="overall-cta-poll-error-heading"
@@ -120,13 +117,13 @@ export function OverallContent({
                 >
                     AI 종합 분석
                 </h2>
-                <p className="text-ui-danger text-sm">
+                <p className="text-sm text-ui-danger">
                     뉴스 카드 분석 준비 중 오류가 발생했어요.
                 </p>
                 <button
                     type="button"
                     onClick={() => window.location.reload()}
-                    className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-800 mt-4 inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    className="mt-4 inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
                 >
                     다시 시도
                 </button>
@@ -156,7 +153,7 @@ export function OverallContent({
             <section
                 aria-labelledby="overall-loading-heading"
                 aria-busy="true"
-                className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+                className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
             >
                 <h2
                     id="overall-loading-heading"
@@ -167,10 +164,10 @@ export function OverallContent({
                 <div className="flex items-center gap-3">
                     <div
                         aria-hidden="true"
-                        className="border-primary-500 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent motion-reduce:animate-none"
+                        className="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent motion-reduce:animate-none"
                     />
                     <p
-                        className="text-secondary-400 text-sm"
+                        className="text-sm text-secondary-400"
                         aria-live="polite"
                         aria-atomic="true"
                     >
@@ -202,7 +199,7 @@ export function OverallContent({
         return (
             <section
                 aria-labelledby="overall-error-heading"
-                className="border-ui-danger/30 bg-secondary-800 rounded-xl border p-6"
+                className="rounded-xl border border-ui-danger/30 bg-secondary-800 p-6"
             >
                 <h2
                     id="overall-error-heading"
@@ -210,14 +207,14 @@ export function OverallContent({
                 >
                     AI 종합 분석
                 </h2>
-                <p className="text-ui-danger text-sm" role="alert">
+                <p className="text-sm text-ui-danger" role="alert">
                     {state.error ?? '분석 중 오류가 발생했습니다.'}
                     {state.axis !== undefined ? ` (${state.axis} 축 실패)` : ''}
                 </p>
                 <button
                     type="button"
                     onClick={trigger}
-                    className="text-primary-400 focus-visible:ring-primary-500 mt-3 rounded-sm text-sm underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    className="mt-3 rounded-sm text-sm text-primary-400 underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
                     다시 시도
                 </button>

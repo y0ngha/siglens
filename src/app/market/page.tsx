@@ -118,16 +118,17 @@ export async function MarketContent(): Promise<ReactElement> {
     // 외부 I/O(FMP/Redis) 오류는 graceful 처리 — 빈 캐시 동결 방지를 위해 throw 대신
     // empty safe default로 폴백한다. MarketSummaryPanel / SectorSignalPanel은
     // 빈 indices/sectors/stocks 배열을 정상적으로 렌더한다(non-empty degraded view).
-    const summary = await getMarketSummaryStatic().catch(e => {
-        console.error('[MarketContent] getMarketSummaryStatic failed:', e);
-        return { indices: [], sectors: [] };
-    });
-    const sectorData = await getSectorSignalsStatic(
-        DEFAULT_DASHBOARD_TIMEFRAME
-    ).catch(e => {
-        console.error('[MarketContent] getSectorSignalsStatic failed:', e);
-        return { computedAt: dateHour, stocks: [] };
-    });
+    // 두 fetch는 서로 독립이므로 병렬로 기다린다(직렬이면 TTFB에 두 지연이 더해진다).
+    const [summary, sectorData] = await Promise.all([
+        getMarketSummaryStatic().catch(e => {
+            console.error('[MarketContent] getMarketSummaryStatic failed:', e);
+            return { indices: [], sectors: [] };
+        }),
+        getSectorSignalsStatic(DEFAULT_DASHBOARD_TIMEFRAME).catch(e => {
+            console.error('[MarketContent] getSectorSignalsStatic failed:', e);
+            return { computedAt: dateHour, stocks: [] };
+        }),
+    ]);
     // peekBriefingStatic is read-only — null on cache miss (client will trigger submit)
     const peekSeed = await peekBriefingStatic(summary, dateHour).catch(
         () => null
@@ -235,7 +236,7 @@ export default function MarketPage() {
                 패턴으로 회귀했었던 이력 — sibling 페이지(/[symbol]/*) 6개와의
                 일관성을 맞춰 둔다. */}
             <main className="flex-1">
-                <h1 className="text-secondary-100 px-6 pt-10 text-2xl font-bold tracking-tight text-balance sm:text-3xl lg:px-[15vw]">
+                <h1 className="px-6 pt-10 text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl lg:px-[15vw]">
                     {MARKET_TITLE}
                 </h1>
                 <Suspense

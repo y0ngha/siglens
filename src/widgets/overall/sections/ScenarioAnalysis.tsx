@@ -27,7 +27,7 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
     return (
         <section
             aria-labelledby="scenario-analysis-heading"
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2
                 id="scenario-analysis-heading"
@@ -39,7 +39,7 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
                 {scenarios.map(scenario => (
                     <li
                         key={scenario.name}
-                        className="bg-secondary-800/40 rounded-lg p-4"
+                        className="rounded-lg bg-secondary-800/40 p-4"
                     >
                         <div className="mb-2 flex items-center gap-2">
                             <span
@@ -52,7 +52,7 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
                             </span>
                         </div>
                         <div className="mb-1.5 text-sm">
-                            <p className="text-secondary-100 mb-0.5 font-medium">
+                            <p className="mb-0.5 font-medium text-secondary-100">
                                 트리거 조건
                             </p>
                             <MarkdownText className="text-secondary-400">
@@ -60,7 +60,7 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
                             </MarkdownText>
                         </div>
                         <div className="text-sm">
-                            <p className="text-secondary-100 mb-0.5 font-medium">
+                            <p className="mb-0.5 font-medium text-secondary-100">
                                 예상 가격대
                             </p>
                             <MarkdownText className="text-secondary-400">

@@ -29,7 +29,7 @@ export function CongressTrendSummaryView({
     return (
         <section
             aria-labelledby="congress-trend-summary-heading"
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <div className="mb-4 flex items-center justify-between gap-3">
                 <h2
@@ -50,7 +50,7 @@ export function CongressTrendSummaryView({
                 </span>
             </div>
 
-            <p className="text-secondary-400 mb-5 text-sm leading-relaxed">
+            <p className="mb-5 text-sm leading-relaxed text-secondary-400">
                 {result.summaryKo}
             </p>
 
@@ -61,7 +61,7 @@ export function CongressTrendSummaryView({
                         {result.notableMembersKo.map((member, i) => (
                             <li
                                 key={`member-${i}-${member}`}
-                                className="text-secondary-400 flex gap-2 text-sm"
+                                className="flex gap-2 text-sm text-secondary-400"
                             >
                                 <span
                                     aria-hidden="true"
@@ -79,7 +79,7 @@ export function CongressTrendSummaryView({
             {result.riskNoteKo.trim().length > 0 && (
                 <div>
                     <h3 className="mb-2 text-sm font-semibold">참고 사항</h3>
-                    <p className="text-secondary-400 text-sm leading-relaxed">
+                    <p className="text-sm leading-relaxed text-secondary-400">
                         {result.riskNoteKo}
                     </p>
                 </div>

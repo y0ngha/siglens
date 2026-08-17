@@ -20,13 +20,13 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
 
             {recentSearches.length > 0 && (
                 <div className="mt-4 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
-                    <span className="text-secondary-500 text-xs">
+                    <span className="text-xs text-secondary-500">
                         최근 검색
                     </span>
                     {recentSearches.map(ticker => (
                         <span
                             key={ticker}
-                            className="border-primary-600/30 bg-primary-600/5 text-secondary-200 hover:border-primary-500/60 hover:text-primary-300 inline-flex touch-manipulation items-center gap-1 rounded-full border pr-1 pl-3 text-xs transition-colors"
+                            className="inline-flex touch-manipulation items-center gap-1 rounded-full border border-primary-600/30 bg-primary-600/5 pr-1 pl-3 text-xs text-secondary-200 transition-colors hover:border-primary-500/60 hover:text-primary-300"
                         >
                             {/*
                                 a11y target-size: WCAG 2.5.8 requires interactive
@@ -40,7 +40,7 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                                 // 최근 검색 목록으로 다수 렌더 —
                                 // docs/architecture/CDN_CACHING.md §1
                                 prefetch={false}
-                                className="focus-visible:ring-primary-500 inline-flex min-h-6 items-center rounded py-1.5 focus-visible:ring-1 focus-visible:outline-none"
+                                className="inline-flex min-h-6 items-center rounded py-1.5 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
                                 {ticker}
                             </Link>
@@ -48,7 +48,7 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                                 type="button"
                                 aria-label={`${ticker} 최근 검색에서 제거`}
                                 onClick={() => removeSearch(ticker)}
-                                className="text-secondary-500 hover:text-secondary-100 focus-visible:ring-primary-500 inline-flex h-6 w-6 items-center justify-center rounded-full leading-none focus-visible:ring-1 focus-visible:outline-none"
+                                className="inline-flex h-6 w-6 items-center justify-center rounded-full leading-none text-secondary-500 hover:text-secondary-100 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
                                 ✕
                             </button>
@@ -57,7 +57,7 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                     <button
                         type="button"
                         onClick={clearAll}
-                        className="text-secondary-500 hover:text-secondary-300 ml-1 text-xs underline-offset-2 hover:underline"
+                        className="ml-1 text-xs text-secondary-500 underline-offset-2 hover:text-secondary-300 hover:underline"
                     >
                         모두 지우기
                     </button>

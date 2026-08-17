@@ -29,7 +29,7 @@ function GrowthBar({ label, value, description }: GrowthBarProps) {
             <div className="mb-2 flex items-baseline justify-between gap-2">
                 <div>
                     <span className="text-sm font-medium">{label}</span>
-                    <span className="text-secondary-400 ml-1.5 text-xs">
+                    <span className="ml-1.5 text-xs text-secondary-400">
                         {description}
                     </span>
                 </div>
@@ -105,15 +105,15 @@ export function GrowthChart({ growth }: GrowthChartProps) {
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 성장성
             </h2>
-            <p className="text-secondary-400 mb-4 text-xs">
+            <p className="mb-4 text-xs text-secondary-400">
                 전년 동기 대비(YoY) 성장률
             </p>
-            <div className="divide-secondary-700/50 divide-y">
+            <div className="divide-y divide-secondary-700/50">
                 <GrowthBar
                     label="매출 성장률"
                     value={growth.growthRevenue}

@@ -1,7 +1,7 @@
 'use client';
 
 import type React from 'react';
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/shared/lib/cn';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
@@ -313,16 +313,12 @@ export function PositionBuilding({
     // 재계산을 막기 위해 useMemo로 감싼다(MISTAKES #10 — props/state 파생
     // 배열/객체는 useMemo). model.bands.length는 이미 model에 포함돼 있으므로
     // deps는 model만으로 충분하다(별도 bandCount 파생값을 deps에 얹지 않는다).
-    const floorTooltips = useMemo(
-        () =>
-            buildFloorTooltips(
-                model,
-                volumeByBand,
-                low52w,
-                high52w,
-                model.bands.length
-            ),
-        [model, volumeByBand, low52w, high52w]
+    const floorTooltips = buildFloorTooltips(
+        model,
+        volumeByBand,
+        low52w,
+        high52w,
+        model.bands.length
     );
 
     // model.bands.length는 volumeByBand 인덱싱(아래)과 describeAvgFloor 둘 다에
@@ -419,7 +415,7 @@ export function PositionBuilding({
                     x={CENTER_X}
                     y={HIGH_LABEL_Y}
                     textAnchor="middle"
-                    className="text-secondary-400 fill-current text-[10px] font-medium tabular-nums"
+                    className="fill-current text-[10px] font-medium text-secondary-400 tabular-nums"
                 >
                     {formatUsdCompactForSvgLabel(high52w)}
                 </text>
@@ -427,7 +423,7 @@ export function PositionBuilding({
                     x={CENTER_X}
                     y={LOW_LABEL_Y}
                     textAnchor="middle"
-                    className="text-secondary-400 fill-current text-[10px] font-medium tabular-nums"
+                    className="fill-current text-[10px] font-medium text-secondary-400 tabular-nums"
                 >
                     {formatUsdCompactForSvgLabel(low52w)}
                 </text>
@@ -551,7 +547,7 @@ export function PositionBuilding({
                                         fill="none"
                                         stroke="currentColor"
                                         strokeWidth={1.5}
-                                        className="text-primary-400 pointer-events-none"
+                                        className="pointer-events-none text-primary-400"
                                         aria-hidden="true"
                                     />
                                     <polygon
@@ -559,7 +555,7 @@ export function PositionBuilding({
                                         fill="none"
                                         stroke="currentColor"
                                         strokeWidth={1.5}
-                                        className="text-primary-400 pointer-events-none"
+                                        className="pointer-events-none text-primary-400"
                                         aria-hidden="true"
                                     />
                                 </>
@@ -722,7 +718,7 @@ export function PositionBuilding({
                 <p
                     data-testid="floor-volume-readout"
                     aria-hidden="true"
-                    className="text-secondary-300 min-h-[1rem] text-center text-xs tabular-nums"
+                    className="min-h-[1rem] text-center text-xs text-secondary-300 tabular-nums"
                 >
                     {activeFloorTooltipText ?? ' '}
                 </p>
@@ -781,10 +777,10 @@ export function PositionBuilding({
                             } as React.CSSProperties
                         }
                     >
-                        <p className="text-secondary-100 font-medium tabular-nums">
+                        <p className="font-medium text-secondary-100 tabular-nums">
                             {activeFloorTooltipContent.main}
                         </p>
-                        <p className="text-secondary-400 mt-0.5 text-[10px]">
+                        <p className="mt-0.5 text-[10px] text-secondary-400">
                             {activeFloorTooltipContent.qualifier}
                         </p>
                     </div>,

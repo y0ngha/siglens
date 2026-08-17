@@ -104,9 +104,9 @@ function convertEasternLocalToUtcMs(localUtcMs: number): number {
 function getEasternOffsetMs(utcMs: number): number {
     const parts = FMP_NEWS_TIME_FORMATTER.formatToParts(new Date(utcMs));
     const values = Object.fromEntries(
-        parts
-            .filter(part => part.type !== 'literal')
-            .map(part => [part.type, part.value])
+        parts.flatMap(part =>
+            part.type === 'literal' ? [] : [[part.type, part.value]]
+        )
     );
 
     const easternAsUtcMs = Date.UTC(

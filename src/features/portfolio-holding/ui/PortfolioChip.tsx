@@ -66,7 +66,7 @@ export function PortfolioChip({ symbol }: PortfolioChipProps) {
     if (isLoading) {
         return (
             <span
-                className="bg-secondary-700/40 inline-flex min-h-11 w-24 animate-pulse rounded-lg"
+                className="inline-flex min-h-11 w-24 animate-pulse rounded-lg bg-secondary-700/40"
                 aria-hidden="true"
             />
         );

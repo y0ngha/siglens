@@ -142,11 +142,11 @@ export function StrikeVolumeChart({
         // paragraph로 떨어지면 셀 높이/시각 무게가 어긋난다. 텍스트 스타일도
         // OI 차트 빈 상태와 통일(`text-xs leading-relaxed`).
         return (
-            <div className="border-secondary-700 bg-secondary-800 space-y-2 rounded-xl border p-4">
-                <span className="text-secondary-300 text-sm font-medium">
+            <div className="space-y-2 rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+                <span className="text-sm font-medium text-secondary-300">
                     Volume 분포 (Strike별)
                 </span>
-                <p className="text-secondary-500 text-xs leading-relaxed">
+                <p className="text-xs leading-relaxed text-secondary-500">
                     이 만기에는 거래량 데이터가 없어요.
                 </p>
             </div>
@@ -175,9 +175,9 @@ export function StrikeVolumeChart({
     return (
         <div
             ref={containerRef}
-            className="border-secondary-700 bg-secondary-800 relative space-y-2 rounded-xl border p-4"
+            className="relative space-y-2 rounded-xl border border-secondary-700 bg-secondary-800 p-4"
         >
-            <span className="text-secondary-300 text-sm font-medium">
+            <span className="text-sm font-medium text-secondary-300">
                 Volume 분포 (Strike별)
             </span>
 
@@ -339,7 +339,7 @@ export function StrikeVolumeChart({
             >
                 {hoveredRow !== null && (
                     <>
-                        <div className="text-secondary-300 mb-1 font-semibold tabular-nums">
+                        <div className="mb-1 font-semibold text-secondary-300 tabular-nums">
                             Strike ${hoveredRow.strike.toLocaleString()}
                         </div>
                         <div className="flex items-center justify-between gap-3">
@@ -354,7 +354,7 @@ export function StrikeVolumeChart({
                                 {hoveredRow.putVolume.toLocaleString()} 계약
                             </span>
                         </div>
-                        <div className="border-secondary-700 mt-1 flex items-center justify-between gap-3 border-t pt-1">
+                        <div className="mt-1 flex items-center justify-between gap-3 border-t border-secondary-700 pt-1">
                             <span className="text-secondary-400">합계</span>
                             <span className="font-semibold tabular-nums">
                                 {(
@@ -367,10 +367,10 @@ export function StrikeVolumeChart({
                 )}
             </StrikeBarTooltip>
 
-            <div className="text-secondary-500 mt-2 flex flex-wrap items-center gap-3 text-[10px]">
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px] text-secondary-500">
                 <span className="flex items-center gap-1">
                     <span
-                        className="bg-chart-bullish inline-block h-2.5 w-2.5 rounded-sm"
+                        className="inline-block h-2.5 w-2.5 rounded-sm bg-chart-bullish"
                         aria-hidden="true"
                     />
                     Call Vol
@@ -378,7 +378,7 @@ export function StrikeVolumeChart({
                 </span>
                 <span className="flex items-center gap-1">
                     <span
-                        className="bg-chart-bearish inline-block h-2.5 w-2.5 rounded-sm"
+                        className="inline-block h-2.5 w-2.5 rounded-sm bg-chart-bearish"
                         aria-hidden="true"
                     />
                     Put Vol
@@ -386,7 +386,7 @@ export function StrikeVolumeChart({
                 </span>
                 <span className="flex items-center gap-1">
                     <span
-                        className="border-ui-warning inline-block w-[14px] border-t-[1.5px] border-solid"
+                        className="inline-block w-[14px] border-t-[1.5px] border-solid border-ui-warning"
                         aria-hidden="true"
                     />
                     현재가

@@ -43,6 +43,50 @@ describe('noticeStorage', () => {
             expect(loadDismissedNoticeIds()).toEqual([]);
         });
 
+        it('버전 없는 레거시 배열 포맷도 계속 읽는다', () => {
+            localStorage.setItem(
+                DISMISSED_NOTICES_STORAGE_KEY,
+                JSON.stringify(['legacy-a', 'legacy-b'])
+            );
+            expect(loadDismissedNoticeIds()).toEqual(['legacy-a', 'legacy-b']);
+        });
+
+        it('구 키(siglens_dismissed_notices)에 저장된 값도 읽는다', () => {
+            localStorage.setItem(
+                'siglens_dismissed_notices',
+                JSON.stringify(['old-1'])
+            );
+            expect(loadDismissedNoticeIds()).toEqual(['old-1']);
+        });
+
+        it('새 키가 있으면 구 키는 무시한다', () => {
+            localStorage.setItem(
+                'siglens_dismissed_notices',
+                JSON.stringify(['old-1'])
+            );
+            localStorage.setItem(
+                DISMISSED_NOTICES_STORAGE_KEY,
+                JSON.stringify({ v: 1, ids: ['new-1'] })
+            );
+            expect(loadDismissedNoticeIds()).toEqual(['new-1']);
+        });
+
+        it('버전 필드가 있는 현재 포맷을 읽는다', () => {
+            localStorage.setItem(
+                DISMISSED_NOTICES_STORAGE_KEY,
+                JSON.stringify({ v: 1, ids: ['a'] })
+            );
+            expect(loadDismissedNoticeIds()).toEqual(['a']);
+        });
+
+        it('모르는 버전은 폐기하고 빈 배열을 반환한다', () => {
+            localStorage.setItem(
+                DISMISSED_NOTICES_STORAGE_KEY,
+                JSON.stringify({ v: 99, ids: ['a'] })
+            );
+            expect(loadDismissedNoticeIds()).toEqual([]);
+        });
+
         it('문자열이 아닌 원소는 걸러낸다', () => {
             localStorage.setItem(
                 DISMISSED_NOTICES_STORAGE_KEY,

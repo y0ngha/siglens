@@ -10,7 +10,7 @@ export function CongressTrendSummaryEmpty() {
     return (
         <section
             aria-labelledby="congress-trend-summary-empty-heading"
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2
                 id="congress-trend-summary-empty-heading"
@@ -18,7 +18,7 @@ export function CongressTrendSummaryEmpty() {
             >
                 AI 동향 해석
             </h2>
-            <p className="text-secondary-400 text-sm leading-relaxed">
+            <p className="text-sm leading-relaxed text-secondary-400">
                 최근 의회 거래가 없어 동향 해석을 생성하지 않았어요.
             </p>
         </section>

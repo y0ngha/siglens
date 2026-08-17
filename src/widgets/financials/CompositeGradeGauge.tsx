@@ -158,7 +158,7 @@ export function CompositeGradeGauge({
                             y={ly}
                             textAnchor={tickTextAnchor(value)}
                             dominantBaseline="middle"
-                            className="text-secondary-400 fill-current text-[10px] font-medium tabular-nums"
+                            className="fill-current text-[10px] font-medium text-secondary-400 tabular-nums"
                         >
                             {value}
                         </text>
@@ -179,11 +179,11 @@ export function CompositeGradeGauge({
             </svg>
             <div className="text-center">
                 <div className="flex items-baseline justify-center gap-1.5">
-                    <span className="text-secondary-100 font-mono text-5xl font-bold tabular-nums">
+                    <span className="font-mono text-5xl font-bold text-secondary-100 tabular-nums">
                         {score !== null ? score : '—'}
                     </span>
                     {score !== null && (
-                        <span className="text-secondary-400 text-xs">
+                        <span className="text-xs text-secondary-400">
                             / 100
                         </span>
                     )}
@@ -196,7 +196,7 @@ export function CompositeGradeGauge({
                 >
                     {grade}
                 </div>
-                <div className="text-secondary-300 mt-1 text-sm">
+                <div className="mt-1 text-sm text-secondary-300">
                     {summaryKo}
                 </div>
             </div>

@@ -233,7 +233,7 @@ export default async function CategoryNewsPage({ params }: Props) {
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 {/* Always rendered even on the degrade path so a failed category is never a dead end. */}
                 <NewsCategoryTabs activeCategory={cat} />
-                <h1 className="text-secondary-100 text-2xl font-bold tracking-tight text-balance sm:text-3xl">
+                <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
                     {cfg.koLabel} 뉴스
                 </h1>
                 <Suspense fallback={<DigestSkeleton />}>
@@ -258,12 +258,12 @@ function DigestSkeleton() {
             aria-busy="true"
             role="status"
             aria-label="AI 다이제스트 불러오는 중"
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
-            <div className="bg-secondary-700 mb-4 h-5 w-1/3 animate-pulse rounded motion-reduce:animate-none" />
+            <div className="mb-4 h-5 w-1/3 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             <div className="space-y-2">
-                <div className="bg-secondary-700/70 h-3.5 w-full animate-pulse rounded motion-reduce:animate-none" />
-                <div className="bg-secondary-700/70 h-3.5 w-2/3 animate-pulse rounded motion-reduce:animate-none" />
+                <div className="h-3.5 w-full animate-pulse rounded bg-secondary-700/70 motion-reduce:animate-none" />
+                <div className="h-3.5 w-2/3 animate-pulse rounded bg-secondary-700/70 motion-reduce:animate-none" />
             </div>
         </div>
     );
@@ -277,9 +277,9 @@ function MarketNewsDegraded({ koLabel }: MarketNewsDegradedProps) {
     return (
         <section
             aria-label={`${koLabel} 뉴스 없음`}
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
-            <p className="text-secondary-400 text-sm">
+            <p className="text-sm text-secondary-400">
                 {koLabel} 최근 뉴스를 불러오지 못했어요. 잠시 후 다시 확인해
                 주세요.
             </p>

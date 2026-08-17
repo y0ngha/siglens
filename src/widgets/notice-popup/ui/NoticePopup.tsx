@@ -39,8 +39,13 @@ export function NoticePopup() {
         <div
             role="presentation"
             data-testid="notice-modal-backdrop"
-            className="bg-secondary-950/80 fixed inset-0 z-9999 flex items-center justify-center px-4 backdrop-blur-sm"
-            onClick={advance}
+            className="fixed inset-0 z-9999 flex items-center justify-center bg-secondary-950/80 px-4 backdrop-blur-sm"
+            // 배경 클릭 닫기는 편의 기능(닫기 경로는 Escape + 닫기 버튼). target 비교로
+            // 처리해 내부 컨테이너에 stopPropagation 핸들러를 달지 않는다 — role="dialog"에
+            // 마우스 핸들러를 붙이면 a11y 린트가 "비인터랙티브 요소 인터랙션"으로 잡는다.
+            onClick={e => {
+                if (e.target === e.currentTarget) advance();
+            }}
         >
             <div
                 ref={dialogRef}
@@ -49,20 +54,19 @@ export function NoticePopup() {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={MODAL_TITLE_ID}
-                className="border-secondary-700 bg-secondary-800 flex max-h-[85dvh] w-full max-w-md flex-col rounded-2xl border p-5"
-                onClick={e => e.stopPropagation()}
+                className="flex max-h-[85dvh] w-full max-w-md flex-col rounded-2xl border border-secondary-700 bg-secondary-800 p-5"
             >
                 <div className="mb-3 flex shrink-0 items-start justify-between gap-3">
                     <h2
                         id={MODAL_TITLE_ID}
-                        className="text-secondary-100 text-base font-bold"
+                        className="text-base font-bold text-secondary-100"
                     >
                         {current.title}
                     </h2>
                     <button
                         onClick={advance}
                         aria-label="팝업 닫기"
-                        className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 shrink-0 text-xl leading-none transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                        className="shrink-0 text-xl leading-none text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         ✕
                     </button>
@@ -78,12 +82,12 @@ export function NoticePopup() {
                     role="region"
                     aria-label="공지 본문"
                     data-testid="notice-body-scroller"
-                    className="focus-visible:ring-primary-500 -mr-2 min-h-0 flex-1 overflow-y-auto rounded pr-2 focus-visible:ring-1 focus-visible:outline-none"
+                    className="-mr-2 min-h-0 flex-1 overflow-y-auto rounded pr-2 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    <p className="text-secondary-500 mb-3 text-xs">
+                    <p className="mb-3 text-xs text-secondary-500">
                         {formatNoticeDate(current.createdAt)}
                     </p>
-                    <MarkdownText className="text-secondary-300 text-sm">
+                    <MarkdownText className="text-sm text-secondary-300">
                         {current.body}
                     </MarkdownText>
                     {safeLinkUrl !== null && (
@@ -91,7 +95,7 @@ export function NoticePopup() {
                             href={safeLinkUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="bg-primary-600 hover:bg-primary-500 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-800 mt-4 inline-block rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors focus-visible:ring-1 focus-visible:ring-offset-2 focus-visible:outline-none"
+                            className="mt-4 inline-block rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-500 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
                         >
                             {current.linkLabel ?? safeLinkUrl}
                         </a>
@@ -100,13 +104,13 @@ export function NoticePopup() {
                 <div className="mt-5 flex shrink-0 items-center justify-end gap-3">
                     <button
                         onClick={dontShowAgain}
-                        className="text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 text-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                        className="text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         다시 보지 않기
                     </button>
                     <button
                         onClick={advance}
-                        className="border-secondary-600 text-secondary-200 hover:bg-secondary-700 focus-visible:ring-primary-500 rounded-lg border px-4 py-2 text-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                        className="rounded-lg border border-secondary-600 px-4 py-2 text-sm text-secondary-200 transition-colors hover:bg-secondary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         닫기
                     </button>

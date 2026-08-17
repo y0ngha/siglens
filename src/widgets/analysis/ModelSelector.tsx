@@ -94,7 +94,7 @@ export function ModelSelector({
     return (
         <div className={cn('flex flex-row items-center gap-3', className)}>
             {showLabel && (
-                <span className="text-secondary-400 text-xs font-medium tracking-[0.15em] whitespace-nowrap uppercase">
+                <span className="text-xs font-medium tracking-[0.15em] whitespace-nowrap text-secondary-400 uppercase">
                     AI MODEL
                 </span>
             )}
@@ -112,7 +112,7 @@ export function ModelSelector({
                         disabled && 'cursor-not-allowed opacity-60'
                     )}
                 >
-                    <span className="text-secondary-300 truncate text-xs font-medium">
+                    <span className="truncate text-xs font-medium text-secondary-300">
                         {selectedDisplay.label}
                     </span>
                     <span
@@ -131,6 +131,9 @@ export function ModelSelector({
                         ref={dropdownRef}
                         role="listbox"
                         aria-label="AI 분석 모델 목록"
+                        // listbox는 인터랙티브 role이라 포커스 가능해야 한다.
+                        // -1이므로 탭 순서는 그대로(트리거 버튼만 탭 대상).
+                        tabIndex={-1}
                         onKeyDown={handleListboxKeyDown}
                         className={cn(
                             'border-secondary-600 bg-secondary-800 absolute top-full z-10 mt-1 w-full min-w-44 rounded-lg border shadow-lg',
@@ -181,12 +184,12 @@ export function ModelSelector({
                                                 <div className="text-[11px] font-medium">
                                                     {display.label}
                                                 </div>
-                                                <div className="text-secondary-500 text-[10px]">
+                                                <div className="text-[10px] text-secondary-500">
                                                     {display.fullName}
                                                 </div>
                                             </div>
                                             {!isFreeModel(modelId) && (
-                                                <span className="text-ui-warning text-[9px] leading-none font-semibold uppercase">
+                                                <span className="text-[9px] leading-none font-semibold text-ui-warning uppercase">
                                                     PRO
                                                 </span>
                                             )}

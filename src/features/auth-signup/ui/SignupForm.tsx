@@ -46,7 +46,7 @@ function StepIndicator({ phase }: StepIndicatorProps) {
     return (
         <p
             aria-live="polite"
-            className="text-secondary-400 mb-4 text-xs font-medium tracking-wider uppercase"
+            className="mb-4 text-xs font-medium tracking-wider text-secondary-400 uppercase"
         >
             {STEP_LABEL[phase]}
         </p>
@@ -62,7 +62,7 @@ function EmailEditButton({ onClick }: EmailEditButtonProps) {
         <button
             type="button"
             onClick={onClick}
-            className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-950 rounded-sm font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            className="rounded-sm font-medium text-primary-400 hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
         >
             이메일 수정
         </button>
@@ -173,8 +173,8 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
             {phase === 'code' && (
                 <form action={codeFormAction} className="space-y-4" noValidate>
                     <input type="hidden" name="email" value={email} />
-                    <p className="text-secondary-300 text-sm">
-                        <span className="text-secondary-100 font-mono break-all">
+                    <p className="text-sm text-secondary-300">
+                        <span className="font-mono break-all text-secondary-100">
                             {email}
                         </span>
                         로 인증 코드를 보냈어요.{' '}
@@ -228,12 +228,12 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                     {signupEmailError ? (
                         <AuthErrorAlert message={signupEmailError} />
                     ) : null}
-                    <p className="text-secondary-300 text-sm">
+                    <p className="text-sm text-secondary-300">
                         <span className="text-ui-success" aria-hidden="true">
                             ✓
                         </span>{' '}
                         인증 완료:{' '}
-                        <span className="text-secondary-100 font-mono break-all">
+                        <span className="font-mono break-all text-secondary-100">
                             {email}
                         </span>{' '}
                         <EmailEditButton onClick={onRestart} />

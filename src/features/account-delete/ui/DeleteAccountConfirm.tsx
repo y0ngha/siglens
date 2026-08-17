@@ -24,7 +24,7 @@ function DangerSubmitButton({ disabled }: DangerSubmitButtonProps) {
             type="submit"
             disabled={isDisabled}
             aria-busy={pending}
-            className="bg-ui-danger hover:bg-ui-danger/90 active:bg-ui-danger/80 focus-visible:ring-ui-danger flex h-12 w-full items-center justify-center gap-2 rounded-md font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50 motion-reduce:transition-none"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-md bg-ui-danger font-semibold text-white transition-colors hover:bg-ui-danger/90 focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none active:bg-ui-danger/80 disabled:opacity-50 motion-reduce:transition-none"
         >
             {pending ? (
                 <>
@@ -62,7 +62,7 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
             {state.error ? (
                 <AuthErrorAlert message={state.error.message} />
             ) : null}
-            <ul className="text-secondary-300 list-disc space-y-1 pl-5 text-sm">
+            <ul className="list-disc space-y-1 pl-5 text-sm text-secondary-300">
                 <li>이메일·닉네임·프로필 사진이 즉시 영구 삭제됩니다.</li>
                 <li>
                     지금 로그인된 모든 기기에서 로그아웃되고, 소셜 로그인(구글
@@ -75,11 +75,11 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
             <div className="space-y-2">
                 <label
                     htmlFor="delete-account-email"
-                    className="text-secondary-200 block text-sm font-medium"
+                    className="block text-sm font-medium text-secondary-200"
                 >
                     계속하려면 본인 이메일을 정확히 입력하세요
                 </label>
-                <p className="text-secondary-100 bg-secondary-950 border-secondary-800 rounded-md border px-3 py-2 font-mono text-sm break-all">
+                <p className="rounded-md border border-secondary-800 bg-secondary-950 px-3 py-2 font-mono text-sm break-all text-secondary-100">
                     {userEmail}
                 </p>
                 <input
@@ -94,7 +94,7 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
                     onChange={event => setInput(event.target.value)}
                     aria-invalid={isMismatch}
                     aria-describedby={INPUT_HINT_ID}
-                    className="border-secondary-700 bg-secondary-950 text-secondary-50 placeholder:text-secondary-500 focus:border-primary-500 focus:ring-primary-500/40 aria-invalid:border-ui-danger h-12 w-full rounded-md border px-4 text-sm focus:ring-2 focus:outline-none"
+                    className="h-12 w-full rounded-md border border-secondary-700 bg-secondary-950 px-4 text-sm text-secondary-50 placeholder:text-secondary-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/40 focus:outline-none aria-invalid:border-ui-danger"
                 />
                 <div
                     id={INPUT_HINT_ID}
@@ -111,7 +111,7 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <Link
                     href="/account"
-                    className="text-secondary-200 border-secondary-700 hover:bg-secondary-800 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-900 inline-flex h-12 items-center justify-center rounded-md border px-5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:flex-1"
+                    className="inline-flex h-12 items-center justify-center rounded-md border border-secondary-700 px-5 text-sm font-medium text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900 focus-visible:outline-none sm:flex-1"
                 >
                     취소
                 </Link>

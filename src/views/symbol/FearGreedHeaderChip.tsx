@@ -22,7 +22,7 @@ interface FearGreedHeaderChipProps {
 export function FearGreedHeaderChip({ snapshot }: FearGreedHeaderChipProps) {
     if (!snapshot) {
         return (
-            <span className="bg-secondary-700/40 text-secondary-400 inline-flex items-center rounded px-2 py-0.5 text-xs">
+            <span className="inline-flex items-center rounded bg-secondary-700/40 px-2 py-0.5 text-xs text-secondary-400">
                 공포·탐욕 데이터 부족
             </span>
         );

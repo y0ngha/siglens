@@ -91,7 +91,7 @@ function CheckboxBox({
                 <svg
                     aria-hidden="true"
                     viewBox="0 0 16 16"
-                    className="text-secondary-50 pointer-events-none absolute inset-0 m-auto size-3"
+                    className="pointer-events-none absolute inset-0 m-auto size-3 text-secondary-50"
                 >
                     <path
                         fill="none"
@@ -107,7 +107,7 @@ function CheckboxBox({
                 <svg
                     aria-hidden="true"
                     viewBox="0 0 16 16"
-                    className="text-secondary-50 pointer-events-none absolute inset-0 m-auto size-3"
+                    className="pointer-events-none absolute inset-0 m-auto size-3 text-secondary-50"
                 >
                     <path
                         fill="none"
@@ -158,8 +158,8 @@ function ConsentRow({
                         onChange: e => onChange(e.target.checked),
                     }}
                 />
-                <span className="text-secondary-300 text-sm">
-                    <span className="text-secondary-400 mr-1 text-xs">
+                <span className="text-sm text-secondary-300">
+                    <span className="mr-1 text-xs text-secondary-400">
                         (필수)
                     </span>
                     {label}
@@ -176,7 +176,7 @@ function ConsentRow({
                 prefetch={false}
                 aria-label={detailLabel}
                 onClick={e => e.stopPropagation()}
-                className="text-secondary-400 hover:text-primary-400 focus-visible:ring-primary-400 focus-visible:ring-offset-secondary-950 inline-flex shrink-0 items-center rounded-sm px-1 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                className="inline-flex shrink-0 items-center rounded-sm px-1 text-xs text-secondary-400 transition-colors hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
             >
                 자세히 보기
                 <ExternalArrowIcon />
@@ -208,9 +208,9 @@ export function ConsentCheckboxGroup({
     }
 
     return (
-        <fieldset className="border-secondary-800 touch-manipulation space-y-3 border-y py-4 [-webkit-tap-highlight-color:transparent]">
+        <fieldset className="touch-manipulation space-y-3 border-y border-secondary-800 py-4 [-webkit-tap-highlight-color:transparent]">
             <legend className="sr-only">동의 항목</legend>
-            <p className="text-secondary-400 text-xs">
+            <p className="text-xs text-secondary-400">
                 계속하려면 아래 항목에 동의해주세요.
             </p>
             <label
@@ -227,14 +227,14 @@ export function ConsentCheckboxGroup({
                         'aria-controls': `${privacyId} ${tosId}`,
                     }}
                 />
-                <span className="text-secondary-100 text-sm font-semibold">
+                <span className="text-sm font-semibold text-secondary-100">
                     모두 동의
                 </span>
             </label>
             <div
                 role="separator"
                 aria-hidden="true"
-                className="border-secondary-800 border-t"
+                className="border-t border-secondary-800"
             />
             <ConsentRow
                 id={privacyId}
@@ -261,7 +261,7 @@ export function ConsentCheckboxGroup({
                     id={errorId}
                     role="status"
                     aria-live="polite"
-                    className="text-ui-danger text-xs"
+                    className="text-xs text-ui-danger"
                 >
                     {error}
                 </p>

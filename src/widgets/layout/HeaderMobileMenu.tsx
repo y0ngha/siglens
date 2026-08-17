@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
     startTransition,
-    useCallback,
     useEffect,
     useEffectEvent,
     useRef,
@@ -31,12 +30,12 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
     const triggerRef = useRef<HTMLButtonElement>(null);
     const drawerRef = useRef<HTMLDivElement>(null);
 
-    const close = useCallback(() => {
+    const close = () => {
         setIsOpen(false);
         triggerRef.current?.focus();
-    }, []);
+    };
 
-    const toggle = useCallback(() => setIsOpen(v => !v), []);
+    const toggle = () => setIsOpen(v => !v);
 
     useEscapeKey(close, isOpen);
     useFocusTrap(drawerRef, isOpen);
@@ -121,7 +120,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                 aria-expanded={isOpen}
                 aria-controls="mobile-nav-drawer"
                 onClick={toggle}
-                className="focus-visible:ring-primary-500 text-secondary-400 hover:text-secondary-100 flex h-11 w-11 touch-manipulation items-center justify-center rounded transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                className="flex h-11 w-11 touch-manipulation items-center justify-center rounded text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
                 <svg
                     width="24"
@@ -164,13 +163,13 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                 isOpen ? 'translate-x-0' : 'translate-x-full'
                             )}
                         >
-                            <div className="border-secondary-800 flex items-center justify-end border-b px-3 py-2">
+                            <div className="flex items-center justify-end border-b border-secondary-800 px-3 py-2">
                                 <button
                                     type="button"
                                     onClick={close}
                                     aria-label="메뉴 패널 닫기"
                                     tabIndex={isOpen ? undefined : -1}
-                                    className="focus-visible:ring-primary-500 text-secondary-400 hover:text-secondary-100 flex h-11 w-11 touch-manipulation items-center justify-center rounded transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                                    className="flex h-11 w-11 touch-manipulation items-center justify-center rounded text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
                                     <span aria-hidden="true">✕</span>
                                 </button>

@@ -192,9 +192,11 @@ export class NaverNewsClient implements NewsClientPort {
         }
 
         const body = (await response.json()) as NaverNewsResponse;
-        return (body.items ?? [])
-            .flatMap(item => this.toNewsItem(item, symbol) ?? [])
-            .filter(item => new Date(item.publishedAt) >= cutoff);
+        return (body.items ?? []).flatMap(raw => {
+            const item = this.toNewsItem(raw, symbol);
+            if (item === null) return [];
+            return new Date(item.publishedAt) >= cutoff ? [item] : [];
+        });
     }
 
     private toNewsItem(raw: NaverNewsItem, symbol: string): NewsItem | null {

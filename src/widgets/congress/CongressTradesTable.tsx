@@ -147,7 +147,7 @@ function OwnerBadge({ owner }: OwnerBadgeProps) {
     const label = OWNER_LABEL[owner];
     if (!label) return null;
     return (
-        <span className="bg-secondary-700 text-secondary-300 rounded px-1.5 py-0.5 text-xs">
+        <span className="rounded bg-secondary-700 px-1.5 py-0.5 text-xs text-secondary-300">
             {label}
         </span>
     );
@@ -160,7 +160,7 @@ interface AssetTypeBadgeProps {
 function AssetTypeBadge({ assetType }: AssetTypeBadgeProps) {
     const label = assetTypeBadge(assetType);
     return (
-        <span className="bg-secondary-700 text-secondary-300 rounded px-1.5 py-0.5 text-xs">
+        <span className="rounded bg-secondary-700 px-1.5 py-0.5 text-xs text-secondary-300">
             {label}
         </span>
     );
@@ -196,13 +196,13 @@ function DisclosureCell({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`${CHAMBER_LABEL[chamber]} ${office} ${transactionDate} 공시 ${isSenate ? '검색' : '문서'}`}
-                className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded text-xs underline transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                className="rounded text-xs text-primary-400 underline transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
                 {isSenate ? '공시 검색' : '공시'}
             </a>
             {isSenate && <InfoTooltip>{SenateDisclosureTooltip}</InfoTooltip>}
             {isSenate && ptrId && (
-                <span className="text-secondary-400 block font-mono text-[10px] whitespace-nowrap">
+                <span className="block font-mono text-[10px] whitespace-nowrap text-secondary-400">
                     PTR {ptrId.slice(0, PTR_ID_PREFIX_LENGTH)}…
                 </span>
             )}
@@ -233,12 +233,12 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
     const rows = trades.slice(0, MAX_ROWS);
 
     return (
-        <div className="border-secondary-700 bg-secondary-800 rounded-xl border">
-            <p className="text-secondary-400 px-4 pt-3 pb-0 text-xs sm:hidden">
+        <div className="rounded-xl border border-secondary-700 bg-secondary-800">
+            <p className="px-4 pt-3 pb-0 text-xs text-secondary-400 sm:hidden">
                 ← 좌우로 스크롤 →
             </p>
             <div
-                className="focus-visible:ring-primary-500 overflow-x-auto rounded-xl focus-visible:ring-2 focus-visible:outline-none"
+                className="overflow-x-auto rounded-xl focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 role="region"
                 aria-label="의회 거래 내역 표 (좌우 스크롤 가능)"
                 tabIndex={0}
@@ -246,7 +246,7 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                 <table className="w-full text-sm">
                     <caption className="sr-only">의회 거래 공시 목록</caption>
                     <thead>
-                        <tr className="text-secondary-400 border-secondary-700 border-b text-xs tracking-widest uppercase">
+                        <tr className="border-b border-secondary-700 text-xs tracking-widest text-secondary-400 uppercase">
                             <th
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
@@ -317,21 +317,21 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                         </tr>
                     </thead>
                     <tbody>
-                        {rows.map((trade, i) => (
+                        {rows.map(trade => (
                             <tr
-                                key={`${trade.office}-${trade.transactionDate}-${i}`}
-                                className="hover:bg-secondary-700/30 border-secondary-700/50 border-b transition-colors last:border-b-0"
+                                key={`${trade.office}-${trade.transactionDate}-${trade.side}-${trade.amount}`}
+                                className="border-b border-secondary-700/50 transition-colors last:border-b-0 hover:bg-secondary-700/30"
                             >
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     <ChamberBadge chamber={trade.chamber} />
                                 </td>
 
                                 <td className="px-4 py-3 whitespace-nowrap">
-                                    <div className="text-secondary-100 text-xs font-medium">
+                                    <div className="text-xs font-medium text-secondary-100">
                                         {trade.office}
                                     </div>
                                     {trade.district && (
-                                        <div className="text-secondary-400 mt-0.5 text-xs">
+                                        <div className="mt-0.5 text-xs text-secondary-400">
                                             {trade.district}
                                         </div>
                                     )}
@@ -353,11 +353,11 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                                     />
                                 </td>
 
-                                <td className="text-secondary-300 px-4 py-3 font-mono text-xs whitespace-nowrap tabular-nums">
+                                <td className="px-4 py-3 font-mono text-xs whitespace-nowrap text-secondary-300 tabular-nums">
                                     {trade.transactionDate}
                                 </td>
 
-                                <td className="text-secondary-300 px-4 py-3 font-mono text-xs whitespace-nowrap tabular-nums">
+                                <td className="px-4 py-3 font-mono text-xs whitespace-nowrap text-secondary-300 tabular-nums">
                                     {trade.disclosureDate}
                                 </td>
 
@@ -367,7 +367,7 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
 
                                 <td className="px-4 py-3">
                                     <div
-                                        className="text-secondary-400 max-w-[12rem] truncate text-xs"
+                                        className="max-w-[12rem] truncate text-xs text-secondary-400"
                                         title={trade.assetDescription}
                                     >
                                         {trade.assetDescription}
@@ -385,7 +385,7 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                                             }
                                         />
                                     ) : (
-                                        <span className="text-secondary-400 text-xs">
+                                        <span className="text-xs text-secondary-400">
                                             —
                                         </span>
                                     )}

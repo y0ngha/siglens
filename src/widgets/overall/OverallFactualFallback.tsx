@@ -30,12 +30,12 @@ export function OverallFactualFallback({
     return (
         <section
             aria-labelledby={headingId}
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-5"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-5"
         >
             <h2 id={headingId} className="text-lg font-semibold tracking-tight">
                 {displayName} 종합 분석 데이터 상태
             </h2>
-            <div className="text-secondary-300 mt-3 space-y-3 text-sm leading-relaxed">
+            <div className="mt-3 space-y-3 text-sm leading-relaxed text-secondary-300">
                 <p>
                     {displayName} ({symbol}) 종합 분석은{' '}
                     {getAxesText(assetClass)}를 함께 봅니다.

@@ -30,10 +30,10 @@ export function OverallFactsSummary({
     return (
         <section aria-label={`${symbol} 종합 분석 요약`} className="space-y-4">
             <h2 className="sr-only">{symbol} AI 종합 분석 결론</h2>
-            <p className="text-secondary-300 text-sm leading-relaxed">
+            <p className="text-sm leading-relaxed text-secondary-300">
                 {analysis.headlineKo}
             </p>
-            <p className="text-secondary-400 text-sm leading-relaxed">
+            <p className="text-sm leading-relaxed text-secondary-400">
                 {analysis.integratedConclusionKo}
             </p>
             {analysis.scenarios.length > 0 && (
@@ -41,9 +41,9 @@ export function OverallFactsSummary({
                     {analysis.scenarios.map(scenario => (
                         <li
                             key={scenario.name}
-                            className="text-secondary-400 text-sm"
+                            className="text-sm text-secondary-400"
                         >
-                            <span className="text-secondary-300 font-medium">
+                            <span className="font-medium text-secondary-300">
                                 {SCENARIO_LABEL[scenario.name]}:
                             </span>{' '}
                             {scenario.triggerConditionKo} —{' '}
@@ -55,7 +55,7 @@ export function OverallFactsSummary({
             {analysis.riskFactorsKo.length > 0 && (
                 <ul className="space-y-1">
                     {analysis.riskFactorsKo.map(risk => (
-                        <li key={risk} className="text-secondary-400 text-sm">
+                        <li key={risk} className="text-sm text-secondary-400">
                             {risk}
                         </li>
                     ))}

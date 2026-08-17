@@ -32,17 +32,17 @@ export function LegalPageShell({
                 <article className="w-full max-w-3xl">
                     <LegalBreadcrumb pageTitle={breadcrumbTitle} />
 
-                    <header className="border-secondary-800 border-b pb-8">
-                        <p className="text-primary-400 font-mono text-xs tracking-widest uppercase">
+                    <header className="border-b border-secondary-800 pb-8">
+                        <p className="font-mono text-xs tracking-widest text-primary-400 uppercase">
                             {eyebrow}
                         </p>
-                        <h1 className="text-secondary-100 mt-3 text-3xl font-bold sm:text-4xl">
+                        <h1 className="mt-3 text-3xl font-bold text-secondary-100 sm:text-4xl">
                             {title}
                         </h1>
-                        <p className="text-secondary-400 mt-4 text-sm leading-relaxed sm:text-base">
+                        <p className="mt-4 text-sm leading-relaxed text-secondary-400 sm:text-base">
                             {intro}
                         </p>
-                        <p className="text-secondary-500 mt-4 text-xs">
+                        <p className="mt-4 text-xs text-secondary-500">
                             시행일: {effectiveDate}
                         </p>
                     </header>
@@ -56,7 +56,7 @@ export function LegalPageShell({
                             topNotice ? undefined : 'mt-8'
                         )}
                     >
-                        <p className="text-secondary-400 mb-3 text-xs font-semibold tracking-wider uppercase">
+                        <p className="mb-3 text-xs font-semibold tracking-wider text-secondary-400 uppercase">
                             목차
                         </p>
                         <ol className="space-y-2 text-sm">
@@ -64,7 +64,7 @@ export function LegalPageShell({
                                 <li key={item.id}>
                                     <a
                                         href={`#${item.id}`}
-                                        className="text-secondary-300 hover:text-primary-400 transition-colors"
+                                        className="text-secondary-300 transition-colors hover:text-primary-400"
                                     >
                                         {item.label}
                                     </a>

@@ -8,7 +8,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-16.2-black)
 ![React](https://img.shields.io/badge/React-19.2-61dafb?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-tsgo%20(TS7)-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-7.0-blue)
 ![OXC](https://img.shields.io/badge/lint%2Fformat-OXC-c96198)
 ![Node.js](https://img.shields.io/badge/node-25.2.1-green)
 
@@ -328,6 +328,13 @@ Vitest 테스트 파일 약 1,000개, Playwright 스펙 43개입니다. 커버�
 
 E2E는 Vitest와 별개로 실제 프로덕션 빌드를 브라우저에서 검증합니다 — [E2E.md](./docs/qa/E2E.md) 참고. `git push` 시 Husky 게이트가 format check, lint, typecheck, 유닛 테스트, 프로덕션 빌드를 전부 돌리므로 시간이 꽤 걸립니다.
 
+### React Doctor
+
+`npx react-doctor@latest`가 React 코드베이스를 감사한다(보안·정확성·접근성·성능·구조).
+CI는 `.github/workflows/react-doctor.yml`로 모든 PR에서 실행되며, 그 PR이 **새로 추가한
+error 등급** 지적이 있을 때만 실패시킨다. 룰 정책은 `doctor.config.json`에 있고 끈 룰마다
+근거를 주석으로 남긴다.
+
 ## 명령어
 
 일상적으로 쓰는 것:
@@ -336,14 +343,14 @@ E2E는 Vitest와 별개로 실제 프로덕션 빌드를 브라우저에서 검�
 yarn dev             # :4200 개발 서버
 yarn build           # 프로덕션 빌드
 yarn lint            # oxlint          (lint:fix로 자동 수정)
-yarn typecheck       # tsgo            (typecheck:tsc는 tsc)
+yarn typecheck       # TypeScript 7 (네이티브 tsc)
 yarn format          # oxfmt           (format:check로 검사만)
 yarn test            # Vitest
 ```
 
 설치는 항상 `yarn`으로 합니다. `npm`과 `pnpm`은 쓰지 않습니다.
 
-**툴체인은 TypeScript 7과 OXC입니다.** 타입 체크는 `@typescript/native-preview`의 `tsgo`(TypeScript 7이 될 Go 포팅)로 돌고, `yarn typecheck:tsc`가 레거시 `tsc` 경로로 남아 있습니다. 린트와 포맷은 OXC입니다 — `yarn lint`가 `oxlint`, `yarn format`이 `oxfmt`입니다. 스크립트 이름은 그대로라 Husky pre-push 훅과 CI는 예전과 같은 게이트를 호출합니다.
+**툴체인은 TypeScript 7과 OXC입니다.** 타입 체크는 TypeScript 7의 네이티브 `tsc`(`typescript@7`, Go 포팅)로 돌아 전체 트리가 2초 남짓에 끝납니다. `@typescript/native-preview`는 Next 16.2가 자기 타입체크(레거시 `typescript/lib/typescript.js` API 필요 — TS7은 배포하지 않음)를 건너뛰게 하는 신호로 devDependencies에 남아 있습니다. 제거하면 `yarn build`가 깨집니다. 린트와 포맷은 OXC입니다 — `yarn lint`가 `oxlint`, `yarn format`이 `oxfmt`입니다. 스크립트 이름은 그대로라 Husky pre-push 훅과 CI는 예전과 같은 게이트를 호출합니다. 제약과 배경은 [TOOLCHAIN.md](./docs/conventions/TOOLCHAIN.md)에 정리했습니다.
 
 <details>
 <summary><b>package.json 전체 스크립트</b></summary>
@@ -363,22 +370,20 @@ yarn test            # Vitest
 | `yarn lint:staged` | staged 파일 oxlint 자동 수정 |
 | `yarn lint:style` | Stylelint |
 | `yarn lint:style-fix` | Stylelint 자동 수정 |
-| `yarn format` | oxfmt 적용 |
+| `yarn format` | oxfmt write |
 | `yarn format:staged` | staged 파일 oxfmt |
-| `yarn format:check` | oxfmt 검사 |
-| `yarn typecheck` | `tsgo` 타입 체크 |
-| `yarn typecheck:tsc` | `tsc` 타입 체크 |
-| `yarn db:generate` | Drizzle 마이그레이션 생성 |
-| `yarn db:migrate` | 마이그레이션 실행 |
-| `yarn db:seed:terms` | 용어 데이터 시드 |
-| `yarn db:migrate:tickers` | Redis에 캐시된 티커 한글명을 `korean_tickers` / `asset_translations`로 이관 |
-| `yarn db:seed:kr-names` | 공공데이터포털 KRX 상장종목(한글명) 시드 |
-| `yarn db:seed:crypto` | FMP 크립토 유니버스를 `crypto_assets`에 시드 |
-| `yarn db:seed:crypto-korean` | 크립토 한글명 시드 |
-| `yarn db:backfill:calendar` | 경제 캘린더 백필 |
-| `yarn db:seed:calendar-analysis` | 경제 캘린더 분석 시드 |
-| `yarn db:seed:calendar-analysis:batch` | 캘린더 분석 배치 시드 |
-| `yarn db:seed:indicator-translations:batch` | 지표 번역 배치 시드 |
+| `yarn format:check` | oxfmt check |
+| `yarn typecheck` | TypeScript 7 네이티브 `tsc` 타입체크 |
+| `yarn db:generate` | Drizzle migration 생성 |
+| `yarn db:migrate` | migration 실행 |
+| `yarn db:seed:terms` | 약관 데이터 seed |
+| `yarn db:migrate:tickers` | 한국어 ticker 데이터 seed/update |
+| `yarn db:seed:crypto` | FMP crypto universe를 `crypto_assets`에 적재 |
+| `yarn db:seed:crypto-korean` | 암호화폐 한국어 이름 seed |
+| `yarn db:backfill:calendar` | 경제 캘린더 backfill |
+| `yarn db:seed:calendar-analysis` | 경제 캘린더 분석 seed |
+| `yarn db:seed:calendar-analysis:batch` | 캘린더 분석 batch seed |
+| `yarn db:seed:indicator-translations:batch` | 지표 번역 batch seed |
 | `yarn test` | Vitest 전체 |
 | `yarn test:quiet` | dot 리포터 Vitest |
 | `yarn test:related` | 변경 파일 관련 테스트 |

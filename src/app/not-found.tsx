@@ -14,13 +14,13 @@ export default function NotFound() {
         <>
             <main className="flex flex-1 flex-col">
                 <div className="flex flex-col items-center px-6 py-20 text-center">
-                    <p className="text-primary-400 font-mono text-sm tracking-widest">
+                    <p className="font-mono text-sm tracking-widest text-primary-400">
                         404
                     </p>
-                    <h1 className="text-secondary-100 mt-4 text-2xl font-bold sm:text-3xl">
+                    <h1 className="mt-4 text-2xl font-bold text-secondary-100 sm:text-3xl">
                         페이지를 찾을 수 없습니다
                     </h1>
-                    <p className="text-secondary-400 mt-3 max-w-md text-sm leading-relaxed">
+                    <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">
                         요청하신 페이지가 존재하지 않거나 이동되었을 수
                         있습니다. 아래에서 종목을 검색하거나, 인기 종목을 확인해
                         보세요.
@@ -28,16 +28,16 @@ export default function NotFound() {
 
                     <Link
                         href="/"
-                        className="bg-primary-600 hover:bg-primary-700 mt-8 rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-colors"
+                        className="mt-8 rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700"
                     >
                         {SITE_NAME} 홈으로 돌아가기
                     </Link>
 
-                    <div className="border-secondary-800 mt-10 border-t pt-8">
-                        <p className="text-secondary-400 text-sm">
+                    <div className="mt-10 border-t border-secondary-800 pt-8">
+                        <p className="text-sm text-secondary-400">
                             실제로 있는 종목인데 찾을 수 없나요?
                         </p>
-                        <p className="text-secondary-600 mt-1 text-xs">
+                        <p className="mt-1 text-xs text-secondary-600">
                             시스템 오류일 수 있습니다. 알려주시면
                             확인하겠습니다.
                         </p>

@@ -34,14 +34,14 @@ async function AccountContent() {
         <>
             <section
                 aria-label="프로필"
-                className="ring-secondary-800 bg-secondary-900/80 space-y-4 rounded-2xl p-6 ring-1 backdrop-blur-xl"
+                className="space-y-4 rounded-2xl bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
             >
-                <h2 className="text-secondary-100 text-lg font-semibold">
+                <h2 className="text-lg font-semibold text-secondary-100">
                     프로필
                 </h2>
                 <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-[120px_1fr]">
                     <dt className="text-secondary-400">이메일</dt>
-                    <dd className="text-secondary-100 break-all">
+                    <dd className="break-all text-secondary-100">
                         {user.email}
                     </dd>
                     <dt className="text-secondary-400">표시 이름</dt>
@@ -59,19 +59,19 @@ async function AccountContent() {
 
             <section
                 aria-label="AI 모델 API 키"
-                className="ring-secondary-800 bg-secondary-900/80 space-y-4 rounded-2xl p-6 ring-1 backdrop-blur-xl"
+                className="space-y-4 rounded-2xl bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
             >
                 <ApiKeySection registeredProviders={registeredProviders} />
             </section>
 
             <section
                 aria-label="보유종목"
-                className="ring-secondary-800 bg-secondary-900/80 space-y-4 rounded-2xl p-6 ring-1 backdrop-blur-xl"
+                className="space-y-4 rounded-2xl bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
             >
                 <PortfolioSection />
                 <Link
                     href="/portfolio"
-                    className="border-secondary-700 text-secondary-200 hover:bg-secondary-800 focus-visible:ring-primary-500 inline-flex min-h-11 touch-manipulation items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                    className="inline-flex min-h-11 touch-manipulation items-center justify-center rounded-md border border-secondary-700 px-4 text-sm font-medium text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     내 포트폴리오 위치 보기
                 </Link>
@@ -79,20 +79,20 @@ async function AccountContent() {
 
             <section
                 aria-label="위험영역"
-                className="border-ui-danger/30 bg-ui-danger/5 space-y-4 rounded-2xl border p-6"
+                className="space-y-4 rounded-2xl border border-ui-danger/30 bg-ui-danger/5 p-6"
             >
-                <div className="border-secondary-800 bg-secondary-900/60 flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3 rounded-lg border border-secondary-800 bg-secondary-900/60 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h3 className="text-secondary-100 text-sm font-semibold">
+                        <h3 className="text-sm font-semibold text-secondary-100">
                             회원 탈퇴
                         </h3>
-                        <p className="text-secondary-400 mt-1 text-sm">
+                        <p className="mt-1 text-sm text-secondary-400">
                             계정과 관련된 모든 정보가 즉시 영구 파기됩니다.
                         </p>
                     </div>
                     <Link
                         href="/account/delete"
-                        className="text-ui-danger border-ui-danger/40 hover:bg-ui-danger/10 focus-visible:ring-ui-danger inline-flex h-11 shrink-0 items-center justify-center rounded-md border px-5 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        className="inline-flex h-11 shrink-0 items-center justify-center rounded-md border border-ui-danger/40 px-5 text-sm font-semibold text-ui-danger transition-colors hover:bg-ui-danger/10 focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none"
                     >
                         회원 탈퇴 진행
                     </Link>
@@ -105,7 +105,7 @@ async function AccountContent() {
 function SkeletonLine({ className }: { className?: string }) {
     return (
         <div
-            className={`bg-secondary-800 animate-pulse rounded ${className ?? ''}`}
+            className={`animate-pulse rounded bg-secondary-800 ${className ?? ''}`}
         />
     );
 }
@@ -116,7 +116,7 @@ function AccountContentSkeleton() {
             {/* 프로필 섹션 */}
             <section
                 aria-label="프로필 로딩 중"
-                className="ring-secondary-800 bg-secondary-900/80 space-y-4 rounded-2xl p-6 ring-1 backdrop-blur-xl"
+                className="space-y-4 rounded-2xl bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
             >
                 <SkeletonLine className="h-6 w-16" />
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-[120px_1fr]">
@@ -132,14 +132,14 @@ function AccountContentSkeleton() {
             {/* AI 모델 API 키 섹션 */}
             <section
                 aria-label="AI 모델 API 키 로딩 중"
-                className="ring-secondary-800 bg-secondary-900/80 space-y-4 rounded-2xl p-6 ring-1 backdrop-blur-xl"
+                className="space-y-4 rounded-2xl bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
             >
                 <SkeletonLine className="h-6 w-32" />
                 <SkeletonLine className="h-4 w-64" />
                 {[0, 1, 2].map(i => (
                     <div
                         key={i}
-                        className="ring-secondary-800 bg-secondary-900/60 rounded-xl p-4 ring-1"
+                        className="rounded-xl bg-secondary-900/60 p-4 ring-1 ring-secondary-800"
                     >
                         <div className="flex items-center gap-2">
                             <SkeletonLine className="h-4 w-20" />
@@ -154,13 +154,13 @@ function AccountContentSkeleton() {
 
 export default function AccountPage() {
     return (
-        <main className="bg-secondary-950 min-h-[calc(100dvh-3.5rem)] px-4 py-12">
+        <main className="min-h-[calc(100dvh-3.5rem)] bg-secondary-950 px-4 py-12">
             <div className="mx-auto w-full max-w-2xl space-y-6">
                 <header>
-                    <h1 className="text-secondary-50 text-2xl font-semibold">
+                    <h1 className="text-2xl font-semibold text-secondary-50">
                         계정 설정
                     </h1>
-                    <p className="text-secondary-400 mt-1 text-sm">
+                    <p className="mt-1 text-sm text-secondary-400">
                         프로필 정보를 확인하고 계정을 관리합니다.
                     </p>
                 </header>

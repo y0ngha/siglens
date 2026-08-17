@@ -34,7 +34,7 @@ export function ContactForm() {
             {submissionError ? (
                 <div
                     role="alert"
-                    className="border-ui-danger/30 bg-ui-danger/10 text-ui-danger flex items-start gap-2 rounded-md border p-3 text-sm"
+                    className="flex items-start gap-2 rounded-md border border-ui-danger/30 bg-ui-danger/10 p-3 text-sm text-ui-danger"
                 >
                     <span aria-hidden>⚠</span>
                     <p>{submissionError}</p>
@@ -47,7 +47,6 @@ export function ContactForm() {
                 label="제목"
                 type="text"
                 required
-                autoFocus
                 maxLength={CONTACT_TITLE_MAX_LENGTH}
                 placeholder="문의 제목을 입력해 주세요"
                 defaultValue={state.values.title}
@@ -90,12 +89,12 @@ export function ContactForm() {
 function ContactEmailFieldSkeleton() {
     return (
         <div className="space-y-2" aria-busy="true">
-            <span className="text-secondary-200 block text-sm font-medium">
+            <span className="block text-sm font-medium text-secondary-200">
                 이메일
             </span>
             <div
                 aria-hidden
-                className="border-secondary-700 bg-secondary-900/60 h-12 w-full animate-pulse rounded-md border"
+                className="h-12 w-full animate-pulse rounded-md border border-secondary-700 bg-secondary-900/60"
             />
         </div>
     );

@@ -14,11 +14,13 @@ export const TERMS_TITLE = '이용약관';
 export const TERMS_FULL_TITLE = `${TERMS_TITLE} | ${SITE_NAME}`;
 export const TERMS_DESCRIPTION = `${SITE_NAME} 서비스 이용약관 — 서비스 이용 조건, 투자 정보 면책 조항, 사용자 권리와 의무를 안내합니다.`;
 
+const KST_LONG_DATE_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+});
+
 export function formatKoreanDate(date: Date): string {
-    return new Intl.DateTimeFormat('ko-KR', {
-        timeZone: 'Asia/Seoul',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-    }).format(date);
+    return KST_LONG_DATE_FORMATTER.format(date);
 }

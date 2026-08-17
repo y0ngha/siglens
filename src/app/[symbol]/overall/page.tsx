@@ -282,17 +282,17 @@ export default async function OverallPage({ params }: Props) {
                 </SymbolPageHeading>
                 <section
                     aria-labelledby="overall-guide-heading"
-                    className="border-secondary-800 bg-secondary-800/30 space-y-3 rounded-lg border p-5"
+                    className="space-y-3 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5"
                 >
                     <h2
                         id="overall-guide-heading"
-                        className="text-secondary-300 text-base font-semibold"
+                        className="text-base font-semibold text-secondary-300"
                     >
                         {displayName} 종합 분석은 어떻게 봐야 할까
                     </h2>
                     {isEquity ? (
                         <>
-                            <p className="text-secondary-400 text-sm leading-relaxed">
+                            <p className="text-sm leading-relaxed text-secondary-400">
                                 {displayName} 주가가 지금 어디쯤 와 있는지 한
                                 페이지에서 정리해 봅니다. 차트의 추세와 주요
                                 지지선과 저항선, 옵션 시장이 평가하는 단기
@@ -300,7 +300,7 @@ export default async function OverallPage({ params }: Props) {
                                 무엇에 반응하고 있는지까지 네 가지 분석 축에
                                 시장 분위기를 더해 살펴봅니다.
                             </p>
-                            <p className="text-secondary-400 text-sm leading-relaxed">
+                            <p className="text-sm leading-relaxed text-secondary-400">
                                 옵션 시장이 가까운 만기에서 콜과 풋 어느 쪽에 더
                                 큰 베팅을 걸고 있는지도 한 줄로 짚어 줍니다. 네
                                 축을 합쳐 강세와 약세 시나리오를 각각 정리하고,
@@ -308,7 +308,7 @@ export default async function OverallPage({ params }: Props) {
                                 신호가 나오면 시나리오가 깨지는지를 함께
                                 짚습니다.
                             </p>
-                            <p className="text-secondary-400 text-sm leading-relaxed">
+                            <p className="text-sm leading-relaxed text-secondary-400">
                                 실적 발표, 가이던스 변화, 매크로 이벤트처럼
                                 시나리오를 뒤집을 수 있는 위험 요인도 따로
                                 표시해 두니, 매수 전에 한 번 훑어보면 도움이
@@ -317,20 +317,20 @@ export default async function OverallPage({ params }: Props) {
                         </>
                     ) : (
                         <>
-                            <p className="text-secondary-400 text-sm leading-relaxed">
+                            <p className="text-sm leading-relaxed text-secondary-400">
                                 {displayName} 시세가 지금 어디쯤 와 있는지 한
                                 페이지에서 정리해 봅니다. 차트의 추세와 주요
                                 지지선과 저항선, 최근 뉴스에서 시장이 무엇에
                                 반응하고 있는지, 매수 분위기(공포 탐욕 지수)를
                                 세 축으로 묶어 살펴봅니다.
                             </p>
-                            <p className="text-secondary-400 text-sm leading-relaxed">
+                            <p className="text-sm leading-relaxed text-secondary-400">
                                 세 축을 합쳐 강세와 약세 시나리오를 각각
                                 정리하고, 어떤 가격대에서 진입을 고려해 볼
                                 만한지, 어떤 신호가 나오면 시나리오가 깨지는지를
                                 함께 짚습니다.
                             </p>
-                            <p className="text-secondary-400 text-sm leading-relaxed">
+                            <p className="text-sm leading-relaxed text-secondary-400">
                                 매크로 이벤트, 규제 이슈, 대형 뉴스처럼
                                 시나리오를 뒤집을 수 있는 위험 요인도 따로
                                 표시해 두니, 매수 전에 한 번 훑어보면 도움이

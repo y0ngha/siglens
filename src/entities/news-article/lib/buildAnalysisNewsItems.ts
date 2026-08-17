@@ -27,6 +27,8 @@ export function buildAnalysisNewsItems(
     rows: ReadonlyArray<NewsRow>
 ): EnrichedNewsItem[] {
     return selectAggregateNewsItems(
-        rows.filter(isEnrichedRow).map(toEnrichedNewsItem)
+        rows.flatMap(row =>
+            isEnrichedRow(row) ? [toEnrichedNewsItem(row)] : []
+        )
     );
 }

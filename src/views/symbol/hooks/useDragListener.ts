@@ -1,13 +1,7 @@
 'use client';
 
 import type React from 'react';
-import {
-    useCallback,
-    useEffect,
-    useEffectEvent,
-    useRef,
-    useState,
-} from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 
 interface UseDragListenerOptions {
     onResize: (deltaX: number) => void;
@@ -24,12 +18,12 @@ export function useDragListener({
     const [isDragging, setIsDragging] = useState(false);
     const dragStartXRef = useRef<number>(0);
 
-    const handleDragStart = useCallback((e: React.MouseEvent): void => {
+    const handleDragStart = (e: React.MouseEvent): void => {
         if (e.button !== 0) return;
         e.preventDefault();
         dragStartXRef.current = e.clientX;
         setIsDragging(true);
-    }, []);
+    };
 
     const handleMouseMove = useEffectEvent((e: MouseEvent) => {
         onResize(e.clientX - dragStartXRef.current);

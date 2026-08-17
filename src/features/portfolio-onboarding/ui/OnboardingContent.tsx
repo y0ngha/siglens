@@ -25,13 +25,13 @@ export function OnboardingContent() {
     return (
         <div className="space-y-6">
             <header className="space-y-3">
-                <span className="bg-primary-500/10 text-primary-400 ring-primary-500/20 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ring-1">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-500/10 px-3 py-1 text-xs font-medium text-primary-400 ring-1 ring-primary-500/20">
                     <span aria-hidden="true">🎉</span> 가입을 환영해요
                 </span>
-                <h1 className="text-secondary-50 text-2xl font-semibold">
+                <h1 className="text-2xl font-semibold text-secondary-50">
                     보유종목을 등록해 보세요
                 </h1>
-                <p className="text-secondary-400 text-sm">
+                <p className="text-sm text-secondary-400">
                     지금 등록하면 내 평단을 기준으로 분석을 받을 수 있어요.
                     나중에 계정 설정에서도 추가할 수 있어요.
                 </p>
@@ -39,7 +39,7 @@ export function OnboardingContent() {
 
             <section
                 aria-label="보유종목"
-                className="ring-secondary-800 bg-secondary-900/80 space-y-4 rounded-2xl p-6 ring-1 backdrop-blur-xl"
+                className="space-y-4 rounded-2xl bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
             >
                 <PortfolioSection />
             </section>

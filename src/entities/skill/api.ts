@@ -559,16 +559,12 @@ export class FileSkillsLoader implements SkillsProvider {
 export async function countSkillFiles(): Promise<SkillCounts> {
     const skills = await new FileSkillsLoader().loadSkills();
     const byType = countSkillsByType(skills);
-    const byCategory = skills.reduce<Partial<Record<SkillCategory, number>>>(
-        (acc, skill) => {
-            if (skill.category == null) return acc;
-            return {
-                ...acc,
-                [skill.category]: (acc[skill.category] ?? 0) + 1,
-            };
-        },
-        {}
-    );
+    // 스킬마다 객체를 복제하지 않고 로컬 누적기를 증가시킨다(O(n)).
+    const byCategory: Partial<Record<SkillCategory, number>> = {};
+    for (const skill of skills) {
+        if (skill.category == null) continue;
+        byCategory[skill.category] = (byCategory[skill.category] ?? 0) + 1;
+    }
     return {
         indicators: byType.indicator_guide ?? 0,
         candlesticks: byType.candlestick ?? 0,

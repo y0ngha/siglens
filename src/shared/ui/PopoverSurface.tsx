@@ -125,7 +125,7 @@ export function PopoverSurface({
         <div
             data-testid="popover-backdrop"
             role="presentation"
-            className="bg-secondary-950/80 fixed inset-0 z-60 flex items-start justify-center overflow-y-auto overscroll-contain p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-60 flex items-start justify-center overflow-y-auto overscroll-contain bg-secondary-950/80 p-4 backdrop-blur-sm"
         >
             {panel}
         </div>,

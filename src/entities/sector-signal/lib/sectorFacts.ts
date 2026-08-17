@@ -62,8 +62,7 @@ export function buildSectorFacts(
             .map(s => s.symbol)
             .toSorted((a, b) => a.localeCompare(b, 'en'));
         const bearishOnlySymbols = bearishStocks
-            .filter(s => !isBullish(s))
-            .map(s => s.symbol)
+            .flatMap(s => (isBullish(s) ? [] : [s.symbol]))
             .toSorted((a, b) => a.localeCompare(b, 'en'));
         const topSymbols = [...bullishSymbols, ...bearishOnlySymbols].slice(
             0,

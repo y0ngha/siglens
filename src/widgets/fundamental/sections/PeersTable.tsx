@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
+import { formatCompactUsd } from '@/shared/lib/priceFormat';
 
 const HEADING_ID = 'peers-heading';
 const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
@@ -23,7 +24,7 @@ export function PeersTable({ peers }: PeersTableProps) {
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 동종업계 비교
@@ -31,7 +32,7 @@ export function PeersTable({ peers }: PeersTableProps) {
             <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                     <thead>
-                        <tr className="text-secondary-400 border-secondary-700 border-b text-left text-xs tracking-widest uppercase">
+                        <tr className="border-b border-secondary-700 text-left text-xs tracking-widest text-secondary-400 uppercase">
                             <th className="pb-2 font-medium">티커</th>
                             <th className="pb-2 font-medium">회사명</th>
                             <th className="pb-2 text-right font-medium">
@@ -43,29 +44,24 @@ export function PeersTable({ peers }: PeersTableProps) {
                         {peers.map(peer => (
                             <tr
                                 key={peer.symbol}
-                                className="hover:bg-secondary-800/40 border-secondary-700/50 border-b transition-colors last:border-b-0"
+                                className="border-b border-secondary-700/50 transition-colors last:border-b-0 hover:bg-secondary-800/40"
                             >
                                 <td className="py-2.5 pr-4">
                                     <Link
                                         href={`/${peer.symbol}/fundamental`}
                                         // 표로 다수 렌더 — docs/architecture/CDN_CACHING.md §1
                                         prefetch={false}
-                                        className="text-primary-400 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-800 rounded-sm font-mono font-medium hover:underline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                                        className="rounded-sm font-mono font-medium text-primary-400 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
                                         translate="no"
                                     >
                                         {peer.symbol}
                                     </Link>
                                 </td>
-                                <td className="text-secondary-400 py-2.5 pr-4">
+                                <td className="py-2.5 pr-4 text-secondary-400">
                                     {peer.companyName}
                                 </td>
                                 <td className="py-2.5 text-right font-mono tabular-nums">
-                                    {new Intl.NumberFormat('ko-KR', {
-                                        notation: 'compact',
-                                        maximumFractionDigits: 1,
-                                        style: 'currency',
-                                        currency: 'USD',
-                                    }).format(peer.marketCap)}
+                                    {formatCompactUsd(peer.marketCap)}
                                 </td>
                             </tr>
                         ))}

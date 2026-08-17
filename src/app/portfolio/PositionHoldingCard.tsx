@@ -91,7 +91,7 @@ function CardSkeleton({ symbol }: { symbol: string }) {
             <span className="sr-only">{symbol} 위치를 불러오는 중이에요</span>
             <div
                 aria-hidden="true"
-                className="bg-secondary-800 h-32 w-32 animate-pulse rounded"
+                className="h-32 w-32 animate-pulse rounded bg-secondary-800"
             />
         </div>
     );
@@ -111,8 +111,8 @@ function CardDegraded({ avg, message }: CardDegradedProps) {
                 'border-secondary-700 flex w-full max-w-[200px] flex-col items-center justify-center gap-1 rounded-lg border border-dashed p-3 text-center'
             )}
         >
-            <span className="text-secondary-400 text-xs">{message}</span>
-            <span className="text-secondary-400 text-xs tabular-nums">
+            <span className="text-xs text-secondary-400">{message}</span>
+            <span className="text-xs text-secondary-400 tabular-nums">
                 평단 {formatUsd(avg)}
             </span>
         </div>
@@ -164,19 +164,19 @@ export function PositionHoldingCard({ holding }: PositionHoldingCardProps) {
             href={`/${holding.symbol}/position`}
             // 보유 종목 수만큼 카드가 렌더된다 — docs/architecture/CDN_CACHING.md §1
             prefetch={false}
-            className="focus-visible:ring-primary-500 group block rounded-xl transition-shadow focus-visible:ring-2 focus-visible:outline-none"
+            className="group block rounded-xl transition-shadow focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
         >
             <div
                 ref={setNode}
                 data-testid="portfolio-holding-card"
-                className="ring-secondary-800 group-hover:ring-secondary-600 bg-secondary-900/60 flex flex-col items-center gap-3 rounded-xl p-4 ring-1 transition-colors"
+                className="flex flex-col items-center gap-3 rounded-xl bg-secondary-900/60 p-4 ring-1 ring-secondary-800 transition-colors group-hover:ring-secondary-600"
             >
                 <div className="flex w-full items-baseline justify-between gap-2">
-                    <span className="text-secondary-100 text-sm font-semibold">
+                    <span className="text-sm font-semibold text-secondary-100">
                         {holding.symbol}
                     </span>
                     {holding.companyName && (
-                        <span className="text-secondary-400 truncate text-xs">
+                        <span className="truncate text-xs text-secondary-400">
                             {holding.companyName}
                         </span>
                     )}
@@ -209,7 +209,7 @@ export function PositionHoldingCard({ holding }: PositionHoldingCardProps) {
                                 avg={avg}
                                 className="max-w-[200px]"
                             />
-                            <dl className="text-secondary-300 grid w-full grid-cols-2 gap-x-2 gap-y-1 text-xs">
+                            <dl className="grid w-full grid-cols-2 gap-x-2 gap-y-1 text-xs text-secondary-300">
                                 <dt className="text-secondary-400">평단</dt>
                                 <dd className="text-right tabular-nums">
                                     {formatUsd(avg)}

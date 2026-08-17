@@ -75,7 +75,7 @@ export function __pendingBackgroundTaskCount(): number {
  */
 export async function drainBackgroundTasks(deadlineMs: number): Promise<void> {
     if (pendingTasks.size === 0) return;
-    const all = Promise.allSettled([...pendingTasks]);
+    const all = Promise.allSettled(pendingTasks);
     let timer: ReturnType<typeof setTimeout> | undefined;
     const deadline = new Promise<void>(resolve => {
         timer = setTimeout(resolve, deadlineMs);

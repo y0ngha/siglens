@@ -35,7 +35,7 @@ export default function DeleteAccountPage() {
                     마음이 바뀌셨나요?{' '}
                     <Link
                         href="/account"
-                        className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 font-medium underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none"
+                        className="font-medium text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         계정 설정으로 돌아가기 →
                     </Link>
@@ -56,9 +56,9 @@ export default function DeleteAccountPage() {
                     >
                         <span
                             aria-hidden="true"
-                            className="border-secondary-500 h-3 w-3 animate-spin rounded-full border-2 border-t-transparent"
+                            className="h-3 w-3 animate-spin rounded-full border-2 border-secondary-500 border-t-transparent"
                         />
-                        <span className="text-secondary-400 text-xs">
+                        <span className="text-xs text-secondary-400">
                             계정 정보를 불러오고 있어요…
                         </span>
                     </div>

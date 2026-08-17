@@ -100,11 +100,11 @@ export function ExpirationSelector({
 
     return (
         <div
-            className="border-secondary-700 bg-secondary-800 flex flex-wrap items-center gap-2 overflow-x-auto rounded-xl border p-3"
+            className="flex flex-wrap items-center gap-2 overflow-x-auto rounded-xl border border-secondary-700 bg-secondary-800 p-3"
             role="tablist"
             aria-label="옵션 만기 선택"
         >
-            <span className="text-secondary-400 mr-1 text-xs tracking-widest uppercase">
+            <span className="mr-1 text-xs tracking-widest text-secondary-400 uppercase">
                 만기
                 <InfoTooltip>
                     <p>옵션 계약이 만료되는 날짜예요.</p>
@@ -135,7 +135,7 @@ export function ExpirationSelector({
                     >
                         <span>{tab.label}</span>
                         {tab.sub !== undefined && (
-                            <span className="text-secondary-500 font-mono text-[10px]">
+                            <span className="font-mono text-[10px] text-secondary-500">
                                 {tab.sub}
                             </span>
                         )}

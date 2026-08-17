@@ -99,8 +99,9 @@ describe('ConsentCheckboxGroup', () => {
 
     it('detail links open in new tab with rel=noopener and aria-label', () => {
         render(<Renderer />);
-        const privacyLink =
-            screen.getByLabelText('개인정보처리방침 자세히 보기');
+        const privacyLink = screen.getByLabelText(
+            '개인정보처리방침 자세히 보기'
+        );
         expect(privacyLink).toHaveAttribute('target', '_blank');
         expect(privacyLink.getAttribute('rel')).toContain('noopener');
     });

@@ -80,7 +80,7 @@ export function MarketSummaryPanel({ peekSeed }: MarketSummaryPanelProps = {}) {
             aria-label="오늘의 미국 시장"
             className="px-6 py-10 lg:px-[15vw]"
         >
-            <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-[0.15em] uppercase">
+            <h2 className="mb-6 text-sm font-semibold tracking-[0.15em] text-secondary-200 uppercase">
                 오늘의 미국 시장
             </h2>
             {showNotice && (
@@ -107,7 +107,7 @@ export function MarketSummaryPanel({ peekSeed }: MarketSummaryPanelProps = {}) {
 
                         return (
                             <div key={group.label}>
-                                <p className="text-secondary-500 mb-1.5 text-[10px] tracking-wider uppercase">
+                                <p className="mb-1.5 text-[10px] tracking-wider text-secondary-500 uppercase">
                                     {group.label}
                                 </p>
                                 <div

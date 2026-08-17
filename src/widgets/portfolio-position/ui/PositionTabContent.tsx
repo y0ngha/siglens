@@ -36,7 +36,7 @@ function PositionAuthSkeleton() {
             aria-busy="true"
             aria-live="polite"
             data-testid="position-auth-loading"
-            className="border-secondary-700 bg-secondary-800/40 h-40 animate-pulse rounded-xl border"
+            className="h-40 animate-pulse rounded-xl border border-secondary-700 bg-secondary-800/40"
         >
             <span className="sr-only">내 위치를 불러오는 중이에요</span>
         </div>

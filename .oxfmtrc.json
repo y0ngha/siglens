@@ -1,0 +1,42 @@
+{
+    "$schema": "./node_modules/oxfmt/configuration_schema.json",
+
+    // prettier(.prettierrc.cjs) 설정을 `oxfmt --migrate=prettier`로 이관한 결과.
+    // tailwind 클래스 정렬은 prettier-plugin-tailwindcss 대신 oxfmt 내장
+    // sortTailwindcss가 담당한다(Tailwind v4: CSS entry point 지정 필요).
+    "tabWidth": 4,
+    "useTabs": false,
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "es5",
+    "arrowParens": "avoid",
+    "printWidth": 80,
+    "endOfLine": "lf",
+    "sortPackageJson": false,
+    "sortTailwindcss": {
+        "stylesheet": "./src/app/globals.css"
+    },
+
+    // oxfmt는 기본으로 .gitignore를 읽는다. 아래는 이전 .prettierignore에서
+    // 유지해야 하는 항목(문서/생성물/에이전트 설정은 손대지 않는다).
+    // .yarn/**은 .gitignore의 `!.yarn/releases` 부정 패턴 때문에 다시 후보로
+    // 올라오므로 여기서 명시적으로 제외한다(yarn 릴리스 번들 재포맷 방지).
+    "ignorePatterns": [
+        "**/*.md",
+        ".github/**",
+        ".agents/**",
+        ".claude/**",
+        ".codex/**",
+        ".gemini/**",
+        ".superpowers/**",
+        ".idea/**",
+        ".vscode/**",
+        ".yarn/**",
+        "coverage/**",
+        "drizzle/**",
+        "playwright-report/**",
+        "public/**",
+        "worker/**",
+        "next-env.d.ts"
+    ]
+}

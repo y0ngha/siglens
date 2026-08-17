@@ -64,6 +64,15 @@ export function useAnalysisProgress({
     const [finishing, setFinishing] = useState(false);
     const [prevIsAnalyzing, setPrevIsAnalyzing] = useState(isAnalyzing);
 
+    // 마무리 effect가 "현재 단계"를 읽기 위한 ref. 예전에는 setPhaseIndex(current => …)
+    // 안에서 타이머를 걸어 current를 훔쳐봤는데, React는 updater를 두 번 호출할 수 있어
+    // (StrictMode·렌더 재시도) 타이머 체인이 중복 생성되고 onFinished가 두 번 불릴 수 있었다.
+    // updater는 순수하게 유지하고 최신 값은 ref로 읽는다.
+    const phaseIndexRef = useRef(phaseIndex);
+    useEffect(() => {
+        phaseIndexRef.current = phaseIndex;
+    }, [phaseIndex]);
+
     // 항상 최신 onFinished를 호출하기 위한 ref. 마무리 effect 자체는 한 번만 돌아야 하므로
     // onFinished를 deps에 넣지 않고 ref로 우회한다.
     const onFinishedRef = useRef(onFinished);
@@ -140,20 +149,15 @@ export function useAnalysisProgress({
             );
         };
 
-        // finishing 진입 시점의 phaseIndex를 직접 함수형 setState로 읽어 캡처한다.
-        setPhaseIndex(current => {
-            if (current >= ANALYSIS_PHASES.length - 1) {
-                timers.push(window.setTimeout(callFinished, FINISHING_TAIL_MS));
-            } else {
-                timers.push(
-                    window.setTimeout(
-                        () => advanceFrom(current),
-                        FINISHING_HOLD_MS
-                    )
-                );
-            }
-            return current;
-        });
+        // finishing 진입 시점의 phaseIndex를 ref에서 읽는다(커밋된 최신 값).
+        const current = phaseIndexRef.current;
+        if (current >= ANALYSIS_PHASES.length - 1) {
+            timers.push(window.setTimeout(callFinished, FINISHING_TAIL_MS));
+        } else {
+            timers.push(
+                window.setTimeout(() => advanceFrom(current), FINISHING_HOLD_MS)
+            );
+        }
 
         return () => {
             cancelled = true;

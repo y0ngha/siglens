@@ -66,7 +66,7 @@ export function ShareButton() {
                 <p
                     id={describedById}
                     role="status"
-                    className="border-secondary-700 bg-secondary-900 text-secondary-400 absolute top-full right-0 z-50 mt-1 w-max max-w-xs rounded-lg border px-3 py-2 text-xs shadow-lg"
+                    className="absolute top-full right-0 z-50 mt-1 w-max max-w-xs rounded-lg border border-secondary-700 bg-secondary-900 px-3 py-2 text-xs text-secondary-400 shadow-lg"
                 >
                     이 탭은 공유할 분석이 아직 없어요
                 </p>

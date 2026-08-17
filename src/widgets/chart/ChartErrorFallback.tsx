@@ -14,12 +14,12 @@ export function ChartErrorFallback({
             : '알 수 없는 오류가 발생했습니다.');
 
     return (
-        <div className="bg-secondary-900/60 absolute inset-0 z-10 flex flex-col items-center justify-center gap-3">
-            <span className="text-ui-danger text-sm">{errorMessage}</span>
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-secondary-900/60">
+            <span className="text-sm text-ui-danger">{errorMessage}</span>
             <button
                 type="button"
                 onClick={resetErrorBoundary}
-                className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-900 rounded px-3 py-1.5 text-xs text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                className="rounded bg-primary-600 px-3 py-1.5 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900 focus-visible:outline-none"
             >
                 다시 시도
             </button>

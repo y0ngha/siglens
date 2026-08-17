@@ -21,7 +21,7 @@ export function StaleAnalysisBanner({
     return (
         <div
             role="status"
-            className="border-ui-warning/30 bg-ui-warning/10 text-ui-warning flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm"
+            className="flex items-center justify-between gap-3 rounded-lg border border-ui-warning/30 bg-ui-warning/10 px-3 py-2 text-sm text-ui-warning"
         >
             <span>{STALE_MESSAGE}</span>
             <div className="relative inline-flex">
@@ -37,7 +37,7 @@ export function StaleAnalysisBanner({
                             ? `재분석은 ${cooldownMinutes}분에 한 번만 실행할 수 있어요.`
                             : undefined
                     }
-                    className="border-ui-warning/40 hover:bg-ui-warning/20 focus-visible:ring-primary-500 rounded-md border px-2 py-1 text-xs font-medium focus-visible:ring-1 focus-visible:outline-none disabled:opacity-40"
+                    className="rounded-md border border-ui-warning/40 px-2 py-1 text-xs font-medium hover:bg-ui-warning/20 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none disabled:opacity-40"
                 >
                     {REANALYZE_LABEL}
                 </button>

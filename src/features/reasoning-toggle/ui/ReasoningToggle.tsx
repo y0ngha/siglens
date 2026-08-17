@@ -70,7 +70,7 @@ export function ReasoningToggle({
 
     return (
         <div className={cn('flex items-center gap-1.5', className)}>
-            <span className="text-secondary-400 text-xs whitespace-nowrap">
+            <span className="text-xs whitespace-nowrap text-secondary-400">
                 {REASONING_FEATURE_LABEL}
             </span>
             <InfoTooltip>

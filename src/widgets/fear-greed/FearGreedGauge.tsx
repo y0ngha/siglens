@@ -228,7 +228,7 @@ export function FearGreedGauge({
                                 y={ly}
                                 textAnchor={tickTextAnchor(value)}
                                 dominantBaseline="middle"
-                                className="text-secondary-400 fill-current text-[10px] font-medium tabular-nums"
+                                className="fill-current text-[10px] font-medium text-secondary-400 tabular-nums"
                             >
                                 {value}
                             </text>
@@ -251,10 +251,10 @@ export function FearGreedGauge({
                 {isHero ? (
                     <>
                         <div className="flex items-baseline justify-center gap-1.5">
-                            <span className="text-secondary-100 text-5xl font-bold tabular-nums">
+                            <span className="text-5xl font-bold text-secondary-100 tabular-nums">
                                 {score}
                             </span>
-                            <span className="text-secondary-400 text-xs">
+                            <span className="text-xs text-secondary-400">
                                 / 100
                             </span>
                         </div>
@@ -277,11 +277,11 @@ export function FearGreedGauge({
                     </>
                 ) : (
                     <>
-                        <div className="text-secondary-100 text-xl font-semibold tabular-nums">
+                        <div className="text-xl font-semibold text-secondary-100 tabular-nums">
                             {score}
                         </div>
                         {periodLabel ? (
-                            <div className="text-secondary-400 text-[10px]">
+                            <div className="text-[10px] text-secondary-400">
                                 {periodLabel}
                             </div>
                         ) : null}

@@ -123,9 +123,9 @@ export function NewsSnapshotProse({
             displayName={displayName}
             asOf={generatedAt}
         >
-            <div className="text-secondary-300 space-y-4 text-sm leading-6">
+            <div className="space-y-4 text-sm leading-6 text-secondary-300">
                 {narrowed.overallSentiment !== null && (
-                    <p className="text-secondary-200 font-medium">
+                    <p className="font-medium text-secondary-200">
                         {symbol} 뉴스 종합 심리:{' '}
                         {SENTIMENT_LABEL[narrowed.overallSentiment]}
                     </p>

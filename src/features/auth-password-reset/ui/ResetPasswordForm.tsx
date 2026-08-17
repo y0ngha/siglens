@@ -6,7 +6,7 @@ import { PasswordStrengthHint } from '@/shared/ui/auth/PasswordStrengthHint';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 import { useResetPasswordForm } from '../hooks/useResetPasswordForm';
 import type { ResetPasswordFormState } from '@/shared/lib/types';
-import { useCallback, useId, useState } from 'react';
+import { useId, useState } from 'react';
 
 interface ResetPasswordFormProps {
     email: string;
@@ -42,19 +42,16 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
     const formError = describeFormError(state);
     const fieldError = describePasswordFieldError(state);
 
-    const handleAction = useCallback(
-        (formData: FormData) => {
-            if (password !== confirmPassword) {
-                setConfirmError('비밀번호가 일치하지 않습니다.');
-                return;
-            }
-            setConfirmError(null);
-            setPassword('');
-            setConfirmPassword('');
-            formAction(formData);
-        },
-        [formAction, password, confirmPassword]
-    );
+    const handleAction = (formData: FormData) => {
+        if (password !== confirmPassword) {
+            setConfirmError('비밀번호가 일치하지 않습니다.');
+            return;
+        }
+        setConfirmError(null);
+        setPassword('');
+        setConfirmPassword('');
+        formAction(formData);
+    };
 
     return (
         <form action={handleAction} className="space-y-4" noValidate>

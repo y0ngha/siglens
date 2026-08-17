@@ -1,12 +1,6 @@
 'use client';
 
-import {
-    startTransition,
-    useEffect,
-    useEffectEvent,
-    useMemo,
-    useState,
-} from 'react';
+import { startTransition, useEffect, useEffectEvent, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import {
     useAnalysisSettingsHydrated,
@@ -89,19 +83,16 @@ export function OptionsPageClient({
     const [now, setNow] = useState<Date | null>(null);
     const { modelId, reasoning } = useSymbolModel();
     const isSettingsHydrated = useAnalysisSettingsHydrated();
-    const validSlots = useMemo(() => slots.filter(isSlotMapping), [slots]);
+    const validSlots = slots.filter(isSlotMapping);
     // 단일 호출로 (chain, metrics)을 산출하고 세 자식에 prop-drill 한다 —
     // 이전엔 OptionsMetricsRow / OpenInterestChart / OptionsChainTable이
     // 각자 pickActiveChain + summarizeChainForLlm을 동일 입력으로 3번
     // 돌렸다. chip 전환 시마다 같은 계산이 세 번 반복되던 비용을 제거한다.
     const chainMetrics = useOptionsChainMetrics(snapshot, expirationDate);
-    const oiStale = useMemo(
-        () =>
-            now !== null &&
-            !isEtRegularSessionOpen(now) &&
-            isOpenInterestSnapshotStale(snapshot),
-        [now, snapshot]
-    );
+    const oiStale =
+        now !== null &&
+        !isEtRegularSessionOpen(now) &&
+        isOpenInterestSnapshotStale(snapshot);
     const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
     // handlers — useEffectEvent 는 stable reference 이므로 deps 에 넣지 않는다
     // (MISTAKES.md Predictability §3). 본문은 startTransition 으로 격리해

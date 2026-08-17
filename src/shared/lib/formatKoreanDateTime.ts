@@ -4,13 +4,24 @@
  * - 출력 형식: `YYYY년 M월 D일 H시 mm분` (KST, Asia/Seoul)
  * - 월/일/시는 leading-zero 없이 숫자만 표기한다 (1월, 9일, 3시 …).
  * - 분은 두 자리 zero-pad (01분, 47분).
- * - RSC 전용 — 서버 렌더링만 사용하므로 hydration 불일치 없음.
+ * - timeZone을 Asia/Seoul로 고정하므로 서버/클라이언트 렌더 결과가 항상 같다
+ *   (hydration 불일치 없음). 클라이언트 컴포넌트에서도 안전하게 쓸 수 있다.
  * - 잘못된 ISO 입력은 빈 문자열 대신 원본 문자열을 그대로 반환한다 (graceful fallback).
  *
  * @example
  * formatKoreanDateTime('2026-06-30T14:47:00.000Z')
  * // → '2026년 6월 30일 23시 47분'  (KST = UTC+9)
  */
+const KST_DATE_TIME_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: false,
+});
+
 export function formatKoreanDateTime(iso: string): string {
     const date = new Date(iso);
     if (Number.isNaN(date.getTime())) {
@@ -20,17 +31,7 @@ export function formatKoreanDateTime(iso: string): string {
     // Intl.DateTimeFormat('ko-KR') 숫자 포맷은 Node/ICU 버전에 따라
     // '2026년 6월 30일' 같은 리터럴을 포함하거나 파트 경계가 달라질 수 있다.
     // 안전하게 각 숫자 파트만 추출해 직접 조합한다.
-    const formatter = new Intl.DateTimeFormat('ko-KR', {
-        timeZone: 'Asia/Seoul',
-        year: 'numeric',
-        month: 'numeric',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: false,
-    });
-
-    const parts = formatter.formatToParts(date);
+    const parts = KST_DATE_TIME_FORMATTER.formatToParts(date);
     const get = (type: Intl.DateTimeFormatPartTypes): string =>
         parts.find(p => p.type === type)?.value ?? '';
 

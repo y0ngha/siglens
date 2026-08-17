@@ -13,31 +13,45 @@ interface SurpriseBadge {
     percent: number;
 }
 
+// 포매터는 모듈 스코프에 한 번만 생성한다(렌더마다 new Intl.* 금지).
+// 날짜는 timeZone: 'UTC' 고정 — 날짜만 있는 문자열이 로컬 TZ에서 하루 밀리는 것과
+// 서버/클라이언트 렌더 불일치를 동시에 막는다.
+const SHORT_DATE_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'UTC',
+    month: 'short',
+    day: 'numeric',
+});
+
+const USD_FORMATTER = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 2,
+});
+
+const COMPACT_USD_FORMATTER = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    notation: 'compact',
+    maximumFractionDigits: 1,
+});
+
+const SIGNED_PERCENT_FORMATTER = new Intl.NumberFormat('ko-KR', {
+    signDisplay: 'always',
+    maximumFractionDigits: 1,
+});
+
 function formatShortDate(dateStr: string): string {
-    return new Intl.DateTimeFormat('ko-KR', {
-        timeZone: 'UTC',
-        month: 'short',
-        day: 'numeric',
-    }).format(new Date(dateStr));
+    return SHORT_DATE_FORMATTER.format(new Date(dateStr));
 }
 
 function formatCurrency(value: number | null): string {
     if (value === null) return '—';
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        maximumFractionDigits: 2,
-    }).format(value);
+    return USD_FORMATTER.format(value);
 }
 
 function formatRevenue(value: number | null): string {
     if (value === null) return '—';
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        notation: 'compact',
-        maximumFractionDigits: 1,
-    }).format(value);
+    return COMPACT_USD_FORMATTER.format(value);
 }
 
 interface EarningsReportComparisonProps {
@@ -57,7 +71,7 @@ function EarningsReportComparison({ items }: EarningsReportComparisonProps) {
     return (
         <div className="space-y-3">
             <div className="flex flex-wrap items-end justify-between gap-2">
-                <div className="text-secondary-400 flex gap-3 text-xs">
+                <div className="flex gap-3 text-xs text-secondary-400">
                     <span className="inline-flex items-center gap-1">
                         <span className="h-2 w-2 rounded-full bg-emerald-400" />
                         실제
@@ -107,10 +121,10 @@ function EarningsReportCard({
     const surpriseBadge = getSurpriseBadge(item);
 
     return (
-        <article className="border-secondary-700 bg-secondary-800 rounded-lg border p-4">
+        <article className="rounded-lg border border-secondary-700 bg-secondary-800 p-4">
             <div className="flex min-h-10 items-start justify-between gap-3">
                 <div>
-                    <p className="text-secondary-400 text-xs">{statusLabel}</p>
+                    <p className="text-xs text-secondary-400">{statusLabel}</p>
                     <time
                         dateTime={item.earningsDate}
                         className="font-semibold tabular-nums"
@@ -119,7 +133,7 @@ function EarningsReportCard({
                     </time>
                 </div>
                 <div className="flex flex-wrap justify-end gap-1">
-                    <span className="border-secondary-600 text-secondary-300 rounded-full border px-2 py-0.5 text-xs">
+                    <span className="rounded-full border border-secondary-600 px-2 py-0.5 text-xs text-secondary-300">
                         {item.period === 'future' ? '예정' : '과거'}
                     </span>
                     {surpriseBadge !== null ? (
@@ -189,7 +203,7 @@ function MetricBars({
     return (
         <div className="space-y-2">
             <div className="flex items-center justify-between gap-3 text-xs">
-                <span className="text-secondary-300 font-medium">{label}</span>
+                <span className="font-medium text-secondary-300">{label}</span>
             </div>
             <div className="space-y-1.5">
                 <MetricBar
@@ -236,10 +250,10 @@ function MetricBar({
 
     return (
         <div className="grid grid-cols-[4.5rem_minmax(0,1fr)_4.5rem] items-center gap-2">
-            <span className="text-secondary-500 text-xs">{label}</span>
-            <div className="bg-secondary-900 relative h-2 rounded-full">
+            <span className="text-xs text-secondary-500">{label}</span>
+            <div className="relative h-2 rounded-full bg-secondary-900">
                 {signed ? (
-                    <span className="bg-secondary-600 absolute -top-0.5 -bottom-0.5 left-1/2 w-px" />
+                    <span className="absolute -top-0.5 -bottom-0.5 left-1/2 w-px bg-secondary-600" />
                 ) : null}
                 {value !== null ? (
                     <div
@@ -249,7 +263,7 @@ function MetricBar({
                     />
                 ) : null}
             </div>
-            <span className="text-secondary-400 text-right text-xs tabular-nums">
+            <span className="text-right text-xs text-secondary-400 tabular-nums">
                 {format(value)}
             </span>
         </div>
@@ -324,11 +338,7 @@ function getSurprisePercent(
 }
 
 function formatSignedPercent(value: number): string {
-    const formatted = new Intl.NumberFormat('ko-KR', {
-        signDisplay: 'always',
-        maximumFractionDigits: 1,
-    }).format(value);
-    return `${formatted}%`;
+    return `${SIGNED_PERCENT_FORMATTER.format(value)}%`;
 }
 
 interface EventCalendarProps {

@@ -1,7 +1,7 @@
 'use client';
 
 import type React from 'react';
-import { useCallback, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useDragListener } from './useDragListener';
 
 export const PANEL_MIN_WIDTH = 240;
@@ -33,15 +33,12 @@ export function usePanelResize(): UsePanelResizeResult {
         },
     });
 
-    const handleDragStart = useCallback(
-        (e: React.MouseEvent): void => {
-            panelWidthAtDragStartRef.current = panelWidth;
-            startDrag(e);
-        },
-        [panelWidth, startDrag]
-    );
+    const handleDragStart = (e: React.MouseEvent): void => {
+        panelWidthAtDragStartRef.current = panelWidth;
+        startDrag(e);
+    };
 
-    const handleKeyDown = useCallback((e: React.KeyboardEvent): void => {
+    const handleKeyDown = (e: React.KeyboardEvent): void => {
         if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
 
         e.preventDefault();
@@ -55,7 +52,7 @@ export function usePanelResize(): UsePanelResizeResult {
                 Math.min(PANEL_MAX_WIDTH, prev + KEYBOARD_RESIZE_STEP)
             );
         }
-    }, []);
+    };
 
     return { panelWidth, isDragging, handleDragStart, handleKeyDown };
 }

@@ -196,11 +196,11 @@ export function OpenInterestChart({
         // stale-quote 시그니처에 해당한다. 세 경로 모두 사용자 대응법
         // (정규장 시간에 재확인)이 같아 메시지를 통합한다.
         return (
-            <div className="border-secondary-700 bg-secondary-800 space-y-2 rounded-xl border p-4">
-                <span className="text-secondary-300 text-sm font-medium">
+            <div className="space-y-2 rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+                <span className="text-sm font-medium text-secondary-300">
                     Open Interest 분포 (Strike별)
                 </span>
-                <p className="text-secondary-500 text-xs leading-relaxed">
+                <p className="text-xs leading-relaxed text-secondary-500">
                     이 만기에는 OI 데이터가 없어요.
                 </p>
             </div>
@@ -242,10 +242,10 @@ export function OpenInterestChart({
     return (
         <div
             ref={containerRef}
-            className="border-secondary-700 bg-secondary-800 relative space-y-2 rounded-xl border p-4"
+            className="relative space-y-2 rounded-xl border border-secondary-700 bg-secondary-800 p-4"
         >
             <div className="flex items-center gap-1">
-                <span className="text-secondary-300 text-sm font-medium">
+                <span className="text-sm font-medium text-secondary-300">
                     Open Interest 분포 (Strike별)
                 </span>
                 <InfoTooltip>{OpenInterestTooltip}</InfoTooltip>
@@ -425,7 +425,7 @@ export function OpenInterestChart({
             >
                 {hoveredRow !== null && (
                     <>
-                        <div className="text-secondary-300 mb-1 font-semibold tabular-nums">
+                        <div className="mb-1 font-semibold text-secondary-300 tabular-nums">
                             Strike ${hoveredRow.strike.toLocaleString()}
                         </div>
                         <div className="flex items-center justify-between gap-3">
@@ -442,7 +442,7 @@ export function OpenInterestChart({
                                 계약
                             </span>
                         </div>
-                        <div className="border-secondary-700 mt-1 flex items-center justify-between gap-3 border-t pt-1">
+                        <div className="mt-1 flex items-center justify-between gap-3 border-t border-secondary-700 pt-1">
                             <span className="text-secondary-400">합계</span>
                             <span className="font-semibold tabular-nums">
                                 {(
@@ -456,10 +456,10 @@ export function OpenInterestChart({
                 )}
             </StrikeBarTooltip>
 
-            <div className="text-secondary-500 mt-2 flex flex-wrap items-center gap-3 text-[10px]">
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px] text-secondary-500">
                 <span className="flex items-center gap-1">
                     <span
-                        className="bg-chart-bullish inline-block h-2.5 w-2.5 rounded-sm"
+                        className="inline-block h-2.5 w-2.5 rounded-sm bg-chart-bullish"
                         aria-hidden="true"
                     />
                     Call OI
@@ -467,7 +467,7 @@ export function OpenInterestChart({
                 </span>
                 <span className="flex items-center gap-1">
                     <span
-                        className="bg-chart-bearish inline-block h-2.5 w-2.5 rounded-sm"
+                        className="inline-block h-2.5 w-2.5 rounded-sm bg-chart-bearish"
                         aria-hidden="true"
                     />
                     Put OI
@@ -475,14 +475,14 @@ export function OpenInterestChart({
                 </span>
                 <span className="flex items-center gap-1">
                     <span
-                        className="border-ui-warning inline-block w-[14px] border-t-[1.5px] border-dashed"
+                        className="inline-block w-[14px] border-t-[1.5px] border-dashed border-ui-warning"
                         aria-hidden="true"
                     />
                     Max Pain
                 </span>
                 <span className="flex items-center gap-1">
                     <span
-                        className="border-ui-warning inline-block w-[14px] border-t-[1.5px] border-solid"
+                        className="inline-block w-[14px] border-t-[1.5px] border-solid border-ui-warning"
                         aria-hidden="true"
                     />
                     현재가

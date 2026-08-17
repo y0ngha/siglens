@@ -8,7 +8,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-16.2-black)
 ![React](https://img.shields.io/badge/React-19.2-61dafb?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-tsgo%20(TS7)-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-7.0-blue)
 ![OXC](https://img.shields.io/badge/lint%2Fformat-OXC-c96198)
 ![Node.js](https://img.shields.io/badge/node-25.2.1-green)
 
@@ -254,7 +254,7 @@ siglens/
 
 Three things about this tree surprise people:
 
-**The `pages` layer lives in `src/views/`.** Creating `src/pages/` in an App Router project would activate the legacy Pages Router, so the FSD layer is named `views` instead. The mapping is enforced by the repo's lint boundary rules — violations fail the build, not review.
+**The `pages` layer lives in `src/views/`.** Creating `src/pages/` in an App Router project would activate the legacy Pages Router, so the FSD layer is named `views` instead. The mapping is enforced by `no-restricted-imports` layer overrides in `.oxlintrc.json` — violations fail the build, not review.
 
 **`@y0ngha/siglens-core` is not a third-party dependency.** It is Siglens' own analysis domain, extracted into a package: indicator math, pattern detection, signal logic, prompt building. Any layer may import it directly. What belongs there versus here is decided in [SCOPE.md](./docs/architecture/SCOPE.md); the layer rules themselves are in [ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md).
 
@@ -328,6 +328,14 @@ Roughly 1,000 Vitest files and 43 Playwright specs. The coverage target is **90%
 
 E2E runs against a real production build in a browser, separately from Vitest; see [E2E.md](./docs/qa/E2E.md). Note that `git push` triggers a Husky gate running format check, lint, typecheck, unit tests, and a full production build — expect it to take a while.
 
+### React Doctor
+
+`npx react-doctor@latest` audits the React codebase (security, correctness, a11y,
+performance, architecture). CI runs it on every pull request via
+`.github/workflows/react-doctor.yml` and fails the check on **new error-level**
+findings a change introduces. Project-level rule policy lives in
+`doctor.config.json`; every disabled rule there carries the reason inline.
+
 ## Commands
 
 Day to day:
@@ -336,14 +344,14 @@ Day to day:
 yarn dev             # dev server on :4200
 yarn build           # production build
 yarn lint            # oxlint          (lint:fix to autofix)
-yarn typecheck       # tsgo            (typecheck:tsc for tsc)
+yarn typecheck       # TypeScript 7 (native tsc)
 yarn format          # oxfmt           (format:check to verify)
 yarn test            # Vitest
 ```
 
 Always install with `yarn`. `npm` and `pnpm` are not used.
 
-**The toolchain is TypeScript 7 and OXC.** Type checking runs on `tsgo` from `@typescript/native-preview` — the Go port that becomes TypeScript 7 — with `yarn typecheck:tsc` kept as the legacy `tsc` path. Linting and formatting run on OXC: `yarn lint` is `oxlint`, `yarn format` is `oxfmt`. Script names are unchanged, so the Husky pre-push hook and CI call the same gates they always did.
+**The toolchain is TypeScript 7 and OXC.** Type checking runs on TypeScript 7's native `tsc` (`typescript@7`, the Go port) — the whole tree in about two seconds. `@typescript/native-preview` stays in devDependencies as the signal Next 16.2 looks for to skip its own type check, which still requires the legacy `typescript/lib/typescript.js` API that TS7 no longer ships; removing it breaks `yarn build`. Linting and formatting run on OXC: `yarn lint` is `oxlint`, `yarn format` is `oxfmt`. Script names are unchanged, so the Husky pre-push hook and CI call the same gates they always did. Details and constraints: [TOOLCHAIN.md](./docs/conventions/TOOLCHAIN.md).
 
 <details>
 <summary><b>Every script in package.json</b></summary>
@@ -366,8 +374,7 @@ Always install with `yarn`. `npm` and `pnpm` are not used.
 | `yarn format` | oxfmt write |
 | `yarn format:staged` | oxfmt for staged files |
 | `yarn format:check` | oxfmt check |
-| `yarn typecheck` | Typecheck with `tsgo` |
-| `yarn typecheck:tsc` | Typecheck with `tsc` |
+| `yarn typecheck` | Typecheck with TypeScript 7's native `tsc` |
 | `yarn db:generate` | Generate Drizzle migrations |
 | `yarn db:migrate` | Run migrations |
 | `yarn db:seed:terms` | Seed terms data |

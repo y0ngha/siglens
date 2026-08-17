@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import type { SkillType } from '@y0ngha/siglens-core';
 
 export type SkillsActiveTab = 'all' | SkillType;
@@ -21,23 +21,23 @@ export function useSkillsShowcase(): UseSkillsShowcaseReturn {
     const [expandedKey, setExpandedKey] = useState<string | null>(null);
     const baseId = useId();
 
-    const handleTabSelect = useCallback((value: SkillsActiveTab): void => {
+    const handleTabSelect = (value: SkillsActiveTab): void => {
         setActiveTab(value);
         setShowAll(false);
         // 탭을 바꾸면 펼쳐진 카드가 숨겨진 채 상태에 남지 않도록 초기화.
         setExpandedKey(null);
-    }, []);
+    };
 
-    const toggleShowAll = useCallback((): void => {
+    const toggleShowAll = (): void => {
         setShowAll(prev => !prev);
         // "더 보기/접기"로 카드 집합이 바뀌므로 펼침 상태도 초기화.
         setExpandedKey(null);
-    }, []);
+    };
 
     // 아코디언 UX 정책: 같은 카드를 다시 클릭하면 닫히고, 다른 카드를 열면 이전 카드는 자동으로 닫힌다.
-    const toggleExpanded = useCallback((key: string): void => {
+    const toggleExpanded = (key: string): void => {
         setExpandedKey(prev => (prev === key ? null : key));
-    }, []);
+    };
 
     return {
         activeTab,

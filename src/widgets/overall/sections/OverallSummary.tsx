@@ -9,7 +9,7 @@ export function OverallSummary({ headline }: OverallSummaryProps) {
     return (
         <section
             aria-labelledby="overall-summary-heading"
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2
                 id="overall-summary-heading"
@@ -17,7 +17,7 @@ export function OverallSummary({ headline }: OverallSummaryProps) {
             >
                 종합 요약
             </h2>
-            <MarkdownText className="text-secondary-400 text-sm">
+            <MarkdownText className="text-sm text-secondary-400">
                 {headline}
             </MarkdownText>
         </section>

@@ -71,15 +71,15 @@ export function TechnicalFactsSummary({
     return (
         <section
             aria-labelledby={headingId}
-            className="bg-secondary-800 flex flex-col gap-3 rounded-lg p-4"
+            className="flex flex-col gap-3 rounded-lg bg-secondary-800 p-4"
         >
             <h2
                 id={headingId}
-                className="text-secondary-200 text-sm font-semibold"
+                className="text-sm font-semibold text-secondary-200"
             >
                 {symbol} 기술적 지표 요약
             </h2>
-            <dl className="text-secondary-300 grid grid-cols-1 gap-2 text-sm">
+            <dl className="grid grid-cols-1 gap-2 text-sm text-secondary-300">
                 <div className="flex justify-between gap-4">
                     <dt className="text-secondary-400">
                         현재가
@@ -87,7 +87,7 @@ export function TechnicalFactsSummary({
                             값 옆이 아니라 라벨에 두는 이유: 가격·등락률과 한 줄에 섞이면
                             숫자의 일부처럼 읽힌다. */}
                         {quoteDelayMinutes > 0 && (
-                            <span className="text-secondary-500 ml-1 text-xs font-normal">
+                            <span className="ml-1 text-xs font-normal text-secondary-500">
                                 ({quoteDelayMinutes}분 지연)
                             </span>
                         )}
@@ -125,12 +125,12 @@ export function TechnicalFactsSummary({
                     </dd>
                 </div>
             </dl>
-            <div className="text-secondary-300 space-y-1 text-sm leading-6">
+            <div className="space-y-1 text-sm leading-6 text-secondary-300">
                 {narrative.map(line => (
                     <p key={line}>{line}</p>
                 ))}
             </div>
-            <p className="text-secondary-400 text-xs">
+            <p className="text-xs text-secondary-400">
                 위 지표는 표시된 차트 데이터 기반 자동 계산값입니다.
             </p>
         </section>

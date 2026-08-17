@@ -245,9 +245,9 @@ export const INDICATOR_META: Record<IndicatorKey, IndicatorMeta> =
 export function groupBindingsByCategory(
     bindings: IndicatorBinding[]
 ): IndicatorCategoryGroup[] {
-    return CATEGORY_ORDER.map(category => ({
-        category,
-        label: CATEGORY_LABELS[category],
-        items: bindings.filter(b => b.meta.category === category),
-    })).filter(group => group.items.length > 0);
+    return CATEGORY_ORDER.flatMap(category => {
+        const items = bindings.filter(b => b.meta.category === category);
+        if (items.length === 0) return [];
+        return [{ category, label: CATEGORY_LABELS[category], items }];
+    });
 }

@@ -163,14 +163,14 @@ export function TechnicalSnapshotProse({
             displayName={displayName}
             asOf={generatedAt}
         >
-            <div className="text-secondary-300 space-y-4 text-sm leading-6">
+            <div className="space-y-4 text-sm leading-6 text-secondary-300">
                 {/* 근거는 LIVE_ANALYSIS_CROSS_REF JSDoc 참고 — 두 탭이 동일 문구를 쓴다. */}
-                <p className="text-secondary-400 text-xs">
+                <p className="text-xs text-secondary-400">
                     {LIVE_ANALYSIS_CROSS_REF}
                 </p>
                 <div className="space-y-2">
                     {narrowed.trend !== null && (
-                        <p className="text-secondary-200 font-medium">
+                        <p className="font-medium text-secondary-200">
                             {symbol} 기술적 방향성:{' '}
                             {TREND_LABEL[narrowed.trend]}
                         </p>
@@ -182,7 +182,7 @@ export function TechnicalSnapshotProse({
 
                 {narrowed.patternSummaries.length > 0 && (
                     <div>
-                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
+                        <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
                             차트 패턴
                         </h3>
                         <ul
@@ -190,9 +190,9 @@ export function TechnicalSnapshotProse({
                             aria-label={`${symbol} 차트 패턴 목록`}
                             className="space-y-2"
                         >
-                            {narrowed.patternSummaries.map((p, i) => (
-                                <li key={`${p.name}-${i}`}>
-                                    <span className="text-secondary-200 font-medium">
+                            {narrowed.patternSummaries.map(p => (
+                                <li key={`${p.name}-${p.summary.slice(0, 32)}`}>
+                                    <span className="font-medium text-secondary-200">
                                         {p.name}
                                         {p.trend !== null &&
                                             ` (${TREND_LABEL[p.trend]})`}
@@ -206,7 +206,7 @@ export function TechnicalSnapshotProse({
 
                 {narrowed.strategyResults.length > 0 && (
                     <div>
-                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
+                        <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
                             전략 시그널
                         </h3>
                         <ul
@@ -214,9 +214,9 @@ export function TechnicalSnapshotProse({
                             aria-label={`${symbol} 전략 시그널 목록`}
                             className="space-y-2"
                         >
-                            {narrowed.strategyResults.map((s, i) => (
-                                <li key={`${s.name}-${i}`}>
-                                    <span className="text-secondary-200 font-medium">
+                            {narrowed.strategyResults.map(s => (
+                                <li key={`${s.name}-${s.summary.slice(0, 32)}`}>
+                                    <span className="font-medium text-secondary-200">
                                         {s.name}
                                         {s.trend !== null &&
                                             ` (${TREND_LABEL[s.trend]})`}

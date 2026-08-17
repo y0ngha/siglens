@@ -2,7 +2,7 @@
 
 # ---- builder ----
 FROM node:22-alpine AS builder
-RUN corepack enable && corepack prepare yarn@4.12.0 --activate
+RUN corepack enable && corepack prepare yarn@4.18.0 --activate
 WORKDIR /app
 COPY .yarnrc.yml package.json yarn.lock ./
 COPY .yarn ./.yarn

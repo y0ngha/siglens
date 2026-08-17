@@ -61,11 +61,11 @@ export function EconomyMacroFacts({ snapshot }: EconomyMacroFactsProps) {
         <section aria-labelledby="economy-macro-facts-heading">
             <h2
                 id="economy-macro-facts-heading"
-                className="text-secondary-100 mb-3 text-lg font-semibold"
+                className="mb-3 text-lg font-semibold text-secondary-100"
             >
                 거시 경제 한눈에
             </h2>
-            <p className="text-secondary-300 text-sm leading-relaxed">
+            <p className="text-sm leading-relaxed text-secondary-300">
                 {ratesSentence}
                 {ratesSentence !== null && macroSentence !== null ? ' ' : null}
                 {macroSentence}

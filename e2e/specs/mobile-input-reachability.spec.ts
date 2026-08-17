@@ -22,7 +22,10 @@ test.describe('모바일 차트 페이지 입력 도달성 (authed, 시트 마�
     test('평단 팝오버의 수량·평단 입력에 실제로 타이핑할 수 있다', async ({
         page,
     }) => {
-        await page.getByRole('button', { name: /평단/ }).first().tap();
+        await page
+            .getByRole('button', { name: /평단/ })
+            .first()
+            .tap();
 
         const dialog = page.getByRole('dialog', { name: /AAPL 평단 설정/ });
         await expect(dialog).toBeVisible();
@@ -51,7 +54,10 @@ test.describe('모바일 차트 페이지 입력 도달성 (authed, 시트 마�
     });
 
     test('평단 팝오버가 뷰포트 안에 완전히 들어온다', async ({ page }) => {
-        await page.getByRole('button', { name: /평단/ }).first().tap();
+        await page
+            .getByRole('button', { name: /평단/ })
+            .first()
+            .tap();
 
         const dialog = page.getByRole('dialog', { name: /AAPL 평단 설정/ });
         await expect(dialog).toBeVisible();
@@ -70,7 +76,10 @@ test.describe('모바일 차트 페이지 입력 도달성 (authed, 시트 마�
     });
 
     test('평단 팝오버가 분석 시트에 가려지지 않는다', async ({ page }) => {
-        await page.getByRole('button', { name: /평단/ }).first().tap();
+        await page
+            .getByRole('button', { name: /평단/ })
+            .first()
+            .tap();
 
         const dialog = page.getByRole('dialog', { name: /AAPL 평단 설정/ });
         await expect(dialog).toBeVisible();

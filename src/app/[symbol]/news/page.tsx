@@ -196,13 +196,13 @@ interface NewsDataServerAlertProps {
 function NewsDataServerAlert({ title, message }: NewsDataServerAlertProps) {
     return (
         <section
-            className="border-ui-danger/30 bg-secondary-800 rounded-xl border p-6"
+            className="rounded-xl border border-ui-danger/30 bg-secondary-800 p-6"
             role="alert"
         >
             <h2 className="mb-2 text-lg font-semibold tracking-tight">
                 {title}
             </h2>
-            <p className="text-ui-danger text-sm">{message}</p>
+            <p className="text-sm text-ui-danger">{message}</p>
         </section>
     );
 }

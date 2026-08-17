@@ -29,7 +29,7 @@ export default function LoginPage() {
                     <p>
                         <Link
                             href="/forgot-password"
-                            className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 font-medium underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none"
+                            className="font-medium text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             비밀번호를 잊으셨나요?
                         </Link>
@@ -38,7 +38,7 @@ export default function LoginPage() {
                         처음이세요?{' '}
                         <Link
                             href="/signup"
-                            className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 font-medium underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none"
+                            className="font-medium text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             회원가입 →
                         </Link>
