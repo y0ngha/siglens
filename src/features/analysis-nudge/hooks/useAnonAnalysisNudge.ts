@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback } from 'react';
 import { useCurrentUser } from '@/entities/auth';
 import {
     recordAnonSymbolAnalysis,
@@ -62,16 +63,19 @@ export function useAnonAnalysisNudge(
     const isLoginResolved = currentUserQuery.data !== undefined;
     const isAnonymous = isLoginResolved && currentUserQuery.data === null;
 
-    const onSymbolAnalyzed = (symbol: string): void => {
-        if (!isAnonymous) return;
+    const onSymbolAnalyzed = useCallback(
+        (symbol: string): void => {
+            if (!isAnonymous) return;
 
-        const { crossedThreshold } = recordAnonSymbolAnalysis(symbol);
-        if (!crossedThreshold) return;
-        if (hasNudgeShownToday()) return;
+            const { crossedThreshold } = recordAnonSymbolAnalysis(symbol);
+            if (!crossedThreshold) return;
+            if (hasNudgeShownToday()) return;
 
-        markNudgeShownToday();
-        openNudge();
-    };
+            markNudgeShownToday();
+            openNudge();
+        },
+        [isAnonymous, openNudge]
+    );
 
     return { isLoginResolved, onSymbolAnalyzed };
 }
