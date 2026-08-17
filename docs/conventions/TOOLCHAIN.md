@@ -17,6 +17,20 @@
 - yarn은 4.18 이상이어야 한다. 4.12는 typescript@7에 compat 패치를 적용하려다
   `lib/_tsc.js` ENOENT로 install 자체가 실패한다.
 
+### 에디터 설정 (중요)
+
+TypeScript 7 패키지는 **`tsserver`를 배포하지 않는다** — `bin/`에 `tsc`뿐이다.
+그래서 에디터가 워크스페이스 TypeScript(`node_modules/typescript/lib`)를 언어 서버로
+쓰도록 설정돼 있으면 서버가 뜨지 못해 파일마다 `Cannot find name 'Promise'` 같은
+가짜 오류가 뜬다(CLI `yarn typecheck`는 멀쩡히 통과한다).
+
+- VS Code/Cursor: `.vscode/settings.json`에서 tsdk 경로 지정을 **제거**하고 에디터
+  번들 TypeScript를 쓰게 둔다(`.vscode/`는 gitignore라 각자 로컬에서 조치).
+- 네이티브 언어 서버를 원하면 "TypeScript (Native Preview)" 확장 + 
+  `"typescript.experimental.useTsgo": true` — 이미 설치된 `@typescript/native-preview`의
+  `tsgo`가 LSP로 동작한다.
+- 어느 쪽이든 타입 판정의 기준은 `yarn typecheck`(tsc 7)와 CI다.
+
 ## oxlint (eslint 대체)
 
 TypeScript 7 도입으로 typescript-eslint가 로드 단계에서 죽어(`typescript-estree`:
