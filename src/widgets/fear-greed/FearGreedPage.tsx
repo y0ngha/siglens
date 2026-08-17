@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import { useFearGreedFromSymbol } from './hooks/useFearGreedFromSymbol';
 import { FearGreedHero } from './FearGreedHero';
 import { FearGreedComparisonGauges } from './FearGreedComparisonGauges';
@@ -65,7 +64,7 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
     const isHydrated = useHydrated();
     const { snapshot, history } = useFearGreedFromSymbol({ symbol, fmpSymbol });
 
-    const chatState = useMemo(() => buildChatState(snapshot), [snapshot]);
+    const chatState = buildChatState(snapshot);
     usePublishSymbolChat(chatState);
     useRegisterShareable({
         kind: 'fear-greed',

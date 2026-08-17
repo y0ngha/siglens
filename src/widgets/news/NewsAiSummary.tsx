@@ -288,10 +288,9 @@ export function NewsAiSummary({
     // `analysis`는 discriminated union이라 deps에는 객체 전체를 둔다. React Query가
     // `query.data`를 memoize하므로 동일 분석에 대한 reference는 안정적 — 실제
     // 데이터가 바뀔 때만 재계산된다.
-    const chatState = useMemo(
-        () => (isCardsReady ? buildChatState(analysis) : WAITING_CHAT_STATE),
-        [isCardsReady, analysis]
-    );
+    const chatState = isCardsReady
+        ? buildChatState(analysis)
+        : WAITING_CHAT_STATE;
     usePublishSymbolChat(chatState);
     // When enriched news cards are not yet ready the analysis query is disabled
     // (enabled: false → useNewsAnalysis returns status 'loading' immediately).

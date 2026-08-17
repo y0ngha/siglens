@@ -159,7 +159,7 @@ export function FundamentalAiSummary({
     // 이전 페이지의 stale context를 그대로 들고 가지 않게 한다.
     // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
     // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
-    const chatState = useMemo(() => buildChatState(state), [state]);
+    const chatState = buildChatState(state);
     usePublishSymbolChat(chatState);
     useRegisterShareable({
         kind: 'fundamental',

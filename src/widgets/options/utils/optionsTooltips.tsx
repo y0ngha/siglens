@@ -30,7 +30,7 @@ import {
 import { useHydrated } from '@/shared/hooks/useHydrated';
 
 interface KstWindowInfo {
-    window: string;
+    hours: string;
     label: string;
 }
 
@@ -60,17 +60,17 @@ export const PutCallRatioTooltip = (
 function getCurrentKstWindow(): KstWindowInfo {
     const inEdt = getEasternOffsetHours(new Date()) === EDT_OFFSET_HOURS;
     return inEdt
-        ? { window: KST_EDT_HOURS_DISPLAY, label: '서머타임(EDT)' }
-        : { window: KST_EST_HOURS_DISPLAY, label: '표준시(EST)' };
+        ? { hours: KST_EDT_HOURS_DISPLAY, label: '서머타임(EDT)' }
+        : { hours: KST_EST_HOURS_DISPLAY, label: '표준시(EST)' };
 }
 
 export function AtmIvTooltip() {
     const isHydrated = useHydrated();
     // getCurrentKstWindow()는 new Date()를 호출하므로 마운트 후에만 실행한다.
     // SSR·첫 CSR 렌더에서 DST가 다르면 React #418 하이드레이션 불일치가 발생하므로 게이팅.
-    const { window: kstWindow, label } = isHydrated
+    const { hours: kstWindow, label } = isHydrated
         ? getCurrentKstWindow()
-        : { window: KST_EDT_HOURS_DISPLAY, label: '' };
+        : { hours: KST_EDT_HOURS_DISPLAY, label: '' };
     return (
         <>
             <p>
@@ -95,9 +95,9 @@ export function ImpliedMoveTooltip() {
     const isHydrated = useHydrated();
     // getCurrentKstWindow()는 new Date()를 호출하므로 마운트 후에만 실행한다.
     // SSR·첫 CSR 렌더에서 DST가 다르면 React #418 하이드레이션 불일치가 발생하므로 게이팅.
-    const { window: kstWindow, label } = isHydrated
+    const { hours: kstWindow, label } = isHydrated
         ? getCurrentKstWindow()
-        : { window: KST_EDT_HOURS_DISPLAY, label: '' };
+        : { hours: KST_EDT_HOURS_DISPLAY, label: '' };
     return (
         <>
             <p>

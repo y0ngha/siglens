@@ -83,12 +83,12 @@ export function useMovingAverageOverlay({
 
         if (!chart) return;
 
-        // visiblePeriods에서 제거된 기간의 시리즈 삭제
-        const periodsToRemove = Object.keys(seriesRef.current)
-            .map(Number)
-            .filter(period => !visiblePeriods.includes(period));
-
-        for (const period of periodsToRemove) {
+        // visiblePeriods에서 제거된 기간의 시리즈 삭제.
+        // Set 조회 + 단일 순회 — 중간 배열 없이 한 번만 돈다.
+        const visible = new Set(visiblePeriods);
+        for (const key of Object.keys(seriesRef.current)) {
+            const period = Number(key);
+            if (visible.has(period)) continue;
             const series = seriesRef.current[period];
             if (series) chart.removeSeries(series);
         }

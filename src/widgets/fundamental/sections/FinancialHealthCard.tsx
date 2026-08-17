@@ -6,6 +6,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
 import { cn } from '@/shared/lib/cn';
+import { formatCompactUsd } from '@/shared/lib/priceFormat';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 
 const HEADING_ID = 'health-heading';
@@ -104,15 +105,7 @@ export function FinancialHealthCard({
     }
 
     const ocf = cashFlow?.operatingCashFlow ?? null;
-    const formattedOcf =
-        ocf !== null
-            ? new Intl.NumberFormat('ko-KR', {
-                  notation: 'compact',
-                  maximumFractionDigits: 1,
-                  style: 'currency',
-                  currency: 'USD',
-              }).format(ocf)
-            : '—';
+    const formattedOcf = ocf !== null ? formatCompactUsd(ocf) : '—';
 
     return (
         <section

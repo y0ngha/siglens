@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type {
     MarketBriefingResponse,
@@ -50,15 +49,11 @@ export function useMarketBriefing(
      * Pre-hydration seed: peek seed가 있으면 cached처럼 노출, 없으면 undefined(렌더 안 함).
      * peek seed는 briefing 본문만 보유하므로 generatedAt이 빈 문자열이다.
      * BriefingCard가 빈 generatedAt을 조건부 렌더로 가드한다.
-     * useMemo로 peekSeed 참조가 바뀌지 않는 한 매 렌더마다 새 객체 생성을 막는다.
+     * 객체 재생성은 React Compiler가 peekSeed 참조 기준으로 캐시한다(수동 useMemo 불필요).
      */
-    const seedInput = useMemo<RunBriefingResult | undefined>(
-        () =>
-            peekSeed
-                ? { status: 'cached', briefing: peekSeed, generatedAt: '' }
-                : undefined,
-        [peekSeed]
-    );
+    const seedInput: RunBriefingResult | undefined = peekSeed
+        ? { status: 'cached', briefing: peekSeed, generatedAt: '' }
+        : undefined;
 
     // 스트림이 error 이벤트로 끝나면 `runAnalysisStream`이 throw하므로 data가 없다 —
     // 이때 그냥 seedInput으로 떨어지면 실패가 조용히 사라져 스켈레톤만 남는다.

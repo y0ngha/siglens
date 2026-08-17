@@ -1,7 +1,7 @@
 'use client';
 
 import type { RefObject } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { IChartApi } from 'lightweight-charts';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import type { OverlayLegendItem } from '../types';
@@ -31,9 +31,10 @@ export function useOverlayLegend({
 
     const barIndex = resolveBarIndex(bars, crosshairIndex);
 
-    const legendItems = useMemo(
-        () => resolveOverlayValues(labelConfigs, indicators, barIndex),
-        [labelConfigs, indicators, barIndex]
+    const legendItems = resolveOverlayValues(
+        labelConfigs,
+        indicators,
+        barIndex
     );
 
     useEffect(() => {

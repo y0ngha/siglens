@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import type { OptionsExpirationMetrics } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
@@ -65,42 +64,36 @@ export function OptionsMetricsRow({
     // siglens-core R12: maxPain / putCallRatio are now `number | null`
     // (formatters tolerate the union explicitly), so pass through directly
     // without the legacy `?? NaN` coercion.
-    const metricCards = useMemo(
-        () =>
-            [
-                {
-                    label: 'Max Pain',
-                    value: oiStale
-                        ? METRIC_PLACEHOLDER
-                        : formatMaxPain(metrics?.maxPain ?? null),
-                    tooltip: MaxPainTooltip,
-                },
-                {
-                    label: 'P/C Ratio',
-                    value: oiStale
-                        ? METRIC_PLACEHOLDER
-                        : formatPutCallRatio(metrics?.putCallRatio ?? null),
-                    tooltip: PutCallRatioTooltip,
-                },
-                {
-                    label: 'ATM IV',
-                    value: oiStale
-                        ? METRIC_PLACEHOLDER
-                        : formatAtmIv(metrics?.atmImpliedVolatility ?? null),
-                    tooltip: <AtmIvTooltip />,
-                },
-                {
-                    label: 'Imp. Move',
-                    value: oiStale
-                        ? METRIC_PLACEHOLDER
-                        : formatImpliedMove(
-                              metrics?.impliedMovePercent ?? null
-                          ),
-                    tooltip: <ImpliedMoveTooltip />,
-                },
-            ] as const,
-        [metrics, oiStale]
-    );
+    const metricCards = [
+        {
+            label: 'Max Pain',
+            value: oiStale
+                ? METRIC_PLACEHOLDER
+                : formatMaxPain(metrics?.maxPain ?? null),
+            tooltip: MaxPainTooltip,
+        },
+        {
+            label: 'P/C Ratio',
+            value: oiStale
+                ? METRIC_PLACEHOLDER
+                : formatPutCallRatio(metrics?.putCallRatio ?? null),
+            tooltip: PutCallRatioTooltip,
+        },
+        {
+            label: 'ATM IV',
+            value: oiStale
+                ? METRIC_PLACEHOLDER
+                : formatAtmIv(metrics?.atmImpliedVolatility ?? null),
+            tooltip: <AtmIvTooltip />,
+        },
+        {
+            label: 'Imp. Move',
+            value: oiStale
+                ? METRIC_PLACEHOLDER
+                : formatImpliedMove(metrics?.impliedMovePercent ?? null),
+            tooltip: <ImpliedMoveTooltip />,
+        },
+    ] as const;
 
     return (
         <div className="space-y-2">

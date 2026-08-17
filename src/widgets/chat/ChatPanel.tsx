@@ -88,6 +88,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                     <button
                         type="button"
                         onClick={dismissAnalysisUpdated}
+                        aria-label="분석 업데이트 알림 닫기"
                         className="ml-2 rounded text-xs text-primary-400 hover:text-primary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         ✕

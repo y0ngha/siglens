@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { useTabs } from '@/shared/ui/tabs/hooks/useTabs';
 import type { TabItem } from '@/shared/ui/tabs/utils/tabIds';
@@ -55,7 +54,7 @@ export function TabsUnderline<T extends string>({
     idPrefix,
     withHomeEnd,
 }: TabsUnderlineProps<T>) {
-    const values = useMemo((): readonly T[] => tabs.map(t => t.value), [tabs]);
+    const values = tabs.map(t => t.value);
     const { getTabProps } = useTabs({
         tabs: values,
         activeTab,

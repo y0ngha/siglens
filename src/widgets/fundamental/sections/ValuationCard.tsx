@@ -3,6 +3,21 @@ import type { FundamentalValuationMetrics } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 
+// 소수 자릿수(digits)가 행마다 달라 단일 상수로 고정할 수 없다. 자릿수별로
+// 포매터를 한 번만 만들어 재사용한다 — 렌더마다 new Intl.NumberFormat 금지.
+const DECIMAL_FORMATTERS = new Map<number, Intl.NumberFormat>();
+
+function formatDecimal(value: number, digits: number): string {
+    let formatter = DECIMAL_FORMATTERS.get(digits);
+    if (formatter === undefined) {
+        formatter = new Intl.NumberFormat('ko-KR', {
+            maximumFractionDigits: digits,
+        });
+        DECIMAL_FORMATTERS.set(digits, formatter);
+    }
+    return formatter.format(value);
+}
+
 const HEADING_ID = 'valuation-heading';
 const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
 
@@ -25,12 +40,7 @@ function MetricRow({
     digits = 2,
     tooltip,
 }: MetricRowProps) {
-    const formatted =
-        value !== null
-            ? new Intl.NumberFormat('ko-KR', {
-                  maximumFractionDigits: digits,
-              }).format(value)
-            : '—';
+    const formatted = value !== null ? formatDecimal(value, digits) : '—';
 
     return (
         <div className="flex items-baseline justify-between gap-4 border-b border-secondary-700 py-2.5 last:border-b-0">

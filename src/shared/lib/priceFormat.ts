@@ -32,6 +32,19 @@ export function formatUsdCurrency(price: number): string {
     return USD_CURRENCY_FORMATTER.format(price);
 }
 
+// "US$1.2조" 형식 (시가총액/현금흐름 등 큰 금액). 포매터 생성은 비싸므로
+// 모듈 스코프에 한 번만 만든다 — 렌더마다 new Intl.NumberFormat 금지.
+const COMPACT_USD_FORMATTER = new Intl.NumberFormat('ko-KR', {
+    notation: 'compact',
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 1,
+});
+
+export function formatCompactUsd(value: number): string {
+    return COMPACT_USD_FORMATTER.format(value);
+}
+
 /**
  * Number of significant digits to preserve after the leading zeros when
  * formatting a sub-1 price (e.g. $0.000123 → 4 sig-figs → 8 decimal places).

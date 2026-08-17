@@ -88,9 +88,9 @@ export function useMarketNewsDigest(
     // exhaustive-deps without introducing unstable derived values.
     const { refetch } = query;
 
-    const retry = useCallback(() => {
+    const retry = () => {
         void refetch();
-    }, [refetch]);
+    };
 
     // Hydration gate — set after first client render so SSR and client
     // render match (avoids useQuery firing during hydration).

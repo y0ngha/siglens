@@ -1,0 +1,100 @@
+{
+    // react-doctor 설정. 규칙을 끄는 항목은 모두 "이 저장소에서 오탐이거나 제품 결정과
+    // 충돌하는 경우"에 한정하고 근거를 남긴다. 실제 결함은 코드에서 고친다.
+    "ignore": {
+        // React 앱(src/) 밖의 코드. ISR 캐시 핸들러(node 스크립트), 서비스 워커,
+        // 일회성 시드/유지보수 스크립트, 마이그레이션, 인프라 정의는 React 진단 대상이 아니다.
+        "files": [
+            "cache-handler/**",
+            "public/**",
+            "scripts/**",
+            "db/**",
+            "drizzle/**",
+            "infra/**",
+            "lighthouse/**",
+            "update-popular-tickers.ts"
+        ],
+        "overrides": [
+            {
+                // 런타임 require() 게이트: E2E 전용 클라이언트/스텁을 프로덕션 번들에서
+                // 배제하기 위한 의도된 설계(static import는 번들에 포함되고, dynamic
+                // import는 모든 동기 호출자를 async로 바꿔야 한다). oxlint에서도 같은
+                // 파일 목록으로 예외 처리한다(.oxlintrc.json).
+                "files": [
+                    "src/shared/db/client.ts",
+                    "src/shared/api/market/getMarketDataProvider.ts",
+                    "src/shared/api/economy/getEconomyProvider.ts",
+                    "src/shared/api/fmp/getFundamentalDataProvider.ts",
+                    "src/shared/api/fmp/getFinancialStatementsProvider.ts",
+                    "src/shared/api/fmp/getCongressTradesProvider.ts",
+                    "src/entities/analysis/actions/submitAnalysisAction.ts",
+                    "src/entities/analysis/actions/submitOverallAnalysisAction.ts",
+                    "src/entities/analysis/actions/submitFundamentalAnalysisAction.ts",
+                    "src/entities/news-article/actions/submitNewsAnalysisAction.ts",
+                    "src/entities/news-article/lib/getNewsClient.ts",
+                    "src/entities/market-news/lib/getMarketNewsClient.ts",
+                    "src/entities/options-chain/actions/optionsActions.ts",
+                    "src/entities/options-chain/lib/getOptionsProvider.ts"
+                ],
+                "rules": ["typescript/no-require-imports"]
+            },
+            {
+                // RSC 페이지에서 요청마다 QueryClient를 만들어 prefetch → dehydrate하는 것은
+                // TanStack Query가 문서화한 Next.js 서버 컴포넌트 패턴이다(요청 간 캐시
+                // 공유 금지가 목적). 클라이언트 QueryClient는 Providers에서 단일 인스턴스.
+                "files": ["src/app/**/page.tsx", "src/app/**/layout.tsx"],
+                "rules": ["react-doctor/query-stable-query-client"]
+            },
+            {
+                // 두 곳 모두 브라우저 전역 접근 앞에 게이트가 있는데 분석기가 그것을 보지 못한다.
+                //  - useAuthHint: `if (!isHydrated) return false` 뒤에서만 document.cookie를 읽는다.
+                //  - IndicatorSettingsModal: `isOpen && createPortal(…, document.body)` —
+                //    isOpen은 false로 시작하므로 서버 렌더에서 평가되지 않는다.
+                "files": [
+                    "src/entities/auth/hooks/useAuthHint.ts",
+                    "src/widgets/chart/ui/IndicatorSettingsModal.tsx"
+                ],
+                "rules": [
+                    "react-doctor/no-unguarded-browser-global-in-render-or-hook-init"
+                ]
+            },
+            {
+                // 테스트 하네스: createRef로 ref 노출을 검증하거나, 의도적으로 매 렌더
+                // 새 객체를 만들어 리렌더 경로를 재현한다. 프로덕션 규칙을 적용할 대상이 아니다.
+                "files": [
+                    "src/**/__tests__/**",
+                    "src/**/*.test.ts",
+                    "src/**/*.test.tsx",
+                    "src/__integration__/**",
+                    "e2e/**"
+                ],
+                "rules": [
+                    "react-doctor/no-create-ref-in-function-component",
+                    "react-doctor/react-compiler-no-manual-memoization",
+                    "react-doctor/todo",
+                    "react-hooks/exhaustive-deps",
+                    "react-doctor/no-json-parse-stringify-clone",
+                    "react-doctor/no-array-index-as-key"
+                ]
+            }
+        ],
+        "rules": [
+            // 게스트 사용이 제품 결정이다(로그인은 옵션, 혜택은 tier로만 — CLAUDE.md).
+            // 공유 스냅샷은 IP 해시 rate limit, 지표 번역은 pending-flag dedupe로 남용을
+            // 막고, 사용량/티어 정책은 @y0ngha/siglens-core가 소유한다. 로그아웃·OAuth
+            // 취소·이메일 인증 요청처럼 인증 이전 단계 액션도 원리상 무인증이다.
+            "react-doctor/server-auth-actions",
+
+            // catch 블록의 console.warn을 지적한다. 동기 로깅은 마이크로초 단위이고,
+            // 오류 로그를 after()로 미루면 응답 이후로 밀려 진단이 어려워진다. 실제
+            // 비차단 작업(AI 잡)은 이미 waitUntil/fire-and-forget으로 분리돼 있다.
+            "react-doctor/server-after-nonblocking",
+
+            // sharp: Next.js가 이미지 최적화에 런타임으로 요구한다(직접 import 없음).
+            // stylelint-order: stylelint-config-recess-order가 의존한다.
+            // @release-it/conventional-changelog: .release-it.json 플러그인으로만 참조된다.
+            "react-doctor/unused-dependency",
+            "react-doctor/unused-dev-dependency"
+        ]
+    }
+}

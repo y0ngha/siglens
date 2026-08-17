@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
     startTransition,
-    useCallback,
     useEffect,
     useEffectEvent,
     useRef,
@@ -31,12 +30,12 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
     const triggerRef = useRef<HTMLButtonElement>(null);
     const drawerRef = useRef<HTMLDivElement>(null);
 
-    const close = useCallback(() => {
+    const close = () => {
         setIsOpen(false);
         triggerRef.current?.focus();
-    }, []);
+    };
 
-    const toggle = useCallback(() => setIsOpen(v => !v), []);
+    const toggle = () => setIsOpen(v => !v);
 
     useEscapeKey(close, isOpen);
     useFocusTrap(drawerRef, isOpen);

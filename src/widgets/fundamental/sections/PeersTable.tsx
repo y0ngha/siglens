@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
+import { formatCompactUsd } from '@/shared/lib/priceFormat';
 
 const HEADING_ID = 'peers-heading';
 const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
@@ -60,12 +61,7 @@ export function PeersTable({ peers }: PeersTableProps) {
                                     {peer.companyName}
                                 </td>
                                 <td className="py-2.5 text-right font-mono tabular-nums">
-                                    {new Intl.NumberFormat('ko-KR', {
-                                        notation: 'compact',
-                                        maximumFractionDigits: 1,
-                                        style: 'currency',
-                                        currency: 'USD',
-                                    }).format(peer.marketCap)}
+                                    {formatCompactUsd(peer.marketCap)}
                                 </td>
                             </tr>
                         ))}

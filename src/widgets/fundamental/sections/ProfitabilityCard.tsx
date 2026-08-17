@@ -47,7 +47,7 @@ function MetricBar({ label, value, description, tooltip }: MetricBarProps) {
                     className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-secondary-700"
                 >
                     <div
-                        className="h-full w-(--fill-pct) rounded-full bg-primary-600 transition-all"
+                        className="h-full w-(--fill-pct) rounded-full bg-primary-600 transition-[width]"
                         style={
                             {
                                 '--fill-pct': `${fillPct}%`,

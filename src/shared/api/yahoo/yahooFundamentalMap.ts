@@ -144,9 +144,11 @@ export function mapKeyMetrics(
  * 처리하게 한다.
  */
 function impliedShareCount(summary: YahooSummary): number | undefined {
-    const marketCap = summary.summaryDetail?.marketCap;
-    const price = summary.price?.regularMarketPrice;
-    if (!marketCap || !price || price <= 0) return undefined;
+    // optional chain 결과를 먼저 0으로 정규화한다 — undefined가 나눗셈에 흘러가 NaN이
+    // 조용히 퍼지는 것을 방지(둘 중 하나라도 0/음수면 undefined).
+    const marketCap = summary.summaryDetail?.marketCap ?? 0;
+    const price = summary.price?.regularMarketPrice ?? 0;
+    if (marketCap <= 0 || price <= 0) return undefined;
     return marketCap / price;
 }
 

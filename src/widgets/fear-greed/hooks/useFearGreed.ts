@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import {
     computeFearGreedIndex,
     computeFearGreedHistory,
@@ -28,11 +27,8 @@ export function useFearGreed({
     bars,
     buySellVolume,
 }: UseFearGreedInput): UseFearGreedResult {
-    return useMemo(
-        () => ({
-            snapshot: computeFearGreedIndex(bars, buySellVolume),
-            history: computeFearGreedHistory(bars, buySellVolume),
-        }),
-        [bars, buySellVolume]
-    );
+    return {
+        snapshot: computeFearGreedIndex(bars, buySellVolume),
+        history: computeFearGreedHistory(bars, buySellVolume),
+    };
 }

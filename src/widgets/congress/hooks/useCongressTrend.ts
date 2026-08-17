@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CongressTrendResponse, ModelId } from '@y0ngha/siglens-core';
 import type { RunCongressTrendActionResult } from '@/entities/analysis/actions';
@@ -101,9 +101,9 @@ export function useCongressTrend(
 
     const { refetch } = query;
 
-    const retry = useCallback(() => {
+    const retry = () => {
         void refetch();
-    }, [refetch]);
+    };
 
     useEffect(() => {
         if (!isSettingsHydrated) return;

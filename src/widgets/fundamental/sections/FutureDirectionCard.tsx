@@ -1,5 +1,6 @@
 import { EmptySectionCard } from './EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { formatCompactUsd } from '@/shared/lib/priceFormat';
 import type {
     FundamentalAnalystEstimateInput,
     FundamentalGradesConsensusInput,
@@ -30,25 +31,19 @@ function pct(value: number, total: number): string {
     return ((value / total) * 100).toFixed(1);
 }
 
+// 포매터 생성 비용을 렌더마다 물지 않도록 모듈 스코프에 고정한다.
+const USD_FORMATTER = new Intl.NumberFormat('ko-KR', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 2,
+});
+
 function fmtUsd(v: number | null): string {
-    return v !== null
-        ? new Intl.NumberFormat('ko-KR', {
-              style: 'currency',
-              currency: 'USD',
-              maximumFractionDigits: 2,
-          }).format(v)
-        : '—';
+    return v !== null ? USD_FORMATTER.format(v) : '—';
 }
 
 function fmtBig(v: number | null): string {
-    return v !== null
-        ? new Intl.NumberFormat('ko-KR', {
-              notation: 'compact',
-              style: 'currency',
-              currency: 'USD',
-              maximumFractionDigits: 1,
-          }).format(v)
-        : '—';
+    return v !== null ? formatCompactUsd(v) : '—';
 }
 
 function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {

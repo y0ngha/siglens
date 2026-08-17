@@ -49,7 +49,7 @@ export function CongressTrendSummary({
     // publish하여 챗봇이 이전 페이지의 stale context를 그대로 들고 가지
     // 않게 한다. (mirrors FinancialsAiSummary; §17 훅 순서 — usePublishSymbolChat은
     // chatState 파생 변수에 의존하므로 useMemo 뒤에 위치)
-    const chatState = useMemo(() => buildChatState(state), [state]);
+    const chatState = buildChatState(state);
     usePublishSymbolChat(chatState);
     useRegisterShareable({
         kind: 'congress',

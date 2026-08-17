@@ -1,6 +1,6 @@
 'use client';
 
-import { type KeyboardEvent, useCallback } from 'react';
+import { type KeyboardEvent } from 'react';
 import { getRovingNextIndex } from '@/shared/lib/rovingKeyboardNav';
 
 interface UseRovingKeyboardNavOptions<T> {
@@ -19,22 +19,16 @@ export function useRovingKeyboardNav<T>({
     focusItem,
     withHomeEnd = true,
 }: UseRovingKeyboardNavOptions<T>): (e: KeyboardEvent<Element>) => void {
-    return useCallback(
-        (e: KeyboardEvent<Element>) => {
-            const currentIdx = items.indexOf(activeItem);
-            if (currentIdx === -1) return;
-            const nextIdx = getRovingNextIndex(
-                e.key,
-                currentIdx,
-                items.length,
-                { withHomeEnd }
-            );
-            if (nextIdx === null) return;
-            e.preventDefault();
-            const next = items[nextIdx];
-            onChange(next);
-            focusItem(next, e);
-        },
-        [items, activeItem, onChange, focusItem, withHomeEnd]
-    );
+    return (e: KeyboardEvent<Element>) => {
+        const currentIdx = items.indexOf(activeItem);
+        if (currentIdx === -1) return;
+        const nextIdx = getRovingNextIndex(e.key, currentIdx, items.length, {
+            withHomeEnd,
+        });
+        if (nextIdx === null) return;
+        e.preventDefault();
+        const next = items[nextIdx];
+        onChange(next);
+        focusItem(next, e);
+    };
 }

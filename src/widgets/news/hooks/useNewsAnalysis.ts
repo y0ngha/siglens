@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { NewsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import type { SubmitNewsAnalysisActionResult } from '@/entities/news-article/actions';
@@ -89,9 +89,11 @@ export function useNewsAnalysis(
         isSettingsHydrated = true,
     }: UseNewsAnalysisOptions = {}
 ): NewsAnalysisState {
-    const queryKey = useMemo(
-        () => QUERY_KEYS.newsAnalysis(symbol, companyName, modelId, reasoning),
-        [symbol, companyName, modelId, reasoning]
+    const queryKey = QUERY_KEYS.newsAnalysis(
+        symbol,
+        companyName,
+        modelId,
+        reasoning
     );
 
     const query = useQuery({
@@ -118,9 +120,9 @@ export function useNewsAnalysis(
     // `refetch` reference is stable across renders (React Query guarantee).
     const { refetch } = query;
 
-    const retry = useCallback(() => {
+    const retry = () => {
         void refetch();
-    }, [refetch]);
+    };
 
     if (query.isError) {
         if (query.error instanceof BotBlockedError) {

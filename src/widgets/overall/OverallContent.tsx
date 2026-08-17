@@ -85,10 +85,7 @@ export function OverallContent({
     );
 
     // usePublishSymbolChat은 chatState(useMemo 반환값)를 인자로 받으므로 useMemo 뒤에 둔다(§17 의존 순서).
-    const chatState = useMemo(
-        () => buildChatState(state, timeframe),
-        [state, timeframe]
-    );
+    const chatState = buildChatState(state, timeframe);
     usePublishSymbolChat(chatState);
     useRegisterShareable({
         kind: 'overall',

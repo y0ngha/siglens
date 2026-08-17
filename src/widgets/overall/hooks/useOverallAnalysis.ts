@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
     ModelId,
@@ -156,16 +156,12 @@ export function useOverallAnalysis(
     // 다음 queryFn 호출이 "사용자가 누른 재분석"인지 표시한다. state가 아니라 ref인
     // 이유: 값이 바뀌어도 렌더는 필요 없고, refetch가 곧바로 읽어가야 한다.
     const reanalyzeIntentRef = useRef(false);
-    const queryKey = useMemo(
-        () =>
-            QUERY_KEYS.overallAnalysis(
-                symbol,
-                companyName,
-                timeframe,
-                modelId,
-                reasoning
-            ),
-        [symbol, companyName, timeframe, modelId, reasoning]
+    const queryKey = QUERY_KEYS.overallAnalysis(
+        symbol,
+        companyName,
+        timeframe,
+        modelId,
+        reasoning
     );
     // queryKey를 ref에 캡처해 mount 시 최초 렌더 기준으로 캐시를 확인한다.
     const queryKeyRef = useRef(queryKey);
@@ -184,9 +180,10 @@ export function useOverallAnalysis(
     // effect가 reactive 값을 읽는 것이 되어 react-hooks/set-state-in-effect가
     // 걸린다. 하나로 합치려면 lint 예외가 필요해 의도적으로 분리해 둔다.
     const [mountQueryKey] = useState(queryKey);
-    const isMountQueryKey = queryKey.every(
-        (part, i) => part === mountQueryKey[i]
-    );
+    // 길이를 먼저 비교한다 — 길이가 다르면 즉시 탈락(짧은 쪽만 비교해 같다고 오판하는 것도 막는다).
+    const isMountQueryKey =
+        queryKey.length === mountQueryKey.length &&
+        queryKey.every((part, i) => part === mountQueryKey[i]);
 
     const query = useQuery({
         queryKey,
@@ -248,7 +245,7 @@ export function useOverallAnalysis(
     }, [triggered, query.isError, query.error, query.data]);
 
     const { refetch } = query;
-    const trigger = useCallback(() => {
+    const trigger = () => {
         if (!triggered) {
             setTriggered(true);
         } else {
@@ -257,7 +254,7 @@ export function useOverallAnalysis(
             reanalyzeIntentRef.current = true;
             void refetch();
         }
-    }, [triggered, refetch]);
+    };
 
     useEffect(() => {
         if (queryClient.getQueryData(queryKeyRef.current) !== undefined) {

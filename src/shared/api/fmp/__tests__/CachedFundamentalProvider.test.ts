@@ -267,7 +267,7 @@ describe('CachedFundamentalProvider — getStockPeers enrich', () => {
         expect(await provider.getStockPeers('NONE')).toEqual([]);
     });
 
-    it('enriches each peer sequentially via cached getKeyMetricsTtm', async () => {
+    it('enriches peers in parallel but calls the upstream once per unique symbol', async () => {
         const inner = makeInner({
             getStockPeers: vi.fn(async () => [
                 { symbol: 'MSFT', companyName: 'Microsoft', marketCap: 2e12 },
@@ -284,8 +284,8 @@ describe('CachedFundamentalProvider — getStockPeers enrich', () => {
         });
         const provider = new CachedFundamentalProvider(inner);
         const peers = await provider.getStockPeers('AAPL');
-        // 동일 peer 심볼 → getKeyMetricsTtm 결과가 Redis(fundamental:key-metrics:MSFT)로 캐싱돼
-        // 두 번째 peer는 캐시 히트(inner.getKeyMetricsTtm 1회)
+        // 동일 peer 심볼은 조회 전에 dedupe된다 → 병렬 조회에서도 상류 호출 1회.
+        // (dedupe가 없으면 두 요청이 동시에 캐시 미스로 떠서 2회 호출된다)
         expect(inner.getKeyMetricsTtm).toHaveBeenCalledTimes(1);
         expect(peers).toHaveLength(2);
         expect(peers[0].per).toBe(30);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import {
     getProviderForModel,
     isFreeModel,
@@ -70,39 +70,34 @@ export function useModelGate({
         staleTime: REGISTERED_PROVIDERS_STALE_TIME_MS,
     });
 
-    const handleModelChange = useCallback(
-        (model: ModelId): void => {
-            if (!isFreeModel(model)) {
-                const requiredProvider = getProviderForModel(model);
-                if (!currentUser) {
-                    setGateModal({ mode: 'auth', provider: requiredProvider });
-                    return;
-                }
-                if (currentUser.tier === 'pro') {
-                    onAllow(model);
-                    return;
-                }
-                if (
-                    !registeredProviders.some(
-                        p => p.provider === requiredProvider
-                    )
-                ) {
-                    setGateModal({ mode: 'byok', provider: requiredProvider });
-                    return;
-                }
+    const handleModelChange = (model: ModelId): void => {
+        if (!isFreeModel(model)) {
+            const requiredProvider = getProviderForModel(model);
+            if (!currentUser) {
+                setGateModal({ mode: 'auth', provider: requiredProvider });
+                return;
             }
-            onAllow(model);
-        },
-        [currentUser, registeredProviders, onAllow]
-    );
+            if (currentUser.tier === 'pro') {
+                onAllow(model);
+                return;
+            }
+            if (
+                !registeredProviders.some(p => p.provider === requiredProvider)
+            ) {
+                setGateModal({ mode: 'byok', provider: requiredProvider });
+                return;
+            }
+        }
+        onAllow(model);
+    };
 
-    const dismissGate = useCallback((): void => {
+    const dismissGate = (): void => {
         setGateModal(null);
-    }, []);
+    };
 
-    const showGate = useCallback((state: ModelGateState): void => {
+    const showGate = (state: ModelGateState): void => {
         setGateModal(state);
-    }, []);
+    };
 
     return { gateModal, dismissGate, handleModelChange, showGate };
 }

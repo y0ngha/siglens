@@ -13,31 +13,45 @@ interface SurpriseBadge {
     percent: number;
 }
 
+// 포매터는 모듈 스코프에 한 번만 생성한다(렌더마다 new Intl.* 금지).
+// 날짜는 timeZone: 'UTC' 고정 — 날짜만 있는 문자열이 로컬 TZ에서 하루 밀리는 것과
+// 서버/클라이언트 렌더 불일치를 동시에 막는다.
+const SHORT_DATE_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'UTC',
+    month: 'short',
+    day: 'numeric',
+});
+
+const USD_FORMATTER = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 2,
+});
+
+const COMPACT_USD_FORMATTER = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    notation: 'compact',
+    maximumFractionDigits: 1,
+});
+
+const SIGNED_PERCENT_FORMATTER = new Intl.NumberFormat('ko-KR', {
+    signDisplay: 'always',
+    maximumFractionDigits: 1,
+});
+
 function formatShortDate(dateStr: string): string {
-    return new Intl.DateTimeFormat('ko-KR', {
-        timeZone: 'UTC',
-        month: 'short',
-        day: 'numeric',
-    }).format(new Date(dateStr));
+    return SHORT_DATE_FORMATTER.format(new Date(dateStr));
 }
 
 function formatCurrency(value: number | null): string {
     if (value === null) return '—';
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        maximumFractionDigits: 2,
-    }).format(value);
+    return USD_FORMATTER.format(value);
 }
 
 function formatRevenue(value: number | null): string {
     if (value === null) return '—';
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        notation: 'compact',
-        maximumFractionDigits: 1,
-    }).format(value);
+    return COMPACT_USD_FORMATTER.format(value);
 }
 
 interface EarningsReportComparisonProps {
@@ -324,11 +338,7 @@ function getSurprisePercent(
 }
 
 function formatSignedPercent(value: number): string {
-    const formatted = new Intl.NumberFormat('ko-KR', {
-        signDisplay: 'always',
-        maximumFractionDigits: 1,
-    }).format(value);
-    return `${formatted}%`;
+    return `${SIGNED_PERCENT_FORMATTER.format(value)}%`;
 }
 
 interface EventCalendarProps {

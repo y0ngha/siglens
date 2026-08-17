@@ -1,7 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import { useId, useMemo } from 'react';
+import { useId } from 'react';
 import { createPortal } from 'react-dom';
 import { useDialog } from '@/shared/hooks/useDialog';
 import { cn } from '@/shared/lib/cn';
@@ -30,10 +30,13 @@ function PeriodChips({ binding }: IndicatorRowProps) {
         onTogglePeriod,
     } = binding;
 
+    // 배열 includes를 map 안에서 반복하면 O(n*m) — Set으로 O(1) 조회.
+    const visible = new Set(visiblePeriods);
+
     return (
         <div className="flex flex-wrap gap-1">
             {availablePeriods.map(period => {
-                const selected = visiblePeriods.includes(period);
+                const selected = visible.has(period);
                 return (
                     <button
                         key={period}
@@ -102,7 +105,7 @@ export function IndicatorSettingsModal({
     // 같은 페이지에 여러 차트가 렌더되어도 dialog title id가 충돌하지 않도록
     // 인스턴스별 고유 id를 생성한다 (aria-labelledby 무결성 보장).
     const titleId = useId();
-    const groups = useMemo(() => groupBindingsByCategory(bindings), [bindings]);
+    const groups = groupBindingsByCategory(bindings);
 
     return (
         <>

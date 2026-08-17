@@ -1,6 +1,6 @@
 'use client';
 
-import { type RefObject, useCallback, useState } from 'react';
+import { type RefObject, useState } from 'react';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 
 interface UsePopoverToggleReturn {
@@ -17,9 +17,9 @@ export function usePopoverToggle(
 
     useOnClickOutside(refs, () => setIsOpen(false), { enabled: isOpen });
 
-    const open = useCallback(() => setIsOpen(true), []);
-    const close = useCallback(() => setIsOpen(false), []);
-    const toggle = useCallback(() => setIsOpen(prev => !prev), []);
+    const open = () => setIsOpen(true);
+    const close = () => setIsOpen(false);
+    const toggle = () => setIsOpen(prev => !prev);
 
     return { isOpen, open, close, toggle };
 }

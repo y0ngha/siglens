@@ -30,16 +30,21 @@ const ROW_ACCENT_CLASS: Record<GradesAction, string> = {
 
 const PAGE_SIZE = 5;
 
+// 모듈 스코프 고정 + timeZone: 'UTC'. 공시일은 날짜만 있는 값이라 로컬 TZ로
+// 포맷하면 서버(UTC)와 클라이언트에서 하루가 어긋나 하이드레이션이 깨진다.
+const GRADE_DATE_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'UTC',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+});
+
 interface GradeRowProps {
     event: GradesEvent;
 }
 
 function GradeRow({ event }: GradeRowProps) {
-    const dateFormatted = new Intl.DateTimeFormat('ko-KR', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    }).format(new Date(event.date));
+    const dateFormatted = GRADE_DATE_FORMATTER.format(new Date(event.date));
 
     return (
         <li

@@ -34,12 +34,14 @@ export function useNoticePopup(pathname: string): UseNoticePopupResult {
     // 다시 읽어 세션 내 stale이 불가능하다. advance는 localStorage를 건드리지 않으므로 재읽기가
     // 불필요하다.
     const queue = useMemo<NoticeRecord[]>(() => {
-        const dismissed = loadDismissedNoticeIds();
+        // includes를 filter 안에서 반복하면 O(n*m) — Set으로 O(1) 조회.
+        const dismissed = new Set(loadDismissedNoticeIds());
+        const consumed = new Set(consumedIds);
         return allNotices.filter(
             n =>
                 matchPath(n.pathPattern, pathname) &&
-                !dismissed.includes(n.id) &&
-                !consumedIds.includes(n.id)
+                !dismissed.has(n.id) &&
+                !consumed.has(n.id)
         );
     }, [allNotices, pathname, consumedIds]);
 

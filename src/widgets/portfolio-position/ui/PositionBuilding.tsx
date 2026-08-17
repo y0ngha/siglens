@@ -313,16 +313,12 @@ export function PositionBuilding({
     // 재계산을 막기 위해 useMemo로 감싼다(MISTAKES #10 — props/state 파생
     // 배열/객체는 useMemo). model.bands.length는 이미 model에 포함돼 있으므로
     // deps는 model만으로 충분하다(별도 bandCount 파생값을 deps에 얹지 않는다).
-    const floorTooltips = useMemo(
-        () =>
-            buildFloorTooltips(
-                model,
-                volumeByBand,
-                low52w,
-                high52w,
-                model.bands.length
-            ),
-        [model, volumeByBand, low52w, high52w]
+    const floorTooltips = buildFloorTooltips(
+        model,
+        volumeByBand,
+        low52w,
+        high52w,
+        model.bands.length
     );
 
     // model.bands.length는 volumeByBand 인덱싱(아래)과 describeAvgFloor 둘 다에

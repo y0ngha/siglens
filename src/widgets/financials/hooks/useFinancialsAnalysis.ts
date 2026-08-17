@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { FinancialsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import type { RunFinancialsAnalysisActionResult } from '@/entities/analysis/actions';
@@ -88,9 +88,9 @@ export function useFinancialsAnalysis(
 
     const { refetch } = query;
 
-    const retry = useCallback(() => {
+    const retry = () => {
         void refetch();
-    }, [refetch]);
+    };
 
     useEffect(() => {
         if (!isSettingsHydrated) return;

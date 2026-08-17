@@ -13,6 +13,21 @@ import {
 // 하위 호환성을 위해 re-export한다 (기존 import 경로 유지).
 export { nthSundayDay };
 
+// Intl 포매터 생성은 비싸다 — 모듈 스코프에 한 번만 만들어 재사용한다.
+const KST_DATE_PARTS_FORMATTER = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+});
+
+const KST_TIME_LABEL_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+});
+
 const SPRING_FORWARD_MONTH = MARCH;
 const SPRING_FORWARD_NTH = SECOND_SUNDAY;
 const FALL_BACK_MONTH = NOVEMBER;
@@ -119,23 +134,13 @@ export function etDateTimeToKst(etDate: string): EtToKstResult {
      * `en-CA` 로케일을 직접 format()하면 ICU 버전에 따라 구분자가 '/'로 오거나
      * 순서가 바뀌어 `split('-')`이 NaN을 반환할 수 있다.
      */
-    const parts = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'Asia/Seoul',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-    }).formatToParts(d);
+    const parts = KST_DATE_PARTS_FORMATTER.formatToParts(d);
     const year = parts.find(p => p.type === 'year')?.value ?? '';
     const month = parts.find(p => p.type === 'month')?.value ?? '';
     const day = parts.find(p => p.type === 'day')?.value ?? '';
     const kstDateKey = `${year}-${month}-${day}`;
 
-    const kstTimeLabel = new Intl.DateTimeFormat('ko-KR', {
-        timeZone: 'Asia/Seoul',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-    }).format(d);
+    const kstTimeLabel = KST_TIME_LABEL_FORMATTER.format(d);
 
     return { iso, kstDateKey, kstTimeLabel };
 }

@@ -27,13 +27,12 @@ function toUtcDateString(date: Date): string {
 function toUsageCounts(
     rows: readonly { actionType: UsageActionType; count: number | string }[]
 ): SiglensUsageCounts {
-    return rows.reduce(
-        (counts, row) => ({
-            ...counts,
-            [row.actionType]: Number(row.count),
-        }),
-        { ...EMPTY_USAGE_COUNTS }
-    );
+    // reduce + 스프레드는 행마다 객체를 새로 만들어 O(n²)이 된다 — 로컬 누적기를 채운다.
+    const counts = { ...EMPTY_USAGE_COUNTS };
+    for (const row of rows) {
+        counts[row.actionType] = Number(row.count);
+    }
+    return counts;
 }
 
 /** Drizzle ORM implementation of {@link SiglensUsageRepository} backed by usage_logs. */

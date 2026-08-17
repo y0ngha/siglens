@@ -3,6 +3,7 @@
 import type { MacroBriefingResponse } from '@y0ngha/siglens-core';
 
 import { cn } from '@/shared/lib/cn';
+import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
 
 import { useMacroBriefing } from '../hooks/useMacroBriefing';
 
@@ -104,7 +105,7 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
             )}
             {generatedAt !== null && (
                 <p className="mt-3 text-xs text-secondary-400">
-                    생성 시각: {new Date(generatedAt).toLocaleString('ko-KR')}
+                    생성 시각: {formatKoreanDateTime(generatedAt)}
                 </p>
             )}
         </section>

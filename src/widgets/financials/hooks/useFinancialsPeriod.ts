@@ -52,28 +52,25 @@ export function useFinancialsPeriod(
      */
     const quarterSnapshotRef = useRef<FinancialsSnapshot | null>(null);
 
-    const setPeriod = useCallback(
-        (next: StatementPeriod) => {
-            if (next === 'annual') {
-                setPeriodState('annual');
-                return;
-            }
+    const setPeriod = (next: StatementPeriod) => {
+        if (next === 'annual') {
+            setPeriodState('annual');
+            return;
+        }
 
-            if (quarterSnapshotRef.current !== null) {
-                setPeriodState('quarter');
-                return;
-            }
-
+        if (quarterSnapshotRef.current !== null) {
             setPeriodState('quarter');
-            setIsLoading(true);
-            void fetchAndApplyQuarterSnapshot(symbol, {
-                setPeriodState,
-                setQuarterSnapshot,
-                setIsLoading,
-            });
-        },
-        [symbol]
-    );
+            return;
+        }
+
+        setPeriodState('quarter');
+        setIsLoading(true);
+        void fetchAndApplyQuarterSnapshot(symbol, {
+            setPeriodState,
+            setQuarterSnapshot,
+            setIsLoading,
+        });
+    };
 
     const snapshot =
         period === 'quarter' && quarterSnapshot !== null

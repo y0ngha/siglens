@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Timeframe } from '@y0ngha/siglens-core';
@@ -43,47 +43,36 @@ export function useTimeframeChange(
     // 선언 순서 예외(MISTAKES.md #17)로 timeframe 계산 직후에 둔다.
     const previousTimeframeRef = useRef<Timeframe>(timeframe);
 
-    const handleTimeframeChange = useCallback(
-        (nextTimeframe: Timeframe): void => {
-            if (!isTierHydrated) return;
-            if (isFreeTier && nextTimeframe !== DEFAULT_TIMEFRAME) return;
-            if (nextTimeframe === timeframe) return;
-            // 이전 타임프레임 쿼리 취소 — 불필요한 네트워크 요청 방지
-            void queryClient.cancelQueries({
-                queryKey: QUERY_KEYS.barsPrefix(symbol, timeframe),
-            });
-            // 새 타임프레임 데이터를 이벤트 핸들러 시점에 prefetch한다.
-            // useSuspenseQuery가 렌더 도중 Server Action을 호출하면
-            // Next.js 내부 Router 상태 업데이트와 충돌하므로,
-            // 렌더 전에 쿼리 캐시에 데이터(또는 진행 중인 Promise)를 넣어둔다.
-            void queryClient.prefetchQuery({
-                queryKey: QUERY_KEYS.bars(
-                    symbol,
-                    nextTimeframe,
-                    assetInfo?.fmpSymbol
-                ),
-                queryFn: ({ queryKey: [, qSymbol, qTimeframe, qFmpSymbol] }) =>
-                    getBarsAction(qSymbol, qTimeframe, qFmpSymbol),
-            });
-            startTransition(() => {
-                setTimeframeChangeCount(c => c + 1);
-                pendingNavigationRef.current = nextTimeframe;
-                router.replace(
-                    `/${symbol}?${TIMEFRAME_QUERY_PARAM}=${nextTimeframe}`,
-                    { scroll: false }
-                );
-            });
-        },
-        [
-            timeframe,
-            isFreeTier,
-            isTierHydrated,
-            queryClient,
-            symbol,
-            router,
-            assetInfo?.fmpSymbol,
-        ]
-    );
+    const handleTimeframeChange = (nextTimeframe: Timeframe): void => {
+        if (!isTierHydrated) return;
+        if (isFreeTier && nextTimeframe !== DEFAULT_TIMEFRAME) return;
+        if (nextTimeframe === timeframe) return;
+        // 이전 타임프레임 쿼리 취소 — 불필요한 네트워크 요청 방지
+        void queryClient.cancelQueries({
+            queryKey: QUERY_KEYS.barsPrefix(symbol, timeframe),
+        });
+        // 새 타임프레임 데이터를 이벤트 핸들러 시점에 prefetch한다.
+        // useSuspenseQuery가 렌더 도중 Server Action을 호출하면
+        // Next.js 내부 Router 상태 업데이트와 충돌하므로,
+        // 렌더 전에 쿼리 캐시에 데이터(또는 진행 중인 Promise)를 넣어둔다.
+        void queryClient.prefetchQuery({
+            queryKey: QUERY_KEYS.bars(
+                symbol,
+                nextTimeframe,
+                assetInfo?.fmpSymbol
+            ),
+            queryFn: ({ queryKey: [, qSymbol, qTimeframe, qFmpSymbol] }) =>
+                getBarsAction(qSymbol, qTimeframe, qFmpSymbol),
+        });
+        startTransition(() => {
+            setTimeframeChangeCount(c => c + 1);
+            pendingNavigationRef.current = nextTimeframe;
+            router.replace(
+                `/${symbol}?${TIMEFRAME_QUERY_PARAM}=${nextTimeframe}`,
+                { scroll: false }
+            );
+        });
+    };
 
     useEffect(() => {
         if (

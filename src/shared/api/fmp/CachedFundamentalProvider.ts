@@ -170,28 +170,32 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
     getStockPeers = cache((symbol: string): Promise<FundamentalPeerInput[]> =>
         getOrSetCache(`fundamental:peers:${sym(symbol)}`, TTL, async () => {
             const raw = await this.inner.getStockPeers(symbol);
-            return raw
-                .slice(0, PEER_LIMIT)
-                .reduce(
-                    async (
-                        accPromise: Promise<FundamentalPeerInput[]>,
-                        peer
-                    ) => {
-                        const acc = await accPromise;
-                        const metrics = await this.getKeyMetricsTtm(
-                            peer.symbol
-                        );
-                        return [
-                            ...acc,
-                            {
-                                ...peer,
-                                per: metrics?.peRatioTTM ?? null,
-                                psr: metrics?.priceToSalesRatioTTM ?? null,
-                            },
-                        ];
-                    },
-                    Promise.resolve<FundamentalPeerInput[]>([])
-                );
+            const peers = raw.slice(0, PEER_LIMIT);
+            // 이전에는 async reduce로 peer를 한 건씩 직렬 조회해 지연이 PEER_LIMIT배로
+            // 누적됐다. 심볼 단위로 dedupe한 뒤 병렬 조회한다 — 직렬 루프가 보장했던
+            // "중복 심볼은 상류 1회 호출"(첫 조회가 캐시를 채워 두 번째가 히트)을
+            // 병렬에서도 유지하려면 dedupe가 필수다. 없으면 같은 심볼이 동시에 미스로
+            // 떠서 FMP 호출이 중복된다.
+            const uniqueSymbols = [...new Set(peers.map(peer => peer.symbol))];
+            const metricsBySymbol = new Map(
+                await Promise.all(
+                    uniqueSymbols.map(
+                        async symbol =>
+                            [
+                                symbol,
+                                await this.getKeyMetricsTtm(symbol),
+                            ] as const
+                    )
+                )
+            );
+            return peers.map(peer => {
+                const metrics = metricsBySymbol.get(peer.symbol);
+                return {
+                    ...peer,
+                    per: metrics?.peRatioTTM ?? null,
+                    psr: metrics?.priceToSalesRatioTTM ?? null,
+                };
+            });
         })
     );
 

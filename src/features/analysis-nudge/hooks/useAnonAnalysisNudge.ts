@@ -63,19 +63,16 @@ export function useAnonAnalysisNudge(
     const isLoginResolved = currentUserQuery.data !== undefined;
     const isAnonymous = isLoginResolved && currentUserQuery.data === null;
 
-    const onSymbolAnalyzed = useCallback(
-        (symbol: string): void => {
-            if (!isAnonymous) return;
+    const onSymbolAnalyzed = (symbol: string): void => {
+        if (!isAnonymous) return;
 
-            const { crossedThreshold } = recordAnonSymbolAnalysis(symbol);
-            if (!crossedThreshold) return;
-            if (hasNudgeShownToday()) return;
+        const { crossedThreshold } = recordAnonSymbolAnalysis(symbol);
+        if (!crossedThreshold) return;
+        if (hasNudgeShownToday()) return;
 
-            markNudgeShownToday();
-            openNudge();
-        },
-        [isAnonymous, openNudge]
-    );
+        markNudgeShownToday();
+        openNudge();
+    };
 
     return { isLoginResolved, onSymbolAnalyzed };
 }

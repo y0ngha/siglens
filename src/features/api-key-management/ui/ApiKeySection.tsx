@@ -6,7 +6,7 @@ import type { ApiKeyActionState } from '@/entities/api-key';
 import { LLM_PROVIDER_VALUES, type LlmProvider } from '@/entities/api-key';
 import { cn } from '@/shared/lib/cn';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useFormStatus } from 'react-dom';
 
 const PROVIDER_PLACEHOLDERS: Record<LlmProvider, string> = {
@@ -190,10 +190,7 @@ interface ApiKeySectionProps {
 }
 
 export function ApiKeySection({ registeredProviders }: ApiKeySectionProps) {
-    const registeredSet = useMemo(
-        () => new Set(registeredProviders),
-        [registeredProviders]
-    );
+    const registeredSet = new Set(registeredProviders);
 
     return (
         <div className="space-y-4">

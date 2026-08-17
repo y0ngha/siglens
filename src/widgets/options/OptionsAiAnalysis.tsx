@@ -261,7 +261,7 @@ export function OptionsAiAnalysis({
     // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생
     // 변수)를 인자로 받으므로 useMemo 뒤에 위치해야 한다. 다른 페이지
     // (overall/fundamental/news/chart) 모두 동일 패턴.
-    const chatState = useMemo(() => buildChatState(state), [state]);
+    const chatState = buildChatState(state);
     usePublishSymbolChat(chatState);
     useRegisterShareable({
         kind: 'options',
