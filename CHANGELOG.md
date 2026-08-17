@@ -1,5 +1,32 @@
 # Changelog
 
+# [0.55.0](https://github.com/y0ngha/siglens/compare/v0.54.1...v0.55.0) (2026-08-17)
+
+
+### Bug Fixes
+
+* 렌더 폭주 재현 테스트를 원래 형태로 되돌림 ([3550f77](https://github.com/y0ngha/siglens/commit/3550f7708d4cc24f7445058311c315013fede4c5))
+* 리뷰 피드백 반영 — JSDoc 실측값 정정 및 분기 재무제표 조회 경량화 ([acdacf2](https://github.com/y0ngha/siglens/commit/acdacf23d810c5b050d1ca31ee179cf1e87c6114))
+* 실제 키 검증으로 드러난 한국 주식 API 연동 오류 수정 ([ffe78eb](https://github.com/y0ngha/siglens/commit/ffe78ebaa79a4bf046688d0728d413143d7493ec))
+* 한국 주식 밸류에이션 지표 계산 오류 수정 ([e6b8abb](https://github.com/y0ngha/siglens/commit/e6b8abb1866088b83c3791c748b7f4bdf74bc4e7))
+* anon nudge 콜백의 useCallback 복원 (교차 파일 식별성 계약) ([2bc90d0](https://github.com/y0ngha/siglens/commit/2bc90d003cc4a9ec723d901220f10c8baac994ec))
+* **e2e:** 공지 dismiss 스펙을 버전 키·페이로드에 맞춤 ([10688ba](https://github.com/y0ngha/siglens/commit/10688ba5b8a30c84511c4f536af6b237099b4617))
+* react-doctor 진단 실수정 1차 — 하이드레이션·SSR·상태 업데이터·성능 ([09c6076](https://github.com/y0ngha/siglens/commit/09c60763a0a12feaecec81107983e317c6e001db))
+
+
+### Features
+
+* 잘린 뉴스 본문을 판정해 표기 ([47d1959](https://github.com/y0ngha/siglens/commit/47d1959952caba02db992c30ceb2f99c2dbf569a))
+* 한국 주식(KOSPI/KOSDAQ) 분석 지원 ([7a37a0c](https://github.com/y0ngha/siglens/commit/7a37a0c7256e7bbfdefe70df95f8970f63a85d53))
+* core 0.45.0 도입 — 한국 뉴스 번역 단계 생략 ([3322b72](https://github.com/y0ngha/siglens/commit/3322b72494a3ff81329e2c3a97d98fbdb83c301c))
+* NYSE 거래소 캘린더를 세션 날짜·신선도 경로에 적용 ([01c1442](https://github.com/y0ngha/siglens/commit/01c1442763c4ae898cb61f2fcea2162acb3b50db))
+* react-doctor CI 도입 + 진단 실수정 2차(보안·컴파일러 최적화·저장 포맷) ([e652eed](https://github.com/y0ngha/siglens/commit/e652eed8d29bf4ce0372ca5e5ab8a68bc08af39a))
+
+
+### Performance Improvements
+
+* filter+map 체인 18곳 단일 순회로 + 툴체인 문서화 ([4543cf9](https://github.com/y0ngha/siglens/commit/4543cf975757fd01dbf5b3ffcb1e91b8ec2c7dac))
+
 ## [0.54.1](https://github.com/y0ngha/siglens/compare/v0.54.0...v0.54.1) (2026-08-15)
 
 
