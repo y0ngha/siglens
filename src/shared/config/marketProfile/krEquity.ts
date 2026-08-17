@@ -49,5 +49,4 @@ export const KR_EQUITY_DESCRIPTOR: MarketProfileDescriptor = {
     seo: {
         aboutNodeType: 'Corporation',
     },
-    sitemapLastmod: 'kr-close',
 };

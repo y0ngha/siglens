@@ -56,6 +56,18 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Use fetchInChunks(items, FETCH_CONCURRENCY) for sequential chunked execution
    ✅ for await (const batch of chunks) { const results = await Promise.all(batch); }
 
+0.9. Non-exhaustive control flow over domains with 3+ distinct members
+   → Binary ternary or if/else chains over unions with 3+ members silently misclassify the unhandled case
+   → Use exhaustive switch over discriminated unions, or reuse existing exhaustive mapping functions instead of rebuilding with ternary/if-else
+   → Pattern occurs twice when a bug is introduced, then the fix recreates the same non-exhaustive shape one layer down — always delegate to the authoritative exhaustive mapping
+   ❌ const spec = isKrEquitySymbol(s) ? KR : US;  // 3 asset classes (crypto, KR, US); crypto falls through to US
+   ❌ function mapProfileToSession(p) { if (p === 'kr') return KR; if (p === 'us') return US; }  // crypto unhandled, silently defaults to undefined
+   ❌ // Fix attempt: if/else chain instead of reusing existing exhaustive switch
+      const spec = isKrEquitySymbol(s) ? KR : (someCheck ? US : undefined);  // still non-exhaustive
+   ✅ const spec = sessionSpecFor(assetClassOf(s));  // delegates to exhaustive switch over SessionModel
+   ✅ switch (profile.kind) { case 'kr': return KR; case 'us': return US; case 'crypto': return CRYPTO; }  // exhaustive
+   → Recurring: feat/kr-sitemap-scope R1 (ternary bug) + R2 (fix recreated pattern with if/else chain)
+
 1. Reimplementing the same algorithm
    → Check for existing helpers before writing a new function
    → Separate number[]-based helpers from Bar[]-based wrappers for reuse
