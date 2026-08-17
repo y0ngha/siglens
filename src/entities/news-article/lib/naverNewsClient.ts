@@ -5,6 +5,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import type { NewsClientPort } from './newsClientPort';
 import { computeCutoff, hashUrlToId } from './fmpNewsClient';
+import { detectTruncatedBody } from './detectTruncatedBody';
 
 /**
  * NAVER API HUB의 뉴스 검색 엔드포인트.
@@ -224,6 +225,9 @@ export class NaverNewsClient implements NewsClientPort {
             // 모델이 조용히 고쳐 쓸 여지를 준다(core v0.45.0 `NewsItem.sourceLanguage`).
             // 요약·감성·분류는 언어와 무관하게 그대로 수행된다.
             sourceLanguage: 'ko',
+            // 네이버 `description`은 본문 앞 ~120자를 기계적으로 잘라낸 조각이다
+            // (실측 117~130자, 항상 `…`으로 끝남). AI 요약본이 아니다.
+            bodyTruncated: detectTruncatedBody(description),
         };
     }
 }
