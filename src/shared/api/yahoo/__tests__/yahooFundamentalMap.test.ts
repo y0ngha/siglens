@@ -19,6 +19,7 @@ function build(over: Partial<YahooFundamentals> = {}): YahooFundamentals {
         income: [],
         balance: [],
         cashFlow: [],
+        quarterlyBalance: [],
         ...over,
     };
 }
@@ -135,19 +136,27 @@ describe('mapProfile', () => {
 });
 
 describe('mapKeyMetrics', () => {
+    // 전부 삼성전자 2026-08-17 실측값이다.
     const summary = {
+        price: { regularMarketPrice: 274_500 },
         summaryDetail: {
             marketCap: 1_802_521_672_679_424,
             priceToSalesTrailing12Months: 3.7147098,
         },
         defaultKeyStatistics: {
             netIncomeToCommon: 149_733_733_564_416,
+            // 시총 산출 기준(6.567B)과 어긋나는 값 — EPS 분모로 쓰면 안 된다.
             sharesOutstanding: 5_764_191_903,
             pegRatio: 0.18,
             enterpriseToEbitda: 7.237,
         },
     };
+    /** 연간(FY2025) 자기자본. PBR 분모로 쓰면 결산 이후 분기가 빠진다. */
     const balance = years({ stockholdersEquity: 424_313_255_000_000 });
+    /** 분기(2026-03-31) 자기자본 — PBR이 실제로 써야 하는 값. */
+    const quarterlyBalance = years({
+        stockholdersEquity: 473_964_801_000_000,
+    });
 
     it('derives PER from market cap over net income, not from share count', () => {
         // yahoo가 KRX 종목에 trailingPE를 주지 않는다. sharesOutstanding과
@@ -156,14 +165,53 @@ describe('mapKeyMetrics', () => {
         expect(result!.peRatioTTM).toBeCloseTo(12.038, 2);
     });
 
-    it('derives PBR from market cap over stockholders equity', () => {
+    it('derives PBR from the latest QUARTERLY equity, not the annual one', () => {
+        // 연간(424.3조)을 쓰면 4.25, 분기(474.0조)를 쓰면 3.80. 결산 이후 분기 이익이
+        // 반영되지 않아 생기는 과대다 — SK하이닉스 실측에서는 36%까지 벌어졌다.
+        const result = mapKeyMetrics(
+            build({ summary, balance, quarterlyBalance } as never)
+        );
+        expect(result!.pbRatioTTM).toBeCloseTo(3.803, 2);
+    });
+
+    it('falls back to annual equity when no quarterly balance exists', () => {
+        // 신규 상장 등으로 분기 제표가 없는 종목은 연간이라도 보여 주는 편이 낫다.
         const result = mapKeyMetrics(build({ summary, balance } as never));
         expect(result!.pbRatioTTM).toBeCloseTo(4.248, 2);
     });
 
-    it('derives EPS per share from net income over shares outstanding', () => {
+    it('derives EPS from the implied share count, not sharesOutstanding', () => {
+        // 삼성전자 실측(2026-08-17): 보고된 최근 4분기 EPS 합이 22,683원이다.
+        //   sharesOutstanding(5.764B) 사용 → 25,977원 (+14.5% 과대)
+        //   내재주식수(시총/현재가 = 6.567B) 사용 → 22,802원 (+0.53%)
+        const REPORTED_TTM_EPS = 22_683;
         const result = mapKeyMetrics(build({ summary, balance } as never));
-        expect(result!.epsTTM).toBeCloseTo(25976.5, 0);
+
+        expect(result!.epsTTM).toBeCloseTo(22_802, 0);
+        // 보고값과의 상대 오차가 1% 안에 머무는지 — 분모를 잘못 바꾸면 즉시 깨진다.
+        expect(Math.abs(result!.epsTTM! / REPORTED_TTM_EPS - 1)).toBeLessThan(
+            0.01
+        );
+    });
+
+    it('keeps price / EPS identical to PER', () => {
+        // 같은 분모(내재주식수)를 공유하므로 항등식이어야 한다 — 화면에서 두 지표가
+        // 서로 어긋나면 사용자가 값을 신뢰하지 않는다.
+        const result = mapKeyMetrics(build({ summary, balance } as never))!;
+        const price = summary.price.regularMarketPrice;
+        expect(price / result.epsTTM!).toBeCloseTo(result.peRatioTTM!, 6);
+    });
+
+    it('returns null EPS when price is missing or zero', () => {
+        for (const regularMarketPrice of [0, undefined]) {
+            const result = mapKeyMetrics(
+                build({
+                    summary: { ...summary, price: { regularMarketPrice } },
+                    balance,
+                } as never)
+            );
+            expect(result!.epsTTM).toBeNull();
+        }
     });
 
     it('passes through the metrics yahoo already computes', () => {
@@ -180,7 +228,7 @@ describe('mapKeyMetrics', () => {
         const result = mapKeyMetrics(
             build({
                 summary,
-                balance: years({ stockholdersEquity: -1_000 }),
+                quarterlyBalance: years({ stockholdersEquity: -1_000 }),
             } as never)
         );
         expect(result!.pbRatioTTM).toBeNull();
@@ -210,17 +258,17 @@ describe('mapKeyMetrics', () => {
         expect(result!.peRatioTTM).not.toBeNull();
     });
 
-    it('uses the latest fiscal year for equity', () => {
+    it('uses the most recent quarter for equity', () => {
         const result = mapKeyMetrics(
             build({
                 summary,
-                balance: years(
-                    { stockholdersEquity: 424_313_255_000_000 },
+                quarterlyBalance: years(
+                    { stockholdersEquity: 473_964_801_000_000 },
                     { stockholdersEquity: 1 }
                 ),
             } as never)
         );
-        expect(result!.pbRatioTTM).toBeCloseTo(4.248, 2);
+        expect(result!.pbRatioTTM).toBeCloseTo(3.803, 2);
     });
 
     it('returns null when the summary is absent', () => {

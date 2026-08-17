@@ -11,6 +11,7 @@ import type {
 import type {
     YahooFundamentals,
     YahooStatementRow,
+    YahooSummary,
 } from './yahooFundamentalSource';
 
 /**
@@ -87,20 +88,26 @@ export function mapProfile(
 }
 
 /**
- * 밸류에이션 지표. yahoo는 KRX 종목에 `trailingPE`/`priceToBook`/`trailingEps`를
- * 주지 않으므로(2026-08-16 실측) 이미 확보한 값들로 파생 계산한다.
- *
- * **PER/EPS를 주식수가 아니라 시가총액 기준으로 계산하는 이유**: yahoo가 돌려주는
- * `sharesOutstanding`(5,764,191,903)과 재무제표의 `ordinarySharesNumber`(5,792,563,304)가
- * 서로 다르다(우선주·자기주식 처리 차이). 주식수를 거치면 어느 쪽을 쓰느냐에 따라
- * 지표가 흔들리므로, 같은 기준으로 산출된 `marketCap`과 `netIncomeToCommon`을 직접
- * 나눈다 — 주식수가 약분되어 표기 차이의 영향을 받지 않는다.
+ * 밸류에이션 지표. yahoo는 KRX 종목에 `trailingPE`/`priceToBook`/`trailingEps`/`bookValue`를
+ * 하나도 주지 않으므로(2026-08-17 실측, 5종목 전부 `n/a`) 확보한 값들로 파생 계산한다.
  *
  *   PER = marketCap / netIncomeToCommon(TTM 지배주주 순이익)
- *   PBR = marketCap / stockholdersEquity(최신 자기자본)
- *   EPS = netIncomeToCommon / sharesOutstanding
+ *   PBR = marketCap / stockholdersEquity(**최신 분기** 자기자본)
+ *   EPS = netIncomeToCommon / 내재주식수(marketCap / price)
  *
- * EPS만은 주당 값이라 주식수가 불가피하다. 표시 전용이며 PER 산출에는 쓰이지 않는다.
+ * **주식수를 시가총액에서 역산하는 이유**: yahoo가 주는 `sharesOutstanding`은 KRX
+ * 종목에서 시가총액의 산출 기준과 어긋난다. 삼성전자 실측 —
+ * `sharesOutstanding` 5.764B인데 `marketCap / price`로 역산하면 6.567B다(우선주
+ * 005935 등의 처리 차이). 전자로 EPS를 내면 보고된 분기 EPS 합(22,683원) 대비
+ * **14.5% 과대**(25,977원)해진다. 내재주식수를 쓰면 22,802원으로 오차가 0.53%로 줄고,
+ * SK하이닉스도 0.35% 이내였다.
+ *
+ * 부수 효과로 `price / epsTTM === peRatioTTM`이 항등식으로 성립한다 — 두 지표가 같은
+ * 분모를 공유하므로 화면에서 서로 어긋나지 않는다.
+ *
+ * **PBR 분모가 분기인 이유**: 연간(결산) 자본을 쓰면 결산 이후 분기 이익이 반영되지
+ * 않는다. 실측에서 SK하이닉스가 9.69 vs 7.11로 **36% 과대**했다. PER이 TTM 기준이므로
+ * PBR도 최신 시점으로 맞춰야 두 지표의 기준이 일관된다.
  */
 export function mapKeyMetrics(
     data: YahooFundamentals
@@ -110,7 +117,10 @@ export function mapKeyMetrics(
 
     const marketCap = summary.summaryDetail?.marketCap;
     const netIncome = summary.defaultKeyStatistics?.netIncomeToCommon;
-    const equity = latest(data.balance)?.stockholdersEquity;
+    // 분기 자본이 없는 종목(신규 상장 등)은 연간으로 폴백한다 — 없는 것보다 낫다.
+    const equity =
+        latest(data.quarterlyBalance)?.stockholdersEquity ??
+        latest(data.balance)?.stockholdersEquity;
 
     return {
         peRatioTTM: safeRatio(marketCap, netIncome),
@@ -122,11 +132,22 @@ export function mapKeyMetrics(
         enterpriseValueOverEBITDATTM: toNullable(
             summary.defaultKeyStatistics?.enterpriseToEbitda
         ),
-        epsTTM: safeRatio(
-            netIncome,
-            summary.defaultKeyStatistics?.sharesOutstanding
-        ),
+        epsTTM: safeRatio(netIncome, impliedShareCount(summary)),
     };
+}
+
+/**
+ * 시가총액 ÷ 현재가 = 시총 산출에 실제로 쓰인 주식수.
+ *
+ * yahoo가 별도로 주는 `sharesOutstanding`을 신뢰하지 않는 이유는 `mapKeyMetrics`
+ * 주석 참조. 둘 중 하나라도 없거나 0이면 `undefined`를 돌려 `safeRatio`가 `null`로
+ * 처리하게 한다.
+ */
+function impliedShareCount(summary: YahooSummary): number | undefined {
+    const marketCap = summary.summaryDetail?.marketCap;
+    const price = summary.price?.regularMarketPrice;
+    if (!marketCap || !price || price <= 0) return undefined;
+    return marketCap / price;
 }
 
 export function mapRatios(
@@ -142,9 +163,12 @@ export function mapRatios(
         netProfitMarginTTM: toNullable(fd.profitMargins),
         // yahoo는 부채비율을 자기자본 대비(`debtToEquity`, 백분율)로만 준다.
         // 도메인이 기대하는 debtRatio는 총자산 대비이므로 재무제표에서 직접 계산한다.
+        // 분자 `totalDebt`가 TTM 시점 값이므로 분모도 최신 분기 총자산을 쓴다 —
+        // 연간과 섞으면 PBR에서 드러난 것과 같은 기준 불일치가 생긴다.
         debtRatioTTM: safeRatio(
             fd.totalDebt,
-            latest(data.balance)?.totalAssets
+            latest(data.quarterlyBalance)?.totalAssets ??
+                latest(data.balance)?.totalAssets
         ),
         currentRatioTTM: toNullable(fd.currentRatio),
     };

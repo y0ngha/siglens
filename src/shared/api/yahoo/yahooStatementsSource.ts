@@ -79,12 +79,19 @@ async function fetchModule(
     period: StatementPeriod
 ): Promise<YahooStatementRaw[]> {
     try {
-        const rows = await yahooFinance.fundamentalsTimeSeries(symbol, {
-            period1: lookbackStart(period),
-            module,
-            // 도메인의 `'quarter'`와 yahoo의 `'quarterly'`는 표기가 다르다.
-            type: period === 'annual' ? 'annual' : 'quarterly',
-        });
+        const rows = await yahooFinance.fundamentalsTimeSeries(
+            symbol,
+            {
+                period1: lookbackStart(period),
+                module,
+                // 도메인의 `'quarter'`와 yahoo의 `'quarterly'`는 표기가 다르다.
+                type: period === 'annual' ? 'annual' : 'quarterly',
+            },
+            // 스키마 검증을 끄는 근거는 `yahooFundamentalSource`의
+            // `SKIP_SCHEMA_VALIDATION` 주석 참조 — 필드 하나의 결측이 제표 전체를
+            // 버리게 두지 않는다.
+            { validateResult: false }
+        );
         // yahoo는 오래된 기간부터 반환한다. 도메인 계약(newest first)에 맞춰 뒤집는다 —
         // 이 순서를 어기면 성장률이 부호까지 반대로 계산된다.
         //
@@ -123,7 +130,7 @@ export function getYahooStatements(
     symbol: string,
     period: StatementPeriod
 ): Promise<YahooStatements> {
-    const key = `${symbol.toUpperCase()}:${period}`;
+    const key = statementsCacheKey(symbol, period);
     const hit = cache.get(key);
     if (hit && Date.now() - hit.at < DEDUP_WINDOW_MS) return hit.value;
 
@@ -134,4 +141,42 @@ export function getYahooStatements(
     });
     cache.set(key, { at: Date.now(), value });
     return value;
+}
+
+function statementsCacheKey(symbol: string, period: StatementPeriod): string {
+    return `${symbol.toUpperCase()}:${period}`;
+}
+
+/**
+ * 재무상태표 한 장만 가져온다.
+ *
+ * PBR·부채비율의 분모(자기자본·총자산)만 필요한 호출부를 위한 경량 경로다.
+ * `getYahooStatements`를 쓰면 손익·현금흐름까지 3개 모듈을 함께 받는데, 그 두 개는
+ * 그대로 버려져 yahoo 호출 2회가 낭비된다 — 사용자가 financials 탭을 열지 않고
+ * fundamental 탭만 보는 가장 흔한 경로에서 매번 발생한다.
+ *
+ * **캐시는 `getYahooStatements`와 공유한다.** 같은 심볼·주기의 전체 제표가 이미
+ * 캐시에 있으면 그걸 그대로 쓰고, 없을 때만 balance-sheet 하나를 받아 부분 결과로
+ * 채운다. 반대로 이 함수가 먼저 캐시를 채운 뒤 전체 제표가 필요해지면 income·cashFlow가
+ * 빈 배열이 되므로, **그 경우는 캐시를 재사용하지 않고 전체를 다시 받는다**(아래 참조).
+ */
+export function getYahooBalanceSheet(
+    symbol: string,
+    period: StatementPeriod
+): Promise<YahooStatementRaw[]> {
+    const key = statementsCacheKey(symbol, period);
+    const hit = cache.get(key);
+    if (hit && Date.now() - hit.at < DEDUP_WINDOW_MS) {
+        return hit.value.then(s => s.balance);
+    }
+
+    // 부분 결과를 공유 캐시에 넣지 않는다 — 넣으면 뒤이어 전체 제표를 요구하는
+    // 호출부가 빈 income/cashFlow를 캐시 히트로 받아 재무 탭이 통째로 비어 버린다.
+    // 그 사고를 막는 대신 이 경로가 캐시를 채우지 못하는 비용을 감수한다.
+    return fetchModule(symbol.toUpperCase(), 'balance-sheet', period).catch(
+        (e: unknown) => {
+            console.warn('[yahooStatements] balance-only fetch failed', key, e);
+            return [];
+        }
+    );
 }
