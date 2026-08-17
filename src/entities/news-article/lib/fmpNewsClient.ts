@@ -7,6 +7,7 @@ import type {
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 import type { RawFmpEarningsReport, RawFmpNews } from '@/shared/api/fmp/types';
 import { MS_PER_HOUR } from '@/shared/config/time';
+import { detectTruncatedBody } from './detectTruncatedBody';
 
 /** Maximum article count to request per `NewsTimeRange` value. */
 const RANGE_TO_LIMIT: Record<NewsTimeRange, number> = {
@@ -178,6 +179,10 @@ function mapRawToNewsItem(raw: RawFmpNews, publishedAt: string): NewsItem {
         publishedAt,
         titleEn: raw.title,
         bodyEn: raw.text,
+        // FMP도 전문이 아니라 리드 조각을 주는 일이 잦다 — 실측(2026-08-17)에서
+        // `news/stock` 10건 중 8건이 문장 중간에서 끊겼다(`…during the quarter. Apple makes`).
+        // 네이버와 달리 `...` 표식이 없어 눈에 띄지 않았을 뿐이다.
+        bodyTruncated: detectTruncatedBody(raw.text),
     };
 }
 

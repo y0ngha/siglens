@@ -134,6 +134,27 @@ describe('NaverNewsClient', () => {
         expect(item!.sourceLanguage).toBe('ko');
     });
 
+    it('flags the body as truncated — description is a ~120-char slice', async () => {
+        // 네이버 `description`은 AI 요약이 아니라 본문 앞부분을 기계적으로 자른 것이다
+        // (실측 117~130자, 항상 `…`으로 끝남). 표시가 없으면 core 프롬프트가 이를
+        // 온전한 본문으로 읽고 없는 수치를 요구받는다.
+        fetchSpy.mockResolvedValue(
+            mockNaverResponse([
+                naverItem({
+                    description:
+                        '삼성전자가 반도체 부문 회복에 힘입어 시장 예상을 웃도는 실적을 냈다. 3분기 영업이익은...',
+                }),
+            ])
+        );
+
+        const [item] = await new NaverNewsClient(resolveQuery).fetchNews(
+            SYMBOL,
+            '7d'
+        );
+
+        expect(item!.bodyTruncated).toBe(true);
+    });
+
     it('prefers the original link over the Naver mirror', async () => {
         // 네이버 링크는 기사 이관 시 만료되지만 원문 URL은 남는다.
         fetchSpy.mockResolvedValue(mockNaverResponse([naverItem()]));
