@@ -3,8 +3,17 @@
     // 충돌하는 경우"에 한정하고 근거를 남긴다. 실제 결함은 코드에서 고친다.
     "ignore": {
         // React 앱(src/) 밖의 코드. ISR 캐시 핸들러(node 스크립트), 서비스 워커,
-        // 일회성 시드/유지보수 스크립트, 마이그레이션, 인프라 정의는 React 진단 대상이 아니다.
+        // 일회성 시드/유지보수 스크립트, 마이그레이션, 인프라 정의, CI 워크플로는
+        // React 진단 대상이 아니다.
+        //
+        // .github/** 관련 주의: build-pipeline-secret-boundary 룰이 "시크릿이 있는 잡에서
+        // install이 실행된다"고 지적하는데, @y0ngha/siglens-core를 GitHub Packages(프라이빗)
+        // 에서 받으려면 install 시점에 토큰이 반드시 필요하다 — 플랫폼 제약이라 해소할 수
+        // 없다. 대신 실제로 할 수 있는 완화는 코드에 반영했다: 토큰을 job 전역 env에서
+        // install 스텝으로 좁혔고(ci/deploy/e2e), 순수 JS 체크 잡은 --mode=skip-build로
+        // 시크릿이 있는 동안 패키지 lifecycle 코드를 실행하지 않는다.
         "files": [
+            ".github/**",
             "cache-handler/**",
             "public/**",
             "scripts/**",

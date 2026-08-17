@@ -16,8 +16,9 @@ import { stripSnapshotMarkdown } from './stripSnapshotMarkdown';
  */
 export function narrowStringArray(value: unknown): string[] {
     if (!Array.isArray(value)) return [];
-    return value
-        .filter((item): item is string => typeof item === 'string')
-        .map(item => stripSnapshotMarkdown(item).trim())
-        .filter(item => item.length > 0);
+    return value.flatMap(item => {
+        if (typeof item !== 'string') return [];
+        const cleaned = stripSnapshotMarkdown(item).trim();
+        return cleaned.length > 0 ? [cleaned] : [];
+    });
 }

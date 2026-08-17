@@ -30,9 +30,9 @@ const KST_DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
 /** UTC instant → ET-zoned 'YYYY-MM-DD'. */
 export function etDateOf(instant: Date): string {
     const parts = Object.fromEntries(
-        ET_DATE_FORMAT.formatToParts(instant)
-            .filter(p => p.type !== 'literal')
-            .map(p => [p.type, p.value])
+        ET_DATE_FORMAT.formatToParts(instant).flatMap(p =>
+            p.type === 'literal' ? [] : [[p.type, p.value]]
+        )
         // Intl.DateTimeFormat configured with year/month/day always emits parts of these exact types.
     ) as Record<'year' | 'month' | 'day', string>;
     return `${parts.year}-${parts.month}-${parts.day}`;
@@ -41,9 +41,9 @@ export function etDateOf(instant: Date): string {
 /** UTC instant → KST-zoned 'YYYY-MM-DD'. */
 export function kstDateOf(instant: Date): string {
     const parts = Object.fromEntries(
-        KST_DATE_FORMAT.formatToParts(instant)
-            .filter(p => p.type !== 'literal')
-            .map(p => [p.type, p.value])
+        KST_DATE_FORMAT.formatToParts(instant).flatMap(p =>
+            p.type === 'literal' ? [] : [[p.type, p.value]]
+        )
         // Intl.DateTimeFormat configured with year/month/day always emits parts of these exact types.
     ) as Record<'year' | 'month' | 'day', string>;
     return `${parts.year}-${parts.month}-${parts.day}`;

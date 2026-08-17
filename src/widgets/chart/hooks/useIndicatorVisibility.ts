@@ -51,9 +51,9 @@ export function useIndicatorVisibility(): UseIndicatorVisibilityReturn {
 
     const paneIndices: PaneIndices = useMemo(() => {
         // 가변 카운터 없이 순수하게 계산 — 활성 pane을 등록 순서로 추려 Map으로 위치를 부여.
-        const activePaneKeys = INDICATOR_REGISTRY.filter(
-            m => m.kind === 'pane' && visible[m.key]
-        ).map(m => m.key);
+        const activePaneKeys = INDICATOR_REGISTRY.flatMap(m =>
+            m.kind === 'pane' && visible[m.key] ? [m.key] : []
+        );
         const activePaneIndexMap = new Map(
             activePaneKeys.map((key, i) => [
                 key,

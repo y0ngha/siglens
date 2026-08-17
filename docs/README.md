@@ -23,6 +23,7 @@
 - [FF.md](./conventions/FF.md) — FF 4원칙(Readability/Predictability/Cohesion/Coupling)
 - [GIT_CONVENTIONS.md](./conventions/GIT_CONVENTIONS.md) — 브랜치/커밋/PR 규칙
 - [DESIGN.md](./conventions/DESIGN.md) — 컬러 시스템, Tailwind v4 `@theme`, 차트 컬러 상수
+- [TOOLCHAIN.md](./conventions/TOOLCHAIN.md) — TypeScript 7 · oxlint/oxfmt · React Doctor(점수 산식 실측, 남은 과제)
 
 ## reference/ — 레퍼런스
 - [API.md](./reference/API.md) — FMP/AI/worker API 엔드포인트, 환경변수

@@ -123,11 +123,11 @@ export async function searchByKoreanName(
 ): Promise<TickerSearchResult[]> {
     const entries = await loadAllEntries();
     const normalizedQuery = query.toLowerCase();
-    return entries
-        .filter(entry =>
-            entry.koreanName.toLowerCase().includes(normalizedQuery)
-        )
-        .map(koreanEntryToSearchResult);
+    return entries.flatMap(entry =>
+        entry.koreanName.toLowerCase().includes(normalizedQuery)
+            ? [koreanEntryToSearchResult(entry)]
+            : []
+    );
 }
 
 /** Resolve Korean names for a list of canonical ticker symbols. */

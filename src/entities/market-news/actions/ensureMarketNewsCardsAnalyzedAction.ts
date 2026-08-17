@@ -155,13 +155,13 @@ export async function ensureMarketNewsCardsAnalyzedAction(
         // wasting LLM credits. The majority-failure guard above already handles
         // bulk failures; this filters the surviving minority rejects.
         const upsertedIds = new Set(
-            upsertSettled
-                .map((r, i) => (r.status === 'fulfilled' ? fresh[i].id : null))
-                .filter((id): id is string => id !== null)
+            upsertSettled.flatMap((r, i) =>
+                r.status === 'fulfilled' ? [fresh[i].id] : []
+            )
         );
-        const unanalyzed = fresh
-            .filter(item => upsertedIds.has(item.id))
-            .filter(item => !analyzedIds.has(item.id));
+        const unanalyzed = fresh.filter(
+            item => upsertedIds.has(item.id) && !analyzedIds.has(item.id)
+        );
 
         if (unanalyzed.length === 0) return;
 

@@ -52,9 +52,10 @@ export function StrikeBarSrTable({
                 <tbody>
                     {rows.map(row => (
                         <tr key={row.key}>
-                            {row.cells.map((cell, i) => (
-                                // 셀 순서가 고정돼 있어 index를 key로 사용해도 안전하다.
-                                <td key={i}>{cell}</td>
+                            {/* 셀은 headers와 같은 순서로 채워지므로 컬럼 헤더명을
+                                key로 쓴다(인덱스 key 불필요, 컬럼 순서가 바뀌어도 안전). */}
+                            {headers.map((header, columnIndex) => (
+                                <td key={header}>{row.cells[columnIndex]}</td>
                             ))}
                         </tr>
                     ))}

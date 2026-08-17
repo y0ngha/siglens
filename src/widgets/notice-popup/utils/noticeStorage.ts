@@ -1,5 +1,12 @@
-/** "다시 보지 않기"한 공지 ID 목록을 담는 localStorage 키. */
-export const DISMISSED_NOTICES_STORAGE_KEY = 'siglens_dismissed_notices';
+/**
+ * "다시 보지 않기"한 공지 ID 목록을 담는 localStorage 키.
+ * 키 이름에 포맷 버전을 넣는다 — 값의 모양을 바꿀 때 키를 올리면 낡은 데이터를
+ * 파싱할 필요 자체가 없어진다(구 키는 아래 LEGACY_KEYS에서 읽기만 지원).
+ */
+export const DISMISSED_NOTICES_STORAGE_KEY = 'siglens_dismissed_notices_v1';
+
+/** 버전 없는 구 키. 읽기만 지원하고 새로 쓰지 않는다(자연 소멸). */
+const LEGACY_DISMISSED_NOTICES_KEYS = ['siglens_dismissed_notices'] as const;
 
 /**
  * 저장 포맷 버전. 값의 모양을 바꿀 때 올린다 — 읽기 쪽이 모르는 버전을 만나면
@@ -31,8 +38,12 @@ export function loadDismissedNoticeIds(): string[] {
     if (typeof window === 'undefined') return [];
     try {
         const raw = localStorage.getItem(DISMISSED_NOTICES_STORAGE_KEY);
-        if (!raw) return [];
-        return toIds(JSON.parse(raw));
+        if (raw) return toIds(JSON.parse(raw));
+        for (const legacyKey of LEGACY_DISMISSED_NOTICES_KEYS) {
+            const legacyRaw = localStorage.getItem(legacyKey);
+            if (legacyRaw) return toIds(JSON.parse(legacyRaw));
+        }
+        return [];
     } catch {
         return [];
     }

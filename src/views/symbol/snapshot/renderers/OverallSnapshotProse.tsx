@@ -130,21 +130,23 @@ function narrowOverallContent(content: unknown): NarrowedOverallContent | null {
             : '';
 
     const scenarios = Array.isArray(record.scenarios)
-        ? record.scenarios.map(narrowScenario).filter(s => s !== null)
+        ? record.scenarios.flatMap(raw => {
+              const scenario = narrowScenario(raw);
+              return scenario === null ? [] : [scenario];
+          })
         : [];
 
-    const bullishBullets = scenarios
-        .filter(s => s.name === 'bullish')
-        .map(formatScenarioBullet)
-        .filter((bullet): bullet is string => bullet !== null);
-    const neutralBullets = scenarios
-        .filter(s => s.name === 'neutral')
-        .map(formatScenarioBullet)
-        .filter((bullet): bullet is string => bullet !== null);
-    const bearishBullets = scenarios
-        .filter(s => s.name === 'bearish')
-        .map(formatScenarioBullet)
-        .filter((bullet): bullet is string => bullet !== null);
+    // 이름별 불릿 추출 — 시나리오 배열을 이름당 한 번씩만 순회한다.
+    const bulletsOf = (name: string): string[] =>
+        scenarios.flatMap(scenario => {
+            if (scenario.name !== name) return [];
+            const bullet = formatScenarioBullet(scenario);
+            return bullet === null ? [] : [bullet];
+        });
+
+    const bullishBullets = bulletsOf('bullish');
+    const neutralBullets = bulletsOf('neutral');
+    const bearishBullets = bulletsOf('bearish');
 
     const riskFactorsKo = narrowStringArray(record.riskFactorsKo);
     const technicalBulletsKo = narrowStringArray(record.technicalBulletsKo);

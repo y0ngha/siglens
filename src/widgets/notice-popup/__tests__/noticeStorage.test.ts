@@ -51,6 +51,26 @@ describe('noticeStorage', () => {
             expect(loadDismissedNoticeIds()).toEqual(['legacy-a', 'legacy-b']);
         });
 
+        it('구 키(siglens_dismissed_notices)에 저장된 값도 읽는다', () => {
+            localStorage.setItem(
+                'siglens_dismissed_notices',
+                JSON.stringify(['old-1'])
+            );
+            expect(loadDismissedNoticeIds()).toEqual(['old-1']);
+        });
+
+        it('새 키가 있으면 구 키는 무시한다', () => {
+            localStorage.setItem(
+                'siglens_dismissed_notices',
+                JSON.stringify(['old-1'])
+            );
+            localStorage.setItem(
+                DISMISSED_NOTICES_STORAGE_KEY,
+                JSON.stringify({ v: 1, ids: ['new-1'] })
+            );
+            expect(loadDismissedNoticeIds()).toEqual(['new-1']);
+        });
+
         it('버전 필드가 있는 현재 포맷을 읽는다', () => {
             localStorage.setItem(
                 DISMISSED_NOTICES_STORAGE_KEY,

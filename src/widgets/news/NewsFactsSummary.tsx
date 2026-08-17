@@ -60,11 +60,10 @@ function getSentimentCounts(
 
 function getHeadlineItems(items: readonly NewsDisplayItem[]): HeadlineItem[] {
     return items
-        .map(item => ({
-            id: item.id,
-            title: item.titleKo ?? item.titleEn ?? '',
-        }))
-        .filter(item => item.title.length > 0)
+        .flatMap(item => {
+            const title = item.titleKo ?? item.titleEn ?? '';
+            return title.length > 0 ? [{ id: item.id, title }] : [];
+        })
         .slice(0, MAX_HEADLINES);
 }
 
