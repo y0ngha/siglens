@@ -1,11 +1,4 @@
 /**
- * Explicitly disables extended thinking for per-card translation/classification
- * tasks. Deterministic transformations gain no quality benefit from extended
- * thinking while incurring extra latency and cost.
- */
-export const DISABLED_THINKING_BUDGET = 0;
-
-/**
  * 동시 `runNewsCardAnalysis` 호출 상한 — `withConcurrencyLimit` 인자.
  *
  * `runNewsCardAnalysis`는 블로킹 LLM 왕복이다(worker 제거 이후). N개를

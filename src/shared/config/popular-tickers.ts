@@ -151,7 +151,7 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
  * 큐레이션된 카테고리에 적힌 한글 종목명 — 심볼 → 한글명.
  *
  * `korean_tickers` 테이블이 비어 있는 동안의 시드로 쓴다. 한글명은 원래
- * `translateCompanyNames`(Gemini)가 종목 방문 시 lazy하게 채우지만, ISR은 **첫 렌더를
+ * `translateCompanyNames`가 종목 방문 시 lazy하게 채우지만, ISR은 **첫 렌더를
  * 캐시에 굳히므로** 번역이 끝나기 전에 영문 제목(`005930.KS 주가 전망`)이 revalidate
  * 주기 동안 고정된다. 미국 종목은 대부분 이미 번역돼 있어 드러나지 않던 문제가, 전부
  * 신규인 한국 종목에서는 전면적으로 나타난다.

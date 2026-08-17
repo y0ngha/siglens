@@ -1,5 +1,5 @@
 vi.mock('@/entities/llm-provider', () => ({
-    callGeminiChat: vi.fn(),
+    callDeepseekChat: vi.fn(),
     parseJsonResponse: vi.fn(),
 }));
 
@@ -11,16 +11,16 @@ import {
     translateCompanyNames,
     translateCompanyDescription,
 } from '@/entities/ticker/lib/koreanTranslator';
-import { callGeminiChat, parseJsonResponse } from '@/entities/llm-provider';
+import { callDeepseekChat, parseJsonResponse } from '@/entities/llm-provider';
 import { tryReadTranslatorConfig } from '@/entities/ticker/lib/config';
 
-const mockCallGemini = callGeminiChat as ReturnType<typeof vi.fn>;
+const mockCallDeepseek = callDeepseekChat as ReturnType<typeof vi.fn>;
 const mockParseJson = parseJsonResponse as ReturnType<typeof vi.fn>;
 const mockReadConfig = tryReadTranslatorConfig as ReturnType<typeof vi.fn>;
 
 const CONFIG = {
     apiKey: 'test-key',
-    model: 'gemini-2.5-flash',
+    model: 'deepseek-v4-flash',
 };
 
 describe('Background translation failure handling', () => {
@@ -29,9 +29,9 @@ describe('Background translation failure handling', () => {
     });
 
     describe('translateCompanyNames', () => {
-        it('returns empty object when Gemini fails', async () => {
+        it('returns empty object when DeepSeek fails', async () => {
             mockReadConfig.mockReturnValue(CONFIG);
-            mockCallGemini.mockRejectedValue(new Error('Gemini 500'));
+            mockCallDeepseek.mockRejectedValue(new Error('DeepSeek 500'));
 
             const result = await translateCompanyNames([
                 { symbol: 'AAPL', name: 'Apple Inc.' },
@@ -56,9 +56,9 @@ describe('Background translation failure handling', () => {
             expect(result).toEqual({});
         });
 
-        it('returns translations when Gemini succeeds', async () => {
+        it('returns translations when DeepSeek succeeds', async () => {
             mockReadConfig.mockReturnValue(CONFIG);
-            mockCallGemini.mockResolvedValue('{"AAPL":"애플"}');
+            mockCallDeepseek.mockResolvedValue('{"AAPL":"애플"}');
             mockParseJson.mockReturnValue({ AAPL: '애플' });
 
             const result = await translateCompanyNames([
@@ -70,7 +70,7 @@ describe('Background translation failure handling', () => {
 
         it('returns empty object when parseJsonResponse returns non-string-record', async () => {
             mockReadConfig.mockReturnValue(CONFIG);
-            mockCallGemini.mockResolvedValue('[1,2,3]');
+            mockCallDeepseek.mockResolvedValue('[1,2,3]');
             mockParseJson.mockReturnValue([1, 2, 3]);
 
             const result = await translateCompanyNames([
@@ -82,9 +82,9 @@ describe('Background translation failure handling', () => {
     });
 
     describe('translateCompanyDescription', () => {
-        it('returns null when Gemini fails', async () => {
+        it('returns null when DeepSeek fails', async () => {
             mockReadConfig.mockReturnValue(CONFIG);
-            mockCallGemini.mockRejectedValue(new Error('API error'));
+            mockCallDeepseek.mockRejectedValue(new Error('API error'));
 
             const result = await translateCompanyDescription(
                 'Apple makes iPhones'
@@ -105,7 +105,7 @@ describe('Background translation failure handling', () => {
 
         it('returns translated text on success', async () => {
             mockReadConfig.mockReturnValue(CONFIG);
-            mockCallGemini.mockResolvedValue('애플은 아이폰을 만듭니다');
+            mockCallDeepseek.mockResolvedValue('애플은 아이폰을 만듭니다');
 
             const result = await translateCompanyDescription(
                 'Apple makes iPhones'
@@ -116,7 +116,7 @@ describe('Background translation failure handling', () => {
 
         it('returns null for empty response', async () => {
             mockReadConfig.mockReturnValue(CONFIG);
-            mockCallGemini.mockResolvedValue('   ');
+            mockCallDeepseek.mockResolvedValue('   ');
 
             const result = await translateCompanyDescription(
                 'Apple makes iPhones'

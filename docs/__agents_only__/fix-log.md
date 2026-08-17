@@ -183,3 +183,8 @@
 - Violation: isTabAllowedForSymbol used nested ternary (ternary ? ternary : value) pattern, obscuring control flow
   - Rule: FF.md Readability 1-E — no nested ternaries; early returns preserve clarity
   - Context: Refactored to early return, also eliminating unnecessary DB call for KR symbols (now skips isCryptoSymbolStatic check for all KR market profiles)
+
+## [worktree-refactor+deepseek-model-swap | Migrate Gemini → DeepSeek, Round 3 | 2026-08-17]
+- Violation: Guard condition to skip persisting empty analysis (when titleKo + summaryKo both blank) is too broad; applies only to bot branch but skips re-submission check on human page view → permanently malformed articles re-submitted to LLM on every view for 180-day FMP lookback
+  - Rule: Pattern copied from sibling files without verifying destination's invariant holds
+  - Context: src/entities/news-article/actions/ensureNewsCardsAnalyzedAction.ts. Sibling economy paths pair the skip guard with unconditional TTL flag (cost-bounded), but destination only gates on isRecentlyFetched/markFetched (applies to bot branch only, leaving human path unguarded). Fixed by narrowing skip condition to exact normalizer-fallback signature only so responses model genuinely produced still persist.

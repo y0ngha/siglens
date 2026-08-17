@@ -9,7 +9,6 @@ export {
     isEnrichedRow,
     toEnrichedNewsItem,
 } from './lib/newsEnrichment';
-export { DISABLED_THINKING_BUDGET } from './lib/newsAnalysisConstants';
 export {
     NEWS_LOOKBACK_MS,
     NEWS_ANALYSIS_LOOKBACK_MS,

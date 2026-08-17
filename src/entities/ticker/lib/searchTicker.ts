@@ -43,7 +43,7 @@ function toKoreanEntry(
     ];
 }
 
-/** Single-flight registry keyed by sorted-symbol list; collapses concurrent identical search queries into one Gemini call. */
+/** Single-flight registry keyed by sorted-symbol list; collapses concurrent identical search queries into one translation call. */
 const translationSingleFlight = createSingleFlight<void>();
 
 function buildInFlightKey(symbols: readonly string[]): string {
