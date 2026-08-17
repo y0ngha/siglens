@@ -98,6 +98,18 @@ describe('getYahooFundamentals dedup', () => {
         );
     });
 
+    it('fetches only the quarterly balance sheet, not all three statements', async () => {
+        // PBR·부채비율 분모만 필요한데 전체 제표를 받으면 손익·현금흐름 2개 모듈이
+        // 그대로 버려진다. fundamental 탭만 여는 가장 흔한 경로에서 매번 낭비된다.
+        await getYahooFundamentals('005930.KS');
+
+        const quarterCalls = fundamentalsTimeSeries.mock.calls.filter(
+            c => (c[1] as { type?: string })?.type === 'quarterly'
+        );
+        expect(quarterCalls).toHaveLength(1);
+        expect(quarterCalls[0]![1]).toMatchObject({ module: 'balance-sheet' });
+    });
+
     it('fetches quarterly balance so PBR uses the latest reported equity', async () => {
         // 연간 자본만 쓰면 결산 이후 분기가 빠져 PBR이 과대해진다(SK하이닉스 실측 +36%).
         const result = await getYahooFundamentals('005930.KS');

@@ -2,6 +2,7 @@ import 'server-only';
 import YahooFinance from 'yahoo-finance2';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
+    getYahooBalanceSheet,
     getYahooStatements,
     type YahooStatementRaw,
 } from './yahooStatementsSource';
@@ -207,9 +208,11 @@ async function fetchAll(symbol: string): Promise<YahooFundamentals> {
                 return null;
             }),
         getYahooStatements(symbol, 'annual'),
-        getYahooStatements(symbol, 'quarter'),
+        // 분기는 재무상태표만 필요하다(PBR·부채비율 분모). 전체 제표를 받으면
+        // 손익·현금흐름 2개 모듈이 그대로 버려져 호출이 낭비된다.
+        getYahooBalanceSheet(symbol, 'quarter'),
     ]);
-    const statements = { ...annual, quarterlyBalance: quarterly.balance };
+    const statements = { ...annual, quarterlyBalance: quarterly };
 
     return {
         // Safe cast: `quoteSummary`의 반환 타입은 요청한 모듈 조합에 따라 라이브러리가
