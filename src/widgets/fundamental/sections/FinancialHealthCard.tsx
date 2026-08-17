@@ -45,12 +45,12 @@ function HealthMetric({
         badge === undefined ? '' : BADGE_VARIANT_CLASS[badge.variant];
 
     return (
-        <div className="border-secondary-700 flex items-baseline justify-between gap-4 border-b py-2.5 last:border-b-0">
+        <div className="flex items-baseline justify-between gap-4 border-b border-secondary-700 py-2.5 last:border-b-0">
             <div>
                 <span className="text-sm font-medium">{label}</span>
                 {tooltip !== undefined && <InfoTooltip>{tooltip}</InfoTooltip>}
                 {hint !== undefined && (
-                    <span className="text-secondary-400 ml-1.5 text-xs">
+                    <span className="ml-1.5 text-xs text-secondary-400">
                         {hint}
                     </span>
                 )}
@@ -117,7 +117,7 @@ export function FinancialHealthCard({
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 재무 건전성

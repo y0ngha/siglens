@@ -62,15 +62,15 @@ export function PositionStatusSummary({
         <section
             aria-labelledby={headingId}
             data-testid="position-status-summary"
-            className="bg-secondary-800 flex flex-col gap-3 rounded-lg p-4"
+            className="flex flex-col gap-3 rounded-lg bg-secondary-800 p-4"
         >
             <h2
                 id={headingId}
-                className="text-secondary-200 text-sm font-semibold"
+                className="text-sm font-semibold text-secondary-200"
             >
                 내 포지션
             </h2>
-            <dl className="text-secondary-300 grid grid-cols-1 gap-2 text-sm">
+            <dl className="grid grid-cols-1 gap-2 text-sm text-secondary-300">
                 <ReadoutRow
                     label="평단 · 수량"
                     value={`${avgDisplay} · ${quantityDisplay}`}

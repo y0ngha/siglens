@@ -22,26 +22,26 @@ const CROSS_LINK_CARD_COUNT = 3;
 export default function OptionsLoading() {
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
-            <div className="border-secondary-700 bg-secondary-800 flex flex-wrap items-center gap-2 rounded-xl border p-3">
-                <div className="bg-secondary-700 mr-1 h-3 w-10 animate-pulse rounded" />
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-secondary-700 bg-secondary-800 p-3">
+                <div className="mr-1 h-3 w-10 animate-pulse rounded bg-secondary-700" />
                 {Array.from({ length: EXPIRATION_CHIP_SKELETON_COUNT }).map(
                     (_, i) => (
                         <div
                             key={i}
-                            className="bg-secondary-700 h-7 w-20 animate-pulse rounded-full"
+                            className="h-7 w-20 animate-pulse rounded-full bg-secondary-700"
                         />
                     )
                 )}
             </div>
 
             <section
-                className="border-primary-500/30 from-secondary-800 to-secondary-900 ring-primary-500/10 rounded-xl border bg-gradient-to-br p-6 ring-1"
+                className="rounded-xl border border-primary-500/30 bg-gradient-to-br from-secondary-800 to-secondary-900 p-6 ring-1 ring-primary-500/10"
                 aria-busy="true"
                 aria-label="AI 옵션 분석 불러오는 중"
             >
                 <div className="mb-4 flex items-center gap-2">
-                    <div className="border-primary-500 h-3 w-3 animate-spin rounded-full border-2 border-t-transparent" />
-                    <div className="bg-secondary-700 h-4 w-32 animate-pulse rounded" />
+                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
+                    <div className="h-4 w-32 animate-pulse rounded bg-secondary-700" />
                 </div>
                 <div className="mb-5 space-y-2">
                     {AI_ANALYSIS_LINE_WIDTHS.map(w => (
@@ -54,16 +54,16 @@ export default function OptionsLoading() {
                         />
                     ))}
                 </div>
-                <div className="bg-secondary-700 mb-3 h-3 w-24 animate-pulse rounded" />
+                <div className="mb-3 h-3 w-24 animate-pulse rounded bg-secondary-700" />
                 <ul className="space-y-3">
                     {Array.from({ length: AI_PER_EXPIRATION_ITEM_COUNT }).map(
                         (_, i) => (
                             <li
                                 key={i}
-                                className="border-secondary-700 rounded-lg border p-3"
+                                className="rounded-lg border border-secondary-700 p-3"
                             >
-                                <div className="bg-secondary-700 mb-2 h-3 w-24 animate-pulse rounded" />
-                                <div className="bg-secondary-700 h-3 w-full animate-pulse rounded" />
+                                <div className="mb-2 h-3 w-24 animate-pulse rounded bg-secondary-700" />
+                                <div className="h-3 w-full animate-pulse rounded bg-secondary-700" />
                             </li>
                         )
                     )}
@@ -74,28 +74,28 @@ export default function OptionsLoading() {
                 {Array.from({ length: METRIC_CARD_COUNT }).map((_, i) => (
                     <div
                         key={i}
-                        className="border-secondary-700 bg-secondary-800 animate-pulse rounded-xl border p-4"
+                        className="animate-pulse rounded-xl border border-secondary-700 bg-secondary-800 p-4"
                     >
-                        <div className="bg-secondary-700 h-3 w-16 rounded" />
-                        <div className="bg-secondary-700 mt-2 h-6 w-20 rounded" />
+                        <div className="h-3 w-16 rounded bg-secondary-700" />
+                        <div className="mt-2 h-6 w-20 rounded bg-secondary-700" />
                     </div>
                 ))}
             </div>
 
-            <div className="border-secondary-700 bg-secondary-800 space-y-2 rounded-xl border p-4">
-                <div className="bg-secondary-700 h-4 w-48 animate-pulse rounded" />
-                <div className="bg-secondary-700 h-60 w-full animate-pulse rounded" />
-                <div className="bg-secondary-700 h-3 w-40 animate-pulse rounded" />
+            <div className="space-y-2 rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+                <div className="h-4 w-48 animate-pulse rounded bg-secondary-700" />
+                <div className="h-60 w-full animate-pulse rounded bg-secondary-700" />
+                <div className="h-3 w-40 animate-pulse rounded bg-secondary-700" />
             </div>
 
-            <div className="border-secondary-700 bg-secondary-800 space-y-2 rounded-xl border p-4">
-                <div className="bg-secondary-700 h-4 w-40 animate-pulse rounded" />
+            <div className="space-y-2 rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+                <div className="h-4 w-40 animate-pulse rounded bg-secondary-700" />
                 <div className="space-y-2">
                     {Array.from({ length: CHAIN_TABLE_ROW_COUNT }).map(
                         (_, i) => (
                             <div
                                 key={i}
-                                className="bg-secondary-700 h-8 w-full animate-pulse rounded"
+                                className="h-8 w-full animate-pulse rounded bg-secondary-700"
                             />
                         )
                     )}
@@ -106,7 +106,7 @@ export default function OptionsLoading() {
                 {Array.from({ length: CROSS_LINK_CARD_COUNT }).map((_, i) => (
                     <div
                         key={i}
-                        className="bg-secondary-700 h-24 w-full animate-pulse rounded-xl"
+                        className="h-24 w-full animate-pulse rounded-xl bg-secondary-700"
                     />
                 ))}
             </div>

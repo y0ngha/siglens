@@ -279,7 +279,7 @@ export default async function Home() {
             <JsonLd data={faqJsonLd} />
             <a
                 href="#search"
-                className="focus-visible:bg-primary-600 sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-4 focus-visible:left-4 focus-visible:z-50 focus-visible:rounded focus-visible:px-4 focus-visible:py-2 focus-visible:text-white"
+                className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-4 focus-visible:left-4 focus-visible:z-50 focus-visible:rounded focus-visible:bg-primary-600 focus-visible:px-4 focus-visible:py-2 focus-visible:text-white"
             >
                 검색으로 건너뛰기
             </a>
@@ -301,7 +301,7 @@ export default async function Home() {
                             <HeroIllustration className="mx-auto h-auto w-full max-w-md lg:max-w-none" />
                         </div>
                         <div className="text-center lg:text-left">
-                            <p className="text-secondary-400 mb-5 font-mono text-[0.68rem] leading-relaxed tracking-[0.18em] uppercase sm:text-xs">
+                            <p className="mb-5 font-mono text-[0.68rem] leading-relaxed tracking-[0.18em] text-secondary-400 uppercase sm:text-xs">
                                 투자의 확신을 더하는 AI 분석
                             </p>
                             {/*
@@ -311,14 +311,14 @@ export default async function Home() {
                                 (lg에서 text-5xl을 유지하면 첫 줄이 추가로
                                 줄바꿈돼 3줄이 된다.)
                             */}
-                            <h1 className="text-secondary-100 mx-auto max-w-sm text-[2.2rem] leading-[1.1] font-bold tracking-tight text-balance sm:max-w-2xl sm:text-5xl lg:mx-0 lg:text-[2.25rem] xl:text-5xl">
+                            <h1 className="mx-auto max-w-sm text-[2.2rem] leading-[1.1] font-bold tracking-tight text-balance text-secondary-100 sm:max-w-2xl sm:text-5xl lg:mx-0 lg:text-[2.25rem] xl:text-5xl">
                                 주식과 코인, 투자의 새로운 기준 —
                                 <br />
                                 <span className="text-primary-300">
                                     AI가 분석하고 완성하는 SIGLENS
                                 </span>
                             </h1>
-                            <p className="text-secondary-400 mx-auto mt-5 max-w-md text-base leading-relaxed sm:max-w-2xl sm:text-lg lg:mx-0">
+                            <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-secondary-400 sm:max-w-2xl sm:text-lg lg:mx-0">
                                 {skillCounts.indicators}종의 지표와 다양한 투자
                                 전략 기반의 차트 흐름,&nbsp;
                                 <br className="hidden sm:block" />
@@ -341,7 +341,7 @@ export default async function Home() {
                                         // 목적지에 대해 진입 경로별로 다른 `_rsc` 키가 또
                                         // 쌓인다 (docs/architecture/CDN_CACHING.md §1).
                                         prefetch={false}
-                                        className="text-primary-400 hover:text-primary-300 inline-flex items-center gap-1 text-sm font-semibold transition-colors"
+                                        className="inline-flex items-center gap-1 text-sm font-semibold text-primary-400 transition-colors hover:text-primary-300"
                                     >
                                         {label}{' '}
                                         <span aria-hidden="true">→</span>
@@ -358,12 +358,12 @@ export default async function Home() {
                 </section>
                 <HowItWorks skillCounts={skillCounts} />
                 <section className="px-6 pb-8 lg:px-[15vw]">
-                    <div className="border-secondary-800 bg-secondary-800/30 flex flex-col items-center gap-3 rounded-lg border px-6 py-5 text-center sm:flex-row sm:justify-between sm:text-left">
+                    <div className="flex flex-col items-center gap-3 rounded-lg border border-secondary-800 bg-secondary-800/30 px-6 py-5 text-center sm:flex-row sm:justify-between sm:text-left">
                         <div>
-                            <p className="text-secondary-200 text-sm font-semibold">
+                            <p className="text-sm font-semibold text-secondary-200">
                                 Siglens는 얼마나 정확할까요?
                             </p>
-                            <p className="text-secondary-400 mt-0.5 text-xs">
+                            <p className="mt-0.5 text-xs text-secondary-400">
                                 주요 10개 종목으로 2년치 기술적 분석과 AI 예측을
                                 백테스트한 결과를 확인하세요.
                             </p>
@@ -373,7 +373,7 @@ export default async function Home() {
                             // 랜딩은 트래픽이 가장 많은 페이지라 이 링크 하나가 대량의
                             // 파편화된 `_rsc` 요청을 만든다 (CDN_CACHING.md §1).
                             prefetch={false}
-                            className="bg-secondary-700 text-secondary-200 hover:bg-secondary-600 shrink-0 rounded-md px-4 py-2 text-xs font-medium transition-colors"
+                            className="shrink-0 rounded-md bg-secondary-700 px-4 py-2 text-xs font-medium text-secondary-200 transition-colors hover:bg-secondary-600"
                         >
                             백테스팅 결과 보기 →
                         </Link>

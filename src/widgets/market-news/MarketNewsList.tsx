@@ -20,7 +20,7 @@ function MarketNewsListHeader() {
             >
                 최신 마켓 뉴스
             </h2>
-            <span className="bg-secondary-700 text-secondary-300 rounded px-2 py-0.5 text-xs">
+            <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-300">
                 {PERIOD_LABEL}
             </span>
         </div>
@@ -31,17 +31,17 @@ function MarketNewsCardSkeleton() {
     return (
         <article
             aria-hidden="true"
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-4"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-4"
         >
-            <div className="bg-secondary-700 h-5 w-4/5 animate-pulse rounded motion-reduce:animate-none" />
+            <div className="h-5 w-4/5 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             <div className="mt-2 flex flex-wrap items-center gap-2">
-                <div className="bg-secondary-700 h-5 w-10 animate-pulse rounded motion-reduce:animate-none" />
-                <div className="bg-secondary-700 h-5 w-24 animate-pulse rounded motion-reduce:animate-none" />
-                <div className="bg-secondary-700 h-4 w-20 animate-pulse rounded motion-reduce:animate-none" />
+                <div className="h-5 w-10 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
+                <div className="h-5 w-24 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
+                <div className="h-4 w-20 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             </div>
             <div className="mt-3 space-y-1.5">
-                <div className="bg-secondary-700/70 h-3.5 w-full animate-pulse rounded motion-reduce:animate-none" />
-                <div className="bg-secondary-700/70 h-3.5 w-2/3 animate-pulse rounded motion-reduce:animate-none" />
+                <div className="h-3.5 w-full animate-pulse rounded bg-secondary-700/70 motion-reduce:animate-none" />
+                <div className="h-3.5 w-2/3 animate-pulse rounded bg-secondary-700/70 motion-reduce:animate-none" />
             </div>
         </article>
     );
@@ -56,7 +56,7 @@ function LoadingState() {
         >
             <MarketNewsListHeader />
             <span
-                className="text-secondary-400 block text-xs"
+                className="block text-xs text-secondary-400"
                 aria-live="polite"
                 aria-atomic="true"
             >
@@ -118,10 +118,10 @@ export function MarketNewsList({
         return (
             <section
                 aria-labelledby="market-news-list-heading"
-                className="border-secondary-700 bg-secondary-800 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-6"
+                className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-6"
             >
                 <MarketNewsListHeader />
-                <p className="text-secondary-400 text-sm">
+                <p className="text-sm text-secondary-400">
                     지난 {MARKET_NEWS_LOOKBACK_DAYS}일 동안 들어온 뉴스가
                     없어요.
                 </p>
@@ -150,7 +150,7 @@ export function MarketNewsList({
                 <button
                     type="button"
                     onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
-                    className="border-secondary-700 text-secondary-400 hover:text-secondary-100 focus-visible:ring-primary-500 inline-flex min-h-11 w-full items-center justify-center rounded-lg border py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                    className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-secondary-700 py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     더보기 ({items.length - visibleCount}개 남음)
                 </button>

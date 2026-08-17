@@ -20,12 +20,10 @@ export async function getRegisteredProvidersAction(): Promise<
         );
 
         return rows
-            .map(
-                (row): RegisteredProvider => ({
-                    provider: row.provider,
-                    updatedAt: row.updatedAt,
-                })
-            )
+            .map((row): RegisteredProvider => ({
+                provider: row.provider,
+                updatedAt: row.updatedAt,
+            }))
             .toSorted((a, b) => a.provider.localeCompare(b.provider));
     } catch (error) {
         // Preserve the [] return shape for backward compatibility with the

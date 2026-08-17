@@ -59,17 +59,17 @@ function GradeRow({ event }: GradeRowProps) {
             <div className="min-w-0 flex-1">
                 <p className="font-medium">{event.gradingCompany}</p>
                 {event.previousGrade !== null ? (
-                    <p className="text-secondary-400 mt-0.5 text-sm">
+                    <p className="mt-0.5 text-sm text-secondary-400">
                         {event.previousGrade}
                         <span aria-hidden="true"> → </span>
                         <span className="sr-only">에서 </span>
-                        <span className="text-secondary-100 font-medium">
+                        <span className="font-medium text-secondary-100">
                             {event.newGrade}
                         </span>
                     </p>
                 ) : (
-                    <p className="text-secondary-400 mt-0.5 text-sm">
-                        <span className="text-secondary-100 font-medium">
+                    <p className="mt-0.5 text-sm text-secondary-400">
+                        <span className="font-medium text-secondary-100">
                             {event.newGrade}
                         </span>
                     </p>
@@ -77,7 +77,7 @@ function GradeRow({ event }: GradeRowProps) {
             </div>
             <time
                 dateTime={event.date}
-                className="text-secondary-400 shrink-0 text-xs tabular-nums"
+                className="shrink-0 text-xs text-secondary-400 tabular-nums"
             >
                 {dateFormatted}
             </time>
@@ -96,7 +96,7 @@ export function AnalystActions({ events }: AnalystActionsProps) {
         return (
             <section
                 aria-labelledby="analyst-actions-heading"
-                className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+                className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
             >
                 <h2
                     id="analyst-actions-heading"
@@ -104,7 +104,7 @@ export function AnalystActions({ events }: AnalystActionsProps) {
                 >
                     애널리스트 등급 변경
                 </h2>
-                <p className="text-secondary-400 text-sm">
+                <p className="text-sm text-secondary-400">
                     최근 애널리스트 등급 변경이 없습니다.
                 </p>
             </section>
@@ -137,7 +137,7 @@ export function AnalystActions({ events }: AnalystActionsProps) {
                 <button
                     type="button"
                     onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
-                    className="border-secondary-700 text-secondary-400 hover:text-secondary-100 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-800 w-full rounded-lg border py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    className="w-full rounded-lg border border-secondary-700 py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
                 >
                     더보기 ({events.length - visibleCount}개 남음)
                 </button>

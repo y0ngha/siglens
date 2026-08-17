@@ -112,7 +112,7 @@ export function ShareCandlestickChart({
     if (snapshotBars.length === 0) {
         return (
             <div className="flex h-48 w-full items-center justify-center">
-                <p className="text-secondary-400 text-sm">
+                <p className="text-sm text-secondary-400">
                     차트 데이터가 없습니다
                 </p>
             </div>

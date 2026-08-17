@@ -88,7 +88,7 @@ function ToggleRow({ binding }: IndicatorRowProps) {
                 // onToggle은 타입상 optional이라 undefined면 controlled input이
                 // read-only가 되고 React 경고가 난다. no-op으로 controlled 유지.
                 onChange={() => binding.onToggle?.()}
-                className="accent-primary-500 h-4 w-4"
+                className="h-4 w-4 accent-primary-500"
             />
             <span>{binding.meta.label}</span>
         </label>
@@ -112,7 +112,7 @@ export function IndicatorSettingsModal({
                 onClick={open}
                 aria-label="보조지표 설정"
                 aria-haspopup="dialog"
-                className="bg-secondary-900/85 text-secondary-400 hover:bg-secondary-700/90 focus-visible:ring-primary-500 flex h-11 w-11 touch-manipulation items-center justify-center rounded-lg backdrop-blur-sm transition-colors hover:text-white focus-visible:ring-1 focus-visible:outline-none"
+                className="flex h-11 w-11 touch-manipulation items-center justify-center rounded-lg bg-secondary-900/85 text-secondary-400 backdrop-blur-sm transition-colors hover:bg-secondary-700/90 hover:text-white focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
                 <GearIcon className="h-4 w-4" />
             </button>
@@ -120,7 +120,7 @@ export function IndicatorSettingsModal({
             {isOpen &&
                 createPortal(
                     <div
-                        className="bg-secondary-950/80 fixed inset-0 z-60 flex items-center justify-center overscroll-contain p-4 backdrop-blur-sm"
+                        className="fixed inset-0 z-60 flex items-center justify-center overscroll-contain bg-secondary-950/80 p-4 backdrop-blur-sm"
                         role="presentation"
                     >
                         <div
@@ -129,12 +129,12 @@ export function IndicatorSettingsModal({
                             aria-modal="true"
                             aria-labelledby={titleId}
                             tabIndex={-1}
-                            className="border-secondary-700 bg-secondary-800 max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-xl border text-left shadow-2xl outline-none"
+                            className="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-xl border border-secondary-700 bg-secondary-800 text-left shadow-2xl outline-none"
                         >
-                            <div className="border-secondary-700 flex items-start justify-between border-b px-5 py-4">
+                            <div className="flex items-start justify-between border-b border-secondary-700 px-5 py-4">
                                 <h2
                                     id={titleId}
-                                    className="text-secondary-100 text-base font-semibold"
+                                    className="text-base font-semibold text-secondary-100"
                                 >
                                     보조지표 설정
                                 </h2>
@@ -142,7 +142,7 @@ export function IndicatorSettingsModal({
                                     type="button"
                                     onClick={close}
                                     aria-label="닫기"
-                                    className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 -mt-1 -mr-1 rounded p-1 transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                                    className="-mt-1 -mr-1 rounded p-1 text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
                                     <svg
                                         width="16"
@@ -164,7 +164,7 @@ export function IndicatorSettingsModal({
                             <div className="flex flex-col gap-4 p-5">
                                 {groups.map(group => (
                                     <section key={group.category}>
-                                        <h3 className="text-secondary-500 mb-1 text-xs font-semibold tracking-wide uppercase">
+                                        <h3 className="mb-1 text-xs font-semibold tracking-wide text-secondary-500 uppercase">
                                             {group.label}
                                         </h3>
                                         <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">

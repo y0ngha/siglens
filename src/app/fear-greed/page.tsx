@@ -194,10 +194,10 @@ export default async function FearGreedRoutePage() {
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
             <main className="flex-1">
-                <h1 className="text-secondary-100 px-6 pt-10 text-2xl font-bold tracking-tight text-balance sm:text-3xl lg:px-[15vw]">
+                <h1 className="px-6 pt-10 text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl lg:px-[15vw]">
                     {FEAR_GREED_TITLE}
                 </h1>
-                <section className="text-secondary-400 space-y-3 px-6 pt-4 text-sm leading-relaxed sm:text-base lg:px-[15vw]">
+                <section className="space-y-3 px-6 pt-4 text-sm leading-relaxed text-secondary-400 sm:text-base lg:px-[15vw]">
                     <p>
                         시장 공포 탐욕 지수는 S&amp;P500, VIX, 장기국채,
                         회사채(하이일드·투자등급), 동일가중 지수의 최근 종가
@@ -215,22 +215,22 @@ export default async function FearGreedRoutePage() {
                 </div>
                 <section
                     aria-labelledby="market-fear-greed-guide-heading"
-                    className="border-secondary-800 bg-secondary-800/30 mx-6 mt-6 space-y-4 rounded-lg border p-5 lg:mx-[15vw]"
+                    className="mx-6 mt-6 space-y-4 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5 lg:mx-[15vw]"
                 >
                     <h2
                         id="market-fear-greed-guide-heading"
-                        className="text-secondary-300 text-base font-semibold"
+                        className="text-base font-semibold text-secondary-300"
                     >
                         공포탐욕지수 읽는 법
                     </h2>
-                    <ul className="text-secondary-400 space-y-1 text-sm leading-relaxed">
+                    <ul className="space-y-1 text-sm leading-relaxed text-secondary-400">
                         {FEAR_GREED_BANDS.map(band => (
                             <li key={band.label}>
                                 {band.min}~{band.max}점 — {band.label}
                             </li>
                         ))}
                     </ul>
-                    <ul className="text-secondary-400 space-y-1 text-sm leading-relaxed">
+                    <ul className="space-y-1 text-sm leading-relaxed text-secondary-400">
                         {MARKET_FEAR_GREED_FACTOR_KEYS.map(key => (
                             <li key={key}>
                                 {MARKET_FACTOR_LABEL[key]} —{' '}
@@ -245,14 +245,14 @@ export default async function FearGreedRoutePage() {
                 >
                     <h2
                         id="market-fear-greed-faq-heading"
-                        className="text-secondary-300 text-base font-semibold"
+                        className="text-base font-semibold text-secondary-300"
                     >
                         자주 묻는 질문
                     </h2>
-                    <dl className="text-secondary-400 mt-3 space-y-4 text-sm leading-relaxed">
+                    <dl className="mt-3 space-y-4 text-sm leading-relaxed text-secondary-400">
                         {FEAR_GREED_FAQ.map(({ question, answer }) => (
                             <div key={question}>
-                                <dt className="text-secondary-300 font-medium">
+                                <dt className="font-medium text-secondary-300">
                                     {question}
                                 </dt>
                                 <dd className="mt-1">{answer}</dd>

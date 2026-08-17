@@ -234,7 +234,7 @@ function DayDetailPanel({
                 isSelected ? 'opacity-100' : 'opacity-0'
             )}
         >
-            <h3 className="text-secondary-100 font-semibold">
+            <h3 className="font-semibold text-secondary-100">
                 {month + 1}월 {day}일 ({dowLabel})
             </h3>
             <ul className="space-y-2">
@@ -245,25 +245,25 @@ function DayDetailPanel({
                         <li
                             key={`${ev.iso}:${ev.original.event}:${ev.original.actual ?? ''}`}
                             hidden={!activeImpacts.has(ev.original.impact)}
-                            className="border-secondary-700 bg-secondary-800/50 rounded-lg border p-3"
+                            className="rounded-lg border border-secondary-700 bg-secondary-800/50 p-3"
                         >
                             <div className="flex flex-wrap items-start justify-between gap-2">
                                 <div className="min-w-0 flex-1">
                                     <div className="mb-0.5 flex items-center gap-2">
                                         <time
                                             dateTime={ev.iso}
-                                            className="text-secondary-300 shrink-0 text-xs tabular-nums"
+                                            className="shrink-0 text-xs text-secondary-300 tabular-nums"
                                         >
                                             {ev.kstTimeLabel}
                                         </time>
                                     </div>
-                                    <p className="text-secondary-100 text-sm font-medium">
+                                    <p className="text-sm font-medium text-secondary-100">
                                         {displayEventLabel(
                                             ev.original.event,
                                             labels
                                         )}
                                     </p>
-                                    <p className="text-secondary-400 mt-0.5 text-xs">
+                                    <p className="mt-0.5 text-xs text-secondary-400">
                                         예상{' '}
                                         {formatNum(
                                             ev.original.estimate,
@@ -297,7 +297,7 @@ function DayDetailPanel({
                             </div>
                             {ev.original.sentiment != null &&
                                 hasSummaryContent && (
-                                    <div className="border-secondary-700/60 mt-2 space-y-1 border-t pt-2">
+                                    <div className="mt-2 space-y-1 border-t border-secondary-700/60 pt-2">
                                         <span
                                             className={cn(
                                                 'inline-block rounded px-2 py-0.5 text-xs font-medium',
@@ -312,12 +312,12 @@ function DayDetailPanel({
                                                 ]
                                             }
                                         </span>
-                                        <p className="text-secondary-200 text-sm">
+                                        <p className="text-sm text-secondary-200">
                                             {ev.original.summaryKo}
                                         </p>
                                         {ev.original.interpretationKo !=
                                             null && (
-                                            <p className="text-secondary-400 text-xs leading-relaxed">
+                                            <p className="text-xs leading-relaxed text-secondary-400">
                                                 {ev.original.interpretationKo}
                                             </p>
                                         )}
@@ -411,7 +411,7 @@ function DayCell({
                     ))}
                 </span>
 
-                <span className="text-secondary-300 mt-0.5 block text-[10px] tabular-nums">
+                <span className="mt-0.5 block text-[10px] text-secondary-300 tabular-nums">
                     {count}건
                 </span>
 
@@ -419,14 +419,14 @@ function DayCell({
                     {visibleEvents.slice(0, INLINE_EVENT_MAX).map(ev => (
                         <span
                             key={`${ev.iso}:${ev.original.event}`}
-                            className="text-secondary-400 block min-w-0 truncate text-[10px] leading-tight"
+                            className="block min-w-0 truncate text-[10px] leading-tight text-secondary-400"
                         >
                             {ev.kstTimeLabel.replace(/^(오전|오후)\s*/, '')}{' '}
                             {displayEventLabel(ev.original.event, labels)}
                         </span>
                     ))}
                     {count > INLINE_EVENT_MAX && (
-                        <span className="text-secondary-500 block text-[10px]">
+                        <span className="block text-[10px] text-secondary-500">
                             +{count - INLINE_EVENT_MAX}
                         </span>
                     )}
@@ -485,7 +485,7 @@ function MonthCalendar({
     return (
         <div>
             <p
-                className="text-secondary-300 mb-2 text-sm font-medium"
+                className="mb-2 text-sm font-medium text-secondary-300"
                 aria-hidden="true"
             >
                 {year}년 {MONTH_LABELS[month]}
@@ -498,7 +498,7 @@ function MonthCalendar({
                             <th
                                 key={label}
                                 scope="col"
-                                className="text-secondary-400 py-1 text-center text-[11px] font-medium"
+                                className="py-1 text-center text-[11px] font-medium text-secondary-400"
                             >
                                 {label}
                             </th>
@@ -631,14 +631,14 @@ export function EconomicCalendarGrid({
             <section aria-labelledby="economy-calendar-heading">
                 <h2
                     id="economy-calendar-heading"
-                    className="text-secondary-100 mb-3 text-lg font-semibold"
+                    className="mb-3 text-lg font-semibold text-secondary-100"
                 >
                     경제 캘린더{' '}
-                    <span className="text-secondary-400 text-sm font-normal">
+                    <span className="text-sm font-normal text-secondary-400">
                         (한국시간)
                     </span>
                 </h2>
-                <p className="text-secondary-400 text-sm">
+                <p className="text-sm text-secondary-400">
                     다가오는 미국 경제 발표 일정이 아직 없어요.
                 </p>
             </section>
@@ -649,10 +649,10 @@ export function EconomicCalendarGrid({
         <section aria-labelledby="economy-calendar-heading">
             <h2
                 id="economy-calendar-heading"
-                className="text-secondary-100 mb-4 text-lg font-semibold"
+                className="mb-4 text-lg font-semibold text-secondary-100"
             >
                 경제 캘린더{' '}
-                <span className="text-secondary-400 text-sm font-normal">
+                <span className="text-sm font-normal text-secondary-400">
                     (한국시간)
                 </span>
             </h2>
@@ -661,7 +661,7 @@ export function EconomicCalendarGrid({
                 <ImpactFilter value={activeImpacts} onToggle={toggleImpact} />
             </div>
 
-            <div className="border-secondary-700 space-y-6 rounded-xl border p-3 sm:p-4">
+            <div className="space-y-6 rounded-xl border border-secondary-700 p-3 sm:p-4">
                 {months.map(({ year, month }) => (
                     <MonthCalendar
                         key={`${year}-${month}`}

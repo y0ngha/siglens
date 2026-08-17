@@ -108,7 +108,7 @@ function ConfidenceInfoTooltip() {
                     e.stopPropagation();
                     toggle();
                 }}
-                className="text-secondary-600 hover:text-secondary-400 focus-visible:ring-primary-500 cursor-help rounded text-xs leading-none transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                className="cursor-help rounded text-xs leading-none text-secondary-600 transition-colors hover:text-secondary-400 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
                 ⓘ
             </button>
@@ -123,7 +123,7 @@ function ConfidenceInfoTooltip() {
                         : 'pointer-events-none opacity-0 sm:pointer-events-none sm:opacity-0'
                 )}
             >
-                <div className="text-secondary-300 leading-relaxed">
+                <div className="leading-relaxed text-secondary-300">
                     <p>분석 기법의 신뢰도 점수예요.</p>
                     <p>
                         {MEDIUM_PCT}% 미만은 낮음, {MEDIUM_PCT}~{HIGH_PCT}%는
@@ -194,7 +194,7 @@ export function SkillCard({
             )}
         >
             <div className="mb-2 flex items-start gap-2">
-                <span className="text-secondary-200 min-w-0 text-sm font-medium">
+                <span className="min-w-0 text-sm font-medium text-secondary-200">
                     {skill.name}
                 </span>
                 {badge != null && (
@@ -228,7 +228,7 @@ export function SkillCard({
                 </p>
             </div>
             <div className="flex items-center gap-2">
-                <div className="bg-secondary-700 h-1.5 flex-1 overflow-hidden rounded-full">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary-700">
                     <div
                         data-testid="confidence-bar"
                         className={cn(
@@ -243,7 +243,7 @@ export function SkillCard({
                         aria-hidden="true"
                     />
                 </div>
-                <span className="text-secondary-400 font-mono text-xs">
+                <span className="font-mono text-xs text-secondary-400">
                     {Math.round(skill.confidenceWeight * 100)}%
                 </span>
                 <ConfidenceInfoTooltip />
@@ -260,12 +260,12 @@ export function SkillsShowcaseSkeleton() {
             className="px-6 py-10 lg:px-[15vw]"
         >
             <div aria-hidden="true">
-                <div className="bg-secondary-700/50 mb-6 h-3.5 w-20 animate-pulse rounded" />
+                <div className="mb-6 h-3.5 w-20 animate-pulse rounded bg-secondary-700/50" />
                 <div className="mb-6 flex flex-wrap gap-2">
                     {SKELETON_TAB_WIDTHS_PX.map((w, i) => (
                         <div
                             key={i}
-                            className="bg-secondary-700/50 h-7 w-(--skeleton-w) animate-pulse rounded-full"
+                            className="h-7 w-(--skeleton-w) animate-pulse rounded-full bg-secondary-700/50"
                             style={
                                 {
                                     '--skeleton-w': `${w}px`,
@@ -278,17 +278,17 @@ export function SkillsShowcaseSkeleton() {
                     {Array.from({ length: SKELETON_CARD_COUNT }).map((_, i) => (
                         <div
                             key={i}
-                            className="bg-secondary-800/50 border-secondary-700 rounded-lg border p-4"
+                            className="rounded-lg border border-secondary-700 bg-secondary-800/50 p-4"
                         >
                             <div className="mb-2 flex items-center gap-2">
-                                <div className="bg-secondary-700/50 h-4 w-28 animate-pulse rounded" />
-                                <div className="bg-secondary-700/50 h-4 w-12 animate-pulse rounded" />
+                                <div className="h-4 w-28 animate-pulse rounded bg-secondary-700/50" />
+                                <div className="h-4 w-12 animate-pulse rounded bg-secondary-700/50" />
                             </div>
                             <div className="mb-3 space-y-1.5">
-                                <div className="bg-secondary-700/50 h-3 w-full animate-pulse rounded" />
-                                <div className="bg-secondary-700/50 h-3 w-4/5 animate-pulse rounded" />
+                                <div className="h-3 w-full animate-pulse rounded bg-secondary-700/50" />
+                                <div className="h-3 w-4/5 animate-pulse rounded bg-secondary-700/50" />
                             </div>
-                            <div className="bg-secondary-700/50 h-1.5 animate-pulse rounded-full" />
+                            <div className="h-1.5 animate-pulse rounded-full bg-secondary-700/50" />
                         </div>
                     ))}
                 </div>
@@ -314,7 +314,7 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
 
     return (
         <section className="px-6 py-10 lg:px-[15vw]">
-            <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-wider uppercase">
+            <h2 className="mb-6 text-sm font-semibold tracking-wider text-secondary-200 uppercase">
                 AI 분석 스킬
             </h2>
             <TabsPill
@@ -359,7 +359,7 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
                                 <button
                                     type="button"
                                     onClick={toggleShowAll}
-                                    className="border-secondary-700 text-secondary-400 hover:border-primary-600/40 hover:text-primary-400 focus-visible:ring-primary-500 rounded-full border px-6 py-2 text-xs font-medium transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                                    className="rounded-full border border-secondary-700 px-6 py-2 text-xs font-medium text-secondary-400 transition-colors hover:border-primary-600/40 hover:text-primary-400 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
                                     {showAll
                                         ? '접기'

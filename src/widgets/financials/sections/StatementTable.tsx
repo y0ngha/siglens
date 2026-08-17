@@ -74,11 +74,11 @@ export function StatementTable({
 }: StatementTableProps) {
     return (
         <>
-            <p className="text-secondary-400 mb-2 text-xs sm:hidden">
+            <p className="mb-2 text-xs text-secondary-400 sm:hidden">
                 ← 좌우로 스크롤 →
             </p>
             <div
-                className="focus-visible:ring-primary-500 overflow-x-auto rounded-xl focus-visible:ring-2 focus-visible:outline-none"
+                className="overflow-x-auto rounded-xl focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 role="region"
                 aria-label={
                     caption
@@ -89,12 +89,12 @@ export function StatementTable({
             >
                 <table className="w-full text-sm">
                     {caption && (
-                        <caption className="text-secondary-400 mb-2 text-left text-xs tracking-widest uppercase">
+                        <caption className="mb-2 text-left text-xs tracking-widest text-secondary-400 uppercase">
                             {caption}
                         </caption>
                     )}
                     <thead>
-                        <tr className="text-secondary-400 border-secondary-700 border-b text-xs tracking-widest uppercase">
+                        <tr className="border-b border-secondary-700 text-xs tracking-widest text-secondary-400 uppercase">
                             <th
                                 scope="col"
                                 className="pb-2 text-left font-medium"
@@ -116,11 +116,11 @@ export function StatementTable({
                         {rows.map(row => (
                             <tr
                                 key={row.labelKo}
-                                className="hover:bg-secondary-800/40 border-secondary-700/50 border-b transition-colors last:border-b-0"
+                                className="border-b border-secondary-700/50 transition-colors last:border-b-0 hover:bg-secondary-800/40"
                             >
                                 <th
                                     scope="row"
-                                    className="text-secondary-300 py-2.5 pr-4 text-left text-xs font-normal whitespace-nowrap"
+                                    className="py-2.5 pr-4 text-left text-xs font-normal whitespace-nowrap text-secondary-300"
                                 >
                                     {row.labelKo}
                                     {row.tooltip && (

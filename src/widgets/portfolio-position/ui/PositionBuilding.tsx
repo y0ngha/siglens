@@ -419,7 +419,7 @@ export function PositionBuilding({
                     x={CENTER_X}
                     y={HIGH_LABEL_Y}
                     textAnchor="middle"
-                    className="text-secondary-400 fill-current text-[10px] font-medium tabular-nums"
+                    className="fill-current text-[10px] font-medium text-secondary-400 tabular-nums"
                 >
                     {formatUsdCompactForSvgLabel(high52w)}
                 </text>
@@ -427,7 +427,7 @@ export function PositionBuilding({
                     x={CENTER_X}
                     y={LOW_LABEL_Y}
                     textAnchor="middle"
-                    className="text-secondary-400 fill-current text-[10px] font-medium tabular-nums"
+                    className="fill-current text-[10px] font-medium text-secondary-400 tabular-nums"
                 >
                     {formatUsdCompactForSvgLabel(low52w)}
                 </text>
@@ -551,7 +551,7 @@ export function PositionBuilding({
                                         fill="none"
                                         stroke="currentColor"
                                         strokeWidth={1.5}
-                                        className="text-primary-400 pointer-events-none"
+                                        className="pointer-events-none text-primary-400"
                                         aria-hidden="true"
                                     />
                                     <polygon
@@ -559,7 +559,7 @@ export function PositionBuilding({
                                         fill="none"
                                         stroke="currentColor"
                                         strokeWidth={1.5}
-                                        className="text-primary-400 pointer-events-none"
+                                        className="pointer-events-none text-primary-400"
                                         aria-hidden="true"
                                     />
                                 </>
@@ -722,7 +722,7 @@ export function PositionBuilding({
                 <p
                     data-testid="floor-volume-readout"
                     aria-hidden="true"
-                    className="text-secondary-300 min-h-[1rem] text-center text-xs tabular-nums"
+                    className="min-h-[1rem] text-center text-xs text-secondary-300 tabular-nums"
                 >
                     {activeFloorTooltipText ?? ' '}
                 </p>
@@ -781,10 +781,10 @@ export function PositionBuilding({
                             } as React.CSSProperties
                         }
                     >
-                        <p className="text-secondary-100 font-medium tabular-nums">
+                        <p className="font-medium text-secondary-100 tabular-nums">
                             {activeFloorTooltipContent.main}
                         </p>
-                        <p className="text-secondary-400 mt-0.5 text-[10px]">
+                        <p className="mt-0.5 text-[10px] text-secondary-400">
                             {activeFloorTooltipContent.qualifier}
                         </p>
                     </div>,

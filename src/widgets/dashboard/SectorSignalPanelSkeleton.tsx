@@ -12,17 +12,17 @@ export function SectorSignalPanelSkeleton() {
                 className="mb-6 flex items-center justify-between"
                 aria-hidden="true"
             >
-                <div className="bg-secondary-700/50 h-3.5 w-24 animate-pulse rounded" />
-                <div className="bg-secondary-700/50 h-3.5 w-20 animate-pulse rounded" />
+                <div className="h-3.5 w-24 animate-pulse rounded bg-secondary-700/50" />
+                <div className="h-3.5 w-20 animate-pulse rounded bg-secondary-700/50" />
             </div>
             <div
-                className="border-secondary-700 flex gap-6 overflow-x-auto border-b pb-2"
+                className="flex gap-6 overflow-x-auto border-b border-secondary-700 pb-2"
                 aria-hidden="true"
             >
                 {SIGNAL_SECTORS.map(etf => (
                     <div
                         key={etf.symbol}
-                        className="bg-secondary-700/50 h-3 w-12 shrink-0 animate-pulse rounded"
+                        className="h-3 w-12 shrink-0 animate-pulse rounded bg-secondary-700/50"
                     />
                 ))}
             </div>
@@ -30,17 +30,17 @@ export function SectorSignalPanelSkeleton() {
                 {[0, 1, 2, 3].map(i => (
                     <div
                         key={i}
-                        className="border-secondary-700 flex flex-col gap-3 border-t pt-3 pb-4"
+                        className="flex flex-col gap-3 border-t border-secondary-700 pt-3 pb-4"
                     >
                         <div className="flex items-center justify-between">
-                            <div className="bg-secondary-700/50 h-3 w-20 animate-pulse rounded" />
-                            <div className="bg-secondary-700/50 h-6 w-8 animate-pulse rounded" />
+                            <div className="h-3 w-20 animate-pulse rounded bg-secondary-700/50" />
+                            <div className="h-6 w-8 animate-pulse rounded bg-secondary-700/50" />
                         </div>
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                             {[0, 1, 2, 3].map(j => (
                                 <div
                                     key={j}
-                                    className="bg-secondary-800/50 border-secondary-700 h-[120px] animate-pulse rounded-lg border"
+                                    className="h-[120px] animate-pulse rounded-lg border border-secondary-700 bg-secondary-800/50"
                                 />
                             ))}
                         </div>

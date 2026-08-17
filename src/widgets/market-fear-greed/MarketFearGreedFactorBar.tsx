@@ -33,12 +33,12 @@ export function MarketFearGreedFactorBar({
     const pctile = Math.round(factor.percentile);
 
     return (
-        <section className="bg-secondary-800/40 flex flex-col gap-2 rounded p-3">
+        <section className="flex flex-col gap-2 rounded bg-secondary-800/40 p-3">
             <header className="flex items-center justify-between">
-                <h3 className="text-secondary-200 text-sm font-medium">
+                <h3 className="text-sm font-medium text-secondary-200">
                     {label}
                 </h3>
-                <span className="text-secondary-100 font-mono text-sm">
+                <span className="font-mono text-sm text-secondary-100">
                     {formatMarketFactorRaw(factor.rawValue)}
                 </span>
             </header>
@@ -48,7 +48,7 @@ export function MarketFearGreedFactorBar({
                 aria-valuenow={pctile}
                 aria-valuemin={0}
                 aria-valuemax={100}
-                className="bg-secondary-700/70 relative h-2 overflow-hidden rounded"
+                className="relative h-2 overflow-hidden rounded bg-secondary-700/70"
             >
                 <div
                     className={cn(
@@ -62,8 +62,8 @@ export function MarketFearGreedFactorBar({
                 {/* Plain visible text, not a tooltip — this component is a server
                     component (no client-side disclosure widget available), and
                     plain text is trivially reachable by screen readers. */}
-                <p className="text-secondary-500 text-xs">{description}</p>
-                <span className="text-secondary-400 shrink-0 font-mono text-xs">
+                <p className="text-xs text-secondary-500">{description}</p>
+                <span className="shrink-0 font-mono text-xs text-secondary-400">
                     백분위 {pctile}
                 </span>
             </div>

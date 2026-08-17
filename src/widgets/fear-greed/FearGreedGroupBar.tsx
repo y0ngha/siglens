@@ -26,12 +26,12 @@ const EXTREME_PERCENTILE_HIGH = 90;
 export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
     const score = Math.round(group.score);
     return (
-        <section className="bg-secondary-800/40 flex flex-col gap-2 rounded p-3">
+        <section className="flex flex-col gap-2 rounded bg-secondary-800/40 p-3">
             <header className="flex items-center justify-between">
-                <h4 className="text-secondary-200 text-sm font-medium">
+                <h4 className="text-sm font-medium text-secondary-200">
                     {group.name} Group
                 </h4>
-                <span className="text-secondary-100 font-mono text-sm">
+                <span className="font-mono text-sm text-secondary-100">
                     {score} / 100
                 </span>
             </header>
@@ -41,7 +41,7 @@ export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
                 aria-valuenow={score}
                 aria-valuemin={0}
                 aria-valuemax={100}
-                className="bg-secondary-700/70 relative h-2 overflow-hidden rounded"
+                className="relative h-2 overflow-hidden rounded bg-secondary-700/70"
             >
                 <div
                     className={cn(
@@ -51,7 +51,7 @@ export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
                     style={{ '--bar-width': `${score}%` } as CSSProperties}
                 />
             </div>
-            <ul className="text-secondary-400 flex flex-col gap-1 text-xs">
+            <ul className="flex flex-col gap-1 text-xs text-secondary-400">
                 {group.factors.map(f => {
                     const pctile = Math.round(f.percentile);
                     const isExtreme =

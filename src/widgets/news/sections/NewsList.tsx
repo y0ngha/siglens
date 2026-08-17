@@ -90,11 +90,11 @@ interface NewsTextSectionProps {
 
 function NewsTextSection({ label, text }: NewsTextSectionProps) {
     return (
-        <section className="border-secondary-700/70 mt-3 border-t pt-3">
-            <h4 className="text-secondary-300 mb-1 text-xs font-semibold">
+        <section className="mt-3 border-t border-secondary-700/70 pt-3">
+            <h4 className="mb-1 text-xs font-semibold text-secondary-300">
                 {label}
             </h4>
-            <p className="text-secondary-400 text-sm leading-relaxed wrap-break-word">
+            <p className="text-sm leading-relaxed wrap-break-word text-secondary-400">
                 {text}
             </p>
         </section>
@@ -105,17 +105,17 @@ function NewsCardSkeleton() {
     return (
         <article
             aria-hidden="true"
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-4"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-4"
         >
-            <div className="bg-secondary-700 h-5 w-4/5 animate-pulse rounded motion-reduce:animate-none" />
+            <div className="h-5 w-4/5 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             <div className="mt-2 flex flex-wrap items-center gap-2">
-                <div className="bg-secondary-700 h-5 w-10 animate-pulse rounded motion-reduce:animate-none" />
-                <div className="bg-secondary-700 h-5 w-24 animate-pulse rounded motion-reduce:animate-none" />
-                <div className="bg-secondary-700 h-4 w-20 animate-pulse rounded motion-reduce:animate-none" />
+                <div className="h-5 w-10 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
+                <div className="h-5 w-24 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
+                <div className="h-4 w-20 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             </div>
             <div className="mt-3 space-y-1.5">
-                <div className="bg-secondary-700/70 h-3.5 w-full animate-pulse rounded motion-reduce:animate-none" />
-                <div className="bg-secondary-700/70 h-3.5 w-2/3 animate-pulse rounded motion-reduce:animate-none" />
+                <div className="h-3.5 w-full animate-pulse rounded bg-secondary-700/70 motion-reduce:animate-none" />
+                <div className="h-3.5 w-2/3 animate-pulse rounded bg-secondary-700/70 motion-reduce:animate-none" />
             </div>
         </article>
     );
@@ -136,11 +136,11 @@ function NewsListLoadingState() {
                     >
                         최근 뉴스
                     </h2>
-                    <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
+                    <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
                         {NEWS_LIST_PERIOD_LABEL}
                     </span>
                 </div>
-                <span className="text-secondary-400 text-xs" aria-live="polite">
+                <span className="text-xs text-secondary-400" aria-live="polite">
                     뉴스 수집 중…
                 </span>
             </div>
@@ -162,17 +162,17 @@ function NewsRefreshStatusCard() {
         <div
             role="status"
             aria-live="polite"
-            className="border-primary-500/30 bg-primary-500/5 flex w-full max-w-full min-w-0 items-start gap-3 overflow-hidden rounded-xl border p-4"
+            className="flex w-full max-w-full min-w-0 items-start gap-3 overflow-hidden rounded-xl border border-primary-500/30 bg-primary-500/5 p-4"
         >
             <div
                 aria-hidden="true"
-                className="border-primary-400 mt-0.5 h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-t-transparent motion-reduce:animate-none"
+                className="mt-0.5 h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-primary-400 border-t-transparent motion-reduce:animate-none"
             />
             <div className="min-w-0">
-                <p className="text-secondary-100 text-sm font-medium">
+                <p className="text-sm font-medium text-secondary-100">
                     최신 뉴스 확인 중…
                 </p>
-                <p className="text-secondary-400 mt-1 text-xs leading-relaxed wrap-break-word">
+                <p className="mt-1 text-xs leading-relaxed wrap-break-word text-secondary-400">
                     기존 뉴스는 먼저 보여드리고, 새로 들어온 기사가 있으면
                     자동으로 추가합니다.
                 </p>
@@ -188,9 +188,9 @@ function NewsRefreshStatusCard() {
 function AnalysisSkeleton() {
     return (
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            <div className="bg-secondary-700 h-5 w-10 animate-pulse rounded motion-reduce:animate-none" />
-            <div className="bg-secondary-700 h-5 w-20 animate-pulse rounded motion-reduce:animate-none" />
-            <span className="text-secondary-500 text-xs">AI 분석 중…</span>
+            <div className="h-5 w-10 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
+            <div className="h-5 w-20 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
+            <span className="text-xs text-secondary-500">AI 분석 중…</span>
         </div>
     );
 }
@@ -199,8 +199,8 @@ function AnalysisSkeleton() {
 function SummarySkeletonLine() {
     return (
         <div className="mt-2 space-y-1.5">
-            <div className="bg-secondary-700/70 h-3.5 w-full animate-pulse rounded motion-reduce:animate-none" />
-            <div className="bg-secondary-700/70 h-3.5 w-4/5 animate-pulse rounded motion-reduce:animate-none" />
+            <div className="h-3.5 w-full animate-pulse rounded bg-secondary-700/70 motion-reduce:animate-none" />
+            <div className="h-3.5 w-4/5 animate-pulse rounded bg-secondary-700/70 motion-reduce:animate-none" />
         </div>
     );
 }
@@ -228,17 +228,17 @@ function NewsCard({ item }: { item: NewsDisplayItem }) {
                         <ImpactBadge value={item.priceImpact} />
                     )}
                     {item.category !== null && (
-                        <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
+                        <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
                             {item.category}
                         </span>
                     )}
                     <time
                         dateTime={item.publishedAt}
-                        className="text-secondary-400 text-xs"
+                        className="text-xs text-secondary-400"
                     >
                         {publishedDate}
                     </time>
-                    <span className="text-secondary-400 text-xs">
+                    <span className="text-xs text-secondary-400">
                         {item.source}
                     </span>
                 </div>
@@ -294,7 +294,7 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
         return (
             <section
                 aria-labelledby="news-list-heading"
-                className="border-secondary-700 bg-secondary-800 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-6"
+                className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-6"
             >
                 <div className="mb-3 flex items-center gap-2">
                     <h2
@@ -303,11 +303,11 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
                     >
                         최근 뉴스
                     </h2>
-                    <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
+                    <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
                         {NEWS_LIST_PERIOD_LABEL}
                     </span>
                 </div>
-                <p className="text-secondary-400 text-sm">
+                <p className="text-sm text-secondary-400">
                     {NEWS_LIST_PERIOD_LABEL} 동안 들어온 뉴스가 없어요.
                 </p>
             </section>
@@ -329,7 +329,7 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
                 >
                     최근 뉴스
                 </h2>
-                <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
+                <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
                     {NEWS_LIST_PERIOD_LABEL}
                 </span>
             </div>
@@ -345,7 +345,7 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
                 <button
                     type="button"
                     onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
-                    className="border-secondary-700 text-secondary-400 hover:text-secondary-100 focus-visible:ring-primary-500 w-full rounded-lg border py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                    className="w-full rounded-lg border border-secondary-700 py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     더보기 ({items.length - visibleCount}개 남음)
                 </button>

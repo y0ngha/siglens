@@ -18,7 +18,7 @@ function DigestStatusCard() {
         <section
             aria-labelledby="market-news-digest-status-heading"
             aria-busy="true"
-            className="border-secondary-700 bg-secondary-800 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
+            className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
         >
             <h2
                 id="market-news-digest-status-heading"
@@ -34,16 +34,16 @@ function DigestStatusCard() {
             >
                 <div
                     aria-hidden="true"
-                    className="border-primary-500 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent motion-reduce:animate-none"
+                    className="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent motion-reduce:animate-none"
                 />
-                <p className="text-secondary-400 text-sm">
+                <p className="text-sm text-secondary-400">
                     AI 다이제스트 생성 중이에요…
                 </p>
             </div>
             <div className="mt-4 space-y-2" aria-hidden="true">
-                <div className="bg-secondary-700 h-4 w-[91%] animate-pulse rounded motion-reduce:animate-none" />
-                <div className="bg-secondary-700 h-4 w-[67%] animate-pulse rounded motion-reduce:animate-none" />
-                <div className="bg-secondary-700 h-4 w-[79%] animate-pulse rounded motion-reduce:animate-none" />
+                <div className="h-4 w-[91%] animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
+                <div className="h-4 w-[67%] animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
+                <div className="h-4 w-[79%] animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             </div>
         </section>
     );
@@ -57,7 +57,7 @@ function DigestResultView({ result }: DigestResultViewProps) {
     return (
         <section
             aria-labelledby="market-news-digest-heading"
-            className="border-secondary-700 bg-secondary-800 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
+            className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
         >
             <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
                 <h2
@@ -78,7 +78,7 @@ function DigestResultView({ result }: DigestResultViewProps) {
                 )}
             </div>
 
-            <p className="text-secondary-400 mb-4 text-sm leading-relaxed wrap-break-word">
+            <p className="mb-4 text-sm leading-relaxed wrap-break-word text-secondary-400">
                 {result.currentDriverKo}
             </p>
 
@@ -89,7 +89,7 @@ function DigestResultView({ result }: DigestResultViewProps) {
                         {result.keyEventsKo.map((event, i) => (
                             <li
                                 key={`${i}-${event.slice(0, 32)}`}
-                                className="text-secondary-400 flex min-w-0 gap-2 text-sm wrap-break-word"
+                                className="flex min-w-0 gap-2 text-sm wrap-break-word text-secondary-400"
                             >
                                 <span
                                     aria-hidden="true"
@@ -113,11 +113,11 @@ function DigestResultView({ result }: DigestResultViewProps) {
                         {result.upcomingEventsKo.map((event, i) => (
                             <li
                                 key={`${i}-${event.slice(0, 32)}`}
-                                className="text-secondary-400 flex min-w-0 gap-2 text-sm wrap-break-word"
+                                className="flex min-w-0 gap-2 text-sm wrap-break-word text-secondary-400"
                             >
                                 <span
                                     aria-hidden="true"
-                                    className="text-ui-warning mt-0.5 shrink-0"
+                                    className="mt-0.5 shrink-0 text-ui-warning"
                                 >
                                     ⚠
                                 </span>
@@ -142,7 +142,7 @@ function DigestErrorView({ error, onRetry }: DigestErrorViewProps) {
     return (
         <section
             aria-labelledby="market-news-digest-error-heading"
-            className="border-ui-danger/30 bg-secondary-800 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-6"
+            className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-ui-danger/30 bg-secondary-800 p-6"
         >
             <h2
                 id="market-news-digest-error-heading"
@@ -152,14 +152,14 @@ function DigestErrorView({ error, onRetry }: DigestErrorViewProps) {
             </h2>
             <div
                 role="alert"
-                className="text-ui-danger-text text-sm wrap-break-word"
+                className="text-sm wrap-break-word text-ui-danger-text"
             >
                 {error.message}
             </div>
             <button
                 type="button"
                 onClick={onRetry}
-                className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-800 mt-4 inline-flex min-h-11 items-center rounded px-3 py-2 text-xs text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                className="mt-4 inline-flex min-h-11 items-center rounded bg-primary-600 px-3 py-2 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
             >
                 다시 시도
             </button>

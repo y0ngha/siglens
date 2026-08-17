@@ -235,7 +235,7 @@ export default function MarketPage() {
                 패턴으로 회귀했었던 이력 — sibling 페이지(/[symbol]/*) 6개와의
                 일관성을 맞춰 둔다. */}
             <main className="flex-1">
-                <h1 className="text-secondary-100 px-6 pt-10 text-2xl font-bold tracking-tight text-balance sm:text-3xl lg:px-[15vw]">
+                <h1 className="px-6 pt-10 text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl lg:px-[15vw]">
                     {MARKET_TITLE}
                 </h1>
                 <Suspense

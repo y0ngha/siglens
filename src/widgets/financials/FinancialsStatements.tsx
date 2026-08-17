@@ -43,13 +43,13 @@ export function FinancialsStatements({
                 <PeriodToggle value={period} onChange={setPeriod} />
                 {isLoading && (
                     <span
-                        className="text-secondary-400 flex items-center gap-1.5 text-xs"
+                        className="flex items-center gap-1.5 text-xs text-secondary-400"
                         role="status"
                         aria-live="polite"
                     >
                         <span
                             aria-hidden="true"
-                            className="border-primary-500 h-3 w-3 animate-spin rounded-full border-2 border-t-transparent motion-reduce:animate-none"
+                            className="h-3 w-3 animate-spin rounded-full border-2 border-primary-500 border-t-transparent motion-reduce:animate-none"
                         />
                         불러오는 중…
                     </span>

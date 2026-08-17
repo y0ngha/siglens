@@ -243,13 +243,13 @@ export function OverallSnapshotProse({
             displayName={displayName}
             asOf={generatedAt}
         >
-            <div className="text-secondary-300 space-y-4 text-sm leading-6">
+            <div className="space-y-4 text-sm leading-6 text-secondary-300">
                 {/* 근거는 LIVE_ANALYSIS_CROSS_REF JSDoc 참고 — 두 탭이 동일 문구를 쓴다. */}
-                <p className="text-secondary-400 text-xs">
+                <p className="text-xs text-secondary-400">
                     {LIVE_ANALYSIS_CROSS_REF}
                 </p>
                 {narrowed.headlineKo.length > 0 && (
-                    <p className="text-secondary-200 font-medium">
+                    <p className="font-medium text-secondary-200">
                         {narrowed.headlineKo}
                     </p>
                 )}

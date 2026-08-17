@@ -61,7 +61,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 {strongBuy > 0 && (
                     <div
                         title={`강력 매수 ${strongBuy}`}
-                        className="bg-ui-success h-3 w-(--bar-w)"
+                        className="h-3 w-(--bar-w) bg-ui-success"
                         style={
                             {
                                 '--bar-w': `${pct(strongBuy, total)}%`,
@@ -72,7 +72,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 {buy > 0 && (
                     <div
                         title={`매수 ${buy}`}
-                        className="bg-ui-success/60 h-3 w-(--bar-w)"
+                        className="h-3 w-(--bar-w) bg-ui-success/60"
                         style={
                             {
                                 '--bar-w': `${pct(buy, total)}%`,
@@ -83,7 +83,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 {hold > 0 && (
                     <div
                         title={`중립 ${hold}`}
-                        className="bg-ui-warning h-3 w-(--bar-w)"
+                        className="h-3 w-(--bar-w) bg-ui-warning"
                         style={
                             {
                                 '--bar-w': `${pct(hold, total)}%`,
@@ -94,7 +94,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 {sell > 0 && (
                     <div
                         title={`매도 ${sell}`}
-                        className="bg-ui-danger/60 h-3 w-(--bar-w)"
+                        className="h-3 w-(--bar-w) bg-ui-danger/60"
                         style={
                             {
                                 '--bar-w': `${pct(sell, total)}%`,
@@ -105,7 +105,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 {strongSell > 0 && (
                     <div
                         title={`강력 매도 ${strongSell}`}
-                        className="bg-ui-danger h-3 w-(--bar-w)"
+                        className="h-3 w-(--bar-w) bg-ui-danger"
                         style={
                             {
                                 '--bar-w': `${pct(strongSell, total)}%`,
@@ -117,7 +117,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
             <dl className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs">
                 <div className="flex items-center gap-1">
                     <span
-                        className="bg-ui-success block h-2 w-2 rounded-sm"
+                        className="block h-2 w-2 rounded-sm bg-ui-success"
                         aria-hidden="true"
                     />
                     <dt className="text-secondary-400">강력 매수</dt>
@@ -125,7 +125,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 </div>
                 <div className="flex items-center gap-1">
                     <span
-                        className="bg-ui-success/60 block h-2 w-2 rounded-sm"
+                        className="block h-2 w-2 rounded-sm bg-ui-success/60"
                         aria-hidden="true"
                     />
                     <dt className="text-secondary-400">매수</dt>
@@ -133,7 +133,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 </div>
                 <div className="flex items-center gap-1">
                     <span
-                        className="bg-ui-warning block h-2 w-2 rounded-sm"
+                        className="block h-2 w-2 rounded-sm bg-ui-warning"
                         aria-hidden="true"
                     />
                     <dt className="text-secondary-400">중립</dt>
@@ -141,7 +141,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 </div>
                 <div className="flex items-center gap-1">
                     <span
-                        className="bg-ui-danger/60 block h-2 w-2 rounded-sm"
+                        className="block h-2 w-2 rounded-sm bg-ui-danger/60"
                         aria-hidden="true"
                     />
                     <dt className="text-secondary-400">매도</dt>
@@ -149,7 +149,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 </div>
                 <div className="flex items-center gap-1">
                     <span
-                        className="bg-ui-danger block h-2 w-2 rounded-sm"
+                        className="block h-2 w-2 rounded-sm bg-ui-danger"
                         aria-hidden="true"
                     />
                     <dt className="text-secondary-400">강력 매도</dt>
@@ -179,7 +179,7 @@ export function FutureDirectionCard({
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 전망과 목표가
@@ -187,12 +187,12 @@ export function FutureDirectionCard({
 
             {estimates !== null && (
                 <div className="mb-5">
-                    <h3 className="text-secondary-400 mb-2 text-xs font-medium tracking-widest uppercase">
+                    <h3 className="mb-2 text-xs font-medium tracking-widest text-secondary-400 uppercase">
                         애널리스트 추정
                     </h3>
                     <dl className="grid grid-cols-2 gap-3">
-                        <div className="bg-secondary-800/40 rounded-lg px-4 py-3">
-                            <dt className="text-secondary-400 text-xs">
+                        <div className="rounded-lg bg-secondary-800/40 px-4 py-3">
+                            <dt className="text-xs text-secondary-400">
                                 EPS 컨센서스
                                 <InfoTooltip>
                                     <p>
@@ -210,8 +210,8 @@ export function FutureDirectionCard({
                                 {fmtUsd(estimates.estimatedEpsAvg)}
                             </dd>
                         </div>
-                        <div className="bg-secondary-800/40 rounded-lg px-4 py-3">
-                            <dt className="text-secondary-400 text-xs">
+                        <div className="rounded-lg bg-secondary-800/40 px-4 py-3">
+                            <dt className="text-xs text-secondary-400">
                                 매출 컨센서스
                                 <InfoTooltip>
                                     <p>
@@ -234,7 +234,7 @@ export function FutureDirectionCard({
 
             {ptConsensus !== null && (
                 <div className="mb-5">
-                    <h3 className="text-secondary-400 mb-2 text-xs font-medium tracking-widest uppercase">
+                    <h3 className="mb-2 text-xs font-medium tracking-widest text-secondary-400 uppercase">
                         목표 주가
                     </h3>
                     <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
@@ -273,7 +273,7 @@ export function FutureDirectionCard({
                             ) // 위 리터럴 entries가 항상 [라벨, ptConsensus 필드, tooltip?] 튜플이므로 narrowing 안전.
                                 .map(([label, val, tooltip]) => (
                                     <div key={label}>
-                                        <dt className="text-secondary-400 text-xs">
+                                        <dt className="text-xs text-secondary-400">
                                             {label}
                                             {tooltip !== undefined && (
                                                 <InfoTooltip>
@@ -317,7 +317,7 @@ export function FutureDirectionCard({
 
             {grades !== null && (
                 <div>
-                    <h3 className="text-secondary-400 mb-1 text-xs font-medium tracking-widest uppercase">
+                    <h3 className="mb-1 text-xs font-medium tracking-widest text-secondary-400 uppercase">
                         투자의견 컨센서스
                         <InfoTooltip>
                             <p>

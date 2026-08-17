@@ -89,11 +89,11 @@ export function SymbolPageClient({
                 SymbolLayoutHeader가 자기 자리 + page main(flex-1)이 잔여를 차지하고,
                 이 outer div가 그 main 안에서 flex-1로 chart+AI 영역을 채운다. footer는
                 jail 형제로 push되어 스크롤 내려야 보인다. */}
-            <div className="bg-secondary-900 text-secondary-200 flex min-h-0 flex-1 flex-col overflow-hidden">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-secondary-900 text-secondary-200">
                 {/* Chart-only timeframe controls live inside this overflow-hidden chart
                     container so the layout header can stay free of useSearchParams
                     (which would force PPR to mark the whole route as dynamic). */}
-                <div className="border-secondary-700 flex flex-col gap-2 border-b px-4 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-1.5">
+                <div className="flex flex-col gap-2 border-b border-secondary-700 px-4 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-1.5">
                     {/* 차트 페이지 가시 h1: jail(first-viewport 고정 + overflow-hidden)이라
                         본문에 별도 블록을 얹으면 chart 가시 영역이 침범된다. 그래서
                         timeframe bar 행에 짧은 한 줄로 둔다(truncate로 좁은 화면에서
@@ -102,7 +102,7 @@ export function SymbolPageClient({
                         크롤러용 h1은 page.tsx의 Suspense fallback에 동일 텍스트 sr-only h1으로
                         제공하고, hydration 후 이 가시 h1이 fallback을 대체한다. */}
                     <div className="flex min-w-0 items-center gap-2">
-                        <h1 className="text-secondary-100 line-clamp-2 min-w-0 text-sm font-semibold sm:line-clamp-none sm:truncate sm:text-base">
+                        <h1 className="line-clamp-2 min-w-0 text-sm font-semibold text-secondary-100 sm:line-clamp-none sm:truncate sm:text-base">
                             {buildChartPageHeading(displayName)}
                         </h1>
                         {/*
@@ -123,7 +123,7 @@ export function SymbolPageClient({
                         <button
                             type="button"
                             onClick={() => setSheetSnap(SNAP_FULL)}
-                            className="border-secondary-700 text-secondary-300 hover:border-secondary-600 hover:bg-secondary-700/30 hover:text-secondary-100 focus-visible:ring-primary-500 shrink-0 touch-manipulation rounded-lg border px-2.5 py-1 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:outline-none md:hidden"
+                            className="shrink-0 touch-manipulation rounded-lg border border-secondary-700 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-secondary-300 transition-colors hover:border-secondary-600 hover:bg-secondary-700/30 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none md:hidden"
                         >
                             AI 분석 보기
                         </button>

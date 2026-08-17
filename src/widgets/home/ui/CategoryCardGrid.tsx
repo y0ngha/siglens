@@ -35,7 +35,7 @@ export function CategoryCardGrid({
             aria-label={ariaLabel}
             className="px-6 py-10 lg:pr-[10vw] lg:pl-[15vw]"
         >
-            <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-wider uppercase">
+            <h2 className="mb-6 text-sm font-semibold tracking-wider text-secondary-200 uppercase">
                 {heading}
             </h2>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -71,10 +71,10 @@ export function CategoryCardGrid({
                                         // origin에서 당겨오므로 prefetch를 끈다
                                         // (docs/architecture/CDN_CACHING.md §1).
                                         prefetch={false}
-                                        className="border-secondary-700 text-secondary-300 hover:border-primary-600/40 hover:text-primary-400 focus-visible:ring-primary-500 inline-flex items-baseline gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                                        className="inline-flex items-baseline gap-1.5 rounded-full border border-secondary-700 px-3 py-1 text-xs text-secondary-300 transition-colors hover:border-primary-600/40 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                                     >
                                         <span>{item.name}</span>
-                                        <span className="text-secondary-500 text-[10px]">
+                                        <span className="text-[10px] text-secondary-500">
                                             {item.symbol}
                                         </span>
                                     </Link>

@@ -6,7 +6,7 @@ export default function OverallLoading() {
             {[...Array(SKELETON_SECTION_COUNT)].map((_, i) => (
                 <div
                     key={i}
-                    className="bg-secondary-700 h-32 animate-pulse rounded-xl"
+                    className="h-32 animate-pulse rounded-xl bg-secondary-700"
                     aria-hidden="true"
                 />
             ))}

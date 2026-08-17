@@ -42,7 +42,7 @@ export function TimeframeSelector({
         <div className="flex items-baseline gap-3">
             <span
                 id={TIMEFRAME_LABEL_ID}
-                className="text-secondary-500 text-[10px] tracking-wider uppercase"
+                className="text-[10px] tracking-wider text-secondary-500 uppercase"
             >
                 타임프레임
             </span>

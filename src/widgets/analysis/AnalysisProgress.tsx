@@ -29,26 +29,26 @@ export function AnalysisProgress({
 }: AnalysisProgressProps) {
     return (
         <div
-            className="border-secondary-700/60 bg-secondary-900/40 relative flex flex-col gap-4 overflow-hidden rounded-lg border p-4"
+            className="relative flex flex-col gap-4 overflow-hidden rounded-lg border border-secondary-700/60 bg-secondary-900/40 p-4"
             role="status"
             aria-live="polite"
             aria-label="AI 분석 진행 중"
         >
             {/* 상단의 흐르는 라이트 바: indeterminate progress */}
-            <span className="via-primary-500/60 pointer-events-none absolute inset-x-0 top-0 h-px animate-pulse bg-linear-to-r from-transparent to-transparent" />
+            <span className="pointer-events-none absolute inset-x-0 top-0 h-px animate-pulse bg-linear-to-r from-transparent via-primary-500/60 to-transparent" />
 
             <div className="flex items-center gap-3">
                 <Spinner />
                 <div className="flex min-w-0 flex-1 flex-col">
-                    <span className="text-secondary-200 text-sm font-medium">
+                    <span className="text-sm font-medium text-secondary-200">
                         {ANALYSIS_PHASES[phaseIndex]}
-                        <span className="text-primary-400 ml-1 inline-block animate-pulse">
+                        <span className="ml-1 inline-block animate-pulse text-primary-400">
                             …
                         </span>
                     </span>
                     <span
                         key={tipIndex}
-                        className="text-secondary-500 mt-0.5 text-[11px] leading-relaxed tracking-wide"
+                        className="mt-0.5 text-[11px] leading-relaxed tracking-wide text-secondary-500"
                         style={{ animation: 'fade-in 0.6s ease-in' }}
                     >
                         {ANALYSIS_TIPS[tipIndex]}
@@ -91,8 +91,8 @@ export function AnalysisProgress({
 function Spinner() {
     return (
         <span className="relative inline-flex h-5 w-5 shrink-0 items-center justify-center">
-            <span className="border-secondary-700 border-t-primary-400 absolute inset-0 animate-spin rounded-full border-2" />
-            <span className="bg-primary-400/70 h-1 w-1 animate-pulse rounded-full" />
+            <span className="absolute inset-0 animate-spin rounded-full border-2 border-secondary-700 border-t-primary-400" />
+            <span className="h-1 w-1 animate-pulse rounded-full bg-primary-400/70" />
         </span>
     );
 }

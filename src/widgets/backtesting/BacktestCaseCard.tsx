@@ -127,36 +127,36 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                         >
                             {c.signalType === 'buy' ? '매수' : '매도'}
                         </span>
-                        <span className="text-secondary-400 ml-1">
+                        <span className="ml-1 text-secondary-400">
                             {c.entryDate}
                         </span>
-                        <span className="text-secondary-500 ml-1 font-mono tabular-nums">
+                        <span className="ml-1 font-mono text-secondary-500 tabular-nums">
                             {formatUsdCurrency(c.entryPrice)}
                         </span>
                     </div>
                     <span
-                        className="text-secondary-600 shrink-0"
+                        className="shrink-0 text-secondary-600"
                         aria-hidden="true"
                     >
                         →
                     </span>
-                    <span className="text-secondary-500 shrink-0 text-[10px] whitespace-nowrap">
+                    <span className="shrink-0 text-[10px] whitespace-nowrap text-secondary-500">
                         <span className="tabular-nums">{c.holdingDays}</span>일
                     </span>
                     <span
-                        className="text-secondary-600 shrink-0"
+                        className="shrink-0 text-secondary-600"
                         aria-hidden="true"
                     >
                         →
                     </span>
-                    <div className="border-chart-bearish/20 bg-chart-bearish/10 shrink-0 rounded border px-2 py-1 text-right">
-                        <span className="text-chart-bearish font-semibold">
+                    <div className="shrink-0 rounded border border-chart-bearish/20 bg-chart-bearish/10 px-2 py-1 text-right">
+                        <span className="font-semibold text-chart-bearish">
                             {c.exitReason === 'stop_loss' ? '손절' : '매도'}
                         </span>
-                        <span className="text-secondary-400 ml-1">
+                        <span className="ml-1 text-secondary-400">
                             {c.exitDate}
                         </span>
-                        <span className="text-secondary-500 ml-1 font-mono tabular-nums">
+                        <span className="ml-1 font-mono text-secondary-500 tabular-nums">
                             {formatUsdCurrency(c.exitPrice)}
                         </span>
                     </div>
@@ -207,9 +207,9 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
             )}
 
             {showPredictionBlock && (
-                <div className="bg-secondary-900/60 text-secondary-400 mt-2 rounded px-3 py-2 text-[10px]">
+                <div className="mt-2 rounded bg-secondary-900/60 px-3 py-2 text-[10px] text-secondary-400">
                     <div className="mb-1 flex items-center gap-2">
-                        <span className="text-secondary-500 text-[9px] font-semibold tracking-wider uppercase">
+                        <span className="text-[9px] font-semibold tracking-wider text-secondary-500 uppercase">
                             AI 예측 레벨
                         </span>
                         <EntryRecBadge
@@ -232,7 +232,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                                     )}
                                 </span>
                                 {c.aiTrendHit && (
-                                    <span className="text-chart-bullish ml-1">
+                                    <span className="ml-1 text-chart-bullish">
                                         ✓ 도달
                                     </span>
                                 )}
@@ -245,7 +245,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                                     {formatUsdCurrency(c.aiAnalysis.takeProfit)}
                                 </span>
                                 {c.exitReason === 'take_profit' && (
-                                    <span className="text-chart-bullish ml-1">
+                                    <span className="ml-1 text-chart-bullish">
                                         ✓
                                     </span>
                                 )}
@@ -258,7 +258,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                                     {formatUsdCurrency(c.aiAnalysis.stopLoss)}
                                 </span>
                                 {c.exitReason === 'stop_loss' && (
-                                    <span className="text-chart-bearish ml-1">
+                                    <span className="ml-1 text-chart-bearish">
                                         ✓
                                     </span>
                                 )}
@@ -267,7 +267,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                     </div>
 
                     {firstBullishTarget?.basis && (
-                        <p className="text-secondary-500 mt-1 line-clamp-1 text-[9px]">
+                        <p className="mt-1 line-clamp-1 text-[9px] text-secondary-500">
                             근거: {firstBullishTarget.basis}
                         </p>
                     )}

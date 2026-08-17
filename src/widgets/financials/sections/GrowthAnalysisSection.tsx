@@ -87,7 +87,7 @@ export function GrowthAnalysisSection({ rows }: GrowthAnalysisSectionProps) {
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 {TITLE}
@@ -95,8 +95,8 @@ export function GrowthAnalysisSection({ rows }: GrowthAnalysisSectionProps) {
             <div className="mb-6">
                 <StatementTable columns={columns} rows={yoyRows} />
             </div>
-            <div className="border-secondary-700/50 border-t pt-4">
-                <p className="text-secondary-400 mb-3 text-xs tracking-wide uppercase">
+            <div className="border-t border-secondary-700/50 pt-4">
+                <p className="mb-3 text-xs tracking-wide text-secondary-400 uppercase">
                     장기 주당매출 성장 (최근 기준)
                 </p>
                 <StatementTable

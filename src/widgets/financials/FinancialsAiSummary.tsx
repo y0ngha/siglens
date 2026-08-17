@@ -42,7 +42,7 @@ export function FinancialsAiSummaryView({
     return (
         <section
             aria-labelledby="financials-ai-summary-heading"
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <div className="mb-4 flex items-center justify-between gap-3">
                 <h2
@@ -61,7 +61,7 @@ export function FinancialsAiSummaryView({
                 </span>
             </div>
 
-            <p className="text-secondary-400 mb-5 text-sm leading-relaxed">
+            <p className="mb-5 text-sm leading-relaxed text-secondary-400">
                 {result.overallConclusionKo}
             </p>
 
@@ -70,7 +70,7 @@ export function FinancialsAiSummaryView({
                     {result.axisAssessments.map(a => (
                         <li
                             key={a.axis}
-                            className="bg-secondary-800/40 rounded-lg p-3"
+                            className="rounded-lg bg-secondary-800/40 p-3"
                         >
                             <div className="mb-1 flex items-center gap-2">
                                 <span className="text-sm font-medium">
@@ -85,7 +85,7 @@ export function FinancialsAiSummaryView({
                                     {SENTIMENT_LABEL[a.sentiment]}
                                 </span>
                             </div>
-                            <p className="text-secondary-400 text-sm leading-relaxed">
+                            <p className="text-sm leading-relaxed text-secondary-400">
                                 {a.rationaleKo}
                             </p>
                         </li>
@@ -100,7 +100,7 @@ export function FinancialsAiSummaryView({
                         {result.riskFactorsKo.map((risk, i) => (
                             <li
                                 key={`risk-${i}-${risk}`}
-                                className="text-secondary-400 flex gap-2 text-sm"
+                                className="flex gap-2 text-sm text-secondary-400"
                             >
                                 <span
                                     aria-hidden="true"

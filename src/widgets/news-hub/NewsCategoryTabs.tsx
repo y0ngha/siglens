@@ -37,7 +37,7 @@ export function NewsCategoryTabs({ activeCategory }: NewsCategoryTabsProps) {
     return (
         <nav
             aria-label="뉴스 카테고리"
-            className="border-secondary-700 flex overflow-x-auto border-b"
+            className="flex overflow-x-auto border-b border-secondary-700"
         >
             {NEWS_CATEGORY_SLUGS.map(category => {
                 const active = category === activeCategory;

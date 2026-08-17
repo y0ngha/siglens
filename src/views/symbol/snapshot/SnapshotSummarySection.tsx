@@ -61,7 +61,7 @@ export function SnapshotSummarySection({
     return (
         <section
             aria-labelledby={headingId}
-            className="border-secondary-700 bg-secondary-800 flex flex-col gap-4 rounded-xl border p-6"
+            className="flex flex-col gap-4 rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <div className="flex flex-col gap-1">
                 {/*
@@ -77,17 +77,17 @@ export function SnapshotSummarySection({
                 <div className="flex flex-wrap items-center gap-2">
                     <h2
                         id={headingId}
-                        className="text-secondary-100 text-lg font-semibold tracking-tight"
+                        className="text-lg font-semibold tracking-tight text-secondary-100"
                     >
                         {title}
                     </h2>
                     {formattedAsOf !== null && (
-                        <span className="border-secondary-600 text-secondary-300 bg-secondary-900/60 rounded-full border px-2 py-0.5 text-xs font-medium">
+                        <span className="rounded-full border border-secondary-600 bg-secondary-900/60 px-2 py-0.5 text-xs font-medium text-secondary-300">
                             지난 AI 분석
                         </span>
                     )}
                 </div>
-                <p className="text-secondary-400 text-xs">{caption}</p>
+                <p className="text-xs text-secondary-400">{caption}</p>
             </div>
             {children}
         </section>

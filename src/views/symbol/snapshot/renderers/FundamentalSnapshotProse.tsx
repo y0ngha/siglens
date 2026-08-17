@@ -173,9 +173,9 @@ export function FundamentalSnapshotProse({
             displayName={displayName}
             asOf={generatedAt}
         >
-            <div className="text-secondary-300 space-y-4 text-sm leading-6">
+            <div className="space-y-4 text-sm leading-6 text-secondary-300">
                 {narrowed.overallSentiment !== null && (
-                    <p className="text-secondary-200 font-medium">
+                    <p className="font-medium text-secondary-200">
                         {symbol} 펀더멘털 종합 평가:{' '}
                         {SENTIMENT_LABEL[narrowed.overallSentiment]}
                     </p>
@@ -191,7 +191,7 @@ export function FundamentalSnapshotProse({
 
                 {narrowed.categoryAssessments.length > 0 && (
                     <div>
-                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
+                        <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
                             카테고리별 평가
                         </h3>
                         <ul
@@ -201,7 +201,7 @@ export function FundamentalSnapshotProse({
                         >
                             {narrowed.categoryAssessments.map((a, i) => (
                                 <li key={`${a.category}-${i}`}>
-                                    <span className="text-secondary-200 font-medium">
+                                    <span className="font-medium text-secondary-200">
                                         {CATEGORY_LABEL[a.category]}
                                         {a.sentiment !== null &&
                                             ` (${SENTIMENT_LABEL[a.sentiment]})`}

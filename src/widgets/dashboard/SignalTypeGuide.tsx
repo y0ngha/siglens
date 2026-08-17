@@ -41,17 +41,17 @@ export function SignalTypeGuide() {
         >
             <h2
                 id="signal-guide-heading"
-                className="text-secondary-200 mb-6 text-sm font-semibold tracking-[0.15em] uppercase"
+                className="mb-6 text-sm font-semibold tracking-[0.15em] text-secondary-200 uppercase"
             >
                 신호 유형 가이드
             </h2>
             <dl className="grid grid-cols-1 gap-x-8 gap-y-3 md:grid-cols-2">
                 {ENTRIES.map(e => (
                     <div key={e.term}>
-                        <dt className="text-secondary-300 text-sm font-semibold">
+                        <dt className="text-sm font-semibold text-secondary-300">
                             {e.term}
                         </dt>
-                        <dd className="text-secondary-500 text-xs leading-relaxed">
+                        <dd className="text-xs leading-relaxed text-secondary-500">
                             {e.desc}
                         </dd>
                     </div>

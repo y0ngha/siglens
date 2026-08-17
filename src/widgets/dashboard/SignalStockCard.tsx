@@ -49,7 +49,7 @@ export function SignalStockCard({ data }: SignalStockCardProps) {
                     </div>
                 )}
                 {data.conflict && (
-                    <p className="text-secondary-500 mt-1 text-xs">
+                    <p className="mt-1 text-xs text-secondary-500">
                         상승 {data.conflict.bullishCount}건 / 하락{' '}
                         {data.conflict.bearishCount}건 감지
                     </p>

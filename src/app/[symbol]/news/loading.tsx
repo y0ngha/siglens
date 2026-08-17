@@ -6,7 +6,7 @@ export default function NewsLoading() {
             {[...Array(SKELETON_SECTION_COUNT)].map((_, i) => (
                 <div
                     key={i}
-                    className="bg-secondary-700 h-32 w-full animate-pulse rounded-xl motion-reduce:animate-none"
+                    className="h-32 w-full animate-pulse rounded-xl bg-secondary-700 motion-reduce:animate-none"
                     aria-hidden="true"
                 />
             ))}

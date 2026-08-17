@@ -14,7 +14,7 @@ export function FearGreedPageError({
     return (
         <section
             aria-labelledby="fear-greed-error-heading"
-            className="border-ui-danger/30 bg-secondary-800 rounded-xl border p-6"
+            className="rounded-xl border border-ui-danger/30 bg-secondary-800 p-6"
         >
             <h2
                 id="fear-greed-error-heading"
@@ -22,13 +22,13 @@ export function FearGreedPageError({
             >
                 공포 탐욕 지수
             </h2>
-            <div className="text-ui-danger text-sm" role="alert">
+            <div className="text-sm text-ui-danger" role="alert">
                 {message}
             </div>
             <button
                 type="button"
                 onClick={resetErrorBoundary}
-                className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-800 mt-4 rounded px-3 py-1.5 text-xs text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                className="mt-4 rounded bg-primary-600 px-3 py-1.5 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
             >
                 다시 시도
             </button>

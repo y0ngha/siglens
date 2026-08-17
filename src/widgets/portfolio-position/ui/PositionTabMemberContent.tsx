@@ -22,12 +22,12 @@ function PositionSkeleton() {
             aria-busy="true"
             aria-live="polite"
             data-testid="position-loading"
-            className="border-secondary-700 bg-secondary-800/40 flex min-h-[280px] flex-col items-center justify-center gap-2 rounded-xl border p-6"
+            className="flex min-h-[280px] flex-col items-center justify-center gap-2 rounded-xl border border-secondary-700 bg-secondary-800/40 p-6"
         >
             <span className="sr-only">내 위치를 불러오는 중이에요</span>
             <div
                 aria-hidden="true"
-                className="bg-secondary-700 h-40 w-40 animate-pulse rounded"
+                className="h-40 w-40 animate-pulse rounded bg-secondary-700"
             />
         </div>
     );
@@ -37,7 +37,7 @@ function DataInsufficientNote() {
     return (
         <p
             data-testid="position-data-insufficient"
-            className="text-secondary-400 border-secondary-700 rounded-lg border border-dashed p-4 text-sm"
+            className="rounded-lg border border-dashed border-secondary-700 p-4 text-sm text-secondary-400"
         >
             데이터가 부족해 내 위치를 표시할 수 없어요. 가격 범위나 평단 정보를
             다시 확인해 주세요.

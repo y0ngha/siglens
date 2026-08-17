@@ -50,11 +50,11 @@ export function OptionsEmptyState({
 }: OptionsEmptyStateProps) {
     return (
         <main className="mx-auto max-w-5xl px-4 py-16">
-            <div className="border-secondary-700 bg-secondary-800 rounded-xl border p-8 text-center">
+            <div className="rounded-xl border border-secondary-700 bg-secondary-800 p-8 text-center">
                 <h1 className="text-xl font-semibold tracking-tight">
                     {symbol} 옵션 시장 정보 없음
                 </h1>
-                <p className="text-secondary-400 mt-3 text-sm leading-relaxed">
+                <p className="mt-3 text-sm leading-relaxed text-secondary-400">
                     {symbol}는 현재 옵션 시장이 형성되어 있지 않습니다.
                     <br />
                     다른 분석 페이지에서 종목을 살펴보세요.
@@ -72,7 +72,7 @@ export function OptionsEmptyState({
                             className={FALLBACK_LINK_CLASSES}
                         >
                             <p className="font-semibold">{label}</p>
-                            <p className="text-secondary-400 mt-1 text-sm">
+                            <p className="mt-1 text-sm text-secondary-400">
                                 {desc}
                             </p>
                         </Link>

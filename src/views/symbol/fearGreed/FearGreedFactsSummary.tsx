@@ -49,15 +49,15 @@ export function FearGreedFactsSummary({
     return (
         <section
             aria-labelledby={headingId}
-            className="bg-secondary-800 flex flex-col gap-3 rounded-lg p-4"
+            className="flex flex-col gap-3 rounded-lg bg-secondary-800 p-4"
         >
             <h2
                 id={headingId}
-                className="text-secondary-200 text-sm font-semibold"
+                className="text-sm font-semibold text-secondary-200"
             >
                 {symbol} 공포 탐욕 지수 요약
             </h2>
-            <dl className="text-secondary-300 grid grid-cols-1 gap-2 text-sm">
+            <dl className="grid grid-cols-1 gap-2 text-sm text-secondary-300">
                 <div className="flex justify-between gap-4">
                     <dt className="text-secondary-400">현재 점수</dt>
                     <dd>
@@ -65,14 +65,14 @@ export function FearGreedFactsSummary({
                     </dd>
                 </div>
             </dl>
-            <div className="text-secondary-300 space-y-1 text-sm leading-6">
+            <div className="space-y-1 text-sm leading-6 text-secondary-300">
                 {groupComparisonLine !== null && <p>{groupComparisonLine}</p>}
                 {factorRankingLine !== null && <p>{factorRankingLine}</p>}
                 {factorLines.map((line, i) => (
                     <p key={`line-${i}-${line}`}>{line}</p>
                 ))}
             </div>
-            <p className="text-secondary-400 text-xs">
+            <p className="text-xs text-secondary-400">
                 {formatConfidenceFooter(
                     snapshot.sampleSize,
                     snapshot.confidence

@@ -43,7 +43,7 @@ export function PremiumModelGateModal({
         >
             {/* backdrop */}
             <div
-                className="bg-secondary-950/80 absolute inset-0 backdrop-blur-sm"
+                className="absolute inset-0 bg-secondary-950/80 backdrop-blur-sm"
                 onClick={onClose}
                 aria-hidden="true"
             />
@@ -53,7 +53,7 @@ export function PremiumModelGateModal({
                 role="dialog"
                 aria-labelledby={TITLE_ID}
                 tabIndex={-1}
-                className="bg-secondary-900 ring-secondary-800 relative w-full max-w-sm rounded-2xl p-6 shadow-2xl ring-1 outline-none"
+                className="relative w-full max-w-sm rounded-2xl bg-secondary-900 p-6 shadow-2xl ring-1 ring-secondary-800 outline-none"
             >
                 <div className="mb-4 flex flex-col items-center gap-3 text-center">
                     {/* inline SVG avoids lucide-react dependency */}
@@ -80,11 +80,11 @@ export function PremiumModelGateModal({
                     </svg>
                     <h2
                         id={TITLE_ID}
-                        className="text-secondary-50 font-semibold"
+                        className="font-semibold text-secondary-50"
                     >
                         {title}
                     </h2>
-                    <p className="text-secondary-300 text-sm leading-relaxed">
+                    <p className="text-sm leading-relaxed text-secondary-300">
                         {body}
                     </p>
                 </div>
@@ -94,7 +94,7 @@ export function PremiumModelGateModal({
                         <Link
                             href="/signup"
                             onClick={onClose}
-                            className="bg-primary-600 hover:bg-primary-500 focus-visible:ring-primary-500 flex h-10 items-center justify-center rounded-lg px-4 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                            className="flex h-10 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-medium text-white transition-colors hover:bg-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             회원가입 하러 가기
                         </Link>
@@ -102,7 +102,7 @@ export function PremiumModelGateModal({
                         <Link
                             href="/account"
                             onClick={onClose}
-                            className="bg-primary-600 hover:bg-primary-500 focus-visible:ring-primary-500 flex h-10 items-center justify-center rounded-lg px-4 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                            className="flex h-10 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-medium text-white transition-colors hover:bg-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             등록하러 가기
                         </Link>
@@ -110,7 +110,7 @@ export function PremiumModelGateModal({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 flex h-10 items-center justify-center rounded-lg px-4 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        className="flex h-10 items-center justify-center rounded-lg px-4 text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         닫기
                     </button>

@@ -108,16 +108,16 @@ function HoldingRow({
             <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                     <div className="flex flex-wrap items-baseline gap-x-2">
-                        <span className="text-secondary-100 font-semibold">
+                        <span className="font-semibold text-secondary-100">
                             {holding.symbol}
                         </span>
                         {holding.companyName && (
-                            <span className="text-secondary-400 truncate text-sm">
+                            <span className="truncate text-sm text-secondary-400">
                                 {holding.companyName}
                             </span>
                         )}
                     </div>
-                    <div className="text-secondary-400 mt-0.5 text-sm tabular-nums">
+                    <div className="mt-0.5 text-sm text-secondary-400 tabular-nums">
                         {trimTrailingZeros(holding.quantity)}주 · 평단 $
                         {trimTrailingZeros(holding.averagePrice)}
                     </div>
@@ -125,7 +125,7 @@ function HoldingRow({
 
                 {isConfirmingDelete ? (
                     <div className="flex shrink-0 items-center gap-2">
-                        <span className="text-secondary-400 text-xs">
+                        <span className="text-xs text-secondary-400">
                             삭제할까요?
                         </span>
                         <button
@@ -247,11 +247,11 @@ export function PortfolioSection() {
                 <h2
                     ref={headingRef}
                     tabIndex={-1}
-                    className="text-secondary-100 focus-visible:ring-primary-500 rounded-sm text-lg font-semibold focus-visible:ring-2 focus-visible:outline-none"
+                    className="rounded-sm text-lg font-semibold text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     보유종목
                 </h2>
-                <p className="text-secondary-400 mt-1 text-sm">
+                <p className="mt-1 text-sm text-secondary-400">
                     등록하면 내 평단 기준으로 분석을 받을 수 있어요.
                 </p>
             </div>
@@ -267,7 +267,7 @@ export function PortfolioSection() {
             {!isLoadingState && isError && (
                 <div
                     role="alert"
-                    className="border-secondary-800 text-secondary-400 rounded-xl border border-dashed px-4 py-6 text-center text-sm"
+                    className="rounded-xl border border-dashed border-secondary-800 px-4 py-6 text-center text-sm text-secondary-400"
                 >
                     <p>보유종목을 일시적으로 불러오지 못했어요.</p>
                     <button
@@ -281,7 +281,7 @@ export function PortfolioSection() {
             )}
 
             {!isLoadingState && !isError && holdings.length === 0 && (
-                <p className="border-secondary-800 text-secondary-400 rounded-xl border border-dashed px-4 py-6 text-center text-sm">
+                <p className="rounded-xl border border-dashed border-secondary-800 px-4 py-6 text-center text-sm text-secondary-400">
                     아직 등록한 보유종목이 없어요. 첫 종목을 추가해 보세요.
                 </p>
             )}
@@ -334,8 +334,8 @@ export function PortfolioSection() {
             )}
 
             {!isLoadingState && !isError && (
-                <div className="border-secondary-800 space-y-2 border-t pt-4">
-                    <h3 className="text-secondary-200 text-sm font-semibold">
+                <div className="space-y-2 border-t border-secondary-800 pt-4">
+                    <h3 className="text-sm font-semibold text-secondary-200">
                         종목 추가
                     </h3>
                     <HoldingForm

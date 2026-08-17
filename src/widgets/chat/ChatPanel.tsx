@@ -59,15 +59,15 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
 
     return (
         <div className="flex flex-col overflow-hidden rounded-xl">
-            <div className="border-secondary-700 flex items-center justify-between border-b px-3 py-2">
-                <span className="text-secondary-300 text-xs font-semibold">
+            <div className="flex items-center justify-between border-b border-secondary-700 px-3 py-2">
+                <span className="text-xs font-semibold text-secondary-300">
                     💬 AI에게 물어보기
                 </span>
                 {onClose && (
                     <button
                         type="button"
                         onClick={onClose}
-                        className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 -mr-1 flex h-11 w-11 items-center justify-center rounded text-sm leading-none transition-colors focus-visible:ring-1 focus-visible:outline-none md:h-6 md:w-6"
+                        className="-mr-1 flex h-11 w-11 items-center justify-center rounded text-sm leading-none text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none md:h-6 md:w-6"
                         aria-label="채팅 닫기"
                     >
                         ✕
@@ -77,18 +77,18 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
 
             {analysisUpdated && (
                 <div
-                    className="bg-primary-900/30 border-primary-700/50 flex items-center justify-between border-b px-3 py-1.5"
+                    className="flex items-center justify-between border-b border-primary-700/50 bg-primary-900/30 px-3 py-1.5"
                     role="status"
                     aria-live="polite"
                 >
-                    <span className="text-primary-300 text-xs">
+                    <span className="text-xs text-primary-300">
                         분석이 업데이트됐어요 — 최신 결과 기반으로 이어서
                         질문하세요
                     </span>
                     <button
                         type="button"
                         onClick={dismissAnalysisUpdated}
-                        className="text-primary-400 hover:text-primary-200 focus-visible:ring-primary-500 ml-2 rounded text-xs focus-visible:ring-1 focus-visible:outline-none"
+                        className="ml-2 rounded text-xs text-primary-400 hover:text-primary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         ✕
                     </button>
@@ -98,8 +98,8 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
             {/* 메시지 영역 — 고정 높이, 내부 스크롤 */}
             <div className="flex h-80 flex-col gap-2 overflow-y-auto px-3 py-2">
                 {messages.length === 0 && loadingPhase === null && (
-                    <div className="bg-secondary-700/30 rounded-lg rounded-tl-sm p-3">
-                        <p className="text-secondary-400 text-sm leading-relaxed">
+                    <div className="rounded-lg rounded-tl-sm bg-secondary-700/30 p-3">
+                        <p className="text-sm leading-relaxed text-secondary-400">
                             분석 결과를 바탕으로 질문해 보세요. 진입 타이밍,
                             매도 전략, 지표 해석까지 모두 물어볼 수 있어요.
                         </p>
@@ -138,14 +138,14 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
 
                 {loadingPhase !== null && (
                     <div
-                        className="bg-secondary-700/50 max-w-[85%] self-start rounded-lg rounded-tl-sm p-2.5"
+                        className="max-w-[85%] self-start rounded-lg rounded-tl-sm bg-secondary-700/50 p-2.5"
                         role="status"
                         aria-live="polite"
                     >
-                        <p className="text-secondary-400 text-xs">
+                        <p className="text-xs text-secondary-400">
                             {LOADING_MESSAGES[loadingPhase]}
                         </p>
-                        <span className="text-secondary-500 mt-1 inline-flex gap-0.5 text-base leading-none">
+                        <span className="mt-1 inline-flex gap-0.5 text-base leading-none text-secondary-500">
                             <span className="animate-bounce [animation-delay:0ms]">
                                 ·
                             </span>
@@ -162,8 +162,8 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="border-secondary-700 border-t px-3 py-2">
-                <div className="text-secondary-600 mb-1.5 flex items-center gap-1.5 text-[10px]">
+            <div className="border-t border-secondary-700 px-3 py-2">
+                <div className="mb-1.5 flex items-center gap-1.5 text-[10px] text-secondary-600">
                     <ModelSelect
                         options={CHAT_MODEL_OPTIONS}
                         selected={selectedModel}
@@ -203,7 +203,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                         type="button"
                         onClick={() => void handleSubmit()}
                         disabled={isInputDisabled || inputValue.trim() === ''}
-                        className="bg-primary-600 hover:bg-primary-500 disabled:bg-secondary-700 disabled:text-secondary-500 focus-visible:ring-primary-500 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-white transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed md:h-8 md:w-8"
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary-600 text-white transition-colors hover:bg-primary-500 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-secondary-700 disabled:text-secondary-500 md:h-8 md:w-8"
                         aria-label="전송"
                     >
                         ↑

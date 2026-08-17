@@ -10,7 +10,7 @@ const MARKDOWN_TEXT_COMPONENTS: Components = {
         </p>
     ),
     strong: ({ children }) => (
-        <strong className="text-secondary-100 font-semibold">{children}</strong>
+        <strong className="font-semibold text-secondary-100">{children}</strong>
     ),
     em: ({ children }) => (
         <em className="text-secondary-300 italic">{children}</em>
@@ -27,27 +27,27 @@ const MARKDOWN_TEXT_COMPONENTS: Components = {
     ),
     li: ({ children }) => <li className="pl-0.5">{children}</li>,
     h1: ({ children }) => (
-        <p className="text-secondary-100 mb-2 leading-[1.6] font-semibold last:mb-0">
+        <p className="mb-2 leading-[1.6] font-semibold text-secondary-100 last:mb-0">
             {children}
         </p>
     ),
     h2: ({ children }) => (
-        <p className="text-secondary-100 mb-2 leading-[1.6] font-semibold last:mb-0">
+        <p className="mb-2 leading-[1.6] font-semibold text-secondary-100 last:mb-0">
             {children}
         </p>
     ),
     h3: ({ children }) => (
-        <p className="text-secondary-200 mb-1.5 leading-[1.65] font-medium last:mb-0">
+        <p className="mb-1.5 leading-[1.65] font-medium text-secondary-200 last:mb-0">
             {children}
         </p>
     ),
     code: ({ children }) => (
-        <code className="bg-secondary-800 text-secondary-300 rounded px-1 py-0.5 font-mono text-[10px]">
+        <code className="rounded bg-secondary-800 px-1 py-0.5 font-mono text-[10px] text-secondary-300">
             {children}
         </code>
     ),
     pre: ({ children }) => (
-        <pre className="bg-secondary-800 text-secondary-300 mb-1.5 overflow-x-auto rounded p-2 font-mono text-[10px] last:mb-0">
+        <pre className="mb-1.5 overflow-x-auto rounded bg-secondary-800 p-2 font-mono text-[10px] text-secondary-300 last:mb-0">
             {children}
         </pre>
     ),

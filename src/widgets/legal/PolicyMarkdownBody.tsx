@@ -16,7 +16,7 @@ const components: Components = {
     h2: ({ id, children }) => (
         <h2
             id={id}
-            className="text-secondary-100 scroll-mt-24 text-lg font-semibold sm:text-xl"
+            className="scroll-mt-24 text-lg font-semibold text-secondary-100 sm:text-xl"
         >
             {children}
         </h2>
@@ -24,31 +24,31 @@ const components: Components = {
     h3: ({ id, children }) => (
         <h3
             id={id}
-            className="text-secondary-200 scroll-mt-24 text-base font-medium sm:text-lg"
+            className="scroll-mt-24 text-base font-medium text-secondary-200 sm:text-lg"
         >
             {children}
         </h3>
     ),
     p: ({ children }) => (
-        <p className="text-secondary-300 mt-3 text-sm leading-relaxed sm:text-base">
+        <p className="mt-3 text-sm leading-relaxed text-secondary-300 sm:text-base">
             {children}
         </p>
     ),
     ul: ({ children }) => (
-        <ul className="text-secondary-300 mt-3 list-disc space-y-1.5 pl-5 text-sm leading-relaxed sm:text-base">
+        <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-secondary-300 sm:text-base">
             {children}
         </ul>
     ),
     li: ({ children }) => <li>{children}</li>,
     strong: ({ children }) => (
-        <strong className="text-secondary-200 font-semibold">{children}</strong>
+        <strong className="font-semibold text-secondary-200">{children}</strong>
     ),
     a: ({ href, children }) => {
         if (isInternalHref(href)) {
             return (
                 <Link
                     href={href ?? '#'}
-                    className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-950 rounded-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    className="rounded-sm text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
                 >
                     {children}
                 </Link>
@@ -59,7 +59,7 @@ const components: Components = {
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-950 rounded-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                className="rounded-sm text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
             >
                 {children}
             </a>

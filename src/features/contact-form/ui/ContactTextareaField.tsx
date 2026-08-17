@@ -29,7 +29,7 @@ export function ContactTextareaField({
         <div className="space-y-2">
             <label
                 htmlFor={id}
-                className="text-secondary-200 block text-sm font-medium"
+                className="block text-sm font-medium text-secondary-200"
             >
                 {label}
             </label>
@@ -50,14 +50,14 @@ export function ContactTextareaField({
                     error && 'border-ui-danger/60'
                 )}
             />
-            <p id={helperId} className="text-secondary-500 text-right text-xs">
+            <p id={helperId} className="text-right text-xs text-secondary-500">
                 최대 {maxLength.toLocaleString('ko-KR')}자
             </p>
             {error ? (
                 <div
                     id={errorId}
                     role="alert"
-                    className="text-ui-danger flex items-start gap-1 text-sm"
+                    className="flex items-start gap-1 text-sm text-ui-danger"
                 >
                     <span aria-hidden>⚠</span>
                     <span>{error}</span>

@@ -108,11 +108,11 @@ export default function BacktestingPage() {
             {/* main이 백테스트 컨텐츠 전체(hero h1 포함)를 감싸야 의미론적
                 landmark가 페이지 주제와 일치한다. 이전엔 BacktestHero가 main
                 바깥에 있어 h1이 landmark 밖으로 빠지는 문제가 있었다. */}
-            <main className="bg-secondary-900 min-h-screen">
+            <main className="min-h-screen bg-secondary-900">
                 <BacktestHero meta={data.meta} />
                 <Suspense
                     fallback={
-                        <div className="text-secondary-500 py-10 text-center text-sm">
+                        <div className="py-10 text-center text-sm text-secondary-500">
                             로딩 중...
                         </div>
                     }
@@ -122,9 +122,9 @@ export default function BacktestingPage() {
                 <div
                     role="note"
                     aria-label="투자 면책 고지"
-                    className="border-secondary-800 border-t px-6 py-4"
+                    className="border-t border-secondary-800 px-6 py-4"
                 >
-                    <p className="text-secondary-600 text-center text-[11px]">
+                    <p className="text-center text-[11px] text-secondary-600">
                         * 본 결과는 과거 데이터 기반 백테스팅이며 미래 수익을
                         보장하지 않습니다. 투자 판단의 책임은 투자자 본인에게
                         있습니다.

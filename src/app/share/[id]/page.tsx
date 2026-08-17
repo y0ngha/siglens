@@ -33,19 +33,19 @@ export default async function SharePage({ params }: Props) {
         // indexing this expired/not-found state.
         return (
             <main className="flex flex-1 flex-col items-center px-6 py-20 text-center">
-                <p className="text-primary-400 font-mono text-sm tracking-widest">
+                <p className="font-mono text-sm tracking-widest text-primary-400">
                     공유 링크 만료
                 </p>
-                <h1 className="text-secondary-100 mt-4 text-2xl font-bold sm:text-3xl">
+                <h1 className="mt-4 text-2xl font-bold text-secondary-100 sm:text-3xl">
                     이 공유 링크는 만료됐어요
                 </h1>
-                <p className="text-secondary-400 mt-3 max-w-md text-sm leading-relaxed">
+                <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">
                     공유된 분석 스냅샷의 유효 기간이 지났거나 존재하지 않는
                     링크입니다. {SITE_NAME}에서 최신 분석을 직접 확인하세요.
                 </p>
                 <Link
                     href="/"
-                    className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 mt-8 rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                    className="mt-8 rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     {SITE_NAME} 홈으로 돌아가기
                 </Link>
@@ -60,19 +60,19 @@ export default async function SharePage({ params }: Props) {
     return (
         <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
             <h1 className="mb-6 flex flex-wrap items-center gap-2">
-                <span className="text-secondary-500 text-sm font-medium">
+                <span className="text-sm font-medium text-secondary-500">
                     {SITE_NAME}
                 </span>
-                <span className="text-secondary-600 text-sm">/</span>
-                <span className="text-secondary-100 text-lg font-bold">
+                <span className="text-sm text-secondary-600">/</span>
+                <span className="text-lg font-bold text-secondary-100">
                     {ticker}
                 </span>
-                <span className="bg-primary-900/40 text-primary-300 rounded px-2 py-0.5 text-xs font-semibold">
+                <span className="rounded bg-primary-900/40 px-2 py-0.5 text-xs font-semibold text-primary-300">
                     {label}
                 </span>
             </h1>
 
-            <div className="border-secondary-700 bg-secondary-800/50 text-secondary-400 mb-6 rounded-lg border px-3 py-2 text-xs">
+            <div className="mb-6 rounded-lg border border-secondary-700 bg-secondary-800/50 px-3 py-2 text-xs text-secondary-400">
                 {asOf} 데이터라서 현재 시세와 다를 수 있어요
             </div>
 
@@ -91,9 +91,9 @@ export default async function SharePage({ params }: Props) {
             <div
                 role="note"
                 aria-label="투자 면책 고지"
-                className="border-ui-danger/30 bg-ui-danger/5 mt-8 rounded-lg border px-4 py-3"
+                className="mt-8 rounded-lg border border-ui-danger/30 bg-ui-danger/5 px-4 py-3"
             >
-                <p className="text-secondary-400 text-xs leading-relaxed">
+                <p className="text-xs leading-relaxed text-secondary-400">
                     {INVESTMENT_DISCLAIMER}
                 </p>
             </div>
@@ -101,7 +101,7 @@ export default async function SharePage({ params }: Props) {
             <div className="mt-8 text-center">
                 <Link
                     href={`/${ticker}`}
-                    className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 inline-flex items-center rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                    className="inline-flex items-center rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     {SITE_NAME}에서 {ticker} 직접 분석하기
                 </Link>

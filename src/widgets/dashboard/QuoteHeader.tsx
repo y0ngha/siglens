@@ -56,16 +56,16 @@ export function QuoteHeader({ data, layout = 'index' }: QuoteHeaderProps) {
                 <div className="flex items-center justify-between gap-1">
                     <span
                         translate="no"
-                        className="text-secondary-100 font-mono text-xs font-semibold"
+                        className="font-mono text-xs font-semibold text-secondary-100"
                     >
                         {data.symbol}
                     </span>
                     {changeSpan}
                 </div>
-                <p className="text-secondary-400 min-w-0 truncate text-xs">
+                <p className="min-w-0 truncate text-xs text-secondary-400">
                     {data.koreanName}
                 </p>
-                <p className="text-secondary-100 font-mono text-sm tabular-nums">
+                <p className="font-mono text-sm text-secondary-100 tabular-nums">
                     ${formatUsdPrice(data.price)}
                 </p>
             </>
@@ -76,17 +76,17 @@ export function QuoteHeader({ data, layout = 'index' }: QuoteHeaderProps) {
         <>
             <span
                 translate="no"
-                className="text-secondary-100 font-mono text-xs font-semibold"
+                className="font-mono text-xs font-semibold text-secondary-100"
             >
                 {data.symbol}
             </span>
             <div className="flex items-center justify-between gap-1">
-                <p className="text-secondary-400 min-w-0 truncate text-xs">
+                <p className="min-w-0 truncate text-xs text-secondary-400">
                     {data.koreanName}
                 </p>
                 {changeSpan}
             </div>
-            <p className="text-secondary-100 font-mono text-sm tabular-nums">
+            <p className="font-mono text-sm text-secondary-100 tabular-nums">
                 ${formatUsdPrice(data.price)}
             </p>
         </>

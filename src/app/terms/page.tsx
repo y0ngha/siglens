@@ -73,15 +73,15 @@ const topNotice = (
     <div
         role="note"
         aria-label="투자 면책 고지 요약"
-        className="border-ui-danger/30 bg-ui-danger/5 my-8 rounded-lg border p-5"
+        className="my-8 rounded-lg border border-ui-danger/30 bg-ui-danger/5 p-5"
     >
-        <p className="text-ui-danger mb-2 text-xs font-semibold tracking-wider uppercase">
+        <p className="mb-2 text-xs font-semibold tracking-wider text-ui-danger uppercase">
             중요 안내
         </p>
-        <p className="text-secondary-200 text-sm leading-relaxed sm:text-base">
+        <p className="text-sm leading-relaxed text-secondary-200 sm:text-base">
             {INVESTMENT_DISCLAIMER}
         </p>
-        <p className="text-secondary-400 mt-2 text-xs leading-relaxed sm:text-sm">
+        <p className="mt-2 text-xs leading-relaxed text-secondary-400 sm:text-sm">
             {SITE_NAME}은(는) 투자 자문이나 매매 권유를 제공하지 않으며,
             제공되는 모든 분석은 통계적·기술적 관점의 정보입니다. 자세한 내용은
             아래 제5조를 확인해 주세요.

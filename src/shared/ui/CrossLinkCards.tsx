@@ -104,15 +104,15 @@ export function CrossLinkCards({
                         <div
                             key={p}
                             aria-current="page"
-                            className="border-primary-500 bg-secondary-800/40 ring-primary-500/30 cursor-default rounded-xl border p-6 ring-1"
+                            className="cursor-default rounded-xl border border-primary-500 bg-secondary-800/40 p-6 ring-1 ring-primary-500/30"
                         >
-                            <h3 className="text-secondary-100 font-semibold">
+                            <h3 className="font-semibold text-secondary-100">
                                 {LABEL[p]}
                             </h3>
-                            <p className="text-secondary-400 mt-2 text-sm">
+                            <p className="mt-2 text-sm text-secondary-400">
                                 {description}
                             </p>
-                            <p className="text-primary-400 mt-3 text-xs font-medium">
+                            <p className="mt-3 text-xs font-medium text-primary-400">
                                 지금 보는 페이지예요
                             </p>
                         </div>
@@ -126,10 +126,10 @@ export function CrossLinkCards({
                         // 섹션이다. prefetch를 켜두면 같은 페이로드를 탭에 이어 두 번째로
                         // 예약하게 되므로 끈다 (docs/architecture/CDN_CACHING.md §1).
                         prefetch={false}
-                        className="border-secondary-700 hover:border-primary-500 focus-visible:ring-primary-500 rounded-xl border p-6 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                        className="rounded-xl border border-secondary-700 p-6 transition-colors hover:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
                     >
                         <h3 className="font-semibold">{LABEL[p]}</h3>
-                        <p className="text-secondary-400 mt-2 text-sm">
+                        <p className="mt-2 text-sm text-secondary-400">
                             {description}
                         </p>
                     </Link>

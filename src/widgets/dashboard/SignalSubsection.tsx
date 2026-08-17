@@ -57,7 +57,7 @@ export function SignalSubsection({
                     )}
                 </div>
                 <span
-                    className="text-secondary-500 font-mono text-2xl tabular-nums"
+                    className="font-mono text-2xl text-secondary-500 tabular-nums"
                     aria-label={`${stocks.length}개 종목`}
                 >
                     {count}
@@ -65,7 +65,7 @@ export function SignalSubsection({
             </div>
             {stocks.length === 0 ? (
                 <p
-                    className="text-secondary-500 py-4 text-center text-xs italic"
+                    className="py-4 text-center text-xs text-secondary-500 italic"
                     role="status"
                 >
                     오늘은 이 신호가 잡힌 종목이 없어요. 다른 섹터도 살펴보세요.

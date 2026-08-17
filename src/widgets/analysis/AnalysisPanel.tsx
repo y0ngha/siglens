@@ -100,10 +100,10 @@ function ActionRecommendationSection({
     onToggleChart,
 }: ActionRecommendationSectionProps) {
     return (
-        <div className="bg-secondary-700/30 flex flex-col gap-2 rounded-lg p-3">
+        <div className="flex flex-col gap-2 rounded-lg bg-secondary-700/30 p-3">
             {rec.entryRecommendation !== undefined && (
                 <div className="flex items-center gap-2">
-                    <span className="text-secondary-500 text-xs">
+                    <span className="text-xs text-secondary-500">
                         진입 의견
                     </span>
                     <span
@@ -117,7 +117,7 @@ function ActionRecommendationSection({
                 </div>
             )}
             <div className="flex items-center justify-between">
-                <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
                     매매 전략
                 </span>
                 <button
@@ -145,10 +145,10 @@ function ActionRecommendationSection({
                     if (typeof value !== 'string' || value === '') return null;
                     return (
                         <div key={label} className="flex flex-col gap-0.5">
-                            <span className="text-secondary-400 text-xs font-medium">
+                            <span className="text-xs font-medium text-secondary-400">
                                 {label}
                             </span>
-                            <MarkdownText className="text-secondary-300 text-sm">
+                            <MarkdownText className="text-sm text-secondary-300">
                                 {value}
                             </MarkdownText>
                         </div>
@@ -192,9 +192,9 @@ function ReconciledLevelsBlock({
     reason,
 }: ReconciledLevelsBlockProps) {
     return (
-        <section className="border-secondary-700 bg-secondary-800/40 mt-1 flex flex-col gap-1 rounded-md border px-3 py-2">
+        <section className="mt-1 flex flex-col gap-1 rounded-md border border-secondary-700 bg-secondary-800/40 px-3 py-2">
             <header className="flex items-center">
-                <span className="text-secondary-400 text-[10px] font-semibold tracking-wide uppercase">
+                <span className="text-[10px] font-semibold tracking-wide text-secondary-400 uppercase">
                     내부 보정값
                 </span>
                 <InfoTooltip>
@@ -212,12 +212,12 @@ function ReconciledLevelsBlock({
                 </InfoTooltip>
             </header>
             {exit !== '' && (
-                <MarkdownText className="text-secondary-300 text-sm">
+                <MarkdownText className="text-sm text-secondary-300">
                     {exit}
                 </MarkdownText>
             )}
             {riskReward !== '' && (
-                <MarkdownText className="text-secondary-400 text-xs">
+                <MarkdownText className="text-xs text-secondary-400">
                     {riskReward}
                 </MarkdownText>
             )}
@@ -258,9 +258,9 @@ function SignalItem({ signal, typeLabel }: SignalItemProps) {
     const strengthDisplay = resolveStrengthDisplay(signal.strength);
 
     return (
-        <div className="bg-secondary-700/40 flex flex-col gap-1.5 rounded px-3 py-2">
+        <div className="flex flex-col gap-1.5 rounded bg-secondary-700/40 px-3 py-2">
             <div className="flex items-center gap-2">
-                <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
+                <span className="min-w-0 flex-1 truncate text-xs font-medium text-secondary-300">
                     {typeLabel ?? SIGNAL_TYPE_LABEL[signal.type]}
                 </span>
                 <div className="flex w-36 shrink-0 items-center justify-end gap-1">
@@ -277,7 +277,7 @@ function SignalItem({ signal, typeLabel }: SignalItemProps) {
                     )}
                 </div>
             </div>
-            <MarkdownText className="text-secondary-400 text-xs">
+            <MarkdownText className="text-xs text-secondary-400">
                 {signal.description}
             </MarkdownText>
         </div>
@@ -324,7 +324,7 @@ function PersonalizedAnalysisBadge() {
     return (
         <span
             data-testid="personalized-analysis-badge"
-            className="border-primary-400/40 bg-primary-400/10 text-primary-300 inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium whitespace-nowrap"
+            className="inline-flex items-center gap-1 rounded border-primary-400/40 bg-primary-400/10 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-primary-300"
         >
             내 평단 기준으로 분석했어요
         </span>
@@ -424,7 +424,7 @@ function ConfluenceInfo({ level }: ConfluenceInfoProps) {
                         key={`${source.price}-${source.reason}-${index}`}
                         className="flex items-baseline gap-2 whitespace-nowrap"
                     >
-                        <span className="text-secondary-300 shrink-0">
+                        <span className="shrink-0 text-secondary-300">
                             {source.price.toLocaleString(undefined, {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
@@ -478,15 +478,15 @@ function PatternAccordionItem({
     const keyPrices = pattern.keyPrices ?? [];
 
     return (
-        <div className="border-secondary-700 overflow-hidden rounded-md border">
-            <div className="bg-secondary-700/20 hover:bg-secondary-700/40 flex w-full items-center transition-colors">
+        <div className="overflow-hidden rounded-md border border-secondary-700">
+            <div className="flex w-full items-center bg-secondary-700/20 transition-colors hover:bg-secondary-700/40">
                 <button
                     type="button"
                     aria-expanded={isOpen}
                     onClick={handleToggleOpen}
-                    className="focus-visible:ring-primary-500 flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left focus-visible:ring-1 focus-visible:outline-none"
+                    className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
+                    <span className="min-w-0 flex-1 truncate text-xs font-medium text-secondary-300">
                         {pattern.skillName}
                     </span>
                     <TrendBadge trend={pattern.trend} />
@@ -502,13 +502,13 @@ function PatternAccordionItem({
             </div>
 
             {isOpen ? (
-                <div className="bg-secondary-800/60 border-secondary-700 flex flex-col gap-2.5 border-t px-3 py-2.5">
-                    <MarkdownText className="text-secondary-400 text-xs">
+                <div className="flex flex-col gap-2.5 border-t border-secondary-700 bg-secondary-800/60 px-3 py-2.5">
+                    <MarkdownText className="text-xs text-secondary-400">
                         {pattern.summary}
                     </MarkdownText>
                     {keyPrices.length > 0 && (
                         <div className="flex flex-col gap-1">
-                            <span className="text-secondary-500 text-[10px] font-semibold tracking-wide uppercase">
+                            <span className="text-[10px] font-semibold tracking-wide text-secondary-500 uppercase">
                                 주요 가격대
                             </span>
                             <div className="flex flex-col gap-1">
@@ -517,12 +517,12 @@ function PatternAccordionItem({
                                         key={`keyprice-${kp.label}`}
                                         className="flex items-baseline gap-2"
                                     >
-                                        <span className="text-secondary-500 w-16 shrink-0 text-xs">
+                                        <span className="w-16 shrink-0 text-xs text-secondary-500">
                                             {index === 0
                                                 ? primaryLabel
                                                 : kp.label}
                                         </span>
-                                        <span className="text-secondary-200 text-xs font-medium tabular-nums">
+                                        <span className="text-xs font-medium text-secondary-200 tabular-nums">
                                             {kp.price.toLocaleString(
                                                 undefined,
                                                 {
@@ -551,10 +551,10 @@ function StructuredSkillSummary({ sections }: StructuredSkillSummaryProps) {
         <div className="flex flex-col gap-2">
             {sections.map(section => (
                 <div key={section.label} className="flex flex-col gap-0.5">
-                    <span className="text-secondary-500 text-[10px] font-semibold tracking-wide uppercase">
+                    <span className="text-[10px] font-semibold tracking-wide text-secondary-500 uppercase">
                         {section.label}
                     </span>
-                    <MarkdownText className="text-secondary-300 text-xs">
+                    <MarkdownText className="text-xs text-secondary-300">
                         {section.value}
                     </MarkdownText>
                 </div>
@@ -582,15 +582,15 @@ function StrategyAccordionItem({
     const sections = parseStructuredSummary(strategy.summary);
 
     return (
-        <div className="border-secondary-700 overflow-hidden rounded-md border">
-            <div className="bg-secondary-700/20 hover:bg-secondary-700/40 flex w-full items-center transition-colors">
+        <div className="overflow-hidden rounded-md border border-secondary-700">
+            <div className="flex w-full items-center bg-secondary-700/20 transition-colors hover:bg-secondary-700/40">
                 <button
                     type="button"
                     aria-expanded={isOpen}
                     onClick={handleToggleOpen}
-                    className="focus-visible:ring-primary-500 flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left focus-visible:ring-1 focus-visible:outline-none"
+                    className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
+                    <span className="min-w-0 flex-1 truncate text-xs font-medium text-secondary-300">
                         {strategy.strategyName}
                     </span>
                     <TrendBadge trend={strategy.trend} />
@@ -606,11 +606,11 @@ function StrategyAccordionItem({
             </div>
 
             {isOpen ? (
-                <div className="bg-secondary-800/60 border-secondary-700 border-t px-3 py-2.5">
+                <div className="border-t border-secondary-700 bg-secondary-800/60 px-3 py-2.5">
                     {sections !== null ? (
                         <StructuredSkillSummary sections={sections} />
                     ) : (
-                        <MarkdownText className="text-secondary-400 text-xs">
+                        <MarkdownText className="text-xs text-secondary-400">
                             {strategy.summary}
                         </MarkdownText>
                     )}
@@ -651,12 +651,12 @@ function TrendlineItem({ trendline }: TrendlineItemProps) {
         TRENDLINE_BG_COLOR[trendline.direction] ?? TRENDLINE_FALLBACK_BG;
 
     return (
-        <div className="bg-secondary-700/40 flex items-center gap-2 rounded px-3 py-2">
+        <div className="flex items-center gap-2 rounded bg-secondary-700/40 px-3 py-2">
             <span className={cn('h-2 w-2 shrink-0 rounded-full', bgClass)} />
             <span className={cn('text-xs font-medium', colorClass)}>
                 {label}
             </span>
-            <span className="text-secondary-500 ml-auto text-xs tabular-nums">
+            <span className="ml-auto text-xs text-secondary-500 tabular-nums">
                 {trendline.start.price.toLocaleString(undefined, {
                     maximumFractionDigits: 2,
                 })}
@@ -686,7 +686,7 @@ function PriceScenarioSection({
             <span className={cn('text-xs font-medium', colorClass)}>
                 {label}
             </span>
-            <MarkdownText className="text-secondary-500 text-xs">
+            <MarkdownText className="text-xs text-secondary-500">
                 {scenario.condition}
             </MarkdownText>
             {scenario.targets.map((target, index) => (
@@ -705,7 +705,7 @@ function PriceScenarioSection({
                             maximumFractionDigits: 2,
                         })}
                     </span>
-                    <MarkdownText className="text-secondary-500 text-xs">
+                    <MarkdownText className="text-xs text-secondary-500">
                         {target.basis}
                     </MarkdownText>
                 </div>
@@ -745,7 +745,7 @@ function ReanalyzeButton({
                     ? '재분석은 5분에 한 번만 실행할 수 있어요.'
                     : undefined
             }
-            className="bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/40 disabled:text-secondary-300 focus-visible:ring-primary-500 w-full rounded-lg px-4 py-2 text-sm font-semibold text-white tabular-nums transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed"
+            className="w-full rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white tabular-nums transition-colors hover:bg-primary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-primary-600/40 disabled:text-secondary-300"
         >
             {label}
         </button>
@@ -962,7 +962,7 @@ export function AnalysisPanel({
     }, [analysis.analyzedAt]);
 
     return (
-        <div className="bg-secondary-800 relative flex flex-col gap-4 rounded-lg p-4">
+        <div className="relative flex flex-col gap-4 rounded-lg bg-secondary-800 p-4">
             {showStaleBanner && (
                 <StaleAnalysisBanner
                     onReanalyze={onReanalyze}
@@ -978,12 +978,12 @@ export function AnalysisPanel({
                 지그재그가 생겨 responsive 스택으로 대체했다. */}
             <div className="flex flex-col gap-y-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
-                    <span className="text-secondary-200 text-sm font-semibold">
+                    <span className="text-sm font-semibold text-secondary-200">
                         AI 분석
                     </span>
                     {isAnalyzing && (
                         <span
-                            className="bg-primary-400 inline-block h-1.5 w-1.5 animate-pulse rounded-full"
+                            className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary-400"
                             aria-hidden
                         />
                     )}
@@ -1001,7 +1001,7 @@ export function AnalysisPanel({
                     {analysis.analyzedAt && (
                         <time
                             dateTime={analysis.analyzedAt}
-                            className="text-secondary-400 text-xs whitespace-nowrap"
+                            className="text-xs whitespace-nowrap text-secondary-400"
                         >
                             {formatAnalyzedAt(analysis.analyzedAt)}
                         </time>
@@ -1042,7 +1042,7 @@ export function AnalysisPanel({
                         </button>
                     )}
                     {!hasLockedPartialDetail && (
-                        <div className="text-secondary-400 flex items-center gap-1.5 text-xs whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 text-xs whitespace-nowrap text-secondary-400">
                             <span>리스크</span>
                             <span
                                 className={cn(
@@ -1057,11 +1057,11 @@ export function AnalysisPanel({
                 </div>
             </div>
             {copyState === 'failed' && (
-                <p className="text-chart-bearish -mt-2 text-xs">
+                <p className="-mt-2 text-xs text-chart-bearish">
                     클립보드 복사에 실패했습니다. 브라우저 권한을 확인해 주세요.
                 </p>
             )}
-            <p className="text-secondary-500 font-mono text-xs">
+            <p className="font-mono text-xs text-secondary-500">
                 {/* free 티어는 스킬이 그룹당 소수만 샘플되어 감지 개수가 0일 수
                     있으므로, 오해를 주지 않도록 개수 세그먼트를 숨기고 인디케이터
                     적용 수만 노출한다. 회원가입 안내는 아래 업셀 카드가 담당한다. */}
@@ -1091,7 +1091,7 @@ export function AnalysisPanel({
                 // free 사용자의 진짜 summary는 direction과 함께 허용된 필드이므로
                 // 그대로 보여준다.
                 !isFallbackAnalysis(analysis) && (
-                    <MarkdownText className="text-secondary-300 text-sm">
+                    <MarkdownText className="text-sm text-secondary-300">
                         {analysis.summary}
                     </MarkdownText>
                 )
@@ -1105,7 +1105,7 @@ export function AnalysisPanel({
                     {/* free 티어의 상세 잠금 안내와 스킬 샘플 안내는 패널 하단의
                         단일 업셀 카드(아래)로 통합했다. 회원가입 CTA를 한 번만
                         노출해 중복을 없앤다. */}
-                    <div className="border-secondary-700 border-t" />
+                    <div className="border-t border-secondary-700" />
 
                     {!hasLockedActionDetail &&
                         analysis.actionRecommendation && (
@@ -1125,7 +1125,7 @@ export function AnalysisPanel({
                         keyLevels.poc !== undefined) && (
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center">
-                                <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                                <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
                                     주요 레벨
                                 </span>
                                 <KeyLevelsHeaderInfo />
@@ -1133,7 +1133,7 @@ export function AnalysisPanel({
                             <div className="grid grid-cols-2 gap-3">
                                 {resistanceLevels.length > 0 && (
                                     <div className="flex flex-col gap-1">
-                                        <span className="text-secondary-500 text-xs">
+                                        <span className="text-xs text-secondary-500">
                                             저항
                                         </span>
                                         {resistanceLevels.map(level => (
@@ -1141,7 +1141,7 @@ export function AnalysisPanel({
                                                 key={`resistance-${level.price}`}
                                                 className="flex flex-col"
                                             >
-                                                <span className="text-chart-bearish text-sm font-medium">
+                                                <span className="text-sm font-medium text-chart-bearish">
                                                     {level.price.toLocaleString(
                                                         undefined,
                                                         {
@@ -1150,7 +1150,7 @@ export function AnalysisPanel({
                                                         }
                                                     )}
                                                 </span>
-                                                <span className="text-secondary-600 inline-flex items-center text-xs">
+                                                <span className="inline-flex items-center text-xs text-secondary-600">
                                                     {level.reason}
                                                     <ConfluenceInfo
                                                         level={level}
@@ -1162,7 +1162,7 @@ export function AnalysisPanel({
                                 )}
                                 {supportLevels.length > 0 && (
                                     <div className="flex flex-col gap-1">
-                                        <span className="text-secondary-500 text-xs">
+                                        <span className="text-xs text-secondary-500">
                                             지지
                                         </span>
                                         {supportLevels.map(level => (
@@ -1170,7 +1170,7 @@ export function AnalysisPanel({
                                                 key={`support-${level.price}`}
                                                 className="flex flex-col"
                                             >
-                                                <span className="text-chart-bullish text-sm font-medium">
+                                                <span className="text-sm font-medium text-chart-bullish">
                                                     {level.price.toLocaleString(
                                                         undefined,
                                                         {
@@ -1179,7 +1179,7 @@ export function AnalysisPanel({
                                                         }
                                                     )}
                                                 </span>
-                                                <span className="text-secondary-600 inline-flex items-center text-xs">
+                                                <span className="inline-flex items-center text-xs text-secondary-600">
                                                     {level.reason}
                                                     <ConfluenceInfo
                                                         level={level}
@@ -1192,7 +1192,7 @@ export function AnalysisPanel({
                             </div>
                             {keyLevels.poc !== undefined && (
                                 <div className="flex flex-col">
-                                    <span className="text-secondary-500 text-xs">
+                                    <span className="text-xs text-secondary-500">
                                         PoC
                                     </span>
                                     <span className="text-sm font-medium">
@@ -1204,7 +1204,7 @@ export function AnalysisPanel({
                                             }
                                         )}
                                     </span>
-                                    <span className="text-secondary-600 text-xs">
+                                    <span className="text-xs text-secondary-600">
                                         {keyLevels.poc.reason}
                                     </span>
                                 </div>
@@ -1215,7 +1215,7 @@ export function AnalysisPanel({
                     {trendlines.length > 0 && (
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center justify-between">
-                                <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                                <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
                                     추세선
                                 </span>
                             </div>
@@ -1233,7 +1233,7 @@ export function AnalysisPanel({
                     {((priceTargets.bullish?.targets.length ?? 0) > 0 ||
                         (priceTargets.bearish?.targets.length ?? 0) > 0) && (
                         <div className="flex flex-col gap-2">
-                            <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                            <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
                                 가격 목표
                             </span>
                             <div className="grid grid-cols-2 gap-3">
@@ -1253,7 +1253,7 @@ export function AnalysisPanel({
 
                     {displayedIndicatorResults.length > 0 && (
                         <div className="flex flex-col gap-2">
-                            <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                            <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
                                 보조지표
                             </span>
                             <div className="flex flex-col gap-1.5">
@@ -1276,7 +1276,7 @@ export function AnalysisPanel({
                     )}
 
                     <div className="flex flex-col gap-2">
-                        <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                        <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
                             차트 패턴
                         </span>
                         {hasDetectedPatterns ? (
@@ -1290,7 +1290,7 @@ export function AnalysisPanel({
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-secondary-500 text-sm">
+                            <p className="text-sm text-secondary-500">
                                 감지된 패턴 없음
                             </p>
                         )}
@@ -1298,7 +1298,7 @@ export function AnalysisPanel({
 
                     {detectedStrategyResults.length > 0 && (
                         <div className="flex flex-col gap-2">
-                            <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                            <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
                                 전략
                             </span>
                             <div className="flex flex-col gap-1.5">
@@ -1317,17 +1317,17 @@ export function AnalysisPanel({
                         회원 전용 상세 항목 + 전체 스킬 수를 한 카드에 모아, 패널
                         하단에서 회원가입 CTA를 한 번만 노출한다(중복 제거). */}
                     {hasLockedDetails && (
-                        <div className="border-secondary-700 bg-secondary-800/40 flex flex-col items-center gap-3 rounded-lg border p-5 text-center">
+                        <div className="flex flex-col items-center gap-3 rounded-lg border border-secondary-700 bg-secondary-800/40 p-5 text-center">
                             <div className="flex flex-col gap-1.5">
-                                <p className="text-secondary-100 text-sm font-semibold text-balance">
+                                <p className="text-sm font-semibold text-balance text-secondary-100">
                                     더 깊은 분석이 궁금하신가요?
                                 </p>
-                                <p className="text-secondary-300 text-xs leading-relaxed text-balance">
+                                <p className="text-xs leading-relaxed text-balance text-secondary-300">
                                     {skillCount > 0
                                         ? `회원가입하면 ${skillCount}개 스킬을 모두 적용한 상세 분석을 받아볼 수 있어요.`
                                         : '회원가입하면 전체 스킬을 적용한 상세 분석을 받아볼 수 있어요.'}
                                 </p>
-                                <p className="text-secondary-400 text-xs leading-relaxed">
+                                <p className="text-xs leading-relaxed text-secondary-400">
                                     보조지표 심층 분석, 캔들 패턴, 핵심
                                     지지·저항 레벨, 매매 시나리오까지 담겨
                                     있어요.
@@ -1335,7 +1335,7 @@ export function AnalysisPanel({
                             </div>
                             <Link
                                 href="/signup"
-                                className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 rounded-md px-4 py-2 text-sm font-semibold text-white transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                                className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
                                 회원가입
                             </Link>

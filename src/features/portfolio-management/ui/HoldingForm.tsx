@@ -157,13 +157,13 @@ export function HoldingForm({
                                 errorField === 'symbol' && 'border-ui-danger'
                             )}
                         >
-                            <span className="text-secondary-100 text-sm font-semibold">
+                            <span className="text-sm font-semibold text-secondary-100">
                                 {symbol}
                             </span>
                             <button
                                 type="button"
                                 onClick={() => setSymbol('')}
-                                className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 -my-2 touch-manipulation rounded px-1 py-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                                className="-my-2 touch-manipulation rounded px-1 py-2 text-xs font-medium text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
                                 변경
                             </button>

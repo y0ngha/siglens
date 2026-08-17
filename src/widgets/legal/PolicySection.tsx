@@ -10,12 +10,12 @@ export function PolicySection({ id, title, children }: PolicySectionProps) {
     return (
         <section
             id={id}
-            className="border-secondary-800 scroll-mt-24 border-t pt-8"
+            className="scroll-mt-24 border-t border-secondary-800 pt-8"
         >
-            <h2 className="text-secondary-100 text-xl font-semibold">
+            <h2 className="text-xl font-semibold text-secondary-100">
                 {title}
             </h2>
-            <div className="text-secondary-300 mt-4 space-y-3 text-sm leading-relaxed sm:text-base">
+            <div className="mt-4 space-y-3 text-sm leading-relaxed text-secondary-300 sm:text-base">
                 {children}
             </div>
         </section>

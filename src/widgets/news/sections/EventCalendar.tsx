@@ -57,7 +57,7 @@ function EarningsReportComparison({ items }: EarningsReportComparisonProps) {
     return (
         <div className="space-y-3">
             <div className="flex flex-wrap items-end justify-between gap-2">
-                <div className="text-secondary-400 flex gap-3 text-xs">
+                <div className="flex gap-3 text-xs text-secondary-400">
                     <span className="inline-flex items-center gap-1">
                         <span className="h-2 w-2 rounded-full bg-emerald-400" />
                         실제
@@ -107,10 +107,10 @@ function EarningsReportCard({
     const surpriseBadge = getSurpriseBadge(item);
 
     return (
-        <article className="border-secondary-700 bg-secondary-800 rounded-lg border p-4">
+        <article className="rounded-lg border border-secondary-700 bg-secondary-800 p-4">
             <div className="flex min-h-10 items-start justify-between gap-3">
                 <div>
-                    <p className="text-secondary-400 text-xs">{statusLabel}</p>
+                    <p className="text-xs text-secondary-400">{statusLabel}</p>
                     <time
                         dateTime={item.earningsDate}
                         className="font-semibold tabular-nums"
@@ -119,7 +119,7 @@ function EarningsReportCard({
                     </time>
                 </div>
                 <div className="flex flex-wrap justify-end gap-1">
-                    <span className="border-secondary-600 text-secondary-300 rounded-full border px-2 py-0.5 text-xs">
+                    <span className="rounded-full border border-secondary-600 px-2 py-0.5 text-xs text-secondary-300">
                         {item.period === 'future' ? '예정' : '과거'}
                     </span>
                     {surpriseBadge !== null ? (
@@ -189,7 +189,7 @@ function MetricBars({
     return (
         <div className="space-y-2">
             <div className="flex items-center justify-between gap-3 text-xs">
-                <span className="text-secondary-300 font-medium">{label}</span>
+                <span className="font-medium text-secondary-300">{label}</span>
             </div>
             <div className="space-y-1.5">
                 <MetricBar
@@ -236,10 +236,10 @@ function MetricBar({
 
     return (
         <div className="grid grid-cols-[4.5rem_minmax(0,1fr)_4.5rem] items-center gap-2">
-            <span className="text-secondary-500 text-xs">{label}</span>
-            <div className="bg-secondary-900 relative h-2 rounded-full">
+            <span className="text-xs text-secondary-500">{label}</span>
+            <div className="relative h-2 rounded-full bg-secondary-900">
                 {signed ? (
-                    <span className="bg-secondary-600 absolute -top-0.5 -bottom-0.5 left-1/2 w-px" />
+                    <span className="absolute -top-0.5 -bottom-0.5 left-1/2 w-px bg-secondary-600" />
                 ) : null}
                 {value !== null ? (
                     <div
@@ -249,7 +249,7 @@ function MetricBar({
                     />
                 ) : null}
             </div>
-            <span className="text-secondary-400 text-right text-xs tabular-nums">
+            <span className="text-right text-xs text-secondary-400 tabular-nums">
                 {format(value)}
             </span>
         </div>

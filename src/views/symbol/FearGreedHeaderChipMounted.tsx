@@ -30,7 +30,7 @@ export function FearGreedHeaderChipMounted({
     if (!isHydrated) {
         return (
             <span
-                className="bg-secondary-700/40 inline-flex h-5 w-16 animate-pulse rounded"
+                className="inline-flex h-5 w-16 animate-pulse rounded bg-secondary-700/40"
                 aria-hidden="true"
             />
         );

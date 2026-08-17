@@ -45,11 +45,11 @@ export function FundamentalDegraded({
                 displayName={displayName}
                 generatedAt={snapshotGeneratedAt}
             />
-            <section className="border-secondary-800 bg-secondary-900/40 rounded-lg border px-5 py-8 text-center">
-                <p className="text-secondary-200 text-sm font-medium">
+            <section className="rounded-lg border border-secondary-800 bg-secondary-900/40 px-5 py-8 text-center">
+                <p className="text-sm font-medium text-secondary-200">
                     재무 데이터를 일시적으로 불러올 수 없어요
                 </p>
-                <p className="text-secondary-400 mt-2 text-sm leading-relaxed">
+                <p className="mt-2 text-sm leading-relaxed text-secondary-400">
                     외부 데이터 제공처가 잠시 응답하지 않고 있어요. 잠시 후 다시
                     방문하시면 PER·ROE·애널리스트 컨센서스를 보실 수 있습니다.
                 </p>

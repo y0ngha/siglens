@@ -26,11 +26,10 @@ import {
  * 1회 호출에 그치기 때문이다. 본 함수는 metadata와 본문이 같은 snapshot을 보는 degrade
  * 판정 동기화 요건 때문에 2회 호출되므로 React.cache 추가가 필요하다.
  */
-export const getEconomySnapshotStatic = cache(
-    (): Promise<EconomySnapshot> =>
-        unstable_cache(
-            () => getEconomySnapshot(),
-            ['economy-snapshot-static', ECONOMY_CONFIG_FINGERPRINT],
-            { revalidate: SECONDS_PER_DAY, tags: ['economy:snapshot'] }
-        )()
+export const getEconomySnapshotStatic = cache((): Promise<EconomySnapshot> =>
+    unstable_cache(
+        () => getEconomySnapshot(),
+        ['economy-snapshot-static', ECONOMY_CONFIG_FINGERPRINT],
+        { revalidate: SECONDS_PER_DAY, tags: ['economy:snapshot'] }
+    )()
 );

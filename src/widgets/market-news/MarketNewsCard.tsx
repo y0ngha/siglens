@@ -87,7 +87,7 @@ function TickerChips({ category, tickers }: TickerChipsProps) {
                         // docs/architecture/CDN_CACHING.md §1
                         prefetch={false}
                         data-testid="ticker-chip"
-                        className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 inline-flex min-h-6 min-w-6 items-center justify-center rounded px-1.5 py-0.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        className="inline-flex min-h-6 min-w-6 items-center justify-center rounded px-1.5 py-0.5 text-xs font-medium text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         {ticker}
                     </Link>
@@ -105,7 +105,7 @@ function TickerChips({ category, tickers }: TickerChipsProps) {
                 <span
                     key={ticker}
                     data-testid="ticker-chip"
-                    className="bg-secondary-700 text-secondary-300 rounded px-1.5 py-0.5 text-xs font-medium"
+                    className="rounded bg-secondary-700 px-1.5 py-0.5 text-xs font-medium text-secondary-300"
                 >
                     {ticker}
                 </span>
@@ -124,9 +124,9 @@ function AnalysisSkeleton() {
             aria-hidden="true"
             className="mt-1.5 flex flex-wrap items-center gap-2"
         >
-            <div className="bg-secondary-700 h-5 w-10 animate-pulse rounded motion-reduce:animate-none" />
-            <div className="bg-secondary-700 h-5 w-20 animate-pulse rounded motion-reduce:animate-none" />
-            <span className="text-secondary-400 text-xs">AI 분석 중…</span>
+            <div className="h-5 w-10 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
+            <div className="h-5 w-20 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
+            <span className="text-xs text-secondary-400">AI 분석 중…</span>
         </div>
     );
 }
@@ -135,8 +135,8 @@ function AnalysisSkeleton() {
 function SummarySkeletonLine() {
     return (
         <div aria-hidden="true" className="mt-2 space-y-1.5">
-            <div className="bg-secondary-700/70 h-3.5 w-full animate-pulse rounded motion-reduce:animate-none" />
-            <div className="bg-secondary-700/70 h-3.5 w-4/5 animate-pulse rounded motion-reduce:animate-none" />
+            <div className="h-3.5 w-full animate-pulse rounded bg-secondary-700/70 motion-reduce:animate-none" />
+            <div className="h-3.5 w-4/5 animate-pulse rounded bg-secondary-700/70 motion-reduce:animate-none" />
         </div>
     );
 }
@@ -176,17 +176,17 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
                         <ImpactBadge value={item.priceImpact} />
                     )}
                     {item.category !== null && (
-                        <span className="bg-secondary-700 text-secondary-300 rounded px-2 py-0.5 text-xs">
+                        <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-300">
                             {item.category}
                         </span>
                     )}
                     <time
                         dateTime={item.publishedAt}
-                        className="text-secondary-400 text-xs"
+                        className="text-xs text-secondary-400"
                     >
                         {publishedDate}
                     </time>
-                    <span translate="no" className="text-secondary-400 text-xs">
+                    <span translate="no" className="text-xs text-secondary-400">
                         {item.source}
                     </span>
                 </div>
@@ -199,21 +199,21 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
             bodySection={
                 <>
                     {item.bodyKo !== null && (
-                        <section className="border-secondary-700/70 mt-3 border-t pt-3">
-                            <h4 className="text-secondary-300 mb-1 text-xs font-semibold">
+                        <section className="mt-3 border-t border-secondary-700/70 pt-3">
+                            <h4 className="mb-1 text-xs font-semibold text-secondary-300">
                                 본문
                             </h4>
-                            <p className="text-secondary-400 text-sm leading-relaxed wrap-break-word">
+                            <p className="text-sm leading-relaxed wrap-break-word text-secondary-400">
                                 {item.bodyKo}
                             </p>
                         </section>
                     )}
                     {item.summaryKo !== null && (
-                        <section className="border-secondary-700/70 mt-3 border-t pt-3">
-                            <h4 className="text-secondary-300 mb-1 text-xs font-semibold">
+                        <section className="mt-3 border-t border-secondary-700/70 pt-3">
+                            <h4 className="mb-1 text-xs font-semibold text-secondary-300">
                                 요약
                             </h4>
-                            <p className="text-secondary-400 text-sm leading-relaxed wrap-break-word">
+                            <p className="text-sm leading-relaxed wrap-break-word text-secondary-400">
                                 {item.summaryKo}
                             </p>
                         </section>

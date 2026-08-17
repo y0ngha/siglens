@@ -95,7 +95,7 @@ export function AnalysisSettingsMenu({
                 {isActive && (
                     <span
                         aria-hidden="true"
-                        className="bg-primary-500 absolute -top-0.5 -right-0.5 size-1.5 rounded-full"
+                        className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-primary-500"
                     />
                 )}
             </button>
@@ -113,7 +113,7 @@ export function AnalysisSettingsMenu({
                 >
                     <h2
                         id={titleId}
-                        className="text-secondary-100 text-xs font-semibold tracking-wide"
+                        className="text-xs font-semibold tracking-wide text-secondary-100"
                     >
                         분석 설정
                     </h2>

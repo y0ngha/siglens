@@ -45,7 +45,7 @@ interface SignalBadgeProps {
 
 export function SignalBadge({ type }: SignalBadgeProps) {
     return (
-        <span className="text-secondary-300 text-[10px] tracking-wider uppercase">
+        <span className="text-[10px] tracking-wider text-secondary-300 uppercase">
             {SIGNAL_BADGE_LABELS[type]}
         </span>
     );

@@ -15,7 +15,7 @@ export function EmptySectionCard({ title }: EmptySectionCardProps) {
     return (
         <section
             aria-labelledby={headingId}
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2
                 id={headingId}
@@ -23,7 +23,7 @@ export function EmptySectionCard({ title }: EmptySectionCardProps) {
             >
                 {title}
             </h2>
-            <p className="text-secondary-400 text-sm">{EMPTY_MESSAGE}</p>
+            <p className="text-sm text-secondary-400">{EMPTY_MESSAGE}</p>
         </section>
     );
 }

@@ -104,7 +104,7 @@ export function EconomicIndicatorGrid({
         >
             <h2
                 id="economy-indicators-heading"
-                className="text-secondary-100 text-lg font-semibold"
+                className="text-lg font-semibold text-secondary-100"
             >
                 경제지표
             </h2>
@@ -158,7 +158,7 @@ function CategorySection({
 
     return (
         <div>
-            <h3 className="text-secondary-200 mb-3 text-base font-medium">
+            <h3 className="mb-3 text-base font-medium text-secondary-200">
                 {label}
             </h3>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -175,14 +175,14 @@ function IndicatorCard({ meta, series }: IndicatorCardProps) {
     const prev = series.previous;
     const delta = prev !== null ? latest.value - prev.value : null;
     return (
-        <article className="border-secondary-700 bg-secondary-800 rounded-xl border p-4">
-            <header className="text-secondary-300 mb-2 flex items-center gap-1 text-sm">
+        <article className="rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+            <header className="mb-2 flex items-center gap-1 text-sm text-secondary-300">
                 <span>{meta.label}</span>
                 <InfoTooltip>{meta.tooltip}</InfoTooltip>
             </header>
-            <div className="text-secondary-100 text-2xl font-semibold">
+            <div className="text-2xl font-semibold text-secondary-100">
                 {latest.value.toFixed(meta.precision)}
-                <span className="text-secondary-400 ml-1 text-sm">
+                <span className="ml-1 text-sm text-secondary-400">
                     {meta.unit}
                 </span>
             </div>
@@ -193,7 +193,7 @@ function IndicatorCard({ meta, series }: IndicatorCardProps) {
                     unit={meta.unit}
                 />
             )}
-            <p className="text-secondary-400 mt-1 text-xs">{latest.date}</p>
+            <p className="mt-1 text-xs text-secondary-400">{latest.date}</p>
         </article>
     );
 }
@@ -203,16 +203,16 @@ function TreasuryYieldCard({ snapshot, maturity }: TreasuryYieldCardProps) {
     if (value === null) return null;
     const { label, tooltip, unit } = TREASURY_CARD_META[maturity];
     return (
-        <article className="border-secondary-700 bg-secondary-800 rounded-xl border p-4">
-            <header className="text-secondary-300 mb-2 flex items-center gap-1 text-sm">
+        <article className="rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+            <header className="mb-2 flex items-center gap-1 text-sm text-secondary-300">
                 <span>{label}</span>
                 <InfoTooltip>{tooltip}</InfoTooltip>
             </header>
-            <div className="text-secondary-100 text-2xl font-semibold">
+            <div className="text-2xl font-semibold text-secondary-100">
                 {value.toFixed(TREASURY_YIELD_PRECISION)}
-                <span className="text-secondary-400 ml-1 text-sm">{unit}</span>
+                <span className="ml-1 text-sm text-secondary-400">{unit}</span>
             </div>
-            <p className="text-secondary-400 mt-1 text-xs">{snapshot.date}</p>
+            <p className="mt-1 text-xs text-secondary-400">{snapshot.date}</p>
         </article>
     );
 }
@@ -222,8 +222,8 @@ function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
     if (spread === null) return null;
     const positive = spread >= 0;
     return (
-        <article className="border-secondary-700 bg-secondary-800 rounded-xl border p-4">
-            <header className="text-secondary-300 mb-2 flex items-center gap-1 text-sm">
+        <article className="rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+            <header className="mb-2 flex items-center gap-1 text-sm text-secondary-300">
                 <span>2s10s 스프레드</span>
                 <InfoTooltip>
                     10년물 수익률에서 2년물을 뺀 값이에요. 마이너스가 되면
@@ -238,9 +238,9 @@ function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
             >
                 {positive ? '+' : ''}
                 {spread.toFixed(TREASURY_YIELD_PRECISION)}
-                <span className="text-secondary-400 ml-1 text-sm">%p</span>
+                <span className="ml-1 text-sm text-secondary-400">%p</span>
             </div>
-            <p className="text-secondary-400 mt-1 text-xs">{snapshot.date}</p>
+            <p className="mt-1 text-xs text-secondary-400">{snapshot.date}</p>
         </article>
     );
 }
@@ -251,7 +251,7 @@ function DeltaBadge({ delta, precision, unit }: DeltaBadgeProps) {
     const formatted = delta.toFixed(precision);
     if (parseFloat(formatted) === 0) {
         return (
-            <span className="text-secondary-400 mt-1 inline-block text-xs">
+            <span className="mt-1 inline-block text-xs text-secondary-400">
                 전기 대비 변화 없음
             </span>
         );
@@ -262,7 +262,7 @@ function DeltaBadge({ delta, precision, unit }: DeltaBadgeProps) {
     // green/red would be semantically wrong for indicators like CPI or
     // unemployment where rising values are not positive outcomes.
     return (
-        <span className="text-secondary-300 mt-1 inline-flex items-center gap-1 text-xs">
+        <span className="mt-1 inline-flex items-center gap-1 text-xs text-secondary-300">
             <svg
                 aria-hidden="true"
                 viewBox="0 0 10 10"

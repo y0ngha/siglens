@@ -35,9 +35,9 @@ export function MarketFearGreedPage({ view }: MarketFearGreedPageProps) {
 
     if (!snapshot) {
         return (
-            <div className="text-secondary-400 flex flex-col gap-2 py-6 text-sm">
+            <div className="flex flex-col gap-2 py-6 text-sm text-secondary-400">
                 <p>시장 공포·탐욕 지수를 계산할 데이터가 부족합니다.</p>
-                <p className="text-secondary-500 text-xs">
+                <p className="text-xs text-secondary-500">
                     데이터가 아직 충분히 쌓이지 않았을 수 있습니다. 잠시 후 다시
                     확인해주세요.
                 </p>
@@ -56,20 +56,20 @@ export function MarketFearGreedPage({ view }: MarketFearGreedPageProps) {
                     size="hero"
                     confidence={snapshot.confidence}
                 />
-                <p className="text-secondary-500 text-xs">
+                <p className="text-xs text-secondary-500">
                     {formatAsOf(snapshot.asOf)}
                 </p>
             </section>
 
             <section className="flex flex-col gap-3">
-                <h2 className="text-secondary-300 text-sm font-medium">
+                <h2 className="text-sm font-medium text-secondary-300">
                     기간별 비교
                 </h2>
                 <MarketFearGreedComparison comparisons={comparisons} />
             </section>
 
             <section className="flex flex-col gap-3">
-                <h2 className="text-secondary-300 text-sm font-medium">
+                <h2 className="text-sm font-medium text-secondary-300">
                     요인별 기여도
                 </h2>
                 {snapshot.factors.map(factor => (
@@ -80,7 +80,7 @@ export function MarketFearGreedPage({ view }: MarketFearGreedPageProps) {
                 ))}
             </section>
 
-            <footer className="text-secondary-500 flex flex-col gap-1 text-xs">
+            <footer className="flex flex-col gap-1 text-xs text-secondary-500">
                 <p>{CNN_DIFFERENCE_NOTE}</p>
                 <p>
                     {formatConfidenceFooter(

@@ -44,11 +44,10 @@ export const PEER_LIMIT = 10;
 export class CachedFundamentalProvider implements FundamentalProviderWithRawPeers {
     constructor(private readonly inner: FundamentalProvider) {}
 
-    getProfile = cache(
-        (symbol: string): Promise<FundamentalProfile | null> =>
-            getOrSetCache(`fundamental:profile:${sym(symbol)}`, TTL, () =>
-                this.inner.getProfile(symbol)
-            )
+    getProfile = cache((symbol: string): Promise<FundamentalProfile | null> =>
+        getOrSetCache(`fundamental:profile:${sym(symbol)}`, TTL, () =>
+            this.inner.getProfile(symbol)
+        )
     );
 
     /**
@@ -123,11 +122,10 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
             )
     );
 
-    getGrades = cache(
-        (symbol: string): Promise<GradesEvent[]> =>
-            getOrSetCache(`fundamental:grades:${sym(symbol)}`, TTL, () =>
-                this.inner.getGrades(symbol)
-            )
+    getGrades = cache((symbol: string): Promise<GradesEvent[]> =>
+        getOrSetCache(`fundamental:grades:${sym(symbol)}`, TTL, () =>
+            this.inner.getGrades(symbol)
+        )
     );
 
     getGradesConsensus = cache(
@@ -169,33 +167,32 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
      * accumulator를 잇는 async reduce — 다음 peer fetch는 직전 peer 완료 후에만 시작), 비정상
      * 적으로 큰 peer 목록은 PEER_LIMIT으로 제한한다.
      */
-    getStockPeers = cache(
-        (symbol: string): Promise<FundamentalPeerInput[]> =>
-            getOrSetCache(`fundamental:peers:${sym(symbol)}`, TTL, async () => {
-                const raw = await this.inner.getStockPeers(symbol);
-                return raw
-                    .slice(0, PEER_LIMIT)
-                    .reduce(
-                        async (
-                            accPromise: Promise<FundamentalPeerInput[]>,
-                            peer
-                        ) => {
-                            const acc = await accPromise;
-                            const metrics = await this.getKeyMetricsTtm(
-                                peer.symbol
-                            );
-                            return [
-                                ...acc,
-                                {
-                                    ...peer,
-                                    per: metrics?.peRatioTTM ?? null,
-                                    psr: metrics?.priceToSalesRatioTTM ?? null,
-                                },
-                            ];
-                        },
-                        Promise.resolve<FundamentalPeerInput[]>([])
-                    );
-            })
+    getStockPeers = cache((symbol: string): Promise<FundamentalPeerInput[]> =>
+        getOrSetCache(`fundamental:peers:${sym(symbol)}`, TTL, async () => {
+            const raw = await this.inner.getStockPeers(symbol);
+            return raw
+                .slice(0, PEER_LIMIT)
+                .reduce(
+                    async (
+                        accPromise: Promise<FundamentalPeerInput[]>,
+                        peer
+                    ) => {
+                        const acc = await accPromise;
+                        const metrics = await this.getKeyMetricsTtm(
+                            peer.symbol
+                        );
+                        return [
+                            ...acc,
+                            {
+                                ...peer,
+                                per: metrics?.peRatioTTM ?? null,
+                                psr: metrics?.priceToSalesRatioTTM ?? null,
+                            },
+                        ];
+                    },
+                    Promise.resolve<FundamentalPeerInput[]>([])
+                );
+        })
     );
 
     /**

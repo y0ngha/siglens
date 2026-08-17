@@ -83,7 +83,7 @@ export function NewsFactsSummary({
     return (
         <section
             aria-labelledby="news-facts-summary-heading"
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-5"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-5"
         >
             <h2
                 id="news-facts-summary-heading"
@@ -93,13 +93,13 @@ export function NewsFactsSummary({
             </h2>
 
             {items.length === 0 ? (
-                <p className="text-secondary-300 mt-3 text-sm leading-relaxed">
+                <p className="mt-3 text-sm leading-relaxed text-secondary-300">
                     {displayName} 최신 뉴스 데이터가 아직 준비되지 않았습니다.
                     뉴스 카드가 분석되면 최근 기사와 분위기 요약이 이 영역에
                     표시됩니다.
                 </p>
             ) : (
-                <div className="text-secondary-300 mt-3 space-y-3 text-sm leading-relaxed">
+                <div className="mt-3 space-y-3 text-sm leading-relaxed text-secondary-300">
                     <p>
                         {displayName} ({symbol}) 페이지는 최근 뉴스{' '}
                         {items.length}건을 표시합니다.
@@ -122,7 +122,7 @@ export function NewsFactsSummary({
 
                     {headlines.length > 0 ? (
                         <div>
-                            <h3 className="text-secondary-200 text-sm font-semibold">
+                            <h3 className="text-sm font-semibold text-secondary-200">
                                 최근 기사 제목
                             </h3>
                             <ol className="mt-2 list-decimal space-y-1 pl-5">

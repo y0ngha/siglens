@@ -54,7 +54,7 @@ export function AdBanner({ isFreeUser, slot }: AdBannerProps) {
                 data-ad-format="auto"
                 data-full-width-responsive="true"
             />
-            <p className="text-secondary-400 text-center text-xs leading-relaxed">
+            <p className="text-center text-xs leading-relaxed text-secondary-400">
                 {SUPPORT_MESSAGE[slot]}
             </p>
         </div>

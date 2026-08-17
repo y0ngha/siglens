@@ -35,7 +35,7 @@ export function SharePreparingModal({
     if (!open) return null;
 
     return (
-        <div className="bg-secondary-950/80 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-secondary-950/80 p-4 backdrop-blur-sm">
             <div
                 ref={dialogRef}
                 role="dialog"
@@ -43,12 +43,12 @@ export function SharePreparingModal({
                 aria-labelledby="share-preparing-modal-title"
                 aria-busy={phase === 'pending' ? 'true' : undefined}
                 tabIndex={-1}
-                className="border-secondary-700 bg-secondary-800 w-full max-w-sm rounded-xl border shadow-2xl outline-none"
+                className="w-full max-w-sm rounded-xl border border-secondary-700 bg-secondary-800 shadow-2xl outline-none"
             >
-                <div className="border-secondary-700 flex items-center justify-between border-b px-5 py-4">
+                <div className="flex items-center justify-between border-b border-secondary-700 px-5 py-4">
                     <h2
                         id="share-preparing-modal-title"
-                        className="text-secondary-100 text-sm font-semibold"
+                        className="text-sm font-semibold text-secondary-100"
                     >
                         {phase === 'pending' ? '분석 준비 중' : '분석 실패'}
                     </h2>
@@ -56,7 +56,7 @@ export function SharePreparingModal({
                         type="button"
                         onClick={onClose}
                         aria-label="닫기"
-                        className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 touch-manipulation rounded p-1 transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                        className="touch-manipulation rounded p-1 text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         ✕
                     </button>
@@ -65,36 +65,36 @@ export function SharePreparingModal({
                 <div className="flex flex-col items-center gap-4 px-5 py-6">
                     {phase === 'pending' ? (
                         <>
-                            <SpinnerIcon className="text-primary-500 h-8 w-8" />
+                            <SpinnerIcon className="h-8 w-8 text-primary-500" />
                             <div
                                 aria-live="polite"
                                 className="flex flex-col items-center gap-1 text-center"
                             >
-                                <p className="text-secondary-200 text-sm">
+                                <p className="text-sm text-secondary-200">
                                     AI가 분석 결과를 준비하고 있어요&hellip;
                                 </p>
-                                <p className="text-secondary-500 text-xs">
+                                <p className="text-xs text-secondary-500">
                                     보통 10–30초면 끝나요
                                 </p>
                             </div>
                         </>
                     ) : (
                         <>
-                            <p className="text-secondary-300 text-center text-sm">
+                            <p className="text-center text-sm text-secondary-300">
                                 분석을 끝내지 못했어요. 다시 시도할까요?
                             </p>
                             <div className="flex w-full flex-col gap-2">
                                 <button
                                     type="button"
                                     onClick={onRetry}
-                                    className="bg-primary-600 hover:bg-primary-500 focus-visible:ring-primary-500 text-secondary-50 flex h-9 touch-manipulation items-center justify-center rounded-lg px-4 text-sm font-medium transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                                    className="flex h-9 touch-manipulation items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-medium text-secondary-50 transition-colors hover:bg-primary-500 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
                                     다시 시도
                                 </button>
                                 <button
                                     type="button"
                                     onClick={onClose}
-                                    className="text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 border-secondary-700 flex h-9 touch-manipulation items-center justify-center rounded-lg border px-4 text-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                                    className="flex h-9 touch-manipulation items-center justify-center rounded-lg border border-secondary-700 px-4 text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
                                     닫기
                                 </button>

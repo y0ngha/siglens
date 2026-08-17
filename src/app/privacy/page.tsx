@@ -76,13 +76,13 @@ const bottomNotice = (
     <div
         role="note"
         aria-label="투자 면책 고지"
-        className="border-secondary-800 bg-secondary-900/40 mt-12 rounded-lg border p-5"
+        className="mt-12 rounded-lg border border-secondary-800 bg-secondary-900/40 p-5"
     >
-        <p className="text-secondary-400 text-xs leading-relaxed sm:text-sm">
+        <p className="text-xs leading-relaxed text-secondary-400 sm:text-sm">
             {INVESTMENT_DISCLAIMER} 서비스 이용과 관련한 자세한 조건은&nbsp;
             <Link
                 href={TERMS_PATH}
-                className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                className="rounded-sm text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
                 {TERMS_TITLE}
             </Link>

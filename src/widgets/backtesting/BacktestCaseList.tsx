@@ -18,7 +18,7 @@ interface MonthGroup {
 export function BacktestCaseList({ cases }: BacktestCaseListProps) {
     if (cases.length === 0) {
         return (
-            <p className="text-secondary-500 py-10 text-center text-sm">
+            <p className="py-10 text-center text-sm text-secondary-500">
                 해당 종목의 케이스가 없습니다.
             </p>
         );
@@ -37,7 +37,7 @@ export function BacktestCaseList({ cases }: BacktestCaseListProps) {
         <div className="flex flex-col gap-2 px-4 pb-6">
             {groups.map(group => (
                 <div key={group.label}>
-                    <div className="text-secondary-600 pt-3 pb-1 text-[10px] tracking-widest uppercase">
+                    <div className="pt-3 pb-1 text-[10px] tracking-widest text-secondary-600 uppercase">
                         {group.label}
                     </div>
                     <div className="flex flex-col gap-2">

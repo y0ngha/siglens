@@ -34,29 +34,29 @@ export function HowItWorks({ skillCounts }: HowItWorksProps) {
     ];
     return (
         <section className="px-6 py-10 lg:px-[15vw]">
-            <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-wider uppercase">
+            <h2 className="mb-6 text-sm font-semibold tracking-wider text-secondary-200 uppercase">
                 이용 방법
             </h2>
             <div className="flex flex-col gap-4 md:flex-row">
                 {STEPS.map((step, idx) => (
                     <Fragment key={step.number}>
-                        <div className="bg-secondary-800/50 border-secondary-700 flex-1 rounded-lg border p-6">
+                        <div className="flex-1 rounded-lg border border-secondary-700 bg-secondary-800/50 p-6">
                             <span
                                 aria-hidden="true"
-                                className="text-primary-400/80 font-mono text-3xl leading-none font-bold"
+                                className="font-mono text-3xl leading-none font-bold text-primary-400/80"
                             >
                                 {step.number}
                             </span>
-                            <h3 className="text-secondary-200 mt-4 text-sm font-semibold tracking-wider uppercase">
+                            <h3 className="mt-4 text-sm font-semibold tracking-wider text-secondary-200 uppercase">
                                 {step.title}
                             </h3>
-                            <p className="text-secondary-400 mt-1 text-sm leading-relaxed">
+                            <p className="mt-1 text-sm leading-relaxed text-secondary-400">
                                 {step.description}
                             </p>
                         </div>
                         {idx < STEPS.length - 1 && (
                             <div
-                                className="text-secondary-600 hidden items-center text-xl md:flex"
+                                className="hidden items-center text-xl text-secondary-600 md:flex"
                                 aria-hidden="true"
                             >
                                 →

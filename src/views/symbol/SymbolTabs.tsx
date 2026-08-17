@@ -26,7 +26,7 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
     // Render a placeholder that matches the tab bar height/border so there is no
     // layout shift when the real tabs appear.
     if (assetInfo === undefined) {
-        return <div className="border-secondary-700 h-11 border-b" />;
+        return <div className="h-11 border-b border-secondary-700" />;
     }
 
     /**
@@ -47,7 +47,7 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
             // 각 탭 링크의 -mb-px가 1px 세로 오버플로를 만들어 모바일에서 원치 않는
             // 세로 스크롤(바)이 생긴다. overflow-y-hidden으로 세로 스크롤을 차단하고
             // 가로 스크롤만 유지한다.
-            className="border-secondary-700 flex overflow-x-auto overflow-y-hidden border-b"
+            className="flex overflow-x-auto overflow-y-hidden border-b border-secondary-700"
         >
             {tabs.map(t => {
                 const href = t.hrefBuilder(upper);

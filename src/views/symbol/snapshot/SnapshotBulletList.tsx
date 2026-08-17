@@ -41,7 +41,7 @@ export function SnapshotBulletList({
 
     return (
         <div>
-            <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
+            <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
                 {title}
             </h3>
             <ul

@@ -69,13 +69,13 @@ export function AiSummaryErrorSection({
             >
                 {heading}
             </h2>
-            <p className="text-ui-danger-text text-sm" role="alert">
+            <p className="text-sm text-ui-danger-text" role="alert">
                 {message}
             </p>
             <button
                 type="button"
                 onClick={resetErrorBoundary}
-                className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-800 mt-4 inline-flex min-h-11 items-center rounded px-3 py-2 text-xs text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                className="mt-4 inline-flex min-h-11 items-center rounded bg-primary-600 px-3 py-2 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
             >
                 다시 시도
             </button>

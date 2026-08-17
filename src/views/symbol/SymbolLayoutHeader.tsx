@@ -56,7 +56,7 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                         // 진입 심볼마다 다른 `_rsc` 해시로 `/`의 캐시를 파편화시킨다
                         // (docs/architecture/CDN_CACHING.md §1).
                         prefetch={false}
-                        className="text-secondary-400 hover:text-secondary-300 font-mono text-xs tracking-[0.2em] uppercase transition-colors"
+                        className="font-mono text-xs tracking-[0.2em] text-secondary-400 uppercase transition-colors hover:text-secondary-300"
                     >
                         SIGLENS
                     </Link>
@@ -68,7 +68,7 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                         살리고, 여기는 시각 스타일만 유지한 채 의미론적 위계에서는
                         제외한다. role 미부여(plain span)로 두면 layout banner 영역의
                         breadcrumb 정도로 처리되어 의도와 일치한다. */}
-                    <span className="text-secondary-100 truncate text-lg font-semibold tracking-wide">
+                    <span className="truncate text-lg font-semibold tracking-wide text-secondary-100">
                         {assetInfo?.koreanName && (
                             <span className="text-secondary-300">
                                 {assetInfo.koreanName}

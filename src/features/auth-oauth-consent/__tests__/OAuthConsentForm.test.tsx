@@ -141,8 +141,9 @@ describe('OAuthConsentForm', () => {
     it('updates agreed_privacy hidden input when privacy checkbox is clicked', async () => {
         const user = userEvent.setup();
         const { container } = render(<OAuthConsentForm {...baseProps} />);
-        const privacyCheckbox =
-            screen.getByLabelText(/개인정보 수집·이용 동의/);
+        const privacyCheckbox = screen.getByLabelText(
+            /개인정보 수집·이용 동의/
+        );
         await user.click(privacyCheckbox);
         const hiddenInput = container.querySelector(
             'input[name="agreed_privacy"]'

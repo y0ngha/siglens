@@ -65,7 +65,7 @@ function ChartSharePanel({
     return (
         <div className="flex flex-col gap-6">
             {chartBars !== undefined && chartBars.length > 0 && (
-                <div className="border-secondary-700 overflow-hidden rounded-lg border">
+                <div className="overflow-hidden rounded-lg border border-secondary-700">
                     <ShareCandlestickChart bars={chartBars} ticker={symbol} />
                 </div>
             )}

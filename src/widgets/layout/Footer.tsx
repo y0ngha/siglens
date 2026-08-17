@@ -14,17 +14,17 @@ import { Fragment } from 'react';
 
 export function Footer() {
     return (
-        <footer className="border-secondary-800 border-t">
+        <footer className="border-t border-secondary-800">
             <div className="flex flex-col gap-2 px-6 py-6 lg:px-[15vw]">
                 <div
                     role="note"
                     aria-label="투자 면책 고지"
-                    className="text-secondary-400 text-xs leading-relaxed sm:text-sm"
+                    className="text-xs leading-relaxed text-secondary-400 sm:text-sm"
                 >
                     {INVESTMENT_DISCLAIMER}
                 </div>
-                <div className="border-secondary-800 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
-                    <p className="text-secondary-400 text-sm">
+                <div className="flex flex-col items-center gap-3 border-secondary-800 sm:flex-row sm:justify-between">
+                    <p className="text-sm text-secondary-400">
                         © <CurrentYear /> Siglens
                     </p>
                     <nav
@@ -39,7 +39,7 @@ export function Footer() {
                                     // 페이지마다 다른 `_rsc` 해시를 만들어 캐시를 파편화시킨다
                                     // (docs/architecture/CDN_CACHING.md §1).
                                     prefetch={false}
-                                    className="text-secondary-400 hover:text-secondary-200 text-sm transition-colors"
+                                    className="text-sm text-secondary-400 transition-colors hover:text-secondary-200"
                                 >
                                     {item.label}
                                 </Link>
@@ -51,7 +51,7 @@ export function Footer() {
                             // 위 NAV_ITEMS와 동일 — 전역 푸터의 `_rsc` 파편화
                             // (docs/architecture/CDN_CACHING.md §1).
                             prefetch={false}
-                            className="text-secondary-400 hover:text-secondary-200 text-sm transition-colors"
+                            className="text-sm text-secondary-400 transition-colors hover:text-secondary-200"
                         >
                             {PRIVACY_TITLE}
                         </Link>
@@ -61,7 +61,7 @@ export function Footer() {
                             // 위 NAV_ITEMS와 동일 — 전역 푸터의 `_rsc` 파편화
                             // (docs/architecture/CDN_CACHING.md §1).
                             prefetch={false}
-                            className="text-secondary-400 hover:text-secondary-200 text-sm transition-colors"
+                            className="text-sm text-secondary-400 transition-colors hover:text-secondary-200"
                         >
                             {TERMS_TITLE}
                         </Link>

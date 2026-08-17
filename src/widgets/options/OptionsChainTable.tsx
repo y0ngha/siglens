@@ -119,8 +119,8 @@ export function OptionsChainTable({
 
     if (!chain || totalContracts === 0) {
         return (
-            <div className="border-secondary-700 bg-secondary-800 flex w-full items-center justify-between rounded-xl border p-4">
-                <span className="text-secondary-400 text-sm">
+            <div className="flex w-full items-center justify-between rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+                <span className="text-sm text-secondary-400">
                     ▸ 전체 옵션 chain 테이블 보기 (0 contracts)
                 </span>
             </div>
@@ -136,16 +136,16 @@ export function OptionsChainTable({
                 aria-expanded={expanded}
                 aria-controls="options-chain-table"
                 onClick={() => setExpanded(prev => !prev)}
-                className="border-secondary-700 bg-secondary-800 hover:border-primary-500 focus-visible:ring-primary-500 flex w-full cursor-pointer items-center justify-between rounded-xl border p-4 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                className="flex w-full cursor-pointer items-center justify-between rounded-xl border border-secondary-700 bg-secondary-800 p-4 transition-colors hover:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
-                <span className="text-secondary-200 text-sm">
+                <span className="text-sm text-secondary-200">
                     {headerLabel}
                 </span>
             </button>
 
             <div id="options-chain-table" hidden={!expanded}>
                 {expirationDate === 'all' && nearestExpiry && (
-                    <p className="text-secondary-500 mt-2 px-1 text-[10px]">
+                    <p className="mt-2 px-1 text-[10px] text-secondary-500">
                         전체 만기 합산 — 가장 가까운 만기({nearestExpiry}) 기준
                         으로 표시합니다. 다른 만기를 보려면 위 만기 버튼에서
                         선택해 주세요.
@@ -159,7 +159,7 @@ export function OptionsChainTable({
                             가격, OI, IV)
                         </caption>
 
-                        <thead className="text-secondary-400 border-secondary-700 border-b text-xs tracking-widest uppercase">
+                        <thead className="border-b border-secondary-700 text-xs tracking-widest text-secondary-400 uppercase">
                             <tr>
                                 <th scope="col" className="px-3 py-2 text-left">
                                     Strike{' '}
@@ -224,7 +224,7 @@ export function OptionsChainTable({
                                             isAtm && 'bg-primary-500/10'
                                         )}
                                     >
-                                        <td className="text-secondary-200 px-3 py-1.5 text-left font-mono whitespace-nowrap tabular-nums">
+                                        <td className="px-3 py-1.5 text-left font-mono whitespace-nowrap text-secondary-200 tabular-nums">
                                             {formatStrike(strike)}
                                             {isMaxPain && (
                                                 <>
@@ -239,7 +239,7 @@ export function OptionsChainTable({
                                             )}
                                         </td>
 
-                                        <td className="text-secondary-300 px-3 py-1.5 text-right font-mono whitespace-nowrap tabular-nums">
+                                        <td className="px-3 py-1.5 text-right font-mono whitespace-nowrap text-secondary-300 tabular-nums">
                                             {call
                                                 ? formatBidAsk(
                                                       call.bid,
@@ -248,13 +248,13 @@ export function OptionsChainTable({
                                                 : '—'}
                                         </td>
 
-                                        <td className="text-secondary-300 px-3 py-1.5 text-right">
+                                        <td className="px-3 py-1.5 text-right text-secondary-300">
                                             {call
                                                 ? formatOi(call.openInterest)
                                                 : '—'}
                                         </td>
 
-                                        <td className="text-secondary-300 px-3 py-1.5 text-right">
+                                        <td className="px-3 py-1.5 text-right text-secondary-300">
                                             {call
                                                 ? formatIv(
                                                       call.impliedVolatility
@@ -262,19 +262,19 @@ export function OptionsChainTable({
                                                 : '—'}
                                         </td>
 
-                                        <td className="text-secondary-300 px-3 py-1.5 text-right font-mono whitespace-nowrap tabular-nums">
+                                        <td className="px-3 py-1.5 text-right font-mono whitespace-nowrap text-secondary-300 tabular-nums">
                                             {put
                                                 ? formatBidAsk(put.bid, put.ask)
                                                 : '—'}
                                         </td>
 
-                                        <td className="text-secondary-300 px-3 py-1.5 text-right">
+                                        <td className="px-3 py-1.5 text-right text-secondary-300">
                                             {put
                                                 ? formatOi(put.openInterest)
                                                 : '—'}
                                         </td>
 
-                                        <td className="text-secondary-300 px-3 py-1.5 text-right">
+                                        <td className="px-3 py-1.5 text-right text-secondary-300">
                                             {put
                                                 ? formatIv(
                                                       put.impliedVolatility

@@ -166,7 +166,7 @@ export function FinancialTrendChart({
                                         COLOR_CLASSES[c].legend
                                     )}
                                 />
-                                <span className="text-secondary-400 text-xs">
+                                <span className="text-xs text-secondary-400">
                                     {s.labelKo}
                                 </span>
                             </div>
@@ -176,7 +176,7 @@ export function FinancialTrendChart({
             )}
             {seriesCount === 1 && (
                 <div className="mb-1">
-                    <span className="text-secondary-400 text-xs">
+                    <span className="text-xs text-secondary-400">
                         {series[0].labelKo}
                     </span>
                 </div>
@@ -260,7 +260,7 @@ export function FinancialTrendChart({
 
             <div className="mt-1 flex justify-between">
                 {periods.map(p => (
-                    <span key={p} className="text-secondary-400 text-xs">
+                    <span key={p} className="text-xs text-secondary-400">
                         {p}
                     </span>
                 ))}
@@ -275,7 +275,7 @@ export function FinancialTrendChart({
                     // 접근성 트리에서 완전히 숨긴다. AT 사용자는 아래 StatementTable에서
                     // 동일 수치에 접근하고, 테스트는 data-testid로 조회한다.
                     aria-hidden="true"
-                    className="border-secondary-600 bg-secondary-900 pointer-events-none fixed top-[var(--tip-top)] left-[var(--tip-left)] z-50 rounded-md border px-3 py-2 text-xs shadow-lg"
+                    className="pointer-events-none fixed top-[var(--tip-top)] left-[var(--tip-left)] z-50 rounded-md border border-secondary-600 bg-secondary-900 px-3 py-2 text-xs shadow-lg"
                     style={
                         {
                             '--tip-left': `${hover.left}px`,
@@ -283,7 +283,7 @@ export function FinancialTrendChart({
                         } as CSSProperties
                     }
                 >
-                    <div className="text-secondary-300 mb-1 font-medium">
+                    <div className="mb-1 font-medium text-secondary-300">
                         {periods[hover.periodIdx]}
                     </div>
                     <ul className="space-y-0.5">

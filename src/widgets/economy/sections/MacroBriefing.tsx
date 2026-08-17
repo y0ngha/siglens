@@ -65,13 +65,13 @@ export function MacroBriefing({ peekSeed }: MacroBriefingProps) {
 function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
     return (
         <section
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
             aria-labelledby="macro-briefing-heading"
         >
             <header className="mb-4 flex items-center gap-3">
                 <h2
                     id="macro-briefing-heading"
-                    className="text-secondary-100 text-lg font-semibold"
+                    className="text-lg font-semibold text-secondary-100"
                 >
                     거시 브리핑
                 </h2>
@@ -84,11 +84,11 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
                     {REGIME_LABELS[briefing.regime]}
                 </span>
             </header>
-            <p className="text-secondary-200 mb-4 leading-relaxed whitespace-pre-line">
+            <p className="mb-4 leading-relaxed whitespace-pre-line text-secondary-200">
                 {briefing.summary}
             </p>
             {briefing.highlights.length > 0 && (
-                <ul className="text-secondary-300 space-y-1 text-sm">
+                <ul className="space-y-1 text-sm text-secondary-300">
                     {briefing.highlights.map((h, i) => (
                         // briefing 객체가 교체될 때 항목 수가 다르면 index key는
                         // 잘못된 reconciliation을 유발한다 — content+index 결합으로 stable화.
@@ -103,7 +103,7 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
                 </ul>
             )}
             {generatedAt !== null && (
-                <p className="text-secondary-400 mt-3 text-xs">
+                <p className="mt-3 text-xs text-secondary-400">
                     생성 시각: {new Date(generatedAt).toLocaleString('ko-KR')}
                 </p>
             )}
@@ -114,13 +114,13 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
 function MacroBriefingSkeleton() {
     return (
         <section
-            className="border-secondary-700 bg-secondary-800 animate-pulse rounded-xl border p-6 motion-reduce:animate-none"
+            className="animate-pulse rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
             aria-busy="true"
             aria-label="거시 경제 브리핑 로딩 중"
         >
-            <div className="bg-secondary-700 mb-3 h-6 w-32 rounded" />
-            <div className="bg-secondary-700 mb-2 h-4 w-full rounded" />
-            <div className="bg-secondary-700 h-4 w-4/5 rounded" />
+            <div className="mb-3 h-6 w-32 rounded bg-secondary-700" />
+            <div className="mb-2 h-4 w-full rounded bg-secondary-700" />
+            <div className="h-4 w-4/5 rounded bg-secondary-700" />
         </section>
     );
 }
@@ -128,7 +128,7 @@ function MacroBriefingSkeleton() {
 function MacroBriefingBotBlocked() {
     return (
         <section
-            className="border-secondary-700 bg-secondary-800 text-secondary-300 rounded-xl border p-6 text-sm"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6 text-sm text-secondary-300"
             aria-label="거시 경제 브리핑 안내"
         >
             크롤러 접근으로 분석을 생성하지 않았어요.
@@ -139,18 +139,18 @@ function MacroBriefingBotBlocked() {
 function MacroBriefingError({ onRetry }: MacroBriefingErrorProps) {
     return (
         <section
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
             role="alert"
             aria-label="거시 경제 브리핑 안내"
         >
-            <p className="text-secondary-300 text-sm">
+            <p className="text-sm text-secondary-300">
                 지금은 거시 브리핑을 만들지 못했어요. 잠시 후 다시 시도해
                 주세요.
             </p>
             <button
                 type="button"
                 onClick={onRetry}
-                className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-800 mt-4 inline-flex min-h-11 items-center rounded px-3 py-2 text-xs text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                className="mt-4 inline-flex min-h-11 items-center rounded bg-primary-600 px-3 py-2 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
             >
                 다시 시도
             </button>

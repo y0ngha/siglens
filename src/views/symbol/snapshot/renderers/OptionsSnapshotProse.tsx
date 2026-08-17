@@ -179,16 +179,16 @@ export function OptionsSnapshotProse({
             displayName={displayName}
             asOf={generatedAt}
         >
-            <div className="text-secondary-300 space-y-4 text-sm leading-6">
+            <div className="space-y-4 text-sm leading-6 text-secondary-300">
                 {narrowed.summary.length > 0 && (
-                    <p className="text-secondary-200 font-medium">
+                    <p className="font-medium text-secondary-200">
                         {narrowed.summary}
                     </p>
                 )}
 
                 {narrowed.perExpiration.length > 0 && (
                     <div>
-                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
+                        <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
                             만기별 해석
                         </h3>
                         <ul
@@ -198,7 +198,7 @@ export function OptionsSnapshotProse({
                         >
                             {narrowed.perExpiration.map((item, i) => (
                                 <li key={`${item.expirationDate}-${i}`}>
-                                    <span className="text-secondary-200 font-medium">
+                                    <span className="font-medium text-secondary-200">
                                         {item.expirationDate}
                                         {item.tone !== null &&
                                             ` (${TONE_LABEL[item.tone]})`}
@@ -212,7 +212,7 @@ export function OptionsSnapshotProse({
 
                 {narrowed.signals.length > 0 && (
                     <div>
-                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
+                        <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
                             시그널
                         </h3>
                         <ul
