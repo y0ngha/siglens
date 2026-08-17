@@ -7,10 +7,13 @@ import {
 } from '@y0ngha/siglens-core';
 import { getMarketDataProvider } from './getMarketDataProvider';
 import { CachedMarketDataProvider } from './CachedMarketDataProvider';
+import { KR_EQUITY_SESSION } from './sessionSpecFor';
+import { YahooMarketProvider } from '@/shared/api/yahoo/YahooMarketProvider';
 import { isE2E } from '@/shared/api/e2eEnv';
 
 let cached: MarketDataProvider | null = null;
 let cachedCrypto: MarketDataProvider | null = null;
+let cachedKrEquity: MarketDataProvider | null = null;
 
 /**
  * 분석/차트 경로 전용 Redis 캐시 provider(싱글톤).
@@ -28,6 +31,16 @@ export function getCachedMarketDataProvider(
     session: MarketSessionSpec = US_EQUITY_SESSION
 ): MarketDataProvider {
     if (isE2E()) return getMarketDataProvider();
+    if (session === KR_EQUITY_SESSION) {
+        // FMP 플랜에 KRX가 포함되지 않아 provider 자체가 다르다 — 크립토가 세션만
+        // 바꿔 같은 FmpMarketProvider를 감싸는 것과 다른 지점이다.
+        if (cachedKrEquity !== null) return cachedKrEquity;
+        cachedKrEquity = new CachedMarketDataProvider(
+            new YahooMarketProvider(),
+            KR_EQUITY_SESSION
+        );
+        return cachedKrEquity;
+    }
     if (session === CRYPTO_SESSION) {
         if (cachedCrypto !== null) return cachedCrypto;
         cachedCrypto = new CachedMarketDataProvider(

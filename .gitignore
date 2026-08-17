@@ -93,6 +93,9 @@ next-env.d.ts
 !/scripts/seedIndicatorTranslationsBatch.ts
 # Plan 1: FMP cryptocurrency-list sync script.
 !/scripts/seed-crypto-assets.ts
+# 한국 상장 종목 한글명 시드(공공데이터포털). package.json의 `db:seed:kr-names`가
+# 이 파일을 실행하므로 추적하지 않으면 fresh checkout에서 스크립트가 사라진다.
+!/scripts/seed-kr-listed-names.ts
 # Tracked because scripts/__tests__/ imports them — untracking these two while
 # keeping their test files broke every fresh checkout and CI run.
 !/scripts/seed-crypto-korean-names.ts

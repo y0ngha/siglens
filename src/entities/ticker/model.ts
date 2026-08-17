@@ -13,7 +13,7 @@ export interface TranslatorEntry {
     name: string;
 }
 
-/** Resolved Gemini-translator config. */
+/** Resolved DeepSeek-translator config (see `lib/config.ts`). */
 export interface TranslatorConfig {
     apiKey: string;
     model: string;

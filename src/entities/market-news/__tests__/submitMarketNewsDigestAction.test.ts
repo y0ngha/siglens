@@ -46,6 +46,7 @@ vi.mock('@/entities/news-article', async orig => ({
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { isBot } from '@/shared/api/isBot';
 import * as core from '@y0ngha/siglens-core';
+import { DEFAULT_DIGEST_MODEL_ID } from '../lib/marketNewsConstants';
 
 // 3. 테스트
 
@@ -96,6 +97,37 @@ describe('submitMarketNewsDigestAction은', () => {
         // 사람 경로에서 enqueue를 차단하면 안 된다.
         expect(core.runMarketNewsDigest).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: false })
+        );
+    });
+
+    it('추론을 켜고 DeepSeek 기본 모델로 core를 호출한다', async () => {
+        // `reasoning: true`는 모델 스펙을 오버라이드한다 — 스펙상 non-thinking인
+        // deepseek-v4-flash에서도 추론이 켜져야 Gemini 시절 동작(spec
+        // thinkingBudget 8192 = 추론 ON)과 같은 깊이가 유지된다. 이 단언이
+        // 없으면 모델만 갈아끼웠을 때 다이제스트 추론이 조용히 꺼진다.
+        vi.mocked(isBot).mockReturnValue(false);
+        vi.mocked(core.runMarketNewsDigest).mockResolvedValue({
+            status: 'done',
+            result: {
+                currentDriverKo: '흐름',
+                keyEventsKo: [],
+                upcomingEventsKo: [],
+                overallSentiment: 'bullish',
+            },
+        });
+
+        const { submitMarketNewsDigestAction } =
+            await import('../actions/submitMarketNewsDigestAction');
+        await submitMarketNewsDigestAction('crypto');
+
+        expect(core.runMarketNewsDigest).toHaveBeenCalledWith(
+            expect.objectContaining({
+                reasoning: true,
+                modelId: DEFAULT_DIGEST_MODEL_ID,
+            })
+        );
+        expect(core.MODEL_SPECS[DEFAULT_DIGEST_MODEL_ID].provider).toBe(
+            'deepseek'
         );
     });
 

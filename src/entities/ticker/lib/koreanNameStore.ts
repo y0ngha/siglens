@@ -1,6 +1,7 @@
 import { tryGetTickerDatabaseClient } from './db';
 import { KOREAN_NAMES_CACHE_TTL, KOREAN_TICKERS_CACHE_KEY } from './cacheKeys';
 import { createCacheProvider, type CacheProvider } from '@y0ngha/siglens-core';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/shared/lib/types';
 import { DrizzleKoreanTickerRepository } from '../api';
 import type { KoreanTickerRepository } from '@/shared/db/types';
@@ -14,6 +15,12 @@ function koreanEntryToSearchResult(
         koreanName: entry.koreanName,
         exchange: entry.exchange,
         exchangeFullName: entry.exchangeFullName,
+        // `korean_tickers`는 미국·한국 종목을 함께 담는다(크립토만 별도 테이블). 행 자체에는
+        // 프로필 컬럼이 없으므로 심볼 형상으로 판정한다 — 이게 없으면 한글 검색으로 찾은
+        // 한국 종목이 us-equity로 표시된다.
+        ...(isKrEquitySymbol(entry.symbol)
+            ? { marketProfile: 'kr-equity' as const }
+            : {}),
     };
 }
 

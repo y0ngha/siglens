@@ -1,4 +1,8 @@
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile';
+import { fetchKrEquityQuoteName } from './krEquityQuoteName';
+import { krExchangeOf } from './krExchange';
+import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
 import { DrizzleAssetTranslationRepository } from '../api';
 import { getCryptoAsset } from './cryptoAssetStore';
 import { fetchCryptoQuoteName } from './cryptoQuoteName';
@@ -119,7 +123,7 @@ async function persistTranslation(
     );
 }
 
-/** Single-flight registry for fire-and-forget translate-and-persist work; collapses concurrent calls for the same symbol into one Gemini request. */
+/** Single-flight registry for fire-and-forget translate-and-persist work; collapses concurrent calls for the same symbol into one translation request. */
 const translationSingleFlight = createSingleFlight<void>();
 
 function translateAndPersist(
@@ -155,6 +159,72 @@ function translateAndPersist(
             cache
         );
     });
+}
+
+/**
+ * 한국 상장 종목의 AssetInfo를 yahoo quote로 해석한다.
+ *
+ * 미국 주식 경로(FMP `searchBySymbol` → `findExactUsMatch` → 번역)와 같은 형태를
+ * 유지한다 — 조회 소스만 yahoo다. 덕분에 한글명은 신규 코드 없이 기존
+ * `translateCompanyNames` 경로로 채워지고, 그 부산물로 `korean_tickers`에
+ * 행이 생겨 **한글 검색까지 자동으로 동작한다**(`searchByKoreanName`). 별도의
+ * 한국 종목 마스터 테이블이 필요하지 않은 이유다.
+ *
+ * quote가 없으면 `null`을 반환해 호출부의 `notFound()`가 동작한다 — 형상만 맞는
+ * 가짜 티커(`999999.KS`)가 빈 페이지로 렌더되지 않게 하는 지점이다.
+ */
+async function resolveKrEquityAssetInfo(
+    upper: string,
+    cache: CacheProvider | null
+): Promise<AssetInfo | null> {
+    const name = await fetchKrEquityQuoteName(upper);
+    if (name === null) return null;
+
+    const koreanNames = await getKoreanNames([upper]);
+    // 큐레이션 카탈로그를 fallback으로 둔다 — ISR이 첫 렌더를 캐시에 굳히므로, lazy 번역이
+    // 끝나기를 기다리면 대표 종목의 SEO 제목이 revalidate 주기 내내 영문으로 남는다.
+    const koreanName = koreanNames[upper] ?? CURATED_KOREAN_NAMES.get(upper);
+
+    const info: AssetInfo = {
+        symbol: upper,
+        name,
+        marketProfile: 'kr-equity',
+        ...(koreanName && { koreanName }),
+    };
+
+    if (koreanName) {
+        fireAndForget(
+            persistTranslation(upper, upper, name, koreanName, cache).catch(e =>
+                console.warn('[getAssetInfo] kr persist failed', e)
+            )
+        );
+        return info;
+    }
+
+    const exchange = krExchangeOf(upper);
+    fireAndForget(
+        translateAndPersist(
+            upper,
+            {
+                symbol: upper,
+                name,
+                exchange: exchange.code,
+                exchangeFullName: exchange.fullName,
+            },
+            cache
+        ).catch(e =>
+            console.warn('[getAssetInfo] kr background translation failed', e)
+        )
+    );
+
+    setCacheBestEffort(
+        cache,
+        buildAssetInfoCacheKey(upper),
+        info,
+        ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN
+    );
+
+    return info;
 }
 
 /** Test helper — clears the in-flight registry between cases. */
@@ -241,6 +311,13 @@ export async function getAssetInfo(symbol: string): Promise<AssetInfo | null> {
             ASSET_INFO_CACHE_TTL_WITH_KOREAN
         );
         return fromDb;
+    }
+
+    // 한국 상장 종목은 FMP 플랜이 커버하지 않으므로 아래 `searchBySymbol` 경로로 내려가면
+    // 반드시 빈 결과 → null(=404)로 끝난다. DB 조회 뒤, FMP 조회 앞에 둬야 이미 번역된
+    // 레코드는 DB에서 잡히고(yahoo 호출 0회), 신규 심볼만 yahoo로 이름을 해석한다.
+    if (isKrEquitySymbol(upper)) {
+        return resolveKrEquityAssetInfo(upper, cache);
     }
 
     const fmpResults = await searchBySymbol(upper, {

@@ -16,6 +16,7 @@ import {
     setKoreanTickers,
 } from './koreanNameStore';
 import { searchCryptoAssets } from './cryptoAssetStore';
+import { searchKrEquity } from './krEquitySearch';
 import { rankByRelevance } from './searchRelevance';
 import { fireAndForget, type BackgroundTaskOptions } from './backgroundTask';
 import { createSingleFlight } from './utils/singleFlight';
@@ -42,7 +43,7 @@ function toKoreanEntry(
     ];
 }
 
-/** Single-flight registry keyed by sorted-symbol list; collapses concurrent identical search queries into one Gemini call. */
+/** Single-flight registry keyed by sorted-symbol list; collapses concurrent identical search queries into one translation call. */
 const translationSingleFlight = createSingleFlight<void>();
 
 function buildInFlightKey(symbols: readonly string[]): string {
@@ -109,16 +110,21 @@ export async function searchTicker(
         }
     }
 
-    const [symbolResults, nameResults, cryptoResults] = await Promise.all([
-        searchBySymbol(trimmed),
-        searchByName(trimmed),
-        searchCryptoAssets(trimmed),
-    ]);
+    const [symbolResults, nameResults, cryptoResults, krResults] =
+        await Promise.all([
+            searchBySymbol(trimmed),
+            searchByName(trimmed),
+            searchCryptoAssets(trimmed),
+            // 종목코드 형상 쿼리에만 yahoo를 태운다 — 그 외에는 즉시 빈 배열이라
+            // 미국 종목 검색에 지연이 붙지 않는다(krEquitySearch.ts 참조).
+            searchKrEquity(trimmed).catch((): TickerSearchResult[] => []),
+        ]);
 
     const merged = deduplicateResults([
         ...filterUsExchanges(symbolResults).map(toTickerSearchResult),
         ...filterUsExchanges(nameResults).map(toTickerSearchResult),
         ...cryptoResults,
+        ...krResults,
     ]);
 
     const koreanNames = await getKoreanNames(merged.map(r => r.symbol));

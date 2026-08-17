@@ -384,7 +384,7 @@ export async function getNextEarningsReport(
         !(await isEarningsKnownEmpty(symbol))
     ) {
         try {
-            const client = getFundamentalDataProvider();
+            const client = getFundamentalDataProvider(symbol);
             const reports = await client.getEarningsReports(
                 symbol,
                 EARNINGS_REPORT_FMP_LIMIT

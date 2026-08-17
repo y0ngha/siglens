@@ -8,6 +8,7 @@ import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResili
 import { FinancialsDegraded } from '@/app/[symbol]/financials/FinancialsDegraded';
 import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
 import { FinancialsScorecard } from '@/widgets/financials/FinancialsScorecard';
+import { statementCurrencyOf } from '@/widgets/financials/utils/numberFormat';
 import { FinancialsStatements } from '@/widgets/financials/FinancialsStatements';
 import { SymbolPageHeading } from '@/views/symbol';
 import {
@@ -280,7 +281,10 @@ export default async function FinancialsPage({ params }: Props) {
                     </p>
                 </section>
 
-                <FinancialsScorecard scorecard={scorecard} />
+                <FinancialsScorecard
+                    scorecard={scorecard}
+                    currency={statementCurrencyOf(upper)}
+                />
 
                 {/* audit fix FIX 2: XOR — FinancialsAiSummary (client widget) and
                     FinancialsSnapshotProse (SSR prose) both render the same AI

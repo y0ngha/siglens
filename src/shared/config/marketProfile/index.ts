@@ -4,6 +4,7 @@ export type {
     AssetClass,
     MarketRegion,
     SessionModel,
+    NewsSource,
     PricePrecision,
     PriceFormatConfig,
     MarketProfileDescriptor,
@@ -11,5 +12,6 @@ export type {
 export {
     getDescriptor,
     marketProfileOf,
+    isKrEquitySymbol,
     DEFAULT_MARKET_PROFILE,
 } from './registry';

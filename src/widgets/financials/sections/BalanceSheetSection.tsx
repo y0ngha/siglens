@@ -3,12 +3,18 @@ import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { NetDebtTooltip } from '@/widgets/financials/financialsTooltips';
 import { EmptySectionCard } from './EmptySectionCard';
 import { StatementTable } from './StatementTable';
+import {
+    DEFAULT_STATEMENT_CURRENCY,
+    type StatementCurrency,
+} from '../utils/numberFormat';
 import { FinancialTrendChart } from './FinancialTrendChart';
 import { toDisplayOrder } from './toDisplayOrder';
 import { HEADING_CLASS_NAME } from './constants';
 
 interface BalanceSheetSectionProps {
     rows: BalanceSheetRow[];
+    /** 금액 표기에 적용할 통화. 생략하면 USD — 미국 종목의 기존 동작. */
+    currency?: StatementCurrency;
 }
 
 const HEADING_ID = 'balance-sheet-heading';
@@ -21,7 +27,10 @@ const TITLE = '재무상태표';
  * `rows` are newest→oldest (index 0 = latest). Display is oldest→newest
  * left-to-right.
  */
-export function BalanceSheetSection({ rows }: BalanceSheetSectionProps) {
+export function BalanceSheetSection({
+    rows,
+    currency = DEFAULT_STATEMENT_CURRENCY,
+}: BalanceSheetSectionProps) {
     if (rows.length === 0) {
         return <EmptySectionCard title={TITLE} />;
     }
@@ -97,9 +106,17 @@ export function BalanceSheetSection({ rows }: BalanceSheetSectionProps) {
                 {TITLE}
             </h2>
             <div className="mb-6">
-                <FinancialTrendChart series={chartSeries} periods={columns} />
+                <FinancialTrendChart
+                    series={chartSeries}
+                    periods={columns}
+                    currency={currency}
+                />
             </div>
-            <StatementTable columns={columns} rows={tableRows} />
+            <StatementTable
+                columns={columns}
+                rows={tableRows}
+                currency={currency}
+            />
         </section>
     );
 }

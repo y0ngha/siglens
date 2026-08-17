@@ -174,7 +174,7 @@ yarn dev              # → http://localhost:4200
 | 변수 | 용도 |
 |---|---|
 | `UPSTASH_REDIS_REST_READONLY_TOKEN` | Redis readonly 접근 |
-| `TRANSLATE_API_KEY` / `TRANSLATE_MODEL` | 한국어 종목명·설명 번역 |
+| `TRANSLATE_MODEL` | 한국어 종목명·설명 번역 모델(`DEEPSEEK_API_KEY`로 호출) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth 로그인 |
 | `KAKAO_REST_API_KEY` / `KAKAO_CLIENT_SECRET` | Kakao OAuth 로그인 |
 | `OAUTH_REDIRECT_BASE_URL` | OAuth redirect 기준 URL |

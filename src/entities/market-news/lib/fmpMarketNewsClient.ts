@@ -10,6 +10,7 @@ import type {
     MarketNewsItem,
 } from './marketNewsClientPort';
 import { FMP_NEWS_FETCH_LIMIT } from './marketNewsConstants';
+import { detectTruncatedBody } from '@/entities/news-article/lib/detectTruncatedBody';
 
 /** Raw shape returned by FMP `/stable/news/{general,stock,crypto,forex}-latest`. */
 interface RawFmpLatestNews {
@@ -77,6 +78,9 @@ function mapLatestRawToItem(
         publishedAt,
         titleEn: raw.title,
         bodyEn: raw.text ?? null,
+        // 시장 뉴스도 카드 분석(`runNewsCardAnalysis`)을 타므로 종목 뉴스와 같은 표기가
+        // 필요하다 — 실측에서 `news/general-latest`는 10건 중 2건이 문장 중간에서 끊겼다.
+        bodyTruncated: detectTruncatedBody(raw.text),
         tickers: raw.symbol ? [raw.symbol] : [],
     };
 }
@@ -94,6 +98,9 @@ function mapArticleRawToItem(
         publishedAt,
         titleEn: raw.title,
         bodyEn: raw.content ?? null,
+        // `fmp-articles`는 본문이 2,500~5,900자로 길지만 그래도 종결부호 없이 끝난다
+        // (실측 0/10 완결). 길이가 아니라 형상으로 판정하는 이유다.
+        bodyTruncated: detectTruncatedBody(raw.content),
         tickers: parseArticleTickers(raw.tickers),
     };
 }

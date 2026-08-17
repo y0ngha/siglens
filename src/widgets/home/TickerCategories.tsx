@@ -47,6 +47,10 @@ const CATEGORY_STYLES: Record<CategoryId, CardStyle> = {
         borderColor: 'border-l-secondary-500',
         textColor: 'text-secondary-500',
     },
+    'korea-equity': {
+        borderColor: 'border-l-primary-400',
+        textColor: 'text-primary-400',
+    },
 };
 
 const TICKER_CARDS: CategoryCard[] = TICKER_CATEGORIES.map(category => ({

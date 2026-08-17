@@ -25,6 +25,31 @@ describe('getFinancialStatementsProvider (prod)', () => {
         );
     });
 
+    it.each(['AAPL', 'BTCUSD'])('keeps the FMP path for %s', async symbol => {
+        const { getFinancialStatementsProvider } =
+            await import('@/shared/api/fmp/getFinancialStatementsProvider');
+        expect(getFinancialStatementsProvider(symbol)).toBe(
+            getFinancialStatementsProvider()
+        );
+    });
+
+    it('routes Korean symbols to a different provider than FMP', async () => {
+        // FMP 플랜이 KRX를 커버하지 않아 yahoo 백엔드로 가야 한다.
+        const { getFinancialStatementsProvider } =
+            await import('@/shared/api/fmp/getFinancialStatementsProvider');
+        expect(getFinancialStatementsProvider('005930.KS')).not.toBe(
+            getFinancialStatementsProvider('AAPL')
+        );
+    });
+
+    it('returns the same KR singleton across Korean symbols', async () => {
+        const { getFinancialStatementsProvider } =
+            await import('@/shared/api/fmp/getFinancialStatementsProvider');
+        expect(getFinancialStatementsProvider('247540.KQ')).toBe(
+            getFinancialStatementsProvider('005930.KS')
+        );
+    });
+
     it('singleton is reset between module reloads (vi.resetModules)', async () => {
         const { getFinancialStatementsProvider: get1 } =
             await import('@/shared/api/fmp/getFinancialStatementsProvider');

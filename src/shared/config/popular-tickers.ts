@@ -130,7 +130,39 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
             { symbol: 'BA', name: '보잉' },
         ],
     },
+    {
+        id: 'korea-equity',
+        label: '한국 주식',
+        items: [
+            { symbol: '005930.KS', name: '삼성전자' },
+            { symbol: '000660.KS', name: 'SK하이닉스' },
+            { symbol: '005380.KS', name: '현대차' },
+            { symbol: '373220.KS', name: 'LG에너지솔루션' },
+            { symbol: '207940.KS', name: '삼성바이오로직스' },
+            { symbol: '035420.KS', name: '네이버' },
+            { symbol: '035720.KS', name: '카카오' },
+            { symbol: '247540.KQ', name: '에코프로비엠' },
+            { symbol: '196170.KQ', name: '알테오젠' },
+        ],
+    },
 ];
+
+/**
+ * 큐레이션된 카테고리에 적힌 한글 종목명 — 심볼 → 한글명.
+ *
+ * `korean_tickers` 테이블이 비어 있는 동안의 시드로 쓴다. 한글명은 원래
+ * `translateCompanyNames`가 종목 방문 시 lazy하게 채우지만, ISR은 **첫 렌더를
+ * 캐시에 굳히므로** 번역이 끝나기 전에 영문 제목(`005930.KS 주가 전망`)이 revalidate
+ * 주기 동안 고정된다. 미국 종목은 대부분 이미 번역돼 있어 드러나지 않던 문제가, 전부
+ * 신규인 한국 종목에서는 전면적으로 나타난다.
+ *
+ * 카테고리 상수에 이미 정확한 한글명이 있으므로 새 데이터 소스가 필요 없다.
+ */
+export const CURATED_KOREAN_NAMES: ReadonlyMap<string, string> = new Map(
+    TICKER_CATEGORIES.flatMap(category =>
+        category.items.map(item => [item.symbol, item.name] as const)
+    )
+);
 
 export const POPULAR_TICKERS = [
     // --- [1] Mega Cap & Index ---
@@ -449,4 +481,31 @@ export const POPULAR_TICKERS = [
     'GSK',
     'SAP',
     'DLR',
+
+    // --- [KR] KOSPI / KOSDAQ (2026-08-16) ---
+    // 시가총액 상위 + 코스닥 대표주. 이 목록에 있어야 `evaluateSymbolIndexability`가
+    // indexable로 판정하고 sitemap에도 실린다(그 외 종목은 longtail-default-blocked).
+    // 전 종목을 넣지 않는 이유: 2026-07 노출 절벽이 thin 콘텐츠 대량 색인에서 비롯됐고,
+    // 여기 있는 종목은 차트·펀더멘털·재무가 모두 채워지는 것을 실측으로 확인한 것들이다.
+    // 20종목 전부 2026-08-16 yahoo quote 응답으로 상장 상태를 검증했다.
+    '005930.KS', // 삼성전자
+    '000660.KS', // SK하이닉스
+    '005380.KS', // 현대차
+    '373220.KS', // LG에너지솔루션
+    '207940.KS', // 삼성바이오로직스
+    '028260.KS', // 삼성물산
+    '105560.KS', // KB금융
+    '000270.KS', // 기아
+    '055550.KS', // 신한지주
+    '012330.KS', // 현대모비스
+    '068270.KS', // 셀트리온
+    '006400.KS', // 삼성SDI
+    '035420.KS', // 네이버
+    '051910.KS', // LG화학
+    '035720.KS', // 카카오
+    '196170.KQ', // 알테오젠
+    '086520.KQ', // 에코프로
+    '247540.KQ', // 에코프로비엠
+    '058470.KQ', // 리노공업
+    '403870.KQ', // HPSP
 ] as const;
