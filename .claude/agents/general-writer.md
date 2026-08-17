@@ -1,7 +1,7 @@
 ---
 name: general-writer
 description: 상위 모델이 설계를 하고, 그 내용을 받아 구현을 담당하는 Agent. 설계·계획이 이미 확정된 뒤 코드/테스트 작성을 위임할 때 사용한다.
-model: claude-sonnet-4-6
+model: sonnet
 memory: project
 tools: Read, Write, Edit, Bash, Grep, Glob
 ---

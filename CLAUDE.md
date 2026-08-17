@@ -249,54 +249,11 @@ If a reviewer or review-agent raises multi-line comment compression as a Blocker
 ## Commands
 
 Always use `yarn` for package installation. `npm` and `pnpm` are prohibited.
-
-```bash
-# Dev server (port 4200)
-yarn dev
-
-# Build
-yarn build
-
-# Lint
-yarn lint
-yarn lint:fix
-yarn lint:style
-yarn lint:style-fix
-
-# Test
-yarn test              # vitest run
-yarn test-watch        # vitest (watch mode)
-yarn test-coverage     # vitest run --coverage
-
-# Format
-yarn format
-```
+Script list lives in `package.json` — read it there rather than duplicating it here.
 
 ---
 
 ## Reference Documents
 
-> 전체 인덱스는 [`docs/README.md`](docs/README.md). 문서는 목적별 폴더로 구성된다.
-
-| Document | Contents |
-|---|---|
-| `docs/architecture/SCOPE.md` | **siglens vs siglens-core 분담** — 결정 트리, 의존 방향, 안티 패턴 (양쪽 레포 공통 source-of-truth) |
-| `docs/architecture/ARCHITECTURE.md` | Layer structure, dependency direction rules, folder layout |
-| `docs/architecture/PERFORMANCE_BASELINE.md` | 성능 baseline & 개선 액션 플랜 |
-| `docs/architecture/ISR_REVALIDATE.md` | ISR `revalidate` 정책 — 페이지별 값·근거, Fast Origin Transfer 절감, cron 미도입 결정 |
-| `docs/architecture/DEPLOY_RUNBOOK.md` | **운영 문제 시 첫 진입점** — 배포·롤백, 알람별 1차 대응, 증상별 트리아지, 부트스트랩 체크리스트 |
-| `docs/architecture/ISR_CACHE_HANDLER.md` | S3 ISR 캐시 핸들러 런북 — 킬 스위치, 태그 스토어, 수동 캐시 정리 |
-| `docs/architecture/CDN_CACHING.md` | Cloudflare 캐싱·WAF·봇 보호 런북 |
-| `docs/product/SERVICE.md` | Product overview, target users, tech stack, Skills system |
-| `docs/product/DOMAIN.md` | Indicator calculation specs, candle patterns, Skills system, business rules |
-| `docs/product/AUTH.md` | 인증·세션·OAuth·이메일 토큰 흐름 (인증은 옵션) |
-| `docs/conventions/CONVENTIONS.md` | Coding conventions, naming rules, paradigm guidelines, coverage targets |
-| `docs/conventions/FF.md` | FF 4 principles in detail (Readability, Predictability, Cohesion, Coupling) |
-| `docs/conventions/DESIGN.md` | Color system, Tailwind v4 `@theme`, chart color constants |
-| `docs/conventions/GIT_CONVENTIONS.md` | Branch naming, commit message format, PR rules |
-| `docs/reference/API.md` | FMP, AI, worker API endpoints, environment variables |
-| `docs/reference/CRON.md` | 크론/스케줄 패턴 |
-| `docs/workflows/ISSUE_IMPL_FLOW.md` | 이슈 구현 플로우 (라우팅·에이전트 순서) |
-| `docs/workflows/PR_FIX_FLOW.md` | PR 수정 플로우 (라우팅·에이전트 순서) |
-| `docs/workflows/MISTAKES.md` | Common mistakes Claude Code repeatedly makes — review before and after implementing |
-| `docs/qa/` | 테스트·검증 문서군 — 환경 셋업, 테스트 시트, 멀티환경(Chrome/Safari×모바일), 실증, PR 리뷰 루프, 릴리스 검증, 안정성 감사, E2E ([qa/README.md](docs/qa/README.md)) |
+전체 인덱스와 각 문서 요약은 [`docs/README.md`](docs/README.md)에 있다. 작업 전 해당 인덱스를 읽고
+필요한 문서로 이동한다. 운영 문제는 [`docs/architecture/DEPLOY_RUNBOOK.md`](docs/architecture/DEPLOY_RUNBOOK.md)가 첫 진입점.

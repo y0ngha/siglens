@@ -69,17 +69,3 @@ export async function myAction() { ... }
 | `news-article` | `DrizzleNewsRepository`, `getNewsList` | `api.ts`가 drizzle/DB client import, `import 'server-only'` 선언 |
 | `bars` | `useBars` hook | Server Action barrel이 `@google/genai` ESM을 전이적으로 pull-in → Jest 모듈 해석 깨짐. deep import: `@/entities/bars/hooks/useBars` |
 | `ticker` | `useAssetInfo` hook | Server Action barrel이 `@google/genai` ESM을 전이적으로 pull-in → Jest 모듈 해석 깨짐. deep import: `@/entities/ticker/hooks/useAssetInfo` |
-
-## 슬라이스 구조
-
-```
-entities/<name>/
-├── model.ts          types (먼저 정의)
-├── api.ts            비-action 함수 (server-only repository, API 호출)
-├── actions.ts        Server Action barrel (❗ 'use server' 선언 금지 — 개별 action 파일에서만 선언)
-├── actions/          개별 Server Action 파일
-├── hooks/            (선택) useXxxQuery / useXxxMutation
-├── lib/              (선택) 도메인 순수 함수
-├── __tests__/        colocated tests
-└── index.ts          public API barrel
-```

@@ -26,16 +26,3 @@ Next.js 16 Turbopack은 `'use server'` 파일에서 async function 직접 export
 re-export 문은 빌드 오류를 유발한다. 개별 action 파일에서만 `'use server'`를 선언한다.
 
 자세한 규칙은 `src/entities/CLAUDE.md` § `'use server'` 규칙 참조.
-
-## 슬라이스 구조
-
-```
-features/<name>/
-├── ui/               UI 컴포넌트
-├── model/            (선택) Context + Provider
-├── hooks/            React hooks
-├── actions/          (선택) Server Action wrapper (❗ barrel에 'use server' 선언 금지)
-├── lib/              (선택) 순수 함수
-├── __tests__/        colocated tests
-└── index.ts          public API barrel
-```

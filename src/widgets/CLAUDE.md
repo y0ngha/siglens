@@ -36,15 +36,3 @@ cross-widget import는 현재 허용되지만, `symbol-page` 슬라이스는 Spe
 
 소비자는 항목별 실제 경로로 deep import한다:
 - `FearGreedHistoricalChart` → `@/widgets/chart/FearGreedHistoricalChart`
-
-## 슬라이스 구조
-
-```
-widgets/<name>/
-├── ui/               (선택) 서브 컴포넌트
-├── hooks/            React hooks
-├── utils/            (선택) 순수 유틸
-├── sections/         (선택) 섹션 컴포넌트
-├── __tests__/        colocated tests
-└── index.ts          public API barrel
-```
