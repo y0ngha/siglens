@@ -71,11 +71,21 @@ function makeSelectFromDb(rows: unknown[]): {
     db: SiglensDatabase;
     select: Mock;
     from: Mock;
+    where: Mock;
 } {
-    const fromResult = Promise.resolve(rows);
+    const where = vi.fn().mockResolvedValue(rows);
+    // `findAll`은 `.where(isNull(delistedAt))`로 상폐 행을 거르고
+    // `findAllListingStatuses`는 `.from()`에서 끝난다 — 둘 다 태우려면 from의 결과가
+    // thenable이면서 where도 갖고 있어야 한다.
+    const fromResult = Object.assign(Promise.resolve(rows), { where });
     const from = vi.fn(() => fromResult);
     const select = vi.fn(() => ({ from }));
-    return { db: { select } as unknown as SiglensDatabase, select, from };
+    return {
+        db: { select } as unknown as SiglensDatabase,
+        select,
+        from,
+        where,
+    };
 }
 
 function makeFindBySymbolDb(rows: unknown[]): {
@@ -117,17 +127,45 @@ function makeUpsertDb(): {
     };
 }
 
+function makeUpdateDb(): {
+    db: SiglensDatabase;
+    update: Mock;
+    set: Mock;
+    where: Mock;
+} {
+    const where = vi.fn().mockResolvedValue(undefined);
+    const set = vi.fn(() => ({ where }));
+    const update = vi.fn(() => ({ set }));
+    return { db: { update } as unknown as SiglensDatabase, update, set, where };
+}
+
 describe('DrizzleKoreanTickerRepository', () => {
-    it('findAll 은 모든 row 를 반환한다', async () => {
-        const { db } = makeSelectFromDb([apple, microsoft]);
+    it('findAll 은 상장 중인 row 를 반환한다', async () => {
+        const { db, where } = makeSelectFromDb([apple, microsoft]);
         const repo = new DrizzleKoreanTickerRepository(db);
         await expect(repo.findAll()).resolves.toEqual([apple, microsoft]);
+        // findAll 결과가 곧 한글 검색 후보 전체다 — 필터 없이 전량을 읽으면 상폐 종목이
+        // 자동완성에 뜨고 클릭하면 시세 없는 페이지로 간다.
+        expect(where).toHaveBeenCalledTimes(1);
     });
 
     it('findAll 은 빈 결과도 그대로 반환한다', async () => {
         const { db } = makeSelectFromDb([]);
         const repo = new DrizzleKoreanTickerRepository(db);
         await expect(repo.findAll()).resolves.toEqual([]);
+    });
+
+    it('findAllListingStatuses 는 상폐 행까지 포함해 전량을 읽는다', async () => {
+        // reconcile 플래너는 "이미 상폐로 표시된 종목"을 알아야 relist를 판단하고,
+        // 같은 행을 매일 다시 상폐 표시해 시각을 미는 것도 막는다.
+        const rows = [
+            { symbol: '005930.KS', delistedAt: null },
+            { symbol: '000000.KQ', delistedAt: new Date('2026-01-01') },
+        ];
+        const { db, where } = makeSelectFromDb(rows);
+        const repo = new DrizzleKoreanTickerRepository(db);
+        await expect(repo.findAllListingStatuses()).resolves.toEqual(rows);
+        expect(where).not.toHaveBeenCalled();
     });
 
     it('findBySymbols 는 빈 입력에서 select 를 호출하지 않는다', async () => {
@@ -182,6 +220,50 @@ describe('DrizzleKoreanTickerRepository', () => {
         expect(passedSet).toHaveProperty('updatedAt');
         // sql`now()` produces an SQL chunk object — must not be undefined/null.
         expect(passedSet.updatedAt).toBeDefined();
+    });
+
+    it('upsertMany 는 전 종목 동기화를 배치로 쪼갠다', async () => {
+        // 2,500행대를 한 INSERT로 보내면 Neon HTTP 페이로드 한도에 걸린다.
+        const { db, insert } = makeUpsertDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        const many = Array.from({ length: 1_100 }, (_, i) => ({
+            ...apple,
+            symbol: `SYM${i}`,
+        }));
+        await repo.upsertMany(many);
+        expect(insert).toHaveBeenCalledTimes(3); // 500 + 500 + 100
+    });
+
+    it('markDelisted 는 빈 입력에서 update 를 호출하지 않는다', async () => {
+        const { db, update } = makeUpdateDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        await repo.markDelisted([]);
+        expect(update).not.toHaveBeenCalled();
+    });
+
+    it('markDelisted 는 delisted_at 을 채우고 이미 표시된 행은 건드리지 않는다', async () => {
+        const { db, set, where } = makeUpdateDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        await repo.markDelisted(['000000.KQ']);
+        // sql`now()` — DB 서버 시계로 스탬프한다.
+        expect(set.mock.calls[0][0].delistedAt).toBeDefined();
+        // where 조건이 하나뿐이면(심볼만) 재실행마다 상폐 시각이 밀려
+        // "언제부터 상폐였나"를 잃는다. isNull 조건이 그걸 막는다.
+        expect(where).toHaveBeenCalledTimes(1);
+    });
+
+    it('markRelisted 는 delisted_at 을 null 로 되돌린다', async () => {
+        const { db, set } = makeUpdateDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        await repo.markRelisted(['000000.KQ']);
+        expect(set).toHaveBeenCalledWith({ delistedAt: null });
+    });
+
+    it('markRelisted 는 빈 입력에서 update 를 호출하지 않는다', async () => {
+        const { db, update } = makeUpdateDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        await repo.markRelisted([]);
+        expect(update).not.toHaveBeenCalled();
     });
 });
 

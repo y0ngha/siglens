@@ -1256,6 +1256,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ if (fresh.length === 0) return;  // safe: unanalyzed = fresh.filter(...) is also empty, so analyze is no-op
    → Recurring: feat/isr-writes-opt (R1), PR #573 R2 (regression from earlier round)
    → Updated PR #573 R4: clarified fresh.length===0 early return is safe when downstream is fresh-derived (not DB-derived)
+
+2. API/domain documentation must be kept in sync with implementation; documentation drift hides regressions
+   → Every interface, return type, API schema, or domain specification documented in docs/ must be updated atomically with the implementation
+   → Changes to API contracts, public exports, or domain logic require synchronized documentation updates
+   → Stale documentation masks regressions: tests verify against outdated docs, reviewers read outdated behavior specs
+   ❌ PR: add new field to TierModel + update TIER_CONFIG; ship without updating docs/PUBLIC_API.md
+   ❌ Implementation changes histogram sign formula; docs/product/DOMAIN.md §15.6 still lists old formula
+   ✅ Field addition + docs/PUBLIC_API.md update in the same commit
+   ✅ Formula change synced to both implementation and docs/product/DOMAIN.md in one PR
+   → Recurring: PR #166 (public API doc omission), feat/latest-llm-models R1 (API union expansion not documented), perf/indicator-precision (histogram formula drift)
 ```
 
 ## Architecture

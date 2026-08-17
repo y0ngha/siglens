@@ -6,6 +6,7 @@ import type { Tier } from '@y0ngha/siglens-core';
 import type { OAuthProvider } from '@/shared/lib/types';
 import type { LlmProvider } from '../config/llmProviders';
 import type { KoreanTickerEntry } from '@/shared/lib/types';
+import type { KrTickerListingRow } from '@/shared/lib/krTickerReconcile';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import type * as schema from './schema';
 
@@ -246,9 +247,25 @@ export interface PortfolioHoldingRepository {
  * search and asset metadata flows by exposing the cached `korean_tickers` rows.
  */
 export interface KoreanTickerRepository {
+    /**
+     * Currently-listed rows only. This backs Korean-name search, so a delisted
+     * ticker must not surface here — it would rank in the suggestion list and
+     * lead to a dead page.
+     */
     findAll(): Promise<KoreanTickerEntry[]>;
+    /**
+     * Rows for the given symbols **including delisted ones**. Name resolution for
+     * a symbol the caller already holds is a display concern, not a discovery
+     * one — a visitor on a delisted symbol's URL should still see its Korean name.
+     */
     findBySymbols(symbols: readonly string[]): Promise<KoreanTickerEntry[]>;
     upsertMany(entries: readonly KoreanTickerEntry[]): Promise<void>;
+    /** Every row's symbol and listing status — the reconcile planner's input. */
+    findAllListingStatuses(): Promise<KrTickerListingRow[]>;
+    /** Stamp `delisted_at = now()` on rows that are still marked as listed. */
+    markDelisted(symbols: readonly string[]): Promise<void>;
+    /** Clear `delisted_at` on symbols observed as listed again. */
+    markRelisted(symbols: readonly string[]): Promise<void>;
 }
 
 /**

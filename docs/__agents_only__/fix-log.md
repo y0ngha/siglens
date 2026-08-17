@@ -111,11 +111,6 @@
   - Rule: Test best practices — Mocked polling loops must have a terminating stub that yields eventually (return one processing tick, then never-settling promise)
   - Context: useAnalysisBranches.test.tsx polling action stub. Fixed by returning a single {status:'processing'} response, then a promise that never settles, allowing loop to yield before next poll.
 
-## [feat/latest-llm-models | siglens-core | R1 recommended]
-- Violation: Public API union widening (TierModel/ModelId/ActiveModelId +6 members, TIER_CONFIG literals +6 rows) shipped without updating docs/PUBLIC_API.md. Identical pattern had prior precedent (PR #166 logged same model-union widening).
-  - Rule: MISTAKES.md §Code Review — Public API documentation must be updated atomically with the API it describes
-  - Context: Added public-api.md update to same commit + test forcing struct evolution (MODEL_SPECS satisfies Record<ActiveModelId, ...>).
-
 ## [feat/latest-llm-models | siglens | R1 recommended]
 - Violation: Label versioning inconsistency — 'Opus 5' next to unversioned 'Opus' (=4.7) made the old model appear current on collapsed trigger, misleading users about which version they selected.
   - Rule: User-facing text must match code state; version numbers in labels must be consistent
@@ -154,9 +149,6 @@
 - Violation: Fixed-precision formatting (toFixed()) truncated sub-penny assets (SHIBUSD trade price ~0.00000XXX) to 0, and reversed MACD histogram sign in candle serialization
   - Rule: Numeric formatting must not lose precision on low-value assets; histogram sign must be preserved from calculation
   - Context: Review caught two precision defects before deployment. Both fixed by switching from fixed decimal places to significant figures, preserving data fidelity while maintaining payload reduction (-34.0% consistent with original measurement).
-- Violation (documentation): docs/product/DOMAIN.md §15.6 candle spec listed incorrect formula for histogram sign; code had corrected it after earlier cycle but docs were not updated in sync
-  - Rule: MISTAKES.md §Code Review — API/domain documentation must be kept in sync with implementation; documentation drift hides regressions
-  - Context: Synced docs/product/DOMAIN.md §15.6 with current implementation.
 - Violation (documentation): docs/product/DOMAIN.md §15.6 listed a histogram aggregation formula that is not implemented in the live serialization path
   - Rule: Documentation must reflect actual implementation, not aspirational future code
   - Context: Corrected formula in docs to match live code path.

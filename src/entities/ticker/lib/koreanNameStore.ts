@@ -147,6 +147,16 @@ export async function getKoreanNames(
     return Object.fromEntries(pairs) as Record<string, string>;
 }
 
+/**
+ * 한글 종목 캐시를 비운다. 검색은 이 캐시를 통째로 읽어 substring 필터를 돌리므로,
+ * 상장 상태가 바뀐 뒤 비우지 않으면 상폐 종목이 TTL 동안 검색에 계속 뜬다.
+ */
+export async function invalidateKoreanTickerCache(): Promise<void> {
+    const cache = createCacheProvider();
+    if (!cache) return;
+    await invalidateCache(cache);
+}
+
 async function invalidateCache(cache: CacheProvider): Promise<void> {
     try {
         await cache.delete(KOREAN_TICKERS_CACHE_KEY);

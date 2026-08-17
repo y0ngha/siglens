@@ -5,7 +5,8 @@ import {
     type CryptoAssetRow,
     type FmpCryptoListRaw,
 } from './lib/fmpCryptoListClient';
-import { desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
+import { and, desc, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm';
+import type { KrTickerListingRow } from '@/shared/lib/krTickerReconcile';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import {
     assetTranslations,
@@ -44,6 +45,12 @@ const DB_SORT_EXACT = 0;
 const DB_SORT_PREFIX = 1;
 const DB_SORT_OTHER = 2;
 
+/**
+ * 한 INSERT 문에 담을 최대 행 수. 전 종목 동기화는 2,500행대라 한 번에 보내면 Neon HTTP
+ * 페이로드 한도에 걸린다. 기존 시드 스크립트가 쓰던 값과 같다.
+ */
+const KOREAN_TICKER_UPSERT_BATCH_SIZE = 500;
+
 const koreanTickerColumns = {
     symbol: koreanTickers.symbol,
     name: koreanTickers.name,
@@ -73,8 +80,15 @@ const assetTranslationColumns = {
 export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
+    /**
+     * 상장 중인 행만 반환한다 — 이 결과가 한글명 검색 후보 전체다. 상폐 종목이 섞이면
+     * 자동완성에 뜨고 클릭하면 시세가 없는 죽은 페이지로 간다.
+     */
     async findAll(): Promise<KoreanTickerEntry[]> {
-        return this.db.select(koreanTickerColumns).from(koreanTickers);
+        return this.db
+            .select(koreanTickerColumns)
+            .from(koreanTickers)
+            .where(isNull(koreanTickers.delistedAt));
     }
 
     async findBySymbols(
@@ -89,6 +103,20 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
     }
 
     async upsertMany(entries: readonly KoreanTickerEntry[]): Promise<void> {
+        for (
+            let i = 0;
+            i < entries.length;
+            i += KOREAN_TICKER_UPSERT_BATCH_SIZE
+        ) {
+            await this.upsertBatch(
+                entries.slice(i, i + KOREAN_TICKER_UPSERT_BATCH_SIZE)
+            );
+        }
+    }
+
+    private async upsertBatch(
+        entries: readonly KoreanTickerEntry[]
+    ): Promise<void> {
         if (entries.length === 0) return;
 
         await withRetry(
@@ -111,6 +139,48 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
                             updatedAt: sql`now()`,
                         },
                     }),
+            NEON_TRANSIENT_RETRY
+        );
+    }
+
+    async findAllListingStatuses(): Promise<KrTickerListingRow[]> {
+        return this.db
+            .select({
+                symbol: koreanTickers.symbol,
+                delistedAt: koreanTickers.delistedAt,
+            })
+            .from(koreanTickers);
+    }
+
+    async markDelisted(symbols: readonly string[]): Promise<void> {
+        if (symbols.length === 0) return;
+
+        // `isNull` 조건이 재실행을 멱등하게 만든다 — 이미 표시된 행의 타임스탬프를
+        // 다시 밀면 "언제부터 상폐였나"를 잃는다.
+        await withRetry(
+            () =>
+                this.db
+                    .update(koreanTickers)
+                    .set({ delistedAt: sql`now()` })
+                    .where(
+                        and(
+                            inArray(koreanTickers.symbol, [...symbols]),
+                            isNull(koreanTickers.delistedAt)
+                        )
+                    ),
+            NEON_TRANSIENT_RETRY
+        );
+    }
+
+    async markRelisted(symbols: readonly string[]): Promise<void> {
+        if (symbols.length === 0) return;
+
+        await withRetry(
+            () =>
+                this.db
+                    .update(koreanTickers)
+                    .set({ delistedAt: null })
+                    .where(inArray(koreanTickers.symbol, [...symbols])),
             NEON_TRANSIENT_RETRY
         );
     }

@@ -209,18 +209,32 @@ export const portfolioHoldings = pgTable(
     ]
 );
 
-/** Korean stock ticker metadata — keyed by ticker symbol. */
-export const koreanTickers = pgTable('korean_tickers', {
-    symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).primaryKey(),
-    koreanName: text('korean_name').notNull(),
-    name: text('name').notNull(),
-    exchange: varchar('exchange', { length: EXCHANGE_MAX_LENGTH }).notNull(),
-    exchangeFullName: text('exchange_full_name').notNull(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-        .notNull()
-        .defaultNow()
-        .$onUpdateFn(nowFn),
-});
+/**
+ * Korean stock ticker metadata — keyed by ticker symbol.
+ *
+ * `delisted_at` is the listing-status column: `NULL` means currently listed.
+ * Rows are **marked, never deleted** — a visitor arriving on a delisted symbol's
+ * URL still needs its Korean name, and an incorrect mark costs nothing to undo.
+ * Search and sitemap read only the `NULL` rows; name lookup reads all of them.
+ */
+export const koreanTickers = pgTable(
+    'korean_tickers',
+    {
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).primaryKey(),
+        koreanName: text('korean_name').notNull(),
+        name: text('name').notNull(),
+        exchange: varchar('exchange', {
+            length: EXCHANGE_MAX_LENGTH,
+        }).notNull(),
+        exchangeFullName: text('exchange_full_name').notNull(),
+        delistedAt: timestamp('delisted_at', { withTimezone: true }),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [index('korean_tickers_delisted_at_idx').on(table.delistedAt)]
+);
 
 /**
  * Cryptocurrency asset universe — seeded from FMP `cryptocurrency-list`.
