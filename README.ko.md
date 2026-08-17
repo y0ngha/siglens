@@ -295,7 +295,7 @@ E2E는 실제 프로덕션 빌드를 브라우저로 검증하며 Vitest와 별�
 yarn dev             # :4200 개발 서버
 yarn build           # 프로덕션 빌드
 yarn lint            # ESLint          (자동 수정은 lint:fix)
-yarn typecheck       # tsgo            (tsc는 typecheck:tsc)
+yarn typecheck       # TypeScript 7 (네이티브 tsc)
 yarn format          # Prettier        (검사만 하면 format:check)
 yarn test            # Vitest
 ```
@@ -323,8 +323,7 @@ yarn test            # Vitest
 | `yarn format` | Prettier write |
 | `yarn format:staged` | staged 파일 Prettier |
 | `yarn format:check` | Prettier check |
-| `yarn typecheck` | `tsgo` 타입체크 |
-| `yarn typecheck:tsc` | `tsc` 타입체크 |
+| `yarn typecheck` | TypeScript 7 네이티브 `tsc` 타입체크 |
 | `yarn db:generate` | Drizzle migration 생성 |
 | `yarn db:migrate` | migration 실행 |
 | `yarn db:seed:terms` | 약관 데이터 seed |

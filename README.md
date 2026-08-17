@@ -295,7 +295,7 @@ Day to day:
 yarn dev             # dev server on :4200
 yarn build           # production build
 yarn lint            # ESLint          (lint:fix to autofix)
-yarn typecheck       # tsgo            (typecheck:tsc for tsc)
+yarn typecheck       # TypeScript 7 (native tsc)
 yarn format          # Prettier        (format:check to verify)
 yarn test            # Vitest
 ```
@@ -323,8 +323,7 @@ Always install with `yarn`. `npm` and `pnpm` are not used.
 | `yarn format` | Prettier write |
 | `yarn format:staged` | Prettier for staged files |
 | `yarn format:check` | Prettier check |
-| `yarn typecheck` | Typecheck with `tsgo` |
-| `yarn typecheck:tsc` | Typecheck with `tsc` |
+| `yarn typecheck` | Typecheck with TypeScript 7's native `tsc` |
 | `yarn db:generate` | Generate Drizzle migrations |
 | `yarn db:migrate` | Run migrations |
 | `yarn db:seed:terms` | Seed terms data |
