@@ -19,10 +19,16 @@ export const FMP_NEWS_FETCH_LIMIT = 50;
 /**
  * Fixed server-side model for the public category digest.
  * No BYOK — the digest is gating-free and uses a single shared model.
- * `'gemini-2.5-flash'` is a valid {@link ModelId} member (verified against
+ * `'deepseek-v4-flash'` is a valid {@link ModelId} member (verified against
  * the installed `@y0ngha/siglens-core` `TierModel` union).
+ *
+ * ⚠️ The DeepSeek analysis adapter ignores `responseSchema` and sends
+ * `response_format: { type: 'json_object' }` instead (see
+ * `infrastructure/ai/providers/deepseek.ts` in siglens-core), so the digest's
+ * field contract is carried by the prompt + `normalize*` post-processing
+ * alone — schema enforcement is NOT in play on this path.
  */
-export const DEFAULT_DIGEST_MODEL_ID = 'gemini-2.5-flash' satisfies ModelId;
+export const DEFAULT_DIGEST_MODEL_ID = 'deepseek-v4-flash' satisfies ModelId;
 
 /** ISR cache-tag prefix for market-news sentinel buckets. Combined with the sentinel as `${prefix}:${sentinel}`. */
 export const MARKET_NEWS_CACHE_TAG_PREFIX = 'market-news';
@@ -31,7 +37,7 @@ export const MARKET_NEWS_CACHE_TAG_PREFIX = 'market-news';
  * Max concurrent LLM submissions for per-card analysis.
  *
  * Unbounded `Promise.allSettled` over 50 items × 5 categories = 250 concurrent
- * Gemini requests stampedes the worker queue. This cap throttles throughput while
+ * LLM requests stampedes the provider. This cap throttles throughput while
  * still keeping latency low for typical category sizes (10–20 items).
  */
 export const LLM_PARALLEL_LIMIT = 8;

@@ -1,102 +1,82 @@
 import { MODEL_SPECS } from '@y0ngha/siglens-core';
 import {
     _getDefaultTranslateModelForTest,
-    _isValidGeminiModelForTest,
+    _isValidTranslateModelForTest,
     _resetTranslateModelWarningForTest,
     _toApiModelIdForTest,
     tryReadTranslatorConfig,
 } from '../../lib/config';
 
 describe('tryReadTranslatorConfig', () => {
-    // release-it 경유 실행 시 `.env.local`의 TRANSLATE_* 변수가 부모 프로세스에 주입되므로,
-    // afterEach만으로는 첫 케이스의 "미설정" 전제가 깨진다. 케이스 시작 시점에도 unset 보장.
+    // `vi.stubEnv`를 쓰는 이유: DEEPSEEK_API_KEY는 번역 전용이 아니라 분석·챗
+    // 경로가 공유하는 서버 키다. `delete process.env`로 지우면 vitest worker
+    // process를 공유하는 sibling suite에 "키 없음" 상태가 leak된다
+    // (config의 `unstubEnvs: true`가 stub은 케이스마다 자동 복원).
     beforeEach(() => {
-        delete process.env.TRANSLATE_API_KEY;
-        delete process.env.TRANSLATE_MODEL;
+        vi.stubEnv('DEEPSEEK_API_KEY', undefined);
+        vi.stubEnv('TRANSLATE_MODEL', undefined);
         // "경고는 최초 1회만" once-flag가 케이스 간 leak되지 않도록 매 케이스
         // 시작 시 리셋한다 — 그렇지 않으면 이전 케이스가 이미 경고를 소비해
         // 이번 케이스의 warnSpy 단언이 거짓으로 실패한다.
         _resetTranslateModelWarningForTest();
     });
 
-    // 마지막 케이스가 세팅한 값이 같은 worker process에 남아 sibling suite로 leak되는
-    // 것을 방지(vitest worker pool은 file별 새 process지만 같은 file 내 다른 describe로의
-    // leak은 가능). beforeEach만 두면 마지막 케이스 cleanup이 빠진다.
-    afterEach(() => {
-        delete process.env.TRANSLATE_API_KEY;
-        delete process.env.TRANSLATE_MODEL;
-    });
-
-    it('TRANSLATE_API_KEY 미설정 시 null 반환', () => {
+    it('DEEPSEEK_API_KEY 미설정 시 null 반환', () => {
         expect(tryReadTranslatorConfig()).toBeNull();
     });
 
-    it('필수 키만 있을 때 model은 default(gemini-2.5-flash-lite)', () => {
-        process.env.TRANSLATE_API_KEY = 'paid';
+    it('필수 키만 있을 때 model은 default(deepseek-v4-flash)', () => {
+        vi.stubEnv('DEEPSEEK_API_KEY', 'paid');
         expect(tryReadTranslatorConfig()).toEqual({
             apiKey: 'paid',
             // 리터럴이 아니라 MODEL_SPECS에서 파생한 값과 비교한다 — toApiModelId를
             // 지우고 raw key를 그대로 반환해도 리터럴 비교는 우연히 통과해버린다
-            // (오늘은 apiModelId === key라서). REQUIRED 6.
-            model: MODEL_SPECS['gemini-2.5-flash-lite'].apiModelId,
+            // (오늘은 apiModelId === key라서).
+            model: MODEL_SPECS['deepseek-v4-flash'].apiModelId,
         });
     });
 
-    it('MODEL 환경변수가 사고 비활성화를 지원하는 유효한 Gemini 모델이면 그 값을 우선 사용한다', () => {
-        process.env.TRANSLATE_API_KEY = 'paid';
-        // 기본값(gemini-2.5-flash-lite)과 다른 값을 사용해 실제로 pass-through가
+    it('MODEL 환경변수가 유효한 DeepSeek 모델이면 그 값을 우선 사용한다', () => {
+        vi.stubEnv('DEEPSEEK_API_KEY', 'paid');
+        // 기본값(deepseek-v4-flash)과 다른 값을 사용해 실제로 pass-through가
         // 일어나는지(기본값으로 우연히 일치하는 게 아닌지) 검증한다.
-        process.env.TRANSLATE_MODEL = 'gemini-2.5-flash';
+        vi.stubEnv('TRANSLATE_MODEL', 'deepseek-v4-pro');
         expect(tryReadTranslatorConfig()).toEqual({
             apiKey: 'paid',
-            model: MODEL_SPECS['gemini-2.5-flash'].apiModelId,
+            model: MODEL_SPECS['deepseek-v4-pro'].apiModelId,
         });
     });
 
     it('MODEL 환경변수가 알 수 없는 값이면 기본값으로 폴백하고 경고를 로깅한다', () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        process.env.TRANSLATE_API_KEY = 'paid';
-        process.env.TRANSLATE_MODEL = 'gemini-custom';
+        vi.stubEnv('DEEPSEEK_API_KEY', 'paid');
+        vi.stubEnv('TRANSLATE_MODEL', 'deepseek-custom');
 
         expect(tryReadTranslatorConfig()).toEqual({
             apiKey: 'paid',
-            model: MODEL_SPECS['gemini-2.5-flash-lite'].apiModelId,
+            model: MODEL_SPECS['deepseek-v4-flash'].apiModelId,
         });
         expect(warnSpy).toHaveBeenCalledWith(
-            expect.stringContaining('TRANSLATE_MODEL="gemini-custom"')
+            expect.stringContaining('TRANSLATE_MODEL="deepseek-custom"')
         );
 
         warnSpy.mockRestore();
     });
 
-    it('MODEL 환경변수가 Gemini 아닌 모델(Claude 등)이면 기본값으로 폴백한다', () => {
+    it('MODEL 환경변수가 DeepSeek 아닌 provider 모델이면 기본값으로 폴백한다', () => {
+        // 번역은 DEEPSEEK_API_KEY 하나로만 호출된다 — Gemini 모델 ID가 통과하면
+        // DeepSeek 엔드포인트에 그 ID가 그대로 나가 401/400이 나고,
+        // koreanTranslator가 에러를 삼켜 한국어 이름이 소리 없이 사라진다.
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        process.env.TRANSLATE_API_KEY = 'paid';
-        process.env.TRANSLATE_MODEL = 'claude-haiku-4-5';
+        vi.stubEnv('DEEPSEEK_API_KEY', 'paid');
+        vi.stubEnv('TRANSLATE_MODEL', 'gemini-2.5-flash-lite');
 
         expect(tryReadTranslatorConfig()).toEqual({
             apiKey: 'paid',
-            model: MODEL_SPECS['gemini-2.5-flash-lite'].apiModelId,
-        });
-        expect(warnSpy).toHaveBeenCalled();
-
-        warnSpy.mockRestore();
-    });
-
-    it('MODEL 환경변수가 Gemini 모델이지만 사고 비활성화(thinkingBudget: 0)를 지원하지 않으면 기본값으로 폴백한다', () => {
-        // gemini-2.5-pro는 MODEL_SPECS의 실존 Gemini 모델이지만
-        // GEMINI_MODELS_SUPPORTING_DISABLED_THINKING 라이브 실측 대상이
-        // 아니었으므로 미지원 취급된다 — REQUIRED A.2.
-        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        process.env.TRANSLATE_API_KEY = 'paid';
-        process.env.TRANSLATE_MODEL = 'gemini-2.5-pro';
-
-        expect(tryReadTranslatorConfig()).toEqual({
-            apiKey: 'paid',
-            model: MODEL_SPECS['gemini-2.5-flash-lite'].apiModelId,
+            model: MODEL_SPECS['deepseek-v4-flash'].apiModelId,
         });
         expect(warnSpy).toHaveBeenCalledWith(
-            expect.stringContaining('TRANSLATE_MODEL="gemini-2.5-pro"')
+            expect.stringContaining('TRANSLATE_MODEL="gemini-2.5-flash-lite"')
         );
 
         warnSpy.mockRestore();
@@ -104,12 +84,12 @@ describe('tryReadTranslatorConfig', () => {
 
     it('MODEL 환경변수가 빈 문자열이면(??가 못 거르는 값) 기본값을 조용히 사용한다', () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        process.env.TRANSLATE_API_KEY = 'paid';
-        process.env.TRANSLATE_MODEL = '';
+        vi.stubEnv('DEEPSEEK_API_KEY', 'paid');
+        vi.stubEnv('TRANSLATE_MODEL', '');
 
         expect(tryReadTranslatorConfig()).toEqual({
             apiKey: 'paid',
-            model: MODEL_SPECS['gemini-2.5-flash-lite'].apiModelId,
+            model: MODEL_SPECS['deepseek-v4-flash'].apiModelId,
         });
         // 빈 문자열은 "미설정"과 동일하게 취급 — 사용자가 값을 준 게 아니라
         // env가 그냥 비어 있는 흔한 케이스이므로 경고로 시끄럽게 하지 않는다.
@@ -123,12 +103,12 @@ describe('tryReadTranslatorConfig', () => {
         // constructor, valueOf, __proto__ 등)도 true로 판정한다 — Object.hasOwn
         // 회귀를 잡는 테스트.
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        process.env.TRANSLATE_API_KEY = 'paid';
-        process.env.TRANSLATE_MODEL = 'toString';
+        vi.stubEnv('DEEPSEEK_API_KEY', 'paid');
+        vi.stubEnv('TRANSLATE_MODEL', 'toString');
 
         expect(tryReadTranslatorConfig()).toEqual({
             apiKey: 'paid',
-            model: MODEL_SPECS['gemini-2.5-flash-lite'].apiModelId,
+            model: MODEL_SPECS['deepseek-v4-flash'].apiModelId,
         });
         expect(warnSpy).toHaveBeenCalledWith(
             expect.stringContaining('TRANSLATE_MODEL="toString"')
@@ -137,23 +117,22 @@ describe('tryReadTranslatorConfig', () => {
         warnSpy.mockRestore();
     });
 
-    it('DEFAULT_TRANSLATE_MODEL 자신도 자기 검증(isValidGeminiModel)을 통과한다 — self-consistency', () => {
-        // resolveTranslateModel()의 모든 "unset/invalid" 분기는 isValidGeminiModel을
-        // 거치지 않고 DEFAULT_TRANSLATE_MODEL을 곧장 반환한다. 위 테스트들은 리터럴
-        // 문자열('gemini-2.5-flash-lite')만 단언해, 그 값이 실제로
-        // MODEL_SPECS/GEMINI_MODELS_SUPPORTING_DISABLED_THINKING 양쪽에 속하는지는
-        // 검증하지 못한다. siglens-core가 이 모델을 rename/제거하면(파일 상단 ⚠️
-        // 참고) 가장 흔하게 타는 폴백 경로가 곧바로 미검증 값이 되어 Gemini에
-        // 400을 던진다 — 이 테스트가 그 회귀를 잡는다.
+    it('DEFAULT_TRANSLATE_MODEL 자신도 자기 검증(isValidTranslateModel)을 통과한다 — self-consistency', () => {
+        // resolveTranslateModel()의 모든 "unset/invalid" 분기는 isValidTranslateModel을
+        // 거치지 않고 DEFAULT_TRANSLATE_MODEL을 곧장 반환한다. 위 테스트들은
+        // MODEL_SPECS 인덱싱으로 apiModelId만 비교하므로, 그 기본값이 실제로
+        // DeepSeek provider인지는 검증하지 못한다. siglens-core가 이 모델을
+        // rename/제거하면 가장 흔하게 타는 폴백 경로가 곧바로 미검증 값이 되어
+        // DeepSeek에 400을 던진다 — 이 테스트가 그 회귀를 잡는다.
         const defaultModel = _getDefaultTranslateModelForTest();
-        expect(_isValidGeminiModelForTest(defaultModel)).toBe(true);
+        expect(_isValidTranslateModelForTest(defaultModel)).toBe(true);
     });
 
     it('toApiModelId는 MODEL_SPECS에 없는 값을 받아도 던지지 않고 그 값을 그대로 반환한다', () => {
-        // resolveTranslateModel()의 unset/invalid 두 분기는 isValidGeminiModel을
-        // 거치지 않고 DEFAULT_TRANSLATE_MODEL을 곧장 toApiModelId에 넘긴다
-        // (REQUIRED 2). MODEL_SPECS[value as ActiveModelId] 인덱싱을 그대로
-        // 뒀다면 이 케이스에서 TypeError가 던져지고, tryReadTranslatorConfig()가
+        // resolveTranslateModel()의 unset/invalid 두 분기는 isValidTranslateModel을
+        // 거치지 않고 DEFAULT_TRANSLATE_MODEL을 곧장 toApiModelId에 넘긴다.
+        // MODEL_SPECS[value as ActiveModelId] 인덱싱을 그대로 뒀다면 이 케이스에서
+        // TypeError가 던져지고, tryReadTranslatorConfig()가
         // translateCompanyNames/translateCompanyDescription의 try/catch **밖**에서
         // 호출되므로 그 throw는 문서화된 우아한 디그레이드를 우회한다.
         // toApiModelId는 miss일 때 값을 그대로 반환해 이 throw를 구조적으로
@@ -166,8 +145,8 @@ describe('tryReadTranslatorConfig', () => {
 
     it('경고는 잘못된 값이 반복돼도 최초 1회만 로깅한다', () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        process.env.TRANSLATE_API_KEY = 'paid';
-        process.env.TRANSLATE_MODEL = 'gemini-custom';
+        vi.stubEnv('DEEPSEEK_API_KEY', 'paid');
+        vi.stubEnv('TRANSLATE_MODEL', 'deepseek-custom');
 
         tryReadTranslatorConfig();
         tryReadTranslatorConfig();

@@ -89,6 +89,12 @@ export async function submitMarketNewsDigestAction(
             categoryLabel: koLabel,
             modelId: DEFAULT_DIGEST_MODEL_ID,
             news,
+            // 스펙상 non-thinking인 deepseek-v4-flash에서도 추론을 강제로 켠다.
+            // 카테고리 피드 수십 건을 하나의 서술로 합성하는 작업이라 뉴스
+            // 경로 중 추론 이득이 실제로 나오는 유일한 지점이고, Gemini에서
+            // 넘어오기 전 동작(spec thinkingBudget 8192 = 추론 ON)과도 맞는다.
+            // 추론 티어 모델(deepseek-v4-pro)로 올리는 것보다 훨씬 싸다.
+            reasoning: true,
             skipEnqueueIfMiss,
             signal,
         });

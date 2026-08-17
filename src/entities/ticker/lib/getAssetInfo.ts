@@ -123,7 +123,7 @@ async function persistTranslation(
     );
 }
 
-/** Single-flight registry for fire-and-forget translate-and-persist work; collapses concurrent calls for the same symbol into one Gemini request. */
+/** Single-flight registry for fire-and-forget translate-and-persist work; collapses concurrent calls for the same symbol into one translation request. */
 const translationSingleFlight = createSingleFlight<void>();
 
 function translateAndPersist(
@@ -166,7 +166,7 @@ function translateAndPersist(
  *
  * 미국 주식 경로(FMP `searchBySymbol` → `findExactUsMatch` → 번역)와 같은 형태를
  * 유지한다 — 조회 소스만 yahoo다. 덕분에 한글명은 신규 코드 없이 기존
- * `translateCompanyNames`(Gemini) 경로로 채워지고, 그 부산물로 `korean_tickers`에
+ * `translateCompanyNames` 경로로 채워지고, 그 부산물로 `korean_tickers`에
  * 행이 생겨 **한글 검색까지 자동으로 동작한다**(`searchByKoreanName`). 별도의
  * 한국 종목 마스터 테이블이 필요하지 않은 이유다.
  *

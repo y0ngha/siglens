@@ -180,6 +180,48 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         );
     });
 
+    it('titleKo·summaryKo가 모두 빈 결과는 persist하지 않는다 — write-once 고착 방지', async () => {
+        // 저장하면 analyzedAt이 세팅되어 이 기사는 영구히 재분석에서 빠지고
+        // sentiment/category가 기본값으로 굳는다. DeepSeek 어댑터가
+        // responseSchema를 무시하므로(json_object만 강제) 실제로 열려 있는
+        // 경로다 — 심볼 뉴스·경제 이벤트 경로와 동일하게 skip한다.
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const attachAnalysis = vi.fn(async () => undefined);
+        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(function (
+            this: unknown
+        ) {
+            (this as Record<string, unknown>).upsertMarketNewsItem = vi.fn(
+                async () => true
+            );
+            (this as Record<string, unknown>).attachAnalysis = attachAnalysis;
+            (this as Record<string, unknown>).listByCategory = vi.fn(
+                async () => [DEFAULT_ITEM]
+            );
+            return this;
+        });
+        vi.mocked(core.runNewsCardAnalysis).mockResolvedValue({
+            status: 'done',
+            result: {
+                titleKo: '  ',
+                bodyKo: null,
+                summaryKo: '   ',
+                sentiment: 'bullish',
+                category: 'macro',
+                priceImpact: 'high',
+            },
+        });
+
+        await ensureMarketNewsCardsAnalyzedAction('crypto');
+
+        expect(core.runNewsCardAnalysis).toHaveBeenCalled();
+        expect(attachAnalysis).not.toHaveBeenCalled();
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining('empty card analysis')
+        );
+
+        warnSpy.mockRestore();
+    });
+
     it('upsert가 변경 없이 끝나면(false) revalidateTag를 호출하지 않는다', async () => {
         vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(function (
             this: unknown

@@ -174,7 +174,7 @@ Requires **Node.js 25.2.1** and **yarn 4.12.0**. `yarn install` resolves `@y0ngh
 | Variable | Purpose |
 |---|---|
 | `UPSTASH_REDIS_REST_READONLY_TOKEN` | Redis readonly access |
-| `TRANSLATE_API_KEY` / `TRANSLATE_MODEL` | Korean asset-name and profile translation |
+| `TRANSLATE_MODEL` | Korean asset-name and profile translation model (runs on `DEEPSEEK_API_KEY`) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth login |
 | `KAKAO_REST_API_KEY` / `KAKAO_CLIENT_SECRET` | Kakao OAuth login |
 | `OAUTH_REDIRECT_BASE_URL` | OAuth redirect base |

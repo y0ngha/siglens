@@ -21,8 +21,6 @@ import {
     MARKET_NEWS_CACHE_TAG_PREFIX,
     LLM_PARALLEL_LIMIT,
 } from '../lib/marketNewsConstants';
-import { DISABLED_THINKING_BUDGET } from '@/entities/news-article';
-
 /** Divisor for the upsert-majority-failure threshold: if more than half of fetched items fail to upsert, abort. */
 const MAJORITY_DIVISOR = 2;
 
@@ -31,15 +29,33 @@ const MAJORITY_DIVISOR = 2;
  *
  * Caller guarantees that `item` has not been analyzed yet (analyzedAt === null).
  * `runNewsCardAnalysis` returns `{ status: 'done', result }` directly — no polling.
+ *
+ * 추론 on/off는 여기서 정하지 않는다 — `runNewsCardAnalysis`가 use-case 정책으로
+ * `reasoning: false`를 고정한다. 구 `thinkingBudget: 0`은 Gemini 전용 인자였고
+ * DeepSeek 분기에서는 무시되므로 제거했다.
  */
 async function analyzeAndPersist(
     item: NewsItem,
     repo: DrizzleMarketNewsRepository
 ): Promise<void> {
-    const analyzed = await runNewsCardAnalysis({
-        item,
-        thinkingBudget: DISABLED_THINKING_BUDGET,
-    });
+    const analyzed = await runNewsCardAnalysis({ item });
+
+    // titleKo·summaryKo가 둘 다 비면 core normalizer의 crash-safe fallback이다.
+    // 저장하면 `analyzedAt`이 세팅되어 재분석 대상에서 영구히 빠지고
+    // sentiment/category가 기본값으로 고착한다 — 심볼 뉴스 경로
+    // (`ensureNewsCardsAnalyzedAction`) 및 경제 이벤트 경로와 동일한 skip 정책.
+    // 조건을 좁힌 이유(재시도 비용) 포함 자세한 근거는 그쪽 주석 참고.
+    //
+    // 이 경로는 심볼 뉴스와 달리 `isRecentlyFetched(sentinel)`가 봇·사람 구분 없이
+    // 걸려 있어(아래 참조) 재시도가 refresh TTL 주기로 자연히 제한된다.
+    const { titleKo, summaryKo } = analyzed.result;
+    if (titleKo.trim() === '' && summaryKo.trim() === '') {
+        console.warn(
+            `[ensureMarketNewsCardsAnalyzedAction] empty card analysis — skipping persist for ${item.id}`
+        );
+        return;
+    }
+
     await repo.attachAnalysis(item.id, analyzed.result, new Date());
 }
 

@@ -52,10 +52,7 @@ vi.mock('@/entities/news-article/api', () => ({
 
 import type { MockedFunction, MockedClass, Mock } from 'vitest';
 import { ensureNewsCardsAnalyzedAction } from '../actions/ensureNewsCardsAnalyzedAction';
-import {
-    DISABLED_THINKING_BUDGET,
-    NEWS_CARD_ANALYSIS_PARALLEL_LIMIT,
-} from '../lib/newsAnalysisConstants';
+import { NEWS_CARD_ANALYSIS_PARALLEL_LIMIT } from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import { runNewsCardAnalysis } from '@y0ngha/siglens-core';
 import { getNewsClient } from '../lib/getNewsClient';
@@ -165,6 +162,49 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             );
         });
 
+        it('titleKo·summaryKo가 모두 빈 결과는 persist하지 않는다 — write-once 고착 방지', async () => {
+            // core normalizer는 응답이 스키마와 어긋나면 crash-safe fallback으로
+            // 모든 문자열 필드를 ''로 떨어뜨린다. 그대로 attachAnalysis하면
+            // analyzedAt이 세팅되어 이 기사는 영구히 재분석 대상에서 빠지고
+            // sentiment='neutral'/category='other'로 굳는다. DeepSeek 어댑터는
+            // responseSchema를 무시하므로(json_object만 강제) 이 경로가 실제로
+            // 열려 있다 — 경제 이벤트 경로와 동일하게 skip해야 한다.
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
+            mockRunNewsCardAnalysis.mockResolvedValue({
+                status: 'done',
+                result: { ...CARD_ANALYSIS, titleKo: '  ', summaryKo: '   ' },
+            });
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockRunNewsCardAnalysis).toHaveBeenCalledTimes(1);
+            expect(mockAttachAnalysis).not.toHaveBeenCalled();
+            expect(warnSpy).toHaveBeenCalledWith(
+                expect.stringContaining('empty card analysis')
+            );
+
+            warnSpy.mockRestore();
+        });
+
+        it('titleKo가 채워져 있으면 summaryKo가 비어도 persist한다', async () => {
+            // 이 경로에는 TTL 게이트가 없어(사람은 항상 fresh) analyzedAt이 null로
+            // 남으면 FMP lookback 동안 방문마다 재분석된다. titleKo가 있는 응답은
+            // normalizer fallback이 아니라 모델이 실제로 만든 결과이므로 저장해
+            // 그 재시도 루프에 들어가지 않게 한다 — 가드를 "둘 다 빈 경우"로 좁힌 이유.
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
+            mockRunNewsCardAnalysis.mockResolvedValue({
+                status: 'done',
+                result: { ...CARD_ANALYSIS, summaryKo: '   ' },
+            });
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockAttachAnalysis).toHaveBeenCalledTimes(1);
+        });
+
         it('각 뉴스 아이템을 DB에 upsert한다', async () => {
             mockFetchNewsForPeriod.mockResolvedValue([
                 NEWS_ITEM_1,
@@ -192,13 +232,14 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             await ensureNewsCardsAnalyzedAction('AAPL');
 
             expect(mockRunNewsCardAnalysis).toHaveBeenCalledTimes(2);
+            // 정확 일치로 단언한다 — 추론 스위치를 호출부로 되돌리려는 시도
+            // (`thinkingBudget`/`reasoning` 재추가)를 여기서 잡는다. 그 정책은
+            // core의 `runNewsCardAnalysis`가 `reasoning: false`로 고정한다.
             expect(mockRunNewsCardAnalysis).toHaveBeenCalledWith({
                 item: NEWS_ITEM_1,
-                thinkingBudget: DISABLED_THINKING_BUDGET,
             });
             expect(mockRunNewsCardAnalysis).toHaveBeenCalledWith({
                 item: NEWS_ITEM_2,
-                thinkingBudget: DISABLED_THINKING_BUDGET,
             });
         });
 

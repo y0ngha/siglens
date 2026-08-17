@@ -34,7 +34,7 @@ export const getProfile = (
 
 /**
  * 회사 설명의 한국어 번역을 반환하고, 최초 호출 시 DB에 저장해 배포 간에도
- * 유지한다. Read: DB 조회(히트 시 즉시). Write: Gemini 번역 → DB upsert(심볼당 최초 1회).
+ * 유지한다. Read: DB 조회(히트 시 즉시). Write: AI 번역 → DB upsert(심볼당 최초 1회).
  *
  * `cache()` 래핑 의도: 같은 요청에서 description-Ko를 여러 번 조회해도 DB lookup·
  * 번역을 1회로 묶는다. 내부 `getProfile(symbol)`은 이제 단순 위임이지만, 프로바이더
