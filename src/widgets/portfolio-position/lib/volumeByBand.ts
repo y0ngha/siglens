@@ -38,7 +38,7 @@ export function computeVolumeByBand(
     if (!Number.isInteger(bandCount) || bandCount <= 0) return null;
 
     const bandWidth = (high - low) / bandCount;
-    const volumeByBand = new Array<number>(bandCount).fill(0);
+    const volumeByBand = Array.from<number>({ length: bandCount }).fill(0);
     let totalVolume = 0;
 
     for (const bar of bars) {

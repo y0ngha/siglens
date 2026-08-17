@@ -323,7 +323,7 @@ function writeAndFormatFileAtomically(
     writeFileSync(tempPath, fileContent, 'utf-8');
 
     try {
-        execSync(`yarn prettier --write "${tempPath}"`, {
+        execSync(`yarn oxfmt "${tempPath}"`, {
             stdio: 'inherit',
         });
     } catch {

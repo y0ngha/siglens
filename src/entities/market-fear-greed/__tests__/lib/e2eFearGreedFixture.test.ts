@@ -25,7 +25,7 @@ describe('e2eDailyCloses', () => {
 
         expect(spy.map(p => p.date)).toEqual(vix.map(p => p.date));
         expect(spy.every(p => /^\d{4}-\d{2}-\d{2}$/.test(p.date))).toBe(true);
-        expect(spy.map(p => p.date)).toEqual([...spy.map(p => p.date)].sort());
+        expect(spy.map(p => p.date)).toEqual(spy.map(p => p.date).sort());
     });
 
     it('keeps every close finite and positive', () => {

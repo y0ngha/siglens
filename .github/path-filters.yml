@@ -38,10 +38,9 @@ e2e_irrelevant:
     - *common_irrelevant
     - 'skills/**'
     - 'skills-lock.json'
-    - 'eslint.config.mjs'
+    - '.oxlintrc.json'
     - '.stylelintrc.cjs'
-    - '.prettierrc.cjs'
-    - '.prettierignore'
+    - '.oxfmtrc.json'
     - 'vitest.config.ts'
     - 'vitest.setup.*.ts'
     - 'lint-staged.config.mjs'

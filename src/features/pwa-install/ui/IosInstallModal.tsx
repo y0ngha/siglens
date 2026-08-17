@@ -44,9 +44,15 @@ export function IosInstallModal({ onClose }: IosInstallModalProps) {
 
     return (
         <div
+            // 배경은 장식용(role="presentation")이고 닫기 경로는 Escape(useEscapeKey)와
+            // 닫기 버튼이 담당한다. 배경 클릭은 편의 기능이라 target 비교로 처리해
+            // 내부 클릭에 stopPropagation 핸들러를 달지 않는다.
+            role="presentation"
             data-testid="ios-modal-backdrop"
-            className="bg-secondary-950/80 fixed inset-0 z-9999 flex items-center justify-center px-4 backdrop-blur-sm"
-            onClick={onClose}
+            className="fixed inset-0 z-9999 flex items-center justify-center bg-secondary-950/80 px-4 backdrop-blur-sm"
+            onClick={e => {
+                if (e.target === e.currentTarget) onClose();
+            }}
         >
             <div
                 ref={dialogRef}
@@ -54,20 +60,19 @@ export function IosInstallModal({ onClose }: IosInstallModalProps) {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={MODAL_TITLE_ID}
-                className="border-secondary-700 bg-secondary-800 w-full max-w-sm rounded-2xl border p-5"
-                onClick={e => e.stopPropagation()}
+                className="w-full max-w-sm rounded-2xl border border-secondary-700 bg-secondary-800 p-5"
             >
                 <div className="mb-4 flex items-center justify-between">
                     <h2
                         id={MODAL_TITLE_ID}
-                        className="text-secondary-100 text-base font-bold"
+                        className="text-base font-bold text-secondary-100"
                     >
                         홈 화면에 추가하기
                     </h2>
                     <button
                         onClick={onClose}
                         aria-label="닫기"
-                        className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 text-xl leading-none transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                        className="text-xl leading-none text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         ✕
                     </button>
@@ -76,16 +81,16 @@ export function IosInstallModal({ onClose }: IosInstallModalProps) {
                     {STEPS.map(({ step, title, description, img, height }) => (
                         <div
                             key={step}
-                            className="bg-secondary-900 flex gap-3 rounded-xl p-3"
+                            className="flex gap-3 rounded-xl bg-secondary-900 p-3"
                         >
-                            <div className="bg-primary-600 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white">
+                            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-600 text-xs font-bold text-white">
                                 {step}
                             </div>
                             <div className="min-w-0 flex-1">
-                                <p className="text-secondary-200 mb-1 text-sm font-semibold">
+                                <p className="mb-1 text-sm font-semibold text-secondary-200">
                                     {title}
                                 </p>
-                                <p className="text-secondary-400 mb-2 text-xs">
+                                <p className="mb-2 text-xs text-secondary-400">
                                     {description}
                                 </p>
                                 <Image

@@ -203,7 +203,7 @@ app  →  pages  →  widgets  →  features  →  entities  →  shared
 
 ### ESLint 강제
 
-위 규칙은 `eslint-plugin-boundaries` + `no-restricted-imports`로 정적 검증된다. 위반 시 PR 머지 불가. 자세한 설정은 `eslint.config.mjs`.
+위 규칙은 oxlint의 `no-restricted-imports` 패턴(레이어별 override)으로 정적 검증된다. 위반 시 PR 머지 불가. 자세한 설정은 `.oxlintrc.json`.
 
 ---
 

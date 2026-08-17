@@ -216,7 +216,7 @@ siglens/
 
 이 트리에서 처음 보면 의외인 지점이 둘 있습니다.
 
-**`pages` 레이어가 `src/views/`에 있습니다.** App Router 프로젝트에 `src/pages/`를 만들면 레거시 Pages Router가 활성화되기 때문에, FSD 레이어 이름만 `views`로 둡니다. 이 매핑은 `eslint.config.mjs`의 `eslint-plugin-boundaries`가 강제하므로 위반은 리뷰가 아니라 빌드에서 걸립니다.
+**`pages` 레이어가 `src/views/`에 있습니다.** App Router 프로젝트에 `src/pages/`를 만들면 레거시 Pages Router가 활성화되기 때문에, FSD 레이어 이름만 `views`로 둡니다. 이 매핑은 `.oxlintrc.json`의 레이어별 `no-restricted-imports` override가 강제하므로 위반은 리뷰가 아니라 빌드에서 걸립니다.
 
 **`@y0ngha/siglens-core`는 외부 라이브러리가 아닙니다.** 지표 계산, 패턴 감지, 시그널 로직, 프롬프트 빌더 — Siglens의 분석 도메인을 그대로 떼어낸 패키지이고, 모든 레이어에서 직접 import할 수 있습니다. 무엇을 코어에 두고 무엇을 여기 둘지는 [SCOPE.md](./docs/architecture/SCOPE.md)에서 판단하고, 레이어 규칙 자체는 [ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md)에 있습니다.
 
@@ -294,9 +294,9 @@ E2E는 실제 프로덕션 빌드를 브라우저로 검증하며 Vitest와 별�
 ```bash
 yarn dev             # :4200 개발 서버
 yarn build           # 프로덕션 빌드
-yarn lint            # ESLint          (자동 수정은 lint:fix)
+yarn lint            # oxlint          (자동 수정은 lint:fix)
 yarn typecheck       # TypeScript 7 (네이티브 tsc)
-yarn format          # Prettier        (검사만 하면 format:check)
+yarn format          # oxfmt           (검사만 하면 format:check)
 yarn test            # Vitest
 ```
 
@@ -315,14 +315,14 @@ yarn test            # Vitest
 | `yarn copy:backtesting` | 백테스팅 JSON을 `public/backtesting`으로 복사 |
 | `yarn clear:backtesting` | `public/backtesting` 생성물 삭제 |
 | `yarn predev` / `yarn prebuild` | dev·build 전 백테스팅 파일 재생성 |
-| `yarn lint` | ESLint |
-| `yarn lint:fix` | ESLint 자동 수정 |
-| `yarn lint:staged` | staged 파일 ESLint 자동 수정 |
+| `yarn lint` | oxlint |
+| `yarn lint:fix` | oxlint 자동 수정 |
+| `yarn lint:staged` | staged 파일 oxlint 자동 수정 |
 | `yarn lint:style` | Stylelint |
 | `yarn lint:style-fix` | Stylelint 자동 수정 |
-| `yarn format` | Prettier write |
-| `yarn format:staged` | staged 파일 Prettier |
-| `yarn format:check` | Prettier check |
+| `yarn format` | oxfmt write |
+| `yarn format:staged` | staged 파일 oxfmt |
+| `yarn format:check` | oxfmt check |
 | `yarn typecheck` | TypeScript 7 네이티브 `tsc` 타입체크 |
 | `yarn db:generate` | Drizzle migration 생성 |
 | `yarn db:migrate` | migration 실행 |

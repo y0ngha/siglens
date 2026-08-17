@@ -351,7 +351,7 @@ export function deduplicateCryptoEntries(
         seen: new Set(),
     };
 
-    // CRLF-safe split — defensive, since this repo is LF-normalized by prettier
+    // CRLF-safe split — defensive, since this repo is LF-normalized by oxfmt
     // but the file may originate from a non-normalized source (e.g. Windows checkout).
     const { keptLines, removed } = section
         .split(/\r?\n/)
@@ -427,7 +427,7 @@ function writeAndFormatFileAtomically(
     writeFileSync(tempPath, fileContent, 'utf-8');
 
     try {
-        execSync(`yarn prettier --write "${tempPath}"`, { stdio: 'inherit' });
+        execSync(`yarn oxfmt "${tempPath}"`, { stdio: 'inherit' });
     } catch {
         console.warn(
             `Prettier failed for ${path} — temp file was written but may need manual formatting.`

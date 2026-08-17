@@ -216,7 +216,7 @@ siglens/
 
 Two things about this tree surprise people:
 
-**The `pages` layer lives in `src/views/`.** Creating `src/pages/` in an App Router project would activate the legacy Pages Router, so the FSD layer is named `views` instead. The mapping is enforced by `eslint-plugin-boundaries` in `eslint.config.mjs` — violations fail the build, not review.
+**The `pages` layer lives in `src/views/`.** Creating `src/pages/` in an App Router project would activate the legacy Pages Router, so the FSD layer is named `views` instead. The mapping is enforced by `no-restricted-imports` layer overrides in `.oxlintrc.json` — violations fail the build, not review.
 
 **`@y0ngha/siglens-core` is not a third-party dependency.** It is Siglens' own analysis domain, extracted into a package: indicator math, pattern detection, signal logic, prompt building. Any layer may import it directly. What belongs there versus here is decided in [SCOPE.md](./docs/architecture/SCOPE.md); the layer rules themselves are in [ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md).
 
@@ -294,9 +294,9 @@ Day to day:
 ```bash
 yarn dev             # dev server on :4200
 yarn build           # production build
-yarn lint            # ESLint          (lint:fix to autofix)
+yarn lint            # oxlint          (lint:fix to autofix)
 yarn typecheck       # TypeScript 7 (native tsc)
-yarn format          # Prettier        (format:check to verify)
+yarn format          # oxfmt           (format:check to verify)
 yarn test            # Vitest
 ```
 
@@ -315,14 +315,14 @@ Always install with `yarn`. `npm` and `pnpm` are not used.
 | `yarn copy:backtesting` | Copy backtesting JSON into `public/backtesting` |
 | `yarn clear:backtesting` | Remove generated `public/backtesting` files |
 | `yarn predev` / `yarn prebuild` | Regenerate backtesting files before dev/build |
-| `yarn lint` | ESLint |
-| `yarn lint:fix` | ESLint with autofix |
-| `yarn lint:staged` | ESLint autofix for staged files |
+| `yarn lint` | oxlint |
+| `yarn lint:fix` | oxlint with autofix |
+| `yarn lint:staged` | oxlint autofix for staged files |
 | `yarn lint:style` | Stylelint |
 | `yarn lint:style-fix` | Stylelint with autofix |
-| `yarn format` | Prettier write |
-| `yarn format:staged` | Prettier for staged files |
-| `yarn format:check` | Prettier check |
+| `yarn format` | oxfmt write |
+| `yarn format:staged` | oxfmt for staged files |
+| `yarn format:check` | oxfmt check |
 | `yarn typecheck` | Typecheck with TypeScript 7's native `tsc` |
 | `yarn db:generate` | Generate Drizzle migrations |
 | `yarn db:migrate` | Run migrations |

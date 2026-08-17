@@ -8,7 +8,6 @@ interface ContactTextFieldProps {
     label: string;
     type: ContactInputType;
     autoComplete?: string;
-    autoFocus?: boolean;
     required?: boolean;
     maxLength?: number;
     defaultValue?: string;
@@ -22,7 +21,6 @@ export function ContactTextField({
     label,
     type,
     autoComplete,
-    autoFocus,
     required,
     maxLength,
     defaultValue,
@@ -34,7 +32,7 @@ export function ContactTextField({
         <div className="space-y-2">
             <label
                 htmlFor={id}
-                className="text-secondary-200 block text-sm font-medium"
+                className="block text-sm font-medium text-secondary-200"
             >
                 {label}
             </label>
@@ -43,7 +41,6 @@ export function ContactTextField({
                 name={name}
                 type={type}
                 autoComplete={autoComplete}
-                autoFocus={autoFocus}
                 required={required}
                 maxLength={maxLength}
                 defaultValue={defaultValue}
@@ -59,7 +56,7 @@ export function ContactTextField({
                 <div
                     id={errorId}
                     role="alert"
-                    className="text-ui-danger flex items-start gap-1 text-sm"
+                    className="flex items-start gap-1 text-sm text-ui-danger"
                 >
                     <span aria-hidden>⚠</span>
                     <span>{error}</span>
