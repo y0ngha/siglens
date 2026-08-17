@@ -5,7 +5,17 @@ import {
     type CryptoAssetRow,
     type FmpCryptoListRaw,
 } from './lib/fmpCryptoListClient';
-import { and, desc, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm';
+import {
+    and,
+    desc,
+    eq,
+    ilike,
+    inArray,
+    isNull,
+    like,
+    or,
+    sql,
+} from 'drizzle-orm';
 import type { KrTickerListingRow } from '@/shared/lib/krTickerReconcile';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import {
@@ -143,13 +153,32 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
         );
     }
 
+    /**
+     * **국내 상장 종목 행만 반환한다.**
+     *
+     * `korean_tickers`는 이름이 무색하게 미국·한국 종목을 함께 담는 이중언어 이름
+     * 저장소다(2026-08 프로덕션 실측: 32,951행 중 국내는 2,595행). 이 결과는
+     * `planKrTickerReconcile`의 "현재 상장 중" 집합이 되는데, 대조 대상인
+     * 공공데이터포털 응답은 **KRX만** 담는다. 전량을 넘기면 미국 종목 3만여 건이
+     * 매일 "사라진 종목"으로 잡혀, 소실 상한 가드가 매일 걸리고 상폐 처리는 영원히
+     * 일어나지 않는다 — 가드가 파국은 막지만 기능이 통째로 죽는다.
+     *
+     * 접미사로 거르는 이유는 `isKrEquitySymbol`과 같다: 국내 심볼은 canonical 심볼에
+     * 거래소 접미사가 박혀 있어 형상만으로 판정이 끝난다.
+     */
     async findAllListingStatuses(): Promise<KrTickerListingRow[]> {
         return this.db
             .select({
                 symbol: koreanTickers.symbol,
                 delistedAt: koreanTickers.delistedAt,
             })
-            .from(koreanTickers);
+            .from(koreanTickers)
+            .where(
+                or(
+                    like(koreanTickers.symbol, '%.KS'),
+                    like(koreanTickers.symbol, '%.KQ')
+                )
+            );
     }
 
     async markDelisted(symbols: readonly string[]): Promise<void> {

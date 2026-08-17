@@ -144,6 +144,33 @@ describe('syncKrListedTickers', () => {
         expect(mockRepository.upsertMany).toHaveBeenCalledOnce();
     });
 
+    /**
+     * `korean_tickers`는 이름과 달리 미국 종목도 담는다(프로덕션 실측 32,951행 중 국내
+     * 2,595행). 리포지토리가 전량을 돌려주면 미국 종목이 전부 "사라진 종목"으로 잡혀
+     * 가드가 매일 걸리고 상폐 처리가 영영 일어나지 않는다 — 가드가 파국은 막지만
+     * 기능은 통째로 죽는다. 그 계약이 리포지토리 쪽에 있다는 것을 여기서도 못박는다.
+     */
+    it('[회귀] 미국 종목이 섞여 들어오면 가드가 걸려 상폐가 통째로 멈춘다', async () => {
+        const items = bulkItems(1_200);
+        mockFetchKrxListedItems.mockResolvedValue(items);
+        mockRepository.findAllListingStatuses.mockResolvedValue([
+            ...items.map(i => ({
+                symbol: `${i.shortCode}.KS`,
+                delistedAt: null,
+            })),
+            // 리포지토리가 접미사 필터를 잃으면 이런 행들이 섞여 들어온다.
+            ...Array.from({ length: 100 }, (_, i) => ({
+                symbol: `US${i}`,
+                delistedAt: null,
+            })),
+        ]);
+
+        const counts = await syncKrListedTickers();
+
+        expect(counts.guardTrip).toContain('vanished in one sync');
+        expect(counts.delisted).toBe(0);
+    });
+
     it('다시 상장된 종목은 표시를 해제한다', async () => {
         const items = bulkItems(1_200);
         mockFetchKrxListedItems.mockResolvedValue(items);

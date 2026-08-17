@@ -1,6 +1,6 @@
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { and, inArray, isNull, sql } from 'drizzle-orm';
+import { and, inArray, isNull, like, or, sql } from 'drizzle-orm';
 import { pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 import {
     fetchKrxListedItems,
@@ -110,12 +110,23 @@ async function main() {
     const db = drizzle(client);
 
     try {
+        // 국내 종목 행만 읽는다. `korean_tickers`는 이름과 달리 미국 종목도 담고
+        // (2026-08 프로덕션 실측: 32,951행 중 국내 2,595행), 대조 대상인 공공데이터포털
+        // 응답은 KRX만 담는다. 전량을 넘기면 미국 종목이 매일 "사라진 종목"으로 잡혀
+        // 소실 상한 가드가 항상 걸리고 상폐 처리가 영영 일어나지 않는다.
+        // `syncKrListedTickers`의 `findAllListingStatuses`와 같은 조건이어야 한다.
         const existing = await db
             .select({
                 symbol: koreanTickers.symbol,
                 delistedAt: koreanTickers.delistedAt,
             })
-            .from(koreanTickers);
+            .from(koreanTickers)
+            .where(
+                or(
+                    like(koreanTickers.symbol, '%.KS'),
+                    like(koreanTickers.symbol, '%.KQ')
+                )
+            );
 
         const plan = planKrTickerReconcile(
             rows.map(row => row.symbol),

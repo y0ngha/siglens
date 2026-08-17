@@ -155,9 +155,14 @@ describe('DrizzleKoreanTickerRepository', () => {
         await expect(repo.findAll()).resolves.toEqual([]);
     });
 
-    it('findAllListingStatuses 는 상폐 행까지 포함해 전량을 읽는다', async () => {
+    it('findAllListingStatuses 는 상폐 행까지 포함하되 국내 종목만 읽는다', async () => {
         // reconcile 플래너는 "이미 상폐로 표시된 종목"을 알아야 relist를 판단하고,
-        // 같은 행을 매일 다시 상폐 표시해 시각을 미는 것도 막는다.
+        // 같은 행을 매일 다시 상폐 표시해 시각을 미는 것도 막는다 — 그래서 상폐 행도 읽는다.
+        //
+        // 반면 **미국 종목은 읽으면 안 된다.** `korean_tickers`는 이름과 달리 미국 종목도
+        // 담는데(2026-08 프로덕션 실측: 32,951행 중 국내 2,595행), 대조 대상인
+        // 공공데이터포털 응답은 KRX만 담는다. 전량을 읽으면 미국 종목 3만여 건이
+        // "사라진 종목"으로 잡혀 소실 상한 가드가 매일 걸리고 상폐 처리가 영영 일어나지 않는다.
         const rows = [
             { symbol: '005930.KS', delistedAt: null },
             { symbol: '000000.KQ', delistedAt: new Date('2026-01-01') },
@@ -165,7 +170,8 @@ describe('DrizzleKoreanTickerRepository', () => {
         const { db, where } = makeSelectFromDb(rows);
         const repo = new DrizzleKoreanTickerRepository(db);
         await expect(repo.findAllListingStatuses()).resolves.toEqual(rows);
-        expect(where).not.toHaveBeenCalled();
+        // 접미사 필터가 반드시 걸려야 한다 — 빠지면 미국 종목이 섞인다.
+        expect(where).toHaveBeenCalledTimes(1);
     });
 
     it('findBySymbols 는 빈 입력에서 select 를 호출하지 않는다', async () => {
