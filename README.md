@@ -8,7 +8,8 @@
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-16.2-black)
 ![React](https://img.shields.io/badge/React-19.2-61dafb?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.x%20%C2%B7%20tsgo-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-tsgo%20(TS7)-blue)
+![OXC](https://img.shields.io/badge/lint%2Fformat-OXC-c96198)
 ![Node.js](https://img.shields.io/badge/node-25.2.1-green)
 
 [![Website](https://img.shields.io/badge/Website-siglens.io-blue?style=for-the-badge)](https://siglens.io)
@@ -334,15 +335,15 @@ Day to day:
 ```bash
 yarn dev             # dev server on :4200
 yarn build           # production build
-yarn lint            # ESLint          (lint:fix to autofix)
-yarn typecheck       # tsgo            (typecheck:tsc for tsc)
-yarn format          # Prettier        (format:check to verify)
+yarn lint            # ESLint → oxlint  (lint:fix to autofix)
+yarn typecheck       # tsgo             (typecheck:tsc for tsc)
+yarn format          # Prettier → oxfmt (format:check to verify)
 yarn test            # Vitest
 ```
 
 Always install with `yarn`. `npm` and `pnpm` are not used.
 
-**Toolchain, in transit.** `yarn typecheck` already runs `tsgo` from `@typescript/native-preview` — the Go port that becomes TypeScript 7 — with `yarn typecheck:tsc` kept as the `tsc` escape hatch. ESLint and Prettier are next: both are slated for replacement by OXC (`oxlint`, `oxfmt`). Until that lands, `yarn lint` and `yarn format` are still the real gates, and the Husky pre-push hook still calls them.
+**Toolchain, mid-swap.** The type checker has already moved: `yarn typecheck` runs `tsgo` from `@typescript/native-preview` — the Go port that becomes TypeScript 7 — and `yarn typecheck:tsc` is the `tsc` escape hatch left behind. ESLint and Prettier are being replaced the same way, by OXC — `oxlint` and `oxfmt`. The script names do not change: `yarn lint` and `yarn format` stay the gates the Husky pre-push hook calls, and they swap out from under you as each tool lands.
 
 <details>
 <summary><b>Every script in package.json</b></summary>
@@ -357,12 +358,12 @@ Always install with `yarn`. `npm` and `pnpm` are not used.
 | `yarn copy:backtesting` | Copy backtesting JSON into `public/backtesting` |
 | `yarn clear:backtesting` | Remove generated `public/backtesting` files |
 | `yarn predev` / `yarn prebuild` | Regenerate backtesting files before dev/build |
-| `yarn lint` | ESLint |
+| `yarn lint` | ESLint — swapping to `oxlint` |
 | `yarn lint:fix` | ESLint with autofix |
 | `yarn lint:staged` | ESLint autofix for staged files |
 | `yarn lint:style` | Stylelint |
 | `yarn lint:style-fix` | Stylelint with autofix |
-| `yarn format` | Prettier write |
+| `yarn format` | Prettier write — swapping to `oxfmt` |
 | `yarn format:staged` | Prettier for staged files |
 | `yarn format:check` | Prettier check |
 | `yarn typecheck` | Typecheck with `tsgo` |

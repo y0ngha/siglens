@@ -8,7 +8,8 @@
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-16.2-black)
 ![React](https://img.shields.io/badge/React-19.2-61dafb?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.x%20%C2%B7%20tsgo-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-tsgo%20(TS7)-blue)
+![OXC](https://img.shields.io/badge/lint%2Fformat-OXC-c96198)
 ![Node.js](https://img.shields.io/badge/node-25.2.1-green)
 
 [![Website](https://img.shields.io/badge/Website-siglens.io-blue?style=for-the-badge)](https://siglens.io)
@@ -334,15 +335,15 @@ E2E는 Vitest와 별개로 실제 프로덕션 빌드를 브라우저에서 검�
 ```bash
 yarn dev             # :4200 개발 서버
 yarn build           # 프로덕션 빌드
-yarn lint            # ESLint          (lint:fix로 자동 수정)
-yarn typecheck       # tsgo            (typecheck:tsc는 tsc)
-yarn format          # Prettier        (format:check로 검사만)
+yarn lint            # ESLint → oxlint  (lint:fix로 자동 수정)
+yarn typecheck       # tsgo             (typecheck:tsc는 tsc)
+yarn format          # Prettier → oxfmt (format:check로 검사만)
 yarn test            # Vitest
 ```
 
 설치는 항상 `yarn`으로 합니다. `npm`과 `pnpm`은 쓰지 않습니다.
 
-**전환 중인 툴체인.** `yarn typecheck`는 이미 `@typescript/native-preview`의 `tsgo`(TypeScript 7이 될 Go 포팅)로 돌고, `yarn typecheck:tsc`가 `tsc` 비상구로 남아 있습니다. 다음 차례는 ESLint와 Prettier로, 둘 다 OXC(`oxlint`, `oxfmt`)로 교체할 예정입니다. 교체 전까지는 `yarn lint`·`yarn format`이 실제 게이트이고 Husky pre-push 훅도 이들을 호출합니다.
+**교체 중인 툴체인.** 타입 체커는 이미 옮겼습니다 — `yarn typecheck`는 `@typescript/native-preview`의 `tsgo`(TypeScript 7이 될 Go 포팅)로 돌고, `yarn typecheck:tsc`가 `tsc` 비상구로 남아 있습니다. ESLint와 Prettier도 같은 방식으로 OXC(`oxlint`, `oxfmt`)로 교체하는 중입니다. 스크립트 이름은 그대로입니다 — `yarn lint`·`yarn format`이 계속 Husky pre-push 훅이 호출하는 게이트이고, 각 도구가 들어올 때마다 그 아래 구현만 바뀝니다.
 
 <details>
 <summary><b>package.json 전체 스크립트</b></summary>
@@ -357,12 +358,12 @@ yarn test            # Vitest
 | `yarn copy:backtesting` | 백테스팅 JSON을 `public/backtesting`으로 복사 |
 | `yarn clear:backtesting` | 생성된 `public/backtesting` 파일 제거 |
 | `yarn predev` / `yarn prebuild` | dev/build 전 백테스팅 파일 재생성 |
-| `yarn lint` | ESLint |
+| `yarn lint` | ESLint — `oxlint`로 교체 중 |
 | `yarn lint:fix` | ESLint 자동 수정 |
 | `yarn lint:staged` | staged 파일 ESLint 자동 수정 |
 | `yarn lint:style` | Stylelint |
 | `yarn lint:style-fix` | Stylelint 자동 수정 |
-| `yarn format` | Prettier 적용 |
+| `yarn format` | Prettier 적용 — `oxfmt`로 교체 중 |
 | `yarn format:staged` | staged 파일 Prettier |
 | `yarn format:check` | Prettier 검사 |
 | `yarn typecheck` | `tsgo` 타입 체크 |
