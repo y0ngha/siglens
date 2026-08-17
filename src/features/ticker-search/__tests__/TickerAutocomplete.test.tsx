@@ -155,14 +155,47 @@ describe('TickerAutocomplete', () => {
         ).not.toBeInTheDocument();
     });
 
-    it('renders koreanName in result item display', () => {
+    it('회사명을 먼저, 티커를 뒤에 렌더한다', () => {
+        // 사용자는 티커가 아니라 이름으로 종목을 떠올린다. 한국어 화면이므로 한글명이
+        // 주 이름이고, 영문명은 다를 때만 보조로 붙는다.
         setupAutocomplete({
             query: 'A',
             isOpen: true,
             results: MOCK_RESULTS,
         });
         render(<TickerAutocomplete />);
-        expect(screen.getByText('Apple Inc. (애플)')).toBeInTheDocument();
+
+        expect(screen.getByText('애플')).toBeInTheDocument();
+        expect(screen.getByText('AAPL')).toBeInTheDocument();
+        expect(screen.getByText('Apple Inc.')).toBeInTheDocument();
+
+        // 순서: 회사명 → 티커. DOM 순서로 확인한다.
+        const option = screen.getByText('애플').closest('[role="option"]');
+        expect(option).not.toBeNull();
+        const text = option!.textContent ?? '';
+        expect(text.indexOf('애플')).toBeLessThan(text.indexOf('AAPL'));
+    });
+
+    it('영문명이 한글명과 같으면 한 번만 쓴다', () => {
+        // 종목 마스터 시드는 영문명을 주지 않아 `name`에 한글명을 넣는다 —
+        // 그대로 두면 `삼성전자 (삼성전자)`가 된다.
+        setupAutocomplete({
+            query: '삼성',
+            isOpen: true,
+            results: [
+                {
+                    symbol: '005930.KS',
+                    name: '삼성전자',
+                    koreanName: '삼성전자',
+                    exchange: 'KOSPI',
+                    exchangeFullName: 'Korea Exchange (KOSPI)',
+                },
+            ],
+        });
+        render(<TickerAutocomplete />);
+
+        expect(screen.getAllByText('삼성전자')).toHaveLength(1);
+        expect(screen.getByText('005930.KS')).toBeInTheDocument();
     });
 
     it('renders exchange name', () => {

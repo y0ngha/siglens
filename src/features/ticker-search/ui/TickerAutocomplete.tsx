@@ -191,9 +191,14 @@ function ResultItem({
     onSelect,
     onPrefetch,
 }: ResultItemProps) {
-    const displayName = result.koreanName
-        ? `${result.name} (${result.koreanName})`
-        : result.name;
+    // 한국어 사용자가 읽는 화면이므로 한글명이 있으면 그쪽이 주 이름이다.
+    // 영문명은 한글명과 다를 때만 덧붙인다 — 종목 마스터 시드는 영문명을 주지 않아
+    // `name`에 한글명을 넣어 두므로, 그대로 두면 `삼성전자 (삼성전자)`가 된다.
+    const primaryName = result.koreanName ?? result.name;
+    const secondaryName =
+        result.koreanName && result.name !== result.koreanName
+            ? result.name
+            : null;
 
     return (
         <button
@@ -208,14 +213,22 @@ function ResultItem({
                 isSelected && 'bg-secondary-700'
             )}
         >
+            {/* 회사명이 먼저, 티커가 뒤 — 사용자는 티커가 아니라 이름으로 종목을
+                떠올린다(`삼성전자`, `애플`). 티커는 같은 이름의 종목을 구분하는
+                보조 정보라 뒤에 둔다. */}
             <div className="flex items-baseline gap-2">
-                <span className="shrink-0 font-medium text-secondary-100">
-                    {result.symbol}
+                <span className="truncate font-medium text-secondary-100">
+                    {primaryName}
                 </span>
                 {result.marketProfile === 'crypto' && <CryptoBadge />}
-                <span className="truncate text-sm text-secondary-400">
-                    {displayName}
+                <span className="shrink-0 text-sm text-secondary-400">
+                    {result.symbol}
                 </span>
+                {secondaryName && (
+                    <span className="truncate text-sm text-secondary-500">
+                        {secondaryName}
+                    </span>
+                )}
             </div>
             <div className="text-xs text-secondary-500">
                 {result.exchangeFullName}
