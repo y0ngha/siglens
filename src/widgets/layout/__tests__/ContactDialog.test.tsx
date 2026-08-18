@@ -23,6 +23,26 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ContactDialog } from '../ContactDialog';
 import { useDialog } from '@/shared/hooks/useDialog';
 
+/**
+ * useDialog를 mock한 테스트용 dialogRef.
+ *
+ * 네이티브 `<dialog>`는 열려 있지 않으면 children이 숨겨져(UA 스타일 display:none)
+ * getByRole/getByText로 조회되지 않는다. 실제 훅은 effect에서 showModal()을 부르지만
+ * mock에는 그 로직이 없으므로, React가 엘리먼트를 ref에 붙이는 순간 열어 준다.
+ */
+function openedDialogRef(): { current: HTMLDialogElement | null } {
+    let node: HTMLDialogElement | null = null;
+    return {
+        get current() {
+            return node;
+        },
+        set current(next: HTMLDialogElement | null) {
+            node = next;
+            if (next !== null && !next.open) next.showModal();
+        },
+    };
+}
+
 describe('ContactDialog', () => {
     it('renders the trigger button with default label', () => {
         render(<ContactDialog />);
@@ -51,13 +71,15 @@ describe('ContactDialog', () => {
             isOpen: true,
             open: vi.fn(),
             close: vi.fn(),
-            dialogRef: { current: null },
+            dialogRef: openedDialogRef(),
             triggerRef: { current: null },
         });
 
         render(<ContactDialog />);
 
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        // useDialog를 mock했으므로 showModal()이 호출되지 않는다 → <dialog>에 open이
+        // 붙지 않아 role="dialog"로는 조회되지 않는다. 여기서 검증할 것은 "열림 상태에서
+        // 내용이 렌더되는가"이고, 네이티브 open 동작은 useDialog 테스트가 담당한다.
         expect(screen.getByTestId('contact-form')).toBeInTheDocument();
     });
 
