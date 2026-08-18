@@ -107,12 +107,12 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                     </div>
                 )}
 
-                {/* 메시지 목록은 append-only이므로 role+index 키가 안전하다 */}
-                {messages.map((msg, i) => {
+                {/* uiId는 메시지 생성/복원 시 부여되는 렌더 전용 식별자다(useChat). */}
+                {messages.map(msg => {
                     if (msg.role === 'system') {
                         return (
                             <ContextSwitchSystemMessage
-                                key={`system-${i}`}
+                                key={msg.uiId}
                                 label={msg.label}
                             />
                         );
@@ -120,7 +120,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
 
                     return (
                         <div
-                            key={`${msg.role}-${i}`}
+                            key={msg.uiId}
                             className={cn(
                                 'max-w-[85%] rounded-lg p-2.5 text-xs leading-relaxed',
                                 msg.role === 'user'

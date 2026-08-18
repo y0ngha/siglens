@@ -10,15 +10,10 @@ function DialogHarness() {
                 Open
             </button>
             {isOpen && (
-                <div
-                    ref={dialogRef}
-                    tabIndex={-1}
-                    role="dialog"
-                    data-testid="dialog"
-                >
+                <dialog ref={dialogRef} data-testid="dialog" onClose={close}>
                     <p>Dialog content</p>
                     <button onClick={close}>Close</button>
-                </div>
+                </dialog>
             )}
         </>
     );
@@ -55,20 +50,14 @@ describe('useDialog', () => {
         expect(screen.queryByTestId('dialog')).not.toBeInTheDocument();
     });
 
-    it('closes on click outside', async () => {
+    // 네이티브 모달은 배경 클릭이 dialog 엘리먼트 자신에게 도달한다(바깥 요소는 inert).
+    // 소비자는 target === currentTarget 확인으로 "배경 클릭 닫기"를 구현한다.
+    it('closes when the backdrop (dialog element itself) is clicked', async () => {
         const user = userEvent.setup();
-        render(
-            <div>
-                <DialogHarness />
-                <div data-testid="outside">outside</div>
-            </div>
-        );
+        render(<DialogHarness />);
         await user.click(screen.getByText('Open'));
         expect(screen.getByTestId('dialog')).toBeInTheDocument();
-        await user.pointer({
-            target: screen.getByTestId('outside'),
-            keys: '[MouseLeft]',
-        });
+        await user.click(screen.getByTestId('dialog'));
         expect(screen.queryByTestId('dialog')).not.toBeInTheDocument();
     });
 

@@ -71,9 +71,10 @@ oxlint는 자체 파서라 무관하고, 저장소 전체 린트가 1초대에 �
 
 | 상태 | 점수 |
 |---|---|
-| 전환 전 | 65 |
-| 실수정 + 설정 정리 후(현재) | 81 |
-| Bugs·Performance·Accessibility를 전부 0으로 만들면 | **90** |
+| 툴체인 전환 전 | 65 |
+| 1차 실수정 + 설정 정리 | 81 |
+| 2차 실수정(아래) 후 **현재** | **85 (Great)**, error 0 |
+| Bugs·Performance·Accessibility를 전부 0으로 만들면 | 90 |
 | 진단 0건 | 100 |
 
 - **suppression은 점수를 바꾸지 않는다.** `ignore.rules` / `ignore.overrides`로
@@ -88,17 +89,31 @@ oxlint는 자체 파서라 무관하고, 저장소 전체 린트가 1초대에 �
   스텝으로 좁혔고, 순수 JS 체크 잡은 `--mode=skip-build`로 시크릿이 있는 동안
   패키지 lifecycle 코드를 실행하지 않는다.
 
+### 2차에서 실제로 고친 것
+
+- **분석 쿼리 4종**(congress/financials/fundamental/options): `enabled: false` + effect에서
+  `refetch()` → `enabled` 기반으로. 포커스/재연결 재요청을 꺼서 "실패 후 창 포커스만으로
+  AI 분석이 다시 도는" 경로를 차단했다.
+- **usePersistentState**: 마운트 effect 복원 → `useSyncExternalStore`. 복원 렌더가 사라지고,
+  같은 key를 쓰는 인스턴스가 자동 동기화되며 다른 탭 변경도 반영된다.
+- **useSectorSignalState**: URL 딥링크 복원을 effect → 첫 렌더 초기화로(이 패널은
+  `useSearchParams` CSR bailout이라 하이드레이션 불일치가 없다).
+- **채팅 메시지 key**: `ChatMessage`(core 소유 타입)에 id가 없어 표시 계층에서 `uiId`를
+  부여하고 LLM 전송·저장 전에 제거한다. 인덱스 key 제거.
+- **모달 2종**(ContactDialog, IndicatorSettingsModal): 네이티브 `<dialog>` + `showModal()`.
+  포커스 트랩·Esc·비활성 배경을 브라우저에 위임하고 `useFocusTrap`/`useEscapeKey`/
+  `useOnClickOutside` 조합을 걷어냈다. 배경 클릭 닫기는 `useDialog`가 dialog 엘리먼트에
+  직접 리스너를 붙인다(소비자 JSX에 클릭 핸들러를 두면 a11y 룰에 걸린다).
+  jsdom은 `showModal`을 구현하지 않아 `vitest.setup.dom.ts`에 최소 폴리필을 뒀다.
+
 ### 90점까지 남은 항목(후속 과제)
 
-전부 "런타임 회귀가 의심되는" 리팩터링이라 툴체인 전환 PR에서는 손대지 않았다.
+남은 9건이 5점을 물고 있다. 전부 "런타임 회귀가 의심되는" 리팩터링이거나 분석기 오탐이라
+이 PR에서는 손대지 않았다.
 
 | 항목 | 건수 | 왜 미뤘나 |
 |---|---|---|
-| `no-pass-data-to-parent` 계열 (ChartContent, useSelectedModel, MA 오버레이, 지표 번역 트리거) | 7 | effect → 부모 콜백 동기화 구조 변경. 이 저장소는 재등록 렌더 폭주 이력이 있어 별도 PR + 실증이 필요하다 |
-| `query-no-query-in-effect` | 4 | refetch 트리거를 `enabled`로 바꾸면 AI 분석 트리거 시맨틱(비용·중복 실행)이 바뀐다 |
-| `prefer-html-dialog` | 4 | 커스텀 포커스 트랩 4개를 네이티브 `<dialog>`로 교체하는 UI 리팩터링 |
-| `no-adjust-state-on-prop-change` (useAnalysis) | 2 | 파생 상태 재설계 |
-| `query-mutation-missing-invalidation` | 2 | 무효화 추가 시 추가 refetch가 발생 — 캐시 정책 결정 필요 |
-| `no-array-index-as-key` (ChatPanel) | 2 | `ChatMessage`(siglens-core 소유 타입)에 안정적 id가 없다. 내용이 같은 메시지가 반복될 수 있어 콘텐츠 key도 불가 → core 타입 변경이 선행돼야 한다 |
-| `set-state-in-effect` (usePersistentState, useSectorSignalState) | 2 | `useSyncExternalStore` 전환이 정답이지만 여러 위젯이 공유하는 훅이라 별도 검증 필요 |
-| `todo`(React Compiler 미최적화, 렌더 폭주 재현 테스트) | 1 | 렌더마다 카운터를 증가시키는 것이 테스트의 목적 자체라 컴파일러가 최적화할 수 있는 형태로 바꿀 수 없다. 객체 카운터로 바꿔 봤으나 `immutability` 오류로 바뀔 뿐이라 원복했다 |
+| `no-pass-data-to-parent` 외 2종 (ChartContent `notifyMobileContent`) | 3 | 모바일 바텀시트 내용을 부모 상태로 올리는 구조다. 부모가 Suspense 경계 **밖**에서 시트를 렌더해 타임프레임 전환 시에도 내용이 유지되는 것이 의도된 설계라(포털로 바꾸면 서스펜드 중 내용이 사라진다) 구조 변경 없이는 못 없앤다 |
+| `no-pass-data-to-parent`/`no-pass-live-state-to-parent` (useSelectedModel) | 2 | 모델 선택이 매 로드 DEFAULT로 강등되던 회귀(PR #713)를 tier 확정 게이트로 막은 파일이다. 파생 상태 재작성이 더 안전할 수 있지만 별도 PR + 실증이 필요하다 |
+| `no-pass-data-to-parent` (useMovingAverageOverlay, useIndicatorTranslationTrigger) | 2 | 분석기 오탐. 각각 lightweight-charts 시리즈에 데이터를 넣는 명령형 동기화와, 마운트 1회 fire-and-forget 서버 액션 트리거다 |
+| `no-adjust-state-on-prop-change` (useAnalysis) | 2 | tier 확정·보유종목 하이드레이션·warm 캐시 결과가 얽힌 레이스 처리다. 상태 조정과 재제출(side effect)이 한 effect에 묶여 있어 렌더 파생으로 옮길 수 없다 |

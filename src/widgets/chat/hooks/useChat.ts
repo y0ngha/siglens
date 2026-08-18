@@ -6,7 +6,11 @@ import {
     loadSessionFull,
     saveSession,
 } from '../utils/chatStorage';
-import { isChatMessage } from '../utils/chatMessageUtils';
+import {
+    isChatMessage,
+    nextMessageUiId,
+    withUiIds,
+} from '../utils/chatMessageUtils';
 import {
     DEEPSEEK_V4_FLASH_MODEL,
     VALID_CHAT_MODELS,
@@ -18,7 +22,7 @@ import {
     type ChatMessage,
     type ModelId,
 } from '@y0ngha/siglens-core';
-import type { ContextSwitchMessage, DisplayMessage } from '@/shared/lib/types';
+import type { DisplayMessage } from '@/shared/lib/types';
 import {
     chatAction,
     getRemainingTokensAction,
@@ -226,7 +230,11 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
                 assetClass
             ),
         onMutate: ({ text }) => {
-            const userMessage: ChatMessage = { role: 'user', content: text };
+            const userMessage: DisplayMessage = {
+                role: 'user',
+                content: text,
+                uiId: nextMessageUiId(),
+            };
             setMessages(prev => [...prev, userMessage]);
             setLoadingPhase('analyzing');
             phaseTimerRef.current = setTimeout(() => {
@@ -242,9 +250,10 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
         },
         onSuccess: result => {
             const aiContent = resolveAiContent(result);
-            const aiMessage: ChatMessage = {
+            const aiMessage: DisplayMessage = {
                 role: 'model',
                 content: aiContent,
+                uiId: nextMessageUiId(),
             };
             setMessages(prev => [...prev, aiMessage]);
             if (result.ok) {
@@ -263,7 +272,11 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
         onError: () => {
             setMessages(prev => [
                 ...prev,
-                { role: 'model', content: ERROR_MESSAGES.server_error },
+                {
+                    role: 'model',
+                    content: ERROR_MESSAGES.server_error,
+                    uiId: nextMessageUiId(),
+                },
             ]);
         },
     });
@@ -283,7 +296,12 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
             // in-flight requests use the snapshot captured when the user submitted)
             if (loadingPhaseRef.current !== null || !isAnalysisReady) return;
             // Filter out UI-only system messages before forwarding history to the LLM.
-            const llmMessages = messagesRef.current.filter(isChatMessage);
+            // uiId는 렌더 전용이므로 프롬프트 payload에서 제거한다(단일 순회).
+            const llmMessages = messagesRef.current.flatMap(message =>
+                isChatMessage(message)
+                    ? [{ role: message.role, content: message.content }]
+                    : []
+            );
             await mutateAsync({ currentMessages: llmMessages, text });
         },
         [isAnalysisReady, mutateAsync]
@@ -305,7 +323,7 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     // initialStorageKey는 마운트 시 한 번 계산되고 이후 바뀌지 않으므로 deps에 넣어도
     // 마운트 1회 의미가 그대로 유지된다.
     useEffect(() => {
-        const loaded = loadSession(initialStorageKey);
+        const loaded = withUiIds(loadSession(initialStorageKey));
         startTransition(() => {
             setMessages(loaded);
         });
@@ -363,7 +381,7 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
         if (prevKeyRef.current === storageKey) return;
         prevKeyRef.current = storageKey;
         isKeyChangePendingRef.current = true;
-        const loaded = loadSession(storageKey);
+        const loaded = withUiIds(loadSession(storageKey));
         startTransition(() => {
             setMessages(loaded);
             setAnalysisUpdated(false);
@@ -407,10 +425,11 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     // 컨텍스트 스위치 system 메시지 삽입은 useEffectEvent로 격리해 effect 본문에서 setState를 직접 호출하지 않는다.
     // LLM 프롬프트에는 포함되지 않음 — sendMessage에서 필터링된다.
     const appendContextSwitch = useEffectEvent((label: string) => {
-        const systemMessage: ContextSwitchMessage = {
+        const systemMessage: DisplayMessage = {
             role: 'system',
             kind: 'context_switch',
             label,
+            uiId: nextMessageUiId(),
         };
         startTransition(() => {
             setMessages(msgs => [...msgs, systemMessage]);
@@ -440,7 +459,12 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
             isKeyChangePendingRef.current = false;
             return;
         }
-        const persistableMessages = messages.filter(isChatMessage);
+        // 저장본에도 uiId를 남기지 않는다(복원 시 새로 발급).
+        const persistableMessages = messages.flatMap(message =>
+            isChatMessage(message)
+                ? [{ role: message.role, content: message.content }]
+                : []
+        );
         saveSession(storageKey, persistableMessages);
     }, [messages, storageKey]);
 

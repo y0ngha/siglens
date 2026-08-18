@@ -1,2 +1,50 @@
 import '@testing-library/jest-dom/vitest';
 import './vitest.setup.base';
+
+/**
+ * jsdom `<dialog>` 폴리필.
+ *
+ * jsdom은 `HTMLDialogElement.showModal()/close()`를 구현하지 않는다(미구현 API 호출 시
+ * `showModal is not a function`). 앱은 모달을 네이티브 `<dialog>`로 띄우므로(포커스 트랩·
+ * Esc·비활성 배경을 브라우저에 위임) 테스트 환경에만 최소 구현을 채워 넣는다.
+ *
+ * 채우는 것: open 속성 토글, Escape 키로 close 이벤트 발생(브라우저의 cancel→close 흐름),
+ * close 이벤트 디스패치. 실제 브라우저 동작은 Playwright E2E가 검증한다.
+ */
+const dialogProto = globalThis.HTMLDialogElement?.prototype;
+
+if (dialogProto !== undefined && typeof dialogProto.showModal !== 'function') {
+    const escapeHandlers = new WeakMap<HTMLDialogElement, () => void>();
+
+    const closeDialog = function (
+        this: HTMLDialogElement,
+        returnValue?: string
+    ): void {
+        if (!this.open) return;
+        this.open = false;
+        if (returnValue !== undefined) this.returnValue = returnValue;
+        const handler = escapeHandlers.get(this);
+        if (handler !== undefined) {
+            document.removeEventListener('keydown', handler as EventListener);
+            escapeHandlers.delete(this);
+        }
+        this.dispatchEvent(new Event('close'));
+    };
+
+    dialogProto.show = function (this: HTMLDialogElement): void {
+        this.open = true;
+    };
+
+    dialogProto.showModal = function (this: HTMLDialogElement): void {
+        this.open = true;
+        const onKeyDown = (event: Event): void => {
+            if ((event as KeyboardEvent).key !== 'Escape') return;
+            event.preventDefault();
+            closeDialog.call(this);
+        };
+        escapeHandlers.set(this, onKeyDown as () => void);
+        document.addEventListener('keydown', onKeyDown);
+    };
+
+    dialogProto.close = closeDialog;
+}
