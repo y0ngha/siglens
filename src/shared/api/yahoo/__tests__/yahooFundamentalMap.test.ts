@@ -310,6 +310,21 @@ describe('mapRatios', () => {
         expect(result!.debtRatioTTM).toBeCloseTo(0.0445, 4);
     });
 
+    it('debtRatio 분모는 연간이 아니라 최신 분기 총자산이다', () => {
+        // 분자 `totalDebt`가 TTM 시점 값이라 분모도 같은 시점이어야 한다. 위 케이스는
+        // 연간만 줘서 폴백 경로만 밟았고, 그래서 우선순위를 뒤집어도 통과했다 —
+        // PBR에는 같은 불변식을 잠그는 테스트가 있는데 여기만 비어 있었다.
+        // 분기(566.9조)면 0.0445, 연간(1,000조)이면 0.0252.
+        const result = mapRatios(
+            build({
+                summary: { financialData },
+                quarterlyBalance: years({ totalAssets: 566_942_110_000_000 }),
+                balance: years({ totalAssets: 1_000_000_000_000_000 }),
+            } as never)
+        );
+        expect(result!.debtRatioTTM).toBeCloseTo(0.0445, 4);
+    });
+
     it('returns null debtRatio when total assets are unavailable', () => {
         const result = mapRatios(
             build({ summary: { financialData } } as never)
