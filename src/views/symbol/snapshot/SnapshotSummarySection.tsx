@@ -1,5 +1,6 @@
 import { useId, type ReactNode } from 'react';
 import { formatSnapshotAsOf } from '@/shared/lib/formatSnapshotAsOf';
+import type { MarketProfileId } from '@/shared/config/marketProfile';
 
 interface SnapshotSummarySectionProps {
     /** 섹션 헤딩 텍스트. 생략 시 "최근 분석 요약". */
@@ -7,15 +8,45 @@ interface SnapshotSummarySectionProps {
     /** 캡션에 노출되는 심볼 표시명(예: "Apple Inc."). */
     displayName: string;
     /**
+     * 캡션 문구·타임존을 고르는 데 쓴다(`AS_OF_CAPTION_COPY`, `formatSnapshotAsOf`).
+     * 필수 prop이고 안전한 기본값이 없다 — 이 셸은 us-equity·kr-equity·crypto
+     * 페이지 전부에서 렌더되므로, 생략하면 항상 미국 장마감으로 잘못 캡션되는
+     * SEO 감사 실측 결함(2026-08-18: KR·crypto 페이지가 "미국 장마감 기준"을
+     * 자처)이 그대로 재발한다.
+     */
+    marketProfile: MarketProfileId;
+    /**
      * 스냅샷 행의 `generatedAt`. 있으면 h2 옆에 "지난 AI 분석" 배지를 렌더하고
-     * 캡션에 실제 기준일을 노출한다. 없으면 기존 "전일 장마감 기준" 캡션으로
-     * 폴백한다(배지 없음).
+     * 캡션에 실제 기준일을 노출한다. 없으면 시장별 고정 캡션으로 폴백한다(배지
+     * 없음) — `AS_OF_CAPTION_COPY[marketProfile].fallback`.
      */
     asOf?: Date;
     children: ReactNode;
 }
 
 const DEFAULT_TITLE = '최근 분석 요약';
+
+/**
+ * 기준일 캡션의 시장별 문구.
+ *
+ * `fallback`은 `asOf`가 없을 때 쓰는 완결된 문장, `suffix`는 `asOf`가 있을 때
+ * `formatSnapshotAsOf`가 포맷한 날짜 뒤에 붙는 접미사다. crypto는 정규장 마감이
+ * 없는 24/7 시장이라 "장마감"이라는 말 자체가 성립하지 않으므로 "UTC 기준"으로
+ * 대체한다. `Record<MarketProfileId, …>`라 세 값을 모두 채우지 않으면 컴파일이
+ * 막힌다 — `marketProfile`은 항상 타입이 보장된 값이라(런타임 미신뢰 입력이
+ * 아니다) `sessionSpecFor`류의 `_exhaustive: never` 런타임 가드는 불필요하다.
+ */
+const AS_OF_CAPTION_COPY: Record<
+    MarketProfileId,
+    { fallback: string; suffix: string }
+> = {
+    'us-equity': { fallback: '전일 장마감 기준', suffix: '미국 장마감 기준' },
+    'kr-equity': {
+        fallback: '전일 국내 장마감 기준',
+        suffix: '국내 장마감 기준',
+    },
+    crypto: { fallback: '전일 UTC 자정 기준', suffix: 'UTC 기준' },
+};
 
 /**
  * pre-warm된 SEO 분석 스냅샷의 프로즈 콘텐츠를 감싸는 재사용 셸.
@@ -34,29 +65,38 @@ const DEFAULT_TITLE = '최근 분석 요약';
  * `null`을 반환해 이 셸을 감싸지 않는 것과 동일한 계약).
  *
  * 캡션은 `asOf`가 주어지면 스냅샷 행의 실제 기준일(`formatSnapshotAsOf`로
- * 포맷)을 노출하고, 없으면 고정 라벨 "전일 장마감 기준"으로 폴백한다. 두 경로
- * 모두 렌더 중 `new Date()`를 호출하지 않는다 — `asOf`는 항상 DB 행의
- * `generatedAt`에서 와야 하며, 그래야 같은 캐시 엔트리가 재검증 시점과 무관하게
- * 항상 같은 문자열을 렌더한다(결정적 출력 유지, cold-gen dynamic API 회피).
+ * `marketProfile`의 타임존으로 포맷)을 노출하고, 없으면 `marketProfile`별 고정
+ * 캡션(`AS_OF_CAPTION_COPY[marketProfile].fallback`)으로 폴백한다. 두 경로 모두
+ * 렌더 중 `new Date()`를 호출하지 않는다 — `asOf`는 항상 DB 행의 `generatedAt`
+ * 에서 와야 하며, 그래야 같은 캐시 엔트리가 재검증 시점과 무관하게 항상 같은
+ * 문자열을 렌더한다(결정적 출력 유지, cold-gen dynamic API 회피).
  *
  * A1(감사): `formatSnapshotAsOf`는 Invalid Date에 `null`을 반환한다(throw하지
  * 않음). 배지("지난 AI 분석")와 캡션 문구는 반드시 같은 조건에서 갈려야 한다 —
  * 그래서 포맷된 문자열을 먼저 계산해두고, `null`을 `asOf === undefined`와
  * 완전히 동일하게 취급한다. 조건이 갈라지면 배지는 뜨는데 캡션은 고정 문구인
  * (또는 그 반대인) 자기모순적 렌더가 생긴다.
+ *
+ * SEO 감사(2026-08-18): 이전에는 캡션이 "미국 장마감 기준"으로 하드코딩돼
+ * 있었다 — 한국 주식·크립토 페이지도 미국 장마감을 자처했고, America/New_York
+ * 고정 타임존이 표시 날짜를 하루 밀거나 당길 수도 있었다. `marketProfile`을
+ * 스레딩해 라벨과 타임존을 시장에 맞게 고른다.
  */
 export function SnapshotSummarySection({
     title = DEFAULT_TITLE,
     displayName,
+    marketProfile,
     asOf,
     children,
 }: SnapshotSummarySectionProps) {
     const headingId = useId();
-    const formattedAsOf = asOf === undefined ? null : formatSnapshotAsOf(asOf);
+    const formattedAsOf =
+        asOf === undefined ? null : formatSnapshotAsOf(asOf, marketProfile);
+    const copy = AS_OF_CAPTION_COPY[marketProfile];
     const caption =
         formattedAsOf === null
-            ? `${displayName} · 전일 장마감 기준`
-            : `${displayName} · ${formattedAsOf} 미국 장마감 기준`;
+            ? `${displayName} · ${copy.fallback}`
+            : `${displayName} · ${formattedAsOf} ${copy.suffix}`;
 
     return (
         <section

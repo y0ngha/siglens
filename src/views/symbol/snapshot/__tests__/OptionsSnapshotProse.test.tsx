@@ -41,6 +41,7 @@ describe('OptionsSnapshotProse', () => {
                 content={buildFixture()}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -61,6 +62,7 @@ describe('OptionsSnapshotProse', () => {
                 content={buildFixture()}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -90,6 +92,7 @@ describe('OptionsSnapshotProse', () => {
                 })}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -107,6 +110,7 @@ describe('OptionsSnapshotProse', () => {
                 })}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
         expect(emptyContainer.textContent?.trim()).toBe('');
@@ -116,6 +120,7 @@ describe('OptionsSnapshotProse', () => {
                 content={null}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
         expect(nullContainer.textContent?.trim()).toBe('');
@@ -125,6 +130,7 @@ describe('OptionsSnapshotProse', () => {
                 content="not-an-object"
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
         expect(stringContainer.textContent?.trim()).toBe('');
@@ -148,6 +154,7 @@ describe('OptionsSnapshotProse', () => {
                 })}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -162,6 +169,7 @@ describe('OptionsSnapshotProse', () => {
                 content={buildFixture({ perExpiration: [], signals: [] })}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -197,6 +205,7 @@ describe('OptionsSnapshotProse', () => {
                 }}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -219,6 +228,7 @@ describe('OptionsSnapshotProse', () => {
                 }}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -235,6 +245,7 @@ describe('OptionsSnapshotProse — 기준일 표기 (C1 감사)', () => {
                 content={buildFixture()}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
                 generatedAt={new Date('2026-07-31T20:00:00Z')}
             />
         );

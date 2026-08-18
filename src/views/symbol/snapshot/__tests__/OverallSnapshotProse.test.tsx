@@ -61,6 +61,7 @@ describe('OverallSnapshotProse', () => {
                 content={buildFixture()}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -86,6 +87,7 @@ describe('OverallSnapshotProse', () => {
                 content={buildFixture()}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -104,6 +106,7 @@ describe('OverallSnapshotProse', () => {
                 content={buildFixture()}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -128,6 +131,7 @@ describe('OverallSnapshotProse', () => {
                 })}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
         expect(emptyContainer.textContent?.trim()).toBe('');
@@ -137,6 +141,7 @@ describe('OverallSnapshotProse', () => {
                 content={null}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
         expect(nullContainer.textContent?.trim()).toBe('');
@@ -146,6 +151,7 @@ describe('OverallSnapshotProse', () => {
                 content="not-an-object"
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
         expect(stringContainer.textContent?.trim()).toBe('');
@@ -160,6 +166,7 @@ describe('OverallSnapshotProse', () => {
                 })}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -179,6 +186,7 @@ describe('OverallSnapshotProse', () => {
                 content={buildFixture()}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -197,6 +205,7 @@ describe('OverallSnapshotProse', () => {
                 content={buildFixture({ riskFactorsKo: [RISK_TEXT] })}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -220,6 +229,7 @@ describe('OverallSnapshotProse', () => {
                 })}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -240,6 +250,7 @@ describe('OverallSnapshotProse — FIX 2 (4축 bullet 배열)', () => {
                 })}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -260,6 +271,7 @@ describe('OverallSnapshotProse — FIX 2 (4축 bullet 배열)', () => {
                 })}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -277,6 +289,7 @@ describe('OverallSnapshotProse — FIX 2 (4축 bullet 배열)', () => {
                 })}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -294,6 +307,7 @@ describe('OverallSnapshotProse — FIX 2 (4축 bullet 배열)', () => {
                 })}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -311,6 +325,7 @@ describe('OverallSnapshotProse — FIX 2 (4축 bullet 배열)', () => {
                 })}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -326,6 +341,7 @@ describe('OverallSnapshotProse — FIX 2 (4축 bullet 배열)', () => {
                 content={buildFixture()}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -350,6 +366,7 @@ describe('OverallSnapshotProse — FIX 2 (4축 bullet 배열)', () => {
                 content={content}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
         expect(
@@ -369,6 +386,7 @@ describe('OverallSnapshotProse — FIX 4 (markdown marker 제거)', () => {
                 })}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -428,6 +446,7 @@ describe('OverallSnapshotProse — scenarios 방어적 좁히기', () => {
                 }}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -460,6 +479,7 @@ describe('OverallSnapshotProse — scenarios 방어적 좁히기', () => {
                 }}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -482,6 +502,7 @@ describe('OverallSnapshotProse — scenarios 방어적 좁히기', () => {
                 }}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -497,6 +518,7 @@ describe('OverallSnapshotProse — 기준일 표기 + 라이브 분석 상호참
                 content={buildFixture()}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
                 generatedAt={new Date('2026-07-31T20:00:00Z')}
             />
         );
@@ -507,12 +529,50 @@ describe('OverallSnapshotProse — 기준일 표기 + 라이브 분석 상호참
         ).toBeInTheDocument();
     });
 
+    // SEO 감사(2026-08-18): overall 탭은 세 시장 전부 렌더한다 — marketProfile을
+    // SnapshotSummarySection까지 실제로 전달하는지 kr-equity·crypto 양쪽으로
+    // 겨냥한다.
+    it('kr-equity로 렌더하면 "국내 장마감 기준" 캡션을 쓴다', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture()}
+                symbol="005930.KS"
+                displayName="삼성전자"
+                marketProfile="kr-equity"
+                generatedAt={new Date('2026-08-14T06:30:00Z')}
+            />
+        );
+
+        expect(
+            screen.getByText(/2026년 8월 14일 국내 장마감 기준/)
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/미국 장마감 기준/)).not.toBeInTheDocument();
+    });
+
+    it('crypto로 렌더하면 "UTC 기준" 캡션을 쓴다 — "장마감"을 쓰지 않는다', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture()}
+                symbol="BTCUSD"
+                displayName="비트코인"
+                marketProfile="crypto"
+                generatedAt={new Date('2026-08-14T00:00:00Z')}
+            />
+        );
+
+        expect(
+            screen.getByText(/2026년 8월 14일 UTC 기준/)
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/장마감/)).not.toBeInTheDocument();
+    });
+
     it('라이브 분석 패널을 가리키는 상호참조 문장을 렌더한다', () => {
         render(
             <OverallSnapshotProse
                 content={buildFixture()}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -525,6 +585,7 @@ describe('OverallSnapshotProse — 기준일 표기 + 라이브 분석 상호참
                 content={buildFixture()}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 

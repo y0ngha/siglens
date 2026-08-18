@@ -438,6 +438,7 @@ export default async function OverallPage({ params }: Props) {
                         content={overallSnapshot?.content}
                         symbol={upper}
                         displayName={displayName}
+                        marketProfile={marketProfile}
                         generatedAt={overallSnapshot?.generatedAt}
                     />
                 )}

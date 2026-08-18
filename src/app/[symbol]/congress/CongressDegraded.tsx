@@ -46,6 +46,9 @@ export function CongressDegraded({
                 content={snapshotContent}
                 symbol={symbol}
                 displayName={displayName}
+                // congress 탭은 us-equity 전용이다 — CongressSnapshotProseProps
+                // JSDoc 참고.
+                marketProfile="us-equity"
                 generatedAt={snapshotGeneratedAt}
             />
             <section className="rounded-lg border border-secondary-800 bg-secondary-900/40 px-5 py-8 text-center">

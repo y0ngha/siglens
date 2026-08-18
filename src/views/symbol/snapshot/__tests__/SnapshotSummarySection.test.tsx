@@ -5,7 +5,10 @@ import { SnapshotSummarySection } from '../SnapshotSummarySection';
 describe('SnapshotSummarySection', () => {
     it('기본 타이틀·전일 장마감 캡션·children을 렌더한다', () => {
         render(
-            <SnapshotSummarySection displayName="Apple Inc.">
+            <SnapshotSummarySection
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+            >
                 <p>본문 텍스트</p>
             </SnapshotSummarySection>
         );
@@ -22,6 +25,7 @@ describe('SnapshotSummarySection', () => {
             <SnapshotSummarySection
                 title="커스텀 타이틀"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             >
                 <p>본문</p>
             </SnapshotSummarySection>
@@ -37,7 +41,10 @@ describe('SnapshotSummarySection', () => {
 
     it('displayName을 캡션에 노출한다', () => {
         render(
-            <SnapshotSummarySection displayName="Apple Inc.">
+            <SnapshotSummarySection
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+            >
                 <p>본문</p>
             </SnapshotSummarySection>
         );
@@ -50,7 +57,10 @@ describe('SnapshotSummarySection', () => {
     // — 이전 소수 패턴(bg-secondary-800 rounded-lg p-4, 5곳)으로의 회귀 가드.
     it('제품 우세 카드 셸 패턴을 사용한다(FIX 4)', () => {
         const { container } = render(
-            <SnapshotSummarySection displayName="Apple Inc.">
+            <SnapshotSummarySection
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+            >
                 <p>본문</p>
             </SnapshotSummarySection>
         );
@@ -69,7 +79,10 @@ describe('SnapshotSummarySection', () => {
     // 동일 톤(역전)이었다. 다른 카드 h2 컨벤션과 동일하게 맞춘다.
     it('제품 우세 h2 헤딩 톤(text-lg font-semibold tracking-tight)을 사용한다(FIX 5)', () => {
         render(
-            <SnapshotSummarySection displayName="Apple Inc.">
+            <SnapshotSummarySection
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+            >
                 <p>본문</p>
             </SnapshotSummarySection>
         );
@@ -88,6 +101,7 @@ describe('SnapshotSummarySection — 기준일 표기', () => {
         render(
             <SnapshotSummarySection
                 displayName="Apple Inc."
+                marketProfile="us-equity"
                 asOf={new Date('2026-07-31T20:00:00Z')}
             >
                 <p>본문</p>
@@ -119,7 +133,11 @@ describe('SnapshotSummarySection — 기준일 표기', () => {
         'asOf가 있으면 "전일" 고정 문구 대신 자신의 실제 기준일을 렌더한다 — $label',
         ({ asOf, expectedDate }) => {
             render(
-                <SnapshotSummarySection displayName="Apple Inc." asOf={asOf}>
+                <SnapshotSummarySection
+                    displayName="Apple Inc."
+                    marketProfile="us-equity"
+                    asOf={asOf}
+                >
                     <p>본문</p>
                 </SnapshotSummarySection>
             );
@@ -135,7 +153,10 @@ describe('SnapshotSummarySection — 기준일 표기', () => {
 
     it('asOf가 없으면 기존 캡션으로 폴백한다', () => {
         render(
-            <SnapshotSummarySection displayName="Apple Inc.">
+            <SnapshotSummarySection
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+            >
                 <p>본문</p>
             </SnapshotSummarySection>
         );
@@ -145,12 +166,81 @@ describe('SnapshotSummarySection — 기준일 표기', () => {
     });
 });
 
+/**
+ * SEO 감사(2026-08-18): 이전에는 `marketProfile`이 없어 캡션이 항상
+ * "미국 장마감 기준"이었다 — 한국 주식·크립토 페이지도 미국 장마감을 자처했다.
+ * us-equity 커버리지는 위 두 describe가 이미 촘촘히 맡고 있으므로, 여기서는
+ * kr-equity·crypto가 각자의 캡션 문구로 갈리는지만 겨냥한다.
+ */
+describe('SnapshotSummarySection — 시장별 캡션(kr-equity/crypto)', () => {
+    it('kr-equity는 asOf가 있으면 "국내 장마감 기준"을 렌더한다', () => {
+        render(
+            <SnapshotSummarySection
+                displayName="삼성전자"
+                marketProfile="kr-equity"
+                asOf={new Date('2026-08-14T06:30:00Z')}
+            >
+                <p>본문</p>
+            </SnapshotSummarySection>
+        );
+
+        expect(
+            screen.getByText(/2026년 8월 14일 국내 장마감 기준/)
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/미국 장마감 기준/)).not.toBeInTheDocument();
+    });
+
+    it('kr-equity는 asOf가 없으면 "전일 국내 장마감 기준"으로 폴백한다', () => {
+        render(
+            <SnapshotSummarySection
+                displayName="삼성전자"
+                marketProfile="kr-equity"
+            >
+                <p>본문</p>
+            </SnapshotSummarySection>
+        );
+
+        expect(screen.getByText(/전일 국내 장마감 기준/)).toBeInTheDocument();
+    });
+
+    it('crypto는 asOf가 있으면 "UTC 기준"을 렌더한다 — "장마감"을 쓰지 않는다', () => {
+        render(
+            <SnapshotSummarySection
+                displayName="비트코인"
+                marketProfile="crypto"
+                asOf={new Date('2026-08-14T00:00:00Z')}
+            >
+                <p>본문</p>
+            </SnapshotSummarySection>
+        );
+
+        expect(
+            screen.getByText(/2026년 8월 14일 UTC 기준/)
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/장마감/)).not.toBeInTheDocument();
+    });
+
+    it('crypto는 asOf가 없으면 "전일 UTC 자정 기준"으로 폴백한다', () => {
+        render(
+            <SnapshotSummarySection
+                displayName="비트코인"
+                marketProfile="crypto"
+            >
+                <p>본문</p>
+            </SnapshotSummarySection>
+        );
+
+        expect(screen.getByText(/전일 UTC 자정 기준/)).toBeInTheDocument();
+    });
+});
+
 describe('SnapshotSummarySection — Invalid Date (A1)', () => {
     it('asOf가 Invalid Date이면 throw하지 않고 고정 캡션으로 폴백하며 배지도 렌더하지 않는다', () => {
         expect(() =>
             render(
                 <SnapshotSummarySection
                     displayName="Apple Inc."
+                    marketProfile="us-equity"
                     asOf={new Date(NaN)}
                 >
                     <p>본문</p>

@@ -386,6 +386,7 @@ export default async function NewsPage({ params }: Props) {
                     content={newsSnapshot?.content}
                     symbol={upper}
                     displayName={displayName}
+                    marketProfile={marketProfile}
                     generatedAt={newsSnapshot?.generatedAt}
                 />
                 <section className="sr-only">

@@ -202,6 +202,9 @@ export default async function OptionsPage({ params }: Props) {
                             content={optionsSnapshot?.content}
                             symbol={upper}
                             displayName={displayName}
+                            // options 탭은 us-equity 전용이다(147행 notFound
+                            // 가드) — OptionsSnapshotProseProps JSDoc 참고.
+                            marketProfile="us-equity"
                             generatedAt={optionsSnapshot?.generatedAt}
                         />
                     ) : undefined
@@ -236,6 +239,9 @@ export default async function OptionsPage({ params }: Props) {
                             content={optionsSnapshot?.content}
                             symbol={upper}
                             displayName={displayName}
+                            // options 탭은 us-equity 전용이다(147행 notFound
+                            // 가드) — OptionsSnapshotProseProps JSDoc 참고.
+                            marketProfile="us-equity"
                             generatedAt={optionsSnapshot?.generatedAt}
                         />
                     ) : undefined
@@ -372,6 +378,9 @@ export default async function OptionsPage({ params }: Props) {
                     content={optionsSnapshot?.content}
                     symbol={upper}
                     displayName={displayName}
+                    // options 탭은 us-equity 전용이다(147행 notFound 가드) —
+                    // OptionsSnapshotProseProps JSDoc 참고.
+                    marketProfile="us-equity"
                     generatedAt={optionsSnapshot?.generatedAt}
                 />
                 <HydrationBoundary state={dehydrate(queryClient)}>
