@@ -1,5 +1,59 @@
 # Changelog
 
+# [0.56.0](https://github.com/y0ngha/siglens/compare/v0.55.0...v0.56.0) (2026-08-18)
+
+
+### Bug Fixes
+
+* 감사 라운드 13 — 무한 폴링, 새는 스로틀, 공허한 가드 ([8681f79](https://github.com/y0ngha/siglens/commit/8681f79bc08487a35eafdf381ff912b358864a53))
+* 감사 라운드 5 — 장중 defer 배선 가드 + 아웃바운드 타임아웃 ([40e3096](https://github.com/y0ngha/siglens/commit/40e3096936b60921b4861066906733c7ad130233))
+* 감사 라운드 6 — 닿지 않는 예산과 반증된 주석 예시 ([d058f3f](https://github.com/y0ngha/siglens/commit/d058f3fe2f2caa8023936efc94d5f97af37ccd4c))
+* 뉴스 재적재 스로틀을 사람 경로에도 적용 ([a08d905](https://github.com/y0ngha/siglens/commit/a08d905370788982cf5b4c38e34d20bf7f1da994))
+* 뉴스 탭 원화 표기 + 계약 변경 테스트 보강 ([75254cc](https://github.com/y0ngha/siglens/commit/75254ccf1982e3db9f72448d97232076d2ab6f47))
+* 리뷰 지적 반영 — drain 헬퍼 반환 타입, 중복 import 통합 ([bc2033a](https://github.com/y0ngha/siglens/commit/bc2033a52f76edfcb4f460f9bdee14450398f311))
+* 방문자 뉴스 보강에 상한이 없어 첫 마운트가 최대 1,000회 LLM 왕복이었다 ([a294034](https://github.com/y0ngha/siglens/commit/a2940347546ff67ab257c19f995804328282b11a))
+* 상폐 리컨사일이 미국 종목까지 대조하던 문제 ([cea6b58](https://github.com/y0ngha/siglens/commit/cea6b58288a9cf874892b52ca542b60bc5d7cd23))
+* 상폐 종목 한글명이 캐시에 가려지던 문제 ([2212d9f](https://github.com/y0ngha/siglens/commit/2212d9f568f43d82ae2a034b89945a76155d84d5))
+* 상폐·재상장 대량 업데이트도 배치로 분할 ([af43287](https://github.com/y0ngha/siglens/commit/af43287e611c9c41987e9533c22eb267ca3289cf))
+* 수집 예산이 드레인 전체가 아니라 fetch 구간만 덮고 있었다 ([e66fc5b](https://github.com/y0ngha/siglens/commit/e66fc5ba121c30221e818356efbd98957c14c023))
+* 영문명 노출 판정 공유 + JSON-LD 반환 타입 명시 ([9b43970](https://github.com/y0ngha/siglens/commit/9b43970d91b5aeefad8dfde075201882f494ae9b))
+* 자산군 커버리지 단일 소스화 + 자동완성 국내 영문명 억제 ([0fe7e86](https://github.com/y0ngha/siglens/commit/0fe7e86ca957c9075a01d7e9be5ffc844c738252))
+* 잘못 라벨된 티커 2종 제거 + 홈 타이틀 폭 + /market 색인성 ([02c5e06](https://github.com/y0ngha/siglens/commit/02c5e0696ff68595271001b91f4d379a31e364ae))
+* 정체 종료가 살아 있는 보강 라운드를 자르던 것 + 시장 뉴스 폴러에도 이식 ([9eeff3e](https://github.com/y0ngha/siglens/commit/9eeff3ec7c1d78053cdacd2254e164272042d2c3))
+* 종목 전환 레이스 + 조기 종료 조건 미고정 ([c37c205](https://github.com/y0ngha/siglens/commit/c37c2058525a89cda08f6c3e3ff990ec42e57c67))
+* 종목 헤더가 국내 종목에 영문 법인명을 붙이던 문제 ([20217f8](https://github.com/y0ngha/siglens/commit/20217f8f2f32ac29ba60afaec81b216f0d9c13e8))
+* 차트 탭 포지션 카드의 원화 표기 + 감사 지적 3건 ([9861cb7](https://github.com/y0ngha/siglens/commit/9861cb7030419f19c45f6b23aed08699874e6949))
+* 크론이 매일 영문 종목명을 한글 placeholder로 되돌리던 회귀 ([924897f](https://github.com/y0ngha/siglens/commit/924897fdf08617a08a37a9c92c0a8bb9f8143c1c))
+* 펀드명 안전망이 리츠의 Corporation 노드를 지우던 회귀 ([6f62ccf](https://github.com/y0ngha/siglens/commit/6f62ccf8f401ff59f568cc331f0f467d64310162))
+* 포지션·포트폴리오 화면의 원화 표기 ([fb34c2c](https://github.com/y0ngha/siglens/commit/fb34c2c2c050b00fec15e8735ef0c423e55f9fc4))
+* 한국 종목 런타임 경로 하드닝 — yahoo 타임아웃·degrade·통화 표기 ([80a7aa5](https://github.com/y0ngha/siglens/commit/80a7aa5df4172b795a93a60153c9578d54dabe8b))
+* import/first 위반 수정 + upsert 실패 기사 후보 제외 ([751dbb0](https://github.com/y0ngha/siglens/commit/751dbb096829b7192ef544f04444036c050c77be))
+* KR ETF 오분류와 e2e 계약 오류 수정 ([400995b](https://github.com/y0ngha/siglens/commit/400995b317c14d472b16b32261357735e1af0690))
+* KRX 캘린더 지평선 연장 + /overall degrade 게이트 ([44fc4b1](https://github.com/y0ngha/siglens/commit/44fc4b1533dee5d9cadc40c7e4e978580441d992))
+* KRX 휴장일 캘린더 + 네이버 표기 + 시장별 장마감 캡션 ([5f4c536](https://github.com/y0ngha/siglens/commit/5f4c536b8658b695ddf1b9841e55bb3e18071540))
+* prewarm 크론이 뉴스 카드 보강 단계를 건너뛰던 문제 ([34c11ed](https://github.com/y0ngha/siglens/commit/34c11edbc109b6ca3c6dc62a12d09cd7abda688e))
+* prewarm 회전이 KR 상위 5종목을 영구 기아시키던 문제 ([fe03ed3](https://github.com/y0ngha/siglens/commit/fe03ed30afecec3ce1486f9f47c1e995c72ea724))
+* react-doctor 81 → 85 (Great) — effect 기반 상태를 렌더/외부 스토어로 ([c48c605](https://github.com/y0ngha/siglens/commit/c48c60579b63f7e3c4b460a6becbd50fe06ebe36)), closes [#713](https://github.com/y0ngha/siglens/issues/713)
+* react-doctor 스캔 범위에서 에이전트 워크트리·생성물 제외 ([d050ea5](https://github.com/y0ngha/siglens/commit/d050ea5ddf989181a945bc907236d1fafc422526))
+* **review:** useDialog 훅 선언 순서 규약 준수 ([a5fe2cd](https://github.com/y0ngha/siglens/commit/a5fe2cd2e5dcbed5ff622e0cc7a0f82956828984))
+* SEO 감사 5건 + 옵션 없는 시장에 옵션을 말하던 세 호출부 ([635ee11](https://github.com/y0ngha/siglens/commit/635ee11fbac4201a57ff5d560a7f679a8e18344d))
+
+
+### Features
+
+* 자동완성을 회사명 → 티커 순서로 ([3903f22](https://github.com/y0ngha/siglens/commit/3903f22aed48037917f809f28dfb8684ad7117cc))
+* 한국 상장 종목 SEO 표면 정비 ([862715c](https://github.com/y0ngha/siglens/commit/862715c4f5f1f8042e4370b2fe131d742126b2c2))
+* 한국 종목 마스터 상장 상태 관리와 일 1회 동기화 ([c9ca5ff](https://github.com/y0ngha/siglens/commit/c9ca5ff5fd5601a5949e4a5153bde8cf93bbfa34))
+* KR sitemap 범위 결정과 시장별 prewarm 경계 ([d19a660](https://github.com/y0ngha/siglens/commit/d19a6600e573716a831987ed5fca07a0c0587ac8))
+
+
+### Performance Improvements
+
+* 기사 본문을 읽기 단계에서 뺀다 — 두 뉴스 슬라이스 모두 ([fb77faa](https://github.com/y0ngha/siglens/commit/fb77faaf30d7e743421f6c4fcaff50fb4d15e315))
+* 기사 원문이 RSC 페이로드와 3초 폴링에 실려 나가던 것 차단 ([a6953bd](https://github.com/y0ngha/siglens/commit/a6953bda65a75bc0ba46d78faf890796f78a2fcc))
+* 분석 경로도 기사 원문을 읽지 않는다 ([d5a5161](https://github.com/y0ngha/siglens/commit/d5a51619d0e00bff89deec3f8f7aa0944d95a4de))
+* 카드 폴링이 진전 없이도 상한을 다 채우던 것 차단 ([2244577](https://github.com/y0ngha/siglens/commit/22445779e381667b94ba0ce64a22d4aafae86a0b))
+
 # [0.55.0](https://github.com/y0ngha/siglens/compare/v0.54.1...v0.55.0) (2026-08-17)
 
 
