@@ -165,20 +165,32 @@ describe('classifyAsset — 국내 ETF', () => {
  * — 실제로 프로덕션에서 발생했던 오분류(SpaceX로 표기됐지만 실제로는 SPAC 펀드).
  */
 describe('classifyAsset — 영문 펀드명 접미 안전망', () => {
-    it('이름이 ETF/Fund/Trust/ETN/Index로 끝나면 etf로 분류한다', () => {
+    it('이름이 ETF/Fund/ETN/Index로 끝나면 etf로 분류한다', () => {
         expect(classifyAsset('SPCX', undefined, 'SPAC and New Issue ETF')).toBe(
             'etf'
         );
         expect(classifyAsset('XYZ1', undefined, 'Example Growth Fund')).toBe(
             'etf'
         );
-        expect(classifyAsset('XYZ2', undefined, 'SPDR Gold Trust')).toBe('etf');
         expect(classifyAsset('XYZ3', undefined, 'iPath Example ETN')).toBe(
             'etf'
         );
         expect(
             classifyAsset('XYZ4', undefined, 'Vanguard Total Market Index')
         ).toBe('etf');
+    });
+
+    /**
+     * `TRUST`를 유형어 목록에서 뺀 대가를 명시적으로 고정한다. `SPDR Gold Trust`는
+     * 진짜 펀드지만 안전망이 잡지 못하고 `stock`으로 떨어진다 — 미국 리츠가 같은
+     * 형태로 끝나는 실제 기업이라 이름만으로 가를 수 없기 때문이다. 이런 펀드는
+     * `KNOWN_ETF_TICKERS`에 추가하는 것이 정본 경로다.
+     */
+    it('Trust로 끝나는 진짜 펀드는 안전망이 잡지 못한다 — allowlist가 정본이다', () => {
+        expect(classifyAsset('XYZ2', undefined, 'SPDR Gold Trust')).toBe(
+            'stock'
+        );
+        expect(classifyAsset('GLD', undefined, 'SPDR Gold Trust')).toBe('etf');
     });
 
     it('대소문자와 무관하게 매칭한다', () => {
@@ -209,6 +221,25 @@ describe('classifyAsset — 영문 펀드명 접미 안전망', () => {
             '@type': 'Corporation',
             name: 'Northern Trust Corporation',
             tickerSymbol: 'NTRS',
+        });
+    });
+
+    /**
+     * [회귀] 미국 리츠는 `Postal Realty Trust`·`Vornado Realty Trust`처럼 이름이
+     * `Trust`로 **끝나는** 실제 상장 기업이다. 안전망이 `TRUST`를 유형어로 잡으면
+     * 이들의 Corporation 노드가 통째로 사라지고, ISR이라 그 렌더가 revalidate 창
+     * 내내 굳는다. 진짜 펀드(`SPDR Gold Trust`)와 이름만으로는 가를 수 없어
+     * `TRUST`를 목록에서 뺐다 — 두 오류 중 조용한 쪽을 피한다.
+     */
+    it.each([
+        ['PSTL', 'Postal Realty Trust'],
+        ['VNO', 'Vornado Realty Trust'],
+    ])('%s 처럼 Trust로 끝나는 리츠는 stock을 유지한다', (symbol, name) => {
+        expect(classifyAsset(symbol, undefined, name)).toBe('stock');
+        expect(buildAssetAboutNode(symbol, name)).toEqual({
+            '@type': 'Corporation',
+            name,
+            tickerSymbol: symbol,
         });
     });
 

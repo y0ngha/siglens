@@ -131,26 +131,32 @@ function isKrEtfName(name: string | undefined): boolean {
 }
 
 /**
- * 영문 펀드/신탁형 상품명이 끝나는 유형어. 미국 ETF/ETN/인덱스 펀드는 명명 관행상
- * `<스폰서> <기초지수> ETF/Fund/Trust`처럼 상품 유형어를 이름 **끝**에 붙인다
- * (`SPAC and New Issue ETF`, `SPDR Gold Trust`, `Vanguard Total Stock Market
- * Index Fund`). `isKrEtfName`이 한국 ETF 브랜드를 맨 **앞** 토큰으로 보는 것과는
- * 반대 위치인데, 명명 관행이 다르므로 검사 위치도 그 관행을 따라간다.
+ * 영문 펀드형 상품명이 끝나는 유형어. 미국 ETF/ETN/인덱스 펀드는 명명 관행상
+ * `<스폰서> <기초지수> ETF/Fund`처럼 상품 유형어를 이름 **끝**에 붙인다
+ * (`SPAC and New Issue ETF`, `Vanguard Total Stock Market Index Fund`).
+ * `isKrEtfName`이 한국 ETF 브랜드를 맨 **앞** 토큰으로 보는 것과는 반대 위치인데,
+ * 명명 관행이 다르므로 검사 위치도 그 관행을 따라간다.
+ *
+ * **`TRUST`는 일부러 뺐다.** `SPDR Gold Trust`처럼 진짜 펀드도 끝이 `Trust`지만,
+ * 미국 리츠가 `Postal Realty Trust`·`Vornado Realty Trust`처럼 같은 형태로 끝나는
+ * **실제 상장 기업**이다. 둘을 이름만으로 가를 방법이 없고, 두 오류의 대가가 다르다 —
+ * 펀드에 `Corporation` 노드가 붙는 건 눈에 띄고 고치기 쉽지만, 리츠에서 노드가
+ * 사라지는 건 조용하고 ISR 창 내내 굳는다(`isKrEtfName` 주석의 같은 판단).
  */
-const FUND_NAME_SUFFIX_WORDS = new Set([
-    'ETF',
-    'FUND',
-    'TRUST',
-    'ETN',
-    'INDEX',
-]);
+const FUND_NAME_SUFFIX_WORDS = new Set(['ETF', 'FUND', 'ETN', 'INDEX']);
 
 /**
- * **끝 토큰만 본다.** `Northern Trust Corporation`처럼 사명에 "Trust"가 들어가지만
+ * **끝 토큰만 본다.** `Northern Trust Corporation`처럼 사명에 유형어가 들어가지만
  * 끝 토큰은 "Corporation"인 진짜 상장사가 있다 — 부분 문자열이나 임의 위치 토큰으로
  * 찾으면 이런 회사가 조용히 ETF로 오분류돼 `Corporation` about 노드가 사라진다.
  * `isKrEtfName`이 부분 문자열 대신 토큰 전체 일치를 쓰는 것과 같은 안전장치를,
  * 위치만 이름 끝으로 바꿔 적용한다.
+ *
+ * **적용 범위는 영문 이름뿐이다.** 호출부(`buildAssetAboutNode`)는
+ * `koreanName ?? name`을 넘기므로, 한글명이 채워진 뒤에는 이 검사가 걸리지 않는다.
+ * 즉 이건 큐레이션 목록(`KNOWN_ETF_TICKERS`)을 비켜 간 펀드에 대한 **1차 안전망**이지
+ * 항구적 보증이 아니다 — 목록에 없는 펀드가 실제로 문제가 되면 목록에 추가하는 것이
+ * 정본이다.
  */
 function isFundShapedName(name: string | undefined): boolean {
     if (!name) return false;
