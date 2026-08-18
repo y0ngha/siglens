@@ -64,7 +64,7 @@ const DB_SORT_OTHER = 2;
  * `scripts/seed-kr-listed-names.ts`의 `UPSERT_BATCH_SIZE`와 같은 한도를 인코딩한
  * 값이다 — 하나를 바꾸면 다른 쪽도 함께 확인해야 한다.
  */
-const KOREAN_TICKER_UPSERT_BATCH_SIZE = 500;
+export const KOREAN_TICKER_UPSERT_BATCH_SIZE = 500;
 
 const koreanTickerColumns = {
     symbol: koreanTickers.symbol,
