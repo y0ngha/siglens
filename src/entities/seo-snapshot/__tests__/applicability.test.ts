@@ -37,18 +37,20 @@ describe('applicableTabsFor', () => {
 });
 
 describe('buildPrewarmUniverse', () => {
-    // 실패 시 상수 목록 변경 — 스펙 §5 수치도 함께 갱신
-    it('전체 유닛 수 = 264×7 + 1×6 + 20×5 + 29×3 = 2041 (spec §5 실측)', () => {
+    // 실패 시 상수 목록 변경 — 스펙 §5 수치도 함께 갱신.
+    // SEO 감사 라운드 2에서 SPCX/SKHY를 POPULAR_TICKERS에서 뺀 만큼(옵션 상장
+    // US 주식 7탭 버킷에서 2종목) 264→262, 2041→2027로 갱신됐다.
+    it('전체 유닛 수 = 262×7 + 1×6 + 20×5 + 29×3 = 2027 (spec §5 실측)', () => {
         const units = buildPrewarmUniverse().reduce(
             (n, u) => n + u.tabs.length,
             0
         );
-        expect(units).toBe(2041);
+        expect(units).toBe(2027);
     });
 
     // 실패 시 상수 목록 변경 — 스펙 §5 수치도 함께 갱신
-    it('심볼 수 = 314 (POPULAR_TICKERS 285 + POPULAR_CRYPTOS 29)', () => {
-        expect(buildPrewarmUniverse()).toHaveLength(314);
+    it('심볼 수 = 312 (POPULAR_TICKERS 283 + POPULAR_CRYPTOS 29)', () => {
+        expect(buildPrewarmUniverse()).toHaveLength(312);
     });
 
     it('한국 종목은 options·congress를 prewarm하지 않는다', () => {

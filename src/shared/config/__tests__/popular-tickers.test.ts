@@ -55,7 +55,6 @@ describe('TICKER_CATEGORIES', () => {
         expect(space).toBeDefined();
         expect(space!.label).toBe('우주·항공우주');
         expect(space!.items.map(i => i.symbol)).toEqual([
-            'SPCX',
             'RKLB',
             'ASTS',
             'LUNR',
@@ -63,6 +62,17 @@ describe('TICKER_CATEGORIES', () => {
             'PL',
             'SPCE',
         ]);
+    });
+
+    /**
+     * 회귀 가드(SEO 감사 라운드 2 finding 1): SPCX는 SpaceX가 아니라 SPAC/신규 발행
+     * ETF다. SpaceX는 비상장이라 대체 티커가 없으므로, 이 심볼은 어떤 카테고리에도
+     * 있으면 안 된다 — 있으면 카테고리 그리드가 다시 "스페이스X"로 표기하게 된다.
+     */
+    it('SPCX(SPAC/신규 발행 ETF, SpaceX 아님)를 어떤 카테고리에도 포함하지 않는다', () => {
+        for (const category of TICKER_CATEGORIES) {
+            expect(category.items.map(i => i.symbol)).not.toContain('SPCX');
+        }
     });
 });
 
@@ -92,6 +102,25 @@ describe('POPULAR_TICKERS', () => {
 
     it('100개 이상의 티커를 포함한다', () => {
         expect(POPULAR_TICKERS.length).toBeGreaterThanOrEqual(100);
+    });
+
+    /**
+     * 회귀 가드(SEO 감사 라운드 2 finding 1): SPCX는 SpaceX가 아니라 SPAC/신규 발행
+     * ETF다. SpaceX는 비상장이라 대체 티커가 없다 — 있으면 sitemap이 다시 그 심볼을
+     * 8개 URL로 실어 나른다.
+     */
+    it('SPCX(SPAC/신규 발행 ETF, SpaceX 아님)를 포함하지 않는다', () => {
+        expect(POPULAR_TICKERS).not.toContain('SPCX');
+    });
+
+    /**
+     * 회귀 가드(SEO 감사 라운드 2 finding 2): SKHY(SK하이닉스 OTC ADR)는
+     * 000660.KS(KRX 원주)와 같은 회사다. 둘 다 있으면 같은 한국어 검색 의도를
+     * 두 개의 색인 가능 클러스터가 나눠 갖는다 — 원주만 남긴다.
+     */
+    it('SKHY(000660.KS와 동일 회사인 OTC ADR)를 포함하지 않는다', () => {
+        expect(POPULAR_TICKERS).not.toContain('SKHY');
+        expect(POPULAR_TICKERS).toContain('000660.KS');
     });
 });
 

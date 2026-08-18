@@ -12,6 +12,7 @@ import { ReactQueryProvider } from '@/app/providers';
 import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
 import { CF_BEACON_TOKEN } from '@/shared/lib/cloudflareAnalytics';
 import {
+    ROOT_FULL_TITLE,
     ROOT_HEADLINE,
     ROOT_KEYWORDS,
     ROOT_TITLE,
@@ -72,7 +73,7 @@ export const metadata: Metadata = {
     openGraph: {
         type: 'website',
         siteName: SITE_NAME,
-        title: ROOT_TITLE,
+        title: ROOT_FULL_TITLE,
         description: SITE_DESCRIPTION,
         url: SITE_URL,
         locale: 'ko_KR',
@@ -87,7 +88,7 @@ export const metadata: Metadata = {
     },
     twitter: {
         card: 'summary_large_image',
-        title: ROOT_TITLE,
+        title: ROOT_FULL_TITLE,
         description: SITE_DESCRIPTION,
         images: ['/og-image.png'],
     },

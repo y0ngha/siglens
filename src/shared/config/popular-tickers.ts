@@ -93,8 +93,11 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     {
         id: 'space',
         label: '우주·항공우주',
+        // SpaceX(SPCX)는 여기 없다 — SpaceX는 비상장이고, SPCX는 그 이름을 딴
+        // SPAC/신규 발행 ETF다. 대체할 진짜 SpaceX 티커가 없으므로 빼기만 한다
+        // (SEO 감사 라운드 2 finding 1 — 카테고리 그리드가 이 심볼을 SpaceX로 표기해
+        // Corporation JSON-LD까지 펀드를 회사로 잘못 단언하고 있었다).
         items: [
-            { symbol: 'SPCX', name: '스페이스X' },
             { symbol: 'RKLB', name: '로켓랩' },
             { symbol: 'ASTS', name: 'AST스페이스모바일' },
             { symbol: 'LUNR', name: '인튜이티브머신스' },
@@ -476,7 +479,7 @@ export const POPULAR_TICKERS = [
     'CIFR',
 
     // --- Trending (2026-06-15) ---
-    'SPCX',
+    // SPCX 제거(SEO 감사 라운드 2 finding 1) — SpaceX가 아니라 SPAC/신규 발행 ETF.
     'ING',
 
     // --- Trending (2026-06-27) ---
@@ -498,7 +501,9 @@ export const POPULAR_TICKERS = [
     'APP',
 
     // --- Trending (2026-07-25) ---
-    'SKHY',
+    // SKHY 제거(SEO 감사 라운드 2 finding 2) — SK하이닉스 OTC ADR. KRX 원주(000660.KS)와
+    // 같은 회사를 두 클러스터로 쪼개고 있었고, 한국어 검색 수요·Naver 뉴스 소스는
+    // 원주 쪽에만 있다.
     'CARR',
     'GSK',
     'SAP',

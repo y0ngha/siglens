@@ -132,12 +132,11 @@ describe('SECTOR_STOCKS', () => {
         expect(new Set(symbols).size).toBe(symbols.length);
     });
 
-    it('SPACE 가상 섹터에 순수 우주 기업 7개를 포함한다', () => {
+    it('SPACE 가상 섹터에 순수 우주 기업 6개를 포함한다', () => {
         const spaceSymbols = SECTOR_STOCKS.filter(
             stock => stock.sectorSymbol === 'SPACE'
         ).map(stock => stock.symbol);
         expect(spaceSymbols).toEqual([
-            'SPCX',
             'RKLB',
             'ASTS',
             'LUNR',
@@ -145,6 +144,17 @@ describe('SECTOR_STOCKS', () => {
             'PL',
             'SPCE',
         ]);
+    });
+
+    /**
+     * 회귀 가드(SEO 감사 라운드 3 finding 2): SPCX는 SpaceX가 아니라 SPAC/신규 발행
+     * ETF다. SpaceX는 비상장이라 대체 티커가 없으므로, 이 심볼은 어떤 섹터에도
+     * 있으면 안 된다 — 있으면 /market의 SectorFactsSummary가 크롤러에게
+     * `<Link href="/SPCX">`를 다시 실어 나른다(popular-tickers.ts에서 이미 제거한 것과
+     * 동일 근거).
+     */
+    it('SPCX(SPAC/신규 발행 ETF, SpaceX 아님)를 포함하지 않는다', () => {
+        expect(SECTOR_STOCKS.map(s => s.symbol)).not.toContain('SPCX');
     });
 });
 
