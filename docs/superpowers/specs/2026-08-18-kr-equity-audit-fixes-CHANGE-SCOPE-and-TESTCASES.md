@@ -111,7 +111,8 @@ self-canonical을 내보내고 있었다. sitemap priority가 0.85로 가장 높
 `FUND_NAME_SUFFIX_WORDS`에서 `TRUST`를 뺐다 — 미국 리츠(`Vornado Realty Trust`)와
 진짜 펀드(`SPDR Gold Trust`)를 이름만으로 가를 수 없어, 두 오류 중 조용한 쪽을
 피한다. 그 결과 `Northern Trust Corporation`을 쓰던 "끝 토큰만 본다" 회귀 가드가
-빈 껍데기가 됐고, 실제 원소를 중간 토큰으로 가진 이름으로 교체했다.
+빈 껍데기가 됐고, 실제 원소를 중간 토큰으로 가진 이름(`Global Index Partners
+Corporation`)으로 교체했다.
 
 ### 1.7 테스트 품질
 
@@ -162,7 +163,7 @@ pending diff에 포함된 테스트 파일 60개. 판정 기준은 커버리지 
 | 8 | robots | `curl -s https://siglens.io/robots.txt` | KR sitemap과 무모순 |
 | 9 | `/overall` 색인성 | KR 심볼 `/overall`의 `<meta name="robots">` | 프로즈 채워지기 전에는 `noindex` |
 | 10 | 미국 종목 무영향 | `AAPL`의 `/overall` | `noindex` 아님 |
-| 11 | kr-tickers 크론 | `curl -X PATCH https://siglens.io/api/cron/kr-tickers` | 202 |
+| 11 | kr-tickers 크론 | `curl -i -X PATCH https://siglens.io/api/cron/kr-tickers -H "Authorization: Bearer $CRON_SECRET"` | 202. 헤더 없으면 401이 정상 |
 
 6·9는 시각 의존이므로 **KRX 마감 이후** 확인한다.
 
@@ -175,8 +176,10 @@ pending diff에 포함된 테스트 파일 60개. 판정 기준은 커버리지 
 
 1. `bash infra/aws/13-seo-prewarm.sh` — 크론 창(20:30–03:59 / 07:00–09:55 UTC)
    **밖에서** 실행. 재실행이 비활성 룰을 조용히 다시 켜므로 실행 후 상태 확인 필요.
-2. **배포 후** `bash infra/aws/14-kr-tickers-cron.sh` → `curl -X PATCH .../api/cron/kr-tickers`
-   (202 기대) → 알람 존재 확인.
+2. **배포 후** `bash infra/aws/14-kr-tickers-cron.sh` →
+   `curl -i -X PATCH https://siglens.io/api/cron/kr-tickers -H "Authorization: Bearer $CRON_SECRET"`
+   (202 기대 — 이 라우트는 Bearer 게이트라 헤더 없이 부르면 401이다.
+   `docs/reference/CRON.md` §kr-tickers와 같은 형태) → 알람 존재 확인.
 
 ---
 

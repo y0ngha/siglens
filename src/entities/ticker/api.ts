@@ -199,10 +199,11 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
     }
 
     async markDelisted(symbols: readonly string[]): Promise<void> {
-        // `markRelisted`와 같은 이유로 쪼갠다. 평소에는 가드가 25개로 묶어 두지만
-        // `--force-delist`는 그 상한을 푸는 유일한 경로이고(대량 상폐를 사람이 확인한
-        // 뒤 쓰는 수동 override), 바로 그때 심볼이 수백 개가 되어 같은 Neon HTTP
-        // 페이로드 한도에 걸린다 — 가드가 없는 경로일수록 견고해야 한다.
+        // 현재 유일한 호출부(`syncKrListedTickers`)는 대량 상폐 가드가 25개로 묶어
+        // 두므로 지금은 청크가 한 번에 끝난다. 그래도 `markRelisted`와 같은 크기로
+        // 맞춰 둔다 — 가드가 완화되거나 새 호출부가 생기는 순간 같은 Neon HTTP
+        // 페이로드 한도에 걸리고, 그때는 이 자리가 아니라 호출부를 보게 된다.
+        // (`--force-delist`는 시드 스크립트 자체의 UPDATE만 푼다 — 그쪽 주석 참조.)
         for (
             let i = 0;
             i < symbols.length;
