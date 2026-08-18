@@ -70,4 +70,17 @@ describe('FinancialHealthCard', () => {
         ).toBeInTheDocument();
         expect(screen.getByText('부채 비율')).toBeInTheDocument();
     });
+
+    it('threads symbol through to formatCompactCurrency and renders KRW, not USD, for a KR-equity operating cash flow', () => {
+        render(
+            <FinancialHealthCard
+                symbol="005930.KS"
+                ratios={null}
+                scores={null}
+                cashFlow={SAMPLE_CASHFLOW}
+            />
+        );
+        expect(screen.getByText('₩1000억')).toBeInTheDocument();
+        expect(screen.queryByText(/US\$/)).not.toBeInTheDocument();
+    });
 });

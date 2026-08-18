@@ -25,4 +25,16 @@ describe('isUnresolvableDegraded', () => {
             expect(isUnresolvableDegraded('AAPL', false)).toBe(false);
         });
     });
+
+    describe('kr-equity early return (isKrEquitySymbol) — preserve degrade-200 behaviour', () => {
+        it('returns false for a KR-equity symbol even when degraded (no hard 404 during a yahoo outage)', () => {
+            expect(isUnresolvableDegraded('005930.KS', true)).toBe(false);
+        });
+
+        it('does not widen the crypto branch — digit-first crypto symbols still 404 when degraded', () => {
+            // Pins that the KR early return is scoped to KR_SYMBOL_RE and does not
+            // accidentally swallow the crypto class the original guard was written for.
+            expect(isUnresolvableDegraded('1INCHUSD', true)).toBe(true);
+        });
+    });
 });

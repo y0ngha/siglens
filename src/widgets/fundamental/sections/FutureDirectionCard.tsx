@@ -50,6 +50,11 @@ const MONEY_FORMATTERS: Record<'USD' | 'KRW', Intl.NumberFormat> = {
     }),
 };
 
+// formatCompactCurrency로 위임하지 않는 이유: 이 값들(EPS 컨센서스·목표주가)은
+// 억/조 단위로 뭉개면 안 되는 실제 가격이라 compact notation을 쓸 수 없다 —
+// `fmtBig` 바로 아래가 매출처럼 압축 표기가 맞는 값에 formatCompactCurrency를
+// 그대로 쓰는 예다. 통화 판정 로직만 같고 표기 방식(compact 여부)이 달라 별도
+// 포매터 맵을 둔다.
 function fmtMoney(v: number | null, symbol: string): string {
     if (v === null) return '—';
     return MONEY_FORMATTERS[isKrEquitySymbol(symbol) ? 'KRW' : 'USD'].format(v);
