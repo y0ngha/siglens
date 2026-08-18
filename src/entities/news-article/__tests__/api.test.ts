@@ -414,6 +414,126 @@ describe('DrizzleNewsRepository', () => {
             expect(result.priceImpact).toBeNull();
         });
     });
+
+    /**
+     * 카드 폴링 전용 투영. `listBySymbol`의 정규화(enum 화이트리스트, Date→ISO,
+     * 180일 창, 최신순)를 그대로 다시 구현하므로 같은 케이스를 여기서도 고정한다 —
+     * 안 하면 두 사본이 조용히 갈라지고, 갈라지는 쪽이 하필 3초 폴링 경로다
+     * (감사 라운드 15).
+     *
+     * enum 정규화가 특히 중요하다: `hasAnyEnrichedCard`/`hasPendingAnalysis`가
+     * `sentiment === null`로 보강 여부를 판정하므로, 깨진 문자열이 그대로 흘러가면
+     * 미보강 종목이 "보강됨"으로 읽혀 폴링이 일찍 멈추고 분석 패널이 열린다.
+     */
+    describe('listCardsBySymbol', () => {
+        interface CardDbRow {
+            id: string;
+            source: string;
+            url: string;
+            publishedAt: Date;
+            titleEn: string;
+            titleKo: string | null;
+            bodyKo: string | null;
+            summaryKo: string | null;
+            sentiment: string | null;
+            category: string | null;
+            priceImpact: string | null;
+        }
+
+        const cardRow: CardDbRow = {
+            id: 'abc123',
+            source: 'Reuters',
+            url: 'https://example.com/news/1',
+            publishedAt: new Date('2025-08-01T10:00:00.000Z'),
+            titleEn: 'Apple hits all-time high',
+            titleKo: '애플 사상 최고가',
+            bodyKo: '본문',
+            summaryKo: '요약',
+            sentiment: 'bullish',
+            category: 'other',
+            priceImpact: 'medium',
+        };
+
+        it('DB 내부 필드를 아예 읽지 않는다', async () => {
+            const { db } = makeSelectDb([cardRow]);
+            const repo = new DrizzleNewsRepository(db);
+            const [result] = await repo.listCardsBySymbol('AAPL', 86_400_000);
+
+            expect(result).not.toHaveProperty('bodyEn');
+            expect(result).not.toHaveProperty('symbol');
+            expect(result).not.toHaveProperty('analyzedAt');
+        });
+
+        it('publishedAt 을 ISO 문자열로 변환해 반환한다', async () => {
+            const { db } = makeSelectDb([cardRow]);
+            const repo = new DrizzleNewsRepository(db);
+            const results = await repo.listCardsBySymbol('AAPL', 86_400_000);
+
+            expect(results[0]?.publishedAt).toBe('2025-08-01T10:00:00.000Z');
+        });
+
+        it('결과가 없으면 빈 배열을 반환한다', async () => {
+            const { db } = makeSelectDb([]);
+            const repo = new DrizzleNewsRepository(db);
+            await expect(
+                repo.listCardsBySymbol('AAPL', 86_400_000)
+            ).resolves.toEqual([]);
+        });
+
+        it('표시 필드를 그대로 옮긴다', async () => {
+            const { db } = makeSelectDb([cardRow]);
+            const repo = new DrizzleNewsRepository(db);
+            const [result] = await repo.listCardsBySymbol('AAPL', 86_400_000);
+
+            expect(result).toEqual({
+                id: 'abc123',
+                source: 'Reuters',
+                url: 'https://example.com/news/1',
+                publishedAt: '2025-08-01T10:00:00.000Z',
+                titleEn: 'Apple hits all-time high',
+                titleKo: '애플 사상 최고가',
+                bodyKo: '본문',
+                summaryKo: '요약',
+                sentiment: 'bullish',
+                category: 'other',
+                priceImpact: 'medium',
+            });
+        });
+
+        it('알 수 없는 enum 문자열은 null 로 정규화한다', async () => {
+            const { db } = makeSelectDb([
+                {
+                    ...cardRow,
+                    sentiment: 'unknown_value',
+                    category: 'unknown_category',
+                    priceImpact: 'unknown_impact',
+                },
+            ]);
+            const repo = new DrizzleNewsRepository(db);
+            const [result] = await repo.listCardsBySymbol('AAPL', 86_400_000);
+
+            expect(result?.sentiment).toBeNull();
+            expect(result?.category).toBeNull();
+            expect(result?.priceImpact).toBeNull();
+        });
+
+        it('비문자열 enum 값은 null 로 정규화한다', async () => {
+            const { db } = makeSelectDb([
+                {
+                    ...cardRow,
+                    sentiment: 42 as unknown as string,
+                    category: {} as unknown as string,
+                    priceImpact: [] as unknown as string,
+                },
+            ]);
+            const repo = new DrizzleNewsRepository(db);
+            const [result] = await repo.listCardsBySymbol('AAPL', 86_400_000);
+
+            expect(result?.sentiment).toBeNull();
+            expect(result?.category).toBeNull();
+            expect(result?.priceImpact).toBeNull();
+        });
+    });
 });
 
 describe('prewarmNews', () => {

@@ -4,7 +4,7 @@ import {
     MARKET_NEWS_CACHE_TAG_PREFIX,
     type NewsFeedCategory,
 } from '@/entities/market-news';
-import { getMarketNewsList } from '@/entities/market-news/api';
+import { getMarketNewsCards } from '@/entities/market-news/api';
 import { CategoryCard, PREVIEW_HEADLINE_LIMIT } from '@/widgets/news-hub';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
@@ -80,7 +80,7 @@ async function fetchCategoryPreviews(
     const rows = await staticSymbolCache(
         ['market-news:list', cfg.sentinel],
         cfg.sentinel,
-        () => getMarketNewsList(cfg.sentinel),
+        () => getMarketNewsCards(cfg.sentinel),
         [`${MARKET_NEWS_CACHE_TAG_PREFIX}:${cfg.sentinel}`],
         SECONDS_PER_DAY
     ).catch((e: unknown) => {
@@ -88,7 +88,7 @@ async function fetchCategoryPreviews(
             `[NewsHubPage] fetchCategoryPreviews(${category}) failed, degrading to []:`,
             e
         );
-        return [] as Awaited<ReturnType<typeof getMarketNewsList>>;
+        return [] as Awaited<ReturnType<typeof getMarketNewsCards>>;
     });
     return rows
         .slice(0, PREVIEW_HEADLINE_LIMIT)

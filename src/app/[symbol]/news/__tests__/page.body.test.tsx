@@ -198,17 +198,14 @@ const CRYPTO_ASSET_INFO = {
 const READY_NEWS: Awaited<ReturnType<typeof getNewsList>> = [
     {
         id: 'news-1',
-        symbol: 'AAPL',
         publishedAt: '2026-05-06T00:00:00.000Z',
         titleEn: 'Apple announces new product',
         titleKo: '애플, 신제품 발표',
-        bodyEn: 'Apple announced a new product.',
         sentiment: 'bullish',
         category: 'earnings',
         bodyKo: '애플은 신제품 발표 이후 수요 기대가 커졌다고 밝혔습니다.',
         summaryKo: '신제품 발표가 투자심리에 긍정적으로 작용했습니다.',
         priceImpact: 'medium',
-        analyzedAt: new Date('2026-05-06T01:00:00.000Z'),
         url: 'https://example.com/news-1',
         source: 'Example',
     },

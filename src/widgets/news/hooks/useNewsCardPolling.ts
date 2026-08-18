@@ -104,10 +104,14 @@ export function useNewsCardPolling(
         let pollCount = 0;
         let consecutiveFailures = 0;
         const startTime = Date.now();
-        // 종목이 바뀌어도 **이미 날아간 요청**은 취소되지 않는다(`clearInterval`은
-        // 다음 tick만 막는다). 그 응답이 늦게 도착하면 새 종목의 상태에 옛 종목의
-        // 카드를 써 넣는다 — `setItems`/`latestItemsRef`/`onPollingComplete`가 전부
-        // await 뒤에 있다(감사 라운드 14, 형제 훅과 같은 수정).
+        // 언마운트 후 쓰기 방지 — `clearInterval`은 다음 tick만 막고, 이미 날아간
+        // 요청의 응답은 그대로 돌아온다. `setItems`/`latestItemsRef`/
+        // `onPollingComplete`가 전부 await 뒤에 있어 그대로 두면 떠난 종목의 카드로
+        // 상태를 쓰고, `useNewsPollingWithInvalidation`을 통해 그 종목의
+        // `invalidateQueries`까지 발화시킨다.
+        //
+        // 종목 전환 자체는 remount다(Next가 `[symbol]` 세그먼트를 param으로 keying).
+        // 자세한 경위는 형제 훅 `useWaitForNewsCards` 주석 참조.
         let cancelled = false;
 
         const intervalId = setInterval(async () => {

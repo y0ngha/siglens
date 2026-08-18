@@ -34,28 +34,13 @@ vi.mock('../api', () => ({
         return {
             upsertMarketNewsItem: vi.fn(async () => true),
             attachAnalysis: vi.fn(async () => undefined),
-            listByCategory: vi.fn(async () => [
-                {
-                    id: 'm1',
-                    symbol: '__NEWS_CRYPTO__',
-                    source: 'CoinWire',
-                    url: 'https://x/btc',
-                    publishedAt: '2026-06-15T10:00:00.000Z',
-                    titleEn: 'BTC up',
-                    bodyEn: 'body',
-                    titleKo: null,
-                    bodyKo: null,
-                    summaryKo: null,
-                    sentiment: null,
-                    category: null,
-                    priceImpact: null,
-                    tickers: ['BTCUSD'],
-                    analyzedAt: null,
-                },
-            ]),
+            listByCategory: vi.fn(async () => []),
+            // 분석 여부 판정은 id 집합만 읽는다(감사: 비용 라운드 15).
+            listAnalyzedIds: vi.fn(async () => new Set<string>()),
         };
     }),
     getMarketNewsList: vi.fn(),
+    getMarketNewsCards: vi.fn(),
     isRecentlyFetched: vi.fn(async () => false),
     markFetched: vi.fn(async () => undefined),
 }));
@@ -166,6 +151,9 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
                 (this as Record<string, unknown>).listByCategory = vi.fn(
                     async () => [DEFAULT_ITEM]
                 );
+                (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
+                    async () => new Set<string>()
+                );
                 return this;
             }
         );
@@ -196,6 +184,9 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
                     attachAnalysis;
                 (this as Record<string, unknown>).listByCategory = vi.fn(
                     async () => [DEFAULT_ITEM]
+                );
+                (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
+                    async () => new Set<string>()
                 );
                 return this;
             }
@@ -234,6 +225,9 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
                 );
                 (this as Record<string, unknown>).listByCategory = vi.fn(
                     async () => [DEFAULT_ITEM]
+                );
+                (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
+                    async () => new Set<string>()
                 );
                 return this;
             }
@@ -326,6 +320,9 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
                             priceImpact: null,
                         }))
                 );
+                (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
+                    async () => new Set<string>()
+                );
                 return this;
             }
         );
@@ -377,6 +374,9 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
                             priceImpact: null,
                         }))
                 );
+                (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
+                    async () => new Set<string>()
+                );
                 return this;
             }
         );
@@ -418,6 +418,9 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
                             category: null,
                             priceImpact: null,
                         }))
+                );
+                (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
+                    async () => new Set<string>()
                 );
                 return this;
             }
@@ -461,6 +464,9 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
                             category: null,
                             priceImpact: null,
                         }))
+                );
+                (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
+                    async () => new Set<string>()
                 );
                 return this;
             }
@@ -526,6 +532,9 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
                             priceImpact: null,
                         }))
                 );
+                (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
+                    async () => new Set<string>()
+                );
                 return this;
             }
         );
@@ -581,6 +590,9 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
                             category: null,
                             priceImpact: null,
                         }))
+                );
+                (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
+                    async () => new Set<string>()
                 );
                 return this;
             }

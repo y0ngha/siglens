@@ -112,10 +112,9 @@ export async function ensureNewsCardsAnalyzedAction(
     if (options?.skipAnalysis) return;
 
     // Read the current DB state after upsert so newly inserted rows are included.
-    const rows = await repo.listBySymbol(symbol, NEWS_LOOKBACK_MS);
-    const analyzedIds = new Set(
-        rows.filter(r => r.analyzedAt !== null).map(r => r.id)
-    );
+    // 필요한 건 "이미 분석됨" 집합뿐이라 id만 읽는다 — 전 컬럼을 읽으면 본문까지
+    // 받아서 그대로 버린다(감사: 비용 라운드 15).
+    const analyzedIds = await repo.listAnalyzedIds(symbol, NEWS_LOOKBACK_MS);
     const unanalyzed = fresh.filter(item => !analyzedIds.has(item.id));
 
     if (unanalyzed.length === 0) return;

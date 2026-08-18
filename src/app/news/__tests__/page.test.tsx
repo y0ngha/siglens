@@ -25,7 +25,7 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
 }));
 
 vi.mock('@/entities/market-news/api', () => ({
-    getMarketNewsList: vi.fn().mockResolvedValue([]),
+    getMarketNewsCards: vi.fn().mockResolvedValue([]),
 }));
 
 import NewsHubPage, { generateMetadata } from '../page';

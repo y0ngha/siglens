@@ -1,11 +1,11 @@
 /**
  * ISR empty-cache prevention tests for the /news/[category] page.
  *
- * A transient throw from getMarketNewsList during ISR cold-gen must NOT
+ * A transient throw from getMarketNewsCards during ISR cold-gen must NOT
  * propagate — it must degrade to MarketNewsDegraded (a non-empty, non-0-byte
  * page) rather than freezing an empty ISR cache.
  *
- * Strategy: mock getMarketNewsList to reject, invoke the RSC directly
+ * Strategy: mock getMarketNewsCards to reject, invoke the RSC directly
  * (via render), and confirm MarketNewsDegraded renders.
  * Mirrors page.test.tsx mocking pattern.
  */
@@ -27,9 +27,9 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
     ),
 }));
 
-// getMarketNewsList will be configured per-test to reject.
+// getMarketNewsCards will be configured per-test to reject.
 vi.mock('@/entities/market-news/api', () => ({
-    getMarketNewsList: vi.fn(),
+    getMarketNewsCards: vi.fn(),
 }));
 
 vi.mock('@/widgets/market-news', () => ({
@@ -49,10 +49,10 @@ import {
 } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import CategoryNewsPage from '../page';
-import { getMarketNewsList } from '@/entities/market-news/api';
+import { getMarketNewsCards } from '@/entities/market-news/api';
 
-const mockGetMarketNewsList = getMarketNewsList as MockedFunction<
-    typeof getMarketNewsList
+const mockGetMarketNewsList = getMarketNewsCards as MockedFunction<
+    typeof getMarketNewsCards
 >;
 
 describe('/news/[category] ISR empty-cache prevention', () => {
@@ -60,7 +60,7 @@ describe('/news/[category] ISR empty-cache prevention', () => {
         vi.clearAllMocks();
     });
 
-    it('getMarketNewsList throw → page does not throw, renders MarketNewsDegraded (non-empty)', async () => {
+    it('getMarketNewsCards throw → page does not throw, renders MarketNewsDegraded (non-empty)', async () => {
         // Simulate transient DB failure during ISR cold-gen.
         mockGetMarketNewsList.mockRejectedValue(
             new Error('DB connection refused')
@@ -79,7 +79,7 @@ describe('/news/[category] ISR empty-cache prevention', () => {
         ).toBeInTheDocument();
     });
 
-    it('getMarketNewsList throw → page still renders category tabs and h1 (chrome intact)', async () => {
+    it('getMarketNewsCards throw → page still renders category tabs and h1 (chrome intact)', async () => {
         mockGetMarketNewsList.mockRejectedValue(
             new Error('DB connection refused')
         );
@@ -94,7 +94,7 @@ describe('/news/[category] ISR empty-cache prevention', () => {
         expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
     });
 
-    it('generateMetadata: getMarketNewsList throw → returns noindex metadata (isEmpty:true path)', async () => {
+    it('generateMetadata: getMarketNewsCards throw → returns noindex metadata (isEmpty:true path)', async () => {
         mockGetMarketNewsList.mockRejectedValue(
             new Error('DB connection refused')
         );
@@ -130,7 +130,7 @@ describe('/news/[category] ISR empty-cache prevention', () => {
                 tickers: ['BTCUSD'],
                 analyzedAt: null,
             },
-        ] as Awaited<ReturnType<typeof getMarketNewsList>>);
+        ] as Awaited<ReturnType<typeof getMarketNewsCards>>);
 
         render(
             await CategoryNewsPage({

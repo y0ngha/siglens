@@ -6,11 +6,10 @@ import {
     MARKET_NEWS_CACHE_TAG_PREFIX,
     NEWS_CATEGORY_SLUGS,
     categoryFromSlug,
-    toMarketNewsCardItem,
     type MarketNewsCardItem,
     type NewsFeedCategory,
 } from '@/entities/market-news';
-import { getMarketNewsList } from '@/entities/market-news/api';
+import { getMarketNewsCards } from '@/entities/market-news/api';
 import { MarketNewsDigest, MarketNewsList } from '@/widgets/market-news';
 import { NewsCategoryTabs } from '@/widgets/news-hub';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -63,7 +62,7 @@ async function loadCategorySnapshot(
     const rows = await staticSymbolCache(
         ['market-news:list', cfg.sentinel],
         cfg.sentinel,
-        () => getMarketNewsList(cfg.sentinel),
+        () => getMarketNewsCards(cfg.sentinel),
         [`${MARKET_NEWS_CACHE_TAG_PREFIX}:${cfg.sentinel}`],
         SECONDS_PER_HALF_DAY
     ).catch((e: unknown) => {
@@ -71,12 +70,11 @@ async function loadCategorySnapshot(
             `[CategoryNewsPage] loadCategorySnapshot(${category}) failed, degrading to []:`,
             e
         );
-        return [] as Awaited<ReturnType<typeof getMarketNewsList>>;
+        return [] as Awaited<ReturnType<typeof getMarketNewsCards>>;
     });
-    // Project to the same allowlist `getMarketNewsCardsAction` uses so the
-    // client component never sees server-only DB columns (bodyEn/symbol/analyzedAt).
-    const items = rows.map(toMarketNewsCardItem);
-    return { items, isEmpty: items.length === 0 };
+    // 읽기 자체가 카드 투영이라 여기서 다시 거를 것이 없다 — 서버 전용 컬럼
+    // (bodyEn/symbol/analyzedAt)은 애초에 select되지 않는다.
+    return { items: rows, isEmpty: rows.length === 0 };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
