@@ -1,25 +1,43 @@
-import type { AssetClass } from '@/shared/config/marketProfile';
+import {
+    getDescriptor,
+    type MarketProfileId,
+} from '@/shared/config/marketProfile';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 
 export interface OverallFactualFallbackProps {
     symbol: string;
     displayName: string;
-    assetClass: AssetClass;
+    marketProfile: MarketProfileId;
     newsItems: readonly NewsDisplayItem[];
 }
 
-function getAxesText(assetClass: AssetClass): string {
-    if (assetClass === 'crypto') {
+/**
+ * 이 컴포넌트는 `overall/page.tsx`의 Suspense fallback으로 렌더되어 JS 없이
+ * 접근하는 크롤러가 그대로 읽는 SSR HTML이다(`OverallContent`가 client
+ * 컴포넌트라 non-JS 크롤러에게는 fallback이 사실상 최종 콘텐츠다). `assetClass`
+ * 이진 분류(equity/crypto)만으로 축 문구를 고르면 한국 개별주식(assetClass는
+ * 'equity'지만 옵션 탭이 없음, `KR_EQUITY_DESCRIPTOR.tabs` 참고)에도 미국
+ * 주식과 동일하게 "옵션"을 언급해, 존재하지 않는 옵션 분석을 크롤러에게
+ * 약속하게 된다(SEO 감사 2026-08-18) — `marketProfile`로 descriptor의
+ * 실제 tabs whitelist를 물어 옵션 탭 존재 여부를 판정한다.
+ */
+function getAxesText(marketProfile: MarketProfileId): string {
+    const descriptor = getDescriptor(marketProfile);
+    if (descriptor.assetClass === 'crypto') {
         return '차트, 뉴스, 공포 탐욕 지수';
     }
 
-    return '차트, 뉴스, 펀더멘털, 옵션, 공포 탐욕 지수';
+    if (descriptor.tabs.includes('options')) {
+        return '차트, 뉴스, 펀더멘털, 옵션, 공포 탐욕 지수';
+    }
+
+    return '차트, 뉴스, 펀더멘털, 공포 탐욕 지수';
 }
 
 export function OverallFactualFallback({
     symbol,
     displayName,
-    assetClass,
+    marketProfile,
     newsItems,
 }: OverallFactualFallbackProps) {
     const headingId = 'overall-factual-fallback-heading';
@@ -38,7 +56,7 @@ export function OverallFactualFallback({
             <div className="mt-3 space-y-3 text-sm leading-relaxed text-secondary-300">
                 <p>
                     {displayName} ({symbol}) 종합 분석은{' '}
-                    {getAxesText(assetClass)}를 함께 봅니다.
+                    {getAxesText(marketProfile)}를 함께 봅니다.
                 </p>
                 {newsItems.length > 0 ? (
                     <p>

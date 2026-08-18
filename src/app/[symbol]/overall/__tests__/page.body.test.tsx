@@ -116,6 +116,17 @@ const CRYPTO_ASSET_INFO = {
     degraded: false,
 } as Awaited<ReturnType<typeof getAssetInfoResilient>>;
 
+const KR_EQUITY_ASSET_INFO = {
+    assetInfo: {
+        symbol: '005930.KS',
+        name: 'Samsung Electronics',
+        koreanName: '삼성전자',
+        fmpSymbol: undefined as unknown as string | undefined,
+        marketProfile: 'kr-equity' as const,
+    },
+    degraded: false,
+} as Awaited<ReturnType<typeof getAssetInfoResilient>>;
+
 describe('OverallPage — isEquity body branching', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -233,5 +244,65 @@ describe('OverallPage — isEquity body branching', () => {
             expect(treeStr).toContain('실적 발표 결과나 가이던스 변화');
             expect(treeStr).not.toContain('규제 이슈, 대형 뉴스');
         });
+    });
+});
+
+/**
+ * 회귀 가드(SEO 감사 finding 1, 2026-08-18): 한국 개별주식은 옵션 시장이 없다
+ * (`KR_EQUITY_DESCRIPTOR.tabs`에 `options`가 없음). `isEquity`(assetClass 이진
+ * 분류)만으로 문구를 고르면 한국 종목도 미국 종목과 동일한 "옵션 시장" 문구를
+ * 노출하게 된다 — `/005930.KS/overall`이 실재하지 않는 옵션 분석을 약속했다.
+ * `hasOptions`(descriptor.tabs.includes('options')) 분기가 H1, FAQ 두 답변,
+ * 본문 3문단에서 모두 걸려 있는지 각각 pin한다.
+ */
+describe('OverallPage — kr-equity hasOptions branching (SEO 감사 finding 1)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+    });
+
+    it('한국 종목 H1은 옵션 시장 문구 없이 차트·실적·뉴스만 언급한다', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue(KR_EQUITY_ASSET_INFO);
+        const tree = await OverallPage({
+            params: Promise.resolve({ symbol: '005930.ks' }),
+        });
+        const treeStr = JSON.stringify(tree);
+        expect(treeStr).toContain('차트와 실적, 뉴스 종합 분석');
+        expect(treeStr).not.toContain('차트와 옵션 시장, 실적, 뉴스 종합 분석');
+    });
+
+    it('한국 종목 FAQ 첫 답변은 옵션 시장 문구 없이 세 가지 분석 축을 언급한다', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue(KR_EQUITY_ASSET_INFO);
+        const tree = await OverallPage({
+            params: Promise.resolve({ symbol: '005930.ks' }),
+        });
+        const treeStr = JSON.stringify(tree);
+        expect(treeStr).toContain(
+            '세 가지 분석 축에 시장 분위기(공포 탐욕 지수)'
+        );
+        expect(treeStr).not.toContain('옵션 시장이 평가하는 단기 방향성');
+    });
+
+    it('한국 종목 FAQ 두 번째 답변은 옵션 시장의 콜·풋 베팅 문구를 포함하지 않는다', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue(KR_EQUITY_ASSET_INFO);
+        const tree = await OverallPage({
+            params: Promise.resolve({ symbol: '005930.ks' }),
+        });
+        const treeStr = JSON.stringify(tree);
+        expect(treeStr).not.toContain('옵션 시장의 콜·풋 베팅 분위기');
+        // 미국 주식과 동일하게 실적/가이던스는 여전히 언급한다.
+        expect(treeStr).toContain('실적과 가이던스 흐름');
+    });
+
+    it('한국 종목 본문 가이드는 옵션 시장 문단 대신 실적/가이던스 문단을 보여준다', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue(KR_EQUITY_ASSET_INFO);
+        const tree = await OverallPage({
+            params: Promise.resolve({ symbol: '005930.ks' }),
+        });
+        const treeStr = JSON.stringify(tree);
+        expect(treeStr).not.toContain(
+            '옵션 시장이 가까운 만기에서 콜과 풋 어느'
+        );
+        expect(treeStr).toContain('분기 실적이 시장 기대치를 웃돌았는지');
     });
 });

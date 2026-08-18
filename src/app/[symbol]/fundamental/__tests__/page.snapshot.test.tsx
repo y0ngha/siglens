@@ -121,6 +121,7 @@ import FundamentalPage from '@/app/[symbol]/fundamental/page';
 import { FundamentalDegraded } from '@/app/[symbol]/fundamental/FundamentalDegraded';
 import { FundamentalSnapshotProse } from '@/views/symbol/snapshot/renderers/FundamentalSnapshotProse';
 import { FundamentalAiSummary } from '@/widgets/fundamental/FundamentalAiSummary';
+import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResilient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
@@ -134,6 +135,17 @@ const EQUITY_ASSET_INFO = {
         name: 'Apple Inc.',
         koreanName: '애플',
         fmpSymbol: 'AAPL',
+    },
+    degraded: false,
+} as Awaited<ReturnType<typeof getAssetInfoResilient>>;
+
+const KR_ASSET_INFO = {
+    assetInfo: {
+        symbol: '005930.KS',
+        name: 'Samsung Electronics',
+        koreanName: '삼성전자',
+        fmpSymbol: undefined,
+        marketProfile: 'kr-equity' as const,
     },
     degraded: false,
 } as Awaited<ReturnType<typeof getAssetInfoResilient>>;
@@ -252,5 +264,63 @@ describe('FundamentalPage — SEO snapshot prose (Task 7b)', () => {
         expect(
             (degraded?.props as { snapshotContent: unknown }).snapshotContent
         ).toEqual(SNAPSHOT_CONTENT);
+    });
+});
+
+/**
+ * 회귀 가드(SEO 감사 finding 4, 2026-08-18): `CrossLinkCards`는 `marketProfile`을
+ * 안 받으면 `'us-equity'` 기본값으로 떨어져, 한국 종목 페이지에도 존재하지 않는
+ * `/options`·`/congress` 링크(soft-404: notFound()가 Suspense 안이라 200 반환 —
+ * `e2e/specs/kr-equity-seo.spec.ts`)를 노출했다. 페이지가 계산한 marketProfile이
+ * 정상 분기와 degrade 분기 양쪽 모두 `CrossLinkCards`/`FundamentalDegraded`에
+ * 그대로 전달되는지 pin한다 — hrefs 자체는 `CrossLinkCards.test.tsx`의 tabs
+ * whitelist 테스트가 이미 검증한다.
+ */
+describe('FundamentalPage — marketProfile 전달 (SEO 감사 finding 4)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+    });
+
+    it('한국 종목은 CrossLinkCards에 marketProfile="kr-equity"를 전달한다', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue(KR_ASSET_INFO);
+        mockGetProfileResilient.mockResolvedValue(PROFILE_OK);
+
+        const tree = await FundamentalPage({
+            params: Promise.resolve({ symbol: '005930.ks' }),
+        });
+
+        const links = findElementByType(tree, CrossLinkCards);
+        expect((links?.props as { marketProfile?: string }).marketProfile).toBe(
+            'kr-equity'
+        );
+    });
+
+    it('미국 종목은 CrossLinkCards에 marketProfile="us-equity"를 전달한다 (회귀 아님 확인)', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+        mockGetProfileResilient.mockResolvedValue(PROFILE_OK);
+
+        const tree = await FundamentalPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        const links = findElementByType(tree, CrossLinkCards);
+        expect((links?.props as { marketProfile?: string }).marketProfile).toBe(
+            'us-equity'
+        );
+    });
+
+    it('profile degraded 분기에서도 한국 종목은 FundamentalDegraded에 marketProfile="kr-equity"를 전달한다', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue(KR_ASSET_INFO);
+        mockGetProfileResilient.mockResolvedValue(PROFILE_DEGRADED);
+
+        const tree = await FundamentalPage({
+            params: Promise.resolve({ symbol: '005930.ks' }),
+        });
+
+        const degraded = findElementByType(tree, FundamentalDegraded);
+        expect(
+            (degraded?.props as { marketProfile?: string }).marketProfile
+        ).toBe('kr-equity');
     });
 });

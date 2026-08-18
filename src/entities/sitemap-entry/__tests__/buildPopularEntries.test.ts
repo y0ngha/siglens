@@ -2,6 +2,8 @@ import { POPULAR_OPTIONS_TICKERS } from '../config/popular-options-tickers';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { SITE_URL } from '@/shared/lib/seo';
+import { classifyAsset } from '@/entities/ticker';
+import { floorToHour } from '../lib/floorToHour';
 import { buildPopularEntries } from '../lib/buildPopularEntries';
 
 // 2026-05-23은 **토요일**이다. 직전 마감 세션은 금요일(2026-05-22) 20:00 UTC.
@@ -10,14 +12,19 @@ const NOW = new Date('2026-05-23T21:00:00.000Z');
 const LAST_SESSION_CLOSE = new Date('2026-05-22T20:00:00.000Z');
 
 describe('buildPopularEntries', () => {
-    it('모든 POPULAR_TICKERS에 대해 7축 기본 라우트를 생성하고 options는 generated list에 맞춘다', () => {
+    it('모든 POPULAR_TICKERS에 대해 7축 기본 라우트를 생성하고 options/financials는 자산 분류에 맞춘다', () => {
         const entries = buildPopularEntries(NOW);
 
         // 한국 종목은 `/congress`가 없어(국내에 공직자 매매 공시 제도가 없다) 6축이다.
         const krCount = POPULAR_TICKERS.filter(t => /\.K[SQ]$/.test(t)).length;
+        // ETF/지수는 재무제표가 없어 `/financials`가 6축이다(SPY, TQQQ 등).
+        const nonStockCount = POPULAR_TICKERS.filter(
+            t => classifyAsset(t) !== 'stock'
+        ).length;
         expect(entries).toHaveLength(
             POPULAR_TICKERS.length * 7 -
-                krCount +
+                krCount -
+                nonStockCount +
                 POPULAR_OPTIONS_TICKERS.length
         );
 
@@ -61,15 +68,63 @@ describe('buildPopularEntries', () => {
         expect(optionsSymbols).toEqual([...POPULAR_OPTIONS_TICKERS]);
     });
 
-    it('news 페이지는 1시간 슬라이딩 lastmod와 hourly changefreq를 적용한다', () => {
+    it('news 페이지는 1시간 슬라이딩 lastmod(정시로 내림)와 hourly changefreq를 적용한다', () => {
         const entries = buildPopularEntries(NOW);
 
         const newsEntry = entries.find(e => e.url.endsWith('/news'));
         expect(newsEntry).toBeDefined();
         expect(newsEntry!.lastModified.getTime()).toBe(
-            NOW.getTime() - MS_PER_HOUR
+            floorToHour(new Date(NOW.getTime() - MS_PER_HOUR)).getTime()
         );
         expect(newsEntry!.changeFrequency).toBe('hourly');
+    });
+
+    /**
+     * 회귀 가드(SEO 감사 finding 5): `/news` lastmod가 raw `now - 1h`였을 때는
+     * 같은 시간대 안에서도 호출마다 값이 달라져(sitemap 라우트가 force-dynamic),
+     * `maxLastModified`가 고르는 sitemap index lastmod가 끝없이 "방금 바뀜"으로
+     * 나갔다. `floorToHour`로 정시 내림한 뒤로는 같은 시간대 안의 서로 다른 호출
+     * 시각이 동일한 lastmod를 내야 한다. 세션 기반 엔트리(us/kr)는 이 픽스와
+     * 무관하게 원래도 거래소별로 다른 고정 시각을 유지해야 한다.
+     */
+    it('같은 시간대 안에서는 호출 시각이 달라도 news lastmod가 동일하다 (US/KR 세션 엔트리는 그대로 구분됨)', () => {
+        // NOW = 2026-05-23T21:00:00Z. 같은 21시대 안에서 분만 다른 두 시각.
+        const a = buildPopularEntries(new Date('2026-05-23T21:00:05.000Z'));
+        const b = buildPopularEntries(new Date('2026-05-23T21:59:55.000Z'));
+
+        const newsOf = (es: ReturnType<typeof buildPopularEntries>) =>
+            es.find(e => e.url.endsWith('/news'))!.lastModified.getTime();
+        expect(newsOf(a)).toBe(newsOf(b));
+
+        // US/KR 세션 앵커 엔트리는 news 픽스와 독립적으로 여전히 서로 다른 값을 유지한다.
+        const usTicker = POPULAR_TICKERS.find(t => !/\.K[SQ]$/.test(t))!;
+        const krTicker = POPULAR_TICKERS.find(t => /\.K[SQ]$/.test(t))!;
+        const chartOf = (
+            es: ReturnType<typeof buildPopularEntries>,
+            ticker: string
+        ) => es.find(e => e.url === `${SITE_URL}/${ticker}`)!.lastModified;
+        expect(chartOf(a, usTicker).getTime()).not.toBe(
+            chartOf(a, krTicker).getTime()
+        );
+    });
+
+    /**
+     * 회귀 가드(SEO 감사 finding 2): ETF(SPY)는 재무제표가 없다 —
+     * `/financials`는 `isEmptyFinancialsSnapshot` → NOINDEX_SYMBOL_METADATA로
+     * 응답하는 permanently-noindex 페이지다. noindex URL을 sitemap에 실으면
+     * 크롤 예산만 태우고 색인 품질 신호가 나빠지므로 stock으로 분류된 티커만
+     * `/financials` 엔트리를 내야 한다. SPY는 옵션은 있으므로(POPULAR_OPTIONS_SET)
+     * `/options`는 그대로 남아야 한다 — financials 배제가 다른 축까지 지우지
+     * 않음을 함께 확인한다.
+     */
+    it('ETF(SPY)는 /financials 엔트리가 없지만 /options는 그대로 유지한다', () => {
+        const entries = buildPopularEntries(NOW);
+        const urls = entries.map(e => e.url);
+
+        expect(urls).not.toContain(`${SITE_URL}/SPY/financials`);
+        expect(urls).toContain(`${SITE_URL}/SPY/options`);
+        // 대조군: 일반 주식(AAPL)은 financials가 정상적으로 존재해야 한다.
+        expect(urls).toContain(`${SITE_URL}/AAPL/financials`);
     });
 
     it('chart 페이지는 daily, fundamental은 weekly로 우선순위를 둔다', () => {
