@@ -18,6 +18,9 @@ vi.mock('next/link', () => ({
 }));
 
 vi.mock('@/shared/config/popular-tickers', () => ({
+    // 목이 KR 카테고리를 갖지 않으므로 빈 집합이다 — `TickerCategories`가 한국
+    // 섹션을 렌더하지 않고, 이 파일들은 미국 그리드만 검증한다.
+    KR_CATEGORY_IDS: new Set<string>(),
     TICKER_CATEGORIES: [
         {
             id: 'megacap',
@@ -57,14 +60,16 @@ describe('Home Page Category Browse', () => {
     it('renders accessible nav landmark', () => {
         render(<TickerCategories />);
         expect(
-            screen.getByRole('navigation', { name: '섹터별 인기 종목 탐색' })
+            screen.getByRole('navigation', {
+                name: '미국 섹터별 인기 종목 탐색',
+            })
         ).toBeInTheDocument();
     });
 
     it('renders section heading', () => {
         render(<TickerCategories />);
         expect(
-            screen.getByRole('heading', { name: '섹터별 인기 종목' })
+            screen.getByRole('heading', { name: '미국 섹터별 인기 종목' })
         ).toBeInTheDocument();
     });
 

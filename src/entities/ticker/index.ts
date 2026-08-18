@@ -19,6 +19,7 @@ export {
 
 export {
     getRecentSearches,
+    type RecentSearchEntry,
     addRecentSearch,
     removeRecentSearch,
     clearRecentSearches,
@@ -45,3 +46,7 @@ export {
     type AssetCategory,
     type CorporationAboutNode,
 } from './lib/assetClassification';
+
+// 접미사→거래소 매핑의 유일한 출처. 자동완성 배지가 `.KQ`를 자체 판정하면
+// canonical 정규식보다 느슨한 두 번째 표가 생긴다(MISTAKES.md §16.5).
+export { krExchangeOf, type KrExchange } from './lib/krExchange';

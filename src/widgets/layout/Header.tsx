@@ -62,8 +62,18 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                         {SITE_NAME}
                     </span>
                 </Link>
-                {/* Desktop nav — hidden on mobile; PPR: Suspense fallback renders the static version */}
-                <div className="hidden md:flex">
+                {/*
+                    Desktop nav — PPR: Suspense fallback renders the static version.
+
+                    브레이크포인트가 `lg`(1024px)인 것은 의도다. 헤더는 고정 `h-14`
+                    한 줄이고 로고·검색·인증 메뉴가 같은 줄을 나눠 쓰는데, 내비
+                    라벨에 시장("미국")이 붙으면서 폭이 늘었다. `md`(768px)에 두면
+                    768~896px 구간에서 한글이 글자 단위로 줄바꿈돼 링크 높이가
+                    82px가 되고 56px 행 위아래로 삐져나간다(768px 실측).
+                    `HeaderMobileMenu`의 `lg:hidden`과 **반드시 같은 값**이어야
+                    한다 — 어긋나면 둘 다 보이거나 둘 다 사라진다.
+                */}
+                <div className="hidden lg:flex">
                     <Suspense fallback={<HeaderNavStatic items={NAV_ITEMS} />}>
                         <HeaderNav items={NAV_ITEMS} />
                     </Suspense>

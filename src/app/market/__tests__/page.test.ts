@@ -372,3 +372,20 @@ describe('Market page', () => {
         });
     });
 });
+
+/**
+ * 이 파일은 `buildBreadcrumbJsonLd`를 `{}`로 목킹해서 렌더된 JSON-LD로는 이름을
+ * 볼 수 없다. 그래서 **호출 인자**로 고정한다 — breadcrumb 이름은 SERP에 실제로
+ * 출력되는 문자열이고, 여기가 유일한 관측점이다.
+ */
+describe('/market BreadcrumbList 이름', () => {
+    it('시장을 명시한다', async () => {
+        const { buildBreadcrumbJsonLd } = await import('@/shared/lib/seo');
+        const MarketPage = (await import('../page')).default;
+        vi.mocked(buildBreadcrumbJsonLd).mockClear();
+        await MarketPage();
+        expect(buildBreadcrumbJsonLd).toHaveBeenCalledWith([
+            expect.objectContaining({ name: '미국 시장 현황' }),
+        ]);
+    });
+});

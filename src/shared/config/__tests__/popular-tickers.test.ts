@@ -1,5 +1,6 @@
 import {
     CURATED_KOREAN_NAMES,
+    KR_CATEGORY_IDS,
     POPULAR_TICKERS,
     TICKER_CATEGORIES,
 } from '@/shared/config/popular-tickers';
@@ -125,24 +126,60 @@ describe('POPULAR_TICKERS', () => {
 });
 
 /**
- * `korea-equity` 카테고리는 저장소 전체에서 한국 종목 페이지로 가는 **유일한 크롤 가능한
+ * KR 카테고리들은 저장소 전체에서 한국 종목 페이지로 가는 **유일한 크롤 가능한
  * 링크**다(검색 자동완성은 `<button>` + `router.push`, 크로스링크는 같은 심볼의 다른 탭만).
  * 동시에 `CURATED_KOREAN_NAMES`의 원천이라, 여기 빠진 종목은 콜드 ISR에서 영문 티커 제목이
  * 캐시에 굳는다. 두 목록이 어긋나면 그 종목은 sitemap에만 있는 고아가 된다.
+ *
+ * 업종 분할(2026-08) 이후로는 **합집합**이 기준이다 — 카테고리를 더 쪼개더라도 한
+ * 종목이 어느 카드에도 안 들어가면 같은 고아가 생긴다.
  */
-describe('korea-equity 카테고리 ↔ POPULAR_TICKERS KR 블록', () => {
+describe('KR 카테고리 합집합 ↔ POPULAR_TICKERS KR 블록', () => {
     const krPopular = POPULAR_TICKERS.filter(t => /\.K[SQ]$/.test(t));
-    const krCategory = TICKER_CATEGORIES.find(c => c.id === 'korea-equity');
+    const krCategories = TICKER_CATEGORIES.filter(c =>
+        KR_CATEGORY_IDS.has(c.id)
+    );
 
     it('두 목록이 정확히 같은 심볼 집합이다', () => {
-        expect(krCategory).toBeDefined();
-        const categorySymbols = krCategory!.items.map(i => i.symbol);
+        expect(krCategories.length).toBeGreaterThan(0);
+        const categorySymbols = krCategories.flatMap(c =>
+            c.items.map(i => i.symbol)
+        );
         expect([...categorySymbols].sort()).toEqual([...krPopular].sort());
+    });
+
+    it('같은 종목이 두 카테고리에 중복 노출되지 않는다', () => {
+        const all = krCategories.flatMap(c => c.items.map(i => i.symbol));
+        expect(all.length).toBe(new Set(all).size);
     });
 
     it('모든 KR 인기 종목에 한글명 폴백이 있다', () => {
         for (const symbol of krPopular) {
             expect(CURATED_KOREAN_NAMES.get(symbol)).toBeTruthy();
+        }
+    });
+});
+
+/**
+ * `KR_CATEGORY_IDS`가 실제 카테고리 목록과 어긋나면 홈 그리드의 미국/한국 분리와
+ * 위 합집합 불변식이 **둘 다 동시에** 조용히 빗나간다 — 빠진 카테고리는 미국 섹션에
+ * 렌더되면서 고아 검사에서도 제외된다.
+ */
+describe('KR_CATEGORY_IDS', () => {
+    it('KR 종목을 담은 카테고리를 하나도 빠뜨리지 않는다', () => {
+        const holdsKrSymbols = TICKER_CATEGORIES.filter(c =>
+            c.items.some(i => /\.K[SQ]$/.test(i.symbol))
+        ).map(c => c.id);
+        expect([...holdsKrSymbols].sort()).toEqual([...KR_CATEGORY_IDS].sort());
+    });
+
+    it('KR 종목이 없는 카테고리를 포함하지 않는다', () => {
+        for (const id of KR_CATEGORY_IDS) {
+            const category = TICKER_CATEGORIES.find(c => c.id === id);
+            expect(category).toBeDefined();
+            expect(category!.items.every(i => /\.K[SQ]$/.test(i.symbol))).toBe(
+                true
+            );
         }
     });
 });

@@ -88,7 +88,14 @@ export type CategoryId =
     | 'space'
     | 'ev-mobility'
     | 'energy-industrial'
-    | 'korea-equity';
+    // 한국 종목은 미국과 같은 결의 업종 축으로 나눈다. 단일 '한국 주식' 묶음은
+    // 20종목이 한 카드에 뭉쳐 업종 정보가 드러나지 않았다.
+    | 'kr-semiconductor'
+    | 'kr-auto-battery'
+    | 'kr-bio'
+    | 'kr-platform'
+    | 'kr-finance'
+    | 'kr-kosdaq';
 
 /** Curated ticker category (id + label + member tickers with Korean names). */
 export interface TickerCategory {

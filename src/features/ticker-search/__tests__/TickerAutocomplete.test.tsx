@@ -9,7 +9,10 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 vi.mock('@/features/ticker-search/hooks/useAutocomplete');
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker', async importOriginal => ({
+    // 부분 목 — 배지가 쓰는 `krExchangeOf` 같은 순수 함수까지 손으로 나열하면
+    // 배럴에 export가 하나 늘 때마다 무관한 테스트가 죽는다.
+    ...(await importOriginal<typeof import('@/entities/ticker')>()),
     isKoreanInput: vi.fn(() => false),
 }));
 
@@ -332,6 +335,139 @@ describe('TickerAutocomplete', () => {
         expect(screen.getByText('코인')).toBeInTheDocument();
     });
 
+    /**
+     * `삼성전자`는 KOSPI 주 상장과 미국 장외 비후원(SSNLF)으로 둘 다 잡힌다.
+     * 배지가 없으면 목록에 같은 이름 두 줄이 뜨고 사용자는 구분할 수 없다.
+     */
+    it.each([
+        ['005930.KS', 'Korea Exchange (KOSPI)', 'KOSPI'],
+        ['247540.KQ', 'Korea Exchange (KOSDAQ)', 'KOSDAQ'],
+        ['SSNLF', 'Other OTC', '미국 OTC'],
+    ])('%s 는 %s 결과에 배지 "%s" 를 렌더한다', (symbol, full, badge) => {
+        setupAutocomplete({
+            query: '삼성',
+            isOpen: true,
+            results: [
+                {
+                    symbol,
+                    name: 'Samsung Electronics Co., Ltd.',
+                    koreanName: '삼성전자',
+                    exchange: 'KRX',
+                    exchangeFullName: full,
+                },
+            ],
+        });
+        render(<TickerAutocomplete />);
+        expect(screen.getByText(badge)).toBeInTheDocument();
+    });
+
+    it('labels a plain US listing with its exchange', () => {
+        // 배지를 국내·OTC에만 붙이면 "배지 없음"이 정보가 된다 — 배지 로직이
+        // 조용히 깨져도 화면상 구분이 안 간다. 세 자산군 전부 명시한다.
+        setupAutocomplete({ query: 'A', isOpen: true, results: MOCK_RESULTS });
+        render(<TickerAutocomplete />);
+        expect(screen.getAllByTestId('market-badge')[0]).toHaveTextContent(
+            'NASDAQ'
+        );
+    });
+
+    it('renders exactly one badge per result row', () => {
+        setupAutocomplete({ query: 'A', isOpen: true, results: MOCK_RESULTS });
+        render(<TickerAutocomplete />);
+        expect(screen.getAllByTestId('market-badge')).toHaveLength(
+            MOCK_RESULTS.length
+        );
+    });
+
+    it('normalizes the exchange code and maps OTC pink sheets', () => {
+        // 이 케이스가 없으면 `US_EXCHANGE_LABELS` 조회와 `.trim().toUpperCase()`가
+        // 둘 다 지워져도 테스트가 통과한다 — 나머지 픽스처는 전부 크립토/KR/
+        // exchangeFullName 분기로 빠져나가 이 줄에 닿지 않는다.
+        setupAutocomplete({
+            query: 'X',
+            isOpen: true,
+            results: [
+                {
+                    ...MOCK_RESULTS[0],
+                    exchange: ' pnk ',
+                    exchangeFullName: 'Pink Sheets',
+                },
+            ],
+        });
+        render(<TickerAutocomplete />);
+        expect(screen.getByTestId('market-badge')).toHaveTextContent(
+            '미국 OTC'
+        );
+    });
+
+    it('renders no badge when the exchange is unknown', () => {
+        setupAutocomplete({
+            query: 'A',
+            isOpen: true,
+            results: [
+                { ...MOCK_RESULTS[0], exchange: '', exchangeFullName: '' },
+            ],
+        });
+        render(<TickerAutocomplete />);
+        expect(screen.queryByTestId('market-badge')).not.toBeInTheDocument();
+    });
+
+    it('does not render a market badge for a crypto result on an OTC-named venue', () => {
+        // 코인은 거래소 배지가 무의미하다 — `코인` 배지가 이미 자산군을 말한다.
+        setupAutocomplete({
+            query: 'BTC',
+            isOpen: true,
+            results: [
+                {
+                    symbol: 'BTCUSD',
+                    name: 'Bitcoin',
+                    exchange: 'CRYPTO',
+                    exchangeFullName: 'OTC Crypto Desk',
+                    marketProfile: 'crypto',
+                },
+            ],
+        });
+        render(<TickerAutocomplete />);
+        const badges = screen.getAllByTestId('market-badge');
+        expect(badges).toHaveLength(1);
+        expect(badges[0]).toHaveTextContent('코인');
+    });
+
+    it('passes the display name alongside the symbol on select', () => {
+        // 최근 검색이 `005930.KS`가 아니라 `삼성전자`로 남으려면 회사명이 함께
+        // 넘어가야 한다.
+        const navigate = vi.fn();
+        setupAutocomplete({
+            query: '삼성',
+            isOpen: true,
+            navigate,
+            results: [
+                {
+                    symbol: '005930.KS',
+                    name: 'Samsung Electronics Co., Ltd.',
+                    koreanName: '삼성전자',
+                    exchange: 'KRX',
+                    exchangeFullName: 'Korea Exchange (KOSPI)',
+                },
+            ],
+        });
+        render(<TickerAutocomplete />);
+        screen.getByRole('option').click();
+        expect(navigate).toHaveBeenCalledWith('005930.KS', '삼성전자');
+    });
+
+    it('renders a placeholder covering all three asset classes', () => {
+        setupAutocomplete();
+        render(<TickerAutocomplete />);
+        const placeholder =
+            screen.getByRole('combobox').getAttribute('placeholder') ?? '';
+        // 이름이 약속하는 대로 셋 다 확인한다 — 하나만 보면 나머지 둘이 조용히
+        // 빠져도 통과한다.
+        for (const example of ['AAPL', '삼성전자', 'BTC']) {
+            expect(placeholder).toContain(example);
+        }
+    });
+
     it('selects a result on click and prefetches on hover', async () => {
         const user = userEvent.setup();
         const navigate = vi.fn();
@@ -350,6 +486,6 @@ describe('TickerAutocomplete', () => {
         expect(prefetch).toHaveBeenCalledWith('AAPL');
 
         await user.click(firstOption);
-        expect(navigate).toHaveBeenCalledWith('AAPL');
+        expect(navigate).toHaveBeenCalledWith('AAPL', expect.any(String));
     });
 });

@@ -111,8 +111,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         `${cfg.koLabel} 뉴스`,
         `${cfg.koLabel} 최신 뉴스`,
         `${cfg.koLabel} 뉴스 분석`,
+        '미국 시장 뉴스',
+        // 구 표기(2026-08 리브랜딩 전) — 기존 유입 질의 보존용.
         '미국 마켓 뉴스',
-        '마켓 뉴스 한국어',
+        '시장 뉴스 한국어',
         'AI 뉴스 다이제스트',
     ];
 
@@ -174,7 +176,7 @@ export default async function CategoryNewsPage({ params }: Props) {
 
     const breadcrumbJsonLd = !isEmpty
         ? buildBreadcrumbJsonLd([
-              { name: '마켓 뉴스 허브', url: `${SITE_URL}/news` },
+              { name: '미국 시장 뉴스 허브', url: `${SITE_URL}/news` },
               { name: cfg.koLabel, url: categoryUrl },
           ])
         : null;

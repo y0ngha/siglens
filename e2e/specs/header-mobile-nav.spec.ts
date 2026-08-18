@@ -4,8 +4,12 @@ import type { Page } from '@playwright/test';
 /**
  * Mobile nav drawer (`@webkit`) — HeaderMobileMenu hydration + interaction guard.
  *
- * `HeaderMobileMenu` is a `'use client'` component rendered inside `md:hidden`,
- * so it only appears on mobile viewports (< md 768px). The webkit project uses
+ * `HeaderMobileMenu` is a `'use client'` component rendered inside `lg:hidden`,
+ * so it appears below lg (< 1024px) — the breakpoint moved up from `md` when the
+ * nav labels grew a market prefix ("미국 시장 분석" 등) and started wrapping inside
+ * the fixed 56px header row. It must stay paired with `Header.tsx`'s
+ * `hidden lg:flex` (see `widgets/layout/__tests__/navBreakpointPairing.test.tsx`).
+ * The webkit project uses
  * `devices['iPhone 14']` (~390px), so the hamburger renders there.
  *
  * The tests act as a hydration guard: a dead / un-hydrated button leaves the

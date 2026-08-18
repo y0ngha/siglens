@@ -21,6 +21,9 @@ vi.mock('@/shared/lib/cn', () => ({
             .join(' '),
 }));
 vi.mock('@/shared/config/popular-tickers', () => ({
+    // 목이 KR 카테고리를 갖지 않으므로 빈 집합이다 — `TickerCategories`가 한국
+    // 섹션을 렌더하지 않고, 이 파일들은 미국 그리드만 검증한다.
+    KR_CATEGORY_IDS: new Set<string>(),
     TICKER_CATEGORIES: [
         {
             id: 'megacap',
@@ -65,11 +68,22 @@ describe('TickerCategories', () => {
         expect(nvdaLink).toHaveAttribute('href', '/NVDA');
     });
 
+    it('KR 카테고리가 없으면 한국 섹션을 아예 렌더하지 않는다', () => {
+        // `CategoryCardGrid`는 `cards: []`여도 nav+h2를 그린다 — 가드가 없으면
+        // 제목만 있는 빈 섹션이 나간다. 이 파일의 목이 바로 그 상태를 만든다.
+        render(<TickerCategories />);
+        expect(
+            screen.queryByRole('navigation', {
+                name: '한국 섹터별 인기 종목 탐색',
+            })
+        ).toBeNull();
+    });
+
     it('renders the section heading', () => {
         render(<TickerCategories />);
 
         expect(
-            screen.getByRole('heading', { name: /섹터별 인기 종목/ })
+            screen.getByRole('heading', { name: '미국 섹터별 인기 종목' })
         ).toBeInTheDocument();
     });
 
@@ -77,7 +91,9 @@ describe('TickerCategories', () => {
         render(<TickerCategories />);
 
         expect(
-            screen.getByRole('navigation', { name: /섹터별 인기 종목 탐색/ })
+            screen.getByRole('navigation', {
+                name: '미국 섹터별 인기 종목 탐색',
+            })
         ).toBeInTheDocument();
     });
 

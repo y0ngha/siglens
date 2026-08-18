@@ -235,7 +235,7 @@ export default function MarketPage() {
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: '시장 현황', url: MARKET_URL },
+        { name: '미국 시장 현황', url: MARKET_URL },
     ]);
 
     // ItemList 항목에는 url을 두지 않는다 — 모든 항목이 동일 /market을 가리키면

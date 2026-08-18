@@ -1,4 +1,4 @@
-import type { TickerCategory } from '@/shared/lib/types';
+import type { CategoryId, TickerCategory } from '@/shared/lib/types';
 
 // TODO(seo): 현재 수동 관리 — 매일 새벽 FMP `/stable/stock-list`와 동기화하는 cron job 검토.
 //            상장폐지된 종목이 sitemap에 남아 404를 유발하는 케이스 모니터링 필요.
@@ -134,35 +134,65 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
         ],
     },
     {
-        id: 'korea-equity',
-        label: '한국 주식',
-        // POPULAR_TICKERS의 KR 블록과 **같은 20종목이어야 한다.**
+        id: 'kr-semiconductor',
+        label: '반도체·IT',
+        // 아래 여섯 개 KR 카테고리의 종목 합집합은 `POPULAR_TICKERS`의 KR 블록과
+        // **정확히 같아야 한다.**
         //
-        // 이 카테고리 그리드(`widgets/home/TickerCategories` → `CategoryCardGrid`)가
-        // 저장소 전체에서 한국 종목 페이지로 가는 **유일한 크롤 가능한 `<a>`**다.
-        // 검색 자동완성은 `<button>` + `router.push`라 링크가 아니고, 크로스링크 카드는
-        // 같은 심볼의 다른 탭만 잇는다. 여기 빠진 종목은 sitemap에만 있는 고아가 된다
-        // (직전 상태: 20 중 9만 있어 11종목 × 6탭 = 66 URL이 인바운드 0이었다).
+        // 이 그리드(`widgets/home/TickerCategories` → `CategoryCardGrid`)가 저장소
+        // 전체에서 한국 종목 페이지로 가는 **유일한 크롤 가능한 `<a>`**다. 검색
+        // 자동완성은 `<button>` + `router.push`라 링크가 아니고, 크로스링크 카드는
+        // 같은 심볼의 다른 탭만 잇는다. 여기 빠진 종목은 sitemap에만 있는 고아가 된다.
         //
-        // 두 번째 이유는 `CURATED_KOREAN_NAMES`다. 이 배열에서 파생되므로, 빠진 종목은
-        // 한글명 폴백이 없어 `korean_tickers`가 아직 비어 있는 콜드 ISR 생성에서
-        // `006400.KS 주가 전망` 같은 영문 티커 제목이 캐시에 굳는다.
+        // 두 번째 이유는 `CURATED_KOREAN_NAMES`다. 이 배열에서 파생되므로, 빠진
+        // 종목은 한글명 폴백이 없어 `korean_tickers`가 아직 비어 있는 콜드 ISR
+        // 생성에서 `006400.KS 주가 전망` 같은 영문 티커 제목이 캐시에 굳는다.
         items: [
             { symbol: '005930.KS', name: '삼성전자' },
             { symbol: '000660.KS', name: 'SK하이닉스' },
-            { symbol: '005380.KS', name: '현대차' },
-            { symbol: '373220.KS', name: 'LG에너지솔루션' },
-            { symbol: '207940.KS', name: '삼성바이오로직스' },
-            { symbol: '028260.KS', name: '삼성물산' },
-            { symbol: '105560.KS', name: 'KB금융' },
-            { symbol: '000270.KS', name: '기아' },
-            { symbol: '055550.KS', name: '신한지주' },
-            { symbol: '012330.KS', name: '현대모비스' },
-            { symbol: '068270.KS', name: '셀트리온' },
             { symbol: '006400.KS', name: '삼성SDI' },
-            { symbol: '035420.KS', name: '네이버' },
+        ],
+    },
+    {
+        id: 'kr-auto-battery',
+        label: '자동차·2차전지',
+        items: [
+            { symbol: '005380.KS', name: '현대차' },
+            { symbol: '000270.KS', name: '기아' },
+            { symbol: '012330.KS', name: '현대모비스' },
+            { symbol: '373220.KS', name: 'LG에너지솔루션' },
             { symbol: '051910.KS', name: 'LG화학' },
+        ],
+    },
+    {
+        id: 'kr-bio',
+        label: '바이오·헬스케어',
+        items: [
+            { symbol: '207940.KS', name: '삼성바이오로직스' },
+            { symbol: '068270.KS', name: '셀트리온' },
+        ],
+    },
+    {
+        id: 'kr-platform',
+        label: '인터넷·플랫폼',
+        items: [
+            { symbol: '035420.KS', name: '네이버' },
             { symbol: '035720.KS', name: '카카오' },
+        ],
+    },
+    {
+        id: 'kr-finance',
+        label: '금융·지주',
+        items: [
+            { symbol: '105560.KS', name: 'KB금융' },
+            { symbol: '055550.KS', name: '신한지주' },
+            { symbol: '028260.KS', name: '삼성물산' },
+        ],
+    },
+    {
+        id: 'kr-kosdaq',
+        label: '코스닥',
+        items: [
             { symbol: '196170.KQ', name: '알테오젠' },
             { symbol: '086520.KQ', name: '에코프로' },
             { symbol: '247540.KQ', name: '에코프로비엠' },
@@ -171,6 +201,25 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
         ],
     },
 ];
+
+/**
+ * 한국 상장 종목을 담는 카테고리 id 집합.
+ *
+ * 홈 그리드는 이 집합으로 미국/한국 섹션을 가른다. 그런데 이걸 `id.startsWith('kr-')`
+ * 같은 **작명 규칙**으로 판정하면 규칙을 어긴 새 카테고리(`korea-fintech` 등)가
+ * 타입 검사도 통과하고, 조용히 `미국 섹터별 인기 종목` 밑에 렌더되며, 합집합
+ * 불변식 검사(`popular-tickers.test.ts`)도 함께 빠져나간다 — 그게 바로 이 파일이
+ * 막으려는 SEO 고아다. 명시 집합으로 두면 카테고리를 추가할 때 미국/한국 판단을
+ * 강제로 한 번 하게 된다.
+ */
+export const KR_CATEGORY_IDS: ReadonlySet<CategoryId> = new Set([
+    'kr-semiconductor',
+    'kr-auto-battery',
+    'kr-bio',
+    'kr-platform',
+    'kr-finance',
+    'kr-kosdaq',
+]);
 
 /**
  * 큐레이션된 카테고리에 적힌 한글 종목명 — 심볼 → 한글명.

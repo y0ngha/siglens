@@ -25,7 +25,7 @@ export const dynamic = 'force-static';
 export const revalidate = 2592000;
 export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
 export const contentType = 'image/png';
-export const alt = 'Siglens 마켓 뉴스 허브';
+export const alt = 'Siglens 미국 시장 뉴스 허브';
 
 export default async function Image() {
     const fontData = await loadKoreanFont();
@@ -68,7 +68,7 @@ export default async function Image() {
                     textAlign: 'center',
                 }}
             >
-                마켓 뉴스 허브
+                미국 시장 뉴스 허브
             </div>
             <div
                 style={{

@@ -22,7 +22,7 @@ import {
 export const revalidate = 86400;
 
 const NEWS_HUB_PATH = '/news';
-const NEWS_HUB_TITLE = '미국 마켓 뉴스 허브 — 카테고리별 최신 흐름';
+const NEWS_HUB_TITLE = '미국 시장 뉴스 허브 — 카테고리별 최신 흐름';
 const NEWS_HUB_FULL_TITLE = `${NEWS_HUB_TITLE} | ${SITE_NAME}`;
 const NEWS_HUB_DESCRIPTION = clampSeoDescription(
     '미국 일반·주식·암호화폐·외환·마켓 아티클 5개 카테고리의 최신 뉴스를 한국어 AI 요약과 함께 한 곳에서 봐요.'
@@ -34,11 +34,13 @@ export function generateMetadata(): Metadata {
         title: NEWS_HUB_TITLE,
         description: NEWS_HUB_DESCRIPTION,
         keywords: [
+            '미국 시장 뉴스',
+            // 구 표기. 리브랜딩(2026-08) 전 유입 질의를 잃지 않기 위해 남긴다.
             '미국 마켓 뉴스',
             '미국 주식 뉴스',
             '암호화폐 뉴스',
             '외환 뉴스',
-            '마켓 뉴스 한국어',
+            '시장 뉴스 한국어',
             '미국 주식 뉴스 요약',
             'AI 뉴스 다이제스트',
             'Siglens 뉴스',
@@ -117,7 +119,7 @@ export default async function NewsHubPage() {
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: '마켓 뉴스 허브', url: hubUrl },
+        { name: '미국 시장 뉴스 허브', url: hubUrl },
     ]);
 
     return (
@@ -126,7 +128,7 @@ export default async function NewsHubPage() {
             <JsonLd data={breadcrumbJsonLd} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
-                    마켓 뉴스 허브
+                    미국 시장 뉴스 허브
                 </h1>
                 <div className="space-y-1 text-sm text-secondary-400">
                     <p>

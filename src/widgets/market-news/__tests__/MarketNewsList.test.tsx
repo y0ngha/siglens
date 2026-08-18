@@ -91,9 +91,9 @@ describe('MarketNewsList', () => {
         render(<MarketNewsList category="general" initialItems={[]} />);
 
         // The section heading is present inside the loading state.
-        expect(screen.getByText('최신 마켓 뉴스')).toBeInTheDocument();
+        expect(screen.getByText('최신 시장 뉴스')).toBeInTheDocument();
         // aria-busy="true" on the section.
-        const section = screen.getByText('최신 마켓 뉴스').closest('section');
+        const section = screen.getByText('최신 시장 뉴스').closest('section');
         expect(section).toHaveAttribute('aria-busy', 'true');
         // Polling status label.
         expect(screen.getByText('뉴스 수집 중…')).toBeInTheDocument();

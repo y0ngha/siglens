@@ -6,7 +6,7 @@ import { clampSeoDescription } from '@/shared/lib/seo';
  * metadata.title, og.title, and schema.org name are always identical.
  */
 export function buildCategoryPageTitle(koLabel: string): string {
-    return `${koLabel} 뉴스 — 최신 마켓 흐름과 AI 다이제스트`;
+    return `${koLabel} 뉴스 — 최신 시장 흐름과 AI 다이제스트`;
 }
 
 /**

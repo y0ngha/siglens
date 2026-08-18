@@ -14,12 +14,19 @@ vi.mock('@/features/ticker-search', () => ({
     TickerAutocomplete: ({
         onSelect,
     }: {
-        onSelect?: (symbol: string) => void;
+        onSelect?: (entry: { symbol: string; label: string }) => void;
     }) => (
         <input
             aria-label="종목 티커 검색"
             onBlur={e => {
-                if (e.target.value) onSelect?.(e.target.value);
+                // label을 symbol과 다르게 둔다. 같게 하면 폼이 실수로 label을
+                // 저장해도 테스트가 통과한다 — 실제로는 `삼성전자`가 종목 심볼로
+                // 저장된다.
+                if (e.target.value)
+                    onSelect?.({
+                        symbol: e.target.value,
+                        label: `${e.target.value} 표시명`,
+                    });
             }}
         />
     ),

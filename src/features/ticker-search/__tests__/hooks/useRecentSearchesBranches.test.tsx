@@ -38,6 +38,37 @@ describe('useRecentSearches — branch coverage', () => {
         expect(result.current.recentSearches).toEqual([]);
     });
 
+    it('re-renders when only the display label changes', () => {
+        // 스냅샷 캐시 키가 심볼만 보면, 같은 종목을 회사명과 함께 다시 검색해도
+        // 칩에는 옛 라벨(티커)이 그대로 남는다.
+        mockGetRecentSearches.mockReturnValue([
+            { symbol: 'AAPL', label: 'AAPL' },
+        ]);
+        const { result, rerender } = renderHook(() => useRecentSearches());
+        expect(result.current.recentSearches[0]?.label).toBe('AAPL');
+
+        mockGetRecentSearches.mockReturnValue([
+            { symbol: 'AAPL', label: '애플' },
+        ]);
+        act(() => {
+            window.dispatchEvent(new Event('siglens:recent-searches-change'));
+        });
+        rerender();
+
+        expect(result.current.recentSearches[0]?.label).toBe('애플');
+    });
+
+    it('keeps the same snapshot reference when nothing changed', () => {
+        // 매 호출 새 배열을 돌려주면 useSyncExternalStore가 무한 렌더에 빠진다.
+        mockGetRecentSearches.mockImplementation(() => [
+            { symbol: 'AAPL', label: '애플' },
+        ]);
+        const { result, rerender } = renderHook(() => useRecentSearches());
+        const first = result.current.recentSearches;
+        rerender();
+        expect(result.current.recentSearches).toBe(first);
+    });
+
     it('addSearch calls addRecentSearch and dispatches event', () => {
         const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
 
@@ -81,11 +112,15 @@ describe('useRecentSearches — branch coverage', () => {
     });
 
     it('updates snapshot when getRecentSearches returns new data', () => {
-        mockGetRecentSearches.mockReturnValue(['AAPL']);
+        mockGetRecentSearches.mockReturnValue([
+            { symbol: 'AAPL', label: 'AAPL' },
+        ]);
 
         const { result } = renderHook(() => useRecentSearches());
 
-        expect(result.current.recentSearches).toEqual(['AAPL']);
+        expect(result.current.recentSearches).toEqual([
+            { symbol: 'AAPL', label: 'AAPL' },
+        ]);
     });
 
     it('handles storage event for matching key', () => {
@@ -94,7 +129,9 @@ describe('useRecentSearches — branch coverage', () => {
         const { result, rerender } = renderHook(() => useRecentSearches());
 
         // Change mock return to simulate storage change
-        mockGetRecentSearches.mockReturnValue(['MSFT']);
+        mockGetRecentSearches.mockReturnValue([
+            { symbol: 'MSFT', label: 'MSFT' },
+        ]);
 
         // Dispatch storage event for the correct key
         act(() => {
@@ -106,11 +143,15 @@ describe('useRecentSearches — branch coverage', () => {
         });
 
         rerender();
-        expect(result.current.recentSearches).toEqual(['MSFT']);
+        expect(result.current.recentSearches).toEqual([
+            { symbol: 'MSFT', label: 'MSFT' },
+        ]);
     });
 
     it('ignores storage event for non-matching key', () => {
-        mockGetRecentSearches.mockReturnValue(['AAPL']);
+        mockGetRecentSearches.mockReturnValue([
+            { symbol: 'AAPL', label: 'AAPL' },
+        ]);
 
         const { result } = renderHook(() => useRecentSearches());
 
@@ -124,6 +165,8 @@ describe('useRecentSearches — branch coverage', () => {
         });
 
         // Should still have the original data
-        expect(result.current.recentSearches).toEqual(['AAPL']);
+        expect(result.current.recentSearches).toEqual([
+            { symbol: 'AAPL', label: 'AAPL' },
+        ]);
     });
 });

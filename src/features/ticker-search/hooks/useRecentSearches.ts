@@ -2,6 +2,7 @@
 
 import { useCallback, useSyncExternalStore } from 'react';
 
+import type { RecentSearchEntry } from '@/entities/ticker';
 import {
     addRecentSearch,
     clearRecentSearches,
@@ -11,21 +12,24 @@ import {
 } from '@/entities/ticker';
 
 interface UseRecentSearchesResult {
-    recentSearches: string[];
-    addSearch: (symbol: string) => void;
+    recentSearches: RecentSearchEntry[];
+    /** 표시용 회사명을 아는 호출부는 `{ symbol, label }`을 넘긴다. */
+    addSearch: (entry: string | RecentSearchEntry) => void;
     removeSearch: (symbol: string) => void;
     clearAll: () => void;
 }
 
 const RECENT_SEARCHES_EVENT = 'siglens:recent-searches-change';
-const EMPTY: string[] = [];
+const EMPTY: RecentSearchEntry[] = [];
 
-let cachedSnapshot: string[] = EMPTY;
+let cachedSnapshot: RecentSearchEntry[] = EMPTY;
 let cacheKey = '';
 
-function getSnapshot(): string[] {
+function getSnapshot(): RecentSearchEntry[] {
     const next = getRecentSearches();
-    const key = next.join('|');
+    // `useSyncExternalStore`는 참조 동일성으로 재렌더를 정한다 — 매 호출마다 새
+    // 배열을 돌려주면 무한 루프가 된다. 심볼+라벨을 합쳐 키를 만든다.
+    const key = next.map(e => `${e.symbol}\u0000${e.label}`).join('|');
     if (key !== cacheKey) {
         cachedSnapshot = next;
         cacheKey = key;
@@ -33,7 +37,7 @@ function getSnapshot(): string[] {
     return cachedSnapshot;
 }
 
-function getServerSnapshot(): string[] {
+function getServerSnapshot(): RecentSearchEntry[] {
     return EMPTY;
 }
 
@@ -67,8 +71,8 @@ export function useRecentSearches(): UseRecentSearchesResult {
         getServerSnapshot
     );
 
-    const addSearch = useCallback((symbol: string) => {
-        addRecentSearch(symbol);
+    const addSearch = useCallback((entry: string | RecentSearchEntry) => {
+        addRecentSearch(entry);
         notify();
     }, []);
 

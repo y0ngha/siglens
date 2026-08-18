@@ -35,7 +35,7 @@ const CATEGORY_SLUGS = [
     'articles',
 ] as const;
 
-test.describe('/news 마켓 뉴스 허브', () => {
+test.describe('/news 미국 시장 뉴스 허브', () => {
     /**
      * 허브 인덱스가 5개 카테고리 딥링크를 SSR-렌더하는지 검증해요.
      * CategoryCard는 `href="/news/${slug}"`로 직접 연결돼요.

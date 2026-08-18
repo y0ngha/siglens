@@ -23,7 +23,7 @@ export const dynamic = 'force-static';
 export const revalidate = 2592000; // 30d
 export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
 export const contentType = 'image/png';
-export const alt = 'Siglens 마켓 뉴스';
+export const alt = 'Siglens 미국 시장 뉴스';
 
 interface Props {
     params: Promise<{ category: string }>;
@@ -32,7 +32,7 @@ interface Props {
 export default async function Image({ params }: Props) {
     const { category: slug } = await params;
     const cat = categoryFromSlug(slug);
-    const label = cat ? CATEGORY_CONFIG[cat].koLabel : '마켓 뉴스';
+    const label = cat ? CATEGORY_CONFIG[cat].koLabel : '시장 뉴스';
 
     const fontData = await loadKoreanFont();
 
