@@ -41,9 +41,8 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import {
-    DEFAULT_MARKET_PROFILE,
-    isKrEquitySymbol,
     marketProfileOf,
+    profileIdForSymbol,
     type MarketProfileId,
 } from '@/shared/config/marketProfile';
 
@@ -174,16 +173,14 @@ export default async function FinancialsPage({ params }: Props) {
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     // CrossLinkCards에 넘길 시장 프로필. financials도 fundamental과 동일하게
     // assetInfo가 optional이라(FMP profile만 있어도 렌더) marketProfileOf(assetInfo)를
-    // 못 쓸 수 있다 — 그 경우 심볼 형상으로 판정한다(marketProfileOf 내부 fallback과
-    // 동일 패턴). crypto는 isTabAllowedForSymbol('financials') 가드로 이미 걸러졌으므로
-    // 여기 남는 값은 us-equity/kr-equity뿐이다. SEO 감사(2026-08-18): 이 값을 넘기지
-    // 않으면 CrossLinkCards의 `marketProfile='us-equity'` 기본값으로 떨어져, 한국
-    // 종목 페이지에도 존재하지 않는 `/options`·`/congress` 링크가 노출됐다.
+    // 못 쓸 수 있다 — 그 경우 심볼 형상으로 판정한다(`profileIdForSymbol`, marketProfileOf
+    // 내부 fallback과 동일 패턴). crypto는 isTabAllowedForSymbol('financials') 가드로
+    // 이미 걸러졌으므로 여기 남는 값은 us-equity/kr-equity뿐이다. SEO 감사(2026-08-18):
+    // 이 값을 넘기지 않으면 CrossLinkCards의 `marketProfile='us-equity'` 기본값으로
+    // 떨어져, 한국 종목 페이지에도 존재하지 않는 `/options`·`/congress` 링크가 노출됐다.
     const marketProfile: MarketProfileId = assetInfo
         ? marketProfileOf(assetInfo)
-        : isKrEquitySymbol(upper)
-          ? 'kr-equity'
-          : DEFAULT_MARKET_PROFILE;
+        : profileIdForSymbol(upper);
 
     // FMP 인프라 일시 실패: 500 대신 degrade 안내(200)를 렌더한다. 다음 revalidate에
     // 인프라가 복구되면 정상 데이터로 자동 갱신된다. 스냅샷이 있으면 degrade 중에도

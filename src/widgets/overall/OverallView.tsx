@@ -36,7 +36,11 @@ interface OverallViewProps {
      * 현재 딱 둘뿐이고(`OverallContent`, `kindPanelRegistry.tsx`의 `overall`
      * 엔트리) 둘 다 옵션 탭 존재 여부를 판정할 재료를 이미 갖고 있다
      * (`OverallContent`는 페이지가 넘긴 `getDescriptor(marketProfile).tabs`,
-     * share 패널은 snapshot에서 threaded된 `symbol` → `isKrEquitySymbol`).
+     * share 패널은 snapshot에서 threaded된 `symbol` →
+     * `getDescriptor(profileIdForSymbol(symbol)).tabs.includes('options')` —
+     * `isKrEquitySymbol`을 거기서 직접 부르면 "옵션 탭이 있는가"의 세 번째
+     * 독립 파생이 되어 위험하다는 이유로 `kindPanelRegistry.tsx`의
+     * `overall` 엔트리가 명시적으로 피하는 경로다).
      * 그 기본값이 바로 이 버그가 감사 2라운드 연속 재발한 원인이었다 —
      * 새 호출부가 이 prop을 빠뜨려도 컴파일 에러 없이 조용히 "옵션 있음"으로
      * 흡수됐다. required로 바꿔 세 번째 조용한 재발을 컴파일 타임에 막는다.
