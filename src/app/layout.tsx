@@ -12,6 +12,7 @@ import { ReactQueryProvider } from '@/app/providers';
 import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
 import { CF_BEACON_TOKEN } from '@/shared/lib/cloudflareAnalytics';
 import {
+    ROOT_HEADLINE,
     ROOT_KEYWORDS,
     ROOT_TITLE,
     SITE_DESCRIPTION,
@@ -80,7 +81,7 @@ export const metadata: Metadata = {
                 url: '/og-image.png',
                 width: OG_IMAGE_WIDTH,
                 height: OG_IMAGE_HEIGHT,
-                alt: '미국 주식·암호화폐 AI 분석 — 차트, 펀더멘털, 뉴스, 옵션, 공포 탐욕 지수, 종합 결론',
+                alt: `${ROOT_HEADLINE} — 차트, 펀더멘털, 뉴스, 옵션, 공포 탐욕 지수, 종합 결론`,
             },
         ],
     },

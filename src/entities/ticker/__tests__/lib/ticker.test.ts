@@ -2,6 +2,7 @@ import {
     buildDisplayName,
     deduplicateResults,
     isKoreanInput,
+    shouldShowEnglishName,
 } from '@/entities/ticker/lib/ticker';
 import type { AssetInfo, TickerSearchResult } from '@/shared/lib/types';
 
@@ -134,5 +135,106 @@ describe('deduplicateResults', () => {
                 'TSLA',
             ]);
         });
+    });
+});
+
+/**
+ * 국내 상장 종목의 표시명에서 영문 법인명을 뺀다.
+ *
+ * `displayName`은 meta description의 주어로 그대로 들어간다. 고정 후미가 90자인데
+ * `삼성전자, Samsung Electronics Co., Ltd. (005930.KS)`가 47자라 합이 137자 —
+ * 상한 120자를 넘겨 **모든 국내 종목 페이지에서 설명 끝문장이 잘려 나갔다**.
+ * 한국어 SERP에서 영문 법인명이 보태는 것도 없다.
+ */
+describe('buildDisplayName — 국내 상장 종목', () => {
+    it('영문 법인명을 빼고 한글명 + 티커만 남긴다', () => {
+        expect(
+            buildDisplayName(
+                {
+                    symbol: '005930.KS',
+                    name: 'Samsung Electronics Co., Ltd.',
+                    koreanName: '삼성전자',
+                },
+                '005930.KS'
+            )
+        ).toBe('삼성전자 (005930.KS)');
+    });
+
+    it('종목 마스터 시드가 name에 한글명을 넣어 둔 행도 중복 표기하지 않는다', () => {
+        // 시드는 영문명을 주지 않아 `name`에 한글명을 채운다 — 방문 전 종목이 이 상태다.
+        expect(
+            buildDisplayName(
+                {
+                    symbol: '247540.KQ',
+                    name: '에코프로비엠',
+                    koreanName: '에코프로비엠',
+                },
+                '247540.KQ'
+            )
+        ).toBe('에코프로비엠 (247540.KQ)');
+    });
+
+    it('한글명이 없으면 종전대로 영문명을 쓴다', () => {
+        expect(
+            buildDisplayName(
+                { symbol: '005930.KS', name: 'Samsung Electronics Co., Ltd.' },
+                '005930.KS'
+            )
+        ).toBe('Samsung Electronics Co., Ltd. (005930.KS)');
+    });
+
+    it('미국 종목이라도 영문명이 한글명과 같으면 한 번만 쓴다', () => {
+        // KR 분기와 confound되지 않도록 미국 티커로 검증한다 — 이 조건이 없으면
+        // 번역이 원문을 그대로 돌려준 종목에서 `애플, 애플 (AAPL)`이 나온다.
+        expect(
+            buildDisplayName(
+                { symbol: 'AAPL', name: '애플', koreanName: '애플' },
+                'AAPL'
+            )
+        ).toBe('애플 (AAPL)');
+    });
+
+    it('미국 종목은 영문 법인명을 그대로 유지한다', () => {
+        expect(
+            buildDisplayName(
+                { symbol: 'AAPL', name: 'Apple Inc.', koreanName: '애플' },
+                'AAPL'
+            )
+        ).toBe('애플, Apple Inc. (AAPL)');
+    });
+});
+
+/**
+ * `buildDisplayName`과 `SymbolLayoutHeader`가 공유하는 판정. 헤더 쪽 옛 구현은
+ * `name !== ''` 가드가 빠져 있어 이름이 빈 문자열인 종목에서 `한글명, (TICKER)`처럼
+ * 빈 span과 낙오된 쉼표가 렌더됐다 — 이 describe는 그 회귀를 이 함수 하나로 막는다.
+ */
+describe('shouldShowEnglishName', () => {
+    it('국내 상장 종목이면 영문명이 달라도 보여주지 않는다', () => {
+        expect(
+            shouldShowEnglishName(
+                'Samsung Electronics Co., Ltd.',
+                '삼성전자',
+                '005930.KS'
+            )
+        ).toBe(false);
+    });
+
+    it('name과 koreanName이 같으면 보여주지 않는다', () => {
+        expect(shouldShowEnglishName('애플', '애플', 'AAPL')).toBe(false);
+    });
+
+    it('name이 ticker와 같으면 보여주지 않는다', () => {
+        expect(shouldShowEnglishName('AAPL', '애플', 'AAPL')).toBe(false);
+    });
+
+    it('name이 빈 문자열이면 보여주지 않는다', () => {
+        // getAssetInfo.crypto.test.ts가 실증하듯 시세만 있고 이름이 없는 종목에서
+        // name은 빈 문자열로 온다 — 빈 span과 낙오된 쉼표를 막는 가드.
+        expect(shouldShowEnglishName('', '애플', 'AAPL')).toBe(false);
+    });
+
+    it('미국 종목에서 name이 ticker·koreanName과 모두 다르면 보여준다', () => {
+        expect(shouldShowEnglishName('Apple Inc.', '애플', 'AAPL')).toBe(true);
     });
 });
