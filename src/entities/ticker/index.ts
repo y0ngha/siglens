@@ -30,6 +30,7 @@ export {
     buildDisplayName,
     deduplicateResults,
     isKoreanInput,
+    shouldShowEnglishName,
 } from './lib/ticker';
 
 // fireAndForget — SIGTERM drain 카운터에 백그라운드 promise를 등록하는 유틸.

@@ -382,4 +382,22 @@ describe('SymbolLayoutHeader', () => {
 
         expect(screen.queryByText(/애플,/)).not.toBeInTheDocument();
     });
+
+    /**
+     * `shouldShowEnglishName`이 막는 회귀다. name이 빈 문자열인 종목(시세만 있고
+     * 이름이 없는 크립토 등)에서 옛 `hasCompanyName`은 `name !== ''` 가드가 없어
+     * true가 됐고, 그 결과 헤더가 `애플, (AAPL)`처럼 빈 span과 낙오된 쉼표를 렌더했다.
+     */
+    it('name이 빈 문자열이면 회사명 세그먼트도 쉼표도 렌더하지 않는다', () => {
+        vi.mocked(useAssetInfo).mockReturnValueOnce({
+            name: '',
+            koreanName: '애플',
+        } as ReturnType<typeof useAssetInfo>);
+
+        render(<SymbolLayoutHeader symbol="aapl" />);
+
+        expect(screen.getByText('(AAPL)')).toBeInTheDocument();
+        expect(screen.getByText(/애플/)).toBeInTheDocument();
+        expect(screen.queryByText(/애플,/)).not.toBeInTheDocument();
+    });
 });

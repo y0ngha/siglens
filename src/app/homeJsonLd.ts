@@ -114,7 +114,32 @@ export const HOME_FAQ_JSON_LD = {
     ],
 };
 
-export function buildHomeHowToJsonLd(skillCounts: SkillCounts) {
+interface HomeHowToJsonLd {
+    '@context': string;
+    '@type': 'HowTo';
+    name: string;
+    description: string;
+    step: Array<{
+        '@type': 'HowToStep';
+        name: string;
+        text: string;
+        url: string;
+    }>;
+    // `<JsonLd data>`가 `Record<string, unknown>`을 요구한다 — 인덱스 시그니처가
+    // 없으면 이 인터페이스를 그 자리에 넘길 수 없다. 필드별 타입(`name: string` 등)은
+    // 이 시그니처보다 좁으므로 구조적으로 여전히 유효하다.
+    [key: string]: unknown;
+}
+
+/**
+ * `Record<string, unknown>` 대신 이름 있는 인터페이스를 쓴다 — 자산군 커버리지
+ * 테스트(`supportedAssets.test.ts`)가 `name`·`description`을 문자열로 읽어
+ * `missingAssetMentions`에 넘기는데, `Record<string, unknown>`이면 그 필드가
+ * `unknown`으로 넓어져 캐스트 없이는 타입체크를 통과할 수 없다.
+ */
+export function buildHomeHowToJsonLd(
+    skillCounts: SkillCounts
+): HomeHowToJsonLd {
     return {
         '@context': 'https://schema.org',
         '@type': 'HowTo',

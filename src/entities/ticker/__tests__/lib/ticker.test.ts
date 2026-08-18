@@ -2,6 +2,7 @@ import {
     buildDisplayName,
     deduplicateResults,
     isKoreanInput,
+    shouldShowEnglishName,
 } from '@/entities/ticker/lib/ticker';
 import type { AssetInfo, TickerSearchResult } from '@/shared/lib/types';
 
@@ -200,5 +201,40 @@ describe('buildDisplayName — 국내 상장 종목', () => {
                 'AAPL'
             )
         ).toBe('애플, Apple Inc. (AAPL)');
+    });
+});
+
+/**
+ * `buildDisplayName`과 `SymbolLayoutHeader`가 공유하는 판정. 헤더 쪽 옛 구현은
+ * `name !== ''` 가드가 빠져 있어 이름이 빈 문자열인 종목에서 `한글명, (TICKER)`처럼
+ * 빈 span과 낙오된 쉼표가 렌더됐다 — 이 describe는 그 회귀를 이 함수 하나로 막는다.
+ */
+describe('shouldShowEnglishName', () => {
+    it('국내 상장 종목이면 영문명이 달라도 보여주지 않는다', () => {
+        expect(
+            shouldShowEnglishName(
+                'Samsung Electronics Co., Ltd.',
+                '삼성전자',
+                '005930.KS'
+            )
+        ).toBe(false);
+    });
+
+    it('name과 koreanName이 같으면 보여주지 않는다', () => {
+        expect(shouldShowEnglishName('애플', '애플', 'AAPL')).toBe(false);
+    });
+
+    it('name이 ticker와 같으면 보여주지 않는다', () => {
+        expect(shouldShowEnglishName('AAPL', '애플', 'AAPL')).toBe(false);
+    });
+
+    it('name이 빈 문자열이면 보여주지 않는다', () => {
+        // getAssetInfo.crypto.test.ts가 실증하듯 시세만 있고 이름이 없는 종목에서
+        // name은 빈 문자열로 온다 — 빈 span과 낙오된 쉼표를 막는 가드.
+        expect(shouldShowEnglishName('', '애플', 'AAPL')).toBe(false);
+    });
+
+    it('미국 종목에서 name이 ticker·koreanName과 모두 다르면 보여준다', () => {
+        expect(shouldShowEnglishName('Apple Inc.', '애플', 'AAPL')).toBe(true);
     });
 });

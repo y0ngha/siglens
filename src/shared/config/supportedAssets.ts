@@ -30,6 +30,10 @@ export const SUPPORTED_ASSET_TERMS = {
 
 export type SupportedAssetId = keyof typeof SUPPORTED_ASSET_TERMS;
 
+// SUPPORTED_ASSET_TERMS는 as const 객체 리터럴이라 런타임 키가 정확히
+// SupportedAssetId 3개뿐임이 보장되지만, Object.keys는 TypeScript 객체가
+// 구조적으로 열려 있다는 이유로 항상 string[]로 타이핑된다 — TS의 표현력
+// 한계이지 런타임 위험이 아니다.
 export const SUPPORTED_ASSET_IDS = Object.keys(
     SUPPORTED_ASSET_TERMS
 ) as SupportedAssetId[];
