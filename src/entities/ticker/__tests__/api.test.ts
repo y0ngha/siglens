@@ -364,6 +364,16 @@ describe('DrizzleKoreanTickerRepository', () => {
         await repo.markRelisted(many);
         expect(update).toHaveBeenCalledTimes(3); // 500 + 500 + 100
     });
+
+    it('markDelisted 도 대량 상폐를 배치로 쪼갠다', async () => {
+        // 평소엔 가드가 25개로 묶지만 `--force-delist`가 그 상한을 푼다 — 가드가
+        // 없는 경로라 오히려 여기서 페이로드 한도에 걸린다.
+        const { db, update } = makeUpdateDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        const many = Array.from({ length: 1_100 }, (_, i) => `SYM${i}.KS`);
+        await repo.markDelisted(many);
+        expect(update).toHaveBeenCalledTimes(3); // 500 + 500 + 100
+    });
 });
 
 describe('DrizzleAssetTranslationRepository', () => {

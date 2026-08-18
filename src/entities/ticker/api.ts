@@ -198,6 +198,22 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
     }
 
     async markDelisted(symbols: readonly string[]): Promise<void> {
+        // `markRelisted`와 같은 이유로 쪼갠다. 평소에는 가드가 25개로 묶어 두지만
+        // `--force-delist`는 그 상한을 푸는 유일한 경로이고(대량 상폐를 사람이 확인한
+        // 뒤 쓰는 수동 override), 바로 그때 심볼이 수백 개가 되어 같은 Neon HTTP
+        // 페이로드 한도에 걸린다 — 가드가 없는 경로일수록 견고해야 한다.
+        for (
+            let i = 0;
+            i < symbols.length;
+            i += KOREAN_TICKER_UPSERT_BATCH_SIZE
+        ) {
+            await this.markDelistedBatch(
+                symbols.slice(i, i + KOREAN_TICKER_UPSERT_BATCH_SIZE)
+            );
+        }
+    }
+
+    private async markDelistedBatch(symbols: readonly string[]): Promise<void> {
         if (symbols.length === 0) return;
 
         // `isNull` 조건이 재실행을 멱등하게 만든다 — 이미 표시된 행의 타임스탬프를

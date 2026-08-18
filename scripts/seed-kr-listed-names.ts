@@ -163,11 +163,22 @@ async function main() {
             console.log(`Upserted ${written}/${rows.length}`);
         }
 
-        if (plan.relist.length > 0) {
+        // relist/delist도 upsert와 같은 이유로 쪼갠다 — 이 스크립트는 피드 장애
+        // 복구를 손으로 돌리는 경로이고, 그때가 바로 심볼이 수백~수천 개로 몰려
+        // `IN (...)` 하나가 Neon HTTP 페이로드 한도에 걸리는 상황이다
+        // (`DrizzleKoreanTickerRepository.markRelisted`가 같은 이유로 청크를 나눈다).
+        for (let i = 0; i < plan.relist.length; i += UPSERT_BATCH_SIZE) {
             await db
                 .update(koreanTickers)
                 .set({ delistedAt: null })
-                .where(inArray(koreanTickers.symbol, [...plan.relist]));
+                .where(
+                    inArray(
+                        koreanTickers.symbol,
+                        plan.relist.slice(i, i + UPSERT_BATCH_SIZE)
+                    )
+                );
+        }
+        if (plan.relist.length > 0) {
             console.log(`Relisted ${plan.relist.length}`);
         }
 
@@ -182,15 +193,23 @@ async function main() {
         } else if (plan.delist.length > 0) {
             // 이미 표시된 행은 건드리지 않는다 — 상폐 시각이 매 실행마다 밀리면
             // "언제부터 상폐였나"를 잃는다.
-            await db
-                .update(koreanTickers)
-                .set({ delistedAt: sql`now()` })
-                .where(
-                    and(
-                        inArray(koreanTickers.symbol, [...plan.delist]),
-                        isNull(koreanTickers.delistedAt)
-                    )
-                );
+            //
+            // `--force-delist`가 25개 상한을 푸는 유일한 경로라 여기가 바로
+            // 페이로드 한도에 걸리는 자리다. relist와 같은 크기로 쪼갠다.
+            for (let i = 0; i < plan.delist.length; i += UPSERT_BATCH_SIZE) {
+                await db
+                    .update(koreanTickers)
+                    .set({ delistedAt: sql`now()` })
+                    .where(
+                        and(
+                            inArray(
+                                koreanTickers.symbol,
+                                plan.delist.slice(i, i + UPSERT_BATCH_SIZE)
+                            ),
+                            isNull(koreanTickers.delistedAt)
+                        )
+                    );
+            }
             console.log(`Delisted ${plan.delist.length}`);
         }
 
