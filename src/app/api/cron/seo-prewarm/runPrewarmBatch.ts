@@ -15,6 +15,7 @@ import { getFmpErrorStatus } from '@/shared/api/fmp/fmpUserMessage';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import {
     addFmpBudget,
+    advanceRotationCursor,
     clearInFlight,
     getFmpBudgetUsed,
     getInFlightMarker,
@@ -70,31 +71,25 @@ const SYMBOLS_PER_TICK = 6;
  */
 const SYMBOL_CONCURRENCY = 6;
 // FIX A(감사) — bounded in-flight/backoff 후보 스캔 폭. selectFairBatch 참고.
+//
+// 2026-08 감사(KR 5종목 prewarm 미도달) — 예전엔 이 값이 "회전 오프셋이 시각에서 파생돼 배치가
+// 지연되면 창을 건너뛸 수 있다"는 불변식(`BATCH_DEADLINE_MS + 스케줄주기 ≤
+// SYMBOLS_PER_TICK × CANDIDATE_WINDOW_MULTIPLIER`)의 절반을 담당했다 — 그 불변식은
+// "정확히 경계"라 여유가 없었다(경계 유도 과정은 git blame으로 확인 가능).
+// 오프셋을 Redis 영속 커서(`lock.ts`의 `advanceRotationCursor`, 실행 1회당
+// `SYMBOLS_PER_TICK`만큼만 전진)로 바꾼 뒤로는 배치가 아무리 지연돼도 창이 건너뛰지
+// 않으므로 이 불변식 자체가 사라졌다 — 지금 이 상수는 순수하게 "bounded 스캔 비용"만
+// 결정한다(아래 selectFairBatch doc-comment ②).
 const CANDIDATE_WINDOW_MULTIPLIER = 3;
-// 회전 오프셋의 시간 눈금 — EventBridge 스케줄 간격(5분, 13-seo-prewarm.sh)과 맞춘다.
-//
-// ⚠️ **불변식**: `BATCH_DEADLINE_MS + 스케줄주기 ≤ CANDIDATE_WINDOW_MULTIPLIER × TICK_ROTATION_MS`
-//
-// 회전 폭을 결정하는 건 스케줄 주기가 아니라 **배치가 실제로 시작되는 간격**이다.
-// Redis 루트 락(LOCK_TTL 900s)이 중첩 실행을 막으므로, 앞 배치가 데드라인까지
-// 쓰면 다음 시작은 `BATCH_DEADLINE_MS` 뒤의 첫 스케줄 tick이다. 그 간격만큼
-// offset이 뛰고, 뜀폭이 창 폭(`SYMBOLS_PER_TICK × CANDIDATE_WINDOW_MULTIPLIER` = 18)을
-// 넘으면 창과 창 사이에 **영영 후보가 되지 않는 구멍**이 생긴다 — livelock과 같은
-// 부류의 기아가 재발한다.
-//
-// 현재 값: 600s(데드라인) + 300s(스케줄) = 900s = 15분 → 전진 18 = 창 18.
-// **여유 없이 경계에 정확히 걸쳐 있다.** 따라서 `BATCH_DEADLINE_MS`를 늘리는 것만으로도
-// (EventBridge를 건드리지 않아도) 불변식이 깨진다 — 아래 BATCH_DEADLINE_MS 주석 참조.
-// 스케줄이나 데드라인을 바꾸려면 `CANDIDATE_WINDOW_MULTIPLIER`를 함께 올릴 것.
-const TICK_ROTATION_MS = 5 * 60 * 1000;
 // FIX G(감사) — 배치 전체 wall-clock 상한. LOCK_TTL_SECONDS(900s)보다 충분히
 // 작고 5분 tick 주기보다는 커서, 정상 배치가 잘리지 않으면서도 락 만료 전에
 // 반드시 끝나 "락 만료 → 다음 tick이 새 락 획득 → 배치 2개 동시 실행" 오버랩을
 // 막는다(FMP 429 폭풍 중 심볼당 최악 ~75s(10s 타임아웃 + 10/15/20s 재시도)로
 // 10심볼 배치가 900s를 넘길 수 있었던 문제).
-// ⚠️ 이 값을 늘리면 회전 불변식이 깨진다 — `TICK_ROTATION_MS` 주석의
-// `BATCH_DEADLINE_MS + 스케줄주기 ≤ 15분`을 반드시 함께 확인할 것. 현재 정확히
-// 경계값(600s + 300s = 900s)이라 여유가 없다.
+// 2026-08 감사(KR 5종목 prewarm 미도달) — 예전엔 이 값을 늘리면 회전 불변식이 깨졌다(위
+// CANDIDATE_WINDOW_MULTIPLIER 주석 참고). 오프셋이 Redis 영속 커서 기반으로
+// 바뀐 뒤로는 이 값과 회전 폭 사이에 더 이상 결합이 없다 — 늘려도 안전하다
+// (물론 LOCK_TTL_SECONDS보다는 작아야 한다는 원래 제약은 그대로 남는다).
 const BATCH_DEADLINE_MS = 600_000; // 10min
 /**
  * 유닛(심볼×탭) 하나당 LLM 왕복 최대 대기 시간.
@@ -132,6 +127,15 @@ const FMP_CALLS_PER_TAB_CRYPTO = 1;
 
 const CRYPTO_SYMBOL_SET = new Set<string>(POPULAR_CRYPTOS);
 
+// 2026-08 감사(starvation watch) — 정상 회전(위 2026-08 감사, KR 5종목 prewarm 미도달)이면 하룻밤 안에
+// 유니버스 전체가 한 번은 후보가 된다. 이 문턱을 넘겨도 stale인 심볼은 "아직
+// 오늘 밤 순번이 안 왔다"가 아니라 "회전에서 구조적으로 빠지고 있다"는 신호다
+// (원인 사례: KR 5종목이 POPULAR_TICKERS의 KR 블록 head라는 이유만으로 몇 달간
+// 한 번도 선택되지 못했다 — findStarvedSymbols 참고). 여유를 위해 24h(하루
+// 단위 마감 주기)의 두 배로 잡는다.
+const STARVATION_AGE_THRESHOLD_MS = 48 * 60 * 60 * 1000; // 48h
+const STARVATION_LOG_LIMIT = 5;
+
 /** runPrewarmBatch/pollUntilSettled가 시간을 읽고 기다리는 방식을 추상화한다
  * (기본값은 실제 wall-clock). 테스트가 결정적으로 주입할 수 있도록 분리한다. */
 export interface PrewarmClock {
@@ -157,6 +161,88 @@ function snapshotKey(symbol: string, tab: SeoSnapshotTab): string {
     return `${symbol.toUpperCase()}:${tab}`;
 }
 
+interface StarvedSymbol {
+    symbol: string;
+    /** 마지막 생성 이후 경과 ms. 탭 하나라도 한 번도 생성된 적 없으면 null(="never"). */
+    ageMs: number | null;
+}
+
+/**
+ * 2026-08 감사(starvation watch) — stale 심볼 중 "얼마나 오래" 밀려 있는지 랭킹한다.
+ *
+ * 별도 Redis 상태나 심볼별 카운터 없이, 이미 이번 tick에 한 번 읽어 온
+ * `generatedAtMap`(DB, 배치당 1회)만 재사용한다. "몇 tick 연속 stale인가"를
+ * 정확히 세려면 심볼별 카운터가 있어야 하지만, 그러려면 심볼당 Redis 왕복이
+ * 하나 늘어난다 — 대신 "마지막 생성 이후 경과 시간"을 대리 지표로 쓴다. 정보량은
+ * 오히려 더 많고(단순 tick 수보다 "몇 시간 밀렸는지"가 운영자에게 바로 의미
+ * 있다) 비용은 0이다.
+ *
+ * 심볼의 탭 중 하나라도 생성된 적이 없으면(generatedAtMap에 그 키가 없음) 그
+ * 심볼 전체를 "never"로 표시한다 — 정확히 이번 KR 5종목 인시던트의 모양이다
+ * (전 탭·news 테이블까지 0행). 일부 탭만 없는 경우도 보수적으로 "never"로
+ * 잡는다 — 부분 커버리지도 이 워치의 목적상 완전 미도달과 같은 우선순위로
+ * 취급하는 편이 안전하다.
+ */
+function findStarvedSymbols(
+    staleSymbols: PrewarmSymbol[],
+    generatedAtMap: Map<string, Date>,
+    nowMs: number
+): StarvedSymbol[] {
+    return staleSymbols
+        .map(u => {
+            let oldestGeneratedAt: Date | undefined;
+            let neverGenerated = false;
+            for (const tab of u.tabs) {
+                const generatedAt = generatedAtMap.get(
+                    snapshotKey(u.symbol, tab)
+                );
+                if (generatedAt === undefined) {
+                    neverGenerated = true;
+                    continue;
+                }
+                if (
+                    oldestGeneratedAt === undefined ||
+                    generatedAt < oldestGeneratedAt
+                ) {
+                    oldestGeneratedAt = generatedAt;
+                }
+            }
+            const ageMs =
+                neverGenerated || oldestGeneratedAt === undefined
+                    ? null
+                    : nowMs - oldestGeneratedAt.getTime();
+            return { symbol: u.symbol, ageMs };
+        })
+        .filter(s => s.ageMs === null || s.ageMs > STARVATION_AGE_THRESHOLD_MS)
+        .sort((a, b) => {
+            if (a.ageMs === null) return b.ageMs === null ? 0 : -1;
+            if (b.ageMs === null) return 1;
+            return b.ageMs - a.ageMs;
+        });
+}
+
+/** findStarvedSymbols 결과를 CloudWatch에서 grep 가능한 한 줄로 남긴다.
+ * 정상 야간(모든 stale이 문턱 이내)에는 아무것도 로그하지 않는다 — 매 tick
+ * 찍히는 로그는 신호를 잡음에 묻는다. */
+function logStarvationWatch(
+    staleSymbols: PrewarmSymbol[],
+    generatedAtMap: Map<string, Date>,
+    nowMs: number
+): void {
+    const starved = findStarvedSymbols(staleSymbols, generatedAtMap, nowMs);
+    if (starved.length === 0) return;
+    const worst = starved
+        .slice(0, STARVATION_LOG_LIMIT)
+        .map(s =>
+            s.ageMs === null
+                ? `${s.symbol}(never)`
+                : `${s.symbol}(${Math.floor(s.ageMs / (60 * 60 * 1000))}h)`
+        );
+    console.warn(
+        `[seo-prewarm] starvation watch: ${starved.length} symbol(s) stale > 48h — worst: ${worst.join(', ')}`
+    );
+}
+
 /**
  * SEO pre-warm 배치 오케스트레이터 (spec 2026-07-24 §6~§8, Task 9. FIX A/C/G/Z audit).
  *
@@ -172,11 +258,13 @@ export async function runPrewarmBatch(
     const batchDeadline = clock.now() + BATCH_DEADLINE_MS;
     const isPastDeadline = () => clock.now() > batchDeadline;
     // **의도적으로 `clock.now()`가 아니다.** `PrewarmClock`은 경과 시간 예산
-    // (데드라인·틱 회전·sleep)을 테스트가 조작하기 위한 것이고, 그 테스트들은 epoch에서
-    // 파생한 임의의 값을 넣는다 — 회전 오프셋 검증이 그렇게 설계돼 있다. 반면 여기 두
-    // 판정(마감 경계, 장중 여부)은 **달력**이 필요해서 그 값으로는 의미가 없다.
-    // 테스트는 `vi.setSystemTime`으로 이쪽을 따로 고정한다. 하나로 합치면 회전 테스트가
-    // 깨진다.
+    // (데드라인·sleep)을 테스트가 조작하기 위한 것이고, 그 테스트들은 epoch에서
+    // 파생한 임의의 값을 넣는다. 반면 여기 두 판정(마감 경계, 장중 여부)은 **달력**이
+    // 필요해서 그 값으로는 의미가 없다. 테스트는 `vi.setSystemTime`으로 이쪽을 따로
+    // 고정한다. 하나로 합치면 데드라인 테스트가 깨진다.
+    //
+    // 회전 오프셋은 더 이상 이 시계 어느 쪽과도 무관하다(2026-08 감사) — Redis
+    // 영속 커서에서 나온다(`selectFairBatch` doc-comment 참고).
     const now = new Date();
     // 심볼마다 자기 시장의 마감을 경계로 쓴다. 하나의 ET 경계를 전 심볼에 쓰면 국내
     // 종목이 두 방향으로 다 어긋난다 — 미국 휴장일(KRX 개장)엔 하루 묵은 스냅샷이
@@ -199,6 +287,10 @@ export async function runPrewarmBatch(
                 )
         );
     });
+    // 2026-08 감사(starvation watch) — 회전에서 구조적으로 빠지고 있는 심볼을
+    // 로그에 이름으로 남긴다. 이미 배치당 1회 읽은 `generatedAtMap`(DB)만
+    // 재사용하므로 심볼당 Redis 왕복이 늘지 않는다(findStarvedSymbols 참고).
+    logStarvationWatch(staleSymbols, generatedAtMap, now.getTime());
     // 자기 시장이 장중인 심볼은 이번 틱에서 뺀다. 창의 뒤쪽 4시간이 KRX 장중이라,
     // 그 틱에 걸린 국내 종목은 형성 중인 일봉으로 만든 서술이 다음 마감까지 굳는다.
     //
@@ -212,8 +304,7 @@ export async function runPrewarmBatch(
     const batch = await selectFairBatch(
         selectable,
         generatedAtMap,
-        boundaryFor,
-        clock.now()
+        boundaryFor
     );
     const counts: PrewarmBatchCounts = {
         harvested: 0,
@@ -290,19 +381,36 @@ export async function runPrewarmBatch(
  * 선택이 index 0부터 재시작돼 유니버스 tail(POPULAR_CRYPTOS 29종, `buildPrewarmUniverse`가
  * 배열 끝에 붙임)이 평일엔 영원히 도달하지 못했다.
  *
- * ⚠️ **offset은 진행도가 아니라 시각에서 파생해야 한다** (2026-07-26 인시던트).
- * 최초 구현은 offset을 "전 탭이 fresh로 완료된 심볼 수"(freshCount)로 잡았다.
- * 진행이 있을 때는 잘 흘러가지만, 창 안 후보가 **전부 blocked**가 되는 순간
- * 아무것도 완료되지 않아 freshCount가 얼어붙고, 그러면 offset도 얼어붙어
- * 다음 tick이 **같은 창을 재검사**한다 — 스스로 빠져나올 수 없는 livelock이다.
- * 첫 야간 운영에서 실제로 발생했다: `submitted:0 / remaining:153`이 반복되며
- * 221/295 심볼에서 정지(skip 마커 69 + in-flight 7이 창 18칸을 덮음).
+ * ⚠️ **offset은 "완료 여부"에서 파생하면 안 된다** (2026-07-26 인시던트). 최초
+ * 구현은 offset을 "전 탭이 fresh로 완료된 심볼 수"(freshCount)로 잡았다. 진행이
+ * 있을 때는 잘 흘러가지만, 창 안 후보가 **전부 blocked**가 되는 순간 아무것도
+ * 완료되지 않아 freshCount가 얼어붙고, 그러면 offset도 얼어붙어 다음 tick이
+ * **같은 창을 재검사**한다 — 스스로 빠져나올 수 없는 livelock이다. 첫 야간
+ * 운영에서 실제로 발생했다: `submitted:0 / remaining:153`이 반복되며 221/295
+ * 심볼에서 정지(skip 마커 69 + in-flight 7이 창 18칸을 덮음).
  *
- * 그래서 offset을 tick 시각에서 뽑는다 — `floor(now / TICK_ROTATION_MS) *
- * SYMBOLS_PER_TICK`. 진행 여부와 무관하게 매 tick 창이 `SYMBOLS_PER_TICK`칸씩
- * 전진하므로 blocked 구간을 반드시 통과하고, 유니버스 tail 도달 문제(위 원래
- * 목적)도 그대로 해결된다. Math.random이나 Redis 커서 없이 결정적이며,
- * 같은 tick 안의 재시도(EventBridge 재전송)는 같은 offset을 얻어 멱등이다.
+ * 그 뒤 두 번째 구현은 offset을 tick **시각**에서 뽑았다 — `floor(now /
+ * TICK_ROTATION_MS) * SYMBOLS_PER_TICK`. livelock은 고쳤지만 새 구멍을 열었다
+ * (2026-08 감사, KR 5종목 prewarm 미도달): 배치 하나가 지연되면 다음 실제 실행
+ * 시각이 몇 틱씩 밀리고, 그만큼 offset이 **경과 시간에 비례해 점프**해 창 폭을
+ * 넘으면 그 구간이 그 날 밤 영영 후보가 되지 못했다 — `BATCH_DEADLINE_MS(600s)
+ * + 스케줄주기(300s) ≤ 창 폭(18)`이라는 불변식이 "정확히 경계"였기 때문에 아주
+ * 작은 추가 지연도 이 구멍을 열 수 있었다. 실제로 `POPULAR_TICKERS`의 KR 블록
+ * head 5종목이 이 경로로 몇 달째 한 번도 선택되지 못했다(SEO snapshot 0행,
+ * `news` 테이블도 0행).
+ *
+ * 그래서 offset을 다시 바꾼다 — 이번엔 Redis에 절대값으로 영속시키고
+ * (`lock.ts`의 `advanceRotationCursor`), **실제 배치 실행 1회당** `SYMBOLS_PER_TICK`
+ * 만큼만 전진시킨다. "경과 시각"도 "완료 개수"도 아니라 "실행 횟수"에 묶는 게
+ * 핵심이다:
+ * - livelock 불가 — 매 호출마다 분류 결과와 무관하게 무조건 전진한다(첫 번째
+ *   구현이 못 하던 것).
+ * - skip 불가 — 실행이 아무리 늦게 일어나도 전진 폭은 항상 `SYMBOLS_PER_TICK`
+ *   하나뿐이라 이전 창과 바로 이어 붙는다(두 번째 구현이 못 하던 것).
+ *
+ * Math.random 없이 결정적이며(같은 커서 값에서 항상 같은 창), 실행 횟수에만
+ * 묶이므로 재시도가 이 로직에 도달하기 전에 이미 Redis 루트 락이 중첩 실행을
+ * 막는다(`route.ts`) — 따로 멱등성을 신경 쓸 필요가 없다.
  *
  * ② bounded in-flight/backoff 스캔: `getInFlightMarker`/`isSkipped`는 (symbol, tab)당
  * 비동기 Redis 조회라 유니버스 전체(290×≤7)를 매 tick 걸면 ~1900회 왕복이 든다.
@@ -324,15 +432,15 @@ export async function runPrewarmBatch(
 async function selectFairBatch(
     staleSymbols: PrewarmSymbol[],
     generatedAtMap: Map<string, Date>,
-    boundaryFor: (symbol: string) => Date,
-    nowMs: number
+    boundaryFor: (symbol: string) => Date
 ): Promise<PrewarmSymbol[]> {
     if (staleSymbols.length === 0) return [];
 
-    // 회전 오프셋은 **시각**에서 파생한다(아래 doc-comment ① 참조).
-    const offset =
-        (Math.floor(nowMs / TICK_ROTATION_MS) * SYMBOLS_PER_TICK) %
-        staleSymbols.length;
+    // 회전 오프셋은 Redis 영속 커서에서 뽑는다(아래 doc-comment ① 참조) — 이
+    // 호출 자체가 "이번 tick에 배치를 시도했다"는 뜻이므로, 분류 결과와 무관하게
+    // 매번 SYMBOLS_PER_TICK만큼 무조건 전진한다.
+    const base = await advanceRotationCursor(SYMBOLS_PER_TICK);
+    const offset = base % staleSymbols.length;
     const windowSize = Math.min(
         staleSymbols.length,
         SYMBOLS_PER_TICK * CANDIDATE_WINDOW_MULTIPLIER

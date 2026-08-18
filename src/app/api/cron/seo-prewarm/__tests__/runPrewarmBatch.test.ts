@@ -6,6 +6,7 @@ const {
     mockClearInFlight,
     mockAddFmpBudget,
     mockGetFmpBudgetUsed,
+    mockAdvanceRotationCursor,
     mockRevalidateTag,
     mockUpsert,
     mockFindGeneratedAtMap,
@@ -33,6 +34,7 @@ const {
     mockClearInFlight: vi.fn(),
     mockAddFmpBudget: vi.fn(),
     mockGetFmpBudgetUsed: vi.fn(),
+    mockAdvanceRotationCursor: vi.fn(),
     mockRevalidateTag: vi.fn(),
     mockUpsert: vi.fn(),
     mockFindGeneratedAtMap: vi.fn(),
@@ -62,6 +64,7 @@ vi.mock('../lock', () => ({
     clearInFlight: mockClearInFlight,
     addFmpBudget: mockAddFmpBudget,
     getFmpBudgetUsed: mockGetFmpBudgetUsed,
+    advanceRotationCursor: mockAdvanceRotationCursor,
     // 구현과 동일한 값(lock.ts). 일시적 실패 backoff TTL.
     TRANSIENT_SKIP_TTL_SECONDS: 1800,
 }));
@@ -125,7 +128,12 @@ vi.mock('@/entities/options-chain/api', () => ({
 
 import type { SeoSnapshotTab } from '@/entities/seo-snapshot';
 import type { PrewarmSymbol } from '@/entities/seo-snapshot/lib/applicability';
-import { lastCompletedEtCloseWithBuffer } from '@/entities/seo-snapshot/lib/freshness';
+import {
+    lastCompletedEtCloseWithBuffer,
+    isSnapshotFresh as isSnapshotFreshReal,
+    snapshotCloseBoundaryFor as snapshotCloseBoundaryForReal,
+    shouldDeferPrewarmWhileOpen as shouldDeferPrewarmWhileOpenReal,
+} from '@/entities/seo-snapshot/lib/freshness';
 import { runPrewarmBatch, type PrewarmClock } from '../runPrewarmBatch';
 
 const FIXED_NOW = new Date('2026-07-25T13:00:00.000Z');
@@ -171,6 +179,9 @@ describe('runPrewarmBatch', () => {
         mockIsSkipped.mockResolvedValue(false);
         mockAddFmpBudget.mockResolvedValue(0);
         mockGetFmpBudgetUsed.mockResolvedValue(0);
+        // 회전에 관심 없는 테스트의 기본값 — offset은 항상 0(창의 시작)이다.
+        // 회전 자체를 검증하는 테스트는 이 mock을 로컬로 덮어쓴다.
+        mockAdvanceRotationCursor.mockResolvedValue(0);
         mockGetFmpErrorStatus.mockReturnValue(null);
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: { symbol: 'X', name: 'X Inc.', fmpSymbol: undefined },
@@ -515,9 +526,22 @@ describe('runPrewarmBatch', () => {
         expect(counts.revalidated).toBe(0);
     });
 
-    // ── FIX A(감사) — 공정 선별: 회전 오프셋 + resumable 우선 + backoff 배제 ──
+    // ── FIX A/2026-08 감사 — 공정 선별: 회전 오프셋 + resumable 우선 + backoff 배제 ──
 
-    it('회전 오프셋 — tick 시각에서 결정적으로 파생된다(Math.random·Redis 커서 없이)', async () => {
+    /** 실제 Redis INCRBY 시맨틱을 그대로 흉내: 호출마다 `step`만큼 전진하고
+     * "전진 전" 값을 반환한다. `advanceRotationCursor`의 계약과 동일하다. */
+    function makeStatefulRotationCursor(
+        startValue = 0
+    ): (step: number) => Promise<number> {
+        let cursor = startValue;
+        return async (step: number) => {
+            const base = cursor;
+            cursor += step;
+            return base;
+        };
+    }
+
+    it('회전 오프셋 — Redis 영속 커서에서 결정적으로 파생된다(시각·Math.random과 무관)', async () => {
         const staleOnes: PrewarmSymbol[] = Array.from(
             { length: 10 },
             (_, i) => ({
@@ -532,11 +556,13 @@ describe('runPrewarmBatch', () => {
             result: {},
         });
 
-        // tick = floor(now / 5분) → offset = (tick × SYMBOLS_PER_TICK) % 10.
-        // tick을 3으로 잡으면 offset = 18 % 10 = 8 → S8,S9,S0..S3이 선택된다.
-        const TICK_MS = 5 * 60 * 1000;
-        await runPrewarmBatch(makeSimClock(3 * TICK_MS));
+        // advanceRotationCursor는 "전진 전"(=이번 tick이 쓸) 값을 반환한다.
+        // 8을 주면 offset = 8 % 10 = 8 → S8,S9,S0..S3이 선택된다.
+        mockAdvanceRotationCursor.mockResolvedValue(8);
 
+        await runPrewarmBatch();
+
+        expect(mockAdvanceRotationCursor).toHaveBeenCalledWith(6); // SYMBOLS_PER_TICK
         const calledSymbols = mockPrewarmTechnical.mock.calls.map(c => c[0]);
         expect(calledSymbols).toHaveLength(6);
         for (const s of ['S8', 'S9', 'S0', 'S1', 'S2', 'S3']) {
@@ -548,12 +574,14 @@ describe('runPrewarmBatch', () => {
     });
 
     // 2026-07-26 인시던트 회귀 가드.
-    // 이전 구현은 offset을 freshCount(= universe - stale)에서 뽑았다. 창 안 후보가
-    // 전부 blocked면 아무것도 완료되지 않아 freshCount가 얼어붙고, 그러면 offset도
-    // 얼어붙어 다음 tick이 같은 창을 재검사한다 — 스스로 못 빠져나오는 livelock.
+    // 이전(첫 번째) 구현은 offset을 freshCount(= universe - stale)에서 뽑았다. 창 안
+    // 후보가 전부 blocked면 아무것도 완료되지 않아 freshCount가 얼어붙고, 그러면
+    // offset도 얼어붙어 다음 tick이 같은 창을 재검사한다 — 스스로 못 빠져나오는 livelock.
     // 실제 운영에서 `submitted:0 / remaining:153`이 반복되며 221/295에서 정지했다.
-    // 시각 기반 offset은 진행 여부와 무관하게 창을 전진시키므로 반드시 통과한다.
-    it('창이 전부 blocked여도 다음 tick엔 다른 창을 본다(livelock 회귀 가드)', async () => {
+    // 지금(2026-08 감사) 구현은 "완료 여부"가 아니라 "실행 횟수"에 오프셋을 묶는다 —
+    // advanceRotationCursor는 selectFairBatch가 호출되기만 하면 분류 결과와 무관하게
+    // 전진하므로 이 livelock이 재발할 수 없다.
+    it('창이 전부 blocked여도 커서가 무조건 전진해 다음 tick엔 다른 창을 본다(livelock 회귀 가드)', async () => {
         const staleOnes: PrewarmSymbol[] = Array.from(
             { length: 40 },
             (_, i) => ({
@@ -567,20 +595,243 @@ describe('runPrewarmBatch', () => {
             status: 'cached',
             result: {},
         });
+        mockAdvanceRotationCursor.mockImplementation(
+            makeStatefulRotationCursor(0)
+        );
 
-        const TICK_MS = 5 * 60 * 1000;
-        await runPrewarmBatch(makeSimClock(0 * TICK_MS));
-        const first = mockPrewarmTechnical.mock.calls.map(c => c[0]);
-        mockPrewarmTechnical.mockClear();
+        // tick 1 — 창의 전부를 blocked로 만든다(모든 후보가 in-flight).
+        mockGetInFlightMarker.mockResolvedValue({ present: true, jobId: null });
+        await runPrewarmBatch();
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
 
-        // 진행이 전혀 없었다고 가정(스냅샷 맵 그대로 = freshCount 불변)해도
-        // 다음 tick은 다른 심볼 집합을 선택해야 한다.
-        await runPrewarmBatch(makeSimClock(1 * TICK_MS));
+        // tick 2 — 이제는 아무것도 막혀 있지 않다고 가정한다. 진행이 전혀 없었는데도
+        // (tick 1에서 아무것도 완료되지 않았다) 커서는 실행 자체로 전진했으므로,
+        // tick 1과 겹치지 않는 새 창(offset=6)을 봐야 한다.
+        mockGetInFlightMarker.mockResolvedValue({
+            present: false,
+            jobId: null,
+        });
+        await runPrewarmBatch();
         const second = mockPrewarmTechnical.mock.calls.map(c => c[0]);
 
-        expect(second).toHaveLength(6);
-        expect(second).not.toEqual(first);
-        expect(second.some(s => !first.includes(s))).toBe(true);
+        expect(second).toEqual(['S6', 'S7', 'S8', 'S9', 'S10', 'S11']);
+    });
+
+    // 2026-08 감사(KR 5종목 prewarm 미도달의 근본 원인) 회귀 가드.
+    // 이전(두 번째) 구현은 offset을 tick 시각에서 파생했다 — 배치 하나가 지연되면
+    // 다음 실제 실행 시각이 몇 틱 밀리고, 그만큼 offset이 경과 시간에 비례해
+    // 점프했다. 여기서는 그 지연을 그대로 재현한다: tick 1과 tick 2 사이에 실제
+    // wall-clock이 4틱(20분)만큼 흘렀다고 가정한다(FMP 폭풍으로 배치 하나가
+    // BATCH_DEADLINE_MS+스케줄 주기를 다 쓴 뒤에도 그다음 tick조차 락 때문에
+    // 건너뛴 시나리오). 이전 구현이라면 offset이 floor(20분/5분)×6=24로 뛰어(창
+    // 폭 18을 넘어) S18~S23 대역이 한동안 후보가 되지 못했다 — 그 뒤로도 회전
+    // 시각이 계속 옛 offset과 어긋나므로 "다음에 자연스럽게 따라잡는다"가 보장되지
+    // 않는다. 새 구현은 시각과 무관하므로 그 대역이 "밀린 tick 바로 다음"에
+    // 정확히 예정대로 도착해야 한다.
+    it('배치 오버런으로 여러 tick이 밀려도 다음 tick들이 대역을 건너뛰지 않는다(overrun-no-skip 회귀 가드)', async () => {
+        const staleOnes: PrewarmSymbol[] = Array.from(
+            { length: 40 },
+            (_, i) => ({
+                symbol: `S${i}`,
+                tabs: ['technical'] as SeoSnapshotTab[],
+            })
+        );
+        universe(...staleOnes);
+        mockFindGeneratedAtMap.mockResolvedValue(new Map());
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+        // 커서는 "실행 횟수"에만 묶인다 — 아래에서 clock을 4틱만큼 앞당겨도 이
+        // mock의 전진 폭에는 아무 영향이 없다(그 자체가 FIX B의 핵심 주장이다).
+        mockAdvanceRotationCursor.mockImplementation(
+            makeStatefulRotationCursor(0)
+        );
+
+        const TICK_MS = 5 * 60 * 1000;
+        // tick 1 — 정상 시각. offset=0 → S0~S5.
+        await runPrewarmBatch(makeSimClock(0));
+        mockPrewarmTechnical.mockClear();
+
+        // tick 2 — 배치 하나가 데드라인(600s)+스케줄(300s)을 다 써 다음 실제
+        // 실행이 4틱(20분) 뒤에야 시작됐다고 가정한다. offset=6 → S6~S11
+        // (옛 구현이라면 offset이 24로 뛰어 S24~S29를 봤을 시점).
+        await runPrewarmBatch(makeSimClock(4 * TICK_MS));
+        mockPrewarmTechnical.mockClear();
+
+        // tick 3 — offset=12 → S12~S17.
+        await runPrewarmBatch(makeSimClock(4 * TICK_MS));
+        mockPrewarmTechnical.mockClear();
+
+        // tick 4 — offset=18 → S18~S23. 옛 구현이라면 tick 2의 24-점프 때문에
+        // 이 대역이 이 시점에 나타나지 않았다(다음 도달은 회전 주기 전체를
+        // 기다려야 했다).
+        await runPrewarmBatch(makeSimClock(4 * TICK_MS));
+        const fourth = mockPrewarmTechnical.mock.calls.map(c => c[0]);
+
+        expect(fourth).toEqual(['S18', 'S19', 'S20', 'S21', 'S22', 'S23']);
+    });
+
+    // review(2026-08) 회귀 가드 — selectFairBatch doc-comment(①)이 "이전 창과 바로
+    // 이어 붙는다"고 주장하는 대상은 offset = base % staleSymbols.length인데, 위
+    // 세 테스트는 전부 **정적** 배열(길이·구성이 tick 사이에 안 바뀜) 위에서 커서만
+    // 바꿔가며 검증한다. 실제로는 그 배열(정확히는 selectFairBatch가 받는
+    // `selectable`)이 매 tick 바뀐다 — 완료된 심볼이 stale에서 빠지고, 마감 경계가
+    // 자정을 넘기면 유니버스 전체가 되살아나고(nightly reset), KR 블록은
+    // kr-boundary window(00:00~03:59 UTC = 09:00~12:59 KST)에서
+    // `shouldDeferPrewarmWhileOpen`에 걸려 selectable에서 빠졌다가 장이 끝나면
+    // 되돌아온다(실제 KR 5종목 인시던트가 일어난 정확히 그 구간). 이 세 축(길이
+    // 변화·자정 리셋·KR defer/reinclude) 중 어느 것도 고정하지 않은 상태에서 이
+    // 불변식을 pin한다.
+    //
+    // 검증 방식은 shadow model이다: `predictBatch`는 selectFairBatch의 회전
+    // 산술(offset = base % length, 그 지점부터 SYMBOLS_PER_TICK개 슬라이스)만
+    // 재구현한다 — freshness·defer 판정은 재구현하지 않고 실물 함수
+    // (`isSnapshotFreshReal`/`snapshotCloseBoundaryForReal`/
+    // `shouldDeferPrewarmWhileOpenReal`, `@/entities/seo-snapshot/lib/freshness`는
+    // 이 파일에서 mock되지 않는다)를 그대로 불러 쓴다. `base`는 실제 실행이 그
+    // tick에 advanceRotationCursor로부터 받은 값을 그대로 가져온다(재계산하지
+    // 않음) — 그래서 이 테스트가 검증하는 것은 정확히 "그 base와 그 tick의 실제
+    // selectable로부터 나와야 할 6개"뿐이다. 모듈로가 stale length를 쓰거나
+    // 커서가 매 실행 리셋되면 실제 선택이 이 예측과 tick마다 어긋나 즉시 실패한다.
+    it('staleSymbols가 완료·자정 리셋·KR defer로 매 tick 실제로 바뀌어도 회전이 전 심볼을 빠짐없이 커버한다(동적 배열 회귀 가드)', async () => {
+        const KR_BLOCK = Array.from(
+            { length: 5 },
+            (_, i) => `00000${i + 1}.KS`
+        ); // POPULAR_TICKERS의 KR 블록 head를 그대로 흉내(실제 인시던트 모양).
+        const US_BLOCK = Array.from({ length: 20 }, (_, i) => `US${i + 1}`);
+        const universeSymbols = [...KR_BLOCK, ...US_BLOCK];
+        universe(
+            ...universeSymbols.map(symbol => ({
+                symbol,
+                tabs: ['technical'] as SeoSnapshotTab[],
+            }))
+        );
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        // 실제 Redis INCRBY를 흉내내되(makeStatefulRotationCursor와 동일 계약),
+        // 이 tick이 실제로 받은 base를 예측 계산에 쓸 수 있도록 기록해 둔다.
+        let cursor = 0;
+        let lastBase = 0;
+        mockAdvanceRotationCursor.mockImplementation(async (step: number) => {
+            lastBase = cursor;
+            cursor += step;
+            return lastBase;
+        });
+
+        // 테스트가 직접 들고 있는 generatedAt 북키핑 — 실물 DB의
+        // findGeneratedAtMap을 흉내낸다. 한 번 선택된 심볼은 선택된 tick 시각을
+        // generatedAt으로 기록하고, 그 뒤로는 실물 isSnapshotFreshReal이 boundary와
+        // 비교해 stale 여부를 스스로 판정한다 — nightly reset도, KR/US 경계
+        // 롤오버도 실물 로직이 처리하므로 이 테스트가 따로 흉내내지 않는다.
+        const generatedAtBySymbol = new Map<string, Date>();
+
+        function computeSelectableOracle(now: Date): string[] {
+            return universeSymbols.filter(symbol => {
+                const boundary = snapshotCloseBoundaryForReal(symbol, now);
+                const fresh = isSnapshotFreshReal(
+                    generatedAtBySymbol.get(symbol),
+                    boundary
+                );
+                if (fresh) return false; // stale에서 빠짐 → selectable에서도 빠짐.
+                return !shouldDeferPrewarmWhileOpenReal(symbol, now); // KR defer.
+            });
+        }
+
+        // selectFairBatch의 회전 산술만 재구현(위 doc-comment 참고). windowSize
+        // 캡(CANDIDATE_WINDOW_MULTIPLIER)은 blocked 후보가 없는 이 테스트에서는
+        // 결과에 영향이 없다 — fresh = window 전체이고 batch는 그 앞 6개뿐이라,
+        // 그 6개는 windowSize와 무관하게 항상 selectable[(offset+i) % length]다.
+        function predictBatch(selectable: string[], base: number): string[] {
+            if (selectable.length === 0) return [];
+            const offset = base % selectable.length;
+            const size = Math.min(6, selectable.length); // SYMBOLS_PER_TICK
+            return Array.from(
+                { length: size },
+                (_, i) => selectable[(offset + i) % selectable.length]
+            );
+        }
+
+        function nightTicks(nightStartIso: string): Date[] {
+            const HALF_HOUR = 30 * 60 * 1000;
+            const start = new Date(nightStartIso).getTime();
+            const ticks: Date[] = [];
+            // early region: 20:30~23:30 UTC(7틱) — KR 개장 전, 전 유니버스가 후보.
+            for (let i = 0; i < 7; i++)
+                ticks.push(new Date(start + i * HALF_HOUR));
+            // kr-boundary window: 00:00~03:30 UTC(다음날, 09:00~12:30 KST, 8틱) — KR
+            // 블록이 shouldDeferPrewarmWhileOpen에 걸려 selectable에서 빠진다.
+            const krStart = start + 7 * HALF_HOUR;
+            for (let i = 0; i < 8; i++)
+                ticks.push(new Date(krStart + i * HALF_HOUR));
+            return ticks;
+        }
+
+        // 평일 3일(2026-08-17~19, 화~수요일 KR 장중 걸침) — 미국·한국 모두 휴장일이
+        // 아니다. 밤마다 마감 경계가 하루씩 굴러가 전날 harvest된 심볼도 다시
+        // stale이 된다(nightly reset).
+        const NIGHTS = [
+            '2026-08-17T20:30:00.000Z',
+            '2026-08-18T20:30:00.000Z',
+            '2026-08-19T20:30:00.000Z',
+        ];
+
+        const selectedEver = new Set<string>();
+
+        for (const [nightIndex, nightStart] of NIGHTS.entries()) {
+            const selectedThisNight = new Set<string>();
+
+            for (const tick of nightTicks(nightStart)) {
+                vi.setSystemTime(tick);
+                mockFindGeneratedAtMap.mockResolvedValue(
+                    new Map(
+                        [...generatedAtBySymbol].map(([symbol, date]) => [
+                            key(symbol, 'technical'),
+                            date,
+                        ])
+                    )
+                );
+                mockPrewarmTechnical.mockClear();
+
+                const selectableOracle = computeSelectableOracle(tick);
+
+                await runPrewarmBatch();
+
+                const actual = mockPrewarmTechnical.mock.calls.map(
+                    c => c[0] as string
+                );
+                const expected = predictBatch(selectableOracle, lastBase);
+
+                expect(
+                    actual,
+                    `night ${nightIndex + 1} tick=${tick.toISOString()} base=${lastBase} selectable=[${selectableOracle.join(',')}]`
+                ).toEqual(expected);
+
+                for (const symbol of actual) {
+                    generatedAtBySymbol.set(symbol, tick);
+                    selectedThisNight.add(symbol);
+                    selectedEver.add(symbol);
+                }
+            }
+
+            // 밤마다 전 유니버스가 최소 한 번은 선택된다 — KR 블록이
+            // kr-boundary window에서 빠졌다가 되돌아오는 것도, 완료된 심볼이
+            // staleSymbols에서 빠지는 것도 이 커버리지를 깨지 않아야 한다.
+            const missing = universeSymbols.filter(
+                s => !selectedThisNight.has(s)
+            );
+            expect(
+                missing,
+                `night ${nightIndex + 1} missed: ${missing.join(', ')}`
+            ).toEqual([]);
+        }
+
+        // 전체 실행에서 한 번도 선택되지 못한 심볼이 없다 — "다른 심볼은 반복
+        // 선택되는데 특정 심볼만 영영 선택 안 됨"이 이 테스트가 잡는 회귀 모양이다.
+        expect(selectedEver.size).toBe(universeSymbols.length);
     });
 
     // ── FIX 1(감사, PR #698 리뷰) — legacy in-flight 마커(present, jobId 없음) ──
@@ -845,16 +1096,20 @@ describe('runPrewarmBatch', () => {
         });
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-        const base = FIXED_NOW.getTime();
-        let calls = 0;
-        // 1=배치 데드라인 계산, 2=회전 오프셋, 3번째부터(=청크0 진입 검사) 초과.
-        const now = (): number => {
-            calls++;
-            return calls <= 2 ? base : base + BATCH_DEADLINE_MS + 1;
-        };
-        const sleep = vi.fn().mockResolvedValue(undefined);
+        // makeSimClock(경과 시간 clock)을 쓰되, "청크 진입 직전"이라는 named
+        // checkpoint에서 데드라인을 넘긴다 — clock.now() 호출 횟수를 세지 않는다.
+        // advanceRotationCursor는 selectFairBatch가 청크 루프에 들어가기 **직전**에
+        // 정확히 한 번 호출되므로(runPrewarmBatch.ts) 그 시점을 hook해 clock을
+        // 데드라인 너머로 진행시킨다. 이 방식은 now() 호출 지점이 앞으로 추가되거나
+        // 없어져도(call-count 기반이라면 매번 threshold를 다시 맞춰야 한다) 깨지지
+        // 않는다.
+        const clock = makeSimClock(FIXED_NOW.getTime());
+        mockAdvanceRotationCursor.mockImplementation(async () => {
+            await clock.sleep(BATCH_DEADLINE_MS + 1);
+            return 0;
+        });
 
-        const counts = await runPrewarmBatch({ now, sleep });
+        const counts = await runPrewarmBatch(clock);
 
         expect(mockPrewarmTechnical).not.toHaveBeenCalled();
         expect(counts.remaining).toBe(6);
@@ -1071,6 +1326,84 @@ describe('runPrewarmBatch', () => {
         expect(counts.durationMs).toBeGreaterThan(0);
     });
 
+    // ── 2026-08 감사 — starvation watch(회전에서 구조적으로 빠진 심볼을 로그로 노출) ──
+
+    it('한 번도 생성된 적 없는(never) stale 심볼은 starvation watch 로그에 (never)로 찍힌다', async () => {
+        // 이번 KR 5종목 인시던트의 모양 그대로 — generatedAtMap에 해당 키가 아예 없다.
+        universe({ symbol: 'NEVERWARMED', tabs: ['technical'] });
+        mockFindGeneratedAtMap.mockResolvedValue(new Map());
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        await runPrewarmBatch();
+
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining(
+                '[seo-prewarm] starvation watch: 1 symbol(s) stale > 48h — worst: NEVERWARMED(never)'
+            )
+        );
+
+        warnSpy.mockRestore();
+    });
+
+    it('48시간 이내로 stale인 심볼은 starvation watch에 잡히지 않는다', async () => {
+        // STALE_DATE(boundary - 24h)는 FIXED_NOW 기준 아직 48h 문턱 안이다 —
+        // "오늘 밤 아직 순번이 안 왔다"일 뿐 구조적 starvation이 아니다.
+        universe({ symbol: 'RECENTSTALE', tabs: ['technical'] });
+        mockFindGeneratedAtMap.mockResolvedValue(
+            new Map([[key('RECENTSTALE', 'technical'), STALE_DATE]])
+        );
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        await runPrewarmBatch();
+
+        expect(warnSpy).not.toHaveBeenCalledWith(
+            expect.stringContaining('starvation watch')
+        );
+
+        warnSpy.mockRestore();
+    });
+
+    it('여러 offender가 있으면 가장 오래 밀린 순으로 상위 5개만 로그에 남기고 총 개수는 전체를 반영한다', async () => {
+        // 7개 모두 never-generated. worst 목록은 STARVATION_LOG_LIMIT(5)로 잘리지만
+        // 총 개수(7)는 전체를 센다 — 잘린 나머지도 여전히 문제라는 신호를 잃지 않는다.
+        const symbols: PrewarmSymbol[] = Array.from({ length: 7 }, (_, i) => ({
+            symbol: `NEVER${i}`,
+            tabs: ['technical'] as SeoSnapshotTab[],
+        }));
+        universe(...symbols);
+        mockFindGeneratedAtMap.mockResolvedValue(new Map());
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        await runPrewarmBatch();
+
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining(
+                '[seo-prewarm] starvation watch: 7 symbol(s) stale > 48h'
+            )
+        );
+        const call = warnSpy.mock.calls.find(c =>
+            String(c[0]).includes('starvation watch')
+        );
+        const message = String(call?.[0]);
+        const worstOffenderCount = (message.match(/NEVER\d\(never\)/g) ?? [])
+            .length;
+        expect(worstOffenderCount).toBe(5);
+
+        warnSpy.mockRestore();
+    });
+
     /**
      * Task 9: processSymbol의 탭별 isSkipped 가드가 실제로 seam을 차단한다.
      *
@@ -1115,15 +1448,17 @@ describe('runPrewarmBatch', () => {
      * 버려짐"으로 계산되어 counts.remaining이 부풀고, 경고 메시지에 실제보다
      * 많은 탭 수가 찍힌다.
      *
-     * 검증 방식:
+     * 검증 방식(makeSimClock + named checkpoint — call-count 세지 않음):
      * - symbol ORDTEST: technical(fresh in map) + overall(stale).
-     * - 3번째 clock.now() 호출(청크 진입 검사)은 정상 시각 → 청크 진행.
-     * - 4번째+ 호출(processSymbol 탭 루프 내 isPastDeadline)은 데드라인 초과.
+     * - `getAssetInfoResilient`는 processSymbol이 탭 루프에 들어가기 **직전**에
+     *   심볼당 정확히 한 번만 호출된다(runPrewarmBatch.ts) — 그 호출을 hook해
+     *   그 시점에 clock을 데드라인 너머로 진행시킨다. 청크 진입 검사(그 앞에서
+     *   일어남)는 자연히 데드라인 이전을 본다.
      * - 올바른 순서: technical → alreadyFresh → continue(isPastDeadline 미호출);
      *                 overall → alreadyFresh=false → isPastDeadline=true → dropped.
      *   → droppedByDeadline=1, counts.remaining=1, warn "1 tabs dropped".
-     * - 잘못된 순서: technical → isPastDeadline=true → dropped(fresh 체크 안함);
-     *                 overall → isPastDeadline=true → dropped.
+     * - 잘못된 순서(isPastDeadline 먼저)라면: technical → isPastDeadline=true →
+     *                 dropped(fresh 체크 안함); overall → isPastDeadline=true → dropped.
      *   → droppedByDeadline=2, counts.remaining=2, warn "2 tabs dropped".
      */
     it('Task 4 — alreadyFresh 검사가 isPastDeadline보다 먼저 실행된다(신선도 우선 순서 보장)', async () => {
@@ -1132,32 +1467,24 @@ describe('runPrewarmBatch', () => {
             // technical은 이미 fresh, overall은 stale(맵에 없음).
             new Map([[key('ORDTEST', 'technical'), BOUNDARY]])
         );
-        mockGetAssetInfoResilient.mockResolvedValue({
-            assetInfo: {
-                symbol: 'ORDTEST',
-                name: 'Order Test Inc.',
-                fmpSymbol: undefined,
-            },
-            degraded: false,
-        });
 
-        const base = FIXED_NOW.getTime();
-        let nowCalls = 0;
-        // 호출 순서:
-        //   1: batchDeadline = base + BATCH_DEADLINE_MS
-        //   2: selectFairBatch의 회전 오프셋
-        //   3: 청크 진입 isPastDeadline → base → 미초과(청크 진행)
-        //   4+: processSymbol 내 탭 루프 isPastDeadline → 초과
-        const now = (): number => {
-            nowCalls++;
-            return nowCalls <= 3 ? base : base + BATCH_DEADLINE_MS + 1;
-        };
+        const clock = makeSimClock(FIXED_NOW.getTime());
+        mockGetAssetInfoResilient.mockImplementation(async (symbol: string) => {
+            // named checkpoint — processSymbol의 탭 루프 진입 직전. 청크 진입
+            // 데드라인 검사는 이미 통과한 뒤이므로 여기서부터 넘겨도 안전하다.
+            await clock.sleep(BATCH_DEADLINE_MS + 1);
+            return {
+                assetInfo: {
+                    symbol,
+                    name: 'Order Test Inc.',
+                    fmpSymbol: undefined,
+                },
+                degraded: false,
+            };
+        });
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-        const counts = await runPrewarmBatch({
-            now,
-            sleep: vi.fn().mockResolvedValue(undefined),
-        });
+        const counts = await runPrewarmBatch(clock);
 
         // 올바른 순서: fresh 탭(technical)은 isPastDeadline 없이 처리되므로
         // droppedByDeadline=1(overall만)이고, counts.remaining=1.

@@ -13,6 +13,7 @@
 const {
     mockRedisGet,
     mockRedisSet,
+    mockRedisIncrby,
     mockRevalidateTag,
     mockUpsert,
     mockFindGeneratedAtMap,
@@ -24,6 +25,7 @@ const {
 } = vi.hoisted(() => ({
     mockRedisGet: vi.fn(),
     mockRedisSet: vi.fn(),
+    mockRedisIncrby: vi.fn(),
     mockRevalidateTag: vi.fn(),
     mockUpsert: vi.fn(),
     mockFindGeneratedAtMap: vi.fn(),
@@ -42,7 +44,7 @@ vi.mock('@/shared/cache/redisClient', () => ({
         set: mockRedisSet,
         del: vi.fn(),
         eval: vi.fn(),
-        incrby: vi.fn(),
+        incrby: mockRedisIncrby,
         expire: vi.fn(),
     }),
 }));
@@ -129,6 +131,18 @@ describe('runPrewarmBatch × 실제 lock.ts 왕복 (FIX 3, 실증 회귀 가드)
             assetInfo: { symbol: 'X', name: 'X Inc.', fmpSymbol: undefined },
             degraded: false,
         });
+        // 실제 lock.ts가 회전 커서(advanceRotationCursor)와 FMP 예산 집계
+        // (addFmpBudget) 둘 다에 이 INCRBY를 쓴다 — 키별로 독립된 카운터를
+        // 흉내내는 진짜 INCRBY 시맨틱이 필요하다(단순 vi.fn()은 undefined를
+        // 반환해 회전 오프셋 계산이 NaN이 된다).
+        const incrbyCounters = new Map<string, number>();
+        mockRedisIncrby.mockImplementation(
+            async (redisKey: string, step: number) => {
+                const next = (incrbyCounters.get(redisKey) ?? 0) + step;
+                incrbyCounters.set(redisKey, next);
+                return next;
+            }
+        );
     });
 
     afterEach(() => {
