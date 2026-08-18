@@ -222,6 +222,42 @@ describe('runPrewarmBatch', () => {
         expect(counts.harvested).toBe(1);
     });
 
+    /**
+     * [회귀] `shouldDeferPrewarmWhileOpen` 배선 가드.
+     *
+     * 헬퍼 자체는 `entities/seo-snapshot/__tests__/freshness.test.ts`가 고정하지만,
+     * runPrewarmBatch에서 `selectable`을 거르는 **호출**은 아무 테스트도 안 밟고
+     * 있었다(감사 라운드 5: 필터를 통째로 지워도 이 디렉터리 100건이 전부 통과).
+     * 그 배선이 빠지면 장중 틱에 걸린 국내 종목이 형성 중인 일봉으로 만든 서술을
+     * 다음 마감까지 스냅샷에 굳힌다 — 게이트가 존재하는 이유 그 자체다.
+     *
+     * 아래 시각은 두 시장을 동시에 가르도록 골랐다: 02:00Z = 11:00 KST(KRX 정규장
+     * 한복판) = 21:00 ET 전날(NYSE 마감 후). 그래서 같은 틱에서 KR은 빠지고 US는
+     * 남는다 — 게이트가 "장중이면 미룬다"이지 "한국이면 미룬다"가 아님까지 고정된다.
+     */
+    it('KRX 장중 틱에서는 국내 종목을 배치에서 빼되 staleTotal에는 남긴다', async () => {
+        vi.setSystemTime(new Date('2026-11-26T02:00:00Z'));
+        universe(
+            { symbol: '005930.KS', tabs: ['technical'] },
+            { symbol: 'AAPL', tabs: ['technical'] }
+        );
+        mockFindGeneratedAtMap.mockResolvedValue(new Map()); // 둘 다 stale.
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        const counts = await runPrewarmBatch();
+
+        expect(mockPrewarmTechnical.mock.calls.map(c => c[0])).toEqual([
+            'AAPL',
+        ]);
+        // 미뤄진 심볼도 아직 처리해야 할 백로그다 — 유니버스 단계가 아니라
+        // staleSymbols **다음에** 걸러야 야간 여력 신호가 작아지지 않는다.
+        expect(counts.staleTotal).toBe(2);
+        expect(counts.harvested).toBe(1);
+    });
+
     it('심볼이 소문자/혼합 대소문자여도 UPPERCASE generatedAtMap 키와 매칭해 fresh로 판정한다', async () => {
         // findGeneratedAtMap(api.ts)은 항상 UPPERCASE 키로 저장한다. universe에
         // 소문자 심볼이 섞여 들어와도 freshness lookup이 miss하지 않아야 한다.

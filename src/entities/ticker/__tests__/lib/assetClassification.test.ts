@@ -206,21 +206,26 @@ describe('classifyAsset — 영문 펀드명 접미 안전망', () => {
     });
 
     /**
-     * [회귀] `Northern Trust Corporation`처럼 사명에 "Trust"가 부분 문자열/중간
-     * 토큰으로 들어가지만 끝 토큰은 "Corporation"인 진짜 상장사가 있다. 끝 토큰이
-     * 아니라 아무 위치에서나 유형어를 찾으면 이런 회사가 조용히 ETF로 오분류돼
-     * Corporation about 노드가 사라진다.
+     * [회귀] 안전망은 **끝 토큰만** 본다. 아무 위치에서나 유형어를 찾으면 사명
+     * 중간에 그 단어가 들어간 상장사가 조용히 ETF로 오분류돼 Corporation about
+     * 노드가 사라진다.
+     *
+     * 픽스처는 구성한 이름이다 — `FUND_NAME_SUFFIX_WORDS`의 실제 원소(ETF/FUND/
+     * ETN/INDEX)를 중간 토큰으로 가진 상장사가 마땅치 않다. 원소가 아닌 단어를
+     * 쓰면(예전 `Northern Trust Corporation`) 어떤 탐색 전략에서도 통과해 이
+     * 불변식을 전혀 고정하지 못한다 — `TRUST`가 목록에서 빠진 뒤 실제로 그렇게
+     * 됐다(아래 리츠 케이스가 그 규칙을 따로 지킨다).
      */
     it('사명에 유형어가 들어가지만 끝 토큰이 아니면 stock을 유지한다', () => {
         expect(
-            classifyAsset('NTRS', undefined, 'Northern Trust Corporation')
+            classifyAsset('IDXS', undefined, 'Index Solutions Corporation')
         ).toBe('stock');
         expect(
-            buildAssetAboutNode('NTRS', 'Northern Trust Corporation')
+            buildAssetAboutNode('IDXS', 'Index Solutions Corporation')
         ).toEqual({
             '@type': 'Corporation',
-            name: 'Northern Trust Corporation',
-            tickerSymbol: 'NTRS',
+            name: 'Index Solutions Corporation',
+            tickerSymbol: 'IDXS',
         });
     });
 

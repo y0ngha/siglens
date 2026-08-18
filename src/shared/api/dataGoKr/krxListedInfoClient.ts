@@ -32,6 +32,23 @@ const MAX_ROWS_PER_PAGE = 1000;
 /** 폭주 방지 상한 — KOSPI+KOSDAQ+KONEX 전체가 3,000 종목 남짓이라 넉넉하다. */
 const MAX_PAGES = 20;
 
+/**
+ * 페이지 1건당 타임아웃. 레포 공통 규약(`shared/api/fmp/httpClient` 10초,
+ * `shared/api/yahoo/createYahooClient` 8초)을 따른다 — bare `fetch`는 undici 기본
+ * 300초라 멈춘 소켓 하나가 아래 전체 예산을 혼자 다 먹는다.
+ */
+const PAGE_TIMEOUT_MS = 10_000;
+
+/**
+ * 수집 전체의 wall-clock 예산.
+ *
+ * 페이지 타임아웃만으로는 상한이 못 된다 — 최악은 10일 후보 × 20페이지 × 10초라
+ * 30분을 넘는다. 이 함수는 크론 라우트의 `after()` 안에서 돌고 그 promise가
+ * SIGTERM 드레인에 등록되므로(`app/api/cron/kr-tickers/route.ts`), 배포 때
+ * 종료를 그만큼 붙잡는다. 정상 경로는 첫 후보에서 3페이지로 끝나 수 초다.
+ */
+const TOTAL_BUDGET_MS = 120_000;
+
 /** 시장 구분 값. `mrktCtg` 필드가 이 셋 중 하나로 온다. */
 export type KrxMarket = 'KOSPI' | 'KOSDAQ' | 'KONEX';
 
@@ -171,7 +188,10 @@ async function fetchPage(
         ...(basDt ? { basDt } : {}),
     });
 
-    const res = await fetch(`${ENDPOINT}?${params}`, { cache: 'no-store' });
+    const res = await fetch(`${ENDPOINT}?${params}`, {
+        cache: 'no-store',
+        signal: AbortSignal.timeout(PAGE_TIMEOUT_MS),
+    });
     if (!res.ok) {
         throw new Error(`[krxListedInfo] HTTP ${res.status}`);
     }
@@ -238,10 +258,18 @@ export async function fetchKrxListedItems(
         ? [basDt]
         : recentDateCandidates(MAX_DATE_LOOKBACK_DAYS);
 
+    const deadline = Date.now() + TOTAL_BUDGET_MS;
+
     for (const date of candidates) {
         const items = await collectAllPages(key, date);
         if (items.length > 0) return items;
         // 주말·공휴일이거나 아직 갱신 전이다 — 하루 더 거슬러 올라간다.
+        if (Date.now() >= deadline) {
+            console.warn(
+                `[krxListedInfo] 예산(${TOTAL_BUDGET_MS}ms) 소진 — ${date}까지 확인하고 중단`
+            );
+            return [];
+        }
     }
 
     console.warn(

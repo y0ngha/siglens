@@ -156,7 +156,8 @@ export class CachedMarketDataProvider implements MarketDataProvider {
      *   세션당 1회 재조회. `before=lastClosed`로 완료된 EOD까지만 fetch.
      *   `lastClosed`는 `lastClosedSessionDate(this.session, now)`가 세션 스펙에서 유도한다:
      *   - US 주식: 16:00 ET(반장은 13:00) 마감 + EOD_PUBLISH_BUFFER_HOURS(4h) 버퍼 + 주말·NYSE 휴장일 되감기.
-     *   - 한국 주식: 15:30 KST 마감 + 같은 버퍼 + 주말 되감기(한국 공휴일은 스펙에 없음).
+     *   - 한국 주식: 15:30 KST 마감 + 같은 버퍼 + 주말·KRX 휴장일 되감기
+     *     (`KR_MARKET_HOLIDAYS`; `KR_CALENDAR_HORIZON` 밖 날짜는 정상 개장으로 폴백).
      *   - 크립토(`always-open`): 어제 UTC 날짜 — 24/7이므로 주말 되감기·버퍼 없음.
      *   TTL은 fetch된 bars가 lastClosed까지 도달했는지에 따라 분기한다:
      *   - 도달했으면(newest.time >= lastClosedThreshold) 7일 long TTL(EOD_HIST_TTL_SECONDS).
@@ -181,7 +182,7 @@ export class CachedMarketDataProvider implements MarketDataProvider {
         now: Date = new Date()
     ): Promise<Bar[]> {
         // 세션 스펙이 시장 차이를 흡수한다: 크립토는 어제 UTC, 미국은 16:00 ET 마감 +
-        // 4h 버퍼 + 주말·NYSE 휴장일 되감기, 한국은 15:30 KST 마감 + 주말 되감기.
+        // 4h 버퍼 + 주말·NYSE 휴장일 되감기, 한국은 15:30 KST 마감 + 주말·KRX 휴장일 되감기.
         // **`this.session`을 넘기는 것이 핵심** — ET 고정 헬퍼를 쓰면 추수감사절처럼
         // NYSE만 쉬는 날 KRX 봉이 `before=lastClosed`에 잘려 나간다.
         const lastClosed = lastClosedSessionDate(this.session, now);

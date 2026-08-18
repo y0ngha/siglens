@@ -23,6 +23,13 @@ const NAVER_NEWS_ENDPOINT =
 /** 네이버 검색 API의 `display` 상한. 이보다 큰 값을 보내면 400이 돌아온다. */
 const MAX_DISPLAY = 100;
 
+/**
+ * 요청 1건당 타임아웃. 레포 공통 규약(`shared/api/fmp/httpClient` 10초,
+ * `shared/api/yahoo/createYahooClient` 8초)을 따른다 — bare `fetch`는 undici 기본
+ * 300초라, 소켓 하나가 멈추면 prewarm 유닛 예산(120초)을 통째로 넘긴다.
+ */
+const NAVER_FETCH_TIMEOUT_MS = 8_000;
+
 /** `NewsTimeRange`별 요청 건수. FMP 어댑터와 같은 축척이되 API 상한(100)에 맞춰 잘린다. */
 const RANGE_TO_DISPLAY: Record<NewsTimeRange, number> = {
     '24h': 30,
@@ -176,6 +183,7 @@ export class NaverNewsClient implements NewsClientPort {
                 },
                 // 뉴스는 신선도가 핵심이라 상위 계층(news 테이블 + ISR 태그)이 캐싱을 맡는다.
                 cache: 'no-store',
+                signal: AbortSignal.timeout(NAVER_FETCH_TIMEOUT_MS),
             });
         } catch (e) {
             console.warn('[naverNewsClient] fetch failed', symbol, e);
