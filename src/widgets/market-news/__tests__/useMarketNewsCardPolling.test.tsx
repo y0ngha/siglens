@@ -137,6 +137,28 @@ describe('useMarketNewsCardPolling', () => {
         );
     });
 
+    /**
+     * [회귀] 정체 종료는 순수 함수(`pollMarketNewsCardsStep`)만 테스트돼 있었고
+     * **훅의 배선**(`recordEnriched`/`getEnrichedCount`/`getStagnantPolls`)은
+     * 무커버리지였다 — 훅에서 정체 카운터를 못 올리게 만들어도 전건 통과한다
+     * (감사: 테스트 라운드 17). 그러면 기능이 통째로 죽은 채 초록이다.
+     */
+    it('보강이 진행되다 멈추면 상한 전에 접는다 — 훅 배선', async () => {
+        // 일부만 보강된 스냅샷이 계속 그대로다: 다른 종료 조건은 전부 죽어 있고
+        // (빈 스냅샷 아님, 전건 보강 아님, 실패 아님) 정체 종료만 남는다.
+        mockGetMarketNewsCardsAction.mockResolvedValue({
+            ok: true,
+            items: [ENRICHED_ITEM, PENDING_ITEM],
+        });
+
+        renderHook(() => useMarketNewsCardPolling('general', []));
+
+        await advancePolls(20);
+
+        // 리터럴로 고정한다 — 상수를 import해 단언하면 양변이 같이 움직인다.
+        expect(mockGetMarketNewsCardsAction).toHaveBeenCalledTimes(12);
+    });
+
     it('카테고리 변경 시 상태를 초기화하고 새 카테고리로 폴링한다', async () => {
         mockGetMarketNewsCardsAction.mockResolvedValue({
             ok: true,

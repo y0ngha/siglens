@@ -85,10 +85,11 @@ describe('useNewsCardPolling', () => {
 
         await advancePolls(20);
         const settled = mockGetNewsCardsAction.mock.calls.length;
-        // 정확한 정지 지점을 고정한다 — `toBeLessThan(20)`처럼 느슨하게 두면
-        // STAGNATION_FLOOR_POLLS를 1~11 아무 값으로 바꿔도 통과한다
-        // (감사: 테스트·코드 라운드 16).
-        expect(settled).toBe(STAGNATION_FLOOR_POLLS);
+        // 리터럴로 고정한다. 상수를 import해 단언하면 양변이 같이 움직여
+        // 7~20 밴드의 어떤 값으로 바꿔도 통과한다(감사: 테스트 라운드 17이 8·10·15로
+        // 실증). 상수 자체의 값도 따로 못 박아 두 축을 분리한다.
+        expect(STAGNATION_FLOOR_POLLS).toBe(12);
+        expect(settled).toBe(12);
 
         await advancePolls(5);
         expect(mockGetNewsCardsAction.mock.calls.length).toBe(settled);

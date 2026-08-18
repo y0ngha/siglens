@@ -75,11 +75,6 @@ describe('getNewsCardsAction', () => {
             url: 'https://example.com/1',
             source: 'reuters',
         });
-
-        // Ensure internal fields are stripped
-        expect(result[0]).not.toHaveProperty('bodyEn');
-        expect(result[0]).not.toHaveProperty('symbol');
-        expect(result[0]).not.toHaveProperty('analyzedAt');
     });
 
     it('returns empty array when no news items exist', async () => {
@@ -125,9 +120,9 @@ describe('getNewsCardsAction', () => {
         expect(result).toHaveLength(2);
         expect(result[0].id).toBe('news-1');
         expect(result[1].id).toBe('news-2');
-        // 서버 전용 컬럼 배제는 리포지터리 테스트가 SELECT 목록까지 포함해 진다.
-        expect(result[0]).not.toHaveProperty('bodyEn');
-        expect(result[1]).not.toHaveProperty('bodyEn');
+        // 서버 전용 컬럼 배제는 `DrizzleNewsRepository.listCardsBySymbol` 테스트가
+        // SELECT 목록까지 포함해 진다 — 여기서 다시 단언하면 mock 픽스처를 자기가
+        // 자기에게 확인하는 꼴이라 어떤 회귀도 못 잡는다(감사: 테스트 라운드 17).
     });
 
     it('preserves null fields in the output', async () => {
@@ -144,9 +139,6 @@ describe('getNewsCardsAction', () => {
                 priceImpact: null,
                 url: 'https://example.com/1',
                 source: 'reuters',
-                bodyEn: null,
-                symbol: 'AAPL',
-                analyzedAt: null,
             },
         ]);
 
