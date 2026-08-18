@@ -36,7 +36,10 @@ import { getDescriptor } from '@/shared/config/marketProfile';
 
 /** Domain-level row returned from the `news` table; extends the display projection with persistence-only fields. */
 export interface NewsRow extends NewsDisplayItem {
-    /** Original English body — needed for re-analysis but not displayed. */
+    /**
+     * 항상 `null`이다 — 사유는 `toNewsRow`의 주석 참조.
+     * core `EnrichedNewsItem` 형상을 맞추기 위한 placeholder다.
+     */
     bodyEn: string | null;
     /** Symbol/issuer the news belongs to — present on `NewsItem` but not in `NewsDisplayItem`. */
     symbol: string;
@@ -193,11 +196,11 @@ export class DrizzleNewsRepository {
     /**
      * 카드 표시에 필요한 컬럼만 읽는다 — `bodyEn`(기사 원문)을 select에서 뺀다.
      *
-     * `listBySymbol`은 재분석 경로가 원문을 필요로 해서 전 컬럼을 읽는데, 3초 폴링
-     * (`getNewsCardsAction`)과 목록 렌더는 그 원문을 받아서 버린다. 180일 창에
-     * 상한이 없어 인기 종목이면 수백 행이고, 폴링 1회마다 그만큼의 Neon 전송이
-     * 통째로 낭비된다(감사: 비용 라운드 14). 시장 뉴스 슬라이스는 같은 이유로
-     * 같은 투영을 SELECT 단계에 두고 있다(`listCardsByCategory`).
+     * `listBySymbol`과의 차이는 이제 원문 유무가 아니다 — 그쪽도 `bodyEn`을 읽지
+     * 않는다(`toNewsRow` 주석 참조). 차이는 집계 경로가 쓰는 `symbol`/`analyzedAt`을
+     * 싣느냐뿐이다. 3초 폴링(`getNewsCardsAction`)과 목록 렌더는 그 둘도 안 쓰므로
+     * 180일 창 × 수백 행에서 그만큼을 덜 실어 나른다(감사: 비용 라운드 14~15).
+     * 시장 뉴스 슬라이스도 같은 투영을 SELECT 단계에 두고 있다(`listCardsByCategory`).
      */
     async listCardsBySymbol(
         symbol: string,

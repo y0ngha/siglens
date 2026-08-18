@@ -73,6 +73,34 @@ describe('useNewsCardPolling', () => {
      *
      * 진전이 멈추면(보강 카드 수가 STAGNANT_POLL_LIMIT 틱 연속 그대로) 접는다.
      */
+    /**
+     * [회귀] 위 케이스는 1틱째에 보강되고 곧바로 멈추는 형상이라 정지 지점이 항상
+     * floor(12)다 — `STAGNANT_POLL_LIMIT`이 11 이하 어떤 값이어도 결속되지 않는다
+     * (감사: 코드 라운드 17이 2로 낮춰 실증). 진전이 **늦게** 오는 형상이라야 그
+     * 상수와 "진전이 오면 카운터를 0으로 되돌린다" 분기가 같이 묶인다.
+     */
+    it('진전이 늦게 오면 그 시점부터 STAGNANT_POLL_LIMIT만큼 더 돈다', async () => {
+        let polls = 0;
+        mockGetNewsCardsAction.mockImplementation(() => {
+            polls += 1;
+            // 13틱째에 첫 보강, 15틱째에 하나 더 — 그 뒤로는 그대로.
+            if (polls < 13) return Promise.resolve([PENDING_ITEM]);
+            if (polls < 15) return Promise.resolve([READY_ITEM, PENDING_ITEM]);
+            return Promise.resolve([
+                READY_ITEM,
+                { ...READY_ITEM, id: 'ready-2' },
+                PENDING_ITEM,
+            ]);
+        });
+
+        renderHook(() => useNewsCardPolling('AAPL', []));
+
+        await advancePolls(30);
+
+        // 마지막 진전이 15틱, 거기서 6틱 더 → 21틱에 정지.
+        expect(mockGetNewsCardsAction.mock.calls.length).toBe(21);
+    });
+
     it('보강이 진행되다 멈추면 상한 전에 폴링을 접는다', async () => {
         // 1건은 보강됨, 나머지는 계속 미보강 — 공급이 끊긴 상태를 흉내낸다.
         mockGetNewsCardsAction.mockResolvedValue([
