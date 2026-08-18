@@ -11,6 +11,7 @@ import { isRecentlyFetched } from '../lib/newsRefreshFlag';
 import { revalidateTag } from 'next/cache';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { analyzeNewsCards } from '../lib/analyzeNewsCards';
+import { VISITOR_NEWS_CARD_LIMIT } from '../lib/newsAnalysisConstants';
 
 /**
  * Server Action: fetch fresh FMP news for `symbol`, upsert to DB, and
@@ -101,9 +102,11 @@ export async function ensureNewsCardsAnalyzedAction(
 
     if (unanalyzed.length === 0) return;
 
-    // 상한 없음 — 이 경로는 `waitUntil` 안에서 돌아 응답 마감이 없다. prewarm
-    // cron만 유닛 타임아웃 때문에 상한을 건다.
+    // 마감이 없다는 것과 비용이 없다는 것은 다르다 — 이 경로의 적재 lookback은
+    // 180일이고 FMP 상한이 1,000건이라, 백로그가 쌓인 종목의 첫 마운트 한 번이
+    // 최악 1,000회 LLM 왕복이 된다(상한 도입 근거는 상수 JSDoc 참조).
     await analyzeNewsCards(unanalyzed, repo, {
+        limit: VISITOR_NEWS_CARD_LIMIT,
         logLabel: 'ensureNewsCardsAnalyzedAction',
     });
 }

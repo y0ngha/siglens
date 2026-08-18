@@ -55,6 +55,7 @@ import { ensureNewsCardsAnalyzedAction } from '../actions/ensureNewsCardsAnalyze
 import { NEWS_CARD_ANALYSIS_PARALLEL_LIMIT } from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import { runNewsCardAnalysis } from '@y0ngha/siglens-core';
+import { VISITOR_NEWS_CARD_LIMIT } from '../lib/newsAnalysisConstants';
 import { getNewsClient } from '../lib/getNewsClient';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type {
@@ -219,6 +220,27 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             expect(mockUpsertNewsItem).toHaveBeenCalledWith(NEWS_ITEM_1);
             expect(mockUpsertNewsItem).toHaveBeenCalledWith(NEWS_ITEM_2);
             expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
+        });
+
+        it('한 번에 보강하는 기사 수를 VISITOR_NEWS_CARD_LIMIT로 묶는다', async () => {
+            // 적재 lookback이 180일이고 FMP 상한이 1,000건이라, 상한이 없으면
+            // 백로그가 쌓인 종목의 첫 마운트 한 번이 최악 1,000회 LLM 왕복이 된다.
+            // 2-vCPU 박스에서 LLM 소켓 4개를 수십 분 잡는다(감사: 비용 확인 패스).
+            const many = Array.from({ length: 40 }, (_, i) => ({
+                ...NEWS_ITEM_1,
+                id: `news-${i}`,
+                url: `https://example.com/${i}`,
+            }));
+            mockFetchNewsForPeriod.mockResolvedValue(many);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockRunNewsCardAnalysis).toHaveBeenCalledTimes(
+                VISITOR_NEWS_CARD_LIMIT
+            );
+            // 적재는 전량 그대로다 — 상한은 분석 단계에만 건다.
+            expect(mockUpsertNewsItem).toHaveBeenCalledTimes(40);
         });
 
         it('각 뉴스 아이템에 대해 runNewsCardAnalysis를 호출한다', async () => {

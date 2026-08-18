@@ -10,9 +10,28 @@
 export const NEWS_CARD_ANALYSIS_PARALLEL_LIMIT = 4;
 
 /**
+ * 방문자 경로가 한 번에 보강할 기사 수 상한.
+ *
+ * 원래 상한이 없었다 — `waitUntil` 안이라 응답 마감이 없다는 이유였는데, 마감이
+ * 없다는 것과 비용이 없다는 것은 다르다. 방문자 경로의 적재 lookback은 180일
+ * (`NEWS_LOOKBACK_MS`)이고 FMP 상한이 1,000건이라, 백로그가 쌓인 종목의 첫 마운트
+ * 한 번이 최악 1,000회 LLM 왕복이 된다. 동시 4개로 나눠도 2-vCPU 박스에서 LLM
+ * 소켓 4개를 수십 분 잡는다(감사: 비용 확인 패스).
+ *
+ * 25로 잡은 근거는 소비자다 — 보강 결과를 읽는 유일한 소비자인 집계 분석이
+ * `MAX_AGGREGATE_NEWS_ITEMS`(25)만 고른다. 그보다 더 보강해도 읽히지 않는다.
+ * cron 상한(12)보다 큰 것은 방문자 경로엔 유닛 타임아웃이 없기 때문이다.
+ *
+ * 남은 기사는 다음 마운트나 다음 밤 cron이 이어받는다 — `analyzedAt`이 찍힌
+ * 기사는 후보에서 빠지므로 진전은 누적된다.
+ */
+export const VISITOR_NEWS_CARD_LIMIT = 25;
+
+/**
  * prewarm cron이 한 tick에 보강할 기사 수 상한.
  *
- * 방문자 경로에는 상한이 없다(`waitUntil` 안이라 응답 마감이 없다). cron만
+ * 방문자 경로는 `VISITOR_NEWS_CARD_LIMIT`(25)로 더 넉넉하다 — 유닛 타임아웃이
+ * 없기 때문이다. cron만
  * `UNIT_TIMEOUT_MS`(2분) 안에서 카드 보강 + 집계 분석을 **모두** 끝내야 한다.
  *
  * 숫자 근거: 12건 / 동시 4 = 3청크. 프로덕션 실측 DeepSeek 왕복이 4~13초이므로
