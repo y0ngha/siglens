@@ -10,7 +10,7 @@ import { toKoreanTickerRows } from '../src/shared/api/dataGoKr/toKoreanTickerRow
 import {
     formatCandidates,
     planKrTickerReconcile,
-} from '../src/shared/lib/krTickerReconcile';
+} from '../src/entities/ticker/lib/krTickerReconcile';
 import { KOREAN_TICKERS_CACHE_KEY } from '../src/entities/ticker/lib/cacheKeys';
 import { createCacheProvider } from '@y0ngha/siglens-core';
 

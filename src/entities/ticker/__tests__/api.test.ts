@@ -286,9 +286,13 @@ describe('DrizzleKoreanTickerRepository', () => {
         await repo.markDelisted(['000000.KQ']);
         // sql`now()` — DB 서버 시계로 스탬프한다.
         expect(set.mock.calls[0][0].delistedAt).toBeDefined();
-        // where 조건이 하나뿐이면(심볼만) 재실행마다 상폐 시각이 밀려
-        // "언제부터 상폐였나"를 잃는다. isNull 조건이 그걸 막는다.
+        // `where`가 불렸다는 것만 보면 **아무 조건이나** 통과한다 — isNull 가드가
+        // and(...)에서 빠져도 초록으로 남는다. 조건식을 열어 컬럼을 직접 확인한다.
         expect(where).toHaveBeenCalledTimes(1);
+        const condition = where.mock.calls[0][0] as SqlLike;
+        expect(collectColumnNames(condition)).toEqual(
+            expect.arrayContaining(['symbol', 'delisted_at'])
+        );
     });
 
     it('markRelisted 는 delisted_at 을 null 로 되돌린다', async () => {

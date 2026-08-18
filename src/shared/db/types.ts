@@ -6,7 +6,6 @@ import type { Tier } from '@y0ngha/siglens-core';
 import type { OAuthProvider } from '@/shared/lib/types';
 import type { LlmProvider } from '../config/llmProviders';
 import type { KoreanTickerEntry } from '@/shared/lib/types';
-import type { KrTickerListingRow } from '@/shared/lib/krTickerReconcile';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import type * as schema from './schema';
 
@@ -240,6 +239,17 @@ export interface PortfolioHoldingRepository {
     ): Promise<PortfolioHoldingRecord | null>;
     upsert(input: UpsertPortfolioHoldingInput): Promise<PortfolioHoldingRecord>;
     deleteByUserAndSymbol(userId: string, symbol: string): Promise<boolean>;
+}
+
+/** `korean_tickers`의 상장 상태만 담은 최소 행. 상폐 판정 로직(`planKrTickerReconcile`,
+ * `entities/ticker/lib/krTickerReconcile.ts`)의 입력 타입이다 — 그 로직은 entity
+ * 레이어에 있지만 이 타입은 {@link KoreanTickerRepository}의 반환 타입이라 다른
+ * repository 타입들과 함께 여기 둔다(entity → shared 참조만 발생, 역방향 없음).
+ */
+export interface KrTickerListingRow {
+    symbol: string;
+    /** `null`이면 상장 중. 값이 있으면 그 시점에 상폐로 표시됐다. */
+    delistedAt: Date | null;
 }
 
 /**

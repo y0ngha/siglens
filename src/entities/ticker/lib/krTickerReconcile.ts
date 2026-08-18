@@ -1,11 +1,7 @@
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
+import type { KrTickerListingRow } from '@/shared/db/types';
 
-/** `korean_tickers`의 상장 상태만 담은 최소 행. */
-export interface KrTickerListingRow {
-    symbol: string;
-    /** `null`이면 상장 중. 값이 있으면 그 시점에 상폐로 표시됐다. */
-    delistedAt: Date | null;
-}
+export type { KrTickerListingRow };
 
 export interface KrTickerReconcilePlan {
     /** 이번 응답에 없어 상폐로 표시할 심볼. 가드가 걸리면 빈 배열이다. */
@@ -78,11 +74,13 @@ export interface KrTickerReconcileOptions {
  * 공공데이터포털 응답과 DB 현재 상태를 대조해 상장 상태 변경분을 계산한다.
  *
  * 순수 함수다 — DB도 네트워크도 건드리지 않는다. 시드 스크립트(`tsx`, Next 밖)와
- * 크론 라우트(Next 안)가 **같은 판정을 공유해야** 하는데, 스크립트는 `server-only`를
- * 거치는 앱 모듈을 import할 수 없어 각자 DB 접근 코드를 따로 갖는다. 위험한 판단
- * (무엇을 지울 것인가)은 전부 여기 있고, 양쪽에 남는 중복은 테이블 선언과 SQL 실행뿐이다.
- * 그래서 가드가 걸린 경우의 후보 목록도 호출부가 다시 계산하지 않고
- * `delistCandidates`로 받는다 — 두 벌이 되면 조용히 어긋난다.
+ * 크론 라우트(Next 안)가 **같은 판정을 공유해야** 하는데, 위험한 판단(무엇을 지울
+ * 것인가)이 두 벌이 되면 조용히 어긋난다. 그래서 이 파일은 entity 레이어 안에서도
+ * `entities/ticker/api.ts`(실제 DB 접근, `server-only` 체인에 걸림)를 거치지 않는
+ * 순수 `lib/` 모듈로 둔다 — `scripts/seed-kr-listed-names.ts`가 `tsx`로 Next 런타임
+ * 밖에서 이 모듈을 직접 import할 수 있는 것도 그래서다. 양쪽에 남는 중복은 테이블
+ * 선언과 SQL 실행뿐이다. 가드가 걸린 경우의 후보 목록도 호출부가 다시 계산하지 않고
+ * `delistCandidates`로 받는다.
  *
  * 행을 삭제하지 않고 표시만 하는 이유: 상폐 종목 URL로 들어온 방문자에게 한글명은
  * 여전히 필요하고, 오탐이었을 때 되돌리는 비용이 0이다.

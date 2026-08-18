@@ -16,7 +16,6 @@ import {
     or,
     sql,
 } from 'drizzle-orm';
-import type { KrTickerListingRow } from '@/shared/lib/krTickerReconcile';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import {
     assetTranslations,
@@ -31,6 +30,7 @@ import type {
     CryptoAssetRecord,
     CryptoAssetRepository,
     KoreanTickerRepository,
+    KrTickerListingRow,
     ProfileDescriptionTranslationRecord,
     ProfileDescriptionTranslationRepository,
 } from '@/shared/db/types';

@@ -4,10 +4,7 @@ import {
     hasDataGoKrCredentials,
 } from '@/shared/api/dataGoKr/krxListedInfoClient';
 import { toKoreanTickerRows } from '@/shared/api/dataGoKr/toKoreanTickerRows';
-import {
-    formatCandidates,
-    planKrTickerReconcile,
-} from '@/shared/lib/krTickerReconcile';
+import { formatCandidates, planKrTickerReconcile } from './krTickerReconcile';
 import { DrizzleKoreanTickerRepository } from '../api';
 import { tryGetTickerDatabaseClient } from './db';
 import { invalidateKoreanTickerCache } from './koreanNameStore';

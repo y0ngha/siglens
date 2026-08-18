@@ -7,7 +7,7 @@ import {
     KR_RECONCILE_MIN_COUNT,
     planKrTickerReconcile,
     type KrTickerListingRow,
-} from '@/shared/lib/krTickerReconcile';
+} from '@/entities/ticker/lib/krTickerReconcile';
 
 /** 절대 하한을 넘기는 더미 심볼 집합 — 가드를 통과시키고 싶을 때 쓴다. */
 function padSymbols(count: number, prefix = 'PAD'): string[] {
