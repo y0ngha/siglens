@@ -86,11 +86,36 @@ vi.mock('@/shared/config/market', async importOriginal => ({
     DEFAULT_TIMEFRAME: '1Day',
 }));
 
+import { Suspense, isValidElement, type ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import OverallPage from '@/app/[symbol]/overall/page';
 import { getAssetInfoResilient } from '@/entities/ticker';
+import { OverallContent } from '@/widgets/overall/OverallContent';
+import { OverallFactualFallback } from '@/widgets/overall';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
+
+/**
+ * OverallFactualFallback은 Suspense의 `fallback` prop 안에 있어 children-only
+ * 순회(findElementByType)로는 닿지 않는다 — page.factlayer.test.tsx / page.test.ts와
+ * 동일한 로컬 헬퍼.
+ */
+function findSuspenseFallback(node: ReactNode): ReactNode {
+    if (Array.isArray(node)) {
+        for (const child of node) {
+            const result = findSuspenseFallback(child);
+            if (result !== undefined) return result;
+        }
+        return undefined;
+    }
+    if (!isValidElement(node)) return undefined;
+    if (node.type === Suspense) {
+        return (node.props as { fallback?: ReactNode }).fallback;
+    }
+    const childProps = node.props as { children?: ReactNode };
+    return findSuspenseFallback(childProps.children);
+}
 
 const EQUITY_ASSET_INFO = {
     assetInfo: {
@@ -304,5 +329,51 @@ describe('OverallPage — kr-equity hasOptions branching (SEO 감사 finding 1)'
             '옵션 시장이 가까운 만기에서 콜과 풋 어느'
         );
         expect(treeStr).toContain('분기 실적이 시장 기대치를 웃돌았는지');
+    });
+
+    it('.KS 종목: OverallContent에 hasOptions=false, OverallFactualFallback에 marketProfile="kr-equity"를 전달한다', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue(KR_EQUITY_ASSET_INFO);
+        const tree = await OverallPage({
+            params: Promise.resolve({ symbol: '005930.ks' }),
+        });
+
+        const content = findElementByType(tree, OverallContent);
+        expect(content).not.toBeNull();
+        expect((content?.props as { hasOptions: boolean }).hasOptions).toBe(
+            false
+        );
+
+        const fallback = findSuspenseFallback(tree);
+        const factualFallback = findElementByType(
+            fallback,
+            OverallFactualFallback
+        );
+        expect(factualFallback).not.toBeNull();
+        expect(
+            (factualFallback?.props as { marketProfile: string }).marketProfile
+        ).toBe('kr-equity');
+    });
+
+    it('미국 종목: OverallContent에 hasOptions=true, OverallFactualFallback에 marketProfile="us-equity"를 전달한다', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+        const tree = await OverallPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        const content = findElementByType(tree, OverallContent);
+        expect(content).not.toBeNull();
+        expect((content?.props as { hasOptions: boolean }).hasOptions).toBe(
+            true
+        );
+
+        const fallback = findSuspenseFallback(tree);
+        const factualFallback = findElementByType(
+            fallback,
+            OverallFactualFallback
+        );
+        expect(factualFallback).not.toBeNull();
+        expect(
+            (factualFallback?.props as { marketProfile: string }).marketProfile
+        ).toBe('us-equity');
     });
 });

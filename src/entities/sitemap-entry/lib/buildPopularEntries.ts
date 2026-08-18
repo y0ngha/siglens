@@ -1,5 +1,8 @@
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
-import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
+import {
+    CURATED_KOREAN_NAMES,
+    POPULAR_TICKERS,
+} from '@/shared/config/popular-tickers';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
@@ -46,7 +49,19 @@ export function buildPopularEntries(now: Date): SitemapEntry[] {
         // isEmptyFinancialsSnapshot으로 noindex를 반환한다(`[symbol]/financials/page.tsx`).
         // noindex URL을 sitemap에 실으면 크롤 예산만 태우고 품질 신호가 나빠지므로
         // stock으로 분류된 티커만 `/financials` 엔트리를 낸다.
-        const isStock = classifyAsset(ticker) === 'stock';
+        //
+        // `name`을 반드시 넘겨야 한다 — `classifyAsset`의
+        // `isKrEquitySymbol(symbol) && isKrEtfName(name)` 분기는 `name`이 없으면
+        // 절대 참이 될 수 없다(`isKrEtfName(undefined)`는 항상 false). 이 인자를
+        // 빼먹으면 KODEX/TIGER 같은 국내 ETF도 전부 `stock`으로 떨어져
+        // `/financials`가 열리고, 그 페이지는 재무제표가 없어 영구 noindex다
+        // (assetClassification.ts JSDoc이 경고하는 바로 그 시나리오).
+        const isStock =
+            classifyAsset(
+                ticker,
+                undefined,
+                CURATED_KOREAN_NAMES.get(ticker)
+            ) === 'stock';
         return [
             {
                 url: `${SITE_URL}/${ticker}`,

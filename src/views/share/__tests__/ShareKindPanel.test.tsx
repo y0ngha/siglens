@@ -227,5 +227,25 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
                 expect.objectContaining({ hasOptions: false })
             );
         });
+
+        // 뮤테이션 감사(2026-08-18) — `symbol !== undefined` 하나로만 게이트하면
+        // `symbol=''`은 undefined가 아니므로 게이트를 통과해
+        // `profileIdForSymbol('')`(us-equity로 폴백)까지 흘러 hasOptions=true로
+        // 열린다. 빈 문자열은 "심볼 없음"과 같은 실패 형태(모르는 상태)이므로
+        // undefined와 동일하게 숨겨야 한다 — 위 "symbol이 없으면" 케이스와 같은
+        // 결론을 빈 문자열에도 고정한다.
+        it('symbol이 빈 문자열이면 hasOptions=false — undefined와 동일하게 숨긴다', () => {
+            render(
+                <ShareKindPanel
+                    kind="overall"
+                    result={stubResults.overall as never}
+                    assetClass="equity"
+                    symbol=""
+                />
+            );
+            expect(mockOverallView).toHaveBeenCalledWith(
+                expect.objectContaining({ hasOptions: false })
+            );
+        });
     });
 });

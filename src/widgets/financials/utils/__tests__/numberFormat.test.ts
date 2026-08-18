@@ -18,6 +18,18 @@ describe('formatCurrencyCompact', () => {
         expect(formatted).not.toContain('T');
     });
 
+    it('renders the exact KRW string, including the ₩ glyph (guards against currency mixups)', () => {
+        expect(formatCurrencyCompact(333_605_938_000_000, 'KRW')).toBe(
+            '₩333.6조'
+        );
+    });
+
+    it('renders the exact USD string as a counterpart to the KRW pin', () => {
+        expect(formatCurrencyCompact(333_605_938_000_000, 'USD')).toBe(
+            '$333.6T'
+        );
+    });
+
     it('renders KRW without decimal sub-units', () => {
         expect(formatCurrencyCompact(274_500, 'KRW')).not.toContain('.00');
     });
