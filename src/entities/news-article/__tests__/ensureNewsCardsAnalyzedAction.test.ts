@@ -838,18 +838,26 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
         });
 
-        it('사람 경로 → 최근 fetch됐어도 항상 fetch한다(가드 무시)', async () => {
+        it('최근 fetch됐으면 사람 경로도 FMP 재조회와 upsert를 건너뛴다', async () => {
+            // 이전에는 이 가드가 `skipAnalysis` 뒤에 걸려 사실상 죽어 있었고, 그
+            // 동작("사람은 항상 fresh")을 이 테스트가 고정하고 있었다. 그런데 이
+            // 액션은 `useEffect`에서 fire-and-forget으로 나가므로 트리거를 쏜 본인의
+            // 화면에는 애초에 반영되지 않는다 — 적재 결과는 `revalidateTag` 이후의
+            // 다음 렌더에 들어간다. 그래서 TTL의 실제 대가는 "10분 안에 들어온 다음
+            // 방문자가 최대 10분 된 목록을 본다"뿐이고, 얻는 건 매 마운트 반복되던
+            // 180일 FMP 조회 + 기사 수만큼의 Neon 왕복 제거다.
+            //
+            // 시장 뉴스 형제 경로(`ensureMarketNewsCardsAnalyzedAction`)가 같은
+            // 플래그를 이미 봇·사람 구분 없이 같은 TTL로 걸고 있다 — 이제 정책이 같다.
             mockIsRecentlyFetched.mockResolvedValue(true);
             mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
-            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
             mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
-            expect(mockFetchNewsForPeriod).toHaveBeenCalledWith(
-                'AAPL',
-                NEWS_LOOKBACK_MS
-            );
+            expect(mockFetchNewsForPeriod).not.toHaveBeenCalled();
+            expect(mockUpsertNewsItem).not.toHaveBeenCalled();
+            expect(mockRunNewsCardAnalysis).not.toHaveBeenCalled();
         });
 
         it('upsert 과반 실패 시 markFetched를 호출하지 않고, throw도 하지 않는다', async () => {

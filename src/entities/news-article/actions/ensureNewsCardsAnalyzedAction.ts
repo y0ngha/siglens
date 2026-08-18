@@ -31,9 +31,27 @@ export async function ensureNewsCardsAnalyzedAction(
     symbol: string,
     options?: { skipAnalysis?: boolean }
 ): Promise<void> {
-    // 봇 경로만 가드: 최근 TTL 내 fetch했으면 FMP fetch + N건 DB upsert를 스킵한다.
-    // 봇은 DB의 기존 뉴스를 그대로 읽으므로 SEO 무해. 사람 경로는 항상 fresh.
-    if (options?.skipAnalysis && (await isRecentlyFetched(symbol))) {
+    // 최근 TTL(10분) 내에 fetch했으면 FMP 재조회와 기사 수만큼의 DB upsert를 스킵한다.
+    //
+    // 원래 이 가드가 `skipAnalysis` 뒤에 걸려 있어 사실상 죽어 있었다 — 그 옵션을
+    // 넘기는 프로덕션 호출부가 없다(봇은 JS를 실행하지 않아 트리거 자체를 안 탄다,
+    // `useNewsAnalysisTrigger` 주석 참고). 그래서 **매 마운트마다** 180일 FMP 조회와
+    // 기사 수만큼 Neon 왕복을 다시 했다. 대부분은 값이 안 바뀌어 `setWhere`로 UPDATE도
+    // 안 되는 no-op인데 왕복 비용은 그대로 든다(감사: 비용 확인 패스).
+    //
+    // "사람 경로는 항상 fresh"라는 원래 의도는 실제로 성립하지 않았다: 이 액션은
+    // `useEffect`에서 fire-and-forget으로 나가므로 **트리거를 쏜 본인의 화면에는
+    // 반영되지 않는다**(그 렌더는 이미 끝났다). 적재 결과는 `revalidateTag` 이후의
+    // 다음 렌더에 들어간다. 즉 TTL의 대가는 10분 안에 들어온 다음 방문자가 최대
+    // 10분 된 목록을 본다는 것뿐이고, FMP 수집 지연과 페이지 ISR 주기 안에 묻힌다.
+    //
+    // 시장 뉴스 형제 경로(`ensureMarketNewsCardsAnalyzedAction`)는 같은 플래그를
+    // 이미 봇·사람 구분 없이 걸고 있다 — TTL도 같은 10분이다. 이제 두 뉴스 경로의
+    // 정책이 일치한다.
+    //
+    // prewarm cron은 이 액션이 아니라 `ingestNewsForSymbol`을 직접 부르므로
+    // 스냅샷·SEO 경로의 신선도는 이 가드와 무관하다.
+    if (await isRecentlyFetched(symbol)) {
         return;
     }
 
