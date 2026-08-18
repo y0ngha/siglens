@@ -1,7 +1,7 @@
 'use client';
 
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile';
+import { currencyForSymbol } from '@/shared/config/marketProfile';
 import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 import type React from 'react';
 
@@ -24,7 +24,8 @@ const SHORT_DATE_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
 });
 
 // 통화는 심볼에서 유도한다 — 국내 종목은 원화다(같은 버그를 FinancialHealthCard/
-// FutureDirectionCard에서 이미 고쳤다). shared/lib/priceFormat의
+// FutureDirectionCard에서 이미 고쳤다). 판정은 currencyForSymbol
+// (shared/config/marketProfile/registry.ts) 한 곳으로 위임한다. shared/lib/priceFormat의
 // formatCompactCurrency를 그대로 쓰지 않는 이유: 이 카드의 숫자 칸은
 // `4.5rem` 고정 너비라 "US$1111.8억"(ko-KR 로케일의 조/억 단위) 같은 긴 표기가
 // 줄바꿈된다. 이 좁은 칸에는 "$111.2B" 같은 en-US 축약 표기가 필요해서, 같은
@@ -68,16 +69,12 @@ function formatShortDate(dateStr: string): string {
 
 function formatCurrency(value: number | null, symbol: string): string {
     if (value === null) return '—';
-    return MONEY_FORMATTERS[isKrEquitySymbol(symbol) ? 'KRW' : 'USD'].format(
-        value
-    );
+    return MONEY_FORMATTERS[currencyForSymbol(symbol)].format(value);
 }
 
 function formatRevenue(value: number | null, symbol: string): string {
     if (value === null) return '—';
-    return COMPACT_MONEY_FORMATTERS[
-        isKrEquitySymbol(symbol) ? 'KRW' : 'USD'
-    ].format(value);
+    return COMPACT_MONEY_FORMATTERS[currencyForSymbol(symbol)].format(value);
 }
 
 interface EarningsReportComparisonProps {

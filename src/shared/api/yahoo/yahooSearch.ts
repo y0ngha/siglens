@@ -1,7 +1,6 @@
 import 'server-only';
 import { createYahooClient } from './createYahooClient';
 
-// 설정 근거는 YahooMarketProvider / YahooOptionsAdapter 주석 참조.
 const yahooFinance = createYahooClient();
 
 /** yahoo `search`가 돌려주는 quote 항목 중 이 앱이 소비하는 부분집합. */

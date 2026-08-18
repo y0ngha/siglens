@@ -3,7 +3,6 @@ import { createYahooClient } from './createYahooClient';
 import type { StatementPeriod } from '@y0ngha/siglens-core';
 import { MS_PER_SECOND } from '@/shared/config/time';
 
-// 설정 근거는 YahooMarketProvider / YahooOptionsAdapter 주석 참조.
 const yahooFinance = createYahooClient();
 
 /**

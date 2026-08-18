@@ -1,7 +1,7 @@
 import { EmptySectionCard } from './EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { formatCompactCurrency } from '@/shared/lib/priceFormat';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile';
+import { currencyForSymbol } from '@/shared/config/marketProfile';
 import type {
     FundamentalAnalystEstimateInput,
     FundamentalGradesConsensusInput,
@@ -57,7 +57,7 @@ const MONEY_FORMATTERS: Record<'USD' | 'KRW', Intl.NumberFormat> = {
 // 포매터 맵을 둔다.
 function fmtMoney(v: number | null, symbol: string): string {
     if (v === null) return '—';
-    return MONEY_FORMATTERS[isKrEquitySymbol(symbol) ? 'KRW' : 'USD'].format(v);
+    return MONEY_FORMATTERS[currencyForSymbol(symbol)].format(v);
 }
 
 function fmtBig(v: number | null, symbol: string): string {

@@ -10,9 +10,6 @@ import type { SiglensMarketProvider } from '@/shared/api/market/marketProvider.t
 import { MS_PER_SECOND, MS_PER_HOUR } from '@/shared/config/time';
 import { pickYahooDisplayName } from './displayName';
 
-// `suppressNotices` / `validation.logErrors` 근거는 YahooOptionsAdapter의 주석 참조 —
-// 첫 호출 시 뜨는 마케팅 배너와, 비정형 응답에서 쏟아지는 다중 행 스키마 경고를 억제한다.
-// throw 동작은 그대로 유지되므로 에러 처리 경로는 바뀌지 않는다.
 const yahooFinance = createYahooClient();
 
 /** KST는 서머타임이 없다 — ET와 달리 고정 오프셋이라 DST 분기가 필요 없다. */

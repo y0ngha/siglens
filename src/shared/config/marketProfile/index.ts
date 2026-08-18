@@ -13,5 +13,6 @@ export {
     getDescriptor,
     marketProfileOf,
     isKrEquitySymbol,
+    currencyForSymbol,
     DEFAULT_MARKET_PROFILE,
 } from './registry';

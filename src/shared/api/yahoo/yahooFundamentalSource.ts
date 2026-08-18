@@ -7,7 +7,6 @@ import {
     type YahooStatementRaw,
 } from './yahooStatementsSource';
 
-// 설정 근거는 YahooMarketProvider / YahooOptionsAdapter 주석 참조.
 const yahooFinance = createYahooClient();
 
 /**
