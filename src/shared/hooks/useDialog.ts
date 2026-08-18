@@ -26,20 +26,19 @@ interface UseDialogReturn {
  * 발생시키며, ::backdrop이 하위 콘텐츠를 비활성화한다. 직접 구현한 트랩이 어긋나
  * 키보드 사용자가 모달 밖으로 탭 아웃되는 부류의 버그가 구조적으로 사라진다.
  *
- * 소비자는 `<dialog ref={dialogRef} onClose={...}>`를 항상 렌더하고(열림 여부는 이 훅이
- * 제어), 배경 클릭으로 닫으려면 dialog 자신에게 온 click(=backdrop 영역)을 확인한다.
+ * 소비자는 `<dialog ref={dialogRef} onClose={close}>`를 항상 렌더하기만 하면 된다 —
+ * 열고 닫기, 배경(::backdrop) 클릭 닫기는 이 훅이 dialog 엘리먼트에 직접 처리한다.
  */
 export function useDialog(): UseDialogReturn {
     const [isOpen, setIsOpen] = useState(false);
     const dialogRef = useRef<HTMLDialogElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
-
-    const open = useCallback(() => setIsOpen(true), []);
-    const close = useCallback(() => setIsOpen(false), []);
-
     // 마운트 직후(닫힌 상태)의 effect에서 트리거로 포커스를 훔치지 않도록,
     // "한 번이라도 열렸는지"를 기억한다.
     const wasOpenRef = useRef(false);
+
+    const open = useCallback(() => setIsOpen(true), []);
+    const close = useCallback(() => setIsOpen(false), []);
 
     useEffect(() => {
         const dialog = dialogRef.current;
