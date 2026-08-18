@@ -48,9 +48,9 @@ interface CategorySnapshot {
  * Uses `staticSymbolCache` (axis 1) to avoid DYNAMIC_SERVER_USAGE from the
  * DB call during ISR cold-gen.
  *
- * Projects rows through the shared allowlist (`toMarketNewsCardItem`) so that
- * DB-internal columns (bodyEn, symbol, analyzedAt) are stripped before the
- * items reach any client component or RSC payload serialisation.
+ * 읽기(`getMarketNewsCards`) 자체가 카드 투영이라 DB 내부 컬럼(bodyEn, symbol,
+ * analyzedAt)은 애초에 SELECT되지 않는다 — 받은 뒤 거르면 Neon 전송과 S3 ISR
+ * 블롭에는 그대로 남는다(감사: 비용 라운드 15).
  */
 async function loadCategorySnapshot(
     category: NewsFeedCategory

@@ -156,6 +156,43 @@ function makeUpdateDb(): {
 }
 
 /** Build a mock `db` for a select…where…orderBy chain returning `rows`. */
+/**
+ * drizzle `SQL` 객체에서 리터럴 조각만 뽑는다. `JSON.stringify`는 테이블 참조가
+ * 순환이라 던지므로 쓸 수 없다. `isNotNull`은 `' is not null'`, `isNull`은
+ * `' is null'` 조각을 남기므로 필터 방향을 이걸로 판별한다.
+ */
+function sqlChunks(node: unknown, out: string[] = []): string[] {
+    if (Array.isArray(node)) {
+        for (const item of node) sqlChunks(item, out);
+        return out;
+    }
+    if (node && typeof node === 'object') {
+        const obj = node as Record<string, unknown>;
+        if (Array.isArray(obj.queryChunks)) sqlChunks(obj.queryChunks, out);
+        if (
+            Array.isArray(obj.value) &&
+            obj.value.every(v => typeof v === 'string')
+        ) {
+            out.push(...(obj.value as string[]));
+        }
+    }
+    return out;
+}
+
+/**
+ * `listAnalyzedIds`용 — 이 쿼리는 `orderBy` 없이 `where()`를 바로 await한다.
+ * `where` 인자를 노출해 필터 자체(`is not null`)를 단언할 수 있게 한다.
+ */
+function makeFilterSelectDb(rows: unknown[]): {
+    db: SiglensDatabase;
+    where: Mock;
+} {
+    const where = vi.fn().mockResolvedValue(rows);
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
+    return { db: { select } as unknown as SiglensDatabase, where };
+}
+
 function makeSelectDb(rows: unknown[]): {
     db: SiglensDatabase;
     select: Mock;
@@ -425,6 +462,40 @@ describe('DrizzleNewsRepository', () => {
      * `sentiment === null`로 보강 여부를 판정하므로, 깨진 문자열이 그대로 흘러가면
      * 미보강 종목이 "보강됨"으로 읽혀 폴링이 일찍 멈추고 분석 패널이 열린다.
      */
+    /**
+     * [회귀] 이 메서드의 전부는 `isNotNull(analyzedAt)` 한 줄이다 — 뒤집으면
+     * 이미 분석된 기사를 매번 LLM에 다시 보내고 미분석 기사는 영영 안 돈다.
+     * 호출부 테스트는 이 메서드를 통째로 mock하므로 SQL을 볼 수 없다
+     * (감사: 코드 라운드 16).
+     */
+    describe('listAnalyzedIds', () => {
+        it('분석 완료 행만 거르는 필터를 건다', async () => {
+            const { db, where } = makeFilterSelectDb([
+                { id: 'a' },
+                { id: 'b' },
+            ]);
+            const repo = new DrizzleNewsRepository(db);
+
+            const ids = await repo.listAnalyzedIds('AAPL', 86_400_000);
+
+            expect(ids).toEqual(new Set(['a', 'b']));
+            // drizzle의 `isNotNull`은 ' is not null' 조각을, `isNull`은 ' is null'
+            // 조각을 남긴다 — 방향이 뒤집히면 여기서 걸린다.
+            const literals = sqlChunks((where.mock.calls[0] as [unknown])[0]);
+            expect(literals).toContain(' is not null');
+            expect(literals).not.toContain(' is null');
+        });
+
+        it('결과가 없으면 빈 Set을 돌려준다', async () => {
+            const { db } = makeFilterSelectDb([]);
+            const repo = new DrizzleNewsRepository(db);
+
+            await expect(
+                repo.listAnalyzedIds('AAPL', 86_400_000)
+            ).resolves.toEqual(new Set());
+        });
+    });
+
     describe('listCardsBySymbol', () => {
         interface CardDbRow {
             id: string;
@@ -440,7 +511,13 @@ describe('DrizzleNewsRepository', () => {
             priceImpact: string | null;
         }
 
-        const cardRow: CardDbRow = {
+        // 픽스처가 서버 전용 컬럼을 **갖고 있어야** 한다 — 안 그러면 투영을 통째로
+        // 되돌려(`...row` spread) 놓아도 샐 것이 없어 테스트가 통과한다
+        // (감사: 테스트 라운드 16). DB는 그 컬럼들을 갖고 있으므로 이쪽이 실제 형상이다.
+        const cardRow = {
+            symbol: 'AAPL',
+            bodyEn: '유출되면 안 되는 영어 원문',
+            analyzedAt: new Date('2025-08-01T12:00:00.000Z'),
             id: 'abc123',
             source: 'Reuters',
             url: 'https://example.com/news/1',
@@ -455,13 +532,23 @@ describe('DrizzleNewsRepository', () => {
         };
 
         it('DB 내부 필드를 아예 읽지 않는다', async () => {
-            const { db } = makeSelectDb([cardRow]);
+            const { db, select } = makeSelectDb([cardRow]);
             const repo = new DrizzleNewsRepository(db);
             const [result] = await repo.listCardsBySymbol('AAPL', 86_400_000);
 
+            // 반환 형상: 새어 나오지 않는다.
             expect(result).not.toHaveProperty('bodyEn');
             expect(result).not.toHaveProperty('symbol');
             expect(result).not.toHaveProperty('analyzedAt');
+
+            // SELECT 목록: 애초에 읽지 않는다 — 비용 근거가 여기 있다.
+            // 반환 형상만 보면 select에 남겨 둔 채 매핑에서만 빼도 통과한다.
+            const selected = Object.keys(
+                (select.mock.calls[0] as [Record<string, unknown>])[0]
+            );
+            expect(selected).not.toContain('bodyEn');
+            expect(selected).not.toContain('symbol');
+            expect(selected).not.toContain('analyzedAt');
         });
 
         it('publishedAt 을 ISO 문자열로 변환해 반환한다', async () => {

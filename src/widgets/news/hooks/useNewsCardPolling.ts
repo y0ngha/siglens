@@ -30,15 +30,32 @@ const REFRESH_SNAPSHOT_MIN_POLLS = 5;
 /**
  * 보강 진전이 이 횟수만큼 연속으로 없으면 폴링을 접는다.
  *
- * 카드 한 건의 LLM 왕복은 실측 4~13초이고 방문자 경로는 동시 4건으로 돌린다
- * (`NEWS_CARD_ANALYSIS_PARALLEL_LIMIT`). 3초 간격 4틱이면 12초라 진행 중인 청크
- * 하나가 끝나기에 충분하다 — 그 사이 카운트가 한 번도 안 오르면 이번 창에서
- * 더 채워질 것이 없다는 뜻이다.
+ * 카드 한 건의 LLM 왕복은 실측 **4~13초**이고(`newsAnalysisConstants` 참조) 방문자
+ * 경로는 `withConcurrencyLimit`로 청크를 순차 실행한다 — 빠른 청크가 4초에 끝나고
+ * 다음 청크가 13초 걸리면 쓰기 사이 침묵이 13초까지 벌어진다. 창을 그보다 짧게
+ * 잡으면 **진행 중인 청크를 두고 접는다**: 서버가 보강한 카드가 열려 있는 페이지에
+ * 영영 안 닿고, `onPollingComplete`가 부분 풀에 대고 invalidate를 쏜다.
+ * 6틱 = 18초로 그 13초 위에 여유를 둔다.
  *
  * 단, **첫 보강이 도착한 뒤에만** 센다. 0건인 동안은 적재+LLM 왕복을 기다리는
  * 중일 뿐이라, 그때 접으면 콜드 종목이 시작도 못 하고 끝난다.
  */
-const STAGNANT_POLL_LIMIT = 4;
+export const STAGNANT_POLL_LIMIT = 6;
+
+/**
+ * 정체 판정을 시작하기 전에 반드시 지나야 하는 최소 폴 수.
+ *
+ * `enrichedCount > 0`만으로는 부족하다 — 그 조건은 이번 마운트의 진전이 아니라
+ * **SSR 스냅샷에 이미 들어 있던 카드**로 충족된다. 그래서 예전엔 스피너 floor
+ * (`REFRESH_SNAPSHOT_MIN_POLLS`)를 재사용해 t=15초에 접었는데, 이번 마운트가
+ * 유발한 첫 카드가 도착하는 실측 구간은 그보다 뒤다: 적재 2~5초 + upsert 파동 +
+ * 첫 LLM 왕복 4~13초 = 최악 22~30초. 즉 살아 있는 보강 라운드를 잘랐다
+ * (감사: 비용 라운드 16이 계측으로 실증).
+ *
+ * 12틱 = 36초로 그 구간을 넘긴다. 상한은 100 → 12~16틱이라 절감(84~88%)은
+ * 그대로 남는다. 스피너 floor는 UI 표시용이라 이 판정과 목적이 다르므로 분리한다.
+ */
+export const STAGNATION_FLOOR_POLLS = 12;
 
 function hasPendingAnalysis(items: NewsDisplayItem[]): boolean {
     return items.some(
@@ -186,7 +203,7 @@ export function useNewsCardPolling(
                     // 콜드 종목이 시작도 못 하고 끝난다 — 그 케이스는 wall-clock
                     // 상한이 맡는다.
                     enrichedCount > 0 &&
-                    pollCount >= REFRESH_SNAPSHOT_MIN_POLLS &&
+                    pollCount >= STAGNATION_FLOOR_POLLS &&
                     stagnantPolls >= STAGNANT_POLL_LIMIT
                 ) {
                     setIsPolling(false);

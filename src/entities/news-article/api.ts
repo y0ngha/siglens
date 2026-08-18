@@ -198,7 +198,7 @@ export class DrizzleNewsRepository {
      * (`getNewsCardsAction`)과 목록 렌더는 그 원문을 받아서 버린다. 180일 창에
      * 상한이 없어 인기 종목이면 수백 행이고, 폴링 1회마다 그만큼의 Neon 전송이
      * 통째로 낭비된다(감사: 비용 라운드 14). 시장 뉴스 슬라이스는 같은 이유로
-     * 이미 투영을 두고 있다(`toMarketNewsCardItem`).
+     * 같은 투영을 SELECT 단계에 두고 있다(`listCardsByCategory`).
      */
     async listCardsBySymbol(
         symbol: string,

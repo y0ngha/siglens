@@ -15,6 +15,10 @@ import {
     MAX_POLL_DURATION_MS,
 } from '@/widgets/market-news/constants';
 import {
+    STAGNANT_POLL_LIMIT,
+    STAGNATION_FLOOR_POLLS,
+} from '@/widgets/news/hooks/useNewsCardPolling';
+import {
     pollMarketNewsCardsStep,
     type PollMarketNewsCardsContext,
 } from '../utils/pollMarketNewsCardsStep';
@@ -83,6 +87,8 @@ function makeCtx(
     const state = {
         pollCount: overrides.pollCount ?? 0,
         consecutiveFailures: overrides.consecutiveFailures ?? 0,
+        enrichedCount: 0,
+        stagnantPolls: 0,
     };
 
     const mocks = {
@@ -109,6 +115,16 @@ function makeCtx(
         getStartTime: () => startTime,
         getPollCount: () => state.pollCount,
         getConsecutiveFailures: () => state.consecutiveFailures,
+        getEnrichedCount: () => state.enrichedCount,
+        getStagnantPolls: () => state.stagnantPolls,
+        recordEnriched: (count: number) => {
+            if (count > state.enrichedCount) {
+                state.enrichedCount = count;
+                state.stagnantPolls = 0;
+            } else {
+                state.stagnantPolls += 1;
+            }
+        },
         setItems: mocks.setItems,
         setIsPolling: mocks.setIsPolling,
         setPollError: mocks.setPollError,
@@ -126,6 +142,30 @@ describe('pollMarketNewsCardsStep', () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
+    });
+
+    /**
+     * [회귀] 종료 조건이 "버킷 안 **모든** 카드가 보강됨"인데, 영구히
+     * `analyzedAt=null`로 남는 행이 설계상 존재한다(빈 분석 결과는 일부러 persist하지
+     * 않고, 개별 실패는 삼켜진다). 그런 행은 FMP 최신 50건 밖으로 밀려나면 다시
+     * 후보가 안 되므로 그 카테고리 페이지를 여는 모든 방문자가 100틱 상한을 문다
+     * (감사: 비용 라운드 16). 종목 뉴스 폴러와 같은 정체 종료를 둔다.
+     */
+    it('보강이 진행되다 멈추면 상한 전에 접는다', async () => {
+        mockGetMarketNewsCardsAction.mockResolvedValue({
+            ok: true,
+            items: [ENRICHED_ITEM, PENDING_ITEM],
+        });
+
+        // 하한을 이미 넘긴 상태에서 정체가 누적된 상황을 만든다.
+        const { ctx, mocks } = makeCtx({ pollCount: STAGNATION_FLOOR_POLLS });
+        // 첫 틱이 기준선을 세우고, 이후 틱은 진전이 없어 정체가 쌓인다.
+        for (let i = 0; i <= STAGNANT_POLL_LIMIT; i++) {
+            await pollMarketNewsCardsStep(ctx);
+        }
+
+        expect(mocks.clearInterval).toHaveBeenCalled();
+        expect(mocks.setIsPolling).toHaveBeenCalledWith(false);
     });
 
     it('all cards enriched → returns stop, clearInterval and setIsPolling(false) called', async () => {

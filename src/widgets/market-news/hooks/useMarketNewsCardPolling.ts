@@ -54,6 +54,8 @@ export function useMarketNewsCardPolling(
             pollCount: 0,
             consecutiveFailures: 0,
             startTime: Date.now(),
+            enrichedCount: 0,
+            stagnantPolls: 0,
         };
 
         intervalIdRef.current = setInterval(() => {
@@ -71,6 +73,16 @@ export function useMarketNewsCardPolling(
                 getStartTime: () => stateRef.startTime,
                 getPollCount: () => stateRef.pollCount,
                 getConsecutiveFailures: () => stateRef.consecutiveFailures,
+                getEnrichedCount: () => stateRef.enrichedCount,
+                getStagnantPolls: () => stateRef.stagnantPolls,
+                recordEnriched: (count: number) => {
+                    if (count > stateRef.enrichedCount) {
+                        stateRef.enrichedCount = count;
+                        stateRef.stagnantPolls = 0;
+                    } else {
+                        stateRef.stagnantPolls += 1;
+                    }
+                },
                 setItems,
                 setIsPolling,
                 setPollError,

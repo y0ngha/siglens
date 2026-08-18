@@ -20,33 +20,6 @@ export async function getNewsCardsAction(
     const repo = new DrizzleNewsRepository(db);
     // 카드 표시 컬럼만 읽는다 — `bodyEn`을 읽어서 버리지 않도록 select 단계에서
     // 뺀다(감사: 비용 라운드 14). 3초 폴링 경로라 낭비가 매 tick 반복됐다.
-    const rows = await repo.listCardsBySymbol(symbol, NEWS_LOOKBACK_MS);
-    // Allowlist: NewsDisplayItem에 필요한 필드만 노출.
-    return rows.map(
-        ({
-            id,
-            publishedAt,
-            titleEn,
-            titleKo,
-            sentiment,
-            category,
-            bodyKo,
-            summaryKo,
-            priceImpact,
-            url,
-            source,
-        }) => ({
-            id,
-            publishedAt,
-            titleEn,
-            titleKo,
-            sentiment,
-            category,
-            bodyKo,
-            summaryKo,
-            priceImpact,
-            url,
-            source,
-        })
-    );
+    // 리포지터리가 이미 `NewsDisplayItem[]`을 돌려주므로 여기서 다시 거를 것이 없다.
+    return repo.listCardsBySymbol(symbol, NEWS_LOOKBACK_MS);
 }

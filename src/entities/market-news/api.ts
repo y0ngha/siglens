@@ -166,8 +166,9 @@ export class DrizzleMarketNewsRepository {
      * 카드 표시에 필요한 컬럼만 읽는다 — `bodyEn`을 select에서 뺀다.
      *
      * 종목 뉴스 슬라이스의 `listCardsBySymbol`과 같은 이유다: 3초 폴링과 목록
-     * 렌더는 본문을 받아서 버리는데, `toMarketNewsCardItem`은 **받은 뒤** 거르는
-     * JS 투영이라 Neon 전송과 S3 ISR 블롭에는 그대로 남는다(감사: 비용 라운드 15).
+     * 렌더는 본문을 받아서 버리는데, 예전의 JS 투영(`toMarketNewsCardItem`)은
+     * **받은 뒤** 거르는 방식이라 Neon 전송과 S3 ISR 블롭에는 그대로 남았다
+     * (감사: 비용 라운드 15). 그래서 그 함수는 지우고 SELECT로 옮겼다.
      * 본문이 실제로 필요한 곳(다이제스트 submit, 카드 분석)은 `listByCategory`를 쓴다.
      */
     async listCardsByCategory(
