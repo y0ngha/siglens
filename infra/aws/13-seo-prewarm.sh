@@ -3,14 +3,15 @@
 # infra/aws/13-seo-prewarm.sh — SEO pre-warm cron EventBridge 스케줄 프로비저닝 (멱등)
 #
 # `PATCH /api/cron/seo-prewarm`(Task 8)를 AWS EventBridge → API Destination으로
-# 주기 호출하기 위한 IAM 역할·Connection·API Destination·Rule 3개·타겟 wiring을
+# 주기 호출하기 위한 IAM 역할·Connection·API Destination·Rule 4개·타겟 wiring을
 # 생성한다. 이 저장소에서 EventBridge를 사용하는 **첫 사례**다 — Vercel Cron/GitHub
 # Actions cron과 달리 classic Rules + API Destinations는 UTC 스케줄만 지원한다
 # (라우트가 ET 마감 기준 신선도로 자체 게이팅하므로 UTC로도 문제없다, spec §6/§11).
 #
-# 스케줄: 20:30–03:59 UTC, 5분 간격(EST/EDT 양쪽에서 16:00 ET 마감을 커버).
-# UTC 자정 + AWS cron의 "시간별로 다른 분(minute) 표현" 제약 때문에 규칙을
-# 3개로 쪼갠다(20:30-55시, 21-23시, 0-3시).
+# 스케줄: 20:30–03:59 UTC(미국 마감 창) + 07:00–09:55 UTC(KR 마감 창), 5분 간격
+# (EST/EDT 양쪽에서 16:00 ET 마감을 커버). UTC 자정 + AWS cron의 "시간별로
+# 다른 분(minute) 표현" 제약 때문에 미국 마감 창을 3개 규칙으로 쪼갠다
+# (20:30-55시, 21-23시, 0-3시). KR 마감 창은 자정을 걸치지 않아 규칙 1개로 충분하다.
 #
 # ⚠️ FIX Z(감사) — 20:00이 아니라 20:30 시작이다: technical 캐시(anonymous/free
 # 기준)는 KST 05:00 = UTC 20:00에 만료된다(infrastructure/cache/config.js).
@@ -18,6 +19,19 @@
 # 루트 라우트가 cron 실행 시점에 거의 항상 MISS였다. 30분 지연 + 이미 존재하는
 # 30분 정착 버퍼(SETTLE_BUFFER_MS, freshness.ts)를 합쳐 시작 시점을 캐시
 # 만료·정착 버퍼 둘 다보다 뒤로 민다.
+#
+# ⚠️ 2026-08 감사(KR 5종목 prewarm 미도달) — 위 미국 마감 창(20:30–03:59 UTC)의
+# 뒤쪽 4시간(00:00–03:59 UTC = 09:00–12:59 KST)은 KRX 정규장 **개장 중**이다.
+# `shouldDeferPrewarmWhileOpen`(freshness.ts)이 그 시간대에 걸린 국내 종목을
+# 매번 미루므로, 국내 종목은 이 창의 **저녁 절반**(20:30–23:59 UTC = 05:30–08:59
+# KST, 이미 장 마감 이후)에서만 실질적으로 처리 가능했다 — 야간 배치가 이미
+# 포화 상태(remaining이 바닥나지 않음)라 그 절반 창 안에서도 순번이 자주
+# 밀렸다. `siglens-seo-prewarm-kr-boundary`(07:00–09:55 UTC = 16:00–18:55 KST)를
+# 더한 이유: KRX는 06:30 UTC(15:30 KST)에 마감하고 정착 버퍼(30min)도 07:00
+# UTC에 이미 지나 있어, 이 창은 시작하자마자 국내 종목이 즉시 선별 가능하다
+# (`shouldDeferPrewarmWhileOpen`도 통과, 마감 경계도 이미 롤됨). 이 창에서
+# 뽑히는 미국·크립토 심볼은 전날 저녁 창에서 이미 fresh였을 것이므로 추가
+# 비용이 거의 없다 — `isSnapshotFresh`가 걸러 seam을 아예 안 부른다.
 #
 # ⚠️ 부트스트랩 순서(중요): 이 스크립트는 첫 태그 배포 전에 1회 수동 실행해야
 #    한다. deploy 어디서도 자동 호출하지 않는다. 또한 이 저장소 최초의
@@ -49,6 +63,9 @@ DESTINATION_NAME=siglens-seo-prewarm
 RULE_EVENING=siglens-seo-prewarm-evening
 RULE_EVENING_LATE=siglens-seo-prewarm-evening-late
 RULE_EARLY=siglens-seo-prewarm-early
+# 2026-08 감사(KR 5종목 prewarm 미도달) — KR 마감 경계 직후 창. 위 3개 규칙
+# 상단의 doc-comment 참고.
+RULE_KR_BOUNDARY=siglens-seo-prewarm-kr-boundary
 ENDPOINT="https://siglens.io/api/cron/seo-prewarm"
 
 ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
@@ -131,20 +148,18 @@ fi
 DEST_ARN="$(aws events describe-api-destination --name "$DESTINATION_NAME" \
   --query ApiDestinationArn --output text --region "$REGION")"
 
-### 5) Rule 3개 (UTC) — EventBridge cron은 UTC 고정이라 20:30–03:59 창을 자정
-###    경계로 쪼개고, 20시대는 AWS cron이 "시간별로 다른 분(minute) 필터"를
-###    표현할 수 없어 21-23시(매시 0/5)와 별도 규칙으로 나눈다. 전부 5분 간격.
+### 5) Rule 4개 (UTC) — EventBridge cron은 UTC 고정이라 20:30–03:59 미국 마감
+###    창을 자정 경계로 쪼개고, 20시대는 AWS cron이 "시간별로 다른 분(minute)
+###    필터"를 표현할 수 없어 21-23시(매시 0/5)와 별도 규칙으로 나눈다. 전부
+###    5분 간격. KR 마감 창(07:00–09:55 UTC)은 자정을 걸치지 않아 규칙 1개.
 ###
-### ⚠️ **5분 간격은 앱 코드와 묶인 계약이다 — 임의로 늘리지 말 것.**
-### `runPrewarmBatch.ts`의 배치 선정은 회전 창(window)을 쓰는데, invocation당
-### 전진 폭이 `SYMBOLS_PER_TICK × (스케줄주기 / TICK_ROTATION_MS)`이고 이 값이
-### 창 폭(`SYMBOLS_PER_TICK × CANDIDATE_WINDOW_MULTIPLIER` = 18)을 넘으면 창 사이에
-### 영영 후보가 되지 않는 구멍이 생겨 일부 심볼이 영구히 pre-warm되지 않는다.
-### 불변식: **BATCH_DEADLINE_MS + 스케줄주기 ≤ 15분**. 락이 중첩을 막으므로 실제
-### 회전 폭을 정하는 건 "배치가 시작되는 간격"이고, 앞 배치가 데드라인까지 쓰면
-### 그만큼 뒤로 밀린다. 현재 600s + 300s = 900s = 15분으로 **경계에 정확히 걸쳐
-### 있어 여유가 없다**. 스케줄이나 BATCH_DEADLINE_MS를 늘리려면
-### `CANDIDATE_WINDOW_MULTIPLIER`를 함께 올릴 것.
+### ⚠️ 예전엔 여기 "5분 간격은 앱 코드와 묶인 계약"이라는 불변식(회전 오프셋이
+### 스케줄 간격에서 파생돼, 배치 지연이 겹치면 회전 창을 건너뛸 수 있었다)이
+### 있었다. 2026-08 감사로 오프셋을 Redis 영속 커서(`runPrewarmBatch.ts`의
+### `advanceRotationCursor`, "실행 횟수"에만 묶임)로 바꾼 뒤로는 그 결합이
+### 사라졌다 — 스케줄 간격은 이제 순수하게 "야간 처리량"만 결정한다(자세한
+### 배경은 `runPrewarmBatch.ts`의 `selectFairBatch` doc-comment 참고). 그래도
+### 간격을 바꾸면 처리량 추정치(docs/reference/CRON.md)가 stale해지니 함께 갱신할 것.
 # FIX Z(감사) — 20,25분 두 슬롯을 빼고 30분부터 시작(cron(0/5 20-23 ...)이면
 # 20:00/20:05/...도 포함되므로, 30분부터 도는 조밀한 표현이 없어 명시 리스트로 튼다).
 aws events put-rule --name "$RULE_EVENING" \
@@ -163,11 +178,19 @@ aws events put-rule --name "$RULE_EARLY" \
   --state ENABLED --region "$REGION" >/dev/null
 log "rule $RULE_EARLY ready (00:00-03:59 UTC, every 5m)"
 
+# 2026-08 감사(KR 5종목 prewarm 미도달) — KR 마감(15:30 KST = 06:30 UTC) +
+# 정착 버퍼(30min) 직후 창. 위 파일 상단 doc-comment 참고. 07:00부터라 UTC
+# 자정을 걸치지 않으므로 위 3개처럼 쪼갤 필요가 없다.
+aws events put-rule --name "$RULE_KR_BOUNDARY" \
+  --schedule-expression "cron(0/5 7-9 * * ? *)" \
+  --state ENABLED --region "$REGION" >/dev/null
+log "rule $RULE_KR_BOUNDARY ready (07:00-09:55 UTC = 16:00-18:55 KST, every 5m)"
+
 # 타겟 wiring: 각 rule → API Destination(+ 호출용 IAM role). 본문 없음(빈 body) —
 # 라우트는 PATCH + Authorization 헤더(Connection이 주입)만으로 충분하다.
 # ⚠️ put-targets의 HttpParameters 문법은 이 레포 최초 EventBridge 사용이라
 #    실전 검증이 안 된 상태다 — 배포 시 딜리버리 스파이크로 반드시 확인할 것.
-for RULE in "$RULE_EVENING" "$RULE_EVENING_LATE" "$RULE_EARLY"; do
+for RULE in "$RULE_EVENING" "$RULE_EVENING_LATE" "$RULE_EARLY" "$RULE_KR_BOUNDARY"; do
   aws events put-targets --rule "$RULE" --region "$REGION" \
     --targets "[{\"Id\":\"seo-prewarm\",\"Arn\":\"$DEST_ARN\",\"RoleArn\":\"$ROLE_ARN\",\"HttpParameters\":{\"HeaderParameters\":{},\"QueryStringParameters\":{},\"PathParameterValues\":[]}}]" \
     >/dev/null
@@ -190,11 +213,12 @@ ACTIONS="--alarm-actions $ALARM_SNS --ok-actions $ALARM_SNS"
 # 딜리버리 부재 알람(OPS-1): 배치 내부 실패는 batch-failed가 잡지만, EventBridge가
 # 애초에 타겟 호출 자체를 실패하면(Connection 미인증, API Destination 오류, IAM 등)
 # 우리 앱 로그에는 아무 흔적도 안 남는다 — AWS/Events FailedInvocations로 그 공백을 잡는다.
-for RULE in "$RULE_EVENING" "$RULE_EVENING_LATE" "$RULE_EARLY"; do
+for RULE in "$RULE_EVENING" "$RULE_EVENING_LATE" "$RULE_EARLY" "$RULE_KR_BOUNDARY"; do
   case "$RULE" in
     "$RULE_EVENING") ALARM_SUFFIX="evening" ;;
     "$RULE_EVENING_LATE") ALARM_SUFFIX="evening-late" ;;
-    *) ALARM_SUFFIX="early" ;;
+    "$RULE_EARLY") ALARM_SUFFIX="early" ;;
+    *) ALARM_SUFFIX="kr-boundary" ;;
   esac
   aws cloudwatch put-metric-alarm --alarm-name "siglens-seo-prewarm-${ALARM_SUFFIX}-failed" \
     --namespace AWS/Events --metric-name FailedInvocations \

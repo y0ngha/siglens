@@ -56,6 +56,7 @@ import {
     isSkipped,
     addFmpBudget,
     getFmpBudgetUsed,
+    advanceRotationCursor,
 } from '../lock';
 
 describe('seo-prewarm lock', () => {
@@ -347,6 +348,36 @@ describe('seo-prewarm lock', () => {
             vi.mocked(getRedisClient).mockReturnValue(null);
             expect(await getFmpBudgetUsed()).toBe(0);
             expect(mockGet).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('advanceRotationCursor (2026-08 감사, KR 5종목 prewarm 미도달)', () => {
+        it('INCRBY(rotation-cursor, step)를 호출하고 전진 전 값을 반환한다', async () => {
+            // 커서가 이미 10이었고 step=6만큼 전진하면 INCRBY는 새 값 16을
+            // 돌려준다 — 함수는 "이번 tick이 쓸" 전진 전 값(10)을 반환해야 한다.
+            mockIncrby.mockResolvedValue(16);
+            const base = await advanceRotationCursor(6);
+            expect(mockIncrby).toHaveBeenCalledWith(
+                'seo-prewarm:rotation-cursor',
+                6
+            );
+            expect(base).toBe(10);
+        });
+
+        it('키가 처음이면(INCRBY가 step 그대로 반환) 오프셋 0에서 시작한다', async () => {
+            mockIncrby.mockResolvedValue(6);
+            expect(await advanceRotationCursor(6)).toBe(0);
+        });
+
+        it('redis null이면 throw한다(다른 lock.ts 함수와 달리 fail-open 기본값이 없음)', async () => {
+            // acquirePrewarmLock이 이미 성공한 뒤에만 도달하는 호출이라(route.ts),
+            // 여기서 redis가 null이면 lock.ts 내부 설정이 깨진 것 — 조용히 0을
+            // 반환해 오프셋을 창의 시작으로 되돌리는 것보다 fail-loud가 안전하다.
+            vi.mocked(getRedisClient).mockReturnValue(null);
+            await expect(advanceRotationCursor(6)).rejects.toThrow(
+                'redis unavailable'
+            );
+            expect(mockIncrby).not.toHaveBeenCalled();
         });
     });
 });
