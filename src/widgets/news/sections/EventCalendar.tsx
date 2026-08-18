@@ -1,6 +1,7 @@
 'use client';
 
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { currencyForSymbol } from '@/shared/config/marketProfile';
 import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 import type React from 'react';
 
@@ -22,18 +23,40 @@ const SHORT_DATE_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
     day: 'numeric',
 });
 
-const USD_FORMATTER = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 2,
-});
+// 통화는 심볼에서 유도한다 — 국내 종목은 원화다(같은 버그를 FinancialHealthCard/
+// FutureDirectionCard에서 이미 고쳤다). 판정은 currencyForSymbol
+// (shared/config/marketProfile/registry.ts) 한 곳으로 위임한다. shared/lib/priceFormat의
+// formatCompactCurrency를 그대로 쓰지 않는 이유: 이 카드의 숫자 칸은
+// `4.5rem` 고정 너비라 "US$1111.8억"(ko-KR 로케일의 조/억 단위) 같은 긴 표기가
+// 줄바꿈된다. 이 좁은 칸에는 "$111.2B" 같은 en-US 축약 표기가 필요해서, 같은
+// 로케일·notation을 유지한 채 통화만 심볼에 따라 바꾼다.
+const MONEY_FORMATTERS: Record<'USD' | 'KRW', Intl.NumberFormat> = {
+    USD: new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 2,
+    }),
+    KRW: new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'KRW',
+        maximumFractionDigits: 0,
+    }),
+};
 
-const COMPACT_USD_FORMATTER = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    notation: 'compact',
-    maximumFractionDigits: 1,
-});
+const COMPACT_MONEY_FORMATTERS: Record<'USD' | 'KRW', Intl.NumberFormat> = {
+    USD: new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        notation: 'compact',
+        maximumFractionDigits: 1,
+    }),
+    KRW: new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'KRW',
+        notation: 'compact',
+        maximumFractionDigits: 1,
+    }),
+};
 
 const SIGNED_PERCENT_FORMATTER = new Intl.NumberFormat('ko-KR', {
     signDisplay: 'always',
@@ -44,14 +67,14 @@ function formatShortDate(dateStr: string): string {
     return SHORT_DATE_FORMATTER.format(new Date(dateStr));
 }
 
-function formatCurrency(value: number | null): string {
+function formatCurrency(value: number | null, symbol: string): string {
     if (value === null) return '—';
-    return USD_FORMATTER.format(value);
+    return MONEY_FORMATTERS[currencyForSymbol(symbol)].format(value);
 }
 
-function formatRevenue(value: number | null): string {
+function formatRevenue(value: number | null, symbol: string): string {
     if (value === null) return '—';
-    return COMPACT_USD_FORMATTER.format(value);
+    return COMPACT_MONEY_FORMATTERS[currencyForSymbol(symbol)].format(value);
 }
 
 interface EarningsReportComparisonProps {
@@ -119,6 +142,11 @@ function EarningsReportCard({
 }: EarningsReportCardProps) {
     const statusLabel = item.period === 'future' ? '예정' : '발표';
     const surpriseBadge = getSurpriseBadge(item);
+    // 각 item이 이미 자기 symbol을 들고 있다(같은 심볼 하나에 대한 비교 데이터라
+    // 항상 동일) — 별도 prop을 새로 뚫지 않고 그대로 통화 판정에 쓴다.
+    const fmtEps = (value: number | null) => formatCurrency(value, item.symbol);
+    const fmtRevenue = (value: number | null) =>
+        formatRevenue(value, item.symbol);
 
     return (
         <article className="rounded-lg border border-secondary-700 bg-secondary-800 p-4">
@@ -147,7 +175,7 @@ function EarningsReportCard({
                     actual={item.epsActual}
                     estimated={item.epsEstimated}
                     maxValue={maxEps}
-                    format={formatCurrency}
+                    format={fmtEps}
                     signed
                 />
                 <MetricBars
@@ -155,7 +183,7 @@ function EarningsReportCard({
                     actual={item.revenueActual}
                     estimated={item.revenueEstimated}
                     maxValue={maxRevenue}
-                    format={formatRevenue}
+                    format={fmtRevenue}
                 />
             </div>
         </article>

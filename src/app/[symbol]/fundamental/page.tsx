@@ -396,6 +396,7 @@ export async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
     ]);
     return (
         <FinancialHealthCard
+            symbol={symbol}
             ratios={ratios}
             scores={scores}
             cashFlow={cashFlow}
@@ -462,6 +463,7 @@ export async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
     ]);
     return (
         <FutureDirectionCard
+            symbol={symbol}
             estimates={estimates}
             grades={grades}
             ptConsensus={ptConsensus}

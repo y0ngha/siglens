@@ -1,4 +1,5 @@
 import { VALID_TICKER_RE } from '@/shared/config/market';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile';
 
 /**
  * Returns `true` when a ticker cannot be resolved because both FMP and the
@@ -41,5 +42,12 @@ export function isUnresolvableDegraded(
     ticker: string,
     degraded: boolean
 ): boolean {
-    return degraded && !VALID_TICKER_RE.test(ticker);
+    if (!degraded) return false;
+    // 국내 상장 종목은 미국 티커와 같은 쪽에 세운다. `KR_SYMBOL_RE`는 **닫힌 형상**
+    // (6자리 숫자 + 알려진 거래소 접미사)이라, 이 형상을 통과한 심볼은 크립토처럼
+    // "존재를 확인할 방법이 없는" 후보가 아니다 — sitemap에 실린 20종목은 확실히 실재한다.
+    // 이 분기가 없으면 KR 심볼이 숫자로 시작한다는 이유만으로 `VALID_TICKER_RE`에서
+    // 떨어져, yahoo 일시 장애 중 색인된 국내 종목 페이지가 전부 하드 404가 된다.
+    if (isKrEquitySymbol(ticker)) return false;
+    return !VALID_TICKER_RE.test(ticker);
 }

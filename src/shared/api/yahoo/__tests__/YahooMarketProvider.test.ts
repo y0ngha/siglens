@@ -161,6 +161,25 @@ describe('YahooMarketProvider', () => {
         });
     });
 
+    describe('getQuoteOrThrow', () => {
+        it('rejects (does not swallow) on yahoo fetch failure', async () => {
+            // getQuoteOrThrow의 존재 이유는 인프라 실패를 삼키지 않는 것이다 —
+            // getQuote는 이 메서드를 try/catch로 감싸 null로 접으므로, 이 메서드
+            // 자체가 조용히 null로 수렴하면 getQuote 쪽 테스트만으론 못 잡는다.
+            quote.mockRejectedValue(new Error('network'));
+            await expect(
+                new YahooMarketProvider().getQuoteOrThrow('005930.KS')
+            ).rejects.toThrow('network');
+        });
+
+        it('resolves null when yahoo returns undefined for an unlisted symbol', async () => {
+            quote.mockResolvedValue(undefined);
+            expect(
+                await new YahooMarketProvider().getQuoteOrThrow('999999.KS')
+            ).toBeNull();
+        });
+    });
+
     describe('getQuote', () => {
         it('maps a yahoo quote to MarketQuote', async () => {
             quote.mockResolvedValue({

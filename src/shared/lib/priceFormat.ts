@@ -1,4 +1,7 @@
-import { getDescriptor } from '@/shared/config/marketProfile';
+import {
+    currencyForSymbol,
+    getDescriptor,
+} from '@/shared/config/marketProfile';
 import type {
     MarketProfileId,
     PriceFormatConfig,
@@ -41,8 +44,30 @@ const COMPACT_USD_FORMATTER = new Intl.NumberFormat('ko-KR', {
     maximumFractionDigits: 1,
 });
 
-export function formatCompactUsd(value: number): string {
-    return COMPACT_USD_FORMATTER.format(value);
+const COMPACT_KRW_FORMATTER = new Intl.NumberFormat('ko-KR', {
+    notation: 'compact',
+    style: 'currency',
+    currency: 'KRW',
+    maximumFractionDigits: 1,
+});
+
+/**
+ * 시가총액·현금흐름 같은 큰 금액을 통화 기호와 함께 축약 표기한다.
+ *
+ * **통화는 심볼에서 유도한다.** 예전에는 USD로 고정돼 있어서, 국내 상장 종목의 원화
+ * 금액이 `시가총액 US$1802.5조`·`목표 주가 US$450,000`처럼 나갔다 — 같은 사이트가
+ * 차트 탭에서는 `₩274,500`으로 표시하는 값이다. 금융 정보라 표기 오류의 대가가 크고,
+ * 그 페이지들은 색인 대상이다.
+ *
+ * 심볼을 받는 이유: 호출부는 어차피 심볼을 들고 있고, 통화 판정은 `currencyForSymbol`
+ * (`shared/config/marketProfile/registry.ts`) 한 곳에서만 이뤄진다 — `getDescriptor`가
+ * 읽는 REGISTRY가 3개 프로필 전체를 exhaustive하게 갖고 있는 유일한 소스라, 새 호출부가
+ * 생겨도 그 함수를 호출하기만 하면 자동으로 맞는다(형상 판정이라 조회도 async도 필요 없다).
+ */
+export function formatCompactCurrency(value: number, symbol: string): string {
+    return currencyForSymbol(symbol) === 'KRW'
+        ? COMPACT_KRW_FORMATTER.format(value)
+        : COMPACT_USD_FORMATTER.format(value);
 }
 
 /**
