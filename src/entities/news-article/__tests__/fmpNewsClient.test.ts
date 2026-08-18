@@ -210,6 +210,45 @@ describe('FmpNewsClient', () => {
             expect(item.url).toBe('https://reuters.com/aapl-q2');
         });
 
+        /**
+         * [회귀] `bodyTruncated`의 소스 필드를 아무 테스트도 안 잡고 있었다 —
+         * `raw.text` 대신 `raw.title`을 넣어도 전건 통과했다(감사 라운드 12).
+         * 이 플래그의 유일한 소비자는 core의 카드 분석 프롬프트다: 잘리지 않았다고
+         * 알리면 모델이 잘려 나간 수치를 보존하라는 지시를 받아 날조를 유도한다.
+         *
+         * 두 케이스가 본문과 제목의 판정을 서로 반대로 만든다 — 제목에서 파생하면
+         * 둘 다 뒤집힌다.
+         */
+        it('bodyTruncated는 제목이 아니라 본문에서 판정한다', async () => {
+            mockOk([
+                {
+                    ...withinWindow,
+                    // 제목은 종결부호 없이 끝나 truncated로 보이고,
+                    title: 'Apple Q2 Results',
+                    // 본문은 40자를 넘기면서 마침표로 끝난다 — 완결.
+                    text: 'Apple reported record quarterly revenue driven by services growth.',
+                },
+            ]);
+            const complete = (
+                await new FmpNewsClient().fetchNews('AAPL', '24h')
+            )[0]!;
+            expect(complete.bodyTruncated).toBe(false);
+
+            mockOk([
+                {
+                    ...withinWindow,
+                    // 제목은 마침표로 끝나 완결로 보이고,
+                    title: 'Apple posts record revenue.',
+                    // 본문은 문장 중간에서 끊긴다.
+                    text: 'Apple reported record quarterly revenue during the quarter. Apple makes',
+                },
+            ]);
+            const truncated = (
+                await new FmpNewsClient().fetchNews('AAPL', '24h')
+            )[0]!;
+            expect(truncated.bodyTruncated).toBe(true);
+        });
+
         it('generates a stable 32-char ID from the article URL', async () => {
             mockOk([withinWindow]);
             const client = new FmpNewsClient();
