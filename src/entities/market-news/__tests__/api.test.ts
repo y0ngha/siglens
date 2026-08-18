@@ -301,6 +301,20 @@ describe('DrizzleMarketNewsRepository.listByCategory는', () => {
         analyzedAt: null,
     };
 
+    it('기사 원문(body_en)은 읽지 않고 null로 내려준다', async () => {
+        // 사유는 종목 뉴스 쪽 같은 이름의 테스트 주석 참조 — 다이제스트 프롬프트도
+        // 이 필드를 읽지 않는다(감사: 테스트 라운드 17).
+        const { db, select } = makeSelectDb([baseDbRow]);
+        const repo = new DrizzleMarketNewsRepository(db);
+
+        const [result] = await repo.listByCategory('__NEWS_CRYPTO__', 1000);
+
+        expect(result?.bodyEn).toBeNull();
+        expect(
+            Object.keys((select.mock.calls[0] as [Record<string, unknown>])[0])
+        ).not.toContain('bodyEn');
+    });
+
     it('유효한 DB row를 MarketNewsRow로 매핑하고 tickers를 그대로 전달한다', async () => {
         const analyzedRow: MarketNewsDbRow = {
             ...baseDbRow,

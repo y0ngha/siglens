@@ -168,7 +168,9 @@ export class DrizzleMarketNewsRepository {
      * 렌더는 본문을 받아서 버리는데, 예전의 JS 투영(`toMarketNewsCardItem`)은
      * **받은 뒤** 거르는 방식이라 Neon 전송과 S3 ISR 블롭에는 그대로 남았다
      * (감사: 비용 라운드 15). 그래서 그 함수는 지우고 SELECT로 옮겼다.
-     * 본문이 실제로 필요한 곳(다이제스트 submit, 카드 분석)은 `listByCategory`를 쓴다.
+     * `listByCategory`도 이제 본문을 읽지 않는다 — 그쪽 소비자(다이제스트 프롬프트)가
+     * 그 값을 안 쓰기 때문이다(`toMarketNewsRow` 주석 참조). 두 읽기의 차이는
+     * `symbol`/`analyzedAt` 유무와 정렬·창뿐이다.
      */
     async listCardsByCategory(
         sentinel: string,

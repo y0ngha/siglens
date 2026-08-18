@@ -383,6 +383,24 @@ describe('DrizzleNewsRepository', () => {
             expect(results[0]?.publishedAt).toBe('2025-08-01T10:00:00.000Z');
         });
 
+        it('기사 원문(body_en)은 읽지 않고 null로 내려준다', async () => {
+            // 이 읽기의 소비자(집계 분석 프롬프트)가 원문을 쓰지 않는다 — core에서
+            // `bodyEn`을 읽는 곳은 카드 프롬프트뿐이고 그 입력은 DB 행이 아니라 FMP
+            // 응답이다. core가 집계 쪽에서 읽기 시작하면 이 값이 조용히 null이 되어
+            // 품질만 떨어지므로, 계약을 여기서 고정한다(감사: 테스트 라운드 17).
+            const { db, select } = makeSelectDb([dbRow]);
+            const repo = new DrizzleNewsRepository(db);
+
+            const [result] = await repo.listBySymbol('AAPL', 86_400_000);
+
+            expect(result?.bodyEn).toBeNull();
+            expect(
+                Object.keys(
+                    (select.mock.calls[0] as [Record<string, unknown>])[0]
+                )
+            ).not.toContain('bodyEn');
+        });
+
         it('결과가 없으면 빈 배열을 반환한다', async () => {
             const { db } = makeSelectDb([]);
             const repo = new DrizzleNewsRepository(db);
@@ -497,20 +515,6 @@ describe('DrizzleNewsRepository', () => {
     });
 
     describe('listCardsBySymbol', () => {
-        interface CardDbRow {
-            id: string;
-            source: string;
-            url: string;
-            publishedAt: Date;
-            titleEn: string;
-            titleKo: string | null;
-            bodyKo: string | null;
-            summaryKo: string | null;
-            sentiment: string | null;
-            category: string | null;
-            priceImpact: string | null;
-        }
-
         // 픽스처가 서버 전용 컬럼을 **갖고 있어야** 한다 — 안 그러면 투영을 통째로
         // 되돌려(`...row` spread) 놓아도 샐 것이 없어 테스트가 통과한다
         // (감사: 테스트 라운드 16). DB는 그 컬럼들을 갖고 있으므로 이쪽이 실제 형상이다.
