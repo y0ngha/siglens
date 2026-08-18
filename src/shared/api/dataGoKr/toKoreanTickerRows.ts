@@ -14,7 +14,16 @@ const MARKET_SUFFIX: Record<KrxListedItem['market'], string | null> = {
     KONEX: null,
 };
 
-const EXCHANGE_FULL_NAME: Record<string, string> = {
+/**
+ * KONEX는 위 `MARKET_SUFFIX`에서 이미 걸러지므로 이 레코드에는 KOSPI/KOSDAQ만 있으면
+ * 된다. 키 집합을 `Exclude<..., 'KONEX'>`로 좁혀 두면 아래 `toKoreanTickerRows`의
+ * 인덱싱 지점에서 "KONEX일 수도 있다"는 불가능한 케이스가 컴파일 타임에 배제된다 —
+ * `?? item.market` 같은 죽은 폴백을 캐스팅 없이 지울 수 있다.
+ */
+const EXCHANGE_FULL_NAME: Record<
+    Exclude<KrxListedItem['market'], 'KONEX'>,
+    string
+> = {
     KOSPI: 'Korea Exchange (KOSPI)',
     KOSDAQ: 'KOSDAQ',
 };
@@ -36,16 +45,19 @@ export function toKoreanTickerRows(
     const bySymbol = new Map<string, KoreanTickerEntry>();
 
     for (const item of items) {
-        const suffix = MARKET_SUFFIX[item.market];
-        if (suffix === null) continue;
+        // `suffix === null` 대신 `item.market`을 직접 검사한다 — 그래야 컴파일러가
+        // 아래 블록 전체에서 `item.market`을 KOSPI/KOSDAQ로 좁혀, `EXCHANGE_FULL_NAME`
+        // 인덱싱이 캐스팅 없이 안전해진다(둘은 `MARKET_SUFFIX`의 정의상 동치다).
+        if (item.market === 'KONEX') continue;
 
+        const suffix = MARKET_SUFFIX[item.market];
         const symbol = `${item.shortCode}${suffix}`;
         bySymbol.set(symbol, {
             symbol,
             koreanName: item.koreanName,
             name: item.koreanName,
             exchange: item.market,
-            exchangeFullName: EXCHANGE_FULL_NAME[item.market] ?? item.market,
+            exchangeFullName: EXCHANGE_FULL_NAME[item.market],
         });
     }
 

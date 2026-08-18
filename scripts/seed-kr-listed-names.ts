@@ -67,6 +67,10 @@ if (!databaseUrl) {
     throw new Error('DATABASE_URL env var required');
 }
 
+/**
+ * `src/entities/ticker/api.ts`의 `KOREAN_TICKER_UPSERT_BATCH_SIZE`와 같은 Neon HTTP
+ * 페이로드 한도를 인코딩한 값이다 — 하나를 바꾸면 다른 쪽도 함께 확인해야 한다.
+ */
 const UPSERT_BATCH_SIZE = 500;
 
 /**

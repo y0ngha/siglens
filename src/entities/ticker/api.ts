@@ -57,7 +57,8 @@ const DB_SORT_OTHER = 2;
 
 /**
  * 한 INSERT 문에 담을 최대 행 수. 전 종목 동기화는 2,500행대라 한 번에 보내면 Neon HTTP
- * 페이로드 한도에 걸린다. 기존 시드 스크립트가 쓰던 값과 같다.
+ * 페이로드 한도에 걸린다. `scripts/seed-kr-listed-names.ts`의 `UPSERT_BATCH_SIZE`와
+ * 같은 한도를 인코딩한 값이다 — 하나를 바꾸면 다른 쪽도 함께 확인해야 한다.
  */
 const KOREAN_TICKER_UPSERT_BATCH_SIZE = 500;
 

@@ -45,6 +45,7 @@ vi.mock('../../api', () => ({
 
 import {
     getKoreanNames,
+    invalidateKoreanTickerCache,
     searchByKoreanName,
     setKoreanTickers,
 } from '../../lib/koreanNameStore';
@@ -236,5 +237,26 @@ describe('setKoreanTickers', () => {
         await setKoreanTickers([apple]);
         expect(mockRepository.upsertMany).toHaveBeenCalledTimes(1);
         expect(mockCache.delete).not.toHaveBeenCalled();
+    });
+});
+
+describe('invalidateKoreanTickerCache', () => {
+    beforeEach(resetMocks);
+    afterEach(() => vi.clearAllMocks());
+
+    it('cache provider 가 없으면 아무것도 하지 않는다', async () => {
+        createCacheProviderMock.mockReturnValue(null);
+        await expect(invalidateKoreanTickerCache()).resolves.toBeUndefined();
+        expect(mockCache.delete).not.toHaveBeenCalled();
+    });
+
+    it('cache 가 있으면 korean:tickers 키를 지운다', async () => {
+        await invalidateKoreanTickerCache();
+        expect(mockCache.delete).toHaveBeenCalledWith('korean:tickers');
+    });
+
+    it('cache delete 실패는 흡수한다', async () => {
+        mockCache.delete.mockRejectedValue(new Error('cache down'));
+        await expect(invalidateKoreanTickerCache()).resolves.toBeUndefined();
     });
 });
