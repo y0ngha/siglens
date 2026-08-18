@@ -170,7 +170,7 @@ export class DrizzleMarketNewsRepository {
      * (감사: 비용 라운드 15). 그래서 그 함수는 지우고 SELECT로 옮겼다.
      * `listByCategory`도 이제 본문을 읽지 않는다 — 그쪽 소비자(다이제스트 프롬프트)가
      * 그 값을 안 쓰기 때문이다(`toMarketNewsRow` 주석 참조). 두 읽기의 차이는
-     * `symbol`/`analyzedAt` 유무와 정렬·창뿐이다.
+     * `symbol`/`analyzedAt` 유무뿐이다 — 필터·정렬·창은 동일하다.
      */
     async listCardsByCategory(
         sentinel: string,

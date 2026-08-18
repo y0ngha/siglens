@@ -73,6 +73,33 @@ describe('useNewsCardPolling', () => {
      *
      * 진전이 멈추면(보강 카드 수가 STAGNANT_POLL_LIMIT 틱 연속 그대로) 접는다.
      */
+    it('보강이 진행되다 멈추면 상한 전에 폴링을 접고 onPollingComplete를 부른다', async () => {
+        // 1건은 보강됨, 나머지는 계속 미보강 — 공급이 끊긴 상태를 흉내낸다.
+        mockGetNewsCardsAction.mockResolvedValue([
+            READY_ITEM,
+            { ...PENDING_ITEM, id: 'p2' },
+            { ...PENDING_ITEM, id: 'p3' },
+        ]);
+        // 정체 종료의 부수효과까지 고정한다 — 이 콜백이 React Query 무효화를
+        // 일으키는 유일한 경로인데, 다른 종료 경로만 단언돼 있었다(감사: 테스트
+        // 라운드 18). 지우면 보강된 카드가 화면에 반영되지 않는다.
+        const onComplete = vi.fn();
+
+        renderHook(() => useNewsCardPolling('AAPL', [], onComplete));
+
+        await advancePolls(20);
+        const settled = mockGetNewsCardsAction.mock.calls.length;
+        // 리터럴로 고정한다. 상수를 import해 단언하면 양변이 같이 움직여
+        // 7~20 밴드의 어떤 값으로 바꿔도 통과한다(감사: 테스트 라운드 17이 8·10·15로
+        // 실증). 상수 자체의 값도 따로 못 박아 두 축을 분리한다.
+        expect(STAGNATION_FLOOR_POLLS).toBe(12);
+        expect(settled).toBe(12);
+
+        await advancePolls(5);
+        expect(mockGetNewsCardsAction.mock.calls.length).toBe(settled);
+        expect(onComplete).toHaveBeenCalledTimes(1);
+    });
+
     /**
      * [회귀] 위 케이스는 1틱째에 보강되고 곧바로 멈추는 형상이라 정지 지점이 항상
      * floor(12)다 — `STAGNANT_POLL_LIMIT`이 11 이하 어떤 값이어도 결속되지 않는다
@@ -99,28 +126,6 @@ describe('useNewsCardPolling', () => {
 
         // 마지막 진전이 15틱, 거기서 6틱 더 → 21틱에 정지.
         expect(mockGetNewsCardsAction.mock.calls.length).toBe(21);
-    });
-
-    it('보강이 진행되다 멈추면 상한 전에 폴링을 접는다', async () => {
-        // 1건은 보강됨, 나머지는 계속 미보강 — 공급이 끊긴 상태를 흉내낸다.
-        mockGetNewsCardsAction.mockResolvedValue([
-            READY_ITEM,
-            { ...PENDING_ITEM, id: 'p2' },
-            { ...PENDING_ITEM, id: 'p3' },
-        ]);
-
-        renderHook(() => useNewsCardPolling('AAPL', []));
-
-        await advancePolls(20);
-        const settled = mockGetNewsCardsAction.mock.calls.length;
-        // 리터럴로 고정한다. 상수를 import해 단언하면 양변이 같이 움직여
-        // 7~20 밴드의 어떤 값으로 바꿔도 통과한다(감사: 테스트 라운드 17이 8·10·15로
-        // 실증). 상수 자체의 값도 따로 못 박아 두 축을 분리한다.
-        expect(STAGNATION_FLOOR_POLLS).toBe(12);
-        expect(settled).toBe(12);
-
-        await advancePolls(5);
-        expect(mockGetNewsCardsAction.mock.calls.length).toBe(settled);
     });
 
     it('초기 뉴스가 비어 있으면 폴링 상태로 시작하고 새 카드를 반영한 뒤 확인 카드를 닫는다', async () => {
