@@ -169,6 +169,26 @@ pending diff에 포함된 테스트 파일 60개. 판정 기준은 커버리지 
 
 ---
 
+## 3.5 릴리스 절차 (버전 재사용 금지)
+
+`package.json`은 `0.55.0`이고 `v0.55.0` 태그는 **이미 존재한다**. 태그를 옮겨
+재사용하면 안 된다 — `GIT_SHA`가 S3 ISR 캐시의 프리픽스이므로
+(`cache-handler/config.mjs`의 `buildId`, `s3Store.mjs`의 키 조립), 같은 버전을
+다시 쓰면 새 코드가 **이전 릴리스가 채워 둔 캐시를 읽는다**. 알람도 로그도 없이
+옛 HTML이 나간다. ECR 저장소도 MUTABLE이라 이미지까지 덮어쓴다.
+
+버전 bump는 이 브랜치에서 하지 않는다. `release-it`이 master에서
+(`requireBranch: master`) bump·CHANGELOG·커밋·태그·push를 한 번에 처리하므로,
+PR에서 미리 올리면 릴리스가 그 값을 기준으로 한 단계 더 올라간다.
+
+절차: 병합 후 master에서 `yarn release:minor` → `0.56.0` + `v0.56.0` 태그가
+**git push**로 나가고 `deploy.yml`이 돈다(GitHub API로 만든 ref는 push 이벤트가
+없어 배포가 조용히 안 돈다). 확인: `gh run list --workflow=deploy.yml`.
+
+마이그레이션 `0028`은 **이미지 빌드 전에** 적용한다 — `deploy.yml`이 빌드 시점에
+프로덕션 `DATABASE_URL`을 주입해 ISR을 prerender하므로, 순서가 뒤바뀌면 degrade된
+페이지가 이미지에 구워진다. 추가 컬럼(nullable) + 인덱스라 현행 v0.55.0에 무해하다.
+
 ## 4. 수동 작업 (배포와 별개)
 
 `infra/aws/` 스크립트 2종은 AWS 자격증명이 필요해 이번 세션에서 실행하지 못했다.
