@@ -24,6 +24,8 @@ import {
     NEWS_ANALYSIS_LOOKBACK_MS,
 } from './lib/newsLookback';
 import { buildAnalysisNewsItems } from './lib/buildAnalysisNewsItems';
+import { analyzeNewsCards } from './lib/analyzeNewsCards';
+import { PREWARM_NEWS_CARD_LIMIT } from './lib/newsAnalysisConstants';
 import {
     ingestNewsForSymbol,
     NewsIngestWriteError,
@@ -365,10 +367,45 @@ export async function prewarmNews(
         revalidateTag(`news:${symbol.toUpperCase()}`, 'max');
     }
 
-    const [rows, next] = await Promise.all([
+    let [rows, next] = await Promise.all([
         repo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
         getNextEarningsReport(symbol, db),
     ]);
+
+    // 카드 보강(번역 + 라벨링). **이 단계를 건너뛰면 아래 분석은 항상 실패한다** —
+    // `buildAnalysisNewsItems`가 `isEnrichedRow`로 미보강 행을 전부 걸러내고, core의
+    // `runNewsAnalysis`는 빈 입력을 보고 `{status:'error', code:'no_news'}`를 돌려준다.
+    // 그러면 `news`·`overall` 두 탭 스냅샷이 생성되지 않는다.
+    //
+    // 원래 보강은 방문자 경로(`ensureNewsCardsAnalyzedAction`)에만 있었다. 그래서
+    // 사람이 찾지 않는 종목은 영원히 보강되지 않았고, 보강이 없으니 스냅샷이 없고,
+    // 스냅샷이 없으니 페이지가 얇아 유입이 생기지 않는 자기강화 루프에 갇혔다.
+    // (프로덕션 실측: 국내 20종목 전부 보강 0건 / AAPL 288건.)
+    //
+    // 상한(`PREWARM_NEWS_CARD_LIMIT`)을 두는 이유와 숫자 근거는 그 상수의 주석에 있다 —
+    // 요지는 백로그가 큰 종목일수록 유닛 타임아웃에 걸린다는 것이고, 그게 바로 이
+    // 수정이 겨냥한 종목들이다.
+    //
+    // 후보를 `ingested.fresh`에서만 뽑는다. 적재가 실패한 밤(fail-open, `null`)에는
+    // 보강도 건너뛴다 — 그날은 새로 확인된 기사가 없으므로 DB의 어떤 행이 아직
+    // 유효한 후보인지 판단할 근거가 없다. `fetchNewsForPeriod`는 델타가 아니라 30일
+    // 창 전체를 매번 돌려주므로, 다음에 적재가 성공하면 남은 미보강 행이 그대로
+    // 후보로 다시 잡힌다(자기 회복).
+    const analyzedIds = new Set(
+        rows.filter(r => r.analyzedAt !== null).map(r => r.id)
+    );
+    const unanalyzed =
+        ingested?.fresh.filter(item => !analyzedIds.has(item.id)) ?? [];
+    if (unanalyzed.length > 0) {
+        await analyzeNewsCards(unanalyzed, repo, {
+            limit: PREWARM_NEWS_CARD_LIMIT,
+            logLabel: 'prewarmNews',
+        });
+        // 방금 채운 보강 결과를 반영해 다시 읽는다 — 이 재조회가 없으면 이번 tick은
+        // 보강 비용만 쓰고 여전히 빈 입력으로 분석을 부른다.
+        rows = await repo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS);
+    }
+
     const enrichedNews: ReadonlyArray<EnrichedNewsItem> =
         buildAnalysisNewsItems(rows);
 

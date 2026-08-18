@@ -52,6 +52,13 @@ const { mockRevalidateTag } = vi.hoisted(() => ({
 }));
 vi.mock('next/cache', () => ({ revalidateTag: mockRevalidateTag }));
 
+// 카드 보강은 건당 LLM 왕복이라 여기서는 seam으로만 본다 — 어떤 후보가 어떤
+// 상한으로 넘어가는지가 이 파일의 관심사이고, 보강 자체의 동작(정렬·상한·실패
+// 격리)은 analyzeNewsCards.test.ts가 검증한다.
+vi.mock('../lib/analyzeNewsCards', () => ({
+    analyzeNewsCards: vi.fn().mockResolvedValue(undefined),
+}));
+
 import type {
     NewsCardAnalysis,
     NewsItem,
@@ -73,6 +80,8 @@ import {
     ingestNewsForSymbol,
     NewsIngestWriteError,
 } from '../lib/ingestNewsForSymbol';
+import { analyzeNewsCards } from '../lib/analyzeNewsCards';
+import { PREWARM_NEWS_CARD_LIMIT } from '../lib/newsAnalysisConstants';
 
 const SEAM_SOURCE = readFileSync(
     fileURLToPath(new URL('../api.ts', import.meta.url)),
@@ -537,6 +546,106 @@ describe('prewarmNews', () => {
         expect(SEAM_SOURCE).not.toMatch(
             /next\/headers|getCurrentUser|isBot|cookies|draftMode/
         );
+    });
+
+    /**
+     * 프로덕션 회귀 가드 (2026-08-18). prewarm은 기사를 적재만 하고 카드 보강을
+     * 건너뛰었다. `isEnrichedRow`가 미보강 행을 전부 걸러내므로 core는 매번
+     * `{status:'error', code:'no_news'}`를 돌려줬고, `news`·`overall` 두 탭
+     * 스냅샷이 **한 건도** 생성되지 않았다. 보강이 방문자 경로에만 있었기 때문에
+     * 사람이 찾지 않는 종목은 영원히 그 상태였다(국내 20종목 전부 / 미국
+     * 저유동성 종목·알트코인 동일).
+     */
+    describe('카드 보강 (thin 스냅샷 회귀 가드)', () => {
+        const mockAnalyzeNewsCards = vi.mocked(analyzeNewsCards);
+
+        it('미보강 기사를 분석 전에 보강한다', async () => {
+            const { db } = makeSelectDb([UNANALYZED_ROW]);
+            mockGetDatabaseClient.mockReturnValue({
+                db,
+            } as unknown as ReturnType<typeof getDatabaseClient>);
+            mockIngestNewsForSymbol.mockResolvedValueOnce({
+                fresh: [{ ...baseItem, id: UNANALYZED_ROW.id }],
+                upsertSettled: [{ status: 'fulfilled', value: true }],
+            });
+
+            await prewarmNews('AAPL', 'Apple Inc.', false);
+
+            expect(mockAnalyzeNewsCards).toHaveBeenCalledTimes(1);
+            const [candidates, , options] = mockAnalyzeNewsCards.mock.calls[0]!;
+            expect(candidates.map(c => c.id)).toEqual([UNANALYZED_ROW.id]);
+            // 유닛 타임아웃(2분) 안에 보강 + 집계 분석을 모두 끝내야 한다.
+            expect(options.limit).toBe(PREWARM_NEWS_CARD_LIMIT);
+        });
+
+        it('이미 보강된 기사는 다시 분석하지 않는다', async () => {
+            const { db } = makeSelectDb([ANALYZED_ROW]);
+            mockGetDatabaseClient.mockReturnValue({
+                db,
+            } as unknown as ReturnType<typeof getDatabaseClient>);
+            mockIngestNewsForSymbol.mockResolvedValueOnce({
+                fresh: [{ ...baseItem, id: ANALYZED_ROW.id }],
+                upsertSettled: [{ status: 'fulfilled', value: true }],
+            });
+
+            await prewarmNews('AAPL', 'Apple Inc.', false);
+
+            expect(mockAnalyzeNewsCards).not.toHaveBeenCalled();
+        });
+
+        it('보강한 뒤 DB를 다시 읽어 그 결과를 분석에 넘긴다', async () => {
+            // 재조회가 없으면 보강 비용만 쓰고 여전히 빈 입력으로 분석을 부른다 —
+            // 겉보기엔 "보강했는데도 안 된다"로 보이는 가장 지독한 실패 모드다.
+            const { db, orderBy } = makeSelectDb([]);
+            orderBy
+                .mockResolvedValueOnce([UNANALYZED_ROW])
+                .mockResolvedValueOnce([ANALYZED_ROW]);
+            mockGetDatabaseClient.mockReturnValue({
+                db,
+            } as unknown as ReturnType<typeof getDatabaseClient>);
+            mockIngestNewsForSymbol.mockResolvedValueOnce({
+                fresh: [{ ...baseItem, id: UNANALYZED_ROW.id }],
+                upsertSettled: [{ status: 'fulfilled', value: true }],
+            });
+
+            await prewarmNews('AAPL', 'Apple Inc.', false);
+
+            expect(orderBy).toHaveBeenCalledTimes(2);
+            expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    news: expect.arrayContaining([
+                        expect.objectContaining({ id: ANALYZED_ROW.id }),
+                    ]),
+                })
+            );
+        });
+
+        it('보강 대상이 없으면 DB를 두 번 읽지 않는다', async () => {
+            const { db, orderBy } = makeSelectDb([ANALYZED_ROW]);
+            mockGetDatabaseClient.mockReturnValue({
+                db,
+            } as unknown as ReturnType<typeof getDatabaseClient>);
+            mockIngestNewsForSymbol.mockResolvedValueOnce({
+                fresh: [{ ...baseItem, id: ANALYZED_ROW.id }],
+                upsertSettled: [{ status: 'fulfilled', value: true }],
+            });
+
+            await prewarmNews('AAPL', 'Apple Inc.', false);
+
+            expect(orderBy).toHaveBeenCalledTimes(1);
+        });
+
+        it('적재가 실패하면(fail-open) 보강을 건너뛴다', async () => {
+            const { db } = makeSelectDb([UNANALYZED_ROW]);
+            mockGetDatabaseClient.mockReturnValue({
+                db,
+            } as unknown as ReturnType<typeof getDatabaseClient>);
+            mockIngestNewsForSymbol.mockResolvedValueOnce(null);
+
+            await prewarmNews('AAPL', 'Apple Inc.', false);
+
+            expect(mockAnalyzeNewsCards).not.toHaveBeenCalled();
+        });
     });
 
     describe('ingest-before-read (SEO pre-warm news livelock fix)', () => {
