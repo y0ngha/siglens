@@ -1,16 +1,17 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NewsCardAnalysis, NewsItem } from '@y0ngha/siglens-core';
-
 const { mockRunNewsCardAnalysis } = vi.hoisted(() => ({
     mockRunNewsCardAnalysis: vi.fn(),
 }));
 
+// `vi.mock`은 import 위로 호이스트되어야 static import보다 먼저 평가된다
+// (`import/first` 규칙과 일치) — 아래 import 블록은 하나로 이어져야 한다.
 vi.mock('@y0ngha/siglens-core', async importOriginal => {
     const actual =
         await importOriginal<typeof import('@y0ngha/siglens-core')>();
     return { ...actual, runNewsCardAnalysis: mockRunNewsCardAnalysis };
 });
 
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { NewsCardAnalysis, NewsItem } from '@y0ngha/siglens-core';
 import { analyzeNewsCards } from '@/entities/news-article/lib/analyzeNewsCards';
 import type { DrizzleNewsRepository } from '@/entities/news-article/api';
 

@@ -367,10 +367,12 @@ export async function prewarmNews(
         revalidateTag(`news:${symbol.toUpperCase()}`, 'max');
     }
 
-    let [rows, next] = await Promise.all([
+    // `rows`만 가변이다 — 보강을 돌리면 그 결과를 반영해 다시 읽는다.
+    const [initialRows, next] = await Promise.all([
         repo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
         getNextEarningsReport(symbol, db),
     ]);
+    let rows = initialRows;
 
     // 카드 보강(번역 + 라벨링). **이 단계를 건너뛰면 아래 분석은 항상 실패한다** —
     // `buildAnalysisNewsItems`가 `isEnrichedRow`로 미보강 행을 전부 걸러내고, core의
@@ -391,11 +393,19 @@ export async function prewarmNews(
     // 유효한 후보인지 판단할 근거가 없다. `fetchNewsForPeriod`는 델타가 아니라 30일
     // 창 전체를 매번 돌려주므로, 다음에 적재가 성공하면 남은 미보강 행이 그대로
     // 후보로 다시 잡힌다(자기 회복).
+    //
+    // 후보를 DB에 **실제로 있는** 행으로 한 번 더 좁힌다. `ingestNewsForSymbol`은
+    // 과반 미만의 upsert 실패를 삼키고 진행하므로 `fresh`에는 있지만 DB에는 없는
+    // 항목이 남을 수 있다. 그대로 두면 LLM은 호출하고 `attachAnalysis`는 존재하지
+    // 않는 id에 no-op update를 날려, 비용만 쓰고 아무것도 남지 않는다.
+    const rowIds = new Set(rows.map(r => r.id));
     const analyzedIds = new Set(
         rows.filter(r => r.analyzedAt !== null).map(r => r.id)
     );
     const unanalyzed =
-        ingested?.fresh.filter(item => !analyzedIds.has(item.id)) ?? [];
+        ingested?.fresh.filter(
+            item => rowIds.has(item.id) && !analyzedIds.has(item.id)
+        ) ?? [];
     if (unanalyzed.length > 0) {
         await analyzeNewsCards(unanalyzed, repo, {
             limit: PREWARM_NEWS_CARD_LIMIT,

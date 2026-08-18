@@ -635,6 +635,30 @@ describe('prewarmNews', () => {
             expect(orderBy).toHaveBeenCalledTimes(1);
         });
 
+        it('upsert가 실패해 DB에 없는 기사는 후보에서 뺀다', async () => {
+            // 적재는 과반 미만 실패를 삼키고 진행한다. 그런 항목까지 분석하면
+            // LLM 비용만 쓰고 `attachAnalysis`는 없는 id에 no-op update를 한다.
+            const { db } = makeSelectDb([UNANALYZED_ROW]);
+            mockGetDatabaseClient.mockReturnValue({
+                db,
+            } as unknown as ReturnType<typeof getDatabaseClient>);
+            mockIngestNewsForSymbol.mockResolvedValueOnce({
+                fresh: [
+                    { ...baseItem, id: UNANALYZED_ROW.id },
+                    { ...baseItem, id: 'upsert-failed' },
+                ],
+                upsertSettled: [
+                    { status: 'fulfilled', value: true },
+                    { status: 'rejected', reason: new Error('write failed') },
+                ],
+            });
+
+            await prewarmNews('AAPL', 'Apple Inc.', false);
+
+            const [candidates] = mockAnalyzeNewsCards.mock.calls[0]!;
+            expect(candidates.map(c => c.id)).toEqual([UNANALYZED_ROW.id]);
+        });
+
         it('적재가 실패하면(fail-open) 보강을 건너뛴다', async () => {
             const { db } = makeSelectDb([UNANALYZED_ROW]);
             mockGetDatabaseClient.mockReturnValue({
