@@ -50,6 +50,11 @@ export function getCachedMarketDataProvider(
         return cachedCrypto;
     }
     if (cached !== null) return cached;
-    cached = new CachedMarketDataProvider(getMarketDataProvider());
+    // 생성자 기본값에 기대지 않고 명시적으로 넘긴다 — 기본값에 기대면 어떤 스펙이
+    // 쓰이는지 밖에서 관측할 수 없어 배선이 테스트로 고정되지 않는다(감사 라운드 13).
+    cached = new CachedMarketDataProvider(
+        getMarketDataProvider(),
+        US_EQUITY_SESSION
+    );
     return cached;
 }

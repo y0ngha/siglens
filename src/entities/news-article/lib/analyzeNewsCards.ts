@@ -50,8 +50,8 @@ export interface AnalyzeNewsCardsOptions {
      *
      * 두 호출자 모두 값을 넘기지만 근거가 다르다. prewarm cron은 유닛
      * 타임아웃(2분) 안에서 끝나야 해서 12건(`PREWARM_NEWS_CARD_LIMIT`),
-     * 방문자 경로는 마감은 없지만 비용이 있어 25건(`VISITOR_NEWS_CARD_LIMIT`,
-     * 집계 분석이 읽는 `MAX_AGGREGATE_NEWS_ITEMS`와 동수)이다. 생략하면 후보
+     * 방문자 경로는 마감은 없지만 마운트당 LLM 왕복 비용이 있어
+     * 25건(`VISITOR_NEWS_CARD_LIMIT`)이다. 생략하면 후보
      * 전체를 분석한다 — 180일 적재분이면 최악 1,000건이라 실질적으로 쓰면 안 된다.
      */
     limit?: number;

@@ -125,7 +125,12 @@ describe('ingestNewsForSymbol 함수는', () => {
 
             expect(result).toBeNull();
             expect(mockUpsertNewsItem).not.toHaveBeenCalled();
-            expect(mockMarkFetched).not.toHaveBeenCalled();
+            // 실패해도 플래그는 이미 찍혀 있다 — 표시를 FMP 왕복 **앞**으로 옮겼기
+            // 때문이다(감사: 비용 라운드 13). 뒤에 두면 유료 API가 429/402로 거절하는
+            // 동안 스로틀이 통째로 사라져, 마운트마다 재시도 예산까지 포함한 4콜이
+            // 무한 반복된다. 대가는 실패 후 TTL(10분) 동안 재시도가 없다는 것인데,
+            // 이 경로는 fire-and-forget 보강이고 SEO는 prewarm cron이 따로 보장한다.
+            expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
         });
 
         it('429 실패 시 서버 로그를 남기지 않고 null을 반환한다', async () => {
@@ -146,7 +151,7 @@ describe('ingestNewsForSymbol 함수는', () => {
     });
 
     describe('upsert 과반 실패 시', () => {
-        it('에러를 throw하고 markFetched를 호출하지 않는다', async () => {
+        it('에러를 throw한다 — 플래그는 fetch 앞에서 이미 찍혔다', async () => {
             mockFetchNewsForPeriod.mockResolvedValue([
                 NEWS_ITEM_1,
                 NEWS_ITEM_2,
@@ -160,7 +165,9 @@ describe('ingestNewsForSymbol 함수는', () => {
                 'majority upsert failure'
             );
 
-            expect(mockMarkFetched).not.toHaveBeenCalled();
+            // DB 광역 장애 중에도 TTL 동안 FMP를 다시 때리지 않는다 — 어차피
+            // 쓸 곳이 없다. 회복은 다음 TTL 창이나 prewarm cron이 한다.
+            expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
         });
 
         it('소수 실패는 throw하지 않고 markFetched까지 진행한다', async () => {

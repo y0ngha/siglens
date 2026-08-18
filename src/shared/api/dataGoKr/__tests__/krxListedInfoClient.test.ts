@@ -290,6 +290,30 @@ describe('fetchKrxListedItems', () => {
         }
     });
 
+    /**
+     * [회귀] 클램프만 두면 `remaining`이 수십 ms일 때 곧 도착했을 응답까지 끊고,
+     * 그 abort가 `TimeoutError`로 올라가 이미 모은 페이지를 통째로 버린다
+     * (감사 라운드 13). 하한 밑에서는 페이지를 시작하지 않고 모은 만큼 들고 나온다.
+     */
+    it('남은 예산이 하한 미만이면 페이지를 시작하지 않고 모은 만큼 반환한다', async () => {
+        vi.useFakeTimers();
+        try {
+            // 페이지당 89.5초 — 1페이지를 받고 나면 남은 예산이 500ms로 하한 미만이다.
+            fetchSpy.mockImplementation(async () => {
+                vi.advanceTimersByTime(89_500);
+                return page([SAMSUNG], 999_999);
+            });
+
+            const items = await fetchKrxListedItems();
+
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
+            // throw가 아니라 모은 결과가 나온다.
+            expect(items).toHaveLength(1);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('returns empty without calling the API when the key is missing', async () => {
         vi.stubEnv('DATA_GO_KR_SERVICE_KEY', '');
 

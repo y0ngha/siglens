@@ -226,11 +226,16 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             // 적재 lookback이 180일이고 FMP 상한이 1,000건이라, 상한이 없으면
             // 백로그가 쌓인 종목의 첫 마운트 한 번이 최악 1,000회 LLM 왕복이 된다.
             // 2-vCPU 박스에서 LLM 소켓 4개를 수십 분 잡는다(감사: 비용 확인 패스).
-            const many = Array.from({ length: 40 }, (_, i) => ({
-                ...NEWS_ITEM_1,
-                id: `news-${i}`,
-                url: `https://example.com/${i}`,
-            }));
+            // 픽스처 길이를 상수에서 파생한다 — 하드코딩하면 상수를 그 값 이상으로
+            // 올리는 순간 테스트가 조용히 무장 해제된다(감사 라운드 13).
+            const many = Array.from(
+                { length: VISITOR_NEWS_CARD_LIMIT * 2 },
+                (_, i) => ({
+                    ...NEWS_ITEM_1,
+                    id: `news-${i}`,
+                    url: `https://example.com/${i}`,
+                })
+            );
             mockFetchNewsForPeriod.mockResolvedValue(many);
             mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
 
@@ -240,7 +245,9 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
                 VISITOR_NEWS_CARD_LIMIT
             );
             // 적재는 전량 그대로다 — 상한은 분석 단계에만 건다.
-            expect(mockUpsertNewsItem).toHaveBeenCalledTimes(40);
+            expect(mockUpsertNewsItem).toHaveBeenCalledTimes(
+                VISITOR_NEWS_CARD_LIMIT * 2
+            );
         });
 
         it('각 뉴스 아이템에 대해 runNewsCardAnalysis를 호출한다', async () => {
@@ -860,7 +867,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             expect(mockRunNewsCardAnalysis).not.toHaveBeenCalled();
         });
 
-        it('upsert 과반 실패 시 markFetched를 호출하지 않고, throw도 하지 않는다', async () => {
+        it('upsert 과반 실패 시 throw하지 않는다(플래그는 이미 찍힘)', async () => {
             const errorSpy = vi
                 .spyOn(console, 'error')
                 .mockImplementation(() => undefined);
@@ -871,8 +878,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             ]);
             // Both upserts fail → majority failure inside ingestNewsForSymbol,
             // but the action swallows NewsIngestWriteError (fire-and-forget
-            // contract, PR #700 review) instead of propagating it — markFetched
-            // still never runs because the throw happens before it.
+            // contract, PR #700 review) instead of propagating it. markFetched
+            // HAS run — 표시가 FMP 왕복 앞으로 옮겨졌다(감사: 비용 라운드 13).
             mockUpsertNewsItem
                 .mockRejectedValueOnce(new Error('DB down'))
                 .mockRejectedValueOnce(new Error('DB down'));
@@ -881,7 +888,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
                 ensureNewsCardsAnalyzedAction('AAPL', { skipAnalysis: true })
             ).resolves.toBeUndefined();
 
-            expect(mockMarkFetched).not.toHaveBeenCalled();
+            expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
             expect(errorSpy).toHaveBeenCalled();
             errorSpy.mockRestore();
         });

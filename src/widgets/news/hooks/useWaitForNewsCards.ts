@@ -3,7 +3,12 @@
 import { useState, useEffect } from 'react';
 import { getNewsCardsAction } from '@/entities/news-article/actions';
 import type { NewsDisplayItem } from '@/shared/lib/types';
-import { POLL_INTERVAL_MS, MAX_CONSECUTIVE_FAILURES } from '../constants';
+import {
+    POLL_INTERVAL_MS,
+    MAX_CONSECUTIVE_FAILURES,
+    MAX_POLL_DURATION_MS,
+    EMPTY_SNAPSHOT_MAX_POLLS,
+} from '../constants';
 
 function hasAnyEnrichedCard(items: NewsDisplayItem[]): boolean {
     return items.some(item => item.sentiment !== null);
@@ -51,13 +56,34 @@ export function useWaitForNewsCards(
         if (initiallyReady) return;
 
         let consecutiveFailures = 0;
+        let pollCount = 0;
+        const startedAt = Date.now();
 
         const intervalId = setInterval(async () => {
+            // 5분 상한은 `cardPollingConfig`가 선언한 UX 계약이고 형제 훅
+            // (`useNewsCardPolling`)은 지키고 있었다. 여기만 빠져 있어서, 보강될
+            // 카드가 아예 없는 종목에서는 탭이 열려 있는 내내 3초마다 server action
+            // POST + Neon 조회가 나갔다 — 8시간이면 9,600회로 계약 상한(100회)의
+            // 96배다(감사: 비용 라운드 13).
+            if (Date.now() - startedAt > MAX_POLL_DURATION_MS) {
+                clearInterval(intervalId);
+                return;
+            }
             try {
                 const fresh = await getNewsCardsAction(symbol);
                 consecutiveFailures = 0;
+                pollCount += 1;
                 if (hasAnyEnrichedCard(fresh)) {
                     setIsReady(true);
+                    clearInterval(intervalId);
+                    return;
+                }
+                // 기사 자체가 없으면 보강될 것도 없다 — 형제 훅과 같은 상한으로
+                // 일찍 접는다(5분을 다 기다릴 이유가 없다).
+                if (
+                    fresh.length === 0 &&
+                    pollCount >= EMPTY_SNAPSHOT_MAX_POLLS
+                ) {
                     clearInterval(intervalId);
                 }
             } catch (err) {

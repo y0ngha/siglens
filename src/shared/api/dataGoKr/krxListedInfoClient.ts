@@ -73,6 +73,17 @@ const PAGE_TIMEOUT_MS = 10_000;
  */
 const TOTAL_BUDGET_MS = 90_000;
 
+/**
+ * 남은 예산이 이보다 적으면 페이지를 아예 시작하지 않는다.
+ *
+ * 클램프만 두면 `remaining`이 수십 ms일 때 곧 도착했을 응답까지 끊고, 그 abort가
+ * `TimeoutError`로 올라가 **이미 모은 페이지를 통째로 버린다**. 그 밑에서 취할 수
+ * 있는 건 아무것도 없으므로, 그럴 바엔 모은 만큼 들고 문서화된 truncation 경로로
+ * 빠지는 편이 낫다 — 대량 상폐 가드가 그 목록을 받아 상폐만 건너뛴다.
+ * 1초는 실측 페이지 응답(수백 ms)보다 넉넉하고, 예산 90초에 비해 무시할 만하다.
+ */
+const MIN_PAGE_BUDGET_MS = 1_000;
+
 /** 시장 구분 값. `mrktCtg` 필드가 이 셋 중 하나로 온다. */
 export type KrxMarket = 'KOSPI' | 'KOSDAQ' | 'KONEX';
 
@@ -314,7 +325,7 @@ async function collectAllPages(
 
     for (; pageNo <= MAX_PAGES; pageNo++) {
         const remaining = deadline - Date.now();
-        if (remaining <= 0) {
+        if (remaining < MIN_PAGE_BUDGET_MS) {
             console.warn(
                 `[krxListedInfo] 예산(${TOTAL_BUDGET_MS}ms) 소진 — ${basDt} ${pageNo}페이지에서 중단, 결과가 잘렸을 수 있다`
             );

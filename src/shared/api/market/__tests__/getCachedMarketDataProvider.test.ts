@@ -166,6 +166,11 @@ describe('getCachedMarketDataProvider', () => {
 
         getCachedMarketDataProvider(CRYPTO_SESSION);
         expect(ctorCalls.at(-1)?.[1]).toBe(CRYPTO_SESSION);
+
+        // 기본 분기도 고정한다 — 여기가 비어 있으면 미국 종목이 always-open
+        // 스펙으로 감싸져도 아무 테스트가 안 걸린다(KR 케이스와 같은 피해).
+        getCachedMarketDataProvider();
+        expect(ctorCalls.at(-1)?.[1]).toBe(US_EQUITY_SESSION);
     });
 
     it('E2E면 KR_EQUITY_SESSION도 raw provider를 반환한다(네트워크 차단)', async () => {
