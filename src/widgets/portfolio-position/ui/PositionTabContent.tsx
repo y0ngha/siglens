@@ -67,7 +67,9 @@ export function PositionTabContent({
     if (isLoading) return <PositionAuthSkeleton />;
 
     if (!user) {
-        return <PositionCta low52w={low52w} high52w={high52w} />;
+        return (
+            <PositionCta symbol={symbol} low52w={low52w} high52w={high52w} />
+        );
     }
 
     return (

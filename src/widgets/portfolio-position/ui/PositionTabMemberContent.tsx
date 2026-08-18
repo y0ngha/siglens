@@ -66,7 +66,9 @@ export function PositionTabMemberContent({
 
     // 보유 없음(정상) + 조회 실패(degrade) 모두 CTA로 수렴 — 어느 쪽도 렌더를 깨지 않는다.
     if (isError || holding === null) {
-        return <PositionCta low52w={low52w} high52w={high52w} />;
+        return (
+            <PositionCta symbol={symbol} low52w={low52w} high52w={high52w} />
+        );
     }
 
     if (low52w === null || high52w === null || lastClose === null) {
@@ -111,6 +113,7 @@ export function PositionTabMemberContent({
             />
             <div className="sm:min-w-0 sm:flex-1">
                 <PositionCard
+                    symbol={symbol}
                     model={model}
                     low52w={low52w}
                     high52w={high52w}

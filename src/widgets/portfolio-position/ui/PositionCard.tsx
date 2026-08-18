@@ -1,18 +1,16 @@
 import { useId } from 'react';
 import { cn } from '@/shared/lib/cn';
-import { formatSignedPercent, formatUsdPrice } from '@/shared/lib/priceFormat';
+import { formatSignedPercent } from '@/shared/lib/priceFormat';
+import { formatAmount } from '../lib/positionBuildingNotes';
 import type { PositionModel } from '../lib/positionGeometry';
 
 interface PositionCardProps {
+    symbol: string;
     model: PositionModel;
     low52w: number;
     high52w: number;
     current: number;
     avg: number;
-}
-
-function formatUsd(value: number): string {
-    return `$${formatUsdPrice(value)}`;
 }
 
 /** ≥0면 성공, <0면 위험 — AA 텍스트 변형 토큰(DESIGN.md §AA), chart-*는 그래픽 전용이라 미사용. */
@@ -43,6 +41,7 @@ function ReadoutRow({ label, value, valueClassName }: ReadoutRowProps) {
  * 이므로 TechnicalFactsSummary와 동일하게 타임프레임-중립 문구를 쓴다.
  */
 export function PositionCard({
+    symbol,
     model,
     low52w,
     high52w,
@@ -63,10 +62,19 @@ export function PositionCard({
                 내 위치
             </h2>
             <dl className="grid grid-cols-1 gap-2 text-sm text-secondary-300">
-                <ReadoutRow label="최근 고점" value={formatUsd(high52w)} />
-                <ReadoutRow label="최근 저점" value={formatUsd(low52w)} />
-                <ReadoutRow label="현재가" value={formatUsd(current)} />
-                <ReadoutRow label="내 평단" value={formatUsd(avg)} />
+                <ReadoutRow
+                    label="최근 고점"
+                    value={formatAmount(high52w, symbol)}
+                />
+                <ReadoutRow
+                    label="최근 저점"
+                    value={formatAmount(low52w, symbol)}
+                />
+                <ReadoutRow
+                    label="현재가"
+                    value={formatAmount(current, symbol)}
+                />
+                <ReadoutRow label="내 평단" value={formatAmount(avg, symbol)} />
                 <ReadoutRow
                     label="최근 고점 대비"
                     value={formatSignedPercent(model.pctFromHigh)}

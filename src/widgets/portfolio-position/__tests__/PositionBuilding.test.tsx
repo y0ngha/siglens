@@ -10,7 +10,7 @@ import {
     CURRENT_LABEL_PREFIX,
     describeAvgFloor,
     estimateSvgLabelWidth,
-    formatUsdCompactForSvgLabel,
+    formatCompactForSvgLabel,
     SVG_LABEL_AVAILABLE_WIDTH,
 } from '../lib/positionBuildingNotes';
 
@@ -27,11 +27,12 @@ function model(overrides: Partial<Parameters<typeof computePosition>[0]> = {}) {
 function renderBuilding(
     input: Partial<Parameters<typeof computePosition>[0]> = {},
     m: PositionModel = model(input),
-    volumeByBand?: readonly number[] | null
+    volumeByBand?: readonly number[] | null,
+    symbol = 'AAPL'
 ) {
     return render(
         <PositionBuilding
-            symbol="AAPL"
+            symbol={symbol}
             model={m}
             low52w={input.low52w ?? 100}
             high52w={input.high52w ?? 200}
@@ -332,6 +333,58 @@ describe('PositionBuilding', () => {
         expect(svg?.getAttribute('aria-label')).toContain('$650,000');
     });
 
+    describe('통화 표기(currency) — 심볼에서 유도한다(currencyForSymbol), 하드코딩된 $ 금지', () => {
+        it('한국 상장 종목(symbol=005930.KS)의 aria-label은 ₩로 표기되고 $는 전혀 나오지 않는다', () => {
+            const { container } = renderBuilding(
+                { low52w: 100, high52w: 200, avg: 150, current: 180 },
+                undefined,
+                undefined,
+                '005930.KS'
+            );
+            const svg = container.querySelector('svg[role="img"]');
+            const label = svg?.getAttribute('aria-label') ?? '';
+            expect(label).toContain('₩150');
+            expect(label).toContain('₩180');
+            expect(label).not.toContain('$');
+        });
+
+        it('한국 상장 종목의 in-SVG 라벨은 고가 축약 표기에서도 ₩를 쓴다($XXXK가 아니라 ₩XXXK)', () => {
+            const { container } = renderBuilding(
+                {
+                    low52w: 400_000,
+                    high52w: 700_000,
+                    avg: 600_000,
+                    current: 650_000,
+                },
+                undefined,
+                undefined,
+                '005930.KS'
+            );
+            const svg = container.querySelector('svg[role="img"]');
+            expect(svg?.textContent).toContain('₩600K');
+            expect(svg?.textContent).toContain('₩650K');
+            expect(svg?.textContent).not.toContain('$');
+            expect(svg?.getAttribute('aria-label')).not.toContain('$');
+        });
+
+        it('한국 상장 종목의 층(floor) 툴팁도 ₩로 표기된다', () => {
+            const { container } = renderBuilding(
+                { low52w: 100, high52w: 200, avg: 150, current: 180 },
+                undefined,
+                [10, 20, 30, 25, 15],
+                '005930.KS'
+            );
+            const floors = container.querySelectorAll(
+                '[data-testid="building-floor"]'
+            );
+            fireEvent.mouseEnter(floors[2]); // band index 2 → [140,160)
+            const tooltip = screen.getByTestId('floor-tooltip');
+            expect(
+                within(tooltip).getByText('₩140–₩160 · 거주율 30%')
+            ).toBeInTheDocument();
+        });
+    });
+
     it('sub-$1 crypto 정밀도 값은 "$0"으로 뭉개지지 않는다', () => {
         const { container } = renderBuilding({
             low52w: 0.0004,
@@ -359,8 +412,8 @@ describe('PositionBuilding', () => {
             const svg = container.querySelector('svg[role="img"]');
 
             // 라벨이 (축약 없이) 렌더돼 있다.
-            const avgPrice = formatUsdCompactForSvgLabel(avg);
-            const currentPrice = formatUsdCompactForSvgLabel(current);
+            const avgPrice = formatCompactForSvgLabel(avg, 'AAPL');
+            const currentPrice = formatCompactForSvgLabel(current, 'AAPL');
             expect(avgPrice).not.toContain('K'); // IN_SVG_COMPACT_THRESHOLD(100,000) 미만
             expect(svg?.textContent).toContain(avgPrice);
             expect(svg?.textContent).toContain(currentPrice);

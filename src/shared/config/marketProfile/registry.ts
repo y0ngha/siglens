@@ -55,9 +55,13 @@ export function marketProfileOf(asset: AssetInfo): MarketProfileId {
 
 /**
  * 심볼 하나로 표시 통화를 정한다 — `isKrEquitySymbol(symbol) ? 'KRW' : 'USD'` 삼항식이
- * `formatCompactCurrency`/`FutureDirectionCard`/`EventCalendar` 세 곳에 독립적으로
- * 복제돼 있던 것을 여기 한 곳으로 모은다. 통화 판정은 `getDescriptor(...).priceFormat.currency`를
- * 거쳐야 하고(REGISTRY가 3개 프로필 전체를 exhaustive하게 갖고 있는 유일한 곳), 산발적
+ * `formatCompactCurrency`/`FutureDirectionCard`/`EventCalendar`/`statementCurrencyOf`
+ * (`widgets/financials`)/`portfolio-position` 위젯 전반(`positionBuildingNotes`의
+ * `formatAmount`·`formatCompactForSvgLabel`, `PositionCard`, `PositionCta`)/
+ * `PositionHoldingCard`(`app/portfolio`)/`PortfolioChip`(`features/portfolio-holding`)
+ * 등 여러 곳에 독립적으로 복제돼 있던 것을 여기 한 곳으로 모은다. 통화 판정은
+ * `getDescriptor(...).priceFormat.currency`를 거쳐야 하고(REGISTRY가 3개 프로필
+ * 전체를 exhaustive하게 갖고 있는 유일한 곳), 산발적
  * 삼항식은 그중 하나가 4번째 프로필을 얻는 순간 조용히 틀린다.
  *
  * 크립토는 심볼 형상만으로 판정할 수 없다(`crypto_assets` DB 멤버십이 authoritative —
