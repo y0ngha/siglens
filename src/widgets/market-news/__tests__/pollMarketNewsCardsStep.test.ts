@@ -13,11 +13,9 @@ import {
     MAX_CONSECUTIVE_FAILURES,
     EMPTY_SNAPSHOT_MAX_POLLS,
     MAX_POLL_DURATION_MS,
-} from '@/widgets/market-news/constants';
-import {
     STAGNANT_POLL_LIMIT,
     STAGNATION_FLOOR_POLLS,
-} from '@/widgets/news/hooks/useNewsCardPolling';
+} from '@/widgets/market-news/constants';
 import {
     pollMarketNewsCardsStep,
     type PollMarketNewsCardsContext,
@@ -157,14 +155,20 @@ describe('pollMarketNewsCardsStep', () => {
             items: [ENRICHED_ITEM, PENDING_ITEM],
         });
 
-        // 하한을 이미 넘긴 상태에서 정체가 누적된 상황을 만든다.
-        const { ctx, mocks } = makeCtx({ pollCount: STAGNATION_FLOOR_POLLS });
-        // 첫 틱이 기준선을 세우고, 이후 틱은 진전이 없어 정체가 쌓인다.
-        for (let i = 0; i <= STAGNANT_POLL_LIMIT; i++) {
+        // pollCount를 0에서 시작해 실제 카운터로 하한까지 굴린다 — 하한을 픽스처로
+        // 미리 채워 두면 `pollCount >= STAGNATION_FLOOR_POLLS`가 항상 참이라 그
+        // 조건을 지워도 통과한다(감사: 코드 라운드 17).
+        const { ctx, mocks } = makeCtx();
+
+        // 하한 직전까지는 멈추지 않는다.
+        for (let i = 0; i < STAGNATION_FLOOR_POLLS - 1; i++) {
             await pollMarketNewsCardsStep(ctx);
         }
+        expect(mocks.clearInterval).not.toHaveBeenCalled();
 
-        expect(mocks.clearInterval).toHaveBeenCalled();
+        // 하한을 넘는 순간 정체 카운터도 이미 충분하므로 멈춘다.
+        await pollMarketNewsCardsStep(ctx);
+        expect(mocks.clearInterval).toHaveBeenCalledOnce();
         expect(mocks.setIsPolling).toHaveBeenCalledWith(false);
     });
 

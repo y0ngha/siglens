@@ -5,11 +5,9 @@ import {
     MAX_CONSECUTIVE_FAILURES,
     EMPTY_SNAPSHOT_MAX_POLLS,
     MAX_POLL_DURATION_MS,
-} from '../constants';
-import {
     STAGNANT_POLL_LIMIT,
     STAGNATION_FLOOR_POLLS,
-} from '@/widgets/news/hooks/useNewsCardPolling';
+} from '../constants';
 import type { PollStepResult } from './pollStepResult';
 
 export interface PollMarketNewsCardsContext {

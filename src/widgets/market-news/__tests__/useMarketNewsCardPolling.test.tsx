@@ -159,6 +159,40 @@ describe('useMarketNewsCardPolling', () => {
         expect(mockGetMarketNewsCardsAction).toHaveBeenCalledTimes(12);
     });
 
+    /**
+     * [회귀] 위 케이스는 1틱째에 보강되고 곧바로 멈추는 형상이라 정지 지점이 항상
+     * 하한이다 — "진전이 오면 정체 카운터를 0으로 되돌린다" 분기를 지워도 통과한다
+     * (감사: 코드 라운드 17). 진전이 늦게 오는 형상이라야 그 분기가 묶인다.
+     */
+    it('진전이 늦게 오면 그 시점부터 STAGNANT_POLL_LIMIT만큼 더 돈다', async () => {
+        let polls = 0;
+        mockGetMarketNewsCardsAction.mockImplementation(() => {
+            polls += 1;
+            if (polls < 13)
+                return Promise.resolve({ ok: true, items: [PENDING_ITEM] });
+            if (polls < 15)
+                return Promise.resolve({
+                    ok: true,
+                    items: [ENRICHED_ITEM, PENDING_ITEM],
+                });
+            return Promise.resolve({
+                ok: true,
+                items: [
+                    ENRICHED_ITEM,
+                    { ...ENRICHED_ITEM, id: 'enriched-2' },
+                    PENDING_ITEM,
+                ],
+            });
+        });
+
+        renderHook(() => useMarketNewsCardPolling('general', []));
+
+        await advancePolls(30);
+
+        // 마지막 진전이 15틱, 거기서 6틱 더 → 21틱에 정지.
+        expect(mockGetMarketNewsCardsAction).toHaveBeenCalledTimes(21);
+    });
+
     it('카테고리 변경 시 상태를 초기화하고 새 카테고리로 폴링한다', async () => {
         mockGetMarketNewsCardsAction.mockResolvedValue({
             ok: true,
