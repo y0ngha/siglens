@@ -8,7 +8,7 @@ import {
     getMarketSummary,
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
-import { MARKET_INDICES, SECTOR_ETFS } from '@/shared/config/dashboard-tickers';
+import type { DashboardScope } from '@/shared/config/dashboardScope';
 import { createCacheConfigFingerprint } from '@/shared/cache/configFingerprint';
 import { allQuotesPresent } from '../lib/marketSummaryCompleteness';
 
@@ -21,10 +21,22 @@ import { allQuotesPresent } from '../lib/marketSummaryCompleteness';
  * 모든 엔트리에 TTL(`computeBarsEffectiveTtl`, 최대 24h)이 있어 자연 만료된다 —
  * 별도 정리 메커니즘 불필요. (config 변경은 배포 단위로 드물어 누적량도 미미.)
  */
-export const MARKET_SUMMARY_CONFIG_FINGERPRINT = createCacheConfigFingerprint(
-    JSON.stringify({ marketIndices: MARKET_INDICES, sectorEtfs: SECTOR_ETFS })
-);
-const MARKET_SUMMARY_CACHE_KEY = `market:summary:${MARKET_SUMMARY_CONFIG_FINGERPRINT}`;
+export function marketSummaryConfigFingerprint(scope: DashboardScope): string {
+    return createCacheConfigFingerprint(
+        JSON.stringify({
+            marketIndices: scope.indices,
+            sectorEtfs: scope.sectorEtfs,
+        })
+    );
+}
+
+/**
+ * scope.id를 키에 직접 넣는다. fingerprint만으로도 두 시장이 갈리기는 하지만,
+ * Redis를 눈으로 훑을 때 `market:summary:kr:…`이 보이는 편이 운영에서 훨씬 낫다.
+ */
+function marketSummaryCacheKey(scope: DashboardScope): string {
+    return `market:summary:${scope.id}:${marketSummaryConfigFingerprint(scope)}`;
+}
 
 /** 시장 요약은 bars 일봉 TTL 정책을 재사용 — 실제 timeframe과 무관한 placeholder. */
 const SUMMARY_TTL_TIMEFRAME = '1Day' as const satisfies Timeframe;
@@ -45,11 +57,19 @@ const SUMMARY_TTL_TIMEFRAME = '1Day' as const satisfies Timeframe;
  * "데이터 일부 로드 실패" 안내를 띄운다(`hasMissingQuotes` 참조).
  */
 export const getCachedMarketSummary = cache(
-    async (provider: MarketDataProvider): Promise<MarketSummaryData> =>
+    async (
+        provider: MarketDataProvider,
+        scope: DashboardScope
+    ): Promise<MarketSummaryData> =>
         getOrSetCache(
-            MARKET_SUMMARY_CACHE_KEY,
+            marketSummaryCacheKey(scope),
             computeBarsEffectiveTtl(SUMMARY_TTL_TIMEFRAME, new Date()),
-            () => getMarketSummary(provider, MARKET_INDICES, SECTOR_ETFS),
+            () =>
+                getMarketSummary(
+                    provider,
+                    [...scope.indices],
+                    [...scope.sectorEtfs]
+                ),
             allQuotesPresent
         )
 );

@@ -662,8 +662,12 @@ describe('POST /api/analysis/stream', () => {
             const response = await POST(makeRequest(undefined, body));
             await collectSseEvents(response);
 
-            // briefing 핸들러 시그니처: (signal) — params 미사용
+            // briefing 핸들러 시그니처: (scope, signal).
+            // scope는 클라이언트가 보낸 문자열을 그대로 넘기고, 액션이
+            // `isDashboardScopeId`로 검증한다 — 라우트와 액션 양쪽에 검증을 두면
+            // 규칙이 갈린다.
             expect(vi.mocked(submitMarketBriefingAction)).toHaveBeenCalledWith(
+                undefined,
                 expect.any(AbortSignal)
             );
         });

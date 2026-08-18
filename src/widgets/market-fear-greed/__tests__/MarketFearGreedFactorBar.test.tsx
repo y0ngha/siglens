@@ -16,42 +16,44 @@ describe('MarketFearGreedFactorBar', () => {
     describe('with momentum factor', () => {
         it('renders the Korean factor name', () => {
             const { getByText } = render(
-                <MarketFearGreedFactorBar factor={momentumFactor} />
+                <MarketFearGreedFactorBar market="us" factor={momentumFactor} />
             );
-            expect(getByText(MARKET_FACTOR_LABEL.momentum)).toBeInTheDocument();
+            expect(
+                getByText(MARKET_FACTOR_LABEL.us.momentum)
+            ).toBeInTheDocument();
         });
 
         it('renders the formatted signed raw value', () => {
             const { getByText } = render(
-                <MarketFearGreedFactorBar factor={momentumFactor} />
+                <MarketFearGreedFactorBar market="us" factor={momentumFactor} />
             );
             expect(getByText('+5.12%')).toBeInTheDocument();
         });
 
         it('renders the rounded percentile number', () => {
             const { getByText } = render(
-                <MarketFearGreedFactorBar factor={momentumFactor} />
+                <MarketFearGreedFactorBar market="us" factor={momentumFactor} />
             );
             expect(getByText(/백분위\s*80/)).toBeInTheDocument();
         });
 
         it('renders the factor description as accessible plain text', () => {
             const { getByText } = render(
-                <MarketFearGreedFactorBar factor={momentumFactor} />
+                <MarketFearGreedFactorBar market="us" factor={momentumFactor} />
             );
             expect(
-                getByText(MARKET_FACTOR_DESCRIPTION.momentum)
+                getByText(MARKET_FACTOR_DESCRIPTION.us.momentum)
             ).toBeInTheDocument();
         });
 
         it('exposes the percentile via an accessible progressbar', () => {
             const { getByRole } = render(
-                <MarketFearGreedFactorBar factor={momentumFactor} />
+                <MarketFearGreedFactorBar market="us" factor={momentumFactor} />
             );
             const bar = getByRole('progressbar');
             expect(bar).toHaveAttribute('aria-valuenow', '80');
             expect(bar.getAttribute('aria-label')).toContain(
-                MARKET_FACTOR_LABEL.momentum
+                MARKET_FACTOR_LABEL.us.momentum
             );
         });
     });
@@ -64,7 +66,7 @@ describe('MarketFearGreedFactorBar', () => {
                 percentile: 12,
             };
             const { getByText } = render(
-                <MarketFearGreedFactorBar factor={factor} />
+                <MarketFearGreedFactorBar market="us" factor={factor} />
             );
             expect(getByText('-3.14%')).toBeInTheDocument();
         });
@@ -99,7 +101,7 @@ describe('MarketFearGreedFactorBar', () => {
                     percentile,
                 };
                 const { container } = render(
-                    <MarketFearGreedFactorBar factor={factor} />
+                    <MarketFearGreedFactorBar market="us" factor={factor} />
                 );
                 const fill = container.querySelector(
                     '[role="progressbar"] > div'
@@ -130,9 +132,9 @@ describe('MarketFearGreedFactorBar', () => {
                 percentile: 50,
             };
             const { getByText } = render(
-                <MarketFearGreedFactorBar factor={factor} />
+                <MarketFearGreedFactorBar market="us" factor={factor} />
             );
-            expect(getByText(MARKET_FACTOR_LABEL[key])).toBeInTheDocument();
+            expect(getByText(MARKET_FACTOR_LABEL.us[key])).toBeInTheDocument();
         });
     });
 });

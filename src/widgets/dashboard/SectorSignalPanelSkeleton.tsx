@@ -1,6 +1,13 @@
-import { SIGNAL_SECTORS } from '@/shared/config/dashboard-tickers';
+import type { DashboardScope } from '@/shared/config/dashboardScope';
 
-export function SectorSignalPanelSkeleton() {
+interface SectorSignalPanelSkeletonProps {
+    /** 섹터 탭 자리 개수가 시장마다 다르다(미국 13 / 한국 6). */
+    scope: DashboardScope;
+}
+
+export function SectorSignalPanelSkeleton({
+    scope,
+}: SectorSignalPanelSkeletonProps) {
     return (
         <section
             aria-label="섹터 신호 로딩 중"
@@ -19,7 +26,7 @@ export function SectorSignalPanelSkeleton() {
                 className="flex gap-6 overflow-x-auto border-b border-secondary-700 pb-2"
                 aria-hidden="true"
             >
-                {SIGNAL_SECTORS.map(etf => (
+                {scope.signalSectors.map(etf => (
                     <div
                         key={etf.symbol}
                         className="h-3 w-12 shrink-0 animate-pulse rounded bg-secondary-700/50"

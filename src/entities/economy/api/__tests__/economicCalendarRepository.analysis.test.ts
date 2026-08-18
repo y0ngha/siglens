@@ -118,7 +118,7 @@ describe('DrizzleEconomicCalendarRepository.listInRange (analysis columns)', () 
             },
         ]);
         const repo = new DrizzleEconomicCalendarRepository(db);
-        const events = await repo.listInRange('2026-06-01', '2026-06-30');
+        const events = await repo.listInRange('2026-06-01', '2026-06-30', 'US');
         expect(events[0].sentiment).toBe('bearish');
         expect(events[0].summaryKo).toBe('요약');
         expect(events[0].interpretationKo).toBe('해석');

@@ -18,6 +18,7 @@ import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingSta
 import { getCalendarFromDb } from '@/entities/economy/api/getCalendarFromDb';
 import { resolveIndicatorLabels } from '@/entities/economy/api/resolveIndicatorLabels';
 import { etDateOf, kstDateOf } from '@/entities/economy/lib/calendarWindow';
+import { CALENDAR_COUNTRY } from '@/entities/economy/lib/economyCalendarConstants';
 import { isEmptyEconomySnapshot } from '@/entities/economy';
 import {
     buildBreadcrumbJsonLd,
@@ -30,6 +31,7 @@ import { TERMS_PATH } from '@/shared/lib/legal';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { RegionTabs } from '@/shared/ui/RegionTabs';
 
 import { ECONOMY_INDICATORS } from '@/shared/config/economyIndicators';
 
@@ -190,6 +192,7 @@ async function EconomyContent() {
                 events={calendarEvents}
                 today={todayKstKey}
                 labels={indicatorLabels}
+                country={CALENDAR_COUNTRY}
             />
         </div>
     );
@@ -288,6 +291,7 @@ export default function EconomyPage() {
             <JsonLd data={DATASET_JSON_LD} />
             <JsonLd data={FAQ_JSON_LD} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
+                <RegionTabs vertical="economy" active="us" />
                 <EconomyHeroH1 />
                 <Suspense fallback={<EconomySkeleton />}>
                     <EconomyContent />

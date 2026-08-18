@@ -52,29 +52,37 @@ describe('peekBriefingStatic', () => {
     it('(Happy) peekBriefingCache를 summary와 함께 호출하고 결과를 반환한다', async () => {
         mockPeekBriefingCache.mockResolvedValue(sampleBriefing);
 
-        const result = await peekBriefingStatic(sampleSummary, '2026-06-04T10');
+        const result = await peekBriefingStatic(
+            sampleSummary,
+            '2026-06-04T10',
+            'us'
+        );
 
         expect(result).toBe(sampleBriefing);
         expect(mockPeekBriefingCache).toHaveBeenCalledWith(sampleSummary);
     });
 
-    it('(Happy) unstable_cache opts: revalidate=3600, tags=[market:briefing]', async () => {
+    it('(Happy) unstable_cache opts: revalidate=3600, tags=[market:briefing:us]', async () => {
         mockPeekBriefingCache.mockResolvedValue(sampleBriefing);
 
-        await peekBriefingStatic(sampleSummary, '2026-06-04T10');
+        await peekBriefingStatic(sampleSummary, '2026-06-04T10', 'us');
 
         expect(
             (globalThis as Record<string, unknown>).__lastUnstableCacheOpts
         ).toEqual({
             revalidate: SECONDS_PER_HOUR,
-            tags: ['market:briefing'],
+            tags: ['market:briefing:us'],
         });
     });
 
     it('(Worst) briefing 미존재(캐시 miss) 시 null을 그대로 반환한다', async () => {
         mockPeekBriefingCache.mockResolvedValue(null);
 
-        const result = await peekBriefingStatic(sampleSummary, '2026-06-04T10');
+        const result = await peekBriefingStatic(
+            sampleSummary,
+            '2026-06-04T10',
+            'us'
+        );
 
         expect(result).toBeNull();
     });
@@ -83,15 +91,15 @@ describe('peekBriefingStatic', () => {
         mockPeekBriefingCache.mockRejectedValue(new Error('redis error'));
 
         await expect(
-            peekBriefingStatic(sampleSummary, '2026-06-04T10')
+            peekBriefingStatic(sampleSummary, '2026-06-04T10', 'us')
         ).rejects.toThrow('redis error');
     });
 
     it('(Happy) 서로 다른 dateHour는 독립적으로 호출된다', async () => {
         mockPeekBriefingCache.mockResolvedValue(sampleBriefing);
 
-        await peekBriefingStatic(sampleSummary, '2026-06-04T10');
-        await peekBriefingStatic(sampleSummary, '2026-06-04T11');
+        await peekBriefingStatic(sampleSummary, '2026-06-04T10', 'us');
+        await peekBriefingStatic(sampleSummary, '2026-06-04T11', 'us');
 
         expect(mockPeekBriefingCache).toHaveBeenCalledTimes(2);
     });

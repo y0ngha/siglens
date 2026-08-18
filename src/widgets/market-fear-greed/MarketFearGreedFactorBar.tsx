@@ -8,11 +8,17 @@ import {
     MARKET_FACTOR_DESCRIPTION,
     MARKET_FACTOR_LABEL,
     formatMarketFactorRaw,
+    type FearGreedMarketId,
 } from '@/shared/lib/marketFearGreedLabels';
 import { cn } from '@/shared/lib/cn';
 
 interface MarketFearGreedFactorBarProps {
     factor: MarketFearGreedFactor;
+    /**
+     * 어느 시장의 지수인가. 요인 라벨·설명이 시장마다 다르다 — 같은 `junk_bond`
+     * 키라도 미국은 하이일드 회사채, 한국은 회사채−국고채 스프레드로 채워져 있다.
+     */
+    market: FearGreedMarketId;
 }
 
 /** Percentile → fill color class (semantic tokens; matches FearGreedGroupBar). */
@@ -27,9 +33,10 @@ const BAR_FILL_COLOR: Record<FearGreedLabel, string> = {
 /** One factor row for the market-wide Fear & Greed breakdown. Pure — no client state. */
 export function MarketFearGreedFactorBar({
     factor,
+    market,
 }: MarketFearGreedFactorBarProps) {
-    const label = MARKET_FACTOR_LABEL[factor.key];
-    const description = MARKET_FACTOR_DESCRIPTION[factor.key];
+    const label = MARKET_FACTOR_LABEL[market][factor.key];
+    const description = MARKET_FACTOR_DESCRIPTION[market][factor.key];
     const pctile = Math.round(factor.percentile);
 
     return (

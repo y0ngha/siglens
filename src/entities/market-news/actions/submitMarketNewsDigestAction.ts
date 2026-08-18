@@ -9,7 +9,10 @@ import {
 import type { SubmitMarketNewsDigestActionResult } from './submitMarketNewsDigestActionTypes';
 import { isBot } from '@/shared/api/isBot';
 import { getMarketNewsList } from '../api';
-import { CATEGORY_CONFIG } from '../lib/categoryConfig';
+import {
+    CATEGORY_CONFIG,
+    type NewsFeedCategoryId,
+} from '../lib/categoryConfig';
 import { DEFAULT_DIGEST_MODEL_ID } from '../lib/marketNewsConstants';
 import {
     isEnrichedRow,
@@ -61,7 +64,7 @@ function toEnrichedMarketNewsItem(row: MarketNewsRow): EnrichedNewsItem | null {
  * `miss_no_trigger` without dispatching a worker job.
  */
 export async function submitMarketNewsDigestAction(
-    category: NewsFeedCategory,
+    category: NewsFeedCategoryId,
     signal?: AbortSignal
 ): Promise<SubmitMarketNewsDigestActionResult> {
     try {
@@ -85,7 +88,26 @@ export async function submitMarketNewsDigestAction(
         const news = selectAggregateNewsItems(enrichedItems);
 
         return await runMarketNewsDigest({
-            category,
+            /*
+             * core 경계에서의 유일한 캐스트.
+             *
+             * core는 `NewsFeedCategory`(general|stock|crypto|forex|articles)만 알고,
+             * siglens는 여기에 한국 증시(`'kr'`)를 더해 쓴다
+             * (`lib/categoryConfig.ts`의 `NewsFeedCategoryId`).
+             *
+             * **왜 안전한가**: core 안에서 이 값이 닿는 곳은
+             * `buildMarketNewsDigestCacheKey(category, modelId, inputHash, reasoning)`
+             * 하나뿐이고, 거기서 카테고리는 Redis 키 문자열에 그대로 끼워지는
+             * 스코핑 토큰이다. 분기도, 룩업도 없다 — 프롬프트는 아래
+             * `categoryLabel`만 본다(core `buildMarketNewsDigestPrompt` 확인).
+             * 따라서 `'kr'`은 `…:market-news:kr:…`이라는 **정확한** 네임스페이스를
+             * 만들고, 다른 카테고리와 절대 충돌하지 않는다.
+             *
+             * core가 이 값으로 분기하기 시작하면 이 캐스트는 깨져야 한다 —
+             * union 확장을 core 후속 과제로 기록해 두었다
+             * (`docs/superpowers/specs/2026-08-19-asset-class-navigation-design.md` §7).
+             */
+            category: category as NewsFeedCategory,
             categoryLabel: koLabel,
             modelId: DEFAULT_DIGEST_MODEL_ID,
             news,

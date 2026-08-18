@@ -1,6 +1,7 @@
+import type { NewsFeedCategoryId } from '@/entities/market-news';
 import { getMarketNewsCardsAction } from '@/entities/market-news/actions';
 import type { MarketNewsCardItem } from '@/entities/market-news';
-import type { NewsFeedCategory } from '@y0ngha/siglens-core';
+
 import {
     MAX_CONSECUTIVE_FAILURES,
     EMPTY_SNAPSHOT_MAX_POLLS,
@@ -11,7 +12,7 @@ import {
 import type { PollStepResult } from './pollStepResult';
 
 export interface PollMarketNewsCardsContext {
-    category: NewsFeedCategory;
+    category: NewsFeedCategoryId;
     // setters (encapsulate state mutation so pollMarketNewsCardsStep is a pure function of the context object):
     incrementFailures: () => void;
     resetFailures: () => void;

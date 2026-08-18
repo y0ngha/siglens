@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import {
-    NEWS_CATEGORY_SLUGS,
-    type NewsFeedCategory,
+    CATEGORY_CONFIG,
+    categoriesInRegion,
+    type NewsFeedCategoryId,
 } from '@/entities/market-news';
 import { cn } from '@/shared/lib/cn';
 
@@ -11,35 +12,45 @@ import { cn } from '@/shared/lib/cn';
  * horizontally-scrolling tab bar and carries SEO/AI-prompt roles that must not
  * change. These are a UI concern, so they live in the widget layer.
  */
-const TAB_LABELS: Record<NewsFeedCategory, string> = {
+const TAB_LABELS: Record<NewsFeedCategoryId, string> = {
     general: '일반',
     stock: '주식',
     crypto: '암호화폐',
     forex: '외환',
     articles: '아티클',
+    kr: '국내 증시',
 };
 
 interface NewsCategoryTabsProps {
     /** The category currently being viewed — rendered as the active tab. */
-    readonly activeCategory: NewsFeedCategory;
+    readonly activeCategory: NewsFeedCategoryId;
 }
 
 /**
  * Category navigation strip for /news/[category] pages. URL-based nav (links +
  * aria-current), not a tablist — each tab is a real page. Mirrors `SymbolTabs`:
- * `overflow-x-auto` + `whitespace-nowrap` so the five labels scroll horizontally
+ * `overflow-x-auto` + `whitespace-nowrap` so the labels scroll horizontally
  * on narrow viewports (375px) instead of wrapping or overflowing the layout.
+ *
+ * **같은 지역의 카테고리만 나열한다.** 지역(미국·한국·암호화폐)은 위쪽
+ * `RegionTabs`가 이미 고르고 있어서, 여기에 전 지역을 섞으면 같은 화면에 두 개의
+ * 지역 선택기가 생긴다 — `미국 주식` 옆에 `국내 증시` 탭이 붙으면 지역을 나눈
+ * 의미가 사라진다. 지역에 카테고리가 하나뿐이면(한국·암호화폐) 아무것도 렌더하지
+ * 않는다: 선택지가 없는 탭 하나는 정보가 0이고 세로 공간만 먹는다.
  *
  * Server component (the active tab is known from the route param), so it adds
  * no client JS — `usePathname` is unnecessary.
  */
 export function NewsCategoryTabs({ activeCategory }: NewsCategoryTabsProps) {
+    const siblings = categoriesInRegion(CATEGORY_CONFIG[activeCategory].region);
+    if (siblings.length < 2) return null;
+
     return (
         <nav
             aria-label="뉴스 카테고리"
             className="flex overflow-x-auto border-b border-secondary-700"
         >
-            {NEWS_CATEGORY_SLUGS.map(category => {
+            {siblings.map(category => {
                 const active = category === activeCategory;
                 return (
                     <Link

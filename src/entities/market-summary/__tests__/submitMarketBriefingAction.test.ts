@@ -7,6 +7,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { isBot } from '@/shared/api/isBot';
 import { getCachedMarketSummary } from '../api/marketSummaryCache';
+import { US_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
 
 vi.mock('server-only', () => ({}));
 
@@ -30,6 +31,9 @@ vi.mock('@/shared/api/isBot', () => ({
 const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
 vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     getMarketDataProvider: vi.fn(() => mockProvider),
+    // scope 인지 팩토리도 같은 모듈에 있다 — 목에서 빠지면 액션이 import 단계에서
+    // 실패해 `server_error`로 조용히 떨어진다.
+    marketDataProviderFor: vi.fn(() => mockProvider),
 }));
 
 const mockGetCachedMarketSummary = getCachedMarketSummary as MockedFunction<
@@ -79,7 +83,7 @@ describe('submitMarketBriefingAction 함수는', () => {
         });
 
         it('(Happy) runBriefing 결과와 botBlocked: false를 반환한다', async () => {
-            const result = await submitMarketBriefingAction();
+            const result = await submitMarketBriefingAction('us');
 
             expect(result).toEqual({
                 briefing: briefingResult,
@@ -88,10 +92,11 @@ describe('submitMarketBriefingAction 함수는', () => {
         });
 
         it('(Happy) getCachedMarketSummary와 runBriefing(summary)를 호출한다', async () => {
-            await submitMarketBriefingAction();
+            await submitMarketBriefingAction('us');
 
             expect(mockGetCachedMarketSummary).toHaveBeenCalledWith(
-                mockProvider
+                mockProvider,
+                US_DASHBOARD_SCOPE
             );
             expect(mockRunBriefing).toHaveBeenCalledWith(summaryData, {
                 signal: undefined,
@@ -105,13 +110,13 @@ describe('submitMarketBriefingAction 함수는', () => {
         });
 
         it('(Worst) briefing: null과 botBlocked: true를 반환한다', async () => {
-            const result = await submitMarketBriefingAction();
+            const result = await submitMarketBriefingAction('us');
 
             expect(result).toEqual({ briefing: null, botBlocked: true });
         });
 
         it('(Worst) runBriefing을 호출하지 않는다', async () => {
-            await submitMarketBriefingAction();
+            await submitMarketBriefingAction('us');
 
             expect(mockRunBriefing).not.toHaveBeenCalled();
         });
@@ -122,7 +127,7 @@ describe('submitMarketBriefingAction 함수는', () => {
             mockIsBot.mockReturnValue(false);
             mockRunBriefing.mockRejectedValueOnce(new Error('briefing failed'));
 
-            const result = await submitMarketBriefingAction();
+            const result = await submitMarketBriefingAction('us');
 
             expect(result).toEqual({ ok: false, error: 'server_error' });
         });
@@ -133,7 +138,7 @@ describe('submitMarketBriefingAction 함수는', () => {
                 new Error('redis down')
             );
 
-            const result = await submitMarketBriefingAction();
+            const result = await submitMarketBriefingAction('us');
 
             expect(result).toEqual({ ok: false, error: 'server_error' });
         });

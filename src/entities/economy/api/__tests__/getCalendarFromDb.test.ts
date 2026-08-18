@@ -70,7 +70,8 @@ describe('getCalendarFromDb', () => {
         await getCalendarFromDb('2026-06-20');
         expect(listInRange).toHaveBeenCalledWith(
             pastWindowStart('2026-06-20'),
-            futureWindowEnd('2026-06-20')
+            futureWindowEnd('2026-06-20'),
+            'US'
         );
     });
 

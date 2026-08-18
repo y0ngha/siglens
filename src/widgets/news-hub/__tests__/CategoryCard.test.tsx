@@ -20,8 +20,8 @@ import { render, screen } from '@testing-library/react';
 import { CategoryCard } from '../CategoryCard';
 
 const DEFAULTS = {
-    koLabel: '미국 암호화폐',
-    slug: 'crypto',
+    koLabel: '암호화폐',
+    href: '/news/crypto',
     koDescription: '비트코인·이더리움 등 주요 암호화폐 시장 동향을 모았습니다.',
     previewHeadlines: ['헤드라인 1', '헤드라인 2', '헤드라인 3'],
 };
@@ -30,7 +30,7 @@ describe('CategoryCard', () => {
     it('koLabel을 heading으로 렌더한다', () => {
         render(<CategoryCard {...DEFAULTS} />);
         expect(
-            screen.getByRole('heading', { name: '미국 암호화폐' })
+            screen.getByRole('heading', { name: '암호화폐' })
         ).toBeInTheDocument();
     });
 
@@ -60,7 +60,7 @@ describe('CategoryCard', () => {
     it('올바른 href를 가진 "더보기" 링크를 렌더한다', () => {
         render(<CategoryCard {...DEFAULTS} />);
         const link = screen.getByRole('link', {
-            name: '미국 암호화폐 뉴스 더보기',
+            name: '암호화폐 뉴스 더보기',
         });
         expect(link).toBeInTheDocument();
         expect(link).toHaveAttribute('href', '/news/crypto');
@@ -69,7 +69,7 @@ describe('CategoryCard', () => {
     it('aria-label에 koLabel을 포함한다', () => {
         render(<CategoryCard {...DEFAULTS} />);
         expect(
-            screen.getByRole('link', { name: /미국 암호화폐/ })
+            screen.getByRole('link', { name: /암호화폐/ })
         ).toBeInTheDocument();
     });
 });

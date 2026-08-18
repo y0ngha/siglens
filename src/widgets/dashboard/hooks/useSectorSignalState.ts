@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type {
     DashboardTimeframe,
@@ -11,8 +11,8 @@ import type {
 import {
     DEFAULT_DASHBOARD_TIMEFRAME,
     isDashboardTimeframe,
-    SIGNAL_SECTORS,
 } from '@/shared/config/dashboard-tickers';
+import type { DashboardScope } from '@/shared/config/dashboardScope';
 import {
     EMPTY_QUADRANTS,
     filterStrictAnticipation,
@@ -22,6 +22,8 @@ import {
 import { useSectorSignals } from './useSectorSignals';
 
 interface UseSectorSignalStateOptions {
+    /** 어느 시장의 신호인가. 섹터 목록·쿼리 키·서버 액션이 전부 여기서 갈린다. */
+    scope: DashboardScope;
     initialSector: string;
     initialTimeframe: DashboardTimeframe;
     /**
@@ -41,6 +43,7 @@ interface UseSectorSignalStateReturn {
 }
 
 export function useSectorSignalState({
+    scope,
     initialSector,
     initialTimeframe,
     initialData,
@@ -59,7 +62,7 @@ export function useSectorSignalState({
     const [activeSector, setActiveSector] = useState(() => {
         const fromUrl = searchParams.get('sector');
         return fromUrl !== null &&
-            SIGNAL_SECTORS.some(sector => sector.symbol === fromUrl)
+            scope.signalSectors.some(sector => sector.symbol === fromUrl)
             ? fromUrl
             : initialSector;
     });
@@ -70,57 +73,48 @@ export function useSectorSignalState({
         }
     );
 
-    const data = useSectorSignals(activeTimeframe, initialData);
+    const data = useSectorSignals(scope.id, activeTimeframe, initialData);
 
-    const filtered = useMemo(
-        () => filterStrictAnticipation(data.stocks),
-        [data.stocks]
-    );
-    const sectorStocks = useMemo(
-        () => filtered.filter(s => s.sectorSymbol === activeSector),
-        [filtered, activeSector]
-    );
-    const { resolved: resolvedStocks, mixed: mixedStocks } = useMemo(
-        () => resolveConflicts(sectorStocks),
-        [sectorStocks]
-    );
-    const quadrants = useMemo(
-        () => resolvedStocks.reduce(groupStockIntoQuadrants, EMPTY_QUADRANTS),
-        [resolvedStocks]
+    /*
+     * 수동 메모이제이션을 두지 않는다 — `next.config.ts`의 `reactCompiler: true`가
+     * 이 파생값들과 콜백을 자동으로 캐시한다. 손으로 적은 deps 배열은 컴파일러가
+     * 하는 일을 중복할 뿐이고, deps가 하나 빠지면 그때부터 조용히 낡은 값을 준다.
+     */
+    const filtered = filterStrictAnticipation(data.stocks);
+    const sectorStocks = filtered.filter(s => s.sectorSymbol === activeSector);
+    const { resolved: resolvedStocks, mixed: mixedStocks } =
+        resolveConflicts(sectorStocks);
+    const quadrants = resolvedStocks.reduce(
+        groupStockIntoQuadrants,
+        EMPTY_QUADRANTS
     );
 
-    const updateUrl = useCallback(
-        (nextSector: string, nextTimeframe: DashboardTimeframe) => {
-            const params = new URLSearchParams(searchParams.toString());
-            if (nextSector === SIGNAL_SECTORS[0].symbol)
-                params.delete('sector');
-            else params.set('sector', nextSector);
-            if (nextTimeframe === DEFAULT_DASHBOARD_TIMEFRAME)
-                params.delete('timeframe');
-            else params.set('timeframe', nextTimeframe);
-            const qs = params.toString();
-            router.replace(qs === '' ? pathname : `${pathname}?${qs}`, {
-                scroll: false,
-            });
-        },
-        [router, pathname, searchParams]
-    );
+    const updateUrl = (
+        nextSector: string,
+        nextTimeframe: DashboardTimeframe
+    ) => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (nextSector === scope.signalSectors[0]?.symbol)
+            params.delete('sector');
+        else params.set('sector', nextSector);
+        if (nextTimeframe === DEFAULT_DASHBOARD_TIMEFRAME)
+            params.delete('timeframe');
+        else params.set('timeframe', nextTimeframe);
+        const qs = params.toString();
+        router.replace(qs === '' ? pathname : `${pathname}?${qs}`, {
+            scroll: false,
+        });
+    };
 
-    const handleSectorChange = useCallback(
-        (sector: string) => {
-            setActiveSector(sector);
-            updateUrl(sector, activeTimeframe);
-        },
-        [updateUrl, activeTimeframe]
-    );
+    const handleSectorChange = (sector: string) => {
+        setActiveSector(sector);
+        updateUrl(sector, activeTimeframe);
+    };
 
-    const handleTimeframeChange = useCallback(
-        (next: DashboardTimeframe) => {
-            setActiveTimeframe(next);
-            updateUrl(activeSector, next);
-        },
-        [updateUrl, activeSector]
-    );
+    const handleTimeframeChange = (next: DashboardTimeframe) => {
+        setActiveTimeframe(next);
+        updateUrl(activeSector, next);
+    };
 
     return {
         activeSector,

@@ -28,6 +28,7 @@ vi.mock('@upstash/redis', () => ({
 
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
 import { SECTOR_STOCKS } from '@/shared/config/dashboard-tickers';
+import { US_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
 
 const sampleResult: SectorSignalsResult = {
     computedAt: '2026-06-04T00:00:00Z',
@@ -67,7 +68,11 @@ describe('getCachedSectorSignals', () => {
     it('Redis env 없으면 getSectorSignals 직행', async () => {
         mockGetSectorSignals.mockResolvedValue(sampleResult);
         const mod = await loadWithEnv({});
-        const r = await mod.getCachedSectorSignals(mockProvider, '1Day');
+        const r = await mod.getCachedSectorSignals(
+            mockProvider,
+            US_DASHBOARD_SCOPE,
+            '1Day'
+        );
         expect(mockRedisCtor).not.toHaveBeenCalled();
         expect(mockGetSectorSignals).toHaveBeenCalledWith(
             mockProvider,
@@ -83,9 +88,13 @@ describe('getCachedSectorSignals', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        const r = await mod.getCachedSectorSignals(mockProvider, '1Hour');
+        const r = await mod.getCachedSectorSignals(
+            mockProvider,
+            US_DASHBOARD_SCOPE,
+            '1Hour'
+        );
         expect(mockRedisGet).toHaveBeenCalledWith(
-            expect.stringMatching(/^sector-signals:1Hour:[a-f0-9]{12}$/)
+            expect.stringMatching(/^sector-signals:us:1Hour:[a-f0-9]{12}$/)
         );
         expect(mockGetSectorSignals).not.toHaveBeenCalled();
         expect(r).toEqual(sampleResult);
@@ -99,9 +108,13 @@ describe('getCachedSectorSignals', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        await mod.getCachedSectorSignals(mockProvider, '15Min');
+        await mod.getCachedSectorSignals(
+            mockProvider,
+            US_DASHBOARD_SCOPE,
+            '15Min'
+        );
         expect(mockRedisSet).toHaveBeenCalledWith(
-            expect.stringMatching(/^sector-signals:15Min:[a-f0-9]{12}$/),
+            expect.stringMatching(/^sector-signals:us:15Min:[a-f0-9]{12}$/),
             { data: sampleResult },
             { ex: 60 }
         );
@@ -114,7 +127,11 @@ describe('getCachedSectorSignals', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        await mod.getCachedSectorSignals(mockProvider, '1Day');
+        await mod.getCachedSectorSignals(
+            mockProvider,
+            US_DASHBOARD_SCOPE,
+            '1Day'
+        );
         expect(mockRedisSet).not.toHaveBeenCalled();
     });
 
@@ -126,7 +143,11 @@ describe('getCachedSectorSignals', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        await mod.getCachedSectorSignals(mockProvider, '1Day');
+        await mod.getCachedSectorSignals(
+            mockProvider,
+            US_DASHBOARD_SCOPE,
+            '1Day'
+        );
         expect(mockRedisSet).toHaveBeenCalled();
     });
 
@@ -138,7 +159,11 @@ describe('getCachedSectorSignals', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        const r = await mod.getCachedSectorSignals(mockProvider, '1Day');
+        const r = await mod.getCachedSectorSignals(
+            mockProvider,
+            US_DASHBOARD_SCOPE,
+            '1Day'
+        );
         expect(errSpy).toHaveBeenCalled();
         expect(r).toEqual(sampleResult);
         errSpy.mockRestore();
@@ -153,7 +178,11 @@ describe('getCachedSectorSignals', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        const r = await mod.getCachedSectorSignals(mockProvider, '1Day');
+        const r = await mod.getCachedSectorSignals(
+            mockProvider,
+            US_DASHBOARD_SCOPE,
+            '1Day'
+        );
         expect(errSpy).toHaveBeenCalled();
         expect(r).toEqual(sampleResult);
         errSpy.mockRestore();
@@ -165,15 +194,23 @@ describe('getCachedSectorSignals', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        await mod.getCachedSectorSignals(mockProvider, '1Day');
+        await mod.getCachedSectorSignals(
+            mockProvider,
+            US_DASHBOARD_SCOPE,
+            '1Day'
+        );
         expect(mockRedisGet).toHaveBeenCalledWith(
-            expect.stringMatching(/^sector-signals:1Day:[a-f0-9]{12}$/)
+            expect.stringMatching(/^sector-signals:us:1Day:[a-f0-9]{12}$/)
         );
         vi.clearAllMocks();
         mockRedisGet.mockResolvedValue({ data: sampleResult });
-        await mod.getCachedSectorSignals(mockProvider, '15Min');
+        await mod.getCachedSectorSignals(
+            mockProvider,
+            US_DASHBOARD_SCOPE,
+            '15Min'
+        );
         expect(mockRedisGet).toHaveBeenCalledWith(
-            expect.stringMatching(/^sector-signals:15Min:[a-f0-9]{12}$/)
+            expect.stringMatching(/^sector-signals:us:15Min:[a-f0-9]{12}$/)
         );
     });
 });

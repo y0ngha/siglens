@@ -11,7 +11,7 @@ vi.mock('@/entities/economy/api/calendarRefreshFlag', () => ({
 }));
 vi.mock('@/shared/api/fmp/FmpEconomyProvider', () => ({
     FmpEconomyProvider: vi.fn(function () {
-        return { getCalendar: vi.fn() };
+        return { getCalendarForCountry: vi.fn() };
     }),
 }));
 vi.mock('@/entities/economy/api/economicCalendarRepository', () => ({
@@ -50,7 +50,7 @@ const EVENT: EconomicCalendarEvent = {
 };
 
 describe('ensureEconomicCalendarAction', () => {
-    let getCalendar: ReturnType<typeof vi.fn>;
+    let getCalendarForCountry: ReturnType<typeof vi.fn>;
     let upsertEvent: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
@@ -63,10 +63,12 @@ describe('ensureEconomicCalendarAction', () => {
         vi.mocked(markCalendarFetched).mockResolvedValue(undefined);
 
         // Set up fresh mocks on the class instances created by the action
-        getCalendar = vi.fn().mockResolvedValue([EVENT]);
+        getCalendarForCountry = vi.fn().mockResolvedValue([EVENT]);
         upsertEvent = vi.fn().mockResolvedValue(true);
         vi.mocked(FmpEconomyProvider).mockImplementation(function () {
-            return { getCalendar } as unknown as FmpEconomyProvider;
+            return {
+                getCalendarForCountry,
+            } as unknown as FmpEconomyProvider;
         });
         vi.mocked(DrizzleEconomicCalendarRepository).mockImplementation(
             function () {
@@ -84,7 +86,7 @@ describe('ensureEconomicCalendarAction', () => {
     it('short-circuits under E2E (no FMP calls)', async () => {
         isE2E.mockReturnValue(true);
         await ensureEconomicCalendarAction();
-        expect(getCalendar).not.toHaveBeenCalled();
+        expect(getCalendarForCountry).not.toHaveBeenCalled();
         expect(upsertEvent).not.toHaveBeenCalled();
         expect(vi.mocked(revalidateTag)).not.toHaveBeenCalled();
     });
@@ -92,20 +94,21 @@ describe('ensureEconomicCalendarAction', () => {
     it('skips fetch when recently fetched', async () => {
         vi.mocked(isCalendarRecentlyFetched).mockResolvedValue(true);
         await ensureEconomicCalendarAction();
-        expect(getCalendar).not.toHaveBeenCalled();
+        expect(getCalendarForCountry).not.toHaveBeenCalled();
         expect(upsertEvent).not.toHaveBeenCalled();
     });
 
     it('fetches, upserts, and revalidates the calendar tag on change', async () => {
         await ensureEconomicCalendarAction();
         expect(markCalendarFetched).toHaveBeenCalledOnce();
-        expect(getCalendar).toHaveBeenCalledOnce();
+        expect(getCalendarForCountry).toHaveBeenCalledOnce();
 
         // B3: assert FMP was called with the computed window
         const day = etDateOf(new Date('2026-06-20T12:00:00Z'));
-        expect(getCalendar).toHaveBeenCalledWith(
+        expect(getCalendarForCountry).toHaveBeenCalledWith(
             addEtDays(day, -CALENDAR_INGESTION_WINDOW_DAYS),
-            addEtDays(day, CALENDAR_INGESTION_WINDOW_DAYS)
+            addEtDays(day, CALENDAR_INGESTION_WINDOW_DAYS),
+            'US'
         );
 
         expect(upsertEvent).toHaveBeenCalledWith('US', EVENT);
@@ -122,7 +125,7 @@ describe('ensureEconomicCalendarAction', () => {
     });
 
     it('swallows FMP failure without throwing or revalidating', async () => {
-        getCalendar.mockRejectedValue(new Error('fmp down'));
+        getCalendarForCountry.mockRejectedValue(new Error('fmp down'));
         await expect(ensureEconomicCalendarAction()).resolves.toBeUndefined();
         expect(upsertEvent).not.toHaveBeenCalled();
         expect(revalidateTag).not.toHaveBeenCalled();
@@ -139,7 +142,7 @@ describe('ensureEconomicCalendarAction', () => {
             previous: 180000,
             unit: '건',
         };
-        getCalendar.mockResolvedValue([singleEvent]);
+        getCalendarForCountry.mockResolvedValue([singleEvent]);
         upsertEvent.mockRejectedValue(new Error('db'));
 
         await ensureEconomicCalendarAction();
@@ -168,7 +171,7 @@ describe('ensureEconomicCalendarAction', () => {
             previous: 0.2,
             unit: '%',
         };
-        getCalendar.mockResolvedValue([eventA, eventB]);
+        getCalendarForCountry.mockResolvedValue([eventA, eventB]);
         // First call rejects, second resolves true
         upsertEvent
             .mockRejectedValueOnce(new Error('db'))

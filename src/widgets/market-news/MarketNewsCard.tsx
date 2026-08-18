@@ -1,6 +1,7 @@
+import type { NewsFeedCategoryId } from '@/entities/market-news';
 import Link from 'next/link';
 import type { MarketNewsCardItem } from '@/entities/market-news';
-import type { NewsFeedCategory } from '@y0ngha/siglens-core';
+
 import { cn } from '@/shared/lib/cn';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import { NewsCardShell } from '@/shared/ui/NewsCardShell';
@@ -57,7 +58,7 @@ function ImpactBadge({ value }: ImpactBadgeProps) {
 }
 
 interface TickerChipsProps {
-    category: NewsFeedCategory;
+    category: NewsFeedCategoryId;
     tickers: string[];
 }
 
@@ -142,7 +143,7 @@ function SummarySkeletonLine() {
 }
 
 export interface MarketNewsCardProps {
-    category: NewsFeedCategory;
+    category: NewsFeedCategoryId;
     item: MarketNewsCardItem;
 }
 

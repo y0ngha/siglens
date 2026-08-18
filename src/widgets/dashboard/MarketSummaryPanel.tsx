@@ -13,7 +13,7 @@ import { useMarketSummary } from './hooks/useMarketSummary';
 import { useMarketBriefing } from './hooks/useMarketBriefing';
 import { MarketSummaryPanelSkeleton } from './MarketSummaryPanelSkeleton';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
-import { SECTOR_GROUPS } from '@/shared/config/dashboard-tickers';
+import type { DashboardScope } from '@/shared/config/dashboardScope';
 import type {
     MarketBriefingResponse,
     MarketSectorData,
@@ -43,16 +43,32 @@ function BriefingRegion({ input }: BriefingRegionProps) {
 }
 
 interface MarketSummaryPanelProps {
+    /** 어느 시장인가. 시세·브리핑 조회와 섹터 묶음, 섹션 제목이 전부 여기서 갈린다. */
+    scope: DashboardScope;
     peekSeed?: MarketBriefingResponse | null;
 }
 
-export function MarketSummaryPanel({ peekSeed }: MarketSummaryPanelProps = {}) {
+/**
+ * 섹션 제목 겸 랜드마크 라벨. 지역 탭이 위에 있어도 "지금 보고 있는 게 어느 시장인지"를
+ * 제목이 한 번 더 말해 줘야 한다 — 스크린리더는 탭의 활성 상태를 이 섹션과 함께
+ * 읽어 주지 않는다.
+ */
+const PANEL_HEADING: Record<DashboardScope['id'], string> = {
+    us: '오늘의 미국 시장',
+    kr: '오늘의 한국 시장',
+};
+
+export function MarketSummaryPanel({
+    scope,
+    peekSeed,
+}: MarketSummaryPanelProps) {
     const [noticeDismissed, setNoticeDismissed] = useState(false);
     const { data, isPending, sectorMap, indices, hasMissingQuotes } =
-        useMarketSummary();
-    const { input: briefing } = useMarketBriefing(peekSeed);
+        useMarketSummary(scope.id);
+    const { input: briefing } = useMarketBriefing(scope.id, peekSeed);
+    const heading = PANEL_HEADING[scope.id];
 
-    if (isPending) return <MarketSummaryPanelSkeleton />;
+    if (isPending) return <MarketSummaryPanelSkeleton scope={scope} />;
 
     const isTotalFailure = data !== undefined && 'ok' in data;
     const showNotice = !noticeDismissed && (isTotalFailure || hasMissingQuotes);
@@ -63,10 +79,7 @@ export function MarketSummaryPanel({ peekSeed }: MarketSummaryPanelProps = {}) {
     if (isTotalFailure) {
         if (!showNotice) return null;
         return (
-            <section
-                aria-label="오늘의 미국 시장"
-                className="px-6 py-10 lg:px-[15vw]"
-            >
+            <section aria-label={heading} className="px-6 py-10 lg:px-[15vw]">
                 <MarketDataErrorNotice onClose={dismissNotice} />
             </section>
         );
@@ -76,12 +89,9 @@ export function MarketSummaryPanel({ peekSeed }: MarketSummaryPanelProps = {}) {
     // role="alert"(assertive)인 안내를 그 안에 중첩하면 라이브리전이 경쟁하므로,
     // 안내는 polite 영역 밖(제목 아래·그리드 위)에 렌더한다.
     return (
-        <section
-            aria-label="오늘의 미국 시장"
-            className="px-6 py-10 lg:px-[15vw]"
-        >
+        <section aria-label={heading} className="px-6 py-10 lg:px-[15vw]">
             <h2 className="mb-6 text-sm font-semibold tracking-[0.15em] text-secondary-200 uppercase">
-                오늘의 미국 시장
+                {heading}
             </h2>
             {showNotice && (
                 <MarketDataErrorNotice
@@ -98,7 +108,7 @@ export function MarketSummaryPanel({ peekSeed }: MarketSummaryPanelProps = {}) {
 
                 {/* 섹터 ETF — 그룹별 내부 링크 포함 (SEO) */}
                 <div className="flex flex-col gap-3">
-                    {SECTOR_GROUPS.map(group => {
+                    {scope.sectorGroups.map(group => {
                         const groupSectors = group.symbols
                             .map(sym => sectorMap.get(sym))
                             .filter(

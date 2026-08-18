@@ -10,7 +10,14 @@ export const PREVIEW_HEADLINE_LIMIT = 3;
 
 export interface CategoryCardProps {
     koLabel: string;
-    slug: string;
+    /**
+     * 카드가 가리키는 목적지.
+     *
+     * 예전에는 `slug`를 받아 `/news/${slug}`를 조립했는데, `/news` 허브가 3지역
+     * 카드(`/news/us` 등)를 렌더하게 되면서 카테고리 slug로 표현되지 않는 목적지가
+     * 생겼다. 호출부가 완성된 경로를 넘긴다.
+     */
+    href: string;
     /** One-sentence category intro shown below the heading. Differentiates each card from thin-duplicate content. */
     koDescription: string;
     /**
@@ -23,7 +30,7 @@ export interface CategoryCardProps {
 }
 
 /**
- * Server component: category hub card linking to `/news/[slug]`.
+ * Server component: hub card linking to `href`.
  *
  * Renders a heading, up to 3 truncated headline previews (or a fallback
  * placeholder when none are available), and a "더보기" deep link with a decorative arrow.
@@ -33,7 +40,7 @@ export interface CategoryCardProps {
  */
 export function CategoryCard({
     koLabel,
-    slug,
+    href,
     koDescription,
     previewHeadlines,
 }: CategoryCardProps) {
@@ -69,7 +76,7 @@ export function CategoryCard({
             )}
 
             <Link
-                href={`/news/${slug}`}
+                href={href}
                 // 카드 그리드로 다수 렌더 — docs/architecture/CDN_CACHING.md §1
                 prefetch={false}
                 className="mt-auto text-sm text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"

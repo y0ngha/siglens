@@ -58,6 +58,23 @@ vi.mock('@/entities/sector-signal/api/sectorSignalsStaticCache', () => ({
 
 vi.mock('@/shared/config/dashboard-tickers', () => ({
     DEFAULT_DASHBOARD_TIMEFRAME: '1Day',
+    // `dashboardScope`가 이 모듈에서 US 설정을 조립하므로 목이 전부를 덮어야 한다.
+    // 하나라도 빠지면 scope 생성 단계에서 터진다.
+    MARKET_INDICES: [
+        {
+            symbol: 'GSPC',
+            fmpSymbol: '^GSPC',
+            displayName: 'S&P 500',
+            koreanName: '미국 대형주 500',
+        },
+    ],
+    SECTOR_ETFS: [
+        { symbol: 'XLK', koreanName: 'AI 반도체', sectorName: 'Technology' },
+    ],
+    SECTOR_GROUPS: [{ label: '성장', symbols: ['XLK'] }],
+    SECTOR_STOCKS: [
+        { symbol: 'AAPL', koreanName: '애플', sectorSymbol: 'XLK' },
+    ],
     SIGNAL_SECTORS: [
         { symbol: 'XLK', koreanName: 'AI 반도체', sectorName: 'Technology' },
     ],
@@ -65,9 +82,13 @@ vi.mock('@/shared/config/dashboard-tickers', () => ({
 
 vi.mock('@/shared/config/queryConfig', () => ({
     QUERY_KEYS: {
-        marketSummary: () => ['market-summary'],
-        sectorSignals: (tf: string) => ['sector-signals', tf],
-        marketBriefing: () => ['market-briefing'],
+        marketSummary: (scope: string) => ['market-summary', scope],
+        sectorSignals: (scope: string, tf: string) => [
+            'sector-signals',
+            scope,
+            tf,
+        ],
+        marketBriefing: (scope: string) => ['market-briefing', scope],
     },
 }));
 
@@ -87,7 +108,10 @@ vi.mock('@/shared/lib/og', () => ({
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 
 import * as pageModule from '@/app/market/page';
-import { generateMetadata, MarketContent } from '@/app/market/page';
+import { generateMetadata } from '@/app/market/page';
+// `MarketContent`는 미국·한국 라우트가 공유하는 본문으로 옮겨졌다 — scope를 인자로 받는다.
+import { MarketContent } from '@/app/market/MarketRouteBody';
+import { US_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
 
 describe('Market page', () => {
     describe('ISR route config', () => {
@@ -207,17 +231,20 @@ describe('Market page', () => {
         });
 
         it('calls getMarketSummaryStatic (no args — static route)', async () => {
-            await MarketContent();
+            await MarketContent({ scope: US_DASHBOARD_SCOPE });
             expect(mockGetMarketSummaryStatic).toHaveBeenCalled();
         });
 
         it('calls getSectorSignalsStatic with DEFAULT_DASHBOARD_TIMEFRAME', async () => {
-            await MarketContent();
-            expect(mockGetSectorSignalsStatic).toHaveBeenCalledWith('1Day');
+            await MarketContent({ scope: US_DASHBOARD_SCOPE });
+            expect(mockGetSectorSignalsStatic).toHaveBeenCalledWith(
+                US_DASHBOARD_SCOPE,
+                '1Day'
+            );
         });
 
         it('seeds QueryClient with setQueryData for both marketSummary and sectorSignals keys', async () => {
-            await MarketContent();
+            await MarketContent({ scope: US_DASHBOARD_SCOPE });
 
             // MarketContent calls queryClient.setQueryData twice: once for marketSummary
             // and once for sectorSignals. mockSetQueryData is shared across all QueryClient
@@ -225,7 +252,7 @@ describe('Market page', () => {
             // page.tsx: queryClient.setQueryData(QUERY_KEYS.marketSummary(), { summary }, { updatedAt })
             // updatedAt 옵션은 dehydrate 시 ISR HTML 결정성 보장용(2026-06-06 PR #573 R8 fix).
             expect(mockSetQueryData).toHaveBeenCalledWith(
-                ['market-summary'],
+                ['market-summary', 'us'],
                 expect.objectContaining({
                     summary: expect.objectContaining({
                         indices: [],
@@ -236,7 +263,7 @@ describe('Market page', () => {
             );
             // page.tsx: queryClient.setQueryData(QUERY_KEYS.sectorSignals(...), sectorData, { updatedAt })
             expect(mockSetQueryData).toHaveBeenCalledWith(
-                ['sector-signals', '1Day'],
+                ['sector-signals', 'us', '1Day'],
                 expect.objectContaining({ stocks: [] }),
                 expect.objectContaining({ updatedAt: expect.any(Number) })
             );
@@ -248,7 +275,7 @@ describe('Market page', () => {
             vi.useFakeTimers();
             vi.setSystemTime(new Date('2026-06-04T14:37:22.000Z'));
             try {
-                await MarketContent();
+                await MarketContent({ scope: US_DASHBOARD_SCOPE });
 
                 const sectorSignalsCall = (
                     mockSetQueryData.mock.calls as [
@@ -287,7 +314,7 @@ describe('Market page', () => {
             vi.useFakeTimers();
             vi.setSystemTime(new Date('2026-06-04T09:52:11.000Z'));
             try {
-                await MarketContent();
+                await MarketContent({ scope: US_DASHBOARD_SCOPE });
 
                 const sectorSignalsCall = (
                     mockSetQueryData.mock.calls as [unknown[], unknown][]
@@ -311,15 +338,19 @@ describe('Market page', () => {
         it('peekBriefingStatic returns null → graceful fallback (client triggers submit)', async () => {
             mockPeekBriefingStatic.mockResolvedValue(null);
             // MarketContent must render without throwing when peekSeed is null
-            await expect(MarketContent()).resolves.toBeDefined();
+            await expect(
+                MarketContent({ scope: US_DASHBOARD_SCOPE })
+            ).resolves.toBeDefined();
         });
 
         it('peekBriefingStatic throwing → .catch(() => null) prevents page crash', async () => {
             // The page uses .catch(() => null) — even if peekBriefingStatic throws,
             // peekSeed = null and the page continues to render. This test would FAIL
-            // if the page's own .catch were removed, because MarketContent() would reject.
+            // if the page's own .catch were removed, because MarketContent({ scope: US_DASHBOARD_SCOPE }) would reject.
             mockPeekBriefingStatic.mockRejectedValue(new Error('redis down'));
-            await expect(MarketContent()).resolves.toBeDefined();
+            await expect(
+                MarketContent({ scope: US_DASHBOARD_SCOPE })
+            ).resolves.toBeDefined();
         });
 
         it('getMarketSummaryStatic throwing → .catch() degraded empty summary, page does not throw', async () => {
@@ -330,10 +361,12 @@ describe('Market page', () => {
                 .spyOn(console, 'error')
                 .mockImplementation(() => undefined);
 
-            await expect(MarketContent()).resolves.toBeDefined();
+            await expect(
+                MarketContent({ scope: US_DASHBOARD_SCOPE })
+            ).resolves.toBeDefined();
             expect(consoleSpy).toHaveBeenCalledWith(
                 expect.stringContaining(
-                    '[MarketContent] getMarketSummaryStatic failed:'
+                    '[MarketContent:us] getMarketSummaryStatic failed:'
                 ),
                 expect.any(Error)
             );
@@ -351,10 +384,12 @@ describe('Market page', () => {
                 .spyOn(console, 'error')
                 .mockImplementation(() => undefined);
 
-            await expect(MarketContent()).resolves.toBeDefined();
+            await expect(
+                MarketContent({ scope: US_DASHBOARD_SCOPE })
+            ).resolves.toBeDefined();
             expect(consoleSpy).toHaveBeenCalledWith(
                 expect.stringContaining(
-                    '[MarketContent] getSectorSignalsStatic failed:'
+                    '[MarketContent:us] getSectorSignalsStatic failed:'
                 ),
                 expect.any(Error)
             );
@@ -381,9 +416,11 @@ describe('Market page', () => {
 describe('/market BreadcrumbList 이름', () => {
     it('시장을 명시한다', async () => {
         const { buildBreadcrumbJsonLd } = await import('@/shared/lib/seo');
-        const MarketPage = (await import('../page')).default;
+        // 라우트는 이제 공유 본문 컴포넌트를 반환만 한다 — breadcrumb는 그 본문이
+        // 렌더될 때 만들어지므로 본문을 직접 호출해야 관측된다.
+        const { MarketRouteBody } = await import('../MarketRouteBody');
         vi.mocked(buildBreadcrumbJsonLd).mockClear();
-        await MarketPage();
+        MarketRouteBody({ scope: US_DASHBOARD_SCOPE });
         expect(buildBreadcrumbJsonLd).toHaveBeenCalledWith([
             expect.objectContaining({ name: '미국 시장 현황' }),
         ]);

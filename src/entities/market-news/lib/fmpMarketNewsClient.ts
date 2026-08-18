@@ -1,10 +1,9 @@
-import type { NewsFeedCategory } from '@y0ngha/siglens-core';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 import {
     hashUrlToId,
     normalizeFmpPublishedDate,
 } from '@/entities/news-article';
-import { CATEGORY_CONFIG } from './categoryConfig';
+import { CATEGORY_CONFIG, type NewsFeedCategoryId } from './categoryConfig';
 import type {
     MarketNewsClientPort,
     MarketNewsItem,
@@ -134,7 +133,7 @@ export class FmpMarketNewsClient implements MarketNewsClientPort {
      * - **articles**: `{ title, date, content, tickers, link, author, site }`.
      */
     async fetchCategoryNews(
-        category: NewsFeedCategory,
+        category: NewsFeedCategoryId,
         lookbackMs: number
     ): Promise<MarketNewsItem[]> {
         const { sentinel, fmpEndpoint } = CATEGORY_CONFIG[category];

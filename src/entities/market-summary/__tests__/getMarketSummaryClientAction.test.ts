@@ -3,6 +3,7 @@ import { getMarketSummaryClientAction } from '../actions/getMarketSummaryClientA
 import { type MarketSummaryData } from '@y0ngha/siglens-core';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { getCachedMarketSummary } from '../api/marketSummaryCache';
+import { US_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
 
 vi.mock('server-only', () => ({}));
 
@@ -22,6 +23,9 @@ vi.mock('@/shared/api/e2eEnv', () => ({
 const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
 vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     getMarketDataProvider: vi.fn(() => mockProvider),
+    // scope 인지 팩토리도 같은 모듈에 있다 — 목에서 빠지면 액션이 import 단계에서
+    // 실패해 `server_error`로 조용히 떨어진다.
+    marketDataProviderFor: vi.fn(() => mockProvider),
 }));
 
 const mockGetCachedMarketSummary = getCachedMarketSummary as MockedFunction<
@@ -61,16 +65,17 @@ describe('getMarketSummaryClientAction 함수는', () => {
 
     describe('일반(비-E2E) 요청 시', () => {
         it('(Happy) summary를 그대로 반환한다', async () => {
-            const result = await getMarketSummaryClientAction();
+            const result = await getMarketSummaryClientAction('us');
 
             expect(result).toEqual({ summary: summaryData });
         });
 
         it('(Happy) getCachedMarketSummary를 provider와 함께 호출한다', async () => {
-            await getMarketSummaryClientAction();
+            await getMarketSummaryClientAction('us');
 
             expect(mockGetCachedMarketSummary).toHaveBeenCalledWith(
-                mockProvider
+                mockProvider,
+                US_DASHBOARD_SCOPE
             );
         });
     });
@@ -81,7 +86,7 @@ describe('getMarketSummaryClientAction 함수는', () => {
         });
 
         it('(Worst) force-partial 쿠키 없으면 summary를 그대로 반환한다', async () => {
-            const result = await getMarketSummaryClientAction();
+            const result = await getMarketSummaryClientAction('us');
 
             expect(result).toEqual({ summary: summaryData });
         });
@@ -92,7 +97,7 @@ describe('getMarketSummaryClientAction 함수는', () => {
                 value: '1',
             });
 
-            const result = await getMarketSummaryClientAction();
+            const result = await getMarketSummaryClientAction('us');
 
             expect('ok' in result).toBe(false);
             if ('ok' in result) return;
@@ -112,7 +117,7 @@ describe('getMarketSummaryClientAction 함수는', () => {
                 new Error('network timeout')
             );
 
-            const result = await getMarketSummaryClientAction();
+            const result = await getMarketSummaryClientAction('us');
 
             expect(result).toEqual({ ok: false, error: 'server_error' });
         });

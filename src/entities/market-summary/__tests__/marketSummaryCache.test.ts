@@ -28,6 +28,7 @@ vi.mock('@upstash/redis', () => ({
 
 import type { MarketSummaryData } from '@y0ngha/siglens-core';
 import { MARKET_INDICES, SECTOR_ETFS } from '@/shared/config/dashboard-tickers';
+import { US_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
 
 const sampleSummary: MarketSummaryData = {
     indices: [
@@ -113,7 +114,10 @@ describe('getCachedMarketSummary', () => {
     it('Redis env 없으면 getMarketSummary 직행', async () => {
         mockGetMarketSummary.mockResolvedValue(sampleSummary);
         const mod = await loadWithEnv({});
-        const r = await mod.getCachedMarketSummary(mockProvider);
+        const r = await mod.getCachedMarketSummary(
+            mockProvider,
+            US_DASHBOARD_SCOPE
+        );
         expect(mockRedisCtor).not.toHaveBeenCalled();
         expect(mockGetMarketSummary).toHaveBeenCalledWith(
             mockProvider,
@@ -129,9 +133,12 @@ describe('getCachedMarketSummary', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        const r = await mod.getCachedMarketSummary(mockProvider);
+        const r = await mod.getCachedMarketSummary(
+            mockProvider,
+            US_DASHBOARD_SCOPE
+        );
         expect(mockRedisGet).toHaveBeenCalledWith(
-            expect.stringMatching(/^market:summary:[a-f0-9]{12}$/)
+            expect.stringMatching(/^market:summary:us:[a-f0-9]{12}$/)
         );
         expect(mockGetMarketSummary).not.toHaveBeenCalled();
         expect(r).toEqual(sampleSummary);
@@ -145,9 +152,9 @@ describe('getCachedMarketSummary', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        await mod.getCachedMarketSummary(mockProvider);
+        await mod.getCachedMarketSummary(mockProvider, US_DASHBOARD_SCOPE);
         expect(mockRedisSet).toHaveBeenCalledWith(
-            expect.stringMatching(/^market:summary:[a-f0-9]{12}$/),
+            expect.stringMatching(/^market:summary:us:[a-f0-9]{12}$/),
             { data: sampleSummary },
             { ex: 60 }
         );
@@ -160,7 +167,7 @@ describe('getCachedMarketSummary', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        await mod.getCachedMarketSummary(mockProvider);
+        await mod.getCachedMarketSummary(mockProvider, US_DASHBOARD_SCOPE);
         expect(mockRedisSet).not.toHaveBeenCalled();
     });
 
@@ -171,7 +178,7 @@ describe('getCachedMarketSummary', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        await mod.getCachedMarketSummary(mockProvider);
+        await mod.getCachedMarketSummary(mockProvider, US_DASHBOARD_SCOPE);
         expect(mockRedisSet).not.toHaveBeenCalled();
     });
 
@@ -183,7 +190,10 @@ describe('getCachedMarketSummary', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        const r = await mod.getCachedMarketSummary(mockProvider);
+        const r = await mod.getCachedMarketSummary(
+            mockProvider,
+            US_DASHBOARD_SCOPE
+        );
         expect(errSpy).toHaveBeenCalled();
         expect(r).toEqual(sampleSummary);
         errSpy.mockRestore();
@@ -198,7 +208,10 @@ describe('getCachedMarketSummary', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        const r = await mod.getCachedMarketSummary(mockProvider);
+        const r = await mod.getCachedMarketSummary(
+            mockProvider,
+            US_DASHBOARD_SCOPE
+        );
         expect(errSpy).toHaveBeenCalled();
         expect(r).toEqual(sampleSummary);
         errSpy.mockRestore();

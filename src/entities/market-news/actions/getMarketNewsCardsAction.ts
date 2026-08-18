@@ -1,9 +1,11 @@
 'use server';
 
 import { getMarketNewsCards } from '../api';
-import { CATEGORY_CONFIG } from '../lib/categoryConfig';
+import {
+    CATEGORY_CONFIG,
+    type NewsFeedCategoryId,
+} from '../lib/categoryConfig';
 import type { MarketNewsCardItem } from '../lib/toCardItem';
-import type { NewsFeedCategory } from '@y0ngha/siglens-core';
 
 /**
  * Discriminated union result type for {@link getMarketNewsCardsAction}.
@@ -34,7 +36,7 @@ export type GetMarketNewsCardsResult =
  * 실리지 않는다.
  */
 export async function getMarketNewsCardsAction(
-    category: NewsFeedCategory
+    category: NewsFeedCategoryId
 ): Promise<GetMarketNewsCardsResult> {
     try {
         const { sentinel } = CATEGORY_CONFIG[category];

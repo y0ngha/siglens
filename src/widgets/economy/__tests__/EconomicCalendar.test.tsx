@@ -24,14 +24,16 @@ const EVENT: EconomicCalendarEvent = {
 
 describe('EconomicCalendar (barrel alias → EconomicCalendarGrid)', () => {
     it('이벤트 0건이면 안내 문구', () => {
-        render(<EconomicCalendar events={[]} />);
+        render(<EconomicCalendar country="US" events={[]} />);
         expect(
             screen.getByText('다가오는 미국 경제 발표 일정이 아직 없어요.')
         ).toBeInTheDocument();
     });
 
     it('이벤트 1건이면 이벤트 이름이 DOM에 존재한다', () => {
-        const { container } = render(<EconomicCalendar events={[EVENT]} />);
+        const { container } = render(
+            <EconomicCalendar country="US" events={[EVENT]} />
+        );
         expect(container.textContent).toContain('Fed Rate Decision');
     });
 });

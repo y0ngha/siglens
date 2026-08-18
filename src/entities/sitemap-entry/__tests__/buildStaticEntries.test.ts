@@ -10,13 +10,21 @@ import { MS_PER_HOUR } from '@/shared/config/time';
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 import { floorToHour } from '../lib/floorToHour';
+import { ALL_NAV_REGION_LINKS } from '@/shared/config/assetClassNav';
 
 const NOW = new Date('2026-05-23T15:30:00.000Z');
 
 describe('buildStaticEntries', () => {
-    it('home / market / fear-greed / backtesting / economy / news hub + 5 categories / privacy / terms 13개 엔트리를 반환한다', () => {
+    it('홈 + 버티컬 지역 페이지 + backtesting + 뉴스 허브·지역·카테고리 + legal 전부를 반환한다', () => {
         const entries = buildStaticEntries(NOW);
-        expect(entries).toHaveLength(13);
+
+        // 개수를 손으로 적지 않는다 — 지역을 하나 열 때마다 이 숫자만 고치게 되고
+        // 정작 "빠진 URL"은 못 잡는다. 내비 설정에서 파생해 정합성을 강제한다.
+        const urlSet = new Set(entries.map(e => e.url));
+        for (const link of ALL_NAV_REGION_LINKS) {
+            expect(urlSet).toContain(`${SITE_URL}${link.href}`);
+        }
+        expect(urlSet.size).toBe(entries.length); // 중복 URL 없음
 
         const urls = entries.map(e => e.url);
         expect(urls).toEqual(

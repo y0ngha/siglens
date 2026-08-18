@@ -32,6 +32,7 @@ describe('EconomicCalendarGrid analysis display', () => {
     it('renders sentiment badge + summary + interpretation for an analyzed event', () => {
         render(
             <EconomicCalendarGrid
+                country="US"
                 events={[
                     ev({
                         sentiment: 'bullish',
@@ -56,6 +57,7 @@ describe('EconomicCalendarGrid analysis display', () => {
     it('renders no sentiment badge for a not-yet-analyzed announced event', () => {
         render(
             <EconomicCalendarGrid
+                country="US"
                 events={[ev({ sentiment: null, summaryKo: null })]}
                 today="2026-06-20"
             />
@@ -68,6 +70,7 @@ describe('EconomicCalendarGrid analysis display', () => {
     it('renders badge and summary but not interpretation when interpretationKo is null', () => {
         render(
             <EconomicCalendarGrid
+                country="US"
                 events={[
                     ev({
                         sentiment: 'bearish',
@@ -92,6 +95,7 @@ describe('EconomicCalendarGrid analysis display', () => {
     it('renders no analysis block for an unannounced event (actual null)', () => {
         render(
             <EconomicCalendarGrid
+                country="US"
                 events={[
                     ev({ actual: null, sentiment: null, summaryKo: null }),
                 ]}
@@ -105,6 +109,7 @@ describe('EconomicCalendarGrid analysis display', () => {
     it('renders no sentiment badge when summaryKo is an empty string (C1 guard)', () => {
         render(
             <EconomicCalendarGrid
+                country="US"
                 events={[
                     ev({
                         sentiment: 'neutral',
@@ -123,6 +128,7 @@ describe('EconomicCalendarGrid analysis display', () => {
     it('renders no sentiment badge when summaryKo is whitespace-only (C1 guard)', () => {
         render(
             <EconomicCalendarGrid
+                country="US"
                 events={[
                     ev({
                         sentiment: 'bullish',
@@ -156,6 +162,7 @@ describe('EconomicCalendarGrid — displayEventLabel prototype-pollution guard (
         // function without the Object.hasOwn guard, potentially crashing the renderer.
         render(
             <EconomicCalendarGrid
+                country="US"
                 events={[baseEvent('toString')]}
                 today="2026-06-20"
                 labels={{}}
@@ -167,6 +174,7 @@ describe('EconomicCalendarGrid — displayEventLabel prototype-pollution guard (
     it('renders the literal "constructor" event name when labels map does not contain it', () => {
         render(
             <EconomicCalendarGrid
+                country="US"
                 events={[baseEvent('constructor')]}
                 today="2026-06-20"
                 labels={{}}

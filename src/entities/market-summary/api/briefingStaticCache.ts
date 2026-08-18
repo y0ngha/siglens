@@ -6,6 +6,7 @@ import {
     peekBriefingCache,
 } from '@y0ngha/siglens-core';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 
 /**
  * ISR static-safe peek of the cached briefing. core peekBriefingCache(읽기전용)를 Next
@@ -15,11 +16,15 @@ import { SECONDS_PER_HOUR } from '@/shared/config/time';
  */
 export function peekBriefingStatic(
     summary: MarketSummaryData,
-    dateHour: string
+    dateHour: string,
+    scope: DashboardScopeId
 ): Promise<MarketBriefingResponse | null> {
     return unstable_cache(
         () => peekBriefingCache(summary),
-        ['briefing-peek-static', dateHour],
-        { revalidate: SECONDS_PER_HOUR, tags: ['market:briefing'] }
+        // `scope`가 키에 **반드시** 있어야 한다. 예전 키는 `dateHour` 하나뿐이라
+        // 미국·한국이 같은 시간대에 같은 엔트리를 공유했다 — 먼저 렌더된 쪽의
+        // 브리핑이 다른 시장 페이지에 그대로 나간다.
+        ['briefing-peek-static', scope, dateHour],
+        { revalidate: SECONDS_PER_HOUR, tags: [`market:briefing:${scope}`] }
     )();
 }

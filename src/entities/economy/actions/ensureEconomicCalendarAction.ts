@@ -17,6 +17,7 @@ import {
     CALENDAR_COUNTRY,
     CALENDAR_INGESTION_WINDOW_DAYS,
     ECONOMY_CALENDAR_CACHE_TAG,
+    type CalendarCountry,
 } from '../lib/economyCalendarConstants';
 
 /** upsert 과반 실패 시 abort 임계 분모. */
@@ -30,14 +31,21 @@ const MAJORITY_DIVISOR = 2;
  * graceful FMP 실패(빈 결과 X, DB 기존 데이터 유지), 과반 upsert 실패 시 abort.
  * AI 분석 없음(SP-D 별도). `waitUntil` 안에서 돌도록 설계 — 응답 스트림 비차단.
  */
-export async function ensureEconomicCalendarAction(): Promise<void> {
+/**
+ * @param country - 수집할 국가. 기본값은 미국이라 기존 호출부(`/economy`)가 그대로
+ *   동작한다. 한국 라우트는 `'KR'`을 넘긴다 — refresh-flag도 국가별로 갈려 있어
+ *   한쪽 인제스션이 다른 쪽을 건너뛰게 만들지 않는다.
+ */
+export async function ensureEconomicCalendarAction(
+    country: CalendarCountry = CALENDAR_COUNTRY
+): Promise<void> {
     try {
         if (isE2E()) return;
-        if (await isCalendarRecentlyFetched()) {
+        if (await isCalendarRecentlyFetched(country)) {
             return;
         }
         // 플래그를 fetch 전에 set: 동시 마운트 dedup(news 패턴). 전량 실패 시 복구는 TTL 만료까지 대기.
-        await markCalendarFetched();
+        await markCalendarFetched(country);
 
         const today = etDateOf(new Date());
         const from = addEtDays(today, -CALENDAR_INGESTION_WINDOW_DAYS);
@@ -45,7 +53,7 @@ export async function ensureEconomicCalendarAction(): Promise<void> {
 
         const provider = new FmpEconomyProvider();
         const fresh = await provider
-            .getCalendar(from, to)
+            .getCalendarForCountry(from, to, country)
             .catch((err: unknown) => {
                 console.error(
                     '[ensureEconomicCalendarAction] FMP fetch failed:',
@@ -65,7 +73,7 @@ export async function ensureEconomicCalendarAction(): Promise<void> {
                     event =>
                         [
                             economicCalendarId(
-                                CALENDAR_COUNTRY,
+                                country,
                                 event.date,
                                 event.event
                             ),
@@ -76,7 +84,7 @@ export async function ensureEconomicCalendarAction(): Promise<void> {
         ];
 
         const settled = await Promise.allSettled(
-            deduped.map(event => repo.upsertEvent(CALENDAR_COUNTRY, event))
+            deduped.map(event => repo.upsertEvent(country, event))
         );
         const failures = settled.filter(r => r.status === 'rejected');
         if (failures.length > 0) {

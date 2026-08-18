@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MarketSummaryPanel } from '@/widgets/dashboard/MarketSummaryPanel';
+import { TEST_SCOPE } from './helpers/testScope';
 
 const mockUseMarketSummary = vi.fn();
 vi.mock('@/widgets/dashboard/hooks/useMarketSummary', () => ({
@@ -45,13 +46,6 @@ vi.mock('@/shared/lib/cn', () => ({
     cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
 }));
 
-vi.mock('@/shared/config/dashboard-tickers', () => ({
-    SECTOR_GROUPS: [
-        { label: 'Tech', symbols: ['XLK'] },
-        { label: 'Finance', symbols: ['XLF', 'XLV', 'XLI'] },
-    ],
-}));
-
 vi.mock('react-error-boundary', () => ({
     ErrorBoundary: ({ children }: { children: React.ReactNode }) => (
         <>{children}</>
@@ -84,7 +78,7 @@ describe('MarketSummaryPanel', () => {
             data: undefined,
             isPending: true,
         });
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(screen.getByTestId('skeleton')).toBeInTheDocument();
     });
 
@@ -93,7 +87,7 @@ describe('MarketSummaryPanel', () => {
             ...defaultSummaryReturn,
             data: { ok: false },
         });
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(screen.getByTestId('data-error-notice')).toBeInTheDocument();
         expect(screen.queryByText('오늘의 미국 시장')).not.toBeInTheDocument();
     });
@@ -103,7 +97,7 @@ describe('MarketSummaryPanel', () => {
             ...defaultSummaryReturn,
             data: { ok: false },
         });
-        const { container } = render(<MarketSummaryPanel />);
+        const { container } = render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         fireEvent.click(screen.getByText('close-notice'));
         expect(container.innerHTML).toBe('');
     });
@@ -123,7 +117,7 @@ describe('MarketSummaryPanel', () => {
             ],
             hasMissingQuotes: true,
         });
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(screen.getByTestId('data-error-notice')).toBeInTheDocument();
         expect(screen.getByText('오늘의 미국 시장')).toBeInTheDocument();
         expect(screen.getByTestId('index-SPY')).toBeInTheDocument();
@@ -144,7 +138,7 @@ describe('MarketSummaryPanel', () => {
             ],
             hasMissingQuotes: true,
         });
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         fireEvent.click(screen.getByText('close-notice'));
         expect(
             screen.queryByTestId('data-error-notice')
@@ -166,7 +160,7 @@ describe('MarketSummaryPanel', () => {
                 },
             ],
         });
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(
             screen.queryByTestId('data-error-notice')
         ).not.toBeInTheDocument();
@@ -187,7 +181,7 @@ describe('MarketSummaryPanel', () => {
                 },
             ],
         });
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(screen.getByText('오늘의 미국 시장')).toBeInTheDocument();
         expect(screen.getByTestId('index-SPY')).toBeInTheDocument();
     });
@@ -240,7 +234,7 @@ describe('MarketSummaryPanel', () => {
             ...defaultSummaryReturn,
             sectorMap,
         });
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(screen.getByText('Tech')).toBeInTheDocument();
         expect(screen.getByText('Finance')).toBeInTheDocument();
         expect(screen.getByTestId('index-XLK')).toBeInTheDocument();
@@ -252,7 +246,7 @@ describe('MarketSummaryPanel', () => {
             input: { status: 'miss_no_trigger' },
         });
         mockUseMarketSummary.mockReturnValue(defaultSummaryReturn);
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(screen.getByTestId('briefing-loading')).toBeInTheDocument();
     });
 
@@ -267,7 +261,7 @@ describe('MarketSummaryPanel', () => {
             },
         });
         mockUseMarketSummary.mockReturnValue(defaultSummaryReturn);
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(screen.getByTestId('briefing')).toBeInTheDocument();
     });
 
@@ -280,14 +274,14 @@ describe('MarketSummaryPanel', () => {
             },
         });
         mockUseMarketSummary.mockReturnValue(defaultSummaryReturn);
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(screen.getByTestId('briefing')).toBeInTheDocument();
     });
 
     it('briefing undefined면 BriefingRegion이 아무것도 렌더하지 않는다', () => {
         mockUseMarketBriefing.mockReturnValue({ input: undefined });
         mockUseMarketSummary.mockReturnValue(defaultSummaryReturn);
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(screen.queryByTestId('briefing')).not.toBeInTheDocument();
         expect(screen.queryByTestId('bot-blocked')).not.toBeInTheDocument();
     });
@@ -295,7 +289,7 @@ describe('MarketSummaryPanel', () => {
     it('briefing null이면 봇 차단 안내를 렌더한다', () => {
         mockUseMarketBriefing.mockReturnValue({ input: null });
         mockUseMarketSummary.mockReturnValue(defaultSummaryReturn);
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(screen.getByTestId('bot-blocked')).toBeInTheDocument();
     });
 
@@ -337,7 +331,7 @@ describe('MarketSummaryPanel', () => {
             ...defaultSummaryReturn,
             sectorMap,
         });
-        const { container } = render(<MarketSummaryPanel />);
+        const { container } = render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         const grids = container.querySelectorAll('.grid-cols-3');
         expect(grids.length).toBeGreaterThan(0);
     });

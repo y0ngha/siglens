@@ -9,6 +9,7 @@ import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import type { MarketBriefingActionResult } from '@/shared/lib/types';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 
 export interface UseMarketBriefingReturn {
     /**
@@ -27,15 +28,16 @@ export interface UseMarketBriefingReturn {
  * `runAnalysisStream`은 25초 heartbeat로 그 벽을 넘긴다.
  */
 export function useMarketBriefing(
+    scope: DashboardScopeId,
     peekSeed?: MarketBriefingResponse | null
 ): UseMarketBriefingReturn {
     const isHydrated = useHydrated();
     const { data, isError } = useQuery({
-        queryKey: QUERY_KEYS.marketBriefing(),
+        queryKey: QUERY_KEYS.marketBriefing(scope),
         queryFn: ({ signal }) =>
             runAnalysisStream<MarketBriefingActionResult>({
                 type: 'briefing',
-                params: {},
+                params: { scope },
                 signal,
             }),
         enabled: isHydrated,

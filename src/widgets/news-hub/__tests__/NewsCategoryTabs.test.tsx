@@ -20,13 +20,14 @@ import { render, screen } from '@testing-library/react';
 import { NewsCategoryTabs } from '../NewsCategoryTabs';
 
 describe('NewsCategoryTabs', () => {
-    it('renders all five category tabs with correct hrefs', () => {
+    it('renders only the same-region categories with correct hrefs', () => {
+        // 지역(미국·한국·암호화폐)은 위쪽 `RegionTabs`가 이미 고른다 — 여기에 전
+        // 지역을 섞으면 한 화면에 지역 선택기가 둘이 된다.
         render(<NewsCategoryTabs activeCategory="stock" />);
 
         const expected: Record<string, string> = {
             일반: '/news/general',
             주식: '/news/stock',
-            암호화폐: '/news/crypto',
             외환: '/news/forex',
             아티클: '/news/articles',
         };
@@ -35,6 +36,12 @@ describe('NewsCategoryTabs', () => {
             const link = screen.getByRole('link', { name: label });
             expect(link).toHaveAttribute('href', href);
         }
+        expect(
+            screen.queryByRole('link', { name: '암호화폐' })
+        ).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('link', { name: '국내 증시' })
+        ).not.toBeInTheDocument();
     });
 
     it('renders tabs in the canonical left-to-right category order', () => {
@@ -43,19 +50,22 @@ describe('NewsCategoryTabs', () => {
         const labelsInOrder = screen
             .getAllByRole('link')
             .map(l => l.textContent);
-        expect(labelsInOrder).toEqual([
-            '일반',
-            '주식',
-            '암호화폐',
-            '외환',
-            '아티클',
-        ]);
+        expect(labelsInOrder).toEqual(['일반', '주식', '외환', '아티클']);
+    });
+
+    it('renders nothing when the region has a single category', () => {
+        // 선택지가 없는 탭 하나는 정보가 0이고 세로 공간만 먹는다.
+        const { container } = render(<NewsCategoryTabs activeCategory="kr" />);
+        expect(container).toBeEmptyDOMElement();
+
+        const cryptoOnly = render(<NewsCategoryTabs activeCategory="crypto" />);
+        expect(cryptoOnly.container).toBeEmptyDOMElement();
     });
 
     it('marks only the active category with aria-current="page"', () => {
-        render(<NewsCategoryTabs activeCategory="crypto" />);
+        render(<NewsCategoryTabs activeCategory="forex" />);
 
-        expect(screen.getByRole('link', { name: '암호화폐' })).toHaveAttribute(
+        expect(screen.getByRole('link', { name: '외환' })).toHaveAttribute(
             'aria-current',
             'page'
         );

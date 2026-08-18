@@ -1,10 +1,11 @@
+import type { NewsFeedCategoryId } from '@/entities/market-news';
 import { getMarketNewsCardsAction } from '@/entities/market-news/actions';
-import type { NewsFeedCategory } from '@y0ngha/siglens-core';
+
 import { MAX_CONSECUTIVE_FAILURES, MAX_POLL_DURATION_MS } from '../constants';
 import type { PollStepResult } from './pollStepResult';
 
 export interface WaitForMarketNewsCardsContext {
-    category: NewsFeedCategory;
+    category: NewsFeedCategoryId;
     /** Timestamp (Date.now()) when the wait loop started. Used to enforce the hard ceiling. */
     startedAt: number;
     // setters (encapsulate state mutation so waitForMarketNewsCardsStep is a pure function of the context object):

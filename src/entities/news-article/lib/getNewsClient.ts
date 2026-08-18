@@ -1,6 +1,7 @@
 import { FmpNewsClient } from './fmpNewsClient';
 import { EMPTY_NEWS_CLIENT } from './emptyNewsClient';
 import { NaverNewsClient } from './naverNewsClient';
+import { hasNaverCredentials } from './naverNewsSearch';
 import { getKoreanNames } from '@/entities/ticker/lib/koreanNameStore';
 import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
 import type { NewsClientPort } from './newsClientPort';
@@ -11,12 +12,6 @@ let cachedStock: NewsClientPort | null = null;
 let cachedCrypto: NewsClientPort | null = null;
 let cachedNaver: NewsClientPort | null = null;
 let cachedFake: NewsClientPort | null = null;
-
-function hasNaverCredentials(): boolean {
-    return Boolean(
-        process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET
-    );
-}
 
 /**
  * 한국 종목의 뉴스 검색어 — 한글 종목명("삼성전자")을 쓴다.

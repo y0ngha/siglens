@@ -103,7 +103,7 @@ describe('DrizzleEconomicCalendarRepository.listInRange', () => {
     it('queries with inclusive lower bound and upper bound extended to 23:59:59', async () => {
         const { db } = makeDb([], []);
         const repo = new DrizzleEconomicCalendarRepository(db);
-        await repo.listInRange('2026-06-01', '2026-06-30');
+        await repo.listInRange('2026-06-01', '2026-06-30', 'US');
         // gte 두 번째 인수는 fromEt 그대로 (하한 경계 포함)
         expect(gteSpy).toHaveBeenCalledWith(expect.anything(), '2026-06-01');
         // lte 두 번째 인수는 toEt + ' 23:59:59' (같은 날 이벤트 누락 방지)
@@ -146,7 +146,7 @@ describe('DrizzleEconomicCalendarRepository.listInRange', () => {
             ]
         );
         const repo = new DrizzleEconomicCalendarRepository(db);
-        const events = await repo.listInRange('2026-06-01', '2026-06-30');
+        const events = await repo.listInRange('2026-06-01', '2026-06-30', 'US');
         expect(events).toHaveLength(2);
         expect(events[0]).toEqual({
             date: '2026-06-13 08:30:00',

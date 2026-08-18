@@ -142,7 +142,8 @@ export class DrizzleEconomicCalendarRepository {
      */
     async listInRange(
         fromEt: string,
-        toEt: string
+        toEt: string,
+        country: string
     ): Promise<EconomicCalendarEventWithAnalysis[]> {
         const rows = await withRetry(
             () =>
@@ -163,6 +164,9 @@ export class DrizzleEconomicCalendarRepository {
                     .from(economicCalendar)
                     .where(
                         and(
+                            // country 필터가 없으면 미국·한국 이벤트가 한 캘린더에
+                            // 섞여 나온다 — 두 라우트가 같은 테이블을 쓰기 때문이다.
+                            eq(economicCalendar.country, country),
                             gte(economicCalendar.dateEt, fromEt),
                             lte(economicCalendar.dateEt, `${toEt} 23:59:59`)
                         )
@@ -241,4 +245,63 @@ export class DrizzleEconomicCalendarRepository {
             unit: r.unit,
         }));
     }
+
+    /**
+     * 발표가 끝난(actual IS NOT NULL) 이벤트 이력을 국가별로 읽는다.
+     *
+     * 한국 지표 카드는 FMP 지표 시계열 엔드포인트가 커버하지 않아 **캘린더 발표
+     * 이력에서 되짚는다**(`shared/config/economyIndicatorsKr.ts` 주석 참조).
+     * 값 표시에 필요한 최소 컬럼만 읽는다 — AI 분석 컬럼은 카드에 쓰이지 않으므로
+     * SELECT에서 뺀다(불필요한 Neon 전송 + ISR 블롭 증가 방지).
+     */
+    async listAnnouncedSince(
+        country: string,
+        fromEt: string
+    ): Promise<AnnouncedEventPoint[]> {
+        const rows = await withRetry(
+            () =>
+                this.db
+                    .select({
+                        dateEt: economicCalendar.dateEt,
+                        event: economicCalendar.event,
+                        actual: economicCalendar.actual,
+                        previous: economicCalendar.previous,
+                        unit: economicCalendar.unit,
+                    })
+                    .from(economicCalendar)
+                    .where(
+                        and(
+                            eq(economicCalendar.country, country),
+                            gte(economicCalendar.dateEt, fromEt),
+                            isNotNull(economicCalendar.actual)
+                        )
+                    )
+                    .orderBy(asc(economicCalendar.dateEt)),
+            NEON_TRANSIENT_RETRY
+        );
+        return rows.flatMap(row =>
+            row.actual === null
+                ? []
+                : [
+                      {
+                          dateEt: row.dateEt,
+                          event: row.event,
+                          actual: row.actual,
+                          previous: row.previous,
+                          unit: row.unit,
+                      },
+                  ]
+        );
+    }
+}
+
+/** 발표가 끝난 이벤트 한 건 — 지표 카드가 소비하는 최소 형상. */
+export interface AnnouncedEventPoint {
+    /** FMP 원본 'YYYY-MM-DD HH:mm:ss'(ET 벽시계). */
+    dateEt: string;
+    event: string;
+    /** `actual IS NOT NULL` 필터를 통과했으므로 number 보장. */
+    actual: number;
+    previous: number | null;
+    unit: string;
 }

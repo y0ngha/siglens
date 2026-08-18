@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
 import type { MarketSummaryActionResult } from '@/shared/lib/types';
@@ -12,6 +11,7 @@ import {
 } from '@/shared/config/queryConfig';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { isE2EClient } from '@/shared/api/e2eClientEnv';
+import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 
 /**
  * Build-time-static E2E flag — evaluated once at module import.
@@ -37,11 +37,17 @@ function hasSummary(
     return data !== undefined && !('ok' in data);
 }
 
-export function useMarketSummary(): UseMarketSummaryReturn {
+/**
+ * @param scope - 어느 시장의 시세인가. 쿼리 키와 서버 액션 양쪽에 흐른다 —
+ *   키에만 넣고 액션에 안 넘기면 캐시는 갈리는데 내용은 같아진다.
+ */
+export function useMarketSummary(
+    scope: DashboardScopeId
+): UseMarketSummaryReturn {
     const isHydrated = useHydrated();
     const { data, isPending } = useQuery<MarketSummaryActionResult>({
-        queryKey: QUERY_KEYS.marketSummary(),
-        queryFn: getMarketSummaryClientAction,
+        queryKey: QUERY_KEYS.marketSummary(scope),
+        queryFn: () => getMarketSummaryClientAction(scope),
         enabled: isHydrated,
         staleTime: IS_E2E_MODE ? 0 : MARKET_SUMMARY_STALE_TIME_MS,
         refetchOnMount: IS_E2E_MODE ? 'always' : undefined,
@@ -49,26 +55,23 @@ export function useMarketSummary(): UseMarketSummaryReturn {
 
     const resolved = hasSummary(data) ? data : undefined;
 
-    const sectorMap = useMemo(
-        () =>
-            new Map<string, MarketSectorData>(
-                (resolved?.summary.sectors ?? []).map((s: MarketSectorData) => [
-                    s.symbol,
-                    s,
-                ])
-            ),
-        [resolved?.summary.sectors]
+    /*
+     * 수동 메모이제이션 없음 — `reactCompiler: true`가 이 파생값들을 자동으로 캐시한다.
+     * 특히 `sectorMap`은 매 렌더 새 Map을 만들면 소비 컴포넌트가 전부 다시 그려지는
+     * 자리라 캐시가 실제로 필요한데, 그 일을 컴파일러가 한다.
+     */
+    const sectorMap = new Map<string, MarketSectorData>(
+        (resolved?.summary.sectors ?? []).map((s: MarketSectorData) => [
+            s.symbol,
+            s,
+        ])
     );
 
-    const indices = useMemo(
-        () => resolved?.summary.indices ?? [],
-        [resolved?.summary.indices]
-    );
+    const indices = resolved?.summary.indices ?? [];
 
-    const hasMissingQuotes = useMemo(
-        () => (resolved ? detectMissingQuotes(resolved.summary) : false),
-        [resolved]
-    );
+    const hasMissingQuotes = resolved
+        ? detectMissingQuotes(resolved.summary)
+        : false;
 
     return { data, isPending, sectorMap, indices, hasMissingQuotes };
 }

@@ -92,7 +92,7 @@ describe('/news/[category] CategoryNewsPage default export는', () => {
             })
         );
         expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-            '미국 암호화폐 뉴스'
+            '암호화폐 뉴스'
         );
     });
 

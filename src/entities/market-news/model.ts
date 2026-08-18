@@ -1,6 +1,8 @@
 import type { NewsDisplayItem } from '@/shared/lib/types';
 
-export type { NewsFeedCategory } from '@y0ngha/siglens-core';
+// 피드 카테고리 식별자는 core union을 siglens 쪽에서 넓힌 것이다(한국 증시 추가).
+// 근거는 `lib/categoryConfig.ts`의 `NewsFeedCategoryId` 주석 참조.
+export type { NewsFeedCategoryId } from './lib/categoryConfig';
 
 /**
  * Row from the `market_news` table — display projection + persistence fields + tickers.

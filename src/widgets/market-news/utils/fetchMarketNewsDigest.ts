@@ -1,7 +1,5 @@
-import type {
-    NewsAnalysisResponse,
-    NewsFeedCategory,
-} from '@y0ngha/siglens-core';
+import type { NewsFeedCategoryId } from '@/entities/market-news';
+import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { SubmitMarketNewsDigestActionResult } from '@/entities/market-news/actions';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 
@@ -18,7 +16,7 @@ import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
  * 이탈한 방문자의 호출은 캐시를 채워 다음 방문자와 크롤러에게 쓰인다.
  */
 export async function fetchMarketNewsDigest(
-    category: NewsFeedCategory,
+    category: NewsFeedCategoryId,
     signal?: AbortSignal
 ): Promise<NewsAnalysisResponse> {
     const result = await runAnalysisStream<SubmitMarketNewsDigestActionResult>({

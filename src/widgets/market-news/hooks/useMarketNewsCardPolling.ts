@@ -1,8 +1,9 @@
 'use client';
 
+import type { NewsFeedCategoryId } from '@/entities/market-news';
 import { useState, useEffect, useRef } from 'react';
 import type { MarketNewsCardItem } from '@/entities/market-news';
-import type { NewsFeedCategory } from '@y0ngha/siglens-core';
+
 import { POLL_INTERVAL_MS } from '../constants';
 import { pollMarketNewsCardsStep } from '../utils/pollMarketNewsCardsStep';
 
@@ -28,7 +29,7 @@ export interface UseMarketNewsCardPollingReturn {
  * when the snapshot array identity must drive a reset (e.g. client navigation).
  */
 export function useMarketNewsCardPolling(
-    category: NewsFeedCategory,
+    category: NewsFeedCategoryId,
     initialItems: MarketNewsCardItem[]
 ): UseMarketNewsCardPollingReturn {
     const [items, setItems] = useState(initialItems);

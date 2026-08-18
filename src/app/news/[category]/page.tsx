@@ -7,12 +7,14 @@ import {
     NEWS_CATEGORY_SLUGS,
     categoryFromSlug,
     type MarketNewsCardItem,
-    type NewsFeedCategory,
+    type NewsFeedCategoryId,
 } from '@/entities/market-news';
 import { getMarketNewsCards } from '@/entities/market-news/api';
 import { MarketNewsDigest, MarketNewsList } from '@/widgets/market-news';
 import { NewsCategoryTabs } from '@/widgets/news-hub';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { RegionTabs } from '@/shared/ui/RegionTabs';
+import { regionsOf } from '@/shared/config/assetClassNav';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
@@ -30,6 +32,41 @@ export function generateStaticParams(): CategoryPageParams[] {
 
 // JSON-LD ItemList: Google 가이드라인상 "주요 항목"만 노출.
 const JSON_LD_NEWS_MAX_ITEMS = 10;
+
+/**
+ * 지역별 추가 SEO 키워드.
+ *
+ * `미국 마켓 뉴스`는 2026-08 리브랜딩 전 표기다 — 기존 유입 질의를 잃지 않으려고
+ * 미국 카테고리에만 남긴다.
+ */
+const REGION_KEYWORDS: Record<string, string[]> = {
+    us: ['미국 시장 뉴스', '미국 마켓 뉴스'],
+    kr: ['한국 증시 뉴스', '코스피 뉴스', '코스닥 뉴스'],
+    crypto: ['암호화폐 뉴스', '비트코인 뉴스'],
+};
+
+/**
+ * 카테고리 페이지의 breadcrumb — 허브 → 지역 허브 → 카테고리.
+ *
+ * 지역에 카테고리가 하나뿐이면(한국·암호화폐) 지역 허브와 카테고리 페이지가
+ * 같은 URL이라 2단계로 줄인다. 같은 URL을 두 단계로 넣으면 breadcrumb가
+ * 자기 자신을 부모로 갖는다.
+ */
+function buildCategoryBreadcrumb(
+    cfg: { koLabel: string; region: string; slug: string },
+    categoryUrl: string
+) {
+    const regionLink = regionsOf('news').find(r => r.region === cfg.region);
+    const trail = [{ name: '시장 뉴스 허브', url: `${SITE_URL}/news` }];
+    if (regionLink && `${SITE_URL}${regionLink.href}` !== categoryUrl) {
+        trail.push({
+            name: regionLink.fullLabel,
+            url: `${SITE_URL}${regionLink.href}`,
+        });
+    }
+    trail.push({ name: cfg.koLabel, url: categoryUrl });
+    return buildBreadcrumbJsonLd(trail);
+}
 
 interface Props {
     params: Promise<{ category: string }>;
@@ -53,7 +90,7 @@ interface CategorySnapshot {
  * 블롭에는 그대로 남는다(감사: 비용 라운드 15).
  */
 async function loadCategorySnapshot(
-    category: NewsFeedCategory
+    category: NewsFeedCategoryId
 ): Promise<CategorySnapshot> {
     const cfg = CATEGORY_CONFIG[category];
     // ISR degrade guard: getMarketNewsList(DB)가 throw하면 ISR 캐시에 0-byte 빈 결과가
@@ -111,9 +148,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         `${cfg.koLabel} 뉴스`,
         `${cfg.koLabel} 최신 뉴스`,
         `${cfg.koLabel} 뉴스 분석`,
-        '미국 시장 뉴스',
-        // 구 표기(2026-08 리브랜딩 전) — 기존 유입 질의 보존용.
-        '미국 마켓 뉴스',
+        // 지역 키워드는 그 카테고리가 실제로 속한 지역만 붙인다 — 한국 증시
+        // 페이지에 `미국 시장 뉴스`를 넣으면 무관한 질의로 유입돼 이탈만 만든다.
+        ...REGION_KEYWORDS[cfg.region],
         '시장 뉴스 한국어',
         'AI 뉴스 다이제스트',
     ];
@@ -175,10 +212,7 @@ export default async function CategoryNewsPage({ params }: Props) {
         : null;
 
     const breadcrumbJsonLd = !isEmpty
-        ? buildBreadcrumbJsonLd([
-              { name: '미국 시장 뉴스 허브', url: `${SITE_URL}/news` },
-              { name: cfg.koLabel, url: categoryUrl },
-          ])
+        ? buildCategoryBreadcrumb(cfg, categoryUrl)
         : null;
 
     // FMP category news has no per-article image URL, so we use the per-category OG image
@@ -231,7 +265,12 @@ export default async function CategoryNewsPage({ params }: Props) {
             {breadcrumbJsonLd ? <JsonLd data={breadcrumbJsonLd} /> : null}
             {newsListJsonLd ? <JsonLd data={newsListJsonLd} /> : null}
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
-                {/* Always rendered even on the degrade path so a failed category is never a dead end. */}
+                {/*
+                    지역 선택기가 먼저, 그 안의 카테고리 선택기가 다음.
+                    둘 다 degrade 경로에서도 렌더한다 — 실패한 카테고리가
+                    막다른 길이 되지 않도록.
+                */}
+                <RegionTabs vertical="news" active={cfg.region} />
                 <NewsCategoryTabs activeCategory={cat} />
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
                     {cfg.koLabel} 뉴스

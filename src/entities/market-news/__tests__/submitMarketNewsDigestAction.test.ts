@@ -70,7 +70,7 @@ describe('submitMarketNewsDigestAction은', () => {
                 skipEnqueueIfMiss: true,
                 category: 'crypto',
                 // CATEGORY_CONFIG['crypto'].koLabel — 실제 값으로 검증한다.
-                categoryLabel: '미국 암호화폐',
+                categoryLabel: '암호화폐',
             })
         );
     });

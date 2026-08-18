@@ -14,7 +14,7 @@ import { render } from '@testing-library/react';
 import { useEconomicCalendarTrigger } from '../useEconomicCalendarTrigger';
 
 function Probe() {
-    useEconomicCalendarTrigger();
+    useEconomicCalendarTrigger('US');
     return null;
 }
 

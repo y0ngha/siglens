@@ -8,8 +8,10 @@ import { DrizzleEconomicCalendarRepository } from './economicCalendarRepository'
 import type { EconomicCalendarEventWithAnalysis } from '../model';
 import { pastWindowStart, futureWindowEnd } from '../lib/calendarWindow';
 import {
+    CALENDAR_COUNTRY,
     ECONOMY_CALENDAR_CACHE_TAG,
     ECONOMY_CALENDAR_REVALIDATE_SECONDS,
+    type CalendarCountry,
 } from '../lib/economyCalendarConstants';
 
 /**
@@ -27,12 +29,16 @@ import {
  * 함께 반환하므로 반환 타입이 `EconomicCalendarEventWithAnalysis[]`로 확장됐다.
  */
 const fetchCalendar = unstable_cache(
-    async (anchorEt: string): Promise<EconomicCalendarEventWithAnalysis[]> => {
+    async (
+        anchorEt: string,
+        country: CalendarCountry
+    ): Promise<EconomicCalendarEventWithAnalysis[]> => {
         const { db } = getDatabaseClient();
         const repo = new DrizzleEconomicCalendarRepository(db);
         return repo.listInRange(
             pastWindowStart(anchorEt),
-            futureWindowEnd(anchorEt)
+            futureWindowEnd(anchorEt),
+            country
         );
     },
     ['economy-calendar-db'],
@@ -52,9 +58,14 @@ const fetchCalendar = unstable_cache(
  * DB 실패 시 빈 배열로 graceful — 캘린더 섹션만 비고 페이지는 렌더.
  */
 export const getCalendarFromDb = cache(
-    async (anchorEt: string): Promise<EconomicCalendarEventWithAnalysis[]> => {
+    async (
+        anchorEt: string,
+        country: CalendarCountry = CALENDAR_COUNTRY
+    ): Promise<EconomicCalendarEventWithAnalysis[]> => {
         try {
-            return await fetchCalendar(anchorEt);
+            // `unstable_cache`는 인자를 키에 포함하므로 국가가 키에 자동으로 들어간다 —
+            // 미국·한국이 같은 엔트리를 공유할 수 없다.
+            return await fetchCalendar(anchorEt, country);
         } catch (error) {
             console.error('[getCalendarFromDb] DB read failed:', error);
             return [];

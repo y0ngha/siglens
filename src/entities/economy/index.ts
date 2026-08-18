@@ -17,3 +17,4 @@ export {
 } from './lib/indicatorNameKo';
 export type { NormalizedIndicatorName } from './lib/indicatorNameKo';
 export type { EconomicCalendarEventWithAnalysis } from './model';
+export type { CalendarCountry } from './lib/economyCalendarConstants';

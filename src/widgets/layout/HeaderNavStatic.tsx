@@ -1,29 +1,28 @@
-import Link from 'next/link';
-
-interface NavItem {
-    readonly href: string;
-    readonly label: string;
-}
+import type { NavVerticalNode } from './headerNavTree';
+import { HeaderNavMenu } from './HeaderNavMenu';
 
 interface HeaderNavStaticProps {
-    readonly items: ReadonlyArray<NavItem>;
+    readonly items: ReadonlyArray<NavVerticalNode>;
 }
 
-// Static HeaderNav fallback — usePathname 없이 PPR prerender shell이 정적으로 완료되도록 Suspense fallback 역할.
+/**
+ * Static HeaderNav fallback — `usePathname` 없이 PPR prerender shell이 정적으로
+ * 완료되도록 하는 Suspense fallback.
+ *
+ * `HeaderNav`와 **같은 `HeaderNavMenu`를 렌더한다.** 예전에는 이쪽이 단순 링크
+ * 목록이라 마크업이 갈렸는데, 지금은 지역 링크가 드롭다운 패널 안에 있어서
+ * fallback이 축약형이면 정적 셸에서 신규 지역 페이지로 가는 앵커가 통째로 빠진다 —
+ * 크롤러가 보는 것이 바로 그 정적 셸이다. 활성 표시(`pathname`)만 없는 동일 마크업.
+ */
 export function HeaderNavStatic({ items }: HeaderNavStaticProps) {
     return (
         <nav aria-label="주요 네비게이션" className="flex gap-1 sm:gap-4">
-            {items.map(item => (
-                <Link
-                    key={item.href}
-                    href={item.href}
-                    // HeaderNav와 동일 — 전역 네비 prefetch는 `_rsc` 해시 파편화로
-                    // 캐시 미스만 늘린다 (docs/architecture/CDN_CACHING.md §1).
-                    prefetch={false}
-                    className="-mb-px flex min-h-11 touch-manipulation items-center border-b-2 border-transparent px-2 text-xs font-semibold tracking-[0.12em] text-secondary-400 uppercase transition-colors hover:text-secondary-100 focus-visible:rounded focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                >
-                    {item.label}
-                </Link>
+            {items.map(vertical => (
+                <HeaderNavMenu
+                    key={vertical.id}
+                    vertical={vertical}
+                    pathname={null}
+                />
             ))}
         </nav>
     );

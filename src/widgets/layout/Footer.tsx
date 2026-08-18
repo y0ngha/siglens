@@ -1,6 +1,6 @@
 import { ContactDialog } from './ContactDialog';
 import { CurrentYear } from './CurrentYear';
-import { NAV_ITEMS } from './headerNavItems';
+import { ALL_NAV_REGION_LINKS } from '@/shared/config/assetClassNav';
 import { DotSeparator } from '@/shared/ui/DotSeparator';
 import {
     INVESTMENT_DISCLAIMER,
@@ -31,7 +31,12 @@ export function Footer() {
                         aria-label="사이트 정보"
                         className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2"
                     >
-                        {NAV_ITEMS.map(item => (
+                        {/*
+                            푸터는 버티컬 그룹핑 없이 평탄하게 나열하므로 짧은 라벨
+                            (`미국`/`한국`)이 아니라 `fullLabel`을 쓴다 — 짧은 라벨만
+                            쓰면 `미국 · 한국 · 미국 · 한국`이 되어 뜻을 잃는다.
+                        */}
+                        {ALL_NAV_REGION_LINKS.map(item => (
                             <Fragment key={item.href}>
                                 <Link
                                     href={item.href}
@@ -41,14 +46,14 @@ export function Footer() {
                                     prefetch={false}
                                     className="text-sm text-secondary-400 transition-colors hover:text-secondary-200"
                                 >
-                                    {item.label}
+                                    {item.fullLabel}
                                 </Link>
                                 <DotSeparator />
                             </Fragment>
                         ))}
                         <Link
                             href={PRIVACY_PATH}
-                            // 위 NAV_ITEMS와 동일 — 전역 푸터의 `_rsc` 파편화
+                            // 위 ALL_NAV_REGION_LINKS와 동일 — 전역 푸터의 `_rsc` 파편화
                             // (docs/architecture/CDN_CACHING.md §1).
                             prefetch={false}
                             className="text-sm text-secondary-400 transition-colors hover:text-secondary-200"
@@ -58,7 +63,7 @@ export function Footer() {
                         <DotSeparator />
                         <Link
                             href={TERMS_PATH}
-                            // 위 NAV_ITEMS와 동일 — 전역 푸터의 `_rsc` 파편화
+                            // 위 ALL_NAV_REGION_LINKS와 동일 — 전역 푸터의 `_rsc` 파편화
                             // (docs/architecture/CDN_CACHING.md §1).
                             prefetch={false}
                             className="text-sm text-secondary-400 transition-colors hover:text-secondary-200"

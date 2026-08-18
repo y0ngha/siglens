@@ -1,0 +1,65 @@
+import {
+    NAV_VERTICALS,
+    type NavRegionLink,
+    type NavVertical,
+} from '@/shared/config/assetClassNav';
+import { CATEGORY_CONFIG, categoriesInRegion } from '@/entities/market-news';
+
+/** 지역 안에서 한 번에 갈 수 있는 최종 목적지. */
+export interface NavLeafLink {
+    readonly label: string;
+    readonly href: string;
+}
+
+export interface NavRegionNode extends NavRegionLink {
+    /**
+     * 이 지역 안의 최종 목적지들. 비어 있으면 지역 링크 자체가 최종 목적지다.
+     *
+     * 뉴스 미국만 비어 있지 않다 — 그 지역만 카테고리가 여러 개라서다.
+     */
+    readonly children: readonly NavLeafLink[];
+}
+
+export interface NavVerticalNode extends Omit<NavVertical, 'regions'> {
+    readonly regions: readonly NavRegionNode[];
+}
+
+/**
+ * 헤더·드로어가 그리는 **2단 내비 트리**.
+ *
+ * `shared/config/assetClassNav`의 버티컬×지역 뼈대에, 뉴스 미국 지역만
+ * `entities/market-news`의 카테고리를 자식으로 붙인다.
+ *
+ * **왜 여기서 합치는가**: 자식 목록의 출처(`CATEGORY_CONFIG`)는 entities에 있고
+ * 뼈대(`NAV_VERTICALS`)는 shared에 있다. shared는 entities를 import할 수 없으므로
+ * (FSD 의존 방향) 두 층을 다 볼 수 있는 widgets에서 합성한다. 뼈대를 entities로
+ * 내리면 `shared/ui/RegionTabs`가 그걸 못 읽는다.
+ *
+ * **왜 2단인가**: 1단만 두면 미국 주식 뉴스에 닿기까지 헤더 → 지역 허브 → 카테고리로
+ * 클릭이 두 번이다. 자산군을 1차 축으로 올린 목적이 "바로 들어가기"인데 허브를
+ * 한 겹 더 만들면 오히려 멀어진다. 지역 허브 페이지는 그대로 두되(색인·푸터·사이트맵),
+ * 헤더에서는 최종 목적지로 직행한다.
+ */
+export const NAV_TREE: readonly NavVerticalNode[] = NAV_VERTICALS.map(
+    vertical => ({
+        ...vertical,
+        regions: vertical.regions.map(region => ({
+            ...region,
+            children: vertical.id === 'news' ? newsLeavesOf(region.region) : [],
+        })),
+    })
+);
+
+/**
+ * 뉴스 지역 하나의 카테고리 링크들. 카테고리가 하나뿐인 지역(한국·암호화폐)은
+ * 빈 배열을 돌려준다 — 지역 링크와 똑같은 목적지 하나를 자식으로 또 그리면
+ * 같은 줄이 두 번 나온다.
+ */
+function newsLeavesOf(region: NavRegionLink['region']): readonly NavLeafLink[] {
+    const categories = categoriesInRegion(region);
+    if (categories.length < 2) return [];
+    return categories.map(cat => ({
+        label: CATEGORY_CONFIG[cat].koLabel,
+        href: `/news/${CATEGORY_CONFIG[cat].slug}`,
+    }));
+}

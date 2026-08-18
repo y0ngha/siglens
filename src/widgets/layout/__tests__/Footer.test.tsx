@@ -36,6 +36,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 
 import { Footer } from '../Footer';
+import { ALL_NAV_REGION_LINKS } from '@/shared/config/assetClassNav';
 
 describe('Footer', () => {
     it('renders the investment disclaimer', () => {
@@ -87,17 +88,33 @@ describe('Footer', () => {
         expect(link).toHaveAttribute('href', '/economy');
     });
 
-    it('renders the /news link with 미국 시장 뉴스 label', () => {
+    it('renders the US news link with its full label', () => {
         render(<Footer />);
 
-        const link = screen.getByRole('link', { name: /미국 시장 뉴스/ });
-        expect(link).toHaveAttribute('href', '/news');
+        // `/news`는 3지역 상위 허브이고 미국 카테고리 목록은 `/news/us`가 잇는다.
+        const link = screen.getByRole('link', { name: '미국 시장 뉴스' });
+        expect(link).toHaveAttribute('href', '/news/us');
     });
 
-    it('renders the /market link with 시장 분석 label', () => {
+    it('uses the full label for every region link, not the short one', () => {
+        // 푸터는 버티컬 그룹핑 없이 평탄하게 나열한다 — 짧은 라벨(`미국`/`한국`)만
+        // 쓰면 `미국 · 한국 · 미국 · 한국`이 되어 뜻을 잃는다.
         render(<Footer />);
 
-        const link = screen.getByRole('link', { name: /시장 분석/ });
-        expect(link).toHaveAttribute('href', '/market');
+        for (const region of ALL_NAV_REGION_LINKS) {
+            const link = screen.getByRole('link', { name: region.fullLabel });
+            expect(link).toHaveAttribute('href', region.href);
+        }
+    });
+
+    it('exposes both market regions', () => {
+        render(<Footer />);
+
+        expect(
+            screen.getByRole('link', { name: '미국 시장 분석' })
+        ).toHaveAttribute('href', '/market');
+        expect(
+            screen.getByRole('link', { name: '한국 시장 분석' })
+        ).toHaveAttribute('href', '/market/kr');
     });
 });

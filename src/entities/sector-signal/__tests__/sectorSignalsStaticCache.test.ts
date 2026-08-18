@@ -18,15 +18,19 @@ vi.mock('next/cache', () => ({
 
 vi.mock('../api/sectorSignalsCache', () => ({
     getCachedSectorSignals: vi.fn(),
-    SECTOR_STOCKS_CONFIG_FINGERPRINT: 'abcdef012345',
+    sectorStocksConfigFingerprint: vi.fn(() => 'abcdef012345'),
 }));
 
 vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     getMarketDataProvider: vi.fn(() => ({})),
+    // scope 인지 팩토리도 같은 모듈에 있다 — 목에서 빠지면 액션이 import 단계에서
+    // 실패해 `server_error`로 조용히 떨어진다.
+    marketDataProviderFor: vi.fn(() => ({})),
 }));
 
 import { getSectorSignalsStatic } from '../api/sectorSignalsStaticCache';
 import { getCachedSectorSignals } from '../api/sectorSignalsCache';
+import { US_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
 
 const mockGetCachedSectorSignals = vi.mocked(getCachedSectorSignals);
 
@@ -55,34 +59,35 @@ describe('getSectorSignalsStatic', () => {
     it('(Happy) getCachedSectorSignals를 timeframe과 함께 호출하고 결과를 반환한다', async () => {
         mockGetCachedSectorSignals.mockResolvedValue(sampleResult);
 
-        const result = await getSectorSignalsStatic('1Day');
+        const result = await getSectorSignalsStatic(US_DASHBOARD_SCOPE, '1Day');
 
         expect(result).toBe(sampleResult);
         expect(mockGetCachedSectorSignals).toHaveBeenCalledTimes(1);
     });
 
-    it('(Happy) unstable_cache opts: revalidate=3600, tags=[sector:signals]', async () => {
+    it('(Happy) unstable_cache opts: revalidate=3600, tags=[sector:signals:us]', async () => {
         mockGetCachedSectorSignals.mockResolvedValue(sampleResult);
 
-        await getSectorSignalsStatic('1Hour');
+        await getSectorSignalsStatic(US_DASHBOARD_SCOPE, '1Hour');
 
         expect(
             (globalThis as Record<string, unknown>).__lastUnstableCacheOpts
         ).toEqual({
             revalidate: SECONDS_PER_HOUR,
-            tags: ['sector:signals'],
+            tags: ['sector:signals:us'],
         });
     });
 
     it('(Happy) static cache key에 sectorStocks 설정 fingerprint를 포함한다', async () => {
         mockGetCachedSectorSignals.mockResolvedValue(sampleResult);
 
-        await getSectorSignalsStatic('1Day');
+        await getSectorSignalsStatic(US_DASHBOARD_SCOPE, '1Day');
 
         expect(
             (globalThis as Record<string, unknown>).__lastUnstableCacheKeys
         ).toEqual([
             'sector-signals-static',
+            'us',
             '1Day',
             expect.stringMatching(/^[a-f0-9]{12}$/),
         ]);
@@ -91,8 +96,8 @@ describe('getSectorSignalsStatic', () => {
     it('(Happy) 서로 다른 timeframe은 독립적으로 호출된다', async () => {
         mockGetCachedSectorSignals.mockResolvedValue(sampleResult);
 
-        await getSectorSignalsStatic('1Day');
-        await getSectorSignalsStatic('15Min');
+        await getSectorSignalsStatic(US_DASHBOARD_SCOPE, '1Day');
+        await getSectorSignalsStatic(US_DASHBOARD_SCOPE, '15Min');
 
         expect(mockGetCachedSectorSignals).toHaveBeenCalledTimes(2);
     });
@@ -102,8 +107,8 @@ describe('getSectorSignalsStatic', () => {
             new Error('signals failed')
         );
 
-        await expect(getSectorSignalsStatic('1Day')).rejects.toThrow(
-            'signals failed'
-        );
+        await expect(
+            getSectorSignalsStatic(US_DASHBOARD_SCOPE, '1Day')
+        ).rejects.toThrow('signals failed');
     });
 });

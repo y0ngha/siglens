@@ -4,12 +4,15 @@ import type {
     DashboardTimeframe,
     SectorSignalsResult,
 } from '@y0ngha/siglens-core';
+import type { DashboardScope } from '@/shared/config/dashboardScope';
 import { useSectorSignalState } from './hooks/useSectorSignalState';
 import { SectorTabs } from './SectorTabs';
 import { TimeframeSelector } from './TimeframeSelector';
 import { SignalSubsection } from './SignalSubsection';
 
 interface SectorSignalPanelProps {
+    /** 어느 시장의 신호인가. 섹터 탭·조회·URL 복원이 전부 여기서 갈린다. */
+    scope: DashboardScope;
     initialSector: string;
     initialTimeframe: DashboardTimeframe;
     /**
@@ -21,6 +24,7 @@ interface SectorSignalPanelProps {
 }
 
 export function SectorSignalPanel({
+    scope,
     initialSector,
     initialTimeframe,
     initialData,
@@ -33,6 +37,7 @@ export function SectorSignalPanel({
         handleSectorChange,
         handleTimeframeChange,
     } = useSectorSignalState({
+        scope,
         initialSector,
         initialTimeframe,
         initialData,
@@ -54,6 +59,7 @@ export function SectorSignalPanel({
                 />
             </div>
             <SectorTabs
+                sectors={scope.signalSectors}
                 activeSector={activeSector}
                 onChange={handleSectorChange}
             />

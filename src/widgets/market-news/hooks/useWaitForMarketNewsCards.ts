@@ -1,7 +1,8 @@
 'use client';
 
+import type { NewsFeedCategoryId } from '@/entities/market-news';
 import { useState, useEffect, useRef } from 'react';
-import type { NewsFeedCategory } from '@y0ngha/siglens-core';
+
 import { POLL_INTERVAL_MS } from '../constants';
 import { waitForMarketNewsCardsStep } from '../utils/waitForMarketNewsCardsStep';
 
@@ -18,7 +19,7 @@ export interface WaitForMarketNewsCardsResult {
  * Adapted for market-news categories (keyed by sentinel symbol).
  */
 export function useWaitForMarketNewsCards(
-    category: NewsFeedCategory,
+    category: NewsFeedCategoryId,
     initiallyReady: boolean
 ): WaitForMarketNewsCardsResult {
     const [isReady, setIsReady] = useState(initiallyReady);

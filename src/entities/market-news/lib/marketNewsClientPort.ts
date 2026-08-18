@@ -1,4 +1,5 @@
-import type { NewsFeedCategory, NewsItem } from '@y0ngha/siglens-core';
+import type { NewsFeedCategoryId } from './categoryConfig';
+import type { NewsItem } from '@y0ngha/siglens-core';
 
 /** A market-news article: core NewsItem plus the article's own display tickers. */
 export interface MarketNewsItem extends NewsItem {
@@ -9,7 +10,7 @@ export interface MarketNewsItem extends NewsItem {
 export interface MarketNewsClientPort {
     /** Fetch the category's market-wide feed within the lookback window. */
     fetchCategoryNews(
-        category: NewsFeedCategory,
+        category: NewsFeedCategoryId,
         lookbackMs: number
     ): Promise<MarketNewsItem[]>;
 }

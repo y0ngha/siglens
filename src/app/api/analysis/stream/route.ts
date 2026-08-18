@@ -1,9 +1,4 @@
-import type {
-    ModelId,
-    NewsFeedCategory,
-    PositionBucket,
-    Timeframe,
-} from '@y0ngha/siglens-core';
+import type { ModelId, PositionBucket, Timeframe } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
@@ -12,6 +7,7 @@ import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { getDescriptor } from '@/shared/config/marketProfile';
+import type { NewsFeedCategoryId } from '@/entities/market-news';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
     buildGateError,
@@ -287,7 +283,7 @@ const DISPATCH: Record<
 
     marketNewsDigest: (params, signal) =>
         submitMarketNewsDigestAction(
-            params.category as NewsFeedCategory,
+            params.category as NewsFeedCategoryId,
             signal
         ),
 
@@ -314,7 +310,11 @@ const DISPATCH: Record<
      * briefing: delegates to the market-summary entity action that owns bot
      * detection and market-summary data loading.
      */
-    briefing: (_params, signal) => submitMarketBriefingAction(signal),
+    briefing: (params, signal) =>
+        // scope는 클라이언트가 보낸 문자열이다. 여기서 좁히지 않고 그대로 넘기는 것은
+        // 의도된 설계다 — 액션이 `isDashboardScopeId`로 검증하고 알 수 없는 값이면
+        // 에러를 돌려준다(라우트와 액션 양쪽에 검증을 두면 규칙이 갈린다).
+        submitMarketBriefingAction(params.scope as string, signal),
 
     macroBriefing: (_params, signal) => submitMacroBriefingAction(signal),
 };

@@ -2,6 +2,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useSectorSignalState } from '@/widgets/dashboard/hooks/useSectorSignalState';
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
+import { TEST_SCOPE } from '../helpers/testScope';
 
 const mockReplace = vi.fn();
 let mockSearchParamsString = '';
@@ -55,10 +56,15 @@ const SECTOR_DATA: SectorSignalsResult = {
     computedAt: '2025-01-01T00:00:00Z',
 };
 
-// useSectorSignals 내부 훅을 mock 처리 — React Query 의존 제거
+// useSectorSignals 내부 훅을 mock 처리 — React Query 의존 제거.
+// 시그니처가 `(scope, timeframe, initialData)`로 바뀌었다 — 인자 위치가 어긋나면
+// `initialData`가 timeframe 자리로 들어가 조용히 undefined가 된다.
 vi.mock('@/widgets/dashboard/hooks/useSectorSignals', () => ({
-    useSectorSignals: (_tf: unknown, initialData?: SectorSignalsResult) =>
-        initialData ?? SECTOR_DATA,
+    useSectorSignals: (
+        _scope: unknown,
+        _tf: unknown,
+        initialData?: SectorSignalsResult
+    ) => initialData ?? SECTOR_DATA,
 }));
 
 describe('useSectorSignalState', () => {
@@ -70,6 +76,7 @@ describe('useSectorSignalState', () => {
     it('returns initial sector and timeframe', () => {
         const { result } = renderHook(() =>
             useSectorSignalState({
+                scope: TEST_SCOPE,
                 initialSector: 'XLK',
                 initialTimeframe: '1Day',
             })
@@ -81,6 +88,7 @@ describe('useSectorSignalState', () => {
     it('handleSectorChange updates sector and calls router.replace', () => {
         const { result } = renderHook(() =>
             useSectorSignalState({
+                scope: TEST_SCOPE,
                 initialSector: 'XLK',
                 initialTimeframe: '1Day',
             })
@@ -97,6 +105,7 @@ describe('useSectorSignalState', () => {
     it('handleTimeframeChange updates timeframe and calls router.replace', () => {
         const { result } = renderHook(() =>
             useSectorSignalState({
+                scope: TEST_SCOPE,
                 initialSector: 'XLK',
                 initialTimeframe: '1Day',
             })
@@ -113,6 +122,7 @@ describe('useSectorSignalState', () => {
     it('uses pathname without query when both sector and timeframe are defaults', () => {
         const { result } = renderHook(() =>
             useSectorSignalState({
+                scope: TEST_SCOPE,
                 initialSector: 'XLF',
                 initialTimeframe: '1Hour',
             })
@@ -135,6 +145,7 @@ describe('useSectorSignalState', () => {
     it('omits default sector and timeframe from query string', () => {
         const { result } = renderHook(() =>
             useSectorSignalState({
+                scope: TEST_SCOPE,
                 initialSector: 'XLF',
                 initialTimeframe: '1Hour',
             })
@@ -154,6 +165,7 @@ describe('useSectorSignalState', () => {
 
         const { result } = renderHook(() =>
             useSectorSignalState({
+                scope: TEST_SCOPE,
                 initialSector: 'XLK',
                 initialTimeframe: '1Day',
             })
@@ -171,6 +183,7 @@ describe('useSectorSignalState', () => {
 
         const { result } = renderHook(() =>
             useSectorSignalState({
+                scope: TEST_SCOPE,
                 initialSector: 'XLK',
                 initialTimeframe: '1Day',
             })
@@ -188,6 +201,7 @@ describe('useSectorSignalState', () => {
 
         const { result } = renderHook(() =>
             useSectorSignalState({
+                scope: TEST_SCOPE,
                 initialSector: 'XLK',
                 initialTimeframe: '1Day',
             })
