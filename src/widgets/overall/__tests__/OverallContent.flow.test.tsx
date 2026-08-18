@@ -90,6 +90,7 @@ function renderOverall() {
             symbol="AAPL"
             companyName="Apple Inc."
             hasEnrichedNews={true}
+            hasOptions={true}
         />,
         {
             wrapper: createQueryClientWrapper().wrapper,

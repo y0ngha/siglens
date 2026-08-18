@@ -112,7 +112,10 @@ export const SHARE_KIND_PANEL_REGISTRY = {
      *
      * **심볼이 없으면 `false`다.** 모르는 상태를 `true`로 열면 존재하지 않는
      * 옵션 섹션이 뜨는데, 그게 이 감사가 두 라운드 연속 잡아낸 실패 방향이다.
-     * 숨기는 쪽이 틀려도 대가가 작다.
+     * 숨기는 쪽이 틀려도 대가가 작다. 빈 문자열(`''`)도 "모르는 상태"와 같은
+     * 실패 형태로 취급한다 — `profileIdForSymbol('')`은 `isKrEquitySymbol`이
+     * false를 반환해 us-equity로 폴백하므로, 빈 문자열을 undefined와 다르게
+     * 두면 hasOptions가 조용히 `true`로 열린다(뮤테이션 감사 2026-08-18).
      *
      * crypto는 `OverallView`가 `isEquity` 게이트로 이 값을 무시하므로,
      * `profileIdForSymbol`이 크립토를 us-equity로 떨어뜨리는 한계가 여기선
@@ -124,6 +127,7 @@ export const SHARE_KIND_PANEL_REGISTRY = {
             assetClass={assetClass}
             hasOptions={
                 symbol !== undefined &&
+                symbol !== '' &&
                 getDescriptor(profileIdForSymbol(symbol)).tabs.includes(
                     'options'
                 )

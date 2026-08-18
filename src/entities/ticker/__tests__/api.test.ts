@@ -900,4 +900,30 @@ describe('isTabAllowedForSymbol', () => {
             ).resolves.toBe(false);
         });
     });
+
+    // KR 개별주식은 심볼 형상 fast path로 `isCryptoSymbolStatic`을 건너뛴다
+    // (구현부 주석 참고) — 그 분기가 옵션/congress를 걸러내지 못하면 국내에
+    // 존재하지 않는 탭이 200으로 열린다.
+    describe('kr-equity symbol (shape fast path, isCryptoSymbolStatic bypassed)', () => {
+        it('KR 종목은 유동성 있는 옵션 시장이 없는 "options" 탭을 허용하지 않는다', async () => {
+            await expect(
+                isTabAllowedForSymbol('005930.KS', 'options')
+            ).resolves.toBe(false);
+            expect(mockIsCryptoSymbolStatic).not.toHaveBeenCalled();
+        });
+
+        it('KR 종목은 공직자 주식 백지신탁 API가 없는 "congress" 탭을 허용하지 않는다', async () => {
+            await expect(
+                isTabAllowedForSymbol('005930.KS', 'congress')
+            ).resolves.toBe(false);
+            expect(mockIsCryptoSymbolStatic).not.toHaveBeenCalled();
+        });
+
+        it('US 종목(positive control)은 여전히 "options" 탭을 허용한다', async () => {
+            mockIsCryptoSymbolStatic.mockResolvedValue(false);
+            await expect(
+                isTabAllowedForSymbol('AAPL', 'options')
+            ).resolves.toBe(true);
+        });
+    });
 });

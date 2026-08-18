@@ -1405,6 +1405,98 @@ describe('runPrewarmBatch', () => {
     });
 
     /**
+     * 2026-08 감사(mutation coverage) — 기존 starvation watch 테스트 3개는 전부
+     * `never` 경로만 태운다(generatedAtMap이 비었거나 그 키가 없는 경우). 그래서
+     * findStarvedSymbols의 나머지 절반(48h 문턱 비교, worst-first 정렬, h 단위
+     * 렌더)은 뮤테이션(문턱 ×100, 정렬 반전, 시/분 divisor 교체)이 들어와도 이
+     * 스위트가 전부 green으로 남았다. 숫자 age가 있는 심볼 2개로 세 가지를
+     * 한 번에 고정한다.
+     */
+    it('숫자 age가 있는 offender 2개: 47h는 문턱 밖으로 제외, 100h가 50h보다 먼저(worst-first), 단위는 h(분 아님)', async () => {
+        const HOUR_MS = 60 * 60 * 1000;
+        universe(
+            { symbol: 'SYM47H', tabs: ['technical'] }, // 48h 문턱 미만 — starved 목록에서 제외돼야 한다.
+            { symbol: 'SYM50H', tabs: ['technical'] },
+            { symbol: 'SYM100H', tabs: ['technical'] }
+        );
+        mockFindGeneratedAtMap.mockResolvedValue(
+            new Map([
+                [
+                    key('SYM47H', 'technical'),
+                    new Date(FIXED_NOW.getTime() - 47 * HOUR_MS),
+                ],
+                [
+                    key('SYM50H', 'technical'),
+                    new Date(FIXED_NOW.getTime() - 50 * HOUR_MS),
+                ],
+                [
+                    key('SYM100H', 'technical'),
+                    new Date(FIXED_NOW.getTime() - 100 * HOUR_MS),
+                ],
+            ])
+        );
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        await runPrewarmBatch();
+
+        const call = warnSpy.mock.calls.find(c =>
+            String(c[0]).includes('starvation watch')
+        );
+        expect(call).toBeDefined();
+        const message = String(call?.[0]);
+
+        // 문턱(48h) 미만인 SYM47H는 아예 목록에 없다 — 문턱이 ×100 되면 아무도
+        // 안 남아 이 assertion보다 앞의 toBeDefined()에서 이미 실패한다.
+        expect(message).not.toContain('SYM47H');
+        // worst-first 정렬: 100h가 50h보다 먼저 나온다(비교자 반전 뮤테이션 감지).
+        const idx100 = message.indexOf('SYM100H');
+        const idx50 = message.indexOf('SYM50H');
+        expect(idx100).toBeGreaterThanOrEqual(0);
+        expect(idx50).toBeGreaterThanOrEqual(0);
+        expect(idx100).toBeLessThan(idx50);
+        // 단위는 시간(h)이다 — divisor가 분으로 바뀌면 100h는 6000h로 찍힌다.
+        expect(message).toContain('SYM100H(100h)');
+        expect(message).toContain('SYM50H(50h)');
+
+        warnSpy.mockRestore();
+    });
+
+    it('부분 탭 결측(partial-tab): 한 탭은 생성 이력이 있어도 다른 탭이 한 번도 생성된 적 없으면 심볼 전체를 (never)로 잡는다', async () => {
+        // technical: generatedAtMap에 키 자체가 없음(never). overall: boundary
+        // 이후(=fresh)라 age가 작다. `neverGenerated || oldestGeneratedAt ===
+        // undefined`에서 첫 절이 빠지면 oldestGeneratedAt(=overall의 신선한
+        // 값)만 보고 age를 작게 계산해 48h 문턱을 못 넘어 starved 목록에서
+        // 통째로 빠진다 — 부분 커버리지도 완전 미도달과 동일 우선순위로 다뤄야
+        // 한다는 문서화된 규칙(findStarvedSymbols doc-comment)이 깨진다.
+        universe({ symbol: 'PARTIALNEVER', tabs: ['technical', 'overall'] });
+        mockFindGeneratedAtMap.mockResolvedValue(
+            new Map([
+                [
+                    key('PARTIALNEVER', 'overall'),
+                    new Date(FIXED_NOW.getTime() - 5 * 60 * 60 * 1000),
+                ],
+            ])
+        );
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        await runPrewarmBatch();
+
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining('PARTIALNEVER(never)')
+        );
+
+        warnSpy.mockRestore();
+    });
+
+    /**
      * Task 9: processSymbol의 탭별 isSkipped 가드가 실제로 seam을 차단한다.
      *
      * 2탭 심볼에서 기술적(technical) 탭만 isSkipped=true로 만들고, overall 탭은
