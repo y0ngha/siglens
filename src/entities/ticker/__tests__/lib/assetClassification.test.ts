@@ -218,14 +218,14 @@ describe('classifyAsset — 영문 펀드명 접미 안전망', () => {
      */
     it('사명에 유형어가 들어가지만 끝 토큰이 아니면 stock을 유지한다', () => {
         expect(
-            classifyAsset('IDXS', undefined, 'Index Solutions Corporation')
+            classifyAsset('GIP', undefined, 'Global Index Partners Corporation')
         ).toBe('stock');
         expect(
-            buildAssetAboutNode('IDXS', 'Index Solutions Corporation')
+            buildAssetAboutNode('GIP', 'Global Index Partners Corporation')
         ).toEqual({
             '@type': 'Corporation',
-            name: 'Index Solutions Corporation',
-            tickerSymbol: 'IDXS',
+            name: 'Global Index Partners Corporation',
+            tickerSymbol: 'GIP',
         });
     });
 

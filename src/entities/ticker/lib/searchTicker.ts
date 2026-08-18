@@ -115,8 +115,10 @@ export async function searchTicker(
             searchBySymbol(trimmed),
             searchByName(trimmed),
             searchCryptoAssets(trimmed),
-            // 종목코드 형상 쿼리에만 yahoo를 태운다 — 그 외에는 즉시 빈 배열이라
-            // 미국 종목 검색에 지연이 붙지 않는다(krEquitySearch.ts 참조).
+            // 코드 형상(`005930`)과 라틴 회사명(`samsung`) 질의를 yahoo에 태운다 —
+            // 한글·1자 질의는 즉시 빈 배열이다(krEquitySearch.ts 참조). 미국 질의도
+            // 태우지만 이 `Promise.all` 안이라 추가 비용은 합이 아니라 최댓값이고,
+            // 실패는 아래 `.catch`가 빈 배열로 degrade시킨다.
             searchKrEquity(trimmed).catch((): TickerSearchResult[] => []),
         ]);
 
