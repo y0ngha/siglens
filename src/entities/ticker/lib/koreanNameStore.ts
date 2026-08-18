@@ -78,20 +78,58 @@ async function loadAllEntries(): Promise<KoreanTickerEntry[]> {
     return entries;
 }
 
+/**
+ * `loadAllEntries`와 같은 캐시 키(`KOREAN_TICKERS_CACHE_KEY`)를 읽지만 미스 처리
+ * 방식이 다르다 — 단순화하면 이 저장소의 상폐 종목 보장이 캐시가 warm해진 순간
+ * 조용히 깨진다.
+ *
+ * 캐시는 `findAll()`(상장 종목만) 결과로 채워진다. 캐시 hit에서 그 배열을
+ * `filter`만 하면, DB에는 있지만 캐시엔 없는 상폐 심볼이 영원히 걸러진다 —
+ * `findBySymbols`가 상폐 행까지 돌려주도록 만든 목적 자체가 무력화된다
+ * (`KoreanTickerRepository.findBySymbols` JSDoc 참조). 그래서 캐시 hit이어도
+ * 요청 심볼 중 캐시가 못 채운 것을 따로 추려 DB로 보충한다.
+ *
+ * 보충은 **국내 심볼로만** 한정한다. 상폐는 KR 티커에만 있는 개념이고, 오탈자·
+ * 미상장 등으로 캐시에 없는 US/crypto 심볼까지 매번 DB를 때리면 흔한 캐시
+ * 미스마다 쿼리가 하나씩 붙는다 — 이 함수가 핫 패스(`getKoreanNames`)에서
+ * 호출되므로 그 비용은 무시할 수 없다.
+ */
 async function loadEntriesBySymbols(
     symbols: readonly string[]
 ): Promise<KoreanTickerEntry[]> {
     const cache = createCacheProvider();
     const cached = await loadEntriesFromCache(cache);
     if (cached !== null) {
-        const symbolSet = new Set(symbols);
-        return cached.filter(entry => symbolSet.has(entry.symbol));
+        return resolveFromCacheWithFallback(cached, symbols);
     }
 
     const repository = tryGetRepository();
     if (!repository) return [];
 
     return readBySymbolsFromDatabase(repository, symbols);
+}
+
+async function resolveFromCacheWithFallback(
+    cached: KoreanTickerEntry[],
+    symbols: readonly string[]
+): Promise<KoreanTickerEntry[]> {
+    const requested = new Set(symbols);
+    const hits = cached.filter(entry => requested.has(entry.symbol));
+
+    const hitSymbols = new Set(hits.map(entry => entry.symbol));
+    const missingKrSymbols = [...requested].filter(
+        symbol => !hitSymbols.has(symbol) && isKrEquitySymbol(symbol)
+    );
+    if (missingKrSymbols.length === 0) return hits;
+
+    const repository = tryGetRepository();
+    if (!repository) return hits;
+
+    const fallback = await readBySymbolsFromDatabase(
+        repository,
+        missingKrSymbols
+    );
+    return [...hits, ...fallback];
 }
 
 async function readAllFromDatabase(
@@ -145,6 +183,16 @@ export async function getKoreanNames(
     });
     // Object.fromEntries widens to { [k: string]: string } but pairs is readonly [string, string][], so the cast is safe.
     return Object.fromEntries(pairs) as Record<string, string>;
+}
+
+/**
+ * 한글 종목 캐시를 비운다. 검색은 이 캐시를 통째로 읽어 substring 필터를 돌리므로,
+ * 상장 상태가 바뀐 뒤 비우지 않으면 상폐 종목이 TTL 동안 검색에 계속 뜬다.
+ */
+export async function invalidateKoreanTickerCache(): Promise<void> {
+    const cache = createCacheProvider();
+    if (!cache) return;
+    await invalidateCache(cache);
 }
 
 async function invalidateCache(cache: CacheProvider): Promise<void> {

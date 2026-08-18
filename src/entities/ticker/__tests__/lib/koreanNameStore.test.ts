@@ -45,6 +45,7 @@ vi.mock('../../api', () => ({
 
 import {
     getKoreanNames,
+    invalidateKoreanTickerCache,
     searchByKoreanName,
     setKoreanTickers,
 } from '../../lib/koreanNameStore';
@@ -195,6 +196,74 @@ describe('getKoreanNames', () => {
     });
 });
 
+/**
+ * `loadEntriesBySymbols`가 캐시 hit에서도 상폐 심볼을 놓치지 않는지 검증한다.
+ * 캐시는 `findAll()`(상장 종목만)로 채워지므로, 캐시 hit에서 단순 filter만 하면
+ * 상폐 종목의 한글명이 영원히 사라진다 — `KoreanTickerRepository.findBySymbols`가
+ * 상폐 행까지 돌려주도록 만든 목적을 캐시가 조용히 무력화하는 회귀를 이 블록이 잡는다.
+ */
+describe('getKoreanNames — 캐시 hit + 상폐 종목 DB 폴백', () => {
+    beforeEach(resetMocks);
+    afterEach(() => vi.clearAllMocks());
+
+    const samsung: KoreanTickerEntry = {
+        symbol: '005930.KS',
+        name: 'Samsung Electronics',
+        koreanName: '삼성전자',
+        exchange: 'KSC',
+        exchangeFullName: 'KOSPI',
+    };
+
+    const delistedKr: KoreanTickerEntry = {
+        symbol: '000000.KQ',
+        name: 'Delisted Co',
+        koreanName: '상폐기업',
+        exchange: 'KOQ',
+        exchangeFullName: 'KOSDAQ',
+    };
+
+    it('캐시가 요청 심볼을 전부 커버하면 findBySymbols 를 호출하지 않는다', async () => {
+        mockCache.get.mockResolvedValue([apple, samsung]);
+        const result = await getKoreanNames(['AAPL', '005930.KS']);
+        expect(result).toEqual({ AAPL: '애플', '005930.KS': '삼성전자' });
+        expect(mockRepository.findBySymbols).not.toHaveBeenCalled();
+    });
+
+    it('캐시에 없는 KR 심볼은 findBySymbols 로 보충하고 병합한다', async () => {
+        mockCache.get.mockResolvedValue([apple]);
+        mockRepository.findBySymbols.mockResolvedValue([delistedKr]);
+
+        const result = await getKoreanNames(['AAPL', '000000.KQ']);
+
+        expect(mockRepository.findBySymbols).toHaveBeenCalledWith([
+            '000000.KQ',
+        ]);
+        expect(result).toEqual({ AAPL: '애플', '000000.KQ': '상폐기업' });
+    });
+
+    it('캐시에 없는 US/crypto 심볼은 findBySymbols 를 호출하지 않는다', async () => {
+        mockCache.get.mockResolvedValue([apple]);
+
+        const result = await getKoreanNames(['AAPL', 'TSLA']);
+
+        expect(mockRepository.findBySymbols).not.toHaveBeenCalled();
+        expect(result).toEqual({ AAPL: '애플' });
+    });
+
+    it('입력에 중복 심볼이 있어도 KR 폴백 조회는 한 번만 한다', async () => {
+        mockCache.get.mockResolvedValue([apple]);
+        mockRepository.findBySymbols.mockResolvedValue([delistedKr]);
+
+        const result = await getKoreanNames(['000000.KQ', 'AAPL', '000000.KQ']);
+
+        expect(mockRepository.findBySymbols).toHaveBeenCalledTimes(1);
+        expect(mockRepository.findBySymbols).toHaveBeenCalledWith([
+            '000000.KQ',
+        ]);
+        expect(result).toEqual({ AAPL: '애플', '000000.KQ': '상폐기업' });
+    });
+});
+
 describe('setKoreanTickers', () => {
     beforeEach(resetMocks);
     afterEach(() => vi.clearAllMocks());
@@ -236,5 +305,26 @@ describe('setKoreanTickers', () => {
         await setKoreanTickers([apple]);
         expect(mockRepository.upsertMany).toHaveBeenCalledTimes(1);
         expect(mockCache.delete).not.toHaveBeenCalled();
+    });
+});
+
+describe('invalidateKoreanTickerCache', () => {
+    beforeEach(resetMocks);
+    afterEach(() => vi.clearAllMocks());
+
+    it('cache provider 가 없으면 아무것도 하지 않는다', async () => {
+        createCacheProviderMock.mockReturnValue(null);
+        await expect(invalidateKoreanTickerCache()).resolves.toBeUndefined();
+        expect(mockCache.delete).not.toHaveBeenCalled();
+    });
+
+    it('cache 가 있으면 korean:tickers 키를 지운다', async () => {
+        await invalidateKoreanTickerCache();
+        expect(mockCache.delete).toHaveBeenCalledWith('korean:tickers');
+    });
+
+    it('cache delete 실패는 흡수한다', async () => {
+        mockCache.delete.mockRejectedValue(new Error('cache down'));
+        await expect(invalidateKoreanTickerCache()).resolves.toBeUndefined();
     });
 });

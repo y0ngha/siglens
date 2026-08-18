@@ -116,6 +116,33 @@ ISR 캐시 키는 `GIT_SHA` prefix가 붙어 매 릴리스마다 cold-start한�
 
 **추적할 알려진 갭(여기서 고치지 않음)**: `cache-handler/tagStore.mjs`는 in-process Map이다(ASG desired=1 가정 하에 문서화됨). Phase 2로 `seo-snapshot:{SYM}` 태그에 실제 consumer가 생겼으므로, ASG가 1을 넘어 스케일하면 서빙하지 않는 인스턴스는 자기 TTL까지 무효화되지 않는다. 별도 follow-up 이슈로 추적할 것.
 
+## `kr-tickers` (AWS EventBridge)
+
+`PATCH /api/cron/kr-tickers`가 공공데이터포털 KRX상장종목정보를 읽어 `korean_tickers`를 동기화한다. 신규 상장 추가·기존 행 갱신·사라진 종목 상폐 표시를 한 번에 한다.
+
+- **스케줄**: `cron(0 5 * * ? *)` — 05:00 UTC = 14:00 KST, Rule 하나(`siglens-kr-tickers-daily`). 원본 API가 기준일 다음 영업일 13시 이후 하루 한 번 갱신되므로 그보다 한 시간 뒤에 읽는다. `seo-prewarm`이 Rule 3개로 쪼개진 건 UTC 창이 자정을 가로질렀기 때문이고, 하루 한 틱은 그 제약을 받지 않는다.
+- **인증**: Connection `siglens-kr-tickers`(API_KEY)가 `Authorization: Bearer <CRON_SECRET>`를 주입한다. `seo-prewarm`과 같은 시크릿을 쓰지만 Connection은 따로 둔다 — 이름이 `siglens-seo-prewarm`인 리소스에 두 크론이 매달리면, 한쪽을 지웠을 때 다른 쪽이 조용히 죽는다.
+- **왜 seo-prewarm보다 작은가**: 그쪽은 5분 간격 10분짜리 LLM 배치라 Redis 루트 락·wall-clock 데드라인·알람 8종이 필요했다. 이쪽은 **하루 한 번 도는 10초짜리 멱등 작업**이다. 202를 먼저 돌려주므로 EventBridge 타임아웃 재시도가 없고, 겹쳐 돌아도 upsert와 상폐 표시가 모두 멱등이라 락이 막아 줄 것이 없다. 202 + `after()`만 가져온 이유는 남아 있다 — API Destination 타임아웃(~5s)이 전 종목 페이지네이션보다 짧다.
+- **상폐 판정 가드**: 부분 응답으로 멀쩡한 종목이 대량 삭제되는 것이 유일한 파괴적 실패 모드다. `planKrTickerReconcile`(`src/entities/ticker/lib/krTickerReconcile.ts`)이 두 가지로 막는다 — 수신 건수 절대 하한(1,000, DB가 비어 있는 최초 실행용)과 **한 번에 사라진 종목 수 상한(25)**. 후자가 비율 가드보다 위험을 직접 표현한다: 종전의 "기존 상장 수의 90%" 규칙은 2,595종목 기준 하루 259종목까지 조용히 통과시켜, 마지막 몇 페이지만 빠지는 페이지네이션 결함을 못 잡았다. 걸리면 상폐 처리만 건너뛰고 upsert·relist는 그대로 한다(지우는 방향만 막는다). 행은 삭제하지 않고 `delisted_at`을 채워 표시만 하므로 오탐 복구 비용이 0이다.
+- **모니터링 신호**:
+  - 정상 완료: `[kr-tickers] sync done: {"fetched":…,"delisted":…,"relisted":…,"guardTrip":null}`
+  - 동기화 실패: `[kr-tickers] sync failed: …` → 알람 `siglens-kr-tickers-sync-failed`
+  - 가드 발동: `[kr-tickers] delist skipped — …` — 상폐 처리를 건너뛴 날이다. **크론은 이 상태에서 스스로 빠져나오지 못한다**(다음 날도 같은 후보 집합이 나와 다시 걸린다). 의도된 정지이므로 사람이 어느 쪽인지 판정해야 한다:
+    - *절대 하한(`absolute floor`)에 걸린 경우* — 응답이 1,000건 미만이다. 거의 항상 API 장애나 응답 shape 변경이다. 하루 이틀은 기다려 보고, 계속되면 `fetchKrxListedItems`의 파싱을 먼저 의심할 것. 이 하한은 어떤 방법으로도 우회되지 않는다.
+    - *소실 상한(`vanished in one sync`)에 걸린 경우* — 응답 크기는 정상인데 25종목 넘게 사라졌다. **진짜 대량 정리(관리종목 일괄 상폐 등)일 수 있다.** 바로 다음 줄에 후보 목록이 찍힌다(`[kr-tickers] delist candidates: …`, 50개 초과분은 개수로 축약) — CloudWatch에서 그대로 읽으면 되고 스크립트를 따로 돌릴 필요가 없다. 눈으로 확인한 뒤 맞다면 한 번만 통과시킨다:
+      ```bash
+      yarn db:seed:kr-names --force-delist
+      ```
+      크론과 같은 판정 로직을 쓰므로 결과가 같고, 상수를 고쳐 재배포할 필요가 없다. 승인은 그 실행 한 번으로 끝난다 — 다음 날 크론은 다시 가드가 걸린 상태로 돌아간다(그때는 이미 상폐 표시가 끝나 후보가 없다).
+  - **`[kr-tickers] delisted popular ticker — remove from POPULAR_TICKERS: …`** — 사람이 개입해야 하는 유일한 신호다. `POPULAR_TICKERS`는 하드코딩이라 sitemap이 계속 그 URL을 싣는다. 목록에서 빼기 전까지 404가 크롤 예산을 태운다.
+  - 딜리버리 부재: 알람 `siglens-kr-tickers-delivery-failed`(`AWS/Events` `FailedInvocations`) — EventBridge가 호출 자체에 실패하면 앱 로그에 흔적이 없다.
+- **부트스트랩(수동, 1회)**:
+  1. `yarn db:migrate`로 `delisted_at` 컬럼 마이그레이션(0028) 적용. `.env.local`의 `DATABASE_URL`이 prod를 가리키는지 먼저 확인할 것.
+  2. `bash infra/aws/14-kr-tickers-cron.sh` (멱등). 로그 그룹 `/siglens/app`이 없으면 metric filter가 조용히 빠지므로 `10-logs.sh` 뒤에 **재실행**할 것.
+  3. 수동 invoke로 202 확인: `curl -i -X PATCH https://siglens.io/api/cron/kr-tickers -H "Authorization: Bearer $CRON_SECRET"`
+- **kill-switch**: `aws events disable-rule --name siglens-kr-tickers-daily`. 껐다고 알람이 뜨지는 않는다 — `sync done` 로그가 안 보이는 것으로만 알 수 있다.
+- **수동 경로**: `yarn db:seed:kr-names`가 같은 판정 로직(`planKrTickerReconcile` + `toKoreanTickerRows`)을 공유하므로 앱 없이도 같은 결과를 낸다. 크론이 상시 경로, 이 스크립트는 부트스트랩·복구용이다.
+
 ## Pending Follow-ups
 
 | 테이블 | 작업 | 상태 |

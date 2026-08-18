@@ -197,6 +197,13 @@
             "when": 1784906423081,
             "tag": "0027_warm_gertrude_yorkes",
             "breakpoints": true
+        },
+        {
+            "idx": 28,
+            "version": "7",
+            "when": 1786984257566,
+            "tag": "0028_lush_wendell_vaughn",
+            "breakpoints": true
         }
     ]
 }

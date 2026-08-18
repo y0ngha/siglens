@@ -51,6 +51,32 @@ function collectColumnNames(node: SqlLike): string[] {
     );
 }
 
+/** 순환 참조 방어 + 무한 재귀 방어용 깊이 상한. Drizzle 조건식은 이보다 훨씬 얕다. */
+const SQL_WALK_MAX_DEPTH = 8;
+
+/**
+ * 조건식 객체 그래프에 들어 있는 **모든 문자열**을 모은다.
+ *
+ * 컬럼 이름만 보면 조건이 어떤 컬럼을 쓰는지는 알아도 *무엇과* 비교하는지는 모른다 —
+ * 접미사 필터처럼 값 자체가 계약인 경우엔 그것만으로 부족하다. Drizzle이 바인딩 값을
+ * 어느 노드 타입에 담는지는 버전마다 다르므로(`Param`/`StringChunk`/중첩 `SQL`),
+ * 특정 형태를 가정하지 않고 그래프 전체를 훑는다.
+ */
+function collectSqlStrings(
+    node: unknown,
+    depth = 0,
+    seen = new Set<unknown>()
+): string[] {
+    if (depth > SQL_WALK_MAX_DEPTH || node === null) return [];
+    if (typeof node === 'string') return [node];
+    if (typeof node !== 'object') return [];
+    if (seen.has(node)) return [];
+    seen.add(node);
+    return Object.values(node as Record<string, unknown>).flatMap(value =>
+        collectSqlStrings(value, depth + 1, seen)
+    );
+}
+
 const apple: KoreanTickerEntry = {
     symbol: 'AAPL',
     name: 'Apple Inc.',
@@ -71,11 +97,21 @@ function makeSelectFromDb(rows: unknown[]): {
     db: SiglensDatabase;
     select: Mock;
     from: Mock;
+    where: Mock;
 } {
-    const fromResult = Promise.resolve(rows);
+    const where = vi.fn().mockResolvedValue(rows);
+    // `findAll`은 `.where(isNull(delistedAt))`로 상폐 행을 거르고
+    // `findAllListingStatuses`도 `.from().where(or(like(...), like(...)))`로 국내
+    // 종목만 거른다 — 둘 다 태우려면 from의 결과가 thenable이면서 where도 갖고 있어야 한다.
+    const fromResult = Object.assign(Promise.resolve(rows), { where });
     const from = vi.fn(() => fromResult);
     const select = vi.fn(() => ({ from }));
-    return { db: { select } as unknown as SiglensDatabase, select, from };
+    return {
+        db: { select } as unknown as SiglensDatabase,
+        select,
+        from,
+        where,
+    };
 }
 
 function makeFindBySymbolDb(rows: unknown[]): {
@@ -117,17 +153,58 @@ function makeUpsertDb(): {
     };
 }
 
+function makeUpdateDb(): {
+    db: SiglensDatabase;
+    update: Mock;
+    set: Mock;
+    where: Mock;
+} {
+    const where = vi.fn().mockResolvedValue(undefined);
+    const set = vi.fn(() => ({ where }));
+    const update = vi.fn(() => ({ set }));
+    return { db: { update } as unknown as SiglensDatabase, update, set, where };
+}
+
 describe('DrizzleKoreanTickerRepository', () => {
-    it('findAll 은 모든 row 를 반환한다', async () => {
-        const { db } = makeSelectFromDb([apple, microsoft]);
+    it('findAll 은 상장 중인 row 를 반환한다', async () => {
+        const { db, where } = makeSelectFromDb([apple, microsoft]);
         const repo = new DrizzleKoreanTickerRepository(db);
         await expect(repo.findAll()).resolves.toEqual([apple, microsoft]);
+        // findAll 결과가 곧 한글 검색 후보 전체다 — 필터 없이 전량을 읽으면 상폐 종목이
+        // 자동완성에 뜨고 클릭하면 시세 없는 페이지로 간다.
+        expect(where).toHaveBeenCalledTimes(1);
     });
 
     it('findAll 은 빈 결과도 그대로 반환한다', async () => {
         const { db } = makeSelectFromDb([]);
         const repo = new DrizzleKoreanTickerRepository(db);
         await expect(repo.findAll()).resolves.toEqual([]);
+    });
+
+    it('findAllListingStatuses 는 상폐 행까지 포함하되 국내 종목만 읽는다', async () => {
+        // reconcile 플래너는 "이미 상폐로 표시된 종목"을 알아야 relist를 판단하고,
+        // 같은 행을 매일 다시 상폐 표시해 시각을 미는 것도 막는다 — 그래서 상폐 행도 읽는다.
+        //
+        // 반면 **미국 종목은 읽으면 안 된다.** `korean_tickers`는 이름과 달리 미국 종목도
+        // 담는데(2026-08 프로덕션 실측: 32,951행 중 국내 2,595행), 대조 대상인
+        // 공공데이터포털 응답은 KRX만 담는다. 전량을 읽으면 미국 종목 3만여 건이
+        // "사라진 종목"으로 잡혀 소실 상한 가드가 매일 걸리고 상폐 처리가 영영 일어나지 않는다.
+        const rows = [
+            { symbol: '005930.KS', delistedAt: null },
+            { symbol: '000000.KQ', delistedAt: new Date('2026-01-01') },
+        ];
+        const { db, where } = makeSelectFromDb(rows);
+        const repo = new DrizzleKoreanTickerRepository(db);
+        await expect(repo.findAllListingStatuses()).resolves.toEqual(rows);
+
+        // `.where()`가 불렸다는 것만 보면 **아무 조건이나** 통과한다 — 오타 난 접미사도,
+        // 엉뚱한 컬럼도. 실제 조건식을 열어 컬럼과 바인딩 값을 둘 다 확인한다.
+        expect(where).toHaveBeenCalledTimes(1);
+        const condition = where.mock.calls[0][0] as SqlLike;
+        expect(collectColumnNames(condition)).toContain('symbol');
+        expect(collectSqlStrings(condition)).toEqual(
+            expect.arrayContaining(['%.KS', '%.KQ'])
+        );
     });
 
     it('findBySymbols 는 빈 입력에서 select 를 호출하지 않는다', async () => {
@@ -182,6 +259,120 @@ describe('DrizzleKoreanTickerRepository', () => {
         expect(passedSet).toHaveProperty('updatedAt');
         // sql`now()` produces an SQL chunk object — must not be undefined/null.
         expect(passedSet.updatedAt).toBeDefined();
+    });
+
+    it('upsertMany 는 옵션 없이 호출하면(번역 경로) conflict-update set 에 name 을 포함한다', async () => {
+        // koreanNameStore.setKoreanTickers(방문 시 getAssetInfo가 채운 진짜 영문명)가
+        // 이 경로를 옵션 없이 쓴다 — name이 빠지면 번역이 절대 반영되지 않는다.
+        const { db, onConflictDoUpdate } = makeUpsertDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        await repo.upsertMany([apple]);
+        const passedSet = onConflictDoUpdate.mock.calls[0]![0].set as Record<
+            string,
+            unknown
+        >;
+        expect(passedSet).toHaveProperty('name');
+    });
+
+    it('upsertMany 는 preserveExistingName 옵션이 있으면(크론 경로) conflict-update set 에서 name 을 뺀다', async () => {
+        // syncKrListedTickers가 넘기는 name은 공공데이터포털에 영문명이 없어 채운
+        // 한글명 placeholder다. 이 옵션 없이 upsert하면 방문 시 getAssetInfo가 이미
+        // 써 둔 진짜 영문명을 크론이 매일 밤 placeholder로 되돌린다 — 이 테스트는
+        // 그 회귀를 pin한다. 카운트만 세면 name이 여전히 set에 남아 있어도(=버그가
+        // 있어도) 통과하므로, set 객체 자체를 열어 키 존재 여부를 직접 확인한다.
+        const { db, onConflictDoUpdate } = makeUpsertDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        await repo.upsertMany([apple], { preserveExistingName: true });
+        const passedSet = onConflictDoUpdate.mock.calls[0]![0].set as Record<
+            string,
+            unknown
+        >;
+        expect(passedSet).not.toHaveProperty('name');
+        expect(passedSet).toMatchObject({
+            koreanName: expect.anything(),
+            exchange: expect.anything(),
+            exchangeFullName: expect.anything(),
+            updatedAt: expect.anything(),
+        });
+    });
+
+    it('upsertMany 는 preserveExistingName 옵션이 있어도 신규 INSERT 행에는 name(placeholder)을 그대로 담는다', async () => {
+        // 옵션은 conflict-update만 바꾼다 — INSERT되는 값 자체에서 name을 빼면 신규
+        // 행이 NOT NULL 제약을 위반하거나 빈 문자열로 남는다. placeholder라도 null보다
+        // 낫다는 게 이 리포지토리의 원래 계약(toKoreanTickerRows 참조)이다.
+        const { db, values } = makeUpsertDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        await repo.upsertMany([apple], { preserveExistingName: true });
+        const passedValues = values.mock.calls[0]![0] as KoreanTickerEntry[];
+        expect(passedValues[0]).toMatchObject({ name: apple.name });
+    });
+
+    it('upsertMany 는 전 종목 동기화를 배치로 쪼갠다', async () => {
+        // 2,500행대를 한 INSERT로 보내면 Neon HTTP 페이로드 한도에 걸린다.
+        const { db, insert } = makeUpsertDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        const many = Array.from({ length: 1_100 }, (_, i) => ({
+            ...apple,
+            symbol: `SYM${i}`,
+        }));
+        await repo.upsertMany(many);
+        expect(insert).toHaveBeenCalledTimes(3); // 500 + 500 + 100
+    });
+
+    it('markDelisted 는 빈 입력에서 update 를 호출하지 않는다', async () => {
+        const { db, update } = makeUpdateDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        await repo.markDelisted([]);
+        expect(update).not.toHaveBeenCalled();
+    });
+
+    it('markDelisted 는 delisted_at 을 채우고 이미 표시된 행은 건드리지 않는다', async () => {
+        const { db, set, where } = makeUpdateDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        await repo.markDelisted(['000000.KQ']);
+        // sql`now()` — DB 서버 시계로 스탬프한다.
+        expect(set.mock.calls[0][0].delistedAt).toBeDefined();
+        // `where`가 불렸다는 것만 보면 **아무 조건이나** 통과한다 — isNull 가드가
+        // and(...)에서 빠져도 초록으로 남는다. 조건식을 열어 컬럼을 직접 확인한다.
+        expect(where).toHaveBeenCalledTimes(1);
+        const condition = where.mock.calls[0][0] as SqlLike;
+        expect(collectColumnNames(condition)).toEqual(
+            expect.arrayContaining(['symbol', 'delisted_at'])
+        );
+    });
+
+    it('markRelisted 는 delisted_at 을 null 로 되돌린다', async () => {
+        const { db, set } = makeUpdateDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        await repo.markRelisted(['000000.KQ']);
+        expect(set).toHaveBeenCalledWith({ delistedAt: null });
+    });
+
+    it('markRelisted 는 빈 입력에서 update 를 호출하지 않는다', async () => {
+        const { db, update } = makeUpdateDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        await repo.markRelisted([]);
+        expect(update).not.toHaveBeenCalled();
+    });
+
+    it('markRelisted 는 대량 재상장을 배치로 쪼갠다', async () => {
+        // 피드 장애 복구 직후처럼 재상장 심볼이 한 번에 몰리면 IN (...) 하나가
+        // upsertMany와 같은 Neon HTTP 페이로드 한도에 걸린다.
+        const { db, update } = makeUpdateDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        const many = Array.from({ length: 1_100 }, (_, i) => `SYM${i}.KS`);
+        await repo.markRelisted(many);
+        expect(update).toHaveBeenCalledTimes(3); // 500 + 500 + 100
+    });
+
+    it('markDelisted 도 대량 상폐를 배치로 쪼갠다', async () => {
+        // 평소엔 가드가 25개로 묶지만 `--force-delist`가 그 상한을 푼다 — 가드가
+        // 없는 경로라 오히려 여기서 페이로드 한도에 걸린다.
+        const { db, update } = makeUpdateDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        const many = Array.from({ length: 1_100 }, (_, i) => `SYM${i}.KS`);
+        await repo.markDelisted(many);
+        expect(update).toHaveBeenCalledTimes(3); // 500 + 500 + 100
     });
 });
 

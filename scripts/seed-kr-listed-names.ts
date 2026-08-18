@@ -1,12 +1,18 @@
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { sql } from 'drizzle-orm';
+import { and, inArray, isNull, like, or, sql } from 'drizzle-orm';
 import { pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 import {
     fetchKrxListedItems,
     hasDataGoKrCredentials,
-    type KrxListedItem,
 } from '../src/shared/api/dataGoKr/krxListedInfoClient';
+import { toKoreanTickerRows } from '../src/shared/api/dataGoKr/toKoreanTickerRows';
+import {
+    formatCandidates,
+    planKrTickerReconcile,
+} from '../src/entities/ticker/lib/krTickerReconcile';
+import { KOREAN_TICKERS_CACHE_KEY } from '../src/entities/ticker/lib/cacheKeys';
+import { createCacheProvider } from '@y0ngha/siglens-core';
 
 /**
  * `korean_tickers` 테이블 정의 — `src/shared/db/schema.ts`의 동명 테이블과 **같은 컬럼**이다.
@@ -14,11 +20,17 @@ import {
  * 앱 스키마를 import하지 않고 여기서 다시 선언하는 이유: `schema.ts`가 최상단에
  * `import 'server-only'`를 선언하는데, 그 모듈은 Next.js 번들러가 제공하는 가상
  * 패키지라 `node_modules`에 실체가 없다. 시드는 Next 런타임 밖에서 `tsx`로 도는
- * 순수 Node 스크립트여서 그 import가 `MODULE_NOT_FOUND`로 즉시 죽는다
- * (같은 이유로 기존 `db:seed:crypto`도 이 워크트리에서 실행되지 않는다).
+ * 순수 Node 스크립트여서 그 import가 `MODULE_NOT_FOUND`로 즉시 죽는다.
  *
  * 중복이 생기는 대신 시드가 앱의 server-only 경계를 침범하지 않는다. 컬럼이 바뀌면
  * 양쪽을 함께 고쳐야 하므로, 이 주석과 `schema.ts`의 정의를 서로의 단서로 남긴다.
+ *
+ * **판단 로직은 중복되지 않는다** — 무엇을 상폐로 볼지는 `planKrTickerReconcile`,
+ * 응답을 행으로 바꾸는 매핑은 `toKoreanTickerRows`가 갖고 있고 크론 라우트
+ * (`syncKrListedTickers`)도 같은 두 모듈을 쓴다. 여기 남는 중복은 테이블 선언, SQL
+ * 실행, 그리고 이 파일 하단의 `invalidateKoreanTickerCache`뿐이다 — 그 함수도 같은
+ * 이유(아래 `invalidateKoreanTickerCache` 주석 참조)로 `koreanNameStore.ts`의 동명
+ * 함수를 재사용하지 못해 여기서 다시 구현한다.
  */
 const koreanTickers = pgTable('korean_tickers', {
     // 길이는 schema.ts의 SYMBOL_MAX_LENGTH / EXCHANGE_MAX_LENGTH(각 32)와 일치해야 한다.
@@ -27,6 +39,7 @@ const koreanTickers = pgTable('korean_tickers', {
     name: text('name').notNull(),
     exchange: varchar('exchange', { length: 32 }).notNull(),
     exchangeFullName: text('exchange_full_name').notNull(),
+    delistedAt: timestamp('delisted_at', { withTimezone: true }),
     updatedAt: timestamp('updated_at', { withTimezone: true })
         .notNull()
         .defaultNow(),
@@ -40,13 +53,14 @@ const koreanTickers = pgTable('korean_tickers', {
  * 기존 lazy 번역(`translateCompanyNames`)은 **누군가 그 종목을 이미 방문했을 때만**
  * 행을 만들어서, 첫 사용자에게는 검색 결과가 비어 있는 닭-달걀 문제가 있었다.
  *
- * 이 스크립트가 전 종목을 미리 채워 그 문제를 없앤다.
+ * 상시 갱신은 크론(`PATCH /api/cron/kr-tickers`, 일 1회)이 담당한다. 이 스크립트는
+ * 앱을 띄우지 않고 손으로 돌리는 부트스트랩·복구 경로이며, 같은 판정 로직을 공유하므로
+ * 어느 쪽으로 돌려도 결과가 같다.
  *
  * 실행:
  *   yarn db:seed:kr-names
  *
  * 필요 환경변수: `DATA_GO_KR_SERVICE_KEY`, `DATABASE_URL`(또는 `DIRECT_DATABASE_URL`).
- * 갱신 주기: API가 일 1회(기준일 다음 영업일 13시 이후) 갱신되므로 하루 1회면 충분하다.
  */
 
 const databaseUrl = process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL;
@@ -55,51 +69,21 @@ if (!databaseUrl) {
     throw new Error('DATABASE_URL env var required');
 }
 
+/**
+ * `src/entities/ticker/api.ts`의 `KOREAN_TICKER_UPSERT_BATCH_SIZE`와 같은 Neon HTTP
+ * 페이로드 한도를 인코딩한 값이다 — 하나를 바꾸면 다른 쪽도 함께 확인해야 한다.
+ */
 const UPSERT_BATCH_SIZE = 500;
 
 /**
- * 시장 구분 → canonical 심볼 접미사.
+ * 대량 상폐 수동 승인 플래그.
  *
- * KONEX가 `null`인 것은 의도적이다 — yahoo에 KONEX 시세가 없음을 실측으로 확인했다
- * (2026-08-16: `.KN` 심볼 검색 0건). 시드에 넣으면 검색 결과에는 뜨는데 클릭하면
- * 404가 나는 죽은 링크가 된다.
+ * 하루 25종목 넘게 사라지면 가드가 상폐 처리를 통째로 멈춘다. 진짜 대량 정리였다면
+ * 크론은 다음 날도 같은 후보로 다시 걸리므로 스스로 수렴하지 못한다 — 그건 의도된
+ * 정지다. 사람이 로그의 후보 목록을 확인한 뒤 이 플래그로 한 번 통과시킨다.
+ * 상수를 고쳐 재배포할 필요가 없고, 승인이 그때 한 번으로 끝난다는 점이 중요하다.
  */
-const MARKET_SUFFIX: Record<KrxListedItem['market'], string | null> = {
-    KOSPI: '.KS',
-    KOSDAQ: '.KQ',
-    KONEX: null,
-};
-
-const EXCHANGE_FULL_NAME: Record<string, string> = {
-    KOSPI: 'Korea Exchange (KOSPI)',
-    KOSDAQ: 'KOSDAQ',
-};
-
-interface KoreanTickerRow {
-    symbol: string;
-    koreanName: string;
-    name: string;
-    exchange: string;
-    exchangeFullName: string;
-}
-
-function toRow(item: KrxListedItem): KoreanTickerRow[] {
-    const suffix = MARKET_SUFFIX[item.market];
-    if (suffix === null) return [];
-
-    return [
-        {
-            symbol: `${item.shortCode}${suffix}`,
-            koreanName: item.koreanName,
-            // 이 소스는 영문명을 주지 않는다. `name`은 NOT NULL이라 한글명을 넣어 둔다 —
-            // 영문명은 종목 방문 시 `getAssetInfo`가 yahoo quote에서 따로 채운다
-            // (korean_tickers.name은 표시명 폴백일 뿐 authoritative가 아니다).
-            name: item.koreanName,
-            exchange: item.market,
-            exchangeFullName: EXCHANGE_FULL_NAME[item.market] ?? item.market,
-        },
-    ];
-}
+const FORCE_DELIST = process.argv.includes('--force-delist');
 
 async function main() {
     if (!hasDataGoKrCredentials()) {
@@ -117,11 +101,7 @@ async function main() {
     }, {});
     console.log('By market:', byMarket);
 
-    // 같은 단축코드가 여러 행으로 오는 경우(기준일 중복 등)를 접는다 —
-    // ON CONFLICT DO UPDATE는 한 문장에서 같은 행을 두 번 건드릴 수 없다.
-    const rows = Array.from(
-        new Map(items.flatMap(toRow).map(r => [r.symbol, r])).values()
-    );
+    const rows = toKoreanTickerRows(items);
     const skipped = items.length - rows.length;
     console.log(
         `Upserting ${rows.length} rows (skipped ${skipped}: KONEX + duplicates)`
@@ -135,31 +115,137 @@ async function main() {
     const client = postgres(databaseUrl!, { max: 1 });
     const db = drizzle(client);
 
-    let written = 0;
-    for (let i = 0; i < rows.length; i += UPSERT_BATCH_SIZE) {
-        const chunk = rows.slice(i, i + UPSERT_BATCH_SIZE);
-        await db
-            .insert(koreanTickers)
-            .values(chunk)
-            .onConflictDoUpdate({
-                target: koreanTickers.symbol,
-                set: {
-                    koreanName: sql`excluded.korean_name`,
-                    exchange: sql`excluded.exchange`,
-                    exchangeFullName: sql`excluded.exchange_full_name`,
-                    // `name`은 덮어쓰지 않는다 — 방문 시 yahoo가 채운 영문명이
-                    // 한글명으로 되돌아가면 표시가 퇴행한다.
-                    // Drizzle은 conflict-update에서 $onUpdateFn을 돌리지 않으므로
-                    // updatedAt을 명시해야 stale해지지 않는다.
-                    updatedAt: sql`now()`,
-                },
-            });
-        written += chunk.length;
-        console.log(`Upserted ${written}/${rows.length}`);
-    }
+    try {
+        // 국내 종목 행만 읽는다. `korean_tickers`는 이름과 달리 미국 종목도 담고
+        // (2026-08 프로덕션 실측: 32,951행 중 국내 2,595행), 대조 대상인 공공데이터포털
+        // 응답은 KRX만 담는다. 전량을 넘기면 미국 종목이 매일 "사라진 종목"으로 잡혀
+        // 소실 상한 가드가 항상 걸리고 상폐 처리가 영영 일어나지 않는다.
+        // `syncKrListedTickers`의 `findAllListingStatuses`와 같은 조건이어야 한다.
+        const existing = await db
+            .select({
+                symbol: koreanTickers.symbol,
+                delistedAt: koreanTickers.delistedAt,
+            })
+            .from(koreanTickers)
+            .where(
+                or(
+                    like(koreanTickers.symbol, '%.KS'),
+                    like(koreanTickers.symbol, '%.KQ')
+                )
+            );
 
-    console.log('korean_tickers KR seed complete');
-    await client.end();
+        const plan = planKrTickerReconcile(
+            rows.map(row => row.symbol),
+            existing,
+            { allowLargeDelist: FORCE_DELIST }
+        );
+
+        let written = 0;
+        for (let i = 0; i < rows.length; i += UPSERT_BATCH_SIZE) {
+            const chunk = rows.slice(i, i + UPSERT_BATCH_SIZE);
+            await db
+                .insert(koreanTickers)
+                .values(chunk)
+                .onConflictDoUpdate({
+                    target: koreanTickers.symbol,
+                    set: {
+                        koreanName: sql`excluded.korean_name`,
+                        exchange: sql`excluded.exchange`,
+                        exchangeFullName: sql`excluded.exchange_full_name`,
+                        // `name`은 덮어쓰지 않는다 — 방문 시 yahoo가 채운 영문명이
+                        // 한글명으로 되돌아가면 표시가 퇴행한다.
+                        // Drizzle은 conflict-update에서 $onUpdateFn을 돌리지 않으므로
+                        // updatedAt을 명시해야 stale해지지 않는다.
+                        updatedAt: sql`now()`,
+                    },
+                });
+            written += chunk.length;
+            console.log(`Upserted ${written}/${rows.length}`);
+        }
+
+        // relist/delist도 upsert와 같은 이유로 쪼갠다 — 이 스크립트는 피드 장애
+        // 복구를 손으로 돌리는 경로이고, 그때가 바로 심볼이 수백~수천 개로 몰려
+        // `IN (...)` 하나가 Neon HTTP 페이로드 한도에 걸리는 상황이다
+        // (`DrizzleKoreanTickerRepository.markRelisted`가 같은 이유로 청크를 나눈다).
+        for (let i = 0; i < plan.relist.length; i += UPSERT_BATCH_SIZE) {
+            await db
+                .update(koreanTickers)
+                .set({ delistedAt: null })
+                .where(
+                    inArray(
+                        koreanTickers.symbol,
+                        plan.relist.slice(i, i + UPSERT_BATCH_SIZE)
+                    )
+                );
+        }
+        if (plan.relist.length > 0) {
+            console.log(`Relisted ${plan.relist.length}`);
+        }
+
+        if (plan.guardTrip !== null) {
+            console.error(
+                `Delist skipped — ${plan.guardTrip}. Upserts still applied.`
+            );
+            // 후보를 찍어 둬야 사람이 --force-delist를 줄지 판단할 수 있다.
+            console.error(
+                `Delist candidates: ${formatCandidates(plan.delistCandidates)}`
+            );
+        } else if (plan.delist.length > 0) {
+            // 이미 표시된 행은 건드리지 않는다 — 상폐 시각이 매 실행마다 밀리면
+            // "언제부터 상폐였나"를 잃는다.
+            //
+            // `--force-delist`가 25개 상한을 푸는 유일한 경로라 여기가 바로
+            // 페이로드 한도에 걸리는 자리다. relist와 같은 크기로 쪼갠다.
+            for (let i = 0; i < plan.delist.length; i += UPSERT_BATCH_SIZE) {
+                await db
+                    .update(koreanTickers)
+                    .set({ delistedAt: sql`now()` })
+                    .where(
+                        and(
+                            inArray(
+                                koreanTickers.symbol,
+                                plan.delist.slice(i, i + UPSERT_BATCH_SIZE)
+                            ),
+                            isNull(koreanTickers.delistedAt)
+                        )
+                    );
+            }
+            console.log(`Delisted ${plan.delist.length}`);
+        }
+
+        if (plan.delistedPopular.length > 0) {
+            console.error(
+                `Delisted POPULAR_TICKERS entries — remove them from popular-tickers.ts or sitemap will serve 404s: ${plan.delistedPopular.join(', ')}`
+            );
+        }
+
+        // 검색은 `korean:tickers` 캐시에 담긴 전체 목록에 substring 필터를 돌린다.
+        // TTL이 1년이라 사실상 영구다 — 비우지 않으면 방금 표시한 상폐 종목이 계속
+        // 자동완성에 뜬다. 크론(`syncKrListedTickers`)이 같은 일을 하므로, 이 스크립트만
+        // 빠지면 "복구용 경로가 복구를 완성하지 못하는" 상태가 된다.
+        await invalidateKoreanTickerCache();
+
+        console.log('korean_tickers KR seed complete');
+    } finally {
+        await client.end();
+    }
+}
+
+/**
+ * `koreanNameStore`를 그대로 쓰지 못하는 이유는 이 파일 상단 주석과 같다 — 그 모듈은
+ * `api.ts`를 거쳐 `schema.ts`의 `server-only`에 닿는다. `cacheKeys`와 core의
+ * `createCacheProvider`는 그 체인 밖이라 여기서 직접 쓸 수 있다.
+ */
+async function invalidateKoreanTickerCache(): Promise<void> {
+    try {
+        const cache = createCacheProvider();
+        if (!cache) return;
+        await cache.delete(KOREAN_TICKERS_CACHE_KEY);
+        console.log('korean:tickers cache invalidated');
+    } catch (e) {
+        // 캐시가 없거나 못 지워도 DB 상태는 이미 옳다. 다음 크론이 다시 비운다.
+        console.warn('korean:tickers cache invalidation failed', e);
+    }
 }
 
 main().catch(e => {

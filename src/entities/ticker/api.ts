@@ -5,7 +5,17 @@ import {
     type CryptoAssetRow,
     type FmpCryptoListRaw,
 } from './lib/fmpCryptoListClient';
-import { desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
+import {
+    and,
+    desc,
+    eq,
+    ilike,
+    inArray,
+    isNull,
+    like,
+    or,
+    sql,
+} from 'drizzle-orm';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import {
     assetTranslations,
@@ -20,6 +30,8 @@ import type {
     CryptoAssetRecord,
     CryptoAssetRepository,
     KoreanTickerRepository,
+    KoreanTickerUpsertOptions,
+    KrTickerListingRow,
     ProfileDescriptionTranslationRecord,
     ProfileDescriptionTranslationRepository,
 } from '@/shared/db/types';
@@ -43,6 +55,16 @@ import {
 const DB_SORT_EXACT = 0;
 const DB_SORT_PREFIX = 1;
 const DB_SORT_OTHER = 2;
+
+/**
+ * `korean_tickers`에 대한 한 INSERT/UPDATE 문에 담을 최대 행 수. 전 종목 동기화는
+ * 2,500행대라 한 번에 보내면 Neon HTTP 페이로드 한도에 걸린다. `upsertMany`(INSERT),
+ * `markRelisted`(대량 재상장 UPDATE), `markDelisted`(대량 상폐 UPDATE) 세 곳의 청크
+ * 크기로 재사용한다.
+ * `scripts/seed-kr-listed-names.ts`의 `UPSERT_BATCH_SIZE`와 같은 한도를 인코딩한
+ * 값이다 — 하나를 바꾸면 다른 쪽도 함께 확인해야 한다.
+ */
+const KOREAN_TICKER_UPSERT_BATCH_SIZE = 500;
 
 const koreanTickerColumns = {
     symbol: koreanTickers.symbol,
@@ -73,8 +95,15 @@ const assetTranslationColumns = {
 export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
+    /**
+     * 상장 중인 행만 반환한다 — 이 결과가 한글명 검색 후보 전체다. 상폐 종목이 섞이면
+     * 자동완성에 뜨고 클릭하면 시세가 없는 죽은 페이지로 간다.
+     */
     async findAll(): Promise<KoreanTickerEntry[]> {
-        return this.db.select(koreanTickerColumns).from(koreanTickers);
+        return this.db
+            .select(koreanTickerColumns)
+            .from(koreanTickers)
+            .where(isNull(koreanTickers.delistedAt));
     }
 
     async findBySymbols(
@@ -88,7 +117,26 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
             .where(inArray(koreanTickers.symbol, [...symbols]));
     }
 
-    async upsertMany(entries: readonly KoreanTickerEntry[]): Promise<void> {
+    async upsertMany(
+        entries: readonly KoreanTickerEntry[],
+        options?: KoreanTickerUpsertOptions
+    ): Promise<void> {
+        for (
+            let i = 0;
+            i < entries.length;
+            i += KOREAN_TICKER_UPSERT_BATCH_SIZE
+        ) {
+            await this.upsertBatch(
+                entries.slice(i, i + KOREAN_TICKER_UPSERT_BATCH_SIZE),
+                options
+            );
+        }
+    }
+
+    private async upsertBatch(
+        entries: readonly KoreanTickerEntry[],
+        options?: KoreanTickerUpsertOptions
+    ): Promise<void> {
         if (entries.length === 0) return;
 
         await withRetry(
@@ -103,14 +151,113 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
                         // (DB-server clock) rather than new Date() (app-server clock) so
                         // timestamps stay monotonic across concurrent app instances
                         // writing to the same row.
+                        //
+                        // `name`은 `preserveExistingName`이 켜졌을 때만 뺀다 — 그 사유는
+                        // `KoreanTickerUpsertOptions` JSDoc(shared/db/types.ts) 참조. INSERT
+                        // 쪽 `values()`에는 이 옵션이 관여하지 않으므로 신규 행은 항상
+                        // placeholder라도 name을 받는다(placeholder가 null보다는 낫다).
                         set: {
-                            name: sql`excluded.name`,
+                            ...(options?.preserveExistingName
+                                ? {}
+                                : { name: sql`excluded.name` }),
                             koreanName: sql`excluded.korean_name`,
                             exchange: sql`excluded.exchange`,
                             exchangeFullName: sql`excluded.exchange_full_name`,
                             updatedAt: sql`now()`,
                         },
                     }),
+            NEON_TRANSIENT_RETRY
+        );
+    }
+
+    /**
+     * **국내 상장 종목 행만 반환한다.**
+     *
+     * `korean_tickers`는 이름이 무색하게 미국·한국 종목을 함께 담는 이중언어 이름
+     * 저장소다(2026-08 프로덕션 실측: 32,951행 중 국내는 2,595행). 이 결과는
+     * `planKrTickerReconcile`의 "현재 상장 중" 집합이 되는데, 대조 대상인
+     * 공공데이터포털 응답은 **KRX만** 담는다. 전량을 넘기면 미국 종목 3만여 건이
+     * 매일 "사라진 종목"으로 잡혀, 소실 상한 가드가 매일 걸리고 상폐 처리는 영원히
+     * 일어나지 않는다 — 가드가 파국은 막지만 기능이 통째로 죽는다.
+     *
+     * 접미사로 거르는 이유는 `isKrEquitySymbol`과 같다: 국내 심볼은 canonical 심볼에
+     * 거래소 접미사가 박혀 있어 형상만으로 판정이 끝난다.
+     */
+    async findAllListingStatuses(): Promise<KrTickerListingRow[]> {
+        return this.db
+            .select({
+                symbol: koreanTickers.symbol,
+                delistedAt: koreanTickers.delistedAt,
+            })
+            .from(koreanTickers)
+            .where(
+                or(
+                    like(koreanTickers.symbol, '%.KS'),
+                    like(koreanTickers.symbol, '%.KQ')
+                )
+            );
+    }
+
+    async markDelisted(symbols: readonly string[]): Promise<void> {
+        // `markRelisted`와 같은 이유로 쪼갠다. 평소에는 가드가 25개로 묶어 두지만
+        // `--force-delist`는 그 상한을 푸는 유일한 경로이고(대량 상폐를 사람이 확인한
+        // 뒤 쓰는 수동 override), 바로 그때 심볼이 수백 개가 되어 같은 Neon HTTP
+        // 페이로드 한도에 걸린다 — 가드가 없는 경로일수록 견고해야 한다.
+        for (
+            let i = 0;
+            i < symbols.length;
+            i += KOREAN_TICKER_UPSERT_BATCH_SIZE
+        ) {
+            await this.markDelistedBatch(
+                symbols.slice(i, i + KOREAN_TICKER_UPSERT_BATCH_SIZE)
+            );
+        }
+    }
+
+    private async markDelistedBatch(symbols: readonly string[]): Promise<void> {
+        if (symbols.length === 0) return;
+
+        // `isNull` 조건이 재실행을 멱등하게 만든다 — 이미 표시된 행의 타임스탬프를
+        // 다시 밀면 "언제부터 상폐였나"를 잃는다.
+        await withRetry(
+            () =>
+                this.db
+                    .update(koreanTickers)
+                    .set({ delistedAt: sql`now()` })
+                    .where(
+                        and(
+                            inArray(koreanTickers.symbol, [...symbols]),
+                            isNull(koreanTickers.delistedAt)
+                        )
+                    ),
+            NEON_TRANSIENT_RETRY
+        );
+    }
+
+    async markRelisted(symbols: readonly string[]): Promise<void> {
+        // `upsertMany`와 같은 이유로 청크를 나눈다 — 피드 장애가 며칠 이어졌다 복구되면
+        // 재상장 심볼이 한 번에 수백~수천 개 몰릴 수 있고, 그걸 IN (...) 하나에 담으면
+        // 같은 Neon HTTP 페이로드 한도에 걸린다.
+        for (
+            let i = 0;
+            i < symbols.length;
+            i += KOREAN_TICKER_UPSERT_BATCH_SIZE
+        ) {
+            await this.markRelistedBatch(
+                symbols.slice(i, i + KOREAN_TICKER_UPSERT_BATCH_SIZE)
+            );
+        }
+    }
+
+    private async markRelistedBatch(symbols: readonly string[]): Promise<void> {
+        if (symbols.length === 0) return;
+
+        await withRetry(
+            () =>
+                this.db
+                    .update(koreanTickers)
+                    .set({ delistedAt: null })
+                    .where(inArray(koreanTickers.symbol, [...symbols])),
             NEON_TRANSIENT_RETRY
         );
     }
