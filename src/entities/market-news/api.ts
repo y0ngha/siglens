@@ -262,9 +262,11 @@ export class DrizzleMarketNewsRepository {
  * is not a pure function (MISTAKES.md Architecture §0.7).
  */
 /**
- * 카드 표시용 목록 — 본문 컬럼을 아예 읽지 않는다.
+ * 카드 표시용 목록.
  *
- * 본문이 필요한 소비자(다이제스트 submit)는 `getMarketNewsList`를 쓴다.
+ * `getMarketNewsList`와의 차이는 `symbol`/`analyzedAt` 유무뿐이다 — 그쪽도 이제
+ * 본문(`body_en`)을 읽지 않는다(`toMarketNewsRow` 주석 참조). 즉 "본문이 필요하면
+ * 저쪽"이라는 구분은 더 이상 없고, 집계·다이제스트 프롬프트도 본문을 안 읽는다.
  */
 export const getMarketNewsCards = cache(
     async (sentinel: string): Promise<MarketNewsCardItem[]> => {
