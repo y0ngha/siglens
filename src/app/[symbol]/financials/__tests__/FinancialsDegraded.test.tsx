@@ -86,6 +86,31 @@ describe('FinancialsDegraded', () => {
         ).toBeInTheDocument();
     });
 
+    // SEO 감사(2026-08-18): financials는 kr-equity도 렌더한다 — marketProfile이
+    // CrossLinkCards뿐 아니라 FinancialsSnapshotProse까지 실제로 전달되는지(캡션이
+    // "미국 장마감"으로 굳어 있지 않은지) 직접 겨냥한다.
+    it('한국 종목은 "국내 장마감 기준" 캡션을 쓴다', () => {
+        render(
+            <FinancialsDegraded
+                displayName="삼성전자"
+                symbol="005930.KS"
+                marketProfile="kr-equity"
+                snapshotContent={{
+                    overallConclusionKo: '현금창출력이 견조합니다.',
+                    overallSentiment: 'bullish',
+                    axisAssessments: [],
+                    riskFactorsKo: [],
+                }}
+                snapshotGeneratedAt={new Date('2026-08-14T06:30:00Z')}
+            />
+        );
+
+        expect(
+            screen.getByText(/2026년 8월 14일 국내 장마감 기준/)
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/미국 장마감 기준/)).not.toBeInTheDocument();
+    });
+
     // SEO 감사(2026-08-18): marketProfile을 넘기지 않으면 CrossLinkCards의
     // 기본값(`'us-equity'`)으로 떨어져, 한국 종목 degrade 셸에도 존재하지 않는
     // `/options`·`/congress` 링크가 노출됐다(soft-404: notFound()가 Suspense

@@ -31,6 +31,7 @@ describe('NewsSnapshotProse', () => {
                 content={buildFixture()}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -54,6 +55,7 @@ describe('NewsSnapshotProse', () => {
                 content={buildFixture({ overallSentiment: 'bullish' })}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -76,6 +78,7 @@ describe('NewsSnapshotProse', () => {
                 })}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -93,6 +96,7 @@ describe('NewsSnapshotProse', () => {
                 })}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
         expect(emptyContainer.textContent?.trim()).toBe('');
@@ -102,6 +106,7 @@ describe('NewsSnapshotProse', () => {
                 content={null}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
         expect(nullContainer.textContent?.trim()).toBe('');
@@ -111,6 +116,7 @@ describe('NewsSnapshotProse', () => {
                 content="not-an-object"
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
         expect(stringContainer.textContent?.trim()).toBe('');
@@ -126,6 +132,7 @@ describe('NewsSnapshotProse', () => {
                 })}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -143,6 +150,7 @@ describe('NewsSnapshotProse', () => {
                 })}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
             />
         );
 
@@ -161,6 +169,7 @@ describe('NewsSnapshotProse — 기준일 표기 (C1 감사)', () => {
                 content={buildFixture()}
                 symbol="AAPL"
                 displayName="Apple Inc."
+                marketProfile="us-equity"
                 generatedAt={new Date('2026-07-31T20:00:00Z')}
             />
         );
@@ -169,5 +178,25 @@ describe('NewsSnapshotProse — 기준일 표기 (C1 감사)', () => {
         expect(
             screen.getByText(/2026년 7월 31일 미국 장마감 기준/)
         ).toBeInTheDocument();
+    });
+
+    // SEO 감사(2026-08-18): news 탭은 세 시장 전부 렌더한다 — marketProfile을
+    // SnapshotSummarySection까지 실제로 전달하는지 crypto로 직접 겨냥한다("장마감"
+    // 자체가 없는 24/7 시장이라 문구가 통째로 달라야 한다).
+    it('crypto로 렌더하면 "UTC 기준" 캡션을 쓴다 — "장마감"을 쓰지 않는다', () => {
+        render(
+            <NewsSnapshotProse
+                content={buildFixture()}
+                symbol="BTCUSD"
+                displayName="비트코인"
+                marketProfile="crypto"
+                generatedAt={new Date('2026-08-14T00:00:00Z')}
+            />
+        );
+
+        expect(
+            screen.getByText(/2026년 8월 14일 UTC 기준/)
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/장마감/)).not.toBeInTheDocument();
     });
 });

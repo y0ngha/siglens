@@ -3,6 +3,7 @@ import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 import { createEnumGuard } from '../lib/createEnumGuard';
 import { LIVE_ANALYSIS_CROSS_REF } from '../lib/liveAnalysisCrossRef';
+import type { MarketProfileId } from '@/shared/config/marketProfile';
 
 interface TechnicalSnapshotProseProps {
     /**
@@ -15,6 +16,12 @@ interface TechnicalSnapshotProseProps {
     content: unknown;
     symbol: string;
     displayName: string;
+    /**
+     * chart(technical) 탭은 us-equity·kr-equity·crypto 전부 렌더한다 —
+     * `SnapshotSummarySection` 셸의 캡션·타임존이 시장에 맞게 갈리도록 호출부가
+     * 반드시 실제 값을 넘긴다.
+     */
+    marketProfile: MarketProfileId;
     /** 스냅샷 행의 `generatedAt`. 셸이 기준일 캡션과 "지난 AI 분석" 배지를 렌더하는 데 쓴다. */
     generatedAt?: Date;
 }
@@ -147,6 +154,7 @@ export function TechnicalSnapshotProse({
     content,
     symbol,
     displayName,
+    marketProfile,
     generatedAt,
 }: TechnicalSnapshotProseProps) {
     const narrowed = narrowTechnicalContent(content);
@@ -161,6 +169,7 @@ export function TechnicalSnapshotProse({
         <SnapshotSummarySection
             title="기술적 분석 요약"
             displayName={displayName}
+            marketProfile={marketProfile}
             asOf={generatedAt}
         >
             <div className="space-y-4 text-sm leading-6 text-secondary-300">

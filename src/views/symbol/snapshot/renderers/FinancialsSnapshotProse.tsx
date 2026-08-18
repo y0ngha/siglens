@@ -4,6 +4,7 @@ import { SnapshotBulletList } from '../SnapshotBulletList';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 import { createEnumGuard } from '../lib/createEnumGuard';
 import { narrowStringArray } from '../lib/narrowStringArray';
+import type { MarketProfileId } from '@/shared/config/marketProfile';
 
 interface FinancialsSnapshotProseProps {
     /**
@@ -23,6 +24,11 @@ interface FinancialsSnapshotProseProps {
     content: unknown;
     symbol: string;
     displayName: string;
+    /**
+     * financials 탭은 us-equity·kr-equity 둘 다 렌더한다 — `SnapshotSummarySection`
+     * 셸의 캡션·타임존이 시장에 맞게 갈리도록 호출부가 반드시 실제 값을 넘긴다.
+     */
+    marketProfile: MarketProfileId;
     /** 스냅샷 행의 `generatedAt`. 셸이 기준일 캡션과 "지난 AI 분석" 배지를 렌더하는 데 쓴다. */
     generatedAt?: Date;
 }
@@ -151,6 +157,7 @@ export function FinancialsSnapshotProse({
     content,
     symbol,
     displayName,
+    marketProfile,
     generatedAt,
 }: FinancialsSnapshotProseProps) {
     const narrowed = narrowFinancialsContent(content);
@@ -165,6 +172,7 @@ export function FinancialsSnapshotProse({
         <SnapshotSummarySection
             title="재무제표 종합 평가"
             displayName={displayName}
+            marketProfile={marketProfile}
             asOf={generatedAt}
         >
             <div className="space-y-4 text-sm leading-6 text-secondary-300">

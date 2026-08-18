@@ -2,6 +2,7 @@ import type { OptionsSignalKind, OptionsTone } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 import { createEnumGuard } from '../lib/createEnumGuard';
+import type { MarketProfileId } from '@/shared/config/marketProfile';
 
 interface OptionsSnapshotProseProps {
     /**
@@ -25,6 +26,12 @@ interface OptionsSnapshotProseProps {
     content: unknown;
     symbol: string;
     displayName: string;
+    /**
+     * options 탭은 us-equity 전용이다(`KR_EQUITY_DESCRIPTOR`/`CRYPTO_DESCRIPTOR`
+     * 둘 다 `tabs`에 `'options'`가 없다). 그래도 `SnapshotSummarySection` 셸의
+     * 캡션 계약은 이 값을 요구하므로 호출부가 `'us-equity'`를 그대로 넘긴다.
+     */
+    marketProfile: MarketProfileId;
     /** 스냅샷 행의 `generatedAt`. 셸이 기준일 캡션과 "지난 AI 분석" 배지를 렌더하는 데 쓴다. */
     generatedAt?: Date;
 }
@@ -168,6 +175,7 @@ export function OptionsSnapshotProse({
     content,
     symbol,
     displayName,
+    marketProfile,
     generatedAt,
 }: OptionsSnapshotProseProps) {
     const narrowed = narrowOptionsContent(content);
@@ -177,6 +185,7 @@ export function OptionsSnapshotProse({
         <SnapshotSummarySection
             title="옵션 시장 요약"
             displayName={displayName}
+            marketProfile={marketProfile}
             asOf={generatedAt}
         >
             <div className="space-y-4 text-sm leading-6 text-secondary-300">

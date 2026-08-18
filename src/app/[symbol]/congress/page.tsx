@@ -292,6 +292,9 @@ export default async function CongressPage({ params }: Props) {
                         content={congressSnapshot?.content}
                         symbol={upper}
                         displayName={displayName}
+                        // congress 탭은 us-equity 전용이다 —
+                        // CongressSnapshotProseProps JSDoc 참고.
+                        marketProfile="us-equity"
                         generatedAt={congressSnapshot?.generatedAt}
                     />
                 )}

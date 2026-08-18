@@ -146,4 +146,30 @@ describe('FundamentalDegraded', () => {
             screen.getByText(/2026년 7월 31일 미국 장마감 기준/)
         ).toBeInTheDocument();
     });
+
+    // SEO 감사(2026-08-18): fundamental은 kr-equity도 렌더한다 — marketProfile이
+    // CrossLinkCards뿐 아니라 FundamentalSnapshotProse까지 실제로 전달되는지(캡션이
+    // "미국 장마감"으로 굳어 있지 않은지) 직접 겨냥한다.
+    it('한국 종목은 "국내 장마감 기준" 캡션을 쓴다', () => {
+        render(
+            <FundamentalDegraded
+                displayName="삼성전자"
+                symbol="005930.KS"
+                marketProfile="kr-equity"
+                snapshotContent={{
+                    overallConclusionKo:
+                        '밸류에이션은 업종 평균 대비 낮습니다.',
+                    overallSentiment: 'bullish',
+                    categoryAssessments: [],
+                    riskFactorsKo: [],
+                }}
+                snapshotGeneratedAt={new Date('2026-08-14T06:30:00Z')}
+            />
+        );
+
+        expect(
+            screen.getByText(/2026년 8월 14일 국내 장마감 기준/)
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/미국 장마감 기준/)).not.toBeInTheDocument();
+    });
 });

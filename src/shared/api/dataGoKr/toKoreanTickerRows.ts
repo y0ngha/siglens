@@ -1,5 +1,6 @@
 import type { KoreanTickerEntry } from '@/shared/lib/types';
 import type { KrxListedItem } from './krxListedInfoClient';
+import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
 
 /**
  * 시장 구분 → canonical 심볼 접미사.
@@ -38,6 +39,12 @@ const EXCHANGE_FULL_NAME: Record<
  * `name`(영문명)에 한글명을 넣는 이유: 이 소스는 영문명을 주지 않는다. `name`은 NOT NULL
  * 이고 표시명 폴백일 뿐이며, 실제 영문명은 종목 방문 시 `getAssetInfo`가 yahoo quote에서
  * 채운다(그래서 upsert는 `name`을 덮어쓰지 않는다).
+ *
+ * `koreanName`은 KRX 등록명(`itmsNm`)보다 `CURATED_KOREAN_NAMES`를 우선한다. KRX
+ * 등록명은 한글이 아닐 수 있다 — 035420(네이버)의 등록명은 로마자 `NAVER`다. 이 필드가
+ * 한 번 채워지면 `getAssetInfo`의 `koreanNames[symbol] ?? CURATED_KOREAN_NAMES.get(...)`
+ * 폴백이 다시는 큐레이션을 참조하지 않으므로(`??`는 truthy 문자열에서 멈춘다), 큐레이션을
+ * 이기는 건 그 이후로는 이 소스뿐이다 — 여기서 지지 않게 순서를 바꾼다.
  */
 export function toKoreanTickerRows(
     items: readonly KrxListedItem[]
@@ -52,9 +59,10 @@ export function toKoreanTickerRows(
 
         const suffix = MARKET_SUFFIX[item.market];
         const symbol = `${item.shortCode}${suffix}`;
+        const koreanName = CURATED_KOREAN_NAMES.get(symbol) ?? item.koreanName;
         bySymbol.set(symbol, {
             symbol,
-            koreanName: item.koreanName,
+            koreanName,
             name: item.koreanName,
             exchange: item.market,
             exchangeFullName: EXCHANGE_FULL_NAME[item.market],

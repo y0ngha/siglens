@@ -52,6 +52,7 @@ export function FinancialsDegraded({
                 content={snapshotContent}
                 symbol={symbol}
                 displayName={displayName}
+                marketProfile={marketProfile}
                 generatedAt={snapshotGeneratedAt}
             />
             <section className="rounded-lg border border-secondary-800 bg-secondary-900/40 px-5 py-8 text-center">

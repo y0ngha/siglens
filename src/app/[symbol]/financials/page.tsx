@@ -320,6 +320,7 @@ export default async function FinancialsPage({ params }: Props) {
                         content={financialsSnapshot?.content}
                         symbol={upper}
                         displayName={displayName}
+                        marketProfile={marketProfile}
                         generatedAt={financialsSnapshot?.generatedAt}
                     />
                 )}

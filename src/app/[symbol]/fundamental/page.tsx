@@ -660,6 +660,7 @@ export default async function FundamentalPage({ params }: Props) {
                         content={fundamentalSnapshot?.content}
                         symbol={upper}
                         displayName={displayName}
+                        marketProfile={marketProfile}
                         generatedAt={fundamentalSnapshot?.generatedAt}
                     />
                 )}
