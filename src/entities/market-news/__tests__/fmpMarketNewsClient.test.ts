@@ -79,6 +79,84 @@ describe('FmpMarketNewsClient.fetchCategoryNews는', () => {
         expect(items).toHaveLength(0);
     });
 
+    /**
+     * [회귀] 두 매퍼 모두 `bodyTruncated`의 소스 필드가 무커버리지였다 — `raw.text`/
+     * `raw.content` 대신 `raw.title`을 넣어도 전건 통과했다(감사 라운드 12).
+     * 이 플래그는 core 카드 분석 프롬프트가 읽는다: 잘리지 않았다고 알리면 모델이
+     * 잘려 나간 수치를 보존하라는 지시를 받아 날조를 유도한다.
+     */
+    it('bodyTruncated는 제목이 아니라 본문에서 판정한다 — latest 스키마', async () => {
+        mockFetchOnce([
+            {
+                symbol: 'BTCUSD',
+                publishedDate: '2026-06-15 10:00:00',
+                // 제목은 종결부호가 없어 truncated로 보이고,
+                title: 'BTC up',
+                // 본문은 40자를 넘기며 마침표로 끝난다 — 완결.
+                text: 'Bitcoin rallied past its previous high on heavy spot volume.',
+                site: 'CoinWire',
+                url: 'https://x.com/btc',
+            },
+        ]);
+        const [complete] = await new FmpMarketNewsClient().fetchCategoryNews(
+            'crypto',
+            MARKET_NEWS_LOOKBACK_MS
+        );
+        expect(complete.bodyTruncated).toBe(false);
+
+        mockFetchOnce([
+            {
+                symbol: 'BTCUSD',
+                publishedDate: '2026-06-15 10:00:00',
+                title: 'Bitcoin rallies.',
+                text: 'Bitcoin rallied past its previous high on heavy spot volume. Traders said the',
+                site: 'CoinWire',
+                url: 'https://x.com/btc2',
+            },
+        ]);
+        const [truncated] = await new FmpMarketNewsClient().fetchCategoryNews(
+            'crypto',
+            MARKET_NEWS_LOOKBACK_MS
+        );
+        expect(truncated.bodyTruncated).toBe(true);
+    });
+
+    it('bodyTruncated는 제목이 아니라 본문에서 판정한다 — articles 스키마', async () => {
+        mockFetchOnce([
+            {
+                title: 'Market wrap',
+                date: '2026-06-15 11:00:00',
+                content:
+                    'Equities closed broadly higher as macro data cooled inflation fears.',
+                tickers: 'NASDAQ:AAPL',
+                link: 'https://x.com/article-complete',
+                site: 'Financial Modeling Prep',
+            },
+        ]);
+        const [complete] = await new FmpMarketNewsClient().fetchCategoryNews(
+            'articles',
+            MARKET_NEWS_LOOKBACK_MS
+        );
+        expect(complete.bodyTruncated).toBe(false);
+
+        mockFetchOnce([
+            {
+                title: 'Market wrap.',
+                date: '2026-06-15 11:00:00',
+                content:
+                    'Equities closed broadly higher as macro data cooled inflation fears. Analysts at',
+                tickers: 'NASDAQ:AAPL',
+                link: 'https://x.com/article-truncated',
+                site: 'Financial Modeling Prep',
+            },
+        ]);
+        const [truncated] = await new FmpMarketNewsClient().fetchCategoryNews(
+            'articles',
+            MARKET_NEWS_LOOKBACK_MS
+        );
+        expect(truncated.bodyTruncated).toBe(true);
+    });
+
     it('articles 카테고리는 articles 스키마(link/date/content/tickers)를 매핑한다', async () => {
         mockFetchOnce([
             {

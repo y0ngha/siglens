@@ -6,7 +6,8 @@ import {
     type MarketDataProvider,
 } from '@y0ngha/siglens-core';
 
-const { mockIsE2E, fakeRawProvider } = vi.hoisted(() => ({
+const { mockIsE2E, fakeRawProvider, ctorCalls } = vi.hoisted(() => ({
+    ctorCalls: [] as unknown[][],
     mockIsE2E: vi.fn(() => false),
     fakeRawProvider: {
         getBars: vi.fn(async () => [] as Bar[]),
@@ -25,10 +26,36 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     getMarketDataProvider: () => fakeRawProvider,
 }));
 
+// 생성자 인자를 기록하기 위한 얇은 서브클래스. `session`이 private이라 밖에서 못
+// 읽는데, 이 인자야말로 시장별 TTL·EOD 꼬리를 결정하는 값이라 배선을 고정해야 한다.
+// `instanceof` 단언은 서브클래스 인스턴스도 참이므로 기존 테스트와 공존한다.
+vi.mock('@/shared/api/market/CachedMarketDataProvider', async orig => {
+    const actual =
+        await orig<
+            typeof import('@/shared/api/market/CachedMarketDataProvider')
+        >();
+    return {
+        ...actual,
+        CachedMarketDataProvider: class
+            extends actual.CachedMarketDataProvider
+        {
+            constructor(
+                ...args: ConstructorParameters<
+                    typeof actual.CachedMarketDataProvider
+                >
+            ) {
+                ctorCalls.push(args);
+                super(...args);
+            }
+        },
+    };
+});
+
 describe('getCachedMarketDataProvider', () => {
     beforeEach(() => {
         vi.resetModules();
         mockIsE2E.mockReturnValue(false);
+        ctorCalls.length = 0;
     });
 
     it('같은 인스턴스를 반환한다(singleton)', async () => {
@@ -117,6 +144,28 @@ describe('getCachedMarketDataProvider', () => {
         expect(getCachedMarketDataProvider(KR_EQUITY_SESSION)).toBeInstanceOf(
             CachedMarketDataProvider
         );
+    });
+
+    /**
+     * [회귀] 어느 세션 스펙이 넘어가는지는 어떤 테스트도 안 잡고 있었다 —
+     * KR 분기에 `US_EQUITY_SESSION`을 넣어도 이 디렉터리 70건이 전부 통과했다
+     * (감사 라운드 12). 기존 단언은 싱글톤 동일성과 `instanceof`뿐이다.
+     *
+     * `session`은 `computeBarsEffectiveTtl`과 `lastClosedSessionDate`(EOD 꼬리)에
+     * 쓰인다. 미국 스펙이 들어가면 KST 낮 시간대에 이미 닫힌 KRX를 열려 있다고
+     * 보고, 차트와 technical/overall AI 프롬프트가 잘못된 마지막 일봉을 받는다.
+     */
+    it('시장별로 자기 세션 스펙을 생성자에 넘긴다', async () => {
+        const { getCachedMarketDataProvider } =
+            await import('@/shared/api/market/getCachedMarketDataProvider');
+        const { KR_EQUITY_SESSION } =
+            await import('@/shared/api/market/sessionSpecFor');
+
+        getCachedMarketDataProvider(KR_EQUITY_SESSION);
+        expect(ctorCalls.at(-1)?.[1]).toBe(KR_EQUITY_SESSION);
+
+        getCachedMarketDataProvider(CRYPTO_SESSION);
+        expect(ctorCalls.at(-1)?.[1]).toBe(CRYPTO_SESSION);
     });
 
     it('E2E면 KR_EQUITY_SESSION도 raw provider를 반환한다(네트워크 차단)', async () => {

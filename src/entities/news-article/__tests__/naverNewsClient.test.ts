@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NaverNewsClient, stripNaverMarkup } from '../lib/naverNewsClient';
+import { hashUrlToId } from '../lib/fmpNewsClient';
 
 const KOREAN_NAME = '삼성전자';
 const SYMBOL = '005930.KS';
@@ -78,6 +79,32 @@ describe('NaverNewsClient', () => {
         });
         // pubDate에 +0900 오프셋이 있으므로 UTC 변환이 정확해야 한다.
         expect(items[0]!.publishedAt).toBe('2026-08-14T06:30:00.000Z');
+        // `id`는 news 테이블의 upsert 충돌 키다. URL이 아닌 걸 해싱하면 한 심볼의
+        // 기사 전체가 한 행으로 붕괴한다(또는 ON CONFLICT가 같은 행을 두 번 건드려
+        // INSERT가 통째로 실패한다).
+        expect(items[0]!.id).toBe(
+            hashUrlToId('https://news.example.com/article/1')
+        );
+    });
+
+    it('기사마다 서로 다른 id를 만든다', async () => {
+        fetchSpy.mockResolvedValue(
+            mockNaverResponse([
+                naverItem(),
+                naverItem({
+                    originallink: 'https://news.example.com/article/2',
+                    link: 'https://n.news.naver.com/article/2',
+                }),
+            ])
+        );
+
+        const items = await new NaverNewsClient(resolveQuery).fetchNews(
+            SYMBOL,
+            '7d'
+        );
+
+        expect(items).toHaveLength(2);
+        expect(items[0]!.id).not.toBe(items[1]!.id);
     });
 
     it('sends the Korean company name as the query, not the ticker', async () => {

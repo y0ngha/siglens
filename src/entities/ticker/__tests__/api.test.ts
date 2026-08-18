@@ -279,6 +279,21 @@ describe('DrizzleKoreanTickerRepository', () => {
                 updatedAt: expect.anything(),
             },
         });
+        // 키 존재만 보면 `koreanName`을 `excluded.name`으로 돌려놔도 통과한다
+        // (감사 라운드 12). 그러면 매일 밤 크론이 전 종목 한글명을 영문/placeholder로
+        // 덮어써 한글 검색 색인과 네이버 뉴스 질의가 통째로 망가진다.
+        const set = onConflictDoUpdate.mock.calls[0][0].set as Record<
+            string,
+            unknown
+        >;
+        expect(JSON.stringify(set.koreanName)).toContain(
+            'excluded.korean_name'
+        );
+        expect(JSON.stringify(set.name)).toContain('excluded.name');
+        expect(JSON.stringify(set.exchange)).toContain('excluded.exchange"');
+        expect(JSON.stringify(set.exchangeFullName)).toContain(
+            'excluded.exchange_full_name'
+        );
     });
 
     it('upsertMany 는 onConflictDoUpdate 의 set 에 updatedAt 을 명시적으로 포함한다', async () => {
@@ -552,6 +567,17 @@ describe('DrizzleAssetTranslationRepository', () => {
                 updatedAt: expect.anything(),
             },
         });
+        // 키 존재만으로는 컬럼을 서로 바꿔 껴도 통과한다 — `korean_tickers` 쪽과
+        // 같은 이유로 각 `excluded.*` 대상까지 고정한다(감사 라운드 12).
+        const set = onConflictDoUpdate.mock.calls[0][0].set as Record<
+            string,
+            unknown
+        >;
+        expect(JSON.stringify(set.koreanName)).toContain(
+            'excluded.korean_name'
+        );
+        expect(JSON.stringify(set.name)).toContain('excluded.name"');
+        expect(JSON.stringify(set.fmpSymbol)).toContain('excluded.fmp_symbol');
     });
 
     it('upsert 는 onConflictDoUpdate 의 set 에 updatedAt 을 명시적으로 포함한다', async () => {

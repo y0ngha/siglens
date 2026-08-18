@@ -55,6 +55,7 @@ import { ensureNewsCardsAnalyzedAction } from '../actions/ensureNewsCardsAnalyze
 import { NEWS_CARD_ANALYSIS_PARALLEL_LIMIT } from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import { runNewsCardAnalysis } from '@y0ngha/siglens-core';
+import { VISITOR_NEWS_CARD_LIMIT } from '../lib/newsAnalysisConstants';
 import { getNewsClient } from '../lib/getNewsClient';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type {
@@ -219,6 +220,27 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             expect(mockUpsertNewsItem).toHaveBeenCalledWith(NEWS_ITEM_1);
             expect(mockUpsertNewsItem).toHaveBeenCalledWith(NEWS_ITEM_2);
             expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
+        });
+
+        it('한 번에 보강하는 기사 수를 VISITOR_NEWS_CARD_LIMIT로 묶는다', async () => {
+            // 적재 lookback이 180일이고 FMP 상한이 1,000건이라, 상한이 없으면
+            // 백로그가 쌓인 종목의 첫 마운트 한 번이 최악 1,000회 LLM 왕복이 된다.
+            // 2-vCPU 박스에서 LLM 소켓 4개를 수십 분 잡는다(감사: 비용 확인 패스).
+            const many = Array.from({ length: 40 }, (_, i) => ({
+                ...NEWS_ITEM_1,
+                id: `news-${i}`,
+                url: `https://example.com/${i}`,
+            }));
+            mockFetchNewsForPeriod.mockResolvedValue(many);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockRunNewsCardAnalysis).toHaveBeenCalledTimes(
+                VISITOR_NEWS_CARD_LIMIT
+            );
+            // 적재는 전량 그대로다 — 상한은 분석 단계에만 건다.
+            expect(mockUpsertNewsItem).toHaveBeenCalledTimes(40);
         });
 
         it('각 뉴스 아이템에 대해 runNewsCardAnalysis를 호출한다', async () => {
@@ -816,18 +838,26 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
         });
 
-        it('사람 경로 → 최근 fetch됐어도 항상 fetch한다(가드 무시)', async () => {
+        it('최근 fetch됐으면 사람 경로도 FMP 재조회와 upsert를 건너뛴다', async () => {
+            // 이전에는 이 가드가 `skipAnalysis` 뒤에 걸려 사실상 죽어 있었고, 그
+            // 동작("사람은 항상 fresh")을 이 테스트가 고정하고 있었다. 그런데 이
+            // 액션은 `useEffect`에서 fire-and-forget으로 나가므로 트리거를 쏜 본인의
+            // 화면에는 애초에 반영되지 않는다 — 적재 결과는 `revalidateTag` 이후의
+            // 다음 렌더에 들어간다. 그래서 TTL의 실제 대가는 "10분 안에 들어온 다음
+            // 방문자가 최대 10분 된 목록을 본다"뿐이고, 얻는 건 매 마운트 반복되던
+            // 180일 FMP 조회 + 기사 수만큼의 Neon 왕복 제거다.
+            //
+            // 시장 뉴스 형제 경로(`ensureMarketNewsCardsAnalyzedAction`)가 같은
+            // 플래그를 이미 봇·사람 구분 없이 같은 TTL로 걸고 있다 — 이제 정책이 같다.
             mockIsRecentlyFetched.mockResolvedValue(true);
             mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
-            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
             mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
-            expect(mockFetchNewsForPeriod).toHaveBeenCalledWith(
-                'AAPL',
-                NEWS_LOOKBACK_MS
-            );
+            expect(mockFetchNewsForPeriod).not.toHaveBeenCalled();
+            expect(mockUpsertNewsItem).not.toHaveBeenCalled();
+            expect(mockRunNewsCardAnalysis).not.toHaveBeenCalled();
         });
 
         it('upsert 과반 실패 시 markFetched를 호출하지 않고, throw도 하지 않는다', async () => {

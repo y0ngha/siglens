@@ -98,8 +98,46 @@ describe('searchByKoreanName', () => {
         mockCache.get.mockResolvedValue([apple, microsoft]);
         const result = await searchByKoreanName('애');
         expect(result).toHaveLength(1);
-        expect(result[0].symbol).toBe('AAPL');
+        // 전 필드를 고정한다 — `symbol`만 단언하면 name↔koreanName,
+        // exchange↔exchangeFullName을 맞바꿔도 통과한다(감사 라운드 12).
+        // 이 매퍼가 한글 질의 분기의 유일한 생산자라 그 값이 자동완성 드롭다운에
+        // 그대로 렌더된다.
+        expect(result[0]).toEqual({
+            symbol: 'AAPL',
+            name: 'Apple Inc.',
+            koreanName: '애플',
+            exchange: 'NASDAQ',
+            exchangeFullName: 'NASDAQ Global Select',
+        });
         expect(mockRepository.findAll).not.toHaveBeenCalled();
+    });
+
+    it('한국 종목에는 marketProfile을 붙인다 — 미국 종목에는 안 붙인다', async () => {
+        // 행에 프로필 컬럼이 없어 심볼 형상으로 판정한다. 빠지면 한글 검색으로
+        // 찾은 한국 종목이 us-equity로 표시된다.
+        mockCache.get.mockResolvedValue([
+            apple,
+            {
+                symbol: '005930.KS',
+                name: 'Samsung Electronics',
+                koreanName: '삼성전자',
+                exchange: 'KSC',
+                exchangeFullName: 'KOSPI',
+            },
+        ]);
+
+        const [kr] = await searchByKoreanName('삼성');
+        expect(kr).toEqual({
+            symbol: '005930.KS',
+            name: 'Samsung Electronics',
+            koreanName: '삼성전자',
+            exchange: 'KSC',
+            exchangeFullName: 'KOSPI',
+            marketProfile: 'kr-equity',
+        });
+
+        const [us] = await searchByKoreanName('애');
+        expect(us).not.toHaveProperty('marketProfile');
     });
 
     it('cache miss(null) 시 DB 조회 후 cache 갱신', async () => {

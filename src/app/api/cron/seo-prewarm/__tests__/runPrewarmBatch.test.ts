@@ -235,6 +235,42 @@ describe('runPrewarmBatch', () => {
      * 한복판) = 21:00 ET 전날(NYSE 마감 후). 그래서 같은 틱에서 KR은 빠지고 US는
      * 남는다 — 게이트가 "장중이면 미룬다"이지 "한국이면 미룬다"가 아님까지 고정된다.
      */
+    /**
+     * [회귀] 신선도 경계를 심볼의 시장별로 잡는 배선(`boundaryFor`)을 아무 테스트도
+     * 안 잡고 있었다 — 전 심볼을 하나의 ET 경계로 눌러도 이 디렉터리 101건이 전부
+     * 통과했다(감사 라운드 12). 그게 수정 전 동작이고, 바로 위 주석이 경고하는 대상이다.
+     *
+     * 아래 시각에서 두 경계가 갈린다(실측): now 2026-11-26T22:30Z 기준
+     * KR 경계 = 2026-11-26T06:30Z, ET 경계 = 2026-11-25T21:00Z. 그 사이에 찍힌
+     * generatedAt은 **ET 기준으론 fresh, KR 기준으론 stale**이다. 그 시각엔 KRX가
+     * 닫혀 있어 장중 defer 게이트가 이 판정을 가리지도 않는다.
+     */
+    it('국내 종목의 신선도를 KRX 마감 기준으로 판정한다(ET 경계 아님)', async () => {
+        vi.setSystemTime(new Date('2026-11-26T22:30:00Z'));
+        universe({ symbol: '005930.KS', tabs: ['technical'] });
+        mockFindGeneratedAtMap.mockResolvedValue(
+            new Map([
+                [
+                    key('005930.KS', 'technical'),
+                    // ET 경계(11-25 21:00Z) 이후, KR 경계(11-26 06:30Z) 이전.
+                    new Date('2026-11-26T00:00:00Z'),
+                ],
+            ])
+        );
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        const counts = await runPrewarmBatch();
+
+        // ET 경계를 쓰면 fresh로 잡혀 0건이 된다.
+        expect(counts.staleTotal).toBe(1);
+        expect(mockPrewarmTechnical.mock.calls.map(c => c[0])).toEqual([
+            '005930.KS',
+        ]);
+    });
+
     it('KRX 장중 틱에서는 국내 종목을 배치에서 빼되 staleTotal에는 남긴다', async () => {
         vi.setSystemTime(new Date('2026-11-26T02:00:00Z'));
         universe(
