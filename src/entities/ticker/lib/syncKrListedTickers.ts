@@ -13,6 +13,7 @@ import { tryGetTickerDatabaseClient } from './db';
 import { invalidateKoreanTickerCache } from './koreanNameStore';
 
 export interface KrTickerSyncCounts {
+    /** 공공데이터포털 응답의 원본 항목 수 — KONEX 제외·중복 병합 전. */
     fetched: number;
     upserted: number;
     delisted: number;
@@ -78,7 +79,9 @@ export async function syncKrListedTickers(): Promise<KrTickerSyncCounts> {
     await invalidateKoreanTickerCache();
 
     return {
-        fetched: rows.length,
+        // `rows`가 아니라 `items`를 센다 — KONEX 제외·중복 병합 전 원본 수신량이어야
+        // 로그에서 필터가 몇 건을 걸러냈는지(fetched - upserted) 읽을 수 있다.
+        fetched: items.length,
         upserted: rows.length,
         delisted: plan.delist.length,
         relisted: plan.relist.length,

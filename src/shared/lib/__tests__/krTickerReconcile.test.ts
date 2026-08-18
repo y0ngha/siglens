@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import {
+    CANDIDATE_LOG_LIMIT,
+    formatCandidates,
     KR_RECONCILE_DELIST_ABORT_THRESHOLD,
     KR_RECONCILE_MIN_COUNT,
     planKrTickerReconcile,
@@ -211,5 +213,47 @@ describe('planKrTickerReconcile — 대량 상폐 수동 승인', () => {
         expect(
             planKrTickerReconcile(padSymbols(1_500), existing).guardTrip
         ).not.toBeNull();
+    });
+});
+
+/**
+ * 가드가 걸렸을 때 운영자가 CloudWatch에서 읽고 `--force-delist` 여부를 판단하는
+ * 유일한 줄이다 — 여기서 개수가 틀리면 사람이 잘못된 규모로 판단한다.
+ */
+describe('formatCandidates — 로그 한 줄 포맷', () => {
+    it('빈 배열이면 빈 문자열이다', () => {
+        expect(formatCandidates([])).toBe('');
+    });
+
+    it('상한 미만이면 콤마로 이어 붙이고 개수 표시를 붙이지 않는다', () => {
+        const candidates = ['A.KS', 'B.KQ', 'C.KS'];
+        expect(formatCandidates(candidates)).toBe('A.KS, B.KQ, C.KS');
+    });
+
+    it('경계: 정확히 상한만큼이면 전부 나열하고 overflow 표시가 없다', () => {
+        const candidates = padSymbols(CANDIDATE_LOG_LIMIT);
+        const result = formatCandidates(candidates);
+
+        expect(result).toBe(candidates.join(', '));
+        expect(result).not.toContain('…');
+    });
+
+    it('상한을 하나 넘기면 앞 상한개만 나열하고 나머지 개수를 덧붙인다', () => {
+        const candidates = padSymbols(CANDIDATE_LOG_LIMIT + 1);
+        const result = formatCandidates(candidates);
+
+        const head = candidates.slice(0, CANDIDATE_LOG_LIMIT).join(', ');
+        expect(result).toBe(`${head} … (+1)`);
+    });
+
+    it('상한을 크게 넘으면 overflow 개수가 초과분과 정확히 일치한다', () => {
+        const overCount = 37;
+        const candidates = padSymbols(CANDIDATE_LOG_LIMIT + overCount);
+        const result = formatCandidates(candidates);
+        const expectedHead = candidates
+            .slice(0, CANDIDATE_LOG_LIMIT)
+            .join(', ');
+
+        expect(result).toBe(`${expectedHead} … (+${overCount})`);
     });
 });

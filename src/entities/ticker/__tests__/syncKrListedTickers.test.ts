@@ -104,7 +104,10 @@ describe('syncKrListedTickers', () => {
             symbol: string;
         }[];
         expect(upserted.map(r => r.symbol)).toEqual(['005930.KS', '247540.KQ']);
-        expect(counts.fetched).toBe(2);
+        // fetched는 KONEX를 포함한 원본 응답 3건, upserted는 필터 후 2건 — 둘이
+        // 갈라져야 로그에서 "필터가 몇 건 걸렀는지"를 읽을 수 있다.
+        expect(counts.fetched).toBe(3);
+        expect(counts.upserted).toBe(2);
     });
 
     it('사라진 종목을 상폐 표시하고 캐시를 비운다', async () => {

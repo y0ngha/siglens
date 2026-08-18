@@ -120,7 +120,7 @@ export function planKrTickerReconcile(
 }
 
 /** 로그 한 줄에 담을 최대 심볼 수 — 그 이상은 개수만 덧붙인다. */
-const CANDIDATE_LOG_LIMIT = 50;
+export const CANDIDATE_LOG_LIMIT = 50;
 
 /**
  * 가드가 걸렸을 때 사람이 눈으로 볼 후보 목록을 한 줄로 만든다.
