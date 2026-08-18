@@ -474,8 +474,10 @@ describe('DrizzleKoreanTickerRepository', () => {
     });
 
     it('markDelisted 도 대량 상폐를 배치로 쪼갠다', async () => {
-        // 평소엔 가드가 25개로 묶지만 `--force-delist`가 그 상한을 푼다 — 가드가
-        // 없는 경로라 오히려 여기서 페이로드 한도에 걸린다.
+        // 현재 유일한 호출부(`syncKrListedTickers`)는 가드가 25개로 묶으므로 이
+        // 1,100건 입력은 오늘 도달 불가능한 형상이다 — 가드가 완화되거나 새 호출부가
+        // 생겼을 때 청크가 살아 있는지를 고정한다.
+        // (`--force-delist`는 시드 스크립트 자체의 인라인 UPDATE만 푼다.)
         const { db, update, where } = makeUpdateDb();
         const repo = new DrizzleKoreanTickerRepository(db);
         const many = Array.from({ length: 1_100 }, (_, i) => `SYM${i}.KS`);
