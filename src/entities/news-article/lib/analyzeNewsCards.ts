@@ -48,9 +48,11 @@ export interface AnalyzeNewsCardsOptions {
     /**
      * 이번 호출에서 분석할 최대 건수. 최신순으로 자른다.
      *
-     * 방문자 경로는 `waitUntil` 안에서 돌아 마감이 없으므로 상한을 두지 않는다.
-     * prewarm cron은 유닛 타임아웃(2분) 안에서 돌아야 하므로 상한이 필요하다 —
-     * 그쪽 호출자가 값을 넘긴다.
+     * 두 호출자 모두 값을 넘기지만 근거가 다르다. prewarm cron은 유닛
+     * 타임아웃(2분) 안에서 끝나야 해서 12건(`PREWARM_NEWS_CARD_LIMIT`),
+     * 방문자 경로는 마감은 없지만 마운트당 LLM 왕복 비용이 있어
+     * 25건(`VISITOR_NEWS_CARD_LIMIT`)이다. 생략하면 후보
+     * 전체를 분석한다 — 180일 적재분이면 최악 1,000건이라 실질적으로 쓰면 안 된다.
      */
     limit?: number;
     /** 로그 접두. 어느 경로에서 난 실패인지 CloudWatch에서 구분하기 위한 것. */

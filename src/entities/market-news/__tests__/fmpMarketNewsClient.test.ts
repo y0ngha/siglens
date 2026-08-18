@@ -90,8 +90,8 @@ describe('FmpMarketNewsClient.fetchCategoryNews는', () => {
             {
                 symbol: 'BTCUSD',
                 publishedDate: '2026-06-15 10:00:00',
-                // 제목은 종결부호가 없어 truncated로 보이고,
-                title: 'BTC up',
+                // 제목은 40자를 넘기며 기능어로 끊겨 truncated로 판정된다,
+                title: 'BTC up sharply on spot ETF inflows and short covering across the',
                 // 본문은 40자를 넘기며 마침표로 끝난다 — 완결.
                 text: 'Bitcoin rallied past its previous high on heavy spot volume.',
                 site: 'CoinWire',
@@ -124,7 +124,7 @@ describe('FmpMarketNewsClient.fetchCategoryNews는', () => {
     it('bodyTruncated는 제목이 아니라 본문에서 판정한다 — articles 스키마', async () => {
         mockFetchOnce([
             {
-                title: 'Market wrap',
+                title: 'Market wrap for the session as breadth improved and volatility fell to',
                 date: '2026-06-15 11:00:00',
                 content:
                     'Equities closed broadly higher as macro data cooled inflation fears.',

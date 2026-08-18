@@ -223,8 +223,8 @@ describe('FmpNewsClient', () => {
             mockOk([
                 {
                     ...withinWindow,
-                    // 제목은 종결부호 없이 끝나 truncated로 보이고,
-                    title: 'Apple Q2 Results',
+                    // 제목은 40자를 넘기며 기능어로 끊겨 truncated로 판정된다,
+                    title: 'Apple Q2 Results beat expectations across every segment driven by',
                     // 본문은 40자를 넘기면서 마침표로 끝난다 — 완결.
                     text: 'Apple reported record quarterly revenue driven by services growth.',
                 },

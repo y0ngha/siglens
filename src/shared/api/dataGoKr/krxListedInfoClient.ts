@@ -61,11 +61,28 @@ const PAGE_TIMEOUT_MS = 10_000;
  * 넘기는 경로는 후보당 정확히 1페이지다(≤ 10 × 10초). 그래서 **페이지 단위로**
  * 잰다.
  *
- * 예산에 걸려 잘린 목록이 상폐 판정을 오염시키지는 않는다 — `planKrTickerReconcile`의
- * 대량 상폐 가드가 그런 목록에서 걸려 상폐만 건너뛴다. 정상 경로는 첫 후보
- * 3~4페이지로 끝나 수 초다.
+ * 예산이 페이지 도중에 닳으면 잘린 목록이 아니라 `TimeoutError`가 위로 나간다 —
+ * 남은 예산으로 자른 `AbortSignal`이 그 fetch를 끊고, `collectAllPages`에 catch가
+ * 없어 크론 라우트까지 올라가 `[kr-tickers] sync failed`로 알람이 뜬다. 조용한
+ * 부분 동기화 대신 시끄러운 실패를 고른 것이다 — 멱등한 일 1회 작업이라 다음 날
+ * 재시도로 회복된다.
+ *
+ * (예산 밖에서 잘린 목록이 들어오는 경로 — 예: 포털이 일부 페이지만 주는 경우 —
+ * 는 여전히 `planKrTickerReconcile`의 대량 상폐 가드가 받아 상폐만 건너뛴다.)
+ * 정상 경로는 첫 후보 3~4페이지로 끝나 수 초다.
  */
 const TOTAL_BUDGET_MS = 90_000;
+
+/**
+ * 남은 예산이 이보다 적으면 페이지를 아예 시작하지 않는다.
+ *
+ * 클램프만 두면 `remaining`이 수십 ms일 때 곧 도착했을 응답까지 끊고, 그 abort가
+ * `TimeoutError`로 올라가 **이미 모은 페이지를 통째로 버린다**. 그 밑에서 취할 수
+ * 있는 건 아무것도 없으므로, 그럴 바엔 모은 만큼 들고 문서화된 truncation 경로로
+ * 빠지는 편이 낫다 — 대량 상폐 가드가 그 목록을 받아 상폐만 건너뛴다.
+ * 1초는 실측 페이지 응답(수백 ms)보다 넉넉하고, 예산 90초에 비해 무시할 만하다.
+ */
+const MIN_PAGE_BUDGET_MS = 1_000;
 
 /** 시장 구분 값. `mrktCtg` 필드가 이 셋 중 하나로 온다. */
 export type KrxMarket = 'KOSPI' | 'KOSDAQ' | 'KONEX';
@@ -308,7 +325,7 @@ async function collectAllPages(
 
     for (; pageNo <= MAX_PAGES; pageNo++) {
         const remaining = deadline - Date.now();
-        if (remaining <= 0) {
+        if (remaining < MIN_PAGE_BUDGET_MS) {
             console.warn(
                 `[krxListedInfo] 예산(${TOTAL_BUDGET_MS}ms) 소진 — ${basDt} ${pageNo}페이지에서 중단, 결과가 잘렸을 수 있다`
             );

@@ -21,6 +21,15 @@ const FACTORIES = [
 
 const SRC_ROOT = join(import.meta.dirname, '../../../..');
 
+/**
+ * 선언부(`export function foo(`)는 인자 목록이 비어 있지 않아 이 패턴에 안 걸린다.
+ * 걸리는 건 인자 없는 **호출**뿐이다. 스캔과 자기검사가 **같은** 빌더를 써야
+ * 한다 — 각자 리터럴을 들고 있으면 스캔 쪽 패턴이 망가져도 자기검사는 계속 통과한다.
+ */
+function zeroArgCallRe(factory: string): RegExp {
+    return new RegExp(`${factory}\\(\\s*\\)`);
+}
+
 function collectSourceFiles(dir: string, out: string[] = []): string[] {
     for (const entry of readdirSync(dir)) {
         const full = join(dir, entry);
@@ -40,14 +49,20 @@ function collectSourceFiles(dir: string, out: string[] = []): string[] {
 describe('provider 팩토리 호출부', () => {
     it('심볼 인자 없이 부르는 프로덕션 호출부가 없다', () => {
         const offenders: string[] = [];
+        const files = collectSourceFiles(SRC_ROOT);
 
-        for (const file of collectSourceFiles(SRC_ROOT)) {
+        // 스캔이 실제로 호출부에 닿았는지 먼저 확인한다 — 테스트 파일이 옮겨지거나
+        // 탐색이 망가지면 offenders가 빈 채로 초록이 된다(감사 라운드 13).
+        const callSiteFiles = files.filter(f => {
+            const src = readFileSync(f, 'utf8');
+            return FACTORIES.some(factory => src.includes(`${factory}(`));
+        });
+        expect(callSiteFiles.length).toBeGreaterThanOrEqual(10);
+
+        for (const file of files) {
             const source = readFileSync(file, 'utf8');
             for (const factory of FACTORIES) {
-                // 선언부(`export function foo(`)는 인자 목록이 비어 있지 않으므로
-                // 이 패턴에 걸리지 않는다. 걸리는 건 인자 없는 **호출**뿐이다.
-                const zeroArgCall = new RegExp(`${factory}\\(\\s*\\)`);
-                if (zeroArgCall.test(source)) {
+                if (zeroArgCallRe(factory).test(source)) {
                     offenders.push(
                         `${file.slice(SRC_ROOT.length + 1)} — ${factory}()`
                     );
@@ -61,7 +76,7 @@ describe('provider 팩토리 호출부', () => {
     it('가드가 실제로 판별한다 — 인자 없는 호출을 넣으면 잡힌다', () => {
         // 위 테스트가 항진명제가 아님을 보인다: 같은 정규식이 인자 있는 호출은
         // 통과시키고 없는 호출만 잡는다.
-        const zeroArg = new RegExp('getFundamentalDataProvider\\(\\s*\\)');
+        const zeroArg = zeroArgCallRe('getFundamentalDataProvider');
         expect(
             zeroArg.test('getFundamentalDataProvider(symbol).getGrades(s)')
         ).toBe(false);
