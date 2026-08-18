@@ -1,6 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
-import { and, desc, eq, gte, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, isNotNull, isNull, sql } from 'drizzle-orm';
 import type {
     NewsCardAnalysis,
     NewsCategory,
@@ -13,6 +13,7 @@ import { marketNews } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { withRetry } from '@/shared/lib/withRetry';
+import type { MarketNewsCardItem } from './lib/toCardItem';
 import { createRedisFlag } from '@/shared/cache/createRedisFlag';
 import { SECONDS_PER_MINUTE } from '@/shared/config/time';
 import type { MarketNewsItem } from './lib/marketNewsClientPort';
@@ -137,7 +138,6 @@ export class DrizzleMarketNewsRepository {
                         url: marketNews.url,
                         publishedAt: marketNews.publishedAt,
                         titleEn: marketNews.titleEn,
-                        bodyEn: marketNews.bodyEn,
                         titleKo: marketNews.titleKo,
                         bodyKo: marketNews.bodyKo,
                         summaryKo: marketNews.summaryKo,
@@ -160,6 +160,95 @@ export class DrizzleMarketNewsRepository {
 
         return rows.map(toMarketNewsRow);
     }
+
+    /**
+     * 카드 표시에 필요한 컬럼만 읽는다 — `bodyEn`을 select에서 뺀다.
+     *
+     * 종목 뉴스 슬라이스의 `listCardsBySymbol`과 같은 이유다: 3초 폴링과 목록
+     * 렌더는 본문을 받아서 버리는데, 예전의 JS 투영(`toMarketNewsCardItem`)은
+     * **받은 뒤** 거르는 방식이라 Neon 전송과 S3 ISR 블롭에는 그대로 남았다
+     * (감사: 비용 라운드 15). 그래서 그 함수는 지우고 SELECT로 옮겼다.
+     * `listByCategory`도 이제 본문을 읽지 않는다 — 그쪽 소비자(다이제스트 프롬프트)가
+     * 그 값을 안 쓰기 때문이다(`toMarketNewsRow` 주석 참조). 두 읽기의 차이는
+     * `symbol`/`analyzedAt` 유무뿐이다 — 필터·정렬·창은 동일하다.
+     */
+    async listCardsByCategory(
+        sentinel: string,
+        sinceMs: number
+    ): Promise<MarketNewsCardItem[]> {
+        const cutoff = new Date(Date.now() - sinceMs);
+
+        const rows = await withRetry(
+            () =>
+                this.db
+                    .select({
+                        id: marketNews.id,
+                        source: marketNews.source,
+                        url: marketNews.url,
+                        publishedAt: marketNews.publishedAt,
+                        titleEn: marketNews.titleEn,
+                        titleKo: marketNews.titleKo,
+                        bodyKo: marketNews.bodyKo,
+                        summaryKo: marketNews.summaryKo,
+                        sentiment: marketNews.sentiment,
+                        category: marketNews.category,
+                        priceImpact: marketNews.priceImpact,
+                        tickers: marketNews.tickers,
+                    })
+                    .from(marketNews)
+                    .where(
+                        and(
+                            eq(marketNews.symbol, sentinel),
+                            gte(marketNews.publishedAt, cutoff)
+                        )
+                    )
+                    .orderBy(desc(marketNews.publishedAt)),
+            NEON_TRANSIENT_RETRY
+        );
+
+        return rows.map(row => ({
+            id: row.id,
+            publishedAt: row.publishedAt.toISOString(),
+            titleEn: row.titleEn,
+            titleKo: row.titleKo,
+            bodyKo: row.bodyKo,
+            summaryKo: row.summaryKo,
+            sentiment: toNewsSentiment(row.sentiment),
+            category: toNewsCategory(row.category),
+            priceImpact: toNewsImpact(row.priceImpact),
+            url: row.url,
+            source: row.source,
+            tickers: row.tickers,
+        }));
+    }
+
+    /**
+     * 이 창에서 이미 분석된 기사 id만 읽는다 — 필터를 SQL로 내려 id만 오게 한다
+     * (감사: 비용 라운드 15, 종목 뉴스 `listAnalyzedIds`와 대칭).
+     */
+    async listAnalyzedIds(
+        sentinel: string,
+        sinceMs: number
+    ): Promise<Set<string>> {
+        const cutoff = new Date(Date.now() - sinceMs);
+
+        const rows = await withRetry(
+            () =>
+                this.db
+                    .select({ id: marketNews.id })
+                    .from(marketNews)
+                    .where(
+                        and(
+                            eq(marketNews.symbol, sentinel),
+                            gte(marketNews.publishedAt, cutoff),
+                            isNotNull(marketNews.analyzedAt)
+                        )
+                    ),
+            NEON_TRANSIENT_RETRY
+        );
+
+        return new Set(rows.map(row => row.id));
+    }
 }
 
 /**
@@ -172,6 +261,23 @@ export class DrizzleMarketNewsRepository {
  * Placed in `api.ts` rather than `lib/` because it has a DB side effect and
  * is not a pure function (MISTAKES.md Architecture §0.7).
  */
+/**
+ * 카드 표시용 목록.
+ *
+ * `getMarketNewsList`와의 차이는 `symbol`/`analyzedAt` 유무뿐이다 — 그쪽도 이제
+ * 본문(`body_en`)을 읽지 않는다(`toMarketNewsRow` 주석 참조). 즉 "본문이 필요하면
+ * 저쪽"이라는 구분은 더 이상 없고, 집계·다이제스트 프롬프트도 본문을 안 읽는다.
+ */
+export const getMarketNewsCards = cache(
+    async (sentinel: string): Promise<MarketNewsCardItem[]> => {
+        const { db } = getDatabaseClient();
+        return new DrizzleMarketNewsRepository(db).listCardsByCategory(
+            sentinel,
+            MARKET_NEWS_LOOKBACK_MS
+        );
+    }
+);
+
 export const getMarketNewsList = cache(
     async (sentinel: string): Promise<MarketNewsRow[]> => {
         const { db } = getDatabaseClient();
@@ -189,7 +295,8 @@ export interface MarketNewsDbRow {
     url: string;
     publishedAt: Date;
     titleEn: string;
-    bodyEn: string | null;
+    /** 이 경로에서는 select하지 않는다 — `toNewsRow`/`toMarketNewsRow` 주석 참조. */
+    bodyEn?: string | null;
     titleKo: string | null;
     bodyKo: string | null;
     summaryKo: string | null;
@@ -269,7 +376,9 @@ function toMarketNewsRow(row: MarketNewsDbRow): MarketNewsRow {
     };
     return {
         ...displayItem,
-        bodyEn: row.bodyEn,
+        // 읽지 않는다 — 사유는 `news-article/api.ts`의 `toNewsRow` 주석 참조
+        // (다이제스트 프롬프트도 이 필드를 읽지 않는다).
+        bodyEn: null,
         symbol: row.symbol,
         tickers: row.tickers,
         analyzedAt: row.analyzedAt,

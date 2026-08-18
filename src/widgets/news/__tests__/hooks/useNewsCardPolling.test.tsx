@@ -7,6 +7,7 @@ import {
     MAX_CONSECUTIVE_FAILURES,
     MAX_POLL_DURATION_MS,
     POLL_INTERVAL_MS,
+    STAGNATION_FLOOR_POLLS,
     useNewsCardPolling,
 } from '@/widgets/news/hooks/useNewsCardPolling';
 
@@ -62,6 +63,69 @@ describe('useNewsCardPolling', () => {
 
     afterEach(() => {
         vi.useRealTimers();
+    });
+
+    /**
+     * [회귀] 종료 조건이 "창 안의 **모든** 카드가 보강됨"인데, 공급은 방문자
+     * 25건/10분 + 크론 12건/밤이고 창은 180일이다. 기사가 25건을 넘는 종목은 그
+     * 조건이 구조적으로 참이 되지 않아 매 조회마다 100회 상한을 그대로 채웠다.
+     * 게다가 5회째에 스피너만 꺼져 나머지는 눈에도 안 보인다(감사: 비용 라운드 15).
+     *
+     * 진전이 멈추면(보강 카드 수가 STAGNANT_POLL_LIMIT 틱 연속 그대로) 접는다.
+     */
+    it('보강이 진행되다 멈추면 상한 전에 폴링을 접고 onPollingComplete를 부른다', async () => {
+        // 1건은 보강됨, 나머지는 계속 미보강 — 공급이 끊긴 상태를 흉내낸다.
+        mockGetNewsCardsAction.mockResolvedValue([
+            READY_ITEM,
+            { ...PENDING_ITEM, id: 'p2' },
+            { ...PENDING_ITEM, id: 'p3' },
+        ]);
+        // 정체 종료의 부수효과까지 고정한다 — 이 콜백이 React Query 무효화를
+        // 일으키는 유일한 경로인데, 다른 종료 경로만 단언돼 있었다(감사: 테스트
+        // 라운드 18). 지우면 보강된 카드가 화면에 반영되지 않는다.
+        const onComplete = vi.fn();
+
+        renderHook(() => useNewsCardPolling('AAPL', [], onComplete));
+
+        await advancePolls(20);
+        const settled = mockGetNewsCardsAction.mock.calls.length;
+        // 리터럴로 고정한다. 상수를 import해 단언하면 양변이 같이 움직여
+        // 7~20 밴드의 어떤 값으로 바꿔도 통과한다(감사: 테스트 라운드 17이 8·10·15로
+        // 실증). 상수 자체의 값도 따로 못 박아 두 축을 분리한다.
+        expect(STAGNATION_FLOOR_POLLS).toBe(12);
+        expect(settled).toBe(12);
+
+        await advancePolls(5);
+        expect(mockGetNewsCardsAction.mock.calls.length).toBe(settled);
+        expect(onComplete).toHaveBeenCalledTimes(1);
+    });
+
+    /**
+     * [회귀] 위 케이스는 1틱째에 보강되고 곧바로 멈추는 형상이라 정지 지점이 항상
+     * floor(12)다 — `STAGNANT_POLL_LIMIT`이 11 이하 어떤 값이어도 결속되지 않는다
+     * (감사: 코드 라운드 17이 2로 낮춰 실증). 진전이 **늦게** 오는 형상이라야 그
+     * 상수와 "진전이 오면 카운터를 0으로 되돌린다" 분기가 같이 묶인다.
+     */
+    it('진전이 늦게 오면 그 시점부터 STAGNANT_POLL_LIMIT만큼 더 돈다', async () => {
+        let polls = 0;
+        mockGetNewsCardsAction.mockImplementation(() => {
+            polls += 1;
+            // 13틱째에 첫 보강, 15틱째에 하나 더 — 그 뒤로는 그대로.
+            if (polls < 13) return Promise.resolve([PENDING_ITEM]);
+            if (polls < 15) return Promise.resolve([READY_ITEM, PENDING_ITEM]);
+            return Promise.resolve([
+                READY_ITEM,
+                { ...READY_ITEM, id: 'ready-2' },
+                PENDING_ITEM,
+            ]);
+        });
+
+        renderHook(() => useNewsCardPolling('AAPL', []));
+
+        await advancePolls(30);
+
+        // 마지막 진전이 15틱, 거기서 6틱 더 → 21틱에 정지.
+        expect(mockGetNewsCardsAction.mock.calls.length).toBe(21);
     });
 
     it('초기 뉴스가 비어 있으면 폴링 상태로 시작하고 새 카드를 반영한 뒤 확인 카드를 닫는다', async () => {

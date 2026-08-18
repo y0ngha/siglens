@@ -137,6 +137,62 @@ describe('useMarketNewsCardPolling', () => {
         );
     });
 
+    /**
+     * [회귀] 정체 종료는 순수 함수(`pollMarketNewsCardsStep`)만 테스트돼 있었고
+     * **훅의 배선**(`recordEnriched`/`getEnrichedCount`/`getStagnantPolls`)은
+     * 무커버리지였다 — 훅에서 정체 카운터를 못 올리게 만들어도 전건 통과한다
+     * (감사: 테스트 라운드 17). 그러면 기능이 통째로 죽은 채 초록이다.
+     */
+    it('보강이 진행되다 멈추면 상한 전에 접는다 — 훅 배선', async () => {
+        // 일부만 보강된 스냅샷이 계속 그대로다: 다른 종료 조건은 전부 죽어 있고
+        // (빈 스냅샷 아님, 전건 보강 아님, 실패 아님) 정체 종료만 남는다.
+        mockGetMarketNewsCardsAction.mockResolvedValue({
+            ok: true,
+            items: [ENRICHED_ITEM, PENDING_ITEM],
+        });
+
+        renderHook(() => useMarketNewsCardPolling('general', []));
+
+        await advancePolls(20);
+
+        // 리터럴로 고정한다 — 상수를 import해 단언하면 양변이 같이 움직인다.
+        expect(mockGetMarketNewsCardsAction).toHaveBeenCalledTimes(12);
+    });
+
+    /**
+     * [회귀] 위 케이스는 1틱째에 보강되고 곧바로 멈추는 형상이라 정지 지점이 항상
+     * 하한이다 — "진전이 오면 정체 카운터를 0으로 되돌린다" 분기를 지워도 통과한다
+     * (감사: 코드 라운드 17). 진전이 늦게 오는 형상이라야 그 분기가 묶인다.
+     */
+    it('진전이 늦게 오면 그 시점부터 STAGNANT_POLL_LIMIT만큼 더 돈다', async () => {
+        let polls = 0;
+        mockGetMarketNewsCardsAction.mockImplementation(() => {
+            polls += 1;
+            if (polls < 13)
+                return Promise.resolve({ ok: true, items: [PENDING_ITEM] });
+            if (polls < 15)
+                return Promise.resolve({
+                    ok: true,
+                    items: [ENRICHED_ITEM, PENDING_ITEM],
+                });
+            return Promise.resolve({
+                ok: true,
+                items: [
+                    ENRICHED_ITEM,
+                    { ...ENRICHED_ITEM, id: 'enriched-2' },
+                    PENDING_ITEM,
+                ],
+            });
+        });
+
+        renderHook(() => useMarketNewsCardPolling('general', []));
+
+        await advancePolls(30);
+
+        // 마지막 진전이 15틱, 거기서 6틱 더 → 21틱에 정지.
+        expect(mockGetMarketNewsCardsAction).toHaveBeenCalledTimes(21);
+    });
+
     it('카테고리 변경 시 상태를 초기화하고 새 카테고리로 폴링한다', async () => {
         mockGetMarketNewsCardsAction.mockResolvedValue({
             ok: true,

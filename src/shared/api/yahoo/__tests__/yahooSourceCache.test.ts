@@ -98,6 +98,33 @@ describe('getYahooFundamentals dedup', () => {
         );
     });
 
+    /**
+     * [회귀] 어느 yahoo 모듈이 어느 제표 버킷을 채우는지는 어떤 테스트도 안 잡고
+     * 있었다 — `financials`와 `cash-flow`를 맞바꿔도 전건 통과한다(감사 라운드 12).
+     * `YahooFinancialStatementsProvider` 테스트는 이 모듈을 통째로 mock하므로
+     * 배선이 관측되는 곳이 여기뿐이다. 뒤바뀌면 재무 탭의 매출·EBITDA 행에
+     * 현금흐름 숫자가 들어가고 같은 값이 재무 AI 프롬프트로 나간다.
+     */
+    it('모듈별 응답이 각자의 제표 버킷으로 들어간다', async () => {
+        fundamentalsTimeSeries.mockImplementation(
+            (_symbol: string, opts: { module?: string }) => {
+                if (opts.module === 'financials')
+                    return Promise.resolve([{ totalRevenue: 1 }]);
+                if (opts.module === 'balance-sheet')
+                    return Promise.resolve([{ totalAssets: 2 }]);
+                if (opts.module === 'cash-flow')
+                    return Promise.resolve([{ freeCashFlow: 3 }]);
+                return Promise.resolve([]);
+            }
+        );
+
+        const statements = await getYahooStatements('005930.KS', 'annual');
+
+        expect(statements.income[0]).toMatchObject({ totalRevenue: 1 });
+        expect(statements.balance[0]).toMatchObject({ totalAssets: 2 });
+        expect(statements.cashFlow[0]).toMatchObject({ freeCashFlow: 3 });
+    });
+
     it('fetches only the quarterly balance sheet, not all three statements', async () => {
         // PBR·부채비율 분모만 필요한데 전체 제표를 받으면 손익·현금흐름 2개 모듈이
         // 그대로 버려진다. fundamental 탭만 여는 가장 흔한 경로에서 매번 낭비된다.

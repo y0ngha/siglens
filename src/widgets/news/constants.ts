@@ -7,4 +7,6 @@ export {
     MAX_CONSECUTIVE_FAILURES,
     EMPTY_SNAPSHOT_MAX_POLLS,
     MAX_POLL_DURATION_MS,
+    STAGNANT_POLL_LIMIT,
+    STAGNATION_FLOOR_POLLS,
 } from '@/shared/config/cardPollingConfig';

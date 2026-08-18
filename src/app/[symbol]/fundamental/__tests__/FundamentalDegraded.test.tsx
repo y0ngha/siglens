@@ -14,14 +14,17 @@ vi.mock('@/shared/ui/CrossLinkCards', () => ({
     CrossLinkCards: ({
         symbol,
         current,
+        marketProfile,
     }: {
         symbol: string;
         current: string;
+        marketProfile?: string;
     }) => (
         <div
             data-testid="cross-links"
             data-symbol={symbol}
             data-current={current}
+            data-market-profile={marketProfile}
         />
     ),
 }));
@@ -29,7 +32,11 @@ vi.mock('@/shared/ui/CrossLinkCards', () => ({
 describe('FundamentalDegraded', () => {
     it('renders exactly one h1 carrying the display name (single-h1 SEO contract)', () => {
         const { container } = render(
-            <FundamentalDegraded displayName="애플 (AAPL)" symbol="AAPL" />
+            <FundamentalDegraded
+                displayName="애플 (AAPL)"
+                symbol="AAPL"
+                marketProfile="us-equity"
+            />
         );
 
         const h1s = container.querySelectorAll('h1');
@@ -38,7 +45,13 @@ describe('FundamentalDegraded', () => {
     });
 
     it('shows the temporary-unavailable notice', () => {
-        render(<FundamentalDegraded displayName="AAPL" symbol="AAPL" />);
+        render(
+            <FundamentalDegraded
+                displayName="AAPL"
+                symbol="AAPL"
+                marketProfile="us-equity"
+            />
+        );
 
         expect(
             screen.getByText(/일시적으로 불러올 수 없어요/)
@@ -46,11 +59,34 @@ describe('FundamentalDegraded', () => {
     });
 
     it('keeps the cross-route links so the visitor can still reach other tabs', () => {
-        render(<FundamentalDegraded displayName="AAPL" symbol="TSLA" />);
+        render(
+            <FundamentalDegraded
+                displayName="AAPL"
+                symbol="TSLA"
+                marketProfile="us-equity"
+            />
+        );
 
         const links = screen.getByTestId('cross-links');
         expect(links).toHaveAttribute('data-symbol', 'TSLA');
         expect(links).toHaveAttribute('data-current', 'fundamental');
+    });
+
+    // SEO 감사(2026-08-18): marketProfile을 넘기지 않으면 CrossLinkCards의
+    // 기본값(`'us-equity'`)으로 떨어져, 한국 종목 degrade 셸에도 존재하지 않는
+    // `/options`·`/congress` 링크가 노출됐다. 페이지가 넘긴 값이 그대로
+    // CrossLinkCards에 전달되는지 pin한다.
+    it('passes kr-equity marketProfile through to CrossLinkCards for a Korean symbol', () => {
+        render(
+            <FundamentalDegraded
+                displayName="삼성전자"
+                symbol="005930.KS"
+                marketProfile="kr-equity"
+            />
+        );
+
+        const links = screen.getByTestId('cross-links');
+        expect(links).toHaveAttribute('data-market-profile', 'kr-equity');
     });
 
     it('renders the SEO snapshot prose when snapshotContent is present (spec §7)', () => {
@@ -58,6 +94,7 @@ describe('FundamentalDegraded', () => {
             <FundamentalDegraded
                 displayName="애플"
                 symbol="AAPL"
+                marketProfile="us-equity"
                 snapshotContent={{
                     overallConclusionKo:
                         '밸류에이션은 업종 평균 대비 낮습니다.',
@@ -74,7 +111,13 @@ describe('FundamentalDegraded', () => {
     });
 
     it('omits the snapshot prose section when snapshotContent is absent', () => {
-        render(<FundamentalDegraded displayName="애플" symbol="AAPL" />);
+        render(
+            <FundamentalDegraded
+                displayName="애플"
+                symbol="AAPL"
+                marketProfile="us-equity"
+            />
+        );
 
         expect(screen.queryByText('최근 분석 요약')).not.toBeInTheDocument();
     });
@@ -87,6 +130,7 @@ describe('FundamentalDegraded', () => {
             <FundamentalDegraded
                 displayName="애플"
                 symbol="AAPL"
+                marketProfile="us-equity"
                 snapshotContent={{
                     overallConclusionKo:
                         '밸류에이션은 업종 평균 대비 낮습니다.',
@@ -101,5 +145,31 @@ describe('FundamentalDegraded', () => {
         expect(
             screen.getByText(/2026년 7월 31일 미국 장마감 기준/)
         ).toBeInTheDocument();
+    });
+
+    // SEO 감사(2026-08-18): fundamental은 kr-equity도 렌더한다 — marketProfile이
+    // CrossLinkCards뿐 아니라 FundamentalSnapshotProse까지 실제로 전달되는지(캡션이
+    // "미국 장마감"으로 굳어 있지 않은지) 직접 겨냥한다.
+    it('한국 종목은 "국내 장마감 기준" 캡션을 쓴다', () => {
+        render(
+            <FundamentalDegraded
+                displayName="삼성전자"
+                symbol="005930.KS"
+                marketProfile="kr-equity"
+                snapshotContent={{
+                    overallConclusionKo:
+                        '밸류에이션은 업종 평균 대비 낮습니다.',
+                    overallSentiment: 'bullish',
+                    categoryAssessments: [],
+                    riskFactorsKo: [],
+                }}
+                snapshotGeneratedAt={new Date('2026-08-14T06:30:00Z')}
+            />
+        );
+
+        expect(
+            screen.getByText(/2026년 8월 14일 국내 장마감 기준/)
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/미국 장마감 기준/)).not.toBeInTheDocument();
     });
 });

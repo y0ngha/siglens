@@ -220,6 +220,100 @@ describe('fetchKrxListedItems', () => {
         await expect(fetchKrxListedItems()).resolves.toHaveLength(1);
     });
 
+    /**
+     * [회귀] wall-clock 예산은 **페이지 단위로** 재야 도달한다.
+     *
+     * 후보 루프에서만 재면 영원히 걸리지 않는다 — `collectAllPages`는 첫 페이지가
+     * 비었을 때만 `[]`를 돌려주고, 한 건이라도 있으면 호출부가 즉시 반환하므로
+     * 후보를 넘기는 경로는 후보당 정확히 1페이지(≤ 10 × 10초 < 120초)다. 실제
+     * 위험은 반대쪽이다: 한 후보가 `MAX_PAGES`를 다 쓰면 20 × 10초 = 200초로
+     * 배포 드레인 창(180초)을 넘긴다. 이 수집은 `after()` 안에서 돌고 그 promise가
+     * SIGTERM 드레인에 등록돼 있어 그만큼 종료를 붙잡는다.
+     *
+     * 가짜 타이머로 페이지당 30초를 흘려보내면 3페이지를 받은 시점에 정확히 90초라
+     * 4페이지째 검사에서 멈춘다 — MAX_PAGES(20)에 한참 못 미치는 지점이라, 상한이
+     * 페이지 수가 아니라 시간에서 오는지가 판별된다.
+     */
+    it('예산이 닳으면 MAX_PAGES 전에 수집을 멈춘다', async () => {
+        vi.useFakeTimers();
+        try {
+            // 매 페이지가 가득 차 있어 종료 조건(빈 페이지·totalCount 도달)에 절대
+            // 걸리지 않는다 — 멈추는 이유가 예산뿐이도록.
+            fetchSpy.mockImplementation(async () => {
+                vi.advanceTimersByTime(30_000);
+                return page(
+                    Array.from({ length: 1000 }, (_, i) => ({
+                        ...SAMSUNG,
+                        srtnCd: `A${String(i).padStart(6, '0')}`,
+                    })),
+                    999_999 // totalCount를 크게 둬 페이지 소진으로는 안 끝나게.
+                );
+            });
+
+            await fetchKrxListedItems();
+
+            expect(fetchSpy.mock.calls.length).toBeLessThan(20); // MAX_PAGES
+            expect(fetchSpy.mock.calls.length).toBe(3); // 90초 / 30초
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    /**
+     * [회귀] 예산 검사는 fetch **앞**에만 있으므로, 예산 1ms 전에 통과한 페이지가
+     * `PAGE_TIMEOUT_MS`를 통째로 더 쓰면 상한이 예산 + 10초가 된다. 드레인 창
+     * (180초) 안에서 수집 뒤 DB 단계까지 끝나야 하므로 그 초과분이 그대로 위험이다.
+     * 마지막 페이지의 타임아웃을 남은 예산으로 잘라 초과 자체를 없앤다.
+     */
+    it('마지막 페이지 타임아웃을 남은 예산으로 자른다', async () => {
+        vi.useFakeTimers();
+        try {
+            const timeouts: number[] = [];
+            const realTimeout = AbortSignal.timeout.bind(AbortSignal);
+            vi.spyOn(AbortSignal, 'timeout').mockImplementation(ms => {
+                timeouts.push(ms);
+                return realTimeout(ms);
+            });
+            // 페이지당 42초 — 3페이지째 진입 시각이 84초라 남은 예산이 6초다.
+            fetchSpy.mockImplementation(async () => {
+                vi.advanceTimersByTime(42_000);
+                return page([SAMSUNG], 999_999);
+            });
+
+            await fetchKrxListedItems();
+
+            // 3번째가 10초면 총 94초로 예산을 넘긴다.
+            expect(timeouts).toEqual([10_000, 10_000, 6_000]);
+        } finally {
+            vi.useRealTimers();
+            vi.restoreAllMocks();
+        }
+    });
+
+    /**
+     * [회귀] 클램프만 두면 `remaining`이 수십 ms일 때 곧 도착했을 응답까지 끊고,
+     * 그 abort가 `TimeoutError`로 올라가 이미 모은 페이지를 통째로 버린다
+     * (감사 라운드 13). 하한 밑에서는 페이지를 시작하지 않고 모은 만큼 들고 나온다.
+     */
+    it('남은 예산이 하한 미만이면 페이지를 시작하지 않고 모은 만큼 반환한다', async () => {
+        vi.useFakeTimers();
+        try {
+            // 페이지당 89.5초 — 1페이지를 받고 나면 남은 예산이 500ms로 하한 미만이다.
+            fetchSpy.mockImplementation(async () => {
+                vi.advanceTimersByTime(89_500);
+                return page([SAMSUNG], 999_999);
+            });
+
+            const items = await fetchKrxListedItems();
+
+            expect(fetchSpy).toHaveBeenCalledTimes(1);
+            // throw가 아니라 모은 결과가 나온다.
+            expect(items).toHaveLength(1);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('returns empty without calling the API when the key is missing', async () => {
         vi.stubEnv('DATA_GO_KR_SERVICE_KEY', '');
 

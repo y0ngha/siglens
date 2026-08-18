@@ -82,7 +82,7 @@ describe('FutureDirectionCard', () => {
         render(
             <FutureDirectionCard
                 symbol="005930.KS"
-                estimates={null}
+                estimates={SAMPLE_ESTIMATES}
                 grades={null}
                 ptConsensus={SAMPLE_PT_CONSENSUS}
                 ptSummary={null}
@@ -91,6 +91,10 @@ describe('FutureDirectionCard', () => {
 
         expect(screen.getByText('₩150')).toBeInTheDocument();
         expect(screen.getByText('₩250')).toBeInTheDocument();
+        // 뮤테이션 감사(fmtBig의 symbol → 'AAPL' 생존자): estimates가 null이면
+        // 매출 컨센서스(fmtBig)가 아예 렌더되지 않아 이 배선을 아무도 검증하지
+        // 못했다. estimates를 채워 compact 통화(₩4000억)로 pin한다.
+        expect(screen.getByText('₩4000억')).toBeInTheDocument();
         expect(screen.queryByText(/US\$/)).not.toBeInTheDocument();
     });
 });

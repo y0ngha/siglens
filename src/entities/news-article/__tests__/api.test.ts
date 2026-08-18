@@ -156,6 +156,43 @@ function makeUpdateDb(): {
 }
 
 /** Build a mock `db` for a select…where…orderBy chain returning `rows`. */
+/**
+ * drizzle `SQL` 객체에서 리터럴 조각만 뽑는다. `JSON.stringify`는 테이블 참조가
+ * 순환이라 던지므로 쓸 수 없다. `isNotNull`은 `' is not null'`, `isNull`은
+ * `' is null'` 조각을 남기므로 필터 방향을 이걸로 판별한다.
+ */
+function sqlChunks(node: unknown, out: string[] = []): string[] {
+    if (Array.isArray(node)) {
+        for (const item of node) sqlChunks(item, out);
+        return out;
+    }
+    if (node && typeof node === 'object') {
+        const obj = node as Record<string, unknown>;
+        if (Array.isArray(obj.queryChunks)) sqlChunks(obj.queryChunks, out);
+        if (
+            Array.isArray(obj.value) &&
+            obj.value.every(v => typeof v === 'string')
+        ) {
+            out.push(...(obj.value as string[]));
+        }
+    }
+    return out;
+}
+
+/**
+ * `listAnalyzedIds`용 — 이 쿼리는 `orderBy` 없이 `where()`를 바로 await한다.
+ * `where` 인자를 노출해 필터 자체(`is not null`)를 단언할 수 있게 한다.
+ */
+function makeFilterSelectDb(rows: unknown[]): {
+    db: SiglensDatabase;
+    where: Mock;
+} {
+    const where = vi.fn().mockResolvedValue(rows);
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
+    return { db: { select } as unknown as SiglensDatabase, where };
+}
+
 function makeSelectDb(rows: unknown[]): {
     db: SiglensDatabase;
     select: Mock;
@@ -346,6 +383,24 @@ describe('DrizzleNewsRepository', () => {
             expect(results[0]?.publishedAt).toBe('2025-08-01T10:00:00.000Z');
         });
 
+        it('기사 원문(body_en)은 읽지 않고 null로 내려준다', async () => {
+            // 이 읽기의 소비자(집계 분석 프롬프트)가 원문을 쓰지 않는다 — core에서
+            // `bodyEn`을 읽는 곳은 카드 프롬프트뿐이고 그 입력은 DB 행이 아니라 FMP
+            // 응답이다. core가 집계 쪽에서 읽기 시작하면 이 값이 조용히 null이 되어
+            // 품질만 떨어지므로, 계약을 여기서 고정한다(감사: 테스트 라운드 17).
+            const { db, select } = makeSelectDb([dbRow]);
+            const repo = new DrizzleNewsRepository(db);
+
+            const [result] = await repo.listBySymbol('AAPL', 86_400_000);
+
+            expect(result?.bodyEn).toBeNull();
+            expect(
+                Object.keys(
+                    (select.mock.calls[0] as [Record<string, unknown>])[0]
+                )
+            ).not.toContain('bodyEn');
+        });
+
         it('결과가 없으면 빈 배열을 반환한다', async () => {
             const { db } = makeSelectDb([]);
             const repo = new DrizzleNewsRepository(db);
@@ -412,6 +467,162 @@ describe('DrizzleNewsRepository', () => {
             expect(result.sentiment).toBeNull();
             expect(result.category).toBeNull();
             expect(result.priceImpact).toBeNull();
+        });
+    });
+
+    /**
+     * 카드 폴링 전용 투영. `listBySymbol`의 정규화(enum 화이트리스트, Date→ISO,
+     * 180일 창, 최신순)를 그대로 다시 구현하므로 같은 케이스를 여기서도 고정한다 —
+     * 안 하면 두 사본이 조용히 갈라지고, 갈라지는 쪽이 하필 3초 폴링 경로다
+     * (감사 라운드 15).
+     *
+     * enum 정규화가 특히 중요하다: `hasAnyEnrichedCard`/`hasPendingAnalysis`가
+     * `sentiment === null`로 보강 여부를 판정하므로, 깨진 문자열이 그대로 흘러가면
+     * 미보강 종목이 "보강됨"으로 읽혀 폴링이 일찍 멈추고 분석 패널이 열린다.
+     */
+    /**
+     * [회귀] 이 메서드의 전부는 `isNotNull(analyzedAt)` 한 줄이다 — 뒤집으면
+     * 이미 분석된 기사를 매번 LLM에 다시 보내고 미분석 기사는 영영 안 돈다.
+     * 호출부 테스트는 이 메서드를 통째로 mock하므로 SQL을 볼 수 없다
+     * (감사: 코드 라운드 16).
+     */
+    describe('listAnalyzedIds', () => {
+        it('분석 완료 행만 거르는 필터를 건다', async () => {
+            const { db, where } = makeFilterSelectDb([
+                { id: 'a' },
+                { id: 'b' },
+            ]);
+            const repo = new DrizzleNewsRepository(db);
+
+            const ids = await repo.listAnalyzedIds('AAPL', 86_400_000);
+
+            expect(ids).toEqual(new Set(['a', 'b']));
+            // drizzle의 `isNotNull`은 ' is not null' 조각을, `isNull`은 ' is null'
+            // 조각을 남긴다 — 방향이 뒤집히면 여기서 걸린다.
+            const literals = sqlChunks((where.mock.calls[0] as [unknown])[0]);
+            expect(literals).toContain(' is not null');
+            expect(literals).not.toContain(' is null');
+        });
+
+        it('결과가 없으면 빈 Set을 돌려준다', async () => {
+            const { db } = makeFilterSelectDb([]);
+            const repo = new DrizzleNewsRepository(db);
+
+            await expect(
+                repo.listAnalyzedIds('AAPL', 86_400_000)
+            ).resolves.toEqual(new Set());
+        });
+    });
+
+    describe('listCardsBySymbol', () => {
+        // 픽스처가 서버 전용 컬럼을 **갖고 있어야** 한다 — 안 그러면 투영을 통째로
+        // 되돌려(`...row` spread) 놓아도 샐 것이 없어 테스트가 통과한다
+        // (감사: 테스트 라운드 16). DB는 그 컬럼들을 갖고 있으므로 이쪽이 실제 형상이다.
+        const cardRow = {
+            symbol: 'AAPL',
+            bodyEn: '유출되면 안 되는 영어 원문',
+            analyzedAt: new Date('2025-08-01T12:00:00.000Z'),
+            id: 'abc123',
+            source: 'Reuters',
+            url: 'https://example.com/news/1',
+            publishedAt: new Date('2025-08-01T10:00:00.000Z'),
+            titleEn: 'Apple hits all-time high',
+            titleKo: '애플 사상 최고가',
+            bodyKo: '본문',
+            summaryKo: '요약',
+            sentiment: 'bullish',
+            category: 'other',
+            priceImpact: 'medium',
+        };
+
+        it('DB 내부 필드를 아예 읽지 않는다', async () => {
+            const { db, select } = makeSelectDb([cardRow]);
+            const repo = new DrizzleNewsRepository(db);
+            const [result] = await repo.listCardsBySymbol('AAPL', 86_400_000);
+
+            // 반환 형상: 새어 나오지 않는다.
+            expect(result).not.toHaveProperty('bodyEn');
+            expect(result).not.toHaveProperty('symbol');
+            expect(result).not.toHaveProperty('analyzedAt');
+
+            // SELECT 목록: 애초에 읽지 않는다 — 비용 근거가 여기 있다.
+            // 반환 형상만 보면 select에 남겨 둔 채 매핑에서만 빼도 통과한다.
+            const selected = Object.keys(
+                (select.mock.calls[0] as [Record<string, unknown>])[0]
+            );
+            expect(selected).not.toContain('bodyEn');
+            expect(selected).not.toContain('symbol');
+            expect(selected).not.toContain('analyzedAt');
+        });
+
+        it('publishedAt 을 ISO 문자열로 변환해 반환한다', async () => {
+            const { db } = makeSelectDb([cardRow]);
+            const repo = new DrizzleNewsRepository(db);
+            const results = await repo.listCardsBySymbol('AAPL', 86_400_000);
+
+            expect(results[0]?.publishedAt).toBe('2025-08-01T10:00:00.000Z');
+        });
+
+        it('결과가 없으면 빈 배열을 반환한다', async () => {
+            const { db } = makeSelectDb([]);
+            const repo = new DrizzleNewsRepository(db);
+            await expect(
+                repo.listCardsBySymbol('AAPL', 86_400_000)
+            ).resolves.toEqual([]);
+        });
+
+        it('표시 필드를 그대로 옮긴다', async () => {
+            const { db } = makeSelectDb([cardRow]);
+            const repo = new DrizzleNewsRepository(db);
+            const [result] = await repo.listCardsBySymbol('AAPL', 86_400_000);
+
+            expect(result).toEqual({
+                id: 'abc123',
+                source: 'Reuters',
+                url: 'https://example.com/news/1',
+                publishedAt: '2025-08-01T10:00:00.000Z',
+                titleEn: 'Apple hits all-time high',
+                titleKo: '애플 사상 최고가',
+                bodyKo: '본문',
+                summaryKo: '요약',
+                sentiment: 'bullish',
+                category: 'other',
+                priceImpact: 'medium',
+            });
+        });
+
+        it('알 수 없는 enum 문자열은 null 로 정규화한다', async () => {
+            const { db } = makeSelectDb([
+                {
+                    ...cardRow,
+                    sentiment: 'unknown_value',
+                    category: 'unknown_category',
+                    priceImpact: 'unknown_impact',
+                },
+            ]);
+            const repo = new DrizzleNewsRepository(db);
+            const [result] = await repo.listCardsBySymbol('AAPL', 86_400_000);
+
+            expect(result?.sentiment).toBeNull();
+            expect(result?.category).toBeNull();
+            expect(result?.priceImpact).toBeNull();
+        });
+
+        it('비문자열 enum 값은 null 로 정규화한다', async () => {
+            const { db } = makeSelectDb([
+                {
+                    ...cardRow,
+                    sentiment: 42 as unknown as string,
+                    category: {} as unknown as string,
+                    priceImpact: [] as unknown as string,
+                },
+            ]);
+            const repo = new DrizzleNewsRepository(db);
+            const [result] = await repo.listCardsBySymbol('AAPL', 86_400_000);
+
+            expect(result?.sentiment).toBeNull();
+            expect(result?.category).toBeNull();
+            expect(result?.priceImpact).toBeNull();
         });
     });
 });

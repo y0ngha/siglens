@@ -72,8 +72,29 @@ interface CrossLinkCardsProps {
     /**
      * Market profile of the symbol. Used to filter ALL_PAGES to only the tabs
      * allowed for this asset class (e.g. crypto: chart/news/fear-greed/overall).
-     * Defaults to 'us-equity' so existing call-sites that don't yet pass this
-     * param continue to show all 8 cards.
+     *
+     * The default is kept deliberately, not because it's safe in general, but
+     * because it's *provably* safe for its only remaining implicit callers:
+     * `congress/page.tsx`, `congress/CongressDegraded.tsx`, and
+     * `options/OptionsPageClient.tsx` render this component only after their
+     * page already 404s any symbol whose tab set doesn't include
+     * `congress`/`options` (`isTabAllowedForSymbol`) — and only `us-equity`
+     * carries those tabs (`US_EQUITY_DESCRIPTOR.tabs`). So `marketProfile`
+     * is provably `'us-equity'` there, and the default is accurate rather than
+     * assumed.
+     *
+     * An audit (2026-08-18) found the opposite case: `fundamental`/`financials`
+     * render for BOTH us-equity and kr-equity, so their call sites omitting
+     * this prop silently fell back to `'us-equity'` and rendered live links to
+     * `/options` and `/congress` for Korean symbols — pages that
+     * `isTabAllowedForSymbol` then 404s (soft-404: `notFound()` inside a
+     * Suspense boundary still returns HTTP 200, see
+     * `e2e/specs/kr-equity-seo.spec.ts`). That fix passes `marketProfile`
+     * explicitly at those two call sites; it does not remove this default,
+     * to avoid an unrelated diff across the three still-provably-safe callers
+     * above. If a *new* call site ever needs to render both congress/options
+     * copy for a non-us-equity symbol, that's exactly the moment this default
+     * stops being safe — pass `marketProfile` explicitly there too.
      */
     marketProfile?: MarketProfileId;
 }

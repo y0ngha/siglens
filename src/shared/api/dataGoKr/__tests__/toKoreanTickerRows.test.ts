@@ -72,9 +72,45 @@ describe('toKoreanTickerRows', () => {
         expect(rows.map(r => r.symbol)).toEqual(['005930.KS', '247540.KQ']);
     });
 
+    it('큐레이션된 심볼은 KRX 등록명 대신 CURATED_KOREAN_NAMES를 koreanName으로 쓴다 (035420 NAVER → 네이버)', () => {
+        // 실측(SEO 감사): KRX 등록명(itmsNm)이 035420에는 로마자 "NAVER"로 온다.
+        // koreanName은 큐레이션을 이겨야 하고, name(영문 표시명 폴백)은 그대로 피드 값이다.
+        const rows = toKoreanTickerRows([
+            item({
+                shortCode: '035420',
+                koreanName: 'NAVER',
+                market: 'KOSPI',
+            }),
+        ]);
+
+        expect(rows).toEqual([
+            {
+                symbol: '035420.KS',
+                koreanName: '네이버',
+                name: 'NAVER',
+                exchange: 'KOSPI',
+                exchangeFullName: 'Korea Exchange (KOSPI)',
+            },
+        ]);
+    });
+
+    it('큐레이션되지 않은 심볼은 KRX 등록명을 koreanName으로 그대로 쓴다', () => {
+        const rows = toKoreanTickerRows([
+            item({
+                shortCode: '999001',
+                koreanName: '이름없는종목',
+                market: 'KOSPI',
+            }),
+        ]);
+
+        expect(rows[0]!.koreanName).toBe('이름없는종목');
+    });
+
     it('중복 shortCode(같은 시장)는 Map이 마지막 값으로 덮어써 한 행만 남는다', () => {
         // toKoreanTickerRows는 symbol(= shortCode + suffix)을 키로 Map을 채운다 —
         // 같은 symbol이 두 번 들어오면 나중 항목이 앞의 항목을 덮어쓴다.
+        // 005930은 CURATED_KOREAN_NAMES에 있어 koreanName은 두 입력 모두에서 큐레이션
+        // 값으로 고정되므로, 덮어쓰기 자체는 피드를 그대로 통과시키는 name으로 관측한다.
         const rows = toKoreanTickerRows([
             item({
                 shortCode: '005930',
@@ -89,6 +125,7 @@ describe('toKoreanTickerRows', () => {
         ]);
 
         expect(rows).toHaveLength(1);
-        expect(rows[0]!.koreanName).toBe('삼성전자(신)');
+        expect(rows[0]!.koreanName).toBe('삼성전자');
+        expect(rows[0]!.name).toBe('삼성전자(신)');
     });
 });

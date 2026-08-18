@@ -8,7 +8,11 @@ export type { NewsFeedCategory } from '@y0ngha/siglens-core';
  * not surfaced as display-only metadata.
  */
 export interface MarketNewsRow extends NewsDisplayItem {
-    /** Original English body — needed for re-analysis but not displayed directly. */
+    /**
+     * 항상 `null`이다. 읽기 경로가 `body_en`을 SELECT하지 않는다 — 이 값을 읽는
+     * 유일한 소비자(core `newsCardPrompt`)는 DB 행이 아니라 FMP 응답 객체를 받는다.
+     * core의 `EnrichedNewsItem` 형상을 맞추려고 필드만 남겨 둔다.
+     */
     bodyEn: string | null;
     /** Sentinel bucket symbol (e.g. `__NEWS_CRYPTO__`). Never shown in a URL. */
     symbol: string;

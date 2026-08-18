@@ -105,12 +105,25 @@ describe('Market page', () => {
     });
 
     describe('generateMetadata', () => {
+        // 두 loader 모두 콘텐츠가 있는 정상 상태. 모듈 기본 mock(둘 다 빈 배열)은
+        // degrade 판정 테스트 쪽에서 그대로 재사용한다.
+        beforeEach(() => {
+            mockGetMarketSummaryStatic.mockResolvedValue({
+                indices: [{ symbol: 'GSPC' }],
+                sectors: [{ symbol: 'XLK' }],
+            });
+            mockGetSectorSignalsStatic.mockResolvedValue({
+                computedAt: '2026-06-04T14:37:22.000Z',
+                stocks: [{ symbol: 'AAPL' }],
+            });
+        });
+
         it('returns metadata with market title', async () => {
             const metadata = await generateMetadata();
             expect(metadata.title).toContain('미국 주식');
         });
 
-        it('sets canonical to /market', async () => {
+        it('sets canonical to /market when at least one loader has data', async () => {
             const metadata = await generateMetadata();
             expect(metadata.alternates?.canonical).toBe(
                 'https://siglens.io/market'
@@ -120,6 +133,61 @@ describe('Market page', () => {
         it('does not set noindex — variant URLs consolidate via clean canonical', async () => {
             const metadata = await generateMetadata();
             expect(metadata.robots).toBeUndefined();
+        });
+
+        /**
+         * 회귀 가드(SEO 감사 라운드 2 finding 4): `/market`은 두 loader(summary/sector)가
+         * 모두 빈 값으로 떨어져도 canonical=/market + robots=undefined를 냈다 — 본문은
+         * MarketSummaryPanel/SectorSignalPanel이 빈 배열로 non-empty degraded view를
+         * 렌더하는데(의도된 graceful fallback), 그 상태를 그대로 색인시키고 있었다.
+         * economy/fear-greed 형제 페이지와 동일하게 canonical=null + noindex로 gate한다.
+         */
+        it('두 loader가 모두 빈 값이면 canonical=null + noindex', async () => {
+            mockGetMarketSummaryStatic.mockResolvedValue({
+                indices: [],
+                sectors: [],
+            });
+            mockGetSectorSignalsStatic.mockResolvedValue({
+                computedAt: '',
+                stocks: [],
+            });
+
+            const metadata = await generateMetadata();
+
+            expect(metadata.alternates?.canonical).toBeNull();
+            expect(metadata.robots).toEqual({ index: false, follow: true });
+        });
+
+        it('한 loader만 비어도 다른 loader에 데이터가 있으면 degrade로 보지 않는다', async () => {
+            mockGetMarketSummaryStatic.mockResolvedValue({
+                indices: [],
+                sectors: [],
+            });
+            // sectorData는 beforeEach의 non-empty 값을 그대로 유지.
+
+            const metadata = await generateMetadata();
+
+            expect(metadata.alternates?.canonical).toBe(
+                'https://siglens.io/market'
+            );
+            expect(metadata.robots).toBeUndefined();
+        });
+
+        it('두 loader가 모두 throw해도 degrade 경로로 폴백해 canonical=null + noindex', async () => {
+            mockGetMarketSummaryStatic.mockRejectedValue(new Error('FMP 5xx'));
+            mockGetSectorSignalsStatic.mockRejectedValue(
+                new Error('cache miss')
+            );
+            const consoleSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => undefined);
+
+            const metadata = await generateMetadata();
+
+            expect(metadata.alternates?.canonical).toBeNull();
+            expect(metadata.robots).toEqual({ index: false, follow: true });
+
+            consoleSpy.mockRestore();
         });
     });
 

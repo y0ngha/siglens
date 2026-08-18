@@ -13,6 +13,7 @@ import {
     MAX_CONSECUTIVE_FAILURES,
     EMPTY_SNAPSHOT_MAX_POLLS,
     MAX_POLL_DURATION_MS,
+    STAGNATION_FLOOR_POLLS,
 } from '@/widgets/market-news/constants';
 import {
     pollMarketNewsCardsStep,
@@ -83,6 +84,8 @@ function makeCtx(
     const state = {
         pollCount: overrides.pollCount ?? 0,
         consecutiveFailures: overrides.consecutiveFailures ?? 0,
+        enrichedCount: 0,
+        stagnantPolls: 0,
     };
 
     const mocks = {
@@ -109,6 +112,16 @@ function makeCtx(
         getStartTime: () => startTime,
         getPollCount: () => state.pollCount,
         getConsecutiveFailures: () => state.consecutiveFailures,
+        getEnrichedCount: () => state.enrichedCount,
+        getStagnantPolls: () => state.stagnantPolls,
+        recordEnriched: (count: number) => {
+            if (count > state.enrichedCount) {
+                state.enrichedCount = count;
+                state.stagnantPolls = 0;
+            } else {
+                state.stagnantPolls += 1;
+            }
+        },
         setItems: mocks.setItems,
         setIsPolling: mocks.setIsPolling,
         setPollError: mocks.setPollError,
@@ -126,6 +139,36 @@ describe('pollMarketNewsCardsStep', () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
+    });
+
+    /**
+     * [회귀] 종료 조건이 "버킷 안 **모든** 카드가 보강됨"인데, 영구히
+     * `analyzedAt=null`로 남는 행이 설계상 존재한다(빈 분석 결과는 일부러 persist하지
+     * 않고, 개별 실패는 삼켜진다). 그런 행은 FMP 최신 50건 밖으로 밀려나면 다시
+     * 후보가 안 되므로 그 카테고리 페이지를 여는 모든 방문자가 100틱 상한을 문다
+     * (감사: 비용 라운드 16). 종목 뉴스 폴러와 같은 정체 종료를 둔다.
+     */
+    it('보강이 진행되다 멈추면 상한 전에 접는다', async () => {
+        mockGetMarketNewsCardsAction.mockResolvedValue({
+            ok: true,
+            items: [ENRICHED_ITEM, PENDING_ITEM],
+        });
+
+        // pollCount를 0에서 시작해 실제 카운터로 하한까지 굴린다 — 하한을 픽스처로
+        // 미리 채워 두면 `pollCount >= STAGNATION_FLOOR_POLLS`가 항상 참이라 그
+        // 조건을 지워도 통과한다(감사: 코드 라운드 17).
+        const { ctx, mocks } = makeCtx();
+
+        // 하한 직전까지는 멈추지 않는다.
+        for (let i = 0; i < STAGNATION_FLOOR_POLLS - 1; i++) {
+            await pollMarketNewsCardsStep(ctx);
+        }
+        expect(mocks.clearInterval).not.toHaveBeenCalled();
+
+        // 하한을 넘는 순간 정체 카운터도 이미 충분하므로 멈춘다.
+        await pollMarketNewsCardsStep(ctx);
+        expect(mocks.clearInterval).toHaveBeenCalledOnce();
+        expect(mocks.setIsPolling).toHaveBeenCalledWith(false);
     });
 
     it('all cards enriched → returns stop, clearInterval and setIsPolling(false) called', async () => {

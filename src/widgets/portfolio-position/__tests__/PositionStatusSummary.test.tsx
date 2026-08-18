@@ -20,6 +20,7 @@ describe('PositionStatusSummary', () => {
     it('status가 null이면 아무것도 렌더하지 않는다', () => {
         const { container } = render(
             <PositionStatusSummary
+                symbol="AAPL"
                 status={null}
                 avgRaw="150"
                 quantityRaw="10"
@@ -34,6 +35,7 @@ describe('PositionStatusSummary', () => {
         // 암묵적 렌더 집합이 아니라 falsifiable 단언으로 잠근다.
         const { container } = render(
             <PositionStatusSummary
+                symbol="AAPL"
                 status={status()}
                 avgRaw="150"
                 quantityRaw="10"
@@ -47,6 +49,7 @@ describe('PositionStatusSummary', () => {
     it('평단·수량을 trimTrailingZeros로 다듬어 표시한다', () => {
         const { getByText } = render(
             <PositionStatusSummary
+                symbol="AAPL"
                 status={status()}
                 avgRaw="150.00000000"
                 quantityRaw="10.50000000"
@@ -59,6 +62,7 @@ describe('PositionStatusSummary', () => {
         // avg=150, current=180, quantity=10 → pnl=+300, returnPct=+20
         const { getByText } = render(
             <PositionStatusSummary
+                symbol="AAPL"
                 status={status()}
                 avgRaw="150"
                 quantityRaw="10"
@@ -76,6 +80,7 @@ describe('PositionStatusSummary', () => {
         // avg=180, current=150, quantity=5 → pnl=-150, returnPct≈-16.7
         const { getByText } = render(
             <PositionStatusSummary
+                symbol="AAPL"
                 status={status({ avg: 180, current: 150, quantity: 5 })}
                 avgRaw="180"
                 quantityRaw="5"
@@ -91,6 +96,7 @@ describe('PositionStatusSummary', () => {
     it('범위 내 위치·고점/저점까지 거리는 손익 색상 토큰을 쓰지 않는다(중립적 사실)', () => {
         const { getByText } = render(
             <PositionStatusSummary
+                symbol="AAPL"
                 status={status()}
                 avgRaw="150"
                 quantityRaw="10"
@@ -109,6 +115,7 @@ describe('PositionStatusSummary', () => {
         // avg=0.0001, current=0.0002, quantity=1000 → pnl=(0.0002-0.0001)*1000=0.1
         const { getByText } = render(
             <PositionStatusSummary
+                symbol="AAPL"
                 status={status({
                     low52w: 0.00005,
                     high52w: 0.0003,
@@ -127,6 +134,7 @@ describe('PositionStatusSummary', () => {
     it('region은 "내 포지션" 헤딩으로 이름 지어지고(aria-labelledby→h2), 수치 행은 내용으로 제공된다', () => {
         const { getByRole, getByText } = render(
             <PositionStatusSummary
+                symbol="AAPL"
                 status={status()}
                 avgRaw="150"
                 quantityRaw="10"
@@ -137,5 +145,21 @@ describe('PositionStatusSummary', () => {
         expect(section).toBeInTheDocument();
         // 수치(평가손익 등)는 region의 내용으로 읽힌다 — 접근명이 아니라 dl 콘텐츠.
         expect(getByText('+$300.00')).toBeInTheDocument();
+    });
+
+    it('한국 상장 종목(symbol=005930.KS)은 평단·평가손익을 $가 아니라 ₩로 표시한다', () => {
+        // avg=150, current=180, quantity=10 → pnl=+300원
+        const { getByText, queryByText } = render(
+            <PositionStatusSummary
+                symbol="005930.KS"
+                status={status()}
+                avgRaw="150"
+                quantityRaw="10"
+            />
+        );
+        expect(getByText('₩150 · 10주')).toBeInTheDocument();
+        expect(getByText('+₩300')).toBeInTheDocument();
+        expect(queryByText('$150 · 10주')).not.toBeInTheDocument();
+        expect(queryByText('+$300.00')).not.toBeInTheDocument();
     });
 });

@@ -49,11 +49,18 @@ describe('getIncomeStatements', () => {
             'annual',
             5
         );
+        // 파생값(마진)만 단언하면 통과 경로의 필드명은 아무거나여도 통과한다 —
+        // yahoo 이름과 도메인 이름이 다른 항목(`EBITDA`)이 특히 그렇다. 픽스처 값이
+        // 서로 다르므로 전 항목을 한 번에 고정한다.
         expect(rows[0]).toMatchObject({
             fiscalYear: '2025',
             period: 'FY',
             date: '2025-12-31',
             revenue: 333_605_938_000_000,
+            grossProfit: 131_370_425_000_000,
+            operatingIncome: 43_601_051_000_000,
+            netIncome: 44_260_956_000_000,
+            ebitda: 97_013_846_000_000,
             eps: 6605,
             epsDiluted: 6603,
         });
@@ -130,6 +137,40 @@ describe('getBalanceSheets', () => {
         cashCashEquivalentsAndShortTermInvestments: 125_847_114_000_000,
         totalDebt: 25_239_139_000_000,
         stockholdersEquity: 424_313_255_000_000,
+    });
+
+    /**
+     * [회귀] 이 블록은 파생값(`netDebt`/`currentRatio`)만 단언하고 통과 매핑 7개를
+     * 하나도 고정하지 않고 있었다 — 감사 라운드 11에서 7개 필드를 서로 바꿔 끼우는
+     * 뮤테이션 8건이 전부 살아남았다.
+     *
+     * 가장 위험한 건 `totalLiabilities`다. yahoo 쪽 이름이
+     * `totalLiabilitiesNetMinorityInterest`라 도메인 이름과 닮지 않았는데, 같은
+     * 픽스처 행에 그럴싸한 오답(`totalDebt`)이 나란히 있다. 바꿔 껴도 값이 나오므로
+     * 눈에 띄지 않지만, core 스코어카드가 `totalLiabilities / totalAssets`로
+     * debtRatio를 매기므로 삼성전자 기준 0.230이 0.044로 바뀐다.
+     */
+    it('yahoo 필드명을 도메인 필드에 정확히 매핑한다', async () => {
+        getYahooStatements.mockResolvedValue(statements({ balance: [row] }));
+
+        const [sheet] = await provider.getBalanceSheets(
+            '005930.KS',
+            'annual',
+            1
+        );
+
+        expect(sheet).toMatchObject({
+            fiscalYear: '2025',
+            period: 'FY',
+            date: '2025-12-31',
+            totalAssets: 566_942_110_000_000,
+            totalCurrentAssets: 247_684_612_000_000,
+            totalLiabilities: 130_621_773_000_000,
+            totalCurrentLiabilities: 106_411_348_000_000,
+            cashAndShortTermInvestments: 125_847_114_000_000,
+            totalDebt: 25_239_139_000_000,
+            totalStockholdersEquity: 424_313_255_000_000,
+        });
     });
 
     it('computes netDebt because yahoo always leaves it empty', async () => {

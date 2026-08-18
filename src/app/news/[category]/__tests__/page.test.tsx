@@ -29,9 +29,9 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
     ]),
 }));
 
-// Mock getMarketNewsList to avoid DB in tests
+// Mock getMarketNewsCards to avoid DB in tests
 vi.mock('@/entities/market-news/api', () => ({
-    getMarketNewsList: vi.fn().mockResolvedValue([]),
+    getMarketNewsCards: vi.fn().mockResolvedValue([]),
 }));
 
 // Mock MarketNewsDigest and MarketNewsList — they are client components with

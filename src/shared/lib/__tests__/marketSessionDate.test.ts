@@ -387,6 +387,68 @@ describe('lastClosedSessionDate — KRX / 크립토 격리', () => {
 });
 
 /**
+ * KRX 휴장일 캘린더 회귀 가드 — SEO 감사에서 실측한 라이브 결함.
+ *
+ * `KR_EQUITY_SESSION`이 `closeMinuteFor` 없이 주말만 알던 시절, 2026-08-17(광복절
+ * 대체공휴일, 월)이 평범한 평일로 오인되어 프로덕션 sitemap이 KR 비뉴스 URL 100개의
+ * lastmod로 `2026-08-17T06:30:00.000Z`를 광고했다. 실제 마지막 개장은 08-14(금)
+ * 이었다 — +3일 과잉 신선도 주장이 라이브에서 발생 중이었다.
+ */
+describe('lastClosedSessionDate — KRX 휴장일 캘린더', () => {
+    it('2026-08-18(화)에는 08-17(광복절 대체공휴일)이 아니라 08-14(금)이 마지막 마감이다', () => {
+        // 2026-08-18 02:00Z = 08-18 11:00 KST — 당일 마감(15:30) 전이라 전일부터
+        // 되감는다: 08-17(휴장) → 08-16(일) → 08-15(토) → 08-14(금, 거래일).
+        expect(
+            lastClosedSessionDate(
+                KR_EQUITY_SESSION,
+                new Date('2026-08-18T02:00:00Z')
+            )
+        ).toBe('2026-08-14');
+    });
+
+    it('lastClosedSessionCloseUtc는 08-14 15:30 KST(06:30 UTC)를 준다 — 08-17이 아니다', () => {
+        expect(
+            lastClosedSessionCloseUtc(
+                KR_EQUITY_SESSION,
+                new Date('2026-08-18T02:00:00Z')
+            ).toISOString()
+        ).toBe('2026-08-14T06:30:00.000Z');
+    });
+
+    it('설 연휴 3일(02-16~18 월~수)을 건너뛰고 직전 거래일(02-13 금)로 되감는다', () => {
+        expect(
+            lastClosedSessionDate(
+                KR_EQUITY_SESSION,
+                new Date('2026-02-19T02:00:00Z')
+            )
+        ).toBe('2026-02-13');
+    });
+
+    it('추석 연휴(09-24~28 목~월, 대체공휴일 포함 주말 관통)를 건너뛰고 직전 거래일(09-23 수)로 되감는다', () => {
+        // 2026-09-29 02:00Z = 09-29(화) 11:00 KST — 당일 마감 전이라 전일부터 되감는다:
+        // 09-28(대체공휴일) → 09-27(일) → 09-26(토) → 09-25(추석) → 09-24(추석 연휴) → 09-23(수, 거래일).
+        expect(
+            lastClosedSessionDate(
+                KR_EQUITY_SESSION,
+                new Date('2026-09-29T02:00:00Z')
+            )
+        ).toBe('2026-09-23');
+    });
+
+    it('개천절 대체공휴일(10-05 월)이 끼면 lastClosedSessionCloseUtc는 직전 거래일(10-02 금) 마감을 준다', () => {
+        // 2026-10-06 02:00Z = 10-06(화) 11:00 KST — 당일 마감 전이라 전일부터 되감는다:
+        // 10-05(대체공휴일) → 10-04(일) → 10-03(토) → 10-02(금, 거래일). +3일 과잉 신선도
+        // 회귀(08-17 사례)와 같은 형태의 연휴가 gazetted 목록으로도 막히는지 못박는다.
+        expect(
+            lastClosedSessionCloseUtc(
+                KR_EQUITY_SESSION,
+                new Date('2026-10-06T02:00:00Z')
+            ).toISOString()
+        ).toBe('2026-10-02T06:30:00.000Z');
+    });
+});
+
+/**
  * 방어 분기와 DST 전환 경계 — 둘 다 이 모듈이 소유한 불변식이라 여기서 못박는다.
  */
 describe('lastClosedSessionDate — 방어 분기 / DST 전환일', () => {

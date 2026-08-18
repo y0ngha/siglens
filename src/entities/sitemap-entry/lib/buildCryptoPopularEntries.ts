@@ -2,6 +2,7 @@ import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { CRYPTO_CHART_ISR_PERIOD_HOURS } from '@/shared/config/isr';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { SITE_URL } from '@/shared/lib/seo';
+import { floorToHour } from './floorToHour';
 import type { SitemapEntry } from '../model';
 
 /**
@@ -40,7 +41,8 @@ function quantizeTo6hBoundary(now: Date): Date {
  *
  * `changeFrequency` per tab reflects editorial intent and is independent of lastmod:
  *   - chart (`revalidate=21600`, 6h) → `changeFrequency: 'daily'`, 6h-boundary lastmod.
- *   - news (`revalidate=43200`, 12h) → `changeFrequency: 'daily'`, rolling 1h-ago lastmod
+ *   - news (`revalidate=43200`, 12h) → `changeFrequency: 'daily'`, rolling 1h-ago lastmod,
+ *     floored to the hour (`floorToHour`) so repeated calls within the same hour agree
  *     (news is the most dynamic tab; 1h rolling accounts for on-demand revalidateTag that
  *     can refresh the page inside the ISR window).
  *   - fear-greed (`revalidate=86400`, 24h) → `changeFrequency: 'daily'`, 6h-boundary lastmod
@@ -53,7 +55,10 @@ function quantizeTo6hBoundary(now: Date): Date {
  */
 export function buildCryptoPopularEntries(now: Date): SitemapEntry[] {
     const boundary6h = quantizeTo6hBoundary(now);
-    const oneHourAgo = new Date(now.getTime() - MS_PER_HOUR);
+    // floorToHour: rolling `now - 1h`를 그대로 쓰면 매 호출마다 값이 달라져
+    // sitemap index lastmod의 freshness 신호가 무력화된다 — `buildPopularEntries`의
+    // `/news` 엔트리와 같은 이유(floorToHour JSDoc 참고).
+    const oneHourAgo = floorToHour(new Date(now.getTime() - MS_PER_HOUR));
     return POPULAR_CRYPTOS.flatMap((sym): SitemapEntry[] => [
         {
             url: `${SITE_URL}/${sym}`,

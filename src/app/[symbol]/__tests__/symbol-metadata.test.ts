@@ -179,6 +179,22 @@ vi.mock('@/entities/news-article/actions', () => ({
 }));
 
 // tanstack query (페이지 default export에서 사용, generateMetadata에는 불필요)
+// `/overall`은 스냅샷 프로즈도 peek 캐시도 없으면 noindex + canonical:null로 내려간다
+// (감사 라운드 4 — placeholder 페이지가 색인되던 것을 막는 게이트). 이 파일의 관심사는
+// canonical URL이지 색인성이 아니므로, 그 게이트를 통과할 최소 픽스처를 준다.
+vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+    getSeoSnapshotsStatic: vi.fn().mockResolvedValue([
+        {
+            symbol: 'AAPL',
+            tab: 'overall',
+            content: { headlineKo: '테스트용 종합 결론' },
+            model: 'deepseek-v4-flash',
+            generatedAt: new Date(),
+            updatedAt: new Date(),
+        },
+    ]),
+}));
+
 vi.mock('@tanstack/react-query', () => ({
     QueryClient: vi.fn().mockImplementation(function () {
         return {

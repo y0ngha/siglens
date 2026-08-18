@@ -1,10 +1,16 @@
 import { useId } from 'react';
+import { currencyForSymbol } from '@/shared/config/marketProfile';
 import { cn } from '@/shared/lib/cn';
-import { formatSignedPercent, formatSignedUsd } from '@/shared/lib/priceFormat';
+import {
+    formatSignedAmount,
+    formatSignedPercent,
+} from '@/shared/lib/priceFormat';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 import type { PositionStatus } from '../lib/positionStatus';
 
 interface PositionStatusSummaryProps {
+    /** 통화 판정(currencyForSymbol)에만 쓰인다 — 시세 조회는 하지 않는다. */
+    symbol: string;
     status: PositionStatus | null;
     /** 회원이 입력한 원본 평단 decimal 문자열(holding.averagePrice) — trimTrailingZeros로만 다듬는다. */
     avgRaw: string;
@@ -44,8 +50,14 @@ function ReadoutRow({ label, value, valueClassName }: ReadoutRowProps) {
  * 다듬어 표시한다 — JS float round-trip을 거치지 않아 crypto sub-cent 평단도
  * 안전하다. 평가손익/수익률만 색상 코딩한다(ui-success/danger) — 범위 내 위치·
  * 고점/저점까지 거리는 손익 판단이 아닌 중립적 사실이라 색상을 입히지 않는다.
+ *
+ * 통화 기호는 `$`로 하드코딩하지 않는다 — `currencyForSymbol`(PortfolioChip과
+ * 동일 소스)로 심볼에서 유도해, 한국 상장 종목(`005930.KS`)에 원화 금액을
+ * 달러 기호로 표시하지 않는다(SEO/표기 감사, 이 카드가 헤더 PortfolioChip
+ * 바로 아래 렌더돼 같은 값을 다른 통화로 보여주면 신뢰를 깬다).
  */
 export function PositionStatusSummary({
+    symbol,
     status,
     avgRaw,
     quantityRaw,
@@ -55,7 +67,8 @@ export function PositionStatusSummary({
 
     if (status === null) return null;
 
-    const avgDisplay = `$${trimTrailingZeros(avgRaw)}`;
+    const currencyPrefix = currencyForSymbol(symbol) === 'KRW' ? '₩' : '$';
+    const avgDisplay = `${currencyPrefix}${trimTrailingZeros(avgRaw)}`;
     const quantityDisplay = `${trimTrailingZeros(quantityRaw)}주`;
 
     return (
@@ -77,7 +90,7 @@ export function PositionStatusSummary({
                 />
                 <ReadoutRow
                     label="평가손익"
-                    value={formatSignedUsd(status.unrealizedPnl)}
+                    value={formatSignedAmount(status.unrealizedPnl, symbol)}
                     valueClassName={signColorClass(status.unrealizedPnl)}
                 />
                 <ReadoutRow

@@ -32,6 +32,32 @@ async function runAfterCallback(): Promise<void> {
     await callback!();
 }
 
+/**
+ * drain promise가 **곧바로** settle되는지 본다.
+ *
+ * `await expect(p).resolves…`만 쓰면 회귀 시 vitest 기본 타임아웃(5초)까지 매달렸다가
+ * "Test timed out"으로 죽는다 — CI에 10초를 얹으면서 무엇이 깨졌는지는 알려주지 않는다.
+ * 짧은 sentinel과 race시키면 즉시, 그리고 원인이 드러나는 메시지로 실패한다.
+ */
+const DRAIN_SETTLE_GRACE_MS = 50;
+
+type DrainOutcome = 'settled' | 'still-pending';
+
+// 반환 타입에 `undefined`가 섞이지 않게 여기서 좁힌다. 호출부는 이미
+// `toBeInstanceOf(Promise)`로 거른 뒤라 이 throw는 도달하지 않지만, optional을
+// 그대로 흘리면 도달 불가능한 결과가 타입에 남아 읽는 사람을 헷갈리게 한다.
+async function settlesPromptly(
+    promise: Promise<void> | undefined
+): Promise<DrainOutcome> {
+    if (!promise) throw new Error('drain promise가 등록되지 않았다');
+    return Promise.race<DrainOutcome>([
+        promise.then(() => 'settled'),
+        new Promise<DrainOutcome>(resolve =>
+            setTimeout(() => resolve('still-pending'), DRAIN_SETTLE_GRACE_MS)
+        ),
+    ]);
+}
+
 describe('PATCH /api/cron/kr-tickers', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -73,15 +99,31 @@ describe('PATCH /api/cron/kr-tickers', () => {
         expect(mockAfter).toHaveBeenCalledOnce();
         // SIGTERM drain이 기다릴 수 있도록 promise가 등록돼야 한다.
         expect(mockFireAndForget).toHaveBeenCalledOnce();
+        // `fireAndForget`이 *호출*됐다는 것만 보면 그 promise가 영원히 pending이어도
+        // 통과한다 — route의 `finally { resolveSync(); }`가 지워지면 SIGTERM/배포 시
+        // drain이 그 자리에서 멈춘다. 실제로 settle되는지까지 확인한다.
+        const drainPromise = mockFireAndForget.mock.calls[0]?.[0] as
+            | Promise<void>
+            | undefined;
+        expect(drainPromise).toBeInstanceOf(Promise);
 
         await runAfterCallback();
         expect(mockSync).toHaveBeenCalledOnce();
+        await expect(settlesPromptly(drainPromise)).resolves.toBe('settled');
     });
 
     it('동기화가 던져도 after() 콜백이 예외를 밖으로 흘리지 않는다', async () => {
         mockSync.mockRejectedValue(new Error('data.go.kr 503'));
         await PATCH(makeRequest('Bearer test-secret'));
 
+        const drainPromise = mockFireAndForget.mock.calls[0]?.[0] as
+            | Promise<void>
+            | undefined;
+        expect(drainPromise).toBeInstanceOf(Promise);
+
         await expect(runAfterCallback()).resolves.toBeUndefined();
+        // 동기화가 실패해도 drain은 풀려야 한다 — `finally`가 아니라 try 블록에만
+        // resolveSync()를 둔 회귀를 여기서 잡는다.
+        await expect(settlesPromptly(drainPromise)).resolves.toBe('settled');
     });
 });

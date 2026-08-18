@@ -1,9 +1,8 @@
 'use server';
 
-import { getMarketNewsList } from '../api';
+import { getMarketNewsCards } from '../api';
 import { CATEGORY_CONFIG } from '../lib/categoryConfig';
 import type { MarketNewsCardItem } from '../lib/toCardItem';
-import { toMarketNewsCardItem } from '../lib/toCardItem';
 import type { NewsFeedCategory } from '@y0ngha/siglens-core';
 
 /**
@@ -27,19 +26,21 @@ export type GetMarketNewsCardsResult =
  * Intentionally NOT cached — each call must hit the DB to reflect the most
  * recent `attachAnalysis` writes.
  *
- * Uses `getMarketNewsList` (React.cache-memoized) to deduplicate concurrent
+ * Uses `getMarketNewsCards` (React.cache-memoized) to deduplicate concurrent
  * calls within the same RSC render pass or the same Server Action invocation.
  *
- * Projects rows through `toMarketNewsCardItem` (allowlist) so DB-internal columns
- * (bodyEn, symbol, analyzedAt) are never serialised into the Server Action response.
+ * 투영은 읽기(`listCardsByCategory`)의 SELECT가 한다 — DB 내부 컬럼
+ * (bodyEn, symbol, analyzedAt)은 애초에 조회되지 않으므로 Server Action 응답에도
+ * 실리지 않는다.
  */
 export async function getMarketNewsCardsAction(
     category: NewsFeedCategory
 ): Promise<GetMarketNewsCardsResult> {
     try {
         const { sentinel } = CATEGORY_CONFIG[category];
-        const rows = await getMarketNewsList(sentinel);
-        return { ok: true, items: rows.map(toMarketNewsCardItem) };
+        // 카드 리더는 본문 컬럼을 아예 읽지 않는다 — 받은 뒤 거르면 Neon 전송이
+        // 3초 폴링마다 그대로 난다(감사: 비용 라운드 15).
+        return { ok: true, items: await getMarketNewsCards(sentinel) };
     } catch (error) {
         console.error('[getMarketNewsCardsAction]', error);
         return { ok: false, error: 'db error' };

@@ -30,15 +30,15 @@ vi.mock('../api', () => ({
     DrizzleMarketNewsRepository: vi.fn(function () {
         return { listByCategory: mockListByCategory };
     }),
-    getMarketNewsList: vi.fn(async () => [
+    // 카드 리더는 서버 전용 컬럼(bodyEn/symbol/analyzedAt)을 애초에 select하지
+    // 않는다 — 픽스처도 그 형상이어야 한다(감사: 비용 라운드 15).
+    getMarketNewsCards: vi.fn(async () => [
         {
             id: 'm1',
-            symbol: '__NEWS_CRYPTO__',
             source: 'CoinWire',
             url: 'https://x/btc',
             publishedAt: '2026-06-15T10:00:00.000Z',
             titleEn: 'BTC up',
-            bodyEn: 'body',
             titleKo: 'BTC 상승',
             bodyKo: null,
             summaryKo: '요약',
@@ -46,7 +46,6 @@ vi.mock('../api', () => ({
             category: 'macro',
             priceImpact: 'high',
             tickers: ['BTCUSD'],
-            analyzedAt: new Date('2026-06-15T12:00:00.000Z'),
         },
     ]),
 }));
@@ -73,8 +72,8 @@ describe('getMarketNewsCardsAction은', () => {
     });
 
     it('빈 버킷이면 ok: true + 빈 items 배열을 반환한다', async () => {
-        const { getMarketNewsList } = await import('../api');
-        vi.mocked(getMarketNewsList).mockResolvedValueOnce([]);
+        const { getMarketNewsCards } = await import('../api');
+        vi.mocked(getMarketNewsCards).mockResolvedValueOnce([]);
         const result = await getMarketNewsCardsAction('forex');
         expect(result.ok).toBe(true);
         if (!result.ok) throw new Error('expected ok');
@@ -82,8 +81,8 @@ describe('getMarketNewsCardsAction은', () => {
     });
 
     it('예외 발생 시 ok: false + error: "db error"를 반환한다', async () => {
-        const { getMarketNewsList } = await import('../api');
-        vi.mocked(getMarketNewsList).mockRejectedValueOnce(
+        const { getMarketNewsCards } = await import('../api');
+        vi.mocked(getMarketNewsCards).mockRejectedValueOnce(
             new Error('db error')
         );
         const result = await getMarketNewsCardsAction('crypto');

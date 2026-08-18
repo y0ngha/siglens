@@ -96,6 +96,17 @@ export async function ingestNewsForSymbol(
     const newsSource = getDescriptor(resolvedProfileId).newsSource;
     const newsClient = getNewsClient(newsSource);
 
+    // FMP 왕복 **전에** 표시한다. 뒤에서 표시하면 두 경로가 새는데, 둘 다 비싼
+    // 쪽이다(감사: 비용 라운드 13).
+    //  - 실패 경로: `fresh === null`로 빠져나가면 표시가 아예 안 된다 — 즉 유료 API가
+    //    429/402로 거절하는 동안 스로틀이 없다. 재시도 예산까지 포함해 마운트당
+    //    4콜이 무한 반복된다.
+    //  - 동시성: 플래그를 읽은 시점과 쓰는 시점 사이(FMP 왕복 + N건 upsert)에 들어온
+    //    마운트가 같은 패스를 통째로 중복 수행한다 — `analyzedAt`이 아직 안 찍혀
+    //    같은 최신 25건을 두 번 분석한다.
+    // 시장 뉴스 형제 경로가 같은 이유로 이미 앞에서 표시한다.
+    await markFetched(symbol);
+
     const fresh = await newsClient
         .fetchNewsForPeriod(symbol, lookbackMs)
         .catch((err: unknown) => {
@@ -134,7 +145,5 @@ export async function ingestNewsForSymbol(
         // to analyze partial data.
         throw new NewsIngestWriteError(upsertFailures.length, fresh.length);
     }
-    await markFetched(symbol);
-
     return { fresh, upsertSettled };
 }

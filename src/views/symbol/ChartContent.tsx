@@ -340,6 +340,7 @@ export function ChartContent({
                     PositionStatusSummary 자체도 null을 렌더하므로 이중 가드다. */}
                 {positionStatus !== null && symbolHolding !== null && (
                     <PositionStatusSummary
+                        symbol={symbol}
                         status={positionStatus}
                         avgRaw={symbolHolding.averagePrice}
                         quantityRaw={symbolHolding.quantity}

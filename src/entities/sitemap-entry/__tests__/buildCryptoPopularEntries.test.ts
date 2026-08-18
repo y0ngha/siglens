@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildCryptoPopularEntries } from '../lib/buildCryptoPopularEntries';
+import { floorToHour } from '../lib/floorToHour';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { MS_PER_HOUR } from '@/shared/config/time';
 
@@ -49,13 +50,31 @@ describe('buildCryptoPopularEntries', () => {
         );
     });
 
-    it('news route uses rolling 1h-ago lastmod (most dynamic tab)', () => {
+    it('news route uses rolling 1h-ago lastmod, floored to the hour (most dynamic tab)', () => {
         const entries = buildCryptoPopularEntries(now);
         const newsEntry = entries.find(
             e => e.url === 'https://siglens.io/BTCUSD/news'
         );
-        const expected = new Date(now.getTime() - MS_PER_HOUR).toISOString();
+        const expected = floorToHour(
+            new Date(now.getTime() - MS_PER_HOUR)
+        ).toISOString();
         expect(newsEntry?.lastModified.toISOString()).toBe(expected);
+    });
+
+    /**
+     * 회귀 가드(SEO 감사 finding 5): raw `now - 1h`였을 때는 같은 시간대 안에서도
+     * 호출마다 값이 달라져 sitemap index lastmod의 freshness 신호가 무력화됐다.
+     * `floorToHour` 적용 후로는 같은 시간대 안의 서로 다른 호출 시각이 동일한
+     * lastmod를 내야 한다.
+     */
+    it('같은 시간대 안에서는 호출 시각이 달라도 news lastmod가 동일하다', () => {
+        const a = buildCryptoPopularEntries(new Date('2026-06-21T10:00:05Z'));
+        const b = buildCryptoPopularEntries(new Date('2026-06-21T10:59:55Z'));
+        const newsOf = (es: ReturnType<typeof buildCryptoPopularEntries>) =>
+            es
+                .find(e => e.url === 'https://siglens.io/BTCUSD/news')!
+                .lastModified.getTime();
+        expect(newsOf(a)).toBe(newsOf(b));
     });
 
     it('chart/fear-greed use daily changeFrequency; overall uses weekly', () => {

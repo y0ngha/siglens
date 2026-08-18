@@ -1,13 +1,10 @@
 import Link from 'next/link';
-import { formatUsdPrice } from '@/shared/lib/priceFormat';
+import { formatAmount } from '../lib/positionBuildingNotes';
 
 interface PositionCtaProps {
+    symbol: string;
     low52w: number | null;
     high52w: number | null;
-}
-
-function formatUsd(value: number): string {
-    return `$${formatUsdPrice(value)}`;
 }
 
 /**
@@ -17,7 +14,7 @@ function formatUsd(value: number): string {
  * presentational component (no hooks) so the guest gate in `PositionTabContent`
  * can render it directly without pulling in the lazy member chunk.
  */
-export function PositionCta({ low52w, high52w }: PositionCtaProps) {
+export function PositionCta({ symbol, low52w, high52w }: PositionCtaProps) {
     return (
         <section
             data-testid="position-cta"
@@ -35,7 +32,8 @@ export function PositionCta({ low52w, high52w }: PositionCtaProps) {
                     data-testid="position-cta-range"
                     className="text-xs text-secondary-400 tabular-nums"
                 >
-                    최근 범위 {formatUsd(low52w)} ~ {formatUsd(high52w)}
+                    최근 범위 {formatAmount(low52w, symbol)} ~{' '}
+                    {formatAmount(high52w, symbol)}
                 </p>
             )}
             <Link

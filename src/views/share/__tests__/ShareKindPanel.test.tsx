@@ -166,4 +166,86 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
             );
         });
     });
+
+    /**
+     * Regression guard (SEO audit finding 2, 2026-08-18) — this is the second
+     * call site of the same defect the assetClass tests above cover: the
+     * `overall` registry entry rendered `<OverallView>` with no `hasOptions`,
+     * so a shared kr-equity overall analysis (assetClass 'equity', no options
+     * tab) fell through to the default `true` and rendered a bogus "옵션 시장"
+     * section. `OverallView.hasOptions` is now required, so the registry must
+     * derive it from the `symbol` already threaded through this dispatcher
+     * (same prop the `chart` entry uses). 파생은 `isKrEquitySymbol`을 직접
+     * 부르지 않고 `profileIdForSymbol` → `getDescriptor(...).tabs`를 탄다 —
+     * 여기서 형상 판정을 다시 쓰면 "옵션 탭이 있는가"의 세 번째 독립 파생이
+     * 되어 프로필 설정과 조용히 갈라진다(kindPanelRegistry.tsx JSDoc 참고).
+     */
+    describe('overall panel: hasOptions derived from symbol (SEO audit finding 2)', () => {
+        beforeEach(() => {
+            mockOverallView.mockClear();
+        });
+
+        it('passes hasOptions=false to OverallView for a kr-equity symbol', () => {
+            render(
+                <ShareKindPanel
+                    kind="overall"
+                    result={stubResults.overall as never}
+                    assetClass="equity"
+                    symbol="005930.KS"
+                />
+            );
+            expect(mockOverallView).toHaveBeenCalledWith(
+                expect.objectContaining({ hasOptions: false })
+            );
+        });
+
+        it('passes hasOptions=true to OverallView for a us-equity symbol', () => {
+            render(
+                <ShareKindPanel
+                    kind="overall"
+                    result={stubResults.overall as never}
+                    assetClass="equity"
+                    symbol="AAPL"
+                />
+            );
+            expect(mockOverallView).toHaveBeenCalledWith(
+                expect.objectContaining({ hasOptions: true })
+            );
+        });
+
+        // 모르는 상태를 `true`로 열면 존재하지 않는 옵션 섹션이 뜬다 — 이 감사가
+        // 두 라운드 연속 잡아낸 실패 방향이다. 숨기는 쪽이 틀려도 대가가 작다.
+        it('symbol이 없으면 hasOptions=false — 모를 때는 숨긴다', () => {
+            render(
+                <ShareKindPanel
+                    kind="overall"
+                    result={stubResults.overall as never}
+                    assetClass="equity"
+                />
+            );
+            expect(mockOverallView).toHaveBeenCalledWith(
+                expect.objectContaining({ hasOptions: false })
+            );
+        });
+
+        // 뮤테이션 감사(2026-08-18) — `symbol !== undefined` 하나로만 게이트하면
+        // `symbol=''`은 undefined가 아니므로 게이트를 통과해
+        // `profileIdForSymbol('')`(us-equity로 폴백)까지 흘러 hasOptions=true로
+        // 열린다. 빈 문자열은 "심볼 없음"과 같은 실패 형태(모르는 상태)이므로
+        // undefined와 동일하게 숨겨야 한다 — 위 "symbol이 없으면" 케이스와 같은
+        // 결론을 빈 문자열에도 고정한다.
+        it('symbol이 빈 문자열이면 hasOptions=false — undefined와 동일하게 숨긴다', () => {
+            render(
+                <ShareKindPanel
+                    kind="overall"
+                    result={stubResults.overall as never}
+                    assetClass="equity"
+                    symbol=""
+                />
+            );
+            expect(mockOverallView).toHaveBeenCalledWith(
+                expect.objectContaining({ hasOptions: false })
+            );
+        });
+    });
 });

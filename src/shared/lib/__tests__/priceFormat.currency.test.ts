@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { formatCompactCurrency } from '@/shared/lib/priceFormat';
+import {
+    formatCompactCurrency,
+    formatSignedAmount,
+} from '@/shared/lib/priceFormat';
 
 /**
  * 프로덕션 실측에서 잡힌 결함의 회귀 가드다. 국내 상장 종목의 펀더멘털·뉴스 탭이
@@ -34,5 +37,42 @@ describe('formatCompactCurrency', () => {
 
     it('소문자 심볼도 국내 종목으로 인식한다', () => {
         expect(formatCompactCurrency(1_000, '005930.ks')).toContain('₩');
+    });
+});
+
+/**
+ * `formatSignedUsd`의 통화-인지 counterpart. PositionStatusSummary가
+ * 평가손익(unrealizedPnl)에 하드코딩된 `$`를 쓰던 결함(SEO/표기 감사)의 회귀
+ * 가드다 — 원화 종목은 소수점 없이 `₩` 부호를, 그 외에는 `formatSignedUsd`와
+ * 동일한 dynamic-by-magnitude 출력을 낸다.
+ */
+describe('formatSignedAmount', () => {
+    it('국내 상장 종목은 소수점 없이 ₩ 부호를 붙인다', () => {
+        expect(formatSignedAmount(1_250_000, '005930.KS')).toBe('+₩1,250,000');
+    });
+
+    it('국내 상장 종목의 음수 값도 ₩ 부호를 유지한다', () => {
+        expect(formatSignedAmount(-1_250_000, '005930.KS')).toBe('-₩1,250,000');
+    });
+
+    it('국내 상장 종목의 0은 +₩0이다', () => {
+        expect(formatSignedAmount(0, '005930.KS')).toBe('+₩0');
+    });
+
+    it('국내 상장 종목의 소수 금액도 소수점 없이(원화 호가 관례) 반올림한다 (뮤테이션 감사: maximumFractionDigits 0 → 2 생존자)', () => {
+        // unrealizedPnl = (current - avg) * quantity는 회원이 입력한 소수 평단으로
+        // 언제든 소수가 될 수 있다. 기존 fixture는 전부 정수라 maximumFractionDigits:0을
+        // 2로 바꿔도 그린이 유지됐다 — 소수 입력으로 그 캡을 falsifiable하게 pin한다.
+        expect(formatSignedAmount(300.5, '005930.KS')).toBe('+₩301');
+        expect(formatSignedAmount(-150.5, '005930.KS')).toBe('-₩151');
+    });
+
+    it('미국 종목은 formatSignedUsd와 동일하게 $ 표기를 쓴다', () => {
+        expect(formatSignedAmount(300, 'AAPL')).toBe('+$300.00');
+        expect(formatSignedAmount(-150, 'AAPL')).toBe('-$150.00');
+    });
+
+    it('크립토도 $ 표기다 — 국내 종목 형상이 아니다', () => {
+        expect(formatSignedAmount(0.1, 'BTCUSD')).toBe('+$0.10000');
     });
 });

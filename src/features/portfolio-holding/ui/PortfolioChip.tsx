@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useRef, useState } from 'react';
 import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
+import { currencyForSymbol } from '@/shared/config/marketProfile';
 import { cn } from '@/shared/lib/cn';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 import { useSymbolHolding } from '../hooks/useSymbolHolding';
@@ -72,10 +73,14 @@ export function PortfolioChip({ symbol }: PortfolioChipProps) {
         );
     }
 
+    // 통화는 심볼에서 유도한다(currencyForSymbol) — 이 칩은 헤더에 상주해 모든 KR
+    // 탭에서 노출되므로, 하드코딩된 `$`는 원화 종목(005930.KS)에도 달러 기호를
+    // 찍어 접근 가능한 이름(aria)에까지 오표기가 새는 버그였다.
+    const currencyPrefix = currencyForSymbol(symbol) === 'KRW' ? '₩' : '$';
     const label =
         holding === null
             ? '평단 설정'
-            : `평단 $${trimTrailingZeros(holding.averagePrice)} · ${trimTrailingZeros(holding.quantity)}주`;
+            : `평단 ${currencyPrefix}${trimTrailingZeros(holding.averagePrice)} · ${trimTrailingZeros(holding.quantity)}주`;
 
     return (
         <div className="relative inline-block">

@@ -133,6 +133,7 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
+                hasOptions={true}
             />
         );
         expect(mockUseOverallAnalysis).toHaveBeenCalledWith(
@@ -154,6 +155,7 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
+                hasOptions={true}
             />
         );
         expect(mockUseOverallAnalysis).toHaveBeenCalledWith(
@@ -184,6 +186,7 @@ describe('OverallContent non-done branches', () => {
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
+                hasOptions={true}
             />
         );
         expect(
@@ -201,6 +204,7 @@ describe('OverallContent non-done branches', () => {
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
+                hasOptions={true}
             />
         );
         expect(
@@ -218,6 +222,7 @@ describe('OverallContent non-done branches', () => {
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
+                hasOptions={true}
             />
         );
         expect(screen.getByText('AI 종합 분석 요청 중…')).toBeInTheDocument();
@@ -233,6 +238,7 @@ describe('OverallContent non-done branches', () => {
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
+                hasOptions={true}
             />
         );
         expect(
@@ -250,6 +256,7 @@ describe('OverallContent non-done branches', () => {
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
+                hasOptions={true}
             />
         );
         expect(screen.getByText(/커스텀 에러/)).toBeInTheDocument();
@@ -265,6 +272,7 @@ describe('OverallContent non-done branches', () => {
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
+                hasOptions={true}
             />
         );
         expect(screen.getByText(/technical 축 실패/)).toBeInTheDocument();
@@ -281,6 +289,7 @@ describe('OverallContent non-done branches', () => {
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
+                hasOptions={true}
             />
         );
         fireEvent.click(screen.getByText('다시 시도'));
@@ -300,6 +309,7 @@ describe('OverallContent done branch', () => {
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
+                hasOptions={true}
             />
         );
         // 헤딩 텍스트 순서를 DOM 순서로 비교
@@ -321,6 +331,7 @@ describe('OverallContent done branch', () => {
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
+                hasOptions={true}
             />
         );
         expect(
@@ -338,6 +349,7 @@ describe('OverallContent done branch', () => {
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
+                hasOptions={true}
             />
         );
         expect(
@@ -357,6 +369,7 @@ describe('OverallContent done branch', () => {
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
+                hasOptions={true}
             />
         );
         const btn = screen.getByRole('button', { name: /재분석/ });
@@ -375,6 +388,7 @@ describe('OverallContent done branch', () => {
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
+                hasOptions={true}
             />
         );
         const btn = screen.getByRole('button', { name: /재분석/ });
@@ -389,6 +403,7 @@ describe('OverallContent done branch', () => {
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
+                hasOptions={true}
             />
         );
         fireEvent.click(screen.getByRole('button', { name: /재분석/ }));
@@ -406,6 +421,7 @@ describe('OverallContent done branch', () => {
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
+                hasOptions={true}
             />
         );
         expect(
@@ -422,6 +438,7 @@ describe('OverallContent done branch', () => {
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
+                hasOptions={true}
             />
         );
         expect(
@@ -471,6 +488,7 @@ describe('OverallContent SSR seed', () => {
                 companyName="Apple Inc."
                 initialAnalysis={SEED_RESULT}
                 hasEnrichedNews={true}
+                hasOptions={true}
             />,
             { wrapper: createQueryClientWrapper().wrapper }
         );
@@ -485,6 +503,7 @@ describe('OverallContent SSR seed', () => {
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
+                hasOptions={true}
             />,
             {
                 wrapper: createQueryClientWrapper().wrapper,
@@ -540,6 +559,7 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={false}
+                hasOptions={true}
             />
         );
         expect(useNewsAnalysisTrigger).toHaveBeenCalledWith('AAPL');
@@ -551,6 +571,7 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={false}
+                hasOptions={true}
             />
         );
         const btn = screen.getByRole('button', { name: /뉴스 카드 분석 중/ });
@@ -570,6 +591,7 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={true}
+                hasOptions={true}
             />
         );
         const btn = screen.getByRole('button', { name: /AI 종합 분석 받기/ });
@@ -587,6 +609,7 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={false}
+                hasOptions={true}
             />
         );
         const btn = screen.getByRole('button', { name: /뉴스 카드 분석 중/ });
@@ -608,6 +631,7 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
                 symbol="AAPL"
                 companyName="Apple Inc."
                 hasEnrichedNews={false}
+                hasOptions={true}
             />
         );
         // role="alert" + 안내 문구로 사용자에게 회복 메시지 노출.
@@ -653,6 +677,7 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
                 companyName="Bitcoin USD"
                 hasEnrichedNews={false}
                 assetClass="crypto"
+                hasOptions={true}
             />
         );
         expect(mockUseOverallAnalysis).toHaveBeenCalledWith(
@@ -681,6 +706,7 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
                 companyName="Bitcoin USD"
                 hasEnrichedNews={true}
                 assetClass="crypto"
+                hasOptions={true}
             />
         );
         expect(screen.queryByRole('heading', { name: /옵션 시장/ })).toBeNull();
@@ -702,6 +728,7 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
                 companyName="Bitcoin USD"
                 hasEnrichedNews={true}
                 assetClass="crypto"
+                hasOptions={true}
             />
         );
         expect(
@@ -723,6 +750,7 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
                 companyName="Bitcoin USD"
                 hasEnrichedNews={true}
                 assetClass="crypto"
+                hasOptions={true}
             />
         );
         expect(
@@ -747,6 +775,7 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
                 companyName="Bitcoin USD"
                 hasEnrichedNews={true}
                 assetClass="crypto"
+                hasOptions={true}
             />
         );
         expect(

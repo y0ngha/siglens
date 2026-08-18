@@ -14,5 +14,6 @@ export {
     marketProfileOf,
     isKrEquitySymbol,
     currencyForSymbol,
+    profileIdForSymbol,
     DEFAULT_MARKET_PROFILE,
 } from './registry';

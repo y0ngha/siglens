@@ -17,6 +17,10 @@ import type {
     SnapshotResultOf,
 } from '@/entities/shared-analysis';
 import type { AssetClass } from '@/shared/config/marketProfile';
+import {
+    getDescriptor,
+    profileIdForSymbol,
+} from '@/shared/config/marketProfile';
 import type { Bar } from '@y0ngha/siglens-core';
 import { clusterKeyLevels, validateKeyLevels } from '@y0ngha/siglens-core';
 import { AnalysisPanel } from '@/widgets/analysis';
@@ -95,8 +99,40 @@ export const SHARE_KIND_PANEL_REGISTRY = {
             symbol={symbol ?? ''}
         />
     ),
-    overall: ({ result, assetClass }) => (
-        <OverallView result={result} assetClass={assetClass} />
+    /**
+     * `OverallView.hasOptions`는 required — 호출부가 옵션 탭 존재 여부를
+     * 직접 판정해 넘겨야 한다(그 이유는 OverallView.tsx JSDoc 참고).
+     *
+     * 판정은 `overall/page.tsx`·`OverallFactualFallback`과 **같은 소스**를 탄다 —
+     * `getDescriptor(...).tabs`. 이 패널은 `marketProfile`을 갖고 있지 않지만
+     * `symbol`(스냅샷에서 이미 threaded되어 `chart` 엔트리도 쓰는 canonical
+     * ticker)로 프로필을 구할 수 있다. `isKrEquitySymbol`을 여기서 직접 부르면
+     * "옵션 탭이 있는가"의 **세 번째 독립 파생**이 되어, 프로필의 `tabs`가 바뀌는
+     * 순간 조용히 갈라진다(MISTAKES.md §6.6).
+     *
+     * **심볼이 없으면 `false`다.** 모르는 상태를 `true`로 열면 존재하지 않는
+     * 옵션 섹션이 뜨는데, 그게 이 감사가 두 라운드 연속 잡아낸 실패 방향이다.
+     * 숨기는 쪽이 틀려도 대가가 작다. 빈 문자열(`''`)도 "모르는 상태"와 같은
+     * 실패 형태로 취급한다 — `profileIdForSymbol('')`은 `isKrEquitySymbol`이
+     * false를 반환해 us-equity로 폴백하므로, 빈 문자열을 undefined와 다르게
+     * 두면 hasOptions가 조용히 `true`로 열린다(뮤테이션 감사 2026-08-18).
+     *
+     * crypto는 `OverallView`가 `isEquity` 게이트로 이 값을 무시하므로,
+     * `profileIdForSymbol`이 크립토를 us-equity로 떨어뜨리는 한계가 여기선
+     * 영향을 주지 않는다.
+     */
+    overall: ({ result, assetClass, symbol }) => (
+        <OverallView
+            result={result}
+            assetClass={assetClass}
+            hasOptions={
+                symbol !== undefined &&
+                symbol !== '' &&
+                getDescriptor(profileIdForSymbol(symbol)).tabs.includes(
+                    'options'
+                )
+            }
+        />
     ),
     news: ({ result }) => <NewsAiSummaryView result={result} />,
     fundamental: ({ result }) => <FundamentalAiSummaryView result={result} />,

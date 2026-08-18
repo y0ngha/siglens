@@ -18,9 +18,14 @@ import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
  * 1. `fmpSymbol`이 `^`로 시작하면 지수 (예: ^SPX, ^DJI).
  * 2. KNOWN_ETF_TICKERS에 포함되면 ETF — POPULAR_TICKERS와 무관하게
  *    독립 목록을 유지해, 운영용 카테고리 변경이 SEO 분류를 깨지 않게 한다.
- * 3. 그 외엔 stock으로 default. 일부 ETF가 KNOWN_ETF_TICKERS에 빠져 있을
- *    경우 stock으로 오분류될 가능성은 있으나, 가장 거래량 많은 ETF는 모두
- *    포함되어 있어 회귀 영향은 제한적이다.
+ * 3. 국내 상장 종목이고 이름이 KODEX/TIGER 등 국내 ETF 브랜드로 시작하면 ETF.
+ * 4. 이름이 ETF/Fund/ETN/Index로 끝나면 ETF — KNOWN_ETF_TICKERS allowlist를
+ *    비켜 간 미상장 펀드에 대한 안전망(`isFundShapedName`). `Trust`는 일부러
+ *    뺐다 — `Vornado Realty Trust`처럼 같은 형태로 끝나는 리츠가 실제
+ *    상장사라 오분류되기 때문이다(`FUND_NAME_SUFFIX_WORDS` 주석 참고).
+ * 5. 그 외엔 stock으로 default. 일부 ETF가 KNOWN_ETF_TICKERS에 빠져 있고
+ *    이름도 유형어로 끝나지 않을 경우 stock으로 오분류될 가능성은 있으나,
+ *    가장 거래량 많은 ETF는 모두 포함되어 있어 회귀 영향은 제한적이다.
  */
 
 export type AssetCategory = 'stock' | 'etf' | 'index';
@@ -127,6 +132,44 @@ function isKrEtfName(name: string | undefined): boolean {
     return KR_ETF_BRAND_PREFIXES.includes(firstToken);
 }
 
+/**
+ * 영문 펀드형 상품명이 끝나는 유형어. 미국 ETF/ETN/인덱스 펀드는 명명 관행상
+ * `<스폰서> <기초지수> ETF/Fund`처럼 상품 유형어를 이름 **끝**에 붙인다
+ * (`SPAC and New Issue ETF`, `Vanguard Total Stock Market Index Fund`).
+ * `isKrEtfName`이 한국 ETF 브랜드를 맨 **앞** 토큰으로 보는 것과는 반대 위치인데,
+ * 명명 관행이 다르므로 검사 위치도 그 관행을 따라간다.
+ *
+ * **`TRUST`는 일부러 뺐다.** `SPDR Gold Trust`처럼 진짜 펀드도 끝이 `Trust`지만,
+ * 미국 리츠가 `Postal Realty Trust`·`Vornado Realty Trust`처럼 같은 형태로 끝나는
+ * **실제 상장 기업**이다. 둘을 이름만으로 가를 방법이 없고, 두 오류의 대가가 다르다 —
+ * 펀드에 `Corporation` 노드가 붙는 건 눈에 띄고 고치기 쉽지만, 리츠에서 노드가
+ * 사라지는 건 조용하고 ISR 창 내내 굳는다(`isKrEtfName` 주석의 같은 판단).
+ */
+const FUND_NAME_SUFFIX_WORDS = new Set(['ETF', 'FUND', 'ETN', 'INDEX']);
+
+/**
+ * **끝 토큰만 본다.** `Global Index Partners Corporation`처럼 유형어(`INDEX`)가
+ * 중간 토큰으로 들어가지만 끝 토큰은 "Corporation"인 사명이 있다 — 부분 문자열이나 임의
+ * 위치 토큰으로 찾으면 이런 회사가 조용히 ETF로 오분류돼 `Corporation` about 노드가
+ * 사라진다. (예전에 여기 적혀 있던 `Northern Trust Corporation`은 `TRUST`가 위
+ * 목록에서 빠진 뒤로 이 규칙의 예가 아니다 — 어떤 탐색 전략에서도 통과한다.
+ * 그 이름은 위 `TRUST` 제외 주석이 가리키는 대상이다.)
+ * `isKrEtfName`이 부분 문자열 대신 토큰 전체 일치를 쓰는 것과 같은 안전장치를,
+ * 위치만 이름 끝으로 바꿔 적용한다.
+ *
+ * **적용 범위는 영문 이름뿐이다.** 호출부(`buildAssetAboutNode`)는
+ * `koreanName ?? name`을 넘기므로, 한글명이 채워진 뒤에는 이 검사가 걸리지 않는다.
+ * 즉 이건 큐레이션 목록(`KNOWN_ETF_TICKERS`)을 비켜 간 펀드에 대한 **1차 안전망**이지
+ * 항구적 보증이 아니다 — 목록에 없는 펀드가 실제로 문제가 되면 목록에 추가하는 것이
+ * 정본이다.
+ */
+function isFundShapedName(name: string | undefined): boolean {
+    if (!name) return false;
+    const tokens = name.trim().toUpperCase().split(/\s+/);
+    const lastToken = tokens[tokens.length - 1] ?? '';
+    return FUND_NAME_SUFFIX_WORDS.has(lastToken);
+}
+
 export function classifyAsset(
     symbol: string,
     fmpSymbol?: string,
@@ -135,6 +178,10 @@ export function classifyAsset(
     if (fmpSymbol?.startsWith('^')) return 'index';
     if (KNOWN_ETF_TICKERS.has(symbol.toUpperCase())) return 'etf';
     if (isKrEquitySymbol(symbol) && isKrEtfName(name)) return 'etf';
+    // KNOWN_ETF_TICKERS(60종 allowlist)를 비켜 간 미상장 펀드에 대한 안전망 —
+    // SPCX("SPAC and New Issue ETF")가 그 allowlist 밖에서 stock으로 떨어져
+    // Corporation 노드를 받았던 사례(SEO 감사 라운드 2 finding 1)의 재발 방지.
+    if (isFundShapedName(name)) return 'etf';
     return 'stock';
 }
 

@@ -144,6 +144,27 @@ export function formatSignedUsd(value: number): string {
     return `${sign}$${magnitude}`;
 }
 
+/**
+ * "+₩1,250,000" / "-$12.34" — currency-aware counterpart to `formatSignedUsd`
+ * for signed delta displays (e.g. unrealized P&L). Currency is derived from
+ * the symbol via `currencyForSymbol` — the same single source `formatAmount`
+ * (`widgets/portfolio-position/lib/positionBuildingNotes.ts`) and
+ * `PortfolioChip` use, so a hardcoded `$` doesn't leak onto KR-equity
+ * symbols (`005930.KS`). KRW has no fractional digits (원화 호가 관례,
+ * `KR_EQUITY_DESCRIPTOR.priceFormat.precision`); non-KRW delegates to
+ * `formatSignedUsd` for its existing dynamic-by-magnitude precision.
+ */
+export function formatSignedAmount(value: number, symbol: string): string {
+    if (currencyForSymbol(symbol) === 'KRW') {
+        const sign = value >= 0 ? '+' : '-';
+        const magnitude = Math.abs(value).toLocaleString('en-US', {
+            maximumFractionDigits: 0,
+        });
+        return `${sign}₩${magnitude}`;
+    }
+    return formatSignedUsd(value);
+}
+
 export function formatPriceChange(percent: number): PriceChangeDisplay {
     const isUp = percent >= 0;
     return {

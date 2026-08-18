@@ -2,7 +2,7 @@ import 'server-only';
 import { revalidateTag } from 'next/cache';
 
 import { cache } from 'react';
-import { and, desc, eq, gte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, isNotNull, sql } from 'drizzle-orm';
 import type {
     NewsCardAnalysis,
     NewsCategory,
@@ -36,7 +36,10 @@ import { getDescriptor } from '@/shared/config/marketProfile';
 
 /** Domain-level row returned from the `news` table; extends the display projection with persistence-only fields. */
 export interface NewsRow extends NewsDisplayItem {
-    /** Original English body — needed for re-analysis but not displayed. */
+    /**
+     * 항상 `null`이다 — 사유는 `toNewsRow`의 주석 참조.
+     * core `EnrichedNewsItem` 형상을 맞추기 위한 placeholder다.
+     */
     bodyEn: string | null;
     /** Symbol/issuer the news belongs to — present on `NewsItem` but not in `NewsDisplayItem`. */
     symbol: string;
@@ -149,7 +152,6 @@ export class DrizzleNewsRepository {
                 url: news.url,
                 publishedAt: news.publishedAt,
                 titleEn: news.titleEn,
-                bodyEn: news.bodyEn,
                 titleKo: news.titleKo,
                 bodyKo: news.bodyKo,
                 summaryKo: news.summaryKo,
@@ -163,6 +165,80 @@ export class DrizzleNewsRepository {
             .orderBy(desc(news.publishedAt));
 
         return rows.map(toNewsRow);
+    }
+
+    /**
+     * 이 창에서 이미 분석된 기사 id만 읽는다.
+     *
+     * 호출부는 "이미 분석됨" 집합만 필요한데 전 컬럼(본문 포함)을 읽어서 버리고
+     * 있었다 — 필터를 SQL로 내려 id만 오게 한다(감사: 비용 라운드 15).
+     */
+    async listAnalyzedIds(
+        symbol: string,
+        sinceMs: number
+    ): Promise<Set<string>> {
+        const cutoff = new Date(Date.now() - sinceMs);
+
+        const rows = await this.db
+            .select({ id: news.id })
+            .from(news)
+            .where(
+                and(
+                    eq(news.symbol, symbol),
+                    gte(news.publishedAt, cutoff),
+                    isNotNull(news.analyzedAt)
+                )
+            );
+
+        return new Set(rows.map(row => row.id));
+    }
+
+    /**
+     * 카드 표시에 필요한 컬럼만 읽는다 — `bodyEn`(기사 원문)을 select에서 뺀다.
+     *
+     * `listBySymbol`과의 차이는 이제 원문 유무가 아니다 — 그쪽도 `bodyEn`을 읽지
+     * 않는다(`toNewsRow` 주석 참조). 차이는 집계 경로가 쓰는 `symbol`/`analyzedAt`을
+     * 싣느냐뿐이다. 3초 폴링(`getNewsCardsAction`)과 목록 렌더는 그 둘도 안 쓰므로
+     * 180일 창 × 수백 행에서 그만큼을 덜 실어 나른다(감사: 비용 라운드 14~15).
+     * 시장 뉴스 슬라이스도 같은 투영을 SELECT 단계에 두고 있다(`listCardsByCategory`).
+     */
+    async listCardsBySymbol(
+        symbol: string,
+        sinceMs: number
+    ): Promise<NewsDisplayItem[]> {
+        const cutoff = new Date(Date.now() - sinceMs);
+
+        const rows = await this.db
+            .select({
+                id: news.id,
+                source: news.source,
+                url: news.url,
+                publishedAt: news.publishedAt,
+                titleEn: news.titleEn,
+                titleKo: news.titleKo,
+                bodyKo: news.bodyKo,
+                summaryKo: news.summaryKo,
+                sentiment: news.sentiment,
+                category: news.category,
+                priceImpact: news.priceImpact,
+            })
+            .from(news)
+            .where(and(eq(news.symbol, symbol), gte(news.publishedAt, cutoff)))
+            .orderBy(desc(news.publishedAt));
+
+        return rows.map(row => ({
+            id: row.id,
+            source: row.source,
+            url: row.url,
+            publishedAt: row.publishedAt.toISOString(),
+            titleEn: row.titleEn,
+            titleKo: row.titleKo,
+            bodyKo: row.bodyKo,
+            summaryKo: row.summaryKo,
+            sentiment: toNewsSentiment(row.sentiment),
+            category: toNewsCategory(row.category),
+            priceImpact: toNewsImpact(row.priceImpact),
+        }));
     }
 }
 
@@ -181,11 +257,18 @@ export class DrizzleNewsRepository {
  * 사이드 이펙트(DB I/O)가 있으므로 entities/news-article/api.ts에 배치
  * (entities/{slice}/lib/은 순수 함수 전용 — MISTAKES.md Architecture §0.7).
  */
-export const getNewsList = cache(async (symbol: string): Promise<NewsRow[]> => {
-    const { db } = getDatabaseClient();
-    const repo = new DrizzleNewsRepository(db);
-    return repo.listBySymbol(symbol, NEWS_LOOKBACK_MS);
-});
+export const getNewsList = cache(
+    async (symbol: string): Promise<NewsDisplayItem[]> => {
+        const { db } = getDatabaseClient();
+        const repo = new DrizzleNewsRepository(db);
+        // 카드 투영으로 읽는다 — 이 함수의 소비자 셋(뉴스 목록, 뉴스 페이지 본문,
+        // overall 페이지) 중 누구도 `bodyEn`/`symbol`/`analyzedAt`을 읽지 않는데,
+        // 결과가 `staticSymbolCache`(=`unstable_cache`)로 S3 ISR 블롭에 굳는다.
+        // 클라이언트 경계에서만 걸러 내면 Neon 전송과 S3 블롭에는 그대로 남는다
+        // (감사: 비용 라운드 15).
+        return repo.listCardsBySymbol(symbol, NEWS_LOOKBACK_MS);
+    }
+);
 
 /** Shape of a single row read from the `news` table. */
 interface NewsDbRow {
@@ -195,7 +278,8 @@ interface NewsDbRow {
     url: string;
     publishedAt: Date;
     titleEn: string;
-    bodyEn: string | null;
+    /** 이 경로에서는 select하지 않는다 — `toNewsRow`/`toMarketNewsRow` 주석 참조. */
+    bodyEn?: string | null;
     titleKo: string | null;
     bodyKo: string | null;
     summaryKo: string | null;
@@ -272,7 +356,16 @@ function toNewsRow(row: NewsDbRow): NewsRow {
         url: row.url,
         publishedAt: row.publishedAt.toISOString(),
         titleEn: row.titleEn,
-        bodyEn: row.bodyEn,
+        // `body_en`은 읽지 않는다 — 이 경로의 소비자(집계 분석 프롬프트)가 그 값을
+        // 쓰지 않기 때문이다. core에서 `bodyEn`을 읽는 곳은 카드 프롬프트
+        // (`newsCardPrompt`)뿐인데, 그쪽 입력은 DB 행이 아니라 FMP 응답 객체다
+        // (`analyzeNewsCards(ingested.fresh)`). 즉 DB에서 원문을 실어 오면 전량
+        // 버려진다(감사: 비용 라운드 16).
+        //
+        // ⚠️ core가 집계/다이제스트 프롬프트에서 `bodyEn`을 읽기 시작하면 이 값이
+        // 조용히 null이 되어 품질만 떨어진다. core 업그레이드 시
+        // `grep -rn bodyEn node_modules/@y0ngha/siglens-core/dist`로 확인할 것.
+        bodyEn: null,
         titleKo: row.titleKo,
         bodyKo: row.bodyKo,
         summaryKo: row.summaryKo,

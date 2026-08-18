@@ -32,14 +32,20 @@ import { E2E_FORCE_ANALYSIS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisStub';
  *      seed.ts inserts a chart-kind snapshot row (E2E_SHARE_ID, expiresAt=2099).
  *      The panel + disclaimer + CTA render path is asserted against the seeded row.
  *
- *   5. confirm → loading → share interactive flow — REAL TEST (partial).
- *      Asserting that clicking ShareButton when no analysis is ready opens
- *      ShareTriggerDialog. This is fully feasible: the button is always in
- *      the header, the dialog renders client-side, and on a fresh page load
- *      the analysis status is idle/pending so the dialog branch fires.
- *      We do NOT assert the full flow through to the share sheet (that would
- *      require waiting for the E2E analysis fixture + mutation success), but
- *      the dialog appearance is a reliable, fast assertion.
+ *   5. confirm → loading → share interactive flow — REAL TEST (deterministic
+ *      only). A plain-navigation variant of this test ("clicking ShareButton
+ *      with no ready analysis shows dialog or unavailable notice") was
+ *      removed (mutation-coverage audit, 2026-08-18): its premise was false
+ *      on both asserted branches. 'pending' status routes to
+ *      SharePreparingModal (role="dialog", name "분석 준비 중"), not
+ *      ShareTriggerDialog — so that branch could never match. 'idle' is
+ *      unreachable because `[symbol]/page.tsx` hardcodes
+ *      `initialAnalysisFailed={true}`, and `useShareFlow` destroys the only
+ *      window where `reg === null` (the "unavailable notice" branch) in the
+ *      same commit as registration. The only test that can pass
+ *      deterministically is the one below, which forces status 'error' via
+ *      `E2E_FORCE_ANALYSIS_ERROR_COOKIE` — that is the sole real coverage for
+ *      this scenario now.
  */
 
 const SHARE_BUTTON_LABEL = '분석 결과 공유';
@@ -207,55 +213,6 @@ test.describe('share: happy path /share/[id] panel', () => {
 });
 
 test.describe('share: confirm → loading interactive flow', () => {
-    /**
-     * Clicks the ShareButton on a page where no analysis is immediately ready
-     * (chart page on first load — the analysis is still idle before the E2E
-     * short-circuit fires). The ShareButton's state machine routes idle/error
-     * status to ShareTriggerDialog, so this dialog should appear immediately
-     * after the click without any analysis wait.
-     *
-     * We navigate to the AAPL chart page but do NOT wait for the analysis
-     * fixture to load. On initial load, useShareable() returns either null
-     * (before the chart widget mounts) or a registration with status 'idle'
-     * or 'pending' (while the E2E short-circuit is in flight). Both routes
-     * lead to the dialog appearing (null → unavailable inline notice, idle →
-     * trigger dialog).
-     *
-     * Strategy: wait for the ShareButton to appear (header is SSR-rendered),
-     * click, then assert either:
-     *   a. ShareTriggerDialog appears ("공유하기 전에 분석을 준비할게요"), OR
-     *   b. The unavailable inline notice appears ("이 탭은 공유할 분석이 아직 없어요")
-     *
-     * Either outcome proves the button click branching logic works end-to-end
-     * in the browser.
-     */
-    test('clicking ShareButton with no ready analysis shows dialog or unavailable notice', async ({
-        page,
-    }) => {
-        // Navigate to chart tab; do NOT wait for analysis fixture to complete
-        // so the analysis status remains idle/pending/unavailable.
-        await page.goto('/AAPL');
-
-        const shareButton = page.getByRole('button', {
-            name: SHARE_BUTTON_LABEL,
-        });
-        await expect(shareButton).toBeVisible();
-
-        await shareButton.click();
-
-        // Either the trigger dialog or the unavailable notice should appear.
-        const triggerDialog = page.getByRole('dialog', {
-            name: TRIGGER_DIALOG_TITLE,
-        });
-        const unavailableNotice = page.getByRole('status').filter({
-            hasText: '이 탭은 공유할 분석이 아직 없어요',
-        });
-
-        await expect(triggerDialog.or(unavailableNotice).first()).toBeVisible({
-            timeout: 5_000,
-        });
-    });
-
     /**
      * Deterministic ShareTriggerDialog assertion via the options force-error seam.
      *

@@ -68,13 +68,41 @@ const MARKET_KEYWORDS = [
 ];
 
 export async function generateMetadata(): Promise<Metadata> {
+    // MarketContent와 동일한 catch 패턴으로 두 loader를 독립 병렬 조회한다 — metadata의
+    // degrade 판정이 실제 렌더 degrade와 어긋나지 않도록 한다(economy/fear-greed와 동일 원칙).
+    const [summary, sectorData] = await Promise.all([
+        getMarketSummaryStatic().catch(e => {
+            console.error(
+                '[market.generateMetadata] getMarketSummaryStatic failed:',
+                e
+            );
+            return { indices: [], sectors: [] };
+        }),
+        getSectorSignalsStatic(DEFAULT_DASHBOARD_TIMEFRAME).catch(e => {
+            console.error(
+                '[market.generateMetadata] getSectorSignalsStatic failed:',
+                e
+            );
+            return { computedAt: '', stocks: [] };
+        }),
+    ]);
+    // 두 loader가 모두 빈 값으로 떨어진 경우만 degrade로 본다. 한쪽만 비어도 다른 쪽에
+    // 콘텐츠가 있으면 페이지는 여전히 비어있지 않은 렌더다.
+    const degraded =
+        summary.indices.length === 0 &&
+        summary.sectors.length === 0 &&
+        sectorData.stocks.length === 0;
+
     return {
         title: MARKET_TITLE,
         description: MARKET_DESCRIPTION,
         keywords: MARKET_KEYWORDS,
         // variant URL(?sector=, ?timeframe=)은 noindex 대신 clean canonical(/market)로
         // 색인 통합한다 — canonical과 noindex를 동시에 거는 신호 충돌을 제거.
-        alternates: { canonical: MARKET_URL },
+        // 단, 두 loader가 모두 실패해 본문이 빈 렌더로 떨어지면 economy/fear-greed와
+        // 동일하게 canonical을 비우고 noindex를 걸어 임시 상태를 색인하지 않는다.
+        alternates: { canonical: degraded ? null : MARKET_URL },
+        robots: degraded ? { index: false, follow: true } : undefined,
         openGraph: {
             title: MARKET_FULL_TITLE,
             description: MARKET_DESCRIPTION,

@@ -37,6 +37,15 @@ const AAPL_HOLDING: PortfolioHoldingView = {
     updatedAt: '2026-01-02T00:00:00.000Z',
 };
 
+const KR_HOLDING: PortfolioHoldingView = {
+    symbol: '005930.KS',
+    companyName: '삼성전자',
+    fmpSymbol: null,
+    quantity: '10.00000000',
+    averagePrice: '274500.00000000',
+    updatedAt: '2026-01-02T00:00:00.000Z',
+};
+
 function setCurrentUser(data: AuthUserRecord | null | undefined) {
     mockUseCurrentUser.mockReturnValue({
         data,
@@ -126,6 +135,18 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         expect(
             screen.getByRole('button', { name: '평단 $150.5 · 10주' })
         ).toBeInTheDocument();
+    });
+
+    it('renders the value chip in ₩ (not $) for a KR-equity holding — this chip lives in the header, so every KR tab was showing a dollar sign', () => {
+        setCurrentUser(USER);
+        setHoldings({ holdings: [KR_HOLDING] });
+        render(<PortfolioChipMounted symbol="005930.KS" />);
+        expect(
+            screen.getByRole('button', { name: '평단 ₩274500 · 10주' })
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByRole('button', { name: /\$/ })
+        ).not.toBeInTheDocument();
     });
 
     it('opens the popover, submits, calls save.mutateAsync and closes on ok', async () => {

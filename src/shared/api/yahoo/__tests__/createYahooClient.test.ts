@@ -34,6 +34,11 @@ describe('createYahooClient', () => {
         expect(opts.fetch).toBeTypeOf('function');
 
         const seen: (AbortSignal | undefined)[] = [];
+        // `new AbortController().signal`도 "매 호출 새 인스턴스"·"아직 abort 안 됨"
+        // 조건은 통과한다 — 그건 절대 타임아웃되지 않는 시그널이기 때문이다. 실제로
+        // `AbortSignal.timeout`이 우리 상수로 불렸는지까지 확인해야 이 클라이언트가
+        // 존재하는 이유(타임아웃이 실제로 발동한다)를 검증한다.
+        const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
         const fetchSpy = vi
             .spyOn(globalThis, 'fetch')
             .mockImplementation(async (_input, init) => {
@@ -41,11 +46,16 @@ describe('createYahooClient', () => {
                 return new Response('{}');
             });
 
+        let timeoutCalls: unknown[][];
         try {
             await opts.fetch!('https://example.test/a');
             await opts.fetch!('https://example.test/b');
+            // `mockRestore()`는 원래 구현 복원뿐 아니라 `mock.calls` 기록도 지운다 —
+            // finally에서 복원하기 전에 호출 기록을 먼저 떼어 둔다.
+            timeoutCalls = timeoutSpy.mock.calls;
         } finally {
             fetchSpy.mockRestore();
+            timeoutSpy.mockRestore();
         }
 
         expect(seen).toHaveLength(2);
@@ -54,6 +64,9 @@ describe('createYahooClient', () => {
         // 이미 abort된 시그널을 받는다 — 그래서 호출마다 달라야 한다.
         expect(seen[0]).not.toBe(seen[1]);
         expect(seen[0]!.aborted).toBe(false);
+        expect(timeoutCalls).toHaveLength(2);
+        expect(timeoutCalls[0]).toEqual([YAHOO_FETCH_TIMEOUT_MS]);
+        expect(timeoutCalls[1]).toEqual([YAHOO_FETCH_TIMEOUT_MS]);
     });
 
     it('호출부 시그널이 있으면 둘 다 존중한다', async () => {
@@ -62,6 +75,7 @@ describe('createYahooClient', () => {
 
         const controller = new AbortController();
         let captured: AbortSignal | undefined;
+        const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
         const fetchSpy = vi
             .spyOn(globalThis, 'fetch')
             .mockImplementation(async (_input, init) => {
@@ -69,12 +83,16 @@ describe('createYahooClient', () => {
                 return new Response('{}');
             });
 
+        let timeoutCalls: unknown[][];
         try {
             await opts.fetch!('https://example.test/c', {
                 signal: controller.signal,
             });
+            // `mockRestore()`가 `mock.calls` 기록까지 지우므로 복원 전에 떼어 둔다.
+            timeoutCalls = timeoutSpy.mock.calls;
         } finally {
             fetchSpy.mockRestore();
+            timeoutSpy.mockRestore();
         }
 
         expect(captured).toBeInstanceOf(AbortSignal);
@@ -82,6 +100,10 @@ describe('createYahooClient', () => {
         // 상위 취소가 우리 타임아웃에 삼켜지면 안 된다.
         controller.abort();
         expect(captured!.aborted).toBe(true);
+        // 호출부 시그널이 있어도 우리 타임아웃은 여전히 걸려야 한다 —
+        // `AbortSignal.any([init.signal, timeout])`가 timeout 쪽을 빼먹으면
+        // 호출부가 취소를 안 할 경우 무한정 걸린다.
+        expect(timeoutCalls).toEqual([[YAHOO_FETCH_TIMEOUT_MS]]);
     });
 
     it('타임아웃이 ALB idle(60초)보다 충분히 짧다', () => {

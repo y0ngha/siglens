@@ -16,6 +16,7 @@ const {
     getKoreanNamesMock,
     setKoreanTickersMock,
     translateCompanyNamesMock,
+    fetchKrEquityQuoteNameMock,
 } = vi.hoisted(() => ({
     mockCache: {
         get: vi.fn(),
@@ -33,6 +34,7 @@ const {
     getKoreanNamesMock: vi.fn(),
     setKoreanTickersMock: vi.fn(),
     translateCompanyNamesMock: vi.fn(),
+    fetchKrEquityQuoteNameMock: vi.fn(),
 }));
 
 interface FakeDbClient {
@@ -70,6 +72,12 @@ vi.mock('../../lib/koreanNameStore', () => ({
 vi.mock('../../lib/koreanTranslator', () => ({
     translateCompanyNames: () => translateCompanyNamesMock(),
 }));
+// yahoo quote 조회는 동적 import + server-only 의존이라 유닛에서는 이름 해석만
+// 대역한다 — resolveKrEquityAssetInfo 갈래는 이 결과만 있으면 재현된다.
+vi.mock('../../lib/krEquityQuoteName', () => ({
+    fetchKrEquityQuoteName: (symbol: string) =>
+        fetchKrEquityQuoteNameMock(symbol),
+}));
 // Crypto branch: equity test cases return null (not a crypto symbol), so the
 // existing equity path is unaffected. The crypto branch itself is covered by
 // getAssetInfo.crypto.test.ts.
@@ -84,6 +92,10 @@ import {
     _resetInFlightTranslationsForTest,
     getAssetInfo,
 } from '../../lib/getAssetInfo';
+import {
+    ASSET_INFO_CACHE_TTL_WITH_KOREAN,
+    ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN,
+} from '../../lib/cacheKeys';
 
 const apple: FmpSearchResult = {
     symbol: 'AAPL',
@@ -130,6 +142,7 @@ describe('getAssetInfo', () => {
         setKoreanTickersMock.mockResolvedValue(undefined);
         translateCompanyNamesMock.mockReset();
         translateCompanyNamesMock.mockResolvedValue({});
+        fetchKrEquityQuoteNameMock.mockReset();
     });
 
     afterEach(() => {
@@ -429,6 +442,81 @@ describe('getAssetInfo', () => {
         searchBySymbolMock.mockRejectedValue(new Error('FMP HTTP 429'));
 
         await expect(getAssetInfo('AAPL')).rejects.toThrow('FMP HTTP 429');
+    });
+
+    it('KR 종목에 한글명이 없으면 yahoo quote 이름으로 응답하고 짧은 TTL로 캐시하며 번역을 fire-and-forget 한다', async () => {
+        // E2E 시임은 CURATED_KOREAN_NAMES로 바로 단락시켜 이 분기를 밟지 않는다 —
+        // 유닛에서 확인 안 하면 전 국내 종목의 ~99%(2026-08 실측 2,570/2,595)가 타는
+        // 경로가 아무 테스트에도 안 걸린다. 이 갈래가 곧 korean_tickers를 채우는
+        // translateAndPersist 발동 지점이라, 검색 색인 전체가 이 경로에 달려 있다.
+        const symbol = '999999.KQ'; // CURATED_KOREAN_NAMES에 없는 형상만 맞는 KR 심볼
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockResolvedValue(null); // DB에 아직 번역이 없다
+        fetchKrEquityQuoteNameMock.mockResolvedValue('Fake Korea Inc.');
+        getKoreanNamesMock.mockResolvedValue({}); // koreanNameStore도 아직 비어 있다
+        translateCompanyNamesMock.mockResolvedValue({ [symbol]: '가짜코리아' });
+
+        const result = await getAssetInfo(symbol);
+
+        expect(result).toEqual({
+            symbol,
+            name: 'Fake Korea Inc.',
+            marketProfile: 'kr-equity',
+        });
+        expect(mockCache.set).toHaveBeenCalledWith(
+            `asset-info:${symbol}`,
+            result,
+            ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN
+        );
+
+        await new Promise(resolve => setImmediate(resolve));
+        // translateAndPersist가 실제로 발동했는지 확인한다 — 여기가 korean_tickers를
+        // 채우는 유일한 경로다. 발동하지 않으면 해당 종목은 영원히 한글 검색에 안 잡힌다.
+        expect(translateCompanyNamesMock).toHaveBeenCalledTimes(1);
+        expect(setKoreanTickersMock).toHaveBeenCalledWith([
+            {
+                symbol,
+                name: 'Fake Korea Inc.',
+                koreanName: '가짜코리아',
+                exchange: 'KOSDAQ',
+                exchangeFullName: 'KOSDAQ',
+            },
+        ]);
+    });
+
+    it('KR 대표 종목은 koreanNameStore가 비어도 큐레이션 카탈로그로 한글명을 채운다', async () => {
+        // ISR은 첫 렌더를 캐시에 굳힌다. lazy 번역이 끝나기를 기다리면 대표 종목의
+        // SEO 제목이 revalidate 주기 내내 `005930.KS 주가 전망`으로 남는다 —
+        // 카탈로그 fallback이 그걸 막는 유일한 장치다.
+        const symbol = '005930.KS';
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockResolvedValue(null);
+        fetchKrEquityQuoteNameMock.mockResolvedValue(
+            'Samsung Electronics Co Ltd'
+        );
+        getKoreanNamesMock.mockResolvedValue({}); // 번역 스토어가 아직 비어 있다
+
+        const result = await getAssetInfo(symbol);
+
+        expect(result).toEqual({
+            symbol,
+            name: 'Samsung Electronics Co Ltd',
+            marketProfile: 'kr-equity',
+            koreanName: '삼성전자',
+        });
+        // 한글명을 이미 확보했으므로 긴 TTL로 굳히고, 번역 API는 부르지 않는다.
+        expect(mockCache.set).toHaveBeenCalledWith(
+            `asset-info:${symbol}`,
+            result,
+            ASSET_INFO_CACHE_TTL_WITH_KOREAN
+        );
+        expect(translateCompanyNamesMock).not.toHaveBeenCalled();
+
+        await new Promise(resolve => setImmediate(resolve));
+        // 카탈로그 값도 DB에 내려써야 다음 요청이 카탈로그 없이도 맞는다.
+        expect(mockRepository.upsert).toHaveBeenCalledWith(
+            expect.objectContaining({ symbol, koreanName: '삼성전자' })
+        );
     });
 
     it('getAssetInfo가 searchBySymbol을 throwOnInfraFailure로 호출한다', async () => {

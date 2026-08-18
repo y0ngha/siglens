@@ -38,18 +38,6 @@ function titleOf(html: string): string {
     return html.match(/<title>([^<]*)<\/title>/)?.[1] ?? '';
 }
 
-/** 태그·스크립트를 걷어낸 뒤 남는 가시 텍스트 길이 — 봇이 보는 콘텐츠 분량의 근사치. */
-function visibleTextLength(html: string): number {
-    const body = html
-        .replace(/<script[\s\S]*?<\/script>/g, '')
-        .replace(/<style[\s\S]*?<\/style>/g, '')
-        .replace(/<!--[\s\S]*?-->/g, '')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-    return [...body].length;
-}
-
 test.describe('KR equity SEO (crawler-facing)', () => {
     test('국내 종목 페이지가 200으로 렌더되고 h1이 하나다', async ({
         page,
@@ -82,8 +70,11 @@ test.describe('KR equity SEO (crawler-facing)', () => {
 
         expect(description).not.toBeNull();
         expect(description).toContain(KR_KOREAN_NAME);
-        // 영문 법인명을 함께 넣던 시절엔 137자가 되어 모든 국내 종목에서 끝문장이 잘렸다.
-        expect([...description!].length).toBeLessThanOrEqual(120);
+        // ≤120자는 clampSeoDescription이 모든 description(미국 포함)에 구조적으로
+        // 강제하므로 여기서 재확인해도 KR 전용 결함을 잡지 못한다(뮤테이션 감사
+        // 2026-08-18) — 실제로 의미 있는 단언은 "끝문장까지 살아 있다"는 아래
+        // not.toContain('…')뿐이다. 영문 법인명을 함께 넣던 시절엔 137자가 되어
+        // 모든 국내 종목에서 끝문장이 잘렸다(그 결함은 '…' 존재로 드러난다).
         expect(description).not.toContain('…');
     });
 
@@ -145,10 +136,17 @@ test.describe('KR equity SEO (crawler-facing)', () => {
         expect(metaContent(html, 'description')).toContain('한국');
 
         const blocks = jsonLdBlocks(html);
-        const serialized = JSON.stringify(blocks);
         // FAQPage 답변과 HowTo 본문 — Google이 rich result로 직접 읽는 표면이다.
-        expect(blocks.some(b => b['@type'] === 'FAQPage')).toBe(true);
-        expect(serialized).toMatch(/코스피|한국/);
+        // `SITE_DESCRIPTION`(WebApplication/WebPage/Organization 노드에 공통
+        // 임베드됨)이 이미 "한국"을 포함하므로, blocks 전체를 직렬화해 매칭하면
+        // FAQPage/HowTo 본문이 실제로 한국 종목을 언급하는지와 무관하게 항상
+        // 통과한다(뮤테이션 감사 2026-08-18) — 그 두 블록으로 범위를 좁힌다.
+        const faqBlock = blocks.find(b => b['@type'] === 'FAQPage');
+        const howToBlock = blocks.find(b => b['@type'] === 'HowTo');
+        expect(faqBlock).toBeDefined();
+        expect(howToBlock).toBeDefined();
+        expect(JSON.stringify(faqBlock)).toMatch(/코스피|한국/);
+        expect(JSON.stringify(howToBlock)).toMatch(/코스피|한국/);
     });
 
     test('홈에서 국내 종목으로 가는 크롤 가능한 링크가 있다', async ({
@@ -184,29 +182,13 @@ test.describe('KR equity SEO (crawler-facing)', () => {
         expect(orphans).toEqual([]);
     });
 
-    /**
-     * 2026-07 노출 절벽의 원인은 봇에게 677자만 나가던 thin 콘텐츠였다. 그 인시던트가
-     * prewarm 아키텍처 전체를 낳았는데도 회귀 테스트는 한 번도 만들어지지 않았고,
-     * 저장소 어디에도 문자 수를 재는 코드가 없다(측정은 수동 절차 문서로만 남아 있다).
-     *
-     * **여기서 절대 하한을 걸지 않는 이유**: E2E 빌드에는 FMP·LLM 키가 없고
-     * `seo_analysis_snapshots`도 비어 있다. 프로덕션 페이지 분량의 대부분은 그 스냅샷
-     * 산문에서 나오므로, 이 환경의 절대 문자 수는 껍데기 크기일 뿐이다(실측 589자 —
-     * 절벽 당시 수치보다 낮지만 원인이 다르다). 절대 하한 검증은 키가 있는 프로덕션
-     * 빌드에서 해야 하고, 배포 실증 체크리스트가 그걸 맡는다.
-     *
-     * 이 환경에서 의미 있는 것은 **US 대비 비율**이다. 두 경로가 같은 껍데기를 쓰므로,
-     * KR만 조용히 얇아지는 회귀(탭 누락, 데이터 미해석, 폴백 문구로 축소)는 여기서 잡힌다.
-     */
-    test('봇이 받는 KR 본문이 US 대비 얇아지지 않는다', async ({ page }) => {
-        const krLength = visibleTextLength(
-            await (await page.request.get(`/${KR_SYMBOL}`)).text()
-        );
-        const usLength = visibleTextLength(
-            await (await page.request.get('/AAPL')).text()
-        );
-
-        expect(usLength).toBeGreaterThan(0);
-        expect(krLength).toBeGreaterThan(usLength * 0.6);
-    });
+    // 2026-07 노출 절벽의 원인은 봇에게 677자만 나가던 thin 콘텐츠였다 — 그 인시던트가
+    // prewarm 아키텍처 전체를 낳았다. "봇이 받는 KR 본문이 US 대비 얇아지지 않는다"는
+    // 회귀 가드가 한때 여기 있었지만, 뮤테이션 감사(2026-08-18)로 삭제했다: E2E 빌드에는
+    // FMP·LLM 키가 없어 `seo_analysis_snapshots`가 양쪽 다 비고 `FakeMarketProvider`가
+    // 양쪽에 동일한 bars를 주므로 두 경로가 사실상 같은 껍데기를 쓴다 — KR/US 길이비가
+    // 구조적으로 ~1.0에 붙박여 있어 0.6배 문턱은 사실상 항상 통과했다(불가위성). 이 환경
+    // 자체가 실제 콘텐츠 분량 차를 만들 수 없으므로 상대 비교로도 고칠 수 없다 — 절대
+    // 하한과 마찬가지로 키가 있는 프로덕션 빌드에서 검증해야 하고, 배포 실증 체크리스트가
+    // 그걸 맡는다.
 });

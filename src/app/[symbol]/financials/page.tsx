@@ -40,6 +40,11 @@ import {
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
+import {
+    marketProfileOf,
+    profileIdForSymbol,
+    type MarketProfileId,
+} from '@/shared/config/marketProfile';
 
 // 종목당 재무제표는 분기(약 45일) 단위로 갱신된다. 24h revalidate는 엣지 캐시를 최대한 활용하면서
 // 다음 분기 공시 이전에 오래된 데이터를 서빙하지 않는 균형점이다.
@@ -166,6 +171,16 @@ export default async function FinancialsPage({ params }: Props) {
     if (isUnresolvableDegraded(upper, degraded)) notFound();
 
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
+    // CrossLinkCards에 넘길 시장 프로필. financials도 fundamental과 동일하게
+    // assetInfo가 optional이라(FMP profile만 있어도 렌더) marketProfileOf(assetInfo)를
+    // 못 쓸 수 있다 — 그 경우 심볼 형상으로 판정한다(`profileIdForSymbol`, marketProfileOf
+    // 내부 fallback과 동일 패턴). crypto는 isTabAllowedForSymbol('financials') 가드로
+    // 이미 걸러졌으므로 여기 남는 값은 us-equity/kr-equity뿐이다. SEO 감사(2026-08-18):
+    // 이 값을 넘기지 않으면 CrossLinkCards의 `marketProfile='us-equity'` 기본값으로
+    // 떨어져, 한국 종목 페이지에도 존재하지 않는 `/options`·`/congress` 링크가 노출됐다.
+    const marketProfile: MarketProfileId = assetInfo
+        ? marketProfileOf(assetInfo)
+        : profileIdForSymbol(upper);
 
     // FMP 인프라 일시 실패: 500 대신 degrade 안내(200)를 렌더한다. 다음 revalidate에
     // 인프라가 복구되면 정상 데이터로 자동 갱신된다. 스냅샷이 있으면 degrade 중에도
@@ -175,6 +190,7 @@ export default async function FinancialsPage({ params }: Props) {
             <FinancialsDegraded
                 displayName={displayName}
                 symbol={upper}
+                marketProfile={marketProfile}
                 snapshotContent={financialsSnapshot?.content}
                 snapshotGeneratedAt={financialsSnapshot?.generatedAt}
             />
@@ -197,6 +213,7 @@ export default async function FinancialsPage({ params }: Props) {
             <FinancialsDegraded
                 displayName={displayName}
                 symbol={upper}
+                marketProfile={marketProfile}
                 snapshotContent={financialsSnapshot?.content}
                 snapshotGeneratedAt={financialsSnapshot?.generatedAt}
             />
@@ -303,6 +320,7 @@ export default async function FinancialsPage({ params }: Props) {
                         content={financialsSnapshot?.content}
                         symbol={upper}
                         displayName={displayName}
+                        marketProfile={marketProfile}
                         generatedAt={financialsSnapshot?.generatedAt}
                     />
                 )}
@@ -316,7 +334,11 @@ export default async function FinancialsPage({ params }: Props) {
                     annualSnapshot={snapshot}
                 />
 
-                <CrossLinkCards symbol={upper} current="financials" />
+                <CrossLinkCards
+                    symbol={upper}
+                    current="financials"
+                    marketProfile={marketProfile}
+                />
             </main>
         </>
     );

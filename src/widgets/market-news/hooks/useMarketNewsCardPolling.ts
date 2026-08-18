@@ -19,7 +19,10 @@ export interface UseMarketNewsCardPollingReturn {
  * Polls `getMarketNewsCardsAction(category)` every `POLL_INTERVAL_MS` and stops
  * when ALL items have `sentiment !== null` (fully enriched), after
  * `MAX_POLL_DURATION_MS`, after `MAX_CONSECUTIVE_FAILURES` consecutive polling
- * errors, or after `EMPTY_SNAPSHOT_MAX_POLLS` consecutive empty snapshots.
+ * errors, after `EMPTY_SNAPSHOT_MAX_POLLS` consecutive empty snapshots, or when
+ * the enriched-card count has not grown for `STAGNANT_POLL_LIMIT` consecutive
+ * polls past `STAGNATION_FLOOR_POLLS` — 그 정체 종료가 없으면 영구히
+ * `analyzedAt=null`로 남는 행 하나가 "전건 보강" 조건을 영원히 거짓으로 만든다.
  *
  * Pass a stable `key` on the consuming list to force a fresh-mount reset
  * when the snapshot array identity must drive a reset (e.g. client navigation).
@@ -54,6 +57,8 @@ export function useMarketNewsCardPolling(
             pollCount: 0,
             consecutiveFailures: 0,
             startTime: Date.now(),
+            enrichedCount: 0,
+            stagnantPolls: 0,
         };
 
         intervalIdRef.current = setInterval(() => {
@@ -71,6 +76,16 @@ export function useMarketNewsCardPolling(
                 getStartTime: () => stateRef.startTime,
                 getPollCount: () => stateRef.pollCount,
                 getConsecutiveFailures: () => stateRef.consecutiveFailures,
+                getEnrichedCount: () => stateRef.enrichedCount,
+                getStagnantPolls: () => stateRef.stagnantPolls,
+                recordEnriched: (count: number) => {
+                    if (count > stateRef.enrichedCount) {
+                        stateRef.enrichedCount = count;
+                        stateRef.stagnantPolls = 0;
+                    } else {
+                        stateRef.stagnantPolls += 1;
+                    }
+                },
                 setItems,
                 setIsPolling,
                 setPollError,

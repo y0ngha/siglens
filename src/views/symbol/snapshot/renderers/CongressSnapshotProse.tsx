@@ -4,6 +4,7 @@ import { SnapshotBulletList } from '../SnapshotBulletList';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 import { createEnumGuard } from '../lib/createEnumGuard';
 import { narrowStringArray } from '../lib/narrowStringArray';
+import type { MarketProfileId } from '@/shared/config/marketProfile';
 
 interface CongressSnapshotProseProps {
     /**
@@ -21,6 +22,12 @@ interface CongressSnapshotProseProps {
     content: unknown;
     symbol: string;
     displayName: string;
+    /**
+     * congress 탭은 us-equity 전용이다(`KR_EQUITY_DESCRIPTOR`/`CRYPTO_DESCRIPTOR`
+     * 둘 다 `tabs`에 `'congress'`가 없다). 그래도 `SnapshotSummarySection` 셸의
+     * 캡션 계약은 이 값을 요구하므로 호출부가 `'us-equity'`를 그대로 넘긴다.
+     */
+    marketProfile: MarketProfileId;
     /** 스냅샷 행의 `generatedAt`. 셸이 기준일 캡션과 "지난 AI 분석" 배지를 렌더하는 데 쓴다. */
     generatedAt?: Date;
 }
@@ -111,6 +118,7 @@ export function CongressSnapshotProse({
     content,
     symbol,
     displayName,
+    marketProfile,
     generatedAt,
 }: CongressSnapshotProseProps) {
     const narrowed = narrowCongressContent(content);
@@ -125,6 +133,7 @@ export function CongressSnapshotProse({
         <SnapshotSummarySection
             title="의회 거래 동향 요약"
             displayName={displayName}
+            marketProfile={marketProfile}
             asOf={generatedAt}
         >
             <div className="space-y-4 text-sm leading-6 text-secondary-300">

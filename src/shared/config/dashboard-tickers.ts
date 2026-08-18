@@ -146,8 +146,12 @@ export const SECTOR_STOCKS: readonly SectorStock[] = [
     { symbol: 'QBTS', koreanName: '디웨이브 퀀텀', sectorSymbol: 'QNTM' },
     { symbol: 'QUBT', koreanName: '퀀텀 컴퓨팅', sectorSymbol: 'QNTM' },
     { symbol: 'IBM', koreanName: '아이비엠', sectorSymbol: 'QNTM' },
-    // Space (SPACE) — 7 (virtual sector, no ETF)
-    { symbol: 'SPCX', koreanName: '스페이스X', sectorSymbol: 'SPACE' },
+    // Space (SPACE) — 6 (virtual sector, no ETF)
+    // SPCX는 여기 없다 — SpaceX는 비상장이고, SPCX는 그 이름을 딴 SPAC/신규 발행
+    // ETF다. 대체할 진짜 SpaceX 티커가 없으므로 빼기만 한다(SEO 감사 라운드 3
+    // finding 2 — /market의 SectorFactsSummary가 이 심볼이 top signal로 뜨면
+    // 크롤러가 보는 `<Link href="/SPCX">`를 만들어냈다. popular-tickers.ts의
+    // 같은 이유로 이미 뺀 것과 일치시킨다).
     { symbol: 'RKLB', koreanName: '로켓랩', sectorSymbol: 'SPACE' },
     { symbol: 'ASTS', koreanName: 'AST 스페이스모바일', sectorSymbol: 'SPACE' },
     { symbol: 'LUNR', koreanName: '인튜이티브 머신스', sectorSymbol: 'SPACE' },

@@ -12,6 +12,11 @@ const LOCK_KEY = 'seo-prewarm:lock';
 const LOCK_TTL_SECONDS = 900; // 15min ≥ 최대 배치 시간 (spec §6 락 라이프사이클)
 const INFLIGHT_TTL_SECONDS = 1800; // 30min
 const FMP_BUDGET_TTL_SECONDS = 172800; // 2d — 날짜 키 자연 롤오버, TTL은 청소용
+// 2026-08 감사(KR 5종목 prewarm 미도달) — 회전 커서. TTL을 두지 않는다: 값 자체가 단조 증가하는
+// 카운터일 뿐이라(문자열 하나) 만료시켜 청소해야 할 이유가 없고, cron이 몇 달
+// 쉬어도 다음 실행이 그 값을 그대로 이어받는 편이 "왜 갑자기 오프셋이 0으로
+// 리셋됐지"보다 낫다.
+const ROTATION_CURSOR_KEY = 'seo-prewarm:rotation-cursor';
 // FIX C(감사) — terminal skip(error/miss_no_trigger/no_trades/no_chains_error/null)
 // 상태의 (symbol, tab)에 6h backoff를 건다. 5분 tick 기준 그대로 두면 하룻밤에
 // ~96회 재시도되며 head 슬롯을 영구 점유한다 — 6h TTL이면 하룻밤에 최대 ~2회로 줄어든다.
@@ -196,4 +201,67 @@ export async function getFmpBudgetUsed(): Promise<number> {
     if (redis === null) return 0;
     const value = await redis.get(fmpBudgetKey());
     return typeof value === 'number' ? value : Number(value ?? 0);
+}
+
+/**
+ * 회전 커서를 `step`만큼 원자적으로 전진시키고, 전진 **전** 값(=이번 tick이 쓸
+ * 오프셋)을 반환한다(`runPrewarmBatch.ts`의 `selectFairBatch`).
+ *
+ * 2026-08 감사(KR 5종목 prewarm 미도달) — 이전 구현은 오프셋을
+ * `floor(now / TICK_ROTATION_MS) * SYMBOLS_PER_TICK`으로 **시각**에서 파생했다.
+ * 배치 하나가 지연되면(FMP 폭풍 등) 다음 실제 실행 시각이 몇 틱씩 밀리고, 그만큼
+ * 오프셋이 한 번에 점프해(walk이 아니라 jump) 후보 창 폭을 넘으면 그 구간이 그
+ * 날 밤 영영 후보가 되지 못했다 — `BATCH_DEADLINE_MS + 스케줄주기 ≤ 창 폭`이라는
+ * 불변식이 "정확히 경계"였기 때문에 아주 작은 추가 지연도 그 구멍을 열 수 있었다.
+ *
+ * 대신 오프셋을 Redis에 절대값(모듈로 없이 계속 커지는 카운터)으로 들고, **실제
+ * 배치 실행 1회당** `step`(=SYMBOLS_PER_TICK)만큼만 전진시킨다 — 경과 시각이
+ * 아니라 "실행 횟수"에 묶는다. 그 결과:
+ * - **skip 불가**: 다음 실행이 아무리 늦게 일어나도(락 때문에 몇 틱을 건너뛰어도)
+ *   전진 폭은 항상 `step` 하나뿐이다 — 이전 창과 바로 이어 붙으므로 구간이 비지
+ *   않는다.
+ * - **livelock 불가**(2026-07-26 인시던트 재발 방지): 창 안 후보가 전부
+ *   blocked라도 전진은 "완료 여부"가 아니라 "시도 여부"에 걸려 있어 무조건
+ *   일어난다 — `selectFairBatch`가 분류 결과와 무관하게 매 호출마다 이 함수를
+ *   한 번 부른다.
+ *
+ * INCRBY 한 번으로 읽기+쓰기를 원자적으로 합친다(락이 이미 실행을 직렬화하므로
+ * 굳이 필요하진 않지만, 락 밖에서 호출될 가능성에도 안전하다). 새 값에서 `step`을
+ * 빼면 "이번 tick 시작 시점"의 값이 된다 — INCRBY는 키가 없으면 0에서 시작하므로
+ * 최초 실행은 자연스럽게 오프셋 0에서 시작하고(과거 `slice(0, N)` 버그처럼 영구히
+ * 0에 머무는 게 아니라 매 실행마다 전진하므로 재발하지 않는다), 커서 키가 유실돼도
+ * (Redis 마이그레이션 등) 0으로 재시작할 뿐 자체 치유된다.
+ *
+ * ⚠️ 다른 lock.ts 함수들과 달리 redis가 null이어도 조용히 기본값을 반환하지
+ * **않는다**(`getFmpBudgetUsed` 등과 다른 이유는 아래 참고). 단, 이 null 체크가
+ * 잡는 건 정확히 **"redis 미구성"** 한 가지뿐이다 — `getRedisClient()`는 env
+ * 존재 여부로 키를 잡는 캐시된 싱글톤이고, 이 함수는 `acquirePrewarmLock()`이
+ * 이미 non-null 클라이언트를 얻은 뒤에만 실행되므로(`runPrewarmBatch`는
+ * `route.ts`에서 락 획득 성공 후에만 호출된다), 실행 시점에 redis가 미구성일
+ * 가능성은 사실상 없다 — 그럼에도 null이 온다면 lock.ts와 이 함수 사이 다른
+ * 곳에서 클라이언트 설정이 깨졌다는 신호라, 조용히 0을 반환해 오프셋을 매번
+ * 창의 시작으로 되돌리는 것보다 배치를 fail-loud로 실패시켜 `batch failed`
+ * 알람이 뜨는 편이 안전하다.
+ *
+ * **이 null 체크가 못 잡는 것**: redis가 구성돼 있는데 `redis.incrby` 호출
+ * 자체가 REJECT하는 진짜 Upstash 네트워크 장애·타임아웃. null 체크는 클라이언트
+ * *존재 여부*만 보므로 이 경우는 애초에 검사 대상이 아니다 — throw가 그대로
+ * 전파된다. 다만 이건 이 함수만의 사정이 아니라 이 경로(selectFairBatch →
+ * classifySymbol의 `getInFlightMarker`/`isSkipped`, `Promise.all`로 후보별
+ * 격리 없이 호출됨) 전체가 오늘 공유하는 상태다 — 후보 하나의 Redis 호출이
+ * reject하면 `Promise.all` 전체가 reject해 같은 방식으로 배치가 실패한다.
+ * 결과는 동일하게 fail-hard: 그 tick의 배치가 실패하고(`route.ts`의 `catch`가
+ * `[seo-prewarm] batch failed:`로 로그), `finally`가 락을 해제하며, 다음
+ * EventBridge tick(5분 뒤)이 재시도한다. 후보 단위 격리(개별 Redis 호출 실패가
+ * 배치 전체를 죽이지 않게 하는 것)는 아직 없다 — 별도 작업 대상이다.
+ */
+export async function advanceRotationCursor(step: number): Promise<number> {
+    const redis = getRedisClient();
+    if (redis === null) {
+        throw new Error(
+            '[seo-prewarm] redis unavailable — cannot advance rotation cursor'
+        );
+    }
+    const next = await redis.incrby(ROTATION_CURSOR_KEY, step);
+    return next - step;
 }

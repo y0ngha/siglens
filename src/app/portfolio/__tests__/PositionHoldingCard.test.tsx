@@ -131,6 +131,32 @@ describe('PositionHoldingCard', () => {
         ).not.toBeInTheDocument();
     });
 
+    it('renders the degrade note in ₩ (not $) for a KR-equity holding', async () => {
+        mockGetBarsAction.mockRejectedValue(new Error('FMP down'));
+        const { wrapper } = createQueryClientWrapper();
+
+        render(
+            <PositionHoldingCard
+                holding={{
+                    ...HOLDING_AAPL,
+                    symbol: '005930.KS',
+                    averagePrice: '274500',
+                }}
+            />,
+            { wrapper }
+        );
+        await waitFor(() => expect(mockObserve).toHaveBeenCalledTimes(1));
+
+        fireIntersecting(true);
+
+        await waitFor(() =>
+            expect(
+                screen.getByTestId('holding-card-degraded')
+            ).toBeInTheDocument()
+        );
+        expect(screen.getByText('평단 ₩274,500')).toBeInTheDocument();
+    });
+
     it('formats a sub-$1 average price without misleading "$0" truncation in the degrade note', async () => {
         mockGetBarsAction.mockRejectedValue(new Error('FMP down'));
         const { wrapper } = createQueryClientWrapper();
@@ -283,6 +309,31 @@ describe('PositionHoldingCard', () => {
         // 아니라 dl 리드아웃 자체를 검증하는 게 목적) dl의 <dd> 값으로 범위를 좁힌다.
         const readoutValue = screen.getByText('평단').nextElementSibling;
         expect(readoutValue?.textContent).toMatch(/^\$0\.0006/);
+    });
+
+    it('renders the resolved dl readout in ₩ (not $) for a KR-equity holding', async () => {
+        mockGetBarsAction.mockResolvedValue(BARS_DATA as never);
+        const { wrapper } = createQueryClientWrapper();
+
+        render(
+            <PositionHoldingCard
+                holding={{
+                    ...HOLDING_AAPL,
+                    symbol: '005930.KS',
+                    averagePrice: '274500',
+                }}
+            />,
+            { wrapper }
+        );
+        await waitFor(() => expect(mockObserve).toHaveBeenCalledTimes(1));
+        fireIntersecting(true);
+
+        await waitFor(() =>
+            expect(screen.getByTestId('position-building')).toBeInTheDocument()
+        );
+        const readoutValue = screen.getByText('평단').nextElementSibling;
+        expect(readoutValue?.textContent).toBe('₩274,500');
+        expect(readoutValue?.textContent).not.toContain('$');
     });
 
     it('degrades to a muted note when computePosition cannot resolve (e.g. invalid avg price)', async () => {

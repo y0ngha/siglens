@@ -8,6 +8,8 @@ import {
     MAX_CONSECUTIVE_FAILURES,
     EMPTY_SNAPSHOT_MAX_POLLS,
     MAX_POLL_DURATION_MS,
+    STAGNANT_POLL_LIMIT,
+    STAGNATION_FLOOR_POLLS,
 } from '../constants';
 
 /**
@@ -23,6 +25,8 @@ export {
     MAX_CONSECUTIVE_FAILURES,
     EMPTY_SNAPSHOT_MAX_POLLS,
     MAX_POLL_DURATION_MS,
+    STAGNANT_POLL_LIMIT,
+    STAGNATION_FLOOR_POLLS,
 };
 
 const REFRESH_SNAPSHOT_MIN_POLLS = 5;
@@ -103,7 +107,26 @@ export function useNewsCardPolling(
     useEffect(() => {
         let pollCount = 0;
         let consecutiveFailures = 0;
+        // 진전이 멈추면 선다.
+        //
+        // 종료 조건이 `!hasPendingAnalysis(fresh)` — 즉 창 안의 **모든** 카드가
+        // 보강돼야 멈춘다 — 인데, 공급 쪽은 방문자 25건/10분(`VISITOR_NEWS_CARD_LIMIT`)
+        // + 크론 12건/밤이고 창은 180일이다. 기사가 25건을 넘는 종목은 그 조건이
+        // 구조적으로 참이 되지 않아 매 조회마다 100회 상한을 그대로 채운다. 게다가
+        // 5회째에 스피너만 꺼져서(`setIsPolling(false)`) 나머지 95회는 눈에도 안
+        // 보인다(감사: 비용 라운드 15).
+        let enrichedCount = 0;
+        let stagnantPolls = 0;
         const startTime = Date.now();
+        // 언마운트 후 쓰기 방지 — `clearInterval`은 다음 tick만 막고, 이미 날아간
+        // 요청의 응답은 그대로 돌아온다. `setItems`/`latestItemsRef`/
+        // `onPollingComplete`가 전부 await 뒤에 있어 그대로 두면 떠난 종목의 카드로
+        // 상태를 쓰고, `useNewsPollingWithInvalidation`을 통해 그 종목의
+        // `invalidateQueries`까지 발화시킨다.
+        //
+        // 종목 전환 자체는 remount다(Next가 `[symbol]` 세그먼트를 param으로 keying).
+        // 자세한 경위는 형제 훅 `useWaitForNewsCards` 주석 참조.
+        let cancelled = false;
 
         const intervalId = setInterval(async () => {
             if (Date.now() - startTime > MAX_POLL_DURATION_MS) {
@@ -117,6 +140,7 @@ export function useNewsCardPolling(
 
             try {
                 const fresh = await getNewsCardsAction(symbol);
+                if (cancelled) return;
                 pollCount += 1;
                 consecutiveFailures = 0;
                 latestItemsRef.current = fresh;
@@ -129,12 +153,38 @@ export function useNewsCardPolling(
                     setIsPolling(false);
                 }
 
+                // 보강된 카드 수가 STAGNANT_POLL_LIMIT 틱 연속 그대로면, 남은
+                // 미보강 카드는 이번 창에서 채워지지 않는다 — 상한까지 끌 이유가 없다.
+                const freshEnriched = fresh.filter(
+                    item => item.sentiment !== null
+                ).length;
+                if (freshEnriched > enrichedCount) {
+                    enrichedCount = freshEnriched;
+                    stagnantPolls = 0;
+                } else {
+                    stagnantPolls += 1;
+                }
+
                 if (
                     fresh.length === 0 &&
                     pollCount >= EMPTY_SNAPSHOT_MAX_POLLS
                 ) {
                     setIsPolling(false);
                     clearInterval(intervalId);
+                } else if (
+                    // 보강이 **한 번이라도** 진행된 뒤에만 정체로 본다. 아직 0건이면
+                    // 첫 카드가 도착하기 전(적재 + LLM 왕복)일 뿐이라 여기서 접으면
+                    // 콜드 종목이 시작도 못 하고 끝난다 — 그 케이스는 wall-clock
+                    // 상한이 맡는다.
+                    enrichedCount > 0 &&
+                    pollCount >= STAGNATION_FLOOR_POLLS &&
+                    stagnantPolls >= STAGNANT_POLL_LIMIT
+                ) {
+                    setIsPolling(false);
+                    clearInterval(intervalId);
+                    if (fresh.length > 0) {
+                        onPollingCompleteRef.current?.(fresh);
+                    }
                 } else if (
                     fresh.length > 0 &&
                     !hasPendingAnalysis(fresh) &&
@@ -145,6 +195,7 @@ export function useNewsCardPolling(
                     onPollingCompleteRef.current?.(fresh);
                 }
             } catch (err) {
+                if (cancelled) return;
                 pollCount += 1;
                 consecutiveFailures += 1;
                 console.error('[useNewsCardPolling] poll failed:', err);
@@ -168,7 +219,10 @@ export function useNewsCardPolling(
             }
         }, POLL_INTERVAL_MS);
 
-        return () => clearInterval(intervalId);
+        return () => {
+            cancelled = true;
+            clearInterval(intervalId);
+        };
         // Only `symbol` is in deps. `initialItems` is excluded on purpose —
         // including it would restart the polling effect on every parent render
         // with an unstable array prop, resetting `pollCount` and breaking the

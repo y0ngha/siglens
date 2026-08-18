@@ -1,5 +1,6 @@
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile';
+import type { MarketProfileId } from '@/shared/config/marketProfile';
 import { fetchKrEquityQuoteName } from './krEquityQuoteName';
 import { krExchangeOf } from './krExchange';
 import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
@@ -89,19 +90,18 @@ async function readFromDatabase(symbol: string): Promise<AssetInfo | null> {
 }
 
 async function persistTranslation(
-    symbol: string,
+    info: AssetInfo & { koreanName: string },
     fmpSymbol: string,
-    name: string,
-    koreanName: string,
     cache: CacheProvider | null
 ): Promise<void> {
+    const { symbol, name } = info;
     const repository = tryGetRepository();
     if (repository) {
         try {
             await repository.upsert({
                 symbol,
                 name,
-                koreanName,
+                koreanName: info.koreanName,
                 fmpSymbol,
             });
         } catch (e) {
@@ -110,15 +110,15 @@ async function persistTranslation(
         }
     }
 
+    // 호출부가 방금 돌려준 객체를 그대로 굳힌다 — 여기서 필드를 다시 조립하면
+    // `marketProfile`처럼 나중에 생긴 필드가 조용히 빠지고, 이 TTL이 1년이라 그
+    // 결손 레코드가 오래 남는다. 지금은 `marketProfileOf`의 심볼 형상 폴백이
+    // 한국 종목을 되살려 증상이 없지만, 형상으로 판정 못 하는 프로필이 이 경로에
+    // 들어오는 순간 조용히 틀린다.
     setCacheBestEffort(
         cache,
         buildAssetInfoCacheKey(symbol),
-        {
-            symbol,
-            name,
-            koreanName,
-            ...(fmpSymbol !== symbol && { fmpSymbol }),
-        },
+        info,
         ASSET_INFO_CACHE_TTL_WITH_KOREAN
     );
 }
@@ -129,7 +129,8 @@ const translationSingleFlight = createSingleFlight<void>();
 function translateAndPersist(
     symbol: string,
     match: AssetInfoMatch,
-    cache: CacheProvider | null
+    cache: CacheProvider | null,
+    marketProfile?: MarketProfileId
 ): Promise<void> {
     return translationSingleFlight.run(symbol, async () => {
         const translated = await translateCompanyNames([
@@ -152,10 +153,14 @@ function translateAndPersist(
         };
         await setKoreanTickers([entry]);
         await persistTranslation(
-            symbol,
+            {
+                symbol,
+                name: match.name,
+                koreanName,
+                ...(match.symbol !== symbol && { fmpSymbol: match.symbol }),
+                ...(marketProfile && { marketProfile }),
+            },
             match.symbol,
-            match.name,
-            koreanName,
             cache
         );
     });
@@ -194,7 +199,7 @@ async function resolveKrEquityAssetInfo(
 
     if (koreanName) {
         fireAndForget(
-            persistTranslation(upper, upper, name, koreanName, cache).catch(e =>
+            persistTranslation({ ...info, koreanName }, upper, cache).catch(e =>
                 console.warn('[getAssetInfo] kr persist failed', e)
             )
         );
@@ -211,7 +216,8 @@ async function resolveKrEquityAssetInfo(
                 exchange: exchange.code,
                 exchangeFullName: exchange.fullName,
             },
-            cache
+            cache,
+            'kr-equity'
         ).catch(e =>
             console.warn('[getAssetInfo] kr background translation failed', e)
         )
@@ -343,7 +349,7 @@ export async function getAssetInfo(symbol: string): Promise<AssetInfo | null> {
 
     if (koreanName) {
         fireAndForget(
-            persistTranslation(upper, fmpSymbol, name, koreanName, cache).catch(
+            persistTranslation({ ...info, koreanName }, fmpSymbol, cache).catch(
                 e => console.warn('[getAssetInfo] persist failed', e)
             )
         );

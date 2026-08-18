@@ -12,6 +12,14 @@ describe('kr-equity market profile', () => {
             expect(d.priceFormat.locale).toBe('ko-KR');
         });
 
+        it('20분 지연 고지를 남긴다 — 미국은 0', () => {
+            // yahoo `exchangeDataDelayedBy`가 KRX에서 20으로 온다(2026-08-16 실측).
+            // `TechnicalFactsSummary`는 이 값이 0보다 클 때만 "(N분 지연)"을 붙이므로,
+            // 0이 되면 20분 지연된 시세를 실시간처럼 내보낸다(감사 라운드 12).
+            expect(d.quoteDelayMinutes).toBe(20);
+            expect(getDescriptor('us-equity').quoteDelayMinutes).toBe(0);
+        });
+
         it('routes to the yahoo provider and naver news', () => {
             expect(d.dataProvider).toBe('yahoo');
             expect(d.newsSource).toBe('naver');
@@ -67,6 +75,9 @@ describe('kr-equity market profile', () => {
             '0059300.KS', // 7자리
             'AAPL.KS', // 종목코드가 숫자가 아님
             '005930.KX', // 알 수 없는 거래소
+            // KONEX — yahoo가 데이터를 안 주는 유일한 국내 세그먼트(2026-08-16 실측).
+            // `K[SQ]`가 `K[SQN]`으로 느슨해지면 이 케이스가 조용히 kr-equity로 빠진다.
+            '005930.KN',
             'AAPL',
             'BTCUSD',
         ])('rejects %s', symbol => {
@@ -102,6 +113,8 @@ describe('kr-equity market profile', () => {
         it('still blocks other foreign exchange suffixes', () => {
             expect(isAdmissibleSymbolShape('SHOP.TO')).toBe(false);
             expect(isAdmissibleSymbolShape('HVO.L')).toBe(false);
+            // KONEX — yahoo에 데이터가 없어(2026-08-16 실측) 의도적으로 차단 대상이다.
+            expect(isAdmissibleSymbolShape('005930.KN')).toBe(false);
         });
 
         it('still admits US shapes', () => {

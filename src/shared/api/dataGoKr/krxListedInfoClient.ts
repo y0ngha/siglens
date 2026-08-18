@@ -32,6 +32,59 @@ const MAX_ROWS_PER_PAGE = 1000;
 /** 폭주 방지 상한 — KOSPI+KOSDAQ+KONEX 전체가 3,000 종목 남짓이라 넉넉하다. */
 const MAX_PAGES = 20;
 
+/**
+ * 페이지 1건당 타임아웃. 레포 공통 규약(`shared/api/fmp/httpClient` 10초,
+ * `shared/api/yahoo/createYahooClient` 8초)을 따른다 — bare `fetch`는 undici 기본
+ * 300초라 멈춘 소켓 하나가 아래 전체 예산을 혼자 다 먹는다.
+ */
+const PAGE_TIMEOUT_MS = 10_000;
+
+/**
+ * 수집 전체의 wall-clock 예산.
+ *
+ * 페이지 타임아웃만으로는 부족하다 — 후보 하나가 `MAX_PAGES`를 다 쓰면 20 × 10초
+ * = 200초로, 배포 드레인 창(180초)을 넘긴다. 이 수집은 크론 라우트의 `after()`
+ * 안에서 돌고 그 promise가 SIGTERM 드레인에 등록되므로
+ * (`app/api/cron/kr-tickers/route.ts`) 그만큼 종료를 붙잡는다.
+ *
+ * **드레인이 기다리는 건 fetch가 끝나는 시점이 아니다.** `syncKrListedTickers`는
+ * 그 뒤에 `findAllListingStatuses` + `upsertMany`(약 2,595행 / 500 = 6 왕복,
+ * 각각 Neon 일시 오류 재시도 예산 포함) + relist/delist + 캐시 무효화를 더 돌고,
+ * 그 전체가 끝나야 promise가 resolve한다. 그러니 실제 제약은
+ * `TOTAL_BUDGET_MS + 최악 DB 단계 <= SHUTDOWN_DRAIN_DEADLINE_MS(180초)`다 —
+ * 넘치면 드레인이 먼저 끝나고 동기화가 잘리는데, EventBridge는 이미 202를 받았고
+ * `sync done`/`sync failed` 어느 쪽도 안 찍혀 **아무 알람도 안 뜬다**. 90초로
+ * 잡아 DB 단계에 90초를 남긴다.
+ *
+ * 후보 루프에서만 재면 도달할 수 없다: `collectAllPages`는 첫 페이지가 비었을
+ * 때만 `[]`를 돌려주고, 한 건이라도 있으면 호출부가 즉시 반환하므로 후보를
+ * 넘기는 경로는 후보당 정확히 1페이지다(≤ 10 × 10초). 그래서 **페이지 단위로**
+ * 잰다.
+ *
+ * 예산이 닳는 지점에 따라 결과가 갈린다.
+ *  - **페이지 도중**: 남은 예산으로 자른 `AbortSignal`이 그 fetch를 끊고,
+ *    `collectAllPages`에 catch가 없어 `TimeoutError`가 크론 라우트까지 올라가
+ *    `[kr-tickers] sync failed`로 알람이 뜬다. 멱등한 일 1회 작업이라 다음 날
+ *    재시도로 회복된다.
+ *  - **페이지 경계**: `MIN_PAGE_BUDGET_MS` 하한에 걸려 다음 페이지를 시작하지 않고
+ *    모은 만큼 돌려준다. 잘린 목록이지만 `planKrTickerReconcile`의 대량 상폐 가드가
+ *    받아 상폐만 건너뛴다(포털이 일부 페이지만 주는 경우와 같은 처리다).
+ *
+ * 정상 경로는 첫 후보 3~4페이지로 끝나 수 초다.
+ */
+const TOTAL_BUDGET_MS = 90_000;
+
+/**
+ * 남은 예산이 이보다 적으면 페이지를 아예 시작하지 않는다.
+ *
+ * 클램프만 두면 `remaining`이 수십 ms일 때 곧 도착했을 응답까지 끊고, 그 abort가
+ * `TimeoutError`로 올라가 **이미 모은 페이지를 통째로 버린다**. 그 밑에서 취할 수
+ * 있는 건 아무것도 없으므로, 그럴 바엔 모은 만큼 들고 문서화된 truncation 경로로
+ * 빠지는 편이 낫다 — 대량 상폐 가드가 그 목록을 받아 상폐만 건너뛴다.
+ * 1초는 실측 페이지 응답(수백 ms)보다 넉넉하고, 예산 90초에 비해 무시할 만하다.
+ */
+const MIN_PAGE_BUDGET_MS = 1_000;
+
 /** 시장 구분 값. `mrktCtg` 필드가 이 셋 중 하나로 온다. */
 export type KrxMarket = 'KOSPI' | 'KOSDAQ' | 'KONEX';
 
@@ -161,7 +214,8 @@ function unwrapItems(
 async function fetchPage(
     key: string,
     pageNo: number,
-    basDt: string | undefined
+    basDt: string | undefined,
+    timeoutMs: number = PAGE_TIMEOUT_MS
 ): Promise<{ items: KrxListedItem[]; totalCount: number }> {
     const params = new URLSearchParams({
         serviceKey: key,
@@ -171,7 +225,10 @@ async function fetchPage(
         ...(basDt ? { basDt } : {}),
     });
 
-    const res = await fetch(`${ENDPOINT}?${params}`, { cache: 'no-store' });
+    const res = await fetch(`${ENDPOINT}?${params}`, {
+        cache: 'no-store',
+        signal: AbortSignal.timeout(timeoutMs),
+    });
     if (!res.ok) {
         throw new Error(`[krxListedInfo] HTTP ${res.status}`);
     }
@@ -238,10 +295,18 @@ export async function fetchKrxListedItems(
         ? [basDt]
         : recentDateCandidates(MAX_DATE_LOOKBACK_DAYS);
 
+    const deadline = Date.now() + TOTAL_BUDGET_MS;
+
     for (const date of candidates) {
-        const items = await collectAllPages(key, date);
+        const items = await collectAllPages(key, date, deadline);
         if (items.length > 0) return items;
         // 주말·공휴일이거나 아직 갱신 전이다 — 하루 더 거슬러 올라간다.
+        if (Date.now() >= deadline) {
+            console.warn(
+                `[krxListedInfo] 예산(${TOTAL_BUDGET_MS}ms) 소진 — ${date}까지 확인하고 중단`
+            );
+            return [];
+        }
     }
 
     console.warn(
@@ -253,13 +318,28 @@ export async function fetchKrxListedItems(
 /** 한 기준일의 전 페이지를 모은다. */
 async function collectAllPages(
     key: string,
-    basDt: string
+    basDt: string,
+    deadline: number
 ): Promise<KrxListedItem[]> {
     const collected: KrxListedItem[] = [];
     let pageNo = 1;
 
     for (; pageNo <= MAX_PAGES; pageNo++) {
-        const { items, totalCount } = await fetchPage(key, pageNo, basDt);
+        const remaining = deadline - Date.now();
+        if (remaining < MIN_PAGE_BUDGET_MS) {
+            console.warn(
+                `[krxListedInfo] 예산(${TOTAL_BUDGET_MS}ms) 소진 — ${basDt} ${pageNo}페이지에서 중단, 결과가 잘렸을 수 있다`
+            );
+            break;
+        }
+        // 남은 예산으로 잘라 준다 — 검사만으로는 예산 직전에 통과한 페이지가
+        // `PAGE_TIMEOUT_MS`만큼 더 끌고 갈 수 있어 상한이 예산 + 10초가 된다.
+        const { items, totalCount } = await fetchPage(
+            key,
+            pageNo,
+            basDt,
+            Math.min(PAGE_TIMEOUT_MS, remaining)
+        );
         collected.push(...items);
 
         // 마지막 페이지 판정: 이번 페이지가 비었거나 총계에 도달했을 때.

@@ -480,7 +480,27 @@ export const SITE_DESCRIPTION = clampSeoDescription(
  * (홈 본문에는 `한국 주식` 카테고리 카드가 이미 렌더된다 — 본문과 메타가 어긋난 상태였다).
  */
 export const ROOT_HEADLINE = '미국·한국 주식·암호화폐 AI 분석';
-export const ROOT_TITLE = `${ROOT_HEADLINE} — 차트·뉴스로 투자 결론 | ${SITE_NAME}`;
+// Root layout template appends "| Siglens" — 본문 title은 brand 제외
+// (SEO 감사 라운드 2 finding 3: 65 폭단위로 SEO_TITLE_MAX_WIDTH(55)를 넘고 있었다.
+// symbolMetadataFromSeo의 2,247개 URL과 같은 근거 — 브랜드 검색어는 이미 자연 순위
+// 상위라 title 폭을 추가로 쓸 이유가 없다). layout.tsx의 `title.default`는
+// title.template을 거치지 않으므로 접미사를 직접 빼야 한다.
+//
+// (SEO 감사 라운드 3 finding 3) 이 문자열은 정확히 55 폭단위 — SEO_TITLE_MAX_WIDTH와
+// 동일해 여유가 0이다. `clampSeoTitle`을 거치는 12개 심볼 title 템플릿과 달리 홈은
+// 손으로 쓴 리터럴 하나뿐이라 클램프를 씌우기보다("한국 주식 AI 분석" 같은 핵심 문구가
+// 말줄임표에 잘릴 위험) 짧게 유지하는 쪽을 택했다. 대신 안전장치는 코드가 아니라
+// `seo.rootCopy.test.ts`의 폭 테스트다 — 그 테스트는 `SEO_TITLE_MAX_WIDTH` 상수를
+// 직접 참조하므로(하드코딩된 55가 아님) 다음 카피 수정이 예산을 넘으면 그 자리에서
+// 실패한다. 문구를 줄여 여유를 확보하는 대신 이 가드에 의존하기로 한 것은, 남은 여유가
+// 없더라도 회귀를 잡는 테스트가 이미 있으면 카피 품질(핵심 키워드 보존)이 우선한다고
+// 판단했기 때문이다.
+export const ROOT_TITLE = `${ROOT_HEADLINE} — 차트·뉴스로 투자 결론`;
+// 소셜 카드(Kakao/Slack/Twitter/Facebook 언퍼널)는 SERP 폭 제약이 없고 브랜드
+// 노출이 오히려 도움이 된다 — symbolMetadataFromSeo의 fullTitle, MARKET_FULL_TITLE,
+// ECONOMY_FULL_TITLE과 같은 근거로 별도 브랜드 문자열을 둔다. layout.tsx의
+// openGraph.title·twitter.title은 이 값을 쓰고, title.default만 ROOT_TITLE(브랜드 제외)을 쓴다.
+export const ROOT_FULL_TITLE = `${ROOT_TITLE} | ${SITE_NAME}`;
 
 // 한글 SERP는 80~120자가 안전권이라 키워드는 핵심 검색의도 위주로 추렸다.
 export const ROOT_KEYWORDS = [

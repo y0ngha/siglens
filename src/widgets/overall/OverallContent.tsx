@@ -45,6 +45,17 @@ interface OverallContentProps {
      * and which result sections are rendered (crypto: no options/fundamental/financials).
      */
     assetClass?: AssetClass;
+    /**
+     * 옵션 탭이 실제로 존재하는지. `assetClass`만으로는 한국 개별주식(assetClass는
+     * 'equity'지만 옵션 탭이 없음)을 구분하지 못한다 — 페이지가
+     * `getDescriptor(marketProfile).tabs.includes('options')`로 판정해 넘긴다.
+     * `OverallView`(required — SEO 감사 2026-08-18, JSDoc 참고)로 그대로 전달돼
+     * OptionsSummary 섹션 노출 여부를 결정한다. required로 강제한다 — optional +
+     * `= true` 기본값은 `OverallView`에서 적용한 required 강화를 이 한 단계
+     * 위에서 무력화한다(SEO 감사 2026-08-18 finding 2): 호출부가 실수로 값을
+     * 빼먹어도 컴파일이 통과하고 "옵션 있음"으로 조용히 폴백한다.
+     */
+    hasOptions: boolean;
 }
 
 export function OverallContent({
@@ -53,6 +64,7 @@ export function OverallContent({
     initialAnalysis,
     hasEnrichedNews,
     assetClass = 'equity',
+    hasOptions,
 }: OverallContentProps) {
     // /news와 동일 패턴: 마운트 시 개별 카드 분석 fire-and-forget trigger + cards ready 폴링.
     // 새 뉴스 fetch+분석을 사용자 클릭 전에 시작해두면 trigger 시점엔 분석 완료 row만
@@ -234,7 +246,11 @@ export function OverallContent({
 
     return (
         <div className="space-y-6">
-            <OverallView result={r} assetClass={assetClass} />
+            <OverallView
+                result={r}
+                assetClass={assetClass}
+                hasOptions={hasOptions}
+            />
             <ReanalyzeButton
                 onClick={trigger}
                 highlighted={reanalyzeHighlighted}

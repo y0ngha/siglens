@@ -22,14 +22,16 @@ import {
     fetchCryptoAssetList,
     DrizzleCryptoAssetRepository,
     isTabAllowedForSymbol,
-} from '@/entities/ticker/api';
-import { fmpGet } from '@/shared/api/fmp/httpClient';
-import { isCryptoSymbolStatic } from '@/entities/ticker/lib/isCryptoSymbolStatic';
-import {
     DrizzleAssetTranslationRepository,
     DrizzleKoreanTickerRepository,
     DrizzleProfileDescriptionTranslationRepository,
+    // 경계 테스트(500/501)는 구현이 실제로 쓰는 상수여야 의미가 있다 — 값을 여기
+    // 다시 적으면 상수가 바뀌는 순간 조용히 경계를 벗어난다(MISTAKES.md Tests §4).
+    KOREAN_TICKER_UPSERT_BATCH_SIZE,
 } from '@/entities/ticker/api';
+import { fmpGet } from '@/shared/api/fmp/httpClient';
+import { isCryptoSymbolStatic } from '@/entities/ticker/lib/isCryptoSymbolStatic';
+
 import type {
     AssetTranslationRecord,
     CryptoAssetRecord,
@@ -74,6 +76,33 @@ function collectSqlStrings(
     seen.add(node);
     return Object.values(node as Record<string, unknown>).flatMap(value =>
         collectSqlStrings(value, depth + 1, seen)
+    );
+}
+
+/**
+ * `upsertMany`가 배치마다 호출한 `values()`에서 실제로 넘어간 symbol 전체를
+ * 평탄화한다. 콜 횟수만 세면 `slice(i, i + BATCH_SIZE - 1)`처럼 배치마다 한 건씩
+ * 빠뜨려도 콜 수는 그대로라 통과한다 — 실제로 흘러간 전체 집합을 입력과 대조해야
+ * 누락을 잡는다.
+ */
+function collectBatchedUpsertSymbols(values: Mock): string[] {
+    return values.mock.calls.flatMap(call =>
+        (call[0] as KoreanTickerEntry[]).map(entry => entry.symbol)
+    );
+}
+
+/**
+ * `markDelisted`/`markRelisted`가 배치마다 호출한 `where()`의 `inArray(...)` 조건에서
+ * 실제로 바인딩된 symbol만 골라 평탄화한다. `collectSqlStrings`는 SQL 키워드나 컬럼
+ * 이름까지 다 주워오므로, 입력으로 넘긴 symbol 집합과 교집합을 취해 노이즈를 걷어낸다.
+ */
+function collectBatchedInArraySymbols(
+    where: Mock,
+    expectedSymbols: readonly string[]
+): string[] {
+    const expectedSet = new Set(expectedSymbols);
+    return where.mock.calls.flatMap(call =>
+        collectSqlStrings(call[0]).filter(value => expectedSet.has(value))
     );
 }
 
@@ -173,6 +202,10 @@ describe('DrizzleKoreanTickerRepository', () => {
         // findAll 결과가 곧 한글 검색 후보 전체다 — 필터 없이 전량을 읽으면 상폐 종목이
         // 자동완성에 뜨고 클릭하면 시세 없는 페이지로 간다.
         expect(where).toHaveBeenCalledTimes(1);
+        // `.where()`가 불렸다는 것만 보면 **아무 조건이나** 통과한다 — isNull(delistedAt)이
+        // 엉뚱한 컬럼으로 바뀌어도 초록으로 남는다. 조건식을 열어 컬럼을 직접 확인한다.
+        const condition = where.mock.calls[0][0] as SqlLike;
+        expect(collectColumnNames(condition)).toContain('delisted_at');
     });
 
     it('findAll 은 빈 결과도 그대로 반환한다', async () => {
@@ -246,6 +279,21 @@ describe('DrizzleKoreanTickerRepository', () => {
                 updatedAt: expect.anything(),
             },
         });
+        // 키 존재만 보면 `koreanName`을 `excluded.name`으로 돌려놔도 통과한다
+        // (감사 라운드 12). 그러면 매일 밤 크론이 전 종목 한글명을 영문/placeholder로
+        // 덮어써 한글 검색 색인과 네이버 뉴스 질의가 통째로 망가진다.
+        const set = onConflictDoUpdate.mock.calls[0][0].set as Record<
+            string,
+            unknown
+        >;
+        expect(JSON.stringify(set.koreanName)).toContain(
+            'excluded.korean_name'
+        );
+        expect(JSON.stringify(set.name)).toContain('excluded.name');
+        expect(JSON.stringify(set.exchange)).toContain('excluded.exchange"');
+        expect(JSON.stringify(set.exchangeFullName)).toContain(
+            'excluded.exchange_full_name'
+        );
     });
 
     it('upsertMany 는 onConflictDoUpdate 의 set 에 updatedAt 을 명시적으로 포함한다', async () => {
@@ -309,14 +357,48 @@ describe('DrizzleKoreanTickerRepository', () => {
 
     it('upsertMany 는 전 종목 동기화를 배치로 쪼갠다', async () => {
         // 2,500행대를 한 INSERT로 보내면 Neon HTTP 페이로드 한도에 걸린다.
-        const { db, insert } = makeUpsertDb();
+        const { db, insert, values } = makeUpsertDb();
         const repo = new DrizzleKoreanTickerRepository(db);
-        const many = Array.from({ length: 1_100 }, (_, i) => ({
-            ...apple,
-            symbol: `SYM${i}`,
-        }));
+        const symbols = Array.from({ length: 1_100 }, (_, i) => `SYM${i}`);
+        const many = symbols.map(symbol => ({ ...apple, symbol }));
         await repo.upsertMany(many);
         expect(insert).toHaveBeenCalledTimes(3); // 500 + 500 + 100
+        // 콜 수만 세면 `slice(i, i + BATCH_SIZE - 1)`처럼 배치마다 한 건씩 빠뜨려도
+        // 콜 수는 그대로라 통과한다 — 실제로 넘어간 symbol 전체가 입력과 정확히
+        // (개수·구성원 모두) 일치하는지 대조한다.
+        const sentSymbols = collectBatchedUpsertSymbols(values);
+        expect(sentSymbols).toHaveLength(symbols.length);
+        expect(new Set(sentSymbols)).toEqual(new Set(symbols));
+    });
+
+    it('upsertMany 는 정확히 배치 크기(500)만큼이면 한 번만 호출한다', async () => {
+        const { db, insert, values } = makeUpsertDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        const symbols = Array.from(
+            { length: KOREAN_TICKER_UPSERT_BATCH_SIZE },
+            (_, i) => `SYM${i}`
+        );
+        const many = symbols.map(symbol => ({ ...apple, symbol }));
+        await repo.upsertMany(many);
+        expect(insert).toHaveBeenCalledTimes(1);
+        expect(new Set(collectBatchedUpsertSymbols(values))).toEqual(
+            new Set(symbols)
+        );
+    });
+
+    it('upsertMany 는 배치 크기보다 하나 많으면 두 번 호출한다', async () => {
+        const { db, insert, values } = makeUpsertDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        const symbols = Array.from(
+            { length: KOREAN_TICKER_UPSERT_BATCH_SIZE + 1 },
+            (_, i) => `SYM${i}`
+        );
+        const many = symbols.map(symbol => ({ ...apple, symbol }));
+        await repo.upsertMany(many);
+        expect(insert).toHaveBeenCalledTimes(2);
+        expect(new Set(collectBatchedUpsertSymbols(values))).toEqual(
+            new Set(symbols)
+        );
     });
 
     it('markDelisted 는 빈 입력에서 update 를 호출하지 않는다', async () => {
@@ -342,10 +424,17 @@ describe('DrizzleKoreanTickerRepository', () => {
     });
 
     it('markRelisted 는 delisted_at 을 null 로 되돌린다', async () => {
-        const { db, set } = makeUpdateDb();
+        const { db, set, where } = makeUpdateDb();
         const repo = new DrizzleKoreanTickerRepository(db);
         await repo.markRelisted(['000000.KQ']);
         expect(set).toHaveBeenCalledWith({ delistedAt: null });
+        // `set`만 보면 **어떤 행을** 되돌렸는지는 모른다 — inArray(symbol, …)이 엉뚱한
+        // 컬럼으로 바뀌어도 초록으로 남는다. 조건식을 열어 대상 컬럼과 바인딩 값을
+        // 둘 다 확인한다.
+        expect(where).toHaveBeenCalledTimes(1);
+        const condition = where.mock.calls[0][0] as SqlLike;
+        expect(collectColumnNames(condition)).toContain('symbol');
+        expect(collectSqlStrings(condition)).toContain('000000.KQ');
     });
 
     it('markRelisted 는 빈 입력에서 update 를 호출하지 않는다', async () => {
@@ -358,21 +447,88 @@ describe('DrizzleKoreanTickerRepository', () => {
     it('markRelisted 는 대량 재상장을 배치로 쪼갠다', async () => {
         // 피드 장애 복구 직후처럼 재상장 심볼이 한 번에 몰리면 IN (...) 하나가
         // upsertMany와 같은 Neon HTTP 페이로드 한도에 걸린다.
-        const { db, update } = makeUpdateDb();
+        const { db, update, where } = makeUpdateDb();
         const repo = new DrizzleKoreanTickerRepository(db);
         const many = Array.from({ length: 1_100 }, (_, i) => `SYM${i}.KS`);
         await repo.markRelisted(many);
         expect(update).toHaveBeenCalledTimes(3); // 500 + 500 + 100
+        // 콜 수만 세면 `slice(i, i + BATCH_SIZE - 1)`처럼 배치마다 한 건씩 빠뜨려도
+        // 콜 수는 그대로라 통과한다 — 실제로 IN (...)에 바인딩된 symbol 전체가 입력과
+        // 정확히 일치하는지 대조한다.
+        const sentSymbols = collectBatchedInArraySymbols(where, many);
+        expect(sentSymbols).toHaveLength(many.length);
+        expect(new Set(sentSymbols)).toEqual(new Set(many));
+    });
+
+    it('markRelisted 는 정확히 배치 크기(500)만큼이면 한 번만 호출한다', async () => {
+        const { db, update, where } = makeUpdateDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        const many = Array.from(
+            { length: KOREAN_TICKER_UPSERT_BATCH_SIZE },
+            (_, i) => `SYM${i}.KS`
+        );
+        await repo.markRelisted(many);
+        expect(update).toHaveBeenCalledTimes(1);
+        expect(new Set(collectBatchedInArraySymbols(where, many))).toEqual(
+            new Set(many)
+        );
+    });
+
+    it('markRelisted 는 배치 크기보다 하나 많으면 두 번 호출한다', async () => {
+        const { db, update, where } = makeUpdateDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        const many = Array.from(
+            { length: KOREAN_TICKER_UPSERT_BATCH_SIZE + 1 },
+            (_, i) => `SYM${i}.KS`
+        );
+        await repo.markRelisted(many);
+        expect(update).toHaveBeenCalledTimes(2);
+        expect(new Set(collectBatchedInArraySymbols(where, many))).toEqual(
+            new Set(many)
+        );
     });
 
     it('markDelisted 도 대량 상폐를 배치로 쪼갠다', async () => {
-        // 평소엔 가드가 25개로 묶지만 `--force-delist`가 그 상한을 푼다 — 가드가
-        // 없는 경로라 오히려 여기서 페이로드 한도에 걸린다.
-        const { db, update } = makeUpdateDb();
+        // 현재 유일한 호출부(`syncKrListedTickers`)는 가드가 25개로 묶으므로 이
+        // 1,100건 입력은 오늘 도달 불가능한 형상이다 — 가드가 완화되거나 새 호출부가
+        // 생겼을 때 청크가 살아 있는지를 고정한다.
+        // (`--force-delist`는 시드 스크립트 자체의 인라인 UPDATE만 푼다.)
+        const { db, update, where } = makeUpdateDb();
         const repo = new DrizzleKoreanTickerRepository(db);
         const many = Array.from({ length: 1_100 }, (_, i) => `SYM${i}.KS`);
         await repo.markDelisted(many);
         expect(update).toHaveBeenCalledTimes(3); // 500 + 500 + 100
+        const sentSymbols = collectBatchedInArraySymbols(where, many);
+        expect(sentSymbols).toHaveLength(many.length);
+        expect(new Set(sentSymbols)).toEqual(new Set(many));
+    });
+
+    it('markDelisted 는 정확히 배치 크기(500)만큼이면 한 번만 호출한다', async () => {
+        const { db, update, where } = makeUpdateDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        const many = Array.from(
+            { length: KOREAN_TICKER_UPSERT_BATCH_SIZE },
+            (_, i) => `SYM${i}.KS`
+        );
+        await repo.markDelisted(many);
+        expect(update).toHaveBeenCalledTimes(1);
+        expect(new Set(collectBatchedInArraySymbols(where, many))).toEqual(
+            new Set(many)
+        );
+    });
+
+    it('markDelisted 는 배치 크기보다 하나 많으면 두 번 호출한다', async () => {
+        const { db, update, where } = makeUpdateDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        const many = Array.from(
+            { length: KOREAN_TICKER_UPSERT_BATCH_SIZE + 1 },
+            (_, i) => `SYM${i}.KS`
+        );
+        await repo.markDelisted(many);
+        expect(update).toHaveBeenCalledTimes(2);
+        expect(new Set(collectBatchedInArraySymbols(where, many))).toEqual(
+            new Set(many)
+        );
     });
 });
 
@@ -411,6 +567,17 @@ describe('DrizzleAssetTranslationRepository', () => {
                 updatedAt: expect.anything(),
             },
         });
+        // 키 존재만으로는 컬럼을 서로 바꿔 껴도 통과한다 — `korean_tickers` 쪽과
+        // 같은 이유로 각 `excluded.*` 대상까지 고정한다(감사 라운드 12).
+        const set = onConflictDoUpdate.mock.calls[0][0].set as Record<
+            string,
+            unknown
+        >;
+        expect(JSON.stringify(set.koreanName)).toContain(
+            'excluded.korean_name'
+        );
+        expect(JSON.stringify(set.name)).toContain('excluded.name"');
+        expect(JSON.stringify(set.fmpSymbol)).toContain('excluded.fmp_symbol');
     });
 
     it('upsert 는 onConflictDoUpdate 의 set 에 updatedAt 을 명시적으로 포함한다', async () => {
@@ -759,6 +926,32 @@ describe('isTabAllowedForSymbol', () => {
             await expect(
                 isTabAllowedForSymbol('BTCUSD', 'options')
             ).resolves.toBe(false);
+        });
+    });
+
+    // KR 개별주식은 심볼 형상 fast path로 `isCryptoSymbolStatic`을 건너뛴다
+    // (구현부 주석 참고) — 그 분기가 옵션/congress를 걸러내지 못하면 국내에
+    // 존재하지 않는 탭이 200으로 열린다.
+    describe('kr-equity symbol (shape fast path, isCryptoSymbolStatic bypassed)', () => {
+        it('KR 종목은 유동성 있는 옵션 시장이 없는 "options" 탭을 허용하지 않는다', async () => {
+            await expect(
+                isTabAllowedForSymbol('005930.KS', 'options')
+            ).resolves.toBe(false);
+            expect(mockIsCryptoSymbolStatic).not.toHaveBeenCalled();
+        });
+
+        it('KR 종목은 공직자 주식 백지신탁 API가 없는 "congress" 탭을 허용하지 않는다', async () => {
+            await expect(
+                isTabAllowedForSymbol('005930.KS', 'congress')
+            ).resolves.toBe(false);
+            expect(mockIsCryptoSymbolStatic).not.toHaveBeenCalled();
+        });
+
+        it('US 종목(positive control)은 여전히 "options" 탭을 허용한다', async () => {
+            mockIsCryptoSymbolStatic.mockResolvedValue(false);
+            await expect(
+                isTabAllowedForSymbol('AAPL', 'options')
+            ).resolves.toBe(true);
         });
     });
 });

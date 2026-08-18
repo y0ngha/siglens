@@ -31,7 +31,7 @@ describe('OverallFactualFallback', () => {
             <OverallFactualFallback
                 symbol="AAPL"
                 displayName="Apple Inc."
-                assetClass="equity"
+                marketProfile="us-equity"
                 newsItems={[
                     makeNewsItem('news-1', { sentiment: 'bullish' }),
                     makeNewsItem('news-2'),
@@ -59,7 +59,7 @@ describe('OverallFactualFallback', () => {
             <OverallFactualFallback
                 symbol="BTCUSD"
                 displayName="Bitcoin"
-                assetClass="crypto"
+                marketProfile="crypto"
                 newsItems={[makeNewsItem('crypto-1', { sentiment: 'bearish' })]}
             />
         );
@@ -74,12 +74,37 @@ describe('OverallFactualFallback', () => {
         expect(section).not.toHaveTextContent('옵션');
     });
 
+    /**
+     * 회귀 가드(SEO 감사 finding 1, 2026-08-18): 한국 개별주식은 assetClass가
+     * 'equity'라 예전 `assetClass` 기반 분기에서는 미국 주식과 똑같이 "옵션"을
+     * 노출했다. `marketProfile="kr-equity"`가 descriptor의 tabs whitelist를
+     * 물어 옵션 문구를 빼는지 pin한다.
+     */
+    it('renders kr-equity axes without the options claim', () => {
+        render(
+            <OverallFactualFallback
+                symbol="005930.KS"
+                displayName="Samsung Electronics"
+                marketProfile="kr-equity"
+                newsItems={[makeNewsItem('kr-1', { sentiment: 'bullish' })]}
+            />
+        );
+
+        const section = screen.getByRole('region', {
+            name: 'Samsung Electronics 종합 분석 데이터 상태',
+        });
+        expect(section).toHaveTextContent(
+            'Samsung Electronics (005930.KS) 종합 분석은 차트, 뉴스, 펀더멘털, 공포 탐욕 지수를 함께 봅니다.'
+        );
+        expect(section).not.toHaveTextContent('옵션');
+    });
+
     it('renders an honest empty news state', () => {
         render(
             <OverallFactualFallback
                 symbol="AAPL"
                 displayName="Apple Inc."
-                assetClass="equity"
+                marketProfile="us-equity"
                 newsItems={[]}
             />
         );

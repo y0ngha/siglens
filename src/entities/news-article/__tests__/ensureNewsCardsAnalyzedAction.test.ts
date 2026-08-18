@@ -46,6 +46,7 @@ vi.mock('@/entities/news-article/api', () => ({
             upsertNewsItem: vi.fn(),
             attachAnalysis: vi.fn(),
             listBySymbol: vi.fn().mockResolvedValue([]),
+            listAnalyzedIds: vi.fn().mockResolvedValue(new Set<string>()),
         };
     }),
 }));
@@ -55,6 +56,7 @@ import { ensureNewsCardsAnalyzedAction } from '../actions/ensureNewsCardsAnalyze
 import { NEWS_CARD_ANALYSIS_PARALLEL_LIMIT } from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import { runNewsCardAnalysis } from '@y0ngha/siglens-core';
+import { VISITOR_NEWS_CARD_LIMIT } from '../lib/newsAnalysisConstants';
 import { getNewsClient } from '../lib/getNewsClient';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type {
@@ -119,6 +121,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
     let mockUpsertNewsItem: Mock;
     let mockAttachAnalysis: Mock;
     let mockListBySymbol: Mock;
+    let mockListAnalyzedIds: Mock;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -135,6 +138,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         mockUpsertNewsItem = vi.fn().mockResolvedValue(true);
         mockAttachAnalysis = vi.fn().mockResolvedValue(undefined);
         mockListBySymbol = vi.fn().mockResolvedValue([]);
+        mockListAnalyzedIds = vi.fn().mockResolvedValue(new Set<string>());
 
         mockGetNewsClient.mockReturnValue({
             fetchNewsForPeriod: mockFetchNewsForPeriod,
@@ -144,6 +148,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
                 upsertNewsItem: mockUpsertNewsItem,
                 attachAnalysis: mockAttachAnalysis,
                 listBySymbol: mockListBySymbol,
+                listAnalyzedIds: mockListAnalyzedIds,
             } as never;
         });
     });
@@ -219,6 +224,34 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             expect(mockUpsertNewsItem).toHaveBeenCalledWith(NEWS_ITEM_1);
             expect(mockUpsertNewsItem).toHaveBeenCalledWith(NEWS_ITEM_2);
             expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
+        });
+
+        it('한 번에 보강하는 기사 수를 VISITOR_NEWS_CARD_LIMIT로 묶는다', async () => {
+            // 적재 lookback이 180일이고 FMP 상한이 1,000건이라, 상한이 없으면
+            // 백로그가 쌓인 종목의 첫 마운트 한 번이 최악 1,000회 LLM 왕복이 된다.
+            // 2-vCPU 박스에서 LLM 소켓 4개를 수십 분 잡는다(감사: 비용 확인 패스).
+            // 픽스처 길이를 상수에서 파생한다 — 하드코딩하면 상수를 그 값 이상으로
+            // 올리는 순간 테스트가 조용히 무장 해제된다(감사 라운드 13).
+            const many = Array.from(
+                { length: VISITOR_NEWS_CARD_LIMIT * 2 },
+                (_, i) => ({
+                    ...NEWS_ITEM_1,
+                    id: `news-${i}`,
+                    url: `https://example.com/${i}`,
+                })
+            );
+            mockFetchNewsForPeriod.mockResolvedValue(many);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockRunNewsCardAnalysis).toHaveBeenCalledTimes(
+                VISITOR_NEWS_CARD_LIMIT
+            );
+            // 적재는 전량 그대로다 — 상한은 분석 단계에만 건다.
+            expect(mockUpsertNewsItem).toHaveBeenCalledTimes(
+                VISITOR_NEWS_CARD_LIMIT * 2
+            );
         });
 
         it('각 뉴스 아이템에 대해 runNewsCardAnalysis를 호출한다', async () => {
@@ -372,19 +405,17 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
 
         it('fresh.length === 0 early-return은 DB에 미분석 기사가 있어도 안전하다', async () => {
             // fresh=[]이면 unanalyzed는 항상 빈 배열이 된다(unanalyzed = fresh.filter(...)).
-            // 따라서 listBySymbol로 DB를 조회할 필요가 없고, runNewsCardAnalysis도
+            // 따라서 분석 대상 조회(listAnalyzedIds)도 필요 없고, runNewsCardAnalysis도
             // 호출할 필요가 없다 — 분석 대상이 fresh에서 파생되므로 fresh가 비면 항상 빈다.
             // DB에 analyzedAt=null 행이 남아 있더라도 이번 호출에서 가져온 fresh가 없으면
             // 그 행을 참조할 방법이 없으므로 early-return은 안전하다.
             mockFetchNewsForPeriod.mockResolvedValue([]);
             // DB에 미분석 기사가 있다고 가정한다(next call에서 구제됨).
-            mockListBySymbol.mockResolvedValue([
-                { id: 'stale-item-001', analyzedAt: null },
-            ]);
+            mockListAnalyzedIds.mockResolvedValue(new Set<string>());
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
-            expect(mockListBySymbol).not.toHaveBeenCalled();
+            expect(mockListAnalyzedIds).not.toHaveBeenCalled();
             expect(mockRunNewsCardAnalysis).not.toHaveBeenCalled();
         });
 
@@ -397,9 +428,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             // 모든 upsert가 false → changedCount=0 (재fetch, 내용 동일)
             mockUpsertNewsItem.mockResolvedValue(false);
             // DB에는 해당 기사가 있으나 아직 분석 안 됨(analyzedAt=null)
-            mockListBySymbol.mockResolvedValue([
-                { id: NEWS_ITEM_1.id, analyzedAt: null },
-            ]);
+            mockListAnalyzedIds.mockResolvedValue(new Set<string>());
             mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
             mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
 
@@ -420,13 +449,13 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
 
         it('[회귀] changedCount=0이고 미분석 기사도 없으면 분석 단계를 호출하지 않는다', async () => {
-            // changedCount=0이지만 listBySymbol이 모든 기사가 이미 분석 완료 상태임을 반환.
+            // changedCount=0이고 그 기사가 이미 분석 완료 상태다.
             // 분석 단계는 unanalyzed=[]이므로 실제 submit 호출이 없어야 한다.
             mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
             mockUpsertNewsItem.mockResolvedValue(false);
-            mockListBySymbol.mockResolvedValue([
-                { id: NEWS_ITEM_1.id, analyzedAt: new Date('2025-07-01') },
-            ]);
+            mockListAnalyzedIds.mockResolvedValue(
+                new Set<string>(['item-001'])
+            );
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
@@ -582,13 +611,13 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
     describe('DB-first 필터링은', () => {
         it('모든 아이템이 이미 분석 완료(analyzedAt != null)이면 카드 분석을 호출하지 않는다', async () => {
             mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
-            mockListBySymbol.mockResolvedValue([
-                { id: NEWS_ITEM_1.id, analyzedAt: new Date('2025-07-01') },
-            ]);
+            mockListAnalyzedIds.mockResolvedValue(
+                new Set<string>(['item-001', 'item-002'])
+            );
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
-            expect(mockListBySymbol).toHaveBeenCalledWith(
+            expect(mockListAnalyzedIds).toHaveBeenCalledWith(
                 'AAPL',
                 NEWS_LOOKBACK_MS
             );
@@ -600,11 +629,9 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
                 NEWS_ITEM_1,
                 NEWS_ITEM_2,
             ]);
-            mockListBySymbol.mockResolvedValue([
-                { id: NEWS_ITEM_1.id, analyzedAt: new Date('2025-07-01') },
-                { id: NEWS_ITEM_2.id, analyzedAt: null },
-            ]);
-            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
+            mockListAnalyzedIds.mockResolvedValue(
+                new Set<string>(['item-001'])
+            );
             mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
 
             await ensureNewsCardsAnalyzedAction('AAPL');
@@ -618,9 +645,11 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             );
         });
 
-        it('listBySymbol 실패 시 에러를 전파한다', async () => {
+        it('분석 대상 조회 실패 시 에러를 전파한다', async () => {
             mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
-            mockListBySymbol.mockRejectedValue(new Error('DB connection lost'));
+            mockListAnalyzedIds.mockRejectedValue(
+                new Error('DB connection lost')
+            );
 
             await expect(ensureNewsCardsAnalyzedAction('AAPL')).rejects.toThrow(
                 'DB connection lost'
@@ -816,21 +845,29 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
         });
 
-        it('사람 경로 → 최근 fetch됐어도 항상 fetch한다(가드 무시)', async () => {
+        it('최근 fetch됐으면 사람 경로도 FMP 재조회와 upsert를 건너뛴다', async () => {
+            // 이전에는 이 가드가 `skipAnalysis` 뒤에 걸려 사실상 죽어 있었고, 그
+            // 동작("사람은 항상 fresh")을 이 테스트가 고정하고 있었다. 그런데 이
+            // 액션은 `useEffect`에서 fire-and-forget으로 나가므로 트리거를 쏜 본인의
+            // 화면에는 애초에 반영되지 않는다 — 적재 결과는 `revalidateTag` 이후의
+            // 다음 렌더에 들어간다. 그래서 TTL의 실제 대가는 "10분 안에 들어온 다음
+            // 방문자가 최대 10분 된 목록을 본다"뿐이고, 얻는 건 매 마운트 반복되던
+            // 180일 FMP 조회 + 기사 수만큼의 Neon 왕복 제거다.
+            //
+            // 시장 뉴스 형제 경로(`ensureMarketNewsCardsAnalyzedAction`)가 같은
+            // 플래그를 이미 봇·사람 구분 없이 같은 TTL로 걸고 있다 — 이제 정책이 같다.
             mockIsRecentlyFetched.mockResolvedValue(true);
             mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
-            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
             mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
-            expect(mockFetchNewsForPeriod).toHaveBeenCalledWith(
-                'AAPL',
-                NEWS_LOOKBACK_MS
-            );
+            expect(mockFetchNewsForPeriod).not.toHaveBeenCalled();
+            expect(mockUpsertNewsItem).not.toHaveBeenCalled();
+            expect(mockRunNewsCardAnalysis).not.toHaveBeenCalled();
         });
 
-        it('upsert 과반 실패 시 markFetched를 호출하지 않고, throw도 하지 않는다', async () => {
+        it('upsert 과반 실패 시 throw하지 않는다(플래그는 이미 찍힘)', async () => {
             const errorSpy = vi
                 .spyOn(console, 'error')
                 .mockImplementation(() => undefined);
@@ -841,8 +878,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             ]);
             // Both upserts fail → majority failure inside ingestNewsForSymbol,
             // but the action swallows NewsIngestWriteError (fire-and-forget
-            // contract, PR #700 review) instead of propagating it — markFetched
-            // still never runs because the throw happens before it.
+            // contract, PR #700 review) instead of propagating it. markFetched
+            // HAS run — 표시가 FMP 왕복 앞으로 옮겨졌다(감사: 비용 라운드 13).
             mockUpsertNewsItem
                 .mockRejectedValueOnce(new Error('DB down'))
                 .mockRejectedValueOnce(new Error('DB down'));
@@ -851,7 +888,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
                 ensureNewsCardsAnalyzedAction('AAPL', { skipAnalysis: true })
             ).resolves.toBeUndefined();
 
-            expect(mockMarkFetched).not.toHaveBeenCalled();
+            expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
             expect(errorSpy).toHaveBeenCalled();
             errorSpy.mockRestore();
         });
