@@ -29,19 +29,16 @@ export function ContactDialog({
                 {triggerLabel}
             </button>
 
-            {isOpen && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center overscroll-contain bg-secondary-950/80 p-4 backdrop-blur-sm"
-                    role="presentation"
-                >
-                    <div
-                        ref={dialogRef}
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="contact-dialog-title"
-                        tabIndex={-1}
-                        className="max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-xl border border-secondary-700 bg-secondary-800 text-left shadow-2xl outline-none"
-                    >
+            {/* 네이티브 모달: 포커스 트랩·Esc·비활성 배경이 브라우저 기본 동작이고,
+                배경 클릭 닫기는 useDialog가 dialog에 직접 리스너를 붙여 처리한다. */}
+            <dialog
+                ref={dialogRef}
+                aria-labelledby="contact-dialog-title"
+                onClose={close}
+                className="max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-xl border border-secondary-700 bg-secondary-800 p-0 text-left shadow-2xl backdrop:bg-secondary-950/80 backdrop:backdrop-blur-sm"
+            >
+                {isOpen && (
+                    <div>
                         <div className="flex items-start justify-between border-b border-secondary-700 px-6 py-5">
                             <div>
                                 <h2
@@ -81,8 +78,8 @@ export function ContactDialog({
                             <ContactForm />
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </dialog>
         </>
     );
 }

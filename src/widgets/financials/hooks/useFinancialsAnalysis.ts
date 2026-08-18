@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import type { FinancialsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import type { RunFinancialsAnalysisActionResult } from '@/entities/analysis/actions';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
@@ -72,8 +71,6 @@ export function useFinancialsAnalysis(
      */
     isSettingsHydrated = true
 ): FinancialsAnalysisState {
-    const queryClient = useQueryClient();
-
     // queryKey는 인라인으로 둔다(§17 훅 순서: useMemo는 useQuery보다 뒤여야 함).
     // React Query는 queryKey를 deep-equality로 비교하므로 매 렌더 새 배열 참조가
     // 생성돼도 불필요한 재페치가 발생하지 않는다.
@@ -81,8 +78,13 @@ export function useFinancialsAnalysis(
         queryKey: QUERY_KEYS.financialsAnalysis(symbol, modelId, reasoning),
         queryFn: ({ signal, queryKey: [, qSymbol, qModelId, qReasoning] }) =>
             fetchFinancialsAnalysis(qSymbol, qModelId, qReasoning, signal),
-        enabled: false,
+        // 캐시가 없을 때만 1회 자동 실행한다. staleTime: Infinity라 캐시가 있으면
+        // 조용히 재사용되고(재요청 없음), 포커스/재연결 재요청은 꺼서 실패 이후
+        // 창 포커스만으로 AI 분석이 다시 도는 것을 막는다. 수동 재시도는 retry().
+        enabled: isSettingsHydrated,
         retry: false,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
         staleTime: Infinity,
     });
 
@@ -91,17 +93,6 @@ export function useFinancialsAnalysis(
     const retry = () => {
         void refetch();
     };
-
-    useEffect(() => {
-        if (!isSettingsHydrated) return;
-        if (
-            queryClient.getQueryData(
-                QUERY_KEYS.financialsAnalysis(symbol, modelId, reasoning)
-            ) === undefined
-        ) {
-            void refetch();
-        }
-    }, [isSettingsHydrated, queryClient, symbol, modelId, reasoning, refetch]);
 
     if (query.isError) {
         if (query.error instanceof BotBlockedError) {

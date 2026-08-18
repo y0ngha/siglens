@@ -28,12 +28,32 @@ import {
     type IndicatorBinding,
 } from '../../model/indicatorRegistry';
 
+/**
+ * useDialog를 mock한 테스트용 dialogRef.
+ *
+ * 네이티브 `<dialog>`는 열려 있지 않으면 children이 숨겨져(UA 스타일 display:none)
+ * getByRole/getByText로 조회되지 않는다. 실제 훅은 effect에서 showModal()을 부르지만
+ * mock에는 그 로직이 없으므로, React가 엘리먼트를 ref에 붙이는 순간 열어 준다.
+ */
+function openedDialogRef(): { current: HTMLDialogElement | null } {
+    let node: HTMLDialogElement | null = null;
+    return {
+        get current() {
+            return node;
+        },
+        set current(next: HTMLDialogElement | null) {
+            node = next;
+            if (next !== null && !next.open) next.showModal();
+        },
+    };
+}
+
 function openDialog(): void {
     vi.mocked(useDialog).mockReturnValue({
         isOpen: true,
         open: vi.fn(),
         close: vi.fn(),
-        dialogRef: { current: null },
+        dialogRef: openedDialogRef(),
         triggerRef: { current: null },
     });
 }
@@ -98,7 +118,12 @@ describe('IndicatorSettingsModal', () => {
         render(
             <IndicatorSettingsModal bindings={[rsiBinding(), maBinding()]} />
         );
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        // useDialog mock은 showModal()을 호출하지 않으므로 <dialog>에 open이 붙지 않는다
+        // (role="dialog" 조회 불가). 내용 렌더 여부로 검증한다 — 네이티브 open 동작은
+        // useDialog 테스트와 chartIndicatorFlow 통합 테스트가 담당한다.
+        expect(
+            screen.getByRole('heading', { name: '보조지표 설정' })
+        ).toBeInTheDocument();
         expect(screen.getByText('추세')).toBeInTheDocument();
         expect(screen.getByText('모멘텀')).toBeInTheDocument();
         expect(screen.queryByText('변동성')).not.toBeInTheDocument();
@@ -169,7 +194,7 @@ describe('IndicatorSettingsModal', () => {
             isOpen: true,
             open: vi.fn(),
             close,
-            dialogRef: { current: null },
+            dialogRef: openedDialogRef(),
             triggerRef: { current: null },
         });
         render(<IndicatorSettingsModal bindings={[rsiBinding()]} />);
@@ -180,7 +205,9 @@ describe('IndicatorSettingsModal', () => {
     it('renders an empty dialog body without crashing when bindings is empty (worst case)', () => {
         openDialog();
         render(<IndicatorSettingsModal bindings={[]} />);
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', { name: '보조지표 설정' })
+        ).toBeInTheDocument();
         expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
     });
 

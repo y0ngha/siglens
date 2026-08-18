@@ -106,5 +106,4 @@ export interface MarketProfileDescriptor {
          */
         aboutNodeType: 'Corporation' | null;
     };
-    sitemapLastmod: 'us-close' | 'rolling' | 'kr-close';
 }

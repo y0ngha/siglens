@@ -199,3 +199,6 @@
 
 ## [feat/market-calendar-adoption Round 5 | Stock market calendar adoption | 2026-08-18]
 - Status: APPROVED (zero findings)
+
+## [feat/kr-sitemap-scope Round 3 | Korean symbol sitemap scoping decision | 2026-08-18]
+- Status: APPROVED (zero findings)

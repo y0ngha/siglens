@@ -79,7 +79,13 @@ vi.mock('@/entities/seo-snapshot/api', () => ({
     }),
 }));
 
-vi.mock('@/entities/seo-snapshot/lib/applicability', () => ({
+// `buildPrewarmUniverse`만 스텁하고 나머지는 실물을 쓴다. `prewarmSessionSpecFor`는
+// `freshness`의 장중 게이트가 부르는데, 스텁으로 덮으면 "크립토는 절대 미루지 않는다"는
+// 계약이 이 스위트에서 사라진다 — 그 계약이 깨져도 여기 36개 테스트가 전부 통과한다.
+vi.mock('@/entities/seo-snapshot/lib/applicability', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/entities/seo-snapshot/lib/applicability')
+    >()),
     buildPrewarmUniverse: mockBuildPrewarmUniverse,
 }));
 
