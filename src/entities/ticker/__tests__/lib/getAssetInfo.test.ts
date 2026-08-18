@@ -92,7 +92,10 @@ import {
     _resetInFlightTranslationsForTest,
     getAssetInfo,
 } from '../../lib/getAssetInfo';
-import { ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN } from '../../lib/cacheKeys';
+import {
+    ASSET_INFO_CACHE_TTL_WITH_KOREAN,
+    ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN,
+} from '../../lib/cacheKeys';
 
 const apple: FmpSearchResult = {
     symbol: 'AAPL',
@@ -479,6 +482,41 @@ describe('getAssetInfo', () => {
                 exchangeFullName: 'KOSDAQ',
             },
         ]);
+    });
+
+    it('KR 대표 종목은 koreanNameStore가 비어도 큐레이션 카탈로그로 한글명을 채운다', async () => {
+        // ISR은 첫 렌더를 캐시에 굳힌다. lazy 번역이 끝나기를 기다리면 대표 종목의
+        // SEO 제목이 revalidate 주기 내내 `005930.KS 주가 전망`으로 남는다 —
+        // 카탈로그 fallback이 그걸 막는 유일한 장치다.
+        const symbol = '005930.KS';
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockResolvedValue(null);
+        fetchKrEquityQuoteNameMock.mockResolvedValue(
+            'Samsung Electronics Co Ltd'
+        );
+        getKoreanNamesMock.mockResolvedValue({}); // 번역 스토어가 아직 비어 있다
+
+        const result = await getAssetInfo(symbol);
+
+        expect(result).toEqual({
+            symbol,
+            name: 'Samsung Electronics Co Ltd',
+            marketProfile: 'kr-equity',
+            koreanName: '삼성전자',
+        });
+        // 한글명을 이미 확보했으므로 긴 TTL로 굳히고, 번역 API는 부르지 않는다.
+        expect(mockCache.set).toHaveBeenCalledWith(
+            `asset-info:${symbol}`,
+            result,
+            ASSET_INFO_CACHE_TTL_WITH_KOREAN
+        );
+        expect(translateCompanyNamesMock).not.toHaveBeenCalled();
+
+        await new Promise(resolve => setImmediate(resolve));
+        // 카탈로그 값도 DB에 내려써야 다음 요청이 카탈로그 없이도 맞는다.
+        expect(mockRepository.upsert).toHaveBeenCalledWith(
+            expect.objectContaining({ symbol, koreanName: '삼성전자' })
+        );
     });
 
     it('getAssetInfo가 searchBySymbol을 throwOnInfraFailure로 호출한다', async () => {
