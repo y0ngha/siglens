@@ -22,10 +22,6 @@ import {
     fetchCryptoAssetList,
     DrizzleCryptoAssetRepository,
     isTabAllowedForSymbol,
-} from '@/entities/ticker/api';
-import { fmpGet } from '@/shared/api/fmp/httpClient';
-import { isCryptoSymbolStatic } from '@/entities/ticker/lib/isCryptoSymbolStatic';
-import {
     DrizzleAssetTranslationRepository,
     DrizzleKoreanTickerRepository,
     DrizzleProfileDescriptionTranslationRepository,
@@ -33,6 +29,9 @@ import {
     // 다시 적으면 상수가 바뀌는 순간 조용히 경계를 벗어난다(MISTAKES.md Tests §4).
     KOREAN_TICKER_UPSERT_BATCH_SIZE,
 } from '@/entities/ticker/api';
+import { fmpGet } from '@/shared/api/fmp/httpClient';
+import { isCryptoSymbolStatic } from '@/entities/ticker/lib/isCryptoSymbolStatic';
+
 import type {
     AssetTranslationRecord,
     CryptoAssetRecord,

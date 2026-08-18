@@ -41,10 +41,18 @@ async function runAfterCallback(): Promise<void> {
  */
 const DRAIN_SETTLE_GRACE_MS = 50;
 
-async function settlesPromptly(promise: Promise<void> | undefined) {
-    return Promise.race([
-        promise?.then(() => 'settled' as const),
-        new Promise<'still-pending'>(resolve =>
+type DrainOutcome = 'settled' | 'still-pending';
+
+// 반환 타입에 `undefined`가 섞이지 않게 여기서 좁힌다. 호출부는 이미
+// `toBeInstanceOf(Promise)`로 거른 뒤라 이 throw는 도달하지 않지만, optional을
+// 그대로 흘리면 도달 불가능한 결과가 타입에 남아 읽는 사람을 헷갈리게 한다.
+async function settlesPromptly(
+    promise: Promise<void> | undefined
+): Promise<DrainOutcome> {
+    if (!promise) throw new Error('drain promise가 등록되지 않았다');
+    return Promise.race<DrainOutcome>([
+        promise.then(() => 'settled'),
+        new Promise<DrainOutcome>(resolve =>
             setTimeout(() => resolve('still-pending'), DRAIN_SETTLE_GRACE_MS)
         ),
     ]);
