@@ -279,6 +279,41 @@ describe('ChartContent', () => {
             }
         );
 
+        it('한국 상장 종목(symbol=005930.KS)이면 "내 포지션" 요약을 원화(₩)로 렌더한다 (뮤테이션 감사: PositionStatusSummary.symbol → "AAPL" 생존자)', () => {
+            // PositionStatusSummary 단위 테스트는 symbol prop이 주어지면 ₩로
+            // 포맷됨을 이미 검증했다. 여기서 확인할 건 그 하나뿐인 프로덕션
+            // 배선 — ChartContent가 자신의 symbol prop을 그대로 전달하는지다.
+            analysisMock.mockReturnValue(
+                analysisReturn({ analysis: NARRATIVE_ANALYSIS })
+            );
+            symbolHoldingMock.mockReturnValue({
+                holding: {
+                    symbol: '005930.KS',
+                    companyName: 'Samsung Electronics',
+                    fmpSymbol: undefined,
+                    quantity: '10',
+                    averagePrice: '100',
+                    updatedAt: new Date().toISOString(),
+                },
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+
+            render(
+                <ChartContent
+                    {...props}
+                    symbol="005930.KS"
+                    initialAnalysis={FALLBACK_ANALYSIS}
+                    initialAnalysisFailed={true}
+                />
+            );
+
+            expect(screen.getByText('₩100 · 10주')).toBeInTheDocument();
+            expect(screen.queryByText('$100 · 10주')).not.toBeInTheDocument();
+        });
+
         it('홀딩이 있고 resolve됐어도 분석이 서사 없는 FALLBACK이면 "내 포지션" 요약을 렌더하지 않는다 — narrative 게이트', () => {
             // analysisMock은 beforeEach 기본값(FALLBACK_ANALYSIS, 서사 없음) 그대로.
             symbolHoldingMock.mockReturnValue({

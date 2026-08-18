@@ -59,6 +59,14 @@ describe('formatSignedAmount', () => {
         expect(formatSignedAmount(0, '005930.KS')).toBe('+₩0');
     });
 
+    it('국내 상장 종목의 소수 금액도 소수점 없이(원화 호가 관례) 반올림한다 (뮤테이션 감사: maximumFractionDigits 0 → 2 생존자)', () => {
+        // unrealizedPnl = (current - avg) * quantity는 회원이 입력한 소수 평단으로
+        // 언제든 소수가 될 수 있다. 기존 fixture는 전부 정수라 maximumFractionDigits:0을
+        // 2로 바꿔도 그린이 유지됐다 — 소수 입력으로 그 캡을 falsifiable하게 pin한다.
+        expect(formatSignedAmount(300.5, '005930.KS')).toBe('+₩301');
+        expect(formatSignedAmount(-150.5, '005930.KS')).toBe('-₩151');
+    });
+
     it('미국 종목은 formatSignedUsd와 동일하게 $ 표기를 쓴다', () => {
         expect(formatSignedAmount(300, 'AAPL')).toBe('+$300.00');
         expect(formatSignedAmount(-150, 'AAPL')).toBe('-$150.00');
