@@ -74,9 +74,13 @@ describe('KR_EQUITY_SESSION.closeMinuteFor', () => {
     });
 
     it('지평선(KR_CALENDAR_HORIZON) 안쪽 마지막 날짜는 경고 없이 정상 처리된다', () => {
+        // KR_CALENDAR_HORIZON(2026-12-31)은 KRX 연말 폐장일이라 0을 반환하는 게 맞다 —
+        // 이 케이스는 "경고 없이"와 "휴장일 조회가 지평선 폴백보다 먼저 걸린다"를
+        // 동시에 못박는다. `date > horizon`이 아니라 `>=`였다면 이 날짜도 경고와 함께
+        // 정상 개장으로 새 버렸을 것이다.
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const horizonNoonUtc = new Date(`${KR_CALENDAR_HORIZON}T02:00:00Z`);
-        expect(closeMinuteFor(horizonNoonUtc)).toBe(930);
+        expect(closeMinuteFor(horizonNoonUtc)).toBe(0);
         expect(warnSpy).not.toHaveBeenCalled();
     });
 
