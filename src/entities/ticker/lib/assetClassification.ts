@@ -148,9 +148,12 @@ function isKrEtfName(name: string | undefined): boolean {
 const FUND_NAME_SUFFIX_WORDS = new Set(['ETF', 'FUND', 'ETN', 'INDEX']);
 
 /**
- * **끝 토큰만 본다.** `Northern Trust Corporation`처럼 사명에 유형어가 들어가지만
- * 끝 토큰은 "Corporation"인 진짜 상장사가 있다 — 부분 문자열이나 임의 위치 토큰으로
- * 찾으면 이런 회사가 조용히 ETF로 오분류돼 `Corporation` about 노드가 사라진다.
+ * **끝 토큰만 본다.** `Index Solutions Corporation`처럼 유형어(`INDEX`)가 중간
+ * 토큰으로 들어가지만 끝 토큰은 "Corporation"인 사명이 있다 — 부분 문자열이나 임의
+ * 위치 토큰으로 찾으면 이런 회사가 조용히 ETF로 오분류돼 `Corporation` about 노드가
+ * 사라진다. (예전에 여기 적혀 있던 `Northern Trust Corporation`은 `TRUST`가 위
+ * 목록에서 빠진 뒤로 이 규칙의 예가 아니다 — 어떤 탐색 전략에서도 통과한다.
+ * 그 이름은 위 `TRUST` 제외 주석이 가리키는 대상이다.)
  * `isKrEtfName`이 부분 문자열 대신 토큰 전체 일치를 쓰는 것과 같은 안전장치를,
  * 위치만 이름 끝으로 바꿔 적용한다.
  *

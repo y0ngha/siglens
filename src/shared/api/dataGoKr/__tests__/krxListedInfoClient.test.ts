@@ -220,6 +220,45 @@ describe('fetchKrxListedItems', () => {
         await expect(fetchKrxListedItems()).resolves.toHaveLength(1);
     });
 
+    /**
+     * [회귀] wall-clock 예산은 **페이지 단위로** 재야 도달한다.
+     *
+     * 후보 루프에서만 재면 영원히 걸리지 않는다 — `collectAllPages`는 첫 페이지가
+     * 비었을 때만 `[]`를 돌려주고, 한 건이라도 있으면 호출부가 즉시 반환하므로
+     * 후보를 넘기는 경로는 후보당 정확히 1페이지(≤ 10 × 10초 < 120초)다. 실제
+     * 위험은 반대쪽이다: 한 후보가 `MAX_PAGES`를 다 쓰면 20 × 10초 = 200초로
+     * 배포 드레인 창(180초)을 넘긴다. 이 수집은 `after()` 안에서 돌고 그 promise가
+     * SIGTERM 드레인에 등록돼 있어 그만큼 종료를 붙잡는다.
+     *
+     * 가짜 타이머로 페이지당 30초를 흘려보내면 4페이지를 받은 시점에 정확히 120초라
+     * 5페이지째 검사에서 멈춘다 — MAX_PAGES(20)에 한참 못 미치는 지점이라, 상한이
+     * 페이지 수가 아니라 시간에서 오는지가 판별된다.
+     */
+    it('예산이 닳으면 MAX_PAGES 전에 수집을 멈춘다', async () => {
+        vi.useFakeTimers();
+        try {
+            // 매 페이지가 가득 차 있어 종료 조건(빈 페이지·totalCount 도달)에 절대
+            // 걸리지 않는다 — 멈추는 이유가 예산뿐이도록.
+            fetchSpy.mockImplementation(async () => {
+                vi.advanceTimersByTime(30_000);
+                return page(
+                    Array.from({ length: 1000 }, (_, i) => ({
+                        ...SAMSUNG,
+                        srtnCd: `A${String(i).padStart(6, '0')}`,
+                    })),
+                    999_999 // totalCount를 크게 둬 페이지 소진으로는 안 끝나게.
+                );
+            });
+
+            await fetchKrxListedItems();
+
+            expect(fetchSpy.mock.calls.length).toBeLessThan(20); // MAX_PAGES
+            expect(fetchSpy.mock.calls.length).toBe(4); // 120초 / 30초
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('returns empty without calling the API when the key is missing', async () => {
         vi.stubEnv('DATA_GO_KR_SERVICE_KEY', '');
 

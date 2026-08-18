@@ -42,10 +42,19 @@ const PAGE_TIMEOUT_MS = 10_000;
 /**
  * 수집 전체의 wall-clock 예산.
  *
- * 페이지 타임아웃만으로는 상한이 못 된다 — 최악은 10일 후보 × 20페이지 × 10초라
- * 30분을 넘는다. 이 함수는 크론 라우트의 `after()` 안에서 돌고 그 promise가
- * SIGTERM 드레인에 등록되므로(`app/api/cron/kr-tickers/route.ts`), 배포 때
- * 종료를 그만큼 붙잡는다. 정상 경로는 첫 후보에서 3페이지로 끝나 수 초다.
+ * 페이지 타임아웃만으로는 부족하다 — 후보 하나가 `MAX_PAGES`를 다 쓰면 20 × 10초
+ * = 200초로, 배포 드레인 창(180초)을 넘긴다. 이 수집은 크론 라우트의 `after()`
+ * 안에서 돌고 그 promise가 SIGTERM 드레인에 등록되므로
+ * (`app/api/cron/kr-tickers/route.ts`) 그만큼 종료를 붙잡는다.
+ *
+ * 후보 루프에서만 재면 도달할 수 없다: `collectAllPages`는 첫 페이지가 비었을
+ * 때만 `[]`를 돌려주고, 한 건이라도 있으면 호출부가 즉시 반환하므로 후보를
+ * 넘기는 경로는 후보당 정확히 1페이지다(≤ 10 × 10초). 그래서 **페이지 단위로**
+ * 잰다.
+ *
+ * 예산에 걸려 잘린 목록이 상폐 판정을 오염시키지는 않는다 — `planKrTickerReconcile`의
+ * 대량 상폐 가드가 그런 목록에서 걸려 상폐만 건너뛴다. 정상 경로는 첫 후보
+ * 3~4페이지로 끝나 수 초다.
  */
 const TOTAL_BUDGET_MS = 120_000;
 
@@ -261,7 +270,7 @@ export async function fetchKrxListedItems(
     const deadline = Date.now() + TOTAL_BUDGET_MS;
 
     for (const date of candidates) {
-        const items = await collectAllPages(key, date);
+        const items = await collectAllPages(key, date, deadline);
         if (items.length > 0) return items;
         // 주말·공휴일이거나 아직 갱신 전이다 — 하루 더 거슬러 올라간다.
         if (Date.now() >= deadline) {
@@ -281,12 +290,19 @@ export async function fetchKrxListedItems(
 /** 한 기준일의 전 페이지를 모은다. */
 async function collectAllPages(
     key: string,
-    basDt: string
+    basDt: string,
+    deadline: number
 ): Promise<KrxListedItem[]> {
     const collected: KrxListedItem[] = [];
     let pageNo = 1;
 
     for (; pageNo <= MAX_PAGES; pageNo++) {
+        if (Date.now() >= deadline) {
+            console.warn(
+                `[krxListedInfo] 예산(${TOTAL_BUDGET_MS}ms) 소진 — ${basDt} ${pageNo}페이지에서 중단, 결과가 잘렸을 수 있다`
+            );
+            break;
+        }
         const { items, totalCount } = await fetchPage(key, pageNo, basDt);
         collected.push(...items);
 
