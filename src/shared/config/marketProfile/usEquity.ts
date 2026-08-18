@@ -49,5 +49,4 @@ export const US_EQUITY_DESCRIPTOR: MarketProfileDescriptor = {
     seo: {
         aboutNodeType: 'Corporation',
     },
-    sitemapLastmod: 'us-close',
 };
