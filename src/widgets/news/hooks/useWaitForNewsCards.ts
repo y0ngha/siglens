@@ -58,6 +58,13 @@ export function useWaitForNewsCards(
         let consecutiveFailures = 0;
         let pollCount = 0;
         const startedAt = Date.now();
+        // 종목이 바뀌면 effect가 다시 돌지만, **이미 날아간 요청**은 취소되지 않는다
+        // (`clearInterval`은 다음 tick만 막는다). 그 응답이 늦게 도착해 새 종목의
+        // 상태에 `setIsReady(true)`를 찍으면, 카드가 보강되지 않은 종목에서 분석
+        // 패널이 열리고 core가 `no_news`를 돌려준다 — `retry:false` +
+        // `staleTime:Infinity`라 그 에러가 영구 캐시된다(`NewsAiSummary` 주석 참조).
+        // 소비자에 `key={symbol}`이 없어 remount로도 안 끊긴다(감사 라운드 14).
+        let cancelled = false;
 
         const intervalId = setInterval(async () => {
             // 5분 상한은 `cardPollingConfig`가 선언한 UX 계약이고 형제 훅
@@ -71,6 +78,7 @@ export function useWaitForNewsCards(
             }
             try {
                 const fresh = await getNewsCardsAction(symbol);
+                if (cancelled) return;
                 consecutiveFailures = 0;
                 pollCount += 1;
                 if (hasAnyEnrichedCard(fresh)) {
@@ -87,6 +95,7 @@ export function useWaitForNewsCards(
                     clearInterval(intervalId);
                 }
             } catch (err) {
+                if (cancelled) return;
                 consecutiveFailures += 1;
                 console.error('[useWaitForNewsCards] poll failed:', err);
                 if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
@@ -98,7 +107,10 @@ export function useWaitForNewsCards(
             }
         }, POLL_INTERVAL_MS);
 
-        return () => clearInterval(intervalId);
+        return () => {
+            cancelled = true;
+            clearInterval(intervalId);
+        };
     }, [symbol, initiallyReady]);
 
     return { isReady, pollError };

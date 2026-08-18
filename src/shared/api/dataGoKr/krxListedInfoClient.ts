@@ -61,14 +61,15 @@ const PAGE_TIMEOUT_MS = 10_000;
  * 넘기는 경로는 후보당 정확히 1페이지다(≤ 10 × 10초). 그래서 **페이지 단위로**
  * 잰다.
  *
- * 예산이 페이지 도중에 닳으면 잘린 목록이 아니라 `TimeoutError`가 위로 나간다 —
- * 남은 예산으로 자른 `AbortSignal`이 그 fetch를 끊고, `collectAllPages`에 catch가
- * 없어 크론 라우트까지 올라가 `[kr-tickers] sync failed`로 알람이 뜬다. 조용한
- * 부분 동기화 대신 시끄러운 실패를 고른 것이다 — 멱등한 일 1회 작업이라 다음 날
- * 재시도로 회복된다.
+ * 예산이 닳는 지점에 따라 결과가 갈린다.
+ *  - **페이지 도중**: 남은 예산으로 자른 `AbortSignal`이 그 fetch를 끊고,
+ *    `collectAllPages`에 catch가 없어 `TimeoutError`가 크론 라우트까지 올라가
+ *    `[kr-tickers] sync failed`로 알람이 뜬다. 멱등한 일 1회 작업이라 다음 날
+ *    재시도로 회복된다.
+ *  - **페이지 경계**: `MIN_PAGE_BUDGET_MS` 하한에 걸려 다음 페이지를 시작하지 않고
+ *    모은 만큼 돌려준다. 잘린 목록이지만 `planKrTickerReconcile`의 대량 상폐 가드가
+ *    받아 상폐만 건너뛴다(포털이 일부 페이지만 주는 경우와 같은 처리다).
  *
- * (예산 밖에서 잘린 목록이 들어오는 경로 — 예: 포털이 일부 페이지만 주는 경우 —
- * 는 여전히 `planKrTickerReconcile`의 대량 상폐 가드가 받아 상폐만 건너뛴다.)
  * 정상 경로는 첫 후보 3~4페이지로 끝나 수 초다.
  */
 const TOTAL_BUDGET_MS = 90_000;
