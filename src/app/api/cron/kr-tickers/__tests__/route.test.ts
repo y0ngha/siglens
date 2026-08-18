@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 const { mockAfter, mockSync, mockFireAndForget } = vi.hoisted(() => ({
     mockAfter: vi.fn(),
     mockSync: vi.fn(),
@@ -12,6 +10,7 @@ vi.mock('@/entities/ticker/lib/syncKrListedTickers', () => ({
     syncKrListedTickers: mockSync,
 }));
 
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { constants } from 'node:http2';
 import { PATCH } from '@/app/api/cron/kr-tickers/route';
 

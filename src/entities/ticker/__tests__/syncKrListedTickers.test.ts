@@ -1,6 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { KrxListedItem } from '@/shared/api/dataGoKr/krxListedInfoClient';
-
 const {
     mockFetchKrxListedItems,
     mockHasCredentials,
@@ -42,6 +39,8 @@ vi.mock('../api', () => ({
     },
 }));
 
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { KrxListedItem } from '@/shared/api/dataGoKr/krxListedInfoClient';
 import { syncKrListedTickers } from '../lib/syncKrListedTickers';
 
 function item(
