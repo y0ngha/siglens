@@ -17,6 +17,7 @@
 - [ISR_CACHE_HANDLER.md](./architecture/ISR_CACHE_HANDLER.md) — S3 ISR 캐시 핸들러, 킬 스위치, 태그 스토어, 수동 캐시 정리
 - [ISR_REVALIDATE.md](./architecture/ISR_REVALIDATE.md) — ISR revalidate 정책(페이지별 값·근거, Fast Origin Transfer 절감)
 - [CDN_CACHING.md](./architecture/CDN_CACHING.md) — Cloudflare 캐싱·WAF·봇 보호
+- [SITEMAP_SCOPE.md](./architecture/SITEMAP_SCOPE.md) — sitemap에 무엇을 싣는지의 규칙(시드 2,595종목을 넣지 않는 근거, 늘릴 때의 순서)
 
 ## conventions/ — 작성 규칙
 - [CONVENTIONS.md](./conventions/CONVENTIONS.md) — 코딩 컨벤션, 네이밍, 타입, 테스트 커버리지

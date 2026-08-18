@@ -3,7 +3,8 @@ import { revalidateTag } from 'next/cache';
 import {
     buildPrewarmUniverse,
     isSnapshotFresh,
-    lastCompletedEtCloseWithBuffer,
+    shouldDeferPrewarmWhileOpen,
+    snapshotCloseBoundaryFor,
     type PrewarmSymbol,
     type SeoSnapshotTab,
 } from '@/entities/seo-snapshot';
@@ -170,26 +171,48 @@ export async function runPrewarmBatch(
 ): Promise<PrewarmBatchCounts> {
     const batchDeadline = clock.now() + BATCH_DEADLINE_MS;
     const isPastDeadline = () => clock.now() > batchDeadline;
-    const boundary = lastCompletedEtCloseWithBuffer(new Date());
+    // **의도적으로 `clock.now()`가 아니다.** `PrewarmClock`은 경과 시간 예산
+    // (데드라인·틱 회전·sleep)을 테스트가 조작하기 위한 것이고, 그 테스트들은 epoch에서
+    // 파생한 임의의 값을 넣는다 — 회전 오프셋 검증이 그렇게 설계돼 있다. 반면 여기 두
+    // 판정(마감 경계, 장중 여부)은 **달력**이 필요해서 그 값으로는 의미가 없다.
+    // 테스트는 `vi.setSystemTime`으로 이쪽을 따로 고정한다. 하나로 합치면 회전 테스트가
+    // 깨진다.
+    const now = new Date();
+    // 심볼마다 자기 시장의 마감을 경계로 쓴다. 하나의 ET 경계를 전 심볼에 쓰면 국내
+    // 종목이 두 방향으로 다 어긋난다 — 미국 휴장일(KRX 개장)엔 하루 묵은 스냅샷이
+    // fresh로 통과하고, 한국 공휴일엔 바뀐 게 없는데 전 국내 종목을 재생성한다.
+    const boundaryFor = (symbol: string) =>
+        snapshotCloseBoundaryFor(symbol, now);
     const universe = buildPrewarmUniverse();
     const repo = new DrizzleSeoSnapshotRepository(getDatabaseClient().db);
     const generatedAtMap = await repo.findGeneratedAtMap(
         universe.map(u => u.symbol)
     );
 
-    const staleSymbols = universe.filter(u =>
-        u.tabs.some(
+    const staleSymbols = universe.filter(u => {
+        const boundary = boundaryFor(u.symbol);
+        return u.tabs.some(
             tab =>
                 !isSnapshotFresh(
                     generatedAtMap.get(snapshotKey(u.symbol, tab)),
                     boundary
                 )
-        )
+        );
+    });
+    // 자기 시장이 장중인 심볼은 이번 틱에서 뺀다. 창의 뒤쪽 4시간이 KRX 장중이라,
+    // 그 틱에 걸린 국내 종목은 형성 중인 일봉으로 만든 서술이 다음 마감까지 굳는다.
+    //
+    // `staleSymbols` **다음에** 거르는 것이 중요하다. `staleTotal`은 운영자가 야간
+    // 처리 여력을 판단하는 신호인데(`docs/architecture/SITEMAP_SCOPE.md` §2), 유니버스
+    // 단계에서 빼면 장중 시간대에 조회한 값이 실제 백로그보다 작게 나온다 — 미뤄진
+    // 심볼도 아직 처리해야 할 대상이다.
+    const selectable = staleSymbols.filter(
+        u => !shouldDeferPrewarmWhileOpen(u.symbol, now)
     );
     const batch = await selectFairBatch(
-        staleSymbols,
+        selectable,
         generatedAtMap,
-        boundary,
+        boundaryFor,
         clock.now()
     );
     const counts: PrewarmBatchCounts = {
@@ -223,7 +246,7 @@ export async function runPrewarmBatch(
             chunk.map(u =>
                 processSymbol(
                     u,
-                    boundary,
+                    boundaryFor(u.symbol),
                     generatedAtMap,
                     repo,
                     counts,
@@ -301,7 +324,7 @@ export async function runPrewarmBatch(
 async function selectFairBatch(
     staleSymbols: PrewarmSymbol[],
     generatedAtMap: Map<string, Date>,
-    boundary: Date,
+    boundaryFor: (symbol: string) => Date,
     nowMs: number
 ): Promise<PrewarmSymbol[]> {
     if (staleSymbols.length === 0) return [];
@@ -323,7 +346,11 @@ async function selectFairBatch(
     // 같은(=원래 회전 순서) 인덱스로 되돌아온다.
     const classifications = await Promise.all(
         windowCandidates.map(candidate =>
-            classifySymbol(candidate, generatedAtMap, boundary)
+            classifySymbol(
+                candidate,
+                generatedAtMap,
+                boundaryFor(candidate.symbol)
+            )
         )
     );
 
