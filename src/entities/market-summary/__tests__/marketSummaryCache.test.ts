@@ -28,7 +28,11 @@ vi.mock('@upstash/redis', () => ({
 
 import type { MarketSummaryData } from '@y0ngha/siglens-core';
 import { MARKET_INDICES, SECTOR_ETFS } from '@/shared/config/dashboard-tickers';
-import { US_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
+import {
+    KR_DASHBOARD_SCOPE,
+    US_DASHBOARD_SCOPE,
+} from '@/shared/config/dashboardScope';
+import { marketSummaryConfigFingerprint } from '../api/marketSummaryCache';
 
 const sampleSummary: MarketSummaryData = {
     indices: [
@@ -215,5 +219,31 @@ describe('getCachedMarketSummary', () => {
         expect(errSpy).toHaveBeenCalled();
         expect(r).toEqual(sampleSummary);
         errSpy.mockRestore();
+    });
+
+    /**
+     * `scope.id`가 키에 들어가는 것이 두 시장을 가르는 **유일한** 장치다.
+     * 빠지면 먼저 워밍된 시장이 양쪽에 서빙된다 — 렌더도 숫자도 멀쩡해 보인다.
+     */
+    it('kr scope는 kr 접두 키를 쓴다', async () => {
+        mockRedisGet.mockResolvedValue(null);
+        mockGetMarketSummary.mockResolvedValue(sampleSummary);
+        mockRedisSet.mockResolvedValue('OK');
+        const mod = await loadWithEnv({
+            url: 'https://x.upstash.io',
+            token: 't',
+        });
+
+        await mod.getCachedMarketSummary(mockProvider, KR_DASHBOARD_SCOPE);
+
+        expect(mockRedisGet).toHaveBeenCalledWith(
+            expect.stringMatching(/^market:summary:kr:[a-f0-9]{12}$/)
+        );
+    });
+
+    it('두 시장의 fingerprint가 서로 다르다', () => {
+        expect(marketSummaryConfigFingerprint(KR_DASHBOARD_SCOPE)).not.toBe(
+            marketSummaryConfigFingerprint(US_DASHBOARD_SCOPE)
+        );
     });
 });

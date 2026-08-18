@@ -7,7 +7,10 @@ import {
 } from '@y0ngha/siglens-core';
 import { isBot } from '@/shared/api/isBot';
 import { getCachedMarketSummary } from '../api/marketSummaryCache';
-import { US_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
+import {
+    KR_DASHBOARD_SCOPE,
+    US_DASHBOARD_SCOPE,
+} from '@/shared/config/dashboardScope';
 
 vi.mock('server-only', () => ({}));
 
@@ -88,6 +91,7 @@ describe('submitMarketBriefingAction 함수는', () => {
             expect(result).toEqual({
                 briefing: briefingResult,
                 botBlocked: false,
+                scope: 'us',
             });
         });
 
@@ -141,6 +145,40 @@ describe('submitMarketBriefingAction 함수는', () => {
             const result = await submitMarketBriefingAction('us');
 
             expect(result).toEqual({ ok: false, error: 'server_error' });
+        });
+    });
+
+    describe('scope 배선', () => {
+        it("'kr'이면 KR 요약으로 브리핑을 만들고 응답에 scope를 실어 준다", async () => {
+            mockIsBot.mockReturnValue(false);
+            mockRunBriefing.mockResolvedValue(briefingResult);
+            mockGetCachedMarketSummary.mockResolvedValue(summaryData);
+
+            const result = await submitMarketBriefingAction('kr');
+
+            expect(mockGetCachedMarketSummary).toHaveBeenCalledWith(
+                expect.anything(),
+                KR_DASHBOARD_SCOPE
+            );
+            expect(result).toEqual({
+                briefing: briefingResult,
+                botBlocked: false,
+                scope: 'kr',
+            });
+        });
+
+        it('알 수 없는 scope는 요약을 읽지 않고 server_error를 반환한다', async () => {
+            const errSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            mockIsBot.mockReturnValue(false);
+            mockGetCachedMarketSummary.mockClear();
+
+            const result = await submitMarketBriefingAction('jp');
+
+            expect(result).toEqual({ ok: false, error: 'server_error' });
+            expect(mockGetCachedMarketSummary).not.toHaveBeenCalled();
+            errSpy.mockRestore();
         });
     });
 });

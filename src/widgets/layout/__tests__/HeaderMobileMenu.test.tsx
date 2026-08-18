@@ -126,9 +126,11 @@ describe('HeaderMobileMenu', () => {
         // 설정에 선언된 모든 지역·카테고리 목적지가 드로어에 있어야 한다. 개수를
         // 하드코딩하면 지역을 하나 열 때마다 이 테스트만 고치게 되고, 정작 "빠진
         // 링크"는 못 잡는다.
-        const expected = NAV_TREE.flatMap(v =>
-            v.regions.flatMap(r => [r.href, ...r.children.map(c => c.href)])
-        );
+        const expected = NAV_TREE.flatMap(v => [
+            // 버티컬 자체가 지역과 별개의 상위 페이지를 가지면(뉴스 허브) 그것도 건다.
+            ...(v.overview ? [v.overview.href] : []),
+            ...v.regions.flatMap(r => [r.href, ...r.children.map(c => c.href)]),
+        ]);
         expect(hrefs).toEqual(expected);
     });
 

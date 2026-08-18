@@ -3,8 +3,8 @@ import Link from 'next/link';
 /**
  * Maximum number of headline previews to render on the hub card.
  * Three headlines fit cleanly in the card without requiring scroll.
- * Exported so the data producer (`app/news/page.tsx`) can slice to this
- * count before passing the array — single source of truth, no drift.
+ * Exported so the data producer (`app/news/_lib/categoryPreviews.ts`) can slice
+ * to this count before passing the array — single source of truth, no drift.
  */
 export const PREVIEW_HEADLINE_LIMIT = 3;
 
@@ -46,8 +46,21 @@ export function CategoryCard({
 }: CategoryCardProps) {
     return (
         <article className="flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-5 transition-colors hover:border-primary-500/50">
+            {/*
+                **제목이 링크다.** 예전에는 아래 `더보기 →`만 링크라, 이 카드가 거는
+                내부 링크의 앵커 텍스트가 전부 "더보기"였다 — 목적지가 무엇에 관한
+                페이지인지 알려 주는 신호가 0이다. 키워드를 가진 것은 제목이므로
+                제목을 링크로 만든다.
+            */}
             <h2 className="mb-1 text-base font-semibold tracking-tight text-balance">
-                {koLabel}
+                <Link
+                    href={href}
+                    // 카드 그리드로 다수 렌더 — docs/architecture/CDN_CACHING.md §1
+                    prefetch={false}
+                    className="transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                >
+                    {koLabel}
+                </Link>
             </h2>
             <p className="mb-3 text-xs leading-relaxed text-secondary-400">
                 {koDescription}
@@ -56,7 +69,9 @@ export function CategoryCard({
             {previewHeadlines.length > 0 ? (
                 <ul
                     className="mb-4 min-w-0 space-y-2"
-                    aria-label={`${koLabel} 최신 뉴스 미리보기`}
+                    // `koLabel`이 이미 `…뉴스`로 끝나는 경우가 있어(`미국 시장 뉴스`)
+                    // 꼬리표에 `뉴스`를 또 붙이면 `뉴스 최신 뉴스`가 된다.
+                    aria-label={`${koLabel} 미리보기`}
                 >
                     {previewHeadlines.map(headline => (
                         <li
@@ -75,12 +90,17 @@ export function CategoryCard({
                 </p>
             )}
 
+            {/*
+                같은 목적지로 가는 두 번째 앵커 — 클릭 영역을 넓히는 시각 장치다.
+                보조기술에는 숨긴다(`aria-hidden` + `tabIndex={-1}`): 위 제목 링크와
+                목적지가 같아서, 그대로 두면 카드마다 같은 링크가 두 번 읽힌다.
+            */}
             <Link
                 href={href}
-                // 카드 그리드로 다수 렌더 — docs/architecture/CDN_CACHING.md §1
                 prefetch={false}
-                className="mt-auto text-sm text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                aria-label={`${koLabel} 뉴스 더보기`}
+                aria-hidden="true"
+                tabIndex={-1}
+                className="mt-auto text-sm text-primary-400 transition-colors hover:text-primary-300"
             >
                 더보기 <span aria-hidden="true">→</span>
             </Link>

@@ -21,13 +21,15 @@ describe('/news/us hub', () => {
         expect(revalidate).toBe(86400);
     });
 
-    it('self-canonicals to /news/us', () => {
-        expect(generateMetadata().alternates?.canonical).toBe('/news/us');
+    it('self-canonicals to /news/us', async () => {
+        expect((await generateMetadata()).alternates?.canonical).toBe(
+            '/news/us'
+        );
     });
 
-    it('inherits the legacy US news queries from the old /news hub', () => {
+    it('inherits the legacy US news queries from the old /news hub', async () => {
         // 2026-08 리브랜딩 전 유입 질의를 잃지 않으려고 이쪽이 승계한다.
-        const keywords = generateMetadata().keywords as string[];
+        const keywords = (await generateMetadata()).keywords as string[];
         expect(keywords).toContain('미국 시장 뉴스');
         expect(keywords).toContain('미국 마켓 뉴스');
     });
@@ -53,9 +55,10 @@ describe('/news/us hub', () => {
     it('links each card at its category page', async () => {
         render(await UsNewsHubPage());
 
-        expect(
-            screen.getByRole('link', { name: '미국 주식 뉴스 더보기' })
-        ).toHaveAttribute('href', '/news/stock');
+        expect(screen.getByRole('link', { name: '미국 주식' })).toHaveAttribute(
+            'href',
+            '/news/stock'
+        );
     });
 
     it('renders the region tab strip', async () => {

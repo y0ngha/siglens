@@ -1,4 +1,4 @@
-import type { KrIndicatorCard } from '@/entities/economy/api/getKrIndicatorCards';
+import type { KrIndicatorCard } from '@/entities/economy';
 import {
     ECONOMY_INDICATOR_CATEGORIES,
     type EconomyCategoryKey,
@@ -65,7 +65,11 @@ export function KrEconomicIndicatorGrid({
     );
 }
 
-function IndicatorCard({ card }: { readonly card: KrIndicatorCard }) {
+interface IndicatorCardProps {
+    readonly card: KrIndicatorCard;
+}
+
+function IndicatorCard({ card }: IndicatorCardProps) {
     const { meta, latest, latestDate, changeFromPrevious } = card;
     return (
         <article className="rounded-lg border border-secondary-800 bg-secondary-800/30 p-4">

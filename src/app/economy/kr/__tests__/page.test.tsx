@@ -108,7 +108,13 @@ describe('/economy/kr page', () => {
         expect(nav).toHaveTextContent('한국');
     });
 
-    it('emits Dataset and FAQ structured data', async () => {
+    /**
+     * FAQ만 페이지 셸에서 낸다. 나머지(WebPage/Breadcrumb/Dataset)는 데이터가 있을
+     * 때만 나가도록 `KrEconomyContent` 안으로 내려갔다 — 지표도 캘린더도 없는
+     * 상태에서는 `generateMetadata`가 noindex를 거는데, 그때 "지표 N종을 6개월치
+     * 담은 데이터셋"이라고 주장하면 모순이다.
+     */
+    it('셸에서는 FAQ 구조화데이터만 낸다', async () => {
         const { container } = render(await EconomyKrPage());
         const types = Array.from(
             container.querySelectorAll('script[type="application/ld+json"]')
@@ -119,8 +125,7 @@ describe('/economy/kr page', () => {
                 return null;
             }
         });
-        expect(types).toContain('Dataset');
         expect(types).toContain('FAQPage');
-        expect(types).toContain('BreadcrumbList');
+        expect(types).not.toContain('Dataset');
     });
 });

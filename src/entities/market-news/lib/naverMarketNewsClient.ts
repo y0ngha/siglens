@@ -1,8 +1,5 @@
 import { toNaverNewsItem } from '@/entities/news-article/lib/naverNewsClient';
-import {
-    NAVER_MAX_DISPLAY,
-    searchNaverNews,
-} from '@/entities/news-article/lib/naverNewsSearch';
+import { searchNaverNews } from '@/entities/news-article/lib/naverNewsSearch';
 import { CATEGORY_CONFIG, type NewsFeedCategoryId } from './categoryConfig';
 import type {
     MarketNewsClientPort,
@@ -48,15 +45,33 @@ export class NaverMarketNewsClient implements MarketNewsClientPort {
         }
 
         const cutoff = new Date(Date.now() - lookbackMs);
-        const batches = await Promise.all(
-            cfg.naverQueries.map(query =>
-                searchNaverNews(
-                    query,
-                    Math.min(NAVER_QUERY_DISPLAY, NAVER_MAX_DISPLAY),
-                    LOG_TAG
-                )
-            )
-        );
+        /*
+         * 정확도순 질의 전부 + **최신순 보조 질의 하나**.
+         *
+         * 정확도순은 관련성이 압도적으로 좋지만(실측: 제목 적중률 90~98% vs 15~23%)
+         * 최신을 보장하지 않는다. 뉴스가 뜸한 주에는 상위 결과가 전부 lookback 창
+         * 밖으로 밀려 컷오프 뒤에 한 줌만 남고, 그러면 `/news/kr`이 200 + 안내문 +
+         * noindex로 굳는다 — 로그는 전부 `200 OK`라 아무 신호가 없다.
+         *
+         * 그래서 첫 질의(가장 넓은 키워드)를 최신순으로 한 번 더 돌려 바닥을 깐다.
+         * 호출 1회가 늘고, 겹치는 기사는 아래 dedupe가 걷어낸다.
+         */
+        const primaryQuery = cfg.naverQueries[0];
+        const batches = await Promise.all([
+            ...cfg.naverQueries.map(query =>
+                searchNaverNews(query, NAVER_QUERY_DISPLAY, LOG_TAG)
+            ),
+            ...(primaryQuery === undefined
+                ? []
+                : [
+                      searchNaverNews(
+                          primaryQuery,
+                          NAVER_QUERY_DISPLAY,
+                          LOG_TAG,
+                          'date'
+                      ),
+                  ]),
+        ]);
 
         // URL 해시(id) 기준 중복 제거 — 같은 기사가 `코스피`·`국내 증시` 양쪽에
         // 잡히는 것이 정상이다. Map은 삽입 순서를 지키므로 앞선 질의가 이긴다.
@@ -71,7 +86,7 @@ export class NaverMarketNewsClient implements MarketNewsClientPort {
             byId.set(item.id, { ...item, tickers: [] });
         }
 
-        return [...byId.values()].sort((a, b) =>
+        return [...byId.values()].toSorted((a, b) =>
             b.publishedAt.localeCompare(a.publishedAt)
         );
     }

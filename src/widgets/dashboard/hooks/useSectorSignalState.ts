@@ -12,7 +12,7 @@ import {
     DEFAULT_DASHBOARD_TIMEFRAME,
     isDashboardTimeframe,
 } from '@/shared/config/dashboard-tickers';
-import type { DashboardScope } from '@/shared/config/dashboardScope';
+import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 import {
     EMPTY_QUADRANTS,
     filterStrictAnticipation,
@@ -23,7 +23,7 @@ import { useSectorSignals } from './useSectorSignals';
 
 interface UseSectorSignalStateOptions {
     /** 어느 시장의 신호인가. 섹터 목록·쿼리 키·서버 액션이 전부 여기서 갈린다. */
-    scope: DashboardScope;
+    scope: ClientDashboardScope;
     initialSector: string;
     initialTimeframe: DashboardTimeframe;
     /**

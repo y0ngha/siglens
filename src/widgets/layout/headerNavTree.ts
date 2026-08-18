@@ -1,4 +1,5 @@
 import {
+    hasRegionForRoot,
     NAV_VERTICALS,
     type NavRegionLink,
     type NavVertical,
@@ -22,6 +23,16 @@ export interface NavRegionNode extends NavRegionLink {
 
 export interface NavVerticalNode extends Omit<NavVertical, 'regions'> {
     readonly regions: readonly NavRegionNode[];
+    /**
+     * 버티컬 루트가 지역 링크 어디에도 없을 때의 "전체" 항목. 없으면 `null`.
+     *
+     * 뉴스만 해당한다 — `/news`는 3지역 상위 허브라 지역 목록(`/news/us` 등)에
+     * 들어 있지 않다. 이 항목이 없으면 **`/news`로 가는 내부 앵커가 사이트 전체에
+     * 0개가 된다**(헤더 트리거는 `<button>`, 푸터·히어로는 지역만 평탄화한다).
+     * 이미 순위를 가진 URL의 주제를 바꾸면서 내부 링크까지 끊는 조합이라,
+     * 이 한 줄이 SEO 회귀를 막는 지점이다.
+     */
+    readonly overview: NavLeafLink | null;
 }
 
 /**
@@ -43,6 +54,11 @@ export interface NavVerticalNode extends Omit<NavVertical, 'regions'> {
 export const NAV_TREE: readonly NavVerticalNode[] = NAV_VERTICALS.map(
     vertical => ({
         ...vertical,
+        // 판정식은 `assetClassNav`가 소유한다 — 푸터(`NAV_OVERVIEW_LINKS`)와
+        // 같은 규칙을 두 곳에 손으로 적어 두면 한쪽만 갱신된다.
+        overview: hasRegionForRoot(vertical)
+            ? null
+            : { label: '전체', href: vertical.rootHref },
         regions: vertical.regions.map(region => ({
             ...region,
             children: vertical.id === 'news' ? newsLeavesOf(region.region) : [],

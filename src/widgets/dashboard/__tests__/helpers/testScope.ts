@@ -12,6 +12,9 @@ import type { DashboardScope } from '@/shared/config/dashboardScope';
  */
 export const TEST_SCOPE: DashboardScope = {
     id: 'us',
+    currencySymbol: '$',
+    linkSectorCards: true,
+    volatilityIndexLabel: 'VIX',
     indices: [
         { symbol: 'SPY', fmpSymbol: 'SPY', displayName: 'SPY', koreanName: '' },
         { symbol: 'QQQ', fmpSymbol: 'QQQ', displayName: 'QQQ', koreanName: '' },
@@ -20,6 +23,7 @@ export const TEST_SCOPE: DashboardScope = {
     ],
     sectorEtfs: [
         { symbol: 'XLK', sectorName: 'Technology', koreanName: '기술' },
+        { symbol: 'XLE', sectorName: 'Energy', koreanName: '에너지' },
         { symbol: 'XLC', sectorName: 'Comm. Svc.', koreanName: '통신서비스' },
         { symbol: 'XLY', sectorName: 'Cons. Disc.', koreanName: '경기소비재' },
         { symbol: 'XLF', sectorName: 'Financials', koreanName: '금융' },

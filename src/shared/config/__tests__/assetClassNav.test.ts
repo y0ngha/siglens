@@ -1,5 +1,7 @@
 import {
     ALL_NAV_REGION_LINKS,
+    hasRegionForRoot,
+    NAV_OVERVIEW_LINKS,
     NAV_VERTICALS,
     regionsOf,
     type NavVerticalId,
@@ -73,5 +75,31 @@ describe('regionsOf', () => {
         expect(() => regionsOf('nope' as NavVerticalId)).toThrow(
             /unknown vertical/
         );
+    });
+});
+
+/**
+ * `/news`는 세 지역이 각자 다른 URL이라 허브가 어느 지역에도 속하지 않는다.
+ * `hasRegionForRoot`가 뒤집히면 **푸터와 헤더 드로어 양쪽에서 동시에** `/news`
+ * 앵커가 사라지고(이미 색인된 URL이 사이트 안에서 고아가 된다) 동시에
+ * `/market`·`/fear-greed`·`/economy`가 푸터에 두 번 나온다. 판정식을 한 곳으로
+ * 모은 대신 한 글자가 그 결과를 쥐게 됐으므로, 여기서 falsifiable하게 못박는다.
+ */
+describe('hasRegionForRoot / NAV_OVERVIEW_LINKS', () => {
+    it('지역 링크로 못 가는 루트는 뉴스 허브 하나뿐이다', () => {
+        expect(NAV_OVERVIEW_LINKS.map(l => l.href)).toEqual(['/news']);
+    });
+
+    it('나머지 버티컬은 루트가 지역 링크에 이미 들어 있다', () => {
+        const withoutRegion = NAV_VERTICALS.filter(v => !hasRegionForRoot(v));
+        expect(withoutRegion.map(v => v.id)).toEqual(['news']);
+    });
+
+    it('overview + 지역 링크를 합쳐도 href가 중복되지 않는다', () => {
+        const hrefs = [
+            ...NAV_OVERVIEW_LINKS.map(l => l.href),
+            ...ALL_NAV_REGION_LINKS.map(l => l.href),
+        ];
+        expect(new Set(hrefs).size).toBe(hrefs.length);
     });
 });

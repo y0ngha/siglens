@@ -114,19 +114,19 @@ describe('Dashboard Navigation', () => {
         } as unknown as StockWithConflict;
 
         it('renders stock card with symbol and name', () => {
-            render(<SignalStockCard data={MOCK_STOCK} />);
+            render(<SignalStockCard currencySymbol="$" data={MOCK_STOCK} />);
             expect(screen.getByText('AAPL')).toBeInTheDocument();
             expect(screen.getByText('Apple Inc.')).toBeInTheDocument();
         });
 
         it('renders link to symbol page', () => {
-            render(<SignalStockCard data={MOCK_STOCK} />);
+            render(<SignalStockCard currencySymbol="$" data={MOCK_STOCK} />);
             const link = screen.getByRole('link');
             expect(link).toHaveAttribute('href', '/AAPL');
         });
 
         it('renders price change with correct formatting', () => {
-            render(<SignalStockCard data={MOCK_STOCK} />);
+            render(<SignalStockCard currencySymbol="$" data={MOCK_STOCK} />);
             expect(screen.getByText(/2\.50%/)).toBeInTheDocument();
         });
     });

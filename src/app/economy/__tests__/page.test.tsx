@@ -224,28 +224,31 @@ describe('/economy page.tsx integration', () => {
     });
 
     describe('DATASET_JSON_LD — license field', () => {
-        it('EconomyPage가 Dataset JSON-LD에 license 필드를 포함해 JsonLd에 전달한다', async () => {
-            // JsonLd는 vi.mock 내부에서 vi.fn()으로 교체됐으므로 vi.mocked()로 참조.
+        it('Dataset JSON-LD에 license 필드가 있다', async () => {
+            const { DATASET_JSON_LD } = await import('@/app/economy/page');
+
+            // GSC "license 누락" 경고 해소 — backtesting 페이지와 동일한 SITE_URL+TERMS_PATH 형식.
+            expect(DATASET_JSON_LD.license).toBe('https://siglens.io/terms');
+        });
+
+        /**
+         * Dataset/WebPage/Breadcrumb은 데이터가 있을 때만 나간다. 셸이 무조건
+         * 내보내면 `generateMetadata`가 noindex를 건 렌더에서도 "이 URL은 1년치
+         * 거시 지표 데이터셋"이라고 주장하게 된다. FAQ는 화면에 그대로 있으므로 예외.
+         */
+        it('셸에서는 FAQ 구조화데이터만 낸다', async () => {
             const mockJsonLdComponent = vi.mocked(JsonLd);
             mockJsonLdComponent.mockClear();
 
-            // 다른 테스트와 동일하게 dynamic import 사용(ESM 경로 alias '@/' 지원).
-            // EconomyPage는 동기 컴포넌트이므로 act 래핑 불필요.
             const { default: EconomyPage } = await import('@/app/economy/page');
             render(<EconomyPage />);
 
-            // JsonLd가 받은 모든 data prop 중 @type === 'Dataset'인 것을 찾는다.
-            const datasetCall = mockJsonLdComponent.mock.calls.find(
+            const types = mockJsonLdComponent.mock.calls.map(
                 ([props]) =>
-                    (props as { data: { '@type': string } }).data['@type'] ===
-                    'Dataset'
+                    (props as { data: { '@type': string } }).data['@type']
             );
-            expect(datasetCall).toBeDefined();
-            const datasetData = (
-                datasetCall![0] as { data: Record<string, unknown> }
-            ).data;
-            // GSC "license 누락" 경고 해소 — backtesting 페이지와 동일한 SITE_URL+TERMS_PATH 형식.
-            expect(datasetData.license).toBe('https://siglens.io/terms');
+            expect(types).toContain('FAQPage');
+            expect(types).not.toContain('Dataset');
         });
     });
 });

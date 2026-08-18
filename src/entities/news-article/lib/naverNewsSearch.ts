@@ -28,6 +28,9 @@ export const NAVER_MAX_DISPLAY = 100;
  */
 const NAVER_FETCH_TIMEOUT_MS = 8_000;
 
+/** 네이버 검색 정렬. `sim` = 정확도순, `date` = 최신순. */
+export type NaverSearchSort = 'sim' | 'date';
+
 /** 네이버 검색 결과의 단일 기사(원본 형태). */
 export interface NaverNewsItem {
     title?: string;
@@ -95,19 +98,31 @@ function credentials(): { id: string; secret: string } | null {
  * @param query - 검색어(한국어). 종목명 또는 시장 키워드.
  * @param display - 요청 건수. {@link NAVER_MAX_DISPLAY}로 clamp된다.
  * @param logTag - 로그 접두사. 어느 소비자가 실패했는지 구분하기 위해 주입받는다.
+ * @param sort - 정렬. 기본 `'sim'`(정확도순) — 아래 URL 주석의 실측 근거 참조.
+ *   `'date'`는 **최신 보장이 필요한 보조 질의**에만 쓴다.
  */
 export async function searchNaverNews(
     query: string,
     display: number,
-    logTag: string
+    logTag: string,
+    sort: NaverSearchSort = 'sim'
 ): Promise<NaverNewsItem[]> {
     const creds = credentials();
-    if (!creds) return [];
+    if (!creds) {
+        // **조용히 끝내지 않는다.** 키가 없거나 SSM 로테이션이 컨테이너에 닿지
+        // 않으면 `/news/kr`이 200 + "불러오지 못했어요" + noindex로 굳는데,
+        // 로그가 한 줄도 없으면 CloudWatch에 아무 흔적이 남지 않는다.
+        console.error(
+            `${logTag} NAVER_CLIENT_ID/SECRET 미설정 — 빈 결과로 degrade`,
+            query
+        );
+        return [];
+    }
 
     const url = `${NAVER_NEWS_ENDPOINT}?${new URLSearchParams({
         query,
         display: String(Math.min(display, NAVER_MAX_DISPLAY)),
-        // 'sim' = 정확도순. **최신순('date')을 쓰면 안 된다.**
+        // 기본값 'sim' = 정확도순. **주 질의를 최신순('date')으로 돌리면 안 된다.**
         //
         // 네이버 뉴스 검색은 본문까지 대상으로 하므로, 종목명이 스쳐 지나가듯
         // 한 번 언급된 정치·연예 기사도 결과에 들어온다. 최신순은 그런 기사를
@@ -120,7 +135,11 @@ export async function searchNaverNews(
         // 처음에는 "정확도순은 오래된 기사가 올라와 cutoff를 통과하는 수가 준다"는
         // 이유로 최신순을 골랐는데, 실측해 보니 정반대였다 — 정확도순도 최근
         // 기사로 채워지고 관련성만 크게 높아진다.
-        sort: 'sim',
+        //
+        // 다만 정확도순은 **최신을 보장하지는 않는다.** 조용한 한 주에는 상위
+        // 결과가 전부 lookback 창 밖으로 밀려 피드가 통째로 빌 수 있다. 그 바닥은
+        // 소비자가 `'date'` 보조 질의 하나를 섞어 받친다(`naverMarketNewsClient`).
+        sort,
     })}`;
 
     let response: Response;
@@ -142,7 +161,11 @@ export async function searchNaverNews(
     }
 
     if (!response.ok) {
-        console.warn(`${logTag} non-OK response`, query, response.status);
+        // **warn이 아니라 error다.** 키 회수·NCP 구독 만료·일일 쿼터 소진이 전부
+        // 여기로 떨어지는데, `/news/kr`은 소스가 이것 하나뿐이라 빈 결과가 곧
+        // 200 + "불러오지 못했어요" + noindex로 굳는다. 부분 신호조차 없다.
+        // CloudWatch 알람이 `"non-OK response"`(ASCII) 접두를 센다.
+        console.error(`${logTag} non-OK response`, query, response.status);
         return [];
     }
 

@@ -30,7 +30,11 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
 
 import { getSectorSignalsStatic } from '../api/sectorSignalsStaticCache';
 import { getCachedSectorSignals } from '../api/sectorSignalsCache';
-import { US_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
+import {
+    KR_DASHBOARD_SCOPE,
+    US_DASHBOARD_SCOPE,
+} from '@/shared/config/dashboardScope';
+import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
 
 const mockGetCachedSectorSignals = vi.mocked(getCachedSectorSignals);
 
@@ -100,6 +104,37 @@ describe('getSectorSignalsStatic', () => {
         await getSectorSignalsStatic(US_DASHBOARD_SCOPE, '15Min');
 
         expect(mockGetCachedSectorSignals).toHaveBeenCalledTimes(2);
+    });
+
+    /**
+     * scope별로 키·태그가 갈리지 않으면 `/market/kr` 신호 스캐너가 미국 종목을
+     * 조용히 그린다 — 렌더도 숫자도 멀쩡해 보이는 종류의 회귀다.
+     */
+    it('(Happy) kr scope는 미국과 다른 캐시 키·태그를 쓰고 provider도 kr로 고른다', async () => {
+        mockGetCachedSectorSignals.mockResolvedValue(sampleResult);
+
+        await getSectorSignalsStatic(KR_DASHBOARD_SCOPE, '1Day');
+
+        expect(
+            (globalThis as Record<string, unknown>).__lastUnstableCacheKeys
+        ).toEqual([
+            'sector-signals-static',
+            'kr',
+            '1Day',
+            expect.stringMatching(/^[a-f0-9]{12}$/),
+        ]);
+        expect(
+            (globalThis as Record<string, unknown>).__lastUnstableCacheOpts
+        ).toEqual({
+            revalidate: SECONDS_PER_HOUR,
+            tags: ['sector:signals:kr'],
+        });
+        expect(vi.mocked(marketDataProviderFor)).toHaveBeenCalledWith('kr');
+        expect(mockGetCachedSectorSignals).toHaveBeenCalledWith(
+            expect.anything(),
+            KR_DASHBOARD_SCOPE,
+            '1Day'
+        );
     });
 
     it('(Worst) getCachedSectorSignals가 throw하면 에러가 전파된다', async () => {

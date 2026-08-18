@@ -64,8 +64,15 @@ async function buildView(now: Date): Promise<MarketFearGreedView> {
     // 상한을 "이미 마감·게시된 세션"으로 끊는다. 그러지 않으면 장중 시세가 종가로
     // 섞여 들어와 하루 종일 값이 흔들리면서 화면에는 "종가 기준"이라고 적힌다.
     // KRX 공휴일·주말 되감기는 `lastClosedSessionDate`가 처리한다.
+    //
+    // `T15:00:00Z` = 그 KST 달력일의 끝(24:00 KST). `lastClosedSessionDate`가 주는
+    // 날짜는 **KST 달력일**이라, `T23:59:59Z`로 끊으면 상한이 다음 KST 날 09:00까지
+    // 넘어간다. 지금은 yahoo가 KRX 일봉을 09:00 KST 개장 인스턴트로 찍어서
+    // **1초 차이로** 다음 날 봉이 안 들어오고 있을 뿐이다 — 개장 시각이 바뀌거나
+    // yahoo가 찍는 시각이 종가 쪽으로 옮겨가면 장중 값이 "종가 기준" 시리즈로
+    // 들어온다. 그 여유를 9시간으로 되돌린다.
     const to = new Date(
-        `${lastClosedSessionDate(KR_EQUITY_SESSION, now)}T23:59:59Z`
+        `${lastClosedSessionDate(KR_EQUITY_SESSION, now)}T15:00:00Z`
     );
 
     const [tickerSeries, kospiCloses] = await Promise.all([

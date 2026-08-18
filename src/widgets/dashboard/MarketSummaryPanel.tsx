@@ -13,7 +13,7 @@ import { useMarketSummary } from './hooks/useMarketSummary';
 import { useMarketBriefing } from './hooks/useMarketBriefing';
 import { MarketSummaryPanelSkeleton } from './MarketSummaryPanelSkeleton';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
-import type { DashboardScope } from '@/shared/config/dashboardScope';
+import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 import type {
     MarketBriefingResponse,
     MarketSectorData,
@@ -22,9 +22,10 @@ import type {
 
 interface BriefingRegionProps {
     input: RunBriefingResult | null | 'error' | undefined;
+    scope: ClientDashboardScope;
 }
 
-function BriefingRegion({ input }: BriefingRegionProps) {
+function BriefingRegion({ input, scope }: BriefingRegionProps) {
     if (input === undefined) return null;
     if (input === null) return <BotBlockedNotice />;
     if (input === 'error') return <BriefingErrorCard />;
@@ -35,6 +36,7 @@ function BriefingRegion({ input }: BriefingRegionProps) {
             <BriefingCard
                 briefing={input.briefing}
                 generatedAt={input.generatedAt}
+                scope={scope}
             />
         );
     }
@@ -44,7 +46,7 @@ function BriefingRegion({ input }: BriefingRegionProps) {
 
 interface MarketSummaryPanelProps {
     /** 어느 시장인가. 시세·브리핑 조회와 섹터 묶음, 섹션 제목이 전부 여기서 갈린다. */
-    scope: DashboardScope;
+    scope: ClientDashboardScope;
     peekSeed?: MarketBriefingResponse | null;
 }
 
@@ -53,7 +55,7 @@ interface MarketSummaryPanelProps {
  * 제목이 한 번 더 말해 줘야 한다 — 스크린리더는 탭의 활성 상태를 이 섹션과 함께
  * 읽어 주지 않는다.
  */
-const PANEL_HEADING: Record<DashboardScope['id'], string> = {
+const PANEL_HEADING: Record<ClientDashboardScope['id'], string> = {
     us: '오늘의 미국 시장',
     kr: '오늘의 한국 시장',
 };
@@ -102,7 +104,11 @@ export function MarketSummaryPanel({
             <div className="flex flex-col gap-6" aria-live="polite">
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     {indices.map(idx => (
-                        <IndexCard key={idx.fmpSymbol} data={idx} />
+                        <IndexCard
+                            key={idx.fmpSymbol}
+                            data={idx}
+                            currencySymbol={scope.currencySymbol}
+                        />
                     ))}
                 </div>
 
@@ -132,7 +138,12 @@ export function MarketSummaryPanel({
                                         <IndexCard
                                             key={etf.symbol}
                                             data={etf}
-                                            href={`/${etf.symbol}`}
+                                            currencySymbol={
+                                                scope.currencySymbol
+                                            }
+                                            {...(scope.linkSectorCards
+                                                ? { href: `/${etf.symbol}` }
+                                                : {})}
                                         />
                                     ))}
                                 </div>
@@ -141,7 +152,7 @@ export function MarketSummaryPanel({
                     })}
                 </div>
 
-                <BriefingRegion input={briefing} />
+                <BriefingRegion input={briefing} scope={scope} />
             </div>
         </section>
     );

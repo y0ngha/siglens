@@ -105,3 +105,15 @@ describe('isDashboardScopeId', () => {
         expect(isDashboardScopeId(null)).toBe(false);
     });
 });
+
+describe('volatilityIndexLabel', () => {
+    /**
+     * 근거 없는 숫자를 화면에 올리지 않기 위한 필드다. 미국은 VIX가 실제로
+     * 브리핑 입력에 있고, 한국은 없다 — 그런데 core 프롬프트가 VIX 값을 요구해
+     * 모델이 지어낸 적이 있다(2026-08-19 `/market/kr` 실측 `VIX 18.30`).
+     */
+    it('미국만 변동성 지수를 선언한다', () => {
+        expect(US_DASHBOARD_SCOPE.volatilityIndexLabel).toBe('VIX');
+        expect(KR_DASHBOARD_SCOPE.volatilityIndexLabel).toBeNull();
+    });
+});

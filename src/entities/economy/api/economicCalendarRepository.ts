@@ -76,6 +76,13 @@ export interface UnanalyzedAnnouncedEvent {
     unit: string;
 }
 
+/**
+ * 미분석 발표 스캔 1회가 가져오는 최대 행 수 — 곧 LLM 왕복 수의 상한이다.
+ * `CALENDAR_ANALYSIS_PARALLEL_LIMIT`(4)로 나누면 배치 5회로, 페이지 로드에서
+ * 시작한 백그라운드 작업이 감당할 만한 크기다.
+ */
+const UNANALYZED_SCAN_LIMIT = 20;
+
 export class DrizzleEconomicCalendarRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
@@ -206,11 +213,16 @@ export class DrizzleEconomicCalendarRepository {
     }
 
     /**
-     * 분석 대상 행을 읽는다: impact ∈ impacts AND actual IS NOT NULL AND analyzed_at IS NULL.
-     * 발표된(actual 채워진) Medium+ 미분석 이벤트만 반환해 ensure가 core에 넘긴다.
+     * 분석 대상 행을 읽는다: country = ? AND impact ∈ impacts AND actual IS NOT NULL
+     * AND analyzed_at IS NULL. 발표된(actual 채워진) Medium+ 미분석 이벤트만 반환한다.
+     *
+     * **country 필터가 반드시 있어야 한다.** 없으면 미국 페이지 방문이 한국 이벤트를
+     * 집어 미국 few-shot 프롬프트로 분석하고, 그 결과는 `analyzed_at IS NULL` 가드
+     * 때문에 **한 번 쓰이면 다시 못 고친다**(write-once). 반대 방향도 같다.
      */
     async listUnanalyzedAnnounced(
-        impacts: readonly CalendarImpact[]
+        impacts: readonly CalendarImpact[],
+        country: string
     ): Promise<UnanalyzedAnnouncedEvent[]> {
         const rows = await withRetry(
             () =>
@@ -227,11 +239,17 @@ export class DrizzleEconomicCalendarRepository {
                     .from(economicCalendar)
                     .where(
                         and(
+                            eq(economicCalendar.country, country),
                             inArray(economicCalendar.impact, [...impacts]),
                             isNotNull(economicCalendar.actual),
                             isNull(economicCalendar.analyzedAt)
                         )
-                    ),
+                    )
+                    // 한 번의 pass가 삼킬 수 있는 양을 묶는다. 이 스캔은 페이지
+                    // 로드에서 `waitUntil` 안으로 들어가고, 각 행이 LLM 왕복 하나다.
+                    // 상한이 없으면 인제스션 창을 넓힌 국가가 처음 켜질 때 수십 건이
+                    // 한 요청에 몰린다. 남은 것은 다음 pass(플래그 TTL)가 가져간다.
+                    .limit(UNANALYZED_SCAN_LIMIT),
             NEON_TRANSIENT_RETRY
         );
         return rows.map(r => ({

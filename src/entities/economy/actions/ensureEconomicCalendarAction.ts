@@ -16,8 +16,10 @@ import { economicCalendarId } from '../lib/economicCalendarId';
 import {
     CALENDAR_COUNTRY,
     CALENDAR_INGESTION_WINDOW_DAYS,
-    ECONOMY_CALENDAR_CACHE_TAG,
+    CALENDAR_PAST_WINDOW_DAYS,
+    economyCalendarCacheTag,
     type CalendarCountry,
+    isCalendarCountry,
 } from '../lib/economyCalendarConstants';
 
 /** upsert 과반 실패 시 abort 임계 분모. */
@@ -41,6 +43,14 @@ export async function ensureEconomicCalendarAction(
 ): Promise<void> {
     try {
         if (isE2E()) return;
+        // 직렬화를 건너온 공개 인자라 런타임에서 좁힌다 — `isCalendarCountry` JSDoc 참조.
+        if (!isCalendarCountry(country)) {
+            console.error(
+                '[ensureEconomicCalendarAction] unknown country:',
+                country
+            );
+            return;
+        }
         if (await isCalendarRecentlyFetched(country)) {
             return;
         }
@@ -48,7 +58,7 @@ export async function ensureEconomicCalendarAction(
         await markCalendarFetched(country);
 
         const today = etDateOf(new Date());
-        const from = addEtDays(today, -CALENDAR_INGESTION_WINDOW_DAYS);
+        const from = addEtDays(today, -CALENDAR_PAST_WINDOW_DAYS[country]);
         const to = addEtDays(today, CALENDAR_INGESTION_WINDOW_DAYS);
 
         const provider = new FmpEconomyProvider();
@@ -104,9 +114,10 @@ export async function ensureEconomicCalendarAction(
             r => r.status === 'fulfilled' && r.value === true
         ).length;
         if (changedCount > 0) {
-            // 'economy:calendar' 태그만 무효화 — 스냅샷(지표/treasury) ISR 캐시는 무관.
+            // 해당 국가의 캘린더 태그만 무효화 — 스냅샷(지표/treasury) ISR 캐시와, 다른
+            // 국가의 캘린더 캐시는 건드리지 않는다.
             // Next 16 revalidateTag(tag, profile) — 'max'는 즉시 무효화.
-            revalidateTag(ECONOMY_CALENDAR_CACHE_TAG, 'max');
+            revalidateTag(economyCalendarCacheTag(country), 'max');
         }
     } catch (error) {
         console.error('[ensureEconomicCalendarAction]', error);

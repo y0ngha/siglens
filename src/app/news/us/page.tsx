@@ -30,8 +30,15 @@ const DESCRIPTION = clampSeoDescription(
  * 갈 곳이 필요해졌다. 구 `/news`로 유입되던 질의(`미국 시장 뉴스`, 리브랜딩 전
  * 표기인 `미국 마켓 뉴스`)를 여기가 승계한다 — 그래서 키워드 목록도 함께 옮겼다.
  */
-export function generateMetadata(): Metadata {
+export async function generateMetadata(): Promise<Metadata> {
     const url = `${SITE_URL}${PATH}`;
+    // 미리보기가 하나도 없으면 이 페이지는 h1 + 두 문단 + 카드 제목뿐이라
+    // 2026-07 thin-content 사태에서 문제가 된 분량(약 677자)보다도 얇다.
+    // 첫인상으로 판정되는 신규 URL이라 그 상태를 색인시키지 않는다.
+    const previews = await Promise.all(
+        categoriesInRegion('us').map(cat => fetchCategoryPreviews(cat))
+    );
+    const degraded = previews.every(list => list.length === 0);
     return {
         title: TITLE,
         description: DESCRIPTION,
@@ -46,7 +53,8 @@ export function generateMetadata(): Metadata {
             'AI 뉴스 다이제스트',
             'Siglens 뉴스',
         ],
-        alternates: { canonical: PATH },
+        alternates: { canonical: degraded ? null : PATH },
+        robots: degraded ? { index: false, follow: true } : undefined,
         openGraph: {
             type: 'website',
             siteName: SITE_NAME,
@@ -54,11 +62,17 @@ export function generateMetadata(): Metadata {
             description: DESCRIPTION,
             url,
             locale: 'ko_KR',
+            // `/news/opengraph-image.tsx`를 **명시적으로** 가리킨다. 파일 컨벤션은
+            // 그 세그먼트에 붙고, 하위 세그먼트가 자기 `openGraph`를 선언하면
+            // 상속이 끊긴다 — 그러면 공유 카드에 이미지가 통째로 빠지는데,
+            // 빌드/렌더에는 아무 에러도 나지 않아 조용히 넘어간다.
+            images: [`${SITE_URL}/news/opengraph-image`],
         },
         twitter: {
             card: 'summary_large_image',
             title: FULL_TITLE,
             description: DESCRIPTION,
+            images: [`${SITE_URL}/news/opengraph-image`],
         },
     };
 }
@@ -92,7 +106,7 @@ export default async function UsNewsHubPage() {
             <JsonLd data={webPageJsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
-                <RegionTabs vertical="news" active="us" />
+                <RegionTabs vertical="news" active="us" currentPath={PATH} />
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
                     미국 시장 뉴스
                 </h1>

@@ -134,6 +134,29 @@ export function HeaderNavMenu({ vertical, pathname }: HeaderNavMenuProps) {
                     isOpen ? 'visible' : 'invisible'
                 )}
             >
+                {vertical.overview && (
+                    <li>
+                        <Link
+                            href={vertical.overview.href}
+                            prefetch={false}
+                            aria-current={
+                                isHrefActive(vertical.overview.href, pathname)
+                                    ? 'page'
+                                    : undefined
+                            }
+                            onClick={close}
+                            className={cn(
+                                ITEM_BASE,
+                                'border-b border-secondary-800 px-4',
+                                isHrefActive(vertical.overview.href, pathname)
+                                    ? 'bg-secondary-800 text-secondary-100'
+                                    : 'text-secondary-400 hover:bg-secondary-800 hover:text-secondary-100'
+                            )}
+                        >
+                            {vertical.overview.label}
+                        </Link>
+                    </li>
+                )}
                 {vertical.regions.map(region => (
                     <li key={region.href}>
                         <Link

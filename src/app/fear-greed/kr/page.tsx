@@ -12,7 +12,7 @@ import { FearGreedRouteBody } from '../FearGreedRouteBody';
 export const revalidate = 3600;
 
 const COPY = FEAR_GREED_COPY.kr;
-const URL_ = `${SITE_URL}${COPY.path}`;
+const PAGE_URL = `${SITE_URL}${COPY.path}`;
 const FULL_TITLE = `${COPY.title} | ${SITE_NAME}`;
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -34,12 +34,12 @@ export async function generateMetadata(): Promise<Metadata> {
         keywords: [...COPY.keywords],
         // degraded 시 canonical을 비우고 noindex — 표본 부족 상태(설명문만 남는 화면)를
         // 색인시키지 않는다. follow는 유지해 내부 링크로 주스가 계속 흐르게 한다.
-        alternates: { canonical: degraded ? null : URL_ },
+        alternates: { canonical: degraded ? null : PAGE_URL },
         robots: degraded ? { index: false, follow: true } : undefined,
         openGraph: {
             title: FULL_TITLE,
             description: COPY.description,
-            url: URL_,
+            url: PAGE_URL,
             siteName: SITE_NAME,
             locale: 'ko_KR',
             type: 'website',

@@ -336,6 +336,39 @@ async function seed(): Promise<void> {
             actual: null,
             unit: '%',
         },
+        /**
+         * KR 캘린더 시드 — `/economy/kr`의 지표 카드는 **캘린더 발표 이력**에서
+         * 값을 되짚는다(FMP 지표 시계열이 한국을 커버하지 않는다). 지표 하나당
+         * 두 번 발표가 있어야 `changeFromPrevious`까지 렌더되므로 각 지표를
+         * today-2 / today-1 두 벌로 넣는다.
+         *
+         * `country: 'KR'`이 핵심이다 — 미국 라우트로 새면 `/economy`가 한국
+         * 이벤트를 그리는데, 이건 국가 필터가 빠졌을 때만 나는 증상이다.
+         */
+        ...(
+            [
+                ['Interest Rate Decision', 'High', 2.5, 2.75, '%'],
+                ['Inflation Rate YoY', 'High', 2.7, 2.8, '%'],
+                ['Unemployment Rate', 'Medium', 2.9, 2.8, '%'],
+            ] as const
+        ).flatMap(([event, impact, older, newer, unit]) =>
+            (
+                [
+                    [todayMinus2, older],
+                    [todayMinus1, newer],
+                ] as const
+            ).map(([dateEt, actual]) => ({
+                id: economicCalendarId('KR', `${dateEt} 01:00:00`, event),
+                country: 'KR',
+                dateEt: `${dateEt} 01:00:00`,
+                event,
+                impact,
+                estimate: null,
+                previous: older,
+                actual,
+                unit,
+            }))
+        ),
     ];
     await db
         .insert(economicCalendar)

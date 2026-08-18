@@ -2,6 +2,7 @@ import { MS_PER_HOUR } from '@/shared/config/time';
 import { PRIVACY_PATH, TERMS_PATH } from '@/shared/lib/legal';
 import { SITE_BUILD_DATE, SITE_URL } from '@/shared/lib/seo';
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 import {
     CATEGORY_CONFIG,
@@ -51,8 +52,16 @@ export function buildStaticEntries(now: Date): SitemapEntry[] {
     // `buildPopularEntries`의 `/news` 엔트리와 같은 이유(floorToHour JSDoc 참고).
     const oneHourAgo = floorToHour(new Date(now.getTime() - MS_PER_HOUR));
     const todayUtc = startOfUtcDay(now);
-    // `/fear-greed`는 미국 지수·ETF의 EOD 종가가 입력이므로 NYSE 세션 기준이다.
+    // `/fear-greed`는 EOD 종가가 입력이라 "직전 마감"이 곧 lastmod다. 두 지역이
+    // 서로 다른 거래소를 보므로 세션도 따로 계산한다 — KRX는 06:30 UTC, NYSE는
+    // 21:00 UTC에 닫혀서, 한 시계로 통일하면 하루 14시간 넘게 KR 엔트리가 실제
+    // 변경 시각보다 뒤처지고 KRX만 여는 날에는 바뀌지도 않은 변경을 주장한다.
+    // (`buildPopularEntries`가 종목 URL에서 이미 같은 분기를 한다.)
     const lastSessionClose = lastClosedSessionCloseUtc(US_EQUITY_SESSION, now);
+    const lastKrSessionClose = lastClosedSessionCloseUtc(
+        KR_EQUITY_SESSION,
+        now
+    );
     // safe: CATEGORY_CONFIG is Record<NewsFeedCategoryId, CategoryConfig>, so Object.keys is exactly the union — TS just widens to string[].
     const newsCategoryEntries: SitemapEntry[] = (
         Object.keys(CATEGORY_CONFIG) as NewsFeedCategoryId[]
@@ -71,19 +80,26 @@ export function buildStaticEntries(now: Date): SitemapEntry[] {
      * 뉴스 지역 링크는 여기서 제외한다 — `/news/crypto`처럼 카테고리 페이지와 URL이
      * 겹쳐 `newsCategoryEntries`가 이미 내보내고 있어, 넣으면 같은 URL이 두 번 나간다.
      */
+    /**
+     * 등급은 버티컬 성격을 따른다: `/market*`은 장중 신호라 1시간 슬라이딩,
+     * `/fear-greed*`는 EOD 입력이라 직전 마감(거래소가 다르므로 지역별로),
+     * `/economy*`는 배포 단위.
+     */
+    function lastModifiedFor(
+        link: (typeof ALL_NAV_REGION_LINKS)[number]
+    ): Date {
+        if (link.href.startsWith('/market')) return oneHourAgo;
+        if (!link.href.startsWith('/fear-greed')) return SITE_BUILD_DATE;
+        return link.region === 'kr' ? lastKrSessionClose : lastSessionClose;
+    }
+
     const regionEntries: SitemapEntry[] = ALL_NAV_REGION_LINKS.flatMap(link => {
         if (link.href.startsWith('/news/')) return [];
         const isMarket = link.href.startsWith('/market');
         return [
             {
                 url: `${SITE_URL}${link.href}`,
-                // 등급은 버티컬 성격을 따른다: `/market*`은 장중 신호라 1시간 슬라이딩,
-                // `/fear-greed*`는 EOD 입력이라 직전 마감, `/economy*`는 배포 단위.
-                lastModified: isMarket
-                    ? oneHourAgo
-                    : link.href.startsWith('/fear-greed')
-                      ? lastSessionClose
-                      : SITE_BUILD_DATE,
+                lastModified: lastModifiedFor(link),
                 changeFrequency: isMarket
                     ? ('hourly' as const)
                     : ('daily' as const),

@@ -136,7 +136,18 @@ export class FmpMarketNewsClient implements MarketNewsClientPort {
         category: NewsFeedCategoryId,
         lookbackMs: number
     ): Promise<MarketNewsItem[]> {
-        const { sentinel, fmpEndpoint } = CATEGORY_CONFIG[category];
+        const cfg = CATEGORY_CONFIG[category];
+        if (cfg.source !== 'fmp') {
+            // 배선 실수를 조용한 빈 피드가 아니라 로그로 드러낸다 — 네이버 카테고리는
+            // `fmpEndpoint`가 빈 문자열이라 그대로 두면 `fmpGet('')`까지 간다.
+            // 자매 어댑터(`NaverMarketNewsClient`)와 대칭.
+            console.error(
+                '[fmpMarketNewsClient] non-fmp category routed here',
+                category
+            );
+            return [];
+        }
+        const { sentinel, fmpEndpoint } = cfg;
         const cutoff = new Date(Date.now() - lookbackMs);
 
         if (category === 'articles') {

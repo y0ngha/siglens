@@ -57,13 +57,24 @@ describe('CategoryCard', () => {
         ).toBeInTheDocument();
     });
 
-    it('올바른 href를 가진 "더보기" 링크를 렌더한다', () => {
+    /**
+     * 앵커 텍스트가 곧 목적지에 대한 신호다. 예전에는 링크가 `더보기`뿐이라
+     * 이 카드가 거는 내부 링크에 키워드가 하나도 실리지 않았다.
+     */
+    it('제목이 링크이고 앵커 텍스트가 카테고리 이름이다', () => {
         render(<CategoryCard {...DEFAULTS} />);
-        const link = screen.getByRole('link', {
-            name: '암호화폐 뉴스 더보기',
-        });
-        expect(link).toBeInTheDocument();
+
+        const link = screen.getByRole('link', { name: '암호화폐' });
         expect(link).toHaveAttribute('href', '/news/crypto');
+        expect(link.closest('h2')).not.toBeNull();
+    });
+
+    it('보조기술에 노출되는 링크는 카드당 하나다', () => {
+        render(<CategoryCard {...DEFAULTS} />);
+
+        // `더보기 →`도 같은 곳으로 가지만 `aria-hidden` + `tabIndex={-1}`이라
+        // 접근성 트리에는 안 뜬다 — 같은 링크가 두 번 읽히지 않게.
+        expect(screen.getAllByRole('link')).toHaveLength(1);
     });
 
     it('aria-label에 koLabel을 포함한다', () => {

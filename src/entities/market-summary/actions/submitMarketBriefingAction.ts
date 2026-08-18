@@ -16,8 +16,17 @@ import {
  * summary 재조회 — redis HIT). cached/submitted 결과를 반환. headers()는 클라 호출
  * 경로라 ISR과 무관.
  */
+/**
+ * 롤링 배포 호환 기본값.
+ *
+ * ASG 갱신은 구·신 인스턴스를 최대 30분 함께 띄우고, Next의 Server Action id는
+ * 파일 경로 + export 이름에서 나오므로 **옛 번들이 보낸 인자 없는 호출이 새 구현에
+ * 그대로 도달한다.** 기본값이 없으면 그 호출이 `server_error`가 되어 `/market`에
+ * 빨간 오류 배너가 뜬다 — 배포 중 30분 동안, 사이트에서 가장 트래픽이 많은 페이지에서.
+ * 한 릴리스 뒤에 기본값을 떼고 필수 인자로 좁힌다.
+ */
 export async function submitMarketBriefingAction(
-    scope: string,
+    scope: string = 'us',
     signal?: AbortSignal
 ): Promise<MarketBriefingActionResult> {
     try {
@@ -39,7 +48,7 @@ export async function submitMarketBriefingAction(
             resolved
         );
         const briefing = await runBriefing(summary, { signal });
-        return { briefing, botBlocked: false };
+        return { briefing, botBlocked: false, scope: resolved.id };
     } catch (e) {
         console.error('[submitMarketBriefingAction] failed:', e);
         return { ok: false, error: 'server_error' };

@@ -153,3 +153,45 @@ describe('/news/[category] CategoryNewsPage default export는', () => {
         expect(scripts).toHaveLength(0);
     });
 });
+
+/**
+ * `/news/kr`은 같은 동적 라우트를 타지만 소스가 네이버라 배선이 다르다 —
+ * 카테고리 슬러그가 라우트에 실제로 등록돼 있는지, 그리고 지역 탭이 한국으로
+ * 활성화되는지는 미국 카테고리 테스트가 잡아 주지 않는다.
+ */
+describe('/news/kr 카테고리 페이지는', () => {
+    it('유효한 슬러그로 인식돼 자기 canonical을 설정한다', async () => {
+        const meta = await generateMetadata({
+            params: Promise.resolve({ category: 'kr' }),
+        });
+
+        expect(meta.alternates?.canonical).toBe('/news/kr');
+        expect(meta.robots).toBeUndefined();
+    });
+
+    it('h1에 한국 증시 라벨을 렌더한다', async () => {
+        const { container } = render(
+            await CategoryNewsPage({
+                params: Promise.resolve({ category: 'kr' }),
+            })
+        );
+
+        expect(container.querySelector('h1')?.textContent).toContain(
+            '한국 증시'
+        );
+    });
+
+    it('지역 탭에서 한국만 현재 페이지로 표시한다', async () => {
+        const { container } = render(
+            await CategoryNewsPage({
+                params: Promise.resolve({ category: 'kr' }),
+            })
+        );
+
+        const current = Array.from(
+            container.querySelectorAll('[aria-current="page"]')
+        ).map(el => el.textContent?.trim());
+
+        expect(current).toEqual(['한국']);
+    });
+});

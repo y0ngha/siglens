@@ -12,9 +12,11 @@ function getLabel(data: IndexCardData): string {
 interface IndexCardProps {
     data: IndexCardData;
     href?: string;
+    /** 가격 앞에 붙일 통화 기호. 시장마다 다르다(`DashboardScope.currencySymbol`). */
+    currencySymbol: string;
 }
 
-export function IndexCard({ data, href }: IndexCardProps) {
+export function IndexCard({ data, href, currencySymbol }: IndexCardProps) {
     const label = getLabel(data);
 
     const inner = (
@@ -26,6 +28,7 @@ export function IndexCard({ data, href }: IndexCardProps) {
                     price: data.price,
                     changePercent: data.changesPercentage,
                 }}
+                currencySymbol={currencySymbol}
             />
         </div>
     );

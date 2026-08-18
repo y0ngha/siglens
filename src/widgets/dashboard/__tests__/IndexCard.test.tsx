@@ -55,35 +55,45 @@ const SECTOR_DATA: MarketSectorData = {
 
 describe('IndexCard', () => {
     it('renders symbol and price', () => {
-        render(<IndexCard data={INDEX_DATA} />);
+        render(<IndexCard currencySymbol="$" data={INDEX_DATA} />);
         expect(screen.getByText('SPY')).toBeInTheDocument();
         expect(screen.getByText('$5012.34')).toBeInTheDocument();
     });
 
+    /**
+     * `$`가 컴포넌트에 박혀 있던 시절 `/market/kr`은 코스피를 `$6,869.83`으로 그렸다 —
+     * 렌더도 숫자도 맞아서 실증 전까지 아무도 못 봤다.
+     */
+    it('통화 기호를 그대로 쓴다 (KR = ₩)', () => {
+        render(<IndexCard currencySymbol="₩" data={INDEX_DATA} />);
+        expect(screen.getByText('₩5012.34')).toBeInTheDocument();
+        expect(screen.queryByText('$5012.34')).not.toBeInTheDocument();
+    });
+
     it('renders korean name', () => {
-        render(<IndexCard data={INDEX_DATA} />);
+        render(<IndexCard currencySymbol="$" data={INDEX_DATA} />);
         expect(screen.getByText('S&P 500')).toBeInTheDocument();
     });
 
     it('renders percentage change', () => {
-        render(<IndexCard data={INDEX_DATA} />);
+        render(<IndexCard currencySymbol="$" data={INDEX_DATA} />);
         expect(screen.getByText(/1\.25%/)).toBeInTheDocument();
     });
 
     it('wraps in a Link when href is provided', () => {
-        render(<IndexCard data={INDEX_DATA} href="/SPY" />);
+        render(<IndexCard currencySymbol="$" data={INDEX_DATA} href="/SPY" />);
         const link = screen.getByRole('link');
         expect(link).toHaveAttribute('href', '/SPY');
         expect(link).toHaveAttribute('title', 'S&P 500 Index 분석');
     });
 
     it('does not wrap in a Link when href is absent', () => {
-        render(<IndexCard data={INDEX_DATA} />);
+        render(<IndexCard currencySymbol="$" data={INDEX_DATA} />);
         expect(screen.queryByRole('link')).not.toBeInTheDocument();
     });
 
     it('uses sectorName as label for sector data', () => {
-        render(<IndexCard data={SECTOR_DATA} href="/XLK" />);
+        render(<IndexCard currencySymbol="$" data={SECTOR_DATA} href="/XLK" />);
         const link = screen.getByRole('link');
         expect(link).toHaveAttribute('title', 'Technology 분석');
     });

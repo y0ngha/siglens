@@ -23,7 +23,10 @@ export const dynamic = 'force-static';
 export const revalidate = 2592000; // 30d
 export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
 export const contentType = 'image/png';
-export const alt = 'Siglens 미국 시장 뉴스';
+// 이 파일은 `/news/kr`·`/news/crypto`까지 모든 카테고리에 붙는 정적 문자열이라
+// 지역을 박으면 한국·암호화폐 페이지가 자기를 미국이라고 말하게 된다.
+// 이미지 본문은 `CATEGORY_CONFIG[cat].koLabel`로 카테고리마다 갈린다.
+export const alt = 'Siglens 시장 뉴스';
 
 interface Props {
     params: Promise<{ category: string }>;

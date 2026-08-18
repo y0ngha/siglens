@@ -188,12 +188,16 @@ core는 `MarketFearGreedSeriesKey`를 **의미(semantic)** 로 정의하고 티�
 
 | 섹터 | ETF | 확인된 이름 |
 |---|---|---|
-| 반도체·IT | `091160.KS` | Kodex Semicon |
-| 자동차·2차전지 | `091180.KS` | Kodex Autos |
-| 바이오·헬스케어 | `244580.KS` | KODEX Biotech |
-| 인터넷·플랫폼 | `266360.KS` | KODEX IT Software |
-| 금융·지주 | `091170.KS` | Kodex Banks |
-| 코스닥 | `229200.KS` | KODEX KOSDAQ 150 |
+| 반도체 | `091160.KS` | Kodex Semicon |
+| 2차전지 | `305720.KS` | KODEX 2차전지산업 |
+| 인터넷·SW | `266360.KS` | KODEX IT Software |
+| 자동차 | `091180.KS` | Kodex Autos |
+| 은행 | `091170.KS` | Kodex Banks |
+| 바이오 | `244580.KS` | KODEX Biotech |
+
+처음 후보에 넣었던 `229200.KS`(KODEX KOSDAQ 150)는 뺐다 — 코스닥은 이미 상단 지수
+카드에 있어 섹터 축과 겹치고, 2차전지 종목 4종(LG화학·삼성SDI·에코프로·에코프로비엠)을
+담을 섹터가 없어 `305720.KS`가 더 필요했다.
 
 신호 스캔 종목은 **기존 `POPULAR_TICKERS` KR 블록 20종 그대로** 쓴다. 새 심볼을
 넣으면 한글명 시드·사이트맵 범위·prewarm 회전까지 파생 작업이 붙는데, 그건 이
@@ -226,8 +230,9 @@ DB 스키마 `economic_calendar`는 이미 `country` 컬럼 + `(country, date_et
 갖고 있다("현재 US만 저장"). **KR 수집을 켜고 읽기에서 country로 가르면 된다.**
 
 한계와 처리:
-- 시계열이 180일뿐이라 초기 미니 추세는 월간 지표 기준 5~6포인트다. DB에 누적되면
-  자연히 길어진다. **없는 구간을 지어내지 않는다** — 포인트가 부족하면 추세선을 숨긴다.
+- 시계열이 180일뿐이라 월간 지표 기준 5~6포인트다. 미니 추세선은 **구현하지 않았다** —
+  포인트가 그만큼이면 선이 표본이 아니라 노이즈를 그린다. 카드는 최신 actual과 직전 값
+  대비 변화만 보여 준다. DB에 이력이 쌓이면 그때 추세를 붙인다.
 - 한국은행 ECOS는 별도 키가 필요하고, 공공데이터포털 추가 서비스도 개별 신청이
   필요하다. 지금 키로 되는 범위에서 최대치를 뽑고, 부족분은 후속으로 남긴다.
 - 이벤트명 한국어화는 기존 `resolveIndicatorLabels`(사전 → DB 캐시 → AI) 체인을 재사용.
@@ -262,11 +267,19 @@ UI degrade 개선은 별도 이슈로 뺀다.
 
 ```
 지금:  오늘 주목할 종목 →   미국 시장 뉴스 →   미국 경제 →
-바뀜:  미국 시장 →   한국 시장 →   시장 뉴스 →   경제 지표 →
+바뀜:  미국 시장 분석 →  한국 시장 분석 →  미국 공포·탐욕 지수 →
+       미국 시장 뉴스 →  미국 경제 →
 ```
 
-앞의 둘은 지역 진입점(`/market`, `/market/kr`), 뒤의 둘은 버티컬 진입점
-(`/news`, `/economy`)이다. `NAV_VERTICALS`에서 파생하므로 헤더와 어긋날 수 없다.
+`NAV_VERTICALS`에서 파생한다(`widgets/home/heroQuickLinks.ts`) — 헤더와 어긋날 수
+없다. 규칙은 **`시장 분석`만 지역을 전부 펼치고 나머지 버티컬은 첫 지역 하나씩**이다.
+랜딩에서 가장 많이 쓰이는 진입점이 시장 분석이라 거기서만 시장을 바로 고르게 하고,
+전부 펼치면 히어로 밑에 링크가 9개 깔려 CTA가 묻힌다.
+
+**허브(`/news`)가 아니라 최종 목적지를 건다.** 히어로에서 허브를 거치면 랜딩에서
+원하는 화면까지 클릭이 두 번이 되는데, 자산군을 1차 축으로 올린 목적이 바로
+"한 번에 들어가기"다. 라벨도 짧은 지역명(`미국`)이 아니라 `fullLabel`(`미국 시장
+분석`)을 쓴다 — 히어로 링크는 버티컬 맥락 없이 홀로 읽힌다.
 
 ---
 
@@ -287,9 +300,16 @@ UI degrade 개선은 별도 이슈로 뺀다.
 
 ```
 shared/config/assetClassNav.ts          내비 단일 소스
-shared/config/marketFearGreedKr.ts      KR F&G 심볼 테이블 + 실현변동성 파생
-shared/config/dashboard-tickers.kr.ts   KR 지수/섹터ETF/신호종목
+shared/config/dashboard-tickers-kr.ts   KR 지수/섹터ETF/신호종목
+shared/config/dashboardScope.ts         시장별 대시보드 설정 묶음(us/kr)
+shared/config/economyIndicatorsKr.ts    KR 지표 카드 정의(FMP 이벤트명 키)
 shared/ui/RegionTabs.tsx                지역 탭 스트립(프레젠테이션)
+
+entities/market-fear-greed/lib/marketFearGreedKrSymbols.ts
+                                        KR F&G 심볼 테이블
+entities/market-fear-greed/lib/realizedVolatility.ts
+                                        VKOSPI 대체 — 20일 실현변동성 파생
+widgets/home/heroQuickLinks.ts          히어로 퀵링크(NAV_VERTICALS 파생)
 
 entities/market-fear-greed/api/…Kr…     KR 뷰 캐시 (yahoo → core compute)
 entities/market-news/…                  KR 시장 뉴스 카테고리 config + 수집
@@ -317,3 +337,61 @@ app/news/{us,kr}/                       신규 라우트
 - ECOS·KOSIS 연동을 통한 KR 거시 시계열 장기화
 - 브리핑 실패 시 UI degrade 개선(§4 후속)
 - 헤더 브레이크포인트 `lg` → `md` 복귀(실측 후 별도 판단)
+
+### 8.1 감사에서 드러났으나 이번 릴리스에서 처리하지 않는 것
+
+이 절은 "안 보였다"와 "보고 미뤘다"를 구분하기 위한 기록이다.
+
+**(a) core 브리핑 프롬프트가 미국 전제다 — core 소유**
+
+`marketBriefingPrompt`가 섹터 필드를 `"섹터 ETF 티커 (예: 'XLK')"`로 설명하고
+`"VIX 지수 값"`을 요구한다. 한국 요약을 넣으면 모델이 미국 티커를 돌려주고
+입력에 없는 VIX 숫자를 **지어낸다**(2026-08-19 `/market/kr` 실측: `하락 섹터
+XLK·XLV·XLY`, `VIX 18.30`).
+
+프롬프트는 `docs/architecture/SCOPE.md` 기준 core 소유라 여기서 고치지 않는다.
+siglens 쪽에서는 **화면에 근거 없는 값을 올리지 않는 것**까지만 한다:
+`BriefingCard`가 scope에 실재하는 티커만 남기고, `volatilityIndexLabel === null`인
+시장에서는 변동성 줄을 통째로 뺀다. 서술 문장은 그대로 둔다 — 요약 데이터에서
+직접 나온 값이라 근거가 있다.
+
+**(b) 한국 경제 발표의 AI 해설 — 이번 릴리스에서는 끈다**
+
+core `buildEconomicEventAnalysisPrompt`도 국가 개념이 없고 few-shot이 미국
+발표다. `Interest Rate Decision`처럼 국가가 이름에 없는 한국 발표가 그 프롬프트로
+분석되면 한국은행 결정이 연준 맥락으로 서술되는데, 저장이 `analyzed_at IS NULL`
+가드로 **한 번만** 일어나 되돌릴 수 없다(재분석 경로 없음).
+
+`ensureEconomicEventsAnalyzedAction`이 `country === 'KR'`이면 조기 반환한다.
+캘린더 수집과 표시는 그대로 돌고 AI 컬럼만 비어 있다 — 틀린 해설을 영구히
+남기는 것보다 낫다. core가 country를 받으면 가드를 지운다.
+
+**(c) 사이트맵의 KR 엔트리를 데이터 유무로 게이팅하지 않는다**
+
+감사는 "`/economy/kr`이 첫 크롤에 반드시 degraded(noindex)"라고 봤지만, 그
+전제가 이 배포에는 성립하지 않는다 — 개발 중 인제스션이 이미 돌아 프로덕션과
+같은 Neon 인스턴스에 KR 행이 들어 있다(2026-08-19 확인: 180일 창 63건).
+게이팅을 넣으려면 `buildStaticEntries`의 순수 함수 계약을 깨거나 sitemap 라우트가
+페이지 로더를 호출해야 하는데, 실재하지 않는 상태를 위한 값은 아니다.
+다음 신규 지역을 열 때 콜드 스타트가 실제로 발생하면 그때 다시 본다.
+
+**(d) 섹터 신호 스캔의 부분 실패 탐지**
+
+`getSectorSignals`는 종목별 실패를 `Promise.allSettled`로 버리고 `YahooMarketProvider`는
+오류를 `null`로 바꾸므로, yahoo 429로 20종목 중 2종목만 남은 결과와 정상 결과를
+캐시 계층이 구분하지 못한다. 그런데 **설정 종목 수 대비 비율로는 잴 수 없다** —
+`result.stocks`는 "조회 성공한 종목"이 아니라 **"신호가 잡힌 종목"**이다(core
+`computeStockSignalResult`가 `detectSignals` 결과가 비면 `null`을 돌린다).
+비율 가드를 넣었다가 조용한 장에서 캐시 쓰기가 통째로 막히는 것을 확인하고 되돌렸다.
+
+구분하려면 provider나 어댑터가 **종목별 조회 성공 여부**를 따로 보고해야 한다.
+그건 core 반환 타입 변경이라 이번 범위 밖이다. 지금은 `stocks.length > 0`으로
+전면 실패만 막고, 대량 실패는 `siglens-market-kr-loader-failed` 알람이 잡는다.
+
+**(e) `KR_CALENDAR_HORIZON` 2027년 연장**
+
+2026-12-31 이후 KRX 휴장일을 추측으로 채우지 않는다. 설·추석은 음력이고
+대체공휴일은 그때그때 지정돼, 기억으로 적으면 그 오답이 캐시 TTL과 사이트맵
+`lastmod`를 함께 끌고 간다. 대신 지평선 만료가 **소리 나게** 만들었다 —
+`siglens-kr-calendar-horizon-expired` 알람(`[KR_EQUITY_SESSION]` 로그 필터)과
+런북 대응 절차. 고시가 나오면 목록과 지평선을 함께 늘린다.

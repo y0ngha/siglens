@@ -1,6 +1,9 @@
 import { ContactDialog } from './ContactDialog';
 import { CurrentYear } from './CurrentYear';
-import { ALL_NAV_REGION_LINKS } from '@/shared/config/assetClassNav';
+import {
+    ALL_NAV_REGION_LINKS,
+    NAV_OVERVIEW_LINKS,
+} from '@/shared/config/assetClassNav';
 import { DotSeparator } from '@/shared/ui/DotSeparator';
 import {
     INVESTMENT_DISCLAIMER,
@@ -11,6 +14,14 @@ import {
 } from '@/shared/lib/legal';
 import Link from 'next/link';
 import { Fragment } from 'react';
+
+/**
+ * 푸터에 거는 목적지 = 모든 지역 링크 + 지역에 속하지 않는 상위 페이지(`/news`).
+ *
+ * 지역 링크만 걸면 `/news` 허브가 사이트 안에서 보이는 앵커를 하나도 못 갖는다 —
+ * 헤더 드롭다운은 `hidden lg:flex` + `invisible` 안이라 그 자리를 대신하지 못한다.
+ */
+const FOOTER_NAV_LINKS = [...NAV_OVERVIEW_LINKS, ...ALL_NAV_REGION_LINKS];
 
 export function Footer() {
     return (
@@ -36,7 +47,7 @@ export function Footer() {
                             (`미국`/`한국`)이 아니라 `fullLabel`을 쓴다 — 짧은 라벨만
                             쓰면 `미국 · 한국 · 미국 · 한국`이 되어 뜻을 잃는다.
                         */}
-                        {ALL_NAV_REGION_LINKS.map(item => (
+                        {FOOTER_NAV_LINKS.map(item => (
                             <Fragment key={item.href}>
                                 <Link
                                     href={item.href}
@@ -53,7 +64,7 @@ export function Footer() {
                         ))}
                         <Link
                             href={PRIVACY_PATH}
-                            // 위 ALL_NAV_REGION_LINKS와 동일 — 전역 푸터의 `_rsc` 파편화
+                            // 위 FOOTER_NAV_LINKS와 동일 — 전역 푸터의 `_rsc` 파편화
                             // (docs/architecture/CDN_CACHING.md §1).
                             prefetch={false}
                             className="text-sm text-secondary-400 transition-colors hover:text-secondary-200"
@@ -63,7 +74,7 @@ export function Footer() {
                         <DotSeparator />
                         <Link
                             href={TERMS_PATH}
-                            // 위 ALL_NAV_REGION_LINKS와 동일 — 전역 푸터의 `_rsc` 파편화
+                            // 위 FOOTER_NAV_LINKS와 동일 — 전역 푸터의 `_rsc` 파편화
                             // (docs/architecture/CDN_CACHING.md §1).
                             prefetch={false}
                             className="text-sm text-secondary-400 transition-colors hover:text-secondary-200"

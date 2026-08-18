@@ -111,7 +111,10 @@ import * as pageModule from '@/app/market/page';
 import { generateMetadata } from '@/app/market/page';
 // `MarketContent`는 미국·한국 라우트가 공유하는 본문으로 옮겨졌다 — scope를 인자로 받는다.
 import { MarketContent } from '@/app/market/MarketRouteBody';
-import { US_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
+import {
+    KR_DASHBOARD_SCOPE,
+    US_DASHBOARD_SCOPE,
+} from '@/shared/config/dashboardScope';
 
 describe('Market page', () => {
     describe('ISR route config', () => {
@@ -266,6 +269,37 @@ describe('Market page', () => {
                 ['sector-signals', 'us', '1Day'],
                 expect.objectContaining({ stocks: [] }),
                 expect.objectContaining({ updatedAt: expect.any(Number) })
+            );
+        });
+
+        /**
+         * 같은 본문이 두 시장을 그린다 — scope가 로더·쿼리 키·peek까지 끝까지
+         * 흐르지 않으면 `/market/kr`이 미국 데이터를 조용히 렌더한다.
+         */
+        it('kr scope로 부르면 로더·쿼리 키·peek가 전부 kr로 간다', async () => {
+            await MarketContent({ scope: KR_DASHBOARD_SCOPE });
+
+            expect(mockGetMarketSummaryStatic).toHaveBeenCalledWith(
+                KR_DASHBOARD_SCOPE
+            );
+            expect(mockGetSectorSignalsStatic).toHaveBeenCalledWith(
+                KR_DASHBOARD_SCOPE,
+                '1Day'
+            );
+            expect(mockPeekBriefingStatic).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.any(String),
+                'kr'
+            );
+            expect(mockSetQueryData).toHaveBeenCalledWith(
+                ['market-summary', 'kr'],
+                expect.anything(),
+                expect.anything()
+            );
+            expect(mockSetQueryData).toHaveBeenCalledWith(
+                ['sector-signals', 'kr', '1Day'],
+                expect.anything(),
+                expect.anything()
             );
         });
 

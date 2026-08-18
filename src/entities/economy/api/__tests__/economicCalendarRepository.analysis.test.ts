@@ -16,8 +16,11 @@ function makeDb(selectRows: unknown[]) {
     const update = vi.fn(() => ({ set }));
 
     const orderBy = vi.fn(async () => selectRows);
+    // `listUnanalyzedAnnounced`는 `.limit()`으로 한 pass의 LLM 왕복 수를 묶는다.
+    const limit = vi.fn(async () => selectRows);
     const selectWhere = vi.fn(() => ({
         orderBy,
+        limit,
         then: (resolve: (rows: unknown[]) => unknown) =>
             Promise.resolve(selectRows).then(resolve),
     }));
@@ -26,7 +29,16 @@ function makeDb(selectRows: unknown[]) {
 
     return {
         db: { update, select } as never,
-        spies: { update, set, where, select, from, selectWhere, orderBy },
+        spies: {
+            update,
+            set,
+            where,
+            select,
+            from,
+            selectWhere,
+            orderBy,
+            limit,
+        },
     };
 }
 
@@ -70,7 +82,10 @@ describe('DrizzleEconomicCalendarRepository.listUnanalyzedAnnounced', () => {
             },
         ]);
         const repo = new DrizzleEconomicCalendarRepository(db);
-        const rows = await repo.listUnanalyzedAnnounced(['High', 'Medium']);
+        const rows = await repo.listUnanalyzedAnnounced(
+            ['High', 'Medium'],
+            'US'
+        );
         expect(rows).toEqual([
             {
                 id: 'id1',

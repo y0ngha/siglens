@@ -30,7 +30,11 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
 
 import { getMarketSummaryStatic } from '../api/marketSummaryStaticCache';
 import { getCachedMarketSummary } from '../api/marketSummaryCache';
-import { US_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
+import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
+import {
+    KR_DASHBOARD_SCOPE,
+    US_DASHBOARD_SCOPE,
+} from '@/shared/config/dashboardScope';
 
 const mockGetCachedMarketSummary = vi.mocked(getCachedMarketSummary);
 
@@ -98,6 +102,43 @@ describe('getMarketSummaryStatic', () => {
             'us',
             expect.stringMatching(/^[a-f0-9]{12}$/),
         ]);
+    });
+
+    /**
+     * 두 시장이 캐시 키나 태그를 공유하면 `/market/kr`이 미국 지수를 그리고도
+     * 아무 신호가 나지 않는다 — 렌더는 정상이고 숫자도 맞아 보인다.
+     */
+    it('(Happy) kr scope는 미국과 다른 캐시 키·태그를 쓴다', async () => {
+        mockGetCachedMarketSummary.mockResolvedValue(sampleSummary);
+
+        await getMarketSummaryStatic(KR_DASHBOARD_SCOPE);
+
+        expect(
+            (globalThis as Record<string, unknown>).__lastUnstableCacheKeys
+        ).toEqual([
+            'market-summary-static',
+            'kr',
+            expect.stringMatching(/^[a-f0-9]{12}$/),
+        ]);
+        expect(
+            (globalThis as Record<string, unknown>).__lastUnstableCacheOpts
+        ).toEqual({
+            revalidate: SECONDS_PER_HOUR,
+            tags: ['market:summary:kr'],
+        });
+    });
+
+    it('(Happy) scope에 맞는 provider와 scope를 아래층 캐시에 넘긴다', async () => {
+        mockGetCachedMarketSummary.mockResolvedValue(sampleSummary);
+
+        await getMarketSummaryStatic(KR_DASHBOARD_SCOPE);
+
+        // provider 팩토리에 scope id가 그대로 흘러야 KRX가 yahoo로 간다.
+        expect(vi.mocked(marketDataProviderFor)).toHaveBeenCalledWith('kr');
+        expect(mockGetCachedMarketSummary).toHaveBeenCalledWith(
+            expect.anything(),
+            KR_DASHBOARD_SCOPE
+        );
     });
 
     it('(Worst) getCachedMarketSummary가 throw하면 에러가 전파된다', async () => {

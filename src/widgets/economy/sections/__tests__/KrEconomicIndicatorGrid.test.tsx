@@ -16,7 +16,6 @@ function card(event: string, overrides: Partial<KrIndicatorCard> = {}) {
         latest: 2.8,
         latestDate: '2026-08-03',
         changeFromPrevious: -0.4,
-        trend: [],
         ...overrides,
     } satisfies KrIndicatorCard;
 }

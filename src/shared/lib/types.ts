@@ -8,6 +8,7 @@ import type {
     RunBriefingResult,
     RunMacroBriefingResult,
 } from '@y0ngha/siglens-core';
+import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 
 /**
  * `FearGreedSnapshot.confidence`의 narrowed 형태(`'normal' | 'limited'`).
@@ -279,14 +280,28 @@ export type DisplayMessage = (ChatMessage | ContextSwitchMessage) & {
     uiId: string;
 };
 
-/** summary 전용 결과 — briefing/botBlocked는 별도 경로(MarketBriefingActionResult). */
+/**
+ * summary 전용 결과 — briefing/botBlocked는 별도 경로(MarketBriefingActionResult).
+ *
+ * `scope`는 **응답이 자기가 어느 시장인지 밝히는 필드**다. 롤링 배포 중 새 클라이언트가
+ * 구 컨테이너에 닿으면 그쪽 액션은 인자가 없어 `'kr'`을 무시하고 미국 요약을 준다 —
+ * 화면에는 `₩` 기호를 단 S&P 500이 뜨고 에러도 로그도 없다. 구 응답에는 이 필드가
+ * 아예 없으므로(`undefined`) 소비자가 그것만으로 불일치를 알아챌 수 있다.
+ */
 export type MarketSummaryActionResult =
-    | { summary: MarketSummaryData }
+    | { summary: MarketSummaryData; scope?: DashboardScopeId }
     | { ok: false; error: string };
 
-/** briefing 클라 경로 결과 — 봇 차단 또는 cached/done. */
+/**
+ * briefing 클라 경로 결과 — 봇 차단 또는 cached/done.
+ * `scope`의 용도는 {@link MarketSummaryActionResult}와 같다(롤링 배포 불일치 탐지).
+ */
 export type MarketBriefingActionResult =
-    | { briefing: RunBriefingResult; botBlocked: false }
+    | {
+          briefing: RunBriefingResult;
+          botBlocked: false;
+          scope?: DashboardScopeId;
+      }
     | { briefing: null; botBlocked: true }
     | { ok: false; error: string };
 

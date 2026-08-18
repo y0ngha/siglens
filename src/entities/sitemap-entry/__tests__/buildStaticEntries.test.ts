@@ -11,6 +11,7 @@ import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 import { floorToHour } from '../lib/floorToHour';
 import { ALL_NAV_REGION_LINKS } from '@/shared/config/assetClassNav';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 
 const NOW = new Date('2026-05-23T15:30:00.000Z');
 
@@ -171,5 +172,28 @@ describe('buildStaticEntries', () => {
         expect(market!.lastModified.getTime()).toBe(
             floorToHour(new Date(NOW.getTime() - MS_PER_HOUR)).getTime()
         );
+    });
+});
+
+describe('buildStaticEntries — 지역별 lastmod', () => {
+    /**
+     * 두 공포·탐욕 페이지는 서로 다른 거래소의 EOD 종가가 입력이다. KRX는 06:30 UTC,
+     * NYSE는 21:00 UTC에 닫혀서 한 시계로 통일하면 하루 14시간 넘게 KR 엔트리가 실제
+     * 변경 시각보다 뒤처지고, KRX만 여는 날에는 바뀌지도 않은 변경을 주장한다.
+     */
+    it('/fear-greed/kr은 KRX 직전 마감을, /fear-greed는 NYSE 직전 마감을 쓴다', () => {
+        const now = new Date('2026-08-18T12:00:00Z');
+        const entries = buildStaticEntries(now);
+
+        const us = entries.find(e => e.url.endsWith('/fear-greed'));
+        const kr = entries.find(e => e.url.endsWith('/fear-greed/kr'));
+
+        expect(us?.lastModified).toEqual(
+            lastClosedSessionCloseUtc(US_EQUITY_SESSION, now)
+        );
+        expect(kr?.lastModified).toEqual(
+            lastClosedSessionCloseUtc(KR_EQUITY_SESSION, now)
+        );
+        expect(kr?.lastModified).not.toEqual(us?.lastModified);
     });
 });

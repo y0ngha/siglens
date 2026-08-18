@@ -7,9 +7,14 @@ import { QuoteHeader } from './QuoteHeader';
 
 interface SignalStockCardProps {
     data: StockWithConflict;
+    /** 가격 앞에 붙일 통화 기호. 시장마다 다르다(`DashboardScope.currencySymbol`). */
+    currencySymbol: string;
 }
 
-export function SignalStockCard({ data }: SignalStockCardProps) {
+export function SignalStockCard({
+    data,
+    currencySymbol,
+}: SignalStockCardProps) {
     return (
         <Link
             href={`/${data.symbol}`}
@@ -30,6 +35,7 @@ export function SignalStockCard({ data }: SignalStockCardProps) {
                         price: data.price,
                         changePercent: data.changePercent,
                     }}
+                    currencySymbol={currencySymbol}
                 />
                 {data.signals.length > 0 && (
                     <div className="flex flex-wrap gap-x-1.5 gap-y-0.5 pt-1">

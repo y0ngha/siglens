@@ -33,10 +33,7 @@ import {
 import { FmpEconomyProvider } from '@/shared/api/fmp/FmpEconomyProvider';
 import { DrizzleEconomicCalendarRepository } from '@/entities/economy/api/economicCalendarRepository';
 import { ensureEconomicCalendarAction } from '@/entities/economy/actions/ensureEconomicCalendarAction';
-import {
-    ECONOMY_CALENDAR_CACHE_TAG,
-    CALENDAR_INGESTION_WINDOW_DAYS,
-} from '@/entities/economy/lib/economyCalendarConstants';
+import { CALENDAR_INGESTION_WINDOW_DAYS } from '@/entities/economy/lib/economyCalendarConstants';
 import { addEtDays, etDateOf } from '@/entities/economy/lib/calendarWindow';
 
 const EVENT: EconomicCalendarEvent = {
@@ -113,7 +110,7 @@ describe('ensureEconomicCalendarAction', () => {
 
         expect(upsertEvent).toHaveBeenCalledWith('US', EVENT);
         expect(revalidateTag).toHaveBeenCalledWith(
-            ECONOMY_CALENDAR_CACHE_TAG,
+            'economy:calendar:us',
             'max'
         );
     });
@@ -180,7 +177,7 @@ describe('ensureEconomicCalendarAction', () => {
         await ensureEconomicCalendarAction();
 
         expect(revalidateTag).toHaveBeenCalledWith(
-            ECONOMY_CALENDAR_CACHE_TAG,
+            'economy:calendar:us',
             'max'
         );
     });

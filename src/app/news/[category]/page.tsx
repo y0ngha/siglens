@@ -7,6 +7,7 @@ import {
     NEWS_CATEGORY_SLUGS,
     categoryFromSlug,
     type MarketNewsCardItem,
+    type CategoryConfig,
     type NewsFeedCategoryId,
 } from '@/entities/market-news';
 import { getMarketNewsCards } from '@/entities/market-news/api';
@@ -14,7 +15,7 @@ import { MarketNewsDigest, MarketNewsList } from '@/widgets/market-news';
 import { NewsCategoryTabs } from '@/widgets/news-hub';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
-import { regionsOf } from '@/shared/config/assetClassNav';
+import { regionsOf, type NavRegionId } from '@/shared/config/assetClassNav';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
@@ -39,7 +40,7 @@ const JSON_LD_NEWS_MAX_ITEMS = 10;
  * `미국 마켓 뉴스`는 2026-08 리브랜딩 전 표기다 — 기존 유입 질의를 잃지 않으려고
  * 미국 카테고리에만 남긴다.
  */
-const REGION_KEYWORDS: Record<string, string[]> = {
+const REGION_KEYWORDS: Record<NavRegionId, readonly string[]> = {
     us: ['미국 시장 뉴스', '미국 마켓 뉴스'],
     kr: ['한국 증시 뉴스', '코스피 뉴스', '코스닥 뉴스'],
     crypto: ['암호화폐 뉴스', '비트코인 뉴스'],
@@ -53,9 +54,9 @@ const REGION_KEYWORDS: Record<string, string[]> = {
  * 자기 자신을 부모로 갖는다.
  */
 function buildCategoryBreadcrumb(
-    cfg: { koLabel: string; region: string; slug: string },
+    cfg: CategoryConfig,
     categoryUrl: string
-) {
+): Record<string, unknown> {
     const regionLink = regionsOf('news').find(r => r.region === cfg.region);
     const trail = [{ name: '시장 뉴스 허브', url: `${SITE_URL}/news` }];
     if (regionLink && `${SITE_URL}${regionLink.href}` !== categoryUrl) {
@@ -135,7 +136,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return {
             title: `${cfg.koLabel} 뉴스`,
             description: `${cfg.koLabel} 최신 뉴스를 불러오지 못했어요.`,
-            robots: { index: false, follow: false },
+            // `follow: true` — 헤더가 전 페이지에서 이 URL을 링크한다. 콜드 배포
+            // 직후의 빈 상태를 `nofollow`로 두면 사이트 전역에서 링크 주스가 끊기는
+            // 막다른 길이 된다. 자매 KR 라우트(`/market/kr` 등)도 전부 follow다.
+            robots: { index: false, follow: true },
             alternates: { canonical: null },
         };
     }
@@ -270,7 +274,11 @@ export default async function CategoryNewsPage({ params }: Props) {
                     둘 다 degrade 경로에서도 렌더한다 — 실패한 카테고리가
                     막다른 길이 되지 않도록.
                 */}
-                <RegionTabs vertical="news" active={cfg.region} />
+                <RegionTabs
+                    vertical="news"
+                    active={cfg.region}
+                    currentPath={`/news/${cfg.slug}`}
+                />
                 <NewsCategoryTabs activeCategory={cat} />
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
                     {cfg.koLabel} 뉴스

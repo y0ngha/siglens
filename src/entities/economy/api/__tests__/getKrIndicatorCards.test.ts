@@ -1,7 +1,24 @@
 vi.mock('server-only', () => ({}));
 
+/**
+ * `unstable_cache`의 keyParts·options를 캡처한다. 그냥 call-through로 두면
+ * ISR 태그가 잘못돼도(예: KR 카드가 미국 태그를 달아 KR 인제스션의
+ * `revalidateTag`가 아무것도 못 맞추는 경우) 테스트가 전부 통과한다.
+ */
+let capturedKeyParts: string[] = [];
+let capturedOptions: Record<string, unknown> = {};
 vi.mock('next/cache', () => ({
-    unstable_cache: (fn: (...args: unknown[]) => unknown) => fn,
+    unstable_cache:
+        (
+            fn: (...args: unknown[]) => unknown,
+            keyParts: string[],
+            options: Record<string, unknown>
+        ) =>
+        (...args: unknown[]) => {
+            capturedKeyParts = keyParts;
+            capturedOptions = options;
+            return fn(...args);
+        },
 }));
 
 const listAnnouncedSince = vi.fn();
@@ -15,11 +32,8 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
 
-import {
-    getKrIndicatorCards,
-    KR_TREND_MAX_POINTS,
-    KR_TREND_MIN_POINTS,
-} from '../getKrIndicatorCards';
+import { getKrIndicatorCards } from '../getKrIndicatorCards';
+import { ECONOMY_CALENDAR_REVALIDATE_SECONDS } from '../../lib/economyCalendarConstants';
 
 const ANCHOR = '2026-08-19';
 
@@ -68,31 +82,6 @@ describe('getKrIndicatorCards', () => {
         expect(card.changeFromPrevious).toBeNull();
     });
 
-    it('hides the trend until it has enough points', async () => {
-        // 2점짜리 "추세"는 선분 하나라 정보가 없고, 데이터가 충분하다는 인상만 준다.
-        listAnnouncedSince.mockResolvedValue(
-            inflationHistory(
-                Array.from({ length: KR_TREND_MIN_POINTS - 1 }, () => 2.8)
-            )
-        );
-
-        const [card] = await getKrIndicatorCards(ANCHOR);
-        expect(card.trend).toEqual([]);
-    });
-
-    it('caps the trend length', async () => {
-        listAnnouncedSince.mockResolvedValue(
-            inflationHistory(
-                Array.from({ length: KR_TREND_MAX_POINTS + 5 }, (_, i) => i)
-            )
-        );
-
-        const [card] = await getKrIndicatorCards(ANCHOR);
-        expect(card.trend).toHaveLength(KR_TREND_MAX_POINTS);
-        // 최신 쪽을 남긴다.
-        expect(card.trend.at(-1)).toBe(KR_TREND_MAX_POINTS + 4);
-    });
-
     it('omits indicators that have no announcements yet', async () => {
         listAnnouncedSince.mockResolvedValue([]);
 
@@ -132,5 +121,22 @@ describe('getKrIndicatorCards', () => {
         expect(await getKrIndicatorCards(ANCHOR)).toEqual([]);
         expect(spy).toHaveBeenCalled();
         spy.mockRestore();
+    });
+
+    /**
+     * 태그가 KR이 아니면 KR 인제스션의 `revalidateTag('economy:calendar:kr')`이
+     * 카드 캐시를 못 맞춘다 — 아래 캘린더는 새 발표를 보여주는데 위 카드만
+     * 24시간 낡은 값으로 남는다.
+     */
+    it('KR 캘린더 태그와 revalidate를 unstable_cache에 넘긴다', async () => {
+        listAnnouncedSince.mockResolvedValue([]);
+
+        await getKrIndicatorCards(ANCHOR);
+
+        expect(capturedKeyParts).toEqual(['economy-kr-indicator-cards']);
+        expect(capturedOptions).toMatchObject({
+            revalidate: ECONOMY_CALENDAR_REVALIDATE_SECONDS,
+            tags: ['economy:calendar:kr'],
+        });
     });
 });

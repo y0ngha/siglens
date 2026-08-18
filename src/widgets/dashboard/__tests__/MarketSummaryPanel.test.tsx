@@ -26,9 +26,28 @@ vi.mock('@/widgets/dashboard/MarketSummaryPanelSkeleton', () => ({
     ),
 }));
 
+/*
+ * 목이 `href`·`currencySymbol`을 DOM으로 흘려보낸다. 예전 목은 `data`만 받아
+ * 그 둘을 삼켰는데, 그러면 `linkSectorCards: false`가 무시돼도(=한국 페이지가
+ * KR 섹터 ETF로 가는 크롤 진입점 6개를 여는 회귀) 아무 테스트가 안 깨진다.
+ */
 vi.mock('@/widgets/dashboard/IndexCard', () => ({
-    IndexCard: ({ data }: { data: { symbol: string } }) => (
-        <div data-testid={`index-${data.symbol}`}>{data.symbol}</div>
+    IndexCard: ({
+        data,
+        href,
+        currencySymbol,
+    }: {
+        data: { symbol: string };
+        href?: string;
+        currencySymbol: string;
+    }) => (
+        <div
+            data-testid={`index-${data.symbol}`}
+            data-href={href ?? ''}
+            data-currency={currencySymbol}
+        >
+            {data.symbol}
+        </div>
     ),
 }));
 
@@ -334,5 +353,74 @@ describe('MarketSummaryPanel', () => {
         const { container } = render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         const grids = container.querySelectorAll('.grid-cols-3');
         expect(grids.length).toBeGreaterThan(0);
+    });
+});
+
+/**
+ * `/market/kr`은 사이트맵 priority 0.9다. 섹터 카드에 링크가 붙으면 그 페이지가
+ * `POPULAR_TICKERS`에도 prewarm 회전에도 없는 KR ETF 6종으로 가는 **새 크롤
+ * 진입점**이 된다 — 봇은 캐시 미스에 분석을 큐에 넣지 않으므로 딱 thin 변형만
+ * 보게 되고, 그게 2026-07 노출 급감의 메커니즘이다.
+ */
+describe('MarketSummaryPanel — KR scope', () => {
+    /** 첫 섹터 그룹의 심볼 하나만 채운 sectorMap — 카드 하나면 계약 검증에 충분하다. */
+    const firstSectorSymbol = TEST_SCOPE.sectorGroups[0]!.symbols[0]!;
+
+    beforeEach(() => {
+        mockUseMarketSummary.mockReturnValue({
+            ...defaultSummaryReturn,
+            sectorMap: new Map([
+                [
+                    firstSectorSymbol,
+                    {
+                        symbol: firstSectorSymbol,
+                        sectorName: 'Technology',
+                        koreanName: '기술',
+                        price: 100,
+                        changesPercentage: 1,
+                    },
+                ],
+            ]),
+        });
+        mockUseMarketBriefing.mockReturnValue(defaultBriefingReturn);
+    });
+
+    afterEach(() => {
+        mockUseMarketSummary.mockReset();
+        mockUseMarketBriefing.mockReset();
+    });
+
+    const KR_SCOPE = {
+        ...TEST_SCOPE,
+        id: 'kr' as const,
+        currencySymbol: '₩',
+        linkSectorCards: false,
+    };
+
+    function sectorCards(container: HTMLElement): HTMLElement[] {
+        return Array.from(
+            container.querySelectorAll<HTMLElement>('[data-testid^="index-"]')
+        );
+    }
+
+    it('섹터 카드에 링크를 붙이지 않고 통화 기호를 ₩로 넘긴다', () => {
+        const { container } = render(<MarketSummaryPanel scope={KR_SCOPE} />);
+
+        const cards = sectorCards(container);
+        expect(cards.length).toBeGreaterThan(0);
+        for (const card of cards) {
+            expect(card).toHaveAttribute('data-href', '');
+            expect(card).toHaveAttribute('data-currency', '₩');
+        }
+    });
+
+    it('미국 scope는 섹터 카드를 종목 페이지로 링크한다', () => {
+        const { container } = render(<MarketSummaryPanel scope={TEST_SCOPE} />);
+
+        const linked = sectorCards(container).filter(
+            el => el.getAttribute('data-href') !== ''
+        );
+        expect(linked.length).toBeGreaterThan(0);
+        expect(linked[0]).toHaveAttribute('data-currency', '$');
     });
 });

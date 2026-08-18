@@ -4,6 +4,7 @@ import {
     dehydrate,
     HydrationBoundary,
     QueryClient,
+    type DehydratedState,
 } from '@tanstack/react-query';
 import { MarketSummaryPanel } from '@/widgets/dashboard/MarketSummaryPanel';
 import { MarketSummaryPanelSkeleton } from '@/widgets/dashboard/MarketSummaryPanelSkeleton';
@@ -15,7 +16,10 @@ import { getMarketSummaryStatic } from '@/entities/market-summary/api/marketSumm
 import { peekBriefingStatic } from '@/entities/market-summary/api/briefingStaticCache';
 import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSignalsStaticCache';
 import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
-import type { DashboardScope } from '@/shared/config/dashboardScope';
+import {
+    toClientScope,
+    type DashboardScope,
+} from '@/shared/config/dashboardScope';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -46,7 +50,7 @@ function buildDehydratedSeed(
     summary: Awaited<ReturnType<typeof getMarketSummaryStatic>>,
     sectorDataSeed: Awaited<ReturnType<typeof getSectorSignalsStatic>>,
     dateHour: string
-) {
+): DehydratedState {
     const stableUpdatedAt = new Date(`${dateHour}:00:00.000Z`).getTime();
     const queryClient = new QueryClient();
     queryClient.setQueryData(
@@ -72,11 +76,13 @@ function buildDehydratedSeed(
  *   3. QueryClient.setQueryData — seeds React Query for instant hydration
  *   4. SectorFactsSummary — SSR crawl text (axis 2: useSearchParams bailout workaround)
  */
+interface MarketScopeProps {
+    readonly scope: DashboardScope;
+}
+
 export async function MarketContent({
     scope,
-}: {
-    scope: DashboardScope;
-}): Promise<ReactElement> {
+}: MarketScopeProps): Promise<ReactElement> {
     // ISR date-hour key: same hour = same cached briefing peek. Avoids hashing
     // the full summary object on every ISR render.
     const dateHour = new Date().toISOString().slice(0, ISO_DATE_HOUR_SLICE_END);
@@ -132,13 +138,22 @@ export async function MarketContent({
         throw new Error(`[MarketContent] scope has no sectors: ${scope.id}`);
     }
 
+    // 서버 → 클라이언트 경계. 여기서 한 번 좁히지 않으면 스캔 대상 종목표(미국 97행)가
+    // RSC Flight 페이로드와 ISR HTML에 매 렌더 실린다 — 클라는 읽지도 않는 값이다.
+    const clientScope = toClientScope(scope);
+
     return (
         <>
             <HydrationBoundary state={dehydratedState}>
                 <Suspense
-                    fallback={<MarketSummaryPanelSkeleton scope={scope} />}
+                    fallback={
+                        <MarketSummaryPanelSkeleton scope={clientScope} />
+                    }
                 >
-                    <MarketSummaryPanel scope={scope} peekSeed={peekSeed} />
+                    <MarketSummaryPanel
+                        scope={clientScope}
+                        peekSeed={peekSeed}
+                    />
                 </Suspense>
             </HydrationBoundary>
             <Suspense
@@ -150,12 +165,12 @@ export async function MarketContent({
                             so crawlers see actual signal content without JS. Not cloaking — users
                             see the same data once JS loads. */}
                         <SectorFactsSummary data={sectorDataSeed} />
-                        <SectorSignalPanelSkeleton scope={scope} />
+                        <SectorSignalPanelSkeleton scope={clientScope} />
                     </>
                 }
             >
                 <SectorSignalPanel
-                    scope={scope}
+                    scope={clientScope}
                     initialSector={firstSector.symbol}
                     initialTimeframe={DEFAULT_DASHBOARD_TIMEFRAME}
                     initialData={sectorDataSeed}
@@ -173,8 +188,10 @@ export async function MarketContent({
  * SSR seed 배선(쿼리 키·peek scope) 같은 조용한 항목이 한쪽에서만 갱신되는데,
  * 그건 화면에 아무 표시도 나지 않고 "다른 시장 데이터가 보이는" 형태로만 드러난다.
  */
-export function MarketRouteBody({ scope }: { scope: DashboardScope }) {
+export function MarketRouteBody({ scope }: MarketScopeProps): ReactElement {
     const copy = MARKET_COPY[scope.id];
+    // 스켈레톤도 클라이언트 컴포넌트다 — `MarketContent`와 같은 이유로 좁힌다.
+    const clientScope = toClientScope(scope);
     const url = `${SITE_URL}${copy.path}`;
     const fullTitle = `${copy.title} | ${SITE_NAME}`;
 
@@ -220,7 +237,11 @@ export function MarketRouteBody({ scope }: { scope: DashboardScope }) {
                 일관성을 맞춰 둔다. */}
             <main className="flex-1">
                 <div className="px-6 pt-6 lg:px-[15vw]">
-                    <RegionTabs vertical="market" active={scope.id} />
+                    <RegionTabs
+                        vertical="market"
+                        active={scope.id}
+                        currentPath={copy.path}
+                    />
                 </div>
                 <h1 className="px-6 pt-6 text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl lg:px-[15vw]">
                     {copy.title}
@@ -228,8 +249,8 @@ export function MarketRouteBody({ scope }: { scope: DashboardScope }) {
                 <Suspense
                     fallback={
                         <>
-                            <MarketSummaryPanelSkeleton scope={scope} />
-                            <SectorSignalPanelSkeleton scope={scope} />
+                            <MarketSummaryPanelSkeleton scope={clientScope} />
+                            <SectorSignalPanelSkeleton scope={clientScope} />
                         </>
                     }
                 >

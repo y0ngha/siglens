@@ -158,3 +158,39 @@ export function regionsOf(verticalId: NavVerticalId): readonly NavRegionLink[] {
 /** 모든 지역 링크를 버티컬 순서대로 평탄화. 푸터와 사이트맵 정합성 테스트가 쓴다. */
 export const ALL_NAV_REGION_LINKS: readonly NavRegionLink[] =
     NAV_VERTICALS.flatMap(v => v.regions);
+
+/**
+ * 이 버티컬의 루트가 지역 링크로 도달 가능한가.
+ *
+ * `/market`·`/fear-greed`·`/economy`는 자기 버티컬의 미국 지역 URL이기도 해서
+ * 이미 지역 목록에 들어 있다. `/news`만 다르다 — 세 지역이 각자 다른 URL이라
+ * 허브가 어느 지역에도 속하지 않는다.
+ *
+ * **판정식은 여기 한 곳에만 둔다.** 헤더 트리(`NAV_TREE.overview`)와 푸터가 같은
+ * 식을 각자 적고 있으면, 그건 이 모듈이 생긴 사고(헤더와 히어로가 같은 목적지를
+ * 다르게 부르다 한쪽만 갱신됨)와 같은 모양이다.
+ */
+export function hasRegionForRoot(vertical: NavVertical): boolean {
+    return vertical.regions.some(r => r.href === vertical.rootHref);
+}
+
+/**
+ * 지역 링크로는 도달하지 않는 버티컬 상위 페이지들(현재는 `/news` 하나).
+ *
+ * 이걸 안 걸면 이미 색인돼 있고 이번에 의미까지 바뀐 URL이 사이트 안에서 보이는
+ * 앵커를 하나도 갖지 못한다 — 헤더 드롭다운은 `invisible` 패널 + `hidden lg:flex`
+ * 안이라 크롤러 기준으로 약한 신호다.
+ */
+export const NAV_OVERVIEW_LINKS: readonly NavRegionLink[] =
+    NAV_VERTICALS.flatMap(v =>
+        hasRegionForRoot(v)
+            ? []
+            : [
+                  {
+                      region: v.regions[0]!.region,
+                      label: v.label,
+                      fullLabel: `${v.label} 전체`,
+                      href: v.rootHref,
+                  },
+              ]
+    );

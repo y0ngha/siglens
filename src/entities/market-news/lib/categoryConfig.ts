@@ -113,7 +113,8 @@ export const CATEGORY_CONFIG: Record<NewsFeedCategoryId, CategoryConfig> = {
         sentinel: '__NEWS_KR__',
         fmpEndpoint: '',
         // 코스피·코스닥을 각각 덮고, 지수 이름이 안 들어간 거시·수급 기사를 위해
-        // `국내 증시`를 더한다. 3회 호출은 refresh TTL(30분) 주기당 비용이다.
+        // `국내 증시`를 더한다. 3회 호출은 refresh TTL 주기당 비용이다
+        // (`MARKET_NEWS_REFRESH_FLAG_TTL_MINUTES` = 10분 → 하루 최대 432회).
         naverQueries: ['코스피', '코스닥', '국내 증시'],
         source: 'naver',
         slug: 'kr',

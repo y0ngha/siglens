@@ -31,13 +31,10 @@ describe('NaverMarketNewsClient', () => {
         mockSearch.mockReset();
     });
 
-    it('runs one search per configured query', async () => {
+    it('runs one relevance search per configured query', async () => {
         mockSearch.mockResolvedValue([]);
         await new NaverMarketNewsClient().fetchCategoryNews('kr', WEEK_MS);
 
-        expect(mockSearch).toHaveBeenCalledTimes(
-            CATEGORY_CONFIG.kr.naverQueries.length
-        );
         for (const query of CATEGORY_CONFIG.kr.naverQueries) {
             expect(mockSearch).toHaveBeenCalledWith(
                 query,
@@ -45,6 +42,26 @@ describe('NaverMarketNewsClient', () => {
                 expect.any(String)
             );
         }
+    });
+
+    /**
+     * 정확도순은 최신을 보장하지 않는다 — 뉴스가 뜸한 주에는 상위 결과가 전부
+     * lookback 창 밖으로 밀려 `/news/kr`이 통째로 비고 noindex로 굳는다.
+     * 첫 질의를 최신순으로 한 번 더 돌려 바닥을 깐다.
+     */
+    it('첫 질의를 최신순으로 한 번 더 돌려 최신 보장을 만든다', async () => {
+        mockSearch.mockResolvedValue([]);
+        await new NaverMarketNewsClient().fetchCategoryNews('kr', WEEK_MS);
+
+        expect(mockSearch).toHaveBeenCalledTimes(
+            CATEGORY_CONFIG.kr.naverQueries.length + 1
+        );
+        expect(mockSearch).toHaveBeenCalledWith(
+            CATEGORY_CONFIG.kr.naverQueries[0],
+            expect.any(Number),
+            expect.any(String),
+            'date'
+        );
     });
 
     it('dedupes the same article across queries', async () => {

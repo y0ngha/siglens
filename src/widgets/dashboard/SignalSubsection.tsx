@@ -5,6 +5,8 @@ import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { SignalStockCard } from './SignalStockCard';
 
 interface SignalSubsectionProps {
+    /** 가격 앞에 붙일 통화 기호. 시장마다 다르다(`DashboardScope.currencySymbol`). */
+    currencySymbol: string;
     title: string;
     marker: string; // ▲ ▼ △ ▽ ◈
     variant: 'confirmed' | 'expected' | 'mixed';
@@ -25,6 +27,7 @@ const VARIANT_LABEL: Record<SignalSubsectionProps['variant'], string> = {
 };
 
 export function SignalSubsection({
+    currencySymbol,
     title,
     marker,
     variant,
@@ -73,7 +76,11 @@ export function SignalSubsection({
             ) : (
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                     {stocks.map(stock => (
-                        <SignalStockCard key={stock.symbol} data={stock} />
+                        <SignalStockCard
+                            key={stock.symbol}
+                            data={stock}
+                            currencySymbol={currencySymbol}
+                        />
                     ))}
                 </div>
             )}

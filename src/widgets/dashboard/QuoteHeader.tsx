@@ -20,6 +20,11 @@ interface QuoteHeaderProps {
      *   SignalStockCard 원본 DOM과 동일.
      */
     layout?: 'index' | 'signal';
+    /**
+     * 가격 앞에 붙일 통화 기호. 예전에는 `$`가 JSX에 그대로 박혀 있어
+     * `/market/kr`에서 원화가 달러로 표기됐다.
+     */
+    currencySymbol: string;
 }
 
 /**
@@ -30,7 +35,11 @@ interface QuoteHeaderProps {
  *
  * `layout` prop으로 두 카드의 원본 DOM을 정확히 재현한다.
  */
-export function QuoteHeader({ data, layout = 'index' }: QuoteHeaderProps) {
+export function QuoteHeader({
+    data,
+    layout = 'index',
+    currencySymbol,
+}: QuoteHeaderProps) {
     const { sign, colorClass, arrow, arrowLabel } = formatPriceChange(
         data.changePercent
     );
@@ -66,7 +75,8 @@ export function QuoteHeader({ data, layout = 'index' }: QuoteHeaderProps) {
                     {data.koreanName}
                 </p>
                 <p className="font-mono text-sm text-secondary-100 tabular-nums">
-                    ${formatUsdPrice(data.price)}
+                    {currencySymbol}
+                    {formatUsdPrice(data.price)}
                 </p>
             </>
         );
@@ -87,7 +97,8 @@ export function QuoteHeader({ data, layout = 'index' }: QuoteHeaderProps) {
                 {changeSpan}
             </div>
             <p className="font-mono text-sm text-secondary-100 tabular-nums">
-                ${formatUsdPrice(data.price)}
+                {currencySymbol}
+                {formatUsdPrice(data.price)}
             </p>
         </>
     );

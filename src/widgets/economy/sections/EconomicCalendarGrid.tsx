@@ -12,9 +12,10 @@ import type {
     EconomicCalendarEvent,
 } from '@y0ngha/siglens-core';
 
-import type {
-    CalendarCountry,
-    EconomicCalendarEventWithAnalysis,
+import {
+    CALENDAR_COUNTRY_LABEL,
+    type CalendarCountry,
+    type EconomicCalendarEventWithAnalysis,
 } from '@/entities/economy';
 import {
     SENTIMENT_LABEL,
@@ -649,7 +650,8 @@ export function EconomicCalendarGrid({
                     </span>
                 </h2>
                 <p className="text-sm text-secondary-400">
-                    다가오는 미국 경제 발표 일정이 아직 없어요.
+                    다가오는 {CALENDAR_COUNTRY_LABEL[country]} 경제 발표 일정이
+                    아직 없어요.
                 </p>
             </section>
         );

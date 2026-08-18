@@ -37,6 +37,9 @@ import {
 } from '../api/marketFearGreedKrCache';
 import { MARKET_FEAR_GREED_CONFIG_FINGERPRINT } from '../api/marketFearGreedCache';
 import { KOSPI_INDEX_SYMBOL } from '../lib/marketFearGreedKrSymbols';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
+import { lastClosedSessionDate } from '@/shared/lib/marketSessionDate';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 /** `getOrSetCache(key, ttl, fetcher, guard)`의 fetcher를 실행해 결과를 얻는다. */
 async function runFetcher() {
@@ -109,5 +112,34 @@ describe('getCachedMarketFearGreedKr', () => {
 
         await getCachedMarketFearGreedKr();
         await expect(runFetcher()).rejects.toThrow('yahoo down');
+    });
+
+    /**
+     * 상한이 KRX 세션이 아니면 장중 시세가 종가로 섞여 들어와 하루 종일 값이
+     * 흔들리는데 화면에는 "종가 기준"이라고 적힌다. `T23:59:59Z`로 끊던 시절에는
+     * yahoo가 KRX 일봉을 09:00 KST에 찍는 덕에 **1초 차이로** 겨우 비켜 갔다.
+     */
+    it('조회 상한을 KRX 직전 마감일의 KST 하루 끝으로 끊는다', async () => {
+        vi.setSystemTime(new Date('2026-08-18T02:00:00Z')); // 화 11:00 KST(장중)
+        await getCachedMarketFearGreedKr();
+        await runFetcher();
+
+        const [, , to] = fetchKrDailyCloses.mock.calls[0] as [
+            string,
+            Date,
+            Date,
+        ];
+        const expectedDate = lastClosedSessionDate(
+            KR_EQUITY_SESSION,
+            new Date('2026-08-18T02:00:00Z')
+        );
+        expect(to.toISOString()).toBe(`${expectedDate}T15:00:00.000Z`);
+        vi.useRealTimers();
+    });
+
+    it('TTL은 1시간이다 — EOD 갱신 반영 대기 상한', async () => {
+        await getCachedMarketFearGreedKr();
+
+        expect(getOrSetCache.mock.calls[0][1]).toBe(SECONDS_PER_HOUR);
     });
 });

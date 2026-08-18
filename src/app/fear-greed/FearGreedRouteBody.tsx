@@ -31,6 +31,16 @@ export function FearGreedRouteBody({ market, view }: FearGreedRouteBodyProps) {
     const factorLabel = MARKET_FACTOR_LABEL[market];
     const factorDescription = MARKET_FACTOR_DESCRIPTION[market];
     const url = `${SITE_URL}${copy.path}`;
+    /*
+     * 표본이 부족하면 이 페이지는 설명문만 남고 판독값이 없다. 그 상태에서
+     * `generateMetadata`는 canonical을 비우고 noindex를 건다 — 구조화데이터가
+     * 그대로 나가면 "색인하지 말라"면서 "이 URL이 정식 WebPage"라고 주장하는
+     * 모순이 된다. `/news/[category]`가 같은 상태에서 JSON-LD를 통째로 빼는 규칙을
+     * 이미 쓴다.
+     *
+     * FAQ는 예외다 — 질문·답변이 판독값과 무관하게 화면에 그대로 있다.
+     */
+    const degraded = view.snapshot === null;
 
     const webPageJsonLd = {
         '@context': 'https://schema.org',
@@ -62,12 +72,20 @@ export function FearGreedRouteBody({ market, view }: FearGreedRouteBodyProps) {
 
     return (
         <>
-            <JsonLd data={webPageJsonLd} />
-            <JsonLd data={breadcrumbJsonLd} />
+            {!degraded && (
+                <>
+                    <JsonLd data={webPageJsonLd} />
+                    <JsonLd data={breadcrumbJsonLd} />
+                </>
+            )}
             <JsonLd data={faqJsonLd} />
             <main className="flex-1">
                 <div className="px-6 pt-6 lg:px-[15vw]">
-                    <RegionTabs vertical="fear-greed" active={market} />
+                    <RegionTabs
+                        vertical="fear-greed"
+                        active={market}
+                        currentPath={copy.path}
+                    />
                 </div>
                 <h1 className="px-6 pt-6 text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl lg:px-[15vw]">
                     {copy.title}

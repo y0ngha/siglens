@@ -34,7 +34,7 @@ export function useEconomicCalendarTrigger(country: CalendarCountry): void {
                 e
             );
         });
-        void ensureEconomicEventsAnalyzedAction().catch((e: unknown) => {
+        void ensureEconomicEventsAnalyzedAction(country).catch((e: unknown) => {
             console.error(
                 '[useEconomicCalendarTrigger] ensureEconomicEventsAnalyzedAction failed:',
                 e

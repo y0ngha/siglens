@@ -59,7 +59,8 @@ async function analyzeAndPersist(
 }
 
 /**
- * Server Action: fetch fresh FMP market-news for `category`, upsert to the
+ * Server Action: fetch fresh market-news for `category` (소스는 카테고리가 정한다 —
+ * 미국·암호화폐는 FMP, 한국은 네이버), upsert to the
  * `market_news` table, and trigger per-card AI analysis for unenriched items.
  *
  * Unlike the per-symbol equivalent, there is NO tier/BYOK gate — category

@@ -1,8 +1,8 @@
-import type { DashboardScope } from '@/shared/config/dashboardScope';
+import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 
 interface SectorSignalPanelSkeletonProps {
     /** 섹터 탭 자리 개수가 시장마다 다르다(미국 13 / 한국 6). */
-    scope: DashboardScope;
+    scope: ClientDashboardScope;
 }
 
 export function SectorSignalPanelSkeleton({

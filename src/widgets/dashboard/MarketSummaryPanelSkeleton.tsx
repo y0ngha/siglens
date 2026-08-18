@@ -1,8 +1,8 @@
-import type { DashboardScope } from '@/shared/config/dashboardScope';
+import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 
 interface MarketSummaryPanelSkeletonProps {
     /** 실제 패널과 같은 개수·배치의 자리를 잡기 위해 필요하다 — 시장마다 지수·섹터 수가 다르다. */
-    scope: DashboardScope;
+    scope: ClientDashboardScope;
 }
 
 export function MarketSummaryPanelSkeleton({

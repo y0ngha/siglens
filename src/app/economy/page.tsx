@@ -142,6 +142,15 @@ async function EconomyContent() {
     if (snapshot === null || isEmptyEconomySnapshot(snapshot))
         return <EconomyDegraded />;
 
+    /*
+     * 구조화데이터를 **여기서** 낸다(FAQ는 예외 — 셸에 남는다).
+     *
+     * 위 degrade 분기를 지난 시점에만 도달하므로, `generateMetadata`가 noindex를
+     * 건 렌더에서는 이 블록이 아예 실행되지 않는다. 셸에서 무조건 내보내면
+     * "색인하지 말라"면서 "이 URL은 1년치 거시 지표 데이터셋"이라고 주장하는
+     * 모순이 된다. `/economy/kr`과 `/news/[category]`가 같은 규칙을 쓴다.
+     */
+
     // 1-hour date-hour 버킷 키로 macro briefing peek seed 조회. miss는 null → 클라가 submit.
     const dateHour = new Date().toISOString().slice(0, ISO_DATE_HOUR_SLICE_END);
     // 외부 I/O 오류는 graceful 처리하되 silent하게 삼키지 않는다(MISTAKES §Infra §4).
@@ -182,6 +191,9 @@ async function EconomyContent() {
 
     return (
         <div className="space-y-6">
+            <JsonLd data={WEB_PAGE_JSON_LD} />
+            <JsonLd data={BREADCRUMB_JSON_LD} />
+            <JsonLd data={DATASET_JSON_LD} />
             {/* SSR 크롤 텍스트 — MacroBriefing은 'use client'라 크롤러에 빈 HTML을
                 반환한다. EconomyMacroFacts가 서버사이드에서 핵심 수치를 텍스트로
                 노출해 검색 엔진이 수치 데이터를 색인할 수 있도록 한다. */}
@@ -211,7 +223,12 @@ const DATASET_TEMPORAL_COVERAGE = 'P1Y'; // ISO 8601 — 1년 lookback
 // TREASURY_CARD_META의 키 수에서 파생 — EconomicIndicatorGrid와 동기.
 const TREASURY_MATURITY_COUNT = Object.keys(TREASURY_CARD_META).length;
 const DATASET_VARIABLE_MEASURED = `미국 거시 경제 지표 (기준금리·CPI·GDP·실업률 등 ${ECONOMY_INDICATORS.length}종 + 국채금리 ${TREASURY_MATURITY_COUNT}종)`;
-const DATASET_JSON_LD = {
+/**
+ * `license`는 GSC "license 누락" 경고를 없애려고 넣은 필드다. 렌더 위치는
+ * degrade 게이팅 때문에 `EconomyContent` 안으로 옮겨졌지만, 계약 자체는
+ * 페이로드에 있으므로 테스트가 상수를 직접 본다 — 그래서 export한다.
+ */
+export const DATASET_JSON_LD = {
     '@context': 'https://schema.org',
     '@type': 'Dataset',
     name: 'US Macroeconomic Indicators — Federal Funds, CPI, Unemployment, etc.',
@@ -266,32 +283,35 @@ const FAQ_JSON_LD = {
     ],
 } as const;
 
+const WEB_PAGE_JSON_LD = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    '@id': `${ECONOMY_URL}#webpage`,
+    name: ECONOMY_FULL_TITLE,
+    description: ECONOMY_DESCRIPTION,
+    url: ECONOMY_URL,
+    inLanguage: 'ko',
+    isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
+    // dateModified 제거: SITE_BUILD_DATE는 모듈 로드 시점에 고정되어
+    // 24h ISR 갱신 주기를 반영하지 못한다. /financials 등 peer 페이지와 동일하게 제외.
+};
+
+const BREADCRUMB_JSON_LD = buildBreadcrumbJsonLd([
+    { name: '미국 경제', url: ECONOMY_URL },
+]);
+
 export default function EconomyPage() {
-    const jsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'WebPage',
-        '@id': `${ECONOMY_URL}#webpage`,
-        name: ECONOMY_FULL_TITLE,
-        description: ECONOMY_DESCRIPTION,
-        url: ECONOMY_URL,
-        inLanguage: 'ko',
-        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
-        // dateModified 제거: SITE_BUILD_DATE는 모듈 로드 시점에 고정되어
-        // 24h ISR 갱신 주기를 반영하지 못한다. /financials 등 peer 페이지와 동일하게 제외.
-    };
-
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: '미국 경제', url: ECONOMY_URL },
-    ]);
-
     return (
         <>
-            <JsonLd data={jsonLd} />
-            <JsonLd data={breadcrumbJsonLd} />
-            <JsonLd data={DATASET_JSON_LD} />
+            {/* FAQ는 로더 결과와 무관하게 화면에 그대로 있으므로 항상 낸다.
+                나머지는 데이터가 있을 때만 — `EconomyContent` 참조. */}
             <JsonLd data={FAQ_JSON_LD} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
-                <RegionTabs vertical="economy" active="us" />
+                <RegionTabs
+                    vertical="economy"
+                    active="us"
+                    currentPath="/economy"
+                />
                 <EconomyHeroH1 />
                 <Suspense fallback={<EconomySkeleton />}>
                     <EconomyContent />

@@ -101,7 +101,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
      * restores standard viewport-relative fixed positioning.
      *
      * Nav links remain crawlable because the desktop `HeaderNavStatic` / `HeaderNav`
-     * already renders the same `NAV_ITEMS` server-side; the mobile drawer being
+     * already renders the same `NAV_TREE` server-side; the mobile drawer being
      * client-only does not affect discoverability.
      *
      * The drawer is always rendered (when mounted) and shown/hidden via translate-x
@@ -196,11 +196,34 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                     */
                                     <div
                                         key={vertical.id}
+                                        // 시각적 구분만으로는 부족하다 — 지역 라벨이
+                                        // 짧아져(`미국`/`한국`) 버티컬마다 반복되므로,
+                                        // 스크린리더에는 같은 이름의 링크 8개가 한
+                                        // 줄로 이어진다. 그룹에 이름을 붙여 어느
+                                        // 버티컬의 `미국`인지 읽히게 한다.
+                                        role="group"
+                                        aria-labelledby={`mobile-nav-group-${vertical.id}`}
                                         className="border-t border-secondary-800 py-2 first:border-t-0"
                                     >
-                                        <p className="px-4 pt-1 pb-2 text-sm font-bold tracking-wide text-secondary-100">
+                                        <p
+                                            id={`mobile-nav-group-${vertical.id}`}
+                                            className="px-4 pt-1 pb-2 text-sm font-bold tracking-wide text-secondary-100"
+                                        >
                                             {vertical.label}
                                         </p>
+                                        {vertical.overview && (
+                                            <MobileNavLink
+                                                key={vertical.overview.href}
+                                                href={vertical.overview.href}
+                                                label={vertical.overview.label}
+                                                active={isHrefActive(
+                                                    vertical.overview.href,
+                                                    pathname
+                                                )}
+                                                focusable={isOpen}
+                                                onNavigate={close}
+                                            />
+                                        )}
                                         {vertical.regions.flatMap(region => [
                                             <MobileNavLink
                                                 key={region.href}

@@ -48,10 +48,7 @@ vi.mock('@/shared/lib/withConcurrencyLimit', async () => {
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { ensureEconomicEventsAnalyzedAction } from '@/entities/economy/actions/ensureEconomicEventsAnalyzedAction';
-import {
-    ECONOMY_CALENDAR_CACHE_TAG,
-    CALENDAR_ANALYZED_IMPACTS,
-} from '@/entities/economy/lib/economyCalendarConstants';
+import { CALENDAR_ANALYZED_IMPACTS } from '@/entities/economy/lib/economyCalendarConstants';
 
 const ROW = {
     id: 'id1',
@@ -99,9 +96,10 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
     it('analyzes Medium+ announced unanalyzed events and revalidates on change (cached path)', async () => {
         await ensureEconomicEventsAnalyzedAction();
         expect(markAnalysisRun).toHaveBeenCalledOnce();
-        expect(listUnanalyzedAnnounced).toHaveBeenCalledWith([
-            ...CALENDAR_ANALYZED_IMPACTS,
-        ]);
+        expect(listUnanalyzedAnnounced).toHaveBeenCalledWith(
+            [...CALENDAR_ANALYZED_IMPACTS],
+            'US'
+        );
         expect(runEconomicEventAnalysis).toHaveBeenCalledWith({
             event: 'Core CPI MoM (May)',
             impact: 'High',
@@ -112,7 +110,7 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
         });
         expect(attachEventAnalysis).toHaveBeenCalledWith('id1', ANALYSIS);
         expect(revalidateTag).toHaveBeenCalledWith(
-            ECONOMY_CALENDAR_CACHE_TAG,
+            'economy:calendar:us',
             'max'
         );
     });
@@ -125,7 +123,7 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
         await ensureEconomicEventsAnalyzedAction();
         expect(attachEventAnalysis).toHaveBeenCalledWith('id1', ANALYSIS);
         expect(revalidateTag).toHaveBeenCalledWith(
-            ECONOMY_CALENDAR_CACHE_TAG,
+            'economy:calendar:us',
             'max'
         );
     });
@@ -246,7 +244,7 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
             expect.stringContaining('majority analyze failure')
         );
         expect(revalidateTag).toHaveBeenCalledWith(
-            ECONOMY_CALENDAR_CACHE_TAG,
+            'economy:calendar:us',
             'max'
         );
 

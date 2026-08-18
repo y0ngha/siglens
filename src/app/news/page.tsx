@@ -18,9 +18,15 @@ import {
 export const revalidate = 86400;
 
 const NEWS_HUB_PATH = '/news';
-const NEWS_HUB_TITLE = '시장 뉴스 허브 — 미국·한국·암호화폐';
+/**
+ * 3지역 커버리지를 밝히는 문구 — `src/app/__tests__/supportedAssets.test.ts`가
+ * 여기서 자산군 누락을 검사한다. 커버리지 문구가 여러 표면에 프로즈로 흩어져
+ * 한쪽만 갱신되는 것이 이 저장소에서 세 라운드 반복된 결함이다
+ * (`docs/workflows/MISTAKES.md` §6.6).
+ */
+export const NEWS_HUB_TITLE = '시장 뉴스 허브 — 미국·한국 주식과 암호화폐';
 const NEWS_HUB_FULL_TITLE = `${NEWS_HUB_TITLE} | ${SITE_NAME}`;
-const NEWS_HUB_DESCRIPTION = clampSeoDescription(
+export const NEWS_HUB_DESCRIPTION = clampSeoDescription(
     '미국·한국 주식과 암호화폐 시장 뉴스를 지역별로 나눠, 한국어 AI 요약과 함께 한 곳에서 봐요.'
 );
 
@@ -32,24 +38,39 @@ const NEWS_HUB_DESCRIPTION = clampSeoDescription(
  * 목록은 `/news/us`가 그대로 이어받았고 미국 관련 질의 키워드도 그쪽이 승계한다.
  * 여기서는 3지역을 나란히 놓아 어느 자산군이든 한 번에 들어가게 한다.
  */
-export function generateMetadata(): Metadata {
+export async function generateMetadata(): Promise<Metadata> {
     const url = `${SITE_URL}${NEWS_HUB_PATH}`;
+    // 지역 카드 미리보기가 전부 비면 본문이 제목·설명뿐이라 thin으로 판정될 분량이다.
+    // 자매 라우트와 같은 규약: canonical을 비우고 noindex, follow는 유지.
+    const previews = await Promise.all(
+        regionsOf('news').map(region =>
+            fetchCategoryPreviews(previewCategoryOf(region.region))
+        )
+    );
+    const degraded = previews.every(list => list.length === 0);
     return {
         title: NEWS_HUB_TITLE,
         description: NEWS_HUB_DESCRIPTION,
+        /*
+         * **지역 head term은 하나도 넣지 않는다.**
+         *
+         * `미국 시장 뉴스`는 `/news/us`가, `한국 증시 뉴스`·`코스피 뉴스`는
+         * `/news/kr`이, `암호화폐 뉴스`는 `/news/crypto`가 각각 title·h1·본문으로
+         * 정면 타게팅한다(`REGION_KEYWORDS` 참조). 허브가 같은 말을 또 하면 같은
+         * 질의를 두 URL이 나눠 갖고, 구글은 보통 더 오래된 쪽(=허브)을 고르는데
+         * 그쪽이 주제로는 더 얕다.
+         *
+         * 허브가 노릴 것은 "어느 시장인지 아직 안 정한" 상위 질의뿐이다.
+         */
         keywords: [
             '시장 뉴스',
-            '미국 시장 뉴스',
-            '한국 증시 뉴스',
-            '코스피 뉴스',
-            '암호화폐 뉴스',
+            '주식 뉴스',
             '시장 뉴스 한국어',
             'AI 뉴스 다이제스트',
             'Siglens 뉴스',
         ],
-        alternates: {
-            canonical: NEWS_HUB_PATH,
-        },
+        alternates: { canonical: degraded ? null : NEWS_HUB_PATH },
+        robots: degraded ? { index: false, follow: true } : undefined,
         openGraph: {
             type: 'website',
             siteName: SITE_NAME,
@@ -133,8 +154,9 @@ export default async function NewsHubPage() {
                         한국어로 정리해 드려요.
                     </p>
                     <p>
-                        각 카테고리는 AI 다이제스트와 함께 호재·악재 시그널을
-                        표시하며, 카드 클릭 시 원문 기사로 이동합니다.
+                        보고 싶은 시장을 먼저 고르세요. 미국은
+                        일반·주식·외환·마켓 아티클로 다시 나뉘고, 한국과
+                        암호화폐는 바로 기사 목록으로 이어집니다.
                     </p>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -163,7 +185,7 @@ export default async function NewsHubPage() {
                         id="news-hub-category-index"
                         className="text-base font-semibold text-secondary-300"
                     >
-                        미국 뉴스 카테고리 바로가기
+                        카테고리 바로가기
                     </h2>
                     <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
                         {categoriesInRegion('us').map(cat => (

@@ -53,6 +53,19 @@ describe('EconomicCalendarGrid — 빈 상태', () => {
         ).toBeInTheDocument();
     });
 
+    /**
+     * 이 그리드는 두 라우트가 공유한다. 빈 상태는 `/economy/kr`에서 **의도적으로
+     * 도달 가능한** 경로다 — 인제스션 트리거가 이 컴포넌트 안에 있어서 데이터가
+     * 없어도 항상 렌더하기 때문이다. 문구를 하드코딩하면 배포 직후 한국 사용자가
+     * "미국 발표 일정" 안내를 보고, 그게 24시간 ISR에 그대로 굳는다.
+     */
+    it('KR이면 빈 상태 문구도 한국을 가리킨다', () => {
+        render(<EconomicCalendarGrid country="KR" events={[]} />);
+        expect(
+            screen.getByText('다가오는 한국 경제 발표 일정이 아직 없어요.')
+        ).toBeInTheDocument();
+    });
+
     it('빈 상태에서 "(한국시간)" 부제가 있는 h2 렌더', () => {
         render(<EconomicCalendarGrid country="US" events={[]} />);
         expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
