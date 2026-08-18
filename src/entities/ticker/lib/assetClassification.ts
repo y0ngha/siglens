@@ -19,8 +19,10 @@ import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
  * 2. KNOWN_ETF_TICKERS에 포함되면 ETF — POPULAR_TICKERS와 무관하게
  *    독립 목록을 유지해, 운영용 카테고리 변경이 SEO 분류를 깨지 않게 한다.
  * 3. 국내 상장 종목이고 이름이 KODEX/TIGER 등 국내 ETF 브랜드로 시작하면 ETF.
- * 4. 이름이 ETF/Fund/Trust/ETN/Index로 끝나면 ETF — KNOWN_ETF_TICKERS
- *    allowlist를 비켜 간 미상장 펀드에 대한 안전망(`isFundShapedName`).
+ * 4. 이름이 ETF/Fund/ETN/Index로 끝나면 ETF — KNOWN_ETF_TICKERS allowlist를
+ *    비켜 간 미상장 펀드에 대한 안전망(`isFundShapedName`). `Trust`는 일부러
+ *    뺐다 — `Vornado Realty Trust`처럼 같은 형태로 끝나는 리츠가 실제
+ *    상장사라 오분류되기 때문이다(`FUND_NAME_SUFFIX_WORDS` 주석 참고).
  * 5. 그 외엔 stock으로 default. 일부 ETF가 KNOWN_ETF_TICKERS에 빠져 있고
  *    이름도 유형어로 끝나지 않을 경우 stock으로 오분류될 가능성은 있으나,
  *    가장 거래량 많은 ETF는 모두 포함되어 있어 회귀 영향은 제한적이다.

@@ -13,23 +13,34 @@ const KR_MARKET_OPEN_MINUTE = 9 * 60; // 09:00 KST
 const KR_MARKET_CLOSE_MINUTE = 15 * 60 + 30; // 15:30 KST
 
 /**
- * `KR_MARKET_HOLIDAYS`가 관측을 마친 마지막 날짜(포함, `YYYY-MM-DD`). 이 날짜를
+ * `KR_MARKET_HOLIDAYS`가 커버를 마친 마지막 날짜(포함, `YYYY-MM-DD`). 이 날짜를
  * 넘어서는 `closeMinuteFor`가 그 날을 알 수 없으므로 정상 개장으로 폴백하고
- * `console.warn`으로 남긴다 — 미래 휴장일을 추측하느니, 과거만 정확히 알고 모르는
- * 구간은 눈에 띄게 근사치를 내는 편이 낫다(core `UNSCHEDULED_CLOSURES`와 같은 이유).
- * 새 관측 구간이 생기면 `KR_MARKET_HOLIDAYS`와 이 값을 함께 늘린다.
+ * `console.warn`으로 남긴다 — 관측도 고시도 없는 구간을 추측하느니, 아는 구간만
+ * 정확히 알고 모르는 구간은 눈에 띄게 근사치를 내는 편이 낫다(core
+ * `UNSCHEDULED_CLOSURES`와 같은 이유). 2026년 잔여 공휴일은 이미 고시돼 있어
+ * 연말까지 늘렸다 — 새해가 바뀌면 다음 해 고시 캘린더로 다시 늘린다.
  */
-export const KR_CALENDAR_HORIZON = '2026-08-18';
+export const KR_CALENDAR_HORIZON = '2026-12-31';
 
 /**
  * KRX 정규장이 폐장한 평일 — 규칙이 아니라 리터럴 목록이다.
  *
  * 설·추석은 음력이라 계산식이 없고, 대체공휴일·임시공휴일(선거일 등)은 그때그때
- * 지정돼 미리 규칙으로 도출할 수 없다. yahoo `005930.KS` 일봉과 평일 달력을 대조해
- * 실제로 봉이 없는 평일만 뽑았다(`KR_CALENDAR_HORIZON`까지 관측). 다음 휴장일이
- * 지나면 이 목록에 한 줄을 추가한다.
+ * 지정돼 미리 규칙으로 도출할 수 없다. 두 출처가 섞여 있고 provenance가 다르므로
+ * 구분해 둔다:
+ * - **observed** — yahoo `005930.KS` 일봉과 평일 달력을 대조해 실제로 봉이 없는
+ *   평일만 뽑았다(관측 당시 지평선까지). 2026-07-17(제헌절)이 다른 관측일과 달리
+ *   눈에 띄는 이유는 관측 오류가 아니라 2026년에 제헌절이 공휴일로 부활했기
+ *   때문이다.
+ * - **gazetted** — 아직 관측 지평선을 지나지 않은 미래 날짜로, 실측 대신 이미
+ *   고시된 2026년 공휴일 일정에서 가져왔다. 고시 자체가 근거이므로 "코드에
+ *   규칙이 없다"가 "알 수 없다"를 뜻하지는 않는다. 지평선이 그 날짜를 지나면
+ *   yahoo 봉으로 재검증해 observed로 옮긴다.
+ *
+ * 다음 관측/고시 구간이 생기면 이 목록과 `KR_CALENDAR_HORIZON`을 함께 늘린다.
  */
 const KR_MARKET_HOLIDAYS = new Set<string>([
+    // --- observed: yahoo 005930.KS 일봉 대조 ---
     '2026-01-01',
     '2026-02-16',
     '2026-02-17',
@@ -39,8 +50,16 @@ const KR_MARKET_HOLIDAYS = new Set<string>([
     '2026-05-05',
     '2026-05-25',
     '2026-06-03',
-    '2026-07-17',
+    '2026-07-17', // 제헌절 — 2026년 공휴일로 부활(관측치, 오기 아님)
     '2026-08-17',
+    // --- gazetted: 고시된 2026년 KRX 잔여 휴장일 일정 ---
+    '2026-09-24', // 추석 연휴
+    '2026-09-25', // 추석(음력 8/15)
+    '2026-09-28', // 추석 연휴 마지막날이 토요일이라 대체공휴일
+    '2026-10-05', // 개천절(10/3 토) 대체공휴일
+    '2026-10-09', // 한글날
+    '2026-12-25', // 성탄절
+    '2026-12-31', // KRX 연말 폐장일
 ]);
 
 const krDateFormatter = new Intl.DateTimeFormat('en-CA', {
@@ -56,13 +75,6 @@ function krCalendarDate(now: Date): string {
 }
 
 /**
- * `now`가 속한 KST 달력일의 마감 분. `MarketSessionSpec.closeMinuteFor`와 core
- * `usMarketCloseMinute`가 쓰는 것과 같은 신호(0 = 휴장)를 낸다.
- *
- * 관측 지평선(`KR_CALENDAR_HORIZON`) 밖 날짜는 휴장 여부를 알 수 없으므로 정상
- * 개장으로 폴백하되, `console.warn`으로 CloudWatch에 남겨 조용히 틀리지 않게 한다.
- */
-/**
  * 이미 경고한 지평선 밖 날짜. **dedup이 없으면 로그가 폭주한다** — prewarm은 심볼마다
  * `snapshotCloseBoundaryFor`를 부르고 그 안에서 최대 `MAX_REWIND_DAYS`만큼 되감으므로,
  * KR 심볼 100개 × 되감기 ~11회 × 5분 tick이면 하루 10⁴건 규모가 된다. 그렇게 되면
@@ -70,6 +82,13 @@ function krCalendarDate(now: Date): string {
  */
 const warnedBeyondHorizon = new Set<string>();
 
+/**
+ * `now`가 속한 KST 달력일의 마감 분. `MarketSessionSpec.closeMinuteFor`와 core
+ * `usMarketCloseMinute`가 쓰는 것과 같은 신호(0 = 휴장)를 낸다.
+ *
+ * 관측 지평선(`KR_CALENDAR_HORIZON`) 밖 날짜는 휴장 여부를 알 수 없으므로 정상
+ * 개장으로 폴백하되, `console.warn`으로 CloudWatch에 남겨 조용히 틀리지 않게 한다.
+ */
 function krMarketCloseMinuteFor(now: Date): number {
     const date = krCalendarDate(now);
     if (date > KR_CALENDAR_HORIZON) {

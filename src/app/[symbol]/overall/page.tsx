@@ -205,14 +205,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
 
-    const displayName = buildDisplayName(assetInfo, upper);
-    const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
-    const seo = resolveSymbolOverallSeoContent(upper, assetClass, {
-        displayName,
-        koreanName: assetInfo.koreanName,
-    });
-    const metadata = symbolMetadataFromSeo(seo);
-
     // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
     // getSeoSnapshotsStatic(upper, revalidate) call the page body makes below —
     // unstable_cache dedupes it within this render, so this is a cache hit, not
@@ -222,6 +214,60 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const snap = (await getSeoSnapshotsStatic(upper, revalidate)).find(
         s => s.tab === 'overall'
     );
+
+    // 라운드4 감사 finding 2: getBlockedSymbolMetadata는 `degraded === true`일
+    // 때만 hasProseForTab을 확인한다. 건강한(비degraded) 자산이라도 AI 분석이
+    // 아직 캐시되지 않았으면(배포 직후 ISR cold) 위 가드를 그냥 통과해
+    // index,follow + self-canonical을 내보내는 동안, 본문은 OverallFactualFallback
+    // (~1,250자 placeholder: "종합 AI 결론이 아직 캐시되지 않았습니다…")을 렌더했다.
+    // 본문은 두 소스(스냅샷 프로즈 `hasOverallProse`, peek 캐시 `cachedOverall` →
+    // `OverallFactsSummary`)가 **둘 다** 없을 때만 그 placeholder로 떨어진다 — 여기
+    // 게이트도 `degraded`가 아니라 그 두 소스로 판단해야 본문과 어긋나지 않는다.
+    // peek 키/인자는 아래 본문 호출과 동일해 같은 캐시 엔트리를 겨냥한다.
+    //
+    // **영향 범위와 되돌아오는 경로**(감사 라운드 4 리뷰): 스냅샷은 Postgres에 있어
+    // 배포로 사라지지 않는다 — 실측 시점에 `overall` 스냅샷 보유 심볼 287개 중 KR은
+    // 0개였으므로, 이 게이트에 걸리는 건 아직 프로즈가 없는 KR 20개뿐이고 그건 지금
+    // placeholder를 내보내는 바로 그 페이지들이다. 미국·크립토는 배포 직후 cold ISR
+    // 에서도 스냅샷을 읽어 색인 상태를 유지한다.
+    //
+    // 스냅샷이 들어오면 `revalidateTag('seo-snapshot:{SYM}')`가 이 항목을 깨는데,
+    // prewarm은 **전 탭이 fresh로 수렴할 때만** 그 태그를 쏜다(`runPrewarmBatch`).
+    // 그래서 overall만 채워지고 다른 탭 하나가 실패한 밤에는 noindex가 페이지
+    // `revalidate`(12h)까지 남는다 — 플레이스홀더를 색인시키는 것보다는 낫지만
+    // 공짜는 아니다.
+    if (!hasOverallProse(snap?.content)) {
+        const cachedOverall = await staticSymbolCache(
+            ['peek:overall', upper, DEEPSEEK_V4_FLASH_MODEL],
+            upper,
+            () =>
+                peekOverallAnalysisCache(
+                    upper,
+                    assetInfo.name,
+                    DEFAULT_TIMEFRAME,
+                    DEEPSEEK_V4_FLASH_MODEL,
+                    false
+                ),
+            [],
+            SECONDS_PER_HALF_DAY
+        ).catch((error: unknown) => {
+            console.error(
+                '[OverallPage.generateMetadata] peekOverallAnalysisCache failed:',
+                error
+            );
+            return null;
+        });
+        if (!cachedOverall) return NOINDEX_SYMBOL_METADATA;
+    }
+
+    const displayName = buildDisplayName(assetInfo, upper);
+    const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
+    const seo = resolveSymbolOverallSeoContent(upper, assetClass, {
+        displayName,
+        koreanName: assetInfo.koreanName,
+    });
+    const metadata = symbolMetadataFromSeo(seo);
+
     const snapshotDescription = snap
         ? buildSnapshotMetaDescription('overall', snap.content, displayName)
         : null;

@@ -110,6 +110,11 @@ describe('generateMetadata', () => {
             },
             degraded: false,
         } as never);
+        // 라운드4 finding 2 게이트가 no-snapshot(위 기본값)일 때 peek을 확인한다 —
+        // 이 describe의 기존 테스트들은 그 게이트와 무관하므로 peek HIT을
+        // 기본값으로 둬 indexable 경로를 유지한다. 게이트 자체를 겨냥하는
+        // 테스트는 아래에서 개별적으로 mockPeekOverall을 덮어쓴다.
+        mockPeekOverall.mockResolvedValue({ headlineKo: 'seed' } as never);
     });
 
     it('returns noindex when degraded on infra failure', async () => {
@@ -139,6 +144,63 @@ describe('generateMetadata', () => {
         });
 
         expect(metadata.robots).toEqual({ index: false, follow: false });
+    });
+
+    // 라운드4 finding 2: 건강한(비degraded) 자산이라도 AI 분석이 아직 캐시되지
+    // 않았으면 본문은 OverallFactualFallback(~1,250자 placeholder)을 렌더한다.
+    // degraded 플래그만 보던 기존 게이트는 이 경우를 놓쳐 index,follow +
+    // self-canonical을 내보냈다 — hasOverallProse/peek 둘 다 없을 때 noindex여야
+    // 한다.
+    it('스냅샷 프로즈도 peek 캐시도 없으면 noindex + canonical:null을 반환한다 (cold ISR)', async () => {
+        // beforeEach 기본값: mockGetSeoSnapshotsStatic → [] (프로즈 없음)
+        mockPeekOverall.mockResolvedValue(null);
+
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.alternates).toEqual({ canonical: null });
+    });
+
+    it('스냅샷 프로즈가 렌더 가능하면 peek MISS여도 indexable을 유지한다', async () => {
+        mockPeekOverall.mockResolvedValue(null);
+        mockGetSeoSnapshotsStatic.mockResolvedValue([
+            {
+                symbol: 'AAPL',
+                tab: 'overall',
+                content: { headlineKo: 'valid headline' },
+                model: 'deepseek-v4-flash',
+                generatedAt: new Date(),
+                updatedAt: new Date(),
+            },
+        ] as never);
+
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(metadata.robots).toBeUndefined();
+        // 프로즈가 있으면 peek을 아예 부르지 않는다 — 부르면 색인 판정은 같아도
+        // 매 요청 불필요한 캐시 왕복이 붙는다.
+        expect(mockPeekOverall).not.toHaveBeenCalled();
+    });
+
+    it('스냅샷 프로즈는 없어도 peek 캐시가 HIT이면 indexable을 유지한다', async () => {
+        mockPeekOverall.mockResolvedValue({
+            headlineKo: 'cached overall',
+        } as never);
+        // beforeEach 기본값: mockGetSeoSnapshotsStatic → [] (프로즈 없음)
+
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(metadata.robots).toBeUndefined();
+        // 색인 유지가 peek을 **실제로 확인한 결과**여야 한다 — 게이트가 통째로
+        // 빠져도 `robots`는 그대로 undefined라, 호출 자체를 단언하지 않으면
+        // 이 케이스는 아무것도 지키지 못한다.
+        expect(mockPeekOverall).toHaveBeenCalledTimes(1);
     });
 });
 

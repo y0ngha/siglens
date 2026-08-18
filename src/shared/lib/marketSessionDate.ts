@@ -153,7 +153,8 @@ function isTradingDate(spec: ScheduledSpec, isoDate: string): boolean {
  * 시장별로 다른 세 가지를 스펙 하나로 처리한다:
  * - 표준시/서머타임 — `spec.timeZone`을 `Intl`에 넘기므로 수동 오프셋 산술이 없다.
  * - 주말 — `spec.weekendDays`.
- * - 휴장일·반장 — `spec.closeMinuteFor`(NYSE는 core의 규칙 캘린더, KRX는 미보유).
+ * - 휴장일·반장 — `spec.closeMinuteFor`(NYSE는 core의 규칙 캘린더, KRX는
+ *   `sessionSpecFor.ts`의 리터럴 휴장일 목록).
  *
  * `bufferMinutes`는 마감 후 데이터 발행까지의 대기다. 마감 + 버퍼가 지나야 당일을
  * lastClosed로 롤한다. 버퍼 구간에는 직전 거래일이 유지되어, 불완전한 EOD가 당일 키에
