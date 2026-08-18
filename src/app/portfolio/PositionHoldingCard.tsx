@@ -9,13 +9,10 @@ import { BARS_STALE_TIME_MS, QUERY_KEYS } from '@/shared/config/queryConfig';
 import { buildTechnicalFacts } from '@/views/symbol/utils/technicalFacts';
 import {
     computePosition,
+    formatAmount,
     PositionBuilding,
 } from '@/widgets/portfolio-position';
-import {
-    dynamicDecimals,
-    formatSignedPercent,
-    formatUsdPrice,
-} from '@/shared/lib/priceFormat';
+import { formatSignedPercent } from '@/shared/lib/priceFormat';
 import { cn } from '@/shared/lib/cn';
 import type { PortfolioHoldingView } from '@/entities/portfolio';
 
@@ -26,14 +23,6 @@ type HoldingCardData = Pick<
 
 interface PositionHoldingCardProps {
     holding: HoldingCardData;
-}
-
-/** sub-$1 정밀도 자산군에서 "$0"으로 뭉개지지 않도록 유효자리를 보존한다 (PositionBuilding과 동일 규칙). */
-function formatUsd(value: number): string {
-    if (value !== 0 && Math.abs(value) < 1) {
-        return `$${value.toFixed(dynamicDecimals(value))}`;
-    }
-    return `$${formatUsdPrice(value)}`;
 }
 
 /**
@@ -98,11 +87,12 @@ function CardSkeleton({ symbol }: { symbol: string }) {
 }
 
 interface CardDegradedProps {
+    symbol: string;
     avg: number;
     message: string;
 }
 
-function CardDegraded({ avg, message }: CardDegradedProps) {
+function CardDegraded({ symbol, avg, message }: CardDegradedProps) {
     return (
         <div
             data-testid="holding-card-degraded"
@@ -113,7 +103,7 @@ function CardDegraded({ avg, message }: CardDegradedProps) {
         >
             <span className="text-xs text-secondary-400">{message}</span>
             <span className="text-xs text-secondary-400 tabular-nums">
-                평단 {formatUsd(avg)}
+                평단 {formatAmount(avg, symbol)}
             </span>
         </div>
     );
@@ -186,6 +176,7 @@ export function PositionHoldingCard({ holding }: PositionHoldingCardProps) {
 
                 {isSettled && isDegraded && (
                     <CardDegraded
+                        symbol={holding.symbol}
                         avg={avg}
                         message={
                             isAvgValid
@@ -212,11 +203,14 @@ export function PositionHoldingCard({ holding }: PositionHoldingCardProps) {
                             <dl className="grid w-full grid-cols-2 gap-x-2 gap-y-1 text-xs text-secondary-300">
                                 <dt className="text-secondary-400">평단</dt>
                                 <dd className="text-right tabular-nums">
-                                    {formatUsd(avg)}
+                                    {formatAmount(avg, holding.symbol)}
                                 </dd>
                                 <dt className="text-secondary-400">현재가</dt>
                                 <dd className="text-right tabular-nums">
-                                    {formatUsd(facts.lastClose)}
+                                    {formatAmount(
+                                        facts.lastClose,
+                                        holding.symbol
+                                    )}
                                 </dd>
                                 <dt className="text-secondary-400">수익률</dt>
                                 <dd

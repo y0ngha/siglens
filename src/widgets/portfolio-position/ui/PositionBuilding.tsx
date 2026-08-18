@@ -26,9 +26,9 @@ import {
     computeActiveFloorTooltipContent,
     CURRENT_LABEL_PREFIX,
     describeAvgFloor,
+    formatAmount,
+    formatCompactForSvgLabel,
     formatFloorTooltipText,
-    formatUsd,
-    formatUsdCompactForSvgLabel,
     type FloorPointer,
     ISO_DX,
     LABEL_GAP,
@@ -318,7 +318,8 @@ export function PositionBuilding({
         volumeByBand,
         low52w,
         high52w,
-        model.bands.length
+        model.bands.length,
+        symbol
     );
 
     // model.bands.length는 volumeByBand 인덱싱(아래)과 describeAvgFloor 둘 다에
@@ -327,8 +328,8 @@ export function PositionBuilding({
     // 둔다(Custom Hook Declaration Order — CONVENTIONS.md).
     const bandCount = model.bands.length;
 
-    const avgDisplay = formatUsd(avg);
-    const currentDisplay = formatUsd(current);
+    const avgDisplay = formatAmount(avg, symbol);
+    const currentDisplay = formatAmount(current, symbol);
     const avgFloorNote = describeAvgFloor(
         model.avgPos,
         model.avgClamped,
@@ -369,8 +370,8 @@ export function PositionBuilding({
     const avgY = frontY(model.avgPos, model.avgClamped);
     const currentY = frontY(model.currentPos, model.currentClamped);
 
-    const avgDisplaySvg = formatUsdCompactForSvgLabel(avg);
-    const currentDisplaySvg = formatUsdCompactForSvgLabel(current);
+    const avgDisplaySvg = formatCompactForSvgLabel(avg, symbol);
+    const currentDisplaySvg = formatCompactForSvgLabel(current, symbol);
 
     const returnSign =
         model.returnPct > 0 ? 'gain' : model.returnPct < 0 ? 'loss' : 'flat';
@@ -417,7 +418,7 @@ export function PositionBuilding({
                     textAnchor="middle"
                     className="fill-current text-[10px] font-medium text-secondary-400 tabular-nums"
                 >
-                    {formatUsdCompactForSvgLabel(high52w)}
+                    {formatCompactForSvgLabel(high52w, symbol)}
                 </text>
                 <text
                     x={CENTER_X}
@@ -425,7 +426,7 @@ export function PositionBuilding({
                     textAnchor="middle"
                     className="fill-current text-[10px] font-medium text-secondary-400 tabular-nums"
                 >
-                    {formatUsdCompactForSvgLabel(low52w)}
+                    {formatCompactForSvgLabel(low52w, symbol)}
                 </text>
 
                 {/* 층 볼륨 — bands[0]=저점 인접(1층) ... bands[4]=고점 인접(최상층) */}

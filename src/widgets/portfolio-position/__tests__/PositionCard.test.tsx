@@ -14,10 +14,12 @@ function model(overrides: Partial<Parameters<typeof computePosition>[0]> = {}) {
 
 function renderCard(
     input: Partial<Parameters<typeof computePosition>[0]> = {},
-    m: PositionModel = model(input)
+    m: PositionModel = model(input),
+    symbol = 'AAPL'
 ) {
     return render(
         <PositionCard
+            symbol={symbol}
             model={m}
             low52w={input.low52w ?? 100}
             high52w={input.high52w ?? 200}
@@ -72,5 +74,67 @@ describe('PositionCard', () => {
 
         expect(container.querySelector('.chart-bullish')).toBeNull();
         expect(container.querySelector('.chart-bearish')).toBeNull();
+    });
+
+    it('미국 종목(symbol=AAPL)은 가격 리드아웃을 $ 표기로 렌더한다', () => {
+        const { getByText } = renderCard(
+            { low52w: 100, high52w: 200, avg: 150, current: 180 },
+            undefined,
+            'AAPL'
+        );
+        expect(getByText('$200')).toBeInTheDocument(); // 최근 고점
+        expect(getByText('$100')).toBeInTheDocument(); // 최근 저점
+        expect(getByText('$180')).toBeInTheDocument(); // 현재가
+        expect(getByText('$150')).toBeInTheDocument(); // 내 평단
+    });
+
+    it('한국 상장 종목(symbol=005930.KS)은 가격 리드아웃을 $가 아니라 ₩ 표기로 렌더한다', () => {
+        const { getByText, queryByText } = renderCard(
+            {
+                low52w: 50_900,
+                high52w: 88_800,
+                avg: 274_500,
+                current: 80_000,
+            },
+            undefined,
+            '005930.KS'
+        );
+        expect(getByText('₩88,800')).toBeInTheDocument(); // 최근 고점
+        expect(getByText('₩50,900')).toBeInTheDocument(); // 최근 저점
+        expect(getByText('₩80,000')).toBeInTheDocument(); // 현재가
+        expect(getByText('₩274,500')).toBeInTheDocument(); // 내 평단
+        expect(queryByText(/\$/)).not.toBeInTheDocument();
+    });
+
+    it('sub-$1 crypto 평단(예: avg=0.0006)은 "$0"으로 뭉개지지 않는다(회귀 방지 — PositionBuilding.test.tsx와 동일 케이스)', () => {
+        const { getByText, queryByText } = renderCard(
+            {
+                low52w: 0.0004,
+                high52w: 0.0009,
+                avg: 0.0006,
+                current: 0.0007,
+            },
+            undefined,
+            'SHIB'
+        );
+        expect(getByText(/^\$0\.0006/)).toBeInTheDocument(); // 내 평단
+        expect(getByText(/^\$0\.0007/)).toBeInTheDocument(); // 현재가
+        expect(queryByText(/^\$0$/)).not.toBeInTheDocument();
+    });
+
+    it('원화 종목의 sub-1원 평단(예: avg=0.6)은 소수점 없이 정수로 반올림된다(원화는 소수 단위가 없다)', () => {
+        const { getByText } = renderCard(
+            {
+                low52w: 0.3,
+                high52w: 0.9,
+                avg: 0.6,
+                current: 0.6,
+            },
+            undefined,
+            '005930.KS'
+        );
+        const avgValue = getByText('내 평단').nextElementSibling;
+        expect(avgValue?.textContent).toBe('₩1');
+        expect(avgValue?.textContent).not.toContain('.');
     });
 });

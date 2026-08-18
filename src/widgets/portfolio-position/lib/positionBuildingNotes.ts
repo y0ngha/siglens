@@ -1,13 +1,35 @@
-import { dynamicDecimals, formatUsdPrice } from '@/shared/lib/priceFormat';
+import {
+    currencyForSymbol,
+    getDescriptor,
+} from '@/shared/config/marketProfile';
+import {
+    dynamicDecimals,
+    formatPrice,
+    formatUsdPrice,
+} from '@/shared/lib/priceFormat';
 import type { PositionModel, RangeClamp } from './positionGeometry';
 
 /**
- * "$300" 형태 — sub-$1 정밀도 자산군(암호화폐 등)은 고정 2자리 포맷이 "$0"으로
- * 뭉개지므로(예: $0.0006 → "$0") shared/lib/priceFormat의 dynamicDecimals(이미
- * crypto 지표 포맷에 쓰이는 유틸)로 유효자리를 보존한다. PositionGauge는 이 케이스를
- * §6에서 스코프 밖으로 punt했지만, 이 컴포넌트는 misleading "$0"을 최소 방어선으로 삼는다.
+ * "$300" / "₩274,500" 형태 — 통화는 심볼에서 유도한다(`currencyForSymbol`,
+ * `shared/config/marketProfile/registry.ts`가 REGISTRY 전체를 exhaustive하게 갖는
+ * 유일한 source). 예전 이름(`formatUsd`)은 항상 `$`를 찍어 한국 상장 종목
+ * (`005930.KS`)에도 달러 기호가 붙었다 — symbol 파라미터를 받게 되며 이름을 바꿨다.
+ *
+ * 기존의 두 가지 의도적 동작은 그대로 유지한다:
+ * - sub-$1 정밀도 자산군(암호화폐 등)은 고정 2자리 포맷이 "$0"으로 뭉개지므로
+ *   (예: $0.0006 → "$0") shared/lib/priceFormat의 dynamicDecimals(이미 crypto
+ *   지표 포맷에 쓰이는 유틸)로 유효자리를 보존한다. PositionGauge는 이 케이스를
+ *   §6에서 스코프 밖으로 punt했지만, 이 컴포넌트는 misleading "$0"을 최소 방어선으로
+ *   삼는다. 원화 종목은 이 분기를 타지 않는다(아래).
+ * - 원화는 소수점이 없다 — `KR_EQUITY_DESCRIPTOR.priceFormat.precision`이 이미
+ *   `{ kind: 'integer' }`라 `formatPrice`가 자동으로 0자리를 낸다
+ *   (`FutureDirectionCard`의 `MONEY_FORMATTERS.KRW`가 `maximumFractionDigits: 0`을
+ *   명시했던 것과 동일한 결정 — 여기서는 REGISTRY 값 하나로 자동 상속된다).
  */
-export function formatUsd(value: number): string {
+export function formatAmount(value: number, symbol: string): string {
+    if (currencyForSymbol(symbol) === 'KRW') {
+        return formatPrice(value, getDescriptor('kr-equity').priceFormat);
+    }
     if (value !== 0 && Math.abs(value) < 1) {
         return `$${value.toFixed(dynamicDecimals(value))}`;
     }
@@ -20,11 +42,15 @@ const IN_SVG_COMPACT_THRESHOLD = 100_000;
 
 /** Exported so the clipping-regression test can build the exact string the
  * component renders (avoids a second, potentially-drifting copy in the test). */
-export function formatUsdCompactForSvgLabel(value: number): string {
+export function formatCompactForSvgLabel(
+    value: number,
+    symbol: string
+): string {
     if (Math.abs(value) >= IN_SVG_COMPACT_THRESHOLD) {
-        return `$${Math.round(value / 1000)}K`;
+        const currencyPrefix = currencyForSymbol(symbol) === 'KRW' ? '₩' : '$';
+        return `${currencyPrefix}${Math.round(value / 1000)}K`;
     }
-    return formatUsd(value);
+    return formatAmount(value, symbol);
 }
 
 export function buildAriaLabel(
@@ -169,10 +195,11 @@ export interface FloorTooltipContent {
 function buildFloorTooltipContent(
     bandLow: number,
     bandHigh: number,
-    volumePct: number
+    volumePct: number,
+    symbol: string
 ): FloorTooltipContent {
     return {
-        main: `${formatUsd(bandLow)}–${formatUsd(bandHigh)} · 거주율 ${Math.round(volumePct)}%`,
+        main: `${formatAmount(bandLow, symbol)}–${formatAmount(bandHigh, symbol)} · 거주율 ${Math.round(volumePct)}%`,
         qualifier: '최근 52주 거래량 기준',
     };
 }
@@ -204,7 +231,8 @@ export function buildFloorTooltips(
     volumeByBand: readonly number[] | null | undefined,
     low52w: number,
     high52w: number,
-    bandCount: number
+    bandCount: number,
+    symbol: string
 ): readonly (FloorTooltipContent | null)[] {
     return model.bands.map((_, i) => {
         const volumePct = volumeByBand?.[i];
@@ -217,7 +245,7 @@ export function buildFloorTooltips(
             i,
             bandCount
         );
-        return buildFloorTooltipContent(bandLow, bandHigh, volumePct);
+        return buildFloorTooltipContent(bandLow, bandHigh, volumePct, symbol);
     });
 }
 
