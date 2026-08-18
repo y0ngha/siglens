@@ -4,6 +4,7 @@ import {
 } from '@/app/[symbol]/news/newsData';
 import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
 import { getNewsList } from '@/entities/news-article/api';
+import { toNewsDisplayItem } from '@/entities/news-article/lib/toNewsDisplayItem';
 import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
 import { NewsFactsSummary } from '@/widgets/news';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
@@ -132,7 +133,10 @@ export async function NewsListSection({ symbol }: SymbolSectionProps) {
         );
         return [] as Awaited<ReturnType<typeof getNewsList>>;
     });
-    return <NewsList items={items} symbol={symbol} />;
+    // 클라이언트 컴포넌트 경계 — `NewsRow`를 그대로 넘기면 `bodyEn`(기사 원문)이
+    // RSC 페이로드에 실려 12시간 ISR 캐시에 굳고 조회마다 전송된다. 상위 집합이라
+    // 타입 검사로는 안 걸린다(감사: 비용 라운드 14).
+    return <NewsList items={items.map(toNewsDisplayItem)} symbol={symbol} />;
 }
 
 export async function EventCalendarSection({ symbol }: SymbolSectionProps) {

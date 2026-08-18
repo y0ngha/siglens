@@ -110,6 +110,52 @@ describe('useWaitForNewsCards', () => {
         expect(mockGetCards.mock.calls.length).toBe(settled);
     });
 
+    it('기사가 있지만 아직 보강 전이면 20회에서 접지 않는다', async () => {
+        // 조기 종료는 "기사가 아예 없다"에만 걸려야 한다. 이 조건이 빠지면 무조건
+        // 20회(60초)에서 접혀 5분 계약이 사라지고, 하필 LLM 보강을 기다리는
+        // 꼬리 케이스가 그 대상이다(감사 라운드 14).
+        mockGetCards.mockResolvedValue([PENDING_ITEM]);
+        renderHook(() => useWaitForNewsCards('AAPL', false));
+
+        await waitFor(
+            () =>
+                expect(mockGetCards.mock.calls.length).toBeGreaterThan(
+                    EMPTY_SNAPSHOT_MAX_POLLS
+                ),
+            { timeout: 3_000 }
+        );
+    });
+
+    it('종목이 바뀌면 옛 종목의 늦은 응답으로 isReady를 열지 않는다', async () => {
+        // `clearInterval`은 다음 tick만 막는다 — 이미 날아간 요청의 응답이 늦게
+        // 도착해 새 종목의 상태를 건드리면, 카드가 보강되지 않은 종목에서 분석
+        // 패널이 열리고 core의 `no_news` 에러가 영구 캐시된다.
+        let resolveStale: ((items: NewsDisplayItem[]) => void) | undefined;
+        mockGetCards.mockImplementationOnce(
+            () =>
+                new Promise<NewsDisplayItem[]>(resolve => {
+                    resolveStale = resolve;
+                })
+        );
+
+        const { rerender, result } = renderHook(
+            ({ symbol }) => useWaitForNewsCards(symbol, false),
+            { initialProps: { symbol: 'AAPL' } }
+        );
+
+        await waitFor(() => expect(resolveStale).toBeDefined());
+
+        // 새 종목은 보강된 카드가 없다.
+        mockGetCards.mockResolvedValue([PENDING_ITEM]);
+        rerender({ symbol: 'MSFT' });
+
+        // 옛 종목의 응답이 이제 도착한다.
+        resolveStale?.([ENRICHED_ITEM]);
+        await new Promise(resolve => setTimeout(resolve, 120));
+
+        expect(result.current.isReady).toBe(false);
+    });
+
     it('sets pollError after consecutive failures', async () => {
         mockGetCards.mockRejectedValue(new Error('fetch failed'));
         const { result } = renderHook(() => useWaitForNewsCards('AAPL', false));

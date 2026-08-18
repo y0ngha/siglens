@@ -104,6 +104,11 @@ export function useNewsCardPolling(
         let pollCount = 0;
         let consecutiveFailures = 0;
         const startTime = Date.now();
+        // 종목이 바뀌어도 **이미 날아간 요청**은 취소되지 않는다(`clearInterval`은
+        // 다음 tick만 막는다). 그 응답이 늦게 도착하면 새 종목의 상태에 옛 종목의
+        // 카드를 써 넣는다 — `setItems`/`latestItemsRef`/`onPollingComplete`가 전부
+        // await 뒤에 있다(감사 라운드 14, 형제 훅과 같은 수정).
+        let cancelled = false;
 
         const intervalId = setInterval(async () => {
             if (Date.now() - startTime > MAX_POLL_DURATION_MS) {
@@ -117,6 +122,7 @@ export function useNewsCardPolling(
 
             try {
                 const fresh = await getNewsCardsAction(symbol);
+                if (cancelled) return;
                 pollCount += 1;
                 consecutiveFailures = 0;
                 latestItemsRef.current = fresh;
@@ -145,6 +151,7 @@ export function useNewsCardPolling(
                     onPollingCompleteRef.current?.(fresh);
                 }
             } catch (err) {
+                if (cancelled) return;
                 pollCount += 1;
                 consecutiveFailures += 1;
                 console.error('[useNewsCardPolling] poll failed:', err);
@@ -168,7 +175,10 @@ export function useNewsCardPolling(
             }
         }, POLL_INTERVAL_MS);
 
-        return () => clearInterval(intervalId);
+        return () => {
+            cancelled = true;
+            clearInterval(intervalId);
+        };
         // Only `symbol` is in deps. `initialItems` is excluded on purpose —
         // including it would restart the polling effect on every parent render
         // with an unstable array prop, resetting `pollCount` and breaking the

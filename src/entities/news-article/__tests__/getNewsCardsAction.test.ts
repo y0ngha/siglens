@@ -1,7 +1,12 @@
-const { mockGetDatabaseClient, mockListBySymbol } = vi.hoisted(() => ({
-    mockGetDatabaseClient: vi.fn(),
-    mockListBySymbol: vi.fn(),
-}));
+const { mockGetDatabaseClient, mockListCardsBySymbol, mockListBySymbol } =
+    vi.hoisted(() => ({
+        mockGetDatabaseClient: vi.fn(),
+        // 카드 경로는 `bodyEn`을 select에서 빼는 전용 투영을 쓴다 — 전 컬럼을 읽는
+        // `listBySymbol`을 쓰면 3초 폴링마다 기사 원문을 받아서 버린다
+        // (감사: 비용 라운드 14).
+        mockListCardsBySymbol: vi.fn(),
+        mockListBySymbol: vi.fn(),
+    }));
 
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: mockGetDatabaseClient,
@@ -9,6 +14,7 @@ vi.mock('@/shared/db/client', () => ({
 
 vi.mock('@/entities/news-article/api', () => ({
     DrizzleNewsRepository: class {
+        listCardsBySymbol = mockListCardsBySymbol;
         listBySymbol = mockListBySymbol;
     },
 }));
@@ -21,8 +27,19 @@ describe('getNewsCardsAction', () => {
         mockGetDatabaseClient.mockReturnValue({ db: {} });
     });
 
+    it('본문 전체를 읽는 listBySymbol을 쓰지 않는다', async () => {
+        // 3초 폴링 경로다 — `bodyEn`(기사 원문)을 읽어서 버리면 그 전송이 매 tick
+        // 반복된다. select 단계에서 빼는 전용 투영을 써야 한다.
+        mockListCardsBySymbol.mockResolvedValue([]);
+
+        await getNewsCardsAction('AAPL');
+
+        expect(mockListCardsBySymbol).toHaveBeenCalledTimes(1);
+        expect(mockListBySymbol).not.toHaveBeenCalled();
+    });
+
     it('returns allowlisted fields only, stripping internal DB fields', async () => {
-        mockListBySymbol.mockResolvedValue([
+        mockListCardsBySymbol.mockResolvedValue([
             {
                 id: 'news-1',
                 publishedAt: '2026-05-25T10:00:00Z',
@@ -66,7 +83,7 @@ describe('getNewsCardsAction', () => {
     });
 
     it('returns empty array when no news items exist', async () => {
-        mockListBySymbol.mockResolvedValue([]);
+        mockListCardsBySymbol.mockResolvedValue([]);
 
         const result = await getNewsCardsAction('AAPL');
 
@@ -74,7 +91,7 @@ describe('getNewsCardsAction', () => {
     });
 
     it('maps multiple rows correctly', async () => {
-        mockListBySymbol.mockResolvedValue([
+        mockListCardsBySymbol.mockResolvedValue([
             {
                 id: 'news-1',
                 publishedAt: '2026-05-25T10:00:00Z',
@@ -119,7 +136,7 @@ describe('getNewsCardsAction', () => {
     });
 
     it('preserves null fields in the output', async () => {
-        mockListBySymbol.mockResolvedValue([
+        mockListCardsBySymbol.mockResolvedValue([
             {
                 id: 'news-1',
                 publishedAt: '2026-05-25T10:00:00Z',
