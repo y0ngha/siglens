@@ -479,7 +479,8 @@ export const SITE_DESCRIPTION = clampSeoDescription(
  * 여기서 "미국 주식과 암호화폐"라고만 말하면 KR 클러스터 전체의 주제 관련성이 눌린다
  * (홈 본문에는 `한국 주식` 카테고리 카드가 이미 렌더된다 — 본문과 메타가 어긋난 상태였다).
  */
-export const ROOT_TITLE = `미국·한국 주식·암호화폐 AI 분석 — 차트·뉴스로 투자 결론 | ${SITE_NAME}`;
+export const ROOT_HEADLINE = '미국·한국 주식·암호화폐 AI 분석';
+export const ROOT_TITLE = `${ROOT_HEADLINE} — 차트·뉴스로 투자 결론 | ${SITE_NAME}`;
 
 // 한글 SERP는 80~120자가 안전권이라 키워드는 핵심 검색의도 위주로 추렸다.
 export const ROOT_KEYWORDS = [

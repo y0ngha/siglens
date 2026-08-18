@@ -1,6 +1,7 @@
 'use client';
 
 import { isKoreanInput } from '@/entities/ticker';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile';
 import { useAutocomplete } from '../hooks/useAutocomplete';
 import { cn } from '@/shared/lib/cn';
 import type { TickerSearchResult } from '@/shared/lib/types';
@@ -194,9 +195,17 @@ function ResultItem({
     // 한국어 사용자가 읽는 화면이므로 한글명이 있으면 그쪽이 주 이름이다.
     // 영문명은 한글명과 다를 때만 덧붙인다 — 종목 마스터 시드는 영문명을 주지 않아
     // `name`에 한글명을 넣어 두므로, 그대로 두면 `삼성전자 (삼성전자)`가 된다.
+    //
+    // 국내 상장 종목은 한 걸음 더 나아가 영문 법인명을 아예 붙이지 않는다.
+    // `buildDisplayName`·`SymbolLayoutHeader`와 **같은 조건**이어야 한다 —
+    // 여기만 빠지면 yahoo가 이름을 채운 종목(`Samsung Electronics Co., Ltd.`)이
+    // 자동완성에서만 영문명을 달고 나와, 클릭해 들어간 페이지의 타이틀·헤더와
+    // 표기가 어긋난다(MISTAKES.md "서버/클라이언트 도메인 조건 불일치").
     const primaryName = result.koreanName ?? result.name;
     const secondaryName =
-        result.koreanName && result.name !== result.koreanName
+        result.koreanName &&
+        result.name !== result.koreanName &&
+        !isKrEquitySymbol(result.symbol)
             ? result.name
             : null;
 

@@ -198,6 +198,44 @@ describe('TickerAutocomplete', () => {
         expect(screen.getByText('005930.KS')).toBeInTheDocument();
     });
 
+    it('국내 종목은 영문 법인명이 달라도 붙이지 않는다', () => {
+        // 시드가 아니라 yahoo가 이름을 채운 국내 종목은 `name`이 영문 법인명이라
+        // "한글명과 다르면 덧붙인다" 규칙에 그대로 걸린다. `buildDisplayName`과
+        // `SymbolLayoutHeader`는 국내 종목에서 영문명을 빼는데 여기만 남으면
+        // 자동완성과 이동한 페이지의 표기가 어긋난다.
+        setupAutocomplete({
+            query: '삼성',
+            isOpen: true,
+            results: [
+                {
+                    symbol: '005930.KS',
+                    name: 'Samsung Electronics Co., Ltd.',
+                    koreanName: '삼성전자',
+                    exchange: 'KOSPI',
+                    exchangeFullName: 'Korea Exchange (KOSPI)',
+                },
+            ],
+        });
+        render(<TickerAutocomplete />);
+
+        expect(screen.getByText('삼성전자')).toBeInTheDocument();
+        expect(
+            screen.queryByText('Samsung Electronics Co., Ltd.')
+        ).not.toBeInTheDocument();
+    });
+
+    it('미국 종목은 영문 법인명을 그대로 붙인다 — 억제는 국내 종목 한정이다', () => {
+        setupAutocomplete({
+            query: 'AAPL',
+            isOpen: true,
+            results: [MOCK_RESULTS[0]],
+        });
+        render(<TickerAutocomplete />);
+
+        expect(screen.getByText('애플')).toBeInTheDocument();
+        expect(screen.getByText('Apple Inc.')).toBeInTheDocument();
+    });
+
     it('renders exchange name', () => {
         setupAutocomplete({
             query: 'A',
