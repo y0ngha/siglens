@@ -122,9 +122,12 @@ export function buildPopularEntries(now: Date): SitemapEntry[] {
                 changeFrequency: 'daily',
                 priority: 0.78,
             },
-            // 국내 상장 종목은 공직자 매매 공시 제도가 없어 `/congress`가 404다
-            // (`KR_EQUITY_DESCRIPTOR.tabs`에서 제외). 404 URL을 sitemap에 실으면
-            // 크롤 예산만 태우고 색인 품질 신호가 나빠진다.
+            // 국내 상장 종목은 공직자 매매 공시 제도가 없어 `/congress`가 not-found
+            // UI + noindex로 나간다(`KR_EQUITY_DESCRIPTOR.tabs`에서 제외). 상태 코드는
+            // 200이다 — `notFound()`가 부모 `loading.tsx`의 Suspense 안에서 던져지기
+            // 때문이고, 그 계약은 `e2e/specs/kr-equity-seo.spec.ts`가 고정한다.
+            // noindex URL을 sitemap에 실으면 크롤 예산만 태우고 색인 품질 신호가
+            // 나빠지므로 제외한다.
             ...(isKr
                 ? []
                 : [
