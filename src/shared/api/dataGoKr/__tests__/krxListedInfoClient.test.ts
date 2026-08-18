@@ -230,8 +230,8 @@ describe('fetchKrxListedItems', () => {
      * 배포 드레인 창(180초)을 넘긴다. 이 수집은 `after()` 안에서 돌고 그 promise가
      * SIGTERM 드레인에 등록돼 있어 그만큼 종료를 붙잡는다.
      *
-     * 가짜 타이머로 페이지당 30초를 흘려보내면 4페이지를 받은 시점에 정확히 120초라
-     * 5페이지째 검사에서 멈춘다 — MAX_PAGES(20)에 한참 못 미치는 지점이라, 상한이
+     * 가짜 타이머로 페이지당 30초를 흘려보내면 3페이지를 받은 시점에 정확히 90초라
+     * 4페이지째 검사에서 멈춘다 — MAX_PAGES(20)에 한참 못 미치는 지점이라, 상한이
      * 페이지 수가 아니라 시간에서 오는지가 판별된다.
      */
     it('예산이 닳으면 MAX_PAGES 전에 수집을 멈춘다', async () => {
@@ -253,9 +253,40 @@ describe('fetchKrxListedItems', () => {
             await fetchKrxListedItems();
 
             expect(fetchSpy.mock.calls.length).toBeLessThan(20); // MAX_PAGES
-            expect(fetchSpy.mock.calls.length).toBe(4); // 120초 / 30초
+            expect(fetchSpy.mock.calls.length).toBe(3); // 90초 / 30초
         } finally {
             vi.useRealTimers();
+        }
+    });
+
+    /**
+     * [회귀] 예산 검사는 fetch **앞**에만 있으므로, 예산 1ms 전에 통과한 페이지가
+     * `PAGE_TIMEOUT_MS`를 통째로 더 쓰면 상한이 예산 + 10초가 된다. 드레인 창
+     * (180초) 안에서 수집 뒤 DB 단계까지 끝나야 하므로 그 초과분이 그대로 위험이다.
+     * 마지막 페이지의 타임아웃을 남은 예산으로 잘라 초과 자체를 없앤다.
+     */
+    it('마지막 페이지 타임아웃을 남은 예산으로 자른다', async () => {
+        vi.useFakeTimers();
+        try {
+            const timeouts: number[] = [];
+            const realTimeout = AbortSignal.timeout.bind(AbortSignal);
+            vi.spyOn(AbortSignal, 'timeout').mockImplementation(ms => {
+                timeouts.push(ms);
+                return realTimeout(ms);
+            });
+            // 페이지당 42초 — 3페이지째 진입 시각이 84초라 남은 예산이 6초다.
+            fetchSpy.mockImplementation(async () => {
+                vi.advanceTimersByTime(42_000);
+                return page([SAMSUNG], 999_999);
+            });
+
+            await fetchKrxListedItems();
+
+            // 3번째가 10초면 총 94초로 예산을 넘긴다.
+            expect(timeouts).toEqual([10_000, 10_000, 6_000]);
+        } finally {
+            vi.useRealTimers();
+            vi.restoreAllMocks();
         }
     });
 

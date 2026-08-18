@@ -47,6 +47,15 @@ const PAGE_TIMEOUT_MS = 10_000;
  * 안에서 돌고 그 promise가 SIGTERM 드레인에 등록되므로
  * (`app/api/cron/kr-tickers/route.ts`) 그만큼 종료를 붙잡는다.
  *
+ * **드레인이 기다리는 건 fetch가 끝나는 시점이 아니다.** `syncKrListedTickers`는
+ * 그 뒤에 `findAllListingStatuses` + `upsertMany`(약 2,595행 / 500 = 6 왕복,
+ * 각각 Neon 일시 오류 재시도 예산 포함) + relist/delist + 캐시 무효화를 더 돌고,
+ * 그 전체가 끝나야 promise가 resolve한다. 그러니 실제 제약은
+ * `TOTAL_BUDGET_MS + 최악 DB 단계 <= SHUTDOWN_DRAIN_DEADLINE_MS(180초)`다 —
+ * 넘치면 드레인이 먼저 끝나고 동기화가 잘리는데, EventBridge는 이미 202를 받았고
+ * `sync done`/`sync failed` 어느 쪽도 안 찍혀 **아무 알람도 안 뜬다**. 90초로
+ * 잡아 DB 단계에 90초를 남긴다.
+ *
  * 후보 루프에서만 재면 도달할 수 없다: `collectAllPages`는 첫 페이지가 비었을
  * 때만 `[]`를 돌려주고, 한 건이라도 있으면 호출부가 즉시 반환하므로 후보를
  * 넘기는 경로는 후보당 정확히 1페이지다(≤ 10 × 10초). 그래서 **페이지 단위로**
@@ -56,7 +65,7 @@ const PAGE_TIMEOUT_MS = 10_000;
  * 대량 상폐 가드가 그런 목록에서 걸려 상폐만 건너뛴다. 정상 경로는 첫 후보
  * 3~4페이지로 끝나 수 초다.
  */
-const TOTAL_BUDGET_MS = 120_000;
+const TOTAL_BUDGET_MS = 90_000;
 
 /** 시장 구분 값. `mrktCtg` 필드가 이 셋 중 하나로 온다. */
 export type KrxMarket = 'KOSPI' | 'KOSDAQ' | 'KONEX';
@@ -187,7 +196,8 @@ function unwrapItems(
 async function fetchPage(
     key: string,
     pageNo: number,
-    basDt: string | undefined
+    basDt: string | undefined,
+    timeoutMs: number = PAGE_TIMEOUT_MS
 ): Promise<{ items: KrxListedItem[]; totalCount: number }> {
     const params = new URLSearchParams({
         serviceKey: key,
@@ -199,7 +209,7 @@ async function fetchPage(
 
     const res = await fetch(`${ENDPOINT}?${params}`, {
         cache: 'no-store',
-        signal: AbortSignal.timeout(PAGE_TIMEOUT_MS),
+        signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) {
         throw new Error(`[krxListedInfo] HTTP ${res.status}`);
@@ -297,13 +307,21 @@ async function collectAllPages(
     let pageNo = 1;
 
     for (; pageNo <= MAX_PAGES; pageNo++) {
-        if (Date.now() >= deadline) {
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) {
             console.warn(
                 `[krxListedInfo] 예산(${TOTAL_BUDGET_MS}ms) 소진 — ${basDt} ${pageNo}페이지에서 중단, 결과가 잘렸을 수 있다`
             );
             break;
         }
-        const { items, totalCount } = await fetchPage(key, pageNo, basDt);
+        // 남은 예산으로 잘라 준다 — 검사만으로는 예산 직전에 통과한 페이지가
+        // `PAGE_TIMEOUT_MS`만큼 더 끌고 갈 수 있어 상한이 예산 + 10초가 된다.
+        const { items, totalCount } = await fetchPage(
+            key,
+            pageNo,
+            basDt,
+            Math.min(PAGE_TIMEOUT_MS, remaining)
+        );
         collected.push(...items);
 
         // 마지막 페이지 판정: 이번 페이지가 비었거나 총계에 도달했을 때.
