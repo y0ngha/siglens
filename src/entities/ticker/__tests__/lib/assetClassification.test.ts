@@ -157,3 +157,62 @@ describe('classifyAsset — 국내 ETF', () => {
         expect(classifyAsset('005930.KS')).toBe('stock');
     });
 });
+
+/**
+ * 회귀 가드(SEO 감사 라운드 2 finding 1): `KNOWN_ETF_TICKERS`는 미국 티커
+ * allowlist다. SPCX("SPAC and New Issue ETF")처럼 그 목록 밖에 있는 펀드가
+ * `POPULAR_TICKERS`에 들어오면 `stock`으로 떨어져 `Corporation` 노드가 붙었다
+ * — 실제로 프로덕션에서 발생했던 오분류(SpaceX로 표기됐지만 실제로는 SPAC 펀드).
+ */
+describe('classifyAsset — 영문 펀드명 접미 안전망', () => {
+    it('이름이 ETF/Fund/Trust/ETN/Index로 끝나면 etf로 분류한다', () => {
+        expect(classifyAsset('SPCX', undefined, 'SPAC and New Issue ETF')).toBe(
+            'etf'
+        );
+        expect(classifyAsset('XYZ1', undefined, 'Example Growth Fund')).toBe(
+            'etf'
+        );
+        expect(classifyAsset('XYZ2', undefined, 'SPDR Gold Trust')).toBe('etf');
+        expect(classifyAsset('XYZ3', undefined, 'iPath Example ETN')).toBe(
+            'etf'
+        );
+        expect(
+            classifyAsset('XYZ4', undefined, 'Vanguard Total Market Index')
+        ).toBe('etf');
+    });
+
+    it('대소문자와 무관하게 매칭한다', () => {
+        expect(classifyAsset('SPCX', undefined, 'spac and new issue etf')).toBe(
+            'etf'
+        );
+    });
+
+    it('etf로 분류되면 Corporation about 노드를 만들지 않는다', () => {
+        expect(
+            buildAssetAboutNode('SPCX', 'SPAC and New Issue ETF')
+        ).toBeUndefined();
+    });
+
+    /**
+     * [회귀] `Northern Trust Corporation`처럼 사명에 "Trust"가 부분 문자열/중간
+     * 토큰으로 들어가지만 끝 토큰은 "Corporation"인 진짜 상장사가 있다. 끝 토큰이
+     * 아니라 아무 위치에서나 유형어를 찾으면 이런 회사가 조용히 ETF로 오분류돼
+     * Corporation about 노드가 사라진다.
+     */
+    it('사명에 유형어가 들어가지만 끝 토큰이 아니면 stock을 유지한다', () => {
+        expect(
+            classifyAsset('NTRS', undefined, 'Northern Trust Corporation')
+        ).toBe('stock');
+        expect(
+            buildAssetAboutNode('NTRS', 'Northern Trust Corporation')
+        ).toEqual({
+            '@type': 'Corporation',
+            name: 'Northern Trust Corporation',
+            tickerSymbol: 'NTRS',
+        });
+    });
+
+    it('이름이 없으면 펀드명 안전망도 no-op이다', () => {
+        expect(classifyAsset('AAPL')).toBe('stock');
+    });
+});
