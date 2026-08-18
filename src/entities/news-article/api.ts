@@ -164,6 +164,54 @@ export class DrizzleNewsRepository {
 
         return rows.map(toNewsRow);
     }
+
+    /**
+     * 카드 표시에 필요한 컬럼만 읽는다 — `bodyEn`(기사 원문)을 select에서 뺀다.
+     *
+     * `listBySymbol`은 재분석 경로가 원문을 필요로 해서 전 컬럼을 읽는데, 3초 폴링
+     * (`getNewsCardsAction`)과 목록 렌더는 그 원문을 받아서 버린다. 180일 창에
+     * 상한이 없어 인기 종목이면 수백 행이고, 폴링 1회마다 그만큼의 Neon 전송이
+     * 통째로 낭비된다(감사: 비용 라운드 14). 시장 뉴스 슬라이스는 같은 이유로
+     * 이미 투영을 두고 있다(`toMarketNewsCardItem`).
+     */
+    async listCardsBySymbol(
+        symbol: string,
+        sinceMs: number
+    ): Promise<NewsDisplayItem[]> {
+        const cutoff = new Date(Date.now() - sinceMs);
+
+        const rows = await this.db
+            .select({
+                id: news.id,
+                source: news.source,
+                url: news.url,
+                publishedAt: news.publishedAt,
+                titleEn: news.titleEn,
+                titleKo: news.titleKo,
+                bodyKo: news.bodyKo,
+                summaryKo: news.summaryKo,
+                sentiment: news.sentiment,
+                category: news.category,
+                priceImpact: news.priceImpact,
+            })
+            .from(news)
+            .where(and(eq(news.symbol, symbol), gte(news.publishedAt, cutoff)))
+            .orderBy(desc(news.publishedAt));
+
+        return rows.map(row => ({
+            id: row.id,
+            source: row.source,
+            url: row.url,
+            publishedAt: row.publishedAt.toISOString(),
+            titleEn: row.titleEn,
+            titleKo: row.titleKo,
+            bodyKo: row.bodyKo,
+            summaryKo: row.summaryKo,
+            sentiment: toNewsSentiment(row.sentiment),
+            category: toNewsCategory(row.category),
+            priceImpact: toNewsImpact(row.priceImpact),
+        }));
+    }
 }
 
 /**

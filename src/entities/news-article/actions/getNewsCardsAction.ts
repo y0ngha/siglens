@@ -18,8 +18,10 @@ export async function getNewsCardsAction(
 ): Promise<NewsDisplayItem[]> {
     const { db } = getDatabaseClient();
     const repo = new DrizzleNewsRepository(db);
-    const rows = await repo.listBySymbol(symbol, NEWS_LOOKBACK_MS);
-    // Allowlist: NewsDisplayItem에 필요한 필드만 노출. DB row의 내부 필드(bodyEn, analyzedAt 등)를 client에 전송하지 않음.
+    // 카드 표시 컬럼만 읽는다 — `bodyEn`을 읽어서 버리지 않도록 select 단계에서
+    // 뺀다(감사: 비용 라운드 14). 3초 폴링 경로라 낭비가 매 tick 반복됐다.
+    const rows = await repo.listCardsBySymbol(symbol, NEWS_LOOKBACK_MS);
+    // Allowlist: NewsDisplayItem에 필요한 필드만 노출.
     return rows.map(
         ({
             id,
