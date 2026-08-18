@@ -58,8 +58,9 @@ const DB_SORT_OTHER = 2;
 
 /**
  * `korean_tickers`에 대한 한 INSERT/UPDATE 문에 담을 최대 행 수. 전 종목 동기화는
- * 2,500행대라 한 번에 보내면 Neon HTTP 페이로드 한도에 걸린다. `upsertMany`(INSERT)와
- * `markRelisted`(대량 재상장 UPDATE) 양쪽의 청크 크기로 재사용한다.
+ * 2,500행대라 한 번에 보내면 Neon HTTP 페이로드 한도에 걸린다. `upsertMany`(INSERT),
+ * `markRelisted`(대량 재상장 UPDATE), `markDelisted`(대량 상폐 UPDATE) 세 곳의 청크
+ * 크기로 재사용한다.
  * `scripts/seed-kr-listed-names.ts`의 `UPSERT_BATCH_SIZE`와 같은 한도를 인코딩한
  * 값이다 — 하나를 바꾸면 다른 쪽도 함께 확인해야 한다.
  */
