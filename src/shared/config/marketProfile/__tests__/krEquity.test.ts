@@ -12,6 +12,14 @@ describe('kr-equity market profile', () => {
             expect(d.priceFormat.locale).toBe('ko-KR');
         });
 
+        it('20분 지연 고지를 남긴다 — 미국은 0', () => {
+            // yahoo `exchangeDataDelayedBy`가 KRX에서 20으로 온다(2026-08-16 실측).
+            // `TechnicalFactsSummary`는 이 값이 0보다 클 때만 "(N분 지연)"을 붙이므로,
+            // 0이 되면 20분 지연된 시세를 실시간처럼 내보낸다(감사 라운드 12).
+            expect(d.quoteDelayMinutes).toBe(20);
+            expect(getDescriptor('us-equity').quoteDelayMinutes).toBe(0);
+        });
+
         it('routes to the yahoo provider and naver news', () => {
             expect(d.dataProvider).toBe('yahoo');
             expect(d.newsSource).toBe('naver');

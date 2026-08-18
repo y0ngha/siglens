@@ -23,6 +23,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // ---------------------------------------------------------------------------
 // Stable mock provider — created before any module-level code runs (hoisted).
 // ---------------------------------------------------------------------------
+const getFundamentalDataProviderMock = vi.hoisted(() => vi.fn());
+
 const mockProvider = vi.hoisted(() => ({
     getProfile: vi.fn(),
     getKeyMetricsTtm: vi.fn(),
@@ -46,7 +48,7 @@ const mockProvider = vi.hoisted(() => ({
 
 // Hoist the mock before the fundamentalData module runs its top-level import.
 vi.mock('@/shared/api/fmp/getFundamentalDataProvider', () => ({
-    getFundamentalDataProvider: () => mockProvider,
+    getFundamentalDataProvider: getFundamentalDataProviderMock,
 }));
 
 // React.cache is a no-op in test environments — unwrap it so the delegating
@@ -102,6 +104,10 @@ function assertOnlyMethodCalled(
     symbol: string
 ): void {
     expect(mockProvider[calledMethod]).toHaveBeenCalledWith(symbol);
+    // 팩토리에 심볼을 넘겨야 한국 종목이 yahoo 백엔드로 간다. 인자를 빠뜨리면
+    // `005930.KS`가 FMP로 떨어지고(플랜에 KRX 없음) 펀더멘털 탭과 AI 프롬프트가
+    // 조용히 빈 값이 된다 — 이 릴리스가 고친 결함 그 자체다(감사 라운드 12).
+    expect(getFundamentalDataProviderMock).toHaveBeenCalledWith(symbol);
     for (const m of allMethods) {
         if (m === calledMethod) continue;
         expect(mockProvider[m]).not.toHaveBeenCalled();
@@ -114,6 +120,9 @@ function assertOnlyMethodCalled(
 
 describe('fundamentalData delegation wiring', () => {
     beforeEach(() => {
+        getFundamentalDataProviderMock
+            .mockReset()
+            .mockReturnValue(mockProvider);
         // Reset all mocks before each test so call counts don't leak between cases.
         for (const m of allMethods) {
             mockProvider[m].mockReset();

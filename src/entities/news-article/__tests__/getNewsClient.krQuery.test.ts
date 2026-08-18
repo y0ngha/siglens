@@ -51,7 +51,17 @@ describe('getNewsClient — 국내 종목 검색어 해석', () => {
         return resolver!;
     }
 
-    it('DB에 한글명이 있으면 그 값을 쓴다', async () => {
+    it('DB에 한글명이 있으면 그 값을 쓴다 — 카탈로그보다 우선', async () => {
+        // 카탈로그와 같은 문자열을 주면 `??` 순서를 뒤집어도 통과한다(감사 라운드 12).
+        // `CURATED_KOREAN_NAMES`는 소스에 박힌 상수인 반면 `korean_tickers`는 KRX
+        // 마스터에서 매일 갱신되므로, 사명이 바뀌면 뒤집힌 순서가 옛 이름으로
+        // 네이버를 계속 조회한다.
+        mockGetKoreanNames.mockResolvedValue({ '005930.KS': 'DB이름' });
+        const resolve = resolverFor();
+        await expect(resolve('005930.KS')).resolves.toBe('DB이름');
+    });
+
+    it('DB에 카탈로그와 같은 값이 있어도 정상 동작한다', async () => {
         mockGetKoreanNames.mockResolvedValue({ '005930.KS': '삼성전자' });
         const resolve = resolverFor();
         await expect(resolve('005930.KS')).resolves.toBe('삼성전자');
