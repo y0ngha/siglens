@@ -1,6 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
-import { and, desc, eq, gte, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, isNotNull, isNull, sql } from 'drizzle-orm';
 import type {
     NewsCardAnalysis,
     NewsCategory,
@@ -13,6 +13,7 @@ import { marketNews } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { withRetry } from '@/shared/lib/withRetry';
+import type { MarketNewsCardItem } from './lib/toCardItem';
 import { createRedisFlag } from '@/shared/cache/createRedisFlag';
 import { SECONDS_PER_MINUTE } from '@/shared/config/time';
 import type { MarketNewsItem } from './lib/marketNewsClientPort';
@@ -160,6 +161,92 @@ export class DrizzleMarketNewsRepository {
 
         return rows.map(toMarketNewsRow);
     }
+
+    /**
+     * 카드 표시에 필요한 컬럼만 읽는다 — `bodyEn`을 select에서 뺀다.
+     *
+     * 종목 뉴스 슬라이스의 `listCardsBySymbol`과 같은 이유다: 3초 폴링과 목록
+     * 렌더는 본문을 받아서 버리는데, `toMarketNewsCardItem`은 **받은 뒤** 거르는
+     * JS 투영이라 Neon 전송과 S3 ISR 블롭에는 그대로 남는다(감사: 비용 라운드 15).
+     * 본문이 실제로 필요한 곳(다이제스트 submit, 카드 분석)은 `listByCategory`를 쓴다.
+     */
+    async listCardsByCategory(
+        sentinel: string,
+        sinceMs: number
+    ): Promise<MarketNewsCardItem[]> {
+        const cutoff = new Date(Date.now() - sinceMs);
+
+        const rows = await withRetry(
+            () =>
+                this.db
+                    .select({
+                        id: marketNews.id,
+                        source: marketNews.source,
+                        url: marketNews.url,
+                        publishedAt: marketNews.publishedAt,
+                        titleEn: marketNews.titleEn,
+                        titleKo: marketNews.titleKo,
+                        bodyKo: marketNews.bodyKo,
+                        summaryKo: marketNews.summaryKo,
+                        sentiment: marketNews.sentiment,
+                        category: marketNews.category,
+                        priceImpact: marketNews.priceImpact,
+                        tickers: marketNews.tickers,
+                    })
+                    .from(marketNews)
+                    .where(
+                        and(
+                            eq(marketNews.symbol, sentinel),
+                            gte(marketNews.publishedAt, cutoff)
+                        )
+                    )
+                    .orderBy(desc(marketNews.publishedAt)),
+            NEON_TRANSIENT_RETRY
+        );
+
+        return rows.map(row => ({
+            id: row.id,
+            publishedAt: row.publishedAt.toISOString(),
+            titleEn: row.titleEn,
+            titleKo: row.titleKo,
+            bodyKo: row.bodyKo,
+            summaryKo: row.summaryKo,
+            sentiment: toNewsSentiment(row.sentiment),
+            category: toNewsCategory(row.category),
+            priceImpact: toNewsImpact(row.priceImpact),
+            url: row.url,
+            source: row.source,
+            tickers: row.tickers,
+        }));
+    }
+
+    /**
+     * 이 창에서 이미 분석된 기사 id만 읽는다 — 필터를 SQL로 내려 id만 오게 한다
+     * (감사: 비용 라운드 15, 종목 뉴스 `listAnalyzedIds`와 대칭).
+     */
+    async listAnalyzedIds(
+        sentinel: string,
+        sinceMs: number
+    ): Promise<Set<string>> {
+        const cutoff = new Date(Date.now() - sinceMs);
+
+        const rows = await withRetry(
+            () =>
+                this.db
+                    .select({ id: marketNews.id })
+                    .from(marketNews)
+                    .where(
+                        and(
+                            eq(marketNews.symbol, sentinel),
+                            gte(marketNews.publishedAt, cutoff),
+                            isNotNull(marketNews.analyzedAt)
+                        )
+                    ),
+            NEON_TRANSIENT_RETRY
+        );
+
+        return new Set(rows.map(row => row.id));
+    }
 }
 
 /**
@@ -172,6 +259,21 @@ export class DrizzleMarketNewsRepository {
  * Placed in `api.ts` rather than `lib/` because it has a DB side effect and
  * is not a pure function (MISTAKES.md Architecture §0.7).
  */
+/**
+ * 카드 표시용 목록 — 본문 컬럼을 아예 읽지 않는다.
+ *
+ * 본문이 필요한 소비자(다이제스트 submit)는 `getMarketNewsList`를 쓴다.
+ */
+export const getMarketNewsCards = cache(
+    async (sentinel: string): Promise<MarketNewsCardItem[]> => {
+        const { db } = getDatabaseClient();
+        return new DrizzleMarketNewsRepository(db).listCardsByCategory(
+            sentinel,
+            MARKET_NEWS_LOOKBACK_MS
+        );
+    }
+);
+
 export const getMarketNewsList = cache(
     async (sentinel: string): Promise<MarketNewsRow[]> => {
         const { db } = getDatabaseClient();

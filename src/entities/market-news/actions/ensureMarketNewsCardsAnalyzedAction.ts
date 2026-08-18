@@ -143,12 +143,11 @@ export async function ensureMarketNewsCardsAnalyzedAction(
 
         // `fresh` comes from FMP and has no `analyzedAt`; re-read DB to skip items
         // that a previous run already analyzed — avoids duplicate LLM submissions.
-        const rows = await repo.listByCategory(
+        // 필요한 건 "이미 분석됨" 집합뿐이라 id만 읽는다 — 전 컬럼을 읽으면 본문까지
+        // 받아서 그대로 버린다(감사: 비용 라운드 15).
+        const analyzedIds = await repo.listAnalyzedIds(
             sentinel,
             MARKET_NEWS_LOOKBACK_MS
-        );
-        const analyzedIds = new Set(
-            rows.filter(r => r.analyzedAt !== null).map(r => r.id)
         );
         // Only send items whose DB row was successfully upserted to LLM —
         // if upsert failed, `attachAnalysis` would error with "row not found",

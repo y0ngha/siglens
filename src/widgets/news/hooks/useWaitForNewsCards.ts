@@ -58,12 +58,15 @@ export function useWaitForNewsCards(
         let consecutiveFailures = 0;
         let pollCount = 0;
         const startedAt = Date.now();
-        // 종목이 바뀌면 effect가 다시 돌지만, **이미 날아간 요청**은 취소되지 않는다
-        // (`clearInterval`은 다음 tick만 막는다). 그 응답이 늦게 도착해 새 종목의
-        // 상태에 `setIsReady(true)`를 찍으면, 카드가 보강되지 않은 종목에서 분석
-        // 패널이 열리고 core가 `no_news`를 돌려준다 — `retry:false` +
-        // `staleTime:Infinity`라 그 에러가 영구 캐시된다(`NewsAiSummary` 주석 참조).
-        // 소비자에 `key={symbol}`이 없어 remount로도 안 끊긴다(감사 라운드 14).
+        // `clearInterval`은 다음 tick만 막는다 — 이미 날아간 요청은 취소되지 않고,
+        // 그 응답이 언마운트 뒤에 도착해 상태를 쓴다. 언마운트 후 쓰기 방지용 가드다.
+        //
+        // 종목 전환은 이 경로가 아니다: Next App Router가 `[symbol]` 세그먼트를 param
+        // 값으로 keying하므로 종목이 바뀌면 이 훅은 remount되고 상태가 새로 시작한다.
+        // (라운드 14 감사가 "옛 종목 응답이 새 종목 상태를 연다"고 봤는데, 그 재현은
+        // `rerender({symbol})`로 prop만 갈아끼운 것이라 라우터가 만들지 않는 전이였다 —
+        // 라운드 15에서 정정.) 형제 훅에서는 이 가드가 떠난 종목에 대한
+        // `invalidateQueries` 발화까지 막는다.
         let cancelled = false;
 
         const intervalId = setInterval(async () => {

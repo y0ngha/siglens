@@ -126,10 +126,11 @@ describe('useWaitForNewsCards', () => {
         );
     });
 
-    it('종목이 바뀌면 옛 종목의 늦은 응답으로 isReady를 열지 않는다', async () => {
-        // `clearInterval`은 다음 tick만 막는다 — 이미 날아간 요청의 응답이 늦게
-        // 도착해 새 종목의 상태를 건드리면, 카드가 보강되지 않은 종목에서 분석
-        // 패널이 열리고 core의 `no_news` 에러가 영구 캐시된다.
+    it('symbol prop이 바뀌면 옛 요청의 늦은 응답으로 isReady를 열지 않는다', async () => {
+        // 프로덕션에서 종목 전환은 remount라 이 전이가 그대로 나오지는 않는다
+        // (Next가 `[symbol]` 세그먼트를 param으로 keying). 여기서 prop을 갈아끼우는
+        // 것은 **effect 재시작 + 늦은 응답**이라는 같은 형상을 최소 비용으로
+        // 재현하기 위해서다 — 실제로 막는 대상은 언마운트 후 쓰기다.
         let resolveStale: ((items: NewsDisplayItem[]) => void) | undefined;
         mockGetCards.mockImplementationOnce(
             () =>

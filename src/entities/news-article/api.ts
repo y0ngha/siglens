@@ -2,7 +2,7 @@ import 'server-only';
 import { revalidateTag } from 'next/cache';
 
 import { cache } from 'react';
-import { and, desc, eq, gte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, isNotNull, sql } from 'drizzle-orm';
 import type {
     NewsCardAnalysis,
     NewsCategory,
@@ -166,6 +166,32 @@ export class DrizzleNewsRepository {
     }
 
     /**
+     * 이 창에서 이미 분석된 기사 id만 읽는다.
+     *
+     * 호출부는 "이미 분석됨" 집합만 필요한데 전 컬럼(본문 포함)을 읽어서 버리고
+     * 있었다 — 필터를 SQL로 내려 id만 오게 한다(감사: 비용 라운드 15).
+     */
+    async listAnalyzedIds(
+        symbol: string,
+        sinceMs: number
+    ): Promise<Set<string>> {
+        const cutoff = new Date(Date.now() - sinceMs);
+
+        const rows = await this.db
+            .select({ id: news.id })
+            .from(news)
+            .where(
+                and(
+                    eq(news.symbol, symbol),
+                    gte(news.publishedAt, cutoff),
+                    isNotNull(news.analyzedAt)
+                )
+            );
+
+        return new Set(rows.map(row => row.id));
+    }
+
+    /**
      * 카드 표시에 필요한 컬럼만 읽는다 — `bodyEn`(기사 원문)을 select에서 뺀다.
      *
      * `listBySymbol`은 재분석 경로가 원문을 필요로 해서 전 컬럼을 읽는데, 3초 폴링
@@ -229,11 +255,18 @@ export class DrizzleNewsRepository {
  * 사이드 이펙트(DB I/O)가 있으므로 entities/news-article/api.ts에 배치
  * (entities/{slice}/lib/은 순수 함수 전용 — MISTAKES.md Architecture §0.7).
  */
-export const getNewsList = cache(async (symbol: string): Promise<NewsRow[]> => {
-    const { db } = getDatabaseClient();
-    const repo = new DrizzleNewsRepository(db);
-    return repo.listBySymbol(symbol, NEWS_LOOKBACK_MS);
-});
+export const getNewsList = cache(
+    async (symbol: string): Promise<NewsDisplayItem[]> => {
+        const { db } = getDatabaseClient();
+        const repo = new DrizzleNewsRepository(db);
+        // 카드 투영으로 읽는다 — 이 함수의 소비자 셋(뉴스 목록, 뉴스 페이지 본문,
+        // overall 페이지) 중 누구도 `bodyEn`/`symbol`/`analyzedAt`을 읽지 않는데,
+        // 결과가 `staticSymbolCache`(=`unstable_cache`)로 S3 ISR 블롭에 굳는다.
+        // 클라이언트 경계에서만 걸러 내면 Neon 전송과 S3 블롭에는 그대로 남는다
+        // (감사: 비용 라운드 15).
+        return repo.listCardsBySymbol(symbol, NEWS_LOOKBACK_MS);
+    }
+);
 
 /** Shape of a single row read from the `news` table. */
 interface NewsDbRow {
