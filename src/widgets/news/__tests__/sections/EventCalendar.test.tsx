@@ -41,6 +41,15 @@ const NEGATIVE_EPS_ITEM: EarningsReportComparisonItem = {
     epsEstimated: -0.4,
 };
 
+const KR_ITEM: EarningsReportComparisonItem = {
+    ...SURPRISE_ITEM,
+    symbol: '005930.KS',
+    epsActual: 1_800,
+    epsEstimated: 1_700,
+    revenueActual: 75_000_000_000_000,
+    revenueEstimated: 70_000_000_000_000,
+};
+
 describe('EventCalendar', () => {
     it('실제값과 컨센서스를 함께 표시하고 컨센서스 툴팁 트리거를 렌더링한다', () => {
         render(
@@ -76,5 +85,16 @@ describe('EventCalendar', () => {
         expect(negativeBar).toHaveClass('bg-rose-400');
         expect(negativeBar).toHaveStyle({ right: '50%' });
         expect(negativeBar).not.toHaveStyle({ left: '50%' });
+    });
+
+    it('국내 종목은 US$ 대신 원화로 표기한다', () => {
+        render(<EventCalendar earningsReports={[KR_ITEM]} />);
+
+        expect(screen.getByText('₩1,800')).toBeInTheDocument();
+        expect(screen.getByText('₩1,700')).toBeInTheDocument();
+        expect(screen.getByText('₩75T')).toBeInTheDocument();
+        expect(screen.getByText('₩70T')).toBeInTheDocument();
+        expect(screen.queryByText(/US\$/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/^\$/)).not.toBeInTheDocument();
     });
 });

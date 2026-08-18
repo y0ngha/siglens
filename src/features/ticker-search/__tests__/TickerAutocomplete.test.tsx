@@ -155,14 +155,85 @@ describe('TickerAutocomplete', () => {
         ).not.toBeInTheDocument();
     });
 
-    it('renders koreanName in result item display', () => {
+    it('회사명을 먼저, 티커를 뒤에 렌더한다', () => {
+        // 사용자는 티커가 아니라 이름으로 종목을 떠올린다. 한국어 화면이므로 한글명이
+        // 주 이름이고, 영문명은 다를 때만 보조로 붙는다.
         setupAutocomplete({
             query: 'A',
             isOpen: true,
             results: MOCK_RESULTS,
         });
         render(<TickerAutocomplete />);
-        expect(screen.getByText('Apple Inc. (애플)')).toBeInTheDocument();
+
+        expect(screen.getByText('애플')).toBeInTheDocument();
+        expect(screen.getByText('AAPL')).toBeInTheDocument();
+        expect(screen.getByText('Apple Inc.')).toBeInTheDocument();
+
+        // 순서: 회사명 → 티커. DOM 순서로 확인한다.
+        const option = screen.getByText('애플').closest('[role="option"]');
+        expect(option).not.toBeNull();
+        const text = option!.textContent ?? '';
+        expect(text.indexOf('애플')).toBeLessThan(text.indexOf('AAPL'));
+    });
+
+    it('영문명이 한글명과 같으면 한 번만 쓴다', () => {
+        // 종목 마스터 시드는 영문명을 주지 않아 `name`에 한글명을 넣는다 —
+        // 그대로 두면 `삼성전자 (삼성전자)`가 된다.
+        setupAutocomplete({
+            query: '삼성',
+            isOpen: true,
+            results: [
+                {
+                    symbol: '005930.KS',
+                    name: '삼성전자',
+                    koreanName: '삼성전자',
+                    exchange: 'KOSPI',
+                    exchangeFullName: 'Korea Exchange (KOSPI)',
+                },
+            ],
+        });
+        render(<TickerAutocomplete />);
+
+        expect(screen.getAllByText('삼성전자')).toHaveLength(1);
+        expect(screen.getByText('005930.KS')).toBeInTheDocument();
+    });
+
+    it('국내 종목은 영문 법인명이 달라도 붙이지 않는다', () => {
+        // 시드가 아니라 yahoo가 이름을 채운 국내 종목은 `name`이 영문 법인명이라
+        // "한글명과 다르면 덧붙인다" 규칙에 그대로 걸린다. `buildDisplayName`과
+        // `SymbolLayoutHeader`는 국내 종목에서 영문명을 빼는데 여기만 남으면
+        // 자동완성과 이동한 페이지의 표기가 어긋난다.
+        setupAutocomplete({
+            query: '삼성',
+            isOpen: true,
+            results: [
+                {
+                    symbol: '005930.KS',
+                    name: 'Samsung Electronics Co., Ltd.',
+                    koreanName: '삼성전자',
+                    exchange: 'KOSPI',
+                    exchangeFullName: 'Korea Exchange (KOSPI)',
+                },
+            ],
+        });
+        render(<TickerAutocomplete />);
+
+        expect(screen.getByText('삼성전자')).toBeInTheDocument();
+        expect(
+            screen.queryByText('Samsung Electronics Co., Ltd.')
+        ).not.toBeInTheDocument();
+    });
+
+    it('미국 종목은 영문 법인명을 그대로 붙인다 — 억제는 국내 종목 한정이다', () => {
+        setupAutocomplete({
+            query: 'AAPL',
+            isOpen: true,
+            results: [MOCK_RESULTS[0]],
+        });
+        render(<TickerAutocomplete />);
+
+        expect(screen.getByText('애플')).toBeInTheDocument();
+        expect(screen.getByText('Apple Inc.')).toBeInTheDocument();
     });
 
     it('renders exchange name', () => {

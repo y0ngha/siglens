@@ -56,6 +56,18 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Use fetchInChunks(items, FETCH_CONCURRENCY) for sequential chunked execution
    ✅ for await (const batch of chunks) { const results = await Promise.all(batch); }
 
+0.9. Non-exhaustive control flow over domains with 3+ distinct members
+   → Binary ternary or if/else chains over unions with 3+ members silently misclassify the unhandled case
+   → Use exhaustive switch over discriminated unions, or reuse existing exhaustive mapping functions instead of rebuilding with ternary/if-else
+   → Pattern occurs twice when a bug is introduced, then the fix recreates the same non-exhaustive shape one layer down — always delegate to the authoritative exhaustive mapping
+   ❌ const spec = isKrEquitySymbol(s) ? KR : US;  // 3 asset classes (crypto, KR, US); crypto falls through to US
+   ❌ function mapProfileToSession(p) { if (p === 'kr') return KR; if (p === 'us') return US; }  // crypto unhandled, silently defaults to undefined
+   ❌ // Fix attempt: if/else chain instead of reusing existing exhaustive switch
+      const spec = isKrEquitySymbol(s) ? KR : (someCheck ? US : undefined);  // still non-exhaustive
+   ✅ const spec = sessionSpecFor(assetClassOf(s));  // delegates to exhaustive switch over SessionModel
+   ✅ switch (profile.kind) { case 'kr': return KR; case 'us': return US; case 'crypto': return CRYPTO; }  // exhaustive
+   → Recurring: feat/kr-sitemap-scope R1 (ternary bug) + R2 (fix recreated pattern with if/else chain)
+
 1. Reimplementing the same algorithm
    → Check for existing helpers before writing a new function
    → Separate number[]-based helpers from Bar[]-based wrappers for reuse
@@ -109,6 +121,19 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ reset() clears both useMutation and all related useState state together
    ✅ countSkillFiles reuses collectMdFiles for consistency
    ✅ All field lists synchronized when new fields are added
+
+6.6. Product capability claims duplicated as prose literals across multiple files without sync mechanism
+   → When product capability descriptions (asset types supported, features available per asset, etc.) appear in multiple string literals (SEO title, description, keywords, FAQ answers, OpenGraph text, etc.) across different files, they must derive from a single source of truth
+   → Each prose field must reference a shared constant or derived helper, never restate capabilities independently
+   → Each fix-round that touches one literal risks leaving others unsynchronized; sync drift hides when only one copy is updated
+   → Unit or E2E test must verify all claim instances match the canonical list
+   ❌ ROOT_TITLE = "미국 주식과 암호화폐 분석"; (seo.ts) + FAQPage text "미국 주식, 암호화폐, 그리고 한국 주식" (page.tsx, later added KR) + og:description "미국 주식과 암호화폐" (layout.tsx, missed KR update) — Round 1 fixed seo.ts, Round 2 over-corrected HowTo, Round 3 found FAQ missing asset parity
+   ❌ Capabilities list guarded by E2E only after multiple fix cycles; no unit-level constant that enforces sync
+   ✅ const SUPPORTED_ASSETS = ['US stocks', 'crypto', 'KR stocks'] as const; export in shared module
+   ✅ ROOT_TITLE = `Analyze ${SUPPORTED_ASSETS.join(', ')}`; (seo.ts derives from constant)
+   ✅ All metadata/FAQ files import SUPPORTED_ASSETS and build their text from it, never hardcode asset names
+   ✅ Unit test: for each file's getMetadata(), assert includes all SUPPORTED_ASSETS (catches addition/removal immediately)
+   → Recurring: feat/kr-equity-seo R1–R3 (3 occurrences across asset-coverage claims in 5+ literals spanning 3 files)
 
 7. Repeating identical className ternary 3+ times
    → Extract to a helper function

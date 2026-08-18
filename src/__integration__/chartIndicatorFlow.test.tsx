@@ -101,11 +101,12 @@ describe('Chart Indicator Flow (settings modal, real useDialog)', () => {
             <IndicatorSettingsModal bindings={makeBindings(makeCallbacks())} />
         );
         await user.click(screen.getByRole('button', { name: '보조지표 설정' }));
-        // useDialog의 Escape 리스너는 useEffect(passive-effect)에서 document에
-        // 등록된다. dialog가 focus를 받을 때까지 기다려 리스너 부착을 보장한 뒤
-        // Escape를 발화한다 — 부착 전 발화 시 CI(vmThreads)에서 이벤트 유실
-        // flake가 발생한다 (MISTAKES.md §19).
-        await waitFor(() => expect(screen.getByRole('dialog')).toHaveFocus());
+        // 네이티브 <dialog>는 showModal()이 effect에서 호출된 뒤에야 열린다. dialog가
+        // 접근성 트리에 뜰 때까지 기다린 다음 Escape를 발화한다 — 열리기 전에 쏘면
+        // CI(vmThreads)에서 이벤트 유실 flake가 난다(MISTAKES.md §19).
+        // 포커스는 브라우저가 dialog 내부 첫 포커서블로 옮기므로 dialog 자신을
+        // 단언하지 않는다(jsdom 폴리필도 포커스를 옮기지 않는다).
+        await waitFor(() => expect(screen.getByRole('dialog')).toBeVisible());
         await user.keyboard('{Escape}');
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });

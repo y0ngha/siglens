@@ -1,5 +1,5 @@
 import 'server-only';
-import YahooFinance from 'yahoo-finance2';
+import { createYahooClient } from './createYahooClient';
 import type {
     Bar,
     GetBarsOptions,
@@ -10,13 +10,7 @@ import type { SiglensMarketProvider } from '@/shared/api/market/marketProvider.t
 import { MS_PER_SECOND, MS_PER_HOUR } from '@/shared/config/time';
 import { pickYahooDisplayName } from './displayName';
 
-// `suppressNotices` / `validation.logErrors` 근거는 YahooOptionsAdapter의 주석 참조 —
-// 첫 호출 시 뜨는 마케팅 배너와, 비정형 응답에서 쏟아지는 다중 행 스키마 경고를 억제한다.
-// throw 동작은 그대로 유지되므로 에러 처리 경로는 바뀌지 않는다.
-const yahooFinance = new YahooFinance({
-    suppressNotices: ['yahooSurvey'],
-    validation: { logErrors: false },
-});
+const yahooFinance = createYahooClient();
 
 /** KST는 서머타임이 없다 — ET와 달리 고정 오프셋이라 DST 분기가 필요 없다. */
 const KST_OFFSET_HOURS = 9;
@@ -134,19 +128,30 @@ export class YahooMarketProvider implements SiglensMarketProvider {
         return from.toISOString().slice(0, ISO_DATE_LENGTH);
     }
 
+    /**
+     * **인프라 실패를 삼키지 않는 변형.** `null`은 오직 "그런 종목이 없다"만 뜻한다.
+     *
+     * `getQuote`는 두 가지를 모두 `null`로 접는다 — 호출부가 "미상장"과 "yahoo가 지금
+     * 안 된다"를 구분할 수 없어, 장애 중에 실재하는 종목이 하드 404를 받는다. 미국 경로는
+     * `throwOnInfraFailure: true`로 그 둘을 갈라 degrade 200 + noindex로 떨어뜨린다.
+     */
+    async getQuoteOrThrow(symbol: string): Promise<MarketQuote | null> {
+        const q = await yahooFinance.quote(symbol);
+        // 상장폐지/오타 심볼에 대해 yahoo는 throw가 아니라 `undefined`를 돌려준다
+        // (실측: `999999.KS` → undefined). 옵셔널 체이닝 없이 접근하면 TypeError가 된다.
+        if (!q || q.regularMarketPrice === undefined) return null;
+        return {
+            symbol,
+            price: q.regularMarketPrice,
+            changesPercentage: q.regularMarketChangePercent ?? 0,
+            // 일부 KRX 종목은 사명 대신 코드 나열이 온다 — `displayName.ts` 참조.
+            name: pickYahooDisplayName(symbol, q.longName, q.shortName),
+        };
+    }
+
     async getQuote(symbol: string): Promise<MarketQuote | null> {
         try {
-            const q = await yahooFinance.quote(symbol);
-            // 상장폐지/오타 심볼에 대해 yahoo는 throw가 아니라 `undefined`를 돌려준다
-            // (실측: `999999.KS` → undefined). 옵셔널 체이닝 없이 접근하면 TypeError가 된다.
-            if (!q || q.regularMarketPrice === undefined) return null;
-            return {
-                symbol,
-                price: q.regularMarketPrice,
-                changesPercentage: q.regularMarketChangePercent ?? 0,
-                // 일부 KRX 종목은 사명 대신 코드 나열이 온다 — `displayName.ts` 참조.
-                name: pickYahooDisplayName(symbol, q.longName, q.shortName),
-            };
+            return await this.getQuoteOrThrow(symbol);
         } catch (error) {
             console.warn(
                 '[YahooMarketProvider] getQuote failed:',

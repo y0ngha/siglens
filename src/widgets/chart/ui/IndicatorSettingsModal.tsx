@@ -120,20 +120,18 @@ export function IndicatorSettingsModal({
                 <GearIcon className="h-4 w-4" />
             </button>
 
-            {isOpen &&
-                createPortal(
-                    <div
-                        className="fixed inset-0 z-60 flex items-center justify-center overscroll-contain bg-secondary-950/80 p-4 backdrop-blur-sm"
-                        role="presentation"
-                    >
-                        <div
-                            ref={dialogRef}
-                            role="dialog"
-                            aria-modal="true"
-                            aria-labelledby={titleId}
-                            tabIndex={-1}
-                            className="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-xl border border-secondary-700 bg-secondary-800 text-left shadow-2xl outline-none"
-                        >
+            {/* 네이티브 모달: 포커스 트랩·Esc·비활성 배경이 브라우저 기본 동작이다.
+                차트 컨테이너의 stacking/overflow 밖으로 띄우기 위해 포털은 유지한다
+                (top layer라 z-index 경쟁은 사라지지만, 부모의 overflow 클리핑은 남는다). */}
+            {createPortal(
+                <dialog
+                    ref={dialogRef}
+                    aria-labelledby={titleId}
+                    onClose={close}
+                    className="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-xl border border-secondary-700 bg-secondary-800 p-0 text-left shadow-2xl backdrop:bg-secondary-950/80 backdrop:backdrop-blur-sm"
+                >
+                    {isOpen && (
+                        <div>
                             <div className="flex items-start justify-between border-b border-secondary-700 px-5 py-4">
                                 <h2
                                     id={titleId}
@@ -193,9 +191,10 @@ export function IndicatorSettingsModal({
                                 ))}
                             </div>
                         </div>
-                    </div>,
-                    document.body
-                )}
+                    )}
+                </dialog>,
+                document.body
+            )}
         </>
     );
 }

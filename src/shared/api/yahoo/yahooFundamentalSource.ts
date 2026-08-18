@@ -1,5 +1,5 @@
 import 'server-only';
-import YahooFinance from 'yahoo-finance2';
+import { createYahooClient } from './createYahooClient';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     getYahooBalanceSheet,
@@ -7,11 +7,7 @@ import {
     type YahooStatementRaw,
 } from './yahooStatementsSource';
 
-// 설정 근거는 YahooMarketProvider / YahooOptionsAdapter 주석 참조.
-const yahooFinance = new YahooFinance({
-    suppressNotices: ['yahooSurvey'],
-    validation: { logErrors: false },
-});
+const yahooFinance = createYahooClient();
 
 /**
  * 라이브러리의 응답 스키마 검증을 끈다.

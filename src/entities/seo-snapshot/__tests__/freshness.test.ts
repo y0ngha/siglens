@@ -3,6 +3,8 @@ import { getEasternOffsetHours } from '@/shared/lib/eastern';
 import {
     lastCompletedEtCloseWithBuffer,
     isSnapshotFresh,
+    shouldDeferPrewarmWhileOpen,
+    snapshotCloseBoundaryFor,
 } from '../lib/freshness';
 
 describe('lastCompletedEtCloseWithBuffer', () => {
@@ -130,5 +132,116 @@ describe('lastCompletedEtCloseWithBuffer — 휴장일/반장', () => {
                 new Date('2026-11-25T21:35:00Z')
             ).toISOString()
         ).toBe('2026-11-25T21:00:00.000Z');
+    });
+});
+
+/**
+ * 경계를 시장별로 고르지 않으면 국내 종목이 양쪽으로 다 어긋난다 — 미국 휴장일에는
+ * 하루 묵은 스냅샷이 fresh로 통과하고, 한국 공휴일에는 바뀐 것도 없이 전 국내 종목이
+ * 재생성된다(현재 KRX 공휴일 캘린더는 없으므로 후자는 주말만 정확히 처리된다).
+ */
+describe('snapshotCloseBoundaryFor — 시장별 경계', () => {
+    it('국내 종목은 KRX 마감(15:30 KST = 06:30 UTC)을 경계로 쓴다', () => {
+        // 2026-11-27 01:00Z = 11/27 10:00 KST — KRX 11/26 세션 마감+30분 경과.
+        expect(
+            snapshotCloseBoundaryFor(
+                '005930.KS',
+                new Date('2026-11-27T01:00:00Z')
+            ).toISOString()
+        ).toBe('2026-11-26T06:30:00.000Z');
+    });
+
+    it('추수감사절(11/26)에 미국 종목만 되감기고 국내 종목은 당일 마감을 쓴다', () => {
+        const now = new Date('2026-11-27T01:00:00Z');
+        // 미국: 11/26 휴장 → 11/25 16:00 EST
+        expect(snapshotCloseBoundaryFor('AAPL', now).toISOString()).toBe(
+            '2026-11-25T21:00:00.000Z'
+        );
+        // 한국: 11/26 정상 개장
+        expect(snapshotCloseBoundaryFor('005930.KS', now).toISOString()).toBe(
+            '2026-11-26T06:30:00.000Z'
+        );
+    });
+
+    it('크립토는 종전대로 ET 앵커를 공유한다', () => {
+        const now = new Date('2026-11-27T01:00:00Z');
+        expect(snapshotCloseBoundaryFor('BTCUSD', now).getTime()).toBe(
+            lastCompletedEtCloseWithBuffer(now).getTime()
+        );
+    });
+});
+
+/**
+ * prewarm 창(20:30~03:59 UTC)의 뒤쪽 4시간은 KRX 장중(09:00~12:59 KST)이다.
+ * 그 틱에 걸린 국내 종목은 **형성 중인 일봉으로 만든 서술**이 스냅샷에 굳어 다음
+ * 마감까지 봇에게 나간다. 회전 오프셋이 epoch에서 나오므로 어느 종목이 걸릴지는
+ * 밤마다 달라진다 — 즉 대략 절반의 밤에 일어난다.
+ */
+describe('shouldDeferPrewarmWhileOpen', () => {
+    it('KRX 장중에는 국내 종목을 미룬다', () => {
+        // 2026-11-26 02:00Z = 11:00 KST — 정규장 한복판.
+        expect(
+            shouldDeferPrewarmWhileOpen(
+                '005930.KS',
+                new Date('2026-11-26T02:00:00Z')
+            )
+        ).toBe(true);
+    });
+
+    it('KRX 마감 후에는 미루지 않는다', () => {
+        // 2026-11-26 08:00Z = 17:00 KST — 15:30 마감 이후.
+        expect(
+            shouldDeferPrewarmWhileOpen(
+                '005930.KS',
+                new Date('2026-11-26T08:00:00Z')
+            )
+        ).toBe(false);
+    });
+
+    it('KRX 장중 시각에 미국 종목은 영향받지 않는다 — 그 시각 NYSE는 닫혀 있다', () => {
+        expect(
+            shouldDeferPrewarmWhileOpen(
+                'AAPL',
+                new Date('2026-11-26T02:00:00Z')
+            )
+        ).toBe(false);
+    });
+
+    it('NYSE 장중이면 미국 종목도 미룬다 — 게이트가 미국에만 없는 게 아니다', () => {
+        // 2026-11-25 16:00Z = 11:00 EST.
+        expect(
+            shouldDeferPrewarmWhileOpen(
+                'AAPL',
+                new Date('2026-11-25T16:00:00Z')
+            )
+        ).toBe(true);
+    });
+
+    /**
+     * 이 케이스가 이 describe에서 유일하게 **판별력 있는** 크립토 단언이다.
+     *
+     * cron이 UTC 고정이라 EST 기간(11~3월)에는 창 시작 20:30 UTC가 NYSE 마감
+     * (21:00 UTC)보다 이르다. 그 30분은 미국 주식이 장중인 시각이므로, 세션 스펙을
+     * KR/US 2분기로 해석하면 크립토가 미국 주식으로 분류돼 **매일 밤 조용히 배치에서
+     * 빠진다**. 장이 닫힌 시각으로 테스트하면 잘못된 구현도 통과한다.
+     */
+    it('[회귀] EST 창 시작(NYSE 장중)에도 크립토는 미루지 않는다', () => {
+        // 2026-01-13(화) 20:45Z = 15:45 EST — 정규장 마감 15분 전, prewarm 창 안.
+        const duringWindowAndNyseOpen = new Date('2026-01-13T20:45:00Z');
+        expect(
+            shouldDeferPrewarmWhileOpen('AAPL', duringWindowAndNyseOpen)
+        ).toBe(true);
+        expect(
+            shouldDeferPrewarmWhileOpen('BTCUSD', duringWindowAndNyseOpen)
+        ).toBe(false);
+    });
+
+    it('크립토는 KRX 장중에도 미루지 않는다', () => {
+        expect(
+            shouldDeferPrewarmWhileOpen(
+                'BTCUSD',
+                new Date('2026-11-26T02:00:00Z')
+            )
+        ).toBe(false);
     });
 });

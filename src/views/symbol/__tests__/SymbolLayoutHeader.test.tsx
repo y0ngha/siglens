@@ -347,4 +347,57 @@ describe('SymbolLayoutHeader', () => {
         // name segment follows it.
         expect(screen.queryByText(/애플,/)).not.toBeInTheDocument();
     });
+
+    /**
+     * 프로덕션 빌드 실증에서 잡힌 결함이다. `buildDisplayName`은 국내 종목에서 영문
+     * 법인명을 빼도록 고쳤는데 이 헤더는 이름을 직접 조립해서, 같은 페이지의
+     * `<title>`·description은 `삼성전자 (005930.KS)`인데 화면 상단만
+     * `삼성전자, Samsung Electronics Co., Ltd. (005930.KS)`로 나갔다.
+     */
+    it('국내 상장 종목은 영문 법인명을 붙이지 않는다', () => {
+        vi.mocked(useAssetInfo).mockReturnValueOnce({
+            name: 'Samsung Electronics Co., Ltd.',
+            koreanName: '삼성전자',
+        } as ReturnType<typeof useAssetInfo>);
+
+        render(<SymbolLayoutHeader symbol="005930.KS" />);
+
+        expect(screen.getByText('(005930.KS)')).toBeInTheDocument();
+        expect(screen.getByText(/삼성전자/)).toBeInTheDocument();
+        expect(
+            screen.queryByText(/Samsung Electronics/)
+        ).not.toBeInTheDocument();
+        // 영문명이 빠지면 쉼표도 빠져야 한다.
+        expect(screen.queryByText(/삼성전자,/)).not.toBeInTheDocument();
+    });
+
+    it('종목 마스터 시드처럼 name과 koreanName이 같으면 한 번만 쓴다', () => {
+        // 시드는 영문명을 주지 않아 `name`에 한글명을 넣는다 — 방문 전 종목이 이 상태다.
+        vi.mocked(useAssetInfo).mockReturnValueOnce({
+            name: '애플',
+            koreanName: '애플',
+        } as ReturnType<typeof useAssetInfo>);
+
+        render(<SymbolLayoutHeader symbol="aapl" />);
+
+        expect(screen.queryByText(/애플,/)).not.toBeInTheDocument();
+    });
+
+    /**
+     * `shouldShowEnglishName`이 막는 회귀다. name이 빈 문자열인 종목(시세만 있고
+     * 이름이 없는 크립토 등)에서 옛 `hasCompanyName`은 `name !== ''` 가드가 없어
+     * true가 됐고, 그 결과 헤더가 `애플, (AAPL)`처럼 빈 span과 낙오된 쉼표를 렌더했다.
+     */
+    it('name이 빈 문자열이면 회사명 세그먼트도 쉼표도 렌더하지 않는다', () => {
+        vi.mocked(useAssetInfo).mockReturnValueOnce({
+            name: '',
+            koreanName: '애플',
+        } as ReturnType<typeof useAssetInfo>);
+
+        render(<SymbolLayoutHeader symbol="aapl" />);
+
+        expect(screen.getByText('(AAPL)')).toBeInTheDocument();
+        expect(screen.getByText(/애플/)).toBeInTheDocument();
+        expect(screen.queryByText(/애플,/)).not.toBeInTheDocument();
+    });
 });

@@ -29,6 +29,7 @@ describe('FinancialHealthCard', () => {
     it('renders metrics when all data provided', () => {
         render(
             <FinancialHealthCard
+                symbol="AAPL"
                 ratios={SAMPLE_RATIOS}
                 scores={SAMPLE_SCORES}
                 cashFlow={SAMPLE_CASHFLOW}
@@ -42,7 +43,12 @@ describe('FinancialHealthCard', () => {
 
     it('renders empty state when all data is null', () => {
         render(
-            <FinancialHealthCard ratios={null} scores={null} cashFlow={null} />
+            <FinancialHealthCard
+                symbol="AAPL"
+                ratios={null}
+                scores={null}
+                cashFlow={null}
+            />
         );
         expect(
             screen.getByRole('heading', { name: '재무 건전성' })
@@ -53,6 +59,7 @@ describe('FinancialHealthCard', () => {
     it('renders metrics when only some data provided (partial null tolerated)', () => {
         render(
             <FinancialHealthCard
+                symbol="AAPL"
                 ratios={SAMPLE_RATIOS}
                 scores={null}
                 cashFlow={null}
@@ -62,5 +69,18 @@ describe('FinancialHealthCard', () => {
             screen.getByRole('heading', { name: '재무 건전성' })
         ).toBeInTheDocument();
         expect(screen.getByText('부채 비율')).toBeInTheDocument();
+    });
+
+    it('threads symbol through to formatCompactCurrency and renders KRW, not USD, for a KR-equity operating cash flow', () => {
+        render(
+            <FinancialHealthCard
+                symbol="005930.KS"
+                ratios={null}
+                scores={null}
+                cashFlow={SAMPLE_CASHFLOW}
+            />
+        );
+        expect(screen.getByText('₩1000억')).toBeInTheDocument();
+        expect(screen.queryByText(/US\$/)).not.toBeInTheDocument();
     });
 });

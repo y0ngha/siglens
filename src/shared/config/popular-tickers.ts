@@ -133,16 +133,38 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     {
         id: 'korea-equity',
         label: '한국 주식',
+        // POPULAR_TICKERS의 KR 블록과 **같은 20종목이어야 한다.**
+        //
+        // 이 카테고리 그리드(`widgets/home/TickerCategories` → `CategoryCardGrid`)가
+        // 저장소 전체에서 한국 종목 페이지로 가는 **유일한 크롤 가능한 `<a>`**다.
+        // 검색 자동완성은 `<button>` + `router.push`라 링크가 아니고, 크로스링크 카드는
+        // 같은 심볼의 다른 탭만 잇는다. 여기 빠진 종목은 sitemap에만 있는 고아가 된다
+        // (직전 상태: 20 중 9만 있어 11종목 × 6탭 = 66 URL이 인바운드 0이었다).
+        //
+        // 두 번째 이유는 `CURATED_KOREAN_NAMES`다. 이 배열에서 파생되므로, 빠진 종목은
+        // 한글명 폴백이 없어 `korean_tickers`가 아직 비어 있는 콜드 ISR 생성에서
+        // `006400.KS 주가 전망` 같은 영문 티커 제목이 캐시에 굳는다.
         items: [
             { symbol: '005930.KS', name: '삼성전자' },
             { symbol: '000660.KS', name: 'SK하이닉스' },
             { symbol: '005380.KS', name: '현대차' },
             { symbol: '373220.KS', name: 'LG에너지솔루션' },
             { symbol: '207940.KS', name: '삼성바이오로직스' },
+            { symbol: '028260.KS', name: '삼성물산' },
+            { symbol: '105560.KS', name: 'KB금융' },
+            { symbol: '000270.KS', name: '기아' },
+            { symbol: '055550.KS', name: '신한지주' },
+            { symbol: '012330.KS', name: '현대모비스' },
+            { symbol: '068270.KS', name: '셀트리온' },
+            { symbol: '006400.KS', name: '삼성SDI' },
             { symbol: '035420.KS', name: '네이버' },
+            { symbol: '051910.KS', name: 'LG화학' },
             { symbol: '035720.KS', name: '카카오' },
-            { symbol: '247540.KQ', name: '에코프로비엠' },
             { symbol: '196170.KQ', name: '알테오젠' },
+            { symbol: '086520.KQ', name: '에코프로' },
+            { symbol: '247540.KQ', name: '에코프로비엠' },
+            { symbol: '058470.KQ', name: '리노공업' },
+            { symbol: '403870.KQ', name: 'HPSP' },
         ],
     },
 ];

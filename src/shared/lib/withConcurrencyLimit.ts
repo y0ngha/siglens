@@ -15,7 +15,8 @@
  *               NOT propagate to the caller.
  */
 export async function withConcurrencyLimit<T, R>(
-    items: T[],
+    // 읽기만 한다(length/slice/map) — readonly 배열도 그대로 받는다.
+    items: readonly T[],
     limit: number,
     fn: (item: T) => Promise<R>
 ): Promise<PromiseSettledResult<R>[]> {
