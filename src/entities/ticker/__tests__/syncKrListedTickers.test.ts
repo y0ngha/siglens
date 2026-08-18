@@ -109,6 +109,20 @@ describe('syncKrListedTickers', () => {
         expect(counts.upserted).toBe(2);
     });
 
+    it('영문명 placeholder 를 보존하도록 preserveExistingName 옵션을 넘긴다', async () => {
+        // rows의 name은 공공데이터포털에 영문명이 없어 채운 한글명 placeholder다
+        // (toKoreanTickerRows 참조). 이 옵션 없이 upsert하면 방문 시 getAssetInfo가
+        // 이미 써 둔 진짜 영문명을 이 크론이 매일 밤 placeholder로 되돌린다.
+        mockFetchKrxListedItems.mockResolvedValue([item('005930', 'KOSPI')]);
+
+        await syncKrListedTickers();
+
+        expect(mockRepository.upsertMany).toHaveBeenCalledWith(
+            expect.anything(),
+            { preserveExistingName: true }
+        );
+    });
+
     it('사라진 종목을 상폐 표시하고 캐시를 비운다', async () => {
         const items = bulkItems(1_200);
         mockFetchKrxListedItems.mockResolvedValue(items);

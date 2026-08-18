@@ -253,6 +253,26 @@ export interface KrTickerListingRow {
 }
 
 /**
+ * `upsertMany`의 conflict-update 동작을 조절하는 옵션.
+ *
+ * `korean_tickers.name`을 쓰는 호출부는 서로 상반된 요구를 가진다:
+ * - 번역 경로(`koreanNameStore.setKoreanTickers`, `getAssetInfo` 방문 시 채움)는
+ *   yahoo quote에서 얻은 **진짜 영문명**을 쓰는 게 목적이다 — 그래서 옵션 없이
+ *   (기본값 `false`) `name`을 그대로 덮어써야 한다.
+ * - 상장종목 동기화 경로(`syncKrListedTickers`)가 넘기는 `name`은 공공데이터포털
+ *   응답에 영문명이 없어 채운 **한글명 placeholder**다(`toKoreanTickerRows` 참조).
+ *   이 경로가 옵션 없이 upsert하면, 방문 시 번역 경로가 이미 써 둔 진짜 영문명을
+ *   placeholder가 매일 밤 되돌린다 — 이게 이 옵션이 존재하는 이유다.
+ *
+ * 두 경로가 각자 다른 이유로 이 옵션을 켜고 끄므로, 나중에 "어차피 upsertMany 하나인데"
+ * 하고 옵션을 없애 합치면 위 회귀가 재발한다.
+ */
+export interface KoreanTickerUpsertOptions {
+    /** `true`면 conflict 시 기존 행의 `name`을 덮어쓰지 않는다. 신규 INSERT에는 영향 없음 — placeholder라도 null보다는 낫다. */
+    preserveExistingName?: boolean;
+}
+
+/**
  * Persistence operations for the Korean ticker store. Backs the bilingual
  * search and asset metadata flows by exposing the cached `korean_tickers` rows.
  */
@@ -269,7 +289,11 @@ export interface KoreanTickerRepository {
      * one — a visitor on a delisted symbol's URL should still see its Korean name.
      */
     findBySymbols(symbols: readonly string[]): Promise<KoreanTickerEntry[]>;
-    upsertMany(entries: readonly KoreanTickerEntry[]): Promise<void>;
+    /** `options.preserveExistingName`는 {@link KoreanTickerUpsertOptions} 참조. */
+    upsertMany(
+        entries: readonly KoreanTickerEntry[],
+        options?: KoreanTickerUpsertOptions
+    ): Promise<void>;
     /** Every row's symbol and listing status — the reconcile planner's input. */
     findAllListingStatuses(): Promise<KrTickerListingRow[]>;
     /** Stamp `delisted_at = now()` on rows that are still marked as listed. */

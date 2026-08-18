@@ -70,7 +70,11 @@ export async function syncKrListedTickers(): Promise<KrTickerSyncCounts> {
         );
     }
 
-    await repository.upsertMany(rows);
+    // `rows`의 `name`은 공공데이터포털에 영문명이 없어 채운 한글명 placeholder다
+    // (`toKoreanTickerRows` 참조). `preserveExistingName`이 없으면 이 크론이 매일 밤
+    // 방문 시 `getAssetInfo`가 이미 써 둔 진짜 영문명을 placeholder로 되돌린다 — 신규
+    // INSERT에는 영향 없다. 사유는 `KoreanTickerUpsertOptions` JSDoc(shared/db/types.ts)에도 있다.
+    await repository.upsertMany(rows, { preserveExistingName: true });
     await repository.markRelisted(plan.relist);
     await repository.markDelisted(plan.delist);
     await invalidateKoreanTickerCache();

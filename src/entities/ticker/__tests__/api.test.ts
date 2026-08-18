@@ -101,8 +101,8 @@ function makeSelectFromDb(rows: unknown[]): {
 } {
     const where = vi.fn().mockResolvedValue(rows);
     // `findAll`은 `.where(isNull(delistedAt))`로 상폐 행을 거르고
-    // `findAllListingStatuses`는 `.from()`에서 끝난다 — 둘 다 태우려면 from의 결과가
-    // thenable이면서 where도 갖고 있어야 한다.
+    // `findAllListingStatuses`도 `.from().where(or(like(...), like(...)))`로 국내
+    // 종목만 거른다 — 둘 다 태우려면 from의 결과가 thenable이면서 where도 갖고 있어야 한다.
     const fromResult = Object.assign(Promise.resolve(rows), { where });
     const from = vi.fn(() => fromResult);
     const select = vi.fn(() => ({ from }));
@@ -261,6 +261,52 @@ describe('DrizzleKoreanTickerRepository', () => {
         expect(passedSet.updatedAt).toBeDefined();
     });
 
+    it('upsertMany 는 옵션 없이 호출하면(번역 경로) conflict-update set 에 name 을 포함한다', async () => {
+        // koreanNameStore.setKoreanTickers(방문 시 getAssetInfo가 채운 진짜 영문명)가
+        // 이 경로를 옵션 없이 쓴다 — name이 빠지면 번역이 절대 반영되지 않는다.
+        const { db, onConflictDoUpdate } = makeUpsertDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        await repo.upsertMany([apple]);
+        const passedSet = onConflictDoUpdate.mock.calls[0]![0].set as Record<
+            string,
+            unknown
+        >;
+        expect(passedSet).toHaveProperty('name');
+    });
+
+    it('upsertMany 는 preserveExistingName 옵션이 있으면(크론 경로) conflict-update set 에서 name 을 뺀다', async () => {
+        // syncKrListedTickers가 넘기는 name은 공공데이터포털에 영문명이 없어 채운
+        // 한글명 placeholder다. 이 옵션 없이 upsert하면 방문 시 getAssetInfo가 이미
+        // 써 둔 진짜 영문명을 크론이 매일 밤 placeholder로 되돌린다 — 이 테스트는
+        // 그 회귀를 pin한다. 카운트만 세면 name이 여전히 set에 남아 있어도(=버그가
+        // 있어도) 통과하므로, set 객체 자체를 열어 키 존재 여부를 직접 확인한다.
+        const { db, onConflictDoUpdate } = makeUpsertDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        await repo.upsertMany([apple], { preserveExistingName: true });
+        const passedSet = onConflictDoUpdate.mock.calls[0]![0].set as Record<
+            string,
+            unknown
+        >;
+        expect(passedSet).not.toHaveProperty('name');
+        expect(passedSet).toMatchObject({
+            koreanName: expect.anything(),
+            exchange: expect.anything(),
+            exchangeFullName: expect.anything(),
+            updatedAt: expect.anything(),
+        });
+    });
+
+    it('upsertMany 는 preserveExistingName 옵션이 있어도 신규 INSERT 행에는 name(placeholder)을 그대로 담는다', async () => {
+        // 옵션은 conflict-update만 바꾼다 — INSERT되는 값 자체에서 name을 빼면 신규
+        // 행이 NOT NULL 제약을 위반하거나 빈 문자열로 남는다. placeholder라도 null보다
+        // 낫다는 게 이 리포지토리의 원래 계약(toKoreanTickerRows 참조)이다.
+        const { db, values } = makeUpsertDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        await repo.upsertMany([apple], { preserveExistingName: true });
+        const passedValues = values.mock.calls[0]![0] as KoreanTickerEntry[];
+        expect(passedValues[0]).toMatchObject({ name: apple.name });
+    });
+
     it('upsertMany 는 전 종목 동기화를 배치로 쪼갠다', async () => {
         // 2,500행대를 한 INSERT로 보내면 Neon HTTP 페이로드 한도에 걸린다.
         const { db, insert } = makeUpsertDb();
@@ -307,6 +353,16 @@ describe('DrizzleKoreanTickerRepository', () => {
         const repo = new DrizzleKoreanTickerRepository(db);
         await repo.markRelisted([]);
         expect(update).not.toHaveBeenCalled();
+    });
+
+    it('markRelisted 는 대량 재상장을 배치로 쪼갠다', async () => {
+        // 피드 장애 복구 직후처럼 재상장 심볼이 한 번에 몰리면 IN (...) 하나가
+        // upsertMany와 같은 Neon HTTP 페이로드 한도에 걸린다.
+        const { db, update } = makeUpdateDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        const many = Array.from({ length: 1_100 }, (_, i) => `SYM${i}.KS`);
+        await repo.markRelisted(many);
+        expect(update).toHaveBeenCalledTimes(3); // 500 + 500 + 100
     });
 });
 

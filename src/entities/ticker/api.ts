@@ -30,6 +30,7 @@ import type {
     CryptoAssetRecord,
     CryptoAssetRepository,
     KoreanTickerRepository,
+    KoreanTickerUpsertOptions,
     KrTickerListingRow,
     ProfileDescriptionTranslationRecord,
     ProfileDescriptionTranslationRepository,
@@ -56,9 +57,11 @@ const DB_SORT_PREFIX = 1;
 const DB_SORT_OTHER = 2;
 
 /**
- * 한 INSERT 문에 담을 최대 행 수. 전 종목 동기화는 2,500행대라 한 번에 보내면 Neon HTTP
- * 페이로드 한도에 걸린다. `scripts/seed-kr-listed-names.ts`의 `UPSERT_BATCH_SIZE`와
- * 같은 한도를 인코딩한 값이다 — 하나를 바꾸면 다른 쪽도 함께 확인해야 한다.
+ * `korean_tickers`에 대한 한 INSERT/UPDATE 문에 담을 최대 행 수. 전 종목 동기화는
+ * 2,500행대라 한 번에 보내면 Neon HTTP 페이로드 한도에 걸린다. `upsertMany`(INSERT)와
+ * `markRelisted`(대량 재상장 UPDATE) 양쪽의 청크 크기로 재사용한다.
+ * `scripts/seed-kr-listed-names.ts`의 `UPSERT_BATCH_SIZE`와 같은 한도를 인코딩한
+ * 값이다 — 하나를 바꾸면 다른 쪽도 함께 확인해야 한다.
  */
 const KOREAN_TICKER_UPSERT_BATCH_SIZE = 500;
 
@@ -113,20 +116,25 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
             .where(inArray(koreanTickers.symbol, [...symbols]));
     }
 
-    async upsertMany(entries: readonly KoreanTickerEntry[]): Promise<void> {
+    async upsertMany(
+        entries: readonly KoreanTickerEntry[],
+        options?: KoreanTickerUpsertOptions
+    ): Promise<void> {
         for (
             let i = 0;
             i < entries.length;
             i += KOREAN_TICKER_UPSERT_BATCH_SIZE
         ) {
             await this.upsertBatch(
-                entries.slice(i, i + KOREAN_TICKER_UPSERT_BATCH_SIZE)
+                entries.slice(i, i + KOREAN_TICKER_UPSERT_BATCH_SIZE),
+                options
             );
         }
     }
 
     private async upsertBatch(
-        entries: readonly KoreanTickerEntry[]
+        entries: readonly KoreanTickerEntry[],
+        options?: KoreanTickerUpsertOptions
     ): Promise<void> {
         if (entries.length === 0) return;
 
@@ -142,8 +150,15 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
                         // (DB-server clock) rather than new Date() (app-server clock) so
                         // timestamps stay monotonic across concurrent app instances
                         // writing to the same row.
+                        //
+                        // `name`은 `preserveExistingName`이 켜졌을 때만 뺀다 — 그 사유는
+                        // `KoreanTickerUpsertOptions` JSDoc(shared/db/types.ts) 참조. INSERT
+                        // 쪽 `values()`에는 이 옵션이 관여하지 않으므로 신규 행은 항상
+                        // placeholder라도 name을 받는다(placeholder가 null보다는 낫다).
                         set: {
-                            name: sql`excluded.name`,
+                            ...(options?.preserveExistingName
+                                ? {}
+                                : { name: sql`excluded.name` }),
                             koreanName: sql`excluded.korean_name`,
                             exchange: sql`excluded.exchange`,
                             exchangeFullName: sql`excluded.exchange_full_name`,
@@ -203,6 +218,21 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
     }
 
     async markRelisted(symbols: readonly string[]): Promise<void> {
+        // `upsertMany`와 같은 이유로 청크를 나눈다 — 피드 장애가 며칠 이어졌다 복구되면
+        // 재상장 심볼이 한 번에 수백~수천 개 몰릴 수 있고, 그걸 IN (...) 하나에 담으면
+        // 같은 Neon HTTP 페이로드 한도에 걸린다.
+        for (
+            let i = 0;
+            i < symbols.length;
+            i += KOREAN_TICKER_UPSERT_BATCH_SIZE
+        ) {
+            await this.markRelistedBatch(
+                symbols.slice(i, i + KOREAN_TICKER_UPSERT_BATCH_SIZE)
+            );
+        }
+    }
+
+    private async markRelistedBatch(symbols: readonly string[]): Promise<void> {
         if (symbols.length === 0) return;
 
         await withRetry(

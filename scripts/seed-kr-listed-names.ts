@@ -27,8 +27,10 @@ import { createCacheProvider } from '@y0ngha/siglens-core';
  *
  * **판단 로직은 중복되지 않는다** — 무엇을 상폐로 볼지는 `planKrTickerReconcile`,
  * 응답을 행으로 바꾸는 매핑은 `toKoreanTickerRows`가 갖고 있고 크론 라우트
- * (`syncKrListedTickers`)도 같은 두 모듈을 쓴다. 여기 남는 중복은 테이블 선언과
- * SQL 실행뿐이다.
+ * (`syncKrListedTickers`)도 같은 두 모듈을 쓴다. 여기 남는 중복은 테이블 선언, SQL
+ * 실행, 그리고 이 파일 하단의 `invalidateKoreanTickerCache`뿐이다 — 그 함수도 같은
+ * 이유(아래 `invalidateKoreanTickerCache` 주석 참조)로 `koreanNameStore.ts`의 동명
+ * 함수를 재사용하지 못해 여기서 다시 구현한다.
  */
 const koreanTickers = pgTable('korean_tickers', {
     // 길이는 schema.ts의 SYMBOL_MAX_LENGTH / EXCHANGE_MAX_LENGTH(각 32)와 일치해야 한다.
