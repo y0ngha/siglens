@@ -100,6 +100,10 @@ describe('Ticker Search -> Navigation', () => {
         const user = userEvent.setup();
         await user.type(screen.getByRole('combobox'), 'NVDA');
         await user.click(screen.getByRole('button', { name: '검색' }));
-        expect(onSelect).toHaveBeenCalledWith('NVDA');
+        // 결과 선택이 아니라 직접 입력한 문자열이므로 라벨은 그 문자열 자체다.
+        expect(onSelect).toHaveBeenCalledWith({
+            symbol: 'NVDA',
+            label: 'NVDA',
+        });
     });
 });

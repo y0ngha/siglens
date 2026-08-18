@@ -34,6 +34,9 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 vi.mock('@/shared/config/popular-tickers', () => ({
+    // 목이 KR 카테고리를 갖지 않으므로 빈 집합이다 — `TickerCategories`가 한국
+    // 섹션을 렌더하지 않고, 이 파일들은 미국 그리드만 검증한다.
+    KR_CATEGORY_IDS: new Set<string>(),
     TICKER_CATEGORIES: [
         {
             id: 'megacap',

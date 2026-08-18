@@ -19,13 +19,15 @@ import { test, expect } from '../support/fixtures';
  *   - RECENT-SEARCH RECORDING is wired ONLY on the hero panel's autocomplete
  *     (`<TickerAutocomplete onSelect={addSearch} />` in SymbolSearchPanel) — the
  *     banner copy has no onSelect, so a banner search does NOT record a recent.
- *     `addSearch` → addRecentSearch persists an uppercase-normalized symbol to
- *     localStorage key `siglens:recent-searches`. Both the Enter-navigate path
+ *     `addSearch` → addRecentSearch persists `{symbol, label}` to localStorage
+ *     key `siglens:recent-searches:v2` (the v1 key is read-only migration input;
+ *     see recentSearches.ts). Both the Enter-navigate path
  *     and the dropdown-option click path go through useAutocomplete.navigate(),
  *     which fires onSelect before router.push — so a HERO search records the
  *     symbol. The recent chip renders back on `/` as a `<Link>` (role="link",
- *     accessible name = the ticker) inside the `#search` hero region, alongside
- *     a "최근 검색" header.
+ *     accessible name = the DISPLAY LABEL, which equals the ticker only when no
+ *     company name is known) inside the `#search` hero region, alongside a
+ *     "최근 검색" header.
  *
  *   - AUTOCOMPLETE under E2E is fed by a deterministic fixture: searchTickerAction
  *     short-circuits on E2E_TEST=1 and returns an AAPL-family set (AAPL + AAPU/AAPD)

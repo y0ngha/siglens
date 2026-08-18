@@ -14,7 +14,11 @@ import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { useTickerSearch } from './useTickerSearch';
 
 interface UseAutocompleteOptions {
-    onSelect?: (symbol: string) => void;
+    /**
+     * 선택된 항목. 표시용 회사명을 함께 넘긴다 — 최근 검색이 티커가 아니라
+     * 회사명으로 저장돼야 하기 때문이다(직접 입력한 문자열은 라벨이 곧 그 문자열).
+     */
+    onSelect?: (entry: { symbol: string; label: string }) => void;
     /**
      * Whether selecting a result also navigates to `/{symbol}`. Defaults to true
      * (the search-bar behavior used by SymbolSearchPanel/Header). Callers that embed
@@ -37,7 +41,7 @@ interface UseAutocompleteReturn {
     handleKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
     handleFocus: () => void;
     handleSearchClick: () => void;
-    navigate: (symbol: string) => void;
+    navigate: (symbol: string, label?: string) => void;
     prefetch: (symbol: string) => void;
 }
 
@@ -61,11 +65,11 @@ export function useAutocomplete({
     const isOpen = !isClosed && hasQuery;
 
     const navigate = useCallback(
-        (symbol: string) => {
+        (symbol: string, label?: string) => {
             setQuery('');
             setIsClosed(true);
             setSelectedIndex(-1);
-            onSelect?.(symbol);
+            onSelect?.({ symbol, label: label?.trim() || symbol });
             if (navigateOnSelect) router.push(`/${symbol}`);
         },
         [navigateOnSelect, onSelect, router]
@@ -107,7 +111,10 @@ export function useAutocomplete({
                 e.preventDefault();
                 const selected = results[selectedIndex];
                 if (selectedIndex >= 0 && selected) {
-                    navigate(selected.symbol);
+                    navigate(
+                        selected.symbol,
+                        selected.koreanName ?? selected.name
+                    );
                 } else {
                     const trimmed = query.trim().toUpperCase();
                     if (trimmed) navigate(trimmed);

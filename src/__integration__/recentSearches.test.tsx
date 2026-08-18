@@ -36,7 +36,17 @@ vi.mock('@/shared/hooks/useOnClickOutside', () => ({
     useOnClickOutside: vi.fn(),
 }));
 
-let mockRecentSearches: string[] = [];
+interface RecentEntry {
+    symbol: string;
+    label: string;
+}
+
+/** 최근 검색 저장 단위는 `{ symbol, label }`이다 — 칩에는 티커가 아니라 회사명이 뜬다. */
+function entries(...pairs: [string, string][]): RecentEntry[] {
+    return pairs.map(([symbol, label]) => ({ symbol, label }));
+}
+
+let mockRecentSearches: RecentEntry[] = [];
 const mockAddSearch = vi.fn();
 const mockRemoveSearch = vi.fn();
 const mockClearAll = vi.fn();
@@ -65,11 +75,15 @@ describe('Recent Searches', () => {
     });
 
     it('shows recent search chips when history exists', () => {
-        mockRecentSearches = ['AAPL', 'TSLA', 'MSFT'];
+        mockRecentSearches = entries(
+            ['AAPL', '애플'],
+            ['TSLA', '테슬라'],
+            ['005930.KS', '삼성전자']
+        );
         render(<SymbolSearchPanel />);
-        expect(screen.getByText('AAPL')).toBeInTheDocument();
-        expect(screen.getByText('TSLA')).toBeInTheDocument();
-        expect(screen.getByText('MSFT')).toBeInTheDocument();
+        expect(screen.getByText('애플')).toBeInTheDocument();
+        expect(screen.getByText('테슬라')).toBeInTheDocument();
+        expect(screen.getByText('삼성전자')).toBeInTheDocument();
         expect(screen.getByText('최근 검색')).toBeInTheDocument();
     });
 
@@ -80,18 +94,21 @@ describe('Recent Searches', () => {
     });
 
     it('calls removeSearch when delete button is clicked', async () => {
-        mockRecentSearches = ['AAPL'];
+        mockRecentSearches = entries(['005930.KS', '삼성전자']);
         render(<SymbolSearchPanel />);
         const user = userEvent.setup();
-        const deleteButton = screen.getByLabelText('AAPL 최근 검색에서 제거');
+        const deleteButton = screen.getByLabelText(
+            '삼성전자 (005930.KS) 최근 검색에서 제거'
+        );
         await user.click(deleteButton);
-        expect(mockRemoveSearch).toHaveBeenCalledWith('AAPL');
+        // 라벨로 지우면 저장소에 남는다 — 제거 키는 항상 심볼이어야 한다.
+        expect(mockRemoveSearch).toHaveBeenCalledWith('005930.KS');
     });
 
     it('recent chip links to symbol page', () => {
-        mockRecentSearches = ['NVDA'];
+        mockRecentSearches = entries(['NVDA', '엔비디아']);
         render(<SymbolSearchPanel />);
-        const link = screen.getByRole('link', { name: 'NVDA' });
+        const link = screen.getByRole('link', { name: '엔비디아' });
         expect(link).toHaveAttribute('href', '/NVDA');
     });
 });

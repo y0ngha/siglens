@@ -56,9 +56,9 @@ describe('/news hub page generateMetadata는', () => {
         expect(meta.alternates?.canonical).toBe('/news');
     });
 
-    it('title에 마켓 뉴스가 포함된다', () => {
+    it('title에 미국 시장 뉴스가 포함된다', () => {
         const meta = generateMetadata();
-        expect(String(meta.title)).toContain('마켓 뉴스');
+        expect(String(meta.title)).toContain('미국 시장 뉴스');
     });
 });
 
@@ -94,5 +94,30 @@ describe('/news hub page JSON-LD는', () => {
             }
         });
         expect(breadcrumbScript).toBeDefined();
+    });
+
+    it('h1·breadcrumb·title이 같은 이름을 쓴다', async () => {
+        // 허브 이름이 다섯 군데(NEWS_HUB_TITLE, h1, breadcrumb, OG 본문, OG alt)에
+        // 손으로 중복돼 있다. 메타 title만 고정하면 탭 제목과 화면 제목이 서로
+        // 다른 어휘로 갈라져도 아무도 모른다 — 실제로 이 리네임이 다섯 군데를
+        // 전부 손으로 고쳐야 했다.
+        const { container } = render(await NewsHubPage());
+        const h1 = container.querySelector('h1')?.textContent?.trim();
+        expect(h1).toBe('미국 시장 뉴스 허브');
+
+        const breadcrumb = Array.from(
+            container.querySelectorAll('script[type="application/ld+json"]')
+        )
+            .map(s => {
+                try {
+                    return JSON.parse(s.textContent ?? '');
+                } catch {
+                    return null;
+                }
+            })
+            .find(d => d?.['@type'] === 'BreadcrumbList');
+        const last = breadcrumb.itemListElement.at(-1).name;
+        expect(last).toBe(h1);
+        expect(String(generateMetadata().title)).toContain(h1);
     });
 });

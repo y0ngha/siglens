@@ -185,7 +185,9 @@ export function HoldingForm({
                             <TickerAutocomplete
                                 size="sm"
                                 navigateOnSelect={false}
-                                onSelect={setSymbol}
+                                // 이 폼은 심볼만 필요하다 — 표시 라벨은 보유 종목
+                                // 카드가 자체적으로 해석한다.
+                                onSelect={entry => setSymbol(entry.symbol)}
                                 inputClassName={cn(
                                     'bg-secondary-950 h-10 rounded-md placeholder-secondary-400 focus:ring-2',
                                     errorField === 'symbol'

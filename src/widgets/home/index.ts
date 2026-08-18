@@ -2,6 +2,7 @@
 
 export { CryptoShowcase } from './CryptoShowcase';
 export { HeroIllustration } from './HeroIllustration';
+export { HERO_QUICK_LINKS, type HeroQuickLink } from './heroQuickLinks';
 export { HowItWorks } from './HowItWorks';
 export { SkillsShowcase, SkillsShowcaseSkeleton } from './SkillsShowcase';
 export { StatsBar, StatsBarSkeleton } from './StatsBar';

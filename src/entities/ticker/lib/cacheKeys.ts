@@ -24,8 +24,16 @@ export const KOREAN_TICKERS_CACHE_KEY = 'korean:tickers';
 /** FMP cryptocurrency-list membership cache key. */
 export const CRYPTO_FMP_LIST_CACHE_KEY = 'crypto:fmp-list';
 
+/**
+ * 검색 결과 캐시 키.
+ *
+ * **결과의 순서나 모양을 바꾸면 `v` 를 올려야 한다.** 이 캐시는 Upstash(외부)라
+ * 이미지 롤아웃으로 비워지지 않고 TTL은 24시간이다 — 배포 전 워밍된 질의는 하루
+ * 내내 옛 결과를 그대로 돌려주고, 고친 게 배포 안 된 것처럼 보인다.
+ * v2: KRX 주 상장을 미국 OTC 중복 앞에 두는 정렬 도입(2026-08).
+ */
 export function buildTickerSearchCacheKey(query: string): string {
-    return `ticker:search:${query.toLowerCase()}`;
+    return `ticker:search:v2:${query.toLowerCase()}`;
 }
 
 export function buildAssetInfoCacheKey(symbol: string): string {

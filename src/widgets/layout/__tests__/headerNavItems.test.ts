@@ -9,9 +9,9 @@ describe('NAV_ITEMS', () => {
 
     it('pins the exact label for every nav item', () => {
         expect(NAV_ITEMS.map(i => i.label)).toEqual([
-            '시장 분석',
-            '공포·탐욕 지수',
-            '마켓 뉴스',
+            '미국 시장 분석',
+            '미국 공포·탐욕 지수',
+            '미국 시장 뉴스',
             '미국 경제',
         ]);
     });

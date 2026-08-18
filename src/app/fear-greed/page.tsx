@@ -175,7 +175,7 @@ export default async function FearGreedRoutePage() {
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: '시장 공포·탐욕 지수', url: FEAR_GREED_URL },
+        { name: '미국 공포·탐욕 지수', url: FEAR_GREED_URL },
     ]);
 
     const faqJsonLd = {

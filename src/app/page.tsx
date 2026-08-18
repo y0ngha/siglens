@@ -6,6 +6,7 @@ import { buildHomeHowToJsonLd, HOME_FAQ_JSON_LD } from './homeJsonLd';
 import {
     CryptoShowcase,
     HeroIllustration,
+    HERO_QUICK_LINKS,
     HowItWorks,
     SkillsShowcase,
     SkillsShowcaseSkeleton,
@@ -22,15 +23,6 @@ import { cache, Suspense } from 'react';
 export const metadata: Metadata = {
     alternates: { canonical: SITE_URL },
 };
-
-// hrefs mirror NAV_ITEMS in `widgets/layout/headerNavItems.ts` (labels differ:
-// CTA style vs short nav label). If the top-level nav destinations change,
-// update both. (MISTAKES.md §16.5 — cross-module value duplication intent.)
-const HERO_QUICK_LINKS = [
-    { href: '/market', label: '오늘 주목할 종목' },
-    { href: '/news', label: '마켓 뉴스' },
-    { href: '/economy', label: '미국 경제' },
-] as const;
 
 // 랜딩은 ISR 정적 페이지로 운영 — proxy.ts가 ?q= 쿼리를 처리해 redirect하므로
 // 이 페이지 자체는 dynamic 의존성이 없다. revalidate로 skills 파일 변경 반영.

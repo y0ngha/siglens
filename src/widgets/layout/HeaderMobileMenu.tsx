@@ -112,7 +112,9 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
      */
 
     return (
-        <div className="md:hidden">
+        // `lg` 는 Header.tsx의 데스크톱 내비 `hidden lg:flex`와 짝이다 — 한쪽만
+        // 바꾸면 두 내비가 동시에 보이거나 둘 다 사라진다.
+        <div className="lg:hidden">
             <button
                 ref={triggerRef}
                 type="button"

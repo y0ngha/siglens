@@ -27,7 +27,7 @@ describe('HeaderNavStatic', () => {
         const marketLink = screen.getByRole('link', { name: /시장 분석/ });
         expect(marketLink).toHaveAttribute('href', '/market');
 
-        const newsLink = screen.getByRole('link', { name: /마켓 뉴스/ });
+        const newsLink = screen.getByRole('link', { name: /미국 시장 뉴스/ });
         expect(newsLink).toHaveAttribute('href', '/news');
     });
 

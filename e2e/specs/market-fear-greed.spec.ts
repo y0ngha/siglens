@@ -107,17 +107,17 @@ test.describe('market fear & greed', () => {
         expect(score as number).toBeLessThanOrEqual(100);
     });
 
-    test('헤더 "공포·탐욕 지수" 링크 클릭으로 /fear-greed에 도달한다', async ({
+    test('헤더 "미국 공포·탐욕 지수" 링크 클릭으로 /fear-greed에 도달한다', async ({
         page,
     }) => {
-        // 헤더 nav 링크는 sm(640px) 이상에서만 표시된다.
+        // 헤더 nav 링크는 lg(1024px) 이상에서만 표시된다 — 그 아래는 햄버거다.
         await page.setViewportSize({ width: 1280, height: 800 });
         await page.goto('/');
 
         await page
             .getByRole('banner')
             .getByRole('navigation', { name: '주요 네비게이션' })
-            .getByRole('link', { name: '공포·탐욕 지수' })
+            .getByRole('link', { name: '미국 공포·탐욕 지수' })
             .click();
 
         await page.waitForURL('**/fear-greed');

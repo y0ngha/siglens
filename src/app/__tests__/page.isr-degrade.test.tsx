@@ -25,6 +25,15 @@ vi.mock('@/widgets/home/TickerCategories', () => ({
     TickerCategories: () => null,
 }));
 vi.mock('@/widgets/home', () => ({
+    // 컴포넌트가 아닌 상수도 이 배럴을 통해 나간다 — 빠뜨리면 `page.tsx`가
+    // `undefined.map`으로 죽어 ISR degrade 테스트가 엉뚱한 이유로 실패한다.
+    //
+    // 빈 배열로 두지 않는다. degrade 경로에서 홈이 "비지 않은 엘리먼트"를 낸다는
+    // 이 파일의 단언은, 히어로 퀵링크 렌더 블록이 통째로 사라져도 통과해 버린다.
+    HERO_QUICK_LINKS: [
+        { href: '/market', label: '오늘 주목할 종목' },
+        { href: '/news', label: '미국 시장 뉴스' },
+    ],
     CryptoShowcase: () => null,
     HeroIllustration: () => null,
     HowItWorks: () => null,
@@ -45,7 +54,22 @@ vi.mock('@/shared/lib/seo', () => ({
     SITE_NAME: 'Siglens',
     SITE_URL: 'https://siglens.io',
 }));
-vi.mock('next/link', () => ({ default: () => null }));
+// `() => null` 로 두면 홈의 모든 내부 링크가 사라진 상태를 테스트하게 된다.
+vi.mock('next/link', () => ({
+    default: ({
+        href,
+        children,
+        ...rest
+    }: {
+        href: string;
+        children: React.ReactNode;
+        [key: string]: unknown;
+    }) => (
+        <a href={href} {...rest}>
+            {children}
+        </a>
+    ),
+}));
 
 import {
     describe,
@@ -57,6 +81,7 @@ import {
     type MockedClass,
 } from 'vitest';
 import { isValidElement } from 'react';
+import { render, screen } from '@testing-library/react';
 import Home from '@/app/page';
 import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';
 
@@ -88,6 +113,30 @@ describe('Home page ISR empty-cache prevention', () => {
         const element = await Home();
 
         expect(isValidElement(element)).toBe(true);
+    });
+
+    /**
+     * `isValidElement`만 보면 히어로 퀵링크 렌더 블록이 통째로 사라져도 통과한다.
+     * degrade 경로에서도 홈의 주요 내부 링크가 살아 있어야 한다 — 홈은 이 사이트에서
+     * 가장 링크 자산이 몰린 페이지다.
+     */
+    it('degrade 상태에서도 히어로 퀵링크를 렌더한다', async () => {
+        mockCountSkillFiles.mockRejectedValue(new Error('ENOENT'));
+        MockFileSkillsLoader.mockImplementation(
+            () =>
+                ({
+                    loadSkills: vi.fn().mockResolvedValue([]),
+                }) as unknown as InstanceType<typeof FileSkillsLoader>
+        );
+
+        render(await Home());
+
+        expect(
+            screen.getByRole('link', { name: '미국 시장 뉴스' })
+        ).toHaveAttribute('href', '/news');
+        expect(
+            screen.getByRole('link', { name: '오늘 주목할 종목' })
+        ).toHaveAttribute('href', '/market');
     });
 
     it('loadSkills throw → Home resolves (non-empty element, does not throw)', async () => {

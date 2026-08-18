@@ -145,7 +145,7 @@ describe('HeaderMobileMenu', () => {
             screen.getByRole('link', { name: /시장 분석/ })
         ).toBeInTheDocument();
         expect(
-            screen.getByRole('link', { name: /마켓 뉴스/ })
+            screen.getByRole('link', { name: /미국 시장 뉴스/ })
         ).toBeInTheDocument();
     });
 
@@ -158,10 +158,9 @@ describe('HeaderMobileMenu', () => {
             'href',
             '/market'
         );
-        expect(screen.getByRole('link', { name: /마켓 뉴스/ })).toHaveAttribute(
-            'href',
-            '/news'
-        );
+        expect(
+            screen.getByRole('link', { name: /미국 시장 뉴스/ })
+        ).toHaveAttribute('href', '/news');
     });
 
     it('applies aria-current="page" to the active link', () => {
@@ -175,7 +174,7 @@ describe('HeaderMobileMenu', () => {
             'page'
         );
         expect(
-            screen.getByRole('link', { name: /마켓 뉴스/ })
+            screen.getByRole('link', { name: /미국 시장 뉴스/ })
         ).not.toHaveAttribute('aria-current');
     });
 
@@ -185,10 +184,9 @@ describe('HeaderMobileMenu', () => {
 
         fireEvent.click(screen.getByRole('button', { name: '메뉴 열기' }));
 
-        expect(screen.getByRole('link', { name: /마켓 뉴스/ })).toHaveAttribute(
-            'aria-current',
-            'page'
-        );
+        expect(
+            screen.getByRole('link', { name: /미국 시장 뉴스/ })
+        ).toHaveAttribute('aria-current', 'page');
         expect(
             screen.getByRole('link', { name: /시장 분석/ })
         ).not.toHaveAttribute('aria-current');

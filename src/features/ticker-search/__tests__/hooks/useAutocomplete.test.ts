@@ -22,7 +22,7 @@ vi.mock('@/features/ticker-search/hooks/useTickerSearch', () => ({
     useTickerSearch: (query: string) => ({
         results: query
             ? [
-                  { symbol: 'AAPL', name: 'Apple Inc.' },
+                  { symbol: 'AAPL', name: 'Apple Inc.', koreanName: '애플' },
                   { symbol: 'AMZN', name: 'Amazon.com Inc.' },
               ]
             : [],
@@ -169,6 +169,28 @@ describe('useAutocomplete', () => {
         expect(mockPush).toHaveBeenCalledWith('/AAPL');
     });
 
+    it('passes the selected result display name to onSelect on Enter', () => {
+        // 최근 검색이 `AAPL`이 아니라 `애플`로 남으려면 Enter 경로도 라벨을
+        // 실어 보내야 한다 — 클릭 경로만 고치면 키보드 사용자만 티커를 본다.
+        const onSelect = vi.fn();
+        const { result } = renderHook(() => useAutocomplete({ onSelect }));
+
+        act(() => {
+            result.current.handleChange(createChangeEvent('A'));
+        });
+        act(() => {
+            result.current.handleKeyDown(createKeyEvent('ArrowDown'));
+        });
+        act(() => {
+            result.current.handleKeyDown(createKeyEvent('Enter'));
+        });
+
+        expect(onSelect).toHaveBeenCalledWith({
+            symbol: 'AAPL',
+            label: '애플',
+        });
+    });
+
     it('navigates to trimmed uppercase query on Enter without selection', () => {
         const { result } = renderHook(() => useAutocomplete());
 
@@ -207,7 +229,10 @@ describe('useAutocomplete', () => {
             result.current.navigate('AAPL');
         });
 
-        expect(onSelect).toHaveBeenCalledWith('AAPL');
+        expect(onSelect).toHaveBeenCalledWith({
+            symbol: 'AAPL',
+            label: 'AAPL',
+        });
         expect(mockPush).toHaveBeenCalledWith('/AAPL');
     });
 
@@ -221,7 +246,10 @@ describe('useAutocomplete', () => {
             result.current.navigate('AAPL');
         });
 
-        expect(onSelect).toHaveBeenCalledWith('AAPL');
+        expect(onSelect).toHaveBeenCalledWith({
+            symbol: 'AAPL',
+            label: 'AAPL',
+        });
         expect(mockPush).not.toHaveBeenCalled();
     });
 

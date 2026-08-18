@@ -190,6 +190,14 @@ describe('/fear-greed page', () => {
             expect(types).toContain('WebPage');
             expect(types).toContain('BreadcrumbList');
             expect(types).toContain('FAQPage');
+
+            // 이름까지 고정한다 — @type만 보면 `미국`이 떨어져 나가도 통과한다.
+            const breadcrumb = scripts
+                .map(s => JSON.parse(s.textContent ?? '{}'))
+                .find(d => d['@type'] === 'BreadcrumbList');
+            expect(breadcrumb.itemListElement.at(-1).name).toBe(
+                '미국 공포·탐욕 지수'
+            );
         });
 
         it('one FAQ answer states the index is computed independently from CNN', async () => {

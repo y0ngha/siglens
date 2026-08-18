@@ -1,6 +1,6 @@
 'use client';
 
-import { isKoreanInput } from '@/entities/ticker';
+import { isKoreanInput, krExchangeOf } from '@/entities/ticker';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile';
 import { useAutocomplete } from '../hooks/useAutocomplete';
 import { cn } from '@/shared/lib/cn';
@@ -28,7 +28,7 @@ const BUTTON_SIZE: Record<TickerAutocompleteSize, string> = {
 interface TickerAutocompleteProps {
     className?: string;
     size?: TickerAutocompleteSize;
-    onSelect?: (symbol: string) => void;
+    onSelect?: (entry: { symbol: string; label: string }) => void;
     /** See useAutocomplete's navigateOnSelect — pass false to use this as a plain value-picker inside a form. */
     navigateOnSelect?: boolean;
     /**
@@ -116,7 +116,7 @@ export function TickerAutocomplete({
                     onChange={handleChange}
                     onKeyDown={handleKeyDown}
                     onFocus={handleFocus}
-                    placeholder="종목 입력 (예: AAPL, 애플, BTC, 비트코인)"
+                    placeholder="종목 입력 (예: AAPL, 삼성전자, BTC)"
                     className={cn(
                         INPUT_BASE,
                         INPUT_SIZE[size],
@@ -169,10 +169,80 @@ export function TickerAutocomplete({
     );
 }
 
-export function CryptoBadge() {
+/** 배지 색조. 자산군을 색으로도 구분해 스캔이 빨라진다. */
+type BadgeTone = 'crypto' | 'kr' | 'us';
+
+export interface MarketBadgeSpec {
+    label: string;
+    tone: BadgeTone;
+}
+
+/**
+ * 검색 결과의 시장 배지 — **모든 결과에 붙는다**.
+ *
+ * `삼성전자`를 검색하면 `005930.KS`(KOSPI 주 상장)와 `SSNLF`(미국 장외 비후원)가
+ * 함께 나온다. 이름이 같아 사용자가 둘을 구분할 방법이 없었다 — 하나는 원화로
+ * 거래되는 주 상장이고 다른 하나는 거래가 희박한 OTC다.
+ *
+ * 처음엔 국내·OTC에만 붙였는데, 그러면 배지의 **부재**가 정보를 나르게 된다 —
+ * "배지 없음 = 미국 정규 상장"을 사용자가 학습해야 하고, 배지 로직이 조용히 깨져도
+ * 화면상 구분이 안 간다. 세 자산군 전부 명시한다.
+ *
+ * 이 배지가 행에 유일한 거래소 표시다. 원래는 아래에 정식명 한 줄
+ * (`Korea Exchange (KOSPI)`, `New York Stock Exchange Arca`)을 더 깔았는데, 배지를
+ * 전 자산군으로 넓히면서 같은 정보가 두 번 나오게 됐고 **서로 어긋나기까지 했다** —
+ * FMP는 Arca 상장을 `exchange: 'AMEX'`로 주는데 `exchangeFullName`은 `... Arca`다.
+ * 좁은 화면에서 종목명을 밀어내던 것도 그 긴 줄이라 배지만 남긴다.
+ */
+function marketBadgeSpec(result: TickerSearchResult): MarketBadgeSpec | null {
+    if (result.marketProfile === 'crypto') {
+        return { label: '코인', tone: 'crypto' };
+    }
+    if (isKrEquitySymbol(result.symbol)) {
+        // 접미사→거래소 매핑은 `krExchangeOf` 한 곳에만 둔다. 여기서 `.KQ`를 다시
+        // 판정하면 canonical 정규식(`KR_SYMBOL_RE`)보다 느슨한 두 번째 표가 생긴다.
+        return { label: krExchangeOf(result.symbol).code, tone: 'kr' };
+    }
+    const full = (result.exchangeFullName ?? '').toLowerCase();
+    if (full.includes('otc')) return { label: '미국 OTC', tone: 'us' };
+
+    const code = (result.exchange ?? '').trim().toUpperCase();
+    if (!code) return null;
+    return { label: US_EXCHANGE_LABELS[code] ?? code, tone: 'us' };
+}
+
+/**
+ * FMP `exchange` 코드 중 **그대로 노출하면 읽기 어려운 것만** 담는다. 표에 없는 코드는
+ * 아래 `?? code` 폴백이 원문을 쓴다 — 새 거래소가 생겼다고 배지가 사라지는 것보다 낫다.
+ * 그래서 `NASDAQ: 'NASDAQ'` 같은 항등 매핑은 넣지 않는다(폴백과 완전히 같은 동작이다).
+ */
+const US_EXCHANGE_LABELS: Record<string, string> = {
+    PNK: '미국 OTC',
+    OTC: '미국 OTC',
+};
+
+const BADGE_TONE_CLASS: Record<BadgeTone, string> = {
+    crypto: 'bg-primary-900/40 text-primary-300',
+    kr: 'bg-primary-800/40 text-primary-200',
+    us: 'bg-secondary-700/60 text-secondary-300',
+};
+
+/**
+ * `self-center`가 핵심이다. 이 배지가 놓이는 행은 `items-baseline`이라 — 종목명과
+ * 티커의 글자 밑선을 맞추기 위한 것이다 — 정렬을 상속받으면 배지의 **글자** 밑선이
+ * 행 밑선에 맞춰지고, 위아래 패딩만큼 배지 상자가 아래로 내려가 미세하게 어긋난다.
+ * 배지는 상자로 읽히는 요소라 상자의 세로 중앙이 맞아야 한다.
+ */
+export function MarketBadge({ label, tone }: MarketBadgeSpec) {
     return (
-        <span className="shrink-0 rounded bg-primary-900/40 px-1.5 py-0.5 text-[0.625rem] font-semibold text-primary-300">
-            코인
+        <span
+            data-testid="market-badge"
+            className={cn(
+                'shrink-0 self-center rounded px-1.5 py-0.5 text-[0.625rem] leading-none font-semibold',
+                BADGE_TONE_CLASS[tone]
+            )}
+        >
+            {label}
         </span>
     );
 }
@@ -181,7 +251,7 @@ interface ResultItemProps {
     id: string;
     result: TickerSearchResult;
     isSelected: boolean;
-    onSelect: (symbol: string) => void;
+    onSelect: (symbol: string, label: string) => void;
     onPrefetch: (symbol: string) => void;
 }
 
@@ -202,6 +272,7 @@ function ResultItem({
     // 자동완성에서만 영문명을 달고 나와, 클릭해 들어간 페이지의 타이틀·헤더와
     // 표기가 어긋난다(MISTAKES.md "서버/클라이언트 도메인 조건 불일치").
     const primaryName = result.koreanName ?? result.name;
+    const badge = marketBadgeSpec(result);
     const secondaryName =
         result.koreanName &&
         result.name !== result.koreanName &&
@@ -215,7 +286,7 @@ function ResultItem({
             type="button"
             role="option"
             aria-selected={isSelected}
-            onClick={() => onSelect(result.symbol)}
+            onClick={() => onSelect(result.symbol, primaryName)}
             onMouseEnter={() => onPrefetch(result.symbol)}
             className={cn(
                 'hover:bg-secondary-700 focus-visible:ring-primary-500 w-full px-4 py-2 text-left transition-colors focus-visible:ring-1 focus-visible:outline-none',
@@ -229,7 +300,7 @@ function ResultItem({
                 <span className="truncate font-medium text-secondary-100">
                     {primaryName}
                 </span>
-                {result.marketProfile === 'crypto' && <CryptoBadge />}
+                {badge && <MarketBadge {...badge} />}
                 <span className="shrink-0 text-sm text-secondary-400">
                     {result.symbol}
                 </span>
@@ -238,9 +309,6 @@ function ResultItem({
                         {secondaryName}
                     </span>
                 )}
-            </div>
-            <div className="text-xs text-secondary-500">
-                {result.exchangeFullName}
             </div>
         </button>
     );

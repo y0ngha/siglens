@@ -18,7 +18,7 @@ function MarketNewsListHeader() {
                 id="market-news-list-heading"
                 className="text-lg font-semibold tracking-tight"
             >
-                최신 마켓 뉴스
+                최신 시장 뉴스
             </h2>
             <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-300">
                 {PERIOD_LABEL}

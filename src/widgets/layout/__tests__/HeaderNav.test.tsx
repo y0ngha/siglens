@@ -39,14 +39,14 @@ describe('HeaderNav', () => {
             screen.getByRole('link', { name: /시장 분석/ })
         ).toBeInTheDocument();
         expect(
-            screen.getByRole('link', { name: /마켓 뉴스/ })
+            screen.getByRole('link', { name: /미국 시장 뉴스/ })
         ).toBeInTheDocument();
     });
 
     it('renders the /news link with correct label', () => {
         render(<HeaderNav items={NAV_ITEMS} />);
 
-        const newsLink = screen.getByRole('link', { name: /마켓 뉴스/ });
+        const newsLink = screen.getByRole('link', { name: /미국 시장 뉴스/ });
         expect(newsLink).toHaveAttribute('href', '/news');
     });
 
@@ -60,7 +60,9 @@ describe('HeaderNav', () => {
     it('does not set aria-current on inactive items', () => {
         render(<HeaderNav items={NAV_ITEMS} />);
 
-        const inactiveLink = screen.getByRole('link', { name: /마켓 뉴스/ });
+        const inactiveLink = screen.getByRole('link', {
+            name: /미국 시장 뉴스/,
+        });
         expect(inactiveLink).not.toHaveAttribute('aria-current');
     });
 

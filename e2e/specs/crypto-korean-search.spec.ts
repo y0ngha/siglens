@@ -13,8 +13,10 @@ import { test, expect } from '../support/fixtures';
  *   - searchTickerAction short-circuits under E2E_TEST=1 and returns a
  *     deterministic fixture that includes BTCUSD/ETHUSD with koreanName and
  *     marketProfile:'crypto'. The filter checks koreanName so "비트코" matches.
- *   - TickerAutocomplete renders a role="option" button per result; when
- *     result.marketProfile === 'crypto' it renders a <CryptoBadge> ("코인").
+ *   - TickerAutocomplete renders a role="option" button per result, each with a
+ *     <MarketBadge>. **Every** result carries one now (KOSPI / KOSDAQ / 미국 OTC /
+ *     NASDAQ / 코인), so the crypto case is identified by the "코인" LABEL, not by
+ *     the badge's presence.
  *
  * Selector conventions (mirrored from symbol-search.spec.ts):
  *   - Header combobox: role="combobox" aria-label="종목 티커 검색" scoped to
@@ -56,7 +58,7 @@ test.describe('crypto Korean-name search', () => {
 
         await expect(btcOption).toBeVisible();
 
-        // The CryptoBadge ("코인") must be present inside the BTCUSD option.
+        // The MarketBadge must read "코인" inside the BTCUSD option.
         // Use exact:true to match only the badge span (not the substring "코인"
         // that appears inside "비트코인" in the display name).
         await expect(
