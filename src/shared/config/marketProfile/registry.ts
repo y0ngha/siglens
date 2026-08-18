@@ -1,6 +1,10 @@
 import type { AssetInfo } from '@/shared/lib/types';
 import { KR_SYMBOL_RE } from '@/shared/config/ticker';
-import type { MarketProfileDescriptor, MarketProfileId } from './types';
+import type {
+    MarketProfileDescriptor,
+    MarketProfileId,
+    PriceFormatConfig,
+} from './types';
 import { US_EQUITY_DESCRIPTOR } from './usEquity';
 import { CRYPTO_DESCRIPTOR } from './crypto';
 import { KR_EQUITY_DESCRIPTOR } from './krEquity';
@@ -47,4 +51,26 @@ export function marketProfileOf(asset: AssetInfo): MarketProfileId {
     if (asset.marketProfile) return asset.marketProfile;
     if (isKrEquitySymbol(asset.symbol)) return 'kr-equity';
     return DEFAULT_MARKET_PROFILE;
+}
+
+/**
+ * 심볼 하나로 표시 통화를 정한다 — `isKrEquitySymbol(symbol) ? 'KRW' : 'USD'` 삼항식이
+ * `formatCompactCurrency`/`FutureDirectionCard`/`EventCalendar` 세 곳에 독립적으로
+ * 복제돼 있던 것을 여기 한 곳으로 모은다. 통화 판정은 `getDescriptor(...).priceFormat.currency`를
+ * 거쳐야 하고(REGISTRY가 3개 프로필 전체를 exhaustive하게 갖고 있는 유일한 곳), 산발적
+ * 삼항식은 그중 하나가 4번째 프로필을 얻는 순간 조용히 틀린다.
+ *
+ * 크립토는 심볼 형상만으로 판정할 수 없다(`crypto_assets` DB 멤버십이 authoritative —
+ * `isKrEquitySymbol`의 주석 참조). 그래서 여기서는 한국 종목이 아니면 `DEFAULT_MARKET_PROFILE`
+ * (us-equity)로 떨어뜨린다 — 통화 관점에서는 안전하다: us-equity와 crypto 둘 다
+ * `priceFormat.currency`가 `'USD'`라서(REGISTRY 값 참조) 결과가 갈리지 않는다. 크립토를
+ * 구분해야 하는 값(precision 등)은 이 함수를 쓰면 안 된다.
+ */
+export function currencyForSymbol(
+    symbol: string
+): PriceFormatConfig['currency'] {
+    const profileId = isKrEquitySymbol(symbol)
+        ? 'kr-equity'
+        : DEFAULT_MARKET_PROFILE;
+    return getDescriptor(profileId).priceFormat.currency;
 }

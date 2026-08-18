@@ -24,5 +24,4 @@ export const CRYPTO_DESCRIPTOR: MarketProfileDescriptor = {
     seo: {
         aboutNodeType: null, // no standard schema.org crypto type → omit about node
     },
-    sitemapLastmod: 'rolling',
 };

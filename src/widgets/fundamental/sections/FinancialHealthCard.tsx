@@ -6,13 +6,15 @@ import type {
 } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
 import { cn } from '@/shared/lib/cn';
-import { formatCompactUsd } from '@/shared/lib/priceFormat';
+import { formatCompactCurrency } from '@/shared/lib/priceFormat';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 
 const HEADING_ID = 'health-heading';
 const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
 
 interface FinancialHealthCardProps {
+    /** 표기 통화를 정하기 위해 필요하다 — 국내 종목은 원화다. */
+    symbol: string;
     ratios: FundamentalRatiosInput | null;
     scores: FundamentalFinancialScoresInput | null;
     cashFlow: FundamentalCashFlowInput | null;
@@ -90,6 +92,7 @@ function piotroskiBadge(p: number | null): HealthMetricProps['badge'] {
 }
 
 export function FinancialHealthCard({
+    symbol,
     ratios,
     scores,
     cashFlow,
@@ -105,7 +108,8 @@ export function FinancialHealthCard({
     }
 
     const ocf = cashFlow?.operatingCashFlow ?? null;
-    const formattedOcf = ocf !== null ? formatCompactUsd(ocf) : '—';
+    const formattedOcf =
+        ocf !== null ? formatCompactCurrency(ocf, symbol) : '—';
 
     return (
         <section

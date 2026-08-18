@@ -5,7 +5,7 @@
  * as null. The consuming use-case treats null as "no data available" and
  * should not receive thrown exceptions from the data layer.
  */
-import YahooFinance from 'yahoo-finance2';
+import { createYahooClient } from '@/shared/api/yahoo/createYahooClient';
 import {
     mapExpirationsToSlots,
     sanitizeOptionsChain,
@@ -33,10 +33,7 @@ import {
 // 이 에러는 adapter의 catch 블록에서 null 반환으로 이미 처리되므로 로그 자체는 노이즈다.
 // validation: { logErrors: false }를 설정하면 FailedYahooValidationError throw는
 // 그대로 유지한 채 로그 출력만 비활성화된다(라이브러리 v3.15.3 defaults.js:24).
-const yahooFinance = new YahooFinance({
-    suppressNotices: ['yahooSurvey'],
-    validation: { logErrors: false },
-});
+const yahooFinance = createYahooClient();
 
 function toIsoDate(d: Date): string {
     return d.toISOString().slice(0, 10);

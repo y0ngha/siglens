@@ -260,8 +260,17 @@ export interface ContextSwitchMessage {
     label: string;
 }
 
-/** Chat display history union — `ChatMessage` (LLM-bound) + UI-only `ContextSwitchMessage`. */
-export type DisplayMessage = ChatMessage | ContextSwitchMessage;
+/**
+ * Chat display history union — `ChatMessage` (LLM-bound) + UI-only `ContextSwitchMessage`.
+ *
+ * `uiId`는 렌더 전용 식별자다. 채팅은 append-only라 인덱스를 key로 써도 눈에 띄는 버그는
+ * 없었지만, 같은 내용의 메시지가 반복될 수 있어 내용 기반 key도 쓸 수 없다(중복 key).
+ * `ChatMessage`는 @y0ngha/siglens-core 소유 타입이라 필드를 추가할 수 없으므로,
+ * 표시 계층에서만 id를 부여하고 LLM 전송·localStorage 저장 전에 제거한다.
+ */
+export type DisplayMessage = (ChatMessage | ContextSwitchMessage) & {
+    uiId: string;
+};
 
 /** summary 전용 결과 — briefing/botBlocked는 별도 경로(MarketBriefingActionResult). */
 export type MarketSummaryActionResult =

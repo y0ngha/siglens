@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { OptionsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import type { SubmitOptionsAnalysisActionResult } from '@/entities/options-chain/actions';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
@@ -106,7 +106,6 @@ export function useOptionsAnalysis({
     isSettingsHydrated = true,
     cacheOnly = false,
 }: UseOptionsAnalysisInput): OptionsAnalysisState {
-    const queryClient = useQueryClient();
     const queryKey = useMemo(
         () =>
             QUERY_KEYS.optionsAnalysis(
@@ -141,8 +140,13 @@ export function useOptionsAnalysis({
                 signal,
                 cacheOnly
             ),
-        enabled: false,
+        // 캐시가 없을 때만 1회 자동 실행한다. staleTime: Infinity라 캐시가 있으면
+        // 조용히 재사용되고(재요청 없음), 포커스/재연결 재요청은 꺼서 실패 이후
+        // 창 포커스만으로 AI 분석이 다시 도는 것을 막는다. 수동 재시도는 retry().
+        enabled: isSettingsHydrated,
         retry: false,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
         staleTime: Infinity,
     });
 
@@ -157,13 +161,6 @@ export function useOptionsAnalysis({
     const retry = useCallback(() => {
         void refetch();
     }, [refetch]);
-
-    useEffect(() => {
-        if (!isSettingsHydrated) return;
-        if (queryClient.getQueryData(queryKey) === undefined) {
-            void refetch();
-        }
-    }, [isSettingsHydrated, queryClient, queryKey, refetch]);
 
     if (query.isError) {
         if (query.error instanceof BotBlockedError) {
