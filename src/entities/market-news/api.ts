@@ -138,7 +138,6 @@ export class DrizzleMarketNewsRepository {
                         url: marketNews.url,
                         publishedAt: marketNews.publishedAt,
                         titleEn: marketNews.titleEn,
-                        bodyEn: marketNews.bodyEn,
                         titleKo: marketNews.titleKo,
                         bodyKo: marketNews.bodyKo,
                         summaryKo: marketNews.summaryKo,
@@ -292,7 +291,8 @@ export interface MarketNewsDbRow {
     url: string;
     publishedAt: Date;
     titleEn: string;
-    bodyEn: string | null;
+    /** 이 경로에서는 select하지 않는다 — `toNewsRow`/`toMarketNewsRow` 주석 참조. */
+    bodyEn?: string | null;
     titleKo: string | null;
     bodyKo: string | null;
     summaryKo: string | null;
@@ -372,7 +372,9 @@ function toMarketNewsRow(row: MarketNewsDbRow): MarketNewsRow {
     };
     return {
         ...displayItem,
-        bodyEn: row.bodyEn,
+        // 읽지 않는다 — 사유는 `news-article/api.ts`의 `toNewsRow` 주석 참조
+        // (다이제스트 프롬프트도 이 필드를 읽지 않는다).
+        bodyEn: null,
         symbol: row.symbol,
         tickers: row.tickers,
         analyzedAt: row.analyzedAt,

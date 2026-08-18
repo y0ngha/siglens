@@ -149,7 +149,6 @@ export class DrizzleNewsRepository {
                 url: news.url,
                 publishedAt: news.publishedAt,
                 titleEn: news.titleEn,
-                bodyEn: news.bodyEn,
                 titleKo: news.titleKo,
                 bodyKo: news.bodyKo,
                 summaryKo: news.summaryKo,
@@ -276,7 +275,8 @@ interface NewsDbRow {
     url: string;
     publishedAt: Date;
     titleEn: string;
-    bodyEn: string | null;
+    /** 이 경로에서는 select하지 않는다 — `toNewsRow`/`toMarketNewsRow` 주석 참조. */
+    bodyEn?: string | null;
     titleKo: string | null;
     bodyKo: string | null;
     summaryKo: string | null;
@@ -353,7 +353,16 @@ function toNewsRow(row: NewsDbRow): NewsRow {
         url: row.url,
         publishedAt: row.publishedAt.toISOString(),
         titleEn: row.titleEn,
-        bodyEn: row.bodyEn,
+        // `body_en`은 읽지 않는다 — 이 경로의 소비자(집계 분석 프롬프트)가 그 값을
+        // 쓰지 않기 때문이다. core에서 `bodyEn`을 읽는 곳은 카드 프롬프트
+        // (`newsCardPrompt`)뿐인데, 그쪽 입력은 DB 행이 아니라 FMP 응답 객체다
+        // (`analyzeNewsCards(ingested.fresh)`). 즉 DB에서 원문을 실어 오면 전량
+        // 버려진다(감사: 비용 라운드 16).
+        //
+        // ⚠️ core가 집계/다이제스트 프롬프트에서 `bodyEn`을 읽기 시작하면 이 값이
+        // 조용히 null이 되어 품질만 떨어진다. core 업그레이드 시
+        // `grep -rn bodyEn node_modules/@y0ngha/siglens-core/dist`로 확인할 것.
+        bodyEn: null,
         titleKo: row.titleKo,
         bodyKo: row.bodyKo,
         summaryKo: row.summaryKo,
