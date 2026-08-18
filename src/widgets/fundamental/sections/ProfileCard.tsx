@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { FundamentalProfile } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
-import { formatCompactUsd } from '@/shared/lib/priceFormat';
+import { formatCompactCurrency } from '@/shared/lib/priceFormat';
 
 const HEADING_ID = 'profile-heading';
 const HEADING_CLASS_NAME = 'text-xl font-semibold tracking-tight';
@@ -24,7 +24,10 @@ export function ProfileCard({ profile, descriptionSlot }: ProfileCardProps) {
         );
     }
 
-    const formattedMarketCap = formatCompactUsd(profile.marketCap);
+    const formattedMarketCap = formatCompactCurrency(
+        profile.marketCap,
+        profile.symbol
+    );
 
     return (
         <section

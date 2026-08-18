@@ -1,11 +1,8 @@
 import 'server-only';
-import YahooFinance from 'yahoo-finance2';
+import { createYahooClient } from './createYahooClient';
 
 // 설정 근거는 YahooMarketProvider / YahooOptionsAdapter 주석 참조.
-const yahooFinance = new YahooFinance({
-    suppressNotices: ['yahooSurvey'],
-    validation: { logErrors: false },
-});
+const yahooFinance = createYahooClient();
 
 /** yahoo `search`가 돌려주는 quote 항목 중 이 앱이 소비하는 부분집합. */
 export interface YahooSearchQuote {

@@ -9,9 +9,10 @@ import type { MarketQuote } from '@y0ngha/siglens-core';
  * quote 부재가 곧 미상장이다. 심볼로 폴백하면 `999999.KS` 같은 가짜 티커가 404 대신
  * 빈 종목 페이지로 렌더된다(실측: yahoo가 미상장 심볼에 `undefined`를 반환).
  *
- * 네트워크 실패도 `null`로 수렴한다. 상위 `getAssetInfoResilient`가 throw를 degrade
- * 경로로 처리하는 것과 달리 여기서는 구분이 불가능하지만, 실패 시 캐시에 쓰이지 않으므로
- * 다음 요청에서 자연히 회복된다.
+ * **인프라 실패는 삼키지 않고 그대로 던진다.** 삼키면 `null`이 "미상장"과 "yahoo가 지금
+ * 안 된다"를 동시에 뜻하게 되고, 호출부는 전자로 읽어 실재하는 종목에 하드 404를 낸다.
+ * 미국 경로가 `throwOnInfraFailure: true`로 그 둘을 가르는 것과 같은 이유다 — 던지면
+ * `getAssetInfoResilient`가 잡아 degrade 200 + noindex로 떨어뜨린다.
  *
  * **동적 import를 쓰는 이유**: `YahooMarketProvider`는 `server-only`이고
  * `yahoo-finance2`는 `child_process`/`dns` 같은 Node 전용 모듈을 요구한다(옵션체인이
@@ -26,17 +27,12 @@ import type { MarketQuote } from '@y0ngha/siglens-core';
 export async function fetchKrEquityQuoteName(
     symbol: string
 ): Promise<string | null> {
-    try {
-        const quote = await getYahooQuote(symbol);
-        return quote?.name ?? null;
-    } catch (e) {
-        console.warn('[krEquityQuoteName] fetchKrEquityQuoteName failed', e);
-        return null;
-    }
+    const quote = await getYahooQuote(symbol);
+    return quote?.name ?? null;
 }
 
 let providerPromise: Promise<{
-    getQuote(symbol: string): Promise<MarketQuote | null>;
+    getQuoteOrThrow(symbol: string): Promise<MarketQuote | null>;
 }> | null = null;
 
 /** provider 인스턴스를 모듈 레벨에서 1회만 만든다(호출마다 동적 import + new 방지). */
@@ -44,5 +40,5 @@ function getYahooQuote(symbol: string): Promise<MarketQuote | null> {
     providerPromise ??= import('@/shared/api/yahoo/YahooMarketProvider').then(
         m => new m.YahooMarketProvider()
     );
-    return providerPromise.then(p => p.getQuote(symbol));
+    return providerPromise.then(p => p.getQuoteOrThrow(symbol));
 }

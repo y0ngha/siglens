@@ -1,6 +1,7 @@
 import { EmptySectionCard } from './EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import { formatCompactUsd } from '@/shared/lib/priceFormat';
+import { formatCompactCurrency } from '@/shared/lib/priceFormat';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile';
 import type {
     FundamentalAnalystEstimateInput,
     FundamentalGradesConsensusInput,
@@ -13,6 +14,8 @@ const HEADING_ID = 'future-heading';
 const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
 
 interface FutureDirectionCardProps {
+    /** 표기 통화를 정하기 위해 필요하다 — 국내 종목은 원화다. */
+    symbol: string;
     estimates: FundamentalAnalystEstimateInput | null;
     grades: FundamentalGradesConsensusInput | null;
     ptConsensus: FundamentalPriceTargetConsensusInput | null;
@@ -31,19 +34,29 @@ function pct(value: number, total: number): string {
     return ((value / total) * 100).toFixed(1);
 }
 
-// 포매터 생성 비용을 렌더마다 물지 않도록 모듈 스코프에 고정한다.
-const USD_FORMATTER = new Intl.NumberFormat('ko-KR', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 2,
-});
+// 포매터 생성 비용을 렌더마다 물지 않도록 모듈 스코프에 고정한다. 통화별로 하나씩 —
+// 국내 종목의 원화 금액에 `US$`를 붙이던 것이 이 카드에서 가장 크게 드러났다
+// (`목표 주가 US$450,000`은 같은 사이트가 차트 탭에서 `₩274,500`으로 쓰는 값이다).
+const MONEY_FORMATTERS: Record<'USD' | 'KRW', Intl.NumberFormat> = {
+    USD: new Intl.NumberFormat('ko-KR', {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 2,
+    }),
+    KRW: new Intl.NumberFormat('ko-KR', {
+        style: 'currency',
+        currency: 'KRW',
+        maximumFractionDigits: 0,
+    }),
+};
 
-function fmtUsd(v: number | null): string {
-    return v !== null ? USD_FORMATTER.format(v) : '—';
+function fmtMoney(v: number | null, symbol: string): string {
+    if (v === null) return '—';
+    return MONEY_FORMATTERS[isKrEquitySymbol(symbol) ? 'KRW' : 'USD'].format(v);
 }
 
-function fmtBig(v: number | null): string {
-    return v !== null ? formatCompactUsd(v) : '—';
+function fmtBig(v: number | null, symbol: string): string {
+    return v !== null ? formatCompactCurrency(v, symbol) : '—';
 }
 
 function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
@@ -156,6 +169,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
 }
 
 export function FutureDirectionCard({
+    symbol,
     estimates,
     grades,
     ptConsensus,
@@ -202,7 +216,7 @@ export function FutureDirectionCard({
                                 </InfoTooltip>
                             </dt>
                             <dd className="mt-1 font-mono text-lg font-semibold tabular-nums">
-                                {fmtUsd(estimates.estimatedEpsAvg)}
+                                {fmtMoney(estimates.estimatedEpsAvg, symbol)}
                             </dd>
                         </div>
                         <div className="rounded-lg bg-secondary-800/40 px-4 py-3">
@@ -220,7 +234,7 @@ export function FutureDirectionCard({
                                 </InfoTooltip>
                             </dt>
                             <dd className="mt-1 font-mono text-lg font-semibold tabular-nums">
-                                {fmtBig(estimates.estimatedRevenueAvg)}
+                                {fmtBig(estimates.estimatedRevenueAvg, symbol)}
                             </dd>
                         </div>
                     </dl>
@@ -277,7 +291,7 @@ export function FutureDirectionCard({
                                             )}
                                         </dt>
                                         <dd className="font-mono text-sm font-medium tabular-nums">
-                                            {fmtUsd(val)}
+                                            {fmtMoney(val, symbol)}
                                         </dd>
                                     </div>
                                 ))
@@ -288,21 +302,28 @@ export function FutureDirectionCard({
                             <div className="flex gap-1">
                                 <dt className="text-secondary-400">1개월</dt>
                                 <dd className="font-mono">
-                                    {fmtUsd(ptSummary.lastMonth.avgPriceTarget)}
+                                    {fmtMoney(
+                                        ptSummary.lastMonth.avgPriceTarget,
+                                        symbol
+                                    )}
                                 </dd>
                             </div>
                             <div className="flex gap-1">
                                 <dt className="text-secondary-400">3개월</dt>
                                 <dd className="font-mono">
-                                    {fmtUsd(
-                                        ptSummary.lastQuarter.avgPriceTarget
+                                    {fmtMoney(
+                                        ptSummary.lastQuarter.avgPriceTarget,
+                                        symbol
                                     )}
                                 </dd>
                             </div>
                             <div className="flex gap-1">
                                 <dt className="text-secondary-400">12개월</dt>
                                 <dd className="font-mono">
-                                    {fmtUsd(ptSummary.lastYear.avgPriceTarget)}
+                                    {fmtMoney(
+                                        ptSummary.lastYear.avgPriceTarget,
+                                        symbol
+                                    )}
                                 </dd>
                             </div>
                         </dl>

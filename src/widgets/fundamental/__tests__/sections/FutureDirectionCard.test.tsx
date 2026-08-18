@@ -31,6 +31,7 @@ describe('FutureDirectionCard', () => {
     it('renders sections when data provided', () => {
         render(
             <FutureDirectionCard
+                symbol="AAPL"
                 estimates={SAMPLE_ESTIMATES}
                 grades={SAMPLE_GRADES}
                 ptConsensus={SAMPLE_PT_CONSENSUS}
@@ -46,6 +47,7 @@ describe('FutureDirectionCard', () => {
     it('renders empty state when estimates/grades/ptConsensus all null', () => {
         render(
             <FutureDirectionCard
+                symbol="AAPL"
                 estimates={null}
                 grades={null}
                 ptConsensus={null}
@@ -61,6 +63,7 @@ describe('FutureDirectionCard', () => {
     it('renders only available sections when partial null', () => {
         render(
             <FutureDirectionCard
+                symbol="AAPL"
                 estimates={SAMPLE_ESTIMATES}
                 grades={null}
                 ptConsensus={null}
