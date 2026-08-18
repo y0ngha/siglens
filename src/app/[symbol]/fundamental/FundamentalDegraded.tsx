@@ -1,11 +1,22 @@
 import { SymbolPageHeading } from '@/views/symbol';
 import { FundamentalSnapshotProse } from '@/views/symbol/snapshot/renderers/FundamentalSnapshotProse';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
+import type { MarketProfileId } from '@/shared/config/marketProfile';
 
 interface FundamentalDegradedProps {
     /** Resolved display name (Korean+English+ticker, or bare-ticker fallback). */
     displayName: string;
     symbol: string;
+    /**
+     * Required (no default here, unlike `CrossLinkCards`'s own prop) — this
+     * component has exactly one caller (`fundamental/page.tsx`), which always
+     * has the value in hand, so there is no safe default to fall back to.
+     * Threading it through prevents the same bug `CrossLinkCards`'s default
+     * caused: fundamental renders for both us-equity and kr-equity, so an
+     * omitted/wrong value would link Korean symbols to nonexistent
+     * `/options`/`/congress` tabs (SEO audit 2026-08-18).
+     */
+    marketProfile: MarketProfileId;
     /**
      * `seo_analysis_snapshots.content` for the fundamental tab, when a pre-warmed
      * snapshot exists. Threaded through so degraded pages stay crawlable — spec
@@ -31,6 +42,7 @@ interface FundamentalDegradedProps {
 export function FundamentalDegraded({
     displayName,
     symbol,
+    marketProfile,
     snapshotContent,
     snapshotGeneratedAt,
 }: FundamentalDegradedProps) {
@@ -54,7 +66,11 @@ export function FundamentalDegraded({
                     방문하시면 PER·ROE·애널리스트 컨센서스를 보실 수 있습니다.
                 </p>
             </section>
-            <CrossLinkCards symbol={symbol} current="fundamental" />
+            <CrossLinkCards
+                symbol={symbol}
+                current="fundamental"
+                marketProfile={marketProfile}
+            />
         </main>
     );
 }

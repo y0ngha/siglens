@@ -4,6 +4,7 @@ import { SITE_BUILD_DATE, SITE_URL } from '@/shared/lib/seo';
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 import { CATEGORY_CONFIG, type NewsFeedCategory } from '@/entities/market-news';
+import { floorToHour } from './floorToHour';
 import type { SitemapEntry } from '../model';
 
 /** `now`가 속한 UTC 날짜의 자정. 하루에 한 번만 바뀌는 lastmod를 만든다. */
@@ -27,8 +28,12 @@ function startOfUtcDay(now: Date): Date {
  *     마지막으로 바뀐 시점"이 곧 직전 마감이다. 주말·DST는 헬퍼가 처리한다.
  *  3. **일 경계 양자화**(`startOfUtcDay`) — 하루 단위로 도는 페이지. news hub와
  *     5개 카테고리(ISR revalidate 24h). 하루에 한 번만 값이 바뀐다.
- *  4. **1시간 슬라이딩**(`oneHourAgo`) — `/market`만. 장중 신호 스캐너를 노출하는
- *     실시간성 페이지이고 ISR revalidate도 1h라 슬라이딩이 실제 갱신 주기와 맞는다.
+ *  4. **1시간 슬라이딩, 정시로 내림**(`oneHourAgo`, `floorToHour`) — `/market`만.
+ *     장중 신호 스캐너를 노출하는 실시간성 페이지이고 ISR revalidate도 1h라 슬라이딩이
+ *     실제 갱신 주기와 맞는다. 정시로 내림하지 않으면(=raw `now - 1h`) 이 라우트가
+ *     `force-dynamic`이라 매 호출마다 값이 달라져, 결국 등급 1~3까지 포함한 세
+ *     sitemap 자식 전부의 index lastmod가 이 값에 끌려다니며 항상 "방금 바뀜"으로
+ *     나간다 — 등급을 나눈 목적 자체가 무력화된다.
  *
  * `changeFrequency`/`priority`는 lastmod와 독립적인 편집 의도다:
  * `/fear-greed`와 news 계열은 daily + 0.8(market 0.9보다 낮고 legal 0.3보다 높음).
@@ -36,7 +41,10 @@ function startOfUtcDay(now: Date): Date {
  * `now`를 인자로 받는 순수 함수라 테스트에서 시간 mock 없이 결정적 검증 가능.
  */
 export function buildStaticEntries(now: Date): SitemapEntry[] {
-    const oneHourAgo = new Date(now.getTime() - MS_PER_HOUR);
+    // floorToHour: rolling `now - 1h`를 그대로 쓰면 매 호출(=매 크롤)마다 값이
+    // 달라져 sitemap index lastmod의 freshness 신호가 무력화된다 —
+    // `buildPopularEntries`의 `/news` 엔트리와 같은 이유(floorToHour JSDoc 참고).
+    const oneHourAgo = floorToHour(new Date(now.getTime() - MS_PER_HOUR));
     const todayUtc = startOfUtcDay(now);
     // `/fear-greed`는 미국 지수·ETF의 EOD 종가가 입력이므로 NYSE 세션 기준이다.
     const lastSessionClose = lastClosedSessionCloseUtc(US_EQUITY_SESSION, now);

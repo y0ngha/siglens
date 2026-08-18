@@ -9,6 +9,7 @@ import { SITE_URL } from '@/shared/lib/seo';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
+import { floorToHour } from '../lib/floorToHour';
 
 const NOW = new Date('2026-05-23T15:30:00.000Z');
 
@@ -78,14 +79,33 @@ describe('buildStaticEntries', () => {
         }
     });
 
-    it('/market은 1시간 슬라이딩 lastmod를 적용한다', () => {
+    it('/market은 1시간 슬라이딩 lastmod(정시로 내림)를 적용한다', () => {
         const entries = buildStaticEntries(NOW);
         const market = entries.find(e => e.url.endsWith('/market'));
         expect(market).toBeDefined();
         expect(market!.lastModified.getTime()).toBe(
-            NOW.getTime() - MS_PER_HOUR
+            floorToHour(new Date(NOW.getTime() - MS_PER_HOUR)).getTime()
         );
         expect(market!.changeFrequency).toBe('hourly');
+    });
+
+    /**
+     * 회귀 가드(SEO 감사 finding 5): raw `now - 1h`였을 때는 같은 시간대 안에서도
+     * 호출마다 값이 달라져 sitemap index lastmod의 freshness 신호가 무력화됐다.
+     * `floorToHour` 적용 후로는 같은 시간대 안의 서로 다른 호출 시각이 동일한
+     * lastmod를 내야 한다. `/fear-greed`(세션 앵커) 값은 이 픽스와 무관하게
+     * 그대로 유지돼야 한다.
+     */
+    it('같은 시간대 안에서는 호출 시각이 달라도 market lastmod가 동일하다 (fear-greed는 그대로 유지)', () => {
+        const a = buildStaticEntries(new Date('2026-05-23T15:00:05.000Z'));
+        const b = buildStaticEntries(new Date('2026-05-23T15:59:55.000Z'));
+        const marketOf = (es: ReturnType<typeof buildStaticEntries>) =>
+            es.find(e => e.url.endsWith('/market'))!.lastModified.getTime();
+        expect(marketOf(a)).toBe(marketOf(b));
+
+        const fgOf = (es: ReturnType<typeof buildStaticEntries>) =>
+            es.find(e => e.url.endsWith('/fear-greed'))!.lastModified.getTime();
+        expect(fgOf(a)).toBe(fgOf(b));
     });
 
     it('home은 priority 1.0, monthly로 둔다', () => {
@@ -141,7 +161,7 @@ describe('buildStaticEntries', () => {
 
         const market = entries.find(e => e.url === `${SITE_URL}/market`);
         expect(market!.lastModified.getTime()).toBe(
-            NOW.getTime() - MS_PER_HOUR
+            floorToHour(new Date(NOW.getTime() - MS_PER_HOUR)).getTime()
         );
     });
 });
