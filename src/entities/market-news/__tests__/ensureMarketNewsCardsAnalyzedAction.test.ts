@@ -68,6 +68,7 @@ import { ensureMarketNewsCardsAnalyzedAction } from '../actions/ensureMarketNews
 import * as api from '../api';
 import * as getMarketNewsClientModule from '../lib/getMarketNewsClient';
 import * as core from '@y0ngha/siglens-core';
+import { MARKET_NEWS_LOOKBACK_MS } from '../lib/marketNewsConstants';
 
 // 3. Item fixtures for majority-failure test
 function makeItem(id: string) {
@@ -272,6 +273,54 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         expect(core.runNewsCardAnalysis).toHaveBeenCalled();
         // Refresh flag was marked at the start (before fetch)
         expect(api.markFetched).toHaveBeenCalledWith('__NEWS_CRYPTO__');
+    });
+
+    /**
+     * [회귀] 이 파일의 `listAnalyzedIds` 픽스처가 전부 빈 Set이라 "이미 분석된
+     * 기사는 다시 안 보낸다"는 계약을 아무 케이스도 밟지 않았다 — 필터를 통째로
+     * 무력화해도 전건 통과한다(감사: 테스트 라운드 16). 종목 뉴스 쌍둥이엔 있는
+     * 케이스를 여기에도 둔다.
+     */
+    it('이미 분석된 기사는 LLM에 다시 보내지 않는다', async () => {
+        vi.mocked(
+            getMarketNewsClientModule.getMarketNewsClient
+        ).mockReturnValue({
+            fetchCategoryNews: vi.fn(async () => [
+                { ...DEFAULT_ITEM, id: 'm1' },
+                { ...DEFAULT_ITEM, id: 'm2' },
+            ]),
+        } as unknown as ReturnType<
+            typeof getMarketNewsClientModule.getMarketNewsClient
+        >);
+        const listAnalyzedIds = vi.fn(async () => new Set(['m1']));
+        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(function (
+            this: unknown
+        ) {
+            (this as Record<string, unknown>).upsertMarketNewsItem = vi.fn(
+                async () => true
+            );
+            (this as Record<string, unknown>).attachAnalysis = vi.fn(
+                async () => undefined
+            );
+            (this as Record<string, unknown>).listByCategory = vi.fn(
+                async () => []
+            );
+            (this as Record<string, unknown>).listAnalyzedIds = listAnalyzedIds;
+            return this;
+        } as never);
+
+        await ensureMarketNewsCardsAnalyzedAction('crypto');
+
+        expect(listAnalyzedIds).toHaveBeenCalledWith(
+            '__NEWS_CRYPTO__',
+            MARKET_NEWS_LOOKBACK_MS
+        );
+        const analyzedIdArgs = vi
+            .mocked(core.runNewsCardAnalysis)
+            .mock.calls.map(
+                call => (call[0] as { item: { id: string } }).item.id
+            );
+        expect(analyzedIdArgs).toEqual(['m2']);
     });
 
     it('예외가 발생해도 throw하지 않고 void를 반환한다', async () => {

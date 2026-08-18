@@ -48,6 +48,39 @@ function makeUpdateDb(): {
 }
 
 /** Build a mock `db` for a select…from…where…orderBy chain returning `rows`. */
+/**
+ * drizzle `SQL`에서 리터럴 조각만 뽑는다(`JSON.stringify`는 테이블 참조가 순환이라
+ * 던진다). `isNotNull`은 `' is not null'`, `isNull`은 `' is null'`을 남긴다.
+ */
+function sqlChunks(node: unknown, out: string[] = []): string[] {
+    if (Array.isArray(node)) {
+        for (const item of node) sqlChunks(item, out);
+        return out;
+    }
+    if (node && typeof node === 'object') {
+        const obj = node as Record<string, unknown>;
+        if (Array.isArray(obj.queryChunks)) sqlChunks(obj.queryChunks, out);
+        if (
+            Array.isArray(obj.value) &&
+            obj.value.every(v => typeof v === 'string')
+        ) {
+            out.push(...(obj.value as string[]));
+        }
+    }
+    return out;
+}
+
+/** `listAnalyzedIds`용 — `orderBy` 없이 `where()`를 바로 await하는 형태. */
+function makeFilterSelectDb(rows: unknown[]): {
+    db: SiglensDatabase;
+    where: ReturnType<typeof vi.fn>;
+} {
+    const where = vi.fn().mockResolvedValue(rows);
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
+    return { db: { select } as unknown as SiglensDatabase, where };
+}
+
 function makeSelectDb(rows: unknown[]): {
     db: SiglensDatabase;
     select: ReturnType<typeof vi.fn>;
@@ -126,6 +159,126 @@ describe('DrizzleMarketNewsRepository.attachAnalysis는', () => {
         const whereArg = where.mock.calls[0][0] as unknown;
         expect(whereArg).toBeTruthy();
         expect(typeof whereArg).toBe('object');
+    });
+});
+
+/**
+ * [회귀] `listCardsByCategory`는 `toMarketNewsRow`의 매핑(enum 화이트리스트,
+ * Date→ISO, tickers)을 두 번째로 구현한다. 종목 뉴스 쌍둥이는 그 divergence를
+ * 막으려고 전용 테스트를 뒀는데 이쪽은 비어 있었다 — 카드 액션과 두 페이지가
+ * `toMarketNewsCardItem` 투영을 걷어내고 이 읽기에 직접 의존하게 된 지금은
+ * 이게 유일한 가드다(감사: 코드·테스트 라운드 16).
+ */
+describe('DrizzleMarketNewsRepository.listCardsByCategory는', () => {
+    // 픽스처가 서버 전용 컬럼을 갖고 있어야 투영을 되돌렸을 때 샌다.
+    const cardDbRow = {
+        id: 'm1',
+        symbol: '__NEWS_CRYPTO__',
+        bodyEn: '유출되면 안 되는 원문',
+        analyzedAt: new Date('2026-06-15T12:00:00.000Z'),
+        source: 'CoinWire',
+        url: 'https://x.com/btc',
+        publishedAt: new Date('2026-06-15T10:00:00.000Z'),
+        titleEn: 'BTC up',
+        titleKo: 'BTC 급등',
+        bodyKo: '본문',
+        summaryKo: '요약',
+        sentiment: 'bullish',
+        category: 'macro',
+        priceImpact: 'high',
+        tickers: ['BTCUSD'],
+    };
+
+    it('서버 전용 컬럼을 SELECT하지도, 반환하지도 않는다', async () => {
+        const { db, select } = makeSelectDb([cardDbRow]);
+        const repo = new DrizzleMarketNewsRepository(db);
+
+        const [result] = await repo.listCardsByCategory(
+            '__NEWS_CRYPTO__',
+            1000
+        );
+
+        expect(result).not.toHaveProperty('bodyEn');
+        expect(result).not.toHaveProperty('symbol');
+        expect(result).not.toHaveProperty('analyzedAt');
+
+        const selected = Object.keys(
+            (select.mock.calls[0] as [Record<string, unknown>])[0]
+        );
+        expect(selected).not.toContain('bodyEn');
+        expect(selected).not.toContain('symbol');
+        expect(selected).not.toContain('analyzedAt');
+    });
+
+    it('표시 필드와 tickers를 그대로 옮기고 publishedAt을 ISO로 만든다', async () => {
+        const { db } = makeSelectDb([cardDbRow]);
+        const repo = new DrizzleMarketNewsRepository(db);
+
+        const [result] = await repo.listCardsByCategory(
+            '__NEWS_CRYPTO__',
+            1000
+        );
+
+        expect(result).toEqual({
+            id: 'm1',
+            source: 'CoinWire',
+            url: 'https://x.com/btc',
+            publishedAt: '2026-06-15T10:00:00.000Z',
+            titleEn: 'BTC up',
+            titleKo: 'BTC 급등',
+            bodyKo: '본문',
+            summaryKo: '요약',
+            sentiment: 'bullish',
+            category: 'macro',
+            priceImpact: 'high',
+            tickers: ['BTCUSD'],
+        });
+    });
+
+    it('알 수 없는/비문자열 enum 값은 null로 정규화한다', async () => {
+        // `hasPendingAnalysis`가 `sentiment === null`로 판정하므로, 깨진 값이
+        // 그대로 흘러가면 미보강 카드가 "보강됨"으로 읽힌다.
+        const { db } = makeSelectDb([
+            {
+                ...cardDbRow,
+                sentiment: 'unknown_value',
+                category: 42,
+                priceImpact: {},
+            },
+        ]);
+        const repo = new DrizzleMarketNewsRepository(db);
+
+        const [result] = await repo.listCardsByCategory(
+            '__NEWS_CRYPTO__',
+            1000
+        );
+
+        expect(result?.sentiment).toBeNull();
+        expect(result?.category).toBeNull();
+        expect(result?.priceImpact).toBeNull();
+    });
+
+    it('결과가 없으면 빈 배열을 돌려준다', async () => {
+        const { db } = makeSelectDb([]);
+        const repo = new DrizzleMarketNewsRepository(db);
+
+        await expect(
+            repo.listCardsByCategory('__NEWS_CRYPTO__', 1000)
+        ).resolves.toEqual([]);
+    });
+});
+
+describe('DrizzleMarketNewsRepository.listAnalyzedIds는', () => {
+    it('분석 완료 행만 거르는 필터를 건다', async () => {
+        const { db, where } = makeFilterSelectDb([{ id: 'm1' }]);
+        const repo = new DrizzleMarketNewsRepository(db);
+
+        const ids = await repo.listAnalyzedIds('__NEWS_CRYPTO__', 1000);
+
+        expect(ids).toEqual(new Set(['m1']));
+        const literals = sqlChunks((where.mock.calls[0] as [unknown])[0]);
+        expect(literals).toContain(' is not null');
+        expect(literals).not.toContain(' is null');
     });
 });
 

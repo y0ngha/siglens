@@ -38,7 +38,11 @@ describe('getNewsCardsAction', () => {
         expect(mockListBySymbol).not.toHaveBeenCalled();
     });
 
-    it('returns allowlisted fields only, stripping internal DB fields', async () => {
+    // 투영은 이제 액션이 아니라 **리포지터리의 SELECT**가 한다 — 액션은 그 결과를
+    // 그대로 돌려준다(중복 재매핑 제거, 감사: 코드 라운드 16). 그래서 mock도 카드
+    // 형상이어야 실제 계약을 흉내낸다. "서버 전용 컬럼이 안 나온다"는 단언은
+    // `DrizzleNewsRepository.listCardsBySymbol` 테스트가 SELECT 목록까지 포함해 진다.
+    it('리포지터리가 돌려준 카드를 그대로 반환한다', async () => {
         mockListCardsBySymbol.mockResolvedValue([
             {
                 id: 'news-1',
@@ -52,10 +56,6 @@ describe('getNewsCardsAction', () => {
                 priceImpact: 'high',
                 url: 'https://example.com/1',
                 source: 'reuters',
-                // Internal fields that should NOT appear in output
-                bodyEn: 'English body text',
-                symbol: 'AAPL',
-                analyzedAt: new Date('2026-05-25T10:30:00Z'),
             },
         ]);
 
@@ -104,9 +104,6 @@ describe('getNewsCardsAction', () => {
                 priceImpact: null,
                 url: 'https://example.com/1',
                 source: 'reuters',
-                bodyEn: 'body',
-                symbol: 'AAPL',
-                analyzedAt: null,
             },
             {
                 id: 'news-2',
@@ -120,9 +117,6 @@ describe('getNewsCardsAction', () => {
                 priceImpact: 'low',
                 url: 'https://example.com/2',
                 source: 'bloomberg',
-                bodyEn: 'body 2',
-                symbol: 'AAPL',
-                analyzedAt: new Date(),
             },
         ]);
 
@@ -131,6 +125,7 @@ describe('getNewsCardsAction', () => {
         expect(result).toHaveLength(2);
         expect(result[0].id).toBe('news-1');
         expect(result[1].id).toBe('news-2');
+        // 서버 전용 컬럼 배제는 리포지터리 테스트가 SELECT 목록까지 포함해 진다.
         expect(result[0]).not.toHaveProperty('bodyEn');
         expect(result[1]).not.toHaveProperty('bodyEn');
     });

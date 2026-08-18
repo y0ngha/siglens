@@ -29,8 +29,9 @@ export type GetMarketNewsCardsResult =
  * Uses `getMarketNewsCards` (React.cache-memoized) to deduplicate concurrent
  * calls within the same RSC render pass or the same Server Action invocation.
  *
- * Projects rows through `toMarketNewsCardItem` (allowlist) so DB-internal columns
- * (bodyEn, symbol, analyzedAt) are never serialised into the Server Action response.
+ * 투영은 읽기(`listCardsByCategory`)의 SELECT가 한다 — DB 내부 컬럼
+ * (bodyEn, symbol, analyzedAt)은 애초에 조회되지 않으므로 Server Action 응답에도
+ * 실리지 않는다.
  */
 export async function getMarketNewsCardsAction(
     category: NewsFeedCategory

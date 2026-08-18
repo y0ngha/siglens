@@ -7,6 +7,7 @@ import {
     MAX_CONSECUTIVE_FAILURES,
     MAX_POLL_DURATION_MS,
     POLL_INTERVAL_MS,
+    STAGNATION_FLOOR_POLLS,
     useNewsCardPolling,
 } from '@/widgets/news/hooks/useNewsCardPolling';
 
@@ -82,9 +83,12 @@ describe('useNewsCardPolling', () => {
 
         renderHook(() => useNewsCardPolling('AAPL', []));
 
-        await advancePolls(12);
+        await advancePolls(20);
         const settled = mockGetNewsCardsAction.mock.calls.length;
-        expect(settled).toBeLessThan(20);
+        // 정확한 정지 지점을 고정한다 — `toBeLessThan(20)`처럼 느슨하게 두면
+        // STAGNATION_FLOOR_POLLS를 1~11 아무 값으로 바꿔도 통과한다
+        // (감사: 테스트·코드 라운드 16).
+        expect(settled).toBe(STAGNATION_FLOOR_POLLS);
 
         await advancePolls(5);
         expect(mockGetNewsCardsAction.mock.calls.length).toBe(settled);
