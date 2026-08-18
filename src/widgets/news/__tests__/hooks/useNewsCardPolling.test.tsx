@@ -64,6 +64,32 @@ describe('useNewsCardPolling', () => {
         vi.useRealTimers();
     });
 
+    /**
+     * [회귀] 종료 조건이 "창 안의 **모든** 카드가 보강됨"인데, 공급은 방문자
+     * 25건/10분 + 크론 12건/밤이고 창은 180일이다. 기사가 25건을 넘는 종목은 그
+     * 조건이 구조적으로 참이 되지 않아 매 조회마다 100회 상한을 그대로 채웠다.
+     * 게다가 5회째에 스피너만 꺼져 나머지는 눈에도 안 보인다(감사: 비용 라운드 15).
+     *
+     * 진전이 멈추면(보강 카드 수가 STAGNANT_POLL_LIMIT 틱 연속 그대로) 접는다.
+     */
+    it('보강이 진행되다 멈추면 상한 전에 폴링을 접는다', async () => {
+        // 1건은 보강됨, 나머지는 계속 미보강 — 공급이 끊긴 상태를 흉내낸다.
+        mockGetNewsCardsAction.mockResolvedValue([
+            READY_ITEM,
+            { ...PENDING_ITEM, id: 'p2' },
+            { ...PENDING_ITEM, id: 'p3' },
+        ]);
+
+        renderHook(() => useNewsCardPolling('AAPL', []));
+
+        await advancePolls(12);
+        const settled = mockGetNewsCardsAction.mock.calls.length;
+        expect(settled).toBeLessThan(20);
+
+        await advancePolls(5);
+        expect(mockGetNewsCardsAction.mock.calls.length).toBe(settled);
+    });
+
     it('초기 뉴스가 비어 있으면 폴링 상태로 시작하고 새 카드를 반영한 뒤 확인 카드를 닫는다', async () => {
         mockGetNewsCardsAction.mockResolvedValue([READY_ITEM]);
 

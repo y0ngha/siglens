@@ -27,6 +27,19 @@ export {
 
 const REFRESH_SNAPSHOT_MIN_POLLS = 5;
 
+/**
+ * 보강 진전이 이 횟수만큼 연속으로 없으면 폴링을 접는다.
+ *
+ * 카드 한 건의 LLM 왕복은 실측 4~13초이고 방문자 경로는 동시 4건으로 돌린다
+ * (`NEWS_CARD_ANALYSIS_PARALLEL_LIMIT`). 3초 간격 4틱이면 12초라 진행 중인 청크
+ * 하나가 끝나기에 충분하다 — 그 사이 카운트가 한 번도 안 오르면 이번 창에서
+ * 더 채워질 것이 없다는 뜻이다.
+ *
+ * 단, **첫 보강이 도착한 뒤에만** 센다. 0건인 동안은 적재+LLM 왕복을 기다리는
+ * 중일 뿐이라, 그때 접으면 콜드 종목이 시작도 못 하고 끝난다.
+ */
+const STAGNANT_POLL_LIMIT = 4;
+
 function hasPendingAnalysis(items: NewsDisplayItem[]): boolean {
     return items.some(
         item => item.sentiment === null || item.priceImpact === null
@@ -103,6 +116,16 @@ export function useNewsCardPolling(
     useEffect(() => {
         let pollCount = 0;
         let consecutiveFailures = 0;
+        // 진전이 멈추면 선다.
+        //
+        // 종료 조건이 `!hasPendingAnalysis(fresh)` — 즉 창 안의 **모든** 카드가
+        // 보강돼야 멈춘다 — 인데, 공급 쪽은 방문자 25건/10분(`VISITOR_NEWS_CARD_LIMIT`)
+        // + 크론 12건/밤이고 창은 180일이다. 기사가 25건을 넘는 종목은 그 조건이
+        // 구조적으로 참이 되지 않아 매 조회마다 100회 상한을 그대로 채운다. 게다가
+        // 5회째에 스피너만 꺼져서(`setIsPolling(false)`) 나머지 95회는 눈에도 안
+        // 보인다(감사: 비용 라운드 15).
+        let enrichedCount = 0;
+        let stagnantPolls = 0;
         const startTime = Date.now();
         // 언마운트 후 쓰기 방지 — `clearInterval`은 다음 tick만 막고, 이미 날아간
         // 요청의 응답은 그대로 돌아온다. `setItems`/`latestItemsRef`/
@@ -139,12 +162,38 @@ export function useNewsCardPolling(
                     setIsPolling(false);
                 }
 
+                // 보강된 카드 수가 STAGNANT_POLL_LIMIT 틱 연속 그대로면, 남은
+                // 미보강 카드는 이번 창에서 채워지지 않는다 — 상한까지 끌 이유가 없다.
+                const freshEnriched = fresh.filter(
+                    item => item.sentiment !== null
+                ).length;
+                if (freshEnriched > enrichedCount) {
+                    enrichedCount = freshEnriched;
+                    stagnantPolls = 0;
+                } else {
+                    stagnantPolls += 1;
+                }
+
                 if (
                     fresh.length === 0 &&
                     pollCount >= EMPTY_SNAPSHOT_MAX_POLLS
                 ) {
                     setIsPolling(false);
                     clearInterval(intervalId);
+                } else if (
+                    // 보강이 **한 번이라도** 진행된 뒤에만 정체로 본다. 아직 0건이면
+                    // 첫 카드가 도착하기 전(적재 + LLM 왕복)일 뿐이라 여기서 접으면
+                    // 콜드 종목이 시작도 못 하고 끝난다 — 그 케이스는 wall-clock
+                    // 상한이 맡는다.
+                    enrichedCount > 0 &&
+                    pollCount >= REFRESH_SNAPSHOT_MIN_POLLS &&
+                    stagnantPolls >= STAGNANT_POLL_LIMIT
+                ) {
+                    setIsPolling(false);
+                    clearInterval(intervalId);
+                    if (fresh.length > 0) {
+                        onPollingCompleteRef.current?.(fresh);
+                    }
                 } else if (
                     fresh.length > 0 &&
                     !hasPendingAnalysis(fresh) &&

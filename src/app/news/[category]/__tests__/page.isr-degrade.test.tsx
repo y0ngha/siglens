@@ -115,20 +115,17 @@ describe('/news/[category] ISR empty-cache prevention', () => {
         mockGetMarketNewsList.mockResolvedValue([
             {
                 id: 'r1',
-                symbol: '__NEWS_CRYPTO__',
                 source: 'CoinWire',
                 url: 'https://example.com/btc',
                 publishedAt: '2026-06-15T10:00:00.000Z',
                 titleEn: 'BTC up',
                 titleKo: '비트코인 상승',
-                bodyEn: null,
                 bodyKo: null,
                 summaryKo: null,
                 sentiment: null,
                 category: null,
                 priceImpact: null,
                 tickers: ['BTCUSD'],
-                analyzedAt: null,
             },
         ] as Awaited<ReturnType<typeof getMarketNewsCards>>);
 

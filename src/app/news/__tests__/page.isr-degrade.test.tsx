@@ -101,20 +101,17 @@ describe('/news hub page ISR empty-cache prevention', () => {
         mockGetMarketNewsList.mockResolvedValue([
             {
                 id: 'r1',
-                symbol: '__NEWS_GENERAL__',
                 source: 'Reuters',
                 url: 'https://example.com/news1',
                 publishedAt: '2026-06-22T10:00:00.000Z',
                 titleEn: 'Markets rally',
                 titleKo: '시장 랠리',
-                bodyEn: null,
                 bodyKo: null,
                 summaryKo: null,
                 sentiment: null,
                 category: null,
                 priceImpact: null,
                 tickers: [],
-                analyzedAt: null,
             },
         ] as Awaited<ReturnType<typeof getMarketNewsCards>>);
 
