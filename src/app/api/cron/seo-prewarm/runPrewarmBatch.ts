@@ -214,7 +214,7 @@ function findStarvedSymbols(
             return { symbol: u.symbol, ageMs };
         })
         .filter(s => s.ageMs === null || s.ageMs > STARVATION_AGE_THRESHOLD_MS)
-        .sort((a, b) => {
+        .toSorted((a, b) => {
             if (a.ageMs === null) return b.ageMs === null ? 0 : -1;
             if (b.ageMs === null) return 1;
             return b.ageMs - a.ageMs;

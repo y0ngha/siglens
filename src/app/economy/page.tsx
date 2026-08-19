@@ -105,7 +105,9 @@ export async function generateMetadata(): Promise<Metadata> {
         // degraded 시 canonical을 null로 비워 크롤러가 임시 상태를 색인하지 않도록 한다.
         // follow: true는 유지해 링크 주스가 내부 링크로 계속 흐르게 한다.
         alternates: { canonical: degraded ? null : ECONOMY_URL },
-        robots: degraded ? { index: false, follow: true } : undefined,
+        robots: degraded
+            ? { index: false, follow: true }
+            : { index: true, follow: true },
         openGraph: {
             title: ECONOMY_FULL_TITLE,
             description: ECONOMY_DESCRIPTION,

@@ -1537,6 +1537,144 @@ describe('runPrewarmBatch', () => {
         warnSpy.mockRestore();
     });
 
+    /**
+     * `never`와 숫자 age가 **한 목록에 섞였을 때**의 정렬을 고정한다.
+     *
+     * 비교자에서 null을 다루는 두 줄은 두 종류가 공존할 때만 실행되는데, 기존
+     * 테스트는 전부 한 종류만 담고 있어(7×never / 3×숫자 / 단일) 이 분기를 한 번도
+     * 밟지 않았다. `-1`/`1`을 뒤집어 never를 뒤로 보내도 전부 통과한다 — 그러면
+     * 바쁜 밤에 never 심볼이 STARVATION_LOG_LIMIT(5) 밖으로 밀려 사라지는데,
+     * never야말로 이 워치를 만든 사고(KR 대장주 미도달)의 모양이다.
+     */
+    it('never와 숫자 age가 섞이면 never가 항상 앞에 온다', async () => {
+        const HOUR_MS = 60 * 60 * 1000;
+        universe(
+            { symbol: 'SYM500H', tabs: ['technical'] },
+            { symbol: 'NEVERX', tabs: ['technical'] }
+        );
+        // NEVERX는 키 자체를 넣지 않는다(= 한 번도 생성된 적 없음).
+        mockFindGeneratedAtMap.mockResolvedValue(
+            new Map([
+                [
+                    key('SYM500H', 'technical'),
+                    new Date(FIXED_NOW.getTime() - 500 * HOUR_MS),
+                ],
+            ])
+        );
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        await runPrewarmBatch();
+
+        const call = warnSpy.mock.calls.find(c =>
+            String(c[0]).includes('starvation watch')
+        );
+        expect(call).toBeDefined();
+        const message = String(call?.[0]);
+        const idxNever = message.indexOf('NEVERX');
+        const idxAged = message.indexOf('SYM500H');
+        expect(idxNever).toBeGreaterThanOrEqual(0);
+        expect(idxAged).toBeGreaterThanOrEqual(0);
+        // 500시간짜리보다도 never가 먼저다 — 숫자 크기가 아니라 종류가 우선한다.
+        expect(idxNever).toBeLessThan(idxAged);
+
+        warnSpy.mockRestore();
+    });
+
+    /**
+     * 비교자의 **두 null 분기**를 모두 밟게 한다. 2요소만 쓰면 V8이 어느 쪽 인자를
+     * a/b로 넘길지가 엔진 내부 사정이라, `return 1` 쪽을 뒤집어 **비대칭 비교자**를
+     * 만들어도 통과할 수 있다 — 비대칭 비교자는 이 버그가 실제로 배포되는 전형적 모양이다.
+     */
+    it('never 여러 개와 숫자 age가 섞여도 never가 전부 앞, 숫자는 오래된 순', async () => {
+        const HOUR_MS = 60 * 60 * 1000;
+        universe(
+            { symbol: 'SYM100H', tabs: ['technical'] },
+            { symbol: 'NEVER_A', tabs: ['technical'] },
+            { symbol: 'SYM500H', tabs: ['technical'] },
+            { symbol: 'NEVER_B', tabs: ['technical'] }
+        );
+        mockFindGeneratedAtMap.mockResolvedValue(
+            new Map([
+                [
+                    key('SYM100H', 'technical'),
+                    new Date(FIXED_NOW.getTime() - 100 * HOUR_MS),
+                ],
+                [
+                    key('SYM500H', 'technical'),
+                    new Date(FIXED_NOW.getTime() - 500 * HOUR_MS),
+                ],
+            ])
+        );
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        await runPrewarmBatch();
+
+        const message = String(
+            warnSpy.mock.calls.find(c =>
+                String(c[0]).includes('starvation watch')
+            )?.[0]
+        );
+        expect(message.indexOf('NEVER_A')).toBeLessThan(
+            message.indexOf('SYM500H')
+        );
+        expect(message.indexOf('NEVER_B')).toBeLessThan(
+            message.indexOf('SYM500H')
+        );
+        // 숫자끼리는 오래된 순.
+        expect(message.indexOf('SYM500H')).toBeLessThan(
+            message.indexOf('SYM100H')
+        );
+
+        warnSpy.mockRestore();
+    });
+
+    /**
+     * 심볼의 age는 **가장 오래된 탭**이어야 한다. `<`를 `>`로 뒤집으면 가장 신선한
+     * 탭의 age를 쓰게 되고, 그 심볼은 48h 문턱을 못 넘어 워치에서 조용히 사라진다.
+     * 기존 픽스처는 심볼당 날짜 있는 탭이 하나뿐이라 이 비교가 참이 된 적이 없다.
+     */
+    it('여러 탭 중 가장 오래된 탭의 age로 판정한다', async () => {
+        const HOUR_MS = 60 * 60 * 1000;
+        universe({ symbol: 'TWOTAB', tabs: ['technical', 'overall'] });
+        mockFindGeneratedAtMap.mockResolvedValue(
+            new Map([
+                [
+                    key('TWOTAB', 'overall'),
+                    new Date(FIXED_NOW.getTime() - 1 * HOUR_MS),
+                ],
+                [
+                    key('TWOTAB', 'technical'),
+                    new Date(FIXED_NOW.getTime() - 200 * HOUR_MS),
+                ],
+            ])
+        );
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        await runPrewarmBatch();
+
+        const message = String(
+            warnSpy.mock.calls.find(c =>
+                String(c[0]).includes('starvation watch')
+            )?.[0]
+        );
+        // `>`로 뒤집으면 (1h)가 되어 문턱 미만 → 로그 자체가 없다.
+        expect(message).toContain('TWOTAB(200h)');
+
+        warnSpy.mockRestore();
+    });
+
     it('부분 탭 결측(partial-tab): 한 탭은 생성 이력이 있어도 다른 탭이 한 번도 생성된 적 없으면 심볼 전체를 (never)로 잡는다', async () => {
         // technical: generatedAtMap에 키 자체가 없음(never). overall: boundary
         // 이후(=fresh)라 age가 작다. `neverGenerated || oldestGeneratedAt ===

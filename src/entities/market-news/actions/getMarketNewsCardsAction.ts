@@ -1,6 +1,7 @@
 'use server';
 
 import { getMarketNewsCards } from '../api';
+import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
 import {
     CATEGORY_CONFIG,
     type NewsFeedCategoryId,
@@ -42,7 +43,18 @@ export async function getMarketNewsCardsAction(
         const { sentinel } = CATEGORY_CONFIG[category];
         // 카드 리더는 본문 컬럼을 아예 읽지 않는다 — 받은 뒤 거르면 Neon 전송이
         // 3초 폴링마다 그대로 난다(감사: 비용 라운드 15).
-        return { ok: true, items: await getMarketNewsCards(sentinel) };
+        //
+        // 행 수 상한도 같은 이유로 여기서 건다: 이 액션은 3초마다 호출되므로 화면이
+        // 다루지 않는 행을 매 tick 실어 보내면 누적이 RSC 한 번보다 커지고,
+        // `compress: true` 이후로는 그 응답이 매번 오리진에서 gzip된다.
+        const items = await getMarketNewsCards(sentinel);
+        return {
+            ok: true,
+            items:
+                items.length > NEWS_ROW_SERIALIZATION_LIMIT
+                    ? items.slice(0, NEWS_ROW_SERIALIZATION_LIMIT)
+                    : items,
+        };
     } catch (error) {
         console.error('[getMarketNewsCardsAction]', error);
         return { ok: false, error: 'db error' };

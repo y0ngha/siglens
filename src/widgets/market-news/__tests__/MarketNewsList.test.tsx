@@ -39,6 +39,7 @@ const mockUseMarketNewsCardPolling = useMarketNewsCardPolling as MockedFunction<
 >;
 
 const PAGE_SIZE = 10; // mirrors the const in MarketNewsList.tsx
+import { MARKET_NEWS_ROW_SERIALIZATION_LIMIT } from '@/widgets/market-news/constants';
 
 function makeItem(n: number): MarketNewsCardItem {
     return {
@@ -165,5 +166,38 @@ describe('MarketNewsList', () => {
         const afterCount = screen.getAllByRole('article').length;
         expect(afterCount).toBeGreaterThan(beforeCount);
         expect(afterCount).toBe(manyItems.length);
+    });
+});
+
+/**
+ * 폴링이 부르는 액션과 서버 렌더가 같은 상한을 쓰는지 고정한다. 한쪽만 자르면
+ * 첫 페인트의 "더보기 (N개 남음)"이 폴링 직후 실제 전체 개수로 튄다.
+ */
+describe('MarketNewsList — 직렬화 상한', () => {
+    afterEach(() => {
+        mockUseMarketNewsCardPolling.mockReset();
+    });
+
+    it('폴링이 상한을 넘겨 돌려줘도 상한까지만 다룬다', () => {
+        mockUseMarketNewsCardPolling.mockReturnValue({
+            items: makeItems(MARKET_NEWS_ROW_SERIALIZATION_LIMIT + 137),
+            isPolling: false,
+            pollError: null,
+        });
+
+        render(
+            <MarketNewsList
+                category="general"
+                initialItems={makeItems(MARKET_NEWS_ROW_SERIALIZATION_LIMIT)}
+            />
+        );
+
+        // 상한이 없으면 (50+137) - 10 = 177개 남음이 된다.
+        const remaining = MARKET_NEWS_ROW_SERIALIZATION_LIMIT - PAGE_SIZE;
+        expect(
+            screen.getByRole('button', { name: `더보기 (${remaining}개 남음)` })
+        ).toBeInTheDocument();
+        // 남기는 쪽은 앞(최신)이다 — `slice(-N)`이면 138번째부터 그린다.
+        expect(screen.getByText('뉴스 헤드라인 1')).toBeInTheDocument();
     });
 });

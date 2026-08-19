@@ -39,7 +39,9 @@ export async function generateMetadata(): Promise<Metadata> {
         // 있는) 상태를 색인하지 않도록 한다. follow: true는 유지해 링크 주스가
         // 내부 링크로 계속 흐르게 한다.
         alternates: { canonical: degraded ? null : FEAR_GREED_URL },
-        robots: degraded ? { index: false, follow: true } : undefined,
+        robots: degraded
+            ? { index: false, follow: true }
+            : { index: true, follow: true },
         openGraph: {
             title: FEAR_GREED_FULL_TITLE,
             description: COPY.description,

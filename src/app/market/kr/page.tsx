@@ -46,7 +46,9 @@ export async function generateMetadata(): Promise<Metadata> {
         description: COPY.description,
         keywords: [...COPY.keywords],
         alternates: { canonical: degraded ? null : PAGE_URL },
-        robots: degraded ? { index: false, follow: true } : undefined,
+        robots: degraded
+            ? { index: false, follow: true }
+            : { index: true, follow: true },
         openGraph: {
             title: FULL_TITLE,
             description: COPY.description,

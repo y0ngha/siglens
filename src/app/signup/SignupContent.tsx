@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import { SignupForm } from '@/features/auth-signup';
-import { SocialLoginButtons } from '@/features/auth-oauth';
+import { SocialLoginButtons } from '@/features/auth-oauth/ui/SocialLoginButtons';
 import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
 
 // useSearchParams를 읽어 이 subtree만 CSR로 떨군다(라우트는 static 유지).

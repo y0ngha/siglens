@@ -20,7 +20,7 @@ const PATH = '/news/us';
 const TITLE = '미국 시장 뉴스 — 카테고리별 최신 흐름';
 const FULL_TITLE = `${TITLE} | ${SITE_NAME}`;
 const DESCRIPTION = clampSeoDescription(
-    '미국 일반·주식·외환·마켓 아티클 카테고리의 최신 뉴스를 한국어 AI 요약과 함께 한 곳에서 봐요.'
+    '미국 시장 뉴스를 카테고리별로 한 곳에서 확인해요. 일반·주식·외환·마켓 아티클까지 최신 흐름을 빠짐없이 모았고, 어려운 원문 기사도 한국어 AI 요약으로 핵심만 빠르게 파악할 수 있게 도와드려요.'
 );
 
 /**
@@ -54,7 +54,9 @@ export async function generateMetadata(): Promise<Metadata> {
             'Siglens 뉴스',
         ],
         alternates: { canonical: degraded ? null : PATH },
-        robots: degraded ? { index: false, follow: true } : undefined,
+        robots: degraded
+            ? { index: false, follow: true }
+            : { index: true, follow: true },
         openGraph: {
             type: 'website',
             siteName: SITE_NAME,

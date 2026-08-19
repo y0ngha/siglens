@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useCurrentUser } from '@/entities/auth';
+import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { PositionCta } from './PositionCta';
 

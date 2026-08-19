@@ -49,7 +49,9 @@ describe('NoticePopup', () => {
         mockedAction.mockResolvedValue([notice()]);
         render(<NoticePopup />);
         expect(await screen.findByText('긴급 점검 안내')).toBeInTheDocument();
-        expect(screen.getByText('오늘 23시')).toBeInTheDocument();
+        // 본문은 `MarkdownText`가 그리는데 그 렌더러는 lazy 청크라(공지가 있을 때만
+        // 내려받는다) 제목보다 한 틱 늦게 도착한다 — 동기 조회로는 잡히지 않는다.
+        expect(await screen.findByText('오늘 23시')).toBeInTheDocument();
         expect(screen.getByText('2026.06.03 작성')).toBeInTheDocument();
     });
 

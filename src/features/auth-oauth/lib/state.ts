@@ -1,3 +1,4 @@
+import 'server-only';
 import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import type { SupportedOAuthProvider } from '@/shared/lib/types';
 import { isSecureCookieEnv, type ResponseCookie } from '@/entities/auth';

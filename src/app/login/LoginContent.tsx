@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import { LoginForm } from '@/features/auth-login';
-import { SocialLoginButtons } from '@/features/auth-oauth';
+import { SocialLoginButtons } from '@/features/auth-oauth/ui/SocialLoginButtons';
 import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
 
 export const OAUTH_ERROR_MESSAGES: Record<string, string | undefined> = {

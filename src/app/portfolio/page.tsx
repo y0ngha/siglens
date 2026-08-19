@@ -18,6 +18,8 @@ export const metadata: Metadata = {
     description: `${SITE_NAME} 보유종목별 최근 가격 범위 안에서 내 평단이 어디에 있는지 확인하는 개인화 페이지`,
     alternates: { canonical: `${SITE_URL}/portfolio` },
     openGraph: { url: `${SITE_URL}/portfolio` },
+    // 로그인 전용 개인화 서페이스라 색인 대상이 아니다 — 비로그인 방문자는
+    // 아래에서 /login?next=/portfolio로 리다이렉트된다.
     robots: { index: false, follow: false },
 };
 

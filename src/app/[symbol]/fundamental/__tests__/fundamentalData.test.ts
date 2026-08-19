@@ -1,13 +1,15 @@
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/api', () => ({
     DrizzleProfileDescriptionTranslationRepository: vi
         .fn()
         .mockImplementation(() => ({
             findBySymbol: vi.fn().mockResolvedValue(null),
             upsert: vi.fn().mockResolvedValue(undefined),
         })),
+}));
+vi.mock('@/entities/ticker/lib/koreanTranslator', () => ({
     translateCompanyDescription: vi.fn().mockResolvedValue('translated desc'),
 }));
 // 모킹된 FmpFundamentalClient의 단일 인스턴스 메서드 핸들. getFundamentalDataProvider가

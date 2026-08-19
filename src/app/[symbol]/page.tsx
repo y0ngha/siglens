@@ -22,7 +22,7 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
-import { getQuantizedBarsStatic } from '@/entities/bars';
+import { getQuantizedBarsStatic, getSeedBarsStatic } from '@/entities/bars';
 import { countSkillFiles } from '@/entities/skill';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
@@ -213,9 +213,19 @@ export default async function SymbolPage({ params }: Props) {
         // Bar.time은 seconds (epoch) — RQ dataUpdatedAt은 milliseconds.
         const lastBarSec = quantizedFactBars.bars.at(-1)?.time ?? 0;
         const stableUpdatedAt = lastBarSec * MS_PER_SECOND;
+        // seed에는 축소판을 넣는다 — FactLayer(아래)는 전체 지표가 필요하지만 클라이언트
+        // 첫 페인트는 rsi·macd·buySellVolume만 읽는다(getSeedBarsStatic JSDoc).
+        // 내부적으로 같은 `getQuantizedBarsStatic` 결과를 재사용하므로 추가 fetch는 없고,
+        // layout과 같은 인자로 호출해야 참조가 접혀 한 벌만 직렬화된다.
+        const seedBars = await getSeedBarsStatic(
+            ticker,
+            DEFAULT_TIMEFRAME,
+            marketProfile,
+            assetInfo.fmpSymbol
+        );
         queryClient.setQueryData(
             QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
-            quantizedFactBars,
+            seedBars,
             { updatedAt: stableUpdatedAt }
         );
     }

@@ -28,7 +28,7 @@ describe('FloatingChatButton', () => {
         ).toBeInTheDocument();
     });
 
-    it('renders ChatPanel when isOpen is true', () => {
+    it('renders ChatPanel when isOpen is true', async () => {
         vi.mocked(useChatButtonState).mockReturnValue({
             isOpen: true,
             showTooltip: false,
@@ -39,7 +39,9 @@ describe('FloatingChatButton', () => {
 
         render(<FloatingChatButton symbol="AAPL" />);
 
-        expect(screen.getByTestId('chat-panel')).toBeInTheDocument();
+        // 패널은 열었을 때만 내려받는 lazy 청크라 한 틱 뒤에 도착한다 —
+        // 그 사이에는 "채팅을 여는 중…" 자리표가 껍데기 안에 렌더된다.
+        expect(await screen.findByTestId('chat-panel')).toBeInTheDocument();
         expect(
             screen.getByRole('button', { name: /AI 채팅 닫기/ })
         ).toBeInTheDocument();

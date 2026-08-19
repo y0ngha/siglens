@@ -19,6 +19,8 @@ vi.mock('@y0ngha/siglens-core', () => ({
     // Task 9: @/views/symbol barrel now also exports FearGreedFactsSummary,
     // which pulls in fearGreedLabels → POC_WINDOW_DEFAULT at module scope.
     POC_WINDOW_DEFAULT: 60,
+    // getSeedBarsStatic(barsStaticCache)이 지표 화이트리스트의 baseline으로 쓴다.
+    EMPTY_INDICATOR_RESULT: { ma: {}, ema: {} },
 }));
 vi.mock('@/shared/config/market', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/config/market')>()),
@@ -35,8 +37,12 @@ vi.mock('@/entities/symbol-indexability', () => ({
         reason: 'popular',
     })),
 }));
+// `indicators`는 BarsData의 필수 필드다 — 비워 두면 seed 축소(getSeedBarsStatic)가
+// undefined를 읽는다. 실제 shape에 맞춰 빈 지표를 함께 준다.
 vi.mock('@/entities/bars/actions', () => ({
-    getBarsAction: vi.fn().mockResolvedValue({ bars: [] }),
+    getBarsAction: vi
+        .fn()
+        .mockResolvedValue({ bars: [], indicators: { ma: {}, ema: {} } }),
 }));
 // page.tsx calls sessionSpecFor(marketProfile) before quantize — stub it out so the
 // core-level constants (US_EQUITY_SESSION) are not required in the partial core mock above.

@@ -41,7 +41,7 @@ export const revalidate = 86400;
 const ECONOMY_KR_URL = `${SITE_URL}/economy/kr`;
 const ECONOMY_KR_FULL_TITLE = `${KR_ECONOMY_TITLE} | ${SITE_NAME}`;
 const ECONOMY_KR_DESCRIPTION = clampSeoDescription(
-    '한국 기준금리·물가·고용·성장 지표와 다가오는 국내 경제 발표 일정을 한 페이지에서 봅니다.'
+    '한국 경제 지표를 한 페이지에서 확인해요. 기준금리·소비자물가·고용률·GDP 성장률 같은 핵심 지표부터 국고채 금리, 수출 증가율까지 모아서 보여드리고, 다가오는 국내 경제 발표 일정도 함께 안내해드려요.'
 );
 const ECONOMY_KR_KEYWORDS = [
     ...ROOT_KEYWORDS,
@@ -98,7 +98,9 @@ export async function generateMetadata(): Promise<Metadata> {
         // degraded 시 canonical을 비우고 noindex — 지표가 하나도 없는 임시 상태를
         // 색인시키지 않는다. follow는 유지해 내부 링크로 주스가 계속 흐르게 한다.
         alternates: { canonical: degraded ? null : ECONOMY_KR_URL },
-        robots: degraded ? { index: false, follow: true } : undefined,
+        robots: degraded
+            ? { index: false, follow: true }
+            : { index: true, follow: true },
         openGraph: {
             title: ECONOMY_KR_FULL_TITLE,
             description: ECONOMY_KR_DESCRIPTION,
@@ -306,7 +308,12 @@ export default function EconomyKrPage() {
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
                     {KR_ECONOMY_TITLE}
                 </h1>
-                <Suspense fallback={<EconomySkeleton />}>
+                {/*
+                    한국 레지스트리를 넘긴다 — 기본값(미국)은 국채 카드 3장을 포함한
+                    12장짜리라, 국채 카드가 없고 고용이 1장뿐인 이 화면에서는 자리를
+                    과하게 예약해 콘텐츠 도착 시 위로 당겨진다.
+                */}
+                <Suspense fallback={<EconomySkeleton variant="kr" />}>
                     <KrEconomyContent />
                 </Suspense>
                 <section aria-labelledby="economy-kr-faq-heading">

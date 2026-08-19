@@ -162,7 +162,11 @@ export class DrizzleNewsRepository {
             })
             .from(news)
             .where(and(eq(news.symbol, symbol), gte(news.publishedAt, cutoff)))
-            .orderBy(desc(news.publishedAt));
+            // 동률 tie-break: `publishedAt`만으로 정렬하면 같은 시각 행들의
+            // 상대 순서가 정해지지 않는다. 소비자가 앞에서 N개를 잘라 쓰기
+            // 시작한 뒤로는(NEWS_ROW_SERIALIZATION_LIMIT) 경계에 걸친 동률이
+            // 재생성마다 다른 행을 남겨 ISR 블롭이 흔들릴 수 있다.
+            .orderBy(desc(news.publishedAt), desc(news.id));
 
         return rows.map(toNewsRow);
     }
@@ -224,7 +228,11 @@ export class DrizzleNewsRepository {
             })
             .from(news)
             .where(and(eq(news.symbol, symbol), gte(news.publishedAt, cutoff)))
-            .orderBy(desc(news.publishedAt));
+            // 동률 tie-break: `publishedAt`만으로 정렬하면 같은 시각 행들의
+            // 상대 순서가 정해지지 않는다. 소비자가 앞에서 N개를 잘라 쓰기
+            // 시작한 뒤로는(NEWS_ROW_SERIALIZATION_LIMIT) 경계에 걸친 동률이
+            // 재생성마다 다른 행을 남겨 ISR 블롭이 흔들릴 수 있다.
+            .orderBy(desc(news.publishedAt), desc(news.id));
 
         return rows.map(row => ({
             id: row.id,

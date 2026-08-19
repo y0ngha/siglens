@@ -12,9 +12,14 @@ vi.mock('next/navigation', () => ({
     redirect: vi.fn(),
 }));
 
+import { render, screen } from '@testing-library/react';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { metadata, OnboardingGuard } from '@/app/onboarding/page';
+import {
+    metadata,
+    OnboardingGuard,
+    OnboardingSkeleton,
+} from '@/app/onboarding/page';
 
 const mockGetCurrentUser = vi.mocked(getCurrentUser);
 const mockRedirect = vi.mocked(redirect);
@@ -59,6 +64,16 @@ describe('Onboarding page', () => {
             await OnboardingGuard();
 
             expect(mockRedirect).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('OnboardingSkeleton', () => {
+        it('exposes exactly one h1 while the guard is loading', () => {
+            render(<OnboardingSkeleton />);
+
+            expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+                '보유종목을 등록해 보세요'
+            );
         });
     });
 });

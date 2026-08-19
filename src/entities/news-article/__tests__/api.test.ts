@@ -82,6 +82,7 @@ import {
 } from '../lib/ingestNewsForSymbol';
 import { analyzeNewsCards } from '../lib/analyzeNewsCards';
 import { PREWARM_NEWS_CARD_LIMIT } from '../lib/newsAnalysisConstants';
+import { orderColumnName } from '@/__tests__/utils/orderColumnName';
 
 const SEAM_SOURCE = readFileSync(
     fileURLToPath(new URL('../api.ts', import.meta.url)),
@@ -336,6 +337,41 @@ describe('DrizzleNewsRepository', () => {
             expect(setArg['category']).toBe('other');
             expect(setArg['priceImpact']).toBe('medium');
             expect(setArg['analyzedAt']).toBe(analyzedAt);
+        });
+    });
+
+    /**
+     * 동률 tie-break를 **인자 수준에서** 고정한다. 기존 테스트는 `orderBy` 호출 횟수만
+     * 봐서, 2차 키를 지워도 전부 통과했다. 소비자가 앞에서 N개를 잘라 쓰는 지금은
+     * 동률의 상대 순서가 정해지지 않으면 재생성마다 다른 행이 살아남아 ISR 블롭이 흔들린다.
+     */
+    describe('정렬 tie-break', () => {
+        it('listBySymbol은 publishedAt desc 다음 id desc로 정렬한다', async () => {
+            const { db, orderBy } = makeSelectDb([]);
+
+            await new DrizzleNewsRepository(db).listBySymbol(
+                'AAPL',
+                86_400_000
+            );
+
+            expect(orderBy.mock.calls[0]!.map(orderColumnName)).toEqual([
+                'published_at desc',
+                'id desc',
+            ]);
+        });
+
+        it('listCardsBySymbol도 같은 tie-break를 쓴다', async () => {
+            const { db, orderBy } = makeSelectDb([]);
+
+            await new DrizzleNewsRepository(db).listCardsBySymbol(
+                'AAPL',
+                86_400_000
+            );
+
+            expect(orderBy.mock.calls[0]!.map(orderColumnName)).toEqual([
+                'published_at desc',
+                'id desc',
+            ]);
         });
     });
 

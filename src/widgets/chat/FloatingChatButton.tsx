@@ -1,8 +1,40 @@
 'use client';
 
-import { ChatPanel } from './ChatPanel';
+import dynamic from 'next/dynamic';
 import { useChatButtonState } from './hooks/useChatButtonState';
 import { useSymbolChat } from '@/features/symbol-chat';
+
+/**
+ * 챗 패널은 **열었을 때** 내려받는다.
+ *
+ * 이 버튼은 `/[symbol]` 레이아웃에 항상 마운트되므로, 정적 import이던 시절에는
+ * 챗을 한 번도 열지 않는 방문자까지 `ChatPanel`과 그 의존인 마크다운 렌더러
+ * (`react-markdown` 체인, 청크 114KB)를 받았다. 아래 렌더는 이미 `isOpen && ...`
+ * 조건부라, 지연 로드로 바꾸면 실제로 여는 사용자만 비용을 낸다.
+ *
+ * 다만 **마크다운 청크가 모든 종목 탭에서 사라지는 것은 아니다**: `/[symbol]`은
+ * `ChartContent → AnalysisPanel`이, `/[symbol]/overall`은 `widgets/overall/sections/*`가
+ * `MarkdownText`를 그대로 정적 import한다(둘 다 AI 서사를 즉시 그려야 해서 지연시킬
+ * 이유가 없다). 이 변경이 실제로 청크를 걷어내는 곳은 `news`·`fundamental`·`options`
+ * 처럼 마크다운을 쓰지 않는 탭들이고, 홈에서 걷어낸 것은 짝을 이루는
+ * `NoticePopup` 쪽 변경이다.
+ *
+ * `ssr: false`인 이유: 패널은 열린 상태로 서버 렌더될 일이 없다(초기값이 닫힘).
+ * `loading` 자리표는 패널 껍데기(`fixed` 오버레이) **안쪽**에만 들어가므로
+ * 문서 흐름을 밀지 않는다 — 레이아웃 이동 없이 "여는 중"만 보인다.
+ */
+const ChatPanel = dynamic(() => import('./ChatPanel').then(m => m.ChatPanel), {
+    ssr: false,
+    loading: () => (
+        <div
+            className="flex h-64 items-center justify-center text-xs text-secondary-400"
+            role="status"
+            aria-live="polite"
+        >
+            채팅을 여는 중…
+        </div>
+    ),
+});
 
 interface FloatingChatButtonProps {
     symbol: string;

@@ -1,3 +1,4 @@
+import 'server-only';
 import { GoogleGenAI } from '@google/genai';
 import type { AiContents, ConversationTurn } from '@y0ngha/siglens-core';
 import type { ProviderCallOptions } from '../model';

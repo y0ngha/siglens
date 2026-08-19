@@ -7,15 +7,16 @@
 // pull-in하여 Jest 모듈 해석이 깨진다.
 // 소비자는 @/entities/ticker/hooks/useAssetInfo 에서 직접 deep import한다.
 
+// translateCompanyNames / translateCompanyDescription도 barrel에서 제외 — koreanTranslator.ts가
+// @/entities/llm-provider를 통해 @anthropic-ai/sdk + openai + @google/genai를 전이적으로
+// pull-in한다. 이 barrel은 'use client' 컴포넌트(TickerAutocomplete 등)가 import하므로,
+// 여기서 재노출하면 세 SDK가 통째로 클라이언트 번들에 유입된다.
+// 소비자는 @/entities/ticker/lib/koreanTranslator 에서 직접 deep import한다.
+
 export {
     getAssetInfoResilient,
     type ResilientAssetInfo,
 } from './lib/getAssetInfoResilient';
-
-export {
-    translateCompanyNames,
-    translateCompanyDescription,
-} from './lib/koreanTranslator';
 
 export {
     getRecentSearches,

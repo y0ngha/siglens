@@ -5,6 +5,7 @@ import { useState } from 'react';
 import type { MarketNewsCardItem } from '@/entities/market-news';
 import { MARKET_NEWS_LOOKBACK_DAYS } from '@/entities/market-news';
 
+import { MARKET_NEWS_ROW_SERIALIZATION_LIMIT } from './constants';
 import { useMarketNewsCardPolling } from './hooks/useMarketNewsCardPolling';
 import { MarketNewsCard } from './MarketNewsCard';
 
@@ -102,10 +103,19 @@ export function MarketNewsList({
         setVisibleCount(PAGE_SIZE);
     }
 
-    const { items, isPolling, pollError } = useMarketNewsCardPolling(
-        category,
-        initialItems
-    );
+    const {
+        items: polledItems,
+        isPolling,
+        pollError,
+    } = useMarketNewsCardPolling(category, initialItems);
+
+    // 서버 렌더와 폴링 액션이 모두 같은 상한을 쓰지만, 렌더 직전에 한 번 더 맞춘다 —
+    // 어느 한쪽이 상한을 잃으면 첫 페인트의 "더보기 (40개 남음)"이 폴링 직후 실제
+    // 전체 개수로 튄다. 화면이 다루는 행 수를 한쪽에서만 제한할 이유가 없다.
+    const items =
+        polledItems.length > MARKET_NEWS_ROW_SERIALIZATION_LIMIT
+            ? polledItems.slice(0, MARKET_NEWS_ROW_SERIALIZATION_LIMIT)
+            : polledItems;
 
     if (pollError !== null) {
         throw pollError;

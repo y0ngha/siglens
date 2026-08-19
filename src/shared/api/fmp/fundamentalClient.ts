@@ -308,19 +308,48 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         };
     }
 
-    /** Fetch recent analyst grade-change events; returns events sorted descending by date. */
+    /**
+     * Fetch recent analyst grade-change events; returns events sorted descending by date.
+     *
+     * **정렬을 여기서 강제한다.** 예전에는 이 JSDoc이 내림차순을 약속하면서 본문은
+     * FMP 응답 순서를 그대로 흘려보냈다 — 즉 계약이 상류 API의 관행에만 기대고 있었다.
+     * 소비자가 "앞쪽이 최신"을 전제로 목록을 자르기 시작하면(`/[symbol]/news`가
+     * 직렬화 상한을 걸며 그렇게 됐다) 상류가 순서를 바꾸는 날 **최신이 잘려 나가고
+     * 가장 오래된 것만 남는다** — 렌더는 정상이라 아무도 눈치채지 못한다.
+     * 날짜 문자열은 `YYYY-MM-DD` 고정폭이라 사전식 비교가 곧 시간순 비교다.
+     */
     async getGrades(symbol: string): Promise<GradesEvent[]> {
         const arr = await fmpGet<RawFmpGradesEvent[]>('grades', {
             symbol,
         });
-        return arr.map(r => ({
-            symbol: r.symbol,
-            date: r.date,
-            gradingCompany: r.gradingCompany,
-            previousGrade: r.previousGrade,
-            newGrade: r.newGrade,
-            action: toGradesAction(r.action),
-        }));
+        return (
+            arr
+                .map(r => ({
+                    symbol: r.symbol,
+                    date: r.date,
+                    gradingCompany: r.gradingCompany,
+                    previousGrade: r.previousGrade,
+                    newGrade: r.newGrade,
+                    action: toGradesAction(r.action),
+                }))
+                // 같은 날짜 안에서도 순서를 고정한다. AAPL은 등급 변경이 하루 여러 건이라
+                // 직렬화 상한(50)의 경계가 거의 항상 동률 묶음 안에 떨어지는데, 동률의
+                // 상대 순서가 FMP 응답 순서에 맡겨져 있으면 재생성마다 다른 이벤트가
+                // 살아남아 ISR 블롭이 흔들린다.
+                //
+                // 세 키를 다 써도 **완전한 전순서는 아니다**(전부 같으면 응답 순서가 남는다).
+                // 그리고 비교 대상은 `fmpGet`이 검증 없이 캐스팅한 값이라 런타임에 null일
+                // 수 있으므로 `?? ''`로 받는다 — 여기서 TypeError가 나면 등급 섹션 전체가
+                // 그 심볼에 대해 degrade된 채 고착된다.
+                .toSorted(
+                    (a, b) =>
+                        (b.date ?? '').localeCompare(a.date ?? '') ||
+                        (a.gradingCompany ?? '').localeCompare(
+                            b.gradingCompany ?? ''
+                        ) ||
+                        (a.newGrade ?? '').localeCompare(b.newGrade ?? '')
+                )
+        );
     }
 
     /** Fetch the current buy/hold/sell grade consensus breakdown; returns `null` when unavailable. */

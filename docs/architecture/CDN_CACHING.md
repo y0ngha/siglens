@@ -35,7 +35,14 @@ App Router의 `<Link>`는 기본값(`prefetch={null}` = auto)에서 **뷰포트�
 - 종목 페이지 한 번 열면 `SymbolTabs`(형제 탭 6~8개) + `CrossLinkCards`(같은 탭 집합 재노출)가
   **페이지뷰당 ~10MB의 RSC를 오리진에서 끌어온다**. 클릭은 많아야 한 번이다.
 - 랜딩(`/`)은 내부 링크가 95개다. 스크롤만 해도 그 수만큼 1.7MB짜리 페이로드를 예약한다.
-- 오리진은 `next.config.ts`에서 `compress: false`(엣지 brotli에 위임)라, 오리진→엣지 구간은 위 비압축 크기 그대로다.
+- 오리진은 `next.config.ts`에서 **`compress: true`** 라 오리진→엣지 구간도 gzip으로 나간다.
+  예전에는 `false`(엣지 brotli에 위임)였는데, 실측해 보니 **엣지가 HTML만 압축하지 않고
+  있었다** — 정적 자산은 `content-encoding: br`인데 HTML 문서는 `content-encoding` 헤더
+  자체가 없었고, `cf-cache-status: MISS`로 강제해도 같았다. 위임의 전제가 성립하지 않아
+  오리진에서 걸었다(홈 기준 1,021KB → 201KB). 대가로 `/_next/static/**`은 brotli 대신
+  gzip으로 나간다(홈 기준 +57KB, 1년 immutable 캐시라 첫 방문만). 순이득 763KB.
+  엣지에서 `text/html` Compression Rule을 켤 수 있으면 그쪽이 상위 호환이다 —
+  HTML brotli(173KB) + 정적 brotli 유지 + 오리진 CPU 0.
 
 #### ⚠️ `_rsc` 해시는 진입 페이지마다 다르다 — prefetch는 캐시를 데우지 못한다
 

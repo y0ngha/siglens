@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
-import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { formatNoticeDate } from '@/entities/notice';
@@ -10,6 +10,28 @@ import { toSafeHttpUrl } from '@/shared/lib/safeUrl';
 import { useNoticePopup } from '../hooks/useNoticePopup';
 
 const MODAL_TITLE_ID = 'notice-modal-title';
+
+/**
+ * 마크다운 렌더러를 **띄울 공지가 실제로 있을 때만** 내려받는다.
+ *
+ * 이 팝업은 루트 레이아웃에서 항상 마운트되는데(`NoticePopupLoader`), `react-markdown`
+ * + `remark-gfm` + `rehype-slug` 체인이 정적 import로 묶여 있어서 **공지가 하나도 없는
+ * 페이지에서도** 그 청크가 초기 로드에 딸려 왔다(실측: 홈이 markdown 청크 113KB /
+ * 전송 34KB를 받고 그중 26KB가 unused).
+ *
+ * 본문(`current`)이 없으면 이 컴포넌트는 그 위에서 `null`을 반환하므로, 아래 렌더에
+ * 도달했다는 것 자체가 "보여줄 공지가 있다"는 뜻이다 — 그 시점에만 청크를 가져온다.
+ *
+ * `loading`을 주지 않는다 = 이 `dynamic()`이 **Suspense 경계를 만들지 않는다**
+ * (`hasSuspenseBoundary = !opts.ssr || !!opts.loading`). 따라서 청크를 기다리는 동안
+ * 멈추는 것은 본문만이 아니라 팝업 전체이고, 대기 지점은 `NoticePopupLoader`가
+ * `{ssr:false}`로 만든 바깥 경계(fallback `null`)다. 모달은 페이지 흐름 밖이라
+ * 레이아웃을 밀지 않고, 원래도 비동기로 뜨는 화면이라 이 편이 단순하다 —
+ * 형제인 `FloatingChatButton`은 반대로 `loading`을 줘서 자체 경계를 갖는다.
+ */
+const MarkdownText = dynamic(() =>
+    import('@/shared/ui/MarkdownText').then(m => m.MarkdownText)
+);
 
 /**
  * 사이트 공지 팝업. 데이터/큐 로직은 useNoticePopup 훅에 위임하고, 이 컴포넌트는

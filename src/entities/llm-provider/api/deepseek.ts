@@ -1,3 +1,4 @@
+import 'server-only';
 import { toProviderTurns, findSpecByApiModelId } from '../lib/utils';
 import type { ProviderCallOptions } from '../model';
 import type { DeepSeekUsageLike } from '../lib/usage';

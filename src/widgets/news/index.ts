@@ -12,3 +12,6 @@ export { NewsAiSummarySkeleton } from './NewsAiSummarySkeleton';
 // 의존성이 없으므로 barrel 제외 사유 없음.
 export { useNewsAnalysisTrigger } from './hooks/useNewsAnalysisTrigger';
 export { useWaitForNewsCards } from './hooks/useWaitForNewsCards';
+
+// 서버 섹션이 클라이언트로 넘길 행 수를 자를 때 쓴다 — 근거는 constants.ts 주석.
+export { NEWS_ROW_SERIALIZATION_LIMIT } from './constants';

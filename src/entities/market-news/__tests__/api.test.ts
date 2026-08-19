@@ -6,6 +6,7 @@ import type { MarketNewsDbRow } from '../api';
 import type { MarketNewsItem } from '../lib/marketNewsClientPort';
 import type { NewsCardAnalysis } from '@y0ngha/siglens-core';
 import type { SiglensDatabase } from '@/shared/db/types';
+import { orderColumnName } from '@/__tests__/utils/orderColumnName';
 
 const ITEM: MarketNewsItem = {
     id: 'm1',
@@ -373,5 +374,35 @@ describe('DrizzleMarketNewsRepository.listByCategory는', () => {
             86_400_000
         );
         expect(results).toEqual([]);
+    });
+});
+
+/**
+ * `/news/[category]`가 이 결과를 앞에서 50개만 잘라 쓴다. 동률(같은 publishedAt)의
+ * 상대 순서가 정해지지 않으면 경계에 걸친 행이 ISR 재생성마다 바뀐다.
+ */
+describe('정렬 tie-break', () => {
+    it('listByCategory는 published_at desc 다음 id desc로 정렬한다', async () => {
+        const { db, orderBy } = makeSelectDb([]);
+        await new DrizzleMarketNewsRepository(db).listByCategory(
+            '__NEWS_CRYPTO__',
+            1000
+        );
+        expect(orderBy.mock.calls[0]!.map(orderColumnName)).toEqual([
+            'published_at desc',
+            'id desc',
+        ]);
+    });
+
+    it('listCardsByCategory도 같은 tie-break를 쓴다', async () => {
+        const { db, orderBy } = makeSelectDb([]);
+        await new DrizzleMarketNewsRepository(db).listCardsByCategory(
+            '__NEWS_CRYPTO__',
+            1000
+        );
+        expect(orderBy.mock.calls[0]!.map(orderColumnName)).toEqual([
+            'published_at desc',
+            'id desc',
+        ]);
     });
 });

@@ -10,3 +10,9 @@ export {
     STAGNANT_POLL_LIMIT,
     STAGNATION_FLOOR_POLLS,
 } from '@/shared/config/cardPollingConfig';
+
+/**
+ * 카테고리 뉴스도 종목 뉴스와 같은 상한을 쓴다 — 근거는
+ * `shared/config/newsSerialization` 주석. 이름만 슬라이스 로컬로 노출한다.
+ */
+export { NEWS_ROW_SERIALIZATION_LIMIT as MARKET_NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';

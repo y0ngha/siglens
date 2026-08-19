@@ -1,11 +1,15 @@
 /**
  * `[symbol]/position` page tests — mirrors overall/fear-greed sibling patterns:
- * revalidate literal, generateMetadata branches (always noindex), body guards
- * (invalid ticker / unresolvable-degraded / missing asset → notFound), the
- * static-path server data composition (getQuantizedBarsStatic →
- * buildTechnicalFacts, never getBarsAction/cookies), and an SSR crawl-safety
- * check that no personalized marker (★/평단/수익률) ever appears in the
- * server-rendered shell.
+ * revalidate literal, generateMetadata branches (index,follow for a valid
+ * resolvable symbol since 2026-08-19; noindex still applies to invalid
+ * ticker/degraded/tab-not-allowed early-returns), body guards (invalid ticker /
+ * unresolvable-degraded / missing asset → notFound), the static-path server
+ * data composition (getQuantizedBarsStatic → buildTechnicalFacts, never
+ * getBarsAction/cookies), the per-symbol current-price-position content block
+ * (Task 1 — the indexing justification), and an SSR crawl-safety check that no
+ * personalized marker (★/평단/수익률) ever appears in the server-rendered shell
+ * (that invariant is unchanged by the indexing flip — only PositionCta, which
+ * is mocked out here, carries those words).
  */
 
 vi.mock('@/entities/ticker', () => ({
@@ -23,19 +27,25 @@ vi.mock('@/views/symbol', () => ({
         children,
 }));
 // PositionTabContent is stubbed (client component, not under test here). But
-// computeVolumeByBand is a real pure function the page's server data path
-// calls directly — pull the actual implementation from its own lean lib
-// module (not the full barrel, which would also drag in PositionTabContent's
-// 'use client' dependency graph) so the "server data path" tests below
-// exercise the real aggregation, not a stub.
+// computeVolumeByBand/computePosition/describeAvgFloor/formatAmount are real
+// pure functions the page's server data path and the Task 1 per-symbol
+// content block call directly — pull the actual implementations from their
+// own lean lib modules (not the full barrel, which would also drag in
+// PositionTabContent's 'use client' dependency graph) so those tests exercise
+// the real aggregation/geometry, not a stub.
 vi.mock('@/widgets/portfolio-position', async () => {
     const { computeVolumeByBand } =
         await import('@/widgets/portfolio-position/lib/volumeByBand');
-    const { BAND_COUNT } =
+    const { BAND_COUNT, computePosition } =
         await import('@/widgets/portfolio-position/lib/positionGeometry');
+    const { formatAmount, describeAvgFloor } =
+        await import('@/widgets/portfolio-position/lib/positionBuildingNotes');
     return {
         PositionTabContent: () => null,
         computeVolumeByBand,
+        computePosition,
+        describeAvgFloor,
+        formatAmount,
         BAND_COUNT,
     };
 });
@@ -128,24 +138,30 @@ describe('generateMetadata', () => {
         expect(metadata.robots).toEqual({ index: false, follow: false });
     });
 
-    it('is ALWAYS noindex for a valid, resolvable symbol — this tab is a personalized surface (design §배치 1)', async () => {
+    it('is index,follow for a valid, resolvable symbol — per-symbol content (Task 1) now justifies indexing (design decision 2026-08-19)', async () => {
         const metadata = await generateMetadata({
             params: Promise.resolve({ symbol: 'aapl' }),
         });
-        // 색인 방침은 불변: noindex + self-canonical 유지(후킹 카피 추가와 무관).
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        // symbolMetadataFromSeo는 robots를 아예 설정하지 않는다 — root layout의
+        // 기본값(index:true, follow:true)을 그대로 상속해 색인된다. sibling
+        // 인덱서블 탭(overall/fear-greed)과 동일 계약.
+        expect(metadata.robots).toBeUndefined();
         expect(metadata.alternates).toEqual({
             canonical: 'https://siglens.io/AAPL/position',
         });
     });
 
-    it('노출용 카피는 "평단 = 몇 층" 아파트 메타포로 후킹 강화 — title/description/OG/Twitter에 반영(색인은 여전히 noindex)', async () => {
+    it('노출용 카피는 "평단 = 몇 층" 아파트 메타포로 후킹 강화 — title/description/OG/Twitter에 반영', async () => {
         const metadata = await generateMetadata({
             params: Promise.resolve({ symbol: 'aapl' }),
         });
         // 후킹 title: 메타포 훅이 displayName **앞**에 front-load — title/OG
         // truncation(브라우저 탭·메신저 프리뷰)에서도 훅이 먼저 살아남는다.
-        expect(metadata.title).toBe('내 평단은 몇 층? — Apple Inc. 내 위치');
+        // symbolMetadataFromSeo는 title을 `{ absolute }`로 감싸 root layout의
+        // title.template("%s | Siglens")을 무시한다(sibling 인덱서블 탭과 동일).
+        expect(metadata.title).toEqual({
+            absolute: '내 평단은 몇 층? — Apple Inc. 내 위치',
+        });
         // 후킹 description: 아파트/층 메타포 키워드를 담고, SEO_DESCRIPTION_MAX_LENGTH 이내.
         const description = metadata.description ?? '';
         expect(description).toContain('아파트');
@@ -157,6 +173,8 @@ describe('generateMetadata', () => {
         expect([...description].length).toBeLessThanOrEqual(
             SEO_DESCRIPTION_MAX_LENGTH
         );
+        // keywords: position 탭 전용 buildPositionKeywords가 ticker 기반 키워드를 낸다.
+        expect(metadata.keywords).toContain('AAPL 평단');
         // OG/Twitter 카드는 root layout의 title.template("| Siglens" suffix)이
         // 페이지 레벨 openGraph/twitter를 replace(merge 아님)하며 무력화되므로,
         // sibling 심볼 페이지(symbolMetadataFromSeo의 fullTitle 패턴)와 동일하게
@@ -402,6 +420,88 @@ describe('PositionPage — SSR crawl safety (no personalized data in the server 
     // 채로(getBarsAction은 손대지 않은 채) 정상적으로 resolve/degrade하는 것 자체가
     // 이 셸이 cookies()/connection()을 요구하는 경로를 타지 않는다는 행동 증거다 —
     // 소스 grep 단언은 구현 세부 검사라 이 레포 컨벤션상 지양한다(financials 선례).
+});
+
+describe('PositionPage — per-symbol current-price-position content (Task 1, the indexing justification)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: AAPL_ASSET_INFO,
+            degraded: false,
+        } as never);
+        mockIsTabAllowedForSymbol.mockResolvedValue(true);
+    });
+
+    it('renders a visible (non sr-only) section with the real low/high/lastClose numbers and the computed percentile/floor', async () => {
+        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
+
+        const tree = await PositionPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        const section = findElementByType(tree, 'section');
+        expect(section).not.toBeNull();
+        // 이 섹션은 sr-only가 아니라 실제로 보이는 콘텐츠여야 한다(Task 1) —
+        // sr-only였던 이전 버전과 달리 className에 'sr-only'가 없다.
+        const className = (section?.props as { className: string }).className;
+        expect(className).not.toContain('sr-only');
+
+        // low=85, high=110, lastClose=100 → (100-85)/(110-85) = 0.6 → 60%,
+        // floorIndex=floor(0.6*5)=3 → "4층 · 고층"(describeAvgFloor의 BAND_COUNT=5
+        // 표와 동일한 매핑 — PositionBuilding.test.tsx의 avgPos=0.6 케이스 참고).
+        // percentile(60)은 JSX 안에서 인접 텍스트('% 지점')와 별개 자식 노드로
+        // 렌더되므로(숫자 보간), JSON.stringify 결과에서 "60%"로 붙어있지 않다 —
+        // 숫자와 접미사를 각각 확인한다.
+        const serialized = JSON.stringify(tree);
+        expect(serialized).toContain('$85');
+        expect(serialized).toContain('$110');
+        expect(serialized).toContain('$100');
+        expect(serialized).toContain('60');
+        expect(serialized).toContain('% 지점');
+        expect(serialized).toContain('4층 · 고층');
+    });
+
+    it('omits the section entirely (no crash, no empty shell) when getQuantizedBarsStatic fails and range degrades to null', async () => {
+        mockGetQuantizedBarsStatic.mockRejectedValue(new Error('FMP down'));
+
+        const tree = await PositionPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(findElementByType(tree, 'section')).toBeNull();
+    });
+
+    it('omits the section when the range resolves but the 52-week span is degenerate (high52w <= low52w, division-by-zero guard)', async () => {
+        // buildTechnicalFacts를 통과하려면 bars가 2개 이상 + prev.close != 0 이어야 하므로,
+        // 두 봉 모두 high/low가 동일한(고저 폭이 0인) 값으로 만들어 high52w===low52w를 재현한다.
+        mockGetQuantizedBarsStatic.mockResolvedValue({
+            bars: [
+                {
+                    time: 1,
+                    open: 100,
+                    high: 100,
+                    low: 100,
+                    close: 100,
+                    volume: 1,
+                },
+                {
+                    time: 2,
+                    open: 100,
+                    high: 100,
+                    low: 100,
+                    close: 100,
+                    volume: 1,
+                },
+            ],
+            indicators: { rsi: [null, null], macd: [{ histogram: null }] },
+        } as never);
+
+        const tree = await PositionPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(findElementByType(tree, 'section')).toBeNull();
+    });
 });
 
 describe('PositionPage — <main> is a flex-item-safe full width (regression guard)', () => {

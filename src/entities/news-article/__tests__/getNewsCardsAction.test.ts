@@ -20,6 +20,7 @@ vi.mock('@/entities/news-article/api', () => ({
 }));
 
 import { getNewsCardsAction } from '@/entities/news-article/actions/getNewsCardsAction';
+import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
 
 describe('getNewsCardsAction', () => {
     beforeEach(() => {
@@ -147,5 +148,39 @@ describe('getNewsCardsAction', () => {
         expect(result[0].titleKo).toBeNull();
         expect(result[0].sentiment).toBeNull();
         expect(result[0].priceImpact).toBeNull();
+    });
+
+    /**
+     * 이 액션은 3초마다 호출된다. 상한이 없으면 화면이 다루지 않는 행까지 매 tick
+     * 실어 보내고, `compress: true` 이후로는 그 응답이 매번 오리진에서 gzip된다.
+     * 자르는 방향도 함께 고정한다 — `slice(-N)`으로 뒤집히면 서버 렌더는 최신 50개를
+     * 보여준 뒤 첫 폴링에서 **가장 오래된 50개로 조용히 뒤바뀐다**.
+     */
+    it('상한을 넘으면 앞(최신)에서 상한만큼만 돌려준다', async () => {
+        const rows = Array.from(
+            { length: NEWS_ROW_SERIALIZATION_LIMIT + 137 },
+            (_, i) => ({ id: `n${i}` })
+        );
+        mockListCardsBySymbol.mockResolvedValue(rows);
+
+        const result = await getNewsCardsAction('AAPL');
+
+        expect(result).toHaveLength(NEWS_ROW_SERIALIZATION_LIMIT);
+        expect(result[0]).toEqual({ id: 'n0' });
+        expect(result.at(-1)).toEqual({
+            id: `n${NEWS_ROW_SERIALIZATION_LIMIT - 1}`,
+        });
+    });
+
+    it('상한 이하이면 그대로 돌려준다', async () => {
+        const rows = Array.from(
+            { length: NEWS_ROW_SERIALIZATION_LIMIT },
+            (_, i) => ({ id: `n${i}` })
+        );
+        mockListCardsBySymbol.mockResolvedValue(rows);
+
+        expect(await getNewsCardsAction('AAPL')).toHaveLength(
+            NEWS_ROW_SERIALIZATION_LIMIT
+        );
     });
 });

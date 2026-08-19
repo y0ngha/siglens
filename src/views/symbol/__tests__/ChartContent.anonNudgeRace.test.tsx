@@ -3,7 +3,7 @@ import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
 import type { UseQueryResult } from '@tanstack/react-query';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { ChartContent } from '@/views/symbol/ChartContent';
-import { useCurrentUser } from '@/entities/auth';
+import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import {
     recordAnonSymbolAnalysis,
     hasNudgeShownToday,
@@ -173,7 +173,7 @@ vi.mock('@/features/portfolio-holding', () => ({
 // The two seams the real bug lives in: login-state resolution
 // (`useCurrentUser`) and the localStorage-backed distinct-symbol counter
 // (`anonAnalysisCount`). `@/features/analysis-nudge` itself is left unmocked.
-vi.mock('@/entities/auth', () => ({
+vi.mock('@/entities/auth/hooks/useCurrentUser', () => ({
     useCurrentUser: vi.fn(),
 }));
 

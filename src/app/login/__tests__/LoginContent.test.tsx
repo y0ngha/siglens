@@ -15,7 +15,7 @@ vi.mock('@/features/auth-login', () => ({
         return <div data-testid="login-form" />;
     },
 }));
-vi.mock('@/features/auth-oauth', () => ({
+vi.mock('@/features/auth-oauth/ui/SocialLoginButtons', () => ({
     SocialLoginButtons: (props: { next?: string }) => {
         socialSpy(props);
         return <div data-testid="social" />;

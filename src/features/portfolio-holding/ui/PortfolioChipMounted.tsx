@@ -1,6 +1,6 @@
 'use client';
 
-import { useCurrentUser } from '@/entities/auth';
+import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import { PortfolioChip } from './PortfolioChip';
 
 interface PortfolioChipMountedProps {
