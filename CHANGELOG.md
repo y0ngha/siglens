@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.59.2](https://github.com/y0ngha/siglens/compare/v0.59.1...v0.59.2) (2026-08-19)
+
+
+### Bug Fixes
+
+* systemd 유닛 기동을 비동기로 분리해 부팅 중단 해소 ([3ad2038](https://github.com/y0ngha/siglens/commit/3ad203842e302a64c1acd238fbf074a838887c49))
+
 ## [0.59.1](https://github.com/y0ngha/siglens/compare/v0.59.0...v0.59.1) (2026-08-19)
 
 
