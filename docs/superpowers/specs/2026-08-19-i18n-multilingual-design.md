@@ -730,3 +730,37 @@ openGraph: { locale: OG_LOCALE[locale], alternateLocale: [...나머지] },
 | 3 | AI 분석 후처리 번역 레이어 → `SYMBOL_INDEXABLE_LOCALES`에 `en` 추가 |
 | 4 | ja / zh |
 | 5 | DB 콘텐츠 로케일 컬럼 |
+
+
+---
+
+## 13. 잔여 미추출 한국어 (2026-08-20 실측)
+
+`yarn i18n:lint` 기준 **1,649건**. 신규 유입은 기준선 게이트가 막고 있다.
+성격별로 나누면 남은 일의 종류가 다르다 — 숫자만 보면 "번역이 덜 됐다"로 읽히지만
+상당수는 **번역 대상이 아니거나, 표시가 아니라 데이터 경로 작업**이다.
+
+| 분류 | 건수 | 성격 | 다음 작업 |
+|---|---|---|---|
+| `non-component-module` | 1,038 | `.ts` 상수·유틸. 훅을 부를 수 없다 | 키 노출 + 소비자 리팩터 |
+| `module-scope-or-helper` | 510 | `.tsx` 모듈 스코프 상수 | 동일 |
+| `seo-keywords-ko-only` | 107 | **번역 대상 아님** — ko 전용 데이터로 확정(§5.1) | 없음 |
+| `template-needs-icu-review` | 98 | 표현식이 섞인 템플릿 | ICU 변환(사람이 문장 확인) |
+| 기타 | 14 | import 경로·파라미터 기본값 | 개별 처리 |
+
+### 파일별 상위와 판단
+
+| 파일 | 건수 | 판단 |
+|---|---|---|
+| `shared/lib/seo.ts` | 229 | 페이지 title/description. **사람 검수 필요**(설계 §5.4의 `reviewRequired`) |
+| `shared/config/dashboard-tickers*.ts` | 129 | **데이터**. core 타입이 영문명을 이미 갖고 있어 `localizedAssetName`으로 고르면 된다 |
+| `shared/config/popular-tickers.ts` | 97 | **데이터**. 개별 종목은 영문명이 core 타입에 없다 — `assetTranslations`(DB) 조회 경로가 필요하다(표시 계층 작업이 아니다) |
+| `app/[locale]/homeJsonLd.ts` | 40 | JSON-LD. §7.1의 **Phase 2 블로커**로 이월 |
+| `entities/economy/lib/indicatorNameKo.ts` 외 | 57 | 경제지표 한국어명. `economicIndicatorTranslations`(DB)에 로케일 축을 더하는 §2.5 작업과 함께 |
+| 위젯 UI 카피(`SignalBadge`·`optionsTooltips`·`technicalFacts` 등) | 90+ | 순수 UI 카피 — 키 전환 대상 |
+
+### 이미 만들어 둔 것
+
+- `shared/lib/localizedAssetName.ts` — 섹터·지수는 core 타입의 영문명을 로케일로 고른다.
+  개별 종목은 영문명이 없어 티커 심볼로 떨어뜨린다(금융 UI에서 티커는 보편적으로 읽힌다).
+- `i18n:lint` 기준선 — 잔여를 **늘리지 못하게** 고정한다. 줄어들면 `--update`로 조인다.
