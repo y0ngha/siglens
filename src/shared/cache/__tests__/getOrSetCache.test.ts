@@ -3,7 +3,10 @@ vi.mock('@/shared/cache/redisClient', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getOrSetCache } from '@/shared/cache/getOrSetCache';
+import {
+    getOrSetCache,
+    __resetInFlightForTests,
+} from '@/shared/cache/getOrSetCache';
 import { getRedisClient } from '@/shared/cache/redisClient';
 
 const mockedGetRedisClient = vi.mocked(getRedisClient);
@@ -29,6 +32,7 @@ function createRedisStub(): RedisStub {
 describe('getOrSetCache 함수는', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        __resetInFlightForTests();
         vi.spyOn(console, 'error').mockImplementation(() => {});
     });
 
@@ -211,5 +215,109 @@ describe('getOrSetCache 함수는', () => {
 
         expect(result).toBe('cached');
         expect(fetcher).not.toHaveBeenCalled();
+    });
+});
+
+describe('getOrSetCache의 in-flight 중복 제거는', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        __resetInFlightForTests();
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('같은 키의 동시 miss를 fetch 1회 + set 1회로 접는다', async () => {
+        const redis = createRedisStub();
+        mockedGetRedisClient.mockReturnValue(redis as never);
+        let release!: (value: string) => void;
+        const fetcher = vi.fn(
+            () =>
+                new Promise<string>(resolve => {
+                    release = resolve;
+                })
+        );
+
+        const calls = [
+            getOrSetCache('k', 60, fetcher),
+            getOrSetCache('k', 60, fetcher),
+            getOrSetCache('k', 60, fetcher),
+        ];
+        // 세 호출이 모두 miss를 통과해 in-flight 맵에 도달한 뒤 fetcher를 완료시킨다.
+        await Promise.resolve();
+        release('fresh');
+        const results = await Promise.all(calls);
+
+        expect(results).toEqual(['fresh', 'fresh', 'fresh']);
+        expect(fetcher).toHaveBeenCalledTimes(1);
+        expect(redis.set).toHaveBeenCalledTimes(1);
+    });
+
+    it('키가 다르면 각각 독립적으로 fetch한다', async () => {
+        const redis = createRedisStub();
+        mockedGetRedisClient.mockReturnValue(redis as never);
+        const fetcher = vi.fn(async () => 'fresh');
+
+        await Promise.all([
+            getOrSetCache('a', 60, fetcher),
+            getOrSetCache('b', 60, fetcher),
+        ]);
+
+        expect(fetcher).toHaveBeenCalledTimes(2);
+    });
+
+    it('완료 후에는 맵에서 제거되어 다음 miss가 다시 fetch한다', async () => {
+        mockedGetRedisClient.mockReturnValue(null);
+        const fetcher = vi.fn(async () => 'fresh');
+
+        await getOrSetCache('k', 60, fetcher);
+        await getOrSetCache('k', 60, fetcher);
+
+        expect(fetcher).toHaveBeenCalledTimes(2);
+    });
+
+    it('fetcher가 throw하면 대기 중인 호출에도 전파되고 맵이 정리된다', async () => {
+        mockedGetRedisClient.mockReturnValue(null);
+        const boom = new Error('fmp down');
+        const failing = vi.fn(async () => {
+            throw boom;
+        });
+
+        const calls = [
+            getOrSetCache('k', 60, failing).catch((e: unknown) => e),
+            getOrSetCache('k', 60, failing).catch((e: unknown) => e),
+        ];
+        expect(await Promise.all(calls)).toEqual([boom, boom]);
+        expect(failing).toHaveBeenCalledTimes(1);
+
+        // 맵이 비워졌으므로 다음 호출은 새로 fetch한다.
+        const ok = vi.fn(async () => 'fresh');
+        await expect(getOrSetCache('k', 60, ok)).resolves.toBe('fresh');
+    });
+
+    it('공유 결과가 대기자의 isFresh를 통과하지 못하면 대기자만 직접 fetch한다', async () => {
+        const redis = createRedisStub();
+        mockedGetRedisClient.mockReturnValue(redis as never);
+        // 소유자는 짧은 시리즈를, 대기자는 더 긴 시리즈를 요구한다.
+        const fetcher = vi.fn(async () => ['b']);
+
+        const owner = getOrSetCache('k', 60, fetcher);
+        const waiter = getOrSetCache(
+            'k',
+            60,
+            fetcher,
+            () => true, // shouldCache
+            value => value.length >= 2 // isFresh: 공유 결과(길이 1)는 불충분
+        );
+        const [ownerValue, waiterValue] = await Promise.all([owner, waiter]);
+
+        expect(ownerValue).toEqual(['b']);
+        expect(waiterValue).toEqual(['b']);
+        // 소유자 1회 + 대기자 폴백 1회.
+        expect(fetcher).toHaveBeenCalledTimes(2);
+        // 대기자의 폴백은 캐시를 덮어쓰지 않는다 — 소유자의 set 1회뿐.
+        expect(redis.set).toHaveBeenCalledTimes(1);
     });
 });

@@ -50,6 +50,42 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-isr-cache-failures --namesp
   --metric-name IsrCacheFailures --statistic Sum --period 300 --evaluation-periods 1 --threshold 5 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
 
+# FETCH 메모리 캐시(memStore.mjs) 가시성 — **메트릭 필터를 만들지 않는다.**
+#
+# memStore는 5분마다 JSON 한 줄을 남긴다:
+#   {"tag":"isr-cache","event":"fetch-mem","size":..,"bytes":..,"hit":..,"miss":..,"evicted":..}
+#
+# 메트릭으로 올리지 않는 이유 2가지:
+#  1) CloudWatch `put-metric-filter`의 metricTransformations는 **필터당 정확히 1개**다
+#     (botocore logs 모델: MetricTransformations `{"max":1,"min":1}`). 5개 값을 올리려면
+#     같은 패턴에 필터를 5개 만들어야 한다.
+#  2) 그러면 커스텀 메트릭 5개 = 월 $1.5인데, 알람을 걸 기준선이 아직 없어 그래프로만 쓴다.
+#     비용 절감 PR에서 알람 없는 메트릭에 그 돈을 쓸 이유가 없다.
+#
+# 대신 Logs Insights로 본다(같은 데이터, 스캔한 만큼만 과금):
+#   fields @timestamp, size, bytes, hit, miss, evicted
+#   | filter event = "fetch-mem"
+#   | sort @timestamp desc
+#
+# 기준선이 잡히고 알람을 걸 값이 정해지면 그때 그 **하나만** 필터로 승격한다
+# (유력 후보: evicted — 지속 축출은 예산 부족 = 조용한 성능·비용 퇴행 신호).
+
+# Redis(Upstash) read-through 캐시 실패 가시성.
+#
+# FETCH 엔트리가 S3에서 빠지면서 **Redis가 인스턴스 간 유일한 FMP 방어선**이 됐다.
+# 그전에는 S3 fetch/ 계층이 Redis degrade를 일부 흡수했지만, memStore는 프로세스 로컬이라
+# 컨테이너 재시작마다 비어 있다. 따라서 Upstash 장애(플랜 한도, 토큰 회전, 스로틀)는
+# 곧바로 FMP 쿼터 소진과 429로 이어지고, 지금은 청구서를 보기 전까지 아무도 모른다.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-redis-cache-failures \
+  --filter-pattern '?"[getOrSetCache] get failed" ?"[getOrSetCache] set failed"' \
+  --metric-transformations metricName=RedisCacheFailures,metricNamespace=Siglens/ISRCache,metricValue=1
+# 5분간 10건 초과 = 산발적 네트워크 blip이 아니라 지속 실패. getOrSetCache는 키마다
+# 로그를 남기므로(스로틀 없음) s3 필터의 5보다 임계값을 높게 잡는다.
+aws cloudwatch put-metric-alarm --alarm-name siglens-redis-cache-failures --namespace Siglens/ISRCache \
+  --metric-name RedisCacheFailures --statistic Sum --period 300 --evaluation-periods 1 --threshold 10 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
+
 # 태그 스토어(tagStore.mjs) fail-open 가시성 — 위 s3 필터와 별개의 알람이어야 한다.
 #
 # 1) 리터럴이 다르다: 로그는 '[isr-cache] tag sync|publish|prune failed'라 위 필터에 안 걸린다.
@@ -181,4 +217,4 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-kr-calendar-horizon-expired
   --metric-name KrCalendarHorizonExpired --statistic Sum --period 3600 --evaluation-periods 1 --threshold 0 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
 
-log "alarms created (5xx, unhealthy, cpu-credits, disk, mem, isr-cache-failures, isr-tag-failures, analysis-stream-failed, node-heap-oom, fear-greed-loader-failed, fear-greed-kr-loader-failed, naver-news-failed, market-kr-loader-failed, kr-calendar-horizon-expired)"
+log "alarms created (5xx, unhealthy, cpu-credits, disk, mem, isr-cache-failures, isr-tag-failures, analysis-stream-failed, node-heap-oom, fear-greed-loader-failed, fear-greed-kr-loader-failed, naver-news-failed, market-kr-loader-failed, kr-calendar-horizon-expired, redis-cache-failures)"
