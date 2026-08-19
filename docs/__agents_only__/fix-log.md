@@ -194,3 +194,56 @@
 
 ## [feat/kr-sitemap-scope Round 3 | Korean symbol sitemap scoping decision | 2026-08-18]
 - Status: APPROVED (zero findings)
+
+## [feat/asset-class-navigation Round 1 | 3-asset navigation architecture | 2026-08-19]
+- Violation: `tsconfig.json` excluded `scripts/` directory from `"exclude"` field, so `npx tsc --noEmit` validated only main src/ but not seed/deploy scripts
+  - Rule: Build validation must include all directories that execute on deployment (seeds, migrations, scripts)
+  - Context: `seedEconomicEventAnalysis.ts` and `seedCalendarAnalysisBatch.ts` used stale siglens-core API (missing `region` parameter, wrong arity, missing exports from core 0.48.0). Removed `scripts` from tsconfig exclude list; scripts now validated alongside src/.
+- Violation: `marketBriefingContextOf` JSDoc claimed "core's sanitizer normalizes `price: 0` sentinel for the cache key"; sanitizer only normalizes for the prompt, not the key
+  - Rule: Documentation/comments must match actual implementation; mismatched claims hide behavioral gaps
+  - Context: Corrected JSDoc to document what the sanitizer actually does (prompt normalization, not key normalization).
+- Violation: `BriefingCard.knownSectors` unioned dynamic `signalSectors` into its allowlist, admitting US virtual theme names (양자, 우주) that can never appear in the briefing prompt
+  - Rule: Allowlists must remain fixed or explicitly documented; dynamic union weakens intended guards
+  - Context: Removed union; restored fixed allowlist to block fabricated sector names.
+- Violation: `MarketDataErrorNotice` hardcoded `'미국 증시'` error label and was rendered on `/market/kr` too
+  - Rule: Market-specific strings must not be hardcoded; must derive from context/scope passed to component
+  - Context: Added `marketLabel` prop from scope context; component now displays correct market name on all routes (kr/us/crypto).
+- Violation: Write-path context assertion (`if (price === 0 && volatility === null) return`) pinned only the degenerate case
+  - Rule: Defensive assertions must cover all expected valid states, not only degenerate edge cases
+  - Context: Expanded assertion to include the additional degraded but valid state (when analysis genuinely produced no meaningful data).
+
+## [feat/asset-class-navigation Round 2 | 3-asset navigation architecture | 2026-08-19]
+- Violation: `seedEconomicEventAnalysis.ts` scanned database with `UNANALYZED_SCAN_LIMIT = 20` cap; logged "Done" indistinguishably whether 20 rows were processed (limit hit) or fewer existed (true completion)
+  - Rule: Pagination-capped loops must distinguish completion from pagination-limit-hit in logging/return state
+  - Context: Changed logging to report `${processedCount}/${totalFound}` and exposed pagination signal to caller, enabling backfill restart from cursor.
+- Violation: `.gitignore` still contained `!` allowlist exceptions for two deleted script files (`!scripts/seedNewsCardAnalyses.ts`, `!scripts/seedEarningsReports.ts`)
+  - Rule: `.gitignore` allowlist entries must be cleaned when corresponding source files are deleted to prevent accidental commits
+  - Context: Removed stale allowlist entries.
+- Violation: `MarketDataErrorNotice` displayed message "일부를 가져오지 못했어요" (partial-failure message) on the total-failure branch where NO data rendered at all
+  - Rule: Error messages must distinguish and report the actual failure mode (total vs partial); mixed messages hide degradation
+  - Context: Added `variant` prop (`'partial' | 'total'`) to MarketDataErrorNotice; renders appropriate message for each failure mode.
+
+## [feat/asset-class-navigation Round 3 | 3-asset navigation architecture | 2026-08-19]
+- Violation: `MarketSummaryPanel.test.tsx` mock of `MarketDataErrorNotice` destructured only `onClose` prop, swallowing the new `variant` prop added in R2
+  - Rule: Test mocks must mirror the full component API; destructuring only-used props masks regressions when new props are added
+  - Context: Updated mock to destructure both `onClose` and `variant`, preventing future prop additions from silently passing broken mocks.
+- Violation: Seed script's `failed` counter accumulated per attempt across all passes; closing tally counted attempts, not failing rows, and could exceed table size
+  - Rule: Counters that track mutable state must reset per iteration/pass; accumulated totals hide actual state and make diagnostics unreliable
+  - Context: Reset `failed = 0` at start of each pass; now final tally reflects actual failing rows processed, not cumulative attempts.
+- Violation: Comment and JSDoc contradicted implementation: header said `pending` represents remaining backlog, but code showed `pending.length` was the capped scan page size; also claimed "break condition" when scan hit limit, but code logged "Done" regardless
+  - Rule: Documentation must reflect actual implementation; contradictory comments hide control flow and mislead future readers
+  - Context: Corrected JSDoc to document that `pending` represents the current page of capped results; clarified break conditions distinguish pagination-limit from completion.
+
+## [feat/asset-class-navigation Round 4 | 3-asset navigation architecture | 2026-08-19]
+- Violation: `data-market-label` attribute assertion tested only against `TEST_SCOPE`, whose `marketLabel` happens to be hardcoded `'미국 증시'`; reverting `marketLabel={scope.marketLabel}` to a hardcoded string still passed the test because test fixture value matched assertion literal
+  - Rule: Test fixture values must differ from assertion literals; shared data between fixture and assertion masks regressions
+  - Context: Added `KR_SCOPE` to test file with `marketLabel: '한국 증시'`; added separate assertions for both scopes; mutation test verified hardcoding fails both.
+- Violation: `KR_SCOPE` inherited `marketLabel` by spread operator, inadvertently inheriting the same `'미국 증시'` value from `TEST_SCOPE`
+  - Rule: Spread in test fixtures + assertion on inherited property = invisible dependency; prop changes silently affect both
+  - Context: Explicitly set `KR_SCOPE.marketLabel = '한국 증시'` in fixture; verified assertion now distinguishes both market labels.
+- Violation: Seed script exit code inconsistency — both abort path (`process.exit(0)`) and non-zero failure count (`process.exit(0)`) returned 0, while uncaught errors returned 1
+  - Rule: Exit codes must consistently reflect success/failure state; mixed exit patterns hide errors in CI pipelines
+  - Context: Changed abort and failure paths to `process.exit(1)`, success path to `process.exit(0)`.
+- Operational lesson (cost: real session time): Multi-replacement script using only `assert content != original` guard silently tolerates individual failed replacements (e.g., when prettier reformatted target across lines). One replacement shipped unapplied, caught only by failing test.
+  - Rule: Verify each replacement with targeted grep (e.g., `grep 'expected string' file`) instead of whole-file inequality check
+  - Context: A component edit never applied; documented in team feedback.
