@@ -1,5 +1,26 @@
 # Changelog
 
+# [0.58.0](https://github.com/y0ngha/siglens/compare/v0.57.1...v0.58.0) (2026-08-19)
+
+
+### Bug Fixes
+
+* 색인 대상 라우트의 robots 메타를 명시로 전환 ([2531d69](https://github.com/y0ngha/siglens/commit/2531d69d322b2d139a8f42224ca4fa3e172a3e15))
+* 코드리뷰 지적사항 반영 — 컨벤션 위반 되돌리기 ([af5b85e](https://github.com/y0ngha/siglens/commit/af5b85e8d9549cdc5b0a4c46b1c0aaea2f88aa79))
+* **dashboard:** 주 제목에 min-w-0 누락 — 긴 한국어명이 카드를 넘치던 문제 ([a06217e](https://github.com/y0ngha/siglens/commit/a06217ec0fe5113ffea1cac39e23ae4cbb45f5f3))
+* **dashboard:** 한국 시세 카드 제목이 KRX 숫자이던 문제 ([1695499](https://github.com/y0ngha/siglens/commit/16954999b709a1893f7f87c433c1b63e0c8a47c1))
+
+
+### Features
+
+* SEO 미해결 항목 해소 + RSC 지표 페이로드 70% 축소 ([f41c367](https://github.com/y0ngha/siglens/commit/f41c36722b7304341803ce69612c5fde89575535)), closes [#719](https://github.com/y0ngha/siglens/issues/719)
+
+
+### Performance Improvements
+
+* 서버 전용 SDK가 클라이언트 번들로 새던 경로 차단 ([3299f36](https://github.com/y0ngha/siglens/commit/3299f3674566a8d15ab007ec23cb5a0bc97e2106))
+* HTML 압축 활성화 + RSC 페이로드 축소로 전 라우트 CWV 개선 ([fe35496](https://github.com/y0ngha/siglens/commit/fe35496a2f9e7587e375ba15fd6f9c0e87e46e5d))
+
 ## [0.57.1](https://github.com/y0ngha/siglens/compare/v0.57.0...v0.57.1) (2026-08-19)
 
 
