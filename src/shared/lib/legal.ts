@@ -8,11 +8,11 @@ export const TERMS_PATH = '/terms';
 
 export const PRIVACY_TITLE = '개인정보처리방침';
 export const PRIVACY_FULL_TITLE = `${PRIVACY_TITLE} | ${SITE_NAME}`;
-export const PRIVACY_DESCRIPTION = `${SITE_NAME}의 개인정보처리방침 — 수집하는 정보, 이용 목적, 보관 기간 및 이용자 권리를 안내합니다.`;
+export const PRIVACY_DESCRIPTION = `${SITE_NAME} 개인정보처리방침을 안내합니다. 회원가입과 서비스 이용 과정에서 수집하는 개인정보의 항목과 이용 목적, 보관 및 파기 기간, 제3자 제공 여부는 물론, 이용자가 직접 행사할 수 있는 열람·정정·삭제 등의 권리까지 한 페이지에서 자세히 확인하세요.`;
 
 export const TERMS_TITLE = '이용약관';
 export const TERMS_FULL_TITLE = `${TERMS_TITLE} | ${SITE_NAME}`;
-export const TERMS_DESCRIPTION = `${SITE_NAME} 서비스 이용약관 — 서비스 이용 조건, 투자 정보 면책 조항, 사용자 권리와 의무를 안내합니다.`;
+export const TERMS_DESCRIPTION = `${SITE_NAME} 서비스 이용약관을 안내합니다. 회원가입 및 서비스 이용 조건, AI 분석·백테스팅 등 투자 정보 제공에 대한 면책 조항, 계정 관리와 콘텐츠 이용 규칙, 그리고 이용자와 회사가 각각 지켜야 할 권리와 의무까지 한 페이지에서 자세히 확인하세요.`;
 
 const KST_LONG_DATE_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
     timeZone: 'Asia/Seoul',

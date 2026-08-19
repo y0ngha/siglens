@@ -41,7 +41,7 @@ export const revalidate = 86400;
 const ECONOMY_KR_URL = `${SITE_URL}/economy/kr`;
 const ECONOMY_KR_FULL_TITLE = `${KR_ECONOMY_TITLE} | ${SITE_NAME}`;
 const ECONOMY_KR_DESCRIPTION = clampSeoDescription(
-    '한국 기준금리·물가·고용·성장 지표와 다가오는 국내 경제 발표 일정을 한 페이지에서 봅니다.'
+    '한국 경제 지표를 한 페이지에서 확인해요. 기준금리·소비자물가·고용률·GDP 성장률 같은 핵심 지표부터 국고채 금리, 수출 증가율까지 모아서 보여드리고, 다가오는 국내 경제 발표 일정도 함께 안내해드려요.'
 );
 const ECONOMY_KR_KEYWORDS = [
     ...ROOT_KEYWORDS,

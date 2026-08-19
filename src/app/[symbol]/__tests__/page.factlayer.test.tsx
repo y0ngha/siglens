@@ -12,12 +12,15 @@
  */
 
 // spy → vi.mock → imports order (MISTAKES.md Tests §17).
-const { mockGetSeoSnapshotsStatic, mockGetQuantizedBarsStatic } = vi.hoisted(
-    () => ({
-        mockGetSeoSnapshotsStatic: vi.fn(),
-        mockGetQuantizedBarsStatic: vi.fn(),
-    })
-);
+const {
+    mockGetSeoSnapshotsStatic,
+    mockGetQuantizedBarsStatic,
+    mockGetSeedBarsStatic,
+} = vi.hoisted(() => ({
+    mockGetSeoSnapshotsStatic: vi.fn(),
+    mockGetQuantizedBarsStatic: vi.fn(),
+    mockGetSeedBarsStatic: vi.fn(),
+}));
 
 vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,
@@ -60,8 +63,12 @@ vi.mock('@/entities/ticker', () => ({
 // quantizeBarsDataToLastClosed는 별도 unit 테스트에서 완전 커버된다.
 // 이 스위트는 FactLayer SSR 배선을 검증하므로, 시장 시간 의존을 제거해 결정론적으로 유지한다.
 // production page.tsx와 동일하게 barrel `@/entities/bars`를 mock해 경로 일관성 유지.
+// getSeedBarsStatic은 seed 경로 전용이다. FactLayer는 축소되지 않은 원본
+// (getQuantizedBarsStatic)을 계속 읽어야 하므로, 두 mock을 분리해 두면 페이지가
+// 실수로 축소판에서 fact를 만들 때 이 스위트가 잡아낸다.
 vi.mock('@/entities/bars', () => ({
     getQuantizedBarsStatic: mockGetQuantizedBarsStatic,
+    getSeedBarsStatic: mockGetSeedBarsStatic,
 }));
 // page.tsx는 더 이상 sessionSpecFor를 직접 부르지 않는다(그 호출은 이제
 // getQuantizedBarsStatic 내부에 있다). 다만 다른 모듈이 전이적으로 끌어올 때

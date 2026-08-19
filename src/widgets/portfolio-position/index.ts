@@ -19,4 +19,8 @@ export {
 // 한 곳에서만 정의하는 canonical 구현이다 — PositionCard/PositionCta(같은 슬라이스)는
 // '../lib/positionBuildingNotes'를 직접 import하고, app 레이어(PositionHoldingCard)는
 // 이 barrel을 거친다(app→widgets는 barrel만, CLAUDE.md FSD 규칙).
-export { formatAmount } from './lib/positionBuildingNotes';
+// describeAvgFloor도 같은 이유로 barrel에 추가한다 — `[symbol]/position/page.tsx`
+// (app 레이어)가 현재가의 "몇 층" 문구를 이 함수로 파생시켜, 회원 전용
+// PositionBuilding이 쓰는 저층/중층/고층/펜트하우스·옥상 위/지하 세대 어휘와
+// 절대 어긋나지 않게 한다(단일 source, MISTAKES #2와 동일 원칙).
+export { formatAmount, describeAvgFloor } from './lib/positionBuildingNotes';

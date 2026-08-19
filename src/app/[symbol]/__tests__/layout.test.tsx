@@ -23,6 +23,7 @@ const {
     mockGetAssetInfoResilient,
     mockNotFound,
     mockGetQuantizedBarsStatic,
+    mockGetSeedBarsStatic,
 } = vi.hoisted(() => ({
     MOCK_EMPTY_INDICATOR_RESULT: { ma: {}, ema: {} } as never,
     mockSetQueryData: vi.fn(),
@@ -34,6 +35,7 @@ const {
         throw new Error('NEXT_HTTP_ERROR_FALLBACK;404');
     }),
     mockGetQuantizedBarsStatic: vi.fn(),
+    mockGetSeedBarsStatic: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -112,8 +114,11 @@ vi.mock('@/entities/ticker', () => ({
         mockGetAssetInfoResilient(ticker),
 }));
 
+// layout은 seed만 하므로 축소판(getSeedBarsStatic)을 쓴다. 이 mock이 원본
+// (getQuantizedBarsStatic)을 가리키면 축소 여부를 검증할 수 없으니 분리해 둔다.
 vi.mock('@/entities/bars', () => ({
     getQuantizedBarsStatic: mockGetQuantizedBarsStatic,
+    getSeedBarsStatic: mockGetSeedBarsStatic,
 }));
 
 import SymbolLayout, { SymbolLayoutChrome } from '@/app/[symbol]/layout';
@@ -137,7 +142,7 @@ describe('SymbolLayoutChrome SSR seed (ISR write churn 차단)', () => {
             assetInfo: ASSET_INFO,
             degraded: false,
         });
-        mockGetQuantizedBarsStatic.mockResolvedValue(QUANTIZED);
+        mockGetSeedBarsStatic.mockResolvedValue(QUANTIZED);
     });
 
     it('Happy: quantize된 bars로 setQueryData 호출 + updatedAt은 마지막 봉의 time', async () => {
@@ -149,7 +154,7 @@ describe('SymbolLayoutChrome SSR seed (ISR write churn 차단)', () => {
         // 대문자 ticker + marketProfile로 호출한다 — page.tsx와 인자가 같아야
         // 요청 스코프 메모가 접혀 지표가 한 벌만 직렬화된다.
         // (세션 스레딩은 헬퍼 내부 책임 → barsStaticCache.test.ts에서 검증)
-        expect(mockGetQuantizedBarsStatic).toHaveBeenCalledWith(
+        expect(mockGetSeedBarsStatic).toHaveBeenCalledWith(
             'AAPL',
             '1Day',
             'us-equity',
@@ -175,7 +180,7 @@ describe('SymbolLayoutChrome SSR seed (ISR write churn 차단)', () => {
         // 빈 BarsData를 query cache에 주입해 useSuspenseQuery가 SSR에서 Server
         // Action을 호출하는 경로를 차단한다 — 클라이언트는 updatedAt:0 → stale
         // 판정 즉시 re-fetch해 실제 bars를 가져온다.
-        mockGetQuantizedBarsStatic.mockRejectedValue(new Error('FMP down'));
+        mockGetSeedBarsStatic.mockRejectedValue(new Error('FMP down'));
 
         await expect(
             SymbolLayoutChrome({
@@ -216,7 +221,7 @@ describe('SymbolLayoutChrome SSR seed (ISR write churn 차단)', () => {
             params: Promise.resolve({ symbol: 'AAPL' }),
         });
 
-        expect(mockGetQuantizedBarsStatic).toHaveBeenCalledWith(
+        expect(mockGetSeedBarsStatic).toHaveBeenCalledWith(
             'AAPL',
             '1Day',
             'us-equity',
@@ -236,7 +241,7 @@ describe('SymbolLayoutChrome SSR seed (ISR write churn 차단)', () => {
     });
 
     it('quantize 결과 bars가 비어 있어도 throw 없음, updatedAt 0으로 fallback', async () => {
-        mockGetQuantizedBarsStatic.mockResolvedValue({
+        mockGetSeedBarsStatic.mockResolvedValue({
             bars: [],
             indicators: {},
         });
@@ -272,7 +277,7 @@ describe('SymbolLayoutChrome SSR seed (ISR write churn 차단)', () => {
             params: Promise.resolve({ symbol: 'BTCUSD' }),
         });
 
-        expect(mockGetQuantizedBarsStatic).toHaveBeenCalledWith(
+        expect(mockGetSeedBarsStatic).toHaveBeenCalledWith(
             'BTCUSD',
             '1Day',
             'crypto',
@@ -293,7 +298,7 @@ describe('SymbolLayoutChrome SSR seed (ISR write churn 차단)', () => {
             params: Promise.resolve({ symbol: 'AAPL' }),
         });
 
-        expect(mockGetQuantizedBarsStatic).toHaveBeenCalledWith(
+        expect(mockGetSeedBarsStatic).toHaveBeenCalledWith(
             'AAPL',
             '1Day',
             'us-equity',

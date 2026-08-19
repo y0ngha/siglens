@@ -17,7 +17,7 @@ import {
     isAdmissibleSymbolShape,
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
-import { getQuantizedBarsStatic } from '@/entities/bars';
+import { getSeedBarsStatic } from '@/entities/bars';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { marketProfileOf } from '@/shared/config/marketProfile';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
@@ -185,13 +185,15 @@ export async function SymbolLayoutChrome({
     // 갈리면 지표가 RSC 페이로드에 두 벌 실린다(getQuantizedBarsStatic JSDoc).
     // quantize도 이 헬퍼 안에서 수행되므로, 장중·크립토에서 새 객체가 갈리던 문제까지
     // 함께 해소된다(세션 spec은 marketProfile에서 유도).
-    const quantized = await getQuantizedBarsStatic(
+    // seed 전용 축소판을 쓴다 — layout은 지표를 서버에서 읽지 않고 seed만 하므로,
+    // 첫 페인트가 읽지 않는 지표까지 직렬화할 이유가 없다(getSeedBarsStatic JSDoc).
+    const quantized = await getSeedBarsStatic(
         symbol.toUpperCase(),
         DEFAULT_TIMEFRAME,
         marketProfileOf(assetInfo),
         assetInfo.fmpSymbol
     ).catch((e: unknown) => {
-        console.error('[SymbolLayout] getQuantizedBarsStatic failed:', e);
+        console.error('[SymbolLayout] getSeedBarsStatic failed:', e);
         return null;
     });
     if (quantized !== null) {

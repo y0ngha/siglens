@@ -27,7 +27,7 @@ const NEWS_HUB_PATH = '/news';
 export const NEWS_HUB_TITLE = '시장 뉴스 허브 — 미국·한국 주식과 암호화폐';
 const NEWS_HUB_FULL_TITLE = `${NEWS_HUB_TITLE} | ${SITE_NAME}`;
 export const NEWS_HUB_DESCRIPTION = clampSeoDescription(
-    '미국·한국 주식과 암호화폐 시장 뉴스를 지역별로 나눠, 한국어 AI 요약과 함께 한 곳에서 봐요.'
+    '시장 뉴스를 한 곳에서 확인해요. 미국·한국 주식과 암호화폐까지 세 지역의 최신 뉴스를 카테고리별로 나누고, 어려운 원문 기사는 한국어 AI 요약으로 핵심만 빠르게 짚어드려서 편하게 훑어볼 수 있어요.'
 );
 
 /**

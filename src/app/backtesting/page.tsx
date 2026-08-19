@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
 import {
     BACKTESTING_DESCRIPTION,
     BACKTESTING_KEYWORDS,
@@ -110,15 +109,10 @@ export default function BacktestingPage() {
                 바깥에 있어 h1이 landmark 밖으로 빠지는 문제가 있었다. */}
             <main className="min-h-screen bg-secondary-900">
                 <BacktestHero meta={data.meta} />
-                <Suspense
-                    fallback={
-                        <div className="py-10 text-center text-sm text-secondary-500">
-                            로딩 중...
-                        </div>
-                    }
-                >
-                    <BacktestTabs cases={data.cases} tickers={TICKERS} />
-                </Suspense>
+                {/* BacktestTabs는 더 이상 useSearchParams()를 렌더 중 호출하지
+                    않으므로(useBacktestFilter 참고) Suspense 경계가 필요 없다 —
+                    전체 케이스 목록이 그대로 SSR 정적 HTML에 포함된다. */}
+                <BacktestTabs cases={data.cases} tickers={TICKERS} />
                 <div
                     role="note"
                     aria-label="투자 면책 고지"
