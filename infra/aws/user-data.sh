@@ -304,6 +304,11 @@ while true; do
   sleep 5
 done
 echo "[drain] terminating — stopping tunnel then app"
+# selfcheck를 **먼저** 멈춘다. 안 그러면 아래에서 터널과 앱을 내리는 동안 selfcheck가
+# 그걸 장애로 읽고 `[cloudflared-down]`·`[selfcheck]`를 찍어, P1 알람 두 개가
+# **배포마다** 울린다(2026-08-19 훅 실증에서 실제로 그렇게 울렸다).
+# 계획된 종료와 진짜 장애를 가르는 건 이 한 줄뿐이다.
+systemctl stop siglens-selfcheck.timer 2>/dev/null || true
 systemctl stop cloudflared
 systemctl stop siglens
 IID=$(imds instance-id) || exit 0
