@@ -43,7 +43,7 @@
         "test:e2e:ui": "playwright test --ui",
         "format": "oxfmt",
         "format:staged": "oxfmt --no-error-on-unmatched-pattern",
-        "typecheck": "tsc --noEmit",
+        "typecheck": "tsc --noEmit && tsc -p tsconfig.scripts.json --noEmit",
         "validate:skills": "tsx scripts/validate-skills.ts",
         "skills:digest-verify": "tsx scripts/skills-digest.ts verify",
         "skills:digest-update": "tsx scripts/skills-digest.ts update-meta",

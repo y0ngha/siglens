@@ -1,0 +1,40 @@
+{
+    // `scripts/`를 메인 tsconfig의 `include`에 넣을 수 없다. 그 디렉터리는
+    // `.gitignore`에서 `/scripts/**`로 통째로 무시되고 `!` allowlist로만 개별 파일이
+    // 추적되므로, 로컬에는 백테스트 스크래치·`node_modules`까지 온갖 untracked 파일이
+    // 섞여 산다. glob으로 잡으면 CI는 통과하는데 로컬 pre-push만 남의 임시 파일 때문에
+    // 깨진다(실제로 v0.57.0 릴리스가 이걸로 중단됐다).
+    //
+    // 그래서 **추적되는 파일만 이름으로 적는다.** 목록 관리 비용은 없다시피 하다 —
+    // 스크립트를 추가하려면 어차피 `.gitignore`에 `!` 한 줄을 넣어야 하고, 그때
+    // 여기에도 한 줄을 넣는 것이 같은 동작의 반쪽이다.
+    //
+    // 이 프로젝트가 없으면 core의 breaking 변경이 스크립트에 닿아도 typecheck가
+    // 못 본다 — core 0.48.0에서 실제로 6건이 그렇게 숨어 있었고, 그중 하나는
+    // `region: undefined` 해설을 write-once로 굳힐 수 있었다.
+    "extends": "./tsconfig.json",
+    "files": [
+        // `server-only` 같은 Next 앰비언트 선언이 여기서 나온다. 빼면 스크립트가
+        // 끌어오는 `src/**` 파일들이 전부 TS2882로 깨진다.
+        "next-env.d.ts",
+        "scripts/backfillEconomicCalendar.ts",
+        "scripts/lib/chunkDateRange.ts",
+        "scripts/lib/normalizeIndicatorBaseName.ts",
+        "scripts/seed-crypto-assets.ts",
+        "scripts/seed-crypto-korean-names.ts",
+        "scripts/seed-kr-listed-names.ts",
+        "scripts/seedEconomicEventAnalysis.ts",
+        "scripts/skills-digest.ts",
+        "scripts/update-popular-cryptos.ts",
+        "scripts/validate-skills.ts",
+        "scripts/__tests__/pattern-index.test.ts",
+        "scripts/__tests__/seed-crypto-korean-names.test.ts",
+        "scripts/__tests__/skills-digest.test.ts",
+        "scripts/__tests__/update-popular-cryptos.test.ts",
+        "scripts/__tests__/validate-skills.test.ts",
+        "scripts/lib/__tests__/chunkDateRange.test.ts",
+        "scripts/lib/__tests__/normalizeIndicatorBaseName.test.ts"
+    ],
+    "include": [],
+    "exclude": []
+}
