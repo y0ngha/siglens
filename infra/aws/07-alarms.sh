@@ -50,28 +50,25 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-isr-cache-failures --namesp
   --metric-name IsrCacheFailures --statistic Sum --period 300 --evaluation-periods 1 --threshold 5 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
 
-# FETCH 메모리 캐시(memStore.mjs) 가시성 — 알람이 아니라 **관측 지표**다.
+# FETCH 메모리 캐시(memStore.mjs) 가시성 — **메트릭 필터를 만들지 않는다.**
 #
-# FETCH 엔트리는 S3가 아니라 프로세스 내 LRU에 산다. 이 캐시의 고장은 전부 조용하다:
-# 히트율 0%, 축출 스래싱, 예산 드리프트 어느 것도 에러를 내지 않고 증상은 FMP 요금과
-# Upstash 커맨드 수로만 뒤늦게 나타난다. memStore가 5분마다 남기는
-# '[isr-cache] fetch-mem size=.. bytes=.. hit=.. miss=.. evicted=..' 줄을 메트릭으로 올린다.
+# memStore는 5분마다 JSON 한 줄을 남긴다:
+#   {"tag":"isr-cache","event":"fetch-mem","size":..,"bytes":..,"hit":..,"miss":..,"evicted":..}
 #
-# 알람을 걸지 않는 이유: 정상 히트율의 기준선이 아직 없다(배포 직후 워밍 구간과
-# 정상 구간의 구분이 필요). 우선 지표만 쌓고, 기준선이 잡히면 임계값을 정한다.
+# 메트릭으로 올리지 않는 이유 2가지:
+#  1) CloudWatch `put-metric-filter`의 metricTransformations는 **필터당 정확히 1개**다
+#     (botocore logs 모델: MetricTransformations `{"max":1,"min":1}`). 5개 값을 올리려면
+#     같은 패턴에 필터를 5개 만들어야 한다.
+#  2) 그러면 커스텀 메트릭 5개 = 월 $1.5인데, 알람을 걸 기준선이 아직 없어 그래프로만 쓴다.
+#     비용 절감 PR에서 알람 없는 메트릭에 그 돈을 쓸 이유가 없다.
 #
-# ⚠️ **JSON 필터여야 한다.** 공백 구분 필터 `[isr, kind, size, bytes, ...]`는 토큰을
-# 공백으로만 쪼개므로 `size=12`가 통째로 한 토큰이 되고, `metricValue=$size`가
-# "size=12"를 숫자로 읽지 못해 **조용히 아무것도 발행하지 않는다**. memStore가
-# JSON 한 줄을 찍고 여기서 `$.필드`로 뽑는 이유다.
-aws logs put-metric-filter --log-group-name /siglens/app \
-  --filter-name siglens-isr-fetch-mem \
-  --filter-pattern '{ $.event = "fetch-mem" }' \
-  --metric-transformations \
-    metricName=FetchMemEvicted,metricNamespace=Siglens/ISRCache,metricValue='$.evicted' \
-    metricName=FetchMemHit,metricNamespace=Siglens/ISRCache,metricValue='$.hit' \
-    metricName=FetchMemMiss,metricNamespace=Siglens/ISRCache,metricValue='$.miss' \
-    metricName=FetchMemBytes,metricNamespace=Siglens/ISRCache,metricValue='$.bytes'
+# 대신 Logs Insights로 본다(같은 데이터, 스캔한 만큼만 과금):
+#   fields @timestamp, size, bytes, hit, miss, evicted
+#   | filter event = "fetch-mem"
+#   | sort @timestamp desc
+#
+# 기준선이 잡히고 알람을 걸 값이 정해지면 그때 그 **하나만** 필터로 승격한다
+# (유력 후보: evicted — 지속 축출은 예산 부족 = 조용한 성능·비용 퇴행 신호).
 
 # Redis(Upstash) read-through 캐시 실패 가시성.
 #
@@ -220,4 +217,4 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-kr-calendar-horizon-expired
   --metric-name KrCalendarHorizonExpired --statistic Sum --period 3600 --evaluation-periods 1 --threshold 0 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
 
-log "alarms created (5xx, unhealthy, cpu-credits, disk, mem, isr-cache-failures, isr-tag-failures, analysis-stream-failed, node-heap-oom, fear-greed-loader-failed, fear-greed-kr-loader-failed, naver-news-failed, market-kr-loader-failed, kr-calendar-horizon-expired)"
+log "alarms created (5xx, unhealthy, cpu-credits, disk, mem, isr-cache-failures, isr-tag-failures, analysis-stream-failed, node-heap-oom, fear-greed-loader-failed, fear-greed-kr-loader-failed, naver-news-failed, market-kr-loader-failed, kr-calendar-horizon-expired, redis-cache-failures)"

@@ -7,6 +7,13 @@ import {
     deleteEntry,
 } from '../memStore.mjs';
 
+/**
+ * `memStore.mjs`의 `MEM_ROUTE_MAX_BYTES` 기본값(메모리/S3 분기점).
+ * 모듈이 export하지 않아 직접 import는 불가 — 여기 한 곳에만 두어 드리프트를 막는다.
+ * memStore의 기본값을 바꾸면 이 상수도 함께 바꿀 것.
+ */
+const ROUTE_GATE_BYTES = 8 * 1024;
+
 /** 크기를 지정한 FETCH 엔트리 — 예산 산정은 `value.data.body.length`를 본다. */
 function fetchEntry(bodyLength, extra = {}) {
     return {
@@ -66,15 +73,15 @@ describe('memStore는', () => {
         expect(statsForTest()).toEqual({ size: 1, totalBytes: 1024 });
     });
 
-    it('크기 게이트(8KB)를 넘으면 false를 반환하고 담지 않는다', () => {
-        expect(setEntry('big', fetchEntry(8 * 1024 + 1))).toBe(false);
+    it('크기 게이트를 넘으면 false를 반환하고 담지 않는다', () => {
+        expect(setEntry('big', fetchEntry(ROUTE_GATE_BYTES + 1))).toBe(false);
 
         expect(getEntry('big')).toBeNull();
         expect(statsForTest()).toEqual({ size: 0, totalBytes: 0 });
     });
 
     it('게이트 이하면 true를 반환한다', () => {
-        expect(setEntry('ok', fetchEntry(8 * 1024))).toBe(true);
+        expect(setEntry('ok', fetchEntry(ROUTE_GATE_BYTES))).toBe(true);
     });
 
     it('deleteEntry가 예산까지 정확히 되돌린다', () => {
@@ -91,7 +98,7 @@ describe('memStore는', () => {
 
     it('게이트 초과 엔트리가 다른 키를 밀어내지 않는다', () => {
         setEntry('keep', fetchEntry(50));
-        setEntry('big', fetchEntry(8 * 1024 + 1));
+        setEntry('big', fetchEntry(ROUTE_GATE_BYTES + 1));
 
         expect(getEntry('keep')).not.toBeNull();
         expect(statsForTest()).toEqual({ size: 1, totalBytes: 50 });
@@ -103,7 +110,7 @@ describe('memStore는', () => {
         // 멀쩡한 옛 엔트리가 조용히 사라진다.
         const kept = fetchEntry(50);
         setEntry('k', kept);
-        setEntry('k', fetchEntry(8 * 1024 + 1));
+        setEntry('k', fetchEntry(ROUTE_GATE_BYTES + 1));
 
         expect(getEntry('k')).toBe(kept);
         expect(statsForTest()).toEqual({ size: 1, totalBytes: 50 });
