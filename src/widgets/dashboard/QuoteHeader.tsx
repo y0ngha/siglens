@@ -77,7 +77,13 @@ export function QuoteHeader({
             {data.symbol}
         </span>
     ) : (
-        <span className="truncate text-xs font-semibold text-secondary-100">
+        // `min-w-0`이 `truncate`와 짝이다. `signal` 레이아웃에서 이 span은
+        // `shrink-0`인 등락률 배지와 같은 flex 행에 놓이는데, flex item 기본값
+        // `min-width: auto`는 nowrap 텍스트의 min-content(=전체 텍스트 폭)로
+        // 해석돼 아이템이 줄어들지 못한다. 그러면 `overflow-hidden`이 있어도
+        // 말줄임이 발동하지 않고 `LG에너지솔루션` 같은 긴 이름이 행을 넘긴다 —
+        // 하필 이 PR이 고치려는 KR 개별 종목 카드가 그 경우다.
+        <span className="min-w-0 truncate text-xs font-semibold text-secondary-100">
             {data.koreanName}
         </span>
     );

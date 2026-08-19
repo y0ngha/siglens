@@ -181,6 +181,31 @@ describe('QuoteHeader — 주 제목 자리 결정 (tickerIsReadable)', () => {
         expect(screen.getByText('반도체')).not.toHaveAttribute('translate');
     });
 
+    /**
+     * jsdom은 레이아웃을 계산하지 않아 실제 넘침을 재현할 수 없다. 그래서
+     * `min-w-0`+`truncate` 짝을 클래스로 고정한다 — flex item 기본값
+     * `min-width: auto`가 nowrap 텍스트를 min-content(전체 폭)로 잡아,
+     * `min-w-0`이 없으면 `shrink-0`인 등락률 배지 옆에서 말줄임이 아예
+     * 발동하지 않고 긴 종목명이 행을 넘긴다.
+     */
+    it('주 제목이 min-w-0과 truncate를 함께 갖는다', () => {
+        const { container } = render(
+            <QuoteHeader
+                tickerIsReadable={false}
+                currencySymbol="₩"
+                data={{ ...KR, koreanName: 'LG에너지솔루션' }}
+                layout="signal"
+            />
+        );
+
+        const primary = screen.getByText('LG에너지솔루션');
+        expect(primary).toHaveClass('min-w-0');
+        expect(primary).toHaveClass('truncate');
+        // 같은 행의 등락률 배지는 줄어들지 않아야 한다 — 그래서 주 제목이 줄어야 한다.
+        const row = container.firstChild as HTMLElement;
+        expect(row.querySelector('.shrink-0')).not.toBeNull();
+    });
+
     it('signal 레이아웃에서도 한국어명이 변동폭과 같은 행에 온다', () => {
         const { container } = render(
             <QuoteHeader
