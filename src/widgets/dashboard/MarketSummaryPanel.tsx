@@ -114,6 +114,7 @@ export function MarketSummaryPanel({
                             key={idx.fmpSymbol}
                             data={idx}
                             currencySymbol={scope.currencySymbol}
+                            tickerIsReadable={scope.tickerIsReadable}
                         />
                     ))}
                 </div>
@@ -146,6 +147,9 @@ export function MarketSummaryPanel({
                                             data={etf}
                                             currencySymbol={
                                                 scope.currencySymbol
+                                            }
+                                            tickerIsReadable={
+                                                scope.tickerIsReadable
                                             }
                                             {...(scope.linkSectorCards
                                                 ? { href: `/${etf.symbol}` }

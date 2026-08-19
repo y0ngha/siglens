@@ -26,24 +26,24 @@ const BASE: QuoteHeaderData = {
 
 describe('QuoteHeader — layout: index (기본값)', () => {
     it('티커를 translate="no"로 렌더한다', () => {
-        render(<QuoteHeader currencySymbol="$" data={BASE} />);
+        render(<QuoteHeader tickerIsReadable currencySymbol="$" data={BASE} />);
         expect(screen.getByText('AAPL')).toHaveAttribute('translate', 'no');
     });
 
     it('한국어 이름을 렌더한다', () => {
-        render(<QuoteHeader currencySymbol="$" data={BASE} />);
+        render(<QuoteHeader tickerIsReadable currencySymbol="$" data={BASE} />);
         // getByText: 정확히 '애플' 텍스트 노드
         expect(screen.getByText('애플')).toBeInTheDocument();
     });
 
     it('가격을 $ 접두어와 함께 렌더한다', () => {
-        render(<QuoteHeader currencySymbol="$" data={BASE} />);
+        render(<QuoteHeader tickerIsReadable currencySymbol="$" data={BASE} />);
         // formatUsdPrice mock → '189.50'
         expect(screen.getByText('$189.50')).toBeInTheDocument();
     });
 
     it('등락률 + 부호를 렌더하고 sr-only 레이블이 정확히 1개다', () => {
-        render(<QuoteHeader currencySymbol="$" data={BASE} />);
+        render(<QuoteHeader tickerIsReadable currencySymbol="$" data={BASE} />);
         // 변동폭 span의 textContent에 '+1.23%'가 포함된다
         // (arrow aria-hidden + sr-only 레이블이 인접해 있으므로 함수 매처 사용)
         expect(
@@ -56,7 +56,7 @@ describe('QuoteHeader — layout: index (기본값)', () => {
     });
 
     it('화살표 아이콘에 aria-hidden이 설정된다', () => {
-        render(<QuoteHeader currencySymbol="$" data={BASE} />);
+        render(<QuoteHeader tickerIsReadable currencySymbol="$" data={BASE} />);
         // aria-hidden="true" 요소가 정확히 1개(화살표 span)
         const hiddenEls = document.querySelectorAll('[aria-hidden="true"]');
         expect(hiddenEls).toHaveLength(1);
@@ -66,6 +66,7 @@ describe('QuoteHeader — layout: index (기본값)', () => {
     it('하락 시 음수 등락률과 sr-only "하락" 레이블을 렌더한다', () => {
         render(
             <QuoteHeader
+                tickerIsReadable
                 currencySymbol="$"
                 data={{ ...BASE, changePercent: -2.5 }}
             />
@@ -82,7 +83,12 @@ describe('QuoteHeader — layout: index (기본값)', () => {
 describe('QuoteHeader — layout: signal', () => {
     it('티커와 변동폭이 같은 행에 렌더된다 (signal 레이아웃)', () => {
         const { container } = render(
-            <QuoteHeader currencySymbol="$" data={BASE} layout="signal" />
+            <QuoteHeader
+                tickerIsReadable
+                currencySymbol="$"
+                data={BASE}
+                layout="signal"
+            />
         );
         // signal 레이아웃: 첫 번째 자식이 flex justify-between 행(티커+변동폭)
         const firstRow = container.firstChild as HTMLElement;
@@ -93,12 +99,111 @@ describe('QuoteHeader — layout: signal', () => {
     });
 
     it('한국어 이름이 독립 행으로 렌더된다', () => {
-        render(<QuoteHeader currencySymbol="$" data={BASE} layout="signal" />);
+        render(
+            <QuoteHeader
+                tickerIsReadable
+                currencySymbol="$"
+                data={BASE}
+                layout="signal"
+            />
+        );
         expect(screen.getByText('애플')).toBeInTheDocument();
     });
 
     it('가격을 $ 접두어와 함께 렌더한다', () => {
-        render(<QuoteHeader currencySymbol="$" data={BASE} layout="signal" />);
+        render(
+            <QuoteHeader
+                tickerIsReadable
+                currencySymbol="$"
+                data={BASE}
+                layout="signal"
+            />
+        );
         expect(screen.getByText('$189.50')).toBeInTheDocument();
+    });
+});
+
+/**
+ * KRX 티커는 `091160.KS`처럼 6자리 숫자라 읽어서 뜻이 통하지 않는다. 그런데 카드는
+ * 티커를 주 제목으로, 한국어명을 작은 회색 글씨로 두는 배치였다 — 정작 알아볼 수
+ * 있는 `반도체`가 밀려나고 숫자가 제목이 된다(2026-08-19 `/market/kr` 프로덕션 실측).
+ * 같은 화면의 AI 브리핑은 이미 "반도체·은행"으로 이름을 쓰고 있었다.
+ */
+describe('QuoteHeader — 주 제목 자리 결정 (tickerIsReadable)', () => {
+    const KR: QuoteHeaderData = {
+        symbol: '091160.KS',
+        koreanName: '반도체',
+        price: 125405,
+        changePercent: -0.67,
+    };
+
+    it('한국어명이 주 제목, 티커가 보조로 뒤바뀐다', () => {
+        const { container } = render(
+            <QuoteHeader
+                tickerIsReadable={false}
+                currencySymbol="₩"
+                data={KR}
+            />
+        );
+
+        // index 레이아웃의 첫 자식이 주 제목 자리다.
+        const primary = container.firstChild as HTMLElement;
+        expect(primary).toHaveTextContent('반도체');
+        expect(primary).not.toHaveTextContent('091160.KS');
+    });
+
+    it('티커를 DOM에서 지우지는 않는다 — 시각적 우선순위만 바꾼다', () => {
+        render(
+            <QuoteHeader
+                tickerIsReadable={false}
+                currencySymbol="₩"
+                data={KR}
+            />
+        );
+
+        expect(screen.getByText('091160.KS')).toBeInTheDocument();
+    });
+
+    it('translate="no"가 자리를 옮긴 티커를 따라간다', () => {
+        render(
+            <QuoteHeader
+                tickerIsReadable={false}
+                currencySymbol="₩"
+                data={KR}
+            />
+        );
+
+        expect(screen.getByText('091160.KS')).toHaveAttribute(
+            'translate',
+            'no'
+        );
+        // 한국어명은 번역 대상에서 제외하지 않는다.
+        expect(screen.getByText('반도체')).not.toHaveAttribute('translate');
+    });
+
+    it('signal 레이아웃에서도 한국어명이 변동폭과 같은 행에 온다', () => {
+        const { container } = render(
+            <QuoteHeader
+                tickerIsReadable={false}
+                currencySymbol="₩"
+                data={KR}
+                layout="signal"
+            />
+        );
+
+        const firstRow = container.firstChild as HTMLElement;
+        expect(firstRow.classList.contains('justify-between')).toBe(true);
+        expect(firstRow).toHaveTextContent('반도체');
+        expect(firstRow).not.toHaveTextContent('091160.KS');
+    });
+
+    it('미국 시장(true)은 예전 배치를 그대로 유지한다', () => {
+        const { container } = render(
+            <QuoteHeader tickerIsReadable currencySymbol="$" data={BASE} />
+        );
+
+        const primary = container.firstChild as HTMLElement;
+        expect(primary).toHaveTextContent('AAPL');
+        expect(primary).toHaveAttribute('translate', 'no');
     });
 });

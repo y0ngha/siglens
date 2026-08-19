@@ -9,11 +9,14 @@ interface SignalStockCardProps {
     data: StockWithConflict;
     /** 가격 앞에 붙일 통화 기호. 시장마다 다르다(`DashboardScope.currencySymbol`). */
     currencySymbol: string;
+    /** 티커를 주 제목으로 쓸지(`DashboardScope.tickerIsReadable`). */
+    tickerIsReadable: boolean;
 }
 
 export function SignalStockCard({
     data,
     currencySymbol,
+    tickerIsReadable,
 }: SignalStockCardProps) {
     return (
         <Link
@@ -36,6 +39,7 @@ export function SignalStockCard({
                         changePercent: data.changePercent,
                     }}
                     currencySymbol={currencySymbol}
+                    tickerIsReadable={tickerIsReadable}
                 />
                 {data.signals.length > 0 && (
                     <div className="flex flex-wrap gap-x-1.5 gap-y-0.5 pt-1">

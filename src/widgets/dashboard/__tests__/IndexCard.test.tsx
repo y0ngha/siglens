@@ -55,7 +55,9 @@ const SECTOR_DATA: MarketSectorData = {
 
 describe('IndexCard', () => {
     it('renders symbol and price', () => {
-        render(<IndexCard currencySymbol="$" data={INDEX_DATA} />);
+        render(
+            <IndexCard tickerIsReadable currencySymbol="$" data={INDEX_DATA} />
+        );
         expect(screen.getByText('SPY')).toBeInTheDocument();
         expect(screen.getByText('$5012.34')).toBeInTheDocument();
     });
@@ -65,35 +67,84 @@ describe('IndexCard', () => {
      * 렌더도 숫자도 맞아서 실증 전까지 아무도 못 봤다.
      */
     it('통화 기호를 그대로 쓴다 (KR = ₩)', () => {
-        render(<IndexCard currencySymbol="₩" data={INDEX_DATA} />);
+        render(
+            <IndexCard tickerIsReadable currencySymbol="₩" data={INDEX_DATA} />
+        );
         expect(screen.getByText('₩5012.34')).toBeInTheDocument();
         expect(screen.queryByText('$5012.34')).not.toBeInTheDocument();
     });
 
     it('renders korean name', () => {
-        render(<IndexCard currencySymbol="$" data={INDEX_DATA} />);
+        render(
+            <IndexCard tickerIsReadable currencySymbol="$" data={INDEX_DATA} />
+        );
         expect(screen.getByText('S&P 500')).toBeInTheDocument();
     });
 
     it('renders percentage change', () => {
-        render(<IndexCard currencySymbol="$" data={INDEX_DATA} />);
+        render(
+            <IndexCard tickerIsReadable currencySymbol="$" data={INDEX_DATA} />
+        );
         expect(screen.getByText(/1\.25%/)).toBeInTheDocument();
     });
 
     it('wraps in a Link when href is provided', () => {
-        render(<IndexCard currencySymbol="$" data={INDEX_DATA} href="/SPY" />);
+        render(
+            <IndexCard
+                tickerIsReadable
+                currencySymbol="$"
+                data={INDEX_DATA}
+                href="/SPY"
+            />
+        );
         const link = screen.getByRole('link');
         expect(link).toHaveAttribute('href', '/SPY');
         expect(link).toHaveAttribute('title', 'S&P 500 Index 분석');
     });
 
     it('does not wrap in a Link when href is absent', () => {
-        render(<IndexCard currencySymbol="$" data={INDEX_DATA} />);
+        render(
+            <IndexCard tickerIsReadable currencySymbol="$" data={INDEX_DATA} />
+        );
         expect(screen.queryByRole('link')).not.toBeInTheDocument();
     });
 
+    /**
+     * 카드가 prop을 QuoteHeader로 넘기지 않으면 한국 화면 제목이 KRX 숫자로 남는다.
+     * QuoteHeader 단위 테스트만으로는 그 한 줄 전달이 고정되지 않는다.
+     */
+    it('tickerIsReadable=false면 한국어명이 먼저 렌더된다', () => {
+        const { container } = render(
+            <IndexCard
+                tickerIsReadable={false}
+                currencySymbol="₩"
+                data={{
+                    symbol: '091160.KS',
+                    fmpSymbol: '091160.KS',
+                    displayName: 'KODEX 반도체',
+                    koreanName: '반도체',
+                    price: 125405,
+                    changesPercentage: -0.67,
+                }}
+            />
+        );
+
+        const firstText = container.querySelector('div > *');
+        expect(firstText).toHaveTextContent('반도체');
+        expect(firstText).not.toHaveTextContent('091160.KS');
+        // 티커는 DOM에 남는다 — 시각적 우선순위만 바뀐다.
+        expect(screen.getByText('091160.KS')).toBeInTheDocument();
+    });
+
     it('uses sectorName as label for sector data', () => {
-        render(<IndexCard currencySymbol="$" data={SECTOR_DATA} href="/XLK" />);
+        render(
+            <IndexCard
+                tickerIsReadable
+                currencySymbol="$"
+                data={SECTOR_DATA}
+                href="/XLK"
+            />
+        );
         const link = screen.getByRole('link');
         expect(link).toHaveAttribute('title', 'Technology 분석');
     });

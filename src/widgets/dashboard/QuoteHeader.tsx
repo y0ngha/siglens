@@ -14,9 +14,9 @@ interface QuoteHeaderProps {
     /**
      * 레이아웃 변형.
      *
-     * - `'index'` (기본): 티커 단독 행 → 한국어 이름 + 변동폭(justify-between) → 가격.
+     * - `'index'` (기본): 주 제목 단독 행 → 보조 제목 + 변동폭(justify-between) → 가격.
      *   IndexCard 원본 DOM과 동일.
-     * - `'signal'`: 티커 + 변동폭(justify-between) 한 행 → 한국어 이름 → 가격.
+     * - `'signal'`: 주 제목 + 변동폭(justify-between) 한 행 → 보조 제목 → 가격.
      *   SignalStockCard 원본 DOM과 동일.
      */
     layout?: 'index' | 'signal';
@@ -25,6 +25,14 @@ interface QuoteHeaderProps {
      * `/market/kr`에서 원화가 달러로 표기됐다.
      */
     currencySymbol: string;
+    /**
+     * 티커를 주 제목으로 쓸지(`DashboardScope.tickerIsReadable`).
+     *
+     * `false`면 한국어명과 티커의 자리가 뒤바뀐다 — KRX 티커는 `091160.KS`처럼
+     * 6자리 숫자라 독자에게 아무 뜻이 없고, 알아볼 수 있는 `반도체`가 작은 회색
+     * 글씨로 밀려나기 때문이다. 두 값 모두 DOM에는 그대로 남는다(시각적 우선순위만 변경).
+     */
+    tickerIsReadable: boolean;
 }
 
 /**
@@ -39,6 +47,7 @@ export function QuoteHeader({
     data,
     layout = 'index',
     currencySymbol,
+    tickerIsReadable,
 }: QuoteHeaderProps) {
     const { sign, colorClass, arrow, arrowLabel } = formatPriceChange(
         data.changePercent
@@ -59,21 +68,41 @@ export function QuoteHeader({
         </span>
     );
 
+    // 티커는 어느 자리에 가든 번역 대상이 아니다 — `translate="no"`가 값을 따라간다.
+    const primary = tickerIsReadable ? (
+        <span
+            translate="no"
+            className="font-mono text-xs font-semibold text-secondary-100"
+        >
+            {data.symbol}
+        </span>
+    ) : (
+        <span className="truncate text-xs font-semibold text-secondary-100">
+            {data.koreanName}
+        </span>
+    );
+
+    const secondary = tickerIsReadable ? (
+        <p className="min-w-0 truncate text-xs text-secondary-400">
+            {data.koreanName}
+        </p>
+    ) : (
+        <p
+            translate="no"
+            className="min-w-0 truncate font-mono text-xs text-secondary-400"
+        >
+            {data.symbol}
+        </p>
+    );
+
     if (layout === 'signal') {
         return (
             <>
                 <div className="flex items-center justify-between gap-1">
-                    <span
-                        translate="no"
-                        className="font-mono text-xs font-semibold text-secondary-100"
-                    >
-                        {data.symbol}
-                    </span>
+                    {primary}
                     {changeSpan}
                 </div>
-                <p className="min-w-0 truncate text-xs text-secondary-400">
-                    {data.koreanName}
-                </p>
+                {secondary}
                 <p className="font-mono text-sm text-secondary-100 tabular-nums">
                     {currencySymbol}
                     {formatUsdPrice(data.price)}
@@ -84,16 +113,9 @@ export function QuoteHeader({
 
     return (
         <>
-            <span
-                translate="no"
-                className="font-mono text-xs font-semibold text-secondary-100"
-            >
-                {data.symbol}
-            </span>
+            {primary}
             <div className="flex items-center justify-between gap-1">
-                <p className="min-w-0 truncate text-xs text-secondary-400">
-                    {data.koreanName}
-                </p>
+                {secondary}
                 {changeSpan}
             </div>
             <p className="font-mono text-sm text-secondary-100 tabular-nums">
