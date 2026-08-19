@@ -289,6 +289,19 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ <NewsAiSummary />  // component name is self-explanatory
     → Recurring: 3 instances in PR #413 (R7 NewsAugment, R10 news/page, plus component removal)
 
+15.7. Market/scope/region-specific strings hardcoded instead of derived from context
+    → Market names ('미국 증시', '한국 증시'), error messages, and region-specific text must not be hardcoded in components
+    → Always derive from context (scope object, props, constants) passed explicitly to the component
+    → Hardcoded values prevent routing the same component to multiple markets and break during multi-market expansion
+    → Error messages must also distinguish between different failure modes (total vs partial data loss); hardcoded generic messages hide degradation
+    ❌ <div>미국 증시 데이터를 불러오지 못했습니다</div>  // hardcoded market name; component fails on /market/kr
+    ❌ MarketDataErrorNotice rendering "일부를 가져오지 못했어요" on both partial AND total failure branches
+    ❌ marketLabel hardcoded in fixture: TEST_SCOPE.marketLabel = '미국 증시'; reverting component prop to hardcoded string still passes test
+    ✅ <div>{scope.marketLabel} 데이터를 불러오지 못했습니다</div>  // derives from prop
+    ✅ <MarketDataErrorNotice variant={isTotalFailure ? 'total' : 'partial'} marketLabel={scope.marketLabel} />  // failure mode + market explicit
+    ✅ Test fixture: KR_SCOPE.marketLabel = '한국 증시'; US_SCOPE.marketLabel = '미국 증시'; assertions verify both
+    → Recurring: feat/asset-class-navigation R1 (hardcoded label), R2 (wrong error message), R4 (assertion overlap) — 3 occurrences across refactor rounds
+
 21. Pure calculation functions using imperative for-loop + push instead of higher-order functions
     → Pure calculation functions must use map, filter, flatMap, reduce — never direct mutation with push/splice
     → Applies to siglens-core calculations and local pure helpers; violation of functional programming paradigm
@@ -774,7 +787,19 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ it('ensures model label and fullName uniqueness', () => { expect(new Set(getLabels()).size).toBe(getLabels().length); expect(new Set(getFullNames()).size).toBe(getFullNames().length); })  // name and assertions aligned
     → Recurring: 3+ occurrences across siglens-core and siglens PR review cycles
 
-21. Gate verification claims must be backed by actual command execution, not visual inspection
+21. Test fixture values that match assertion literals hide regressions
+    → Test fixture data must differ from assertion literals to prevent passing assertions from coincidentally matching fixture values
+    → When a fixture property (e.g., `TEST_SCOPE.marketLabel = '미국 증시'`) equals the assertion literal (`expect(el).toHaveAttribute('data-market-label', '미국 증시')`), removing the component prop still passes because the hardcoded literal matches the fixture
+    → Mutations: reverting dynamic prop binding to hardcoded string in component code still passes the test (fixture value == hardcoded value == assertion literal)
+    → Solution: provide multiple fixture variants with differing values (TEST_SCOPE, KR_SCOPE with distinct marketLabel values); assert each one independently
+    ❌ const TEST_SCOPE = { marketLabel: '미국 증시' }; ... expect(screen.getByTestId('market')).toHaveAttribute('data-market-label', '미국 증시');  // revert component prop to hardcoded string still passes
+    ❌ const KR_SCOPE = { ...TEST_SCOPE, regionCode: 'KR' };  // spread inheritance — KR_SCOPE.marketLabel still '미국 증시', masked until assertion runs
+    ✅ const TEST_SCOPE = { marketLabel: '미국 증시' }; const KR_SCOPE = { marketLabel: '한국 증시', regionCode: 'KR' };
+       it('renders US scope with correct label', () => { render(<Component scope={TEST_SCOPE} />); expect(...).toHaveAttribute('data-market-label', '미국 증시'); });
+       it('renders KR scope with correct label', () => { render(<Component scope={KR_SCOPE} />); expect(...).toHaveAttribute('data-market-label', '한국 증시'); });
+    → Recurring: feat/asset-class-navigation R4 (data-market-label asserted only against TEST_SCOPE, KR_SCOPE inherited hardcoded value via spread)
+
+22. Gate verification claims must be backed by actual command execution, not visual inspection
     → When reporting that a gate (test scope, lint, format, build) passed, the command must actually be invoked and the full output examined
     → False gate reporting (claiming verification completed when it was not run, run with wrong scope, or output misread) hides broken code and causes broken branches to nearly ship
     → Common failure modes: prettier never invoked, vitest scope omitted bracketed-path directories, lint output misread (count off by 1)

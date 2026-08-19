@@ -38,7 +38,7 @@ describe('MarketFearGreedPage', () => {
     describe('with a valid snapshot', () => {
         it('renders the hero score, sentiment text, and asOf date', () => {
             const { container, getByText } = render(
-                <MarketFearGreedPage view={view} />
+                <MarketFearGreedPage market="us" view={view} />
             );
             // The "now" comparison tile also reads 62 — scope to the hero
             // gauge's SVG (role="img") to avoid matching the mini gauge too.
@@ -49,7 +49,9 @@ describe('MarketFearGreedPage', () => {
         });
 
         it('renders all four comparison period labels', () => {
-            const { getByText } = render(<MarketFearGreedPage view={view} />);
+            const { getByText } = render(
+                <MarketFearGreedPage market="us" view={view} />
+            );
             expect(getByText('현재')).toBeInTheDocument();
             expect(getByText('1주 전')).toBeInTheDocument();
             expect(getByText('1개월 전')).toBeInTheDocument();
@@ -57,22 +59,30 @@ describe('MarketFearGreedPage', () => {
         });
 
         it('renders all five factor names', () => {
-            const { getByText } = render(<MarketFearGreedPage view={view} />);
-            expect(getByText(MARKET_FACTOR_LABEL.momentum)).toBeInTheDocument();
+            const { getByText } = render(
+                <MarketFearGreedPage market="us" view={view} />
+            );
             expect(
-                getByText(MARKET_FACTOR_LABEL.volatility)
+                getByText(MARKET_FACTOR_LABEL.us.momentum)
             ).toBeInTheDocument();
             expect(
-                getByText(MARKET_FACTOR_LABEL.safe_haven)
+                getByText(MARKET_FACTOR_LABEL.us.volatility)
             ).toBeInTheDocument();
             expect(
-                getByText(MARKET_FACTOR_LABEL.junk_bond)
+                getByText(MARKET_FACTOR_LABEL.us.safe_haven)
             ).toBeInTheDocument();
-            expect(getByText(MARKET_FACTOR_LABEL.breadth)).toBeInTheDocument();
+            expect(
+                getByText(MARKET_FACTOR_LABEL.us.junk_bond)
+            ).toBeInTheDocument();
+            expect(
+                getByText(MARKET_FACTOR_LABEL.us.breadth)
+            ).toBeInTheDocument();
         });
 
         it('renders the CNN-difference footnote', () => {
-            const { getByText } = render(<MarketFearGreedPage view={view} />);
+            const { getByText } = render(
+                <MarketFearGreedPage market="us" view={view} />
+            );
             const footnote = getByText(/CNN Fear & Greed Index/);
             expect(footnote.textContent).toContain('5개');
             expect(footnote.textContent).toContain('7개');
@@ -80,7 +90,9 @@ describe('MarketFearGreedPage', () => {
         });
 
         it('shows the normal-confidence footer for confidence "normal"', () => {
-            const { getByText } = render(<MarketFearGreedPage view={view} />);
+            const { getByText } = render(
+                <MarketFearGreedPage market="us" view={view} />
+            );
             expect(
                 getByText(`표본 412 — ${CONFIDENCE_NORMAL_LABEL}`)
             ).toBeInTheDocument();
@@ -98,7 +110,7 @@ describe('MarketFearGreedPage', () => {
                 },
             };
             const { getByText } = render(
-                <MarketFearGreedPage view={limitedView} />
+                <MarketFearGreedPage market="us" view={limitedView} />
             );
             expect(
                 getByText(`표본 45 — ${CONFIDENCE_LIMITED_LABEL}`)
@@ -113,7 +125,7 @@ describe('MarketFearGreedPage', () => {
                 comparisons: [],
             };
             const { getByText, container } = render(
-                <MarketFearGreedPage view={emptyView} />
+                <MarketFearGreedPage market="us" view={emptyView} />
             );
             expect(
                 getByText('시장 공포·탐욕 지수를 계산할 데이터가 부족합니다.')

@@ -51,14 +51,18 @@ describe('/news hub page는', () => {
 });
 
 describe('/news hub page generateMetadata는', () => {
-    it('canonical = /news 를 설정한다', () => {
-        const meta = generateMetadata();
+    it('canonical = /news 를 설정한다', async () => {
+        const meta = await generateMetadata();
         expect(meta.alternates?.canonical).toBe('/news');
     });
 
-    it('title에 미국 시장 뉴스가 포함된다', () => {
-        const meta = generateMetadata();
-        expect(String(meta.title)).toContain('미국 시장 뉴스');
+    it('title이 3지역 커버리지를 밝힌다', async () => {
+        // 2026-08: 이 페이지는 미국 허브에서 3지역 상위 허브로 승격됐다.
+        // 미국 카테고리 목록과 미국 질의 키워드는 `/news/us`가 승계한다.
+        const meta = await generateMetadata();
+        expect(String(meta.title)).toContain('미국');
+        expect(String(meta.title)).toContain('한국');
+        expect(String(meta.title)).toContain('암호화폐');
     });
 });
 
@@ -103,7 +107,7 @@ describe('/news hub page JSON-LD는', () => {
         // 전부 손으로 고쳐야 했다.
         const { container } = render(await NewsHubPage());
         const h1 = container.querySelector('h1')?.textContent?.trim();
-        expect(h1).toBe('미국 시장 뉴스 허브');
+        expect(h1).toBe('시장 뉴스 허브');
 
         const breadcrumb = Array.from(
             container.querySelectorAll('script[type="application/ld+json"]')
@@ -118,6 +122,6 @@ describe('/news hub page JSON-LD는', () => {
             .find(d => d?.['@type'] === 'BreadcrumbList');
         const last = breadcrumb.itemListElement.at(-1).name;
         expect(last).toBe(h1);
-        expect(String(generateMetadata().title)).toContain(h1);
+        expect(String((await generateMetadata()).title)).toContain(h1);
     });
 });

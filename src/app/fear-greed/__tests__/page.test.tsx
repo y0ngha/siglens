@@ -180,6 +180,7 @@ describe('/fear-greed page', () => {
 
     describe('JSON-LD', () => {
         it('renders WebPage, BreadcrumbList, and FAQPage JSON-LD blocks', async () => {
+            mockGetMarketFearGreedStatic.mockResolvedValue(SAMPLE_SNAPSHOT);
             const { container } = render(await FearGreedRoutePage());
             const scripts = Array.from(
                 container.querySelectorAll('script[type="application/ld+json"]')
@@ -234,19 +235,34 @@ describe('/fear-greed page', () => {
             expect(webPage.dateModified).toBe(SAMPLE_SNAPSHOT.snapshot?.asOf);
         });
 
-        it('omits WebPage dateModified when the snapshot is null — never invents a fallback date', async () => {
+        it('snapshot이 있으면 dateModified에 그 세션 날짜를 쓴다', async () => {
+            mockGetMarketFearGreedStatic.mockResolvedValue(SAMPLE_SNAPSHOT);
+            const { container } = render(await FearGreedRoutePage());
+            const webPage = Array.from(
+                container.querySelectorAll('script[type="application/ld+json"]')
+            )
+                .map(s => JSON.parse(s.textContent ?? '{}'))
+                .find(d => d['@type'] === 'WebPage');
+            expect(webPage.dateModified).toBe('2026-08-14');
+        });
+
+        /**
+         * 표본이 부족하면 `generateMetadata`가 canonical을 비우고 noindex를 건다.
+         * 그 상태에서 WebPage/Breadcrumb을 그대로 내면 "색인하지 말라"면서
+         * "이 URL이 정식 WebPage"라고 주장하는 모순이 된다. FAQ는 질문·답변이
+         * 화면에 그대로 있으므로 예외다.
+         */
+        it('표본이 없으면 FAQ만 남기고 나머지 구조화데이터를 빼다', async () => {
             mockGetMarketFearGreedStatic.mockResolvedValue({
                 snapshot: null,
                 comparisons: [],
             });
             const { container } = render(await FearGreedRoutePage());
-            const scripts = Array.from(
+            const types = Array.from(
                 container.querySelectorAll('script[type="application/ld+json"]')
-            );
-            const webPage = scripts
-                .map(s => JSON.parse(s.textContent ?? '{}'))
-                .find(d => d['@type'] === 'WebPage');
-            expect(webPage.dateModified).toBeUndefined();
+            ).map(s => JSON.parse(s.textContent ?? '{}')['@type']);
+
+            expect(types).toEqual(['FAQPage']);
         });
     });
 

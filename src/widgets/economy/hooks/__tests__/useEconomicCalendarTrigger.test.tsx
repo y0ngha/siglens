@@ -13,8 +13,8 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { useEconomicCalendarTrigger } from '../useEconomicCalendarTrigger';
 
-function Probe() {
-    useEconomicCalendarTrigger();
+function Probe({ country = 'US' as const }: { country?: 'US' | 'KR' }) {
+    useEconomicCalendarTrigger(country);
     return null;
 }
 
@@ -51,5 +51,25 @@ describe('useEconomicCalendarTrigger', () => {
             new Error('analysis down')
         );
         expect(() => render(<Probe />)).not.toThrow();
+    });
+
+    /**
+     * 이 훅이 KR 인제스션의 **유일한** 트리거다. `country`가 그대로 흐르지 않으면
+     * `economic_calendar`에 KR 행이 영영 안 들어오고, `/economy/kr`은 빈 그리드 +
+     * noindex로 굳는다. 두 액션 모두 오류를 삼키고 *미국* 플래그만 세워지므로
+     * 런타임 신호가 하나도 없다 — 인자 단언이 유일한 방어선이다.
+     */
+    it('country를 두 ensure 액션에 그대로 넘긴다', () => {
+        render(<Probe country="KR" />);
+
+        expect(ensureEconomicCalendarAction).toHaveBeenCalledWith('KR');
+        expect(ensureEconomicEventsAnalyzedAction).toHaveBeenCalledWith('KR');
+    });
+
+    it('기본 국가는 미국이다', () => {
+        render(<Probe />);
+
+        expect(ensureEconomicCalendarAction).toHaveBeenCalledWith('US');
+        expect(ensureEconomicEventsAnalyzedAction).toHaveBeenCalledWith('US');
     });
 });

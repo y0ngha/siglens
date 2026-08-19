@@ -3,9 +3,10 @@ import { unstable_cache } from 'next/cache';
 import type { MarketSummaryData } from '@y0ngha/siglens-core';
 import {
     getCachedMarketSummary,
-    MARKET_SUMMARY_CONFIG_FINGERPRINT,
+    marketSummaryConfigFingerprint,
 } from './marketSummaryCache';
-import { getMarketDataProvider } from '@/shared/api/market/getMarketDataProvider';
+import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
+import type { DashboardScope } from '@/shared/config/dashboardScope';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 /**
@@ -17,10 +18,18 @@ import { SECONDS_PER_HOUR } from '@/shared/config/time';
  * 셋이 한 태그를 공유하면 향후 어느 하나를 revalidateTag로 무효화할 때 나머지까지
  * 함께 날아가는 결합(blast-radius)이 생기므로, 정밀 무효화를 위해 분리해 둔다.
  */
-export function getMarketSummaryStatic(): Promise<MarketSummaryData> {
+export function getMarketSummaryStatic(
+    scope: DashboardScope
+): Promise<MarketSummaryData> {
     return unstable_cache(
-        () => getCachedMarketSummary(getMarketDataProvider()),
-        ['market-summary-static', MARKET_SUMMARY_CONFIG_FINGERPRINT],
-        { revalidate: SECONDS_PER_HOUR, tags: ['market:summary'] }
+        () => getCachedMarketSummary(marketDataProviderFor(scope.id), scope),
+        [
+            'market-summary-static',
+            scope.id,
+            marketSummaryConfigFingerprint(scope),
+        ],
+        // 태그도 시장별로 가른다 — 한국 시세를 무효화하려고 미국까지 날리면
+        // 태그를 분리해 둔 의미가 없다.
+        { revalidate: SECONDS_PER_HOUR, tags: [`market:summary:${scope.id}`] }
     )();
 }

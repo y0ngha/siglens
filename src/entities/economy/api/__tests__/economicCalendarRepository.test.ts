@@ -7,6 +7,7 @@ vi.mock('server-only', () => ({}));
  */
 const gteSpy = vi.fn();
 const lteSpy = vi.fn();
+const eqSpy = vi.fn();
 vi.mock('drizzle-orm', async importOriginal => {
     const original = await importOriginal<typeof import('drizzle-orm')>();
     return {
@@ -18,6 +19,10 @@ vi.mock('drizzle-orm', async importOriginal => {
         lte: (...args: Parameters<typeof original.lte>) => {
             lteSpy(...args);
             return original.lte(...args);
+        },
+        eq: (...args: Parameters<typeof original.eq>) => {
+            eqSpy(...args);
+            return original.eq(...args);
         },
     };
 });
@@ -44,7 +49,9 @@ function makeDb(returningRows: { id: string }[], selectRows: unknown[]) {
     const insert = vi.fn(() => ({ values }));
 
     const orderBy = vi.fn(async () => selectRows);
-    const where = vi.fn(() => ({ orderBy }));
+    // `listUnanalyzedAnnounced`는 한 pass의 LLM 왕복 수를 `.limit()`으로 묶는다.
+    const limit = vi.fn(async () => selectRows);
+    const where = vi.fn(() => ({ orderBy, limit }));
     const from = vi.fn(() => ({ where }));
     const select = vi.fn(() => ({ from }));
 
@@ -59,6 +66,7 @@ function makeDb(returningRows: { id: string }[], selectRows: unknown[]) {
             from,
             where,
             orderBy,
+            limit,
         },
     };
 }
@@ -103,7 +111,7 @@ describe('DrizzleEconomicCalendarRepository.listInRange', () => {
     it('queries with inclusive lower bound and upper bound extended to 23:59:59', async () => {
         const { db } = makeDb([], []);
         const repo = new DrizzleEconomicCalendarRepository(db);
-        await repo.listInRange('2026-06-01', '2026-06-30');
+        await repo.listInRange('2026-06-01', '2026-06-30', 'US');
         // gte 두 번째 인수는 fromEt 그대로 (하한 경계 포함)
         expect(gteSpy).toHaveBeenCalledWith(expect.anything(), '2026-06-01');
         // lte 두 번째 인수는 toEt + ' 23:59:59' (같은 날 이벤트 누락 방지)
@@ -146,7 +154,7 @@ describe('DrizzleEconomicCalendarRepository.listInRange', () => {
             ]
         );
         const repo = new DrizzleEconomicCalendarRepository(db);
-        const events = await repo.listInRange('2026-06-01', '2026-06-30');
+        const events = await repo.listInRange('2026-06-01', '2026-06-30', 'US');
         expect(events).toHaveLength(2);
         expect(events[0]).toEqual({
             date: '2026-06-13 08:30:00',
@@ -174,5 +182,94 @@ describe('DrizzleEconomicCalendarRepository.listInRange', () => {
             interpretationKo: null,
             analyzedAt: null,
         });
+    });
+});
+
+/**
+ * 한국 지표 카드는 FMP 지표 시계열이 KR을 커버하지 않아 캘린더 발표 이력에서
+ * 값을 되짚는다. 국가 필터가 빠지면 미국 CPI가 한국 카드에 섞여 들어오는데,
+ * 화면상으로는 그냥 "값이 이상한 카드"로만 보인다.
+ */
+describe('DrizzleEconomicCalendarRepository.listAnnouncedSince', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    const ROWS = [
+        {
+            dateEt: '2026-08-01',
+            event: 'BOK Interest Rate Decision',
+            actual: 2.75,
+            previous: 2.75,
+            unit: '%',
+        },
+        {
+            dateEt: '2026-08-05',
+            event: 'CPI YoY',
+            actual: null,
+            previous: 2.7,
+            unit: '%',
+        },
+    ];
+
+    it('국가와 시작일로 거른다', async () => {
+        const { db, spies } = makeDb([], ROWS);
+        const repo = new DrizzleEconomicCalendarRepository(db);
+
+        await repo.listAnnouncedSince('KR', '2026-01-01');
+
+        expect(spies.select).toHaveBeenCalledOnce();
+        expect(eqSpy).toHaveBeenCalledWith(expect.anything(), 'KR');
+        expect(gteSpy).toHaveBeenCalledWith(expect.anything(), '2026-01-01');
+    });
+
+    it('actual이 null인 행은 결과에서 빠진다', async () => {
+        const { db } = makeDb([], ROWS);
+        const repo = new DrizzleEconomicCalendarRepository(db);
+
+        const points = await repo.listAnnouncedSince('KR', '2026-01-01');
+
+        expect(points).toEqual([
+            {
+                dateEt: '2026-08-01',
+                event: 'BOK Interest Rate Decision',
+                actual: 2.75,
+                previous: 2.75,
+                unit: '%',
+            },
+        ]);
+    });
+
+    it('행이 없으면 빈 배열을 돌려준다', async () => {
+        const { db } = makeDb([], []);
+        const repo = new DrizzleEconomicCalendarRepository(db);
+
+        expect(await repo.listAnnouncedSince('KR', '2026-01-01')).toEqual([]);
+    });
+});
+
+/**
+ * 국가 필터가 빠지면 `/economy`와 `/economy/kr`이 같은 병합 캘린더를 그린다.
+ * `listUnanalyzedAnnounced` 쪽이 더 나쁘다 — 미국 방문이 KR 이벤트를 집어다
+ * 미국 few-shot 프롬프트로 분석하고, `analyzed_at IS NULL` 가드 때문에
+ * **한 번 쓰면 못 고친다.**
+ */
+describe('국가 필터', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('listInRange가 국가로 거른다', async () => {
+        const { db } = makeDb([], []);
+        const repo = new DrizzleEconomicCalendarRepository(db);
+
+        await repo.listInRange('2026-06-01', '2026-06-30', 'KR');
+
+        expect(eqSpy).toHaveBeenCalledWith(expect.anything(), 'KR');
+    });
+
+    it('listUnanalyzedAnnounced가 국가로 거른다', async () => {
+        const { db } = makeDb([], []);
+        const repo = new DrizzleEconomicCalendarRepository(db);
+
+        await repo.listUnanalyzedAnnounced(['High'], 'KR');
+
+        expect(eqSpy).toHaveBeenCalledWith(expect.anything(), 'KR');
     });
 });

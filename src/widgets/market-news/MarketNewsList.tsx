@@ -1,9 +1,10 @@
 'use client';
 
+import type { NewsFeedCategoryId } from '@/entities/market-news';
 import { useState } from 'react';
 import type { MarketNewsCardItem } from '@/entities/market-news';
 import { MARKET_NEWS_LOOKBACK_DAYS } from '@/entities/market-news';
-import type { NewsFeedCategory } from '@y0ngha/siglens-core';
+
 import { useMarketNewsCardPolling } from './hooks/useMarketNewsCardPolling';
 import { MarketNewsCard } from './MarketNewsCard';
 
@@ -74,7 +75,7 @@ function LoadingState() {
 }
 
 export interface MarketNewsListProps {
-    category: NewsFeedCategory;
+    category: NewsFeedCategoryId;
     initialItems: MarketNewsCardItem[];
 }
 

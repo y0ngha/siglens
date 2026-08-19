@@ -3,6 +3,7 @@ import type {
     ModelId,
     Timeframe,
 } from '@y0ngha/siglens-core';
+import type { DashboardScopeId } from './dashboardScope';
 import { MS_PER_MINUTE } from './time';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 
@@ -61,8 +62,15 @@ export const QUERY_KEYS = {
     ],
     tickerSearch: (query: string) => ['ticker-search', query] as const,
     assetInfo: (symbol: string) => ['asset-info', upper(symbol)] as const,
-    marketSummary: () => ['market-summary'] as const,
-    marketBriefing: () => ['market-briefing'] as const,
+    /**
+     * 시장별로 키를 가른다. `/market`과 `/market/kr`은 같은 클라이언트 캐시를
+     * 공유하므로, scope가 키에 없으면 한 페이지에서 다른 페이지로 이동했을 때
+     * 이전 시장의 시세가 그대로 보인다(staleTime 안에서는 refetch도 없다).
+     */
+    marketSummary: (scope: DashboardScopeId) =>
+        ['market-summary', scope] as const,
+    marketBriefing: (scope: DashboardScopeId) =>
+        ['market-briefing', scope] as const,
     macroBriefing: () => ['macro-briefing'] as const,
     currentUser: () => ['current-user'] as const,
     userTier: () => ['user-tier'] as const,
@@ -119,8 +127,8 @@ export const QUERY_KEYS = {
             modelId,
             reasoning,
         ] as const,
-    sectorSignals: (timeframe: DashboardTimeframe) =>
-        ['sector-signals', timeframe] as const,
+    sectorSignals: (scope: DashboardScopeId, timeframe: DashboardTimeframe) =>
+        ['sector-signals', scope, timeframe] as const,
     optionsSnapshot: (symbol: string) =>
         ['options-snapshot', upper(symbol)] as const,
     /**

@@ -9,6 +9,7 @@ import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import type { MarketBriefingActionResult } from '@/shared/lib/types';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 
 export interface UseMarketBriefingReturn {
     /**
@@ -27,15 +28,16 @@ export interface UseMarketBriefingReturn {
  * `runAnalysisStream`은 25초 heartbeat로 그 벽을 넘긴다.
  */
 export function useMarketBriefing(
+    scope: DashboardScopeId,
     peekSeed?: MarketBriefingResponse | null
 ): UseMarketBriefingReturn {
     const isHydrated = useHydrated();
     const { data, isError } = useQuery({
-        queryKey: QUERY_KEYS.marketBriefing(),
+        queryKey: QUERY_KEYS.marketBriefing(scope),
         queryFn: ({ signal }) =>
             runAnalysisStream<MarketBriefingActionResult>({
                 type: 'briefing',
-                params: {},
+                params: { scope },
                 signal,
             }),
         enabled: isHydrated,
@@ -75,5 +77,13 @@ export function useMarketBriefing(
     }
     if ('ok' in data) return { input: seedInput ?? 'error' };
     if (data.botBlocked) return { input: seedInput ?? null };
+    /*
+     * 롤링 배포 중 구 컨테이너가 답하면 `scope`가 없다 — 그 브리핑은 정의상
+     * 미국 것이다(구 액션은 인자를 안 받는다). 한국 페이지에서 그대로 그리면
+     * "오늘 국내 증시는…" 자리에 미국 서술이 들어앉는데, 문장이 그럴듯해서
+     * 아무도 못 알아챈다. seed(서버가 읽어 온 진짜 KR 캐시)로 물러난다.
+     * 미국에서는 검사하지 않는다 — `useMarketSummary.matchesScope` JSDoc 참조.
+     */
+    if (scope !== 'us' && data.scope !== scope) return { input: seedInput };
     return { input: data.briefing };
 }

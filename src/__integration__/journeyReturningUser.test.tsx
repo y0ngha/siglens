@@ -34,12 +34,15 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 
-vi.mock('@/shared/config/dashboard-tickers', () => ({
-    SIGNAL_SECTORS: [
-        { symbol: 'XLK', koreanName: '기술' },
-        { symbol: 'XLV', koreanName: '헬스케어' },
-    ],
-}));
+/**
+ * `SectorTabs`가 섹터 목록을 **prop으로** 받으므로 모듈 목이 필요 없다.
+ * (예전에는 모듈 최상단 `SIGNAL_SECTORS`를 읽어서 목이 필수였다.)
+ */
+const TEST_SECTORS = [
+    { symbol: 'XLK', sectorName: 'Technology', koreanName: '기술' },
+    { symbol: 'XLV', sectorName: 'Healthcare', koreanName: '헬스케어' },
+    { symbol: 'XLF', sectorName: 'Financials', koreanName: '금융' },
+] as const;
 
 vi.mock('@/shared/ui/tabs', async () => {
     const { createTabsUnderlineMock } =
@@ -77,14 +80,26 @@ describe('Journey: Returning User', () => {
 
     describe('Step 1: Dashboard -> Sector scan', () => {
         it('renders sector tabs on dashboard', () => {
-            render(<SectorTabs activeSector="XLK" onChange={vi.fn()} />);
+            render(
+                <SectorTabs
+                    sectors={TEST_SECTORS}
+                    activeSector="XLK"
+                    onChange={vi.fn()}
+                />
+            );
             expect(screen.getByText('기술')).toBeInTheDocument();
             expect(screen.getByText('헬스케어')).toBeInTheDocument();
         });
 
         it('allows switching sectors', async () => {
             const onChange = vi.fn();
-            render(<SectorTabs activeSector="XLK" onChange={onChange} />);
+            render(
+                <SectorTabs
+                    sectors={TEST_SECTORS}
+                    activeSector="XLK"
+                    onChange={onChange}
+                />
+            );
             const user = userEvent.setup();
             await user.click(screen.getByText('헬스케어'));
             expect(onChange).toHaveBeenCalledWith('XLV');

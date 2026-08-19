@@ -62,14 +62,18 @@ test.describe('home page', () => {
     test('히어로 퀵링크로 미국 시장 뉴스·미국 경제로 이동한다', async ({
         page,
     }) => {
-        // (a) 미국 시장 뉴스 → /news
+        // (a) 미국 시장 뉴스 → /news/us
+        //
+        // 2026-08 동선 재편: 히어로 퀵링크는 이제 허브(`/news`)가 아니라 **최종
+        // 목적지**를 건다. 랜딩에서 원하는 화면까지 클릭이 두 번이 되는 것을 막는 것이
+        // 자산군을 1차 축으로 올린 목적이라, 허브 경유가 아니라 지역 페이지로 간다.
         await page.goto('/');
         const main = page.getByRole('main');
 
         // → is wrapped in <span aria-hidden="true">, so it is excluded from the
         // accessible name. The exact accessible name is '미국 시장 뉴스' / '미국 경제'.
         await main.getByRole('link', { name: '미국 시장 뉴스' }).click();
-        await page.waitForURL('**/news');
+        await page.waitForURL('**/news/us');
 
         // (b) 미국 경제 → /economy
         await page.goto('/');

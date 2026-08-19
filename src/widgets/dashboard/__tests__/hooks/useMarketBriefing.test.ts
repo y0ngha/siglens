@@ -65,9 +65,12 @@ describe('useMarketBriefing', () => {
     it('(Happy) peekSeed 있음 → 초기 input cached로 즉시 노출', () => {
         mockAction.mockImplementation(() => new Promise(() => {}));
         const { client, wrapper } = makeWrapper();
-        const { result } = renderHook(() => useMarketBriefing(PEEK_SEED), {
-            wrapper,
-        });
+        const { result } = renderHook(
+            () => useMarketBriefing('us', PEEK_SEED),
+            {
+                wrapper,
+            }
+        );
         // data=undefined(미hydrated) + peekSeed 있음 → cached 형태로 노출
         expect(result.current.input).toMatchObject({
             status: 'cached',
@@ -79,7 +82,7 @@ describe('useMarketBriefing', () => {
     it('(Happy) peekSeed null + 미hydrated → undefined', () => {
         mockAction.mockImplementation(() => new Promise(() => {}));
         const { client, wrapper } = makeWrapper();
-        const { result } = renderHook(() => useMarketBriefing(null), {
+        const { result } = renderHook(() => useMarketBriefing('us', null), {
             wrapper,
         });
         expect(result.current.input).toBeUndefined();
@@ -89,7 +92,9 @@ describe('useMarketBriefing', () => {
     it('(Happy) peekSeed 없음 + 미hydrated → undefined', () => {
         mockAction.mockImplementation(() => new Promise(() => {}));
         const { client, wrapper } = makeWrapper();
-        const { result } = renderHook(() => useMarketBriefing(), { wrapper });
+        const { result } = renderHook(() => useMarketBriefing('us'), {
+            wrapper,
+        });
         expect(result.current.input).toBeUndefined();
         client.clear();
     });
@@ -97,7 +102,9 @@ describe('useMarketBriefing', () => {
     it('(Happy) action done (cached) → input = cached briefing', async () => {
         mockAction.mockResolvedValue(CACHED_BRIEFING_RESULT);
         const { client, wrapper } = makeWrapper();
-        const { result } = renderHook(() => useMarketBriefing(), { wrapper });
+        const { result } = renderHook(() => useMarketBriefing('us'), {
+            wrapper,
+        });
 
         await waitFor(() => {
             expect(result.current.input).toMatchObject({
@@ -116,7 +123,9 @@ describe('useMarketBriefing', () => {
     it('(Happy) action done (done) → input = done briefing', async () => {
         mockAction.mockResolvedValue(DONE_BRIEFING_RESULT);
         const { client, wrapper } = makeWrapper();
-        const { result } = renderHook(() => useMarketBriefing(), { wrapper });
+        const { result } = renderHook(() => useMarketBriefing('us'), {
+            wrapper,
+        });
 
         await waitFor(() => {
             expect(result.current.input).toMatchObject({
@@ -133,7 +142,7 @@ describe('useMarketBriefing', () => {
         const PEEK = { headlineKo: '시드 브리핑' } as never;
         mockAction.mockResolvedValue({ briefing: null, botBlocked: true });
         const { client, wrapper } = makeWrapper();
-        const { result } = renderHook(() => useMarketBriefing(PEEK), {
+        const { result } = renderHook(() => useMarketBriefing('us', PEEK), {
             wrapper,
         });
 
@@ -149,7 +158,9 @@ describe('useMarketBriefing', () => {
         };
         mockAction.mockResolvedValue(botResult);
         const { client, wrapper } = makeWrapper();
-        const { result } = renderHook(() => useMarketBriefing(), { wrapper });
+        const { result } = renderHook(() => useMarketBriefing('us'), {
+            wrapper,
+        });
 
         await waitFor(() => {
             expect(result.current.input).toBeNull();
@@ -164,7 +175,9 @@ describe('useMarketBriefing', () => {
         };
         mockAction.mockResolvedValue(errorResult);
         const { client, wrapper } = makeWrapper();
-        const { result } = renderHook(() => useMarketBriefing(), { wrapper });
+        const { result } = renderHook(() => useMarketBriefing('us'), {
+            wrapper,
+        });
 
         await waitFor(() => {
             expect(result.current.input).toBe('error');
@@ -177,7 +190,7 @@ describe('useMarketBriefing', () => {
         const PEEK = { headlineKo: '시드 브리핑' } as never;
         mockAction.mockRejectedValue(new Error('분석 시간이 초과되었습니다.'));
         const { client, wrapper } = makeWrapper();
-        const { result } = renderHook(() => useMarketBriefing(PEEK), {
+        const { result } = renderHook(() => useMarketBriefing('us', PEEK), {
             wrapper,
         });
 
@@ -193,7 +206,9 @@ describe('useMarketBriefing', () => {
         // 없어 seedInput(undefined)으로 떨어지면 실패가 조용히 사라진다.
         mockAction.mockRejectedValue(new Error('분석 시간이 초과되었습니다.'));
         const { client, wrapper } = makeWrapper();
-        const { result } = renderHook(() => useMarketBriefing(), { wrapper });
+        const { result } = renderHook(() => useMarketBriefing('us'), {
+            wrapper,
+        });
 
         await waitFor(() => {
             expect(result.current.input).toBe('error');

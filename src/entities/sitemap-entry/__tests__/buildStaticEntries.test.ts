@@ -10,13 +10,22 @@ import { MS_PER_HOUR } from '@/shared/config/time';
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 import { floorToHour } from '../lib/floorToHour';
+import { ALL_NAV_REGION_LINKS } from '@/shared/config/assetClassNav';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 
 const NOW = new Date('2026-05-23T15:30:00.000Z');
 
 describe('buildStaticEntries', () => {
-    it('home / market / fear-greed / backtesting / economy / news hub + 5 categories / privacy / terms 13개 엔트리를 반환한다', () => {
+    it('홈 + 버티컬 지역 페이지 + backtesting + 뉴스 허브·지역·카테고리 + legal 전부를 반환한다', () => {
         const entries = buildStaticEntries(NOW);
-        expect(entries).toHaveLength(13);
+
+        // 개수를 손으로 적지 않는다 — 지역을 하나 열 때마다 이 숫자만 고치게 되고
+        // 정작 "빠진 URL"은 못 잡는다. 내비 설정에서 파생해 정합성을 강제한다.
+        const urlSet = new Set(entries.map(e => e.url));
+        for (const link of ALL_NAV_REGION_LINKS) {
+            expect(urlSet).toContain(`${SITE_URL}${link.href}`);
+        }
+        expect(urlSet.size).toBe(entries.length); // 중복 URL 없음
 
         const urls = entries.map(e => e.url);
         expect(urls).toEqual(
@@ -163,5 +172,28 @@ describe('buildStaticEntries', () => {
         expect(market!.lastModified.getTime()).toBe(
             floorToHour(new Date(NOW.getTime() - MS_PER_HOUR)).getTime()
         );
+    });
+});
+
+describe('buildStaticEntries — 지역별 lastmod', () => {
+    /**
+     * 두 공포·탐욕 페이지는 서로 다른 거래소의 EOD 종가가 입력이다. KRX는 06:30 UTC,
+     * NYSE는 21:00 UTC에 닫혀서 한 시계로 통일하면 하루 14시간 넘게 KR 엔트리가 실제
+     * 변경 시각보다 뒤처지고, KRX만 여는 날에는 바뀌지도 않은 변경을 주장한다.
+     */
+    it('/fear-greed/kr은 KRX 직전 마감을, /fear-greed는 NYSE 직전 마감을 쓴다', () => {
+        const now = new Date('2026-08-18T12:00:00Z');
+        const entries = buildStaticEntries(now);
+
+        const us = entries.find(e => e.url.endsWith('/fear-greed'));
+        const kr = entries.find(e => e.url.endsWith('/fear-greed/kr'));
+
+        expect(us?.lastModified).toEqual(
+            lastClosedSessionCloseUtc(US_EQUITY_SESSION, now)
+        );
+        expect(kr?.lastModified).toEqual(
+            lastClosedSessionCloseUtc(KR_EQUITY_SESSION, now)
+        );
+        expect(kr?.lastModified).not.toEqual(us?.lastModified);
     });
 });

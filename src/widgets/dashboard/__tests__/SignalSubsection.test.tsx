@@ -32,6 +32,7 @@ describe('SignalSubsection', () => {
     it('renders title and marker', () => {
         render(
             <SignalSubsection
+                currencySymbol="$"
                 title="상승 신호"
                 marker="▲"
                 variant="confirmed"
@@ -45,6 +46,7 @@ describe('SignalSubsection', () => {
     it('renders zero-padded stock count', () => {
         render(
             <SignalSubsection
+                currencySymbol="$"
                 title="상승 신호"
                 marker="▲"
                 variant="confirmed"
@@ -57,6 +59,7 @@ describe('SignalSubsection', () => {
     it('renders empty message when no stocks', () => {
         render(
             <SignalSubsection
+                currencySymbol="$"
                 title="하락 신호"
                 marker="▼"
                 variant="confirmed"
@@ -71,6 +74,7 @@ describe('SignalSubsection', () => {
     it('renders stock cards when stocks are present', () => {
         render(
             <SignalSubsection
+                currencySymbol="$"
                 title="상승 신호"
                 marker="▲"
                 variant="confirmed"
@@ -83,6 +87,7 @@ describe('SignalSubsection', () => {
     it('renders info tooltip when infoMessage is provided', () => {
         render(
             <SignalSubsection
+                currencySymbol="$"
                 title="혼재"
                 marker="◈"
                 variant="mixed"
@@ -97,6 +102,7 @@ describe('SignalSubsection', () => {
     it('does not render info tooltip when infoMessage is undefined', () => {
         render(
             <SignalSubsection
+                currencySymbol="$"
                 title="상승 신호"
                 marker="▲"
                 variant="confirmed"

@@ -2,7 +2,7 @@ import { HeaderMobileMenu } from './HeaderMobileMenu';
 import { HeaderNav } from './HeaderNav';
 import { HeaderNavStatic } from './HeaderNavStatic';
 import { HeaderUserMenu, type HeaderUserMenuUser } from './HeaderUserMenu';
-import { NAV_ITEMS } from './headerNavItems';
+import { NAV_TREE } from './headerNavTree';
 import { TickerAutocomplete } from '@/features/ticker-search';
 import { SITE_NAME } from '@/shared/lib/seo';
 import Image from 'next/image';
@@ -72,10 +72,15 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                     82px가 되고 56px 행 위아래로 삐져나간다(768px 실측).
                     `HeaderMobileMenu`의 `lg:hidden`과 **반드시 같은 값**이어야
                     한다 — 어긋나면 둘 다 보이거나 둘 다 사라진다.
+
+                    2026-08 지역 드롭다운 도입으로 라벨에서 "미국"이 빠져 폭이
+                    다시 줄었지만(`시장 분석`·`뉴스`·`경제`), `md` 복귀는 실측
+                    전까지 하지 않는다 — 드롭다운 트리거에 caret(▾)이 붙어
+                    항목당 폭이 라벨 길이만으로 결정되지 않는다.
                 */}
                 <div className="hidden lg:flex">
-                    <Suspense fallback={<HeaderNavStatic items={NAV_ITEMS} />}>
-                        <HeaderNav items={NAV_ITEMS} />
+                    <Suspense fallback={<HeaderNavStatic items={NAV_TREE} />}>
+                        <HeaderNav items={NAV_TREE} />
                     </Suspense>
                 </div>
                 <div className="ml-auto flex w-full max-w-40 min-w-0 justify-end sm:max-w-xs">
@@ -88,7 +93,7 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                     />
                 </div>
                 {/* Mobile hamburger — hidden on desktop */}
-                <HeaderMobileMenu items={NAV_ITEMS} />
+                <HeaderMobileMenu items={NAV_TREE} />
             </div>
         </header>
     );

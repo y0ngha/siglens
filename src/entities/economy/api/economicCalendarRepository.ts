@@ -76,6 +76,13 @@ export interface UnanalyzedAnnouncedEvent {
     unit: string;
 }
 
+/**
+ * 미분석 발표 스캔 1회가 가져오는 최대 행 수 — 곧 LLM 왕복 수의 상한이다.
+ * `CALENDAR_ANALYSIS_PARALLEL_LIMIT`(4)로 나누면 배치 5회로, 페이지 로드에서
+ * 시작한 백그라운드 작업이 감당할 만한 크기다.
+ */
+const UNANALYZED_SCAN_LIMIT = 20;
+
 export class DrizzleEconomicCalendarRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
@@ -142,7 +149,8 @@ export class DrizzleEconomicCalendarRepository {
      */
     async listInRange(
         fromEt: string,
-        toEt: string
+        toEt: string,
+        country: string
     ): Promise<EconomicCalendarEventWithAnalysis[]> {
         const rows = await withRetry(
             () =>
@@ -163,6 +171,9 @@ export class DrizzleEconomicCalendarRepository {
                     .from(economicCalendar)
                     .where(
                         and(
+                            // country 필터가 없으면 미국·한국 이벤트가 한 캘린더에
+                            // 섞여 나온다 — 두 라우트가 같은 테이블을 쓰기 때문이다.
+                            eq(economicCalendar.country, country),
                             gte(economicCalendar.dateEt, fromEt),
                             lte(economicCalendar.dateEt, `${toEt} 23:59:59`)
                         )
@@ -202,11 +213,16 @@ export class DrizzleEconomicCalendarRepository {
     }
 
     /**
-     * 분석 대상 행을 읽는다: impact ∈ impacts AND actual IS NOT NULL AND analyzed_at IS NULL.
-     * 발표된(actual 채워진) Medium+ 미분석 이벤트만 반환해 ensure가 core에 넘긴다.
+     * 분석 대상 행을 읽는다: country = ? AND impact ∈ impacts AND actual IS NOT NULL
+     * AND analyzed_at IS NULL. 발표된(actual 채워진) Medium+ 미분석 이벤트만 반환한다.
+     *
+     * **country 필터가 반드시 있어야 한다.** 없으면 미국 페이지 방문이 한국 이벤트를
+     * 집어 미국 few-shot 프롬프트로 분석하고, 그 결과는 `analyzed_at IS NULL` 가드
+     * 때문에 **한 번 쓰이면 다시 못 고친다**(write-once). 반대 방향도 같다.
      */
     async listUnanalyzedAnnounced(
-        impacts: readonly CalendarImpact[]
+        impacts: readonly CalendarImpact[],
+        country: string
     ): Promise<UnanalyzedAnnouncedEvent[]> {
         const rows = await withRetry(
             () =>
@@ -223,11 +239,17 @@ export class DrizzleEconomicCalendarRepository {
                     .from(economicCalendar)
                     .where(
                         and(
+                            eq(economicCalendar.country, country),
                             inArray(economicCalendar.impact, [...impacts]),
                             isNotNull(economicCalendar.actual),
                             isNull(economicCalendar.analyzedAt)
                         )
-                    ),
+                    )
+                    // 한 번의 pass가 삼킬 수 있는 양을 묶는다. 이 스캔은 페이지
+                    // 로드에서 `waitUntil` 안으로 들어가고, 각 행이 LLM 왕복 하나다.
+                    // 상한이 없으면 인제스션 창을 넓힌 국가가 처음 켜질 때 수십 건이
+                    // 한 요청에 몰린다. 남은 것은 다음 pass(플래그 TTL)가 가져간다.
+                    .limit(UNANALYZED_SCAN_LIMIT),
             NEON_TRANSIENT_RETRY
         );
         return rows.map(r => ({
@@ -241,4 +263,63 @@ export class DrizzleEconomicCalendarRepository {
             unit: r.unit,
         }));
     }
+
+    /**
+     * 발표가 끝난(actual IS NOT NULL) 이벤트 이력을 국가별로 읽는다.
+     *
+     * 한국 지표 카드는 FMP 지표 시계열 엔드포인트가 커버하지 않아 **캘린더 발표
+     * 이력에서 되짚는다**(`shared/config/economyIndicatorsKr.ts` 주석 참조).
+     * 값 표시에 필요한 최소 컬럼만 읽는다 — AI 분석 컬럼은 카드에 쓰이지 않으므로
+     * SELECT에서 뺀다(불필요한 Neon 전송 + ISR 블롭 증가 방지).
+     */
+    async listAnnouncedSince(
+        country: string,
+        fromEt: string
+    ): Promise<AnnouncedEventPoint[]> {
+        const rows = await withRetry(
+            () =>
+                this.db
+                    .select({
+                        dateEt: economicCalendar.dateEt,
+                        event: economicCalendar.event,
+                        actual: economicCalendar.actual,
+                        previous: economicCalendar.previous,
+                        unit: economicCalendar.unit,
+                    })
+                    .from(economicCalendar)
+                    .where(
+                        and(
+                            eq(economicCalendar.country, country),
+                            gte(economicCalendar.dateEt, fromEt),
+                            isNotNull(economicCalendar.actual)
+                        )
+                    )
+                    .orderBy(asc(economicCalendar.dateEt)),
+            NEON_TRANSIENT_RETRY
+        );
+        return rows.flatMap(row =>
+            row.actual === null
+                ? []
+                : [
+                      {
+                          dateEt: row.dateEt,
+                          event: row.event,
+                          actual: row.actual,
+                          previous: row.previous,
+                          unit: row.unit,
+                      },
+                  ]
+        );
+    }
+}
+
+/** 발표가 끝난 이벤트 한 건 — 지표 카드가 소비하는 최소 형상. */
+export interface AnnouncedEventPoint {
+    /** FMP 원본 'YYYY-MM-DD HH:mm:ss'(ET 벽시계). */
+    dateEt: string;
+    event: string;
+    /** `actual IS NOT NULL` 필터를 통과했으므로 number 보장. */
+    actual: number;
+    previous: number | null;
+    unit: string;
 }

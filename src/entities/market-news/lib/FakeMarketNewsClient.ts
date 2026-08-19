@@ -1,6 +1,5 @@
-import type { NewsFeedCategory } from '@y0ngha/siglens-core';
 import { MS_PER_DAY } from '@/shared/config/time';
-import { CATEGORY_CONFIG } from './categoryConfig';
+import { CATEGORY_CONFIG, type NewsFeedCategoryId } from './categoryConfig';
 import type {
     MarketNewsClientPort,
     MarketNewsItem,
@@ -21,7 +20,7 @@ import type {
  * 고정해 날짜와 무관하게 결정적으로 통과한다(타이틀은 불변).
  */
 
-const CATEGORY_TICKERS: Partial<Record<NewsFeedCategory, string[]>> = {
+const CATEGORY_TICKERS: Partial<Record<NewsFeedCategoryId, string[]>> = {
     crypto: ['BTCUSD'],
     stock: ['AAPL'],
 };
@@ -32,7 +31,7 @@ const CATEGORY_TICKERS: Partial<Record<NewsFeedCategory, string[]>> = {
  * client-triggered ingestion would produce — making the category pages render
  * cards in SSR on the very first visit (no cold-start ingestion race).
  */
-export function makeFakeItems(category: NewsFeedCategory): MarketNewsItem[] {
+export function makeFakeItems(category: NewsFeedCategoryId): MarketNewsItem[] {
     const { sentinel } = CATEGORY_CONFIG[category];
     const tickers = CATEGORY_TICKERS[category] ?? [];
     const now = Date.now();
@@ -62,7 +61,7 @@ export function makeFakeItems(category: NewsFeedCategory): MarketNewsItem[] {
 
 export class FakeMarketNewsClient implements MarketNewsClientPort {
     async fetchCategoryNews(
-        category: NewsFeedCategory,
+        category: NewsFeedCategoryId,
         _lookbackMs: number
     ): Promise<MarketNewsItem[]> {
         return makeFakeItems(category);

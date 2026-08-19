@@ -1,9 +1,7 @@
 'use client';
 
-import type {
-    NewsAnalysisResponse,
-    NewsFeedCategory,
-} from '@y0ngha/siglens-core';
+import type { NewsFeedCategoryId } from '@/entities/market-news';
+import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { useMarketNewsDigest } from './hooks/useMarketNewsDigest';
 import {
@@ -168,7 +166,7 @@ function DigestErrorView({ error, onRetry }: DigestErrorViewProps) {
 }
 
 export interface MarketNewsDigestProps {
-    category: NewsFeedCategory;
+    category: NewsFeedCategoryId;
     /**
      * Whether the SSR snapshot already contains at least one AI-enriched card.
      * When `false`, the hook waits for background enrichment before submitting

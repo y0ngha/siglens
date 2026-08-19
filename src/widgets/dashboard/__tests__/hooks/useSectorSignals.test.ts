@@ -58,7 +58,7 @@ describe('useSectorSignals', () => {
         mockAction.mockResolvedValue(SECTOR_RESULT);
         const { client, wrapper } = makeWrapper();
         const { result } = renderHook(
-            () => useSectorSignals(TF_DAY, SECTOR_RESULT),
+            () => useSectorSignals('us', TF_DAY, SECTOR_RESULT),
             { wrapper }
         );
         // initialData가 있으므로 즉시 stocks를 가져와야 함
@@ -70,7 +70,7 @@ describe('useSectorSignals', () => {
         mockAction.mockResolvedValue(SECTOR_RESULT);
         const { client, wrapper } = makeWrapper();
         const { rerender } = renderHook(
-            ({ tf }: { tf: DashboardTimeframe }) => useSectorSignals(tf),
+            ({ tf }: { tf: DashboardTimeframe }) => useSectorSignals('us', tf),
             {
                 wrapper,
                 initialProps: { tf: TF_DAY as DashboardTimeframe },
@@ -78,13 +78,13 @@ describe('useSectorSignals', () => {
         );
 
         await waitFor(() => {
-            expect(mockAction).toHaveBeenCalledWith(TF_DAY);
+            expect(mockAction).toHaveBeenCalledWith('us', TF_DAY);
         });
 
         rerender({ tf: TF_HOUR });
 
         await waitFor(() => {
-            expect(mockAction).toHaveBeenCalledWith(TF_HOUR);
+            expect(mockAction).toHaveBeenCalledWith('us', TF_HOUR);
         });
 
         client.clear();
@@ -94,7 +94,7 @@ describe('useSectorSignals', () => {
         mockAction.mockImplementation(() => new Promise(() => {}));
         const { client, wrapper } = makeWrapper();
         const { result } = renderHook(
-            () => useSectorSignals(TF_HOUR, SECTOR_RESULT),
+            () => useSectorSignals('us', TF_HOUR, SECTOR_RESULT),
             { wrapper }
         );
         // 1Hour는 default(1Day)가 아니므로 initialData 무시 → 빈 배열
@@ -105,7 +105,7 @@ describe('useSectorSignals', () => {
     it('(Worst) fetch 실패 시 빈 stocks 반환', async () => {
         mockAction.mockRejectedValue(new Error('network error'));
         const { client, wrapper } = makeWrapper();
-        const { result } = renderHook(() => useSectorSignals(TF_DAY), {
+        const { result } = renderHook(() => useSectorSignals('us', TF_DAY), {
             wrapper,
         });
 
@@ -120,7 +120,7 @@ describe('useSectorSignals', () => {
     it('(Worst) data=undefined일 때 빈 fallback 반환', () => {
         mockAction.mockImplementation(() => new Promise(() => {}));
         const { client, wrapper } = makeWrapper();
-        const { result } = renderHook(() => useSectorSignals(TF_DAY), {
+        const { result } = renderHook(() => useSectorSignals('us', TF_DAY), {
             wrapper,
         });
         // isPending 상태 — data=undefined이므로 fallback 사용

@@ -12,7 +12,11 @@ import type {
     EconomicCalendarEvent,
 } from '@y0ngha/siglens-core';
 
-import type { EconomicCalendarEventWithAnalysis } from '@/entities/economy';
+import {
+    CALENDAR_COUNTRY_LABEL,
+    type CalendarCountry,
+    type EconomicCalendarEventWithAnalysis,
+} from '@/entities/economy';
 import {
     SENTIMENT_LABEL,
     SENTIMENT_CLASS,
@@ -564,6 +568,12 @@ interface EconomicCalendarGridProps {
      * 미리 해결해 주입한다. 생략 시 모든 이벤트가 영어 원문으로 표시된다(결정론적 fallback).
      */
     labels?: Record<string, string>;
+    /**
+     * 어느 나라 캘린더인가. 마운트 시 도는 인제스션 트리거가 이 값으로 갈린다 —
+     * 기본값을 두지 않는 것은 의도다. 한국 라우트에서 빠뜨리면 미국 이벤트만
+     * 계속 수집되고 한국 캘린더는 영원히 비는데, 화면에는 아무 표시가 없다.
+     */
+    country: CalendarCountry;
 }
 
 /**
@@ -585,12 +595,13 @@ export function EconomicCalendarGrid({
     events,
     today = '',
     labels = {},
+    country,
 }: EconomicCalendarGridProps) {
     const [selectedDateKey, setSelectedDateKey] = useState('');
     const [activeImpacts, setActiveImpacts] = useState<
         ReadonlySet<CalendarImpact>
     >(() => new Set(DEFAULT_ACTIVE_IMPACTS));
-    useEconomicCalendarTrigger();
+    useEconomicCalendarTrigger(country);
     useIndicatorTranslationTrigger(events, labels);
     const groups = useMemo(() => groupEventsByKstDay(events), [events]);
     const groupMap = useMemo(
@@ -639,7 +650,8 @@ export function EconomicCalendarGrid({
                     </span>
                 </h2>
                 <p className="text-sm text-secondary-400">
-                    다가오는 미국 경제 발표 일정이 아직 없어요.
+                    다가오는 {CALENDAR_COUNTRY_LABEL[country]} 경제 발표 일정이
+                    아직 없어요.
                 </p>
             </section>
         );

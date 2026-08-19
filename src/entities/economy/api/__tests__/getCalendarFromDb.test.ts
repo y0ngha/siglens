@@ -40,10 +40,7 @@ import {
     pastWindowStart,
     futureWindowEnd,
 } from '@/entities/economy/lib/calendarWindow';
-import {
-    ECONOMY_CALENDAR_CACHE_TAG,
-    ECONOMY_CALENDAR_REVALIDATE_SECONDS,
-} from '@/entities/economy/lib/economyCalendarConstants';
+import { ECONOMY_CALENDAR_REVALIDATE_SECONDS } from '@/entities/economy/lib/economyCalendarConstants';
 
 describe('getCalendarFromDb', () => {
     beforeEach(() => {
@@ -55,14 +52,14 @@ describe('getCalendarFromDb', () => {
 
     it('passes the correct key array to unstable_cache', async () => {
         await getCalendarFromDb('2026-06-20');
-        expect(capturedKeyParts).toEqual(['economy-calendar-db']);
+        expect(capturedKeyParts).toEqual(['economy-calendar-db', 'US']);
     });
 
     it('passes the correct revalidate and tags to unstable_cache', async () => {
         await getCalendarFromDb('2026-06-20');
         expect(capturedOptions).toMatchObject({
             revalidate: ECONOMY_CALENDAR_REVALIDATE_SECONDS,
-            tags: [ECONOMY_CALENDAR_CACHE_TAG],
+            tags: ['economy:calendar:us'],
         });
     });
 
@@ -70,7 +67,8 @@ describe('getCalendarFromDb', () => {
         await getCalendarFromDb('2026-06-20');
         expect(listInRange).toHaveBeenCalledWith(
             pastWindowStart('2026-06-20'),
-            futureWindowEnd('2026-06-20')
+            futureWindowEnd('2026-06-20'),
+            'US'
         );
     });
 
@@ -93,5 +91,36 @@ describe('getCalendarFromDb', () => {
         listInRange.mockRejectedValue(new Error('neon down'));
         const events = await getCalendarFromDb('2026-06-20');
         expect(events).toEqual([]);
+    });
+
+    /**
+     * 리더는 국가별 `unstable_cache` 래퍼를 Map에 메모한다. 그 Map이 국가를 키로
+     * 쓰지 않으면 (a) `/economy/kr`이 미국 ISR 엔트리를 그대로 서빙하거나
+     * (b) KR 인제스션의 `revalidateTag('economy:calendar:kr')`이 아무것도 못 맞춰
+     * `/economy/kr`이 24시간 얼어붙는다. 메모 때문에 순서 의존이라 한 국가만
+     * 테스트해서는 절대 드러나지 않는다.
+     */
+    it('KR은 자기 캐시 키·태그·국가 필터를 쓴다', async () => {
+        await getCalendarFromDb('2026-06-20', 'KR');
+
+        expect(capturedKeyParts).toEqual(['economy-calendar-db', 'KR']);
+        expect(capturedOptions).toMatchObject({
+            tags: ['economy:calendar:kr'],
+        });
+        expect(listInRange).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.any(String),
+            'KR'
+        );
+    });
+
+    it('KR 조회 뒤에도 US는 여전히 US 키를 쓴다 (래퍼 메모가 뭉개지지 않는다)', async () => {
+        await getCalendarFromDb('2026-06-20', 'KR');
+        await getCalendarFromDb('2026-06-20', 'US');
+
+        expect(capturedKeyParts).toEqual(['economy-calendar-db', 'US']);
+        expect(capturedOptions).toMatchObject({
+            tags: ['economy:calendar:us'],
+        });
     });
 });

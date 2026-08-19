@@ -67,25 +67,31 @@ const STOCK: StockWithConflict = {
 
 describe('SignalStockCard', () => {
     it('renders symbol and korean name', () => {
-        render(<SignalStockCard data={STOCK} />);
+        render(<SignalStockCard currencySymbol="$" data={STOCK} />);
         expect(screen.getByText('AAPL')).toBeInTheDocument();
         expect(screen.getByText('애플')).toBeInTheDocument();
     });
 
     it('renders price', () => {
-        render(<SignalStockCard data={STOCK} />);
+        render(<SignalStockCard currencySymbol="$" data={STOCK} />);
         expect(screen.getByText('$180.25')).toBeInTheDocument();
     });
 
+    it('통화 기호를 그대로 쓴다 (KR = ₩)', () => {
+        render(<SignalStockCard currencySymbol="₩" data={STOCK} />);
+        expect(screen.getByText('₩180.25')).toBeInTheDocument();
+        expect(screen.queryByText('$180.25')).not.toBeInTheDocument();
+    });
+
     it('links to the symbol page', () => {
-        render(<SignalStockCard data={STOCK} />);
+        render(<SignalStockCard currencySymbol="$" data={STOCK} />);
         const link = screen.getByRole('link');
         expect(link).toHaveAttribute('href', '/AAPL');
         expect(link).toHaveAttribute('title', '애플 분석');
     });
 
     it('renders signal badges', () => {
-        render(<SignalStockCard data={STOCK} />);
+        render(<SignalStockCard currencySymbol="$" data={STOCK} />);
         expect(screen.getByTestId('badge-golden_cross')).toBeInTheDocument();
         expect(screen.getByTestId('badge-rsi_oversold')).toBeInTheDocument();
     });
@@ -95,13 +101,13 @@ describe('SignalStockCard', () => {
             ...STOCK,
             conflict: { bullishCount: 3, bearishCount: 2 },
         };
-        render(<SignalStockCard data={stockWithConflict} />);
+        render(<SignalStockCard currencySymbol="$" data={stockWithConflict} />);
         expect(screen.getByText(/상승 3건/)).toBeInTheDocument();
         expect(screen.getByText(/하락 2건/)).toBeInTheDocument();
     });
 
     it('does not render conflict info when absent', () => {
-        render(<SignalStockCard data={STOCK} />);
+        render(<SignalStockCard currencySymbol="$" data={STOCK} />);
         expect(screen.queryByText(/상승.*건/)).not.toBeInTheDocument();
     });
 });

@@ -13,14 +13,11 @@ import { createPortal } from 'react-dom';
 import { cn } from '@/shared/lib/cn';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
-
-interface NavItem {
-    readonly href: string;
-    readonly label: string;
-}
+import type { NavVerticalNode } from './headerNavTree';
+import { isHrefActive } from './navActiveState';
 
 interface HeaderMobileMenuProps {
-    readonly items: ReadonlyArray<NavItem>;
+    readonly items: ReadonlyArray<NavVerticalNode>;
 }
 
 export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
@@ -104,7 +101,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
      * restores standard viewport-relative fixed positioning.
      *
      * Nav links remain crawlable because the desktop `HeaderNavStatic` / `HeaderNav`
-     * already renders the same `NAV_ITEMS` server-side; the mobile drawer being
+     * already renders the same `NAV_TREE` server-side; the mobile drawer being
      * client-only does not affect discoverability.
      *
      * The drawer is always rendered (when mounted) and shown/hidden via translate-x
@@ -177,42 +174,139 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                 </button>
                             </div>
 
-                            <nav aria-label="메뉴">
-                                {items.map(item => {
-                                    const isActive =
-                                        pathname !== null &&
-                                        (pathname === item.href ||
-                                            pathname.startsWith(
-                                                `${item.href}/`
-                                            ));
-                                    return (
-                                        <Link
-                                            key={item.href}
-                                            href={item.href}
-                                            // HeaderNav와 동일 — `_rsc` 해시 파편화로 캐시
-                                            // 미스만 늘어난다 (CDN_CACHING.md §1).
-                                            prefetch={false}
-                                            aria-current={
-                                                isActive ? 'page' : undefined
-                                            }
-                                            onClick={close}
-                                            tabIndex={isOpen ? undefined : -1}
-                                            className={cn(
-                                                'focus-visible:ring-primary-500 flex min-h-11 w-full touch-manipulation items-center px-4 py-3 text-xs font-semibold tracking-[0.12em] uppercase transition-colors focus-visible:ring-2 focus-visible:outline-none',
-                                                isActive
-                                                    ? 'text-secondary-100 border-primary-500 border-l-2'
-                                                    : 'text-secondary-400 hover:text-secondary-100 border-l-2 border-transparent'
-                                            )}
+                            {/*
+                                데스크톱은 드롭다운이지만 드로어는 **펼친 채로** 둔다.
+                                좁은 화면에서 2단 접힘 메뉴는 목적지 하나에 탭 두 번을
+                                요구하고, 열림 상태를 버티컬마다 따로 관리해야 한다.
+                                수직 공간은 남으므로 전부 보여주는 편이 짧다.
+                            */}
+                            <nav
+                                aria-label="메뉴"
+                                className="overflow-y-auto overscroll-contain"
+                            >
+                                {items.map(vertical => (
+                                    /*
+                                        그룹 구분은 **제목 크기와 구분선**이 함께
+                                        만든다. 처음에는 제목을 10px 회색으로 뒀는데,
+                                        지역 링크(12px)와 크기가 비슷해 `시장 분석`이
+                                        그 아래 `미국`·`한국`과 같은 층으로 읽혔다 —
+                                        특히 뉴스처럼 자식이 6줄인 그룹에서는 어디서
+                                        다음 그룹이 시작되는지 알 수 없었다.
+                                        제목을 키우고 밝게 한 뒤 그룹 사이에 선을 둔다.
+                                    */
+                                    <div
+                                        key={vertical.id}
+                                        // 시각적 구분만으로는 부족하다 — 지역 라벨이
+                                        // 짧아져(`미국`/`한국`) 버티컬마다 반복되므로,
+                                        // 스크린리더에는 같은 이름의 링크 8개가 한
+                                        // 줄로 이어진다. 그룹에 이름을 붙여 어느
+                                        // 버티컬의 `미국`인지 읽히게 한다.
+                                        role="group"
+                                        aria-labelledby={`mobile-nav-group-${vertical.id}`}
+                                        className="border-t border-secondary-800 py-2 first:border-t-0"
+                                    >
+                                        <p
+                                            id={`mobile-nav-group-${vertical.id}`}
+                                            className="px-4 pt-1 pb-2 text-sm font-bold tracking-wide text-secondary-100"
                                         >
-                                            {item.label}
-                                        </Link>
-                                    );
-                                })}
+                                            {vertical.label}
+                                        </p>
+                                        {vertical.overview && (
+                                            <MobileNavLink
+                                                key={vertical.overview.href}
+                                                href={vertical.overview.href}
+                                                label={vertical.overview.label}
+                                                active={isHrefActive(
+                                                    vertical.overview.href,
+                                                    pathname
+                                                )}
+                                                focusable={isOpen}
+                                                onNavigate={close}
+                                            />
+                                        )}
+                                        {vertical.regions.flatMap(region => [
+                                            <MobileNavLink
+                                                key={region.href}
+                                                href={region.href}
+                                                label={region.label}
+                                                active={isHrefActive(
+                                                    region.href,
+                                                    pathname
+                                                )}
+                                                focusable={isOpen}
+                                                onNavigate={close}
+                                            />,
+                                            ...region.children.map(leaf => (
+                                                <MobileNavLink
+                                                    key={leaf.href}
+                                                    href={leaf.href}
+                                                    label={leaf.label}
+                                                    active={isHrefActive(
+                                                        leaf.href,
+                                                        pathname
+                                                    )}
+                                                    focusable={isOpen}
+                                                    onNavigate={close}
+                                                    // 들여쓰기로 계층 표현 — 데스크톱 메뉴와 동일 규칙.
+                                                    indented
+                                                />
+                                            )),
+                                        ])}
+                                    </div>
+                                ))}
                             </nav>
                         </div>
                     </>,
                     document.body
                 )}
         </div>
+    );
+}
+
+interface MobileNavLinkProps {
+    readonly href: string;
+    readonly label: string;
+    readonly active: boolean;
+    /** 드로어가 닫혀 있으면 탭 순서에서 뺀다 — 화면 밖 링크에 포커스가 갇히지 않도록. */
+    readonly focusable: boolean;
+    readonly onNavigate: () => void;
+    readonly indented?: boolean;
+}
+
+/** 드로어의 링크 한 줄. 지역과 그 하위 목적지가 같은 컴포넌트를 쓴다(들여쓰기만 다름). */
+function MobileNavLink({
+    href,
+    label,
+    active,
+    focusable,
+    onNavigate,
+    indented,
+}: MobileNavLinkProps) {
+    return (
+        <Link
+            href={href}
+            // HeaderNav와 동일 — `_rsc` 해시 파편화로 캐시 미스만 늘어난다
+            // (CDN_CACHING.md §1).
+            prefetch={false}
+            aria-current={active ? 'page' : undefined}
+            onClick={onNavigate}
+            tabIndex={focusable ? undefined : -1}
+            className={cn(
+                'focus-visible:ring-primary-500 flex min-h-11 w-full touch-manipulation items-center py-2 text-xs tracking-[0.12em] transition-colors focus-visible:ring-2 focus-visible:outline-none',
+                indented
+                    ? 'pr-4 pl-8 font-normal text-secondary-500 hover:text-secondary-200'
+                    : 'px-4 font-semibold',
+                active
+                    ? 'text-secondary-100 border-primary-500 border-l-2'
+                    : cn(
+                          'border-l-2 border-transparent',
+                          indented
+                              ? ''
+                              : 'text-secondary-400 hover:text-secondary-100'
+                      )
+            )}
+        >
+            {label}
+        </Link>
     );
 }

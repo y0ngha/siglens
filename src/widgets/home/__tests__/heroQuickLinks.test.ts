@@ -1,35 +1,60 @@
 import { HERO_QUICK_LINKS } from '../heroQuickLinks';
-import { NAV_ITEMS } from '@/widgets/layout/headerNavItems';
+import {
+    ALL_NAV_REGION_LINKS,
+    NAV_VERTICALS,
+} from '@/shared/config/assetClassNav';
 
 describe('HERO_QUICK_LINKS', () => {
     it('pins the exact label for every hero link', () => {
         expect(HERO_QUICK_LINKS.map(l => l.label)).toEqual([
-            '오늘 주목할 종목',
+            '미국 시장 분석',
+            '한국 시장 분석',
+            '미국 공포·탐욕 지수',
             '미국 시장 뉴스',
             '미국 경제',
         ]);
     });
 
-    it('only points at destinations the header nav also exposes', () => {
+    it('only points at destinations the nav config also exposes', () => {
         // 히어로에만 있는 목적지는 헤더에서 사라진 라우트를 가리키는 죽은 링크가 되기 쉽다.
-        const navHrefs = new Set(NAV_ITEMS.map(i => i.href));
+        const navHrefs = new Set(ALL_NAV_REGION_LINKS.map(i => i.href));
         for (const link of HERO_QUICK_LINKS) {
             expect(navHrefs).toContain(link.href);
         }
     });
 
-    it('names the market in the header label of every US-only destination', () => {
-        // 사이트가 미국·한국·암호화폐를 함께 다니므로 미국 전용 페이지는 라벨에
-        // 시장이 드러나야 한다. `/market`도 목적지 h1이 "오늘의 미국 주식…"이라
-        // 미국 전용이다 — 빠뜨리면 홈의 `한국 섹터별 인기 종목` 바로 위에서
-        // `시장 분석`이 두 시장을 다 덮는 것처럼 읽힌다.
-        //
-        // 히어로는 CTA 문구라 이 규칙에서 뺀다(`오늘 주목할 종목`) — 위 케이스가
-        // 히어로 라벨을 이미 정확히 고정한다.
-        for (const href of ['/market', '/news', '/economy']) {
-            expect(NAV_ITEMS.find(i => i.href === href)?.label).toContain(
-                '미국'
-            );
+    it('never points at a hub — every destination is a leaf page', () => {
+        // 랜딩에서 허브를 거치면 원하는 화면까지 클릭이 두 번이 된다. 자산군을 1차
+        // 축으로 올린 목적이 "바로 들어가기"이므로 히어로는 최종 목적지만 건다.
+        const hubHrefs = new Set(
+            NAV_VERTICALS.map(v => v.rootHref).filter(
+                root => !ALL_NAV_REGION_LINKS.some(r => r.href === root)
+            )
+        );
+        // `/news`가 유일한 허브 전용 경로다(미국은 `/news/us`가 따로 있다).
+        expect(hubHrefs).toContain('/news');
+        for (const link of HERO_QUICK_LINKS) {
+            expect(hubHrefs).not.toContain(link.href);
+        }
+    });
+
+    it('names the market on every hero label', () => {
+        // 히어로는 버티컬 맥락 없이 홀로 읽힌다 — `미국`/`한국` 같은 짧은 라벨만
+        // 쓰면 무엇의 미국인지 알 수 없다.
+        for (const link of HERO_QUICK_LINKS) {
+            expect(link.label).toMatch(/미국|한국|암호화폐/);
+        }
+    });
+
+    it('expands every region of the market vertical', () => {
+        // 랜딩에서 가장 많이 쓰이는 진입점이라 시장 선택을 한 번에 끝내야 한다.
+        const marketRegions = NAV_VERTICALS.find(
+            v => v.id === 'market'
+        )?.regions;
+        expect(marketRegions).toBeDefined();
+        const heroHrefs = new Set(HERO_QUICK_LINKS.map(l => l.href));
+        for (const region of marketRegions ?? []) {
+            expect(heroHrefs).toContain(region.href);
         }
     });
 });

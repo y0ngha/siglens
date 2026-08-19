@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MarketSummaryPanel } from '@/widgets/dashboard/MarketSummaryPanel';
+import { TEST_SCOPE } from './helpers/testScope';
 
 const mockUseMarketSummary = vi.fn();
 vi.mock('@/widgets/dashboard/hooks/useMarketSummary', () => ({
@@ -11,9 +12,27 @@ vi.mock('@/widgets/dashboard/hooks/useMarketBriefing', () => ({
     useMarketBriefing: () => mockUseMarketBriefing(),
 }));
 
+/*
+ * 목이 `variant`·`marketLabel`을 DOM으로 흘려보낸다. 삼키면 전체 실패 분기가
+ * `variant="partial"`로 되돌아가도(=아무것도 못 불러온 화면이 "일부를 가져오지
+ * 못했어요"라고 말하는 회귀) 아무 테스트가 안 깨진다 — `IndexCard` 목과 같은
+ * 이유다.
+ */
 vi.mock('@/widgets/dashboard/MarketDataErrorNotice', () => ({
-    MarketDataErrorNotice: ({ onClose }: { onClose: () => void }) => (
-        <div data-testid="data-error-notice">
+    MarketDataErrorNotice: ({
+        variant,
+        marketLabel,
+        onClose,
+    }: {
+        variant: string;
+        marketLabel: string;
+        onClose: () => void;
+    }) => (
+        <div
+            data-testid="data-error-notice"
+            data-variant={variant}
+            data-market-label={marketLabel}
+        >
             <button onClick={onClose}>close-notice</button>
         </div>
     ),
@@ -25,9 +44,28 @@ vi.mock('@/widgets/dashboard/MarketSummaryPanelSkeleton', () => ({
     ),
 }));
 
+/*
+ * 목이 `href`·`currencySymbol`을 DOM으로 흘려보낸다. 예전 목은 `data`만 받아
+ * 그 둘을 삼켰는데, 그러면 `linkSectorCards: false`가 무시돼도(=한국 페이지가
+ * KR 섹터 ETF로 가는 크롤 진입점 6개를 여는 회귀) 아무 테스트가 안 깨진다.
+ */
 vi.mock('@/widgets/dashboard/IndexCard', () => ({
-    IndexCard: ({ data }: { data: { symbol: string } }) => (
-        <div data-testid={`index-${data.symbol}`}>{data.symbol}</div>
+    IndexCard: ({
+        data,
+        href,
+        currencySymbol,
+    }: {
+        data: { symbol: string };
+        href?: string;
+        currencySymbol: string;
+    }) => (
+        <div
+            data-testid={`index-${data.symbol}`}
+            data-href={href ?? ''}
+            data-currency={currencySymbol}
+        >
+            {data.symbol}
+        </div>
     ),
 }));
 
@@ -43,13 +81,6 @@ vi.mock('@/shared/ui/BotBlockedNotice', () => ({
 
 vi.mock('@/shared/lib/cn', () => ({
     cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
-}));
-
-vi.mock('@/shared/config/dashboard-tickers', () => ({
-    SECTOR_GROUPS: [
-        { label: 'Tech', symbols: ['XLK'] },
-        { label: 'Finance', symbols: ['XLF', 'XLV', 'XLI'] },
-    ],
 }));
 
 vi.mock('react-error-boundary', () => ({
@@ -84,7 +115,7 @@ describe('MarketSummaryPanel', () => {
             data: undefined,
             isPending: true,
         });
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(screen.getByTestId('skeleton')).toBeInTheDocument();
     });
 
@@ -93,8 +124,12 @@ describe('MarketSummaryPanel', () => {
             ...defaultSummaryReturn,
             data: { ok: false },
         });
-        render(<MarketSummaryPanel />);
-        expect(screen.getByTestId('data-error-notice')).toBeInTheDocument();
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
+        const notice = screen.getByTestId('data-error-notice');
+        expect(notice).toBeInTheDocument();
+        // 카드도 제목도 없는 화면이므로 "일부"가 아니라 전체 실패 문구여야 한다.
+        expect(notice).toHaveAttribute('data-variant', 'total');
+        expect(notice).toHaveAttribute('data-market-label', '미국 증시');
         expect(screen.queryByText('오늘의 미국 시장')).not.toBeInTheDocument();
     });
 
@@ -103,7 +138,7 @@ describe('MarketSummaryPanel', () => {
             ...defaultSummaryReturn,
             data: { ok: false },
         });
-        const { container } = render(<MarketSummaryPanel />);
+        const { container } = render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         fireEvent.click(screen.getByText('close-notice'));
         expect(container.innerHTML).toBe('');
     });
@@ -123,8 +158,10 @@ describe('MarketSummaryPanel', () => {
             ],
             hasMissingQuotes: true,
         });
-        render(<MarketSummaryPanel />);
-        expect(screen.getByTestId('data-error-notice')).toBeInTheDocument();
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
+        const notice = screen.getByTestId('data-error-notice');
+        expect(notice).toBeInTheDocument();
+        expect(notice).toHaveAttribute('data-variant', 'partial');
         expect(screen.getByText('오늘의 미국 시장')).toBeInTheDocument();
         expect(screen.getByTestId('index-SPY')).toBeInTheDocument();
     });
@@ -144,7 +181,7 @@ describe('MarketSummaryPanel', () => {
             ],
             hasMissingQuotes: true,
         });
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         fireEvent.click(screen.getByText('close-notice'));
         expect(
             screen.queryByTestId('data-error-notice')
@@ -166,7 +203,7 @@ describe('MarketSummaryPanel', () => {
                 },
             ],
         });
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(
             screen.queryByTestId('data-error-notice')
         ).not.toBeInTheDocument();
@@ -187,7 +224,7 @@ describe('MarketSummaryPanel', () => {
                 },
             ],
         });
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(screen.getByText('오늘의 미국 시장')).toBeInTheDocument();
         expect(screen.getByTestId('index-SPY')).toBeInTheDocument();
     });
@@ -240,7 +277,7 @@ describe('MarketSummaryPanel', () => {
             ...defaultSummaryReturn,
             sectorMap,
         });
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(screen.getByText('Tech')).toBeInTheDocument();
         expect(screen.getByText('Finance')).toBeInTheDocument();
         expect(screen.getByTestId('index-XLK')).toBeInTheDocument();
@@ -252,7 +289,7 @@ describe('MarketSummaryPanel', () => {
             input: { status: 'miss_no_trigger' },
         });
         mockUseMarketSummary.mockReturnValue(defaultSummaryReturn);
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(screen.getByTestId('briefing-loading')).toBeInTheDocument();
     });
 
@@ -267,7 +304,7 @@ describe('MarketSummaryPanel', () => {
             },
         });
         mockUseMarketSummary.mockReturnValue(defaultSummaryReturn);
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(screen.getByTestId('briefing')).toBeInTheDocument();
     });
 
@@ -280,14 +317,14 @@ describe('MarketSummaryPanel', () => {
             },
         });
         mockUseMarketSummary.mockReturnValue(defaultSummaryReturn);
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(screen.getByTestId('briefing')).toBeInTheDocument();
     });
 
     it('briefing undefined면 BriefingRegion이 아무것도 렌더하지 않는다', () => {
         mockUseMarketBriefing.mockReturnValue({ input: undefined });
         mockUseMarketSummary.mockReturnValue(defaultSummaryReturn);
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(screen.queryByTestId('briefing')).not.toBeInTheDocument();
         expect(screen.queryByTestId('bot-blocked')).not.toBeInTheDocument();
     });
@@ -295,7 +332,7 @@ describe('MarketSummaryPanel', () => {
     it('briefing null이면 봇 차단 안내를 렌더한다', () => {
         mockUseMarketBriefing.mockReturnValue({ input: null });
         mockUseMarketSummary.mockReturnValue(defaultSummaryReturn);
-        render(<MarketSummaryPanel />);
+        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(screen.getByTestId('bot-blocked')).toBeInTheDocument();
     });
 
@@ -337,8 +374,98 @@ describe('MarketSummaryPanel', () => {
             ...defaultSummaryReturn,
             sectorMap,
         });
-        const { container } = render(<MarketSummaryPanel />);
+        const { container } = render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         const grids = container.querySelectorAll('.grid-cols-3');
         expect(grids.length).toBeGreaterThan(0);
+    });
+});
+
+/**
+ * `/market/kr`은 사이트맵 priority 0.9다. 섹터 카드에 링크가 붙으면 그 페이지가
+ * `POPULAR_TICKERS`에도 prewarm 회전에도 없는 KR ETF 6종으로 가는 **새 크롤
+ * 진입점**이 된다 — 봇은 캐시 미스에 분석을 큐에 넣지 않으므로 딱 thin 변형만
+ * 보게 되고, 그게 2026-07 노출 급감의 메커니즘이다.
+ */
+describe('MarketSummaryPanel — KR scope', () => {
+    /** 첫 섹터 그룹의 심볼 하나만 채운 sectorMap — 카드 하나면 계약 검증에 충분하다. */
+    const firstSectorSymbol = TEST_SCOPE.sectorGroups[0]!.symbols[0]!;
+
+    beforeEach(() => {
+        mockUseMarketSummary.mockReturnValue({
+            ...defaultSummaryReturn,
+            sectorMap: new Map([
+                [
+                    firstSectorSymbol,
+                    {
+                        symbol: firstSectorSymbol,
+                        sectorName: 'Technology',
+                        koreanName: '기술',
+                        price: 100,
+                        changesPercentage: 1,
+                    },
+                ],
+            ]),
+        });
+        mockUseMarketBriefing.mockReturnValue(defaultBriefingReturn);
+    });
+
+    afterEach(() => {
+        mockUseMarketSummary.mockReset();
+        mockUseMarketBriefing.mockReset();
+    });
+
+    const KR_SCOPE = {
+        ...TEST_SCOPE,
+        id: 'kr' as const,
+        // TEST_SCOPE에서 퍼오면 `'미국 증시'`가 그대로 따라온다 — 그러면 한국
+        // 화면이 미국 문구를 그려도 단언이 통과한다.
+        marketLabel: '한국 증시',
+        currencySymbol: '₩',
+        linkSectorCards: false,
+    };
+
+    function sectorCards(container: HTMLElement): HTMLElement[] {
+        return Array.from(
+            container.querySelectorAll<HTMLElement>('[data-testid^="index-"]')
+        );
+    }
+
+    /**
+     * 문구를 `'미국 증시'`로 박아 두면 한국 화면이 미국 얘기를 한다. 미국 scope로만
+     * 단언하면 그 회귀가 안 잡힌다 — `TEST_SCOPE.marketLabel`이 마침 `'미국 증시'`라
+     * 하드코딩과 구분되지 않기 때문이다.
+     */
+    it('실패 안내에 이 시장의 이름을 넘긴다', () => {
+        mockUseMarketSummary.mockReturnValue({
+            ...defaultSummaryReturn,
+            data: { ok: false },
+        });
+
+        render(<MarketSummaryPanel scope={KR_SCOPE} />);
+
+        const notice = screen.getByTestId('data-error-notice');
+        expect(notice).toHaveAttribute('data-market-label', '한국 증시');
+        expect(notice).toHaveAttribute('data-variant', 'total');
+    });
+
+    it('섹터 카드에 링크를 붙이지 않고 통화 기호를 ₩로 넘긴다', () => {
+        const { container } = render(<MarketSummaryPanel scope={KR_SCOPE} />);
+
+        const cards = sectorCards(container);
+        expect(cards.length).toBeGreaterThan(0);
+        for (const card of cards) {
+            expect(card).toHaveAttribute('data-href', '');
+            expect(card).toHaveAttribute('data-currency', '₩');
+        }
+    });
+
+    it('미국 scope는 섹터 카드를 종목 페이지로 링크한다', () => {
+        const { container } = render(<MarketSummaryPanel scope={TEST_SCOPE} />);
+
+        const linked = sectorCards(container).filter(
+            el => el.getAttribute('data-href') !== ''
+        );
+        expect(linked.length).toBeGreaterThan(0);
+        expect(linked[0]).toHaveAttribute('data-currency', '$');
     });
 });

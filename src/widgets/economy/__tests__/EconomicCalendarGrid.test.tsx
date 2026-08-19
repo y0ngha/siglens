@@ -47,14 +47,27 @@ const EVENT_C: EconomicCalendarEvent = {
 
 describe('EconomicCalendarGrid — 빈 상태', () => {
     it('events가 0건이면 안내 문구 렌더', () => {
-        render(<EconomicCalendarGrid events={[]} />);
+        render(<EconomicCalendarGrid country="US" events={[]} />);
         expect(
             screen.getByText('다가오는 미국 경제 발표 일정이 아직 없어요.')
         ).toBeInTheDocument();
     });
 
+    /**
+     * 이 그리드는 두 라우트가 공유한다. 빈 상태는 `/economy/kr`에서 **의도적으로
+     * 도달 가능한** 경로다 — 인제스션 트리거가 이 컴포넌트 안에 있어서 데이터가
+     * 없어도 항상 렌더하기 때문이다. 문구를 하드코딩하면 배포 직후 한국 사용자가
+     * "미국 발표 일정" 안내를 보고, 그게 24시간 ISR에 그대로 굳는다.
+     */
+    it('KR이면 빈 상태 문구도 한국을 가리킨다', () => {
+        render(<EconomicCalendarGrid country="KR" events={[]} />);
+        expect(
+            screen.getByText('다가오는 한국 경제 발표 일정이 아직 없어요.')
+        ).toBeInTheDocument();
+    });
+
     it('빈 상태에서 "(한국시간)" 부제가 있는 h2 렌더', () => {
-        render(<EconomicCalendarGrid events={[]} />);
+        render(<EconomicCalendarGrid country="US" events={[]} />);
         expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
             '경제 캘린더'
         );
@@ -64,7 +77,9 @@ describe('EconomicCalendarGrid — 빈 상태', () => {
 
 describe('EconomicCalendarGrid — KST 그룹핑', () => {
     it('ET 날짜가 다르더라도 같은 KST 날이면 한 그룹으로 묶인다', () => {
-        render(<EconomicCalendarGrid events={[EVENT_A, EVENT_B]} />);
+        render(
+            <EconomicCalendarGrid country="US" events={[EVENT_A, EVENT_B]} />
+        );
         // EVENT_A(2026-06-19 ET) + EVENT_B(2026-06-19 ET) 모두 KST 2026-06-20
         // → 한 날짜 버튼에 "이벤트 2건" aria-label
         const btn = screen.getByRole('button', {
@@ -74,7 +89,9 @@ describe('EconomicCalendarGrid — KST 그룹핑', () => {
     });
 
     it('KST 날이 다른 이벤트는 별도 날짜 버튼으로 렌더된다', () => {
-        render(<EconomicCalendarGrid events={[EVENT_A, EVENT_C]} />);
+        render(
+            <EconomicCalendarGrid country="US" events={[EVENT_A, EVENT_C]} />
+        );
         // EVENT_A → KST 6/20, EVENT_C → KST 6/21
         expect(
             screen.getByRole('button', { name: /6월 20일/ })
@@ -87,7 +104,9 @@ describe('EconomicCalendarGrid — KST 그룹핑', () => {
 
 describe('EconomicCalendarGrid — 기본 선택 날짜', () => {
     it('가장 이른 KST 날짜가 기본 선택된다 (aria-pressed=true)', () => {
-        render(<EconomicCalendarGrid events={[EVENT_A, EVENT_C]} />);
+        render(
+            <EconomicCalendarGrid country="US" events={[EVENT_A, EVENT_C]} />
+        );
         // KST 상 EVENT_A(2026-06-20) < EVENT_C(2026-06-21)
         const earliest = screen.getByRole('button', { name: /6월 20일/ });
         expect(earliest).toHaveAttribute('aria-pressed', 'true');
@@ -98,7 +117,9 @@ describe('EconomicCalendarGrid — 기본 선택 날짜', () => {
 
 describe('EconomicCalendarGrid — 날짜 선택', () => {
     it('날짜 버튼 클릭 시 aria-pressed가 해당 버튼으로 이동한다', () => {
-        render(<EconomicCalendarGrid events={[EVENT_A, EVENT_C]} />);
+        render(
+            <EconomicCalendarGrid country="US" events={[EVENT_A, EVENT_C]} />
+        );
         const btn21 = screen.getByRole('button', { name: /6월 21일/ });
         fireEvent.click(btn21);
         expect(btn21).toHaveAttribute('aria-pressed', 'true');
@@ -108,13 +129,17 @@ describe('EconomicCalendarGrid — 날짜 선택', () => {
     });
 
     it('선택된 날짜 패널에 이벤트 이름이 보인다', () => {
-        render(<EconomicCalendarGrid events={[EVENT_A, EVENT_C]} />);
+        render(
+            <EconomicCalendarGrid country="US" events={[EVENT_A, EVENT_C]} />
+        );
         // 기본 선택 = 6월 20일 → EVENT_A 상세가 표시
         expect(screen.getByText('Fed Rate Decision')).toBeVisible();
     });
 
     it('다른 날짜 클릭 후 해당 날 상세가 표시된다', () => {
-        render(<EconomicCalendarGrid events={[EVENT_A, EVENT_C]} />);
+        render(
+            <EconomicCalendarGrid country="US" events={[EVENT_A, EVENT_C]} />
+        );
         // EVENT_C는 Low impact → 기본 필터 Low OFF이므로 먼저 Low 칩을 켠다.
         const group = screen.getByRole('group', { name: '중요도 필터' });
         fireEvent.click(within(group).getByRole('button', { name: '낮음' }));
@@ -128,7 +153,7 @@ describe('EconomicCalendarGrid — 날짜 선택', () => {
 describe('EconomicCalendarGrid — SSR 크롤러 접근성', () => {
     it('선택되지 않은 날짜의 이벤트 텍스트도 DOM에 존재한다 (hidden 속성, 크롤러 색인 가능)', () => {
         const { container } = render(
-            <EconomicCalendarGrid events={[EVENT_A, EVENT_C]} />
+            <EconomicCalendarGrid country="US" events={[EVENT_A, EVENT_C]} />
         );
         // 기본 선택 = 6/20(EVENT_A). EVENT_C(6/21)는 숨겨져 있지만 DOM에 있어야 한다.
         // `screen.getByText`는 hidden을 제외하므로 container.textContent로 확인.
@@ -137,7 +162,10 @@ describe('EconomicCalendarGrid — SSR 크롤러 접근성', () => {
 
     it('모든 이벤트의 event.event 텍스트가 container에 포함된다', () => {
         const { container } = render(
-            <EconomicCalendarGrid events={[EVENT_A, EVENT_B, EVENT_C]} />
+            <EconomicCalendarGrid
+                country="US"
+                events={[EVENT_A, EVENT_B, EVENT_C]}
+            />
         );
         expect(container.textContent).toContain('Fed Rate Decision');
         expect(container.textContent).toContain('CPI Release');
@@ -146,7 +174,7 @@ describe('EconomicCalendarGrid — SSR 크롤러 접근성', () => {
 
     it('비선택 패널은 hidden 속성을 가진다', () => {
         const { container } = render(
-            <EconomicCalendarGrid events={[EVENT_A, EVENT_C]} />
+            <EconomicCalendarGrid country="US" events={[EVENT_A, EVENT_C]} />
         );
         // panel-2026-06-21은 선택되지 않으므로 hidden
         const hiddenPanel = container.querySelector('#panel-2026-06-21');
@@ -155,7 +183,7 @@ describe('EconomicCalendarGrid — SSR 크롤러 접근성', () => {
 
     it('선택된 패널은 hidden 속성이 없다', () => {
         const { container } = render(
-            <EconomicCalendarGrid events={[EVENT_A, EVENT_C]} />
+            <EconomicCalendarGrid country="US" events={[EVENT_A, EVENT_C]} />
         );
         // 기본 선택 = 6/20
         const selectedPanel = container.querySelector('#panel-2026-06-20');
@@ -165,23 +193,23 @@ describe('EconomicCalendarGrid — SSR 크롤러 접근성', () => {
 
 describe('EconomicCalendarGrid — 상세 패널 데이터', () => {
     it('예상·이전 값 표시', () => {
-        render(<EconomicCalendarGrid events={[EVENT_A]} />);
+        render(<EconomicCalendarGrid country="US" events={[EVENT_A]} />);
         expect(screen.getByText(/예상 3\.63%/)).toBeInTheDocument();
         expect(screen.getByText(/이전 3\.63%/)).toBeInTheDocument();
     });
 
     it('actual이 있으면 실제 값 표시', () => {
-        render(<EconomicCalendarGrid events={[EVENT_B]} />);
+        render(<EconomicCalendarGrid country="US" events={[EVENT_B]} />);
         expect(screen.getByText(/실제 2\.5%/)).toBeInTheDocument();
     });
 
     it('actual=null이면 실제 미표시', () => {
-        render(<EconomicCalendarGrid events={[EVENT_A]} />);
+        render(<EconomicCalendarGrid country="US" events={[EVENT_A]} />);
         expect(screen.queryByText(/실제/)).not.toBeInTheDocument();
     });
 
     it('임팩트 뱃지 한국어 레이블 표시 (High → 높음)', () => {
-        render(<EconomicCalendarGrid events={[EVENT_A]} />);
+        render(<EconomicCalendarGrid country="US" events={[EVENT_A]} />);
         // 화면에는 필터 칩 "높음"(button)과 상세 뱃지 "높음"(span)이 함께 존재.
         // 뱃지만 검증하기 위해 button role을 제외한 매치를 센다.
         const highLabels = screen.getAllByText('높음');
@@ -190,7 +218,7 @@ describe('EconomicCalendarGrid — 상세 패널 데이터', () => {
     });
 
     it('천 단위 콤마 포맷 (230,000건)', () => {
-        render(<EconomicCalendarGrid events={[EVENT_C]} />);
+        render(<EconomicCalendarGrid country="US" events={[EVENT_C]} />);
         // EVENT_C가 기본 선택이 아니므로 먼저 6/21 버튼 클릭
         const btn21 = screen.getByRole('button', { name: /6월 21일/ });
         fireEvent.click(btn21);
@@ -200,7 +228,7 @@ describe('EconomicCalendarGrid — 상세 패널 데이터', () => {
 
     it('time 요소에 ET ISO-8601 dateTime 속성', () => {
         const { container } = render(
-            <EconomicCalendarGrid events={[EVENT_A]} />
+            <EconomicCalendarGrid country="US" events={[EVENT_A]} />
         );
         // EVENT_A: 2026-06-19 19:30:00 ET → -04:00
         const times = container.querySelectorAll('time');
@@ -211,7 +239,7 @@ describe('EconomicCalendarGrid — 상세 패널 데이터', () => {
     });
 
     it('KST 시각 레이블이 상세 패널에 표시된다 (오전 8:30)', () => {
-        render(<EconomicCalendarGrid events={[EVENT_A]} />);
+        render(<EconomicCalendarGrid country="US" events={[EVENT_A]} />);
         expect(screen.getByText('오전 8:30')).toBeInTheDocument();
     });
 });
@@ -219,27 +247,29 @@ describe('EconomicCalendarGrid — 상세 패널 데이터', () => {
 describe('EconomicCalendarGrid — 그리드 구조', () => {
     it('테이블 요소가 렌더된다', () => {
         const { container } = render(
-            <EconomicCalendarGrid events={[EVENT_A]} />
+            <EconomicCalendarGrid country="US" events={[EVENT_A]} />
         );
         expect(container.querySelector('table')).toBeInTheDocument();
     });
 
     it('thead에 7개의 요일 th가 있다', () => {
         const { container } = render(
-            <EconomicCalendarGrid events={[EVENT_A]} />
+            <EconomicCalendarGrid country="US" events={[EVENT_A]} />
         );
         const ths = container.querySelectorAll('thead th');
         expect(ths.length).toBe(7);
     });
 
     it('h2 제목에 "(한국시간)" 포함', () => {
-        render(<EconomicCalendarGrid events={[EVENT_A]} />);
+        render(<EconomicCalendarGrid country="US" events={[EVENT_A]} />);
         expect(screen.getByText('(한국시간)')).toBeInTheDocument();
     });
 
     it('월 스패닝 시 해당 월 레이블이 표시된다', () => {
         // EVENT_A → KST 6/20 (6월), EVENT_C → KST 6/21 (6월) — 같은 월
-        render(<EconomicCalendarGrid events={[EVENT_A, EVENT_C]} />);
+        render(
+            <EconomicCalendarGrid country="US" events={[EVENT_A, EVENT_C]} />
+        );
         // 가시적 월 레이블(<p>)과 sr-only caption 모두 2026년 6월을 포함하므로
         // 두 요소가 매치된다.
         expect(screen.getAllByText(/2026년 6월/)).toHaveLength(2);
@@ -261,6 +291,7 @@ describe('EconomicCalendarGrid default selection from today', () => {
         // 2026-06-20 08:30 ET → KST 2026-06-20 21:30 → KST date key 2026-06-20.
         render(
             <EconomicCalendarGrid
+                country="US"
                 events={[ev('2026-06-18'), ev('2026-06-20'), ev('2026-06-25')]}
                 today="2026-06-20"
             />
@@ -275,6 +306,7 @@ describe('EconomicCalendarGrid default selection from today', () => {
     it('selects the nearest upcoming day when today has no events', () => {
         render(
             <EconomicCalendarGrid
+                country="US"
                 events={[ev('2026-06-18'), ev('2026-06-25')]}
                 today="2026-06-20"
             />
@@ -288,6 +320,7 @@ describe('EconomicCalendarGrid default selection from today', () => {
     it('falls back to the earliest day when all events are in the past', () => {
         render(
             <EconomicCalendarGrid
+                country="US"
                 events={[ev('2026-06-10'), ev('2026-06-12')]}
                 today="2026-06-20"
             />
@@ -301,14 +334,21 @@ describe('EconomicCalendarGrid default selection from today', () => {
 
 describe('EconomicCalendarGrid — 중요도 필터 (기본 상태 · 셀 건수)', () => {
     it('"중요도 필터" group이 렌더된다', () => {
-        render(<EconomicCalendarGrid events={[EVENT_A, EVENT_C]} />);
+        render(
+            <EconomicCalendarGrid country="US" events={[EVENT_A, EVENT_C]} />
+        );
         expect(
             screen.getByRole('group', { name: '중요도 필터' })
         ).toBeInTheDocument();
     });
 
     it('기본값은 High+Medium ON, Low OFF (칩 aria-pressed)', () => {
-        render(<EconomicCalendarGrid events={[EVENT_A, EVENT_B, EVENT_C]} />);
+        render(
+            <EconomicCalendarGrid
+                country="US"
+                events={[EVENT_A, EVENT_B, EVENT_C]}
+            />
+        );
         const group = screen.getByRole('group', { name: '중요도 필터' });
         expect(
             within(group).getByRole('button', { name: '높음' })
@@ -324,7 +364,12 @@ describe('EconomicCalendarGrid — 중요도 필터 (기본 상태 · 셀 건수
     it('기본 상태에서 날짜 셀 건수는 활성 impact만 센다 (Low 제외)', () => {
         // EVENT_A(High)+EVENT_B(Medium) → KST 6/20, EVENT_C(Low) → KST 6/21.
         // 기본 필터: Low OFF → 6/21 셀은 0건, 6/20 셀은 2건.
-        render(<EconomicCalendarGrid events={[EVENT_A, EVENT_B, EVENT_C]} />);
+        render(
+            <EconomicCalendarGrid
+                country="US"
+                events={[EVENT_A, EVENT_B, EVENT_C]}
+            />
+        );
         expect(
             screen.getByRole('button', { name: /6월 20일.*이벤트 2건/ })
         ).toBeInTheDocument();
@@ -334,7 +379,12 @@ describe('EconomicCalendarGrid — 중요도 필터 (기본 상태 · 셀 건수
     });
 
     it('Low 칩을 켜면 Low 날짜 셀 건수가 다시 카운트된다', () => {
-        render(<EconomicCalendarGrid events={[EVENT_A, EVENT_B, EVENT_C]} />);
+        render(
+            <EconomicCalendarGrid
+                country="US"
+                events={[EVENT_A, EVENT_B, EVENT_C]}
+            />
+        );
         const group = screen.getByRole('group', { name: '중요도 필터' });
         fireEvent.click(within(group).getByRole('button', { name: '낮음' }));
         expect(
@@ -343,7 +393,12 @@ describe('EconomicCalendarGrid — 중요도 필터 (기본 상태 · 셀 건수
     });
 
     it('High 칩을 끄면 High 셀 건수가 줄어든다', () => {
-        render(<EconomicCalendarGrid events={[EVENT_A, EVENT_B, EVENT_C]} />);
+        render(
+            <EconomicCalendarGrid
+                country="US"
+                events={[EVENT_A, EVENT_B, EVENT_C]}
+            />
+        );
         const group = screen.getByRole('group', { name: '중요도 필터' });
         // 기본: 6/20 = High(A)+Medium(B) = 2건. High 끄면 Medium만 → 1건.
         fireEvent.click(within(group).getByRole('button', { name: '높음' }));
@@ -358,7 +413,10 @@ describe('EconomicCalendarGrid — 중요도 필터 (상세 패널 · DOM 유지
         // EVENT_C(Low) → KST 6/21. 기본 필터 Low OFF.
         // 6/21을 선택해 패널을 열어도, Low 항목은 hidden이지만 DOM엔 존재해야 한다.
         const { container } = render(
-            <EconomicCalendarGrid events={[EVENT_A, EVENT_B, EVENT_C]} />
+            <EconomicCalendarGrid
+                country="US"
+                events={[EVENT_A, EVENT_B, EVENT_C]}
+            />
         );
         // 패널을 열기 위해 6/21 날짜 버튼 클릭(Low 칩은 여전히 OFF)
         fireEvent.click(screen.getByRole('button', { name: /6월 21일/ }));
@@ -371,13 +429,23 @@ describe('EconomicCalendarGrid — 중요도 필터 (상세 패널 · DOM 유지
 
     it('활성 impact 이벤트의 상세 li는 hidden이 아니다', () => {
         // EVENT_A(High) → KST 6/20, 기본 선택 + High 활성.
-        render(<EconomicCalendarGrid events={[EVENT_A, EVENT_B, EVENT_C]} />);
+        render(
+            <EconomicCalendarGrid
+                country="US"
+                events={[EVENT_A, EVENT_B, EVENT_C]}
+            />
+        );
         const li = screen.getByText('Fed Rate Decision').closest('li');
         expect(li).not.toHaveAttribute('hidden');
     });
 
     it('Low 칩을 켜면 상세 패널의 Low li에서 hidden이 사라진다', () => {
-        render(<EconomicCalendarGrid events={[EVENT_A, EVENT_B, EVENT_C]} />);
+        render(
+            <EconomicCalendarGrid
+                country="US"
+                events={[EVENT_A, EVENT_B, EVENT_C]}
+            />
+        );
         const group = screen.getByRole('group', { name: '중요도 필터' });
         fireEvent.click(screen.getByRole('button', { name: /6월 21일/ }));
         // 켜기 전: hidden
@@ -393,7 +461,12 @@ describe('EconomicCalendarGrid — 중요도 필터 (상세 패널 · DOM 유지
 
     it('Medium 칩을 끄면 상세 패널의 Medium li가 hidden 된다', () => {
         // EVENT_B(Medium) → KST 6/20, 기본 선택일.
-        render(<EconomicCalendarGrid events={[EVENT_A, EVENT_B, EVENT_C]} />);
+        render(
+            <EconomicCalendarGrid
+                country="US"
+                events={[EVENT_A, EVENT_B, EVENT_C]}
+            />
+        );
         const group = screen.getByRole('group', { name: '중요도 필터' });
         // 기본: Medium ON → CPI Release li는 hidden 아님
         expect(
@@ -420,6 +493,7 @@ describe('EconomicCalendarGrid Korean indicator labels', () => {
     it('renders the Korean label in the detail panel when provided', () => {
         render(
             <EconomicCalendarGrid
+                country="US"
                 events={[ev('2026-06-20', 'Nonfarm Payrolls')]}
                 today="2026-06-20"
                 labels={{ 'Nonfarm Payrolls': '비농업 고용' }}
@@ -433,6 +507,7 @@ describe('EconomicCalendarGrid Korean indicator labels', () => {
     it('falls back to the English event name when no label is provided', () => {
         render(
             <EconomicCalendarGrid
+                country="US"
                 events={[ev('2026-06-20', 'Mystery Index')]}
                 today="2026-06-20"
             />

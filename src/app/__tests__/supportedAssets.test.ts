@@ -11,6 +11,7 @@ import {
     SITE_DESCRIPTION,
 } from '@/shared/lib/seo';
 import { buildHomeHowToJsonLd, HOME_FAQ_JSON_LD } from '@/app/homeJsonLd';
+import { NEWS_HUB_DESCRIPTION, NEWS_HUB_TITLE } from '@/app/news/page';
 
 const SKILL_COUNTS = {
     indicators: 25,
@@ -48,6 +49,9 @@ describe('자산군 커버리지 동기화', () => {
             'FAQ 서비스 소개 답변',
             HOME_FAQ_JSON_LD.mainEntity[0]!.acceptedAnswer.text,
         ],
+        // 뉴스 허브는 사이트에서 자산군 커버리지를 가장 직접적으로 주장하는 표면이다.
+        ['NEWS_HUB_TITLE', NEWS_HUB_TITLE],
+        ['NEWS_HUB_DESCRIPTION', NEWS_HUB_DESCRIPTION],
     ];
 
     it.each(SURFACES)('%s는 모든 자산군을 언급한다', (_label, text) => {

@@ -25,7 +25,9 @@ export const dynamic = 'force-static';
 export const revalidate = 2592000;
 export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
 export const contentType = 'image/png';
-export const alt = 'Siglens 미국 시장 뉴스 허브';
+// `/news`는 2026-08부터 미국 허브가 아니라 3지역 허브다. 미국 전용 문구는
+// `/news/us`가 가져갔다 — 여기 남으면 공유 카드가 페이지 제목과 정면으로 어긋난다.
+export const alt = 'Siglens 시장 뉴스 허브';
 
 export default async function Image() {
     const fontData = await loadKoreanFont();
@@ -68,7 +70,7 @@ export default async function Image() {
                     textAlign: 'center',
                 }}
             >
-                미국 시장 뉴스 허브
+                시장 뉴스 허브
             </div>
             <div
                 style={{
@@ -80,7 +82,7 @@ export default async function Image() {
                     display: 'flex',
                 }}
             >
-                미국 일반·주식·암호화폐·외환·아티클
+                미국 · 한국 · 암호화폐
             </div>
         </div>,
         {

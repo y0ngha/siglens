@@ -53,12 +53,26 @@ describe('queryConfig staleTime constants', () => {
         expect(QUERY_KEYS.currentUser()).toEqual(['current-user']);
     });
 
-    it('marketSummary query key는 안정적이다', () => {
-        expect(QUERY_KEYS.marketSummary()).toEqual(['market-summary']);
+    it('marketSummary query key는 시장별로 갈린다', () => {
+        expect(QUERY_KEYS.marketSummary('us')).toEqual([
+            'market-summary',
+            'us',
+        ]);
+        // `/market`과 `/market/kr`은 같은 클라이언트 캐시를 공유한다 — scope가
+        // 키에 없으면 페이지를 옮겨도 이전 시장 시세가 그대로 보인다.
+        expect(QUERY_KEYS.marketSummary('kr')).not.toEqual(
+            QUERY_KEYS.marketSummary('us')
+        );
     });
 
-    it('marketBriefing query key는 안정적이다', () => {
-        expect(QUERY_KEYS.marketBriefing()).toEqual(['market-briefing']);
+    it('marketBriefing query key는 시장별로 갈린다', () => {
+        expect(QUERY_KEYS.marketBriefing('us')).toEqual([
+            'market-briefing',
+            'us',
+        ]);
+        expect(QUERY_KEYS.marketBriefing('kr')).not.toEqual(
+            QUERY_KEYS.marketBriefing('us')
+        );
     });
 
     it('macroBriefing query key는 안정적이다', () => {
@@ -211,11 +225,15 @@ describe('QUERY_KEYS — 나머지 키 팩토리', () => {
         ]);
     });
 
-    it('sectorSignals: timeframe을 포함한다', () => {
-        expect(QUERY_KEYS.sectorSignals(DASHBOARD_TF)).toEqual([
+    it('sectorSignals: scope와 timeframe을 함께 포함한다', () => {
+        expect(QUERY_KEYS.sectorSignals('us', DASHBOARD_TF)).toEqual([
             'sector-signals',
+            'us',
             DASHBOARD_TF,
         ]);
+        expect(QUERY_KEYS.sectorSignals('kr', DASHBOARD_TF)).not.toEqual(
+            QUERY_KEYS.sectorSignals('us', DASHBOARD_TF)
+        );
     });
 
     it('optionsSnapshot: symbol 대문자 정규화', () => {

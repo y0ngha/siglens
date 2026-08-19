@@ -127,4 +127,58 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-fear-greed-loader-failed --
   --metric-name FearGreedLoaderFailed --statistic Sum --period 3600 --evaluation-periods 2 --threshold 4 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
 
-log "alarms created (5xx, unhealthy, cpu-credits, disk, mem, isr-cache-failures, isr-tag-failures, analysis-stream-failed, node-heap-oom, fear-greed-loader-failed)"
+# ── 한국 공포·탐욕 로더 실패 ──────────────────────────────────────────────
+# 미국판과 **로그 접두사가 다르다**(`[FearGreedKrRoute] getMarketFearGreedKrStatic
+# failed`). 위 필터는 리터럴 부분문자열 매칭이라 KR 로그를 잡지 못한다 — 필터를
+# 따로 두지 않으면 KR 라우트만 fail-open이 무감시 상태가 된다.
+#
+# 실패 모드가 미국보다 넓다: yahoo가 무인증이라 429가 나고, KRX ETF 5종 중 하나가
+# 상장폐지되면 `fetchKrDailyCloses`가 던져 200 + "표본이 부족합니다" + noindex가
+# 매시 재생성마다 똑같이 굳는다. 임계값 근거는 미국과 동일(렌더 1회당 로그 2줄).
+aws logs put-metric-filter --log-group-name /siglens/app   --filter-name siglens-fear-greed-kr-loader-failed   --filter-pattern '"[FearGreedKrRoute] getMarketFearGreedKrStatic failed"'   --metric-transformations metricName=FearGreedKrLoaderFailed,metricNamespace=Siglens/MarketFearGreed,metricValue=1
+aws cloudwatch put-metric-alarm --alarm-name siglens-fear-greed-kr-loader-failed --namespace Siglens/MarketFearGreed \
+  --metric-name FearGreedKrLoaderFailed --statistic Sum --period 3600 --evaluation-periods 2 --threshold 4 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
+
+# ── 네이버 뉴스 실패(자격증명 부재 + 업스트림 non-OK) ─────────────────────
+# `/news/kr`의 유일한 소스다. 키가 비거나 구독이 만료되면 빈 피드 + noindex가
+# 조용히 굳으므로 두 로그 줄을 알람으로 승격한다(발생 즉시 = 설정/구독 문제라 0 초과).
+#
+# **필터 패턴은 ASCII만 쓴다.** CloudWatch metric filter는 non-ASCII 리터럴을
+# 매칭하지 못한다(FIX F — `infra/aws/13-seo-prewarm.sh`, `docs/reference/CRON.md`).
+# 원래 `"NAVER_CLIENT_ID/SECRET 미설정"`이었는데, 그러면 알람이 영원히 안 울린다.
+# `?`는 OR — 두 접두 중 하나만 맞아도 센다.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-naver-news-failed \
+  --filter-pattern '?"NAVER_CLIENT_ID/SECRET" ?"non-OK response"' \
+  --metric-transformations metricName=NaverNewsFailed,metricNamespace=Siglens/News,metricValue=1
+aws cloudwatch put-metric-alarm --alarm-name siglens-naver-news-failed --namespace Siglens/News \
+  --metric-name NaverNewsFailed --statistic Sum --period 3600 --evaluation-periods 1 --threshold 0 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
+
+# ── 한국 대시보드 로더 실패 ──────────────────────────────────────────────
+# `/market/kr`은 세 KR 라우트 중 실패 표면이 가장 넓다 — 지수 3 + ETF 6 + 종목 20을
+# 무인증 yahoo로 긁는다(리필당 49회). 실패하면 빈 배열로 fail-open해서
+# canonical null + noindex 상태가 ISR에 굳는데, 로그 말고는 아무 신호가 없다.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-market-kr-loader-failed \
+  --filter-pattern '"[MarketContent:kr]"' \
+  --metric-transformations metricName=MarketKrLoaderFailed,metricNamespace=Siglens/Market,metricValue=1
+aws cloudwatch put-metric-alarm --alarm-name siglens-market-kr-loader-failed --namespace Siglens/Market \
+  --metric-name MarketKrLoaderFailed --statistic Sum --period 3600 --evaluation-periods 2 --threshold 4 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
+
+# ── KRX 휴장 캘린더 지평선 만료 ──────────────────────────────────────────
+# `KR_CALENDAR_HORIZON`(현재 2026-12-31)을 넘으면 모든 날을 정상 개장으로 보고
+# `console.warn`만 남긴다. 그 값이 (a) 대시보드 캐시 TTL과 (b) `/fear-greed/kr`
+# 사이트맵 lastmod를 끌고 가므로, 휴장일에 "장중 60초 TTL"로 yahoo를 긁고
+# 바뀌지도 않은 페이지의 신선도를 주장하게 된다. warn 한 줄은 아무도 안 본다.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-kr-calendar-horizon-expired \
+  --filter-pattern '"[KR_EQUITY_SESSION]"' \
+  --metric-transformations metricName=KrCalendarHorizonExpired,metricNamespace=Siglens/Market,metricValue=1
+aws cloudwatch put-metric-alarm --alarm-name siglens-kr-calendar-horizon-expired --namespace Siglens/Market \
+  --metric-name KrCalendarHorizonExpired --statistic Sum --period 3600 --evaluation-periods 1 --threshold 0 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
+
+log "alarms created (5xx, unhealthy, cpu-credits, disk, mem, isr-cache-failures, isr-tag-failures, analysis-stream-failed, node-heap-oom, fear-greed-loader-failed, fear-greed-kr-loader-failed, naver-news-failed, market-kr-loader-failed, kr-calendar-horizon-expired)"

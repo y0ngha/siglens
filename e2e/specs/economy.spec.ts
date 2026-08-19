@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures';
+import { clickHeaderNavRegion } from '../support/headerNav';
 
 /**
  * T3 degrade 시나리오 분류: Tier 3 env-seam 패턴.
@@ -154,18 +155,16 @@ test.describe('economy overview', () => {
      * playwright.config.ts 기본 프로젝트(Desktop Chrome)는 이미 데스크톱 크기지만,
      * 테스트 격리를 위해 뷰포트를 명시적으로 지정한다.
      */
-    test('헤더 "미국 경제" 링크 클릭으로 /economy에 도달하고 h1이 표시된다 (E2)', async ({
+    test('헤더 "경제 > 미국"으로 /economy에 도달하고 h1이 표시된다 (E2)', async ({
         page,
     }) => {
-        // 데스크톱 뷰포트 보장 — 헤더 nav 링크는 lg(1024px) 이상에서만 표시된다.
+        // 데스크톱 뷰포트 보장 — 헤더 nav는 lg(1024px) 이상에서만 표시된다.
         await page.setViewportSize({ width: 1280, height: 800 });
         await page.goto('/');
 
-        const header = page.getByRole('banner');
-        await header
-            .getByRole('navigation', { name: '주요 네비게이션' })
-            .getByRole('link', { name: '미국 경제' })
-            .click();
+        // 2026-08 동선 재편: 헤더가 버티컬 드롭다운이 되면서 링크 라벨이
+        // `미국 경제` 단일 항목에서 `경제` 트리거 + 패널 안 `미국`으로 갈렸다.
+        await clickHeaderNavRegion(page, '경제', '미국');
 
         await page.waitForURL('**/economy');
 

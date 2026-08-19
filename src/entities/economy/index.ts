@@ -17,3 +17,8 @@ export {
 } from './lib/indicatorNameKo';
 export type { NormalizedIndicatorName } from './lib/indicatorNameKo';
 export type { EconomicCalendarEventWithAnalysis } from './model';
+export type { CalendarCountry } from './lib/economyCalendarConstants';
+export { CALENDAR_COUNTRY_LABEL } from './lib/economyCalendarConstants';
+// 타입만 재export — `api/getKrIndicatorCards`는 server-only지만 타입은 런타임을
+// 끌고 오지 않는다. UI/훅은 슬라이스 barrel에서 타입을 받는다(MISTAKES §Architecture 0).
+export type { KrIndicatorCard } from './api/getKrIndicatorCards';

@@ -78,10 +78,12 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
         await expect(closeLabel).toBeVisible();
         await expect(closeLabel).toHaveAttribute('aria-expanded', 'true');
 
+        // 지역 라벨은 버티컬 안에서만 유일하다(`미국`이 네 번 나온다) — 그룹으로
+        // 좁힌 뒤 이름으로 집는다.
         await expect(
             drawer
-                .getByRole('navigation', { name: '메뉴' })
-                .getByRole('link', { name: '미국 경제' })
+                .getByRole('group', { name: '경제' })
+                .getByRole('link', { name: '미국', exact: true })
         ).toHaveAttribute('href', '/economy');
     });
 
@@ -159,8 +161,8 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
 
         // Link의 onClick={close} 핸들러가 탐색 전에 드로어를 닫는다.
         await drawer
-            .getByRole('navigation', { name: '메뉴' })
-            .getByRole('link', { name: '미국 경제' })
+            .getByRole('group', { name: '경제' })
+            .getByRole('link', { name: '미국', exact: true })
             .click();
 
         await page.waitForURL('**/economy');

@@ -21,6 +21,7 @@
 배포 트리거는 **`v*` 태그 push 하나뿐이다.** `.github/workflows/deploy.yml`은 `workflow_dispatch`를 의도적으로 뺐다 — OIDC 신뢰 정책이 `refs/tags/v*`만 허용하므로 브랜치에서의 수동 실행은 403으로 실패한다.
 
 ```bash
+bash infra/aws/07-alarms.sh   # 알람에 변경이 있는 릴리스라면 태그 **전에** (멱등)
 yarn release          # release-it: 버전 범프 + CHANGELOG + 커밋 + 태그 (SIGLENS_RELEASE_E2E=1 → e2e 포함)
 git push              # 커밋 push
 git push --tags       # ← 이 순간 배포가 시작된다
@@ -41,7 +42,9 @@ git push --tags       # ← 이 순간 배포가 시작된다
 > bash infra/aws/04-params.sh <env-file>
 >
 > bash infra/aws/06-alb-asg.sh    # ALB 속성 + ASG 용량
-> bash infra/aws/07-alarms.sh     # 알람 (analysis-stream-failed, fear-greed-loader-failed 포함)
+> bash infra/aws/07-alarms.sh     # 알람 (analysis-stream-failed, fear-greed-loader-failed,
+> #                                 fear-greed-kr-loader-failed, naver-news-failed,
+> #                                 market-kr-loader-failed, kr-calendar-horizon-expired 포함)
 > bash infra/aws/08-scaling.sh    # 스케일링 정책 (요청수 + CPU)
 > bash infra/aws/13-seo-prewarm.sh # 크론 알람 (unit-error/unit-timeout 포함)
 > ```
@@ -102,6 +105,20 @@ aws elbv2 describe-target-health --target-group-arn <TG_ARN> --profile siglens
 
 ⚠️ **ISR 캐시는 롤백을 따라오지 않는다.** S3 캐시 prefix는 `GIT_SHA`(=릴리스 버전)로 분리되므로, 이전 버전으로 되돌리면 그 버전 prefix의 캐시가 이미 lifecycle(14일)로 지워졌을 수 있다. 그 경우 롤백 직후 전 라우트가 cold-gen이 되어 origin 부하가 튄다 — 정상이며 몇 분 내 안정된다. SSM `prev-isr-buildid` 드리프트는 [ISR_CACHE_HANDLER.md](./ISR_CACHE_HANDLER.md) §5 참고.
 
+⚠️ **3자산군 릴리스(v0.57.0~) 이전으로 롤백할 땐 KR 캘린더 행을 지워야 한다.**
+
+`/economy/kr`이 `economic_calendar`에 `country='KR'` 행을 넣는데, 그 릴리스 **이전**
+코드의 `listInRange`에는 country 필터가 없다. 롤백하면 `/economy`(미국) 캘린더에
+`Interest Rate Decision (KR)`, `국고채 낙찰금리` 같은 한국 발표가 섞여 나오고,
+200에 에러도 알람도 없어 조용히 계속된다.
+
+```bash
+psql "$DATABASE_URL" -c "DELETE FROM economic_calendar WHERE country = 'KR';"
+```
+
+행이 지워져도 `/economy/kr`은 다음 방문에서 다시 수집하므로 앞으로 재배포할 때
+손실은 없다(과거 180일 창을 다시 당겨온다).
+
 ### 인프라 롤백 — 인스턴스 교체
 
 코드가 아니라 인스턴스 상태가 망가진 경우(디스크, FS read-only, 부팅 실패):
@@ -159,6 +176,10 @@ curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge
 | `siglens-analysis-stream-failed` | `[analysis-stream] failed` 15분 합계 > 2가 연속 2주기 | **분석 전면 장애의 유일한 신호다.** SSE는 실패해도 HTTP 200이라 5xx 알람이 안 뜬다. 1순위 의심: 프로바이더 키(SSM `/siglens/{DEEPSEEK,GEMINI,ANTHROPIC,OPENAI}_API_KEY`) 누락·만료. Logs Insights에서 `[analysis-stream] failed` 원문 확인 → 키 문제면 SSM 갱신 후 인스턴스 재시작, 프로바이더 장애면 회복 대기 |
 | `siglens-node-heap-oom` | `JavaScript heap out of memory` 1시간 1건 초과 | 앱 프로세스가 힙 상한(1.5GiB)에 닿아 죽었다 = 진행 중이던 분석 전멸 후 systemd 재시작. worker 제거로 LLM 호출이 앱 안에서 돌면서 생긴 실패 모드다. 동시 분석 상한(24)이 뚫렸는지, 특정 심볼의 bars가 비정상적으로 큰지 확인. 반복되면 인스턴스 타입 상향 또는 상한 하향 |
 | `siglens-fear-greed-loader-failed` | `[FearGreedRoute] getMarketFearGreedStatic failed` 1시간 합계 > 4가 연속 2주기 (실패 1회당 로그 2줄 — metadata + 본문이 각각 catch하므로 실질 "시간당 실패 2회 초과") | `/fear-greed` 로더가 계속 실패 중. **fail-open이라 이게 유일한 신호다** — 페이지는 200 + "표본이 부족합니다"를 렌더하고 그 HTML이 ISR/S3에 저장돼 5xx도 헬스체크 실패도 안 뜬다. FMP 402/403처럼 재시도 대상이 아닌 오류면 매시 재생성이 똑같이 실패해 **빈 페이지가 영구화**된다. Logs Insights로 원문 확인 → FMP 키/플랜(SSM `/siglens/FMP_API_KEY`) 우선 의심. 복구 후에는 다음 revalidate(최대 1h)에 자동 정상화 |
+| `siglens-fear-greed-kr-loader-failed` | `[FearGreedKrRoute] getMarketFearGreedKrStatic failed` 1시간 합계 > 4가 연속 2주기 | 미국판과 같은 fail-open 구조. 소스가 **무인증 yahoo**라 429가 주된 원인이고, KRX ETF 상장폐지도 같은 증상을 낸다. Logs Insights 원문 → 429면 회복 대기, 심볼 오류면 `marketFearGreedKrSymbols.ts` 갱신 |
+| `siglens-market-kr-loader-failed` | `[MarketContent:kr]` 1시간 합계 > 4가 연속 2주기 | `/market/kr`이 빈 배열로 fail-open 중 = canonical null + noindex가 ISR에 굳는다. 지수 3 + ETF 6 + 종목 20을 yahoo로 긁으므로 429가 1순위. 캐시 쓰기 가드가 지수 기준이라, 지수까지 빠지면 캐시가 아예 안 써져 부하가 더 커진다 |
+| `siglens-naver-news-failed` | `NAVER_CLIENT_ID/SECRET` 또는 `non-OK response` 1시간 1건 초과 | `/news/kr`의 **유일한** 소스다. 키 회수·NCP 구독 만료·일일 쿼터 소진이 전부 여기로 온다. SSM `/siglens/NAVER_CLIENT_ID`·`NAVER_CLIENT_SECRET` 확인 → NCP 콘솔에서 API HUB 구독 상태 확인 |
+| `siglens-kr-calendar-horizon-expired` | `[KR_EQUITY_SESSION]` 1시간 1건 초과 | **KRX 휴장 캘린더가 만료됐다.** `src/shared/api/market/sessionSpecFor.ts`의 `KR_MARKET_HOLIDAYS`에 다음 해 고시 휴장일을 추가하고 `KR_CALENDAR_HORIZON`을 함께 늘린다. 방치하면 휴장일에 장중 TTL로 yahoo를 긁고 `/fear-greed/kr` 사이트맵이 없던 변경을 주장한다 |
 | `siglens-seo-prewarm-unit-error` | `[seo-prewarm] unit-error` 또는 `unit-timeout` 15분 20건 초과 ×2주기 | 야간 prewarm 유닛이 대량 실패 중. 배치는 fail-open이라 `batch failed`가 안 뜨므로 이게 유일한 신호다. 프로바이더 키·장애를 먼저 의심 |
 | `siglens-seo-prewarm-deadline-reached` | `[seo-prewarm] batch deadline reached` 6시간 3건 초과 | 배치가 데드라인에 걸려 심볼을 버리고 있다 = 커버리지가 조용히 줄고 있다. `SYMBOL_CONCURRENCY`/스케줄 폭 재검토, 유닛 지연 실측 |
 | `siglens-seo-prewarm-batch-failed` | `[seo-prewarm] batch failed` 1시간 3회 초과 | [CRON.md](../reference/CRON.md) — 배치 내부 실패 |

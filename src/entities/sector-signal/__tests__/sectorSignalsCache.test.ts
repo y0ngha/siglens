@@ -28,6 +28,10 @@ vi.mock('@upstash/redis', () => ({
 
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
 import { SECTOR_STOCKS } from '@/shared/config/dashboard-tickers';
+import {
+    KR_DASHBOARD_SCOPE,
+    US_DASHBOARD_SCOPE,
+} from '@/shared/config/dashboardScope';
 
 const sampleResult: SectorSignalsResult = {
     computedAt: '2026-06-04T00:00:00Z',
@@ -67,7 +71,11 @@ describe('getCachedSectorSignals', () => {
     it('Redis env 없으면 getSectorSignals 직행', async () => {
         mockGetSectorSignals.mockResolvedValue(sampleResult);
         const mod = await loadWithEnv({});
-        const r = await mod.getCachedSectorSignals(mockProvider, '1Day');
+        const r = await mod.getCachedSectorSignals(
+            mockProvider,
+            US_DASHBOARD_SCOPE,
+            '1Day'
+        );
         expect(mockRedisCtor).not.toHaveBeenCalled();
         expect(mockGetSectorSignals).toHaveBeenCalledWith(
             mockProvider,
@@ -83,9 +91,13 @@ describe('getCachedSectorSignals', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        const r = await mod.getCachedSectorSignals(mockProvider, '1Hour');
+        const r = await mod.getCachedSectorSignals(
+            mockProvider,
+            US_DASHBOARD_SCOPE,
+            '1Hour'
+        );
         expect(mockRedisGet).toHaveBeenCalledWith(
-            expect.stringMatching(/^sector-signals:1Hour:[a-f0-9]{12}$/)
+            expect.stringMatching(/^sector-signals:us:1Hour:[a-f0-9]{12}$/)
         );
         expect(mockGetSectorSignals).not.toHaveBeenCalled();
         expect(r).toEqual(sampleResult);
@@ -99,9 +111,13 @@ describe('getCachedSectorSignals', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        await mod.getCachedSectorSignals(mockProvider, '15Min');
+        await mod.getCachedSectorSignals(
+            mockProvider,
+            US_DASHBOARD_SCOPE,
+            '15Min'
+        );
         expect(mockRedisSet).toHaveBeenCalledWith(
-            expect.stringMatching(/^sector-signals:15Min:[a-f0-9]{12}$/),
+            expect.stringMatching(/^sector-signals:us:15Min:[a-f0-9]{12}$/),
             { data: sampleResult },
             { ex: 60 }
         );
@@ -114,19 +130,36 @@ describe('getCachedSectorSignals', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        await mod.getCachedSectorSignals(mockProvider, '1Day');
+        await mod.getCachedSectorSignals(
+            mockProvider,
+            US_DASHBOARD_SCOPE,
+            '1Day'
+        );
         expect(mockRedisSet).not.toHaveBeenCalled();
     });
 
-    it('(guard: true) stocks 비어있지 않으면 set 호출', async () => {
+    /**
+     * `result.stocks`는 "조회 성공한 종목"이 아니라 **"신호가 잡힌 종목"**이다
+     * (core `computeStockSignalResult`가 신호 0개면 `null`을 돌린다). 설정 종목 수
+     * 대비 비율로 완전성을 재면 조용한 장에서 캐시 쓰기가 통째로 막힌다 —
+     * 한때 그렇게 만들었다가 되돌린 자리라 회귀를 고정해 둔다. 여기서 1종목 결과를
+     * 수십 종목짜리 미국 설정에 물리는 것이 그 회귀를 재현하는 조합이다.
+     */
+    it('(guard: true) stocks가 있으면 설정 종목 수와 무관하게 set 호출', async () => {
         mockRedisGet.mockResolvedValue(null);
-        mockGetSectorSignals.mockResolvedValue(sampleResult);
+        mockGetSectorSignals.mockResolvedValue(sampleResult); // 1종목
         mockRedisSet.mockResolvedValue('OK');
         const mod = await loadWithEnv({
             url: 'https://x.upstash.io',
             token: 't',
         });
-        await mod.getCachedSectorSignals(mockProvider, '1Day');
+
+        await mod.getCachedSectorSignals(
+            mockProvider,
+            US_DASHBOARD_SCOPE, // 실제 설정은 수십 종목
+            '1Day'
+        );
+
         expect(mockRedisSet).toHaveBeenCalled();
     });
 
@@ -138,7 +171,11 @@ describe('getCachedSectorSignals', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        const r = await mod.getCachedSectorSignals(mockProvider, '1Day');
+        const r = await mod.getCachedSectorSignals(
+            mockProvider,
+            US_DASHBOARD_SCOPE,
+            '1Day'
+        );
         expect(errSpy).toHaveBeenCalled();
         expect(r).toEqual(sampleResult);
         errSpy.mockRestore();
@@ -153,7 +190,11 @@ describe('getCachedSectorSignals', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        const r = await mod.getCachedSectorSignals(mockProvider, '1Day');
+        const r = await mod.getCachedSectorSignals(
+            mockProvider,
+            US_DASHBOARD_SCOPE,
+            '1Day'
+        );
         expect(errSpy).toHaveBeenCalled();
         expect(r).toEqual(sampleResult);
         errSpy.mockRestore();
@@ -165,15 +206,43 @@ describe('getCachedSectorSignals', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        await mod.getCachedSectorSignals(mockProvider, '1Day');
+        await mod.getCachedSectorSignals(
+            mockProvider,
+            US_DASHBOARD_SCOPE,
+            '1Day'
+        );
         expect(mockRedisGet).toHaveBeenCalledWith(
-            expect.stringMatching(/^sector-signals:1Day:[a-f0-9]{12}$/)
+            expect.stringMatching(/^sector-signals:us:1Day:[a-f0-9]{12}$/)
         );
         vi.clearAllMocks();
         mockRedisGet.mockResolvedValue({ data: sampleResult });
-        await mod.getCachedSectorSignals(mockProvider, '15Min');
+        await mod.getCachedSectorSignals(
+            mockProvider,
+            US_DASHBOARD_SCOPE,
+            '15Min'
+        );
         expect(mockRedisGet).toHaveBeenCalledWith(
-            expect.stringMatching(/^sector-signals:15Min:[a-f0-9]{12}$/)
+            expect.stringMatching(/^sector-signals:us:15Min:[a-f0-9]{12}$/)
+        );
+    });
+
+    /** scope.id가 키에 들어가는 것이 두 시장을 가르는 유일한 장치다. */
+    it('kr scope는 kr 접두 키를 쓴다', async () => {
+        mockRedisGet.mockResolvedValue(null);
+        mockGetSectorSignals.mockResolvedValue(emptyResult);
+        const mod = await loadWithEnv({
+            url: 'https://x.upstash.io',
+            token: 't',
+        });
+
+        await mod.getCachedSectorSignals(
+            mockProvider,
+            KR_DASHBOARD_SCOPE,
+            '1Hour'
+        );
+
+        expect(mockRedisGet).toHaveBeenCalledWith(
+            expect.stringMatching(/^sector-signals:kr:1Hour:[a-f0-9]{12}$/)
         );
     });
 });

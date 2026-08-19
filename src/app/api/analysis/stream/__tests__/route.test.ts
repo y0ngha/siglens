@@ -662,8 +662,38 @@ describe('POST /api/analysis/stream', () => {
             const response = await POST(makeRequest(undefined, body));
             await collectSseEvents(response);
 
-            // briefing 핸들러 시그니처: (signal) — params 미사용
+            // briefing 핸들러 시그니처: (scope, signal).
+            // scope는 클라이언트가 보낸 문자열을 그대로 넘기고, 액션이
+            // `isDashboardScopeId`로 검증한다 — 라우트와 액션 양쪽에 검증을 두면
+            // 규칙이 갈린다.
             expect(vi.mocked(submitMarketBriefingAction)).toHaveBeenCalledWith(
+                undefined,
+                expect.any(AbortSignal)
+            );
+        });
+
+        /**
+         * 클라의 scope가 서버로 건너오는 **유일한** 지점이다. 여기서 잘못된 키를
+         * 읽으면(`params.category` 등) 값이 조용히 `undefined`가 되어 액션 기본값
+         * `'us'`로 떨어진다 — `/market/kr`이 한국어 제목 아래 미국 브리핑을
+         * 보여주고, 스택 어디에도 신호가 없다. 위 케이스는 body에 scope가 없어
+         * 어떤 키를 읽어도 통과하므로 이 케이스가 필요하다.
+         */
+        it('briefing params.scope를 액션에 그대로 넘긴다', async () => {
+            vi.mocked(submitMarketBriefingAction).mockResolvedValue({
+                briefing: null,
+                botBlocked: false,
+            } as never);
+
+            const body = JSON.stringify({
+                type: 'briefing',
+                params: { scope: 'kr' },
+            });
+            const response = await POST(makeRequest(undefined, body));
+            await collectSseEvents(response);
+
+            expect(vi.mocked(submitMarketBriefingAction)).toHaveBeenCalledWith(
+                'kr',
                 expect.any(AbortSignal)
             );
         });

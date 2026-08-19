@@ -9,7 +9,7 @@ describe('buildCategoryPageTitle', () => {
         expect(title).toContain('뉴스');
         // 어휘도 고정한다. 이 문자열은 `<title>`·`og:title`·JSON-LD WebPage name의
         // 단일 출처라, 여기만 옛 표기로 남으면 한 페이지에 두 어휘가 공존한다.
-        expect(title).toContain('최신 시장 흐름');
+        expect(title).toContain('최신 흐름');
     });
 
     it('빈 koLabel이어도 throw하지 않는다', () => {

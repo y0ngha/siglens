@@ -1,11 +1,9 @@
 'use client';
 
+import type { NewsFeedCategoryId } from '@/entities/market-news';
 import { useState, startTransition, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type {
-    NewsAnalysisResponse,
-    NewsFeedCategory,
-} from '@y0ngha/siglens-core';
+import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import { ensureMarketNewsCardsAnalyzedAction } from '@/entities/market-news/actions';
 import { fetchMarketNewsDigest } from '../utils/fetchMarketNewsDigest';
 import { useWaitForMarketNewsCards } from './useWaitForMarketNewsCards';
@@ -21,7 +19,7 @@ export type MarketNewsDigestState =
  * consumer does not need to react; if the ingestion fails, polling will simply
  * stay empty until the next FMP refresh cycle.
  */
-function useMarketNewsAnalysisTrigger(category: NewsFeedCategory): void {
+function useMarketNewsAnalysisTrigger(category: NewsFeedCategoryId): void {
     const triggeredCategoryRef = useRef<string | null>(null);
 
     useEffect(() => {
@@ -52,7 +50,7 @@ function useMarketNewsAnalysisTrigger(category: NewsFeedCategory): void {
  * No `usePublishSymbolChat` — this is a category page, not a per-symbol page.
  */
 export function useMarketNewsDigest(
-    category: NewsFeedCategory,
+    category: NewsFeedCategoryId,
     hasEnrichedNews: boolean
 ): MarketNewsDigestState {
     const [isHydrated, setIsHydrated] = useState(false);

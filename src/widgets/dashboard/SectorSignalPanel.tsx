@@ -4,12 +4,15 @@ import type {
     DashboardTimeframe,
     SectorSignalsResult,
 } from '@y0ngha/siglens-core';
+import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 import { useSectorSignalState } from './hooks/useSectorSignalState';
 import { SectorTabs } from './SectorTabs';
 import { TimeframeSelector } from './TimeframeSelector';
 import { SignalSubsection } from './SignalSubsection';
 
 interface SectorSignalPanelProps {
+    /** 어느 시장의 신호인가. 섹터 탭·조회·URL 복원이 전부 여기서 갈린다. */
+    scope: ClientDashboardScope;
     initialSector: string;
     initialTimeframe: DashboardTimeframe;
     /**
@@ -21,6 +24,7 @@ interface SectorSignalPanelProps {
 }
 
 export function SectorSignalPanel({
+    scope,
     initialSector,
     initialTimeframe,
     initialData,
@@ -33,6 +37,7 @@ export function SectorSignalPanel({
         handleSectorChange,
         handleTimeframeChange,
     } = useSectorSignalState({
+        scope,
         initialSector,
         initialTimeframe,
         initialData,
@@ -54,6 +59,7 @@ export function SectorSignalPanel({
                 />
             </div>
             <SectorTabs
+                sectors={scope.signalSectors}
                 activeSector={activeSector}
                 onChange={handleSectorChange}
             />
@@ -64,18 +70,21 @@ export function SectorSignalPanel({
                 className="mt-6 flex flex-col gap-4"
             >
                 <SignalSubsection
+                    currencySymbol={scope.currencySymbol}
                     title="상승 신호"
                     marker="▲"
                     variant="confirmed"
                     stocks={quadrants.bullishConfirmed}
                 />
                 <SignalSubsection
+                    currencySymbol={scope.currencySymbol}
                     title="상승 조짐"
                     marker="△"
                     variant="expected"
                     stocks={quadrants.bullishExpected}
                 />
                 <SignalSubsection
+                    currencySymbol={scope.currencySymbol}
                     title="혼재"
                     marker="◈"
                     variant="mixed"
@@ -94,12 +103,14 @@ export function SectorSignalPanel({
                     }
                 />
                 <SignalSubsection
+                    currencySymbol={scope.currencySymbol}
                     title="하락 조짐"
                     marker="▽"
                     variant="expected"
                     stocks={quadrants.bearishExpected}
                 />
                 <SignalSubsection
+                    currencySymbol={scope.currencySymbol}
                     title="하락 신호"
                     marker="▼"
                     variant="confirmed"

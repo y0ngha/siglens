@@ -59,7 +59,9 @@ describe('useMarketSummary', () => {
     it('(Happy) isPending true initially', () => {
         mockAction.mockImplementation(() => new Promise(() => {}));
         const { client, wrapper } = makeWrapper();
-        const { result } = renderHook(() => useMarketSummary(), { wrapper });
+        const { result } = renderHook(() => useMarketSummary('us'), {
+            wrapper,
+        });
         expect(result.current.isPending).toBe(true);
         client.clear();
     });
@@ -67,7 +69,9 @@ describe('useMarketSummary', () => {
     it('(Happy) returns data with sectorMap and indices when action resolves', async () => {
         mockAction.mockResolvedValue(SUMMARY_DATA);
         const { client, wrapper } = makeWrapper();
-        const { result } = renderHook(() => useMarketSummary(), { wrapper });
+        const { result } = renderHook(() => useMarketSummary('us'), {
+            wrapper,
+        });
 
         await waitFor(() => {
             expect(result.current.isPending).toBe(false);
@@ -95,7 +99,9 @@ describe('useMarketSummary', () => {
             },
         });
         const { client, wrapper } = makeWrapper();
-        const { result } = renderHook(() => useMarketSummary(), { wrapper });
+        const { result } = renderHook(() => useMarketSummary('us'), {
+            wrapper,
+        });
 
         await waitFor(() => {
             expect(result.current.isPending).toBe(false);
@@ -108,7 +114,9 @@ describe('useMarketSummary', () => {
     it('(Worst) {ok:false} → empty sectorMap and indices', async () => {
         mockAction.mockResolvedValue({ ok: false, error: 'server_error' });
         const { client, wrapper } = makeWrapper();
-        const { result } = renderHook(() => useMarketSummary(), { wrapper });
+        const { result } = renderHook(() => useMarketSummary('us'), {
+            wrapper,
+        });
 
         await waitFor(() => {
             expect(result.current.isPending).toBe(false);
@@ -144,7 +152,7 @@ describe('useMarketSummary', () => {
         );
 
         const { client, wrapper } = makeWrapper();
-        renderHook(() => useMarketSummaryE2E(), { wrapper });
+        renderHook(() => useMarketSummaryE2E('us'), { wrapper });
 
         // When staleTime=0 and refetchOnMount='always', data immediately becomes stale
         // so the query refetches. Action called at least once.

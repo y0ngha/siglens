@@ -19,7 +19,11 @@ import {
 import {
     CALENDAR_ANALYSIS_PARALLEL_LIMIT,
     CALENDAR_ANALYZED_IMPACTS,
-    ECONOMY_CALENDAR_CACHE_TAG,
+    CALENDAR_COUNTRY,
+    CALENDAR_REGION_LABEL,
+    economyCalendarCacheTag,
+    type CalendarCountry,
+    isCalendarCountry,
 } from '../lib/economyCalendarConstants';
 
 /** 과반 실패 판정 분모. ensureMarketNewsCardsAnalyzedAction.ts의 MAJORITY_DIVISOR와 동일 — 변경 시 함께 업데이트. */
@@ -36,9 +40,13 @@ const MAJORITY_DIVISOR = 2;
  */
 async function analyzeAndPersistEvent(
     row: UnanalyzedAnnouncedEvent,
-    repo: DrizzleEconomicCalendarRepository
+    repo: DrizzleEconomicCalendarRepository,
+    country: CalendarCountry
 ): Promise<boolean> {
     const input = {
+        // core 필수 필드. 프롬프트 프레이밍과 분석 캐시 키 양쪽에 들어간다 —
+        // 같은 이름·같은 수치의 발표라도 경제권이 다르면 해설을 공유하면 안 된다.
+        region: CALENDAR_REGION_LABEL[country],
         event: row.event,
         impact: row.impact,
         actual: row.actual,
@@ -90,25 +98,45 @@ async function analyzeAndPersistEvent(
  * 과반 실패는 경고 로깅만 — 다음 접속/플래그 만료 시 재시도된다.
  * E2E/prerender에서는 즉시 반환(LLM 비용 0).
  */
-export async function ensureEconomicEventsAnalyzedAction(): Promise<void> {
+/**
+ * @param country - 분석할 국가. 스캔·플래그·프롬프트 입력·캐시 키가 전부 이 값으로
+ *   갈린다. 기본값이 미국이라 기존 호출부(`/economy`)는 그대로 동작한다.
+ *
+ *   **국가를 안 나누면 write-once가 잘못된 결과를 굳힌다**: `Interest Rate Decision`
+ *   처럼 이름에 국가가 없는 발표가 국가 없이 분석되면 한국은행 결정이 연준 맥락으로
+ *   서술되고, `analyzed_at IS NULL` 가드 때문에 다시 못 고친다. core 0.48.0의
+ *   `EconomicEventAnalysisInput.region`이 그 축을 받으므로 여기서 넘겨준다.
+ */
+export async function ensureEconomicEventsAnalyzedAction(
+    country: CalendarCountry = CALENDAR_COUNTRY
+): Promise<void> {
     try {
         if (isE2E()) return;
-        if (await isAnalysisRecentlyRun()) return;
+        // 직렬화를 건너온 공개 인자라 런타임에서 좁힌다.
+        if (!isCalendarCountry(country)) {
+            console.error(
+                '[ensureEconomicEventsAnalyzedAction] unknown country:',
+                country
+            );
+            return;
+        }
+        if (await isAnalysisRecentlyRun(country)) return;
         // async 작업 전에 마킹 — 동시 호출이 이 지점 이후 플래그를 읽으면 스캔 생략.
-        await markAnalysisRun();
+        await markAnalysisRun(country);
 
         const { db } = getDatabaseClient();
         const repo = new DrizzleEconomicCalendarRepository(db);
 
         const pending = await repo.listUnanalyzedAnnounced(
-            CALENDAR_ANALYZED_IMPACTS
+            CALENDAR_ANALYZED_IMPACTS,
+            country
         );
         if (pending.length === 0) return;
 
         const settled = await withConcurrencyLimit(
             pending,
             CALENDAR_ANALYSIS_PARALLEL_LIMIT,
-            row => analyzeAndPersistEvent(row, repo)
+            row => analyzeAndPersistEvent(row, repo, country)
         );
         const failures = settled.filter(
             (r): r is PromiseRejectedResult => r.status === 'rejected'
@@ -130,7 +158,7 @@ export async function ensureEconomicEventsAnalyzedAction(): Promise<void> {
         ).length;
         if (persisted > 0) {
             // SP-A와 같은 'economy:calendar' 태그만 무효화 — 다음 렌더가 분석 채워진 행을 읽는다.
-            revalidateTag(ECONOMY_CALENDAR_CACHE_TAG, 'max');
+            revalidateTag(economyCalendarCacheTag(country), 'max');
         }
     } catch (error) {
         console.error('[ensureEconomicEventsAnalyzedAction]', error);

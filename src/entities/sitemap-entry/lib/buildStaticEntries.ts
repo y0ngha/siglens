@@ -2,8 +2,13 @@ import { MS_PER_HOUR } from '@/shared/config/time';
 import { PRIVACY_PATH, TERMS_PATH } from '@/shared/lib/legal';
 import { SITE_BUILD_DATE, SITE_URL } from '@/shared/lib/seo';
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
-import { CATEGORY_CONFIG, type NewsFeedCategory } from '@/entities/market-news';
+import {
+    CATEGORY_CONFIG,
+    type NewsFeedCategoryId,
+} from '@/entities/market-news';
+import { ALL_NAV_REGION_LINKS } from '@/shared/config/assetClassNav';
 import { floorToHour } from './floorToHour';
 import type { SitemapEntry } from '../model';
 
@@ -15,7 +20,8 @@ function startOfUtcDay(now: Date): Date {
 }
 
 /**
- * 정적 라우트(home, market, fear-greed, backtesting, economy, legal, news hub + 5 category pages)의 sitemap 엔트리.
+ * 정적 라우트(home, 각 버티컬의 지역 페이지, backtesting, legal, news hub + 카테고리 페이지)의
+ * sitemap 엔트리.
  *
  * **`lastmod`에 요청 시각(`now`)을 그대로 쓰지 않는다.** sitemap 라우트가
  * `force-dynamic`이라 그렇게 하면 크롤러가 가져갈 때마다 값이 바뀌어, 실제로는
@@ -46,17 +52,61 @@ export function buildStaticEntries(now: Date): SitemapEntry[] {
     // `buildPopularEntries`의 `/news` 엔트리와 같은 이유(floorToHour JSDoc 참고).
     const oneHourAgo = floorToHour(new Date(now.getTime() - MS_PER_HOUR));
     const todayUtc = startOfUtcDay(now);
-    // `/fear-greed`는 미국 지수·ETF의 EOD 종가가 입력이므로 NYSE 세션 기준이다.
+    // `/fear-greed`는 EOD 종가가 입력이라 "직전 마감"이 곧 lastmod다. 두 지역이
+    // 서로 다른 거래소를 보므로 세션도 따로 계산한다 — KRX는 06:30 UTC, NYSE는
+    // 21:00 UTC에 닫혀서, 한 시계로 통일하면 하루 14시간 넘게 KR 엔트리가 실제
+    // 변경 시각보다 뒤처지고 KRX만 여는 날에는 바뀌지도 않은 변경을 주장한다.
+    // (`buildPopularEntries`가 종목 URL에서 이미 같은 분기를 한다.)
     const lastSessionClose = lastClosedSessionCloseUtc(US_EQUITY_SESSION, now);
-    // safe: CATEGORY_CONFIG is Record<NewsFeedCategory, CategoryConfig>, so Object.keys is exactly the union — TS just widens to string[].
+    const lastKrSessionClose = lastClosedSessionCloseUtc(
+        KR_EQUITY_SESSION,
+        now
+    );
+    // safe: CATEGORY_CONFIG is Record<NewsFeedCategoryId, CategoryConfig>, so Object.keys is exactly the union — TS just widens to string[].
     const newsCategoryEntries: SitemapEntry[] = (
-        Object.keys(CATEGORY_CONFIG) as NewsFeedCategory[]
+        Object.keys(CATEGORY_CONFIG) as NewsFeedCategoryId[]
     ).map(cat => ({
         url: `${SITE_URL}/news/${CATEGORY_CONFIG[cat].slug}`,
         lastModified: todayUtc,
         changeFrequency: 'daily' as const,
         priority: 0.8,
     }));
+
+    /*
+     * 버티컬 지역 페이지는 `ALL_NAV_REGION_LINKS`에서 파생한다 — 내비에 열어 둔
+     * 지역과 sitemap에 광고하는 지역이 어긋나지 않게 하기 위해서다. 손으로 나열하면
+     * 지역을 하나 더 열 때 sitemap 쪽을 빠뜨려도 아무것도 깨지지 않는다(조용한 누락).
+     *
+     * 뉴스 지역 링크는 여기서 제외한다 — `/news/crypto`처럼 카테고리 페이지와 URL이
+     * 겹쳐 `newsCategoryEntries`가 이미 내보내고 있어, 넣으면 같은 URL이 두 번 나간다.
+     */
+    /**
+     * 등급은 버티컬 성격을 따른다: `/market*`은 장중 신호라 1시간 슬라이딩,
+     * `/fear-greed*`는 EOD 입력이라 직전 마감(거래소가 다르므로 지역별로),
+     * `/economy*`는 배포 단위.
+     */
+    function lastModifiedFor(
+        link: (typeof ALL_NAV_REGION_LINKS)[number]
+    ): Date {
+        if (link.href.startsWith('/market')) return oneHourAgo;
+        if (!link.href.startsWith('/fear-greed')) return SITE_BUILD_DATE;
+        return link.region === 'kr' ? lastKrSessionClose : lastSessionClose;
+    }
+
+    const regionEntries: SitemapEntry[] = ALL_NAV_REGION_LINKS.flatMap(link => {
+        if (link.href.startsWith('/news/')) return [];
+        const isMarket = link.href.startsWith('/market');
+        return [
+            {
+                url: `${SITE_URL}${link.href}`,
+                lastModified: lastModifiedFor(link),
+                changeFrequency: isMarket
+                    ? ('hourly' as const)
+                    : ('daily' as const),
+                priority: isMarket ? 0.9 : 0.8,
+            },
+        ];
+    });
 
     return [
         {
@@ -65,18 +115,7 @@ export function buildStaticEntries(now: Date): SitemapEntry[] {
             changeFrequency: 'monthly',
             priority: 1,
         },
-        {
-            url: `${SITE_URL}/market`,
-            lastModified: oneHourAgo,
-            changeFrequency: 'hourly',
-            priority: 0.9,
-        },
-        {
-            url: `${SITE_URL}/fear-greed`,
-            lastModified: lastSessionClose,
-            changeFrequency: 'daily',
-            priority: 0.8,
-        },
+        ...regionEntries,
         {
             url: `${SITE_URL}/backtesting`,
             lastModified: SITE_BUILD_DATE,
@@ -84,13 +123,13 @@ export function buildStaticEntries(now: Date): SitemapEntry[] {
             priority: 0.9,
         },
         {
-            url: `${SITE_URL}/economy`,
-            lastModified: SITE_BUILD_DATE,
+            url: `${SITE_URL}/news`,
+            lastModified: todayUtc,
             changeFrequency: 'daily',
             priority: 0.8,
         },
         {
-            url: `${SITE_URL}/news`,
+            url: `${SITE_URL}/news/us`,
             lastModified: todayUtc,
             changeFrequency: 'daily',
             priority: 0.8,

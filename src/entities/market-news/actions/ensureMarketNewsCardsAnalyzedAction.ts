@@ -4,18 +4,17 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { revalidateTag } from 'next/cache';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
-import {
-    runNewsCardAnalysis,
-    type NewsItem,
-    type NewsFeedCategory,
-} from '@y0ngha/siglens-core';
+import { runNewsCardAnalysis, type NewsItem } from '@y0ngha/siglens-core';
 import {
     DrizzleMarketNewsRepository,
     isRecentlyFetched,
     markFetched,
 } from '../api';
 import { getMarketNewsClient } from '../lib/getMarketNewsClient';
-import { CATEGORY_CONFIG } from '../lib/categoryConfig';
+import {
+    CATEGORY_CONFIG,
+    type NewsFeedCategoryId,
+} from '../lib/categoryConfig';
 import {
     MARKET_NEWS_LOOKBACK_MS,
     MARKET_NEWS_CACHE_TAG_PREFIX,
@@ -60,7 +59,8 @@ async function analyzeAndPersist(
 }
 
 /**
- * Server Action: fetch fresh FMP market-news for `category`, upsert to the
+ * Server Action: fetch fresh market-news for `category` (소스는 카테고리가 정한다 —
+ * 미국·암호화폐는 FMP, 한국은 네이버), upsert to the
  * `market_news` table, and trigger per-card AI analysis for unenriched items.
  *
  * Unlike the per-symbol equivalent, there is NO tier/BYOK gate — category
@@ -73,7 +73,7 @@ async function analyzeAndPersist(
  * Designed to run inside `waitUntil` so it does not block the response stream.
  */
 export async function ensureMarketNewsCardsAnalyzedAction(
-    category: NewsFeedCategory
+    category: NewsFeedCategoryId
 ): Promise<void> {
     try {
         const { sentinel } = CATEGORY_CONFIG[category];
@@ -83,10 +83,11 @@ export async function ensureMarketNewsCardsAnalyzedAction(
         }
 
         // Mark before the async fetch so that a second concurrent caller that
-        // reads the flag after this point will skip the FMP round-trip.
+        // reads the flag after this point will skip the upstream round-trip.
         await markFetched(sentinel);
 
-        const newsClient = getMarketNewsClient();
+        // 소스(FMP / 네이버)는 카테고리가 결정한다 — `CATEGORY_CONFIG[category].source`.
+        const newsClient = getMarketNewsClient(category);
         const { db } = getDatabaseClient();
         const repo = new DrizzleMarketNewsRepository(db);
 
@@ -94,7 +95,7 @@ export async function ensureMarketNewsCardsAnalyzedAction(
             .fetchCategoryNews(category, MARKET_NEWS_LOOKBACK_MS)
             .catch((err: unknown) => {
                 console.error(
-                    '[ensureMarketNewsCardsAnalyzedAction] FMP fetch failed:',
+                    '[ensureMarketNewsCardsAnalyzedAction] feed fetch failed:',
                     err
                 );
                 return null;
@@ -141,7 +142,7 @@ export async function ensureMarketNewsCardsAnalyzedAction(
 
         if (isE2E()) return;
 
-        // `fresh` comes from FMP and has no `analyzedAt`; re-read DB to skip items
+        // `fresh` comes from the upstream feed and has no `analyzedAt`; re-read DB to skip items
         // that a previous run already analyzed — avoids duplicate LLM submissions.
         // 필요한 건 "이미 분석됨" 집합뿐이라 id만 읽는다 — 전 컬럼을 읽으면 본문까지
         // 받아서 그대로 버린다(감사: 비용 라운드 15).

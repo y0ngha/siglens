@@ -7,6 +7,10 @@ import {
 } from '@y0ngha/siglens-core';
 import { isBot } from '@/shared/api/isBot';
 import { getCachedMarketSummary } from '../api/marketSummaryCache';
+import {
+    KR_DASHBOARD_SCOPE,
+    US_DASHBOARD_SCOPE,
+} from '@/shared/config/dashboardScope';
 
 vi.mock('server-only', () => ({}));
 
@@ -30,6 +34,9 @@ vi.mock('@/shared/api/isBot', () => ({
 const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
 vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     getMarketDataProvider: vi.fn(() => mockProvider),
+    // scope 인지 팩토리도 같은 모듈에 있다 — 목에서 빠지면 액션이 import 단계에서
+    // 실패해 `server_error`로 조용히 떨어진다.
+    marketDataProviderFor: vi.fn(() => mockProvider),
 }));
 
 const mockGetCachedMarketSummary = getCachedMarketSummary as MockedFunction<
@@ -47,6 +54,16 @@ const summaryData: MarketSummaryData = {
             koreanName: 'S&P 500',
             price: 5000,
             changesPercentage: 0.5,
+        },
+        // VIX를 픽스처에 둔다 — 없으면 context가 `volatility: null`이라
+        // 쓰기·읽기 두 경로가 같은 값을 만드는지가 자명한 값에서만 고정된다.
+        {
+            symbol: 'VIX',
+            fmpSymbol: '^VIX',
+            displayName: 'VIX',
+            koreanName: '공포지수',
+            price: 18.3,
+            changesPercentage: -2.1,
         },
     ],
     sectors: [
@@ -79,23 +96,32 @@ describe('submitMarketBriefingAction 함수는', () => {
         });
 
         it('(Happy) runBriefing 결과와 botBlocked: false를 반환한다', async () => {
-            const result = await submitMarketBriefingAction();
+            const result = await submitMarketBriefingAction('us');
 
             expect(result).toEqual({
                 briefing: briefingResult,
                 botBlocked: false,
+                scope: 'us',
             });
         });
 
-        it('(Happy) getCachedMarketSummary와 runBriefing(summary)를 호출한다', async () => {
-            await submitMarketBriefingAction();
+        it('(Happy) getCachedMarketSummary와 runBriefing(summary, context)를 호출한다', async () => {
+            await submitMarketBriefingAction('us');
 
             expect(mockGetCachedMarketSummary).toHaveBeenCalledWith(
-                mockProvider
+                mockProvider,
+                US_DASHBOARD_SCOPE
             );
-            expect(mockRunBriefing).toHaveBeenCalledWith(summaryData, {
-                signal: undefined,
-            });
+            // context는 core 캐시 키에 접힌다 — peek 경로(peekBriefingStatic)와
+            // 같은 헬퍼로 조립되지 않으면 두 키가 갈려 peek이 영원히 미스한다.
+            expect(mockRunBriefing).toHaveBeenCalledWith(
+                summaryData,
+                {
+                    marketLabel: '미국 증시',
+                    volatility: { label: 'VIX', level: 18.3 },
+                },
+                { signal: undefined }
+            );
         });
     });
 
@@ -105,13 +131,13 @@ describe('submitMarketBriefingAction 함수는', () => {
         });
 
         it('(Worst) briefing: null과 botBlocked: true를 반환한다', async () => {
-            const result = await submitMarketBriefingAction();
+            const result = await submitMarketBriefingAction('us');
 
             expect(result).toEqual({ briefing: null, botBlocked: true });
         });
 
         it('(Worst) runBriefing을 호출하지 않는다', async () => {
-            await submitMarketBriefingAction();
+            await submitMarketBriefingAction('us');
 
             expect(mockRunBriefing).not.toHaveBeenCalled();
         });
@@ -122,7 +148,7 @@ describe('submitMarketBriefingAction 함수는', () => {
             mockIsBot.mockReturnValue(false);
             mockRunBriefing.mockRejectedValueOnce(new Error('briefing failed'));
 
-            const result = await submitMarketBriefingAction();
+            const result = await submitMarketBriefingAction('us');
 
             expect(result).toEqual({ ok: false, error: 'server_error' });
         });
@@ -133,9 +159,51 @@ describe('submitMarketBriefingAction 함수는', () => {
                 new Error('redis down')
             );
 
-            const result = await submitMarketBriefingAction();
+            const result = await submitMarketBriefingAction('us');
 
             expect(result).toEqual({ ok: false, error: 'server_error' });
+        });
+    });
+
+    describe('scope 배선', () => {
+        it("'kr'이면 KR 요약으로 브리핑을 만들고 응답에 scope를 실어 준다", async () => {
+            mockIsBot.mockReturnValue(false);
+            mockRunBriefing.mockResolvedValue(briefingResult);
+            mockGetCachedMarketSummary.mockResolvedValue(summaryData);
+
+            const result = await submitMarketBriefingAction('kr');
+
+            expect(mockGetCachedMarketSummary).toHaveBeenCalledWith(
+                expect.anything(),
+                KR_DASHBOARD_SCOPE
+            );
+            // 픽스처에는 VIX가 들어 있다 — `volatilityIndexSymbol: null`인 시장이
+            // 그걸 **무시하는지**가 이 단언의 요점이다. VIX가 새어 들어가면 KR
+            // 캐시 키가 쓰기·읽기 사이에서 갈린다.
+            expect(mockRunBriefing).toHaveBeenCalledWith(
+                summaryData,
+                { marketLabel: '한국 증시', volatility: null },
+                { signal: undefined }
+            );
+            expect(result).toEqual({
+                briefing: briefingResult,
+                botBlocked: false,
+                scope: 'kr',
+            });
+        });
+
+        it('알 수 없는 scope는 요약을 읽지 않고 server_error를 반환한다', async () => {
+            const errSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            mockIsBot.mockReturnValue(false);
+            mockGetCachedMarketSummary.mockClear();
+
+            const result = await submitMarketBriefingAction('jp');
+
+            expect(result).toEqual({ ok: false, error: 'server_error' });
+            expect(mockGetCachedMarketSummary).not.toHaveBeenCalled();
+            errSpy.mockRestore();
         });
     });
 });
