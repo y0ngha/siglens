@@ -345,15 +345,22 @@ aws cloudwatch delete-alarms --alarm-names \
 
 # 구독자 없는 토픽은 "액션 없는 알람"과 같다 — 콘솔만 빨개지고 아무도 모른다.
 # 확인 대기(PendingConfirmation)도 통지가 안 가므로 별도로 센다.
+#
+# ⚠️ 한글 바로 앞의 변수는 반드시 `${var}`로 감쌀 것. `$confirmed건`으로 쓰면 bash가
+#    한글 바이트를 변수명 일부로 먹어 `confirmed건: unbound variable`로 죽는다
+#    (`set -u` 아래). 실제로 그렇게 죽어서 이 블록이 통째로 실행되지 않았다.
 for pair in "P1:$ALARM_SNS" "P2:$ALARM_SNS_LOW"; do
   tier="${pair%%:*}"; arn="${pair#*:}"
   confirmed=$(aws sns list-subscriptions-by-topic --topic-arn "$arn" \
-    --query "length(Subscriptions[?SubscriptionArn!='PendingConfirmation'])" --output text 2>/dev/null || echo 0)
+    --query "length(Subscriptions[?SubscriptionArn!='PendingConfirmation'])" --output text 2>/dev/null || echo ERR)
   pending=$(aws sns list-subscriptions-by-topic --topic-arn "$arn" \
-    --query "length(Subscriptions[?SubscriptionArn=='PendingConfirmation'])" --output text 2>/dev/null || echo 0)
-  if [ "$confirmed" = "0" ]; then
-    log "⚠️  $tier 토픽에 확인된 구독이 없다 (대기 $pending건) — 이 등급 알람은 아무에게도 안 간다: $arn"
+    --query "length(Subscriptions[?SubscriptionArn=='PendingConfirmation'])" --output text 2>/dev/null || echo ERR)
+  if [ "$confirmed" = "ERR" ]; then
+    # API 실패를 "구독 0"으로 렌더하면 이미 확인된 주소를 다시 구독하러 가게 만든다.
+    log "WARN: $tier 토픽 구독 조회 실패 — 구독 유무를 확인하지 못했다: $arn"
+  elif [ "$confirmed" = "0" ]; then
+    log "WARN: $tier 토픽에 확인된 구독이 없다 (대기 ${pending}건) — 이 등급 알람은 아무에게도 안 간다: $arn"
   else
-    log "$tier 구독 확인 $confirmed건 (대기 $pending건)"
+    log "$tier 구독 확인 ${confirmed}건 (대기 ${pending}건)"
   fi
 done
