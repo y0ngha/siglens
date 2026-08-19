@@ -84,10 +84,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (profileDegraded || profile === null) {
         return NOINDEX_SYMBOL_METADATA;
     }
-    // **financials와의 의도적 차이점**: 0건은 정상(sparse 종목)이라 색인 가능.
-    // `degraded === true`(FMP 인프라 실패)만 noindex로 떨어뜨린다.
+    // **financials와의 의도적 차이점**: 0건 자체는 정상(sparse 종목)이라, 그것만으로
+    // noindex하지 않는다. `degraded === true`(FMP 인프라 실패)는 noindex.
     // getCongressTradesResilient는 React.cache로 메모이즈되므로 본문과 동일한 호출이 즉시 반환된다.
-    const { degraded: tradesDegraded } =
+    const { trades, degraded: tradesDegraded } =
         await getCongressTradesResilient(upper);
     if (tradesDegraded) {
         return NOINDEX_SYMBOL_METADATA;
@@ -111,6 +111,32 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const snapshotDescription = snap
         ? buildSnapshotMetaDescription('congress', snap.content, displayName)
         : null;
+    // **thin-content 게이트.** 거래 0건이면서 AI 스냅샷도 없으면 본문에 종목 고유
+    // 텍스트가 거의 남지 않는다 — 2026-08 실측에서 `B`(1,059자)·`KEEL`(1,079자)이
+    // `index, follow`로 사이트맵에 올라 있었고, 크롬(내비·푸터·탭)이 650~750자라
+    // 실제 콘텐츠는 300~400자였다. `SITEMAP_SCOPE.md`가 2026-07 노출 붕괴의 기준선으로
+    // 기록한 677자와 같은 대역이다.
+    //
+    // 0건 **그 자체**는 여전히 정상 상태다. 렌더 가능한 프로즈가 있으면 0건이어도
+    // 색인한다 — 게이트는 "빈 상태 + 서술 없음"의 교집합에만 걸린다.
+    //
+    // 존재 여부(`snap !== undefined`)가 아니라 `hasCongressProse`로 판정하는 게 핵심이다.
+    // 본문(아래 `showCongressProse`)이 쓰는 것과 **같은** 술어여야 메타와 본문이 갈라지지
+    // 않는다. 내용이 빈/깨진 스냅샷 행이 남아 있으면 본문은 프로즈를 안 그리는데
+    // 메타만 색인 가능이 되어, 정확히 이 픽스가 겨냥한 thin 페이지가 색인된 채 남는다.
+    //
+    // `getSeoSnapshotsStatic`이 읽기 실패 시 `[]`로 fail-open하는 건 여기서 문제가 아니다:
+    // 본문이 같은 `unstable_cache` 호출을 공유하므로 실패하면 본문에도 프로즈가 없다 —
+    // 그 렌더의 페이지는 **실제로** thin이고, noindex가 맞는 판정이다.
+    //
+    // `NOINDEX_SYMBOL_METADATA`(index:false, **follow:false**, canonical:null)를 쓰지
+    // 않는다. 그건 존재하지 않는 종목·degrade용이고, 이 페이지는 멀쩡히 살아 있으면서
+    // `CrossLinkCards`로 형제 탭에 내부 링크를 뿌린다 — `follow:false`면 그 링크 자산이
+    // 통째로 끊긴다. 제목·설명도 사용자(브라우저 탭)에게는 그대로 필요하다.
+    if (trades.length === 0 && !hasCongressProse(snap?.content)) {
+        return { ...metadata, robots: { index: false, follow: true } };
+    }
+
     return snapshotDescription
         ? { ...metadata, description: snapshotDescription }
         : metadata;

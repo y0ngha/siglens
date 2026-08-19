@@ -1,17 +1,23 @@
 import { useId } from 'react';
 import {
     computeFearGreedIndex,
+    computeFearGreedHistory,
     type Bar,
     type BuySellVolumeResult,
 } from '@y0ngha/siglens-core';
 import {
     SENTIMENT_LABEL_TEXT,
+    WARNING_TEXT,
     formatConfidenceFooter,
 } from '@/shared/lib/fearGreedLabels';
 import {
     buildFearGreedFactorLines,
     buildFearGreedGroupComparisonLine,
     buildFearGreedFactorRankingLine,
+    buildFearGreedPeriodComparisonLine,
+    buildFearGreedYearRangeLine,
+    buildFearGreedRegimeDistributionLine,
+    scoredHistory,
 } from './utils/fearGreedFacts';
 
 interface FearGreedFactsSummaryProps {
@@ -46,6 +52,21 @@ export function FearGreedFactsSummary({
     const groupComparisonLine = buildFearGreedGroupComparisonLine(snapshot);
     const factorRankingLine = buildFearGreedFactorRankingLine(snapshot);
 
+    // 시계열 문장 3종. `useFearGreed`가 **매 클라이언트 로드마다** 이미 부르는 계산이라,
+    // ISR 재생성(24h)당 한 번 서버에서 도는 건 총량으로는 오히려 싸다. 새 fetch도,
+    // 새 의존성도 없다 — 같은 `bars`/`buySellVolume`을 그대로 쓴다.
+    //
+    // 왜 필요한가: 이 페이지는 283개 URL이 서로 76.7% 겹치는 준중복 상태였고(5-gram
+    // Jaccard 실측, 형제 탭은 21~27%), 심볼별로 실제 달라지는 텍스트가 페이지의 4%뿐이었다.
+    // 아래 세 문장은 날짜·점수·체류일이 들어가 그 비율을 실질적으로 끌어올린다.
+    // 전부 로그인 없이 보이는 클라이언트 화면의 부분집합이라 클로킹이 아니다.
+    const points = scoredHistory(computeFearGreedHistory(bars, buySellVolume));
+    const timeSeriesLines = [
+        buildFearGreedPeriodComparisonLine(points),
+        buildFearGreedYearRangeLine(points),
+        buildFearGreedRegimeDistributionLine(points),
+    ].filter((line): line is string => line !== null);
+
     return (
         <section
             aria-labelledby={headingId}
@@ -66,6 +87,12 @@ export function FearGreedFactsSummary({
                 </div>
             </dl>
             <div className="space-y-1 text-sm leading-6 text-secondary-300">
+                {timeSeriesLines.map(line => (
+                    <p key={line}>{line}</p>
+                ))}
+                {snapshot.warning !== null && (
+                    <p>{WARNING_TEXT[snapshot.warning]}</p>
+                )}
                 {groupComparisonLine !== null && <p>{groupComparisonLine}</p>}
                 {factorRankingLine !== null && <p>{factorRankingLine}</p>}
                 {factorLines.map((line, i) => (
