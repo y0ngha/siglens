@@ -10,6 +10,12 @@ interface CategorizedIndicator {
     readonly category: EconomyCategoryKey;
 }
 
+/** `deriveCategories`가 카테고리별로 파생한 카드 자리 수. */
+interface CategoryCardCount {
+    key: EconomyCategoryKey;
+    cardCount: number;
+}
+
 /**
  * 카테고리별 카드 수를 **레지스트리에서 파생**한다. 숫자를 손으로 적어 두면 지표가
  * 늘거나 줄 때 스켈레톤만 옛 모양으로 남아, 정확히 이 파일이 고치려는 레이아웃
@@ -25,7 +31,7 @@ interface CategorizedIndicator {
 function deriveCategories(
     indicators: readonly CategorizedIndicator[],
     treasuryCardCount: number
-) {
+): CategoryCardCount[] {
     return ECONOMY_INDICATOR_CATEGORIES.map(cat => ({
         key: cat.key,
         cardCount:

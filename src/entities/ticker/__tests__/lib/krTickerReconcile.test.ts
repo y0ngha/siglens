@@ -48,8 +48,8 @@ describe('planKrTickerReconcile — 상폐 판정', () => {
 
         // 재실행이 상폐 시각을 밀지 않도록, 이미 표시된 행은 계획에서 빠진다.
         expect(plan.delist).toEqual([]);
-        // 피드에 없는 상폐 종목을 relist로 올리지 않는다 — 단일 순회로 두 목록을
-        // 모으다 보면 "이미 상폐" 분기에서 피드 포함 여부 가드가 빠지기 쉽다.
+        // 피드에 없는 상폐 종목을 relist로 올리지 않는다 — relist 조건에서
+        // `fetched.has(...)` 가드가 빠지면 이미 상폐된 행이 통째로 되살아난다.
         expect(plan.relist).toEqual([]);
         // 운영자에게 보이는 후보 목록도 비어 있어야 한다(가드가 걷혀도 대상 없음).
         expect(plan.delistCandidates).toEqual([]);

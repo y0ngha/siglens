@@ -341,7 +341,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
                 // 그리고 비교 대상은 `fmpGet`이 검증 없이 캐스팅한 값이라 런타임에 null일
                 // 수 있으므로 `?? ''`로 받는다 — 여기서 TypeError가 나면 등급 섹션 전체가
                 // 그 심볼에 대해 degrade된 채 고착된다.
-                .sort(
+                .toSorted(
                     (a, b) =>
                         (b.date ?? '').localeCompare(a.date ?? '') ||
                         (a.gradingCompany ?? '').localeCompare(
