@@ -339,6 +339,63 @@ describe('DrizzleNewsRepository', () => {
         });
     });
 
+    /**
+     * drizzle `desc(col)` 노드에서 컬럼 이름을 뽑는다 — 리터럴 조각(`' desc'`)만으로는
+     * 어느 컬럼인지 구분할 수 없다.
+     */
+    function orderColumnName(node: unknown): string {
+        const chunks = (node as { queryChunks?: unknown[] }).queryChunks ?? [];
+        let name = '?';
+        let direction = '?';
+        for (const c of chunks) {
+            const chunk = c as { name?: unknown; value?: unknown };
+            if (typeof chunk.name === 'string') name = chunk.name;
+            // 방향은 마지막 StringChunk에 `[' desc']` 형태로 들어 있다. 이름만 보면
+            // desc→asc 뮤테이션이 그대로 통과한다 — 그러면 "앞이 최신"이라는 전제가
+            // 뒤집혀 상한 slice가 **가장 오래된** 행을 남긴다(감사: 라운드 4 P1).
+            const [literal] = Array.isArray(chunk.value) ? chunk.value : [];
+            if (typeof literal === 'string' && literal.trim() !== '') {
+                direction = literal.trim();
+            }
+        }
+        return `${name} ${direction}`;
+    }
+
+    /**
+     * 동률 tie-break를 **인자 수준에서** 고정한다. 기존 테스트는 `orderBy` 호출 횟수만
+     * 봐서, 2차 키를 지워도 전부 통과했다. 소비자가 앞에서 N개를 잘라 쓰는 지금은
+     * 동률의 상대 순서가 정해지지 않으면 재생성마다 다른 행이 살아남아 ISR 블롭이 흔들린다.
+     */
+    describe('정렬 tie-break', () => {
+        it('listBySymbol은 publishedAt desc 다음 id desc로 정렬한다', async () => {
+            const { db, orderBy } = makeSelectDb([]);
+
+            await new DrizzleNewsRepository(db).listBySymbol(
+                'AAPL',
+                86_400_000
+            );
+
+            expect(orderBy.mock.calls[0]!.map(orderColumnName)).toEqual([
+                'published_at desc',
+                'id desc',
+            ]);
+        });
+
+        it('listCardsBySymbol도 같은 tie-break를 쓴다', async () => {
+            const { db, orderBy } = makeSelectDb([]);
+
+            await new DrizzleNewsRepository(db).listCardsBySymbol(
+                'AAPL',
+                86_400_000
+            );
+
+            expect(orderBy.mock.calls[0]!.map(orderColumnName)).toEqual([
+                'published_at desc',
+                'id desc',
+            ]);
+        });
+    });
+
     describe('listBySymbol', () => {
         interface DbRow {
             id: string;

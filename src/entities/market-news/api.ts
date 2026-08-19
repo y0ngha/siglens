@@ -154,7 +154,10 @@ export class DrizzleMarketNewsRepository {
                             gte(marketNews.publishedAt, cutoff)
                         )
                     )
-                    .orderBy(desc(marketNews.publishedAt)),
+                    // 동률 tie-break — `/news/[category]`가 앞에서 N개를 잘라
+                    // 쓰므로, 같은 시각 행들의 상대 순서가 정해지지 않으면
+                    // 경계에 걸친 행이 재생성마다 바뀌어 ISR 블롭이 흔들린다.
+                    .orderBy(desc(marketNews.publishedAt), desc(marketNews.id)),
             NEON_TRANSIENT_RETRY
         );
 
@@ -202,7 +205,10 @@ export class DrizzleMarketNewsRepository {
                             gte(marketNews.publishedAt, cutoff)
                         )
                     )
-                    .orderBy(desc(marketNews.publishedAt)),
+                    // 동률 tie-break — `/news/[category]`가 앞에서 N개를 잘라
+                    // 쓰므로, 같은 시각 행들의 상대 순서가 정해지지 않으면
+                    // 경계에 걸친 행이 재생성마다 바뀌어 ISR 블롭이 흔들린다.
+                    .orderBy(desc(marketNews.publishedAt), desc(marketNews.id)),
             NEON_TRANSIENT_RETRY
         );
 

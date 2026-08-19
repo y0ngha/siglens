@@ -41,8 +41,46 @@ const nextConfig: NextConfig = {
     // postgres를 external로 분리할 이유 자체가 없다. external 후보가 생기면 반드시
     // `E2E_TEST=1 yarn build`로 검증한 뒤에만 추가한다.
 
-    // 압축은 CloudFlare가 brotli로 엣지에서 수행 → Next의 gzip 이중압축 방지
-    compress: false,
+    /*
+     * 오리진에서 gzip을 건다.
+     *
+     * 원래는 "CloudFlare가 엣지에서 brotli로 압축하니 이중압축을 피하자"는 이유로
+     * 껐는데, 프로덕션 실측 결과 **그 전제가 성립하지 않았다**:
+     *
+     *   - `/_next/static/**`(CSS·JS) → `content-encoding: br` ✅
+     *   - HTML 문서(`/`, `/AAPL`, `/market` …) → `content-encoding` 헤더 자체가 없음 ❌
+     *     (`Accept-Encoding: br, gzip`으로 요청해도 바이트 수가 동일하고,
+     *      `cf-cache-status: MISS`로 강제해도 마찬가지)
+     *
+     * 그래서 홈이 998KB, `/AAPL`이 728KB짜리 **비압축** HTML로 나갔고 Lighthouse가
+     * 이를 그대로 집어냈다(`document-latency-insight`: 669KiB 절감 가능,
+     * 데스크톱 LCP 4.2s / FCP 3.0s / 성능 63점).
+     *
+     * **대가가 있다 — 정적 자산은 brotli를 잃는다.** Next의 압축 미들웨어는
+     * gzip/deflate만 협상하고 라우트별로 끌 수 없다(all-or-nothing). 그래서 켜는
+     * 순간 `/_next/static/**`도 오리진에서 gzip이 붙고, CloudFlare는 이미
+     * `content-encoding`이 있는 응답을 재압축하지 않으므로 지금 받고 있는 `br`이
+     * gzip으로 내려앉는다. 홈 기준 실측 손익:
+     *
+     *   HTML   비압축 1,021KB → gzip 201KB   =  **-820KB** (매 요청)
+     *   정적   brotli 439KB  → gzip 496KB   =  **+57KB**  (1년 immutable 캐시라 첫 방문만)
+     *   ────────────────────────────────────────────────
+     *   순이득 763KB
+     *
+     * **더 나은 해법이 있다면 그쪽이 맞다**: CloudFlare에서 `text/html`에 Compression
+     * Rule을 걸면 HTML은 brotli(173KB, gzip보다 28KB 더 작음)로 나가고 정적 자산의
+     * brotli도 지켜지며 오리진 CPU는 0이다. 애초에 왜 엣지가 HTML만 압축하지 않는지는
+     * 근본 원인이 밝혀지지 않았다 — 그게 규명되면 이 플래그는 되돌리는 것이 낫다.
+     *
+     * CPU 비용은 과소평가하지 말 것: CF HTML 히트율은 실측 36.7%
+     * (docs/architecture/CDN_CACHING.md)라 나머지는 오리진까지 오고, RSC 페이로드도
+     * 압축 대상이다. t4g는 버스터블이라 배포 후 `CPUUtilization`과
+     * `CPUCreditBalance`를 한 트래픽 주기 동안 지켜본 뒤 전체 롤아웃할 것.
+     *
+     * SSE는 영향 없다 — `/api/analysis/stream`과 `/api/sse-probe`가 보내는
+     * `Cache-Control: no-transform`에서 압축 미들웨어가 빠진다(실측 확인).
+     */
+    compress: true,
 
     allowedDevOrigins: ['172.30.1.26'],
 

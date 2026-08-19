@@ -272,6 +272,12 @@ describe('POST /api/analysis/stream', () => {
             expect(response.headers.get('Content-Type')).toContain(
                 'text/event-stream'
             );
+            // `compress: true` 이후 Next 압축 미들웨어가 이 라우트에도 붙는다 —
+            // `no-transform`을 보고서만 빠진다. 이 조각이 사라지면 SSE가 gzip
+            // 버퍼에 갇혀 실시간성이 죽는다(CF 설정 정리 중 지우기 쉬운 자리).
+            expect(response.headers.get('Cache-Control')).toContain(
+                'no-transform'
+            );
 
             const events = await collectSseEvents(response);
 

@@ -11,7 +11,11 @@ import {
     type NewsFeedCategoryId,
 } from '@/entities/market-news';
 import { getMarketNewsCards } from '@/entities/market-news/api';
-import { MarketNewsDigest, MarketNewsList } from '@/widgets/market-news';
+import {
+    MarketNewsDigest,
+    MarketNewsList,
+    MARKET_NEWS_ROW_SERIALIZATION_LIMIT,
+} from '@/widgets/market-news';
 import { NewsCategoryTabs } from '@/widgets/news-hub';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
@@ -292,7 +296,15 @@ export default async function CategoryNewsPage({ params }: Props) {
                 {isEmpty ? (
                     <MarketNewsDegraded koLabel={cfg.koLabel} />
                 ) : (
-                    <MarketNewsList category={cat} initialItems={items} />
+                    // 그리지 않는 카드까지 RSC 페이로드로 내보내지 않는다 —
+                    // MARKET_NEWS_ROW_SERIALIZATION_LIMIT 주석 참고.
+                    <MarketNewsList
+                        category={cat}
+                        initialItems={items.slice(
+                            0,
+                            MARKET_NEWS_ROW_SERIALIZATION_LIMIT
+                        )}
+                    />
                 )}
             </main>
         </>

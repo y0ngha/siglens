@@ -8,9 +8,17 @@ import {
     type MockedFunction,
 } from 'vitest';
 
+/** 자리표가 어떤 variant로 불렸는지 기록한다 — 배선은 여기서만 잡힌다. */
+const skeletonVariants: unknown[] = [];
+
 vi.mock('@/widgets/economy', () => ({
     EconomicCalendar: () => null,
-    EconomySkeleton: () => null,
+    // 컴포넌트 쪽 테스트는 "kr을 받으면 맞게 그린다"까지만 보장한다.
+    // 이 화면이 실제로 kr을 넘기는지는 이 스텁이 아니면 아무도 안 본다.
+    EconomySkeleton: ({ variant }: { variant?: string }) => {
+        skeletonVariants.push(variant);
+        return null;
+    },
     KrEconomicIndicatorGrid: ({ cards }: { cards: unknown[] }) => (
         <div data-testid="kr-indicator-grid">{cards.length}</div>
     ),
@@ -127,5 +135,18 @@ describe('/economy/kr page', () => {
         });
         expect(types).toContain('FAQPage');
         expect(types).not.toContain('Dataset');
+    });
+});
+
+/**
+ * 자리표 배선. 컴포넌트 테스트(`EconomySkeleton.test.tsx`)는 "kr을 받으면 한국 형상으로
+ * 그린다"까지만 보장한다 — 이 화면이 실제로 `kr`을 넘기지 않으면 미국 형상(거시 카드 2개
+ * + 국채 3장)이 그대로 예약돼 콘텐츠 도착 시 위로 당겨진다.
+ */
+describe('/economy/kr Suspense 자리표는', () => {
+    it('variant="kr"로 렌더된다', async () => {
+        skeletonVariants.length = 0;
+        render(await EconomyKrPage());
+        expect(skeletonVariants).toContain('kr');
     });
 });

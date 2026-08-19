@@ -10,3 +10,7 @@ export {
     STAGNANT_POLL_LIMIT,
     STAGNATION_FLOOR_POLLS,
 } from '@/shared/config/cardPollingConfig';
+
+// 상한 자체는 `shared/config/newsSerialization`이 단일 출처다 — 서버 렌더(widgets)와
+// 폴링 액션(entities)이 같은 값을 써야 하는데 entities는 widgets를 import할 수 없다.
+export { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';

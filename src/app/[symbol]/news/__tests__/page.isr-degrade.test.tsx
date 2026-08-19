@@ -66,15 +66,28 @@ vi.mock('@/widgets/news/NewsAiSummarySkeleton', () => ({
     NewsAiSummarySkeleton: () => null,
 }));
 vi.mock('@/widgets/news/sections/NewsList', () => ({
-    NewsList: ({ items }: { items: unknown[] }) => (
-        <ul data-testid="news-list" data-count={items.length} />
+    NewsList: ({ items }: { items: { id: string }[] }) => (
+        <ul
+            data-testid="news-list"
+            data-count={items.length}
+            data-first={items[0]?.id}
+            data-last={items[items.length - 1]?.id}
+        />
     ),
 }));
 vi.mock('@/widgets/news/sections/EventCalendar', () => ({
     EventCalendar: () => <div data-testid="event-calendar" />,
 }));
 vi.mock('@/widgets/news/sections/AnalystActions', () => ({
-    AnalystActions: () => <div data-testid="analyst-actions" />,
+    // data-count/first/last: 직렬화 상한이 몇 개를, 어느 쪽 끝에서 남기는지 관찰한다.
+    AnalystActions: ({ events }: { events: { date: string }[] }) => (
+        <div
+            data-testid="analyst-actions"
+            data-count={events.length}
+            data-first={events[0]?.date}
+            data-last={events[events.length - 1]?.date}
+        />
+    ),
 }));
 vi.mock('@/views/symbol', () => ({
     SymbolPageHeading: ({ children }: { children: React.ReactNode }) => (
@@ -141,6 +154,7 @@ import {
     getGradeEvents,
 } from '@/app/[symbol]/news/newsData';
 import { getFmpUserFacingMessage } from '@/shared/api/fmp/fmpUserMessage';
+import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/widgets/news/constants';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
     typeof getAssetInfoResilient
@@ -324,5 +338,89 @@ describe('/[symbol]/news ISR empty-cache prevention', () => {
         expect(
             screen.queryByText('애널리스트 동향을 불러오지 못했어요.')
         ).not.toBeInTheDocument();
+    });
+});
+
+/**
+ * 클라이언트로 **직렬화해 보내는 행 수**의 상한을 고정한다.
+ *
+ * 이 상한이 없으면 화면에 5개만 그리면서 1,400~1,800행을 RSC 페이로드에 실어 보낸다.
+ * 반대로 상한을 잘못 걸면(뒤에서 자르기, 정렬 전 자르기) **최신 기사가 사라지고 가장
+ * 오래된 것만 남는데 렌더는 멀쩡해서 아무도 눈치채지 못한다** — 그래서 개수만이 아니라
+ * 어느 쪽 끝이 남는지까지 단언한다.
+ */
+describe('/[symbol]/news 직렬화 행 상한', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: { symbol: 'AAPL', name: 'Apple Inc.' },
+            degraded: false,
+        } as unknown as Awaited<ReturnType<typeof getAssetInfoResilient>>);
+    });
+
+    /**
+     * 최신순(내림차순) 뉴스 n건 — 앞이 최신이다. 상한이 개수와 방향을 지키는지만
+     * 보므로 `NewsList` 스텁이 읽는 `id` 외 필드는 채우지 않는다.
+     */
+    function newsRows(n: number) {
+        return Array.from({ length: n }, (_, i) => ({
+            id: `n${i}`,
+            publishedAt: new Date(Date.UTC(2026, 0, 1) - i * 86_400_000),
+        })) as unknown as Awaited<ReturnType<typeof getNewsList>>;
+    }
+
+    /** 최신순 등급 이벤트 n건 — `date` 내림차순. */
+    function gradeRows(n: number) {
+        return Array.from({ length: n }, (_, i) => ({
+            symbol: 'AAPL',
+            date: `2026-01-${String(n - i).padStart(2, '0')}`,
+        })) as unknown as Awaited<ReturnType<typeof getGradeEvents>>;
+    }
+
+    it('상한을 넘으면 상한만큼만 넘긴다 (뉴스)', async () => {
+        mockGetNewsList.mockResolvedValue(
+            newsRows(NEWS_ROW_SERIALIZATION_LIMIT + 7)
+        );
+        render(await NewsListSection({ symbol: 'AAPL' }));
+        expect(screen.getByTestId('news-list').getAttribute('data-count')).toBe(
+            String(NEWS_ROW_SERIALIZATION_LIMIT)
+        );
+    });
+
+    it('정확히 상한이면 하나도 잘리지 않는다 — off-by-one 감지', async () => {
+        mockGetNewsList.mockResolvedValue(
+            newsRows(NEWS_ROW_SERIALIZATION_LIMIT)
+        );
+        render(await NewsListSection({ symbol: 'AAPL' }));
+        expect(screen.getByTestId('news-list').getAttribute('data-count')).toBe(
+            String(NEWS_ROW_SERIALIZATION_LIMIT)
+        );
+    });
+
+    it('남기는 쪽은 앞(최신)이다 — 뒤에서 자르는 뮤테이션 감지', async () => {
+        mockGetNewsList.mockResolvedValue(
+            newsRows(NEWS_ROW_SERIALIZATION_LIMIT + 7)
+        );
+        render(await NewsListSection({ symbol: 'AAPL' }));
+        const el = screen.getByTestId('news-list');
+        expect(el.getAttribute('data-first')).toBe('n0');
+        expect(el.getAttribute('data-last')).toBe(
+            `n${NEWS_ROW_SERIALIZATION_LIMIT - 1}`
+        );
+    });
+
+    it('등급 이벤트에도 같은 상한이 걸린다 — 한쪽에만 거는 실수 감지', async () => {
+        mockGetGradeEvents.mockResolvedValue(
+            gradeRows(NEWS_ROW_SERIALIZATION_LIMIT + 7)
+        );
+        render(await AnalystActionsSection({ symbol: 'AAPL' }));
+        const el = screen.getByTestId('analyst-actions');
+        expect(el.getAttribute('data-count')).toBe(
+            String(NEWS_ROW_SERIALIZATION_LIMIT)
+        );
+        // 앞이 최신이어야 한다(getGrades가 date 내림차순을 보장한다는 전제).
+        expect(el.getAttribute('data-first')).toBe(
+            `2026-01-${String(NEWS_ROW_SERIALIZATION_LIMIT + 7).padStart(2, '0')}`
+        );
     });
 });

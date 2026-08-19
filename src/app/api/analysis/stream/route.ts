@@ -94,6 +94,12 @@ type StreamRequestBody =
 const SSE_HEADERS: HeadersInit = {
     'Content-Type': 'text/event-stream; charset=utf-8',
     // no-transform: asks CF/nginx not to buffer or modify the response body.
+    //
+    // ⚠️ 이 지시어는 이제 **오리진 자신에게도** 걸린다. `next.config.ts`가
+    // `compress: true`라 Next의 압축 미들웨어가 응답에 붙는데, 그 미들웨어는
+    // `no-transform`을 보면 빠진다. 이 한 조각을 빼면 SSE가 gzip 스트림에 들어가
+    // 청크가 버퍼링되고 실시간성이 사라진다 — CF 설정을 정리하다 무심코 지우기
+    // 쉬운 자리라 명시해 둔다.
     'Cache-Control': 'no-cache, no-store, no-transform',
     // Disables nginx-family proxy response buffering (ALB, etc.).
     'X-Accel-Buffering': 'no',

@@ -306,7 +306,12 @@ export default function EconomyKrPage() {
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
                     {KR_ECONOMY_TITLE}
                 </h1>
-                <Suspense fallback={<EconomySkeleton />}>
+                {/*
+                    한국 레지스트리를 넘긴다 — 기본값(미국)은 국채 카드 3장을 포함한
+                    12장짜리라, 국채 카드가 없고 고용이 1장뿐인 이 화면에서는 자리를
+                    과하게 예약해 콘텐츠 도착 시 위로 당겨진다.
+                */}
+                <Suspense fallback={<EconomySkeleton variant="kr" />}>
                     <KrEconomyContent />
                 </Suspense>
                 <section aria-labelledby="economy-kr-faq-heading">

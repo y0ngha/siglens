@@ -5,7 +5,7 @@ import {
 import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
 import { getNewsList } from '@/entities/news-article/api';
 import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
-import { NewsFactsSummary } from '@/widgets/news';
+import { NewsFactsSummary, NEWS_ROW_SERIALIZATION_LIMIT } from '@/widgets/news';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import { NewsAiSummaryErrorBoundary } from '@/widgets/news/NewsAiSummaryErrorBoundary';
 import { NewsAiSummarySkeleton } from '@/widgets/news/NewsAiSummarySkeleton';
@@ -132,7 +132,13 @@ export async function NewsListSection({ symbol }: SymbolSectionProps) {
         );
         return [] as Awaited<ReturnType<typeof getNewsList>>;
     });
-    return <NewsList items={items} symbol={symbol} />;
+    // 그리지 않는 행까지 RSC 페이로드로 내보내지 않는다 — NEWS_ROW_SERIALIZATION_LIMIT 주석 참고.
+    return (
+        <NewsList
+            items={items.slice(0, NEWS_ROW_SERIALIZATION_LIMIT)}
+            symbol={symbol}
+        />
+    );
 }
 
 export async function EventCalendarSection({ symbol }: SymbolSectionProps) {
@@ -185,7 +191,12 @@ export async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
             />
         );
     }
-    return <AnalystActions events={events} />;
+    // 뉴스 목록과 같은 이유로 자른다 — AAPL 실측 1,786건 중 화면에 닿는 것은 앞의 몇 개뿐이다.
+    return (
+        <AnalystActions
+            events={events.slice(0, NEWS_ROW_SERIALIZATION_LIMIT)}
+        />
+    );
 }
 
 interface NewsDataServerAlertProps {

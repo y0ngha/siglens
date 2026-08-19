@@ -53,6 +53,8 @@ vi.mock('../api', () => ({
 // 2. Static imports — grouped after all vi.mock() calls
 import { describe, it, expect, vi } from 'vitest';
 import { getMarketNewsCardsAction } from '../actions/getMarketNewsCardsAction';
+import { getMarketNewsCards } from '../api';
+import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
 
 // 3. Tests
 describe('getMarketNewsCardsAction은', () => {
@@ -89,5 +91,29 @@ describe('getMarketNewsCardsAction은', () => {
         expect(result.ok).toBe(false);
         if (result.ok) throw new Error('expected not ok');
         expect(result.error).toBe('db error');
+    });
+
+    /**
+     * 3초 폴링 경로다. 상한이 없으면 화면이 다루지 않는 카드까지 매 tick 실어 보내고,
+     * `compress: true` 이후로는 그 응답이 매번 오리진에서 gzip된다. 자르는 방향도
+     * 함께 고정한다 — `slice(-N)`이면 첫 폴링에서 가장 오래된 카드로 조용히 뒤바뀐다.
+     */
+    it('상한을 넘으면 앞(최신)에서 상한만큼만 돌려준다', async () => {
+        vi.mocked(getMarketNewsCards).mockResolvedValueOnce(
+            Array.from(
+                { length: NEWS_ROW_SERIALIZATION_LIMIT + 87 },
+                (_, i) => ({ id: `c${i}` })
+            ) as unknown as Awaited<ReturnType<typeof getMarketNewsCards>>
+        );
+
+        const result = await getMarketNewsCardsAction('crypto');
+
+        expect(result.ok).toBe(true);
+        if (!result.ok) throw new Error('expected ok');
+        expect(result.items).toHaveLength(NEWS_ROW_SERIALIZATION_LIMIT);
+        expect(result.items[0]!.id).toBe('c0');
+        expect(result.items.at(-1)!.id).toBe(
+            `c${NEWS_ROW_SERIALIZATION_LIMIT - 1}`
+        );
     });
 });

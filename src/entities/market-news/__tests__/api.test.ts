@@ -375,3 +375,55 @@ describe('DrizzleMarketNewsRepository.listByCategory는', () => {
         expect(results).toEqual([]);
     });
 });
+
+/**
+ * drizzle `desc(col)` 노드에서 컬럼 이름을 뽑는다 — 리터럴 조각(`' desc'`)만으로는
+ * 어느 컬럼인지 구분할 수 없다.
+ */
+function orderColumnName(node: unknown): string {
+    const chunks = (node as { queryChunks?: unknown[] }).queryChunks ?? [];
+    let name = '?';
+    let direction = '?';
+    for (const c of chunks) {
+        const chunk = c as { name?: unknown; value?: unknown };
+        if (typeof chunk.name === 'string') name = chunk.name;
+        // 방향은 마지막 StringChunk에 `[' desc']` 형태로 들어 있다. 이름만 보면
+        // desc→asc 뮤테이션이 그대로 통과한다 — 그러면 "앞이 최신"이라는 전제가
+        // 뒤집혀 상한 slice가 **가장 오래된** 행을 남긴다(감사: 라운드 4 P1).
+        const [literal] = Array.isArray(chunk.value) ? chunk.value : [];
+        if (typeof literal === 'string' && literal.trim() !== '') {
+            direction = literal.trim();
+        }
+    }
+    return `${name} ${direction}`;
+}
+
+/**
+ * `/news/[category]`가 이 결과를 앞에서 50개만 잘라 쓴다. 동률(같은 publishedAt)의
+ * 상대 순서가 정해지지 않으면 경계에 걸친 행이 ISR 재생성마다 바뀐다.
+ */
+describe('정렬 tie-break', () => {
+    it('listByCategory는 published_at desc 다음 id desc로 정렬한다', async () => {
+        const { db, orderBy } = makeSelectDb([]);
+        await new DrizzleMarketNewsRepository(db).listByCategory(
+            '__NEWS_CRYPTO__',
+            1000
+        );
+        expect(orderBy.mock.calls[0]!.map(orderColumnName)).toEqual([
+            'published_at desc',
+            'id desc',
+        ]);
+    });
+
+    it('listCardsByCategory도 같은 tie-break를 쓴다', async () => {
+        const { db, orderBy } = makeSelectDb([]);
+        await new DrizzleMarketNewsRepository(db).listCardsByCategory(
+            '__NEWS_CRYPTO__',
+            1000
+        );
+        expect(orderBy.mock.calls[0]!.map(orderColumnName)).toEqual([
+            'published_at desc',
+            'id desc',
+        ]);
+    });
+});

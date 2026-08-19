@@ -91,15 +91,20 @@ export function planKrTickerReconcile(
     options: KrTickerReconcileOptions = {}
 ): KrTickerReconcilePlan {
     const fetched = new Set(fetchedSymbols);
-    const listedNow = existing.filter(row => row.delistedAt === null);
 
-    const relist = existing
-        .filter(row => row.delistedAt !== null && fetched.has(row.symbol))
-        .map(row => row.symbol);
-
-    const candidates = listedNow
-        .filter(row => !fetched.has(row.symbol))
-        .map(row => row.symbol);
+    // 한 번의 순회로 두 목록을 모은다 — `existing`은 KRX 전 종목(수천 행)이라
+    // `.filter().map()` 체인마다 중간 배열이 하나씩 더 생긴다.
+    const relist: string[] = [];
+    const candidates: string[] = [];
+    for (const row of existing) {
+        const isFetched = fetched.has(row.symbol);
+        if (row.delistedAt !== null) {
+            if (isFetched) relist.push(row.symbol);
+            continue;
+        }
+        // delistedAt === null → 현재 상장 상태. 피드에 없으면 상폐 후보다.
+        if (!isFetched) candidates.push(row.symbol);
+    }
 
     const guardTrip = checkGuards(
         fetched.size,

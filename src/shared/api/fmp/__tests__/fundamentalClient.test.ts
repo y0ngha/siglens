@@ -476,6 +476,105 @@ describe('FmpFundamentalClient', () => {
     // ------------------------------------------------------------------ //
 
     describe('getGrades', () => {
+        /**
+         * 소비자(`/[symbol]/news`)가 "앞쪽이 최신"을 전제로 목록을 잘라 보내므로,
+         * 상류가 어떤 순서로 주든 여기서 내림차순으로 고정돼야 한다. 이 단언이
+         * 없으면 FMP가 순서를 바꾸는 날 최신 등급 변경이 통째로 잘려 나가고,
+         * 화면은 멀쩡해서 아무도 눈치채지 못한다.
+         */
+        it('상류 순서와 무관하게 date 내림차순으로 돌려준다', async () => {
+            mockOk([
+                {
+                    symbol: 'AAPL',
+                    date: '2024-01-02',
+                    gradingCompany: 'B',
+                    previousGrade: 'Hold',
+                    newGrade: 'Buy',
+                    action: 'upgrade',
+                },
+                {
+                    symbol: 'AAPL',
+                    date: '2024-03-11',
+                    gradingCompany: 'C',
+                    previousGrade: 'Hold',
+                    newGrade: 'Buy',
+                    action: 'upgrade',
+                },
+                {
+                    symbol: 'AAPL',
+                    date: '2024-01-10',
+                    gradingCompany: 'A',
+                    previousGrade: 'Hold',
+                    newGrade: 'Buy',
+                    action: 'upgrade',
+                },
+            ]);
+            const client = new FmpFundamentalClient();
+            const result = await client.getGrades('AAPL');
+            expect(result.map(r => r.date)).toEqual([
+                '2024-03-11',
+                '2024-01-10',
+                '2024-01-02',
+            ]);
+        });
+
+        /**
+         * 같은 날짜 묶음 안의 순서까지 고정한다. 소비자가 앞에서 50개를 자르는데
+         * 경계는 거의 항상 동률 묶음 안에 떨어지므로, 여기서 순서가 흔들리면
+         * 재생성마다 다른 이벤트가 살아남아 ISR 블롭이 흔들린다.
+         */
+        it('같은 날짜는 gradingCompany → newGrade 순으로 깬다', async () => {
+            const row = (gradingCompany: string, newGrade: string) => ({
+                symbol: 'AAPL',
+                date: '2024-02-02',
+                gradingCompany,
+                previousGrade: 'Hold',
+                newGrade,
+                action: 'upgrade',
+            });
+            mockOk([
+                row('Morgan', 'Buy'),
+                row('Citi', 'Sell'),
+                row('Citi', 'Buy'),
+            ]);
+            const client = new FmpFundamentalClient();
+            const result = await client.getGrades('AAPL');
+            expect(
+                result.map(r => `${r.gradingCompany}:${r.newGrade}`)
+            ).toEqual(['Citi:Buy', 'Citi:Sell', 'Morgan:Buy']);
+        });
+
+        /**
+         * `fmpGet`은 검증 없이 캐스팅하므로 이 필드들은 런타임에 null일 수 있다.
+         * 비교자가 그대로 `localeCompare`를 부르면 TypeError가 나고 등급 섹션이
+         * 그 심볼에 대해 degrade된 채 고착된다 — 타입은 non-null이라 tsc는
+         * `?? ''`를 "불필요한" 코드로 보이게 만든다. 그래서 여기서 고정한다.
+         */
+        it('date/gradingCompany/newGrade가 null이어도 던지지 않는다', async () => {
+            mockOk([
+                {
+                    symbol: 'AAPL',
+                    date: null,
+                    gradingCompany: null,
+                    previousGrade: 'Hold',
+                    newGrade: null,
+                    action: 'upgrade',
+                },
+                {
+                    symbol: 'AAPL',
+                    date: '2024-01-02',
+                    gradingCompany: 'B',
+                    previousGrade: 'Hold',
+                    newGrade: 'Buy',
+                    action: 'upgrade',
+                },
+            ]);
+            const client = new FmpFundamentalClient();
+            const result = await client.getGrades('AAPL');
+            // null은 `''`로 취급돼 내림차순에서 가장 뒤로 밀린다.
+            expect(result.map(r => r.date)).toEqual(['2024-01-02', null]);
+        });
+
         it('maps known action strings to GradesAction union', async () => {
             mockOk([
                 {

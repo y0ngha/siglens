@@ -188,37 +188,37 @@ function findStarvedSymbols(
     generatedAtMap: Map<string, Date>,
     nowMs: number
 ): StarvedSymbol[] {
-    return staleSymbols
-        .map(u => {
-            let oldestGeneratedAt: Date | undefined;
-            let neverGenerated = false;
-            for (const tab of u.tabs) {
-                const generatedAt = generatedAtMap.get(
-                    snapshotKey(u.symbol, tab)
-                );
-                if (generatedAt === undefined) {
-                    neverGenerated = true;
-                    continue;
-                }
-                if (
-                    oldestGeneratedAt === undefined ||
-                    generatedAt < oldestGeneratedAt
-                ) {
-                    oldestGeneratedAt = generatedAt;
-                }
+    const starved: StarvedSymbol[] = [];
+    for (const u of staleSymbols) {
+        let oldestGeneratedAt: Date | undefined;
+        let neverGenerated = false;
+        for (const tab of u.tabs) {
+            const generatedAt = generatedAtMap.get(snapshotKey(u.symbol, tab));
+            if (generatedAt === undefined) {
+                neverGenerated = true;
+                continue;
             }
-            const ageMs =
-                neverGenerated || oldestGeneratedAt === undefined
-                    ? null
-                    : nowMs - oldestGeneratedAt.getTime();
-            return { symbol: u.symbol, ageMs };
-        })
-        .filter(s => s.ageMs === null || s.ageMs > STARVATION_AGE_THRESHOLD_MS)
-        .sort((a, b) => {
-            if (a.ageMs === null) return b.ageMs === null ? 0 : -1;
-            if (b.ageMs === null) return 1;
-            return b.ageMs - a.ageMs;
-        });
+            if (
+                oldestGeneratedAt === undefined ||
+                generatedAt < oldestGeneratedAt
+            ) {
+                oldestGeneratedAt = generatedAt;
+            }
+        }
+        const ageMs =
+            neverGenerated || oldestGeneratedAt === undefined
+                ? null
+                : nowMs - oldestGeneratedAt.getTime();
+        if (ageMs === null || ageMs > STARVATION_AGE_THRESHOLD_MS) {
+            starved.push({ symbol: u.symbol, ageMs });
+        }
+    }
+
+    return starved.sort((a, b) => {
+        if (a.ageMs === null) return b.ageMs === null ? 0 : -1;
+        if (b.ageMs === null) return 1;
+        return b.ageMs - a.ageMs;
+    });
 }
 
 /** findStarvedSymbols 결과를 CloudWatch에서 grep 가능한 한 줄로 남긴다.

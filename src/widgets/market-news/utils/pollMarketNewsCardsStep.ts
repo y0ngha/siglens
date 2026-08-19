@@ -69,9 +69,14 @@ export async function pollMarketNewsCardsStep(
     // 종목 뉴스 폴러와 같은 이유의 정체 종료(감사: 비용 라운드 15~16).
     // 종료 조건이 "버킷 안 **모든** 카드가 보강됨"인데, 영구히 `analyzedAt=null`로
     // 남는 행이 설계상 존재한다 — 빈 분석 결과는 일부러 persist하지 않고
-    // (`ensureMarketNewsCardsAnalyzedAction`), 개별 실패는 삼켜진다. 그런 행은
-    // FMP 최신 50건 밖으로 밀려나면 다시 후보가 되지 않으므로, 그 카테고리
-    // 페이지를 여는 모든 방문자가 100틱 상한을 그대로 문다.
+    // (`ensureMarketNewsCardsAnalyzedAction`), 개별 실패는 삼켜진다.
+    //
+    // 예전에는 그런 행이 폴링 응답에 계속 섞여 들어와 종료 조건이 **구조적으로
+    // 도달 불가**였고, 그래서 모든 방문자가 100틱 상한을 그대로 물었다. 지금은
+    // `getMarketNewsCardsAction`이 최신 `NEWS_ROW_SERIALIZATION_LIMIT`건만 돌려주므로
+    // 그 밖으로 밀려난 행은 응답에 들어오지 않는다 — 종료가 도달 가능해졌다.
+    // 정체 종료 자체는 그래도 남긴다: 상한 **안쪽**에 영구 null이 있으면 여전히
+    // 도달 불가이기 때문이다.
     ctx.recordEnriched(fresh.filter(item => item.sentiment !== null).length);
 
     if (fresh.length === 0 && ctx.getPollCount() >= EMPTY_SNAPSHOT_MAX_POLLS) {
