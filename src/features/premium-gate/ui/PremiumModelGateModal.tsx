@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import type { GateMode } from '@/entities/api-key';
@@ -20,6 +21,7 @@ export function PremiumModelGateModal({
     providerLabel,
     onClose,
 }: PremiumModelGateModalProps) {
+    const t = useTranslations('features.premium-gate');
     const panelRef = useRef<HTMLDivElement>(null);
 
     useFocusTrap(panelRef, true);
@@ -31,9 +33,11 @@ export function PremiumModelGateModal({
 
     const isAuth = mode === 'auth';
     const iconColorClass = isAuth ? 'text-ui-warning' : 'text-ui-success';
-    const title = isAuth ? '프리미엄 모델 사용 안내' : 'API 키 등록 필요';
+    const title = isAuth
+        ? t('PremiumModelGateModal.2d4880')
+        : t('PremiumModelGateModal.2f2f6d');
     const body = isAuth
-        ? '회원가입 후 API 키를 등록하면 이 모델을 사용할 수 있어요.'
+        ? t('PremiumModelGateModal.671fa2')
         : `${providerLabel ?? ''} API 키를 등록하면 이 모델을 사용할 수 있어요.`;
 
     return (
@@ -96,7 +100,7 @@ export function PremiumModelGateModal({
                             onClick={onClose}
                             className="flex h-10 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-medium text-white transition-colors hover:bg-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
-                            회원가입 하러 가기
+                            {t('PremiumModelGateModal.2b8afd')}
                         </Link>
                     ) : (
                         <Link
@@ -104,7 +108,7 @@ export function PremiumModelGateModal({
                             onClick={onClose}
                             className="flex h-10 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-medium text-white transition-colors hover:bg-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
-                            등록하러 가기
+                            {t('PremiumModelGateModal.e91c23')}
                         </Link>
                     )}
                     <button
@@ -112,7 +116,7 @@ export function PremiumModelGateModal({
                         onClick={onClose}
                         className="flex h-10 items-center justify-center rounded-lg px-4 text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
-                        닫기
+                        {t('PremiumModelGateModal.94b7db')}
                     </button>
                 </div>
             </div>

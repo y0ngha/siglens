@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import type { CooldownNotice } from './model/types';
 import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/shared/config/time';
@@ -28,6 +29,7 @@ function formatRemaining(ms: number): string {
 }
 
 export function AnalysisToast({ notice }: AnalysisToastProps) {
+    const t = useTranslations('widgets.analysis');
     const [isVisible, setIsVisible] = useState(notice !== null);
 
     // TOAST_VISIBLE_MS 후 토스트를 숨긴다.
@@ -52,11 +54,12 @@ export function AnalysisToast({ notice }: AnalysisToastProps) {
         >
             <span className="mt-1 inline-block h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-ui-warning" />
             <span className="leading-snug">
-                재분석은 5분에 한 번만 가능해요.
+                {t('AnalysisToast.93531d')}
                 <br />
                 <span className="text-secondary-400">
-                    약 {formatRemaining(notice.remainingMs)} 뒤에 다시 시도해
-                    주세요.
+                    {t('AnalysisToast.6e9d56')}{' '}
+                    {formatRemaining(notice.remainingMs)}{' '}
+                    {t('AnalysisToast.89856d')}
                 </span>
             </span>
         </div>

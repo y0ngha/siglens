@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { buildSymbolOgImage } from '@/entities/og-image';
 
@@ -18,9 +19,10 @@ interface Props {
 }
 
 export default async function Image({ params }: Props) {
+    const t = await getTranslations('app.symbol');
     const { symbol } = await params;
     return buildSymbolOgImage({
         ticker: symbol.toUpperCase(),
-        label: '차트 분석',
+        label: t('opengraph-image.a74840'),
     });
 }

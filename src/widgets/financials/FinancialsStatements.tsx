@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
 import { PeriodToggle } from './PeriodToggle';
 import { useFinancialsPeriod } from './hooks/useFinancialsPeriod';
@@ -29,6 +30,7 @@ export function FinancialsStatements({
     symbol,
     annualSnapshot,
 }: FinancialsStatementsProps) {
+    const t = useTranslations('widgets.financials');
     const { period, setPeriod, snapshot, isLoading } = useFinancialsPeriod(
         symbol,
         annualSnapshot
@@ -51,7 +53,7 @@ export function FinancialsStatements({
                             aria-hidden="true"
                             className="h-3 w-3 animate-spin rounded-full border-2 border-primary-500 border-t-transparent motion-reduce:animate-none"
                         />
-                        불러오는 중…
+                        {t('FinancialsStatements.c78656')}
                     </span>
                 )}
             </div>

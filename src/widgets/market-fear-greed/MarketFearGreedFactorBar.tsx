@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { CSSProperties } from 'react';
 import {
     scoreToLabel,
@@ -35,6 +36,7 @@ export function MarketFearGreedFactorBar({
     factor,
     market,
 }: MarketFearGreedFactorBarProps) {
+    const t = useTranslations('widgets.market-fear-greed');
     const label = MARKET_FACTOR_LABEL[market][factor.key];
     const description = MARKET_FACTOR_DESCRIPTION[market][factor.key];
     const pctile = Math.round(factor.percentile);
@@ -71,7 +73,7 @@ export function MarketFearGreedFactorBar({
                     plain text is trivially reachable by screen readers. */}
                 <p className="text-xs text-secondary-500">{description}</p>
                 <span className="shrink-0 font-mono text-xs text-secondary-400">
-                    백분위 {pctile}
+                    {t('MarketFearGreedFactorBar.330be1')} {pctile}
                 </span>
             </div>
         </section>

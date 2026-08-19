@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import {
     BAND_COUNT,
     computePosition,
@@ -289,6 +290,7 @@ export default async function PositionPage({ params }: Props) {
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.symbol');
     const upper = symbol.toUpperCase();
 
     if (!isAdmissibleSymbolShape(upper)) {
@@ -332,7 +334,9 @@ export default async function PositionPage({ params }: Props) {
         // auto가 아닌 명시값(100%)으로 만들면 stretch 비활성 조건을 우회해 sibling과
         // 동일하게 max-w-5xl까지 채워진다.
         <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
-            <SymbolPageHeading>{displayName} 내 위치</SymbolPageHeading>
+            <SymbolPageHeading>
+                {displayName} {t('page.69d338')}
+            </SymbolPageHeading>
             {/* Task 1(색인 전환 근거) — 이전엔 이 자리에 sr-only 개요 섹션만 있었다
                 (noindex 시절엔 스크린리더 문맥 보강용이었을 뿐, SEO 신호가 아니었다).
                 지금은 index,follow 라우트라 크롤러가 실제로 보는 유일한 본문 콘텐츠고,
@@ -349,17 +353,18 @@ export default async function PositionPage({ params }: Props) {
                         id="position-guide-heading"
                         className="text-base font-semibold text-secondary-300"
                     >
-                        {displayName} 지금 가격은 이 아파트 몇 층?
+                        {displayName} {t('page.2ab959')}
                     </h2>
                     <p className="text-sm leading-relaxed text-secondary-400">
-                        {displayName}의 최근 52주 범위는{' '}
-                        {formatAmount(range.low52w, upper)} ~{' '}
-                        {formatAmount(range.high52w, upper)}이고, 현재가{' '}
-                        {formatAmount(range.lastClose, upper)}는 이 범위의{' '}
-                        {currentPricePosition.percentile}% 지점 —{' '}
-                        {currentPricePosition.floorLabel}에 해당합니다.{' '}
-                        {currentPricePosition.tone} 아래에서 보유종목을 등록하면
-                        같은 건물 안에서 내가 산 층까지 함께 확인할 수 있어요.
+                        {displayName}
+                        {t('page.54c128')} {formatAmount(range.low52w, upper)} ~{' '}
+                        {formatAmount(range.high52w, upper)}
+                        {t('page.eb2672')}{' '}
+                        {formatAmount(range.lastClose, upper)}
+                        {t('page.235953')} {currentPricePosition.percentile}
+                        {t('page.c4d80d')} {currentPricePosition.floorLabel}
+                        {t('page.880314')} {currentPricePosition.tone}{' '}
+                        {t('page.cbd74e')}
                     </p>
                 </section>
             )}

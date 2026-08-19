@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -26,17 +27,18 @@ export default async function ResetPasswordPage({
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.reset-password');
     return (
         <AuthCardShell
-            title="새 비밀번호 설정"
-            subtitle="이전 비밀번호와 다른 값으로 설정해주세요"
+            title={t('page.921c49')}
+            subtitle={t('page.e10323')}
             footer={
                 <p>
                     <Link
                         href="/forgot-password"
                         className="font-medium text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
-                        재설정 링크 다시 받기 →
+                        {t('page.7ba818')}
                     </Link>
                 </p>
             }

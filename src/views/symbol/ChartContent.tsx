@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { isFallbackAnalysis } from '@/entities/chat-message';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { useSymbolHolding } from '@/features/portfolio-holding';
@@ -54,9 +55,12 @@ const VolumeChart = dynamic(
 );
 
 function AnalyzingBanner() {
+    const t = useTranslations('views.symbol');
     return (
         <div className="flex items-center gap-2 rounded bg-secondary-700/40 px-3 py-2">
-            <span className="text-sm text-secondary-400">AI 분석 중…</span>
+            <span className="text-sm text-secondary-400">
+                {t('ChartContent.d12df8')}
+            </span>
         </div>
     );
 }
@@ -130,6 +134,7 @@ export function ChartContent({
     fmpSymbol,
     marketProfile = 'us-equity',
 }: ChartContentProps) {
+    const t = useTranslations('views.symbol');
     // 비회원 회원가입 유도(Part B) — 같은 심볼에 대한 중복 카운트 방지용.
     const notifiedSymbolRef = useRef<string | null>(null);
 
@@ -526,9 +531,8 @@ export function ChartContent({
                      * 암호화폐는 24/7 거래라 장전·장후 세션 구분 자체가 없으므로
                      * crypto 마켓 프로파일에서는 이 문구를 표시하지 않는다.
                      */}
-                    {marketProfile !== 'crypto' &&
-                        '차트는 Pre-market, After-market 주가를 반영하지 않습니다. | '}
-                    시세 데이터는 최대 15분 지연됩니다.
+                    {marketProfile !== 'crypto' && t('ChartContent.93c3a3')}
+                    {t('ChartContent.ff6b09')}
                 </p>
             </div>
 
@@ -537,7 +541,7 @@ export function ChartContent({
                 role="separator"
                 tabIndex={0}
                 aria-orientation="vertical"
-                aria-label="패널 너비 조절"
+                aria-label={t('ChartContent.d1a23e')}
                 aria-valuenow={panelWidth}
                 aria-valuemin={PANEL_MIN_WIDTH}
                 aria-valuemax={PANEL_MAX_WIDTH}

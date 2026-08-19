@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { SymbolPageHeading } from '@/views/symbol';
 import { FinancialsSnapshotProse } from '@/views/symbol/snapshot/renderers/FinancialsSnapshotProse';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
@@ -45,9 +46,12 @@ export function FinancialsDegraded({
     snapshotContent,
     snapshotGeneratedAt,
 }: FinancialsDegradedProps) {
+    const t = useTranslations('app.symbol');
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-            <SymbolPageHeading>{displayName} 재무제표</SymbolPageHeading>
+            <SymbolPageHeading>
+                {displayName} {t('FinancialsDegraded.128c11')}
+            </SymbolPageHeading>
             <FinancialsSnapshotProse
                 content={snapshotContent}
                 symbol={symbol}
@@ -57,11 +61,10 @@ export function FinancialsDegraded({
             />
             <section className="rounded-lg border border-secondary-800 bg-secondary-900/40 px-5 py-8 text-center">
                 <p className="text-sm font-medium text-secondary-200">
-                    재무 데이터를 일시적으로 불러올 수 없어요
+                    {t('FinancialsDegraded.595d2d')}
                 </p>
                 <p className="mt-2 text-sm leading-relaxed text-secondary-400">
-                    외부 데이터 제공처가 잠시 응답하지 않고 있어요. 잠시 후 다시
-                    방문하시면 재무제표를 보실 수 있습니다.
+                    {t('FinancialsDegraded.4e578a')}
                 </p>
             </section>
             <CrossLinkCards

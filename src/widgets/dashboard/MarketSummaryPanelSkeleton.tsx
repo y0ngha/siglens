@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 
 interface MarketSummaryPanelSkeletonProps {
@@ -8,9 +9,10 @@ interface MarketSummaryPanelSkeletonProps {
 export function MarketSummaryPanelSkeleton({
     scope,
 }: MarketSummaryPanelSkeletonProps) {
+    const t = useTranslations('widgets.dashboard');
     return (
         <section
-            aria-label="시장 현황 로딩 중"
+            aria-label={t('MarketSummaryPanelSkeleton.dc6348')}
             className="px-6 py-10 lg:px-[15vw]"
             aria-busy="true"
         >

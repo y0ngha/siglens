@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type {
     CongressSentiment,
     CongressTrendResponse,
@@ -24,6 +25,7 @@ interface CongressTrendSummaryViewProps {
 export function CongressTrendSummaryView({
     result,
 }: CongressTrendSummaryViewProps) {
+    const t = useTranslations('widgets.congress');
     const sentimentLabel = SENTIMENT_LABEL[result.overallSentiment];
 
     return (
@@ -36,7 +38,7 @@ export function CongressTrendSummaryView({
                     id="congress-trend-summary-heading"
                     className="text-lg font-semibold tracking-tight"
                 >
-                    AI 동향 해석
+                    {t('CongressTrendSummaryView.bbb041')}
                 </h2>
                 <span
                     role="img"
@@ -56,8 +58,13 @@ export function CongressTrendSummaryView({
 
             {result.notableMembersKo.length > 0 && (
                 <div className="mb-5">
-                    <h3 className="mb-2 text-sm font-semibold">주목할 인물</h3>
-                    <ul aria-label="주목할 인물" className="space-y-1.5">
+                    <h3 className="mb-2 text-sm font-semibold">
+                        {t('CongressTrendSummaryView.9a15c9')}
+                    </h3>
+                    <ul
+                        aria-label={t('CongressTrendSummaryView.9a15c9')}
+                        className="space-y-1.5"
+                    >
                         {result.notableMembersKo.map((member, i) => (
                             <li
                                 key={`member-${i}-${member}`}
@@ -78,7 +85,9 @@ export function CongressTrendSummaryView({
 
             {result.riskNoteKo.trim().length > 0 && (
                 <div>
-                    <h3 className="mb-2 text-sm font-semibold">참고 사항</h3>
+                    <h3 className="mb-2 text-sm font-semibold">
+                        {t('CongressTrendSummaryView.b2e4d7')}
+                    </h3>
                     <p className="text-sm leading-relaxed text-secondary-400">
                         {result.riskNoteKo}
                     </p>

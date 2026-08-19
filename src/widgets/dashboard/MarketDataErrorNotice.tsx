@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 
 interface MarketDataErrorNoticeProps {
@@ -35,6 +36,7 @@ export function MarketDataErrorNotice({
     onClose,
     className,
 }: MarketDataErrorNoticeProps) {
+    const t = useTranslations('widgets.dashboard');
     return (
         <div
             role="alert"
@@ -51,13 +53,13 @@ export function MarketDataErrorNotice({
                         : `${marketLabel} 데이터를 불러오는 중 일부를 가져오지 못했어요.`}
                 </p>
                 <p className="text-ui-warning/80">
-                    잠시 후 새로고침해 다시 시도해 주세요.
+                    {t('MarketDataErrorNotice.69afbd')}
                 </p>
             </div>
             <button
                 type="button"
                 onClick={onClose}
-                aria-label="안내 닫기"
+                aria-label={t('MarketDataErrorNotice.76bb07')}
                 className="-m-1 shrink-0 rounded p-1 leading-none text-ui-warning/70 transition-colors hover:text-ui-warning focus-visible:ring-2 focus-visible:ring-ui-warning/50 focus-visible:outline-none"
             >
                 ✕

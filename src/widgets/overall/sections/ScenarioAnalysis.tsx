@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type {
     OverallScenario,
     OverallScenarioName,
@@ -23,6 +24,7 @@ interface ScenarioAnalysisProps {
 
 /** RSC section: bullish/neutral/bearish scenarios with trigger conditions and projected price ranges. */
 export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
+    const t = useTranslations('widgets.overall');
     if (scenarios.length === 0) return null;
     return (
         <section
@@ -33,9 +35,9 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
                 id="scenario-analysis-heading"
                 className="mb-4 text-lg font-semibold text-balance"
             >
-                시나리오 분석
+                {t('ScenarioAnalysis.bb732c')}
             </h2>
-            <ul aria-label="시나리오 목록" className="space-y-4">
+            <ul aria-label={t('ScenarioAnalysis.239da9')} className="space-y-4">
                 {scenarios.map(scenario => (
                     <li
                         key={scenario.name}
@@ -53,7 +55,7 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
                         </div>
                         <div className="mb-1.5 text-sm">
                             <p className="mb-0.5 font-medium text-secondary-100">
-                                트리거 조건
+                                {t('ScenarioAnalysis.35e6f0')}
                             </p>
                             <MarkdownText className="text-secondary-400">
                                 {scenario.triggerConditionKo}
@@ -61,7 +63,7 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
                         </div>
                         <div className="text-sm">
                             <p className="mb-0.5 font-medium text-secondary-100">
-                                예상 가격대
+                                {t('ScenarioAnalysis.fcd702')}
                             </p>
                             <MarkdownText className="text-secondary-400">
                                 {scenario.priceRangeKo}

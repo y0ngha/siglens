@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type {
     FinancialsAnalysisResponse,
     FinancialsSentiment,
@@ -38,6 +39,7 @@ interface FinancialsAiSummaryViewProps {
 export function FinancialsAiSummaryView({
     result,
 }: FinancialsAiSummaryViewProps) {
+    const t = useTranslations('widgets.financials');
     return (
         <section
             aria-labelledby="financials-ai-summary-heading"
@@ -48,7 +50,7 @@ export function FinancialsAiSummaryView({
                     id="financials-ai-summary-heading"
                     className="text-lg font-semibold tracking-tight"
                 >
-                    AI 재무제표 분석
+                    {t('FinancialsAiSummary.26f860')}
                 </h2>
                 <span
                     className={cn(
@@ -65,7 +67,10 @@ export function FinancialsAiSummaryView({
             </p>
 
             {result.axisAssessments.length > 0 && (
-                <ul aria-label="축별 평가" className="mb-5 space-y-3">
+                <ul
+                    aria-label={t('FinancialsAiSummary.4f0caa')}
+                    className="mb-5 space-y-3"
+                >
                     {result.axisAssessments.map(a => (
                         <li
                             key={a.axis}
@@ -94,7 +99,9 @@ export function FinancialsAiSummaryView({
 
             {result.riskFactorsKo.length > 0 && (
                 <div>
-                    <h3 className="mb-2 text-sm font-semibold">위험 요인</h3>
+                    <h3 className="mb-2 text-sm font-semibold">
+                        {t('FinancialsAiSummary.af0480')}
+                    </h3>
                     <ul className="space-y-1.5">
                         {result.riskFactorsKo.map((risk, i) => (
                             <li

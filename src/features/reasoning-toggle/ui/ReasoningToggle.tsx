@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { REASONING_FEATURE_LABEL } from '../model/reasoningFeature';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
@@ -42,6 +43,7 @@ export function ReasoningToggle({
     disabled = false,
     className,
 }: ReasoningToggleProps) {
+    const t = useTranslations('features.reasoning-toggle');
     const locked = !canUse;
     // Locked non-members never actually have reasoning enabled server-side,
     // so the switch always reads as OFF regardless of the raw `checked` prop
@@ -74,14 +76,9 @@ export function ReasoningToggle({
                 {REASONING_FEATURE_LABEL}
             </span>
             <InfoTooltip>
-                <p className="mb-1">
-                    AI가 답을 내기 전에 여러 단계로 더 깊이 추론하는 기능이에요.
-                </p>
-                <p className="mb-1">
-                    켜면 지표·뉴스·시나리오를 더 꼼꼼히 따져 상세한 분석을
-                    드려요.
-                </p>
-                <p>대신 분석에 시간이 조금 더 걸릴 수 있어요.</p>
+                <p className="mb-1">{t('ReasoningToggle.3592be')}</p>
+                <p className="mb-1">{t('ReasoningToggle.ddf353')}</p>
+                <p>{t('ReasoningToggle.c48ae3')}</p>
             </InfoTooltip>
             <button
                 type="button"

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import {
     useCallback,
     useEffect,
@@ -58,13 +59,14 @@ interface EmailEditButtonProps {
 }
 
 function EmailEditButton({ onClick }: EmailEditButtonProps) {
+    const t = useTranslations('features.auth-signup');
     return (
         <button
             type="button"
             onClick={onClick}
             className="rounded-sm font-medium text-primary-400 hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
         >
-            이메일 수정
+            {t('SignupForm.f38cb1')}
         </button>
     );
 }
@@ -104,6 +106,7 @@ interface SignupFormFlowProps extends SignupFormProps {
 }
 
 function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
+    const t = useTranslations('features.auth-signup');
     const [email, setEmail] = useState('');
     const [name, setName] = useState('');
     const [password, setPassword] = useState('');
@@ -157,7 +160,7 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                     <AuthFieldGroup
                         id="signup-email"
                         name="email"
-                        label="이메일"
+                        label={t('SignupForm.3c3776')}
                         type="email"
                         autoComplete="email"
                         required
@@ -165,8 +168,8 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                         onChange={event => setEmail(event.target.value.trim())}
                     />
                     <SubmitButton
-                        label="인증 코드 받기"
-                        pendingLabel="발송 중…"
+                        label={t('SignupForm.f4a9ff')}
+                        pendingLabel={t('SignupForm.8321f5')}
                     />
                 </form>
             )}
@@ -177,7 +180,7 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                         <span className="font-mono break-all text-secondary-100">
                             {email}
                         </span>
-                        로 인증 코드를 보냈어요.{' '}
+                        {t('SignupForm.d50482')}{' '}
                         <EmailEditButton onClick={onRestart} />
                     </p>
                     {codeState.error?.code === 'redis_unavailable' ||
@@ -187,11 +190,11 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                     <AuthFieldGroup
                         id="signup-code"
                         name="code"
-                        label="인증 코드"
+                        label={t('SignupForm.d89be9')}
                         type="text"
                         autoComplete="one-time-code"
                         required
-                        placeholder="6자리 코드"
+                        placeholder={t('SignupForm.403732')}
                         error={
                             codeState.error?.code !== 'redis_unavailable' &&
                             codeState.error?.code !== 'email_already_exists'
@@ -199,7 +202,10 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                                 : undefined
                         }
                     />
-                    <SubmitButton label="코드 확인" pendingLabel="확인 중…" />
+                    <SubmitButton
+                        label={t('SignupForm.7b5f5a')}
+                        pendingLabel={t('SignupForm.33c1f7')}
+                    />
                 </form>
             )}
             {phase === 'details' && (
@@ -232,7 +238,7 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                         <span className="text-ui-success" aria-hidden="true">
                             ✓
                         </span>{' '}
-                        인증 완료:{' '}
+                        {t('SignupForm.0d75cf')}{' '}
                         <span className="font-mono break-all text-secondary-100">
                             {email}
                         </span>{' '}
@@ -241,17 +247,17 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                     <AuthFieldGroup
                         id="signup-name"
                         name="name"
-                        label="표시 이름 (선택)"
+                        label={t('SignupForm.e4d212')}
                         type="text"
                         autoComplete="name"
-                        placeholder="다른 사용자에게 보이는 이름"
+                        placeholder={t('SignupForm.4e96eb')}
                         value={name}
                         onChange={event => setName(event.target.value)}
                     />
                     <PasswordField
                         id="signup-password"
                         name="password"
-                        label="비밀번호"
+                        label={t('SignupForm.819738')}
                         autoComplete="new-password"
                         required
                         value={password}
@@ -272,7 +278,10 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                         onTosChange={setTosChecked}
                         error={consentErrorMessage}
                     />
-                    <SubmitButton label="회원가입" pendingLabel="가입 중…" />
+                    <SubmitButton
+                        label={t('SignupForm.ecb4cc')}
+                        pendingLabel={t('SignupForm.d01150')}
+                    />
                 </form>
             )}
         </div>

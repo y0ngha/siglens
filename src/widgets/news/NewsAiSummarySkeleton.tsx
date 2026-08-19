@@ -1,11 +1,13 @@
+import { useTranslations } from 'next-intl';
 import { AiSummarySkeleton } from '@/shared/ui/AiSummarySkeleton';
 
 export function NewsAiSummarySkeleton() {
+    const t = useTranslations('widgets.news');
     return (
         <AiSummarySkeleton
-            heading="AI 뉴스 종합 분석"
+            heading={t('NewsAiSummarySkeleton.ed8166')}
             idPrefix="news-ai-summary"
-            progressMessage="AI 뉴스 분석 진행 중…"
+            progressMessage={t('NewsAiSummarySkeleton.b86179')}
             className="w-full max-w-full min-w-0 overflow-hidden"
         />
     );

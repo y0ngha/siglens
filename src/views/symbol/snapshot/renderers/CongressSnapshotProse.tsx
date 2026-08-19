@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { CongressSentiment } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { SnapshotBulletList } from '../SnapshotBulletList';
@@ -121,6 +122,7 @@ export function CongressSnapshotProse({
     marketProfile,
     generatedAt,
 }: CongressSnapshotProseProps) {
+    const t = useTranslations('views.symbol');
     const narrowed = narrowCongressContent(content);
     if (narrowed === null) return null;
 
@@ -131,7 +133,7 @@ export function CongressSnapshotProse({
 
     return (
         <SnapshotSummarySection
-            title="의회 거래 동향 요약"
+            title={t('CongressSnapshotProse.f7e3fb')}
             displayName={displayName}
             marketProfile={marketProfile}
             asOf={generatedAt}
@@ -139,7 +141,7 @@ export function CongressSnapshotProse({
             <div className="space-y-4 text-sm leading-6 text-secondary-300">
                 {narrowed.overallSentiment !== null && (
                     <p className="font-medium text-secondary-200">
-                        {symbol} 의회 거래 동향:{' '}
+                        {symbol} {t('CongressSnapshotProse.dbbd69')}{' '}
                         {SENTIMENT_LABEL[narrowed.overallSentiment]}
                     </p>
                 )}
@@ -153,9 +155,9 @@ export function CongressSnapshotProse({
                 )}
 
                 <SnapshotBulletList
-                    title="주목할 인물"
+                    title={t('CongressSnapshotProse.9a15c9')}
                     symbol={symbol}
-                    ariaSuffix="주목할 인물"
+                    ariaSuffix={t('CongressSnapshotProse.9a15c9')}
                     items={narrowed.notableMembersKo}
                     keyPrefix="member"
                 />
@@ -163,7 +165,7 @@ export function CongressSnapshotProse({
                 {narrowed.riskNoteKo.length > 0 && (
                     <div>
                         <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
-                            참고 사항
+                            {t('CongressSnapshotProse.b2e4d7')}
                         </h3>
                         <p>{narrowed.riskNoteKo}</p>
                     </div>

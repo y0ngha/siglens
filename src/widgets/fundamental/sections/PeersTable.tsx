@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
@@ -11,11 +12,12 @@ interface PeersTableProps {
 }
 
 export function PeersTable({ peers }: PeersTableProps) {
+    const t = useTranslations('widgets.fundamental');
     if (peers.length === 0) {
         return (
             <EmptySectionCard
                 headingId={HEADING_ID}
-                title="동종업계 비교"
+                title={t('PeersTable.0f2e1e')}
                 headingClassName={HEADING_CLASS_NAME}
             />
         );
@@ -27,16 +29,20 @@ export function PeersTable({ peers }: PeersTableProps) {
             className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
-                동종업계 비교
+                {t('PeersTable.0f2e1e')}
             </h2>
             <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                     <thead>
                         <tr className="border-b border-secondary-700 text-left text-xs tracking-widest text-secondary-400 uppercase">
-                            <th className="pb-2 font-medium">티커</th>
-                            <th className="pb-2 font-medium">회사명</th>
+                            <th className="pb-2 font-medium">
+                                {t('PeersTable.c141c2')}
+                            </th>
+                            <th className="pb-2 font-medium">
+                                {t('PeersTable.5e86bf')}
+                            </th>
                             <th className="pb-2 text-right font-medium">
-                                시가총액
+                                {t('PeersTable.cf643b')}
                             </th>
                         </tr>
                     </thead>

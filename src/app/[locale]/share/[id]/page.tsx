@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -29,6 +30,7 @@ export default async function SharePage({ params }: Props) {
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.share');
     const lookup = await getCachedSharedAnalysis(id);
 
     if (lookup.status !== 'found') {
@@ -39,20 +41,20 @@ export default async function SharePage({ params }: Props) {
         return (
             <main className="flex flex-1 flex-col items-center px-6 py-20 text-center">
                 <p className="font-mono text-sm tracking-widest text-primary-400">
-                    공유 링크 만료
+                    {t('page.0658dd')}
                 </p>
                 <h1 className="mt-4 text-2xl font-bold text-secondary-100 sm:text-3xl">
-                    이 공유 링크는 만료됐어요
+                    {t('page.365a70')}
                 </h1>
                 <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">
-                    공유된 분석 스냅샷의 유효 기간이 지났거나 존재하지 않는
-                    링크입니다. {SITE_NAME}에서 최신 분석을 직접 확인하세요.
+                    {t('page.b73cea')} {SITE_NAME}
+                    {t('page.edfe95')}
                 </p>
                 <Link
                     href="/"
                     className="mt-8 rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    {SITE_NAME} 홈으로 돌아가기
+                    {SITE_NAME} {t('page.3614fb')}
                 </Link>
             </main>
         );
@@ -78,7 +80,7 @@ export default async function SharePage({ params }: Props) {
             </h1>
 
             <div className="mb-6 rounded-lg border border-secondary-700 bg-secondary-800/50 px-3 py-2 text-xs text-secondary-400">
-                {asOf} 데이터라서 현재 시세와 다를 수 있어요
+                {asOf} {t('page.97ec4e')}
             </div>
 
             <ShareKindPanel
@@ -95,7 +97,7 @@ export default async function SharePage({ params }: Props) {
 
             <div
                 role="note"
-                aria-label="투자 면책 고지"
+                aria-label={t('page.693b62')}
                 className="mt-8 rounded-lg border border-ui-danger/30 bg-ui-danger/5 px-4 py-3"
             >
                 <p className="text-xs leading-relaxed text-secondary-400">
@@ -108,7 +110,8 @@ export default async function SharePage({ params }: Props) {
                     href={`/${ticker}`}
                     className="inline-flex items-center rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    {SITE_NAME}에서 {ticker} 직접 분석하기
+                    {SITE_NAME}
+                    {t('page.81b8e2')} {ticker} {t('page.084d16')}
                 </Link>
             </div>
         </main>

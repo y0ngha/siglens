@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import { useSearchParams } from 'next/navigation';
 import { SignupForm } from '@/features/auth-signup';
@@ -8,6 +9,7 @@ import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
 
 // useSearchParams를 읽어 이 subtree만 CSR로 떨군다(라우트는 static 유지).
 export function SignupContent() {
+    const t = useTranslations('app.signup');
     const params = useSearchParams();
     // `next`를 로케일 경로로 바꾼다. 이 값이 hidden 필드 → 로그인 액션 →
     // OAuth state → 콜백 리다이렉트까지 그대로 흘러가므로, 여기서 접두사를 붙이면
@@ -22,7 +24,7 @@ export function SignupContent() {
         <>
             <SignupForm next={nextParam} />
             <p className="mt-6 mb-2 text-xs text-secondary-500">
-                소셜 로그인 시작 후 약관 동의 단계가 있습니다.
+                {t('SignupContent.50f3e4')}
             </p>
             <SocialLoginButtons next={nextParam} />
         </>

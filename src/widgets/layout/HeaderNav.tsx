@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import type { NavVerticalNode } from './headerNavTree';
 import { HeaderNavMenu } from './HeaderNavMenu';
@@ -10,6 +11,7 @@ interface HeaderNavProps {
 
 /** Client island for the primary nav; isolated so the surrounding Header can stay an RSC while `usePathname()` runs client-side. */
 export function HeaderNav({ items }: HeaderNavProps) {
+    const t = useTranslations('widgets.layout');
     // `NAV_TREE`의 href는 로케일 접두사가 없는 `/market` 형태다. `usePathname()`은
     // `/en/market`을 그대로 주므로, 떼지 않으면 `isHrefActive`의 정확 일치가 영영
     // 실패해 **비-ko 사용자에게 활성 내비 표시가 통째로 사라진다.**
@@ -18,7 +20,7 @@ export function HeaderNav({ items }: HeaderNavProps) {
     // 한꺼번에 import에 실패한다.
     const pathname = useAppPathname();
     return (
-        <nav aria-label="주요 네비게이션" className="flex gap-1 sm:gap-4">
+        <nav aria-label={t('HeaderNav.5281d7')} className="flex gap-1 sm:gap-4">
             {items.map(vertical => (
                 <HeaderNavMenu
                     key={vertical.id}

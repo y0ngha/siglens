@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
 import { setRequestLocale } from 'next-intl/server';
@@ -27,18 +28,19 @@ export default async function SignupPage({
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.signup');
     return (
         <AuthCardShell
-            title="회원이 되면 더 많은 걸 볼 수 있어요"
-            subtitle="이메일로 시작하기"
+            title={t('page.925d56')}
+            subtitle={t('page.1c6c68')}
             footer={
                 <p>
-                    이미 계정이 있으신가요?{' '}
+                    {t('page.9922a0')}{' '}
                     <Link
                         href="/login"
                         className="font-medium text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
-                        로그인 →
+                        {t('page.e2d231')}
                     </Link>
                 </p>
             }

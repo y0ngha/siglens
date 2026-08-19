@@ -1,3 +1,5 @@
+import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import { PositionHoldingCard } from './PositionHoldingCard';
 import {
     DEFAULT_LOCALE,
@@ -96,23 +98,23 @@ export async function PortfolioGuard({ locale }: { locale: Locale }) {
 // element tree returned by `PortfolioGuard()` via `findElementByType`,
 // mirroring the `countElementsByType(tree, PositionHoldingCard)` check above.
 export function PortfolioEmptyState() {
+    const t = useTranslations('app.portfolio');
     return (
         <section
             data-testid="portfolio-empty-state"
             className="flex flex-col items-start gap-3 rounded-xl border border-secondary-700 bg-secondary-800/40 p-6"
         >
             <p className="text-sm font-semibold text-secondary-100">
-                아직 등록한 보유종목이 없어요
+                {t('page.ac9263')}
             </p>
             <p className="text-sm leading-relaxed text-secondary-400">
-                보유종목을 등록하면 최근 가격 범위 안에서 내 평단이 어디에
-                있는지 종목별 빌딩으로 확인할 수 있어요.
+                {t('page.d103d5')}
             </p>
             <Link
                 href="/onboarding"
                 className="inline-flex min-h-11 touch-manipulation items-center rounded-lg border border-primary-500 px-4 text-sm font-medium text-primary-300 transition-colors hover:bg-primary-500/10 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
-                보유종목 등록해보기
+                {t('page.81860c')}
             </Link>
         </section>
     );
@@ -122,16 +124,17 @@ export function PortfolioEmptyState() {
 // — tests locate it via `findElementByType` on the unrendered tree returned
 // by `PortfolioGuard()` when the holdings read throws.
 export function PortfolioErrorState() {
+    const t = useTranslations('app.portfolio');
     return (
         <section
             data-testid="portfolio-error-state"
             className="flex flex-col items-start gap-3 rounded-xl border border-secondary-700 bg-secondary-800/40 p-6"
         >
             <p className="text-sm font-semibold text-secondary-100">
-                포트폴리오를 불러오지 못했어요
+                {t('page.90a081')}
             </p>
             <p className="text-sm leading-relaxed text-secondary-400">
-                잠시 후 다시 시도해 주세요.
+                {t('page.92020d')}
             </p>
         </section>
     );
@@ -147,6 +150,7 @@ function SkeletonCard() {
 }
 
 function PortfolioSkeleton() {
+    const t = useTranslations('app.portfolio');
     return (
         <div
             role="status"
@@ -154,7 +158,7 @@ function PortfolioSkeleton() {
             aria-live="polite"
             data-testid="portfolio-loading"
         >
-            <span className="sr-only">보유종목 위치를 불러오는 중이에요</span>
+            <span className="sr-only">{t('page.605ada')}</span>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {[0, 1, 2].map(i => (
                     <SkeletonCard key={i} />
@@ -175,16 +179,16 @@ export default async function PortfolioPage({
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.portfolio');
     return (
         <main className="min-h-[calc(100dvh-3.5rem)] bg-secondary-950 px-4 py-12">
             <div className="mx-auto w-full max-w-5xl space-y-6">
                 <header>
                     <h1 className="text-2xl font-semibold text-secondary-50">
-                        내 포트폴리오 위치
+                        {t('page.55ca69')}
                     </h1>
                     <p className="mt-1 text-sm text-secondary-400">
-                        보유종목별 최근 가격 범위에서 내 평단이 어디에 있는지
-                        확인하세요.
+                        {t('page.80736f')}
                     </p>
                 </header>
                 <Suspense fallback={<PortfolioSkeleton />}>

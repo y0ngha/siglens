@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { OverallScenarioName } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { SnapshotBulletList } from '../SnapshotBulletList';
@@ -239,6 +240,7 @@ export function OverallSnapshotProse({
     marketProfile,
     generatedAt,
 }: OverallSnapshotProseProps) {
+    const t = useTranslations('views.symbol');
     const narrowed = narrowOverallContent(content);
     if (narrowed === null) return null;
 
@@ -249,7 +251,7 @@ export function OverallSnapshotProse({
 
     return (
         <SnapshotSummarySection
-            title="종합 분석 결론"
+            title={t('OverallSnapshotProse.de4a87')}
             displayName={displayName}
             marketProfile={marketProfile}
             asOf={generatedAt}
@@ -274,66 +276,66 @@ export function OverallSnapshotProse({
                 )}
 
                 <SnapshotBulletList
-                    title="기술적 분석"
+                    title={t('OverallSnapshotProse.da6fd3')}
                     symbol={symbol}
-                    ariaSuffix="기술적 분석"
+                    ariaSuffix={t('OverallSnapshotProse.da6fd3')}
                     items={narrowed.technicalBulletsKo}
                     keyPrefix="technical-bullet"
                 />
                 <SnapshotBulletList
-                    title="펀더멘털"
+                    title={t('OverallSnapshotProse.854e15')}
                     symbol={symbol}
-                    ariaSuffix="펀더멘털"
+                    ariaSuffix={t('OverallSnapshotProse.854e15')}
                     items={narrowed.fundamentalBulletsKo}
                     keyPrefix="fundamental-bullet"
                 />
                 <SnapshotBulletList
-                    title="뉴스"
+                    title={t('OverallSnapshotProse.3a465d')}
                     symbol={symbol}
-                    ariaSuffix="뉴스"
+                    ariaSuffix={t('OverallSnapshotProse.3a465d')}
                     items={narrowed.newsBulletsKo}
                     keyPrefix="news-bullet"
                 />
                 <SnapshotBulletList
-                    title="옵션"
+                    title={t('OverallSnapshotProse.3c7dbc')}
                     symbol={symbol}
-                    ariaSuffix="옵션"
+                    ariaSuffix={t('OverallSnapshotProse.3c7dbc')}
                     items={narrowed.optionsBulletsKo}
                     keyPrefix="options-bullet"
                 />
                 <SnapshotBulletList
-                    title="재무제표"
+                    title={t('OverallSnapshotProse.128c11')}
                     symbol={symbol}
-                    ariaSuffix="재무제표"
+                    ariaSuffix={t('OverallSnapshotProse.128c11')}
                     items={narrowed.financialsBulletsKo}
                     keyPrefix="financials-bullet"
                 />
 
                 <SnapshotBulletList
-                    title="강세 시나리오"
+                    title={t('OverallSnapshotProse.b8f729')}
                     symbol={symbol}
-                    ariaSuffix="강세 시나리오"
+                    ariaSuffix={t('OverallSnapshotProse.b8f729')}
                     items={narrowed.bullishBullets}
                     keyPrefix="bullish"
                 />
                 <SnapshotBulletList
-                    title="중립 시나리오"
+                    title={t('OverallSnapshotProse.ac2e2f')}
                     symbol={symbol}
-                    ariaSuffix="중립 시나리오"
+                    ariaSuffix={t('OverallSnapshotProse.ac2e2f')}
                     items={narrowed.neutralBullets}
                     keyPrefix="neutral"
                 />
                 <SnapshotBulletList
-                    title="약세 시나리오"
+                    title={t('OverallSnapshotProse.288428')}
                     symbol={symbol}
-                    ariaSuffix="약세 시나리오"
+                    ariaSuffix={t('OverallSnapshotProse.288428')}
                     items={narrowed.bearishBullets}
                     keyPrefix="bearish"
                 />
                 <SnapshotBulletList
-                    title="위험 요인"
+                    title={t('OverallSnapshotProse.af0480')}
                     symbol={symbol}
-                    ariaSuffix="위험 요인"
+                    ariaSuffix={t('OverallSnapshotProse.af0480')}
                     items={narrowed.riskFactorsKo}
                     keyPrefix="risk"
                 />

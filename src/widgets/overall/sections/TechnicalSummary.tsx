@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 
 interface TechnicalSummaryProps {
@@ -6,6 +7,7 @@ interface TechnicalSummaryProps {
 
 /** RSC section: technical analysis bullet points from the overall analysis result. */
 export function TechnicalSummary({ bullets }: TechnicalSummaryProps) {
+    const t = useTranslations('widgets.overall');
     if (bullets.length === 0) return null;
     return (
         <section
@@ -16,9 +18,9 @@ export function TechnicalSummary({ bullets }: TechnicalSummaryProps) {
                 id="technical-summary-heading"
                 className="mb-3 text-lg font-semibold text-balance"
             >
-                기술적 분석 요약
+                {t('TechnicalSummary.938737')}
             </h2>
-            <ul aria-label="기술적 분석 항목" className="space-y-2">
+            <ul aria-label={t('TechnicalSummary.6d957a')} className="space-y-2">
                 {bullets.map(bullet => (
                     <li key={bullet} className="flex gap-2 text-sm">
                         <span

@@ -1,3 +1,5 @@
+import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import { ApiKeySection } from '@/features/api-key-management';
 import {
     DEFAULT_LOCALE,
@@ -29,6 +31,7 @@ export const metadata: Metadata = {
 
 // Reads cookies via getCurrentUser — must be inside Suspense for PPR.
 async function AccountContent({ locale }: { locale: Locale }) {
+    const t = await getTranslations('app.account');
     const [user, rawProviders] = await Promise.all([
         getCurrentUser(),
         getRegisteredProvidersAction(),
@@ -45,24 +48,26 @@ async function AccountContent({ locale }: { locale: Locale }) {
     return (
         <>
             <section
-                aria-label="프로필"
+                aria-label={t('page.14fab1')}
                 className="space-y-4 rounded-2xl bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
             >
                 <h2 className="text-lg font-semibold text-secondary-100">
-                    프로필
+                    {t('page.14fab1')}
                 </h2>
                 <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-[120px_1fr]">
-                    <dt className="text-secondary-400">이메일</dt>
+                    <dt className="text-secondary-400">{t('page.3c3776')}</dt>
                     <dd className="break-all text-secondary-100">
                         {user.email}
                     </dd>
-                    <dt className="text-secondary-400">표시 이름</dt>
+                    <dt className="text-secondary-400">{t('page.7be993')}</dt>
                     <dd className="text-secondary-100">
                         {user.name ?? (
-                            <span className="text-secondary-500">미설정</span>
+                            <span className="text-secondary-500">
+                                {t('page.c6c674')}
+                            </span>
                         )}
                     </dd>
-                    <dt className="text-secondary-400">회원 등급</dt>
+                    <dt className="text-secondary-400">{t('page.f5162c')}</dt>
                     <dd className="text-secondary-100">
                         {TIER_LABEL[user.tier]}
                     </dd>
@@ -70,14 +75,14 @@ async function AccountContent({ locale }: { locale: Locale }) {
             </section>
 
             <section
-                aria-label="AI 모델 API 키"
+                aria-label={t('page.64f90b')}
                 className="space-y-4 rounded-2xl bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
             >
                 <ApiKeySection registeredProviders={registeredProviders} />
             </section>
 
             <section
-                aria-label="보유종목"
+                aria-label={t('page.cae421')}
                 className="space-y-4 rounded-2xl bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
             >
                 <PortfolioSection />
@@ -85,28 +90,28 @@ async function AccountContent({ locale }: { locale: Locale }) {
                     href="/portfolio"
                     className="inline-flex min-h-11 touch-manipulation items-center justify-center rounded-md border border-secondary-700 px-4 text-sm font-medium text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    내 포트폴리오 위치 보기
+                    {t('page.2a5883')}
                 </Link>
             </section>
 
             <section
-                aria-label="위험영역"
+                aria-label={t('page.1987ac')}
                 className="space-y-4 rounded-2xl border border-ui-danger/30 bg-ui-danger/5 p-6"
             >
                 <div className="flex flex-col gap-3 rounded-lg border border-secondary-800 bg-secondary-900/60 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h3 className="text-sm font-semibold text-secondary-100">
-                            회원 탈퇴
+                            {t('page.3a0c2b')}
                         </h3>
                         <p className="mt-1 text-sm text-secondary-400">
-                            계정과 관련된 모든 정보가 즉시 영구 파기됩니다.
+                            {t('page.54ac38')}
                         </p>
                     </div>
                     <Link
                         href="/account/delete"
                         className="inline-flex h-11 shrink-0 items-center justify-center rounded-md border border-ui-danger/40 px-5 text-sm font-semibold text-ui-danger transition-colors hover:bg-ui-danger/10 focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none"
                     >
-                        회원 탈퇴 진행
+                        {t('page.fa7c86')}
                     </Link>
                 </div>
             </section>
@@ -123,11 +128,12 @@ function SkeletonLine({ className }: { className?: string }) {
 }
 
 function AccountContentSkeleton() {
+    const t = useTranslations('app.account');
     return (
         <>
             {/* 프로필 섹션 */}
             <section
-                aria-label="프로필 로딩 중"
+                aria-label={t('page.c4079e')}
                 className="space-y-4 rounded-2xl bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
             >
                 <SkeletonLine className="h-6 w-16" />
@@ -143,7 +149,7 @@ function AccountContentSkeleton() {
 
             {/* AI 모델 API 키 섹션 */}
             <section
-                aria-label="AI 모델 API 키 로딩 중"
+                aria-label={t('page.1b6c6d')}
                 className="space-y-4 rounded-2xl bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
             >
                 <SkeletonLine className="h-6 w-32" />
@@ -175,15 +181,16 @@ export default async function AccountPage({
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.account');
     return (
         <main className="min-h-[calc(100dvh-3.5rem)] bg-secondary-950 px-4 py-12">
             <div className="mx-auto w-full max-w-2xl space-y-6">
                 <header>
                     <h1 className="text-2xl font-semibold text-secondary-50">
-                        계정 설정
+                        {t('page.622fae')}
                     </h1>
                     <p className="mt-1 text-sm text-secondary-400">
-                        프로필 정보를 확인하고 계정을 관리합니다.
+                        {t('page.b8fd1b')}
                     </p>
                 </header>
                 <Suspense fallback={<AccountContentSkeleton />}>

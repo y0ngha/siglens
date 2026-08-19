@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { isFreeModel, type ModelId } from '@y0ngha/siglens-core';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
@@ -25,6 +26,7 @@ export function ModelSelect({
     onChange,
     isHydrated,
 }: ModelSelectProps) {
+    const t = useTranslations('widgets.chat');
     const triggerRef = useRef<HTMLButtonElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -103,7 +105,7 @@ export function ModelSelect({
                     className="flex items-center gap-1 rounded bg-secondary-700 px-1.5 py-0.5 text-secondary-400 transition-colors hover:bg-secondary-600 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     aria-haspopup="listbox"
                     aria-expanded={isOpen}
-                    aria-label="AI 모델 선택"
+                    aria-label={t('ModelSelect.fb54aa')}
                 >
                     <span>{selectedLabel}</span>
                     <span
@@ -122,7 +124,7 @@ export function ModelSelect({
                 <div
                     ref={dropdownRef}
                     role="listbox"
-                    aria-label="AI 모델 목록"
+                    aria-label={t('ModelSelect.43807f')}
                     // listbox는 인터랙티브 role이라 포커스 가능해야 한다.
                     // -1이므로 탭 순서는 그대로(트리거 버튼만 탭 대상).
                     tabIndex={-1}

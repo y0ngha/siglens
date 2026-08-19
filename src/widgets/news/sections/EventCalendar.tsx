@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { currencyForSymbol } from '@/shared/config/marketProfile';
 import type { EarningsReportComparisonItem } from '@/shared/lib/types';
@@ -82,6 +83,7 @@ interface EarningsReportComparisonProps {
 }
 
 function EarningsReportComparison({ items }: EarningsReportComparisonProps) {
+    const t = useTranslations('widgets.news');
     if (items.length === 0) return null;
 
     const maxEps = getMaxAbs(
@@ -97,20 +99,14 @@ function EarningsReportComparison({ items }: EarningsReportComparisonProps) {
                 <div className="flex gap-3 text-xs text-secondary-400">
                     <span className="inline-flex items-center gap-1">
                         <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                        실제
+                        {t('EventCalendar.19aa63')}
                     </span>
                     <span className="inline-flex items-center gap-1">
                         <span className="h-2 w-2 rounded-full bg-sky-400" />
-                        컨센서스
+                        {t('EventCalendar.a06069')}
                         <InfoTooltip className="ml-0 text-[11px]">
-                            <p>
-                                컨센서스는 여러 애널리스트가 예상한 EPS나 매출의
-                                평균값이에요.
-                            </p>
-                            <p>
-                                실제 발표값과 비교하면 시장 기대를 얼마나
-                                웃돌거나 밑돌았는지 볼 수 있어요.
-                            </p>
+                            <p>{t('EventCalendar.6a5765')}</p>
+                            <p>{t('EventCalendar.3e6c69')}</p>
                         </InfoTooltip>
                     </span>
                 </div>
@@ -140,7 +136,11 @@ function EarningsReportCard({
     maxEps,
     maxRevenue,
 }: EarningsReportCardProps) {
-    const statusLabel = item.period === 'future' ? '예정' : '발표';
+    const t = useTranslations('widgets.news');
+    const statusLabel =
+        item.period === 'future'
+            ? t('EventCalendar.7ba954')
+            : t('EventCalendar.f8f294');
     const surpriseBadge = getSurpriseBadge(item);
     // 각 item이 이미 자기 symbol을 들고 있다(같은 심볼 하나에 대한 비교 데이터라
     // 항상 동일) — 별도 prop을 새로 뚫지 않고 그대로 통화 판정에 쓴다.
@@ -162,7 +162,9 @@ function EarningsReportCard({
                 </div>
                 <div className="flex flex-wrap justify-end gap-1">
                     <span className="rounded-full border border-secondary-600 px-2 py-0.5 text-xs text-secondary-300">
-                        {item.period === 'future' ? '예정' : '과거'}
+                        {item.period === 'future'
+                            ? t('EventCalendar.7ba954')
+                            : t('EventCalendar.c0c9e1')}
                     </span>
                     {surpriseBadge !== null ? (
                         <SurpriseBadge badge={surpriseBadge} />
@@ -179,7 +181,7 @@ function EarningsReportCard({
                     signed
                 />
                 <MetricBars
-                    label="매출"
+                    label={t('EventCalendar.191145')}
                     actual={item.revenueActual}
                     estimated={item.revenueEstimated}
                     maxValue={maxRevenue}
@@ -228,6 +230,7 @@ function MetricBars({
     format,
     signed = false,
 }: MetricBarsProps) {
+    const t = useTranslations('widgets.news');
     return (
         <div className="space-y-2">
             <div className="flex items-center justify-between gap-3 text-xs">
@@ -235,7 +238,7 @@ function MetricBars({
             </div>
             <div className="space-y-1.5">
                 <MetricBar
-                    label="실제"
+                    label={t('EventCalendar.19aa63')}
                     value={actual}
                     maxValue={maxValue}
                     format={format}
@@ -243,7 +246,7 @@ function MetricBars({
                     signed={signed}
                 />
                 <MetricBar
-                    label="컨센서스"
+                    label={t('EventCalendar.a06069')}
                     value={estimated}
                     maxValue={maxValue}
                     format={format}
@@ -374,6 +377,7 @@ interface EventCalendarProps {
 }
 
 export function EventCalendar({ earningsReports }: EventCalendarProps) {
+    const t = useTranslations('widgets.news');
     if (earningsReports.length === 0) {
         return null;
     }
@@ -384,7 +388,7 @@ export function EventCalendar({ earningsReports }: EventCalendarProps) {
                 id="event-calendar-heading"
                 className="text-lg font-semibold tracking-tight"
             >
-                실적 발표
+                {t('EventCalendar.4732b0')}
             </h2>
             <EarningsReportComparison items={earningsReports} />
         </section>

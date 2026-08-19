@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
@@ -126,6 +127,7 @@ export default async function BacktestingPage({
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.backtesting');
     return (
         <>
             <JsonLd data={webPageJsonLd} />
@@ -142,13 +144,11 @@ export default async function BacktestingPage({
                 <BacktestTabs cases={data.cases} tickers={TICKERS} />
                 <div
                     role="note"
-                    aria-label="투자 면책 고지"
+                    aria-label={t('page.693b62')}
                     className="border-t border-secondary-800 px-6 py-4"
                 >
                     <p className="text-center text-[11px] text-secondary-600">
-                        * 본 결과는 과거 데이터 기반 백테스팅이며 미래 수익을
-                        보장하지 않습니다. 투자 판단의 책임은 투자자 본인에게
-                        있습니다.
+                        {t('page.8e0330')}
                     </p>
                 </div>
             </main>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 import { useRecentSearches } from '../hooks/useRecentSearches';
@@ -11,6 +12,7 @@ interface SymbolSearchPanelProps {
 }
 
 export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
+    const t = useTranslations('features.ticker-search');
     const { recentSearches, addSearch, removeSearch, clearAll } =
         useRecentSearches();
 
@@ -21,7 +23,7 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
             {recentSearches.length > 0 && (
                 <div className="mt-4 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
                     <span className="text-xs text-secondary-500">
-                        최근 검색
+                        {t('SymbolSearchPanel.d7fe41')}
                     </span>
                     {recentSearches.map(entry => (
                         <span
@@ -79,7 +81,7 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                         onClick={clearAll}
                         className="ml-1 text-xs text-secondary-500 underline-offset-2 hover:text-secondary-300 hover:underline"
                     >
-                        모두 지우기
+                        {t('SymbolSearchPanel.9d0d41')}
                     </button>
                 </div>
             )}

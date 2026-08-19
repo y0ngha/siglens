@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { ContactForm } from '@/features/contact-form';
 import { useDialog } from '@/shared/hooks/useDialog';
 import { cn } from '@/shared/lib/cn';
@@ -16,6 +17,7 @@ export function ContactDialog({
     triggerLabel = '문의하기',
     triggerClassName,
 }: ContactDialogProps) {
+    const t = useTranslations('widgets.layout');
     const { isOpen, open, close, dialogRef, triggerRef } = useDialog();
 
     return (
@@ -45,16 +47,16 @@ export function ContactDialog({
                                     id="contact-dialog-title"
                                     className="text-base font-semibold text-secondary-100"
                                 >
-                                    문의하기
+                                    {t('ContactDialog.531f6a')}
                                 </h2>
                                 <p className="mt-1 text-sm text-secondary-400">
-                                    의견이나 오류 제보를 남겨 주세요.
+                                    {t('ContactDialog.79bb9f')}
                                 </p>
                             </div>
                             <button
                                 type="button"
                                 onClick={close}
-                                aria-label="닫기"
+                                aria-label={t('ContactDialog.94b7db')}
                                 className="-mt-1 -mr-1 rounded p-1 text-secondary-400 transition-colors hover:text-secondary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
                                 <svg

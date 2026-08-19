@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { FallbackProps } from 'react-error-boundary';
 import { cn } from '@/shared/lib/cn';
 
@@ -49,6 +50,7 @@ export function AiSummaryErrorSection({
     className,
     getErrorMessage,
 }: AiSummaryErrorSectionProps) {
+    const t = useTranslations('shared.ui');
     const headingId = `${idPrefix}-error-heading`;
 
     const message =
@@ -77,7 +79,7 @@ export function AiSummaryErrorSection({
                 onClick={resetErrorBoundary}
                 className="mt-4 inline-flex min-h-11 items-center rounded bg-primary-600 px-3 py-2 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
             >
-                다시 시도
+                {t('AiSummaryErrorSection.0c767c')}
             </button>
         </section>
     );

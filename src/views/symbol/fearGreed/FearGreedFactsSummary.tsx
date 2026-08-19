@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { useId } from 'react';
 import {
     computeFearGreedIndex,
@@ -33,6 +34,7 @@ export function FearGreedFactsSummary({
     bars,
     buySellVolume,
 }: FearGreedFactsSummaryProps) {
+    const t = useTranslations('views.symbol');
     const headingId = useId();
     const snapshot = computeFearGreedIndex(bars, buySellVolume);
     if (!snapshot) return null;
@@ -55,11 +57,13 @@ export function FearGreedFactsSummary({
                 id={headingId}
                 className="text-sm font-semibold text-secondary-200"
             >
-                {symbol} 공포 탐욕 지수 요약
+                {symbol} {t('FearGreedFactsSummary.fabc11')}
             </h2>
             <dl className="grid grid-cols-1 gap-2 text-sm text-secondary-300">
                 <div className="flex justify-between gap-4">
-                    <dt className="text-secondary-400">현재 점수</dt>
+                    <dt className="text-secondary-400">
+                        {t('FearGreedFactsSummary.fa167e')}
+                    </dt>
                     <dd>
                         {score} / 100 ({SENTIMENT_LABEL_TEXT[snapshot.label]})
                     </dd>

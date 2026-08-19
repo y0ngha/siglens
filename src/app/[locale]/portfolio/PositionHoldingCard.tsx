@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useQuery } from '@tanstack/react-query';
@@ -66,6 +67,7 @@ function useInViewOnce<T extends Element>(): [
 const CARD_BODY_MIN_H = 'min-h-[350px]';
 
 function CardSkeleton({ symbol }: { symbol: string }) {
+    const t = useTranslations('app.portfolio');
     return (
         <div
             role="status"
@@ -77,7 +79,9 @@ function CardSkeleton({ symbol }: { symbol: string }) {
                 'flex w-full max-w-[200px] flex-col items-center justify-center gap-2'
             )}
         >
-            <span className="sr-only">{symbol} 위치를 불러오는 중이에요</span>
+            <span className="sr-only">
+                {symbol} {t('PositionHoldingCard.519f33')}
+            </span>
             <div
                 aria-hidden="true"
                 className="h-32 w-32 animate-pulse rounded bg-secondary-800"
@@ -93,6 +97,7 @@ interface CardDegradedProps {
 }
 
 function CardDegraded({ symbol, avg, message }: CardDegradedProps) {
+    const t = useTranslations('app.portfolio');
     return (
         <div
             data-testid="holding-card-degraded"
@@ -103,7 +108,7 @@ function CardDegraded({ symbol, avg, message }: CardDegradedProps) {
         >
             <span className="text-xs text-secondary-400">{message}</span>
             <span className="text-xs text-secondary-400 tabular-nums">
-                평단 {formatAmount(avg, symbol)}
+                {t('PositionHoldingCard.900beb')} {formatAmount(avg, symbol)}
             </span>
         </div>
     );
@@ -117,6 +122,7 @@ function CardDegraded({ symbol, avg, message }: CardDegradedProps) {
  * 단위로 degrade하고 그리드 전체는 절대 깨지지 않는다(design §에러/엣지).
  */
 export function PositionHoldingCard({ holding }: PositionHoldingCardProps) {
+    const t = useTranslations('app.portfolio');
     const [setNode, isVisible] = useInViewOnce<HTMLDivElement>();
     const avg = Number(holding.averagePrice);
     const fmpSymbol = holding.fmpSymbol ?? undefined;
@@ -180,8 +186,8 @@ export function PositionHoldingCard({ holding }: PositionHoldingCardProps) {
                         avg={avg}
                         message={
                             isAvgValid
-                                ? '범위 데이터를 불러오지 못했어요'
-                                : '데이터 부족'
+                                ? t('PositionHoldingCard.fa94cf')
+                                : t('PositionHoldingCard.0bafa3')
                         }
                     />
                 )}
@@ -201,18 +207,24 @@ export function PositionHoldingCard({ holding }: PositionHoldingCardProps) {
                                 className="max-w-[200px]"
                             />
                             <dl className="grid w-full grid-cols-2 gap-x-2 gap-y-1 text-xs text-secondary-300">
-                                <dt className="text-secondary-400">평단</dt>
+                                <dt className="text-secondary-400">
+                                    {t('PositionHoldingCard.900beb')}
+                                </dt>
                                 <dd className="text-right tabular-nums">
                                     {formatAmount(avg, holding.symbol)}
                                 </dd>
-                                <dt className="text-secondary-400">현재가</dt>
+                                <dt className="text-secondary-400">
+                                    {t('PositionHoldingCard.497d1e')}
+                                </dt>
                                 <dd className="text-right tabular-nums">
                                     {formatAmount(
                                         facts.lastClose,
                                         holding.symbol
                                     )}
                                 </dd>
-                                <dt className="text-secondary-400">수익률</dt>
+                                <dt className="text-secondary-400">
+                                    {t('PositionHoldingCard.fb64df')}
+                                </dt>
                                 <dd
                                     className={cn(
                                         'text-right tabular-nums',

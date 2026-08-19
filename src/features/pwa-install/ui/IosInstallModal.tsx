@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import Image from 'next/image';
@@ -38,6 +39,7 @@ interface IosInstallModalProps {
 }
 
 export function IosInstallModal({ onClose }: IosInstallModalProps) {
+    const t = useTranslations('features.pwa-install');
     const dialogRef = useRef<HTMLDivElement>(null);
     useEscapeKey(onClose, true);
     useFocusTrap(dialogRef, true);
@@ -67,11 +69,11 @@ export function IosInstallModal({ onClose }: IosInstallModalProps) {
                         id={MODAL_TITLE_ID}
                         className="text-base font-bold text-secondary-100"
                     >
-                        홈 화면에 추가하기
+                        {t('IosInstallModal.2c8570')}
                     </h2>
                     <button
                         onClick={onClose}
-                        aria-label="닫기"
+                        aria-label={t('IosInstallModal.94b7db')}
                         className="text-xl leading-none text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         ✕

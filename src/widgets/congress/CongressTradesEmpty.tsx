@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 /**
  * Empty-state card for the `CongressTradesTable` when there are no trades.
  *
@@ -6,13 +7,16 @@
  * SSR trade rows simply came back empty, without implying an error.
  */
 export function CongressTradesEmpty() {
+    const t = useTranslations('widgets.congress');
     return (
         <div
             role="status"
-            aria-label="의회 거래 내역 없음"
+            aria-label={t('CongressTradesEmpty.be4210')}
             className="rounded-xl border border-secondary-700 bg-secondary-800 px-5 py-4"
         >
-            <p className="text-sm text-secondary-400">거래 내역 없음</p>
+            <p className="text-sm text-secondary-400">
+                {t('CongressTradesEmpty.cb8eae')}
+            </p>
         </div>
     );
 }

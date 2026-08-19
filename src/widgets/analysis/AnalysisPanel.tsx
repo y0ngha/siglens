@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import {
     startTransition,
@@ -99,12 +100,13 @@ function ActionRecommendationSection({
     isChartVisible,
     onToggleChart,
 }: ActionRecommendationSectionProps) {
+    const t = useTranslations('widgets.analysis');
     return (
         <div className="flex flex-col gap-2 rounded-lg bg-secondary-700/30 p-3">
             {rec.entryRecommendation !== undefined && (
                 <div className="flex items-center gap-2">
                     <span className="text-xs text-secondary-500">
-                        진입 의견
+                        {t('AnalysisPanel.edb872')}
                     </span>
                     <span
                         className={cn(
@@ -118,7 +120,7 @@ function ActionRecommendationSection({
             )}
             <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
-                    매매 전략
+                    {t('AnalysisPanel.034be7')}
                 </span>
                 <button
                     type="button"
@@ -131,12 +133,12 @@ function ActionRecommendationSection({
                     )}
                     aria-label={
                         isChartVisible
-                            ? '차트 가격선 숨기기'
-                            : '차트 가격선 표시'
+                            ? t('AnalysisPanel.f744e1')
+                            : t('AnalysisPanel.cfbeac')
                     }
                 >
                     <EyeIcon isVisible={isChartVisible} />
-                    차트
+                    {t('AnalysisPanel.06c8ed')}
                 </button>
             </div>
             <div className="flex flex-col gap-2">
@@ -191,22 +193,17 @@ function ReconciledLevelsBlock({
     riskReward,
     reason,
 }: ReconciledLevelsBlockProps) {
+    const t = useTranslations('widgets.analysis');
     return (
         <section className="mt-1 flex flex-col gap-1 rounded-md border border-secondary-700 bg-secondary-800/40 px-3 py-2">
             <header className="flex items-center">
                 <span className="text-[10px] font-semibold tracking-wide text-secondary-400 uppercase">
-                    내부 보정값
+                    {t('AnalysisPanel.b3df82')}
                 </span>
                 <InfoTooltip>
                     <div className="text-secondary-300">
-                        <p>
-                            AI가 제시한 값을 내부 데이터로 한 번 더 검증·보정한
-                            결과예요.
-                        </p>
-                        <p>
-                            실시간 가격 흐름과 어긋난 부분이 있으면 여기서
-                            조정돼요.
-                        </p>
+                        <p>{t('AnalysisPanel.82e32f')}</p>
+                        <p>{t('AnalysisPanel.db5809')}</p>
                         <MarkdownText>{reason}</MarkdownText>
                     </div>
                 </InfoTooltip>
@@ -321,12 +318,13 @@ function TrendBadge({ trend }: TrendBadgeProps) {
  * 색상만으로 의미를 전달하지 않도록 실제 문구를 포함한 텍스트 배지로 구성했다.
  */
 function PersonalizedAnalysisBadge() {
+    const t = useTranslations('widgets.analysis');
     return (
         <span
             data-testid="personalized-analysis-badge"
             className="inline-flex items-center gap-1 rounded border-primary-400/40 bg-primary-400/10 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-primary-300"
         >
-            내 평단 기준으로 분석했어요
+            {t('AnalysisPanel.2c520f')}
         </span>
     );
 }
@@ -441,14 +439,12 @@ function ConfluenceInfo({ level }: ConfluenceInfoProps) {
 }
 
 function KeyLevelsHeaderInfo() {
+    const t = useTranslations('widgets.analysis');
     return (
         <InfoTooltip>
             <div className="text-secondary-300">
-                <p>가까운 가격대에 여러 지표가 함께 모인 레벨이에요.</p>
-                <p>
-                    수렴된 지표가 많을수록 그 가격대의 지지·저항 신뢰도가 높다고
-                    봐요.
-                </p>
+                <p>{t('AnalysisPanel.b321c3')}</p>
+                <p>{t('AnalysisPanel.d39704')}</p>
             </div>
         </InfoTooltip>
     );
@@ -468,13 +464,15 @@ function PatternAccordionItem({
     pattern,
     showConfidence,
 }: PatternAccordionItemProps) {
+    const t = useTranslations('widgets.analysis');
     const [isOpen, setIsOpen] = useState(false);
 
     const handleToggleOpen = (): void => {
         setIsOpen(prev => !prev);
     };
 
-    const primaryLabel = pattern.renderConfig?.label ?? '주요 가격';
+    const primaryLabel =
+        pattern.renderConfig?.label ?? t('AnalysisPanel.fb0cf0');
     const keyPrices = pattern.keyPrices ?? [];
 
     return (
@@ -509,7 +507,7 @@ function PatternAccordionItem({
                     {keyPrices.length > 0 && (
                         <div className="flex flex-col gap-1">
                             <span className="text-[10px] font-semibold tracking-wide text-secondary-500 uppercase">
-                                주요 가격대
+                                {t('AnalysisPanel.251228')}
                             </span>
                             <div className="flex flex-col gap-1">
                                 {keyPrices.map((kp, index) => (
@@ -731,6 +729,7 @@ function ReanalyzeButton({
     reanalyzeCooldownMs,
     onReanalyze,
 }: ReanalyzeButtonProps) {
+    const t = useTranslations('widgets.analysis');
     const isCoolingDown = reanalyzeCooldownMs > 0;
     const isDisabled = isAnalyzing || isCoolingDown;
     const label = getReanalyzeLabel(isAnalyzing, reanalyzeCooldownMs);
@@ -740,11 +739,7 @@ function ReanalyzeButton({
             onClick={onReanalyze}
             disabled={isDisabled}
             aria-disabled={isDisabled}
-            title={
-                isCoolingDown
-                    ? '재분석은 5분에 한 번만 실행할 수 있어요.'
-                    : undefined
-            }
+            title={isCoolingDown ? t('AnalysisPanel.550fe5') : undefined}
             className="w-full rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white tabular-nums transition-colors hover:bg-primary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-primary-600/40 disabled:text-secondary-300"
         >
             {label}
@@ -824,6 +819,7 @@ export function AnalysisPanel({
     skillCount = 0,
     isPersonalized = false,
 }: AnalysisPanelProps) {
+    const t = useTranslations('widgets.analysis');
     const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
         'idle'
     );
@@ -986,7 +982,7 @@ export function AnalysisPanel({
             <div className="flex flex-col gap-y-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-secondary-200">
-                        AI 분석
+                        {t('AnalysisPanel.f0cdeb')}
                     </span>
                     {isAnalyzing && (
                         <span
@@ -1039,18 +1035,20 @@ export function AnalysisPanel({
                             )}
                             title={
                                 showProgress || isAnalyzing
-                                    ? '분석이 완료된 뒤 복사할 수 있습니다'
-                                    : '리포트 복사'
+                                    ? t('AnalysisPanel.39c545')
+                                    : t('AnalysisPanel.32f681')
                             }
                         >
-                            {copyState === 'copied' && '복사됨'}
-                            {copyState === 'failed' && '복사 실패'}
-                            {copyState === 'idle' && '리포트 복사'}
+                            {copyState === 'copied' &&
+                                t('AnalysisPanel.e5c85b')}
+                            {copyState === 'failed' &&
+                                t('AnalysisPanel.e815ab')}
+                            {copyState === 'idle' && t('AnalysisPanel.32f681')}
                         </button>
                     )}
                     {!hasLockedPartialDetail && (
                         <div className="flex items-center gap-1.5 text-xs whitespace-nowrap text-secondary-400">
-                            <span>리스크</span>
+                            <span>{t('AnalysisPanel.720097')}</span>
                             <span
                                 className={cn(
                                     'font-semibold',
@@ -1065,7 +1063,7 @@ export function AnalysisPanel({
             </div>
             {copyState === 'failed' && (
                 <p className="-mt-2 text-xs text-chart-bearish">
-                    클립보드 복사에 실패했습니다. 브라우저 권한을 확인해 주세요.
+                    {t('AnalysisPanel.c68843')}
                 </p>
             )}
             <p className="font-mono text-xs text-secondary-500">
@@ -1076,10 +1074,11 @@ export function AnalysisPanel({
                     <>
                         {detectedPatterns.length +
                             detectedStrategyResults.length}
-                        개 스킬 감지 ·{' '}
+                        {t('AnalysisPanel.715a79')}{' '}
                     </>
                 )}
-                {indicatorCount}종 인디케이터 적용
+                {indicatorCount}
+                {t('AnalysisPanel.4450ef')}
             </p>
 
             {/* 분석 중에는 진행 인디케이터로 대체.
@@ -1133,7 +1132,7 @@ export function AnalysisPanel({
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center">
                                 <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
-                                    주요 레벨
+                                    {t('AnalysisPanel.5ec98c')}
                                 </span>
                                 <KeyLevelsHeaderInfo />
                             </div>
@@ -1141,7 +1140,7 @@ export function AnalysisPanel({
                                 {resistanceLevels.length > 0 && (
                                     <div className="flex flex-col gap-1">
                                         <span className="text-xs text-secondary-500">
-                                            저항
+                                            {t('AnalysisPanel.d930e0')}
                                         </span>
                                         {resistanceLevels.map(level => (
                                             <div
@@ -1170,7 +1169,7 @@ export function AnalysisPanel({
                                 {supportLevels.length > 0 && (
                                     <div className="flex flex-col gap-1">
                                         <span className="text-xs text-secondary-500">
-                                            지지
+                                            {t('AnalysisPanel.8da27a')}
                                         </span>
                                         {supportLevels.map(level => (
                                             <div
@@ -1223,7 +1222,7 @@ export function AnalysisPanel({
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center justify-between">
                                 <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
-                                    추세선
+                                    {t('AnalysisPanel.0b5eb6')}
                                 </span>
                             </div>
                             <div className="flex flex-col gap-1.5">
@@ -1241,16 +1240,16 @@ export function AnalysisPanel({
                         (priceTargets.bearish?.targets.length ?? 0) > 0) && (
                         <div className="flex flex-col gap-2">
                             <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
-                                가격 목표
+                                {t('AnalysisPanel.31f83c')}
                             </span>
                             <div className="grid grid-cols-2 gap-3">
                                 <PriceScenarioSection
-                                    label="상승"
+                                    label={t('AnalysisPanel.3dc47b')}
                                     scenario={priceTargets.bullish}
                                     colorClass="text-chart-bullish"
                                 />
                                 <PriceScenarioSection
-                                    label="하락"
+                                    label={t('AnalysisPanel.79282c')}
                                     scenario={priceTargets.bearish}
                                     colorClass="text-chart-bearish"
                                 />
@@ -1261,7 +1260,7 @@ export function AnalysisPanel({
                     {displayedIndicatorResults.length > 0 && (
                         <div className="flex flex-col gap-2">
                             <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
-                                보조지표
+                                {t('AnalysisPanel.2a1bed')}
                             </span>
                             <div className="flex flex-col gap-1.5">
                                 {displayedIndicatorResults.map(
@@ -1284,7 +1283,7 @@ export function AnalysisPanel({
 
                     <div className="flex flex-col gap-2">
                         <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
-                            차트 패턴
+                            {t('AnalysisPanel.bdeea2')}
                         </span>
                         {hasDetectedPatterns ? (
                             <div className="flex flex-col gap-1.5">
@@ -1298,7 +1297,7 @@ export function AnalysisPanel({
                             </div>
                         ) : (
                             <p className="text-sm text-secondary-500">
-                                감지된 패턴 없음
+                                {t('AnalysisPanel.8d481f')}
                             </p>
                         )}
                     </div>
@@ -1306,7 +1305,7 @@ export function AnalysisPanel({
                     {detectedStrategyResults.length > 0 && (
                         <div className="flex flex-col gap-2">
                             <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
-                                전략
+                                {t('AnalysisPanel.913a74')}
                             </span>
                             <div className="flex flex-col gap-1.5">
                                 {detectedStrategyResults.map(strategy => (
@@ -1327,24 +1326,22 @@ export function AnalysisPanel({
                         <div className="flex flex-col items-center gap-3 rounded-lg border border-secondary-700 bg-secondary-800/40 p-5 text-center">
                             <div className="flex flex-col gap-1.5">
                                 <p className="text-sm font-semibold text-balance text-secondary-100">
-                                    더 깊은 분석이 궁금하신가요?
+                                    {t('AnalysisPanel.120a0a')}
                                 </p>
                                 <p className="text-xs leading-relaxed text-balance text-secondary-300">
                                     {skillCount > 0
                                         ? `회원가입하면 ${skillCount}개 스킬을 모두 적용한 상세 분석을 받아볼 수 있어요.`
-                                        : '회원가입하면 전체 스킬을 적용한 상세 분석을 받아볼 수 있어요.'}
+                                        : t('AnalysisPanel.f0256c')}
                                 </p>
                                 <p className="text-xs leading-relaxed text-secondary-400">
-                                    보조지표 심층 분석, 캔들 패턴, 핵심
-                                    지지·저항 레벨, 매매 시나리오까지 담겨
-                                    있어요.
+                                    {t('AnalysisPanel.9971e1')}
                                 </p>
                             </div>
                             <Link
                                 href="/signup"
                                 className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
-                                회원가입
+                                {t('AnalysisPanel.ecb4cc')}
                             </Link>
                         </div>
                     )}

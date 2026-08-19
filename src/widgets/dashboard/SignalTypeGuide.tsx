@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 const ENTRIES = [
     {
         term: '골든크로스',
@@ -34,6 +35,7 @@ const ENTRIES = [
 ];
 
 export function SignalTypeGuide() {
+    const t = useTranslations('widgets.dashboard');
     return (
         <section
             className="px-6 py-10 lg:px-[15vw]"
@@ -43,7 +45,7 @@ export function SignalTypeGuide() {
                 id="signal-guide-heading"
                 className="mb-6 text-sm font-semibold tracking-[0.15em] text-secondary-200 uppercase"
             >
-                신호 유형 가이드
+                {t('SignalTypeGuide.03876a')}
             </h2>
             <dl className="grid grid-cols-1 gap-x-8 gap-y-3 md:grid-cols-2">
                 {ENTRIES.map(e => (

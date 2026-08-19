@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { buildSymbolOgImage } from '@/entities/og-image';
 import { getCachedSharedAnalysis } from '@/entities/shared-analysis/actions/getCachedSharedAnalysis';
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export default async function Image({ params }: Props) {
+    const t = await getTranslations('app.share');
     const { id } = await params;
     const lookup = await getCachedSharedAnalysis(id);
 
@@ -38,7 +40,7 @@ export default async function Image({ params }: Props) {
 
     return buildSymbolOgImage({
         ticker: 'SIGLENS',
-        label: '만료된 공유',
+        label: t('opengraph-image.ce34e2'),
         cacheControl: SHARE_OG_CACHE_CONTROL,
     });
 }

@@ -1,4 +1,6 @@
+import { useTranslations } from 'next-intl';
 export function OptionsAiAnalysisStaleNotice() {
+    const t = useTranslations('widgets.options');
     // sibling OptionsAiAnalysis는 <section aria-labelledby="...">로 landmark 역할.
     // 같은 region을 mutually exclusive 상태(stale vs ready)로 노출하므로 wrapper
     // 도 <section>으로 통일해 screen reader landmark navigation이 일관되게 한다.
@@ -11,20 +13,19 @@ export function OptionsAiAnalysisStaleNotice() {
                 id="options-ai-analysis-heading"
                 className="mb-3 text-xs tracking-widest text-secondary-400 uppercase"
             >
-                AI 옵션 분석
+                {t('OptionsAiAnalysisStaleNotice.eefb95')}
             </h2>
             <p className="text-sm leading-relaxed text-secondary-300">
-                지금은 AI 옵션 분석을 생성하기 어려워요.
+                {t('OptionsAiAnalysisStaleNotice.1e523c')}
             </p>
             <p className="mt-2 text-sm leading-relaxed text-secondary-400">
-                Open Interest와 호가 데이터가 비어 있어서 Max Pain, P/C Ratio,
-                주요 strike 같은 핵심 지표를 계산할 수 없어요.
+                {t('OptionsAiAnalysisStaleNotice.6e90d0')}
             </p>
             <p className="mt-2 text-sm leading-relaxed text-secondary-400">
-                데이터가 갱신되면 분석이 자동으로 다시 동작합니다.
+                {t('OptionsAiAnalysisStaleNotice.048b74')}
             </p>
             <p className="mt-2 text-sm leading-relaxed text-secondary-400">
-                보통 한국 시간 저녁 8시(20:00) 이후에 데이터가 갱신돼요.
+                {t('OptionsAiAnalysisStaleNotice.40026a')}
             </p>
         </section>
     );

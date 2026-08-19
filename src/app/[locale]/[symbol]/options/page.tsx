@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
 import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
@@ -147,6 +148,7 @@ export default async function OptionsPage({ params }: Props) {
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.symbol');
     const upper = symbol.toUpperCase();
 
     if (!isAdmissibleSymbolShape(upper)) notFound();
@@ -300,7 +302,7 @@ export default async function OptionsPage({ params }: Props) {
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: upper, url: buildSymbolSeoContent(upper).url },
-        { name: '옵션 분석', url },
+        { name: t('page.f1b01b'), url },
     ]);
 
     const faqJsonLd = {
@@ -312,23 +314,23 @@ export default async function OptionsPage({ params }: Props) {
                 name: `${displayName} 옵션 시장 분석에서 무엇을 볼 수 있나요?`,
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: 'AI가 옵션 시장 데이터를 분석해 주요 만기별로 어디에 돈이 쌓이고 있는지, 시장이 어떤 변동성을 예상하는지 한국어로 설명해줍니다. Max Pain, Put/Call Ratio, ATM IV, Implied Move 같은 핵심 지표와 Strike별 OI 분포 차트도 함께 보여줍니다.',
+                    text: t('page.a32c23'),
                 },
             },
             {
                 '@type': 'Question',
-                name: 'Max Pain과 Open Interest는 어떻게 해석하나요?',
+                name: t('page.faa62c'),
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: 'Max Pain은 옵션 만기일이 가까워질 때 주가가 끌리는 가격입니다. Open Interest는 현재 살아있는 옵션 계약 수로, 두꺼운 가격대에 많은 사람이 베팅하고 있다는 뜻입니다.',
+                    text: t('page.e70f2d'),
                 },
             },
             {
                 '@type': 'Question',
-                name: '제 종목에 옵션이 없으면 어떻게 되나요?',
+                name: t('page.ec648e'),
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '옵션 시장이 형성되지 않은 종목은 옵션 분석 페이지에 빈 안내가 표시되며, 차트/펀더멘털/뉴스 같은 다른 분석 페이지로 안내됩니다.',
+                    text: t('page.f865a7'),
                 },
             },
         ],
@@ -352,20 +354,20 @@ export default async function OptionsPage({ params }: Props) {
                 than the cards beneath it.) */}
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>
-                    {displayName} 옵션 시장 분석
+                    {displayName} {t('page.d95d05')}
                 </SymbolPageHeading>
                 <section className="sr-only">
-                    <h2>{displayName} 옵션 분석 개요</h2>
+                    <h2>
+                        {displayName} {t('page.928b1c')}
+                    </h2>
                     <p>
-                        {displayName} 옵션 시장을 AI가 한국어로 해석합니다.
-                        만기별 Max Pain, Put/Call Ratio, ATM IV, Implied Move 등
-                        핵심 지표와 Strike별 Open Interest 분포를 함께 살펴볼 수
-                        있습니다.
+                        {displayName} {t('page.64f569')}
                     </p>
                     {expirations.length > 0 ? (
                         <p>
-                            현재 거래 가능한 만기일은 총 {expirations.length}
-                            개이며, 가장 가까운 만기는 {expirations[0]}입니다.
+                            {t('page.934008')} {expirations.length}
+                            {t('page.6f7f8a')} {expirations[0]}
+                            {t('page.d69510')}
                         </p>
                     ) : null}
                 </section>

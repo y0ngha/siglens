@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { MARKET_FEAR_GREED_FACTOR_KEYS } from '@y0ngha/siglens-core';
 import { MarketFearGreedPage } from '@/widgets/market-fear-greed';
 import type { MarketFearGreedView } from '@/entities/market-fear-greed';
@@ -27,6 +28,7 @@ interface FearGreedRouteBodyProps {
  * 서버 컴포넌트 — 활성 지역은 라우트가 알고 있으므로 `usePathname`이 필요 없다.
  */
 export function FearGreedRouteBody({ market, view }: FearGreedRouteBodyProps) {
+    const t = useTranslations('app.fear-greed');
     const copy = FEAR_GREED_COPY[market];
     const factorLabel = MARKET_FACTOR_LABEL[market];
     const factorDescription = MARKET_FACTOR_DESCRIPTION[market];
@@ -106,12 +108,13 @@ export function FearGreedRouteBody({ market, view }: FearGreedRouteBodyProps) {
                         id="market-fear-greed-guide-heading"
                         className="text-base font-semibold text-secondary-300"
                     >
-                        공포탐욕지수 읽는 법
+                        {t('FearGreedRouteBody.350c3b')}
                     </h2>
                     <ul className="space-y-1 text-sm leading-relaxed text-secondary-400">
                         {FEAR_GREED_BANDS.map(band => (
                             <li key={band.label}>
-                                {band.min}~{band.max}점 — {band.label}
+                                {band.min}~{band.max}
+                                {t('FearGreedRouteBody.7503d0')} {band.label}
                             </li>
                         ))}
                     </ul>
@@ -131,7 +134,7 @@ export function FearGreedRouteBody({ market, view }: FearGreedRouteBodyProps) {
                         id="market-fear-greed-faq-heading"
                         className="text-base font-semibold text-secondary-300"
                     >
-                        자주 묻는 질문
+                        {t('FearGreedRouteBody.ae2ce9')}
                     </h2>
                     <dl className="mt-3 space-y-4 text-sm leading-relaxed text-secondary-400">
                         {copy.faq.map(({ question, answer }) => (

@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
@@ -149,6 +150,7 @@ export default async function NewsHubPage({
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.news');
     const regions = regionsOf('news');
     const previews = await Promise.all(
         regions.map(region =>
@@ -170,7 +172,7 @@ export default async function NewsHubPage({
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: '시장 뉴스 허브', url: hubUrl },
+        { name: t('page.dc06c4'), url: hubUrl },
     ]);
 
     return (
@@ -179,18 +181,11 @@ export default async function NewsHubPage({
             <JsonLd data={breadcrumbJsonLd} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
-                    시장 뉴스 허브
+                    {t('page.dc06c4')}
                 </h1>
                 <div className="space-y-1 text-sm text-secondary-400">
-                    <p>
-                        미국·한국 주식과 암호화폐 뉴스를 지역별로 나눠, AI가
-                        한국어로 정리해 드려요.
-                    </p>
-                    <p>
-                        보고 싶은 시장을 먼저 고르세요. 미국은
-                        일반·주식·외환·마켓 아티클로 다시 나뉘고, 한국과
-                        암호화폐는 바로 기사 목록으로 이어집니다.
-                    </p>
+                    <p>{t('page.17728f')}</p>
+                    <p>{t('page.a96e68')}</p>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {regions.map((region, i) => (
@@ -218,7 +213,7 @@ export default async function NewsHubPage({
                         id="news-hub-category-index"
                         className="text-base font-semibold text-secondary-300"
                     >
-                        카테고리 바로가기
+                        {t('page.e02fdd')}
                     </h2>
                     <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
                         {categoriesInRegion('us').map(cat => (

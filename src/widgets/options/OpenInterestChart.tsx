@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import {
     CALL_LABEL_MIDLINE_OFFSET_PX,
     PEAK_LABEL_TOP_OFFSET_PX,
@@ -107,6 +108,7 @@ export function OpenInterestChart({
     chain,
     metrics,
 }: OpenInterestChartProps) {
+    const t = useTranslations('widgets.options');
     const {
         containerRef,
         hoveredIndex,
@@ -198,10 +200,10 @@ export function OpenInterestChart({
         return (
             <div className="space-y-2 rounded-xl border border-secondary-700 bg-secondary-800 p-4">
                 <span className="text-sm font-medium text-secondary-300">
-                    Open Interest 분포 (Strike별)
+                    {t('OpenInterestChart.f0220d')}
                 </span>
                 <p className="text-xs leading-relaxed text-secondary-500">
-                    이 만기에는 OI 데이터가 없어요.
+                    {t('OpenInterestChart.0f1ff5')}
                 </p>
             </div>
         );
@@ -246,7 +248,7 @@ export function OpenInterestChart({
         >
             <div className="flex items-center gap-1">
                 <span className="text-sm font-medium text-secondary-300">
-                    Open Interest 분포 (Strike별)
+                    {t('OpenInterestChart.f0220d')}
                 </span>
                 <InfoTooltip>{OpenInterestTooltip}</InfoTooltip>
             </div>
@@ -257,11 +259,10 @@ export function OpenInterestChart({
                 aria-labelledby="oi-chart-title oi-chart-desc"
                 className="block w-full"
             >
-                <title id="oi-chart-title">Strike별 Open Interest 분포</title>
-                <desc id="oi-chart-desc">
-                    Call과 Put의 만기별 OI를 strike 가격대별로 막대그래프로
-                    표시합니다. Max Pain과 현재 주가는 세로선으로 강조됩니다.
-                </desc>
+                <title id="oi-chart-title">
+                    {t('OpenInterestChart.4948b9')}
+                </title>
+                <desc id="oi-chart-desc">{t('OpenInterestChart.c9d602')}</desc>
 
                 <line
                     x1={PAD_LEFT}
@@ -432,24 +433,26 @@ export function OpenInterestChart({
                             <span className="text-chart-bullish">Call OI</span>
                             <span className="tabular-nums">
                                 {hoveredRow.callOpenInterest.toLocaleString()}{' '}
-                                계약
+                                {t('OpenInterestChart.b41163')}
                             </span>
                         </div>
                         <div className="flex items-center justify-between gap-3">
                             <span className="text-chart-bearish">Put OI</span>
                             <span className="tabular-nums">
                                 {hoveredRow.putOpenInterest.toLocaleString()}{' '}
-                                계약
+                                {t('OpenInterestChart.b41163')}
                             </span>
                         </div>
                         <div className="mt-1 flex items-center justify-between gap-3 border-t border-secondary-700 pt-1">
-                            <span className="text-secondary-400">합계</span>
+                            <span className="text-secondary-400">
+                                {t('OpenInterestChart.3dcb27')}
+                            </span>
                             <span className="font-semibold tabular-nums">
                                 {(
                                     hoveredRow.callOpenInterest +
                                     hoveredRow.putOpenInterest
                                 ).toLocaleString()}{' '}
-                                계약
+                                {t('OpenInterestChart.b41163')}
                             </span>
                         </div>
                     </>
@@ -485,12 +488,12 @@ export function OpenInterestChart({
                         className="inline-block w-[14px] border-t-[1.5px] border-solid border-ui-warning"
                         aria-hidden="true"
                     />
-                    현재가
+                    {t('OpenInterestChart.497d1e')}
                 </span>
             </div>
 
             <StrikeBarSrTable
-                caption="Strike별 Open Interest 데이터"
+                caption={t('OpenInterestChart.a33e7f')}
                 headers={['Strike', 'Call OI', 'Put OI']}
                 rows={oiByStrike.map(row => ({
                     key: row.strike,

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { LogoutButton } from '@/features/auth-logout';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
@@ -41,6 +42,7 @@ function getInitial(user: HeaderUserMenuUser): string {
 }
 
 export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
+    const t = useTranslations('widgets.layout');
     const containerRef = useRef<HTMLDivElement>(null);
     const { isOpen, close, toggle } = usePopoverToggle(containerRef);
     useEscapeKey(close, isOpen);
@@ -49,7 +51,7 @@ export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
         return (
             <div
                 role="status"
-                aria-label="로딩 중"
+                aria-label={t('HeaderUserMenu.ce5200')}
                 className="size-10 animate-pulse rounded-full bg-secondary-800 motion-reduce:animate-none"
             />
         );
@@ -57,7 +59,10 @@ export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
 
     if (!currentUser) {
         return (
-            <nav aria-label="인증" className="flex items-center gap-2">
+            <nav
+                aria-label={t('HeaderUserMenu.ce7156')}
+                className="flex items-center gap-2"
+            >
                 {/*
                     전역 헤더의 인증 CTA — 비로그인 방문자의 **모든** 페이지뷰에 렌더되므로
                     NAV_VERTICALS·로고와 같은 범주다. 전환 행동이라 prefetch를 남길지 검토했으나
@@ -72,14 +77,14 @@ export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
                     prefetch={false}
                     className="hidden min-h-11 items-center rounded px-3 text-sm font-medium text-secondary-200 transition-colors hover:text-secondary-50 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none sm:inline-flex"
                 >
-                    로그인
+                    {t('HeaderUserMenu.e225a6')}
                 </Link>
                 <Link
                     href="/signup"
                     prefetch={false}
                     className="inline-flex min-h-11 items-center rounded bg-primary-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    회원가입
+                    {t('HeaderUserMenu.ecb4cc')}
                 </Link>
             </nav>
         );
@@ -101,7 +106,7 @@ export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
                 {currentUser.avatarUrl ? (
                     <Image
                         src={currentUser.avatarUrl}
-                        alt="아바타 이미지"
+                        alt={t('HeaderUserMenu.3a7424')}
                         width={40}
                         height={40}
                         className="size-full rounded-full object-cover"
@@ -120,7 +125,7 @@ export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
             {isOpen ? (
                 <div
                     role="menu"
-                    aria-label="사용자 메뉴"
+                    aria-label={t('HeaderUserMenu.b9a45e')}
                     className="absolute right-0 z-50 mt-2 w-64 rounded-lg border border-secondary-800 bg-secondary-900 p-2 shadow-2xl"
                 >
                     <div className="border-b border-secondary-800 px-3 py-2 text-sm">
@@ -150,7 +155,7 @@ export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
                             onClick={close}
                             className="flex w-full items-center rounded px-3 py-2 text-left text-sm text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
-                            계정 설정
+                            {t('HeaderUserMenu.622fae')}
                         </Link>
                         <LogoutButton />
                     </div>

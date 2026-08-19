@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
@@ -112,6 +113,7 @@ export default async function UsNewsHubPage({
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.news');
     const categories = categoriesInRegion('us');
     const previewsByCategory = await Promise.all(
         categories.map(cat => fetchCategoryPreviews(cat))
@@ -131,8 +133,8 @@ export default async function UsNewsHubPage({
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: '시장 뉴스 허브', url: `${SITE_URL}/news` },
-        { name: '미국 시장 뉴스', url },
+        { name: t('page.dc06c4'), url: `${SITE_URL}/news` },
+        { name: t('page.d311d2'), url },
     ]);
 
     return (
@@ -142,17 +144,11 @@ export default async function UsNewsHubPage({
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <RegionTabs vertical="news" active="us" currentPath={PATH} />
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
-                    미국 시장 뉴스
+                    {t('page.d311d2')}
                 </h1>
                 <div className="space-y-1 text-sm text-secondary-400">
-                    <p>
-                        미국 일반·주식·외환·마켓 아티클 최신 뉴스를 AI가
-                        한국어로 정리해 드려요.
-                    </p>
-                    <p>
-                        각 카테고리는 AI 다이제스트와 함께 호재·악재 시그널을
-                        표시하며, 카드 클릭 시 원문 기사로 이동합니다.
-                    </p>
+                    <p>{t('page.d97943')}</p>
+                    <p>{t('page.f5e9de')}</p>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {categories.map((cat, i) => {

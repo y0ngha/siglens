@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import {
     getDescriptor,
     type MarketProfileId,
@@ -40,6 +41,7 @@ export function OverallFactualFallback({
     marketProfile,
     newsItems,
 }: OverallFactualFallbackProps) {
+    const t = useTranslations('widgets.overall');
     const headingId = 'overall-factual-fallback-heading';
     const analyzedNewsCount = newsItems.filter(
         item => item.sentiment !== null
@@ -51,30 +53,25 @@ export function OverallFactualFallback({
             className="rounded-xl border border-secondary-700 bg-secondary-800 p-5"
         >
             <h2 id={headingId} className="text-lg font-semibold tracking-tight">
-                {displayName} 종합 분석 데이터 상태
+                {displayName} {t('OverallFactualFallback.87d0df')}
             </h2>
             <div className="mt-3 space-y-3 text-sm leading-relaxed text-secondary-300">
                 <p>
-                    {displayName} ({symbol}) 종합 분석은{' '}
-                    {getAxesText(marketProfile)}를 함께 봅니다.
+                    {displayName} ({symbol}
+                    {t('OverallFactualFallback.33902f')}{' '}
+                    {getAxesText(marketProfile)}
+                    {t('OverallFactualFallback.6da953')}
                 </p>
                 {newsItems.length > 0 ? (
                     <p>
-                        현재 서버가 확인한 최근 뉴스는 {newsItems.length}건이며,
-                        이 중 {analyzedNewsCount}건은 AI 뉴스 카드 분석이
-                        완료됐습니다.
+                        {t('OverallFactualFallback.550056')} {newsItems.length}
+                        {t('OverallFactualFallback.cedc27')} {analyzedNewsCount}
+                        {t('OverallFactualFallback.4514b7')}
                     </p>
                 ) : (
-                    <p>
-                        최근 뉴스 데이터는 아직 준비되지 않았습니다. 뉴스 카드가
-                        분석되면 종합 분석의 뉴스 축 상태도 함께 반영됩니다.
-                    </p>
+                    <p>{t('OverallFactualFallback.3a92a1')}</p>
                 )}
-                <p>
-                    종합 AI 결론이 아직 캐시되지 않았습니다. 분석 결과가
-                    준비되면 강세, 중립, 약세 시나리오와 위험 요인이 이 영역에
-                    표시됩니다.
-                </p>
+                <p>{t('OverallFactualFallback.ea75f6')}</p>
             </div>
         </section>
     );

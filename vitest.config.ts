@@ -16,6 +16,13 @@ const sharedConfig = {
             // stub으로 해석된다. 서버 컴포넌트를 직접 호출하는 이 레포의 페이지
             // 테스트가 통째로 깨지므로 실제 react-server 빌드로 직접 가리킨다
             // (mock이 아니라 실물이라 `setRequestLocale`의 실제 동작을 검증한다).
+            // `next-intl/config`는 빌드 플러그인이 만드는 가상 모듈이라 vitest에는
+            // 없다. 없으면 서버 컴포넌트의 번역 호출이 전부 "config file 없음"으로
+            // 던진다. 실제 ko 카탈로그를 돌려주는 테스트 설정으로 대체한다.
+            'next-intl/config': path.resolve(
+                __dirname,
+                'src/shared/test-utils/nextIntlTestConfig.ts'
+            ),
             'next-intl/server': path.resolve(
                 __dirname,
                 'node_modules/next-intl/dist/esm/development/server.react-server.js'

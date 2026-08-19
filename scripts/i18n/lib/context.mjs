@@ -107,6 +107,15 @@ export function classify({ candidate, filePath }) {
     if (!component) {
         return { applicable: false, reason: 'module-scope-or-helper' };
     }
+    // 파라미터 기본값(`function C({ label = '한국어' })`)은 컴포넌트 **본문 밖**이라
+    // `const t = useTranslations(...)`가 아직 선언되지 않았다. 치환하면 `t is not
+    // defined`가 되는데, 이건 오프셋만 보면 컴포넌트 안쪽이라 다른 검사로는 안 걸린다.
+    if (
+        component.body?.start !== undefined &&
+        candidate.start < component.body.start
+    ) {
+        return { applicable: false, reason: 'parameter-default' };
+    }
     // 표현식 본문(`const X = () => <div/>`)은 `const t = …`를 넣을 자리가 없다.
     // 여기서 걸러내지 않으면 extract.mjs가 `{t('key')}` 치환은 큐에 넣고 바인딩
     // 주입만 나중에 건너뛰어, **`t`가 정의되지 않은 파일**을 써 버린다.

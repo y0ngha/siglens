@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
 import {
@@ -72,10 +73,11 @@ export function StatementTable({
     rows,
     currency = DEFAULT_STATEMENT_CURRENCY,
 }: StatementTableProps) {
+    const t = useTranslations('widgets.financials');
     return (
         <>
             <p className="mb-2 text-xs text-secondary-400 sm:hidden">
-                ← 좌우로 스크롤 →
+                {t('StatementTable.b488b1')}
             </p>
             <div
                 className="overflow-x-auto rounded-xl focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
@@ -83,7 +85,7 @@ export function StatementTable({
                 aria-label={
                     caption
                         ? `${caption} (좌우 스크롤 가능)`
-                        : '재무제표 표 (좌우 스크롤 가능)'
+                        : t('StatementTable.99a09e')
                 }
                 tabIndex={0}
             >
@@ -99,7 +101,7 @@ export function StatementTable({
                                 scope="col"
                                 className="pb-2 text-left font-medium"
                             >
-                                지표
+                                {t('StatementTable.0b5a2c')}
                             </th>
                             {columns.map(col => (
                                 <th

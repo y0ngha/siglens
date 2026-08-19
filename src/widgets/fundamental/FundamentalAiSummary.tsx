@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import {
     type FundamentalAnalysisResponse,
     type FundamentalCategory,
@@ -46,6 +47,7 @@ interface FundamentalAiSummaryViewProps {
 export function FundamentalAiSummaryView({
     result,
 }: FundamentalAiSummaryViewProps) {
+    const t = useTranslations('widgets.fundamental');
     return (
         <section
             aria-labelledby="ai-summary-heading"
@@ -56,7 +58,7 @@ export function FundamentalAiSummaryView({
                     id="ai-summary-heading"
                     className="text-lg font-semibold tracking-tight"
                 >
-                    AI 펀더멘털 분석
+                    {t('FundamentalAiSummary.17769c')}
                 </h2>
                 <span
                     className={cn(
@@ -73,7 +75,10 @@ export function FundamentalAiSummaryView({
             </p>
 
             {result.categoryAssessments.length > 0 && (
-                <ul aria-label="카테고리별 평가" className="mb-5 space-y-3">
+                <ul
+                    aria-label={t('FundamentalAiSummary.74f3b1')}
+                    className="mb-5 space-y-3"
+                >
                     {result.categoryAssessments.map(a => (
                         <li
                             key={a.category}
@@ -102,7 +107,9 @@ export function FundamentalAiSummaryView({
 
             {result.riskFactorsKo.length > 0 && (
                 <div>
-                    <h3 className="mb-2 text-sm font-semibold">위험 요인</h3>
+                    <h3 className="mb-2 text-sm font-semibold">
+                        {t('FundamentalAiSummary.af0480')}
+                    </h3>
                     <ul className="space-y-1.5">
                         {result.riskFactorsKo.map(risk => (
                             <li

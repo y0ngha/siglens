@@ -21,6 +21,7 @@
  * `'use client'` 강제.
  */
 
+import { useTranslations } from 'next-intl';
 import { EDT_OFFSET_HOURS, getEasternOffsetHours } from '@/shared/lib/eastern';
 import {
     ET_MARKET_HOURS_DISPLAY,
@@ -65,6 +66,7 @@ function getCurrentKstWindow(): KstWindowInfo {
 }
 
 export function AtmIvTooltip() {
+    const t = useTranslations('widgets.options');
     const isHydrated = useHydrated();
     // getCurrentKstWindow()는 new Date()를 호출하므로 마운트 후에만 실행한다.
     // SSR·첫 CSR 렌더에서 DST가 다르면 React #418 하이드레이션 불일치가 발생하므로 게이팅.
@@ -73,17 +75,14 @@ export function AtmIvTooltip() {
         : { hours: KST_EDT_HOURS_DISPLAY, label: '' };
     return (
         <>
-            <p>
-                현재 주가에 가장 가까운 옵션이 반영하고 있는 예상 변동성이에요.
-            </p>
-            <p>어닝 발표 직전에 보통 올라가요.</p>
+            <p>{t('optionsTooltips.149b70')}</p>
+            <p>{t('optionsTooltips.d9d063')}</p>
             <br />
             <p>
-                <strong>&lsquo;—&rsquo;로 표시될 때</strong>: 미국 정규장 마감
-                후나 pre-market에는 Yahoo가 ATM 옵션의 IV를 0으로 클리어해
-                보내는 경우가 있어서 정확한 수치를 받을 수 없어요. 한국 시간
-                기준으로 평일 {kstWindow}(미국 정규장, {ET_MARKET_HOURS_DISPLAY}
-                ) 에 다시 확인해 주세요. 미국 증시 휴장일은 제외예요.{' '}
+                <strong>{t('optionsTooltips.974bf0')}</strong>
+                {t('optionsTooltips.f75e14')} {kstWindow}
+                {t('optionsTooltips.f4e7e8')} {ET_MARKET_HOURS_DISPLAY}
+                {t('optionsTooltips.ec4190')}{' '}
                 {/* 현재 DST 레이블은 마운트 후에만 렌더 — React #418 방지 */}
                 {isHydrated && `지금은 ${label} 기간이에요.`}
             </p>
@@ -92,6 +91,7 @@ export function AtmIvTooltip() {
 }
 
 export function ImpliedMoveTooltip() {
+    const t = useTranslations('widgets.options');
     const isHydrated = useHydrated();
     // getCurrentKstWindow()는 new Date()를 호출하므로 마운트 후에만 실행한다.
     // SSR·첫 CSR 렌더에서 DST가 다르면 React #418 하이드레이션 불일치가 발생하므로 게이팅.
@@ -100,22 +100,14 @@ export function ImpliedMoveTooltip() {
         : { hours: KST_EDT_HOURS_DISPLAY, label: '' };
     return (
         <>
-            <p>
-                옵션 시장이 &ldquo;이 주식이 앞으로 얼마나 출렁일 것 같다&rdquo;
-                고 가격에 반영해놓은 폭이에요.
-            </p>
-            <p>
-                예를 들어 ±4%라면 시장은 다음 만기일까지 주가가 ±4% 정도 움직일
-                가능성이 높다고 보고 있는 거예요.
-            </p>
-            <p>어닝 같은 큰 이벤트 직전에는 이 값이 평소보다 커져요.</p>
+            <p>{t('optionsTooltips.2eb007')}</p>
+            <p>{t('optionsTooltips.f76775')}</p>
+            <p>{t('optionsTooltips.f899ef')}</p>
             <br />
             <p>
-                <strong>&lsquo;—&rsquo;로 표시될 때</strong>: ATM IV에서
-                계산하기 때문에 ATM IV가 비어 있으면(정규장 외 시간 등) 같이
-                비워져요. 또 만기 당일이면 남은 시간이 0이라 계산이 불가능해
-                비어 보일 수 있어요. 한국 시간 기준으로 평일 {kstWindow}(미국
-                정규장)에 다시 확인해 주세요. 미국 증시 휴장일은 제외예요.{' '}
+                <strong>{t('optionsTooltips.974bf0')}</strong>
+                {t('optionsTooltips.091adb')} {kstWindow}
+                {t('optionsTooltips.0b146b')}{' '}
                 {/* 현재 DST 레이블은 마운트 후에만 렌더 — React #418 방지 */}
                 {isHydrated && `지금은 ${label} 기간이에요.`}
             </p>

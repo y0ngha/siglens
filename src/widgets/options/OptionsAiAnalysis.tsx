@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type {
     ModelId,
     OptionsAnalysisResponse,
@@ -116,6 +117,7 @@ interface OptionsAiAnalysisViewProps {
 }
 
 export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
+    const t = useTranslations('widgets.options');
     const isEmpty =
         result.summary === '' &&
         result.perExpiration.length === 0 &&
@@ -135,7 +137,7 @@ export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
                     id="options-ai-analysis-heading"
                     className="text-lg font-semibold tracking-tight"
                 >
-                    AI 옵션 분석
+                    {t('OptionsAiAnalysis.eefb95')}
                 </h2>
                 {result.analyzedAt ? (
                     <time
@@ -156,9 +158,12 @@ export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
             {result.perExpiration.length > 0 && (
                 <div className="mb-5">
                     <h3 className="mb-3 text-xs font-semibold tracking-wider text-secondary-200 uppercase">
-                        ▸ 만기별 해석
+                        {t('OptionsAiAnalysis.e26a05')}
                     </h3>
-                    <ul className="space-y-3" aria-label="만기별 옵션 해석">
+                    <ul
+                        className="space-y-3"
+                        aria-label={t('OptionsAiAnalysis.440d96')}
+                    >
                         {result.perExpiration.map(item => (
                             <li
                                 key={item.expirationDate}
@@ -182,9 +187,12 @@ export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
             {result.signals.length > 0 && (
                 <div>
                     <h3 className="mb-3 text-xs font-semibold tracking-wider text-secondary-200 uppercase">
-                        ▸ 시그널
+                        {t('OptionsAiAnalysis.598bf4')}
                     </h3>
-                    <ul className="space-y-2" aria-label="옵션 시그널 목록">
+                    <ul
+                        className="space-y-2"
+                        aria-label={t('OptionsAiAnalysis.e0c6a1')}
+                    >
                         {result.signals.map(signal => (
                             <li
                                 // Signals are render-only and the AI rarely emits
@@ -248,6 +256,7 @@ export function OptionsAiAnalysis({
     hideView = false,
     cacheOnly = false,
 }: OptionsAiAnalysisProps) {
+    const t = useTranslations('widgets.options');
     const state = useOptionsAnalysis({
         symbol,
         companyName,
@@ -293,7 +302,7 @@ export function OptionsAiAnalysis({
                     id="options-ai-analysis-heading"
                     className="mb-3 text-xs tracking-widest text-secondary-400 uppercase"
                 >
-                    AI 옵션 분석
+                    {t('OptionsAiAnalysis.eefb95')}
                 </h2>
                 <BotBlockedNotice />
             </section>

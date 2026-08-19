@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -17,6 +18,7 @@ interface DangerSubmitButtonProps {
 }
 
 function DangerSubmitButton({ disabled }: DangerSubmitButtonProps) {
+    const t = useTranslations('features.account-delete');
     const { pending } = useFormStatus();
     const isDisabled = disabled || pending;
     return (
@@ -32,10 +34,10 @@ function DangerSubmitButton({ disabled }: DangerSubmitButtonProps) {
                         aria-hidden
                         className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white motion-reduce:animate-none"
                     />
-                    <span>탈퇴 처리 중…</span>
+                    <span>{t('DeleteAccountConfirm.b5b216')}</span>
                 </>
             ) : (
-                '계정 영구 삭제'
+                t('DeleteAccountConfirm.009e27')
             )}
         </button>
     );
@@ -46,6 +48,7 @@ interface DeleteAccountConfirmProps {
 }
 
 export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
+    const t = useTranslations('features.account-delete');
     const [input, setInput] = useState('');
     const [state, formAction] = useDeleteAccountForm();
     const trimmed = input.trim();
@@ -63,21 +66,16 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
                 <AuthErrorAlert message={state.error.message} />
             ) : null}
             <ul className="list-disc space-y-1 pl-5 text-sm text-secondary-300">
-                <li>이메일·닉네임·프로필 사진이 즉시 영구 삭제됩니다.</li>
-                <li>
-                    지금 로그인된 모든 기기에서 로그아웃되고, 소셜 로그인(구글
-                    등) 연결도 자동으로 해제됩니다.
-                </li>
-                <li>
-                    법령상 보유 사유가 있는 경우 해당 기간 동안만 보유됩니다.
-                </li>
+                <li>{t('DeleteAccountConfirm.a060ae')}</li>
+                <li>{t('DeleteAccountConfirm.5c7233')}</li>
+                <li>{t('DeleteAccountConfirm.6f8404')}</li>
             </ul>
             <div className="space-y-2">
                 <label
                     htmlFor="delete-account-email"
                     className="block text-sm font-medium text-secondary-200"
                 >
-                    계속하려면 본인 이메일을 정확히 입력하세요
+                    {t('DeleteAccountConfirm.56dd08')}
                 </label>
                 <p className="rounded-md border border-secondary-800 bg-secondary-950 px-3 py-2 font-mono text-sm break-all text-secondary-100">
                     {userEmail}
@@ -113,7 +111,7 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
                     href="/account"
                     className="inline-flex h-12 items-center justify-center rounded-md border border-secondary-700 px-5 text-sm font-medium text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900 focus-visible:outline-none sm:flex-1"
                 >
-                    취소
+                    {t('DeleteAccountConfirm.19b2d1')}
                 </Link>
                 <span className="sm:flex-1">
                     <DangerSubmitButton disabled={!isMatch} />

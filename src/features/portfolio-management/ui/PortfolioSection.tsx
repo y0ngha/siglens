@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
 import { cn } from '@/shared/lib/cn';
@@ -27,9 +28,10 @@ function SkeletonLine({ className }: { className?: string }) {
 }
 
 function HoldingsSkeleton() {
+    const t = useTranslations('features.portfolio-management');
     return (
         <div role="status" aria-busy="true" aria-live="polite">
-            <span className="sr-only">보유종목을 불러오는 중이에요</span>
+            <span className="sr-only">{t('PortfolioSection.e8f6b4')}</span>
             <div className="space-y-2" aria-hidden="true">
                 {[0, 1].map(i => (
                     <div key={i} className={ROW_CHROME}>
@@ -71,6 +73,7 @@ function HoldingRow({
     isDeleting,
     deleteError,
 }: HoldingRowProps) {
+    const t = useTranslations('features.portfolio-management');
     const deleteButtonRef = useRef<HTMLButtonElement>(null);
     const confirmDeleteButtonRef = useRef<HTMLButtonElement>(null);
     const wasConfirmingDeleteRef = useRef(isConfirmingDelete);
@@ -118,7 +121,8 @@ function HoldingRow({
                         )}
                     </div>
                     <div className="mt-0.5 text-sm text-secondary-400 tabular-nums">
-                        {trimTrailingZeros(holding.quantity)}주 · 평단 $
+                        {trimTrailingZeros(holding.quantity)}
+                        {t('PortfolioSection.91d7d2')}
                         {trimTrailingZeros(holding.averagePrice)}
                     </div>
                 </div>
@@ -126,7 +130,7 @@ function HoldingRow({
                 {isConfirmingDelete ? (
                     <div className="flex shrink-0 items-center gap-2">
                         <span className="text-xs text-secondary-400">
-                            삭제할까요?
+                            {t('PortfolioSection.ac4dd7')}
                         </span>
                         <button
                             ref={confirmDeleteButtonRef}
@@ -136,7 +140,9 @@ function HoldingRow({
                             aria-busy={isDeleting}
                             className={DANGER_BUTTON}
                         >
-                            {isDeleting ? '삭제 중…' : '삭제 확정'}
+                            {isDeleting
+                                ? t('PortfolioSection.283e16')
+                                : t('PortfolioSection.eca4ac')}
                         </button>
                         <button
                             type="button"
@@ -144,7 +150,7 @@ function HoldingRow({
                             disabled={isDeleting}
                             className={ACTION_BUTTON}
                         >
-                            취소
+                            {t('PortfolioSection.19b2d1')}
                         </button>
                     </div>
                 ) : (
@@ -155,7 +161,7 @@ function HoldingRow({
                             aria-label={`${holding.symbol} 보유종목 수정`}
                             className={ACTION_BUTTON}
                         >
-                            수정
+                            {t('PortfolioSection.e1407b')}
                         </button>
                         <button
                             ref={deleteButtonRef}
@@ -164,7 +170,7 @@ function HoldingRow({
                             aria-label={`${holding.symbol} 보유종목 삭제`}
                             className={DANGER_BUTTON}
                         >
-                            삭제
+                            {t('PortfolioSection.fc81e2')}
                         </button>
                     </div>
                 )}
@@ -180,6 +186,7 @@ function HoldingRow({
 
 /** Account-page section for managing the member's portfolio holdings: list + inline edit + inline delete confirm + add form. */
 export function PortfolioSection() {
+    const t = useTranslations('features.portfolio-management');
     const [editingSymbol, setEditingSymbol] = useState<string | null>(null);
     const [confirmingDeleteSymbol, setConfirmingDeleteSymbol] = useState<
         string | null
@@ -236,7 +243,7 @@ export function PortfolioSection() {
             // unhandled promise rejection.
             setDeleteError({
                 symbol,
-                message: '삭제에 실패했어요. 잠시 후 다시 시도해 주세요.',
+                message: t('PortfolioSection.19d04f'),
             });
         }
     };
@@ -249,10 +256,10 @@ export function PortfolioSection() {
                     tabIndex={-1}
                     className="rounded-sm text-lg font-semibold text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    보유종목
+                    {t('PortfolioSection.cae421')}
                 </h2>
                 <p className="mt-1 text-sm text-secondary-400">
-                    등록하면 내 평단 기준으로 분석을 받을 수 있어요.
+                    {t('PortfolioSection.060e90')}
                 </p>
             </div>
 
@@ -269,20 +276,20 @@ export function PortfolioSection() {
                     role="alert"
                     className="rounded-xl border border-dashed border-secondary-800 px-4 py-6 text-center text-sm text-secondary-400"
                 >
-                    <p>보유종목을 일시적으로 불러오지 못했어요.</p>
+                    <p>{t('PortfolioSection.4e29b2')}</p>
                     <button
                         type="button"
                         onClick={() => refetch()}
                         className={cn(ACTION_BUTTON, 'mt-3')}
                     >
-                        다시 시도
+                        {t('PortfolioSection.0c767c')}
                     </button>
                 </div>
             )}
 
             {!isLoadingState && !isError && holdings.length === 0 && (
                 <p className="rounded-xl border border-dashed border-secondary-800 px-4 py-6 text-center text-sm text-secondary-400">
-                    아직 등록한 보유종목이 없어요. 첫 종목을 추가해 보세요.
+                    {t('PortfolioSection.20b566')}
                 </p>
             )}
 
@@ -336,7 +343,7 @@ export function PortfolioSection() {
             {!isLoadingState && !isError && (
                 <div className="space-y-2 border-t border-secondary-800 pt-4">
                     <h3 className="text-sm font-semibold text-secondary-200">
-                        종목 추가
+                        {t('PortfolioSection.0a4e7f')}
                     </h3>
                     <HoldingForm
                         onSubmit={async input => {

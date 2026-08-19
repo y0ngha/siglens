@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 
 interface HeroIllustrationProps {
@@ -27,10 +28,11 @@ interface HeroIllustrationProps {
  * 시에는 globals.css `@theme` token과 함께 일관되게 갱신해야 한다.
  */
 export function HeroIllustration({ className }: HeroIllustrationProps) {
+    const t = useTranslations('widgets.home');
     return (
         <Image
             src="/hero-dashboard.svg"
-            alt="캔들 차트와 보조지표 추세선, 골든크로스 신호 마커, RSI 서브패널이 표시된 분석 대시보드 일러스트"
+            alt={t('HeroIllustration.018ed1')}
             width={800}
             height={500}
             priority

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { GradesAction, GradesEvent } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
@@ -44,6 +45,7 @@ interface GradeRowProps {
 }
 
 function GradeRow({ event }: GradeRowProps) {
+    const t = useTranslations('widgets.news');
     const dateFormatted = GRADE_DATE_FORMATTER.format(new Date(event.date));
 
     return (
@@ -67,7 +69,9 @@ function GradeRow({ event }: GradeRowProps) {
                     <p className="mt-0.5 text-sm text-secondary-400">
                         {event.previousGrade}
                         <span aria-hidden="true"> → </span>
-                        <span className="sr-only">에서 </span>
+                        <span className="sr-only">
+                            {t('AnalystActions.81b8e2')}{' '}
+                        </span>
                         <span className="font-medium text-secondary-100">
                             {event.newGrade}
                         </span>
@@ -95,6 +99,7 @@ interface AnalystActionsProps {
 }
 
 export function AnalystActions({ events }: AnalystActionsProps) {
+    const t = useTranslations('widgets.news');
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
     if (events.length === 0) {
@@ -107,10 +112,10 @@ export function AnalystActions({ events }: AnalystActionsProps) {
                     id="analyst-actions-heading"
                     className="mb-3 text-lg font-semibold tracking-tight"
                 >
-                    애널리스트 등급 변경
+                    {t('AnalystActions.b2cd1a')}
                 </h2>
                 <p className="text-sm text-secondary-400">
-                    최근 애널리스트 등급 변경이 없습니다.
+                    {t('AnalystActions.dc2ffb')}
                 </p>
             </section>
         );
@@ -128,9 +133,9 @@ export function AnalystActions({ events }: AnalystActionsProps) {
                 id="analyst-actions-heading"
                 className="text-lg font-semibold tracking-tight"
             >
-                애널리스트 등급 변경
+                {t('AnalystActions.b2cd1a')}
             </h2>
-            <ul className="space-y-2" aria-label="애널리스트 등급 변경 목록">
+            <ul className="space-y-2" aria-label={t('AnalystActions.b37a23')}>
                 {visible.map(event => (
                     <GradeRow
                         key={`${event.date}-${event.gradingCompany}-${event.newGrade}`}
@@ -144,7 +149,9 @@ export function AnalystActions({ events }: AnalystActionsProps) {
                     onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
                     className="w-full rounded-lg border border-secondary-700 py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
                 >
-                    더보기 ({events.length - visibleCount}개 남음)
+                    {t('AnalystActions.e5a749')}
+                    {events.length - visibleCount}
+                    {t('AnalystActions.03df8c')}
                 </button>
             )}
         </section>

@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
@@ -113,6 +114,7 @@ export default async function SymbolPage({ params }: Props) {
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.symbol');
     const ticker = symbol.toUpperCase();
     // 다른 5개 sibling 페이지(news/fundamental/options/overall/fear-greed)와 일관:
     // 잘못된 ticker 형식은 본문에서도 notFound로 즉시 차단한다 (generateMetadata 가드와 짝).
@@ -290,10 +292,12 @@ export default async function SymbolPage({ params }: Props) {
                     {/* 차트 h1은 SymbolPageClient(이 section보다 DOM 뒤)에 있어,
                         여기에 heading을 두면 h1보다 먼저 나와 위계가 역전된다
                         (WCAG 1.3.1). 보조 설명은 heading 없이 p로만 노출한다. */}
-                    <p>{displayName} 차트 분석 개요</p>
                     <p>
-                        {displayName}의 가격 흐름과 기술적 지표 요약을 확인할 수
-                        있는 차트 페이지입니다.
+                        {displayName} {t('page.2a2b89')}
+                    </p>
+                    <p>
+                        {displayName}
+                        {t('page.1df4e8')}
                     </p>
                 </section>
                 {/* h-full + shrink-0: main의 전체 높이를 basis로 고정하고 shrink를

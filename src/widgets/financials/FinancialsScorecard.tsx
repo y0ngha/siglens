@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { FinancialsScorecard } from '@y0ngha/siglens-core';
 import { CompositeGradeGauge } from './CompositeGradeGauge';
 import { AxisScoreCard } from './AxisScoreCard';
@@ -27,6 +28,7 @@ export function FinancialsScorecard({
     scorecard,
     currency = DEFAULT_STATEMENT_CURRENCY,
 }: FinancialsScorecardProps) {
+    const t = useTranslations('widgets.financials');
     const { composite, growth, quality, solvency, cash } = scorecard;
 
     const axes = [
@@ -53,7 +55,7 @@ export function FinancialsScorecard({
                 id="financials-scorecard-heading"
                 className="mb-6 text-lg font-semibold tracking-tight"
             >
-                재무 종합 점수
+                {t('FinancialsScorecard.b5f196')}
             </h2>
 
             <div className="mb-8">

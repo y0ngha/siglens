@@ -5,7 +5,20 @@
  * 모달처럼 루트에 마운트되는 클라이언트 컴포넌트가 쓰는 것만 넣는다.
  * 특정 페이지에서만 필요한 네임스페이스는 그 페이지가 `withChrome()`으로 덧붙인다.
  */
-export const ROOT_CLIENT_NAMESPACES: readonly string[] = ['widgets.layout'];
+import generated from '../../../messages/_meta/clientNamespaces.json';
+
+/**
+ * ⚠️ 이 목록은 `yarn i18n:extract`가 생성한다(`messages/_meta/clientNamespaces.json`).
+ * 손으로 고치지 말 것 — 새 클라이언트 컴포넌트가 추가될 때마다 빠뜨리게 되고,
+ * 그 누락은 빌드가 아니라 런타임 `MISSING_MESSAGE`로만 드러난다.
+ *
+ * **트레이드오프**: 클라이언트 네임스페이스 전체가 모든 라우트의 first-load에 실린다.
+ * 라우트별로 좁히려면 각 페이지가 `withChrome(...)`로 자체 프로바이더를 만들어야
+ * 하는데, 지금은 어느 페이지가 어느 클라이언트 네임스페이스를 쓰는지 정적으로
+ * 알 수 없다(컴포넌트 조합이 런타임에 결정된다). 페이로드가 문제로 관측되면
+ * 그때 라우트별 매핑을 생성하는 쪽으로 좁힌다.
+ */
+export const ROOT_CLIENT_NAMESPACES: readonly string[] = generated;
 
 /**
  * 라우트별 프로바이더에 넘길 네임스페이스 목록을 만든다.

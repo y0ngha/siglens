@@ -1,3 +1,5 @@
+import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale, localePath } from '@/shared/i18n/locales';
@@ -197,6 +199,7 @@ export default async function CategoryNewsPage({ params }: Props) {
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.news');
     const cat = categoryFromSlug(slug);
 
     if (!cat) {
@@ -294,7 +297,7 @@ export default async function CategoryNewsPage({ params }: Props) {
                 />
                 <NewsCategoryTabs activeCategory={cat} />
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
-                    {cfg.koLabel} 뉴스
+                    {cfg.koLabel} {t('page.3a465d')}
                 </h1>
                 <Suspense fallback={<DigestSkeleton />}>
                     <MarketNewsDigest
@@ -321,11 +324,12 @@ export default async function CategoryNewsPage({ params }: Props) {
 }
 
 function DigestSkeleton() {
+    const t = useTranslations('app.news');
     return (
         <div
             aria-busy="true"
             role="status"
-            aria-label="AI 다이제스트 불러오는 중"
+            aria-label={t('page.faef4a')}
             className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <div className="mb-4 h-5 w-1/3 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
@@ -342,14 +346,14 @@ interface MarketNewsDegradedProps {
 }
 
 function MarketNewsDegraded({ koLabel }: MarketNewsDegradedProps) {
+    const t = useTranslations('app.news');
     return (
         <section
             aria-label={`${koLabel} 뉴스 없음`}
             className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <p className="text-sm text-secondary-400">
-                {koLabel} 최근 뉴스를 불러오지 못했어요. 잠시 후 다시 확인해
-                주세요.
+                {koLabel} {t('page.22d8d0')}
             </p>
         </section>
     );

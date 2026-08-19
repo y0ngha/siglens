@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import {
     type OptionsChain,
@@ -74,6 +75,7 @@ export function OptionsChainTable({
     metrics,
     nearestExpiry,
 }: OptionsChainTableProps) {
+    const t = useTranslations('widgets.options');
     const [expanded, setExpanded] = useState(false);
 
     // Hooks must run unconditionally — compute derived data even when the
@@ -121,7 +123,7 @@ export function OptionsChainTable({
         return (
             <div className="flex w-full items-center justify-between rounded-xl border border-secondary-700 bg-secondary-800 p-4">
                 <span className="text-sm text-secondary-400">
-                    ▸ 전체 옵션 chain 테이블 보기 (0 contracts)
+                    {t('OptionsChainTable.1b9687')}
                 </span>
             </div>
         );
@@ -146,17 +148,17 @@ export function OptionsChainTable({
             <div id="options-chain-table" hidden={!expanded}>
                 {expirationDate === 'all' && nearestExpiry && (
                     <p className="mt-2 px-1 text-[10px] text-secondary-500">
-                        전체 만기 합산 — 가장 가까운 만기({nearestExpiry}) 기준
-                        으로 표시합니다. 다른 만기를 보려면 위 만기 버튼에서
-                        선택해 주세요.
+                        {t('OptionsChainTable.1b1d72')}
+                        {nearestExpiry}
+                        {t('OptionsChainTable.fa4a47')}
                     </p>
                 )}
 
                 <div className="mt-2 overflow-x-auto">
                     <table className="w-full border-collapse text-sm">
                         <caption className="sr-only">
-                            {symbol} {expirationDate} 옵션 chain (Strike별 콜/풋
-                            가격, OI, IV)
+                            {symbol} {expirationDate}{' '}
+                            {t('OptionsChainTable.9440a2')}
                         </caption>
 
                         <thead className="border-b border-secondary-700 text-xs tracking-widest text-secondary-400 uppercase">

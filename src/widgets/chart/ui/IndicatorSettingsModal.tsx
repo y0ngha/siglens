@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { CSSProperties } from 'react';
 import { useId } from 'react';
 import { createPortal } from 'react-dom';
@@ -101,6 +102,7 @@ function ToggleRow({ binding }: IndicatorRowProps) {
 export function IndicatorSettingsModal({
     bindings,
 }: IndicatorSettingsModalProps) {
+    const t = useTranslations('widgets.chart');
     const { isOpen, open, close, dialogRef, triggerRef } = useDialog();
     // 같은 페이지에 여러 차트가 렌더되어도 dialog title id가 충돌하지 않도록
     // 인스턴스별 고유 id를 생성한다 (aria-labelledby 무결성 보장).
@@ -113,7 +115,7 @@ export function IndicatorSettingsModal({
                 ref={triggerRef}
                 type="button"
                 onClick={open}
-                aria-label="보조지표 설정"
+                aria-label={t('IndicatorSettingsModal.c6e1ca')}
                 aria-haspopup="dialog"
                 className="flex h-11 w-11 touch-manipulation items-center justify-center rounded-lg bg-secondary-900/85 text-secondary-400 backdrop-blur-sm transition-colors hover:bg-secondary-700/90 hover:text-white focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
@@ -137,12 +139,14 @@ export function IndicatorSettingsModal({
                                     id={titleId}
                                     className="text-base font-semibold text-secondary-100"
                                 >
-                                    보조지표 설정
+                                    {t('IndicatorSettingsModal.c6e1ca')}
                                 </h2>
                                 <button
                                     type="button"
                                     onClick={close}
-                                    aria-label="닫기"
+                                    aria-label={t(
+                                        'IndicatorSettingsModal.94b7db'
+                                    )}
                                     className="-mt-1 -mr-1 rounded p-1 text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
                                     <svg

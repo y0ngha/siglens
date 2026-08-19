@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { OnboardingContent } from '@/features/portfolio-onboarding';
 import {
     DEFAULT_LOCALE,
@@ -44,6 +45,7 @@ export async function OnboardingGuard({ locale }: { locale: Locale }) {
 // the sr-only h1 below, mirroring the PortfolioEmptyState/PortfolioErrorState
 // export pattern in src/app/portfolio/page.tsx.
 export function OnboardingSkeleton() {
+    const t = useTranslations('app.onboarding');
     return (
         <div role="status" aria-busy="true" aria-live="polite">
             {/* OnboardingGuard reads cookies (getCurrentUser), so this fallback —
@@ -51,8 +53,8 @@ export function OnboardingSkeleton() {
                 outline before the boundary resolves. Same sr-only-duplicate
                 technique as src/app/[symbol]/page.tsx: identical text to the
                 real h1 below, so there's never zero or two h1s for this page. */}
-            <h1 className="sr-only">보유종목을 등록해 보세요</h1>
-            <span className="sr-only">불러오는 중이에요</span>
+            <h1 className="sr-only">{t('page.26bd1f')}</h1>
+            <span className="sr-only">{t('page.b1e428')}</span>
             <div className="space-y-6" aria-hidden="true">
                 <div className="space-y-3">
                     <div className="h-6 w-28 animate-pulse rounded-full bg-secondary-800" />

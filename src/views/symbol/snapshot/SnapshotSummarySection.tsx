@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { useId, type ReactNode } from 'react';
 import { formatSnapshotAsOf } from '@/shared/lib/formatSnapshotAsOf';
 import type { MarketProfileId } from '@/shared/config/marketProfile';
@@ -89,6 +90,7 @@ export function SnapshotSummarySection({
     asOf,
     children,
 }: SnapshotSummarySectionProps) {
+    const t = useTranslations('views.symbol');
     const headingId = useId();
     const formattedAsOf =
         asOf === undefined ? null : formatSnapshotAsOf(asOf, marketProfile);
@@ -123,7 +125,7 @@ export function SnapshotSummarySection({
                     </h2>
                     {formattedAsOf !== null && (
                         <span className="rounded-full border border-secondary-600 bg-secondary-900/60 px-2 py-0.5 text-xs font-medium text-secondary-300">
-                            지난 AI 분석
+                            {t('SnapshotSummarySection.220156')}
                         </span>
                     )}
                 </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { ApiKeyInput } from './ApiKeyInput';
 import { useApiKeyForms } from '../hooks/useApiKeyForms';
 import type { ApiKeyActionState } from '@/entities/api-key';
@@ -73,6 +74,7 @@ interface ProviderCardProps {
 }
 
 function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
+    const t = useTranslations('features.api-key-management');
     // editMode: true only when an already-registered provider's "재등록" is active
     const [editMode, setEditMode] = useState(false);
     const { saveState, saveFormAction, deleteState, deleteFormAction } =
@@ -102,11 +104,11 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                     </span>
                     {isRegistered ? (
                         <span className="rounded-full bg-ui-success/10 px-2 py-0.5 text-xs text-ui-success ring-1 ring-ui-success/30">
-                            등록됨
+                            {t('ApiKeySection.e848ed')}
                         </span>
                     ) : (
                         <span className="rounded-full bg-secondary-800 px-2 py-0.5 text-xs text-secondary-400">
-                            미등록
+                            {t('ApiKeySection.363c34')}
                         </span>
                     )}
                 </div>
@@ -117,7 +119,7 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                             onClick={() => setEditMode(true)}
                             className="rounded-md border border-secondary-700 px-3 py-1.5 text-xs font-medium text-secondary-300 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
-                            재등록
+                            {t('ApiKeySection.fc669b')}
                         </button>
                         <form action={deleteFormAction} noValidate>
                             <input
@@ -126,8 +128,8 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                                 value={provider}
                             />
                             <SubmitButton
-                                label="삭제"
-                                pendingLabel="삭제 중…"
+                                label={t('ApiKeySection.fc81e2')}
+                                pendingLabel={t('ApiKeySection.283e16')}
                                 aria-describedby={deleteStatusId}
                                 className="inline-flex h-7 items-center justify-center rounded-md border border-ui-danger/40 px-3 text-xs font-medium text-ui-danger transition-colors hover:bg-ui-danger/10 focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none disabled:opacity-50"
                             />
@@ -150,8 +152,8 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                         aria-describedby={saveStatusId}
                     />
                     <SubmitButton
-                        label="저장"
-                        pendingLabel="저장 중…"
+                        label={t('ApiKeySection.1f1712')}
+                        pendingLabel={t('ApiKeySection.9f6785')}
                         className="inline-flex h-10 shrink-0 items-center justify-center rounded-md border border-secondary-700 px-4 text-sm font-medium text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none disabled:opacity-50"
                     />
                     {isRegistered && (
@@ -160,7 +162,7 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                             onClick={() => setEditMode(false)}
                             className="inline-flex h-10 shrink-0 items-center justify-center px-2 text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
-                            취소
+                            {t('ApiKeySection.19b2d1')}
                         </button>
                     )}
                 </form>
@@ -190,16 +192,17 @@ interface ApiKeySectionProps {
 }
 
 export function ApiKeySection({ registeredProviders }: ApiKeySectionProps) {
+    const t = useTranslations('features.api-key-management');
     const registeredSet = new Set(registeredProviders);
 
     return (
         <div className="space-y-4">
             <div>
                 <h2 className="text-lg font-semibold text-secondary-100">
-                    AI 모델 API 키
+                    {t('ApiKeySection.64f90b')}
                 </h2>
                 <p className="mt-1 text-sm text-secondary-400">
-                    등록한 키는 계정에만 저장되며 안전한 방식으로 암호화됩니다.
+                    {t('ApiKeySection.017638')}
                 </p>
             </div>
             {LLM_PROVIDER_VALUES.map(provider => (

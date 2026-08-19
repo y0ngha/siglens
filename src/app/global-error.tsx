@@ -2,6 +2,7 @@
 
 // global-error.tsx는 루트 레이아웃을 완전히 교체하므로, 루트 레이아웃이 담당하던
 // globals.css 로드를 이 파일이 직접 맡는다. 없으면 Tailwind 클래스가 해석되지 않는다.
+import { useTranslations } from 'next-intl';
 import './globals.css';
 import { useEffect } from 'react';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -27,6 +28,7 @@ interface GlobalErrorProps {
  * recovers from transient throws (Redis/DB client init, cold-gen errors).
  */
 export default function GlobalError({ error, reset }: GlobalErrorProps) {
+    const t = useTranslations('app.home');
     useEffect(() => {
         console.error('[GlobalError] root layout error:', error);
     }, [error]);
@@ -35,13 +37,13 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
         <html lang="ko">
             <body className="flex min-h-dvh flex-col items-center justify-center bg-secondary-900 px-6 text-center text-secondary-50">
                 <p className="font-mono text-xs tracking-widest text-primary-400 uppercase">
-                    일시 오류
+                    {t('global-error.729779')}
                 </p>
                 <h1 className="mt-4 text-2xl font-bold text-secondary-100">
-                    서비스를 불러오지 못했어요
+                    {t('global-error.1bf79c')}
                 </h1>
                 <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">
-                    일시적인 문제가 발생했어요. 잠시 후 다시 시도해 주세요.
+                    {t('global-error.32c8a0')}
                 </p>
                 <div className="mt-8 flex gap-3">
                     <button
@@ -49,13 +51,13 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
                         onClick={reset}
                         className="inline-flex min-h-11 items-center rounded-lg bg-primary-600 px-6 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
                     >
-                        다시 시도
+                        {t('global-error.0c767c')}
                     </button>
                     <Link
                         href="/"
                         className="inline-flex min-h-11 items-center rounded-lg px-6 text-sm font-medium text-secondary-200 transition-colors hover:text-secondary-50 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
                     >
-                        홈으로
+                        {t('global-error.d8c261')}
                     </Link>
                 </div>
             </body>

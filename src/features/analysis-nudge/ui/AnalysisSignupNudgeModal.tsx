@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { REASONING_FEATURE_LABEL } from '@/features/reasoning-toggle';
@@ -21,6 +22,7 @@ const TITLE_ID = 'analysis-signup-nudge-title';
 export function AnalysisSignupNudgeModal({
     onClose,
 }: AnalysisSignupNudgeModalProps) {
+    const t = useTranslations('features.analysis-nudge');
     const panelRef = useRef<HTMLDivElement>(null);
 
     useFocusTrap(panelRef, true);
@@ -68,15 +70,16 @@ export function AnalysisSignupNudgeModal({
                         id={TITLE_ID}
                         className="font-semibold text-secondary-50"
                     >
-                        더 깊은 분석을 원하세요?
+                        {t('AnalysisSignupNudgeModal.84ff73')}
                     </h2>
                     <p className="text-sm leading-relaxed text-secondary-300">
                         {/* The object-particle `을` assumes REASONING_FEATURE_LABEL
                             ends in a consonant (batchim) — true for '상세 분석'
                             (분석 ends in 석). Revisit the particle (을/를) if the
                             label ever changes to a vowel-final word. */}
-                        회원가입하면 &apos;{REASONING_FEATURE_LABEL}&apos;을
-                        켜고 더 자세한 분석 리포트를 받을 수 있어요.
+                        {t('AnalysisSignupNudgeModal.0faeab')}
+                        {REASONING_FEATURE_LABEL}
+                        {t('AnalysisSignupNudgeModal.32fe41')}
                     </p>
                 </div>
 
@@ -86,14 +89,14 @@ export function AnalysisSignupNudgeModal({
                         onClick={onClose}
                         className="flex h-10 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-medium text-white transition-colors hover:bg-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
-                        회원가입 하러 가기
+                        {t('AnalysisSignupNudgeModal.2b8afd')}
                     </Link>
                     <button
                         type="button"
                         onClick={onClose}
                         className="flex h-10 items-center justify-center rounded-lg px-4 text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
-                        닫기
+                        {t('AnalysisSignupNudgeModal.94b7db')}
                     </button>
                 </div>
             </div>

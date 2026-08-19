@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type {
     Chamber,
     CongressOwner,
@@ -100,6 +101,7 @@ interface ChamberBadgeProps {
 }
 
 function ChamberBadge({ chamber }: ChamberBadgeProps) {
+    const t = useTranslations('widgets.congress');
     const label = CHAMBER_LABEL[chamber];
 
     return (
@@ -110,7 +112,11 @@ function ChamberBadge({ chamber }: ChamberBadgeProps) {
                     ? 'bg-primary-500/10 text-primary-400'
                     : 'bg-secondary-700 text-secondary-300'
             )}
-            aria-label={chamber === 'senate' ? '상원 (Senate)' : '하원 (House)'}
+            aria-label={
+                chamber === 'senate'
+                    ? t('CongressTradesTable.27edc1')
+                    : t('CongressTradesTable.d8edd7')
+            }
         >
             {label}
         </span>
@@ -185,6 +191,7 @@ function DisclosureCell({
     office,
     transactionDate,
 }: DisclosureCellProps) {
+    const t = useTranslations('widgets.congress');
     const isSenate = chamber === 'senate';
     const href = getDisclosureHref(chamber, link);
     const ptrId = isSenate ? extractSenatePtrId(link) : null;
@@ -198,7 +205,9 @@ function DisclosureCell({
                 aria-label={`${CHAMBER_LABEL[chamber]} ${office} ${transactionDate} 공시 ${isSenate ? '검색' : '문서'}`}
                 className="rounded text-xs text-primary-400 underline transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
-                {isSenate ? '공시 검색' : '공시'}
+                {isSenate
+                    ? t('CongressTradesTable.fdf8d2')
+                    : t('CongressTradesTable.26d466')}
             </a>
             {isSenate && <InfoTooltip>{SenateDisclosureTooltip}</InfoTooltip>}
             {isSenate && ptrId && (
@@ -226,6 +235,7 @@ interface CongressTradesTableProps {
  * itself is RSC-safe (no hooks, no browser APIs at module scope).
  */
 export function CongressTradesTable({ trades }: CongressTradesTableProps) {
+    const t = useTranslations('widgets.congress');
     if (trades.length === 0) {
         return <CongressTradesEmpty />;
     }
@@ -235,23 +245,25 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
     return (
         <div className="rounded-xl border border-secondary-700 bg-secondary-800">
             <p className="px-4 pt-3 pb-0 text-xs text-secondary-400 sm:hidden">
-                ← 좌우로 스크롤 →
+                {t('CongressTradesTable.b488b1')}
             </p>
             <div
                 className="overflow-x-auto rounded-xl focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 role="region"
-                aria-label="의회 거래 내역 표 (좌우 스크롤 가능)"
+                aria-label={t('CongressTradesTable.373579')}
                 tabIndex={0}
             >
                 <table className="w-full text-sm">
-                    <caption className="sr-only">의회 거래 공시 목록</caption>
+                    <caption className="sr-only">
+                        {t('CongressTradesTable.de5545')}
+                    </caption>
                     <thead>
                         <tr className="border-b border-secondary-700 text-xs tracking-widest text-secondary-400 uppercase">
                             <th
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                구분
+                                {t('CongressTradesTable.af2fee')}
                                 <InfoTooltip>
                                     {ChamberColumnTooltip}
                                 </InfoTooltip>
@@ -260,38 +272,38 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                의원
+                                {t('CongressTradesTable.29c3ae')}
                             </th>
                             <th
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                매수/매도
+                                {t('CongressTradesTable.67600a')}
                             </th>
                             <th
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                금액 구간
+                                {t('CongressTradesTable.c8eed2')}
                                 <InfoTooltip>{AmountRangeTooltip}</InfoTooltip>
                             </th>
                             <th
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                종류
+                                {t('CongressTradesTable.29efb6')}
                             </th>
                             <th
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                거래일
+                                {t('CongressTradesTable.e6fa15')}
                             </th>
                             <th
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                공시일
+                                {t('CongressTradesTable.1ed947')}
                                 <InfoTooltip>
                                     {DisclosureLagTooltip}
                                 </InfoTooltip>
@@ -300,19 +312,19 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                보유자
+                                {t('CongressTradesTable.0c2cd8')}
                             </th>
                             <th
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                자산 설명
+                                {t('CongressTradesTable.5073ef')}
                             </th>
                             <th
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                공시
+                                {t('CongressTradesTable.26d466')}
                             </th>
                         </tr>
                     </thead>

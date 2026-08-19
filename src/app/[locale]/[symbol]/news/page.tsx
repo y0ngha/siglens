@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import {
     getEarningsReportComparison,
     getGradeEvents,
@@ -146,6 +147,7 @@ export async function NewsListSection({ symbol }: SymbolSectionProps) {
 }
 
 export async function EventCalendarSection({ symbol }: SymbolSectionProps) {
+    const t = await getTranslations('app.symbol');
     const today = todayKstIsoDate();
     let earningsReports: Awaited<
         ReturnType<typeof getEarningsReportComparison>
@@ -163,14 +165,16 @@ export async function EventCalendarSection({ symbol }: SymbolSectionProps) {
             '[EventCalendarSection] earnings load failed, degrading:',
             error
         );
-        const message =
-            getFmpUserFacingMessage(error) ?? '실적 일정을 불러오지 못했어요.';
-        return <NewsDataServerAlert title="실적 일정" message={message} />;
+        const message = getFmpUserFacingMessage(error) ?? t('page.3c87a9');
+        return (
+            <NewsDataServerAlert title={t('page.6723ea')} message={message} />
+        );
     }
     return <EventCalendar earningsReports={earningsReports} />;
 }
 
 export async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
+    const t = await getTranslations('app.symbol');
     let events: Awaited<ReturnType<typeof getGradeEvents>>;
     try {
         events = await staticSymbolCache(
@@ -185,14 +189,9 @@ export async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
             '[AnalystActionsSection] grades load failed, degrading:',
             error
         );
-        const message =
-            getFmpUserFacingMessage(error) ??
-            '애널리스트 동향을 불러오지 못했어요.';
+        const message = getFmpUserFacingMessage(error) ?? t('page.5c38df');
         return (
-            <NewsDataServerAlert
-                title="애널리스트 등급 변경"
-                message={message}
-            />
+            <NewsDataServerAlert title={t('page.b2cd1a')} message={message} />
         );
     }
     // 뉴스 목록과 같은 이유로 자른다 — AAPL 실측 1,786건 중 화면에 닿는 것은 앞의 몇 개뿐이다.
@@ -228,6 +227,7 @@ export default async function NewsPage({ params }: Props) {
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.symbol');
     const upper = symbol.toUpperCase();
 
     if (!isAdmissibleSymbolShape(upper)) {
@@ -272,7 +272,7 @@ export default async function NewsPage({ params }: Props) {
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: upper, url: buildSymbolSeoContent(upper).url },
-        { name: '뉴스 분석', url },
+        { name: t('page.2141f2'), url },
     ]);
 
     // datePublished는 의도적으로 생략한다 — ticker별 최초 뉴스 ingestion 시각
@@ -409,7 +409,9 @@ export default async function NewsPage({ params }: Props) {
                     generatedAt={newsSnapshot?.generatedAt}
                 />
                 <section className="sr-only">
-                    <h2>{displayName} 뉴스 분석 개요</h2>
+                    <h2>
+                        {displayName} {t('page.1e24e1')}
+                    </h2>
                     <p>
                         {isEquity
                             ? `${displayName}의 최신 뉴스 분위기, 다음 어닝 일정, 최근 실적 보고서, 애널리스트 등급 변경을 한국어로 정리합니다.`

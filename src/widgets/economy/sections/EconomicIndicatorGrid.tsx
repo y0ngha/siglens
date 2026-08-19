@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { ReactElement } from 'react';
 import {
     computeYieldSpread,
@@ -91,6 +92,7 @@ interface DeltaBadgeProps {
 export function EconomicIndicatorGrid({
     snapshot,
 }: EconomicIndicatorGridProps) {
+    const t = useTranslations('widgets.economy');
     const seriesByName = new Map(
         // Map 생성자는 [K, V][] 튜플을 요구하지만 map 결과는 (string|Series)[] 배열로
         // 추론된다 — as const로 튜플 고정해 키/값 타입 보장.
@@ -106,7 +108,7 @@ export function EconomicIndicatorGrid({
                 id="economy-indicators-heading"
                 className="text-lg font-semibold text-secondary-100"
             >
-                경제지표
+                {t('EconomicIndicatorGrid.c2a5bf')}
             </h2>
             {ECONOMY_INDICATOR_CATEGORIES.map(cat => (
                 <CategorySection
@@ -218,17 +220,15 @@ function TreasuryYieldCard({ snapshot, maturity }: TreasuryYieldCardProps) {
 }
 
 function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
+    const t = useTranslations('widgets.economy');
     const spread = computeYieldSpread(snapshot);
     if (spread === null) return null;
     const positive = spread >= 0;
     return (
         <article className="rounded-xl border border-secondary-700 bg-secondary-800 p-4">
             <header className="mb-2 flex items-center gap-1 text-sm text-secondary-300">
-                <span>2s10s 스프레드</span>
-                <InfoTooltip>
-                    10년물 수익률에서 2년물을 뺀 값이에요. 마이너스가 되면
-                    장단기 금리가 뒤집힌 것으로, 흔히 경기침체 신호로 봐요.
-                </InfoTooltip>
+                <span>{t('EconomicIndicatorGrid.2388de')}</span>
+                <InfoTooltip>{t('EconomicIndicatorGrid.868089')}</InfoTooltip>
             </header>
             <div
                 className={cn(
@@ -246,13 +246,14 @@ function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
 }
 
 function DeltaBadge({ delta, precision, unit }: DeltaBadgeProps) {
+    const t = useTranslations('widgets.economy');
     // 부동소수점 잔차나 표시 정밀도 미만 변화(예: delta=0.003, precision=2)도
     // 화면에서는 변화 없음이므로 포맷팅된 값을 기준으로 0 판정한다.
     const formatted = delta.toFixed(precision);
     if (parseFloat(formatted) === 0) {
         return (
             <span className="mt-1 inline-block text-xs text-secondary-400">
-                전기 대비 변화 없음
+                {t('EconomicIndicatorGrid.015416')}
             </span>
         );
     }
@@ -275,7 +276,7 @@ function DeltaBadge({ delta, precision, unit }: DeltaBadgeProps) {
                     <path d="M2 3.5 5 6.5 8 3.5" />
                 )}
             </svg>
-            전기 대비 {sign}
+            {t('EconomicIndicatorGrid.8d282d')} {sign}
             {formatted}
             {unit}
         </span>

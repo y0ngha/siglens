@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 
 interface FinancialsSummaryProps {
@@ -5,6 +6,7 @@ interface FinancialsSummaryProps {
 }
 
 export function FinancialsSummary({ bullets }: FinancialsSummaryProps) {
+    const t = useTranslations('widgets.overall');
     if (bullets.length === 0) return null;
     return (
         <section
@@ -15,9 +17,12 @@ export function FinancialsSummary({ bullets }: FinancialsSummaryProps) {
                 id="financials-summary-heading"
                 className="mb-3 text-lg font-semibold text-balance"
             >
-                재무 분석
+                {t('FinancialsSummary.9f2f34')}
             </h2>
-            <ul aria-label="재무 분석 항목" className="space-y-2">
+            <ul
+                aria-label={t('FinancialsSummary.ecbc52')}
+                className="space-y-2"
+            >
                 {bullets.map(bullet => (
                     <li key={bullet} className="flex gap-2 text-sm">
                         <span

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { CalendarImpact } from '@y0ngha/siglens-core';
 
 import { cn } from '@/shared/lib/cn';
@@ -31,10 +32,11 @@ interface ImpactFilterProps {
  * 상위 그리드가 `value`를 받아 셀/상세를 시각적으로 한정한다.
  */
 export function ImpactFilter({ value, onToggle }: ImpactFilterProps) {
+    const t = useTranslations('widgets.economy');
     return (
         <div
             role="group"
-            aria-label="중요도 필터"
+            aria-label={t('ImpactFilter.cc4968')}
             className="flex items-center gap-2"
         >
             {IMPACT_ORDER.map(impact => {

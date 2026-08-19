@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 
 // `mapExpirationsToSlots`가 산출하는 슬롯 6종(1W/2W/1M/2M/3M/6M)에 종합 chip을 더한 수.
@@ -20,6 +21,7 @@ const CHAIN_TABLE_ROW_COUNT = 6;
 const CROSS_LINK_CARD_COUNT = 3;
 
 export default function OptionsLoading() {
+    const t = useTranslations('app.symbol');
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
             <div className="flex flex-wrap items-center gap-2 rounded-xl border border-secondary-700 bg-secondary-800 p-3">
@@ -37,7 +39,7 @@ export default function OptionsLoading() {
             <section
                 className="rounded-xl border border-primary-500/30 bg-gradient-to-br from-secondary-800 to-secondary-900 p-6 ring-1 ring-primary-500/10"
                 aria-busy="true"
-                aria-label="AI 옵션 분석 불러오는 중"
+                aria-label={t('loading.673e73')}
             >
                 <div className="mb-4 flex items-center gap-2">
                     <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />

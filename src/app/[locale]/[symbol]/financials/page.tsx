@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { getFinancialsPageData } from '@/app/[locale]/[symbol]/financials/financialData';
 import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
@@ -138,6 +139,7 @@ export default async function FinancialsPage({ params }: Props) {
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.symbol');
     const upper = symbol.toUpperCase();
 
     if (!isAdmissibleSymbolShape(upper)) {
@@ -254,7 +256,7 @@ export default async function FinancialsPage({ params }: Props) {
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: upper, url: buildSymbolSeoContent(upper).url },
-        { name: '재무제표', url },
+        { name: t('page.128c11'), url },
     ]);
 
     const faqJsonLd = {
@@ -266,7 +268,7 @@ export default async function FinancialsPage({ params }: Props) {
                 name: `${displayName}의 재무는 건전한가요?`,
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '안정성 점수는 부채비율과 유동비율을 기반으로 산출됩니다. 점수가 높을수록 부채 부담이 낮고 단기 상환 능력이 우수하다는 신호입니다. 재무상태표의 총자산 대비 총부채 비율도 함께 확인하면 재무 건전성을 더 정확히 파악할 수 있습니다.',
+                    text: t('page.24d5a2'),
                 },
             },
             {
@@ -274,7 +276,7 @@ export default async function FinancialsPage({ params }: Props) {
                 name: `${displayName}의 성장 추세는 어떤가요?`,
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '성장성 점수는 매출과 영업이익의 연간 성장률을 5년 추이로 평가합니다. 매출 성장이 지속되면서 영업이익 마진이 함께 늘어난다면 질적 성장으로 볼 수 있습니다. 손익계산서 차트에서 연도별 추이를 직접 확인할 수 있습니다.',
+                    text: t('page.a79703'),
                 },
             },
             {
@@ -282,7 +284,7 @@ export default async function FinancialsPage({ params }: Props) {
                 name: `${displayName}의 현금 창출력은 충분한가요?`,
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '현금창출력 점수는 영업활동현금흐름과 잉여현금흐름(FCF)을 기준으로 산출됩니다. 순이익보다 영업현금흐름이 크면 이익의 질이 높다는 의미이며, 꾸준한 FCF는 배당·자사주매입·투자 여력을 나타냅니다.',
+                    text: t('page.0430a5'),
                 },
             },
         ],
@@ -294,15 +296,16 @@ export default async function FinancialsPage({ params }: Props) {
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
-                <SymbolPageHeading>{displayName} 재무제표</SymbolPageHeading>
+                <SymbolPageHeading>
+                    {displayName} {t('page.128c11')}
+                </SymbolPageHeading>
                 <section className="sr-only">
-                    <h2>{displayName} 재무제표 분석 개요</h2>
+                    <h2>
+                        {displayName} {t('page.9d943d')}
+                    </h2>
                     <p>
-                        {displayName}의 손익계산서(매출·영업이익·순이익·EPS),
-                        재무상태표(자산·부채·자본), 현금흐름표(영업활동현금흐름·
-                        잉여현금흐름)를 5년 추이로 분석합니다. 성장성,
-                        수익성·질, 안정성, 현금창출력 4개 축의 재무 종합 점수와
-                        주요 재무비율을 함께 제공합니다.
+                        {displayName}
+                        {t('page.933612')}
                     </p>
                 </section>
 

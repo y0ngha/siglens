@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { OptionsSignalKind, OptionsTone } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
@@ -178,12 +179,13 @@ export function OptionsSnapshotProse({
     marketProfile,
     generatedAt,
 }: OptionsSnapshotProseProps) {
+    const t = useTranslations('views.symbol');
     const narrowed = narrowOptionsContent(content);
     if (narrowed === null) return null;
 
     return (
         <SnapshotSummarySection
-            title="옵션 시장 요약"
+            title={t('OptionsSnapshotProse.daaf55')}
             displayName={displayName}
             marketProfile={marketProfile}
             asOf={generatedAt}
@@ -198,7 +200,7 @@ export function OptionsSnapshotProse({
                 {narrowed.perExpiration.length > 0 && (
                     <div>
                         <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
-                            만기별 해석
+                            {t('OptionsSnapshotProse.935f5d')}
                         </h3>
                         <ul
                             role="list"
@@ -222,7 +224,7 @@ export function OptionsSnapshotProse({
                 {narrowed.signals.length > 0 && (
                     <div>
                         <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
-                            시그널
+                            {t('OptionsSnapshotProse.3a0721')}
                         </h3>
                         <ul
                             role="list"

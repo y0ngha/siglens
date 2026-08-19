@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { BacktestCase } from '@y0ngha/siglens-core';
 import { BacktestCaseCard } from './BacktestCaseCard';
 
@@ -16,10 +17,11 @@ interface MonthGroup {
 }
 
 export function BacktestCaseList({ cases }: BacktestCaseListProps) {
+    const t = useTranslations('widgets.backtesting');
     if (cases.length === 0) {
         return (
             <p className="py-10 text-center text-sm text-secondary-500">
-                해당 종목의 케이스가 없습니다.
+                {t('BacktestCaseList.9018e2')}
             </p>
         );
     }

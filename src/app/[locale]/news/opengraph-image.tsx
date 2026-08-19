@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { ImageResponse } from 'next/og';
 import { loadKoreanFont } from '@/entities/og-image/lib/loadKoreanFont';
 import {
@@ -30,6 +31,7 @@ export const contentType = 'image/png';
 export const alt = 'Siglens 시장 뉴스 허브';
 
 export default async function Image() {
+    const t = await getTranslations('app.news');
     const fontData = await loadKoreanFont();
 
     return new ImageResponse(
@@ -70,7 +72,7 @@ export default async function Image() {
                     textAlign: 'center',
                 }}
             >
-                시장 뉴스 허브
+                {t('opengraph-image.dc06c4')}
             </div>
             <div
                 style={{
@@ -82,7 +84,7 @@ export default async function Image() {
                     display: 'flex',
                 }}
             >
-                미국 · 한국 · 암호화폐
+                {t('opengraph-image.4ad764')}
             </div>
         </div>,
         {

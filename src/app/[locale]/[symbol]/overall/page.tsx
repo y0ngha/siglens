@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { OverallContent } from '@/widgets/overall/OverallContent';
 import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
@@ -287,6 +288,7 @@ export default async function OverallPage({ params }: Props) {
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.symbol');
     const upper = symbol.toUpperCase();
 
     if (!isAdmissibleSymbolShape(upper)) {
@@ -420,7 +422,7 @@ export default async function OverallPage({ params }: Props) {
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: upper, url: buildSymbolSeoContent(upper).url },
-        { name: 'AI 종합 분석', url },
+        { name: t('page.8b7ae7'), url },
     ]);
 
     // FAQ 답변은 market profile별로 분기한다 — 크립토에는 옵션 시장·분기 실적·펀더멘털이
@@ -441,7 +443,7 @@ export default async function OverallPage({ params }: Props) {
             },
             {
                 '@type': 'Question',
-                name: '강세 시나리오와 약세 시나리오는 어떤 기준으로 나뉘나요?',
+                name: t('page.e753ee'),
                 acceptedAnswer: {
                     '@type': 'Answer',
                     text: copy.scenarioAnswer,
@@ -449,12 +451,10 @@ export default async function OverallPage({ params }: Props) {
             },
             {
                 '@type': 'Question',
-                name: '어떤 신호가 나오면 시나리오가 깨졌다고 봐야 하나요?',
+                name: t('page.e2a9cb'),
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: isEquity
-                        ? '실적 발표 결과나 가이던스 변화, 매크로 이벤트, 분위기 급반전 같은 위험 요인이 시나리오의 전제를 무너뜨리면 그 시나리오는 깨졌다고 봅니다. 위험 요인 항목에 따로 표시되어 있어 매수 전에 한 번 확인하기 좋습니다.'
-                        : '매크로 이벤트, 규제 이슈, 대형 뉴스, 분위기 급반전 같은 위험 요인이 시나리오의 전제를 무너뜨리면 그 시나리오는 깨졌다고 봅니다. 위험 요인 항목에 따로 표시되어 있어 매수 전에 한 번 확인하기 좋습니다.',
+                    text: isEquity ? t('page.715b77') : t('page.b51b30'),
                 },
             },
         ],
@@ -475,7 +475,7 @@ export default async function OverallPage({ params }: Props) {
                         id="overall-guide-heading"
                         className="text-base font-semibold text-secondary-300"
                     >
-                        {displayName} 종합 분석은 어떻게 봐야 할까
+                        {displayName} {t('page.119eb4')}
                     </h2>
                     {copy.guideParagraphs}
                 </section>

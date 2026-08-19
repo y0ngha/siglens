@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import type { AssetClass } from '@/shared/config/marketProfile';
@@ -73,6 +74,7 @@ export function NewsFactsSummary({
     assetClass,
     items,
 }: NewsFactsSummaryProps) {
+    const t = useTranslations('widgets.news');
     const latestPublishedAt = getLatestPublishedAt(items);
     const analyzedCount = items.filter(item => item.sentiment !== null).length;
     const sentimentCounts = getSentimentCounts(items);
@@ -88,41 +90,47 @@ export function NewsFactsSummary({
                 id="news-facts-summary-heading"
                 className="text-lg font-semibold tracking-tight"
             >
-                {displayName} 최근 뉴스 데이터 요약
+                {displayName} {t('NewsFactsSummary.438417')}
             </h2>
 
             {items.length === 0 ? (
                 <p className="mt-3 text-sm leading-relaxed text-secondary-300">
-                    {displayName} 최신 뉴스 데이터가 아직 준비되지 않았습니다.
-                    뉴스 카드가 분석되면 최근 기사와 분위기 요약이 이 영역에
-                    표시됩니다.
+                    {displayName} {t('NewsFactsSummary.2453b9')}
                 </p>
             ) : (
                 <div className="mt-3 space-y-3 text-sm leading-relaxed text-secondary-300">
                     <p>
-                        {displayName} ({symbol}) 페이지는 최근 뉴스{' '}
-                        {items.length}건을 표시합니다.
+                        {displayName} ({symbol}
+                        {t('NewsFactsSummary.2658c0')} {items.length}
+                        {t('NewsFactsSummary.1519b2')}
                     </p>
                     {latestPublishedAt ? (
                         <p>
-                            최신 기사는{' '}
+                            {t('NewsFactsSummary.306582')}{' '}
                             {formatNewsPublishedAt(latestPublishedAt)}{' '}
-                            기준입니다.
+                            {t('NewsFactsSummary.615021')}
                         </p>
                     ) : null}
-                    <p>AI 뉴스 카드 분석은 {analyzedCount}건 완료됐습니다.</p>
+                    <p>
+                        {t('NewsFactsSummary.fd7a75')} {analyzedCount}
+                        {t('NewsFactsSummary.2da115')}
+                    </p>
                     {analyzedCount > 0 ? (
                         <p>
-                            분위기 분포는 긍정 {sentimentCounts.bullish}건, 중립{' '}
-                            {sentimentCounts.neutral}건, 부정{' '}
-                            {sentimentCounts.bearish}건입니다.
+                            {t('NewsFactsSummary.f36be5')}{' '}
+                            {sentimentCounts.bullish}
+                            {t('NewsFactsSummary.b9024e')}{' '}
+                            {sentimentCounts.neutral}
+                            {t('NewsFactsSummary.e3a052')}{' '}
+                            {sentimentCounts.bearish}
+                            {t('NewsFactsSummary.feb04c')}
                         </p>
                     ) : null}
 
                     {headlines.length > 0 ? (
                         <div>
                             <h3 className="text-sm font-semibold text-secondary-200">
-                                최근 기사 제목
+                                {t('NewsFactsSummary.fc9900')}
                             </h3>
                             <ol className="mt-2 list-decimal space-y-1 pl-5">
                                 {headlines.map(headline => (
@@ -134,8 +142,8 @@ export function NewsFactsSummary({
 
                     <p>
                         {isCrypto
-                            ? '코인 뉴스의 핵심 이슈와 분위기를 함께 확인할 수 있습니다.'
-                            : '뉴스 흐름과 함께 어닝 일정, 최근 실적, 애널리스트 등급 변경을 이어서 확인할 수 있습니다.'}
+                            ? t('NewsFactsSummary.5a1c5f')
+                            : t('NewsFactsSummary.c154a3')}
                     </p>
                 </div>
             )}

@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { MarketFearGreedView } from '@/entities/market-fear-greed';
 import { FearGreedGauge } from '@/widgets/fear-greed';
 import { formatConfidenceFooter } from '@/shared/lib/fearGreedLabels';
@@ -47,15 +48,15 @@ export function MarketFearGreedPage({
     view,
     market,
 }: MarketFearGreedPageProps) {
+    const t = useTranslations('widgets.market-fear-greed');
     const { snapshot, comparisons } = view;
 
     if (!snapshot) {
         return (
             <div className="flex flex-col gap-2 py-6 text-sm text-secondary-400">
-                <p>시장 공포·탐욕 지수를 계산할 데이터가 부족합니다.</p>
+                <p>{t('MarketFearGreedPage.1d7b3e')}</p>
                 <p className="text-xs text-secondary-500">
-                    데이터가 아직 충분히 쌓이지 않았을 수 있습니다. 잠시 후 다시
-                    확인해주세요.
+                    {t('MarketFearGreedPage.e446f9')}
                 </p>
             </div>
         );
@@ -79,14 +80,14 @@ export function MarketFearGreedPage({
 
             <section className="flex flex-col gap-3">
                 <h2 className="text-sm font-medium text-secondary-300">
-                    기간별 비교
+                    {t('MarketFearGreedPage.41205a')}
                 </h2>
                 <MarketFearGreedComparison comparisons={comparisons} />
             </section>
 
             <section className="flex flex-col gap-3">
                 <h2 className="text-sm font-medium text-secondary-300">
-                    요인별 기여도
+                    {t('MarketFearGreedPage.c099fa')}
                 </h2>
                 {snapshot.factors.map(factor => (
                     <MarketFearGreedFactorBar

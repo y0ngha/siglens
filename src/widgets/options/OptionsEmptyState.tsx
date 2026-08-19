@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { ReactNode } from 'react';
 
@@ -48,20 +49,22 @@ export function OptionsEmptyState({
     symbol,
     snapshotSlot,
 }: OptionsEmptyStateProps) {
+    const t = useTranslations('widgets.options');
     return (
         <main className="mx-auto max-w-5xl px-4 py-16">
             <div className="rounded-xl border border-secondary-700 bg-secondary-800 p-8 text-center">
                 <h1 className="text-xl font-semibold tracking-tight">
-                    {symbol} 옵션 시장 정보 없음
+                    {symbol} {t('OptionsEmptyState.68a411')}
                 </h1>
                 <p className="mt-3 text-sm leading-relaxed text-secondary-400">
-                    {symbol}는 현재 옵션 시장이 형성되어 있지 않습니다.
+                    {symbol}
+                    {t('OptionsEmptyState.97e04b')}
                     <br />
-                    다른 분석 페이지에서 종목을 살펴보세요.
+                    {t('OptionsEmptyState.9e8562')}
                 </p>
                 <nav
                     className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
-                    aria-label="다른 분석 페이지"
+                    aria-label={t('OptionsEmptyState.840bca')}
                 >
                     {FALLBACK_PAGES.map(({ key, label, desc, href }) => (
                         <Link

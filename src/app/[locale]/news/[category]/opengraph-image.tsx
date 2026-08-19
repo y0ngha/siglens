@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { ImageResponse } from 'next/og';
 import { CATEGORY_CONFIG, categoryFromSlug } from '@/entities/market-news';
 import { loadKoreanFont } from '@/entities/og-image/lib/loadKoreanFont';
@@ -33,9 +34,12 @@ interface Props {
 }
 
 export default async function Image({ params }: Props) {
+    const t = await getTranslations('app.news');
     const { category: slug } = await params;
     const cat = categoryFromSlug(slug);
-    const label = cat ? CATEGORY_CONFIG[cat].koLabel : '시장 뉴스';
+    const label = cat
+        ? CATEGORY_CONFIG[cat].koLabel
+        : t('opengraph-image.91dd85');
 
     const fontData = await loadKoreanFont();
 
@@ -89,7 +93,7 @@ export default async function Image({ params }: Props) {
                     display: 'flex',
                 }}
             >
-                뉴스
+                {t('opengraph-image.3a465d')}
             </div>
         </div>,
         {

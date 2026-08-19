@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 import { useContactForm } from '../hooks/useContactForm';
 import { ContactSubmittedNotice } from './ContactSubmittedNotice';
@@ -13,6 +14,7 @@ import {
 } from '@/entities/inquiry';
 
 export function ContactForm() {
+    const t = useTranslations('features.contact-form');
     const [state, formAction] = useContactForm();
     const currentUser = useCurrentUser();
 
@@ -44,11 +46,11 @@ export function ContactForm() {
             <ContactTextField
                 id="contact-title"
                 name="title"
-                label="제목"
+                label={t('ContactForm.078b3a')}
                 type="text"
                 required
                 maxLength={CONTACT_TITLE_MAX_LENGTH}
-                placeholder="문의 제목을 입력해 주세요"
+                placeholder={t('ContactForm.b17241')}
                 defaultValue={state.values.title}
                 error={getFieldError(state.error, 'title')}
             />
@@ -59,7 +61,7 @@ export function ContactForm() {
                 <ContactTextField
                     id="contact-email"
                     name="email"
-                    label="이메일"
+                    label={t('ContactForm.3c3776')}
                     type="email"
                     autoComplete="email"
                     required
@@ -72,25 +74,29 @@ export function ContactForm() {
             <ContactTextareaField
                 id="contact-content"
                 name="content"
-                label="문의 내용"
+                label={t('ContactForm.91c89b')}
                 required
                 maxLength={CONTACT_CONTENT_MAX_LENGTH}
-                placeholder="자세한 내용을 입력해 주세요"
+                placeholder={t('ContactForm.52d02b')}
                 defaultValue={state.values.content}
                 error={getFieldError(state.error, 'content')}
             />
 
-            <SubmitButton label="문의 보내기" pendingLabel="전송 중…" />
+            <SubmitButton
+                label={t('ContactForm.4de00c')}
+                pendingLabel={t('ContactForm.15bde2')}
+            />
         </form>
     );
 }
 
 /** Visible while the current-user query is pending; prevents a remount that would wipe user input once the query resolves. */
 function ContactEmailFieldSkeleton() {
+    const t = useTranslations('features.contact-form');
     return (
         <div className="space-y-2" aria-busy="true">
             <span className="block text-sm font-medium text-secondary-200">
-                이메일
+                {t('ContactForm.3c3776')}
             </span>
             <div
                 aria-hidden

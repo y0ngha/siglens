@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { AuthErrorAlert } from '@/shared/ui/auth/AuthErrorAlert';
 import { PasswordField } from '@/shared/ui/auth/PasswordField';
 import { PasswordStrengthHint } from '@/shared/ui/auth/PasswordStrengthHint';
@@ -34,6 +35,7 @@ function describePasswordFieldError(
 }
 
 export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
+    const t = useTranslations('features.auth-password-reset');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [confirmError, setConfirmError] = useState<string | null>(null);
@@ -44,7 +46,7 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
 
     const handleAction = (formData: FormData) => {
         if (password !== confirmPassword) {
-            setConfirmError('비밀번호가 일치하지 않습니다.');
+            setConfirmError(t('ResetPasswordForm.c3b85c'));
             return;
         }
         setConfirmError(null);
@@ -61,7 +63,7 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
             <PasswordField
                 id="reset-password"
                 name="newPassword"
-                label="새 비밀번호"
+                label={t('ResetPasswordForm.783ba8')}
                 autoComplete="new-password"
                 required
                 value={password}
@@ -81,7 +83,7 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
             <PasswordField
                 id="reset-password-confirm"
                 name="confirmPassword"
-                label="새 비밀번호 확인"
+                label={t('ResetPasswordForm.2fe1f8')}
                 autoComplete="new-password"
                 required
                 value={confirmPassword}
@@ -91,7 +93,10 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
                 }}
                 error={confirmError ?? undefined}
             />
-            <SubmitButton label="비밀번호 변경" pendingLabel="변경 중…" />
+            <SubmitButton
+                label={t('ResetPasswordForm.4c7b96')}
+                pendingLabel={t('ResetPasswordForm.5926a3')}
+            />
         </form>
     );
 }

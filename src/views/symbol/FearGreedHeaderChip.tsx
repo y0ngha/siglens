@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { FearGreedLabel, FearGreedSnapshot } from '@y0ngha/siglens-core';
 import {
     CONFIDENCE_LIMITED_LABEL,
@@ -20,10 +21,11 @@ interface FearGreedHeaderChipProps {
 
 /** Ticker-level sentiment chip on every /[symbol]/* route header. */
 export function FearGreedHeaderChip({ snapshot }: FearGreedHeaderChipProps) {
+    const t = useTranslations('views.symbol');
     if (!snapshot) {
         return (
             <span className="inline-flex items-center rounded bg-secondary-700/40 px-2 py-0.5 text-xs text-secondary-400">
-                공포·탐욕 데이터 부족
+                {t('FearGreedHeaderChip.afe032')}
             </span>
         );
     }

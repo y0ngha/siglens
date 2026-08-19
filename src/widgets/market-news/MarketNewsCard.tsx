@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { NewsFeedCategoryId } from '@/entities/market-news';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { MarketNewsCardItem } from '@/entities/market-news';
@@ -120,6 +121,7 @@ function TickerChips({ category, tickers }: TickerChipsProps) {
  * text-secondary-400 텍스트 컬러는 NewsList(text-secondary-500)와 의도적으로 다르다.
  */
 function AnalysisSkeleton() {
+    const t = useTranslations('widgets.market-news');
     return (
         <div
             aria-hidden="true"
@@ -127,7 +129,9 @@ function AnalysisSkeleton() {
         >
             <div className="h-5 w-10 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             <div className="h-5 w-20 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
-            <span className="text-xs text-secondary-400">AI 분석 중…</span>
+            <span className="text-xs text-secondary-400">
+                {t('MarketNewsCard.d12df8')}
+            </span>
         </div>
     );
 }
@@ -156,6 +160,7 @@ export interface MarketNewsCardProps {
  * skeleton placeholders while the background LLM pass completes.
  */
 export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
+    const t = useTranslations('widgets.market-news');
     const pending = isPending(item);
     const isHighImpact = !pending && item.priceImpact === 'high';
     const publishedDate = formatNewsPublishedAt(item.publishedAt);
@@ -202,7 +207,7 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
                     {item.bodyKo !== null && (
                         <section className="mt-3 border-t border-secondary-700/70 pt-3">
                             <h4 className="mb-1 text-xs font-semibold text-secondary-300">
-                                본문
+                                {t('MarketNewsCard.c67b87')}
                             </h4>
                             <p className="text-sm leading-relaxed wrap-break-word text-secondary-400">
                                 {item.bodyKo}
@@ -212,7 +217,7 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
                     {item.summaryKo !== null && (
                         <section className="mt-3 border-t border-secondary-700/70 pt-3">
                             <h4 className="mb-1 text-xs font-semibold text-secondary-300">
-                                요약
+                                {t('MarketNewsCard.3ea27a')}
                             </h4>
                             <p className="text-sm leading-relaxed wrap-break-word text-secondary-400">
                                 {item.summaryKo}
@@ -223,7 +228,8 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
             }
             linkChildren={
                 <>
-                    원문 보기 <span aria-hidden="true">→</span>
+                    {t('MarketNewsCard.adb2bb')}{' '}
+                    <span aria-hidden="true">→</span>
                 </>
             }
         />

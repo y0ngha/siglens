@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
@@ -24,6 +25,7 @@ export function ShareTriggerDialog({
     onConfirm,
     onCancel,
 }: ShareTriggerDialogProps) {
+    const t = useTranslations('widgets.share');
     const dialogRef = useRef<HTMLDivElement>(null);
 
     useFocusTrap(dialogRef, open);
@@ -46,11 +48,11 @@ export function ShareTriggerDialog({
                         id="share-trigger-dialog-title"
                         className="text-sm font-semibold text-secondary-100"
                     >
-                        공유하기 전에 분석을 준비할게요
+                        {t('ShareTriggerDialog.5481d6')}
                     </h2>
                     <button
                         type="button"
-                        aria-label="닫기"
+                        aria-label={t('ShareTriggerDialog.94b7db')}
                         onClick={onCancel}
                         className="-mr-1 rounded p-1 text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
@@ -60,8 +62,7 @@ export function ShareTriggerDialog({
 
                 <div className="flex flex-col gap-4 px-5 py-4">
                     <p className="text-sm leading-relaxed text-secondary-400">
-                        이 종목의 AI 분석이 아직 없어요. 잠깐이면 준비돼요 —
-                        끝나면 바로 공유 화면으로 이어드릴게요.
+                        {t('ShareTriggerDialog.b74ea2')}
                     </p>
 
                     <div className="flex flex-col gap-2">
@@ -70,7 +71,7 @@ export function ShareTriggerDialog({
                             onClick={onConfirm}
                             className="flex h-9 touch-manipulation items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-medium text-secondary-50 transition-colors hover:bg-primary-500 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
-                            분석하고 공유하기
+                            {t('ShareTriggerDialog.cc6aae')}
                         </button>
 
                         <button
@@ -78,7 +79,7 @@ export function ShareTriggerDialog({
                             onClick={onCancel}
                             className="flex h-9 touch-manipulation items-center justify-center rounded-lg border border-secondary-700 px-4 text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
-                            다음에
+                            {t('ShareTriggerDialog.2d4e13')}
                         </button>
                     </div>
                 </div>

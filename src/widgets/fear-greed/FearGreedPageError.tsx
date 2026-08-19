@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { FallbackProps } from 'react-error-boundary';
 import { getFmpUserFacingMessage } from '@/shared/api/fmp/fmpUserMessage';
 
@@ -7,9 +8,9 @@ export function FearGreedPageError({
     error,
     resetErrorBoundary,
 }: FallbackProps) {
+    const t = useTranslations('widgets.fear-greed');
     const message =
-        getFmpUserFacingMessage(error) ??
-        '공포 탐욕 지수를 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+        getFmpUserFacingMessage(error) ?? t('FearGreedPageError.f929f0');
 
     return (
         <section
@@ -20,7 +21,7 @@ export function FearGreedPageError({
                 id="fear-greed-error-heading"
                 className="mb-2 text-lg font-semibold tracking-tight"
             >
-                공포 탐욕 지수
+                {t('FearGreedPageError.f9482c')}
             </h2>
             <div className="text-sm text-ui-danger" role="alert">
                 {message}
@@ -30,7 +31,7 @@ export function FearGreedPageError({
                 onClick={resetErrorBoundary}
                 className="mt-4 rounded bg-primary-600 px-3 py-1.5 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
             >
-                다시 시도
+                {t('FearGreedPageError.0c767c')}
             </button>
         </section>
     );

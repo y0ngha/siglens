@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type {
     FundamentalCategory,
     FundamentalSentiment,
@@ -166,6 +167,7 @@ export function FundamentalSnapshotProse({
     marketProfile,
     generatedAt,
 }: FundamentalSnapshotProseProps) {
+    const t = useTranslations('views.symbol');
     const narrowed = narrowFundamentalContent(content);
     if (narrowed === null) return null;
 
@@ -176,7 +178,7 @@ export function FundamentalSnapshotProse({
 
     return (
         <SnapshotSummarySection
-            title="펀더멘털 종합 평가"
+            title={t('FundamentalSnapshotProse.05a94d')}
             displayName={displayName}
             marketProfile={marketProfile}
             asOf={generatedAt}
@@ -184,7 +186,7 @@ export function FundamentalSnapshotProse({
             <div className="space-y-4 text-sm leading-6 text-secondary-300">
                 {narrowed.overallSentiment !== null && (
                     <p className="font-medium text-secondary-200">
-                        {symbol} 펀더멘털 종합 평가:{' '}
+                        {symbol} {t('FundamentalSnapshotProse.367261')}{' '}
                         {SENTIMENT_LABEL[narrowed.overallSentiment]}
                     </p>
                 )}
@@ -200,7 +202,7 @@ export function FundamentalSnapshotProse({
                 {narrowed.categoryAssessments.length > 0 && (
                     <div>
                         <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
-                            카테고리별 평가
+                            {t('FundamentalSnapshotProse.74f3b1')}
                         </h3>
                         <ul
                             role="list"
@@ -224,9 +226,9 @@ export function FundamentalSnapshotProse({
                 )}
 
                 <SnapshotBulletList
-                    title="위험 요인"
+                    title={t('FundamentalSnapshotProse.af0480')}
                     symbol={symbol}
-                    ariaSuffix="위험 요인"
+                    ariaSuffix={t('FundamentalSnapshotProse.af0480')}
                     items={narrowed.riskFactorsKo}
                     keyPrefix="risk"
                 />

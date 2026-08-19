@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import { useHydrated } from '@/shared/hooks/useHydrated';
@@ -30,6 +31,7 @@ interface PositionTabContentProps {
 }
 
 function PositionAuthSkeleton() {
+    const t = useTranslations('widgets.portfolio-position');
     return (
         <div
             role="status"
@@ -38,7 +40,7 @@ function PositionAuthSkeleton() {
             data-testid="position-auth-loading"
             className="h-40 animate-pulse rounded-xl border border-secondary-700 bg-secondary-800/40"
         >
-            <span className="sr-only">내 위치를 불러오는 중이에요</span>
+            <span className="sr-only">{t('PositionTabContent.0b16bc')}</span>
         </div>
     );
 }

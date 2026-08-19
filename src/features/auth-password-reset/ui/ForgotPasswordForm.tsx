@@ -1,10 +1,12 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { AuthFieldGroup } from '@/shared/ui/auth/AuthFieldGroup';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 import { useForgotPasswordForm } from '../hooks/useForgotPasswordForm';
 
 export function ForgotPasswordForm() {
+    const t = useTranslations('features.auth-password-reset');
     const [state, formAction] = useForgotPasswordForm();
     if (state.submitted) {
         return (
@@ -14,14 +16,13 @@ export function ForgotPasswordForm() {
                 className="space-y-2 rounded-md border border-secondary-800 bg-secondary-900/60 p-4 text-sm"
             >
                 <p className="font-semibold text-secondary-100">
-                    메일을 확인해 주세요
+                    {t('ForgotPasswordForm.fe04f2')}
                 </p>
                 <p className="text-secondary-300">
-                    입력하신 이메일이 등록된 계정이라면 비밀번호 재설정 링크를
-                    보내드렸습니다.
+                    {t('ForgotPasswordForm.3be296')}
                 </p>
                 <p className="text-secondary-300">
-                    메일이 도착하지 않은 경우 스팸함도 확인해 주세요.
+                    {t('ForgotPasswordForm.3e3640')}
                 </p>
             </div>
         );
@@ -31,12 +32,15 @@ export function ForgotPasswordForm() {
             <AuthFieldGroup
                 id="forgot-email"
                 name="email"
-                label="이메일"
+                label={t('ForgotPasswordForm.3c3776')}
                 type="email"
                 autoComplete="email"
                 required
             />
-            <SubmitButton label="재설정 링크 보내기" pendingLabel="발송 중…" />
+            <SubmitButton
+                label={t('ForgotPasswordForm.f4d6d3')}
+                pendingLabel={t('ForgotPasswordForm.8321f5')}
+            />
         </form>
     );
 }

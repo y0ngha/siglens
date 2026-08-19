@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type React from 'react';
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -260,6 +261,7 @@ export function PositionBuilding({
     className,
     volumeByBand,
 }: PositionBuildingProps) {
+    const t = useTranslations('widgets.portfolio-position');
     // 층 hover/tap(pin) 상태 — volumeByBand가 없으면 절대 set되지 않아(아래 이벤트
     // 핸들러가 통째로 붙지 않음) 항상 null로 남고, 건물은 이 기능 추가 전과 동일하게
     // 렌더된다. 마우스/터치 전용(포인터 어포던스) — 층 <g>는 role="img" 자손이라
@@ -704,8 +706,11 @@ export function PositionBuilding({
                     returnTokenClass
                 )}
             >
-                수익률 {formatSignedPercent(model.returnPct)} · 최근 범위의{' '}
-                {model.rangePositionPct.toFixed(0)}% 지점
+                {t('PositionBuilding.fb64df')}{' '}
+                {formatSignedPercent(model.returnPct)}{' '}
+                {t('PositionBuilding.562a2c')}{' '}
+                {model.rangePositionPct.toFixed(0)}
+                {t('PositionBuilding.92b19a')}
             </p>
 
             {/* 층 hover/탭 리드아웃 — 마우스/터치를 쓰는 시각 사용자 전용 보강 표시다

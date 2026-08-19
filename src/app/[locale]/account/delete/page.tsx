@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import {
     DEFAULT_LOCALE,
@@ -48,18 +49,19 @@ export default async function DeleteAccountPage({
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.account');
     return (
         <AuthCardShell
-            title="회원 탈퇴"
-            subtitle="이 작업은 되돌릴 수 없습니다"
+            title={t('page.3a0c2b')}
+            subtitle={t('page.752a1e')}
             footer={
                 <p>
-                    마음이 바뀌셨나요?{' '}
+                    {t('page.bfc060')}{' '}
                     <Link
                         href="/account"
                         className="font-medium text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
-                        계정 설정으로 돌아가기 →
+                        {t('page.1b62d0')}
                     </Link>
                 </p>
             }
@@ -81,7 +83,7 @@ export default async function DeleteAccountPage({
                             className="h-3 w-3 animate-spin rounded-full border-2 border-secondary-500 border-t-transparent"
                         />
                         <span className="text-xs text-secondary-400">
-                            계정 정보를 불러오고 있어요…
+                            {t('page.109043')}
                         </span>
                     </div>
                 }

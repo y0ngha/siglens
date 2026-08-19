@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 
 const SKELETON_LINE_WIDTHS = [
@@ -9,16 +10,17 @@ const SKELETON_LINE_WIDTHS = [
 ] as const;
 
 export function OptionsAiAnalysisSkeleton() {
+    const t = useTranslations('widgets.options');
     return (
         <section
             className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
             aria-busy="true"
-            aria-label="AI 옵션 분석 불러오는 중"
+            aria-label={t('OptionsAiAnalysisSkeleton.673e73')}
         >
             <div className="flex items-center gap-2">
                 <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
                 <span className="text-xs tracking-widest text-secondary-400 uppercase">
-                    AI 옵션 분석 생성 중
+                    {t('OptionsAiAnalysisSkeleton.a88633')}
                 </span>
             </div>
             <div className="mt-4 space-y-2" aria-hidden="true">

@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { SymbolPageHeading } from '@/views/symbol';
 import { CongressSnapshotProse } from '@/views/symbol/snapshot/renderers/CongressSnapshotProse';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
@@ -39,9 +40,12 @@ export function CongressDegraded({
     snapshotContent,
     snapshotGeneratedAt,
 }: CongressDegradedProps) {
+    const t = useTranslations('app.symbol');
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-            <SymbolPageHeading>{displayName} 의회 거래</SymbolPageHeading>
+            <SymbolPageHeading>
+                {displayName} {t('CongressDegraded.7b06ac')}
+            </SymbolPageHeading>
             <CongressSnapshotProse
                 content={snapshotContent}
                 symbol={symbol}
@@ -53,11 +57,10 @@ export function CongressDegraded({
             />
             <section className="rounded-lg border border-secondary-800 bg-secondary-900/40 px-5 py-8 text-center">
                 <p className="text-sm font-medium text-secondary-200">
-                    의회 거래 데이터를 일시적으로 불러올 수 없어요
+                    {t('CongressDegraded.ea5528')}
                 </p>
                 <p className="mt-2 text-sm leading-relaxed text-secondary-400">
-                    외부 데이터 제공처가 잠시 응답하지 않고 있어요. 잠시 후 다시
-                    방문하시면 상원·하원 의원의 매매 내역을 보실 수 있습니다.
+                    {t('CongressDegraded.508fee')}
                 </p>
             </section>
             <CrossLinkCards symbol={symbol} current="congress" />

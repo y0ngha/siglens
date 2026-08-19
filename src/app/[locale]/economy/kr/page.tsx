@@ -1,3 +1,5 @@
+import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
@@ -240,14 +242,13 @@ async function KrEconomyContent() {
  * 캘린더는 이 아래에 그대로 렌더된다(수집 트리거가 거기 있다).
  */
 function KrEconomyDegraded() {
+    const t = useTranslations('app.economy');
     return (
         <section
-            aria-label="한국 경제 데이터 없음"
+            aria-label={t('page.03f79d')}
             className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
-            <p className="text-sm text-secondary-400">
-                한국 경제 지표를 준비하고 있어요. 잠시 후 다시 확인해 주세요.
-            </p>
+            <p className="text-sm text-secondary-400">{t('page.99ee99')}</p>
         </section>
     );
 }
@@ -326,6 +327,7 @@ export default async function EconomyKrPage({
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.economy');
     return (
         <>
             {/* FAQ는 로더 결과와 무관하게 화면에 그대로 있으므로 항상 낸다.
@@ -353,7 +355,7 @@ export default async function EconomyKrPage({
                         id="economy-kr-faq-heading"
                         className="text-base font-semibold text-secondary-300"
                     >
-                        자주 묻는 질문
+                        {t('page.ae2ce9')}
                     </h2>
                     <dl className="mt-3 space-y-4 text-sm leading-relaxed text-secondary-400">
                         {ECONOMY_KR_FAQ.map(({ question, answer }) => (

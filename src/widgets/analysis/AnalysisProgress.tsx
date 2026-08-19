@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { ANALYSIS_PHASES, ANALYSIS_TIPS } from './hooks/useAnalysisProgress';
 import { AdBanner } from './AdBanner';
@@ -27,12 +28,13 @@ export function AnalysisProgress({
     tipIndex,
     isFreeUser = true,
 }: AnalysisProgressProps) {
+    const t = useTranslations('widgets.analysis');
     return (
         <div
             className="relative flex flex-col gap-4 overflow-hidden rounded-lg border border-secondary-700/60 bg-secondary-900/40 p-4"
             role="status"
             aria-live="polite"
-            aria-label="AI 분석 진행 중"
+            aria-label={t('AnalysisProgress.784c44')}
         >
             {/* 상단의 흐르는 라이트 바: indeterminate progress */}
             <span className="pointer-events-none absolute inset-x-0 top-0 h-px animate-pulse bg-linear-to-r from-transparent via-primary-500/60 to-transparent" />

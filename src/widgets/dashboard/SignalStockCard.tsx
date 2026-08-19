@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
 import { cn } from '@/shared/lib/cn';
@@ -18,6 +19,7 @@ export function SignalStockCard({
     currencySymbol,
     tickerIsReadable,
 }: SignalStockCardProps) {
+    const t = useTranslations('widgets.dashboard');
     return (
         <Link
             href={`/${data.symbol}`}
@@ -60,8 +62,11 @@ export function SignalStockCard({
                 )}
                 {data.conflict && (
                     <p className="mt-1 text-xs text-secondary-500">
-                        상승 {data.conflict.bullishCount}건 / 하락{' '}
-                        {data.conflict.bearishCount}건 감지
+                        {t('SignalStockCard.3dc47b')}{' '}
+                        {data.conflict.bullishCount}
+                        {t('SignalStockCard.8d6330')}{' '}
+                        {data.conflict.bearishCount}
+                        {t('SignalStockCard.16af52')}
                     </p>
                 )}
             </div>

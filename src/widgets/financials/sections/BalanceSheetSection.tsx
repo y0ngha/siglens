@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { BalanceSheetRow } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { NetDebtTooltip } from '@/widgets/financials/financialsTooltips';
@@ -31,6 +32,7 @@ export function BalanceSheetSection({
     rows,
     currency = DEFAULT_STATEMENT_CURRENCY,
 }: BalanceSheetSectionProps) {
+    const t = useTranslations('widgets.financials');
     if (rows.length === 0) {
         return <EmptySectionCard title={TITLE} />;
     }
@@ -40,17 +42,17 @@ export function BalanceSheetSection({
 
     const chartSeries = [
         {
-            labelKo: '총자산',
+            labelKo: t('BalanceSheetSection.7c44f5'),
             values: displayRows.map(r => r.totalAssets),
             color: 'bullish' as const,
         },
         {
-            labelKo: '총부채',
+            labelKo: t('BalanceSheetSection.88bf5b'),
             values: displayRows.map(r => r.totalLiabilities),
             color: 'bearish' as const,
         },
         {
-            labelKo: '자본',
+            labelKo: t('BalanceSheetSection.72fc67'),
             values: displayRows.map(r => r.totalStockholdersEquity),
             color: 'neutral' as const,
         },
@@ -58,19 +60,19 @@ export function BalanceSheetSection({
 
     const tableRows = [
         {
-            labelKo: '총자산',
+            labelKo: t('BalanceSheetSection.7c44f5'),
             values: displayRows.map(r => r.totalAssets),
             format: 'usd' as const,
             colorize: false, // absolute magnitude — larger is neither good nor bad
         },
         {
-            labelKo: '총부채',
+            labelKo: t('BalanceSheetSection.88bf5b'),
             values: displayRows.map(r => r.totalLiabilities),
             format: 'usd' as const,
             colorize: false, // absolute magnitude — size alone does not signal direction
         },
         {
-            labelKo: '순부채',
+            labelKo: t('BalanceSheetSection.5d4837'),
             tooltip: <InfoTooltip>{NetDebtTooltip}</InfoTooltip>,
             values: displayRows.map(r => r.netDebt),
             format: 'usd' as const,
@@ -78,19 +80,19 @@ export function BalanceSheetSection({
             colorize: false,
         },
         {
-            labelKo: '현금',
+            labelKo: t('BalanceSheetSection.610240'),
             values: displayRows.map(r => r.cashAndShortTermInvestments),
             format: 'usd' as const,
             colorize: false, // absolute stock — always positive, magnitude ≠ direction signal
         },
         {
-            labelKo: '자본',
+            labelKo: t('BalanceSheetSection.72fc67'),
             values: displayRows.map(r => r.totalStockholdersEquity),
             format: 'usd' as const,
             colorize: false, // absolute magnitude — larger equity not inherently good or bad
         },
         {
-            labelKo: '유동비율',
+            labelKo: t('BalanceSheetSection.835374'),
             values: displayRows.map(r => r.currentRatio),
             format: 'num' as const,
             // colorize: true (default) — higher current ratio = better liquidity

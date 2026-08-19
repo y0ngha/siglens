@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { formatPriceChange, formatPrice } from '@/shared/lib/priceFormat';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { useId } from 'react';
@@ -56,6 +57,7 @@ export function TechnicalFactsSummary({
     indicators,
     marketProfile = 'us-equity',
 }: TechnicalFactsSummaryProps) {
+    const t = useTranslations('views.symbol');
     const headingId = useId();
     const facts = buildTechnicalFacts(bars, indicators);
     if (!facts) return null;
@@ -77,18 +79,19 @@ export function TechnicalFactsSummary({
                 id={headingId}
                 className="text-sm font-semibold text-secondary-200"
             >
-                {symbol} 기술적 지표 요약
+                {symbol} {t('TechnicalFactsSummary.880cd6')}
             </h2>
             <dl className="grid grid-cols-1 gap-2 text-sm text-secondary-300">
                 <div className="flex justify-between gap-4">
                     <dt className="text-secondary-400">
-                        현재가
+                        {t('TechnicalFactsSummary.497d1e')}
                         {/* 지연 시세를 실시간으로 오독하지 않도록 라벨에 바로 붙인다.
                             값 옆이 아니라 라벨에 두는 이유: 가격·등락률과 한 줄에 섞이면
                             숫자의 일부처럼 읽힌다. */}
                         {quoteDelayMinutes > 0 && (
                             <span className="ml-1 text-xs font-normal text-secondary-500">
-                                ({quoteDelayMinutes}분 지연)
+                                ({quoteDelayMinutes}
+                                {t('TechnicalFactsSummary.310c70')}
                             </span>
                         )}
                     </dt>
@@ -107,7 +110,9 @@ export function TechnicalFactsSummary({
                 )}
                 {facts.macdHistogram !== null && (
                     <div className="flex justify-between gap-4">
-                        <dt className="text-secondary-400">MACD 모멘텀</dt>
+                        <dt className="text-secondary-400">
+                            {t('TechnicalFactsSummary.d8446c')}
+                        </dt>
                         <dd>
                             {technicalFactsMacdMomentumLabel(
                                 facts.macdHistogram
@@ -120,8 +125,10 @@ export function TechnicalFactsSummary({
                         {`최근 ${RECENT_BARS_WINDOW}개 봉 위치`}
                     </dt>
                     <dd>
-                        고점 대비 {facts.pctFrom52wHigh.toFixed(1)}%, 저점 대비
-                        +{facts.pctAbove52wLow.toFixed(1)}%
+                        {t('TechnicalFactsSummary.10a318')}{' '}
+                        {facts.pctFrom52wHigh.toFixed(1)}
+                        {t('TechnicalFactsSummary.130d28')}
+                        {facts.pctAbove52wLow.toFixed(1)}%
                     </dd>
                 </div>
             </dl>
@@ -131,7 +138,7 @@ export function TechnicalFactsSummary({
                 ))}
             </div>
             <p className="text-xs text-secondary-400">
-                위 지표는 표시된 차트 데이터 기반 자동 계산값입니다.
+                {t('TechnicalFactsSummary.beae1d')}
             </p>
         </section>
     );

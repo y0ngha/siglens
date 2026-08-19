@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import {
     usePublishSymbolChat,
     type SymbolChatState,
@@ -40,6 +41,7 @@ interface StatusCardProps {
 }
 
 function StatusCard({ phase }: StatusCardProps) {
+    const t = useTranslations('widgets.news');
     const isFetching = phase === 'fetching';
 
     return (
@@ -53,7 +55,7 @@ function StatusCard({ phase }: StatusCardProps) {
                     id="news-ai-summary-status-heading"
                     className="text-lg font-semibold tracking-tight"
                 >
-                    뉴스 AI 종합 분석
+                    {t('NewsAiSummary.a74178')}
                 </h2>
                 <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
                     {NEWS_ANALYSIS_PERIOD_LABEL}
@@ -76,14 +78,14 @@ function StatusCard({ phase }: StatusCardProps) {
                     aria-atomic="true"
                 >
                     {isFetching
-                        ? '뉴스 데이터를 수집하고 있어요…'
-                        : 'AI 종합 분석 중이에요…'}
+                        ? t('NewsAiSummary.678c71')
+                        : t('NewsAiSummary.c520e4')}
                 </p>
             </div>
             <p className="mt-2 text-xs text-secondary-500">
                 {isFetching
-                    ? '최신 뉴스를 가져온 뒤에 AI 분석을 시작해요.'
-                    : '수집한 뉴스를 종합 분석하고 있어요. 잠시만 기다려 주세요.'}
+                    ? t('NewsAiSummary.c4068f')
+                    : t('NewsAiSummary.595bae')}
             </p>
             <div className="mt-4 space-y-2" aria-hidden="true">
                 <div className="h-4 w-[91%] animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
@@ -99,6 +101,7 @@ interface NewsAiSummaryViewProps {
 }
 
 export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
+    const t = useTranslations('widgets.news');
     return (
         <section
             aria-labelledby="news-ai-summary-heading"
@@ -110,7 +113,7 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                         id="news-ai-summary-heading"
                         className="text-lg font-semibold tracking-tight"
                     >
-                        뉴스 AI 종합 분석
+                        {t('NewsAiSummary.a74178')}
                     </h2>
                     <span className="shrink-0 rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
                         {NEWS_ANALYSIS_PERIOD_LABEL}
@@ -132,8 +135,13 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
 
             {result.keyEventsKo.length > 0 && (
                 <div className="mb-4">
-                    <h3 className="mb-2 text-sm font-semibold">핵심 이벤트</h3>
-                    <ul className="space-y-1.5" aria-label="핵심 이벤트 목록">
+                    <h3 className="mb-2 text-sm font-semibold">
+                        {t('NewsAiSummary.d65c2f')}
+                    </h3>
+                    <ul
+                        className="space-y-1.5"
+                        aria-label={t('NewsAiSummary.3cad3e')}
+                    >
                         {result.keyEventsKo.map(event => (
                             <li
                                 key={event}
@@ -157,11 +165,11 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
             {result.upcomingEventsKo.length > 0 && (
                 <div>
                     <h3 className="mb-2 text-sm font-semibold">
-                        다가오는 주요 일정
+                        {t('NewsAiSummary.1244e3')}
                     </h3>
                     <ul
                         className="space-y-1.5"
-                        aria-label="다가오는 주요 일정 목록"
+                        aria-label={t('NewsAiSummary.a96ba1')}
                     >
                         {result.upcomingEventsKo.map(event => (
                             <li
@@ -195,6 +203,7 @@ function NewsAiSummaryInlineError({
     error,
     onRetry,
 }: NewsAiSummaryInlineErrorProps) {
+    const t = useTranslations('widgets.news');
     return (
         <section
             aria-labelledby="news-ai-summary-error-heading"
@@ -205,7 +214,7 @@ function NewsAiSummaryInlineError({
                     id="news-ai-summary-error-heading"
                     className="text-lg font-semibold tracking-tight"
                 >
-                    뉴스 AI 종합 분석
+                    {t('NewsAiSummary.a74178')}
                 </h2>
                 <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
                     {NEWS_ANALYSIS_PERIOD_LABEL}
@@ -219,7 +228,7 @@ function NewsAiSummaryInlineError({
                 onClick={onRetry}
                 className="mt-4 rounded bg-primary-600 px-3 py-1.5 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
             >
-                다시 시도
+                {t('NewsAiSummary.0c767c')}
             </button>
         </section>
     );

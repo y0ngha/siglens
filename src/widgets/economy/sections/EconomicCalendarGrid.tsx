@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import {
     useState,
     useMemo,
@@ -214,6 +215,7 @@ function DayDetailPanel({
     activeImpacts,
     labels,
 }: DayDetailPanelProps) {
+    const t = useTranslations('widgets.economy');
     const { month, day, dateKey } = group;
     const dowLabel = kstDayOfWeekLabel(dateKey);
 
@@ -239,7 +241,10 @@ function DayDetailPanel({
             )}
         >
             <h3 className="font-semibold text-secondary-100">
-                {month + 1}월 {day}일 ({dowLabel})
+                {month + 1}
+                {t('EconomicCalendarGrid.754486')} {day}
+                {t('EconomicCalendarGrid.957e9a')}
+                {dowLabel})
             </h3>
             <ul className="space-y-2">
                 {group.events.map(ev => {
@@ -268,12 +273,12 @@ function DayDetailPanel({
                                         )}
                                     </p>
                                     <p className="mt-0.5 text-xs text-secondary-400">
-                                        예상{' '}
+                                        {t('EconomicCalendarGrid.764ee3')}{' '}
                                         {formatNum(
                                             ev.original.estimate,
                                             ev.original.unit
                                         )}{' '}
-                                        · 이전{' '}
+                                        {t('EconomicCalendarGrid.30d561')}{' '}
                                         {formatNum(
                                             ev.original.previous,
                                             ev.original.unit
@@ -281,7 +286,9 @@ function DayDetailPanel({
                                         {ev.original.actual !== null && (
                                             <>
                                                 {' '}
-                                                · 실제{' '}
+                                                {t(
+                                                    'EconomicCalendarGrid.2fbc54'
+                                                )}{' '}
                                                 {formatNum(
                                                     ev.original.actual,
                                                     ev.original.unit
@@ -350,6 +357,7 @@ function DayCell({
     onSelect,
     labels,
 }: DayCellProps) {
+    const t = useTranslations('widgets.economy');
     const { day, month, dateKey } = group;
 
     /**
@@ -416,7 +424,8 @@ function DayCell({
                 </span>
 
                 <span className="mt-0.5 block text-[10px] text-secondary-300 tabular-nums">
-                    {count}건
+                    {count}
+                    {t('EconomicCalendarGrid.d202b4')}
                 </span>
 
                 <span className="mt-1 hidden space-y-0.5 sm:block">
@@ -460,6 +469,7 @@ function MonthCalendar({
     onSelect,
     labels,
 }: MonthCalendarProps) {
+    const t = useTranslations('widgets.economy');
     const weeks = useMemo(() => {
         const totalDays = daysInMonth(year, month);
         /** 1일의 요일 (0=일 … 6=토) */
@@ -492,7 +502,8 @@ function MonthCalendar({
                 className="mb-2 text-sm font-medium text-secondary-300"
                 aria-hidden="true"
             >
-                {year}년 {MONTH_LABELS[month]}
+                {year}
+                {t('EconomicCalendarGrid.cdb423')} {MONTH_LABELS[month]}
             </p>
             <table className="w-full table-fixed border-collapse">
                 <caption className="sr-only">{captionText}</caption>
@@ -597,6 +608,7 @@ export function EconomicCalendarGrid({
     labels = {},
     country,
 }: EconomicCalendarGridProps) {
+    const t = useTranslations('widgets.economy');
     const [selectedDateKey, setSelectedDateKey] = useState('');
     const [activeImpacts, setActiveImpacts] = useState<
         ReadonlySet<CalendarImpact>
@@ -644,14 +656,15 @@ export function EconomicCalendarGrid({
                     id="economy-calendar-heading"
                     className="mb-3 text-lg font-semibold text-secondary-100"
                 >
-                    경제 캘린더{' '}
+                    {t('EconomicCalendarGrid.596fce')}{' '}
                     <span className="text-sm font-normal text-secondary-400">
-                        (한국시간)
+                        {t('EconomicCalendarGrid.4ccace')}
                     </span>
                 </h2>
                 <p className="text-sm text-secondary-400">
-                    다가오는 {CALENDAR_COUNTRY_LABEL[country]} 경제 발표 일정이
-                    아직 없어요.
+                    {t('EconomicCalendarGrid.5dfc7f')}{' '}
+                    {CALENDAR_COUNTRY_LABEL[country]}{' '}
+                    {t('EconomicCalendarGrid.bdc29f')}
                 </p>
             </section>
         );
@@ -663,9 +676,9 @@ export function EconomicCalendarGrid({
                 id="economy-calendar-heading"
                 className="mb-4 text-lg font-semibold text-secondary-100"
             >
-                경제 캘린더{' '}
+                {t('EconomicCalendarGrid.596fce')}{' '}
                 <span className="text-sm font-normal text-secondary-400">
-                    (한국시간)
+                    {t('EconomicCalendarGrid.4ccace')}
                 </span>
             </h2>
 

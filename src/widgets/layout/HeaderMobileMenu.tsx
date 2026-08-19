@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import {
@@ -22,6 +23,7 @@ interface HeaderMobileMenuProps {
 }
 
 export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
+    const t = useTranslations('widgets.layout');
     const [isOpen, setIsOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
     // `NAV_TREE`의 href는 로케일 접두사가 없는 `/market` 형태다. `usePathname()`은
@@ -122,7 +124,11 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
             <button
                 ref={triggerRef}
                 type="button"
-                aria-label={isOpen ? '메뉴 닫기' : '메뉴 열기'}
+                aria-label={
+                    isOpen
+                        ? t('HeaderMobileMenu.923b26')
+                        : t('HeaderMobileMenu.195da6')
+                }
                 aria-expanded={isOpen}
                 aria-controls="mobile-nav-drawer"
                 onClick={toggle}
@@ -161,7 +167,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                             ref={drawerRef}
                             role="dialog"
                             aria-modal={isOpen ? 'true' : undefined}
-                            aria-label="메뉴"
+                            aria-label={t('HeaderMobileMenu.076925')}
                             aria-hidden={!isOpen}
                             tabIndex={-1}
                             className={cn(
@@ -173,7 +179,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                 <button
                                     type="button"
                                     onClick={close}
-                                    aria-label="메뉴 패널 닫기"
+                                    aria-label={t('HeaderMobileMenu.d28d27')}
                                     tabIndex={isOpen ? undefined : -1}
                                     className="flex h-11 w-11 touch-manipulation items-center justify-center rounded text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
@@ -197,7 +203,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                             </div>
 
                             <nav
-                                aria-label="메뉴"
+                                aria-label={t('HeaderMobileMenu.076925')}
                                 className="overflow-y-auto overscroll-contain"
                             >
                                 {items.map(vertical => (

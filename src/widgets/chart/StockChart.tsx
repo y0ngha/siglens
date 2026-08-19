@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { RefObject } from 'react';
 import { useEffect, useMemo, useRef } from 'react';
 import type {
@@ -115,6 +116,7 @@ export function StockChart({
     ticker,
     marketProfile = 'us-equity',
 }: StockChartProps) {
+    const t = useTranslations('widgets.chart');
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
@@ -589,7 +591,7 @@ export function StockChart({
         return (
             <div className="flex h-full w-full items-center justify-center">
                 <p className="text-sm text-secondary-400">
-                    차트 데이터가 없습니다
+                    {t('StockChart.1b2664')}
                 </p>
             </div>
         );
@@ -602,7 +604,7 @@ export function StockChart({
     const chartAriaLabel =
         ticker !== undefined && ticker !== ''
             ? `${ticker} ${timeframe} 캔들 차트`
-            : '가격 차트';
+            : t('StockChart.a547a0');
 
     return (
         <div ref={wrapperRef} className="relative h-full w-full">

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
@@ -27,6 +28,7 @@ export function SharePreparingModal({
     onClose,
     onRetry,
 }: SharePreparingModalProps) {
+    const t = useTranslations('widgets.share');
     const dialogRef = useRef<HTMLDivElement>(null);
 
     useFocusTrap(dialogRef, open);
@@ -50,12 +52,14 @@ export function SharePreparingModal({
                         id="share-preparing-modal-title"
                         className="text-sm font-semibold text-secondary-100"
                     >
-                        {phase === 'pending' ? '분석 준비 중' : '분석 실패'}
+                        {phase === 'pending'
+                            ? t('SharePreparingModal.797416')
+                            : t('SharePreparingModal.15b661')}
                     </h2>
                     <button
                         type="button"
                         onClick={onClose}
-                        aria-label="닫기"
+                        aria-label={t('SharePreparingModal.94b7db')}
                         className="touch-manipulation rounded p-1 text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         ✕
@@ -71,17 +75,17 @@ export function SharePreparingModal({
                                 className="flex flex-col items-center gap-1 text-center"
                             >
                                 <p className="text-sm text-secondary-200">
-                                    AI가 분석 결과를 준비하고 있어요&hellip;
+                                    {t('SharePreparingModal.cec483')}
                                 </p>
                                 <p className="text-xs text-secondary-500">
-                                    보통 10–30초면 끝나요
+                                    {t('SharePreparingModal.99d27b')}
                                 </p>
                             </div>
                         </>
                     ) : (
                         <>
                             <p className="text-center text-sm text-secondary-300">
-                                분석을 끝내지 못했어요. 다시 시도할까요?
+                                {t('SharePreparingModal.98580d')}
                             </p>
                             <div className="flex w-full flex-col gap-2">
                                 <button
@@ -89,14 +93,14 @@ export function SharePreparingModal({
                                     onClick={onRetry}
                                     className="flex h-9 touch-manipulation items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-medium text-secondary-50 transition-colors hover:bg-primary-500 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
-                                    다시 시도
+                                    {t('SharePreparingModal.0c767c')}
                                 </button>
                                 <button
                                     type="button"
                                     onClick={onClose}
                                     className="flex h-9 touch-manipulation items-center justify-center rounded-lg border border-secondary-700 px-4 text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
-                                    닫기
+                                    {t('SharePreparingModal.94b7db')}
                                 </button>
                             </div>
                         </>

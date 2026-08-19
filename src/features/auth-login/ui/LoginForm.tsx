@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { LoginFormState } from '@/shared/lib/auth/formTypes';
 import { useLoginForm } from '../hooks/useLoginForm';
 import { AuthErrorAlert } from '@/shared/ui/auth/AuthErrorAlert';
@@ -25,6 +26,7 @@ function describeError(
 }
 
 export function LoginForm({ next, initialError }: LoginFormProps) {
+    const t = useTranslations('features.auth-login');
     const [state, formAction] = useLoginForm();
     const errorMessage = describeError(state, initialError);
     return (
@@ -34,7 +36,7 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
             <AuthFieldGroup
                 id="login-email"
                 name="email"
-                label="이메일"
+                label={t('LoginForm.3c3776')}
                 type="email"
                 autoComplete="email"
                 required
@@ -42,11 +44,14 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
             <PasswordField
                 id="login-password"
                 name="password"
-                label="비밀번호"
+                label={t('LoginForm.819738')}
                 autoComplete="current-password"
                 required
             />
-            <SubmitButton label="로그인" pendingLabel="로그인 중…" />
+            <SubmitButton
+                label={t('LoginForm.e225a6')}
+                pendingLabel={t('LoginForm.21fb76')}
+            />
         </form>
     );
 }

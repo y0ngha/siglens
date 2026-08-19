@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type {
     OverallAnalysisResponse,
     OverallScenario,
@@ -27,9 +28,12 @@ export function OverallFactsSummary({
     symbol,
     analysis,
 }: OverallFactsSummaryProps) {
+    const t = useTranslations('widgets.overall');
     return (
         <section aria-label={`${symbol} 종합 분석 요약`} className="space-y-4">
-            <h2 className="sr-only">{symbol} AI 종합 분석 결론</h2>
+            <h2 className="sr-only">
+                {symbol} {t('OverallFactsSummary.5b1ab5')}
+            </h2>
             <p className="text-sm leading-relaxed text-secondary-300">
                 {analysis.headlineKo}
             </p>

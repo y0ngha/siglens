@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { computeYieldSpread, type EconomySnapshot } from '@y0ngha/siglens-core';
 
 interface EconomyMacroFactsProps {
@@ -20,6 +21,7 @@ interface EconomyMacroFactsProps {
  * (symbol chart page) — both are SSR fact proxies for client-only AI widgets.
  */
 export function EconomyMacroFacts({ snapshot }: EconomyMacroFactsProps) {
+    const t = useTranslations('widgets.economy');
     const { indicators, treasury } = snapshot;
 
     const seriesByName = new Map(indicators.map(s => [s.name, s] as const));
@@ -63,7 +65,7 @@ export function EconomyMacroFacts({ snapshot }: EconomyMacroFactsProps) {
                 id="economy-macro-facts-heading"
                 className="mb-3 text-lg font-semibold text-secondary-100"
             >
-                거시 경제 한눈에
+                {t('EconomyMacroFacts.59ed20')}
             </h2>
             <p className="text-sm leading-relaxed text-secondary-300">
                 {ratesSentence}

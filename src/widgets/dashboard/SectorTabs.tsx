@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { SectorEtf } from '@y0ngha/siglens-core';
 import { TabsUnderline } from '@/shared/ui/tabs';
 
@@ -17,13 +18,14 @@ export function SectorTabs({
     activeSector,
     onChange,
 }: SectorTabsProps) {
+    const t = useTranslations('widgets.dashboard');
     const tabs = sectors.map(s => ({ value: s.symbol, label: s.koreanName }));
     return (
         <TabsUnderline
             tabs={tabs}
             activeTab={activeSector}
             onChange={onChange}
-            ariaLabel="섹터 선택"
+            ariaLabel={t('SectorTabs.651e5e')}
             size="sm"
             idPrefix={TABS_ID_PREFIX}
         />

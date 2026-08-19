@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';
 import { setRequestLocale } from 'next-intl/server';
 import { localeAlternatesFrom } from '@/shared/lib/seoAlternates';
@@ -71,6 +72,7 @@ export default async function Home({
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.home');
     // countSkillFiles 오류(fs 접근 실패 등)는 graceful 처리 — 0 폴백으로 페이지를 계속 렌더한다.
     // throw가 전파되면 ISR 빈 캐시(0-byte body)가 동결된다.
     const skillCounts = await countSkillFiles().catch(e => {
@@ -141,7 +143,7 @@ export default async function Home({
                 href="#search"
                 className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-4 focus-visible:left-4 focus-visible:z-50 focus-visible:rounded focus-visible:bg-primary-600 focus-visible:px-4 focus-visible:py-2 focus-visible:text-white"
             >
-                검색으로 건너뛰기
+                {t('page.24e60c')}
             </a>
             <main className="flex flex-1 flex-col">
                 <section className="relative overflow-hidden px-6 py-12 sm:py-16 lg:pr-[10vw] lg:pl-[15vw]">
@@ -162,7 +164,7 @@ export default async function Home({
                         </div>
                         <div className="text-center lg:text-left">
                             <p className="mb-5 font-mono text-[0.68rem] leading-relaxed tracking-[0.18em] text-secondary-400 uppercase sm:text-xs">
-                                투자의 확신을 더하는 AI 분석
+                                {t('page.c26658')}
                             </p>
                             {/*
                                 H1 크기 단계 — split column 폭에 맞춰 두 줄 구조 유지.
@@ -172,18 +174,17 @@ export default async function Home({
                                 줄바꿈돼 3줄이 된다.)
                             */}
                             <h1 className="mx-auto max-w-sm text-[2.2rem] leading-[1.1] font-bold tracking-tight text-balance text-secondary-100 sm:max-w-2xl sm:text-5xl lg:mx-0 lg:text-[2.25rem] xl:text-5xl">
-                                주식과 코인, 투자의 새로운 기준 —
+                                {t('page.2573df')}
                                 <br />
                                 <span className="text-primary-300">
-                                    AI가 분석하고 완성하는 SIGLENS
+                                    {t('page.1d43d2')}
                                 </span>
                             </h1>
                             <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-secondary-400 sm:max-w-2xl sm:text-lg lg:mx-0">
-                                {skillCounts.indicators}종의 지표와 다양한 투자
-                                전략 기반의 차트 흐름,&nbsp;
+                                {skillCounts.indicators}
+                                {t('page.eafd49')} 
                                 <br className="hidden sm:block" />
-                                뉴스·펀더멘털·공포 탐욕 지수를 분석한 AI
-                                리포트를 쉽고 편하게 확인하세요.
+                                {t('page.79bd8f')}
                             </p>
                             <div
                                 id="search"
@@ -221,11 +222,10 @@ export default async function Home({
                     <div className="flex flex-col items-center gap-3 rounded-lg border border-secondary-800 bg-secondary-800/30 px-6 py-5 text-center sm:flex-row sm:justify-between sm:text-left">
                         <div>
                             <p className="text-sm font-semibold text-secondary-200">
-                                Siglens는 얼마나 정확할까요?
+                                {t('page.dfbacd')}
                             </p>
                             <p className="mt-0.5 text-xs text-secondary-400">
-                                주요 10개 종목으로 2년치 기술적 분석과 AI 예측을
-                                백테스트한 결과를 확인하세요.
+                                {t('page.167f34')}
                             </p>
                         </div>
                         <Link
@@ -235,7 +235,7 @@ export default async function Home({
                             prefetch={false}
                             className="shrink-0 rounded-md bg-secondary-700 px-4 py-2 text-xs font-medium text-secondary-200 transition-colors hover:bg-secondary-600"
                         >
-                            백테스팅 결과 보기 →
+                            {t('page.ee41ec')}
                         </Link>
                     </div>
                 </section>

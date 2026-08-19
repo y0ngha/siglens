@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { Trend } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
@@ -157,6 +158,7 @@ export function TechnicalSnapshotProse({
     marketProfile,
     generatedAt,
 }: TechnicalSnapshotProseProps) {
+    const t = useTranslations('views.symbol');
     const narrowed = narrowTechnicalContent(content);
     if (narrowed === null) return null;
 
@@ -167,7 +169,7 @@ export function TechnicalSnapshotProse({
 
     return (
         <SnapshotSummarySection
-            title="기술적 분석 요약"
+            title={t('TechnicalSnapshotProse.938737')}
             displayName={displayName}
             marketProfile={marketProfile}
             asOf={generatedAt}
@@ -180,7 +182,7 @@ export function TechnicalSnapshotProse({
                 <div className="space-y-2">
                     {narrowed.trend !== null && (
                         <p className="font-medium text-secondary-200">
-                            {symbol} 기술적 방향성:{' '}
+                            {symbol} {t('TechnicalSnapshotProse.e61e3d')}{' '}
                             {TREND_LABEL[narrowed.trend]}
                         </p>
                     )}
@@ -192,7 +194,7 @@ export function TechnicalSnapshotProse({
                 {narrowed.patternSummaries.length > 0 && (
                     <div>
                         <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
-                            차트 패턴
+                            {t('TechnicalSnapshotProse.bdeea2')}
                         </h3>
                         <ul
                             role="list"
@@ -216,7 +218,7 @@ export function TechnicalSnapshotProse({
                 {narrowed.strategyResults.length > 0 && (
                     <div>
                         <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
-                            전략 시그널
+                            {t('TechnicalSnapshotProse.3d874f')}
                         </h3>
                         <ul
                             role="list"

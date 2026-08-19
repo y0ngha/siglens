@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { TIMEFRAMES } from '@/shared/config/market';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
@@ -26,6 +27,7 @@ export function TimeframeSelector({
     isFreeTier = false,
     isTierHydrated = true,
 }: TimeframeSelectorProps) {
+    const t = useTranslations('widgets.chart');
     return (
         <div className="flex w-full items-center gap-1 sm:w-auto">
             {TIMEFRAMES.map(timeframe => {
@@ -39,9 +41,9 @@ export function TimeframeSelector({
                         disabled={isLocked}
                         title={
                             !isTierHydrated
-                                ? '권한을 확인하는 중입니다.'
+                                ? t('TimeframeSelector.fd0418')
                                 : isLocked
-                                  ? '회원 전용 시간 프레임입니다.'
+                                  ? t('TimeframeSelector.a4632e')
                                   : undefined
                         }
                         onClick={() => onChange(timeframe)}

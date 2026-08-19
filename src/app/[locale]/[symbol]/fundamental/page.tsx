@@ -1,3 +1,5 @@
+import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import {
     getAnalystEstimates,
     getCashFlowStatement,
@@ -151,11 +153,14 @@ interface SymbolSectionProps {
 }
 
 function ProfileDescriptionSkeleton() {
+    const t = useTranslations('app.symbol');
     return (
         <div className="mt-4 space-y-2">
             <div className="flex items-center gap-1.5">
                 <div className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-secondary-500 border-t-transparent" />
-                <span className="text-xs text-secondary-500">번역 중...</span>
+                <span className="text-xs text-secondary-500">
+                    {t('page.c6cf97')}
+                </span>
             </div>
             <div className="animate-pulse space-y-1.5">
                 <div className="h-3 w-full rounded bg-secondary-700" />
@@ -172,6 +177,7 @@ interface ProfileCardSkeletonProps {
 }
 
 function ProfileCardSkeleton({ symbol }: ProfileCardSkeletonProps) {
+    const t = useTranslations('app.symbol');
     return (
         <section
             aria-labelledby="profile-heading"
@@ -192,7 +198,7 @@ function ProfileCardSkeleton({ symbol }: ProfileCardSkeletonProps) {
                 </div>
                 <div className="text-right">
                     <span className="text-xs tracking-widest text-secondary-400 uppercase">
-                        시가총액
+                        {t('page.cf643b')}
                     </span>
                     <div className="mt-0.5 h-6 w-20 animate-pulse rounded bg-secondary-700" />
                 </div>
@@ -209,7 +215,7 @@ function ProfileCardSkeleton({ symbol }: ProfileCardSkeletonProps) {
                 </div>
                 <div className="flex gap-2">
                     <dt className="w-10 shrink-0 text-sm text-secondary-400">
-                        웹
+                        {t('page.9f451a')}
                     </dt>
                     <dd>
                         <div className="h-4 w-40 animate-pulse rounded bg-secondary-700" />
@@ -487,6 +493,7 @@ export default async function FundamentalPage({ params }: Props) {
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.symbol');
     const upper = symbol.toUpperCase();
 
     if (!isAdmissibleSymbolShape(upper)) {
@@ -592,7 +599,7 @@ export default async function FundamentalPage({ params }: Props) {
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: upper, url: buildSymbolSeoContent(upper).url },
         {
-            name: '펀더멘털 분석',
+            name: t('page.412646'),
             url: buildSymbolFundamentalSeoContent(upper).url,
         },
     ]);
@@ -606,23 +613,23 @@ export default async function FundamentalPage({ params }: Props) {
                 name: `${displayName} 펀더멘털 분석에서 무엇을 볼 수 있나요?`,
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '회사 프로필, PER, PSR, EPS 같은 밸류에이션 지표, ROE와 마진으로 보는 수익성, 부채와 현금흐름을 통한 재무 건전성, 애널리스트 컨센서스와 목표 주가를 함께 볼 수 있습니다.',
+                    text: t('page.716d9b'),
                 },
             },
             {
                 '@type': 'Question',
-                name: 'PER, ROE 같은 지표는 어떻게 해석하나요?',
+                name: t('page.8770b1'),
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: 'PER이 높으면 시장이 미래 성장에 프리미엄을 주고 있다는 신호이고, ROE는 자기자본 대비 얼마나 많은 이익을 내고 있는지 보여줍니다. 동종업계 평균과 비교하며 봐야 의미가 살아납니다.',
+                    text: t('page.7b255a'),
                 },
             },
             {
                 '@type': 'Question',
-                name: '동종업계 대비 비교는 어떻게 보나요?',
+                name: t('page.05f287'),
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '같은 페이지의 동종업계 표(Peers)에서 같은 섹터의 다른 종목들과 PER, PSR, ROE, 마진 같은 핵심 지표를 한눈에 비교할 수 있습니다. 단일 종목의 절대값만 보면 비싸 보이거나 싸 보이는 착시를 줄여줍니다.',
+                    text: t('page.6e94dd'),
                 },
             },
         ],
@@ -635,16 +642,16 @@ export default async function FundamentalPage({ params }: Props) {
             <JsonLd data={faqJsonLd} />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>
-                    {displayName} 재무지표와 애널리스트 의견
+                    {displayName} {t('page.8c80db')}
                 </SymbolPageHeading>
                 <section className="sr-only">
-                    <h2>{displayName} 펀더멘털 분석 개요</h2>
+                    <h2>
+                        {displayName} {t('page.b4e50a')}
+                    </h2>
                     <p>
                         {displayName}
-                        {sector !== '' ? `(${sector} 섹터)` : ''}의 펀더멘털
-                        분석. 회사 프로필, 밸류에이션(PER, PSR, EPS),
-                        수익성(ROE, 마진), 재무건전성, 애널리스트 컨센서스
-                        목표가를 분석합니다.
+                        {sector !== '' ? `(${sector} 섹터)` : ''}
+                        {t('page.cf99c5')}
                     </p>
                 </section>
                 <Suspense fallback={<ProfileCardSkeleton symbol={upper} />}>

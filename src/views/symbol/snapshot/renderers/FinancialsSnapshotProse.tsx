@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { FinancialsAxis, FinancialsSentiment } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { SnapshotBulletList } from '../SnapshotBulletList';
@@ -160,6 +161,7 @@ export function FinancialsSnapshotProse({
     marketProfile,
     generatedAt,
 }: FinancialsSnapshotProseProps) {
+    const t = useTranslations('views.symbol');
     const narrowed = narrowFinancialsContent(content);
     if (narrowed === null) return null;
 
@@ -170,7 +172,7 @@ export function FinancialsSnapshotProse({
 
     return (
         <SnapshotSummarySection
-            title="재무제표 종합 평가"
+            title={t('FinancialsSnapshotProse.557f6d')}
             displayName={displayName}
             marketProfile={marketProfile}
             asOf={generatedAt}
@@ -178,7 +180,7 @@ export function FinancialsSnapshotProse({
             <div className="space-y-4 text-sm leading-6 text-secondary-300">
                 {narrowed.overallSentiment !== null && (
                     <p className="font-medium text-secondary-200">
-                        {symbol} 재무제표 종합 평가:{' '}
+                        {symbol} {t('FinancialsSnapshotProse.6332e6')}{' '}
                         {SENTIMENT_LABEL[narrowed.overallSentiment]}
                     </p>
                 )}
@@ -194,7 +196,7 @@ export function FinancialsSnapshotProse({
                 {narrowed.axisAssessments.length > 0 && (
                     <div>
                         <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
-                            축별 평가
+                            {t('FinancialsSnapshotProse.4f0caa')}
                         </h3>
                         <ul
                             role="list"
@@ -218,9 +220,9 @@ export function FinancialsSnapshotProse({
                 )}
 
                 <SnapshotBulletList
-                    title="위험 요인"
+                    title={t('FinancialsSnapshotProse.af0480')}
                     symbol={symbol}
-                    ariaSuffix="위험 요인"
+                    ariaSuffix={t('FinancialsSnapshotProse.af0480')}
                     items={narrowed.riskFactorsKo}
                     keyPrefix="risk"
                 />

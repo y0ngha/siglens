@@ -37,12 +37,19 @@ vi.mock('next/navigation', () => ({
 }));
 
 import BacktestingPage from '@/app/[locale]/backtesting/page';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import backtestData from '@/app/[locale]/backtesting/data.json';
 
 describe('/backtesting SSR output', () => {
     it('renders every real case ticker in the effect-free first render pass', async () => {
+        // `renderToStaticMarkup`은 RTL을 거치지 않아 전역 i18n wrapper가 닿지
+        // 않는다(vitest.setup.dom.ts는 `render`/`renderHook`만 감싼다). 직접 감싼다.
         const html = renderToStaticMarkup(
-            await BacktestingPage({ params: Promise.resolve({ locale: 'ko' }) })
+            <IntlTestProvider>
+                {await BacktestingPage({
+                    params: Promise.resolve({ locale: 'ko' }),
+                })}
+            </IntlTestProvider>
         );
 
         const tickers = [...new Set(backtestData.cases.map(c => c.ticker))];
@@ -61,8 +68,14 @@ describe('/backtesting SSR output', () => {
         // post-mount effect may narrow it.
         window.history.pushState({}, '', '/backtesting?ticker=GOOGL');
 
+        // `renderToStaticMarkup`은 RTL을 거치지 않아 전역 i18n wrapper가 닿지
+        // 않는다(vitest.setup.dom.ts는 `render`/`renderHook`만 감싼다). 직접 감싼다.
         const html = renderToStaticMarkup(
-            await BacktestingPage({ params: Promise.resolve({ locale: 'ko' }) })
+            <IntlTestProvider>
+                {await BacktestingPage({
+                    params: Promise.resolve({ locale: 'ko' }),
+                })}
+            </IntlTestProvider>
         );
 
         const otherTickerCase = backtestData.cases.find(

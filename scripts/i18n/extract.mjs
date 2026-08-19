@@ -34,6 +34,8 @@ const onlyPrefix = args.includes('--only') ? ONLY : null;
 const catalog = {}; // ns -> { key: koText }
 const takenPerNamespace = new Map(); // ns -> Map(key -> text)
 const skips = [];
+/** `'use client'` 파일이 사용하는 네임스페이스 — 루트 프로바이더가 실어야 한다. */
+const clientNamespaces = new Set();
 let replacedCount = 0;
 let filesChanged = 0;
 
@@ -103,6 +105,7 @@ for (const relPath of files) {
     }
 
     const ns = namespaceFor(relPath);
+    const isClientFile = /^\s*(['"])use client\1/m.test(code.slice(0, 400));
     const prefix = keyPrefixFor(relPath);
     const candidates = collectCandidates(ast, code);
     const edits = [];
@@ -159,6 +162,7 @@ for (const relPath of files) {
             });
         }
         componentsNeedingTranslator.set(verdict.component, verdict.binding);
+        if (isClientFile) clientNamespaces.add(ns);
         replacedCount += 1;
     }
 
@@ -179,7 +183,23 @@ for (const relPath of files) {
             });
             continue;
         }
-        const insertAt = body.start + 1;
+        /**
+         * 번역자 바인딩은 **`setRequestLocale(...)` 뒤**에 넣어야 한다.
+         *
+         * 앞에 넣으면 next-intl의 서버 API가 아직 요청 로케일을 못 찾아
+         * `headers()`로 폴백하고, 그 순간 **이 라우트의 ISR이 꺼진다**
+         * (빌드 route 표에서 `●` → `ƒ`). 실측으로 10개 라우트가 이렇게 날아갔다.
+         * 타입체크·테스트는 전부 통과하므로 빌드 표를 봐야만 드러난다.
+         */
+        const setLocaleCall = code
+            .slice(body.start, body.end)
+            .indexOf('setRequestLocale(');
+        let insertAt = body.start + 1;
+        if (setLocaleCall !== -1) {
+            const absolute = body.start + setLocaleCall;
+            const semicolon = code.indexOf(';', absolute);
+            if (semicolon !== -1) insertAt = semicolon + 1;
+        }
         const decl =
             binding === 'get'
                 ? `\n    const t = await getTranslations('${ns}');`
@@ -199,7 +219,17 @@ for (const relPath of files) {
     const firstImportNode = ast.program.body.find(
         node => node.type === 'ImportDeclaration'
     );
-    const importOffset = firstImportNode ? firstImportNode.start : 0;
+    /**
+     * import가 하나도 없는 파일은 offset 0이 아니라 **directive 뒤**에 넣어야 한다.
+     * `'use client'` 앞에 import를 꽂으면 지시어가 파일 첫 문이 아니게 되어
+     * 조용히 무효가 된다(서버 컴포넌트로 바뀌어 훅이 죽는다).
+     */
+    const lastDirective = ast.program.directives?.at(-1);
+    const importOffset = firstImportNode
+        ? firstImportNode.start
+        : lastDirective
+          ? lastDirective.end + 1
+          : 0;
     const importLines = [
         needsImport.hook && "import { useTranslations } from 'next-intl';",
         needsImport.get &&
@@ -256,6 +286,18 @@ if (WRITE) {
     writeFileSync(
         `${ROOT}/messages/_meta/skips.json`,
         JSON.stringify(skips, null, 4) + '\n'
+    );
+    /**
+     * 루트 클라이언트 프로바이더에 실어야 할 네임스페이스.
+     *
+     * `'use client'` 파일이 쓰는 것만 모은다 — 서버 컴포넌트는 프로바이더가
+     * 아니라 요청 설정에서 메시지를 읽으므로 클라이언트로 보낼 필요가 없다.
+     * 손으로 관리하면 새 클라이언트 컴포넌트가 추가될 때마다 빠뜨리고,
+     * 그 누락은 런타임에 `MISSING_MESSAGE`로만 드러난다(빌드는 통과한다).
+     */
+    writeFileSync(
+        `${ROOT}/messages/_meta/clientNamespaces.json`,
+        JSON.stringify([...clientNamespaces].sort(), null, 4) + '\n'
     );
 }
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useFearGreedFromSymbol } from './hooks/useFearGreedFromSymbol';
 import { FearGreedHero } from './FearGreedHero';
 import { FearGreedComparisonGauges } from './FearGreedComparisonGauges';
@@ -34,12 +35,13 @@ interface FearGreedPageProps {
  * (score is computed client-side); the skeleton makes that explicit.
  */
 function FearGreedPageSkeleton() {
+    const t = useTranslations('widgets.fear-greed');
     return (
         <div
             role="status"
             className="flex flex-col gap-6 p-4 md:p-6"
             aria-busy="true"
-            aria-label="공포 탐욕 지수 로딩 중"
+            aria-label={t('FearGreedPage.7da634')}
         >
             <div className="grid gap-6 md:grid-cols-2">
                 <section className="flex flex-col gap-3">
@@ -61,6 +63,7 @@ function FearGreedPageSkeleton() {
 }
 
 export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
+    const t = useTranslations('widgets.fear-greed');
     const isHydrated = useHydrated();
     const { snapshot, history } = useFearGreedFromSymbol({ symbol, fmpSymbol });
 
@@ -95,11 +98,9 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
     if (!snapshot) {
         return (
             <div className="flex flex-col gap-2 p-6 text-sm text-secondary-400">
-                <p>공포 탐욕 지수 산출에 필요한 데이터가 부족합니다.</p>
+                <p>{t('FearGreedPage.d6e558')}</p>
                 <p className="text-xs text-secondary-500">
-                    상장한 지 얼마 되지 않았거나 거래량 데이터가 비어 있는
-                    종목일 수 있습니다. 며칠 뒤 다시 확인하거나, 같은 섹터의
-                    다른 종목을 살펴보세요.
+                    {t('FearGreedPage.ef5b22')}
                 </p>
             </div>
         );
@@ -110,7 +111,7 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
             <div className="grid gap-6 md:grid-cols-2">
                 <section className="flex flex-col gap-3">
                     <h2 className="text-sm font-medium text-secondary-300">
-                        현재 공포 탐욕 지수와 기간별 비교
+                        {t('FearGreedPage.29eed9')}
                     </h2>
                     <FearGreedHero snapshot={snapshot} />
                     <FearGreedComparisonGauges history={history} />
@@ -118,9 +119,7 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
                 </section>
 
                 <section className="flex flex-col gap-3">
-                    <h2 className="sr-only">
-                        Flow와 Trend 그룹별 score breakdown
-                    </h2>
+                    <h2 className="sr-only">{t('FearGreedPage.0506ae')}</h2>
                     {snapshot.groups.map(group => (
                         <FearGreedGroupBar key={group.name} group={group} />
                     ))}
@@ -129,7 +128,7 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
 
             <section className="flex flex-col gap-2">
                 <h2 className="text-sm font-medium text-secondary-300">
-                    공포 탐욕 지수 추이 (최근 1년)
+                    {t('FearGreedPage.180c65')}
                 </h2>
                 <FearGreedHistoricalChart history={history} />
             </section>

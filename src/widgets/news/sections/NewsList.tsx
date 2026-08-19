@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useNewsPollingWithInvalidation } from '../hooks/useNewsPollingWithInvalidation';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { cn } from '@/shared/lib/cn';
@@ -122,6 +123,7 @@ function NewsCardSkeleton() {
 }
 
 function NewsListLoadingState() {
+    const t = useTranslations('widgets.news');
     return (
         <section
             aria-labelledby="news-list-heading"
@@ -134,14 +136,14 @@ function NewsListLoadingState() {
                         id="news-list-heading"
                         className="text-lg font-semibold tracking-tight"
                     >
-                        최근 뉴스
+                        {t('NewsList.ac2367')}
                     </h2>
                     <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
                         {NEWS_LIST_PERIOD_LABEL}
                     </span>
                 </div>
                 <span className="text-xs text-secondary-400" aria-live="polite">
-                    뉴스 수집 중…
+                    {t('NewsList.b514aa')}
                 </span>
             </div>
             <ul className="space-y-3">
@@ -158,6 +160,7 @@ function NewsListLoadingState() {
 }
 
 function NewsRefreshStatusCard() {
+    const t = useTranslations('widgets.news');
     return (
         <div
             role="status"
@@ -170,11 +173,10 @@ function NewsRefreshStatusCard() {
             />
             <div className="min-w-0">
                 <p className="text-sm font-medium text-secondary-100">
-                    최신 뉴스 확인 중…
+                    {t('NewsList.17ecc6')}
                 </p>
                 <p className="mt-1 text-xs leading-relaxed wrap-break-word text-secondary-400">
-                    기존 뉴스는 먼저 보여드리고, 새로 들어온 기사가 있으면
-                    자동으로 추가합니다.
+                    {t('NewsList.a61f43')}
                 </p>
             </div>
         </div>
@@ -186,11 +188,14 @@ function NewsRefreshStatusCard() {
  * text-secondary-500 텍스트 컬러는 MarketNewsCard(text-secondary-400)와 의도적으로 다르다.
  */
 function AnalysisSkeleton() {
+    const t = useTranslations('widgets.news');
     return (
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
             <div className="h-5 w-10 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             <div className="h-5 w-20 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
-            <span className="text-xs text-secondary-500">AI 분석 중…</span>
+            <span className="text-xs text-secondary-500">
+                {t('NewsList.d12df8')}
+            </span>
         </div>
     );
 }
@@ -206,6 +211,7 @@ function SummarySkeletonLine() {
 }
 
 function NewsCard({ item }: { item: NewsDisplayItem }) {
+    const t = useTranslations('widgets.news');
     const pending = isPendingAnalysis(item);
     const isHighImpact = !pending && item.priceImpact === 'high';
 
@@ -246,14 +252,20 @@ function NewsCard({ item }: { item: NewsDisplayItem }) {
             bodySection={
                 <>
                     {item.bodyKo !== null && (
-                        <NewsTextSection label="본문" text={item.bodyKo} />
+                        <NewsTextSection
+                            label={t('NewsList.c67b87')}
+                            text={item.bodyKo}
+                        />
                     )}
                     {item.summaryKo !== null && (
-                        <NewsTextSection label="요약" text={item.summaryKo} />
+                        <NewsTextSection
+                            label={t('NewsList.3ea27a')}
+                            text={item.summaryKo}
+                        />
                     )}
                 </>
             }
-            linkChildren="원문 보기 →"
+            linkChildren={t('NewsList.850458')}
         />
     );
 }
@@ -264,6 +276,7 @@ interface NewsListProps {
 }
 
 export function NewsList({ items: initialItems, symbol }: NewsListProps) {
+    const t = useTranslations('widgets.news');
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
     // Tracks the last rendered symbol for the render-time reset below.
     // Client-side navigation keeps the component mounted while delivering new
@@ -301,14 +314,14 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
                         id="news-list-heading"
                         className="text-lg font-semibold tracking-tight"
                     >
-                        최근 뉴스
+                        {t('NewsList.ac2367')}
                     </h2>
                     <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
                         {NEWS_LIST_PERIOD_LABEL}
                     </span>
                 </div>
                 <p className="text-sm text-secondary-400">
-                    {NEWS_LIST_PERIOD_LABEL} 동안 들어온 뉴스가 없어요.
+                    {NEWS_LIST_PERIOD_LABEL} {t('NewsList.526674')}
                 </p>
             </section>
         );
@@ -327,7 +340,7 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
                     id="news-list-heading"
                     className="text-lg font-semibold tracking-tight"
                 >
-                    최근 뉴스
+                    {t('NewsList.ac2367')}
                 </h2>
                 <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
                     {NEWS_LIST_PERIOD_LABEL}
@@ -347,7 +360,9 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
                     onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
                     className="w-full rounded-lg border border-secondary-700 py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    더보기 ({items.length - visibleCount}개 남음)
+                    {t('NewsList.e5a749')}
+                    {items.length - visibleCount}
+                    {t('NewsList.03df8c')}
                 </button>
             )}
         </section>

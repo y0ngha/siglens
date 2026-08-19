@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import {
     ChartErrorFallback,
     ChartSkeleton,
@@ -62,6 +63,7 @@ export function SymbolPageClient({
     skillCount,
     marketProfile,
 }: SymbolPageClientProps) {
+    const t = useTranslations('views.symbol');
     const { tier, isTierHydrated } = useSymbolModel();
     const {
         sheetSnap,
@@ -125,7 +127,7 @@ export function SymbolPageClient({
                             onClick={() => setSheetSnap(SNAP_FULL)}
                             className="shrink-0 touch-manipulation rounded-lg border border-secondary-700 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-secondary-300 transition-colors hover:border-secondary-600 hover:bg-secondary-700/30 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none md:hidden"
                         >
-                            AI 분석 보기
+                            {t('SymbolPageClient.ddb88e')}
                         </button>
                     </div>
                     <TimeframeSelector

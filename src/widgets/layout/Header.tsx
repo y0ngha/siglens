@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { HeaderMobileMenu } from './HeaderMobileMenu';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { HeaderNav } from './HeaderNav';
@@ -25,12 +26,13 @@ interface HeaderProps {
 /** Presentational shell; receives resolved current user as a prop so layer rules forbid direct infrastructure access here. */
 // 최상위 <header>는 암시적으로 role="banner"이므로 role을 명시하지 않는다(중복 ARIA).
 export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
+    const t = useTranslations('widgets.layout');
     return (
         <header className="sticky top-0 z-50 border-b border-secondary-800 bg-secondary-900/90 backdrop-blur-md supports-backdrop-filter:bg-secondary-900/75">
             <div className="flex h-14 items-center gap-2 px-3 sm:gap-4 sm:px-6">
                 <Link
                     href="/"
-                    title="홈으로"
+                    title={t('Header.d8c261')}
                     // 전역 헤더 로고 — 모든 페이지에서 렌더된다. prefetch는 진입 페이지마다
                     // 다른 `_rsc` 해시를 만들어 `/`의 캐시를 파편화시킨다
                     // (docs/architecture/CDN_CACHING.md §1).
@@ -50,7 +52,7 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                     */}
                     <Image
                         src="/icon96.png"
-                        alt="Siglens 로고"
+                        alt={t('Header.1ebe53')}
                         width={24}
                         height={24}
                         className="h-6 w-6"

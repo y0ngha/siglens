@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import React, { useId, useRef } from 'react';
 import { cn } from '@/shared/lib/cn';
 import type { SkillShowcaseItem, SkillType } from '@y0ngha/siglens-core';
@@ -93,6 +94,7 @@ function barColorClass(weight: number): string {
 }
 
 function ConfidenceInfoTooltip() {
+    const t = useTranslations('widgets.home');
     const containerRef = useRef<HTMLDivElement>(null);
     const tooltipId = useId();
     const { isOpen, toggle } = usePopoverToggle(containerRef);
@@ -101,7 +103,7 @@ function ConfidenceInfoTooltip() {
         <div ref={containerRef} className="group relative">
             <button
                 type="button"
-                aria-label="신뢰도 점수 설명"
+                aria-label={t('SkillsShowcase.7e6540')}
                 aria-describedby={tooltipId}
                 onClick={e => {
                     // 카드 펼침 토글로 버블링되지 않게 — ⓘ는 신뢰도 설명 전용.
@@ -124,12 +126,14 @@ function ConfidenceInfoTooltip() {
                 )}
             >
                 <div className="leading-relaxed text-secondary-300">
-                    <p>분석 기법의 신뢰도 점수예요.</p>
+                    <p>{t('SkillsShowcase.ebff92')}</p>
                     <p>
-                        {MEDIUM_PCT}% 미만은 낮음, {MEDIUM_PCT}~{HIGH_PCT}%는
-                        보통, {HIGH_PCT}% 이상은 높음이에요.
+                        {MEDIUM_PCT}
+                        {t('SkillsShowcase.621e21')} {MEDIUM_PCT}~{HIGH_PCT}
+                        {t('SkillsShowcase.a6f18e')} {HIGH_PCT}
+                        {t('SkillsShowcase.48fcfa')}
                     </p>
-                    <p>낮은 점수도 분석에 보조적으로 반영돼요.</p>
+                    <p>{t('SkillsShowcase.e0f5c5')}</p>
                 </div>
             </div>
         </div>
@@ -253,9 +257,10 @@ export function SkillCard({
 }
 
 export function SkillsShowcaseSkeleton() {
+    const t = useTranslations('widgets.home');
     return (
         <section
-            aria-label="AI 분석 스킬 불러오는 중"
+            aria-label={t('SkillsShowcase.7f2565')}
             aria-busy="true"
             className="px-6 py-10 lg:px-[15vw]"
         >
@@ -302,6 +307,7 @@ interface SkillsShowcaseProps {
 }
 
 export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
+    const t = useTranslations('widgets.home');
     const {
         activeTab,
         showAll,
@@ -315,13 +321,13 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
     return (
         <section className="px-6 py-10 lg:px-[15vw]">
             <h2 className="mb-6 text-sm font-semibold tracking-wider text-secondary-200 uppercase">
-                AI 분석 스킬
+                {t('SkillsShowcase.158954')}
             </h2>
             <TabsPill
                 tabs={TABS}
                 activeTab={activeTab}
                 onChange={handleTabSelect}
-                ariaLabel="스킬 카테고리 탭"
+                ariaLabel={t('SkillsShowcase.c78b79')}
                 idPrefix={baseId}
                 className="mb-6"
             />
@@ -362,7 +368,7 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
                                     className="rounded-full border border-secondary-700 px-6 py-2 text-xs font-medium text-secondary-400 transition-colors hover:border-primary-600/40 hover:text-primary-400 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
                                     {showAll
-                                        ? '접기'
+                                        ? t('SkillsShowcase.0d2c24')
                                         : `더 보기 (${panelSkills.length - INITIAL_VISIBLE_COUNT}개)`}
                                 </button>
                             </div>

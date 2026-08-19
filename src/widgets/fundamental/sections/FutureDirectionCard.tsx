@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { EmptySectionCard } from './EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { formatCompactCurrency } from '@/shared/lib/priceFormat';
@@ -65,6 +66,7 @@ function fmtBig(v: number | null, symbol: string): string {
 }
 
 function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
+    const t = useTranslations('widgets.fundamental');
     const total = strongBuy + buy + hold + sell + strongSell;
     if (total === 0) return null;
 
@@ -133,7 +135,9 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                         className="block h-2 w-2 rounded-sm bg-ui-success"
                         aria-hidden="true"
                     />
-                    <dt className="text-secondary-400">강력 매수</dt>
+                    <dt className="text-secondary-400">
+                        {t('FutureDirectionCard.cb528c')}
+                    </dt>
                     <dd className="font-mono font-medium">{strongBuy}</dd>
                 </div>
                 <div className="flex items-center gap-1">
@@ -141,7 +145,9 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                         className="block h-2 w-2 rounded-sm bg-ui-success/60"
                         aria-hidden="true"
                     />
-                    <dt className="text-secondary-400">매수</dt>
+                    <dt className="text-secondary-400">
+                        {t('FutureDirectionCard.31e4d3')}
+                    </dt>
                     <dd className="font-mono font-medium">{buy}</dd>
                 </div>
                 <div className="flex items-center gap-1">
@@ -149,7 +155,9 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                         className="block h-2 w-2 rounded-sm bg-ui-warning"
                         aria-hidden="true"
                     />
-                    <dt className="text-secondary-400">중립</dt>
+                    <dt className="text-secondary-400">
+                        {t('FutureDirectionCard.6640f0')}
+                    </dt>
                     <dd className="font-mono font-medium">{hold}</dd>
                 </div>
                 <div className="flex items-center gap-1">
@@ -157,7 +165,9 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                         className="block h-2 w-2 rounded-sm bg-ui-danger/60"
                         aria-hidden="true"
                     />
-                    <dt className="text-secondary-400">매도</dt>
+                    <dt className="text-secondary-400">
+                        {t('FutureDirectionCard.62a65c')}
+                    </dt>
                     <dd className="font-mono font-medium">{sell}</dd>
                 </div>
                 <div className="flex items-center gap-1">
@@ -165,7 +175,9 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                         className="block h-2 w-2 rounded-sm bg-ui-danger"
                         aria-hidden="true"
                     />
-                    <dt className="text-secondary-400">강력 매도</dt>
+                    <dt className="text-secondary-400">
+                        {t('FutureDirectionCard.00129a')}
+                    </dt>
                     <dd className="font-mono font-medium">{strongSell}</dd>
                 </div>
             </dl>
@@ -180,11 +192,12 @@ export function FutureDirectionCard({
     ptConsensus,
     ptSummary,
 }: FutureDirectionCardProps) {
+    const t = useTranslations('widgets.fundamental');
     if (estimates === null && grades === null && ptConsensus === null) {
         return (
             <EmptySectionCard
                 headingId={HEADING_ID}
-                title="미래 방향"
+                title={t('FutureDirectionCard.c629ac')}
                 headingClassName={HEADING_CLASS_NAME}
             />
         );
@@ -196,28 +209,21 @@ export function FutureDirectionCard({
             className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
-                전망과 목표가
+                {t('FutureDirectionCard.2e31de')}
             </h2>
 
             {estimates !== null && (
                 <div className="mb-5">
                     <h3 className="mb-2 text-xs font-medium tracking-widest text-secondary-400 uppercase">
-                        애널리스트 추정
+                        {t('FutureDirectionCard.dba802')}
                     </h3>
                     <dl className="grid grid-cols-2 gap-3">
                         <div className="rounded-lg bg-secondary-800/40 px-4 py-3">
                             <dt className="text-xs text-secondary-400">
-                                EPS 컨센서스
+                                {t('FutureDirectionCard.bd4c6d')}
                                 <InfoTooltip>
-                                    <p>
-                                        애널리스트들이 예측한 EPS(주당순이익)의
-                                        평균값이에요.
-                                    </p>
-                                    <p>
-                                        실제 발표값이 이보다 높으면 &lsquo;어닝
-                                        서프라이즈&rsquo;, 낮으면 &lsquo;어닝
-                                        쇼크&rsquo;라고 불러요.
-                                    </p>
+                                    <p>{t('FutureDirectionCard.b21bb3')}</p>
+                                    <p>{t('FutureDirectionCard.973dba')}</p>
                                 </InfoTooltip>
                             </dt>
                             <dd className="mt-1 font-mono text-lg font-semibold tabular-nums">
@@ -226,16 +232,10 @@ export function FutureDirectionCard({
                         </div>
                         <div className="rounded-lg bg-secondary-800/40 px-4 py-3">
                             <dt className="text-xs text-secondary-400">
-                                매출 컨센서스
+                                {t('FutureDirectionCard.69de00')}
                                 <InfoTooltip>
-                                    <p>
-                                        애널리스트들이 예측한 매출의
-                                        평균값이에요.
-                                    </p>
-                                    <p>
-                                        시장이 기대하는 성장 수준을 가늠할 수
-                                        있는 지표예요.
-                                    </p>
+                                    <p>{t('FutureDirectionCard.f23e65')}</p>
+                                    <p>{t('FutureDirectionCard.dea4fe')}</p>
                                 </InfoTooltip>
                             </dt>
                             <dd className="mt-1 font-mono text-lg font-semibold tabular-nums">
@@ -249,7 +249,7 @@ export function FutureDirectionCard({
             {ptConsensus !== null && (
                 <div className="mb-5">
                     <h3 className="mb-2 text-xs font-medium tracking-widest text-secondary-400 uppercase">
-                        목표 주가
+                        {t('FutureDirectionCard.dbfbf1')}
                     </h3>
                     <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
                         {
@@ -257,28 +257,37 @@ export function FutureDirectionCard({
                             // data is structurally [string, number | null] per the priceTargetSummary shape.
                             (
                                 [
-                                    ['하단', ptConsensus.targetLow, undefined],
                                     [
-                                        '중앙값',
+                                        t('FutureDirectionCard.b84f07'),
+                                        ptConsensus.targetLow,
+                                        undefined,
+                                    ],
+                                    [
+                                        t('FutureDirectionCard.7e0ea3'),
                                         ptConsensus.targetMedian,
                                         undefined,
                                     ],
                                     [
-                                        '컨센서스',
+                                        t('FutureDirectionCard.a06069'),
                                         ptConsensus.targetConsensus,
                                         <>
                                             <p>
-                                                애널리스트들이 제시한 목표주가의
-                                                평균이에요.
+                                                {t(
+                                                    'FutureDirectionCard.2d8af0'
+                                                )}
                                             </p>
                                             <p>
-                                                현재 주가보다 높으면 상승 여력이
-                                                있다고 보고, 낮으면 고평가
-                                                신호로 해석해요.
+                                                {t(
+                                                    'FutureDirectionCard.0b21ed'
+                                                )}
                                             </p>
                                         </>,
                                     ],
-                                    ['상단', ptConsensus.targetHigh, undefined],
+                                    [
+                                        t('FutureDirectionCard.5f23f6'),
+                                        ptConsensus.targetHigh,
+                                        undefined,
+                                    ],
                                 ] as [
                                     string,
                                     number | null,
@@ -305,7 +314,9 @@ export function FutureDirectionCard({
                     {ptSummary !== null && (
                         <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs">
                             <div className="flex gap-1">
-                                <dt className="text-secondary-400">1개월</dt>
+                                <dt className="text-secondary-400">
+                                    {t('FutureDirectionCard.c1648d')}
+                                </dt>
                                 <dd className="font-mono">
                                     {fmtMoney(
                                         ptSummary.lastMonth.avgPriceTarget,
@@ -314,7 +325,9 @@ export function FutureDirectionCard({
                                 </dd>
                             </div>
                             <div className="flex gap-1">
-                                <dt className="text-secondary-400">3개월</dt>
+                                <dt className="text-secondary-400">
+                                    {t('FutureDirectionCard.f7b7b3')}
+                                </dt>
                                 <dd className="font-mono">
                                     {fmtMoney(
                                         ptSummary.lastQuarter.avgPriceTarget,
@@ -323,7 +336,9 @@ export function FutureDirectionCard({
                                 </dd>
                             </div>
                             <div className="flex gap-1">
-                                <dt className="text-secondary-400">12개월</dt>
+                                <dt className="text-secondary-400">
+                                    {t('FutureDirectionCard.49aace')}
+                                </dt>
                                 <dd className="font-mono">
                                     {fmtMoney(
                                         ptSummary.lastYear.avgPriceTarget,
@@ -339,16 +354,10 @@ export function FutureDirectionCard({
             {grades !== null && (
                 <div>
                     <h3 className="mb-1 text-xs font-medium tracking-widest text-secondary-400 uppercase">
-                        투자의견 컨센서스
+                        {t('FutureDirectionCard.5039cb')}
                         <InfoTooltip>
-                            <p>
-                                애널리스트들이 매수·중립·매도 중 어떤 의견을
-                                내고 있는지 분포예요.
-                            </p>
-                            <p>
-                                매수 의견이 많을수록 시장의 긍정적 시각이
-                                강하다는 뜻이에요.
-                            </p>
+                            <p>{t('FutureDirectionCard.b69220')}</p>
+                            <p>{t('FutureDirectionCard.ebde29')}</p>
                         </InfoTooltip>
                     </h3>
                     <GradesBar

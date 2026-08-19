@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { SymbolPageHeading } from '@/views/symbol';
 import { FundamentalSnapshotProse } from '@/views/symbol/snapshot/renderers/FundamentalSnapshotProse';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
@@ -46,10 +47,11 @@ export function FundamentalDegraded({
     snapshotContent,
     snapshotGeneratedAt,
 }: FundamentalDegradedProps) {
+    const t = useTranslations('app.symbol');
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
             <SymbolPageHeading>
-                {displayName} 재무지표와 애널리스트 의견
+                {displayName} {t('FundamentalDegraded.8c80db')}
             </SymbolPageHeading>
             <FundamentalSnapshotProse
                 content={snapshotContent}
@@ -60,11 +62,10 @@ export function FundamentalDegraded({
             />
             <section className="rounded-lg border border-secondary-800 bg-secondary-900/40 px-5 py-8 text-center">
                 <p className="text-sm font-medium text-secondary-200">
-                    재무 데이터를 일시적으로 불러올 수 없어요
+                    {t('FundamentalDegraded.595d2d')}
                 </p>
                 <p className="mt-2 text-sm leading-relaxed text-secondary-400">
-                    외부 데이터 제공처가 잠시 응답하지 않고 있어요. 잠시 후 다시
-                    방문하시면 PER·ROE·애널리스트 컨센서스를 보실 수 있습니다.
+                    {t('FundamentalDegraded.a37ac2')}
                 </p>
             </section>
             <CrossLinkCards

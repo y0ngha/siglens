@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useId, useRef } from 'react';
 import { DEEPSEEK_V4_FLASH_MODEL, type ModelId } from '@y0ngha/siglens-core';
 import { ReasoningToggle } from '@/features/reasoning-toggle';
@@ -44,6 +45,7 @@ export function AnalysisSettingsMenu({
     canUseReasoning,
     openSignupNudge,
 }: AnalysisSettingsMenuProps) {
+    const t = useTranslations('widgets.analysis');
     const triggerRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     const titleId = useId();
@@ -115,7 +117,7 @@ export function AnalysisSettingsMenu({
                         id={titleId}
                         className="text-xs font-semibold tracking-wide text-secondary-100"
                     >
-                        분석 설정
+                        {t('AnalysisSettingsMenu.211258')}
                     </h2>
                     <ModelSelector
                         selectedModel={modelId}

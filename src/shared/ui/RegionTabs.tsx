@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { cn } from '@/shared/lib/cn';
 import {
@@ -44,13 +45,14 @@ export function RegionTabs({
     currentPath,
     className,
 }: RegionTabsProps) {
+    const t = useTranslations('shared.ui');
     const regions = regionsOf(vertical);
     const baseClass =
         'flex min-h-11 touch-manipulation items-center rounded-md px-3 text-sm font-semibold transition-colors';
 
     return (
         <nav
-            aria-label="지역 선택"
+            aria-label={t('RegionTabs.1eafbd')}
             className={cn(
                 'flex flex-wrap items-center gap-1 rounded-lg border border-secondary-800 bg-secondary-800/30 p-1',
                 className

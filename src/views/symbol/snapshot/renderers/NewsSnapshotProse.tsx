@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { NewsSentiment } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { SnapshotBulletList } from '../SnapshotBulletList';
@@ -116,6 +117,7 @@ export function NewsSnapshotProse({
     marketProfile,
     generatedAt,
 }: NewsSnapshotProseProps) {
+    const t = useTranslations('views.symbol');
     const narrowed = narrowNewsContent(content);
     if (narrowed === null) return null;
 
@@ -126,7 +128,7 @@ export function NewsSnapshotProse({
 
     return (
         <SnapshotSummarySection
-            title="뉴스 종합 심리"
+            title={t('NewsSnapshotProse.23befe')}
             displayName={displayName}
             marketProfile={marketProfile}
             asOf={generatedAt}
@@ -134,7 +136,7 @@ export function NewsSnapshotProse({
             <div className="space-y-4 text-sm leading-6 text-secondary-300">
                 {narrowed.overallSentiment !== null && (
                     <p className="font-medium text-secondary-200">
-                        {symbol} 뉴스 종합 심리:{' '}
+                        {symbol} {t('NewsSnapshotProse.a2cd62')}{' '}
                         {SENTIMENT_LABEL[narrowed.overallSentiment]}
                     </p>
                 )}
@@ -148,16 +150,16 @@ export function NewsSnapshotProse({
                 )}
 
                 <SnapshotBulletList
-                    title="핵심 이벤트"
+                    title={t('NewsSnapshotProse.d65c2f')}
                     symbol={symbol}
-                    ariaSuffix="핵심 이벤트"
+                    ariaSuffix={t('NewsSnapshotProse.d65c2f')}
                     items={narrowed.keyEventsKo}
                     keyPrefix="event"
                 />
                 <SnapshotBulletList
-                    title="다가오는 주요 일정"
+                    title={t('NewsSnapshotProse.1244e3')}
                     symbol={symbol}
-                    ariaSuffix="다가오는 주요 일정"
+                    ariaSuffix={t('NewsSnapshotProse.1244e3')}
                     items={narrowed.upcomingEventsKo}
                     keyPrefix="upcoming"
                 />

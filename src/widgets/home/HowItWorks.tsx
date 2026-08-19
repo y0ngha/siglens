@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
 import type { SkillCounts } from '@y0ngha/siglens-core';
 
@@ -6,6 +7,7 @@ interface HowItWorksProps {
 }
 
 export function HowItWorks({ skillCounts }: HowItWorksProps) {
+    const t = useTranslations('widgets.home');
     const {
         indicators,
         candlesticks,
@@ -17,25 +19,24 @@ export function HowItWorks({ skillCounts }: HowItWorksProps) {
     const STEPS = [
         {
             number: '01',
-            title: '종목 입력',
-            description: '종목명이나 심볼을 입력하면 차트가 바로 그려져요',
+            title: t('HowItWorks.1493a3'),
+            description: t('HowItWorks.952732'),
         },
         {
             number: '02',
-            title: '자동 분석',
+            title: t('HowItWorks.1174ae'),
             description: `보조지표 ${indicators}종, 캔들 패턴 ${candlesticks}종, 차트 패턴 ${patterns}종, 전략 ${strategies}종, 지지·저항선 ${supportResistance}종을 자동으로 분석해요`,
         },
         {
             number: '03',
-            title: 'AI 리포트',
-            description:
-                '추세와 리스크, 매수 진입 가이드, 매매 신호, 차트 패턴, 전략, 주요 지지·저항선까지 한 화면에서 확인할 수 있어요',
+            title: t('HowItWorks.f260aa'),
+            description: t('HowItWorks.d441e1'),
         },
     ];
     return (
         <section className="px-6 py-10 lg:px-[15vw]">
             <h2 className="mb-6 text-sm font-semibold tracking-wider text-secondary-200 uppercase">
-                이용 방법
+                {t('HowItWorks.7330a9')}
             </h2>
             <div className="flex flex-col gap-4 md:flex-row">
                 {STEPS.map((step, idx) => (

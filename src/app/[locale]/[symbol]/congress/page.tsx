@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { getCongressPageData } from '@/app/[locale]/[symbol]/congress/congressData';
 import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
@@ -126,6 +127,7 @@ export default async function CongressPage({ params }: Props) {
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.symbol');
     const upper = symbol.toUpperCase();
 
     if (!isAdmissibleSymbolShape(upper)) {
@@ -231,7 +233,7 @@ export default async function CongressPage({ params }: Props) {
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: upper, url: buildSymbolSeoContent(upper).url },
-        { name: '의회 거래', url },
+        { name: t('page.7b06ac'), url },
     ]);
 
     const faqJsonLd = {
@@ -243,15 +245,15 @@ export default async function CongressPage({ params }: Props) {
                 name: `${displayName}의 의회 거래는 어떤 의미가 있나요?`,
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '미국 STOCK Act는 상원·하원 의원과 가족 구성원의 주식 매매를 45일 이내 공시하도록 의무화합니다. 의원의 매매는 산업·정책 정보 접근성 측면에서 시장 참여자들이 주목하는 신호 중 하나로, 정치인 거래 동향은 정량적 가치 평가가 아닌 시장 센티먼트 보조 지표로 활용됩니다.',
+                    text: t('page.1a9e0a'),
                 },
             },
             {
                 '@type': 'Question',
-                name: '공시 지연이 약 45일인 이유는 무엇인가요?',
+                name: t('page.72cf41'),
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: 'STOCK Act는 의원이 거래일로부터 30일 이내에 회계 사무소에 통지하고, 통지일로부터 45일 이내에 공시하도록 규정합니다. 따라서 공시 시점에 실제 거래는 이미 1–2개월 전에 일어났을 가능성이 높습니다. 거래 시점과 공시 시점이 다르므로 단기 매매 신호로 활용하기보다는 누적 동향을 해석하는 편이 안전합니다.',
+                    text: t('page.a916d9'),
                 },
             },
             {
@@ -259,7 +261,7 @@ export default async function CongressPage({ params }: Props) {
                 name: `${displayName}의 의회 거래가 매수 신호인가요?`,
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '특정 종목에 대한 의원의 순매수 우세가 곧 강세 신호로 직결되는 것은 아닙니다. 공시 지연·구간 단위 금액·가족 명의 거래 같은 한계가 있어 보조 지표로 해석해야 합니다. 본 페이지의 AI 동향 해석은 거래 건수와 의원 분포를 결정론적으로 요약한 뒤 LLM 코멘트를 더한 결과로, 매수·매도 판단은 다른 펀더멘털·기술적 신호와 함께 종합 검토하시기 바랍니다.',
+                    text: t('page.2c1d31'),
                 },
             },
         ],
@@ -271,15 +273,15 @@ export default async function CongressPage({ params }: Props) {
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
-                <SymbolPageHeading>{displayName} 의회 거래</SymbolPageHeading>
+                <SymbolPageHeading>
+                    {displayName} {t('page.7b06ac')}
+                </SymbolPageHeading>
                 <section className="sr-only">
-                    <h2>{displayName} 의회 의원 매매 공시 개요</h2>
+                    <h2>
+                        {displayName} {t('page.71fc99')}
+                    </h2>
                     <p>
-                        미국 상원·하원 의원이 STOCK Act에 따라 공시한{' '}
-                        {displayName} 매매 내역을 정리합니다.
-                        거래일·공시일·매수/매도 구분· 예상 금액 범위를 함께
-                        보여주고, 공시지연 약 45일을 감안해 AI가 최근 의회 매매
-                        동향을 한국어로 요약합니다.
+                        {t('page.21713f')} {displayName} {t('page.70516f')}
                     </p>
                 </section>
 

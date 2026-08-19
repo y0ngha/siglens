@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { MarketBriefingResponse } from '@y0ngha/siglens-core';
 import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 
@@ -37,6 +38,7 @@ export function BriefingCard({
     generatedAt,
     scope,
 }: BriefingCardProps) {
+    const t = useTranslations('widgets.dashboard');
     const {
         summary,
         dominantThemes,
@@ -84,7 +86,7 @@ export function BriefingCard({
                     {leadingSectors.length > 0 && (
                         <p className="text-xs">
                             <span className="mr-1 text-secondary-500">
-                                상승 섹터
+                                {t('BriefingCard.e1760c')}
                             </span>
                             <span className="text-chart-bullish">
                                 {leadingSectors.join('·')}
@@ -94,7 +96,7 @@ export function BriefingCard({
                     {laggingSectors.length > 0 && (
                         <p className="text-xs">
                             <span className="mr-1 text-secondary-500">
-                                하락 섹터
+                                {t('BriefingCard.7bd647')}
                             </span>
                             <span className="text-chart-bearish">
                                 {laggingSectors.join('·')}
@@ -142,7 +144,7 @@ export function BriefingCard({
                         hour: '2-digit',
                         minute: '2-digit',
                     })}{' '}
-                    기준
+                    {t('BriefingCard.39b300')}
                 </p>
             )}
         </div>
@@ -150,6 +152,7 @@ export function BriefingCard({
 }
 
 export function BriefingLoadingCard() {
+    const t = useTranslations('widgets.dashboard');
     return (
         <div
             role="status"
@@ -158,20 +161,23 @@ export function BriefingLoadingCard() {
         >
             <div className="flex items-center gap-2">
                 <div className="h-2 w-2 animate-pulse rounded-full bg-secondary-700/50" />
-                <p className="text-sm text-secondary-500">AI 브리핑 생성 중…</p>
+                <p className="text-sm text-secondary-500">
+                    {t('BriefingCard.38eff4')}
+                </p>
             </div>
         </div>
     );
 }
 
 export function BriefingErrorCard() {
+    const t = useTranslations('widgets.dashboard');
     return (
         <div
             role="alert"
             className="rounded-lg border border-secondary-700/50 p-4"
         >
             <p className="text-sm text-chart-bearish">
-                브리핑을 불러오지 못했어요.
+                {t('BriefingCard.8b256d')}
             </p>
         </div>
     );

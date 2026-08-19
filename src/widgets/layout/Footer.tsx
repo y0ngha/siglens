@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { ContactDialog } from './ContactDialog';
 import { CurrentYear } from './CurrentYear';
 import {
@@ -24,12 +25,13 @@ import { Fragment } from 'react';
 const FOOTER_NAV_LINKS = [...NAV_OVERVIEW_LINKS, ...ALL_NAV_REGION_LINKS];
 
 export function Footer() {
+    const t = useTranslations('widgets.layout');
     return (
         <footer className="border-t border-secondary-800">
             <div className="flex flex-col gap-2 px-6 py-6 lg:px-[15vw]">
                 <div
                     role="note"
-                    aria-label="투자 면책 고지"
+                    aria-label={t('Footer.693b62')}
                     className="text-xs leading-relaxed text-secondary-400 sm:text-sm"
                 >
                     {INVESTMENT_DISCLAIMER}
@@ -39,7 +41,7 @@ export function Footer() {
                         © <CurrentYear /> Siglens
                     </p>
                     <nav
-                        aria-label="사이트 정보"
+                        aria-label={t('Footer.5f5d12')}
                         className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2"
                     >
                         {/*
@@ -83,7 +85,7 @@ export function Footer() {
                         </Link>
                         <DotSeparator />
                         <ContactDialog
-                            triggerLabel="문의하기"
+                            triggerLabel={t('Footer.531f6a')}
                             triggerClassName="text-secondary-400 hover:text-secondary-200 text-sm transition-colors"
                         />
                     </nav>

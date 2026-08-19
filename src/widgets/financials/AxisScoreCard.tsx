@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type React from 'react';
 import type {
     AxisScore,
@@ -129,6 +130,7 @@ export function AxisScoreCard({
     axis,
     currency = DEFAULT_STATEMENT_CURRENCY,
 }: AxisScoreCardProps) {
+    const t = useTranslations('widgets.financials');
     const { score, grade, signals, metrics } = axis;
     const gradeBadgeClass = GRADE_BADGE_CLASS[grade];
     const progressColorClass = PROGRESS_GRADE_COLOR[grade];
@@ -157,7 +159,9 @@ export function AxisScoreCard({
 
             <div>
                 <div className="mb-1 flex items-baseline justify-between">
-                    <span className="text-xs text-secondary-400">점수</span>
+                    <span className="text-xs text-secondary-400">
+                        {t('AxisScoreCard.67d2cf')}
+                    </span>
                     <span className="font-mono text-sm font-semibold text-secondary-100 tabular-nums">
                         {score}
                     </span>

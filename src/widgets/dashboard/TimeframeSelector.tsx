@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { KeyboardEvent } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { useRovingKeyboardNav } from '@/shared/hooks/useRovingKeyboardNav';
@@ -30,6 +31,7 @@ export function TimeframeSelector({
     timeframe,
     onChange,
 }: TimeframeSelectorProps) {
+    const t = useTranslations('widgets.dashboard');
     const handleKeyDown = useRovingKeyboardNav<DashboardTimeframe>({
         items: DASHBOARD_TIMEFRAMES,
         activeItem: timeframe,
@@ -44,7 +46,7 @@ export function TimeframeSelector({
                 id={TIMEFRAME_LABEL_ID}
                 className="text-[10px] tracking-wider text-secondary-500 uppercase"
             >
-                타임프레임
+                {t('TimeframeSelector.756aa5')}
             </span>
             <div
                 role="radiogroup"

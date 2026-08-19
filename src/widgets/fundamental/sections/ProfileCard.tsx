@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import type { FundamentalProfile } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
@@ -12,11 +13,12 @@ interface ProfileCardProps {
 }
 
 export function ProfileCard({ profile, descriptionSlot }: ProfileCardProps) {
+    const t = useTranslations('widgets.fundamental');
     if (profile === null) {
         return (
             <EmptySectionCard
                 headingId={HEADING_ID}
-                title="회사 프로필"
+                title={t('ProfileCard.56679f')}
                 headingClassName={HEADING_CLASS_NAME}
             >
                 {descriptionSlot}
@@ -49,7 +51,7 @@ export function ProfileCard({ profile, descriptionSlot }: ProfileCardProps) {
                 </div>
                 <div className="text-right">
                     <span className="text-xs tracking-widest text-secondary-400 uppercase">
-                        시가총액
+                        {t('ProfileCard.cf643b')}
                     </span>
                     <p className="font-mono text-lg font-medium tabular-nums">
                         {formattedMarketCap}
@@ -69,7 +71,7 @@ export function ProfileCard({ profile, descriptionSlot }: ProfileCardProps) {
                 {profile.website !== null && (
                     <div className="flex gap-2">
                         <dt className="w-10 shrink-0 text-sm text-secondary-400">
-                            웹
+                            {t('ProfileCard.9f451a')}
                         </dt>
                         <dd className="text-sm">
                             <a

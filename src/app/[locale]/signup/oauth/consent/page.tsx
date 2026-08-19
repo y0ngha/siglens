@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { setRequestLocale } from 'next-intl/server';
 import { localeRedirect } from '@/shared/i18n/localeRedirect';
 import { Suspense } from 'react';
@@ -64,11 +65,9 @@ export default async function OAuthConsentPage({
     // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     setRequestLocale(locale);
+    const t = await getTranslations('app.signup');
     return (
-        <AuthCardShell
-            title="소셜 로그인 가입"
-            subtitle="아래 정보로 SigLens에 가입됩니다"
-        >
+        <AuthCardShell title={t('page.8ba06b')} subtitle={t('page.f0c59b')}>
             <Suspense
                 fallback={<div className="animate-pulse" aria-hidden="true" />}
             >

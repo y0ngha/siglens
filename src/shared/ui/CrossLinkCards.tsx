@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import {
     getDescriptor,
@@ -107,6 +108,7 @@ export function CrossLinkCards({
     current,
     marketProfile = 'us-equity',
 }: CrossLinkCardsProps) {
+    const t = useTranslations('shared.ui');
     const descriptor = getDescriptor(marketProfile);
     const allowedTabKeys = new Set(descriptor.tabs);
     const assetClass = descriptor.assetClass;
@@ -115,7 +117,7 @@ export function CrossLinkCards({
     return (
         <section
             className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-            aria-label="다른 분석 탭"
+            aria-label={t('CrossLinkCards.be1af0')}
         >
             {visiblePages.map(p => {
                 const isCurrent = p === current;
@@ -134,7 +136,7 @@ export function CrossLinkCards({
                                 {description}
                             </p>
                             <p className="mt-3 text-xs font-medium text-primary-400">
-                                지금 보는 페이지예요
+                                {t('CrossLinkCards.7863c7')}
                             </p>
                         </div>
                     );

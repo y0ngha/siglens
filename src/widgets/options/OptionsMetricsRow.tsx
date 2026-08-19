@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { OptionsExpirationMetrics } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
@@ -61,6 +62,7 @@ export function OptionsMetricsRow({
     nearestExpiry,
     oiStale,
 }: OptionsMetricsRowProps) {
+    const t = useTranslations('widgets.options');
     // siglens-core R12: maxPain / putCallRatio are now `number | null`
     // (formatters tolerate the union explicitly), so pass through directly
     // without the legacy `?? NaN` coercion.
@@ -109,8 +111,9 @@ export function OptionsMetricsRow({
             </div>
             {expirationDate === 'all' && nearestExpiry && (
                 <p className="text-[10px] text-secondary-500">
-                    전체 만기 합산 — 가장 가까운 만기({nearestExpiry}) 기준으로
-                    표시합니다.
+                    {t('OptionsMetricsRow.1b1d72')}
+                    {nearestExpiry}
+                    {t('OptionsMetricsRow.3df517')}
                 </p>
             )}
         </div>

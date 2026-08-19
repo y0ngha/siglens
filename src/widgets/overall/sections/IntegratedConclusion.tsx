@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 
 interface IntegratedConclusionProps {
@@ -8,6 +9,7 @@ interface IntegratedConclusionProps {
 // 최종 결론을 제시하는 focal section이다. 시각적으로도 sibling axis summary와
 // 구분되도록 primary tone의 border + 배경을 사용한다.
 export function IntegratedConclusion({ text }: IntegratedConclusionProps) {
+    const t = useTranslations('widgets.overall');
     if (!text) return null;
     return (
         <section
@@ -18,7 +20,7 @@ export function IntegratedConclusion({ text }: IntegratedConclusionProps) {
                 id="overall-integrated-conclusion-heading"
                 className="mb-3 text-lg font-semibold text-balance"
             >
-                통합 결론
+                {t('IntegratedConclusion.85f201')}
             </h2>
             <MarkdownText className="text-sm">{text}</MarkdownText>
         </section>

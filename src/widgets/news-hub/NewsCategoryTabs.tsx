@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import {
     CATEGORY_CONFIG,
@@ -42,12 +43,13 @@ interface NewsCategoryTabsProps {
  * no client JS — `usePathname` is unnecessary.
  */
 export function NewsCategoryTabs({ activeCategory }: NewsCategoryTabsProps) {
+    const t = useTranslations('widgets.news-hub');
     const siblings = categoriesInRegion(CATEGORY_CONFIG[activeCategory].region);
     if (siblings.length < 2) return null;
 
     return (
         <nav
-            aria-label="뉴스 카테고리"
+            aria-label={t('NewsCategoryTabs.ab8544')}
             className="flex overflow-x-auto border-b border-secondary-700"
         >
             {siblings.map(category => {

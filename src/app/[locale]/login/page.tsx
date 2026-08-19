@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { setRequestLocale } from 'next-intl/server';
 import { AuthCardShell, AuthFormSkeleton } from '@/shared/ui/auth';
@@ -30,10 +31,11 @@ export default async function LoginPage({
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.login');
     return (
         <AuthCardShell
-            title="다시 만나서 반가워요"
-            subtitle="이메일과 비밀번호로 로그인"
+            title={t('page.9d6e84')}
+            subtitle={t('page.2241cc')}
             footer={
                 <div className="space-y-2">
                     <p>
@@ -41,16 +43,16 @@ export default async function LoginPage({
                             href="/forgot-password"
                             className="font-medium text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
-                            비밀번호를 잊으셨나요?
+                            {t('page.313efe')}
                         </Link>
                     </p>
                     <p>
-                        처음이세요?{' '}
+                        {t('page.15bb24')}{' '}
                         <Link
                             href="/signup"
                             className="font-medium text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
-                            회원가입 →
+                            {t('page.49f561')}
                         </Link>
                     </p>
                 </div>

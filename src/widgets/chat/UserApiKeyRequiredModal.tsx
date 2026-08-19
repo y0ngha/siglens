@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRef, useEffect } from 'react';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
@@ -28,6 +29,7 @@ export function UserApiKeyRequiredModal({
     loggedIn,
     onSwitchToFree,
 }: UserApiKeyRequiredModalProps) {
+    const t = useTranslations('widgets.chat');
     const dialogRef = useRef<HTMLDivElement>(null);
 
     useFocusTrap(dialogRef, open);
@@ -45,10 +47,12 @@ export function UserApiKeyRequiredModal({
     // 비로그인은 /signup으로 보낸다. 이전엔 존재하지 않는 /account/api-keys, /auth/sign-up
     // 경로로 박혀 있어 클릭 시 404가 나는 dead link였다.
     const ctaHref = loggedIn ? '/account' : '/signup';
-    const ctaLabel = loggedIn ? 'API 키 등록하기' : '회원가입하기';
+    const ctaLabel = loggedIn
+        ? t('UserApiKeyRequiredModal.e790ae')
+        : t('UserApiKeyRequiredModal.16ec45');
     const bodyText = loggedIn
-        ? 'API 키를 등록하면 이 모델을 사용할 수 있어요.'
-        : '회원가입하고 본인의 API 키를 등록하면 이 모델을 사용할 수 있어요.';
+        ? t('UserApiKeyRequiredModal.378180')
+        : t('UserApiKeyRequiredModal.017c94');
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-secondary-950/80 p-4 backdrop-blur-sm">
@@ -65,12 +69,13 @@ export function UserApiKeyRequiredModal({
                         id="api-key-modal-title"
                         className="text-sm font-semibold text-secondary-100"
                     >
-                        {PROVIDER_DISPLAY[provider]} API 키 등록이 필요해요
+                        {PROVIDER_DISPLAY[provider]}{' '}
+                        {t('UserApiKeyRequiredModal.b43ad2')}
                     </h2>
                     <button
                         type="button"
                         onClick={onClose}
-                        aria-label="닫기"
+                        aria-label={t('UserApiKeyRequiredModal.94b7db')}
                         className="rounded p-1 text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         ✕
@@ -96,7 +101,7 @@ export function UserApiKeyRequiredModal({
                             onClick={onSwitchToFree}
                             className="flex h-9 items-center justify-center rounded-lg border border-secondary-700 px-4 text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
-                            무료 모델로 계속하기
+                            {t('UserApiKeyRequiredModal.f85b06')}
                         </button>
                     </div>
                 </div>

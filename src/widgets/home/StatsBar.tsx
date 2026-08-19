@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { CSSProperties } from 'react';
 import { Fragment } from 'react';
 
@@ -13,11 +14,12 @@ interface StatsBarProps {
 // "list, 6 items"로 안내해 단순 텍스트 나열보다 구조 인식이 명확해진다.
 // 시각 표현(가운뎃점 구분자, 가로 정렬)은 그대로 유지하기 위해 list-none 적용.
 export function StatsBar({ skills }: StatsBarProps) {
+    const t = useTranslations('widgets.home');
     const stats = buildSkillStats(skills);
 
     return (
         <ul
-            aria-label="Siglens 분석 규모"
+            aria-label={t('StatsBar.deac8e')}
             className="mt-6 flex list-none flex-wrap items-center justify-center gap-x-2 p-0 font-mono text-xs text-secondary-400 lg:justify-start"
         >
             {stats.map((stat, i) => (

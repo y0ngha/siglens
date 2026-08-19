@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { cn } from '@/shared/lib/cn';
@@ -17,6 +18,7 @@ interface SymbolTabsProps {
 
 /** Header nav strip for the 4 analysis pages of a symbol. Uses nav + aria-current (URL-based, not tablist). */
 export function SymbolTabs({ symbol }: SymbolTabsProps) {
+    const t = useTranslations('views.symbol');
     // 탭 href(`/AAPL/news`)는 로케일 접두사가 없다. 접두사가 붙은 경로로
     // 비교하면 en/ja/zh에서 활성 탭 표시와 `aria-current`가 통째로 꺼진다.
     const pathname = useAppPathname();
@@ -44,7 +46,7 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
 
     return (
         <nav
-            aria-label="분석 종류"
+            aria-label={t('SymbolTabs.765f05')}
             // overflow-x-auto만 두면 CSS 명세상 overflow-y가 visible→auto로 승격되고,
             // 각 탭 링크의 -mb-px가 1px 세로 오버플로를 만들어 모바일에서 원치 않는
             // 세로 스크롤(바)이 생긴다. overflow-y-hidden으로 세로 스크롤을 차단하고

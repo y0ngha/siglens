@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 /**
@@ -44,6 +45,7 @@ export function CategoryCard({
     koDescription,
     previewHeadlines,
 }: CategoryCardProps) {
+    const t = useTranslations('widgets.news-hub');
     return (
         <article className="flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-5 transition-colors hover:border-primary-500/50">
             {/*
@@ -86,7 +88,7 @@ export function CategoryCard({
                 </ul>
             ) : (
                 <p className="mb-4 text-sm text-secondary-400">
-                    최신 뉴스를 불러오고 있어요.
+                    {t('CategoryCard.2253f0')}
                 </p>
             )}
 
@@ -102,7 +104,7 @@ export function CategoryCard({
                 tabIndex={-1}
                 className="mt-auto text-sm text-primary-400 transition-colors hover:text-primary-300"
             >
-                더보기 <span aria-hidden="true">→</span>
+                {t('CategoryCard.0b6807')} <span aria-hidden="true">→</span>
             </Link>
         </article>
     );

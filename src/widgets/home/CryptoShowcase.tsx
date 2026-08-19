@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { CryptoCategoryId } from '@/shared/lib/types';
 import { CRYPTO_CATEGORIES } from '@/shared/config/crypto-categories';
 import {
@@ -25,10 +26,11 @@ const CRYPTO_CARDS: CategoryCard[] = CRYPTO_CATEGORIES.map(category => ({
 }));
 
 export function CryptoShowcase() {
+    const t = useTranslations('widgets.home');
     return (
         <CategoryCardGrid
-            heading="암호화폐 인기 종목"
-            ariaLabel="암호화폐 인기 종목 탐색"
+            heading={t('CryptoShowcase.5c8e33')}
+            ariaLabel={t('CryptoShowcase.ab6a33')}
             cards={CRYPTO_CARDS}
         />
     );

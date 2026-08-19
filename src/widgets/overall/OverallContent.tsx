@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { useNewsAnalysisTrigger, useWaitForNewsCards } from '@/widgets/news';
 import { useOverallAnalysis } from './hooks/useOverallAnalysis';
@@ -66,6 +67,7 @@ export function OverallContent({
     assetClass = 'equity',
     hasOptions,
 }: OverallContentProps) {
+    const t = useTranslations('widgets.overall');
     // /news와 동일 패턴: 마운트 시 개별 카드 분석 fire-and-forget trigger + cards ready 폴링.
     // 새 뉴스 fetch+분석을 사용자 클릭 전에 시작해두면 trigger 시점엔 분석 완료 row만
     // input으로 들어가 submitNewsAnalysis cache key가 /news와 일치한다(axis hit).
@@ -127,17 +129,17 @@ export function OverallContent({
                     id="overall-cta-poll-error-heading"
                     className="mb-2 text-lg font-semibold text-balance"
                 >
-                    AI 종합 분석
+                    {t('OverallContent.8b7ae7')}
                 </h2>
                 <p className="text-sm text-ui-danger">
-                    뉴스 카드 분석 준비 중 오류가 발생했어요.
+                    {t('OverallContent.1c85d8')}
                 </p>
                 <button
                     type="button"
                     onClick={() => window.location.reload()}
                     className="mt-4 inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
                 >
-                    다시 시도
+                    {t('OverallContent.0c767c')}
                 </button>
             </section>
         );
@@ -160,7 +162,7 @@ export function OverallContent({
     }
 
     if (state.status === 'submitting') {
-        const loadingLabel = 'AI 종합 분석 요청 중…';
+        const loadingLabel = t('OverallContent.e69812');
         return (
             <section
                 aria-labelledby="overall-loading-heading"
@@ -171,7 +173,7 @@ export function OverallContent({
                     id="overall-loading-heading"
                     className="mb-4 text-lg font-semibold text-balance"
                 >
-                    AI 종합 분석
+                    {t('OverallContent.8b7ae7')}
                 </h2>
                 <div className="flex items-center gap-3">
                     <div
@@ -217,10 +219,10 @@ export function OverallContent({
                     id="overall-error-heading"
                     className="mb-2 text-lg font-semibold text-balance"
                 >
-                    AI 종합 분석
+                    {t('OverallContent.8b7ae7')}
                 </h2>
                 <p className="text-sm text-ui-danger" role="alert">
-                    {state.error ?? '분석 중 오류가 발생했습니다.'}
+                    {state.error ?? t('OverallContent.0bb0bd')}
                     {state.axis !== undefined ? ` (${state.axis} 축 실패)` : ''}
                 </p>
                 <button
@@ -228,7 +230,7 @@ export function OverallContent({
                     onClick={trigger}
                     className="mt-3 rounded-sm text-sm text-primary-400 underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
-                    다시 시도
+                    {t('OverallContent.0c767c')}
                 </button>
             </section>
         );

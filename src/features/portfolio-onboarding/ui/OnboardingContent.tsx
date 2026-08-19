@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import { PortfolioSection } from '@/features/portfolio-management';
@@ -20,6 +21,7 @@ const SKIP_LINK =
  * return home — adding holdings is entirely optional here.
  */
 export function OnboardingContent() {
+    const t = useTranslations('features.portfolio-onboarding');
     const router = useRouter();
     const toLocalePath = useLocalePath();
     const goHome = () => router.push(toLocalePath('/'));
@@ -28,19 +30,19 @@ export function OnboardingContent() {
         <div className="space-y-6">
             <header className="space-y-3">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-500/10 px-3 py-1 text-xs font-medium text-primary-400 ring-1 ring-primary-500/20">
-                    <span aria-hidden="true">🎉</span> 가입을 환영해요
+                    <span aria-hidden="true">🎉</span>{' '}
+                    {t('OnboardingContent.643019')}
                 </span>
                 <h1 className="text-2xl font-semibold text-secondary-50">
-                    보유종목을 등록해 보세요
+                    {t('OnboardingContent.26bd1f')}
                 </h1>
                 <p className="text-sm text-secondary-400">
-                    지금 등록하면 내 평단을 기준으로 분석을 받을 수 있어요.
-                    나중에 계정 설정에서도 추가할 수 있어요.
+                    {t('OnboardingContent.5d18f5')}
                 </p>
             </header>
 
             <section
-                aria-label="보유종목"
+                aria-label={t('OnboardingContent.cae421')}
                 className="space-y-4 rounded-2xl bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
             >
                 <PortfolioSection />
@@ -48,14 +50,14 @@ export function OnboardingContent() {
 
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <button type="button" onClick={goHome} className={SKIP_LINK}>
-                    나중에 하기
+                    {t('OnboardingContent.c9c840')}
                 </button>
                 <button
                     type="button"
                     onClick={goHome}
                     className={PRIMARY_BUTTON}
                 >
-                    시작하기
+                    {t('OnboardingContent.389b82')}
                 </button>
             </div>
         </div>
