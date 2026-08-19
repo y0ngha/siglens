@@ -46,6 +46,8 @@ export function RegionTabs({
     className,
 }: RegionTabsProps) {
     const t = useTranslations('shared.ui');
+    // 내비 라벨 키는 네임스페이스까지 포함된 완전 수식 키라 루트로 푼다.
+    const tNav = useTranslations();
     const regions = regionsOf(vertical);
     const baseClass =
         'flex min-h-11 touch-manipulation items-center rounded-md px-3 text-sm font-semibold transition-colors';
@@ -68,7 +70,7 @@ export function RegionTabs({
                             'bg-secondary-700 text-secondary-100'
                         )}
                     >
-                        {region.label}
+                        {tNav(region.labelKey)}
                     </span>
                 ) : (
                     <Link
@@ -88,7 +90,7 @@ export function RegionTabs({
                                 : 'text-secondary-400'
                         )}
                     >
-                        {region.label}
+                        {tNav(region.labelKey)}
                     </Link>
                 )
             )}

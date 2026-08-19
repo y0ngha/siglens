@@ -246,16 +246,11 @@ export default async function SymbolFearGreedPage({ params }: Props) {
             <JsonLd data={faqJsonLd} />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>
-                    {displayName} {t('page.784707')}
+                    {t('page.6cd32e', { v0: displayName })}
                 </SymbolPageHeading>
                 <section className="sr-only">
-                    <h2>
-                        {displayName} {t('page.8fe673')}
-                    </h2>
-                    <p>
-                        {displayName}
-                        {t('page.6d13a8')}
-                    </p>
+                    <h2>{t('page.eac807', { v0: displayName })}</h2>
+                    <p>{t('page.9dc811', { v0: displayName })}</p>
                 </section>
                 <section
                     aria-labelledby="fear-greed-guide-heading"
@@ -265,10 +260,10 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         id="fear-greed-guide-heading"
                         className="text-base font-semibold text-secondary-300"
                     >
-                        {displayName} {t('page.1f6e4c')}
+                        {t('page.ea5664', { v0: displayName })}
                     </h2>
                     <p className="text-sm leading-relaxed text-secondary-400">
-                        {displayName} {t('page.70235a')}{' '}
+                        {t('page.469707', { v0: displayName })}
                         {/* 상위 지수 링크는 이 종목이 속한 시장을 가리켜야 한다.
                             `/fear-greed/kr`이 생기기 전에는 둘 다 미국뿐이라
                             하드코딩이 맞았지만, 지금은 한국 종목 페이지가
@@ -279,8 +274,9 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         >
                             {marketFearGreedLink.label}
                         </Link>
-                        {t('page.719df0')} {marketFearGreedLink.marketLabel}{' '}
-                        {t('page.652c52')}
+                        {t('page.4e7e6f', {
+                            v0: marketFearGreedLink.marketLabel,
+                        })}
                     </p>
                     <p className="text-sm leading-relaxed text-secondary-400">
                         {t('page.348851')}

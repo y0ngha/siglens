@@ -57,7 +57,7 @@ export function FearGreedFactsSummary({
                 id={headingId}
                 className="text-sm font-semibold text-secondary-200"
             >
-                {symbol} {t('FearGreedFactsSummary.fabc11')}
+                {t('FearGreedFactsSummary.b53859', { v0: symbol })}
             </h2>
             <dl className="grid grid-cols-1 gap-2 text-sm text-secondary-300">
                 <div className="flex justify-between gap-4">

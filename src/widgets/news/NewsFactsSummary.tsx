@@ -90,40 +90,37 @@ export function NewsFactsSummary({
                 id="news-facts-summary-heading"
                 className="text-lg font-semibold tracking-tight"
             >
-                {displayName} {t('NewsFactsSummary.438417')}
+                {t('NewsFactsSummary.9a3aa1', { v0: displayName })}
             </h2>
 
             {items.length === 0 ? (
                 <p className="mt-3 text-sm leading-relaxed text-secondary-300">
-                    {displayName} {t('NewsFactsSummary.2453b9')}
+                    {t('NewsFactsSummary.3ed34b', { v0: displayName })}
                 </p>
             ) : (
                 <div className="mt-3 space-y-3 text-sm leading-relaxed text-secondary-300">
                     <p>
-                        {displayName} ({symbol}
-                        {t('NewsFactsSummary.2658c0')} {items.length}
-                        {t('NewsFactsSummary.1519b2')}
+                        {displayName} (
+                        {t('NewsFactsSummary.34b3fc', {
+                            v0: symbol,
+                            v1: items.length,
+                        })}
                     </p>
                     {latestPublishedAt ? (
                         <p>
-                            {t('NewsFactsSummary.306582')}{' '}
-                            {formatNewsPublishedAt(latestPublishedAt)}{' '}
-                            {t('NewsFactsSummary.615021')}
+                            {t('NewsFactsSummary.d54f8a', {
+                                v0: formatNewsPublishedAt(latestPublishedAt),
+                            })}
                         </p>
                     ) : null}
-                    <p>
-                        {t('NewsFactsSummary.fd7a75')} {analyzedCount}
-                        {t('NewsFactsSummary.2da115')}
-                    </p>
+                    <p>{t('NewsFactsSummary.630450', { v0: analyzedCount })}</p>
                     {analyzedCount > 0 ? (
                         <p>
-                            {t('NewsFactsSummary.f36be5')}{' '}
-                            {sentimentCounts.bullish}
-                            {t('NewsFactsSummary.b9024e')}{' '}
-                            {sentimentCounts.neutral}
-                            {t('NewsFactsSummary.e3a052')}{' '}
-                            {sentimentCounts.bearish}
-                            {t('NewsFactsSummary.feb04c')}
+                            {t('NewsFactsSummary.0a451a', {
+                                v0: sentimentCounts.bullish,
+                                v1: sentimentCounts.neutral,
+                                v2: sentimentCounts.bearish,
+                            })}
                         </p>
                     ) : null}
 

@@ -136,8 +136,10 @@ export function NewsSnapshotProse({
             <div className="space-y-4 text-sm leading-6 text-secondary-300">
                 {narrowed.overallSentiment !== null && (
                     <p className="font-medium text-secondary-200">
-                        {symbol} {t('NewsSnapshotProse.a2cd62')}{' '}
-                        {SENTIMENT_LABEL[narrowed.overallSentiment]}
+                        {t('NewsSnapshotProse.0e9c3d', {
+                            v0: symbol,
+                            v1: SENTIMENT_LABEL[narrowed.overallSentiment],
+                        })}
                     </p>
                 )}
 

@@ -113,8 +113,11 @@ export function FearGreedRouteBody({ market, view }: FearGreedRouteBodyProps) {
                     <ul className="space-y-1 text-sm leading-relaxed text-secondary-400">
                         {FEAR_GREED_BANDS.map(band => (
                             <li key={band.label}>
-                                {band.min}~{band.max}
-                                {t('FearGreedRouteBody.7503d0')} {band.label}
+                                {band.min}~
+                                {t('FearGreedRouteBody.b35c3b', {
+                                    v0: band.max,
+                                    v1: band.label,
+                                })}
                             </li>
                         ))}
                     </ul>

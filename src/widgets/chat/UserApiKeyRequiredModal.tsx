@@ -69,8 +69,9 @@ export function UserApiKeyRequiredModal({
                         id="api-key-modal-title"
                         className="text-sm font-semibold text-secondary-100"
                     >
-                        {PROVIDER_DISPLAY[provider]}{' '}
-                        {t('UserApiKeyRequiredModal.b43ad2')}
+                        {t('UserApiKeyRequiredModal.f77cc9', {
+                            v0: PROVIDER_DISPLAY[provider],
+                        })}
                     </h2>
                     <button
                         type="button"

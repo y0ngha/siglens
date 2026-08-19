@@ -53,9 +53,9 @@ export function ContactTextareaField({
                 )}
             />
             <p id={helperId} className="text-right text-xs text-secondary-500">
-                {t('ContactTextareaField.869e9f')}{' '}
-                {maxLength.toLocaleString('ko-KR')}
-                {t('ContactTextareaField.a86264')}
+                {t('ContactTextareaField.fbccd7', {
+                    v0: maxLength.toLocaleString('ko-KR'),
+                })}
             </p>
             {error ? (
                 <div

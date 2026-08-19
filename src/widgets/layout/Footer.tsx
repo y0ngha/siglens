@@ -26,6 +26,8 @@ const FOOTER_NAV_LINKS = [...NAV_OVERVIEW_LINKS, ...ALL_NAV_REGION_LINKS];
 
 export function Footer() {
     const t = useTranslations('widgets.layout');
+    // 내비 라벨 키는 네임스페이스까지 포함된 완전 수식 키라 루트로 푼다.
+    const tNav = useTranslations();
     return (
         <footer className="border-t border-secondary-800">
             <div className="flex flex-col gap-2 px-6 py-6 lg:px-[15vw]">
@@ -59,7 +61,7 @@ export function Footer() {
                                     prefetch={false}
                                     className="text-sm text-secondary-400 transition-colors hover:text-secondary-200"
                                 >
-                                    {item.fullLabel}
+                                    {tNav(item.fullLabelKey)}
                                 </Link>
                                 <DotSeparator />
                             </Fragment>

@@ -53,20 +53,22 @@ export function OverallFactualFallback({
             className="rounded-xl border border-secondary-700 bg-secondary-800 p-5"
         >
             <h2 id={headingId} className="text-lg font-semibold tracking-tight">
-                {displayName} {t('OverallFactualFallback.87d0df')}
+                {t('OverallFactualFallback.662bc5', { v0: displayName })}
             </h2>
             <div className="mt-3 space-y-3 text-sm leading-relaxed text-secondary-300">
                 <p>
-                    {displayName} ({symbol}
-                    {t('OverallFactualFallback.33902f')}{' '}
-                    {getAxesText(marketProfile)}
-                    {t('OverallFactualFallback.6da953')}
+                    {displayName} (
+                    {t('OverallFactualFallback.ab960a', {
+                        v0: symbol,
+                        v1: getAxesText(marketProfile),
+                    })}
                 </p>
                 {newsItems.length > 0 ? (
                     <p>
-                        {t('OverallFactualFallback.550056')} {newsItems.length}
-                        {t('OverallFactualFallback.cedc27')} {analyzedNewsCount}
-                        {t('OverallFactualFallback.4514b7')}
+                        {t('OverallFactualFallback.278a07', {
+                            v0: newsItems.length,
+                            v1: analyzedNewsCount,
+                        })}
                     </p>
                 ) : (
                     <p>{t('OverallFactualFallback.3a92a1')}</p>

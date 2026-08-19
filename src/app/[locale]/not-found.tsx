@@ -30,7 +30,7 @@ export default function NotFound() {
                         href="/"
                         className="mt-8 rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700"
                     >
-                        {SITE_NAME} {t('not-found.3614fb')}
+                        {t('not-found.ba81f0', { v0: SITE_NAME })}
                     </Link>
 
                     <div className="mt-10 border-t border-secondary-800 pt-8">

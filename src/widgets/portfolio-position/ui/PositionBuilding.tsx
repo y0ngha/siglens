@@ -706,11 +706,10 @@ export function PositionBuilding({
                     returnTokenClass
                 )}
             >
-                {t('PositionBuilding.fb64df')}{' '}
-                {formatSignedPercent(model.returnPct)}{' '}
-                {t('PositionBuilding.562a2c')}{' '}
-                {model.rangePositionPct.toFixed(0)}
-                {t('PositionBuilding.92b19a')}
+                {t('PositionBuilding.305967', {
+                    v0: formatSignedPercent(model.returnPct),
+                    v1: model.rangePositionPct.toFixed(0),
+                })}
             </p>
 
             {/* 층 hover/탭 리드아웃 — 마우스/터치를 쓰는 시각 사용자 전용 보강 표시다

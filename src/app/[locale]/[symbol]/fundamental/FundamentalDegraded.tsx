@@ -51,7 +51,7 @@ export function FundamentalDegraded({
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
             <SymbolPageHeading>
-                {displayName} {t('FundamentalDegraded.8c80db')}
+                {t('FundamentalDegraded.9e0659', { v0: displayName })}
             </SymbolPageHeading>
             <FundamentalSnapshotProse
                 content={snapshotContent}

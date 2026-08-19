@@ -45,7 +45,7 @@ export function LegalPageShell({
                             {intro}
                         </p>
                         <p className="mt-4 text-xs text-secondary-500">
-                            {t('LegalPageShell.f2fe24')} {effectiveDate}
+                            {t('LegalPageShell.4ea5e2', { v0: effectiveDate })}
                         </p>
                     </header>
 

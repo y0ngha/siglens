@@ -432,15 +432,17 @@ export function OpenInterestChart({
                         <div className="flex items-center justify-between gap-3">
                             <span className="text-chart-bullish">Call OI</span>
                             <span className="tabular-nums">
-                                {hoveredRow.callOpenInterest.toLocaleString()}{' '}
-                                {t('OpenInterestChart.b41163')}
+                                {t('OpenInterestChart.e3558e', {
+                                    v0: hoveredRow.callOpenInterest.toLocaleString(),
+                                })}
                             </span>
                         </div>
                         <div className="flex items-center justify-between gap-3">
                             <span className="text-chart-bearish">Put OI</span>
                             <span className="tabular-nums">
-                                {hoveredRow.putOpenInterest.toLocaleString()}{' '}
-                                {t('OpenInterestChart.b41163')}
+                                {t('OpenInterestChart.e3558e', {
+                                    v0: hoveredRow.putOpenInterest.toLocaleString(),
+                                })}
                             </span>
                         </div>
                         <div className="mt-1 flex items-center justify-between gap-3 border-t border-secondary-700 pt-1">
@@ -448,11 +450,12 @@ export function OpenInterestChart({
                                 {t('OpenInterestChart.3dcb27')}
                             </span>
                             <span className="font-semibold tabular-nums">
-                                {(
-                                    hoveredRow.callOpenInterest +
-                                    hoveredRow.putOpenInterest
-                                ).toLocaleString()}{' '}
-                                {t('OpenInterestChart.b41163')}
+                                {t('OpenInterestChart.e3558e', {
+                                    v0: (
+                                        hoveredRow.callOpenInterest +
+                                        hoveredRow.putOpenInterest
+                                    ).toLocaleString(),
+                                })}
                             </span>
                         </div>
                     </>

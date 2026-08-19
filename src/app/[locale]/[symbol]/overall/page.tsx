@@ -475,7 +475,7 @@ export default async function OverallPage({ params }: Props) {
                         id="overall-guide-heading"
                         className="text-base font-semibold text-secondary-300"
                     >
-                        {displayName} {t('page.119eb4')}
+                        {t('page.712907', { v0: displayName })}
                     </h2>
                     {copy.guideParagraphs}
                 </section>

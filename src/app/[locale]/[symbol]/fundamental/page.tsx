@@ -642,16 +642,15 @@ export default async function FundamentalPage({ params }: Props) {
             <JsonLd data={faqJsonLd} />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>
-                    {displayName} {t('page.8c80db')}
+                    {t('page.9e0659', { v0: displayName })}
                 </SymbolPageHeading>
                 <section className="sr-only">
-                    <h2>
-                        {displayName} {t('page.b4e50a')}
-                    </h2>
+                    <h2>{t('page.dbd943', { v0: displayName })}</h2>
                     <p>
-                        {displayName}
-                        {sector !== '' ? `(${sector} 섹터)` : ''}
-                        {t('page.cf99c5')}
+                        {t('page.632a87', {
+                            v0: displayName,
+                            v1: sector !== '' ? `(${sector} 섹터)` : '',
+                        })}
                     </p>
                 </section>
                 <Suspense fallback={<ProfileCardSkeleton symbol={upper} />}>

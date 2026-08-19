@@ -50,6 +50,24 @@ function isJsxAttributeValue(parents, node) {
     return parent?.type === 'JSXAttribute' && parent.value === node;
 }
 
+/**
+ * SEO 키워드 배열 안의 문자열인가.
+ *
+ * 검색 키워드는 번역문이 아니라 그 언어권에서 실제로 치는 질의다. 기계번역하면
+ * 아무도 검색하지 않는 문자열이 들어간다. `<meta name="keywords">`는 Google이
+ * 무시하고 네이버만 보는데 네이버는 한국어 질의를 다루므로, 이 값들은 ko 전용
+ * 데이터로 남긴다(`localeKeywords`가 비-ko에서 태그 자체를 뺀다).
+ */
+function isSeoKeyword(parents) {
+    return parents.some(
+        p =>
+            (p.type === 'ObjectProperty' && p.key?.name === 'keywords') ||
+            (p.type === 'VariableDeclarator' &&
+                p.id?.type === 'Identifier' &&
+                p.id.name.endsWith('KEYWORDS'))
+    );
+}
+
 /** 후보가 이미 `t(...)` 호출 안에 있는가 — 재실행 멱등성. */
 function isInsideTranslatorCall(parents) {
     return parents.some(
@@ -97,6 +115,9 @@ export function classify({ candidate, filePath }) {
     }
     if (isModuleSpecifier(parents, node)) {
         return { applicable: false, reason: 'module-specifier' };
+    }
+    if (isSeoKeyword(parents)) {
+        return { applicable: false, reason: 'seo-keywords-ko-only' };
     }
     // `.ts` 파일에는 컴포넌트가 없다 — 상수/유틸이라 소비자 쪽 리팩터가 필요하다.
     if (!filePath.endsWith('.tsx')) {

@@ -12,6 +12,7 @@
  * 오프셋 역순으로 적용해 앞선 치환이 뒤 오프셋을 밀지 않게 한다.
  */
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import {
     candidateFiles,
@@ -34,8 +35,45 @@ const onlyPrefix = args.includes('--only') ? ONLY : null;
 const catalog = {}; // ns -> { key: koText }
 const takenPerNamespace = new Map(); // ns -> Map(key -> text)
 const skips = [];
-/** `'use client'` 파일이 사용하는 네임스페이스 — 루트 프로바이더가 실어야 한다. */
-const clientNamespaces = new Set();
+/**
+ * `'use client'` 파일이 사용하는 네임스페이스 — 루트 프로바이더가 실어야 한다.
+ *
+ * **치환 시점이 아니라 참조 시점으로 센다.** 치환은 한 번만 일어나므로 그때
+ * 모으면 재실행 시 목록이 0이 되고, 그러면 클라이언트에서 전 메시지가
+ * `MISSING_MESSAGE`가 된다(실측 5,184건). 빌드는 성공하고 화면에서만 깨진다.
+ */
+function collectClientNamespaces(root) {
+    const namespaces = new Set();
+    for (const relPath of candidateSourceFiles(root)) {
+        const code = readFileSync(`${root}/${relPath}`, 'utf8');
+        if (!/^\s*(['"])use client\1/m.test(code.slice(0, 400))) continue;
+        if (!/\bt\w*\(/.test(code)) continue;
+        namespaces.add(namespaceFor(relPath));
+        // 루트 번역자(`useTranslations()`)가 쓰는 완전 수식 키는 그 키의
+        // 네임스페이스도 필요하다.
+        for (const match of code.matchAll(/\bt\w*\(\s*'([A-Za-z0-9_.$-]+)'/g)) {
+            const parts = match[1].split('.');
+            if (parts.length >= 3) namespaces.add(parts.slice(0, 2).join('.'));
+        }
+    }
+    /**
+     * 수동 키의 네임스페이스도 넣는다.
+     *
+     * `manualKeys.json`에 등록되는 키는 **소스에 한국어가 없어 추출로 만들어지지
+     * 않는 것**들이고(내비 라벨·카테고리 라벨), 소비자는 그 키를 변수로 넘긴다
+     * (`t(vertical.labelKey)`). 정규식 스캔으로는 절대 보이지 않으므로 여기서
+     * 명시적으로 더한다 — 빠뜨리면 클라이언트에서 그 라벨만 한국어로 남는데,
+     * `MISSING_MESSAGE`도 안 뜨고(폴백이 ko다) route 표에도 안 나온다.
+     */
+    const manualPath = `${root}/messages/_meta/manualKeys.json`;
+    if (existsSync(manualPath)) {
+        for (const prefix of JSON.parse(readFileSync(manualPath, 'utf8'))) {
+            const parts = prefix.split('.');
+            if (parts.length >= 2) namespaces.add(parts.slice(0, 2).join('.'));
+        }
+    }
+    return namespaces;
+}
 let replacedCount = 0;
 let filesChanged = 0;
 
@@ -85,6 +123,50 @@ function splitJsxWhitespace(raw) {
     return { leading, core: raw.trim(), trailing };
 }
 
+/**
+ * 소스가 **이미 참조하고 있는** 메시지 키.
+ *
+ * 이 스크립트는 한국어 리터럴을 찾아 카탈로그를 만든다. 한 번 치환하고 나면
+ * 그 자리에는 `t('key')`만 남아 리터럴이 사라지므로, 재실행하면 카탈로그가
+ * 통째로 비워진다 — 실측으로 2,751키가 41키로 날아갔다.
+ *
+ * 그래서 재생성은 "리터럴에서 새로 만든 것 + **소스가 아직 참조하는 것** +
+ * 손으로 쓴 것"의 합집합이다. 어느 코드도 부르지 않는 키만 사라진다.
+ */
+function collectReferencedKeys(root) {
+    const referenced = new Set();
+    const pattern = /\bt\w*\(\s*'([A-Za-z0-9_.$-]+)'/g;
+    for (const relPath of candidateSourceFiles(root)) {
+        const code = readFileSync(`${root}/${relPath}`, 'utf8');
+        const ns = namespaceFor(relPath);
+        for (const match of code.matchAll(pattern)) {
+            // 네임스페이스 번역자(`useTranslations('widgets.legal')`)는 키를
+            // 접두사 없이 부르고, 루트 번역자(`useTranslations()`)는 완전 수식
+            // 키를 부른다. 어느 쪽인지 정규식으로는 알 수 없으므로 둘 다 넣는다 —
+            // 존재하지 않는 조합은 카탈로그에 없어서 무해하다.
+            referenced.add(match[1]);
+            referenced.add(`${ns}.${match[1]}`);
+        }
+    }
+    return referenced;
+}
+
+/** `t()` 스캔 대상 — 한국어 유무와 무관하게 전 소스를 본다. */
+function candidateSourceFiles(root) {
+    return execSync(
+        // ⚠️ 괄호가 없으면 `-o` 우선순위 때문에 암시적 `-print`가 뒤쪽 조건에만
+        // 붙어 **`.ts` 파일이 통째로 빠진다** — 그러면 `.ts`에서만 쓰는 키가
+        // "참조 없음"으로 판정돼 카탈로그에서 조용히 지워진다.
+        `find ${JSON.stringify(root + '/src')} \\( -name '*.ts' -o -name '*.tsx' \\) -print`,
+        { encoding: 'utf8', maxBuffer: 1 << 28 }
+    )
+        .trim()
+        .split('\n')
+        .filter(Boolean)
+        .map(f => f.replace(root + '/', ''))
+        .filter(f => !/__tests__|\.test\.|\.spec\./.test(f));
+}
+
 const files = candidateFiles(ROOT).filter(
     f => !onlyPrefix || f.startsWith(onlyPrefix)
 );
@@ -105,7 +187,7 @@ for (const relPath of files) {
     }
 
     const ns = namespaceFor(relPath);
-    const isClientFile = /^\s*(['"])use client\1/m.test(code.slice(0, 400));
+
     const prefix = keyPrefixFor(relPath);
     const candidates = collectCandidates(ast, code);
     const edits = [];
@@ -123,14 +205,18 @@ for (const relPath of files) {
                 reason: verdict.reason,
                 text: candidate.text.replace(/\s+/g, ' ').trim().slice(0, 80),
             });
-            // 스킵해도 카탈로그에는 넣는다 — 번역·검증 파이프라인은 전량을 봐야 한다.
-            if (
-                verdict.reason !== 'module-specifier' &&
-                verdict.reason !== 'already-translated' &&
-                verdict.reason !== 'parse-error'
-            ) {
-                recordMessage(ns, prefix, candidate.text.trim());
-            }
+            /**
+             * 스킵한 문자열은 **카탈로그에 넣지 않는다.**
+             *
+             * 치환되지 않았으므로 코드가 `t()`로 꺼내 쓸 일이 없다. 넣으면
+             * (1) 번역 비용만 나가고 (2) 검증 게이트가 쓰이지도 않는 문자열에
+             * 대해 실패한다. 실제로 템플릿 원문(`` `${x} 삭제` ``)이 카탈로그에
+             * 들어가 "번역"됐는데, 그 `${}`는 카탈로그 안에서 전개되지 않아
+             * 아무 의미가 없었다.
+             *
+             * 남은 대상은 `messages/_meta/skips.json`이 사유와 함께 추적한다 —
+             * 잃어버리는 정보는 없다.
+             */
             continue;
         }
 
@@ -162,7 +248,6 @@ for (const relPath of files) {
             });
         }
         componentsNeedingTranslator.set(verdict.component, verdict.binding);
-        if (isClientFile) clientNamespaces.add(ns);
         replacedCount += 1;
     }
 
@@ -265,11 +350,30 @@ if (WRITE) {
     const target = `${ROOT}/messages/ko.json`;
     mkdirSync(dirname(target), { recursive: true });
 
-    // 기존 수기 항목(언어 스위처 라벨 등)을 잃지 않도록 병합한다.
+    /**
+     * 기존 카탈로그에서 **손으로 쓴 키만** 살린다.
+     *
+     * `messages/_meta/manualKeys.json`에 적힌 접두사에 해당하는 키가 그 대상이다
+     * (내비 라벨처럼 소스에 한국어가 없어 추출로는 만들어지지 않는 것들).
+     * 나머지는 버린다 — 소스에서 사라진 문자열의 키가 남으면 번역 게이트가
+     * "고아 키"로 계속 실패하고 진짜 누락이 그 안에 묻힌다.
+     */
+    const manualPrefixes = existsSync(`${ROOT}/messages/_meta/manualKeys.json`)
+        ? JSON.parse(
+              readFileSync(`${ROOT}/messages/_meta/manualKeys.json`, 'utf8')
+          )
+        : [];
     const existing = existsSync(target)
         ? flatten(JSON.parse(readFileSync(target, 'utf8')))
         : {};
-    const merged = { ...existing };
+    const referenced = collectReferencedKeys(ROOT);
+    const merged = Object.fromEntries(
+        Object.entries(existing).filter(
+            ([key]) =>
+                referenced.has(key) ||
+                manualPrefixes.some(prefix => key.startsWith(`${prefix}.`))
+        )
+    );
     for (const [ns, entries] of Object.entries(catalog)) {
         for (const [key, value] of Object.entries(entries)) {
             merged[`${ns}.${key}`] = value;
@@ -297,7 +401,8 @@ if (WRITE) {
      */
     writeFileSync(
         `${ROOT}/messages/_meta/clientNamespaces.json`,
-        JSON.stringify([...clientNamespaces].sort(), null, 4) + '\n'
+        JSON.stringify([...collectClientNamespaces(ROOT)].sort(), null, 4) +
+            '\n'
     );
 }
 

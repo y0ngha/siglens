@@ -138,7 +138,7 @@ export function PortfolioChipPopover({
                 id={titleId}
                 className="mb-3 text-sm font-semibold text-secondary-100"
             >
-                {symbol.toUpperCase()} {t('PortfolioChipPopover.40c48c')}
+                {t('PortfolioChipPopover.51fc60', { v0: symbol.toUpperCase() })}
             </h2>
 
             <form

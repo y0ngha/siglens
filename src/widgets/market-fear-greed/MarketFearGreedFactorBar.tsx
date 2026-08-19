@@ -73,7 +73,7 @@ export function MarketFearGreedFactorBar({
                     plain text is trivially reachable by screen readers. */}
                 <p className="text-xs text-secondary-500">{description}</p>
                 <span className="shrink-0 font-mono text-xs text-secondary-400">
-                    {t('MarketFearGreedFactorBar.330be1')} {pctile}
+                    {t('MarketFearGreedFactorBar.3d4046', { v0: pctile })}
                 </span>
             </div>
         </section>

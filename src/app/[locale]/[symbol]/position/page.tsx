@@ -335,7 +335,7 @@ export default async function PositionPage({ params }: Props) {
         // 동일하게 max-w-5xl까지 채워진다.
         <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
             <SymbolPageHeading>
-                {displayName} {t('page.69d338')}
+                {t('page.927513', { v0: displayName })}
             </SymbolPageHeading>
             {/* Task 1(색인 전환 근거) — 이전엔 이 자리에 sr-only 개요 섹션만 있었다
                 (noindex 시절엔 스크린리더 문맥 보강용이었을 뿐, SEO 신호가 아니었다).
@@ -353,18 +353,21 @@ export default async function PositionPage({ params }: Props) {
                         id="position-guide-heading"
                         className="text-base font-semibold text-secondary-300"
                     >
-                        {displayName} {t('page.2ab959')}
+                        {t('page.5ab35b', { v0: displayName })}
                     </h2>
                     <p className="text-sm leading-relaxed text-secondary-400">
-                        {displayName}
-                        {t('page.54c128')} {formatAmount(range.low52w, upper)} ~{' '}
-                        {formatAmount(range.high52w, upper)}
-                        {t('page.eb2672')}{' '}
-                        {formatAmount(range.lastClose, upper)}
-                        {t('page.235953')} {currentPricePosition.percentile}
-                        {t('page.c4d80d')} {currentPricePosition.floorLabel}
-                        {t('page.880314')} {currentPricePosition.tone}{' '}
-                        {t('page.cbd74e')}
+                        {t('page.1e3497', {
+                            v0: displayName,
+                            v1: formatAmount(range.low52w, upper),
+                        })}{' '}
+                        ~{' '}
+                        {t('page.44a64f', {
+                            v0: formatAmount(range.high52w, upper),
+                            v1: formatAmount(range.lastClose, upper),
+                            v2: currentPricePosition.percentile,
+                            v3: currentPricePosition.floorLabel,
+                            v4: currentPricePosition.tone,
+                        })}
                     </p>
                 </section>
             )}

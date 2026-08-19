@@ -50,7 +50,7 @@ export function FinancialsDegraded({
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
             <SymbolPageHeading>
-                {displayName} {t('FinancialsDegraded.128c11')}
+                {t('FinancialsDegraded.465a63', { v0: displayName })}
             </SymbolPageHeading>
             <FinancialsSnapshotProse
                 content={snapshotContent}

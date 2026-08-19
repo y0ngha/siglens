@@ -47,14 +47,13 @@ export default async function SharePage({ params }: Props) {
                     {t('page.365a70')}
                 </h1>
                 <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">
-                    {t('page.b73cea')} {SITE_NAME}
-                    {t('page.edfe95')}
+                    {t('page.7c95d5', { v0: SITE_NAME })}
                 </p>
                 <Link
                     href="/"
                     className="mt-8 rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    {SITE_NAME} {t('page.3614fb')}
+                    {t('page.ba81f0', { v0: SITE_NAME })}
                 </Link>
             </main>
         );
@@ -80,7 +79,7 @@ export default async function SharePage({ params }: Props) {
             </h1>
 
             <div className="mb-6 rounded-lg border border-secondary-700 bg-secondary-800/50 px-3 py-2 text-xs text-secondary-400">
-                {asOf} {t('page.97ec4e')}
+                {t('page.de8fc6', { v0: asOf })}
             </div>
 
             <ShareKindPanel
@@ -110,8 +109,7 @@ export default async function SharePage({ params }: Props) {
                     href={`/${ticker}`}
                     className="inline-flex items-center rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    {SITE_NAME}
-                    {t('page.81b8e2')} {ticker} {t('page.084d16')}
+                    {t('page.69aebc', { v0: SITE_NAME, v1: ticker })}
                 </Link>
             </div>
         </main>

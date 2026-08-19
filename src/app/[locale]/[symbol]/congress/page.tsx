@@ -274,15 +274,11 @@ export default async function CongressPage({ params }: Props) {
             <JsonLd data={faqJsonLd} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>
-                    {displayName} {t('page.7b06ac')}
+                    {t('page.e607c1', { v0: displayName })}
                 </SymbolPageHeading>
                 <section className="sr-only">
-                    <h2>
-                        {displayName} {t('page.71fc99')}
-                    </h2>
-                    <p>
-                        {t('page.21713f')} {displayName} {t('page.70516f')}
-                    </p>
+                    <h2>{t('page.1af282', { v0: displayName })}</h2>
+                    <p>{t('page.42ddbe', { v0: displayName })}</p>
                 </section>
 
                 {/* audit fix FIX 2: XOR — CongressTrendSummary (client widget) and

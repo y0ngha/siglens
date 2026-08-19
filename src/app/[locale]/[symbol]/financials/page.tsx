@@ -297,16 +297,11 @@ export default async function FinancialsPage({ params }: Props) {
             <JsonLd data={faqJsonLd} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>
-                    {displayName} {t('page.128c11')}
+                    {t('page.465a63', { v0: displayName })}
                 </SymbolPageHeading>
                 <section className="sr-only">
-                    <h2>
-                        {displayName} {t('page.9d943d')}
-                    </h2>
-                    <p>
-                        {displayName}
-                        {t('page.933612')}
-                    </p>
+                    <h2>{t('page.fec645', { v0: displayName })}</h2>
+                    <p>{t('page.1b54b3', { v0: displayName })}</p>
                 </section>
 
                 <FinancialsScorecard

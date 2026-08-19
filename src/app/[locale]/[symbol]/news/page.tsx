@@ -409,9 +409,7 @@ export default async function NewsPage({ params }: Props) {
                     generatedAt={newsSnapshot?.generatedAt}
                 />
                 <section className="sr-only">
-                    <h2>
-                        {displayName} {t('page.1e24e1')}
-                    </h2>
+                    <h2>{t('page.2659c6', { v0: displayName })}</h2>
                     <p>
                         {isEquity
                             ? `${displayName}의 최신 뉴스 분위기, 다음 어닝 일정, 최근 실적 보고서, 애널리스트 등급 변경을 한국어로 정리합니다.`

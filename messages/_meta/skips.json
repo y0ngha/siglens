@@ -1,121 +1,121 @@
 [
     {
         "file": "src/app/[locale]/[symbol]/congress/opengraph-image.tsx",
-        "line": 14,
+        "line": 15,
         "reason": "module-scope-or-helper",
         "text": "Siglens 미국 주식 의회 거래"
     },
     {
         "file": "src/app/[locale]/[symbol]/congress/page.tsx",
-        "line": 243,
+        "line": 245,
         "reason": "template-needs-icu-review",
         "text": "`${displayName}의 의회 거래는 어떤 의미가 있나요?`"
     },
     {
         "file": "src/app/[locale]/[symbol]/congress/page.tsx",
-        "line": 259,
+        "line": 261,
         "reason": "template-needs-icu-review",
         "text": "`${displayName}의 의회 거래가 매수 신호인가요?`"
     },
     {
         "file": "src/app/[locale]/[symbol]/fear-greed/opengraph-image.tsx",
-        "line": 14,
+        "line": 15,
         "reason": "module-scope-or-helper",
         "text": "Siglens 공포 탐욕 지수"
     },
     {
         "file": "src/app/[locale]/[symbol]/fear-greed/page.tsx",
-        "line": 57,
+        "line": 58,
         "reason": "module-scope-or-helper",
         "text": "시장 전체 공포·탐욕 지수"
     },
     {
         "file": "src/app/[locale]/[symbol]/fear-greed/page.tsx",
-        "line": 58,
+        "line": 59,
         "reason": "module-scope-or-helper",
         "text": "미국 증시"
-    },
-    {
-        "file": "src/app/[locale]/[symbol]/fear-greed/page.tsx",
-        "line": 62,
-        "reason": "module-scope-or-helper",
-        "text": "한국 시장 공포·탐욕 지수"
     },
     {
         "file": "src/app/[locale]/[symbol]/fear-greed/page.tsx",
         "line": 63,
         "reason": "module-scope-or-helper",
-        "text": "한국 증시"
+        "text": "한국 시장 공포·탐욕 지수"
     },
     {
         "file": "src/app/[locale]/[symbol]/fear-greed/page.tsx",
-        "line": 67,
+        "line": 64,
         "reason": "module-scope-or-helper",
-        "text": "시장 전체 공포·탐욕 지수"
+        "text": "한국 증시"
     },
     {
         "file": "src/app/[locale]/[symbol]/fear-greed/page.tsx",
         "line": 68,
         "reason": "module-scope-or-helper",
+        "text": "시장 전체 공포·탐욕 지수"
+    },
+    {
+        "file": "src/app/[locale]/[symbol]/fear-greed/page.tsx",
+        "line": 69,
+        "reason": "module-scope-or-helper",
         "text": "미국 증시"
     },
     {
         "file": "src/app/[locale]/[symbol]/fear-greed/page.tsx",
-        "line": 173,
+        "line": 175,
         "reason": "template-needs-icu-review",
         "text": "`${displayName} 공포 탐욕 지수는 무엇을 측정하나요?`"
     },
     {
         "file": "src/app/[locale]/[symbol]/fear-greed/page.tsx",
-        "line": 176,
+        "line": 178,
         "reason": "template-needs-icu-review",
         "text": "`${displayName} 한 종목의 단기 매매 심리를 0~100 점수로 측정합니다. CNN의 시장 전체 Fear & Greed Index와 "
     },
     {
         "file": "src/app/[locale]/[symbol]/financials/opengraph-image.tsx",
-        "line": 14,
+        "line": 15,
         "reason": "module-scope-or-helper",
         "text": "Siglens 미국 주식 재무제표"
     },
     {
         "file": "src/app/[locale]/[symbol]/financials/page.tsx",
-        "line": 266,
+        "line": 268,
         "reason": "template-needs-icu-review",
         "text": "`${displayName}의 재무는 건전한가요?`"
     },
     {
         "file": "src/app/[locale]/[symbol]/financials/page.tsx",
-        "line": 274,
+        "line": 276,
         "reason": "template-needs-icu-review",
         "text": "`${displayName}의 성장 추세는 어떤가요?`"
     },
     {
         "file": "src/app/[locale]/[symbol]/financials/page.tsx",
-        "line": 282,
+        "line": 284,
         "reason": "template-needs-icu-review",
         "text": "`${displayName}의 현금 창출력은 충분한가요?`"
     },
     {
         "file": "src/app/[locale]/[symbol]/fundamental/opengraph-image.tsx",
-        "line": 14,
+        "line": 15,
         "reason": "module-scope-or-helper",
         "text": "Siglens 미국 주식 펀더멘털 분석"
     },
     {
         "file": "src/app/[locale]/[symbol]/fundamental/page.tsx",
-        "line": 606,
+        "line": 613,
         "reason": "template-needs-icu-review",
         "text": "`${displayName} 펀더멘털 분석에서 무엇을 볼 수 있나요?`"
     },
     {
         "file": "src/app/[locale]/[symbol]/fundamental/page.tsx",
-        "line": 644,
-        "reason": "template-needs-icu-review",
+        "line": 652,
+        "reason": "already-translated",
         "text": "`(${sector} 섹터)`"
     },
     {
         "file": "src/app/[locale]/[symbol]/news/opengraph-image.tsx",
-        "line": 14,
+        "line": 15,
         "reason": "module-scope-or-helper",
         "text": "Siglens 뉴스 분석"
     },
@@ -175,290 +175,290 @@
     },
     {
         "file": "src/app/[locale]/[symbol]/opengraph-image.tsx",
-        "line": 14,
+        "line": 15,
         "reason": "module-scope-or-helper",
         "text": "Siglens 기술적 분석"
     },
     {
         "file": "src/app/[locale]/[symbol]/options/opengraph-image.tsx",
-        "line": 14,
+        "line": 15,
         "reason": "module-scope-or-helper",
         "text": "Siglens 미국 주식 옵션 분석"
     },
     {
         "file": "src/app/[locale]/[symbol]/options/page.tsx",
-        "line": 312,
+        "line": 314,
         "reason": "template-needs-icu-review",
         "text": "`${displayName} 옵션 시장 분석에서 무엇을 볼 수 있나요?`"
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/opengraph-image.tsx",
-        "line": 14,
+        "line": 15,
         "reason": "module-scope-or-helper",
         "text": "Siglens 종합 분석"
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/page.tsx",
-        "line": 77,
+        "line": 78,
         "reason": "module-scope-or-helper",
         "text": "`${displayName} 차트와 옵션 시장, 실적, 뉴스 종합 분석`"
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/page.tsx",
-        "line": 78,
+        "line": 79,
         "reason": "module-scope-or-helper",
         "text": "`${displayName} 주가의 차트 추세, 옵션 시장이 평가하는 단기 방향성, 분기 실적과 펀더멘털, 최근 뉴스 분위기까지 네 가지 분석 "
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/page.tsx",
-        "line": 80,
+        "line": 81,
         "reason": "module-scope-or-helper",
         "text": "차트 추세, 옵션 시장의 콜·풋 베팅 분위기, 실적과 가이던스 흐름, 뉴스 분위기를 종합해 상승 압력이 우세한지 하방 압력이 우세한지 판단합니다"
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/page.tsx",
-        "line": 84,
+        "line": 85,
         "reason": "module-scope-or-helper",
         "text": "주가가 지금 어디쯤 와 있는지 한 페이지에서 정리해 봅니다. 차트의 추세와 주요 지지선과 저항선, 옵션 시장이 평가하는 단기 방향성, 분기 실적"
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/page.tsx",
-        "line": 91,
+        "line": 92,
         "reason": "module-scope-or-helper",
         "text": "옵션 시장이 가까운 만기에서 콜과 풋 어느 쪽에 더 큰 베팅을 걸고 있는지도 한 줄로 짚어 줍니다. 네 축을 합쳐 강세와 약세 시나리오를 각각 "
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/page.tsx",
-        "line": 98,
+        "line": 99,
         "reason": "module-scope-or-helper",
         "text": "실적 발표, 가이던스 변화, 매크로 이벤트처럼 시나리오를 뒤집을 수 있는 위험 요인도 따로 표시해 두니, 매수 전에 한 번 훑어보면 도움이 됩니"
-    },
-    {
-        "file": "src/app/[locale]/[symbol]/overall/page.tsx",
-        "line": 111,
-        "reason": "module-scope-or-helper",
-        "text": "`${displayName} 차트와 실적, 뉴스 종합 분석`"
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/page.tsx",
         "line": 112,
         "reason": "module-scope-or-helper",
+        "text": "`${displayName} 차트와 실적, 뉴스 종합 분석`"
+    },
+    {
+        "file": "src/app/[locale]/[symbol]/overall/page.tsx",
+        "line": 113,
+        "reason": "module-scope-or-helper",
         "text": "`${displayName} 주가의 차트 추세, 분기 실적과 펀더멘털, 최근 뉴스 분위기까지 세 가지 분석 축에 시장 분위기(공포 탐욕 지수)를"
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/page.tsx",
-        "line": 114,
+        "line": 115,
         "reason": "module-scope-or-helper",
         "text": "차트 추세, 실적과 가이던스 흐름, 뉴스 분위기를 종합해 상승 압력이 우세한지 하방 압력이 우세한지 판단합니다. 각 시나리오마다 어떤 가격대에서"
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/page.tsx",
-        "line": 118,
+        "line": 119,
         "reason": "module-scope-or-helper",
         "text": "주가가 지금 어디쯤 와 있는지 한 페이지에서 정리해 봅니다. 차트의 추세와 주요 지지선과 저항선, 분기 실적 흐름, 최근 뉴스에서 시장이 무엇에"
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/page.tsx",
-        "line": 124,
+        "line": 125,
         "reason": "module-scope-or-helper",
         "text": "분기 실적이 시장 기대치를 웃돌았는지, 다음 분기 가이던스가 어떻게 나왔는지도 한 줄로 짚어 줍니다. 세 축을 합쳐 강세와 약세 시나리오를 각각"
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/page.tsx",
-        "line": 131,
+        "line": 132,
         "reason": "module-scope-or-helper",
         "text": "실적 발표, 가이던스 변화, 매크로 이벤트처럼 시나리오를 뒤집을 수 있는 위험 요인도 따로 표시해 두니, 매수 전에 한 번 훑어보면 도움이 됩니"
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/page.tsx",
-        "line": 141,
+        "line": 142,
         "reason": "module-scope-or-helper",
         "text": "`${displayName} 차트와 뉴스, 매수 분위기 종합 분석`"
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/page.tsx",
-        "line": 142,
+        "line": 143,
         "reason": "module-scope-or-helper",
         "text": "`${displayName} 시세의 차트 추세, 최근 뉴스 분위기, 매수 분위기(공포 탐욕 지수)를 묶어 강세와 약세 시나리오, 진입을 고려할 "
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/page.tsx",
-        "line": 144,
+        "line": 145,
         "reason": "module-scope-or-helper",
         "text": "차트 추세, 최근 뉴스 흐름, 매수 분위기를 종합해 상승 압력이 우세한지 하방 압력이 우세한지 판단합니다. 각 시나리오마다 어떤 가격대에서 진입"
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/page.tsx",
-        "line": 148,
+        "line": 149,
         "reason": "module-scope-or-helper",
         "text": "시세가 지금 어디쯤 와 있는지 한 페이지에서 정리해 봅니다. 차트의 추세와 주요 지지선과 저항선, 최근 뉴스에서 시장이 무엇에 반응하고 있는지,"
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/page.tsx",
-        "line": 154,
+        "line": 155,
         "reason": "module-scope-or-helper",
         "text": "세 축을 합쳐 강세와 약세 시나리오를 각각 정리하고, 어떤 가격대에서 진입을 고려해 볼 만한지, 어떤 신호가 나오면 시나리오가 깨지는지를 함께 "
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/page.tsx",
-        "line": 159,
+        "line": 160,
         "reason": "module-scope-or-helper",
         "text": "매크로 이벤트, 규제 이슈, 대형 뉴스처럼 시나리오를 뒤집을 수 있는 위험 요인도 따로 표시해 두니, 매수 전에 한 번 훑어보면 도움이 됩니다."
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/page.tsx",
-        "line": 436,
+        "line": 438,
         "reason": "template-needs-icu-review",
         "text": "`${displayName} 종합 분석에서는 어떤 축을 같이 보나요?`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/opengraph-image.tsx",
-        "line": 14,
+        "line": 15,
         "reason": "module-scope-or-helper",
         "text": "Siglens 내 위치 분석"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 117,
+        "line": 118,
         "reason": "module-scope-or-helper",
         "text": "`내 평단은 몇 층? — ${displayName} 내 위치`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 119,
+        "line": 120,
         "reason": "module-scope-or-helper",
         "text": "`내 평단은 이 종목 '아파트'의 몇 층일까? 옥상(고점)일까 지하(저점)일까 — `"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 120,
+        "line": 121,
         "reason": "module-scope-or-helper",
         "text": "`${displayName}의 최근 52주 범위에서 내 평단의 위치를 확인해보세요.`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 148,
+        "line": 149,
         "reason": "module-scope-or-helper",
         "text": "`${ticker} 평단`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 149,
+        "line": 150,
         "reason": "module-scope-or-helper",
         "text": "`${ticker} 평단 계산`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 150,
+        "line": 151,
         "reason": "module-scope-or-helper",
         "text": "`${ticker} 내 위치`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 151,
+        "line": 152,
         "reason": "module-scope-or-helper",
         "text": "`${ticker} 매수 가격대`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 152,
+        "line": 153,
         "reason": "module-scope-or-helper",
         "text": "`${ticker} 52주 범위`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 153,
+        "line": 154,
         "reason": "module-scope-or-helper",
         "text": "`${koreanName} 평단`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 153,
+        "line": 154,
         "reason": "module-scope-or-helper",
         "text": "`${koreanName} 내 위치`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 154,
+        "line": 155,
         "reason": "module-scope-or-helper",
         "text": "평단 확인"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 155,
+        "line": 156,
         "reason": "module-scope-or-helper",
         "text": "52주 최고가 최저가"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 236,
+        "line": 237,
         "reason": "module-scope-or-helper",
         "text": "최근 1년 고점에 가까운 상단부예요."
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 239,
+        "line": 240,
         "reason": "module-scope-or-helper",
         "text": "최근 1년 저점에 가까운 하단부예요."
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 241,
+        "line": 242,
         "reason": "module-scope-or-helper",
         "text": "최근 1년 고점과 저점 사이 중간 지점이에요."
     },
     {
         "file": "src/app/[locale]/account/delete/page.tsx",
-        "line": 19,
+        "line": 20,
         "reason": "module-scope-or-helper",
         "text": "회원 탈퇴"
     },
     {
         "file": "src/app/[locale]/account/delete/page.tsx",
-        "line": 20,
+        "line": 21,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} 회원 탈퇴`"
     },
     {
         "file": "src/app/[locale]/account/page.tsx",
-        "line": 23,
+        "line": 25,
         "reason": "module-scope-or-helper",
         "text": "계정 설정"
     },
     {
         "file": "src/app/[locale]/account/page.tsx",
-        "line": 24,
+        "line": 26,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} 계정 설정 페이지`"
     },
     {
         "file": "src/app/[locale]/backtesting/page.tsx",
-        "line": 61,
+        "line": 62,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} AI 백테스팅 결과`"
     },
     {
         "file": "src/app/[locale]/backtesting/page.tsx",
-        "line": 91,
+        "line": 92,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} AI 기술적 분석 백테스팅 데이터셋`"
     },
     {
         "file": "src/app/[locale]/backtesting/page.tsx",
-        "line": 99,
+        "line": 100,
         "reason": "module-scope-or-helper",
         "text": "주식 기술적 분석 신호 승률 및 AI 예측 정확도"
     },
     {
         "file": "src/app/[locale]/backtesting/page.tsx",
-        "line": 106,
-        "reason": "module-scope-or-helper",
+        "line": 107,
+        "reason": "seo-keywords-ko-only",
         "text": "주식 기술적 분석 백테스팅"
     },
     {
         "file": "src/app/[locale]/backtesting/page.tsx",
-        "line": 107,
-        "reason": "module-scope-or-helper",
+        "line": 108,
+        "reason": "seo-keywords-ko-only",
         "text": "AI 주식 예측 정확도"
     },
     {
@@ -475,103 +475,103 @@
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 51,
+        "line": 53,
         "reason": "module-scope-or-helper",
         "text": "한국 경제 지표를 한 페이지에서 확인해요. 기준금리·소비자물가·고용률·GDP 성장률 같은 핵심 지표부터 국고채 금리, 수출 증가율까지 모아서 보"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 55,
-        "reason": "module-scope-or-helper",
+        "line": 57,
+        "reason": "seo-keywords-ko-only",
         "text": "한국 경제 지표"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 56,
-        "reason": "module-scope-or-helper",
+        "line": 58,
+        "reason": "seo-keywords-ko-only",
         "text": "한국은행 기준금리"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 57,
-        "reason": "module-scope-or-helper",
+        "line": 59,
+        "reason": "seo-keywords-ko-only",
         "text": "국내 소비자물가"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 58,
-        "reason": "module-scope-or-helper",
+        "line": 60,
+        "reason": "seo-keywords-ko-only",
         "text": "한국 실업률"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 59,
-        "reason": "module-scope-or-helper",
+        "line": 61,
+        "reason": "seo-keywords-ko-only",
         "text": "한국 GDP 성장률"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 60,
-        "reason": "module-scope-or-helper",
+        "line": 62,
+        "reason": "seo-keywords-ko-only",
         "text": "국고채 금리"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 61,
-        "reason": "module-scope-or-helper",
+        "line": 63,
+        "reason": "seo-keywords-ko-only",
         "text": "국내 경제 캘린더"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 62,
-        "reason": "module-scope-or-helper",
+        "line": 64,
+        "reason": "seo-keywords-ko-only",
         "text": "수출 증가율"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 265,
+        "line": 266,
         "reason": "module-scope-or-helper",
         "text": "`한국 거시 경제 지표 (기준금리·소비자물가·GDP·실업률 등 ${KR_ECONOMY_INDICATORS.length}종)`"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 281,
+        "line": 282,
         "reason": "module-scope-or-helper",
         "text": "한국 기준금리는 누가 정하나요?"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 282,
+        "line": 283,
         "reason": "module-scope-or-helper",
         "text": "한국은행 금융통화위원회가 연 8회 회의를 열어 기준금리를 결정합니다. 이 페이지의 \"한국 기준금리\" 카드가 가장 최근 결정치를 보여줍니다."
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 285,
+        "line": 286,
         "reason": "module-scope-or-helper",
         "text": "국고채 낙찰금리는 무엇인가요?"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 286,
+        "line": 287,
         "reason": "module-scope-or-helper",
         "text": "정부가 국고채를 발행할 때 입찰로 정해지는 금리입니다. 3년물은 단기, 10년물은 장기 시장금리의 기준으로 읽히며, 둘의 차이가 커질수록 경기 "
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 289,
+        "line": 290,
         "reason": "module-scope-or-helper",
         "text": "이 데이터는 어디서 가져오나요?"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 290,
+        "line": 291,
         "reason": "module-scope-or-helper",
         "text": "FMP(Financial Modeling Prep) 경제 캘린더의 한국 발표 이력을 기준으로 수집합니다. 지표 카드는 각 지표의 최근 발표값이며"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 316,
+        "line": 317,
         "reason": "module-scope-or-helper",
         "text": "한국 경제"
     },
@@ -584,61 +584,61 @@
     {
         "file": "src/app/[locale]/economy/page.tsx",
         "line": 88,
-        "reason": "module-scope-or-helper",
+        "reason": "seo-keywords-ko-only",
         "text": "미국 경제 지표"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
         "line": 89,
-        "reason": "module-scope-or-helper",
+        "reason": "seo-keywords-ko-only",
         "text": "미국 기준금리"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
         "line": 90,
-        "reason": "module-scope-or-helper",
+        "reason": "seo-keywords-ko-only",
         "text": "FOMC 일정"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
         "line": 91,
-        "reason": "module-scope-or-helper",
+        "reason": "seo-keywords-ko-only",
         "text": "CPI 발표"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
         "line": 92,
-        "reason": "module-scope-or-helper",
+        "reason": "seo-keywords-ko-only",
         "text": "미국 실업률"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
         "line": 93,
-        "reason": "module-scope-or-helper",
+        "reason": "seo-keywords-ko-only",
         "text": "경제 캘린더"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
         "line": 94,
-        "reason": "module-scope-or-helper",
+        "reason": "seo-keywords-ko-only",
         "text": "장단기 금리차"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
         "line": 95,
-        "reason": "module-scope-or-helper",
+        "reason": "seo-keywords-ko-only",
         "text": "미국 경기침체"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
         "line": 96,
-        "reason": "module-scope-or-helper",
+        "reason": "seo-keywords-ko-only",
         "text": "2s10s 스프레드"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
         "line": 97,
-        "reason": "module-scope-or-helper",
+        "reason": "seo-keywords-ko-only",
         "text": "10년물 국채 금리"
     },
     {
@@ -746,31 +746,31 @@
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
         "line": 66,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "공포 탐욕 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
         "line": 67,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "시장 심리 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
         "line": 68,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "미국 증시 심리"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
         "line": 70,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "VIX 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
         "line": 71,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "증시 매수 심리"
     },
     {
@@ -842,37 +842,37 @@
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
         "line": 100,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "코스피 공포 탐욕 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
         "line": 101,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "한국 증시 심리"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
         "line": 102,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "국내 증시 투자심리"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
         "line": 103,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "코스피 심리 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
         "line": 104,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "공포 탐욕 지수"
     },
     {
         "file": "src/app/[locale]/fear-greed/copy.ts",
         "line": 105,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "증시 매수 심리"
     },
     {
@@ -943,13 +943,13 @@
     },
     {
         "file": "src/app/[locale]/forgot-password/page.tsx",
-        "line": 10,
+        "line": 11,
         "reason": "module-scope-or-helper",
         "text": "비밀번호 찾기"
     },
     {
         "file": "src/app/[locale]/forgot-password/page.tsx",
-        "line": 11,
+        "line": 12,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} 비밀번호 재설정 링크 발송`"
     },
@@ -1243,13 +1243,13 @@
     },
     {
         "file": "src/app/[locale]/login/page.tsx",
-        "line": 14,
+        "line": 15,
         "reason": "module-scope-or-helper",
         "text": "로그인"
     },
     {
         "file": "src/app/[locale]/login/page.tsx",
-        "line": 15,
+        "line": 16,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME}에 로그인하여 회원 전용 기능을 이용해보세요.`"
     },
@@ -1268,73 +1268,73 @@
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 34,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "미국 주식 시장 개요"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 35,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "오늘의 종목"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 36,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "오늘 매수 종목"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 37,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "거래량 급증"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 38,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "장중 신호"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 39,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "섹터 ETF 신호"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 40,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "AI 반도체 종목"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 41,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "빅테크 종목"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 42,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "헬스케어 종목"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 43,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "골든크로스 스캐너"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 44,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "RSI 다이버전스"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 45,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "볼린저 스퀴즈"
     },
     {
@@ -1364,67 +1364,67 @@
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 58,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "코스피 오늘"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 59,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "코스닥 오늘"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 60,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "한국 주식 시장 개요"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 61,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "오늘 매수 종목"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 62,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "국내 증시 신호"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 63,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "반도체 종목"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 64,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "2차전지 종목"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 65,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "바이오 종목"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 66,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "골든크로스 스캐너"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 67,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "RSI 다이버전스"
     },
     {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 68,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "볼린저 스퀴즈"
     },
     {
@@ -1441,121 +1441,121 @@
     },
     {
         "file": "src/app/[locale]/news/[category]/opengraph-image.tsx",
-        "line": 29,
+        "line": 30,
         "reason": "module-scope-or-helper",
         "text": "Siglens 시장 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 51,
-        "reason": "module-scope-or-helper",
+        "line": 53,
+        "reason": "seo-keywords-ko-only",
         "text": "미국 시장 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 51,
-        "reason": "module-scope-or-helper",
+        "line": 53,
+        "reason": "seo-keywords-ko-only",
         "text": "미국 마켓 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 52,
-        "reason": "module-scope-or-helper",
+        "line": 54,
+        "reason": "seo-keywords-ko-only",
         "text": "한국 증시 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 52,
-        "reason": "module-scope-or-helper",
+        "line": 54,
+        "reason": "seo-keywords-ko-only",
         "text": "코스피 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 52,
-        "reason": "module-scope-or-helper",
+        "line": 54,
+        "reason": "seo-keywords-ko-only",
         "text": "코스닥 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 53,
-        "reason": "module-scope-or-helper",
+        "line": 55,
+        "reason": "seo-keywords-ko-only",
         "text": "암호화폐 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 53,
-        "reason": "module-scope-or-helper",
+        "line": 55,
+        "reason": "seo-keywords-ko-only",
         "text": "비트코인 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 68,
+        "line": 72,
         "reason": "module-scope-or-helper",
         "text": "시장 뉴스 허브"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 134,
+        "line": 138,
         "reason": "module-scope-or-helper",
         "text": "뉴스 카테고리를 찾을 수 없어요"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 135,
+        "line": 139,
         "reason": "module-scope-or-helper",
         "text": "요청하신 뉴스 카테고리가 존재하지 않아요."
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 145,
+        "line": 149,
         "reason": "module-scope-or-helper",
         "text": "`${cfg.koLabel} 뉴스`"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 146,
+        "line": 150,
         "reason": "module-scope-or-helper",
         "text": "`${cfg.koLabel} 최신 뉴스를 불러오지 못했어요.`"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 160,
+        "line": 164,
         "reason": "module-scope-or-helper",
         "text": "`${cfg.koLabel} 뉴스`"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 161,
+        "line": 165,
         "reason": "module-scope-or-helper",
         "text": "`${cfg.koLabel} 최신 뉴스`"
-    },
-    {
-        "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 162,
-        "reason": "module-scope-or-helper",
-        "text": "`${cfg.koLabel} 뉴스 분석`"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
         "line": 166,
         "reason": "module-scope-or-helper",
+        "text": "`${cfg.koLabel} 뉴스 분석`"
+    },
+    {
+        "file": "src/app/[locale]/news/[category]/page.tsx",
+        "line": 170,
+        "reason": "module-scope-or-helper",
         "text": "시장 뉴스 한국어"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 167,
+        "line": 171,
         "reason": "module-scope-or-helper",
         "text": "AI 뉴스 다이제스트"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 244,
+        "line": 250,
         "reason": "template-needs-icu-review",
         "text": "`${cfg.koLabel} 최신 뉴스`"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 347,
+        "line": 355,
         "reason": "template-needs-icu-review",
         "text": "`${koLabel} 뉴스 없음`"
     },
@@ -1573,157 +1573,157 @@
     },
     {
         "file": "src/app/[locale]/news/opengraph-image.tsx",
-        "line": 30,
+        "line": 31,
         "reason": "module-scope-or-helper",
         "text": "Siglens 시장 뉴스 허브"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 34,
+        "line": 35,
         "reason": "module-scope-or-helper",
         "text": "시장 뉴스 허브 — 미국·한국 주식과 암호화폐"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 37,
+        "line": 38,
         "reason": "module-scope-or-helper",
         "text": "시장 뉴스를 한 곳에서 확인해요. 미국·한국 주식과 암호화폐까지 세 지역의 최신 뉴스를 카테고리별로 나누고, 어려운 원문 기사는 한국어 AI 요"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 83,
-        "reason": "module-scope-or-helper",
+        "line": 84,
+        "reason": "seo-keywords-ko-only",
         "text": "시장 뉴스"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 84,
-        "reason": "module-scope-or-helper",
+        "line": 85,
+        "reason": "seo-keywords-ko-only",
         "text": "주식 뉴스"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 85,
-        "reason": "module-scope-or-helper",
+        "line": 86,
+        "reason": "seo-keywords-ko-only",
         "text": "시장 뉴스 한국어"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 86,
-        "reason": "module-scope-or-helper",
+        "line": 87,
+        "reason": "seo-keywords-ko-only",
         "text": "AI 뉴스 다이제스트"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 87,
-        "reason": "module-scope-or-helper",
+        "line": 88,
+        "reason": "seo-keywords-ko-only",
         "text": "Siglens 뉴스"
-    },
-    {
-        "file": "src/app/[locale]/news/page.tsx",
-        "line": 137,
-        "reason": "module-scope-or-helper",
-        "text": "미국 일반·주식·외환·마켓 아티클 4개 카테고리를 모았습니다."
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
         "line": 138,
         "reason": "module-scope-or-helper",
-        "text": "코스피·코스닥 등 국내 증시 주요 뉴스를 모았습니다."
+        "text": "미국 일반·주식·외환·마켓 아티클 4개 카테고리를 모았습니다."
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
         "line": 139,
         "reason": "module-scope-or-helper",
+        "text": "코스피·코스닥 등 국내 증시 주요 뉴스를 모았습니다."
+    },
+    {
+        "file": "src/app/[locale]/news/page.tsx",
+        "line": 140,
+        "reason": "module-scope-or-helper",
         "text": "비트코인·이더리움 등 주요 암호화폐 시장 동향을 모았습니다."
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 27,
+        "line": 28,
         "reason": "module-scope-or-helper",
         "text": "미국 시장 뉴스 — 카테고리별 최신 흐름"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 30,
+        "line": 31,
         "reason": "module-scope-or-helper",
         "text": "미국 시장 뉴스를 카테고리별로 한 곳에서 확인해요. 일반·주식·외환·마켓 아티클까지 최신 흐름을 빠짐없이 모았고, 어려운 원문 기사도 한국어 A"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 64,
-        "reason": "module-scope-or-helper",
+        "line": 65,
+        "reason": "seo-keywords-ko-only",
         "text": "미국 시장 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 66,
-        "reason": "module-scope-or-helper",
+        "line": 67,
+        "reason": "seo-keywords-ko-only",
         "text": "미국 마켓 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 67,
-        "reason": "module-scope-or-helper",
+        "line": 68,
+        "reason": "seo-keywords-ko-only",
         "text": "미국 주식 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 68,
-        "reason": "module-scope-or-helper",
+        "line": 69,
+        "reason": "seo-keywords-ko-only",
         "text": "미국 외환 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 69,
-        "reason": "module-scope-or-helper",
+        "line": 70,
+        "reason": "seo-keywords-ko-only",
         "text": "시장 뉴스 한국어"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 70,
-        "reason": "module-scope-or-helper",
+        "line": 71,
+        "reason": "seo-keywords-ko-only",
         "text": "미국 주식 뉴스 요약"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 71,
-        "reason": "module-scope-or-helper",
+        "line": 72,
+        "reason": "seo-keywords-ko-only",
         "text": "AI 뉴스 다이제스트"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 72,
-        "reason": "module-scope-or-helper",
+        "line": 73,
+        "reason": "seo-keywords-ko-only",
         "text": "Siglens 뉴스"
     },
     {
         "file": "src/app/[locale]/not-found.tsx",
-        "line": 8,
+        "line": 9,
         "reason": "module-scope-or-helper",
         "text": "페이지를 찾을 수 없습니다"
     },
     {
         "file": "src/app/[locale]/onboarding/page.tsx",
-        "line": 19,
+        "line": 20,
         "reason": "module-scope-or-helper",
         "text": "보유종목 등록"
     },
     {
         "file": "src/app/[locale]/onboarding/page.tsx",
-        "line": 20,
+        "line": 21,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} 가입 후 보유종목 등록 온보딩 페이지`"
     },
     {
         "file": "src/app/[locale]/portfolio/page.tsx",
-        "line": 24,
+        "line": 26,
         "reason": "module-scope-or-helper",
         "text": "내 포트폴리오 위치"
     },
     {
         "file": "src/app/[locale]/portfolio/page.tsx",
-        "line": 25,
+        "line": 27,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} 보유종목별 최근 가격 범위 안에서 내 평단이 어디에 있는지 확인하는 개인화 페이지`"
     },
@@ -1759,43 +1759,43 @@
     },
     {
         "file": "src/app/[locale]/reset-password/page.tsx",
-        "line": 11,
+        "line": 12,
         "reason": "module-scope-or-helper",
         "text": "비밀번호 재설정"
     },
     {
         "file": "src/app/[locale]/reset-password/page.tsx",
-        "line": 12,
+        "line": 13,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} 새 비밀번호 설정`"
     },
     {
         "file": "src/app/[locale]/share/[id]/opengraph-image.tsx",
-        "line": 20,
+        "line": 21,
         "reason": "module-scope-or-helper",
         "text": "Siglens AI 분석 공유"
     },
     {
         "file": "src/app/[locale]/signup/oauth/consent/page.tsx",
-        "line": 14,
+        "line": 15,
         "reason": "module-scope-or-helper",
         "text": "소셜 로그인 가입 동의"
     },
     {
         "file": "src/app/[locale]/signup/oauth/consent/page.tsx",
-        "line": 15,
+        "line": 16,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} 소셜 로그인 가입 약관 동의`"
     },
     {
         "file": "src/app/[locale]/signup/page.tsx",
-        "line": 12,
+        "line": 13,
         "reason": "module-scope-or-helper",
         "text": "회원가입"
     },
     {
         "file": "src/app/[locale]/signup/page.tsx",
-        "line": 13,
+        "line": 14,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} 회원이 되면 추가 혜택을 누릴 수 있어요. 가입은 옵션이며 비회원도 모든 기본 기능을 그대로 이용할 수 있습니다.`"
     },
@@ -2455,91 +2455,91 @@
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 65,
+        "line": 76,
         "reason": "non-component-module",
         "text": "미국 일반 시장"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 66,
+        "line": 77,
         "reason": "non-component-module",
         "text": "미국 전반적인 시장 흐름과 거시 경제 소식을 모았습니다."
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 75,
+        "line": 88,
         "reason": "non-component-module",
         "text": "미국 주식"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 77,
+        "line": 90,
         "reason": "non-component-module",
         "text": "미국 주식 시장의 주요 종목 뉴스와 실적 이슈를 모았습니다."
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 86,
+        "line": 101,
         "reason": "non-component-module",
         "text": "암호화폐"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 88,
+        "line": 103,
         "reason": "non-component-module",
         "text": "비트코인·이더리움 등 주요 암호화폐 시장 동향을 모았습니다."
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 97,
+        "line": 114,
         "reason": "non-component-module",
         "text": "미국 외환"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 99,
+        "line": 116,
         "reason": "non-component-module",
         "text": "달러·엔·유로 등 주요 통화 쌍의 외환 시장 소식을 모았습니다."
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 108,
+        "line": 127,
         "reason": "non-component-module",
         "text": "미국 마켓 아티클"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 110,
+        "line": 129,
         "reason": "non-component-module",
         "text": "FMP 리서치팀이 작성한 심층 마켓 분석 아티클을 모았습니다."
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 118,
+        "line": 139,
         "reason": "non-component-module",
         "text": "코스피"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 118,
+        "line": 139,
         "reason": "non-component-module",
         "text": "코스닥"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 118,
+        "line": 139,
         "reason": "non-component-module",
         "text": "국내 증시"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 122,
+        "line": 143,
         "reason": "non-component-module",
         "text": "한국 증시"
     },
     {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
-        "line": 124,
+        "line": 145,
         "reason": "non-component-module",
         "text": "코스피·코스닥 등 국내 증시 주요 뉴스를 네이버 뉴스에서 모았습니다."
     },
@@ -2719,25 +2719,25 @@
     },
     {
         "file": "src/features/account-delete/ui/DeleteAccountConfirm.tsx",
-        "line": 11,
+        "line": 12,
         "reason": "module-scope-or-helper",
         "text": "이메일이 일치해야 탈퇴 버튼이 활성화됩니다."
     },
     {
         "file": "src/features/account-delete/ui/DeleteAccountConfirm.tsx",
-        "line": 12,
+        "line": 13,
         "reason": "module-scope-or-helper",
         "text": "입력한 이메일이 본인 이메일과 일치하지 않습니다."
     },
     {
         "file": "src/features/account-delete/ui/DeleteAccountConfirm.tsx",
-        "line": 13,
+        "line": 14,
         "reason": "module-scope-or-helper",
         "text": "입력한 이메일이 일치합니다. 탈퇴 버튼이 활성화되었습니다."
     },
     {
         "file": "src/features/api-key-management/ui/ApiKeySection.tsx",
-        "line": 149,
+        "line": 151,
         "reason": "template-needs-icu-review",
         "text": "`${LLM_PROVIDER_LABELS[provider]} API 키`"
     },
@@ -2767,7 +2767,7 @@
     },
     {
         "file": "src/features/auth-login/ui/LoginForm.tsx",
-        "line": 15,
+        "line": 16,
         "reason": "module-scope-or-helper",
         "text": "이메일 또는 비밀번호가 올바르지 않습니다."
     },
@@ -2779,13 +2779,13 @@
     },
     {
         "file": "src/features/auth-password-reset/ui/ResetPasswordForm.tsx",
-        "line": 17,
+        "line": 18,
         "reason": "module-scope-or-helper",
         "text": "재설정 링크가 유효하지 않거나 이미 사용되었습니다. 다시 요청해 주세요."
     },
     {
         "file": "src/features/auth-password-reset/ui/ResetPasswordForm.tsx",
-        "line": 19,
+        "line": 20,
         "reason": "module-scope-or-helper",
         "text": "재설정 링크가 만료되었습니다. 다시 요청해 주세요."
     },
@@ -2797,19 +2797,19 @@
     },
     {
         "file": "src/features/auth-signup/ui/SignupForm.tsx",
-        "line": 30,
+        "line": 31,
         "reason": "module-scope-or-helper",
         "text": "1단계: 이메일 인증 요청"
     },
     {
         "file": "src/features/auth-signup/ui/SignupForm.tsx",
-        "line": 31,
+        "line": 32,
         "reason": "module-scope-or-helper",
         "text": "2단계: 인증 코드 확인"
     },
     {
         "file": "src/features/auth-signup/ui/SignupForm.tsx",
-        "line": 32,
+        "line": 33,
         "reason": "module-scope-or-helper",
         "text": "3단계: 비밀번호 및 표시 이름 설정"
     },
@@ -2821,43 +2821,43 @@
     },
     {
         "file": "src/features/portfolio-holding/ui/PortfolioChip.tsx",
-        "line": 83,
+        "line": 85,
         "reason": "template-needs-icu-review",
         "text": "`평단 ${currencyPrefix}${trimTrailingZeros(holding.averagePrice)} · ${trimTrailing"
     },
     {
         "file": "src/features/portfolio-management/ui/PortfolioSection.tsx",
-        "line": 155,
+        "line": 161,
         "reason": "template-needs-icu-review",
         "text": "`${holding.symbol} 보유종목 수정`"
     },
     {
         "file": "src/features/portfolio-management/ui/PortfolioSection.tsx",
-        "line": 164,
+        "line": 170,
         "reason": "template-needs-icu-review",
         "text": "`${holding.symbol} 보유종목 삭제`"
     },
     {
         "file": "src/features/portfolio-management/ui/PortfolioSection.tsx",
-        "line": 227,
+        "line": 234,
         "reason": "template-needs-icu-review",
         "text": "`'${symbol}' 보유종목을 삭제했어요`"
     },
     {
         "file": "src/features/portfolio-management/ui/PortfolioSection.tsx",
-        "line": 307,
+        "line": 314,
         "reason": "template-needs-icu-review",
         "text": "`'${result.holding.symbol}' 보유종목을 저장했어요`"
     },
     {
         "file": "src/features/portfolio-management/ui/PortfolioSection.tsx",
-        "line": 347,
+        "line": 354,
         "reason": "template-needs-icu-review",
         "text": "`'${result.holding.symbol}' 보유종목을 저장했어요`"
     },
     {
         "file": "src/features/premium-gate/ui/PremiumModelGateModal.tsx",
-        "line": 37,
+        "line": 41,
         "reason": "template-needs-icu-review",
         "text": "`${providerLabel ?? ''} API 키를 등록하면 이 모델을 사용할 수 있어요.`"
     },
@@ -2875,43 +2875,43 @@
     },
     {
         "file": "src/features/pwa-install/ui/IosInstallModal.tsx",
-        "line": 15,
+        "line": 16,
         "reason": "module-scope-or-helper",
         "text": "Safari 하단 공유 버튼을 탭하세요"
     },
     {
         "file": "src/features/pwa-install/ui/IosInstallModal.tsx",
-        "line": 16,
+        "line": 17,
         "reason": "module-scope-or-helper",
         "text": "화면 아래 가운데에 있는 위쪽 화살표 모양 아이콘입니다"
     },
     {
         "file": "src/features/pwa-install/ui/IosInstallModal.tsx",
-        "line": 22,
+        "line": 23,
         "reason": "module-scope-or-helper",
         "text": "'홈 화면에 추가'를 선택하세요"
     },
     {
         "file": "src/features/pwa-install/ui/IosInstallModal.tsx",
-        "line": 23,
+        "line": 24,
         "reason": "module-scope-or-helper",
         "text": "공유 메뉴를 아래로 스크롤하면 나타납니다"
     },
     {
         "file": "src/features/pwa-install/ui/IosInstallModal.tsx",
-        "line": 29,
+        "line": 30,
         "reason": "module-scope-or-helper",
         "text": "우측 상단 '추가'를 탭하면 완료!"
     },
     {
         "file": "src/features/pwa-install/ui/IosInstallModal.tsx",
-        "line": 30,
+        "line": 31,
         "reason": "module-scope-or-helper",
         "text": "SigLens 아이콘이 홈 화면에 추가됩니다"
     },
     {
         "file": "src/features/pwa-install/ui/IosInstallModal.tsx",
-        "line": 98,
+        "line": 100,
         "reason": "template-needs-icu-review",
         "text": "`${step}단계 안내`"
     },
@@ -2923,13 +2923,13 @@
     },
     {
         "file": "src/features/reasoning-toggle/ui/ReasoningToggle.tsx",
-        "line": 55,
+        "line": 57,
         "reason": "template-needs-icu-review",
         "text": "`${REASONING_FEATURE_LABEL} — 회원가입하면 사용할 수 있어요`"
     },
     {
         "file": "src/features/reasoning-toggle/ui/ReasoningToggle.tsx",
-        "line": 56,
+        "line": 58,
         "reason": "template-needs-icu-review",
         "text": "`${REASONING_FEATURE_LABEL} (추론) 토글`"
     },
@@ -2953,37 +2953,37 @@
     },
     {
         "file": "src/features/ticker-search/ui/SymbolSearchPanel.tsx",
-        "line": 67,
+        "line": 69,
         "reason": "template-needs-icu-review",
         "text": "`${entry.symbol} 최근 검색에서 제거`"
     },
     {
         "file": "src/features/ticker-search/ui/SymbolSearchPanel.tsx",
-        "line": 68,
+        "line": 70,
         "reason": "template-needs-icu-review",
         "text": "`${entry.label} (${entry.symbol}) 최근 검색에서 제거`"
     },
     {
         "file": "src/features/ticker-search/ui/TickerAutocomplete.tsx",
-        "line": 199,
+        "line": 205,
         "reason": "module-scope-or-helper",
         "text": "코인"
     },
     {
         "file": "src/features/ticker-search/ui/TickerAutocomplete.tsx",
-        "line": 207,
+        "line": 213,
         "reason": "module-scope-or-helper",
         "text": "미국 OTC"
     },
     {
         "file": "src/features/ticker-search/ui/TickerAutocomplete.tsx",
-        "line": 220,
+        "line": 226,
         "reason": "module-scope-or-helper",
         "text": "미국 OTC"
     },
     {
         "file": "src/features/ticker-search/ui/TickerAutocomplete.tsx",
-        "line": 221,
+        "line": 227,
         "reason": "module-scope-or-helper",
         "text": "미국 OTC"
     },
@@ -3058,144 +3058,6 @@
         "line": 101,
         "reason": "non-component-module",
         "text": "`[KR_EQUITY_SESSION] ${date}는 KR_MARKET_HOLIDAYS 관측 지평선(${KR_CALENDAR_HORIZON}) "
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 62,
-        "reason": "non-component-module",
-        "text": "시장 분석"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 67,
-        "reason": "non-component-module",
-        "text": "미국"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 68,
-        "reason": "non-component-module",
-        "text": "미국 시장 분석"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 73,
-        "reason": "non-component-module",
-        "text": "한국"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 74,
-        "reason": "non-component-module",
-        "text": "한국 시장 분석"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 81,
-        "reason": "non-component-module",
-        "text": "공포·탐욕 지수"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 86,
-        "reason": "non-component-module",
-        "text": "미국"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 87,
-        "reason": "non-component-module",
-        "text": "미국 공포·탐욕 지수"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 92,
-        "reason": "non-component-module",
-        "text": "한국"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 93,
-        "reason": "non-component-module",
-        "text": "한국 공포·탐욕 지수"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 100,
-        "reason": "non-component-module",
-        "text": "뉴스"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 105,
-        "reason": "non-component-module",
-        "text": "미국"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 106,
-        "reason": "non-component-module",
-        "text": "미국 시장 뉴스"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 111,
-        "reason": "non-component-module",
-        "text": "한국"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 112,
-        "reason": "non-component-module",
-        "text": "한국 시장 뉴스"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 117,
-        "reason": "non-component-module",
-        "text": "암호화폐"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 118,
-        "reason": "non-component-module",
-        "text": "암호화폐 뉴스"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 125,
-        "reason": "non-component-module",
-        "text": "경제"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 130,
-        "reason": "non-component-module",
-        "text": "미국"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 131,
-        "reason": "non-component-module",
-        "text": "미국 경제"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 136,
-        "reason": "non-component-module",
-        "text": "한국"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 137,
-        "reason": "non-component-module",
-        "text": "한국 경제"
-    },
-    {
-        "file": "src/shared/config/assetClassNav.ts",
-        "line": 192,
-        "reason": "non-component-module",
-        "text": "`${v.label} 전체`"
     },
     {
         "file": "src/shared/config/crypto-categories.ts",
@@ -5420,127 +5282,127 @@
     {
         "file": "src/shared/lib/seo.ts",
         "line": 511,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "미국 주식 AI 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 512,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "미국 주식 차트 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 513,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "미국 주식 펀더멘털"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 514,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "미국 주식 뉴스"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 515,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "미국 주식 옵션"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 516,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "AI 종합 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 517,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "공포 탐욕 지수"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 518,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "AI 주식 백테스팅"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 519,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "오늘의 미국 주식"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 520,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "섹터별 주식 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 521,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "미국 주식 PER"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 522,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "한국 주식 AI 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 523,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "코스피 종목 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 524,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "코스닥 종목 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 525,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "국내 주식 차트 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 526,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "암호화폐 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 527,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "비트코인 시세"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 528,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "이더리움 시세"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 529,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "코인 AI 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 530,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "암호화폐 차트 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 531,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "비트코인 차트"
     },
     {
@@ -5690,73 +5552,73 @@
     {
         "file": "src/shared/lib/seo.ts",
         "line": 734,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "주식 AI 백테스팅"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 735,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "기술적 분석 백테스팅"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 736,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "AI 주식 예측 정확도"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 737,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "주식 기술적 분석 정확도"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 738,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "RSI 신호 백테스팅"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 739,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "MACD 백테스팅"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 740,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "AI 분석 신뢰도"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 741,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "Magnificent 7 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 742,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "AI 주식 예측 검증"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 743,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "기술적 분석 백테스트 무료"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 744,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "주식 매매 신호 정확도"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 745,
-        "reason": "non-component-module",
+        "reason": "seo-keywords-ko-only",
         "text": "미국 주식 백테스트"
     },
     {
@@ -7009,109 +6871,109 @@
     },
     {
         "file": "src/shared/ui/AiSummaryErrorSection.tsx",
-        "line": 48,
+        "line": 49,
         "reason": "parameter-default",
         "text": "분석 중 오류가 발생했습니다."
     },
     {
         "file": "src/shared/ui/CrossLinkCards.tsx",
-        "line": 24,
+        "line": 25,
         "reason": "module-scope-or-helper",
         "text": "차트 분석"
     },
     {
         "file": "src/shared/ui/CrossLinkCards.tsx",
-        "line": 25,
+        "line": 26,
         "reason": "module-scope-or-helper",
         "text": "뉴스 분석"
     },
     {
         "file": "src/shared/ui/CrossLinkCards.tsx",
-        "line": 26,
+        "line": 27,
         "reason": "module-scope-or-helper",
         "text": "펀더멘털 분석"
     },
     {
         "file": "src/shared/ui/CrossLinkCards.tsx",
-        "line": 27,
+        "line": 28,
         "reason": "module-scope-or-helper",
         "text": "재무제표"
     },
     {
         "file": "src/shared/ui/CrossLinkCards.tsx",
-        "line": 28,
+        "line": 29,
         "reason": "module-scope-or-helper",
         "text": "옵션 분석"
     },
     {
         "file": "src/shared/ui/CrossLinkCards.tsx",
-        "line": 29,
+        "line": 30,
         "reason": "module-scope-or-helper",
         "text": "공포 탐욕 지수"
     },
     {
         "file": "src/shared/ui/CrossLinkCards.tsx",
-        "line": 30,
+        "line": 31,
         "reason": "module-scope-or-helper",
         "text": "의회 거래"
     },
     {
         "file": "src/shared/ui/CrossLinkCards.tsx",
-        "line": 31,
+        "line": 32,
         "reason": "module-scope-or-helper",
         "text": "AI 종합 분석"
     },
     {
         "file": "src/shared/ui/CrossLinkCards.tsx",
-        "line": 35,
+        "line": 36,
         "reason": "module-scope-or-helper",
         "text": "기술적 지표 + AI 종합 리포트"
     },
     {
         "file": "src/shared/ui/CrossLinkCards.tsx",
-        "line": 36,
+        "line": 37,
         "reason": "module-scope-or-helper",
         "text": "실시간 뉴스 + 애널리스트 의견 분석"
     },
     {
         "file": "src/shared/ui/CrossLinkCards.tsx",
-        "line": 37,
+        "line": 38,
         "reason": "module-scope-or-helper",
         "text": "재무·밸류에이션·애널리스트 전망"
     },
     {
         "file": "src/shared/ui/CrossLinkCards.tsx",
-        "line": 38,
+        "line": 39,
         "reason": "module-scope-or-helper",
         "text": "손익계산서·재무상태표·현금흐름표"
     },
     {
         "file": "src/shared/ui/CrossLinkCards.tsx",
-        "line": 39,
+        "line": 40,
         "reason": "module-scope-or-helper",
         "text": "옵션 시장이 보는 가격대와 기대 변동성"
     },
     {
         "file": "src/shared/ui/CrossLinkCards.tsx",
-        "line": 40,
+        "line": 41,
         "reason": "module-scope-or-helper",
         "text": "단기 매매 심리 0~100 점수"
     },
     {
         "file": "src/shared/ui/CrossLinkCards.tsx",
-        "line": 41,
+        "line": 42,
         "reason": "module-scope-or-helper",
         "text": "상원·하원 의원 매매 공시와 AI 동향 해석"
     },
     {
         "file": "src/shared/ui/CrossLinkCards.tsx",
-        "line": 42,
+        "line": 43,
         "reason": "module-scope-or-helper",
         "text": "4축 통합 AI 결론 + 시나리오"
     },
     {
         "file": "src/shared/ui/CrossLinkCards.tsx",
-        "line": 51,
+        "line": 52,
         "reason": "module-scope-or-helper",
         "text": "차트·뉴스·시장 분위기 통합 AI 결론 + 시나리오"
     },
@@ -7141,19 +7003,19 @@
     },
     {
         "file": "src/views/symbol/FearGreedHeaderChip.tsx",
-        "line": 41,
+        "line": 43,
         "reason": "template-needs-icu-review",
         "text": "`공포 탐욕 지수 ${SENTIMENT_LABEL_TEXT[snapshot.label]} ${score}점${confidenceNote}`"
     },
     {
         "file": "src/views/symbol/TechnicalFactsSummary.tsx",
-        "line": 25,
+        "line": 26,
         "reason": "module-scope-or-helper",
         "text": "0.00% 보합"
     },
     {
         "file": "src/views/symbol/TechnicalFactsSummary.tsx",
-        "line": 120,
+        "line": 127,
         "reason": "template-needs-icu-review",
         "text": "`최근 ${RECENT_BARS_WINDOW}개 봉 위치`"
     },
@@ -7255,43 +7117,43 @@
     },
     {
         "file": "src/views/symbol/snapshot/SnapshotSummarySection.tsx",
-        "line": 27,
+        "line": 28,
         "reason": "module-scope-or-helper",
         "text": "최근 분석 요약"
     },
     {
         "file": "src/views/symbol/snapshot/SnapshotSummarySection.tsx",
-        "line": 43,
+        "line": 44,
         "reason": "module-scope-or-helper",
         "text": "전일 장마감 기준"
     },
     {
         "file": "src/views/symbol/snapshot/SnapshotSummarySection.tsx",
-        "line": 43,
+        "line": 44,
         "reason": "module-scope-or-helper",
         "text": "미국 장마감 기준"
     },
     {
         "file": "src/views/symbol/snapshot/SnapshotSummarySection.tsx",
-        "line": 45,
+        "line": 46,
         "reason": "module-scope-or-helper",
         "text": "전일 국내 장마감 기준"
     },
     {
         "file": "src/views/symbol/snapshot/SnapshotSummarySection.tsx",
-        "line": 46,
+        "line": 47,
         "reason": "module-scope-or-helper",
         "text": "국내 장마감 기준"
     },
     {
         "file": "src/views/symbol/snapshot/SnapshotSummarySection.tsx",
-        "line": 48,
+        "line": 49,
         "reason": "module-scope-or-helper",
         "text": "전일 UTC 자정 기준"
     },
     {
         "file": "src/views/symbol/snapshot/SnapshotSummarySection.tsx",
-        "line": 48,
+        "line": 49,
         "reason": "module-scope-or-helper",
         "text": "UTC 기준"
     },
@@ -7303,259 +7165,259 @@
     },
     {
         "file": "src/views/symbol/snapshot/renderers/CongressSnapshotProse.tsx",
-        "line": 36,
+        "line": 37,
         "reason": "module-scope-or-helper",
         "text": "매수 우위"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/CongressSnapshotProse.tsx",
-        "line": 37,
+        "line": 38,
         "reason": "module-scope-or-helper",
         "text": "중립"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/CongressSnapshotProse.tsx",
-        "line": 38,
+        "line": 39,
         "reason": "module-scope-or-helper",
         "text": "매도 우위"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/FinancialsSnapshotProse.tsx",
-        "line": 37,
+        "line": 38,
         "reason": "module-scope-or-helper",
         "text": "긍정"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/FinancialsSnapshotProse.tsx",
-        "line": 38,
+        "line": 39,
         "reason": "module-scope-or-helper",
         "text": "중립"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/FinancialsSnapshotProse.tsx",
-        "line": 39,
+        "line": 40,
         "reason": "module-scope-or-helper",
         "text": "부정"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/FinancialsSnapshotProse.tsx",
-        "line": 51,
+        "line": 52,
         "reason": "module-scope-or-helper",
         "text": "성장성"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/FinancialsSnapshotProse.tsx",
-        "line": 52,
+        "line": 53,
         "reason": "module-scope-or-helper",
         "text": "수익성·질"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/FinancialsSnapshotProse.tsx",
-        "line": 53,
+        "line": 54,
         "reason": "module-scope-or-helper",
         "text": "안정성"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/FinancialsSnapshotProse.tsx",
-        "line": 54,
+        "line": 55,
         "reason": "module-scope-or-helper",
         "text": "현금창출력"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/FinancialsSnapshotProse.tsx",
-        "line": 201,
+        "line": 205,
         "reason": "template-needs-icu-review",
         "text": "`${symbol} 축별 평가 목록`"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/FundamentalSnapshotProse.tsx",
-        "line": 40,
+        "line": 41,
         "reason": "module-scope-or-helper",
         "text": "긍정"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/FundamentalSnapshotProse.tsx",
-        "line": 41,
+        "line": 42,
         "reason": "module-scope-or-helper",
         "text": "중립"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/FundamentalSnapshotProse.tsx",
-        "line": 42,
+        "line": 43,
         "reason": "module-scope-or-helper",
         "text": "부정"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/FundamentalSnapshotProse.tsx",
-        "line": 51,
+        "line": 52,
         "reason": "module-scope-or-helper",
         "text": "밸류에이션"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/FundamentalSnapshotProse.tsx",
-        "line": 52,
+        "line": 53,
         "reason": "module-scope-or-helper",
         "text": "수익성"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/FundamentalSnapshotProse.tsx",
-        "line": 53,
+        "line": 54,
         "reason": "module-scope-or-helper",
         "text": "성장성"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/FundamentalSnapshotProse.tsx",
-        "line": 54,
+        "line": 55,
         "reason": "module-scope-or-helper",
         "text": "재무 건전성"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/FundamentalSnapshotProse.tsx",
-        "line": 55,
+        "line": 56,
         "reason": "module-scope-or-helper",
         "text": "미래 방향"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/FundamentalSnapshotProse.tsx",
-        "line": 207,
+        "line": 211,
         "reason": "template-needs-icu-review",
         "text": "`${symbol} 카테고리별 평가 목록`"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/NewsSnapshotProse.tsx",
-        "line": 37,
+        "line": 38,
         "reason": "module-scope-or-helper",
         "text": "긍정"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/NewsSnapshotProse.tsx",
-        "line": 38,
+        "line": 39,
         "reason": "module-scope-or-helper",
         "text": "중립"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/NewsSnapshotProse.tsx",
-        "line": 39,
+        "line": 40,
         "reason": "module-scope-or-helper",
         "text": "부정"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/OptionsSnapshotProse.tsx",
-        "line": 40,
-        "reason": "module-scope-or-helper",
-        "text": "강세"
-    },
-    {
-        "file": "src/views/symbol/snapshot/renderers/OptionsSnapshotProse.tsx",
         "line": 41,
         "reason": "module-scope-or-helper",
-        "text": "약세"
+        "text": "강세"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/OptionsSnapshotProse.tsx",
         "line": 42,
         "reason": "module-scope-or-helper",
-        "text": "신중"
+        "text": "약세"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/OptionsSnapshotProse.tsx",
         "line": 43,
         "reason": "module-scope-or-helper",
-        "text": "중립"
+        "text": "신중"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/OptionsSnapshotProse.tsx",
-        "line": 52,
+        "line": 44,
         "reason": "module-scope-or-helper",
-        "text": "강세"
+        "text": "중립"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/OptionsSnapshotProse.tsx",
         "line": 53,
         "reason": "module-scope-or-helper",
-        "text": "약세"
+        "text": "강세"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/OptionsSnapshotProse.tsx",
         "line": 54,
         "reason": "module-scope-or-helper",
-        "text": "변동성"
+        "text": "약세"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/OptionsSnapshotProse.tsx",
         "line": 55,
         "reason": "module-scope-or-helper",
+        "text": "변동성"
+    },
+    {
+        "file": "src/views/symbol/snapshot/renderers/OptionsSnapshotProse.tsx",
+        "line": 56,
+        "reason": "module-scope-or-helper",
         "text": "중립"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/OptionsSnapshotProse.tsx",
-        "line": 205,
+        "line": 207,
         "reason": "template-needs-icu-review",
         "text": "`${symbol} 만기별 해석 목록`"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/OptionsSnapshotProse.tsx",
-        "line": 229,
+        "line": 231,
         "reason": "template-needs-icu-review",
         "text": "`${symbol} 옵션 시그널 목록`"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/OverallSnapshotProse.tsx",
-        "line": 45,
-        "reason": "module-scope-or-helper",
-        "text": "강세"
-    },
-    {
-        "file": "src/views/symbol/snapshot/renderers/OverallSnapshotProse.tsx",
         "line": 46,
         "reason": "module-scope-or-helper",
-        "text": "중립"
+        "text": "강세"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/OverallSnapshotProse.tsx",
         "line": 47,
         "reason": "module-scope-or-helper",
+        "text": "중립"
+    },
+    {
+        "file": "src/views/symbol/snapshot/renderers/OverallSnapshotProse.tsx",
+        "line": 48,
+        "reason": "module-scope-or-helper",
         "text": "약세"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/OverallSnapshotProse.tsx",
-        "line": 86,
+        "line": 87,
         "reason": "module-scope-or-helper",
         "text": "`${trigger} (예상 가격대: ${priceRange})`"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/OverallSnapshotProse.tsx",
-        "line": 88,
+        "line": 89,
         "reason": "module-scope-or-helper",
         "text": "`예상 가격대: ${priceRange}`"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/TechnicalSnapshotProse.tsx",
-        "line": 30,
+        "line": 31,
         "reason": "module-scope-or-helper",
         "text": "강세"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/TechnicalSnapshotProse.tsx",
-        "line": 31,
+        "line": 32,
         "reason": "module-scope-or-helper",
         "text": "약세"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/TechnicalSnapshotProse.tsx",
-        "line": 32,
+        "line": 33,
         "reason": "module-scope-or-helper",
         "text": "보합"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/TechnicalSnapshotProse.tsx",
-        "line": 199,
+        "line": 203,
         "reason": "template-needs-icu-review",
         "text": "`${symbol} 차트 패턴 목록`"
     },
     {
         "file": "src/views/symbol/snapshot/renderers/TechnicalSnapshotProse.tsx",
-        "line": 223,
+        "line": 227,
         "reason": "template-needs-icu-review",
         "text": "`${symbol} 전략 시그널 목록`"
     },
@@ -7795,127 +7657,127 @@
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 62,
+        "line": 63,
         "reason": "module-scope-or-helper",
         "text": "지금 진입"
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 63,
+        "line": 64,
         "reason": "module-scope-or-helper",
         "text": "관망"
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 64,
+        "line": 65,
         "reason": "module-scope-or-helper",
         "text": "진입 보류"
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 85,
+        "line": 86,
         "reason": "module-scope-or-helper",
         "text": "현재 위치"
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 86,
+        "line": 87,
         "reason": "module-scope-or-helper",
         "text": "진입 전략"
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 87,
+        "line": 88,
         "reason": "module-scope-or-helper",
         "text": "청산 전략"
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 88,
+        "line": 89,
         "reason": "module-scope-or-helper",
         "text": "리스크/리워드"
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 243,
+        "line": 240,
         "reason": "module-scope-or-helper",
         "text": "낮음"
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 244,
+        "line": 241,
         "reason": "module-scope-or-helper",
         "text": "보통"
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 245,
+        "line": 242,
         "reason": "module-scope-or-helper",
         "text": "높음"
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 249,
+        "line": 246,
         "reason": "module-scope-or-helper",
         "text": "스킬"
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 367,
+        "line": 365,
         "reason": "module-scope-or-helper",
         "text": "높은 신뢰도"
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 370,
+        "line": 368,
         "reason": "module-scope-or-helper",
         "text": "신뢰도가 높은 패턴이에요."
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 371,
+        "line": 369,
         "reason": "module-scope-or-helper",
         "text": "AI가 이 패턴을 분명하게 감지했다는 뜻이에요."
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 378,
+        "line": 376,
         "reason": "module-scope-or-helper",
         "text": "중간 신뢰도"
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 381,
+        "line": 379,
         "reason": "module-scope-or-helper",
         "text": "신뢰도가 중간 정도인 패턴이에요."
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 382,
+        "line": 380,
         "reason": "module-scope-or-helper",
         "text": "단독으로 보기보다는 다른 지표와 함께 참고하는 게 좋아요."
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 636,
+        "line": 634,
         "reason": "module-scope-or-helper",
         "text": "추세선"
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 718,
+        "line": 716,
         "reason": "module-scope-or-helper",
         "text": "분석 중…"
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 719,
+        "line": 717,
         "reason": "module-scope-or-helper",
         "text": "`재분석 가능까지 ${formatCooldown(cooldownMs)}`"
     },
     {
         "file": "src/widgets/analysis/AnalysisPanel.tsx",
-        "line": 720,
+        "line": 718,
         "reason": "module-scope-or-helper",
         "text": "재분석"
     },
@@ -7927,25 +7789,25 @@
     },
     {
         "file": "src/widgets/analysis/AnalysisSettingsMenu.tsx",
-        "line": 74,
+        "line": 76,
         "reason": "template-needs-icu-review",
         "text": "`분석 설정 · 현재 모델: ${modelDisplay.label} (변경됨)`"
     },
     {
         "file": "src/widgets/analysis/AnalysisSettingsMenu.tsx",
-        "line": 75,
+        "line": 77,
         "reason": "template-needs-icu-review",
         "text": "`분석 설정 · 현재 모델: ${modelDisplay.label}`"
     },
     {
         "file": "src/widgets/analysis/AnalysisToast.tsx",
-        "line": 26,
+        "line": 27,
         "reason": "module-scope-or-helper",
         "text": "`${seconds}초`"
     },
     {
         "file": "src/widgets/analysis/AnalysisToast.tsx",
-        "line": 27,
+        "line": 28,
         "reason": "module-scope-or-helper",
         "text": "`${minutes}분 ${seconds.toString().padStart(2, '0')}초`"
     },
@@ -8323,73 +8185,73 @@
     },
     {
         "file": "src/widgets/backtesting/BacktestCaseList.tsx",
-        "line": 10,
+        "line": 11,
         "reason": "module-scope-or-helper",
         "text": "`${year}년 ${parseInt(month, 10)}월`"
     },
     {
         "file": "src/widgets/backtesting/BacktestHero.tsx",
-        "line": 55,
+        "line": 56,
         "reason": "template-needs-icu-review",
         "text": "`${meta.totalCases}개`"
     },
     {
         "file": "src/widgets/backtesting/BacktestHero.tsx",
-        "line": 61,
+        "line": 62,
         "reason": "template-needs-icu-review",
         "text": "`${meta.tickerCount}종목`"
     },
     {
         "file": "src/widgets/chart/ShareCandlestickChart.tsx",
-        "line": 109,
+        "line": 111,
         "reason": "template-needs-icu-review",
         "text": "`${ticker} 스냅샷 캔들 차트`"
     },
     {
         "file": "src/widgets/chart/StockChart.tsx",
-        "line": 604,
+        "line": 606,
         "reason": "template-needs-icu-review",
         "text": "`${ticker} ${timeframe} 캔들 차트`"
     },
     {
         "file": "src/widgets/chart/TimeframeSelector.tsx",
-        "line": 8,
+        "line": 9,
         "reason": "module-scope-or-helper",
         "text": "5분"
     },
     {
         "file": "src/widgets/chart/TimeframeSelector.tsx",
-        "line": 9,
+        "line": 10,
         "reason": "module-scope-or-helper",
         "text": "15분"
     },
     {
         "file": "src/widgets/chart/TimeframeSelector.tsx",
-        "line": 10,
+        "line": 11,
         "reason": "module-scope-or-helper",
         "text": "30분"
     },
     {
         "file": "src/widgets/chart/TimeframeSelector.tsx",
-        "line": 11,
+        "line": 12,
         "reason": "module-scope-or-helper",
         "text": "1시간"
     },
     {
         "file": "src/widgets/chart/TimeframeSelector.tsx",
-        "line": 12,
+        "line": 13,
         "reason": "module-scope-or-helper",
         "text": "4시간"
     },
     {
         "file": "src/widgets/chart/TimeframeSelector.tsx",
-        "line": 13,
+        "line": 14,
         "reason": "module-scope-or-helper",
         "text": "1일"
     },
     {
         "file": "src/widgets/chart/VolumeChart.tsx",
-        "line": 67,
+        "line": 69,
         "reason": "template-needs-icu-review",
         "text": "`${ticker} 거래량 차트`"
     },
@@ -8461,19 +8323,19 @@
     },
     {
         "file": "src/widgets/chat/ChatPanel.tsx",
-        "line": 20,
+        "line": 21,
         "reason": "module-scope-or-helper",
         "text": "질문 내용을 살펴보고 있어요..."
     },
     {
         "file": "src/widgets/chat/ChatPanel.tsx",
-        "line": 21,
+        "line": 22,
         "reason": "module-scope-or-helper",
         "text": "답변을 작성하고 있어요..."
     },
     {
         "file": "src/widgets/chat/FloatingChatButton.tsx",
-        "line": 33,
+        "line": 34,
         "reason": "module-scope-or-helper",
         "text": "채팅을 여는 중…"
     },
@@ -8515,97 +8377,97 @@
     },
     {
         "file": "src/widgets/congress/CongressTradesTable.tsx",
-        "line": 48,
+        "line": 49,
         "reason": "module-scope-or-helper",
         "text": "상원"
     },
     {
         "file": "src/widgets/congress/CongressTradesTable.tsx",
-        "line": 49,
+        "line": 50,
         "reason": "module-scope-or-helper",
         "text": "하원"
     },
     {
         "file": "src/widgets/congress/CongressTradesTable.tsx",
-        "line": 59,
+        "line": 60,
         "reason": "module-scope-or-helper",
         "text": "매수"
     },
     {
         "file": "src/widgets/congress/CongressTradesTable.tsx",
-        "line": 60,
+        "line": 61,
         "reason": "module-scope-or-helper",
         "text": "매도"
     },
     {
         "file": "src/widgets/congress/CongressTradesTable.tsx",
-        "line": 77,
+        "line": 78,
         "reason": "module-scope-or-helper",
         "text": "본인"
     },
     {
         "file": "src/widgets/congress/CongressTradesTable.tsx",
-        "line": 78,
+        "line": 79,
         "reason": "module-scope-or-helper",
         "text": "배우자"
     },
     {
         "file": "src/widgets/congress/CongressTradesTable.tsx",
-        "line": 79,
+        "line": 80,
         "reason": "module-scope-or-helper",
         "text": "공동"
     },
     {
         "file": "src/widgets/congress/CongressTradesTable.tsx",
-        "line": 80,
+        "line": 81,
         "reason": "module-scope-or-helper",
         "text": "자녀"
     },
     {
         "file": "src/widgets/congress/CongressTradesTable.tsx",
-        "line": 93,
+        "line": 94,
         "reason": "module-scope-or-helper",
         "text": "옵션"
     },
     {
         "file": "src/widgets/congress/CongressTradesTable.tsx",
-        "line": 94,
+        "line": 95,
         "reason": "module-scope-or-helper",
         "text": "주식"
     },
     {
         "file": "src/widgets/congress/CongressTradesTable.tsx",
-        "line": 95,
+        "line": 96,
         "reason": "module-scope-or-helper",
         "text": "기타"
     },
     {
         "file": "src/widgets/congress/CongressTradesTable.tsx",
-        "line": 198,
+        "line": 205,
         "reason": "template-needs-icu-review",
         "text": "`${CHAMBER_LABEL[chamber]} ${office} ${transactionDate} 공시 ${isSenate ? '검색' : '"
     },
     {
         "file": "src/widgets/congress/CongressTrendSummaryView.tsx",
-        "line": 8,
+        "line": 9,
         "reason": "module-scope-or-helper",
         "text": "매수 우위"
     },
     {
         "file": "src/widgets/congress/CongressTrendSummaryView.tsx",
-        "line": 9,
+        "line": 10,
         "reason": "module-scope-or-helper",
         "text": "중립"
     },
     {
         "file": "src/widgets/congress/CongressTrendSummaryView.tsx",
-        "line": 10,
+        "line": 11,
         "reason": "module-scope-or-helper",
         "text": "매도 우위"
     },
     {
         "file": "src/widgets/congress/CongressTrendSummaryView.tsx",
-        "line": 43,
+        "line": 45,
         "reason": "template-needs-icu-review",
         "text": "`전반적 동향: ${sentimentLabel}`"
     },
@@ -8701,13 +8563,13 @@
     },
     {
         "file": "src/widgets/dashboard/MarketDataErrorNotice.tsx",
-        "line": 50,
+        "line": 52,
         "reason": "template-needs-icu-review",
         "text": "`${marketLabel} 데이터를 불러오지 못했어요.`"
     },
     {
         "file": "src/widgets/dashboard/MarketDataErrorNotice.tsx",
-        "line": 51,
+        "line": 53,
         "reason": "template-needs-icu-review",
         "text": "`${marketLabel} 데이터를 불러오는 중 일부를 가져오지 못했어요.`"
     },
@@ -8941,319 +8803,319 @@
     },
     {
         "file": "src/widgets/dashboard/SignalStockCard.tsx",
-        "line": 24,
+        "line": 26,
         "reason": "template-needs-icu-review",
         "text": "`${data.koreanName} 분석`"
     },
     {
         "file": "src/widgets/dashboard/SignalSubsection.tsx",
-        "line": 67,
+        "line": 69,
         "reason": "template-needs-icu-review",
         "text": "`${stocks.length}개 종목`"
     },
     {
         "file": "src/widgets/dashboard/SignalTypeGuide.tsx",
-        "line": 3,
+        "line": 4,
         "reason": "module-scope-or-helper",
         "text": "골든크로스"
     },
     {
         "file": "src/widgets/dashboard/SignalTypeGuide.tsx",
-        "line": 4,
+        "line": 5,
         "reason": "module-scope-or-helper",
         "text": "단기 이동평균선이 장기 이동평균선을 위로 뚫고 올라가는 순간이에요. 상승 추세 시작의 대표적인 신호로 봐요."
     },
     {
         "file": "src/widgets/dashboard/SignalTypeGuide.tsx",
-        "line": 7,
+        "line": 8,
         "reason": "module-scope-or-helper",
         "text": "데드크로스"
     },
     {
         "file": "src/widgets/dashboard/SignalTypeGuide.tsx",
-        "line": 8,
+        "line": 9,
         "reason": "module-scope-or-helper",
         "text": "단기 이동평균선이 장기 이동평균선을 아래로 뚫고 내려가는 순간이에요. 하락 추세 시작의 대표적인 신호로 봐요."
     },
     {
         "file": "src/widgets/dashboard/SignalTypeGuide.tsx",
-        "line": 11,
+        "line": 12,
         "reason": "module-scope-or-helper",
         "text": "RSI 과매도/과매수"
     },
     {
         "file": "src/widgets/dashboard/SignalTypeGuide.tsx",
-        "line": 12,
+        "line": 13,
         "reason": "module-scope-or-helper",
         "text": "RSI가 30 아래로 내려가면(과매도) 반등, 70 위로 올라가면(과매수) 조정 가능성을 살펴봐요."
     },
     {
         "file": "src/widgets/dashboard/SignalTypeGuide.tsx",
-        "line": 15,
+        "line": 16,
         "reason": "module-scope-or-helper",
         "text": "볼린저 하단 반등 / 상단 돌파"
     },
     {
         "file": "src/widgets/dashboard/SignalTypeGuide.tsx",
-        "line": 16,
+        "line": 17,
         "reason": "module-scope-or-helper",
         "text": "가격이 볼린저 하단을 찍고 반등하거나 상단을 뚫고 올라가요. 추세가 이어지거나 과열되었다는 신호일 수 있어요."
     },
     {
         "file": "src/widgets/dashboard/SignalTypeGuide.tsx",
-        "line": 19,
+        "line": 20,
         "reason": "module-scope-or-helper",
         "text": "RSI 다이버전스"
     },
     {
         "file": "src/widgets/dashboard/SignalTypeGuide.tsx",
-        "line": 20,
+        "line": 21,
         "reason": "module-scope-or-helper",
         "text": "가격은 새 고점·저점을 찍는데 RSI가 따라가지 못해요. 추세가 바뀔 수 있다는 전조 신호예요."
     },
     {
         "file": "src/widgets/dashboard/SignalTypeGuide.tsx",
-        "line": 23,
+        "line": 24,
         "reason": "module-scope-or-helper",
         "text": "MACD 히스토그램 수렴"
     },
     {
         "file": "src/widgets/dashboard/SignalTypeGuide.tsx",
-        "line": 24,
+        "line": 25,
         "reason": "module-scope-or-helper",
         "text": "MACD 히스토그램의 막대 크기가 연속해서 줄어들고 있어요. 곧 교차가 일어날 수 있다는 신호예요."
     },
     {
         "file": "src/widgets/dashboard/SignalTypeGuide.tsx",
-        "line": 27,
+        "line": 28,
         "reason": "module-scope-or-helper",
         "text": "볼린저 스퀴즈"
     },
     {
         "file": "src/widgets/dashboard/SignalTypeGuide.tsx",
-        "line": 28,
+        "line": 29,
         "reason": "module-scope-or-helper",
         "text": "볼린저 밴드 폭이 최근 6개월 중 가장 좁아진 상태예요. 곧 한 방향으로 큰 움직임이 나올 가능성이 높아요."
     },
     {
         "file": "src/widgets/dashboard/SignalTypeGuide.tsx",
-        "line": 31,
+        "line": 32,
         "reason": "module-scope-or-helper",
         "text": "지지선/저항선 근접"
     },
     {
         "file": "src/widgets/dashboard/SignalTypeGuide.tsx",
-        "line": 32,
+        "line": 33,
         "reason": "module-scope-or-helper",
         "text": "가격이 MA50이나 MA200 근처에 와 있어요. 반등할지 반락할지 지켜봐야 하는 구간이에요."
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 46,
+        "line": 47,
         "reason": "module-scope-or-helper",
         "text": "일"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 46,
+        "line": 47,
         "reason": "module-scope-or-helper",
         "text": "월"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 46,
+        "line": 47,
         "reason": "module-scope-or-helper",
         "text": "화"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 46,
+        "line": 47,
         "reason": "module-scope-or-helper",
         "text": "수"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 46,
+        "line": 47,
         "reason": "module-scope-or-helper",
         "text": "목"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 46,
+        "line": 47,
         "reason": "module-scope-or-helper",
         "text": "금"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 46,
+        "line": 47,
         "reason": "module-scope-or-helper",
         "text": "토"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 50,
+        "line": 51,
         "reason": "module-scope-or-helper",
         "text": "1월"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 51,
+        "line": 52,
         "reason": "module-scope-or-helper",
         "text": "2월"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 52,
+        "line": 53,
         "reason": "module-scope-or-helper",
         "text": "3월"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 53,
+        "line": 54,
         "reason": "module-scope-or-helper",
         "text": "4월"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 54,
+        "line": 55,
         "reason": "module-scope-or-helper",
         "text": "5월"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 55,
+        "line": 56,
         "reason": "module-scope-or-helper",
         "text": "6월"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 56,
+        "line": 57,
         "reason": "module-scope-or-helper",
         "text": "7월"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 57,
+        "line": 58,
         "reason": "module-scope-or-helper",
         "text": "8월"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 58,
+        "line": 59,
         "reason": "module-scope-or-helper",
         "text": "9월"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 59,
+        "line": 60,
         "reason": "module-scope-or-helper",
         "text": "10월"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 60,
+        "line": 61,
         "reason": "module-scope-or-helper",
         "text": "11월"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 61,
+        "line": 62,
         "reason": "module-scope-or-helper",
         "text": "12월"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 379,
+        "line": 391,
         "reason": "template-needs-icu-review",
         "text": "`${month + 1}월 ${day}일, 이벤트 ${count}건`"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 487,
+        "line": 500,
         "reason": "template-needs-icu-review",
         "text": "`${year}년 ${MONTH_LABELS[month]} 경제 캘린더`"
     },
     {
         "file": "src/widgets/economy/sections/EconomicIndicatorGrid.tsx",
-        "line": 38,
+        "line": 39,
         "reason": "module-scope-or-helper",
         "text": "2년물 국채"
     },
     {
         "file": "src/widgets/economy/sections/EconomicIndicatorGrid.tsx",
-        "line": 40,
+        "line": 41,
         "reason": "module-scope-or-helper",
         "text": "미국 정부가 발행하는 2년 만기 국채의 수익률이에요. 단기 시장금리의 기준이에요."
     },
     {
         "file": "src/widgets/economy/sections/EconomicIndicatorGrid.tsx",
-        "line": 44,
+        "line": 45,
         "reason": "module-scope-or-helper",
         "text": "10년물 국채"
     },
     {
         "file": "src/widgets/economy/sections/EconomicIndicatorGrid.tsx",
-        "line": 46,
+        "line": 47,
         "reason": "module-scope-or-helper",
         "text": "미국 정부가 발행하는 10년 만기 국채의 수익률이에요. 장기 시장금리와 모기지 금리의 기준이에요."
     },
     {
         "file": "src/widgets/economy/sections/EconomyMacroFacts.tsx",
-        "line": 44,
+        "line": 46,
         "reason": "template-needs-icu-review",
         "text": "`현재 미국 기준금리는 ${federalFunds.toFixed(2)}%, 2년물·10년물 국채금리는 ${year2.toFixed(2)}%/${"
     },
     {
         "file": "src/widgets/economy/sections/EconomyMacroFacts.tsx",
-        "line": 46,
+        "line": 48,
         "reason": "template-needs-icu-review",
         "text": "`현재 미국 기준금리는 ${federalFunds.toFixed(2)}%입니다.`"
     },
     {
         "file": "src/widgets/economy/sections/EconomyMacroFacts.tsx",
-        "line": 51,
+        "line": 53,
         "reason": "template-needs-icu-review",
         "text": "`최신 소비자물가지수(CPI)는 ${cpi.toFixed(1)}pt, 실업률은 ${unemploymentRate.toFixed(1)}%입니다.`"
     },
     {
         "file": "src/widgets/economy/sections/EconomyMacroFacts.tsx",
-        "line": 53,
+        "line": 55,
         "reason": "template-needs-icu-review",
         "text": "`최신 소비자물가지수(CPI)는 ${cpi.toFixed(1)}pt입니다.`"
     },
     {
         "file": "src/widgets/economy/sections/EconomyMacroFacts.tsx",
-        "line": 55,
+        "line": 57,
         "reason": "template-needs-icu-review",
         "text": "`최신 실업률은 ${unemploymentRate.toFixed(1)}%입니다.`"
     },
     {
         "file": "src/widgets/economy/sections/MacroBriefing.tsx",
-        "line": 11,
+        "line": 12,
         "reason": "module-scope-or-helper",
         "text": "확장"
     },
     {
         "file": "src/widgets/economy/sections/MacroBriefing.tsx",
-        "line": 12,
+        "line": 13,
         "reason": "module-scope-or-helper",
         "text": "둔화"
     },
     {
         "file": "src/widgets/economy/sections/MacroBriefing.tsx",
-        "line": 13,
+        "line": 14,
         "reason": "module-scope-or-helper",
         "text": "수축"
     },
     {
         "file": "src/widgets/economy/sections/MacroBriefing.tsx",
-        "line": 14,
+        "line": 15,
         "reason": "module-scope-or-helper",
         "text": "회복"
     },
     {
         "file": "src/widgets/economy/sections/MacroBriefing.tsx",
-        "line": 15,
+        "line": 16,
         "reason": "module-scope-or-helper",
         "text": "중립"
     },
@@ -9385,31 +9247,31 @@
     },
     {
         "file": "src/widgets/financials/FinancialsAiSummary.tsx",
-        "line": 23,
+        "line": 24,
         "reason": "module-scope-or-helper",
         "text": "긍정"
     },
     {
         "file": "src/widgets/financials/FinancialsAiSummary.tsx",
-        "line": 24,
+        "line": 25,
         "reason": "module-scope-or-helper",
         "text": "중립"
     },
     {
         "file": "src/widgets/financials/FinancialsAiSummary.tsx",
-        "line": 25,
+        "line": 26,
         "reason": "module-scope-or-helper",
         "text": "부정"
     },
     {
         "file": "src/widgets/financials/PeriodToggle.tsx",
-        "line": 9,
+        "line": 10,
         "reason": "module-scope-or-helper",
         "text": "연간"
     },
     {
         "file": "src/widgets/financials/PeriodToggle.tsx",
-        "line": 10,
+        "line": 11,
         "reason": "module-scope-or-helper",
         "text": "분기"
     },
@@ -9541,13 +9403,13 @@
     },
     {
         "file": "src/widgets/financials/sections/BalanceSheetSection.tsx",
-        "line": 21,
+        "line": 22,
         "reason": "module-scope-or-helper",
         "text": "재무상태표"
     },
     {
         "file": "src/widgets/financials/sections/CashFlowSection.tsx",
-        "line": 25,
+        "line": 26,
         "reason": "module-scope-or-helper",
         "text": "현금흐름표"
     },
@@ -9559,67 +9421,67 @@
     },
     {
         "file": "src/widgets/financials/sections/GrowthAnalysisSection.tsx",
-        "line": 12,
+        "line": 13,
         "reason": "module-scope-or-helper",
         "text": "성장 분석"
     },
     {
         "file": "src/widgets/financials/sections/IncomeStatementSection.tsx",
-        "line": 21,
+        "line": 22,
         "reason": "module-scope-or-helper",
         "text": "손익계산서"
     },
     {
         "file": "src/widgets/financials/sections/StatementTable.tsx",
-        "line": 85,
+        "line": 87,
         "reason": "template-needs-icu-review",
         "text": "`${caption} (좌우 스크롤 가능)`"
     },
     {
         "file": "src/widgets/fundamental/FundamentalAiSummary.tsx",
-        "line": 23,
+        "line": 24,
         "reason": "module-scope-or-helper",
         "text": "긍정"
     },
     {
         "file": "src/widgets/fundamental/FundamentalAiSummary.tsx",
-        "line": 24,
+        "line": 25,
         "reason": "module-scope-or-helper",
         "text": "중립"
     },
     {
         "file": "src/widgets/fundamental/FundamentalAiSummary.tsx",
-        "line": 25,
+        "line": 26,
         "reason": "module-scope-or-helper",
         "text": "부정"
     },
     {
         "file": "src/widgets/fundamental/FundamentalAiSummary.tsx",
-        "line": 35,
+        "line": 36,
         "reason": "module-scope-or-helper",
         "text": "밸류에이션"
     },
     {
         "file": "src/widgets/fundamental/FundamentalAiSummary.tsx",
-        "line": 36,
+        "line": 37,
         "reason": "module-scope-or-helper",
         "text": "수익성"
     },
     {
         "file": "src/widgets/fundamental/FundamentalAiSummary.tsx",
-        "line": 37,
+        "line": 38,
         "reason": "module-scope-or-helper",
         "text": "성장성"
     },
     {
         "file": "src/widgets/fundamental/FundamentalAiSummary.tsx",
-        "line": 38,
+        "line": 39,
         "reason": "module-scope-or-helper",
         "text": "재무 건전성"
     },
     {
         "file": "src/widgets/fundamental/FundamentalAiSummary.tsx",
-        "line": 39,
+        "line": 40,
         "reason": "module-scope-or-helper",
         "text": "미래 방향"
     },
@@ -9655,145 +9517,145 @@
     },
     {
         "file": "src/widgets/fundamental/sections/FinancialHealthCard.tsx",
-        "line": 82,
+        "line": 83,
         "reason": "module-scope-or-helper",
         "text": "안전"
     },
     {
         "file": "src/widgets/fundamental/sections/FinancialHealthCard.tsx",
-        "line": 83,
+        "line": 84,
         "reason": "module-scope-or-helper",
         "text": "경계"
     },
     {
         "file": "src/widgets/fundamental/sections/FinancialHealthCard.tsx",
-        "line": 84,
+        "line": 85,
         "reason": "module-scope-or-helper",
         "text": "위험"
     },
     {
         "file": "src/widgets/fundamental/sections/FinancialHealthCard.tsx",
-        "line": 89,
+        "line": 90,
         "reason": "module-scope-or-helper",
         "text": "강함"
     },
     {
         "file": "src/widgets/fundamental/sections/FinancialHealthCard.tsx",
-        "line": 90,
+        "line": 91,
         "reason": "module-scope-or-helper",
         "text": "보통"
     },
     {
         "file": "src/widgets/fundamental/sections/FinancialHealthCard.tsx",
-        "line": 91,
+        "line": 92,
         "reason": "module-scope-or-helper",
         "text": "약함"
     },
     {
         "file": "src/widgets/fundamental/sections/FutureDirectionCard.tsx",
-        "line": 76,
+        "line": 78,
         "reason": "template-needs-icu-review",
         "text": "`강력 매수 ${strongBuy}`"
     },
     {
         "file": "src/widgets/fundamental/sections/FutureDirectionCard.tsx",
-        "line": 87,
+        "line": 89,
         "reason": "template-needs-icu-review",
         "text": "`매수 ${buy}`"
     },
     {
         "file": "src/widgets/fundamental/sections/FutureDirectionCard.tsx",
-        "line": 98,
+        "line": 100,
         "reason": "template-needs-icu-review",
         "text": "`중립 ${hold}`"
     },
     {
         "file": "src/widgets/fundamental/sections/FutureDirectionCard.tsx",
-        "line": 109,
+        "line": 111,
         "reason": "template-needs-icu-review",
         "text": "`매도 ${sell}`"
     },
     {
         "file": "src/widgets/fundamental/sections/FutureDirectionCard.tsx",
-        "line": 120,
+        "line": 122,
         "reason": "template-needs-icu-review",
         "text": "`강력 매도 ${strongSell}`"
     },
     {
         "file": "src/widgets/home/HowItWorks.tsx",
-        "line": 26,
+        "line": 28,
         "reason": "template-needs-icu-review",
         "text": "`보조지표 ${indicators}종, 캔들 패턴 ${candlesticks}종, 차트 패턴 ${patterns}종, 전략 ${strategie"
     },
     {
         "file": "src/widgets/home/SkillsShowcase.tsx",
-        "line": 43,
+        "line": 44,
         "reason": "module-scope-or-helper",
         "text": "전체"
     },
     {
         "file": "src/widgets/home/SkillsShowcase.tsx",
-        "line": 44,
+        "line": 45,
         "reason": "module-scope-or-helper",
         "text": "보조지표"
     },
     {
         "file": "src/widgets/home/SkillsShowcase.tsx",
-        "line": 45,
+        "line": 46,
         "reason": "module-scope-or-helper",
         "text": "차트 패턴"
     },
     {
         "file": "src/widgets/home/SkillsShowcase.tsx",
-        "line": 46,
-        "reason": "module-scope-or-helper",
-        "text": "전략"
-    },
-    {
-        "file": "src/widgets/home/SkillsShowcase.tsx",
         "line": 47,
         "reason": "module-scope-or-helper",
-        "text": "캔들 패턴"
+        "text": "전략"
     },
     {
         "file": "src/widgets/home/SkillsShowcase.tsx",
         "line": 48,
         "reason": "module-scope-or-helper",
+        "text": "캔들 패턴"
+    },
+    {
+        "file": "src/widgets/home/SkillsShowcase.tsx",
+        "line": 49,
+        "reason": "module-scope-or-helper",
         "text": "지지/저항"
     },
     {
         "file": "src/widgets/home/SkillsShowcase.tsx",
-        "line": 58,
+        "line": 59,
         "reason": "module-scope-or-helper",
         "text": "지표"
     },
     {
         "file": "src/widgets/home/SkillsShowcase.tsx",
-        "line": 63,
+        "line": 64,
         "reason": "module-scope-or-helper",
         "text": "패턴"
     },
     {
         "file": "src/widgets/home/SkillsShowcase.tsx",
-        "line": 68,
+        "line": 69,
         "reason": "module-scope-or-helper",
         "text": "전략"
     },
     {
         "file": "src/widgets/home/SkillsShowcase.tsx",
-        "line": 73,
+        "line": 74,
         "reason": "module-scope-or-helper",
         "text": "캔들"
     },
     {
         "file": "src/widgets/home/SkillsShowcase.tsx",
-        "line": 78,
+        "line": 79,
         "reason": "module-scope-or-helper",
         "text": "지지/저항"
     },
     {
         "file": "src/widgets/home/SkillsShowcase.tsx",
-        "line": 366,
+        "line": 377,
         "reason": "template-needs-icu-review",
         "text": "`더 보기 (${panelSkills.length - INITIAL_VISIBLE_COUNT}개)`"
     },
@@ -9811,33 +9673,27 @@
     },
     {
         "file": "src/widgets/layout/ContactDialog.tsx",
-        "line": 16,
+        "line": 17,
         "reason": "parameter-default",
         "text": "문의하기"
     },
     {
         "file": "src/widgets/layout/Header.tsx",
-        "line": 40,
+        "line": 42,
         "reason": "template-needs-icu-review",
         "text": "`${SITE_NAME.toUpperCase()} 홈`"
     },
     {
         "file": "src/widgets/layout/HeaderNavMenu.tsx",
-        "line": 131,
+        "line": 134,
         "reason": "template-needs-icu-review",
-        "text": "`${vertical.label} 바로가기`"
+        "text": "`${tNav(vertical.labelKey)} 바로가기`"
     },
     {
         "file": "src/widgets/layout/HeaderUserMenu.tsx",
-        "line": 98,
+        "line": 103,
         "reason": "template-needs-icu-review",
         "text": "`사용자 메뉴 (${tierLabel})`"
-    },
-    {
-        "file": "src/widgets/layout/headerNavTree.ts",
-        "line": 61,
-        "reason": "non-component-module",
-        "text": "전체"
     },
     {
         "file": "src/widgets/market-fear-greed/MarketFearGreedComparison.tsx",
@@ -9865,79 +9721,79 @@
     },
     {
         "file": "src/widgets/market-fear-greed/MarketFearGreedFactorBar.tsx",
-        "line": 54,
+        "line": 56,
         "reason": "template-needs-icu-review",
         "text": "`${label} 백분위 ${pctile}`"
     },
     {
         "file": "src/widgets/market-fear-greed/MarketFearGreedPage.tsx",
-        "line": 17,
+        "line": 18,
         "reason": "module-scope-or-helper",
         "text": "`${year}년 ${month}월 ${day}일 종가 기준`"
     },
     {
         "file": "src/widgets/market-fear-greed/MarketFearGreedPage.tsx",
-        "line": 27,
+        "line": 28,
         "reason": "module-scope-or-helper",
         "text": "이 지수는 일별 종가만으로 독립적으로 산출됩니다. CNN Fear & Greed Index와는"
     },
     {
         "file": "src/widgets/market-fear-greed/MarketFearGreedPage.tsx",
-        "line": 28,
+        "line": 29,
         "reason": "module-scope-or-helper",
         "text": "구성이 달라서(7개가 아닌 5개 요인 사용 — 풋/콜 비율과 뉴욕증권거래소 52주"
     },
     {
         "file": "src/widgets/market-fear-greed/MarketFearGreedPage.tsx",
-        "line": 29,
+        "line": 30,
         "reason": "module-scope-or-helper",
         "text": "신고가·신저가 폭은 활용 가능한 데이터 소스가 없어 제외) 방향성은 대체로"
     },
     {
         "file": "src/widgets/market-fear-greed/MarketFearGreedPage.tsx",
-        "line": 30,
+        "line": 31,
         "reason": "module-scope-or-helper",
         "text": "일치하지만 수치 자체는 CNN과 다를 수 있습니다."
     },
     {
         "file": "src/widgets/market-fear-greed/MarketFearGreedPage.tsx",
-        "line": 34,
+        "line": 35,
         "reason": "module-scope-or-helper",
         "text": "이 지수는 국내 상장 ETF·지수의 일별 종가만으로 독립적으로 산출됩니다."
     },
     {
         "file": "src/widgets/market-fear-greed/MarketFearGreedPage.tsx",
-        "line": 35,
+        "line": 36,
         "reason": "module-scope-or-helper",
         "text": "변동성 요인은 무료로 받을 수 있는 VKOSPI 시세가 없어 코스피 종가에서"
     },
     {
         "file": "src/widgets/market-fear-greed/MarketFearGreedPage.tsx",
-        "line": 36,
+        "line": 37,
         "reason": "module-scope-or-helper",
         "text": "산출한 20일 실현변동성을 사용하고, 신용 요인은 국내에 유동성 있는 하이일드"
     },
     {
         "file": "src/widgets/market-fear-greed/MarketFearGreedPage.tsx",
-        "line": 37,
+        "line": 38,
         "reason": "module-scope-or-helper",
         "text": "채권이 없어 회사채와 국고채 10년의 수익률 차이로 대신합니다. 미국 지수와"
     },
     {
         "file": "src/widgets/market-fear-greed/MarketFearGreedPage.tsx",
-        "line": 38,
+        "line": 39,
         "reason": "module-scope-or-helper",
         "text": "같은 계산식이지만 입력 자산이 달라 두 점수를 직접 비교하지는 마세요."
     },
     {
         "file": "src/widgets/market-news/MarketNewsCard.tsx",
-        "line": 86,
+        "line": 87,
         "reason": "template-needs-icu-review",
         "text": "`${ticker} 종목 페이지로 이동`"
     },
     {
         "file": "src/widgets/market-news/MarketNewsList.tsx",
-        "line": 14,
+        "line": 15,
         "reason": "module-scope-or-helper",
         "text": "`최근 ${MARKET_NEWS_LOOKBACK_DAYS}일`"
     },
@@ -9991,61 +9847,61 @@
     },
     {
         "file": "src/widgets/news-hub/CategoryCard.tsx",
-        "line": 74,
+        "line": 76,
         "reason": "template-needs-icu-review",
         "text": "`${koLabel} 미리보기`"
     },
     {
         "file": "src/widgets/news-hub/NewsCategoryTabs.tsx",
-        "line": 16,
+        "line": 17,
         "reason": "module-scope-or-helper",
         "text": "일반"
     },
     {
         "file": "src/widgets/news-hub/NewsCategoryTabs.tsx",
-        "line": 17,
+        "line": 18,
         "reason": "module-scope-or-helper",
         "text": "주식"
     },
     {
         "file": "src/widgets/news-hub/NewsCategoryTabs.tsx",
-        "line": 18,
+        "line": 19,
         "reason": "module-scope-or-helper",
         "text": "암호화폐"
     },
     {
         "file": "src/widgets/news-hub/NewsCategoryTabs.tsx",
-        "line": 19,
+        "line": 20,
         "reason": "module-scope-or-helper",
         "text": "외환"
     },
     {
         "file": "src/widgets/news-hub/NewsCategoryTabs.tsx",
-        "line": 20,
+        "line": 21,
         "reason": "module-scope-or-helper",
         "text": "아티클"
     },
     {
         "file": "src/widgets/news-hub/NewsCategoryTabs.tsx",
-        "line": 21,
+        "line": 22,
         "reason": "module-scope-or-helper",
         "text": "국내 증시"
     },
     {
         "file": "src/widgets/news/NewsAiSummary.tsx",
-        "line": 27,
+        "line": 28,
         "reason": "module-scope-or-helper",
         "text": "긍정"
     },
     {
         "file": "src/widgets/news/NewsAiSummary.tsx",
-        "line": 28,
+        "line": 29,
         "reason": "module-scope-or-helper",
         "text": "중립"
     },
     {
         "file": "src/widgets/news/NewsAiSummary.tsx",
-        "line": 29,
+        "line": 30,
         "reason": "module-scope-or-helper",
         "text": "부정"
     },
@@ -10075,223 +9931,223 @@
     },
     {
         "file": "src/widgets/news/sections/AnalystActions.tsx",
-        "line": 8,
+        "line": 9,
         "reason": "module-scope-or-helper",
         "text": "상향"
     },
     {
         "file": "src/widgets/news/sections/AnalystActions.tsx",
-        "line": 9,
+        "line": 10,
         "reason": "module-scope-or-helper",
         "text": "하향"
     },
     {
         "file": "src/widgets/news/sections/AnalystActions.tsx",
-        "line": 10,
+        "line": 11,
         "reason": "module-scope-or-helper",
         "text": "등급 유지"
     },
     {
         "file": "src/widgets/news/sections/AnalystActions.tsx",
-        "line": 11,
+        "line": 12,
         "reason": "module-scope-or-helper",
         "text": "신규 커버리지"
     },
     {
         "file": "src/widgets/news/sections/AnalystActions.tsx",
-        "line": 12,
+        "line": 13,
         "reason": "module-scope-or-helper",
         "text": "기타"
     },
     {
         "file": "src/widgets/news/sections/EventCalendar.tsx",
-        "line": 353,
+        "line": 356,
         "reason": "module-scope-or-helper",
         "text": "서프라이즈"
     },
     {
         "file": "src/widgets/news/sections/EventCalendar.tsx",
-        "line": 354,
+        "line": 357,
         "reason": "module-scope-or-helper",
         "text": "쇼크"
     },
     {
         "file": "src/widgets/news/sections/EventCalendar.tsx",
-        "line": 355,
+        "line": 358,
         "reason": "module-scope-or-helper",
         "text": "예상치 부합"
     },
     {
         "file": "src/widgets/news/sections/NewsList.tsx",
-        "line": 13,
+        "line": 14,
         "reason": "module-scope-or-helper",
         "text": "긍정"
     },
     {
         "file": "src/widgets/news/sections/NewsList.tsx",
-        "line": 14,
+        "line": 15,
         "reason": "module-scope-or-helper",
         "text": "부정"
     },
     {
         "file": "src/widgets/news/sections/NewsList.tsx",
-        "line": 15,
+        "line": 16,
         "reason": "module-scope-or-helper",
         "text": "중립"
     },
     {
         "file": "src/widgets/news/sections/NewsList.tsx",
-        "line": 28,
+        "line": 29,
         "reason": "module-scope-or-helper",
         "text": "가격 영향 큼"
     },
     {
         "file": "src/widgets/news/sections/NewsList.tsx",
-        "line": 29,
+        "line": 30,
         "reason": "module-scope-or-helper",
         "text": "가격 영향 보통"
     },
     {
         "file": "src/widgets/news/sections/NewsList.tsx",
-        "line": 30,
+        "line": 31,
         "reason": "module-scope-or-helper",
         "text": "가격 영향 작음"
     },
     {
         "file": "src/widgets/news/sections/NewsList.tsx",
-        "line": 31,
+        "line": 32,
         "reason": "module-scope-or-helper",
         "text": "가격 영향 거의 없음"
     },
     {
         "file": "src/widgets/options/OptionsAiAnalysis.tsx",
-        "line": 22,
+        "line": 23,
         "reason": "module-scope-or-helper",
         "text": "강세"
     },
     {
         "file": "src/widgets/options/OptionsAiAnalysis.tsx",
-        "line": 23,
-        "reason": "module-scope-or-helper",
-        "text": "약세"
-    },
-    {
-        "file": "src/widgets/options/OptionsAiAnalysis.tsx",
         "line": 24,
         "reason": "module-scope-or-helper",
-        "text": "신중"
+        "text": "약세"
     },
     {
         "file": "src/widgets/options/OptionsAiAnalysis.tsx",
         "line": 25,
         "reason": "module-scope-or-helper",
-        "text": "중립"
+        "text": "신중"
     },
     {
         "file": "src/widgets/options/OptionsAiAnalysis.tsx",
-        "line": 68,
+        "line": 26,
         "reason": "module-scope-or-helper",
-        "text": "강세"
+        "text": "중립"
     },
     {
         "file": "src/widgets/options/OptionsAiAnalysis.tsx",
         "line": 69,
         "reason": "module-scope-or-helper",
-        "text": "약세"
+        "text": "강세"
     },
     {
         "file": "src/widgets/options/OptionsAiAnalysis.tsx",
         "line": 70,
         "reason": "module-scope-or-helper",
-        "text": "변동성"
+        "text": "약세"
     },
     {
         "file": "src/widgets/options/OptionsAiAnalysis.tsx",
         "line": 71,
         "reason": "module-scope-or-helper",
+        "text": "변동성"
+    },
+    {
+        "file": "src/widgets/options/OptionsAiAnalysis.tsx",
+        "line": 72,
+        "reason": "module-scope-or-helper",
         "text": "중립"
     },
     {
         "file": "src/widgets/options/OptionsChainTable.tsx",
-        "line": 40,
+        "line": 41,
         "reason": "module-scope-or-helper",
         "text": "옵션 계약에 정해진 매수/매도 가격이에요."
     },
     {
         "file": "src/widgets/options/OptionsChainTable.tsx",
-        "line": 41,
+        "line": 42,
         "reason": "module-scope-or-helper",
         "text": "콜은 '이 가격에 살 권리', 풋은 '이 가격에 팔 권리'를 가진다는 뜻이에요."
     },
     {
         "file": "src/widgets/options/OptionsChainTable.tsx",
-        "line": 50,
+        "line": 51,
         "reason": "module-scope-or-helper",
         "text": "옵션 시장이 예측하는 미래 변동성이에요."
     },
     {
         "file": "src/widgets/options/OptionsChainTable.tsx",
-        "line": 51,
+        "line": 52,
         "reason": "module-scope-or-helper",
         "text": "높을수록 옵션값이 비싸지고, 불확실성이 크다는 뜻이에요."
     },
     {
         "file": "src/widgets/options/OptionsChainTable.tsx",
-        "line": 117,
+        "line": 119,
         "reason": "template-needs-icu-review",
         "text": "`▾ 전체 옵션 chain 테이블 (선택된 만기: ${chain?.expirationDate ?? '—'})`"
     },
     {
         "file": "src/widgets/options/OptionsChainTable.tsx",
-        "line": 118,
+        "line": 120,
         "reason": "template-needs-icu-review",
         "text": "`▸ 전체 옵션 chain 테이블 보기 (${numberFormatter.format(totalContracts)} contracts)`"
     },
     {
         "file": "src/widgets/options/OptionsEmptyState.tsx",
-        "line": 23,
+        "line": 24,
         "reason": "module-scope-or-helper",
         "text": "차트 분석"
     },
     {
         "file": "src/widgets/options/OptionsEmptyState.tsx",
-        "line": 24,
+        "line": 25,
         "reason": "module-scope-or-helper",
         "text": "기술적 지표 + AI 종합 리포트"
     },
     {
         "file": "src/widgets/options/OptionsEmptyState.tsx",
-        "line": 29,
+        "line": 30,
         "reason": "module-scope-or-helper",
         "text": "펀더멘털 분석"
     },
     {
         "file": "src/widgets/options/OptionsEmptyState.tsx",
-        "line": 30,
+        "line": 31,
         "reason": "module-scope-or-helper",
         "text": "재무·밸류에이션·미래 방향"
     },
     {
         "file": "src/widgets/options/OptionsEmptyState.tsx",
-        "line": 35,
+        "line": 36,
         "reason": "module-scope-or-helper",
         "text": "뉴스 분석"
     },
     {
         "file": "src/widgets/options/OptionsEmptyState.tsx",
-        "line": 36,
+        "line": 37,
         "reason": "module-scope-or-helper",
         "text": "실시간 뉴스 + 애널리스트 의견 분석"
     },
     {
         "file": "src/widgets/options/OptionsEmptyState.tsx",
-        "line": 41,
+        "line": 42,
         "reason": "module-scope-or-helper",
         "text": "공포 탐욕 지수"
     },
     {
         "file": "src/widgets/options/OptionsEmptyState.tsx",
-        "line": 42,
+        "line": 43,
         "reason": "module-scope-or-helper",
         "text": "단기 매매 심리 0~100 점수"
     },
@@ -10315,55 +10171,55 @@
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 39,
+        "line": 40,
         "reason": "module-scope-or-helper",
         "text": "옵션 만기일이 가까워질수록 주가가 끌리는 가격이에요."
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 40,
+        "line": 41,
         "reason": "module-scope-or-helper",
         "text": "옵션을 판 쪽(주로 기관)의 손실이 가장 적어지는 가격이라, 만기일 부근에는 주가가 이쪽으로 움직이는 경향이 있어요."
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 44,
+        "line": 45,
         "reason": "module-scope-or-helper",
         "text": "절대 법칙은 아니고 참고용 가격으로 보세요."
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 50,
+        "line": 51,
         "reason": "module-scope-or-helper",
         "text": "풋옵션 거래량을 콜옵션 거래량으로 나눈 값이에요."
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 51,
+        "line": 52,
         "reason": "module-scope-or-helper",
         "text": "1보다 크면 풋(하락 베팅)이 더 많아 시장이 조심스럽다는 뜻이고, 1보다 작으면 콜(상승 베팅)이 더 많다는 뜻이에요."
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 55,
+        "line": 56,
         "reason": "module-scope-or-helper",
         "text": "너무 극단으로 치우치면 오히려 반대 신호로 해석하는 경우도 많아요."
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 56,
+        "line": 57,
         "reason": "module-scope-or-helper",
         "text": "모두 두려워할 때가 바닥인 경우가 있거든요."
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 63,
+        "line": 64,
         "reason": "module-scope-or-helper",
         "text": "서머타임(EDT)"
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 64,
+        "line": 65,
         "reason": "module-scope-or-helper",
         "text": "표준시(EST)"
     },
@@ -10375,151 +10231,151 @@
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 120,
+        "line": 112,
         "reason": "template-needs-icu-review",
         "text": "`지금은 ${label} 기간이에요.`"
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 128,
+        "line": 120,
         "reason": "module-scope-or-helper",
         "text": "특정 옵션에 현재 살아있는(아직 청산 안 된) 계약 수예요."
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 129,
+        "line": 121,
         "reason": "module-scope-or-helper",
         "text": "한쪽 가격대에 OI가 두텁다는 건 그 가격에 많은 사람이 베팅했다는 뜻이에요."
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 138,
+        "line": 130,
         "reason": "module-scope-or-helper",
         "text": "특정 strike에서 콜(상승) 옵션을 산 사람들이 아직 갖고 있는 계약 수예요."
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 142,
+        "line": 134,
         "reason": "module-scope-or-helper",
         "text": "이 가격에 콜 OI가 두텁다 = 시장 참여자들이 “주가가 이 가격 위로 갈 것”에 베팅을 많이 걸어둔 자리예요."
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 146,
+        "line": 138,
         "reason": "module-scope-or-helper",
         "text": "추세가 살아 있을 때 저항선이 깨지면 가격을 위로 끌어당기는 자석처럼 작용해요."
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 155,
+        "line": 147,
         "reason": "module-scope-or-helper",
         "text": "특정 strike에서 풋(하락) 옵션을 산 사람들이 아직 갖고 있는 계약 수예요."
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 159,
+        "line": 151,
         "reason": "module-scope-or-helper",
         "text": "이 가격에 풋 OI가 두텁다 = “이 가격 아래로는 안 떨어졌으면 좋겠다”는 보험성 베팅이 쌓인 자리예요."
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 163,
+        "line": 155,
         "reason": "module-scope-or-helper",
         "text": "주가가 가까이 가면 지지선처럼 작동하는 경우가 많아요."
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 169,
+        "line": 161,
         "reason": "module-scope-or-helper",
         "text": "오늘 새로 체결된 콜 옵션 계약 수예요."
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 170,
+        "line": 162,
         "reason": "module-scope-or-helper",
         "text": "Call Vol이 많다 = 오늘 새로 콜에 베팅하는 사람이 많다 → 단기 강세 기대가 활발하다는 뜻이에요."
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 175,
+        "line": 167,
         "reason": "module-scope-or-helper",
         "text": "OI와 함께 읽기"
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 175,
+        "line": 167,
         "reason": "module-scope-or-helper",
         "text": ": Vol↑ + OI↑는 새 자금이 들어와 추세가 강해지는 신호, Vol↑ + OI↓는 기존 포지션을 청산하며 추세가 약해지는 신호, Vol이 "
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 185,
+        "line": 177,
         "reason": "module-scope-or-helper",
         "text": "오늘 새로 체결된 풋 옵션 계약 수예요."
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 186,
+        "line": 178,
         "reason": "module-scope-or-helper",
         "text": "Put Vol이 많다 = 오늘 새로 하락 베팅이나 헷지가 늘었다 → 단기 위험 관리 수요가 강하다는 뜻이에요."
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 191,
+        "line": 183,
         "reason": "module-scope-or-helper",
         "text": "OI와 함께 읽기"
     },
     {
         "file": "src/widgets/options/utils/optionsTooltips.tsx",
-        "line": 191,
+        "line": 183,
         "reason": "module-scope-or-helper",
         "text": ": Vol↑ + OI↑는 새 헷지/하락 베팅이 진짜 자금으로 들어오는 신호, Vol↑ + OI↓는 보유 포지션을 청산하는 (헷지 해제 등) 신호"
     },
     {
         "file": "src/widgets/overall/OverallContent.tsx",
-        "line": 224,
+        "line": 226,
         "reason": "template-needs-icu-review",
         "text": "` (${state.axis} 축 실패)`"
     },
     {
         "file": "src/widgets/overall/OverallFactsSummary.tsx",
-        "line": 12,
+        "line": 13,
         "reason": "module-scope-or-helper",
         "text": "강세 시나리오"
     },
     {
         "file": "src/widgets/overall/OverallFactsSummary.tsx",
-        "line": 13,
+        "line": 14,
         "reason": "module-scope-or-helper",
         "text": "중립 시나리오"
     },
     {
         "file": "src/widgets/overall/OverallFactsSummary.tsx",
-        "line": 14,
+        "line": 15,
         "reason": "module-scope-or-helper",
         "text": "약세 시나리오"
     },
     {
         "file": "src/widgets/overall/OverallFactsSummary.tsx",
-        "line": 31,
+        "line": 33,
         "reason": "template-needs-icu-review",
         "text": "`${symbol} 종합 분석 요약`"
     },
     {
         "file": "src/widgets/overall/OverallFactualFallback.tsx",
-        "line": 27,
+        "line": 28,
         "reason": "module-scope-or-helper",
         "text": "차트, 뉴스, 공포 탐욕 지수"
     },
     {
         "file": "src/widgets/overall/OverallFactualFallback.tsx",
-        "line": 31,
+        "line": 32,
         "reason": "module-scope-or-helper",
         "text": "차트, 뉴스, 펀더멘털, 옵션, 공포 탐욕 지수"
     },
     {
         "file": "src/widgets/overall/OverallFactualFallback.tsx",
-        "line": 34,
+        "line": 35,
         "reason": "module-scope-or-helper",
         "text": "차트, 뉴스, 펀더멘털, 공포 탐욕 지수"
     },
@@ -10555,19 +10411,19 @@
     },
     {
         "file": "src/widgets/overall/sections/ScenarioAnalysis.tsx",
-        "line": 9,
+        "line": 10,
         "reason": "module-scope-or-helper",
         "text": "강세"
     },
     {
         "file": "src/widgets/overall/sections/ScenarioAnalysis.tsx",
-        "line": 10,
+        "line": 11,
         "reason": "module-scope-or-helper",
         "text": "중립"
     },
     {
         "file": "src/widgets/overall/sections/ScenarioAnalysis.tsx",
-        "line": 11,
+        "line": 12,
         "reason": "module-scope-or-helper",
         "text": "약세"
     },
@@ -10681,19 +10537,19 @@
     },
     {
         "file": "src/widgets/portfolio-position/ui/PositionCard.tsx",
-        "line": 95,
+        "line": 100,
         "reason": "template-needs-icu-review",
         "text": "`${model.rangePositionPct.toFixed(0)}% 지점`"
     },
     {
         "file": "src/widgets/portfolio-position/ui/PositionStatusSummary.tsx",
-        "line": 72,
+        "line": 74,
         "reason": "template-needs-icu-review",
         "text": "`${trimTrailingZeros(quantityRaw)}주`"
     },
     {
         "file": "src/widgets/portfolio-position/ui/PositionStatusSummary.tsx",
-        "line": 103,
+        "line": 105,
         "reason": "template-needs-icu-review",
         "text": "`${status.rangePositionPct.toFixed(0)}% 지점`"
     },
@@ -10747,7 +10603,7 @@
     },
     {
         "file": "src/widgets/share/ui/ShareButton.tsx",
-        "line": 79,
+        "line": 81,
         "reason": "template-needs-icu-review",
         "text": "`${symbol} AI 분석 결과`"
     }

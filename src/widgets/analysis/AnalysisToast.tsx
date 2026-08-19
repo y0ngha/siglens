@@ -57,9 +57,9 @@ export function AnalysisToast({ notice }: AnalysisToastProps) {
                 {t('AnalysisToast.93531d')}
                 <br />
                 <span className="text-secondary-400">
-                    {t('AnalysisToast.6e9d56')}{' '}
-                    {formatRemaining(notice.remainingMs)}{' '}
-                    {t('AnalysisToast.89856d')}
+                    {t('AnalysisToast.b87ea9', {
+                        v0: formatRemaining(notice.remainingMs),
+                    })}
                 </span>
             </span>
         </div>

@@ -51,6 +51,26 @@ function flatten(node, prefix = '', out = {}) {
     return out;
 }
 
+/**
+ * 번역문이 용어집 항목을 (어형 변화를 감안해) 담고 있는가.
+ *
+ * 정확 일치를 요구하면 정상 번역이 대량으로 걸린다 — 실측에서 `Options` 하나로
+ * 21건이 오탐이었고, 그중 하나(`가입은 옵션이며` → `Membership is optional`)는
+ * 애초에 다의어라 용어집을 적용하면 **안 되는** 자리였다. 게이트가 늑대를 계속
+ * 외치면 사람이 게이트를 끈다.
+ */
+function containsTerm(text, expected) {
+    const haystack = text.toLowerCase();
+    const needle = expected.toLowerCase();
+    if (haystack.includes(needle)) return true;
+    // 복수 → 단수 (`options` → `option`)
+    if (needle.endsWith('s') && haystack.includes(needle.slice(0, -1))) {
+        return true;
+    }
+    // 단수 → 복수
+    return haystack.includes(`${needle}s`);
+}
+
 function placeholders(text) {
     return new Set([...String(text).matchAll(PLACEHOLDER)].map(m => m[1]));
 }
@@ -114,7 +134,10 @@ for (const locale of TARGETS) {
         for (const [term, translations] of Object.entries(glossary)) {
             const expected = translations[locale];
             if (!expected || !ko.includes(term)) continue;
-            if (!text.includes(expected)) {
+            // 표기·어형은 문맥이 정한다. `Options` 용어가 `Select Option
+            // Expiration`처럼 단수로 쓰이는 것은 정상이고, 문장 첫머리면
+            // 대문자가 된다. **용어가 쓰였는지**만 본다.
+            if (!containsTerm(text, expected)) {
                 fail(
                     '3-용어집',
                     `${locale} ${key}: "${term}" → "${expected}" 미사용`
@@ -148,11 +171,54 @@ for (const locale of TARGETS) {
         }
 
         // 6. 길이 상식 — 잘림 또는 환각 장문
-        const ratio = text.length / Math.max(ko.length, 1);
-        if (ratio < 0.4 || ratio > 3) {
+        //
+        // 짧은 원문에는 비율을 적용하지 않는다. `계정`(2자) → `Account settings`(16자)는
+        // 8배지만 정상이다 — 한국어는 한자어 축약이 강해 영어보다 훨씬 짧다.
+        // 실측에서 이 규칙 없이 398건이 오탐으로 걸렸다. 절대 하한을 두고, 긴 문장에만
+        // 비율을 본다(그쪽에서 잘림·환각이 실제로 문제가 된다).
+        // 상한은 추측이 아니라 **실측 분포**에서 정했다. ko→en 265건(20자 이상)의
+        // 팽창 비율은 p50 1.78 · p90 2.39 · p99 3.11 · 최대 3.23이었다. 4.0이면
+        // 정상 번역은 전부 통과하고, 환각 장문(원문의 5~10배)은 확실히 걸린다.
+        // 3.0으로 두면 정상 번역 5건이 걸려 게이트가 늑대를 외친다.
+        // 언어마다 압축률이 다르다. 한국어 대비 실측(20자 이상, n=276):
+        //   en  min 0.80 · p50 1.83 · max 3.23  (영어가 길다)
+        //   ja  min 0.32 · p50 0.96 · max 1.33
+        //   zh  min 0.17 · p50 0.62 · max 1.14  (중국어가 훨씬 짧다)
+        // 하나의 임계값으로 세 언어를 재면 zh 정상 번역이 대량으로 걸린다.
+        const BOUNDS = {
+            en: { min: 0.6, max: 4 },
+            ja: { min: 0.3, max: 2 },
+            zh: { min: 0.15, max: 2 },
+        };
+        const MIN_KO_LENGTH_FOR_RATIO = 20;
+        const bounds = BOUNDS[locale] ?? { min: 0.3, max: 4 };
+        if (ko.length >= MIN_KO_LENGTH_FOR_RATIO) {
+            const ratio = text.length / ko.length;
+            if (ratio < bounds.min || ratio > bounds.max) {
+                fail(
+                    '6-길이',
+                    `${locale} ${key}: 비율 ${ratio.toFixed(2)} (${ko.length}자 → ${text.length}자)`
+                );
+            }
+        }
+    }
+}
+
+// ── 게이트 8: ICU 따옴표 이스케이프 ──────────────────────────────────────
+//
+// 작은따옴표는 ICU의 이스케이프 문자다. `'{v0}'`은 리터럴 `{v0}`으로 읽혀
+// **치환이 조용히 건너뛰어지고** 화면에 `{v0}`이 그대로 나온다. 리터럴 따옴표는
+// `''`로 써야 한다. 번역 모델이 원문의 `''`를 `'`로 되돌리는 일이 잦아
+// 모든 로케일을 검사한다.
+for (const locale of LOCALES) {
+    for (const [key, raw] of Object.entries(catalogs[locale])) {
+        const text = String(raw);
+        if (!text.includes('{')) continue;
+        // 홀수 개의 연속 따옴표가 중괄호 앞에 오면 이스케이프가 깨진 것이다.
+        if (/(^|[^'])'(\{|\w*\{)/.test(text)) {
             fail(
-                '6-길이',
-                `${locale} ${key}: 비율 ${ratio.toFixed(2)} (${ko.length}자 → ${text.length}자)`
+                '8-ICU따옴표',
+                `${locale} ${key}: "${text.slice(0, 50)}" — 리터럴 따옴표는 ''로 써야 한다`
             );
         }
     }

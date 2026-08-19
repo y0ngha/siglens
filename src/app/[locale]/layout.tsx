@@ -199,7 +199,10 @@ export default async function RootLayout({
     // dynamic으로 떨어지고 ISR이 통째로 꺼진다(Next 16.2는 next/root-params 미지원).
     setRequestLocale(locale);
 
-    const messages = await getMessages();
+    // 로케일을 명시적으로 넘긴다. 인자 없이 부르면 요청 스코프 상태에 의존하는데,
+    // 이 레이아웃은 `params`로 이미 확정된 값을 갖고 있다 — 요청 상태를 거칠
+    // 이유가 없고, `generateMetadata`가 먼저 도는 순서에도 영향받지 않는다.
+    const messages = await getMessages({ locale });
 
     return (
         <html

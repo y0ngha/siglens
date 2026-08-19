@@ -54,7 +54,7 @@ export function OptionsEmptyState({
         <main className="mx-auto max-w-5xl px-4 py-16">
             <div className="rounded-xl border border-secondary-700 bg-secondary-800 p-8 text-center">
                 <h1 className="text-xl font-semibold tracking-tight">
-                    {symbol} {t('OptionsEmptyState.68a411')}
+                    {t('OptionsEmptyState.64ff0f', { v0: symbol })}
                 </h1>
                 <p className="mt-3 text-sm leading-relaxed text-secondary-400">
                     {symbol}

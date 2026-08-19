@@ -321,7 +321,7 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
                     </span>
                 </div>
                 <p className="text-sm text-secondary-400">
-                    {NEWS_LIST_PERIOD_LABEL} {t('NewsList.526674')}
+                    {t('NewsList.b75118', { v0: NEWS_LIST_PERIOD_LABEL })}
                 </p>
             </section>
         );
@@ -360,9 +360,7 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
                     onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
                     className="w-full rounded-lg border border-secondary-700 py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    {t('NewsList.e5a749')}
-                    {items.length - visibleCount}
-                    {t('NewsList.03df8c')}
+                    {t('NewsList.8e5a3a', { v0: items.length - visibleCount })}
                 </button>
             )}
         </section>

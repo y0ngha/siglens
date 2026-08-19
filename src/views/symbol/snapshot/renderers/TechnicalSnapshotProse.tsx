@@ -182,8 +182,10 @@ export function TechnicalSnapshotProse({
                 <div className="space-y-2">
                     {narrowed.trend !== null && (
                         <p className="font-medium text-secondary-200">
-                            {symbol} {t('TechnicalSnapshotProse.e61e3d')}{' '}
-                            {TREND_LABEL[narrowed.trend]}
+                            {t('TechnicalSnapshotProse.4195b7', {
+                                v0: symbol,
+                                v1: TREND_LABEL[narrowed.trend],
+                            })}
                         </p>
                     )}
                     {paragraphs.map((line, i) => (

@@ -62,20 +62,22 @@ export function OptionsStaleDataBanner() {
             <div className="mt-1 space-y-1 text-ui-warning/90">
                 <p>{t('OptionsStaleDataBanner.baed2a')}</p>
                 <p>
-                    {t('OptionsStaleDataBanner.06ca82')}
-                    {ET_MARKET_HOURS_DISPLAY}
-                    {t('OptionsStaleDataBanner.809bae')}
+                    {t('OptionsStaleDataBanner.c5ab1a', {
+                        v0: ET_MARKET_HOURS_DISPLAY,
+                    })}
                 </p>
                 <p>
-                    {t('OptionsStaleDataBanner.00a287')} {KST_EDT_HOURS_DISPLAY}
-                    {t('OptionsStaleDataBanner.094058')} {KST_EST_HOURS_DISPLAY}
-                    {t('OptionsStaleDataBanner.393510')}
+                    {t('OptionsStaleDataBanner.2696b9', {
+                        v0: KST_EDT_HOURS_DISPLAY,
+                        v1: KST_EST_HOURS_DISPLAY,
+                    })}
                 </p>
                 {isHydrated && (
                     <p>
-                        {t('OptionsStaleDataBanner.85e1b9')} {currentDstLabel}{' '}
-                        {t('OptionsStaleDataBanner.ae7fe3')} {currentKstWindow}
-                        {t('OptionsStaleDataBanner.3ea562')}
+                        {t('OptionsStaleDataBanner.6bdf35', {
+                            v0: currentDstLabel,
+                            v1: currentKstWindow,
+                        })}
                     </p>
                 )}
             </div>

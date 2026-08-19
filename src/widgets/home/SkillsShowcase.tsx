@@ -128,10 +128,15 @@ function ConfidenceInfoTooltip() {
                 <div className="leading-relaxed text-secondary-300">
                     <p>{t('SkillsShowcase.ebff92')}</p>
                     <p>
-                        {MEDIUM_PCT}
-                        {t('SkillsShowcase.621e21')} {MEDIUM_PCT}~{HIGH_PCT}
-                        {t('SkillsShowcase.a6f18e')} {HIGH_PCT}
-                        {t('SkillsShowcase.48fcfa')}
+                        {t('SkillsShowcase.e20b1b', {
+                            v0: MEDIUM_PCT,
+                            v1: MEDIUM_PCT,
+                        })}
+                        ~
+                        {t('SkillsShowcase.c266ba', {
+                            v0: HIGH_PCT,
+                            v1: HIGH_PCT,
+                        })}
                     </p>
                     <p>{t('SkillsShowcase.e0f5c5')}</p>
                 </div>

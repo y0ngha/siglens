@@ -79,7 +79,7 @@ export function TechnicalFactsSummary({
                 id={headingId}
                 className="text-sm font-semibold text-secondary-200"
             >
-                {symbol} {t('TechnicalFactsSummary.880cd6')}
+                {t('TechnicalFactsSummary.170a59', { v0: symbol })}
             </h2>
             <dl className="grid grid-cols-1 gap-2 text-sm text-secondary-300">
                 <div className="flex justify-between gap-4">
@@ -90,8 +90,10 @@ export function TechnicalFactsSummary({
                             숫자의 일부처럼 읽힌다. */}
                         {quoteDelayMinutes > 0 && (
                             <span className="ml-1 text-xs font-normal text-secondary-500">
-                                ({quoteDelayMinutes}
-                                {t('TechnicalFactsSummary.310c70')}
+                                (
+                                {t('TechnicalFactsSummary.e532e4', {
+                                    v0: quoteDelayMinutes,
+                                })}
                             </span>
                         )}
                     </dt>
@@ -125,10 +127,11 @@ export function TechnicalFactsSummary({
                         {`최근 ${RECENT_BARS_WINDOW}개 봉 위치`}
                     </dt>
                     <dd>
-                        {t('TechnicalFactsSummary.10a318')}{' '}
-                        {facts.pctFrom52wHigh.toFixed(1)}
-                        {t('TechnicalFactsSummary.130d28')}
-                        {facts.pctAbove52wLow.toFixed(1)}%
+                        {t('TechnicalFactsSummary.269f7b', {
+                            v0: facts.pctFrom52wHigh.toFixed(1),
+                            v1: facts.pctAbove52wLow.toFixed(1),
+                        })}
+                        %
                     </dd>
                 </div>
             </dl>

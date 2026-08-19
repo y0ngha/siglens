@@ -149,9 +149,9 @@ export function AnalystActions({ events }: AnalystActionsProps) {
                     onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
                     className="w-full rounded-lg border border-secondary-700 py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
                 >
-                    {t('AnalystActions.e5a749')}
-                    {events.length - visibleCount}
-                    {t('AnalystActions.03df8c')}
+                    {t('AnalystActions.8e5a3a', {
+                        v0: events.length - visibleCount,
+                    })}
                 </button>
             )}
         </section>

@@ -29,21 +29,29 @@ export type NavVerticalId = 'market' | 'fear-greed' | 'news' | 'economy';
 
 export interface NavRegionLink {
     readonly region: NavRegionId;
-    /** 드롭다운/탭에 보이는 짧은 라벨(`미국`). 버티컬 맥락 안에서만 읽힌다. */
-    readonly label: string;
     /**
-     * 맥락 없이 홀로 읽혀도 뜻이 통하는 라벨(`미국 시장 분석`).
+     * 드롭다운/탭에 보이는 짧은 라벨의 **메시지 키**(`미국`).
+     *
+     * 문자열이 아니라 키인 이유: 이 모듈은 모듈 스코프 상수라 훅을 부를 수 없고
+     * 서버·클라이언트 양쪽에서 import된다. 키를 들고 다니면 번역 시점을 소비자가
+     * 정한다. **네임스페이스까지 포함한 완전 수식 키**다 — 내비 트리는 이 모듈의
+     * 키와 `entities/market-news`의 카테고리 키를 같은 필드에 섞어 담으므로
+     * 소비자가 네임스페이스를 짐작할 수 없다. 소비자는 `useTranslations()`(루트)로 푼다.
+     */
+    readonly labelKey: string;
+    /**
+     * 맥락 없이 홀로 읽혀도 뜻이 통하는 라벨의 메시지 키(`미국 시장 분석`).
      * 푸터와 `aria-label`이 쓴다 — 푸터는 버티컬 그룹핑 없이 평탄하게 나열하므로
      * 짧은 라벨만 쓰면 `미국 · 한국 · 미국 · 한국`처럼 의미를 잃는다.
      */
-    readonly fullLabel: string;
+    readonly fullLabelKey: string;
     readonly href: string;
 }
 
 export interface NavVertical {
     readonly id: NavVerticalId;
-    /** 1단 메뉴 라벨. 지역 수식어(`미국`)를 **붙이지 않는다** — 지역은 2단이 정한다. */
-    readonly label: string;
+    /** 1단 메뉴 라벨의 메시지 키. 지역 수식어(`미국`)를 **붙이지 않는다** — 지역은 2단이 정한다. */
+    readonly labelKey: string;
     /**
      * 버티컬의 대표 목적지 — 활성 상태 판정(하위 경로 접두사)과 홈 퀵링크가 쓴다.
      *
@@ -59,82 +67,82 @@ export interface NavVertical {
 export const NAV_VERTICALS: readonly NavVertical[] = [
     {
         id: 'market',
-        label: '시장 분석',
+        labelKey: 'shared.config.nav.vertical.market',
         rootHref: '/market',
         regions: [
             {
                 region: 'us',
-                label: '미국',
-                fullLabel: '미국 시장 분석',
+                labelKey: 'shared.config.nav.region.us',
+                fullLabelKey: 'shared.config.nav.full.market.us',
                 href: '/market',
             },
             {
                 region: 'kr',
-                label: '한국',
-                fullLabel: '한국 시장 분석',
+                labelKey: 'shared.config.nav.region.kr',
+                fullLabelKey: 'shared.config.nav.full.market.kr',
                 href: '/market/kr',
             },
         ],
     },
     {
         id: 'fear-greed',
-        label: '공포·탐욕 지수',
+        labelKey: 'shared.config.nav.vertical.fear-greed',
         rootHref: '/fear-greed',
         regions: [
             {
                 region: 'us',
-                label: '미국',
-                fullLabel: '미국 공포·탐욕 지수',
+                labelKey: 'shared.config.nav.region.us',
+                fullLabelKey: 'shared.config.nav.full.fear-greed.us',
                 href: '/fear-greed',
             },
             {
                 region: 'kr',
-                label: '한국',
-                fullLabel: '한국 공포·탐욕 지수',
+                labelKey: 'shared.config.nav.region.kr',
+                fullLabelKey: 'shared.config.nav.full.fear-greed.kr',
                 href: '/fear-greed/kr',
             },
         ],
     },
     {
         id: 'news',
-        label: '뉴스',
+        labelKey: 'shared.config.nav.vertical.news',
         rootHref: '/news',
         regions: [
             {
                 region: 'us',
-                label: '미국',
-                fullLabel: '미국 시장 뉴스',
+                labelKey: 'shared.config.nav.region.us',
+                fullLabelKey: 'shared.config.nav.full.news.us',
                 href: '/news/us',
             },
             {
                 region: 'kr',
-                label: '한국',
-                fullLabel: '한국 시장 뉴스',
+                labelKey: 'shared.config.nav.region.kr',
+                fullLabelKey: 'shared.config.nav.full.news.kr',
                 href: '/news/kr',
             },
             {
                 region: 'crypto',
-                label: '암호화폐',
-                fullLabel: '암호화폐 뉴스',
+                labelKey: 'shared.config.nav.region.crypto',
+                fullLabelKey: 'shared.config.nav.full.news.crypto',
                 href: '/news/crypto',
             },
         ],
     },
     {
         id: 'economy',
-        label: '경제',
+        labelKey: 'shared.config.nav.vertical.economy',
         rootHref: '/economy',
         regions: [
             {
                 region: 'us',
-                label: '미국',
-                fullLabel: '미국 경제',
+                labelKey: 'shared.config.nav.region.us',
+                fullLabelKey: 'shared.config.nav.full.economy.us',
                 href: '/economy',
             },
             {
                 region: 'kr',
-                label: '한국',
-                fullLabel: '한국 경제',
+                labelKey: 'shared.config.nav.region.kr',
+                fullLabelKey: 'shared.config.nav.full.economy.kr',
                 href: '/economy/kr',
             },
         ],
@@ -188,8 +196,9 @@ export const NAV_OVERVIEW_LINKS: readonly NavRegionLink[] =
             : [
                   {
                       region: v.regions[0]!.region,
-                      label: v.label,
-                      fullLabel: `${v.label} 전체`,
+                      labelKey: v.labelKey,
+                      // `{vertical} 전체` — 어순이 언어마다 달라 별도 키로 둔다.
+                      fullLabelKey: `shared.config.nav.overviewFull.${v.id}`,
                       href: v.rootHref,
                   },
               ]

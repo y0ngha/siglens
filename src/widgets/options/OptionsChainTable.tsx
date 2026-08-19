@@ -148,17 +148,17 @@ export function OptionsChainTable({
             <div id="options-chain-table" hidden={!expanded}>
                 {expirationDate === 'all' && nearestExpiry && (
                     <p className="mt-2 px-1 text-[10px] text-secondary-500">
-                        {t('OptionsChainTable.1b1d72')}
-                        {nearestExpiry}
-                        {t('OptionsChainTable.fa4a47')}
+                        {t('OptionsChainTable.0300a5', { v0: nearestExpiry })}
                     </p>
                 )}
 
                 <div className="mt-2 overflow-x-auto">
                     <table className="w-full border-collapse text-sm">
                         <caption className="sr-only">
-                            {symbol} {expirationDate}{' '}
-                            {t('OptionsChainTable.9440a2')}
+                            {t('OptionsChainTable.b2411c', {
+                                v0: symbol,
+                                v1: expirationDate,
+                            })}
                         </caption>
 
                         <thead className="border-b border-secondary-700 text-xs tracking-widest text-secondary-400 uppercase">

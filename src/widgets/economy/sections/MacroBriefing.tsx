@@ -104,8 +104,9 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
             )}
             {generatedAt !== null && (
                 <p className="mt-3 text-xs text-secondary-400">
-                    {t('MacroBriefing.82b8a1')}{' '}
-                    {formatKoreanDateTime(generatedAt)}
+                    {t('MacroBriefing.62f15d', {
+                        v0: formatKoreanDateTime(generatedAt),
+                    })}
                 </p>
             )}
         </section>

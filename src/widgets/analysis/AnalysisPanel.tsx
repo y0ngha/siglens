@@ -1072,13 +1072,14 @@ export function AnalysisPanel({
                     적용 수만 노출한다. 회원가입 안내는 아래 업셀 카드가 담당한다. */}
                 {!hasLockedDetails && (
                     <>
-                        {detectedPatterns.length +
-                            detectedStrategyResults.length}
-                        {t('AnalysisPanel.715a79')}{' '}
+                        {t('AnalysisPanel.c80f22', {
+                            v0:
+                                detectedPatterns.length +
+                                detectedStrategyResults.length,
+                        })}
                     </>
                 )}
-                {indicatorCount}
-                {t('AnalysisPanel.4450ef')}
+                {t('AnalysisPanel.911acb', { v0: indicatorCount })}
             </p>
 
             {/* 분석 중에는 진행 인디케이터로 대체.

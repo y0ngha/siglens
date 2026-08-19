@@ -32,7 +32,7 @@ export function OverallFactsSummary({
     return (
         <section aria-label={`${symbol} 종합 분석 요약`} className="space-y-4">
             <h2 className="sr-only">
-                {symbol} {t('OverallFactsSummary.5b1ab5')}
+                {t('OverallFactsSummary.9a8ae8', { v0: symbol })}
             </h2>
             <p className="text-sm leading-relaxed text-secondary-300">
                 {analysis.headlineKo}

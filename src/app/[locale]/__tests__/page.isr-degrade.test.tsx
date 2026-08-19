@@ -30,9 +30,11 @@ vi.mock('@/widgets/home', () => ({
     //
     // 빈 배열로 두지 않는다. degrade 경로에서 홈이 "비지 않은 엘리먼트"를 낸다는
     // 이 파일의 단언은, 히어로 퀵링크 렌더 블록이 통째로 사라져도 통과해 버린다.
+    // 라벨은 이제 **메시지 키**다. 실제 카탈로그에 있는 키를 쓴다 — 지어낸 키면
+    // 폴백 문자열이 나와 아래 단언이 카탈로그 누락을 잡지 못한다.
     HERO_QUICK_LINKS: [
-        { href: '/market', label: '오늘 주목할 종목' },
-        { href: '/news', label: '미국 시장 뉴스' },
+        { href: '/market', labelKey: 'shared.config.nav.full.market.us' },
+        { href: '/news', labelKey: 'shared.config.nav.full.news.us' },
     ],
     CryptoShowcase: () => null,
     HeroIllustration: () => null,
@@ -71,6 +73,7 @@ vi.mock('next/link', () => ({
     ),
 }));
 
+import { koMessage } from '@/shared/test-utils/koMessage';
 import {
     describe,
     it,
@@ -134,10 +137,14 @@ describe('Home page ISR empty-cache prevention', () => {
         render(await Home({ params: Promise.resolve({ locale: 'ko' }) }));
 
         expect(
-            screen.getByRole('link', { name: '미국 시장 뉴스' })
+            screen.getByRole('link', {
+                name: koMessage('shared.config.nav.full.news.us'),
+            })
         ).toHaveAttribute('href', '/news');
         expect(
-            screen.getByRole('link', { name: '오늘 주목할 종목' })
+            screen.getByRole('link', {
+                name: koMessage('shared.config.nav.full.market.us'),
+            })
         ).toHaveAttribute('href', '/market');
     });
 

@@ -103,10 +103,11 @@ function IndicatorCard({ card }: IndicatorCardProps) {
                         해석까지 색으로 단정하지 않는다. 상승=적색은 국내 증시
                         관행(상승 적색)과 같은 방향이라 오독이 적다.
                     */}
-                    {t('KrEconomicIndicatorGrid.45a5c4')}{' '}
-                    {changeFromPrevious > 0 ? '+' : ''}
-                    {changeFromPrevious.toFixed(meta.precision)}
-                    {meta.unit}
+                    {t('KrEconomicIndicatorGrid.9fc30a', {
+                        v0: changeFromPrevious > 0 ? '+' : '',
+                        v1: changeFromPrevious.toFixed(meta.precision),
+                        v2: meta.unit,
+                    })}
                 </p>
             )}
             <p className="mt-1 text-xs text-secondary-500">{latestDate}</p>

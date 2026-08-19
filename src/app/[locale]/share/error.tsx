@@ -32,7 +32,7 @@ export default function ShareError({ error, reset }: ShareErrorProps) {
                 {t('error.3cf233')}
             </h1>
             <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">
-                {t('error.aecbf9')} {SITE_NAME} {t('error.ca83b5')}
+                {t('error.1dedc8', { v0: SITE_NAME })}
             </p>
             <div className="mt-8 flex gap-3">
                 <button
@@ -46,7 +46,7 @@ export default function ShareError({ error, reset }: ShareErrorProps) {
                     href="/"
                     className="inline-flex min-h-11 items-center rounded-lg px-6 text-sm font-medium text-secondary-200 transition-colors hover:text-secondary-50 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
                 >
-                    {SITE_NAME} {t('error.d8c261')}
+                    {t('error.eb2523', { v0: SITE_NAME })}
                 </Link>
             </div>
         </main>

@@ -44,7 +44,7 @@ export function CongressDegraded({
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
             <SymbolPageHeading>
-                {displayName} {t('CongressDegraded.7b06ac')}
+                {t('CongressDegraded.e607c1', { v0: displayName })}
             </SymbolPageHeading>
             <CongressSnapshotProse
                 content={snapshotContent}

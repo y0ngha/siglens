@@ -50,11 +50,10 @@ export function SectorFactsSummary({ data }: SectorFactsSummaryProps) {
                                 {fact.sectorSymbol}
                             </dt>
                             <dd>
-                                {t('SectorFactsSummary.080a8a')}{' '}
-                                {fact.bullishCount}
-                                {t('SectorFactsSummary.7e56b6')}{' '}
-                                {fact.bearishCount}
-                                {t('SectorFactsSummary.dfa8d7')}
+                                {t('SectorFactsSummary.e6dcde', {
+                                    v0: fact.bullishCount,
+                                    v1: fact.bearishCount,
+                                })}
                                 {fact.topSymbols.length > 0 && (
                                     <span className="ml-2 text-secondary-500">
                                         {/* parens as JSX expressions → no stray whitespace around them */}

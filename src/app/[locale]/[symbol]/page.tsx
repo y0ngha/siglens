@@ -292,13 +292,8 @@ export default async function SymbolPage({ params }: Props) {
                     {/* 차트 h1은 SymbolPageClient(이 section보다 DOM 뒤)에 있어,
                         여기에 heading을 두면 h1보다 먼저 나와 위계가 역전된다
                         (WCAG 1.3.1). 보조 설명은 heading 없이 p로만 노출한다. */}
-                    <p>
-                        {displayName} {t('page.2a2b89')}
-                    </p>
-                    <p>
-                        {displayName}
-                        {t('page.1df4e8')}
-                    </p>
+                    <p>{t('page.f07882', { v0: displayName })}</p>
+                    <p>{t('page.f07925', { v0: displayName })}</p>
                 </section>
                 {/* h-full + shrink-0: main의 전체 높이를 basis로 고정하고 shrink를
                     금지해, 뒤따르는 TechnicalSnapshotProse가 있어도 이 chart+AI

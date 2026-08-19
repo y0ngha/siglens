@@ -77,9 +77,9 @@ export function AnalysisSignupNudgeModal({
                             ends in a consonant (batchim) — true for '상세 분석'
                             (분석 ends in 석). Revisit the particle (을/를) if the
                             label ever changes to a vowel-final word. */}
-                        {t('AnalysisSignupNudgeModal.0faeab')}
-                        {REASONING_FEATURE_LABEL}
-                        {t('AnalysisSignupNudgeModal.32fe41')}
+                        {t('AnalysisSignupNudgeModal.486011', {
+                            v0: REASONING_FEATURE_LABEL,
+                        })}
                     </p>
                 </div>
 

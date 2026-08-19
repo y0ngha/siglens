@@ -14,7 +14,7 @@ export function ContextSwitchSystemMessage({
             className="my-2 rounded-md bg-secondary-800 px-3 py-2 text-xs text-secondary-300"
             role="status"
         >
-            {label} {t('ContextSwitchSystemMessage.c3992c')}
+            {t('ContextSwitchSystemMessage.aa779e', { v0: label })}
         </div>
     );
 }

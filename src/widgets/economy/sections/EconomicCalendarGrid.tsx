@@ -241,10 +241,12 @@ function DayDetailPanel({
             )}
         >
             <h3 className="font-semibold text-secondary-100">
-                {month + 1}
-                {t('EconomicCalendarGrid.754486')} {day}
-                {t('EconomicCalendarGrid.957e9a')}
-                {dowLabel})
+                {t('EconomicCalendarGrid.dc712b', {
+                    v0: month + 1,
+                    v1: day,
+                    v2: dowLabel,
+                })}
+                )
             </h3>
             <ul className="space-y-2">
                 {group.events.map(ev => {
@@ -273,25 +275,27 @@ function DayDetailPanel({
                                         )}
                                     </p>
                                     <p className="mt-0.5 text-xs text-secondary-400">
-                                        {t('EconomicCalendarGrid.764ee3')}{' '}
-                                        {formatNum(
-                                            ev.original.estimate,
-                                            ev.original.unit
-                                        )}{' '}
-                                        {t('EconomicCalendarGrid.30d561')}{' '}
-                                        {formatNum(
-                                            ev.original.previous,
-                                            ev.original.unit
-                                        )}
+                                        {t('EconomicCalendarGrid.3ebd79', {
+                                            v0: formatNum(
+                                                ev.original.estimate,
+                                                ev.original.unit
+                                            ),
+                                            v1: formatNum(
+                                                ev.original.previous,
+                                                ev.original.unit
+                                            ),
+                                        })}
                                         {ev.original.actual !== null && (
                                             <>
                                                 {' '}
                                                 {t(
-                                                    'EconomicCalendarGrid.2fbc54'
-                                                )}{' '}
-                                                {formatNum(
-                                                    ev.original.actual,
-                                                    ev.original.unit
+                                                    'EconomicCalendarGrid.e1d376',
+                                                    {
+                                                        v0: formatNum(
+                                                            ev.original.actual,
+                                                            ev.original.unit
+                                                        ),
+                                                    }
                                                 )}
                                             </>
                                         )}
@@ -424,8 +428,7 @@ function DayCell({
                 </span>
 
                 <span className="mt-0.5 block text-[10px] text-secondary-300 tabular-nums">
-                    {count}
-                    {t('EconomicCalendarGrid.d202b4')}
+                    {t('EconomicCalendarGrid.703910', { v0: count })}
                 </span>
 
                 <span className="mt-1 hidden space-y-0.5 sm:block">
@@ -502,8 +505,10 @@ function MonthCalendar({
                 className="mb-2 text-sm font-medium text-secondary-300"
                 aria-hidden="true"
             >
-                {year}
-                {t('EconomicCalendarGrid.cdb423')} {MONTH_LABELS[month]}
+                {t('EconomicCalendarGrid.490b3a', {
+                    v0: year,
+                    v1: MONTH_LABELS[month],
+                })}
             </p>
             <table className="w-full table-fixed border-collapse">
                 <caption className="sr-only">{captionText}</caption>
@@ -662,9 +667,9 @@ export function EconomicCalendarGrid({
                     </span>
                 </h2>
                 <p className="text-sm text-secondary-400">
-                    {t('EconomicCalendarGrid.5dfc7f')}{' '}
-                    {CALENDAR_COUNTRY_LABEL[country]}{' '}
-                    {t('EconomicCalendarGrid.bdc29f')}
+                    {t('EconomicCalendarGrid.f9d9dc', {
+                        v0: CALENDAR_COUNTRY_LABEL[country],
+                    })}
                 </p>
             </section>
         );

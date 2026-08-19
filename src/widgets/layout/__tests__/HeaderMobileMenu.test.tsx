@@ -37,6 +37,7 @@ vi.mock('@/shared/hooks/useFocusTrap', () => ({
     useFocusTrap: vi.fn(),
 }));
 
+import { koMessage } from '@/shared/test-utils/koMessage';
 import React, { act } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
@@ -173,7 +174,9 @@ describe('HeaderMobileMenu', () => {
         fireEvent.click(screen.getByRole('button', { name: '메뉴 열기' }));
 
         for (const vertical of NAV_TREE) {
-            expect(screen.getByText(vertical.label)).toBeInTheDocument();
+            expect(
+                screen.getByText(koMessage(vertical.labelKey))
+            ).toBeInTheDocument();
         }
         expect(hrefsOf('미국')).toContain('/market');
         expect(hrefsOf('한국')).toContain('/market/kr');

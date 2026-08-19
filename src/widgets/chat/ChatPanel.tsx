@@ -178,8 +178,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                         <>
                             <span>·</span>
                             <span>
-                                {t('ChatPanel.2bdce5')} {remainingTokens}
-                                {t('ChatPanel.f7bc3a')}
+                                {t('ChatPanel.cce9f7', { v0: remainingTokens })}
                             </span>
                         </>
                     )}

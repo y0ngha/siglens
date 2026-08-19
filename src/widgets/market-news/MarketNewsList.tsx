@@ -137,8 +137,9 @@ export function MarketNewsList({
             >
                 <MarketNewsListHeader />
                 <p className="text-sm text-secondary-400">
-                    {t('MarketNewsList.6161f8')} {MARKET_NEWS_LOOKBACK_DAYS}
-                    {t('MarketNewsList.8174f8')}
+                    {t('MarketNewsList.242236', {
+                        v0: MARKET_NEWS_LOOKBACK_DAYS,
+                    })}
                 </p>
             </section>
         );
@@ -167,9 +168,9 @@ export function MarketNewsList({
                     onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
                     className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-secondary-700 py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    {t('MarketNewsList.e5a749')}
-                    {items.length - visibleCount}
-                    {t('MarketNewsList.03df8c')}
+                    {t('MarketNewsList.8e5a3a', {
+                        v0: items.length - visibleCount,
+                    })}
                 </button>
             )}
         </section>

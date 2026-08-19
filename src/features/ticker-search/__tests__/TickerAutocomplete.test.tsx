@@ -462,8 +462,9 @@ describe('TickerAutocomplete', () => {
         const placeholder =
             screen.getByRole('combobox').getAttribute('placeholder') ?? '';
         // 이름이 약속하는 대로 셋 다 확인한다 — 하나만 보면 나머지 둘이 조용히
-        // 빠져도 통과한다.
-        for (const example of ['AAPL', '삼성전자', 'BTC']) {
+        // 빠져도 통과한다. 한국 종목 예시는 **티커 코드**를 쓴다 — 한글 회사명
+        // (`삼성전자`)은 번역되지 않아 중국어·일본어 UI에 그대로 남았다.
+        for (const example of ['AAPL', '005930', 'BTC']) {
             expect(placeholder).toContain(example);
         }
     });

@@ -38,10 +38,13 @@ for (const relPath of candidateFiles(ROOT)) {
     let violations = 0;
     for (const candidate of collectCandidates(ast, code)) {
         const verdict = classify({ candidate, filePath: relPath });
-        // 이미 번역된 것과 모듈 경로는 위반이 아니다.
+        // 위반이 아닌 것들:
+        // - 이미 번역됨 / 모듈 경로·타입 리터럴
+        // - SEO 키워드: 번역 대상이 아니라 ko 전용 데이터다(seoAlternates.ts 참고)
         if (
             verdict.reason === 'already-translated' ||
-            verdict.reason === 'module-specifier'
+            verdict.reason === 'module-specifier' ||
+            verdict.reason === 'seo-keywords-ko-only'
         ) {
             continue;
         }

@@ -354,20 +354,17 @@ export default async function OptionsPage({ params }: Props) {
                 than the cards beneath it.) */}
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>
-                    {displayName} {t('page.d95d05')}
+                    {t('page.ba2808', { v0: displayName })}
                 </SymbolPageHeading>
                 <section className="sr-only">
-                    <h2>
-                        {displayName} {t('page.928b1c')}
-                    </h2>
-                    <p>
-                        {displayName} {t('page.64f569')}
-                    </p>
+                    <h2>{t('page.c3a35c', { v0: displayName })}</h2>
+                    <p>{t('page.c7925a', { v0: displayName })}</p>
                     {expirations.length > 0 ? (
                         <p>
-                            {t('page.934008')} {expirations.length}
-                            {t('page.6f7f8a')} {expirations[0]}
-                            {t('page.d69510')}
+                            {t('page.29ae1a', {
+                                v0: expirations.length,
+                                v1: expirations[0],
+                            })}
                         </p>
                     ) : null}
                 </section>

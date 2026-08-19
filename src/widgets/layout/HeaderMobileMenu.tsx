@@ -24,6 +24,8 @@ interface HeaderMobileMenuProps {
 
 export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
     const t = useTranslations('widgets.layout');
+    // 내비 라벨 키는 네임스페이스까지 포함된 완전 수식 키라 루트로 푼다.
+    const tNav = useTranslations();
     const [isOpen, setIsOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
     // `NAV_TREE`의 href는 로케일 접두사가 없는 `/market` 형태다. `usePathname()`은
@@ -231,13 +233,15 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                             id={`mobile-nav-group-${vertical.id}`}
                                             className="px-4 pt-1 pb-2 text-sm font-bold tracking-wide text-secondary-100"
                                         >
-                                            {vertical.label}
+                                            {tNav(vertical.labelKey)}
                                         </p>
                                         {vertical.overview && (
                                             <MobileNavLink
                                                 key={vertical.overview.href}
                                                 href={vertical.overview.href}
-                                                label={vertical.overview.label}
+                                                label={tNav(
+                                                    vertical.overview.labelKey
+                                                )}
                                                 active={isHrefActive(
                                                     vertical.overview.href,
                                                     pathname
@@ -250,7 +254,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                             <MobileNavLink
                                                 key={region.href}
                                                 href={region.href}
-                                                label={region.label}
+                                                label={tNav(region.labelKey)}
                                                 active={isHrefActive(
                                                     region.href,
                                                     pathname
@@ -262,7 +266,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                                 <MobileNavLink
                                                     key={leaf.href}
                                                     href={leaf.href}
-                                                    label={leaf.label}
+                                                    label={tNav(leaf.labelKey)}
                                                     active={isHrefActive(
                                                         leaf.href,
                                                         pathname

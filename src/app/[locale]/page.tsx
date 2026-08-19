@@ -73,6 +73,8 @@ export default async function Home({
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
     const t = await getTranslations('app.home');
+    // 내비 라벨 키는 완전 수식이라 루트 네임스페이스로 푼다.
+    const tNav = await getTranslations();
     // countSkillFiles 오류(fs 접근 실패 등)는 graceful 처리 — 0 폴백으로 페이지를 계속 렌더한다.
     // throw가 전파되면 ISR 빈 캐시(0-byte body)가 동결된다.
     const skillCounts = await countSkillFiles().catch(e => {
@@ -193,7 +195,7 @@ export default async function Home({
                                 <SymbolSearchPanel className="max-w-2xl lg:max-w-none" />
                             </div>
                             <div className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 lg:justify-start">
-                                {HERO_QUICK_LINKS.map(({ href, label }) => (
+                                {HERO_QUICK_LINKS.map(({ href, labelKey }) => (
                                     <Link
                                         key={href}
                                         href={href}
@@ -204,7 +206,7 @@ export default async function Home({
                                         prefetch={false}
                                         className="inline-flex items-center gap-1 text-sm font-semibold text-primary-400 transition-colors hover:text-primary-300"
                                     >
-                                        {label}{' '}
+                                        {tNav(labelKey)}{' '}
                                         <span aria-hidden="true">→</span>
                                     </Link>
                                 ))}

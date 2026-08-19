@@ -15,7 +15,10 @@
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
+
+const require = createRequire(import.meta.url);
 
 const ROOT = resolve(process.argv[1], '../../..');
 const args = process.argv.slice(2);
@@ -84,7 +87,13 @@ console.log(`전체 키:     ${Object.keys(source).length}`);
 console.log(`번역 필요:   ${stale.length}`);
 
 if (stale.length === 0) {
-    console.log('변경 없음 — 종료');
+    // 번역할 게 없어도 **고아 키는 정리한다.** ko 카탈로그가 줄어든 뒤에도
+    // 대상 카탈로그에 옛 키가 남으면 검증 게이트가 계속 실패하고, 그 소음에
+    // 진짜 누락이 묻힌다.
+    const pruned = pruneOrphans();
+    console.log(
+        pruned > 0 ? `고아 ${pruned}개 정리 — 종료` : '변경 없음 — 종료'
+    );
     process.exit(0);
 }
 if (DRY_RUN) {
@@ -136,15 +145,87 @@ async function callModel(prompt) {
         contents: prompt,
         config: { responseMimeType: 'application/json', temperature: 0 },
     });
-    return JSON.parse(response.text);
+    return parseModelJson(response.text);
 }
 
-const nextTarget = { ...target };
+/**
+ * 모델 JSON 파싱 — `jsonrepair` 폴백.
+ *
+ * `responseMimeType: 'application/json'`을 줘도 깨진 이스케이프가 섞여 나온다
+ * (실측: 42번째 배치에서 `Bad escaped character in JSON`). 한국어 원문에 따옴표·
+ * 백슬래시가 들어 있으면 확률이 올라간다. `jsonrepair`는 이미 의존성에 있다.
+ */
+function parseModelJson(text) {
+    try {
+        return JSON.parse(text);
+    } catch {
+        const { jsonrepair } = require('jsonrepair');
+        return JSON.parse(jsonrepair(text));
+    }
+}
+
+/**
+ * 대상 카탈로그에서 시작하되 **ko에 없는 키는 버린다**(고아 정리).
+ *
+ * ko 카탈로그는 codemod가 재생성하므로 키가 사라지기도 한다(치환하지 않기로
+ * 바뀐 문자열, 이름이 바뀐 컴포넌트 등). 남겨 두면 검증 게이트가 "고아 키"로
+ * 계속 실패하고, 무엇이 진짜 누락인지 묻힌다.
+ */
+const nextTarget = Object.fromEntries(
+    Object.entries(target).filter(([key]) => key in source)
+);
+
+/** ko에 없는 키를 대상 카탈로그에서 지우고 지운 개수를 돌려준다. */
+function pruneOrphans() {
+    const removed = Object.keys(target).filter(key => !(key in source)).length;
+    if (removed > 0) persist();
+    return removed;
+}
 const nextHashes = { ...hashes };
 
+/**
+ * 지금까지의 번역을 디스크에 쓴다.
+ *
+ * **배치마다 저장한다.** 한 배치가 실패했다고 앞선 수십 배치를 버리면 안 된다 —
+ * 실측으로 41배치(1,640키) 분량이 42번째의 JSON 오류 하나로 날아갔다. 재실행은
+ * `hashes.json` 덕분에 남은 것만 이어서 번역한다.
+ */
+function persist() {
+    const nested = {};
+    for (const key of Object.keys(nextTarget).sort((a, b) =>
+        a.localeCompare(b)
+    )) {
+        setPath(nested, key, nextTarget[key]);
+    }
+    writeFileSync(
+        `${ROOT}/messages/${locale}.json`,
+        JSON.stringify(nested, null, 4) + '\n'
+    );
+    mkdirSync(`${ROOT}/messages/_meta`, { recursive: true });
+    writeFileSync(
+        `${ROOT}/messages/_meta/hashes.json`,
+        JSON.stringify(nextHashes, null, 4) + '\n'
+    );
+}
+
+const failedBatches = [];
 for (let index = 0; index < stale.length; index += BATCH_SIZE) {
     const batch = stale.slice(index, index + BATCH_SIZE);
-    const translated = await callModel(buildPrompt(batch));
+    let translated;
+    try {
+        translated = await callModel(buildPrompt(batch));
+    } catch (error) {
+        // 한 번만 재시도한다. 같은 프롬프트가 두 번 깨지면 그 배치는 건너뛰고
+        // 다음으로 간다 — 남은 키는 다음 실행이 `hashes.json`을 보고 다시 집는다.
+        console.warn(`  ⚠ 배치 ${index} 실패, 재시도: ${error.message}`);
+        try {
+            translated = await callModel(buildPrompt(batch));
+        } catch (retryError) {
+            console.error(`  ✗ 배치 ${index} 건너뜀: ${retryError.message}`);
+            failedBatches.push(index);
+            continue;
+        }
+    }
     for (const key of batch) {
         const value = translated[key];
         if (typeof value !== 'string') {
@@ -154,26 +235,18 @@ for (let index = 0; index < stale.length; index += BATCH_SIZE) {
         nextTarget[key] = value;
         nextHashes[key] = hashOf(String(source[key]));
     }
+    persist();
     console.log(
         `  ${Math.min(index + BATCH_SIZE, stale.length)}/${stale.length}`
     );
 }
 
-const nested = {};
-for (const key of Object.keys(nextTarget).sort((a, b) => a.localeCompare(b))) {
-    setPath(nested, key, nextTarget[key]);
-}
-writeFileSync(
-    `${ROOT}/messages/${locale}.json`,
-    JSON.stringify(nested, null, 4) + '\n'
-);
-mkdirSync(`${ROOT}/messages/_meta`, { recursive: true });
-writeFileSync(
-    `${ROOT}/messages/_meta/hashes.json`,
-    JSON.stringify(nextHashes, null, 4) + '\n'
-);
-
 console.log(`✓ messages/${locale}.json 갱신`);
+if (failedBatches.length > 0) {
+    console.warn(
+        `⚠ 실패한 배치 ${failedBatches.length}개 — 다시 실행하면 남은 키만 이어서 번역한다`
+    );
+}
 
 // ── 역번역 채점 ──────────────────────────────────────────────────────────
 if (!WITH_REVIEW) {

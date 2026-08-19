@@ -32,6 +32,7 @@ vi.mock('@/shared/lib/legal', () => ({
     TERMS_TITLE: '이용약관',
 }));
 
+import { koMessage } from '@/shared/test-utils/koMessage';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
@@ -102,7 +103,9 @@ describe('Footer', () => {
         render(<Footer />);
 
         for (const region of ALL_NAV_REGION_LINKS) {
-            const link = screen.getByRole('link', { name: region.fullLabel });
+            const link = screen.getByRole('link', {
+                name: koMessage(region.fullLabelKey),
+            });
             expect(link).toHaveAttribute('href', region.href);
         }
     });

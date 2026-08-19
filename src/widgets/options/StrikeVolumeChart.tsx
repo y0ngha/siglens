@@ -348,15 +348,17 @@ export function StrikeVolumeChart({
                         <div className="flex items-center justify-between gap-3">
                             <span className="text-chart-bullish">Call Vol</span>
                             <span className="tabular-nums">
-                                {hoveredRow.callVolume.toLocaleString()}{' '}
-                                {t('StrikeVolumeChart.b41163')}
+                                {t('StrikeVolumeChart.e3558e', {
+                                    v0: hoveredRow.callVolume.toLocaleString(),
+                                })}
                             </span>
                         </div>
                         <div className="flex items-center justify-between gap-3">
                             <span className="text-chart-bearish">Put Vol</span>
                             <span className="tabular-nums">
-                                {hoveredRow.putVolume.toLocaleString()}{' '}
-                                {t('StrikeVolumeChart.b41163')}
+                                {t('StrikeVolumeChart.e3558e', {
+                                    v0: hoveredRow.putVolume.toLocaleString(),
+                                })}
                             </span>
                         </div>
                         <div className="mt-1 flex items-center justify-between gap-3 border-t border-secondary-700 pt-1">
@@ -364,10 +366,12 @@ export function StrikeVolumeChart({
                                 {t('StrikeVolumeChart.3dcb27')}
                             </span>
                             <span className="font-semibold tabular-nums">
-                                {(
-                                    hoveredRow.callVolume + hoveredRow.putVolume
-                                ).toLocaleString()}{' '}
-                                {t('StrikeVolumeChart.b41163')}
+                                {t('StrikeVolumeChart.e3558e', {
+                                    v0: (
+                                        hoveredRow.callVolume +
+                                        hoveredRow.putVolume
+                                    ).toLocaleString(),
+                                })}
                             </span>
                         </div>
                     </>

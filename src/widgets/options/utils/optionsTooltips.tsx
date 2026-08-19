@@ -80,9 +80,10 @@ export function AtmIvTooltip() {
             <br />
             <p>
                 <strong>{t('optionsTooltips.974bf0')}</strong>
-                {t('optionsTooltips.f75e14')} {kstWindow}
-                {t('optionsTooltips.f4e7e8')} {ET_MARKET_HOURS_DISPLAY}
-                {t('optionsTooltips.ec4190')}{' '}
+                {t('optionsTooltips.2c2508', {
+                    v0: kstWindow,
+                    v1: ET_MARKET_HOURS_DISPLAY,
+                })}
                 {/* 현재 DST 레이블은 마운트 후에만 렌더 — React #418 방지 */}
                 {isHydrated && `지금은 ${label} 기간이에요.`}
             </p>
@@ -106,8 +107,7 @@ export function ImpliedMoveTooltip() {
             <br />
             <p>
                 <strong>{t('optionsTooltips.974bf0')}</strong>
-                {t('optionsTooltips.091adb')} {kstWindow}
-                {t('optionsTooltips.0b146b')}{' '}
+                {t('optionsTooltips.cc43f8', { v0: kstWindow })}
                 {/* 현재 DST 레이블은 마운트 후에만 렌더 — React #418 방지 */}
                 {isHydrated && `지금은 ${label} 기간이에요.`}
             </p>

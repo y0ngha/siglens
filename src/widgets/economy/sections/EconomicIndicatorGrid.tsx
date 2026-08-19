@@ -276,9 +276,11 @@ function DeltaBadge({ delta, precision, unit }: DeltaBadgeProps) {
                     <path d="M2 3.5 5 6.5 8 3.5" />
                 )}
             </svg>
-            {t('EconomicIndicatorGrid.8d282d')} {sign}
-            {formatted}
-            {unit}
+            {t('EconomicIndicatorGrid.58c098', {
+                v0: sign,
+                v1: formatted,
+                v2: unit,
+            })}
         </span>
     );
 }

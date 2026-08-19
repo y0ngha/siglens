@@ -80,7 +80,7 @@ function CardSkeleton({ symbol }: { symbol: string }) {
             )}
         >
             <span className="sr-only">
-                {symbol} {t('PositionHoldingCard.519f33')}
+                {t('PositionHoldingCard.ba09a5', { v0: symbol })}
             </span>
             <div
                 aria-hidden="true"
@@ -108,7 +108,9 @@ function CardDegraded({ symbol, avg, message }: CardDegradedProps) {
         >
             <span className="text-xs text-secondary-400">{message}</span>
             <span className="text-xs text-secondary-400 tabular-nums">
-                {t('PositionHoldingCard.900beb')} {formatAmount(avg, symbol)}
+                {t('PositionHoldingCard.0ac914', {
+                    v0: formatAmount(avg, symbol),
+                })}
             </span>
         </div>
     );

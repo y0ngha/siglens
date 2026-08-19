@@ -111,9 +111,7 @@ export function OptionsMetricsRow({
             </div>
             {expirationDate === 'all' && nearestExpiry && (
                 <p className="text-[10px] text-secondary-500">
-                    {t('OptionsMetricsRow.1b1d72')}
-                    {nearestExpiry}
-                    {t('OptionsMetricsRow.3df517')}
+                    {t('OptionsMetricsRow.6db40b', { v0: nearestExpiry })}
                 </p>
             )}
         </div>

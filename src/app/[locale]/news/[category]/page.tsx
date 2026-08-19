@@ -64,13 +64,15 @@ const REGION_KEYWORDS: Record<NavRegionId, readonly string[]> = {
  */
 function buildCategoryBreadcrumb(
     cfg: CategoryConfig,
-    categoryUrl: string
+    categoryUrl: string,
+    /** `shared.config` 번역자. 이 헬퍼는 순수 함수라 훅을 부를 수 없어 주입받는다. */
+    tNav: (key: string) => string
 ): Record<string, unknown> {
     const regionLink = regionsOf('news').find(r => r.region === cfg.region);
     const trail = [{ name: '시장 뉴스 허브', url: `${SITE_URL}/news` }];
     if (regionLink && `${SITE_URL}${regionLink.href}` !== categoryUrl) {
         trail.push({
-            name: regionLink.fullLabel,
+            name: tNav(regionLink.fullLabelKey),
             url: `${SITE_URL}${regionLink.href}`,
         });
     }
@@ -199,6 +201,7 @@ export default async function CategoryNewsPage({ params }: Props) {
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const tNav = await getTranslations();
     const t = await getTranslations('app.news');
     const cat = categoryFromSlug(slug);
 
@@ -232,7 +235,7 @@ export default async function CategoryNewsPage({ params }: Props) {
         : null;
 
     const breadcrumbJsonLd = !isEmpty
-        ? buildCategoryBreadcrumb(cfg, categoryUrl)
+        ? buildCategoryBreadcrumb(cfg, categoryUrl, tNav)
         : null;
 
     // FMP category news has no per-article image URL, so we use the per-category OG image
@@ -297,7 +300,7 @@ export default async function CategoryNewsPage({ params }: Props) {
                 />
                 <NewsCategoryTabs activeCategory={cat} />
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
-                    {cfg.koLabel} {t('page.3a465d')}
+                    {t('page.78de73', { v0: cfg.koLabel })}
                 </h1>
                 <Suspense fallback={<DigestSkeleton />}>
                     <MarketNewsDigest
@@ -353,7 +356,7 @@ function MarketNewsDegraded({ koLabel }: MarketNewsDegradedProps) {
             className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <p className="text-sm text-secondary-400">
-                {koLabel} {t('page.22d8d0')}
+                {t('page.fdb87b', { v0: koLabel })}
             </p>
         </section>
     );

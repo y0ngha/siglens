@@ -33,8 +33,10 @@ export function PositionCta({ symbol, low52w, high52w }: PositionCtaProps) {
                     data-testid="position-cta-range"
                     className="text-xs text-secondary-400 tabular-nums"
                 >
-                    {t('PositionCta.4405e0')} {formatAmount(low52w, symbol)} ~{' '}
-                    {formatAmount(high52w, symbol)}
+                    {t('PositionCta.2bf3cd', {
+                        v0: formatAmount(low52w, symbol),
+                    })}{' '}
+                    ~ {formatAmount(high52w, symbol)}
                 </p>
             )}
             <Link

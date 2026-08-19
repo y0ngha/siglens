@@ -62,11 +62,10 @@ export function SignalStockCard({
                 )}
                 {data.conflict && (
                     <p className="mt-1 text-xs text-secondary-500">
-                        {t('SignalStockCard.3dc47b')}{' '}
-                        {data.conflict.bullishCount}
-                        {t('SignalStockCard.8d6330')}{' '}
-                        {data.conflict.bearishCount}
-                        {t('SignalStockCard.16af52')}
+                        {t('SignalStockCard.fe2ec0', {
+                            v0: data.conflict.bullishCount,
+                            v1: data.conflict.bearishCount,
+                        })}
                     </p>
                 )}
             </div>
