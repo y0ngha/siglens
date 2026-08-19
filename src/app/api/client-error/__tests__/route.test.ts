@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { constants } from 'node:http2';
 import { POST } from '@/app/api/client-error/route';
 
 const MAX = 4096;
+const { HTTP_STATUS_NO_CONTENT } = constants;
 
 /** `content-length`를 붙이지 않는 요청 — chunked/HTTP2 클라이언트를 흉내 낸다. */
 function chunkedRequest(bytes: number): Request {
@@ -43,7 +45,7 @@ describe('POST /api/client-error', () => {
             })
         );
 
-        expect(res.status).toBe(204);
+        expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
         // 메트릭 필터가 이 리터럴을 센다 — 바뀌면 알람이 조용히 죽는다.
         expect(spy).toHaveBeenCalledWith('[client-error]', payload);
     });
@@ -58,7 +60,7 @@ describe('POST /api/client-error', () => {
             })
         );
 
-        expect(res.status).toBe(204);
+        expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
         const logged = spy.mock.calls[0]?.[1] as string;
         expect(logged).not.toMatch(/[\r\n]/);
         // 내용 자체는 남는다(진단용). 잘리는 건 줄바꿈뿐이다.
@@ -81,21 +83,21 @@ describe('POST /api/client-error', () => {
             })
         );
 
-        expect(res.status).toBe(204);
+        expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
         expect(spy).not.toHaveBeenCalled();
     });
 
     it('content-length 없이 상한을 넘겨도 로그를 남기지 않는다 (헤더 우회 방어)', async () => {
         const res = await POST(chunkedRequest(MAX * 4));
 
-        expect(res.status).toBe(204);
+        expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
         expect(spy).not.toHaveBeenCalled();
     });
 
     it('content-length 없이 상한 이내면 정상 처리한다', async () => {
         const res = await POST(chunkedRequest(64));
 
-        expect(res.status).toBe(204);
+        expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
         expect(spy).toHaveBeenCalledOnce();
         expect(spy.mock.calls[0]?.[1]).toHaveLength(64);
     });
@@ -108,7 +110,7 @@ describe('POST /api/client-error', () => {
             })
         );
 
-        expect(res.status).toBe(204);
+        expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
         expect(spy).not.toHaveBeenCalled();
     });
 });

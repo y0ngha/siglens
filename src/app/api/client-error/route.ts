@@ -4,6 +4,10 @@
  *
  * DB도 Redis도 타지 않는다. 사고 중에 이 경로가 실패하면 사고 자체가 안 보인다.
  */
+import { constants } from 'node:http2';
+
+const { HTTP_STATUS_NO_CONTENT } = constants;
+
 export const dynamic = 'force-dynamic';
 
 /** `reportClientError`가 스택을 1200자로 자르므로 정상 페이로드는 이 한참 아래다. */
@@ -49,11 +53,12 @@ export async function POST(request: Request): Promise<Response> {
     // 정직한 클라이언트는 여기서 걸러진다(스트림을 열지도 않는다).
     const declared = Number(request.headers.get('content-length'));
     if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) {
-        return new Response(null, { status: 204 });
+        return new Response(null, { status: HTTP_STATUS_NO_CONTENT });
     }
 
     const raw = await readCapped(request, MAX_BODY_BYTES);
-    if (raw === null || raw === '') return new Response(null, { status: 204 });
+    if (raw === null || raw === '')
+        return new Response(null, { status: HTTP_STATUS_NO_CONTENT });
 
     // 개행을 반드시 지운다. awslogs 드라이버는 stdout을 개행으로 쪼개 **줄마다** 로그
     // 이벤트를 만들고, CloudWatch 메트릭 필터는 그 줄들을 그대로 센다. 즉 인증 없는 이
@@ -62,5 +67,5 @@ export async function POST(request: Request): Promise<Response> {
     // `[isr-cache] s3 get failed`도 같은 방식으로 위조된다.
     // 정상 본문은 한 줄짜리 JSON이라 잃는 게 없다.
     console.error('[client-error]', raw.replace(/[\r\n]+/g, ' '));
-    return new Response(null, { status: 204 });
+    return new Response(null, { status: HTTP_STATUS_NO_CONTENT });
 }
