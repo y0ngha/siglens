@@ -16,6 +16,7 @@ export const TEST_SCOPE: DashboardScope = {
     currencySymbol: '$',
     linkSectorCards: true,
     volatilityIndexSymbol: 'VIX',
+    tickerIsReadable: true,
     indices: [
         { symbol: 'SPY', fmpSymbol: 'SPY', displayName: 'SPY', koreanName: '' },
         { symbol: 'QQQ', fmpSymbol: 'QQQ', displayName: 'QQQ', koreanName: '' },

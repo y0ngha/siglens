@@ -7,6 +7,8 @@ import { SignalStockCard } from './SignalStockCard';
 interface SignalSubsectionProps {
     /** 가격 앞에 붙일 통화 기호. 시장마다 다르다(`DashboardScope.currencySymbol`). */
     currencySymbol: string;
+    /** 티커를 주 제목으로 쓸지(`DashboardScope.tickerIsReadable`). */
+    tickerIsReadable: boolean;
     title: string;
     marker: string; // ▲ ▼ △ ▽ ◈
     variant: 'confirmed' | 'expected' | 'mixed';
@@ -28,6 +30,7 @@ const VARIANT_LABEL: Record<SignalSubsectionProps['variant'], string> = {
 
 export function SignalSubsection({
     currencySymbol,
+    tickerIsReadable,
     title,
     marker,
     variant,
@@ -80,6 +83,7 @@ export function SignalSubsection({
                             key={stock.symbol}
                             data={stock}
                             currencySymbol={currencySymbol}
+                            tickerIsReadable={tickerIsReadable}
                         />
                     ))}
                 </div>

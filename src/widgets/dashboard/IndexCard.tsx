@@ -14,9 +14,16 @@ interface IndexCardProps {
     href?: string;
     /** 가격 앞에 붙일 통화 기호. 시장마다 다르다(`DashboardScope.currencySymbol`). */
     currencySymbol: string;
+    /** 티커를 주 제목으로 쓸지(`DashboardScope.tickerIsReadable`). */
+    tickerIsReadable: boolean;
 }
 
-export function IndexCard({ data, href, currencySymbol }: IndexCardProps) {
+export function IndexCard({
+    data,
+    href,
+    currencySymbol,
+    tickerIsReadable,
+}: IndexCardProps) {
     const label = getLabel(data);
 
     const inner = (
@@ -29,6 +36,7 @@ export function IndexCard({ data, href, currencySymbol }: IndexCardProps) {
                     changePercent: data.changesPercentage,
                 }}
                 currencySymbol={currencySymbol}
+                tickerIsReadable={tickerIsReadable}
             />
         </div>
     );

@@ -106,6 +106,17 @@ describe('isDashboardScopeId', () => {
     });
 });
 
+/**
+ * KRX 티커는 `091160.KS`처럼 6자리 숫자라 읽어서 뜻이 통하지 않는다. 카드가 티커를
+ * 주 제목으로 두면 한국 화면의 제목이 전부 숫자가 된다(2026-08-19 프로덕션 실측).
+ */
+describe('tickerIsReadable', () => {
+    it('미국만 티커를 읽을 수 있는 이름으로 취급한다', () => {
+        expect(US_DASHBOARD_SCOPE.tickerIsReadable).toBe(true);
+        expect(KR_DASHBOARD_SCOPE.tickerIsReadable).toBe(false);
+    });
+});
+
 describe('volatilityIndexSymbol', () => {
     /**
      * 근거 없는 숫자를 화면에 올리지 않기 위한 필드다. 미국은 VIX가 실제로

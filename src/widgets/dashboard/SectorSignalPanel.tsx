@@ -71,6 +71,7 @@ export function SectorSignalPanel({
             >
                 <SignalSubsection
                     currencySymbol={scope.currencySymbol}
+                    tickerIsReadable={scope.tickerIsReadable}
                     title="상승 신호"
                     marker="▲"
                     variant="confirmed"
@@ -78,6 +79,7 @@ export function SectorSignalPanel({
                 />
                 <SignalSubsection
                     currencySymbol={scope.currencySymbol}
+                    tickerIsReadable={scope.tickerIsReadable}
                     title="상승 조짐"
                     marker="△"
                     variant="expected"
@@ -85,6 +87,7 @@ export function SectorSignalPanel({
                 />
                 <SignalSubsection
                     currencySymbol={scope.currencySymbol}
+                    tickerIsReadable={scope.tickerIsReadable}
                     title="혼재"
                     marker="◈"
                     variant="mixed"
@@ -104,6 +107,7 @@ export function SectorSignalPanel({
                 />
                 <SignalSubsection
                     currencySymbol={scope.currencySymbol}
+                    tickerIsReadable={scope.tickerIsReadable}
                     title="하락 조짐"
                     marker="▽"
                     variant="expected"
@@ -111,6 +115,7 @@ export function SectorSignalPanel({
                 />
                 <SignalSubsection
                     currencySymbol={scope.currencySymbol}
+                    tickerIsReadable={scope.tickerIsReadable}
                     title="하락 신호"
                     marker="▼"
                     variant="confirmed"

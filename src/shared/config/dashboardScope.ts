@@ -89,6 +89,21 @@ export interface DashboardScope {
      * `VIX 18.30`이 떴는데 KR 요약에는 그런 값이 없다).
      */
     readonly volatilityIndexSymbol: string | null;
+    /**
+     * 이 시장의 티커가 **사람이 읽어서 뜻이 통하는가**.
+     *
+     * 시세 카드는 티커를 크게, 한국어명을 작게 두는 배치였다. 미국은 그게 맞다 —
+     * `XLK`·`XLF`는 독자가 알아보는 이름이다. 한국은 `091160.KS`·`005930.KS`처럼
+     * KRX 6자리 숫자라 **누구에게도 의미가 없고**, 정작 알아볼 수 있는 `반도체`·
+     * `삼성전자`가 작은 회색 글씨로 밀려난다(2026-08-19 `/market/kr` 프로덕션 실측).
+     * 같은 화면의 AI 브리핑이 이미 "반도체·은행"으로 이름을 쓰고 있어 표기가
+     * 화면 안에서 엇갈리기까지 했다.
+     *
+     * `false`면 카드가 한국어명을 주 제목으로, 티커를 보조로 뒤집는다. 티커는
+     * 그대로 DOM에 남는다 — 크롤러와 검색 대상에서 빼려는 게 아니라 시각적
+     * 우선순위만 바꾸는 것이다. `$`를 원화에 붙였던 것과 같은 축의 미국 전제다.
+     */
+    readonly tickerIsReadable: boolean;
 }
 
 export const US_DASHBOARD_SCOPE: DashboardScope = {
@@ -97,6 +112,7 @@ export const US_DASHBOARD_SCOPE: DashboardScope = {
     currencySymbol: '$',
     linkSectorCards: true,
     volatilityIndexSymbol: 'VIX',
+    tickerIsReadable: true,
     indices: MARKET_INDICES,
     sectorEtfs: SECTOR_ETFS,
     sectorGroups: SECTOR_GROUPS,
@@ -110,6 +126,8 @@ export const KR_DASHBOARD_SCOPE: DashboardScope = {
     currencySymbol: '₩',
     linkSectorCards: false,
     volatilityIndexSymbol: null,
+    // `091160.KS`는 읽어서 뜻이 통하지 않는다.
+    tickerIsReadable: false,
     indices: KR_MARKET_INDICES,
     sectorEtfs: KR_SECTOR_ETFS,
     sectorGroups: KR_SECTOR_GROUPS,

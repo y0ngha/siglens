@@ -45,24 +45,29 @@ vi.mock('@/widgets/dashboard/MarketSummaryPanelSkeleton', () => ({
 }));
 
 /*
- * 목이 `href`·`currencySymbol`을 DOM으로 흘려보낸다. 예전 목은 `data`만 받아
- * 그 둘을 삼켰는데, 그러면 `linkSectorCards: false`가 무시돼도(=한국 페이지가
- * KR 섹터 ETF로 가는 크롤 진입점 6개를 여는 회귀) 아무 테스트가 안 깨진다.
+ * 목이 `href`·`currencySymbol`·`tickerIsReadable`을 DOM으로 흘려보낸다. 예전 목은
+ * `data`만 받아 그것들을 삼켰는데, 그러면 `linkSectorCards: false`가 무시돼도
+ * (=한국 페이지가 KR 섹터 ETF로 가는 크롤 진입점 6개를 여는 회귀) 아무 테스트가
+ * 안 깨진다. `tickerIsReadable`도 같다 — 삼키면 호출부를 `true` 리터럴로
+ * 되돌려도(=한국 카드 제목이 다시 `091160.KS`가 되는 회귀) 전부 초록이다.
  */
 vi.mock('@/widgets/dashboard/IndexCard', () => ({
     IndexCard: ({
         data,
         href,
         currencySymbol,
+        tickerIsReadable,
     }: {
         data: { symbol: string };
         href?: string;
         currencySymbol: string;
+        tickerIsReadable: boolean;
     }) => (
         <div
             data-testid={`index-${data.symbol}`}
             data-href={href ?? ''}
             data-currency={currencySymbol}
+            data-ticker-readable={String(tickerIsReadable)}
         >
             {data.symbol}
         </div>
@@ -422,6 +427,9 @@ describe('MarketSummaryPanel — KR scope', () => {
         marketLabel: '한국 증시',
         currencySymbol: '₩',
         linkSectorCards: false,
+        // KRX 티커는 `091160.KS`처럼 읽어서 뜻이 통하지 않는다. 퍼온 `true`를
+        // 그대로 두면 한국 카드 제목이 숫자로 돌아가도 단언이 통과한다.
+        tickerIsReadable: false,
     };
 
     function sectorCards(container: HTMLElement): HTMLElement[] {
@@ -448,6 +456,33 @@ describe('MarketSummaryPanel — KR scope', () => {
         expect(notice).toHaveAttribute('data-variant', 'total');
     });
 
+    /**
+     * 기본 픽스처는 `indices: []`라 상단 지수 카드가 아예 안 그려진다 — 그 호출부만
+     * 하드코딩으로 되돌려도 다른 단언이 전부 통과한다(변이 검증에서 실제로 빠져나갔다).
+     * 지수 카드를 실제로 그리게 해서 그 경로도 고정한다.
+     */
+    it('상단 지수 카드에도 scope 값을 그대로 넘긴다', () => {
+        mockUseMarketSummary.mockReturnValue({
+            ...defaultSummaryReturn,
+            indices: [
+                {
+                    symbol: 'KS11',
+                    fmpSymbol: 'KS11',
+                    displayName: 'KOSPI',
+                    koreanName: '코스피',
+                    price: 6869.83,
+                    changesPercentage: -1.55,
+                },
+            ],
+        });
+
+        render(<MarketSummaryPanel scope={KR_SCOPE} />);
+
+        const card = screen.getByTestId('index-KS11');
+        expect(card).toHaveAttribute('data-ticker-readable', 'false');
+        expect(card).toHaveAttribute('data-currency', '₩');
+    });
+
     it('섹터 카드에 링크를 붙이지 않고 통화 기호를 ₩로 넘긴다', () => {
         const { container } = render(<MarketSummaryPanel scope={KR_SCOPE} />);
 
@@ -456,6 +491,7 @@ describe('MarketSummaryPanel — KR scope', () => {
         for (const card of cards) {
             expect(card).toHaveAttribute('data-href', '');
             expect(card).toHaveAttribute('data-currency', '₩');
+            expect(card).toHaveAttribute('data-ticker-readable', 'false');
         }
     });
 
@@ -467,5 +503,6 @@ describe('MarketSummaryPanel — KR scope', () => {
         );
         expect(linked.length).toBeGreaterThan(0);
         expect(linked[0]).toHaveAttribute('data-currency', '$');
+        expect(linked[0]).toHaveAttribute('data-ticker-readable', 'true');
     });
 });

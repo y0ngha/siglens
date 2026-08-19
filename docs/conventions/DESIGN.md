@@ -366,6 +366,8 @@ Price delta chips remain the only use of `text-chart-bullish` / `text-chart-bear
 
 `SignalStockCard` extends `IndexCard` language: mono ticker, tabular-nums price, signal badges as tracked uppercase labels with `·` bullet separator. Hover uses `-translate-y-px` + background/border shift, not `opacity-80`.
 
+**Title hierarchy is market-dependent** (`DashboardScope.tickerIsReadable`). US tickers are names a reader recognises (`XLK`, `AAPL`), so they take the primary line in mono and the Korean name sits below in muted grey. KRX tickers are 6-digit codes (`091160.KS`, `005930.KS`) that mean nothing to anyone, so on `tickerIsReadable: false` markets the two swap: the proportional Korean name (`반도체`, `삼성전자`) becomes the primary line and the mono ticker drops to the muted line. Both values stay in the DOM either way — only visual priority moves, and `translate="no"` follows the ticker. Ship a new quote card with the ticker hardcoded as the title and `/market/kr` goes back to a page whose headings are all numbers.
+
 ### Background
 
 `.sector-panel-bg` utility applies a subtle 32px grid with radial mask — terminal atmosphere at opacity 0.35.
