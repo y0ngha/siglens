@@ -1108,6 +1108,61 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ async function submitAnalysisAction(): Promise<AnalysisResult> { try { return db.query(...); } catch (e) { console.error('[submitAnalysisAction]', e); return { status: 'error' }; } }
    ✅ async function submitOverallAnalysisAction() { try { const user = getCurrentUser(); ... } catch (e) { ... } }  // protected like other actions
    ✅ try { const payload = await response.json(); } catch (e) { console.error('[parseOAuthResponse]', e); return { ok: false, error: 'parse_error' }; }
+
+5. Input validation must precede request processing at all API boundaries
+   → API route handlers must validate type/format before accepting values
+   → Invalid types must return 400, not 204 or silent failure
+   ❌ if (!j.type) return 204;  // falsy check only; "unknown" string passes
+   ✅ const VALID_JOB_TYPES = new Set(['create', 'update', 'delete']); if (!VALID_JOB_TYPES.has(j.type)) return 400;
+
+6. Runtime configuration must survive OS restart and not depend on ephemeral storage
+   → SSH/systemd config stored only in tmpfs (/run) is lost on reboot
+   → Persistent config must be fetched from external source (SSM, vault) before every boot
+   → When external config is unavailable, gracefully degrade or skip startup step rather than abort
+   ❌ user-data.sh writes SSM vars to /run/config; container cannot find config after reboot
+   ✅ systemd ExecStartPre fetches from SSM before container starts; config available every boot
+
+7. Bounded retry loops must include a post-loop assertion or check
+   → Unconditional success after bounded retry is not a gate, it's just a delay
+   → If timeout indicates failure, the code must verify the guarded condition or return error
+   ❌ for i in {1..10}; do [check condition]; done; echo "Success"  // Always succeeds
+   ✅ for i in {1..10}; do [check condition] && break; done; [[ success ]] || exit 1
+
+8. Under `set -e`, blocking commands must not precede their completion prerequisites
+   → If App-Init-Complete systemd unit is required before Container-Start, enable it first
+   → Slow app boot can timeout and exit the script before downstream units enable, creating infinite instance replacement
+   → Reorder: prerequisites first, then blocking commands, then dependent operations
+   ❌ systemctl enable --now cloudflared  # slow, may timeout; then later units enable [timeout here]
+   ✅ systemctl enable app-prerequisites; systemctl wait app-prerequisites; systemctl enable --now cloudflared
+
+9. JSON documents with schema validation (`additionalProperties: false`) cannot embed comments
+   → JSON schema rejects unknown keys, including `"_comment"`
+   → Move all explanatory text to shell script comments or external documentation
+   ❌ { "_comment": "reason", "key": "value" }  # schema rejects _comment
+   ✅ # CloudWatch agent config: reason for the setting below\n{ "key": "value" }
+
+10. Variable producers and consumers must remain synchronized; removing a script that defines a variable requires auditing all callers
+    → Under `set -u`, undefined variables abort before first use
+    → If a change set removes the script that writes VAR, all callers referencing $VAR must be identified and updated or removed
+    ❌ 07-alarms.sh reads $ALB_ARN; same change set removes the script that writes it → `$ALB_ARN: unbound variable`
+    ✅ 07-alarms.sh reconstructs ALB_ARN locally with `aws elbv2 describe-load-balancers` or remove the reference
+
+11. Consumer resource creation must not depend on external environment variables without explicit documentation or provisioning defaults
+    → If SNS topic creation subscribes based on `ALARM_EMAIL_LOW`, the variable must be documented, required, and validated at startup
+    → Otherwise 23 messages route to a topic with zero subscriptions and disappear silently
+    ❌ [[ -n "$ALARM_EMAIL_LOW" ]] && aws sns subscribe --endpoint=$ALARM_EMAIL_LOW  # env var undocumented, not set
+    ✅ : ${ALARM_EMAIL_LOW?}; aws sns subscribe --endpoint=$ALARM_EMAIL_LOW  # fails immediately if unset
+
+12. Upsert-by-name operations (put-metric-alarm, put-record) must be paired with explicit deletion of old resource names
+    → If replacing alarm by name, the old alarm survives the upsert and keeps producing the noise the change was meant to remove
+    ❌ aws cloudwatch put-metric-alarm --alarm-name HighCPU-Old --... # replaces new rule but old one still exists
+    ✅ aws cloudwatch delete-alarms --alarm-names HighCPU-Old; aws cloudwatch put-metric-alarm --alarm-name HighCPU-New --...
+
+13. Logging user input must sanitize or truncate to prevent metric filters from processing multiple log lines
+    → Unescaped newline in request body causes second log line, triggering metric filter alarm
+    → All user-controlled payload logging must limit length or escape special characters
+    ❌ logger "${JSON.stringify(request.body)}"  // newline in body → double log line → metric filter fires
+    ✅ logger "${JSON.stringify(request.body).substring(0, 500)}"  // truncate before logging
 ```
 
 ---
