@@ -101,6 +101,7 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
             'US'
         );
         expect(runEconomicEventAnalysis).toHaveBeenCalledWith({
+            region: '미국',
             event: 'Core CPI MoM (May)',
             impact: 'High',
             actual: 0.4,
@@ -124,6 +125,28 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
         expect(attachEventAnalysis).toHaveBeenCalledWith('id1', ANALYSIS);
         expect(revalidateTag).toHaveBeenCalledWith(
             'economy:calendar:us',
+            'max'
+        );
+    });
+
+    /**
+     * 한국 발표는 core에 국가 개념이 없던 동안 분석을 통째로 건너뛰었다(잘못된
+     * 해설이 `analyzed_at IS NULL` 가드로 영구히 굳기 때문). core 0.48.0의
+     * `region`이 그 축을 받으므로 다시 켰다 — 스킵이 되살아나면 한국 캘린더의
+     * 해설 컬럼이 조용히 비어 간다.
+     */
+    it('한국 발표도 분석하고 region을 한국으로 넘긴다', async () => {
+        await ensureEconomicEventsAnalyzedAction('KR');
+
+        expect(listUnanalyzedAnnounced).toHaveBeenCalledWith(
+            [...CALENDAR_ANALYZED_IMPACTS],
+            'KR'
+        );
+        expect(runEconomicEventAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ region: '한국' })
+        );
+        expect(revalidateTag).toHaveBeenCalledWith(
+            'economy:calendar:kr',
             'max'
         );
     });

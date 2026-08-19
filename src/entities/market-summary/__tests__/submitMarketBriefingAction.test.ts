@@ -95,16 +95,20 @@ describe('submitMarketBriefingAction 함수는', () => {
             });
         });
 
-        it('(Happy) getCachedMarketSummary와 runBriefing(summary)를 호출한다', async () => {
+        it('(Happy) getCachedMarketSummary와 runBriefing(summary, context)를 호출한다', async () => {
             await submitMarketBriefingAction('us');
 
             expect(mockGetCachedMarketSummary).toHaveBeenCalledWith(
                 mockProvider,
                 US_DASHBOARD_SCOPE
             );
-            expect(mockRunBriefing).toHaveBeenCalledWith(summaryData, {
-                signal: undefined,
-            });
+            // context는 core 캐시 키에 접힌다 — peek 경로(peekBriefingStatic)와
+            // 같은 헬퍼로 조립되지 않으면 두 키가 갈려 peek이 영원히 미스한다.
+            expect(mockRunBriefing).toHaveBeenCalledWith(
+                summaryData,
+                { marketLabel: '미국 증시', volatility: null },
+                { signal: undefined }
+            );
         });
     });
 

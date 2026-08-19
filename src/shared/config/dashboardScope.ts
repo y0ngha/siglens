@@ -33,6 +33,15 @@ export type DashboardScopeId = 'us' | 'kr';
 export interface DashboardScope {
     readonly id: DashboardScopeId;
     /**
+     * 이 시장의 표시 이름. core `runBriefing`의 `MarketBriefingContext.marketLabel`로
+     * 그대로 흘러가 프롬프트 프레이밍과 캐시 키에 들어간다.
+     *
+     * 예전에는 core가 시장을 몰랐고, 한국 요약을 넣어도 프롬프트가 미국을 전제해
+     * `XLK·XLV·XLY` 같은 **입력에 없는 티커**를 돌려줬다. 이름을 데이터로 넘겨
+     * "다른 시장 것은 끌어오지 말라"는 경계 규칙이 걸리게 한다.
+     */
+    readonly marketLabel: string;
+    /**
      * 시세 앞에 붙는 통화 기호.
      *
      * 예전에는 카드가 `$`를 문자열로 박아 뒀는데, 그대로 두면 `/market/kr`에서
@@ -68,22 +77,26 @@ export interface DashboardScope {
      */
     readonly linkSectorCards: boolean;
     /**
-     * 이 시장의 변동성 지수 이름. 없으면 `null`.
+     * 이 시장 변동성 지수의 {@link indices} 내 `symbol`. 없으면 `null`.
      *
-     * AI 브리핑(`runBriefing`)의 `volatilityAnalysis.vixLevel`을 화면에 그릴지
-     * 여기서 정한다. 한국은 `null`이다 — 우리 입력에 VKOSPI가 없는데도 core
-     * 프롬프트가 "VIX 지수 값"을 요구해서 모델이 숫자를 **지어낸다**(실측:
-     * `/market/kr`에 `VIX 18.30`이 떴는데 KR 요약에는 그런 값이 없다).
-     * 근거 없는 숫자를 화면에 올리지 않는 것이 이 필드의 유일한 목적이다.
+     * 두 곳이 쓴다: 요약에서 그 지수 시세를 찾아 core에 **값으로 건네고**(브리핑
+     * 프롬프트는 안 준 숫자를 묻지 않는다), 카드에서 그 숫자를 그릴 때 라벨로 쓴다.
+     * 지금은 심볼과 표시 이름이 같아(`'VIX'`) 한 필드로 충분하다 — 둘이 갈리는
+     * 시장이 생기면 그때 나눈다.
+     *
+     * 한국은 `null`이다. 우리 입력에 VKOSPI가 없는데도 예전 core 프롬프트가
+     * "VIX 지수 값"을 요구해서 모델이 숫자를 **지어냈다**(실측: `/market/kr`에
+     * `VIX 18.30`이 떴는데 KR 요약에는 그런 값이 없다).
      */
-    readonly volatilityIndexLabel: string | null;
+    readonly volatilityIndexSymbol: string | null;
 }
 
 export const US_DASHBOARD_SCOPE: DashboardScope = {
     id: 'us',
+    marketLabel: '미국 증시',
     currencySymbol: '$',
     linkSectorCards: true,
-    volatilityIndexLabel: 'VIX',
+    volatilityIndexSymbol: 'VIX',
     indices: MARKET_INDICES,
     sectorEtfs: SECTOR_ETFS,
     sectorGroups: SECTOR_GROUPS,
@@ -93,9 +106,10 @@ export const US_DASHBOARD_SCOPE: DashboardScope = {
 
 export const KR_DASHBOARD_SCOPE: DashboardScope = {
     id: 'kr',
+    marketLabel: '한국 증시',
     currencySymbol: '₩',
     linkSectorCards: false,
-    volatilityIndexLabel: null,
+    volatilityIndexSymbol: null,
     indices: KR_MARKET_INDICES,
     sectorEtfs: KR_SECTOR_ETFS,
     sectorGroups: KR_SECTOR_GROUPS,

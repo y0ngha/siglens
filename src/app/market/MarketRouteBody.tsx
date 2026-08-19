@@ -108,11 +108,9 @@ export async function MarketContent({
         }),
     ]);
     // peekBriefingStatic is read-only — null on cache miss (client will trigger submit)
-    const peekSeed = await peekBriefingStatic(
-        summary,
-        dateHour,
-        scope.id
-    ).catch(() => null);
+    const peekSeed = await peekBriefingStatic(summary, dateHour, scope).catch(
+        () => null
+    );
 
     /**
      * SSR seed의 computedAt만 시간 단위로 quantize한다 — 5~15분 churn이 ISR write를

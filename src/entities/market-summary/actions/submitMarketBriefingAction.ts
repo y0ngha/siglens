@@ -6,6 +6,7 @@ import { runBriefing } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
 import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
 import { getCachedMarketSummary } from '../api/marketSummaryCache';
+import { marketBriefingContextOf } from '../lib/marketBriefingContext';
 import {
     dashboardScopeOf,
     isDashboardScopeId,
@@ -40,14 +41,17 @@ export async function submitMarketBriefingAction(
             return { ok: false, error: 'server_error' };
         }
         const resolved = dashboardScopeOf(scope);
-        // core `runBriefing`은 시장을 모른다 — 프롬프트가 지수·섹터 행을 데이터로만
-        // 읽고, 캐시 키는 그 데이터 해시에서 나온다. 따라서 한국 요약을 넣으면
-        // 한국 브리핑이 나오고 미국 것과 키도 자연히 갈린다.
         const summary = await getCachedMarketSummary(
             marketDataProviderFor(resolved.id),
             resolved
         );
-        const briefing = await runBriefing(summary, { signal });
+        // context는 캐시 키에 접혀 들어간다 — peek 경로와 **같은 헬퍼**로 조립해야
+        // 두 키가 일치한다(marketBriefingContextOf JSDoc).
+        const briefing = await runBriefing(
+            summary,
+            marketBriefingContextOf(resolved, summary),
+            { signal }
+        );
         return { briefing, botBlocked: false, scope: resolved.id };
     } catch (e) {
         console.error('[submitMarketBriefingAction] failed:', e);

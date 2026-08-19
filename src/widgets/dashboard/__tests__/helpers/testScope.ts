@@ -12,9 +12,10 @@ import type { DashboardScope } from '@/shared/config/dashboardScope';
  */
 export const TEST_SCOPE: DashboardScope = {
     id: 'us',
+    marketLabel: '미국 증시',
     currencySymbol: '$',
     linkSectorCards: true,
-    volatilityIndexLabel: 'VIX',
+    volatilityIndexSymbol: 'VIX',
     indices: [
         { symbol: 'SPY', fmpSymbol: 'SPY', displayName: 'SPY', koreanName: '' },
         { symbol: 'QQQ', fmpSymbol: 'QQQ', displayName: 'QQQ', koreanName: '' },

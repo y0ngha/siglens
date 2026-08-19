@@ -6,7 +6,8 @@ import {
     peekBriefingCache,
 } from '@y0ngha/siglens-core';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
-import type { DashboardScopeId } from '@/shared/config/dashboardScope';
+import type { DashboardScope } from '@/shared/config/dashboardScope';
+import { marketBriefingContextOf } from '../lib/marketBriefingContext';
 
 /**
  * ISR static-safe peek of the cached briefing. core peekBriefingCache(읽기전용)를 Next
@@ -17,14 +18,17 @@ import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 export function peekBriefingStatic(
     summary: MarketSummaryData,
     dateHour: string,
-    scope: DashboardScopeId
+    scope: DashboardScope
 ): Promise<MarketBriefingResponse | null> {
+    // core 캐시 키에 접히는 context — 쓰기 경로(submitMarketBriefingAction)와
+    // **같은 헬퍼**로 만들어야 peek이 실제로 쓰인 키를 읽는다.
+    const context = marketBriefingContextOf(scope, summary);
     return unstable_cache(
-        () => peekBriefingCache(summary),
+        () => peekBriefingCache(summary, context),
         // `scope`가 키에 **반드시** 있어야 한다. 예전 키는 `dateHour` 하나뿐이라
         // 미국·한국이 같은 시간대에 같은 엔트리를 공유했다 — 먼저 렌더된 쪽의
         // 브리핑이 다른 시장 페이지에 그대로 나간다.
-        ['briefing-peek-static', scope, dateHour],
-        { revalidate: SECONDS_PER_HOUR, tags: [`market:briefing:${scope}`] }
+        ['briefing-peek-static', scope.id, dateHour],
+        { revalidate: SECONDS_PER_HOUR, tags: [`market:briefing:${scope.id}`] }
     )();
 }

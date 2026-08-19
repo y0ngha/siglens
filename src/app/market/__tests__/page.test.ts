@@ -289,7 +289,7 @@ describe('Market page', () => {
             expect(mockPeekBriefingStatic).toHaveBeenCalledWith(
                 expect.anything(),
                 expect.any(String),
-                'kr'
+                KR_DASHBOARD_SCOPE
             );
             expect(mockSetQueryData).toHaveBeenCalledWith(
                 ['market-summary', 'kr'],

@@ -60,6 +60,19 @@ export const CALENDAR_COUNTRY: CalendarCountry = 'US';
 export const CALENDAR_COUNTRY_KR: CalendarCountry = 'KR';
 
 /**
+ * 국가 코드 → core `EconomicEventAnalysisInput.region`으로 넘길 표시 이름.
+ *
+ * core는 이 필드를 **필수**로 요구한다. `'Interest Rate Decision'`·`'CPI YoY'`처럼
+ * 이름에 국가가 없는 발표가 많아서, 없으면 모델이 사전 지식으로 되메워 한국은행
+ * 결정을 연준 맥락으로 서술한다. 저장이 `analyzed_at IS NULL` 가드로 한 번만
+ * 일어나므로 그 서술은 되돌릴 수 없다.
+ */
+export const CALENDAR_REGION_LABEL: Record<CalendarCountry, string> = {
+    US: '미국',
+    KR: '한국',
+};
+
+/**
  * 화면 문구에 넣을 국가 이름. 캘린더 위젯이 두 라우트에서 공유되므로 빈 상태
  * 문구 같은 것을 하드코딩하면 한국 페이지가 "미국 발표 일정"을 말하게 된다.
  */

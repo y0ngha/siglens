@@ -20,6 +20,7 @@ import {
     CALENDAR_ANALYSIS_PARALLEL_LIMIT,
     CALENDAR_ANALYZED_IMPACTS,
     CALENDAR_COUNTRY,
+    CALENDAR_REGION_LABEL,
     economyCalendarCacheTag,
     type CalendarCountry,
     isCalendarCountry,
@@ -39,9 +40,13 @@ const MAJORITY_DIVISOR = 2;
  */
 async function analyzeAndPersistEvent(
     row: UnanalyzedAnnouncedEvent,
-    repo: DrizzleEconomicCalendarRepository
+    repo: DrizzleEconomicCalendarRepository,
+    country: CalendarCountry
 ): Promise<boolean> {
     const input = {
+        // core 필수 필드. 프롬프트 프레이밍과 분석 캐시 키 양쪽에 들어간다 —
+        // 같은 이름·같은 수치의 발표라도 경제권이 다르면 해설을 공유하면 안 된다.
+        region: CALENDAR_REGION_LABEL[country],
         event: row.event,
         impact: row.impact,
         actual: row.actual,
@@ -94,16 +99,13 @@ async function analyzeAndPersistEvent(
  * E2E/prerender에서는 즉시 반환(LLM 비용 0).
  */
 /**
- * @param country - 분석할 국가. 스캔·플래그·프롬프트 입력이 전부 이 값으로 갈린다.
- *   기본값이 미국이라 기존 호출부(`/economy`)는 그대로 동작한다.
+ * @param country - 분석할 국가. 스캔·플래그·프롬프트 입력·캐시 키가 전부 이 값으로
+ *   갈린다. 기본값이 미국이라 기존 호출부(`/economy`)는 그대로 동작한다.
  *
- *   **국가를 안 나누면 write-once가 잘못된 결과를 굳힌다**: core
- *   `buildEconomicEventAnalysisPrompt`는 국가 필드가 없고 few-shot이 미국 발표
- *   (`미국 CPI`, `연방준비제도 금리 결정`)로 채워져 있다. `Interest Rate Decision`
- *   처럼 국가가 드러나지 않는 이름의 한국 발표가 그 프롬프트로 분석되면 한국은행
- *   결정이 연준 맥락으로 서술되고, `analyzed_at IS NULL` 가드 때문에 다시 못 고친다.
- *   국가를 나눠도 프롬프트 자체는 여전히 미국 맥락이라 — **core가 country를 받기
- *   전까지 한국 이벤트 분석 품질은 알려진 한계다**(설계 문서 §8에 기록).
+ *   **국가를 안 나누면 write-once가 잘못된 결과를 굳힌다**: `Interest Rate Decision`
+ *   처럼 이름에 국가가 없는 발표가 국가 없이 분석되면 한국은행 결정이 연준 맥락으로
+ *   서술되고, `analyzed_at IS NULL` 가드 때문에 다시 못 고친다. core 0.48.0의
+ *   `EconomicEventAnalysisInput.region`이 그 축을 받으므로 여기서 넘겨준다.
  */
 export async function ensureEconomicEventsAnalyzedAction(
     country: CalendarCountry = CALENDAR_COUNTRY
@@ -118,18 +120,6 @@ export async function ensureEconomicEventsAnalyzedAction(
             );
             return;
         }
-        /*
-         * **한국 발표는 이번 릴리스에서 분석하지 않는다.**
-         *
-         * core `buildEconomicEventAnalysisPrompt`에 국가 개념이 없고 few-shot이
-         * 전부 미국 발표다. 한국은행 금통위 결정이 연준 맥락으로 서술되는데,
-         * 저장이 `analyzed_at IS NULL` 가드로 **한 번만** 일어나므로 그 서술은
-         * 되돌릴 방법이 없다(재분석 경로 없음). 잘못된 해설을 영구히 남기느니
-         * 컬럼을 비워 두는 쪽이 정직하다 — 캘린더 수집과 표시는 그대로 돈다.
-         *
-         * core가 country를 받으면 이 가드를 지운다(설계 문서 §8).
-         */
-        if (country === 'KR') return;
         if (await isAnalysisRecentlyRun(country)) return;
         // async 작업 전에 마킹 — 동시 호출이 이 지점 이후 플래그를 읽으면 스캔 생략.
         await markAnalysisRun(country);
@@ -146,7 +136,7 @@ export async function ensureEconomicEventsAnalyzedAction(
         const settled = await withConcurrencyLimit(
             pending,
             CALENDAR_ANALYSIS_PARALLEL_LIMIT,
-            row => analyzeAndPersistEvent(row, repo)
+            row => analyzeAndPersistEvent(row, repo, country)
         );
         const failures = settled.filter(
             (r): r is PromiseRejectedResult => r.status === 'rejected'

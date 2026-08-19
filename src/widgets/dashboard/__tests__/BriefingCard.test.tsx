@@ -12,8 +12,9 @@ const BRIEFING: MarketBriefingResponse = {
     summary: 'Markets rallied today',
     dominantThemes: ['AI', 'Earnings'],
     sectorAnalysis: {
-        leadingSectors: ['XLK', 'XLF'],
-        laggingSectors: ['XLE'],
+        // core 0.48.0부터 이 필드는 **표시용 한국어명**이다(티커 아님).
+        leadingSectors: ['기술', '금융'],
+        laggingSectors: ['에너지'],
         performanceDescription: 'Tech led the way',
     },
     volatilityAnalysis: { vixLevel: 14.5, description: 'Low volatility' },
@@ -52,8 +53,8 @@ describe('BriefingCard', () => {
                 generatedAt="2025-01-15T10:00:00Z"
             />
         );
-        expect(screen.getByText('XLK·XLF')).toBeInTheDocument();
-        expect(screen.getByText('XLE')).toBeInTheDocument();
+        expect(screen.getByText('기술·금융')).toBeInTheDocument();
+        expect(screen.getByText('에너지')).toBeInTheDocument();
     });
 
     it('renders VIX level', () => {
@@ -146,13 +147,14 @@ describe('BriefingErrorCard', () => {
 });
 
 /**
- * core `marketBriefingPrompt`가 섹터 필드를 `"섹터 ETF 티커 (예: 'XLK')"`로 설명해,
- * 한국 요약을 넣어도 모델이 미국 티커를 돌려주는 일이 실제로 있었다
+ * 예전 core 프롬프트가 섹터 필드를 `"섹터 ETF 티커 (예: 'XLK')"`로 설명해,
+ * 한국 요약을 넣어도 모델이 미국 것을 돌려주는 일이 실제로 있었다
  * (2026-08-19 `/market/kr` 실측: `하락 섹터 XLK·XLV·XLY`, `VIX 18.30`).
- * 카드가 그 값을 그대로 그리면 화면상 완전히 그럴듯해 보인다.
+ * core 0.48.0에서 프롬프트를 고쳤지만 예전 캐시 엔트리가 TTL 동안 남으므로
+ * 카드 앞단의 필터는 유지한다.
  */
 describe('BriefingCard — 근거 없는 값 차단', () => {
-    it('scope에 없는 섹터 티커는 그리지 않는다', () => {
+    it('scope에 없는 섹터명은 그리지 않는다', () => {
         render(
             <BriefingCard
                 scope={KR_DASHBOARD_SCOPE}
@@ -161,8 +163,8 @@ describe('BriefingCard — 근거 없는 값 차단', () => {
             />
         );
 
-        expect(screen.queryByText(/XLK/)).not.toBeInTheDocument();
-        expect(screen.queryByText(/XLE/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/기술/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/에너지/)).not.toBeInTheDocument();
         expect(screen.queryByText('상승 섹터')).not.toBeInTheDocument();
         expect(screen.queryByText('하락 섹터')).not.toBeInTheDocument();
         // 서술 문장은 남는다 — 요약 데이터에서 직접 나온 줄이라 근거가 있다.
@@ -182,7 +184,7 @@ describe('BriefingCard — 근거 없는 값 차단', () => {
         expect(screen.queryByText('Low volatility')).not.toBeInTheDocument();
     });
 
-    it('scope에 있는 티커는 그대로 남긴다', () => {
+    it('scope에 있는 섹터명은 그대로 남긴다', () => {
         render(
             <BriefingCard
                 scope={TEST_SCOPE}
@@ -191,8 +193,8 @@ describe('BriefingCard — 근거 없는 값 차단', () => {
             />
         );
 
-        expect(screen.getByText('XLK·XLF')).toBeInTheDocument();
-        expect(screen.getByText('XLE')).toBeInTheDocument();
+        expect(screen.getByText('기술·금융')).toBeInTheDocument();
+        expect(screen.getByText('에너지')).toBeInTheDocument();
         expect(screen.getByText(/VIX 14\.50/)).toBeInTheDocument();
     });
 });

@@ -342,29 +342,37 @@ app/news/{us,kr}/                       신규 라우트
 
 이 절은 "안 보였다"와 "보고 미뤘다"를 구분하기 위한 기록이다.
 
-**(a) core 브리핑 프롬프트가 미국 전제다 — core 소유**
+**(a)·(b) core 프롬프트의 미국 전제 — core 0.48.0에서 해소됨**
 
-`marketBriefingPrompt`가 섹터 필드를 `"섹터 ETF 티커 (예: 'XLK')"`로 설명하고
-`"VIX 지수 값"`을 요구한다. 한국 요약을 넣으면 모델이 미국 티커를 돌려주고
-입력에 없는 VIX 숫자를 **지어낸다**(2026-08-19 `/market/kr` 실측: `하락 섹터
-XLK·XLV·XLY`, `VIX 18.30`).
+감사 시점의 기록은 이랬다: `marketBriefingPrompt`가 섹터 필드를
+`"섹터 ETF 티커 (예: 'XLK')"`로 설명하고 `"VIX 지수 값"`을 요구해, 한국 요약을
+넣으면 모델이 미국 티커를 돌려주고 입력에 없는 VIX 숫자를 **지어냈다**
+(2026-08-19 `/market/kr` 실측: `하락 섹터 XLK·XLV·XLY`, `VIX 18.30`).
+`buildEconomicEventAnalysisPrompt`도 국가 개념이 없어 한국은행 결정이 연준
+맥락으로 서술됐고, 저장이 `analyzed_at IS NULL` 가드로 한 번만 일어나 되돌릴
+수 없었다.
 
-프롬프트는 `docs/architecture/SCOPE.md` 기준 core 소유라 여기서 고치지 않는다.
-siglens 쪽에서는 **화면에 근거 없는 값을 올리지 않는 것**까지만 한다:
-`BriefingCard`가 scope에 실재하는 티커만 남기고, `volatilityIndexLabel === null`인
-시장에서는 변동성 줄을 통째로 뺀다. 서술 문장은 그대로 둔다 — 요약 데이터에서
-직접 나온 값이라 근거가 있다.
+프롬프트는 `docs/architecture/SCOPE.md` 기준 core 소유라 core에서 고쳤다
+(siglens-core PR #180 → **v0.48.0**). 설계 원칙은 "안 준 것은 묻지 않는다":
 
-**(b) 한국 경제 발표의 AI 해설 — 이번 릴리스에서는 끈다**
+- `runBriefing(data, context)` — `MarketBriefingContext`가 시장 이름과 변동성
+  판독값을 데이터로 나른다. 변동성이 `null`이면 그 필드가 스키마에서 **빠진다**.
+- 섹터 행은 `한국어명 (티커): ±n%`로 싣고 답은 괄호 앞 이름을 복사시킨다 —
+  그래서 `leadingSectors`/`laggingSectors`가 이제 **티커가 아니라 한국어명**이다.
+- `EconomicEventAnalysisInput.region` 필수. 기본값을 두면 그 버그가 조용히
+  재현되므로 일부러 defaulting하지 않는다. 캐시 키에도 들어간다.
 
-core `buildEconomicEventAnalysisPrompt`도 국가 개념이 없고 few-shot이 미국
-발표다. `Interest Rate Decision`처럼 국가가 이름에 없는 한국 발표가 그 프롬프트로
-분석되면 한국은행 결정이 연준 맥락으로 서술되는데, 저장이 `analyzed_at IS NULL`
-가드로 **한 번만** 일어나 되돌릴 수 없다(재분석 경로 없음).
+siglens 쪽 배선:
+`marketBriefingContextOf(scope, summary)` 하나를 쓰기(`submitMarketBriefingAction`)와
+읽기(`peekBriefingStatic`)가 **공유한다** — context가 core `hashBriefingInput`에
+접히므로 두 경로가 다르게 조립하면 peek이 아무도 쓴 적 없는 키를 읽어 영원히
+미스한다. `DashboardScope.marketLabel`·`volatilityIndexSymbol`이 그 입력이다.
+`ensureEconomicEventsAnalyzedAction`의 `country === 'KR'` 조기 반환은 제거했다 —
+한국 경제 발표 AI 해설이 다시 켜졌다.
 
-`ensureEconomicEventsAnalyzedAction`이 `country === 'KR'`이면 조기 반환한다.
-캘린더 수집과 표시는 그대로 돌고 AI 컬럼만 비어 있다 — 틀린 해설을 영구히
-남기는 것보다 낫다. core가 country를 받으면 가드를 지운다.
+`BriefingCard`의 필터는 **유지한다.** 프롬프트를 고쳐도 출력은 모델 산물이고,
+예전 프롬프트로 채워진 캐시 엔트리가 TTL 동안 남는다. 비교 대상만 심볼에서
+한국어명으로 바꿨다.
 
 **(c) 사이트맵의 KR 엔트리를 데이터 유무로 게이팅하지 않는다**
 
