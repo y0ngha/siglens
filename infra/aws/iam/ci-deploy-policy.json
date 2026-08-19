@@ -28,9 +28,6 @@
                 "ec2:DescribeSecurityGroups",
                 "ec2:DescribeLaunchTemplates",
                 "ec2:DescribeLaunchTemplateVersions",
-                "elasticloadbalancing:DescribeLoadBalancers",
-                "elasticloadbalancing:DescribeListeners",
-                "elasticloadbalancing:DescribeRules",
                 "autoscaling:DescribeAutoScalingGroups",
                 "autoscaling:DescribeInstanceRefreshes"
             ],
