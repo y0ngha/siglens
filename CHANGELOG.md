@@ -1,5 +1,23 @@
 # Changelog
 
+# [0.57.0](https://github.com/y0ngha/siglens/compare/v0.56.0...v0.57.0) (2026-08-19)
+
+
+### Bug Fixes
+
+* **build:** scripts typecheck를 추적 파일로 한정 — 릴리스 push 중단 수정 ([97d601d](https://github.com/y0ngha/siglens/commit/97d601df063daa595294778011d5c70e2950e5ba))
+* **e2e:** /news 3지역 허브 재편에 맞춰 news-hub 스펙 갱신 ([75c78ff](https://github.com/y0ngha/siglens/commit/75c78ffcc5df2acbad102eaa3e50ac41f094f9c4))
+* **e2e:** 헤더 드롭다운 동선 반영 + 한국 종목 공탐지수 상위 링크 시장별 분기 ([37f70ea](https://github.com/y0ngha/siglens/commit/37f70ea72751aa08abb014bd061c0b9e16af3655))
+* **scripts,dashboard:** seed 백필이 20건에서 조용히 멈추던 문제 외 3건 ([34c48ae](https://github.com/y0ngha/siglens/commit/34c48aee542665ebefabed129b56782d8c556dd2))
+* **scripts:** typecheck 사각지대에 숨어 있던 core API 드리프트 정리 ([6b375fc](https://github.com/y0ngha/siglens/commit/6b375fc6616991b625992d4049e20b5a156e08ed))
+
+
+### Features
+
+* **market:** core 0.48.0 배선 — 시장 컨텍스트를 프롬프트에 데이터로 전달 ([3f0d9b8](https://github.com/y0ngha/siglens/commit/3f0d9b89b18152627ee0458e8572103eb5223d14))
+* **nav:** 미국·한국·암호화폐 3자산군 동선 재편 + 한국 시장 4개 화면 ([28e6c2a](https://github.com/y0ngha/siglens/commit/28e6c2abeca5f4caab6cd764d5b005f97f22e9f4))
+* **ux:** 미국·한국·암호화폐 3자산군 UX 재편 ([dc5924b](https://github.com/y0ngha/siglens/commit/dc5924bb5d4d4efb8d637740aa8b875178acb71e))
+
 # [0.56.0](https://github.com/y0ngha/siglens/compare/v0.55.0...v0.56.0) (2026-08-18)
 
 
