@@ -18,19 +18,23 @@ import { waitForActiveStreams } from '@/shared/lib/sse/activeStreams';
  * 분석 SSE 스트림의 최대 지속 시간(`STREAM_DEADLINE_MS` = 10분)보다 **의도적으로 짧다.**
  * 통상 분석(30~90s)은 완주하고, 180s를 넘는 분석은 SIGKILL로 잘린다.
  *
- * 왜 마감에 맞추지 않는가 — 맞추려면 아래 인프라 3값을 605/605/610으로 같이 올려야 하는데,
- * `deregistration_delay`가 185→605가 되면 인스턴스 교체마다 약 7분이 붙어 2대 롤이
- * 18분에서 30분대로 늘어난다. 그 대가로 얻는 것은 "배포 중이던 분석이 살아남는다" 하나이고,
- * 배포는 주 몇 회, LLM 호출은 하루 20건 수준이다. 이 불일치는 마감이 5분이던 시절에도
- * 있었고(180 < 300) 실패로 관측된 적이 없다 — 10분으로 넓혀도 새 실패 모드가 아니라
- * 기존 모드의 노출이 조금 늘 뿐이다. 배포 중 장기 분석 보존이 필요해지면 그때 위 비용을
- * 감수하고 세 값을 함께 올린다.
+ * 왜 마감에 맞추지 않는가 — 맞추려면 인프라 값들을 605대로 같이 올려야 하는데,
+ * 인스턴스 교체마다 약 7분이 붙어 2대 롤이 18분에서 30분대로 늘어난다. 그 대가로 얻는
+ * 것은 "배포 중이던 분석이 살아남는다" 하나이고, 배포는 주 몇 회, LLM 호출은 하루 20건
+ * 수준이다. 이 불일치는 마감이 5분이던 시절에도 있었고(180 < 300) 실패로 관측된 적이
+ * 없다 — 10분으로 넓혀도 새 실패 모드가 아니라 기존 모드의 노출이 조금 늘 뿐이다.
  *
- * 인프라 타이밍과의 정합(06-alb-asg.sh, user-data.sh):
- *   - deregistration_delay 185s  ≥  이 값(SIGTERM은 deregistration 완료 후 오므로
- *                                      draining 중 새 연결이 들어오지 않는다)
- *   - docker stop -t 185s        >  이 값(drain이 끝나고 process.exit(0) 후 docker가 멈춤)
- *   - TimeoutStopSec 190s        ≥  docker stop -t(systemd 안전망)
+ * 2026-08 cloudflared 전환 이후에는 애초에 **표현 불가능**하기도 하다:
+ * `TUNNEL_GRACE_PERIOD`의 하드 상한이 180초다(185s를 주면 cloudflared가 기동을 거부).
+ *
+ * 인프라 타이밍과의 정합(06-asg.sh, user-data.sh):
+ *   - cloudflared TUNNEL_GRACE_PERIOD 180s  ≥ 이 값. systemd가 앱보다 **먼저** 터널을
+ *                                             내리므로, 이 드레인이 시작될 때는 이미
+ *                                             새 요청이 들어오지 않는다(ALB
+ *                                             deregistration_delay가 하던 역할).
+ *   - docker stop -t 185s                   > 이 값(drain이 끝나고 process.exit(0) 후 멈춤)
+ *   - TimeoutStopSec 190s                   ≥ docker stop -t(systemd 안전망)
+ *   - ASG 라이프사이클 훅 heartbeat 420s      ≥ 180 + 190 + 여유
  */
 const SHUTDOWN_DRAIN_DEADLINE_MS = 180_000;
 

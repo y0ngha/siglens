@@ -153,7 +153,7 @@ RSI · MACD · 볼린저 밴드 · ADX · DMI · Stochastic · StochRSI · CCI �
 | 경로 | 용도 |
 |---|---|
 | `/api/analysis/stream` | SSE 분석 스트림 — tier 게이트, BYOK 해석, 하트비트, 마감 10분 |
-| `/api/health` | shallow liveness 프로브 — ALB 타깃 그룹이 폴링 |
+| `/api/health` | shallow liveness 프로브 — 온박스 헬스 게이트와 selfcheck 타이머가 폴링 |
 | `/api/ready` | deep readiness 프로브 (DB·Redis 도달성) |
 | `/api/sse-probe` | 프록시 idle 타임아웃 실측용 스트리밍 진단 엔드포인트 |
 | `/api/cron/seo-prewarm` | EventBridge가 호출하는 pre-warm 배치 (Bearer `CRON_SECRET`) |
@@ -285,7 +285,7 @@ skills/<category>/my-strategy.md 추가  →  해당 기법이 즉시 반영
 
 배포는 태그 기반입니다. `v*` 태그를 푸시하면 `.github/workflows/deploy.yml`이 돌면서 typecheck·유닛 테스트를 게이트로 걸고, 이미지를 빌드해 ECR에 푸시한 뒤 ASG를 instance refresh로 롤링합니다.
 
-AWS(ALB + ASG/EC2, ECR, SSM, EventBridge, CloudWatch, S3 ISR 캐시) 위에서 Upstash Redis, Neon PostgreSQL, Resend 이메일, 앞단 Cloudflare와 함께 돌아갑니다. 긴 AI 작업은 앱 자신이 스트리밍으로 처리합니다 — 예전의 Cloud Run 워커와 Redis Job 큐는 제거됐습니다.
+AWS(Cloudflare Tunnel 뒤의 ASG/EC2, ECR, SSM, EventBridge, CloudWatch, S3 ISR 캐시) 위에서 Upstash Redis, Neon PostgreSQL, Resend 이메일, 앞단 Cloudflare와 함께 돌아갑니다. 긴 AI 작업은 앱 자신이 스트리밍으로 처리합니다 — 예전의 Cloud Run 워커와 Redis Job 큐는 제거됐습니다.
 
 | 필요한 작업 | 읽을 문서 |
 |---|---|

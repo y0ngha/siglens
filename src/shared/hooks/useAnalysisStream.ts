@@ -4,11 +4,17 @@
  * 분석 SSE 스트림 소비 헬퍼.
  *
  * 왜 서버 액션을 직접 부르지 않는가 — 서버 액션도 결국 단일 POST다. 분석은 LLM 응답을
- * 기다리는 동안 바이트를 전혀 보내지 않으므로 그 연결은 idle로 간주되고, **ALB
- * `idle_timeout` 60초에 잘린다**. 프로덕션 실측(`/api/sse-probe`, v0.50.1): heartbeat
- * 없이 침묵하면 61.1초에 HTTP/2 `INTERNAL_ERROR`로 끊겼고, 25~30초 heartbeat를 흘리면
- * 286초까지 완주했다. Cloudflare의 125초 Proxy Read Timeout은 이 구간에서 발동하지
- * 않았고 `text/event-stream`을 버퍼링하지도 않았다.
+ * 기다리는 동안 바이트를 전혀 보내지 않으므로 그 연결은 idle로 간주되고 **끊긴다**.
+ *
+ * 침묵 벽은 프로덕션 실측(`/api/sse-probe`)으로 두 번 쟀다:
+ *   - ALB 시절(v0.50.1): **61.1초**에 HTTP/2 `INTERNAL_ERROR`. 그 60초가
+ *     `HEARTBEAT_INTERVAL_MS = 25s`를 정한 근거였다.
+ *   - cloudflared 전환 후(2026-08): **125.9초** — Cloudflare Proxy Read Timeout.
+ *     같은 조건에서 25초 heartbeat를 흘리면 600초를 정확히 25.0초 간격으로 완주했다
+ *     (이벤트 25개, 뭉침 0). `text/event-stream`은 터널에서도 버퍼링되지 않는다.
+ *
+ * 즉 벽은 2배 멀어졌지만 heartbeat는 그대로 둔다 — 125초는 여전히 실재하는 상한이고,
+ * 25초는 비용이 없다.
  *
  * 그래서 브라우저 경로는 반드시 이 스트림을 거친다. 서버 내부 경로(크론·SSR·봇)는
  * 브라우저 연결이 없으므로 core `run*`을 그냥 `await`하면 된다.

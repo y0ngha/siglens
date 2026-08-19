@@ -27,8 +27,8 @@ import { releaseReanalyzeCooldown } from '@y0ngha/siglens-core';
 
 // Actions: gating + data-fetch already live in each entity's action file.
 // Calling them from the route (server-side) is safe — no browser connection means
-// no ALB idle_timeout. The SSE heartbeat stream keeps the browser connection alive
-// while these actions await the LLM.
+// no idle-connection wall at all. The SSE heartbeat stream keeps the browser
+// connection alive while these actions await the LLM.
 import {
     runOverallAnalysisAction,
     runFundamentalAnalysisAction,
@@ -101,7 +101,10 @@ const SSE_HEADERS: HeadersInit = {
     // 청크가 버퍼링되고 실시간성이 사라진다 — CF 설정을 정리하다 무심코 지우기
     // 쉬운 자리라 명시해 둔다.
     'Cache-Control': 'no-cache, no-store, no-transform',
-    // Disables nginx-family proxy response buffering (ALB, etc.).
+    // Disables nginx-family proxy response buffering. Kept after the 2026-08
+    // cloudflared migration: cloudflared does not buffer `text/event-stream`
+    // (verified — 600s probe arrived at exact 25.0s gaps), but this header costs
+    // nothing and still applies to any intermediary.
     'X-Accel-Buffering': 'no',
 };
 
@@ -119,12 +122,16 @@ const SSE_HEADERS: HeadersInit = {
  * 10 minutes is measured, not assumed. `/api/sse-probe` at `duration=600&interval=25`
  * completed twice through production (601.4s / 601.2s, CF PoPs LAX and SJC) with
  * constant sub-second drift and 24.9–25.3s arrival gaps — no edge buffering. The
- * control run with a 90s silence gap was severed at exactly 61.0s, confirming the
- * ALB idle timeout is still the live wall and that `HEARTBEAT_INTERVAL_MS` (25s) is
- * what clears it. Raising this bound past ~10 min would need a fresh measurement.
+ * control run with a 90s silence gap was severed at exactly 61.0s — that was the ALB
+ * idle timeout. After the 2026-08 cloudflared migration the same control was re-measured
+ * through the tunnel and severed at **125.9s** (Cloudflare Proxy Read Timeout), and the
+ * 600s heartbeat run completed with exact 25.0s gaps. So the wall doubled but
+ * `HEARTBEAT_INTERVAL_MS` (25s) is still what clears it. Raising this bound past ~10 min
+ * would need a fresh measurement.
  *
  * **Deliberately NOT matched to the shutdown drain** (`SHUTDOWN_DRAIN_DEADLINE_MS`,
- * 180s). Aligning them would mean raising `deregistration_delay` from 185s to 605s,
+ * 180s). Aligning them would mean raising the drain budget from ~180s to 605s — and
+ * cloudflared caps `TUNNEL_GRACE_PERIOD` at 180s, so it is not even expressible —
  * which adds ~7 minutes per instance replacement and pushes a two-instance roll from
  * ~18 min to ~30 min. What that buys is "an in-flight analysis survives a deploy" —
  * and deploys are a handful per week against ~19 LLM calls per day. The 180s < deadline
@@ -138,7 +145,7 @@ const STREAM_DEADLINE_MS = 10 * 60 * 1_000;
 
 /**
  * 포지션 버킷 파생용 시세 조회 상한. 이 조회는 첫 SSE 바이트 이전에 일어나 heartbeat의
- * 보호를 받지 못하므로, ALB idle_timeout(60초)보다 훨씬 짧게 잡는다.
+ * 보호를 받지 못하므로, 침묵 벽(cloudflared 경유 실측 125.9초)보다 훨씬 짧게 잡는다.
  */
 const QUOTE_LOOKUP_TIMEOUT_MS = 5_000;
 
@@ -366,7 +373,7 @@ async function resolveHoldingPositionBucket(
         const avgPrice = Number(holding.averagePrice);
         /**
          * 이 조회는 **첫 SSE 바이트가 나가기 전**에 일어난다 — heartbeat가 아직 시작되지
-         * 않았으므로 여기서 오래 끌면 ALB idle_timeout(60초)이 연결을 끊는다. FMP 429
+         * 않았으므로 여기서 오래 끌면 침묵 벽(실측 125.9초)이 연결을 끊는다. FMP 429
          * 폭풍에서는 요청 타임아웃 10초 + 백오프 10/15/20초로 한 번의 getQuote가 85초까지
          * 갈 수 있다. 개인화는 있으면 좋은 것이지 분석의 전제가 아니므로, 짧은 상한을
          * 두고 넘기면 버킷 없이 진행한다.
@@ -396,9 +403,10 @@ async function resolveHoldingPositionBucket(
  *
  * Browser-side analysis requests MUST go through this SSE route, not server
  * actions. A server action is a single POST — while the server awaits the LLM
- * it sends no bytes, and AWS ALB cuts the idle connection at 60 s (measured on
- * production: 61.1 s without heartbeat, 286 s with 25 s heartbeat). Server-side
- * callers (cron, SSR, bots) are unaffected and may call `run*` directly.
+ * it sends no bytes, and the edge cuts the idle connection (measured on production:
+ * 61.1 s through the ALB, 125.9 s through cloudflared after the 2026-08 migration;
+ * 600 s completes cleanly with the 25 s heartbeat). Server-side callers (cron, SSR,
+ * bots) are unaffected and may call `run*` directly.
  *
  * Request body: `{ type: AnalysisType; params: <type-specific shape> }`
  *
