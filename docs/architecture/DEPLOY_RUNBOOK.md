@@ -28,8 +28,8 @@ git push --tags       # ← 이 순간 배포가 시작된다
 ```
 
 > ⚠️ **`infra/aws/06`·`07`·`08`은 파이프라인이 돌리지 않는다.** `deploy.sh`는
-> `check-env.sh`와 `05-launch-template.sh`만 실행한다. 즉 ALB 속성(`deregistration_delay`,
-> `idle_timeout`), CloudWatch 알람, ASG 스케일링 정책은 **태그를 밀어도 반영되지 않는다.**
+> `check-env.sh`와 `05-launch-template.sh`만 실행한다. 즉 ASG 용량·라이프사이클 훅,
+> CloudWatch 알람, 스케일링 정책은 **태그를 밀어도 반영되지 않는다.**
 >
 > 코드와 인프라 타이밍이 맞물리는 변경(예: graceful drain 예산 조정)을 배포할 때는
 > 태그 push **전에** 해당 스크립트를 수동 실행할 것. 안 하면 컨테이너는 180초를
@@ -41,7 +41,9 @@ git push --tags       # ← 이 순간 배포가 시작된다
 > #    그 게이트는 Docker 빌드 **앞**에서 돌기 때문에 없으면 첫 태그 배포가 즉시 실패한다.
 > bash infra/aws/04-params.sh <env-file>
 >
-> bash infra/aws/06-alb-asg.sh    # ALB 속성 + ASG 용량
+> bash infra/aws/00-iam-setup.sh   # ⚠️ 06보다 **먼저**. AsgLifecycle 권한이 없으면
+>                                 #    launch 훅이 600초 뒤 ABANDON → 모든 배포 실패
+> bash infra/aws/06-asg.sh        # ASG 용량 + 라이프사이클 훅
 > bash infra/aws/07-alarms.sh     # 알람 (analysis-stream-failed, fear-greed-loader-failed,
 > #                                 fear-greed-kr-loader-failed, naver-news-failed,
 > #                                 market-kr-loader-failed, kr-calendar-horizon-expired 포함)
@@ -83,7 +85,13 @@ gh run list --workflow=deploy.yml --limit 3
 curl -sI https://siglens.io | head -20
 
 # 3) 타깃 헬스
-aws elbv2 describe-target-health --target-group-arn <TG_ARN> --profile siglens
+# ALB 제거 후: 타깃 헬스 대신 터널 연결 상태를 본다.
+aws ssm send-command --profile siglens --instance-ids <IID> \
+  --document-name AWS-RunShellScript --parameters 'commands=[
+    "systemctl is-active siglens cloudflared",
+    "curl -s http://127.0.0.1:2000/ready",
+    "curl -s http://127.0.0.1:2000/metrics | grep ha_connections"
+  ]'
 
 # 4) 컨테이너 로그에 부팅 에러가 없는지 (CloudWatch Logs Insights, /siglens/app)
 ```
@@ -155,6 +163,31 @@ curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge
 
 ---
 
+## 2.5 롤백 (ALB 제거 이후)
+
+> ⛔ **0단계를 건너뛰지 말 것.**
+>
+> ```bash
+> aws autoscaling delete-lifecycle-hook --profile siglens \
+>   --auto-scaling-group-name siglens-asg --lifecycle-hook-name siglens-launch-gate
+> ```
+>
+> 훅이 살아 있는 상태로 **예전 태그를 배포하면 안 된다.** `05-launch-template.sh`는
+> 체크아웃된 태그의 `user-data.sh`로 런치 템플릿을 다시 만드는데, cloudflared 전환
+> 이전 태그에는 `complete-lifecycle-action`을 부르는 스크립트가 없다. 그러면 훅이
+> 600초 뒤 ABANDON으로 떨어지고, ASG의 `TerminateHookAbandon: terminate` 정책이
+> 인스턴스를 죽이고, `min-size 1`이 같은 실패를 무한 반복한다(서빙 용량 0).
+> 훅 삭제는 5초면 된다. 되돌린 뒤 `06-asg.sh`로 다시 만든다.
+
+| 단계 | 되돌리는 법 | 소요 |
+|---|---|---|
+| DNS 전환 | Cloudflare에서 `siglens.io`/`www` CNAME을 ALB DNS로 되돌린다(프록시 레코드라 클라이언트 TTL 무관) | **1~2분 — 가장 빠른 레버** |
+| 타깃그룹 분리 / health-check EC2 | `attach-load-balancer-target-groups` + `--health-check-type ELB` | ~3분 |
+| ALB 삭제 | **되돌리는 스크립트가 레포에 없다.** `git show <전환 이전 SHA>:infra/aws/06-alb-asg.sh`와 `:infra/aws/03-acm.sh`로 복구해 수동 재생성 | 10~15분 |
+
+**진짜 되돌릴 수 없는 지점은 ALB 삭제다** — 대체 인그레스가 사라지는 동시에 재생성
+스크립트도 같은 PR에서 삭제됐기 때문이다. 그 전 단계는 전부 20분 안에 되돌아간다.
+
 ## 3. 알람 대응
 
 알람은 `07-alarms.sh`(인프라·ISR)와 `13-seo-prewarm.sh`(크론)가 생성하고, 전부 SNS 토픽 `siglens-alerts`로 간다. **알람·정상복구 양방향으로 통지**한다.
@@ -166,8 +199,8 @@ curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge
 
 | 알람 | 발화 조건(실측) | 1차 대응 |
 |---|---|---|
-| `siglens-alb-5xx` | ELB 5xx 5분 합계 > 10 | Logs Insights에서 스택트레이스 확인. 배포 직후면 롤백 판단, 아니면 의존성(DB/Redis/FMP) 블립 확인. 단발 블립은 알려진 노이즈 |
-| `siglens-unhealthy-targets` | UnHealthyHostCount ≥ 1이 60초×3주기 | `/api/health`는 shallow이므로 이게 뜨면 프로세스 자체가 죽은 것. 컨테이너 로그 → 복구 안 되면 instance refresh |
+| `siglens-tunnel-down` | `[cloudflared-down]` 로그 5분 합계 ≥ 1 | 인그레스 전멸이다. `systemctl status cloudflared` → 토큰(SSM `/siglens/TUNNEL_TOKEN`)·아웃바운드 7844 확인. 복구 안 되면 DNS를 잠시 되돌릴 수 없으니(ALB 없음) instance refresh |
+| `siglens-app-unhealthy` | `[selfcheck]` 로그 5분 합계 ≥ 1 | 온박스 selfcheck가 인스턴스를 Unhealthy로 표시했다는 뜻 = ASG가 교체 중. 교체가 반복되면 컨테이너 로그부터 |
 | `siglens-cpu-credits-low` | CPUCreditBalance < 30 (5분 Min ×2) | t4g 버스트 소진 임박. 배포·빌드가 유발했는지 먼저 확인(정상 회복). 지속되면 인스턴스 타입 재검토 |
 | `siglens-mem-high` | mem_used_percent > 90 (5분 Avg ×3) | OOM 전 경고. 컨테이너 메모리 확인 → 재시작으로 완화, 반복되면 누수 조사 |
 | `siglens-disk-high` | disk_used_percent > 85 (5분 Max ×2) | **ISR 외부화 회귀 카나리다.** 캐시가 S3로 안 나가고 로컬에 쌓인다는 뜻 → `siglens-isr-cache-failures`와 함께 보고 [ISR_CACHE_HANDLER.md](./ISR_CACHE_HANDLER.md)로 |
@@ -200,7 +233,7 @@ curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge
 | 한 페이지가 오래된 내용을 계속 보여준다 | `siglens-isr-tag-failures` 확인 → [ISR_CACHE_HANDLER.md](./ISR_CACHE_HANDLER.md), 그다음 [ISR_REVALIDATE.md](./ISR_REVALIDATE.md)로 의도된 TTL인지 확인 |
 | 디스크가 다시 차오른다 | `siglens-disk-high` 행 참고 — 캐시 외부화가 무력화된 것 |
 | SSH·SSM·EC2 Instance Connect 전부 안 된다 | 진입 복구를 시도하지 말고 §2 instance refresh. golden AMI가 minimal이면 접속 도구 자체가 없다(현재는 SSM param standard + 패키지 명시 설치로 수정됨) |
-| 분석이 계속 pending / 결과가 안 온다 | ALB idle_timeout — 브라우저 SSE 연결이 60초 침묵 시 끊긴다. heartbeat(`/api/analysis/stream`)가 정상 작동 중인지 확인. 서버 오류면 CloudWatch Logs에서 `[streamAnalysisRoute]` 검색 |
+| 분석이 계속 pending / 결과가 안 온다 | **ALB의 60초 벽은 없어졌다**(2026-08 cloudflared 전환, 터널로 600초 완주 실측). 남은 상한은 Cloudflare Proxy Read Timeout이고 25초 heartbeat가 그 아래다. 이제 이 증상은 대체로 서버 측이다 — CloudWatch Logs에서 `[streamAnalysisRoute]` 검색 |
 | 크론이 돌지 않는 것 같다 | [CRON.md](../reference/CRON.md)의 "정상 vs 진짜 막힌 상태" 절 — `submitted 0` 연속은 정상일 수 있다 |
 | 배포가 env 누락으로 중단됐다 | `check-env.sh`가 나열한 키를 `04-params.sh`로 SSM 적재. 비상시 `SKIP_ENV_CHECK=1`(권장하지 않음) |
 

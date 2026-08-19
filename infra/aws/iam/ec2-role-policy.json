@@ -44,7 +44,8 @@
             "Action": [
                 "logs:CreateLogStream",
                 "logs:PutLogEvents",
-                "logs:CreateLogGroup"
+                "logs:CreateLogGroup",
+                "logs:DescribeLogStreams"
             ],
             "Resource": "arn:aws:logs:ap-northeast-2:ACCOUNT_ID:log-group:/siglens/*"
         },
@@ -65,6 +66,16 @@
             "Effect": "Allow",
             "Action": ["s3:ListBucket"],
             "Resource": "arn:aws:s3:::siglens-isr-cache"
+        },
+        {
+            "Sid": "AsgLifecycle",
+            "Effect": "Allow",
+            "Action": [
+                "autoscaling:CompleteLifecycleAction",
+                "autoscaling:RecordLifecycleActionHeartbeat",
+                "autoscaling:SetInstanceHealth"
+            ],
+            "Resource": "arn:aws:autoscaling:ap-northeast-2:ACCOUNT_ID:autoScalingGroup:*:autoScalingGroupName/siglens-asg"
         }
     ]
 }

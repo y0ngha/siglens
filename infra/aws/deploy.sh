@@ -26,14 +26,22 @@ log "rolling to $TAG (ASG already pinned to siglens-lt \$Latest)"
 #                               remain available before any old instance is drained.
 #   MaxHealthyPercentage 200  — allows the ASG to temporarily exceed desired capacity by 1
 #                               batch (desired=2 → max running=4) so replacements are launched
-#                               and pass ELB health checks BEFORE old instances are drained.
-#                               This avoids the healthy-target=0 gap that causes whole-site
-#                               502s. ASG max-size=4, so the temporary surge is within limits.
-#   InstanceWarmup 300        — > health-check-grace 240 s (see 06-alb-asg.sh) + ELB detection
-#                               ~90 s; the refresh
-#                               re-evaluates ELB health after grace expires before counting the
-#                               new instance healthy, so a runtime-unhealthy new instance does
-#                               NOT cause the old one to be terminated.
+#                               and clear the launch lifecycle hook BEFORE old instances are
+#                               drained. This avoids the zero-serving-replica gap that causes
+#                               whole-site 502s. ASG max-size=4, so the surge is within limits.
+#                               During that overlap two cloudflared replicas are attached to
+#                               the same tunnel and Cloudflare routes to either — identical to
+#                               what the ALB already did, and safe because all state is
+#                               external (Neon / Upstash / S3 ISR cache).
+#   InstanceWarmup 300        — 이제는 2차 게이트다. 1차 게이트는 `siglens-launch-gate`
+#                               라이프사이클 훅이다: user-data가 앱(/api/health)과
+#                               터널(cloudflared /ready)이 **둘 다** 살아났음을 증명할
+#                               때까지 인스턴스는 Pending:Wait에 머문다(= InService 아님
+#                               = MinHealthyPercentage 미충족). 따라서 런타임에서 죽은 새
+#                               인스턴스가 옛 인스턴스를 종료시키는 일은 여전히 없다 —
+#                               훅이 600초 뒤 ABANDON으로 떨어지고 refresh가 실패하며
+#                               옛 인스턴스는 그대로 남는다.
+#                               (ALB 제거 전에는 이 자리를 ELB health detection이 맡았다.)
 # No DesiredConfiguration — the ASG already references siglens-lt at Version=$Latest, and
 # 05-launch-template.sh stamped the new image as $Latest before this script ran.
 REFRESH_ID=$(aws autoscaling start-instance-refresh \

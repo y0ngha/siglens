@@ -153,7 +153,7 @@ Source-by-source coverage and what was rejected is in [FMP_INVENTORY_KR.md](./do
 | Route | Purpose |
 |---|---|
 | `/api/analysis/stream` | SSE analysis stream — tier gate, BYOK resolution, heartbeats, 10-minute deadline |
-| `/api/health` | Shallow liveness probe — the ALB target group polls this |
+| `/api/health` | Shallow liveness probe — the on-box health gate and selfcheck timer poll this |
 | `/api/ready` | Deep readiness probe (DB and Redis reachability) |
 | `/api/sse-probe` | Streaming-path diagnostic used to measure proxy idle timeouts |
 | `/api/cron/seo-prewarm` | EventBridge-driven pre-warm batch (Bearer `CRON_SECRET`) |
@@ -285,7 +285,7 @@ add skills/<category>/my-strategy.md  →  the technique is live
 
 Deployment is tag-driven. Pushing a `v*` tag runs `.github/workflows/deploy.yml`, which gates on typecheck and unit tests, builds and pushes the image to ECR, then rolls the ASG through an instance refresh.
 
-Runs on AWS (ALB + ASG/EC2, ECR, SSM, EventBridge, CloudWatch, S3 ISR cache) with Upstash Redis, Neon PostgreSQL, Resend email, and Cloudflare in front. Long AI jobs stream from the app itself; the former Cloud Run worker and its Redis job queue are gone.
+Runs on AWS (ASG/EC2 behind a Cloudflare Tunnel, ECR, SSM, EventBridge, CloudWatch, S3 ISR cache) with Upstash Redis, Neon PostgreSQL, Resend email, and Cloudflare in front. Long AI jobs stream from the app itself; the former Cloud Run worker and its Redis job queue are gone.
 
 | When you need to… | Read |
 |---|---|

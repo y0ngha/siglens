@@ -59,7 +59,19 @@ set -euxo pipefail
 # base 표류(minimal) 대비 + 명시성 위해 직접 설치/활성화한다. 이 둘이 없으면
 # 부팅된 운영 인스턴스에 SSM Session Manager로도 EC2 Instance Connect로도 진입할
 # 수 없어, 장애 시 셸 진단이 불가능해진다(2026-06-28 디스크풀 사고의 2차 원인).
-dnf install -y docker jq amazon-cloudwatch-agent ec2-instance-connect amazon-ssm-agent
+# cloudflared: ALB를 대체한 유일한 인그레스 경로다. 여기서 구우면 매 부팅마다
+# dnf install을 타지 않는다 — 골든 AMI 마커가 있으면 user-data가 설치를 통째로
+# 건너뛰므로, 이 줄이 빠진 AMI로 롤하면 cloudflared 없는 인스턴스가 뜬다.
+cat > /etc/yum.repos.d/cloudflared.repo <<'REPO'
+[cloudflared]
+name=cloudflared
+baseurl=https://pkg.cloudflare.com/cloudflared/rpm
+enabled=1
+type=rpm
+gpgcheck=1
+gpgkey=https://pkg.cloudflare.com/cloudflare-main.gpg
+REPO
+dnf install -y docker jq amazon-cloudwatch-agent ec2-instance-connect amazon-ssm-agent cloudflared
 # docker 데몬은 굳이 부팅 활성화만(이미지에 패키지가 들어가는 게 핵심)
 systemctl enable docker
 # SSM agent를 부팅 시 자동 기동·등록하도록 활성화한다(등록에는 인스턴스 프로파일의

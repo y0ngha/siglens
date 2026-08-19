@@ -32,7 +32,7 @@ The CLAUDE.md file contains critical guidelines, constraints, and operational pr
 - **디스크풀→FS read-only 인시던트(2026-06-28)**: golden AMI가 minimal 이미지라 SSM agent 부재(수정 완료, `PINNED_AMI` 갱신). 근본원인은 ISR/fetch 캐시 디스크 누적 → cacheHandler 외부화로 해결, EBS도 50GB 증설.
 - **홈/economy 빈 ISR 캐시 인시던트(PR #657)**: FMP 402가 재검증 중 uncaught throw로 0-byte 캐시 동결. 방지=전 로더 catch→degrade+root/global error.tsx.
 - **빌드타임 ISR env는 3곳 모두 필요**: `/economy`·`/market` 빌드타임 prerender용 FMP_API_KEY는 Dockerfile secret mount + deploy.yml `--secret` + GH Actions secret 3곳 모두 설정해야 한다.
-- **Vercel→AWS 마이그레이션 완료(2026-06-24/25)**: siglens.io는 AWS ALB+ASG(t4g.medium arm64)에서 서빙, Vercel 프로젝트는 삭제됨. AI 분석은 외부 WORKER로 오프로드.
+- **Vercel→AWS 마이그레이션 완료(2026-06-24/25)**: siglens.io는 AWS ASG(t4g.medium arm64)에서 서빙, 인그레스는 Cloudflare Tunnel(cloudflared) — ALB는 2026-08 제거, Vercel 프로젝트는 삭제됨. AI 분석은 외부 WORKER로 오프로드.
 - **Cloudflare 인프라 + WAF**: siglens.io는 CF 프록시 뒤(cf-connecting-ip). WAF는 proxied(orange-cloud)일 때만 작동. HTML Cache Rule(RSC-aware)로 엣지 캐싱 활성.
 - **ISR revalidate 페이지별 차등화(PR #572)**: 홈/재무/공시 24h·overall/options/news 12h·차트 6h·market만 1h. cron 미도입(전수 재검증 시 Fast Origin 폭증).
 - **ISR 비용·SEO 최적화 R2(PR #591/#593)**: 롱테일 sitemap 라우트 통합, robots AI봇 하이브리드, 캐시키 pageSize 임베드.
