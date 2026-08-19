@@ -1,4 +1,5 @@
 import { HeaderMobileMenu } from './HeaderMobileMenu';
+import { LocaleSwitcher } from './LocaleSwitcher';
 import { HeaderNav } from './HeaderNav';
 import { HeaderNavStatic } from './HeaderNavStatic';
 import { HeaderUserMenu, type HeaderUserMenuUser } from './HeaderUserMenu';
@@ -6,7 +7,7 @@ import { NAV_TREE } from './headerNavTree';
 import { TickerAutocomplete } from '@/features/ticker-search';
 import { SITE_NAME } from '@/shared/lib/seo';
 import Image from 'next/image';
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { Suspense } from 'react';
 
 interface HeaderProps {
@@ -87,6 +88,9 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                     <TickerAutocomplete size="sm" />
                 </div>
                 <div className="flex shrink-0 items-center">
+                    {/* 모바일에서는 드로어 안에 같은 스위처가 있으므로 숨긴다 —
+                        `lg`는 데스크톱 내비/햄버거와 반드시 같은 브레이크포인트다. */}
+                    <LocaleSwitcher className="hidden lg:inline-flex" />
                     <HeaderUserMenu
                         currentUser={currentUser}
                         loading={loadingUserMenu}

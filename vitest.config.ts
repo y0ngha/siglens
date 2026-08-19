@@ -11,6 +11,15 @@ const sharedConfig = {
             '@e2e': path.resolve(__dirname, 'e2e'),
             // server-only는 Next.js 전용 guard 패키지로 실제 설치 불필요.
             // Vitest 환경에서는 빈 stub으로 resolve해 transform 오류를 방지한다.
+            // Vitest는 Next의 `react-server` export condition을 적용하지 않아
+            // `next-intl/server`가 "Client Components에서 지원되지 않는다"고 던지는
+            // stub으로 해석된다. 서버 컴포넌트를 직접 호출하는 이 레포의 페이지
+            // 테스트가 통째로 깨지므로 실제 react-server 빌드로 직접 가리킨다
+            // (mock이 아니라 실물이라 `setRequestLocale`의 실제 동작을 검증한다).
+            'next-intl/server': path.resolve(
+                __dirname,
+                'node_modules/next-intl/dist/esm/development/server.react-server.js'
+            ),
             'server-only': path.resolve(
                 __dirname,
                 'src/__tests__/server-only-stub.ts'
@@ -33,6 +42,11 @@ const sharedTestConfig = {
     // `require('./Fake*')` dead-branch를 활성화 → "Cannot find module" flake를 일으킨다.
     // 매 테스트 후 자동 unstub해 누수를 차단한다(전역 afterEach의 raw E2E_TEST 복원과 함께).
     unstubEnvs: true as const,
+    // next-intl은 ESM 소스를 그대로 배포하고 그 안에서 `next/server`를 bare
+    // specifier로 import한다. 외부 의존으로 두면 Vitest가 이를 파일 경로로 착각해
+    // `node_modules/node_modules/next/server`를 찾다 실패한다. inline 처리하면
+    // Vite의 resolver를 타서 정상 해석된다.
+    server: { deps: { inline: [/next-intl/] } },
     // Keep Vitest and Playwright runners disjoint. The Playwright suite lives in
     // `e2e/**` (`.spec.ts`), so it already falls outside our `src/**` include
     // patterns — but excluding it explicitly is belt-and-suspenders against any

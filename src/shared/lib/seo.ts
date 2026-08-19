@@ -1,4 +1,7 @@
 import type { Metadata } from 'next';
+import { DEFAULT_LOCALE, localePath, type Locale } from '@/shared/i18n/locales';
+import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
+import { localeAlternates, localeOpenGraph } from '@/shared/lib/seoAlternates';
 import {
     isKrEquitySymbol,
     type AssetClass,
@@ -659,20 +662,33 @@ export function buildSymbolWebPageJsonLd(params: {
  * options/page.tsx의 `robots` 스프레드는 호출측이 직접 추가해야 한다:
  * `return { ...symbolMetadataFromSeo(seo), ...(hasOptions ? {} : { robots }) };`
  */
-export function symbolMetadataFromSeo(seo: SymbolSeoContent): Metadata {
+export function symbolMetadataFromSeo(
+    seo: SymbolSeoContent,
+    locale: Locale = DEFAULT_LOCALE
+): Metadata {
     const { title, fullTitle, description, url, keywords } = seo;
+    // `seo.url`은 기본 로케일 절대 URL이다. 경로만 떼어 로케일별 URL을 다시 만든다.
+    const path = url.startsWith(SITE_URL) ? url.slice(SITE_URL.length) : url;
+    const localizedUrl = `${SITE_URL}${localePath(locale, path || '/')}`;
     return {
         title: { absolute: title },
         description,
         keywords,
-        alternates: { canonical: url },
+        // hreflang은 **분석 본문이 준비된 로케일만** 광고한다. 준비되지 않은
+        // 로케일을 광고하면 한국어 본문이 담긴 영어 URL을 크롤러에게 권하는 셈이다.
+        // 준비된 로케일이 하나뿐이면 `buildLanguageAlternates`가 빈 객체를 돌려주고
+        // `languages` 키 자체가 나가지 않는다.
+        alternates: localeAlternates(locale, path, {
+            canonical: localizedUrl,
+            available: SYMBOL_INDEXABLE_LOCALES,
+        }),
         openGraph: {
             type: 'website',
             siteName: SITE_NAME,
             title: fullTitle,
             description,
-            url,
-            locale: 'ko_KR',
+            url: localizedUrl,
+            ...localeOpenGraph(locale),
         },
         twitter: {
             card: 'summary_large_image',

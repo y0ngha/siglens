@@ -9,3 +9,4 @@ export type { HeaderUserMenuUser } from './HeaderUserMenu';
 export { ContactDialog } from './ContactDialog';
 export { CurrentYear } from './CurrentYear';
 export { SiteJsonLd } from './SiteJsonLd';
+export { LocaleSwitcher } from './LocaleSwitcher';

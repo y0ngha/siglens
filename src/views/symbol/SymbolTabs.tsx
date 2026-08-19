@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { cn } from '@/shared/lib/cn';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import {
@@ -17,7 +17,9 @@ interface SymbolTabsProps {
 
 /** Header nav strip for the 4 analysis pages of a symbol. Uses nav + aria-current (URL-based, not tablist). */
 export function SymbolTabs({ symbol }: SymbolTabsProps) {
-    const pathname = usePathname();
+    // 탭 href(`/AAPL/news`)는 로케일 접두사가 없다. 접두사가 붙은 경로로
+    // 비교하면 en/ja/zh에서 활성 탭 표시와 `aria-current`가 통째로 꺼진다.
+    const pathname = useAppPathname();
     const assetInfo = useAssetInfo(symbol);
 
     const upper = symbol.toUpperCase();

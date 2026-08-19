@@ -14,21 +14,46 @@ export function escapeXml(value: string): string {
         .replace(/'/g, '&apos;');
 }
 
-/** SitemapEntry[]를 sitemap.org urlset XML로 직렬화한다. */
+/** 다국어 대체본을 `xhtml:link` 요소로 직렬화한다. 없으면 빈 문자열. */
+function alternateLinks(
+    alternates: Readonly<Record<string, string>> | undefined
+): string {
+    if (!alternates) return '';
+    return Object.entries(alternates)
+        .map(
+            ([hreflang, href]) =>
+                `\n    <xhtml:link rel="alternate" hreflang="${escapeXml(hreflang)}" href="${escapeXml(href)}"/>`
+        )
+        .join('');
+}
+
+/**
+ * SitemapEntry[]를 sitemap.org urlset XML로 직렬화한다.
+ *
+ * `xhtml` 네임스페이스는 **실제로 alternates가 있을 때만** 선언한다 — 쓰지 않는
+ * 네임스페이스를 항상 붙이면 기존 sitemap의 바이트만 늘고 diff가 지저분해진다.
+ */
 export function toUrlSetXml(entries: ReadonlyArray<SitemapEntry>): string {
     const urls = entries
         .map(
-            ({ url, lastModified, changeFrequency, priority }) => `
+            ({ url, lastModified, changeFrequency, priority, alternates }) => `
   <url>
     <loc>${escapeXml(url)}</loc>
     <lastmod>${lastModified.toISOString()}</lastmod>
     <changefreq>${changeFrequency}</changefreq>
-    <priority>${priority}</priority>
+    <priority>${priority}</priority>${alternateLinks(alternates)}
   </url>`
         )
         .join('');
 
-    return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}\n</urlset>`;
+    const hasAlternates = entries.some(
+        entry => entry.alternates && Object.keys(entry.alternates).length > 0
+    );
+    const xhtmlNs = hasAlternates
+        ? ' xmlns:xhtml="http://www.w3.org/1999/xhtml"'
+        : '';
+
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"${xhtmlNs}>${urls}\n</urlset>`;
 }
 
 /** SitemapIndexEntry[]를 sitemap.org sitemapindex XML로 직렬화한다. */

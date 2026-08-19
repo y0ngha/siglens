@@ -7,7 +7,7 @@ import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
 import { cn } from '@/shared/lib/cn';
 import type { Tier } from '@y0ngha/siglens-core';
 import Image from 'next/image';
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useRef } from 'react';
 
 const TIER_DOT_COLOR: Record<Tier, string> = {

@@ -1,5 +1,7 @@
 'use server';
 
+import { localeHref } from '@/shared/i18n/localeRedirect';
+import { redirect } from 'next/navigation';
 import type { SignupFormState } from '@/shared/lib/auth/formTypes';
 import {
     resolvePostSignupDestination,
@@ -28,7 +30,6 @@ import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { DrizzleTermsRepository } from '@/entities/terms';
 import { createEmailTokenStore } from '@/entities/email-token';
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 
 const AUTO_LOGIN_FAILED_MESSAGE =
     '회원가입은 완료되었으나 자동 로그인에 실패했습니다. 로그인 페이지에서 다시 시도해주세요.';
@@ -144,7 +145,14 @@ export async function registerAction(
             resolvePostSignupDestination(next),
             'https://siglens.invalid'
         );
-        redirect(`${target.pathname}${target.search}${target.hash}`);
+        // `localeHref`는 멱등이다 — `next`에 이미 접두사가 있으면 그대로,
+        // 없으면(기본값 `/`) 현재 로케일을 붙인다. `localeRedirect`가 아니라
+        // 동기 `redirect`를 쓰는 이유는 아래 catch가 NEXT_REDIRECT를 재throw해야
+        // 하고, TypeScript가 `never` 반환으로 이후 코드를 도달 불가로 좁혀야 하기
+        // 때문이다(localeRedirect.ts JSDoc 참고).
+        redirect(
+            await localeHref(`${target.pathname}${target.search}${target.hash}`)
+        );
     } catch (err) {
         // Re-throw Next.js redirect (not an error — it's a control-flow signal).
         if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT')) {

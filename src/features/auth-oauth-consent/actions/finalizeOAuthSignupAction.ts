@@ -1,5 +1,6 @@
 'use server';
 
+import { localeRedirect } from '@/shared/i18n/localeRedirect';
 import type { FinalizeOAuthSignupState } from '@/shared/lib/auth/formTypes';
 import {
     resolvePostSignupDestination,
@@ -23,7 +24,6 @@ import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { DrizzleTermsRepository } from '@/entities/terms';
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 
 export async function finalizeOAuthSignupAction(
     _prev: FinalizeOAuthSignupState,
@@ -35,7 +35,7 @@ export async function finalizeOAuthSignupAction(
         const agreedTos = String(formData.get('agreed_tos') ?? '');
 
         if (!token) {
-            redirect(OAUTH_ERROR_REDIRECT.consentInvalid);
+            return localeRedirect(OAUTH_ERROR_REDIRECT.consentInvalid);
         }
 
         if (agreedPrivacy !== 'true' || agreedTos !== 'true') {
@@ -49,12 +49,12 @@ export async function finalizeOAuthSignupAction(
 
         const store = createPendingOAuthSignupStoreFromEnv();
         if (!store) {
-            redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
+            return localeRedirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
         }
 
         const profile = await store.peek(token);
         if (!profile) {
-            redirect(OAUTH_ERROR_REDIRECT.consentExpired);
+            return localeRedirect(OAUTH_ERROR_REDIRECT.consentExpired);
         }
 
         const { db } = getAuthDatabaseClient();
@@ -64,12 +64,12 @@ export async function finalizeOAuthSignupAction(
             termsRepo.findActive('tos'),
         ]);
         if (!termsP || !termsT) {
-            redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
+            return localeRedirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
         }
 
         const consumed = await store.consume(token);
         if (!consumed) {
-            redirect(OAUTH_ERROR_REDIRECT.consentExpired);
+            return localeRedirect(OAUTH_ERROR_REDIRECT.consentExpired);
         }
 
         const userRepo = new DrizzleUserRepository(db);
@@ -77,7 +77,7 @@ export async function finalizeOAuthSignupAction(
 
         const conflict = await userRepo.findByEmail(consumed.email);
         if (conflict) {
-            redirect(OAUTH_ERROR_REDIRECT.emailConflict);
+            return localeRedirect(OAUTH_ERROR_REDIRECT.emailConflict);
         }
 
         const createdUser = await userRepo.createOAuthUser({
@@ -94,7 +94,7 @@ export async function finalizeOAuthSignupAction(
         });
 
         if (!createdUser) {
-            redirect(OAUTH_ERROR_REDIRECT.emailConflict);
+            return localeRedirect(OAUTH_ERROR_REDIRECT.emailConflict);
         }
 
         const agreementRepo = new DrizzleAgreementRepository(db);
@@ -116,7 +116,7 @@ export async function finalizeOAuthSignupAction(
             ]);
         } catch {
             await userRepo.deleteUser(createdUser.id);
-            redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
+            return localeRedirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
         }
 
         const secure = isSecureCookieEnv();
@@ -143,12 +143,14 @@ export async function finalizeOAuthSignupAction(
             resolvePostSignupDestination(sanitizeNextPath(consumed.next)),
             'https://siglens.invalid'
         );
-        redirect(`${target.pathname}${target.search}${target.hash}`);
+        return localeRedirect(
+            `${target.pathname}${target.search}${target.hash}`
+        );
     } catch (err) {
         // Re-throw Next.js redirect (not an error — it's a control-flow signal).
         if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT')) {
             throw err;
         }
-        redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
+        return localeRedirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
     }
 }

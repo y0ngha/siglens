@@ -5,7 +5,13 @@ import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 // 누락돼 [symbol] 라우트 fetch가 차단되는 회귀가 관찰돼 회피한다 (자세한 배경은
 // ticker.ts JSDoc 참조).
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
+// 로케일 상수도 외부 의존이 0인 파일이라 edge runtime에서 안전하다(위 주석과 같은 이유).
+import { LOCALES, localePath, splitLocalePath } from '@/shared/i18n/locales';
+import { routing } from '@/shared/i18n/routing';
+import createIntlMiddleware from 'next-intl/middleware';
 import { NextResponse, type NextRequest } from 'next/server';
+
+const intlMiddleware = createIntlMiddleware(routing);
 
 /**
  * 첫 segment가 여기 있으면 ticker 케이스 정규화를 건너뛴다.
@@ -18,6 +24,10 @@ import { NextResponse, type NextRequest } from 'next/server';
  * (`src/app/__tests__/proxy.test.ts`가 디렉터리 목록과 대조해 강제한다).
  */
 const RESERVED_FIRST_SEGMENTS = new Set([
+    // 로케일 접두사. `isAdmissibleSymbolShape('en')`은 참이라 여기 없으면
+    // `/en`이 `/EN` 티커로 301된다. `ko`도 반드시 포함해야 한다 — `/ko`는 실존
+    // 티커 `KO`(코카콜라)로 정규화되어 조용히 엉뚱한 페이지가 뜬다.
+    ...LOCALES,
     'fear-greed',
     'login',
     'signup',
@@ -46,7 +56,13 @@ const RESERVED_FIRST_SEGMENTS = new Set([
 export function proxy(req: NextRequest): NextResponse {
     const hasSession = !!req.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value;
     const reqUrl = new URL(req.url);
-    const { pathname } = reqUrl;
+    /**
+     * 아래 가드는 전부 **로케일 접두사를 뗀 경로**로 판정한다.
+     * 그래야 `/en/login`도 `/login`과 같은 게스트 전용 규칙을 받는다.
+     * 리다이렉트를 발급할 때는 `localePath()`로 접두사를 다시 붙여 사용자가
+     * 자기 언어에서 이탈하지 않게 한다.
+     */
+    const { locale, path: pathname } = splitLocalePath(reqUrl.pathname);
 
     /**
      * 랜딩 검색 redirect.
@@ -69,7 +85,9 @@ export function proxy(req: NextRequest): NextResponse {
             // 접미사(`HVO.L`)는 어차피 [symbol] 라우트에서 404가 되므로, 404로 redirect를
             // 발급하는 대신 랜딩 페이지로 fall through시킨다.
             if (isAdmissibleSymbolShape(ticker)) {
-                return NextResponse.redirect(new URL('/' + ticker, req.url));
+                return NextResponse.redirect(
+                    new URL(localePath(locale, '/' + ticker), req.url)
+                );
             }
         }
     }
@@ -96,15 +114,15 @@ export function proxy(req: NextRequest): NextResponse {
         firstSegment !== firstSegment.toUpperCase()
     ) {
         const canonicalUrl = new URL(reqUrl);
-        canonicalUrl.pathname = pathname.replace(
-            /^\/[^/]+/,
-            '/' + firstSegment.toUpperCase()
+        canonicalUrl.pathname = localePath(
+            locale,
+            pathname.replace(/^\/[^/]+/, '/' + firstSegment.toUpperCase())
         );
         return NextResponse.redirect(canonicalUrl, 301);
     }
 
     if (GUEST_ONLY_PATHS.has(pathname) && hasSession) {
-        return NextResponse.redirect(new URL('/', req.url));
+        return NextResponse.redirect(new URL(localePath(locale, '/'), req.url));
     }
 
     if (AUTH_REQUIRED_PATHS.some(p => pathname.startsWith(p)) && !hasSession) {
@@ -113,12 +131,16 @@ export function proxy(req: NextRequest): NextResponse {
         // to where they were headed — the proxy's forward guard fires first for
         // these same paths, so it must preserve `next=` too, or a guest hitting
         // `/portfolio` directly loses the return path entirely.
-        const loginUrl = new URL('/login', req.url);
-        loginUrl.searchParams.set('next', pathname);
+        const loginUrl = new URL(localePath(locale, '/login'), req.url);
+        // `next`는 로케일이 붙은 경로로 저장한다 — 로그인 후 사용자가 자기 언어의
+        // 원래 페이지로 돌아와야 한다.
+        loginUrl.searchParams.set('next', localePath(locale, pathname));
         return NextResponse.redirect(loginUrl);
     }
 
-    return NextResponse.next();
+    // 가드를 통과하면 next-intl에 넘긴다. 여기서 `/ko/AAPL` → `/AAPL` 정규화와
+    // `[locale]` 세그먼트로의 내부 rewrite가 일어난다.
+    return intlMiddleware(req);
 }
 
 const GUEST_ONLY_PATHS = new Set([

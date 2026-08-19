@@ -5,9 +5,10 @@ import { getActiveNoticesAction } from '@/entities/notice/actions';
 import type { NoticeRecord } from '@/entities/notice';
 import { DISMISSED_NOTICES_STORAGE_KEY } from '../utils/noticeStorage';
 
-vi.mock('next/navigation', () => ({
-    usePathname: () => '/',
+const { mockPathname } = vi.hoisted(() => ({
+    mockPathname: vi.fn(() => '/'),
 }));
+vi.mock('next/navigation', () => ({ usePathname: mockPathname }));
 
 vi.mock('@/entities/notice/actions', () => ({
     getActiveNoticesAction: vi.fn(),
@@ -32,6 +33,7 @@ describe('NoticePopup', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         localStorage.clear();
+        mockPathname.mockReturnValue('/');
     });
 
     it('활성 공지가 없으면 아무것도 렌더하지 않는다', async () => {
@@ -232,5 +234,41 @@ describe('NoticePopup', () => {
                 localStorage.getItem(DISMISSED_NOTICES_STORAGE_KEY) ?? '[]'
             )
         ).toEqual({ v: 1, ids: ['dismiss-guard'] });
+    });
+});
+
+describe('NoticePopup — 로케일 접두사', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        localStorage.clear();
+    });
+
+    /**
+     * `notices.path_pattern`은 운영자가 넣는 접두사 없는 경로다. 컴포넌트가
+     * `usePathname()`을 그대로 먹이면 비-ko 사용자에게 **경로 지정 공지가 전부
+     * 사라진다** — 에러도 빈 화면도 없이 조용히 없어져 관측이 어렵다.
+     */
+    it.each(['/market', '/en/market', '/ja/market'])(
+        '%s 에서 /market 패턴 공지가 보인다',
+        async pathname => {
+            mockPathname.mockReturnValue(pathname);
+            mockedAction.mockResolvedValue([
+                notice({ pathPattern: '/market' }),
+            ]);
+            render(<NoticePopup />);
+            expect(
+                await screen.findByText('긴급 점검 안내')
+            ).toBeInTheDocument();
+        }
+    );
+
+    it('패턴이 다르면 로케일과 무관하게 숨긴다', async () => {
+        mockPathname.mockReturnValue('/en/news');
+        mockedAction.mockResolvedValue([notice({ pathPattern: '/market' })]);
+        const { container } = render(<NoticePopup />);
+        await waitFor(() => {
+            expect(mockedAction).toHaveBeenCalledTimes(1);
+            expect(container).toBeEmptyDOMElement();
+        });
     });
 });

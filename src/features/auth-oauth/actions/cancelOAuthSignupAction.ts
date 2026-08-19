@@ -1,6 +1,6 @@
 'use server';
 
-import { redirect } from 'next/navigation';
+import { localeRedirect } from '@/shared/i18n/localeRedirect';
 import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
 
 export async function cancelOAuthSignupAction(
@@ -18,12 +18,12 @@ export async function cancelOAuthSignupAction(
                 }
             }
         }
-        redirect('/login');
+        return localeRedirect('/login');
     } catch (err) {
         // Re-throw Next.js redirect (not an error — it's a control-flow signal).
         if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT')) {
             throw err;
         }
-        redirect('/login');
+        return localeRedirect('/login');
     }
 }

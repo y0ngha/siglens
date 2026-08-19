@@ -1,0 +1,9 @@
+{
+    "widgets": {
+        "layout": {
+            "localeSwitcher": {
+                "label": "언어 선택"
+            }
+        }
+    }
+}

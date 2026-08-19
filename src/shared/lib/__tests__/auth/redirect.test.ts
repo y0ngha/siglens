@@ -41,3 +41,26 @@ describe('resolvePostSignupDestination', () => {
         expect(resolvePostSignupDestination('/account')).toBe('/account');
     });
 });
+
+describe('resolvePostSignupDestination — 로케일', () => {
+    /**
+     * 비-ko 사용자의 "돌아갈 곳 없음"은 `/`가 아니라 `/en`·`/ja`·`/zh`다.
+     * 문자열 그대로 비교하면 지원 로케일 4개 중 3개에서 온보딩 정책이 죽는다
+     * (실제로 `next`를 로케일화한 라운드에서 그 회귀가 났다).
+     */
+    it.each([
+        ['/', '/onboarding'],
+        ['/en', '/en/onboarding'],
+        ['/ja', '/ja/onboarding'],
+        ['/zh', '/zh/onboarding'],
+    ])('%s → %s', (next, expected) => {
+        expect(resolvePostSignupDestination(next)).toBe(expected);
+    });
+
+    it.each(['/AAPL', '/en/AAPL', '/ja/news/us'])(
+        '%s: 구체적인 목적지는 그대로 둔다',
+        next => {
+            expect(resolvePostSignupDestination(next)).toBe(next);
+        }
+    );
+});

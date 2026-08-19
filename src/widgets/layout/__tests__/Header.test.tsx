@@ -22,6 +22,11 @@ vi.mock('next/image', () => ({
         />
     ),
 }));
+// LocaleSwitcher는 next-intl 컨텍스트와 로케일 라우터를 요구한다. 여기서는
+// 헤더 조립만 검증하므로 stub으로 대체하고, 스위처 자체는 전용 테스트가 다룬다.
+vi.mock('../LocaleSwitcher', () => ({
+    LocaleSwitcher: () => <div data-testid="locale-switcher" />,
+}));
 vi.mock('../HeaderNav', () => ({
     HeaderNav: () => <nav data-testid="header-nav" />,
 }));

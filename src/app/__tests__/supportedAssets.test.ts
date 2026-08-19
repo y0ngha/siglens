@@ -10,8 +10,11 @@ import {
     ROOT_TITLE,
     SITE_DESCRIPTION,
 } from '@/shared/lib/seo';
-import { buildHomeHowToJsonLd, HOME_FAQ_JSON_LD } from '@/app/homeJsonLd';
-import { NEWS_HUB_DESCRIPTION, NEWS_HUB_TITLE } from '@/app/news/page';
+import {
+    buildHomeHowToJsonLd,
+    HOME_FAQ_JSON_LD,
+} from '@/app/[locale]/homeJsonLd';
+import { NEWS_HUB_DESCRIPTION, NEWS_HUB_TITLE } from '@/app/[locale]/news/page';
 
 const SKILL_COUNTS = {
     indicators: 25,
@@ -60,7 +63,7 @@ describe('자산군 커버리지 동기화', () => {
 
     it('OG alt는 ROOT_HEADLINE에서 파생된다 — 별도 리터럴이면 동기화가 깨진다', async () => {
         const { readFile } = await import('node:fs/promises');
-        const layout = await readFile('src/app/layout.tsx', 'utf8');
+        const layout = await readFile('src/app/[locale]/layout.tsx', 'utf8');
         expect(layout).toContain('${ROOT_HEADLINE}');
     });
 

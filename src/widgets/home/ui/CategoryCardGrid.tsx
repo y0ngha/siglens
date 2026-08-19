@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 import type { TickerItem } from '@/shared/lib/types';
 import { cn } from '@/shared/lib/cn';

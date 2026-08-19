@@ -1,4 +1,6 @@
 import { MS_PER_HOUR } from '@/shared/config/time';
+import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
+import { sitemapAlternates } from './sitemapAlternates';
 import { PRIVACY_PATH, TERMS_PATH } from '@/shared/lib/legal';
 import { SITE_BUILD_DATE, SITE_URL } from '@/shared/lib/seo';
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
@@ -70,6 +72,10 @@ export function buildStaticEntries(now: Date): SitemapEntry[] {
         lastModified: todayUtc,
         changeFrequency: 'daily' as const,
         priority: 0.8,
+        alternates: sitemapAlternates(
+            `/news/${CATEGORY_CONFIG[cat].slug}`,
+            STATIC_INDEXABLE_LOCALES
+        ),
     }));
 
     /*
@@ -104,6 +110,10 @@ export function buildStaticEntries(now: Date): SitemapEntry[] {
                     ? ('hourly' as const)
                     : ('daily' as const),
                 priority: isMarket ? 0.9 : 0.8,
+                alternates: sitemapAlternates(
+                    link.href,
+                    STATIC_INDEXABLE_LOCALES
+                ),
             },
         ];
     });
@@ -114,6 +124,7 @@ export function buildStaticEntries(now: Date): SitemapEntry[] {
             lastModified: SITE_BUILD_DATE,
             changeFrequency: 'monthly',
             priority: 1,
+            alternates: sitemapAlternates('/', STATIC_INDEXABLE_LOCALES),
         },
         ...regionEntries,
         {
@@ -121,18 +132,24 @@ export function buildStaticEntries(now: Date): SitemapEntry[] {
             lastModified: SITE_BUILD_DATE,
             changeFrequency: 'monthly',
             priority: 0.9,
+            alternates: sitemapAlternates(
+                '/backtesting',
+                STATIC_INDEXABLE_LOCALES
+            ),
         },
         {
             url: `${SITE_URL}/news`,
             lastModified: todayUtc,
             changeFrequency: 'daily',
             priority: 0.8,
+            alternates: sitemapAlternates('/news', STATIC_INDEXABLE_LOCALES),
         },
         {
             url: `${SITE_URL}/news/us`,
             lastModified: todayUtc,
             changeFrequency: 'daily',
             priority: 0.8,
+            alternates: sitemapAlternates('/news/us', STATIC_INDEXABLE_LOCALES),
         },
         ...newsCategoryEntries,
         {
@@ -140,12 +157,17 @@ export function buildStaticEntries(now: Date): SitemapEntry[] {
             lastModified: SITE_BUILD_DATE,
             changeFrequency: 'yearly',
             priority: 0.3,
+            alternates: sitemapAlternates(
+                PRIVACY_PATH,
+                STATIC_INDEXABLE_LOCALES
+            ),
         },
         {
             url: `${SITE_URL}${TERMS_PATH}`,
             lastModified: SITE_BUILD_DATE,
             changeFrequency: 'yearly',
             priority: 0.3,
+            alternates: sitemapAlternates(TERMS_PATH, STATIC_INDEXABLE_LOCALES),
         },
     ];
 }

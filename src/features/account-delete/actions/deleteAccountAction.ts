@@ -1,5 +1,6 @@
 'use server';
 
+import { localeRedirect } from '@/shared/i18n/localeRedirect';
 import {
     DrizzleOAuthAccountRepository,
     compositeOAuthRevoker,
@@ -12,7 +13,6 @@ import {
 } from '@/entities/auth';
 import { DrizzleUserRepository } from '@/entities/auth/api';
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import type { DeleteAccountFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
@@ -74,7 +74,7 @@ export async function deleteAccountAction(
         const cookieStore = await cookies();
         cookieStore.set(applyAuthCookie(result.cookie));
         cookieStore.set(createExpiredAuthHintCookie({ secure }));
-        redirect('/?account_deleted=1');
+        return localeRedirect('/?account_deleted=1');
     } catch (err) {
         if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT'))
             throw err;

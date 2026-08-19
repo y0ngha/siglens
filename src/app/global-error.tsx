@@ -4,7 +4,7 @@
 // globals.css 로드를 이 파일이 직접 맡는다. 없으면 Tailwind 클래스가 해석되지 않는다.
 import './globals.css';
 import { useEffect } from 'react';
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 interface GlobalErrorProps {
     error: Error & { digest?: string };

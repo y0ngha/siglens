@@ -1,7 +1,8 @@
 'use server';
 
-import { cookies } from 'next/headers';
+import { localeHref } from '@/shared/i18n/localeRedirect';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import {
     applyAuthCookie,
     isSecureCookieEnv,
@@ -61,7 +62,14 @@ export async function loginAction(
         // 문자열 검사(sanitizeNextPath)가 놓칠 수 있는 절대/프로토콜-상대 URL을 파서가
         // 호스트째로 떼어낸다. base 호스트는 결과에 쓰이지 않는 더미다.
         const target = new URL(next, 'https://siglens.invalid');
-        redirect(`${target.pathname}${target.search}${target.hash}`);
+        // `localeHref`는 멱등이다 — `next`에 이미 접두사가 있으면 그대로,
+        // 없으면(기본값 `/`) 현재 로케일을 붙인다. `localeRedirect`가 아니라
+        // 동기 `redirect`를 쓰는 이유는 아래 catch가 NEXT_REDIRECT를 재throw해야
+        // 하고, TypeScript가 `never` 반환으로 이후 코드를 도달 불가로 좁혀야 하기
+        // 때문이다(localeRedirect.ts JSDoc 참고).
+        redirect(
+            await localeHref(`${target.pathname}${target.search}${target.hash}`)
+        );
     } catch (err) {
         if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT'))
             throw err;

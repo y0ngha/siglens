@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import {
     startTransition,
     useEffect,
@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/shared/lib/cn';
+import { LocaleSwitcher } from './LocaleSwitcher';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import type { NavVerticalNode } from './headerNavTree';
@@ -23,7 +24,13 @@ interface HeaderMobileMenuProps {
 export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const pathname = usePathname();
+    // `NAV_TREE`의 href는 로케일 접두사가 없는 `/market` 형태다. `usePathname()`은
+    // `/en/market`을 그대로 주므로, 떼지 않으면 `isHrefActive`의 정확 일치가 영영
+    // 실패해 **비-ko 사용자에게 활성 내비 표시가 통째로 사라진다.**
+    // next-intl의 navigation 대신 순수 헬퍼를 쓰는 이유: 그쪽은 모듈 로드 시점에
+    // `next/navigation`의 `redirect`를 읽어, 부분 mock을 쓰는 기존 테스트 70여 개가
+    // 한꺼번에 import에 실패한다.
+    const pathname = useAppPathname();
     const triggerRef = useRef<HTMLButtonElement>(null);
     const drawerRef = useRef<HTMLDivElement>(null);
 
@@ -180,6 +187,15 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                 요구하고, 열림 상태를 버티컬마다 따로 관리해야 한다.
                                 수직 공간은 남으므로 전부 보여주는 편이 짧다.
                             */}
+                            {/* 언어 전환은 내비게이션 항목이 아니라 설정이므로
+                                <nav> 밖에 둔다 — 안에 넣으면 스크린리더가 메뉴
+                                링크 목록의 일부로 읽는다. */}
+                            <div className="border-b border-secondary-800 px-2 py-2">
+                                <LocaleSwitcher
+                                    tabIndex={isOpen ? undefined : -1}
+                                />
+                            </div>
+
                             <nav
                                 aria-label="메뉴"
                                 className="overflow-y-auto overscroll-contain"

@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import { PortfolioSection } from '@/features/portfolio-management';
 
 const PRIMARY_BUTTON =
@@ -20,7 +21,8 @@ const SKIP_LINK =
  */
 export function OnboardingContent() {
     const router = useRouter();
-    const goHome = () => router.push('/');
+    const toLocalePath = useLocalePath();
+    const goHome = () => router.push(toLocalePath('/'));
 
     return (
         <div className="space-y-6">

@@ -8,7 +8,7 @@ import {
     useRef,
     useState,
 } from 'react';
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { EyeIcon } from '@/shared/ui/EyeIcon';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { MarkdownText } from '@/shared/ui/MarkdownText';

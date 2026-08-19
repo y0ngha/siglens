@@ -12,7 +12,7 @@ import {
     TERMS_PATH,
     TERMS_TITLE,
 } from '@/shared/lib/legal';
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { Fragment } from 'react';
 
 /**

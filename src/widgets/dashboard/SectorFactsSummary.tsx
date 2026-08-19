@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
 import { buildSectorFacts } from '@/entities/sector-signal';
 

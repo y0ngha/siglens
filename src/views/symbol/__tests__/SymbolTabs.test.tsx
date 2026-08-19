@@ -148,3 +148,21 @@ describe('SymbolTabs', () => {
         expect(screen.getByText('뉴스')).toBeDefined();
     });
 });
+
+describe('SymbolTabs — 로케일 접두사', () => {
+    /**
+     * 탭 href는 접두사가 없는 `/AAPL/news` 형태다. 접두사가 붙은 경로로 비교하면
+     * en/ja/zh 사용자에게 활성 탭 표시와 `aria-current`가 통째로 꺼진다
+     * (시각·a11y 회귀라 에러 없이 조용히 지나간다).
+     */
+    it.each([
+        ['/en/AAPL', '차트'],
+        ['/ja/AAPL/news', '뉴스'],
+    ])('%s에서도 활성 탭을 표시한다', (pathname, label) => {
+        (usePathname as ReturnType<typeof vi.fn>).mockReturnValue(pathname);
+        render(<SymbolTabs symbol="AAPL" />);
+        expect(
+            screen.getByRole('link', { name: label, current: 'page' })
+        ).toBeInTheDocument();
+    });
+});

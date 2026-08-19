@@ -8,6 +8,10 @@
 
 import type { Mock } from 'vitest';
 
+// 액션의 리다이렉트는 `localeHref`/`localeRedirect`를 거치고, 그 안의
+// `getLocale()`은 next-intl config 파일을 요구한다(빌드 플러그인이 만든다).
+// 여기서는 액션 로직만 검증하므로 기본 로케일로 고정한다.
+vi.mock('next-intl/server', () => ({ getLocale: async () => 'ko' }));
 vi.mock('@/entities/oauth-account', () => ({
     DrizzleOAuthAccountRepository: vi.fn().mockImplementation(function () {
         return {};

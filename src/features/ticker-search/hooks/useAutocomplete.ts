@@ -9,6 +9,7 @@ import {
     useState,
 } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import type { TickerSearchResult } from '@/shared/lib/types';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { useTickerSearch } from './useTickerSearch';
@@ -58,6 +59,7 @@ export function useAutocomplete({
     const prefetchedRef = useRef(new Set<string>());
 
     const router = useRouter();
+    const toLocalePath = useLocalePath();
     const { results, isSearching, hasQuery } = useTickerSearch(query);
 
     useOnClickOutside([inputRef, dropdownRef], () => setIsClosed(true));
@@ -70,18 +72,20 @@ export function useAutocomplete({
             setIsClosed(true);
             setSelectedIndex(-1);
             onSelect?.({ symbol, label: label?.trim() || symbol });
-            if (navigateOnSelect) router.push(`/${symbol}`);
+            if (navigateOnSelect) router.push(toLocalePath(`/${symbol}`));
         },
-        [navigateOnSelect, onSelect, router]
+        [navigateOnSelect, onSelect, router, toLocalePath]
     );
 
     const prefetch = useCallback(
         (symbol: string) => {
             if (prefetchedRef.current.has(symbol)) return;
             prefetchedRef.current.add(symbol);
-            router.prefetch(`/${symbol}`);
+            // prefetch도 로케일 경로여야 한다 — 아니면 ko 페이지를 데워 두고
+            // 실제 이동 대상(`/en/AAPL`)은 콜드로 남는다.
+            router.prefetch(toLocalePath(`/${symbol}`));
         },
-        [router]
+        [router, toLocalePath]
     );
 
     const handleChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {

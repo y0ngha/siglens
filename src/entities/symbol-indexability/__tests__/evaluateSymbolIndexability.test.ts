@@ -130,3 +130,39 @@ describe('evaluateSymbolIndexability', () => {
         });
     });
 });
+
+describe('로케일 게이트', () => {
+    const popular = {
+        symbol: 'AAPL',
+        assetInfo: { symbol: 'AAPL', name: 'Apple Inc.', fmpSymbol: 'AAPL' },
+        degraded: false,
+    } as const;
+
+    it('기본 로케일은 기존과 동일하게 판정된다', () => {
+        expect(
+            evaluateSymbolIndexability({ ...popular, locale: 'ko' })
+        ).toEqual({ indexable: true, reason: 'popular' });
+    });
+
+    /**
+     * 본문(AI 분석 산문)이 아직 한국어로만 생성된다. 영어 껍데기 안에 한국어
+     * 본문이 담긴 URL이 색인되면 2026-07 thin-content 노출 붕괴가 재현된다.
+     */
+    it.each(['en', 'ja', 'zh'] as const)(
+        '%s는 인기 티커여도 색인하지 않는다',
+        locale => {
+            expect(evaluateSymbolIndexability({ ...popular, locale })).toEqual({
+                indexable: false,
+                reason: 'locale-not-ready',
+            });
+        }
+    );
+
+    /** 로케일 게이트는 화이트리스트보다 **먼저** 판정돼야 한다. */
+    it('locale 미지정은 기본 로케일로 본다(기존 호출부 호환)', () => {
+        expect(evaluateSymbolIndexability(popular)).toEqual({
+            indexable: true,
+            reason: 'popular',
+        });
+    });
+});

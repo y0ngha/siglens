@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { usePathname } from 'next/navigation';
+import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { formatNoticeDate } from '@/entities/notice';
@@ -41,7 +41,10 @@ const MarkdownText = dynamic(() =>
  */
 export function NoticePopup() {
     const dialogRef = useRef<HTMLDivElement>(null);
-    const pathname = usePathname();
+    // `notices.path_pattern`은 운영자가 넣는 접두사 없는 경로(`/market`, `/symbol/*`)다.
+    // 접두사가 붙은 경로로 매칭하면 비-ko 사용자에게 **경로 지정 공지가 전부 사라진다**
+    // (전역 공지만 남는다).
+    const pathname = useAppPathname();
     const { queue, advance, dontShowAgain } = useNoticePopup(pathname);
 
     useEscapeKey(advance, queue.length > 0);

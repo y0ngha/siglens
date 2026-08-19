@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useDeleteAccountForm } from '../hooks/useDeleteAccountForm';
 import { cn } from '@/shared/lib/cn';
 import { AuthErrorAlert } from '@/shared/ui/auth/AuthErrorAlert';

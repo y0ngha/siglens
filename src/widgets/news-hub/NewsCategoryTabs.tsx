@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import {
     CATEGORY_CONFIG,
     categoriesInRegion,

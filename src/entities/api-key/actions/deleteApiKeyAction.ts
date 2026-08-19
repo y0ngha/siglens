@@ -1,12 +1,12 @@
 'use server';
 
+import { localeRedirect } from '@/shared/i18n/localeRedirect';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleUserApiKeyRepository } from '@/entities/api-key/api';
 import { isLlmProvider } from '../lib/apiKey';
 import type { ApiKeyActionState } from '../lib/types';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 
 export async function deleteApiKeyAction(
     _prevState: ApiKeyActionState,
@@ -14,7 +14,7 @@ export async function deleteApiKeyAction(
 ): Promise<ApiKeyActionState> {
     const user = await getCurrentUser();
     if (user === null) {
-        redirect('/login?next=/account');
+        return localeRedirect('/login?next=/account');
     }
 
     const rawProvider = formData.get('provider');

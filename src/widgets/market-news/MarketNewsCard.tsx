@@ -1,5 +1,5 @@
 import type { NewsFeedCategoryId } from '@/entities/market-news';
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { MarketNewsCardItem } from '@/entities/market-news';
 
 import { cn } from '@/shared/lib/cn';

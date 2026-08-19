@@ -199,9 +199,6 @@
 - Violation: `tsconfig.json` excluded `scripts/` directory from `"exclude"` field, so `npx tsc --noEmit` validated only main src/ but not seed/deploy scripts
   - Rule: Build validation must include all directories that execute on deployment (seeds, migrations, scripts)
   - Context: `seedEconomicEventAnalysis.ts` and `seedCalendarAnalysisBatch.ts` used stale siglens-core API (missing `region` parameter, wrong arity, missing exports from core 0.48.0). Removed `scripts` from tsconfig exclude list; scripts now validated alongside src/.
-- Violation: `marketBriefingContextOf` JSDoc claimed "core's sanitizer normalizes `price: 0` sentinel for the cache key"; sanitizer only normalizes for the prompt, not the key
-  - Rule: Documentation/comments must match actual implementation; mismatched claims hide behavioral gaps
-  - Context: Corrected JSDoc to document what the sanitizer actually does (prompt normalization, not key normalization).
 - Violation: `BriefingCard.knownSectors` unioned dynamic `signalSectors` into its allowlist, admitting US virtual theme names (양자, 우주) that can never appear in the briefing prompt
   - Rule: Allowlists must remain fixed or explicitly documented; dynamic union weakens intended guards
   - Context: Removed union; restored fixed allowlist to block fabricated sector names.
@@ -230,9 +227,6 @@
 - Violation: Seed script's `failed` counter accumulated per attempt across all passes; closing tally counted attempts, not failing rows, and could exceed table size
   - Rule: Counters that track mutable state must reset per iteration/pass; accumulated totals hide actual state and make diagnostics unreliable
   - Context: Reset `failed = 0` at start of each pass; now final tally reflects actual failing rows processed, not cumulative attempts.
-- Violation: Comment and JSDoc contradicted implementation: header said `pending` represents remaining backlog, but code showed `pending.length` was the capped scan page size; also claimed "break condition" when scan hit limit, but code logged "Done" regardless
-  - Rule: Documentation must reflect actual implementation; contradictory comments hide control flow and mislead future readers
-  - Context: Corrected JSDoc to document that `pending` represents the current page of capped results; clarified break conditions distinguish pagination-limit from completion.
 
 ## [feat/asset-class-navigation Round 4 | 3-asset navigation architecture | 2026-08-19]
 - Violation: `data-market-label` attribute assertion tested only against `TEST_SCOPE`, whose `marketLabel` happens to be hardcoded `'미국 증시'`; reverting `marketLabel={scope.marketLabel}` to a hardcoded string still passed the test because test fixture value matched assertion literal

@@ -2,7 +2,7 @@
 
 import { cn } from '@/shared/lib/cn';
 import { PRIVACY_PATH, TERMS_PATH } from '@/shared/lib/legal';
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useEffect, useId, useRef } from 'react';
 
 interface ConsentCheckboxGroupProps {

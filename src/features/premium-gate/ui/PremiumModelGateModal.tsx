@@ -4,7 +4,7 @@ import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import type { GateMode } from '@/entities/api-key';
 import { cn } from '@/shared/lib/cn';
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useEffect, useRef } from 'react';
 
 interface PremiumModelGateModalProps {

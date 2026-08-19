@@ -1,5 +1,6 @@
 'use server';
 
+import { localeRedirect } from '@/shared/i18n/localeRedirect';
 import {
     confirmPasswordReset,
     AUTH_SERVICE_UNAVAILABLE_MESSAGE,
@@ -11,7 +12,6 @@ import {
 } from '@/entities/auth/lib/bcrypt';
 import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
 import { createEmailTokenStore } from '@/entities/email-token';
-import { redirect } from 'next/navigation';
 import type { ResetPasswordFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 
@@ -58,7 +58,7 @@ export async function confirmPasswordResetAction(
             };
         }
 
-        redirect('/login?password_reset=1');
+        return localeRedirect('/login?password_reset=1');
     } catch (err) {
         if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT'))
             throw err;

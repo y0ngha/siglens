@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 import { useRecentSearches } from '../hooks/useRecentSearches';
 import { TickerAutocomplete } from './TickerAutocomplete';

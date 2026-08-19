@@ -1,0 +1,209 @@
+vi.mock('next/navigation', () => ({
+    notFound: vi.fn(() => {
+        throw new Error('NEXT_NOT_FOUND');
+    }),
+}));
+
+// Mock staticSymbolCache to return a non-empty snapshot for valid categories.
+// Factory is fully self-contained — cannot reference outer-scope consts because
+// vi.mock factories are hoisted before variable initialization.
+vi.mock('@/shared/cache/staticSymbolCache', () => ({
+    staticSymbolCache: vi.fn().mockResolvedValue([
+        {
+            id: 'r1',
+            symbol: '__NEWS_CRYPTO__',
+            source: 'CoinWire',
+            url: 'https://example.com/btc',
+            publishedAt: '2026-06-15T10:00:00.000Z',
+            titleEn: 'BTC up',
+            titleKo: '비트코인 상승',
+            bodyEn: null,
+            bodyKo: null,
+            summaryKo: null,
+            sentiment: null,
+            category: null,
+            priceImpact: null,
+            tickers: ['BTCUSD'],
+            analyzedAt: null,
+        },
+    ]),
+}));
+
+// Mock getMarketNewsCards to avoid DB in tests
+vi.mock('@/entities/market-news/api', () => ({
+    getMarketNewsCards: vi.fn().mockResolvedValue([]),
+}));
+
+// Mock MarketNewsDigest and MarketNewsList — they are client components with
+// their own polling logic; RSC test should not drive them.
+vi.mock('@/widgets/market-news', async () => ({
+    MarketNewsDigest: () => <div data-testid="digest-stub" />,
+    // data-count: 서버가 클라이언트로 몇 행을 넘겼는지 관찰한다(직렬화 상한 검증).
+    MarketNewsList: ({ initialItems }: { initialItems: unknown[] }) => (
+        <div data-testid="list-stub" data-count={initialItems.length} />
+    ),
+    // 상수를 여기 손으로 적지 않는다. 페이지가 이 배럴에서 상수를 읽으므로,
+    // 숫자를 하드코딩하면 **실제 값이 무엇이든 테스트가 통과해** 상한 검증이 무의미해진다.
+    ...(await import('@/widgets/market-news/constants')),
+}));
+
+vi.mock('next/cache', () => ({ revalidateTag: vi.fn() }));
+
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { generateMetadata } from '../page';
+import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import CategoryNewsPage from '../page';
+
+describe('/news/[category] generateMetadata는', () => {
+    it('유효 카테고리면 canonical /news/<slug>를 설정한다', async () => {
+        const meta = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko', category: 'crypto' }),
+        });
+        // 자기참조 canonical은 로케일별 **절대 URL**이다 — 상대 경로면 로케일
+        // 정보가 없어 `/en/news/crypto`도 ko와 같은 값을 갖는다.
+        expect(meta.alternates?.canonical).toBe(
+            'https://siglens.io/news/crypto'
+        );
+        expect(String(meta.title)).toContain('암호화폐');
+    });
+
+    it('유효하지 않은 카테고리면 robots 없이 title/description만 반환한다 (noindex는 not-found.tsx가 담당)', async () => {
+        const meta = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko', category: 'bogus' }),
+        });
+        // robots/alternates는 not-found.tsx가 단독 책임 — 이중 robots 태그 방지.
+        expect(meta.robots).toBeUndefined();
+        expect(String(meta.title)).toBeTruthy();
+    });
+
+    it('유효 카테고리이지만 스냅샷이 비어 있으면 noindex + canonical null을 반환한다', async () => {
+        vi.mocked(staticSymbolCache).mockResolvedValueOnce([]);
+
+        const meta = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko', category: 'crypto' }),
+        });
+        expect(meta.robots).toMatchObject({ index: false });
+        expect(meta.alternates?.canonical).toBeNull();
+    });
+});
+
+describe('/news/[category] CategoryNewsPage default export는', () => {
+    it('유효하지 않은 카테고리 slug이면 notFound()를 호출한다', async () => {
+        await expect(
+            CategoryNewsPage({
+                params: Promise.resolve({ locale: 'ko', category: 'bogus' }),
+            })
+        ).rejects.toThrow('NEXT_NOT_FOUND');
+    });
+
+    it('유효 카테고리이면 h1에 카테고리 라벨을 렌더한다', async () => {
+        render(
+            await CategoryNewsPage({
+                params: Promise.resolve({ locale: 'ko', category: 'crypto' }),
+            })
+        );
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+            '암호화폐 뉴스'
+        );
+    });
+
+    it('유효 카테고리이면 JSON-LD ItemList 스크립트를 렌더한다', async () => {
+        const { container } = render(
+            await CategoryNewsPage({
+                params: Promise.resolve({ locale: 'ko', category: 'crypto' }),
+            })
+        );
+        const scripts = Array.from(
+            container.querySelectorAll('script[type="application/ld+json"]')
+        );
+        const itemListScript = scripts.find(s => {
+            try {
+                const parsed = JSON.parse(s.textContent ?? '');
+                return parsed['@type'] === 'ItemList';
+            } catch {
+                return false;
+            }
+        });
+        expect(itemListScript).toBeDefined();
+
+        // I4: Article.image should use the per-category OG URL, not the generic site OG
+        const itemListData = JSON.parse(itemListScript!.textContent ?? '');
+        const firstArticle = itemListData.itemListElement?.[0]?.item;
+        expect(firstArticle?.image).toContain('/news/crypto/opengraph-image');
+
+        // C-3 R2: publisher.name should be the original article source, not SITE_NAME
+        expect(firstArticle?.publisher?.name).toBe('CoinWire');
+    });
+
+    it('스냅샷이 비어 있으면(빈 DB) graceful empty state를 렌더한다', async () => {
+        vi.mocked(staticSymbolCache).mockResolvedValueOnce([]);
+
+        render(
+            await CategoryNewsPage({
+                params: Promise.resolve({ locale: 'ko', category: 'crypto' }),
+            })
+        );
+        // Empty state renders in MarketNewsDegraded (no news copy)
+        expect(
+            screen.getByText(/최근 뉴스를 불러오지 못했어요/)
+        ).toBeInTheDocument();
+    });
+
+    it('스냅샷이 비어 있으면(degrade) JSON-LD 스크립트를 하나도 렌더하지 않는다', async () => {
+        vi.mocked(staticSymbolCache).mockResolvedValueOnce([]);
+
+        const { container } = render(
+            await CategoryNewsPage({
+                params: Promise.resolve({ locale: 'ko', category: 'crypto' }),
+            })
+        );
+        const scripts = container.querySelectorAll(
+            'script[type="application/ld+json"]'
+        );
+        // noindex degrade pages must not emit any JSON-LD (WebPage, BreadcrumbList, ItemList)
+        expect(scripts).toHaveLength(0);
+    });
+});
+
+/**
+ * `/news/kr`은 같은 동적 라우트를 타지만 소스가 네이버라 배선이 다르다 —
+ * 카테고리 슬러그가 라우트에 실제로 등록돼 있는지, 그리고 지역 탭이 한국으로
+ * 활성화되는지는 미국 카테고리 테스트가 잡아 주지 않는다.
+ */
+describe('/news/kr 카테고리 페이지는', () => {
+    it('유효한 슬러그로 인식돼 자기 canonical을 설정한다', async () => {
+        const meta = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko', category: 'kr' }),
+        });
+
+        expect(meta.alternates?.canonical).toBe('https://siglens.io/news/kr');
+        expect(meta.robots).toBeUndefined();
+    });
+
+    it('h1에 한국 증시 라벨을 렌더한다', async () => {
+        const { container } = render(
+            await CategoryNewsPage({
+                params: Promise.resolve({ locale: 'ko', category: 'kr' }),
+            })
+        );
+
+        expect(container.querySelector('h1')?.textContent).toContain(
+            '한국 증시'
+        );
+    });
+
+    it('지역 탭에서 한국만 현재 페이지로 표시한다', async () => {
+        const { container } = render(
+            await CategoryNewsPage({
+                params: Promise.resolve({ locale: 'ko', category: 'kr' }),
+            })
+        );
+
+        const current = Array.from(
+            container.querySelectorAll('[aria-current="page"]')
+        ).map(el => el.textContent?.trim());
+
+        expect(current).toEqual(['한국']);
+    });
+});

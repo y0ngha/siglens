@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import type { LlmProvider } from '@y0ngha/siglens-core';
