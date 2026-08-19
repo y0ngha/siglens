@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import { useCurrentUser } from '@/entities/auth';
+import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import {
     recordAnonSymbolAnalysis,
     hasNudgeShownToday,

@@ -9,8 +9,10 @@ vi.mock('@/widgets/layout/Header', () => ({
         return null;
     },
 }));
-vi.mock('@/entities/auth', () => ({
+vi.mock('@/entities/auth/hooks/useCurrentUser', () => ({
     useCurrentUser: vi.fn(),
+}));
+vi.mock('@/entities/auth/hooks/useAuthHint', () => ({
     useAuthHint: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
@@ -26,7 +28,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { AuthSessionHeaderClient } from '@/app/_components/AuthSessionHeaderClient';
-import { useCurrentUser, useAuthHint } from '@/entities/auth';
+import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
+import { useAuthHint } from '@/entities/auth/hooks/useAuthHint';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
 const mockCurrentUser = vi.mocked(useCurrentUser);

@@ -17,6 +17,13 @@
 // bcryptPasswordHasher / bcryptPasswordVerifier는 barrel에서 제외 — bcrypt는 Node.js 네이티브
 // 의존성이 있어 client bundle에 포함되면 build가 깨진다.
 // server 소비자는 @/entities/auth/lib/bcrypt에서 직접 import한다.
+//
+// tokenUtils(generateUrlSafeToken 등)도 barrel에서 제외 — `node:crypto` import가
+// Next의 자동 브라우저 폴리필(crypto-browserify, 약 414KB)을 client 번들로 끌어온다.
+// 위 항목들과 달리 이건 build를 깨지 않고 **조용히 번들에 실려서** 오래 방치됐다
+// (전 라우트 first-load에 포함돼 있었다). 재발하면 즉시 실패하도록
+// tokenUtils.ts에 `import 'server-only'`를 두었다.
+// server 소비자는 @/entities/auth/lib/tokenUtils에서 직접 import한다.
 
 // --- user lib fns ---
 export { loginUser } from './lib/loginUser';
@@ -94,12 +101,6 @@ export {
     createExpiredAuthHintCookie,
 } from './lib/authHintCookie';
 export type { AuthHintCookieDescriptor } from './lib/authHintCookie';
-export {
-    generateUrlSafeToken,
-    generateNumericCode,
-    hashEmailToken,
-    safeCompareTokenHashes,
-} from './lib/tokenUtils';
 export {
     AUTH_SERVICE_UNAVAILABLE_MESSAGE,
     CONSENT_REQUIRED_MESSAGE,

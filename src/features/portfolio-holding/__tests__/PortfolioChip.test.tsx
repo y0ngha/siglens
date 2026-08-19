@@ -1,14 +1,14 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { UseQueryResult } from '@tanstack/react-query';
-import { useCurrentUser } from '@/entities/auth';
+import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
 import type { PortfolioHoldingView } from '@/entities/portfolio';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { PortfolioChipMounted } from '@/features/portfolio-holding/ui/PortfolioChipMounted';
 import { mockViewport } from '@/__tests__/utils/mockViewport';
 
-vi.mock('@/entities/auth');
+vi.mock('@/entities/auth/hooks/useCurrentUser');
 vi.mock('@/entities/portfolio/hooks/usePortfolioHoldings');
 
 const mockUseCurrentUser = vi.mocked(useCurrentUser);

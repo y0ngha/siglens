@@ -66,8 +66,10 @@ vi.mock('react', async () => {
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/api', () => ({
     DrizzleProfileDescriptionTranslationRepository: vi.fn(),
+}));
+vi.mock('@/entities/ticker/lib/koreanTranslator', () => ({
     translateCompanyDescription: vi.fn(),
 }));
 

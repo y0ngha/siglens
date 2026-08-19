@@ -1,3 +1,4 @@
+import 'server-only';
 import { callDeepseekChat, parseJsonResponse } from '@/entities/llm-provider';
 import { tryReadTranslatorConfig } from './config';
 import type { TranslatorConfig, TranslatorEntry } from '../model';

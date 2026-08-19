@@ -1,3 +1,4 @@
+import 'server-only';
 import { toProviderTurns, findSpecByApiModelId } from '../lib/utils';
 import Anthropic from '@anthropic-ai/sdk';
 import type { AiContents, ModelSpec } from '@y0ngha/siglens-core';

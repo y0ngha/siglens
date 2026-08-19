@@ -1,3 +1,4 @@
+import 'server-only';
 import { toProviderTurns, findSpecByApiModelId } from '../lib/utils';
 import type { AiContents } from '@y0ngha/siglens-core';
 import type { ProviderCallOptions } from '../model';

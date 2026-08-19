@@ -3,14 +3,14 @@ import type { Mock } from 'vitest';
 import type { UseQueryResult } from '@tanstack/react-query';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { useAnonAnalysisNudge } from '@/features/analysis-nudge/hooks/useAnonAnalysisNudge';
-import { useCurrentUser } from '@/entities/auth';
+import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import {
     recordAnonSymbolAnalysis,
     hasNudgeShownToday,
     markNudgeShownToday,
 } from '@/shared/lib/anonAnalysisCount';
 
-vi.mock('@/entities/auth', () => ({
+vi.mock('@/entities/auth/hooks/useCurrentUser', () => ({
     useCurrentUser: vi.fn(),
 }));
 
