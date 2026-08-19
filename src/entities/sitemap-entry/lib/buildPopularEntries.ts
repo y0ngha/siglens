@@ -128,6 +128,13 @@ export function buildPopularEntries(now: Date): SitemapEntry[] {
             // 때문이고, 그 계약은 `e2e/specs/kr-equity-seo.spec.ts`가 고정한다.
             // noindex URL을 sitemap에 실으면 크롤 예산만 태우고 색인 품질 신호가
             // 나빠지므로 제외한다.
+            //
+            // ⚠️ 2026-08 감사가 "`isStock`도 함께 걸면 레버리지 ETF의 thin한 congress를
+            // 공짜로 뺄 수 있다"고 제안했으나 **실측으로 반증됐다.** 비-주식 12개 중
+            // SPY(7,760자)·VTI(7,338)·QQQ(6,105)·IWM(5,674)·DIA(4,793)·TQQQ(2,148)은
+            // 내용이 충분하다 — 의원들이 광범위 ETF를 실제로 매매하므로 공시가 존재한다.
+            // thin한 건 레버리지·인버스 6종(LABU/NVDL/SOXL/SOXS/SQQQ/TSLL, 1,095~1,171자)
+            // 뿐이다. 자산 분류로는 그 둘을 가를 수 없으므로 `isStock`을 걸지 않는다.
             ...(isKr
                 ? []
                 : [

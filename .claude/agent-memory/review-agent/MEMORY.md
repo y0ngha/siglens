@@ -24,6 +24,8 @@
 - [prompt-region-context R6](project-prompt-region-context-r6.md) — green-suite traps: surviving duplicate under wrong describe, forward-scanning few-shot helper, vacuous not.toContain; scratchpad vitest recipe
 - [core 0.48.0 briefing-context wiring](project-core-048-briefing-context.md) — verified in core dist: hash folds context, prompt (not hash) drops `price:0`, sectors come from sectorEtfs only; miss was outside src/
 - [fix-tests2 mutation audit](project-fix-tests2-mutation-audit.md) — 6/7 mutations + 2 E2E deletions re-verified live; approved R1. `initialAnalysisFailed={true}` hardcode makes share-flow 'idle' unreachable; SITE_DESCRIPTION embeds "한국" project-wide (JSON-LD tautology trap)
+- [rsc-flight-fear-greed R3 tailAligned](project-rsc-flight-fear-greed-r3-tailaligned.md) — approved: seriesDataUtils left→tail alignment math-verified all shapes, 3 changed test assertions confirmed real fixes not laundering, computeFearGreedIndex core-source-verified bars+buySellVolume only
+- [rsc-flight-fear-greed R6 client-error](project-rsc-flight-fear-greed-r6-clienterror.md) — stripQueryStrings O(n²) unbounded before length-cap (reachable via unhandledrejection); mutation-test method confirmed ESM namespace-import spy + module-load-time env const are real, not tautological
 
 ## Feedback
 

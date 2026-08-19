@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { SITE_NAME } from '@/shared/lib/seo';
+import { reportClientError } from '@/shared/lib/reportClientError';
 
 interface FearGreedErrorProps {
     error: Error & { digest?: string };
@@ -23,6 +24,7 @@ export default function FearGreedError({ error, reset }: FearGreedErrorProps) {
     useEffect(() => {
         // `digest` ties this client log to the server-side error entry.
         console.error('[FearGreedRoute] render error:', error);
+        reportClientError(error, 'FearGreedRoute', error.digest);
     }, [error]);
 
     return (

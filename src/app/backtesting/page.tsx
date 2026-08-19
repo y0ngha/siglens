@@ -19,6 +19,29 @@ import { validateBacktestData } from '@/entities/backtest-case';
 
 // JSON import typed as any; validateBacktestData ensures shape at load time
 const data = validateBacktestData(backtestData as unknown);
+
+/**
+ * 클라이언트로 넘길 케이스의 프로젝션.
+ *
+ * `BacktestTabs`는 `'use client'`라 이 배열이 통째로 RSC flight에 실린다. 두 필드가
+ * 읽히지 않은 채 실려 있었다:
+ * - `bullishTargets`의 2번째 이후 원소 — `BacktestCaseCard`는 `[0]`과 `.length > 0`만
+ *   본다. `slice(0, 1)`은 두 접근의 결과를 모두 보존한다(빈 배열도 빈 채로 남는다).
+ *
+ * `aiResult`(853B)도 렌더되지 않지만 남겨뒀다 — 떼려면 `BacktestTabs` →
+ * `BacktestCaseList` → `BacktestCaseCard`의 prop 타입을 `Omit`으로 좁혀야 하고,
+ * 그 값어치가 안 된다.
+ *
+ * `data.json` 자체는 건드리지 않는다 — `/backtesting/data.json`으로 공개되는 Dataset이고
+ * `datasetJsonLd`의 `distribution`이 그 파일을 가리킨다.
+ */
+const CLIENT_CASES = data.cases.map(c => ({
+    ...c,
+    aiAnalysis: {
+        ...c.aiAnalysis,
+        bullishTargets: c.aiAnalysis.bullishTargets.slice(0, 1),
+    },
+}));
 // Derived once at module load — intentionally static, data.json is replaced by the script
 const TICKERS = [...new Set(data.cases.map(c => c.ticker))];
 
@@ -112,7 +135,7 @@ export default function BacktestingPage() {
                 {/* BacktestTabs는 더 이상 useSearchParams()를 렌더 중 호출하지
                     않으므로(useBacktestFilter 참고) Suspense 경계가 필요 없다 —
                     전체 케이스 목록이 그대로 SSR 정적 HTML에 포함된다. */}
-                <BacktestTabs cases={data.cases} tickers={TICKERS} />
+                <BacktestTabs cases={CLIENT_CASES} tickers={TICKERS} />
                 <div
                     role="note"
                     aria-label="투자 면책 고지"

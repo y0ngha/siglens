@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { SITE_NAME } from '@/shared/lib/seo';
+import { reportClientError } from '@/shared/lib/reportClientError';
 
 interface NewsErrorProps {
     error: Error & { digest?: string };
@@ -20,6 +21,7 @@ interface NewsErrorProps {
 export default function NewsError({ error, reset }: NewsErrorProps) {
     useEffect(() => {
         console.error('[NewsRoute] render error:', error);
+        reportClientError(error, 'NewsRoute', error.digest);
     }, [error]);
 
     return (

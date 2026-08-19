@@ -16,7 +16,7 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
-import { getQuantizedBarsStatic } from '@/entities/bars';
+import { getSeedBarsStatic } from '@/entities/bars';
 import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
@@ -67,7 +67,9 @@ const MARKET_FEAR_GREED_LINK: Record<
     },
 };
 
-export const revalidate = 86400; // 24h — SSR은 정적 가이드뿐(점수는 클라가 bars로 계산)
+export const revalidate = 86400; // 24h — SSR이 점수·요인·시계열 요약까지 텍스트로 렌더한다(FearGreedFactsSummary).
+// 예전엔 "정적 가이드뿐"이었으나 2026-08 thin-content 대응으로 바뀌었다. 즉 이 TTL은
+// **크롤러가 보는 수치의 신선도**를 직접 정한다 — 줄이면 ISR 재생성 비용이 오른다.
 
 // generateStaticParams가 없으면 동적 라우트는 매 요청 동적 렌더돼 revalidate가
 // 무력화된다(Next.js). 빈 배열 = 빌드 시 prebuild 없이, 첫 요청에 렌더+캐시 후
@@ -196,15 +198,27 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo, {
         updatedAt: 0,
     });
-    // layout.tsx와 같은 인자(대문자 ticker)로 호출 — 요청 스코프 메모가 접혀야
-    // 지표가 한 벌만 직렬화된다(getQuantizedBarsStatic JSDoc).
-    const quantizedFromHelper = await getQuantizedBarsStatic(
+    // **`getSeedBarsStatic`을 쓴다** — layout.tsx와 같은 헬퍼·같은 인자(대문자 ticker)여야
+    // 요청 스코프 메모가 접혀 지표가 한 벌만 직렬화된다.
+    //
+    // 이전에는 이 페이지만 `getQuantizedBarsStatic`(전체 지표)을 seed했다. layout은
+    // 축소판을 seed하므로 참조가 갈려 **지표가 두 벌** 실렸다 — 2026-08 프로덕션 실측:
+    // `/AAPL/fear-greed`의 flight 630KB 중 441KB가 44개 지표를 전부 채운 두 번째 블록이었고,
+    // 첫 번째 블록(53KB, 축소판)과 별개였다. 이 라우트는 gzip 149.9KB로 사이트 최대였다.
+    //
+    // 축소판으로 충분한 근거: 이 페이지에서 지표를 읽는 유일한 소비자는 아래
+    // `FearGreedFactsSummary`이고, 그 props는 `bars`와 `buySellVolume` 둘뿐이다
+    // (`computeFearGreedIndex(bars, buySellVolume)`). `getSeedBarsStatic`이 `buySellVolume`을
+    // 유지하므로 SSR 출력은 입력이 같아 **바이트 동일**하다 — SEO·hydration 영향 없음.
+    // 클라이언트는 마운트 직후 `useBars`가 전체를 다시 받는다(seed의 updatedAt이 마지막 봉
+    // 시각이라 30초 staleTime 기준 항상 stale).
+    const quantizedFromHelper = await getSeedBarsStatic(
         ticker,
         DEFAULT_TIMEFRAME,
         marketProfileOf(assetInfo),
         assetInfo.fmpSymbol
     ).catch((e: unknown) => {
-        console.error('[FearGreedPage] getQuantizedBarsStatic failed:', e);
+        console.error('[FearGreedPage] getSeedBarsStatic failed:', e);
         return null;
     });
     // quantizedFgBars also feeds FearGreedFactsSummary (SSR factor summary below) —
@@ -307,6 +321,9 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         <FearGreedPage
                             symbol={ticker}
                             fmpSymbol={assetInfo.fmpSymbol}
+                            // 위 `FearGreedFactsSummary`가 같은 경고 문구를 이미
+                            // 서버 렌더한다 — 둘 다 그리면 중복이다.
+                            hideSelfNormWarning
                         />
                     </ErrorBoundary>
                 </HydrationBoundary>

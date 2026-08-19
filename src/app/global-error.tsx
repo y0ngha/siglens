@@ -5,6 +5,7 @@
 import './globals.css';
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { reportClientError } from '@/shared/lib/reportClientError';
 
 interface GlobalErrorProps {
     error: Error & { digest?: string };
@@ -29,6 +30,7 @@ interface GlobalErrorProps {
 export default function GlobalError({ error, reset }: GlobalErrorProps) {
     useEffect(() => {
         console.error('[GlobalError] root layout error:', error);
+        reportClientError(error, 'GlobalError', error.digest);
     }, [error]);
 
     return (

@@ -200,9 +200,11 @@ describe('Congress generateMetadata crypto NOINDEX guard', () => {
                 typeof getCongressTradesResilient
             >
         ).mockResolvedValue({
-            trades: [],
+            // 건수만 의미 있다(thin 게이트는 `trades.length === 0`만 본다).
+            // 전체 CongressTrade shape를 만들 이유가 없어 통째로 캐스팅한다.
+            trades: [{ id: 't1' }],
             degraded: false,
-        } as Awaited<ReturnType<typeof getCongressTradesResilient>>);
+        } as unknown as Awaited<ReturnType<typeof getCongressTradesResilient>>);
 
         const result = await generateMetadata({
             params: Promise.resolve({ symbol: 'AAPL' }),

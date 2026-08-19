@@ -134,7 +134,15 @@ log "target wired: $RULE_NAME -> $DESTINATION_NAME"
 ALARM_SNS="${ALARM_SNS:-$(aws sns create-topic --name siglens-alerts --query TopicArn --output text --region "$REGION")}"
 [[ -n "${ALARM_EMAIL:-}" ]] && aws sns subscribe --topic-arn "$ALARM_SNS" --protocol email \
   --notification-endpoint "$ALARM_EMAIL" --region "$REGION" >/dev/null 2>&1 || true
-ACTIONS="--alarm-actions $ALARM_SNS --ok-actions $ALARM_SNS"
+# 07-alarms.sh와 같은 2단 체계. 티커 동기화 크론은 P2다 — 한 회차 실패해도 사용자에게
+# 즉시 보이는 장애가 아니고 다음 회차가 따라잡는다. 복구 알림은 보내지 않는다.
+ALARM_SNS_LOW="${ALARM_SNS_LOW:-$(aws sns create-topic --name siglens-alerts-low --query TopicArn --output text --region "$REGION")}"
+# 구독은 여기서도 건다(멱등). 07-alarms.sh만 구독하던 시절 이 스크립트들의 알람은
+# **구독자 0명인 토픽**으로 발동했다 — 콘솔만 빨개지고 아무에게도 안 갔다.
+LOW_EMAIL="${ALARM_EMAIL_LOW:-${ALARM_EMAIL:-}}"
+[[ -n "$LOW_EMAIL" ]] && aws sns subscribe --topic-arn "$ALARM_SNS_LOW" --protocol email \
+  --notification-endpoint "$LOW_EMAIL" --region "$REGION" >/dev/null 2>&1 || true
+ACTIONS="--alarm-actions $ALARM_SNS_LOW"
 
 # (a) 딜리버리 부재 — EventBridge가 타겟 호출 자체에 실패하면 앱 로그에 흔적이 없다.
 # shellcheck disable=SC2086

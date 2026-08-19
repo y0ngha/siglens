@@ -1,9 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
+import type { FearGreedLabel, FearGreedSnapshot } from '@y0ngha/siglens-core';
 import {
     buildFearGreedFactorLines,
     buildFearGreedGroupComparisonLine,
     buildFearGreedFactorRankingLine,
+    buildFearGreedPeriodComparisonLine,
+    buildFearGreedRegimeDistributionLine,
+    buildFearGreedYearRangeLine,
+    scoredHistory,
 } from '../utils/fearGreedFacts';
 import { FACTOR_LABEL, formatFactorRaw } from '@/shared/lib/fearGreedLabels';
 
@@ -280,5 +284,147 @@ describe('FIX 6 — 두 심볼의 서로 다른 입력이 실질적으로 다른
         expect(flowRanking).not.toBe(trendRanking);
         expect(flowRanking).toContain(FACTOR_LABEL.volume_z);
         expect(trendRanking).toContain(FACTOR_LABEL.ma200_distance);
+    });
+});
+
+describe('시계열 문장 (P1/P2/P5)', () => {
+    /** `computeFearGreedHistory` 출력 형태를 그대로 흉내 낸 픽스처. */
+    function history(
+        scores: (number | null)[]
+    ): { date: string; score: number | null; label: FearGreedLabel | null }[] {
+        return scores.map((score, i) => ({
+            // 2026-01-01부터 하루씩 — 실제 거래일 달력이 아니어도 문장 생성엔 무관.
+            date: new Date(Date.UTC(2026, 0, 1 + i)).toISOString().slice(0, 10),
+            score,
+            label: score === null ? null : labelOf(score),
+        }));
+    }
+
+    function labelOf(score: number): FearGreedLabel {
+        if (score < 25) return 'EXTREME_FEAR';
+        if (score < 45) return 'FEAR';
+        if (score < 55) return 'NEUTRAL';
+        if (score < 75) return 'GREED';
+        return 'EXTREME_GREED';
+    }
+
+    it('scoredHistory는 warm-up(null)을 걷어낸다', () => {
+        const points = scoredHistory(history([null, null, 50, 60]));
+        expect(points).toHaveLength(2);
+        expect(points.map(p => p.score)).toEqual([50, 60]);
+    });
+
+    describe('buildFearGreedPeriodComparisonLine', () => {
+        it('1주/1개월/1년 전을 모두 갖추면 셋 다 언급한다', () => {
+            // 마지막이 현재. 인덱스 -6=1주전, -22=1개월전, -253=1년전.
+            const scores = Array.from({ length: 260 }, () => 50);
+            scores[260 - 1 - 5] = 61; // 1주 전
+            scores[260 - 1 - 21] = 30; // 1개월 전
+            scores[260 - 1 - 252] = 43; // 1년 전
+            scores[259] = 43; // 현재
+            const line = buildFearGreedPeriodComparisonLine(
+                scoredHistory(history(scores))
+            )!;
+
+            expect(line).toContain('현재 43점');
+            expect(line).toContain('1주 전 61점');
+            // 마지막 절이 아니면 연결어미.
+            expect(line).toContain('18점 낮고');
+            expect(line).toContain('1개월 전 30점');
+            expect(line).toContain('13점 높고');
+            // 1년 전이 현재와 같으면 크기 없이 '같습니다'만.
+            // 마지막 절만 종결어미. 차이가 0이면 `대비`가 아니라 조사를 붙인다
+            // (`대비 같고`는 비문). `공포`는 받침이 없어 `와`.
+            expect(line).toContain('1년 전 43점(공포)와 같습니다.');
+        });
+
+        it('시계열이 짧으면 확보된 기간만 말한다', () => {
+            const line = buildFearGreedPeriodComparisonLine(
+                scoredHistory(history(Array.from({ length: 10 }, () => 50)))
+            )!;
+            expect(line).toContain('1주 전');
+            expect(line).not.toContain('1개월 전');
+            expect(line).not.toContain('1년 전');
+        });
+
+        it('비교 대상이 하나도 없으면 null', () => {
+            expect(
+                buildFearGreedPeriodComparisonLine(scoredHistory(history([50])))
+            ).toBeNull();
+        });
+    });
+
+    describe('buildFearGreedYearRangeLine', () => {
+        it('최저·최고를 날짜와 함께, 현재 위치를 백분위로 말한다', () => {
+            const scores = Array.from({ length: 100 }, (_, i) => 40 + (i % 20));
+            scores[3] = 12; // 최저
+            scores[70] = 88; // 최고
+            scores[99] = 43; // 현재
+            const line = buildFearGreedYearRangeLine(
+                scoredHistory(history(scores))
+            )!;
+
+            expect(line).toContain('최저 12점(2026년 1월 4일)');
+            expect(line).toContain('최고 88점(2026년 3월 12일)');
+            // 중앙값·백분위는 이 문장에서 **계산되는** 유일한 두 값이다. 정규식
+            // `\d+`로 두면 `<=`를 `<`로 바꾸거나 분모를 n-1로 해도 통과한다.
+            // 픽스처가 완전히 결정적이므로 정확한 값을 박는다.
+            // scores = 40 + (i % 20), i=0..99, 단 [3]=12 [70]=88 [99]=43.
+            expect(line).toContain('중앙값은 49점');
+            expect(line).toContain(
+                '현재 43점은 이 분포에서 21% 지점에 해당합니다'
+            );
+        });
+
+        it('표본이 60개 미만이면 분포를 말하지 않는다', () => {
+            expect(
+                buildFearGreedYearRangeLine(
+                    scoredHistory(history(Array.from({ length: 59 }, () => 50)))
+                )
+            ).toBeNull();
+        });
+    });
+
+    describe('buildFearGreedRegimeDistributionLine', () => {
+        it('라벨별 체류일과 비율을 말하고, 0일 구간은 뺀다', () => {
+            // 60일: 공포 30 + 탐욕 30. 중립/극단은 0일이라 등장하면 안 된다.
+            const scores = [
+                ...Array.from({ length: 30 }, () => 30),
+                ...Array.from({ length: 30 }, () => 65),
+            ];
+            const line = buildFearGreedRegimeDistributionLine(
+                scoredHistory(history(scores))
+            )!;
+
+            // 표본이 252거래일에 못 미치면 "최근 1년"이라고 쓰지 않는다.
+            expect(line).toContain('최근 60거래일 중');
+            expect(line).not.toContain('최근 1년');
+            expect(line).toContain('공포 30일(50%)');
+            expect(line).toContain('탐욕 30일(50%)');
+            expect(line).not.toContain('중립');
+            expect(line).not.toContain('극심한');
+        });
+
+        it('1% 미만으로 반올림되는 구간은 비율을 생략한다 (1일(0%) 방지)', () => {
+            const scores = [
+                10, // 극심한 공포 1일 → 1/201 = 0.5% → 0%로 반올림
+                ...Array.from({ length: 200 }, () => 50),
+            ];
+            const line = buildFearGreedRegimeDistributionLine(
+                scoredHistory(history(scores))
+            )!;
+
+            expect(line).toContain('극심한 공포 1일,');
+            expect(line).not.toContain('(0%)');
+        });
+
+        it('표본이 252거래일 이상이면 "최근 1년"이라고 쓴다', () => {
+            const line = buildFearGreedRegimeDistributionLine(
+                scoredHistory(history(Array.from({ length: 300 }, () => 50)))
+            )!;
+
+            // 300개를 넣어도 창은 마지막 252개다.
+            expect(line).toContain('최근 1년 252거래일 중');
+        });
     });
 });
