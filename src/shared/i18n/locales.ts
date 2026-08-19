@@ -10,7 +10,13 @@ export const LOCALES = ['ko', 'en', 'ja', 'zh'] as const;
 
 export type Locale = (typeof LOCALES)[number];
 
-export const DEFAULT_LOCALE: Locale = 'ko';
+/**
+ * 리터럴 타입으로 둔다(`: Locale`로 넓히지 않는다) — 그래야
+ * `if (locale === DEFAULT_LOCALE) return;` 뒤에서 TypeScript가 `Exclude<Locale,'ko'>`로
+ * 좁혀 준다. 대상 로케일만 받는 함수(번역 프롬프트·용어집 조회)가 컴파일러의
+ * 보호를 받는다.
+ */
+export const DEFAULT_LOCALE = 'ko' satisfies Locale;
 
 /** 타입 가드 — 신뢰 경계(URL 세그먼트, 쿠키)에서 검증에 쓴다. */
 export function isLocale(value: string): value is Locale {
@@ -118,3 +124,14 @@ export function resolvePrerenderLocales(raw: string | undefined): Locale[] {
         .filter(isLocale);
     return parsed.length > 0 ? [...new Set(parsed)] : [DEFAULT_LOCALE];
 }
+
+/**
+ * 분석 SSE 요청이 로케일을 싣는 헤더.
+ *
+ * `/api/*`는 next-intl 미들웨어 matcher에서 제외돼 있어(그래야 API가 `/ko/api/…`로
+ * 리라이트되지 않는다) 서버가 요청 로케일을 알 수 없다. 그래서 클라이언트가
+ * 명시적으로 싣는다. next-intl의 `X-NEXT-INTL-LOCALE`을 재사용하지 않는 이유는,
+ * 그 헤더는 미들웨어가 소유하는 값이고 여기에 클라이언트가 끼어들면 두 출처가
+ * 같은 이름을 두고 다투게 되기 때문이다.
+ */
+export const ANALYSIS_LOCALE_HEADER = 'x-siglens-locale';

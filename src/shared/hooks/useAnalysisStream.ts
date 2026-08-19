@@ -1,5 +1,7 @@
 'use client';
 
+import { ANALYSIS_LOCALE_HEADER, splitLocalePath } from '@/shared/i18n/locales';
+
 /**
  * 분석 SSE 스트림 소비 헬퍼.
  *
@@ -51,7 +53,20 @@ export async function runAnalysisStream<T>({
 }: RunAnalysisStreamOptions): Promise<T> {
     const response = await fetch('/api/analysis/stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            /**
+             * 분석 응답을 어느 언어로 받을지 알린다.
+             *
+             * `/api/*`는 next-intl 미들웨어 matcher에서 제외돼 있어 서버가
+             * 요청 로케일을 알 방법이 없다. 호출부마다 로케일을 프롭으로
+             * 내려보내는 대신 **현재 주소에서 유도**한다 — 이 함수는 항상
+             * 클라이언트에서 돌고, 주소는 로케일의 단일 소스다.
+             */
+            [ANALYSIS_LOCALE_HEADER]: splitLocalePath(
+                typeof window === 'undefined' ? null : window.location.pathname
+            ).locale,
+        },
         body: JSON.stringify({ type, params }),
         signal,
     });

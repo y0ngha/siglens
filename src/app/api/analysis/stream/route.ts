@@ -1,4 +1,11 @@
 import type { ModelId, PositionBucket, Timeframe } from '@y0ngha/siglens-core';
+import { translateAnalysisForLocale } from '@/entities/analysis-translation';
+import {
+    ANALYSIS_LOCALE_HEADER,
+    DEFAULT_LOCALE,
+    isLocale,
+    type Locale,
+} from '@/shared/i18n/locales';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
@@ -405,6 +412,32 @@ async function resolveHoldingPositionBucket(
  * `technical` is handled inline (complex multi-step gating + position-bucket).
  * All other types delegate to their entity action via `DISPATCH`.
  */
+/**
+ * 요청이 실은 로케일. 없거나 알 수 없는 값이면 기본 로케일.
+ *
+ * `/api/*`는 next-intl 미들웨어 matcher에서 제외돼 있어 요청 로케일을 알 방법이
+ * 헤더뿐이다(`useAnalysisStream`이 주소에서 유도해 싣는다). 신뢰 경계이므로
+ * 반드시 `isLocale`로 검증한다 — 임의 문자열이 캐시 키에 들어가면 번역 캐시가
+ * 무한히 파편화된다.
+ */
+function resolveRequestLocale(request: Request): Locale {
+    const raw = request.headers.get(ANALYSIS_LOCALE_HEADER) ?? '';
+    return isLocale(raw) ? raw : DEFAULT_LOCALE;
+}
+
+/**
+ * 분석 결과의 산문을 요청 로케일로 옮긴다.
+ *
+ * ⚠️ **`heartbeatStream(work)`의 `work` 안에서 일어나야 한다.** 이 체이닝은
+ * `work` 프로미스에 붙으므로 heartbeat가 계속 흐르는 동안 실행된다. 밖에서
+ * await한 뒤 스트림을 만들면 첫 바이트까지의 침묵이 **ALB idle 60초 벽**에
+ * 걸린다(2026-08-02 프로덕션 실측: 침묵 61.1초에 끊김, 25초 heartbeat면 286초 완주).
+ * 기본 로케일이면 `translateAnalysisForLocale`이 즉시 원본을 돌려준다.
+ */
+function withLocalizedProse<T>(work: Promise<T>, locale: Locale): Promise<T> {
+    return work.then(result => translateAnalysisForLocale(result, locale));
+}
+
 export async function POST(request: Request): Promise<Response> {
     // --- 1. Parse and validate request body ---
     let body: StreamRequestBody;
@@ -659,6 +692,7 @@ export async function POST(request: Request): Promise<Response> {
                 );
             }
 
+            const requestLocale = resolveRequestLocale(request);
             const work = withDeadline(deadlineSignal =>
                 runAnalysis(symbol, companyName, timeframe, force, fmpSymbol, {
                     ...options,
@@ -672,9 +706,10 @@ export async function POST(request: Request): Promise<Response> {
                 throw err;
             });
 
-            return new Response(heartbeatStream(work), {
-                headers: SSE_HEADERS,
-            });
+            return new Response(
+                heartbeatStream(withLocalizedProse(work, requestLocale)),
+                { headers: SSE_HEADERS }
+            );
         } catch (err) {
             console.error('[streamAnalysisRoute] unexpected error:', err);
             return Response.json(
@@ -721,7 +756,12 @@ export async function POST(request: Request): Promise<Response> {
         const work = withDeadline(deadlineSignal =>
             handler(body.params, deadlineSignal)
         );
-        return new Response(heartbeatStream(work), { headers: SSE_HEADERS });
+        return new Response(
+            heartbeatStream(
+                withLocalizedProse(work, resolveRequestLocale(request))
+            ),
+            { headers: SSE_HEADERS }
+        );
     } catch (err) {
         console.error('[streamAnalysisRoute] unexpected error:', err);
         return Response.json(

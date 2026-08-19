@@ -51,3 +51,13 @@ export {
 // 접미사→거래소 매핑의 유일한 출처. 자동완성 배지가 `.KQ`를 자체 판정하면
 // canonical 정규식보다 느슨한 두 번째 표가 생긴다(MISTAKES.md §16.5).
 export { krExchangeOf, type KrExchange } from './lib/krExchange';
+
+/**
+ * 번역 모델·키 설정.
+ *
+ * `ticker` 슬라이스에 있는 것은 이력 때문이다(회사명 한국어 번역이 첫 소비자였다).
+ * 지금은 `entities/analysis-translation`도 같은 설정을 쓴다 — 둘 다
+ * `DEEPSEEK_API_KEY` 하나로 같은 저가 모델을 부른다. 복제하면 `TRANSLATE_MODEL`
+ * 검증 규칙이 두 벌이 되어 한쪽만 갱신되므로, 배럴로 내보내 공유한다.
+ */
+export { tryReadTranslatorConfig } from './lib/config';
