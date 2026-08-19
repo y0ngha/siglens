@@ -82,6 +82,20 @@ const MAX_TOTAL_BYTES = Math.max(
     MEM_ROUTE_MAX_BYTES
 );
 
+// 킬 스위치. `true`면 이 계층을 통째로 우회한다 — `getEntry`는 항상 miss를 돌려주고
+// `setEntry`는 항상 거부해서, `index.mjs`가 FETCH 엔트리를 예전처럼 **전부 S3로** 보낸다.
+//
+// `ISR_CACHE_DISABLED`와 다르다: 그건 페이지 캐싱까지 죽여 순수 SSR로 강등시킨다.
+// 이건 FETCH 메모리 계층만 되돌리므로, 이 변경이 의심될 때 재배포 없이
+// SSM `/siglens/ISR_FETCH_CACHE_DISABLED=true` + 인스턴스 갱신으로 원복할 수 있다.
+// **호출 시점**에 읽는다. 모듈 로드 시 상수로 굳히면 테스트가 "껐다"와 "아직 안 채웠다"를
+// 구분할 수 없고(env를 바꾸려면 모듈을 다시 임포트해야 하는데 그러면 Map도 비워진다),
+// 2026-08 감사가 뮤테이션으로 그 테스트가 무효임을 증명했다. 운영상으로도 이쪽이 낫다 —
+// SSM 값을 바꾸고 프로세스만 재시작하면 되는 게 아니라, 원래 의도대로 즉시 반영된다.
+function isDisabled() {
+    return process.env.ISR_FETCH_CACHE_DISABLED === 'true';
+}
+
 // 상태 로그 간격.
 const STATS_LOG_INTERVAL_MS = 5 * 60 * 1000;
 
@@ -147,6 +161,7 @@ function evictToFit() {
 }
 
 export function getEntry(key) {
+    if (isDisabled()) return null;
     logStatsThrottled();
     const held = store.get(key);
     if (held === undefined) {
@@ -168,6 +183,8 @@ export function getEntry(key) {
  * 호출부(`index.mjs`)에 있다.
  */
 export function setEntry(key, entry) {
+    // 거부하면 index.mjs가 S3로 보낸다 — 킬 스위치가 곧 "전부 S3" 복귀다.
+    if (isDisabled()) return false;
     // read 경로에서만 호출하면 쓰기 전용 프로세스(cron 등)가 영원히 로그를 안 남긴다.
     logStatsThrottled();
     const bytes = approximateBytes(entry);

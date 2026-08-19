@@ -1,21 +1,16 @@
 import type { FearGreedWarning } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
+// 문구 자체는 `shared/lib/fearGreedLabels`가 소유한다 — 서버 렌더 요약
+// (`FearGreedFactsSummary`)이 이 클라이언트 모듈을 끌어오지 않게 하기 위함.
+// 기존 소비자(테스트 포함)의 import 경로를 지키려고 여기서 다시 내보낸다.
+import { WARNING_TEXT } from '@/shared/lib/fearGreedLabels';
+
+export { WARNING_TEXT };
 
 interface SelfNormWarningBadgeProps {
     warning: FearGreedWarning;
     className?: string;
 }
-
-/**
- * Self-norm 경고 메시지 — chronic 사이클 종목에서 score가 raw sentiment 대신
- * 자기 분포 대비 상대 위치를 가리킨다는 사용자 안내. test에서도 import해서 검증.
- */
-export const WARNING_TEXT: Record<NonNullable<FearGreedWarning>, string> = {
-    CHRONIC_WEAKNESS:
-        '이 종목은 장기 약세 흐름이에요. 점수는 이 종목의 평소 흐름 안에서의 상대적 위치를 보여줘 절대적인 강도와 다를 수 있어요. 참고만 해 주세요.',
-    CHRONIC_STRENGTH:
-        '이 종목은 장기 강세 흐름이에요. 점수는 이 종목의 평소 흐름 안에서의 상대적 위치를 보여줘 절대적인 강도와 다를 수 있어요. 참고만 해 주세요.',
-};
 
 /** Heroicons exclamation-triangle outline 변형의 표준 stroke width (24px viewBox 기준). */
 const WARNING_ICON_STROKE_WIDTH = 2;

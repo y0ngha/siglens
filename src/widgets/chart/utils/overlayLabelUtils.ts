@@ -2,6 +2,21 @@ import { CHART_COLORS, getPeriodColor } from '@/shared/lib/chartColors';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import type { OverlayItemBase, OverlayLegendItem } from '../types';
 
+/**
+ * ⚠️ **정렬 규약 주의** — 여기 `getValue`들은 지표 배열을 **bar 인덱스로 직접** 읽는다
+ * (`ind.bollinger[i]`). 반면 시리즈 빌더(`seriesDataUtils`)는 **tail 정렬**이다.
+ * 지표 배열이 bars보다 짧으면 둘이 어긋난다 — 라인은 최신 봉에 그려지는데 범례는
+ * `ind.x[500]`을 읽어 `undefined` → `–`가 뜬다.
+ *
+ * 지금은 도달 불가능하다: 부분 배열이 될 수 있는 건 RSC seed가 접는 `rsi`·`macd`뿐인데
+ * 둘 다 **pane 지표**라 이 파일에 오지 않는다. 여기 오는 오버레이 지표(ma·ema·bollinger·
+ * ichimoku·volumeProfile·supertrend·parabolicSar·chandelierExit·donchianChannel·
+ * keltnerChannel)는 seed에서 전부 **완전히 빈** 값이라 `getValue`가 null을 돌려주고
+ * 범례가 정상적으로 숨는다.
+ *
+ * **오버레이 지표를 부분 배열로 접는 변경을 하려면 이 파일도 함께 tail 정렬로 바꿔야 한다**
+ * (`seriesDataUtils`의 `tailOffset` 재사용). 그 전까진 클로저 20여 개를 재구성할 값이 없다.
+ */
 export interface OverlayLabelConfig extends OverlayItemBase {
     getValue: (indicators: IndicatorResult, barIndex: number) => number | null;
     /**

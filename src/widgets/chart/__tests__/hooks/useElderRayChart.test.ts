@@ -117,14 +117,12 @@ describe('useElderRayChart', () => {
         const calls = vi.mocked(buildSeriesData).mock.calls;
         const bullColorFn = calls.find(c => c[2] === 'bullPower')?.[3];
         const bearColorFn = calls.find(c => c[2] === 'bearPower')?.[3];
-        expect(bullColorFn?.(2, {} as never, 0)).toBe(
-            CHART_COLORS.elderBullPower
-        );
-        expect(bullColorFn?.(-2, {} as never, 0)).toBe(CHART_COLORS.neutral);
-        expect(bearColorFn?.(-2, {} as never, 0)).toBe(
+        expect(bullColorFn?.(2, {} as never)).toBe(CHART_COLORS.elderBullPower);
+        expect(bullColorFn?.(-2, {} as never)).toBe(CHART_COLORS.neutral);
+        expect(bearColorFn?.(-2, {} as never)).toBe(
             CHART_COLORS.elderBearPower
         );
-        expect(bearColorFn?.(2, {} as never, 0)).toBe(CHART_COLORS.neutral);
+        expect(bearColorFn?.(2, {} as never)).toBe(CHART_COLORS.neutral);
     });
 
     it('does not set data when elderRay is empty', () => {

@@ -116,10 +116,10 @@ describe('useRegressionChart', () => {
         const colorFn = vi
             .mocked(buildSeriesData)
             .mock.calls.find(c => c[2] === 'slope')?.[3];
-        expect(colorFn?.(0.4, { r2: 0.8 } as never, 0)).toBe(
+        expect(colorFn?.(0.4, { r2: 0.8 } as never)).toBe(
             regressionBarColor(0.4, 0.8)
         );
-        expect(colorFn?.(-0.4, { r2: null } as never, 0)).toBe(
+        expect(colorFn?.(-0.4, { r2: null } as never)).toBe(
             regressionBarColor(-0.4, null)
         );
     });
