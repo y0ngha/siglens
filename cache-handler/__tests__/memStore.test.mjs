@@ -5,14 +5,11 @@ import {
     __resetForTests,
     statsForTest,
     deleteEntry,
+    MEM_ROUTE_MAX_BYTES,
 } from '../memStore.mjs';
 
-/**
- * `memStore.mjs`의 `MEM_ROUTE_MAX_BYTES` 기본값(메모리/S3 분기점).
- * 모듈이 export하지 않아 직접 import는 불가 — 여기 한 곳에만 두어 드리프트를 막는다.
- * memStore의 기본값을 바꾸면 이 상수도 함께 바꿀 것.
- */
-const ROUTE_GATE_BYTES = 8 * 1024;
+/** 소스에서 직접 가져온다 — 로컬 재정의는 기본값이 바뀔 때 조용히 드리프트한다. */
+const ROUTE_GATE_BYTES = MEM_ROUTE_MAX_BYTES;
 
 /** 크기를 지정한 FETCH 엔트리 — 예산 산정은 `value.data.body.length`를 본다. */
 function fetchEntry(bodyLength, extra = {}) {
@@ -116,8 +113,17 @@ describe('memStore는', () => {
         expect(statsForTest()).toEqual({ size: 1, totalBytes: 50 });
     });
 
+    it('총 예산이 라우팅 게이트보다 작게 설정돼도 캐시가 죽지 않는다', async () => {
+        // 두 값이 독립 env라 총 예산 < 게이트 설정이 가능하다. 하한이 없으면
+        // 게이트를 통과한 엔트리가 삽입 직후 축출돼 히트율이 영구 0%가 된다.
+        const store = await freshStore({ maxBytes: 10 });
+        expect(store.setEntry('a', fetchEntry(4096))).toBe(true);
+
+        expect(store.getEntry('a')).not.toBeNull();
+    });
+
     it('총 바이트 상한을 넘으면 오래된 것부터 제거한다', async () => {
-        const store = await freshStore({ maxBytes: 300 });
+        const store = await freshStore({ maxBytes: 300, maxEntries: 3 });
         store.setEntry('a', fetchEntry(100));
         store.setEntry('b', fetchEntry(100));
         store.setEntry('c', fetchEntry(100));

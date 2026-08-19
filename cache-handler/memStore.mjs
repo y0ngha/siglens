@@ -51,6 +51,13 @@ function readPositiveBound(name, fallback) {
     return Number.isFinite(raw) && raw > 0 ? raw : fallback;
 }
 
+// 메모리로 보낼 엔트리의 크기 상한 = S3와의 분기점. 위 분포에서 객체 88% / 용량 3%를
+// 가르는 지점이다. 초과분은 `setEntry`가 거부하고 `index.mjs`가 S3로 보낸다.
+export const MEM_ROUTE_MAX_BYTES = readPositiveBound(
+    'ISR_FETCH_CACHE_ROUTE_MAX_BYTES',
+    8 * 1024
+);
+
 // 엔트리 수 상한. 실측 소형 엔트리는 12,334개의 88% ≈ 10,850개(평균 0.36KB)이므로
 // 20,000은 전량 수용 + 여유다. 실질 제동은 아래 바이트 예산이 건다 — 개수 상한은
 // 키 공간이 예상 밖으로 폭발했을 때의 마지막 방어선이다.
@@ -67,9 +74,12 @@ const MAX_ENTRIES = readPositiveBound('ISR_FETCH_CACHE_MAX_ENTRIES', 20000);
 // **실제 상주 메모리는 계상값보다 크다**(한국어 JSON은 V8이 2바이트 문자열로 잡아
 // 최대 2배). 4MB 실측 기준이면 상주 ~8MB로, `--max-old-space-size=1536`에 무의미한 수준.
 // 운영 중 조정은 SSM `/siglens/ISR_FETCH_CACHE_MAX_BYTES`로 가능하다(코드 변경 불필요).
-const MAX_TOTAL_BYTES = readPositiveBound(
-    'ISR_FETCH_CACHE_MAX_BYTES',
-    32 * 1024 * 1024
+// 하한이 `MEM_ROUTE_MAX_BYTES`인 이유: 두 값이 독립 env라 운영자가 총 예산을 라우팅
+// 게이트보다 작게 잡을 수 있다. 그러면 게이트를 통과한 엔트리가 삽입 직후 `evictToFit`에
+// 즉시 축출돼 **캐시가 조용히 no-op**이 된다(히트율 0%, 에러 없음). 최소 1개는 담기게 한다.
+const MAX_TOTAL_BYTES = Math.max(
+    readPositiveBound('ISR_FETCH_CACHE_MAX_BYTES', 32 * 1024 * 1024),
+    MEM_ROUTE_MAX_BYTES
 );
 
 // 상태 로그 간격.
@@ -78,13 +88,6 @@ const STATS_LOG_INTERVAL_MS = 5 * 60 * 1000;
 // 상태 로그 이벤트 이름. infra/aws/07-alarms.sh의 JSON 메트릭 필터
 // `{ $.event = "fetch-mem" }`가 이 값을 매칭한다 — 바꾸면 알람도 함께 고칠 것.
 const STATS_EVENT = 'fetch-mem';
-
-// 메모리로 보낼 엔트리의 크기 상한 = S3와의 분기점. 위 분포에서 객체 88% / 용량 3%를
-// 가르는 지점이다. 초과분은 `setEntry`가 거부하고 `index.mjs`가 S3로 보낸다.
-const MEM_ROUTE_MAX_BYTES = readPositiveBound(
-    'ISR_FETCH_CACHE_ROUTE_MAX_BYTES',
-    8 * 1024
-);
 
 /** @type {Map<string, { entry: unknown, bytes: number }>} */
 const store = new Map();
