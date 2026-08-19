@@ -40,6 +40,33 @@ import Link from 'next/link';
 
 // 종목당 SEO 콘텐츠는 고정이고 동적 데이터는 클라가 재hydrate한다. 엣지 캐시로
 // compute 호출을 줄인다. (일시 인프라 장애의 404 캐싱은 getAssetInfo strict로 차단)
+/**
+ * 종목이 속한 시장의 상위 공포·탐욕 지수 링크.
+ *
+ * 암호화폐는 전용 시장 지수가 없어 미국 페이지를 가리킨다 — 상위 개념을 설명하는
+ * 용도라 시장이 정확히 일치하지 않아도 문장이 성립한다(라벨로 그렇게 말한다).
+ */
+const MARKET_FEAR_GREED_LINK: Record<
+    ReturnType<typeof marketProfileOf>,
+    { href: string; label: string; marketLabel: string }
+> = {
+    'us-equity': {
+        href: '/fear-greed',
+        label: '시장 전체 공포·탐욕 지수',
+        marketLabel: '미국 증시',
+    },
+    'kr-equity': {
+        href: '/fear-greed/kr',
+        label: '한국 시장 공포·탐욕 지수',
+        marketLabel: '한국 증시',
+    },
+    crypto: {
+        href: '/fear-greed',
+        label: '시장 전체 공포·탐욕 지수',
+        marketLabel: '미국 증시',
+    },
+};
+
 export const revalidate = 86400; // 24h — SSR은 정적 가이드뿐(점수는 클라가 bars로 계산)
 
 // generateStaticParams가 없으면 동적 라우트는 매 요청 동적 렌더돼 revalidate가
@@ -98,6 +125,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     const displayName = buildDisplayName(assetInfo, ticker);
     const marketProfile = marketProfileOf(assetInfo);
     const assetClass = getDescriptor(marketProfile).assetClass;
+    const marketFearGreedLink = MARKET_FEAR_GREED_LINK[marketProfile];
 
     const { fullTitle, description, url } = resolveSymbolFearGreedSeoContent(
         ticker,
@@ -232,16 +260,20 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                     <p className="text-sm leading-relaxed text-secondary-400">
                         {displayName} 한 종목의 단기 매매 심리를 0~100 점수로
                         나타냅니다.{' '}
+                        {/* 상위 지수 링크는 이 종목이 속한 시장을 가리켜야 한다.
+                            `/fear-greed/kr`이 생기기 전에는 둘 다 미국뿐이라
+                            하드코딩이 맞았지만, 지금은 한국 종목 페이지가
+                            "미국 증시 전반"을 참조하게 된다. */}
                         <Link
-                            href="/fear-greed"
+                            href={marketFearGreedLink.href}
                             className="text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline"
                         >
-                            시장 전체 공포·탐욕 지수
+                            {marketFearGreedLink.label}
                         </Link>
-                        가 여러 자산을 합쳐 미국 증시 전반의 감정을 보여 준다면,
-                        이 페이지는 한 종목의 거래량 흐름과 체결 흐름, 가격
-                        위치를 그 종목의 자체 분포 안에서 환산해 점수로
-                        만듭니다.
+                        가 여러 자산을 합쳐 {marketFearGreedLink.marketLabel}{' '}
+                        전반의 감정을 보여 준다면, 이 페이지는 한 종목의 거래량
+                        흐름과 체결 흐름, 가격 위치를 그 종목의 자체 분포 안에서
+                        환산해 점수로 만듭니다.
                     </p>
                     <p className="text-sm leading-relaxed text-secondary-400">
                         Volume z-score, Buy/Sell volume 불균형, Volume Profile

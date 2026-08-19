@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures';
+import { clickHeaderNavRegion } from '../support/headerNav';
 
 /**
  * 3자산군(미국·한국·암호화폐) 동선 — Playwright E2E.
@@ -129,19 +130,27 @@ test.describe('헤더 지역 드롭다운', () => {
         }
     });
 
-    test('트리거를 누르면 패널이 열려요 (happy)', async ({ page }) => {
+    /**
+     * 마우스 동선: 트리거에 **올려두면** 열리고, 패널 안 링크를 누르면 이동한다.
+     *
+     * 트리거를 `click()`하지 않는 이유는 `support/headerNav.ts` 주석 참조 —
+     * Playwright의 클릭은 포인터 이동(=hover로 열림) 뒤에 클릭(=토글로 닫힘)이라
+     * 순서상 스스로를 무효화한다. 실제 마우스 사용자도 트리거를 누를 이유가 없다.
+     */
+    test('트리거에 올리면 패널이 열려요 (happy)', async ({ page }) => {
         await page.goto('/');
+        await page.mouse.move(0, 0);
 
-        const trigger = page.getByRole('button', { name: /시장 분석/ });
+        const trigger = page
+            .getByRole('banner')
+            .getByRole('navigation', { name: '주요 네비게이션' })
+            .getByRole('button', { name: /시장 분석/ })
+            .first();
         await expect(trigger).toHaveAttribute('aria-expanded', 'false');
-        await trigger.click();
+        await trigger.hover();
         await expect(trigger).toHaveAttribute('aria-expanded', 'true');
 
-        await page
-            .locator('a[href="/market/kr"]')
-            .filter({ hasText: '한국' })
-            .first()
-            .click();
+        await clickHeaderNavRegion(page, '시장 분석', '한국');
         await expect(page).toHaveURL(/\/market\/kr$/);
     });
 
@@ -150,8 +159,16 @@ test.describe('헤더 지역 드롭다운', () => {
     }) => {
         await page.goto('/');
 
-        const trigger = page.getByRole('button', { name: /뉴스/ }).first();
-        await trigger.click();
+        await page.mouse.move(0, 0);
+        const trigger = page
+            .getByRole('banner')
+            .getByRole('navigation', { name: '주요 네비게이션' })
+            .getByRole('button', { name: /뉴스/ })
+            .first();
+        // 키보드 사용자 동선: 포커스 후 Enter. 포인터가 관여하지 않으므로
+        // hover-open과 클릭 토글이 겹치지 않는다.
+        await trigger.focus();
+        await page.keyboard.press('Enter');
         await expect(trigger).toHaveAttribute('aria-expanded', 'true');
 
         await page.keyboard.press('Escape');

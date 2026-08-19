@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures';
+import { clickHeaderNavRegion } from '../support/headerNav';
 
 const PAGE_TITLE = '오늘 미국 증시 심리, 공포 탐욕 지수로 확인';
 
@@ -116,16 +117,7 @@ test.describe('market fear & greed', () => {
 
         // 2026-08 동선 재편: 헤더가 버티컬 드롭다운이 되면서 지역 라벨이 짧아졌다
         // (`미국 공포·탐욕 지수` → `공포·탐욕 지수` 패널 안의 `미국`).
-        await page
-            .getByRole('banner')
-            .getByRole('navigation', { name: '주요 네비게이션' })
-            .getByRole('button', { name: /공포·탐욕 지수/ })
-            .click();
-
-        await page
-            .getByRole('list', { name: '공포·탐욕 지수 바로가기' })
-            .getByRole('link', { name: '미국', exact: true })
-            .click();
+        await clickHeaderNavRegion(page, '공포·탐욕 지수', '미국');
 
         await page.waitForURL('**/fear-greed');
 
