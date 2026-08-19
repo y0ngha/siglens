@@ -5,10 +5,14 @@ import { test, expect } from '../support/fixtures';
  *
  * Architecture notes:
  *
- *   - `/news` is an ISR RSC page. The 5 CategoryCard components are SSR-emitted;
- *     each has `aria-label="${koLabel} 뉴스 더보기"` and `href="/news/${slug}"`.
- *     Under E2E_TEST=1 the staticSymbolCache preview fetch uses FakeMarketNewsClient,
- *     so headline previews render deterministically without any network I/O.
+ *   - `/news` is an ISR RSC page. 2026-08부터 3지역 허브라 상단은 지역 카드
+ *     (`/news/us`·`/news/kr`·`/news/crypto`)이고, 그 아래 `카테고리 바로가기`가
+ *     미국 카테고리 4개 딥링크를 낸다. Under E2E_TEST=1 the staticSymbolCache preview
+ *     fetch uses FakeMarketNewsClient, so headline previews render deterministically.
+ *
+ *     **`main`으로 스코프해야 한다.** 헤더 드롭다운 패널이 같은 href를 전 페이지에
+ *     렌더하는데(크롤 가능성 때문에 닫혀도 DOM에 남는다) `visibility: hidden`이라
+ *     `page.locator(...).first()`가 그 보이지 않는 쪽을 집으면 `toBeVisible()`이 깨진다.
  *
  *   - `/news/[category]` renders h1 = `${cfg.koLabel} 뉴스` from the page RSC.
  *     The card list is hydrated from SSR initial items (via FakeMarketNewsClient).
@@ -27,25 +31,27 @@ import { test, expect } from '../support/fixtures';
  *   - Digest section: heading text "시장 AI 다이제스트" (rendered in any digest state)
  */
 
-const CATEGORY_SLUGS = [
-    'general',
-    'stock',
-    'crypto',
-    'forex',
-    'articles',
-] as const;
-
-test.describe('/news 미국 시장 뉴스 허브', () => {
+test.describe('/news 시장 뉴스 허브', () => {
     /**
      * 허브 인덱스가 5개 카테고리 딥링크를 SSR-렌더하는지 검증해요.
      * CategoryCard는 `href="/news/${slug}"`로 직접 연결돼요.
      */
-    test('허브가 5개 카테고리 딥링크를 렌더해요 (happy)', async ({ page }) => {
+    test('허브가 지역 카드 + 미국 카테고리 딥링크를 렌더해요 (happy)', async ({
+        page,
+    }) => {
         await page.goto('/news');
+        const main = page.getByRole('main');
 
-        for (const slug of CATEGORY_SLUGS) {
+        // 지역 카드 3장.
+        for (const slug of ['us', 'kr', 'crypto'] as const) {
             await expect(
-                page.locator(`a[href="/news/${slug}"]`).first()
+                main.locator(`a[href="/news/${slug}"]`).first()
+            ).toBeVisible();
+        }
+        // `카테고리 바로가기` — 미국 카테고리 4개.
+        for (const slug of ['general', 'stock', 'forex', 'articles'] as const) {
+            await expect(
+                main.locator(`a[href="/news/${slug}"]`).first()
             ).toBeVisible();
         }
     });
@@ -61,7 +67,7 @@ test.describe('/news 미국 시장 뉴스 허브', () => {
         await page.goto('/news/crypto');
 
         await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-            '미국 암호화폐 뉴스'
+            '암호화폐 뉴스'
         );
 
         // FakeMarketNewsClient의 crypto fixture 첫 번째 기사 타이틀 (영어)
@@ -104,7 +110,7 @@ test.describe('/news 미국 시장 뉴스 허브', () => {
         await page.goto('/news/crypto');
 
         await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-            '미국 암호화폐 뉴스'
+            '암호화폐 뉴스'
         );
 
         // Verify there is at least one article from SSR fixture
@@ -188,16 +194,17 @@ test.describe('/news 미국 시장 뉴스 허브', () => {
             categoryNav.getByRole('link', { name: '주식' })
         ).toHaveAttribute('aria-current', 'page');
 
-        // '암호화폐' 탭을 클릭하면 /news/crypto로 이동해야 해요.
-        await categoryNav.getByRole('link', { name: '암호화폐' }).click();
-        await page.waitForURL('**/news/crypto');
+        // 탭바는 **같은 지역 안에서만** 묶인다 — `미국 주식` 옆에 `한국 증시`가
+        // 붙으면 지역을 나눈 의미가 없어진다. 그래서 미국 형제 탭으로 이동한다.
+        await categoryNav.getByRole('link', { name: '외환' }).click();
+        await page.waitForURL('**/news/forex');
 
-        // URL 이동 후 '암호화폐' 탭이 새 active 탭이 돼야 해요.
+        // URL 이동 후 '외환' 탭이 새 active 탭이 돼야 해요.
         const updatedNav = page.getByRole('navigation', {
             name: '뉴스 카테고리',
         });
         await expect(
-            updatedNav.getByRole('link', { name: '암호화폐' })
+            updatedNav.getByRole('link', { name: '외환' })
         ).toHaveAttribute('aria-current', 'page');
 
         // '주식' 탭은 더 이상 활성 상태가 아니에요.
