@@ -10,7 +10,7 @@ feat/crypto-korean-search (crypto epic follow-on): typing a Korean coin name (�
 Parts:
 - api.ts DrizzleCryptoAssetRepository.search: added `ilike(cryptoAssets.koreanName, like)` to existing or(). searchCryptoAssets lowercases query but lowercase is a no-op on Hangul → Korean ilike works.
 - searchTicker.ts Korean branch: Promise.all([searchByKoreanName, searchCryptoAssets]) → deduplicateResults (stock-first) → slice(MAX_SEARCH_RESULTS=10). Early-returns before non-Korean path; no double-fetch. Sound.
-- scripts/seed-crypto-korean-names.ts: NEW, mirrors seedIndicatorTranslationsBatch.ts (poll/chunk/resilience) + seed-crypto-assets upsert.
+- scripts/seed-crypto-korean-names.ts: NEW, mirrors seedIndicatorTranslationsBatch.ts (poll/chunk/resilience) + seed-crypto-assets upsert. **seedIndicatorTranslationsBatch.ts was deleted on `feat/asset-class-navigation` (2026-08-19)** — it imported `buildIndicatorTranslationPrompt`, which core 0.48.0 exports from neither its index types nor runtime, so it threw on run. seed-crypto-korean-names.ts now carries the only copy of that poll/chunk pattern.
 
 Focus#1 placeholder-name SAFE: processResponses upserts `name: v.symbol` placeholder, but every symbol came FROM crypto_assets WHERE korean_name IS NULL (SELECT then UPSERT), so PK pre-exists → onConflictDoUpdate takes UPDATE path (sets only korean_name+updatedAt, never name). Placeholder cannot leak into a new row barring concurrent DELETE between SELECT/UPSERT (acceptable for one-off seed, documented).
 

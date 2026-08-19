@@ -20,10 +20,15 @@
 - [OverallView hasOptions audit (audit/fix-seo)](project-overall-hasoptions-audit-fix-seo.md) — R1/R2/R3 recurred (fail-open default, `?? ''`, 3rd derivation); R4 fixed all via `profileIdForSymbol`, approved w/ 1 stale-comment recommendation
 - [audit/fix-seo ROOT_TITLE/SPCX (R6)](project-audit-fix-seo-root-title-spcx.md) — approved: ROOT_FULL_TITLE fixes OG/Twitter brand loss, SPCX purged from SECTOR_STOCKS; both mutation-verified live
 - [kr-release audit R2-R3](project-kr-release-audit-round2.md) — R2 found `$`-on-KRW in PositionStatusSummary; R3 verified all fixes, only `isFundShapedName` trust-name regression + long non-findings list
+- [asset-class-nav R5 closing check](project-asset-class-nav-r5.md) — spread-inherited fixture = unfalsifiable assertion; seed-loop dual exit + exitCode; `/market/kr` 0.9 is derived, not literal
+- [prompt-region-context R6](project-prompt-region-context-r6.md) — green-suite traps: surviving duplicate under wrong describe, forward-scanning few-shot helper, vacuous not.toContain; scratchpad vitest recipe
+- [core 0.48.0 briefing-context wiring](project-core-048-briefing-context.md) — verified in core dist: hash folds context, prompt (not hash) drops `price:0`, sectors come from sectorEtfs only; miss was outside src/
 - [fix-tests2 mutation audit](project-fix-tests2-mutation-audit.md) — 6/7 mutations + 2 E2E deletions re-verified live; approved R1. `initialAnalysisFailed={true}` hardcode makes share-flow 'idle' unreachable; SITE_DESCRIPTION embeds "한국" project-wide (JSON-LD tautology trap)
 
 ## Feedback
 
 - [Round-1: check untracked files too](feedback-check-untracked-files.md) — `git diff --name-only` misses new `??` files in a worktree; also run `git status -uall`
 - [Read tool can silently drop lines on large files](feedback-read-tool-silent-line-loss.md) — no truncation warning; cross-check `wc -l` before concluding content is missing
+- [Green tsc says nothing about scripts/ or worker/](feedback-scripts-excluded-from-tsc.md) — tsconfig excludes them; core breaking bumps leave write-once callers silently broken
+- [Added LIMIT breaks "seed ALL" callers](feedback-limit-added-breaks-seed-all-contract.md) — new `.limit()` on a shared repo read turns backfill scripts into "first N" silently; grep callers, look for "all/전부" in their prose
 - [Audit the slice, not the diff list](feedback-audit-enumerate-slice-not-difflist.md) — for "thread X through N call sites" fixes, grep the symptom repo-wide and subtract; the miss is the unlisted file
