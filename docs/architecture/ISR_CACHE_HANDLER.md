@@ -16,8 +16,39 @@ siglens-isr/{GIT_SHA}/{pages|fetch}/{encoded-or-sha256-key}.cache
 ```
 
 - `pages/` — Next.js 라우트 HTML/RSC 캐시 엔트리.
-- `fetch/` — `unstable_cache` / route-segment fetch 캐시 엔트리.
+- `fetch/` — `unstable_cache` / route-segment fetch 캐시 엔트리 중 **8KB 초과분만**.
+  8KB 이하는 S3에 오지 않고 프로세스 내 LRU(`cache-handler/memStore.mjs`)에 산다 — 아래 참조.
 - 키가 900바이트를 초과하면 sha256으로 대체(S3 1 024 바이트 한계 대응).
+
+**FETCH 엔트리는 크기로 갈린다** (2026-08 도입). 실측 분포(빌드 prefix 0.58.0, `fetch/`
+객체 12,334개 / 128.4MB)가 이봉이었다 — 8KB 이하가 객체의 88%인데 용량은 3%뿐이고,
+나머지가 용량의 97%를 쥔다. S3 PUT 요청비는 개수가 만들므로 작은 쪽만 메모리로 옮겼다.
+
+| 크기 | 저장소 | 근거 |
+|---|---|---|
+| ≤ 8KB | 프로세스 내 bounded LRU | 객체 88% = PUT 비용의 대부분. 재생성이 싸다 |
+| > 8KB | S3 `fetch/` | `bars-static` 등 재생성이 비싸고 인스턴스 간 공유가 값을 한다 |
+
+`get`은 메모리 → S3 순으로 본다. 같은 키가 8KB를 넘겨 S3로 승격되면 `set`이 메모리 사본을
+지우므로 낡은 값이 가려지지 않는다. 태그 무효화(`ensureTagsFresh` + `maxRevalidatedAt`)는
+저장소와 무관하게 동일 적용된다.
+
+메모리 계층은 **인스턴스 로컬**이다 — 스케일아웃 시 인스턴스마다 독립 워밍되고 컨테이너
+재시작이면 비워진다. 담는 대상이 작고 재생성이 싼 엔트리뿐이라 허용 가능하다.
+
+**튜닝 노브** (전부 선택. SSM `/siglens/*`에 넣으면 인스턴스 갱신 시 반영된다.
+`.env.example`에는 **넣지 말 것** — `check-env.sh`가 그 파일의 키를 SSM 필수로 강제해
+미프로비저닝 시 배포가 막힌다):
+
+| 변수 | 기본값 | 용도 |
+|---|---|---|
+| `ISR_FETCH_CACHE_ROUTE_MAX_BYTES` | `8192` | 메모리/S3 분기점 |
+| `ISR_FETCH_CACHE_MAX_BYTES` | `33554432` (32MB) | 메모리 총 예산 |
+| `ISR_FETCH_CACHE_MAX_ENTRIES` | `20000` | 메모리 엔트리 수 상한 |
+
+메모리 계층 상태는 5분마다 JSON 한 줄로 남는다:
+`{"tag":"isr-cache","event":"fetch-mem","size":..,"bytes":..,"hit":..,"miss":..,"evicted":..}`.
+`07-alarms.sh`의 JSON 메트릭 필터가 이걸 `Siglens/ISRCache`로 올린다(알람 없음, 지표만).
 
 S3 get/set 실패는 **fail-open**: 오류를 `console.error('[isr-cache] s3 get/set failed', ...)` 로만 기록하고
 렌더가 SSR 폴백으로 이어진다. 캐시 계층이 깨져도 서비스는 살아있으나 S3 비용(ISR Write) 없는
@@ -133,7 +164,7 @@ aws s3 rm s3://siglens-isr-cache/ --recursive --region ap-northeast-2
 **새 배포로 자연 무효화:**
 
 `GIT_SHA`가 바뀌면 신규 prefix가 사용되고 구버전 캐시는 접근되지 않는다.
-14일 lifecycle이 스스로 정리한다 — 수동 삭제 불필요.
+7일 lifecycle이 스스로 정리한다 — 수동 삭제 불필요.
 
 ## 4. 모니터링
 
@@ -195,7 +226,7 @@ aws s3 ls s3://siglens-isr-cache/ --recursive --summarize | tail -2
 ### 롤백 시 SSM `prev-isr-buildid` 드리프트
 
 `deploy.sh`는 롤백용 `prev-isr-buildid` SSM 파라미터를 유지하지 않는다.
-롤백 시 수동으로 이전 SHA의 캐시 prefix가 유효한지 확인해야 한다(14일 내이면 존재).
+롤백 시 수동으로 이전 SHA의 캐시 prefix가 유효한지 확인해야 한다(7일 내이면 존재).
 
 ### 멀티인스턴스 태그 전파 — ✅ 2026-07-25 해소
 

@@ -26,7 +26,11 @@ const nextConfig: NextConfig = {
         process.env.NODE_ENV === 'production' && process.env.ISR_CACHE_BUCKET
             ? require.resolve('./cache-handler/index.mjs')
             : undefined,
-    // 멀티 인스턴스 정합성: 인스턴스 로컬 L1 캐시를 끄고 모든 read/write를 핸들러로.
+    // 인스턴스 로컬 L1을 끄고 모든 read/write를 핸들러로 보낸다는 의도.
+    // ⚠️ 실제로는 이 값을 Next 기본 `FileSystemCache`만 소비한다(next/dist/server/lib/
+    // incremental-cache/file-system-cache.js). 위 `cacheHandler`가 등록된 프로덕션에서는
+    // 애초에 끌 L1이 없어 **no-op**이고, 핸들러가 없는 dev/E2E에서만 실효가 있다.
+    // 남겨두는 이유는 그 dev/E2E 경로와, 핸들러가 비활성일 때의 명시적 의도 표명이다.
     cacheMaxMemorySize: 0,
 
     // ⚠️ next/image 최적화 캐시(IMAGE kind)는 디스크에 유지한다(정적 에셋이라 작음, ~8KB).

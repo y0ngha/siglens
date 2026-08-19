@@ -50,6 +50,45 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-isr-cache-failures --namesp
   --metric-name IsrCacheFailures --statistic Sum --period 300 --evaluation-periods 1 --threshold 5 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
 
+# FETCH 메모리 캐시(memStore.mjs) 가시성 — 알람이 아니라 **관측 지표**다.
+#
+# FETCH 엔트리는 S3가 아니라 프로세스 내 LRU에 산다. 이 캐시의 고장은 전부 조용하다:
+# 히트율 0%, 축출 스래싱, 예산 드리프트 어느 것도 에러를 내지 않고 증상은 FMP 요금과
+# Upstash 커맨드 수로만 뒤늦게 나타난다. memStore가 5분마다 남기는
+# '[isr-cache] fetch-mem size=.. bytes=.. hit=.. miss=.. evicted=..' 줄을 메트릭으로 올린다.
+#
+# 알람을 걸지 않는 이유: 정상 히트율의 기준선이 아직 없다(배포 직후 워밍 구간과
+# 정상 구간의 구분이 필요). 우선 지표만 쌓고, 기준선이 잡히면 임계값을 정한다.
+#
+# ⚠️ **JSON 필터여야 한다.** 공백 구분 필터 `[isr, kind, size, bytes, ...]`는 토큰을
+# 공백으로만 쪼개므로 `size=12`가 통째로 한 토큰이 되고, `metricValue=$size`가
+# "size=12"를 숫자로 읽지 못해 **조용히 아무것도 발행하지 않는다**. memStore가
+# JSON 한 줄을 찍고 여기서 `$.필드`로 뽑는 이유다.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-isr-fetch-mem \
+  --filter-pattern '{ $.event = "fetch-mem" }' \
+  --metric-transformations \
+    metricName=FetchMemEvicted,metricNamespace=Siglens/ISRCache,metricValue='$.evicted' \
+    metricName=FetchMemHit,metricNamespace=Siglens/ISRCache,metricValue='$.hit' \
+    metricName=FetchMemMiss,metricNamespace=Siglens/ISRCache,metricValue='$.miss' \
+    metricName=FetchMemBytes,metricNamespace=Siglens/ISRCache,metricValue='$.bytes'
+
+# Redis(Upstash) read-through 캐시 실패 가시성.
+#
+# FETCH 엔트리가 S3에서 빠지면서 **Redis가 인스턴스 간 유일한 FMP 방어선**이 됐다.
+# 그전에는 S3 fetch/ 계층이 Redis degrade를 일부 흡수했지만, memStore는 프로세스 로컬이라
+# 컨테이너 재시작마다 비어 있다. 따라서 Upstash 장애(플랜 한도, 토큰 회전, 스로틀)는
+# 곧바로 FMP 쿼터 소진과 429로 이어지고, 지금은 청구서를 보기 전까지 아무도 모른다.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-redis-cache-failures \
+  --filter-pattern '?"[getOrSetCache] get failed" ?"[getOrSetCache] set failed"' \
+  --metric-transformations metricName=RedisCacheFailures,metricNamespace=Siglens/ISRCache,metricValue=1
+# 5분간 10건 초과 = 산발적 네트워크 blip이 아니라 지속 실패. getOrSetCache는 키마다
+# 로그를 남기므로(스로틀 없음) s3 필터의 5보다 임계값을 높게 잡는다.
+aws cloudwatch put-metric-alarm --alarm-name siglens-redis-cache-failures --namespace Siglens/ISRCache \
+  --metric-name RedisCacheFailures --statistic Sum --period 300 --evaluation-periods 1 --threshold 10 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
+
 # 태그 스토어(tagStore.mjs) fail-open 가시성 — 위 s3 필터와 별개의 알람이어야 한다.
 #
 # 1) 리터럴이 다르다: 로그는 '[isr-cache] tag sync|publish|prune failed'라 위 필터에 안 걸린다.

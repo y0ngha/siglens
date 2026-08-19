@@ -103,7 +103,7 @@ aws elbv2 describe-target-health --target-group-arn <TG_ARN> --profile siglens
    ```
 2. **새 태그를 앞으로 자르기** — revert 커밋 후 `v0.48.1` 같은 새 태그를 push. 히스토리가 선형으로 남으므로 원인이 코드에 있을 때 선호.
 
-⚠️ **ISR 캐시는 롤백을 따라오지 않는다.** S3 캐시 prefix는 `GIT_SHA`(=릴리스 버전)로 분리되므로, 이전 버전으로 되돌리면 그 버전 prefix의 캐시가 이미 lifecycle(14일)로 지워졌을 수 있다. 그 경우 롤백 직후 전 라우트가 cold-gen이 되어 origin 부하가 튄다 — 정상이며 몇 분 내 안정된다. SSM `prev-isr-buildid` 드리프트는 [ISR_CACHE_HANDLER.md](./ISR_CACHE_HANDLER.md) §5 참고.
+⚠️ **ISR 캐시는 롤백을 따라오지 않는다.** S3 캐시 prefix는 `GIT_SHA`(=릴리스 버전)로 분리되므로, 이전 버전으로 되돌리면 그 버전 prefix의 캐시가 이미 lifecycle(7일)로 지워졌을 수 있다 — 롤백 안전 창이 14일에서 7일로 줄었다. 그 경우 롤백 직후 전 라우트가 cold-gen이 되어 origin 부하가 튄다 — 정상이며 몇 분 내 안정된다. SSM `prev-isr-buildid` 드리프트는 [ISR_CACHE_HANDLER.md](./ISR_CACHE_HANDLER.md) §5 참고.
 
 ⚠️ **3자산군 릴리스(v0.57.0~) 이전으로 롤백할 땐 KR 캘린더 행을 지워야 한다.**
 
