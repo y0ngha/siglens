@@ -1,5 +1,29 @@
 # Changelog
 
+# [0.59.0](https://github.com/y0ngha/siglens/compare/v0.58.0...v0.59.0) (2026-08-19)
+
+
+### Bug Fixes
+
+* 자체 결함 및 알람·캐시 정비 ([8334df8](https://github.com/y0ngha/siglens/commit/8334df8eebe455a5219d1669da2b0942a5c3d322))
+* claude-review 지적 반영 — 메트릭 필터 제약 + 테스트 ([5169b58](https://github.com/y0ngha/siglens/commit/5169b58bf93dbf6b4f44c9d15c808fe6bacb1939)), closes [#4](https://github.com/y0ngha/siglens/issues/4)
+* claude-review suggestion 반영 — 게이트 상수 export + 예산 하한 ([9deca21](https://github.com/y0ngha/siglens/commit/9deca215ffd4e294094c4bd7b4d89e6c44e5bdee))
+* HTTP 상태 코드를 node:http2 상수로 교체 (CONVENTIONS.md) ([65a059f](https://github.com/y0ngha/siglens/commit/65a059f9bc45332ba3a98d6489aa37279e9a83e8))
+* SSR/클라 기준 차이를 명시해 요약 수치 노출 ([ed7f613](https://github.com/y0ngha/siglens/commit/ed7f61395fc6cbab8650cca1394bf6c5aa1311d9))
+
+
+### Features
+
+* 자체 클라이언트 에러 수집 (Sentry 대체) ([75261ba](https://github.com/y0ngha/siglens/commit/75261bad97269edc17db13beaf835650cbcc560c))
+* thin-content 게이트 + fear-greed/congress 타임시리즈 요약 ([2c0c4ba](https://github.com/y0ngha/siglens/commit/2c0c4ba53c1d6b752f3ba8e3c47de62dd563a73b))
+
+
+### Performance Improvements
+
+* 스킬 전시용 프로젝션 분리로 RSC 페이로드 84% 축소 ([106d754](https://github.com/y0ngha/siglens/commit/106d75491c4c229593a767373353057485f4c24a))
+* AWS 비용 절감 — Redis 캐시 스탬피드 제거 + FETCH 엔트리 크기별 분리 ([beb5b88](https://github.com/y0ngha/siglens/commit/beb5b883601ad41c7dd4bc7858d6c5ff6e5c08a2))
+* economy 페이지의 RSC/클라이언트 경계 정비 ([a021afe](https://github.com/y0ngha/siglens/commit/a021afeb02b92404811a9e8e80d91934fa37a38f))
+
 # [0.58.0](https://github.com/y0ngha/siglens/compare/v0.57.1...v0.58.0) (2026-08-19)
 
 
