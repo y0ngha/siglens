@@ -15,8 +15,8 @@ vi.mock('@/widgets/dashboard/hooks/useMarketBriefing', () => ({
 /*
  * 목이 `variant`·`marketLabel`을 DOM으로 흘려보낸다. 삼키면 전체 실패 분기가
  * `variant="partial"`로 되돌아가도(=아무것도 못 불러온 화면이 "일부를 가져오지
- * 못했어요"라고 말하는 회귀) 아무 테스트가 안 깨진다 — 바로 위 IndexCard 목과
- * 같은 이유다.
+ * 못했어요"라고 말하는 회귀) 아무 테스트가 안 깨진다 — `IndexCard` 목과 같은
+ * 이유다.
  */
 vi.mock('@/widgets/dashboard/MarketDataErrorNotice', () => ({
     MarketDataErrorNotice: ({
@@ -417,6 +417,9 @@ describe('MarketSummaryPanel — KR scope', () => {
     const KR_SCOPE = {
         ...TEST_SCOPE,
         id: 'kr' as const,
+        // TEST_SCOPE에서 퍼오면 `'미국 증시'`가 그대로 따라온다 — 그러면 한국
+        // 화면이 미국 문구를 그려도 단언이 통과한다.
+        marketLabel: '한국 증시',
         currencySymbol: '₩',
         linkSectorCards: false,
     };
@@ -426,6 +429,24 @@ describe('MarketSummaryPanel — KR scope', () => {
             container.querySelectorAll<HTMLElement>('[data-testid^="index-"]')
         );
     }
+
+    /**
+     * 문구를 `'미국 증시'`로 박아 두면 한국 화면이 미국 얘기를 한다. 미국 scope로만
+     * 단언하면 그 회귀가 안 잡힌다 — `TEST_SCOPE.marketLabel`이 마침 `'미국 증시'`라
+     * 하드코딩과 구분되지 않기 때문이다.
+     */
+    it('실패 안내에 이 시장의 이름을 넘긴다', () => {
+        mockUseMarketSummary.mockReturnValue({
+            ...defaultSummaryReturn,
+            data: { ok: false },
+        });
+
+        render(<MarketSummaryPanel scope={KR_SCOPE} />);
+
+        const notice = screen.getByTestId('data-error-notice');
+        expect(notice).toHaveAttribute('data-market-label', '한국 증시');
+        expect(notice).toHaveAttribute('data-variant', 'total');
+    });
 
     it('섹터 카드에 링크를 붙이지 않고 통화 기호를 ₩로 넘긴다', () => {
         const { container } = render(<MarketSummaryPanel scope={KR_SCOPE} />);

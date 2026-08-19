@@ -4,8 +4,9 @@
  *
  * 한 pass가 아니라 **진전이 없을 때까지** 반복한다 — 리포지토리 스캔이 요청 경로용
  * 상한(20행)을 걸고 있어서, 한 번만 부르면 조용히 20건만 처리한다. 스캔이 비면
- * 정상 종료, 한 pass가 아무것도 저장하지 못하면 남은 행을 보고하고 중단한다
- * (완주가 곧 "테이블이 비었다"는 뜻은 아니다).
+ * 정상 종료(그때는 실제로 남은 미분석 행이 없다), 한 pass가 아무것도 저장하지
+ * 못하면 중단 시점의 **스캔 페이지** 건수를 보고하고 멈춘다 — 그 경우 실제 잔량은
+ * 알 수 없다.
  *
  * Usage (after SP-A backfill):
  *   yarn db:seed:calendar-analysis          # 기본 US
@@ -122,13 +123,13 @@ async function run(): Promise<void> {
         /**
          * `listUnanalyzedAnnounced`는 한 번에 `UNANALYZED_SCAN_LIMIT`(20)까지만
          * 준다 — 페이지 로드에서 시작하는 요청 경로용 상한이다. 이 스크립트는
-         * 백필이므로 **비워질 때까지** 돌려야 한다. 한 번만 부르면 KR처럼 조회 창이
+         * 백필이므로 여러 pass에 걸쳐 돌려야 한다. 한 번만 부르면 KR처럼 조회 창이
          * 넓은(180일) 국가에서 20건만 처리하고 "Done"을 찍는데, 로그만 봐서는 원래
          * 20건이었던 것과 구분되지 않는다.
          *
-         * 종료 조건은 "빈 결과"가 아니라 **"이번 pass가 아무것도 저장하지 못함"**
-         * 이다. 저장에 실패한 행은 `analyzed_at`이 그대로라 다음 스캔에 또 나오므로,
-         * 빈 결과만 기다리면 영구 실패 행 하나로 무한 루프가 된다.
+         * 종료 조건은 둘이다 — 스캔이 비었거나(정상), 이번 pass가 아무것도 저장하지
+         * 못했거나(중단). 저장에 실패한 행은 `analyzed_at`이 그대로라 다음 스캔에 또
+         * 나오므로, **빈 결과만** 기다리면 영구 실패 행 하나로 무한 루프가 된다.
          */
         for (let pass = 1; ; pass += 1) {
             const pending = await repo.listUnanalyzedAnnounced(
@@ -156,6 +157,9 @@ async function run(): Promise<void> {
         console.log(
             `Done — analyzed ${analyzed}, failed ${failedIds.size} row(s)`
         );
+        // 실패는 throw와 똑같이 치명적이다 — LLM 환경변수 오설정으로 전 행이
+        // 실패해도 exit 0이면 `yarn db:seed:... && <다음 단계>`가 그냥 이어진다.
+        if (failedIds.size > 0) process.exitCode = 1;
     } finally {
         await client.end();
     }
