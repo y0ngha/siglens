@@ -52,6 +52,10 @@ const sharedTestConfig = {
  */
 const coverageConfig = {
     provider: 'v8' as const,
+    // 실패한 실행에서도 리포트를 낸다. 기본값(false)이면 테스트가 하나라도 깨질 때
+    // **커버리지 표가 아예 안 나온다** — 커버리지를 재려던 사람은 빈 출력을 보고
+    // "측정이 안 됐다"고 오진한다(2026-08 감사에서 실제로 한 번 속았다).
+    reportOnFailure: true,
     include: [
         'src/entities/**/*.{ts,tsx}',
         'src/features/**/*.{ts,tsx}',

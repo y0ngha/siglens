@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { SITE_NAME } from '@/shared/lib/seo';
+import { reportClientError } from '@/shared/lib/reportClientError';
 
 interface SymbolErrorProps {
     error: Error & { digest?: string };
@@ -23,6 +24,7 @@ export default function SymbolError({ error, reset }: SymbolErrorProps) {
     useEffect(() => {
         // `digest` ties this client log to the server-side error entry.
         console.error('[SymbolRoute] render error:', error);
+        reportClientError(error, 'SymbolRoute', error.digest);
     }, [error]);
 
     return (

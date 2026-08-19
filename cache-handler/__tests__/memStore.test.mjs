@@ -233,3 +233,28 @@ describe('memStore는', () => {
         expect(store.getEntry('b')).toBeNull();
     });
 });
+
+describe('ISR_FETCH_CACHE_DISABLED 킬 스위치는', () => {
+    it('setEntry를 거부한다 — 그래야 index.mjs가 S3로 되돌린다', () => {
+        vi.stubEnv('ISR_FETCH_CACHE_DISABLED', 'true');
+        expect(setEntry('k', fetchEntry(10))).toBe(false);
+    });
+
+    it('이미 저장된 엔트리도 miss로 가린다', () => {
+        // 먼저 켜진 상태로 채운다 — 이게 "껐다"와 "아직 안 채웠다"를 가르는 지점이다.
+        setEntry('k', fetchEntry(10));
+        expect(getEntry('k')).not.toBeNull();
+
+        vi.stubEnv('ISR_FETCH_CACHE_DISABLED', 'true');
+        expect(getEntry('k')).toBeNull();
+
+        // 되돌리면 다시 보인다 — 데이터가 지워진 게 아니라 가려진 것뿐이다.
+        vi.unstubAllEnvs();
+        expect(getEntry('k')).not.toBeNull();
+    });
+
+    it("'true'가 아닌 값은 스위치를 켜지 않는다", () => {
+        vi.stubEnv('ISR_FETCH_CACHE_DISABLED', '1');
+        expect(setEntry('k', fetchEntry(10))).toBe(true);
+    });
+});

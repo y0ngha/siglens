@@ -166,6 +166,10 @@ describe('SymbolPage — FactLayer SSR integration', () => {
         mockGetAssetInfoResilient.mockResolvedValue(DEFAULT_ASSET_INFO);
         // Default: no SEO snapshot row — existing FactLayer-only behavior.
         mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+        // seed 헬퍼의 기본 반환값. 이 스위트의 주제는 FactLayer(전체 지표)라 seed 값
+        // 자체는 무관하지만, 페이지가 `.catch(→null)`로 감싸므로 mock이 **Promise를
+        // 돌려줘야** 한다. `vi.fn()` 기본 반환은 undefined라 `.catch`에서 터진다.
+        mockGetSeedBarsStatic.mockResolvedValue(null);
     });
 
     it('Happy: bars 있으면 Suspense fallback에 TechnicalFactsSummary(SSR)를 렌더한다', async () => {
@@ -275,6 +279,20 @@ describe('SymbolPage — FactLayer SSR integration', () => {
         const fact = findElementByType(fallback, TechnicalFactsSummary);
 
         expect(fact).toBeNull();
+    });
+
+    it('Worst: getSeedBarsStatic이 reject해도 페이지가 resolve된다(seed 생략)', async () => {
+        // seed 경로는 fail-open이다. `keepLastNonNull`이 배열 메서드를 부르므로
+        // 런타임 shape가 IndicatorResult를 벗어나면 throw할 수 있고, 그때 페이지가
+        // 깨지면 안 된다. 형제 경로(getQuantizedBarsStatic)는 이미 같은 잠금이 있다.
+        mockBarsStatic.mockResolvedValue({ bars: [], indicators: {} } as never);
+        mockGetSeedBarsStatic.mockRejectedValue(new Error('seed boom'));
+
+        const tree = await SymbolPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(tree).toBeTruthy();
     });
 
     describe('SEO snapshot prose (snapshot-first, complementary to FactLayer)', () => {

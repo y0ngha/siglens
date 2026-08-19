@@ -217,17 +217,25 @@ export default async function SymbolPage({ params }: Props) {
         // 첫 페인트는 rsi·macd·buySellVolume만 읽는다(getSeedBarsStatic JSDoc).
         // 내부적으로 같은 `getQuantizedBarsStatic` 결과를 재사용하므로 추가 fetch는 없고,
         // layout과 같은 인자로 호출해야 참조가 접혀 한 벌만 직렬화된다.
+        // layout·fear-greed와 동일하게 fail-open으로 감싼다. 이 호출은 예전엔
+        // 속성 읽기라 throw할 수 없었지만, 이제 `keepLastNonNull`이 배열 메서드를
+        // 부르므로 런타임 shape가 `IndicatorResult`를 벗어나면 throw할 수 있다.
         const seedBars = await getSeedBarsStatic(
             ticker,
             DEFAULT_TIMEFRAME,
             marketProfile,
             assetInfo.fmpSymbol
-        );
-        queryClient.setQueryData(
-            QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
-            seedBars,
-            { updatedAt: stableUpdatedAt }
-        );
+        ).catch((e: unknown) => {
+            console.error('[SymbolPage] getSeedBarsStatic failed:', e);
+            return null;
+        });
+        if (seedBars !== null) {
+            queryClient.setQueryData(
+                QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
+                seedBars,
+                { updatedAt: stableUpdatedAt }
+            );
+        }
     }
 
     // peek은 읽기 전용 — enqueue/생성 없음. MISS·corrupt·read 실패는 모두 MISS로

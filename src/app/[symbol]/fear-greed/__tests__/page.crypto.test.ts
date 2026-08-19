@@ -4,7 +4,7 @@
  * Verifies two call sites added during the crypto audit:
  *   (a) buildAssetAboutNode receives assetClass 'crypto' for a crypto asset,
  *       causing the about node to be omitted from the JSON-LD output.
- *   (b) getQuantizedBarsStatic receives the right marketProfile string
+ *   (b) getSeedBarsStatic receives the right marketProfile string
  *       ('crypto' / 'us-equity'). 세션 spec 매핑 자체는 그 헬퍼 내부 책임이라
  *       src/entities/bars/__tests__/lib/barsStaticCache.test.ts가 검증한다.
  *
@@ -16,12 +16,12 @@ const {
     mockSetQueryData,
     mockGetAssetInfoResilient,
     mockBuildAssetAboutNode,
-    mockGetQuantizedBarsStatic,
+    mockGetSeedBarsStatic,
 } = vi.hoisted(() => ({
     mockSetQueryData: vi.fn(),
     mockGetAssetInfoResilient: vi.fn(),
     mockBuildAssetAboutNode: vi.fn(),
-    mockGetQuantizedBarsStatic: vi.fn(),
+    mockGetSeedBarsStatic: vi.fn(),
 }));
 
 vi.mock('@y0ngha/siglens-core', () => ({
@@ -59,7 +59,7 @@ vi.mock('@/entities/bars', () => ({
     // 세션 spec 유도는 이제 헬퍼 내부 책임이라 여기서는 위임 인자
     // (ticker, timeframe, marketProfile, fmpSymbol)만 포착한다.
 
-    getQuantizedBarsStatic: mockGetQuantizedBarsStatic,
+    getSeedBarsStatic: mockGetSeedBarsStatic,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -124,9 +124,9 @@ describe('SymbolFearGreedPage — crypto branching', () => {
     beforeEach(() => {
         mockSetQueryData.mockClear();
         mockGetAssetInfoResilient.mockReset();
-        mockGetQuantizedBarsStatic.mockReset();
+        mockGetSeedBarsStatic.mockReset();
         mockBuildAssetAboutNode.mockReset();
-        mockGetQuantizedBarsStatic.mockResolvedValue(QUANTIZED);
+        mockGetSeedBarsStatic.mockResolvedValue(QUANTIZED);
         // Default: about node returns undefined (crypto / non-stock).
         mockBuildAssetAboutNode.mockReturnValue(undefined);
     });
@@ -182,10 +182,10 @@ describe('SymbolFearGreedPage — crypto branching', () => {
             params: Promise.resolve({ symbol: 'BTCUSD' }),
         });
 
-        // 세션 매핑(crypto → always-open)은 `getQuantizedBarsStatic` 내부 책임으로
+        // 세션 매핑(crypto → always-open)은 `getSeedBarsStatic` 내부 책임으로
         // 옮겨졌다(barsStaticCache.test.ts가 검증). 여기서는 페이지가 crypto
         // marketProfile을 헬퍼에 정확히 넘기는지만 본다.
-        expect(mockGetQuantizedBarsStatic).toHaveBeenCalledWith(
+        expect(mockGetSeedBarsStatic).toHaveBeenCalledWith(
             'BTCUSD',
             '1Day',
             'crypto',
@@ -203,7 +203,7 @@ describe('SymbolFearGreedPage — crypto branching', () => {
             params: Promise.resolve({ symbol: 'AAPL' }),
         });
 
-        expect(mockGetQuantizedBarsStatic).toHaveBeenCalledWith(
+        expect(mockGetSeedBarsStatic).toHaveBeenCalledWith(
             'AAPL',
             '1Day',
             'us-equity',

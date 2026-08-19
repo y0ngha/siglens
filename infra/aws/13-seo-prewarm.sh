@@ -208,7 +208,15 @@ ALARM_SNS="${ALARM_SNS:-$(aws sns create-topic --name siglens-alerts --query Top
 # 디스크풀 인시던트(AlarmActions=[]로 조용히 진행)와 같은 종류의 "액션 없는 알람" 사각지대.
 [[ -n "${ALARM_EMAIL:-}" ]] && aws sns subscribe --topic-arn "$ALARM_SNS" --protocol email \
   --notification-endpoint "$ALARM_EMAIL" --region "$REGION" >/dev/null 2>&1 || true
-ACTIONS="--alarm-actions $ALARM_SNS --ok-actions $ALARM_SNS"
+# 07-alarms.sh와 같은 2단 체계. pre-warm 알람은 전부 P2다 — 크론이 한 번 실패해도
+# 사용자에게 즉시 보이는 장애가 아니고, 다음 회차가 따라잡는다. 복구 알림은 보내지 않는다.
+ALARM_SNS_LOW="${ALARM_SNS_LOW:-$(aws sns create-topic --name siglens-alerts-low --query TopicArn --output text --region "$REGION")}"
+# 구독은 여기서도 건다(멱등). 07-alarms.sh만 구독하던 시절 이 스크립트들의 알람은
+# **구독자 0명인 토픽**으로 발동했다 — 콘솔만 빨개지고 아무에게도 안 갔다.
+LOW_EMAIL="${ALARM_EMAIL_LOW:-${ALARM_EMAIL:-}}"
+[[ -n "$LOW_EMAIL" ]] && aws sns subscribe --topic-arn "$ALARM_SNS_LOW" --protocol email \
+  --notification-endpoint "$LOW_EMAIL" --region "$REGION" >/dev/null 2>&1 || true
+ACTIONS="--alarm-actions $ALARM_SNS_LOW"
 
 # 딜리버리 부재 알람(OPS-1): 배치 내부 실패는 batch-failed가 잡지만, EventBridge가
 # 애초에 타겟 호출 자체를 실패하면(Connection 미인증, API Destination 오류, IAM 등)

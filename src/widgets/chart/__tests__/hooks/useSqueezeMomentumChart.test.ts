@@ -130,10 +130,10 @@ describe('useSqueezeMomentumChart', () => {
         const momentumColorFn = vi
             .mocked(buildSeriesData)
             .mock.calls.find(c => c[2] === 'momentum')?.[3];
-        expect(momentumColorFn?.(3, { increasing: true } as never, 0)).toBe(
+        expect(momentumColorFn?.(3, { increasing: true } as never)).toBe(
             CHART_COLORS.squeezeMomentumUp
         );
-        expect(momentumColorFn?.(3, { increasing: false } as never, 0)).toBe(
+        expect(momentumColorFn?.(3, { increasing: false } as never)).toBe(
             CHART_COLORS.squeezeMomentumUpWeak
         );
         // 상태 점은 squeezeStateColor 함수 자체를 buildZeroLineDots에 넘긴다.

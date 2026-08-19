@@ -2,6 +2,7 @@
 
 import { type RefObject, useEffect } from 'react';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
+import { tailAligned } from '../utils/seriesDataUtils';
 import type { Bar, BuySellVolumeResult } from '@y0ngha/siglens-core';
 
 interface UseVolumeChartDataOptions {
@@ -40,11 +41,15 @@ export function useVolumeChartData({
             }))
         );
 
+        // 정렬 규약은 `tailAligned`가 소유한다. 예전 주석은 "인프라 계층이 길이를
+        // 보장한다"였는데, RSC seed가 지표를 축소해 보내면서 그 전제가 깨졌다
+        // (`getSeedBarsStatic`). 좌측 정렬 + non-null 단언 조합은 길이가 어긋나면
+        // `undefined.buyVolume`으로 **throw**했다 — 사이에 ErrorBoundary가 없어
+        // 차트가 통째로 빈다.
         buySeriesRef.current.setData(
-            bars.map(({ time }, i) => ({
+            tailAligned(bars, buySellVolume).map(({ time }, i) => ({
                 time: time as UTCTimestamp,
-                // bars and buySellVolume are guaranteed same length by infrastructure layer
-                value: buySellVolume[i]!.buyVolume,
+                value: buySellVolume[i]?.buyVolume ?? 0,
             }))
         );
 
