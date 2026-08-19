@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { SITE_NAME } from '@/shared/lib/seo';
+import { reportClientError } from '@/shared/lib/reportClientError';
 
 interface ShareErrorProps {
     error: Error & { digest?: string };
@@ -19,6 +20,7 @@ interface ShareErrorProps {
 export default function ShareError({ error, reset }: ShareErrorProps) {
     useEffect(() => {
         console.error('[ShareRoute] render error:', error);
+        reportClientError(error, 'ShareRoute', error.digest);
     }, [error]);
 
     return (

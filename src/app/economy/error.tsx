@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { SITE_NAME } from '@/shared/lib/seo';
+import { reportClientError } from '@/shared/lib/reportClientError';
 
 interface EconomyErrorProps {
     error: Error & { digest?: string };
@@ -22,6 +23,7 @@ export default function EconomyError({ error, reset }: EconomyErrorProps) {
     useEffect(() => {
         // `digest` ties this client log to the server-side error entry.
         console.error('[EconomyRoute] render error:', error);
+        reportClientError(error, 'EconomyRoute', error.digest);
     }, [error]);
 
     return (
