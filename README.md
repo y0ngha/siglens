@@ -384,8 +384,6 @@ Always install with `yarn`. `npm` and `pnpm` are not used.
 | `yarn db:seed:crypto-korean` | Seed Korean crypto names |
 | `yarn db:backfill:calendar` | Backfill the economic calendar |
 | `yarn db:seed:calendar-analysis` | Seed economic calendar analysis |
-| `yarn db:seed:calendar-analysis:batch` | Batch seed calendar analysis |
-| `yarn db:seed:indicator-translations:batch` | Batch seed indicator translations |
 | `yarn test` | Full Vitest suite |
 | `yarn test:quiet` | Vitest with the dot reporter |
 | `yarn test:related` | Vitest for changed files |

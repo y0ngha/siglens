@@ -14,8 +14,11 @@ import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
  *
  * 변동성은 요약 안의 실제 시세에서 가져온다. `volatilityIndexSymbol`이 없거나
  * 그 심볼이 요약에 없으면 `null` — 프롬프트는 안 준 숫자를 묻지 않는다.
- * 조회 실패 sentinel(`price: 0`)이나 비유한값은 core sanitizer가 다시 `null`로
- * 눕히므로 여기서 중복 검사하지 않는다.
+ * 조회 실패 sentinel(`price: 0`)이나 비유한값은 **프롬프트에서만** core sanitizer가
+ * `null`로 눕힌다(`buildMarketBriefingPrompt`의 `isFinite && > 0` 게이트).
+ * `hashBriefingInput`은 그런 검사 없이 값을 그대로 접으므로 캐시 키까지 정규화되지는
+ * 않는다 — 다만 시세 조회가 실패하면 해시되는 `indices` 항목도 같이 0이 되어 키가
+ * 어차피 갈리므로, 여기서 중복 검사하지 않는다.
  */
 export function marketBriefingContextOf(
     scope: ClientDashboardScope,

@@ -382,8 +382,6 @@ yarn test            # Vitest
 | `yarn db:seed:crypto-korean` | 암호화폐 한국어 이름 seed |
 | `yarn db:backfill:calendar` | 경제 캘린더 backfill |
 | `yarn db:seed:calendar-analysis` | 경제 캘린더 분석 seed |
-| `yarn db:seed:calendar-analysis:batch` | 캘린더 분석 batch seed |
-| `yarn db:seed:indicator-translations:batch` | 지표 번역 batch seed |
 | `yarn test` | Vitest 전체 |
 | `yarn test:quiet` | dot 리포터 Vitest |
 | `yarn test:related` | 변경 파일 관련 테스트 |

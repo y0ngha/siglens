@@ -55,6 +55,16 @@ const summaryData: MarketSummaryData = {
             price: 5000,
             changesPercentage: 0.5,
         },
+        // VIX를 픽스처에 둔다 — 없으면 context가 `volatility: null`이라
+        // 쓰기·읽기 두 경로가 같은 값을 만드는지가 자명한 값에서만 고정된다.
+        {
+            symbol: 'VIX',
+            fmpSymbol: '^VIX',
+            displayName: 'VIX',
+            koreanName: '공포지수',
+            price: 18.3,
+            changesPercentage: -2.1,
+        },
     ],
     sectors: [
         {
@@ -106,7 +116,10 @@ describe('submitMarketBriefingAction 함수는', () => {
             // 같은 헬퍼로 조립되지 않으면 두 키가 갈려 peek이 영원히 미스한다.
             expect(mockRunBriefing).toHaveBeenCalledWith(
                 summaryData,
-                { marketLabel: '미국 증시', volatility: null },
+                {
+                    marketLabel: '미국 증시',
+                    volatility: { label: 'VIX', level: 18.3 },
+                },
                 { signal: undefined }
             );
         });

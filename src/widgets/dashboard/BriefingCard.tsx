@@ -24,10 +24,11 @@ function knownSectors(
     names: readonly string[],
     scope: ClientDashboardScope
 ): string[] {
-    const known = new Set([
-        ...scope.sectorEtfs.map(s => s.koreanName),
-        ...scope.signalSectors.map(s => s.koreanName),
-    ]);
+    // `sectorEtfs`만이 정확히 모델에 준 목록이다 — core `getMarketSummary`가
+    // 프롬프트의 섹터 행을 이 배열로만 만든다. `signalSectors`를 합치면 미국의
+    // 가상 테마(양자·우주 — 상장 ETF가 없어 브리핑 입력에 절대 없다)가 허용되어,
+    // 이 가드가 막으려던 바로 그 "지어낸 이름"을 통과시킨다.
+    const known = new Set(scope.sectorEtfs.map(s => s.koreanName));
     return names.filter(name => known.has(name));
 }
 

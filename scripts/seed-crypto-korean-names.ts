@@ -8,7 +8,7 @@
  * long-tail of low-liquidity assets is unlikely to be searched in Korean.
  *
  * Translation uses the Gemini Batch API (same pattern as
- * scripts/seedIndicatorTranslationsBatch.ts) rather than the live
+ * scripts/seedIndicatorTranslationsBatch.ts, 삭제됨) rather than the live
  * `translateCompanyNames` helper: the batch path is cheaper, resilient per-chunk,
  * and suited to a one-off offline seed rather than a real-time autocomplete call.
  *
@@ -55,7 +55,7 @@ const CRYPTO_KOREAN_TRANSLATE_LIMIT = Number(
     process.env.CRYPTO_KOREAN_TRANSLATE_LIMIT ?? '300'
 );
 
-// Mirrors CHUNK_SIZE in seedIndicatorTranslationsBatch.ts — 300 prompts/batch
+// Mirrors CHUNK_SIZE from the removed seedIndicatorTranslationsBatch.ts — 300 prompts/batch
 // stays within Gemini enqueue token limits for short translation prompts.
 const CHUNK_SIZE = 300;
 const GEMINI_MODEL = 'gemini-2.5-flash-lite';
@@ -116,7 +116,7 @@ Coin:
 }
 
 /**
- * Mirrors extractResponseText from seedIndicatorTranslationsBatch.ts.
+ * Mirrors extractResponseText from the removed seedIndicatorTranslationsBatch.ts.
  * Pulls the first candidate's first text part, returning null when absent or blank.
  */
 function extractResponseText(resp: InlinedResponse): string | null {
@@ -274,7 +274,7 @@ function buildInlinedRequest(id: string, prompt: string): InlinedRequest {
 
 /**
  * Polls a submitted Gemini Batch to completion (30s interval, 2h timeout).
- * Mirrors pollUntilComplete from seedIndicatorTranslationsBatch.ts.
+ * Mirrors pollUntilComplete from the removed seedIndicatorTranslationsBatch.ts.
  */
 async function pollUntilComplete(
     batchName: string
@@ -323,7 +323,7 @@ interface ChunkResult {
  * JSON response, then bulk-UPSERT valid translations into crypto_assets.korean_name.
  *
  * Uses id-based response mapping (metadata.id = symbol) for re-run safety,
- * mirroring processResponses in seedIndicatorTranslationsBatch.ts.
+ * mirroring processResponses in the removed seedIndicatorTranslationsBatch.ts.
  * onConflictDoUpdate on symbol so re-runs overwrite stale Korean names (unlike
  * the indicator seed's onConflictDoNothing — crypto names may be corrected).
  */

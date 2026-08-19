@@ -82,7 +82,10 @@ export function MarketSummaryPanel({
         if (!showNotice) return null;
         return (
             <section aria-label={heading} className="px-6 py-10 lg:px-[15vw]">
-                <MarketDataErrorNotice onClose={dismissNotice} />
+                <MarketDataErrorNotice
+                    marketLabel={scope.marketLabel}
+                    onClose={dismissNotice}
+                />
             </section>
         );
     }
@@ -97,6 +100,7 @@ export function MarketSummaryPanel({
             </h2>
             {showNotice && (
                 <MarketDataErrorNotice
+                    marketLabel={scope.marketLabel}
                     onClose={dismissNotice}
                     className="mb-6"
                 />
