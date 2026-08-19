@@ -10,6 +10,14 @@ interface MarketDataErrorNoticeProps {
      * 하나가 간헐적으로 빈다). `$`를 원화 종목에 붙였던 것과 같은 결함이다.
      */
     marketLabel: string;
+    /**
+     * 얼마나 실패했나.
+     *
+     * `'partial'`은 시세 일부만 빈 경우, `'total'`은 요약 자체가 없어 카드도 제목도
+     * 못 그리는 경우다. 문구를 하나로 두면 아무것도 못 불러온 화면이 "일부를
+     * 가져오지 못했어요"라고 말한다 — 화면 상태와 어긋나는 안내다.
+     */
+    variant: 'partial' | 'total';
     /** 'x' 클릭 시 호출 — 닫기 상태는 소비자(패널)가 소유한다. */
     onClose: () => void;
     className?: string;
@@ -23,6 +31,7 @@ interface MarketDataErrorNoticeProps {
  */
 export function MarketDataErrorNotice({
     marketLabel,
+    variant,
     onClose,
     className,
 }: MarketDataErrorNoticeProps) {
@@ -37,7 +46,9 @@ export function MarketDataErrorNotice({
             <span aria-hidden>⚠</span>
             <div className="flex-1 space-y-0.5">
                 <p>
-                    {marketLabel} 데이터를 불러오는 중 일부를 가져오지 못했어요.
+                    {variant === 'total'
+                        ? `${marketLabel} 데이터를 불러오지 못했어요.`
+                        : `${marketLabel} 데이터를 불러오는 중 일부를 가져오지 못했어요.`}
                 </p>
                 <p className="text-ui-warning/80">
                     잠시 후 새로고침해 다시 시도해 주세요.

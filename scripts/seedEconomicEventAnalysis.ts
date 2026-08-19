@@ -2,6 +2,9 @@
  * One-time SEED script: analyze all current Medium+ announced unanalyzed
  * `economic_calendar` rows via core `runEconomicEventAnalysis` (direct, non-queued).
  *
+ * 한 pass가 아니라 **테이블이 빌 때까지** 반복한다 — 리포지토리 스캔이 요청 경로용
+ * 상한(20행)을 걸고 있어서, 한 번만 부르면 조용히 20건만 처리한다.
+ *
  * Usage (after SP-A backfill):
  *   yarn db:seed:calendar-analysis          # 기본 US
  *   CALENDAR_COUNTRY=KR yarn db:seed:calendar-analysis
@@ -47,6 +50,54 @@ if (!isCalendarCountry(seedCountryRaw)) {
 }
 const seedCountry = seedCountryRaw;
 
+type PendingRow = Awaited<
+    ReturnType<DrizzleEconomicCalendarRepository['listUnanalyzedAnnounced']>
+>[number];
+
+/** 한 pass를 SEED_PARALLEL_LIMIT씩 끊어 처리하고 성공·실패 건수를 돌려준다. */
+async function seedPass(
+    pending: readonly PendingRow[],
+    repo: DrizzleEconomicCalendarRepository
+): Promise<{ analyzed: number; failed: number }> {
+    const total = pending.length;
+    let analyzed = 0;
+    let failed = 0;
+
+    for (let i = 0; i < total; i += SEED_PARALLEL_LIMIT) {
+        const chunk = pending.slice(i, i + SEED_PARALLEL_LIMIT);
+        const results = await Promise.allSettled(
+            chunk.map(async row => {
+                const input = {
+                    region: CALENDAR_REGION_LABEL[seedCountry],
+                    event: row.event,
+                    impact: row.impact,
+                    actual: row.actual,
+                    estimate: row.estimate,
+                    previous: row.previous,
+                    unit: row.unit,
+                };
+
+                // `RunEconomicEventAnalysisResult`는 cached|done 뿐이다 —
+                // LLM 실패는 throw로 올라와 allSettled가 수거한다.
+                const result = await runEconomicEventAnalysis(input);
+                await repo.attachEventAnalysis(row.id, result.result);
+            })
+        );
+
+        for (const r of results) {
+            if (r.status === 'fulfilled') {
+                analyzed += 1;
+            } else {
+                failed += 1;
+                console.error('  analyze failed:', r.reason);
+            }
+        }
+        console.log(`  ${Math.min(i + SEED_PARALLEL_LIMIT, total)}/${total}`);
+    }
+
+    return { analyzed, failed };
+}
+
 async function run(): Promise<void> {
     const client = postgres(databaseUrl!, { max: 1 });
     try {
@@ -56,50 +107,40 @@ async function run(): Promise<void> {
         const db = drizzle(client) as unknown as SiglensDatabase;
         const repo = new DrizzleEconomicCalendarRepository(db);
 
-        const pending = await repo.listUnanalyzedAnnounced(
-            CALENDAR_ANALYZED_IMPACTS,
-            seedCountry
-        );
-        const total = pending.length;
-        console.log(
-            `Seeding analysis for ${total} Medium+ announced ${seedCountry} event(s)`
-        );
-
         let analyzed = 0;
         let failed = 0;
 
-        for (let i = 0; i < total; i += SEED_PARALLEL_LIMIT) {
-            const chunk = pending.slice(i, i + SEED_PARALLEL_LIMIT);
-            const results = await Promise.allSettled(
-                chunk.map(async row => {
-                    const input = {
-                        region: CALENDAR_REGION_LABEL[seedCountry],
-                        event: row.event,
-                        impact: row.impact,
-                        actual: row.actual,
-                        estimate: row.estimate,
-                        previous: row.previous,
-                        unit: row.unit,
-                    };
-
-                    // `RunEconomicEventAnalysisResult`는 cached|done 뿐이다 —
-                    // LLM 실패는 throw로 올라와 아래 allSettled가 수거한다.
-                    const result = await runEconomicEventAnalysis(input);
-                    await repo.attachEventAnalysis(row.id, result.result);
-                })
+        /**
+         * `listUnanalyzedAnnounced`는 한 번에 `UNANALYZED_SCAN_LIMIT`(20)까지만
+         * 준다 — 페이지 로드에서 시작하는 요청 경로용 상한이다. 이 스크립트는
+         * 백필이므로 **비워질 때까지** 돌려야 한다. 한 번만 부르면 KR처럼 조회 창이
+         * 넓은(180일) 국가에서 20건만 처리하고 "Done"을 찍는데, 로그만 봐서는 원래
+         * 20건이었던 것과 구분되지 않는다.
+         *
+         * 종료 조건은 "빈 결과"가 아니라 **"이번 pass가 아무것도 저장하지 못함"**
+         * 이다. 저장에 실패한 행은 `analyzed_at`이 그대로라 다음 스캔에 또 나오므로,
+         * 빈 결과만 기다리면 영구 실패 행 하나로 무한 루프가 된다.
+         */
+        for (let pass = 1; ; pass += 1) {
+            const pending = await repo.listUnanalyzedAnnounced(
+                CALENDAR_ANALYZED_IMPACTS,
+                seedCountry
             );
+            if (pending.length === 0) break;
 
-            for (const r of results) {
-                if (r.status === 'fulfilled') {
-                    analyzed += 1;
-                } else {
-                    failed += 1;
-                    console.error('  analyze failed:', r.reason);
-                }
-            }
             console.log(
-                `  ${Math.min(i + SEED_PARALLEL_LIMIT, total)}/${total}`
+                `[pass ${pass}] ${pending.length} Medium+ announced ${seedCountry} event(s)`
             );
+            const result = await seedPass(pending, repo);
+            analyzed += result.analyzed;
+            failed += result.failed;
+
+            if (result.analyzed === 0) {
+                console.error(
+                    `[pass ${pass}] 저장된 행이 없어 중단합니다 — 남은 ${pending.length}건이 계속 실패 중입니다.`
+                );
+                break;
+            }
         }
 
         console.log(`Done — analyzed ${analyzed}, failed ${failed}`);

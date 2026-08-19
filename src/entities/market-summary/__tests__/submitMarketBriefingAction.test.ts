@@ -177,6 +177,14 @@ describe('submitMarketBriefingAction 함수는', () => {
                 expect.anything(),
                 KR_DASHBOARD_SCOPE
             );
+            // 픽스처에는 VIX가 들어 있다 — `volatilityIndexSymbol: null`인 시장이
+            // 그걸 **무시하는지**가 이 단언의 요점이다. VIX가 새어 들어가면 KR
+            // 캐시 키가 쓰기·읽기 사이에서 갈린다.
+            expect(mockRunBriefing).toHaveBeenCalledWith(
+                summaryData,
+                { marketLabel: '한국 증시', volatility: null },
+                { signal: undefined }
+            );
             expect(result).toEqual({
                 briefing: briefingResult,
                 botBlocked: false,

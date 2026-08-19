@@ -84,6 +84,7 @@ export function MarketSummaryPanel({
             <section aria-label={heading} className="px-6 py-10 lg:px-[15vw]">
                 <MarketDataErrorNotice
                     marketLabel={scope.marketLabel}
+                    variant="total"
                     onClose={dismissNotice}
                 />
             </section>
@@ -101,6 +102,7 @@ export function MarketSummaryPanel({
             {showNotice && (
                 <MarketDataErrorNotice
                     marketLabel={scope.marketLabel}
+                    variant="partial"
                     onClose={dismissNotice}
                     className="mb-6"
                 />
