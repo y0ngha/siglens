@@ -12,9 +12,27 @@ vi.mock('@/widgets/dashboard/hooks/useMarketBriefing', () => ({
     useMarketBriefing: () => mockUseMarketBriefing(),
 }));
 
+/*
+ * 목이 `variant`·`marketLabel`을 DOM으로 흘려보낸다. 삼키면 전체 실패 분기가
+ * `variant="partial"`로 되돌아가도(=아무것도 못 불러온 화면이 "일부를 가져오지
+ * 못했어요"라고 말하는 회귀) 아무 테스트가 안 깨진다 — 바로 위 IndexCard 목과
+ * 같은 이유다.
+ */
 vi.mock('@/widgets/dashboard/MarketDataErrorNotice', () => ({
-    MarketDataErrorNotice: ({ onClose }: { onClose: () => void }) => (
-        <div data-testid="data-error-notice">
+    MarketDataErrorNotice: ({
+        variant,
+        marketLabel,
+        onClose,
+    }: {
+        variant: string;
+        marketLabel: string;
+        onClose: () => void;
+    }) => (
+        <div
+            data-testid="data-error-notice"
+            data-variant={variant}
+            data-market-label={marketLabel}
+        >
             <button onClick={onClose}>close-notice</button>
         </div>
     ),
@@ -107,7 +125,11 @@ describe('MarketSummaryPanel', () => {
             data: { ok: false },
         });
         render(<MarketSummaryPanel scope={TEST_SCOPE} />);
-        expect(screen.getByTestId('data-error-notice')).toBeInTheDocument();
+        const notice = screen.getByTestId('data-error-notice');
+        expect(notice).toBeInTheDocument();
+        // 카드도 제목도 없는 화면이므로 "일부"가 아니라 전체 실패 문구여야 한다.
+        expect(notice).toHaveAttribute('data-variant', 'total');
+        expect(notice).toHaveAttribute('data-market-label', '미국 증시');
         expect(screen.queryByText('오늘의 미국 시장')).not.toBeInTheDocument();
     });
 
@@ -137,7 +159,9 @@ describe('MarketSummaryPanel', () => {
             hasMissingQuotes: true,
         });
         render(<MarketSummaryPanel scope={TEST_SCOPE} />);
-        expect(screen.getByTestId('data-error-notice')).toBeInTheDocument();
+        const notice = screen.getByTestId('data-error-notice');
+        expect(notice).toBeInTheDocument();
+        expect(notice).toHaveAttribute('data-variant', 'partial');
         expect(screen.getByText('오늘의 미국 시장')).toBeInTheDocument();
         expect(screen.getByTestId('index-SPY')).toBeInTheDocument();
     });

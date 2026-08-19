@@ -2,8 +2,10 @@
  * One-time SEED script: analyze all current Medium+ announced unanalyzed
  * `economic_calendar` rows via core `runEconomicEventAnalysis` (direct, non-queued).
  *
- * 한 pass가 아니라 **테이블이 빌 때까지** 반복한다 — 리포지토리 스캔이 요청 경로용
- * 상한(20행)을 걸고 있어서, 한 번만 부르면 조용히 20건만 처리한다.
+ * 한 pass가 아니라 **진전이 없을 때까지** 반복한다 — 리포지토리 스캔이 요청 경로용
+ * 상한(20행)을 걸고 있어서, 한 번만 부르면 조용히 20건만 처리한다. 스캔이 비면
+ * 정상 종료, 한 pass가 아무것도 저장하지 못하면 남은 행을 보고하고 중단한다
+ * (완주가 곧 "테이블이 비었다"는 뜻은 아니다).
  *
  * Usage (after SP-A backfill):
  *   yarn db:seed:calendar-analysis          # 기본 US
@@ -54,14 +56,20 @@ type PendingRow = Awaited<
     ReturnType<DrizzleEconomicCalendarRepository['listUnanalyzedAnnounced']>
 >[number];
 
-/** 한 pass를 SEED_PARALLEL_LIMIT씩 끊어 처리하고 성공·실패 건수를 돌려준다. */
+/**
+ * 한 pass를 SEED_PARALLEL_LIMIT씩 끊어 처리한다.
+ *
+ * 실패는 **행 id로** 모은다. 실패한 행은 `analyzed_at`이 그대로라 다음 pass에 또
+ * 나오는데, pass마다 카운터를 올리면 최종 집계가 시도 횟수가 되어 테이블 크기를
+ * 넘어선다(25건 백로그에 "analyzed 24, failed 3" 같은 화해 불가능한 숫자).
+ */
 async function seedPass(
     pending: readonly PendingRow[],
-    repo: DrizzleEconomicCalendarRepository
-): Promise<{ analyzed: number; failed: number }> {
+    repo: DrizzleEconomicCalendarRepository,
+    failedIds: Set<string>
+): Promise<{ analyzed: number }> {
     const total = pending.length;
     let analyzed = 0;
-    let failed = 0;
 
     for (let i = 0; i < total; i += SEED_PARALLEL_LIMIT) {
         const chunk = pending.slice(i, i + SEED_PARALLEL_LIMIT);
@@ -84,18 +92,19 @@ async function seedPass(
             })
         );
 
-        for (const r of results) {
+        for (const [index, r] of results.entries()) {
             if (r.status === 'fulfilled') {
+                failedIds.delete(chunk[index].id);
                 analyzed += 1;
             } else {
-                failed += 1;
+                failedIds.add(chunk[index].id);
                 console.error('  analyze failed:', r.reason);
             }
         }
         console.log(`  ${Math.min(i + SEED_PARALLEL_LIMIT, total)}/${total}`);
     }
 
-    return { analyzed, failed };
+    return { analyzed };
 }
 
 async function run(): Promise<void> {
@@ -108,7 +117,7 @@ async function run(): Promise<void> {
         const repo = new DrizzleEconomicCalendarRepository(db);
 
         let analyzed = 0;
-        let failed = 0;
+        const failedIds = new Set<string>();
 
         /**
          * `listUnanalyzedAnnounced`는 한 번에 `UNANALYZED_SCAN_LIMIT`(20)까지만
@@ -131,19 +140,22 @@ async function run(): Promise<void> {
             console.log(
                 `[pass ${pass}] ${pending.length} Medium+ announced ${seedCountry} event(s)`
             );
-            const result = await seedPass(pending, repo);
+            const result = await seedPass(pending, repo, failedIds);
             analyzed += result.analyzed;
-            failed += result.failed;
 
             if (result.analyzed === 0) {
+                // `pending.length`는 남은 전체가 아니라 **이번 스캔 페이지**다
+                // (`UNANALYZED_SCAN_LIMIT` 상한). 전체 잔량으로 읽히지 않게 쓴다.
                 console.error(
-                    `[pass ${pass}] 저장된 행이 없어 중단합니다 — 남은 ${pending.length}건이 계속 실패 중입니다.`
+                    `[pass ${pass}] 이번 스캔 ${pending.length}건이 전부 실패해 중단합니다 — 미분석 행이 더 남아 있을 수 있습니다.`
                 );
                 break;
             }
         }
 
-        console.log(`Done — analyzed ${analyzed}, failed ${failed}`);
+        console.log(
+            `Done — analyzed ${analyzed}, failed ${failedIds.size} row(s)`
+        );
     } finally {
         await client.end();
     }
