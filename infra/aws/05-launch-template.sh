@@ -30,7 +30,27 @@ if [ -z "${PINNED_AMI:-}" ]; then
   exit 1
 fi
 AMI="$PINNED_AMI"
-UD=$(sed "s|__IMAGE_TAG__|$TAG|" "$(dirname "$0")/user-data.sh" | base64 | tr -d '\n')
+# user-data는 **gzip 후** base64로 넣는다. cloud-init이 gzip 매직바이트를 보고 알아서
+# 푼다(공식 지원). EC2의 16,384바이트 상한은 base64 **디코드된** 바이트에 걸리므로,
+# 압축하면 그만큼 여유가 생긴다.
+#
+# 왜 필요해졌나: 2026-08 cloudflared 전환으로 user-data에 systemd 유닛 5개와 헬스게이트·
+# 라이프사이클·selfcheck 스크립트가 들어가면서 8,983 → 22,624바이트가 됐고,
+# `CreateLaunchTemplateVersion`이 `InvalidUserData.Malformed`로 거부했다. 배포가
+# 런치 템플릿 단계에서 죽어 ASG는 건드리지 않았지만, 그 전까지 아무도 크기를 재지 않았다.
+# 주석을 깎아 맞추지 않는 이유: 그 주석들이 이 파일에서 가장 비싼 정보다.
+UD_RAW=$(sed "s|__IMAGE_TAG__|$TAG|" "$(dirname "$0")/user-data.sh")
+UD=$(printf '%s' "$UD_RAW" | gzip -9 | base64 | tr -d '\n')
+
+# 상한을 **여기서** 검사한다. 안 하면 AWS가 배포 중반에 거부하고, 실패 지점이
+# 원인(파일이 커졌다)에서 멀어진다.
+UD_BYTES=$(printf '%s' "$UD" | base64 -d | wc -c | tr -d ' ')
+if [ "$UD_BYTES" -gt 16384 ]; then
+  log "ERROR: user-data가 gzip 후에도 ${UD_BYTES}바이트로 EC2 상한 16384를 넘는다."
+  log "       임베드 스크립트를 골든 AMI(09-bake-ami.sh)로 옮길 시점이다."
+  exit 1
+fi
+log "user-data: $(printf '%s' "$UD_RAW" | wc -c | tr -d ' ')B raw → ${UD_BYTES}B gzip (상한 16384)"
 LTDATA=$(jq -n \
   --arg     ami           "$AMI" \
   --arg     instance_type "$INSTANCE_TYPE" \
