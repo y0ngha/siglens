@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.57.1](https://github.com/y0ngha/siglens/compare/v0.57.0...v0.57.1) (2026-08-19)
+
+
+### Bug Fixes
+
+* **build:** scripts 타입체크에 Next 앰비언트 진입점 추가 — v0.57.0 배포 실패 수정 ([c87a741](https://github.com/y0ngha/siglens/commit/c87a7417224be0c17d0e62f26cb9499054b1f995))
+
 # [0.57.0](https://github.com/y0ngha/siglens/compare/v0.56.0...v0.57.0) (2026-08-19)
 
 
