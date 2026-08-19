@@ -94,7 +94,7 @@ describe('/fear-greed page', () => {
 
             it('does not set noindex — the page is meant to be crawled', async () => {
                 const metadata = await generateMetadata();
-                expect(metadata.robots).toBeUndefined();
+                expect(metadata.robots).toEqual({ index: true, follow: true });
             });
         });
 

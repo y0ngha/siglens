@@ -98,7 +98,9 @@ export async function generateMetadata(): Promise<Metadata> {
         // degraded 시 canonical을 비우고 noindex — 지표가 하나도 없는 임시 상태를
         // 색인시키지 않는다. follow는 유지해 내부 링크로 주스가 계속 흐르게 한다.
         alternates: { canonical: degraded ? null : ECONOMY_KR_URL },
-        robots: degraded ? { index: false, follow: true } : undefined,
+        robots: degraded
+            ? { index: false, follow: true }
+            : { index: true, follow: true },
         openGraph: {
             title: ECONOMY_KR_FULL_TITLE,
             description: ECONOMY_KR_DESCRIPTION,

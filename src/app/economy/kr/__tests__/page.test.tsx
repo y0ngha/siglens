@@ -79,7 +79,7 @@ describe('/economy/kr page', () => {
 
         const meta = await generateMetadata();
         expect(meta.alternates?.canonical).toBe(`${SITE_URL}/economy/kr`);
-        expect(meta.robots).toBeUndefined();
+        expect(meta.robots).toEqual({ index: true, follow: true });
     });
 
     it('noindexes while no indicator has been announced yet', async () => {

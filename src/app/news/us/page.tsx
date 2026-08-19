@@ -54,7 +54,9 @@ export async function generateMetadata(): Promise<Metadata> {
             'Siglens 뉴스',
         ],
         alternates: { canonical: degraded ? null : PATH },
-        robots: degraded ? { index: false, follow: true } : undefined,
+        robots: degraded
+            ? { index: false, follow: true }
+            : { index: true, follow: true },
         openGraph: {
             type: 'website',
             siteName: SITE_NAME,

@@ -53,7 +53,9 @@ export async function generateMetadata(): Promise<Metadata> {
         // 단, 두 loader가 모두 실패해 본문이 빈 렌더로 떨어지면 economy/fear-greed와
         // 동일하게 canonical을 비우고 noindex를 걸어 임시 상태를 색인하지 않는다.
         alternates: { canonical: degraded ? null : MARKET_URL },
-        robots: degraded ? { index: false, follow: true } : undefined,
+        robots: degraded
+            ? { index: false, follow: true }
+            : { index: true, follow: true },
         openGraph: {
             title: MARKET_FULL_TITLE,
             description: COPY.description,

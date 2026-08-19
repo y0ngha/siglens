@@ -101,13 +101,13 @@ describe('/economy page.tsx integration', () => {
             expect(meta.alternates?.canonical).toBeNull();
         });
 
-        it('정상 스냅샷이면 metadata.robots가 undefined (noindex 없음)이고 canonical이 ECONOMY_URL', async () => {
+        it('정상 스냅샷이면 metadata.robots가 index:true(명시)이고 canonical이 ECONOMY_URL', async () => {
             mockGetSnapshot.mockResolvedValue(FULL_SNAPSHOT);
             mockIsEmpty.mockReturnValue(false);
 
             const meta = await generateMetadata();
 
-            expect(meta.robots).toBeUndefined();
+            expect(meta.robots).toEqual({ index: true, follow: true });
             expect(meta.alternates?.canonical).toBe(
                 'https://siglens.io/economy'
             );
