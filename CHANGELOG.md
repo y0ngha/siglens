@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.59.1](https://github.com/y0ngha/siglens/compare/v0.59.0...v0.59.1) (2026-08-19)
+
+
+### Bug Fixes
+
+* user-data 크기 상한을 상수화하고 gzip 재현성·개행 보존 반영 ([f7962e5](https://github.com/y0ngha/siglens/commit/f7962e59183c2197a38b11fc195ae7cf3fc91e0f))
+* user-data를 gzip 압축해 EC2 16KB 상한 회피 ([bb87591](https://github.com/y0ngha/siglens/commit/bb87591cacfb0f2409a0f5ee1b0ce592a2986817))
+
 # [0.59.0](https://github.com/y0ngha/siglens/compare/v0.58.0...v0.59.0) (2026-08-19)
 
 
