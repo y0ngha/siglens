@@ -14,9 +14,9 @@
     // `region: undefined` 해설을 write-once로 굳힐 수 있었다.
     "extends": "./tsconfig.json",
     "files": [
-        // `server-only` 같은 Next 앰비언트 선언이 여기서 나온다. 빼면 스크립트가
-        // 끌어오는 `src/**` 파일들이 전부 TS2882로 깨진다.
-        "next-env.d.ts",
+        // Next 앰비언트 진입점. 이 파일이 없으면 스크립트가 끌어오는 `src/**`가
+        // 전부 `server-only` TS2882로 깨진다 — 자세한 사정은 그 파일 주석에.
+        "scripts/next-ambient.d.ts",
         "scripts/backfillEconomicCalendar.ts",
         "scripts/lib/chunkDateRange.ts",
         "scripts/lib/normalizeIndicatorBaseName.ts",

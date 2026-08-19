@@ -87,6 +87,8 @@ next-env.d.ts
 !/scripts/backfillEconomicCalendar.ts
 # SP-D: one-time AI analysis seed script (user runs after SP-A backfill).
 !/scripts/seedEconomicEventAnalysis.ts
+# tsconfig.scripts.json의 Next 앰비언트 진입점.
+!/scripts/next-ambient.d.ts
 # Plan 1: FMP cryptocurrency-list sync script.
 !/scripts/seed-crypto-assets.ts
 # 한국 상장 종목 한글명 시드(공공데이터포털). package.json의 `db:seed:kr-names`가
