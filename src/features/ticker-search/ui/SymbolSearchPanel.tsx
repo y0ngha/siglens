@@ -24,9 +24,14 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
     /**
      * "모두 지우기"는 자기 자신이 든 행을 통째로 언마운트시킨다. 그대로 두면 포커스가
      * `<body>`로 떨어져 다음 Tab이 문서 처음부터 시작한다(WCAG 2.4.3). 지운 뒤
-     * 검색 트리거로 돌려보낸다 — 그 행에서 이어질 만한 유일한 행동이다.
+     * 검색 표면으로 돌려보낸다 — 그 행에서 이어질 만한 유일한 행동이다.
      */
     const triggerRef = useRef<HTMLButtonElement>(null);
+    /**
+     * 데스크톱(`lg`)에서는 위 트리거가 `display:none`이라 `focus()`가 **아무 일도 하지
+     * 않는다**. 브레이크포인트마다 보이는 검색 표면이 다르므로 복원 대상도 갈라야 한다.
+     */
+    const desktopSearchRef = useRef<HTMLDivElement>(null);
     /** 칩 하나를 지웠을 때 포커스가 머물 자리. 남은 칩이 있으면 목록 안이 자연스럽다. */
     const chipRowRef = useRef<HTMLDivElement>(null);
 
@@ -61,7 +66,7 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                     {SEARCH_PLACEHOLDER}
                 </button>
             )}
-            <div className="hidden lg:block">
+            <div ref={desktopSearchRef} className="hidden lg:block">
                 <TickerAutocomplete size="lg" onSelect={addSearch} />
             </div>
 
@@ -143,7 +148,21 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                         type="button"
                         onClick={() => {
                             clearAll();
-                            triggerRef.current?.focus();
+                            // `display:none`인 요소에 `focus()`를 주면 조용히
+                            // 실패하고 포커스가 <body>로 떨어진다. `offsetParent`로
+                            // 판정하면 레이아웃이 없는 jsdom에서 항상 숨김으로
+                            // 잡히므로 계산된 스타일을 본다.
+                            const trigger = triggerRef.current;
+                            if (
+                                trigger &&
+                                getComputedStyle(trigger).display !== 'none'
+                            ) {
+                                trigger.focus();
+                                return;
+                            }
+                            desktopSearchRef.current
+                                ?.querySelector('input')
+                                ?.focus();
                         }}
                         // 24×24 미만이면 WCAG 2.5.8을 만족하지 못한다 — text-xs의
                         // line-height는 16px뿐이라 세로 패딩으로 채운다.

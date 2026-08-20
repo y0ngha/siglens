@@ -26,6 +26,9 @@ vi.mock('@/features/ticker-search/ui/TickerAutocomplete', () => ({
         onSelect?: (entry: { symbol: string; label: string }) => void;
     }) => (
         <div data-testid="ticker-autocomplete">
+            {/* 실제 자동완성처럼 입력을 하나 둔다 — 데스크톱 폭에서 포커스가
+                이쪽으로 복원되는지 확인해야 한다. */}
+            <input data-testid="ticker-autocomplete-input" />
             <button
                 type="button"
                 onClick={() => onSelect?.({ symbol: 'AAPL', label: '애플' })}
@@ -252,6 +255,25 @@ describe('SymbolSearchPanel', () => {
         expect(
             screen.getByRole('button', { name: SEARCH_PLACEHOLDER })
         ).toHaveFocus();
+    });
+
+    it('트리거가 숨겨진 폭(lg 이상)에서는 데스크톱 검색 입력으로 복원한다', async () => {
+        // `lg`부터 돋보기 트리거는 `display:none`이다. 그 요소에 focus()를 주면
+        // 조용히 실패해 포커스가 <body>로 떨어지므로, 그 폭에서 실제로 보이는
+        // 검색 표면(인라인 자동완성)으로 보내야 한다.
+        setRecentSearches(['AAPL']);
+        render(<SymbolSearchPanel />);
+
+        const trigger = screen.getByRole('button', {
+            name: SEARCH_PLACEHOLDER,
+        });
+        trigger.style.display = 'none';
+
+        await userEvent.click(
+            screen.getByRole('button', { name: '모두 지우기' })
+        );
+
+        expect(screen.getByTestId('ticker-autocomplete-input')).toHaveFocus();
     });
 
     it('칩 하나를 지우면 포커스가 목록에 남는다', async () => {

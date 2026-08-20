@@ -78,6 +78,9 @@ export function useAutocomplete({
 
     useOnClickOutside([inputRef, dropdownRef], () => setIsClosed(true));
 
+    const isOpen = !isClosed && hasQuery;
+    const isSettled = debouncedQuery.trim() === query.trim();
+
     const navigate = useCallback(
         (symbol: string, label?: string) => {
             setQuery('');
@@ -148,9 +151,6 @@ export function useAutocomplete({
     const handleSearchClick = useCallback(() => setIsSubmitRequested(true), []);
 
     const handleFocus = useCallback(() => setIsClosed(false), []);
-
-    const isOpen = !isClosed && hasQuery;
-    const isSettled = debouncedQuery.trim() === query.trim();
 
     /**
      * 보류해 둔 검색 의도를 실행한다.

@@ -106,18 +106,19 @@ function SearchOverlayBody({
     // 지난 질의가 남지 않는 것은 언마운트가 공짜로 해 준다(예전에는 `[isOpen]` 효과로
     // 비웠다).
 
-    const isSettled = debouncedQuery.trim() === query.trim();
+    /**
+     * 결착된 조회 결과로 목적지를 정해 이동한다.
+     *
+     * `useEffectEvent`라 `query`·`results`·`handleSelect`를 **항상 최신으로** 읽으면서도
+     * 아래 효과의 의존성에는 들어가지 않는다. 렌더 중에 ref를 갈아 끼우던 예전 방식은
+     * React Compiler가 최적화를 포기하게 만들고 동시성 렌더에서 안전하지 않다.
+     */
+    const submitResolvedTarget = useEffectEvent(() => {
+        const target = resolveSubmitTarget(query, results);
+        if (target) handleSelect(target.symbol, target.label);
+    });
 
-    // 배경 스크롤 잠금. 저장/복원 방식은 HeaderMobileMenu와 동일하다 — 둘이 동시에
-    // 열리면 저장값이 서로를 오염시키지만, 오버레이가 열린 동안 햄버거는 가려져
-    // 도달할 수 없다.
-    useEffect(() => {
-        const prev = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = prev;
-        };
-    }, []);
+    const isSettled = debouncedQuery.trim() === query.trim();
 
     /**
      * 결과·최근·인기 모든 행이 거치는 단일 경로.
@@ -160,7 +161,7 @@ function SearchOverlayBody({
      * 루트 `loading.tsx`도 `<Suspense>`도 없어 React가 옛 화면을 그대로 붙들고 있는다.
      * 사용자는 애플을 눌렀는데 NVDA 차트를 2~3초 본다(LAX 경로 실측 기준). 셋 다 사라진다.
      */
-    const handleSelect = (symbol: string, label: string) => {
+    function handleSelect(symbol: string, label: string) {
         addSearch({ symbol, label: label.trim() || symbol });
         // 보고 있던 종목을 다시 고른 경우. 이동할 곳이 없으니 닫기만 한다 —
         // `/NVDA`에서 인기 종목의 NVDA를 누르는 건 탭 한 번이면 닿는 흔한 동작이다.
@@ -169,33 +170,7 @@ function SearchOverlayBody({
             return;
         }
         onNavigate(symbol);
-    };
-
-    /**
-     * 결착된 조회 결과로 목적지를 정해 이동한다.
-     *
-     * `useEffectEvent`라 `query`·`results`·`handleSelect`를 **항상 최신으로** 읽으면서도
-     * 아래 효과의 의존성에는 들어가지 않는다. 렌더 중에 ref를 갈아 끼우던 예전 방식은
-     * React Compiler가 최적화를 포기하게 만들고 동시성 렌더에서 안전하지 않다.
-     */
-    const submitResolvedTarget = useEffectEvent(() => {
-        const target = resolveSubmitTarget(query, results);
-        if (target) handleSelect(target.symbol, target.label);
-    });
-
-    /**
-     * 보류해 둔 검색 의도를 조회가 결착된 뒤에 처리한다.
-     *
-     * 실패(`isError`)면 아무 데도 가지 않는다 — 실패한 조회의 빈 결과는 "없다"가
-     * 아니고, 사용자에게는 실패 화면을 보여주는 편이 존재하지 않는 종목 페이지로
-     * 보내는 것보다 정직하다.
-     */
-    useEffect(() => {
-        if (!isSubmitRequested || !isSettled || isSearching) return;
-        setIsSubmitRequested(false);
-        if (isError) return;
-        submitResolvedTarget();
-    }, [isSubmitRequested, isSettled, isSearching, isError]);
+    }
 
     /**
      * Enter/이동 키. `enterKeyHint="search"`로 키보드에 검색 키를 띄워 놓고 아무 일도
@@ -227,6 +202,31 @@ function SearchOverlayBody({
         // 어디로 갈지 정한다 — 이유는 그 효과의 주석 참고.
         setIsSubmitRequested(true);
     };
+
+    // 배경 스크롤 잠금. 저장/복원 방식은 HeaderMobileMenu와 동일하다 — 둘이 동시에
+    // 열리면 저장값이 서로를 오염시키지만, 오버레이가 열린 동안 햄버거는 가려져
+    // 도달할 수 없다.
+    useEffect(() => {
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = prev;
+        };
+    }, []);
+
+    /**
+     * 보류해 둔 검색 의도를 조회가 결착된 뒤에 처리한다.
+     *
+     * 실패(`isError`)면 아무 데도 가지 않는다 — 실패한 조회의 빈 결과는 "없다"가
+     * 아니고, 사용자에게는 실패 화면을 보여주는 편이 존재하지 않는 종목 페이지로
+     * 보내는 것보다 정직하다.
+     */
+    useEffect(() => {
+        if (!isSubmitRequested || !isSettled || isSearching) return;
+        setIsSubmitRequested(false);
+        if (isError) return;
+        submitResolvedTarget();
+    }, [isSubmitRequested, isSettled, isSearching, isError]);
 
     const portalTarget = typeof document === 'undefined' ? null : document.body;
     if (!portalTarget) return null;
