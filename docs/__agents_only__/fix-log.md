@@ -46,16 +46,6 @@
   - Rule: MISTAKES §Architecture #0.7 — entities/{slice}/lib/는 순수 함수 전용
   - Context: PR #564 R3 claude 리뷰에서 Blocker로 지적. pre-existing이라 별도 PR로 분리(이슈 #565). nextEarningsReport.ts JSDoc에 TODO(#565) 링크를 남겨 추적. 이번 PR diff엔 미수정(scope = 캐시/gate).
 
-## [PR #589 Round 9 | feat/indicator-modal-grid-persist | 2026-06-12]
-- Violation: DOM-count assertion used `expect(document.querySelector('.col-span-2')).toBeInTheDocument()` where element count is deterministic (exactly 1 ma binding = exactly 1 col-span-2 wrapper)
-  - Rule: MISTAKES.md §Tests §13 — DOM assertions on deterministic counts must use exact count matcher, not existence check
-  - Context: Modal grid bind test; fixture produces exactly 1 ma binding row → exactly 1 col-span-2 wrapper. Changed to `expect(document.querySelectorAll('.col-span-2').length).toBe(1)` for correctness and future-proofing against accidental duplicates.
-
-## [feat/skill-card-expand-description | AI 분석 스킬 카드 클릭-확장 기능 | 2026-06-22]
-- Violation: Nested interactive control (ⓘ button) inside `role="button"` card container; card's `handleKeyDown` preventDefault suppressed button's native keyboard activation (Enter/Space)
-  - Rule: Accessibility — Interactive controls nested in role="button" containers must not have their keyboard events hijacked by parent onKeyDown handlers
-  - Context: SkillCardExpandable renders an info icon as a nested `<button>` inside a `<div role="button">`. The card's onKeyDown handler used preventDefault without guarding, which blocked the nested button's Enter/Space activation. Fixed by adding `if (e.target !== e.currentTarget) return;` to handleKeyDown, allowing events from nested interactives to bubble normally.
-
 ## [feat/ticker-search-relevance Round 2 | feat/ticker-search-relevance | 2026-06-23]
 - Violation: Pure calculation helper used imperative for...of + mutable accumulators instead of declarative map/filter/reduce
   - Rule: MISTAKES.md §21 — Pure calculation functions using imperative for-loop + push instead of higher-order functions
@@ -141,9 +131,6 @@
 - Violation: Fixed-precision formatting (toFixed()) truncated sub-penny assets (SHIBUSD trade price ~0.00000XXX) to 0, and reversed MACD histogram sign in candle serialization
   - Rule: Numeric formatting must not lose precision on low-value assets; histogram sign must be preserved from calculation
   - Context: Review caught two precision defects before deployment. Both fixed by switching from fixed decimal places to significant figures, preserving data fidelity while maintaining payload reduction (-34.0% consistent with original measurement).
-- Violation (documentation): docs/product/DOMAIN.md §15.6 listed a histogram aggregation formula that is not implemented in the live serialization path
-  - Rule: Documentation must reflect actual implementation, not aspirational future code
-  - Context: Corrected formula in docs to match live code path.
 
 ## [fix/bars-seed-fold Round 1 | Fold index mechanism in bars query | 2026-08-13]
 - Violation: Test runner invocation `yarn vitest run src/entities/bars src/app/__tests__ src/views/symbol` omitted bracketed-path directory `src/app/[symbol]/__tests__`, causing 24 actual test failures to go unreported
@@ -172,14 +159,6 @@
 - Violation: Guard condition to skip persisting empty analysis (when titleKo + summaryKo both blank) is too broad; applies only to bot branch but skips re-submission check on human page view → permanently malformed articles re-submitted to LLM on every view for 180-day FMP lookback
   - Rule: Pattern copied from sibling files without verifying destination's invariant holds
   - Context: src/entities/news-article/actions/ensureNewsCardsAnalyzedAction.ts. Sibling economy paths pair the skip guard with unconditional TTL flag (cost-bounded), but destination only gates on isRecentlyFetched/markFetched (applies to bot branch only, leaving human path unguarded). Fixed by narrowing skip condition to exact normalizer-fallback signature only so responses model genuinely produced still persist.
-
-## [feat/market-calendar-adoption Round 1 | Stock market calendar adoption | 2026-08-18]
-- Violation: MAX_REWIND_DAYS infinite-loop guard had no unit test
-  - Rule: MISTAKES.md §Tests §22 — Every new pure helper must have dedicated unit tests achieving the project's coverage target
-  - Context: Added test verifying MAX_REWIND_DAYS guard terminates the rewind loop on the boundary (no test before)
-- Violation: DST transition date tests used a 16:00 market close on dates adjacent to the transition, not within the divergent wall-clock window (02:00–07:00 local); one-pass vs two-pass offset correction only diverge inside that window
-  - Rule: MISTAKES.md §Tests §18 — New threshold/conditional branch introduced without test cases covering both true and false paths; boundary test cases must account for the actual divergence range
-  - Context: Round 1 looked like it closed the gap but did not. Round 2 added synthetic spec with close time inside the divergent window, confirmed by mutation testing (deleting second offset pass fails exactly those two tests)
 
 ## [feat/market-calendar-adoption Round 5 | Stock market calendar adoption | 2026-08-18]
 - Status: APPROVED (zero findings)
@@ -222,10 +201,6 @@
 - Violation: Seed script's `failed` counter accumulated per attempt across all passes; closing tally counted attempts, not failing rows, and could exceed table size
   - Rule: Counters that track mutable state must reset per iteration/pass; accumulated totals hide actual state and make diagnostics unreliable
   - Context: Reset `failed = 0` at start of each pass; now final tally reflects actual failing rows processed, not cumulative attempts.
-- Violation: Comment and JSDoc contradicted implementation: header said `pending` represents remaining backlog, but code showed `pending.length` was the capped scan page size; also claimed "break condition" when scan hit limit, but code logged "Done" regardless
-  - Rule: Documentation must reflect actual implementation; contradictory comments hide control flow and mislead future readers
-  - Context: Corrected JSDoc to document that `pending` represents the current page of capped results; clarified break conditions distinguish pagination-limit from completion.
-
 ## [feat/asset-class-navigation Round 4 | 3-asset navigation architecture | 2026-08-19]
 - Violation: `data-market-label` attribute assertion tested only against `TEST_SCOPE`, whose `marketLabel` happens to be hardcoded `'미국 증시'`; reverting `marketLabel={scope.marketLabel}` to a hardcoded string still passed the test because test fixture value matched assertion literal
   - Rule: Test fixture values must differ from assertion literals; shared data between fixture and assertion masks regressions
@@ -252,25 +227,4 @@
   - Rule: Validation must be applied in order (type check → size check → parse); size checks must precede regex to prevent quadratic blowup
   - Context: Moved `.substring(0, MAX_LEN)` BEFORE regex; added `typeof value === 'string'` check before `String(value)`.
 
-## [perf/aws-cost-reduction Round 3 | Test coverage gaps audit | 2026-08-20]
-- Violation (test 1): Kill-switch test re-imported module to change env, which also cleared the store. "Disabled" became indistinguishable from "empty".
-  - Rule: MISTAKES.md §Tests — Module state must not be reset by test setup; use mock at boundary, not reimport
-  - Context: Changed to mock the flag at runtime without reimport; re-ran test in isolation to verify it fails when flag is toggled.
-- Violation (test 2): Content-Length test where undici never sets Content-Length on `new Request(url, {body})`, so the header branch was never exercised.
-  - Rule: MISTAKES.md §Tests §18 — New conditional branch introduced without test cases covering both true and false paths; verify both paths execute
-  - Context: Created separate test with manual `Content-Length` header set to trigger the header-present branch.
-- Violation (test 3): Integration test re-implemented the very helper whose coupling it claimed to pin.
-  - Rule: MISTAKES.md §Tests — Tests verifying a helper's interface must NOT re-implement that helper; call it directly and verify output
-  - Context: Removed duplicate implementation; test now calls the shared helper directly.
-- Violation (test 4): Gate test where every case expected the same outcome; deleting half the gate condition kept all tests green.
-  - Rule: MISTAKES.md §Tests §18 — Exhaustive tests over conditional logic must have at least one case that fails when condition is inverted
-  - Context: Added false-path case expecting different outcome; mutation test verified condition is necessary.
-
-## [perf/aws-cost-reduction Round 3 | UI audit | 2026-08-20]
-- Violation: Two components render the same user-facing string (self-norm warning) — server summary and client badge. Duplicate DOM and duplicate screen-reader output; aria-live regions announce twice.
-  - Rule: Accessibility — User-facing text must not be rendered in multiple places simultaneously; consolidate to a single source or use aria-hidden on duplicates
-  - Context: Moved string to shared constant; server summary renders it as primary; client badge renders aria-hidden text or references parent's `aria-describedby`.
-- Violation: Prose asserting "최근 1년 87거래일 중" but code slices to 252-day window, gated only on 60-point minimum. Window doesn't match prose claim.
-  - Rule: MISTAKES.md §Documentation Sync — Prose describing data windows must match actual window in code; mismatch hides degradation
-  - Context: Corrected prose to "최근 12개월 중" or limited text to only display when 252-day window is fully available.
 

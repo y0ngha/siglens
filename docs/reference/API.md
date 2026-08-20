@@ -261,7 +261,7 @@ ANTHROPIC_CHAT_API_KEY=
 OPENAI_CHAT_API_KEY=
 GEMINI_CHAT_FREE_API_KEY=
 
-# AI — 번역 모델(키는 DEEPSEEK_API_KEY 공유)
+# AI — 번역 모델(키는 GEMINI_API_KEY 공유)
 TRANSLATE_MODEL=
 
 # Cache
@@ -348,24 +348,27 @@ FMP_API_KEY=    # 필수. 없으면 검색 결과 빈 배열 반환
 ### 환경변수
 
 ```
-DEEPSEEK_API_KEY=                # 필수(분석·챗과 공유). 없으면 번역 비활성화
-TRANSLATE_MODEL=deepseek-v4-flash # 기본값
+GEMINI_API_KEY=                     # 필수(분석·챗과 공유). 없으면 번역 비활성화
+TRANSLATE_MODEL=gemini-2.5-flash-lite # 기본값
 ```
 
 전용 번역 키는 없다 — 번역 지출은 키가 아니라 `[Usage]` 텔레메트리의 `jobId: 'translate'`로
 구분된다(`koreanTranslator.ts`).
 
 `TRANSLATE_MODEL`은 `src/entities/ticker/lib/config.ts`에서 검증된다: siglens-core의
-`MODEL_SPECS`에 존재하는 **DeepSeek provider** 모델만 통과한다. 다른 provider의 모델 ID가
-통과하면 DeepSeek 엔드포인트로 그 ID가 그대로 나가 401/400이 나고, `koreanTranslator.ts`가
-에러를 `{}`/`null`로 삼키므로 한국어 이름이 소리 없이 전부 사라진다. 미설정·빈 문자열은 조용히
-기본값으로 처리되고, 그 외 알 수 없는/타 provider 값은 기본값으로 폴백하면서 경고를
-로깅한다(프로세스당 최초 1회만).
+`MODEL_SPECS`에 존재하는 **Gemini provider** 모델이면서 `supportsDisabledThinking`을
+통과하는 모델만 받는다. 다른 provider의 모델 ID가 통과하면 Gemini 엔드포인트로 그 ID가
+그대로 나가 401/400이 나고, `koreanTranslator.ts`가 에러를 `{}`/`null`로 삼키므로 한국어
+이름이 소리 없이 전부 사라진다. 미설정·빈 문자열은 조용히 기본값으로 처리되고, 그 외 알 수
+없는/타 provider/사고 비활성화 미지원 값은 기본값으로 폴백하면서 경고를 로깅한다(프로세스당
+최초 1회만).
 
-추론은 호출부에서 끄지 않는다 — `callDeepseekChat`이 `MODEL_SPECS[model].thinking`으로
-결정하고, 기본 모델 `deepseek-v4-flash`는 그 값이 `false`다. `TRANSLATE_MODEL=deepseek-v4-pro`로
-바꾸면 추론이 켜지며(`reasoning_effort: 'high'`) 번역 지연·비용이 크게 는다 — 결정적 변환에
-이득이 없으므로 권장하지 않는다.
+추론은 호출부에서 항상 끈다 — `koreanTranslator.ts`가 `thinkingBudget: 0`
+(`DISABLED_THINKING_BUDGET`)을 명시한다. 리터럴 0을 400으로 거부하는 Gemini 모델이 있어
+(`gemini-3.1-pro-preview`·`gemini-3.5-flash-lite`·`gemini-3.6-flash` — 2026-07-31 라이브 실측)
+허용목록 검사가 필요하다. 목록의 원본은 siglens-core의
+`GEMINI_MODELS_SUPPORTING_DISABLED_THINKING`이며, core의 고정 모델 경로(뉴스카드·경제이벤트·
+지표번역)도 같은 제약을 공유한다.
 
 ---
 ## 분석 SSE 라우트 — `POST /api/analysis/stream`
