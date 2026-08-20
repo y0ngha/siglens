@@ -27,12 +27,18 @@ import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
 /**
+ * `dynamic()`이 기대하는 default-export 모듈 형태. `MobileAnalysisSheet`는 named
+ * export라 로더가 default로 감싸 넘겨야 한다.
+ */
+type MobileAnalysisSheetModule = {
+    default: typeof MobileAnalysisSheetComponent;
+};
+
+/**
  * 시트 청크 로더. `dynamic()`과 아래 워밍이 **같은** 함수를 공유해야 webpack이
  * 동일 청크로 취급하고, 워밍으로 받아둔 모듈을 `dynamic()`이 재사용한다.
  */
-const importMobileAnalysisSheet = (): Promise<{
-    default: typeof MobileAnalysisSheetComponent;
-}> =>
+const importMobileAnalysisSheet = (): Promise<MobileAnalysisSheetModule> =>
     import('./MobileAnalysisSheet').then(m => ({
         default: m.MobileAnalysisSheet,
     }));
