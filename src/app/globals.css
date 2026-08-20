@@ -133,6 +133,12 @@
     /* Brand — Social login */
     --color-brand-kakao: #fee500;
 
+    /* vaul이 `[data-vaul-handle]`에 하드코딩한 배경색. 디자인 선택이 아니라 외부 제약이며,
+       MobileSheetPlaceholder의 정적 손잡이가 실제 시트와 픽셀 단위로 일치해야 교체가
+       보이지 않는다. secondary-200(#e2e8f0)과 비슷하지만 그쪽이 재조정되면 일치가
+       깨지므로 별도 토큰으로 고정한다. */
+    --color-vaul-handle: #e2e2e4;
+
     /* Layout chrome heights — site Header(h-14) 고정값. PwaBanner처럼 dynamic하게
        변하는 chrome은 자체 컴포넌트가 mount/unmount 시 root에 CSS variable을 토글한다
        (예: PwaBanner의 --pwa-banner-h). 차트 페이지의 sticky-footer jail은 이 변수들을

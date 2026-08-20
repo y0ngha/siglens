@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { MobileSheetPlaceholder } from '@/views/symbol/MobileSheetPlaceholder';
 import {
     MOBILE_SHEET_PEEK_BAND_SVH,
+    PEEK_VISIBLE_OFFSET,
     SNAP_PEEK,
 } from '@/views/symbol/constants/mobileSheet';
 
@@ -39,10 +40,10 @@ describe('MobileSheetPlaceholder', () => {
         expect(el.className).toContain('h-(--peek-band)');
     });
 
-    it('PEEK 띠 상수는 snap − 0.03 산식을 따른다', () => {
+    it('PEEK 띠 상수는 snap − PEEK_VISIBLE_OFFSET 산식을 따른다', () => {
         // 산식이 vaul 동작(SNAP_PEEK 주석)과 어긋나면 높이 계약이 깨진다.
         expect(MOBILE_SHEET_PEEK_BAND_SVH).toBeCloseTo(
-            (SNAP_PEEK - 0.03) * 100
+            (SNAP_PEEK - PEEK_VISIBLE_OFFSET) * 100
         );
     });
 

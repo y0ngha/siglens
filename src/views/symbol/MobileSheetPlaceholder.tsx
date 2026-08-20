@@ -61,7 +61,7 @@ export function MobileSheetPlaceholder() {
             {/* vaul `[data-vaul-handle]`의 기본 지오메트리를 그대로 복제한다
                 (32×5, opacity .7, #e2e2e4, border-radius 1rem, 좌우 auto 마진).
                 교체 순간 손잡이가 튀지 않도록 하기 위함이다. */}
-            <div className="mx-auto h-[5px] w-8 shrink-0 rounded-2xl bg-[#e2e2e4] opacity-70" />
+            <div className="mx-auto h-[5px] w-8 shrink-0 rounded-2xl bg-vaul-handle opacity-70" />
             <div className="min-h-0 flex-1 px-4 pt-3">
                 <p className="text-sm font-medium text-secondary-400">
                     AI 분석

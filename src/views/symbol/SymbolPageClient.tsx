@@ -16,6 +16,7 @@ import { useTimeframeChange } from './hooks/useTimeframeChange';
 import { SymbolPageProvider } from './SymbolPageContext';
 import { buildChartPageHeading } from './utils/chartPageHeading';
 import { useSymbolModel } from '@/features/symbol-model';
+import type { MobileAnalysisSheet as MobileAnalysisSheetComponent } from './MobileAnalysisSheet';
 import type { AnalysisResponse, TierInfoDepth } from '@y0ngha/siglens-core';
 import {
     marketProfileOf,
@@ -29,7 +30,9 @@ import { ErrorBoundary } from 'react-error-boundary';
  * 시트 청크 로더. `dynamic()`과 아래 워밍이 **같은** 함수를 공유해야 webpack이
  * 동일 청크로 취급하고, 워밍으로 받아둔 모듈을 `dynamic()`이 재사용한다.
  */
-const importMobileAnalysisSheet = () =>
+const importMobileAnalysisSheet = (): Promise<{
+    default: typeof MobileAnalysisSheetComponent;
+}> =>
     import('./MobileAnalysisSheet').then(m => ({
         default: m.MobileAnalysisSheet,
     }));
@@ -144,7 +147,7 @@ export function SymbolPageClient({
                          * 분석 시트를 여는 명시적 버튼(모바일 전용).
                          *
                          * 이게 없으면 시트를 여는 유일한 방법이 PEEK 띠를 잡고 드래그하는
-                         * 것뿐이다. 그런데 띠 높이는 `snap − 0.03`이고, 시트는 `97svh`
+                         * 것뿐이다. 그런데 띠 높이는 `snap − PEEK_VISIBLE_OFFSET`이고, 시트는 `97svh`
                          * 고정인 반면 vaul은 오프셋을 `window.innerHeight`로 잡는다 —
                          * 모바일 툴바가 접혀 innerHeight가 svh보다 커지면 띠가 얇아지고,
                          * 극단적으로는 0에 수렴해 **잡을 것이 사라진다**. 그 상태에서는
