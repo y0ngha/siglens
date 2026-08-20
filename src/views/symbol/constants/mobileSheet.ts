@@ -8,6 +8,11 @@ export const SNAP_FULL = 0.97; // 97% — 전체 열림
 
 export const MOBILE_SNAP_POINTS = [SNAP_PEEK, SNAP_HALF, SNAP_FULL] as const;
 
+// PEEK에서 실제로 보이는 띠의 뷰포트 높이 비율(%). 위 SNAP_PEEK 주석의 `snap − 0.03`을
+// 그대로 옮긴 값이며, SSR 껍데기(MobileSheetPlaceholder)가 실제 시트와 같은 높이를
+// 갖도록 하는 단일 소스다. SNAP_PEEK를 바꾸면 이 값도 같이 바뀌어야 한다.
+export const MOBILE_SHEET_PEEK_BAND_SVH = (SNAP_PEEK - 0.03) * 100;
+
 // Vaul의 snapPoints prop은 readonly 배열을 허용하지 않아 mutable 사본을 사용한다.
 export const SNAP_POINTS_MUTABLE = [...MOBILE_SNAP_POINTS] as number[];
 

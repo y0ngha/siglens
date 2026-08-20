@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
-export const MOBILE_VIEWPORT_MEDIA_QUERY = '(max-width: 767px)';
+import { MOBILE_VIEWPORT_MEDIA_QUERY } from '@/shared/config/viewport';
 
 export function useIsMobileViewport(): boolean {
     const [isMobileViewport, setIsMobileViewport] = useState(false);

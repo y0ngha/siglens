@@ -1,9 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
-import {
-    MOBILE_VIEWPORT_MEDIA_QUERY,
-    useIsMobileViewport,
-} from '@/shared/hooks/useIsMobileViewport';
+import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
+import { MOBILE_VIEWPORT_MEDIA_QUERY } from '@/shared/config/viewport';
 
 describe('useIsMobileViewport', () => {
     const listeners = new Set<(event: MediaQueryListEvent) => void>();

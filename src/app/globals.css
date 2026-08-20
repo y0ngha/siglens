@@ -313,3 +313,15 @@ body {
         transform: translateY(0);
     }
 }
+
+/*
+ * 모바일 바텀시트 SSR 껍데기 해제.
+ *
+ * `MobileSheetPlaceholder`는 실제 vaul 시트가 마운트되기까지의 공백(실측 4.6초,
+ * iPhone 390×844 / CPU 4x)을 메우는 서버 렌더 전용 요소다. vaul이 DOM에 들어오는
+ * 순간 CSS만으로 껍데기를 걷어낸다 — JS 타이머도 상태 전환도 없어 교체 레이스가
+ * 생기지 않는다. 근거·타임라인은 MobileSheetPlaceholder의 JSDoc 참고.
+ */
+body:has([data-vaul-drawer]) [data-mobile-sheet-placeholder] {
+    display: none;
+}
