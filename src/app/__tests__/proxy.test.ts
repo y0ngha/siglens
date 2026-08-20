@@ -351,30 +351,48 @@ describe('로케일 접두사는 ticker로 오인되지 않는다', () => {
         vi.clearAllMocks();
     });
 
-    it.each(['ko', 'en', 'ja', 'zh'])(
-        '/%s/AAPL 은 대문자 로케일로 301되지 않는다',
-        locale => {
-            proxy(makeRequest(undefined, `/${locale}/AAPL`));
+    // 이 경로들은 guest-only/auth-required 게이트와 겹치지 않으므로 **어떤
+    // redirect도** 없어야 한다. "대문자 redirect만 없음"으로 단언하면 예기치
+    // 않은 다른 redirect가 섞여도 통과한다.
+    it.each(['en', 'ja', 'zh'])('/%s/AAPL 은 redirect되지 않는다', locale => {
+        proxy(makeRequest(undefined, `/${locale}/AAPL`));
 
-            const uppercased = mockRedirect.mock.calls.filter(
-                ([url]) =>
-                    (url as URL).pathname === `/${locale.toUpperCase()}/AAPL`
-            );
-            expect(uppercased).toEqual([]);
-        }
-    );
+        expect(mockRedirect).not.toHaveBeenCalled();
+    });
 
-    it.each(['ko', 'en', 'ja', 'zh'])(
-        '/%s 단독도 대문자로 301되지 않는다',
-        locale => {
-            proxy(makeRequest(undefined, `/${locale}`));
+    it.each(['en', 'ja', 'zh'])('/%s 단독도 redirect되지 않는다', locale => {
+        proxy(makeRequest(undefined, `/${locale}`));
 
-            const uppercased = mockRedirect.mock.calls.filter(
-                ([url]) => (url as URL).pathname === `/${locale.toUpperCase()}`
-            );
-            expect(uppercased).toEqual([]);
-        }
-    );
+        expect(mockRedirect).not.toHaveBeenCalled();
+    });
+
+    /**
+     * **`ko`는 예약하지 않는다** — `KO`는 코카콜라의 실존 티커다.
+     *
+     * 예약하면 `/ko`가 `/KO`로 정규화되지 않아, canonical(`/KO`)과 요청
+     * URL(`/ko`)이 어긋나는 self-referencing canonical 위반이 생긴다. 이
+     * 파일의 `/fear-greed` 가드가 막는 것과 같은 계열의 결함이다.
+     *
+     * 예약하지 않아도 안전한 이유는 `localePrefix: 'as-needed'`다 — 신버전이
+     * 기본 로케일에 접두사를 붙이지 않으므로 `/ko/*`를 발급하지 않는다.
+     */
+    it('/ko 는 여전히 /KO(코카콜라)로 정규화된다', () => {
+        proxy(makeRequest(undefined, '/ko'));
+
+        expect(mockRedirect).toHaveBeenCalledWith(
+            expect.objectContaining({ pathname: '/KO' }),
+            301
+        );
+    });
+
+    it('/ko/news 도 /KO/news 로 정규화된다', () => {
+        proxy(makeRequest(undefined, '/ko/news'));
+
+        expect(mockRedirect).toHaveBeenCalledWith(
+            expect.objectContaining({ pathname: '/KO/news' }),
+            301
+        );
+    });
 });
 
 /**
