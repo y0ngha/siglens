@@ -93,6 +93,13 @@ export function useSearchOverlay(): UseSearchOverlayReturn {
      */
     const triggerRef = useRef<HTMLElement | null>(null);
 
+    /**
+     * 닫힘이 커밋된 뒤 포커스를 되돌려야 한다는 표식. 상태를 내린 **직후**에 포커스를
+     * 옮기면 포털이 아직 DOM에 있어 트랩이 다시 가져갈 수 있으므로, 실제 복원은
+     * 아래 `[isOpen]` 효과가 커밋 이후에 수행한다.
+     */
+    const pendingRestoreRef = useRef(false);
+
     const open = useCallback(() => {
         // `pushState`는 부수효과라 setState 업데이터 안에 두면 안 된다 — React가
         // StrictMode에서 업데이터를 두 번 호출해 히스토리 항목이 두 개 쌓인다.
@@ -123,32 +130,9 @@ export function useSearchOverlay(): UseSearchOverlayReturn {
         setIsOpen(true);
     }, []);
 
-    /**
-     * 닫힘이 커밋된 뒤 포커스를 되돌려야 한다는 표식. 상태를 내린 **직후**에 포커스를
-     * 옮기면 포털이 아직 DOM에 있어 트랩이 다시 가져갈 수 있으므로, 실제 복원은
-     * 아래 `[isOpen]` 효과가 커밋 이후에 수행한다.
-     */
-    const pendingRestoreRef = useRef(false);
-
     const restoreFocus = useCallback(() => {
         pendingRestoreRef.current = true;
     }, []);
-
-    /**
-     * 오버레이가 사라진 뒤 트리거로 포커스를 돌려준다(WCAG 2.4.3).
-     *
-     * 처음에는 `requestAnimationFrame`으로 다음 프레임에 걸었는데, **숨겨진 탭에서는
-     * rAF가 아예 돌지 않아** 복원이 조용히 건너뛰어졌다(실증에서 focusin 이벤트가
-     * 한 건도 안 잡혔다). effect는 커밋 직후 항상 실행되므로 탭 상태와 무관하다.
-     */
-    useEffect(() => {
-        if (isOpen || !pendingRestoreRef.current) return;
-        pendingRestoreRef.current = false;
-        const trigger = triggerRef.current;
-        triggerRef.current = null;
-        // 이동으로 라우트가 바뀐 경우 트리거는 이미 사라졌을 수 있다.
-        if (trigger && document.contains(trigger)) trigger.focus();
-    }, [isOpen]);
 
     /**
      * 사용자가 명시적으로 닫을 때(닫기 버튼·Escape). 우리가 넣은 항목을 되돌려
@@ -199,6 +183,22 @@ export function useSearchOverlay(): UseSearchOverlayReturn {
         setIsOpen(false);
         return pushedRef.current;
     }, []);
+
+    /**
+     * 오버레이가 사라진 뒤 트리거로 포커스를 돌려준다(WCAG 2.4.3).
+     *
+     * 처음에는 `requestAnimationFrame`으로 다음 프레임에 걸었는데, **숨겨진 탭에서는
+     * rAF가 아예 돌지 않아** 복원이 조용히 건너뛰어졌다(실증에서 focusin 이벤트가
+     * 한 건도 안 잡혔다). effect는 커밋 직후 항상 실행되므로 탭 상태와 무관하다.
+     */
+    useEffect(() => {
+        if (isOpen || !pendingRestoreRef.current) return;
+        pendingRestoreRef.current = false;
+        const trigger = triggerRef.current;
+        triggerRef.current = null;
+        // 이동으로 라우트가 바뀐 경우 트리거는 이미 사라졌을 수 있다.
+        if (trigger && document.contains(trigger)) trigger.focus();
+    }, [isOpen]);
 
     useEffect(() => {
         const handlePopState = () => {
