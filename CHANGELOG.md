@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.59.4](https://github.com/y0ngha/siglens/compare/v0.59.3...v0.59.4) (2026-08-20)
+
+
+### Bug Fixes
+
+* PR 리뷰 지적 반영 — 토큰 등록·매직넘버 추출·반환 타입 명시 ([47305a5](https://github.com/y0ngha/siglens/commit/47305a5079439bfd204651804950ec4e8685970c)), closes [#e2e2e4](https://github.com/y0ngha/siglens/issues/e2e2e4)
+
+
+### Performance Improvements
+
+* 모바일 바텀시트 첫 표시를 2.9초에서 0.2초로 단축 ([ac0323c](https://github.com/y0ngha/siglens/commit/ac0323cbf57092ffa0fb4918e08d40fa948eed69))
+
 ## [0.59.3](https://github.com/y0ngha/siglens/compare/v0.59.2...v0.59.3) (2026-08-20)
 
 
