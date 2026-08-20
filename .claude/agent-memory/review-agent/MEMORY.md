@@ -34,6 +34,7 @@
 - [feat/i18n-multilingual R4](project-i18n-multilingual-r4.md) — R3's 2 findings verified fixed correctly (15 redirect() sites, window.history). New: resolvePostSignupDestination's `next==='/'`  exact-match breaks post-signup onboarding redirect for en/ja/zh (localized next is `/en` not `/`); test mocks reimplement the same bug so it's invisible
 - [feat/i18n-multilingual R5](project-i18n-multilingual-r5.md) — relayed only: SymbolTabs/NoticePopup/usePageContextLabel path-compare broke on prefix; fixed via new useAppPathname.ts + allowlist audit test
 - [feat/i18n-multilingual R6 — APPROVED, closes epic](project-i18n-multilingual-r6.md) — verified useAppPathname consolidation + all 6 allowlist entries + audit-test soundness (import-line-based, not module-aware) + repo-wide locale-loss sweep, zero findings
+- [feat/mobile-search-overlay R3 — dismissForNavigation gap](project-mobile-search-overlay-r3.md) — pending-nav UI removal genuinely fixes R2's 3 findings; but onNavigate has zero test coverage (mutation-verified) + JSDoc overclaims HistoryUpdater race eliminated (verified live against Next 16.2.12 source)
 
 ## Feedback
 
