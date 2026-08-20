@@ -49,11 +49,6 @@ const SearchOverlayContext = createContext<SearchOverlayContextValue | null>(
  * 값을 직접 담는다(그 import 하나가 gzip 2,017B였다).
  */
 export function SearchOverlayProvider({ children }: { children: ReactNode }) {
-    const { isOpen, open, close, dismissForNavigation } = useSearchOverlay();
-    const router = useRouter();
-    const pathname = usePathname();
-    const [isNavigating, startNavigation] = useTransition();
-
     /**
      * 진행 바를 우리가 직접 소유하는 스위치.
      *
@@ -64,6 +59,11 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
      * 남의 promise 수명에 매달리지 않게 우리 상태로 한 번 더 잠근다.
      */
     const [isNavigationPending, setIsNavigationPending] = useState(false);
+
+    const { isOpen, open, close, dismissForNavigation } = useSearchOverlay();
+    const router = useRouter();
+    const pathname = usePathname();
+    const [isNavigating, startNavigation] = useTransition();
 
     /**
      * 종목으로 이동한다. **오버레이는 즉시 닫고** 이동은 뒤에서 진행시킨다.

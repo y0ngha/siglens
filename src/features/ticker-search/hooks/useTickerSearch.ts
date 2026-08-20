@@ -30,6 +30,7 @@ interface UseTickerSearchResult {
 
 export function useTickerSearch(query: string): UseTickerSearchResult {
     const [debouncedQuery, setDebouncedQuery] = useState('');
+    const reportedErrorRef = useRef<unknown>(null);
     const isHydrated = useHydrated();
 
     const isDebouncedQueryReady = debouncedQuery.length >= MIN_QUERY_LENGTH;
@@ -61,13 +62,24 @@ export function useTickerSearch(query: string): UseTickerSearchResult {
     });
 
     /**
+     * 두 조건을 OR로 묶는다.
+     *
+     * - `status === 'pending'`: 재시도 사이의 대기 구간(`retry: 1`, 백오프 약 1초)에서는
+     *   `isFetching`이 false다. 그 구간을 "검색 중"으로 치지 않으면 **"검색 결과가
+     *   없습니다"가 한 번 번쩍인 뒤** 실패 화면으로 넘어간다(500 주입 실증에서 확인).
+     * - `isFetching`: 한 번 실패한 키는 `status`가 `'error'`로 굳는다. 그 키를 다시
+     *   조회할 때(재입력·`retryOnMount`) `pending`으로 돌아오지 않으므로, 이것만 빼면
+     *   **요청이 도는 내내 실패 화면**이 떠 있고 라이브 리전도 실패를 고지한다.
+     */
+    const isSearching = isEnabled && (status === 'pending' || isFetching);
+
+    /**
      * 조회 실패를 **밖으로 드러낸다**. 예전에는 `isError`를 버리고 `data ?? []`만
      * 돌려줬는데, 그러면 검색 서버가 통째로 죽어도 화면에는 "검색 결과가 없습니다"가
      * 뜬다 — 한글 질의에는 "티커로 검색해 보세요"라는 **틀린 안내**까지 나간다.
      * 게다가 클라이언트·서버 어느 쪽에도 신호가 남지 않아 사용자가 제보하기 전까지
      * 아무도 모른다(서버 액션에는 메트릭 필터가 없다).
      */
-    const reportedErrorRef = useRef<unknown>(null);
     useEffect(() => {
         if (!isError || !error) return;
         // 같은 실패를 두 번 세지 않는다. 키 A(실패) → 키 B → 키 A로 돌아오면
@@ -87,18 +99,6 @@ export function useTickerSearch(query: string): UseTickerSearchResult {
         );
         return () => clearTimeout(timer);
     }, [query]);
-
-    /**
-     * 두 조건을 OR로 묶는다.
-     *
-     * - `status === 'pending'`: 재시도 사이의 대기 구간(`retry: 1`, 백오프 약 1초)에서는
-     *   `isFetching`이 false다. 그 구간을 "검색 중"으로 치지 않으면 **"검색 결과가
-     *   없습니다"가 한 번 번쩍인 뒤** 실패 화면으로 넘어간다(500 주입 실증에서 확인).
-     * - `isFetching`: 한 번 실패한 키는 `status`가 `'error'`로 굳는다. 그 키를 다시
-     *   조회할 때(재입력·`retryOnMount`) `pending`으로 돌아오지 않으므로, 이것만 빼면
-     *   **요청이 도는 내내 실패 화면**이 떠 있고 라이브 리전도 실패를 고지한다.
-     */
-    const isSearching = isEnabled && (status === 'pending' || isFetching);
 
     return {
         results: data ?? [],

@@ -18,9 +18,6 @@ interface SymbolSearchPanelProps {
 }
 
 export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
-    const { recentSearches, addSearch, removeSearch, clearAll } =
-        useRecentSearches();
-    const overlay = useSearchOverlayTrigger();
     /**
      * "모두 지우기"는 자기 자신이 든 행을 통째로 언마운트시킨다. 그대로 두면 포커스가
      * `<body>`로 떨어져 다음 Tab이 문서 처음부터 시작한다(WCAG 2.4.3). 지운 뒤
@@ -34,6 +31,10 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
     const desktopSearchRef = useRef<HTMLDivElement>(null);
     /** 칩 하나를 지웠을 때 포커스가 머물 자리. 남은 칩이 있으면 목록 안이 자연스럽다. */
     const chipRowRef = useRef<HTMLDivElement>(null);
+
+    const { recentSearches, addSearch, removeSearch, clearAll } =
+        useRecentSearches();
+    const overlay = useSearchOverlayTrigger();
 
     return (
         <div className={cn('flex w-full flex-col', className)}>

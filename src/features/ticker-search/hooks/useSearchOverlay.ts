@@ -67,7 +67,6 @@ const SEARCH_HISTORY_MARKER = 'siglensSearch';
  */
 export function useSearchOverlay(): UseSearchOverlayReturn {
     const [isOpen, setIsOpen] = useState(false);
-    const pathname = usePathname();
 
     /**
      * 우리가 히스토리 항목을 넣어 둔 상태인지. `history.state`는 Next가 덮어쓰므로
@@ -99,6 +98,8 @@ export function useSearchOverlay(): UseSearchOverlayReturn {
      * 아래 `[isOpen]` 효과가 커밋 이후에 수행한다.
      */
     const pendingRestoreRef = useRef(false);
+
+    const pathname = usePathname();
 
     const open = useCallback(() => {
         // `pushState`는 부수효과라 setState 업데이터 안에 두면 안 된다 — React가
