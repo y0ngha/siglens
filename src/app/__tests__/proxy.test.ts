@@ -338,6 +338,46 @@ describe('랜딩 ?q= redirect — proxy가 page.tsx 대신 처리 (ISR 보존)',
 });
 
 /**
+ * 로케일 접두사 선행 예약 가드.
+ *
+ * 다국어 릴리스는 인스턴스 교체 중 신·구 버전이 공존한다. 그때 신버전이 발급한
+ * `/en/AAPL`이 **구버전**에 도착하면 티커 `EN`으로 301되고, 그 301에는
+ * `Cache-Control`이 없어 브라우저가 영구 캐싱한다 — 배포가 끝나도 그 사용자는
+ * 그 URL을 다시 요청하지 않는다. 구버전이 내는 응답이라 신버전 코드로는 못 막고,
+ * 이 예약이 **다국어 릴리스보다 먼저** 나가 있어야만 창이 닫힌다.
+ */
+describe('로케일 접두사는 ticker로 오인되지 않는다', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it.each(['ko', 'en', 'ja', 'zh'])(
+        '/%s/AAPL 은 대문자 로케일로 301되지 않는다',
+        locale => {
+            proxy(makeRequest(undefined, `/${locale}/AAPL`));
+
+            const uppercased = mockRedirect.mock.calls.filter(
+                ([url]) =>
+                    (url as URL).pathname === `/${locale.toUpperCase()}/AAPL`
+            );
+            expect(uppercased).toEqual([]);
+        }
+    );
+
+    it.each(['ko', 'en', 'ja', 'zh'])(
+        '/%s 단독도 대문자로 301되지 않는다',
+        locale => {
+            proxy(makeRequest(undefined, `/${locale}`));
+
+            const uppercased = mockRedirect.mock.calls.filter(
+                ([url]) => (url as URL).pathname === `/${locale.toUpperCase()}`
+            );
+            expect(uppercased).toEqual([]);
+        }
+    );
+});
+
+/**
  * `/fear-greed` 회귀 가드.
  *
  * `isAdmissibleSymbolShape`은 하이픈 ticker(`PBR-A`)를 허용하므로, 하이픈이 든

@@ -18,6 +18,25 @@ import { NextResponse, type NextRequest } from 'next/server';
  * (`src/app/__tests__/proxy.test.ts`가 디렉터리 목록과 대조해 강제한다).
  */
 const RESERVED_FIRST_SEGMENTS = new Set([
+    /**
+     * 로케일 접두사.
+     *
+     * 아직 다국어 라우팅이 없는데도 **지금** 넣는다. 다국어 배포는 인스턴스
+     * 교체 중 신·구 버전이 잠시 공존하는데, 그때 신버전이 발급한 `/en/AAPL`이
+     * 구버전 인스턴스에 도착하면 이 목록에 없어서 티커로 해석된다:
+     *
+     *   `/en/AAPL` → `isAdmissibleSymbolShape('en')` = true
+     *              → 'en' !== 'EN' → 301 → `/EN/AAPL` → 404
+     *
+     * 그 301에는 `Cache-Control`이 없어 브라우저가 영구 캐싱한다. 배포가 끝나
+     * 신버전만 남아도 그 사용자는 `/en/AAPL`을 **요청조차 보내지 않는다**.
+     * 구버전이 내는 응답이라 신버전 코드로는 막을 수 없어, 다국어 릴리스보다
+     * 먼저 나가야 하는 변경이다.
+     */
+    'ko',
+    'en',
+    'ja',
+    'zh',
     'fear-greed',
     'login',
     'signup',
