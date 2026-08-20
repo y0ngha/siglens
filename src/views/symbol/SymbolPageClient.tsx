@@ -7,6 +7,7 @@ import {
 } from '@/widgets/chart';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
+import { MOBILE_VIEWPORT_MEDIA_QUERY } from '@/shared/config/viewport';
 import { ChartContent } from './ChartContent';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import { useMobileSheet } from './hooks/useMobileSheet';
@@ -15,6 +16,7 @@ import { useTimeframeChange } from './hooks/useTimeframeChange';
 import { SymbolPageProvider } from './SymbolPageContext';
 import { buildChartPageHeading } from './utils/chartPageHeading';
 import { useSymbolModel } from '@/features/symbol-model';
+import type { MobileAnalysisSheet as MobileAnalysisSheetComponent } from './MobileAnalysisSheet';
 import type { AnalysisResponse, TierInfoDepth } from '@y0ngha/siglens-core';
 import {
     marketProfileOf,
@@ -24,14 +26,56 @@ import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
+/**
+ * `dynamic()`이 기대하는 default-export 모듈 형태. `MobileAnalysisSheet`는 named
+ * export라 로더가 default로 감싸 넘겨야 한다.
+ */
+type MobileAnalysisSheetModule = {
+    default: typeof MobileAnalysisSheetComponent;
+};
+
+/**
+ * 시트 청크 로더. `dynamic()`과 아래 워밍이 **같은** 함수를 공유해야 webpack이
+ * 동일 청크로 취급하고, 워밍으로 받아둔 모듈을 `dynamic()`이 재사용한다.
+ */
+const importMobileAnalysisSheet = (): Promise<MobileAnalysisSheetModule> =>
+    import('./MobileAnalysisSheet').then(m => ({
+        default: m.MobileAnalysisSheet,
+    }));
+
 // vaul의 aria-hidden 주입이 hydration과 겹쳐 mismatch 발생 — ssr: false로 hydration 완료 후 마운트.
-const MobileAnalysisSheet = dynamic(
-    () =>
-        import('./MobileAnalysisSheet').then(m => ({
-            default: m.MobileAnalysisSheet,
-        })),
-    { ssr: false }
-);
+const MobileAnalysisSheet = dynamic(importMobileAnalysisSheet, { ssr: false });
+
+/**
+ * 시트 청크 **선인출**. 렌더 게이트(`isHydrated && isMobileViewport`)와 무관하게,
+ * 이 모듈이 평가되는 즉시 청크를 받아둔다.
+ *
+ * 이게 없으면 청크 요청이 하이드레이션 완료 이후로 밀린다 — `ssr: false`라 초기
+ * 번들에 없고, 조건부 렌더라 Next가 미리 당기지도 못하기 때문이다. iPhone 390×844 /
+ * CPU 4배 실측에서 요청 시작이 **4,593ms**였고 다운로드는 190ms뿐이었다. 즉 병목은
+ * 네트워크가 아니라 **요청이 시작되기까지의 대기**다.
+ *
+ * `useHydrated`가 `startTransition`으로 플래그를 올리는 점도 겹친다 — 저우선순위
+ * 업데이트라 차트 렌더가 무거우면 React가 시트 마운트를 더 미룬다. 워밍은 그
+ * 스케줄링과 독립적으로 네트워크를 먼저 진행시킨다.
+ *
+ * 모바일 폭에서만 받는다 — 데스크톱은 `md:hidden`으로 시트를 쓰지 않으므로 그냥
+ * 낭비다. 실패는 삼킨다: 어차피 `dynamic()`이 렌더 시점에 다시 시도하고, 그때의
+ * 실패는 Next의 기존 경로가 처리한다.
+ *
+ * `matchMedia` 존재 여부까지 확인하는 이유: 이 코드는 컴포넌트 밖 **모듈 최상위**라
+ * 여기서 throw하면 모듈 평가 자체가 실패해 페이지 전체가 죽는다. jsdom처럼
+ * `matchMedia`가 없는 환경이 실재한다(이 가드 없이 기존 테스트 61건이 모듈 로드
+ * 단계에서 깨졌다). 워밍은 순수 최적화이므로 판정이 불가능하면 조용히 건너뛰고
+ * 렌더 시점 `dynamic()`에 맡긴다.
+ */
+if (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia(MOBILE_VIEWPORT_MEDIA_QUERY).matches
+) {
+    void importMobileAnalysisSheet().catch(() => {});
+}
 
 interface SymbolPageClientProps {
     symbol: string;
@@ -109,7 +153,7 @@ export function SymbolPageClient({
                          * 분석 시트를 여는 명시적 버튼(모바일 전용).
                          *
                          * 이게 없으면 시트를 여는 유일한 방법이 PEEK 띠를 잡고 드래그하는
-                         * 것뿐이다. 그런데 띠 높이는 `snap − 0.03`이고, 시트는 `97svh`
+                         * 것뿐이다. 그런데 띠 높이는 `snap − PEEK_VISIBLE_OFFSET`이고, 시트는 `97svh`
                          * 고정인 반면 vaul은 오프셋을 `window.innerHeight`로 잡는다 —
                          * 모바일 툴바가 접혀 innerHeight가 svh보다 커지면 띠가 얇아지고,
                          * 극단적으로는 0에 수렴해 **잡을 것이 사라진다**. 그 상태에서는
