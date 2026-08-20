@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.59.3](https://github.com/y0ngha/siglens/compare/v0.59.2...v0.59.3) (2026-08-20)
+
+
+### Bug Fixes
+
+* 드레인 중 selfcheck가 P1 알람을 오탐시키던 것 차단 ([fa5b89f](https://github.com/y0ngha/siglens/commit/fa5b89fffa004e35733661b44bc2a48b4f9ac6d9))
+* 로그 메트릭 필터 19개에 defaultValue=0 추가 — 알람이 스스로 복구되게 ([f21c7a6](https://github.com/y0ngha/siglens/commit/f21c7a66c63c66b8646c8ec0394f32bcd422324f))
+* 셸 스크립트의 조용한 실패 3종 제거 ([894d7ab](https://github.com/y0ngha/siglens/commit/894d7abd740325eec5d2e8406f6781017dab764a))
+
 ## [0.59.2](https://github.com/y0ngha/siglens/compare/v0.59.1...v0.59.2) (2026-08-19)
 
 
