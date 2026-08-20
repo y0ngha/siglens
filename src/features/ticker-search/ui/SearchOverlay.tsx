@@ -1,6 +1,12 @@
 'use client';
 
-import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
+import {
+    type KeyboardEvent,
+    useEffect,
+    useEffectEvent,
+    useRef,
+    useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
@@ -102,23 +108,6 @@ function SearchOverlayBody({
 
     const isSettled = debouncedQuery.trim() === query.trim();
 
-    /**
-     * 보류해 둔 검색 의도를 조회가 결착된 뒤에 처리한다.
-     *
-     * 실패(`isError`)면 아무 데도 가지 않는다 — 실패한 조회의 빈 결과는 "없다"가
-     * 아니고, 사용자에게는 실패 화면을 보여주는 편이 존재하지 않는 종목 페이지로
-     * 보내는 것보다 정직하다.
-     */
-    useEffect(() => {
-        if (!isSubmitRequested || !isSettled || isSearching) return;
-        setIsSubmitRequested(false);
-        if (isError) return;
-        const target = resolveSubmitTarget(query, results);
-        // `handleSelect`는 렌더마다 새로 만들어진다. 의존성에 넣으면 이 효과가 매
-        // 렌더 재실행되므로 ref로 읽는다.
-        if (target) handleSelectRef.current(target.symbol, target.label);
-    }, [isSubmitRequested, isSettled, isSearching, isError, query, results]);
-
     // 배경 스크롤 잠금. 저장/복원 방식은 HeaderMobileMenu와 동일하다 — 둘이 동시에
     // 열리면 저장값이 서로를 오염시키지만, 오버레이가 열린 동안 햄버거는 가려져
     // 도달할 수 없다.
@@ -163,10 +152,6 @@ function SearchOverlayBody({
      * 루트 `loading.tsx`도 `<Suspense>`도 없어 React가 옛 화면을 그대로 붙들고 있는다.
      * 사용자는 애플을 눌렀는데 NVDA 차트를 2~3초 본다(LAX 경로 실측 기준). 셋 다 사라진다.
      */
-    const handleSelectRef = useRef<(symbol: string, label: string) => void>(
-        () => {}
-    );
-
     const handleSelect = (symbol: string, label: string) => {
         addSearch({ symbol, label: label.trim() || symbol });
         // 보고 있던 종목을 다시 고른 경우. 이동할 곳이 없으니 닫기만 한다 —
@@ -177,7 +162,32 @@ function SearchOverlayBody({
         }
         onNavigate(symbol);
     };
-    handleSelectRef.current = handleSelect;
+
+    /**
+     * 결착된 조회 결과로 목적지를 정해 이동한다.
+     *
+     * `useEffectEvent`라 `query`·`results`·`handleSelect`를 **항상 최신으로** 읽으면서도
+     * 아래 효과의 의존성에는 들어가지 않는다. 렌더 중에 ref를 갈아 끼우던 예전 방식은
+     * React Compiler가 최적화를 포기하게 만들고 동시성 렌더에서 안전하지 않다.
+     */
+    const submitResolvedTarget = useEffectEvent(() => {
+        const target = resolveSubmitTarget(query, results);
+        if (target) handleSelect(target.symbol, target.label);
+    });
+
+    /**
+     * 보류해 둔 검색 의도를 조회가 결착된 뒤에 처리한다.
+     *
+     * 실패(`isError`)면 아무 데도 가지 않는다 — 실패한 조회의 빈 결과는 "없다"가
+     * 아니고, 사용자에게는 실패 화면을 보여주는 편이 존재하지 않는 종목 페이지로
+     * 보내는 것보다 정직하다.
+     */
+    useEffect(() => {
+        if (!isSubmitRequested || !isSettled || isSearching) return;
+        setIsSubmitRequested(false);
+        if (isError) return;
+        submitResolvedTarget();
+    }, [isSubmitRequested, isSettled, isSearching, isError]);
 
     /**
      * Enter/이동 키. `enterKeyHint="search"`로 키보드에 검색 키를 띄워 놓고 아무 일도
@@ -209,6 +219,9 @@ function SearchOverlayBody({
         // 어디로 갈지 정한다 — 이유는 그 효과의 주석 참고.
         setIsSubmitRequested(true);
     };
+
+    const portalTarget = typeof document === 'undefined' ? null : document.body;
+    if (!portalTarget) return null;
 
     return createPortal(
         <div
@@ -434,6 +447,9 @@ function SearchOverlayBody({
                 )}
             </div>
         </div>,
-        document.body
+        // `isOpen`이 클릭으로만 켜지므로 여기까지 오는 건 클라이언트뿐이지만,
+        // 정적 분석은 그 사실을 알 수 없다. 가드를 명시해 서버 렌더 경로에서
+        // 브라우저 전역을 읽지 않음을 코드로 드러낸다.
+        portalTarget
     );
 }

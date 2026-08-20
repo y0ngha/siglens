@@ -65,14 +65,6 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
      */
     const [isNavigationPending, setIsNavigationPending] = useState(false);
 
-    // 도착했거나(라우트 변경) 사용자가 물러났으면(popstate) 표시를 끝낸다.
-    useEffect(() => setIsNavigationPending(false), [pathname]);
-    useEffect(() => {
-        const stop = () => setIsNavigationPending(false);
-        window.addEventListener('popstate', stop);
-        return () => window.removeEventListener('popstate', stop);
-    }, []);
-
     /**
      * 종목으로 이동한다. **오버레이는 즉시 닫고** 이동은 뒤에서 진행시킨다.
      *
@@ -106,6 +98,14 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
     // 소비자는 `open`만 필요하다. `isOpen`을 값에 넣으면 오버레이가 열리고 닫힐 때마다
     // 전 소비자가 리렌더된다 — 헤더는 모든 라우트에 있으므로 그 비용이 전역이다.
     const value = useMemo(() => ({ open }), [open]);
+
+    // 도착했거나(라우트 변경) 사용자가 물러났으면(popstate) 표시를 끝낸다.
+    useEffect(() => setIsNavigationPending(false), [pathname]);
+    useEffect(() => {
+        const stop = () => setIsNavigationPending(false);
+        window.addEventListener('popstate', stop);
+        return () => window.removeEventListener('popstate', stop);
+    }, []);
 
     return (
         <SearchOverlayContext value={value}>

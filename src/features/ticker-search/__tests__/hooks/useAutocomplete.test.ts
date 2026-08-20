@@ -441,4 +441,27 @@ describe('useAutocomplete', () => {
 
         expect(mockPush).not.toHaveBeenCalled();
     });
+
+    it('폼 모드(navigateOnSelect: false)는 친 문자열을 그대로 확정한다', () => {
+        // 보유종목 추가 폼은 이동이 아니라 값 확정이다. 형태 검사·결과 우선 규칙을
+        // 걸면 FMP가 모르는 심볼을 넣는 문서화된 degrade 경로가 막히고, 이상한
+        // 입력은 서버 검증 오류 대신 **아무 일도 안 일어나는** 화면이 된다.
+        const onSelect = vi.fn();
+        const { result } = renderHook(() =>
+            useAutocomplete({ navigateOnSelect: false, onSelect })
+        );
+
+        act(() => {
+            result.current.handleChange(createChangeEvent('aa pl'));
+        });
+        act(() => {
+            result.current.handleKeyDown(createKeyEvent('Enter'));
+        });
+
+        expect(onSelect).toHaveBeenCalledWith({
+            symbol: 'AA PL',
+            label: 'AA PL',
+        });
+        expect(mockPush).not.toHaveBeenCalled();
+    });
 });
