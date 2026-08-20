@@ -1,8 +1,15 @@
 'use client';
 
 import Link from 'next/link';
+import { useRef } from 'react';
 
 import { useRecentSearches } from '../hooks/useRecentSearches';
+import { SearchGlyph } from './SearchTriggerButton';
+import {
+    HERO_RECENT_CHIP_LIMIT,
+    SEARCH_PLACEHOLDER,
+} from '../lib/searchLabels';
+import { useSearchOverlayTrigger } from '../model/SearchOverlayContext';
 import { TickerAutocomplete } from './TickerAutocomplete';
 import { cn } from '@/shared/lib/cn';
 
@@ -11,22 +18,81 @@ interface SymbolSearchPanelProps {
 }
 
 export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
+    /**
+     * "모두 지우기"는 자기 자신이 든 행을 통째로 언마운트시킨다. 그대로 두면 포커스가
+     * `<body>`로 떨어져 다음 Tab이 문서 처음부터 시작한다(WCAG 2.4.3). 지운 뒤
+     * 검색 표면으로 돌려보낸다 — 그 행에서 이어질 만한 유일한 행동이다.
+     */
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    /**
+     * 데스크톱(`lg`)에서는 위 트리거가 `display:none`이라 `focus()`가 **아무 일도 하지
+     * 않는다**. 브레이크포인트마다 보이는 검색 표면이 다르므로 복원 대상도 갈라야 한다.
+     */
+    const desktopSearchRef = useRef<HTMLDivElement>(null);
+    /** 칩 하나를 지웠을 때 포커스가 머물 자리. 남은 칩이 있으면 목록 안이 자연스럽다. */
+    const chipRowRef = useRef<HTMLDivElement>(null);
+
     const { recentSearches, addSearch, removeSearch, clearAll } =
         useRecentSearches();
+    const overlay = useSearchOverlayTrigger();
 
     return (
         <div className={cn('flex w-full flex-col', className)}>
-            <TickerAutocomplete size="lg" onSelect={addSearch} />
+            {/*
+                모바일에서는 히어로 검색창이 **트리거**다.
+                폭이 아니라 키보드가 문제여서다 — 이 입력은 이미 전폭이지만, 탭하면
+                키보드가 화면의 45%를 먹어 앵커드 드롭다운에 남는 세로가 ~140px(항목
+                2~3개)뿐이다. 헤더 검색과 같은 전체화면 오버레이로 보내 검색 경험을
+                한 벌로 유지한다.
+
+                겉모습은 그대로 둔다 — 홈의 주 행동 유도라 시각적 앵커가 필요하다.
+                실제 `<input>` 대신 버튼을 쓰는 이유는, 타이핑을 받지 못하는 입력이
+                포커스만 먹고 키보드를 올리면 사용자가 "먹통"으로 읽기 때문이다.
+            */}
+            {/* provider가 없으면(테스트·스토리북) 트리거 자체를 렌더하지 않는다.
+                누르면 아무 일도 없는 컨트롤을 홈의 주 CTA 자리에 두는 것보다 낫다 —
+                `HeaderSearch`와 같은 정책. */}
+            {overlay && (
+                <button
+                    ref={triggerRef}
+                    type="button"
+                    onClick={overlay.open}
+                    // aria-label을 두지 않는다. 버튼의 텍스트가 곧 접근 이름이 되고,
+                    // 그게 화면에 보이는 문구와 일치해야 한다(WCAG 2.5.3 Label in Name).
+                    // `aria-label="종목 검색 열기"`를 붙이면 음성 입력 사용자가 화면에 보이는
+                    // "종목명 · 티커 검색"으로는 이 버튼을 부를 수 없게 된다.
+                    className="focus-glow flex h-12 w-full touch-manipulation items-center gap-2 rounded-lg border border-secondary-700 bg-secondary-800 px-4 text-left text-base text-secondary-400 transition-colors hover:border-secondary-600 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none lg:hidden"
+                >
+                    <SearchGlyph className="h-4 w-4 shrink-0" />
+                    {SEARCH_PLACEHOLDER}
+                </button>
+            )}
+            <div ref={desktopSearchRef} className="hidden lg:block">
+                <TickerAutocomplete size="lg" onSelect={addSearch} />
+            </div>
 
             {recentSearches.length > 0 && (
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
-                    <span className="text-xs text-secondary-500">
+                <div
+                    ref={chipRowRef}
+                    tabIndex={-1}
+                    className="mt-4 flex flex-wrap items-center justify-center gap-2 outline-none lg:justify-start"
+                >
+                    <span className="text-xs text-secondary-400">
                         최근 검색
                     </span>
-                    {recentSearches.map(entry => (
+                    {recentSearches.map((entry, index) => (
                         <span
                             key={entry.symbol}
-                            className="inline-flex touch-manipulation items-center gap-1 rounded-full border border-primary-600/30 bg-primary-600/5 pr-1 pl-3 text-xs text-secondary-200 transition-colors hover:border-primary-500/60 hover:text-primary-300"
+                            className={cn(
+                                'touch-manipulation items-center gap-1 rounded-full border border-primary-600/30 bg-primary-600/5 pr-1 pl-3 text-xs text-secondary-200 transition-colors hover:border-primary-500/60 hover:text-primary-300',
+                                // 히어로는 첫 화면 세로가 귀하다 — 4개까지만 보여주고
+                                // 나머지는 `lg`부터 드러낸다. 잘라내지 않고 CSS로 감추는 이유는
+                                // 브레이크포인트마다 **개수가 달라야** 하기 때문이다 — JS는
+                                // 렌더 시점에 뷰포트를 모르므로 한 벌만 만들 수 있다.
+                                index < HERO_RECENT_CHIP_LIMIT
+                                    ? 'inline-flex'
+                                    : 'hidden lg:inline-flex'
+                            )}
                         >
                             {/*
                                 a11y target-size: WCAG 2.5.8 requires interactive
@@ -67,8 +133,13 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                                         ? `${entry.symbol} 최근 검색에서 제거`
                                         : `${entry.label} (${entry.symbol}) 최근 검색에서 제거`
                                 }
-                                onClick={() => removeSearch(entry.symbol)}
-                                className="inline-flex h-6 w-6 items-center justify-center rounded-full leading-none text-secondary-500 hover:text-secondary-100 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                onClick={() => {
+                                    removeSearch(entry.symbol);
+                                    // 이 버튼은 자기 자신을 언마운트시킨다 —
+                                    // 포커스를 목록에 붙들어 둔다(WCAG 2.4.3).
+                                    chipRowRef.current?.focus();
+                                }}
+                                className="inline-flex h-6 w-6 items-center justify-center rounded-full leading-none text-secondary-400 hover:text-secondary-100 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
                                 ✕
                             </button>
@@ -76,8 +147,27 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                     ))}
                     <button
                         type="button"
-                        onClick={clearAll}
-                        className="ml-1 text-xs text-secondary-500 underline-offset-2 hover:text-secondary-300 hover:underline"
+                        onClick={() => {
+                            clearAll();
+                            // `display:none`인 요소에 `focus()`를 주면 조용히
+                            // 실패하고 포커스가 <body>로 떨어진다. `offsetParent`로
+                            // 판정하면 레이아웃이 없는 jsdom에서 항상 숨김으로
+                            // 잡히므로 계산된 스타일을 본다.
+                            const trigger = triggerRef.current;
+                            if (
+                                trigger &&
+                                getComputedStyle(trigger).display !== 'none'
+                            ) {
+                                trigger.focus();
+                                return;
+                            }
+                            desktopSearchRef.current
+                                ?.querySelector('input')
+                                ?.focus();
+                        }}
+                        // 24×24 미만이면 WCAG 2.5.8을 만족하지 못한다 — text-xs의
+                        // line-height는 16px뿐이라 세로 패딩으로 채운다.
+                        className="ml-1 inline-flex min-h-6 touch-manipulation items-center px-1 text-xs text-secondary-400 underline-offset-2 hover:text-secondary-200 hover:underline"
                     >
                         모두 지우기
                     </button>

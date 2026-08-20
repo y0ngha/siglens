@@ -110,16 +110,19 @@ test.describe('symbol search', () => {
             page.locator('#search').getByText('최근 검색')
         ).toBeVisible();
 
+        // 칩 라벨은 티커가 아니라 **회사명**이다. 검색 키로 확정한 경우에도 결과의
+        // 표시 이름을 쓰기 때문이다 — 결과를 눌러 고른 경우와 같은 값이라야 같은
+        // 종목이 두 가지 이름으로 남지 않는다.
         const recentChip = page
             .locator('#search')
-            .getByRole('link', { name: 'AAPL' });
+            .getByRole('link', { name: '애플' });
         await expect(recentChip).toBeVisible();
         await expect(recentChip).toHaveAttribute('href', '/AAPL');
 
         // The chip's remove control is present and correctly labeled, confirming
         // this is the recent-searches UI (not an unrelated AAPL link).
         await expect(
-            page.getByRole('button', { name: 'AAPL 최근 검색에서 제거' })
+            page.getByRole('button', { name: '애플 (AAPL) 최근 검색에서 제거' })
         ).toBeVisible();
     });
 });
