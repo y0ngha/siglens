@@ -30,7 +30,35 @@ if [ -z "${PINNED_AMI:-}" ]; then
   exit 1
 fi
 AMI="$PINNED_AMI"
-UD=$(sed "s|__IMAGE_TAG__|$TAG|" "$(dirname "$0")/user-data.sh" | base64 | tr -d '\n')
+# EC2 launch template UserData 상한. base64 **디코드된** 바이트 기준이다.
+EC2_USER_DATA_MAX_BYTES=16384
+
+# user-data는 **gzip 후** base64로 넣는다. cloud-init이 gzip 매직바이트를 보고 알아서
+# 푼다(공식 지원). 상한이 디코드 바이트에 걸리므로 압축하면 그만큼 여유가 생긴다.
+#
+# 왜 필요해졌나: 2026-08 cloudflared 전환으로 user-data에 systemd 유닛 5개와 헬스게이트·
+# 라이프사이클·selfcheck 스크립트가 들어가면서 8,983 → 22,624바이트가 됐고,
+# `CreateLaunchTemplateVersion`이 `InvalidUserData.Malformed`로 거부했다. 배포가
+# 런치 템플릿 단계에서 죽어 ASG는 건드리지 않았지만, 그 전까지 아무도 크기를 재지 않았다.
+# 주석을 깎아 맞추지 않는 이유: 그 주석들이 이 파일에서 가장 비싼 정보다.
+#
+# `-n`으로 gzip 헤더의 mtime을 0으로 고정한다. 없으면 같은 입력이 실행마다 다른
+# 바이트를 내서 "이번 배포에서 user-data가 바뀌었나"를 바이트 비교로 판단할 수 없다.
+#
+# 파이프로 직접 넘긴다. `$(...)`로 캡처하면 트레일링 개행이 잘리는데, 지금은 마지막 줄이
+# 일반 명령이라 무해하지만 파일 끝에 heredoc이 오면 종료 구분자가 사라져 조용히 깨진다.
+UD_SRC="$(dirname "$0")/user-data.sh"
+UD=$(sed "s|__IMAGE_TAG__|$TAG|" "$UD_SRC" | gzip -9n | base64 | tr -d '\n')
+
+# 상한을 **여기서** 검사한다. 안 하면 AWS가 배포 중반에 거부하고, 실패 지점이
+# 원인(파일이 커졌다)에서 멀어진다.
+UD_BYTES=$(printf '%s' "$UD" | base64 -d | wc -c | tr -d ' ')
+if [ "$UD_BYTES" -gt "$EC2_USER_DATA_MAX_BYTES" ]; then
+  log "ERROR: user-data가 gzip 후에도 ${UD_BYTES}바이트로 EC2 상한 ${EC2_USER_DATA_MAX_BYTES}를 넘는다."
+  log "       임베드 스크립트를 골든 AMI(09-bake-ami.sh)로 옮길 시점이다."
+  exit 1
+fi
+log "user-data: $(wc -c < "$UD_SRC" | tr -d ' ')B raw → ${UD_BYTES}B gzip (상한 ${EC2_USER_DATA_MAX_BYTES})"
 LTDATA=$(jq -n \
   --arg     ami           "$AMI" \
   --arg     instance_type "$INSTANCE_TYPE" \

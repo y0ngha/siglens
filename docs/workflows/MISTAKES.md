@@ -597,6 +597,24 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ useContactForm.ts in shared/hooks/  // feature-specific hook in shared
     ✅ features/contact-form/hooks/useContactForm.ts
     → Layer dependency improves when hooks are colocated with their feature/widget slices
+
+16. Nested interactive controls with keyboard events hijacked by parent onKeyDown handlers
+    → Interactive elements (buttons, links, inputs) nested inside containers with role="button" or custom keyboard handlers must not have their native keyboard activation blocked
+    → Parent onKeyDown handlers must guard with `if (e.target !== e.currentTarget) return;` to allow nested interactive elements to handle Enter/Space keypresses
+    → Nested interactives lose keyboard accessibility when parent prevents default without checking event source
+    ❌ <div role="button" onKeyDown={handleKeyDown}> <button>{icon}</button> </div>  // parent preventDefault blocks nested button's Enter/Space
+    ✅ <div role="button" onKeyDown={(e) => { if (e.target !== e.currentTarget) return; handleKeyDown(e); }}> <button>{icon}</button> </div>
+    → Recurring: feat/skill-card-expand-description R1, perf/aws-cost-reduction Round 3 UI audit (2 occurrences)
+
+17. Duplicate user-facing text rendered in multiple places simultaneously
+    → User-facing strings (warnings, status messages, labels) must not appear in multiple DOM locations at the same time
+    → Duplicate rendering duplicates aria-live announcements and confuses assistive technology users
+    → Consolidate to a single rendered source, or hide duplicates with aria-hidden="true" and use aria-describedby to reference the primary source
+    ❌ <div aria-live="polite">{warning}</div> <div>{warning}</div>  // warning announced twice
+    ❌ server: "Data loss risk detected"; client: "Data loss risk detected"  // same text rendered separately
+    ✅ <div aria-live="polite" id="warning">{warning}</div> <div aria-describedby="warning" aria-hidden="true">{warning}</div>
+    ✅ Consolidate to single primary location; reference it from other places
+    → Recurring: perf/aws-cost-reduction Round 3 UI audit (1 occurrence in self-norm warning)
 ```
 
 ---
@@ -681,6 +699,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Update mock implementations whenever the action adds a new dependency method call
    ❌ MockNewsRepository.mockImplementation({ fetch: vi.fn() }) but ensureNewsCardsAnalyzedAction calls both fetch + listBySymbol
    ✅ MockNewsRepository.mockImplementation({ fetch: vi.fn(), listBySymbol: vi.fn() }) with all methods tested
+
+8.6. Global vi.mock() in vitest.setup.base.ts weakens test isolation — per-file mocks keep missing-mock failures visible
+   → Global mocks added to vitest.setup.base.ts hide unintended missing dependencies; tests pass despite modules not declaring the mocked package
+   → Use per-file mocks (vi.mock() at top of test file) + resolve alias (tsconfig.json paths) instead
+   → Per-file mocks ensure each test explicitly declares what it mocks; missing mocks for individual tests remain visible and fail loudly
+   ❌ vi.mock('@upstash/redis', ...) added to vitest.setup.base.ts; test passes even if @upstash/redis is not imported/used by the module under test
+   ✅ Remove from setupFiles; add vi.mock('@upstash/redis', ...) directly in test files that need it; unintended missing mocks now fail immediately
+   → Recurring: feat/bot-cost-caching R1 + fix/bars-seed-fold R2 (2 occurrences)
 
 9. Test describe text promises assertions not verified by its it() cases
    → describe() block name must describe only the preconditions/feature shared by all its it() cases
@@ -798,6 +824,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
        it('renders US scope with correct label', () => { render(<Component scope={TEST_SCOPE} />); expect(...).toHaveAttribute('data-market-label', '미국 증시'); });
        it('renders KR scope with correct label', () => { render(<Component scope={KR_SCOPE} />); expect(...).toHaveAttribute('data-market-label', '한국 증시'); });
     → Recurring: feat/asset-class-navigation R4 (data-market-label asserted only against TEST_SCOPE, KR_SCOPE inherited hardcoded value via spread)
+
+21.5. Test module state reset via reimport; clear store on setup, not via side effects
+    → Tests must not rely on reimporting modules to reset test setup state; this causes side effects (e.g., module-level caches cleared) that become indistinguishable from the intended test behavior
+    → Use vi.mock() at test file boundaries, or mock flags/dependencies at runtime without reimport; setup/teardown must be explicit and controllable
+    → Kill-switch flags or feature toggles that require reimport to toggle create invisible state pollution and make tests flaky under different run orders
+    ❌ test file reimports module to change env var: `delete require.cache[require.resolve(...)]; const newModule = require(...)`; store state cleared as side effect
+    ❌ Module-level constants like `const DISABLED = false;` that can't be toggled without reloading
+    ✅ Mock the flag at test boundary: `vi.mock('@/config', () => ({ FEATURE_DISABLED: true }))`
+    ✅ Mock at runtime: `vi.hoisted(() => ({ FEATURE_DISABLED: true })); mock the module with vi.mock()`; test runs in isolation with explicit setup
+    → Recurring: perf/aws-cost-reduction R3 test coverage gaps (1 occurrence)
 
 22. Gate verification claims must be backed by actual command execution, not visual inspection
     → When reporting that a gate (test scope, lint, format, build) passed, the command must actually be invoked and the full output examined

@@ -304,6 +304,11 @@ while true; do
   sleep 5
 done
 echo "[drain] terminating — stopping tunnel then app"
+# selfcheck를 **먼저** 멈춘다. 안 그러면 아래에서 터널과 앱을 내리는 동안 selfcheck가
+# 그걸 장애로 읽고 `[cloudflared-down]`·`[selfcheck]`를 찍어, P1 알람 두 개가
+# **배포마다** 울린다(2026-08-19 훅 실증에서 실제로 그렇게 울렸다).
+# 계획된 종료와 진짜 장애를 가르는 건 이 한 줄뿐이다.
+systemctl stop siglens-selfcheck.timer 2>/dev/null || true
 systemctl stop cloudflared
 systemctl stop siglens
 IID=$(imds instance-id) || exit 0
@@ -405,19 +410,24 @@ UNIT5
 
 systemctl daemon-reload
 
-# 순서가 중요하다. `cloudflared.service`는 `ExecStartPre=siglens-wait-healthy.sh`로
-# 최대 300초 블록하고, 앱이 그 안에 못 뜨면 `systemctl start`가 비-0으로 끝난다.
-# 이 파일은 `set -euxo pipefail`이라 거기서 user-data 전체가 죽는다 — 그러면 아래
-# 라이프사이클/셀프체크 유닛이 **하나도 활성화되지 않고**, launch 훅은 600초 뒤
-# ABANDON, ASG의 `TerminateHookAbandon: terminate` 정책이 인스턴스를 죽이고,
-# min-size 1이 같은 실패를 무한 반복한다(서빙 용량 0, 알람 없음).
+# `enable`(심링크)과 `start`(기동)를 **분리한다.** `enable --now`는 동기라 유닛이
+# 뜰 때까지 블록하고, 실패하면 `set -euxo pipefail`이 user-data 전체를 죽인다.
 #
-# 그래서 (a) 훅 유닛들을 cloudflared **앞에** 활성화하고,
-#        (b) cloudflared는 `--no-block`으로 띄운다.
-# 부팅이 느려도 훅 스크립트는 살아 있어 ABANDON 대신 정상 실패 경로를 탄다.
-systemctl enable --now siglens
-systemctl enable --now siglens-lifecycle-launch
-systemctl enable --now siglens-lifecycle-drain
-systemctl enable --now siglens-selfcheck.timer
-systemctl enable cloudflared
-systemctl start --no-block cloudflared
+# 실제로 그렇게 죽었다(v0.59.1 배포, 실측): `siglens-lifecycle-launch`가
+# `Type=oneshot`인데 그 스크립트는 터널 `/ready`를 300초 폴링하다 실패하면
+# `exit 1`한다(터널 미준비를 조용히 통과시키지 않으려는 의도된 동작). 그런데 이 줄이
+# cloudflared보다 **앞**에 있으니 터널이 아직 없는 게 당연하고, 300초 뒤 실패 →
+# cloud-init 사망 → cloudflared·drain·selfcheck가 영영 활성화되지 않았다.
+# 그 인스턴스는 앱만 뜬 채 터널 없이 InService가 됐다.
+#
+# 두 안전장치가 서로를 깨뜨린 사례다: "훅 유닛을 cloudflared 앞에 두라"(느린 부팅이
+# 유닛을 고아로 만드는 것 방지)와 "터널 미준비면 실패하라"(게이트가 게이트이도록)를
+# 합쳤더니 부팅이 죽었다. 해법은 순서가 아니라 **비동기 기동**이다.
+#
+# `start --no-block`은 요청만 큐에 넣고 즉시 반환한다. 유닛 간 순서는 각자의
+# `After=`가 systemd 트랜잭션 안에서 보장하므로, 한 번에 넘기면 cloudflared가
+# 앱 뒤에, launch가 cloudflared 뒤에 실행된다.
+systemctl enable siglens cloudflared \
+  siglens-lifecycle-launch siglens-lifecycle-drain siglens-selfcheck.timer
+systemctl start --no-block siglens cloudflared \
+  siglens-lifecycle-launch siglens-lifecycle-drain siglens-selfcheck.timer

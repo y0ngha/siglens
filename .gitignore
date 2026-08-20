@@ -119,3 +119,4 @@ infra/aws/.ids
 infra/aws/.ami
 
 .claude/scheduled_tasks.lock
+infra/aws/.tunnel_id

@@ -8,9 +8,17 @@ source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/.env"; source "$(dirnam
 #     06(2)과 08(4)이 표류했다. 중복 설정을 제거해 06으로 일원화.
 
 # (b) [제거됨] ALB 요청 수 기반 타깃 트래킹(`siglens-tt-albreq`).
-#     ALB를 없애면서 함께 삭제했다. 어차피 생성일(2026-06-24) 이후 한 번도 ALARM으로
-#     전이한 적이 없다 — worker 제거 후 요청 수는 부하의 대리 지표가 아니게 됐고,
-#     그 자리는 아래 (c) CPU 정책이 이미 맡고 있다.
+#     생성일(2026-06-24) 이후 한 번도 ALARM으로 전이한 적이 없다 — worker 제거 후
+#     요청 수는 부하의 대리 지표가 아니게 됐고, 그 자리는 아래 (c) CPU 정책이 맡는다.
+#
+#     **명시적으로 지운다.** `put-scaling-policy`는 생성/갱신만 하므로 정의를 지워도
+#     기존 정책은 살아남는다. 남으면 ALB 삭제 후 `RequestCountPerTarget`이 끊기고
+#     그 관리형 알람 2개가 영원히 INSUFFICIENT_DATA가 되는데, 더 나쁜 건
+#     **스케일인이 막힌다**는 점이다 — AWS는 스케일인 활성 타깃트래킹 정책이 **전부**
+#     동의해야 축소하므로, CPU로 늘어난 인스턴스가 영영 안 줄어든다(상한 없는 비용 누수).
+#     정책을 지우면 관리형 알람도 함께 사라진다. 알람을 직접 지우지 말 것.
+aws autoscaling delete-policy --auto-scaling-group-name siglens-asg \
+  --policy-name siglens-tt-albreq 2>/dev/null || true
 
 # (c) CPU 기반 타깃 트래킹 정책
 #     worker 제거 후 LLM 호출이 앱 인스턴스 안에서 돈다. 그래서 요청 수는 더 이상
@@ -54,3 +62,8 @@ aws autoscaling put-scaling-policy \
   --target-tracking-configuration "$CPU_CONFIG"
 
 log "scaling policy set: siglens-tt-cpu (50% CPU); ASG max-size owned by 06-asg.sh (=4)"
+# 실제 남은 정책을 찍는다. 위 delete-policy는 `2>/dev/null || true`라 IAM 거부·
+# ResourceContention으로 실패해도 조용히 넘어가는데, 그러면 "지웠다고 로그만 찍고
+# 스케일인이 계속 막혀 있는" 상태가 된다 — 이 diff가 고친 원래 버그와 같은 계열이다.
+log "active policies: $(aws autoscaling describe-policies --auto-scaling-group-name siglens-asg \
+  --query 'ScalingPolicies[].PolicyName' --output text)"
