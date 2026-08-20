@@ -1,5 +1,6 @@
+import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MarketBadge } from '../ui/TickerAutocomplete';
+import { MarketBadge } from '../ui/MarketBadge';
 
 describe('MarketBadge', () => {
     it('renders a 코인 badge', () => {

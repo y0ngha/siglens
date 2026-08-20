@@ -42,3 +42,15 @@
 - [Green tsc says nothing about scripts/ or worker/](feedback-scripts-excluded-from-tsc.md) — tsconfig excludes them; core breaking bumps leave write-once callers silently broken
 - [Added LIMIT breaks "seed ALL" callers](feedback-limit-added-breaks-seed-all-contract.md) — new `.limit()` on a shared repo read turns backfill scripts into "first N" silently; grep callers, look for "all/전부" in their prose
 - [Audit the slice, not the diff list](feedback-audit-enumerate-slice-not-difflist.md) — for "thread X through N call sites" fixes, grep the symptom repo-wide and subtract; the miss is the unlisted file
+
+## Reference
+
+- [Next.js router.replace + history.back() race](reference-nextjs-router-replace-history-race.md) — delayed replaceState lands on whatever entry is current when the RSC fetch resolves, not the one current at call time; cancel-during-transition can silently mis-navigate
+
+## Project (round updates)
+
+- [mobile-search-overlay R1](project-mobile-search-overlay-r1.md) — navTargetRef effect itself correct, but Escape/취소 close isn't gated on isNavigating → history race; zero tests for the fragile branch; hook ordering violation
+- [mobile-search-overlay R2](project-mobile-search-overlay-r2.md) — canClose fix narrows but doesn't close the race: popstate (OS back/swipe) bypasses it entirely, isNavigating has no timeout ceiling (keyboard trap risk); 1 new test vacuous (Tests #20); DIRECT_TICKER_RE + hook-order exception confirmed correct
+- [mobile-search-overlay R4](project-mobile-search-overlay-r4.md) — R3's onNavigate tests + JSDoc fix both re-verified live (mutation + next dist source check); new vacuous toBeEnabled() test found, same root cause as R2's, 2nd occurrence in this file
+- [mobile-search-overlay R6](project-mobile-search-overlay-r6.md) — gate/body split correct; 3 required findings live-reproduced via scratch tests: dead eslint-disable, onChange missing isSubmitRequested reset (unrequested nav), stale pushedRef via popstate mid-replace (wrong history.back())
+- [mobile-search-overlay R7 — APPROVED, closes loop](project-mobile-search-overlay-r7.md) — all 3 R6 findings re-verified fixed via live mutation-revert-rerun on the 4 modified files; zero new findings

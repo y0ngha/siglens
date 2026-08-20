@@ -331,3 +331,18 @@ body {
 body:has([data-vaul-drawer]) [data-mobile-sheet-placeholder] {
     display: none;
 }
+
+/*
+ * 상단 내비게이션 진행 바(`features/ticker-search/ui/NavigationProgressBar`).
+ * 종목 이동은 RSC 왕복이라 LAX 경로에서 2~3초가 걸리는데, 그동안 화면은 떠나온
+ * 종목 그대로다. 진행 중임을 알리되 아무것도 막지 않는다.
+ */
+@keyframes nav-progress {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(300%);
+    }
+}

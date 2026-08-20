@@ -5,6 +5,7 @@ import {
     type KeyboardEvent,
     type RefObject,
     useCallback,
+    useEffect,
     useRef,
     useState,
 } from 'react';
@@ -12,6 +13,8 @@ import { useRouter } from 'next/navigation';
 import type { TickerSearchResult } from '@/shared/lib/types';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { useTickerSearch } from './useTickerSearch';
+import { resultDisplayNames } from '../lib/resultDisplay';
+import { resolveSubmitTarget } from '../lib/resolveSubmitTarget';
 
 interface UseAutocompleteOptions {
     /**
@@ -33,6 +36,8 @@ interface UseAutocompleteReturn {
     query: string;
     results: readonly TickerSearchResult[];
     isSearching: boolean;
+    /** 조회 실패. 호출부는 "결과 없음"과 구분해 보여줘야 한다. */
+    isError: boolean;
     selectedIndex: number;
     isOpen: boolean;
     inputRef: RefObject<HTMLInputElement | null>;
@@ -58,7 +63,8 @@ export function useAutocomplete({
     const prefetchedRef = useRef(new Set<string>());
 
     const router = useRouter();
-    const { results, isSearching, hasQuery } = useTickerSearch(query);
+    const { results, isSearching, hasQuery, isError, debouncedQuery } =
+        useTickerSearch(query);
 
     useOnClickOutside([inputRef, dropdownRef], () => setIsClosed(true));
 
@@ -75,6 +81,29 @@ export function useAutocomplete({
         [navigateOnSelect, onSelect, router]
     );
 
+    /**
+     * 고른 항목 없이 검색 키를 눌렀다는 사실. 즉시 결정하지 않고 남겨 둔다.
+     *
+     * 디바운스가 300ms라 마지막 글자를 치고 바로 Enter를 누르면 결과가 아직 이전
+     * 질의의 것이다. 그때 결정하면 엉뚱한 종목으로 가거나(`apple` → `/APPLE` 404)
+     * 아무 일도 안 일어나 **검색 키가 먹통으로** 보인다. 결착된 뒤 처리하면 둘 다
+     * 피한다. 오버레이(`SearchOverlay`)가 같은 규칙을 쓴다.
+     */
+    const [isSubmitRequested, setIsSubmitRequested] = useState(false);
+    const isSettled = debouncedQuery.trim() === query.trim();
+
+    const navigateRef = useRef(navigate);
+    navigateRef.current = navigate;
+
+    useEffect(() => {
+        if (!isSubmitRequested || !isSettled || isSearching) return;
+        setIsSubmitRequested(false);
+        // 실패한 조회의 빈 결과는 "없다"가 아니다 — 드롭다운의 실패 문구를 남긴다.
+        if (isError) return;
+        const target = resolveSubmitTarget(query, results);
+        if (target) navigateRef.current(target.symbol, target.label);
+    }, [isSubmitRequested, isSettled, isSearching, isError, query, results]);
+
     const prefetch = useCallback(
         (symbol: string) => {
             if (prefetchedRef.current.has(symbol)) return;
@@ -85,6 +114,9 @@ export function useAutocomplete({
     );
 
     const handleChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+        // 계속 타이핑하면 앞서 남긴 검색 의도는 무효다 — 그대로 두면 새 질의가
+        // 결착되는 순간 사용자가 요청하지 않은 이동이 일어난다.
+        setIsSubmitRequested(false);
         setQuery(e.target.value);
         setIsClosed(false);
         setSelectedIndex(-1);
@@ -111,26 +143,24 @@ export function useAutocomplete({
                 e.preventDefault();
                 const selected = results[selectedIndex];
                 if (selectedIndex >= 0 && selected) {
+                    // 최근 검색 라벨 계산은 `resultDisplayNames`가 단일 소스다 —
+                    // 같은 식을 손으로 다시 적으면 표면마다 이름이 어긋난다.
                     navigate(
                         selected.symbol,
-                        selected.koreanName ?? selected.name
+                        resultDisplayNames(selected).primaryName
                     );
                 } else {
-                    const trimmed = query.trim().toUpperCase();
-                    if (trimmed) navigate(trimmed);
+                    setIsSubmitRequested(true);
                 }
             } else if (e.key === 'Escape') {
                 setIsClosed(true);
                 setSelectedIndex(-1);
             }
         },
-        [navigate, prefetch, query, results, selectedIndex]
+        [navigate, prefetch, results, selectedIndex]
     );
 
-    const handleSearchClick = useCallback(() => {
-        const trimmed = query.trim().toUpperCase();
-        if (trimmed) navigate(trimmed);
-    }, [navigate, query]);
+    const handleSearchClick = useCallback(() => setIsSubmitRequested(true), []);
 
     const handleFocus = useCallback(() => setIsClosed(false), []);
 
@@ -138,6 +168,7 @@ export function useAutocomplete({
         query,
         results,
         isSearching,
+        isError,
         selectedIndex,
         isOpen,
         inputRef,

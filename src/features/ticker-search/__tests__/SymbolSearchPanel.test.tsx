@@ -8,6 +8,15 @@ vi.mock('@/shared/db/client', () => ({
 }));
 vi.mock('@/features/ticker-search/hooks/useRecentSearches');
 
+/**
+ * 오버레이 트리거는 provider가 있을 때만 렌더된다. provider 유무를 케이스마다
+ * 바꿔야 해서 훅을 직접 갈아끼운다 — 실제 provider를 쓰면 라우터까지 따라온다.
+ */
+const overlayState: { value: { open: () => void } | null } = { value: null };
+vi.mock('@/features/ticker-search/model/SearchOverlayContext', () => ({
+    useSearchOverlayTrigger: () => overlayState.value,
+}));
+
 // TickerAutocomplete has deep dependencies; mock the entire component
 vi.mock('@/features/ticker-search/ui/TickerAutocomplete', () => ({
     TickerAutocomplete: ({
@@ -38,6 +47,8 @@ vi.mock('next/link', () => ({
     }) => <a {...props}>{children}</a>,
 }));
 
+import { SEARCH_PLACEHOLDER } from '@/features/ticker-search/lib/searchLabels';
+
 const mockUseRecentSearches = vi.mocked(useRecentSearches);
 const mockAddSearch = vi.fn();
 const mockRemoveSearch = vi.fn();
@@ -64,6 +75,7 @@ function setRecentSearches(searches: string[]) {
 describe('SymbolSearchPanel', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        overlayState.value = { open: vi.fn() };
     });
 
     it('renders TickerAutocomplete', () => {
@@ -192,5 +204,65 @@ describe('SymbolSearchPanel', () => {
         render(<SymbolSearchPanel />);
         const link = screen.getByRole('link', { name: 'AAPL' });
         expect(link).toHaveAttribute('href', '/AAPL');
+    });
+
+    it('모바일에서는 최근 검색 칩을 4개까지만 드러낸다', () => {
+        // 홈 첫 화면 세로가 귀하다. 상한은 오버레이와 같은 상수를 쓰며, 5번째부터는
+        // 마크업은 두되 `hidden lg:inline-flex`로 감춘다(조건부 렌더는 하이드레이션
+        // 불일치 여지를 만든다).
+        setRecentEntries(
+            Array.from({ length: 7 }, (_, i) => ({
+                symbol: `SYM${i}`,
+                label: `종목${i}`,
+            }))
+        );
+        const { container } = render(<SymbolSearchPanel />);
+
+        const chips = [...container.querySelectorAll('span')].filter(el =>
+            el.className.includes('rounded-full')
+        );
+        const hidden = chips.filter(el => el.className.includes('hidden'));
+        expect(chips).toHaveLength(7);
+        expect(hidden).toHaveLength(3);
+    });
+
+    it('provider가 없으면 검색 트리거를 렌더하지 않는다', () => {
+        // 눌러도 아무 일이 없는 컨트롤을 홈의 주 CTA 자리에 두지 않는다.
+        // `HeaderSearch`와 같은 정책.
+        overlayState.value = null;
+        setRecentSearches([]);
+        render(<SymbolSearchPanel />);
+
+        expect(
+            screen.queryByRole('button', { name: SEARCH_PLACEHOLDER })
+        ).toBeNull();
+    });
+
+    it('모두 지우기 뒤 포커스가 검색 트리거로 돌아온다', async () => {
+        // 이 버튼은 자기 자신이 든 행을 통째로 언마운트시킨다. 두면 포커스가
+        // <body>로 떨어져 다음 Tab이 문서 처음부터 시작한다(WCAG 2.4.3).
+        setRecentSearches(['AAPL']);
+        render(<SymbolSearchPanel />);
+
+        await userEvent.click(
+            screen.getByRole('button', { name: '모두 지우기' })
+        );
+
+        expect(mockClearAll).toHaveBeenCalledTimes(1);
+        expect(
+            screen.getByRole('button', { name: SEARCH_PLACEHOLDER })
+        ).toHaveFocus();
+    });
+
+    it('칩 하나를 지우면 포커스가 목록에 남는다', async () => {
+        setRecentSearches(['AAPL', 'MSFT']);
+        render(<SymbolSearchPanel />);
+
+        await userEvent.click(
+            screen.getByRole('button', { name: 'AAPL 최근 검색에서 제거' })
+        );
+
+        expect(mockRemoveSearch).toHaveBeenCalledWith('AAPL');
+        expect(document.activeElement).not.toBe(document.body);
     });
 });
