@@ -1,5 +1,20 @@
 # Changelog
 
+# [0.60.0](https://github.com/y0ngha/siglens/compare/v0.59.4...v0.60.0) (2026-08-20)
+
+
+### Bug Fixes
+
+* 검색 오버레이 검증 오류 수정 ([ca9afed](https://github.com/y0ngha/siglens/commit/ca9afede9dfa69aa612a07f7e37cf65cce486d05))
+* 리뷰 피드백 반영 - 렌더 순서 및 JSDoc 정리 ([c6c489b](https://github.com/y0ngha/siglens/commit/c6c489b9117b334a64e93dc88f7ba04adc1a8067))
+* 훅 선언 순서 및 포커스 관리 수정 ([6db78a0](https://github.com/y0ngha/siglens/commit/6db78a0a6d8e0c3bd7ffb16ed8a814f7b83d1d38))
+* Hook declaration order (useState/useRef → custom hooks → useCallback/useMemo → derived → handlers → useEffect) ([925dc8f](https://github.com/y0ngha/siglens/commit/925dc8fc2b8a0627e588eebff0ade8bfb8fe2f8e))
+
+
+### Features
+
+* 모바일 검색 오버레이 도입 ([e7229b2](https://github.com/y0ngha/siglens/commit/e7229b2e5e7c2c4d97a2ccf1d5e2272e137f2bc6))
+
 ## [0.59.4](https://github.com/y0ngha/siglens/compare/v0.59.3...v0.59.4) (2026-08-20)
 
 
