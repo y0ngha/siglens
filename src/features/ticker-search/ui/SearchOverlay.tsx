@@ -135,10 +135,18 @@ function SearchOverlayBody({
      * 2. 안드로이드 하드웨어 뒤로가기·iOS 엣지 스와이프는 `onClose`를 거치지 않고
      *    `popstate`를 직접 쏘므로 그 가드가 아예 적용되지 않았다.
      * 3. 대기 중 `history.back()`이 일어나면 늦게 도착한 RSC 응답이 사용자가 물러난
-     *    항목을 덮어쓴다 — **고 판단했으나 사실이 아니다.** Next 16.2.12는 `popstate`를
-     *    `ACTION_RESTORE`로 처리하면서 진행 중인 내비게이션을 `discarded`로 표시하고
-     *    (`app-router-instance.js`), 폐기된 액션은 `setState`에 도달하지 않아
-     *    `HistoryUpdater`도 돌지 않는다. 되돌아간 자리가 유지된다.
+     *    항목을 덮어쓴다 — **고 판단했으나 사실이 아니다.** 설치된 next@16.2.12의
+     *    `node_modules/next/dist/client/components/app-router-instance.js`에서 확인했다:
+     *    `ACTION_NAVIGATE`/`ACTION_RESTORE`가 들어오면 진행 중인 액션에
+     *    `actionQueue.pending.discarded = true`를 세우고(L145-146), `handleResult`는
+     *    `action.discarded`면 `actionQueue.state = nextState`도 `action.resolve`도
+     *    하지 않고 빠져나간다(L76-93). `setState`에 도달하지 않으니 `HistoryUpdater`도
+     *    돌지 않는다 — 되돌아간 자리가 유지된다.
+     *
+     *    이 사실은 1·2와 **독립적이다**. 1·2만으로도 가드 제거 근거는 충분하므로,
+     *    Next의 이 동작이 훗날 바뀌더라도 가드를 되살릴 이유는 되지 못한다(대신
+     *    `SearchOverlayProvider`가 진행 바를 자기 상태로 잠가, 폐기된 이동이
+     *    `action.resolve`를 영영 부르지 않아도 띠가 남지 않게 해 둔다).
      *
      * 1·2만으로 제거 근거는 충분하다. 3은 이 버전에서 성립하지 않는다는 사실을 남겨
      * 둔다 — 이 경합을 이유로 가드를 되살리자는 제안이 나오면 여기를 보라.
