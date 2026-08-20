@@ -18,7 +18,7 @@ vi.mock('next/link', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-import NotFound, { metadata } from '@/app/[locale]/not-found';
+import NotFound, { generateMetadata } from '@/app/[locale]/not-found';
 
 describe('NotFound page', () => {
     it('renders the 404 text', () => {
@@ -56,9 +56,19 @@ describe('NotFound page', () => {
         expect(screen.getByTestId('ticker-categories')).toBeInTheDocument();
     });
 
-    it('exports metadata with noindex', () => {
-        expect(metadata.robots).toEqual(
-            expect.objectContaining({ index: false })
-        );
+    /**
+     * 제목이 로케일을 따르는지가 핵심이다. 본문이 SSR되지 않는 경계라
+     * `<title>`이 크롤러와 JS 없는 사용자가 받는 전부다. ko만 검증하면
+     * 정적 `metadata`(전 로케일 한국어)로 되돌려도 통과한다.
+     */
+    it.each([
+        ['ko', '페이지를 찾을 수 없습니다'],
+        ['ja', 'ページが見つかりません'],
+    ])('%s: 제목이 로케일을 따르고 noindex다', async (locale, expected) => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale }),
+        });
+        expect(metadata.title).toBe(expected);
+        expect(metadata.robots).toEqual({ index: false, follow: true });
     });
 });

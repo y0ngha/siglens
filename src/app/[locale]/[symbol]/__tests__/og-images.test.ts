@@ -44,6 +44,26 @@ describe('[symbol] OG images', () => {
             });
         });
 
+        /**
+         * ko만 검증하면 로케일 전달을 통째로 빼도 통과한다 — `getTranslations`가
+         * 로케일 없이도 기본 로케일로 떨어지기 때문이다. 실제로 이 파일의
+         * 6개 테스트는 로케일 인자를 제거한 상태에서도 전부 초록이었다.
+         * 비-기본 로케일이 유일한 판별 지점이다.
+         */
+        it.each([
+            ['ja', 'チャート分析'],
+            ['en', 'Chart Analysis'],
+        ])('%s 로케일 라벨을 쓴다', async (locale, expected) => {
+            await OgImage({
+                params: Promise.resolve({ locale, symbol: 'aapl' }),
+            });
+
+            expect(mockBuildSymbolOgImage).toHaveBeenCalledWith({
+                ticker: 'AAPL',
+                label: expected,
+            });
+        });
+
         it('returns a Response', async () => {
             const result = await OgImage({
                 params: Promise.resolve({ locale: 'ko', symbol: 'TSLA' }),

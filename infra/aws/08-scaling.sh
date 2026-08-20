@@ -1,28 +1,16 @@
 #!/usr/bin/env bash
-# ASG 운영 여유 확보 + ALB 요청 수 기반 타깃 트래킹 스케일링 정책 설정.
+# ASG 운영 여유 확보 + CPU 기반 타깃 트래킹 스케일링 정책 설정.
 # update-auto-scaling-group / put-scaling-policy 모두 upsert — 재실행 안전.
 source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/.env"; source "$(dirname "$0")/.ids"
 
-# (a) ASG max-size는 06-alb-asg.sh가 단일 소스 오브 트루스로 4를 설정한다(L1).
+# (a) ASG max-size는 06-asg.sh가 단일 소스 오브 트루스로 4를 설정한다(L1).
 #     이전에는 여기서 update-auto-scaling-group --max-size 4 로 다시 설정해
 #     06(2)과 08(4)이 표류했다. 중복 설정을 제거해 06으로 일원화.
 
-# (b) ALB 요청 수 기반 타깃 트래킹 정책
-#     순간적 봇 버스트는 Cloudflare에서 처리하므로, 여기서는 지속 트래픽 스케일아웃에 집중.
-ALB_LABEL=$(echo "$ALB_ARN" | sed 's#.*:loadbalancer/##')          # -> app/siglens-alb/<id>
-TG_LABEL=$(echo "$TG_ARN"  | sed 's#.*:\(targetgroup/[^/]*/[^/]*\)$#\1#')  # -> targetgroup/siglens-tg/<id>
-RES_LABEL="$ALB_LABEL/$TG_LABEL"
-
-TT_CONFIG=$(jq -n \
-  --arg res_label "$RES_LABEL" \
-  --argjson target 1000 \
-  '{PredefinedMetricSpecification:{PredefinedMetricType:"ALBRequestCountPerTarget",ResourceLabel:$res_label},TargetValue:$target}')
-
-aws autoscaling put-scaling-policy \
-  --auto-scaling-group-name siglens-asg \
-  --policy-name siglens-tt-albreq \
-  --policy-type TargetTrackingScaling \
-  --target-tracking-configuration "$TT_CONFIG"
+# (b) [제거됨] ALB 요청 수 기반 타깃 트래킹(`siglens-tt-albreq`).
+#     ALB를 없애면서 함께 삭제했다. 어차피 생성일(2026-06-24) 이후 한 번도 ALARM으로
+#     전이한 적이 없다 — worker 제거 후 요청 수는 부하의 대리 지표가 아니게 됐고,
+#     그 자리는 아래 (c) CPU 정책이 이미 맡고 있다.
 
 # (c) CPU 기반 타깃 트래킹 정책
 #     worker 제거 후 LLM 호출이 앱 인스턴스 안에서 돈다. 그래서 요청 수는 더 이상
@@ -65,4 +53,4 @@ aws autoscaling put-scaling-policy \
   --policy-type TargetTrackingScaling \
   --target-tracking-configuration "$CPU_CONFIG"
 
-log "scaling policies set: siglens-tt-albreq (1000 req/target) + siglens-tt-cpu (50% CPU); ASG max-size owned by 06-alb-asg.sh (=4) | resource-label: $RES_LABEL"
+log "scaling policy set: siglens-tt-cpu (50% CPU); ASG max-size owned by 06-asg.sh (=4)"

@@ -99,8 +99,18 @@ describe('localeAlternatesFrom', () => {
 });
 
 describe('localeOpenGraph', () => {
-    it('현재 로케일과 나머지를 배타적으로 나눈다', () => {
+    it('색인 가능 로케일이 하나뿐이면 대체본을 광고하지 않는다', () => {
+        // hreflang과 같은 게이트다 — `buildLanguageAlternates`도 `available`이
+        // 2개 미만이면 `{}`를 돌려준다. 클러스터가 성립하지 않는데 한쪽만
+        // 광고하면 신호가 어긋난다.
         expect(localeOpenGraph('ja')).toEqual({
+            locale: 'ja_JP',
+            alternateLocale: [],
+        });
+    });
+
+    it('게이트가 열리면 자기 자신을 뺀 나머지를 나열한다', () => {
+        expect(localeOpenGraph('ja', ['ko', 'en', 'ja', 'zh'])).toEqual({
             locale: 'ja_JP',
             alternateLocale: ['ko_KR', 'en_US', 'zh_CN'],
         });

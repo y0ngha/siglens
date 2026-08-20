@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import { ImageResponse } from 'next/og';
 import { loadKoreanFont } from '@/entities/og-image/lib/loadKoreanFont';
 import {
@@ -30,8 +31,19 @@ export const contentType = 'image/png';
 // `/news/us`가 가져갔다 — 여기 남으면 공유 카드가 페이지 제목과 정면으로 어긋난다.
 export const alt = 'Siglens 시장 뉴스 허브';
 
-export default async function Image() {
-    const t = await getTranslations('app.news');
+interface Props {
+    params: Promise<{ locale: string }>;
+}
+
+export default async function Image({ params }: Props) {
+    // 로케일을 넘기지 않으면 `getTranslations`가 요청 스코프를 못 찾아 기본
+    // 로케일로 떨어진다 — `force-static`이라 조용히 전 로케일이 한국어 이미지로
+    // 통일된다(실측: /AAPL·/en/AAPL·/ja/AAPL이 바이트 동일).
+    const { locale } = await params;
+    const t = await getTranslations({
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        namespace: 'app.news',
+    });
     const fontData = await loadKoreanFont();
 
     return new ImageResponse(

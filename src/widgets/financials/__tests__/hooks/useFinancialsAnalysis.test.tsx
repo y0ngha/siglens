@@ -1,4 +1,5 @@
 import type { Mock } from 'vitest';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import { useFinancialsAnalysis } from '@/widgets/financials/hooks/useFinancialsAnalysis';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -37,7 +38,9 @@ function makeWrapper() {
     return function Wrapper({ children }: { children: ReactNode }) {
         return (
             <QueryClientProvider client={client}>
-                {children}
+                {/* renderToString은 RTL을 우회하므로 전역 intl 래핑이 걸리지 않는다.
+                    훅이 useTranslations를 쓰는 이상 여기서 직접 감싸야 한다. */}
+                <IntlTestProvider>{children}</IntlTestProvider>
             </QueryClientProvider>
         );
     };

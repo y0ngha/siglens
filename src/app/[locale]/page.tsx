@@ -20,6 +20,7 @@ import {
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { Metadata } from 'next';
 import { cache, Suspense } from 'react';
+import { toSkillShowcaseItems } from '@/widgets/home/toSkillShowcaseItems';
 
 // 루트 레이아웃에서 canonical을 제거했으므로 홈 페이지 자체가 명시적으로 self-canonical을 선언한다.
 // 다른 인덱서블 페이지들(economy, market, backtesting 등)은 이미 자체 canonical을 갖고 있다.
@@ -57,7 +58,8 @@ async function AsyncStatsBar() {
 
 async function SkillsShowcaseServer() {
     const skills = await loadSkills();
-    return <SkillsShowcase skills={skills} />;
+    // 프로젝션이 **필수**다 — 왜인지는 `toSkillShowcaseItems`의 JSDoc에 있다.
+    return <SkillsShowcase skills={toSkillShowcaseItems(skills)} />;
 }
 
 // WebSite SearchAction(urlTemplate=`?q={search_term_string}`)의 ?q= 처리는 proxy.ts가 담당한다.
@@ -183,8 +185,10 @@ export default async function Home({
                                 </span>
                             </h1>
                             <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-secondary-400 sm:max-w-2xl sm:text-lg lg:mx-0">
-                                {skillCounts.indicators}
-                                {t('page.eafd49')} 
+                                {t('page.eafd49', {
+                                    v0: skillCounts.indicators,
+                                })}
+                                 
                                 <br className="hidden sm:block" />
                                 {t('page.79bd8f')}
                             </p>

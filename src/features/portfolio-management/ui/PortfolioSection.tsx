@@ -121,9 +121,10 @@ function HoldingRow({
                         )}
                     </div>
                     <div className="mt-0.5 text-sm text-secondary-400 tabular-nums">
-                        {trimTrailingZeros(holding.quantity)}
-                        {t('PortfolioSection.91d7d2')}
-                        {trimTrailingZeros(holding.averagePrice)}
+                        {t('PortfolioSection.91d7d2', {
+                            v0: trimTrailingZeros(holding.quantity),
+                            v1: trimTrailingZeros(holding.averagePrice),
+                        })}
                     </div>
                 </div>
 

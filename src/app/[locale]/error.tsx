@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { SITE_NAME } from '@/shared/lib/seo';
+import { reportClientError } from '@/shared/lib/reportClientError';
 
 interface RootErrorProps {
     error: Error & { digest?: string };
@@ -26,6 +27,7 @@ export default function RootError({ error, reset }: RootErrorProps) {
     useEffect(() => {
         // `digest` ties this client log to the server-side error entry.
         console.error('[RootRoute] render error:', error);
+        reportClientError(error, 'RootRoute', error.digest);
     }, [error]);
 
     return (

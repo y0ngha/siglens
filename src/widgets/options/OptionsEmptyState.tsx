@@ -57,8 +57,7 @@ export function OptionsEmptyState({
                     {t('OptionsEmptyState.64ff0f', { v0: symbol })}
                 </h1>
                 <p className="mt-3 text-sm leading-relaxed text-secondary-400">
-                    {symbol}
-                    {t('OptionsEmptyState.97e04b')}
+                    {t('OptionsEmptyState.97e04b', { v0: symbol })}
                     <br />
                     {t('OptionsEmptyState.9e8562')}
                 </p>

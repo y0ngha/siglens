@@ -83,8 +83,11 @@ describe('translateAnalysisForLocale', () => {
             { ...ANALYSIS, sentiment: 'bearish' },
             'en'
         );
+        // 두 번째 쓰기가 사라지는 순간 `?? [keyA]` 폴백이 단언을 항등식으로
+        // 만들어 조용히 통과했다. 호출 횟수를 먼저 못박아 반증 가능하게 둔다.
+        expect(mockSet).toHaveBeenCalledTimes(2);
         const [keyA] = mockSet.mock.calls[0]!;
-        const [keyB] = mockSet.mock.calls[1] ?? [keyA];
+        const [keyB] = mockSet.mock.calls[1]!;
         expect(keyB).toBe(keyA);
     });
 });

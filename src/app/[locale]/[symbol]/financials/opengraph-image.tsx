@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { buildSymbolOgImage } from '@/entities/og-image';
 
@@ -15,12 +16,18 @@ export const contentType = 'image/png';
 export const alt = 'Siglens 미국 주식 재무제표';
 
 interface Props {
-    params: Promise<{ symbol: string }>;
+    params: Promise<{ locale: string; symbol: string }>;
 }
 
 export default async function Image({ params }: Props) {
-    const t = await getTranslations('app.symbol');
-    const { symbol } = await params;
+    // 로케일을 넘기지 않으면 `getTranslations`가 요청 스코프를 못 찾아
+    // 기본 로케일로 떨어진다 — `force-static`이라 조용히 전 로케일이 한국어
+    // 이미지로 통일된다(실측: /AAPL·/en/AAPL·/ja/AAPL이 바이트 동일).
+    const { locale, symbol } = await params;
+    const t = await getTranslations({
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        namespace: 'app.symbol',
+    });
     return buildSymbolOgImage({
         ticker: symbol.toUpperCase(),
         label: t('opengraph-image.128c11'),

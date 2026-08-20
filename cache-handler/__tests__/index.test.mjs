@@ -3,6 +3,9 @@ import { vi } from 'vitest';
 const {
     getEntry,
     setEntry,
+    memGetEntry,
+    memSetEntry,
+    memDeleteEntry,
     mockConfig,
     isUpstashConfigured,
     zaddGreater,
@@ -13,6 +16,9 @@ const {
 } = vi.hoisted(() => ({
     getEntry: vi.fn(),
     setEntry: vi.fn(),
+    memGetEntry: vi.fn(),
+    memSetEntry: vi.fn(() => true),
+    memDeleteEntry: vi.fn(),
     mockConfig: { disabled: false },
     isUpstashConfigured: vi.fn(() => true),
     zaddGreater: vi.fn(async () => {}),
@@ -25,6 +31,13 @@ const {
 vi.mock('../s3Store.mjs', () => ({
     getEntry: (...a) => getEntry(...a),
     setEntry: (...a) => setEntry(...a),
+}));
+// FETCH 엔트리는 S3가 아니라 프로세스 내 LRU로 간다(memStore.mjs). 두 저장소를
+// 따로 mock해야 "FETCH가 S3를 건드리지 않는다"를 실제로 단언할 수 있다.
+vi.mock('../memStore.mjs', () => ({
+    getEntry: (...a) => memGetEntry(...a),
+    setEntry: (...a) => memSetEntry(...a),
+    deleteEntry: (...a) => memDeleteEntry(...a),
 }));
 // config.disabled를 테스트에서 토글할 수 있도록 mutable 객체로 mock.
 // vi.mock 팩토리는 호이스트되므로 mutable 참조도 vi.hoisted로 끌어올려야 한다.
@@ -62,6 +75,10 @@ function deferred() {
 beforeEach(() => {
     getEntry.mockReset();
     setEntry.mockReset();
+    memGetEntry.mockReset();
+    memSetEntry.mockReset();
+    memSetEntry.mockReturnValue(true);
+    memDeleteEntry.mockReset();
     mockConfig.disabled = false;
     isUpstashConfigured.mockReturnValue(true);
     zaddGreater.mockReset().mockResolvedValue(undefined);
@@ -121,25 +138,74 @@ describe('CacheHandler.get', () => {
         ).toEqual({ lastModified: 1000, value: { html: 'hi' } });
     });
 
-    it('ctx.kind를 getEntry로 그대로 전달한다(fetch/pages 라우팅)', async () => {
+    it('비FETCH는 ctx.kind를 그대로 S3 getEntry로 전달한다', async () => {
+        getEntry.mockResolvedValueOnce(null);
+        await new CacheHandler({}).get('/x', { kind: 'APP_PAGE' });
+        expect(getEntry).toHaveBeenCalledWith('/x', 'APP_PAGE');
+        expect(memGetEntry).not.toHaveBeenCalled();
+    });
+
+    it('FETCH는 메모리를 먼저 보고, 히트면 S3를 건너뛴다', async () => {
+        memGetEntry.mockReturnValueOnce({
+            lastModified: NOW,
+            value: { kind: 'FETCH', data: {} },
+            tags: [],
+        });
+        await new CacheHandler({}).get('/x', { kind: 'FETCH' });
+        expect(memGetEntry).toHaveBeenCalledWith('/x');
+        expect(getEntry).not.toHaveBeenCalled();
+    });
+
+    it('FETCH가 메모리에 없으면 S3로 폴백한다', async () => {
+        // 크기 게이트를 넘어 S3로 간 엔트리(큰 unstable_cache/bars-static)를 위한 경로.
+        memGetEntry.mockReturnValueOnce(null);
         getEntry.mockResolvedValueOnce(null);
         await new CacheHandler({}).get('/x', { kind: 'FETCH' });
         expect(getEntry).toHaveBeenCalledWith('/x', 'FETCH');
     });
+
+    it('메모리 스토어 히트도 태그 무효화 판정을 거친다', async () => {
+        // 저장소가 S3든 메모리든 soft invalidation은 동일하게 적용돼야 한다 —
+        // 이게 깨지면 revalidateTag 후에도 stale FETCH가 계속 서빙된다.
+        markRevalidated('fmp:AAPL', NOW - 1000);
+        memGetEntry.mockReturnValueOnce({
+            lastModified: NOW - 2000,
+            value: { kind: 'FETCH', data: {} },
+            tags: ['fmp:AAPL'],
+        });
+        expect(
+            await new CacheHandler({}).get('/x', { kind: 'FETCH' })
+        ).toBeNull();
+    });
 });
 
 describe('CacheHandler.set', () => {
-    it('FETCH는 data.kind로 fetch subfolder에 라우팅한다', async () => {
+    it('작은 FETCH는 S3를 건드리지 않고 메모리에 쓴다', async () => {
+        memSetEntry.mockReturnValueOnce(true);
         await new CacheHandler({}).set(
             '/api',
             { kind: 'FETCH', data: {} },
             { tags: ['t'] }
         );
-        const [key, kind, entry] = setEntry.mock.calls[0];
+        expect(setEntry).not.toHaveBeenCalled();
+        const [key, entry] = memSetEntry.mock.calls[0];
         expect(key).toBe('/api');
-        expect(kind).toBe('FETCH');
         expect(entry.value).toEqual({ kind: 'FETCH', data: {} });
         expect(entry.tags).toEqual(['t']);
+    });
+
+    it('메모리가 거부한 큰 FETCH는 S3로 가고 메모리 사본이 정리된다', async () => {
+        // 정리하지 않으면 같은 키가 커졌을 때 get이 낡은 메모리 사본을 먼저 집는다.
+        memSetEntry.mockReturnValueOnce(false);
+        await new CacheHandler({}).set(
+            '/api',
+            { kind: 'FETCH', data: {} },
+            { tags: ['t'] }
+        );
+        expect(memDeleteEntry).toHaveBeenCalledWith('/api');
+        const [key, kind] = setEntry.mock.calls[0];
+        expect(key).toBe('/api');
+        expect(kind).toBe('FETCH');
     });
 
     it('FETCH는 ctx.tags + ctx.softTags + 값 tags를 모두 캡처한다', async () => {
@@ -148,7 +214,7 @@ describe('CacheHandler.set', () => {
             { kind: 'FETCH', data: {}, tags: ['value:tag'] },
             { tags: ['ctx:tag'], softTags: ['soft:tag'] }
         );
-        const [, , entry] = setEntry.mock.calls[0];
+        const [, entry] = memSetEntry.mock.calls[0];
         expect([...entry.tags].sort()).toEqual([
             'ctx:tag',
             'soft:tag',

@@ -24,6 +24,7 @@ vi.mock('@/shared/lib/og', () => ({
 }));
 
 import { generateMetadata, generateStaticParams } from '@/app/[locale]/layout';
+import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import { ROOT_FULL_TITLE, ROOT_TITLE, SITE_NAME } from '@/shared/lib/seo';
 import { LOCALES, LOCALE_OG } from '@/shared/i18n/locales';
 
@@ -71,12 +72,25 @@ describe('RootLayout 로케일', () => {
     });
 
     it.each(LOCALES)(
-        '%s: og:locale과 alternateLocale이 상호 배타적이다',
+        /**
+         * `alternateLocale`은 **색인 게이트를 통과한 로케일**만 나열한다
+         * (`STATIC_INDEXABLE_LOCALES`, 현재 ko 하나). 전 로케일을 무조건
+         * 광고하면 hreflang에서 걷어낸 문제 — 준비 안 된 로케일을 외부에
+         * 알리는 것 — 를 og 계층에서 반복한다. 예전에는 이 레이아웃이 자체
+         * 하드코딩을 갖고 있어 **홈 페이지만** 게이트를 우회했다(실측).
+         */
+        '%s: alternateLocale은 색인 가능한 로케일만 담는다',
         async locale => {
             const metadata = await metadataFor(locale);
             expect(metadata.openGraph?.locale).toBe(LOCALE_OG[locale]);
+            // 색인 가능 로케일이 하나뿐이면 클러스터가 성립하지 않으므로
+            // hreflang과 마찬가지로 대체본을 광고하지 않는다.
             expect(metadata.openGraph?.alternateLocale).toEqual(
-                LOCALES.filter(l => l !== locale).map(l => LOCALE_OG[l])
+                STATIC_INDEXABLE_LOCALES.length < 2
+                    ? []
+                    : STATIC_INDEXABLE_LOCALES.filter(l => l !== locale).map(
+                          l => LOCALE_OG[l]
+                      )
             );
         }
     );

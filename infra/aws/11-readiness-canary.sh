@@ -4,6 +4,9 @@
 # ⚠️  BILLABLE 리소스를 생성한다:
 #   - S3 아티팩트 버킷 (카나리 결과 저장)
 #   - CloudWatch Synthetics 카나리 실행 (rate(5 minutes), ~$0.0012/실행)
+#     → **월 $10.37이다** (8,640회 × $0.0012). ALB 제거로 아낀 $25.9의 40%다.
+#        켤 거라면 `rate(15 minutes)`($3.46/월)부터 고려할 것. 이 스크립트는
+#        기본값을 바꾸지 않는다 — 숫자를 알고 고르라는 뜻이다.
 #   - IAM 역할 (카나리 런타임 권한)
 #   - CloudWatch 알람 (ALARM_SNS 토픽 트리거)
 #
@@ -12,9 +15,14 @@
 #
 # 배경:
 #   /api/ready는 Neon DB + Upstash Redis 도달성을 확인하는 deep probe다.
-#   07-alarms.sh의 ALB 5xx 알람은 하드 장애만 커버한다; DB/Redis 접속 실패가 5xx를
-#   발생시키지 않는 경우(예: 준비 중인 인스턴스, 냉각 중 연결 복구)는 감지하지 못한다.
-#   이 카나리는 /api/ready를 5분마다 직접 HTTP GET하여 그 간극을 메운다.
+#   07-alarms.sh의 로그 기반 알람들은 하드 장애만 커버한다; DB/Redis 접속 실패가
+#   에러 로그를 남기지 않는 경우(예: 준비 중인 인스턴스, 냉각 중 연결 복구)는 감지하지
+#   못한다. 이 카나리는 /api/ready를 직접 HTTP GET하여 그 간극을 메운다.
+#
+#   2026-08 ALB 제거 이후 이 카나리의 값이 올라갔다 — 이제 CF 엣지 → 터널 →
+#   cloudflared → 앱 → Neon/Upstash 전 구간을 **바깥에서** 확인하는 유일한 프로브다.
+#   다만 앱 사망은 온박스 `siglens-selfcheck.timer`가 무료로 감지하고 **교체까지**
+#   하므로, 이 카나리가 추가로 잡는 것은 "앱은 살아 있는데 의존성이 죽은" 구간이다.
 set -euo pipefail
 source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/.env"
 require aws

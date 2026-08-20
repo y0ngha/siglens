@@ -7,6 +7,7 @@
  * fetchMarketNewsDigest(category, signal)은 단일 프로미스를 반환한다.
  */
 
+import { TEST_STREAM_MESSAGES } from '@/shared/test-utils/streamMessagesFixture';
 import type { MockedFunction } from 'vitest';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
@@ -38,7 +39,10 @@ describe('fetchMarketNewsDigest', () => {
             result: DIGEST_RESULT,
         });
 
-        const result = await fetchMarketNewsDigest('general');
+        const result = await fetchMarketNewsDigest(
+            'general',
+            TEST_STREAM_MESSAGES
+        );
 
         expect(result).toEqual(DIGEST_RESULT);
         // type 문자열이 잘못되면 SSE 라우트가 400을 반환한다 — 프로덕션 버그를 테스트에서 잡는다.
@@ -53,7 +57,10 @@ describe('fetchMarketNewsDigest', () => {
             result: DIGEST_RESULT,
         });
 
-        const result = await fetchMarketNewsDigest('general');
+        const result = await fetchMarketNewsDigest(
+            'general',
+            TEST_STREAM_MESSAGES
+        );
 
         expect(result).toEqual(DIGEST_RESULT);
     });
@@ -64,9 +71,9 @@ describe('fetchMarketNewsDigest', () => {
             error: '서버 오류가 발생했습니다.',
         });
 
-        await expect(fetchMarketNewsDigest('general')).rejects.toThrow(
-            '서버 오류가 발생했습니다.'
-        );
+        await expect(
+            fetchMarketNewsDigest('general', TEST_STREAM_MESSAGES)
+        ).rejects.toThrow('서버 오류가 발생했습니다.');
     });
 
     it("status 'no_news' → throws with no-news message", async () => {
@@ -74,9 +81,9 @@ describe('fetchMarketNewsDigest', () => {
             status: 'no_news',
         });
 
-        await expect(fetchMarketNewsDigest('general')).rejects.toThrow(
-            '분석할 뉴스가 없어요. 잠시 후 다시 시도해 주세요.'
-        );
+        await expect(
+            fetchMarketNewsDigest('general', TEST_STREAM_MESSAGES)
+        ).rejects.toThrow('분석할 뉴스가 없어요. 잠시 후 다시 시도해 주세요.');
     });
 
     it("status 'miss_no_trigger' → throws with miss-no-trigger message", async () => {
@@ -84,7 +91,9 @@ describe('fetchMarketNewsDigest', () => {
             status: 'miss_no_trigger',
         });
 
-        await expect(fetchMarketNewsDigest('general')).rejects.toThrow(
+        await expect(
+            fetchMarketNewsDigest('general', TEST_STREAM_MESSAGES)
+        ).rejects.toThrow(
             '다이제스트를 생성할 수 없어요. 잠시 후 다시 시도해 주세요.'
         );
     });

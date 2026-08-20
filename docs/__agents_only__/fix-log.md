@@ -18,11 +18,6 @@
 - Violation: Global `vi.mock('@upstash/redis', ...)` added to `vitest.setup.base.ts` when per-file mocks + resolve alias sufficed
   - Rule: Test best practices — Global mocks weaken test isolation; per-file mocks keep missing-mock failures visible
   - Context: Removed global mock to maintain test isolation and visibility of unintended missing dependencies.
-## [PR #432 Round 4 | fix/cancel-job-on-page-unload | 2026-05-09]
-- Violation: `route.ts` body validation used `!j.type` (falsy check only), allowing invalid type strings (e.g. `"unknown"`) to pass and silently return 204
-  - Rule: Infrastructure Functions — validate all inputs at API boundaries; invalid values must return 400
-  - Context: Added `VALID_JOB_TYPES` Set check so unrecognized job types are rejected with 400 rather than logged as a warning and treated as success
-
 ## [PR #546 Round 2 | fix/fear-greed-h1-dup | 2026-06-03]
 - Status: APPROVED (both rounds, zero findings)
   - Review: Removed duplicate ticker in h1 (`AAPL` duplicated because displayName + explicit ticker append) across 4 spots (fear-greed/page.tsx: h1, FAQ JSON-LD, guide; [symbol]/page.tsx: sr-only)
@@ -67,9 +62,6 @@
   - Context: computeRelevanceScores iterated with for...of and pushed results into accumulator array. Refactored to use .map() for clarity and immutability.
 
 ## [feat/aws-infra Round 1 | feat/aws-infra | 2026-06-24]
-- Violation: SSM env-vars written to /run (tmpfs) only at cloud-init → lost on OS reboot → container crash-loop
-  - Rule: Infrastructure Functions — Runtime configuration must survive OS restart; ephemeral storage invalid for persistent config
-  - Context: user-data.sh saved SSM env to /run only. Fixed: added systemd ExecStartPre to re-fetch from SSM before container start, ensuring config persists across reboots.
 - Violation: workflow_dispatch trigger on restricted GitHub Actions OIDC trust (scoped to refs/tags/v*) → fails with 403
   - Rule: OIDC trust scope must match all intended workflow trigger patterns; workflow_dispatch incompatible with tag-scoped trust
   - Context: deploy.yml workflow_dispatch would fail because GitHub OIDC trust restricted to release tags. Removed workflow_dispatch; only refs/tags/v* remains in trigger scope.
@@ -241,3 +233,38 @@
 - Operational lesson (cost: real session time): Multi-replacement script using only `assert content != original` guard silently tolerates individual failed replacements (e.g., when prettier reformatted target across lines). One replacement shipped unapplied, caught only by failing test.
   - Rule: Verify each replacement with targeted grep (e.g., `grep 'expected string' file`) instead of whole-file inequality check
   - Context: A component edit never applied; documented in team feedback.
+
+## [perf/aws-cost-reduction Round 1 | ISR cache-handler refactor | 2026-08-19]
+- Violation: `cache-handler/memStore.mjs` — `setEntry()` deleted the previous entry and decremented the byte budget BEFORE checking the per-entry size cap, so writing an oversized value to an already-cached key silently destroyed a valid existing entry instead of rejecting the oversized write
+  - Rule: (new) Guard-Ordering — Validation checks must precede mutation; early-return before mutation prevents silent data loss
+  - Context: Moved size-cap check before deletion and decrement. Added regression test verifying that oversized writes leave existing entries intact.
+- Violation: `src/shared/cache/getOrSetCache.ts` — `as Promise<T>` cast had no justification comment, violating docs/workflows/MISTAKES.md TypeScript §7 which requires every `as` cast to carry a comment explaining why the runtime value is guaranteed to match
+  - Rule: MISTAKES.md TypeScript §7 — Every `as` cast must include a comment explaining why the runtime value is guaranteed to match
+  - Context: Added comment explaining why the promise cast is safe: "T is guaranteed by cache contract; cache.get returns T | undefined, but isHit guard ensures T at this point"
+## [perf/aws-cost-reduction Round 3 | Code logic audit | 2026-08-20]
+- Violation: Length cap applied AFTER regex instead of before, making cap useless against the quadratic blowup it was meant to prevent. Same code later called `String(value)` on untrusted object before capping, invoking arbitrary `toString`.
+  - Rule: Validation must be applied in order (type check → size check → parse); size checks must precede regex to prevent quadratic blowup
+  - Context: Moved `.substring(0, MAX_LEN)` BEFORE regex; added `typeof value === 'string'` check before `String(value)`.
+
+## [perf/aws-cost-reduction Round 3 | Test coverage gaps audit | 2026-08-20]
+- Violation (test 1): Kill-switch test re-imported module to change env, which also cleared the store. "Disabled" became indistinguishable from "empty".
+  - Rule: MISTAKES.md §Tests — Module state must not be reset by test setup; use mock at boundary, not reimport
+  - Context: Changed to mock the flag at runtime without reimport; re-ran test in isolation to verify it fails when flag is toggled.
+- Violation (test 2): Content-Length test where undici never sets Content-Length on `new Request(url, {body})`, so the header branch was never exercised.
+  - Rule: MISTAKES.md §Tests §18 — New conditional branch introduced without test cases covering both true and false paths; verify both paths execute
+  - Context: Created separate test with manual `Content-Length` header set to trigger the header-present branch.
+- Violation (test 3): Integration test re-implemented the very helper whose coupling it claimed to pin.
+  - Rule: MISTAKES.md §Tests — Tests verifying a helper's interface must NOT re-implement that helper; call it directly and verify output
+  - Context: Removed duplicate implementation; test now calls the shared helper directly.
+- Violation (test 4): Gate test where every case expected the same outcome; deleting half the gate condition kept all tests green.
+  - Rule: MISTAKES.md §Tests §18 — Exhaustive tests over conditional logic must have at least one case that fails when condition is inverted
+  - Context: Added false-path case expecting different outcome; mutation test verified condition is necessary.
+
+## [perf/aws-cost-reduction Round 3 | UI audit | 2026-08-20]
+- Violation: Two components render the same user-facing string (self-norm warning) — server summary and client badge. Duplicate DOM and duplicate screen-reader output; aria-live regions announce twice.
+  - Rule: Accessibility — User-facing text must not be rendered in multiple places simultaneously; consolidate to a single source or use aria-hidden on duplicates
+  - Context: Moved string to shared constant; server summary renders it as primary; client badge renders aria-hidden text or references parent's `aria-describedby`.
+- Violation: Prose asserting "최근 1년 87거래일 중" but code slices to 252-day window, gated only on 60-point minimum. Window doesn't match prose claim.
+  - Rule: MISTAKES.md §Documentation Sync — Prose describing data windows must match actual window in code; mismatch hides degradation
+  - Context: Corrected prose to "최근 12개월 중" or limited text to only display when 252-day window is fully available.
+

@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { skillLabel } from './skillLabel';
 import type { ReactNode } from 'react';
 import {
     startTransition,
@@ -485,7 +486,7 @@ function PatternAccordionItem({
                     className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     <span className="min-w-0 flex-1 truncate text-xs font-medium text-secondary-300">
-                        {pattern.skillName}
+                        {skillLabel(t, pattern.skillName)}
                     </span>
                     <TrendBadge trend={pattern.trend} />
                     <ChevronIcon isOpen={isOpen} />
@@ -571,6 +572,7 @@ function StrategyAccordionItem({
     strategy,
     showConfidence,
 }: StrategyAccordionItemProps) {
+    const t = useTranslations('widgets.analysis');
     const [isOpen, setIsOpen] = useState(false);
 
     const handleToggleOpen = (): void => {
@@ -589,7 +591,7 @@ function StrategyAccordionItem({
                     className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     <span className="min-w-0 flex-1 truncate text-xs font-medium text-secondary-300">
-                        {strategy.strategyName}
+                        {skillLabel(t, strategy.strategyName)}
                     </span>
                     <TrendBadge trend={strategy.trend} />
                     <ChevronIcon isOpen={isOpen} />
@@ -1271,9 +1273,10 @@ export function AnalysisPanel({
                                                 <SignalItem
                                                     key={`${indicatorResult.indicatorName}-${signal.type}-${index}`}
                                                     signal={signal}
-                                                    typeLabel={
+                                                    typeLabel={skillLabel(
+                                                        t,
                                                         indicatorResult.indicatorName
-                                                    }
+                                                    )}
                                                 />
                                             )
                                         )

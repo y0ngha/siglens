@@ -1,6 +1,8 @@
 'use server';
 
 import { requestPasswordReset } from '@/entities/auth';
+import { getLocale } from 'next-intl/server';
+import { DEFAULT_LOCALE, isLocale, type Locale } from '@/shared/i18n/locales';
 import { DrizzleUserRepository } from '@/entities/auth/api';
 import {
     createEmailTokenStore,
@@ -11,10 +13,26 @@ import { normalizeEmail } from '@/shared/lib/auth/validation';
 import { createEmailDispatcher } from '@/shared/email';
 import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
 
+/**
+ * 요청 로케일. 서버 액션이 로케일 헤더 없이 호출되는 경우를 대비해 기본값으로
+ * 떨어뜨린다 — 여기서 던지면 재설정 메일 자체가 안 나간다.
+ */
+async function resolveRequestLocale(): Promise<Locale> {
+    try {
+        const value = await getLocale();
+        return isLocale(value) ? value : DEFAULT_LOCALE;
+    } catch {
+        return DEFAULT_LOCALE;
+    }
+}
+
 export async function requestPasswordResetAction(
     _prev: ForgotPasswordFormState,
     formData: FormData
 ): Promise<ForgotPasswordFormState> {
+    // 메일 링크가 요청자의 로케일을 유지해야 한다 — 없으면 ja 사용자가
+    // 한국어 재설정 페이지에 떨어진다.
+    const locale = await resolveRequestLocale();
     try {
         const email = normalizeEmail(String(formData.get('email') ?? ''));
 
@@ -34,7 +52,7 @@ export async function requestPasswordResetAction(
             { users: repo, emailTokens, emailDispatcher },
             {
                 buildMessage: token =>
-                    buildPasswordResetEmail({ email, token }),
+                    buildPasswordResetEmail({ email, token, locale }),
             }
         );
 

@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import { localeCanonical } from '@/shared/lib/seoAlternates';
 import type { Metadata } from 'next';
 import {
     DEFAULT_LOCALE,
@@ -13,16 +14,29 @@ import { redirect } from 'next/navigation';
 import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
 import { DeleteAccountConfirm } from '@/features/account-delete';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/lib/seo';
 
 // noindex 페이지에도 canonical/og:url을 명시한다 (login/signup 정책과 일관).
-export const metadata: Metadata = {
-    title: '회원 탈퇴',
-    description: `${SITE_NAME} 회원 탈퇴`,
-    alternates: { canonical: `${SITE_URL}/account/delete` },
-    openGraph: { url: `${SITE_URL}/account/delete` },
-    robots: { index: false, follow: false },
-};
+/**
+ * 정적 `metadata`가 아니라 `generateMetadata`인 이유: 정적 객체는 로케일을 볼 수
+ * 없어 `/ja/account/delete`도 canonical이 한국어 URL로 나갔다. noindex 페이지에 다른 URL을
+ * canonical로 걸면 Google이 noindex를 그 대상으로 전파할 수 있다.
+ */
+export async function generateMetadata({
+    params,
+}: {
+    readonly params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+    const { locale } = await params;
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    return {
+        title: '회원 탈퇴',
+        description: `${SITE_NAME} 회원 탈퇴`,
+        alternates: { canonical: localeCanonical(resolved, '/account/delete') },
+        openGraph: { url: localeCanonical(resolved, '/account/delete') },
+        robots: { index: false, follow: false },
+    };
+}
 
 // Reads cookies via getCurrentUser — must be inside Suspense for PPR.
 async function DeleteAccountContent({ locale }: { locale: Locale }) {

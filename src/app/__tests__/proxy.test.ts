@@ -20,6 +20,7 @@ vi.mock('next/server', () => ({
             status,
         })),
         next: vi.fn(() => ({ type: 'next' })),
+        rewrite: vi.fn((url: URL) => ({ type: 'rewrite', url })),
     },
 }));
 
@@ -32,6 +33,10 @@ import { LOCALES } from '@/shared/i18n/locales';
 const mockRedirect = NextResponse.redirect as MockedFunction<
     typeof NextResponse.redirect
 >;
+const mockRewrite = NextResponse.rewrite as MockedFunction<
+    typeof NextResponse.rewrite
+>;
+const mockNext = NextResponse.next as MockedFunction<typeof NextResponse.next>;
 /** 가드를 통과해 next-intl로 위임됐는지를 보는 관측점. */
 const mockPass = mockIntlMiddleware;
 
@@ -54,6 +59,8 @@ function makeRequest(
 describe('proxy', () => {
     beforeEach(() => {
         mockRedirect.mockClear();
+        mockRewrite.mockClear();
+        mockNext.mockClear();
         mockPass.mockClear();
     });
 
@@ -121,6 +128,8 @@ describe('proxy', () => {
 describe('Ticker 케이스 정규화 — 소문자/혼합 케이스 → 대문자 301', () => {
     beforeEach(() => {
         mockRedirect.mockClear();
+        mockRewrite.mockClear();
+        mockNext.mockClear();
         mockPass.mockClear();
     });
 
@@ -213,6 +222,8 @@ describe('Ticker 케이스 정규화 — 소문자/혼합 케이스 → 대문�
 describe('/share 라우트 — base64url id 대문자화 방지 회귀 테스트', () => {
     beforeEach(() => {
         mockRedirect.mockClear();
+        mockRewrite.mockClear();
+        mockNext.mockClear();
         mockPass.mockClear();
     });
 
@@ -232,6 +243,8 @@ describe('/share 라우트 — base64url id 대문자화 방지 회귀 테스트
 describe('/news 라우트 — ticker 오인 방지 회귀 테스트', () => {
     beforeEach(() => {
         mockRedirect.mockClear();
+        mockRewrite.mockClear();
+        mockNext.mockClear();
         mockPass.mockClear();
     });
 
@@ -252,6 +265,8 @@ describe('/news 라우트 — ticker 오인 방지 회귀 테스트', () => {
 describe('/onboarding 라우트 — ticker 오인으로 인한 /ONBOARDING 404 방지 회귀 테스트', () => {
     beforeEach(() => {
         mockRedirect.mockClear();
+        mockRewrite.mockClear();
+        mockNext.mockClear();
         mockPass.mockClear();
     });
 
@@ -274,6 +289,8 @@ describe('/onboarding 라우트 — ticker 오인으로 인한 /ONBOARDING 404 �
 describe('/portfolio 라우트 — ticker 오인으로 인한 /PORTFOLIO 404 방지 회귀 테스트', () => {
     beforeEach(() => {
         mockRedirect.mockClear();
+        mockRewrite.mockClear();
+        mockNext.mockClear();
         mockPass.mockClear();
     });
 
@@ -300,6 +317,8 @@ describe('/portfolio 라우트 — ticker 오인으로 인한 /PORTFOLIO 404 방
 describe('랜딩 ?q= redirect — proxy가 page.tsx 대신 처리 (ISR 보존)', () => {
     beforeEach(() => {
         mockRedirect.mockClear();
+        mockRewrite.mockClear();
+        mockNext.mockClear();
         mockPass.mockClear();
     });
 
@@ -453,10 +472,118 @@ describe('로케일 접두사 경로', () => {
         );
     });
 
-    it('/ko/AAPL — 기본 로케일 접두사는 티커 판정에서 제외된다', () => {
+    it('/ko/AAPL — 기본 로케일 접두사를 떼되 티커로 오인하지 않는다', () => {
         proxy(makeRequest(undefined, '/ko/AAPL'));
-        // `/KO`로의 오인 301이 없어야 한다. 접두사 제거는 next-intl이 맡는다.
+        // 핵심은 `/KO`(코카콜라)로 오인되지 않는 것이다. 접두사 제거 자체는
+        // **영구** 정규화라 301로 낸다 — next-intl에 맡기면 307(임시)이 나가
+        // Googlebot이 `/ko/*`를 영원히 다시 크롤한다.
+        expect(mockRedirect).toHaveBeenCalledWith(
+            expect.objectContaining({ pathname: '/AAPL' }),
+            301
+        );
+    });
+
+    /**
+     * 두 정규화가 한 홉에 끝나야 한다.
+     *
+     * `/ko/ko`는 코카콜라의 소문자 표기다. 접두사만 떼면 결과 `/ko`가 **다시**
+     * 기본 로케일 접두사로 읽혀 홈으로 떨어진다 — 종목 페이지가 통째로 증발한다.
+     */
+    it.each([
+        ['/ko/ko', '/KO'],
+        ['/ko/aapl', '/AAPL'],
+        ['/ko/market', '/market'],
+    ])('%s → %s (한 홉)', (from, to) => {
+        proxy(makeRequest(undefined, from));
+        expect(mockRedirect).toHaveBeenCalledWith(
+            expect.objectContaining({ pathname: to }),
+            301
+        );
+    });
+
+    /**
+     * 파일 규약 메타데이터 이미지는 **어떤 정규화도 타면 안 된다.**
+     *
+     * 두 형태가 **모두** 살아 있어야 하고, 각각 처리가 다르다.
+     *
+     *  - 접두사 있음(`/ko/AAPL/opengraph-image`): Next가 `[locale]` 라우트에서
+     *    만들어 `og:image`에 싣는 형태. 301을 내면 순위를 가진 한국어 페이지가
+     *    이미지 자리에 리다이렉트를 광고하고, intl에 넘기면 그쪽이 307을 낸다.
+     *    → 그대로 통과(`next()`).
+     *  - 접두사 없음(`/AAPL/opengraph-image`): **프로덕션이 지금 서빙하는 형태**
+     *    (master에서는 라우트가 `src/app/[symbol]/`에 있었다). 그냥 통과시키면
+     *    404가 되고, 3세그먼트는 `[locale]`이 첫 세그먼트를 삼켜 엉뚱한 이미지를
+     *    200으로 돌려준다. → 기본 로케일 세그먼트로 rewrite.
+     *
+     * 두 분기를 구분해 단언하지 않으면 이 파일은 **두 버그 상태를 모두 통과시킨다**
+     * (실측: `next()`만 남겨도, rewrite만 남겨도 101/101 초록이었다).
+     */
+    it.each([
+        '/ko/AAPL/opengraph-image',
+        '/ko/AAPL/twitter-image',
+        '/ko/news/opengraph-image',
+    ])('%s — 접두사가 있으면 그대로 통과한다', path => {
+        proxy(makeRequest(undefined, path));
         expect(mockRedirect).not.toHaveBeenCalled();
-        expect(mockPass).toHaveBeenCalledTimes(1);
+        expect(mockRewrite).not.toHaveBeenCalled();
+        expect(mockPass).not.toHaveBeenCalled();
+        expect(mockNext).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        ['/AAPL/opengraph-image', '/ko/AAPL/opengraph-image'],
+        ['/AAPL/twitter-image', '/ko/AAPL/twitter-image'],
+        ['/AAPL/news/opengraph-image', '/ko/AAPL/news/opengraph-image'],
+        ['/news/opengraph-image', '/ko/news/opengraph-image'],
+    ])('%s — 접두사가 없으면 %s로 rewrite한다', (path, expected) => {
+        proxy(makeRequest(undefined, path));
+        expect(mockRedirect).not.toHaveBeenCalled();
+        expect(mockPass).not.toHaveBeenCalled();
+        expect(mockRewrite).toHaveBeenCalledWith(
+            expect.objectContaining({ pathname: expected })
+        );
+    });
+
+    /**
+     * 접두사가 붙은 경로에서 첫 세그먼트는 무조건 심볼이다. 로케일 이름을
+     * 예약어로 취급하면 `/ja/ko`가 정규화되지 않아 `/ja/KO`와 두 개의 200 URL이
+     * 공존한다(같은 자산, 다른 주소).
+     */
+    it.each([
+        ['/ja/ko', '/ja/KO'],
+        ['/en/ko', '/en/KO'],
+        ['/ja/en', '/ja/EN'],
+    ])(
+        '%s — 접두사 아래의 로케일 철자 티커도 대문자로 정규화된다',
+        (from, to) => {
+            proxy(makeRequest(undefined, from));
+            expect(mockRedirect).toHaveBeenCalledWith(
+                expect.objectContaining({ pathname: to }),
+                301
+            );
+        }
+    );
+
+    it('/KO — 로케일과 철자가 같은 실존 티커는 살아남는다', () => {
+        // next-intl은 로케일 접두사를 대소문자 무시로 매칭한다. 그대로 넘기면
+        // `KO`(코카콜라, sitemap 등재)가 로케일 `ko`로 잡혀 홈으로 날아간다.
+        proxy(makeRequest(undefined, '/KO'));
+        expect(mockRedirect).not.toHaveBeenCalled();
+        expect(mockRewrite).toHaveBeenCalledWith(
+            expect.objectContaining({ pathname: '/ko/KO' }),
+            // intl 미들웨어를 건너뛰므로 로케일 헤더를 직접 심어야 한다 —
+            // 없으면 서버 액션의 `getLocale()`이 기본 로케일로 떨어진다.
+            expect.objectContaining({
+                request: expect.objectContaining({
+                    headers: expect.any(Headers),
+                }),
+            })
+        );
+        const [, init] = mockRewrite.mock.calls[0]!;
+        expect(
+            (init as { request: { headers: Headers } }).request.headers.get(
+                'X-NEXT-INTL-LOCALE'
+            )
+        ).toBe('ko');
     });
 });

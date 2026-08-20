@@ -69,6 +69,11 @@ function GradeRow({ event }: GradeRowProps) {
                     <p className="mt-0.5 text-sm text-secondary-400">
                         {event.previousGrade}
                         <span aria-hidden="true"> → </span>
+                        {/* 이 연결어는 **이전 등급 뒤, 새 등급 앞**에 놓인다.
+                            한국어 `에서`·일본어 `から`는 앞 단어에 붙는 조사라
+                            그 자리가 맞지만, 영어·중국어는 전치사라 같은 자리에
+                            "from"을 두면 방향이 뒤집혀 읽힌다("Buy from Hold").
+                            그래서 로케일마다 방향이 맞는 연결어를 쓴다. */}
                         <span className="sr-only">
                             {t('AnalystActions.81b8e2')}{' '}
                         </span>

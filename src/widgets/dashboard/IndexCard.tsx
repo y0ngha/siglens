@@ -1,3 +1,5 @@
+import { useTranslations } from 'next-intl';
+import { assetLabel } from './assetLabel';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
 import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
@@ -24,6 +26,7 @@ export function IndexCard({
     currencySymbol,
     tickerIsReadable,
 }: IndexCardProps) {
+    const t = useTranslations('widgets.dashboard');
     const label = getLabel(data);
 
     const inner = (
@@ -31,7 +34,7 @@ export function IndexCard({
             <QuoteHeader
                 data={{
                     symbol: data.symbol,
-                    koreanName: data.koreanName,
+                    displayName: assetLabel(t, data.symbol, data.koreanName),
                     price: data.price,
                     changePercent: data.changesPercentage,
                 }}

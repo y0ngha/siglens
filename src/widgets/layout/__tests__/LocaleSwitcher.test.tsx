@@ -13,6 +13,12 @@ import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { LOCALES, LOCALE_NATIVE_LABEL } from '@/shared/i18n/locales';
 
 describe('LocaleSwitcher', () => {
+    // 주소를 심는 케이스가 뒤 테스트로 새면, 쿼리 보존 단언이 다시 항등식이
+    // 되는 것을 막던 장치가 순서 하나로 무력해진다.
+    afterEach(() => {
+        window.history.replaceState(null, '', '/');
+    });
+
     beforeEach(() => {
         mockReplace.mockClear();
     });
@@ -58,6 +64,34 @@ describe('LocaleSwitcher', () => {
         expect(mockReplace).toHaveBeenCalledWith('/AAPL/news', {
             locale: 'ja',
         });
+    });
+
+    /**
+     * ⚠️ **쿼리·해시가 없으면 이 케이스는 아무것도 검증하지 못한다.**
+     *
+     * jsdom 기본 주소는 `http://localhost:3000/`이라 `search`와 `hash`가 빈
+     * 문자열이고, 그러면 `` `${pathname}${query}${hash}` ``가 `pathname`과
+     * **글자 그대로 같다**. 실제로 쿼리 보존 수정을 통째로 되돌려도 기존 6개
+     * 테스트가 전부 통과했다. 그래서 주소를 직접 심어 판별력을 만든다.
+     *
+     * 이 보존이 없으면 `/reset-password?token=…`에서 언어를 바꿀 때 토큰이 날아가
+     * "링크가 유효하지 않다"가 뜨고, `/signup/oauth/consent?token=…`에서는
+     * 진행 중이던 소셜 가입이 취소된다.
+     */
+    it('쿼리스트링과 해시를 유지한 채 로케일만 바꾼다', () => {
+        window.history.replaceState(
+            null,
+            '',
+            '/AAPL/news?tf=1Hour&sector=tech#chart'
+        );
+        renderWithIntl(<LocaleSwitcher />);
+        fireEvent.change(screen.getByRole('combobox'), {
+            target: { value: 'ja' },
+        });
+        expect(mockReplace).toHaveBeenCalledWith(
+            '/AAPL/news?tf=1Hour&sector=tech#chart',
+            { locale: 'ja' }
+        );
     });
 
     it('현재 로케일을 다시 고르면 아무 것도 하지 않는다', () => {

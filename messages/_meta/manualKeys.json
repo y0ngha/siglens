@@ -2,5 +2,8 @@
     "widgets.layout.localeSwitcher",
     "shared.config.nav",
     "entities.market-news.category",
-    "shared.lib.skillStats.count"
+    "shared.lib.skillStats.count",
+    "app.api.stream",
+    "shared.api",
+    "shared.lib.byokGate"
 ]

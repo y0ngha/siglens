@@ -1,4 +1,7 @@
 import type { ModelId, PositionBucket, Timeframe } from '@y0ngha/siglens-core';
+import { LocalizedStreamError } from '@/shared/lib/sse/LocalizedStreamError';
+import { getTranslations } from 'next-intl/server';
+import type { AnalysisGateErrorCode } from '@/shared/lib/types';
 import { translateAnalysisForLocale } from '@/entities/analysis-translation';
 import {
     ANALYSIS_LOCALE_HEADER,
@@ -34,8 +37,8 @@ import { releaseReanalyzeCooldown } from '@y0ngha/siglens-core';
 
 // Actions: gating + data-fetch already live in each entity's action file.
 // Calling them from the route (server-side) is safe — no browser connection means
-// no ALB idle_timeout. The SSE heartbeat stream keeps the browser connection alive
-// while these actions await the LLM.
+// no idle-connection wall at all. The SSE heartbeat stream keeps the browser
+// connection alive while these actions await the LLM.
 import {
     runOverallAnalysisAction,
     runFundamentalAnalysisAction,
@@ -108,7 +111,10 @@ const SSE_HEADERS: HeadersInit = {
     // 청크가 버퍼링되고 실시간성이 사라진다 — CF 설정을 정리하다 무심코 지우기
     // 쉬운 자리라 명시해 둔다.
     'Cache-Control': 'no-cache, no-store, no-transform',
-    // Disables nginx-family proxy response buffering (ALB, etc.).
+    // Disables nginx-family proxy response buffering. Kept after the 2026-08
+    // cloudflared migration: cloudflared does not buffer `text/event-stream`
+    // (verified — 600s probe arrived at exact 25.0s gaps), but this header costs
+    // nothing and still applies to any intermediary.
     'X-Accel-Buffering': 'no',
 };
 
@@ -126,12 +132,16 @@ const SSE_HEADERS: HeadersInit = {
  * 10 minutes is measured, not assumed. `/api/sse-probe` at `duration=600&interval=25`
  * completed twice through production (601.4s / 601.2s, CF PoPs LAX and SJC) with
  * constant sub-second drift and 24.9–25.3s arrival gaps — no edge buffering. The
- * control run with a 90s silence gap was severed at exactly 61.0s, confirming the
- * ALB idle timeout is still the live wall and that `HEARTBEAT_INTERVAL_MS` (25s) is
- * what clears it. Raising this bound past ~10 min would need a fresh measurement.
+ * control run with a 90s silence gap was severed at exactly 61.0s — that was the ALB
+ * idle timeout. After the 2026-08 cloudflared migration the same control was re-measured
+ * through the tunnel and severed at **125.9s** (Cloudflare Proxy Read Timeout), and the
+ * 600s heartbeat run completed with exact 25.0s gaps. So the wall doubled but
+ * `HEARTBEAT_INTERVAL_MS` (25s) is still what clears it. Raising this bound past ~10 min
+ * would need a fresh measurement.
  *
  * **Deliberately NOT matched to the shutdown drain** (`SHUTDOWN_DRAIN_DEADLINE_MS`,
- * 180s). Aligning them would mean raising `deregistration_delay` from 185s to 605s,
+ * 180s). Aligning them would mean raising the drain budget from ~180s to 605s — and
+ * cloudflared caps `TUNNEL_GRACE_PERIOD` at 180s, so it is not even expressible —
  * which adds ~7 minutes per instance replacement and pushes a two-instance roll from
  * ~18 min to ~30 min. What that buys is "an in-flight analysis survives a deploy" —
  * and deploys are a handful per week against ~19 LLM calls per day. The 180s < deadline
@@ -145,7 +155,7 @@ const STREAM_DEADLINE_MS = 10 * 60 * 1_000;
 
 /**
  * 포지션 버킷 파생용 시세 조회 상한. 이 조회는 첫 SSE 바이트 이전에 일어나 heartbeat의
- * 보호를 받지 못하므로, ALB idle_timeout(60초)보다 훨씬 짧게 잡는다.
+ * 보호를 받지 못하므로, 침묵 벽(cloudflared 경유 실측 125.9초)보다 훨씬 짧게 잡는다.
  */
 const QUOTE_LOOKUP_TIMEOUT_MS = 5_000;
 
@@ -181,15 +191,16 @@ const QUOTE_LOOKUP_TIMEOUT_MS = 5_000;
  * 이 signal은 클라이언트별이 아니라 **작업별**이라, 위에서 설명한 공유 abort 문제가 없다:
  * 누가 듣고 있든 5분이 지나면 그 작업 자체가 가망이 없다.
  */
-function withDeadline<T>(run: (signal: AbortSignal) => Promise<T>): Promise<T> {
+function withDeadline<T>(
+    run: (signal: AbortSignal) => Promise<T>,
+    timeoutMessage: string
+): Promise<T> {
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const deadline = new Promise<never>((_, reject) => {
         timer = setTimeout(() => {
             controller.abort();
-            reject(
-                new Error('분석 시간이 초과되었습니다. 다시 시도해 주세요.')
-            );
+            reject(new LocalizedStreamError(timeoutMessage));
         }, STREAM_DEADLINE_MS);
     });
     // work가 먼저 끝나면 타이머를 즉시 회수한다 — 없으면 매 요청이 5분짜리 타이머와
@@ -214,14 +225,21 @@ function withDeadline<T>(run: (signal: AbortSignal) => Promise<T>): Promise<T> {
  * `withDeadline` — never the client's `request.signal`. See the long comment above
  * `withDeadline` for why threading a per-client signal into core is forbidden.
  */
+/**
+ * ⚠️ `locale`은 **반드시 여기로 흘러야 한다.** 액션이 돌려주는 게이트 오류
+ * (`{ status: 'error', error: { code, message } }`)는 훅이 그대로 화면에 던지는
+ * 사용자 문구인데, `/api/*`는 next-intl matcher에서 제외돼 있어 액션이 스스로
+ * 로케일을 알아낼 방법이 없다(`byokGate.ts`의 `gateMessage` JSDoc 참고).
+ */
 const DISPATCH: Record<
     Exclude<AnalysisType, 'technical'>,
     (
         params: Record<string, unknown>,
-        signal: AbortSignal | undefined
+        signal: AbortSignal | undefined,
+        locale: Locale
     ) => Promise<unknown>
 > = {
-    overall: async (params, signal) => {
+    overall: async (params, signal, locale) => {
         // technical과 같은 규칙 — 클라이언트는 의도만 보내고, 캐시 우회 여부는
         // 서버가 쿨다운 획득으로 판단한다. 키 namespace를 분리해(`<tf>:overall`)
         // 기술적 분석 재분석이 종합 분석 재분석을 막지 않게 한다.
@@ -243,6 +261,7 @@ const DISPATCH: Record<
             params.companyName as string,
             params.timeframe as Timeframe,
             params.modelId as ModelId,
+            locale,
             {
                 force: cooldown?.ok === true,
                 reasoning: params.reasoning as boolean | undefined,
@@ -269,52 +288,58 @@ const DISPATCH: Record<
         });
     },
 
-    fundamental: (params, signal) =>
+    fundamental: (params, signal, locale) =>
         runFundamentalAnalysisAction(
             params.symbol as string,
             params.modelId as ModelId,
+            locale,
             params.reasoning as boolean | undefined,
             signal
         ),
 
-    financials: (params, signal) =>
+    financials: (params, signal, locale) =>
         runFinancialsAnalysisAction(
             params.symbol as string,
             params.modelId as ModelId,
+            locale,
             params.reasoning as boolean | undefined,
             signal
         ),
 
-    news: (params, signal) =>
+    news: (params, signal, locale) =>
         submitNewsAnalysisAction(
             params.symbol as string,
             params.companyName as string,
             params.modelId as ModelId,
+            locale,
             params.reasoning as boolean | undefined,
             signal
         ),
 
-    marketNewsDigest: (params, signal) =>
+    marketNewsDigest: (params, signal, locale) =>
         submitMarketNewsDigestAction(
             params.category as NewsFeedCategoryId,
+            locale,
             signal
         ),
 
-    options: (params, signal) =>
+    options: (params, signal, locale) =>
         submitOptionsAnalysisAction(
             params.symbol as string,
             params.companyName as string,
             params.expirationDate as OptionsExpirationSelector,
             params.modelId as ModelId,
+            locale,
             params.reasoning as boolean | undefined,
             signal,
             params.cacheOnly as boolean | undefined
         ),
 
-    congress: (params, signal) =>
+    congress: (params, signal, locale) =>
         runCongressTrendAction(
             params.symbol as string,
             params.modelId as ModelId,
+            locale,
             params.reasoning as boolean | undefined,
             signal
         ),
@@ -329,6 +354,7 @@ const DISPATCH: Record<
         // 에러를 돌려준다(라우트와 액션 양쪽에 검증을 두면 규칙이 갈린다).
         submitMarketBriefingAction(params.scope as string, signal),
 
+    // 게이트를 쓰지 않아 사용자 문구를 만들지 않는다 — 로케일이 필요 없다.
     macroBriefing: (_params, signal) => submitMacroBriefingAction(signal),
 };
 
@@ -373,7 +399,7 @@ async function resolveHoldingPositionBucket(
         const avgPrice = Number(holding.averagePrice);
         /**
          * 이 조회는 **첫 SSE 바이트가 나가기 전**에 일어난다 — heartbeat가 아직 시작되지
-         * 않았으므로 여기서 오래 끌면 ALB idle_timeout(60초)이 연결을 끊는다. FMP 429
+         * 않았으므로 여기서 오래 끌면 침묵 벽(실측 125.9초)이 연결을 끊는다. FMP 429
          * 폭풍에서는 요청 타임아웃 10초 + 백오프 10/15/20초로 한 번의 getQuote가 85초까지
          * 갈 수 있다. 개인화는 있으면 좋은 것이지 분석의 전제가 아니므로, 짧은 상한을
          * 두고 넘기면 버킷 없이 진행한다.
@@ -403,9 +429,10 @@ async function resolveHoldingPositionBucket(
  *
  * Browser-side analysis requests MUST go through this SSE route, not server
  * actions. A server action is a single POST — while the server awaits the LLM
- * it sends no bytes, and AWS ALB cuts the idle connection at 60 s (measured on
- * production: 61.1 s without heartbeat, 286 s with 25 s heartbeat). Server-side
- * callers (cron, SSR, bots) are unaffected and may call `run*` directly.
+ * it sends no bytes, and the edge cuts the idle connection (measured on production:
+ * 61.1 s through the ALB, 125.9 s through cloudflared after the 2026-08 migration;
+ * 600 s completes cleanly with the 25 s heartbeat). Server-side callers (cron, SSR,
+ * bots) are unaffected and may call `run*` directly.
  *
  * Request body: `{ type: AnalysisType; params: <type-specific shape> }`
  *
@@ -426,16 +453,121 @@ function resolveRequestLocale(request: Request): Locale {
 }
 
 /**
+ * 사용자 화면에 그대로 렌더되는 에러 문구.
+ *
+ * `heartbeatStream`이 거절을 SSE `error` 이벤트의 `{ message }`로 실어 보내고,
+ * `useAnalysisStream` → `useAnalysis` → `ChartContent`의 `<ErrorBanner>`가 그걸
+ * 그대로 띄운다. 즉 **서버 로그 문구가 아니라 UI 카피**다.
+ *
+ * `scripts/i18n/lib/scan.mjs`는 `src/app/api/`를 "사용자에게 렌더되지 않는다"는
+ * 전제로 제외하는데, 이 세 문구에 대해서는 그 전제가 틀렸다 — 그래서 기준선
+ * 1,671건에도 잡히지 않았다. 카탈로그(`app.api.stream`)로 옮기고
+ * `noRawUserFacingApiStrings` 테스트가 재발을 막는다.
+ */
+async function streamMessages(locale: Locale) {
+    return getTranslations({ locale, namespace: 'app.api.stream' });
+}
+
+/**
+ * BYOK/tier 게이트 문구를 로케일에 맞게 만든다.
+ *
+ * `buildGateError`는 `shared/lib/byokGate.ts`의 한국어 리터럴을 담아 돌려주는데,
+ * 그게 SSE `error` 이벤트와 `Response.json`을 통해 그대로 화면에 뜬다. 코드
+ * (`tier_premium_blocked` 등)가 실질적인 단일 출처이므로 여기서 코드로 번역한다.
+ * 원본 `message`는 서버 로그용으로 남는다.
+ */
+async function gateMessage(
+    locale: Locale,
+    code: AnalysisGateErrorCode
+): Promise<string> {
+    const t = await getTranslations({
+        locale,
+        namespace: 'shared.lib.byokGate',
+    });
+    return t(code);
+}
+
+/**
  * 분석 결과의 산문을 요청 로케일로 옮긴다.
  *
  * ⚠️ **`heartbeatStream(work)`의 `work` 안에서 일어나야 한다.** 이 체이닝은
  * `work` 프로미스에 붙으므로 heartbeat가 계속 흐르는 동안 실행된다. 밖에서
- * await한 뒤 스트림을 만들면 첫 바이트까지의 침묵이 **ALB idle 60초 벽**에
- * 걸린다(2026-08-02 프로덕션 실측: 침묵 61.1초에 끊김, 25초 heartbeat면 286초 완주).
+ * await한 뒤 스트림을 만들면 첫 바이트까지의 침묵이 **프록시 idle 한도**에
+ * 걸린다(2026-08-02 프로덕션 실측: 침묵 61.1초에 끊김, 25초 heartbeat면 286초 완주.
+ * 당시 벽은 ALB idle 60초였고 master가 cloudflared로 옮긴 뒤에는 125.9초다).
  * 기본 로케일이면 `translateAnalysisForLocale`이 즉시 원본을 돌려준다.
+ *
+ * ## 왜 자체 마감이 필요한가
+ *
+ * 이 체이닝은 `withDeadline`의 `Promise.race`가 **이미 끝난 뒤** 붙으므로
+ * `STREAM_DEADLINE_MS`의 보호를 받지 못한다. 그런데 `callDeepseekChat`은
+ * `timeout`도 `maxRetries`도 지정하지 않아 OpenAI SDK 기본값(10분 × 3회)을
+ * 쓴다 — 프로바이더가 매달리면 스트림 하나가 `canAcceptAnalysisStream`
+ * 동시성 슬롯을 30분 붙들고, `instrumentation.node.ts`가 전제하는 180초
+ * SIGTERM 드레인을 넘겨 배포 때마다 끊긴다.
+ *
+ * 초과하면 **원문을 그대로 돌려준다** — 이 레이어의 모든 실패 경로와 같은
+ * 의미론이다(부분 적용은 한 화면에 두 언어가 섞이는 최악의 상태다).
  */
+const TRANSLATION_DEADLINE_MS = 60_000;
+
 function withLocalizedProse<T>(work: Promise<T>, locale: Locale): Promise<T> {
-    return work.then(result => translateAnalysisForLocale(result, locale));
+    return work.then(async result => {
+        /**
+         * 에러 봉투는 번역하지 않는다.
+         *
+         * 액션은 실패를 `{ status: 'error', error: { code, message } }`로 돌려주는데,
+         * `message`가 `PROSE_FIELD_NAMES`에 있어 그대로 두면 **이미 카탈로그에서
+         * 번역해 온 문구를 LLM에 다시 보낸다**. 프롬프트가 "Translate each Korean
+         * sentence"라 일본어를 넣으면 결과가 망가지고, 게이트 거부마다 DeepSeek
+         * 왕복이 붙어 배너가 늦게 뜬다. 산문 번역의 대상은 분석 결과이지
+         * siglens가 만든 오류 봉투가 아니다.
+         */
+        if (
+            typeof result === 'object' &&
+            result !== null &&
+            (result as { status?: unknown }).status === 'error'
+        ) {
+            /**
+             * core가 만든 `timeframe_not_allowed`는 **영어** 문장이라 ko 사용자에게도
+             * 영어가 나갔다. 코드가 있으므로 카탈로그로 대체한다 — 이 봉투는
+             * 번역 LLM에 보내지 않으므로(위 주석) 여기서 직접 갈아끼운다.
+             */
+            const envelope = result as {
+                error?: { code?: string; message?: string };
+            };
+            if (envelope.error?.code === 'timeframe_not_allowed') {
+                const t = await getTranslations({
+                    locale,
+                    namespace: 'app.api.stream',
+                });
+                return {
+                    ...envelope,
+                    error: {
+                        ...envelope.error,
+                        message: t('timeframeNotAllowed'),
+                    },
+                } as T;
+            }
+            return result;
+        }
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const fallback = new Promise<T>(resolve => {
+            timer = setTimeout(() => {
+                console.error('[analysisTranslation] deadline exceeded', {
+                    locale,
+                    ms: TRANSLATION_DEADLINE_MS,
+                });
+                resolve(result);
+            }, TRANSLATION_DEADLINE_MS);
+        });
+        return Promise.race([
+            translateAnalysisForLocale(result, locale),
+            fallback,
+        ]).finally(() => {
+            if (timer !== undefined) clearTimeout(timer);
+        });
+    });
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -469,6 +601,13 @@ export async function POST(request: Request): Promise<Response> {
         } = body.params;
 
         try {
+            // 번역자는 핸들러 진입부에서 한 번만 확보한다 — E2E 분기부터 마지막
+            // 스트림까지 모든 `heartbeatStream` 호출이 로케일별 제네릭 문구를
+            // 필요로 하고, 동시성 검사와 스트림 생성 사이에 `await`가 들어가면
+            // 원자성이 깨지기 때문이다.
+            const requestLocale = resolveRequestLocale(request);
+            const t = await streamMessages(requestLocale);
+
             // --- 2a. Auth ---
             const user = await getCurrentUser();
             const userId = user?.id ?? null;
@@ -480,7 +619,8 @@ export async function POST(request: Request): Promise<Response> {
                         heartbeatStream(
                             Promise.resolve({
                                 status: 'miss_no_trigger' as const,
-                            })
+                            }),
+                            { genericErrorMessage: t('generic') }
                         ),
                         { headers: SSE_HEADERS }
                     );
@@ -518,7 +658,8 @@ export async function POST(request: Request): Promise<Response> {
                         Promise.resolve({
                             ...e2eCachedTechnical(tier),
                             personalized,
-                        })
+                        }),
+                        { genericErrorMessage: t('generic') }
                     ),
                     { headers: SSE_HEADERS }
                 );
@@ -541,7 +682,11 @@ export async function POST(request: Request): Promise<Response> {
             if (modelId === undefined) {
                 tier = await resolveTierOnly(userId);
             } else {
-                const gate = await resolveTierAndByok(userId, modelId);
+                const gate = await resolveTierAndByok(
+                    userId,
+                    modelId,
+                    requestLocale
+                );
                 if (gate.kind === 'blocked') {
                     /**
                      * Stream the gate error as an SSE `error` event so the client
@@ -560,8 +705,20 @@ export async function POST(request: Request): Promise<Response> {
                     );
                     return new Response(
                         heartbeatStream(
-                            Promise.reject(new Error(gate.error.message)),
-                            { logFailures: false }
+                            // 게이트 문구는 사용자에게 보여줄 목적으로 만들어진
+                            // 것이라 그대로 통과해야 한다.
+                            Promise.reject(
+                                new LocalizedStreamError(
+                                    await gateMessage(
+                                        requestLocale,
+                                        gate.error.code
+                                    )
+                                )
+                            ),
+                            {
+                                logFailures: false,
+                                genericErrorMessage: t('generic'),
+                            }
                         ),
                         { headers: SSE_HEADERS }
                     );
@@ -627,7 +784,8 @@ export async function POST(request: Request): Promise<Response> {
                         Promise.resolve({
                             status: 'reanalyze_cooldown' as const,
                             remainingMs: cooldown.remainingMs,
-                        })
+                        }),
+                        { genericErrorMessage: t('generic') }
                     ),
                     { headers: SSE_HEADERS }
                 );
@@ -679,41 +837,64 @@ export async function POST(request: Request): Promise<Response> {
              * 트래픽이 슬롯을 채운 동안 Googlebot이 503을 받으면 렌더된 DOM에 실패
              * 배너만 남는다. robots 예외를 넣은 이유가 그대로 무너진다.
              */
+            // ⚠️ 번역자는 **동시성 검사 이전에** 확보한다. 검사와
+            // `heartbeatStream` 사이에 `await`가 들어가면 위 주석이 설명한
+            // 원자성이 깨진다 — 그 틈에 도착한 요청이 같은 빈 슬롯을 보고
+            // 전부 통과해 캡이 무의미해진다(`getTranslations`는 로케일당 첫
+            // 호출에서 실제 비동기 작업을 한다). 503 분기도 이 값을 쓴다.
             if (!canAcceptAnalysisStream(skipEnqueueIfMiss)) {
                 console.warn(
                     '[analysis-stream] rejected: concurrency cap reached'
                 );
                 await releaseOnFailure();
                 return Response.json(
-                    {
-                        error: '지금 분석 요청이 많습니다. 잠시 후 다시 시도해 주세요.',
-                    },
+                    { error: t('busy') },
                     { status: 503, headers: { 'Retry-After': '30' } }
                 );
             }
 
-            const requestLocale = resolveRequestLocale(request);
-            const work = withDeadline(deadlineSignal =>
-                runAnalysis(symbol, companyName, timeframe, force, fmpSymbol, {
-                    ...options,
-                    signal: deadlineSignal,
-                }).then(result => ({
-                    ...result,
-                    personalized: positionBucket !== undefined,
-                }))
+            const work = withDeadline(
+                deadlineSignal =>
+                    runAnalysis(
+                        symbol,
+                        companyName,
+                        timeframe,
+                        force,
+                        fmpSymbol,
+                        {
+                            ...options,
+                            signal: deadlineSignal,
+                        }
+                    ).then(result => ({
+                        ...result,
+                        personalized: positionBucket !== undefined,
+                    })),
+                t('timeout')
             ).catch(async (err: unknown) => {
                 await releaseOnFailure();
                 throw err;
             });
 
             return new Response(
-                heartbeatStream(withLocalizedProse(work, requestLocale)),
+                heartbeatStream(withLocalizedProse(work, requestLocale), {
+                    genericErrorMessage: t('generic'),
+                }),
                 { headers: SSE_HEADERS }
             );
         } catch (err) {
             console.error('[streamAnalysisRoute] unexpected error:', err);
             return Response.json(
-                { status: 'error', error: buildGateError('unexpected_error') },
+                {
+                    status: 'error',
+                    // ⚠️ `...await buildGateError(...)`가 아니라 명시적으로 쓴다.
+                    // 스프레드에 Promise를 넣으면 런타임에 `{}`가 되어 `code`가
+                    // 조용히 사라진다(타입체크는 통과한다 — 실측 확인).
+                    // catch 블록이라 try 안의 `requestLocale`이 스코프 밖이다.
+                    error: await buildGateError(
+                        'unexpected_error',
+                        resolveRequestLocale(request)
+                    ),
+                },
                 { status: 500 }
             );
         }
@@ -741,31 +922,38 @@ export async function POST(request: Request): Promise<Response> {
         );
     }
 
-    // 동시 분석 상한 — 위 technical 분기의 주석 참고(검사와 스트림 생성 사이에
-    // await를 두지 않는 게 핵심이다).
-    // 봇은 더 높은 천장 — 근거는 `canAcceptAnalysisStream` 주석 참고.
+    // 번역자는 동시성 검사 **이전에** 확보한다 — 검사와 스트림 생성 사이에
+    // await가 들어가면 원자성이 깨진다(위 technical 분기 주석 참고).
+    const locale = resolveRequestLocale(request);
+    const t = await streamMessages(locale);
+
+    // 동시 분석 상한. 봇은 더 높은 천장 — 근거는 `canAcceptAnalysisStream` 주석.
     if (!canAcceptAnalysisStream(isBot(request.headers))) {
         console.warn('[analysis-stream] rejected: concurrency cap reached');
         return Response.json(
-            { error: '지금 분석 요청이 많습니다. 잠시 후 다시 시도해 주세요.' },
+            { error: t('busy') },
             { status: 503, headers: { 'Retry-After': '30' } }
         );
     }
 
     try {
-        const work = withDeadline(deadlineSignal =>
-            handler(body.params, deadlineSignal)
+        const work = withDeadline(
+            deadlineSignal => handler(body.params, deadlineSignal, locale),
+            t('timeout')
         );
         return new Response(
-            heartbeatStream(
-                withLocalizedProse(work, resolveRequestLocale(request))
-            ),
+            heartbeatStream(withLocalizedProse(work, locale), {
+                genericErrorMessage: t('generic'),
+            }),
             { headers: SSE_HEADERS }
         );
     } catch (err) {
         console.error('[streamAnalysisRoute] unexpected error:', err);
         return Response.json(
-            { status: 'error', error: buildGateError('unexpected_error') },
+            {
+                status: 'error',
+                error: await buildGateError('unexpected_error', locale),
+            },
             { status: 500 }
         );
     }

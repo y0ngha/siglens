@@ -1,4 +1,6 @@
 import 'server-only';
+import type { Locale } from '@/shared/i18n/locales';
+import { getTranslations } from 'next-intl/server';
 
 import {
     TIER_CONFIG,
@@ -18,18 +20,47 @@ import { getUserTier } from '@/entities/user-tier';
 import { DrizzleUserRepository } from '@/entities/auth/api';
 import type { AnalysisGateError, AnalysisGateErrorCode } from './types';
 
-const GATE_MESSAGES: Record<AnalysisGateErrorCode, string> = {
-    tier_premium_blocked:
-        '선택한 모델은 프리미엄 등급에서만 사용 가능합니다. API 키를 등록하거나 등급을 업그레이드해 주세요.',
-    invalid_model: '알 수 없는 모델입니다.',
-    api_key_corrupted:
-        '저장된 API 키를 복호화하지 못했습니다. 키를 다시 등록해 주세요.',
-    unexpected_error:
-        '예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
-};
+/**
+ * 게이트 문구는 **카탈로그에서** 온다.
+ *
+ * 예전에는 여기 한국어 리터럴 4개가 박혀 있었고, 그 값이 두 경로로 브라우저에
+ * 그대로 갔다: SSE `error` 이벤트, 그리고 액션이 돌려주는
+ * `{ status: 'error', error }`를 훅들이 `result.error.message`로 다시 던지는
+ * 경로. 실측으로 ja·en 사용자가 한국어 문장을 봤다.
+ *
+ * 호출부마다 번역하면 또 빠뜨리므로 **여기 한 곳에서** 번역한다.
+ *
+ * ⚠️ **로케일을 인자로 받아야 한다.** `getTranslations()`를 인자 없이 부르면
+ * next-intl이 요청 스코프에서 로케일을 찾는데, 이 코드가 도는 `/api/*`는
+ * `proxy.ts`의 matcher에서 **제외**돼 있어 `setRequestLocale`도
+ * `X-NEXT-INTL-LOCALE`도 없다. 결과는 항상 기본 로케일(ko)이다. 실제 로케일은
+ * 별도 헤더 `x-siglens-locale`로 전달된다(`locales.ts`의 `ANALYSIS_LOCALE_HEADER`).
+ *
+ * 그렇게 나간 한국어가 화면에서는 번역된 것처럼 보였는데, 그건 오직
+ * `message`가 `PROSE_FIELD_NAMES`에 들어 있어 **분석 번역 LLM이 우연히**
+ * 옮겨줬기 때문이다 — 번역 키가 없거나 LLM이 실패하면 그대로 한국어였다.
+ */
+async function gateMessage(
+    locale: Locale,
+    code: AnalysisGateErrorCode
+): Promise<string> {
+    try {
+        const t = await getTranslations({
+            locale,
+            namespace: 'shared.lib.byokGate',
+        });
+        return t(code);
+    } catch {
+        // 카탈로그 조회가 실패해도 게이트 판정 자체는 계속돼야 한다.
+        return code;
+    }
+}
 
-export function buildGateError(code: AnalysisGateErrorCode): AnalysisGateError {
-    return { code, message: GATE_MESSAGES[code] };
+export async function buildGateError(
+    code: AnalysisGateErrorCode,
+    locale: Locale
+): Promise<AnalysisGateError> {
+    return { code, message: await gateMessage(locale, code) };
 }
 
 // Module-level cache: TIER_CONFIG is frozen, this is computed once at module load.
@@ -152,10 +183,15 @@ export function resolvePositionBucket(
  */
 export async function resolveTierAndByok(
     userId: string | null,
-    modelId: ModelId
+    modelId: ModelId,
+    /** 게이트 거부 문구를 만들 로케일. `buildGateError` JSDoc 참고. */
+    locale: Locale
 ): Promise<ByokOutcome> {
     if (!isKnownModelId(modelId)) {
-        return { kind: 'blocked', error: buildGateError('invalid_model') };
+        return {
+            kind: 'blocked',
+            error: await buildGateError('invalid_model', locale),
+        };
     }
 
     const tier = await resolveTierOnly(userId);
@@ -171,7 +207,7 @@ export async function resolveTierAndByok(
     if (userId === null) {
         return {
             kind: 'blocked',
-            error: buildGateError('tier_premium_blocked'),
+            error: await buildGateError('tier_premium_blocked', locale),
         };
     }
 
@@ -182,7 +218,7 @@ export async function resolveTierAndByok(
         if (record === null) {
             return {
                 kind: 'blocked',
-                error: buildGateError('tier_premium_blocked'),
+                error: await buildGateError('tier_premium_blocked', locale),
             };
         }
         return { kind: 'allowed', tier, userApiKey: record.apiKey };
@@ -190,7 +226,7 @@ export async function resolveTierAndByok(
         if (error instanceof LlmApiKeyDecryptionFailedError) {
             return {
                 kind: 'blocked',
-                error: buildGateError('api_key_corrupted'),
+                error: await buildGateError('api_key_corrupted', locale),
             };
         }
         throw error;

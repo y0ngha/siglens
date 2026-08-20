@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { DEFAULT_LOCALE, localePath, type Locale } from '@/shared/i18n/locales';
+import { localePath, type Locale } from '@/shared/i18n/locales';
 import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import { localeAlternates, localeOpenGraph } from '@/shared/lib/seoAlternates';
 import {
@@ -664,7 +664,7 @@ export function buildSymbolWebPageJsonLd(params: {
  */
 export function symbolMetadataFromSeo(
     seo: SymbolSeoContent,
-    locale: Locale = DEFAULT_LOCALE
+    locale: Locale
 ): Metadata {
     const { title, fullTitle, description, url, keywords } = seo;
     // `seo.url`은 기본 로케일 절대 URL이다. 경로만 떼어 로케일별 URL을 다시 만든다.
@@ -695,6 +695,22 @@ export function symbolMetadataFromSeo(
             title: fullTitle,
             description,
         },
+        /**
+         * 준비되지 않은 로케일은 **제목·설명은 그대로 두고 robots만** 덮는다.
+         *
+         * 이전에는 `getBlockedSymbolMetadata`가 통째로 `NOINDEX_SYMBOL_METADATA`를
+         * 돌려줬는데, 그 상수엔 title이 없다. 그래서 `/en/AAPL`의 `<title>`이
+         * 루트 레이아웃의 **한국어 사이트 기본 제목**으로 떨어졌다 — 브라우저 탭·
+         * 북마크·`og:title`이 전부 그렇게 나갔고, `og:image`만 종목별이라 공유하면
+         * AAPL 차트에 한국어 일반 문구가 붙었다.
+         *
+         * `follow: true`인 이유는 정적 페이지 게이트(`localeRobots`)와 같다 —
+         * 색인은 막되 링크는 따라가게 둔다. 같은 게이트가 두 표면에서 다른
+         * `follow` 값을 내면 그것 자체가 크롤 예산 결함이다.
+         */
+        ...(SYMBOL_INDEXABLE_LOCALES.includes(locale)
+            ? {}
+            : { robots: { index: false, follow: true } }),
     };
 }
 

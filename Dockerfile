@@ -24,6 +24,12 @@ ENV GIT_SHA=$GIT_SHA
 # (여기서 하드코딩하지 않음 — 비어 있으면 핸들러 미등록 = 파일시스템 폴백).
 ARG ISR_CACHE_BUCKET
 ENV ISR_CACHE_BUCKET=$ISR_CACHE_BUCKET
+# 프리렌더할 로케일. `generateStaticParams`가 **빌드 시점**에 읽으므로 런타임
+# SSM/EC2 환경변수로는 절대 반영되지 않는다 — 여기 ARG가 없으면 조용한 no-op이다.
+# 비우면 기본 로케일(ko)만 프리렌더한다. 로케일을 늘리면 빌드 중 FMP 호출이
+# 그만큼 곱해져 429로 빌드가 깨질 수 있다(실측).
+ARG PRERENDER_LOCALES
+ENV PRERENDER_LOCALES=$PRERENDER_LOCALES
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
     NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=$NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION \
     NEXT_PUBLIC_ADSENSE_ENABLED=$NEXT_PUBLIC_ADSENSE_ENABLED \

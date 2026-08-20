@@ -119,14 +119,48 @@ export async function localeAlternatesFrom(
  * 선언하는 순간 레이아웃의 `openGraph.locale`이 통째로 사라져 모든 로케일 페이지가
  * `og:locale`을 잃는다.
  */
-export function localeOpenGraph(locale: Locale): {
+export function localeOpenGraph(
+    locale: Locale,
+    available: readonly Locale[] = STATIC_INDEXABLE_LOCALES
+): {
     locale: string;
     alternateLocale: string[];
 } {
     return {
         locale: LOCALE_OG[locale],
-        alternateLocale: LOCALES.filter(l => l !== locale).map(
-            l => LOCALE_OG[l]
-        ),
+        // 색인 게이트를 통과한 로케일만 대체본으로 광고한다. 전 로케일을
+        // 무조건 나열하면 hreflang에서 걷어낸 것과 같은 문제 — 아직 준비되지
+        // 않은 로케일을 외부에 광고 — 를 og 계층에서 반복한다.
+        // hreflang과 같은 게이트: 색인 가능한 로케일이 하나뿐이면 클러스터가
+        // 성립하지 않으므로 대체본을 광고하지 않는다(`buildLanguageAlternates`
+        // 가 `{}`를 돌려주는 것과 같은 조건).
+        alternateLocale:
+            available.length < 2
+                ? []
+                : available.filter(l => l !== locale).map(l => LOCALE_OG[l]),
     };
+}
+
+/**
+ * 로케일 색인 게이트를 적용한 `robots`.
+ *
+ * ## 왜 필요한가
+ *
+ * `STATIC_INDEXABLE_LOCALES`는 hreflang·sitemap alternates만 움직였고 `robots`는
+ * 건드리지 않았다. 그래서 `/terms`·`/en/terms`·`/ja/terms`·`/zh/terms`가 전부
+ * **각자 자기 자신을 canonical로 걸고 index:true**로 나갔다 — 제목·설명은 아직
+ * 한국어(`shared/lib/seo.ts`는 미추출 문자열 1,649개 중 229개), 약관·정책 본문은
+ * DB의 한국어 원문. 2026-07 thin/duplicate content 붕괴와 정확히 같은 모양이
+ * 언어 3개로 복제된다.
+ *
+ * 게이트를 통과하지 못한 로케일은 `follow: true`를 유지한 채 noindex다 —
+ * 링크는 계속 따라가되 색인만 막는다.
+ */
+export function localeRobots(
+    locale: Locale,
+    base: { index: boolean; follow: boolean } = { index: true, follow: true },
+    available: readonly Locale[] = STATIC_INDEXABLE_LOCALES
+): { index: boolean; follow: boolean } {
+    if (!base.index) return base;
+    return available.includes(locale) ? base : { index: false, follow: true };
 }

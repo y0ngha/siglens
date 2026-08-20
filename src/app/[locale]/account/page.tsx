@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { localeCanonical } from '@/shared/lib/seoAlternates';
 import { getTranslations } from 'next-intl/server';
 import { ApiKeySection } from '@/features/api-key-management';
 import {
@@ -12,7 +13,7 @@ import { PortfolioSection } from '@/features/portfolio-management';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions';
 import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
-import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { redirect } from 'next/navigation';
@@ -21,13 +22,26 @@ import { Suspense } from 'react';
 // noindex 페이지에도 canonical/og:url을 명시한다 (login/signup 정책과 일관).
 // 외부에 변형 URL이 공유되더라도 "원본은 /account 하나"라는 신호를 명확히 두면
 // 일부 크롤러/공유 도구가 변형을 강조하지 않는다.
-export const metadata: Metadata = {
-    title: '계정 설정',
-    description: `${SITE_NAME} 계정 설정 페이지`,
-    alternates: { canonical: `${SITE_URL}/account` },
-    openGraph: { url: `${SITE_URL}/account` },
-    robots: { index: false, follow: false },
-};
+/**
+ * 정적 `metadata`가 아니라 `generateMetadata`인 이유: 정적 객체는 로케일을 볼 수
+ * 없어 `/en/account`도 canonical이 `/account`(한국어)로 나갔다. noindex 페이지에
+ * 다른 URL을 canonical로 걸면 Google이 noindex를 그 대상으로 전파할 수 있다.
+ */
+export async function generateMetadata({
+    params,
+}: {
+    readonly params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+    const { locale } = await params;
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    return {
+        title: '계정 설정',
+        description: `${SITE_NAME} 계정 설정 페이지`,
+        alternates: { canonical: localeCanonical(resolved, '/account') },
+        openGraph: { url: localeCanonical(resolved, '/account') },
+        robots: { index: false, follow: false },
+    };
+}
 
 // Reads cookies via getCurrentUser — must be inside Suspense for PPR.
 async function AccountContent({ locale }: { locale: Locale }) {

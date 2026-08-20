@@ -18,6 +18,26 @@ import type { SitemapEntry } from '../model';
 const POPULAR_OPTIONS_SET = new Set<string>(POPULAR_OPTIONS_TICKERS);
 
 /**
+ * 종목 sitemap 엔트리에 다국어 대체본을 붙인다.
+ *
+ * 엔트리마다 손으로 `alternates`를 적지 않는 이유는 이 빌더가 티커당 8~9개
+ * 엔트리를 만들고 분기(ETF·KR·옵션)마다 리터럴이 흩어져 있어서다 — 한 곳만
+ * 빠뜨려도 그 탭만 조용히 hreflang을 잃는다. 마지막에 일괄로 붙인다.
+ *
+ * `SYMBOL_INDEXABLE_LOCALES`가 기본 로케일 하나인 동안에는 `sitemapAlternates`가
+ * `undefined`를 돌려 XML이 지금과 바이트 단위로 동일하다.
+ */
+function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
+    return entries.map(entry => {
+        const alternates = sitemapAlternates(
+            entry.url.slice(SITE_URL.length),
+            SYMBOL_INDEXABLE_LOCALES
+        );
+        return alternates ? { ...entry, alternates } : entry;
+    });
+}
+
+/**
  * POPULAR_TICKERS의 모든 sub-route(차트/뉴스/펀더멘털/재무제표/옵션/종합/공포탐욕/의회거래)에
  * 대한 sitemap 엔트리를 반환한다. 재무제표는 stock으로 분류된 티커만(ETF는 재무제표가
  * 없어 noindex), 옵션 페이지는 generated static list에 포함된 미국 티커만 포함 —
@@ -39,26 +59,6 @@ const POPULAR_OPTIONS_SET = new Set<string>(POPULAR_OPTIONS_TICKERS);
  * 매 호출(=매 크롤)마다 값이 달라져 `maxLastModified`가 고르는 sitemap index
  * lastmod가 끝없이 "방금 바뀜"으로 나가 freshness 신호가 무력화된다.
  */
-/**
- * 종목 sitemap 엔트리에 다국어 대체본을 붙인다.
- *
- * 엔트리마다 손으로 `alternates`를 적지 않는 이유는 이 빌더가 티커당 8~9개
- * 엔트리를 만들고 분기(ETF·KR·옵션)마다 리터럴이 흩어져 있어서다 — 한 곳만
- * 빠뜨려도 그 탭만 조용히 hreflang을 잃는다. 마지막에 일괄로 붙인다.
- *
- * `SYMBOL_INDEXABLE_LOCALES`가 기본 로케일 하나인 동안에는 `sitemapAlternates`가
- * `undefined`를 돌려 XML이 지금과 바이트 단위로 동일하다.
- */
-function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
-    return entries.map(entry => {
-        const alternates = sitemapAlternates(
-            entry.url.slice(SITE_URL.length),
-            SYMBOL_INDEXABLE_LOCALES
-        );
-        return alternates ? { ...entry, alternates } : entry;
-    });
-}
-
 export function buildPopularEntries(now: Date): SitemapEntry[] {
     const usClose = lastClosedSessionCloseUtc(US_EQUITY_SESSION, now);
     const krClose = lastClosedSessionCloseUtc(KR_EQUITY_SESSION, now);
@@ -151,6 +151,13 @@ export function buildPopularEntries(now: Date): SitemapEntry[] {
                 // 때문이고, 그 계약은 `e2e/specs/kr-equity-seo.spec.ts`가 고정한다.
                 // noindex URL을 sitemap에 실으면 크롤 예산만 태우고 색인 품질 신호가
                 // 나빠지므로 제외한다.
+                //
+                // ⚠️ 2026-08 감사가 "`isStock`도 함께 걸면 레버리지 ETF의 thin한 congress를
+                // 공짜로 뺄 수 있다"고 제안했으나 **실측으로 반증됐다.** 비-주식 12개 중
+                // SPY(7,760자)·VTI(7,338)·QQQ(6,105)·IWM(5,674)·DIA(4,793)·TQQQ(2,148)은
+                // 내용이 충분하다 — 의원들이 광범위 ETF를 실제로 매매하므로 공시가 존재한다.
+                // thin한 건 레버리지·인버스 6종(LABU/NVDL/SOXL/SOXS/SQQQ/TSLL, 1,095~1,171자)
+                // 뿐이다. 자산 분류로는 그 둘을 가를 수 없으므로 `isStock`을 걸지 않는다.
                 ...(isKr
                     ? []
                     : [

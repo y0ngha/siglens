@@ -2,15 +2,17 @@
 
 import { useTranslations } from 'next-intl';
 import type { FallbackProps } from 'react-error-boundary';
-import { getFmpUserFacingMessage } from '@/shared/api/fmp/fmpUserMessage';
+import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
 
 export function FearGreedPageError({
     error,
     resetErrorBoundary,
 }: FallbackProps) {
     const t = useTranslations('widgets.fear-greed');
+    // FMP 문구 키는 완전 수식이라 루트 번역자가 필요하다.
+    const tRoot = useTranslations();
     const message =
-        getFmpUserFacingMessage(error) ?? t('FearGreedPageError.f929f0');
+        translateFmpError(error, tRoot) ?? t('FearGreedPageError.f929f0');
 
     return (
         <section

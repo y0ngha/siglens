@@ -1,6 +1,9 @@
 'use server';
 
 import { getLlmProvider } from '@/entities/llm-provider';
+import { getLocale } from 'next-intl/server';
+import { isLocale, DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { withLocaleDirective } from '../lib/localeEnvelope';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleUserApiKeyRepository } from '@/entities/api-key/api';
@@ -101,6 +104,20 @@ async function resolveUserContext(provider: LlmProvider): Promise<UserContext> {
     };
 }
 
+/**
+ * 요청 로케일. 서버 액션이 로케일 접두사 없는 경로(`/AAPL`)에서 호출되거나
+ * 프록시가 헤더를 심지 못한 경우를 대비해 기본 로케일로 떨어뜨린다 — 여기서
+ * 던지면 챗 전체가 `server_error`가 된다.
+ */
+async function resolveRequestLocale(): Promise<Locale> {
+    try {
+        const locale = await getLocale();
+        return isLocale(locale) ? locale : DEFAULT_LOCALE;
+    } catch {
+        return DEFAULT_LOCALE;
+    }
+}
+
 export async function chatAction(
     symbol: string,
     companyName: string,
@@ -122,6 +139,12 @@ export async function chatAction(
 ): Promise<ChatActionResult> {
     try {
         const provider = getProviderForModel(model);
+        // 답변 언어 지시. core의 system prompt는 한국어를 요구하므로, 호출자의
+        // 메시지 본문에 실어 보낸다(설계 §6.3 / SCOPE.md Step 6).
+        const localizedMessage = withLocaleDirective(
+            userMessage,
+            await resolveRequestLocale()
+        );
         const serverApiKey = getServerPrimaryKey(provider);
 
         const [{ tierContext, userApiKey }, clientIp] = await Promise.all([
@@ -157,7 +180,7 @@ export async function chatAction(
                 timeframe,
                 analysis,
                 history,
-                userMessage,
+                userMessage: localizedMessage,
                 model,
                 serverApiKey,
                 userApiKey,

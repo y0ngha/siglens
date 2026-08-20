@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { localeRobots, localeOpenGraph } from '@/shared/lib/seoAlternates';
 import type { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
@@ -27,15 +28,14 @@ import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import {
     DEFAULT_LOCALE,
     isLocale,
-    LOCALES,
-    LOCALE_OG,
+    LOCALE_HREFLANG,
     localePath,
     resolvePrerenderLocales,
     type Locale,
 } from '@/shared/i18n/locales';
 import { pickMessages } from '@/shared/i18n/loadMessages';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
-import { ROOT_CLIENT_NAMESPACES } from '@/shared/i18n/clientNamespaces';
+import { CHROME_CLIENT_PATHS } from '@/shared/i18n/clientNamespaces';
 import '../globals.css';
 
 // Geist는 라틴만 지원하므로 한글 글리프는 globals.css의 --font-sans 스택에서
@@ -125,10 +125,10 @@ export async function generateMetadata({
             title: ROOT_FULL_TITLE,
             description: SITE_DESCRIPTION,
             url: siteUrl,
-            locale: LOCALE_OG[locale],
-            alternateLocale: LOCALES.filter(l => l !== locale).map(
-                l => LOCALE_OG[l]
-            ),
+            // 색인 게이트를 존중하는 단일 출처를 쓴다. 여기 하드코딩을 남겨두면
+            // 홈 페이지만 준비되지 않은 로케일 3개를 og 대체본으로 광고한다
+            // (hreflang은 0개를 내보내는데 og만 3개 — 실측으로 잡혔다).
+            ...localeOpenGraph(locale),
             images: [
                 {
                     url: '/og-image.png',
@@ -148,11 +148,11 @@ export async function generateMetadata({
         // 을 자동 생성하므로 metadata.icons로 중복 선언하지 않는다. 이전엔 둘이 공존해 동일
         // 이미지(184×180)가 두 번 링크됐고, 수동 선언의 sizes='180x180'도 실제와 불일치했다.
         robots: {
-            index: true,
-            follow: true,
+            // 색인 게이트를 통과 못 한 로케일은 noindex. `robots`를 직접 선언하는
+            // 페이지는 이 값을 통째로 덮으므로 각자 `localeRobots`를 불러야 한다.
+            ...localeRobots(locale),
             googleBot: {
-                index: true,
-                follow: true,
+                ...localeRobots(locale),
                 'max-video-preview': -1,
                 'max-image-preview': 'large',
                 'max-snippet': -1,
@@ -206,7 +206,7 @@ export default async function RootLayout({
 
     return (
         <html
-            lang={locale}
+            lang={LOCALE_HREFLANG[locale]}
             className={`${geistSans.variable} ${geistMono.variable} ${pretendard.variable} h-full overflow-x-hidden antialiased scheme-dark`}
         >
             {/* overflow-x-hidden on both html and body prevents fixed/transformed elements (mobile drawer)
@@ -222,10 +222,7 @@ export default async function RootLayout({
                 <LocaleProvider locale={locale}>
                     <NextIntlClientProvider
                         locale={locale}
-                        messages={pickMessages(
-                            messages,
-                            ROOT_CLIENT_NAMESPACES
-                        )}
+                        messages={pickMessages(messages, CHROME_CLIENT_PATHS)}
                     >
                         <ReactQueryProvider>
                             <PwaBanner />

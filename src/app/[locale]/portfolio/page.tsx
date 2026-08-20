@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { localeCanonical } from '@/shared/lib/seoAlternates';
 import { getTranslations } from 'next-intl/server';
 import { PositionHoldingCard } from './PositionHoldingCard';
 import {
@@ -12,7 +13,7 @@ import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { toView } from '@/entities/portfolio/lib/toView';
 import { getDatabaseClient } from '@/shared/db/client';
-import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { redirect } from 'next/navigation';
@@ -22,15 +23,28 @@ import type { PortfolioHoldingView } from '@/entities/portfolio';
 // noindex 페이지에도 canonical/og:url을 명시한다 (login/signup/account/onboarding
 // 정책과 일관). 외부에 변형 URL이 공유되더라도 "원본은 /portfolio 하나"라는 신호를
 // 명확히 두면 일부 크롤러/공유 도구가 변형을 강조하지 않는다.
-export const metadata: Metadata = {
-    title: '내 포트폴리오 위치',
-    description: `${SITE_NAME} 보유종목별 최근 가격 범위 안에서 내 평단이 어디에 있는지 확인하는 개인화 페이지`,
-    alternates: { canonical: `${SITE_URL}/portfolio` },
-    openGraph: { url: `${SITE_URL}/portfolio` },
-    // 로그인 전용 개인화 서페이스라 색인 대상이 아니다 — 비로그인 방문자는
-    // 아래에서 /login?next=/portfolio로 리다이렉트된다.
-    robots: { index: false, follow: false },
-};
+/**
+ * 정적 `metadata`가 아니라 `generateMetadata`인 이유: 정적 객체는 로케일을 볼 수
+ * 없어 `/en/portfolio`도 canonical이 `/portfolio`(한국어)로 나갔다. noindex 페이지에
+ * 다른 URL을 canonical로 걸면 Google이 noindex를 그 대상으로 전파할 수 있다.
+ */
+export async function generateMetadata({
+    params,
+}: {
+    readonly params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+    const { locale } = await params;
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    return {
+        title: '내 포트폴리오 위치',
+        description: `${SITE_NAME} 보유종목별 최근 가격 범위 안에서 내 평단이 어디에 있는지 확인하는 개인화 페이지`,
+        alternates: { canonical: localeCanonical(resolved, '/portfolio') },
+        openGraph: { url: localeCanonical(resolved, '/portfolio') },
+        // 로그인 전용 개인화 서페이스라 색인 대상이 아니다 — 비로그인 방문자는
+        // 아래에서 /login?next=/portfolio로 리다이렉트된다.
+        robots: { index: false, follow: false },
+    };
+}
 
 /**
  * Reads cookies via getCurrentUser — must be inside Suspense for PPR. Exported

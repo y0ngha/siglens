@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { assetLabel } from './assetLabel';
 import type { SectorEtf } from '@y0ngha/siglens-core';
 import { TabsUnderline } from '@/shared/ui/tabs';
 
@@ -19,7 +20,12 @@ export function SectorTabs({
     onChange,
 }: SectorTabsProps) {
     const t = useTranslations('widgets.dashboard');
-    const tabs = sectors.map(s => ({ value: s.symbol, label: s.koreanName }));
+    // `koreanName`은 프롬프트로 흘러가는 한국어 상수다. 탭 라벨은 심볼로
+    // 카탈로그를 찾는다 — 안 그러면 영어 페이지 탭만 한국어로 남는다.
+    const tabs = sectors.map(s => ({
+        value: s.symbol,
+        label: assetLabel(t, s.symbol, s.koreanName),
+    }));
     return (
         <TabsUnderline
             tabs={tabs}

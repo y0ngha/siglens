@@ -16,20 +16,29 @@ vi.mock('next/navigation', () => ({
     redirect: vi.fn(),
 }));
 
-import { metadata } from '@/app/[locale]/account/delete/page';
+import { generateMetadata } from '@/app/[locale]/account/delete/page';
 
 describe('Delete account page', () => {
-    it('exports metadata with delete title', () => {
+    it('exports metadata with delete title', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
         expect(metadata.title).toBe('회원 탈퇴');
     });
 
-    it('sets robots to noindex, nofollow', () => {
+    it('sets robots to noindex, nofollow', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
         expect(metadata.robots).toEqual(
             expect.objectContaining({ index: false, follow: false })
         );
     });
 
-    it('includes canonical URL', () => {
+    it('includes canonical URL', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
         expect(metadata.alternates?.canonical).toBe(
             'https://siglens.io/account/delete'
         );

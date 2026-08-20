@@ -77,13 +77,6 @@
                 "80dac7": "Failed to load page",
                 "eb2523": "{v0} Home"
             },
-            "global-error": {
-                "729779": "Temporary Error",
-                "0c767c": "Try Again",
-                "1bf79c": "Failed to load service",
-                "32c8a0": "A temporary issue occurred. Please try again shortly.",
-                "d8c261": "Home"
-            },
             "not-found": {
                 "03ecab": "The page you requested may not exist or may have been moved.\n                        Search for a stock below, or check popular stocks.",
                 "4da438": "Report an error →",
@@ -100,7 +93,7 @@
                 "79bd8f": "Easily check AI reports analyzing news, Fundamentals, and the Fear & Greed Index.",
                 "c26658": "AI Analysis for Greater Investment Confidence",
                 "dfbacd": "How accurate is Siglens?",
-                "eafd49": "Chart trends based on various indicators and diverse investment strategies,",
+                "eafd49": "Chart trends built on {v0} indicators and a range of investment strategies,",
                 "ee41ec": "View Backtesting Results →"
             }
         },
@@ -284,7 +277,7 @@
                 "42ddbe": "Summarizes {v0} trading details disclosed by U.S. Senate and House members under the STOCK Act. It shows the transaction date, disclosure date, buy/sell classification, and estimated amount range. Considering the disclosure delay of approximately 45 days, AI summarizes recent Congressional trading trends.",
                 "44a64f": "It is {v0}, and the current price {v1} is at {v2}% of this range — {v3}. If you register your Holdings below {v4}, you can also see the floor you bought on within the same building.",
                 "465a63": "{v0} Financial Statements",
-                "4e7e6f": "If it shows the overall sentiment of {v0} by combining multiple assets, this page converts a stock's volume flow, execution flow, and price position within its own distribution into a score.",
+                "4e7e6f": "Where <link>{v1}</link> combines many assets to show sentiment across {v0} as a whole, this page scores a single stock by converting its volume flow, execution flow, and price position within that stock’s own distribution.",
                 "5ab35b": "{v0} Current Price: Which Floor of This Apartment?",
                 "5c38df": "Could not load analyst trends.",
                 "632a87": "{v0}{v1} Fundamentals Analysis. Analyzes company profile, valuation (PER, PSR, EPS), profitability (ROE, Margin), financial health, and analyst consensus target price.",
@@ -329,7 +322,31 @@
                 "f865a7": "For stocks without an Options market, the Options analysis page will display an empty message and redirect to other analysis pages such as Chart/Fundamentals/News.",
                 "f9482c": "Fear & Greed Index",
                 "faa62c": "How are Max Pain and Open Interest interpreted?",
-                "fec645": "{v0} Financial Statements Analysis Overview"
+                "fec645": "{v0} Financial Statements Analysis Overview",
+                "marketFearGreedLinkAll": "Market-wide Fear & Greed Index",
+                "marketFearGreedLinkKr": "Korean Market Fear & Greed Index",
+                "marketLabelUs": "the U.S. stock market",
+                "marketLabelKr": "the Korean stock market"
+            }
+        },
+        "api": {
+            "stream": {
+                "timeout": "The analysis timed out. Please try again.",
+                "busy": "There are many analysis requests right now. Please try again shortly.",
+                "failed": "The analysis request failed ({v0})",
+                "disconnected": "The analysis connection dropped before it finished. Please try again.",
+                "unreadable": "Could not read the analysis result. Please try again.",
+                "generic": "An error occurred during analysis. Please try again.",
+                "unexpected": "An unexpected error occurred.",
+                "unstable": "An unexpected error occurred. Please try again shortly.",
+                "digestFailed": "Could not load the digest. Please try again shortly.",
+                "noOptionsChains": "There is no options data to analyze.",
+                "timeframeNotAllowed": "The selected timeframe is not available on your current tier.",
+                "keyRequired": "The selected model requires your own API key. Register a key or upgrade your plan.",
+                "limitExceeded": "You have used all of today’s analyses. Please try again tomorrow.",
+                "noNews": "There is no news to analyze. Please try again shortly.",
+                "analysisFailed": "Something went wrong during the analysis.",
+                "fetchFailed": "Could not load the data."
             }
         }
     },
@@ -451,7 +468,7 @@
                 "7b5f5a": "Verify Code",
                 "8321f5": "Sending...",
                 "d01150": "Signing up...",
-                "d50482": "We sent a verification code to.",
+                "d50482": "We sent a verification code to <email>{v0}</email>.",
                 "d89be9": "Verification Code",
                 "e4d212": "Display Name (Optional)",
                 "ecb4cc": "Sign Up",
@@ -518,7 +535,7 @@
                 "20b566": "You have no registered holdings yet. Add your first stock.",
                 "283e16": "Deleting…",
                 "4e29b2": "Failed to load holdings temporarily.",
-                "91d7d2": "Shares · Avg. Price $",
+                "91d7d2": "{v0} shares · Avg. price ${v1}",
                 "ac4dd7": "Delete?",
                 "cae421": "Holdings",
                 "e1407b": "Edit",
@@ -633,6 +650,12 @@
                     "support_resistance": "{count} Support/Resistance tools",
                     "total": "{count} analysis skills"
                 }
+            },
+            "byokGate": {
+                "tier_premium_blocked": "The selected model is available on the Premium tier only. Register an API key or upgrade your tier.",
+                "invalid_model": "Unknown model.",
+                "api_key_corrupted": "Could not decrypt the stored API key. Please register it again.",
+                "unexpected_error": "An unexpected error occurred. Please try again shortly."
             }
         },
         "ui": {
@@ -670,6 +693,10 @@
             "RegionTabs": {
                 "1eafbd": "Select Region"
             }
+        },
+        "api": {
+            "fmpBusy": "The US market data server is busy right now. Please try again in a few minutes.",
+            "fmpUnavailable": "This data is currently unavailable."
         }
     },
     "views": {
@@ -688,7 +715,8 @@
             },
             "FearGreedFactsSummary": {
                 "b53859": "{v0} Fear & Greed Index Summary",
-                "fa167e": "Current Score"
+                "fa167e": "Current Score",
+                "asOfClose": "(as of {v0} close)"
             },
             "FearGreedHeaderChip": {
                 "afe032": "Insufficient Fear & Greed Data"
@@ -813,12 +841,50 @@
             "ModelSelector": {
                 "1db1df": "Select AI Analysis Model",
                 "7c0e87": "AI Analysis Model List"
+            },
+            "skillName": {
+                "MACD 대순환 분석": "MACD Grand Cycle Analysis",
+                "가치 투자 (Value Investing)": "Value Investing",
+                "다이버전스 전략": "Divergence Strategy",
+                "다중 시간대 분석": "Multi-Timeframe Analysis",
+                "대칭삼각형": "Symmetrical Triangle",
+                "매크로 영향 분석 (Macro Impact)": "Macro Impact Analysis",
+                "브레이크아웃 전략": "Breakout Strategy",
+                "삼중바닥": "Triple Bottom",
+                "삼중천장": "Triple Top",
+                "상승깃발": "Bull Flag",
+                "상승삼각형": "Ascending Triangle",
+                "상승쐐기": "Rising Wedge",
+                "성장 투자 (Growth Investing)": "Growth Investing",
+                "스마트 머니 컨셉 (SMC)": "Smart Money Concepts (SMC)",
+                "스퀴즈 모멘텀 신호 가이드": "Squeeze Momentum Signal Guide",
+                "어닝 반응 분석 (Earnings Reaction)": "Earnings Reaction Analysis",
+                "엘리어트 파동": "Elliott Wave",
+                "역헤드앤숄더": "Inverse Head and Shoulders",
+                "원형바닥": "Rounding Bottom",
+                "이동평균선 대순환 분석": "Moving Average Grand Cycle Analysis",
+                "이벤트 드리븐 (Event-Driven)": "Event-Driven Strategy",
+                "이중바닥": "Double Bottom",
+                "이중천장": "Double Top",
+                "직사각형": "Rectangle",
+                "컵앤핸들": "Cup and Handle",
+                "퀄리티 투자 (Quality Investing)": "Quality Investing",
+                "페넌트": "Pennant",
+                "평균 회귀 전략": "Mean Reversion Strategy",
+                "피보나치 되돌림": "Fibonacci Retracement",
+                "피보나치 전략": "Fibonacci Strategy",
+                "피보나치 확장": "Fibonacci Extension",
+                "피봇 포인트": "Pivot Points",
+                "하락깃발": "Bear Flag",
+                "하락삼각형": "Descending Triangle",
+                "하락쐐기": "Falling Wedge",
+                "헤드앤숄더": "Head and Shoulders"
             }
         },
         "backtesting": {
             "BacktestCaseCard": {
                 "456225": "Target Price:",
-                "06cf3e": "Day",
+                "06cf3e": "<n>{v0}</n> days",
                 "0f8bf6": "AI Entry Recommendation",
                 "1e38a3": "Stop Loss",
                 "31e4d3": "Buy",
@@ -912,6 +978,14 @@
                 "e790ae": "Register API Key",
                 "f77cc9": "{v0} API key registration is required.",
                 "f85b06": "Continue with Free Model"
+            },
+            "useChat": {
+                "tokenExhausted": "You’ve used all {v0} free questions for today. Please come back tomorrow.",
+                "rateLimited": "The AI server is busy right now. Please try again in a moment.",
+                "serverBusy": "The AI server is busy. Try switching to another model and retrying.",
+                "serverError": "Something went wrong. Please try again.",
+                "modelNotAllowed": "The selected model is not available on your current plan. Please pick another model.",
+                "userApiKeyRequired": "This model requires your own API key. Register a key to use it."
             }
         },
         "congress": {
@@ -965,7 +1039,11 @@
             },
             "MarketDataErrorNotice": {
                 "69afbd": "Please refresh and try again shortly.",
-                "76bb07": "Close Notice"
+                "76bb07": "Close Notice",
+                "total": "Could not load {v0} data.",
+                "partial": "Some {v0} data could not be loaded.",
+                "marketLabelUs": "the U.S. stock market",
+                "marketLabelKr": "the Korean stock market"
             },
             "MarketSummaryPanelSkeleton": {
                 "dc6348": "Loading Market Summary"
@@ -1003,6 +1081,32 @@
             },
             "TimeframeSelector": {
                 "756aa5": "Timeframe"
+            },
+            "assetName": {
+                "GSPC": "S&P 500 Large Cap",
+                "DJI": "Dow Jones Industrial",
+                "IXIC": "NASDAQ Composite",
+                "VIX": "Volatility Index",
+                "KS11": "KOSPI",
+                "KQ11": "KOSDAQ",
+                "USDKRW": "USD/KRW Rate",
+                "XLK": "Technology",
+                "XLF": "Financials",
+                "XLE": "Energy",
+                "XLV": "Healthcare",
+                "XLY": "Cons. Disc.",
+                "XLP": "Cons. Staples",
+                "XLI": "Industrials",
+                "XLB": "Materials",
+                "XLU": "Utilities",
+                "XLRE": "Real Estate",
+                "XLC": "Comm. Svc.",
+                "091160.KS": "Semiconductor",
+                "305720.KS": "Battery",
+                "266360.KS": "IT Software",
+                "091180.KS": "Autos",
+                "091170.KS": "Banks",
+                "244580.KS": "Biotech"
             }
         },
         "economy": {
@@ -1381,7 +1485,7 @@
         },
         "news": {
             "AnalystActions": {
-                "81b8e2": "from",
+                "81b8e2": "changed to",
                 "8e5a3a": "Show more ({v0} remaining)",
                 "b2cd1a": "Analyst Rating Changes",
                 "b37a23": "List of Analyst Rating Changes",
@@ -1498,7 +1602,7 @@
             "OptionsEmptyState": {
                 "64ff0f": "No {v0} Options Market Information",
                 "840bca": "Other Analysis Pages",
-                "97e04b": "currently has no options market.",
+                "97e04b": "{v0} currently has no options market.",
                 "9e8562": "Explore the stock on other analysis pages."
             },
             "OptionsMetricsRow": {

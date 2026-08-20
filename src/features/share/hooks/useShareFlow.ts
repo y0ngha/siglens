@@ -9,6 +9,8 @@ import {
     useState,
 } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { localePath } from '@/shared/i18n/locales';
 import { useShareable } from '../model/ShareableAnalysisContext';
 import type { ShareableRegistration } from '../model/ShareableAnalysisContext';
 import { useUserTier } from '@/features/symbol-model/hooks/useUserTier';
@@ -109,6 +111,7 @@ export function useShareFlow(): UseShareFlowResult {
 
     const reg = useShareable();
     const { tier: sharerTier } = useUserTier();
+    const locale = useCurrentLocale();
 
     /**
      * Reset all transient UI state when the user switches to a different analysis tab.
@@ -170,7 +173,9 @@ export function useShareFlow(): UseShareFlowResult {
                 setPreparingOpen(false);
                 return;
             }
-            const url = `${SITE_URL}/share/${result.id}`;
+            // 공유 링크에 로케일을 유지한다 — 일본어 사용자가 보낸 링크가
+            // 상대에게 한국어로 열리면 공유의 의미가 없다.
+            const url = `${SITE_URL}${localePath(locale, `/share/${result.id}`)}`;
             setShareUrl(url);
 
             const symbol = regRef.current?.context.symbol ?? '';

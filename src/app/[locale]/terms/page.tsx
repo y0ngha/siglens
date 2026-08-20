@@ -4,6 +4,7 @@ import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
     localeOpenGraph,
+    localeRobots,
 } from '@/shared/lib/seoAlternates';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -49,16 +50,12 @@ export async function generateMetadata({
     params,
 }: LocaleMetadataParams): Promise<Metadata> {
     const { locale } = await params;
-    const ogLocale = localeOpenGraph(
-        isLocale(locale) ? locale : DEFAULT_LOCALE
-    );
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const ogLocale = localeOpenGraph(resolved);
     return {
         title: TERMS_TITLE,
         description: TERMS_DESCRIPTION,
-        robots: {
-            index: true,
-            follow: true,
-        },
+        robots: localeRobots(resolved),
         alternates: await localeAlternatesFrom(params, TERMS_PATH),
         openGraph: {
             type: 'article',

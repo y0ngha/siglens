@@ -102,6 +102,7 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
 
 vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
     getFmpErrorStatus: mockGetFmpErrorStatus,
+    translateFmpError: vi.fn().mockReturnValue(null),
 }));
 
 vi.mock('@/entities/analysis/api', () => ({

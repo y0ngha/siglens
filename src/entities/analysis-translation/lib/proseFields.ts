@@ -10,9 +10,15 @@
  *
  * ## 왜 산문만 건드리는가
  *
- * 숫자·가격·enum(`sentiment`, `riskLevel`, `direction`)·티커·`keyLevels`는
- * 절대 넘기지 않는다. 번역 모델이 숫자를 바꾸는 사고를 **구조적으로** 막는 것이
- * 프롬프트로 부탁하는 것보다 확실하다. `*Ko`가 아닌 필드는 애초에 후보가 아니다.
+ * 숫자 필드·enum(`sentiment`, `riskLevel`, `direction`)·티커·`keyLevels`는
+ * 넘기지 않는다. `*Ko` 접미사가 붙은 문자열만 후보이므로, 구조적으로 걸러진다.
+ *
+ * ⚠️ **다만 "숫자가 전혀 안 넘어간다"는 뜻은 아니다.** core의
+ * `OverallScenario.priceRangeKo`는 `'190~200달러'`처럼 **가격이 든 문자열**이고
+ * `*Ko`라서 후보에 포함된다(`__tests__/translateAnalysis.test.ts`가 그 동작을
+ * 고정하고 있다). `keyEventsKo`·`upcomingEventsKo`도 날짜를 담는다. 그 값들의
+ * 숫자 보존은 구조가 아니라 **프롬프트 규칙**(`api.ts`의 "Never change numbers,
+ * prices, percentages, ticker symbols or dates")이 맡는다.
  */
 
 /** 번역 대상 문자열 하나의 위치. `path`는 `a.b.0.c` 형태의 점 경로. */
@@ -23,9 +29,72 @@ export interface ProseEntry {
 
 const KO_SUFFIX = 'Ko';
 
+/**
+ * `*Ko` 접미사를 쓰지 **않는** 한국어 산문 필드.
+ *
+ * ## 왜 접미사만으로는 안 되는가
+ *
+ * core의 21개 `*Ko` 필드는 overall·fundamental·financials·news·congress
+ * 계열에만 있다. `technical`(종목 메인 페이지)·`options`·`briefing`(/market)·
+ * `macroBriefing`(/economy)은 **접미사 없이** `summary`·`description` 같은
+ * 이름을 쓰면서 core JSDoc에 "Korean"이라고 명시돼 있다. 접미사 휴리스틱만
+ * 쓰면 그 네 화면에서 `extractProse`가 빈 배열을 돌려주고,
+ * `translateAnalysis`가 즉시 원본을 반환해 **번역이 통째로 no-op**이 된다.
+ * 실측: 9개 분석 화면 중 4개 — 가장 트래픽이 많은 종목 메인 포함 — 이
+ * 스트림을 새로 돌려도 한국어 산문을 그대로 내보내고 있었다.
+ *
+ * 설계 문서(§"lib/proseFields.ts")가 처음부터 **응답 타입별 화이트리스트**를
+ * 지정했는데 구현이 접미사로 갈음하면서 조용히 넷을 삼켰다.
+ *
+ * ⚠️ 이름 기반이라 **동명의 비-산문 필드가 생기면 오탐**이다. 지금은 없다
+ * (`id`·`strategyName`·`patternName`·`expirationDate`는 목록 밖).
+ * core 응답 타입이 바뀌면 `__tests__/proseFields.test.ts`의 타입별 픽스처가
+ * 먼저 깨진다.
+ */
+const PROSE_FIELD_NAMES: ReadonlySet<string> = new Set([
+    // technical — 키 레벨·시나리오 근거. core JSDoc이 "Korean rationale/
+    // trigger condition"으로 명시한다. `reconciledLevels.exit`/`riskReward`는
+    // 이미 번역되는데 같은 `<section>`의 `reason`만 한국어로 남아, 한 블록 안에
+    // 두 언어가 섞이는 상태였다(`translateAnalysis`의 all-or-nothing 계약 위반).
+    'reason', // KeyLevel.reason, ReconciledActionLevels.reason
+    'basis', // PriceTarget.basis
+    'condition', // PriceScenario.condition
+    /**
+     * `KeyPrice.label`·`SkillChartDisplay.label`·옵션 만기 라벨.
+     *
+     * core 프롬프트가 **한국어를 강제**한다: "All label values in keyPrices must be
+     * written in Korean (e.g. \"상단 추세선\", \"넥라인\", \"목표가\")".
+     * 같은 아코디언에서 `pattern.summary`는 번역되는데 그 아래 키 가격 라벨만
+     * 한국어로 남아, `reconciledLevels.reason`에서 고친 것과 똑같이 한 블록에
+     * 두 언어가 섞였다.
+     *
+     * 오탐 확인: `SectorGroupDef.label`(영어 `"Technology"`)과
+     * `MarketBriefingContext`의 `label`은 **입력·설정 타입**이라 어떤 디스패치
+     * 응답에도 실리지 않는다.
+     */
+    'label',
+    // technical (`AnalysisResponse`)
+    'summary', // 최상위 + StrategyResult + CandlePatternSummary 공용
+    'description', // AnalysisSignal + MarketBriefingVolatilityAnalysis
+    'positionAnalysis',
+    'entry',
+    'exit',
+    'riskReward',
+    // options (`OptionsAnalysisResponse`)
+    'commentary',
+    'message',
+    // briefing (`MarketBriefingResponse`)
+    'dominantThemes',
+    'performanceDescription',
+    'riskSentiment',
+    // macroBriefing (`MacroBriefingResponse`)
+    'highlights',
+]);
+
 /** 이 키가 산문 필드인가. */
 function isProseKey(key: string): boolean {
-    return key.endsWith(KO_SUFFIX) && key !== KO_SUFFIX;
+    if (key.endsWith(KO_SUFFIX) && key !== KO_SUFFIX) return true;
+    return PROSE_FIELD_NAMES.has(key);
 }
 
 /**

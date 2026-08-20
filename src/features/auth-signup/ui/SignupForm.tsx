@@ -177,10 +177,14 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                 <form action={codeFormAction} className="space-y-4" noValidate>
                     <input type="hidden" name="email" value={email} />
                     <p className="text-sm text-secondary-300">
-                        <span className="font-mono break-all text-secondary-100">
-                            {email}
-                        </span>
-                        {t('SignupForm.d50482')}{' '}
+                        {t.rich('SignupForm.d50482', {
+                            v0: email,
+                            email: chunks => (
+                                <span className="font-mono break-all text-secondary-100">
+                                    {chunks}
+                                </span>
+                            ),
+                        })}{' '}
                         <EmailEditButton onClick={onRestart} />
                     </p>
                     {codeState.error?.code === 'redis_unavailable' ||

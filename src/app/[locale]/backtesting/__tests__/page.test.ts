@@ -25,9 +25,27 @@ vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('@/app/[locale]/backtesting/data.json', () => ({
     default: {
         meta: { totalCases: 10, totalTickers: 5 },
+        // `validateBacktestData`가 항등함수로 mock되므로 이 픽스처가 곧 런타임 shape다.
+        // `aiAnalysis.bullishTargets`는 page 모듈이 클라이언트 프로젝션에서 실제로
+        // 읽는다 — 빼면 import 시점에 터진다(실 데이터에서는 validate가 보장하는 필드).
         cases: [
-            { ticker: 'AAPL', date: '2025-01-01', signal: 'buy' },
-            { ticker: 'TSLA', date: '2025-01-01', signal: 'buy' },
+            {
+                ticker: 'AAPL',
+                date: '2025-01-01',
+                signal: 'buy',
+                aiAnalysis: {
+                    bullishTargets: [
+                        { price: 125, basis: '직전 저항선' },
+                        { price: 140, basis: '전고점' },
+                    ],
+                },
+            },
+            {
+                ticker: 'TSLA',
+                date: '2025-01-01',
+                signal: 'buy',
+                aiAnalysis: { bullishTargets: [] },
+            },
         ],
     },
 }));

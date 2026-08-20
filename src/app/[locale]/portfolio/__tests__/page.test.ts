@@ -46,7 +46,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { PositionHoldingCard } from '@/app/[locale]/portfolio/PositionHoldingCard';
 import {
-    metadata,
+    generateMetadata,
     PortfolioEmptyState,
     PortfolioErrorState,
     PortfolioGuard,
@@ -95,17 +95,26 @@ const RECORD_MSFT: PortfolioHoldingRecord = {
 };
 
 describe('Portfolio page', () => {
-    it('exports metadata with the portfolio title', () => {
+    it('exports metadata with the portfolio title', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
         expect(metadata.title).toBe('내 포트폴리오 위치');
     });
 
-    it('sets robots to noindex, nofollow', () => {
+    it('sets robots to noindex, nofollow', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
         expect(metadata.robots).toEqual(
             expect.objectContaining({ index: false, follow: false })
         );
     });
 
-    it('includes canonical URL', () => {
+    it('includes canonical URL', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
         expect(metadata.alternates?.canonical).toBe(
             'https://siglens.io/portfolio'
         );

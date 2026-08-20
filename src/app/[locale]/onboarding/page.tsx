@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { localeCanonical } from '@/shared/lib/seoAlternates';
 import { OnboardingContent } from '@/features/portfolio-onboarding';
 import {
     DEFAULT_LOCALE,
@@ -8,7 +9,7 @@ import {
 } from '@/shared/i18n/locales';
 import { setRequestLocale } from 'next-intl/server';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
@@ -16,13 +17,26 @@ import { Suspense } from 'react';
 // noindex 페이지에도 canonical/og:url을 명시한다 (login/signup/account 정책과 일관).
 // 외부에 변형 URL이 공유되더라도 "원본은 /onboarding 하나"라는 신호를 명확히 두면
 // 일부 크롤러/공유 도구가 변형을 강조하지 않는다.
-export const metadata: Metadata = {
-    title: '보유종목 등록',
-    description: `${SITE_NAME} 가입 후 보유종목 등록 온보딩 페이지`,
-    alternates: { canonical: `${SITE_URL}/onboarding` },
-    openGraph: { url: `${SITE_URL}/onboarding` },
-    robots: { index: false, follow: false },
-};
+/**
+ * 정적 `metadata`가 아니라 `generateMetadata`인 이유: 정적 객체는 로케일을 볼 수
+ * 없어 `/en/onboarding`도 canonical이 `/onboarding`(한국어)로 나갔다. noindex 페이지에
+ * 다른 URL을 canonical로 걸면 Google이 noindex를 그 대상으로 전파할 수 있다.
+ */
+export async function generateMetadata({
+    params,
+}: {
+    readonly params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+    const { locale } = await params;
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    return {
+        title: '보유종목 등록',
+        description: `${SITE_NAME} 가입 후 보유종목 등록 온보딩 페이지`,
+        alternates: { canonical: localeCanonical(resolved, '/onboarding') },
+        openGraph: { url: localeCanonical(resolved, '/onboarding') },
+        robots: { index: false, follow: false },
+    };
+}
 
 // Reads cookies via getCurrentUser — must be inside Suspense for PPR.
 // Exported (rather than module-private) so tests can `await OnboardingGuard()`

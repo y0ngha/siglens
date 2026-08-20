@@ -7,6 +7,7 @@ import {
     localeAlternatesFrom,
     localeCanonical,
     localeOpenGraph,
+    localeRobots,
 } from '@/shared/lib/seoAlternates';
 import { Suspense } from 'react';
 
@@ -125,7 +126,7 @@ export async function generateMetadata({
         }),
         robots: degraded
             ? { index: false, follow: true }
-            : { index: true, follow: true },
+            : localeRobots(resolvedLocale),
         openGraph: {
             title: ECONOMY_KR_FULL_TITLE,
             description: ECONOMY_KR_DESCRIPTION,

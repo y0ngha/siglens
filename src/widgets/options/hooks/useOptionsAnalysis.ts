@@ -1,6 +1,9 @@
 'use client';
 
+import type { StreamErrorMessages } from '@/shared/hooks/useAnalysisStream';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { useCallback, useMemo } from 'react';
+import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import { useQuery } from '@tanstack/react-query';
 import type { OptionsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import type { SubmitOptionsAnalysisActionResult } from '@/entities/options-chain/actions';
@@ -26,6 +29,7 @@ async function fetchOptionsAnalysis(
     expirationDate: OptionsExpirationSelector,
     modelId: ModelId,
     reasoning: boolean,
+    messages: StreamErrorMessages,
     signal?: AbortSignal,
     cacheOnly?: boolean
 ): Promise<OptionsAnalysisResponse> {
@@ -40,6 +44,7 @@ async function fetchOptionsAnalysis(
             cacheOnly,
         },
         signal,
+        messages,
     });
 
     if (result.status === 'cached' || result.status === 'done')
@@ -48,18 +53,20 @@ async function fetchOptionsAnalysis(
         throw new BotBlockedError();
     }
     if (result.status === 'no_chains_error') {
-        throw new Error(result.error ?? '분석할 옵션 데이터가 없습니다.');
+        throw new Error(result.error ?? messages.noOptionsChains);
     }
     if (result.status === 'limit_error') {
-        throw new Error(result.error.message);
+        // core가 만든 문구는 **전 로케일 영어**다 — 코드만 믿고 문구는 갈아끼운다.
+        throw new Error(messages.limitExceeded);
     }
     if (result.status === 'error' && isGateBlockedResult(result)) {
         throw new Error(result.error.message);
     }
     if (result.status === 'key_error') {
-        throw new Error(result.error);
+        // core가 만든 문구는 **전 로케일 한국어**다.
+        throw new Error(messages.keyRequired);
     }
-    throw new Error('예상치 못한 오류가 발생했습니다.');
+    throw new Error(messages.unexpected);
 }
 
 interface UseOptionsAnalysisInput {
@@ -106,6 +113,8 @@ export function useOptionsAnalysis({
     isSettingsHydrated = true,
     cacheOnly = false,
 }: UseOptionsAnalysisInput): OptionsAnalysisState {
+    const locale = useCurrentLocale();
+    const streamMessages = useStreamErrorMessages();
     const queryKey = useMemo(
         () =>
             QUERY_KEYS.optionsAnalysis(
@@ -113,9 +122,10 @@ export function useOptionsAnalysis({
                 companyName,
                 expirationDate,
                 modelId,
-                reasoning
+                reasoning,
+                locale
             ),
-        [symbol, companyName, expirationDate, modelId, reasoning]
+        [symbol, companyName, expirationDate, modelId, reasoning, locale]
     );
 
     const query = useQuery({
@@ -137,6 +147,7 @@ export function useOptionsAnalysis({
                 qExpiration,
                 qModelId,
                 qReasoning,
+                streamMessages,
                 signal,
                 cacheOnly
             ),

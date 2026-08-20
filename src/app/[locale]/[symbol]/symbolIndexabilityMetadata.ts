@@ -36,7 +36,7 @@ interface BlockedSymbolMetadataInput {
      */
     tab?: SeoSnapshotTab;
     /** URL 로케일. 준비되지 않은 로케일은 다른 조건과 무관하게 noindex다. */
-    locale?: Locale;
+    locale: Locale;
 }
 
 export async function getBlockedSymbolMetadata({
@@ -78,5 +78,20 @@ export async function getBlockedSymbolMetadata({
         locale,
     });
 
-    return decision.indexable ? null : NOINDEX_SYMBOL_METADATA;
+    if (decision.indexable) return null;
+
+    /**
+     * 로케일 게이트만 걸린 경우는 **페이지를 비우지 않는다.**
+     *
+     * 이 함수의 blocked 응답은 title이 없는 `NOINDEX_SYMBOL_METADATA`다. 종목이
+     * 실존하지 않거나 본문이 degrade된 경우엔 그게 맞지만, `locale-not-ready`는
+     * 종목도 본문도 멀쩡하고 **번역만 안 됐다**는 뜻이다. 그 경우까지 비우면
+     * 371개 티커 × 9탭 × 3로케일의 제목이 전부 사라진다.
+     *
+     * null을 돌려주면 호출부가 평소대로 `symbolMetadataFromSeo(seo, locale)`를
+     * 만들고, 거기서 로케일 게이트가 robots만 덮는다.
+     */
+    if (decision.reason === 'locale-not-ready') return null;
+
+    return NOINDEX_SYMBOL_METADATA;
 }

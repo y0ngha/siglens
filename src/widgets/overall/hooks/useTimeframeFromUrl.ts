@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import { useSearchParams } from 'next/navigation';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/shared/config/market';
@@ -16,6 +17,7 @@ export function useTimeframeFromUrl(
     isFreeTier: boolean,
     isTierHydrated: boolean
 ): Timeframe {
+    const toLocalePath = useLocalePath();
     const tfParam = useSearchParams().get('tf');
     const requestedTimeframe = isValidTimeframe(tfParam)
         ? tfParam
@@ -40,12 +42,19 @@ export function useTimeframeFromUrl(
         // (잘못된 tf가 잠깐 보이는 깜빡임의 원인). 반환값 timeframe은 이미 위에서
         // DEFAULT로 강제됐으므로 여기서는 주소만 맞춰 주면 된다 — Next가 공식 지원하는
         // history.replaceState로 내비게이션 없이 쿼리만 교체한다(useSearchParams에 반영됨).
+        // 라우터를 우회하는 경로라 로케일 접두사를 직접 붙여야 한다 — 빼면
+        // `/ja/AAPL/overall?tf=1Hour` 진입 시 주소가 조용히
+        // `/AAPL/overall?tf=1Day`가 된다. 피해는 주소창에서 끝나지 않는다:
+        // `useAnalysisStream`이 `window.location.pathname`에서
+        // `x-siglens-locale`을 뽑으므로, 이후 재분석 요청이 `ko`로 나가 **일본어
+        // 페이지에 한국어 분석문이 렌더된다**. 형제 파일
+        // `views/symbol/hooks/useTimeframeChange.ts`에 같은 수정이 있다.
         window.history.replaceState(
             null,
             '',
-            `/${symbol}/overall?tf=${DEFAULT_TIMEFRAME}`
+            toLocalePath(`/${symbol}/overall?tf=${DEFAULT_TIMEFRAME}`)
         );
-    }, [isFreeTier, isTierHydrated, symbol, tfParam]);
+    }, [isFreeTier, isTierHydrated, symbol, tfParam, toLocalePath]);
 
     return timeframe;
 }

@@ -32,6 +32,13 @@ interface LocaleSwitcherProps {
  * 전환은 `replace`다. `push`면 언어를 두 번 바꾼 사용자가 뒤로가기를 눌렀을 때
  * 이전 언어 페이지로 돌아가 "뒤로가기가 언어를 되돌린다"는 혼란이 생긴다.
  *
+ * **쿼리스트링·해시를 보존한다.** next-intl의 `usePathname()`은 경로만 돌려주므로
+ * 그대로 `router.replace`에 넘기면 검색 파라미터가 사라진다. 이건 편의 문제가
+ * 아니라 데이터 손실이다 — `/reset-password?token=…`에서 언어를 바꾸면 토큰이
+ * 날아가 "링크가 유효하지 않다"는 화면을 보게 되고(메일함으로 돌아가야 한다),
+ * `/signup/oauth/consent?token=…`에서는 진행 중이던 소셜 가입이 통째로 취소된다.
+ * `?tf=`·`?next=`·`?sector=` 같은 화면 상태도 같은 이유로 유지한다.
+ *
  * **쿠키를 쓰지 않는다.** 로케일의 단일 소스는 URL이다. 쿠키로 기억해 두면
  * 루트 진입 시 리다이렉트하고 싶어지는데, 그건 `localeDetection: false`로 막아 둔
  * 바로 그 동작(크롤러 이탈 + CDN 캐시 오염)이다.
@@ -58,8 +65,16 @@ export function LocaleSwitcher({ className, tabIndex }: LocaleSwitcherProps) {
                 onChange={event => {
                     const next = event.target.value as Locale;
                     if (next === locale) return;
+                    // `useSearchParams()`를 쓰지 않는다. 이 컴포넌트는 헤더에
+                    // 있어 Suspense 경계 밖이고, 그 훅은 CSR bailout을 일으켜
+                    // **정적 생성 자체를 깬다**(실측: `/ko/account`,
+                    // `/ko/account/delete` 프리렌더 실패). 여기서 필요한 건
+                    // 반응성이 아니라 클릭 시점의 값 하나뿐이다.
+                    const { search: query, hash } = window.location;
                     startTransition(() => {
-                        router.replace(pathname, { locale: next });
+                        router.replace(`${pathname}${query}${hash}`, {
+                            locale: next,
+                        });
                     });
                 }}
                 className="min-h-11 cursor-pointer appearance-none rounded bg-transparent py-2 pr-6 pl-2 text-sm text-secondary-300 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none disabled:opacity-60"

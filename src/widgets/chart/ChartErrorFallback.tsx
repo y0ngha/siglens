@@ -2,15 +2,17 @@
 
 import { useTranslations } from 'next-intl';
 import type { FallbackProps } from 'react-error-boundary';
-import { getFmpUserFacingMessage } from '@/shared/api/fmp/fmpUserMessage';
+import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
 
 export function ChartErrorFallback({
     error,
     resetErrorBoundary,
 }: FallbackProps) {
     const t = useTranslations('widgets.chart');
+    // FMP 문구 키는 완전 수식이라 루트 번역자가 필요하다.
+    const tRoot = useTranslations();
     const errorMessage =
-        getFmpUserFacingMessage(error) ??
+        translateFmpError(error, tRoot) ??
         (error instanceof Error
             ? error.message
             : t('ChartErrorFallback.c9a3b4'));

@@ -36,7 +36,7 @@ export function SignalStockCard({
                     layout="signal"
                     data={{
                         symbol: data.symbol,
-                        koreanName: data.koreanName,
+                        displayName: data.koreanName,
                         price: data.price,
                         changePercent: data.changePercent,
                     }}

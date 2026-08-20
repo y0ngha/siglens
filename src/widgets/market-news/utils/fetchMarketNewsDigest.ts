@@ -1,7 +1,10 @@
 import type { NewsFeedCategoryId } from '@/entities/market-news';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { SubmitMarketNewsDigestActionResult } from '@/entities/market-news/actions';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import {
+    runAnalysisStream,
+    type StreamErrorMessages,
+} from '@/shared/hooks/useAnalysisStream';
 
 /**
  * 다이제스트를 SSE 한 연결로 받아온다. `done`은 `cached`와 동일하게 `result`를 반환한다.
@@ -17,12 +20,14 @@ import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
  */
 export async function fetchMarketNewsDigest(
     category: NewsFeedCategoryId,
+    messages: StreamErrorMessages,
     signal?: AbortSignal
 ): Promise<NewsAnalysisResponse> {
     const result = await runAnalysisStream<SubmitMarketNewsDigestActionResult>({
         type: 'marketNewsDigest',
         params: { category },
         signal,
+        messages,
     });
 
     if (result.status === 'error') {

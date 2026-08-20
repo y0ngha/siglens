@@ -19,7 +19,7 @@ vi.mock('@/shared/lib/priceFormat', () => ({
 
 const BASE: QuoteHeaderData = {
     symbol: 'AAPL',
-    koreanName: '애플',
+    displayName: '애플',
     price: 189.5,
     changePercent: 1.23,
 };
@@ -132,7 +132,7 @@ describe('QuoteHeader — layout: signal', () => {
 describe('QuoteHeader — 주 제목 자리 결정 (tickerIsReadable)', () => {
     const KR: QuoteHeaderData = {
         symbol: '091160.KS',
-        koreanName: '반도체',
+        displayName: '반도체',
         price: 125405,
         changePercent: -0.67,
     };
@@ -193,7 +193,7 @@ describe('QuoteHeader — 주 제목 자리 결정 (tickerIsReadable)', () => {
             <QuoteHeader
                 tickerIsReadable={false}
                 currencySymbol="₩"
-                data={{ ...KR, koreanName: 'LG에너지솔루션' }}
+                data={{ ...KR, displayName: 'LG에너지솔루션' }}
                 layout="signal"
             />
         );

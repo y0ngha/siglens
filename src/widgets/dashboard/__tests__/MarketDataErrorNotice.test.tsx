@@ -5,7 +5,7 @@ describe('MarketDataErrorNotice', () => {
     it('role="alert"로 실패 안내 문구를 렌더한다', () => {
         render(
             <MarketDataErrorNotice
-                marketLabel="미국 증시"
+                scopeId="us"
                 variant="partial"
                 onClose={() => {}}
             />
@@ -24,7 +24,7 @@ describe('MarketDataErrorNotice', () => {
         const onClose = vi.fn();
         render(
             <MarketDataErrorNotice
-                marketLabel="미국 증시"
+                scopeId="us"
                 variant="partial"
                 onClose={onClose}
             />
@@ -42,7 +42,7 @@ describe('MarketDataErrorNotice', () => {
     it('시장 이름을 그대로 문구에 넣는다', () => {
         render(
             <MarketDataErrorNotice
-                marketLabel="한국 증시"
+                scopeId="kr"
                 variant="partial"
                 onClose={() => {}}
             />
@@ -59,7 +59,7 @@ describe('MarketDataErrorNotice', () => {
     it('total이면 "일부"라고 말하지 않는다', () => {
         render(
             <MarketDataErrorNotice
-                marketLabel="한국 증시"
+                scopeId="kr"
                 variant="total"
                 onClose={() => {}}
             />
@@ -75,7 +75,7 @@ describe('MarketDataErrorNotice', () => {
     it('전달한 className을 컨테이너에 합성한다', () => {
         render(
             <MarketDataErrorNotice
-                marketLabel="미국 증시"
+                scopeId="us"
                 variant="partial"
                 onClose={() => {}}
                 className="mb-extra"

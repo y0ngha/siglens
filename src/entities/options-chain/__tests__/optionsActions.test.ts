@@ -120,7 +120,8 @@ describe('submitOptionsAnalysisAction', () => {
             'AAPL',
             'Apple Inc.',
             'all',
-            MODEL_ID
+            MODEL_ID,
+            'ko'
         );
 
         expect(mockRunOptionsAnalysis).toHaveBeenCalledWith(
@@ -141,7 +142,8 @@ describe('submitOptionsAnalysisAction', () => {
             'AAPL',
             'Apple Inc.',
             'all',
-            MODEL_ID
+            MODEL_ID,
+            'ko'
         );
 
         expect(result).toMatchObject({
@@ -162,7 +164,8 @@ describe('submitOptionsAnalysisAction', () => {
             'AAPL',
             'Apple Inc.',
             'all',
-            PREMIUM_MODEL
+            PREMIUM_MODEL,
+            'ko'
         );
 
         expect(result).toEqual({ status: 'error', error: gateError });
@@ -180,7 +183,8 @@ describe('submitOptionsAnalysisAction', () => {
             'AAPL',
             'Apple Inc.',
             '2026-06-20',
-            MODEL_ID
+            MODEL_ID,
+            'ko'
         );
 
         expect(mockRunOptionsAnalysis).toHaveBeenCalledWith(
@@ -200,7 +204,8 @@ describe('submitOptionsAnalysisAction', () => {
             'AAPL',
             'Apple Inc.',
             'all',
-            PREMIUM_MODEL
+            PREMIUM_MODEL,
+            'ko'
         );
 
         expect(mockRunOptionsAnalysis).toHaveBeenCalledWith(
@@ -219,7 +224,8 @@ describe('submitOptionsAnalysisAction', () => {
             'AAPL',
             'Apple Inc.',
             'all',
-            MODEL_ID
+            MODEL_ID,
+            'ko'
         );
 
         const callArg = mockRunOptionsAnalysis.mock.calls[0]?.[0];
@@ -237,7 +243,8 @@ describe('submitOptionsAnalysisAction', () => {
             'AAPL',
             'Apple Inc.',
             'all',
-            MODEL_ID
+            MODEL_ID,
+            'ko'
         );
 
         expect(result).toMatchObject({
@@ -259,6 +266,7 @@ describe('submitOptionsAnalysisAction', () => {
                 'Apple Inc.',
                 'all',
                 MODEL_ID,
+                'ko',
                 true
             );
 
@@ -273,6 +281,7 @@ describe('submitOptionsAnalysisAction', () => {
                 'Apple Inc.',
                 'all',
                 MODEL_ID,
+                'ko',
                 true
             );
 
@@ -292,7 +301,8 @@ describe('submitOptionsAnalysisAction', () => {
                 'AAPL',
                 'Apple Inc.',
                 'all',
-                MODEL_ID
+                MODEL_ID,
+                'ko'
             );
 
             expect(mockRunOptionsAnalysis).toHaveBeenCalledWith(
@@ -331,7 +341,8 @@ describe('submitOptionsAnalysisAction — E2E force-error cookie seam', () => {
             'AAPL',
             'Apple Inc.',
             'all',
-            MODEL_ID
+            MODEL_ID,
+            'ko'
         );
 
         expect(result.status).toBe('no_chains_error');
@@ -348,7 +359,8 @@ describe('submitOptionsAnalysisAction — E2E force-error cookie seam', () => {
             'AAPL',
             'Apple Inc.',
             'all',
-            MODEL_ID
+            MODEL_ID,
+            'ko'
         );
 
         expect(result.status).toBe('cached');

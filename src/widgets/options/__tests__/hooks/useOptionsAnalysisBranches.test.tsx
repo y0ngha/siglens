@@ -6,6 +6,7 @@
  * Poll/cancel machinery has been removed; run* functions return results directly.
  */
 
+import koMessages from '../../../../../messages/ko.json';
 import type { Mock } from 'vitest';
 import { useOptionsAnalysis } from '@/widgets/options/hooks/useOptionsAnalysis';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
@@ -145,7 +146,9 @@ describe('useOptionsAnalysis — branch coverage', () => {
 
         if (result.current.status !== 'error')
             throw new Error('expected error');
-        expect(result.current.error.message).toBe('API key invalid');
+        expect(result.current.error.message).toBe(
+            koMessages.app.api.stream.keyRequired
+        );
     });
 
     it('wraps non-Error thrown value', async () => {

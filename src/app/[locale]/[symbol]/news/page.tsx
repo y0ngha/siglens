@@ -38,7 +38,7 @@ import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { getTodayIsoDay } from '@/shared/lib/getTodayIsoDay';
 import { todayKstIsoDate } from '@/shared/lib/dateKey';
-import { getFmpUserFacingMessage } from '@/shared/api/fmp/fmpUserMessage';
+import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
 import {
     buildBreadcrumbJsonLd,
     buildSnapshotMetaDescription,
@@ -165,7 +165,9 @@ export async function EventCalendarSection({ symbol }: SymbolSectionProps) {
             '[EventCalendarSection] earnings load failed, degrading:',
             error
         );
-        const message = getFmpUserFacingMessage(error) ?? t('page.3c87a9');
+        const message =
+            translateFmpError(error, await getTranslations()) ??
+            t('page.3c87a9');
         return (
             <NewsDataServerAlert title={t('page.6723ea')} message={message} />
         );
@@ -189,7 +191,9 @@ export async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
             '[AnalystActionsSection] grades load failed, degrading:',
             error
         );
-        const message = getFmpUserFacingMessage(error) ?? t('page.5c38df');
+        const message =
+            translateFmpError(error, await getTranslations()) ??
+            t('page.5c38df');
         return (
             <NewsDataServerAlert title={t('page.b2cd1a')} message={message} />
         );

@@ -1,4 +1,6 @@
 import { Suspense, type ReactNode } from 'react';
+import { RouteMessages } from '@/shared/i18n/RouteMessages';
+import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import {
@@ -119,17 +121,27 @@ export default async function SymbolLayout({
     const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
     if (isUnresolvableDegraded(ticker, degraded) || !assetInfo) notFound();
     return (
-        <SymbolLayoutProviders>
-            <SymbolLayoutJail>
-                <Suspense fallback={<SymbolHeaderShellFallback />}>
-                    <SymbolLayoutChrome assetInfo={assetInfo} params={params} />
+        // 이 서브트리가 실제로 쓰는 메시지만 클라이언트로 내려보낸다 —
+        // 루트 레이아웃은 크롬만 싣는다(`RouteMessages` JSDoc 참고).
+        <RouteMessages
+            route="[symbol]"
+            locale={isLocale(locale) ? locale : DEFAULT_LOCALE}
+        >
+            <SymbolLayoutProviders>
+                <SymbolLayoutJail>
+                    <Suspense fallback={<SymbolHeaderShellFallback />}>
+                        <SymbolLayoutChrome
+                            assetInfo={assetInfo}
+                            params={params}
+                        />
+                    </Suspense>
+                    {children}
+                </SymbolLayoutJail>
+                <Suspense fallback={null}>
+                    <SymbolFloatingChat params={params} />
                 </Suspense>
-                {children}
-            </SymbolLayoutJail>
-            <Suspense fallback={null}>
-                <SymbolFloatingChat params={params} />
-            </Suspense>
-        </SymbolLayoutProviders>
+            </SymbolLayoutProviders>
+        </RouteMessages>
     );
 }
 

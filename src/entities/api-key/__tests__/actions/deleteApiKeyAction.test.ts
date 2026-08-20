@@ -128,7 +128,10 @@ describe('deleteApiKeyAction', () => {
             'user-1',
             'anthropic'
         );
-        expect(mockRevalidatePath).toHaveBeenCalledWith('/account');
+        expect(mockRevalidatePath).toHaveBeenCalledWith(
+            '/[locale]/account',
+            'page'
+        );
         expect(result.status).toBe('success');
         expect(result.message).toBe('삭제되었습니다.');
     });

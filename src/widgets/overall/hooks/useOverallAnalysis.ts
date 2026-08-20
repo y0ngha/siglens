@@ -1,6 +1,9 @@
 'use client';
 
+import type { StreamErrorMessages } from '@/shared/hooks/useAnalysisStream';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
     ModelId,
@@ -65,7 +68,8 @@ async function fetchOverallAnalysis(
     companyName: string,
     timeframe: Timeframe,
     modelId: ModelId,
-    options: { reasoning?: boolean; reanalyze?: boolean } = {},
+    options: { reasoning?: boolean; reanalyze?: boolean },
+    messages: StreamErrorMessages,
     signal?: AbortSignal
 ): Promise<OverallAnalysisResponse> {
     // `force`(캐시 우회) 자체는 보내지 않는다 — 인증 없는 공개 라우트라 클라이언트가
@@ -75,6 +79,7 @@ async function fetchOverallAnalysis(
         type: 'overall',
         params: { symbol, companyName, timeframe, modelId, ...options },
         signal,
+        messages,
     });
 
     if (result.status === 'reanalyze_cooldown') {
@@ -97,21 +102,21 @@ async function fetchOverallAnalysis(
         throw new OverallAnalysisError(
             typeof result.error === 'string'
                 ? result.error
-                : '분석 중 오류가 발생했습니다.',
+                : messages.analysisFailed,
             result.axis
         );
     }
 
     if (result.status === 'limit_error') {
-        throw new OverallAnalysisError(
-            '오늘 분석 한도를 모두 사용했어요. 내일 다시 시도해 주세요.'
-        );
+        // core가 만든 문구는 **전 로케일 영어**다 — 코드만 믿는다.
+        throw new OverallAnalysisError(messages.limitExceeded);
     }
     if (result.status === 'key_error') {
-        throw new OverallAnalysisError(result.error, undefined);
+        // core가 만든 문구는 **전 로케일 한국어**다.
+        throw new OverallAnalysisError(messages.keyRequired, undefined);
     }
 
-    throw new OverallAnalysisError('예상치 못한 오류가 발생했습니다.');
+    throw new OverallAnalysisError(messages.unexpected);
 }
 
 export function useOverallAnalysis(
@@ -151,17 +156,21 @@ export function useOverallAnalysis(
      */
     isSettingsHydrated = true
 ): UseOverallAnalysisReturn {
+    const streamMessages = useStreamErrorMessages();
     const queryClient = useQueryClient();
     const [triggered, setTriggered] = useState(initialResult !== undefined);
     // 다음 queryFn 호출이 "사용자가 누른 재분석"인지 표시한다. state가 아니라 ref인
     // 이유: 값이 바뀌어도 렌더는 필요 없고, refetch가 곧바로 읽어가야 한다.
     const reanalyzeIntentRef = useRef(false);
+    // 로케일이 키에 들어가야 ko에서 본 결과가 ja 화면에 재사용되지 않는다.
+    const locale = useCurrentLocale();
     const queryKey = QUERY_KEYS.overallAnalysis(
         symbol,
         companyName,
         timeframe,
         modelId,
-        reasoning
+        reasoning,
+        locale
     );
     // queryKey를 ref에 캡처해 mount 시 최초 렌더 기준으로 캐시를 확인한다.
     const queryKeyRef = useRef(queryKey);
@@ -206,6 +215,7 @@ export function useOverallAnalysis(
                 qTimeframe,
                 qModelId,
                 { reasoning: qReasoning, ...(reanalyze ? { reanalyze } : {}) },
+                streamMessages,
                 signal
             );
         },

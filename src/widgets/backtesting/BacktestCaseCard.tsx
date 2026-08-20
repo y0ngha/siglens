@@ -146,8 +146,12 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                         →
                     </span>
                     <span className="shrink-0 text-[10px] whitespace-nowrap text-secondary-500">
-                        <span className="tabular-nums">{c.holdingDays}</span>
-                        {t('BacktestCaseCard.06cf3e')}
+                        {t.rich('BacktestCaseCard.06cf3e', {
+                            v0: c.holdingDays,
+                            n: chunks => (
+                                <span className="tabular-nums">{chunks}</span>
+                            ),
+                        })}
                     </span>
                     <span
                         className="shrink-0 text-secondary-600"

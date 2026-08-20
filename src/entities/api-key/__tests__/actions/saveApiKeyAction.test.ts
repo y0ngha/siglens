@@ -237,7 +237,10 @@ describe('saveApiKeyAction', () => {
             provider: 'anthropic',
             apiKey: 'sk-ant-test-1234',
         });
-        expect(mockRevalidatePath).toHaveBeenCalledWith('/account');
+        expect(mockRevalidatePath).toHaveBeenCalledWith(
+            '/[locale]/account',
+            'page'
+        );
         expect(result.status).toBe('success');
         expect(result.message).toBe('API 키가 저장되었습니다.');
     });

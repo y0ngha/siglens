@@ -5,6 +5,7 @@ import {
     localeAlternatesFrom,
     localeCanonical,
     localeOpenGraph,
+    localeRobots,
 } from '@/shared/lib/seoAlternates';
 import { getMarketFearGreedStatic } from '@/entities/market-fear-greed/api/marketFearGreedStaticCache';
 import type { MarketFearGreedView } from '@/entities/market-fear-greed';
@@ -63,7 +64,7 @@ export async function generateMetadata({
         }),
         robots: degraded
             ? { index: false, follow: true }
-            : { index: true, follow: true },
+            : localeRobots(resolvedLocale),
         openGraph: {
             title: FEAR_GREED_FULL_TITLE,
             description: COPY.description,

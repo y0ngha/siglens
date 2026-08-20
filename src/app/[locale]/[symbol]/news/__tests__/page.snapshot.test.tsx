@@ -113,7 +113,8 @@ vi.mock('@/shared/lib/dateKey', () => ({
     todayKstIsoDate: () => '2026-07-24',
 }));
 vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
-    getFmpUserFacingMessage: vi.fn().mockReturnValue(null),
+    getFmpUserFacingKey: vi.fn().mockReturnValue(null),
+    translateFmpError: vi.fn().mockReturnValue(null),
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

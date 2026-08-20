@@ -129,7 +129,8 @@ vi.mock('@/shared/lib/dateKey', () => ({
     todayKstIsoDate: () => '2026-06-22',
 }));
 vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
-    getFmpUserFacingMessage: vi.fn(),
+    getFmpUserFacingKey: vi.fn(),
+    translateFmpError: vi.fn().mockReturnValue(null),
 }));
 
 import {
@@ -153,7 +154,7 @@ import {
     getEarningsReportComparison,
     getGradeEvents,
 } from '@/app/[locale]/[symbol]/news/newsData';
-import { getFmpUserFacingMessage } from '@/shared/api/fmp/fmpUserMessage';
+import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
 import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/widgets/news/constants';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
@@ -167,8 +168,9 @@ const mockGetEarningsReportComparison =
 const mockGetGradeEvents = getGradeEvents as MockedFunction<
     typeof getGradeEvents
 >;
-const mockGetFmpUserFacingMessage = getFmpUserFacingMessage as MockedFunction<
-    typeof getFmpUserFacingMessage
+// 페이지가 실제로 부르는 건 `translateFmpError`다(키를 번역해 문구로 만든다).
+const mockGetFmpUserFacingMessage = translateFmpError as MockedFunction<
+    typeof translateFmpError
 >;
 
 const EQUITY_ASSET_INFO = {
@@ -224,7 +226,7 @@ describe('/[symbol]/news ISR empty-cache prevention', () => {
     });
 
     it('getEarningsReportComparison throw (non-FMP) → EventCalendarSection renders generic alert, no throw', async () => {
-        // non-FMP error: getFmpUserFacingMessage returns null → generic fallback
+        // non-FMP error: getFmpUserFacingKey returns null → generic fallback
         mockGetEarningsReportComparison.mockRejectedValue(
             new Error('DB connection refused')
         );
@@ -248,7 +250,7 @@ describe('/[symbol]/news ISR empty-cache prevention', () => {
     });
 
     it('getEarningsReportComparison throw (FMP error) → EventCalendarSection renders FMP message, no throw', async () => {
-        // FMP error: getFmpUserFacingMessage returns a user-facing string.
+        // FMP error: getFmpUserFacingKey returns a user-facing string.
         mockGetEarningsReportComparison.mockRejectedValue(
             new Error('FMP API rate limit')
         );
@@ -273,7 +275,7 @@ describe('/[symbol]/news ISR empty-cache prevention', () => {
     });
 
     it('getGradeEvents throw (non-FMP) → AnalystActionsSection renders generic alert, no throw', async () => {
-        // non-FMP error: getFmpUserFacingMessage returns null → generic fallback
+        // non-FMP error: getFmpUserFacingKey returns null → generic fallback
         mockGetGradeEvents.mockRejectedValue(new Error('Redis unavailable'));
         mockGetFmpUserFacingMessage.mockReturnValue(null);
         const consoleSpy = vi

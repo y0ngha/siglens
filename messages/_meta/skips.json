@@ -1,25 +1,25 @@
 [
     {
         "file": "src/app/[locale]/[symbol]/congress/opengraph-image.tsx",
-        "line": 15,
+        "line": 16,
         "reason": "module-scope-or-helper",
         "text": "Siglens 미국 주식 의회 거래"
     },
     {
         "file": "src/app/[locale]/[symbol]/congress/page.tsx",
-        "line": 245,
+        "line": 271,
         "reason": "template-needs-icu-review",
         "text": "`${displayName}의 의회 거래는 어떤 의미가 있나요?`"
     },
     {
         "file": "src/app/[locale]/[symbol]/congress/page.tsx",
-        "line": 261,
+        "line": 287,
         "reason": "template-needs-icu-review",
         "text": "`${displayName}의 의회 거래가 매수 신호인가요?`"
     },
     {
         "file": "src/app/[locale]/[symbol]/fear-greed/opengraph-image.tsx",
-        "line": 15,
+        "line": 16,
         "reason": "module-scope-or-helper",
         "text": "Siglens 공포 탐욕 지수"
     },
@@ -61,19 +61,19 @@
     },
     {
         "file": "src/app/[locale]/[symbol]/fear-greed/page.tsx",
-        "line": 175,
+        "line": 177,
         "reason": "template-needs-icu-review",
         "text": "`${displayName} 공포 탐욕 지수는 무엇을 측정하나요?`"
     },
     {
         "file": "src/app/[locale]/[symbol]/fear-greed/page.tsx",
-        "line": 178,
+        "line": 180,
         "reason": "template-needs-icu-review",
         "text": "`${displayName} 한 종목의 단기 매매 심리를 0~100 점수로 측정합니다. CNN의 시장 전체 Fear & Greed Index와 "
     },
     {
         "file": "src/app/[locale]/[symbol]/financials/opengraph-image.tsx",
-        "line": 15,
+        "line": 16,
         "reason": "module-scope-or-helper",
         "text": "Siglens 미국 주식 재무제표"
     },
@@ -97,7 +97,7 @@
     },
     {
         "file": "src/app/[locale]/[symbol]/fundamental/opengraph-image.tsx",
-        "line": 15,
+        "line": 16,
         "reason": "module-scope-or-helper",
         "text": "Siglens 미국 주식 펀더멘털 분석"
     },
@@ -115,73 +115,73 @@
     },
     {
         "file": "src/app/[locale]/[symbol]/news/opengraph-image.tsx",
-        "line": 15,
+        "line": 16,
         "reason": "module-scope-or-helper",
         "text": "Siglens 뉴스 분석"
     },
     {
         "file": "src/app/[locale]/[symbol]/news/page.tsx",
-        "line": 290,
+        "line": 294,
         "reason": "template-needs-icu-review",
         "text": "`${displayName} 최근 뉴스 AI 요약`"
     },
     {
         "file": "src/app/[locale]/[symbol]/news/page.tsx",
-        "line": 291,
+        "line": 295,
         "reason": "template-needs-icu-review",
         "text": "`${displayName} 최근 코인 뉴스 AI 요약`"
     },
     {
         "file": "src/app/[locale]/[symbol]/news/page.tsx",
-        "line": 293,
+        "line": 297,
         "reason": "template-needs-icu-review",
         "text": "`${displayName} 최신 뉴스의 호재·악재 분위기와 핵심 이슈를 한국어로 정리합니다.`"
     },
     {
         "file": "src/app/[locale]/[symbol]/news/page.tsx",
-        "line": 294,
+        "line": 298,
         "reason": "template-needs-icu-review",
         "text": "`${displayName} 최신 크립토 뉴스의 호재·악재 분위기와 시장 이슈를 한국어로 정리합니다.`"
     },
     {
         "file": "src/app/[locale]/[symbol]/news/page.tsx",
-        "line": 362,
+        "line": 366,
         "reason": "template-needs-icu-review",
         "text": "`${displayName} 최신 뉴스`"
     },
     {
         "file": "src/app/[locale]/[symbol]/news/page.tsx",
-        "line": 387,
+        "line": 391,
         "reason": "template-needs-icu-review",
         "text": "`${displayName} 최신 뉴스와 어닝 일정`"
     },
     {
         "file": "src/app/[locale]/[symbol]/news/page.tsx",
-        "line": 388,
+        "line": 392,
         "reason": "template-needs-icu-review",
         "text": "`${displayName} 최신 코인 뉴스`"
     },
     {
         "file": "src/app/[locale]/[symbol]/news/page.tsx",
-        "line": 415,
+        "line": 419,
         "reason": "template-needs-icu-review",
         "text": "`${displayName}의 최신 뉴스 분위기, 다음 어닝 일정, 최근 실적 보고서, 애널리스트 등급 변경을 한국어로 정리합니다.`"
     },
     {
         "file": "src/app/[locale]/[symbol]/news/page.tsx",
-        "line": 416,
+        "line": 420,
         "reason": "template-needs-icu-review",
         "text": "`${displayName}의 최신 뉴스 분위기와 핵심 이슈를 한국어로 정리합니다.`"
     },
     {
         "file": "src/app/[locale]/[symbol]/opengraph-image.tsx",
-        "line": 15,
+        "line": 16,
         "reason": "module-scope-or-helper",
         "text": "Siglens 기술적 분석"
     },
     {
         "file": "src/app/[locale]/[symbol]/options/opengraph-image.tsx",
-        "line": 15,
+        "line": 16,
         "reason": "module-scope-or-helper",
         "text": "Siglens 미국 주식 옵션 분석"
     },
@@ -193,7 +193,7 @@
     },
     {
         "file": "src/app/[locale]/[symbol]/overall/opengraph-image.tsx",
-        "line": 15,
+        "line": 16,
         "reason": "module-scope-or-helper",
         "text": "Siglens 종합 분석"
     },
@@ -313,7 +313,7 @@
     },
     {
         "file": "src/app/[locale]/[symbol]/position/opengraph-image.tsx",
-        "line": 15,
+        "line": 16,
         "reason": "module-scope-or-helper",
         "text": "Siglens 내 위치 분석"
     },
@@ -409,55 +409,55 @@
     },
     {
         "file": "src/app/[locale]/account/delete/page.tsx",
-        "line": 20,
+        "line": 33,
         "reason": "module-scope-or-helper",
         "text": "회원 탈퇴"
     },
     {
         "file": "src/app/[locale]/account/delete/page.tsx",
-        "line": 21,
+        "line": 34,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} 회원 탈퇴`"
     },
     {
         "file": "src/app/[locale]/account/page.tsx",
-        "line": 25,
+        "line": 38,
         "reason": "module-scope-or-helper",
         "text": "계정 설정"
     },
     {
         "file": "src/app/[locale]/account/page.tsx",
-        "line": 26,
+        "line": 39,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} 계정 설정 페이지`"
     },
     {
         "file": "src/app/[locale]/backtesting/page.tsx",
-        "line": 62,
+        "line": 85,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} AI 백테스팅 결과`"
     },
     {
         "file": "src/app/[locale]/backtesting/page.tsx",
-        "line": 92,
+        "line": 115,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} AI 기술적 분석 백테스팅 데이터셋`"
     },
     {
         "file": "src/app/[locale]/backtesting/page.tsx",
-        "line": 100,
+        "line": 123,
         "reason": "module-scope-or-helper",
         "text": "주식 기술적 분석 신호 승률 및 AI 예측 정확도"
     },
     {
         "file": "src/app/[locale]/backtesting/page.tsx",
-        "line": 107,
+        "line": 130,
         "reason": "seo-keywords-ko-only",
         "text": "주식 기술적 분석 백테스팅"
     },
     {
         "file": "src/app/[locale]/backtesting/page.tsx",
-        "line": 108,
+        "line": 131,
         "reason": "seo-keywords-ko-only",
         "text": "AI 주식 예측 정확도"
     },
@@ -475,229 +475,229 @@
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 53,
+        "line": 54,
         "reason": "module-scope-or-helper",
         "text": "한국 경제 지표를 한 페이지에서 확인해요. 기준금리·소비자물가·고용률·GDP 성장률 같은 핵심 지표부터 국고채 금리, 수출 증가율까지 모아서 보"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 57,
+        "line": 58,
         "reason": "seo-keywords-ko-only",
         "text": "한국 경제 지표"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 58,
+        "line": 59,
         "reason": "seo-keywords-ko-only",
         "text": "한국은행 기준금리"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 59,
+        "line": 60,
         "reason": "seo-keywords-ko-only",
         "text": "국내 소비자물가"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 60,
+        "line": 61,
         "reason": "seo-keywords-ko-only",
         "text": "한국 실업률"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 61,
+        "line": 62,
         "reason": "seo-keywords-ko-only",
         "text": "한국 GDP 성장률"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 62,
+        "line": 63,
         "reason": "seo-keywords-ko-only",
         "text": "국고채 금리"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 63,
+        "line": 64,
         "reason": "seo-keywords-ko-only",
         "text": "국내 경제 캘린더"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 64,
+        "line": 65,
         "reason": "seo-keywords-ko-only",
         "text": "수출 증가율"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 266,
+        "line": 267,
         "reason": "module-scope-or-helper",
         "text": "`한국 거시 경제 지표 (기준금리·소비자물가·GDP·실업률 등 ${KR_ECONOMY_INDICATORS.length}종)`"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 282,
+        "line": 283,
         "reason": "module-scope-or-helper",
         "text": "한국 기준금리는 누가 정하나요?"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 283,
+        "line": 284,
         "reason": "module-scope-or-helper",
         "text": "한국은행 금융통화위원회가 연 8회 회의를 열어 기준금리를 결정합니다. 이 페이지의 \"한국 기준금리\" 카드가 가장 최근 결정치를 보여줍니다."
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 286,
+        "line": 287,
         "reason": "module-scope-or-helper",
         "text": "국고채 낙찰금리는 무엇인가요?"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 287,
+        "line": 288,
         "reason": "module-scope-or-helper",
         "text": "정부가 국고채를 발행할 때 입찰로 정해지는 금리입니다. 3년물은 단기, 10년물은 장기 시장금리의 기준으로 읽히며, 둘의 차이가 커질수록 경기 "
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 290,
+        "line": 291,
         "reason": "module-scope-or-helper",
         "text": "이 데이터는 어디서 가져오나요?"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 291,
+        "line": 292,
         "reason": "module-scope-or-helper",
         "text": "FMP(Financial Modeling Prep) 경제 캘린더의 한국 발표 이력을 기준으로 수집합니다. 지표 카드는 각 지표의 최근 발표값이며"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 317,
+        "line": 318,
         "reason": "module-scope-or-helper",
         "text": "한국 경제"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 83,
+        "line": 84,
         "reason": "module-scope-or-helper",
         "text": "미국 기준금리·물가·고용·성장 지표와 다가오는 경제 발표 일정을 한 페이지에서 봅니다. AI가 현재 거시 국면을 요약해 드려요."
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 88,
+        "line": 89,
         "reason": "seo-keywords-ko-only",
         "text": "미국 경제 지표"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 89,
+        "line": 90,
         "reason": "seo-keywords-ko-only",
         "text": "미국 기준금리"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 90,
+        "line": 91,
         "reason": "seo-keywords-ko-only",
         "text": "FOMC 일정"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 91,
+        "line": 92,
         "reason": "seo-keywords-ko-only",
         "text": "CPI 발표"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 92,
+        "line": 93,
         "reason": "seo-keywords-ko-only",
         "text": "미국 실업률"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 93,
+        "line": 94,
         "reason": "seo-keywords-ko-only",
         "text": "경제 캘린더"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 94,
+        "line": 95,
         "reason": "seo-keywords-ko-only",
         "text": "장단기 금리차"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 95,
+        "line": 96,
         "reason": "seo-keywords-ko-only",
         "text": "미국 경기침체"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 96,
+        "line": 97,
         "reason": "seo-keywords-ko-only",
         "text": "2s10s 스프레드"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 97,
+        "line": 98,
         "reason": "seo-keywords-ko-only",
         "text": "10년물 국채 금리"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 250,
+        "line": 257,
         "reason": "module-scope-or-helper",
         "text": "`미국 거시 경제 지표 (기준금리·CPI·GDP·실업률 등 ${ECONOMY_INDICATORS.length}종 + 국채금리 ${TREASURY"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 278,
+        "line": 285,
         "reason": "module-scope-or-helper",
         "text": "2s10s 스프레드란 무엇인가요?"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 281,
+        "line": 288,
         "reason": "module-scope-or-helper",
         "text": "2년물과 10년물 미국 국채 수익률의 차이입니다. 10년물에서 2년물을 뺀 값으로, 음수가 되면 장단기 금리가 역전된 것으로 경기침체 신호로 해"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 286,
+        "line": 293,
         "reason": "module-scope-or-helper",
         "text": "FOMC 발표는 어디서 확인하나요?"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 289,
+        "line": 296,
         "reason": "module-scope-or-helper",
         "text": "이 페이지 하단의 경제 캘린더에서 FOMC 회의 및 연방기금금리 결정 일정을 확인할 수 있습니다."
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 294,
+        "line": 301,
         "reason": "module-scope-or-helper",
         "text": "CPI는 얼마나 자주 발표되나요?"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 297,
+        "line": 304,
         "reason": "module-scope-or-helper",
         "text": "CPI(소비자물가지수)는 월 1회, 매월 중순에 미국 노동통계국(BLS)이 발표합니다."
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 302,
+        "line": 309,
         "reason": "module-scope-or-helper",
         "text": "이 데이터는 어디서 가져오나요?"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 305,
+        "line": 312,
         "reason": "module-scope-or-helper",
         "text": "`FMP(Financial Modeling Prep) API를 기준으로 수집하며, ${REVALIDATE_HOURS}시간마다 최신 데이터로 갱신"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 325,
+        "line": 332,
         "reason": "module-scope-or-helper",
         "text": "미국 경제"
     },
@@ -943,13 +943,13 @@
     },
     {
         "file": "src/app/[locale]/forgot-password/page.tsx",
-        "line": 11,
+        "line": 25,
         "reason": "module-scope-or-helper",
         "text": "비밀번호 찾기"
     },
     {
         "file": "src/app/[locale]/forgot-password/page.tsx",
-        "line": 12,
+        "line": 26,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} 비밀번호 재설정 링크 발송`"
     },
@@ -1243,13 +1243,13 @@
     },
     {
         "file": "src/app/[locale]/login/page.tsx",
-        "line": 15,
+        "line": 29,
         "reason": "module-scope-or-helper",
         "text": "로그인"
     },
     {
         "file": "src/app/[locale]/login/page.tsx",
-        "line": 16,
+        "line": 30,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME}에 로그인하여 회원 전용 기능을 이용해보세요.`"
     },
@@ -1441,7 +1441,7 @@
     },
     {
         "file": "src/app/[locale]/news/[category]/opengraph-image.tsx",
-        "line": 30,
+        "line": 31,
         "reason": "module-scope-or-helper",
         "text": "Siglens 시장 뉴스"
     },
@@ -1573,181 +1573,175 @@
     },
     {
         "file": "src/app/[locale]/news/opengraph-image.tsx",
-        "line": 31,
+        "line": 32,
         "reason": "module-scope-or-helper",
         "text": "Siglens 시장 뉴스 허브"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 35,
+        "line": 36,
         "reason": "module-scope-or-helper",
         "text": "시장 뉴스 허브 — 미국·한국 주식과 암호화폐"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 38,
+        "line": 39,
         "reason": "module-scope-or-helper",
         "text": "시장 뉴스를 한 곳에서 확인해요. 미국·한국 주식과 암호화폐까지 세 지역의 최신 뉴스를 카테고리별로 나누고, 어려운 원문 기사는 한국어 AI 요"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 84,
+        "line": 85,
         "reason": "seo-keywords-ko-only",
         "text": "시장 뉴스"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 85,
+        "line": 86,
         "reason": "seo-keywords-ko-only",
         "text": "주식 뉴스"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 86,
-        "reason": "seo-keywords-ko-only",
-        "text": "시장 뉴스 한국어"
-    },
-    {
-        "file": "src/app/[locale]/news/page.tsx",
         "line": 87,
         "reason": "seo-keywords-ko-only",
-        "text": "AI 뉴스 다이제스트"
+        "text": "시장 뉴스 한국어"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
         "line": 88,
         "reason": "seo-keywords-ko-only",
-        "text": "Siglens 뉴스"
+        "text": "AI 뉴스 다이제스트"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 138,
-        "reason": "module-scope-or-helper",
-        "text": "미국 일반·주식·외환·마켓 아티클 4개 카테고리를 모았습니다."
+        "line": 89,
+        "reason": "seo-keywords-ko-only",
+        "text": "Siglens 뉴스"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
         "line": 139,
         "reason": "module-scope-or-helper",
-        "text": "코스피·코스닥 등 국내 증시 주요 뉴스를 모았습니다."
+        "text": "미국 일반·주식·외환·마켓 아티클 4개 카테고리를 모았습니다."
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
         "line": 140,
         "reason": "module-scope-or-helper",
+        "text": "코스피·코스닥 등 국내 증시 주요 뉴스를 모았습니다."
+    },
+    {
+        "file": "src/app/[locale]/news/page.tsx",
+        "line": 141,
+        "reason": "module-scope-or-helper",
         "text": "비트코인·이더리움 등 주요 암호화폐 시장 동향을 모았습니다."
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 28,
+        "line": 29,
         "reason": "module-scope-or-helper",
         "text": "미국 시장 뉴스 — 카테고리별 최신 흐름"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 31,
+        "line": 32,
         "reason": "module-scope-or-helper",
         "text": "미국 시장 뉴스를 카테고리별로 한 곳에서 확인해요. 일반·주식·외환·마켓 아티클까지 최신 흐름을 빠짐없이 모았고, 어려운 원문 기사도 한국어 A"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 65,
+        "line": 66,
         "reason": "seo-keywords-ko-only",
         "text": "미국 시장 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 67,
+        "line": 68,
         "reason": "seo-keywords-ko-only",
         "text": "미국 마켓 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 68,
+        "line": 69,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 69,
+        "line": 70,
         "reason": "seo-keywords-ko-only",
         "text": "미국 외환 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 70,
+        "line": 71,
         "reason": "seo-keywords-ko-only",
         "text": "시장 뉴스 한국어"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 71,
+        "line": 72,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 뉴스 요약"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 72,
+        "line": 73,
         "reason": "seo-keywords-ko-only",
         "text": "AI 뉴스 다이제스트"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 73,
+        "line": 74,
         "reason": "seo-keywords-ko-only",
         "text": "Siglens 뉴스"
     },
     {
-        "file": "src/app/[locale]/not-found.tsx",
-        "line": 9,
-        "reason": "module-scope-or-helper",
-        "text": "페이지를 찾을 수 없습니다"
-    },
-    {
         "file": "src/app/[locale]/onboarding/page.tsx",
-        "line": 20,
+        "line": 33,
         "reason": "module-scope-or-helper",
         "text": "보유종목 등록"
     },
     {
         "file": "src/app/[locale]/onboarding/page.tsx",
-        "line": 21,
+        "line": 34,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} 가입 후 보유종목 등록 온보딩 페이지`"
     },
     {
         "file": "src/app/[locale]/portfolio/page.tsx",
-        "line": 26,
+        "line": 39,
         "reason": "module-scope-or-helper",
         "text": "내 포트폴리오 위치"
     },
     {
         "file": "src/app/[locale]/portfolio/page.tsx",
-        "line": 27,
+        "line": 40,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} 보유종목별 최근 가격 범위 안에서 내 평단이 어디에 있는지 확인하는 개인화 페이지`"
     },
     {
         "file": "src/app/[locale]/privacy/page.tsx",
-        "line": 94,
+        "line": 91,
         "reason": "module-scope-or-helper",
         "text": "투자 면책 고지"
     },
     {
         "file": "src/app/[locale]/privacy/page.tsx",
-        "line": 98,
+        "line": 95,
         "reason": "module-scope-or-helper",
         "text": "서비스 이용과 관련한 자세한 조건은"
     },
     {
         "file": "src/app/[locale]/privacy/page.tsx",
-        "line": 104,
+        "line": 101,
         "reason": "module-scope-or-helper",
         "text": "을(를) 참고해 주세요."
     },
     {
         "file": "src/app/[locale]/privacy/page.tsx",
-        "line": 126,
+        "line": 123,
         "reason": "template-needs-icu-review",
         "text": "`${SITE_NAME}(이하 \"운영자\")는 이용자의 개인정보를 중요시하며, 「개인정보 보호법」 등 관련 법령을 준수하기 위하여 노력하고 있습니"
     },
@@ -1759,67 +1753,67 @@
     },
     {
         "file": "src/app/[locale]/reset-password/page.tsx",
-        "line": 12,
+        "line": 26,
         "reason": "module-scope-or-helper",
         "text": "비밀번호 재설정"
     },
     {
         "file": "src/app/[locale]/reset-password/page.tsx",
-        "line": 13,
+        "line": 27,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} 새 비밀번호 설정`"
     },
     {
         "file": "src/app/[locale]/share/[id]/opengraph-image.tsx",
-        "line": 21,
+        "line": 22,
         "reason": "module-scope-or-helper",
         "text": "Siglens AI 분석 공유"
     },
     {
         "file": "src/app/[locale]/signup/oauth/consent/page.tsx",
-        "line": 15,
+        "line": 29,
         "reason": "module-scope-or-helper",
         "text": "소셜 로그인 가입 동의"
     },
     {
         "file": "src/app/[locale]/signup/oauth/consent/page.tsx",
-        "line": 16,
+        "line": 30,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} 소셜 로그인 가입 약관 동의`"
     },
     {
         "file": "src/app/[locale]/signup/page.tsx",
-        "line": 13,
+        "line": 27,
         "reason": "module-scope-or-helper",
         "text": "회원가입"
     },
     {
         "file": "src/app/[locale]/signup/page.tsx",
-        "line": 14,
+        "line": 28,
         "reason": "module-scope-or-helper",
         "text": "`${SITE_NAME} 회원이 되면 추가 혜택을 누릴 수 있어요. 가입은 옵션이며 비회원도 모든 기본 기능을 그대로 이용할 수 있습니다.`"
     },
     {
         "file": "src/app/[locale]/terms/page.tsx",
-        "line": 91,
+        "line": 88,
         "reason": "module-scope-or-helper",
         "text": "투자 면책 고지 요약"
     },
     {
         "file": "src/app/[locale]/terms/page.tsx",
-        "line": 94,
+        "line": 91,
         "reason": "module-scope-or-helper",
         "text": "중요 안내"
     },
     {
         "file": "src/app/[locale]/terms/page.tsx",
-        "line": 101,
+        "line": 98,
         "reason": "module-scope-or-helper",
         "text": "은(는) 투자 자문이나 매매 권유를 제공하지 않으며, 제공되는 모든 분석은 통계적·기술적 관점의 정보입니다. 자세한 내용은 아래 제5조를 확인해"
     },
     {
         "file": "src/app/[locale]/terms/page.tsx",
-        "line": 124,
+        "line": 121,
         "reason": "template-needs-icu-review",
         "text": "`본 약관은 ${SITE_NAME}(이하 \"운영자\")이 제공하는 미국 주식 기술적 분석 웹 서비스의 이용 조건 및 운영자와 이용자 간의 권리, "
     },
@@ -1867,13 +1861,13 @@
     },
     {
         "file": "src/entities/api-key/actions/deleteApiKeyAction.ts",
-        "line": 32,
+        "line": 34,
         "reason": "non-component-module",
         "text": "삭제되었습니다."
     },
     {
         "file": "src/entities/api-key/actions/deleteApiKeyAction.ts",
-        "line": 34,
+        "line": 36,
         "reason": "non-component-module",
         "text": "삭제 중 오류가 발생했습니다."
     },
@@ -1909,7 +1903,7 @@
     },
     {
         "file": "src/entities/api-key/actions/saveApiKeyAction.ts",
-        "line": 95,
+        "line": 97,
         "reason": "non-component-module",
         "text": "API 키가 저장되었습니다."
     },
@@ -2401,37 +2395,37 @@
     },
     {
         "file": "src/entities/email-token/templates/passwordResetEmail.ts",
-        "line": 25,
+        "line": 35,
         "reason": "non-component-module",
         "text": "`${SITE_NAME} 비밀번호 재설정 안내`"
     },
     {
         "file": "src/entities/email-token/templates/passwordResetEmail.ts",
-        "line": 34,
+        "line": 45,
         "reason": "non-component-module",
         "text": "`${SITE_NAME} 비밀번호 재설정`"
     },
     {
         "file": "src/entities/email-token/templates/passwordResetEmail.ts",
-        "line": 36,
+        "line": 47,
         "reason": "non-component-module",
         "text": "아래 링크를 눌러 새 비밀번호를 설정해주세요."
     },
     {
         "file": "src/entities/email-token/templates/passwordResetEmail.ts",
-        "line": 39,
+        "line": 50,
         "reason": "non-component-module",
         "text": "본 링크는 발급 후 30분간 유효합니다."
     },
     {
         "file": "src/entities/email-token/templates/passwordResetEmail.ts",
-        "line": 40,
+        "line": 51,
         "reason": "non-component-module",
         "text": "본인이 요청하지 않았다면 본 메일을 무시해주세요. 비밀번호는 변경되지 않습니다."
     },
     {
         "file": "src/entities/email-token/templates/passwordResetEmail.ts",
-        "line": 42,
+        "line": 53,
         "reason": "non-component-module",
         "text": "`<!doctype html><html lang=\"ko\"><body style=\"font-family:-apple-system,BlinkMacS"
     },
@@ -2560,12 +2554,6 @@
         "line": 12,
         "reason": "non-component-module",
         "text": "`${year}.${month}.${day} 작성`"
-    },
-    {
-        "file": "src/entities/options-chain/actions/optionsActions.ts",
-        "line": 91,
-        "reason": "non-component-module",
-        "text": "옵션 데이터를 가져올 수 없어요."
     },
     {
         "file": "src/entities/portfolio/actions/deletePortfolioHoldingAction.ts",
@@ -2935,19 +2923,19 @@
     },
     {
         "file": "src/features/share/hooks/useShareFlow.ts",
-        "line": 177,
+        "line": 182,
         "reason": "non-component-module",
         "text": "`${symbol} AI 분석 결과`"
     },
     {
         "file": "src/features/share/hooks/useShareFlow.ts",
-        "line": 178,
+        "line": 183,
         "reason": "non-component-module",
         "text": "`${symbol} AI 분석 결과를 SigLens에서 확인하세요`"
     },
     {
         "file": "src/features/share/hooks/useShareFlow.ts",
-        "line": 317,
+        "line": 322,
         "reason": "non-component-module",
         "text": "`${symbol} AI 분석 결과를 SigLens에서 확인하세요`"
     },
@@ -3037,19 +3025,7 @@
     },
     {
         "file": "src/shared/api/fmp/fmpUserMessage.ts",
-        "line": 6,
-        "reason": "non-component-module",
-        "text": "미국 증시 데이터 서버에 요청이 많아 지금은 처리하기 어렵습니다. 수 분 후 다시 시도해 주세요."
-    },
-    {
-        "file": "src/shared/api/fmp/fmpUserMessage.ts",
-        "line": 12,
-        "reason": "non-component-module",
-        "text": "현재 이 데이터를 제공할 수 없습니다."
-    },
-    {
-        "file": "src/shared/api/fmp/fmpUserMessage.ts",
-        "line": 15,
+        "line": 19,
         "reason": "non-component-module",
         "text": "비용 예외가 필요한 API가 호출되었습니다."
     },
@@ -4842,38 +4818,8 @@
         "text": "코인"
     },
     {
-        "file": "src/shared/hooks/useAnalysisStream.ts",
-        "line": 75,
-        "reason": "non-component-module",
-        "text": "지금 분석 요청이 많습니다. 잠시 후 다시 시도해 주세요."
-    },
-    {
-        "file": "src/shared/hooks/useAnalysisStream.ts",
-        "line": 78,
-        "reason": "non-component-module",
-        "text": "`분석 요청이 실패했습니다 (${response.status})`"
-    },
-    {
-        "file": "src/shared/hooks/useAnalysisStream.ts",
-        "line": 110,
-        "reason": "non-component-module",
-        "text": "분석 연결이 완료 전에 끊겼습니다. 다시 시도해 주세요."
-    },
-    {
-        "file": "src/shared/hooks/useAnalysisStream.ts",
-        "line": 142,
-        "reason": "non-component-module",
-        "text": "분석 결과를 읽지 못했습니다. 다시 시도해 주세요."
-    },
-    {
-        "file": "src/shared/hooks/useAnalysisStream.ts",
-        "line": 153,
-        "reason": "non-component-module",
-        "text": "분석 중 오류가 발생했습니다. 다시 시도해 주세요."
-    },
-    {
         "file": "src/shared/i18n/locales.ts",
-        "line": 25,
+        "line": 31,
         "reason": "non-component-module",
         "text": "한국어"
     },
@@ -4888,30 +4834,6 @@
         "line": 25,
         "reason": "non-component-module",
         "text": "`비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이며 영문자와 숫자를 포함해야 합니다.`"
-    },
-    {
-        "file": "src/shared/lib/byokGate.ts",
-        "line": 23,
-        "reason": "non-component-module",
-        "text": "선택한 모델은 프리미엄 등급에서만 사용 가능합니다. API 키를 등록하거나 등급을 업그레이드해 주세요."
-    },
-    {
-        "file": "src/shared/lib/byokGate.ts",
-        "line": 24,
-        "reason": "non-component-module",
-        "text": "알 수 없는 모델입니다."
-    },
-    {
-        "file": "src/shared/lib/byokGate.ts",
-        "line": 26,
-        "reason": "non-component-module",
-        "text": "저장된 API 키를 복호화하지 못했습니다. 키를 다시 등록해 주세요."
-    },
-    {
-        "file": "src/shared/lib/byokGate.ts",
-        "line": 28,
-        "reason": "non-component-module",
-        "text": "예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
     },
     {
         "file": "src/shared/lib/contactErrorMessages.ts",
@@ -4957,79 +4879,91 @@
     },
     {
         "file": "src/shared/lib/fearGreedLabels.ts",
-        "line": 9,
+        "line": 10,
         "reason": "non-component-module",
         "text": "정상 산출"
     },
     {
         "file": "src/shared/lib/fearGreedLabels.ts",
-        "line": 11,
+        "line": 12,
         "reason": "non-component-module",
         "text": "신뢰도 제한"
     },
     {
         "file": "src/shared/lib/fearGreedLabels.ts",
-        "line": 20,
+        "line": 21,
         "reason": "non-component-module",
         "text": "거래량 z (방향성)"
     },
     {
         "file": "src/shared/lib/fearGreedLabels.ts",
-        "line": 21,
+        "line": 22,
         "reason": "non-component-module",
         "text": "Buy/Sell 불균형"
     },
     {
         "file": "src/shared/lib/fearGreedLabels.ts",
-        "line": 22,
+        "line": 23,
         "reason": "non-component-module",
         "text": "`POC 거리(${POC_WINDOW_DEFAULT}bar)`"
     },
     {
         "file": "src/shared/lib/fearGreedLabels.ts",
-        "line": 23,
+        "line": 24,
         "reason": "non-component-module",
         "text": "MA200 거리"
     },
     {
         "file": "src/shared/lib/fearGreedLabels.ts",
-        "line": 24,
+        "line": 25,
         "reason": "non-component-module",
         "text": "52주 위치"
     },
     {
         "file": "src/shared/lib/fearGreedLabels.ts",
-        "line": 29,
+        "line": 38,
+        "reason": "non-component-module",
+        "text": "이 종목은 장기 약세 흐름이에요. 점수는 이 종목의 평소 흐름 안에서의 상대적 위치를 보여줘 절대적인 강도와 다를 수 있어요. 참고만 해 주세요"
+    },
+    {
+        "file": "src/shared/lib/fearGreedLabels.ts",
+        "line": 40,
+        "reason": "non-component-module",
+        "text": "이 종목은 장기 강세 흐름이에요. 점수는 이 종목의 평소 흐름 안에서의 상대적 위치를 보여줘 절대적인 강도와 다를 수 있어요. 참고만 해 주세요"
+    },
+    {
+        "file": "src/shared/lib/fearGreedLabels.ts",
+        "line": 45,
         "reason": "non-component-module",
         "text": "극심한 공포"
     },
     {
         "file": "src/shared/lib/fearGreedLabels.ts",
-        "line": 30,
+        "line": 46,
         "reason": "non-component-module",
         "text": "공포"
     },
     {
         "file": "src/shared/lib/fearGreedLabels.ts",
-        "line": 31,
+        "line": 47,
         "reason": "non-component-module",
         "text": "중립"
     },
     {
         "file": "src/shared/lib/fearGreedLabels.ts",
-        "line": 32,
+        "line": 48,
         "reason": "non-component-module",
         "text": "탐욕"
     },
     {
         "file": "src/shared/lib/fearGreedLabels.ts",
-        "line": 33,
+        "line": 49,
         "reason": "non-component-module",
         "text": "극심한 탐욕"
     },
     {
         "file": "src/shared/lib/fearGreedLabels.ts",
-        "line": 85,
+        "line": 101,
         "reason": "non-component-module",
         "text": "`표본 ${sampleSize} — ${label}`"
     },
@@ -6852,12 +6786,6 @@
         "text": "개 분석 스킬"
     },
     {
-        "file": "src/shared/lib/sse/heartbeatStream.ts",
-        "line": 173,
-        "reason": "non-component-module",
-        "text": "분석 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
-    },
-    {
         "file": "src/shared/lib/trendline.ts",
         "line": 5,
         "reason": "non-component-module",
@@ -7021,93 +6949,201 @@
     },
     {
         "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
-        "line": 19,
+        "line": 25,
         "reason": "non-component-module",
         "text": "최근 200영업일 분포 대비 낮은 편"
     },
     {
         "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
-        "line": 22,
+        "line": 28,
         "reason": "non-component-module",
         "text": "최근 200영업일 분포 대비 높은 편"
     },
     {
         "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
-        "line": 24,
+        "line": 30,
         "reason": "non-component-module",
         "text": "최근 200영업일 분포의 평균 범위 안"
     },
     {
         "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
-        "line": 41,
+        "line": 47,
         "reason": "non-component-module",
         "text": "`${FACTOR_LABEL[factor.key]}: ${formatFactorRaw(factor.key, factor.rawValue)} ($"
     },
     {
         "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
-        "line": 47,
+        "line": 53,
         "reason": "non-component-module",
         "text": "수급"
     },
     {
         "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
-        "line": 48,
+        "line": 54,
         "reason": "non-component-module",
         "text": "추세"
     },
     {
         "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
-        "line": 76,
+        "line": 82,
         "reason": "non-component-module",
         "text": "`${GROUP_LABEL.Flow} 그룹과 ${GROUP_LABEL.Trend} 그룹이 모두 ${flowScore}점으로 균형 잡힌 흐름을 보"
     },
     {
         "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
-        "line": 85,
+        "line": 91,
         "reason": "non-component-module",
         "text": "`${GROUP_LABEL[leader.name]} 그룹 점수(${leaderScore}점)가 ${GROUP_LABEL[lagging.name]"
     },
     {
         "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
-        "line": 114,
+        "line": 120,
         "reason": "non-component-module",
         "text": "높게"
     },
     {
         "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
-        "line": 114,
+        "line": 120,
         "reason": "non-component-module",
         "text": "낮게"
     },
     {
         "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
-        "line": 116,
+        "line": 122,
         "reason": "non-component-module",
         "text": "`${allFactors.length}개 지표 중 가장 두드러진 지표는 ${FACTOR_LABEL[top.key]}로, ${pctile}번째 퍼"
     },
     {
-        "file": "src/views/symbol/hooks/useAnalysis.ts",
-        "line": 311,
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 154,
         "reason": "non-component-module",
-        "text": "분석 중 오류가 발생했습니다."
+        "text": "`${y}년 ${month}월 ${day}일`"
     },
     {
-        "file": "src/views/symbol/hooks/useAnalysis.ts",
-        "line": 312,
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 162,
         "reason": "non-component-module",
-        "text": "분석 중 오류가 발생했습니다."
+        "text": "과"
     },
     {
-        "file": "src/views/symbol/hooks/useAnalysis.ts",
-        "line": 315,
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 162,
         "reason": "non-component-module",
-        "text": "예상치 못한 오류가 발생했습니다."
+        "text": "와"
     },
     {
-        "file": "src/views/symbol/hooks/useAnalysis.ts",
-        "line": 329,
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 197,
         "reason": "non-component-module",
-        "text": "예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
+        "text": "높고"
+    },
+    {
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 197,
+        "reason": "non-component-module",
+        "text": "낮고"
+    },
+    {
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 197,
+        "reason": "non-component-module",
+        "text": "같고"
+    },
+    {
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 199,
+        "reason": "non-component-module",
+        "text": "높습니다"
+    },
+    {
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 200,
+        "reason": "non-component-module",
+        "text": "낮습니다"
+    },
+    {
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 201,
+        "reason": "non-component-module",
+        "text": "같습니다"
+    },
+    {
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 206,
+        "reason": "non-component-module",
+        "text": "1주 전"
+    },
+    {
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 207,
+        "reason": "non-component-module",
+        "text": "1개월 전"
+    },
+    {
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 208,
+        "reason": "non-component-module",
+        "text": "1년 전"
+    },
+    {
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 215,
+        "reason": "non-component-module",
+        "text": "`${label} ${Math.round(past.score)}점(${labelText(past.label)})`"
+    },
+    {
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 220,
+        "reason": "non-component-module",
+        "text": "`${anchor} 대비 ${Math.abs(diff)}점 `"
+    },
+    {
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 232,
+        "reason": "non-component-module",
+        "text": "`현재 ${Math.round(current.score)}점(${labelText(current.label)})은 ${joined}.`"
+    },
+    {
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 275,
+        "reason": "non-component-module",
+        "text": "최근 1년"
+    },
+    {
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 276,
+        "reason": "non-component-module",
+        "text": "`최근 ${window.length}거래일`"
+    },
+    {
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 278,
+        "reason": "non-component-module",
+        "text": "`${span} 동안 이 종목의 점수는 최저 ${Math.round(min.score)}점(${formatIsoDateKo(min.date)})"
+    },
+    {
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 302,
+        "reason": "non-component-module",
+        "text": "`${labelText(label)} ${n}일${pct === 0 ? '' : `(${pct}%)`}`"
+    },
+    {
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 307,
+        "reason": "non-component-module",
+        "text": "최근 1년"
+    },
+    {
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 307,
+        "reason": "non-component-module",
+        "text": "최근"
+    },
+    {
+        "file": "src/views/symbol/fearGreed/utils/fearGreedFacts.ts",
+        "line": 308,
+        "reason": "non-component-module",
+        "text": "`${span} ${window.length}거래일 중 ${parts.join(', ')}을 기록했습니다.`"
     },
     {
         "file": "src/views/symbol/snapshot/SnapshotBulletList.tsx",
@@ -8539,19 +8575,19 @@
     },
     {
         "file": "src/widgets/congress/hooks/useCongressTrend.ts",
-        "line": 66,
+        "line": 71,
         "reason": "non-component-module",
         "text": "의회 거래 데이터를 불러오지 못했습니다."
     },
     {
         "file": "src/widgets/congress/hooks/useCongressTrend.ts",
-        "line": 69,
+        "line": 74,
         "reason": "non-component-module",
         "text": "예상치 못한 오류가 발생했습니다."
     },
     {
         "file": "src/widgets/congress/hooks/useCongressTrend.ts",
-        "line": 122,
+        "line": 135,
         "reason": "non-component-module",
         "text": "동향 해석 중 오류가 발생했습니다."
     },
@@ -9025,13 +9061,13 @@
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 391,
+        "line": 393,
         "reason": "template-needs-icu-review",
         "text": "`${month + 1}월 ${day}일, 이벤트 ${count}건`"
     },
     {
         "file": "src/widgets/economy/sections/EconomicCalendarGrid.tsx",
-        "line": 500,
+        "line": 502,
         "reason": "template-needs-icu-review",
         "text": "`${year}년 ${MONTH_LABELS[month]} 경제 캘린더`"
     },
@@ -9222,18 +9258,6 @@
         "text": "`${group.name} 그룹 점수 ${score}`"
     },
     {
-        "file": "src/widgets/fear-greed/SelfNormWarningBadge.tsx",
-        "line": 15,
-        "reason": "module-scope-or-helper",
-        "text": "이 종목은 장기 약세 흐름이에요. 점수는 이 종목의 평소 흐름 안에서의 상대적 위치를 보여줘 절대적인 강도와 다를 수 있어요. 참고만 해 주세요"
-    },
-    {
-        "file": "src/widgets/fear-greed/SelfNormWarningBadge.tsx",
-        "line": 17,
-        "reason": "module-scope-or-helper",
-        "text": "이 종목은 장기 강세 흐름이에요. 점수는 이 종목의 평소 흐름 안에서의 상대적 위치를 보여줘 절대적인 강도와 다를 수 있어요. 참고만 해 주세요"
-    },
-    {
         "file": "src/widgets/financials/CompositeGradeGauge.tsx",
         "line": 116,
         "reason": "template-needs-icu-review",
@@ -9379,25 +9403,25 @@
     },
     {
         "file": "src/widgets/financials/hooks/useFinancialsAnalysis.ts",
-        "line": 48,
+        "line": 53,
         "reason": "non-component-module",
         "text": "데이터를 불러오지 못했습니다."
     },
     {
         "file": "src/widgets/financials/hooks/useFinancialsAnalysis.ts",
-        "line": 49,
+        "line": 54,
         "reason": "non-component-module",
         "text": "사용량 한도를 초과했습니다."
     },
     {
         "file": "src/widgets/financials/hooks/useFinancialsAnalysis.ts",
-        "line": 55,
+        "line": 60,
         "reason": "non-component-module",
         "text": "예상치 못한 오류가 발생했습니다."
     },
     {
         "file": "src/widgets/financials/hooks/useFinancialsAnalysis.ts",
-        "line": 106,
+        "line": 124,
         "reason": "non-component-module",
         "text": "분석 중 오류가 발생했습니다."
     },
@@ -9487,25 +9511,25 @@
     },
     {
         "file": "src/widgets/fundamental/hooks/useFundamentalAnalysis.ts",
-        "line": 52,
+        "line": 57,
         "reason": "non-component-module",
         "text": "데이터를 불러오지 못했습니다."
     },
     {
         "file": "src/widgets/fundamental/hooks/useFundamentalAnalysis.ts",
-        "line": 53,
+        "line": 58,
         "reason": "non-component-module",
         "text": "사용량 한도를 초과했습니다."
     },
     {
         "file": "src/widgets/fundamental/hooks/useFundamentalAnalysis.ts",
-        "line": 59,
+        "line": 64,
         "reason": "non-component-module",
         "text": "예상치 못한 오류가 발생했습니다."
     },
     {
         "file": "src/widgets/fundamental/hooks/useFundamentalAnalysis.ts",
-        "line": 117,
+        "line": 131,
         "reason": "non-component-module",
         "text": "분석 중 오류가 발생했습니다."
     },
@@ -9799,25 +9823,25 @@
     },
     {
         "file": "src/widgets/market-news/hooks/useMarketNewsDigest.ts",
-        "line": 104,
+        "line": 110,
         "reason": "non-component-module",
         "text": "AI 다이제스트 생성 중 오류가 발생했어요."
     },
     {
         "file": "src/widgets/market-news/utils/fetchMarketNewsDigest.ts",
-        "line": 35,
+        "line": 40,
         "reason": "non-component-module",
         "text": "다이제스트를 생성할 수 없어요. 잠시 후 다시 시도해 주세요."
     },
     {
         "file": "src/widgets/market-news/utils/fetchMarketNewsDigest.ts",
-        "line": 39,
+        "line": 44,
         "reason": "non-component-module",
         "text": "분석할 뉴스가 없어요. 잠시 후 다시 시도해 주세요."
     },
     {
         "file": "src/widgets/market-news/utils/fetchMarketNewsDigest.ts",
-        "line": 41,
+        "line": 46,
         "reason": "non-component-module",
         "text": "예상치 못한 오류가 발생했습니다."
     },
@@ -9907,25 +9931,25 @@
     },
     {
         "file": "src/widgets/news/hooks/useNewsAnalysis.ts",
-        "line": 45,
+        "line": 50,
         "reason": "non-component-module",
         "text": "분석할 뉴스가 없습니다. 잠시 후 다시 시도해 주세요."
     },
     {
         "file": "src/widgets/news/hooks/useNewsAnalysis.ts",
-        "line": 51,
+        "line": 56,
         "reason": "non-component-module",
         "text": "분석 중 오류가 발생했습니다."
     },
     {
         "file": "src/widgets/news/hooks/useNewsAnalysis.ts",
-        "line": 56,
+        "line": 61,
         "reason": "non-component-module",
         "text": "예상치 못한 오류가 발생했습니다."
     },
     {
         "file": "src/widgets/news/hooks/useNewsAnalysis.ts",
-        "line": 135,
+        "line": 145,
         "reason": "non-component-module",
         "text": "분석 중 오류가 발생했습니다."
     },
@@ -10153,19 +10177,19 @@
     },
     {
         "file": "src/widgets/options/hooks/useOptionsAnalysis.ts",
-        "line": 51,
+        "line": 56,
         "reason": "non-component-module",
         "text": "분석할 옵션 데이터가 없습니다."
     },
     {
         "file": "src/widgets/options/hooks/useOptionsAnalysis.ts",
-        "line": 62,
+        "line": 67,
         "reason": "non-component-module",
         "text": "예상치 못한 오류가 발생했습니다."
     },
     {
         "file": "src/widgets/options/hooks/useOptionsAnalysis.ts",
-        "line": 174,
+        "line": 183,
         "reason": "non-component-module",
         "text": "분석 중 오류가 발생했습니다."
     },
@@ -10381,31 +10405,31 @@
     },
     {
         "file": "src/widgets/overall/hooks/useOverallAnalysis.ts",
-        "line": 82,
+        "line": 87,
         "reason": "non-component-module",
         "text": "`재분석은 잠시 후에 가능해요. ${Math.ceil(result.remainingMs / 1000)}초 뒤에 다시 시도해 주세요.`"
     },
     {
         "file": "src/widgets/overall/hooks/useOverallAnalysis.ts",
-        "line": 100,
+        "line": 105,
         "reason": "non-component-module",
         "text": "분석 중 오류가 발생했습니다."
     },
     {
         "file": "src/widgets/overall/hooks/useOverallAnalysis.ts",
-        "line": 107,
+        "line": 112,
         "reason": "non-component-module",
         "text": "오늘 분석 한도를 모두 사용했어요. 내일 다시 시도해 주세요."
     },
     {
         "file": "src/widgets/overall/hooks/useOverallAnalysis.ts",
-        "line": 114,
+        "line": 119,
         "reason": "non-component-module",
         "text": "예상치 못한 오류가 발생했습니다."
     },
     {
         "file": "src/widgets/overall/hooks/useOverallAnalysis.ts",
-        "line": 237,
+        "line": 247,
         "reason": "non-component-module",
         "text": "분석 중 오류가 발생했습니다."
     },

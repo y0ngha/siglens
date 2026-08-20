@@ -5,6 +5,7 @@ import {
     localeAlternatesFrom,
     localeCanonical,
     localeOpenGraph,
+    localeRobots,
 } from '@/shared/lib/seoAlternates';
 import { Suspense } from 'react';
 
@@ -130,7 +131,7 @@ export async function generateMetadata({
         }),
         robots: degraded
             ? { index: false, follow: true }
-            : { index: true, follow: true },
+            : localeRobots(resolvedLocale),
         openGraph: {
             title: ECONOMY_FULL_TITLE,
             description: ECONOMY_DESCRIPTION,
@@ -205,6 +206,12 @@ async function EconomyContent() {
         }
     );
 
+    // `analyzedAt`은 `EconomicCalendarGrid`(클라이언트)에서 역참조되지 않는다. 타입에서
+    // 빼는 것만으로는 런타임 값이 그대로 flight에 실리므로 여기서 실제로 떼어낸다.
+    const calendarEventsForClient = calendarEvents.map(
+        ({ analyzedAt: _analyzedAt, ...rest }) => rest
+    );
+
     // dict → DB 캐시 → 영어 fallback 체인. 미매핑은 클라 훅이 AI 트리거(SP-B 설계).
     const indicatorLabels = await resolveIndicatorLabels(calendarEvents).catch(
         (e: unknown) => {
@@ -226,7 +233,7 @@ async function EconomyContent() {
             <MacroBriefing peekSeed={peekSeed} />
             <EconomicIndicatorGrid snapshot={snapshot} />
             <EconomicCalendar
-                events={calendarEvents}
+                events={calendarEventsForClient}
                 today={todayKstKey}
                 labels={indicatorLabels}
                 country={CALENDAR_COUNTRY}

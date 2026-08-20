@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { IndexCard } from '@/widgets/dashboard/IndexCard';
 import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
 
@@ -79,6 +80,34 @@ describe('IndexCard', () => {
             <IndexCard tickerIsReadable currencySymbol="$" data={INDEX_DATA} />
         );
         expect(screen.getByText('S&P 500')).toBeInTheDocument();
+    });
+
+    /**
+     * 지수명은 config 상수에 한국어로만 있다. 심볼로 카탈로그를 찾는지,
+     * 그리고 **카탈로그에 없는 심볼은 폴백**으로 떨어지는지 함께 본다 —
+     * 폴백이 없으면 카드에 원시 키(`widgets.dashboard.assetName.SPY`)가 찍힌다.
+     */
+    it('en: 카탈로그에 있는 지수는 그 로케일 이름으로 표시한다', () => {
+        renderWithIntl(
+            <IndexCard
+                tickerIsReadable
+                currencySymbol="$"
+                data={{ ...INDEX_DATA, symbol: 'IXIC' }}
+            />,
+            { locale: 'en' }
+        );
+        expect(screen.getByText('NASDAQ Composite')).toBeInTheDocument();
+    });
+
+    it('카탈로그에 없는 심볼은 koreanName으로 떨어진다', () => {
+        renderWithIntl(
+            <IndexCard tickerIsReadable currencySymbol="$" data={INDEX_DATA} />,
+            { locale: 'en' }
+        );
+        expect(screen.getByText('S&P 500')).toBeInTheDocument();
+        expect(
+            screen.queryByText(/widgets\.dashboard\.assetName/)
+        ).not.toBeInTheDocument();
     });
 
     it('renders percentage change', () => {

@@ -2,7 +2,9 @@
 const { mockGetFmpMsg } = vi.hoisted(() => ({ mockGetFmpMsg: vi.fn() }));
 
 vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
-    getFmpUserFacingMessage: mockGetFmpMsg,
+    getFmpUserFacingKey: vi.fn().mockReturnValue(null),
+    // 컴포넌트가 실제로 부르는 건 이쪽이다(키를 번역해 문구로 만든다).
+    translateFmpError: mockGetFmpMsg,
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

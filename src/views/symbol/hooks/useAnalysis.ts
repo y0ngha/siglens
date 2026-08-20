@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
+import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import {
     useCallback,
     useEffect,
@@ -170,6 +171,7 @@ export function useAnalysis({
     isTierHydrated,
     tier,
 }: UseAnalysisOptions): UseAnalysisResult {
+    const streamMessages = useStreamErrorMessages();
     // 1. useState
     const [analysisResult, setAnalysisResult] =
         useState<AnalysisResponse | null>(null);
@@ -271,6 +273,7 @@ export function useAnalysis({
             streamAbortRef.current = controller;
 
             return runAnalysisStream<RunAnalysisActionResult>({
+                messages: streamMessages,
                 type: 'technical',
                 // `force`(캐시 우회) 자체는 보내지 않는다 — 인증 없는 공개 라우트라
                 // 클라이언트가 우회를 지시할 수 있으면 누구나 서버 키로 LLM을 무제한
@@ -300,19 +303,19 @@ export function useAnalysis({
                         return result;
                     }
                     if (result.status === 'key_error') {
-                        throw new Error(result.error);
+                        // core가 만든 문구는 **전 로케일 한국어**다.
+                        throw new Error(streamMessages.keyRequired);
                     }
                     if (result.status === 'error') {
                         const msg =
                             typeof result.error === 'object' &&
                             result.error !== null
                                 ? ((result.error as { message?: string })
-                                      .message ??
-                                  '분석 중 오류가 발생했습니다.')
-                                : '분석 중 오류가 발생했습니다.';
+                                      .message ?? streamMessages.generic)
+                                : streamMessages.generic;
                         throw new Error(msg);
                     }
-                    throw new Error('예상치 못한 오류가 발생했습니다.');
+                    throw new Error(streamMessages.unexpected);
                 })
                 .catch((err: unknown) => {
                     /**
@@ -325,9 +328,7 @@ export function useAnalysis({
                     const msg =
                         err instanceof Error ? err.message : String(err);
                     if (msg === 'AI_SERVER_UNSTABLE') {
-                        throw new Error(
-                            '예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
-                        );
+                        throw new Error(streamMessages.unstable);
                     }
                     throw err;
                 });

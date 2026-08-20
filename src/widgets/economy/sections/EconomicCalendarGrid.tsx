@@ -75,13 +75,15 @@ const DEFAULT_ACTIVE_IMPACTS: readonly CalendarImpact[] = ['High', 'Medium'];
 /**
  * 그리드 입력 — SP-A `EconomicCalendarEvent` + (선택) SP-D 분석 필드. 분석 필드를
  * optional로 둬 SP-A 호출부(분석 없는 이벤트 리터럴)도 그대로 컴파일된다. DB reader
- * (`getCalendarFromDb`)는 항상 네 필드를 채워 넘기므로 런타임엔 항상 존재(또는 null).
+ * (`getCalendarFromDb`)는 항상 세 필드를 채워 넘기므로 런타임엔 항상 존재(또는 null).
+ * `analyzedAt`은 여기서 한 번도 역참조되지 않아 제외했다 — 타입에만 남겨두면 페이지가
+ * 계속 넘겨도 아무도 못 알아채고, 그대로 flight에 실린다(`Date` 1개당 28자 × 66건).
  */
 type CalendarGridEvent = EconomicCalendarEvent &
     Partial<
         Pick<
             EconomicCalendarEventWithAnalysis,
-            'sentiment' | 'summaryKo' | 'interpretationKo' | 'analyzedAt'
+            'sentiment' | 'summaryKo' | 'interpretationKo'
         >
     >;
 

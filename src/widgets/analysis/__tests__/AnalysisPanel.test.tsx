@@ -74,6 +74,7 @@ import type {
 
 import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
 import { AnalysisPanel } from '../AnalysisPanel';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 
 function makeAnalysis(
     overrides: Partial<AnalysisResponse> = {}
@@ -145,6 +146,35 @@ describe('AnalysisPanel', () => {
         );
 
         expect(screen.getByText('요약 텍스트')).toBeInTheDocument();
+    });
+
+    /**
+     * 스킬명은 `skills/**.md` front-matter라 36개가 한국어다. 아코디언 제목이라
+     * 영어 페이지에서 눈에 바로 띈다. 문자열 자체는 dedupe 키로도 쓰여 못 바꾸므로
+     * **표시 시점**에만 치환하는지, 카탈로그에 없는 이름은 원문으로 남는지 본다.
+     */
+    it('en: 한국어 스킬명은 카탈로그로, 영문 스킬명은 원문 그대로', () => {
+        renderWithIntl(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    patternSummaries: [
+                        makePattern({ skillName: '상승삼각형' }),
+                        makePattern({
+                            id: 'pattern-2',
+                            skillName: 'RSI Signal Guide',
+                        }),
+                    ],
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+            />,
+            { locale: 'en' }
+        );
+
+        expect(screen.getByText('Ascending Triangle')).toBeInTheDocument();
+        expect(screen.getByText('RSI Signal Guide')).toBeInTheDocument();
+        expect(screen.queryByText('상승삼각형')).not.toBeInTheDocument();
     });
 
     it('shows a single consolidated upsell card with exactly one signup CTA for free', () => {

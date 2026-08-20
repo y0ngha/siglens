@@ -17,6 +17,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: '!!!',
                 assetInfo: null,
                 degraded: false,
+                locale: 'ko',
             })
         ).toEqual({ indexable: false, reason: 'invalid-symbol' });
     });
@@ -27,6 +28,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: 'ZZZQ',
                 assetInfo: null,
                 degraded: false,
+                locale: 'ko',
             })
         ).toEqual({ indexable: false, reason: 'asset-missing' });
     });
@@ -37,6 +39,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: 'AAPL',
                 assetInfo: asset('AAPL'),
                 degraded: true,
+                locale: 'ko',
             })
         ).toEqual({ indexable: false, reason: 'degraded' });
     });
@@ -47,6 +50,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: 'aapl',
                 assetInfo: asset('AAPL'),
                 degraded: false,
+                locale: 'ko',
             })
         ).toEqual({ indexable: true, reason: 'popular' });
     });
@@ -57,6 +61,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: 'btcusd',
                 assetInfo: asset('BTCUSD', { marketProfile: 'crypto' }),
                 degraded: false,
+                locale: 'ko',
             })
         ).toEqual({ indexable: true, reason: 'curated-crypto' });
     });
@@ -67,6 +72,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: 'AAPL',
                 assetInfo: asset('AAPL'),
                 degraded: true,
+                locale: 'ko',
                 hasSnapshot: true,
             })
         ).toEqual({ indexable: true, reason: 'degraded-with-snapshot' });
@@ -78,6 +84,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: 'AAPL',
                 assetInfo: asset('AAPL'),
                 degraded: true,
+                locale: 'ko',
                 hasSnapshot: false,
             })
         ).toEqual({ indexable: false, reason: 'degraded' });
@@ -89,6 +96,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: 'ZZZOF',
                 assetInfo: asset('ZZZOF'),
                 degraded: true,
+                locale: 'ko',
                 hasSnapshot: true,
             })
         ).toEqual({ indexable: false, reason: 'degraded' });
@@ -100,6 +108,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: 'AAPL',
                 assetInfo: asset('AAPL'),
                 degraded: true,
+                locale: 'ko',
             })
         ).toEqual({ indexable: false, reason: 'degraded' });
     });
@@ -110,6 +119,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: '0NEUSD',
                 assetInfo: asset('0NEUSD', { marketProfile: 'crypto' }),
                 degraded: false,
+                locale: 'ko',
             })
         ).toEqual({
             indexable: false,
@@ -123,6 +133,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: 'ZZZOF',
                 assetInfo: asset('ZZZOF'),
                 degraded: false,
+                locale: 'ko',
             })
         ).toEqual({
             indexable: false,
@@ -136,6 +147,7 @@ describe('로케일 게이트', () => {
         symbol: 'AAPL',
         assetInfo: { symbol: 'AAPL', name: 'Apple Inc.', fmpSymbol: 'AAPL' },
         degraded: false,
+        locale: 'ko',
     } as const;
 
     it('기본 로케일은 기존과 동일하게 판정된다', () => {
@@ -157,12 +169,4 @@ describe('로케일 게이트', () => {
             });
         }
     );
-
-    /** 로케일 게이트는 화이트리스트보다 **먼저** 판정돼야 한다. */
-    it('locale 미지정은 기본 로케일로 본다(기존 호출부 호환)', () => {
-        expect(evaluateSymbolIndexability(popular)).toEqual({
-            indexable: true,
-            reason: 'popular',
-        });
-    });
 });

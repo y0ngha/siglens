@@ -1,19 +1,36 @@
 import { getTranslations } from 'next-intl/server';
+import { localeCanonical } from '@/shared/lib/seoAlternates';
+import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
 import { ForgotPasswordForm } from '@/features/auth-password-reset';
-import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/lib/seo';
 
 // noindex 페이지에도 canonical/openGraph.url을 명시한다. 자세한 근거는 src/app/login/page.tsx 주석 참조.
-export const metadata: Metadata = {
-    title: '비밀번호 찾기',
-    description: `${SITE_NAME} 비밀번호 재설정 링크 발송`,
-    alternates: { canonical: `${SITE_URL}/forgot-password` },
-    openGraph: { url: `${SITE_URL}/forgot-password` },
-    robots: { index: false, follow: true },
-};
+/**
+ * 정적 `metadata`가 아니라 `generateMetadata`인 이유: 정적 객체는 로케일을 볼 수
+ * 없어 `/en/forgot-password`도 canonical이 `/forgot-password`(한국어)로 나갔다. noindex 페이지에
+ * 다른 URL을 canonical로 걸면 Google이 noindex를 그 대상으로 전파할 수 있다.
+ */
+export async function generateMetadata({
+    params,
+}: {
+    readonly params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+    const { locale } = await params;
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    return {
+        title: '비밀번호 찾기',
+        description: `${SITE_NAME} 비밀번호 재설정 링크 발송`,
+        alternates: {
+            canonical: localeCanonical(resolved, '/forgot-password'),
+        },
+        openGraph: { url: localeCanonical(resolved, '/forgot-password') },
+        robots: { index: false, follow: true },
+    };
+}
 
 export default async function ForgotPasswordPage({
     params,

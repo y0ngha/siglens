@@ -523,7 +523,17 @@ export default async function OverallPage({ params }: Props) {
                     <OverallContent
                         symbol={upper}
                         companyName={assetInfo.name}
-                        initialAnalysis={cachedOverall ?? undefined}
+                        initialAnalysis={
+                            // 캐시된 분석 산문은 한국어다. 비-기본 로케일에
+                            // 시드하면 스트림 요청이 아예 일어나지 않아
+                            // (`triggered = initialResult !== undefined`,
+                            // `staleTime: Infinity`) 번역이 붙을 기회가 없고,
+                            // 일본어 화면에 한국어 분석문이 **영구히** 남는다.
+                            // 재분석(할당량 소모) 말고는 벗어날 방법이 없었다.
+                            locale === DEFAULT_LOCALE
+                                ? (cachedOverall ?? undefined)
+                                : undefined
+                        }
                         hasEnrichedNews={hasEnrichedNews}
                         assetClass={assetClass}
                         hasOptions={hasOptions}

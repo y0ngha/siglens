@@ -1,6 +1,7 @@
 'use server';
 
 import { headers } from 'next/headers';
+import type { Locale } from '@/shared/i18n/locales';
 import {
     isEtRegularSessionOpen,
     runOverallAnalysis,
@@ -63,6 +64,12 @@ export async function runOverallAnalysisAction(
     companyName: string,
     timeframe: Timeframe,
     modelId: SubmitOverallAnalysisOptions['modelId'],
+    /**
+     * 요청 로케일. 게이트 거부 문구가 사용자에게 그대로 보이는데 `/api/*`는
+     * next-intl matcher 밖이라 액션이 스스로 알 수 없다. **기본값을 두지 않는다**
+     * — 두면 호출부에서 빠져도 타입체커가 못 잡는다.
+     */
+    locale: Locale,
     options: SubmitOverallAnalysisActionOptions = {},
     signal?: AbortSignal
 ): Promise<RunOverallAnalysisActionResult> {
@@ -84,7 +91,7 @@ export async function runOverallAnalysisAction(
         const user = await getCurrentUser();
         const userId = user?.id ?? null;
 
-        const gate = await resolveTierAndByok(userId, modelId);
+        const gate = await resolveTierAndByok(userId, modelId, locale);
         if (gate.kind === 'blocked') {
             return { status: 'error', error: gate.error };
         }
@@ -185,6 +192,9 @@ export async function runOverallAnalysisAction(
         });
     } catch (err) {
         console.error('[runOverallAnalysisAction] unexpected error:', err);
-        return { status: 'error', error: buildGateError('unexpected_error') };
+        return {
+            status: 'error',
+            error: await buildGateError('unexpected_error', locale),
+        };
     }
 }

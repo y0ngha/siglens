@@ -6,11 +6,17 @@ import { ANALYSIS_LOCALE_HEADER, splitLocalePath } from '@/shared/i18n/locales';
  * 분석 SSE 스트림 소비 헬퍼.
  *
  * 왜 서버 액션을 직접 부르지 않는가 — 서버 액션도 결국 단일 POST다. 분석은 LLM 응답을
- * 기다리는 동안 바이트를 전혀 보내지 않으므로 그 연결은 idle로 간주되고, **ALB
- * `idle_timeout` 60초에 잘린다**. 프로덕션 실측(`/api/sse-probe`, v0.50.1): heartbeat
- * 없이 침묵하면 61.1초에 HTTP/2 `INTERNAL_ERROR`로 끊겼고, 25~30초 heartbeat를 흘리면
- * 286초까지 완주했다. Cloudflare의 125초 Proxy Read Timeout은 이 구간에서 발동하지
- * 않았고 `text/event-stream`을 버퍼링하지도 않았다.
+ * 기다리는 동안 바이트를 전혀 보내지 않으므로 그 연결은 idle로 간주되고 **끊긴다**.
+ *
+ * 침묵 벽은 프로덕션 실측(`/api/sse-probe`)으로 두 번 쟀다:
+ *   - ALB 시절(v0.50.1): **61.1초**에 HTTP/2 `INTERNAL_ERROR`. 그 60초가
+ *     `HEARTBEAT_INTERVAL_MS = 25s`를 정한 근거였다.
+ *   - cloudflared 전환 후(2026-08): **125.9초** — Cloudflare Proxy Read Timeout.
+ *     같은 조건에서 25초 heartbeat를 흘리면 600초를 정확히 25.0초 간격으로 완주했다
+ *     (이벤트 25개, 뭉침 0). `text/event-stream`은 터널에서도 버퍼링되지 않는다.
+ *
+ * 즉 벽은 2배 멀어졌지만 heartbeat는 그대로 둔다 — 125초는 여전히 실재하는 상한이고,
+ * 25초는 비용이 없다.
  *
  * 그래서 브라우저 경로는 반드시 이 스트림을 거친다. 서버 내부 경로(크론·SSR·봇)는
  * 브라우저 연결이 없으므로 core `run*`을 그냥 `await`하면 된다.
@@ -37,6 +43,57 @@ export interface RunAnalysisStreamOptions {
     /** use-case별 파라미터. 라우트가 그대로 core `run*`에 넘긴다. */
     params: Record<string, unknown>;
     signal?: AbortSignal;
+    /**
+     * 사용자에게 그대로 보이는 실패 문구.
+     *
+     * 이 모듈은 훅이 아니라 평범한 async 함수라 `useTranslations`를 쓸 수 없다.
+     * 그런데 여기서 throw한 `Error.message`는 `useAnalysis` → `ChartContent`의
+     * `<ErrorBanner>`에 **그대로 렌더된다** — 서버 쪽 SSE 문구를 카탈로그로
+     * 옮겼는데 클라이언트 쪽만 한국어로 남아 있으면 같은 배너가 로케일에 따라
+     * 반쪽만 번역된다. 호출하는 훅(컴포넌트 스코프)이 번역해 넘긴다.
+     */
+    messages: StreamErrorMessages;
+}
+
+export interface StreamErrorMessages {
+    /** 동시 분석 상한(503). */
+    readonly busy: string;
+    /** 그 외 HTTP 실패. `{v0}`에 상태 코드가 들어간다. */
+    readonly failed: (status: number) => string;
+    /** `done`/`error` 없이 스트림이 끊긴 경우. */
+    readonly disconnected: string;
+    /** `done` 프레임의 payload를 파싱하지 못한 경우. */
+    readonly unreadable: string;
+    /** 서버가 메시지 없는 `error` 프레임을 보낸 경우. */
+    readonly generic: string;
+    /** 결과 payload에 에러 메시지가 없는 경우. */
+    readonly unexpected: string;
+    /** core의 재시도 소진 sentinel(`AI_SERVER_UNSTABLE`)에 대응하는 문구. */
+    readonly unstable: string;
+    /**
+     * BYOK 키가 필요한 모델(`status: 'key_error'`).
+     *
+     * core가 문구를 만들지만 **전 로케일에 한국어**다
+     * (`application/byok/messages.js`의 `USER_API_KEY_REQUIRED_MESSAGE`).
+     * 코드는 정확하므로 문구만 여기서 갈아끼운다.
+     */
+    readonly keyRequired: string;
+    /**
+     * 일일 사용량 초과(`status: 'limit_error'`).
+     *
+     * 이쪽은 반대로 core가 **전 로케일에 영어**를 준다
+     * (`application/usage/limits.js`의 `'Daily analysis usage limit exceeded.'`) —
+     * 한국어 사용자에게도 영어가 나가고 있었다.
+     */
+    readonly limitExceeded: string;
+    /** 분석할 뉴스가 없음(`code: 'no_news'`). */
+    readonly noNews: string;
+    /** 옵션 체인 없음(`status: 'no_chains_error'`). */
+    readonly noOptionsChains: string;
+    /** 그 밖의 분석 실패. */
+    readonly analysisFailed: string;
+    /** 원천 데이터 조회 실패(`code: 'fetch_failed'`). */
+    readonly fetchFailed: string;
 }
 
 /**
@@ -50,6 +107,7 @@ export async function runAnalysisStream<T>({
     type,
     params,
     signal,
+    messages,
 }: RunAnalysisStreamOptions): Promise<T> {
     const response = await fetch('/api/analysis/stream', {
         method: 'POST',
@@ -85,12 +143,9 @@ export async function runAnalysisStream<T>({
                     typeof body.error === 'string' ? body.error : null
                 )
                 .catch(() => null);
-            throw new Error(
-                message ??
-                    '지금 분석 요청이 많습니다. 잠시 후 다시 시도해 주세요.'
-            );
+            throw new Error(message ?? messages.busy);
         }
-        throw new Error(`분석 요청이 실패했습니다 (${response.status})`);
+        throw new Error(messages.failed(response.status));
     }
 
     const reader = response.body
@@ -110,7 +165,7 @@ export async function runAnalysisStream<T>({
                 const frame = buffer.slice(0, boundary);
                 buffer = buffer.slice(boundary + 2);
 
-                const parsed = parseFrame<T>(frame);
+                const parsed = parseFrame<T>(frame, messages);
                 if (parsed.kind === 'done') return parsed.result;
                 if (parsed.kind === 'error') throw new Error(parsed.message);
 
@@ -122,7 +177,7 @@ export async function runAnalysisStream<T>({
         reader.cancel().catch(() => {});
     }
 
-    throw new Error('분석 연결이 완료 전에 끊겼습니다. 다시 시도해 주세요.');
+    throw new Error(messages.disconnected);
 }
 
 type ParsedFrame<T> =
@@ -138,7 +193,10 @@ function tryParse<T>(raw: string): T | null {
     }
 }
 
-function parseFrame<T>(frame: string): ParsedFrame<T> {
+function parseFrame<T>(
+    frame: string,
+    messages: StreamErrorMessages
+): ParsedFrame<T> {
     let event = '';
     let data = '';
     for (const line of frame.split('\n')) {
@@ -154,7 +212,7 @@ function parseFrame<T>(frame: string): ParsedFrame<T> {
         if (payload === null) {
             return {
                 kind: 'error',
-                message: '분석 결과를 읽지 못했습니다. 다시 시도해 주세요.',
+                message: messages.unreadable,
             };
         }
         return { kind: 'done', result: payload.result };
@@ -163,9 +221,7 @@ function parseFrame<T>(frame: string): ParsedFrame<T> {
         const payload = tryParse<StreamErrorPayload>(data);
         return {
             kind: 'error',
-            message:
-                payload?.message ??
-                '분석 중 오류가 발생했습니다. 다시 시도해 주세요.',
+            message: payload?.message ?? messages.generic,
         };
     }
     return { kind: 'other' };

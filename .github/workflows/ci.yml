@@ -79,6 +79,12 @@ jobs:
             - name: Format check
               run: yarn format:check
 
+            - name: i18n lint (미추출 한국어 기준선)
+              run: yarn i18n:lint
+
+            - name: i18n verify (번역 카탈로그 게이트)
+              run: yarn i18n:verify
+
             - name: Test
               run: yarn test
 

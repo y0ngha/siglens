@@ -14,20 +14,29 @@ vi.mock('@/shared/lib/seo', () => ({
 }));
 vi.mock('next/link', () => ({ default: () => null }));
 
-import { metadata } from '@/app/[locale]/signup/page';
+import { generateMetadata } from '@/app/[locale]/signup/page';
 
 describe('Signup page', () => {
-    it('exports metadata with signup title', () => {
+    it('exports metadata with signup title', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
         expect(metadata.title).toBe('회원가입');
     });
 
-    it('sets robots to noindex', () => {
+    it('sets robots to noindex', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
         expect(metadata.robots).toEqual(
             expect.objectContaining({ index: false })
         );
     });
 
-    it('includes canonical URL', () => {
+    it('includes canonical URL', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
         expect(metadata.alternates?.canonical).toBe(
             'https://siglens.io/signup'
         );

@@ -6,6 +6,7 @@ import {
     localeAlternatesFrom,
     localeCanonical,
     localeOpenGraph,
+    localeRobots,
 } from '@/shared/lib/seoAlternates';
 import { CATEGORY_CONFIG, categoriesInRegion } from '@/entities/market-news';
 import { CategoryCard } from '@/widgets/news-hub';
@@ -80,7 +81,7 @@ export async function generateMetadata({
         }),
         robots: degraded
             ? { index: false, follow: true }
-            : { index: true, follow: true },
+            : localeRobots(resolvedLocale),
         openGraph: {
             type: 'website',
             siteName: SITE_NAME,

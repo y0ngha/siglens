@@ -36,6 +36,7 @@ describe('getBlockedSymbolMetadata', () => {
             symbol: 'AAPL',
             assetInfo: ASSET_INFO,
             degraded: false,
+            locale: 'ko',
             revalidateSeconds: 21600,
             tab: 'technical',
         });
@@ -45,6 +46,7 @@ describe('getBlockedSymbolMetadata', () => {
             symbol: 'AAPL',
             assetInfo: ASSET_INFO,
             degraded: false,
+            locale: 'ko',
             hasSnapshot: undefined,
         });
         expect(result).toBeNull();
@@ -60,6 +62,7 @@ describe('getBlockedSymbolMetadata', () => {
             symbol: 'ZZZOF',
             assetInfo: ASSET_INFO,
             degraded: false,
+            locale: 'ko',
             revalidateSeconds: 21600,
             tab: 'technical',
         });
@@ -87,6 +90,7 @@ describe('getBlockedSymbolMetadata', () => {
             symbol: 'AAPL',
             assetInfo: ASSET_INFO,
             degraded: true,
+            locale: 'ko',
             revalidateSeconds: 21600,
             tab: 'technical',
         });
@@ -96,6 +100,7 @@ describe('getBlockedSymbolMetadata', () => {
             symbol: 'AAPL',
             assetInfo: ASSET_INFO,
             degraded: true,
+            locale: 'ko',
             hasSnapshot: true,
         });
         expect(result).toBeNull();
@@ -112,6 +117,7 @@ describe('getBlockedSymbolMetadata', () => {
             symbol: 'AAPL',
             assetInfo: ASSET_INFO,
             degraded: true,
+            locale: 'ko',
             revalidateSeconds: 43200,
             tab: 'technical',
         });
@@ -121,6 +127,7 @@ describe('getBlockedSymbolMetadata', () => {
             symbol: 'AAPL',
             assetInfo: ASSET_INFO,
             degraded: true,
+            locale: 'ko',
             hasSnapshot: false,
         });
         expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
@@ -145,6 +152,7 @@ describe('getBlockedSymbolMetadata', () => {
             symbol: 'AAPL',
             assetInfo: ASSET_INFO,
             degraded: true,
+            locale: 'ko',
             revalidateSeconds: 86400,
             tab: 'congress',
         });
@@ -154,6 +162,7 @@ describe('getBlockedSymbolMetadata', () => {
             symbol: 'AAPL',
             assetInfo: ASSET_INFO,
             degraded: true,
+            locale: 'ko',
             hasSnapshot: false,
         });
         expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
@@ -181,6 +190,7 @@ describe('getBlockedSymbolMetadata', () => {
             symbol: 'AAPL',
             assetInfo: ASSET_INFO,
             degraded: true,
+            locale: 'ko',
             revalidateSeconds: 21600,
             tab: 'technical',
         });
@@ -190,6 +200,7 @@ describe('getBlockedSymbolMetadata', () => {
             symbol: 'AAPL',
             assetInfo: ASSET_INFO,
             degraded: true,
+            locale: 'ko',
             hasSnapshot: false,
         });
         expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
@@ -208,6 +219,7 @@ describe('getBlockedSymbolMetadata', () => {
             symbol: 'AAPL',
             assetInfo: ASSET_INFO,
             degraded: true,
+            locale: 'ko',
             revalidateSeconds: 86400,
         });
 
@@ -216,6 +228,7 @@ describe('getBlockedSymbolMetadata', () => {
             symbol: 'AAPL',
             assetInfo: ASSET_INFO,
             degraded: true,
+            locale: 'ko',
             hasSnapshot: undefined,
         });
         expect(result).toEqual(NOINDEX_SYMBOL_METADATA);

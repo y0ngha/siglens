@@ -1,15 +1,22 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { reportClientError } from '@/shared/lib/reportClientError';
 
 interface LoginErrorProps {
     error: Error & { digest?: string };
     reset: () => void;
 }
 
-export default function LoginError({ reset }: LoginErrorProps) {
+export default function LoginError({ error, reset }: LoginErrorProps) {
     const t = useTranslations('app.login');
+    useEffect(() => {
+        console.error('[LoginRoute] render error:', error);
+        reportClientError(error, 'LoginRoute', error.digest);
+    }, [error]);
+
     return (
         <main className="flex min-h-[calc(100dvh-3.5rem)] flex-col items-center justify-center gap-4 bg-secondary-950 px-4 py-12 text-center">
             <h1 className="text-2xl font-semibold text-secondary-50">

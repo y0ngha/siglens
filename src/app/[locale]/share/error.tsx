@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { SITE_NAME } from '@/shared/lib/seo';
+import { reportClientError } from '@/shared/lib/reportClientError';
 
 interface ShareErrorProps {
     error: Error & { digest?: string };
@@ -21,6 +22,7 @@ export default function ShareError({ error, reset }: ShareErrorProps) {
     const t = useTranslations('app.share');
     useEffect(() => {
         console.error('[ShareRoute] render error:', error);
+        reportClientError(error, 'ShareRoute', error.digest);
     }, [error]);
 
     return (

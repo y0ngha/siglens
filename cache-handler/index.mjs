@@ -1,4 +1,9 @@
-import { getEntry, setEntry } from './s3Store.mjs';
+import { getEntry as s3Get, setEntry as s3Set } from './s3Store.mjs';
+import {
+    getEntry as memGet,
+    setEntry as memSet,
+    deleteEntry as memDelete,
+} from './memStore.mjs';
 import {
     ensureTagsFresh,
     markRevalidated,
@@ -10,6 +15,23 @@ import { config } from './config.mjs';
 // Next 16.2가 set()에 넘기는 페이지 태그 헤더 키.
 // 출처: next/dist/lib/constants.js:275 — NEXT_CACHE_TAGS_HEADER = 'x-next-cache-tags'.
 const NEXT_CACHE_TAGS_HEADER = 'x-next-cache-tags';
+
+// FETCH 엔트리는 **크기로 갈라** 작은 것만 프로세스 내 LRU에 둔다 — 분포 근거는
+// memStore.mjs 상단. 요약: `fetch/` 객체의 88%가 8KB 이하인데 용량은 3%뿐이라
+// S3 PUT 요청비만 만들고 있었다. 반대로 `bars-static` 같은 큰 엔트리는 재생성이
+// 비싸고 인스턴스 간 공유가 값을 하므로 S3에 남긴다.
+//
+// FETCH에는 `fmpGet`뿐 아니라 Next `unstable_cache` 전체가 섞여 있고 그중 일부는
+// Redis가 아니라 Neon DB가 백엔드다. 크기 게이트가 그 비싼 쪽을 S3에 붙잡아 둔다.
+//
+// get은 메모리 → S3 순으로 본다. 같은 키가 커져서 S3로 승격되면 set이 메모리 사본을
+// 지우므로, 메모리 히트가 낡은 값을 가릴 일은 없다.
+//
+// 태그 무효화 의미론은 바뀌지 않는다: 저장소가 어디든 아래 get()의
+// ensureTagsFresh + maxRevalidatedAt 판정은 동일하게 적용된다.
+function isFetchKind(kind) {
+    return kind === 'FETCH';
+}
 
 // set()의 모든 실태그 소스를 union한다.
 //
@@ -66,7 +88,9 @@ export default class CacheHandler {
 
     async get(cacheKey, ctx) {
         if (config.disabled) return null; // 런타임 비상 킬스위치
-        const entry = await getEntry(cacheKey, ctx?.kind);
+        const entry =
+            (isFetchKind(ctx?.kind) ? memGet(cacheKey) : null) ??
+            (await s3Get(cacheKey, ctx?.kind));
         if (!entry) return null;
         // 멀티 인스턴스: 다른 인스턴스가 기록한 revalidateTag를 로컬 맵에 병합한다.
         // 콜드 인스턴스의 최초 1회만 실제로 await되고(공유 S3 엔트리를 fresh로 오판하지
@@ -107,11 +131,18 @@ export default class CacheHandler {
             return;
         // set context엔 kind가 없다. fetch 엔트리는 data.kind==='FETCH'로 식별되므로,
         // get(ctx.kind)와 동일한 subfolder로 라우팅되도록 set은 data.kind를 사용한다.
-        await setEntry(cacheKey, kind, {
+        const entry = {
             value: data,
             lastModified: Date.now(),
             tags: collectTags(data, ctx),
-        });
+        };
+        if (isFetchKind(kind)) {
+            // 크기 게이트를 통과하면 메모리에서 끝. 통과하지 못하면 S3로 보내고,
+            // 같은 키의 낡은 메모리 사본을 지워 get이 그걸 먼저 집지 않게 한다.
+            if (memSet(cacheKey, entry)) return;
+            memDelete(cacheKey);
+        }
+        await s3Set(cacheKey, kind, entry);
     }
 
     // durations(Next16 SWR profile)는 soft invalidation에선 무시하고 now만 기록한다.

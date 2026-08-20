@@ -1,4 +1,7 @@
 import type { MockedFunction } from 'vitest';
+// 로케일을 케이스마다 바꿔야 판별력이 생긴다 — 고정 mock이면 `localePath('ko',x)===x`라
+// 로케일 전달을 통째로 지워도 통과한다.
+vi.mock('next-intl/server', () => ({ getLocale: vi.fn() }));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: vi.fn(),
@@ -40,6 +43,8 @@ import {
     buildPasswordResetEmail,
 } from '@/entities/email-token';
 import { requestPasswordResetAction } from '@/features/auth-password-reset/actions/requestPasswordResetAction';
+import { getLocale } from 'next-intl/server';
+const mockGetLocale = getLocale as MockedFunction<typeof getLocale>;
 import { resetAuthDatabaseClientForTests } from '@/entities/auth/lib/db';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
@@ -55,6 +60,7 @@ const mockBuild = buildPasswordResetEmail as MockedFunction<
 
 describe('requestPasswordResetAction', () => {
     beforeEach(() => {
+        mockGetLocale.mockResolvedValue('ko');
         resetAuthDatabaseClientForTests();
         process.env.DATABASE_URL = 'postgres://test';
         mockRequest.mockReset();
@@ -118,9 +124,35 @@ describe('requestPasswordResetAction', () => {
             expect(mockBuild).toHaveBeenCalledWith({
                 email: 'user@example.com',
                 token: 'the-token',
+                locale: 'ko',
             });
             expect(message.to).toBe('user@example.com');
             expect(message.html).toContain('the-token');
+        });
+
+        /**
+         * ko로만 검증하면 로케일 전달이 사라져도 통과한다 —
+         * `localePath('ko', x) === x`라 링크가 글자 그대로 같다.
+         * 비-기본 로케일이 유일한 판별 지점이다.
+         */
+        it('비-기본 로케일이 메일 링크에 전달된다', async () => {
+            mockGetLocale.mockResolvedValue('ja');
+            mockRequest.mockResolvedValue({
+                ok: true,
+                tokenIssued: true,
+                emailDispatched: true,
+            });
+            await requestPasswordResetAction(
+                { submitted: false },
+                makeFormData({ email: 'user@example.com' })
+            );
+            const options = mockRequest.mock.calls[0]![2] as {
+                buildMessage: (token: string) => unknown;
+            };
+            options.buildMessage('the-token');
+            expect(mockBuild).toHaveBeenCalledWith(
+                expect.objectContaining({ locale: 'ja' })
+            );
         });
     });
 

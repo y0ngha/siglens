@@ -16,6 +16,20 @@ import { useRegisterShareable } from '@/features/share';
 interface FearGreedPageProps {
     symbol: string;
     fmpSymbol?: string;
+    /**
+     * 자기 정규화 경고 배지를 숨긴다.
+     *
+     * `/[symbol]/fear-greed`는 이 컴포넌트 **위에** 서버 렌더된
+     * `FearGreedFactsSummary`를 함께 그리고, 거기에 이미 같은 문구
+     * (`WARNING_TEXT`)가 문단으로 들어간다. 둘 다 그리면 하이드레이션 뒤
+     * 같은 90자 문장이 DOM에 두 번 남고 스크린리더도 두 번 읽는다.
+     *
+     * 서버 쪽을 지울 수는 없다 — 이 컴포넌트는 `useHydrated` 게이트라
+     * 크롤러에게는 아무것도 안 보이고, 그 문구가 크롤 텍스트에 남는 유일한 경로가
+     * 서버 쪽이다. 그래서 XOR 방향이 "클라이언트를 끈다"로 정해진다
+     * (`congress`의 `hideView` 패턴과 같은 모양).
+     */
+    hideSelfNormWarning?: boolean;
 }
 
 /**
@@ -62,7 +76,11 @@ function FearGreedPageSkeleton() {
     );
 }
 
-export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
+export function FearGreedPage({
+    symbol,
+    fmpSymbol,
+    hideSelfNormWarning = false,
+}: FearGreedPageProps) {
     const t = useTranslations('widgets.fear-greed');
     const isHydrated = useHydrated();
     const { snapshot, history } = useFearGreedFromSymbol({ symbol, fmpSymbol });
@@ -115,7 +133,9 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
                     </h2>
                     <FearGreedHero snapshot={snapshot} />
                     <FearGreedComparisonGauges history={history} />
-                    <SelfNormWarningBadge warning={snapshot.warning} />
+                    {!hideSelfNormWarning && (
+                        <SelfNormWarningBadge warning={snapshot.warning} />
+                    )}
                 </section>
 
                 <section className="flex flex-col gap-3">

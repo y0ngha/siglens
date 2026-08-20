@@ -8,7 +8,7 @@ import {
 } from '@/entities/earnings-report';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import {
-    getFmpUserFacingMessage,
+    getFmpUserFacingKey,
     isFmpPaymentRequiredError,
     logFmpPaymentRequiredError,
 } from '@/shared/api/fmp/fmpUserMessage';
@@ -56,7 +56,7 @@ export async function getEarningsReportComparison(
         } catch (error: unknown) {
             logFmpPaymentRequiredError(error);
             if (
-                getFmpUserFacingMessage(error) === null &&
+                getFmpUserFacingKey(error) === null &&
                 !isFmpPaymentRequiredError(error)
             ) {
                 console.warn(

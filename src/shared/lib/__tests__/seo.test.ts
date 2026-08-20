@@ -843,7 +843,7 @@ describe('symbolMetadataFromSeo', () => {
     });
 
     it('title/description/keywords를 그대로 매핑한다', () => {
-        const meta = symbolMetadataFromSeo(baseSeo);
+        const meta = symbolMetadataFromSeo(baseSeo, 'ko');
 
         // title은 { absolute } 형태다 — 루트 레이아웃의 title.template
         // ("%s | Siglens" 자동 접미사)를 무시하기 위함(Task 6).
@@ -852,14 +852,36 @@ describe('symbolMetadataFromSeo', () => {
         expect(meta.keywords).toEqual(baseSeo.keywords);
     });
 
+    /**
+     * 회귀 방지: `/en/AAPL`의 `<title>`이 한국어 사이트 기본 제목으로 떨어졌던 건.
+     * 색인은 막되 **제목·설명·og는 그 로케일 것**이 나가야 한다.
+     */
+    it.each(['en', 'ja', 'zh'] as const)(
+        '%s: 색인은 막지만 제목은 유지하고 follow는 남긴다',
+        locale => {
+            const meta = symbolMetadataFromSeo(baseSeo, locale);
+
+            expect(meta.robots).toEqual({ index: false, follow: true });
+            expect(meta.title).toEqual({ absolute: baseSeo.title });
+            expect(meta.description).toBe(baseSeo.description);
+            expect((meta.openGraph as Record<string, unknown>)['title']).toBe(
+                baseSeo.fullTitle
+            );
+        }
+    );
+
+    it('기본 로케일에는 robots를 덮지 않는다', () => {
+        expect(symbolMetadataFromSeo(baseSeo, 'ko').robots).toBeUndefined();
+    });
+
     it('alternates.canonical이 seo.url이다', () => {
-        const meta = symbolMetadataFromSeo(baseSeo);
+        const meta = symbolMetadataFromSeo(baseSeo, 'ko');
 
         expect(meta.alternates?.canonical).toBe(baseSeo.url);
     });
 
     it('openGraph에 type/siteName/locale이 고정값으로 들어간다', () => {
-        const meta = symbolMetadataFromSeo(baseSeo);
+        const meta = symbolMetadataFromSeo(baseSeo, 'ko');
         const og = meta.openGraph as Record<string, unknown>;
 
         expect(og['type']).toBe('website');
@@ -871,7 +893,7 @@ describe('symbolMetadataFromSeo', () => {
     });
 
     it('twitter에 card/title/description이 들어간다', () => {
-        const meta = symbolMetadataFromSeo(baseSeo);
+        const meta = symbolMetadataFromSeo(baseSeo, 'ko');
         const tw = meta.twitter as Record<string, unknown>;
 
         expect(tw['card']).toBe('summary_large_image');
@@ -883,7 +905,7 @@ describe('symbolMetadataFromSeo', () => {
     });
 
     it('openGraph.title이 fullTitle(브랜드 포함)이고 meta.title이 absolute(브랜드 제외)이다', () => {
-        const meta = symbolMetadataFromSeo(baseSeo);
+        const meta = symbolMetadataFromSeo(baseSeo, 'ko');
         const og = meta.openGraph as Record<string, unknown>;
 
         // title은 { absolute }로 루트 레이아웃의 "| Siglens" 자동 접미사를

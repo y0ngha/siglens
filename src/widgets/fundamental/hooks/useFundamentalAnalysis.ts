@@ -1,6 +1,9 @@
 'use client';
 
+import type { StreamErrorMessages } from '@/shared/hooks/useAnalysisStream';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { useCallback, useMemo } from 'react';
+import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import { useQuery } from '@tanstack/react-query';
 import type {
     FundamentalAnalysisResponse,
@@ -30,12 +33,14 @@ async function fetchFundamentalAnalysis(
     symbol: string,
     modelId: ModelId,
     reasoning: boolean,
+    messages: StreamErrorMessages,
     signal?: AbortSignal
 ): Promise<FundamentalAnalysisResponse> {
     const result = await runAnalysisStream<RunFundamentalAnalysisActionResult>({
         type: 'fundamental',
         params: { symbol, modelId, reasoning },
         signal,
+        messages,
     });
 
     if (result.status === 'cached' || result.status === 'done')
@@ -49,14 +54,14 @@ async function fetchFundamentalAnalysis(
         }
         const message =
             result.code === 'fetch_failed'
-                ? (result.error ?? '데이터를 불러오지 못했습니다.')
-                : '사용량 한도를 초과했습니다.';
+                ? (result.error ?? messages.fetchFailed)
+                : messages.limitExceeded;
         throw new Error(message);
     }
     if (result.status === 'key_error') {
-        throw new Error(result.error);
+        throw new Error(messages.keyRequired);
     }
-    throw new Error('예상치 못한 오류가 발생했습니다.');
+    throw new Error(messages.unexpected);
 }
 
 export function useFundamentalAnalysis(
@@ -76,15 +81,24 @@ export function useFundamentalAnalysis(
      */
     isSettingsHydrated = true
 ): FundamentalAnalysisState {
+    const locale = useCurrentLocale();
+    const streamMessages = useStreamErrorMessages();
     const queryKey = useMemo(
-        () => QUERY_KEYS.fundamentalAnalysis(symbol, modelId, reasoning),
-        [symbol, modelId, reasoning]
+        () =>
+            QUERY_KEYS.fundamentalAnalysis(symbol, modelId, reasoning, locale),
+        [symbol, modelId, reasoning, locale]
     );
 
     const query = useQuery({
         queryKey,
         queryFn: ({ signal, queryKey: [, qSymbol, qModelId, qReasoning] }) =>
-            fetchFundamentalAnalysis(qSymbol, qModelId, qReasoning, signal),
+            fetchFundamentalAnalysis(
+                qSymbol,
+                qModelId,
+                qReasoning,
+                streamMessages,
+                signal
+            ),
         // 캐시가 없을 때만 1회 자동 실행한다. staleTime: Infinity라 캐시가 있으면
         // 조용히 재사용되고(재요청 없음), 포커스/재연결 재요청은 꺼서 실패 이후
         // 창 포커스만으로 AI 분석이 다시 도는 것을 막는다. 수동 재시도는 retry().

@@ -89,7 +89,9 @@ export async function saveApiKeyAction(
             provider: rawProvider,
             apiKey,
         });
-        revalidatePath('/account');
+        // 실제 렌더 경로는 `/[locale]/account`다. `'/account'`로는 어떤 경로도
+        // 매칭되지 않아 조용한 no-op이 된다.
+        revalidatePath('/[locale]/account', 'page');
         return {
             status: 'success',
             message: 'API 키가 저장되었습니다.',

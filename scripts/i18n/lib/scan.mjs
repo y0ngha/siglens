@@ -8,7 +8,7 @@ const { parse } = require('@babel/parser');
 
 export const HANGUL = /[가-힣]/;
 
-/** 키 해시 길이. 2,297개 규모에서 충돌 확률은 무시할 수준이고, 충돌 시 `keyFor`가 늘린다. */
+/** 키 해시 길이. 현재 1,071키 규모에서 충돌 확률은 무시할 수준이고, 충돌 시 `keyFor`가 늘린다. */
 const HASH_LENGTH = 6;
 
 /**
@@ -17,9 +17,16 @@ const HASH_LENGTH = 6;
  * - 테스트: 픽스처 문자열이 카탈로그를 오염시킨다.
  * - `src/app/api`: 서버 로그·에러 코드. 사용자에게 렌더되지 않는다.
  * - `scripts`, `db`: 운영 스크립트.
+ * - `src/app/not-found.tsx`: 루트 레이아웃 바깥에서 자체 문서를 렌더한다.
+ *   로케일을 알 수 없는 자리라(어떤 라우트에도 매칭되지 않은 URL) ko·en 병기
+ *   정적 문구를 쓴다 — `global-error.tsx`와 같은 이유.
+ * - `global-error.tsx`: 루트 레이아웃을 대체하므로 `NextIntlClientProvider`가
+ *   트리에 없다. 여기서 `useTranslations`를 부르면 최후의 에러 경계가 그 자체로
+ *   던져 `reset()`에 도달할 수 없다. 로케일도 알 수 없어 ko·en 병기 정적 문구를
+ *   쓰는데, 추출기가 그 한국어를 다시 키로 뽑으면 같은 사고가 재발한다.
  */
 const EXCLUDE_RE =
-    /(__tests__|__integration__|\.test\.|\.spec\.|src\/app\/api\/|\/test-utils\/)/;
+    /(__tests__|__integration__|\.test\.|\.spec\.|src\/app\/api\/|\/test-utils\/|global-error\.tsx|src\/app\/not-found\.tsx)/;
 
 /** 파일 경로 → 메시지 네임스페이스. */
 export function namespaceFor(relPath) {
@@ -77,7 +84,7 @@ export function candidateFiles(root) {
     return out.filter(f => !EXCLUDE_RE.test(f)).sort();
 }
 
-export function parseFile(absPath, code) {
+export function parseFile(_path, code) {
     return parse(code, {
         sourceType: 'module',
         plugins: ['typescript', 'jsx', 'decorators-legacy'],

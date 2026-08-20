@@ -6,6 +6,7 @@ import {
     BriefingErrorCard,
 } from '@/widgets/dashboard/BriefingCard';
 import { TEST_SCOPE } from './helpers/testScope';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { KR_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
 
 const BRIEFING: MarketBriefingResponse = {
@@ -22,6 +23,32 @@ const BRIEFING: MarketBriefingResponse = {
 };
 
 describe('BriefingCard', () => {
+    /**
+     * 섹터명은 core가 **한국어 표시명**으로 준다. 그대로 찍으면 영어 페이지에서
+     * 바로 아래 번역된 `performanceDescription` 옆에 `기술·금융`이 붙는다.
+     * 표시 시점에 심볼로 카탈로그를 찾는지 비-기본 로케일로 확인한다.
+     */
+    it.each([
+        ['en', 'Technology·Financials', 'Energy'],
+        ['ja', 'テクノロジー·金融', 'エネルギー'],
+    ] as const)(
+        '%s: 섹터명을 그 로케일로 표시한다',
+        (locale, leading, lagging) => {
+            renderWithIntl(
+                <BriefingCard
+                    scope={TEST_SCOPE}
+                    briefing={BRIEFING}
+                    generatedAt="2025-01-15T10:00:00Z"
+                />,
+                { locale }
+            );
+
+            expect(screen.getByText(leading)).toBeInTheDocument();
+            expect(screen.getByText(lagging)).toBeInTheDocument();
+            expect(screen.queryByText('기술·금융')).not.toBeInTheDocument();
+        }
+    );
+
     it('renders summary text', () => {
         render(
             <BriefingCard

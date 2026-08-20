@@ -445,9 +445,25 @@ entities/analysis-translation/
 
 1. 분석은 지금처럼 **한국어로 1회 생성**된다(core 무변경, 비용·품질 불변).
 2. 비-ko 로케일 요청 시, 정규화된 응답 객체에서 **산문 필드만** 뽑아 번역한다.
-   숫자·enum(`sentiment`, `riskLevel`)·가격·티커·`keyLevels`는 **손대지 않는다** —
-   번역 모델이 숫자를 건드리는 사고를 구조적으로 차단한다.
-3. 저가 모델(`deepseek-v4-flash` / `gemini-2.5-flash-lite`)로 배치 번역, 용어집 주입.
+   숫자 필드·enum(`sentiment`, `riskLevel`, `trend`)·가격·티커·식별자는 **손대지
+   않는다** — `PROSE_FIELD_NAMES` 화이트리스트에 없으면 후보가 아니다.
+
+   > **수정(라운드 6)**: 초안은 `keyLevels`를 통째로 제외 대상에 넣었는데, 그건
+   > "숫자 보호" 논거를 컨테이너 이름에 잘못 적용한 것이었다. `KeyLevel.price`는
+   > 숫자지만 `KeyLevel.reason`은 core가 "Korean rationale"로 명시한 **산문**이다.
+   > 실제로 `reconciledLevels.exit`/`riskReward`는 번역되는데 같은 `<section>`의
+   > `reason`만 한국어로 남아 한 블록에 두 언어가 섞였다. 지금은 `reason`·`basis`·
+   > `condition`이 화이트리스트에 있고, 숫자 필드는 이름 자체가 후보가 아니라
+   > 구조적으로 걸러진다.
+   >
+   > 화이트리스트는 **응답 타입별**이어야 한다는 이 문서의 원래 설계가 옳았다.
+   > 구현이 `*Ko` 접미사 휴리스틱으로 갈음하면서 `technical`·`options`·`briefing`·
+   > `macroBriefing` 네 화면에서 번역이 통째로 no-op이 됐다(라운드 5에서 발견).
+
+3. 저가 모델로 배치 번역, 용어집 주입. **DeepSeek 모델만 허용**한다 —
+   `TRANSLATE_MODEL`이 Gemini/Claude ID면 `callDeepseekChat`이 그 ID를 DeepSeek
+   엔드포인트에 보내 401이 나고 번역이 조용히 사라지므로, `tryReadTranslatorConfig`
+   가 provider까지 검증해 `deepseek-v4-flash`로 폴백한다.
 4. 결과를 `sha256(원문 산문) + locale`로 캐시 → 동일 분석은 로케일당 1회만 과금.
 5. SSE 스트리밍(`/api/analysis/stream`): ko는 지금처럼 토큰 스트리밍,
    비-ko는 **완료 후 번역**이라 토큰이 흐르지 않는다. UI는 "번역 중" 상태를 표시한다.
@@ -716,27 +732,128 @@ openGraph: { locale: OG_LOCALE[locale], alternateLocale: [...나머지] },
 | 추출 codemod · 번역 · 검증 · lint 스크립트 | ✅ |
 | 용어집 27항목 | ✅ |
 
-**게이트 결과**: `yarn typecheck` 통과 · `yarn lint` 경고 0 ·
-`yarn test` 10,254 통과 / 0 실패 · `yarn build` EXIT=0 (`MISSING_MESSAGE` 0).
-프로덕션 서버 실측: `/`·`/en`·`/ja`·`/zh` 200, `/ko` → `/` 307,
-`<html lang>`·`og:locale` 로케일별 정확.
+| en·ja·zh 카탈로그 1,070키 (패리티 100%, ko와 동일 문자열 0) | ✅ |
+| AI 분석 후처리 번역 레이어 (`entities/analysis-translation`) | ✅ |
+| `i18n:verify`·`i18n:lint` CI + pre-push 배선 | ✅ |
+
+### 5종 감사가 잡아낸 것 — 전부 실제 HTTP 요청으로만 보였다
+
+빌드 EXIT=0, 단위 테스트 10,000+ 통과, 카탈로그 패리티 100%인 상태에서
+독립 감사 5건이 아래를 찾았다. **어느 것도 기존 게이트에 걸리지 않았다.**
+
+| 결함 | 왜 게이트가 못 봤나 | 조치 |
+|---|---|---|
+| `loading.tsx`·`not-found.tsx`의 **서버** `useTranslations` → 종목 페이지 전원 500 (`DYNAMIC_SERVER_USAGE`), 없는 심볼도 404 대신 500 | `[symbol]`은 `generateStaticParams: []`라 빌드가 렌더하지 않는다. 커버리지 가드는 `page.tsx`만 수집했다 | 클라이언트 컴포넌트로 분리. 가드를 `loading`/`error`/`not-found`까지 확장 |
+| `/KO`(코카콜라)가 로케일 `ko`로 잡혀 홈으로 리다이렉트 — sitemap의 8개 URL 파손, 일부는 200 soft 404 | next-intl이 로케일 접두사를 **대소문자 무시**로 매칭한다(`middleware/utils.js`). 예약 세그먼트 테스트는 디렉터리 목록만 대조해 실존 대문자 티커와의 충돌을 구조적으로 못 본다 | 정확한 대소문자로 판별해 intl 미들웨어 우회 rewrite. e2e 고정 |
+| 미들웨어가 `Link: rel=alternate hreflang`을 전 응답에 부착 → 색인 게이트가 HTTP 계층에서 통째 우회, noindex URL을 alternate로 광고 | HTML만 검사했다. 헤더는 아무도 안 봤다 | `alternateLinks: false` |
+| `Set-Cookie: NEXT_LOCALE`이 캐시 대상 ISR HTML에 부착 → CF가 HTML을 캐시하지 않음 | `localeDetection: false`라 **읽지도 않는** 쿠키다. `Vary`는 깨끗해서 설계 검토를 통과했다 | `localeCookie: false` |
+| 비-ko 정적 페이지가 한국어 title로 `index:true` (54 URL) | `STATIC_INDEXABLE_LOCALES`가 hreflang·sitemap에만 배선돼 있었다. `robots`는 아무도 안 읽었다 | `localeRobots()` 헬퍼로 전 페이지 게이트 |
+| `analysis-translation/api.ts`에 **리터럴 NUL 바이트** → git이 바이너리로 분류, diff가 리뷰에 안 보임 | 타입체크·린트·테스트·빌드 전부 통과. 바이트를 직접 봐야 보인다 | `JSON.stringify` 분리자로 교체 + NUL 가드 테스트 |
+| 루트 프로바이더가 카탈로그의 **96.3%**(1,035/1,075키)를 전 라우트에 적재 | 네임스페이스 단위 수집이라 슬라이스에 클라이언트 파일이 하나만 있어도 전체가 딸려갔다 | 키 단위로 좁힘 → 52%(20,718바이트). 동적 키 파일은 네임스페이스 유지 + 커버리지 가드 |
+| OG 이미지가 `force-static` + 로케일 미전달로 전 로케일 바이트 동일 | 이미지라 아무 텍스트 검사에도 안 걸린다 | 12개 라우트에 로케일 전달 |
+| OAuth 콜백이 비-ko 사용자를 한국어 페이지로 | `/api/*`는 로케일 접두사가 없다. 기존 테스트는 `getLocale`을 `'ko'`로 고정해 **판별력이 0**이었다(`localePath('ko',x)===x`) | state의 `next`에서 로케일 복원 + ja/en 판별 테스트 |
+| 서버 액션 리다이렉트 10곳이 전부 ko 고정 테스트 | 위와 동일 — ko는 접두사가 없어 회귀가 관측 불가 | 소스 가드(`noRawRedirect`)로 인자 검사 |
+
+### 5종 감사 라운드 2 — 라운드 1 수정 자체의 결함
+
+라운드 1 수정을 마치고 "전 게이트 통과"를 확인한 뒤에도 감사 5건이 전부 findings를
+냈다. 절반이 **라운드 1 수정이 만든 것**이다.
+
+| 결함 | 왜 안 보였나 |
+|---|---|
+| NUL 가드가 macOS에서 영구 통과 | BSD grep이 `-P`를 거부하고 `\|\| true`가 그 실패를 "위반 없음"으로 바꿈. `grepSource.ts` JSDoc이 금지한 바로 그 패턴을, 그 클래스를 막으려고 만든 가드에서 반복 |
+| 테스트 설정이 로케일 인자 무시 | `nextIntlTestConfig`가 항상 ko 반환 → 서버 측 로케일 단언이 전부 항등식. OG 로케일 수정을 되돌려도 테스트 6개가 통과함이 실증됨 |
+| `/ja/KO` 로그아웃 → 한국어 홈 | `/KO` 구제 rewrite가 intl 미들웨어를 건너뛰어 `X-NEXT-INTL-LOCALE` 미설정 |
+| og:image 전부 301 | 라우트가 `[locale]` 아래로 가며 Next가 `/ko/…`로 이미지 URL 생성 → `/ko` 정규화가 리다이렉트. **한국어 색인 표면**을 때림 |
+| 확장 정규식 오탐 37/38 | `then(`·`toFixed(`·`trimTrailingZeros(`를 번역자 호출로 오인 |
+| 챗봇 전 로케일 한국어 답변 | 이 문서 §6.3에 **명시해놓고 구현 안 함**. `git diff`가 비어 있었음 |
+| `useTimeframeFromUrl` 로케일 유실 | 라운드 1 감사가 보고했는데 수정 누락 |
+| 언어 스위처가 쿼리 파괴 | `/reset-password?token=…`에서 언어 전환 시 토큰 소실 |
+| SSE 에러 문구가 기준선 **밖** | 스캐너가 `src/app/api/`를 "렌더 안 됨"으로 제외하는데 실제로는 `<ErrorBanner>`에 그대로 뜸 |
+| 카탈로그가 전 라우트 적재 | first-load JS +28%, RSC prefetch +45.8% (v0.58.0·PR #719 성과 되돌림) |
+
+**교훈**: 게이트가 초록인 것과 수정이 실제로 동작하는 것은 별개다. 이번 라운드의
+모든 수정에 대해 "되돌리면 실패하는가"를 직접 확인했다.
+
+### 감사 라운드 3~8 — 라운드마다 결함의 **성격**이 바뀌었다
+
+| 라운드 | 주된 성격 |
+|---|---|
+| 1 | 동작 파괴 (종목 페이지 전원 500, `/KO` 파괴, 헤더 누출) |
+| 2–3 | 직전 수정의 회귀 (가드 무력화, 에러 경계 원시 키, og:image 404) |
+| 4 | 수정이 **적용 안 됨** (`useMemo` deps 누락, 기본값 때문에 반증 불가) |
+| 5 | 요구사항이 **절반만 동작** (분석 번역이 9개 화면 중 4개에서 no-op) |
+| 6 | 수정의 **전제가 틀림** (`/api/*`가 로케일 스코프라고 가정) |
+| 7 | 수정 강제가 **거짓** (기본값이 컴파일러 강제를 무력화) |
+| 8 | 수정이 **닿지 않은 형제 경로** (DISPATCH는 테스트했는데 `technical` 분기는 방치) |
+
+라운드 4부터는 모든 수정에 대해 **되돌려서 테스트가 깨지는지** 확인했다. 라운드 8
+감사가 그 방식으로 잡은 것들:
+
+| 결함 | 실측 |
+|---|---|
+| `technical` 분기 로케일 무검증 | `resolveRequestLocale`을 상수로 고정해도 89개 통과 |
+| 산문 번역 로케일 결속 무검증 | 두 호출부를 `DEFAULT_LOCALE`로 고정해도 108개 통과 — **다국어 분석이 100% 죽는데** 초록 |
+| 색인 게이트 `locale`이 optional | `overall/page.tsx`에서 인자만 빼도 227개 통과. 전 로케일이 색인 대상이 됨 |
+| 문구 가드가 중첩 형태를 못 봄 | `{ code, message: '영어' }`를 심어도 가드 3개 + 263개 통과 |
+
+동시에 런타임 감사가 **게이트에 전혀 안 잡히는** 결함을 잡았다. 둘 다 초록인
+상태에서만 보이는 것들이라, 정적 게이트와 실물 확인은 서로를 대체하지 못한다:
+
+| 결함 | 증상 |
+|---|---|
+| 비-ko 종목 페이지 title 소실 | `NOINDEX_SYMBOL_METADATA`엔 title이 없다. `/en/AAPL`의 탭·북마크·`og:title`이 한국어 사이트 기본 문구. 371티커 × 9탭 × 3로케일 |
+| 영어에서 문장이 붙어 나옴 | codemod가 `{value}{t(...)}` 이음매에서 잘랐다. ko/ja/zh는 조사·수량사라 맞지만 영어는 `39Chart trends…`, `user@example.comWe sent…` |
+| core 문구가 카탈로그를 우회 | 사용량 한도는 **ko 사용자에게도 영어**, BYOK 키 안내는 **en 사용자에게도 한국어** |
+| 종목 게이트만 `nofollow` | 정적 게이트(`localeRobots`)는 `follow`였다 — 같은 게이트가 두 표면에서 다른 값 |
+
+### 알려진 한계 — `notFound()` 404 본문이 SSR되지 않는다
+
+`notFound()`로 도달한 404는 Next가 내장 셸(`<html id="__next_error__">`)로 문서를
+만들고 앱 트리는 RSC flight로만 실어 보낸다. JS 없이는 제목만 보인다.
+
+원인은 콘텐츠가 아니다 — 본문을 `<main>PROBE</main>` 한 줄짜리 서버 컴포넌트로
+바꿔도 동일했다(intl·클라이언트 여부와 무관). 루트에 `<html>`을 렌더하는 레이아웃이
+없어서인데, `lang`이 로케일별로 달라야 해 `<html>`은 `[locale]/layout.tsx`가 소유할
+수밖에 없다. 패스스루 루트 레이아웃을 넣어도 바뀌지 않았다.
+
+완화: 상태 코드는 정확히 404, `<title>`은 로케일별로 정확. **매칭 실패** URL은
+루트 `src/app/not-found.tsx`가 완전한 문서를 SSR한다(실측 확인).
+
+### ⛔ 배포 순서 — 이 브랜치만으로는 안전하지 않다
+
+구버전 인스턴스는 `RESERVED_FIRST_SEGMENTS`에 로케일이 없어 이렇게 응답한다:
+
+```
+/en/AAPL → 301 Location: /EN/AAPL   (Cache-Control 없음)
+/EN/AAPL → 404
+```
+
+`infra/aws/deploy.sh`가 `MinHealthyPercentage:100`이라 신·구가 ~18분 동시 서빙하고,
+**롤백 시에는 100% 재현**된다. `Cache-Control`이 없어 브라우저가 영구 캐시한다.
+
+301을 내는 쪽이 구버전이므로 이 브랜치에서 고칠 수 없다. **master에
+`RESERVED_FIRST_SEGMENTS`에 `ko`·`en`·`ja`·`zh`를 추가하는 선행 릴리스**를 먼저
+배포해야 한다(4줄). 그러면 구버전이 301 대신 404를 내 전환이 양방향으로 안전해진다.
 
 ### 남은 작업
 
 | Phase | 내용 |
 |---|---|
-| 1 | 2,750키 카탈로그 확정 — codemod `--apply`로 1,151건 자동 치환, 나머지 1,689건(`.ts` 상수·모듈 스코프·템플릿) 수동 이관 |
-| 2 | en 번역 + QA 게이트 통과 → **JSON-LD 로케일화(위 블로커) 후** `STATIC_INDEXABLE_LOCALES`에 `en` 추가 |
-| 3 | AI 분석 후처리 번역 레이어 → `SYMBOL_INDEXABLE_LOCALES`에 `en` 추가 |
-| 4 | ja / zh |
-| 5 | DB 콘텐츠 로케일 컬럼 |
+| 1 | 잔여 1,666건 이관 (§13) — 카탈로그 자체는 확정. 숫자·날짜 포맷(`LOCALE_INTL`)도 여기서: 현재 전 로케일 `ko-KR` 고정이라 `/ja`에서 시가총액이 `US$3.5조`로 나온다(호출부 5곳에 로케일 스레딩 필요) |
+| 1 | 이메일 본문 번역 — 링크 로케일 유실은 수정됨, 본문은 카탈로그·시그니처 변경 필요 |
+| 1 | PWA manifest 로케일화. ⚠️ `[locale]` 아래로 옮기면 프록시 matcher가 `.webmanifest`를 제외해 **설치된 PWA가 전부 404**가 된다 — matcher 제외를 먼저 풀어야 한다 |
+| 2 | **JSON-LD 로케일화**(`inLanguage`·`@id`·`url`) → 그 다음에야 `STATIC_INDEXABLE_LOCALES` 확장. 지금 `@id`가 `/market`과 `/en/market`에서 충돌한다 |
+| 3 | SSR 시드 경로 번역 — 현재 번역은 SSE 경로에만 걸려 있어, 캐시된(=흔한) 심볼은 `/en/AAPL`이 한국어 산문을 렌더한다. `SYMBOL_INDEXABLE_LOCALES` 확장의 선결 조건 |
+| 4 | 번역 호출에 `AbortSignal` 연결 — 자체 마감(`TRANSLATION_DEADLINE_MS` 60초)은 붙었지만 초과 시 DeepSeek 소켓 자체는 SDK 기본값(10분×3)까지 살아 있다 |
+| 5 | DB 콘텐츠 로케일 컬럼 · manifest 로케일화 · `/ko/*` 정규화를 307→301 |
 
 
 ---
 
 ## 13. 잔여 미추출 한국어 (2026-08-20 실측)
 
-`yarn i18n:lint` 기준 **1,649건**. 신규 유입은 기준선 게이트가 막고 있다.
+`yarn i18n:lint` 기준 **1,625건**. 신규 유입은 기준선 게이트가 막고 있다.
 성격별로 나누면 남은 일의 종류가 다르다 — 숫자만 보면 "번역이 덜 됐다"로 읽히지만
 상당수는 **번역 대상이 아니거나, 표시가 아니라 데이터 경로 작업**이다.
 
@@ -759,8 +876,54 @@ openGraph: { locale: OG_LOCALE[locale], alternateLocale: [...나머지] },
 | `entities/economy/lib/indicatorNameKo.ts` 외 | 57 | 경제지표 한국어명. `economicIndicatorTranslations`(DB)에 로케일 축을 더하는 §2.5 작업과 함께 |
 | 위젯 UI 카피(`SignalBadge`·`optionsTooltips`·`technicalFacts` 등) | 90+ | 순수 UI 카피 — 키 전환 대상 |
 
+### ⚠️ 잔여의 성격 — "불활성 상수"가 아니다
+
+`non-component-module` 분류가 오해를 부른다. 이 버킷의 상당수는 **사용자가 실제로
+읽는 문구**이고, 일부는 한 문자열 안에 두 언어가 섞인다. 실측(`/ja/AAPL`에서
+한국어 42개 vs 일본어 25개 텍스트 노드):
+
+| 위치 | 증상 |
+|---|---|
+| `widgets/layout/HeaderNavMenu.tsx` | `aria-label`이 `市場分析 바로가기` — 스크린리더가 전 페이지에서 읽음 |
+| `widgets/layout/Header.tsx` | 홈 링크 접근명 `SIGLENS 홈` |
+| `widgets/dashboard/IndexCard.tsx` 외 | `title="AAPL 분석"` |
+| `entities/auth/lib/loginUser.ts` | `/ja/login`은 100% 일본어인데 실패 시 `이메일 또는 비밀번호가 올바르지 않습니다.` |
+| `views/symbol/utils/symbolTabsConfig.ts` | 종목 탭바 9개 라벨이 전 로케일 한국어 |
+| `entities/chat-message/lib/derivePageContextLabel.ts` | 일본어 대화에 한국어 버블 주입 |
+| `shared/lib/legal.ts` | 푸터가 비-ko 90개 페이지 전부 한국어 |
+
+또한 `scripts/i18n/lib/context.mjs`의 "`.ts`에는 컴포넌트가 없다 → 훅을 부를 수
+없다"는 전제가 부정확하다 — 커스텀 훅은 `.ts`에 있고 `useTranslations`를 부를 수
+있다. 1,054건 중 **59건이 14개 `use*.ts` 훅 파일**에 있고, 그중 몇은 이미
+`useStreamErrorMessages()`를 부르고 있다. 즉 Phase 1의 실제 난이도는 이 분류가
+시사하는 것보다 낮다.
+
 ### 이미 만들어 둔 것
 
-- `shared/lib/localizedAssetName.ts` — 섹터·지수는 core 타입의 영문명을 로케일로 고른다.
-  개별 종목은 영문명이 없어 티커 심볼로 떨어뜨린다(금융 UI에서 티커는 보편적으로 읽힌다).
 - `i18n:lint` 기준선 — 잔여를 **늘리지 못하게** 고정한다. 줄어들면 `--update`로 조인다.
+  CI와 pre-push에 배선돼 있다(사람이 손으로 칠 때만 도는 게이트는 결국 돌지 않는다).
+
+### 표시명 3종은 일괄로 끝냈다 (라운드 8)
+
+한때 "Phase 1로 미룬다"고 적었던 항목이다 — 일부만 배선하면 **같은 페이지에서
+일부만 영어**가 되어 지금보다 나쁘다는 이유였다. 라운드 8 런타임 감사가 그
+"일부"조차 이미 깨져 있음을 실측으로 보여줘서(영어 문장 옆의 `기술·금융`,
+일본어 페이지의 `다이버전스 전략`), 세 계열을 한 번에 끝냈다.
+
+| 계열 | 개수 | 위치 |
+|---|---|---|
+| 지수 + 섹터명 | 24 | `widgets/dashboard/assetLabel.ts` — 심볼로 조회 |
+| 스킬명(패턴·전략·지표) | 36 | `widgets/analysis/skillLabel.ts` — 이름으로 조회 |
+
+둘 다 **표시 시점 조회**다. 원본 문자열을 못 바꾸기 때문이다:
+- 섹터명은 `BriefingCard`의 화이트리스트 대조가 `koreanName` 기준이라, 번역하면
+  모든 행이 걸러져 섹터 표시가 통째로 사라진다.
+- 스킬명은 `AnalysisPanel`에서 **dedupe 키**로도 쓰여, 번역하면 중복 제거가 깨진다.
+
+카탈로그에 없는 심볼·이름은 원문으로 떨어진다. 이 폴백이 없으면 config에 ETF를
+하나 추가하는 순간 카드에 원시 키(`widgets.dashboard.assetName.XLQ`)가 에러 없이
+찍힌다.
+
+**남은 것은 개별 종목명이다**(`popular-tickers.ts` 97건). 이쪽은 core 타입에
+영문명이 없어 `assetTranslations`(DB) 조회 경로가 필요하다 — 표시 계층 작업이
+아니라서 여기 묶지 않았다.

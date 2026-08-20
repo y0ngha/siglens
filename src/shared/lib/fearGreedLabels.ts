@@ -3,6 +3,7 @@ import {
     POC_WINDOW_DEFAULT,
     type FearGreedFactorKey,
     type FearGreedLabel,
+    type FearGreedWarning,
 } from '@y0ngha/siglens-core';
 
 /** confidence === 'normal' 표시 라벨 — Hero/Card footer 양쪽에서 동일 사용. */
@@ -22,6 +23,21 @@ export const FACTOR_LABEL: Record<FearGreedFactorKey, string> = {
     poc_distance: `POC 거리(${POC_WINDOW_DEFAULT}bar)`,
     ma200_distance: 'MA200 거리',
     range_position: '52주 위치',
+};
+
+/**
+ * Self-norm 경고 문구 — chronic 사이클 종목에서 점수가 절대 강도가 아니라 자기 분포
+ * 대비 상대 위치를 가리킨다는 안내.
+ *
+ * 여기 두는 이유: 클라이언트 배지(`SelfNormWarningBadge`)와 서버 렌더 요약
+ * (`FearGreedFactsSummary`)이 **같은 문구**를 써야 하는데, 상수가 `'use client'`
+ * 컴포넌트 파일에 있으면 서버 컴포넌트가 그 모듈을 통째로 끌어온다.
+ */
+export const WARNING_TEXT: Record<NonNullable<FearGreedWarning>, string> = {
+    CHRONIC_WEAKNESS:
+        '이 종목은 장기 약세 흐름이에요. 점수는 이 종목의 평소 흐름 안에서의 상대적 위치를 보여줘 절대적인 강도와 다를 수 있어요. 참고만 해 주세요.',
+    CHRONIC_STRENGTH:
+        '이 종목은 장기 강세 흐름이에요. 점수는 이 종목의 평소 흐름 안에서의 상대적 위치를 보여줘 절대적인 강도와 다를 수 있어요. 참고만 해 주세요.',
 };
 
 /** 5단계 sentiment label → 한글 표시 */

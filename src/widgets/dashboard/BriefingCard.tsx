@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { assetLabel } from './assetLabel';
 import type { MarketBriefingResponse } from '@y0ngha/siglens-core';
 import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 
@@ -24,13 +25,28 @@ interface BriefingCardProps {
 function knownSectors(
     names: readonly string[],
     scope: ClientDashboardScope
-): string[] {
+): { symbol: string; name: string }[] {
     // `sectorEtfs`만이 정확히 모델에 준 목록이다 — core `getMarketSummary`가
     // 프롬프트의 섹터 행을 이 배열로만 만든다. `signalSectors`를 합치면 미국의
     // 가상 테마(양자·우주 — 상장 ETF가 없어 브리핑 입력에 절대 없다)가 허용되어,
     // 이 가드가 막으려던 바로 그 "지어낸 이름"을 통과시킨다.
-    const known = new Set(scope.sectorEtfs.map(s => s.koreanName));
-    return names.filter(name => known.has(name));
+    //
+    // **심볼을 돌려준다.** 이름을 그대로 내보내면 영어 페이지에서 `기술·금융`이
+    // 바로 위 번역된 문장 옆에 붙는다. 화이트리스트를 통과했다는 건 이미 알려진
+    // 섹터라는 뜻이므로, 표시 문자열은 심볼로 카탈로그에서 다시 찾는다.
+    // (LLM 번역으로는 못 고친다 — 이 비교 자체가 `koreanName` 기준이라 번역하면
+    //  모든 행이 걸러진다.)
+    const bySectorName = new Map(
+        scope.sectorEtfs.map(s => [s.koreanName, s.symbol])
+    );
+    return names
+        .map(name => {
+            const symbol = bySectorName.get(name);
+            return symbol === undefined ? null : { symbol, name };
+        })
+        .filter(
+            (entry): entry is { symbol: string; name: string } => entry !== null
+        );
 }
 
 export function BriefingCard({
@@ -89,7 +105,9 @@ export function BriefingCard({
                                 {t('BriefingCard.e1760c')}
                             </span>
                             <span className="text-chart-bullish">
-                                {leadingSectors.join('·')}
+                                {leadingSectors
+                                    .map(s => assetLabel(t, s.symbol, s.name))
+                                    .join('·')}
                             </span>
                         </p>
                     )}
@@ -99,7 +117,9 @@ export function BriefingCard({
                                 {t('BriefingCard.7bd647')}
                             </span>
                             <span className="text-chart-bearish">
-                                {laggingSectors.join('·')}
+                                {laggingSectors
+                                    .map(s => assetLabel(t, s.symbol, s.name))
+                                    .join('·')}
                             </span>
                         </p>
                     )}

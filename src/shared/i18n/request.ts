@@ -29,9 +29,14 @@ export default getRequestConfig(async ({ requestLocale }) => {
         timeZone: 'Asia/Seoul',
         getMessageFallback: ({ key, namespace }) =>
             namespace ? `${namespace}.${key}` : key,
-        onError: () => {
-            // 누락 키는 CI의 `yarn i18n:verify`가 잡는다. 런타임 콘솔을 채우면
-            // 진짜 에러가 묻히므로 침묵한다.
+        onError: error => {
+            // 키 패리티는 CI의 `yarn i18n:verify`가 막지만, 그건 **정적으로 보이는
+            // 키**만 본다. 변수로 조립되는 키가 빠지면 게이트를 통과한 채 화면에만
+            // 키 문자열이 뜬다. 통째로 침묵시키면 그 신호가 영원히 사라지므로
+            // 서버 로그에는 남긴다(클라이언트 콘솔은 채우지 않는다).
+            if (typeof window === 'undefined') {
+                console.error('[i18n]', error.message);
+            }
         },
     };
 });

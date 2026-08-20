@@ -1,6 +1,9 @@
 'use client';
 
 import type { NewsFeedCategoryId } from '@/entities/market-news';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import { useState, startTransition, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
@@ -53,6 +56,8 @@ export function useMarketNewsDigest(
     category: NewsFeedCategoryId,
     hasEnrichedNews: boolean
 ): MarketNewsDigestState {
+    const locale = useCurrentLocale();
+    const streamMessages = useStreamErrorMessages();
     const [isHydrated, setIsHydrated] = useState(false);
 
     // Single custom hook that drives the `enabled` flag (input-provider pattern).
@@ -62,8 +67,9 @@ export function useMarketNewsDigest(
     );
 
     const query = useQuery({
-        queryKey: ['market-news-digest', category] as const,
-        queryFn: ({ signal }) => fetchMarketNewsDigest(category, signal),
+        queryKey: QUERY_KEYS.marketNewsDigest(category, locale),
+        queryFn: ({ signal }) =>
+            fetchMarketNewsDigest(category, streamMessages, signal),
         // Wait for hydration + enriched cards before firing.
         // Firing on empty DB would give no_news immediately and staleTime: Infinity
         // would lock the error state until a hard refresh.

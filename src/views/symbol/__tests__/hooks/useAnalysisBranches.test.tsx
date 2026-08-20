@@ -4,6 +4,7 @@
  * and timeframe change flows.
  */
 
+import koMessages from '../../../../../messages/ko.json';
 import type { Mock } from 'vitest';
 import { useAnalysis } from '@/views/symbol/hooks/useAnalysis';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
@@ -154,7 +155,9 @@ describe('useAnalysis — branch coverage', () => {
             );
 
             await waitFor(() => {
-                expect(result.current.analysisError).toBe('API key invalid');
+                expect(result.current.analysisError).toBe(
+                    koMessages.app.api.stream.keyRequired
+                );
             });
         });
     });

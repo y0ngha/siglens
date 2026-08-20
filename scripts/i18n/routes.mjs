@@ -1,6 +1,7 @@
 import { readdirSync, statSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-const APP = process.argv[2] + '/src/app';
+// npm 스크립트는 인자를 넘기지 않는다 — 없으면 cwd 기준.
+const APP = (process.argv[2] ?? process.cwd()) + '/src/app';
 const out = [];
 function walk(dir, seg) {
     for (const name of readdirSync(dir).sort()) {

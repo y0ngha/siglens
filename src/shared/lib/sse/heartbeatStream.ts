@@ -1,3 +1,4 @@
+import { isPassThroughStreamError } from './LocalizedStreamError';
 import {
     incrementActiveStreams,
     decrementActiveStreams,
@@ -62,11 +63,16 @@ interface HeartbeatStreamOptions {
      * 유일한 신호다 — 정상 거부가 섞이면 오탐으로 알람이 무뎌진다.
      */
     logFailures?: boolean;
+    /**
+     * 내부 오류를 대체할 **로케일별** 문구. 필수다 — 기본값을 두면 호출부에서
+     * 빠졌을 때 다시 한국어가 고정되고 타입체커가 잡지 못한다.
+     */
+    readonly genericErrorMessage: string;
 }
 
 export function heartbeatStream<T>(
     work: Promise<T>,
-    { logFailures = true }: HeartbeatStreamOptions = {}
+    { logFailures = true, genericErrorMessage }: HeartbeatStreamOptions
 ): ReadableStream<Uint8Array> {
     const encoder = new TextEncoder();
     let timer: ReturnType<typeof setInterval> | undefined;
@@ -159,18 +165,15 @@ export function heartbeatStream<T>(
                     }
                     const rawMessage =
                         err instanceof Error ? err.message : String(err);
-                    // 한글이 포함된 메시지는 이미 현지화된 사용자 메시지 — 그대로 전달한다
-                    // (예: '분석 시간이 초과되었습니다. 다시 시도해 주세요.', BYOK 게이트 메시지).
-                    // 영문 내부 오류는 제네릭 한국어 메시지로 교체해 환경변수·내부 스택
-                    // 정보가 브라우저에 노출되지 않도록 한다.
-                    // core의 재시도 소진 sentinel은 ASCII지만 클라이언트가 자체 문구로
-                    // 매핑하므로 그대로 통과시킨다(`useAnalysis`의 catch 참조).
-                    const isLocalized =
-                        /[가-힣]/.test(rawMessage) ||
-                        rawMessage === 'AI_SERVER_UNSTABLE';
-                    const message = isLocalized
+                    // 이미 현지화된 메시지(`LocalizedStreamError`)와 core의
+                    // ASCII sentinel만 그대로 전달한다. 나머지는 내부 오류이므로
+                    // 호출자가 준 **로케일별** 제네릭 문구로 교체한다 — 환경변수·
+                    // 내부 스택이 브라우저에 노출되는 것도 함께 막는다.
+                    // 문자열 생김새(한글 포함 여부)로 판정하지 않는 이유는
+                    // `LocalizedStreamError` JSDoc 참고.
+                    const message = isPassThroughStreamError(err)
                         ? rawMessage
-                        : '분석 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
+                        : genericErrorMessage;
                     send(
                         `event: error\ndata: ${JSON.stringify({ message })}\n\n`
                     );

@@ -1,3 +1,4 @@
+import koMessages from '../../../../../messages/ko.json';
 import type { Mock } from 'vitest';
 import { useOverallAnalysis } from '@/widgets/overall/hooks/useOverallAnalysis';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
@@ -338,7 +339,7 @@ describe('useOverallAnalysis', () => {
 
             const state = result.current.state;
             if (state.status !== 'error') throw new Error('expected error');
-            expect(state.error).toContain('한도');
+            expect(state.error).toBe(koMessages.app.api.stream.limitExceeded);
         });
     });
 

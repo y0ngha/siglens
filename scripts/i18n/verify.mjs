@@ -12,7 +12,12 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const ROOT = resolve(process.argv[1], '../../..');
-const LOCALES = ['ko', 'en', 'ja', 'zh'];
+// 로케일 단일 출처는 `src/shared/i18n/locales.ts`다. 여기에 손으로 적어두면
+// 로케일을 추가했을 때 검증이 조용히 그 로케일을 건너뛴다.
+const LOCALES = readFileSync(`${ROOT}/src/shared/i18n/locales.ts`, 'utf8')
+    .match(/export const LOCALES = \[([^\]]+)\]/)[1]
+    .match(/'([a-z-]+)'/g)
+    .map(s => s.slice(1, -1));
 const SOURCE = 'ko';
 const TARGETS = LOCALES.filter(l => l !== SOURCE);
 
@@ -63,12 +68,10 @@ function containsTerm(text, expected) {
     const haystack = text.toLowerCase();
     const needle = expected.toLowerCase();
     if (haystack.includes(needle)) return true;
-    // 복수 → 단수 (`options` → `option`)
-    if (needle.endsWith('s') && haystack.includes(needle.slice(0, -1))) {
-        return true;
-    }
-    // 단수 → 복수
-    return haystack.includes(`${needle}s`);
+    // 복수 → 단수 (`options` → `option`). 역방향(`option` → `options`)은 넣지
+    // 않는다 — `needle + 's'`를 담은 문자열은 이미 `needle`을 담고 있어 위 검사가
+    // 반드시 먼저 참이 된다(증명 가능한 죽은 분기였다).
+    return needle.endsWith('s') && haystack.includes(needle.slice(0, -1));
 }
 
 function placeholders(text) {

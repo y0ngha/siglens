@@ -4,6 +4,7 @@ import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
     localeOpenGraph,
+    localeRobots,
 } from '@/shared/lib/seoAlternates';
 import { PolicyMarkdownBody } from '@/widgets/legal/PolicyMarkdownBody';
 import { LegalPageShell } from '@/widgets/legal/LegalPageShell';
@@ -52,16 +53,12 @@ export async function generateMetadata({
     params,
 }: LocaleMetadataParams): Promise<Metadata> {
     const { locale } = await params;
-    const ogLocale = localeOpenGraph(
-        isLocale(locale) ? locale : DEFAULT_LOCALE
-    );
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const ogLocale = localeOpenGraph(resolved);
     return {
         title: PRIVACY_TITLE,
         description: PRIVACY_DESCRIPTION,
-        robots: {
-            index: true,
-            follow: true,
-        },
+        robots: localeRobots(resolved),
         alternates: await localeAlternatesFrom(params, PRIVACY_PATH),
         openGraph: {
             type: 'article',

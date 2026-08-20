@@ -1,4 +1,5 @@
 import type { EmailMessage } from '@/shared/email';
+import { DEFAULT_LOCALE, localePath, type Locale } from '@/shared/i18n/locales';
 
 // Duplicates @/shared/lib/seo SITE_NAME/SITE_URL — update both if changed.
 const SITE_NAME = 'Siglens';
@@ -19,6 +20,15 @@ interface BuildPasswordResetEmailInput {
     email: string;
     /** 코어가 발급한 raw 토큰 (해시 전). */
     token: string;
+    /**
+     * 요청이 시작된 로케일. 재설정 링크에 접두사를 붙이는 데 쓴다.
+     *
+     * 빼면 `/ja/forgot-password`에서 요청한 사용자가 메일 링크를 눌렀을 때
+     * **한국어** `/reset-password`에 떨어진다 — 로케일이 메일 왕복 전체에서
+     * 사라진다. 본문 번역은 별도 작업이지만(설계 §13 Phase), 착지 지점이
+     * 어긋나는 것은 그와 무관한 결함이다.
+     */
+    locale?: Locale;
 }
 
 const RESET_PATH = '/reset-password';
@@ -28,8 +38,9 @@ const SUBJECT = `${SITE_NAME} 비밀번호 재설정 안내`;
 export function buildPasswordResetEmail({
     email,
     token,
+    locale = DEFAULT_LOCALE,
 }: BuildPasswordResetEmailInput): EmailMessage {
-    const link = `${buildSiteUrl()}${RESET_PATH}?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
+    const link = `${buildSiteUrl()}${localePath(locale, RESET_PATH)}?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
     const text = [
         `${SITE_NAME} 비밀번호 재설정`,
         '',

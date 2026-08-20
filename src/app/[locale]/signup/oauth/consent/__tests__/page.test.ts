@@ -25,20 +25,29 @@ vi.mock('next/navigation', () => ({
     redirect: vi.fn(),
 }));
 
-import { metadata } from '@/app/[locale]/signup/oauth/consent/page';
+import { generateMetadata } from '@/app/[locale]/signup/oauth/consent/page';
 
 describe('OAuth consent page', () => {
-    it('exports metadata with consent title', () => {
+    it('exports metadata with consent title', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
         expect(metadata.title).toBe('소셜 로그인 가입 동의');
     });
 
-    it('sets robots to noindex, nofollow', () => {
+    it('sets robots to noindex, nofollow', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
         expect(metadata.robots).toEqual(
             expect.objectContaining({ index: false, follow: false })
         );
     });
 
-    it('includes canonical URL', () => {
+    it('includes canonical URL', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
         expect(metadata.alternates?.canonical).toBe(
             'https://siglens.io/signup/oauth/consent'
         );

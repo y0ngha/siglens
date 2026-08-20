@@ -5,6 +5,7 @@ import {
     localeAlternatesFrom,
     localeCanonical,
     localeOpenGraph,
+    localeRobots,
 } from '@/shared/lib/seoAlternates';
 import { getMarketSummaryStatic } from '@/entities/market-summary/api/marketSummaryStaticCache';
 import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSignalsStaticCache';
@@ -77,7 +78,7 @@ export async function generateMetadata({
         }),
         robots: degraded
             ? { index: false, follow: true }
-            : { index: true, follow: true },
+            : localeRobots(resolvedLocale),
         openGraph: {
             title: MARKET_FULL_TITLE,
             description: COPY.description,

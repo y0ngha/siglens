@@ -1,8 +1,10 @@
 import { getTranslations } from 'next-intl/server';
+import { localeCanonical } from '@/shared/lib/seoAlternates';
+import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import { Suspense } from 'react';
 import { setRequestLocale } from 'next-intl/server';
 import { AuthCardShell, AuthFormSkeleton } from '@/shared/ui/auth';
-import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { LoginContent } from './LoginContent';
@@ -11,13 +13,26 @@ import { LoginContent } from './LoginContent';
 // "원본은 /login 하나"라는 신호를 명확히 해 두면 일부 크롤러/공유 도구가 변형을 강조하지 않게 된다.
 // openGraph.url을 명시해 두지 않으면 root layout의 og:url(SITE_URL)이 그대로 상속되어
 // canonical과 og:url이 불일치한다(SEO 일관성 위반).
-export const metadata: Metadata = {
-    title: '로그인',
-    description: `${SITE_NAME}에 로그인하여 회원 전용 기능을 이용해보세요.`,
-    alternates: { canonical: `${SITE_URL}/login` },
-    openGraph: { url: `${SITE_URL}/login` },
-    robots: { index: false, follow: true },
-};
+/**
+ * 정적 `metadata`가 아니라 `generateMetadata`인 이유: 정적 객체는 로케일을 볼 수
+ * 없어 `/en/login`도 canonical이 `/login`(한국어)로 나갔다. noindex 페이지에
+ * 다른 URL을 canonical로 걸면 Google이 noindex를 그 대상으로 전파할 수 있다.
+ */
+export async function generateMetadata({
+    params,
+}: {
+    readonly params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+    const { locale } = await params;
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    return {
+        title: '로그인',
+        description: `${SITE_NAME}에 로그인하여 회원 전용 기능을 이용해보세요.`,
+        alternates: { canonical: localeCanonical(resolved, '/login') },
+        openGraph: { url: localeCanonical(resolved, '/login') },
+        robots: { index: false, follow: true },
+    };
+}
 
 // searchParams 읽기를 LoginContent('use client')로 격리해 이 라우트는 full-static(○)으로 prerender된다.
 // shell/footer/metadata는 정적, 쿼리 의존부만 Suspense 아래에서 CSR.

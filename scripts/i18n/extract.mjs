@@ -35,45 +35,147 @@ const onlyPrefix = args.includes('--only') ? ONLY : null;
 const catalog = {}; // ns -> { key: koText }
 const takenPerNamespace = new Map(); // ns -> Map(key -> text)
 const skips = [];
-/**
- * `'use client'` 파일이 사용하는 네임스페이스 — 루트 프로바이더가 실어야 한다.
- *
- * **치환 시점이 아니라 참조 시점으로 센다.** 치환은 한 번만 일어나므로 그때
- * 모으면 재실행 시 목록이 0이 되고, 그러면 클라이언트에서 전 메시지가
- * `MISSING_MESSAGE`가 된다(실측 5,184건). 빌드는 성공하고 화면에서만 깨진다.
- */
-function collectClientNamespaces(root) {
-    const namespaces = new Set();
-    for (const relPath of candidateSourceFiles(root)) {
-        const code = readFileSync(`${root}/${relPath}`, 'utf8');
-        if (!/^\s*(['"])use client\1/m.test(code.slice(0, 400))) continue;
-        if (!/\bt\w*\(/.test(code)) continue;
-        namespaces.add(namespaceFor(relPath));
-        // 루트 번역자(`useTranslations()`)가 쓰는 완전 수식 키는 그 키의
-        // 네임스페이스도 필요하다.
-        for (const match of code.matchAll(/\bt\w*\(\s*'([A-Za-z0-9_.$-]+)'/g)) {
-            const parts = match[1].split('.');
-            if (parts.length >= 3) namespaces.add(parts.slice(0, 2).join('.'));
-        }
+function buildModuleGraph(root) {
+    const files = candidateSourceFiles(root);
+    const sources = new Map();
+    for (const rel of files) {
+        sources.set(rel, readFileSync(`${root}/${rel}`, 'utf8'));
     }
+
     /**
-     * 수동 키의 네임스페이스도 넣는다.
-     *
-     * `manualKeys.json`에 등록되는 키는 **소스에 한국어가 없어 추출로 만들어지지
-     * 않는 것**들이고(내비 라벨·카테고리 라벨), 소비자는 그 키를 변수로 넘긴다
-     * (`t(vertical.labelKey)`). 정규식 스캔으로는 절대 보이지 않으므로 여기서
-     * 명시적으로 더한다 — 빠뜨리면 클라이언트에서 그 라벨만 한국어로 남는데,
-     * `MISSING_MESSAGE`도 안 뜨고(폴백이 ko다) route 표에도 안 나온다.
+     * import 지정자를 레포 상대 경로로 해석한다.
+     * `@/x` → `src/x`, 상대 경로는 importer 기준. 확장자와 배럴을 순서대로 시도.
      */
-    const manualPath = `${root}/messages/_meta/manualKeys.json`;
-    if (existsSync(manualPath)) {
-        for (const prefix of JSON.parse(readFileSync(manualPath, 'utf8'))) {
-            const parts = prefix.split('.');
-            if (parts.length >= 2) namespaces.add(parts.slice(0, 2).join('.'));
+    const resolveSpecifier = (fromRel, spec) => {
+        let base;
+        if (spec.startsWith('@/')) base = `src/${spec.slice(2)}`;
+        else if (spec.startsWith('.')) {
+            const dir = fromRel.split('/').slice(0, -1);
+            for (const part of spec.split('/')) {
+                if (part === '.') continue;
+                else if (part === '..') dir.pop();
+                else dir.push(part);
+            }
+            base = dir.join('/');
+        } else return undefined; // 외부 패키지
+        for (const cand of [
+            base,
+            `${base}.ts`,
+            `${base}.tsx`,
+            `${base}/index.ts`,
+            `${base}/index.tsx`,
+        ]) {
+            if (sources.has(cand)) return cand;
+        }
+        return undefined;
+    };
+
+    const importsOf = rel => {
+        const code = sources.get(rel) ?? '';
+        const specs = [];
+        // 정적 import와 `next/dynamic(() => import('...'))` 둘 다 따라간다.
+        for (const m of code.matchAll(/from\s+'([^']+)'/g)) specs.push(m[1]);
+        for (const m of code.matchAll(/import\(\s*'([^']+)'\s*\)/g))
+            specs.push(m[1]);
+        return specs
+            .map(spec => resolveSpecifier(rel, spec))
+            .filter(target => target !== undefined);
+    };
+
+    return { sources, importsOf };
+}
+
+/**
+ * 진입점들에서 도달 가능한 **클라이언트 번들 파일** 집합.
+ *
+ * `'use client'` 파일**과 그 파일이 import하는 모든 모듈**이다. 디렉티브만 보면
+ * `BacktestCaseCard.tsx`처럼 디렉티브 없이 클라이언트 컴포넌트에 끌려 들어가는
+ * 파일을 통째로 놓친다 — 실측 2,590건 `MISSING_MESSAGE`가 그렇게 났다
+ * (빌드는 EXIT=0이었다).
+ */
+function clientClosure(graph, entryPoints) {
+    const { sources, importsOf } = graph;
+    // 1패스: 진입점에서 도달 가능한 전부를 훑어 `'use client'` 경계를 찾는다.
+    const reachable = new Set(entryPoints);
+    const queue = [...entryPoints];
+    while (queue.length > 0) {
+        for (const target of importsOf(queue.pop())) {
+            if (!reachable.has(target)) {
+                reachable.add(target);
+                queue.push(target);
+            }
         }
     }
-    return namespaces;
+    // 2패스: 그 경계에서 다시 전이 폐포를 구한다.
+    const client = new Set();
+    const clientQueue = [];
+    for (const rel of reachable) {
+        const code = sources.get(rel) ?? '';
+        if (/^\s*(['"])use client\1/m.test(code.slice(0, 400))) {
+            client.add(rel);
+            clientQueue.push(rel);
+        }
+    }
+    while (clientQueue.length > 0) {
+        for (const target of importsOf(clientQueue.pop())) {
+            if (!client.has(target)) {
+                client.add(target);
+                clientQueue.push(target);
+            }
+        }
+    }
+    return client;
 }
+
+/**
+ * 파일 집합이 참조하는 카탈로그 키.
+ *
+ * ⚠️ **동적 키를 쓰는 파일은 좁히지 않는다.** `t(item.labelKey)`처럼 키가
+ * 변수로 오는 곳은 정적으로 볼 수 없고, 빠뜨리면 빌드·타입체크·테스트를 모두
+ * 통과한 채 화면에서만 `MISSING_MESSAGE`가 된다(실측 5,184건 전례). 그런
+ * 파일의 네임스페이스는 통째로 유지하고, 리터럴만 쓰는 파일만 키 단위로 좁힌다.
+ *
+ * 번역자 변수 이름은 **선언에서 뽑는다.** `/\bt\w*\(/` 같은 이름 형태 휴리스틱은
+ * `then(`·`toFixed(`·`toLocaleString(`·`trimTrailingZeros(`를 전부 동적 키로
+ * 오인해, 38개 네임스페이스 중 37개를 통째로 실었다(실측 5,454바이트 낭비).
+ */
+function keysForFiles(graph, files) {
+    const keys = new Set();
+    const wideNamespaces = new Set();
+    for (const relPath of files) {
+        const code = graph.sources.get(relPath) ?? '';
+        if (!/\bt\w*\(/.test(code)) continue;
+
+        const translatorNames = new Set();
+        for (const m of code.matchAll(
+            /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:await\s+)?(?:useTranslations|getTranslations)\s*\(/g
+        )) {
+            translatorNames.add(m[1]);
+        }
+        if (translatorNames.size === 0) continue;
+        const names = [...translatorNames].join('|');
+
+        const fileNamespaces = new Set([namespaceFor(relPath)]);
+        for (const m of code.matchAll(/useTranslations\(\s*'([^']+)'/g)) {
+            fileNamespaces.add(m[1]);
+        }
+
+        if (new RegExp(`\\b(?:${names})\\(\\s*(?!['"])[A-Za-z_$]`).test(code)) {
+            for (const ns of fileNamespaces) wideNamespaces.add(ns);
+            continue;
+        }
+
+        for (const m of code.matchAll(
+            new RegExp(`\\b(?:${names})\\(\\s*'([A-Za-z0-9_.$-]+)'`, 'g')
+        )) {
+            const literal = m[1];
+            if (literal.split('.').length >= 3) keys.add(literal);
+            else for (const ns of fileNamespaces) keys.add(`${ns}.${literal}`);
+        }
+    }
+    return { keys, wideNamespaces };
+}
+
 let replacedCount = 0;
 let filesChanged = 0;
 
@@ -387,22 +489,145 @@ if (WRITE) {
     writeFileSync(target, JSON.stringify(nested, null, 4) + '\n');
 
     mkdirSync(`${ROOT}/messages/_meta`, { recursive: true });
-    writeFileSync(
-        `${ROOT}/messages/_meta/skips.json`,
-        JSON.stringify(skips, null, 4) + '\n'
-    );
     /**
-     * 루트 클라이언트 프로바이더에 실어야 할 네임스페이스.
-     *
-     * `'use client'` 파일이 쓰는 것만 모은다 — 서버 컴포넌트는 프로바이더가
-     * 아니라 요청 설정에서 메시지를 읽으므로 클라이언트로 보낼 필요가 없다.
-     * 손으로 관리하면 새 클라이언트 컴포넌트가 추가될 때마다 빠뜨리고,
-     * 그 누락은 런타임에 `MISSING_MESSAGE`로만 드러난다(빌드는 통과한다).
+     * `--only`는 트리의 일부만 스캔하므로 `skips`가 그 하위집합만 담는다.
+     * 그대로 덮어쓰면 전체 목록이 잘린다 — 실측: `--only src/widgets/layout`이
+     * 1,787개를 4개로 만들었다. `--only`는 `lint.mjs`가 안내하는 정식 보수
+     * 경로라 실제로 자주 쓰인다. `ko.json`·`clientKeys.json`은 항상 전체 트리를
+     * 스캔하므로 영향이 없고, 이 파일만 부분 결과에 취약하다.
      */
+    if (onlyPrefix === null) {
+        writeFileSync(
+            `${ROOT}/messages/_meta/skips.json`,
+            JSON.stringify(skips, null, 4) + '\n'
+        );
+    } else {
+        console.log(
+            'skips.json은 --only 실행에서 갱신하지 않는다(부분 스캔 결과로 전체를 덮으면 잘린다).'
+        );
+    }
+    /**
+     * 라우트별 클라이언트 키.
+     *
+     * 루트 프로바이더 하나에 전 라우트 키의 합집합을 실으면 `/login`·`/terms`
+     * 같은 가벼운 페이지가 `widgets.options`·`views.symbol`·`widgets.chat`을
+     * 통째로 들고 다닌다. 실측: 전 라우트에 24,299바이트가 동일하게 실려
+     * first-load JS +28%, RSC prefetch +45.8%였다.
+     */
+    const graph = buildModuleGraph(ROOT);
+    const ko = JSON.parse(readFileSync(`${ROOT}/messages/ko.json`, 'utf8'));
+    const exists = path =>
+        path
+            .split('.')
+            .reduce(
+                (node, seg) => (node == null ? undefined : node[seg]),
+                ko
+            ) !== undefined;
+    const manual = existsSync(`${ROOT}/messages/_meta/manualKeys.json`)
+        ? JSON.parse(
+              readFileSync(`${ROOT}/messages/_meta/manualKeys.json`, 'utf8')
+          )
+        : [];
+    const serialize = ({ keys, wideNamespaces }, extraWide = []) => ({
+        keys: [...keys].filter(exists).sort(),
+        wideNamespaces: [...new Set([...wideNamespaces, ...extraWide])].sort(),
+    });
+
+    /**
+     * 수동 키는 변수로 넘겨져 정적 스캔에 안 잡힌다(`t(vertical.labelKey)`).
+     * 어느 라우트가 쓰는지도 알 수 없으므로 **크롬에** 둔다 — 내비게이션·카테고리
+     * 라벨이라 실제로 전역이다.
+     */
+    const manualWide = manual
+        .map(prefix => prefix.split('.'))
+        .filter(parts => parts.length >= 2)
+        .map(parts => parts.slice(0, 2).join('.'));
+
+    const APP = 'src/app/[locale]';
+    const BOUNDARY_FILES = [
+        'error.tsx',
+        'loading.tsx',
+        'not-found.tsx',
+        'template.tsx',
+    ];
+
+    /**
+     * 어떤 라우트 파일이 **어느 프로바이더 아래에서 렌더되는지** 정한다.
+     *
+     * `error.tsx`/`loading.tsx`/`not-found.tsx`는 자기 세그먼트의 **가장 가까운
+     * 조상 `layout.tsx`** 안에서 렌더된다. 같은 디렉터리에 `page.tsx`가 있는지와
+     * 무관하다. 이걸 디렉터리 기준으로만 모으면 두 가지가 새어 나간다:
+     *  - `[locale]/error.tsx`가 소비자 없는 `routes['.']`에 들어간다
+     *    (홈은 자기 세그먼트 레이아웃이 없어 크롬 프로바이더를 쓴다)
+     *  - `[locale]/share/error.tsx`는 `share/`에 `page.tsx`가 없어 **아무 데도**
+     *    안 들어간다
+     * 실측: 두 에러 경계가 `app.home.error.80dac7` 같은 **원시 키를 `<h1>`으로**
+     * 렌더했다 — 한국어 사용자 포함 전 로케일에서. 라운드 2 좁히기가 만든 회귀다.
+     */
+    const nearestLayoutRoute = relPath => {
+        let dir = relPath.slice(0, relPath.lastIndexOf('/'));
+        while (dir.length > APP.length) {
+            if (graph.sources.has(`${dir}/layout.tsx`)) {
+                return dir.slice(APP.length + 1);
+            }
+            dir = dir.slice(0, dir.lastIndexOf('/'));
+        }
+        return null; // 크롬(`[locale]/layout.tsx`) 아래
+    };
+
+    const boundaryFiles = candidateSourceFiles(ROOT).filter(
+        rel =>
+            rel.startsWith(`${APP}/`) &&
+            BOUNDARY_FILES.includes(rel.slice(rel.lastIndexOf('/') + 1))
+    );
+
+    /**
+     * 크롬 = 루트 레이아웃 서브트리 + 홈 페이지 + **크롬 아래에서 렌더되는 경계 파일**.
+     *
+     * 홈은 `[locale]/page.tsx`라 자기 세그먼트 디렉터리가 없어 전용 레이아웃을 둘
+     * 수 없다(라우트 그룹으로 옮기면 테스트 import 경로가 전부 깨진다).
+     */
+    const chromeEntries = [
+        `${APP}/layout.tsx`,
+        `${APP}/page.tsx`,
+        ...boundaryFiles.filter(rel => nearestLayoutRoute(rel) === null),
+    ];
+    const chrome = serialize(
+        keysForFiles(graph, clientClosure(graph, chromeEntries)),
+        manualWide
+    );
+
+    const routes = {};
+    for (const rel of candidateSourceFiles(ROOT)) {
+        if (!/^src\/app\/\[locale\]\/.*page\.tsx$/.test(rel)) continue;
+        const routeId =
+            rel.replace(`${APP}/`, '').replace(/\/?page\.tsx$/, '') || '.';
+        // 홈은 크롬 프로바이더를 쓰므로 별도 엔트리가 필요 없다.
+        if (routeId === '.') continue;
+        const entries = [
+            rel,
+            `${rel.slice(0, rel.lastIndexOf('/'))}/layout.tsx`,
+            ...boundaryFiles.filter(f => nearestLayoutRoute(f) === routeId),
+        ].filter(candidate => graph.sources.has(candidate));
+        const entry = serialize(
+            keysForFiles(graph, clientClosure(graph, entries))
+        );
+        /**
+         * 크롬 키를 빼지 않는다. 중첩 `NextIntlClientProvider`는 부모 메시지를
+         * **상속하지 않고 교체**한다(`use-intl/react.js`의
+         * `messages === undefined ? prevContext?.messages : messages`).
+         */
+        routes[routeId] = {
+            keys: [...new Set([...chrome.keys, ...entry.keys])].sort(),
+            wideNamespaces: [
+                ...new Set([...chrome.wideNamespaces, ...entry.wideNamespaces]),
+            ].sort(),
+        };
+    }
+
     writeFileSync(
-        `${ROOT}/messages/_meta/clientNamespaces.json`,
-        JSON.stringify([...collectClientNamespaces(ROOT)].sort(), null, 4) +
-            '\n'
+        `${ROOT}/messages/_meta/clientKeys.json`,
+        JSON.stringify({ chrome, routes }, null, 4) + '\n'
     );
 }
 

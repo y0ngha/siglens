@@ -16,7 +16,7 @@ import { render, screen } from '@testing-library/react';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import {
-    metadata,
+    generateMetadata,
     OnboardingGuard,
     OnboardingSkeleton,
 } from '@/app/[locale]/onboarding/page';
@@ -25,17 +25,26 @@ const mockGetCurrentUser = vi.mocked(getCurrentUser);
 const mockRedirect = vi.mocked(redirect);
 
 describe('Onboarding page', () => {
-    it('exports metadata with onboarding title', () => {
+    it('exports metadata with onboarding title', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
         expect(metadata.title).toBe('보유종목 등록');
     });
 
-    it('sets robots to noindex, nofollow', () => {
+    it('sets robots to noindex, nofollow', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
         expect(metadata.robots).toEqual(
             expect.objectContaining({ index: false, follow: false })
         );
     });
 
-    it('includes canonical URL', () => {
+    it('includes canonical URL', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
         expect(metadata.alternates?.canonical).toBe(
             'https://siglens.io/onboarding'
         );

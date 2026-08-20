@@ -10,20 +10,29 @@ vi.mock('@/shared/lib/seo', () => ({
 }));
 vi.mock('next/link', () => ({ default: () => null }));
 
-import { metadata } from '@/app/[locale]/forgot-password/page';
+import { generateMetadata } from '@/app/[locale]/forgot-password/page';
 
 describe('ForgotPassword page', () => {
-    it('exports metadata with forgot-password title', () => {
+    it('exports metadata with forgot-password title', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
         expect(metadata.title).toBe('비밀번호 찾기');
     });
 
-    it('sets robots to noindex', () => {
+    it('sets robots to noindex', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
         expect(metadata.robots).toEqual(
             expect.objectContaining({ index: false })
         );
     });
 
-    it('includes canonical URL', () => {
+    it('includes canonical URL', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
         expect(metadata.alternates?.canonical).toBe(
             'https://siglens.io/forgot-password'
         );
