@@ -33,6 +33,20 @@ LOW_EMAIL="${ALARM_EMAIL_LOW:-${ALARM_EMAIL:-}}"
 # 판정 기준: "이 알람을 받고 지금 하던 일을 멈출 것인가?" 아니면 P2다.
 P1="--alarm-actions $ALARM_SNS --ok-actions $ALARM_SNS"
 P2="--alarm-actions $ALARM_SNS_LOW"
+# ⚠️ 모든 로그 메트릭 필터에 `defaultValue=0`이 붙어 있다. 빼면 안 된다.
+#
+# 로그 메트릭 필터는 매칭되는 줄이 있을 때만 값을 발행한다. 그래서 장애가 **끝나면**
+# 로그가 멎고 데이터포인트가 사라지는데, 그러면 알람이 마지막 평가(ALARM)에 고착된다.
+# `--treat-missing-data notBreaching`도 이걸 못 푼다 — 이미 ALARM인 알람을 OK로
+# 되돌리려면 새 데이터포인트가 있어야 하기 때문이다.
+#
+# 2026-08-20 실측: DeepSeek 402가 08:51에 멎은 뒤 `siglens-seo-prewarm-unit-error`가
+# 9시간 45분 전 데이터포인트를 계속 인용하며 ALARM에 머물렀다. 수동으로 OK를 넣어도
+# CloudWatch가 재평가하며 같은 옛 데이터로 다시 ALARM을 만들었다.
+#
+# `defaultValue=0`이면 매칭 없는 구간에도 0이 발행돼 결측 자체가 사라지고,
+# 장애 종료와 함께 알람이 스스로 OK로 돌아온다.
+
 # ── 인그레스·앱 생존 (P1) ────────────────────────────────────────────────────
 #
 # 2026-08 ALB 제거로 `siglens-alb-5xx`(60일간 2회, 둘 다 5분 자가복구라 런북이 이미
@@ -51,7 +65,7 @@ P2="--alarm-actions $ALARM_SNS_LOW"
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-tunnel-down \
   --filter-pattern '"[cloudflared-down]"' \
-  --metric-transformations metricName=TunnelDown,metricNamespace=Siglens/Ingress,metricValue=1
+  --metric-transformations metricName=TunnelDown,metricNamespace=Siglens/Ingress,metricValue=1,defaultValue=0
 aws cloudwatch put-metric-alarm --alarm-name siglens-tunnel-down --namespace Siglens/Ingress \
   --metric-name TunnelDown --statistic Sum --period 300 --evaluation-periods 1 --threshold 0 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P1
@@ -61,7 +75,7 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-tunnel-down --namespace Sig
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-app-unhealthy \
   --filter-pattern '"[selfcheck]"' \
-  --metric-transformations metricName=AppUnhealthy,metricNamespace=Siglens/Ingress,metricValue=1
+  --metric-transformations metricName=AppUnhealthy,metricNamespace=Siglens/Ingress,metricValue=1,defaultValue=0
 aws cloudwatch put-metric-alarm --alarm-name siglens-app-unhealthy --namespace Siglens/Ingress \
   --metric-name AppUnhealthy --statistic Sum --period 300 --evaluation-periods 1 --threshold 0 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P1
@@ -120,7 +134,7 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-mem-high --namespace CWAgen
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-isr-cache-failures \
   --filter-pattern '?"[isr-cache] s3 get failed" ?"[isr-cache] s3 set failed"' \
-  --metric-transformations metricName=IsrCacheFailures,metricNamespace=Siglens/ISRCache,metricValue=1
+  --metric-transformations metricName=IsrCacheFailures,metricNamespace=Siglens/ISRCache,metricValue=1,defaultValue=0
 # 5분간 5건 초과 = 산발적 S3 hiccup(정상 재생성)이 아니라 지속 실패 → 캐시 사실상 죽음.
 aws cloudwatch put-metric-alarm --alarm-name siglens-isr-cache-failures --namespace Siglens/ISRCache \
   --metric-name IsrCacheFailures --statistic Sum --period 300 --evaluation-periods 1 --threshold 5 \
@@ -160,7 +174,7 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-isr-cache-failures --namesp
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-seed-bars-failed \
   --filter-pattern '"getSeedBarsStatic failed"' \
-  --metric-transformations metricName=SeedBarsFailed,metricNamespace=Siglens/Bars,metricValue=1
+  --metric-transformations metricName=SeedBarsFailed,metricNamespace=Siglens/Bars,metricValue=1,defaultValue=0
 # 5분간 5건 초과 = 산발적 FMP blip이 아니라 지속 실패 → 종목 페이지가 광범위하게 degrade.
 aws cloudwatch put-metric-alarm --alarm-name siglens-seed-bars-failed --namespace Siglens/Bars \
   --metric-name SeedBarsFailed --statistic Sum --period 300 --evaluation-periods 1 --threshold 5 \
@@ -175,7 +189,7 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-seed-bars-failed --namespac
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-redis-cache-failures \
   --filter-pattern '?"[getOrSetCache] get failed" ?"[getOrSetCache] set failed"' \
-  --metric-transformations metricName=RedisCacheFailures,metricNamespace=Siglens/ISRCache,metricValue=1
+  --metric-transformations metricName=RedisCacheFailures,metricNamespace=Siglens/ISRCache,metricValue=1,defaultValue=0
 # 5분간 10건 초과 = 산발적 네트워크 blip이 아니라 지속 실패. getOrSetCache는 키마다
 # 로그를 남기므로(스로틀 없음) s3 필터의 5보다 임계값을 높게 잡는다.
 aws cloudwatch put-metric-alarm --alarm-name siglens-redis-cache-failures --namespace Siglens/ISRCache \
@@ -195,7 +209,7 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-redis-cache-failures --name
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-isr-tag-failures \
   --filter-pattern '?"[isr-cache] tag sync failed" ?"[isr-cache] tag publish failed" ?"[isr-cache] tag prune failed"' \
-  --metric-transformations metricName=IsrTagFailures,metricNamespace=Siglens/ISRCache,metricValue=1
+  --metric-transformations metricName=IsrTagFailures,metricNamespace=Siglens/ISRCache,metricValue=1,defaultValue=0
 aws cloudwatch put-metric-alarm --alarm-name siglens-isr-tag-failures --namespace Siglens/ISRCache \
   --metric-name IsrTagFailures --statistic Sum --period 900 --evaluation-periods 2 --threshold 5 \
   --comparison-operator GreaterThanOrEqualToThreshold --treat-missing-data notBreaching $P2
@@ -217,7 +231,7 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-isr-tag-failures --namespac
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-analysis-stream-failed \
   --filter-pattern '"[analysis-stream] failed"' \
-  --metric-transformations metricName=AnalysisStreamFailed,metricNamespace=Siglens/Analysis,metricValue=1
+  --metric-transformations metricName=AnalysisStreamFailed,metricNamespace=Siglens/Analysis,metricValue=1,defaultValue=0
 aws cloudwatch put-metric-alarm --alarm-name siglens-analysis-stream-failed --namespace Siglens/Analysis \
   --metric-name AnalysisStreamFailed --statistic Sum --period 900 --evaluation-periods 2 --threshold 2 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P1
@@ -233,7 +247,7 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-analysis-stream-failed --na
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-node-heap-oom \
   --filter-pattern '"JavaScript heap out of memory"' \
-  --metric-transformations metricName=NodeHeapOom,metricNamespace=Siglens/Runtime,metricValue=1
+  --metric-transformations metricName=NodeHeapOom,metricNamespace=Siglens/Runtime,metricValue=1,defaultValue=0
 aws cloudwatch put-metric-alarm --alarm-name siglens-node-heap-oom --namespace Siglens/Runtime \
   --metric-name NodeHeapOom --statistic Sum --period 3600 --evaluation-periods 1 --threshold 0 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P1
@@ -254,7 +268,7 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-node-heap-oom --namespace S
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-fear-greed-loader-failed \
   --filter-pattern '"[FearGreedRoute] getMarketFearGreedStatic failed"' \
-  --metric-transformations metricName=FearGreedLoaderFailed,metricNamespace=Siglens/MarketFearGreed,metricValue=1
+  --metric-transformations metricName=FearGreedLoaderFailed,metricNamespace=Siglens/MarketFearGreed,metricValue=1,defaultValue=0
 aws cloudwatch put-metric-alarm --alarm-name siglens-fear-greed-loader-failed --namespace Siglens/MarketFearGreed \
   --metric-name FearGreedLoaderFailed --statistic Sum --period 3600 --evaluation-periods 2 --threshold 4 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P2
@@ -267,7 +281,7 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-fear-greed-loader-failed --
 # 실패 모드가 미국보다 넓다: yahoo가 무인증이라 429가 나고, KRX ETF 5종 중 하나가
 # 상장폐지되면 `fetchKrDailyCloses`가 던져 200 + "표본이 부족합니다" + noindex가
 # 매시 재생성마다 똑같이 굳는다. 임계값 근거는 미국과 동일(렌더 1회당 로그 2줄).
-aws logs put-metric-filter --log-group-name /siglens/app   --filter-name siglens-fear-greed-kr-loader-failed   --filter-pattern '"[FearGreedKrRoute] getMarketFearGreedKrStatic failed"'   --metric-transformations metricName=FearGreedKrLoaderFailed,metricNamespace=Siglens/MarketFearGreed,metricValue=1
+aws logs put-metric-filter --log-group-name /siglens/app   --filter-name siglens-fear-greed-kr-loader-failed   --filter-pattern '"[FearGreedKrRoute] getMarketFearGreedKrStatic failed"'   --metric-transformations metricName=FearGreedKrLoaderFailed,metricNamespace=Siglens/MarketFearGreed,metricValue=1,defaultValue=0
 aws cloudwatch put-metric-alarm --alarm-name siglens-fear-greed-kr-loader-failed --namespace Siglens/MarketFearGreed \
   --metric-name FearGreedKrLoaderFailed --statistic Sum --period 3600 --evaluation-periods 2 --threshold 4 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P2
@@ -283,7 +297,7 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-fear-greed-kr-loader-failed
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-naver-news-failed \
   --filter-pattern '?"NAVER_CLIENT_ID/SECRET" ?"non-OK response"' \
-  --metric-transformations metricName=NaverNewsFailed,metricNamespace=Siglens/News,metricValue=1
+  --metric-transformations metricName=NaverNewsFailed,metricNamespace=Siglens/News,metricValue=1,defaultValue=0
 aws cloudwatch put-metric-alarm --alarm-name siglens-naver-news-failed --namespace Siglens/News \
   --metric-name NaverNewsFailed --statistic Sum --period 3600 --evaluation-periods 1 --threshold 0 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P2
@@ -295,7 +309,7 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-naver-news-failed --namespa
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-market-kr-loader-failed \
   --filter-pattern '"[MarketContent:kr]"' \
-  --metric-transformations metricName=MarketKrLoaderFailed,metricNamespace=Siglens/Market,metricValue=1
+  --metric-transformations metricName=MarketKrLoaderFailed,metricNamespace=Siglens/Market,metricValue=1,defaultValue=0
 aws cloudwatch put-metric-alarm --alarm-name siglens-market-kr-loader-failed --namespace Siglens/Market \
   --metric-name MarketKrLoaderFailed --statistic Sum --period 3600 --evaluation-periods 2 --threshold 4 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P2
@@ -308,7 +322,7 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-market-kr-loader-failed --n
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-kr-calendar-horizon-expired \
   --filter-pattern '"[KR_EQUITY_SESSION]"' \
-  --metric-transformations metricName=KrCalendarHorizonExpired,metricNamespace=Siglens/Market,metricValue=1
+  --metric-transformations metricName=KrCalendarHorizonExpired,metricNamespace=Siglens/Market,metricValue=1,defaultValue=0
 aws cloudwatch put-metric-alarm --alarm-name siglens-kr-calendar-horizon-expired --namespace Siglens/Market \
   --metric-name KrCalendarHorizonExpired --statistic Sum --period 3600 --evaluation-periods 1 --threshold 0 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P2
@@ -330,7 +344,7 @@ log "alarms: P1(즉시)=5xx, unhealthy, disk, heap-oom, analysis-stream, capacit
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-client-error \
   --filter-pattern '"[client-error]"' \
-  --metric-transformations metricName=ClientError,metricNamespace=Siglens/Client,metricValue=1
+  --metric-transformations metricName=ClientError,metricNamespace=Siglens/Client,metricValue=1,defaultValue=0
 
 
 # ── 사후 점검 ────────────────────────────────────────────────────────────────
