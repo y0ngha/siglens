@@ -249,7 +249,7 @@ done
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-seo-prewarm-batch-failed \
   --filter-pattern '"[seo-prewarm] batch failed"' \
-  --metric-transformations metricName=SeoPrewarmBatchFailed,metricNamespace=Siglens/SeoPrewarm,metricValue=1 \
+  --metric-transformations metricName=SeoPrewarmBatchFailed,metricNamespace=Siglens/SeoPrewarm,metricValue=1,defaultValue=0 \
   --region "$REGION" || true
 # 1시간에 3회 초과 = 산발적 hiccup이 아니라 지속 실패.
 aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-batch-failed \
@@ -274,7 +274,7 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-batch-failed \
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-seo-prewarm-redis-unavailable \
   --filter-pattern '"[seo-prewarm] redis unavailable"' \
-  --metric-transformations metricName=SeoPrewarmRedisUnavailable,metricNamespace=Siglens/SeoPrewarm,metricValue=1 \
+  --metric-transformations metricName=SeoPrewarmRedisUnavailable,metricNamespace=Siglens/SeoPrewarm,metricValue=1,defaultValue=0 \
   --region "$REGION" || true
 # 1시간에 1회라도 발생하면 신호(락 자체를 못 잡는 상태라 배치가 전혀 안 돈다).
 aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-redis-unavailable \
@@ -310,7 +310,7 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-redis-unavailab
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-seo-prewarm-unit-error \
   --filter-pattern '?"[seo-prewarm] unit-error" ?"[seo-prewarm] unit-timeout"' \
-  --metric-transformations metricName=SeoPrewarmUnitError,metricNamespace=Siglens/SeoPrewarm,metricValue=1 \
+  --metric-transformations metricName=SeoPrewarmUnitError,metricNamespace=Siglens/SeoPrewarm,metricValue=1,defaultValue=0 \
   --region "$REGION" || true
 aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-unit-error \
   --namespace Siglens/SeoPrewarm --metric-name SeoPrewarmUnitError \
@@ -329,7 +329,7 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-unit-error \
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-seo-prewarm-deadline-reached \
   --filter-pattern '"[seo-prewarm] batch deadline reached"' \
-  --metric-transformations metricName=SeoPrewarmDeadlineReached,metricNamespace=Siglens/SeoPrewarm,metricValue=1 \
+  --metric-transformations metricName=SeoPrewarmDeadlineReached,metricNamespace=Siglens/SeoPrewarm,metricValue=1,defaultValue=0 \
   --region "$REGION" || true
 aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-deadline-reached \
   --namespace Siglens/SeoPrewarm --metric-name SeoPrewarmDeadlineReached \
