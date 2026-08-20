@@ -1,5 +1,6 @@
 import 'server-only';
-import { callDeepseekChat, parseJsonResponse } from '@/entities/llm-provider';
+import { DISABLED_THINKING_BUDGET } from '@y0ngha/siglens-core';
+import { callGeminiChat, parseJsonResponse } from '@/entities/llm-provider';
 import { tryReadTranslatorConfig } from './config';
 import type { TranslatorConfig, TranslatorEntry } from '../model';
 
@@ -25,35 +26,33 @@ function isStringRecord(value: unknown): value is Record<string, string> {
 }
 
 /**
- * Calls DeepSeek with the server key (`DEEPSEEK_API_KEY` — see
+ * Calls Gemini with the server key (`GEMINI_API_KEY` — see
  * `tryReadTranslatorConfig`).
  *
- * Reasoning is off, but nothing is passed here to turn it off:
- * `callDeepseekChat` derives `thinking` from `MODEL_SPECS[model].thinking`,
- * and `config.ts` defaults to `deepseek-v4-flash` whose spec has it `false`.
- * That is the intent — company name / description → Korean is a deterministic
- * transformation with no quality gain from extended thinking, only latency
- * and cost. (The old Gemini path had to send an explicit `thinkingBudget: 0`
- * for the same effect, plus an allow-list of models that accepted the literal
- * 0; DeepSeek needs neither.)
+ * Always sends an explicit `DISABLED_THINKING_BUDGET` (0) — company name /
+ * description → Korean is a deterministic transformation with no quality gain
+ * from extended thinking, only latency and cost. `config.ts` validates
+ * `TRANSLATE_MODEL` with `supportsDisabledThinking` so only a model that is
+ * live-verified to accept the literal 0 ever reaches this call; an unsupported
+ * one would reject it with a 400 ("This model only works in thinking mode").
  *
- * ⚠️ The chat adapter deliberately does NOT set
- * `response_format: { type: 'json_object' }` — it is shared with the chatbot,
- * which must emit prose. `translateCompanyNames` therefore relies on the
- * prompt asking for bare JSON plus `parseJsonResponse`'s fence-stripping and
- * `jsonrepair` salvage. A malformed response degrades to `{}` (English names)
- * rather than throwing.
+ * ⚠️ The chat adapter deliberately does NOT request a JSON response mode — it
+ * is shared with the chatbot, which must emit prose. `translateCompanyNames`
+ * therefore relies on the prompt asking for bare JSON plus
+ * `parseJsonResponse`'s fence-stripping and `jsonrepair` salvage. A malformed
+ * response degrades to `{}` (English names) rather than throwing.
  */
-async function callTranslateDeepseek(
+async function callTranslateGemini(
     config: TranslatorConfig,
     contents: string
 ): Promise<string> {
-    return callDeepseekChat({
+    return callGeminiChat({
         apiKey: config.apiKey,
         // Distinguishes translator spend from chat spend in `[Usage]` telemetry.
         jobId: 'translate',
         model: config.model,
         contents,
+        thinkingBudget: DISABLED_THINKING_BUDGET,
     });
 }
 
@@ -66,7 +65,7 @@ export async function translateCompanyNames(
     if (!config) return {};
 
     try {
-        const text = await callTranslateDeepseek(
+        const text = await callTranslateGemini(
             config,
             buildTranslatePrompt(entries)
         );
@@ -94,7 +93,7 @@ export async function translateCompanyDescription(
     if (!config) return null;
 
     try {
-        const text = await callTranslateDeepseek(
+        const text = await callTranslateGemini(
             config,
             buildDescriptionTranslatePrompt(description)
         );
