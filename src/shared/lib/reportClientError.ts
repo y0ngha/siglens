@@ -17,6 +17,12 @@ const MAX_STACK_CHARS = 1200;
 /** 메시지 상한. 스택과 합쳐도 라우트의 4KB 안에 들어간다. */
 const MAX_MESSAGE_CHARS = 500;
 
+/**
+ * User-Agent 상한. 정상 UA는 150자 안쪽이고, 확장 프로그램이 늘려 붙인 긴 UA도
+ * 여기서 잘려 라우트의 4KB 상한을 위협하지 못한다.
+ */
+const MAX_UA_CHARS = 200;
+
 let sent = 0;
 
 /**
@@ -96,15 +102,32 @@ export function reportClientError(
     if (sent >= MAX_REPORTS_PER_LOAD) return;
     sent += 1;
 
-    const body = JSON.stringify({
-        context,
-        digest,
-        // 쿼리스트링은 버린다 — 개인정보가 실릴 수 있고 집계에 쓰지도 않는다.
-        path: window.location.pathname,
-        ...describe(error),
-    });
-
     try {
+        // 본문 생성까지 try 안에 둔다. 이 함수는 이미 무언가 잘못된 상황에서 불리므로
+        // **여기서 던지면 호출부(에러 핸들러·effect)를 한 번 더 깨뜨린다.**
+        // `navigator`의 필드는 환경에 따라 비어 있을 수 있다.
+        const body = JSON.stringify({
+            context,
+            digest,
+            // 쿼리스트링은 버린다 — 개인정보가 실릴 수 있고 집계에 쓰지도 않는다.
+            path: window.location.pathname,
+            /**
+             * 하이드레이션 불일치(React #418) 원인 분해용.
+             *
+             * 프로덕션 스택은 react-dom 내부 프레임뿐이라 어느 컴포넌트인지 알 수 없다.
+             * 실제로 그 경로들(`/SOXL/news`, `/403870.KQ/news`, `/economy`,
+             * `/HON/financials`)을 dev 빌드로 열어 봐도 경고가 재현되지 않았다 — 우리
+             * 마크업이 아니라 **확장 프로그램·브라우저 자동번역이 DOM을 건드려** 생기는
+             * 부류가 남는다. UA와 언어만 있으면 다음 발생 때 그쪽인지 아닌지 갈린다.
+             *
+             * 둘 다 진단 정보이고, 라우트가 로그 한 줄로만 남기므로(별도 저장·전송 없음)
+             * 보존 범위는 기존 필드와 같다.
+             */
+            ua: navigator.userAgent.slice(0, MAX_UA_CHARS),
+            lang: navigator.language,
+            ...describe(error),
+        });
+
         navigator.sendBeacon(
             '/api/client-error',
             new Blob([body], { type: 'application/json' })
