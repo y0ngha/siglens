@@ -212,7 +212,7 @@ DIRECT_DATABASE_URL='postgresql://siglens:siglens@localhost:5433/siglens_e2e' \
 | 1 | `ALLOW_REMOTE_DB_WRITE=1 yarn db:migrate --until 0029_content_locale` | **코드보다 먼저.** 0029는 additive다(컬럼·인덱스 추가, 기존 unique 유지) — 배포된 구 코드는 `locale`을 모르고 INSERT에서 빼는데 DB 기본값이 채우고, `ON CONFLICT (symbol, tab)`도 그대로 매칭된다(로컬 Postgres 17 실증). `--until`이 없으면 0030까지 적용된다. |
 | 2 | 코드 배포 | 이 시점에 컬럼과 3열 unique가 이미 있다. |
 | 3 | `ALLOW_REMOTE_DB_WRITE=1 yarn db:migrate` (0030) | 전 인스턴스가 새 코드다 = `ON CONFLICT` 타깃이 `(symbol, tab, locale)`뿐이다. 이제 구 unique를 지워도 안전하고, **비-ko 스냅샷이 쓰이기 전에 지워야** 한다. |
-| 4 | `yarn db:backfill:content-locale --apply` | 한국어 컬럼 → 사이드카 `ko` 행. |
+| 4 | `yarn db:backfill:content-locale --since 6m --apply` | 한국어 컬럼 → 사이드카 `ko` 행. **창을 반드시 정한다** — 아래 실측 참조. |
 | 5 | `yarn db:translate:content-locale --locale <en\|ja\|zh> --apply` | **비-ko 행을 만드는 유일한 단계.** `GEMINI_API_KEY` 필요. |
 | 6 | `yarn db:verify:content-locale` | 읽기 전용 점검. 실패 시 exit 1이라 게이트로 쓴다. |
 | 7 | SSM `DB_CONTENT_LOCALE=1` → instance refresh | 사이드카 읽기 + ISR 키 분리 시작. |
@@ -236,6 +236,29 @@ or exclusion constraint matching the ON CONFLICT specification`)으로 죽는다
 **되돌리기.** 3번을 적용하기 전까지는 코드 롤백이 안전하다. 3번 이후에는
 구 코드로 롤백하면 안 된다 — `ON CONFLICT (symbol, tab)`이 가리킬 인덱스가 없다.
 스위치(`DB_CONTENT_LOCALE`)는 읽기만 가리므로 언제든 내릴 수 있다.
+
+⚠️ **백필·번역 규모 (2026-08-21 운영 DB 실측, 읽기 전용 dry-run)**
+
+| `--since` | 삽입될 ko 행 | × 3로케일 |
+|---|---|---|
+| `1m` | 114,033 | 342,099 |
+| `6m` (기본) | 905,049 | 2,715,147 |
+| `all` | 1,274,300 | 3,822,900 |
+
+`news` 한 테이블이 44만 행(887MB)이고 3필드라 대부분이 여기서 나온다. 창이
+없으면 화면에 절대 나오지 않는 옛 뉴스까지 넣는다 — 읽기 경로는
+`NEWS_LIST_PERIOD_KEY = 'last6Months'`로 6개월만 조회한다. 그래서 기본값이
+`6m`이고, `--since all`은 명시해야 한다.
+
+⛔ **뉴스를 통째로 AI 번역하지 말 것.** 6개월 기준으로도 271만 행이라 비용·시간이
+성립하지 않는다. `db:translate:content-locale`은 `--entity`·`--limit`을 받으므로
+반드시 좁혀서 돌린다. 참고로 **en 뉴스 제목은 번역이 필요 없다** — `news.title_en`이
+원문 영어 제목이고 `resolveNewsTitle`이 그것을 쓴다. 사이드카가 실제로 값을 더하는
+곳은 ja/zh 제목과 AI가 만든 요약·본문이다.
+
+⚠️ **인덱스 잠금은 문제가 아니다.** `seo_analysis_snapshots`는 2,006행(6.5MB)이라
+0029의 `CREATE UNIQUE INDEX`와 0030의 `DROP INDEX`가 밀리초 단위다 —
+`CONCURRENTLY`가 필요 없다. `shared_analyses`는 8행.
 
 ⚠️ **4·5번 없이 7번을 켜도** 화면은 멀쩡하다(사이드카가 비어 폴백). 무동작이지
 오작동이 아니므로, "켰는데 아무것도 안 바뀐다"면 6번 점검으로 백필(4)이

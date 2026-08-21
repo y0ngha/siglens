@@ -37,6 +37,7 @@ import {
     type TranslatableEntity,
 } from '../../src/shared/db/contentTranslationFields';
 import { DEFAULT_LOCALE } from '../../src/shared/i18n/locales';
+import { DEFAULT_SINCE, parseSince } from './lib/backfillWindow';
 
 /** 원본 테이블에서 `(id, field, value)`를 뽑는 SELECT 한 벌. */
 interface BackfillSource {
@@ -52,6 +53,11 @@ interface BackfillSource {
      * 에러를 낸다.
      */
     readonly sql: string;
+    /**
+     * `{WINDOW}` 자리에 끼울 시간 조건의 컬럼. 없으면 창을 적용하지 않는다
+     * (약관·공지처럼 행이 몇 개뿐이거나 시간축이 없는 소스).
+     */
+    readonly timeColumn?: string;
 }
 
 const F = CONTENT_FIELD;
@@ -60,29 +66,31 @@ const SOURCES: readonly BackfillSource[] = [
     {
         entity: TRANSLATABLE_ENTITY.news,
         label: 'news',
+        timeColumn: 'published_at',
         sql: `
             SELECT id, '${F.news.title}' AS field, title_ko AS value
-              FROM news WHERE title_ko IS NOT NULL AND title_ko <> ''
+              FROM news WHERE title_ko IS NOT NULL AND title_ko <> '' AND {WINDOW}
             UNION ALL
             SELECT id, '${F.news.summary}', summary_ko
-              FROM news WHERE summary_ko IS NOT NULL AND summary_ko <> ''
+              FROM news WHERE summary_ko IS NOT NULL AND summary_ko <> '' AND {WINDOW}
             UNION ALL
             SELECT id, '${F.news.body}', body_ko
-              FROM news WHERE body_ko IS NOT NULL AND body_ko <> ''
+              FROM news WHERE body_ko IS NOT NULL AND body_ko <> '' AND {WINDOW}
         `,
     },
     {
         entity: TRANSLATABLE_ENTITY.marketNews,
         label: 'market_news',
+        timeColumn: 'published_at',
         sql: `
             SELECT id, '${F.marketNews.title}' AS field, title_ko AS value
-              FROM market_news WHERE title_ko IS NOT NULL AND title_ko <> ''
+              FROM market_news WHERE title_ko IS NOT NULL AND title_ko <> '' AND {WINDOW}
             UNION ALL
             SELECT id, '${F.marketNews.summary}', summary_ko
-              FROM market_news WHERE summary_ko IS NOT NULL AND summary_ko <> ''
+              FROM market_news WHERE summary_ko IS NOT NULL AND summary_ko <> '' AND {WINDOW}
             UNION ALL
             SELECT id, '${F.marketNews.body}', body_ko
-              FROM market_news WHERE body_ko IS NOT NULL AND body_ko <> ''
+              FROM market_news WHERE body_ko IS NOT NULL AND body_ko <> '' AND {WINDOW}
         `,
     },
     {
@@ -138,12 +146,20 @@ interface BackfillRow {
 
 export async function backfillContentLocale(
     sql: postgres.Sql,
-    apply: boolean
+    apply: boolean,
+    since: string | null = DEFAULT_SINCE
 ): Promise<number> {
     let total = 0;
 
     for (const source of SOURCES) {
-        const rows = (await sql.unsafe(source.sql)) as unknown as BackfillRow[];
+        // 창이 없거나 시간 컬럼이 없는 소스는 조건을 참으로 만들어 통째로 넣는다.
+        const windowSql =
+            since === null || source.timeColumn === undefined
+                ? 'TRUE'
+                : `${source.timeColumn} >= now() - interval '${since}'`;
+        const rows = (await sql.unsafe(
+            source.sql.replaceAll('{WINDOW}', windowSql)
+        )) as unknown as BackfillRow[];
         // 첫 컬럼을 `AS id`로 별칭하지 않으면 `row.id`가 `undefined`가 되고,
         // 드라이버가 `UNDEFINED_VALUE`로 죽는다. 원본 PK 이름이 테이블마다
         // 다르므로(`symbol`·`normalized_name`) 실수하기 쉽고, 그 테이블이 비어
@@ -184,6 +200,14 @@ export async function backfillContentLocale(
 async function main(): Promise<void> {
     const { databaseUrl, target } = readDatabaseUrl();
     const apply = process.argv.includes('--apply');
+    const sinceIdx = process.argv.indexOf('--since');
+    const since = parseSince(
+        sinceIdx === -1 ? null : (process.argv[sinceIdx + 1] ?? null)
+    );
+    console.log(
+        `[backfill] 창: ${since === null ? '전체' : `최근 ${since}`}` +
+            ' (시간 컬럼이 있는 소스에만 적용)'
+    );
     if (!apply) {
         console.log('[backfill] dry-run — 실제로 쓰려면 --apply를 붙일 것');
     } else {
@@ -194,7 +218,7 @@ async function main(): Promise<void> {
 
     const sql = postgres(databaseUrl, { max: 1 });
     try {
-        const total = await backfillContentLocale(sql, apply);
+        const total = await backfillContentLocale(sql, apply, since);
         console.log(
             `[backfill] ${apply ? 'inserted' : 'would insert'} ${total} row(s)`
         );
