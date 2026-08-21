@@ -73,14 +73,23 @@ export function localeCanonical(locale: Locale, path: string): string {
  * @param available 콘텐츠가 준비된 로케일. 미번역 로케일을 광고하면 thin content로
  *                  색인된다.
  */
+/** `Metadata['alternates']`에 그대로 넣는 형태. */
+export interface LocaleAlternatesResult {
+    readonly canonical: string | null;
+    readonly languages?: LanguageAlternates;
+}
+
+/** `localeAlternates`·`localeAlternatesFrom`가 공유하는 선택 인자. */
+export interface LocaleAlternatesOptions {
+    readonly canonical?: string | null;
+    readonly available?: readonly Locale[];
+}
+
 export function localeAlternates(
     locale: Locale,
     path: string,
-    options: {
-        canonical?: string | null;
-        available?: readonly Locale[];
-    } = {}
-): { canonical: string | null; languages?: LanguageAlternates } {
+    options: LocaleAlternatesOptions = {}
+): LocaleAlternatesResult {
     const canonical =
         options.canonical === undefined
             ? localeCanonical(locale, path)
@@ -113,11 +122,8 @@ export function localeAlternates(
 export async function localeAlternatesFrom(
     params: Promise<{ locale: string }>,
     path: string,
-    options: {
-        canonical?: string | null;
-        available?: readonly Locale[];
-    } = {}
-): Promise<{ canonical: string | null; languages?: LanguageAlternates }> {
+    options: LocaleAlternatesOptions = {}
+): Promise<LocaleAlternatesResult> {
     const { locale } = await params;
     return localeAlternates(
         isLocale(locale) ? locale : DEFAULT_LOCALE,
@@ -170,11 +176,17 @@ export function localeOpenGraph(
  * 게이트를 통과하지 못한 로케일은 `follow: true`를 유지한 채 noindex다 —
  * 링크는 계속 따라가되 색인만 막는다.
  */
+/** `Metadata['robots']`의 색인 지시 두 축. */
+export interface RobotsDirective {
+    readonly index: boolean;
+    readonly follow: boolean;
+}
+
 export function localeRobots(
     locale: Locale,
-    base: { index: boolean; follow: boolean } = { index: true, follow: true },
+    base: RobotsDirective = { index: true, follow: true },
     available: readonly Locale[] = STATIC_INDEXABLE_LOCALES
-): { index: boolean; follow: boolean } {
+): RobotsDirective {
     if (!base.index) return base;
     return available.includes(locale) ? base : { index: false, follow: true };
 }
@@ -191,14 +203,22 @@ export function localeRobots(
  * 이 결함은 세 번 났다(홈 2회, 인증 라우트 7개 1회). 라우트마다 손으로
  * 채우는 대신 여기서 한 번에 만든다 — 빠뜨릴 필드가 없어야 다시 안 난다.
  */
+/** 소셜 카드 문구. 두 곳(`openGraph`·`twitter`)에 같은 값이 들어간다. */
+export interface SocialCopy {
+    readonly title: string;
+    readonly description: string;
+}
+
+export interface LocalePageSocial {
+    openGraph: NonNullable<Metadata['openGraph']>;
+    twitter: NonNullable<Metadata['twitter']>;
+}
+
 export function localePageSocial(
     locale: Locale,
     path: string,
-    { title, description }: { title: string; description: string }
-): {
-    openGraph: NonNullable<Metadata['openGraph']>;
-    twitter: NonNullable<Metadata['twitter']>;
-} {
+    { title, description }: SocialCopy
+): LocalePageSocial {
     const url = localeCanonical(locale, path);
     return {
         openGraph: {

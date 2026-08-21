@@ -110,24 +110,26 @@ export function extractProse(value: unknown, prefix = ''): ProseEntry[] {
     }
     if (typeof value !== 'object' || value === null) return [];
 
-    const out: ProseEntry[] = [];
-    for (const [key, child] of Object.entries(value)) {
+    return Object.entries(value).flatMap(([key, child]) => {
         const path = `${prefix}${prefix ? '.' : ''}${key}`;
-        if (isProseKey(key)) {
-            if (typeof child === 'string') {
-                if (child.trim()) out.push({ path, text: child });
-            } else if (Array.isArray(child)) {
-                child.forEach((item, index) => {
-                    if (typeof item === 'string' && item.trim()) {
-                        out.push({ path: `${path}.${index}`, text: item });
-                    }
-                });
-            }
-            continue;
+        // 산문 키가 아니면 그 아래를 다시 훑는다.
+        if (!isProseKey(key)) return extractProse(child, path);
+
+        if (typeof child === 'string') {
+            return child.trim() ? [{ path, text: child }] : [];
         }
-        out.push(...extractProse(child, path));
-    }
-    return out;
+        if (Array.isArray(child)) {
+            return child.flatMap((item, index) =>
+                typeof item === 'string' && item.trim()
+                    ? [{ path: `${path}.${index}`, text: item }]
+                    : []
+            );
+        }
+        // 산문 키인데 문자열도 배열도 아니면 번역 대상이 없다. 여기서 다시
+        // 내려가지 않는 것이 의도다 — `summary: { ko: ... }` 같은 형태를
+        // 재귀로 훑으면 `summary.ko`가 산문 키가 아니라 통째로 누락된다.
+        return [];
+    });
 }
 
 /**

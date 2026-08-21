@@ -11,10 +11,14 @@ import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
  *
  * `junk_bond`만 시장별로 이름이 다르다(미국=하이일드, 한국=신용 스프레드).
  */
-export function useMarketFactorLabels(market: FearGreedMarketId): {
-    label: (key: string) => string;
-    description: (key: string) => string;
-} {
+export interface MarketFactorLabels {
+    readonly label: (key: string) => string;
+    readonly description: (key: string) => string;
+}
+
+export function useMarketFactorLabels(
+    market: FearGreedMarketId
+): MarketFactorLabels {
     const t = useTranslations('shared.lib.fearGreedFactor');
     return {
         label: key =>

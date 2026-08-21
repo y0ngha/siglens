@@ -99,10 +99,15 @@ export function localePath(locale: Locale, path: string): string {
  *
  * @returns 접두사가 없으면 기본 로케일과 원본 경로.
  */
-export function splitLocalePath(pathname: string | null | undefined): {
-    locale: Locale;
-    path: string;
-} {
+export interface SplitLocalePathResult {
+    readonly locale: Locale;
+    /** 로케일 접두사를 뗀 경로. 항상 `/`로 시작한다. */
+    readonly path: string;
+}
+
+export function splitLocalePath(
+    pathname: string | null | undefined
+): SplitLocalePathResult {
     if (!pathname) return { locale: DEFAULT_LOCALE, path: '/' };
     const [, first = '', ...rest] = pathname.split('/');
     if (!isLocale(first)) {
