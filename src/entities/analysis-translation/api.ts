@@ -45,12 +45,14 @@ function cacheKey(texts: readonly string[], locale: Locale): string {
 }
 
 function buildPrompt(texts: readonly string[], locale: Exclude<Locale, 'ko'>) {
+    // filter+map을 한 번의 flatMap으로 — 중간 배열을 만들지 않는다.
     const glossaryLines = Object.entries(
         glossary as Record<string, Record<string, string>>
     )
-        .filter(([, translations]) => translations[locale])
-        .map(
-            ([term, translations]) => `  "${term}" → "${translations[locale]}"`
+        .flatMap(([term, translations]) =>
+            translations[locale]
+                ? [`  "${term}" → "${translations[locale]}"`]
+                : []
         )
         .join('\n');
 

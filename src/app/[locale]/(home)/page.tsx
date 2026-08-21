@@ -135,10 +135,13 @@ export default async function Home({
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
-    const t = await getTranslations('app.home');
+    // 셋은 서로 독립이다 — 직렬로 await하면 왕복이 3배가 된다.
     // 내비 라벨 키는 완전 수식이라 루트 네임스페이스로 푼다.
-    const tNav = await getTranslations();
-    const tSeo = await getTranslations('shared.seo');
+    const [t, tNav, tSeo] = await Promise.all([
+        getTranslations('app.home'),
+        getTranslations(),
+        getTranslations('shared.seo'),
+    ]);
     const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
     // countSkillFiles 오류(fs 접근 실패 등)는 graceful 처리 — 0 폴백으로 페이지를 계속 렌더한다.
     // throw가 전파되면 ISR 빈 캐시(0-byte body)가 동결된다.

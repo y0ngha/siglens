@@ -16,10 +16,11 @@ import './vitest.setup.base';
  * 로케일별 동작을 검증하는 테스트는 `renderWithIntl(ui, { locale })`로 명시한다.
  */
 vi.mock('@testing-library/react', async importOriginal => {
-    const actual =
-        await importOriginal<typeof import('@testing-library/react')>();
-    const { composeWithIntl } =
-        await import('./src/shared/test-utils/intlRenderWrapper');
+    // 둘은 서로 독립이다 — 직렬로 두면 setup이 두 번 왕복한다.
+    const [actual, { composeWithIntl }] = await Promise.all([
+        importOriginal<typeof import('@testing-library/react')>(),
+        import('./src/shared/test-utils/intlRenderWrapper'),
+    ]);
     return {
         ...actual,
         render: (

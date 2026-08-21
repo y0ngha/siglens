@@ -22,17 +22,22 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { id, locale } = await params;
     const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
-    const lookup = await getCachedSharedAnalysis(id);
-    const tSeo = await getTranslations({
-        locale: resolved,
-        namespace: 'entities.shared-analysis.seo',
-    });
+    // 스냅샷 조회와 번역자 둘은 서로 독립이다 — 직렬로 두면 캐시 미스 시
+    // DB 왕복이 끝날 때까지 번역자 로드가 시작조차 하지 않는다.
+    //
     // OG description의 방향성 라벨도 같은 로케일로 — 예전엔 한국어 상수라
     // 영어 제목 아래 `강세 · …`가 실려 나갔다.
-    const tOg = await getTranslations({
-        locale: resolved,
-        namespace: 'entities.shared-analysis.og',
-    });
+    const [lookup, tSeo, tOg] = await Promise.all([
+        getCachedSharedAnalysis(id),
+        getTranslations({
+            locale: resolved,
+            namespace: 'entities.shared-analysis.seo',
+        }),
+        getTranslations({
+            locale: resolved,
+            namespace: 'entities.shared-analysis.og',
+        }),
+    ]);
     return buildShareMetadata(lookup, tSeo, resolved, tOg);
 }
 

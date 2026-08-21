@@ -157,7 +157,7 @@ export function localeOpenGraph(
         alternateLocale:
             available.length < 2
                 ? []
-                : available.filter(l => l !== locale).map(l => LOCALE_OG[l]),
+                : available.flatMap(l => (l === locale ? [] : [LOCALE_OG[l]])),
     };
 }
 

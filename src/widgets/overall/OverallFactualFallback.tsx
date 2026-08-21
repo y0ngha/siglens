@@ -47,13 +47,30 @@ function getAxisKeys(marketProfile: MarketProfileId): readonly string[] {
  * 라벨은 탭바와 같은 `shared.symbolTab`을 쓴다 — 같은 것을 두 번 번역하지 않는다.
  * 구분자는 `Intl.ListFormat`이 정한다(ko `A, B 및 C`, ja/zh는 `、`).
  */
+/**
+ * `Intl.ListFormat` 생성은 싸지 않다(로케일 데이터 조회 + 규칙 컴파일).
+ * 렌더마다 새로 만들면 그 비용이 매 렌더에 붙는다 — 로케일 수가 4개뿐이라
+ * 모듈 수준에서 캐시한다.
+ */
+const LIST_FORMAT_CACHE = new Map<string, Intl.ListFormat>();
+
+function listFormatFor(intlLocale: string): Intl.ListFormat {
+    const cached = LIST_FORMAT_CACHE.get(intlLocale);
+    if (cached) return cached;
+    const created = new Intl.ListFormat(intlLocale, {
+        style: 'long',
+        type: 'conjunction',
+    });
+    LIST_FORMAT_CACHE.set(intlLocale, created);
+    return created;
+}
+
 function useAxesText(marketProfile: MarketProfileId): string {
     const tTab = useTranslations('shared.symbolTab');
     const locale = useResolvedLocale();
-    return new Intl.ListFormat(INTL_LOCALE[locale], {
-        style: 'long',
-        type: 'conjunction',
-    }).format(getAxisKeys(marketProfile).map(key => tTab(key)));
+    return listFormatFor(INTL_LOCALE[locale]).format(
+        getAxisKeys(marketProfile).map(key => tTab(key))
+    );
 }
 
 export function OverallFactualFallback({

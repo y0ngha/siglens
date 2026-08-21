@@ -1,26 +1,8 @@
 import { useTranslations } from 'next-intl';
-import type {
-    MarketFearGreedComparisonKey,
-    MarketFearGreedComparisonPoint,
-} from '@/entities/market-fear-greed';
+import type { MarketFearGreedComparisonPoint } from '@/entities/market-fear-greed';
 import { FearGreedGauge } from '@/widgets/fear-greed';
 import { cn } from '@/shared/lib/cn';
-
-/**
- * Lookback → 한글 라벨. `shared`는 `entities`를 import할 수 없어(FSD 의존 방향)
- * 나머지 Fear & Greed 라벨과 달리 이 표만 위젯 쪽에 둔다 — shared에 두면 키 유니온을
- * 한 벌 더 적어야 하고, 그 사본이 entity 타입과 조용히 어긋날 수 있다.
- */
-/** `shared.ui.period` 메시지 키 — 표시 문자열이 아니다. */
-export const MARKET_COMPARISON_LABEL_KEY: Record<
-    MarketFearGreedComparisonKey,
-    string
-> = {
-    now: 'now',
-    '1w': 'weekAgo',
-    '1m': 'monthAgo',
-    '1y': 'yearAgo',
-};
+import { MARKET_COMPARISON_LABEL_KEY } from './marketComparisonLabelKey';
 
 interface MarketFearGreedComparisonProps {
     comparisons: MarketFearGreedComparisonPoint[];

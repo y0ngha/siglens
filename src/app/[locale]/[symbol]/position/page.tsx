@@ -317,18 +317,16 @@ export default async function PositionPage({ params }: Props) {
     );
     const marketProfile = marketProfileOf(assetInfo);
 
-    const range = await resolvePriceRange(
-        upper,
-        assetInfo.fmpSymbol,
-        marketProfile
-    );
+    // 셋은 서로 독립이다 — 가격 범위 조회를 기다리는 동안 번역자를 함께 푼다.
+    //
     // range가 degrade되면(bars 실패 등) null — 섹션 자체를 생략한다(크래시도
     // 빈 껍데기 섹션도 없음). range가 있어도 high52w<=low52w 같은 퇴화 입력이면
     // resolveCurrentPricePosition이 null을 반환해 같은 방식으로 생략된다.
-    const tPos = await getTranslations(
-        'widgets.portfolio-position.positionNote'
-    );
-    const tBand = await getTranslations('app.symbol.position.band');
+    const [range, tPos, tBand] = await Promise.all([
+        resolvePriceRange(upper, assetInfo.fmpSymbol, marketProfile),
+        getTranslations('widgets.portfolio-position.positionNote'),
+        getTranslations('app.symbol.position.band'),
+    ]);
     const currentPricePosition = range
         ? resolveCurrentPricePosition(range, tPos, tBand)
         : null;

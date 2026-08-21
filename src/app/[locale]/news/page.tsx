@@ -169,9 +169,12 @@ export default async function NewsHubPage({
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
-    const tNav = await getTranslations();
-    const t = await getTranslations('app.news');
-    const tSeo = await getTranslations('shared.seo');
+    // 셋은 서로 독립이다.
+    const [tNav, t, tSeo] = await Promise.all([
+        getTranslations(),
+        getTranslations('app.news'),
+        getTranslations('shared.seo'),
+    ]);
     const regions = regionsOf('news');
     const previews = await Promise.all(
         regions.map(region =>

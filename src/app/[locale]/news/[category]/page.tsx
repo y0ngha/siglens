@@ -224,9 +224,12 @@ export default async function CategoryNewsPage({ params }: Props) {
     setRequestLocale(locale);
     // DB 콘텐츠(뉴스 제목·요약) 해석에 쓸 좁혀진 로케일. URL 세그먼트는 신뢰 경계다.
     const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
-    const tNav = await getTranslations();
-    const t = await getTranslations('app.news');
-    const tSeo = await getTranslations('shared.seo');
+    // 셋은 서로 독립이다.
+    const [tNav, t, tSeo] = await Promise.all([
+        getTranslations(),
+        getTranslations('app.news'),
+        getTranslations('shared.seo'),
+    ]);
     const cat = categoryFromSlug(slug);
 
     if (!cat) {

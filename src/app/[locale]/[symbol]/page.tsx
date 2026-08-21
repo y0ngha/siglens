@@ -126,9 +126,12 @@ export default async function SymbolPage({ params }: Props) {
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
-    const t = await getTranslations('app.symbol');
-    const tViews = await getTranslations('views.symbol');
-    const tSeo = await getTranslations('shared.seo');
+    // 셋은 서로 독립이다.
+    const [t, tViews, tSeo] = await Promise.all([
+        getTranslations('app.symbol'),
+        getTranslations('views.symbol'),
+        getTranslations('shared.seo'),
+    ]);
     const ticker = symbol.toUpperCase();
     // 다른 5개 sibling 페이지(news/fundamental/options/overall/fear-greed)와 일관:
     // 잘못된 ticker 형식은 본문에서도 notFound로 즉시 차단한다 (generateMetadata 가드와 짝).
