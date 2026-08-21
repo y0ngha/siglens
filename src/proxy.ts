@@ -18,6 +18,34 @@ import { NextResponse, type NextRequest } from 'next/server';
  * (`src/app/__tests__/proxy.test.ts`가 디렉터리 목록과 대조해 강제한다).
  */
 const RESERVED_FIRST_SEGMENTS = new Set([
+    /**
+     * 로케일 접두사 — **`ko`는 뺀다.**
+     *
+     * 아직 다국어 라우팅이 없는데도 **지금** 넣는다. 다국어 배포는 인스턴스
+     * 교체 중 신·구 버전이 잠시 공존하는데, 그때 신버전이 발급한 `/en/AAPL`이
+     * 구버전 인스턴스에 도착하면 이 목록에 없어서 티커로 해석된다:
+     *
+     *   `/en/AAPL` → `isAdmissibleSymbolShape('en')` = true
+     *              → 'en' !== 'EN' → 301 → `/EN/AAPL` → 404
+     *
+     * 그 301에는 `Cache-Control`이 없어 브라우저가 영구 캐싱한다. 배포가 끝나
+     * 신버전만 남아도 그 사용자는 `/en/AAPL`을 **요청조차 보내지 않는다**.
+     * 구버전이 내는 응답이라 신버전 코드로는 막을 수 없어, 다국어 릴리스보다
+     * 먼저 나가야 하는 변경이다.
+     *
+     * **`ko`를 넣으면 안 되는 이유**: `KO`는 코카콜라(NYSE)의 실존 티커다.
+     * 예약하면 `/ko` → `/KO` 케이스 정규화가 사라져, canonical은 `/KO`인데
+     * 요청 URL은 `/ko`로 남는 self-referencing canonical 위반이 생긴다 —
+     * 이 목록이 막으려는 것과 정확히 같은 계열의 결함이다.
+     *
+     * 예약하지 않아도 안전하다. 다국어 릴리스는 `localePrefix: 'as-needed'`라
+     * **기본 로케일에 접두사를 붙이지 않는다** — 신버전은 `/ko/*` URL을 애초에
+     * 발급하지 않으므로 위의 공존 시나리오가 성립하지 않는다.
+     * (`EN`·`JA`·`ZH`는 이 저장소의 티커 유니버스에 없다.)
+     */
+    'en',
+    'ja',
+    'zh',
     'fear-greed',
     'login',
     'signup',

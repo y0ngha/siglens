@@ -338,6 +338,64 @@ describe('랜딩 ?q= redirect — proxy가 page.tsx 대신 처리 (ISR 보존)',
 });
 
 /**
+ * 로케일 접두사 선행 예약 가드.
+ *
+ * 다국어 릴리스는 인스턴스 교체 중 신·구 버전이 공존한다. 그때 신버전이 발급한
+ * `/en/AAPL`이 **구버전**에 도착하면 티커 `EN`으로 301되고, 그 301에는
+ * `Cache-Control`이 없어 브라우저가 영구 캐싱한다 — 배포가 끝나도 그 사용자는
+ * 그 URL을 다시 요청하지 않는다. 구버전이 내는 응답이라 신버전 코드로는 못 막고,
+ * 이 예약이 **다국어 릴리스보다 먼저** 나가 있어야만 창이 닫힌다.
+ */
+describe('로케일 접두사는 ticker로 오인되지 않는다', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    // 이 경로들은 guest-only/auth-required 게이트와 겹치지 않으므로 **어떤
+    // redirect도** 없어야 한다. "대문자 redirect만 없음"으로 단언하면 예기치
+    // 않은 다른 redirect가 섞여도 통과한다.
+    it.each(['en', 'ja', 'zh'])('/%s/AAPL 은 redirect되지 않는다', locale => {
+        proxy(makeRequest(undefined, `/${locale}/AAPL`));
+
+        expect(mockRedirect).not.toHaveBeenCalled();
+    });
+
+    it.each(['en', 'ja', 'zh'])('/%s 단독도 redirect되지 않는다', locale => {
+        proxy(makeRequest(undefined, `/${locale}`));
+
+        expect(mockRedirect).not.toHaveBeenCalled();
+    });
+
+    /**
+     * **`ko`는 예약하지 않는다** — `KO`는 코카콜라의 실존 티커다.
+     *
+     * 예약하면 `/ko`가 `/KO`로 정규화되지 않아, canonical(`/KO`)과 요청
+     * URL(`/ko`)이 어긋나는 self-referencing canonical 위반이 생긴다. 이
+     * 파일의 `/fear-greed` 가드가 막는 것과 같은 계열의 결함이다.
+     *
+     * 예약하지 않아도 안전한 이유는 `localePrefix: 'as-needed'`다 — 신버전이
+     * 기본 로케일에 접두사를 붙이지 않으므로 `/ko/*`를 발급하지 않는다.
+     */
+    it('/ko 는 여전히 /KO(코카콜라)로 정규화된다', () => {
+        proxy(makeRequest(undefined, '/ko'));
+
+        expect(mockRedirect).toHaveBeenCalledWith(
+            expect.objectContaining({ pathname: '/KO' }),
+            301
+        );
+    });
+
+    it('/ko/news 도 /KO/news 로 정규화된다', () => {
+        proxy(makeRequest(undefined, '/ko/news'));
+
+        expect(mockRedirect).toHaveBeenCalledWith(
+            expect.objectContaining({ pathname: '/KO/news' }),
+            301
+        );
+    });
+});
+
+/**
  * `/fear-greed` 회귀 가드.
  *
  * `isAdmissibleSymbolShape`은 하이픈 ticker(`PBR-A`)를 허용하므로, 하이픈이 든
