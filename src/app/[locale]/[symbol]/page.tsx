@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
-import { TechnicalFactsSummary } from '@/views/symbol';
+import { MobileSheetPlaceholder, TechnicalFactsSummary } from '@/views/symbol';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { buildFallbackAnalysis } from '@/entities/chat-message';
@@ -402,6 +402,16 @@ export default async function SymbolPage({ params }: Props) {
                         </Suspense>
                     </HydrationBoundary>
                 </div>
+                {/* 모바일 바텀시트 SSR 껍데기 — 바로 아래 TechnicalSnapshotProse와 같은
+                    이유로 PERSISTENT server sibling이다. Suspense fallback에 두면 boundary가
+                    resolve되는 순간(하이드레이션 ≈4.1초) React가 이 서브트리를 파괴하는데,
+                    실제 vaul 시트는 그보다 늦은 ≈4.9초에 마운트되므로 그 사이 화면 하단이
+                    다시 비어버린다. 껍데기는 실제 시트가 DOM에 들어오면 globals.css의
+                    `body:has([data-vaul-drawer])` 규칙으로 CSS만 사라진다. 실측 타임라인은
+                    MobileSheetPlaceholder의 JSDoc 참고. */}
+                <MobileSheetPlaceholder
+                    label={tViews('mobileSheet.aiAnalysis')}
+                />
                 {/* AI 스냅샷 프로즈는 Suspense fallback이 아니라 PERSISTENT server
                     sibling으로 마운트한다(audit fix — spec §7의 "SSR-only" 의도와
                     달리 Suspense fallback 안에 두면 React가 boundary resolve 시

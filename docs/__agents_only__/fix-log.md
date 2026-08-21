@@ -14,10 +14,6 @@
   - Rule: entities/CONVENTIONS.md — 'use server' files may only export async functions; constants must live in separate modules
   - Context: Attempted to export constants in `ensureNewsCardsAnalyzedAction.ts` (a 'use server' file), caused Next.js error 71011. Corrected by moving constants to `lib/newsAnalysisConstants.ts` and importing them.
 
-## [feat/bot-cost-caching Round 1 | feat/bot-cost-caching | 2026-05-28]
-- Violation: Global `vi.mock('@upstash/redis', ...)` added to `vitest.setup.base.ts` when per-file mocks + resolve alias sufficed
-  - Rule: Test best practices — Global mocks weaken test isolation; per-file mocks keep missing-mock failures visible
-  - Context: Removed global mock to maintain test isolation and visibility of unintended missing dependencies.
 ## [PR #546 Round 2 | fix/fear-greed-h1-dup | 2026-06-03]
 - Status: APPROVED (both rounds, zero findings)
   - Review: Removed duplicate ticker in h1 (`AAPL` duplicated because displayName + explicit ticker append) across 4 spots (fear-greed/page.tsx: h1, FAQ JSON-LD, guide; [symbol]/page.tsx: sr-only)
@@ -88,11 +84,6 @@
   - Rule: 티어 게이팅 prop(isFreeUser 등)을 소비하는 컴포넌트를 렌더할 때, 게이팅 값을 명시적으로 전달해야 한다 — "안전한 기본값"에 의존하면 유료 티어에 무료용 표면(광고)이 새어 나간다.
   - Context: ChartContent에서 이미 destructure된 `tier`로 `const isFreeUser = tier !== 'pro'`를 계산해 AnalysisProgress·AnalysisPanel 두 호출 모두에 전달. claude[bot] 리뷰 Blocker 반영.
 
-## [test/views-coverage-include | 2026-07-27]
-- Violation: Hot-looping mocked poll interval (vitest worker exit). `@/shared/lib/sleep` mocked to resolve immediately; polling action stubbed to return `{status:'processing'}` indefinitely → while loop spins with no yield → vitest worker killed ("Worker exited unexpectedly")
-  - Rule: Test best practices — Mocked polling loops must have a terminating stub that yields eventually (return one processing tick, then never-settling promise)
-  - Context: useAnalysisBranches.test.tsx polling action stub. Fixed by returning a single {status:'processing'} response, then a promise that never settles, allowing loop to yield before next poll.
-
 ## [feat/latest-llm-models | siglens | R1 recommended]
 - Violation: Label versioning inconsistency — 'Opus 5' next to unversioned 'Opus' (=4.7) made the old model appear current on collapsed trigger, misleading users about which version they selected.
   - Rule: User-facing text must match code state; version numbers in labels must be consistent
@@ -138,10 +129,6 @@
   - Context: Reported 648 passed; actual suite had failures invisible to reported scope. Additionally, getQuantizedBarsStatic (the refactored function) had zero unit tests before merge attempt.
 - Violation: New refactored function `getQuantizedBarsStatic` had no unit tests
   - Rule: (new) — Core refactored functions must include unit tests before merge
-
-## [fix/bars-seed-fold Round 2 | Fold index mechanism in bars query | 2026-08-13]
-- Violation: Mock not reset in `beforeEach`; failure-path test passed in full suite (`yarn vitest run`) but failed in isolation (`yarn vitest run -t "실패"`), leaking previous test's resolved value
-  - Rule: Test best practices — After repointing a mock during refactor, failure-path tests must be re-run in isolation (`-t "pattern"`) to detect unreset-leak bugs masked by full-suite runs
 
 ## [fix/bars-seed-fold Round 3 | Fold index mechanism in bars query | 2026-08-13]
 - Violation: Claimed dead mocks removed from 2 files; only 1 was actually cleaned

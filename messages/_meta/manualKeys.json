@@ -124,7 +124,10 @@
         "widgets.financials.section",
         "shared.ui.misc",
         "widgets.legal.untranslatedNotice",
-        "widgets.legal.untranslatedNoticeLabel"
+        "widgets.legal.untranslatedNoticeLabel",
+        "features.ticker-search.search",
+        "views.symbol.mobileSheet",
+        "features.ticker-search.popularName"
     ],
     "chromeWide": [
         "widgets.layout.localeSwitcher",

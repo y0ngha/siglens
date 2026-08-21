@@ -43,6 +43,7 @@ function setupAutocomplete(
         query: '',
         results: [],
         isSearching: false,
+        isError: false,
         selectedIndex: -1,
         isOpen: false,
         inputRef: { current: null },
@@ -488,5 +489,21 @@ describe('TickerAutocomplete', () => {
 
         await user.click(firstOption);
         expect(navigate).toHaveBeenCalledWith('AAPL', expect.any(String));
+    });
+
+    it('조회 실패를 결과 없음과 구분해 보여준다', () => {
+        // 검색이 죽었는데 "검색 결과 없음"으로 보이면 사용자는 없는 종목을 찾은 줄
+        // 안다. 한글 질의라면 "티커로 쳐보세요"라는 **틀린 안내**까지 나간다.
+        // 오버레이만 고치고 데스크톱을 두면 같은 제품이 같은 장애에 다르게 반응한다.
+        setupAutocomplete({
+            query: '삼성',
+            isOpen: true,
+            isError: true,
+            results: [],
+        });
+        render(<TickerAutocomplete />);
+
+        expect(screen.getByText(/불러오지 못했어요/)).toBeInTheDocument();
+        expect(screen.queryByText(/검색 결과 없음/)).toBeNull();
     });
 });

@@ -4,6 +4,7 @@ import {
     SNAP_FULL,
     MOBILE_SNAP_POINTS,
     SNAP_POINTS_MUTABLE,
+    PEEK_VISIBLE_OFFSET,
     VAUL_EASING,
     DRAG_RESISTANCE,
     DRAG_THRESHOLD_PX,
@@ -15,14 +16,14 @@ import {
 describe('mobileSheet constants', () => {
     // 이 값은 취향이 아니라 실측에서 나온 계약이다. 시트는 h-[97svh] 고정이고
     // vaul은 오프셋을 (1 − snap)·innerHeight로 잡으므로 실제로 보이는 띠는
-    // `snap − 0.03`이다. 차트를 가리지 않는 실측 임계값은 3개 기기에서
+    // `snap − PEEK_VISIBLE_OFFSET`이다. 차트를 가리지 않는 실측 임계값은 3개 기기에서
     // 0.194(Pixel 7) / 0.206(iPhone 14) / 0.215(iPhone SE)였다.
     // 0.20 → 띠 0.17로 가장 빡빡한 0.194 아래에 머문다. 값을 올리려면 먼저
     // 다시 측정할 것 — 상수를 참조하는 단언만으로는 이 계약이 깨져도 초록불이다.
-    it('SNAP_PEEK가 만드는 가시 띠(snap − 0.03)는 차트 커버리지 임계값 아래다', () => {
+    it('SNAP_PEEK가 만드는 가시 띠(snap − PEEK_VISIBLE_OFFSET)는 차트 커버리지 임계값 아래다', () => {
         expect(SNAP_PEEK).toBe(0.2);
 
-        const visibleStrip = SNAP_PEEK - 0.03;
+        const visibleStrip = SNAP_PEEK - PEEK_VISIBLE_OFFSET;
         const TIGHTEST_COVERAGE_THRESHOLD = 0.194;
         expect(visibleStrip).toBeLessThan(TIGHTEST_COVERAGE_THRESHOLD);
     });

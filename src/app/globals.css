@@ -133,6 +133,12 @@
     /* Brand — Social login */
     --color-brand-kakao: #fee500;
 
+    /* vaul이 `[data-vaul-handle]`에 하드코딩한 배경색. 디자인 선택이 아니라 외부 제약이며,
+       MobileSheetPlaceholder의 정적 손잡이가 실제 시트와 픽셀 단위로 일치해야 교체가
+       보이지 않는다. secondary-200(#e2e8f0)과 비슷하지만 그쪽이 재조정되면 일치가
+       깨지므로 별도 토큰으로 고정한다. */
+    --color-vaul-handle: #e2e2e4;
+
     /* Layout chrome heights — site Header(h-14) 고정값. PwaBanner처럼 dynamic하게
        변하는 chrome은 자체 컴포넌트가 mount/unmount 시 root에 CSS variable을 토글한다
        (예: PwaBanner의 --pwa-banner-h). 차트 페이지의 sticky-footer jail은 이 변수들을
@@ -311,5 +317,32 @@ body {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+/*
+ * 모바일 바텀시트 SSR 껍데기 해제.
+ *
+ * `MobileSheetPlaceholder`는 실제 vaul 시트가 마운트되기까지의 공백(실측 4.6초,
+ * iPhone 390×844 / CPU 4x)을 메우는 서버 렌더 전용 요소다. vaul이 DOM에 들어오는
+ * 순간 CSS만으로 껍데기를 걷어낸다 — JS 타이머도 상태 전환도 없어 교체 레이스가
+ * 생기지 않는다. 근거·타임라인은 MobileSheetPlaceholder의 JSDoc 참고.
+ */
+body:has([data-vaul-drawer]) [data-mobile-sheet-placeholder] {
+    display: none;
+}
+
+/*
+ * 상단 내비게이션 진행 바(`features/ticker-search/ui/NavigationProgressBar`).
+ * 종목 이동은 RSC 왕복이라 LAX 경로에서 2~3초가 걸리는데, 그동안 화면은 떠나온
+ * 종목 그대로다. 진행 중임을 알리되 아무것도 막지 않는다.
+ */
+@keyframes nav-progress {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(300%);
     }
 }

@@ -1,5 +1,41 @@
 # Changelog
 
+# [0.60.0](https://github.com/y0ngha/siglens/compare/v0.59.4...v0.60.0) (2026-08-20)
+
+
+### Bug Fixes
+
+* 검색 오버레이 검증 오류 수정 ([ca9afed](https://github.com/y0ngha/siglens/commit/ca9afede9dfa69aa612a07f7e37cf65cce486d05))
+* 리뷰 피드백 반영 - 렌더 순서 및 JSDoc 정리 ([c6c489b](https://github.com/y0ngha/siglens/commit/c6c489b9117b334a64e93dc88f7ba04adc1a8067))
+* 훅 선언 순서 및 포커스 관리 수정 ([6db78a0](https://github.com/y0ngha/siglens/commit/6db78a0a6d8e0c3bd7ffb16ed8a814f7b83d1d38))
+* Hook declaration order (useState/useRef → custom hooks → useCallback/useMemo → derived → handlers → useEffect) ([925dc8f](https://github.com/y0ngha/siglens/commit/925dc8fc2b8a0627e588eebff0ade8bfb8fe2f8e))
+
+
+### Features
+
+* 모바일 검색 오버레이 도입 ([e7229b2](https://github.com/y0ngha/siglens/commit/e7229b2e5e7c2c4d97a2ccf1d5e2272e137f2bc6))
+
+## [0.59.4](https://github.com/y0ngha/siglens/compare/v0.59.3...v0.59.4) (2026-08-20)
+
+
+### Bug Fixes
+
+* PR 리뷰 지적 반영 — 토큰 등록·매직넘버 추출·반환 타입 명시 ([47305a5](https://github.com/y0ngha/siglens/commit/47305a5079439bfd204651804950ec4e8685970c)), closes [#e2e2e4](https://github.com/y0ngha/siglens/issues/e2e2e4)
+
+
+### Performance Improvements
+
+* 모바일 바텀시트 첫 표시를 2.9초에서 0.2초로 단축 ([ac0323c](https://github.com/y0ngha/siglens/commit/ac0323cbf57092ffa0fb4918e08d40fa948eed69))
+
+## [0.59.3](https://github.com/y0ngha/siglens/compare/v0.59.2...v0.59.3) (2026-08-20)
+
+
+### Bug Fixes
+
+* 드레인 중 selfcheck가 P1 알람을 오탐시키던 것 차단 ([fa5b89f](https://github.com/y0ngha/siglens/commit/fa5b89fffa004e35733661b44bc2a48b4f9ac6d9))
+* 로그 메트릭 필터 19개에 defaultValue=0 추가 — 알람이 스스로 복구되게 ([f21c7a6](https://github.com/y0ngha/siglens/commit/f21c7a66c63c66b8646c8ec0394f32bcd422324f))
+* 셸 스크립트의 조용한 실패 3종 제거 ([894d7ab](https://github.com/y0ngha/siglens/commit/894d7abd740325eec5d2e8406f6781017dab764a))
+
 ## [0.59.2](https://github.com/y0ngha/siglens/compare/v0.59.1...v0.59.2) (2026-08-19)
 
 

@@ -5,7 +5,7 @@ import { HeaderNav } from './HeaderNav';
 import { HeaderNavStatic } from './HeaderNavStatic';
 import { HeaderUserMenu, type HeaderUserMenuUser } from './HeaderUserMenu';
 import { NAV_TREE } from './headerNavTree';
-import { TickerAutocomplete } from '@/features/ticker-search';
+import { HeaderSearch } from '@/features/ticker-search';
 import { SITE_NAME } from '@/shared/lib/seo';
 import Image from 'next/image';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -88,9 +88,10 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                         <HeaderNav items={NAV_TREE} />
                     </Suspense>
                 </div>
-                <div className="ml-auto flex w-full max-w-40 min-w-0 justify-end sm:max-w-xs">
-                    <TickerAutocomplete size="sm" />
-                </div>
+                {/* 모바일은 아이콘 트리거 + 전체화면 오버레이, 데스크톱은 기존 인라인
+                    자동완성. 폭 계약(`ml-auto`)까지 이 컴포넌트가 소유한다 —
+                    `features/ticker-search/ui/HeaderSearch` JSDoc 참고. */}
+                <HeaderSearch />
                 <div className="flex shrink-0 items-center">
                     {/* 모바일에서는 드로어 안에 같은 스위처가 있으므로 숨긴다 —
                         `lg`는 데스크톱 내비/햄버거와 반드시 같은 브레이크포인트다. */}

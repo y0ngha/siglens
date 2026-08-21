@@ -854,12 +854,44 @@
                 "e62852": "検索結果なし — ティッカー（例: AAPL）で検索してみてください"
             },
             "assetBadge": {
-                "coin": "コイン",
+                "coin": "暗号資産",
                 "usOtc": "米国OTC"
+            },
+            "popularName": {
+                "000660_KS": "SK hynix",
+                "005930_KS": "Samsung Electronics",
+                "006400_KS": "Samsung SDI",
+                "AAPL": "Apple",
+                "BTCUSD": "Bitcoin",
+                "ETHUSD": "Ethereum",
+                "MSFT": "Microsoft",
+                "NVDA": "NVIDIA",
+                "XRPUSD": "XRP"
             },
             "recentSearch": {
                 "removeRecent": "{v0} を最近の検索から削除",
                 "removeRecentNamed": "{v0}（{v1}）を最近の検索から削除"
+            },
+            "search": {
+                "cancel": "キャンセル",
+                "clearAll": "すべて削除",
+                "loadFailed": "検索を読み込めませんでした",
+                "loadFailedRetry": "検索を読み込めませんでした。しばらくしてからもう一度お試しください。",
+                "navigating": "銘柄ページへ移動中",
+                "navigatingBar": "銘柄ページへ移動中",
+                "noResults": "検索結果がありません",
+                "noResultsTryTicker": "検索結果なし — ティッカーで検索してみてください",
+                "noResultsTryTickerExample": "検索結果なし — ティッカー（例: AAPL）で検索してみてください",
+                "overlayLabel": "銘柄検索",
+                "placeholder": "銘柄名・ティッカーを検索",
+                "popularHeading": "人気銘柄 · {v0}",
+                "recentHeading": "最近の検索",
+                "resultsCount": "検索結果 {v0}件",
+                "resultsLabel": "検索結果",
+                "searching": "検索中",
+                "searchingEllipsis": "検索中…",
+                "triggerLabel": "銘柄検索を開く",
+                "typeToSearch": "検索語を入力してください"
             }
         }
     },
@@ -1984,6 +2016,9 @@
                 "recentTradingDays": "直近{v0}取引日",
                 "topFactor": "{v0}個の指標のうち最も目立つのは{v1}で、{v2}パーセンタイルを記録し、平常時より{v3}なっています。",
                 "vsAnchor": "{v0}比 {v1}点 "
+            },
+            "mobileSheet": {
+                "aiAnalysis": "AI分析"
             },
             "snapshot": {
                 "prose": {

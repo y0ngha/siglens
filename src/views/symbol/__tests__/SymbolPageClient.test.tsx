@@ -114,7 +114,7 @@ describe('SymbolPageClient', () => {
 
     /*
      * 시트를 여는 유일한 방법이 PEEK 띠 드래그뿐이면, 툴바 접힘으로 띠가 얇아졌을 때
-     * AI 분석 패널에 접근할 수 없게 된다(띠 = snap − 0.03이고 vaul은 innerHeight,
+     * AI 분석 패널에 접근할 수 없게 된다(띠 = snap − PEEK_VISIBLE_OFFSET이고 vaul은 innerHeight,
      * 시트는 svh 기준이라 두 단위가 벌어지면 띠가 줄어든다). 그래서 시트 **밖**에
      * 항상 살아 있는 버튼을 둔다. 이 버튼이 사라지면 그 안전장치가 사라진다.
      */

@@ -343,8 +343,14 @@ for (const locale of TARGETS) {
          * **고유명사 네임스페이스는 뺀다.** `shared.assetName`은 회사·지수 이름이라
          * `Samsung Electronics`·`Apple`처럼 라틴 표기가 ja/zh에서도 정답이다.
          * 억지로 가나·한자를 넣으면 오히려 통용되지 않는 표기가 된다.
+         *
+         * `features.ticker-search.popularName`은 그 표의 9개 부분집합이다 —
+         * 검색 오버레이가 전 라우트 크롬에 있어 166키짜리 원본을 끌어올 수 없어
+         * 따로 뒀다(`SearchOverlay.tsx` 주석). 같은 값이므로 같은 예외가 맞다.
          */
-        const isProperNoun = key.startsWith('shared.assetName.');
+        const isProperNoun =
+            key.startsWith('shared.assetName.') ||
+            key.startsWith('features.ticker-search.popularName.');
 
         if (
             !isProperNoun &&

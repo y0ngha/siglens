@@ -64,6 +64,9 @@ vi.mock('@/features/ticker-search/hooks/useTickerSearch', () => ({
     useTickerSearch: () => ({
         results: [],
         isSearching: false,
+        isError: false,
+        // 훅의 계약이다 — 검색 키의 목적지가 "조회가 입력을 따라잡았는가"로 갈린다.
+        debouncedQuery: '',
         hasQuery: false,
     }),
 }));

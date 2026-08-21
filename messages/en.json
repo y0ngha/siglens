@@ -854,12 +854,44 @@
                 "e62852": "No search results — Try searching by ticker (e.g.: AAPL)"
             },
             "assetBadge": {
-                "coin": "Coin",
+                "coin": "Crypto",
                 "usOtc": "US OTC"
+            },
+            "popularName": {
+                "000660_KS": "SK hynix",
+                "005930_KS": "Samsung Electronics",
+                "006400_KS": "Samsung SDI",
+                "AAPL": "Apple",
+                "BTCUSD": "Bitcoin",
+                "ETHUSD": "Ethereum",
+                "MSFT": "Microsoft",
+                "NVDA": "NVIDIA",
+                "XRPUSD": "XRP"
             },
             "recentSearch": {
                 "removeRecent": "Remove {v0} from recent searches",
                 "removeRecentNamed": "Remove {v0} ({v1}) from recent searches"
+            },
+            "search": {
+                "cancel": "Cancel",
+                "clearAll": "Clear all",
+                "loadFailed": "Could not load search results",
+                "loadFailedRetry": "Could not load search results. Please try again shortly.",
+                "navigating": "Opening the symbol page",
+                "navigatingBar": "Opening the symbol page",
+                "noResults": "No results",
+                "noResultsTryTicker": "No results — try searching by ticker",
+                "noResultsTryTickerExample": "No results — try a ticker such as AAPL",
+                "overlayLabel": "Symbol search",
+                "placeholder": "Search name or ticker",
+                "popularHeading": "Popular · {v0}",
+                "recentHeading": "Recent searches",
+                "resultsCount": "{v0} results",
+                "resultsLabel": "Search results",
+                "searching": "Searching",
+                "searchingEllipsis": "Searching…",
+                "triggerLabel": "Open symbol search",
+                "typeToSearch": "Type to search"
             }
         }
     },
@@ -1984,6 +2016,9 @@
                 "recentTradingDays": "the last {v0} trading days",
                 "topFactor": "Of {v0} factors, {v1} stands out most at the {v2}th percentile — {v3} than usual.",
                 "vsAnchor": "{v1} points versus {v0} "
+            },
+            "mobileSheet": {
+                "aiAnalysis": "AI analysis"
             },
             "snapshot": {
                 "prose": {

@@ -700,13 +700,19 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ MockNewsRepository.mockImplementation({ fetch: vi.fn() }) but ensureNewsCardsAnalyzedAction calls both fetch + listBySymbol
    ✅ MockNewsRepository.mockImplementation({ fetch: vi.fn(), listBySymbol: vi.fn() }) with all methods tested
 
-8.6. Global vi.mock() in vitest.setup.base.ts weakens test isolation — per-file mocks keep missing-mock failures visible
-   → Global mocks added to vitest.setup.base.ts hide unintended missing dependencies; tests pass despite modules not declaring the mocked package
-   → Use per-file mocks (vi.mock() at top of test file) + resolve alias (tsconfig.json paths) instead
-   → Per-file mocks ensure each test explicitly declares what it mocks; missing mocks for individual tests remain visible and fail loudly
-   ❌ vi.mock('@upstash/redis', ...) added to vitest.setup.base.ts; test passes even if @upstash/redis is not imported/used by the module under test
-   ✅ Remove from setupFiles; add vi.mock('@upstash/redis', ...) directly in test files that need it; unintended missing mocks now fail immediately
-   → Recurring: feat/bot-cost-caching R1 + fix/bars-seed-fold R2 (2 occurrences)
+8.6. Test mock best practices — global mocks weaken isolation; polling loops must terminate; mock resets verified in isolation
+   → Global mocks in vitest.setup.base.ts hide unintended missing dependencies; tests pass despite modules not declaring the mocked package
+   → Polling loops with mocked intervals must terminate eventually to prevent infinite loops (return one response, then never-settling promise)
+   → After repointing a mock during refactor, failure-path tests must be re-run in isolation (`yarn vitest run -t pattern`) to detect unreset-leak bugs masked by full-suite runs
+   → Use per-file mocks (vi.mock() at top of test file) + resolve alias (tsconfig.json paths) instead of global mocks
+   → Per-file mocks ensure each test explicitly declares what it mocks; missing mocks remain visible and fail loudly
+   ❌ vi.mock('@upstash/redis', ...) added to vitest.setup.base.ts; test passes without explicit import
+   ❌ vi.mock(pollingAction) returns {status:'processing'} indefinitely; while loop spins forever → vitest worker killed
+   ❌ Mock not reset in beforeEach; test passes in full suite but fails in isolation
+   ✅ Use per-file vi.mock() in test files; unintended missing mocks fail immediately
+   ✅ Mock returns once {status:'processing'}, then never-settling promise; loop yields cleanly
+   ✅ Reset mocks in beforeEach; run failure-path tests in isolation
+   → Recurring: feat/bot-cost-caching R1, test/views-coverage-include, fix/bars-seed-fold R2 (3 occurrences)
 
 9. Test describe text promises assertions not verified by its it() cases
    → describe() block name must describe only the preconditions/feature shared by all its it() cases

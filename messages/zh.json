@@ -857,9 +857,41 @@
                 "coin": "加密货币",
                 "usOtc": "美国场外"
             },
+            "popularName": {
+                "000660_KS": "SK hynix",
+                "005930_KS": "Samsung Electronics",
+                "006400_KS": "Samsung SDI",
+                "AAPL": "Apple",
+                "BTCUSD": "Bitcoin",
+                "ETHUSD": "Ethereum",
+                "MSFT": "Microsoft",
+                "NVDA": "NVIDIA",
+                "XRPUSD": "XRP"
+            },
             "recentSearch": {
                 "removeRecent": "从最近搜索中移除 {v0}",
                 "removeRecentNamed": "从最近搜索中移除 {v0}（{v1}）"
+            },
+            "search": {
+                "cancel": "取消",
+                "clearAll": "全部清除",
+                "loadFailed": "无法加载搜索结果",
+                "loadFailedRetry": "无法加载搜索结果，请稍后重试。",
+                "navigating": "正在打开个股页面",
+                "navigatingBar": "正在打开个股页面",
+                "noResults": "没有搜索结果",
+                "noResultsTryTicker": "没有结果 — 请尝试用代码搜索",
+                "noResultsTryTickerExample": "没有结果 — 请尝试代码（例如 AAPL）",
+                "overlayLabel": "股票搜索",
+                "placeholder": "搜索名称或代码",
+                "popularHeading": "热门 · {v0}",
+                "recentHeading": "最近搜索",
+                "resultsCount": "{v0} 条搜索结果",
+                "resultsLabel": "搜索结果",
+                "searching": "搜索中",
+                "searchingEllipsis": "搜索中…",
+                "triggerLabel": "打开股票搜索",
+                "typeToSearch": "请输入搜索词"
             }
         }
     },
@@ -1984,6 +2016,9 @@
                 "recentTradingDays": "最近{v0}个交易日",
                 "topFactor": "在{v0}个指标中，{v1}最为突出，处于第{v2}百分位，较平时{v3}。",
                 "vsAnchor": "较{v0} {v1}分 "
+            },
+            "mobileSheet": {
+                "aiAnalysis": "AI 分析"
             },
             "snapshot": {
                 "prose": {

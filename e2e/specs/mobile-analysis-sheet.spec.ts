@@ -17,8 +17,9 @@ import { ANALYSIS_READY_TIMEOUT_MS } from '../support/constants';
  *     visibly higher on screen than at the collapsed PEEK snap).
  *
  * Two more tests guard the P0 this file used to miss entirely: with the
- * sheet mounted and open, guest-reachable inputs OUTSIDE the sheet (header
- * ticker search, floating chatbot) must still accept typing. Before the vaul
+ * sheet mounted and open, guest-reachable inputs OUTSIDE the sheet (the
+ * full-screen search overlay behind the header's magnifier, floating chatbot)
+ * must still accept typing. Before the vaul
  * patch (see MobileAnalysisSheet.tsx), Radix ran modal and its FocusScope
  * yanked focus back into the sheet on every tap into these fields. The
  * member-only holding popover gets the same coverage in the `authed-mobile`
@@ -90,10 +91,15 @@ test.describe('@webkit mobile analysis sheet', () => {
         await page.goto(`/${SYMBOL}`);
         await expect(page.locator('[data-vaul-drawer]')).toBeVisible();
 
-        // 사이트 헤더(z-50)는 심볼 헤더(z-40)보다 DOM상 먼저 렌더돼 항상
-        // 첫 번째 input이다 — TickerAutocomplete가 실제 combobox를 렌더한다.
-        const search = page.locator('header input').first();
-        await search.tap();
+        // 모바일(`lg` 미만)에서 헤더의 검색 표면은 인라인 입력이 아니라 돋보기
+        // 트리거다 — 탭하면 전체화면 오버레이가 열린다. 지켜야 할 불변식은 그대로다:
+        // vaul 시트가 열려 있어도 **시트 밖 입력**이 포커스를 받고 타이핑돼야 한다.
+        await page.getByRole('button', { name: '종목 검색 열기' }).tap();
+
+        const search = page.getByRole('searchbox', {
+            name: '종목명 · 티커 검색',
+        });
+        await expect(search).toBeFocused();
         await search.fill('TSLA');
 
         await expect(search).toHaveValue('TSLA');

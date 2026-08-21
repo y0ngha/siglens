@@ -17,6 +17,7 @@ import { SiteJsonLd } from '@/widgets/layout/SiteJsonLd';
 import { PwaBanner } from '@/features/pwa-install';
 import { NoticePopupLoader } from '@/widgets/notice-popup';
 import { ReactQueryProvider } from '@/app/providers';
+import { SearchOverlayProvider } from '@/features/ticker-search';
 import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
 import { CF_BEACON_TOKEN } from '@/shared/lib/cloudflareAnalytics';
 import { ROOT_KEYWORDS, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
@@ -229,19 +230,30 @@ export default async function RootLayout({
                         messages={pickMessages(messages, CHROME_CLIENT_PATHS)}
                     >
                         <ReactQueryProvider>
-                            <PwaBanner />
-                            <NoticePopupLoader />
-                            {/* 인증 헤더는 클라이언트에서 렌더된다(cookies()를 static render
+                            {/* 전체화면 검색 오버레이를 앱 전체에 하나만 둔다 — 헤더와
+                            홈 히어로가 같은 인스턴스를 연다. 근거는
+                            SearchOverlayProvider JSDoc.
+
+                            마스터는 이것을 루트 레이아웃에 뒀는데, 이 브랜치의
+                            루트는 패스스루라 `<html lang>`도 프로바이더도 없다
+                            (`[locale]/layout.tsx`가 렌더한다). 오버레이는 번역된
+                            문구를 쓰므로 `NextIntlClientProvider` **안**이어야
+                            한다 — 루트에 두면 로케일 컨텍스트 밖이 된다. */}
+                            <SearchOverlayProvider>
+                                <PwaBanner />
+                                <NoticePopupLoader />
+                                {/* 인증 헤더는 클라이언트에서 렌더된다(cookies()를 static render
                         트리에서 제거 → 전 라우트 ISR 가능). 상세는 AuthSessionHeaderClient JSDoc. */}
-                            <AuthSessionHeaderClient />
-                            {children}
-                            {/* Footer를 root layout에 두는 이유: home/404/legal 페이지에만
+                                <AuthSessionHeaderClient />
+                                {children}
+                                {/* Footer를 root layout에 두는 이유: home/404/legal 페이지에만
                         footer가 있어 /market, /backtesting, /[symbol]/* 등 대부분 라우트
                         에 내부 링크가 누수됐다. 차트 페이지(/[symbol])는 SymbolLayout의
                         sticky-footer jail(`min-h-[calc(100dvh-3.5rem)]`)이 chart+AI를
                         첫 viewport에 가득 채우고, footer는 jail의 형제로 그 아래에
                         위치한다 — 사용자가 스크롤을 내리면 footer가 보인다. */}
-                            <Footer />
+                                <Footer />
+                            </SearchOverlayProvider>
                         </ReactQueryProvider>
                     </NextIntlClientProvider>
                 </LocaleProvider>

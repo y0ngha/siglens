@@ -17,3 +17,7 @@ export { TechnicalFactsSummary } from './TechnicalFactsSummary';
 // TechnicalFactsSummary와 동일한 결정적 사실 층 패턴 — fear-greed 페이지의 SSR
 // 서버 계산 factor 요약. app route가 소비.
 export { FearGreedFactsSummary } from './fearGreed/FearGreedFactsSummary';
+// 실제 시트(dynamic ssr:false)가 하이드레이션 후에야 청크를 요청해 생기는 하단 공백을
+// 메우는 서버 렌더 껍데기. app 라우트가 SSR 트리에서 직접 소비한다(SymbolPageClient는
+// useSearchParams CSR-bailout이라 그 안에 두면 SSR HTML에 박히지 않는다).
+export { MobileSheetPlaceholder } from './MobileSheetPlaceholder';

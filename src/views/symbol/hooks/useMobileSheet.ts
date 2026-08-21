@@ -24,7 +24,7 @@ export function useMobileSheet(): UseMobileSheetReturn {
     //
     //     보이는 띠 = 0.97·svh − (1 − snap)·innerHeight
     //
-    // 이고 두 단위가 일치할 때 **띠 = snap − 0.03**으로 정리된다. SNAP_PEEK가
+    // 이고 두 단위가 일치할 때 **띠 = snap − PEEK_VISIBLE_OFFSET**으로 정리된다. SNAP_PEEK가
     // 0.15였을 때 실측값이 정확히 0.12로 나온 것이 이 식의 근거다.
     //
     // 그래서 0.20을 쓴다 — 띠는 0.17로 위 임계값(0.194) 아래에 머물면서,

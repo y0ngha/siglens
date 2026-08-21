@@ -16,6 +16,11 @@ const ALLOWED_RAW_PATHNAME_USERS = [
     'src/features/backtest-filter/hooks/useBacktestFilter.ts',
     // 경로 변경 감지 키로만 쓴다 — 접두사 유무가 무관하다.
     'src/app/_components/AuthSessionHeaderClient.tsx',
+    // 검색 오버레이 3종도 "경로가 바뀌었다"만 본다(도착 감지 → 오버레이 닫기,
+    // 진행 바 끄기). 접두사가 붙은 값이 오히려 맞다 — 로케일 전환도 이동이다.
+    'src/features/ticker-search/ui/SearchOverlay.tsx',
+    'src/features/ticker-search/hooks/useSearchOverlay.ts',
+    'src/features/ticker-search/model/SearchOverlayContext.tsx',
     // 이 훅 자신이 접두사를 뗀다.
     'src/shared/i18n/useAppPathname.ts',
     // next-intl의 navigation(이미 접두사를 뗀 값을 준다)을 쓴다.
