@@ -162,6 +162,21 @@ function keysForFiles(graph, files) {
         )) {
             translatorNamespace.set(m[1], m[2] ?? m[3] ?? null);
         }
+        /**
+         * **즉시 호출 형태** — `useTranslations('ns')('key')`.
+         *
+         * 위 정규식은 `const t = useTranslations(...)` 바인딩만 본다. 변수에
+         * 담지 않고 바로 부르면 그 키가 통째로 안 보여, 라우트 페이로드에서
+         * 빠진 채 런타임 `MISSING_MESSAGE`가 난다. `ChartContent.tsx`의
+         * 폴백 sentinel이 실제로 그 상태였다 — 원시 키 문자열이 sentinel이
+         * 되어 **폴백 판정 자체가 성립하지 않았다**(실측: e2e webServer 로그).
+         */
+        for (const m of code.matchAll(
+            /(?:useTranslations|getTranslations)\s*\(\s*'([^']+)'\s*\)\s*(?:\.(?:rich|markup|raw))?\(\s*'([A-Za-z0-9_.$-]+)'/g
+        )) {
+            keys.add(`${m[1]}.${m[2]}`);
+        }
+
         if (translatorNamespace.size === 0) continue;
 
         const fileNamespaces = new Set([namespaceFor(relPath)]);

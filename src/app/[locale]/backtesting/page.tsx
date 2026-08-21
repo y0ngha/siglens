@@ -108,7 +108,22 @@ export async function generateMetadata({
  * <h1>s")이지만, `name`/`description`은 `backtestingTitle`/`backtestingDescription`을
  * 재사용해 title/description과 동일 로케일로 자동 정렬된다.
  */
-function buildBacktestingJsonLd(t: SeoTranslator, locale: Locale) {
+/**
+ * @param t      `shared.seo` 번역자 — `backtestingTitle`/`backtestingDescription`이 쓴다.
+ * @param tPage  `app.backtesting.seo` 번역자 — Dataset 전용 문구가 쓴다.
+ *
+ * **번역자를 둘 받는다.** 예전에는 `t` 하나로 `t('datasetName')`까지 불렀는데,
+ * 그 키는 `app.backtesting.seo` 아래에 있어 `shared.seo.datasetName`을 찾다
+ * 실패했다. next-intl은 던지지 않고 **키 경로 문자열을 그대로 돌려주므로**
+ * Dataset JSON-LD의 `name`에 `shared.seo.datasetName`이 박힌 채 크롤러에
+ * 나갔다(실측: e2e webServer 로그의 `MISSING_MESSAGE`). 타입도 게이트도
+ * 통과한다 — 런타임에만 드러난다.
+ */
+function buildBacktestingJsonLd(
+    t: SeoTranslator,
+    tPage: SeoTranslator,
+    locale: Locale
+) {
     const title = backtestingTitle(t);
     const description = backtestingDescription(t);
     const fullTitle = `${title} | ${SITE_NAME}`;
@@ -130,7 +145,7 @@ function buildBacktestingJsonLd(t: SeoTranslator, locale: Locale) {
         datasetJsonLd: {
             '@context': 'https://schema.org',
             '@type': 'Dataset',
-            name: t('datasetName', { v0: SITE_NAME }),
+            name: tPage('datasetName', { v0: SITE_NAME }),
             description,
             // 로케일별 URL — 같은 Dataset을 네 URL이 각자 자기 주소로 선언해야
             // 크롤러가 언어 클러스터를 하나로 접지 않는다.
@@ -144,7 +159,7 @@ function buildBacktestingJsonLd(t: SeoTranslator, locale: Locale) {
             license: `${SITE_URL}${TERMS_PATH}`,
             temporalCoverage: '2024-04/2026-04',
             spatialCoverage: 'US',
-            variableMeasured: t('variableMeasured'),
+            variableMeasured: tPage('variableMeasured'),
             keywords: [
                 'AI stock prediction backtesting',
                 'US stock technical analysis backtest',
@@ -181,6 +196,7 @@ export default async function BacktestingPage({
     const { webPageJsonLd, breadcrumbJsonLd, datasetJsonLd } =
         buildBacktestingJsonLd(
             tSeo,
+            await getTranslations('app.backtesting.seo'),
             isLocale(locale) ? locale : DEFAULT_LOCALE
         );
     return (

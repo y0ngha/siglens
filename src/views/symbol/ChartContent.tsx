@@ -135,10 +135,17 @@ export function ChartContent({
     marketProfile = 'us-equity',
 }: ChartContentProps) {
     const t = useTranslations('views.symbol');
-    // 폴백 판정의 sentinel — `buildFallbackAnalysis`와 같은 문구여야 한다.
-    const fallbackSummary = useTranslations('entities.chat-message.fallback')(
-        'unavailable'
-    );
+    /**
+     * 폴백 판정의 sentinel — `buildFallbackAnalysis`와 같은 문구여야 한다.
+     *
+     * **번역자를 변수에 담아 쓴다.** `useTranslations(ns)('key')`처럼 즉시
+     * 호출하면 추출기가 그 키를 못 본다 — 그러면 `[symbol]` 라우트의 클라이언트
+     * 페이로드에서 통째로 빠져 런타임에 `MISSING_MESSAGE`가 나고, sentinel이
+     * 원시 키 문자열이 되어 **폴백 판정 자체가 성립하지 않는다**(실측: e2e
+     * webServer 로그에 `MISSING_MESSAGE: entities.chat-message.fallback (ko)`).
+     */
+    const tFallback = useTranslations('entities.chat-message.fallback');
+    const fallbackSummary = tFallback('unavailable');
     // 비회원 회원가입 유도(Part B) — 같은 심볼에 대한 중복 카운트 방지용.
     const notifiedSymbolRef = useRef<string | null>(null);
 

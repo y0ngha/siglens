@@ -61,13 +61,13 @@
     },
     {
         "file": "src/app/[locale]/backtesting/page.tsx",
-        "line": 154,
+        "line": 169,
         "reason": "seo-keywords-ko-only",
         "text": "주식 기술적 분석 백테스팅"
     },
     {
         "file": "src/app/[locale]/backtesting/page.tsx",
-        "line": 155,
+        "line": 170,
         "reason": "seo-keywords-ko-only",
         "text": "AI 주식 예측 정확도"
     },
