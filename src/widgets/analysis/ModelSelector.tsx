@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
 import { getModelDisplay } from '@/shared/lib/modelDisplay';
@@ -28,6 +29,7 @@ export function ModelSelector({
     showLabel = true,
     dropdownAlign = 'left',
 }: ModelSelectorProps) {
+    const t = useTranslations('widgets.analysis');
     const triggerRef = useRef<HTMLButtonElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -106,7 +108,7 @@ export function ModelSelector({
                     disabled={disabled}
                     aria-haspopup="listbox"
                     aria-expanded={isOpen}
-                    aria-label="AI 분석 모델 선택"
+                    aria-label={t('ModelSelector.1db1df')}
                     className={cn(
                         'border-secondary-700 hover:bg-secondary-700/30 focus-visible:ring-primary-500 flex min-h-11 w-full touch-manipulation items-center justify-between rounded-md border px-3 py-2 transition-colors focus-visible:ring-1 focus-visible:outline-none',
                         disabled && 'cursor-not-allowed opacity-60'
@@ -130,7 +132,7 @@ export function ModelSelector({
                     <div
                         ref={dropdownRef}
                         role="listbox"
-                        aria-label="AI 분석 모델 목록"
+                        aria-label={t('ModelSelector.7c0e87')}
                         // listbox는 인터랙티브 role이라 포커스 가능해야 한다.
                         // -1이므로 탭 순서는 그대로(트리거 버튼만 탭 대상).
                         tabIndex={-1}

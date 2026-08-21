@@ -1,3 +1,5 @@
+import { useTranslations } from 'next-intl';
+
 /**
  * 종목 이동이 진행 중임을 알리는 상단 진행 바.
  *
@@ -34,10 +36,11 @@
  * `SearchOverlayProvider`가 자기 상태로 잠가 폐기된 이동에도 남지 않게 한다.)
  */
 export function NavigationProgressBar() {
+    const t = useTranslations('features.ticker-search');
     return (
         <div
             role="progressbar"
-            aria-label="종목 페이지 이동 중"
+            aria-label={t('search.navigatingBar')}
             // `progressbar`는 라이브 리전이 **아니다** — 마운트만으로는 아무것도
             // 읽히지 않는다. 한때 같은 요소에 `aria-live`와 sr-only 문구를 얹어
             // 때우려 했는데 그건 동작하지 않는다: `progressbar`는 ARIA의

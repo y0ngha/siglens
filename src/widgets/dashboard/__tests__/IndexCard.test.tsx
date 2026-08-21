@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { IndexCard } from '@/widgets/dashboard/IndexCard';
 import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
 
@@ -81,6 +82,34 @@ describe('IndexCard', () => {
         expect(screen.getByText('S&P 500')).toBeInTheDocument();
     });
 
+    /**
+     * 지수명은 config 상수에 한국어로만 있다. 심볼로 카탈로그를 찾는지,
+     * 그리고 **카탈로그에 없는 심볼은 폴백**으로 떨어지는지 함께 본다 —
+     * 폴백이 없으면 카드에 원시 키(`widgets.dashboard.assetName.SPY`)가 찍힌다.
+     */
+    it('en: 카탈로그에 있는 지수는 그 로케일 이름으로 표시한다', () => {
+        renderWithIntl(
+            <IndexCard
+                tickerIsReadable
+                currencySymbol="$"
+                data={{ ...INDEX_DATA, symbol: 'IXIC' }}
+            />,
+            { locale: 'en' }
+        );
+        expect(screen.getByText('NASDAQ Composite')).toBeInTheDocument();
+    });
+
+    it('카탈로그에 없는 심볼은 koreanName으로 떨어진다', () => {
+        renderWithIntl(
+            <IndexCard tickerIsReadable currencySymbol="$" data={INDEX_DATA} />,
+            { locale: 'en' }
+        );
+        expect(screen.getByText('S&P 500')).toBeInTheDocument();
+        expect(
+            screen.queryByText(/widgets\.dashboard\.assetName/)
+        ).not.toBeInTheDocument();
+    });
+
     it('renders percentage change', () => {
         render(
             <IndexCard tickerIsReadable currencySymbol="$" data={INDEX_DATA} />
@@ -99,7 +128,9 @@ describe('IndexCard', () => {
         );
         const link = screen.getByRole('link');
         expect(link).toHaveAttribute('href', '/SPY');
-        expect(link).toHaveAttribute('title', 'S&P 500 Index 분석');
+        // 툴팁은 카드에 보이는 이름과 **같은 소스**를 쓴다. 예전엔 core의
+        // `displayName`(`S&P 500 Index`)을 써서 카드와 툴팁이 어긋났다.
+        expect(link).toHaveAttribute('title', 'S&P 500 분석');
     });
 
     it('does not wrap in a Link when href is absent', () => {
@@ -146,6 +177,27 @@ describe('IndexCard', () => {
             />
         );
         const link = screen.getByRole('link');
-        expect(link).toHaveAttribute('title', 'Technology 분석');
+        expect(link).toHaveAttribute('title', '기술 분석');
+    });
+
+    /**
+     * 회귀: 카드 이름만 로케일을 타고 `title`은 `Technology 분석`으로 남아
+     * `/ja/market`에서 카드는 `テクノロジー`, 툴팁은 영+한 혼용이었다.
+     */
+    it('en: title도 그 로케일로 나온다', () => {
+        renderWithIntl(
+            <IndexCard
+                tickerIsReadable
+                currencySymbol="$"
+                data={SECTOR_DATA}
+                href="/XLK"
+            />,
+            { locale: 'en' }
+        );
+
+        const title = screen.getByRole('link').getAttribute('title') ?? '';
+
+        expect(title).toBe('Technology analysis');
+        expect(title).not.toMatch(/[가-힣]/);
     });
 });

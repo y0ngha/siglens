@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { EyeIcon } from '@/shared/ui/EyeIcon';
 import { useState } from 'react';
 
@@ -16,6 +17,7 @@ export function ApiKeyInput({
     'aria-label': ariaLabel,
     'aria-describedby': ariaDescribedby,
 }: ApiKeyInputProps) {
+    const t = useTranslations('features.api-key-management');
     const [visible, setVisible] = useState(false);
 
     return (
@@ -33,7 +35,9 @@ export function ApiKeyInput({
             <button
                 type="button"
                 onClick={() => setVisible(v => !v)}
-                aria-label={visible ? 'API 키 숨기기' : 'API 키 보이기'}
+                aria-label={
+                    visible ? t('ApiKeyInput.30ebd1') : t('ApiKeyInput.b45630')
+                }
                 aria-pressed={visible}
                 className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-md text-secondary-400 hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
             >

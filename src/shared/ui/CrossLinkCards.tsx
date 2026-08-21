@@ -1,4 +1,5 @@
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import {
     getDescriptor,
     type MarketProfileId,
@@ -20,37 +21,23 @@ const ALL_PAGES = [
 /** Union of all page keys. */
 type PageKey = (typeof ALL_PAGES)[number];
 
-const LABEL: Record<PageKey, string> = {
-    chart: '차트 분석',
-    news: '뉴스 분석',
-    fundamental: '펀더멘털 분석',
-    financials: '재무제표',
-    options: '옵션 분석',
-    'fear-greed': '공포 탐욕 지수',
-    congress: '의회 거래',
-    overall: 'AI 종합 분석',
-};
-
-const EQUITY_DESCRIPTIONS: Record<PageKey, string> = {
-    chart: '기술적 지표 + AI 종합 리포트',
-    news: '실시간 뉴스 + 애널리스트 의견 분석',
-    fundamental: '재무·밸류에이션·애널리스트 전망',
-    financials: '손익계산서·재무상태표·현금흐름표',
-    options: '옵션 시장이 보는 가격대와 기대 변동성',
-    'fear-greed': '단기 매매 심리 0~100 점수',
-    congress: '상원·하원 의원 매매 공시와 AI 동향 해석',
-    overall: '4축 통합 AI 결론 + 시나리오',
-};
-
 /**
- * Returns the per-page description string, branching on assetClass for pages
- * whose copy is equity-specific (currently "overall").
+ * 라벨·설명은 **키만** 여기 두고 `t()`는 컴포넌트에서 부른다.
+ *
+ * 예전에는 이 자리에 한국어 문자열 테이블이 박혀 있어서, 종목 탭 하단의
+ * cross-link 카드가 네 로케일 전부 한국어로 나갔다 — `shared.symbolTab`과
+ * 같은 결함이다. 번역자를 인자로 받는 헬퍼로 바꾸면 추출기가 이 파일을
+ * 건너뛰므로(`noTranslatorParamCall` 가드 참고) 키만 내보낸다.
+ *
+ * `shared.crossLink`는 배열 조회라 추출기에는 동적이다 —
+ * `manualKeys.preserve`에 등록돼 있어야 유지된다.
  */
-function getDescription(page: PageKey, assetClass: AssetClass): string {
+function descriptionKey(page: PageKey, assetClass: AssetClass): string {
+    // overall 카피만 자산군을 탄다 — 크립토엔 실적·옵션 축이 없다.
     if (page === 'overall' && assetClass === 'crypto') {
-        return '차트·뉴스·시장 분위기 통합 AI 결론 + 시나리오';
+        return 'descriptionOverallCrypto';
     }
-    return EQUITY_DESCRIPTIONS[page];
+    return `description.${page}`;
 }
 
 const HREF: Record<PageKey, (symbol: string) => string> = {
@@ -107,6 +94,9 @@ export function CrossLinkCards({
     current,
     marketProfile = 'us-equity',
 }: CrossLinkCardsProps) {
+    const t = useTranslations('shared.ui');
+    // 전용 네임스페이스 — 카드 라벨·설명은 페이지 키로 조회한다.
+    const tCard = useTranslations('shared.crossLink');
     const descriptor = getDescriptor(marketProfile);
     const allowedTabKeys = new Set(descriptor.tabs);
     const assetClass = descriptor.assetClass;
@@ -115,11 +105,11 @@ export function CrossLinkCards({
     return (
         <section
             className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-            aria-label="다른 분석 탭"
+            aria-label={t('CrossLinkCards.be1af0')}
         >
             {visiblePages.map(p => {
                 const isCurrent = p === current;
-                const description = getDescription(p, assetClass);
+                const description = tCard(descriptionKey(p, assetClass));
                 if (isCurrent) {
                     return (
                         <div
@@ -128,13 +118,13 @@ export function CrossLinkCards({
                             className="cursor-default rounded-xl border border-primary-500 bg-secondary-800/40 p-6 ring-1 ring-primary-500/30"
                         >
                             <h3 className="font-semibold text-secondary-100">
-                                {LABEL[p]}
+                                {tCard(`title.${p}`)}
                             </h3>
                             <p className="mt-2 text-sm text-secondary-400">
                                 {description}
                             </p>
                             <p className="mt-3 text-xs font-medium text-primary-400">
-                                지금 보는 페이지예요
+                                {t('CrossLinkCards.7863c7')}
                             </p>
                         </div>
                     );
@@ -149,7 +139,7 @@ export function CrossLinkCards({
                         prefetch={false}
                         className="rounded-xl border border-secondary-700 p-6 transition-colors hover:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
                     >
-                        <h3 className="font-semibold">{LABEL[p]}</h3>
+                        <h3 className="font-semibold">{tCard(`title.${p}`)}</h3>
                         <p className="mt-2 text-sm text-secondary-400">
                             {description}
                         </p>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { ContactForm } from '@/features/contact-form';
 import { useDialog } from '@/shared/hooks/useDialog';
 import { cn } from '@/shared/lib/cn';
@@ -13,9 +14,13 @@ interface ContactDialogProps {
 }
 
 export function ContactDialog({
-    triggerLabel = '문의하기',
+    triggerLabel,
     triggerClassName,
 }: ContactDialogProps) {
+    const t = useTranslations('widgets.layout');
+    // 기본값을 파라미터 자리에 둘 수 없다 — 컴포넌트 본문 밖이라 훅이 아직 없다.
+    const tMisc = useTranslations('shared.ui.misc');
+    const resolvedTriggerLabel = triggerLabel ?? tMisc('contact');
     const { isOpen, open, close, dialogRef, triggerRef } = useDialog();
 
     return (
@@ -26,7 +31,7 @@ export function ContactDialog({
                 onClick={open}
                 className={cn(TRIGGER_BASE_CLASS, triggerClassName)}
             >
-                {triggerLabel}
+                {resolvedTriggerLabel}
             </button>
 
             {/* 네이티브 모달: 포커스 트랩·Esc·비활성 배경이 브라우저 기본 동작이고,
@@ -45,16 +50,16 @@ export function ContactDialog({
                                     id="contact-dialog-title"
                                     className="text-base font-semibold text-secondary-100"
                                 >
-                                    문의하기
+                                    {t('ContactDialog.531f6a')}
                                 </h2>
                                 <p className="mt-1 text-sm text-secondary-400">
-                                    의견이나 오류 제보를 남겨 주세요.
+                                    {t('ContactDialog.79bb9f')}
                                 </p>
                             </div>
                             <button
                                 type="button"
                                 onClick={close}
-                                aria-label="닫기"
+                                aria-label={t('ContactDialog.94b7db')}
                                 className="-mt-1 -mr-1 rounded p-1 text-secondary-400 transition-colors hover:text-secondary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
                                 <svg

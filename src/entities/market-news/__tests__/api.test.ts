@@ -196,7 +196,8 @@ describe('DrizzleMarketNewsRepository.listCardsByCategory는', () => {
 
         const [result] = await repo.listCardsByCategory(
             '__NEWS_CRYPTO__',
-            1000
+            1000,
+            'ko'
         );
 
         expect(result).not.toHaveProperty('bodyEn');
@@ -217,7 +218,8 @@ describe('DrizzleMarketNewsRepository.listCardsByCategory는', () => {
 
         const [result] = await repo.listCardsByCategory(
             '__NEWS_CRYPTO__',
-            1000
+            1000,
+            'ko'
         );
 
         expect(result).toEqual({
@@ -251,7 +253,8 @@ describe('DrizzleMarketNewsRepository.listCardsByCategory는', () => {
 
         const [result] = await repo.listCardsByCategory(
             '__NEWS_CRYPTO__',
-            1000
+            1000,
+            'ko'
         );
 
         expect(result?.sentiment).toBeNull();
@@ -264,7 +267,7 @@ describe('DrizzleMarketNewsRepository.listCardsByCategory는', () => {
         const repo = new DrizzleMarketNewsRepository(db);
 
         await expect(
-            repo.listCardsByCategory('__NEWS_CRYPTO__', 1000)
+            repo.listCardsByCategory('__NEWS_CRYPTO__', 1000, 'ko')
         ).resolves.toEqual([]);
     });
 });
@@ -398,7 +401,8 @@ describe('정렬 tie-break', () => {
         const { db, orderBy } = makeSelectDb([]);
         await new DrizzleMarketNewsRepository(db).listCardsByCategory(
             '__NEWS_CRYPTO__',
-            1000
+            1000,
+            'ko'
         );
         expect(orderBy.mock.calls[0]!.map(orderColumnName)).toEqual([
             'published_at desc',

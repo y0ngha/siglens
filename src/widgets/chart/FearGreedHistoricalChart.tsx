@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import {
@@ -32,6 +33,7 @@ const LINE_WIDTH = 1;
 export function FearGreedHistoricalChart({
     history,
 }: FearGreedHistoricalChartProps) {
+    const t = useTranslations('widgets.chart');
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Line'> | null>(null);
@@ -95,7 +97,7 @@ export function FearGreedHistoricalChart({
             ref={containerRef}
             className="w-full"
             role="img"
-            aria-label="최근 1년 공포 탐욕 지수 추이 차트"
+            aria-label={t('FearGreedHistoricalChart.9b98f6')}
         />
     );
 }

@@ -1,3 +1,4 @@
+import { koMessage } from '@/shared/test-utils/koMessage';
 import {
     ALL_NAV_REGION_LINKS,
     hasRegionForRoot,
@@ -27,11 +28,14 @@ describe('NAV_VERTICALS', () => {
 
     it('keeps region labels short and full labels self-contained', () => {
         for (const link of ALL_NAV_REGION_LINKS) {
+            // 설정은 키만 들고 있으므로 실제 ko 카탈로그에서 꺼내 검증한다.
+            const label = koMessage(link.labelKey);
+            const fullLabel = koMessage(link.fullLabelKey);
             // 짧은 라벨은 버티컬 맥락 안에서만 읽히므로 수식어가 없어야 한다.
-            expect(link.label).not.toContain(' ');
+            expect(label).not.toContain(' ');
             // 반대로 fullLabel은 홀로 읽혀도 뜻이 통해야 한다(푸터·히어로가 쓴다).
-            expect(link.fullLabel.length).toBeGreaterThan(link.label.length);
-            expect(link.fullLabel).toContain(link.label);
+            expect(fullLabel.length).toBeGreaterThan(label.length);
+            expect(fullLabel).toContain(label);
         }
     });
 
@@ -39,7 +43,9 @@ describe('NAV_VERTICALS', () => {
         // 지역은 2단이 정한다 — 1단에 "미국"이 남아 있으면 `미국 시장 분석 > 한국`
         // 같은 모순된 경로가 생긴다.
         for (const vertical of NAV_VERTICALS) {
-            expect(vertical.label).not.toMatch(/미국|한국|암호화폐/);
+            expect(koMessage(vertical.labelKey)).not.toMatch(
+                /미국|한국|암호화폐/
+            );
         }
     });
 

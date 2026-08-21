@@ -1,3 +1,8 @@
+import { useTranslations } from 'next-intl';
+import {
+    ECONOMY_CATEGORY_LABEL_KEY,
+    ECONOMY_INDICATOR_LABEL_KEY,
+} from '@/shared/config/economyLabelKey';
 import type { KrIndicatorCard } from '@/entities/economy';
 import {
     ECONOMY_INDICATOR_CATEGORIES,
@@ -24,6 +29,8 @@ interface KrEconomicIndicatorGridProps {
 export function KrEconomicIndicatorGrid({
     cards,
 }: KrEconomicIndicatorGridProps) {
+    const tCfg = useTranslations('shared.config');
+    const t = useTranslations('widgets.economy');
     if (cards.length === 0) return null;
 
     const byCategory = new Map<EconomyCategoryKey, KrIndicatorCard[]>();
@@ -39,7 +46,7 @@ export function KrEconomicIndicatorGrid({
                 id="kr-economy-indicators"
                 className="text-base font-semibold text-secondary-200"
             >
-                경제지표
+                {t('KrEconomicIndicatorGrid.c2a5bf')}
             </h2>
             {ECONOMY_INDICATOR_CATEGORIES.map(category => {
                 const items = byCategory.get(category.key);
@@ -48,7 +55,10 @@ export function KrEconomicIndicatorGrid({
                 return (
                     <div key={category.key} className="space-y-2">
                         <h3 className="text-sm font-medium text-secondary-400">
-                            {category.label}
+                            {tCfg(
+                                ECONOMY_CATEGORY_LABEL_KEY[category.key] ??
+                                    category.label
+                            )}
                         </h3>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                             {items.map(card => (
@@ -70,11 +80,17 @@ interface IndicatorCardProps {
 }
 
 function IndicatorCard({ card }: IndicatorCardProps) {
+    const tCfg = useTranslations('shared.config');
+    const t = useTranslations('widgets.economy');
     const { meta, latest, latestDate, changeFromPrevious } = card;
     return (
         <article className="rounded-lg border border-secondary-800 bg-secondary-800/30 p-4">
             <div className="flex items-center gap-1.5">
-                <h4 className="text-sm text-secondary-400">{meta.label}</h4>
+                <h4 className="text-sm text-secondary-400">
+                    {ECONOMY_INDICATOR_LABEL_KEY[meta.label]
+                        ? tCfg(ECONOMY_INDICATOR_LABEL_KEY[meta.label])
+                        : meta.label}
+                </h4>
                 <InfoTooltip>{meta.tooltip}</InfoTooltip>
             </div>
             <p className="mt-1 flex items-baseline gap-1">
@@ -100,9 +116,11 @@ function IndicatorCard({ card }: IndicatorCardProps) {
                         해석까지 색으로 단정하지 않는다. 상승=적색은 국내 증시
                         관행(상승 적색)과 같은 방향이라 오독이 적다.
                     */}
-                    직전 발표 대비 {changeFromPrevious > 0 ? '+' : ''}
-                    {changeFromPrevious.toFixed(meta.precision)}
-                    {meta.unit}
+                    {t('KrEconomicIndicatorGrid.9fc30a', {
+                        v0: changeFromPrevious > 0 ? '+' : '',
+                        v1: changeFromPrevious.toFixed(meta.precision),
+                        v2: meta.unit,
+                    })}
                 </p>
             )}
             <p className="mt-1 text-xs text-secondary-500">{latestDate}</p>

@@ -41,7 +41,17 @@ import { MOBILE_SHEET_PEEK_BAND_SVH } from './constants/mobileSheet';
  * 스크린리더에 동작하지 않는 컨트롤을 노출하지 않는다. 실제 시트가 뜨면 그쪽이
  * 접근성 트리를 담당한다.
  */
-export function MobileSheetPlaceholder() {
+interface MobileSheetPlaceholderProps {
+    /**
+     * 시트 제목. **번역은 호출부가 한다** — 이 컴포넌트를 `async`로 만들어
+     * `getTranslations`를 부르면 순수 컴포넌트가 아니게 되고, 그 순간
+     * 렌더 테스트가 next-intl 서버 컨텍스트를 요구한다. 문구 하나 때문에
+     * 치수·CSS 훅 계약을 검사하던 테스트를 통째로 비동기로 바꿀 이유가 없다.
+     */
+    label: string;
+}
+
+export function MobileSheetPlaceholder({ label }: MobileSheetPlaceholderProps) {
     return (
         <div
             data-mobile-sheet-placeholder=""
@@ -64,7 +74,7 @@ export function MobileSheetPlaceholder() {
             <div className="mx-auto h-[5px] w-8 shrink-0 rounded-2xl bg-vaul-handle opacity-70" />
             <div className="min-h-0 flex-1 px-4 pt-3">
                 <p className="text-sm font-medium text-secondary-400">
-                    AI 분석
+                    {label}
                 </p>
             </div>
         </div>

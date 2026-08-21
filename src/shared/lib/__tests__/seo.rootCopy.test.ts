@@ -1,11 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import {
-    ROOT_TITLE,
-    SITE_DESCRIPTION,
-    ROOT_KEYWORDS,
-    seoTitleWidth,
-    SEO_TITLE_MAX_WIDTH,
-} from '../seo';
+import { ROOT_KEYWORDS, seoTitleWidth, SEO_TITLE_MAX_WIDTH } from '../seo';
+import koMessages from '../../../../messages/ko.json';
+import enMessages from '../../../../messages/en.json';
+import jaMessages from '../../../../messages/ja.json';
+import zhMessages from '../../../../messages/zh.json';
+
+// 홈 카피는 `shared.seo.root` 카탈로그가 소유한다 — 예전엔 `seo.ts`의 한국어
+// 상수라 `/en` 홈이 영어 제목 아래 한국어 JSON-LD 설명을 내보냈다. 자산군
+// 커버리지 계약은 **ko 원문**에 대해 그대로 유지한다.
+const ROOT_TITLE = koMessages.shared.seo.root.title;
+const SITE_DESCRIPTION = koMessages.shared.seo.root.description;
 
 /**
  * 홈은 사이트 전체의 주제를 선언하는 가장 강한 신호다. 서비스가 커버하는 자산군 중
@@ -49,5 +53,24 @@ describe('root SEO copy is multi-asset (US + KR stocks + crypto)', () => {
 
     it('ROOT_TITLE이 "| Siglens" 브랜드 접미사를 포함하지 않는다', () => {
         expect(ROOT_TITLE).not.toContain('Siglens');
+    });
+
+    /**
+     * 비-ko 로케일에 한국어가 남으면 `/en` 홈이 영어 제목과 한국어 설명을 함께
+     * 내보낸다 — 실제로 그렇게 나가고 있었다. 자산군 커버리지는 ko 원문 기준으로
+     * 위에서 검사하고, 여기서는 나머지 세 로케일이 실제로 번역됐는지만 본다.
+     */
+    it.each([
+        ['en', enMessages],
+        ['ja', jaMessages],
+        ['zh', zhMessages],
+    ] as const)('%s 홈 카피에 한글이 남지 않았다', (_locale, messages) => {
+        const root = messages.shared.seo.root as unknown as Record<
+            string,
+            string
+        >;
+        for (const [key, value] of Object.entries(root)) {
+            expect(value, key).not.toMatch(/[가-힣]/);
+        }
     });
 });

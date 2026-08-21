@@ -63,12 +63,24 @@ const BALANCE_SHEET_HEADING = '재무상태표';
 // Cash flow section heading (from CashFlowSection)
 const CASH_FLOW_HEADING = '현금흐름표';
 
-// The forced error message text rendered by FinancialsAiSummaryError.
-// useFinancialsAnalysis converts `submitted.error` into an Error instance;
-// getFmpUserFacingMessage returns null for generic messages, so the component
-// falls back to `error.message`.
+/**
+ * **사용자에게 보이는 것은 서버가 준 문구가 아니라 `code`를 번역한 문구다.**
+ *
+ * core는 `fetch_failed`에 항상 `error`를 채우는데 그건 `String(error)` 같은
+ * **영어 예외 문자열**이다. 예전에는 그걸 그대로 렌더해서 전 로케일에 원시
+ * 예외가 나갔다. 지금은 `useFinancialsAnalysis`가 `code`로 카탈로그 문구를
+ * 고르고, 원문은 개발자용으로 `console.error('[fetchFailed]', …)`에만 남긴다.
+ *
+ * 그래서 이 스펙은 **둘 다** 본다 — 화면의 번역 문구와, 콘솔의 원문.
+ * 번역 문구만 보면 "강제 오류가 났다"와 "그냥 조회에 실패했다"를 구분하지
+ * 못해 테스트가 힘을 잃는다.
+ */
+/** 훅이 콘솔에만 남기는 원문 — 강제 오류 경로가 실제로 탔다는 증거. */
 const FINANCIALS_FORCED_ERROR_TEXT =
     'E2E 강제 재무제표 분석 실패 (resilience 테스트용)';
+
+/** 화면에 나오는 문구 — `app.api.stream.fetchFailed`. */
+const FINANCIALS_FETCH_FAILED_KO = '데이터를 불러오지 못했습니다.';
 
 test.describe('financials: happy path', () => {
     test('page renders h1 and active tab', async ({ page }) => {
@@ -211,15 +223,36 @@ test.describe('financials: resilience', () => {
             },
         ]);
 
+        // 콘솔은 이동 **전에** 걸어야 첫 렌더의 로그를 놓치지 않는다.
+        const consoleErrors: string[] = [];
+        page.on('console', msg => {
+            if (msg.type() === 'error') consoleErrors.push(msg.text());
+        });
+
         await page.goto('/AAPL/financials');
 
-        // AI section renders the error message from the forced failure.
-        // FinancialsAiSummaryError renders `error.message` via role="alert".
+        // 화면에는 번역된 문구가 나온다(원시 예외가 아니라).
         await expect(
             page.getByRole('alert').filter({
-                hasText: FINANCIALS_FORCED_ERROR_TEXT,
+                hasText: FINANCIALS_FETCH_FAILED_KO,
             })
         ).toBeVisible({ timeout: 10_000 });
+
+        // 원문은 개발자용으로 콘솔에 남는다 — 강제 오류가 실제로 났다는 증거.
+        await expect
+            .poll(
+                () =>
+                    consoleErrors.some(line =>
+                        line.includes(FINANCIALS_FORCED_ERROR_TEXT)
+                    ),
+                { timeout: 10_000 }
+            )
+            .toBe(true);
+
+        // 원시 예외 문자열이 화면에 새지 않는다.
+        await expect(
+            page.getByText(FINANCIALS_FORCED_ERROR_TEXT, { exact: false })
+        ).toHaveCount(0);
 
         // The scorecard (SSR) is independent of the AI — it must still render.
         await expect(
@@ -247,7 +280,7 @@ test.describe('financials: resilience', () => {
 
         // Error UI disappears and the real AI summary renders.
         await expect(
-            page.getByText(FINANCIALS_FORCED_ERROR_TEXT, { exact: false })
+            page.getByText(FINANCIALS_FETCH_FAILED_KO, { exact: false })
         ).toHaveCount(0, { timeout: 10_000 });
         await expect(
             page.getByRole('heading', { level: 2, name: 'AI 재무제표 분석' })

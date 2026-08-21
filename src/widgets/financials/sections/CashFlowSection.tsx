@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { CashFlowRow } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import {
@@ -22,7 +23,8 @@ interface CashFlowSectionProps {
 }
 
 const HEADING_ID = 'cash-flow-heading';
-const TITLE = '현금흐름표';
+/** `widgets.financials.section` 키 — 표시는 렌더 쪽에서 `t()`로. */
+const TITLE_KEY = 'cashFlow';
 
 /**
  * Displays cash flow statement data: operating CF / FCF / CapEx trend chart,
@@ -41,8 +43,10 @@ export function CashFlowSection({
     rows,
     currency = DEFAULT_STATEMENT_CURRENCY,
 }: CashFlowSectionProps) {
+    const t = useTranslations('widgets.financials');
+    const tSection = useTranslations('widgets.financials.section');
     if (rows.length === 0) {
-        return <EmptySectionCard title={TITLE} />;
+        return <EmptySectionCard title={tSection(TITLE_KEY)} />;
     }
 
     const displayRows = toDisplayOrder(rows);
@@ -50,7 +54,7 @@ export function CashFlowSection({
 
     const chartSeries = [
         {
-            labelKo: '영업CF',
+            labelKo: t('CashFlowSection.461536'),
             values: displayRows.map(r => r.operatingCashFlow),
             color: 'bullish' as const,
         },
@@ -68,7 +72,7 @@ export function CashFlowSection({
 
     const tableRows = [
         {
-            labelKo: '영업현금흐름',
+            labelKo: t('CashFlowSection.16b9ae'),
             values: displayRows.map(r => r.operatingCashFlow),
             format: 'usd' as const,
         },
@@ -86,13 +90,13 @@ export function CashFlowSection({
             format: 'usd' as const,
         },
         {
-            labelKo: 'FCF마진',
+            labelKo: t('CashFlowSection.3aa41a'),
             tooltip: <InfoTooltip>{FcfMarginTooltip}</InfoTooltip>,
             values: displayRows.map(r => r.fcfMargin),
             format: 'pct' as const,
         },
         {
-            labelKo: '배당',
+            labelKo: t('CashFlowSection.98287f'),
             values: displayRows.map(r => r.dividendsPaid),
             format: 'usd' as const,
             colorize: false, // absolute cash outflow — negative sign is structural, not a signal
@@ -105,7 +109,7 @@ export function CashFlowSection({
             className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
-                {TITLE}
+                {tSection(TITLE_KEY)}
             </h2>
             <div className="mb-6">
                 <FinancialTrendChart

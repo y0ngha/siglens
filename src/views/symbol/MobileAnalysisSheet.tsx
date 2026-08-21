@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { type ReactNode } from 'react';
 import { Drawer } from 'vaul';
 import { cn } from '@/shared/lib/cn';
@@ -41,6 +42,7 @@ export function MobileAnalysisSheet({
     onActiveSnapChange,
     children,
 }: MobileAnalysisSheetProps) {
+    const t = useTranslations('views.symbol');
     const {
         isOpen,
         isFullSnap,
@@ -79,13 +81,13 @@ export function MobileAnalysisSheet({
                 >
                     <Drawer.Handle
                         className="shrink-0"
-                        aria-label="AI 분석 패널 크기 조절"
+                        aria-label={t('MobileAnalysisSheet.3298a7')}
                     />
                     <Drawer.Title className="sr-only">
-                        AI 분석 패널
+                        {t('MobileAnalysisSheet.2f1956')}
                     </Drawer.Title>
                     <Drawer.Description className="sr-only">
-                        위로 드래그하여 분석 내용을 확인하세요
+                        {t('MobileAnalysisSheet.1ce2db')}
                     </Drawer.Description>
                     <div
                         ref={contentRef}

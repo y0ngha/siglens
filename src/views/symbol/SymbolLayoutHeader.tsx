@@ -1,6 +1,8 @@
 'use client';
 
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { SymbolTabs } from './SymbolTabs';
@@ -37,9 +39,29 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
     // `shouldShowEnglishName`) — 이쪽은 문자열 하나를 만들고 여기는 색을 나눠 span으로
     // 렌더해서 렌더링까지 공유할 수는 없지만, 판정이 갈리면 같은 페이지의 메타와
     // 헤더가 서로 다른 이름을 말하게 된다.
+    const locale = useResolvedLocale();
     const hasCompanyName =
         !!assetInfo &&
-        shouldShowEnglishName(assetInfo.name, assetInfo.koreanName, ticker);
+        shouldShowEnglishName(
+            assetInfo.name,
+            assetInfo.koreanName,
+            ticker,
+            locale
+        );
+    /**
+     * 비-기본 로케일에서는 한국어명을 앞세우지 않는다.
+     *
+     * `buildDisplayName`은 로케일을 보는데 이 헤더는 색을 나눠 span으로 그리느라
+     * 그 문자열을 재사용할 수 없다 — 그래서 **판정만** 맞춘다. 안 맞추면
+     * `/en/AAPL`의 브레드크럼이 `애플, Apple Inc. (AAPL)`이 되어, 같은 페이지의
+     * `<title>`(영어)과 헤더가 서로 다른 이름을 말한다.
+     *
+     * 영문명이 아예 없으면(국내 종목 다수) 비-ko에서도 한국어명을 남긴다 —
+     * 티커만 남기는 것보다 낫고, `buildDisplayName`도 같은 폴백을 쓴다.
+     */
+    const showKoreanName =
+        !!assetInfo?.koreanName &&
+        (locale === DEFAULT_LOCALE || !hasCompanyName);
 
     const {
         modelId,
@@ -76,7 +98,7 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                         제외한다. role 미부여(plain span)로 두면 layout banner 영역의
                         breadcrumb 정도로 처리되어 의도와 일치한다. */}
                     <span className="truncate text-lg font-semibold tracking-wide text-secondary-100">
-                        {assetInfo?.koreanName && (
+                        {showKoreanName && (
                             <span className="text-secondary-300">
                                 {assetInfo.koreanName}
                                 {hasCompanyName ? ', ' : ' '}

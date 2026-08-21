@@ -1,3 +1,5 @@
+import { useTranslations } from 'next-intl';
+import { useMarketFactorLabels } from '@/shared/lib/useMarketFactorLabels';
 import type { CSSProperties } from 'react';
 import {
     scoreToLabel,
@@ -5,8 +7,6 @@ import {
     type MarketFearGreedFactor,
 } from '@y0ngha/siglens-core';
 import {
-    MARKET_FACTOR_DESCRIPTION,
-    MARKET_FACTOR_LABEL,
     formatMarketFactorRaw,
     type FearGreedMarketId,
 } from '@/shared/lib/marketFearGreedLabels';
@@ -35,8 +35,10 @@ export function MarketFearGreedFactorBar({
     factor,
     market,
 }: MarketFearGreedFactorBarProps) {
-    const label = MARKET_FACTOR_LABEL[market][factor.key];
-    const description = MARKET_FACTOR_DESCRIPTION[market][factor.key];
+    const t = useTranslations('widgets.market-fear-greed');
+    const factorLabels = useMarketFactorLabels(market);
+    const label = factorLabels.label(factor.key);
+    const description = factorLabels.description(factor.key);
     const pctile = Math.round(factor.percentile);
 
     return (
@@ -51,7 +53,10 @@ export function MarketFearGreedFactorBar({
             </header>
             <div
                 role="progressbar"
-                aria-label={`${label} 백분위 ${pctile}`}
+                aria-label={t('MarketFearGreedFactorBar.percentileLabel', {
+                    v0: label,
+                    v1: pctile,
+                })}
                 aria-valuenow={pctile}
                 aria-valuemin={0}
                 aria-valuemax={100}
@@ -71,7 +76,7 @@ export function MarketFearGreedFactorBar({
                     plain text is trivially reachable by screen readers. */}
                 <p className="text-xs text-secondary-500">{description}</p>
                 <span className="shrink-0 font-mono text-xs text-secondary-400">
-                    백분위 {pctile}
+                    {t('MarketFearGreedFactorBar.3d4046', { v0: pctile })}
                 </span>
             </div>
         </section>

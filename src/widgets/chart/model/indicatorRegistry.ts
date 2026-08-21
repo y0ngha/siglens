@@ -77,7 +77,8 @@ export interface IndicatorBinding {
 
 export interface IndicatorCategoryGroup {
     category: IndicatorCategory;
-    label: string;
+    /** `widgets.chart.indicatorCategory` 키. 표시는 렌더 쪽에서 `t()`로. */
+    labelKey: string;
     items: IndicatorBinding[];
 }
 
@@ -88,13 +89,14 @@ export interface IndicatorCategoryGroup {
  * 컴파일 에러로 잡힌다. CATEGORY_ORDER를 이 객체에서 파생하므로(별도 배열 X)
  * 정렬 목록에서 카테고리가 조용히 빠지는 일이 없다.
  */
-export const CATEGORY_LABELS: Record<IndicatorCategory, string> = {
-    trend: '추세',
-    momentum: '모멘텀',
-    volatility: '변동성',
-    volume: '볼륨',
-    statistical: '통계',
-    smc: 'SMC',
+export const CATEGORY_LABEL_KEY: Record<IndicatorCategory, string> = {
+    trend: 'trend',
+    momentum: 'momentum',
+    volatility: 'volatility',
+    volume: 'volume',
+    statistical: 'statistical',
+    // SMC는 고유명사라 네 로케일 모두 같다 — 카탈로그 항목 없이 그대로 쓴다.
+    smc: 'smc',
 };
 
 /**
@@ -103,7 +105,7 @@ export const CATEGORY_LABELS: Record<IndicatorCategory, string> = {
  * 멤버임이 CATEGORY_LABELS 타입으로 보장되므로 안전한 캐스트다.
  */
 export const CATEGORY_ORDER: readonly IndicatorCategory[] = Object.keys(
-    CATEGORY_LABELS
+    CATEGORY_LABEL_KEY
 ) as IndicatorCategory[];
 
 export const INDICATOR_REGISTRY: readonly IndicatorMeta[] = [
@@ -248,6 +250,6 @@ export function groupBindingsByCategory(
     return CATEGORY_ORDER.flatMap(category => {
         const items = bindings.filter(b => b.meta.category === category);
         if (items.length === 0) return [];
-        return [{ category, label: CATEGORY_LABELS[category], items }];
+        return [{ category, labelKey: CATEGORY_LABEL_KEY[category], items }];
     });
 }

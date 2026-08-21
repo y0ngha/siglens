@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 
 interface BotBlockedNoticeProps {
@@ -14,6 +15,7 @@ interface BotBlockedNoticeProps {
  * `ui-danger` semantic — this is not an error state, just an explanation.
  */
 export function BotBlockedNotice({ className }: BotBlockedNoticeProps) {
+    const t = useTranslations('shared.ui');
     return (
         <div
             role="status"
@@ -22,12 +24,8 @@ export function BotBlockedNotice({ className }: BotBlockedNoticeProps) {
                 className
             )}
         >
-            <p className="text-secondary-200">
-                봇 트래픽으로 보여 분석 결과를 표시하지 않았어요.
-            </p>
-            <p className="text-secondary-300">
-                실제 사용자라면 새로고침하거나 다른 브라우저로 접속해 보세요.
-            </p>
+            <p className="text-secondary-200">{t('BotBlockedNotice.90ee5f')}</p>
+            <p className="text-secondary-300">{t('BotBlockedNotice.2040a8')}</p>
         </div>
     );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { isFallbackAnalysis } from '@/entities/chat-message';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { useSymbolHolding } from '@/features/portfolio-holding';
@@ -54,9 +55,12 @@ const VolumeChart = dynamic(
 );
 
 function AnalyzingBanner() {
+    const t = useTranslations('views.symbol');
     return (
         <div className="flex items-center gap-2 rounded bg-secondary-700/40 px-3 py-2">
-            <span className="text-sm text-secondary-400">AI 분석 중…</span>
+            <span className="text-sm text-secondary-400">
+                {t('ChartContent.d12df8')}
+            </span>
         </div>
     );
 }
@@ -130,6 +134,18 @@ export function ChartContent({
     fmpSymbol,
     marketProfile = 'us-equity',
 }: ChartContentProps) {
+    const t = useTranslations('views.symbol');
+    /**
+     * 폴백 판정의 sentinel — `buildFallbackAnalysis`와 같은 문구여야 한다.
+     *
+     * **번역자를 변수에 담아 쓴다.** `useTranslations(ns)('key')`처럼 즉시
+     * 호출하면 추출기가 그 키를 못 본다 — 그러면 `[symbol]` 라우트의 클라이언트
+     * 페이로드에서 통째로 빠져 런타임에 `MISSING_MESSAGE`가 나고, sentinel이
+     * 원시 키 문자열이 되어 **폴백 판정 자체가 성립하지 않는다**(실측: e2e
+     * webServer 로그에 `MISSING_MESSAGE: entities.chat-message.fallback (ko)`).
+     */
+    const tFallback = useTranslations('entities.chat-message.fallback');
+    const fallbackSummary = tFallback('unavailable');
     // 비회원 회원가입 유도(Part B) — 같은 심볼에 대한 중복 카운트 방지용.
     const notifiedSymbolRef = useRef<string | null>(null);
 
@@ -271,7 +287,7 @@ export function ChartContent({
     const isFreeUser = tier !== 'pro';
 
     const analysisContent = useMemo(() => {
-        const hasNarrative = !isFallbackAnalysis(analysis);
+        const hasNarrative = !isFallbackAnalysis(analysis, fallbackSummary);
 
         // 분기 우선순위: 서사 유무를 먼저 보고, 봇 차단은 그 안에서 additive로 둔다.
         // 이전엔 `isBotBlocked`를 맨 앞에서 검사해 봇이면 BotBlockedNotice가 사실 층
@@ -361,6 +377,7 @@ export function ChartContent({
         symbol,
         analysisStatus,
         analysis,
+        fallbackSummary,
         clusteredKeyLevels,
         timeframe,
         displayAnalyzing,
@@ -433,7 +450,8 @@ export function ChartContent({
             // a fallback shell.
             hasResult:
                 analysisResult != null ||
-                (analysis != null && !isFallbackAnalysis(analysis)),
+                (analysis != null &&
+                    !isFallbackAnalysis(analysis, fallbackSummary)),
         }),
         result: analysisResult ?? analysis ?? null,
         context: {
@@ -474,11 +492,17 @@ export function ChartContent({
     // 바뀌는 순간 effect가 재실행되도록 deps에 포함시켜 그때 정확히 한 번 기록한다.
     useEffect(() => {
         if (!isNudgeLoginResolved) return;
-        if (isFallbackAnalysis(analysis)) return;
+        if (isFallbackAnalysis(analysis, fallbackSummary)) return;
         if (notifiedSymbolRef.current === symbol) return;
         notifiedSymbolRef.current = symbol;
         onSymbolAnalyzed(symbol);
-    }, [symbol, analysis, isNudgeLoginResolved, onSymbolAnalyzed]);
+    }, [
+        symbol,
+        analysis,
+        fallbackSummary,
+        isNudgeLoginResolved,
+        onSymbolAnalyzed,
+    ]);
 
     return (
         <div className="flex h-full w-full flex-col md:flex-row">
@@ -526,9 +550,8 @@ export function ChartContent({
                      * 암호화폐는 24/7 거래라 장전·장후 세션 구분 자체가 없으므로
                      * crypto 마켓 프로파일에서는 이 문구를 표시하지 않는다.
                      */}
-                    {marketProfile !== 'crypto' &&
-                        '차트는 Pre-market, After-market 주가를 반영하지 않습니다. | '}
-                    시세 데이터는 최대 15분 지연됩니다.
+                    {marketProfile !== 'crypto' && t('ChartContent.93c3a3')}
+                    {t('ChartContent.ff6b09')}
                 </p>
             </div>
 
@@ -537,7 +560,7 @@ export function ChartContent({
                 role="separator"
                 tabIndex={0}
                 aria-orientation="vertical"
-                aria-label="패널 너비 조절"
+                aria-label={t('ChartContent.d1a23e')}
                 aria-valuenow={panelWidth}
                 aria-valuemin={PANEL_MIN_WIDTH}
                 aria-valuemax={PANEL_MAX_WIDTH}

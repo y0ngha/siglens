@@ -14,6 +14,7 @@ vi.mock('next/link', () => ({
     ),
 }));
 
+import { koMessage } from '@/shared/test-utils/koMessage';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
@@ -31,7 +32,7 @@ describe('HeaderNavStatic', () => {
 
         for (const region of ALL_NAV_REGION_LINKS) {
             const links = screen.getAllByRole('link', {
-                name: region.label,
+                name: koMessage(region.labelKey),
             });
             expect(
                 links.some(l => l.getAttribute('href') === region.href)

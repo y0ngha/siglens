@@ -1,6 +1,14 @@
 import { render } from '@testing-library/react';
-import { SENTIMENT_LABEL_TEXT } from '@/shared/lib/fearGreedLabels';
+import { beforeAll } from 'vitest';
+import { getTranslations } from 'next-intl/server';
+import { sentimentLabelText } from '@/shared/lib/fearGreedLabels';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 import { FearGreedHeaderChipMounted } from '@/views/symbol/FearGreedHeaderChipMounted';
+
+let t: EnumLabelTranslator;
+beforeAll(async () => {
+    t = await getTranslations({ locale: 'ko', namespace: 'shared.enumLabel' });
+});
 
 vi.mock('@/entities/bars/hooks/useBars', () => ({
     useBars: vi.fn(() => ({
@@ -28,6 +36,6 @@ describe('FearGreedHeaderChipMounted', () => {
         const { getByText } = render(
             <FearGreedHeaderChipMounted symbol="NVDA" />
         );
-        expect(getByText(SENTIMENT_LABEL_TEXT.NEUTRAL)).toBeInTheDocument();
+        expect(getByText(sentimentLabelText('NEUTRAL', t))).toBeInTheDocument();
     });
 });

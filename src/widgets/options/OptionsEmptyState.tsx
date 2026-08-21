@@ -1,4 +1,5 @@
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { ReactNode } from 'react';
 
 interface OptionsEmptyStateProps {
@@ -17,53 +18,40 @@ interface OptionsEmptyStateProps {
 const FALLBACK_LINK_CLASSES =
     'border-secondary-700 hover:border-primary-500 focus-visible:ring-primary-500 rounded-xl border p-4 text-left transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
 
+/**
+ * 라벨·설명은 `shared.crossLink`를 재사용한다 — 같은 네 페이지를 가리키는
+ * 카드가 여기와 `CrossLinkCards`에 두 벌 있었고, 둘 다 한국어 리터럴이라
+ * 네 로케일 전부 한국어였다.
+ */
 const FALLBACK_PAGES = [
-    {
-        key: 'chart',
-        label: '차트 분석',
-        desc: '기술적 지표 + AI 종합 리포트',
-        href: (s: string) => `/${s}`,
-    },
-    {
-        key: 'fundamental',
-        label: '펀더멘털 분석',
-        desc: '재무·밸류에이션·미래 방향',
-        href: (s: string) => `/${s}/fundamental`,
-    },
-    {
-        key: 'news',
-        label: '뉴스 분석',
-        desc: '실시간 뉴스 + 애널리스트 의견 분석',
-        href: (s: string) => `/${s}/news`,
-    },
-    {
-        key: 'fear-greed',
-        label: '공포 탐욕 지수',
-        desc: '단기 매매 심리 0~100 점수',
-        href: (s: string) => `/${s}/fear-greed`,
-    },
+    { key: 'chart', href: (s: string) => `/${s}` },
+    { key: 'fundamental', href: (s: string) => `/${s}/fundamental` },
+    { key: 'news', href: (s: string) => `/${s}/news` },
+    { key: 'fear-greed', href: (s: string) => `/${s}/fear-greed` },
 ] as const;
 
 export function OptionsEmptyState({
     symbol,
     snapshotSlot,
 }: OptionsEmptyStateProps) {
+    const tCard = useTranslations('shared.crossLink');
+    const t = useTranslations('widgets.options');
     return (
         <main className="mx-auto max-w-5xl px-4 py-16">
             <div className="rounded-xl border border-secondary-700 bg-secondary-800 p-8 text-center">
                 <h1 className="text-xl font-semibold tracking-tight">
-                    {symbol} 옵션 시장 정보 없음
+                    {t('OptionsEmptyState.64ff0f', { v0: symbol })}
                 </h1>
                 <p className="mt-3 text-sm leading-relaxed text-secondary-400">
-                    {symbol}는 현재 옵션 시장이 형성되어 있지 않습니다.
+                    {t('OptionsEmptyState.97e04b', { v0: symbol })}
                     <br />
-                    다른 분석 페이지에서 종목을 살펴보세요.
+                    {t('OptionsEmptyState.9e8562')}
                 </p>
                 <nav
                     className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
-                    aria-label="다른 분석 페이지"
+                    aria-label={t('OptionsEmptyState.840bca')}
                 >
-                    {FALLBACK_PAGES.map(({ key, label, desc, href }) => (
+                    {FALLBACK_PAGES.map(({ key, href }) => (
                         <Link
                             key={key}
                             href={href(symbol)}
@@ -71,9 +59,11 @@ export function OptionsEmptyState({
                             prefetch={false}
                             className={FALLBACK_LINK_CLASSES}
                         >
-                            <p className="font-semibold">{label}</p>
+                            <p className="font-semibold">
+                                {tCard(`title.${key}`)}
+                            </p>
                             <p className="mt-1 text-sm text-secondary-400">
-                                {desc}
+                                {tCard(`description.${key}`)}
                             </p>
                         </Link>
                     ))}

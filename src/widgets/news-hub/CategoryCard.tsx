@@ -1,4 +1,5 @@
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 /**
  * Maximum number of headline previews to render on the hub card.
@@ -9,7 +10,7 @@ import Link from 'next/link';
 export const PREVIEW_HEADLINE_LIMIT = 3;
 
 export interface CategoryCardProps {
-    koLabel: string;
+    label: string;
     /**
      * 카드가 가리키는 목적지.
      *
@@ -19,7 +20,7 @@ export interface CategoryCardProps {
      */
     href: string;
     /** One-sentence category intro shown below the heading. Differentiates each card from thin-duplicate content. */
-    koDescription: string;
+    description: string;
     /**
      * Pre-fetched headline strings for the preview list. The caller is
      * responsible for fetching and passing these — this component does no
@@ -39,11 +40,12 @@ export interface CategoryCardProps {
  * no client-side state or browser-only APIs.
  */
 export function CategoryCard({
-    koLabel,
+    label,
     href,
-    koDescription,
+    description,
     previewHeadlines,
 }: CategoryCardProps) {
+    const t = useTranslations('widgets.news-hub');
     return (
         <article className="flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-5 transition-colors hover:border-primary-500/50">
             {/*
@@ -59,11 +61,11 @@ export function CategoryCard({
                     prefetch={false}
                     className="transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    {koLabel}
+                    {label}
                 </Link>
             </h2>
             <p className="mb-3 text-xs leading-relaxed text-secondary-400">
-                {koDescription}
+                {description}
             </p>
 
             {previewHeadlines.length > 0 ? (
@@ -71,7 +73,7 @@ export function CategoryCard({
                     className="mb-4 min-w-0 space-y-2"
                     // `koLabel`이 이미 `…뉴스`로 끝나는 경우가 있어(`미국 시장 뉴스`)
                     // 꼬리표에 `뉴스`를 또 붙이면 `뉴스 최신 뉴스`가 된다.
-                    aria-label={`${koLabel} 미리보기`}
+                    aria-label={t('CategoryCard.previewLabel', { v0: label })}
                 >
                     {previewHeadlines.map(headline => (
                         <li
@@ -86,7 +88,7 @@ export function CategoryCard({
                 </ul>
             ) : (
                 <p className="mb-4 text-sm text-secondary-400">
-                    최신 뉴스를 불러오고 있어요.
+                    {t('CategoryCard.2253f0')}
                 </p>
             )}
 
@@ -102,7 +104,7 @@ export function CategoryCard({
                 tabIndex={-1}
                 className="mt-auto text-sm text-primary-400 transition-colors hover:text-primary-300"
             >
-                더보기 <span aria-hidden="true">→</span>
+                {t('CategoryCard.0b6807')} <span aria-hidden="true">→</span>
             </Link>
         </article>
     );

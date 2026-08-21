@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import {
     ChartErrorFallback,
     ChartSkeleton,
@@ -14,7 +15,6 @@ import { useMobileSheet } from './hooks/useMobileSheet';
 import { SNAP_FULL } from './constants/mobileSheet';
 import { useTimeframeChange } from './hooks/useTimeframeChange';
 import { SymbolPageProvider } from './SymbolPageContext';
-import { buildChartPageHeading } from './utils/chartPageHeading';
 import { useSymbolModel } from '@/features/symbol-model';
 import type { MobileAnalysisSheet as MobileAnalysisSheetComponent } from './MobileAnalysisSheet';
 import type { AnalysisResponse, TierInfoDepth } from '@y0ngha/siglens-core';
@@ -106,6 +106,7 @@ export function SymbolPageClient({
     skillCount,
     marketProfile,
 }: SymbolPageClientProps) {
+    const t = useTranslations('views.symbol');
     const { tier, isTierHydrated } = useSymbolModel();
     const {
         sheetSnap,
@@ -147,7 +148,7 @@ export function SymbolPageClient({
                         제공하고, hydration 후 이 가시 h1이 fallback을 대체한다. */}
                     <div className="flex min-w-0 items-center gap-2">
                         <h1 className="line-clamp-2 min-w-0 text-sm font-semibold text-secondary-100 sm:line-clamp-none sm:truncate sm:text-base">
-                            {buildChartPageHeading(displayName)}
+                            {t('chartPageHeading.heading', { v0: displayName })}
                         </h1>
                         {/*
                          * 분석 시트를 여는 명시적 버튼(모바일 전용).
@@ -169,7 +170,7 @@ export function SymbolPageClient({
                             onClick={() => setSheetSnap(SNAP_FULL)}
                             className="shrink-0 touch-manipulation rounded-lg border border-secondary-700 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-secondary-300 transition-colors hover:border-secondary-600 hover:bg-secondary-700/30 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none md:hidden"
                         >
-                            AI 분석 보기
+                            {t('SymbolPageClient.ddb88e')}
                         </button>
                     </div>
                     <TimeframeSelector

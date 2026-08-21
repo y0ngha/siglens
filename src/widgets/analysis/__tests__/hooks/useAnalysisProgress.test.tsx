@@ -1,8 +1,8 @@
 import { renderHook, act } from '@testing-library/react';
 import {
     useAnalysisProgress,
-    ANALYSIS_PHASES,
-    ANALYSIS_TIPS,
+    ANALYSIS_PHASE_COUNT,
+    ANALYSIS_TIP_COUNT,
 } from '@/widgets/analysis/hooks/useAnalysisProgress';
 
 describe('useAnalysisProgress', () => {
@@ -53,7 +53,7 @@ describe('useAnalysisProgress', () => {
         );
 
         act(() => {
-            vi.advanceTimersByTime(8_000 * ANALYSIS_TIPS.length);
+            vi.advanceTimersByTime(8_000 * ANALYSIS_TIP_COUNT);
         });
 
         expect(result.current.tipIndex).toBe(0);
@@ -65,10 +65,10 @@ describe('useAnalysisProgress', () => {
         );
 
         act(() => {
-            vi.advanceTimersByTime(60_000 * (ANALYSIS_PHASES.length + 5));
+            vi.advanceTimersByTime(60_000 * (ANALYSIS_PHASE_COUNT + 5));
         });
 
-        expect(result.current.phaseIndex).toBe(ANALYSIS_PHASES.length - 1);
+        expect(result.current.phaseIndex).toBe(ANALYSIS_PHASE_COUNT - 1);
     });
 
     it('calls onFinished after finishing sequence completes', () => {
@@ -82,9 +82,7 @@ describe('useAnalysisProgress', () => {
         rerender({ isAnalyzing: false });
 
         act(() => {
-            vi.advanceTimersByTime(
-                3_500 + 1_000 * ANALYSIS_PHASES.length + 600
-            );
+            vi.advanceTimersByTime(3_500 + 1_000 * ANALYSIS_PHASE_COUNT + 600);
         });
 
         expect(onFinished).toHaveBeenCalled();
@@ -105,9 +103,7 @@ describe('useAnalysisProgress', () => {
         rerender({ isAnalyzing: false });
 
         act(() => {
-            vi.advanceTimersByTime(
-                3_500 + 1_000 * ANALYSIS_PHASES.length + 600
-            );
+            vi.advanceTimersByTime(3_500 + 1_000 * ANALYSIS_PHASE_COUNT + 600);
         });
 
         rerender({ isAnalyzing: true });
@@ -137,10 +133,10 @@ describe('useAnalysisProgress', () => {
     });
 
     it('ANALYSIS_PHASES has expected count', () => {
-        expect(ANALYSIS_PHASES.length).toBe(6);
+        expect(ANALYSIS_PHASE_COUNT).toBe(6);
     });
 
     it('ANALYSIS_TIPS is non-empty', () => {
-        expect(ANALYSIS_TIPS.length).toBeGreaterThan(0);
+        expect(ANALYSIS_TIP_COUNT).toBeGreaterThan(0);
     });
 });

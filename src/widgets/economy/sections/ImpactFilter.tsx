@@ -1,9 +1,10 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { CalendarImpact } from '@y0ngha/siglens-core';
 
 import { cn } from '@/shared/lib/cn';
-import { IMPACT_LABELS, IMPACT_ORDER } from '../utils/impactMeta';
+import { IMPACT_LABEL_KEY, IMPACT_ORDER } from '../utils/impactMeta';
 
 /**
  * 활성 칩 색상 — 임팩트 식별성 유지(그리드 IMPACT_BADGE 계열과 일치).
@@ -31,10 +32,15 @@ interface ImpactFilterProps {
  * 상위 그리드가 `value`를 받아 셀/상세를 시각적으로 한정한다.
  */
 export function ImpactFilter({ value, onToggle }: ImpactFilterProps) {
+    const t = useTranslations('widgets.economy');
+    // extract.mjs의 동적 키 탐지는 이 파일 안에서 번역자를 직접 호출하는
+    // 패턴만 본다 — `IMPACT_LABEL_KEY[...]`를 그대로 `tLabel(...)`에 넣어야
+    // `shared.enumLabel`이 이 라우트의 클라이언트 번들에 실린다.
+    const tLabel = useTranslations('shared.enumLabel');
     return (
         <div
             role="group"
-            aria-label="중요도 필터"
+            aria-label={t('ImpactFilter.cc4968')}
             className="flex items-center gap-2"
         >
             {IMPACT_ORDER.map(impact => {
@@ -59,7 +65,7 @@ export function ImpactFilter({ value, onToggle }: ImpactFilterProps) {
                                 active ? 'bg-current' : 'bg-secondary-600'
                             )}
                         />
-                        {IMPACT_LABELS[impact]}
+                        {tLabel(IMPACT_LABEL_KEY[impact])}
                     </button>
                 );
             })}

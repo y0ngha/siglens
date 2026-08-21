@@ -239,6 +239,19 @@ export interface NewsDisplayItem {
     priceImpact: NewsImpact | null;
     url: string;
     source: string;
+    /**
+     * 서버가 `content_translations` 사이드카에서 **요청 로케일로 해석한** 값.
+     *
+     * `titleKo`/`titleEn`은 로케일이 이름에 박힌 원본 컬럼이라 ja/zh를 담을 수
+     * 없다. 표시 계층(`resolveNewsTitle` 등)이 이 필드를 최우선으로 쓰고,
+     * 없으면 기존 ko/en 폴백으로 내려간다.
+     *
+     * optional인 이유: 사이드카가 꺼져 있거나 번역이 없으면 아예 붙지 않는다 —
+     * `null`을 실어 보내면 목록 20건 × 3필드만큼 ISR 블롭이 커진다.
+     */
+    titleLocalized?: string;
+    summaryLocalized?: string;
+    bodyLocalized?: string;
 }
 
 export type EarningsReportPeriod = 'past' | 'future';

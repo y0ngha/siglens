@@ -1,3 +1,4 @@
+import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import 'server-only';
 import { unstable_cache } from 'next/cache';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
@@ -70,8 +71,18 @@ async function readDbMap(
  * 그리드(client)는 이 순수 레이블 맵만 받아 표시한다 — server-only 의존성 누출 없음.
  */
 export async function resolveIndicatorLabels(
-    events: readonly EconomicCalendarEvent[]
+    events: readonly EconomicCalendarEvent[],
+    locale: Locale
 ): Promise<Record<string, string>> {
+    /**
+     * 비-ko는 사전을 타지 않으므로 DB 조회·AI 트리거도 필요 없다 — 원본 영문명을
+     * 그대로 돌려준다. 조회를 건너뛰는 게 부수 효과가 아니라 **의도**다.
+     */
+    if (locale !== DEFAULT_LOCALE) {
+        return Object.fromEntries(
+            [...new Set(events.map(e => e.event))].map(raw => [raw, raw])
+        );
+    }
     const distinctRaw = [...new Set(events.map(e => e.event))];
     const baseByRaw = new Map(
         distinctRaw.map(raw => [raw, normalizeIndicatorName(raw).base])
@@ -85,6 +96,9 @@ export async function resolveIndicatorLabels(
     const dbMap = await readDbMap(unknownBases);
 
     return Object.fromEntries(
-        distinctRaw.map(raw => [raw, indicatorLabelKoFromMaps(raw, dbMap)])
+        distinctRaw.map(raw => [
+            raw,
+            indicatorLabelKoFromMaps(raw, dbMap, locale),
+        ])
     );
 }

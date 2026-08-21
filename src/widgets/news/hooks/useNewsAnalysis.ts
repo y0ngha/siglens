@@ -1,6 +1,10 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+import type { StreamErrorMessages } from '@/shared/hooks/useAnalysisStream';
 import { useQuery } from '@tanstack/react-query';
+import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import type { NewsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import type { SubmitNewsAnalysisActionResult } from '@/entities/news-article/actions';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
@@ -23,12 +27,14 @@ async function fetchNewsAnalysis(
     companyName: string,
     modelId: ModelId,
     reasoning: boolean,
+    messages: StreamErrorMessages,
     signal?: AbortSignal
 ): Promise<NewsAnalysisResponse> {
     const result = await runAnalysisStream<SubmitNewsAnalysisActionResult>({
         type: 'news',
         params: { symbol, companyName, modelId, reasoning },
         signal,
+        messages,
     });
 
     if (result.status === 'cached' || result.status === 'done')
@@ -41,19 +47,19 @@ async function fetchNewsAnalysis(
             throw new Error(result.error.message);
         }
         if (result.code === 'no_news') {
-            throw new Error(
-                '분석할 뉴스가 없습니다. 잠시 후 다시 시도해 주세요.'
-            );
+            throw new Error(messages.noNews);
         }
         if (result.code === 'usage_limit_exceeded') {
-            throw new Error(result.error.message);
+            // core가 만든 문구는 **전 로케일 영어**다 — 코드만 믿는다.
+            throw new Error(messages.limitExceeded);
         }
-        throw new Error('분석 중 오류가 발생했습니다.');
+        throw new Error(messages.analysisFailed);
     }
     if (result.status === 'key_error') {
-        throw new Error(result.error);
+        // core가 만든 문구는 **전 로케일 한국어**다.
+        throw new Error(messages.keyRequired);
     }
-    throw new Error('예상치 못한 오류가 발생했습니다.');
+    throw new Error(messages.unexpected);
 }
 
 interface UseNewsAnalysisOptions {
@@ -88,11 +94,16 @@ export function useNewsAnalysis(
         isSettingsHydrated = true,
     }: UseNewsAnalysisOptions = {}
 ): NewsAnalysisState {
+    const tError = useTranslations('shared.ui.analysisError');
+    const streamMessages = useStreamErrorMessages();
+    // 로케일이 키에 들어가야 ko에서 본 결과가 ja 화면에 재사용되지 않는다.
+    const locale = useCurrentLocale();
     const queryKey = QUERY_KEYS.newsAnalysis(
         symbol,
         companyName,
         modelId,
-        reasoning
+        reasoning,
+        locale
     );
 
     const query = useQuery({
@@ -106,6 +117,7 @@ export function useNewsAnalysis(
                 qCompanyName,
                 qModelId,
                 qReasoning,
+                streamMessages,
                 signal
             ),
         enabled: isSettingsHydrated && enabled,
@@ -132,7 +144,7 @@ export function useNewsAnalysis(
             error:
                 query.error instanceof Error
                     ? query.error
-                    : new Error('분석 중 오류가 발생했습니다.'),
+                    : new Error(tError('analysisFailed')),
             retry,
             trigger: retry,
         };

@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { BacktestMeta } from '@y0ngha/siglens-core';
 
 interface BacktestHeroProps {
@@ -24,42 +25,43 @@ function StatCard({ value, label, valueClassName }: StatCardProps) {
 }
 
 export function BacktestHero({ meta }: BacktestHeroProps) {
+    const t = useTranslations('widgets.backtesting');
+    const tHero = useTranslations('widgets.backtesting.hero');
     return (
         <header className="border-b border-secondary-800 px-6 py-6 text-center">
             <p className="mb-1.5 text-[10px] tracking-widest text-secondary-500 uppercase">
                 BACKTESTING RESULTS · {meta.period}
             </p>
             <h1 className="mb-2 text-xl font-bold text-balance text-secondary-100">
-                Siglens가 얼마나 정확한가요?
+                {t('BacktestHero.d8b543')}
             </h1>
             <p className="mb-5 text-sm leading-relaxed text-secondary-400">
-                실제 시장 데이터로 검증한 백테스트 결과예요.
+                {t('BacktestHero.116858')}
                 <br />
-                지금 Siglens가 제공하는 AI 분석 기능을 그대로 과거에 적용했을 때
-                얼마나 잘 맞았는지 보여드려요.
+                {t('BacktestHero.139227')}
             </p>
             <div className="inline-flex items-center gap-5 rounded-lg border border-secondary-700 bg-secondary-800/40 px-6 py-3">
                 <StatCard
                     value={`${meta.winRate}%`}
-                    label="지표 신호 승률"
+                    label={t('BacktestHero.394fff')}
                     valueClassName="text-chart-bullish"
                 />
                 <div className="h-8 w-px bg-secondary-700" aria-hidden="true" />
                 <StatCard
                     value={`${meta.aiWinRate}%`}
-                    label="AI 예측 승률"
+                    label={t('BacktestHero.5a254c')}
                     valueClassName="text-primary-400"
                 />
                 <div className="h-8 w-px bg-secondary-700" aria-hidden="true" />
                 <StatCard
-                    value={`${meta.totalCases}개`}
-                    label="총 케이스"
+                    value={tHero('caseCount', { v0: meta.totalCases })}
+                    label={t('BacktestHero.f92294')}
                     valueClassName="text-ui-warning"
                 />
                 <div className="h-8 w-px bg-secondary-700" aria-hidden="true" />
                 <StatCard
-                    value={`${meta.tickerCount}종목`}
-                    label="Mag7 + 선도주"
+                    value={tHero('tickerCount', { v0: meta.tickerCount })}
+                    label={t('BacktestHero.530709')}
                     valueClassName="text-secondary-300"
                 />
             </div>

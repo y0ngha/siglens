@@ -11,6 +11,7 @@ import { contentHash } from '../lib/contentHash';
 import { generateShareId } from '../lib/generateShareId';
 import { MS_PER_DAY } from '@/shared/config/time';
 import type { CreateShareResult } from '../types';
+import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 
 const SHARE_TTL_DAYS = 7;
 
@@ -43,6 +44,9 @@ export async function createShareSnapshotAction(
         }
 
         const snapshot = buildShareSnapshot(input);
+        // 공유 스냅샷은 **생성 시점의 로케일로 고정**된다 — 저장된 본문이 그
+        // 언어의 AI 산출물이라 나중에 다른 로케일로 다시 해석할 수 없다.
+        const locale = await resolveRequestLocale();
         const expiresAt = new Date(now.getTime() + SHARE_TTL_DAYS * MS_PER_DAY);
         const { db } = getDatabaseClient();
         const repo = new DrizzleSharedAnalysisRepository(db);
@@ -53,9 +57,11 @@ export async function createShareSnapshotAction(
             contentHash: contentHash(
                 snapshot.kind,
                 snapshot.symbol,
+                locale,
                 snapshot.result,
                 snapshot.chartBars
             ),
+            locale,
             snapshot,
             sharerTier: input.sharerTier,
             userId: null,

@@ -19,7 +19,8 @@ import { NAV_VERTICALS } from '@/shared/config/assetClassNav';
  */
 export interface HeroQuickLink {
     readonly href: string;
-    readonly label: string;
+    /** 라벨의 완전 수식 메시지 키. 소비자가 `t()`로 푼다. */
+    readonly labelKey: string;
 }
 
 /** 지역까지 펼쳐 보여줄 버티컬. 나머지는 첫 지역 1개만 노출한다. */
@@ -35,6 +36,6 @@ export const HERO_QUICK_LINKS: ReadonlyArray<HeroQuickLink> =
         // `fullLabel`(`미국 시장 분석`)을 쓴다.
         return shown.map(region => ({
             href: region.href,
-            label: region.fullLabel,
+            labelKey: region.fullLabelKey,
         }));
     });

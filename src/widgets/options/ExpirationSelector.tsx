@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useMemo, useRef, type KeyboardEvent } from 'react';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { cn } from '@/shared/lib/cn';
@@ -40,6 +41,7 @@ export function ExpirationSelector({
     value,
     onChange,
 }: ExpirationSelectorProps) {
+    const t = useTranslations('widgets.options');
     const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
     const tabs = useMemo<TabDescriptor[]>(
@@ -50,9 +52,13 @@ export function ExpirationSelector({
                 value: expirationDate,
                 sub: expirationDate.slice(5),
             })),
-            { key: 'all', label: '종합', value: 'all' as const },
+            {
+                key: 'all',
+                label: t('ExpirationSelector.f7c86d'),
+                value: 'all' as const,
+            },
         ],
-        [slots]
+        [slots, t]
     );
 
     const activeIndex = useMemo(
@@ -102,16 +108,13 @@ export function ExpirationSelector({
         <div
             className="flex flex-wrap items-center gap-2 overflow-x-auto rounded-xl border border-secondary-700 bg-secondary-800 p-3"
             role="tablist"
-            aria-label="옵션 만기 선택"
+            aria-label={t('ExpirationSelector.15dbc6')}
         >
             <span className="mr-1 text-xs tracking-widest text-secondary-400 uppercase">
-                만기
+                {t('ExpirationSelector.ef6fe0')}
                 <InfoTooltip>
-                    <p>옵션 계약이 만료되는 날짜예요.</p>
-                    <p>
-                        가까운 만기일수록 가격 변동이 빨라요. 만기일이 지나면
-                        옵션은 사라져요.
-                    </p>
+                    <p>{t('ExpirationSelector.88dc87')}</p>
+                    <p>{t('ExpirationSelector.c94421')}</p>
                 </InfoTooltip>
             </span>
             {tabs.map((tab, index) => {

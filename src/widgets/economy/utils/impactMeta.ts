@@ -7,9 +7,12 @@ export const IMPACT_ORDER: readonly CalendarImpact[] = [
     'Low',
 ];
 
-/** 임팩트 한국어 레이블 — 필터 칩·상세 뱃지 공통. */
-export const IMPACT_LABELS: Record<CalendarImpact, string> = {
-    High: '높음',
-    Medium: '보통',
-    Low: '낮음',
+/**
+ * 임팩트 → `shared.enumLabel.riskLevel` 카탈로그 키 — 필터 칩·상세 뱃지 공통.
+ * 값 자체(높음/보통/낮음)가 riskLevel 그룹과 동일해 새 그룹을 만들지 않고 재사용한다.
+ */
+export const IMPACT_LABEL_KEY: Record<CalendarImpact, string> = {
+    High: 'riskLevel.high',
+    Medium: 'riskLevel.medium',
+    Low: 'riskLevel.low',
 };

@@ -13,6 +13,7 @@ import { prewarmNews } from '@/entities/news-article/api';
 import { prewarmOptions } from '@/entities/options-chain/api';
 import { markSkipped, clearInFlight, TRANSIENT_SKIP_TTL_SECONDS } from './lock';
 import type { PrewarmBatchCounts } from './runPrewarmBatch';
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 
 interface TabSeamContext {
     symbol: string;
@@ -93,6 +94,11 @@ export async function resolveHarvest(
         await repo.upsert({
             symbol,
             tab,
+            // 프리웜은 현재 한국어로만 생성한다 — 로케일별 프리웜은 화이트리스트로
+            // 통제해야 해서(설계 §2.5·§6.4) 별도 작업이다. 컬럼을 명시해 두면
+            // 그 작업이 이 값만 바꾸면 되고, 지금 저장되는 행이 어느 언어인지도
+            // 분명해진다.
+            locale: DEFAULT_LOCALE,
             content: result.result,
             // 저장소 `model` 필드는 seam이 보낸 modelId(DEEPSEEK_V4_FLASH_MODEL)와
             // 통일한다: 어떤 축의 cached 결과도 자체적으로 모델 식별자를 싣지

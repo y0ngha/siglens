@@ -1,6 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import type {
     MarketBriefingResponse,
     RunBriefingResult,
@@ -31,11 +33,14 @@ export function useMarketBriefing(
     scope: DashboardScopeId,
     peekSeed?: MarketBriefingResponse | null
 ): UseMarketBriefingReturn {
+    const locale = useCurrentLocale();
+    const streamMessages = useStreamErrorMessages();
     const isHydrated = useHydrated();
     const { data, isError } = useQuery({
-        queryKey: QUERY_KEYS.marketBriefing(scope),
+        queryKey: QUERY_KEYS.marketBriefing(scope, locale),
         queryFn: ({ signal }) =>
             runAnalysisStream<MarketBriefingActionResult>({
+                messages: streamMessages,
                 type: 'briefing',
                 params: { scope },
                 signal,

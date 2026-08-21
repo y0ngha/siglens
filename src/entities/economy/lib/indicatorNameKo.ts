@@ -1,3 +1,4 @@
+import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 /**
  * 경제 지표명 한국어화 — 코드 const 사전(source-of-truth, `dict`)이 1차, DB 캐시(`ai`)가
  * 2차다. 이 모듈은 순수(React/server-only/DB 비의존)하므로 클라 그리드와 서버 reader가
@@ -116,8 +117,20 @@ export function koreanizePeriodToken(token: string): string {
  */
 export function indicatorLabelKoFromMaps(
     raw: string,
-    dbMap: Record<string, string>
+    dbMap: Record<string, string>,
+    // 기본값을 두지 않는다 — 빠지면 그 화면만 조용히 한국어로 돌아간다.
+    locale: Locale
 ): string {
+    /**
+     * 이 사전은 **영문 지표명 → 한국어**다. 그래서 비-ko 로케일에서는 사전을
+     * 아예 타지 않고 원본(FMP가 준 영문명)을 그대로 쓴다 — `/en/economy`가
+     * `근원 PCE 물가지수(전년比)`를 렌더하던 결함이 여기서 났다.
+     *
+     * ja/zh도 영문으로 떨어진다. 한국어보다는 낫고, 지표명은 국제 통용
+     * 표기라 그대로 읽힌다. 각 언어 사전이 생기면 여기서 갈래를 늘리면 된다.
+     */
+    if (locale !== DEFAULT_LOCALE) return raw;
+
     const { base, period } = normalizeIndicatorName(raw);
     // `Record<string, string>` 타입은 `noUncheckedIndexedAccess` 없이 항상 string을
     // 반환하므로 `?? dbMap[base]` fallback이 타입 상 dead code처럼 보인다. `Object.hasOwn`으로

@@ -1,3 +1,5 @@
+import { TICKER_CATEGORY_LABEL_KEY } from '@/shared/config/tickerCategoryLabel';
+import { useTranslations } from 'next-intl';
 import type { CryptoCategoryId } from '@/shared/lib/types';
 import { CRYPTO_CATEGORIES } from '@/shared/config/crypto-categories';
 import {
@@ -19,16 +21,19 @@ const CRYPTO_STYLES: Record<CryptoCategoryId, CardStyle> = {
 
 const CRYPTO_CARDS: CategoryCard[] = CRYPTO_CATEGORIES.map(category => ({
     id: category.id,
+    // 라벨은 렌더 시점에 번역한다 — config는 데이터, 표시는 카탈로그.
+    labelKey: TICKER_CATEGORY_LABEL_KEY[category.label],
     label: category.label,
     ...CRYPTO_STYLES[category.id],
     items: category.items,
 }));
 
 export function CryptoShowcase() {
+    const t = useTranslations('widgets.home');
     return (
         <CategoryCardGrid
-            heading="암호화폐 인기 종목"
-            ariaLabel="암호화폐 인기 종목 탐색"
+            heading={t('CryptoShowcase.5c8e33')}
+            ariaLabel={t('CryptoShowcase.ab6a33')}
             cards={CRYPTO_CARDS}
         />
     );

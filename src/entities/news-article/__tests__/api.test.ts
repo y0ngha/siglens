@@ -365,7 +365,8 @@ describe('DrizzleNewsRepository', () => {
 
             await new DrizzleNewsRepository(db).listCardsBySymbol(
                 'AAPL',
-                86_400_000
+                86_400_000,
+                'ko'
             );
 
             expect(orderBy.mock.calls[0]!.map(orderColumnName)).toEqual([
@@ -574,7 +575,11 @@ describe('DrizzleNewsRepository', () => {
         it('DB 내부 필드를 아예 읽지 않는다', async () => {
             const { db, select } = makeSelectDb([cardRow]);
             const repo = new DrizzleNewsRepository(db);
-            const [result] = await repo.listCardsBySymbol('AAPL', 86_400_000);
+            const [result] = await repo.listCardsBySymbol(
+                'AAPL',
+                86_400_000,
+                'ko'
+            );
 
             // 반환 형상: 새어 나오지 않는다.
             expect(result).not.toHaveProperty('bodyEn');
@@ -594,7 +599,11 @@ describe('DrizzleNewsRepository', () => {
         it('publishedAt 을 ISO 문자열로 변환해 반환한다', async () => {
             const { db } = makeSelectDb([cardRow]);
             const repo = new DrizzleNewsRepository(db);
-            const results = await repo.listCardsBySymbol('AAPL', 86_400_000);
+            const results = await repo.listCardsBySymbol(
+                'AAPL',
+                86_400_000,
+                'ko'
+            );
 
             expect(results[0]?.publishedAt).toBe('2025-08-01T10:00:00.000Z');
         });
@@ -603,14 +612,18 @@ describe('DrizzleNewsRepository', () => {
             const { db } = makeSelectDb([]);
             const repo = new DrizzleNewsRepository(db);
             await expect(
-                repo.listCardsBySymbol('AAPL', 86_400_000)
+                repo.listCardsBySymbol('AAPL', 86_400_000, 'ko')
             ).resolves.toEqual([]);
         });
 
         it('표시 필드를 그대로 옮긴다', async () => {
             const { db } = makeSelectDb([cardRow]);
             const repo = new DrizzleNewsRepository(db);
-            const [result] = await repo.listCardsBySymbol('AAPL', 86_400_000);
+            const [result] = await repo.listCardsBySymbol(
+                'AAPL',
+                86_400_000,
+                'ko'
+            );
 
             expect(result).toEqual({
                 id: 'abc123',
@@ -637,7 +650,11 @@ describe('DrizzleNewsRepository', () => {
                 },
             ]);
             const repo = new DrizzleNewsRepository(db);
-            const [result] = await repo.listCardsBySymbol('AAPL', 86_400_000);
+            const [result] = await repo.listCardsBySymbol(
+                'AAPL',
+                86_400_000,
+                'ko'
+            );
 
             expect(result?.sentiment).toBeNull();
             expect(result?.category).toBeNull();
@@ -654,7 +671,11 @@ describe('DrizzleNewsRepository', () => {
                 },
             ]);
             const repo = new DrizzleNewsRepository(db);
-            const [result] = await repo.listCardsBySymbol('AAPL', 86_400_000);
+            const [result] = await repo.listCardsBySymbol(
+                'AAPL',
+                86_400_000,
+                'ko'
+            );
 
             expect(result?.sentiment).toBeNull();
             expect(result?.category).toBeNull();

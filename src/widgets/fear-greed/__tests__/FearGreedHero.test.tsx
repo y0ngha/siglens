@@ -1,7 +1,15 @@
 import { render } from '@testing-library/react';
+import { beforeAll } from 'vitest';
+import { getTranslations } from 'next-intl/server';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { FearGreedHero } from '@/widgets/fear-greed/FearGreedHero';
-import { SENTIMENT_LABEL_TEXT } from '@/shared/lib/fearGreedLabels';
+import { sentimentLabelText } from '@/shared/lib/fearGreedLabels';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+
+let t: EnumLabelTranslator;
+beforeAll(async () => {
+    t = await getTranslations({ locale: 'ko', namespace: 'shared.enumLabel' });
+});
 
 const snapshot: FearGreedSnapshot = {
     score: 18,
@@ -18,7 +26,7 @@ describe('FearGreedHero', () => {
             const { getByText } = render(<FearGreedHero snapshot={snapshot} />);
             expect(getByText('18')).toBeInTheDocument();
             expect(
-                getByText(SENTIMENT_LABEL_TEXT.EXTREME_FEAR)
+                getByText(sentimentLabelText('EXTREME_FEAR', t))
             ).toBeInTheDocument();
         });
 
@@ -27,7 +35,7 @@ describe('FearGreedHero', () => {
             const svg = container.querySelector('svg[role="img"]');
             expect(svg?.getAttribute('aria-label')).toContain('18');
             expect(svg?.getAttribute('aria-label')).toContain(
-                SENTIMENT_LABEL_TEXT.EXTREME_FEAR
+                sentimentLabelText('EXTREME_FEAR', t)
             );
         });
     });
@@ -55,7 +63,9 @@ describe('FearGreedHero', () => {
                 <FearGreedHero snapshot={greedSnap} />
             );
             expect(getByText('60')).toBeInTheDocument();
-            expect(getByText(SENTIMENT_LABEL_TEXT.GREED)).toBeInTheDocument();
+            expect(
+                getByText(sentimentLabelText('GREED', t))
+            ).toBeInTheDocument();
         });
     });
 });

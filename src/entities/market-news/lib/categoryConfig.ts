@@ -52,6 +52,17 @@ export interface CategoryConfig {
     koLabel: string;
     /** 허브 카드 아래 표시하는 한 줄 카테고리 소개. thin-content SEO 방어용. */
     koDescription: string;
+    /**
+     * **UI 표시용** 라벨의 메시지 키.
+     *
+     * `koLabel`을 그대로 키로 바꾸지 않는 이유: `koLabel`은 AI 다이제스트
+     * 프롬프트에 `categoryLabel`로 들어가는 **도메인 입력**이고 core의 프롬프트는
+     * 한국어다. 화면 표기를 번역한다고 AI에 넘기는 값까지 영어가 되면 분석 품질이
+     * 흔들린다. 두 역할이 실제로 다르므로 표시용 키를 따로 둔다.
+     */
+    labelKey: string;
+    /** 허브 카드 설명의 메시지 키. 역할 구분은 `labelKey`와 같다. */
+    descriptionKey: string;
 }
 
 export const CATEGORY_CONFIG: Record<NewsFeedCategoryId, CategoryConfig> = {
@@ -64,6 +75,8 @@ export const CATEGORY_CONFIG: Record<NewsFeedCategoryId, CategoryConfig> = {
         region: 'us',
         koLabel: '미국 일반 시장',
         koDescription: '미국 전반적인 시장 흐름과 거시 경제 소식을 모았습니다.',
+        labelKey: 'entities.market-news.category.general.label',
+        descriptionKey: 'entities.market-news.category.general.description',
     },
     stock: {
         sentinel: '__NEWS_STOCK__',
@@ -75,6 +88,8 @@ export const CATEGORY_CONFIG: Record<NewsFeedCategoryId, CategoryConfig> = {
         koLabel: '미국 주식',
         koDescription:
             '미국 주식 시장의 주요 종목 뉴스와 실적 이슈를 모았습니다.',
+        labelKey: 'entities.market-news.category.stock.label',
+        descriptionKey: 'entities.market-news.category.stock.description',
     },
     crypto: {
         sentinel: '__NEWS_CRYPTO__',
@@ -86,6 +101,8 @@ export const CATEGORY_CONFIG: Record<NewsFeedCategoryId, CategoryConfig> = {
         koLabel: '암호화폐',
         koDescription:
             '비트코인·이더리움 등 주요 암호화폐 시장 동향을 모았습니다.',
+        labelKey: 'entities.market-news.category.crypto.label',
+        descriptionKey: 'entities.market-news.category.crypto.description',
     },
     forex: {
         sentinel: '__NEWS_FOREX__',
@@ -97,6 +114,8 @@ export const CATEGORY_CONFIG: Record<NewsFeedCategoryId, CategoryConfig> = {
         koLabel: '미국 외환',
         koDescription:
             '달러·엔·유로 등 주요 통화 쌍의 외환 시장 소식을 모았습니다.',
+        labelKey: 'entities.market-news.category.forex.label',
+        descriptionKey: 'entities.market-news.category.forex.description',
     },
     articles: {
         sentinel: '__NEWS_ARTICLES__',
@@ -108,6 +127,8 @@ export const CATEGORY_CONFIG: Record<NewsFeedCategoryId, CategoryConfig> = {
         koLabel: '미국 마켓 아티클',
         koDescription:
             'FMP 리서치팀이 작성한 심층 마켓 분석 아티클을 모았습니다.',
+        labelKey: 'entities.market-news.category.articles.label',
+        descriptionKey: 'entities.market-news.category.articles.description',
     },
     kr: {
         sentinel: '__NEWS_KR__',
@@ -122,6 +143,8 @@ export const CATEGORY_CONFIG: Record<NewsFeedCategoryId, CategoryConfig> = {
         koLabel: '한국 증시',
         koDescription:
             '코스피·코스닥 등 국내 증시 주요 뉴스를 네이버 뉴스에서 모았습니다.',
+        labelKey: 'entities.market-news.category.kr.label',
+        descriptionKey: 'entities.market-news.category.kr.description',
     },
 };
 

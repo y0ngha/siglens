@@ -1,13 +1,13 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { KeyboardEvent } from 'react';
 import { cn } from '@/shared/lib/cn';
+import { timeframeLabel } from '@/shared/lib/timeframeLabel';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { useRovingKeyboardNav } from '@/shared/hooks/useRovingKeyboardNav';
 import type { DashboardTimeframe } from '@y0ngha/siglens-core';
-import {
-    DASHBOARD_TIMEFRAME_LABELS,
-    DASHBOARD_TIMEFRAMES,
-} from '@/shared/config/dashboard-tickers';
+import { DASHBOARD_TIMEFRAMES } from '@/shared/config/dashboard-tickers';
 
 interface TimeframeSelectorProps {
     timeframe: DashboardTimeframe;
@@ -30,6 +30,8 @@ export function TimeframeSelector({
     timeframe,
     onChange,
 }: TimeframeSelectorProps) {
+    const t = useTranslations('widgets.dashboard');
+    const locale = useResolvedLocale();
     const handleKeyDown = useRovingKeyboardNav<DashboardTimeframe>({
         items: DASHBOARD_TIMEFRAMES,
         activeItem: timeframe,
@@ -44,7 +46,7 @@ export function TimeframeSelector({
                 id={TIMEFRAME_LABEL_ID}
                 className="text-[10px] tracking-wider text-secondary-500 uppercase"
             >
-                타임프레임
+                {t('TimeframeSelector.756aa5')}
             </span>
             <div
                 role="radiogroup"
@@ -69,7 +71,7 @@ export function TimeframeSelector({
                                 'focus-visible:ring-primary-500 rounded-t focus-visible:ring-2 focus-visible:outline-none'
                             )}
                         >
-                            {DASHBOARD_TIMEFRAME_LABELS[tf]}
+                            {timeframeLabel(tf, locale)}
                         </button>
                     );
                 })}

@@ -11,11 +11,21 @@
  * E2E와 기존 테스트가 그 이름으로 요소를 찾는다.
  */
 
+/**
+ * 문구는 **키만** 내보낸다 — `t()` 호출은 소비 파일에서 한다.
+ *
+ * 추출기는 번역자 선언이 있는 파일에서만 키를 수집한다
+ * (`keysForFiles`의 `translatorNamespace.size === 0` 조기 반환). 여기서
+ * `t('search.triggerLabel')`을 부르면 그 키가 클라이언트 페이로드에서 통째로
+ * 빠져, 하이드레이션 후 화면에 원시 키 문자열이 뜬다 — 전 로케일에서, ko 포함.
+ * `views/symbol/utils/chartPageHeading.ts`가 같은 이유로 같은 형태다.
+ */
+
 /** 아이콘 전용 트리거의 접근 이름. 보이는 텍스트가 없을 때만 쓴다. */
-export const SEARCH_TRIGGER_LABEL = '종목 검색 열기';
+export const SEARCH_TRIGGER_LABEL_KEY = 'search.triggerLabel';
 
 /** 입력 placeholder이자 홈 히어로 트리거의 **보이는** 문구. */
-export const SEARCH_PLACEHOLDER = '종목명 · 티커 검색';
+export const SEARCH_PLACEHOLDER_KEY = 'search.placeholder';
 
 /**
  * 결과 행·인기 종목 행이 공유하는 껍데기 클래스. 두 목록이 한 화면에 이어 붙으므로

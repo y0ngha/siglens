@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
 import { TickerAutocomplete } from '@/features/ticker-search';
 import { cn } from '@/shared/lib/cn';
@@ -64,6 +65,7 @@ export function HoldingForm({
     onCancel,
     autoFocusFirstField = false,
 }: HoldingFormProps) {
+    const t = useTranslations('features.portfolio-management');
     const isEditMode = initial !== undefined;
     const formId = useId();
     const errorId = `${formId}-error`;
@@ -125,7 +127,7 @@ export function HoldingForm({
                 setAveragePrice('');
             }
         } catch {
-            setError('요청 처리 중 문제가 발생했어요. 다시 시도해 주세요.');
+            setError(t('HoldingForm.ea9c99'));
         }
     };
 
@@ -138,7 +140,7 @@ export function HoldingForm({
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                 <div ref={symbolFieldRef} className="min-w-0 flex-1">
                     <span id={`${formId}-symbol-label`} className={FIELD_LABEL}>
-                        종목
+                        {t('HoldingForm.dfa8d7')}
                     </span>
                     {isEditMode ? (
                         <div
@@ -165,7 +167,7 @@ export function HoldingForm({
                                 onClick={() => setSymbol('')}
                                 className="-my-2 touch-manipulation rounded px-1 py-2 text-xs font-medium text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
-                                변경
+                                {t('HoldingForm.ce0109')}
                             </button>
                         </div>
                     ) : (
@@ -180,7 +182,7 @@ export function HoldingForm({
                                 id={`${formId}-symbol-search-suffix`}
                                 className="sr-only"
                             >
-                                티커 검색
+                                {t('HoldingForm.3407f9')}
                             </span>
                             <TickerAutocomplete
                                 size="sm"
@@ -210,7 +212,7 @@ export function HoldingForm({
                         htmlFor={`${formId}-quantity`}
                         className={FIELD_LABEL}
                     >
-                        수량
+                        {t('HoldingForm.7294d6')}
                     </label>
                     <input
                         ref={quantityRef}
@@ -220,7 +222,7 @@ export function HoldingForm({
                         inputMode="decimal"
                         autoComplete="off"
                         required
-                        placeholder="예: 10…"
+                        placeholder={t('HoldingForm.7c07f7')}
                         value={quantity}
                         onChange={e =>
                             setQuantity(stripNegativeSign(e.target.value))
@@ -240,7 +242,7 @@ export function HoldingForm({
                         htmlFor={`${formId}-average-price`}
                         className={FIELD_LABEL}
                     >
-                        평단
+                        {t('HoldingForm.900beb')}
                     </label>
                     <input
                         ref={priceRef}
@@ -250,7 +252,7 @@ export function HoldingForm({
                         inputMode="decimal"
                         autoComplete="off"
                         required
-                        placeholder="예: 152.35…"
+                        placeholder={t('HoldingForm.ca59e5')}
                         value={averagePrice}
                         onChange={e =>
                             setAveragePrice(stripNegativeSign(e.target.value))
@@ -272,7 +274,11 @@ export function HoldingForm({
                         aria-busy={submitting}
                         className={BUTTON_PRIMARY}
                     >
-                        {submitting ? '저장 중…' : isEditMode ? '저장' : '추가'}
+                        {submitting
+                            ? t('HoldingForm.9f6785')
+                            : isEditMode
+                              ? t('HoldingForm.1f1712')
+                              : t('HoldingForm.579429')}
                     </button>
                     {onCancel && (
                         <button
@@ -280,7 +286,7 @@ export function HoldingForm({
                             onClick={onCancel}
                             className={BUTTON_GHOST}
                         >
-                            취소
+                            {t('HoldingForm.19b2d1')}
                         </button>
                     )}
                 </div>

@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { FinancialsScorecard } from '@y0ngha/siglens-core';
 import { CompositeGradeGauge } from './CompositeGradeGauge';
 import { AxisScoreCard } from './AxisScoreCard';
@@ -5,7 +6,7 @@ import {
     DEFAULT_STATEMENT_CURRENCY,
     type StatementCurrency,
 } from './utils/numberFormat';
-import { AXIS_LABEL_KO } from './axisLabels';
+import { AXIS_LABEL_KEY } from './axisLabels';
 
 interface FinancialsScorecardProps {
     /** The complete 4-axis financials scorecard from computeFinancialsScorecard. */
@@ -27,21 +28,34 @@ export function FinancialsScorecard({
     scorecard,
     currency = DEFAULT_STATEMENT_CURRENCY,
 }: FinancialsScorecardProps) {
+    const t = useTranslations('widgets.financials');
+    // extract.mjs의 동적 키 탐지는 이 파일 안에서 번역자를 직접 호출하는
+    // 패턴만 본다 — `AXIS_LABEL_KEY[...]`를 그대로 `tLabel(...)`에 넣어야
+    // `shared.enumLabel`이 이 라우트의 클라이언트 번들에 실린다.
+    const tLabel = useTranslations('shared.enumLabel');
     const { composite, growth, quality, solvency, cash } = scorecard;
 
     const axes = [
-        { key: 'growth' as const, title: AXIS_LABEL_KO.growth, axis: growth },
+        {
+            key: 'growth' as const,
+            title: tLabel(AXIS_LABEL_KEY.growth),
+            axis: growth,
+        },
         {
             key: 'quality' as const,
-            title: AXIS_LABEL_KO.quality,
+            title: tLabel(AXIS_LABEL_KEY.quality),
             axis: quality,
         },
         {
             key: 'solvency' as const,
-            title: AXIS_LABEL_KO.solvency,
+            title: tLabel(AXIS_LABEL_KEY.solvency),
             axis: solvency,
         },
-        { key: 'cash' as const, title: AXIS_LABEL_KO.cash, axis: cash },
+        {
+            key: 'cash' as const,
+            title: tLabel(AXIS_LABEL_KEY.cash),
+            axis: cash,
+        },
     ];
 
     return (
@@ -53,7 +67,7 @@ export function FinancialsScorecard({
                 id="financials-scorecard-heading"
                 className="mb-6 text-lg font-semibold tracking-tight"
             >
-                재무 종합 점수
+                {t('FinancialsScorecard.b5f196')}
             </h2>
 
             <div className="mb-8">

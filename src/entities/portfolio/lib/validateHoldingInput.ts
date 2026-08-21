@@ -28,25 +28,11 @@ export function validateHoldingInput(
 ): ValidateHoldingResult {
     const symbol = input.symbol.trim().toUpperCase();
     if (!isAdmissibleSymbolShape(symbol)) {
-        return {
-            ok: false,
-            code: 'invalid_symbol',
-            message: '올바른 종목 코드를 입력해 주세요.',
-        };
+        return { ok: false, code: 'invalid_symbol' };
     }
     const q = checkDecimal(input.quantity, QUANTITY_SCALE, QUANTITY_MAX);
-    if (!q.ok)
-        return {
-            ok: false,
-            code: 'invalid_quantity',
-            message: '0보다 큰 수량을 입력해 주세요 (소수점 8자리까지).',
-        };
+    if (!q.ok) return { ok: false, code: 'invalid_quantity' };
     const p = checkDecimal(input.averagePrice, PRICE_SCALE, PRICE_MAX);
-    if (!p.ok)
-        return {
-            ok: false,
-            code: 'invalid_price',
-            message: '0보다 큰 평균 단가를 입력해 주세요 (소수점 8자리까지).',
-        };
+    if (!p.ok) return { ok: false, code: 'invalid_price' };
     return { ok: true, symbol, quantity: q.value, averagePrice: p.value };
 }

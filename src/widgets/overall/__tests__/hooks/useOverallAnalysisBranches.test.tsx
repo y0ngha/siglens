@@ -7,6 +7,7 @@
  * return results directly.
  */
 
+import koMessages from '../../../../../messages/ko.json';
 import type { Mock } from 'vitest';
 import { useOverallAnalysis } from '@/widgets/overall/hooks/useOverallAnalysis';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
@@ -245,7 +246,7 @@ describe('useOverallAnalysis — branch coverage', () => {
 
         const state = result.current.state;
         if (state.status !== 'error') throw new Error('expected error');
-        expect(state.error).toBe('API key invalid');
+        expect(state.error).toBe(koMessages.app.api.stream.keyRequired);
     });
 
     it('returns submitting status immediately after trigger', async () => {

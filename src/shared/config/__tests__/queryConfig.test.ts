@@ -66,17 +66,35 @@ describe('queryConfig staleTime constants', () => {
     });
 
     it('marketBriefing query key는 시장별로 갈린다', () => {
-        expect(QUERY_KEYS.marketBriefing('us')).toEqual([
+        expect(QUERY_KEYS.marketBriefing('us', 'ko')).toEqual([
             'market-briefing',
             'us',
+            'ko',
         ]);
-        expect(QUERY_KEYS.marketBriefing('kr')).not.toEqual(
-            QUERY_KEYS.marketBriefing('us')
+        expect(QUERY_KEYS.marketBriefing('kr', 'ko')).not.toEqual(
+            QUERY_KEYS.marketBriefing('us', 'ko')
         );
     });
 
-    it('macroBriefing query key는 안정적이다', () => {
-        expect(QUERY_KEYS.macroBriefing()).toEqual(['macro-briefing']);
+    it('macroBriefing query key는 로케일을 포함한다', () => {
+        expect(QUERY_KEYS.macroBriefing('ko')).toEqual([
+            'macro-briefing',
+            'ko',
+        ]);
+    });
+
+    /**
+     * 브리핑 산문도 번역 대상이다. 로케일이 키에서 빠지면 ko에서 본 브리핑이
+     * ja 화면에 그대로 재사용된다(`staleTime: Infinity` + `QueryClient`가
+     * `[locale]/layout.tsx`에 있어 전환 시 remount되지 않음).
+     */
+    it('브리핑 키도 로케일이 다르면 달라진다', () => {
+        expect(QUERY_KEYS.marketBriefing('us', 'ja')).not.toEqual(
+            QUERY_KEYS.marketBriefing('us', 'ko')
+        );
+        expect(QUERY_KEYS.macroBriefing('ja')).not.toEqual(
+            QUERY_KEYS.macroBriefing('ko')
+        );
     });
 
     it('remainingTokens query key는 안정적이다', () => {
@@ -98,31 +116,55 @@ describe('QUERY_KEYS.financialsAnalysis', () => {
     const MODEL_ID = 'gemini-2.5-flash' as ModelId;
 
     it('key 배열은 [prefix, UPPER_SYMBOL, modelId, reasoning] 형태이다', () => {
-        expect(QUERY_KEYS.financialsAnalysis('aapl', MODEL_ID)).toEqual([
-            'financials-analysis',
-            'AAPL',
-            MODEL_ID,
-            false,
-        ]);
+        expect(
+            QUERY_KEYS.financialsAnalysis('aapl', MODEL_ID, false, 'ko')
+        ).toEqual(['financials-analysis', 'AAPL', MODEL_ID, false, 'ko']);
     });
 
     it('reasoning=true는 reasoning=false(기본)와 다른 키를 만든다 (member-reasoning-toggle spec)', () => {
-        const off = QUERY_KEYS.financialsAnalysis('AAPL', MODEL_ID, false);
-        const on = QUERY_KEYS.financialsAnalysis('AAPL', MODEL_ID, true);
+        const off = QUERY_KEYS.financialsAnalysis(
+            'AAPL',
+            MODEL_ID,
+            false,
+            'ko'
+        );
+        const on = QUERY_KEYS.financialsAnalysis('AAPL', MODEL_ID, true, 'ko');
         expect(off).not.toEqual(on);
-        expect(QUERY_KEYS.financialsAnalysis('AAPL', MODEL_ID)).toEqual(off);
+        expect(
+            QUERY_KEYS.financialsAnalysis('AAPL', MODEL_ID, false, 'ko')
+        ).toEqual(off);
     });
 
     it('symbol을 대문자로 정규화한다', () => {
-        const lower = QUERY_KEYS.financialsAnalysis('tsla', MODEL_ID);
-        const upper = QUERY_KEYS.financialsAnalysis('TSLA', MODEL_ID);
+        const lower = QUERY_KEYS.financialsAnalysis(
+            'tsla',
+            MODEL_ID,
+            false,
+            'ko'
+        );
+        const upper = QUERY_KEYS.financialsAnalysis(
+            'TSLA',
+            MODEL_ID,
+            false,
+            'ko'
+        );
         expect(lower).toEqual(upper);
         expect(lower[1]).toBe('TSLA');
     });
 
     it('fundamentalAnalysis와 prefix가 다르다 (캐시 충돌 없음)', () => {
-        const financials = QUERY_KEYS.financialsAnalysis('AAPL', MODEL_ID);
-        const fundamental = QUERY_KEYS.fundamentalAnalysis('AAPL', MODEL_ID);
+        const financials = QUERY_KEYS.financialsAnalysis(
+            'AAPL',
+            MODEL_ID,
+            false,
+            'ko'
+        );
+        const fundamental = QUERY_KEYS.fundamentalAnalysis(
+            'AAPL',
+            MODEL_ID,
+            false,
+            'ko'
+        );
         expect(financials[0]).not.toBe(fundamental[0]);
     });
 });
@@ -161,27 +203,62 @@ describe('QUERY_KEYS — 나머지 키 팩토리', () => {
     });
 
     it('fundamentalAnalysis: symbol 대문자 정규화 + modelId + reasoning(기본 false)', () => {
-        expect(QUERY_KEYS.fundamentalAnalysis('aapl', MODEL_ID)).toEqual([
-            'fundamental-analysis',
-            'AAPL',
-            MODEL_ID,
-            false,
-        ]);
+        expect(
+            QUERY_KEYS.fundamentalAnalysis('aapl', MODEL_ID, false, 'ko')
+        ).toEqual(['fundamental-analysis', 'AAPL', MODEL_ID, false, 'ko']);
     });
 
     it('congressTrend: symbol 대문자 정규화 + modelId + reasoning(기본 false)', () => {
-        expect(QUERY_KEYS.congressTrend('aapl', MODEL_ID)).toEqual([
-            'congress-trend',
-            'AAPL',
-            MODEL_ID,
-            false,
-        ]);
+        expect(QUERY_KEYS.congressTrend('aapl', MODEL_ID, false, 'ko')).toEqual(
+            ['congress-trend', 'AAPL', MODEL_ID, false, 'ko']
+        );
     });
 
     it('newsAnalysis: symbol 대문자 정규화 + companyName + modelId + reasoning(기본 false)', () => {
-        expect(QUERY_KEYS.newsAnalysis('aapl', 'Apple Inc.', MODEL_ID)).toEqual(
-            ['news-analysis', 'AAPL', 'Apple Inc.', MODEL_ID, false]
-        );
+        expect(
+            QUERY_KEYS.newsAnalysis('aapl', 'Apple Inc.', MODEL_ID, false, 'ko')
+        ).toEqual([
+            'news-analysis',
+            'AAPL',
+            'Apple Inc.',
+            MODEL_ID,
+            false,
+            'ko',
+        ]);
+    });
+
+    /**
+     * AI 분석 산문은 로케일별로 다른 결과다. 키에서 로케일이 빠지면 ko에서 본
+     * 결과가 ja 화면에 그대로 재사용돼 **일본어 UI에 한국어 분석문**이 남는다
+     * (`QueryClient`가 `[locale]/layout.tsx`에 있어 전환 시 remount되지 않는다).
+     */
+    it.each([
+        [
+            'newsAnalysis',
+            () =>
+                QUERY_KEYS.newsAnalysis(
+                    'aapl',
+                    'Apple Inc.',
+                    MODEL_ID,
+                    false,
+                    'ja'
+                ),
+        ],
+        [
+            'overallAnalysis',
+            () =>
+                QUERY_KEYS.overallAnalysis(
+                    'aapl',
+                    'Apple Inc.',
+                    '1Day',
+                    MODEL_ID,
+                    false,
+                    'ja'
+                ),
+        ],
+    ])('%s: 로케일이 다르면 키가 다르다', (_name, build) => {
+        const ja = build() as readonly unknown[];
+        expect(ja.at(-1)).toBe('ja');
     });
 
     it('newsAnalysis: reasoning=true는 다른 키를 만든다', () => {
@@ -189,7 +266,8 @@ describe('QUERY_KEYS — 나머지 키 팩토리', () => {
             'aapl',
             'Apple Inc.',
             MODEL_ID,
-            true
+            true,
+            'ko'
         );
         expect(on).toEqual([
             'news-analysis',
@@ -197,6 +275,7 @@ describe('QUERY_KEYS — 나머지 키 팩토리', () => {
             'Apple Inc.',
             MODEL_ID,
             true,
+            'ko',
         ]);
     });
 
@@ -213,7 +292,9 @@ describe('QUERY_KEYS — 나머지 키 팩토리', () => {
                 'aapl',
                 'Apple Inc.',
                 TIMEFRAME,
-                MODEL_ID
+                MODEL_ID,
+                false,
+                'ko'
             )
         ).toEqual([
             'overall-analysis',
@@ -222,6 +303,7 @@ describe('QUERY_KEYS — 나머지 키 팩토리', () => {
             TIMEFRAME,
             MODEL_ID,
             false,
+            'ko',
         ]);
     });
 
@@ -249,7 +331,9 @@ describe('QUERY_KEYS — 나머지 키 팩토리', () => {
                 'aapl',
                 'Apple Inc.',
                 '2025-01-17',
-                MODEL_ID
+                MODEL_ID,
+                false,
+                'ko'
             )
         ).toEqual([
             'options-analysis',
@@ -258,6 +342,7 @@ describe('QUERY_KEYS — 나머지 키 팩토리', () => {
             '2025-01-17',
             MODEL_ID,
             false,
+            'ko',
         ]);
     });
 });

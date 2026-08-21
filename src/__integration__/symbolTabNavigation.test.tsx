@@ -2,6 +2,9 @@ import { render, screen } from '@testing-library/react';
 import { SymbolTabs } from '@/views/symbol/SymbolTabs';
 import { TABS } from '@/views/symbol/utils/symbolTabsConfig';
 import type { AssetInfo } from '@/shared/lib/types';
+import { withLocale } from '@/shared/test-utils/intlRenderWrapper';
+import koMessages from '@/../messages/ko.json';
+import enMessages from '@/../messages/en.json';
 
 let mockPathname = '/AAPL';
 
@@ -40,8 +43,28 @@ describe('Symbol Tab Navigation', () => {
     it('renders all tab links for a symbol', () => {
         render(<SymbolTabs symbol="AAPL" />);
         for (const tab of TABS) {
-            expect(screen.getByText(tab.label)).toBeInTheDocument();
+            expect(
+                screen.getByText(koMessages.shared.symbolTab[tab.labelKey])
+            ).toBeInTheDocument();
         }
+    });
+
+    /**
+     * 탭바는 사이트에서 가장 눈에 띄는 내비게이션인데 전 로케일에서 한국어로
+     * 남아 있었다 — `aria-label`은 번역되면서 라벨은 모듈 스코프 상수라
+     * 추출 대상이 아니었다.
+     */
+    it('비-ko 로케일에서는 한국어 탭 라벨이 남지 않는다', () => {
+        render(withLocale(<SymbolTabs symbol="AAPL" />, 'en'));
+
+        for (const tab of TABS) {
+            expect(
+                screen.getByText(enMessages.shared.symbolTab[tab.labelKey])
+            ).toBeInTheDocument();
+        }
+        expect(
+            screen.queryByText(koMessages.shared.symbolTab.chart)
+        ).not.toBeInTheDocument();
     });
 
     it('marks the chart tab as current when on /{symbol}', () => {

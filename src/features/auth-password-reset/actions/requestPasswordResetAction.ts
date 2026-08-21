@@ -1,6 +1,8 @@
 'use server';
 
 import { requestPasswordReset } from '@/entities/auth';
+import { getTranslations } from 'next-intl/server';
+import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 import { DrizzleUserRepository } from '@/entities/auth/api';
 import {
     createEmailTokenStore,
@@ -15,6 +17,9 @@ export async function requestPasswordResetAction(
     _prev: ForgotPasswordFormState,
     formData: FormData
 ): Promise<ForgotPasswordFormState> {
+    // 메일 링크가 요청자의 로케일을 유지해야 한다 — 없으면 ja 사용자가
+    // 한국어 재설정 페이지에 떨어진다.
+    const locale = await resolveRequestLocale();
     try {
         const email = normalizeEmail(String(formData.get('email') ?? ''));
 
@@ -27,6 +32,12 @@ export async function requestPasswordResetAction(
         const { db } = getAuthDatabaseClient();
         const repo = new DrizzleUserRepository(db);
         const emailDispatcher = createEmailDispatcher();
+        // 본문도 링크와 같은 로케일로 — 링크만 로케일화하고 본문을 한국어로
+        // 두면 ja 사용자가 한국어 메일 안의 ja 링크를 받는다.
+        const tEmail = await getTranslations({
+            locale,
+            namespace: 'entities.email-token.email',
+        });
 
         // 코어 위임 — 토큰 발급·이메일 발송까지 처리, ok: true 고정 (enumeration 회피), Server Action 블로킹 의도됨.
         await requestPasswordReset(
@@ -34,7 +45,12 @@ export async function requestPasswordResetAction(
             { users: repo, emailTokens, emailDispatcher },
             {
                 buildMessage: token =>
-                    buildPasswordResetEmail({ email, token }),
+                    buildPasswordResetEmail({
+                        email,
+                        token,
+                        locale,
+                        t: tEmail,
+                    }),
             }
         );
 

@@ -1,10 +1,17 @@
 import { render } from '@testing-library/react';
 import type { MarketFearGreedFactor } from '@y0ngha/siglens-core';
 import { MarketFearGreedFactorBar } from '@/widgets/market-fear-greed/MarketFearGreedFactorBar';
-import {
-    MARKET_FACTOR_DESCRIPTION,
-    MARKET_FACTOR_LABEL,
-} from '@/shared/lib/marketFearGreedLabels';
+
+import koMessages from '@/../messages/ko.json';
+
+/** ko 카탈로그의 팩터 라벨·설명 — 소스 상수를 대체한다. */
+const FG = koMessages.shared.lib.fearGreedFactor as unknown as {
+    label: Record<string, string>;
+    descriptionUs: Record<string, string>;
+    symbolLabel: Record<string, string>;
+};
+
+import {} from '@/shared/lib/marketFearGreedLabels';
 
 const momentumFactor: MarketFearGreedFactor = {
     key: 'momentum',
@@ -18,9 +25,7 @@ describe('MarketFearGreedFactorBar', () => {
             const { getByText } = render(
                 <MarketFearGreedFactorBar market="us" factor={momentumFactor} />
             );
-            expect(
-                getByText(MARKET_FACTOR_LABEL.us.momentum)
-            ).toBeInTheDocument();
+            expect(getByText(FG.label.momentum)).toBeInTheDocument();
         });
 
         it('renders the formatted signed raw value', () => {
@@ -41,9 +46,7 @@ describe('MarketFearGreedFactorBar', () => {
             const { getByText } = render(
                 <MarketFearGreedFactorBar market="us" factor={momentumFactor} />
             );
-            expect(
-                getByText(MARKET_FACTOR_DESCRIPTION.us.momentum)
-            ).toBeInTheDocument();
+            expect(getByText(FG.descriptionUs.momentum)).toBeInTheDocument();
         });
 
         it('exposes the percentile via an accessible progressbar', () => {
@@ -52,9 +55,7 @@ describe('MarketFearGreedFactorBar', () => {
             );
             const bar = getByRole('progressbar');
             expect(bar).toHaveAttribute('aria-valuenow', '80');
-            expect(bar.getAttribute('aria-label')).toContain(
-                MARKET_FACTOR_LABEL.us.momentum
-            );
+            expect(bar.getAttribute('aria-label')).toContain(FG.label.momentum);
         });
     });
 
@@ -134,7 +135,9 @@ describe('MarketFearGreedFactorBar', () => {
             const { getByText } = render(
                 <MarketFearGreedFactorBar market="us" factor={factor} />
             );
-            expect(getByText(MARKET_FACTOR_LABEL.us[key])).toBeInTheDocument();
+            expect(
+                getByText(FG.label[key === 'junk_bond' ? 'junk_bond_us' : key]!)
+            ).toBeInTheDocument();
         });
     });
 });

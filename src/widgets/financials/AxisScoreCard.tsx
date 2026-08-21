@@ -1,3 +1,6 @@
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import type { Locale } from '@/shared/i18n/locales';
+import { useTranslations } from 'next-intl';
 import type React from 'react';
 import type {
     AxisScore,
@@ -55,7 +58,8 @@ const SIGNAL_CHIP_CLASS: Record<FinancialSignalDirection, string> = {
 function formatMetricValue(
     value: number | null,
     unit: ScoreMetricUnit,
-    currency: StatementCurrency
+    currency: StatementCurrency,
+    locale: Locale
 ): string {
     if (value === null) return '—';
 
@@ -66,7 +70,7 @@ function formatMetricValue(
             return `${value.toFixed(2)}x`;
         // 'usd'는 "금액" 단위를 뜻하는 레거시 라벨이다 — 실제 통화는 `currency`가 정한다.
         case 'usd':
-            return formatCurrencyCompact(value, currency);
+            return formatCurrencyCompact(value, currency, locale);
         case 'score':
             return String(Math.round(value));
     }
@@ -104,11 +108,12 @@ interface MetricRowProps {
 }
 
 function MetricRow({ metric, currency }: MetricRowProps) {
+    const locale = useResolvedLocale();
     return (
         <div className="flex items-baseline justify-between gap-2 border-b border-secondary-700 py-1.5 last:border-b-0">
             <span className="text-xs text-secondary-300">{metric.labelKo}</span>
             <span className="font-mono text-xs font-medium tabular-nums">
-                {formatMetricValue(metric.value, metric.unit, currency)}
+                {formatMetricValue(metric.value, metric.unit, currency, locale)}
             </span>
         </div>
     );
@@ -129,6 +134,7 @@ export function AxisScoreCard({
     axis,
     currency = DEFAULT_STATEMENT_CURRENCY,
 }: AxisScoreCardProps) {
+    const t = useTranslations('widgets.financials');
     const { score, grade, signals, metrics } = axis;
     const gradeBadgeClass = GRADE_BADGE_CLASS[grade];
     const progressColorClass = PROGRESS_GRADE_COLOR[grade];
@@ -157,7 +163,9 @@ export function AxisScoreCard({
 
             <div>
                 <div className="mb-1 flex items-baseline justify-between">
-                    <span className="text-xs text-secondary-400">점수</span>
+                    <span className="text-xs text-secondary-400">
+                        {t('AxisScoreCard.67d2cf')}
+                    </span>
                     <span className="font-mono text-sm font-semibold text-secondary-100 tabular-nums">
                         {score}
                     </span>

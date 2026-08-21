@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { EyeIcon } from '@/shared/ui/EyeIcon';
 import { useState, type ReactNode } from 'react';
 
@@ -28,6 +29,7 @@ export function PasswordField({
     describedById,
     onChange,
 }: PasswordFieldProps) {
+    const t = useTranslations('shared.ui');
     const [visible, setVisible] = useState(false);
     const [capsLock, setCapsLock] = useState(false);
     const errorId = `${id}-error`;
@@ -65,7 +67,11 @@ export function PasswordField({
                 <button
                     type="button"
                     onClick={() => setVisible(v => !v)}
-                    aria-label={visible ? '비밀번호 숨기기' : '비밀번호 보이기'}
+                    aria-label={
+                        visible
+                            ? t('PasswordField.483994')
+                            : t('PasswordField.49d3b5')
+                    }
                     aria-pressed={visible}
                     className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-md text-secondary-400 hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
                 >
@@ -78,7 +84,7 @@ export function PasswordField({
                     aria-live="polite"
                     className="text-xs text-ui-warning"
                 >
-                    Caps Lock이 켜져 있습니다.
+                    {t('PasswordField.3ddfb5')}
                 </p>
             ) : null}
             {hint}

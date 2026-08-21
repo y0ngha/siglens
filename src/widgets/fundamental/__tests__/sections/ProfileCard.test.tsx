@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import { EMPTY_MESSAGE } from '@/widgets/fundamental/sections/EmptySectionCard';
 import { ProfileCard } from '@/widgets/fundamental/sections/ProfileCard';
 import type { FundamentalProfile } from '@y0ngha/siglens-core';
+import { koMessage } from '@/shared/test-utils/koMessage';
 
 const SAMPLE_PROFILE: FundamentalProfile = {
     symbol: 'AAPL',
@@ -37,7 +37,11 @@ describe('ProfileCard', () => {
         expect(
             screen.getByRole('heading', { name: '회사 프로필' })
         ).toBeInTheDocument();
-        expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                koMessage('widgets.financials.section.emptySection')
+            )
+        ).toBeInTheDocument();
     });
 
     it('omits industry separator when industry is empty string', () => {

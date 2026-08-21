@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { isKoreanInput } from '@/entities/ticker';
 import { useAutocomplete } from '../hooks/useAutocomplete';
 import { marketBadgeSpec, resultDisplayNames } from '../lib/resultDisplay';
@@ -65,6 +66,7 @@ export function TickerAutocomplete({
     ariaDescribedby,
     ariaLabelledby,
 }: TickerAutocompleteProps) {
+    const t = useTranslations('features.ticker-search');
     const {
         query,
         results,
@@ -100,7 +102,11 @@ export function TickerAutocomplete({
                     name="symbol"
                     autoComplete="off"
                     role="combobox"
-                    aria-label={ariaLabelledby ? undefined : '종목 티커 검색'}
+                    aria-label={
+                        ariaLabelledby
+                            ? undefined
+                            : t('TickerAutocomplete.30cf1e')
+                    }
                     aria-labelledby={ariaLabelledby}
                     aria-expanded={isOpen}
                     aria-haspopup="listbox"
@@ -118,7 +124,7 @@ export function TickerAutocomplete({
                     onChange={handleChange}
                     onKeyDown={handleKeyDown}
                     onFocus={handleFocus}
-                    placeholder="종목 입력 (예: AAPL, 삼성전자, BTC)"
+                    placeholder={t('TickerAutocomplete.124e37')}
                     className={cn(
                         INPUT_BASE,
                         INPUT_SIZE[size],
@@ -135,7 +141,7 @@ export function TickerAutocomplete({
                     >
                         {isSearching && (
                             <div className="px-4 py-3 text-sm text-secondary-400">
-                                검색 중…
+                                {t('TickerAutocomplete.e39068')}
                             </div>
                         )}
                         {isError &&
@@ -144,15 +150,14 @@ export function TickerAutocomplete({
                                 // 죽어도 "결과 없음"으로 보이고, 한글 질의에는 "티커로
                                 // 쳐보세요"라는 틀린 안내까지 나간다. 오버레이와 같은 문구.
                                 <div className="px-4 py-3 text-sm text-secondary-400">
-                                    검색을 불러오지 못했어요. 잠시 후 다시
-                                    시도해 주세요.
+                                    {t('search.loadFailedRetry')}
                                 </div>
                             )}
                         {!isSearching && !isError && results.length === 0 && (
                             <div className="px-4 py-3 text-sm text-secondary-400">
                                 {isKorean
-                                    ? '검색 결과 없음 — 티커(예: AAPL)로 검색해 보세요'
-                                    : '검색 결과 없음'}
+                                    ? t('TickerAutocomplete.e62852')
+                                    : t('TickerAutocomplete.5dd6d9')}
                             </div>
                         )}
                         {results.map((result, index) => (
@@ -174,7 +179,7 @@ export function TickerAutocomplete({
                     onClick={handleSearchClick}
                     className={cn(BUTTON_BASE, BUTTON_SIZE[size])}
                 >
-                    검색
+                    {t('TickerAutocomplete.4f5a3f')}
                 </button>
             )}
         </div>

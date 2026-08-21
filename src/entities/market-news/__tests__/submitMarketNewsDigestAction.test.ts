@@ -44,6 +44,7 @@ vi.mock('@/entities/news-article', async orig => ({
 
 // 2. 정적 import — vi.mock 선언 이후에 배치한다.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import koMessages from '../../../../messages/ko.json';
 import { isBot } from '@/shared/api/isBot';
 import * as core from '@y0ngha/siglens-core';
 import { DEFAULT_DIGEST_MODEL_ID } from '../lib/marketNewsConstants';
@@ -63,7 +64,7 @@ describe('submitMarketNewsDigestAction은', () => {
 
         const { submitMarketNewsDigestAction } =
             await import('../actions/submitMarketNewsDigestAction');
-        await submitMarketNewsDigestAction('crypto');
+        await submitMarketNewsDigestAction('crypto', 'ko');
 
         expect(core.runMarketNewsDigest).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -90,7 +91,7 @@ describe('submitMarketNewsDigestAction은', () => {
 
         const { submitMarketNewsDigestAction } =
             await import('../actions/submitMarketNewsDigestAction');
-        const r = await submitMarketNewsDigestAction('crypto');
+        const r = await submitMarketNewsDigestAction('crypto', 'ko');
 
         // 결과가 core의 반환값을 그대로 전달한다.
         expect(r.status).toBe('done');
@@ -118,7 +119,7 @@ describe('submitMarketNewsDigestAction은', () => {
 
         const { submitMarketNewsDigestAction } =
             await import('../actions/submitMarketNewsDigestAction');
-        await submitMarketNewsDigestAction('crypto');
+        await submitMarketNewsDigestAction('crypto', 'ko');
 
         expect(core.runMarketNewsDigest).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -144,7 +145,7 @@ describe('submitMarketNewsDigestAction은', () => {
 
         const { submitMarketNewsDigestAction } =
             await import('../actions/submitMarketNewsDigestAction');
-        const r = await submitMarketNewsDigestAction('crypto');
+        const r = await submitMarketNewsDigestAction('crypto', 'ko');
 
         expect(r.status).toBe('cached');
     });
@@ -156,11 +157,11 @@ describe('submitMarketNewsDigestAction은', () => {
 
         const { submitMarketNewsDigestAction } =
             await import('../actions/submitMarketNewsDigestAction');
-        const r = await submitMarketNewsDigestAction('crypto');
+        const r = await submitMarketNewsDigestAction('crypto', 'ko');
 
         expect(r.status).toBe('error');
         expect((r as { status: 'error'; error: string }).error).toBe(
-            'Failed to submit digest'
+            koMessages.app.api.stream.digestFailed
         );
     });
 
@@ -169,7 +170,8 @@ describe('submitMarketNewsDigestAction은', () => {
         const { submitMarketNewsDigestAction } =
             await import('../actions/submitMarketNewsDigestAction');
         const r = await submitMarketNewsDigestAction(
-            'unknown_category' as unknown as import('@y0ngha/siglens-core').NewsFeedCategory
+            'unknown_category' as unknown as import('@y0ngha/siglens-core').NewsFeedCategory,
+            'ko'
         );
 
         expect(r.status).toBe('error');

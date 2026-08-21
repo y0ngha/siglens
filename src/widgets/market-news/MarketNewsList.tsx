@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { NewsFeedCategoryId } from '@/entities/market-news';
 import { useState } from 'react';
 import type { MarketNewsCardItem } from '@/entities/market-news';
@@ -11,19 +12,20 @@ import { MarketNewsCard } from './MarketNewsCard';
 
 const PAGE_SIZE = 10;
 const SKELETON_COUNT = 3;
-const PERIOD_LABEL = `최근 ${MARKET_NEWS_LOOKBACK_DAYS}일`;
 
 function MarketNewsListHeader() {
+    const t = useTranslations('widgets.market-news');
+    const tMisc = useTranslations('shared.ui.misc');
     return (
         <div className="flex items-center justify-between gap-2">
             <h2
                 id="market-news-list-heading"
                 className="text-lg font-semibold tracking-tight"
             >
-                최신 시장 뉴스
+                {t('MarketNewsList.d107e1')}
             </h2>
             <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-300">
-                {PERIOD_LABEL}
+                {tMisc('lastNDays', { v0: MARKET_NEWS_LOOKBACK_DAYS })}
             </span>
         </div>
     );
@@ -50,6 +52,7 @@ function MarketNewsCardSkeleton() {
 }
 
 function LoadingState() {
+    const t = useTranslations('widgets.market-news');
     return (
         <section
             aria-labelledby="market-news-list-heading"
@@ -62,7 +65,7 @@ function LoadingState() {
                 aria-live="polite"
                 aria-atomic="true"
             >
-                뉴스 수집 중…
+                {t('MarketNewsList.b514aa')}
             </span>
             <ul className="space-y-3">
                 {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
@@ -95,6 +98,7 @@ export function MarketNewsList({
     category,
     initialItems,
 }: MarketNewsListProps) {
+    const t = useTranslations('widgets.market-news');
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
     const [prevCategory, setPrevCategory] = useState(category);
 
@@ -133,8 +137,9 @@ export function MarketNewsList({
             >
                 <MarketNewsListHeader />
                 <p className="text-sm text-secondary-400">
-                    지난 {MARKET_NEWS_LOOKBACK_DAYS}일 동안 들어온 뉴스가
-                    없어요.
+                    {t('MarketNewsList.242236', {
+                        v0: MARKET_NEWS_LOOKBACK_DAYS,
+                    })}
                 </p>
             </section>
         );
@@ -163,7 +168,9 @@ export function MarketNewsList({
                     onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
                     className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-secondary-700 py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    더보기 ({items.length - visibleCount}개 남음)
+                    {t('MarketNewsList.8e5a3a', {
+                        v0: items.length - visibleCount,
+                    })}
                 </button>
             )}
         </section>

@@ -1,3 +1,8 @@
+import { useTranslations } from 'next-intl';
+import {
+    ECONOMY_CATEGORY_LABEL_KEY,
+    ECONOMY_INDICATOR_LABEL_KEY,
+} from '@/shared/config/economyLabelKey';
 import type { ReactElement } from 'react';
 import {
     computeYieldSpread,
@@ -14,6 +19,7 @@ import {
 } from '@/shared/config/economyIndicators';
 import { cn } from '@/shared/lib/cn';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 
 /**
  * 국채 수익률·2s10s 스프레드 카드의 표시 소수 자리수.
@@ -22,9 +28,27 @@ import { InfoTooltip } from '@/shared/ui/InfoTooltip';
  */
 const TREASURY_YIELD_PRECISION = 2;
 
+/**
+ * `EconomyIndicatorMeta.unit` 중 카탈로그 키로 대체된 한국어 카운터 단위만
+ * `shared.enumLabel.economyUnit`으로 조회한다. 예전엔 이 값이 `'천명'`·`'건'`
+ * 리터럴이라 `/en/economy`가 `vs. Previous Period +41천명`·`-6000건`을 그대로
+ * 찍었다. `'%'`·`'pt'`·`'B$'` 같은 로케일 불변 기호는 맵에 없으므로 그대로
+ * 통과한다.
+ */
+const ECONOMY_UNIT_LABEL_KEY: Partial<Record<string, string>> = {
+    thousandPeople: 'economyUnit.thousandPeople',
+    count: 'economyUnit.count',
+};
+
+function unitLabel(unit: string, tLabel: EnumLabelTranslator): string {
+    const key = ECONOMY_UNIT_LABEL_KEY[unit];
+    return key ? tLabel(key) : unit;
+}
+
 interface TreasuryCardMeta {
-    label: string;
-    tooltip: string;
+    /** `widgets.economy.treasuryCard` 키. */
+    labelKey: string;
+    tooltipKey: string;
     unit: string;
 }
 
@@ -35,15 +59,13 @@ interface TreasuryCardMeta {
 export const TREASURY_CARD_META: Record<'year2' | 'year10', TreasuryCardMeta> =
     {
         year2: {
-            label: '2년물 국채',
-            tooltip:
-                '미국 정부가 발행하는 2년 만기 국채의 수익률이에요. 단기 시장금리의 기준이에요.',
+            labelKey: 'year2Label',
+            tooltipKey: 'year2Desc',
             unit: '%',
         },
         year10: {
-            label: '10년물 국채',
-            tooltip:
-                '미국 정부가 발행하는 10년 만기 국채의 수익률이에요. 장기 시장금리와 모기지 금리의 기준이에요.',
+            labelKey: 'year10Label',
+            tooltipKey: 'year10Desc',
             unit: '%',
         },
     };
@@ -91,6 +113,8 @@ interface DeltaBadgeProps {
 export function EconomicIndicatorGrid({
     snapshot,
 }: EconomicIndicatorGridProps) {
+    const tCfg = useTranslations('shared.config');
+    const t = useTranslations('widgets.economy');
     const seriesByName = new Map(
         // Map 생성자는 [K, V][] 튜플을 요구하지만 map 결과는 (string|Series)[] 배열로
         // 추론된다 — as const로 튜플 고정해 키/값 타입 보장.
@@ -106,13 +130,15 @@ export function EconomicIndicatorGrid({
                 id="economy-indicators-heading"
                 className="text-lg font-semibold text-secondary-100"
             >
-                경제지표
+                {t('EconomicIndicatorGrid.c2a5bf')}
             </h2>
             {ECONOMY_INDICATOR_CATEGORIES.map(cat => (
                 <CategorySection
                     key={cat.key}
                     category={cat.key}
-                    label={cat.label}
+                    label={tCfg(
+                        ECONOMY_CATEGORY_LABEL_KEY[cat.key] ?? cat.label
+                    )}
                     seriesByName={seriesByName}
                     treasury={snapshot.treasury}
                 />
@@ -170,27 +196,36 @@ function CategorySection({
 }
 
 function IndicatorCard({ meta, series }: IndicatorCardProps) {
+    const tCfg = useTranslations('shared.config');
+    // extract.mjs의 동적 키 탐지는 "이 파일 안에서 번역자를 직접 호출하는 패턴"만
+    // 본다 — `unitLabel`이 여기서 `tLabel(...)`을 직접 호출해야 `shared.enumLabel`이
+    // 이 라우트의 클라이언트 번들에 실린다(fearGreedLabels.ts의 SENTIMENT_LABEL_KEY
+    // export 주석 참고).
+    const tLabel = useTranslations('shared.enumLabel');
     const latest = series.latest;
     if (latest === null) return null;
     const prev = series.previous;
     const delta = prev !== null ? latest.value - prev.value : null;
+    const unit = unitLabel(meta.unit, tLabel);
     return (
         <article className="rounded-xl border border-secondary-700 bg-secondary-800 p-4">
             <header className="mb-2 flex items-center gap-1 text-sm text-secondary-300">
-                <span>{meta.label}</span>
+                <span>
+                    {ECONOMY_INDICATOR_LABEL_KEY[meta.label]
+                        ? tCfg(ECONOMY_INDICATOR_LABEL_KEY[meta.label])
+                        : meta.label}
+                </span>
                 <InfoTooltip>{meta.tooltip}</InfoTooltip>
             </header>
             <div className="text-2xl font-semibold text-secondary-100">
                 {latest.value.toFixed(meta.precision)}
-                <span className="ml-1 text-sm text-secondary-400">
-                    {meta.unit}
-                </span>
+                <span className="ml-1 text-sm text-secondary-400">{unit}</span>
             </div>
             {delta !== null && (
                 <DeltaBadge
                     delta={delta}
                     precision={meta.precision}
-                    unit={meta.unit}
+                    unit={unit}
                 />
             )}
             <p className="mt-1 text-xs text-secondary-400">{latest.date}</p>
@@ -199,14 +234,16 @@ function IndicatorCard({ meta, series }: IndicatorCardProps) {
 }
 
 function TreasuryYieldCard({ snapshot, maturity }: TreasuryYieldCardProps) {
+    // 훅은 조기 반환보다 위에 — 값이 null인 렌더에서만 훅이 사라지면 안 된다.
+    const tCard = useTranslations('widgets.economy.treasuryCard');
     const value = snapshot[maturity];
     if (value === null) return null;
-    const { label, tooltip, unit } = TREASURY_CARD_META[maturity];
+    const { labelKey, tooltipKey, unit } = TREASURY_CARD_META[maturity];
     return (
         <article className="rounded-xl border border-secondary-700 bg-secondary-800 p-4">
             <header className="mb-2 flex items-center gap-1 text-sm text-secondary-300">
-                <span>{label}</span>
-                <InfoTooltip>{tooltip}</InfoTooltip>
+                <span>{tCard(labelKey)}</span>
+                <InfoTooltip>{tCard(tooltipKey)}</InfoTooltip>
             </header>
             <div className="text-2xl font-semibold text-secondary-100">
                 {value.toFixed(TREASURY_YIELD_PRECISION)}
@@ -218,17 +255,15 @@ function TreasuryYieldCard({ snapshot, maturity }: TreasuryYieldCardProps) {
 }
 
 function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
+    const t = useTranslations('widgets.economy');
     const spread = computeYieldSpread(snapshot);
     if (spread === null) return null;
     const positive = spread >= 0;
     return (
         <article className="rounded-xl border border-secondary-700 bg-secondary-800 p-4">
             <header className="mb-2 flex items-center gap-1 text-sm text-secondary-300">
-                <span>2s10s 스프레드</span>
-                <InfoTooltip>
-                    10년물 수익률에서 2년물을 뺀 값이에요. 마이너스가 되면
-                    장단기 금리가 뒤집힌 것으로, 흔히 경기침체 신호로 봐요.
-                </InfoTooltip>
+                <span>{t('EconomicIndicatorGrid.2388de')}</span>
+                <InfoTooltip>{t('EconomicIndicatorGrid.868089')}</InfoTooltip>
             </header>
             <div
                 className={cn(
@@ -246,13 +281,14 @@ function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
 }
 
 function DeltaBadge({ delta, precision, unit }: DeltaBadgeProps) {
+    const t = useTranslations('widgets.economy');
     // 부동소수점 잔차나 표시 정밀도 미만 변화(예: delta=0.003, precision=2)도
     // 화면에서는 변화 없음이므로 포맷팅된 값을 기준으로 0 판정한다.
     const formatted = delta.toFixed(precision);
     if (parseFloat(formatted) === 0) {
         return (
             <span className="mt-1 inline-block text-xs text-secondary-400">
-                전기 대비 변화 없음
+                {t('EconomicIndicatorGrid.015416')}
             </span>
         );
     }
@@ -275,9 +311,11 @@ function DeltaBadge({ delta, precision, unit }: DeltaBadgeProps) {
                     <path d="M2 3.5 5 6.5 8 3.5" />
                 )}
             </svg>
-            전기 대비 {sign}
-            {formatted}
-            {unit}
+            {t('EconomicIndicatorGrid.58c098', {
+                v0: sign,
+                v1: formatted,
+                v2: unit,
+            })}
         </span>
     );
 }

@@ -6,35 +6,55 @@ import type {
     RiskLevel,
     Trend,
 } from '@y0ngha/siglens-core';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 
 interface BuildExpertAnalysisReportInput {
     symbol: string;
     analysis: AnalysisResponse;
     keyLevels: ClusteredKeyLevels;
+    /**
+     * `shared.enumLabel`에 바인딩된 번역자 — 필수 인자다. 기본값을 두면 호출부가
+     * 조용히 누락해도 컴파일이 통과하고, 그 결과 라벨이 `trend.bullish` 같은 raw
+     * 카탈로그 키 문자열로 리포트에 그대로 섞여 나간다.
+     */
+    t: EnumLabelTranslator;
+    /** `widgets.analysis.expertReport` 번역자. */
+    tReport: ReportTranslator;
 }
 
-const TREND_LABEL: Record<Trend, string> = {
-    bullish: '강세',
-    bearish: '약세',
-    neutral: '보합',
+/**
+ * `widgets.analysis.expertReport` 번역자.
+ *
+ * 이 모듈은 순수 함수 모음이라 훅을 부를 수 없다 — 진입점이 받아 헬퍼로 넘긴다
+ * (`t`(EnumLabelTranslator)가 이미 같은 방식으로 흐른다).
+ */
+type ReportTranslator = (
+    key: string,
+    values?: Record<string, string | number>
+) => string;
+
+const TREND_LABEL_KEY: Record<Trend, string> = {
+    bullish: 'trend.bullish',
+    bearish: 'trend.bearish',
+    neutral: 'trend.neutral',
 };
 
-const TREND_INTERPRETATION: Record<Trend, string> = {
-    bullish: '상방 우위',
-    bearish: '하방 우위',
-    neutral: '방향성 탐색',
+const TREND_INTERPRETATION_KEY: Record<Trend, string> = {
+    bullish: 'trendInterpretation.bullish',
+    bearish: 'trendInterpretation.bearish',
+    neutral: 'trendInterpretation.neutral',
 };
 
-const RISK_LABEL: Record<RiskLevel, string> = {
-    low: '낮음',
-    medium: '보통',
-    high: '높음',
+const RISK_LABEL_KEY: Record<RiskLevel, string> = {
+    low: 'riskLevel.low',
+    medium: 'riskLevel.medium',
+    high: 'riskLevel.high',
 };
 
-const ENTRY_STANCE: Record<EntryRecommendation, string> = {
-    enter: '핵심 지지 확인 이후 분할 접근 가능성을 검토할 수 있습니다.',
-    wait: '추세 재확인 전까지는 관망 관점이 더 적절합니다.',
-    avoid: '공격적 대응보다 보수적 관리와 비중 점검이 우선되는 구간입니다.',
+const ENTRY_STANCE_KEY: Record<EntryRecommendation, string> = {
+    enter: 'entryStance.enter',
+    wait: 'entryStance.wait',
+    avoid: 'entryStance.avoid',
 };
 
 function normalizeWhitespace(value: string): string {
@@ -52,34 +72,48 @@ function formatPriceList(prices: number[]): string {
     return prices.map(formatPrice).join(', ');
 }
 
-function formatLevelWithReason(level: ClusteredKeyLevel): string {
-    const confluence = level.count > 1 ? ` · ${level.count}개 근거 수렴` : '';
+function formatLevelWithReason(
+    level: ClusteredKeyLevel,
+    tReport: ReportTranslator
+): string {
+    const confluence =
+        level.count > 1 ? tReport('levelConvergence', { v0: level.count }) : '';
     return `${formatPrice(level.price)} (${level.reason}${confluence})`;
 }
 
-function buildTitle(symbol: string): string {
-    return `[${symbol.toUpperCase()}] 기술적 분석 리포트`;
+function buildTitle(symbol: string, tReport: ReportTranslator): string {
+    return tReport('reportTitle', { v0: symbol.toUpperCase() });
 }
 
 function buildInterpretation(
     analysis: AnalysisResponse,
     supportLevels: ClusteredKeyLevel[],
-    resistanceLevels: ClusteredKeyLevel[]
+    resistanceLevels: ClusteredKeyLevel[],
+    t: EnumLabelTranslator,
+    tReport: ReportTranslator
 ): string {
     const parts = [
-        `현재 흐름은 ${TREND_LABEL[analysis.trend]} 흐름 중 ${TREND_INTERPRETATION[analysis.trend]}로 해석되며, 리스크는 ${RISK_LABEL[analysis.riskLevel]} 수준입니다.`,
+        tReport('trendSummary', {
+            v0: t(TREND_LABEL_KEY[analysis.trend]),
+            v1: t(TREND_INTERPRETATION_KEY[analysis.trend]),
+            v2: t(RISK_LABEL_KEY[analysis.riskLevel]),
+        }),
         normalizeWhitespace(analysis.summary),
     ];
 
     if (resistanceLevels.length > 0) {
         parts.push(
-            `상단에서는 ${formatPriceList(resistanceLevels.map(level => level.price))} 구간의 저항 확인이 중요합니다.`
+            tReport('resistanceNote', {
+                v0: formatPriceList(resistanceLevels.map(level => level.price)),
+            })
         );
     }
 
     if (supportLevels.length > 0) {
         parts.push(
-            `하단에서는 ${formatPriceList(supportLevels.map(level => level.price))} 구간의 지지 유지 여부가 핵심입니다.`
+            tReport('supportNote', {
+                v0: formatPriceList(supportLevels.map(level => level.price)),
+            })
         );
     }
 
@@ -88,21 +122,28 @@ function buildInterpretation(
 
 function buildKeyLevelsBlock(
     analysis: AnalysisResponse,
-    keyLevels: ClusteredKeyLevels
+    keyLevels: ClusteredKeyLevels,
+    tReport: ReportTranslator
 ): string | null {
     const lines: string[] = [];
 
     if (keyLevels.resistance.length > 0) {
         lines.push(
-            `- 저항: ${keyLevels.resistance
-                .map(formatLevelWithReason)
-                .join(', ')}`
+            tReport('levelsResistance', {
+                v0: keyLevels.resistance
+                    .map(level => formatLevelWithReason(level, tReport))
+                    .join(', '),
+            })
         );
     }
 
     if (keyLevels.support.length > 0) {
         lines.push(
-            `- 지지: ${keyLevels.support.map(formatLevelWithReason).join(', ')}`
+            tReport('levelsSupport', {
+                v0: keyLevels.support
+                    .map(level => formatLevelWithReason(level, tReport))
+                    .join(', '),
+            })
         );
     }
 
@@ -115,27 +156,34 @@ function buildKeyLevelsBlock(
     const { actionRecommendation } = analysis;
     if (actionRecommendation?.entryPrices?.length) {
         lines.push(
-            `- 진입 참고 구간: ${formatPriceList(actionRecommendation.entryPrices)}`
+            tReport('entryZone', {
+                v0: formatPriceList(actionRecommendation.entryPrices),
+            })
         );
     }
     if (actionRecommendation?.stopLoss !== undefined) {
         lines.push(
-            `- 무효화 기준: ${formatPrice(actionRecommendation.stopLoss)}`
+            tReport('invalidation', {
+                v0: formatPrice(actionRecommendation.stopLoss),
+            })
         );
     }
     if (actionRecommendation?.takeProfitPrices?.length) {
         lines.push(
-            `- 목표 참고 구간: ${formatPriceList(
-                actionRecommendation.takeProfitPrices
-            )}`
+            tReport('targetZone', {
+                v0: formatPriceList(actionRecommendation.takeProfitPrices),
+            })
         );
     }
 
     if (lines.length === 0) return null;
-    return ['주요 가격 구간:', ...lines].join('\n');
+    return [tReport('keyLevelsHeading'), ...lines].join('\n');
 }
 
-function buildEvidenceBlock(analysis: AnalysisResponse): string | null {
+function buildEvidenceBlock(
+    analysis: AnalysisResponse,
+    tReport: ReportTranslator
+): string | null {
     const lines: string[] = [];
 
     const indicatorLines = (analysis.indicatorResults ?? []).flatMap(result =>
@@ -168,10 +216,13 @@ function buildEvidenceBlock(analysis: AnalysisResponse): string | null {
     lines.push(...strategyLines);
 
     if (lines.length === 0) return null;
-    return ['기술적 근거:', ...lines].join('\n');
+    return [tReport('evidenceHeading'), ...lines].join('\n');
 }
 
-function buildScenarioBlock(analysis: AnalysisResponse): string | null {
+function buildScenarioBlock(
+    analysis: AnalysisResponse,
+    tReport: ReportTranslator
+): string | null {
     const lines: string[] = [];
     // priceTargets는 부분 응답에서 누락될 수 있으므로 방어적으로 기본값을 둔다.
     const priceTargets = analysis.priceTargets ?? {
@@ -181,76 +232,85 @@ function buildScenarioBlock(analysis: AnalysisResponse): string | null {
 
     if (priceTargets.bullish && priceTargets.bullish.targets.length > 0) {
         lines.push(
-            `- 상방: ${normalizeWhitespace(
-                priceTargets.bullish.condition
-            )} → ${formatPriceList(
-                priceTargets.bullish.targets.map(target => target.price)
-            )}`
+            tReport('upside', {
+                v0: normalizeWhitespace(priceTargets.bullish.condition),
+                v1: formatPriceList(
+                    priceTargets.bullish.targets.map(target => target.price)
+                ),
+            })
         );
     }
 
     if (priceTargets.bearish && priceTargets.bearish.targets.length > 0) {
         lines.push(
-            `- 하방: ${normalizeWhitespace(
-                priceTargets.bearish.condition
-            )} → ${formatPriceList(
-                priceTargets.bearish.targets.map(target => target.price)
-            )}`
+            tReport('downside', {
+                v0: normalizeWhitespace(priceTargets.bearish.condition),
+                v1: formatPriceList(
+                    priceTargets.bearish.targets.map(target => target.price)
+                ),
+            })
         );
     }
 
     if (lines.length === 0) return null;
-    return ['시나리오:', ...lines].join('\n');
+    return [tReport('scenarioHeading'), ...lines].join('\n');
 }
 
 function buildResponseStance(
     analysis: AnalysisResponse,
-    keyLevels: ClusteredKeyLevels
+    keyLevels: ClusteredKeyLevels,
+    t: EnumLabelTranslator,
+    tReport: ReportTranslator
 ): string {
     const { actionRecommendation } = analysis;
 
     if (actionRecommendation?.entryRecommendation !== undefined) {
-        const base = ENTRY_STANCE[actionRecommendation.entryRecommendation];
+        const base = t(
+            ENTRY_STANCE_KEY[actionRecommendation.entryRecommendation]
+        );
         const entryAnchor =
             actionRecommendation.entryPrices?.length !== 0 &&
             actionRecommendation.entryPrices !== undefined
-                ? `관심 구간은 ${formatPriceList(
-                      actionRecommendation.entryPrices
-                  )}입니다.`
+                ? tReport('entryAnchor', {
+                      v0: formatPriceList(actionRecommendation.entryPrices),
+                  })
                 : '';
         const invalidation =
             actionRecommendation.stopLoss !== undefined
-                ? `핵심 무효화 기준은 ${formatPrice(
-                      actionRecommendation.stopLoss
-                  )}입니다.`
+                ? tReport('invalidationNote', {
+                      v0: formatPrice(actionRecommendation.stopLoss),
+                  })
                 : '';
 
         return normalizeWhitespace([base, entryAnchor, invalidation].join(' '));
     }
 
     if (analysis.trend === 'bullish' && keyLevels.support.length > 0) {
-        return `대응 관점에서는 ${formatPrice(
-            keyLevels.support[0].price
-        )} 지지 확인 이후의 분할 접근 여부를 검토할 수 있습니다.`;
+        return tReport('stanceBullish', {
+            v0: formatPrice(keyLevels.support[0].price),
+        });
     }
 
     if (analysis.trend === 'bearish' && keyLevels.resistance.length > 0) {
-        return `대응 관점에서는 ${formatPrice(
-            keyLevels.resistance[0].price
-        )} 저항 확인 전까지 보수적 관리가 더 적절합니다.`;
+        return tReport('stanceBearish', {
+            v0: formatPrice(keyLevels.resistance[0].price),
+        });
     }
 
-    return '대응 관점에서는 방향성 재확인 전까지 확인 중심 접근이 적절합니다.';
+    return tReport('stanceNeutral');
 }
 
-function buildRiskNote(analysis: AnalysisResponse): string {
+function buildRiskNote(
+    analysis: AnalysisResponse,
+    tReport: ReportTranslator
+): string {
     const { riskLevel, actionRecommendation } = analysis;
     const prefix =
         riskLevel === 'high'
-            ? '변동성 확대 가능성을 우선 염두에 둘 필요가 있습니다.'
+            ? tReport('riskHigh')
             : riskLevel === 'medium'
-              ? '핵심 가격대 이탈 여부에 따라 해석이 빠르게 달라질 수 있습니다.'
-              : '현재 해석이 유지되려면 핵심 지지와 저항 구간 확인이 필요합니다.';
+              ? tReport('riskMedium')
+              : tReport('riskLow');
 
     const suffix =
         actionRecommendation?.riskReward !== undefined
@@ -264,6 +324,8 @@ export function buildExpertAnalysisReport({
     symbol,
     analysis,
     keyLevels,
+    t,
+    tReport,
 }: BuildExpertAnalysisReportInput): string {
     // keyLevels(ClusteredKeyLevels)는 부분 객체로 전달될 수 있으므로 support/
     // resistance 배열을 입구에서 1회 정규화한다 — 이후 helper들이 안전한 배열을
@@ -282,14 +344,22 @@ export function buildExpertAnalysisReport({
     });
 
     const sections = [
-        buildTitle(symbol),
-        buildInterpretation(analysis, supportLevels, resistanceLevels),
-        buildKeyLevelsBlock(analysis, safeKeyLevels),
-        buildEvidenceBlock(analysis),
-        buildScenarioBlock(analysis),
-        `대응 관점:\n${buildResponseStance(analysis, safeKeyLevels)}`,
-        `리스크:\n${buildRiskNote(analysis)}`,
-        '' + `[출처] 기술적 주가 분석 > siglens.io/${symbol}`,
+        buildTitle(symbol, tReport),
+        buildInterpretation(
+            analysis,
+            supportLevels,
+            resistanceLevels,
+            t,
+            tReport
+        ),
+        buildKeyLevelsBlock(analysis, safeKeyLevels, tReport),
+        buildEvidenceBlock(analysis, tReport),
+        buildScenarioBlock(analysis, tReport),
+        `${tReport('responseStance')}
+${buildResponseStance(analysis, safeKeyLevels, t, tReport)}`,
+        `${tReport('riskLabel')}
+${buildRiskNote(analysis, tReport)}`,
+        tReport('source', { v0: symbol }),
     ].filter(
         (section): section is string => section !== null && section !== ''
     );

@@ -124,10 +124,10 @@ describe('PortfolioSection', () => {
         await user.click(screen.getByRole('button', { name: '추가' }));
 
         expect(
-            await screen.findByText("'AAPL' 보유종목을 저장했어요")
+            await screen.findByText('AAPL 보유종목을 저장했어요')
         ).toBeInTheDocument();
         expect(screen.getByRole('status')).toHaveTextContent(
-            "'AAPL' 보유종목을 저장했어요"
+            'AAPL 보유종목을 저장했어요'
         );
     });
 
@@ -193,7 +193,7 @@ describe('PortfolioSection', () => {
         );
 
         expect(
-            await screen.findByText("'AAPL' 보유종목을 삭제했어요")
+            await screen.findByText('AAPL 보유종목을 삭제했어요')
         ).toBeInTheDocument();
     });
 
@@ -280,7 +280,7 @@ describe('PortfolioSection', () => {
 
         // Success is announced in the section's polite status region.
         expect(
-            screen.getByText("'AAPL' 보유종목을 저장했어요")
+            screen.getByText('AAPL 보유종목을 저장했어요')
         ).toBeInTheDocument();
     });
 

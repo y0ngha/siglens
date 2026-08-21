@@ -1,10 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
+import { buildFallbackAnalysis } from '@/entities/chat-message';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { ChartContent } from '../ChartContent';
 import { PANEL_MAX_WIDTH, PANEL_MIN_WIDTH } from '../hooks/usePanelResize';
 import type { UseAnalysisResult } from '../hooks/useAnalysis';
+
+// 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을
+// 들고 있어 `/en/AAPL`이 영어 화면에 한국어 폴백을 렌더했다.
+const FALLBACK_ANALYSIS = buildFallbackAnalysis(
+    catalogTranslator('entities.chat-message.fallback', 'ko')('unavailable')
+);
 
 // 무거운 차트/하위 훅은 stub. 단, usePanelResize/useDragListener는 실제 구현을
 // 사용해 키보드·마우스 드래그가 실제로 panelWidth(aria-valuenow)를 바꾸는지

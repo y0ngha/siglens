@@ -1,10 +1,12 @@
+import { useTranslations } from 'next-intl';
 import type { CSSProperties } from 'react';
 import {
+    POC_WINDOW_DEFAULT,
     scoreToLabel,
     type FearGreedGroup,
     type FearGreedLabel,
 } from '@y0ngha/siglens-core';
-import { FACTOR_LABEL, formatFactorRaw } from '@/shared/lib/fearGreedLabels';
+import { formatFactorRaw } from '@/shared/lib/fearGreedLabels';
 import { cn } from '@/shared/lib/cn';
 
 interface FearGreedGroupBarProps {
@@ -24,6 +26,8 @@ const EXTREME_PERCENTILE_LOW = 10;
 const EXTREME_PERCENTILE_HIGH = 90;
 
 export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
+    const t = useTranslations('widgets.fear-greed');
+    const tFactor = useTranslations('shared.lib.fearGreedFactor');
     const score = Math.round(group.score);
     return (
         <section className="flex flex-col gap-2 rounded bg-secondary-800/40 p-3">
@@ -37,7 +41,10 @@ export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
             </header>
             <div
                 role="progressbar"
-                aria-label={`${group.name} 그룹 점수 ${score}`}
+                aria-label={t('FearGreedGroupBar.groupScore', {
+                    v0: group.name,
+                    v1: score,
+                })}
                 aria-valuenow={score}
                 aria-valuemin={0}
                 aria-valuemax={100}
@@ -62,7 +69,12 @@ export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
                             key={f.key}
                             className="flex items-center justify-between"
                         >
-                            <span>· {FACTOR_LABEL[f.key]}</span>
+                            <span>
+                                ·{' '}
+                                {tFactor(`symbolLabel.${f.key}`, {
+                                    v0: POC_WINDOW_DEFAULT,
+                                })}
+                            </span>
                             <span className="font-mono">
                                 {formatFactorRaw(f.key, f.rawValue)}
                                 <span

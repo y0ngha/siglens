@@ -68,17 +68,24 @@ export const CALENDAR_COUNTRY_KR: CalendarCountry = 'KR';
  * 일어나므로 그 서술은 되돌릴 수 없다.
  */
 export const CALENDAR_REGION_LABEL: Record<CalendarCountry, string> = {
-    US: '미국',
-    KR: '한국',
+    // AI 프롬프트에 넘기는 **입력 데이터**다 — 화면 문구가 아니므로 카탈로그로
+    // 옮기지 않는다. 영어로 두는 이유는 `CHAT_NON_CHART_BASELINE_ANALYSIS`와
+    // 같다: 모델 지시문은 로케일로 갈리면 프롬프트만 흔들린다. 분석 응답 언어는
+    // 프롬프트의 언어 지시가 따로 정한다.
+    US: 'United States',
+    KR: 'South Korea',
 };
 
 /**
- * 화면 문구에 넣을 국가 이름. 캘린더 위젯이 두 라우트에서 공유되므로 빈 상태
- * 문구 같은 것을 하드코딩하면 한국 페이지가 "미국 발표 일정"을 말하게 된다.
+ * 화면 문구에 넣을 국가 이름의 **키**(`entities.economy.calendarCountry`).
+ *
+ * 캘린더 위젯이 두 라우트에서 공유되므로 문구를 하드코딩하면 한국 페이지가
+ * "미국 발표 일정"을 말하게 된다. 여기에 한국어를 두면 그 위에 로케일 결함이
+ * 하나 더 얹힌다 — `/en/economy`가 영어 화면에서 `미국`을 렌더했다.
  */
-export const CALENDAR_COUNTRY_LABEL: Record<CalendarCountry, string> = {
-    US: '미국',
-    KR: '한국',
+export const CALENDAR_COUNTRY_LABEL_KEY: Record<CalendarCountry, string> = {
+    US: 'US',
+    KR: 'KR',
 };
 
 /**

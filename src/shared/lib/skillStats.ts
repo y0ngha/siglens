@@ -1,35 +1,35 @@
 import type { SkillShowcaseItem, SkillType } from '@y0ngha/siglens-core';
 import { countSkillsByType } from './skillUtils';
 
+/** `shared.lib.skillStats.count`의 서브키 — 'total' 또는 SkillType. */
+export type SkillStatKey = SkillType | 'total';
+
 export interface SkillStat {
+    key: SkillStatKey;
     value: number;
-    label: string;
 }
 
-export interface SkillStatConfig {
-    countLabel: string;
-}
+// SKILL_TYPE_ORDER 키는 SkillType과 exhaustiveness가 맞아야 한다 — 새
+// SkillType이 core에 추가되면 여기서 컴파일 에러로 잡힌다.
+const SKILL_TYPE_ORDER = {
+    indicator_guide: true,
+    pattern: true,
+    strategy: true,
+    candlestick: true,
+    support_resistance: true,
+} satisfies Record<SkillType, true>;
 
-export const SKILL_STAT_CONFIG: Record<SkillType, SkillStatConfig> = {
-    indicator_guide: { countLabel: '종 보조지표' },
-    pattern: { countLabel: '개 차트 패턴' },
-    strategy: { countLabel: '개 전략 분석' },
-    candlestick: { countLabel: '개 캔들 패턴' },
-    support_resistance: { countLabel: '개 지지/저항 도구' },
-};
-
-// SKILL_STAT_CONFIG keys are exactly the SkillType union — cast is safe
-const SKILL_TYPES = Object.keys(SKILL_STAT_CONFIG) as SkillType[];
+const SKILL_TYPES = Object.keys(SKILL_TYPE_ORDER) as SkillType[];
 
 export function buildSkillStats(
     skills: readonly SkillShowcaseItem[]
 ): SkillStat[] {
     const typeCounts = countSkillsByType(skills);
     return [
-        { value: skills.length, label: '개 분석 스킬' },
+        { key: 'total', value: skills.length },
         ...SKILL_TYPES.map(type => ({
+            key: type,
             value: typeCounts[type] ?? 0,
-            label: SKILL_STAT_CONFIG[type].countLabel,
         })),
     ];
 }

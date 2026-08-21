@@ -8,6 +8,7 @@ import {
 } from '@/features/auth-email-verification';
 import type { RequestEmailVerificationFormState } from '@/shared/lib/auth/formTypes';
 import type { VerifyEmailFormState, SignupFormState } from '@/shared/lib/types';
+import { koMessage } from '@/shared/test-utils/koMessage';
 
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
@@ -82,7 +83,7 @@ describe('SignupForm', () => {
             );
             render(<SignupForm />);
             expect(screen.getByRole('alert')).toHaveTextContent(
-                '유효한 이메일을 입력하세요.'
+                koMessage('entities.auth.error.emailInvalid')
             );
         });
 
@@ -166,7 +167,11 @@ describe('SignupForm', () => {
             });
             const { rerender } = render(<SignupForm />);
             rerender(<SignupForm />);
-            expect(screen.getByRole('alert')).toHaveTextContent('서비스 오류');
+            // 코드가 표에 있으면 카탈로그 문구를 쓴다 — use-case가 함께 준
+            // `message`(로그용 원문)는 화면에 나가지 않는다.
+            expect(screen.getByRole('alert')).toHaveTextContent(
+                koMessage('entities.auth.error.redisUnavailable')
+            );
         });
     });
 
@@ -261,7 +266,7 @@ describe('SignupForm', () => {
             const { rerender } = render(<SignupForm />);
             rerender(<SignupForm />);
             expect(screen.getByRole('alert')).toHaveTextContent(
-                '서비스 이용 불가'
+                koMessage('entities.auth.error.serviceUnavailable')
             );
         });
 
@@ -305,7 +310,7 @@ describe('SignupForm', () => {
             rerender(<SignupForm />);
             // The error is passed to PasswordField which renders it inline
             expect(
-                screen.getByText('비밀번호가 너무 약합니다.')
+                screen.getByText(koMessage('entities.auth.error.passwordWeak'))
             ).toBeInTheDocument();
         });
 
@@ -320,7 +325,9 @@ describe('SignupForm', () => {
             const { rerender } = render(<SignupForm />);
             rerender(<SignupForm />);
             expect(
-                screen.getByText('약관에 동의해 주세요.')
+                screen.getByText(
+                    koMessage('entities.auth.error.consentRequired')
+                )
             ).toBeInTheDocument();
         });
 

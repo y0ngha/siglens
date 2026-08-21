@@ -21,17 +21,17 @@ vi.mock('@/widgets/dashboard/hooks/useMarketBriefing', () => ({
 vi.mock('@/widgets/dashboard/MarketDataErrorNotice', () => ({
     MarketDataErrorNotice: ({
         variant,
-        marketLabel,
+        scopeId,
         onClose,
     }: {
         variant: string;
-        marketLabel: string;
+        scopeId: string;
         onClose: () => void;
     }) => (
         <div
             data-testid="data-error-notice"
             data-variant={variant}
-            data-market-label={marketLabel}
+            data-scope-id={scopeId}
         >
             <button onClick={onClose}>close-notice</button>
         </div>
@@ -134,7 +134,7 @@ describe('MarketSummaryPanel', () => {
         expect(notice).toBeInTheDocument();
         // 카드도 제목도 없는 화면이므로 "일부"가 아니라 전체 실패 문구여야 한다.
         expect(notice).toHaveAttribute('data-variant', 'total');
-        expect(notice).toHaveAttribute('data-market-label', '미국 증시');
+        expect(notice).toHaveAttribute('data-scope-id', 'us');
         expect(screen.queryByText('오늘의 미국 시장')).not.toBeInTheDocument();
     });
 
@@ -452,7 +452,7 @@ describe('MarketSummaryPanel — KR scope', () => {
         render(<MarketSummaryPanel scope={KR_SCOPE} />);
 
         const notice = screen.getByTestId('data-error-notice');
-        expect(notice).toHaveAttribute('data-market-label', '한국 증시');
+        expect(notice).toHaveAttribute('data-scope-id', 'kr');
         expect(notice).toHaveAttribute('data-variant', 'total');
     });
 

@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
+import koMessages from '../../../../../messages/ko.json';
 import { renderHook, waitFor } from '@testing-library/react';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createElement } from 'react';
 import type { ReactNode } from 'react';
@@ -35,7 +37,12 @@ function makeWrapper() {
     return {
         client,
         wrapper: ({ children }: { children: ReactNode }) =>
-            createElement(QueryClientProvider, { client }, children),
+            createElement(
+                QueryClientProvider,
+                { client },
+                // node 프로젝트는 vitest.setup.dom의 전역 intl 래핑이 걸리지 않는다.
+                createElement(IntlTestProvider, null, children)
+            ),
     };
 }
 
@@ -136,7 +143,9 @@ describe('useOptionsAnalysis', () => {
 
         if (result.current.status !== 'error')
             throw new Error('expected error');
-        expect(result.current.error.message).toBe('한도 초과');
+        expect(result.current.error.message).toBe(
+            koMessages.app.api.stream.limitExceeded
+        );
         client.clear();
     });
 

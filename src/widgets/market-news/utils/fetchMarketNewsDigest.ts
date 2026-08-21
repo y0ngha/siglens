@@ -1,7 +1,10 @@
 import type { NewsFeedCategoryId } from '@/entities/market-news';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { SubmitMarketNewsDigestActionResult } from '@/entities/market-news/actions';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import {
+    runAnalysisStream,
+    type StreamErrorMessages,
+} from '@/shared/hooks/useAnalysisStream';
 
 /**
  * 다이제스트를 SSE 한 연결로 받아온다. `done`은 `cached`와 동일하게 `result`를 반환한다.
@@ -17,12 +20,14 @@ import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
  */
 export async function fetchMarketNewsDigest(
     category: NewsFeedCategoryId,
+    messages: StreamErrorMessages,
     signal?: AbortSignal
 ): Promise<NewsAnalysisResponse> {
     const result = await runAnalysisStream<SubmitMarketNewsDigestActionResult>({
         type: 'marketNewsDigest',
         params: { category },
         signal,
+        messages,
     });
 
     if (result.status === 'error') {
@@ -31,12 +36,10 @@ export async function fetchMarketNewsDigest(
     if (result.status === 'cached' || result.status === 'done')
         return result.result;
     if (result.status === 'miss_no_trigger') {
-        throw new Error(
-            '다이제스트를 생성할 수 없어요. 잠시 후 다시 시도해 주세요.'
-        );
+        throw new Error(messages.digestUnavailable);
     }
     if (result.status === 'no_news') {
-        throw new Error('분석할 뉴스가 없어요. 잠시 후 다시 시도해 주세요.');
+        throw new Error(messages.noNews);
     }
-    throw new Error('예상치 못한 오류가 발생했습니다.');
+    throw new Error(messages.unexpected);
 }

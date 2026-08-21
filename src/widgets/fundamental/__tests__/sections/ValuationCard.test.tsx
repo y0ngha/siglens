@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import { EMPTY_MESSAGE } from '@/widgets/fundamental/sections/EmptySectionCard';
 import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';
 import type { FundamentalValuationMetrics } from '@y0ngha/siglens-core';
+import { koMessage } from '@/shared/test-utils/koMessage';
 
 const SAMPLE_METRICS: FundamentalValuationMetrics = {
     peRatioTTM: 28.5,
@@ -26,6 +26,10 @@ describe('ValuationCard', () => {
         expect(
             screen.getByRole('heading', { name: '밸류에이션' })
         ).toBeInTheDocument();
-        expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                koMessage('widgets.financials.section.emptySection')
+            )
+        ).toBeInTheDocument();
     });
 });

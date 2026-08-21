@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { ContextSwitchSystemMessage } from './ContextSwitchSystemMessage';
 import { ModelSelect, type ModelOption } from './ModelSelect';
 import { useChat } from './hooks/useChat';
@@ -16,9 +17,10 @@ const CHAT_MODEL_OPTIONS: readonly ModelOption[] = VALID_CHAT_MODELS.map(
     id => ({ id, ...getModelDisplay(id) })
 );
 
-const LOADING_MESSAGES = {
-    analyzing: '질문 내용을 살펴보고 있어요...',
-    generating: '답변을 작성하고 있어요...',
+/** `widgets.chat.thinking` 메시지 키 — 표시는 렌더 쪽에서 `t()`로. */
+const LOADING_MESSAGE_KEY = {
+    analyzing: 'reading',
+    generating: 'writing',
 } as const;
 
 interface ChatPanelProps {
@@ -27,6 +29,8 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
+    const t = useTranslations('widgets.chat');
+    const tThinking = useTranslations('widgets.chat.thinking');
     const { isAnalysisReady } = useSymbolChat();
 
     const {
@@ -54,21 +58,21 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
     } = useChatInput({ messages, loadingPhase, isAnalysisReady, sendMessage });
 
     const placeholder = !isAnalysisReady
-        ? '분석이 완료된 후 질문할 수 있어요'
-        : '질문을 입력하세요… (Enter로 전송)';
+        ? t('ChatPanel.0b63e2')
+        : t('ChatPanel.408331');
 
     return (
         <div className="flex flex-col overflow-hidden rounded-xl">
             <div className="flex items-center justify-between border-b border-secondary-700 px-3 py-2">
                 <span className="text-xs font-semibold text-secondary-300">
-                    💬 AI에게 물어보기
+                    {t('ChatPanel.50071e')}
                 </span>
                 {onClose && (
                     <button
                         type="button"
                         onClick={onClose}
                         className="-mr-1 flex h-11 w-11 items-center justify-center rounded text-sm leading-none text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none md:h-6 md:w-6"
-                        aria-label="채팅 닫기"
+                        aria-label={t('ChatPanel.f4ca4c')}
                     >
                         ✕
                     </button>
@@ -82,13 +86,12 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                     aria-live="polite"
                 >
                     <span className="text-xs text-primary-300">
-                        분석이 업데이트됐어요 — 최신 결과 기반으로 이어서
-                        질문하세요
+                        {t('ChatPanel.d7fb24')}
                     </span>
                     <button
                         type="button"
                         onClick={dismissAnalysisUpdated}
-                        aria-label="분석 업데이트 알림 닫기"
+                        aria-label={t('ChatPanel.1dbde9')}
                         className="ml-2 rounded text-xs text-primary-400 hover:text-primary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         ✕
@@ -101,8 +104,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                 {messages.length === 0 && loadingPhase === null && (
                     <div className="rounded-lg rounded-tl-sm bg-secondary-700/30 p-3">
                         <p className="text-sm leading-relaxed text-secondary-400">
-                            분석 결과를 바탕으로 질문해 보세요. 진입 타이밍,
-                            매도 전략, 지표 해석까지 모두 물어볼 수 있어요.
+                            {t('ChatPanel.f292ff')}
                         </p>
                     </div>
                 )}
@@ -144,7 +146,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                         aria-live="polite"
                     >
                         <p className="text-xs text-secondary-400">
-                            {LOADING_MESSAGES[loadingPhase]}
+                            {tThinking(LOADING_MESSAGE_KEY[loadingPhase])}
                         </p>
                         <span className="mt-1 inline-flex gap-0.5 text-base leading-none text-secondary-500">
                             <span className="animate-bounce [animation-delay:0ms]">
@@ -173,11 +175,13 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                     />
 
                     <span>·</span>
-                    <span>분석 결과 안에서만 답해요</span>
+                    <span>{t('ChatPanel.1ca3c2')}</span>
                     {remainingTokens !== null && (
                         <>
                             <span>·</span>
-                            <span>오늘 {remainingTokens}회 남음</span>
+                            <span>
+                                {t('ChatPanel.cce9f7', { v0: remainingTokens })}
+                            </span>
                         </>
                     )}
                 </div>
@@ -205,7 +209,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                         onClick={() => void handleSubmit()}
                         disabled={isInputDisabled || inputValue.trim() === ''}
                         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary-600 text-white transition-colors hover:bg-primary-500 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-secondary-700 disabled:text-secondary-500 md:h-8 md:w-8"
-                        aria-label="전송"
+                        aria-label={t('ChatPanel.4077ce')}
                     >
                         ↑
                     </button>

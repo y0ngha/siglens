@@ -1,8 +1,9 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { usePathname } from 'next/navigation';
+import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { formatNoticeDate } from '@/entities/notice';
@@ -40,8 +41,13 @@ const MarkdownText = dynamic(() =>
  * - "다시 보지 않기" = localStorage에 ID 영구 저장
  */
 export function NoticePopup() {
+    const t = useTranslations('widgets.notice-popup');
+    const tMisc = useTranslations('shared.ui.misc');
     const dialogRef = useRef<HTMLDivElement>(null);
-    const pathname = usePathname();
+    // `notices.path_pattern`은 운영자가 넣는 접두사 없는 경로(`/market`, `/symbol/*`)다.
+    // 접두사가 붙은 경로로 매칭하면 비-ko 사용자에게 **경로 지정 공지가 전부 사라진다**
+    // (전역 공지만 남는다).
+    const pathname = useAppPathname();
     const { queue, advance, dontShowAgain } = useNoticePopup(pathname);
 
     useEscapeKey(advance, queue.length > 0);
@@ -87,7 +93,7 @@ export function NoticePopup() {
                     </h2>
                     <button
                         onClick={advance}
-                        aria-label="팝업 닫기"
+                        aria-label={t('NoticePopup.a5ce49')}
                         className="shrink-0 text-xl leading-none text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         ✕
@@ -102,12 +108,21 @@ export function NoticePopup() {
                 <div
                     tabIndex={0}
                     role="region"
-                    aria-label="공지 본문"
+                    aria-label={t('NoticePopup.ca2829')}
                     data-testid="notice-body-scroller"
                     className="-mr-2 min-h-0 flex-1 overflow-y-auto rounded pr-2 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     <p className="mb-3 text-xs text-secondary-500">
-                        {formatNoticeDate(current.createdAt)}
+                        {(() => {
+                            const parts = formatNoticeDate(current.createdAt);
+                            return parts === null
+                                ? ''
+                                : tMisc('noticeWrittenOn', {
+                                      v0: parts.year,
+                                      v1: parts.month,
+                                      v2: parts.day,
+                                  });
+                        })()}
                     </p>
                     <MarkdownText className="text-sm text-secondary-300">
                         {current.body}
@@ -128,13 +143,13 @@ export function NoticePopup() {
                         onClick={dontShowAgain}
                         className="text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
-                        다시 보지 않기
+                        {t('NoticePopup.e83def')}
                     </button>
                     <button
                         onClick={advance}
                         className="rounded-lg border border-secondary-600 px-4 py-2 text-sm text-secondary-200 transition-colors hover:bg-secondary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
-                        닫기
+                        {t('NoticePopup.94b7db')}
                     </button>
                 </div>
             </div>

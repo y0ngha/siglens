@@ -1,13 +1,15 @@
+import { useTranslations } from 'next-intl';
 import type {
     CongressSentiment,
     CongressTrendResponse,
 } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 
-const SENTIMENT_LABEL: Record<CongressSentiment, string> = {
-    bullish: '매수 우위',
-    neutral: '중립',
-    bearish: '매도 우위',
+/** CongressSentiment → `shared.enumLabel.congressSentiment` 카탈로그 키. */
+const SENTIMENT_LABEL_KEY: Record<CongressSentiment, string> = {
+    bullish: 'congressSentiment.bullish',
+    neutral: 'congressSentiment.neutral',
+    bearish: 'congressSentiment.bearish',
 };
 
 // FinancialsAiSummaryView와 동일한 background/foreground 페어를 사용한다.
@@ -24,7 +26,12 @@ interface CongressTrendSummaryViewProps {
 export function CongressTrendSummaryView({
     result,
 }: CongressTrendSummaryViewProps) {
-    const sentimentLabel = SENTIMENT_LABEL[result.overallSentiment];
+    const t = useTranslations('widgets.congress');
+    // extract.mjs의 동적 키 탐지는 이 파일 안에서 번역자를 직접 호출하는
+    // 패턴만 본다 — `SENTIMENT_LABEL_KEY[...]`를 그대로 `tLabel(...)`에
+    // 넣어야 `shared.enumLabel`이 이 라우트의 클라이언트 번들에 실린다.
+    const tLabel = useTranslations('shared.enumLabel');
+    const sentimentLabel = tLabel(SENTIMENT_LABEL_KEY[result.overallSentiment]);
 
     return (
         <section
@@ -36,11 +43,13 @@ export function CongressTrendSummaryView({
                     id="congress-trend-summary-heading"
                     className="text-lg font-semibold tracking-tight"
                 >
-                    AI 동향 해석
+                    {t('CongressTrendSummaryView.bbb041')}
                 </h2>
                 <span
                     role="img"
-                    aria-label={`전반적 동향: ${sentimentLabel}`}
+                    aria-label={t('CongressTrendSummaryView.overallTrend', {
+                        v0: sentimentLabel,
+                    })}
                     className={cn(
                         'rounded px-2 py-0.5 text-xs font-medium',
                         SENTIMENT_CLASS[result.overallSentiment]
@@ -56,8 +65,13 @@ export function CongressTrendSummaryView({
 
             {result.notableMembersKo.length > 0 && (
                 <div className="mb-5">
-                    <h3 className="mb-2 text-sm font-semibold">주목할 인물</h3>
-                    <ul aria-label="주목할 인물" className="space-y-1.5">
+                    <h3 className="mb-2 text-sm font-semibold">
+                        {t('CongressTrendSummaryView.9a15c9')}
+                    </h3>
+                    <ul
+                        aria-label={t('CongressTrendSummaryView.9a15c9')}
+                        className="space-y-1.5"
+                    >
                         {result.notableMembersKo.map((member, i) => (
                             <li
                                 key={`member-${i}-${member}`}
@@ -78,7 +92,9 @@ export function CongressTrendSummaryView({
 
             {result.riskNoteKo.trim().length > 0 && (
                 <div>
-                    <h3 className="mb-2 text-sm font-semibold">참고 사항</h3>
+                    <h3 className="mb-2 text-sm font-semibold">
+                        {t('CongressTrendSummaryView.b2e4d7')}
+                    </h3>
                     <p className="text-sm leading-relaxed text-secondary-400">
                         {result.riskNoteKo}
                     </p>

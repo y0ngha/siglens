@@ -1,6 +1,7 @@
 'use client';
 
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import {
     useEffect,
     useId,
@@ -37,6 +38,9 @@ const ITEM_BASE =
  * 존재 이유다.
  */
 export function HeaderNavMenu({ vertical, pathname }: HeaderNavMenuProps) {
+    // 내비 라벨 키는 완전 수식이라 루트 네임스페이스로 푼다.
+    const tNav = useTranslations();
+    const t = useTranslations('widgets.layout');
     const [isOpen, setIsOpen] = useState(false);
     const panelId = useId();
     const containerRef = useRef<HTMLDivElement>(null);
@@ -107,7 +111,7 @@ export function HeaderNavMenu({ vertical, pathname }: HeaderNavMenuProps) {
                         : 'border-transparent text-secondary-400 hover:text-secondary-100'
                 )}
             >
-                {vertical.label}
+                {tNav(vertical.labelKey)}
                 <span
                     aria-hidden="true"
                     className={cn(
@@ -128,7 +132,9 @@ export function HeaderNavMenu({ vertical, pathname }: HeaderNavMenuProps) {
             */}
             <ul
                 id={panelId}
-                aria-label={`${vertical.label} 바로가기`}
+                aria-label={t('HeaderNavMenu.shortcutLabel', {
+                    v0: tNav(vertical.labelKey),
+                })}
                 className={cn(
                     'absolute top-full left-0 z-50 min-w-44 rounded-md border border-secondary-700 bg-secondary-900 py-1 shadow-xl',
                     isOpen ? 'visible' : 'invisible'
@@ -153,7 +159,7 @@ export function HeaderNavMenu({ vertical, pathname }: HeaderNavMenuProps) {
                                     : 'text-secondary-400 hover:bg-secondary-800 hover:text-secondary-100'
                             )}
                         >
-                            {vertical.overview.label}
+                            {tNav(vertical.overview.labelKey)}
                         </Link>
                     </li>
                 )}
@@ -179,7 +185,7 @@ export function HeaderNavMenu({ vertical, pathname }: HeaderNavMenuProps) {
                                     : 'text-secondary-400 hover:bg-secondary-800 hover:text-secondary-100'
                             )}
                         >
-                            {region.label}
+                            {tNav(region.labelKey)}
                         </Link>
                         {region.children.length > 0 && (
                             <ul className="pb-1">
@@ -211,7 +217,7 @@ export function HeaderNavMenu({ vertical, pathname }: HeaderNavMenuProps) {
                                                     : 'text-secondary-500 hover:bg-secondary-800 hover:text-secondary-200'
                                             )}
                                         >
-                                            {leaf.label}
+                                            {tNav(leaf.labelKey)}
                                         </Link>
                                     </li>
                                 ))}

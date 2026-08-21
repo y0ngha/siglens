@@ -17,6 +17,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: '!!!',
                 assetInfo: null,
                 degraded: false,
+                locale: 'ko',
             })
         ).toEqual({ indexable: false, reason: 'invalid-symbol' });
     });
@@ -27,6 +28,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: 'ZZZQ',
                 assetInfo: null,
                 degraded: false,
+                locale: 'ko',
             })
         ).toEqual({ indexable: false, reason: 'asset-missing' });
     });
@@ -37,6 +39,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: 'AAPL',
                 assetInfo: asset('AAPL'),
                 degraded: true,
+                locale: 'ko',
             })
         ).toEqual({ indexable: false, reason: 'degraded' });
     });
@@ -47,6 +50,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: 'aapl',
                 assetInfo: asset('AAPL'),
                 degraded: false,
+                locale: 'ko',
             })
         ).toEqual({ indexable: true, reason: 'popular' });
     });
@@ -57,6 +61,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: 'btcusd',
                 assetInfo: asset('BTCUSD', { marketProfile: 'crypto' }),
                 degraded: false,
+                locale: 'ko',
             })
         ).toEqual({ indexable: true, reason: 'curated-crypto' });
     });
@@ -67,6 +72,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: 'AAPL',
                 assetInfo: asset('AAPL'),
                 degraded: true,
+                locale: 'ko',
                 hasSnapshot: true,
             })
         ).toEqual({ indexable: true, reason: 'degraded-with-snapshot' });
@@ -78,6 +84,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: 'AAPL',
                 assetInfo: asset('AAPL'),
                 degraded: true,
+                locale: 'ko',
                 hasSnapshot: false,
             })
         ).toEqual({ indexable: false, reason: 'degraded' });
@@ -89,6 +96,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: 'ZZZOF',
                 assetInfo: asset('ZZZOF'),
                 degraded: true,
+                locale: 'ko',
                 hasSnapshot: true,
             })
         ).toEqual({ indexable: false, reason: 'degraded' });
@@ -100,6 +108,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: 'AAPL',
                 assetInfo: asset('AAPL'),
                 degraded: true,
+                locale: 'ko',
             })
         ).toEqual({ indexable: false, reason: 'degraded' });
     });
@@ -110,6 +119,7 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: '0NEUSD',
                 assetInfo: asset('0NEUSD', { marketProfile: 'crypto' }),
                 degraded: false,
+                locale: 'ko',
             })
         ).toEqual({
             indexable: false,
@@ -123,10 +133,40 @@ describe('evaluateSymbolIndexability', () => {
                 symbol: 'ZZZOF',
                 assetInfo: asset('ZZZOF'),
                 degraded: false,
+                locale: 'ko',
             })
         ).toEqual({
             indexable: false,
             reason: 'longtail-default-blocked',
         });
     });
+});
+
+describe('로케일 게이트', () => {
+    const popular = {
+        symbol: 'AAPL',
+        assetInfo: { symbol: 'AAPL', name: 'Apple Inc.', fmpSymbol: 'AAPL' },
+        degraded: false,
+        locale: 'ko',
+    } as const;
+
+    it('기본 로케일은 기존과 동일하게 판정된다', () => {
+        expect(
+            evaluateSymbolIndexability({ ...popular, locale: 'ko' })
+        ).toEqual({ indexable: true, reason: 'popular' });
+    });
+
+    /**
+     * 본문(AI 분석 산문)이 아직 한국어로만 생성된다. 영어 껍데기 안에 한국어
+     * 본문이 담긴 URL이 색인되면 2026-07 thin-content 노출 붕괴가 재현된다.
+     */
+    it.each(['en', 'ja', 'zh'] as const)(
+        '%s는 인기 티커여도 색인하지 않는다',
+        locale => {
+            expect(evaluateSymbolIndexability({ ...popular, locale })).toEqual({
+                indexable: false,
+                reason: 'locale-not-ready',
+            });
+        }
+    );
 });

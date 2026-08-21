@@ -119,13 +119,19 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     releaseReanalyzeCooldown: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('@/entities/analysis-translation', () => ({
+    translateAnalysisForLocale: vi.fn(async (analysis: unknown) => analysis),
+}));
 vi.mock('@/entities/analysis', () => ({
     tryAcquireReanalyzeCooldown: vi.fn().mockResolvedValue({ ok: true }),
 }));
 
 // --- Imports (after vi.mock declarations) ---
 
+import { TEST_STREAM_MESSAGES } from '@/shared/test-utils/streamMessagesFixture';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import jaMessages from '../../../../../../messages/ja.json';
+import koMessages from '../../../../../../messages/ko.json';
 import { POST } from '../route';
 import { runAnalysis } from '../runAnalysisBridge';
 import {
@@ -134,6 +140,7 @@ import {
     resolvePositionBucket,
     resolveReasoning,
 } from '@/shared/lib/byokGate';
+import { translateAnalysisForLocale } from '@/entities/analysis-translation';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { isBot } from '@/shared/api/isBot';
@@ -205,11 +212,15 @@ function deferred<T>(): {
 /** Build a Request with the given signal and body. */
 function makeRequest(
     signal?: AbortSignal,
-    body: string = TECHNICAL_BODY
+    body: string = TECHNICAL_BODY,
+    locale?: string
 ): Request {
     return new Request('http://localhost/api/analysis/stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            ...(locale ? { 'x-siglens-locale': locale } : {}),
+        },
         body,
         signal,
     });
@@ -480,6 +491,7 @@ describe('POST /api/analysis/stream', () => {
                 'Apple',
                 '1Day',
                 'gemini-2.5-flash',
+                'ko',
                 { force: false, reasoning: undefined },
                 expect.any(AbortSignal)
             );
@@ -503,6 +515,7 @@ describe('POST /api/analysis/stream', () => {
             ).toHaveBeenCalledWith(
                 'AAPL',
                 'gemini-2.5-flash',
+                'ko',
                 undefined,
                 expect.any(AbortSignal)
             );
@@ -524,6 +537,7 @@ describe('POST /api/analysis/stream', () => {
             expect(vi.mocked(runFinancialsAnalysisAction)).toHaveBeenCalledWith(
                 'AAPL',
                 'gemini-2.5-flash',
+                'ko',
                 undefined,
                 expect.any(AbortSignal)
             );
@@ -550,6 +564,7 @@ describe('POST /api/analysis/stream', () => {
                 'AAPL',
                 'Apple',
                 'gemini-2.5-flash',
+                'ko',
                 undefined,
                 expect.any(AbortSignal)
             );
@@ -570,7 +585,7 @@ describe('POST /api/analysis/stream', () => {
             // marketNewsDigest 핸들러 시그니처: (category, signal)
             expect(
                 vi.mocked(submitMarketNewsDigestAction)
-            ).toHaveBeenCalledWith('general', expect.any(AbortSignal));
+            ).toHaveBeenCalledWith('general', 'ko', expect.any(AbortSignal));
         });
 
         it('options → submitOptionsAnalysisAction', async () => {
@@ -597,6 +612,7 @@ describe('POST /api/analysis/stream', () => {
                 'Apple',
                 'nearest',
                 'gemini-2.5-flash',
+                'ko',
                 undefined,
                 expect.any(AbortSignal),
                 undefined
@@ -631,6 +647,7 @@ describe('POST /api/analysis/stream', () => {
                 'Apple',
                 'nearest',
                 'gemini-2.5-flash',
+                'ko',
                 undefined,
                 expect.any(AbortSignal),
                 true
@@ -649,13 +666,172 @@ describe('POST /api/analysis/stream', () => {
             const response = await POST(makeRequest(undefined, body));
             await collectSseEvents(response);
 
-            // congress 핸들러 시그니처: (symbol, modelId, reasoning, signal)
+            // congress 핸들러 시그니처: (symbol, modelId, locale, reasoning, signal)
             expect(vi.mocked(runCongressTrendAction)).toHaveBeenCalledWith(
                 'AAPL',
                 'gemini-2.5-flash',
+                'ko',
                 undefined,
                 expect.any(AbortSignal)
             );
+        });
+
+        /**
+         * 헤더 로케일이 **액션 인자까지** 도달하는지 본다.
+         *
+         * 스위트의 다른 로케일 단언은 전부 `'ko'`(= `DEFAULT_LOCALE`)라
+         * `resolveRequestLocale`을 상수 반환으로 바꿔도 통과했다(감사 실증:
+         * 10,516개 전부 초록). 비-기본 로케일이어야만 반증이 된다.
+         */
+        it.each(['ja', 'en', 'zh'])(
+            'x-siglens-locale: %s가 액션 인자로 전달된다',
+            async locale => {
+                vi.mocked(runCongressTrendAction).mockResolvedValue(
+                    MOCK_RESULT as never
+                );
+
+                const body = JSON.stringify({
+                    type: 'congress',
+                    params: { symbol: 'AAPL', modelId: 'gemini-2.5-flash' },
+                });
+                const response = await POST(
+                    makeRequest(undefined, body, locale)
+                );
+                await collectSseEvents(response);
+
+                expect(vi.mocked(runCongressTrendAction)).toHaveBeenCalledWith(
+                    'AAPL',
+                    'gemini-2.5-flash',
+                    locale,
+                    undefined,
+                    expect.any(AbortSignal)
+                );
+            }
+        );
+
+        it('신뢰 경계: 알 수 없는 로케일 헤더는 기본값으로 떨어진다', async () => {
+            vi.mocked(runCongressTrendAction).mockResolvedValue(
+                MOCK_RESULT as never
+            );
+
+            const body = JSON.stringify({
+                type: 'congress',
+                params: { symbol: 'AAPL', modelId: 'gemini-2.5-flash' },
+            });
+            await collectSseEvents(
+                await POST(makeRequest(undefined, body, '../../etc/passwd'))
+            );
+
+            expect(vi.mocked(runCongressTrendAction)).toHaveBeenCalledWith(
+                'AAPL',
+                'gemini-2.5-flash',
+                'ko',
+                undefined,
+                expect.any(AbortSignal)
+            );
+        });
+
+        /**
+         * `technical`은 DISPATCH 테이블을 타지 않고 **자기 분기에서** 로케일을
+         * 따로 푼다(`route.ts:608`). 그래서 DISPATCH 쪽 테스트가 아무리 촘촘해도
+         * 이 분기는 비어 있었다 — 실증: 그 줄을 `DEFAULT_LOCALE`로 고정해도
+         * 89개 테스트가 전부 통과했다. 최다 트래픽 경로다.
+         */
+        it('technical 분기의 로케일이 게이트까지 도달한다', async () => {
+            vi.mocked(runAnalysis).mockResolvedValue(MOCK_RESULT as never);
+            // `modelId`가 있어야 BYOK 게이트를 탄다 — 없으면 로케일을 받지 않는
+            // `resolveTierOnly` 쪽으로 빠져 로케일이 관측되지 않는다.
+            vi.mocked(resolveTierAndByok).mockResolvedValue({
+                kind: 'allowed',
+                tier: 'pro',
+                userApiKey: undefined,
+            } as never);
+
+            const body = JSON.stringify({
+                type: 'technical',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    timeframe: '1Day',
+                    modelId: 'gemini-2.5-flash',
+                },
+            });
+            await collectSseEvents(
+                await POST(makeRequest(undefined, body, 'ja'))
+            );
+
+            expect(vi.mocked(resolveTierAndByok)).toHaveBeenCalledWith(
+                null,
+                'gemini-2.5-flash',
+                'ja'
+            );
+        });
+
+        /**
+         * 분석 산문 번역의 로케일 결속. 이게 끊기면 `translateAnalysisForLocale`이
+         * 기본 로케일에서 즉시 반환하므로 **다국어 분석이 100% 죽는데** 에러가
+         * 하나도 안 난다(실증: 두 호출부를 `DEFAULT_LOCALE`로 고정해도 108개 통과).
+         */
+        it.each([
+            ['technical', TECHNICAL_BODY],
+            [
+                'congress',
+                JSON.stringify({
+                    type: 'congress',
+                    params: { symbol: 'AAPL', modelId: 'gemini-2.5-flash' },
+                }),
+            ],
+        ])('%s: 산문 번역이 요청 로케일로 호출된다', async (_name, body) => {
+            vi.mocked(runAnalysis).mockResolvedValue(MOCK_RESULT as never);
+            vi.mocked(runCongressTrendAction).mockResolvedValue(
+                MOCK_RESULT as never
+            );
+
+            await collectSseEvents(
+                await POST(makeRequest(undefined, body, 'ja'))
+            );
+
+            expect(vi.mocked(translateAnalysisForLocale)).toHaveBeenCalledWith(
+                expect.anything(),
+                'ja'
+            );
+        });
+
+        /**
+         * core가 만든 `timeframe_not_allowed`는 영어 문장이라 **한국어 사용자에게도
+         * 영어가 나갔다**. 라운드 7이 카탈로그로 갈아끼웠는데 그 블록을 통째로
+         * 지워도 111개 테스트가 통과했다 — 즉 수정이 반증 불가였다.
+         */
+        it('timeframe_not_allowed 문구를 요청 로케일 카탈로그로 갈아끼운다', async () => {
+            vi.mocked(runCongressTrendAction).mockResolvedValue({
+                status: 'error',
+                error: {
+                    code: 'timeframe_not_allowed',
+                    message: 'This timeframe is not available for your tier.',
+                },
+            } as never);
+
+            const events = await collectSseEvents(
+                await POST(
+                    makeRequest(
+                        undefined,
+                        JSON.stringify({
+                            type: 'congress',
+                            params: {
+                                symbol: 'AAPL',
+                                modelId: 'gemini-2.5-flash',
+                            },
+                        }),
+                        'ja'
+                    )
+                )
+            );
+
+            const payload = events.join('');
+            expect(payload).toContain(
+                jaMessages.app.api.stream.timeframeNotAllowed
+            );
+            expect(payload).not.toContain('not available for your tier');
         });
 
         it('briefing → submitMarketBriefingAction', async () => {
@@ -971,11 +1147,14 @@ describe('POST /api/analysis/stream', () => {
         it('blocked면 403이 아니라 SSE error 이벤트로 게이트 메시지를 전달한다', async () => {
             // 403을 쓰면 클라이언트가 게이트 메시지 대신 "분석 요청이 실패했습니다 (403)"을
             // 던지게 된다 — 그래서 의도적으로 200 + error 이벤트다.
+            // 게이트 문구는 이제 **코드로** 번역한다(`gateMessage`) — mock의
+            // `message`는 서버 로그용으로만 남고 화면에는 카탈로그 값이 나간다.
+            // 그래서 `AnalysisGateErrorCode`에 실재하는 코드를 써야 한다.
             vi.mocked(resolveTierAndByok).mockResolvedValue({
                 kind: 'blocked',
                 error: {
-                    code: 'model_not_allowed',
-                    message: '이 모델은 사용할 수 없어요.',
+                    code: 'tier_premium_blocked',
+                    message: '(로그용 원문)',
                 },
             } as never);
 
@@ -994,7 +1173,9 @@ describe('POST /api/analysis/stream', () => {
             expect(response.status).toBe(200);
             const events = await collectSseEvents(response);
             const errorEvent = events.find(e => e.includes('event: error'));
-            expect(errorEvent).toContain('이 모델은 사용할 수 없어요.');
+            expect(errorEvent).toContain(
+                koMessages.shared.lib.byokGate.tier_premium_blocked
+            );
             expect(vi.mocked(runAnalysis)).not.toHaveBeenCalled();
 
             // Task 7: 게이트 거부는 outage 알람 로그를 남기면 안 된다.
@@ -1010,7 +1191,7 @@ describe('POST /api/analysis/stream', () => {
                 String(args[0]).includes('[analysis-stream] gate-denied:')
             );
             expect(gateDeniedWarning).toBeDefined();
-            expect(gateDeniedWarning?.[1]).toBe('model_not_allowed');
+            expect(gateDeniedWarning?.[1]).toBe('tier_premium_blocked');
 
             warnSpy.mockRestore();
             errorSpy.mockRestore();
@@ -1817,6 +1998,7 @@ describe('POST /api/analysis/stream', () => {
                 'Apple',
                 '1Day',
                 'gemini-2.5-flash',
+                'ko',
                 expect.objectContaining({ force: true }),
                 expect.any(AbortSignal)
             );
@@ -1865,6 +2047,7 @@ describe('POST /api/analysis/stream', () => {
                 'Apple',
                 '1Day',
                 'gemini-2.5-flash',
+                'ko',
                 expect.objectContaining({ force: false }),
                 expect.any(AbortSignal)
             );
@@ -2074,6 +2257,7 @@ describe('POST /api/analysis/stream', () => {
                         companyName: 'Apple Inc.',
                         timeframe: '1Day',
                     },
+                    messages: TEST_STREAM_MESSAGES,
                 });
 
                 // heartbeatStream이 JSON.stringify({ result: runAnalysis반환값 })으로

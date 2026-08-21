@@ -1,12 +1,13 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type {
     FinancialsAnalysisResponse,
     FinancialsSentiment,
 } from '@y0ngha/siglens-core';
 import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
 import { cn } from '@/shared/lib/cn';
-import { AXIS_LABEL_KO } from './axisLabels';
+import { AXIS_LABEL_KEY } from './axisLabels';
 import {
     useDefaultModelId,
     useDefaultReasoning,
@@ -19,10 +20,11 @@ import { FinancialsAiSummaryError } from './FinancialsAiSummaryError';
 import { FinancialsAiSummarySkeleton } from './FinancialsAiSummarySkeleton';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 
-const SENTIMENT_LABEL: Record<FinancialsSentiment, string> = {
-    bullish: '긍정',
-    neutral: '중립',
-    bearish: '부정',
+/** FinancialsSentiment → `shared.enumLabel.sentiment` 카탈로그 키. */
+const SENTIMENT_LABEL_KEY: Record<FinancialsSentiment, string> = {
+    bullish: 'sentiment.bullish',
+    neutral: 'sentiment.neutral',
+    bearish: 'sentiment.bearish',
 };
 
 const SENTIMENT_CLASS: Record<FinancialsSentiment, string> = {
@@ -38,6 +40,12 @@ interface FinancialsAiSummaryViewProps {
 export function FinancialsAiSummaryView({
     result,
 }: FinancialsAiSummaryViewProps) {
+    const t = useTranslations('widgets.financials');
+    // extract.mjs의 동적 키 탐지는 이 파일 안에서 번역자를 직접 호출하는
+    // 패턴만 본다 — `SENTIMENT_LABEL_KEY[...]`/`AXIS_LABEL_KEY[...]`를 그대로
+    // `tLabel(...)`에 넣어야 `shared.enumLabel`이 이 라우트의 클라이언트
+    // 번들에 실린다.
+    const tLabel = useTranslations('shared.enumLabel');
     return (
         <section
             aria-labelledby="financials-ai-summary-heading"
@@ -48,7 +56,7 @@ export function FinancialsAiSummaryView({
                     id="financials-ai-summary-heading"
                     className="text-lg font-semibold tracking-tight"
                 >
-                    AI 재무제표 분석
+                    {t('FinancialsAiSummary.26f860')}
                 </h2>
                 <span
                     className={cn(
@@ -56,7 +64,7 @@ export function FinancialsAiSummaryView({
                         SENTIMENT_CLASS[result.overallSentiment]
                     )}
                 >
-                    {SENTIMENT_LABEL[result.overallSentiment]}
+                    {tLabel(SENTIMENT_LABEL_KEY[result.overallSentiment])}
                 </span>
             </div>
 
@@ -65,7 +73,10 @@ export function FinancialsAiSummaryView({
             </p>
 
             {result.axisAssessments.length > 0 && (
-                <ul aria-label="축별 평가" className="mb-5 space-y-3">
+                <ul
+                    aria-label={t('FinancialsAiSummary.4f0caa')}
+                    className="mb-5 space-y-3"
+                >
                     {result.axisAssessments.map(a => (
                         <li
                             key={a.axis}
@@ -73,7 +84,7 @@ export function FinancialsAiSummaryView({
                         >
                             <div className="mb-1 flex items-center gap-2">
                                 <span className="text-sm font-medium">
-                                    {AXIS_LABEL_KO[a.axis]}
+                                    {tLabel(AXIS_LABEL_KEY[a.axis])}
                                 </span>
                                 <span
                                     className={cn(
@@ -81,7 +92,7 @@ export function FinancialsAiSummaryView({
                                         SENTIMENT_CLASS[a.sentiment]
                                     )}
                                 >
-                                    {SENTIMENT_LABEL[a.sentiment]}
+                                    {tLabel(SENTIMENT_LABEL_KEY[a.sentiment])}
                                 </span>
                             </div>
                             <p className="text-sm leading-relaxed text-secondary-400">
@@ -94,7 +105,9 @@ export function FinancialsAiSummaryView({
 
             {result.riskFactorsKo.length > 0 && (
                 <div>
-                    <h3 className="mb-2 text-sm font-semibold">위험 요인</h3>
+                    <h3 className="mb-2 text-sm font-semibold">
+                        {t('FinancialsAiSummary.af0480')}
+                    </h3>
                     <ul className="space-y-1.5">
                         {result.riskFactorsKo.map((risk, i) => (
                             <li

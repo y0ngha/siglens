@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import { EMPTY_MESSAGE } from '@/widgets/fundamental/sections/EmptySectionCard';
 import { ProfitabilityCard } from '@/widgets/fundamental/sections/ProfitabilityCard';
 import type { FundamentalRatiosInput } from '@y0ngha/siglens-core';
+import { koMessage } from '@/shared/test-utils/koMessage';
 
 const SAMPLE_RATIOS = {
     returnOnEquityTTM: 0.45,
@@ -39,6 +39,10 @@ describe('ProfitabilityCard', () => {
         expect(
             screen.getByRole('heading', { name: '수익성' })
         ).toBeInTheDocument();
-        expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                koMessage('widgets.financials.section.emptySection')
+            )
+        ).toBeInTheDocument();
     });
 });

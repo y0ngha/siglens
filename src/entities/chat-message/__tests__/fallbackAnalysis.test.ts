@@ -1,9 +1,21 @@
 import { describe, it, expect } from 'vitest';
-import { FALLBACK_ANALYSIS, isFallbackAnalysis } from '@/entities/chat-message';
+import {
+    buildFallbackAnalysis,
+    isFallbackAnalysis,
+} from '@/entities/chat-message';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+
+// 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을
+// 들고 있어 `/en/AAPL`이 영어 화면에 한국어 폴백을 렌더했다.
+const tFallback = catalogTranslator('entities.chat-message.fallback', 'ko');
+const FALLBACK_SUMMARY = tFallback('unavailable');
+const FALLBACK_ANALYSIS = buildFallbackAnalysis(FALLBACK_SUMMARY);
 
 describe('isFallbackAnalysis', () => {
     it('FALLBACK_ANALYSIS 상수(동일 참조)는 true', () => {
-        expect(isFallbackAnalysis(FALLBACK_ANALYSIS)).toBe(true);
+        expect(isFallbackAnalysis(FALLBACK_ANALYSIS, FALLBACK_SUMMARY)).toBe(
+            true
+        );
     });
 
     // RSC 직렬화(Server Component → 'use client' 경계)와 normalizeAnalysisResponse의
@@ -12,12 +24,14 @@ describe('isFallbackAnalysis', () => {
     // 바뀌었으므로 내용이 같은 clone은 true여야 한다(참조만 다른 clone을 false로 보면
     // 가드가 프로덕션에서 절대 발동하지 않는 dead code가 된다. PR #685 round-3).
     it('내용이 같은 clone(참조만 다름)도 true, 값 기반 판정', () => {
-        expect(isFallbackAnalysis({ ...FALLBACK_ANALYSIS })).toBe(true);
+        expect(
+            isFallbackAnalysis({ ...FALLBACK_ANALYSIS }, FALLBACK_SUMMARY)
+        ).toBe(true);
     });
 
     it('실제 분석 결과는 false', () => {
         const real = { ...FALLBACK_ANALYSIS, summary: 'AAPL 상승 추세' };
-        expect(isFallbackAnalysis(real)).toBe(false);
+        expect(isFallbackAnalysis(real, FALLBACK_SUMMARY)).toBe(false);
     });
 
     it('free-tier 필터로 배열은 비었지만 summary가 다른 응답(빈 문자열)은 false', () => {
@@ -28,6 +42,6 @@ describe('isFallbackAnalysis', () => {
             ...FALLBACK_ANALYSIS,
             summary: '',
         };
-        expect(isFallbackAnalysis(freeFiltered)).toBe(false);
+        expect(isFallbackAnalysis(freeFiltered, FALLBACK_SUMMARY)).toBe(false);
     });
 });

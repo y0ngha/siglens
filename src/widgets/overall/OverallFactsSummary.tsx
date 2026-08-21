@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type {
     OverallAnalysisResponse,
     OverallScenario,
@@ -9,9 +10,9 @@ interface OverallFactsSummaryProps {
 }
 
 const SCENARIO_LABEL: Record<OverallScenario['name'], string> = {
-    bullish: '강세 시나리오',
-    neutral: '중립 시나리오',
-    bearish: '약세 시나리오',
+    bullish: 'scenario.bullish',
+    neutral: 'scenario.neutral',
+    bearish: 'scenario.bearish',
 };
 
 /**
@@ -27,9 +28,16 @@ export function OverallFactsSummary({
     symbol,
     analysis,
 }: OverallFactsSummaryProps) {
+    const t = useTranslations('widgets.overall');
+    const tLabel = useTranslations('shared.enumLabel');
     return (
-        <section aria-label={`${symbol} 종합 분석 요약`} className="space-y-4">
-            <h2 className="sr-only">{symbol} AI 종합 분석 결론</h2>
+        <section
+            aria-label={t('OverallFactsSummary.sectionLabel', { v0: symbol })}
+            className="space-y-4"
+        >
+            <h2 className="sr-only">
+                {t('OverallFactsSummary.9a8ae8', { v0: symbol })}
+            </h2>
             <p className="text-sm leading-relaxed text-secondary-300">
                 {analysis.headlineKo}
             </p>
@@ -44,7 +52,7 @@ export function OverallFactsSummary({
                             className="text-sm text-secondary-400"
                         >
                             <span className="font-medium text-secondary-300">
-                                {SCENARIO_LABEL[scenario.name]}:
+                                {tLabel(SCENARIO_LABEL[scenario.name])}:
                             </span>{' '}
                             {scenario.triggerConditionKo} —{' '}
                             {scenario.priceRangeKo}

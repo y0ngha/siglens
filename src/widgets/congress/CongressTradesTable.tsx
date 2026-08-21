@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type {
     Chamber,
     CongressOwner,
@@ -45,8 +46,8 @@ function extractSenatePtrId(link: string): string | null {
 }
 
 const CHAMBER_LABEL: Record<Chamber, string> = {
-    senate: '상원',
-    house: '하원',
+    senate: 'chamber.senate',
+    house: 'chamber.house',
 };
 
 /**
@@ -56,8 +57,8 @@ const CHAMBER_LABEL: Record<Chamber, string> = {
  * so we map it to an empty string and omit the element entirely in the render.
  */
 const SIDE_LABEL: Record<CongressTradeSide, string> = {
-    buy: '매수',
-    sell: '매도',
+    buy: 'tradeSide.buy',
+    sell: 'tradeSide.sell',
     unknown: '',
 };
 
@@ -74,10 +75,10 @@ const SIDE_CLASS: Record<CongressTradeSide, string> = {
  * when the owner is not disclosed.
  */
 const OWNER_LABEL: Record<CongressOwner, string> = {
-    self: '본인',
-    spouse: '배우자',
-    joint: '공동',
-    child: '자녀',
+    self: 'owner.self',
+    spouse: 'owner.spouse',
+    joint: 'owner.joint',
+    child: 'owner.child',
     unknown: '',
 };
 
@@ -88,11 +89,11 @@ const OWNER_LABEL: Record<CongressOwner, string> = {
  * case-insensitive substring match rather than strict equality to be resilient
  * to minor label changes in the upstream API.
  */
-function assetTypeBadge(assetType: string): string {
+function assetTypeBadgeKey(assetType: string): string {
     const lower = assetType.toLowerCase();
-    if (lower.includes('option')) return '옵션';
-    if (lower.includes('stock')) return '주식';
-    return '기타'; // fallback: 알 수 없는 자산 유형은 한국어 레이블로 통일
+    if (lower.includes('option')) return 'option';
+    if (lower.includes('stock')) return 'stock';
+    return 'other'; // fallback: 알 수 없는 자산 유형은 한 라벨로 통일
 }
 
 interface ChamberBadgeProps {
@@ -100,7 +101,9 @@ interface ChamberBadgeProps {
 }
 
 function ChamberBadge({ chamber }: ChamberBadgeProps) {
-    const label = CHAMBER_LABEL[chamber];
+    const tLabel = useTranslations('shared.enumLabel');
+    const t = useTranslations('widgets.congress');
+    const label = tLabel(CHAMBER_LABEL[chamber]);
 
     return (
         <span
@@ -110,7 +113,11 @@ function ChamberBadge({ chamber }: ChamberBadgeProps) {
                     ? 'bg-primary-500/10 text-primary-400'
                     : 'bg-secondary-700 text-secondary-300'
             )}
-            aria-label={chamber === 'senate' ? '상원 (Senate)' : '하원 (House)'}
+            aria-label={
+                chamber === 'senate'
+                    ? t('CongressTradesTable.27edc1')
+                    : t('CongressTradesTable.d8edd7')
+            }
         >
             {label}
         </span>
@@ -122,7 +129,8 @@ interface SideBadgeProps {
 }
 
 function SideBadge({ side }: SideBadgeProps) {
-    const label = SIDE_LABEL[side];
+    const tLabel = useTranslations('shared.enumLabel');
+    const label = tLabel(SIDE_LABEL[side]);
     if (!label) {
         return <span className={cn('text-xs', SIDE_CLASS[side])}>—</span>;
     }
@@ -144,7 +152,8 @@ interface OwnerBadgeProps {
 }
 
 function OwnerBadge({ owner }: OwnerBadgeProps) {
-    const label = OWNER_LABEL[owner];
+    const tLabel = useTranslations('shared.enumLabel');
+    const label = tLabel(OWNER_LABEL[owner]);
     if (!label) return null;
     return (
         <span className="rounded bg-secondary-700 px-1.5 py-0.5 text-xs text-secondary-300">
@@ -158,7 +167,8 @@ interface AssetTypeBadgeProps {
 }
 
 function AssetTypeBadge({ assetType }: AssetTypeBadgeProps) {
-    const label = assetTypeBadge(assetType);
+    const tAsset = useTranslations('widgets.congress.assetType');
+    const label = tAsset(assetTypeBadgeKey(assetType));
     return (
         <span className="rounded bg-secondary-700 px-1.5 py-0.5 text-xs text-secondary-300">
             {label}
@@ -185,6 +195,8 @@ function DisclosureCell({
     office,
     transactionDate,
 }: DisclosureCellProps) {
+    const tLabel = useTranslations('shared.enumLabel');
+    const t = useTranslations('widgets.congress');
     const isSenate = chamber === 'senate';
     const href = getDisclosureHref(chamber, link);
     const ptrId = isSenate ? extractSenatePtrId(link) : null;
@@ -195,10 +207,19 @@ function DisclosureCell({
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`${CHAMBER_LABEL[chamber]} ${office} ${transactionDate} 공시 ${isSenate ? '검색' : '문서'}`}
+                aria-label={t('disclosureLink', {
+                    v0: tLabel(CHAMBER_LABEL[chamber]),
+                    v1: office,
+                    v2: transactionDate,
+                    v3: isSenate
+                        ? t('disclosureSearch')
+                        : t('disclosureDocument'),
+                })}
                 className="rounded text-xs text-primary-400 underline transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
-                {isSenate ? '공시 검색' : '공시'}
+                {isSenate
+                    ? t('CongressTradesTable.fdf8d2')
+                    : t('CongressTradesTable.26d466')}
             </a>
             {isSenate && <InfoTooltip>{SenateDisclosureTooltip}</InfoTooltip>}
             {isSenate && ptrId && (
@@ -226,6 +247,7 @@ interface CongressTradesTableProps {
  * itself is RSC-safe (no hooks, no browser APIs at module scope).
  */
 export function CongressTradesTable({ trades }: CongressTradesTableProps) {
+    const t = useTranslations('widgets.congress');
     if (trades.length === 0) {
         return <CongressTradesEmpty />;
     }
@@ -235,23 +257,25 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
     return (
         <div className="rounded-xl border border-secondary-700 bg-secondary-800">
             <p className="px-4 pt-3 pb-0 text-xs text-secondary-400 sm:hidden">
-                ← 좌우로 스크롤 →
+                {t('CongressTradesTable.b488b1')}
             </p>
             <div
                 className="overflow-x-auto rounded-xl focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 role="region"
-                aria-label="의회 거래 내역 표 (좌우 스크롤 가능)"
+                aria-label={t('CongressTradesTable.373579')}
                 tabIndex={0}
             >
                 <table className="w-full text-sm">
-                    <caption className="sr-only">의회 거래 공시 목록</caption>
+                    <caption className="sr-only">
+                        {t('CongressTradesTable.de5545')}
+                    </caption>
                     <thead>
                         <tr className="border-b border-secondary-700 text-xs tracking-widest text-secondary-400 uppercase">
                             <th
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                구분
+                                {t('CongressTradesTable.af2fee')}
                                 <InfoTooltip>
                                     {ChamberColumnTooltip}
                                 </InfoTooltip>
@@ -260,38 +284,38 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                의원
+                                {t('CongressTradesTable.29c3ae')}
                             </th>
                             <th
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                매수/매도
+                                {t('CongressTradesTable.67600a')}
                             </th>
                             <th
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                금액 구간
+                                {t('CongressTradesTable.c8eed2')}
                                 <InfoTooltip>{AmountRangeTooltip}</InfoTooltip>
                             </th>
                             <th
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                종류
+                                {t('CongressTradesTable.29efb6')}
                             </th>
                             <th
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                거래일
+                                {t('CongressTradesTable.e6fa15')}
                             </th>
                             <th
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                공시일
+                                {t('CongressTradesTable.1ed947')}
                                 <InfoTooltip>
                                     {DisclosureLagTooltip}
                                 </InfoTooltip>
@@ -300,19 +324,19 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                보유자
+                                {t('CongressTradesTable.0c2cd8')}
                             </th>
                             <th
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                자산 설명
+                                {t('CongressTradesTable.5073ef')}
                             </th>
                             <th
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
-                                공시
+                                {t('CongressTradesTable.26d466')}
                             </th>
                         </tr>
                     </thead>

@@ -1,3 +1,4 @@
+import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 // EDT: 3월 두 번째 일요일 02:00 ~ 11월 첫 번째 일요일 02:00 → UTC-4 (IANA America/New_York)
 // EST: 그 외 구간 → UTC-5
 // 월은 JS Date 0-indexed 기준 (0 = January)
@@ -21,12 +22,31 @@ const KST_DATE_PARTS_FORMATTER = new Intl.DateTimeFormat('en-US', {
     day: '2-digit',
 });
 
-const KST_TIME_LABEL_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
-    timeZone: 'Asia/Seoul',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-});
+/**
+ * KST 시각 레이블 포맷터 — **로케일별**로 캐시한다.
+ *
+ * 예전에는 `'ko-KR'` 고정이라 `/en/economy`의 경제 캘린더가 영어 표 안에
+ * `오전 8:30`을 찍었다. 타임존은 KST로 고정한 채(레이블에 KST 의미가 붙어 있다)
+ * 로케일만 따른다.
+ */
+const KST_TIME_LABEL_FORMATTERS = new Map<string, Intl.DateTimeFormat>();
+
+function kstTimeLabelFormatter(
+    locale: Locale,
+    hour12: boolean
+): Intl.DateTimeFormat {
+    const key = `${locale}:${hour12}`;
+    const cached = KST_TIME_LABEL_FORMATTERS.get(key);
+    if (cached) return cached;
+    const formatter = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+        timeZone: 'Asia/Seoul',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12,
+    });
+    KST_TIME_LABEL_FORMATTERS.set(key, formatter);
+    return formatter;
+}
 
 const SPRING_FORWARD_MONTH = MARCH;
 const SPRING_FORWARD_NTH = SECOND_SUNDAY;
@@ -124,7 +144,20 @@ export interface EtToKstResult {
  * `new Date(iso)`는 ISO 오프셋을 포함하므로 UTC 기준으로 정확히 파싱된다.
  * 날짜 롤오버(예: ET 오후 → KST 다음날)는 Intl.DateTimeFormat이 자동 처리한다.
  */
-export function etDateTimeToKst(etDate: string): EtToKstResult {
+export function etDateTimeToKst(
+    etDate: string,
+    locale: Locale,
+    /**
+     * 오전/오후 표기 여부.
+     *
+     * 캘린더 **월 셀**은 `text-[10px] … truncate` 한 줄이라 오전/오후가 들어갈
+     * 폭이 없다. 예전에는 호출부가 정규식으로 오전·오후 접두사를
+     * 잘라냈는데, 그건 로케일이 `ko-KR`로 고정돼 있을 때만 동작한다 — 로케일을
+     * 따르게 만든 순간 `8:30 AM`·`午前8:30`·`上午8:30`이 그대로 남아 셀을
+     * 넘쳤다. 문자열을 깎는 대신 **포맷 단계에서** 끄는 게 맞다.
+     */
+    hour12 = true
+): EtToKstResult {
     const iso = toIsoDateTime(etDate);
     const d = new Date(iso);
 
@@ -140,7 +173,7 @@ export function etDateTimeToKst(etDate: string): EtToKstResult {
     const day = parts.find(p => p.type === 'day')?.value ?? '';
     const kstDateKey = `${year}-${month}-${day}`;
 
-    const kstTimeLabel = KST_TIME_LABEL_FORMATTER.format(d);
+    const kstTimeLabel = kstTimeLabelFormatter(locale, hour12).format(d);
 
     return { iso, kstDateKey, kstTimeLabel };
 }

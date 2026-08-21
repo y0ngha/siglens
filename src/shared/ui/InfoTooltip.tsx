@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type React from 'react';
 import type { ReactNode } from 'react';
 import { useId, useRef, useState } from 'react';
@@ -23,6 +24,7 @@ const DEFAULT_TRIGGER_CLASS =
     'inline-flex items-center justify-center min-h-6 min-w-6 text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-400 ml-1 cursor-help rounded text-xs leading-none transition-colors focus:outline-none focus-visible:ring-2';
 
 export function InfoTooltip({ children, className }: InfoTooltipProps) {
+    const t = useTranslations('shared.ui');
     const tooltipId = useId();
     const [open, setOpen] = useState(false);
     const [positioned, setPositioned] = useState(false);
@@ -69,7 +71,7 @@ export function InfoTooltip({ children, className }: InfoTooltipProps) {
             <button
                 ref={triggerRef}
                 type="button"
-                aria-label="추가 정보"
+                aria-label={t('InfoTooltip.9b3193')}
                 aria-describedby={open ? tooltipId : undefined}
                 aria-expanded={open}
                 onClick={handleClick}

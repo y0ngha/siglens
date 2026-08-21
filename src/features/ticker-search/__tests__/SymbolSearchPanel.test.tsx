@@ -50,7 +50,13 @@ vi.mock('next/link', () => ({
     }) => <a {...props}>{children}</a>,
 }));
 
-import { SEARCH_PLACEHOLDER } from '@/features/ticker-search/lib/searchLabels';
+import { SEARCH_PLACEHOLDER_KEY } from '@/features/ticker-search/lib/searchLabels';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+
+const SEARCH_PLACEHOLDER = catalogTranslator(
+    'features.ticker-search',
+    'ko'
+)(SEARCH_PLACEHOLDER_KEY);
 
 const mockUseRecentSearches = vi.mocked(useRecentSearches);
 const mockAddSearch = vi.fn();

@@ -1,5 +1,6 @@
 'use server';
 
+import { localeRedirect } from '@/shared/i18n/localeRedirect';
 import type { FinalizeOAuthSignupState } from '@/shared/lib/auth/formTypes';
 import {
     resolvePostSignupDestination,
@@ -23,7 +24,7 @@ import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { DrizzleTermsRepository } from '@/entities/terms';
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 
 export async function finalizeOAuthSignupAction(
     _prev: FinalizeOAuthSignupState,
@@ -35,7 +36,7 @@ export async function finalizeOAuthSignupAction(
         const agreedTos = String(formData.get('agreed_tos') ?? '');
 
         if (!token) {
-            redirect(OAUTH_ERROR_REDIRECT.consentInvalid);
+            return localeRedirect(OAUTH_ERROR_REDIRECT.consentInvalid);
         }
 
         if (agreedPrivacy !== 'true' || agreedTos !== 'true') {
@@ -49,27 +50,29 @@ export async function finalizeOAuthSignupAction(
 
         const store = createPendingOAuthSignupStoreFromEnv();
         if (!store) {
-            redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
+            return localeRedirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
         }
 
         const profile = await store.peek(token);
         if (!profile) {
-            redirect(OAUTH_ERROR_REDIRECT.consentExpired);
+            return localeRedirect(OAUTH_ERROR_REDIRECT.consentExpired);
         }
 
         const { db } = getAuthDatabaseClient();
         const termsRepo = new DrizzleTermsRepository(db);
         const [termsP, termsT] = await Promise.all([
-            termsRepo.findActive('privacy'),
-            termsRepo.findActive('tos'),
+            // 신원(`terms.id`)만 필요하다 — 동의 레코드는 로케일과 무관한
+            // 원본 행을 가리킨다. 본문을 쓰지 않으므로 기본 로케일로 조회한다.
+            termsRepo.findActive('privacy', DEFAULT_LOCALE),
+            termsRepo.findActive('tos', DEFAULT_LOCALE),
         ]);
         if (!termsP || !termsT) {
-            redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
+            return localeRedirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
         }
 
         const consumed = await store.consume(token);
         if (!consumed) {
-            redirect(OAUTH_ERROR_REDIRECT.consentExpired);
+            return localeRedirect(OAUTH_ERROR_REDIRECT.consentExpired);
         }
 
         const userRepo = new DrizzleUserRepository(db);
@@ -77,7 +80,7 @@ export async function finalizeOAuthSignupAction(
 
         const conflict = await userRepo.findByEmail(consumed.email);
         if (conflict) {
-            redirect(OAUTH_ERROR_REDIRECT.emailConflict);
+            return localeRedirect(OAUTH_ERROR_REDIRECT.emailConflict);
         }
 
         const createdUser = await userRepo.createOAuthUser({
@@ -94,7 +97,7 @@ export async function finalizeOAuthSignupAction(
         });
 
         if (!createdUser) {
-            redirect(OAUTH_ERROR_REDIRECT.emailConflict);
+            return localeRedirect(OAUTH_ERROR_REDIRECT.emailConflict);
         }
 
         const agreementRepo = new DrizzleAgreementRepository(db);
@@ -116,7 +119,7 @@ export async function finalizeOAuthSignupAction(
             ]);
         } catch {
             await userRepo.deleteUser(createdUser.id);
-            redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
+            return localeRedirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
         }
 
         const secure = isSecureCookieEnv();
@@ -143,12 +146,14 @@ export async function finalizeOAuthSignupAction(
             resolvePostSignupDestination(sanitizeNextPath(consumed.next)),
             'https://siglens.invalid'
         );
-        redirect(`${target.pathname}${target.search}${target.hash}`);
+        return localeRedirect(
+            `${target.pathname}${target.search}${target.hash}`
+        );
     } catch (err) {
         // Re-throw Next.js redirect (not an error — it's a control-flow signal).
         if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT')) {
             throw err;
         }
-        redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
+        return localeRedirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
     }
 }

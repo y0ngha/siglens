@@ -1,26 +1,67 @@
-import { SITE_NAME } from '@/shared/lib/seo';
+import { SITE_NAME, type SeoTranslator } from '@/shared/lib/seo';
+import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 
-export const INVESTMENT_DISCLAIMER =
-    '본 서비스의 분석 정보는 투자 참고용이며, 투자 결정의 책임은 이용자에게 있습니다.';
+/**
+ * 투자 고지 문구는 `shared.lib.legal.investmentDisclaimer` 키다.
+ *
+ * 예전에는 여기 한국어 상수라 푸터·공유 페이지·약관·개인정보처리방침 **네 곳
+ * 전부**가 로케일과 무관하게 한국어 고지를 렌더했다. 이 모듈은 요청 스코프가
+ * 없으므로 문구를 들 수 없다.
+ */
+export const INVESTMENT_DISCLAIMER_KEY = 'investmentDisclaimer';
 
 export const PRIVACY_PATH = '/privacy';
 export const TERMS_PATH = '/terms';
 
-export const PRIVACY_TITLE = '개인정보처리방침';
-export const PRIVACY_FULL_TITLE = `${PRIVACY_TITLE} | ${SITE_NAME}`;
-export const PRIVACY_DESCRIPTION = `${SITE_NAME} 개인정보처리방침을 안내합니다. 회원가입과 서비스 이용 과정에서 수집하는 개인정보의 항목과 이용 목적, 보관 및 파기 기간, 제3자 제공 여부는 물론, 이용자가 직접 행사할 수 있는 열람·정정·삭제 등의 권리까지 한 페이지에서 자세히 확인하세요.`;
+/**
+ * title/description은 `shared.seo` 카탈로그에서 온다 — `terms`/`privacy` 페이지의
+ * `generateMetadata`, JSON-LD, `LegalPageShell` h1이 전부 이 값을 공유하므로
+ * 한 곳만 바꾸면 셋이 동시에 갱신된다(옛 모듈 상수와 동일한 단일 소스 원칙,
+ * 로케일 인자만 늘었다). `intro`/약관 본문(`terms.body`, DB 마크다운)은 법률
+ * 검토가 필요한 별도 콘텐츠라 이 함수들의 범위가 아니다.
+ */
+export function privacyTitle(t: SeoTranslator): string {
+    return t('privacy.title');
+}
+export function privacyFullTitle(t: SeoTranslator): string {
+    return `${privacyTitle(t)} | ${SITE_NAME}`;
+}
+export function privacyDescription(t: SeoTranslator): string {
+    return t('privacy.description');
+}
 
-export const TERMS_TITLE = '이용약관';
-export const TERMS_FULL_TITLE = `${TERMS_TITLE} | ${SITE_NAME}`;
-export const TERMS_DESCRIPTION = `${SITE_NAME} 서비스 이용약관을 안내합니다. 회원가입 및 서비스 이용 조건, AI 분석·백테스팅 등 투자 정보 제공에 대한 면책 조항, 계정 관리와 콘텐츠 이용 규칙, 그리고 이용자와 회사가 각각 지켜야 할 권리와 의무까지 한 페이지에서 자세히 확인하세요.`;
+export function termsTitle(t: SeoTranslator): string {
+    return t('terms.title');
+}
+export function termsFullTitle(t: SeoTranslator): string {
+    return `${termsTitle(t)} | ${SITE_NAME}`;
+}
+export function termsDescription(t: SeoTranslator): string {
+    return t('terms.description');
+}
 
-const KST_LONG_DATE_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-});
+/**
+ * 로케일별 포맷터 캐시.
+ *
+ * 예전에는 `'ko-KR'` 고정 상수 하나였다 — 그래서 `/en/terms`·`/en/privacy`의
+ * `Effective Date`가 `2026년 4월 30일`을 찍었다. 타임존은 KST로 고정한다
+ * (약관 발효일은 한국 법인 기준 날짜라 로케일과 무관).
+ */
+const FORMATTER_CACHE = new Map<Locale, Intl.DateTimeFormat>();
 
-export function formatKoreanDate(date: Date): string {
-    return KST_LONG_DATE_FORMATTER.format(date);
+function formatterFor(locale: Locale): Intl.DateTimeFormat {
+    const cached = FORMATTER_CACHE.get(locale);
+    if (cached) return cached;
+    const formatter = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    });
+    FORMATTER_CACHE.set(locale, formatter);
+    return formatter;
+}
+
+export function formatKoreanDate(date: Date, locale: Locale): string {
+    return formatterFor(locale).format(date);
 }

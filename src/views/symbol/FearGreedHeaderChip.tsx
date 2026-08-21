@@ -1,7 +1,8 @@
+import { useTranslations } from 'next-intl';
 import type { FearGreedLabel, FearGreedSnapshot } from '@y0ngha/siglens-core';
 import {
-    CONFIDENCE_LIMITED_LABEL,
-    SENTIMENT_LABEL_TEXT,
+    CONFIDENCE_LIMITED_KEY,
+    SENTIMENT_LABEL_KEY,
 } from '@/shared/lib/fearGreedLabels';
 import { cn } from '@/shared/lib/cn';
 
@@ -20,17 +21,24 @@ interface FearGreedHeaderChipProps {
 
 /** Ticker-level sentiment chip on every /[symbol]/* route header. */
 export function FearGreedHeaderChip({ snapshot }: FearGreedHeaderChipProps) {
+    const t = useTranslations('views.symbol');
+    // extract.mjs의 동적 키 탐지는 "이 파일 안에서 번역자를 직접 호출하는
+    // 패턴"만 본다 — `SENTIMENT_LABEL_KEY[...]`를 그대로 `tLabel(...)`에
+    // 넣어야 `shared.enumLabel`이 이 라우트의 클라이언트 번들에 실린다
+    // (fearGreedLabels.ts의 SENTIMENT_LABEL_KEY export 주석 참고).
+    const tLabel = useTranslations('shared.enumLabel');
+    const tFearGreed = useTranslations('shared.lib.fearGreed');
     if (!snapshot) {
         return (
             <span className="inline-flex items-center rounded bg-secondary-700/40 px-2 py-0.5 text-xs text-secondary-400">
-                공포·탐욕 데이터 부족
+                {t('FearGreedHeaderChip.afe032')}
             </span>
         );
     }
     const score = Math.round(snapshot.score);
     const confidenceNote =
         snapshot.confidence === 'limited'
-            ? ` (${CONFIDENCE_LIMITED_LABEL})`
+            ? ` (${tFearGreed(CONFIDENCE_LIMITED_KEY)})`
             : '';
     return (
         <span
@@ -38,9 +46,13 @@ export function FearGreedHeaderChip({ snapshot }: FearGreedHeaderChipProps) {
                 'inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium',
                 LABEL_BG[snapshot.label]
             )}
-            aria-label={`공포 탐욕 지수 ${SENTIMENT_LABEL_TEXT[snapshot.label]} ${score}점${confidenceNote}`}
+            aria-label={t('FearGreedHeaderChip.ariaLabel', {
+                v0: tLabel(SENTIMENT_LABEL_KEY[snapshot.label]),
+                v1: score,
+                v2: confidenceNote,
+            })}
         >
-            <span>{SENTIMENT_LABEL_TEXT[snapshot.label]}</span>
+            <span>{tLabel(SENTIMENT_LABEL_KEY[snapshot.label])}</span>
             <span className="font-mono">{score}</span>
             {snapshot.confidence === 'limited' && (
                 <span className="text-secondary-300" aria-hidden="true">

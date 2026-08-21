@@ -1,3 +1,5 @@
+import { beforeAll } from 'vitest';
+import { getTranslations } from 'next-intl/server';
 import {
     buildCryptoSymbolSeoContent,
     buildCryptoSymbolNewsSeoContent,
@@ -5,14 +7,23 @@ import {
     buildCryptoSymbolFearGreedSeoContent,
     seoTitleWidth,
     SEO_TITLE_MAX_WIDTH,
+    type SeoTranslator,
 } from '@/shared/lib/seo';
 import {
     SEO_WORST_CASE_KOREAN_NAME,
     SEO_WORST_CASE_TICKER,
 } from '@/__tests__/utils/seoTitleFixtures';
 
+// t는 이제 필수 인자다(§design SeoTranslator required-param). ko로 고정한
+// 실제 번역자를 한 번 만들어 모든 builder 호출에 재사용한다.
+let t: SeoTranslator;
+beforeAll(async () => {
+    t = await getTranslations({ locale: 'ko', namespace: 'shared.seo' });
+});
+
 type CryptoBuilder = (
     symbol: string,
+    t: SeoTranslator,
     opts?: { koreanName?: string; displayName?: string }
 ) => { title: string };
 
@@ -27,7 +38,7 @@ describe('크립토 title 템플릿 4개 — 주식과 동일한 조합 형태�
     it.each(CRYPTO_BUILDERS)(
         '%s: 한국어명이 있으면 비트코인(BTCUSD)로 시작한다',
         (_name, build) => {
-            const { title } = build('BTCUSD', { koreanName: '비트코인' });
+            const { title } = build('BTCUSD', t, { koreanName: '비트코인' });
             expect(title.startsWith('비트코인(BTCUSD)')).toBe(true);
         }
     );
@@ -35,7 +46,7 @@ describe('크립토 title 템플릿 4개 — 주식과 동일한 조합 형태�
     it.each(CRYPTO_BUILDERS)(
         '%s: 한국어명이 없으면 BTCUSD로 시작하는 title로 저하되고 undefined를 포함하지 않는다',
         (_name, build) => {
-            const { title } = build('BTCUSD');
+            const { title } = build('BTCUSD', t);
             expect(title.startsWith('BTCUSD')).toBe(true);
             expect(title).not.toContain('undefined');
         }
@@ -44,7 +55,7 @@ describe('크립토 title 템플릿 4개 — 주식과 동일한 조합 형태�
     it.each(CRYPTO_BUILDERS)(
         '%s: 비트코인(BTCUSD) 케이스는 폭 상한 55를 넘지 않는다',
         (_name, build) => {
-            const { title } = build('BTCUSD', { koreanName: '비트코인' });
+            const { title } = build('BTCUSD', t, { koreanName: '비트코인' });
             expect(seoTitleWidth(title)).toBeLessThanOrEqual(
                 SEO_TITLE_MAX_WIDTH
             );
@@ -57,7 +68,7 @@ describe('크립토 title 템플릿 4개 — 주식과 동일한 조합 형태�
         // 토큰)이 존재할 수 있어 주식과 동일한 강등 경로를 검증한다.
         '%s: 실측 최악 케이스도 폭 상한 55를 넘지 않고 core가 살아남는다',
         (_name, build, core) => {
-            const { title } = build(SEO_WORST_CASE_TICKER, {
+            const { title } = build(SEO_WORST_CASE_TICKER, t, {
                 koreanName: SEO_WORST_CASE_KOREAN_NAME,
             });
             expect(seoTitleWidth(title)).toBeLessThanOrEqual(
@@ -68,7 +79,7 @@ describe('크립토 title 템플릿 4개 — 주식과 동일한 조합 형태�
     );
 
     it('fear-greed title은 공포 탐욕 지수를 포함한다', () => {
-        const { title } = buildCryptoSymbolFearGreedSeoContent('BTCUSD', {
+        const { title } = buildCryptoSymbolFearGreedSeoContent('BTCUSD', t, {
             koreanName: '비트코인',
         });
         expect(title).toContain('공포 탐욕 지수');
@@ -78,7 +89,7 @@ describe('크립토 title 템플릿 4개 — 주식과 동일한 조합 형태�
         // 이전 구현: `${ticker} 시세 분석 — ${displayName} 차트와 매매 신호` —
         // displayName이 길면 64 폭단위까지 오버플로우했다. composeSymbolTitle은
         // ticker/koreanName만 조합하므로 displayName은 title에 등장하지 않는다.
-        const { title } = buildCryptoSymbolSeoContent('BTCUSD', {
+        const { title } = buildCryptoSymbolSeoContent('BTCUSD', t, {
             displayName: 'Bitcoin USD',
         });
         expect(title).not.toContain('Bitcoin USD');

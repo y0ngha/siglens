@@ -1,5 +1,22 @@
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
+
+import koMessages from '@/../messages/ko.json';
+
+/** 실제 ko 카탈로그를 읽는 번역자 — 스텁이면 키 누락이 조용히 통과한다. */
+const tFacts = (key: string, values?: Record<string, string | number>) => {
+    const table = koMessages.views.symbol.technicalFacts as Record<
+        string,
+        string
+    >;
+    const raw = table[key];
+    if (raw === undefined) return key;
+    return Object.entries(values ?? {}).reduce(
+        (acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)),
+        raw
+    );
+};
+
 import {
     buildTechnicalFacts,
     buildTechnicalFactsNarrative,
@@ -124,7 +141,7 @@ describe('buildTechnicalFactsNarrative', () => {
         );
 
         expect(
-            buildTechnicalFactsNarrative('AAPL', facts!, 'us-equity')
+            buildTechnicalFactsNarrative('AAPL', facts!, 'us-equity', tFacts)
         ).toEqual([
             'AAPL은 최근 종가 $110.00 기준으로 직전 봉 대비 10.00% 상승했습니다.',
             'RSI 62.5로 중립 구간이며, MACD 히스토그램은 양수라 단기 모멘텀은 상승 쪽입니다.',
@@ -142,7 +159,7 @@ describe('buildTechnicalFactsNarrative', () => {
         );
 
         expect(
-            buildTechnicalFactsNarrative('AAPL', facts!, 'us-equity')
+            buildTechnicalFactsNarrative('AAPL', facts!, 'us-equity', tFacts)
         ).toEqual([
             'AAPL은 최근 종가 $90.00 기준으로 직전 봉 대비 10.00% 하락했습니다.',
             `최근 ${RECENT_BARS_WINDOW}개 봉 고점 대비 -25.0%, 저점 대비 +12.5% 위치에 있습니다.`,
@@ -159,7 +176,7 @@ describe('buildTechnicalFactsNarrative', () => {
         );
 
         expect(
-            buildTechnicalFactsNarrative('AAPL', facts!, 'us-equity')
+            buildTechnicalFactsNarrative('AAPL', facts!, 'us-equity', tFacts)
         ).toEqual([
             'AAPL은 최근 종가 $110.00 기준으로 직전 봉 대비 10.00% 상승했습니다.',
             'RSI 50.0로 중립 구간이며, MACD 히스토그램은 0이라 단기 모멘텀은 중립에 가까운 상태입니다.',
@@ -176,7 +193,8 @@ describe('buildTechnicalFactsNarrative', () => {
         const narrative = buildTechnicalFactsNarrative(
             'BTCUSD',
             facts!,
-            'crypto'
+            'crypto',
+            tFacts
         );
 
         expect(narrative[0]).toContain('$0.05816 기준');

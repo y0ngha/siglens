@@ -1,13 +1,31 @@
 import { render } from '@testing-library/react';
+import { beforeAll } from 'vitest';
+import { getTranslations } from 'next-intl/server';
 import type { MarketFearGreedSnapshot } from '@y0ngha/siglens-core';
 import type { MarketFearGreedView } from '@/entities/market-fear-greed';
 import { MarketFearGreedPage } from '@/widgets/market-fear-greed/MarketFearGreedPage';
 import {
-    CONFIDENCE_LIMITED_LABEL,
-    CONFIDENCE_NORMAL_LABEL,
-    SENTIMENT_LABEL_TEXT,
+    CONFIDENCE_LIMITED_KEY,
+    CONFIDENCE_NORMAL_KEY,
+    sentimentLabelText,
 } from '@/shared/lib/fearGreedLabels';
-import { MARKET_FACTOR_LABEL } from '@/shared/lib/marketFearGreedLabels';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import koMessages from '@/../messages/ko.json';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+
+// 문구는 `shared.lib.fearGreed` 카탈로그에서 온다 — 예전엔 모듈 상수라
+// 비-ko 로케일에서도 한국어 경고가 그대로 나갔다.
+const tFearGreedKo = catalogTranslator('shared.lib.fearGreed', 'ko');
+
+/** ko 카탈로그의 팩터 라벨 — 소스 상수를 대체한다. */
+const FG = koMessages.shared.lib.fearGreedFactor as unknown as {
+    label: Record<string, string>;
+};
+
+let t: EnumLabelTranslator;
+beforeAll(async () => {
+    t = await getTranslations({ locale: 'ko', namespace: 'shared.enumLabel' });
+});
 
 const snapshot: MarketFearGreedSnapshot = {
     score: 62,
@@ -44,7 +62,9 @@ describe('MarketFearGreedPage', () => {
             // gauge's SVG (role="img") to avoid matching the mini gauge too.
             const heroSvg = container.querySelector('svg[role="img"]');
             expect(heroSvg?.getAttribute('aria-label')).toContain('62');
-            expect(getByText(SENTIMENT_LABEL_TEXT.GREED)).toBeInTheDocument();
+            expect(
+                getByText(sentimentLabelText('GREED', t))
+            ).toBeInTheDocument();
             expect(getByText('2026년 8월 14일 종가 기준')).toBeInTheDocument();
         });
 
@@ -62,21 +82,14 @@ describe('MarketFearGreedPage', () => {
             const { getByText } = render(
                 <MarketFearGreedPage market="us" view={view} />
             );
+            expect(getByText(FG.label.momentum)).toBeInTheDocument();
+            expect(getByText(FG.label.volatility)).toBeInTheDocument();
+            expect(getByText(FG.label.safe_haven)).toBeInTheDocument();
             expect(
-                getByText(MARKET_FACTOR_LABEL.us.momentum)
+                // 미국 시장은 로 갈린다(한국은 신용 스프레드).
+                getByText(FG.label.junk_bond_us!)
             ).toBeInTheDocument();
-            expect(
-                getByText(MARKET_FACTOR_LABEL.us.volatility)
-            ).toBeInTheDocument();
-            expect(
-                getByText(MARKET_FACTOR_LABEL.us.safe_haven)
-            ).toBeInTheDocument();
-            expect(
-                getByText(MARKET_FACTOR_LABEL.us.junk_bond)
-            ).toBeInTheDocument();
-            expect(
-                getByText(MARKET_FACTOR_LABEL.us.breadth)
-            ).toBeInTheDocument();
+            expect(getByText(FG.label.breadth)).toBeInTheDocument();
         });
 
         it('renders the CNN-difference footnote', () => {
@@ -94,7 +107,7 @@ describe('MarketFearGreedPage', () => {
                 <MarketFearGreedPage market="us" view={view} />
             );
             expect(
-                getByText(`표본 412 — ${CONFIDENCE_NORMAL_LABEL}`)
+                getByText(`표본 412 — ${tFearGreedKo(CONFIDENCE_NORMAL_KEY)}`)
             ).toBeInTheDocument();
         });
     });
@@ -113,7 +126,7 @@ describe('MarketFearGreedPage', () => {
                 <MarketFearGreedPage market="us" view={limitedView} />
             );
             expect(
-                getByText(`표본 45 — ${CONFIDENCE_LIMITED_LABEL}`)
+                getByText(`표본 45 — ${tFearGreedKo(CONFIDENCE_LIMITED_KEY)}`)
             ).toBeInTheDocument();
         });
     });

@@ -1,12 +1,13 @@
 'use server';
 
+import { localeRedirect } from '@/shared/i18n/localeRedirect';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleUserApiKeyRepository } from '@/entities/api-key/api';
 import { isLlmProvider } from '../lib/apiKey';
 import type { ApiKeyActionState } from '../lib/types';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
 export async function deleteApiKeyAction(
     _prevState: ApiKeyActionState,
@@ -14,12 +15,13 @@ export async function deleteApiKeyAction(
 ): Promise<ApiKeyActionState> {
     const user = await getCurrentUser();
     if (user === null) {
-        redirect('/login?next=/account');
+        return localeRedirect('/login?next=/account');
     }
 
+    const t = await getTranslations('entities.api-key.action');
     const rawProvider = formData.get('provider');
     if (typeof rawProvider !== 'string' || !isLlmProvider(rawProvider)) {
-        return { status: 'error', message: '유효하지 않은 프로바이더입니다.' };
+        return { status: 'error', message: t('invalidProvider') };
     }
 
     try {
@@ -28,9 +30,11 @@ export async function deleteApiKeyAction(
             user.id,
             rawProvider
         );
-        revalidatePath('/account');
-        return { status: 'success', message: '삭제되었습니다.' };
+        // 실제 렌더 경로는 `/[locale]/account`다. `'/account'`로는 어떤 경로도
+        // 매칭되지 않아 조용한 no-op이 된다.
+        revalidatePath('/[locale]/account', 'page');
+        return { status: 'success', message: t('deleted') };
     } catch {
-        return { status: 'error', message: '삭제 중 오류가 발생했습니다.' };
+        return { status: 'error', message: t('deleteFailed') };
     }
 }

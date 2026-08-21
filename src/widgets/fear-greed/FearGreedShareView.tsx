@@ -6,6 +6,7 @@
  * without needing live hooks.
  */
 
+import { useTranslations } from 'next-intl';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { FearGreedHero } from './FearGreedHero';
 import { FearGreedGroupBar } from './FearGreedGroupBar';
@@ -22,12 +23,13 @@ interface FearGreedShareViewProps {
  * alone does not carry history. Only the current-score sections are rendered.
  */
 export function FearGreedShareView({ snapshot }: FearGreedShareViewProps) {
+    const t = useTranslations('widgets.fear-greed');
     return (
         <div className="flex flex-col gap-6 p-4 md:p-6">
             <div className="grid gap-6 md:grid-cols-2">
                 <section className="flex flex-col gap-3">
                     <h2 className="text-sm font-medium text-secondary-300">
-                        현재 공포 탐욕 지수
+                        {t('FearGreedShareView.d9e96a')}
                     </h2>
                     <FearGreedHero snapshot={snapshot} />
                     <SelfNormWarningBadge warning={snapshot.warning} />
@@ -35,7 +37,7 @@ export function FearGreedShareView({ snapshot }: FearGreedShareViewProps) {
 
                 <section className="flex flex-col gap-3">
                     <h2 className="sr-only">
-                        Flow와 Trend 그룹별 score breakdown
+                        {t('FearGreedShareView.0506ae')}
                     </h2>
                     {snapshot.groups.map(group => (
                         <FearGreedGroupBar key={group.name} group={group} />

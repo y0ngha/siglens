@@ -15,7 +15,9 @@ import {
  */
 describe('MobileSheetPlaceholder', () => {
     function renderPlaceholder(): HTMLElement {
-        const { container } = render(<MobileSheetPlaceholder />);
+        const { container } = render(
+            <MobileSheetPlaceholder label="AI 분석" />
+        );
         const el = container.querySelector<HTMLElement>(
             '[data-mobile-sheet-placeholder]'
         );

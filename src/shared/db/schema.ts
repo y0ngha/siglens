@@ -18,6 +18,7 @@ import {
     uuid,
     varchar,
 } from 'drizzle-orm/pg-core';
+import { LOCALES } from '@/shared/i18n/locales';
 import {
     LLM_PROVIDER_VALUES,
     OAUTH_PROVIDER_VALUES,
@@ -38,6 +39,13 @@ const NOTICE_TITLE_MAX_LENGTH = 200;
 // only a safety net for direct ORM updates that forget the explicit assignment
 // (Drizzle does not invoke $onUpdateFn on `onConflictDoUpdate`).
 const nowFn = (): Date => new Date();
+
+/**
+ * DB 콘텐츠 로케일 enum. `shared/i18n/locales.ts`의 `LOCALES`에서 파생한다 —
+ * 로케일을 추가할 때 손댈 곳을 한 군데로 유지하기 위함이고, 값이 어긋나면
+ * `schema.test.ts`가 실패한다.
+ */
+export const contentLocaleEnum = pgEnum('content_locale', LOCALES);
 
 /** Postgres enum for user subscription tier. */
 export const userTierEnum = pgEnum('user_tier', USER_TIER_VALUES);
@@ -601,6 +609,17 @@ export const sharedAnalyses = pgTable(
          * to avoid a destructive migration once the follow-up ships.
          */
         sharerTier: userTierEnum('sharer_tier').notNull().default('free'),
+        /**
+         * 생성 시점의 로케일. **사이드카가 아니라 원본 컬럼**인 이유: 저장된
+         * `snapshot_json`이 그 언어로 생성된 AI 산출물이라, 나중에 다른
+         * 로케일로 다시 해석할 수 있는 성질의 값이 아니다. 로케일은 이 행의
+         * 정체성의 일부다.
+         *
+         * `content_hash` 페이로드에도 로케일이 들어간다 —
+         * `lib/contentHash.ts` 참조(로케일이 빠지면 영어 사용자가 한국어
+         * 스냅샷 id를 물려받는다).
+         */
+        locale: contentLocaleEnum('locale').notNull().default('ko'),
         createdAt: timestamp('created_at', { withTimezone: true })
             .notNull()
             .defaultNow(),
@@ -626,6 +645,15 @@ export const seoAnalysisSnapshots = pgTable(
         id: uuid('id').primaryKey().defaultRandom(),
         symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
         tab: varchar('tab', { length: 16 }).notNull(),
+        /**
+         * 프리웜된 분석 본문의 언어. 공유 스냅샷과 같은 이유로 원본 컬럼이다 —
+         * 본문이 그 언어로 **생성**된 것이라 사후 해석 대상이 아니다.
+         *
+         * unique 인덱스가 `(symbol, tab)`에서 `(symbol, tab, locale)`로
+         * 넓어진다. 넓히지 않으면 en 프리웜이 ko 행을 덮어써서, 프리웜 순서에
+         * 따라 어느 언어가 남을지가 정해진다.
+         */
+        locale: contentLocaleEnum('locale').notNull().default('ko'),
         content: jsonb('content').notNull(),
         model: varchar('model', { length: 64 }).notNull(),
         generatedAt: timestamp('generated_at', {
@@ -636,10 +664,76 @@ export const seoAnalysisSnapshots = pgTable(
             .defaultNow(),
     },
     table => [
-        uniqueIndex('seo_analysis_snapshots_symbol_tab_uq').on(
+        uniqueIndex('seo_analysis_snapshots_symbol_tab_locale_uq').on(
             table.symbol,
-            table.tab
+            table.tab,
+            table.locale
         ),
         index('seo_analysis_snapshots_symbol_idx').on(table.symbol),
+    ]
+);
+
+/**
+ * **DB 콘텐츠 번역 사이드카.**
+ *
+ * 뉴스 제목·공지 본문·약관처럼 카탈로그로 옮길 수 없는 문구의 로케일별 값을
+ * 한 테이블에 모은다. 기존 테이블의 원본 행은 그대로 두고, 이 테이블에 없는
+ * 로케일은 원본(한국어 컬럼)으로 폴백한다(`shared/db/contentLocale.ts`).
+ *
+ * **왜 테이블마다 `locale` 컬럼을 더하지 않았나**
+ * - 로케일 추가가 **행 추가**로 끝난다. 컬럼 방식이면 12개 테이블에 매번
+ *   마이그레이션이 필요하다.
+ * - `notices`는 특히 컬럼/행 분리가 위험하다. 공지 팝업의 "다시 보지 않기"가
+ *   `id`를 localStorage에 저장하므로, 로케일마다 별도 행(=별도 id)을 만들면
+ *   한국어로 닫은 공지가 영어로 다시 뜬다. 사이드카는 원본 `id`를 유지한다.
+ * - `shared_analyses`는 `content_hash` 단독 unique로 dedupe한다. 원본 행에
+ *   `locale`을 더하면 먼저 저장된 한국어 행을 영어 사용자가 물려받는다
+ *   (설계 §2.5 주의). 사이드카는 그 제약을 건드리지 않는다.
+ *
+ * **한계(의도적)**
+ * - 원본 행과의 FK가 없다 — `entity_id`가 테이블마다 타입이 달라(uuid/text)
+ *   단일 FK를 걸 수 없다. 원본 삭제 시 고아 행이 남는다. 정리는
+ *   `docs/reference/CRON.md`의 후속 항목으로 둔다(고아 행은 조회 키가
+ *   맞지 않아 화면에 새어 나오지 않는다).
+ * - `field`가 문자열이다 — 오타를 막으려고 호출부는
+ *   `shared/db/contentTranslationFields.ts`의 상수만 쓴다.
+ */
+export const contentTranslations = pgTable(
+    'content_translations',
+    {
+        /** 원본 테이블 식별자. `TRANSLATABLE_ENTITY_VALUES` 참조. */
+        entity: text('entity').notNull(),
+        /** 원본 행의 PK를 문자열로. uuid·text·복합키 모두 문자열로 정규화한다. */
+        entityId: text('entity_id').notNull(),
+        /** 번역 대상 필드명. `CONTENT_FIELD` 상수만 사용한다. */
+        field: text('field').notNull(),
+        locale: contentLocaleEnum('locale').notNull(),
+        value: text('value').notNull(),
+        /**
+         * 'human' | 'ai' — 번역 출처.
+         *
+         * 약관처럼 인간 번역이 필수인 문서는 `source = 'human'` 행만 신뢰한다
+         * (설계 §2.5). 읽기 경계에서 검증한다.
+         */
+        source: text('source').notNull().default('ai'),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        primaryKey({
+            columns: [table.entity, table.entityId, table.field, table.locale],
+        }),
+        /**
+         * 배치 조회용 — 읽기 경로는 항상 "이 엔티티의 이 id 목록을, 이 로케일
+         * 체인으로" 형태다(카드 20장 = 쿼리 1회). PK 접두사만으로는 로케일
+         * 필터가 뒤에 붙어 인덱스를 다 못 쓴다.
+         */
+        index('content_translations_entity_locale_idx').on(
+            table.entity,
+            table.locale,
+            table.entityId
+        ),
     ]
 );

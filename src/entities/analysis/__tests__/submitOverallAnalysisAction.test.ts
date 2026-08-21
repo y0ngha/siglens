@@ -270,7 +270,13 @@ describe('runOverallAnalysisAction 함수는', () => {
     it('symbol, timeframe, modelId를 runOverallAnalysis에 전달한다', async () => {
         mockRunOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
+        await runOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID,
+            'ko'
+        );
 
         expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -286,7 +292,13 @@ describe('runOverallAnalysisAction 함수는', () => {
         mockListBySymbol.mockResolvedValue([ANALYZED_ROW, UNANALYZED_ROW]);
         mockRunOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
+        await runOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID,
+            'ko'
+        );
 
         const callArg = mockRunOverallAnalysis.mock.calls[0]?.[0];
         expect(callArg?.newsItems).toHaveLength(1);
@@ -307,7 +319,13 @@ describe('runOverallAnalysisAction 함수는', () => {
         mockListBySymbol.mockResolvedValue(rows);
         mockRunOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
+        await runOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID,
+            'ko'
+        );
 
         const callArg = mockRunOverallAnalysis.mock.calls[0]?.[0];
         expect(callArg?.newsItems).toHaveLength(MAX_AGGREGATE_NEWS_ITEMS);
@@ -317,7 +335,13 @@ describe('runOverallAnalysisAction 함수는', () => {
         mockGetNextEarningsReport.mockResolvedValue(NEXT_EARNINGS);
         mockRunOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
+        await runOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID,
+            'ko'
+        );
 
         expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ upcomingCalendar: [NEXT_EARNINGS] })
@@ -327,7 +351,13 @@ describe('runOverallAnalysisAction 함수는', () => {
     it('다음 실적 발표가 없으면 upcomingCalendar는 빈 배열이다', async () => {
         mockRunOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
+        await runOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID,
+            'ko'
+        );
 
         expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ upcomingCalendar: [] })
@@ -341,7 +371,8 @@ describe('runOverallAnalysisAction 함수는', () => {
             'AAPL',
             'Apple Inc.',
             '1Day',
-            MODEL_ID
+            MODEL_ID,
+            'ko'
         );
 
         expect(result).toBe(SUBMITTED_RESULT);
@@ -354,7 +385,8 @@ describe('runOverallAnalysisAction 함수는', () => {
             'AAPL',
             'Apple Inc.',
             '1Day',
-            MODEL_ID
+            MODEL_ID,
+            'ko'
         );
 
         expect(result).toMatchObject({
@@ -374,7 +406,8 @@ describe('runOverallAnalysisAction 함수는', () => {
             'AAPL',
             'Apple Inc.',
             '1Day',
-            PREMIUM_MODEL
+            PREMIUM_MODEL,
+            'ko'
         );
 
         expect(result).toEqual({ status: 'error', error: gateError });
@@ -388,7 +421,13 @@ describe('runOverallAnalysisAction 함수는', () => {
             tier: 'member' as never,
         });
 
-        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
+        await runOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID,
+            'ko'
+        );
 
         const callArg = mockRunOverallAnalysis.mock.calls[0]?.[0];
         expect(callArg).toMatchObject({
@@ -409,7 +448,8 @@ describe('runOverallAnalysisAction 함수는', () => {
             'AAPL',
             'Apple Inc.',
             '1Day',
-            PREMIUM_MODEL
+            PREMIUM_MODEL,
+            'ko'
         );
 
         expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
@@ -429,7 +469,8 @@ describe('runOverallAnalysisAction 함수는', () => {
             'AAPL',
             'Apple Inc.',
             '1Day',
-            PREMIUM_MODEL
+            PREMIUM_MODEL,
+            'ko'
         );
 
         const callArg = mockRunOverallAnalysis.mock.calls[0]?.[0];
@@ -444,9 +485,19 @@ describe('runOverallAnalysisAction 함수는', () => {
             tier: 'free' as never,
         });
 
-        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
+        await runOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID,
+            'ko'
+        );
 
-        expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
+        expect(mockResolveTierAndByok).toHaveBeenCalledWith(
+            null,
+            MODEL_ID,
+            'ko'
+        );
     });
 
     it('technical axis tierContext.userId matches the resolved userId', async () => {
@@ -456,7 +507,13 @@ describe('runOverallAnalysisAction 함수는', () => {
             tier: 'pro' as never,
         });
 
-        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
+        await runOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID,
+            'ko'
+        );
 
         const callArg = mockRunOverallAnalysis.mock.calls[0]?.[0];
         expect(callArg?.technical).toMatchObject({
@@ -472,7 +529,13 @@ describe('runOverallAnalysisAction 함수는', () => {
             })
         );
 
-        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
+        await runOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID,
+            'ko'
+        );
 
         expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: true })
@@ -480,7 +543,13 @@ describe('runOverallAnalysisAction 함수는', () => {
     });
 
     it('passes skipEnqueueIfMiss: false to siglens-core when request UA is not a bot', async () => {
-        await runOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
+        await runOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID,
+            'ko'
+        );
 
         expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: false })
@@ -497,7 +566,8 @@ describe('runOverallAnalysisAction 함수는', () => {
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
-                MODEL_ID
+                MODEL_ID,
+                'ko'
             );
 
             expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
@@ -511,7 +581,13 @@ describe('runOverallAnalysisAction 함수는', () => {
         it('passes optionsSnapshot=undefined for NoChains symbols', async () => {
             mockFetchSnapshot.mockResolvedValueOnce(null);
 
-            await runOverallAnalysisAction('SPXUSD', 'S&P', '1Day', MODEL_ID);
+            await runOverallAnalysisAction(
+                'SPXUSD',
+                'S&P',
+                '1Day',
+                MODEL_ID,
+                'ko'
+            );
 
             expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ optionsSnapshot: undefined })
@@ -524,6 +600,7 @@ describe('runOverallAnalysisAction 함수는', () => {
                 'Apple Inc.',
                 '1Day',
                 MODEL_ID,
+                'ko',
                 { force: true }
             );
 
@@ -537,7 +614,8 @@ describe('runOverallAnalysisAction 함수는', () => {
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
-                MODEL_ID
+                MODEL_ID,
+                'ko'
             );
 
             expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
@@ -554,7 +632,8 @@ describe('runOverallAnalysisAction 함수는', () => {
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
-                MODEL_ID
+                MODEL_ID,
+                'ko'
             );
 
             expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
@@ -571,7 +650,8 @@ describe('runOverallAnalysisAction 함수는', () => {
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
-                MODEL_ID
+                MODEL_ID,
+                'ko'
             );
 
             expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
@@ -613,7 +693,8 @@ describe('runOverallAnalysisAction 함수는', () => {
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
-                MODEL_ID
+                MODEL_ID,
+                'ko'
             );
 
             expect(mockGetFinancialsSnapshot).toHaveBeenCalledWith('AAPL');
@@ -637,7 +718,8 @@ describe('runOverallAnalysisAction 함수는', () => {
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
-                MODEL_ID
+                MODEL_ID,
+                'ko'
             );
 
             // bot 트래픽은 financials fetch를 하지 않는다
@@ -656,7 +738,8 @@ describe('runOverallAnalysisAction 함수는', () => {
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
-                MODEL_ID
+                MODEL_ID,
+                'ko'
             );
 
             // graceful degradation — error 상태로 빠지지 않는다
@@ -680,6 +763,7 @@ describe('runOverallAnalysisAction 함수는', () => {
                 'Apple Inc.',
                 '1Day',
                 MODEL_ID,
+                'ko',
                 { reasoning: true }
             );
 
@@ -694,6 +778,7 @@ describe('runOverallAnalysisAction 함수는', () => {
                 'Apple Inc.',
                 '1Day',
                 MODEL_ID,
+                'ko',
                 { reasoning: true }
             );
 
@@ -713,7 +798,8 @@ describe('runOverallAnalysisAction 함수는', () => {
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
-                MODEL_ID
+                MODEL_ID,
+                'ko'
             );
 
             expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
@@ -731,7 +817,8 @@ describe('runOverallAnalysisAction 함수는', () => {
                 'BTCUSD',
                 'Bitcoin',
                 '1Day',
-                MODEL_ID
+                MODEL_ID,
+                'ko'
             );
 
             expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(
@@ -747,7 +834,8 @@ describe('runOverallAnalysisAction 함수는', () => {
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
-                MODEL_ID
+                MODEL_ID,
+                'ko'
             );
 
             expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(
@@ -765,7 +853,8 @@ describe('runOverallAnalysisAction 함수는', () => {
                 'BTCUSD',
                 'Bitcoin',
                 '1Day',
-                MODEL_ID
+                MODEL_ID,
+                'ko'
             );
 
             expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
@@ -781,7 +870,8 @@ describe('runOverallAnalysisAction 함수는', () => {
                 'AAPL',
                 'Apple Inc.',
                 '1Day',
-                MODEL_ID
+                MODEL_ID,
+                'ko'
             );
 
             expect(mockRunOverallAnalysis).toHaveBeenCalledWith(

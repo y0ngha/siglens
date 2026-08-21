@@ -5,9 +5,24 @@ import {
     type PositionModel,
 } from '../lib/positionGeometry';
 import { PositionBuilding } from '../ui/PositionBuilding';
+
+import koMessages from '@/../messages/ko.json';
+
+/** 실제 ko 카탈로그를 읽는 번역자 — 스텁이면 키 누락이 조용히 통과한다. */
+const tPos = (key: string, values?: Record<string, string | number>) => {
+    const table = koMessages.widgets['portfolio-position']
+        .positionNote as Record<string, string>;
+    const raw = table[key];
+    if (raw === undefined) return key;
+    return Object.entries(values ?? {}).reduce(
+        (acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)),
+        raw
+    );
+};
+
 import {
-    AVG_LABEL_PREFIX,
-    CURRENT_LABEL_PREFIX,
+    AVG_LABEL_PREFIX_KEY,
+    CURRENT_LABEL_PREFIX_KEY,
     describeAvgFloor,
     estimateSvgLabelWidth,
     formatCompactForSvgLabel,
@@ -422,10 +437,10 @@ describe('PositionBuilding', () => {
             // 보수적 폭 추정치로 "라벨 시작 x가 viewBox(0) 안쪽인가"를 검증한다 —
             // 여유 폭(SVG_LABEL_AVAILABLE_WIDTH)보다 라벨 폭이 좁아야 클리핑이 없다.
             const avgLabelWidth = estimateSvgLabelWidth(
-                AVG_LABEL_PREFIX + avgPrice
+                tPos(AVG_LABEL_PREFIX_KEY) + avgPrice
             );
             const currentLabelWidth = estimateSvgLabelWidth(
-                CURRENT_LABEL_PREFIX + currentPrice
+                tPos(CURRENT_LABEL_PREFIX_KEY) + currentPrice
             );
             const avgXStart = SVG_LABEL_AVAILABLE_WIDTH - avgLabelWidth;
             const currentXEnd = SVG_LABEL_AVAILABLE_WIDTH - currentLabelWidth;
@@ -688,19 +703,19 @@ describe('PositionBuilding', () => {
 
 describe('describeAvgFloor', () => {
     it('avgClamped=below면 지하 문구(옥상/층 계산과 무관, avgPos 값은 쓰이지 않는다)', () => {
-        expect(describeAvgFloor(0, 'below', BAND_COUNT)).toBe(
+        expect(describeAvgFloor(0, 'below', BAND_COUNT, tPos)).toBe(
             '지하 세대 · 최근 저점보다 낮은 곳'
         );
-        expect(describeAvgFloor(0.99, 'below', BAND_COUNT)).toBe(
+        expect(describeAvgFloor(0.99, 'below', BAND_COUNT, tPos)).toBe(
             '지하 세대 · 최근 저점보다 낮은 곳'
         );
     });
 
     it('avgClamped=above면 옥상 위 문구(옥상/층 계산과 무관, avgPos 값은 쓰이지 않는다)', () => {
-        expect(describeAvgFloor(0, 'above', BAND_COUNT)).toBe(
+        expect(describeAvgFloor(0, 'above', BAND_COUNT, tPos)).toBe(
             '옥상 위 · 최근 고점보다 높은 곳'
         );
-        expect(describeAvgFloor(1, 'above', BAND_COUNT)).toBe(
+        expect(describeAvgFloor(1, 'above', BAND_COUNT, tPos)).toBe(
             '옥상 위 · 최근 고점보다 높은 곳'
         );
     });
@@ -718,13 +733,15 @@ describe('describeAvgFloor', () => {
     ])(
         'avgClamped=null, avgPos=$avgPos → $expected',
         ({ avgPos, expected }) => {
-            expect(describeAvgFloor(avgPos, null, BAND_COUNT)).toBe(expected);
+            expect(describeAvgFloor(avgPos, null, BAND_COUNT, tPos)).toBe(
+                expected
+            );
         }
     );
 
     it('bandCount이 달라져도(테스트용 임의 값) 최하층=저층, 최상층=펜트하우스 경계를 지킨다', () => {
-        expect(describeAvgFloor(0, null, 3)).toBe('1층 · 저층');
-        expect(describeAvgFloor(1, null, 3)).toBe('3층 · 펜트하우스');
-        expect(describeAvgFloor(0.5, null, 3)).toBe('2층 · 중층');
+        expect(describeAvgFloor(0, null, 3, tPos)).toBe('1층 · 저층');
+        expect(describeAvgFloor(1, null, 3, tPos)).toBe('3층 · 펜트하우스');
+        expect(describeAvgFloor(0.5, null, 3, tPos)).toBe('2층 · 중층');
     });
 });

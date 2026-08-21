@@ -1,29 +1,18 @@
 import type { SnapshotConfidence } from '@/shared/lib/types';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 import {
-    POC_WINDOW_DEFAULT,
     type FearGreedFactorKey,
     type FearGreedLabel,
     type FearGreedWarning,
 } from '@y0ngha/siglens-core';
 
-/** confidence === 'normal' 표시 라벨 — Hero/Card footer 양쪽에서 동일 사용. */
-export const CONFIDENCE_NORMAL_LABEL = '정상 산출';
-/** confidence === 'limited' 표시 라벨 — sampleSize 부족 시 표기. */
-export const CONFIDENCE_LIMITED_LABEL = '신뢰도 제한';
-
 /**
- * Factor key → 한글 표시 라벨. UI는 이 객체로 일관 표시한다.
- *
- * `poc_distance` 라벨의 창 크기는 `@y0ngha/siglens-core`의 `POC_WINDOW_DEFAULT`를
- * 직접 보간하므로 core가 값을 바꾸면 자동으로 반영된다.
+ * confidence 표시 **키** — `shared.lib.fearGreed` 네임스페이스.
+ * Hero/Card footer 양쪽에서 같은 키를 쓴다.
  */
-export const FACTOR_LABEL: Record<FearGreedFactorKey, string> = {
-    volume_z: '거래량 z (방향성)',
-    buysell_imbalance: 'Buy/Sell 불균형',
-    poc_distance: `POC 거리(${POC_WINDOW_DEFAULT}bar)`,
-    ma200_distance: 'MA200 거리',
-    range_position: '52주 위치',
-};
+export const CONFIDENCE_NORMAL_KEY = 'confidenceNormal';
+/** sampleSize 부족 시 표기. */
+export const CONFIDENCE_LIMITED_KEY = 'confidenceLimited';
 
 /**
  * Self-norm 경고 문구 — chronic 사이클 종목에서 점수가 절대 강도가 아니라 자기 분포
@@ -33,21 +22,41 @@ export const FACTOR_LABEL: Record<FearGreedFactorKey, string> = {
  * (`FearGreedFactsSummary`)이 **같은 문구**를 써야 하는데, 상수가 `'use client'`
  * 컴포넌트 파일에 있으면 서버 컴포넌트가 그 모듈을 통째로 끌어온다.
  */
-export const WARNING_TEXT: Record<NonNullable<FearGreedWarning>, string> = {
-    CHRONIC_WEAKNESS:
-        '이 종목은 장기 약세 흐름이에요. 점수는 이 종목의 평소 흐름 안에서의 상대적 위치를 보여줘 절대적인 강도와 다를 수 있어요. 참고만 해 주세요.',
-    CHRONIC_STRENGTH:
-        '이 종목은 장기 강세 흐름이에요. 점수는 이 종목의 평소 흐름 안에서의 상대적 위치를 보여줘 절대적인 강도와 다를 수 있어요. 참고만 해 주세요.',
+export const WARNING_TEXT_KEY: Record<NonNullable<FearGreedWarning>, string> = {
+    CHRONIC_WEAKNESS: 'warningChronicWeakness',
+    CHRONIC_STRENGTH: 'warningChronicStrength',
 };
 
-/** 5단계 sentiment label → 한글 표시 */
-export const SENTIMENT_LABEL_TEXT: Record<FearGreedLabel, string> = {
-    EXTREME_FEAR: '극심한 공포',
-    FEAR: '공포',
-    NEUTRAL: '중립',
-    GREED: '탐욕',
-    EXTREME_GREED: '극심한 탐욕',
+/**
+ * 5단계 sentiment label → `shared.enumLabel` 카탈로그 키.
+ *
+ * export하는 이유: `'use client'` 트리에 닿는 소비자(`FearGreedHeaderChip`/
+ * `FearGreedGauge`/`FearGreedFactsSummary`)는 `sentimentLabelText(label, t)`처럼
+ * 번역자를 **인자로 전달**만 하면 `scripts/i18n/extract.mjs`의 동적 키 탐지
+ * (그 파일 안에서 번역자를 직접 호출하는 패턴만 봄)가 걸리지 않아
+ * `messages/_meta/clientKeys.json`에 `shared.enumLabel`이 안 실린다 — 런타임
+ * `MISSING_MESSAGE`로만 드러난다. 그런 소비자는 이 맵을 직접 import해
+ * `t(SENTIMENT_LABEL_KEY[label])`로 **그 파일 안에서 직접 호출**한다.
+ */
+export const SENTIMENT_LABEL_KEY: Record<FearGreedLabel, string> = {
+    EXTREME_FEAR: 'fearGreed.extremeFear',
+    FEAR: 'fearGreed.fear',
+    NEUTRAL: 'fearGreed.neutral',
+    GREED: 'fearGreed.greed',
+    EXTREME_GREED: 'fearGreed.extremeGreed',
 };
+
+/**
+ * FearGreedLabel → 로케일별 표시 라벨. `t`는 필수 인자다 — 기본값을 두면 호출부가
+ * 조용히 `t`를 누락해도 컴파일이 통과하고, 그 결과 라벨이 `fearGreed.extremeFear`
+ * 같은 raw 카탈로그 키 문자열로 렌더된다(§design EnumLabelTranslator required-param).
+ */
+export function sentimentLabelText(
+    label: FearGreedLabel,
+    t: EnumLabelTranslator
+): string {
+    return t(SENTIMENT_LABEL_KEY[label]);
+}
 
 // Locale-aware formatters hoisted to module scope — Intl.NumberFormat instances
 // are expensive to construct, so we reuse one per precision tier.
@@ -87,16 +96,17 @@ export function formatFactorRaw(
 }
 
 /**
- * Confidence footer 표시 포맷터 — fear & greed를 표시하는 여러 footer에서
- * 동일 형태로 사용한다.
+ * Confidence footer의 라벨 **키**를 고른다.
+ *
+ * 조립(`표본 {v0} — {v1}`)까지 여기서 하지 않는 이유: 이 모듈은 번역자를
+ * **인자로 받으므로** 추출기가 통째로 건너뛴다(`translatorNamespace.size === 0`).
+ * 여기서 `t('confidenceFooter')`를 부르면 그 키가 클라이언트 페이로드에 안 실려
+ * `/en/AAPL/fear-greed`의 footer가 키 문자열을 그대로 렌더한다 — 실제로 종목
+ * 페이지 h1에서 한 번 낸 결함이다. 그래서 `t()` 리터럴 호출은 번역자를 선언한
+ * 소비 파일에서만 한다.
  */
-export function formatConfidenceFooter(
-    sampleSize: number,
-    confidence: SnapshotConfidence
-): string {
-    const label =
-        confidence === 'normal'
-            ? CONFIDENCE_NORMAL_LABEL
-            : CONFIDENCE_LIMITED_LABEL;
-    return `표본 ${sampleSize} — ${label}`;
+export function confidenceLabelKey(confidence: SnapshotConfidence): string {
+    return confidence === 'normal'
+        ? CONFIDENCE_NORMAL_KEY
+        : CONFIDENCE_LIMITED_KEY;
 }

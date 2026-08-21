@@ -1,4 +1,6 @@
+import { useTranslations } from 'next-intl';
 import { HeaderMobileMenu } from './HeaderMobileMenu';
+import { LocaleSwitcher } from './LocaleSwitcher';
 import { HeaderNav } from './HeaderNav';
 import { HeaderNavStatic } from './HeaderNavStatic';
 import { HeaderUserMenu, type HeaderUserMenuUser } from './HeaderUserMenu';
@@ -6,7 +8,7 @@ import { NAV_TREE } from './headerNavTree';
 import { HeaderSearch } from '@/features/ticker-search';
 import { SITE_NAME } from '@/shared/lib/seo';
 import Image from 'next/image';
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { Suspense } from 'react';
 
 interface HeaderProps {
@@ -24,19 +26,22 @@ interface HeaderProps {
 /** Presentational shell; receives resolved current user as a prop so layer rules forbid direct infrastructure access here. */
 // 최상위 <header>는 암시적으로 role="banner"이므로 role을 명시하지 않는다(중복 ARIA).
 export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
+    const t = useTranslations('widgets.layout');
     return (
         <header className="sticky top-0 z-50 border-b border-secondary-800 bg-secondary-900/90 backdrop-blur-md supports-backdrop-filter:bg-secondary-900/75">
             <div className="flex h-14 items-center gap-2 px-3 sm:gap-4 sm:px-6">
                 <Link
                     href="/"
-                    title="홈으로"
+                    title={t('Header.d8c261')}
                     // 전역 헤더 로고 — 모든 페이지에서 렌더된다. prefetch는 진입 페이지마다
                     // 다른 `_rsc` 해시를 만들어 `/`의 캐시를 파편화시킨다
                     // (docs/architecture/CDN_CACHING.md §1).
                     prefetch={false}
                     // Visible brand text is `text-...uppercase` (renders "SIGLENS"),
                     // so the accessible name must match what users see (WCAG 2.5.3).
-                    aria-label={`${SITE_NAME.toUpperCase()} 홈`}
+                    aria-label={t('Header.homeLabel', {
+                        v0: SITE_NAME.toUpperCase(),
+                    })}
                     className="-mx-1 flex min-h-11 shrink-0 touch-manipulation items-center gap-2 rounded px-1 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     {/*
@@ -49,7 +54,7 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                     */}
                     <Image
                         src="/icon96.png"
-                        alt="Siglens 로고"
+                        alt={t('Header.1ebe53')}
                         width={24}
                         height={24}
                         className="h-6 w-6"
@@ -88,6 +93,9 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                     `features/ticker-search/ui/HeaderSearch` JSDoc 참고. */}
                 <HeaderSearch />
                 <div className="flex shrink-0 items-center">
+                    {/* 모바일에서는 드로어 안에 같은 스위처가 있으므로 숨긴다 —
+                        `lg`는 데스크톱 내비/햄버거와 반드시 같은 브레이크포인트다. */}
+                    <LocaleSwitcher className="hidden lg:inline-flex" />
                     <HeaderUserMenu
                         currentUser={currentUser}
                         loading={loadingUserMenu}

@@ -1,6 +1,14 @@
+import type { Locale } from '@/shared/i18n/locales';
+import { localeOpenGraph } from '@/shared/lib/seoAlternates';
+
+/** `entities.shared-analysis.seo` 네임스페이스 번역자. */
+type ShareSeoTranslator = (
+    key: string,
+    values?: Record<string, string | number>
+) => string;
 import type { Metadata } from 'next';
 import type { SharedAnalysisLookup } from '../types';
-import { buildOgText } from '../server/buildOgText';
+import { buildOgText, type OgTranslator } from '../server/buildOgText';
 import { SITE_NAME } from '@/shared/lib/seo';
 
 /**
@@ -12,12 +20,17 @@ import { SITE_NAME } from '@/shared/lib/seo';
  *
  * expired / not_found 상태에서는 최소 noindex 메타데이터만 반환한다.
  */
-export function buildShareMetadata(lookup: SharedAnalysisLookup): Metadata {
+export function buildShareMetadata(
+    lookup: SharedAnalysisLookup,
+    t: ShareSeoTranslator,
+    locale: Locale,
+    tOg: OgTranslator
+): Metadata {
     if (lookup.status === 'found') {
         const { snapshot } = lookup;
         const ticker = snapshot.symbol.toUpperCase();
-        const title = `${ticker} AI 분석 결과`;
-        const { description } = buildOgText(snapshot);
+        const title = t('title', { v0: ticker });
+        const { description } = buildOgText(snapshot, tOg);
 
         return {
             title,
@@ -32,7 +45,9 @@ export function buildShareMetadata(lookup: SharedAnalysisLookup): Metadata {
                 siteName: SITE_NAME,
                 title,
                 description,
-                locale: 'ko_KR',
+                // 예전에는 `'ko_KR'` 고정이라 `/ja/share/x`가 한국어 로케일을
+                // 광고했다.
+                ...localeOpenGraph(locale),
             },
             twitter: {
                 card: 'summary_large_image',
@@ -44,7 +59,7 @@ export function buildShareMetadata(lookup: SharedAnalysisLookup): Metadata {
 
     // expired | not_found — minimal noindex; canonical: null for the same reason.
     return {
-        title: '공유 분석',
+        title: t('expiredTitle'),
         robots: { index: false },
         alternates: { canonical: null },
     };

@@ -75,27 +75,31 @@ describe('koreanizePeriodToken', () => {
 describe('indicatorLabelKoFromMaps', () => {
     it('renders dict base + Korean period when the base is mapped', () => {
         expect(
-            indicatorLabelKoFromMaps('Core PCE Price Index YoY (May)', {})
+            indicatorLabelKoFromMaps('Core PCE Price Index YoY (May)', {}, 'ko')
         ).toBe('근원 PCE 물가지수(전년比) (5월)');
     });
 
     it('renders a mapped base with no period parenthetical', () => {
-        expect(indicatorLabelKoFromMaps('Nonfarm Payrolls', {})).toBe(
+        expect(indicatorLabelKoFromMaps('Nonfarm Payrolls', {}, 'ko')).toBe(
             '비농업 고용'
         );
     });
 
     it('falls back to the DB-cache map when dict misses', () => {
         expect(
-            indicatorLabelKoFromMaps('Some Obscure Index YoY (May)', {
-                'Some Obscure Index YoY': '어떤 모호한 지수(전년比)',
-            })
+            indicatorLabelKoFromMaps(
+                'Some Obscure Index YoY (May)',
+                {
+                    'Some Obscure Index YoY': '어떤 모호한 지수(전년比)',
+                },
+                'ko'
+            )
         ).toBe('어떤 모호한 지수(전년比) (5월)');
     });
 
     it('falls back to the raw English name when both maps miss', () => {
         expect(
-            indicatorLabelKoFromMaps('Totally Unknown Thing (Apr)', {})
+            indicatorLabelKoFromMaps('Totally Unknown Thing (Apr)', {}, 'ko')
         ).toBe('Totally Unknown Thing (Apr)');
     });
 

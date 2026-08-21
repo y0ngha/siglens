@@ -168,7 +168,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
         mockGetNextEarningsReport.mockResolvedValue(null);
         mockRunNewsAnalysis.mockResolvedValueOnce(DONE_RESULT);
 
-        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
+        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID, 'ko');
 
         expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ symbol: 'AAPL', modelId: MODEL_ID })
@@ -180,7 +180,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
         mockGetNextEarningsReport.mockResolvedValue(null);
         mockRunNewsAnalysis.mockResolvedValueOnce(DONE_RESULT);
 
-        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
+        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID, 'ko');
 
         const callArg = mockRunNewsAnalysis.mock.calls[0]?.[0];
         expect(callArg?.news).toHaveLength(1);
@@ -207,7 +207,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
         mockGetNextEarningsReport.mockResolvedValue(null);
         mockRunNewsAnalysis.mockResolvedValueOnce(DONE_RESULT);
 
-        await submitNewsAnalysisAction('NVDA', 'Nvidia Corp.', MODEL_ID);
+        await submitNewsAnalysisAction('NVDA', 'Nvidia Corp.', MODEL_ID, 'ko');
 
         const callArg = mockRunNewsAnalysis.mock.calls[0]?.[0];
         const news = callArg?.news as EnrichedNewsItem[];
@@ -230,7 +230,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
         mockGetNextEarningsReport.mockResolvedValue(NEXT_EARNINGS);
         mockRunNewsAnalysis.mockResolvedValueOnce(DONE_RESULT);
 
-        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
+        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID, 'ko');
 
         expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -244,7 +244,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
         mockGetNextEarningsReport.mockResolvedValue(null);
         mockRunNewsAnalysis.mockResolvedValueOnce(DONE_RESULT);
 
-        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
+        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID, 'ko');
 
         expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ upcomingCalendar: [] })
@@ -264,7 +264,8 @@ describe('submitNewsAnalysisAction 함수는', () => {
         const result = await submitNewsAnalysisAction(
             'AAPL',
             'Apple Inc.',
-            MODEL_ID
+            MODEL_ID,
+            'ko'
         );
 
         expect(result).toBe(noNewsResult);
@@ -280,7 +281,8 @@ describe('submitNewsAnalysisAction 함수는', () => {
         const result = await submitNewsAnalysisAction(
             'AAPL',
             'Apple Inc.',
-            PREMIUM_MODEL
+            PREMIUM_MODEL,
+            'ko'
         );
 
         expect(result).toEqual({ status: 'error', error: gateError });
@@ -296,7 +298,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
             tier: 'member' as never,
         });
 
-        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
+        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID, 'ko');
 
         expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ tier: 'member' })
@@ -311,7 +313,12 @@ describe('submitNewsAnalysisAction 함수는', () => {
             userApiKey: 'usr-key',
         });
 
-        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', PREMIUM_MODEL);
+        await submitNewsAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            PREMIUM_MODEL,
+            'ko'
+        );
 
         expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ userApiKey: 'usr-key' })
@@ -326,7 +333,12 @@ describe('submitNewsAnalysisAction 함수는', () => {
             // no userApiKey
         });
 
-        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', PREMIUM_MODEL);
+        await submitNewsAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            PREMIUM_MODEL,
+            'ko'
+        );
 
         const callArg = mockRunNewsAnalysis.mock.calls[0]?.[0];
         expect(callArg).toBeDefined();
@@ -340,9 +352,13 @@ describe('submitNewsAnalysisAction 함수는', () => {
             tier: 'free' as never,
         });
 
-        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
+        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID, 'ko');
 
-        expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
+        expect(mockResolveTierAndByok).toHaveBeenCalledWith(
+            null,
+            MODEL_ID,
+            'ko'
+        );
     });
 
     it('returns unexpected_error result when an unexpected error is thrown', async () => {
@@ -354,7 +370,8 @@ describe('submitNewsAnalysisAction 함수는', () => {
         const result = await submitNewsAnalysisAction(
             'AAPL',
             'Apple Inc.',
-            MODEL_ID
+            MODEL_ID,
+            'ko'
         );
 
         expect(result).toMatchObject({
@@ -371,7 +388,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
             })
         );
 
-        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
+        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID, 'ko');
 
         expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: true })
@@ -379,7 +396,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
     });
 
     it('passes skipEnqueueIfMiss: false to siglens-core when request UA is not a bot', async () => {
-        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
+        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID, 'ko');
 
         expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: false })
@@ -398,6 +415,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
                 'AAPL',
                 'Apple Inc.',
                 MODEL_ID,
+                'ko',
                 true
             );
 
@@ -411,6 +429,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
                 'AAPL',
                 'Apple Inc.',
                 MODEL_ID,
+                'ko',
                 true
             );
 
@@ -426,7 +445,12 @@ describe('submitNewsAnalysisAction 함수는', () => {
                 tier: 'member' as never,
             });
 
-            await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
+            await submitNewsAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                MODEL_ID,
+                'ko'
+            );
 
             expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false })
@@ -437,14 +461,14 @@ describe('submitNewsAnalysisAction 함수는', () => {
     describe('assetClass forwarding', () => {
         it('forwards default equity to runNewsAnalysis', async () => {
             // default resolveAssetClass mock returns 'equity'
-            await submitNewsAnalysisAction('AAPL', 'Apple', MODEL_ID);
+            await submitNewsAnalysisAction('AAPL', 'Apple', MODEL_ID, 'ko');
             expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ assetClass: 'equity' })
             );
         });
         it('forwards crypto when resolveAssetClass returns "crypto"', async () => {
             mockResolveAssetClass.mockResolvedValueOnce('crypto');
-            await submitNewsAnalysisAction('BTCUSD', 'Bitcoin', MODEL_ID);
+            await submitNewsAnalysisAction('BTCUSD', 'Bitcoin', MODEL_ID, 'ko');
             expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ assetClass: 'crypto' })
             );

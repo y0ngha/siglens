@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { NavVerticalNode } from './headerNavTree';
 import { HeaderNavMenu } from './HeaderNavMenu';
 
@@ -15,8 +16,12 @@ interface HeaderNavStaticProps {
  * 크롤러가 보는 것이 바로 그 정적 셸이다. 활성 표시(`pathname`)만 없는 동일 마크업.
  */
 export function HeaderNavStatic({ items }: HeaderNavStaticProps) {
+    const t = useTranslations('widgets.layout');
     return (
-        <nav aria-label="주요 네비게이션" className="flex gap-1 sm:gap-4">
+        <nav
+            aria-label={t('HeaderNavStatic.5281d7')}
+            className="flex gap-1 sm:gap-4"
+        >
             {items.map(vertical => (
                 <HeaderNavMenu
                     key={vertical.id}

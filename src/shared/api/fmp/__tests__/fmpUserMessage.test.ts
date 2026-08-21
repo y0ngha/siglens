@@ -1,11 +1,11 @@
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 import {
-    FMP_DATA_UNAVAILABLE_MESSAGE,
+    FMP_DATA_UNAVAILABLE_KEY,
     FMP_PAYMENT_REQUIRED_LOG_PREFIX,
-    FMP_TEMPORARY_UNAVAILABLE_MESSAGE,
+    FMP_TEMPORARY_UNAVAILABLE_KEY,
     getFmpPaymentRequiredLogMessage,
     getFmpErrorStatus,
-    getFmpUserFacingMessage,
+    getFmpUserFacingKey,
     isFmpPaymentRequiredError,
     logFmpPaymentRequiredError,
 } from '@/shared/api/fmp/fmpUserMessage';
@@ -38,16 +38,16 @@ describe('getFmpErrorStatus 함수는', () => {
     });
 });
 
-describe('getFmpUserFacingMessage 함수는', () => {
+describe('getFmpUserFacingKey 함수는', () => {
     describe('일시 장애 상태 코드에서', () => {
         it.each([429, 500, 503])(
             '상태 코드 %i는 안내 문구로 매핑한다',
             status => {
                 expect(
-                    getFmpUserFacingMessage(
+                    getFmpUserFacingKey(
                         new FmpHttpError('profile', status, null)
                     )
-                ).toBe(FMP_TEMPORARY_UNAVAILABLE_MESSAGE);
+                ).toBe(FMP_TEMPORARY_UNAVAILABLE_KEY);
             }
         );
     });
@@ -55,17 +55,15 @@ describe('getFmpUserFacingMessage 함수는', () => {
     describe('402(비용 한도) 상태 코드에서', () => {
         it('데이터 미제공 안내 문구로 매핑한다(raw 내부 문자열 노출 방지)', () => {
             expect(
-                getFmpUserFacingMessage(new FmpHttpError('profile', 402, null))
-            ).toBe(FMP_DATA_UNAVAILABLE_MESSAGE);
+                getFmpUserFacingKey(new FmpHttpError('profile', 402, null))
+            ).toBe(FMP_DATA_UNAVAILABLE_KEY);
         });
     });
 
     describe('그 외 비 일시 장애 상태 코드에서', () => {
         it.each([400, 404])('상태 코드 %i는 null을 반환한다', status => {
             expect(
-                getFmpUserFacingMessage(
-                    new FmpHttpError('profile', status, null)
-                )
+                getFmpUserFacingKey(new FmpHttpError('profile', status, null))
             ).toBeNull();
         });
     });

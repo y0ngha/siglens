@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type {
     FundamentalCategory,
     FundamentalSentiment,
@@ -36,26 +37,28 @@ interface FundamentalSnapshotProseProps {
     generatedAt?: Date;
 }
 
-const SENTIMENT_LABEL: Record<FundamentalSentiment, string> = {
-    bullish: '긍정',
-    neutral: '중립',
-    bearish: '부정',
+/** FundamentalSentiment → `shared.enumLabel` 카탈로그 키. 값 자체는 더 이상 한글이 아니다 — 렌더 시점에 `tLabel`로 조회한다. */
+const SENTIMENT_LABEL_KEY: Record<FundamentalSentiment, string> = {
+    bullish: 'sentiment.bullish',
+    neutral: 'sentiment.neutral',
+    bearish: 'sentiment.bearish',
 };
 
 // See createEnumGuard's JSDoc for the Object.hasOwn / prototype-chain
 // rationale (audit fix; PR #698 round-2 review FIX 3 extracted the shared
 // implementation).
-const isSentiment = createEnumGuard(SENTIMENT_LABEL);
+const isSentiment = createEnumGuard(SENTIMENT_LABEL_KEY);
 
-const CATEGORY_LABEL: Record<FundamentalCategory, string> = {
-    valuation: '밸류에이션',
-    profitability: '수익성',
-    growth: '성장성',
-    health: '재무 건전성',
-    futureDirection: '미래 방향',
+/** FundamentalCategory → `shared.enumLabel` 카탈로그 키. */
+const CATEGORY_LABEL_KEY: Record<FundamentalCategory, string> = {
+    valuation: 'fundamentalCategory.valuation',
+    profitability: 'fundamentalCategory.profitability',
+    growth: 'fundamentalCategory.growth',
+    health: 'fundamentalCategory.health',
+    futureDirection: 'fundamentalCategory.futureDirection',
 };
 
-const isCategory = createEnumGuard(CATEGORY_LABEL);
+const isCategory = createEnumGuard(CATEGORY_LABEL_KEY);
 
 interface NarrowedCategoryAssessment {
     category: FundamentalCategory;
@@ -166,6 +169,8 @@ export function FundamentalSnapshotProse({
     marketProfile,
     generatedAt,
 }: FundamentalSnapshotProseProps) {
+    const t = useTranslations('views.symbol');
+    const tLabel = useTranslations('shared.enumLabel');
     const narrowed = narrowFundamentalContent(content);
     if (narrowed === null) return null;
 
@@ -176,7 +181,7 @@ export function FundamentalSnapshotProse({
 
     return (
         <SnapshotSummarySection
-            title="펀더멘털 종합 평가"
+            title={t('FundamentalSnapshotProse.05a94d')}
             displayName={displayName}
             marketProfile={marketProfile}
             asOf={generatedAt}
@@ -184,8 +189,12 @@ export function FundamentalSnapshotProse({
             <div className="space-y-4 text-sm leading-6 text-secondary-300">
                 {narrowed.overallSentiment !== null && (
                     <p className="font-medium text-secondary-200">
-                        {symbol} 펀더멘털 종합 평가:{' '}
-                        {SENTIMENT_LABEL[narrowed.overallSentiment]}
+                        {t('FundamentalSnapshotProse.8a9040', {
+                            v0: symbol,
+                            v1: tLabel(
+                                SENTIMENT_LABEL_KEY[narrowed.overallSentiment]
+                            ),
+                        })}
                     </p>
                 )}
 
@@ -200,19 +209,22 @@ export function FundamentalSnapshotProse({
                 {narrowed.categoryAssessments.length > 0 && (
                     <div>
                         <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
-                            카테고리별 평가
+                            {t('FundamentalSnapshotProse.74f3b1')}
                         </h3>
                         <ul
                             role="list"
-                            aria-label={`${symbol} 카테고리별 평가 목록`}
+                            aria-label={t(
+                                'FundamentalSnapshotProse.categoryListLabel',
+                                { v0: symbol }
+                            )}
                             className="space-y-2"
                         >
                             {narrowed.categoryAssessments.map(a => (
                                 <li key={a.category}>
                                     <span className="font-medium text-secondary-200">
-                                        {CATEGORY_LABEL[a.category]}
+                                        {tLabel(CATEGORY_LABEL_KEY[a.category])}
                                         {a.sentiment !== null &&
-                                            ` (${SENTIMENT_LABEL[a.sentiment]})`}
+                                            ` (${tLabel(SENTIMENT_LABEL_KEY[a.sentiment])})`}
                                     </span>
                                     {a.rationaleKo.length > 0 && (
                                         <p>{a.rationaleKo}</p>
@@ -224,9 +236,9 @@ export function FundamentalSnapshotProse({
                 )}
 
                 <SnapshotBulletList
-                    title="위험 요인"
+                    title={t('FundamentalSnapshotProse.af0480')}
                     symbol={symbol}
-                    ariaSuffix="위험 요인"
+                    ariaSuffix={t('FundamentalSnapshotProse.af0480')}
                     items={narrowed.riskFactorsKo}
                     keyPrefix="risk"
                 />

@@ -9,6 +9,9 @@ import {
     useState,
 } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { localePath } from '@/shared/i18n/locales';
 import { useShareable } from '../model/ShareableAnalysisContext';
 import type { ShareableRegistration } from '../model/ShareableAnalysisContext';
 import { useUserTier } from '@/features/symbol-model/hooks/useUserTier';
@@ -109,6 +112,8 @@ export function useShareFlow(): UseShareFlowResult {
 
     const reg = useShareable();
     const { tier: sharerTier } = useUserTier();
+    const locale = useCurrentLocale();
+    const t = useTranslations('features.share.useShareFlow');
 
     /**
      * Reset all transient UI state when the user switches to a different analysis tab.
@@ -170,12 +175,16 @@ export function useShareFlow(): UseShareFlowResult {
                 setPreparingOpen(false);
                 return;
             }
-            const url = `${SITE_URL}/share/${result.id}`;
+            // 공유 링크에 로케일을 유지한다 — 일본어 사용자가 보낸 링크가
+            // 상대에게 한국어로 열리면 공유의 의미가 없다.
+            const url = `${SITE_URL}${localePath(locale, `/share/${result.id}`)}`;
             setShareUrl(url);
 
             const symbol = regRef.current?.context.symbol ?? '';
-            const title = `${symbol} AI 분석 결과`;
-            const text = `${symbol} AI 분석 결과를 SigLens에서 확인하세요`;
+            // 이 문자열은 **X에 실제로 게시되는 본문**이다 — 영어 UI에서
+            // 한국어가 나가고 있었다.
+            const title = t('shareTitle', { v0: symbol });
+            const text = t('shareText', { v0: symbol });
 
             if (canShareNatively()) {
                 try {
@@ -314,7 +323,7 @@ export function useShareFlow(): UseShareFlowResult {
 
     const describedById = useId();
     const symbol = reg?.context.symbol ?? '';
-    const tweetText = `${symbol} AI 분석 결과를 SigLens에서 확인하세요`;
+    const tweetText = t('shareText', { v0: symbol });
 
     return {
         status: effectiveStatus,

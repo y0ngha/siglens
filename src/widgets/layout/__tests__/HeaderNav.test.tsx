@@ -24,6 +24,7 @@ vi.mock('@/shared/lib/cn', () => ({
             .join(' '),
 }));
 
+import { koMessage } from '@/shared/test-utils/koMessage';
 import React from 'react';
 import { render, screen, within } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
@@ -50,7 +51,7 @@ describe('HeaderNav', () => {
         render(<HeaderNav items={NAV_TREE} />);
 
         for (const vertical of NAV_TREE) {
-            expect(trigger(vertical.label)).toBeInTheDocument();
+            expect(trigger(koMessage(vertical.labelKey))).toBeInTheDocument();
         }
     });
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { RefObject } from 'react';
 import { useEffect, useRef } from 'react';
 import type {
@@ -39,6 +40,7 @@ export function useActionRecommendationOverlay({
     lineWidth = DEFAULT_LINE_WIDTH,
 }: UseActionRecommendationOverlayParams): void {
     const priceLinesRef = useRef<IPriceLine[]>([]);
+    const t = useTranslations('widgets.chart.actionOverlay');
 
     useEffect(() => {
         const series = seriesRef.current;
@@ -56,7 +58,7 @@ export function useActionRecommendationOverlay({
                 lineWidth,
                 lineStyle: LineStyle.Dashed,
                 axisLabelVisible: true,
-                title: `진입점 #${idx + 1}`,
+                title: t('entryPoint', { v0: idx + 1 }),
             })
         );
 
@@ -69,7 +71,7 @@ export function useActionRecommendationOverlay({
                           lineWidth,
                           lineStyle: LineStyle.Dashed,
                           axisLabelVisible: true,
-                          title: '손절점',
+                          title: t('stopLoss'),
                       }),
                   ]
                 : [];
@@ -82,7 +84,7 @@ export function useActionRecommendationOverlay({
                     lineWidth,
                     lineStyle: LineStyle.Dashed,
                     axisLabelVisible: true,
-                    title: `청산점 #${idx + 1}`,
+                    title: t('exitPoint', { v0: idx + 1 }),
                 })
         );
 
@@ -96,7 +98,7 @@ export function useActionRecommendationOverlay({
                           lineWidth,
                           lineStyle: LineStyle.LargeDashed,
                           axisLabelVisible: true,
-                          title: '손절 (보정)',
+                          title: t('stopLossAdjusted'),
                       }),
                   ]
                 : [];
@@ -111,8 +113,8 @@ export function useActionRecommendationOverlay({
                     axisLabelVisible: true,
                     title:
                         tp.totalCount > 1
-                            ? `#${tp.index + 1} 청산 (보정)`
-                            : '목표가 (보정)',
+                            ? t('exitAdjusted', { v0: tp.index + 1 })
+                            : t('targetAdjusted'),
                 })
             ) ?? [];
 
@@ -123,5 +125,5 @@ export function useActionRecommendationOverlay({
             ...reconciledStopLossLine,
             ...reconciledTakeProfitLines,
         ];
-    }, [actionPrices, reconciledPrices, isVisible, lineWidth, seriesRef]);
+    }, [actionPrices, reconciledPrices, isVisible, lineWidth, seriesRef, t]);
 }

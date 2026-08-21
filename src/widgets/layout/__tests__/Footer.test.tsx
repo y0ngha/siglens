@@ -25,11 +25,11 @@ vi.mock('@/shared/ui/DotSeparator', () => ({
     DotSeparator: () => <span aria-hidden="true">·</span>,
 }));
 vi.mock('@/shared/lib/legal', () => ({
-    INVESTMENT_DISCLAIMER: '투자 면책 고지 텍스트',
+    INVESTMENT_DISCLAIMER_KEY: 'investmentDisclaimer',
     PRIVACY_PATH: '/privacy',
-    PRIVACY_TITLE: '개인정보처리방침',
+    privacyTitle: () => '개인정보처리방침',
     TERMS_PATH: '/terms',
-    TERMS_TITLE: '이용약관',
+    termsTitle: () => '이용약관',
 }));
 
 import React from 'react';
@@ -37,12 +37,17 @@ import { render, screen } from '@testing-library/react';
 
 import { Footer } from '../Footer';
 import { ALL_NAV_REGION_LINKS } from '@/shared/config/assetClassNav';
+import { koMessage } from '@/shared/test-utils/koMessage';
 
 describe('Footer', () => {
     it('renders the investment disclaimer', () => {
         render(<Footer />);
 
-        expect(screen.getByText('투자 면책 고지 텍스트')).toBeInTheDocument();
+        // 문구는 `shared.lib.legal` 카탈로그에서 온다 — 예전엔 모듈 상수라
+        // 비-ko 푸터도 한국어 고지를 렌더했다.
+        expect(
+            screen.getByText(koMessage('shared.lib.legal.investmentDisclaimer'))
+        ).toBeInTheDocument();
     });
 
     it('renders the copyright with year', () => {
@@ -102,7 +107,9 @@ describe('Footer', () => {
         render(<Footer />);
 
         for (const region of ALL_NAV_REGION_LINKS) {
-            const link = screen.getByRole('link', { name: region.fullLabel });
+            const link = screen.getByRole('link', {
+                name: koMessage(region.fullLabelKey),
+            });
             expect(link).toHaveAttribute('href', region.href);
         }
     });

@@ -1,10 +1,18 @@
 import type { NewsImpact } from '@y0ngha/siglens-core';
 
-export const IMPACT_LABEL: Record<NewsImpact, string> = {
-    high: '주가 영향 큼',
-    medium: '주가 영향 보통',
-    low: '주가 영향 작음',
-    negligible: '주가 영향 거의 없음',
+/**
+ * 라벨 **키**만 담는다 — `t()`는 소비 컴포넌트에서 부른다.
+ *
+ * 예전에는 이 테이블이 두 벌 있었고(`market-news`는 `주가 영향`,
+ * `news`는 `가격 영향`), 둘 다 한국어 리터럴이라 네 로케일 전부 한국어였다.
+ * 문구는 자산 중립 쪽(`가격`)으로 통일한다 — 크립토 페이지에서 `주가`는
+ * 틀린 말이다.
+ */
+export const IMPACT_LABEL_KEY: Record<NewsImpact, string> = {
+    high: 'newsImpact.high',
+    medium: 'newsImpact.medium',
+    low: 'newsImpact.low',
+    negligible: 'newsImpact.negligible',
 };
 
 export const IMPACT_CLASS: Record<NewsImpact, string> = {

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard';
@@ -40,6 +41,7 @@ export function ShareSheet({
     description,
     onClose,
 }: ShareSheetProps) {
+    const t = useTranslations('widgets.share');
     const { copied, copy } = useCopyToClipboard();
     const [copyFailed, setCopyFailed] = useState(false);
     const firstItemRef = useRef<HTMLButtonElement>(null);
@@ -76,7 +78,7 @@ export function ShareSheet({
         >
             {/* Accessible live region for copy announcement */}
             <div aria-live="polite" className="sr-only">
-                {copied ? '링크를 복사했어요' : ''}
+                {copied ? t('ShareSheet.c040b8') : ''}
             </div>
 
             {/* 1. Copy link */}
@@ -91,7 +93,9 @@ export function ShareSheet({
                 ) : (
                     <LinkIcon className="h-5 w-5" />
                 )}
-                <span>{copied ? '복사됨' : '링크 복사'}</span>
+                <span>
+                    {copied ? t('ShareSheet.e5c85b') : t('ShareSheet.01660a')}
+                </span>
             </button>
 
             {/* Fallback: selectable readonly input when clipboard API fails */}
@@ -103,7 +107,7 @@ export function ShareSheet({
                         value={shareUrl}
                         className="w-full rounded border border-secondary-700 bg-secondary-800 px-2 py-1 text-xs text-secondary-200"
                         onClick={e => (e.target as HTMLInputElement).select()}
-                        aria-label="공유 링크 (직접 복사)"
+                        aria-label={t('ShareSheet.e4441b')}
                     />
                 </div>
             )}
@@ -114,10 +118,10 @@ export function ShareSheet({
                 target="_blank"
                 rel="noopener noreferrer"
                 className={cn(ROW_BASE, 'touch-manipulation')}
-                aria-label="X(트위터)에 공유"
+                aria-label={t('ShareSheet.a46c88')}
             >
                 <XLogoIcon className="h-5 w-5" />
-                <span>X에 공유</span>
+                <span>{t('ShareSheet.4cb3cd')}</span>
             </a>
 
             {/* Screen-reader-only description */}

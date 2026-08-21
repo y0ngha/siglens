@@ -1,5 +1,8 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+import { useSkillLabel } from '@/shared/i18n/skillLabel';
+import { useSkillDescription } from '@/shared/i18n/skillDescription';
 import React, { useId, useRef } from 'react';
 import { cn } from '@/shared/lib/cn';
 import type { SkillShowcaseItem, SkillType } from '@y0ngha/siglens-core';
@@ -36,46 +39,47 @@ const MEDIUM_CONFIDENCE_WEIGHT = 0.5;
 
 interface TabConfig {
     value: SkillsActiveTab;
-    label: string;
+    /** 메시지 키 — `TabsPill`에는 번역된 `label`로 바꿔서 넘긴다. */
+    labelKey: string;
 }
 
 const TABS: readonly TabConfig[] = [
-    { value: 'all', label: '전체' },
-    { value: 'indicator_guide', label: '보조지표' },
-    { value: 'pattern', label: '차트 패턴' },
-    { value: 'strategy', label: '전략' },
-    { value: 'candlestick', label: '캔들 패턴' },
-    { value: 'support_resistance', label: '지지/저항' },
+    { value: 'all', labelKey: 'skillFilter.all' },
+    { value: 'indicator_guide', labelKey: 'skillFilter.indicator_guide' },
+    { value: 'pattern', labelKey: 'skillFilter.pattern' },
+    { value: 'strategy', labelKey: 'skillFilter.strategy' },
+    { value: 'candlestick', labelKey: 'skillFilter.candlestick' },
+    { value: 'support_resistance', labelKey: 'skillFilter.support_resistance' },
 ];
 
 interface TypeBadgeConfig {
-    label: string;
+    labelKey: string;
     className: string;
 }
 
 const TYPE_BADGE: Record<SkillType, TypeBadgeConfig> = {
     indicator_guide: {
-        label: '지표',
+        labelKey: 'skillBadge.indicator_guide',
         className:
             'bg-primary-600/15 text-primary-400 border border-primary-600/30',
     },
     pattern: {
-        label: '패턴',
+        labelKey: 'skillBadge.pattern',
         className:
             'bg-chart-bearish/10 text-chart-bearish border border-chart-bearish/30',
     },
     strategy: {
-        label: '전략',
+        labelKey: 'skillBadge.strategy',
         className:
             'bg-ui-warning/10 text-ui-warning border border-ui-warning/30',
     },
     candlestick: {
-        label: '캔들',
+        labelKey: 'skillBadge.candlestick',
         className:
             'bg-chart-bullish/10 text-chart-bullish border border-chart-bullish/30',
     },
     support_resistance: {
-        label: '지지/저항',
+        labelKey: 'skillBadge.support_resistance',
         className:
             'bg-secondary-700/30 text-secondary-300 border border-secondary-600/50',
     },
@@ -93,6 +97,7 @@ function barColorClass(weight: number): string {
 }
 
 function ConfidenceInfoTooltip() {
+    const t = useTranslations('widgets.home');
     const containerRef = useRef<HTMLDivElement>(null);
     const tooltipId = useId();
     const { isOpen, toggle } = usePopoverToggle(containerRef);
@@ -101,7 +106,7 @@ function ConfidenceInfoTooltip() {
         <div ref={containerRef} className="group relative">
             <button
                 type="button"
-                aria-label="신뢰도 점수 설명"
+                aria-label={t('SkillsShowcase.7e6540')}
                 aria-describedby={tooltipId}
                 onClick={e => {
                     // 카드 펼침 토글로 버블링되지 않게 — ⓘ는 신뢰도 설명 전용.
@@ -124,12 +129,19 @@ function ConfidenceInfoTooltip() {
                 )}
             >
                 <div className="leading-relaxed text-secondary-300">
-                    <p>분석 기법의 신뢰도 점수예요.</p>
+                    <p>{t('SkillsShowcase.ebff92')}</p>
                     <p>
-                        {MEDIUM_PCT}% 미만은 낮음, {MEDIUM_PCT}~{HIGH_PCT}%는
-                        보통, {HIGH_PCT}% 이상은 높음이에요.
+                        {t('SkillsShowcase.e20b1b', {
+                            v0: MEDIUM_PCT,
+                            v1: MEDIUM_PCT,
+                        })}
+                        ~
+                        {t('SkillsShowcase.c266ba', {
+                            v0: HIGH_PCT,
+                            v1: HIGH_PCT,
+                        })}
                     </p>
-                    <p>낮은 점수도 분석에 보조적으로 반영돼요.</p>
+                    <p>{t('SkillsShowcase.e0f5c5')}</p>
                 </div>
             </div>
         </div>
@@ -147,9 +159,17 @@ export function SkillCard({
     isExpanded,
     onToggleExpand,
 }: SkillCardProps) {
+    // 스킬명은 `skills/**.md` front-matter라 36개가 한국어다. 원문은 dedupe·토글
+    // 키로도 쓰이므로 바꿀 수 없고, **표시 시점**에만 카탈로그로 옮긴다
+    // (`AnalysisPanel`과 같은 훅). 홈은 이 표시명의 최대 노출 지점이다.
+    const skillLabel = useSkillLabel();
+    // 설명도 같은 이유로 표시 시점에만 옮긴다 — 74개가 한국어(영문 스킬 7종은
+    // 이미 영어)라 안 옮기면 "영어 제목 + 한국어 본문"이 그대로 남는다.
+    const skillDescription = useSkillDescription();
     // 클램프 측정은 접힘 상태에서만 유효(펼치면 판정이 뒤집힘) → enabled=!isExpanded.
     const { ref: descRef, isClamped } = useIsClamped(!isExpanded);
 
+    const t = useTranslations('widgets.home');
     const badge = skill.type != null ? TYPE_BADGE[skill.type] : null;
     const barColor = barColorClass(skill.confidenceWeight);
     const canExpand = isClamped || isExpanded;
@@ -195,7 +215,7 @@ export function SkillCard({
         >
             <div className="mb-2 flex items-start gap-2">
                 <span className="min-w-0 text-sm font-medium text-secondary-200">
-                    {skill.name}
+                    {skillLabel(skill.name)}
                 </span>
                 {badge != null && (
                     <span
@@ -204,7 +224,7 @@ export function SkillCard({
                             badge.className
                         )}
                     >
-                        {badge.label}
+                        {t(badge.labelKey)}
                     </span>
                 )}
             </div>
@@ -224,7 +244,7 @@ export function SkillCard({
                         !isExpanded && 'line-clamp-2'
                     )}
                 >
-                    {skill.description}
+                    {skillDescription(skill.description)}
                 </p>
             </div>
             <div className="flex items-center gap-2">
@@ -253,9 +273,10 @@ export function SkillCard({
 }
 
 export function SkillsShowcaseSkeleton() {
+    const t = useTranslations('widgets.home');
     return (
         <section
-            aria-label="AI 분석 스킬 불러오는 중"
+            aria-label={t('SkillsShowcase.7f2565')}
             aria-busy="true"
             className="px-6 py-10 lg:px-[15vw]"
         >
@@ -302,6 +323,8 @@ interface SkillsShowcaseProps {
 }
 
 export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
+    const t = useTranslations('widgets.home');
+    const tMisc = useTranslations('shared.ui.misc');
     const {
         activeTab,
         showAll,
@@ -315,13 +338,16 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
     return (
         <section className="px-6 py-10 lg:px-[15vw]">
             <h2 className="mb-6 text-sm font-semibold tracking-wider text-secondary-200 uppercase">
-                AI 분석 스킬
+                {t('SkillsShowcase.158954')}
             </h2>
             <TabsPill
-                tabs={TABS}
+                tabs={TABS.map(tab => ({
+                    value: tab.value,
+                    label: t(tab.labelKey),
+                }))}
                 activeTab={activeTab}
                 onChange={handleTabSelect}
-                ariaLabel="스킬 카테고리 탭"
+                ariaLabel={t('SkillsShowcase.c78b79')}
                 idPrefix={baseId}
                 className="mb-6"
             />
@@ -362,8 +388,12 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
                                     className="rounded-full border border-secondary-700 px-6 py-2 text-xs font-medium text-secondary-400 transition-colors hover:border-primary-600/40 hover:text-primary-400 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
                                     {showAll
-                                        ? '접기'
-                                        : `더 보기 (${panelSkills.length - INITIAL_VISIBLE_COUNT}개)`}
+                                        ? t('SkillsShowcase.0d2c24')
+                                        : tMisc('showMore', {
+                                              v0:
+                                                  panelSkills.length -
+                                                  INITIAL_VISIBLE_COUNT,
+                                          })}
                                 </button>
                             </div>
                         )}

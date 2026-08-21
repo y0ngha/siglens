@@ -26,7 +26,7 @@ describe('GlobalError (root-layout error boundary)', () => {
     it('wires the retry button to reset()', () => {
         const reset = vi.fn();
         render(<GlobalError error={error} reset={reset} />);
-        screen.getByRole('button', { name: '다시 시도' }).click();
+        screen.getByRole('button', { name: /다시 시도/ }).click();
         expect(reset).toHaveBeenCalledTimes(1);
     });
 

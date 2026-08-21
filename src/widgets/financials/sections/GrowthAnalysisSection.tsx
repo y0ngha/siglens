@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { FinancialGrowthRow } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
 import { StatementTable } from './StatementTable';
@@ -9,7 +10,8 @@ interface GrowthAnalysisSectionProps {
 }
 
 const HEADING_ID = 'growth-analysis-heading';
-const TITLE = '성장 분석';
+/** `widgets.financials.section` 키 — 표시는 렌더 쪽에서 `t()`로. */
+const TITLE_KEY = 'growthAnalysis';
 
 /**
  * Convert a YoY growth fraction (e.g. 0.5) to a display percentage (50.0).
@@ -35,8 +37,10 @@ function toPercent(v: number | null): number | null {
  * and shown as single-column rows for context.
  */
 export function GrowthAnalysisSection({ rows }: GrowthAnalysisSectionProps) {
+    const t = useTranslations('widgets.financials');
+    const tSection = useTranslations('widgets.financials.section');
     if (rows.length === 0) {
-        return <EmptySectionCard title={TITLE} />;
+        return <EmptySectionCard title={tSection(TITLE_KEY)} />;
     }
 
     const displayRows = toDisplayOrder(rows);
@@ -44,22 +48,22 @@ export function GrowthAnalysisSection({ rows }: GrowthAnalysisSectionProps) {
 
     const yoyRows = [
         {
-            labelKo: '매출성장',
+            labelKo: t('GrowthAnalysisSection.8a595b'),
             values: displayRows.map(r => toPercent(r.revenueGrowth)),
             format: 'pct' as const,
         },
         {
-            labelKo: '순이익성장',
+            labelKo: t('GrowthAnalysisSection.5ee2d9'),
             values: displayRows.map(r => toPercent(r.netIncomeGrowth)),
             format: 'pct' as const,
         },
         {
-            labelKo: 'EPS성장',
+            labelKo: t('GrowthAnalysisSection.35f2dc'),
             values: displayRows.map(r => toPercent(r.epsGrowth)),
             format: 'pct' as const,
         },
         {
-            labelKo: 'FCF성장',
+            labelKo: t('GrowthAnalysisSection.dd9f11'),
             values: displayRows.map(r => toPercent(r.freeCashFlowGrowth)),
             format: 'pct' as const,
         },
@@ -68,17 +72,17 @@ export function GrowthAnalysisSection({ rows }: GrowthAnalysisSectionProps) {
     const latest = rows[0];
     const perShareRows = [
         {
-            labelKo: '3Y 주당매출성장',
+            labelKo: t('GrowthAnalysisSection.c0a3ad'),
             values: [toPercent(latest.threeYRevenueGrowthPerShare)],
             format: 'pct' as const,
         },
         {
-            labelKo: '5Y 주당매출성장',
+            labelKo: t('GrowthAnalysisSection.18de8f'),
             values: [toPercent(latest.fiveYRevenueGrowthPerShare)],
             format: 'pct' as const,
         },
         {
-            labelKo: '10Y 주당매출성장',
+            labelKo: t('GrowthAnalysisSection.960ca9'),
             values: [toPercent(latest.tenYRevenueGrowthPerShare)],
             format: 'pct' as const,
         },
@@ -90,14 +94,14 @@ export function GrowthAnalysisSection({ rows }: GrowthAnalysisSectionProps) {
             className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
-                {TITLE}
+                {tSection(TITLE_KEY)}
             </h2>
             <div className="mb-6">
                 <StatementTable columns={columns} rows={yoyRows} />
             </div>
             <div className="border-t border-secondary-700/50 pt-4">
                 <p className="mb-3 text-xs tracking-wide text-secondary-400 uppercase">
-                    장기 주당매출 성장 (최근 기준)
+                    {t('GrowthAnalysisSection.fc30d8')}
                 </p>
                 <StatementTable
                     columns={[latest.fiscalYear]}

@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { QuoteHeader } from '@/widgets/dashboard/QuoteHeader';
 import type { QuoteHeaderData } from '@/widgets/dashboard/QuoteHeader';
+import { koMessage } from '@/shared/test-utils/koMessage';
 
 vi.mock('@/shared/lib/cn', () => ({
     cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
@@ -12,14 +13,15 @@ vi.mock('@/shared/lib/priceFormat', () => ({
         sign: percent >= 0 ? '+' : '-',
         colorClass: percent >= 0 ? 'text-green' : 'text-red',
         arrow: percent >= 0 ? '▲' : '▼',
-        arrowLabel: percent >= 0 ? '상승' : '하락',
+        // 표시 문자열이 아니라 `shared.lib.priceMove` 키 — 컴포넌트가 `t()`로 푼다.
+        arrowLabelKey: percent >= 0 ? 'up' : 'down',
     }),
     formatUsdPrice: (price: number) => price.toFixed(2),
 }));
 
 const BASE: QuoteHeaderData = {
     symbol: 'AAPL',
-    koreanName: '애플',
+    displayName: '애플',
     price: 189.5,
     changePercent: 1.23,
 };
@@ -52,7 +54,9 @@ describe('QuoteHeader — layout: index (기본값)', () => {
         // sr-only는 arrowLabel 전용 — 정확히 1개
         const srOnlyEls = document.querySelectorAll('.sr-only');
         expect(srOnlyEls).toHaveLength(1);
-        expect(srOnlyEls[0]).toHaveTextContent('상승');
+        expect(srOnlyEls[0]).toHaveTextContent(
+            koMessage('shared.lib.priceMove.up')
+        );
     });
 
     it('화살표 아이콘에 aria-hidden이 설정된다', () => {
@@ -76,7 +80,9 @@ describe('QuoteHeader — layout: index (기본값)', () => {
         expect(
             screen.getByText(text => text.includes('2.50%'))
         ).toBeInTheDocument();
-        expect(document.querySelector('.sr-only')).toHaveTextContent('하락');
+        expect(document.querySelector('.sr-only')).toHaveTextContent(
+            koMessage('shared.lib.priceMove.down')
+        );
     });
 });
 
@@ -132,7 +138,7 @@ describe('QuoteHeader — layout: signal', () => {
 describe('QuoteHeader — 주 제목 자리 결정 (tickerIsReadable)', () => {
     const KR: QuoteHeaderData = {
         symbol: '091160.KS',
-        koreanName: '반도체',
+        displayName: '반도체',
         price: 125405,
         changePercent: -0.67,
     };
@@ -193,7 +199,7 @@ describe('QuoteHeader — 주 제목 자리 결정 (tickerIsReadable)', () => {
             <QuoteHeader
                 tickerIsReadable={false}
                 currencySymbol="₩"
-                data={{ ...KR, koreanName: 'LG에너지솔루션' }}
+                data={{ ...KR, displayName: 'LG에너지솔루션' }}
                 layout="signal"
             />
         );

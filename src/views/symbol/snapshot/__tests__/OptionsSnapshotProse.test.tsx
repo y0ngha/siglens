@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { OptionsAnalysisResponse } from '@y0ngha/siglens-core';
 import { OptionsSnapshotProse } from '../renderers/OptionsSnapshotProse';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 
 // 스냅샷 저장소 content는 harvest.ts가 prewarmOptions(→core submitOptionsAnalysis)의
 // status==='cached' 분기에서 얻은 result.result(OptionsAnalysisResponse)를 그대로
@@ -254,5 +255,56 @@ describe('OptionsSnapshotProse — 기준일 표기 (C1 감사)', () => {
         expect(
             screen.getByText(/2026년 7월 31일 미국 장마감 기준/)
         ).toBeInTheDocument();
+    });
+});
+
+describe('OptionsSnapshotProse — enum 라벨 로케일 회귀', () => {
+    // `TONE_LABEL`/`SIGNAL_KIND_LABEL`이 하드코딩 한글 Record였을 때는 en
+    // 로케일에서도 톤·시그널 라벨만 한글로 남아 "2026-08-15 (강세)" 같은
+    // 반쪽짜리 영어 문장이 나왔다(원 이슈 재현 대상). `renderWithIntl`로
+    // 실제 en 카탈로그를 태워야 이 결함이 잡힌다 — 전역 `render()`는 항상
+    // ko provider라 이 클래스의 결함을 검출하지 못한다.
+    //
+    // summary/commentary/message는 fixture가 직접 넣는 값이라 en 텍스트로
+    // 바꿔 프로즈 소스에서 한글이 새지 않게 통제한다. "no Hangul" 단언은
+    // 프로즈 본문(summary + 두 목록)에만 스코프한다 — `SnapshotSummarySection`의
+    // 기준일 캡션(`AS_OF_CAPTION_COPY`)은 이 태스크(enum 라벨) 범위 밖의
+    // 별도 하드코딩 한글이라, 컨테이너 전체를 보면 이 회귀 테스트와 무관한
+    // 이유로 실패한다.
+    it('locale=en이면 톤·시그널 라벨을 영어로 렌더하고 프로즈 본문에 한글이 남지 않는다', () => {
+        renderWithIntl(
+            <OptionsSnapshotProse
+                content={buildFixture({
+                    summary: 'Call buying pressure remains dominant.',
+                    perExpiration: [
+                        {
+                            expirationDate: '2026-08-15',
+                            commentary: 'Call open interest leads puts.',
+                            tone: 'bullish',
+                        },
+                    ],
+                    signals: [
+                        { kind: 'volatility', message: 'Implied vol spiked.' },
+                    ],
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+            />,
+            { locale: 'en' }
+        );
+
+        const summaryEl = screen.getByText(
+            'Call buying pressure remains dominant.'
+        );
+        const lists = screen.getAllByRole('list');
+        const proseText = [
+            summaryEl.textContent,
+            ...lists.map(l => l.textContent),
+        ].join(' ');
+
+        expect(proseText).toContain('2026-08-15 (Bullish)');
+        expect(proseText).toContain('[Volatility]');
+        expect(proseText).not.toMatch(/[가-힣]/);
     });
 });

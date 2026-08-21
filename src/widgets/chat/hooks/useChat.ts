@@ -30,6 +30,7 @@ import {
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { CHAT_NON_CHART_BASELINE_ANALYSIS } from '@/entities/chat-message';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { useTranslations } from 'next-intl';
 import { usePageContextLabel } from './usePageContextLabel';
 import { useSymbolChat } from '@/features/symbol-chat';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
@@ -61,30 +62,39 @@ export const MODEL_STORAGE_KEY = LOCAL_STORAGE_CHAT_MODEL_KEY;
 // Matches the siglens-core chat token limit; update only when the core policy changes.
 const DAILY_CHAT_LIMIT = 5;
 
-const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
-    token_exhausted: `오늘 무료 질문 ${DAILY_CHAT_LIMIT}회를 모두 사용했어요. 내일 다시 이용해주세요.`,
-    rate_limited: 'AI 서버가 잠시 바빠요. 잠시 후 다시 시도해주세요.',
-    server_busy:
-        'AI 서버가 지금 바빠요. 다른 모델로 변경 후 다시 시도해주세요.',
-    server_error: '일시적인 오류가 발생했어요. 다시 시도해주세요.',
-    model_not_allowed:
-        '선택한 모델은 현재 회원 등급에서 사용할 수 없어요. 다른 모델을 선택해주세요.',
+/**
+ * 에러 코드 → 카탈로그 키.
+ *
+ * 문구를 여기 상수로 들고 있으면 **답변만 번역되고 오류 말풍선은 한국어**로
+ * 남는다 — 같은 대화창 안에서 언어가 갈린다(`localeEnvelope`가 답변 언어를
+ * 사용자 로케일로 고정하기 때문에 더 도드라진다).
+ */
+const ERROR_MESSAGE_KEYS: Record<ChatErrorCode, string> = {
+    token_exhausted: 'useChat.tokenExhausted',
+    rate_limited: 'useChat.rateLimited',
+    server_busy: 'useChat.serverBusy',
+    server_error: 'useChat.serverError',
+    model_not_allowed: 'useChat.modelNotAllowed',
     // TODO(byok-adapter): BYOK 어댑터 구현 후 chatAction에서 이 코드가 반환됩니다
-    user_api_key_required:
-        '이 모델은 본인 API 키가 필요해요. 키를 등록하면 사용할 수 있어요.',
+    user_api_key_required: 'useChat.userApiKeyRequired',
 };
 
 function isValidChatModel(value: string): value is ModelId {
     return VALID_CHAT_MODELS.some(model => model === value);
 }
 
-function resolveAiContent(result: ChatActionResult): string {
+function resolveAiContent(
+    result: ChatActionResult,
+    t: (key: string, values?: Record<string, string | number>) => string
+): string {
     if (result.ok) {
         return result.message;
     }
 
     if (typeof result.error === 'string') {
-        return ERROR_MESSAGES[result.error] ?? ERROR_MESSAGES.server_error;
+        const key =
+            ERROR_MESSAGE_KEYS[result.error] ?? ERROR_MESSAGE_KEYS.server_error;
+        return t(key, { v0: DAILY_CHAT_LIMIT });
     }
 
     return result.error.message;
@@ -110,6 +120,7 @@ export interface UseChatReturn {
 }
 
 export function useChat({ symbol }: UseChatOptions): UseChatReturn {
+    const t = useTranslations('widgets.chat');
     const [messages, setMessages] = useState<DisplayMessage[]>([]);
     const [loadingPhase, setLoadingPhase] = useState<ChatLoadingPhase | null>(
         null
@@ -249,7 +260,7 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
             setLoadingPhase(null);
         },
         onSuccess: result => {
-            const aiContent = resolveAiContent(result);
+            const aiContent = resolveAiContent(result, t);
             const aiMessage: DisplayMessage = {
                 role: 'model',
                 content: aiContent,
@@ -274,7 +285,7 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
                 ...prev,
                 {
                     role: 'model',
-                    content: ERROR_MESSAGES.server_error,
+                    content: t(ERROR_MESSAGE_KEYS.server_error),
                     uiId: nextMessageUiId(),
                 },
             ]);

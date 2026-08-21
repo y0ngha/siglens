@@ -1,8 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import {
-    EMPTY_MESSAGE,
-    EmptySectionCard,
-} from '@/widgets/fundamental/sections/EmptySectionCard';
+import { EmptySectionCard } from '@/widgets/fundamental/sections/EmptySectionCard';
+import { koMessage } from '@/shared/test-utils/koMessage';
 
 describe('EmptySectionCard', () => {
     it('renders title with provided headingClassName and the shared empty message', () => {
@@ -22,7 +20,11 @@ describe('EmptySectionCard', () => {
             'font-semibold',
             'tracking-tight'
         );
-        expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                koMessage('widgets.financials.section.emptySection')
+            )
+        ).toBeInTheDocument();
     });
 
     it('links section aria-labelledby to the heading id', () => {

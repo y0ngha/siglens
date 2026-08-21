@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { useChatButtonState } from './hooks/useChatButtonState';
 import { useSymbolChat } from '@/features/symbol-chat';
@@ -31,7 +32,10 @@ const ChatPanel = dynamic(() => import('./ChatPanel').then(m => m.ChatPanel), {
             role="status"
             aria-live="polite"
         >
-            채팅을 여는 중…
+            {/* `dynamic()`의 `loading`은 모듈 스코프라 훅을 못 쓴다. 이 자리표는
+                패널이 열리는 수백 ms 동안만 보이고 스크린리더가 읽는 값이므로,
+                번역 대신 상태만 알리는 로케일 중립 표기(줄임표)로 둔다. */}
+            …
         </div>
     ),
 });
@@ -41,6 +45,7 @@ interface FloatingChatButtonProps {
 }
 
 export function FloatingChatButton({ symbol }: FloatingChatButtonProps) {
+    const t = useTranslations('widgets.chat');
     const { isAnalysisReady } = useSymbolChat();
     const {
         isOpen,
@@ -63,13 +68,12 @@ export function FloatingChatButton({ symbol }: FloatingChatButtonProps) {
                         type="button"
                         onClick={dismissTooltip}
                         className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded text-xs text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
-                        aria-label="툴팁 닫기"
+                        aria-label={t('FloatingChatButton.21f255')}
                     >
                         ✕
                     </button>
                     <p className="pr-4 text-sm leading-relaxed text-secondary-100">
-                        분석 내용에 궁금하신 게 있다면 언제든 저에게
-                        말씀해주세요.
+                        {t('FloatingChatButton.318233')}
                     </p>
                 </div>
             )}
@@ -77,7 +81,11 @@ export function FloatingChatButton({ symbol }: FloatingChatButtonProps) {
                 type="button"
                 onClick={handleButtonClick}
                 className="fixed right-4 bottom-3 z-60 flex h-12 w-12 items-center justify-center rounded-full bg-primary-600 text-white shadow-lg transition-colors hover:bg-primary-500 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none md:right-6 md:bottom-6"
-                aria-label={isOpen ? 'AI 채팅 닫기' : 'AI 채팅 열기'}
+                aria-label={
+                    isOpen
+                        ? t('FloatingChatButton.14d856')
+                        : t('FloatingChatButton.75d660')
+                }
                 aria-expanded={isOpen}
             >
                 <span className="text-base leading-none">

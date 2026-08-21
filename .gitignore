@@ -104,6 +104,10 @@ next-env.d.ts
 !/scripts/probe-cdn-cache.sh
 !/scripts/lib/
 !/scripts/lib/**
+# i18n 툴링 — `yarn i18n:extract/translate/verify/lint/routes`가 이 파일들을
+# 실행한다. 추적하지 않으면 fresh checkout·CI에서 스크립트가 통째로 사라진다.
+!/scripts/i18n/
+!/scripts/i18n/**
 
 # Local Lighthouse audit outputs (psi_*.json, desktop.json, mobile.json, headers.txt)
 /lighthouse/

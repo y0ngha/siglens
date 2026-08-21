@@ -117,7 +117,7 @@ describe('submitMarketBriefingAction 함수는', () => {
             expect(mockRunBriefing).toHaveBeenCalledWith(
                 summaryData,
                 {
-                    marketLabel: '미국 증시',
+                    marketLabel: 'US market',
                     volatility: { label: 'VIX', level: 18.3 },
                 },
                 { signal: undefined }
@@ -182,7 +182,7 @@ describe('submitMarketBriefingAction 함수는', () => {
             // 캐시 키가 쓰기·읽기 사이에서 갈린다.
             expect(mockRunBriefing).toHaveBeenCalledWith(
                 summaryData,
-                { marketLabel: '한국 증시', volatility: null },
+                { marketLabel: 'Korean market', volatility: null },
                 { signal: undefined }
             );
             expect(result).toEqual({

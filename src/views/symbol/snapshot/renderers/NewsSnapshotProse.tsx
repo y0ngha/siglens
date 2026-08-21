@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { NewsSentiment } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { SnapshotBulletList } from '../SnapshotBulletList';
@@ -33,16 +34,17 @@ interface NewsSnapshotProseProps {
     generatedAt?: Date;
 }
 
-const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
-    bullish: '긍정',
-    neutral: '중립',
-    bearish: '부정',
+/** NewsSentiment → `shared.enumLabel` 카탈로그 키. 값 자체는 더 이상 한글이 아니다 — 렌더 시점에 `tLabel`로 조회한다. */
+const SENTIMENT_LABEL_KEY: Record<NewsSentiment, string> = {
+    bullish: 'sentiment.bullish',
+    neutral: 'sentiment.neutral',
+    bearish: 'sentiment.bearish',
 };
 
 // See createEnumGuard's JSDoc for the Object.hasOwn / prototype-chain
 // rationale (audit fix; PR #698 round-2 review FIX 3 extracted the shared
 // implementation).
-const isSentiment = createEnumGuard(SENTIMENT_LABEL);
+const isSentiment = createEnumGuard(SENTIMENT_LABEL_KEY);
 
 interface NarrowedNewsContent {
     currentDriverKo: string;
@@ -116,6 +118,8 @@ export function NewsSnapshotProse({
     marketProfile,
     generatedAt,
 }: NewsSnapshotProseProps) {
+    const t = useTranslations('views.symbol');
+    const tLabel = useTranslations('shared.enumLabel');
     const narrowed = narrowNewsContent(content);
     if (narrowed === null) return null;
 
@@ -126,7 +130,7 @@ export function NewsSnapshotProse({
 
     return (
         <SnapshotSummarySection
-            title="뉴스 종합 심리"
+            title={t('NewsSnapshotProse.23befe')}
             displayName={displayName}
             marketProfile={marketProfile}
             asOf={generatedAt}
@@ -134,8 +138,12 @@ export function NewsSnapshotProse({
             <div className="space-y-4 text-sm leading-6 text-secondary-300">
                 {narrowed.overallSentiment !== null && (
                     <p className="font-medium text-secondary-200">
-                        {symbol} 뉴스 종합 심리:{' '}
-                        {SENTIMENT_LABEL[narrowed.overallSentiment]}
+                        {t('NewsSnapshotProse.0e9c3d', {
+                            v0: symbol,
+                            v1: tLabel(
+                                SENTIMENT_LABEL_KEY[narrowed.overallSentiment]
+                            ),
+                        })}
                     </p>
                 )}
 
@@ -148,16 +156,16 @@ export function NewsSnapshotProse({
                 )}
 
                 <SnapshotBulletList
-                    title="핵심 이벤트"
+                    title={t('NewsSnapshotProse.d65c2f')}
                     symbol={symbol}
-                    ariaSuffix="핵심 이벤트"
+                    ariaSuffix={t('NewsSnapshotProse.d65c2f')}
                     items={narrowed.keyEventsKo}
                     keyPrefix="event"
                 />
                 <SnapshotBulletList
-                    title="다가오는 주요 일정"
+                    title={t('NewsSnapshotProse.1244e3')}
                     symbol={symbol}
-                    ariaSuffix="다가오는 주요 일정"
+                    ariaSuffix={t('NewsSnapshotProse.1244e3')}
                     items={narrowed.upcomingEventsKo}
                     keyPrefix="upcoming"
                 />

@@ -4,21 +4,23 @@ const SHA256_HEX = /^[0-9a-f]{64}$/;
 
 describe('contentHash', () => {
     it('returns a sha256 hex digest', () => {
-        expect(contentHash('chart', 'AAPL', { a: 1 })).toMatch(SHA256_HEX);
+        expect(contentHash('chart', 'AAPL', 'ko', { a: 1 })).toMatch(
+            SHA256_HEX
+        );
     });
     it('is stable for the same inputs', () => {
-        expect(contentHash('chart', 'AAPL', { a: 1 })).toBe(
-            contentHash('chart', 'AAPL', { a: 1 })
+        expect(contentHash('chart', 'AAPL', 'ko', { a: 1 })).toBe(
+            contentHash('chart', 'AAPL', 'ko', { a: 1 })
         );
     });
     it('differs when kind differs', () => {
-        expect(contentHash('chart', 'AAPL', { a: 1 })).not.toBe(
-            contentHash('news', 'AAPL', { a: 1 })
+        expect(contentHash('chart', 'AAPL', 'ko', { a: 1 })).not.toBe(
+            contentHash('news', 'AAPL', 'ko', { a: 1 })
         );
     });
     it('differs when result differs', () => {
-        expect(contentHash('chart', 'AAPL', { a: 1 })).not.toBe(
-            contentHash('chart', 'AAPL', { a: 2 })
+        expect(contentHash('chart', 'AAPL', 'ko', { a: 1 })).not.toBe(
+            contentHash('chart', 'AAPL', 'ko', { a: 2 })
         );
     });
 
@@ -46,8 +48,8 @@ describe('contentHash', () => {
         // Verify key order actually differs in this JS engine (it should).
         expect(JSON.stringify(ab)).not.toBe(JSON.stringify(ba));
 
-        const hashAb = contentHash('chart', 'AAPL', ab);
-        const hashBa = contentHash('chart', 'AAPL', ba);
+        const hashAb = contentHash('chart', 'AAPL', 'ko', ab);
+        const hashBa = contentHash('chart', 'AAPL', 'ko', ba);
 
         // The hashes differ because JSON.stringify preserves insertion order.
         expect(hashAb).not.toBe(hashBa);
@@ -64,14 +66,14 @@ describe('contentHash', () => {
         const result = { trend: 'bullish' };
 
         it('same result + different chartBars → different hash', () => {
-            const h1 = contentHash('chart', 'AAPL', result, bars1);
-            const h2 = contentHash('chart', 'AAPL', result, bars2);
+            const h1 = contentHash('chart', 'AAPL', 'ko', result, bars1);
+            const h2 = contentHash('chart', 'AAPL', 'ko', result, bars2);
             expect(h1).not.toBe(h2);
         });
 
         it('identical everything including chartBars → same hash', () => {
-            const h1 = contentHash('chart', 'AAPL', result, bars1);
-            const h2 = contentHash('chart', 'AAPL', result, bars1);
+            const h1 = contentHash('chart', 'AAPL', 'ko', result, bars1);
+            const h2 = contentHash('chart', 'AAPL', 'ko', result, bars1);
             expect(h1).toBe(h2);
         });
 
@@ -80,10 +82,11 @@ describe('contentHash', () => {
             const withUndefined = contentHash(
                 'news',
                 'TSLA',
+                'ko',
                 result,
                 undefined
             );
-            const withOmitted = contentHash('news', 'TSLA', result);
+            const withOmitted = contentHash('news', 'TSLA', 'ko', result);
             expect(withUndefined).toBe(withOmitted);
         });
 
@@ -91,9 +94,21 @@ describe('contentHash', () => {
             // Even if bars were accidentally passed for a non-chart kind they would
             // change the hash (no special handling by kind). This documents the
             // contract: callers must only pass chartBars for chart kind.
-            const noBar = contentHash('news', 'TSLA', result);
-            const withBar = contentHash('news', 'TSLA', result, bars1);
+            const noBar = contentHash('news', 'TSLA', 'ko', result);
+            const withBar = contentHash('news', 'TSLA', 'ko', result, bars1);
             expect(noBar).not.toBe(withBar);
         });
+    });
+
+    /**
+     * dedupe는 `content_hash` **단독** unique로 걸리고 충돌 시 기존 행의 id를
+     * 돌려준다. 로케일이 해시에 없으면 영어 사용자가 먼저 저장된 한국어
+     * 스냅샷의 id를 물려받아, 자기가 보지 않은 언어의 분석을 공유하게 된다
+     * (설계 §2.5).
+     */
+    it('differs when locale differs — 로케일이 다르면 다른 행이어야 한다', () => {
+        expect(contentHash('chart', 'AAPL', 'ko', { a: 1 })).not.toBe(
+            contentHash('chart', 'AAPL', 'en', { a: 1 })
+        );
     });
 });

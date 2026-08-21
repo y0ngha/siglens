@@ -7,12 +7,13 @@ import {
     isTimeframeAllowed,
 } from '@y0ngha/siglens-core';
 import { getCachedBarsWithIndicators } from '../lib/barsDataCache';
+import { getTranslations } from 'next-intl/server';
 import { roundIndicators } from '../lib/roundIndicators';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import {
-    getFmpUserFacingMessage,
+    translateFmpError,
     logFmpPaymentRequiredError,
 } from '@/shared/api/fmp/fmpUserMessage';
 import { resolveCallerTier } from '@/entities/auth/lib/resolveCallerTier';
@@ -52,7 +53,8 @@ export async function getBarsAction(
         return { ...data, indicators: roundIndicators(data.indicators) };
     } catch (error) {
         logFmpPaymentRequiredError(error);
-        const message = getFmpUserFacingMessage(error);
+        // 서버 액션이라 훅이 없다. 루트 번역자를 직접 만든다.
+        const message = translateFmpError(error, await getTranslations());
         if (message !== null) {
             throw new Error(message, { cause: error });
         }

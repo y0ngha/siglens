@@ -1,3 +1,15 @@
+import koMessages from '@/../messages/ko.json';
+import enMessages from '@/../messages/en.json';
+import jaMessages from '@/../messages/ja.json';
+import zhMessages from '@/../messages/zh.json';
+
+const CATALOGS = {
+    ko: koMessages,
+    en: enMessages,
+    ja: jaMessages,
+    zh: zhMessages,
+};
+
 import { TABS } from '@/views/symbol/utils/symbolTabsConfig';
 
 describe('TABS (symbolTabsConfig)', () => {
@@ -43,7 +55,7 @@ describe('TABS (symbolTabsConfig)', () => {
     it('financials tab exists with correct href', () => {
         const tab = TABS.find(t => t.key === 'financials')!;
         expect(tab).toBeDefined();
-        expect(tab.label).toBe('재무제표');
+        expect(tab.labelKey).toBe('financials');
         expect(tab.hrefBuilder('AAPL')).toBe('/AAPL/financials');
     });
 
@@ -56,7 +68,7 @@ describe('TABS (symbolTabsConfig)', () => {
     it('congress tab exists with correct href', () => {
         const tab = TABS.find(t => t.key === 'congress')!;
         expect(tab).toBeDefined();
-        expect(tab.label).toBe('의회 거래');
+        expect(tab.labelKey).toBe('congress');
         expect(tab.hrefBuilder('AAPL')).toBe('/AAPL/congress');
     });
 
@@ -66,16 +78,26 @@ describe('TABS (symbolTabsConfig)', () => {
         expect(congressIdx).toBe(financialsIdx + 1);
     });
 
-    it('every tab has a non-empty label', () => {
+    /**
+     * 라벨이 비었는지가 아니라 **네 로케일 카탈로그에 다 있는지**를 본다.
+     * 새 탭을 추가하고 번역을 빠뜨리면 여기서 실패한다 — 예전 단언(길이 > 0)은
+     * 한국어 상수가 박혀 있는 한 언제나 통과했다.
+     */
+    it('모든 탭 라벨 키가 네 로케일에 다 있다', () => {
         for (const tab of TABS) {
-            expect(tab.label.length).toBeGreaterThan(0);
+            for (const [locale, catalog] of Object.entries(CATALOGS)) {
+                expect(
+                    catalog.shared.symbolTab[tab.labelKey],
+                    `${locale}: ${tab.labelKey}`
+                ).toBeTruthy();
+            }
         }
     });
 
     it('position tab href is /{symbol}/position', () => {
         const tab = TABS.find(t => t.key === 'position')!;
         expect(tab).toBeDefined();
-        expect(tab.label).toBe('내 위치');
+        expect(tab.labelKey).toBe('position');
         expect(tab.hrefBuilder('AAPL')).toBe('/AAPL/position');
     });
 

@@ -21,8 +21,14 @@ export interface AuthValidationError {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
-const INVALID_EMAIL_MESSAGE = '올바른 이메일 형식이 아닙니다.';
-const WEAK_PASSWORD_MESSAGE = `비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이며 영문자와 숫자를 포함해야 합니다.`;
+/**
+ * 이 모듈은 요청 스코프 없는 순수 검증 함수라 표시 문구를 만들 수 없다.
+ * `message`는 **로그·폴백용 영어 원문**이고, 화면은 UI 경계가 `code`를
+ * `AUTH_ERROR_KEY`로 번역해서 낸다(`shared/lib/authErrorKey.ts` 참고).
+ * 한국어를 들면 `/en/signup`이 영어 폼에 한국어 검증 메시지를 띄운다.
+ */
+const INVALID_EMAIL_MESSAGE = 'Invalid email format.';
+const WEAK_PASSWORD_MESSAGE = `Password must be at least ${MIN_PASSWORD_LENGTH} characters and include a letter and a number.`;
 
 /** @internal Normalizes an email address for consistent storage and lookup. */
 export function normalizeEmail(email: string): string {

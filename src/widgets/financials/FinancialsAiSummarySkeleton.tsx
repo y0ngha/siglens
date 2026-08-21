@@ -1,11 +1,13 @@
+import { useTranslations } from 'next-intl';
 import { AiSummarySkeleton } from '@/shared/ui/AiSummarySkeleton';
 
 export function FinancialsAiSummarySkeleton() {
+    const t = useTranslations('widgets.financials');
     return (
         <AiSummarySkeleton
-            heading="AI 재무제표 분석"
+            heading={t('FinancialsAiSummarySkeleton.26f860')}
             idPrefix="financials-ai-summary"
-            progressMessage="AI 재무제표 분석 진행 중…"
+            progressMessage={t('FinancialsAiSummarySkeleton.66140d')}
         />
     );
 }

@@ -1,4 +1,14 @@
 import type { MockedClass, Mock } from 'vitest';
+// 액션의 리다이렉트는 `localeHref`/`localeRedirect`를 거치고, 그 안의
+// `getLocale()`은 next-intl config 파일을 요구한다(빌드 플러그인이 만든다).
+// 여기서는 액션 로직만 검증하므로 기본 로케일로 고정한다 — 그러면 리다이렉트
+// 경로가 접두사 없는 기존 값과 같아져 기존 단언이 그대로 유효하다.
+// ko 카탈로그를 실제로 조회하는 스텁 — 키 오타나 카탈로그 누락이 여기서 잡힌다.
+vi.mock('next-intl/server', async () => {
+    const { nextIntlServerStub } =
+        await import('@/shared/test-utils/catalogTranslator');
+    return nextIntlServerStub();
+});
 vi.mock('@/entities/oauth-account', () => ({
     DrizzleOAuthAccountRepository: vi.fn().mockImplementation(function () {
         return {};
@@ -44,12 +54,10 @@ vi.mock('@/entities/auth/lib/db', () => ({
 vi.mock('next/headers', () => ({
     cookies: vi.fn(),
 }));
-vi.mock('@/shared/lib/auth/redirect', () => ({
-    sanitizeNextPath: vi.fn((p: unknown) => (typeof p === 'string' ? p : '/')),
-    resolvePostSignupDestination: vi.fn((next: string) =>
-        next === '/' ? '/onboarding' : next
-    ),
-}));
+// `@/shared/lib/auth/redirect`는 mock하지 않는다 — 외부 의존이 없는 순수 모듈이고,
+// 로컬에 다시 구현하면 그 사본이 프로덕션과 갈라져도 테스트가 통과한다.
+// 실제로 이 mock이 `next === '/'` 비교를 복제하고 있어서, 로케일 접두사가 붙은
+// `next`(`/en`)로 온보딩 라우팅이 깨진 회귀를 이 파일의 어떤 케이스도 잡지 못했다.
 vi.mock('next/navigation', () => ({
     redirect: vi.fn().mockImplementation((url: string) => {
         throw Object.assign(new Error('NEXT_REDIRECT'), { url });

@@ -1,7 +1,8 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import {
     startTransition,
     useEffect,
@@ -11,6 +12,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/shared/lib/cn';
+import { LocaleSwitcher } from './LocaleSwitcher';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import type { NavVerticalNode } from './headerNavTree';
@@ -21,9 +23,18 @@ interface HeaderMobileMenuProps {
 }
 
 export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
+    const t = useTranslations('widgets.layout');
+    // 내비 라벨 키는 네임스페이스까지 포함된 완전 수식 키라 루트로 푼다.
+    const tNav = useTranslations();
     const [isOpen, setIsOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const pathname = usePathname();
+    // `NAV_TREE`의 href는 로케일 접두사가 없는 `/market` 형태다. `usePathname()`은
+    // `/en/market`을 그대로 주므로, 떼지 않으면 `isHrefActive`의 정확 일치가 영영
+    // 실패해 **비-ko 사용자에게 활성 내비 표시가 통째로 사라진다.**
+    // next-intl의 navigation 대신 순수 헬퍼를 쓰는 이유: 그쪽은 모듈 로드 시점에
+    // `next/navigation`의 `redirect`를 읽어, 부분 mock을 쓰는 기존 테스트 70여 개가
+    // 한꺼번에 import에 실패한다.
+    const pathname = useAppPathname();
     const triggerRef = useRef<HTMLButtonElement>(null);
     const drawerRef = useRef<HTMLDivElement>(null);
 
@@ -115,7 +126,11 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
             <button
                 ref={triggerRef}
                 type="button"
-                aria-label={isOpen ? '메뉴 닫기' : '메뉴 열기'}
+                aria-label={
+                    isOpen
+                        ? t('HeaderMobileMenu.923b26')
+                        : t('HeaderMobileMenu.195da6')
+                }
                 aria-expanded={isOpen}
                 aria-controls="mobile-nav-drawer"
                 onClick={toggle}
@@ -154,7 +169,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                             ref={drawerRef}
                             role="dialog"
                             aria-modal={isOpen ? 'true' : undefined}
-                            aria-label="메뉴"
+                            aria-label={t('HeaderMobileMenu.076925')}
                             aria-hidden={!isOpen}
                             tabIndex={-1}
                             className={cn(
@@ -166,7 +181,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                 <button
                                     type="button"
                                     onClick={close}
-                                    aria-label="메뉴 패널 닫기"
+                                    aria-label={t('HeaderMobileMenu.d28d27')}
                                     tabIndex={isOpen ? undefined : -1}
                                     className="flex h-11 w-11 touch-manipulation items-center justify-center rounded text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
@@ -180,8 +195,17 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                 요구하고, 열림 상태를 버티컬마다 따로 관리해야 한다.
                                 수직 공간은 남으므로 전부 보여주는 편이 짧다.
                             */}
+                            {/* 언어 전환은 내비게이션 항목이 아니라 설정이므로
+                                <nav> 밖에 둔다 — 안에 넣으면 스크린리더가 메뉴
+                                링크 목록의 일부로 읽는다. */}
+                            <div className="border-b border-secondary-800 px-2 py-2">
+                                <LocaleSwitcher
+                                    tabIndex={isOpen ? undefined : -1}
+                                />
+                            </div>
+
                             <nav
-                                aria-label="메뉴"
+                                aria-label={t('HeaderMobileMenu.076925')}
                                 className="overflow-y-auto overscroll-contain"
                             >
                                 {items.map(vertical => (
@@ -209,13 +233,15 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                             id={`mobile-nav-group-${vertical.id}`}
                                             className="px-4 pt-1 pb-2 text-sm font-bold tracking-wide text-secondary-100"
                                         >
-                                            {vertical.label}
+                                            {tNav(vertical.labelKey)}
                                         </p>
                                         {vertical.overview && (
                                             <MobileNavLink
                                                 key={vertical.overview.href}
                                                 href={vertical.overview.href}
-                                                label={vertical.overview.label}
+                                                label={tNav(
+                                                    vertical.overview.labelKey
+                                                )}
                                                 active={isHrefActive(
                                                     vertical.overview.href,
                                                     pathname
@@ -228,7 +254,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                             <MobileNavLink
                                                 key={region.href}
                                                 href={region.href}
-                                                label={region.label}
+                                                label={tNav(region.labelKey)}
                                                 active={isHrefActive(
                                                     region.href,
                                                     pathname
@@ -240,7 +266,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                                 <MobileNavLink
                                                     key={leaf.href}
                                                     href={leaf.href}
-                                                    label={leaf.label}
+                                                    label={tNav(leaf.labelKey)}
                                                     active={isHrefActive(
                                                         leaf.href,
                                                         pathname

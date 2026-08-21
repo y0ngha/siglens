@@ -1,8 +1,13 @@
 import { render } from '@testing-library/react';
 import {
     SelfNormWarningBadge,
-    WARNING_TEXT,
+    WARNING_TEXT_KEY,
 } from '@/widgets/fear-greed/SelfNormWarningBadge';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+
+// 문구는 `shared.lib.fearGreed` 카탈로그에서 온다 — 예전엔 모듈 상수라
+// 비-ko 로케일에서도 한국어 경고가 그대로 나갔다.
+const tFearGreedKo = catalogTranslator('shared.lib.fearGreed', 'ko');
 
 describe('SelfNormWarningBadge', () => {
     describe('rendering by warning value', () => {
@@ -18,7 +23,7 @@ describe('SelfNormWarningBadge', () => {
                 <SelfNormWarningBadge warning="CHRONIC_WEAKNESS" />
             );
             expect(
-                getByText(WARNING_TEXT.CHRONIC_WEAKNESS)
+                getByText(tFearGreedKo(WARNING_TEXT_KEY.CHRONIC_WEAKNESS))
             ).toBeInTheDocument();
         });
 
@@ -27,7 +32,7 @@ describe('SelfNormWarningBadge', () => {
                 <SelfNormWarningBadge warning="CHRONIC_STRENGTH" />
             );
             expect(
-                getByText(WARNING_TEXT.CHRONIC_STRENGTH)
+                getByText(tFearGreedKo(WARNING_TEXT_KEY.CHRONIC_STRENGTH))
             ).toBeInTheDocument();
         });
     });

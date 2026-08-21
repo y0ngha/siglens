@@ -1,7 +1,7 @@
 'use server';
 
+import { localeRedirect } from '@/shared/i18n/localeRedirect';
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import {
     AUTH_SESSION_COOKIE_NAME,
     applyAuthCookie,
@@ -27,11 +27,11 @@ export async function logoutAction(): Promise<void> {
             cookieStore.set(applyAuthCookie(result.cookie));
             cookieStore.set(createExpiredAuthHintCookie({ secure }));
         }
-        redirect('/');
+        return localeRedirect('/');
     } catch (err) {
         if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT'))
             throw err;
         console.error('[logoutAction] unexpected error:', err);
-        redirect('/');
+        return localeRedirect('/');
     }
 }

@@ -1,8 +1,10 @@
+import { useTranslations } from 'next-intl';
+import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import type { Trend } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 import { createEnumGuard } from '../lib/createEnumGuard';
-import { LIVE_ANALYSIS_CROSS_REF } from '../lib/liveAnalysisCrossRef';
+import { LIVE_ANALYSIS_CROSS_REF_KEY } from '../lib/liveAnalysisCrossRef';
 import type { MarketProfileId } from '@/shared/config/marketProfile';
 
 interface TechnicalSnapshotProseProps {
@@ -26,16 +28,17 @@ interface TechnicalSnapshotProseProps {
     generatedAt?: Date;
 }
 
-const TREND_LABEL: Record<Trend, string> = {
-    bullish: '강세',
-    bearish: '약세',
-    neutral: '보합',
+/** Trend → `shared.enumLabel` 카탈로그 키. 값 자체는 더 이상 한글이 아니다 — 렌더 시점에 `tLabel`로 조회한다. */
+const TREND_LABEL_KEY: Record<Trend, string> = {
+    bullish: 'trend.bullish',
+    bearish: 'trend.bearish',
+    neutral: 'trend.neutral',
 };
 
 // See createEnumGuard's JSDoc for the Object.hasOwn / prototype-chain
 // rationale (audit fix; PR #698 round-2 review FIX 3 extracted the shared
 // implementation).
-const isTrend = createEnumGuard(TREND_LABEL);
+const isTrend = createEnumGuard(TREND_LABEL_KEY);
 
 interface NarrowedSkillDetection {
     /** `patternName` (pattern) or `strategyName` (strategy) — the skill identifier. */
@@ -157,6 +160,10 @@ export function TechnicalSnapshotProse({
     marketProfile,
     generatedAt,
 }: TechnicalSnapshotProseProps) {
+    const t = useTranslations('views.symbol');
+    const tMisc = useTranslations('shared.ui.misc');
+    const tLabel = useTranslations('shared.enumLabel');
+    const skillLabel = useSkillLabel();
     const narrowed = narrowTechnicalContent(content);
     if (narrowed === null) return null;
 
@@ -167,7 +174,7 @@ export function TechnicalSnapshotProse({
 
     return (
         <SnapshotSummarySection
-            title="기술적 분석 요약"
+            title={t('TechnicalSnapshotProse.938737')}
             displayName={displayName}
             marketProfile={marketProfile}
             asOf={generatedAt}
@@ -175,13 +182,15 @@ export function TechnicalSnapshotProse({
             <div className="space-y-4 text-sm leading-6 text-secondary-300">
                 {/* 근거는 LIVE_ANALYSIS_CROSS_REF JSDoc 참고 — 두 탭이 동일 문구를 쓴다. */}
                 <p className="text-xs text-secondary-400">
-                    {LIVE_ANALYSIS_CROSS_REF}
+                    {tMisc(LIVE_ANALYSIS_CROSS_REF_KEY)}
                 </p>
                 <div className="space-y-2">
                     {narrowed.trend !== null && (
                         <p className="font-medium text-secondary-200">
-                            {symbol} 기술적 방향성:{' '}
-                            {TREND_LABEL[narrowed.trend]}
+                            {t('TechnicalSnapshotProse.4195b7', {
+                                v0: symbol,
+                                v1: tLabel(TREND_LABEL_KEY[narrowed.trend]),
+                            })}
                         </p>
                     )}
                     {paragraphs.map((line, i) => (
@@ -192,19 +201,24 @@ export function TechnicalSnapshotProse({
                 {narrowed.patternSummaries.length > 0 && (
                     <div>
                         <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
-                            차트 패턴
+                            {t('TechnicalSnapshotProse.bdeea2')}
                         </h3>
                         <ul
                             role="list"
-                            aria-label={`${symbol} 차트 패턴 목록`}
+                            aria-label={t(
+                                'TechnicalSnapshotProse.patternListLabel',
+                                {
+                                    v0: symbol,
+                                }
+                            )}
                             className="space-y-2"
                         >
                             {narrowed.patternSummaries.map(p => (
                                 <li key={`${p.name}-${p.summary.slice(0, 32)}`}>
                                     <span className="font-medium text-secondary-200">
-                                        {p.name}
+                                        {skillLabel(p.name)}
                                         {p.trend !== null &&
-                                            ` (${TREND_LABEL[p.trend]})`}
+                                            ` (${tLabel(TREND_LABEL_KEY[p.trend])})`}
                                     </span>
                                     <p>{p.summary}</p>
                                 </li>
@@ -216,19 +230,24 @@ export function TechnicalSnapshotProse({
                 {narrowed.strategyResults.length > 0 && (
                     <div>
                         <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
-                            전략 시그널
+                            {t('TechnicalSnapshotProse.3d874f')}
                         </h3>
                         <ul
                             role="list"
-                            aria-label={`${symbol} 전략 시그널 목록`}
+                            aria-label={t(
+                                'TechnicalSnapshotProse.strategyListLabel',
+                                {
+                                    v0: symbol,
+                                }
+                            )}
                             className="space-y-2"
                         >
                             {narrowed.strategyResults.map(s => (
                                 <li key={`${s.name}-${s.summary.slice(0, 32)}`}>
                                     <span className="font-medium text-secondary-200">
-                                        {s.name}
+                                        {skillLabel(s.name)}
                                         {s.trend !== null &&
-                                            ` (${TREND_LABEL[s.trend]})`}
+                                            ` (${tLabel(TREND_LABEL_KEY[s.trend])})`}
                                     </span>
                                     <p>{s.summary}</p>
                                 </li>

@@ -8,6 +8,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { TechnicalFactsSummary } from '../TechnicalFactsSummary';
 import { RECENT_BARS_WINDOW } from '../utils/technicalFacts';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 
 const OVERBOUGHT_RSI = RSI_OVERBOUGHT_LEVEL + 1;
 const OVERSOLD_RSI = RSI_OVERSOLD_LEVEL - 1;
@@ -110,7 +111,7 @@ describe('TechnicalFactsSummary', () => {
         expect(screen.getAllByText(/중립/).length).toBeGreaterThan(0);
     });
 
-    it('MACD histogram이 양수이면 MACD 모멘텀을 상승으로 렌더한다', () => {
+    it('MACD histogram이 양수이면 MACD 모멘텀을 강세(shared.enumLabel.trend.bullish)로 렌더한다', () => {
         render(
             <TechnicalFactsSummary
                 symbol="AAPL"
@@ -121,11 +122,12 @@ describe('TechnicalFactsSummary', () => {
                 }}
             />
         );
-        expect(screen.getByText(/MACD 모멘텀/)).toBeInTheDocument();
-        expect(screen.getAllByText(/상승/).length).toBeGreaterThan(0);
+        const macdRow =
+            screen.getByText(/MACD 모멘텀/).closest('div')?.textContent ?? '';
+        expect(macdRow).toContain('강세');
     });
 
-    it('MACD histogram이 음수이면 하락을 렌더한다', () => {
+    it('MACD histogram이 음수이면 약세(shared.enumLabel.trend.bearish)로 렌더한다', () => {
         render(
             <TechnicalFactsSummary
                 symbol="AAPL"
@@ -136,11 +138,15 @@ describe('TechnicalFactsSummary', () => {
                 }}
             />
         );
-        expect(screen.getByText(/MACD 모멘텀/)).toBeInTheDocument();
-        expect(screen.getAllByText(/하락/).length).toBeGreaterThan(0);
+        const macdRow =
+            screen.getByText(/MACD 모멘텀/).closest('div')?.textContent ?? '';
+        expect(macdRow).toContain('약세');
     });
 
-    it('MACD histogram이 0이면 중립으로 렌더한다 (경계값)', () => {
+    it('MACD histogram이 0이면 보합으로 렌더한다 (경계값)', () => {
+        // shared.enumLabel.trend를 재사용한다(momentum이 up/down/flat →
+        // trend.bullish/bearish/neutral) — ko neutral 값은 "보합"이다(기존
+        // technicalFactsMacdMomentumLabel의 '중립' 리터럴과 다름, 의도된 변경).
         render(
             <TechnicalFactsSummary
                 symbol="AAPL"
@@ -153,9 +159,9 @@ describe('TechnicalFactsSummary', () => {
         );
         const macdRow =
             screen.getByText(/MACD 모멘텀/).closest('div')?.textContent ?? '';
-        expect(macdRow).toContain('중립');
-        expect(macdRow).not.toContain('상승');
-        expect(macdRow).not.toContain('하락');
+        expect(macdRow).toContain('보합');
+        expect(macdRow).not.toContain('강세');
+        expect(macdRow).not.toContain('약세');
     });
 
     it('등락률이 0이면 현재가 행에서 보합으로 렌더한다', () => {
@@ -244,5 +250,54 @@ describe('TechnicalFactsSummary', () => {
                 '위 지표는 표시된 차트 데이터 기반 자동 계산값입니다.'
             )
         ).toBeInTheDocument();
+    });
+});
+
+describe('TechnicalFactsSummary — en 로케일 (audit item 1: enum 값 카탈로그 회귀 가드)', () => {
+    it('RSI 구간·MACD 모멘텀 값이 en으로 번역되고 한글이 남지 않는다', () => {
+        // narrative 문단(buildTechnicalFactsNarrative)은 이번 마이그레이션 범위
+        // 밖(로케일 무관 ko 고정 — FearGreedFactsSummary와 동일 패턴)이라
+        // 컨테이너 전체가 아니라 RSI/MACD 값 줄만 좁혀서 한글 없음을 확인한다.
+        renderWithIntl(
+            <TechnicalFactsSummary
+                symbol="AAPL"
+                bars={[bar(100), bar(110)]}
+                indicators={{
+                    ...emptyIndicators,
+                    rsi: [null, OVERBOUGHT_RSI],
+                    macd: [{ macd: 1, signal: 0.5, histogram: 0.3 }],
+                }}
+            />,
+            { locale: 'en' }
+        );
+
+        const rsiRow =
+            screen.getByText('RSI').closest('div')?.textContent ?? '';
+        expect(rsiRow).toContain('Overbought');
+        expect(rsiRow).not.toMatch(/[가-힣]/);
+
+        const macdRow =
+            screen.getByText('MACD Momentum').closest('div')?.textContent ?? '';
+        expect(macdRow).toContain('Bullish');
+        expect(macdRow).not.toMatch(/[가-힣]/);
+    });
+
+    it('MACD histogram이 음수이면 en에서 Bearish로 렌더한다', () => {
+        renderWithIntl(
+            <TechnicalFactsSummary
+                symbol="AAPL"
+                bars={[bar(100), bar(110)]}
+                indicators={{
+                    ...emptyIndicators,
+                    macd: [{ macd: -1, signal: -0.5, histogram: -0.3 }],
+                }}
+            />,
+            { locale: 'en' }
+        );
+
+        const macdRow =
+            screen.getByText('MACD Momentum').closest('div')?.textContent ?? '';
+        expect(macdRow).toContain('Bearish');
+        expect(macdRow).not.toMatch(/[가-힣]/);
     });
 });

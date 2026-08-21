@@ -1,5 +1,6 @@
 import { vi, describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 import { EconomicCalendarGrid } from '@/widgets/economy/sections/EconomicCalendarGrid';
 
@@ -515,4 +516,36 @@ describe('EconomicCalendarGrid Korean indicator labels', () => {
         // Single event on the selected (today) panel → exactly one <p> with the English fallback.
         expect(screen.getByText('Mystery Index')).toBeInTheDocument();
     });
+});
+
+/**
+ * 월 라벨 회귀.
+ *
+ * 예전에는 한국어 배열 상수(`MONTH_LABELS`)였다. 감싸는 템플릿은 번역돼 있어
+ * `/en/economy`가 `2026 8월`, `/ja`가 `2026年8월`을 찍었다 — 번역된 템플릿에
+ * 한국어 값을 끼우는, 기준선 게이트가 구조적으로 못 보는 계열이다.
+ */
+describe('EconomicCalendarGrid — 월 라벨 로케일', () => {
+    it('ko는 한국어 월 이름을 쓴다', () => {
+        const { container } = renderWithIntl(
+            <EconomicCalendarGrid country="US" events={[EVENT_A]} />,
+            { locale: 'ko' }
+        );
+
+        expect(container.textContent ?? '').toMatch(/6월/);
+    });
+
+    it.each(['en', 'ja', 'zh'] as const)(
+        '%s: 월 라벨에 한글이 없다',
+        locale => {
+            const { container } = renderWithIntl(
+                <EconomicCalendarGrid country="US" events={[EVENT_A]} />,
+                { locale }
+            );
+            const header = container.querySelector('p[aria-hidden="true"]');
+
+            expect(header?.textContent ?? '').not.toMatch(/[가-힣]/);
+            expect(header?.textContent ?? '').toMatch(/2026/);
+        }
+    );
 });

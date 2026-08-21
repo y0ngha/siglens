@@ -1,3 +1,6 @@
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+import type { Locale } from '@/shared/i18n/locales';
+import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
 import {
@@ -44,14 +47,15 @@ interface StatementTableProps {
 function formatValue(
     value: number | null,
     format: FormatType = 'num',
-    currency: StatementCurrency = DEFAULT_STATEMENT_CURRENCY
+    currency: StatementCurrency = DEFAULT_STATEMENT_CURRENCY,
+    locale: Locale = DEFAULT_LOCALE
 ): string {
     if (value === null) return '—';
 
     switch (format) {
         // 'usd'는 "금액" 축을 뜻하는 레거시 라벨이다 — 실제 통화는 `currency`가 정한다.
         case 'usd':
-            return formatCurrencyCompact(value, currency);
+            return formatCurrencyCompact(value, currency, locale);
         case 'pct':
             return `${value.toFixed(1)}%`;
         case 'num':
@@ -72,18 +76,20 @@ export function StatementTable({
     rows,
     currency = DEFAULT_STATEMENT_CURRENCY,
 }: StatementTableProps) {
+    const t = useTranslations('widgets.financials');
+    const tSection = useTranslations('widgets.financials.section');
     return (
         <>
             <p className="mb-2 text-xs text-secondary-400 sm:hidden">
-                ← 좌우로 스크롤 →
+                {t('StatementTable.b488b1')}
             </p>
             <div
                 className="overflow-x-auto rounded-xl focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 role="region"
                 aria-label={
                     caption
-                        ? `${caption} (좌우 스크롤 가능)`
-                        : '재무제표 표 (좌우 스크롤 가능)'
+                        ? tSection('tableScrollHint', { v0: caption })
+                        : t('StatementTable.99a09e')
                 }
                 tabIndex={0}
             >
@@ -99,7 +105,7 @@ export function StatementTable({
                                 scope="col"
                                 className="pb-2 text-left font-medium"
                             >
-                                지표
+                                {t('StatementTable.0b5a2c')}
                             </th>
                             {columns.map(col => (
                                 <th

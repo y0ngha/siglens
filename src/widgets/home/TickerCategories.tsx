@@ -1,3 +1,5 @@
+import { TICKER_CATEGORY_LABEL_KEY } from '@/shared/config/tickerCategoryLabel';
+import { useTranslations } from 'next-intl';
 import type { CategoryId } from '@/shared/lib/types';
 import {
     KR_CATEGORY_IDS,
@@ -78,6 +80,8 @@ const CATEGORY_STYLES: Record<CategoryId, CardStyle> = {
 
 const TICKER_CARDS: CategoryCard[] = TICKER_CATEGORIES.map(category => ({
     id: category.id,
+    // 라벨은 렌더 시점에 번역한다 — config는 데이터, 표시는 카탈로그.
+    labelKey: TICKER_CATEGORY_LABEL_KEY[category.label],
     label: category.label,
     ...CATEGORY_STYLES[category.id],
     items: category.items,
@@ -96,18 +100,19 @@ const US_CARDS = TICKER_CARDS.filter(c => !isKrCard(c));
 const KR_CARDS = TICKER_CARDS.filter(isKrCard);
 
 export function TickerCategories() {
+    const t = useTranslations('widgets.home');
     return (
         <>
             <CategoryCardGrid
-                heading="미국 섹터별 인기 종목"
-                ariaLabel="미국 섹터별 인기 종목 탐색"
+                heading={t('TickerCategories.f6087a')}
+                ariaLabel={t('TickerCategories.0ab969')}
                 cards={US_CARDS}
             />
             {/* KR 카테고리가 비어 있으면 제목만 남은 빈 섹션이 된다. */}
             {KR_CARDS.length > 0 && (
                 <CategoryCardGrid
-                    heading="한국 섹터별 인기 종목"
-                    ariaLabel="한국 섹터별 인기 종목 탐색"
+                    heading={t('TickerCategories.227844')}
+                    ariaLabel={t('TickerCategories.bc06f5')}
                     cards={KR_CARDS}
                 />
             )}

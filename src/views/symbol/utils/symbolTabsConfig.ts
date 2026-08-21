@@ -8,47 +8,53 @@ import {
  * module so both the client component (`SymbolTabs`) and server-rendered fallback
  * (`SymbolTabsSkeleton`, used by the RSC layout's PPR shell) can import it without
  * pulling in client-only modules.
+ *
+ * **라벨은 키만 담는다.** 여기서 번역자를 인자로 받아 `t()`를 부르면 추출기가
+ * 이 파일을 건너뛰어(`translatorNamespace.size === 0` 조기 반환) 그 키가
+ * 클라이언트 페이로드에서 빠지고, 화면에는 키 문자열이 그대로 렌더된다 —
+ * 실제로 그렇게 냈다(`noTranslatorParamCall` 가드가 지금은 막는다).
+ * `labelKey`는 `shared.symbolTab` 네임스페이스 기준 상대 키다.
  */
 export const TABS = [
-    { key: 'chart', label: '차트', hrefBuilder: (s: string) => `/${s}` },
+    { key: 'chart', labelKey: 'chart', hrefBuilder: (s: string) => `/${s}` },
     {
         key: 'news',
-        label: '뉴스',
+        labelKey: 'news',
         hrefBuilder: (s: string) => `/${s}/news`,
     },
     {
         key: 'fundamental',
-        label: '펀더멘털',
+        labelKey: 'fundamental',
         hrefBuilder: (s: string) => `/${s}/fundamental`,
     },
     {
         key: 'financials',
-        label: '재무제표',
+        labelKey: 'financials',
         hrefBuilder: (s: string) => `/${s}/financials`,
     },
     {
         key: 'congress',
-        label: '의회 거래',
+        labelKey: 'congress',
         hrefBuilder: (s: string) => `/${s}/congress`,
     },
     {
         key: 'options',
-        label: '옵션',
+        labelKey: 'options',
         hrefBuilder: (s: string) => `/${s}/options`,
     },
     {
         key: 'fear-greed',
-        label: '공포 탐욕 지수',
+        labelKey: 'fear-greed',
         hrefBuilder: (s: string) => `/${s}/fear-greed`,
     },
     {
         key: 'overall',
-        label: '종합',
+        labelKey: 'overall',
         hrefBuilder: (s: string) => `/${s}/overall`,
     },
     {
         key: 'position',
-        label: '내 위치',
+        labelKey: 'position',
         hrefBuilder: (s: string) => `/${s}/position`,
     },
 ] as const;

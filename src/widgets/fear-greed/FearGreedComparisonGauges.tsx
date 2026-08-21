@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { scoreToLabel, type FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { FearGreedGauge } from './FearGreedGauge';
 import { cn } from '@/shared/lib/cn';
@@ -18,11 +19,12 @@ const TRADING_DAYS_1W = 5;
 const TRADING_DAYS_1M = 21;
 const TRADING_DAYS_1Y = 252;
 
+/** `label`은 `shared.ui.period` **키**다 — 표시는 렌더 쪽에서 `t()`로. */
 const PERIODS: ReadonlyArray<PeriodDef> = [
-    { key: 'now', daysBack: 0, label: '현재' },
-    { key: '1w', daysBack: TRADING_DAYS_1W, label: '1주' },
-    { key: '1m', daysBack: TRADING_DAYS_1M, label: '1개월' },
-    { key: '1y', daysBack: TRADING_DAYS_1Y, label: '1년' },
+    { key: 'now', daysBack: 0, label: 'now' },
+    { key: '1w', daysBack: TRADING_DAYS_1W, label: 'week' },
+    { key: '1m', daysBack: TRADING_DAYS_1M, label: 'month' },
+    { key: '1y', daysBack: TRADING_DAYS_1Y, label: 'year' },
 ];
 
 /** Renders the 4 historical reference points as CNN-style mini gauges so the user
@@ -30,6 +32,7 @@ const PERIODS: ReadonlyArray<PeriodDef> = [
 export function FearGreedComparisonGauges({
     history,
 }: FearGreedComparisonGaugesProps) {
+    const tPeriod = useTranslations('shared.ui.period');
     const valid = history.filter(
         (p): p is FearGreedHistoryPoint & { score: number } => p.score !== null
     );
@@ -57,7 +60,7 @@ export function FearGreedComparisonGauges({
                             score={score}
                             label={label}
                             size="mini"
-                            periodLabel={p.label}
+                            periodLabel={tPeriod(p.label)}
                         />
                     </li>
                 );

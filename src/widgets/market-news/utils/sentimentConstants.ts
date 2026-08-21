@@ -4,7 +4,8 @@
  * 임포트를 깨지 않도록 re-export만 유지한다.
  */
 export {
-    SENTIMENT_LABEL,
+    sentimentLabel,
+    SENTIMENT_LABEL_KEY,
     SENTIMENT_CLASS,
     isNewsSentiment,
 } from '@/shared/lib/sentimentDisplay';

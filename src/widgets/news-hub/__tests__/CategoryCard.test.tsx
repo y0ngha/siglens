@@ -20,9 +20,9 @@ import { render, screen } from '@testing-library/react';
 import { CategoryCard } from '../CategoryCard';
 
 const DEFAULTS = {
-    koLabel: '암호화폐',
+    label: '암호화폐',
     href: '/news/crypto',
-    koDescription: '비트코인·이더리움 등 주요 암호화폐 시장 동향을 모았습니다.',
+    description: '비트코인·이더리움 등 주요 암호화폐 시장 동향을 모았습니다.',
     previewHeadlines: ['헤드라인 1', '헤드라인 2', '헤드라인 3'],
 };
 

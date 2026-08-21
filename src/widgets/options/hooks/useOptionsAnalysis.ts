@@ -1,6 +1,10 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+import type { StreamErrorMessages } from '@/shared/hooks/useAnalysisStream';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { useCallback, useMemo } from 'react';
+import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import { useQuery } from '@tanstack/react-query';
 import type { OptionsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import type { SubmitOptionsAnalysisActionResult } from '@/entities/options-chain/actions';
@@ -26,6 +30,7 @@ async function fetchOptionsAnalysis(
     expirationDate: OptionsExpirationSelector,
     modelId: ModelId,
     reasoning: boolean,
+    messages: StreamErrorMessages,
     signal?: AbortSignal,
     cacheOnly?: boolean
 ): Promise<OptionsAnalysisResponse> {
@@ -40,6 +45,7 @@ async function fetchOptionsAnalysis(
             cacheOnly,
         },
         signal,
+        messages,
     });
 
     if (result.status === 'cached' || result.status === 'done')
@@ -48,18 +54,29 @@ async function fetchOptionsAnalysis(
         throw new BotBlockedError();
     }
     if (result.status === 'no_chains_error') {
-        throw new Error(result.error ?? '분석할 옵션 데이터가 없습니다.');
+        /**
+         * core는 `no_chains_error`에 **항상** 영어를 채운다
+         * (`snapshot has no usable options chains`,
+         *  `expiration 2026-09-18 not present in snapshot`).
+         * 그래서 `result.error ?? fallback`은 폴백이 절대 안 걸리고 원시 문구가
+         * 전 로케일에 나갔다 — financials·fundamental·congress와 같은 계열이다.
+         */
+        // 옵션이 없는 종목은 정상 상태다 — error가 아니라 debug 레벨로 남긴다.
+        if (result.error) console.debug('[noOptionsChains]', result.error);
+        throw new Error(messages.noOptionsChains);
     }
     if (result.status === 'limit_error') {
-        throw new Error(result.error.message);
+        // core가 만든 문구는 **전 로케일 영어**다 — 코드만 믿고 문구는 갈아끼운다.
+        throw new Error(messages.limitExceeded);
     }
     if (result.status === 'error' && isGateBlockedResult(result)) {
         throw new Error(result.error.message);
     }
     if (result.status === 'key_error') {
-        throw new Error(result.error);
+        // core가 만든 문구는 **전 로케일 한국어**다.
+        throw new Error(messages.keyRequired);
     }
-    throw new Error('예상치 못한 오류가 발생했습니다.');
+    throw new Error(messages.unexpected);
 }
 
 interface UseOptionsAnalysisInput {
@@ -106,6 +123,9 @@ export function useOptionsAnalysis({
     isSettingsHydrated = true,
     cacheOnly = false,
 }: UseOptionsAnalysisInput): OptionsAnalysisState {
+    const tError = useTranslations('shared.ui.analysisError');
+    const locale = useCurrentLocale();
+    const streamMessages = useStreamErrorMessages();
     const queryKey = useMemo(
         () =>
             QUERY_KEYS.optionsAnalysis(
@@ -113,9 +133,10 @@ export function useOptionsAnalysis({
                 companyName,
                 expirationDate,
                 modelId,
-                reasoning
+                reasoning,
+                locale
             ),
-        [symbol, companyName, expirationDate, modelId, reasoning]
+        [symbol, companyName, expirationDate, modelId, reasoning, locale]
     );
 
     const query = useQuery({
@@ -137,6 +158,7 @@ export function useOptionsAnalysis({
                 qExpiration,
                 qModelId,
                 qReasoning,
+                streamMessages,
                 signal,
                 cacheOnly
             ),
@@ -171,7 +193,7 @@ export function useOptionsAnalysis({
             error:
                 query.error instanceof Error
                     ? query.error
-                    : new Error('분석 중 오류가 발생했습니다.'),
+                    : new Error(tError('analysisFailed')),
             retry,
             trigger: retry,
         };

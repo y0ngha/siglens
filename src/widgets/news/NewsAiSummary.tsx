@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import {
     usePublishSymbolChat,
     type SymbolChatState,
@@ -20,14 +21,9 @@ import {
     type NewsSentiment,
 } from '@y0ngha/siglens-core';
 
-import { NEWS_ANALYSIS_PERIOD_LABEL } from '@/shared/lib/news/periodLabels';
+import { NEWS_ANALYSIS_PERIOD_KEY } from '@/shared/lib/news/periodLabels';
 import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
-
-const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
-    bullish: '긍정',
-    neutral: '중립',
-    bearish: '부정',
-};
+import { SENTIMENT_LABEL_KEY } from '@/shared/lib/sentimentDisplay';
 
 const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
     bullish: 'bg-ui-success/10 text-chart-bullish',
@@ -40,6 +36,8 @@ interface StatusCardProps {
 }
 
 function StatusCard({ phase }: StatusCardProps) {
+    const t = useTranslations('widgets.news');
+    const tPeriod = useTranslations('shared.lib.newsPeriod');
     const isFetching = phase === 'fetching';
 
     return (
@@ -53,10 +51,10 @@ function StatusCard({ phase }: StatusCardProps) {
                     id="news-ai-summary-status-heading"
                     className="text-lg font-semibold tracking-tight"
                 >
-                    뉴스 AI 종합 분석
+                    {t('NewsAiSummary.a74178')}
                 </h2>
                 <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
-                    {NEWS_ANALYSIS_PERIOD_LABEL}
+                    {tPeriod(NEWS_ANALYSIS_PERIOD_KEY)}
                 </span>
             </div>
             <div className="flex items-center gap-3">
@@ -76,14 +74,14 @@ function StatusCard({ phase }: StatusCardProps) {
                     aria-atomic="true"
                 >
                     {isFetching
-                        ? '뉴스 데이터를 수집하고 있어요…'
-                        : 'AI 종합 분석 중이에요…'}
+                        ? t('NewsAiSummary.678c71')
+                        : t('NewsAiSummary.c520e4')}
                 </p>
             </div>
             <p className="mt-2 text-xs text-secondary-500">
                 {isFetching
-                    ? '최신 뉴스를 가져온 뒤에 AI 분석을 시작해요.'
-                    : '수집한 뉴스를 종합 분석하고 있어요. 잠시만 기다려 주세요.'}
+                    ? t('NewsAiSummary.c4068f')
+                    : t('NewsAiSummary.595bae')}
             </p>
             <div className="mt-4 space-y-2" aria-hidden="true">
                 <div className="h-4 w-[91%] animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
@@ -99,6 +97,12 @@ interface NewsAiSummaryViewProps {
 }
 
 export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
+    const t = useTranslations('widgets.news');
+    const tPeriod = useTranslations('shared.lib.newsPeriod');
+    // extract.mjs의 동적 키 탐지는 이 파일 안에서 번역자를 직접 호출하는
+    // 패턴만 본다 — `SENTIMENT_LABEL_KEY[...]`를 그대로 `tLabel(...)`에
+    // 넣어야 `shared.enumLabel`이 이 라우트의 클라이언트 번들에 실린다.
+    const tLabel = useTranslations('shared.enumLabel');
     return (
         <section
             aria-labelledby="news-ai-summary-heading"
@@ -110,10 +114,10 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                         id="news-ai-summary-heading"
                         className="text-lg font-semibold tracking-tight"
                     >
-                        뉴스 AI 종합 분석
+                        {t('NewsAiSummary.a74178')}
                     </h2>
                     <span className="shrink-0 rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
-                        {NEWS_ANALYSIS_PERIOD_LABEL}
+                        {tPeriod(NEWS_ANALYSIS_PERIOD_KEY)}
                     </span>
                 </div>
                 <span
@@ -122,7 +126,7 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                         SENTIMENT_CLASS[result.overallSentiment]
                     )}
                 >
-                    {SENTIMENT_LABEL[result.overallSentiment]}
+                    {tLabel(SENTIMENT_LABEL_KEY[result.overallSentiment])}
                 </span>
             </div>
 
@@ -132,8 +136,13 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
 
             {result.keyEventsKo.length > 0 && (
                 <div className="mb-4">
-                    <h3 className="mb-2 text-sm font-semibold">핵심 이벤트</h3>
-                    <ul className="space-y-1.5" aria-label="핵심 이벤트 목록">
+                    <h3 className="mb-2 text-sm font-semibold">
+                        {t('NewsAiSummary.d65c2f')}
+                    </h3>
+                    <ul
+                        className="space-y-1.5"
+                        aria-label={t('NewsAiSummary.3cad3e')}
+                    >
                         {result.keyEventsKo.map(event => (
                             <li
                                 key={event}
@@ -157,11 +166,11 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
             {result.upcomingEventsKo.length > 0 && (
                 <div>
                     <h3 className="mb-2 text-sm font-semibold">
-                        다가오는 주요 일정
+                        {t('NewsAiSummary.1244e3')}
                     </h3>
                     <ul
                         className="space-y-1.5"
-                        aria-label="다가오는 주요 일정 목록"
+                        aria-label={t('NewsAiSummary.a96ba1')}
                     >
                         {result.upcomingEventsKo.map(event => (
                             <li
@@ -195,6 +204,8 @@ function NewsAiSummaryInlineError({
     error,
     onRetry,
 }: NewsAiSummaryInlineErrorProps) {
+    const t = useTranslations('widgets.news');
+    const tPeriod = useTranslations('shared.lib.newsPeriod');
     return (
         <section
             aria-labelledby="news-ai-summary-error-heading"
@@ -205,10 +216,10 @@ function NewsAiSummaryInlineError({
                     id="news-ai-summary-error-heading"
                     className="text-lg font-semibold tracking-tight"
                 >
-                    뉴스 AI 종합 분석
+                    {t('NewsAiSummary.a74178')}
                 </h2>
                 <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
-                    {NEWS_ANALYSIS_PERIOD_LABEL}
+                    {tPeriod(NEWS_ANALYSIS_PERIOD_KEY)}
                 </span>
             </div>
             <p className="text-sm wrap-break-word text-ui-danger" role="alert">
@@ -219,7 +230,7 @@ function NewsAiSummaryInlineError({
                 onClick={onRetry}
                 className="mt-4 rounded bg-primary-600 px-3 py-1.5 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
             >
-                다시 시도
+                {t('NewsAiSummary.0c767c')}
             </button>
         </section>
     );

@@ -1,9 +1,15 @@
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { formatPriceChange, formatUsdPrice } from '@/shared/lib/priceFormat';
 
 export interface QuoteHeaderData {
     symbol: string;
-    koreanName: string;
+    /**
+     * 화면에 뜨는 이름. **이미 로케일이 반영된 문자열**이어야 한다.
+     * (예전 이름은 `koreanName`이었는데, 그 이름 때문에 지수 카드가 영어
+     *  페이지에서도 한국어 상수를 그대로 넘기고 있었다.)
+     */
+    displayName: string;
     price: number;
     /** 등락률 (%) — 양수=상승, 음수=하락. */
     changePercent: number;
@@ -49,7 +55,8 @@ export function QuoteHeader({
     currencySymbol,
     tickerIsReadable,
 }: QuoteHeaderProps) {
-    const { sign, colorClass, arrow, arrowLabel } = formatPriceChange(
+    const tMove = useTranslations('shared.lib.priceMove');
+    const { sign, colorClass, arrow, arrowLabelKey } = formatPriceChange(
         data.changePercent
     );
 
@@ -62,7 +69,7 @@ export function QuoteHeader({
             )}
         >
             <span aria-hidden="true">{arrow}</span>
-            <span className="sr-only">{arrowLabel}</span>
+            <span className="sr-only">{tMove(arrowLabelKey)}</span>
             {sign}
             {data.changePercent.toFixed(2)}%
         </span>
@@ -84,13 +91,13 @@ export function QuoteHeader({
         // 말줄임이 발동하지 않고 `LG에너지솔루션` 같은 긴 이름이 행을 넘긴다 —
         // 하필 이 PR이 고치려는 KR 개별 종목 카드가 그 경우다.
         <span className="min-w-0 truncate text-xs font-semibold text-secondary-100">
-            {data.koreanName}
+            {data.displayName}
         </span>
     );
 
     const secondary = tickerIsReadable ? (
         <p className="min-w-0 truncate text-xs text-secondary-400">
-            {data.koreanName}
+            {data.displayName}
         </p>
     ) : (
         <p

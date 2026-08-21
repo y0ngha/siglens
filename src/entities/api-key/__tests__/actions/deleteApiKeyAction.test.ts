@@ -3,6 +3,16 @@ const { mockDeleteByUserAndProvider } = vi.hoisted(() => ({
     mockDeleteByUserAndProvider: vi.fn(),
 }));
 
+// 액션의 리다이렉트는 `localeHref`/`localeRedirect`를 거치고, 그 안의
+// `getLocale()`은 next-intl config 파일을 요구한다(빌드 플러그인이 만든다).
+// 여기서는 액션 로직만 검증하므로 기본 로케일로 고정한다 — 그러면 리다이렉트
+// 경로가 접두사 없는 기존 값과 같아져 기존 단언이 그대로 유효하다.
+// ko 카탈로그를 실제로 조회하는 스텁 — 키 오타나 카탈로그 누락이 여기서 잡힌다.
+vi.mock('next-intl/server', async () => {
+    const { nextIntlServerStub } =
+        await import('@/shared/test-utils/catalogTranslator');
+    return nextIntlServerStub();
+});
 vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
@@ -56,9 +66,14 @@ describe('deleteApiKeyAction', () => {
                 IDLE_STATE,
                 makeFormData({ provider: 'anthropic' })
             )
-        ).rejects.toThrow('NEXT_REDIRECT:/login?next=/account');
+        ).rejects.toThrow(
+            `NEXT_REDIRECT:/login?next=${encodeURIComponent('/account')}`
+        );
 
-        expect(mockRedirect).toHaveBeenCalledWith('/login?next=/account');
+        // `next`는 `URLSearchParams`를 거치며 인코딩된다(프록시 전방 가드와 동일).
+        expect(mockRedirect).toHaveBeenCalledWith(
+            `/login?next=${encodeURIComponent('/account')}`
+        );
     });
 
     it('provider 필드가 없을 때 status: error를 반환한다', async () => {
@@ -118,7 +133,10 @@ describe('deleteApiKeyAction', () => {
             'user-1',
             'anthropic'
         );
-        expect(mockRevalidatePath).toHaveBeenCalledWith('/account');
+        expect(mockRevalidatePath).toHaveBeenCalledWith(
+            '/[locale]/account',
+            'page'
+        );
         expect(result.status).toBe('success');
         expect(result.message).toBe('삭제되었습니다.');
     });

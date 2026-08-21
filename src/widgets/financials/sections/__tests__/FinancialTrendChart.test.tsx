@@ -172,8 +172,8 @@ describe('FinancialTrendChart', () => {
         expect(tip).toHaveTextContent('매출');
         expect(tip).toHaveTextContent('순이익');
         // 2024 values: 매출 3B, 순이익 800M → compact USD
-        expect(tip).toHaveTextContent('$3B');
-        expect(tip).toHaveTextContent('$800M');
+        expect(tip).toHaveTextContent('US$30억');
+        expect(tip).toHaveTextContent('US$8억');
 
         fireEvent.pointerLeave(hits[hits.length - 1]!);
         expect(screen.queryByTestId('chart-tooltip')).toBeNull();

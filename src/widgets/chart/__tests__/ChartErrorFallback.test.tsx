@@ -1,7 +1,13 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ChartErrorFallback } from '@/widgets/chart/ChartErrorFallback';
-import { FMP_TEMPORARY_UNAVAILABLE_MESSAGE } from '@/shared/api/fmp/fmpUserMessage';
+import koMessages from '../../../../messages/ko.json';
+
+/**
+ * 컴포넌트는 이제 **키가 아니라 번역된 문구**를 렌더한다. 키 상수를 그대로
+ * 단언하면 번역 배선이 빠져도 통과한다(예전에는 상수가 곧 문구였다).
+ */
+const FMP_BUSY_TEXT = koMessages.shared.api.fmpBusy;
 
 describe('ChartErrorFallback 컴포넌트는', () => {
     describe('에러 메시지 표시에서', () => {
@@ -38,9 +44,7 @@ describe('ChartErrorFallback 컴포넌트는', () => {
                 />
             );
 
-            expect(
-                screen.getByText(FMP_TEMPORARY_UNAVAILABLE_MESSAGE)
-            ).toBeInTheDocument();
+            expect(screen.getByText(FMP_BUSY_TEXT)).toBeInTheDocument();
         });
     });
 

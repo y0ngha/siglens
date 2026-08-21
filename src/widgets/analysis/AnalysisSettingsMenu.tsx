@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useId, useRef } from 'react';
 import { DEEPSEEK_V4_FLASH_MODEL, type ModelId } from '@y0ngha/siglens-core';
 import { ReasoningToggle } from '@/features/reasoning-toggle';
@@ -44,6 +45,8 @@ export function AnalysisSettingsMenu({
     canUseReasoning,
     openSignupNudge,
 }: AnalysisSettingsMenuProps) {
+    const t = useTranslations('widgets.analysis');
+    const tSettings = useTranslations('widgets.analysis.settingsMenu');
     const triggerRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     const titleId = useId();
@@ -71,8 +74,8 @@ export function AnalysisSettingsMenu({
     // header row back out (declutter is intentional; see module doc).
     const modelDisplay = getModelDisplay(modelId);
     const accessibleLabel = isActive
-        ? `분석 설정 · 현재 모델: ${modelDisplay.label} (변경됨)`
-        : `분석 설정 · 현재 모델: ${modelDisplay.label}`;
+        ? tSettings('ariaChanged', { v0: modelDisplay.label })
+        : tSettings('aria', { v0: modelDisplay.label });
 
     return (
         <div className="relative">
@@ -115,7 +118,7 @@ export function AnalysisSettingsMenu({
                         id={titleId}
                         className="text-xs font-semibold tracking-wide text-secondary-100"
                     >
-                        분석 설정
+                        {t('AnalysisSettingsMenu.211258')}
                     </h2>
                     <ModelSelector
                         selectedModel={modelId}

@@ -1,7 +1,7 @@
-export { deriveLabel } from './lib/derivePageContextLabel';
+export { deriveLabelKey } from './lib/derivePageContextLabel';
 export {
     CHAT_NON_CHART_BASELINE_ANALYSIS,
-    FALLBACK_ANALYSIS,
+    buildFallbackAnalysis,
     isFallbackAnalysis,
 } from './lib/fallbackAnalysis';
 

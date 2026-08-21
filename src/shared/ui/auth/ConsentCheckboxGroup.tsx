@@ -1,8 +1,9 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { PRIVACY_PATH, TERMS_PATH } from '@/shared/lib/legal';
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useEffect, useId, useRef } from 'react';
 
 interface ConsentCheckboxGroupProps {
@@ -132,6 +133,7 @@ function ConsentRow({
     errorId,
     onChange,
 }: ConsentRowProps) {
+    const t = useTranslations('shared.ui');
     return (
         <label
             htmlFor={id}
@@ -160,7 +162,7 @@ function ConsentRow({
                 />
                 <span className="text-sm text-secondary-300">
                     <span className="mr-1 text-xs text-secondary-400">
-                        (필수)
+                        {t('ConsentCheckboxGroup.d3e427')}
                     </span>
                     {label}
                 </span>
@@ -178,9 +180,11 @@ function ConsentRow({
                 onClick={e => e.stopPropagation()}
                 className="inline-flex shrink-0 items-center rounded-sm px-1 text-xs text-secondary-400 transition-colors hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
             >
-                자세히 보기
+                {t('ConsentCheckboxGroup.918f5d')}
                 <ExternalArrowIcon />
-                <span className="sr-only">(새 탭에서 열림)</span>
+                <span className="sr-only">
+                    {t('ConsentCheckboxGroup.f97073')}
+                </span>
             </Link>
         </label>
     );
@@ -193,6 +197,7 @@ export function ConsentCheckboxGroup({
     onTosChange,
     error,
 }: ConsentCheckboxGroupProps) {
+    const t = useTranslations('shared.ui');
     const masterId = useId();
     const privacyId = useId();
     const tosId = useId();
@@ -209,9 +214,11 @@ export function ConsentCheckboxGroup({
 
     return (
         <fieldset className="touch-manipulation space-y-3 border-y border-secondary-800 py-4 [-webkit-tap-highlight-color:transparent]">
-            <legend className="sr-only">동의 항목</legend>
+            <legend className="sr-only">
+                {t('ConsentCheckboxGroup.1f835a')}
+            </legend>
             <p className="text-xs text-secondary-400">
-                계속하려면 아래 항목에 동의해주세요.
+                {t('ConsentCheckboxGroup.c99227')}
             </p>
             <label
                 htmlFor={masterId}
@@ -228,7 +235,7 @@ export function ConsentCheckboxGroup({
                     }}
                 />
                 <span className="text-sm font-semibold text-secondary-100">
-                    모두 동의
+                    {t('ConsentCheckboxGroup.847c16')}
                 </span>
             </label>
             <div
@@ -238,9 +245,9 @@ export function ConsentCheckboxGroup({
             />
             <ConsentRow
                 id={privacyId}
-                label="개인정보 수집·이용 동의"
+                label={t('ConsentCheckboxGroup.f1bf9f')}
                 href={PRIVACY_PATH}
-                detailLabel="개인정보처리방침 자세히 보기"
+                detailLabel={t('ConsentCheckboxGroup.4eafc4')}
                 checked={privacyChecked}
                 invalid={Boolean(error) && !privacyChecked}
                 errorId={error ? errorId : undefined}
@@ -248,9 +255,9 @@ export function ConsentCheckboxGroup({
             />
             <ConsentRow
                 id={tosId}
-                label="서비스 이용약관 동의"
+                label={t('ConsentCheckboxGroup.4f0847')}
                 href={TERMS_PATH}
-                detailLabel="이용약관 자세히 보기"
+                detailLabel={t('ConsentCheckboxGroup.337a9a')}
                 checked={tosChecked}
                 invalid={Boolean(error) && !tosChecked}
                 errorId={error ? errorId : undefined}

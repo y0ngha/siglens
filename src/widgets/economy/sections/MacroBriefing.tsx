@@ -1,18 +1,21 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { MacroBriefingResponse } from '@y0ngha/siglens-core';
 
 import { cn } from '@/shared/lib/cn';
 import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 
 import { useMacroBriefing } from '../hooks/useMacroBriefing';
 
-const REGIME_LABELS: Record<MacroBriefingResponse['regime'], string> = {
-    expansion: '확장',
-    slowdown: '둔화',
-    contraction: '수축',
-    recovery: '회복',
-    neutral: '중립',
+/** MacroBriefingResponse['regime'] → `shared.enumLabel.macroRegime` 카탈로그 키. */
+const REGIME_LABEL_KEY: Record<MacroBriefingResponse['regime'], string> = {
+    expansion: 'macroRegime.expansion',
+    slowdown: 'macroRegime.slowdown',
+    contraction: 'macroRegime.contraction',
+    recovery: 'macroRegime.recovery',
+    neutral: 'macroRegime.neutral',
 };
 
 const REGIME_COLORS: Record<MacroBriefingResponse['regime'], string> = {
@@ -64,6 +67,9 @@ export function MacroBriefing({ peekSeed }: MacroBriefingProps) {
 }
 
 function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
+    const t = useTranslations('widgets.economy');
+    const tLabel = useTranslations('shared.enumLabel');
+    const locale = useResolvedLocale();
     return (
         <section
             className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
@@ -74,7 +80,7 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
                     id="macro-briefing-heading"
                     className="text-lg font-semibold text-secondary-100"
                 >
-                    거시 브리핑
+                    {t('MacroBriefing.283194')}
                 </h2>
                 <span
                     className={cn(
@@ -82,7 +88,7 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
                         REGIME_COLORS[briefing.regime]
                     )}
                 >
-                    {REGIME_LABELS[briefing.regime]}
+                    {tLabel(REGIME_LABEL_KEY[briefing.regime])}
                 </span>
             </header>
             <p className="mb-4 leading-relaxed whitespace-pre-line text-secondary-200">
@@ -102,7 +108,9 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
             )}
             {generatedAt !== null && (
                 <p className="mt-3 text-xs text-secondary-400">
-                    생성 시각: {formatKoreanDateTime(generatedAt)}
+                    {t('MacroBriefing.62f15d', {
+                        v0: formatKoreanDateTime(generatedAt, locale),
+                    })}
                 </p>
             )}
         </section>
@@ -110,11 +118,12 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
 }
 
 function MacroBriefingSkeleton() {
+    const t = useTranslations('widgets.economy');
     return (
         <section
             className="animate-pulse rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
             aria-busy="true"
-            aria-label="거시 경제 브리핑 로딩 중"
+            aria-label={t('MacroBriefing.a0f763')}
         >
             <div className="mb-3 h-6 w-32 rounded bg-secondary-700" />
             <div className="mb-2 h-4 w-full rounded bg-secondary-700" />
@@ -124,33 +133,34 @@ function MacroBriefingSkeleton() {
 }
 
 function MacroBriefingBotBlocked() {
+    const t = useTranslations('widgets.economy');
     return (
         <section
             className="rounded-xl border border-secondary-700 bg-secondary-800 p-6 text-sm text-secondary-300"
-            aria-label="거시 경제 브리핑 안내"
+            aria-label={t('MacroBriefing.b5f759')}
         >
-            크롤러 접근으로 분석을 생성하지 않았어요.
+            {t('MacroBriefing.903a71')}
         </section>
     );
 }
 
 function MacroBriefingError({ onRetry }: MacroBriefingErrorProps) {
+    const t = useTranslations('widgets.economy');
     return (
         <section
             className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
             role="alert"
-            aria-label="거시 경제 브리핑 안내"
+            aria-label={t('MacroBriefing.b5f759')}
         >
             <p className="text-sm text-secondary-300">
-                지금은 거시 브리핑을 만들지 못했어요. 잠시 후 다시 시도해
-                주세요.
+                {t('MacroBriefing.15d863')}
             </p>
             <button
                 type="button"
                 onClick={onRetry}
                 className="mt-4 inline-flex min-h-11 items-center rounded bg-primary-600 px-3 py-2 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
             >
-                다시 시도
+                {t('MacroBriefing.0c767c')}
             </button>
         </section>
     );

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useFormStatus } from 'react-dom';
 
 interface SubmitButtonProps {
@@ -7,10 +8,10 @@ interface SubmitButtonProps {
     pendingLabel?: string;
 }
 
-export function SubmitButton({
-    label,
-    pendingLabel = '처리 중…',
-}: SubmitButtonProps) {
+export function SubmitButton({ label, pendingLabel }: SubmitButtonProps) {
+    // 기본값을 파라미터 자리에 둘 수 없다 — 컴포넌트 본문 밖이라 훅이 아직 없다.
+    const tMisc = useTranslations('shared.ui.misc');
+    const resolvedPendingLabel = pendingLabel ?? tMisc('submitting');
     const { pending } = useFormStatus();
     return (
         <button
@@ -25,7 +26,7 @@ export function SubmitButton({
                         aria-hidden
                         className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white motion-reduce:animate-none"
                     />
-                    <span>{pendingLabel}</span>
+                    <span>{resolvedPendingLabel}</span>
                 </>
             ) : (
                 label

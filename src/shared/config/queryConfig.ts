@@ -4,6 +4,7 @@ import type {
     Timeframe,
 } from '@y0ngha/siglens-core';
 import type { DashboardScopeId } from './dashboardScope';
+import type { Locale } from '@/shared/i18n/locales';
 import { MS_PER_MINUTE } from './time';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 
@@ -69,28 +70,61 @@ export const QUERY_KEYS = {
      */
     marketSummary: (scope: DashboardScopeId) =>
         ['market-summary', scope] as const,
-    marketBriefing: (scope: DashboardScopeId) =>
-        ['market-briefing', scope] as const,
-    macroBriefing: () => ['macro-briefing'] as const,
+    /**
+     * 브리핑 산문도 로케일별로 번역된다(`translateAnalysisForLocale`). 다른 분석
+     * 키와 같은 이유로 로케일이 키에 들어가야 한다 — 빠지면 ko에서 본 브리핑이
+     * ja 화면에 그대로 재사용된다.
+     */
+    marketBriefing: (scope: DashboardScopeId, locale: Locale) =>
+        ['market-briefing', scope, locale] as const,
+    macroBriefing: (locale: Locale) => ['macro-briefing', locale] as const,
+    /**
+     * 다이제스트 산문도 로케일별로 번역된다. 이 키만 훅에 인라인 리터럴로
+     * 있어서 `queryConfig.test.ts`의 팩토리 열거 가드가 **구조적으로 못 봤다**
+     * — 로케일이 빠진 채 ko 캐시가 ja 화면에 재사용되고 있었다.
+     */
+    marketNewsDigest: (category: string, locale: Locale) =>
+        ['market-news-digest', category, locale] as const,
     currentUser: () => ['current-user'] as const,
     userTier: () => ['user-tier'] as const,
     remainingTokens: () => ['chat', 'remaining-tokens'] as const,
     registeredProviders: () => ['llm', 'registered-providers'] as const,
     portfolioHoldings: () => ['portfolio-holdings'] as const,
-    // reasoning defaults to `false` on every analysis key below so existing
-    // 2/3-arg call sites (pre-member-reasoning-toggle) keep resolving to the
     // exact same key they always have — only a member's explicit `true` value
     // produces a distinct key (member-reasoning-toggle spec Part A: "changing
     // the toggle re-submits analysis" relies on this key change).
     fundamentalAnalysis: (
         symbol: string,
         modelId: ModelId,
-        reasoning = false
-    ) => ['fundamental-analysis', upper(symbol), modelId, reasoning] as const,
-    financialsAnalysis: (symbol: string, modelId: ModelId, reasoning = false) =>
-        ['financials-analysis', upper(symbol), modelId, reasoning] as const,
-    congressTrend: (symbol: string, modelId: ModelId, reasoning = false) =>
-        ['congress-trend', upper(symbol), modelId, reasoning] as const,
+        reasoning = false,
+        locale: Locale
+    ) =>
+        [
+            'fundamental-analysis',
+            upper(symbol),
+            modelId,
+            reasoning,
+            locale,
+        ] as const,
+    financialsAnalysis: (
+        symbol: string,
+        modelId: ModelId,
+        reasoning = false,
+        locale: Locale
+    ) =>
+        [
+            'financials-analysis',
+            upper(symbol),
+            modelId,
+            reasoning,
+            locale,
+        ] as const,
+    congressTrend: (
+        symbol: string,
+        modelId: ModelId,
+        reasoning = false,
+        locale: Locale
+    ) => ['congress-trend', upper(symbol), modelId, reasoning, locale] as const,
     // News augment (chart page) and news analysis (news page) share this key so
     // a single React Query entry serves both pages within a session — preventing
     // a duplicate fetch when the user navigates between /AAPL and /AAPL/news.
@@ -99,7 +133,8 @@ export const QUERY_KEYS = {
         symbol: string,
         companyName: string,
         modelId: ModelId,
-        reasoning = false
+        reasoning = false,
+        locale: Locale
     ) =>
         [
             'news-analysis',
@@ -107,17 +142,27 @@ export const QUERY_KEYS = {
             companyName,
             modelId,
             reasoning,
+            locale,
         ] as const,
     /** Prefix key — invalidates all modelId/reasoning variants for a symbol at once. */
     newsAnalysisPrefix: (
         symbol: string
     ): readonly ['news-analysis', string] => ['news-analysis', upper(symbol)],
+    /**
+     * ⚠️ **로케일이 키에 들어가야 한다.** AI 분석 산문은 로케일별로 다른
+     * 결과다(`translateAnalysisForLocale`). 키에서 빼면 ko에서 본 결과가
+     * ja로 전환했을 때 그대로 재사용돼 **일본어 화면에 한국어 분석문**이 남고,
+     * 재분석(할당량 소모) 말고는 벗어날 방법이 없다. `QueryClient`가
+     * `[locale]/layout.tsx`에 있어 로케일 전환 시 remount되지 않으므로
+     * 캐시가 그대로 살아 있다.
+     */
     overallAnalysis: (
         symbol: string,
         companyName: string,
         timeframe: Timeframe,
         modelId: ModelId,
-        reasoning = false
+        reasoning = false,
+        locale: Locale
     ) =>
         [
             'overall-analysis',
@@ -126,6 +171,7 @@ export const QUERY_KEYS = {
             timeframe,
             modelId,
             reasoning,
+            locale,
         ] as const,
     sectorSignals: (scope: DashboardScopeId, timeframe: DashboardTimeframe) =>
         ['sector-signals', scope, timeframe] as const,
@@ -141,7 +187,8 @@ export const QUERY_KEYS = {
         companyName: string,
         expirationDate: OptionsExpirationSelector,
         modelId: ModelId,
-        reasoning = false
+        reasoning = false,
+        locale: Locale
     ) =>
         [
             'options-analysis',
@@ -150,5 +197,6 @@ export const QUERY_KEYS = {
             expirationDate,
             modelId,
             reasoning,
+            locale,
         ] as const,
 } as const;

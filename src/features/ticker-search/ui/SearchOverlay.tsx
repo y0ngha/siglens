@@ -8,6 +8,7 @@ import {
     useState,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
@@ -16,7 +17,7 @@ import { useRecentSearches } from '../hooks/useRecentSearches';
 import { useTickerSearch } from '../hooks/useTickerSearch';
 import { POPULAR_PREVIEW_GROUPS } from '../lib/popularPreview';
 import { resolveSubmitTarget } from '../lib/resolveSubmitTarget';
-import { SEARCH_PLACEHOLDER, SEARCH_ROW_CLASS } from '../lib/searchLabels';
+import { SEARCH_PLACEHOLDER_KEY, SEARCH_ROW_CLASS } from '../lib/searchLabels';
 import { SearchResultRow } from './SearchResultRow';
 
 interface SearchOverlayProps {
@@ -79,6 +80,22 @@ function SearchOverlayBody({
     onClose,
     onNavigate,
 }: Omit<SearchOverlayProps, 'isOpen'>) {
+    const t = useTranslations('features.ticker-search');
+    // 인기 종목 섹션 제목은 `assetClassNav`가 이미 네 로케일로 가진 지역명을
+    // 재사용한다 — 새 표를 만들면 `미국`이 두 곳에 생겨 한쪽만 바뀐다.
+    const tRegion = useTranslations('shared.config.nav.region');
+    /**
+     * **`useAssetLabel`을 쓰지 않는다.** 그 훅의 네임스페이스는
+     * `shared.assetName`(166키)이고, 키가 변수라 추출기가 네임스페이스를
+     * 통째로 넓힌다. 이 오버레이는 `SearchOverlayProvider`를 통해 **전 라우트
+     * 크롬**에 들어 있으므로 그 표가 33개 라우트 전부의 first-load에 실린다
+     * (`clientKeyCoverage.test.ts`가 그 회귀를 막는다).
+     *
+     * 인기 종목은 9개뿐이라 전용 표를 둔다. 드리프트는 테스트가 막는다 —
+     * `__tests__/popularPreview.test.ts`가 이 표와 `shared.assetName`이
+     * 네 로케일에서 같은 값인지 확인한다.
+     */
+    const tPopular = useTranslations('features.ticker-search.popularName');
     const [query, setQuery] = useState('');
     /**
      * 사용자가 검색 키를 눌렀다는 사실. 즉시 이동하지 않고 남겨 둔다.
@@ -236,7 +253,7 @@ function SearchOverlayBody({
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
-            aria-label="종목 검색"
+            aria-label={t('search.overlayLabel')}
             // 포커스 불가한 여백을 탭했을 때 포커스가 body로 떨어지지 않게 한다 —
             // 그러면 focus trap의 edge-wrap이 동작하지 않아 다음 Tab이 오버레이 뒤의
             // 헤더 컨트롤로 새어 나간다(보이지 않는 포커스, WCAG 2.4.11).
@@ -267,11 +284,11 @@ function SearchOverlayBody({
                         setQuery(e.target.value);
                     }}
                     onKeyDown={handleKeyDown}
-                    placeholder={SEARCH_PLACEHOLDER}
+                    placeholder={t(SEARCH_PLACEHOLDER_KEY)}
                     // 보이는 문구(placeholder)와 접근 이름을 같게 둔다 —
                     // 음성 입력 사용자가 화면에 보이는 말로 이 필드를 부를 수 있어야 한다
                     // (WCAG 2.5.3). 히어로 트리거에서 같은 이유로 aria-label을 걷어냈다.
-                    aria-label={SEARCH_PLACEHOLDER}
+                    aria-label={t(SEARCH_PLACEHOLDER_KEY)}
                     enterKeyHint="search"
                     autoComplete="off"
                     autoCorrect="off"
@@ -284,7 +301,7 @@ function SearchOverlayBody({
                     onClick={onClose}
                     className="min-h-11 shrink-0 touch-manipulation rounded-lg px-3 text-sm text-secondary-300 transition-colors hover:bg-secondary-800 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    취소
+                    {t('search.cancel')}
                 </button>
             </div>
 
@@ -316,18 +333,20 @@ function SearchOverlayBody({
                 */}
                 <p className="sr-only" aria-live="polite">
                     {isSearching
-                        ? '검색 중'
+                        ? t('search.searching')
                         : isError
-                          ? '검색을 불러오지 못했습니다'
+                          ? t('search.loadFailed')
                           : !hasQuery
-                            ? '검색어를 입력하세요'
+                            ? t('search.typeToSearch')
                             : results.length > 0
-                              ? `검색 결과 ${results.length}건`
+                              ? t('search.resultsCount', {
+                                    v0: results.length,
+                                })
                               : // 한글 막다른 길의 유일한 출구를 화면에만 두면
                                 // 스크린리더 사용자는 그 출구를 못 듣는다(WCAG 4.1.3).
                                 isKoreanInput(query)
-                                ? '검색 결과 없음 — 티커로 검색해 보세요'
-                                : '검색 결과가 없습니다'}
+                                ? t('search.noResultsTryTicker')
+                                : t('search.noResults')}
                 </p>
 
                 {hasQuery ? (
@@ -337,7 +356,7 @@ function SearchOverlayBody({
                     // 탭스톱을 갖는다 — 역할만 빌려오면 스크린리더가 폼 모드로 전환한 뒤
                     // 방향키가 먹지 않아 오히려 나빠진다(WCAG 4.1.2). 지금 구조 그대로가
                     // 버튼 목록이고 Tab으로 완전히 조작된다.
-                    <section aria-label="검색 결과">
+                    <section aria-label={t('search.resultsLabel')}>
                         {results.map(result => (
                             <SearchResultRow
                                 key={result.symbol}
@@ -347,7 +366,7 @@ function SearchOverlayBody({
                         ))}
                         {isSearching && (
                             <p className="px-4 py-3 text-sm text-secondary-400">
-                                검색 중…
+                                {t('search.searchingEllipsis')}
                             </p>
                         )}
                         {isError && !isSearching && (
@@ -358,8 +377,7 @@ function SearchOverlayBody({
                                     보였고, 한글 질의에는 "티커로 쳐보세요"라는 틀린 안내가
                                     나갔다 — 사용자는 없는 종목을 찾은 줄 안다.
                                 */}
-                                검색을 불러오지 못했어요. 잠시 후 다시 시도해
-                                주세요.
+                                {t('search.loadFailedRetry')}
                             </p>
                         )}
                         {results.length === 0 && !isSearching && !isError && (
@@ -371,8 +389,8 @@ function SearchOverlayBody({
                                     안내가 그 유일한 출구다. 데스크톱 자동완성과 같은 문구.
                                 */}
                                 {isKoreanInput(query)
-                                    ? '검색 결과 없음 — 티커(예: AAPL)로 검색해 보세요'
-                                    : '검색 결과가 없습니다'}
+                                    ? t('search.noResultsTryTickerExample')
+                                    : t('search.noResults')}
                             </p>
                         )}
                     </section>
@@ -382,7 +400,7 @@ function SearchOverlayBody({
                             <section>
                                 <div className="flex items-center justify-between px-4 pt-4 pb-2">
                                     <h2 className="text-xs font-medium text-secondary-400">
-                                        최근 검색
+                                        {t('search.recentHeading')}
                                     </h2>
                                     <button
                                         type="button"
@@ -396,7 +414,7 @@ function SearchOverlayBody({
                                         }}
                                         className="inline-flex min-h-11 touch-manipulation items-center px-1 text-xs text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                                     >
-                                        전체 삭제
+                                        {t('search.clearAll')}
                                     </button>
                                 </div>
                                 <div className="flex flex-wrap gap-2 px-4 pb-3">
@@ -424,31 +442,42 @@ function SearchOverlayBody({
                         )}
 
                         {POPULAR_PREVIEW_GROUPS.map(group => (
-                            <section key={group.label}>
+                            <section key={group.labelKey}>
                                 {/* 자산군을 섹션 제목으로 드러낸다. 인기 종목 데이터
                                     (`{symbol, name}`)에는 거래소 정보가 없어 행마다
                                     시장 배지를 붙일 수 없다 — 없는 정보를 지어내는 대신
                                     제목으로 묶어 한국·코인 사용자가 자기 영역을 바로 찾게 한다. */}
                                 <h2 className="px-4 pt-3 pb-1 text-xs font-medium text-secondary-400">
-                                    인기 종목 · {group.label}
+                                    {t('search.popularHeading', {
+                                        v0: tRegion(group.labelKey),
+                                    })}
                                 </h2>
-                                {group.items.map(item => (
-                                    <button
-                                        key={item.symbol}
-                                        type="button"
-                                        onClick={() =>
-                                            handleSelect(item.symbol, item.name)
-                                        }
-                                        className={SEARCH_ROW_CLASS}
-                                    >
-                                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-secondary-100">
-                                            {item.name}
-                                        </span>
-                                        <span className="shrink-0 font-mono text-xs text-secondary-400">
-                                            {item.symbol}
-                                        </span>
-                                    </button>
-                                ))}
+                                {group.items.map(symbol => {
+                                    // 표시 이름은 카탈로그가 정한다. 폴백을 심볼로
+                                    // 두는 것이 의도다 — 누락 시 한국어가 새는 것보다
+                                    // 티커가 보이는 편이 낫고, 누락 자체는 테스트가 막는다.
+                                    const key = symbol.replace(/\./g, '_');
+                                    const label = tPopular.has(key)
+                                        ? tPopular(key)
+                                        : symbol;
+                                    return (
+                                        <button
+                                            key={symbol}
+                                            type="button"
+                                            onClick={() =>
+                                                handleSelect(symbol, label)
+                                            }
+                                            className={SEARCH_ROW_CLASS}
+                                        >
+                                            <span className="min-w-0 flex-1 truncate text-sm font-medium text-secondary-100">
+                                                {label}
+                                            </span>
+                                            <span className="shrink-0 font-mono text-xs text-secondary-400">
+                                                {symbol}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
                             </section>
                         ))}
                     </>

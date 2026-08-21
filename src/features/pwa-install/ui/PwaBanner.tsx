@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { usePwaInstall } from '../hooks/usePwaInstall';
 import { IosInstallModal } from './IosInstallModal';
@@ -20,6 +21,7 @@ const BANNER_SHELL_CLASS =
 const PWA_BANNER_HEIGHT_CSS = '3rem';
 
 export function PwaBanner() {
+    const t = useTranslations('features.pwa-install');
     const {
         showBanner,
         showIosModal,
@@ -61,7 +63,7 @@ export function PwaBanner() {
                     📈
                 </span>
                 <span className="min-w-0 flex-1 truncate text-xs text-secondary-200">
-                    앱으로 설치하면 더 빠르게 접속할 수 있어요
+                    {t('PwaBanner.ba5aad')}
                 </span>
                 <button
                     type="button"
@@ -69,12 +71,12 @@ export function PwaBanner() {
                     tabIndex={showBanner ? 0 : -1}
                     className="shrink-0 rounded-full bg-primary-600 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-primary-500 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    설치하기
+                    {t('PwaBanner.15236a')}
                 </button>
                 <button
                     type="button"
                     onClick={handleDismiss}
-                    aria-label="배너 닫기"
+                    aria-label={t('PwaBanner.9631f3')}
                     tabIndex={showBanner ? 0 : -1}
                     className="shrink-0 text-lg leading-none text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
