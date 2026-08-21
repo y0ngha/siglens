@@ -43,6 +43,37 @@ interface LocaleSwitcherProps {
  * 루트 진입 시 리다이렉트하고 싶어지는데, 그건 `localeDetection: false`로 막아 둔
  * 바로 그 동작(크롤러 이탈 + CDN 캐시 오염)이다.
  */
+/**
+ * 언어 전환의 관용 아이콘 — 지구본.
+ *
+ * **인라인 SVG다.** `widgets/layout` 배럴은 헤더를 통해 33개 전 라우트의
+ * first-load 청크에 들어 있고 `package.json`에 `sideEffects`가 없어 미사용
+ * re-export가 제거되지 않는다 — 아이콘 패키지를 들이면 그 무게가 그대로
+ * 전역으로 퍼진다. `SearchTriggerButton`·`HeaderMobileMenu`도 같은 이유로
+ * 인라인 SVG를 쓴다.
+ *
+ * 구글 번역의 `文A` 마크를 베끼지 않는다 — 특정 서비스의 식별 표지다.
+ * 지구본은 언어 선택의 일반 관용구다.
+ */
+function GlobeGlyph() {
+    return (
+        <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="pointer-events-none absolute left-1.5 h-4 w-4 text-secondary-400"
+        >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M2 12h20" />
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
+    );
+}
+
 export function LocaleSwitcher({ className, tabIndex }: LocaleSwitcherProps) {
     const t = useTranslations('widgets.layout');
     const locale = useLocale() as Locale;
@@ -58,6 +89,9 @@ export function LocaleSwitcher({ className, tabIndex }: LocaleSwitcherProps) {
             )}
         >
             <span className="sr-only">{t('localeSwitcher.label')}</span>
+            {/* `<label>` 안이라 아이콘을 눌러도 select가 열린다. 자기 자신은
+                pointer-events를 받지 않아 클릭을 삼키지 않는다. */}
+            <GlobeGlyph />
             <select
                 value={locale}
                 disabled={isPending}
@@ -77,7 +111,7 @@ export function LocaleSwitcher({ className, tabIndex }: LocaleSwitcherProps) {
                         });
                     });
                 }}
-                className="min-h-11 cursor-pointer appearance-none rounded bg-transparent py-2 pr-6 pl-2 text-sm text-secondary-300 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none disabled:opacity-60"
+                className="min-h-11 cursor-pointer appearance-none rounded bg-transparent py-2 pr-6 pl-7 text-sm text-secondary-300 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none disabled:opacity-60"
             >
                 {LOCALES.map(option => (
                     <option
