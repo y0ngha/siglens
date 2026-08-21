@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { useId, type ReactNode } from 'react';
 import { formatSnapshotAsOf } from '@/shared/lib/formatSnapshotAsOf';
 import type { MarketProfileId } from '@/shared/config/marketProfile';
@@ -25,8 +26,6 @@ interface SnapshotSummarySectionProps {
     children: ReactNode;
 }
 
-const DEFAULT_TITLE = '최근 분석 요약';
-
 /**
  * 기준일 캡션의 시장별 문구.
  *
@@ -37,16 +36,29 @@ const DEFAULT_TITLE = '최근 분석 요약';
  * 막힌다 — `marketProfile`은 항상 타입이 보장된 값이라(런타임 미신뢰 입력이
  * 아니다) `sessionSpecFor`류의 `_exhaustive: never` 런타임 가드는 불필요하다.
  */
-const AS_OF_CAPTION_COPY: Record<
+/**
+ * 캡션 문구는 **카탈로그 키**로 들고 있는다.
+ *
+ * 날짜만 로케일화하고 이 접미사를 한국어로 두면 `/en/AAPL`이
+ * `August 18, 2026 미국 장마감 기준`으로 나온다 — 통째로 한국어일 때보다
+ * 나쁘게 읽힌다(반쪽 번역이 만드는 전형적 결함).
+ */
+const AS_OF_CAPTION_KEY: Record<
     MarketProfileId,
     { fallback: string; suffix: string }
 > = {
-    'us-equity': { fallback: '전일 장마감 기준', suffix: '미국 장마감 기준' },
-    'kr-equity': {
-        fallback: '전일 국내 장마감 기준',
-        suffix: '국내 장마감 기준',
+    'us-equity': {
+        fallback: 'SnapshotSummarySection.asOfUsEquityFallback',
+        suffix: 'SnapshotSummarySection.asOfUsEquity',
     },
-    crypto: { fallback: '전일 UTC 자정 기준', suffix: 'UTC 기준' },
+    'kr-equity': {
+        fallback: 'SnapshotSummarySection.asOfKrEquityFallback',
+        suffix: 'SnapshotSummarySection.asOfKrEquity',
+    },
+    crypto: {
+        fallback: 'SnapshotSummarySection.asOfCryptoFallback',
+        suffix: 'SnapshotSummarySection.asOfCrypto',
+    },
 };
 
 /**
@@ -84,21 +96,27 @@ const AS_OF_CAPTION_COPY: Record<
  * 스레딩해 라벨과 타임존을 시장에 맞게 고른다.
  */
 export function SnapshotSummarySection({
-    title = DEFAULT_TITLE,
+    title,
     displayName,
     marketProfile,
     asOf,
     children,
 }: SnapshotSummarySectionProps) {
     const t = useTranslations('views.symbol');
+    // 기본값을 파라미터 자리에 둘 수 없다 — 컴포넌트 본문 밖이라 훅이 아직 없다.
+    const tMisc = useTranslations('shared.ui.misc');
+    const resolvedTitle = title ?? tMisc('recentSummary');
+    const locale = useResolvedLocale();
     const headingId = useId();
     const formattedAsOf =
-        asOf === undefined ? null : formatSnapshotAsOf(asOf, marketProfile);
-    const copy = AS_OF_CAPTION_COPY[marketProfile];
+        asOf === undefined
+            ? null
+            : formatSnapshotAsOf(asOf, marketProfile, locale);
+    const captionKey = AS_OF_CAPTION_KEY[marketProfile];
     const caption =
         formattedAsOf === null
-            ? `${displayName} · ${copy.fallback}`
-            : `${displayName} · ${formattedAsOf} ${copy.suffix}`;
+            ? `${displayName} · ${t(captionKey.fallback)}`
+            : `${displayName} · ${formattedAsOf} ${t(captionKey.suffix)}`;
 
     return (
         <section
@@ -121,7 +139,7 @@ export function SnapshotSummarySection({
                         id={headingId}
                         className="text-lg font-semibold tracking-tight text-secondary-100"
                     >
-                        {title}
+                        {resolvedTitle}
                     </h2>
                     {formattedAsOf !== null && (
                         <span className="rounded-full border border-secondary-600 bg-secondary-900/60 px-2 py-0.5 text-xs font-medium text-secondary-300">

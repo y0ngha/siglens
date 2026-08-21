@@ -72,7 +72,7 @@ describe('NaverNewsClient', () => {
         expect(items).toHaveLength(1);
         expect(items[0]).toMatchObject({
             symbol: SYMBOL,
-            source: '네이버뉴스',
+            source: 'Naver News',
             url: 'https://news.example.com/article/1',
             titleEn: '삼성전자, 3분기 영업이익 발표',
             bodyEn: '삼성전자가 "호실적"을 기록했다고 발표했다.',

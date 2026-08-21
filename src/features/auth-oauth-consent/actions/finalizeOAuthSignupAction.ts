@@ -24,6 +24,7 @@ import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { DrizzleTermsRepository } from '@/entities/terms';
 import { cookies } from 'next/headers';
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 
 export async function finalizeOAuthSignupAction(
     _prev: FinalizeOAuthSignupState,
@@ -60,8 +61,10 @@ export async function finalizeOAuthSignupAction(
         const { db } = getAuthDatabaseClient();
         const termsRepo = new DrizzleTermsRepository(db);
         const [termsP, termsT] = await Promise.all([
-            termsRepo.findActive('privacy'),
-            termsRepo.findActive('tos'),
+            // 신원(`terms.id`)만 필요하다 — 동의 레코드는 로케일과 무관한
+            // 원본 행을 가리킨다. 본문을 쓰지 않으므로 기본 로케일로 조회한다.
+            termsRepo.findActive('privacy', DEFAULT_LOCALE),
+            termsRepo.findActive('tos', DEFAULT_LOCALE),
         ]);
         if (!termsP || !termsT) {
             return localeRedirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);

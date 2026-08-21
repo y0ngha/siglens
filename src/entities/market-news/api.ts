@@ -1,12 +1,7 @@
 import 'server-only';
 import { cache } from 'react';
 import { and, desc, eq, gte, isNotNull, isNull, sql } from 'drizzle-orm';
-import type {
-    NewsCardAnalysis,
-    NewsCategory,
-    NewsImpact,
-    NewsSentiment,
-} from '@y0ngha/siglens-core';
+import type { NewsCardAnalysis } from '@y0ngha/siglens-core';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import { getDatabaseClient } from '@/shared/db/client';
 import { marketNews } from '@/shared/db/schema';
@@ -14,6 +9,16 @@ import type { SiglensDatabase } from '@/shared/db/types';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { withRetry } from '@/shared/lib/withRetry';
 import type { MarketNewsCardItem } from './lib/toCardItem';
+import type { Locale } from '@/shared/i18n/locales';
+import { TRANSLATABLE_ENTITY } from '@/shared/db/contentTranslationFields';
+// 종목 뉴스 슬라이스와 같은 강제 변환을 쓴다 — 두 벌을 두면 core가 enum 값을
+// 추가했을 때 한쪽만 갱신돼 그 슬라이스에서만 조용히 null로 떨어진다.
+import {
+    toNewsCategory,
+    toNewsImpact,
+    toNewsSentiment,
+} from '@/shared/lib/news/newsEnumCoercion';
+import { toLocalizedDisplayItems } from '@/shared/lib/news/toLocalizedDisplayItems';
 import { createRedisFlag } from '@/shared/cache/createRedisFlag';
 import { SECONDS_PER_MINUTE } from '@/shared/config/time';
 import type { MarketNewsItem } from './lib/marketNewsClientPort';
@@ -177,7 +182,8 @@ export class DrizzleMarketNewsRepository {
      */
     async listCardsByCategory(
         sentinel: string,
-        sinceMs: number
+        sinceMs: number,
+        locale: Locale
     ): Promise<MarketNewsCardItem[]> {
         const cutoff = new Date(Date.now() - sinceMs);
 
@@ -212,19 +218,16 @@ export class DrizzleMarketNewsRepository {
             NEON_TRANSIENT_RETRY
         );
 
-        return rows.map(row => ({
-            id: row.id,
-            publishedAt: row.publishedAt.toISOString(),
-            titleEn: row.titleEn,
-            titleKo: row.titleKo,
-            bodyKo: row.bodyKo,
-            summaryKo: row.summaryKo,
-            sentiment: toNewsSentiment(row.sentiment),
-            category: toNewsCategory(row.category),
-            priceImpact: toNewsImpact(row.priceImpact),
-            url: row.url,
-            source: row.source,
-            tickers: row.tickers,
+        // 카드 투영·해석은 종목 뉴스와 같은 함수를 쓴다 — 컬럼도 소비자도
+        // 같은데 슬라이스마다 따로 구현하면 한쪽만 고쳐진다.
+        const localized = await toLocalizedDisplayItems(
+            rows,
+            locale,
+            TRANSLATABLE_ENTITY.marketNews
+        );
+        return localized.map((item, index) => ({
+            ...item,
+            tickers: rows[index]!.tickers,
         }));
     }
 
@@ -275,11 +278,12 @@ export class DrizzleMarketNewsRepository {
  * 저쪽"이라는 구분은 더 이상 없고, 집계·다이제스트 프롬프트도 본문을 안 읽는다.
  */
 export const getMarketNewsCards = cache(
-    async (sentinel: string): Promise<MarketNewsCardItem[]> => {
+    async (sentinel: string, locale: Locale): Promise<MarketNewsCardItem[]> => {
         const { db } = getDatabaseClient();
         return new DrizzleMarketNewsRepository(db).listCardsByCategory(
             sentinel,
-            MARKET_NEWS_LOOKBACK_MS
+            MARKET_NEWS_LOOKBACK_MS,
+            locale
         );
     }
 );
@@ -311,59 +315,6 @@ export interface MarketNewsDbRow {
     priceImpact: string | null;
     tickers: string[];
     analyzedAt: Date | null;
-}
-
-/**
- * Canonical enum values for the `market_news` analysis columns.
- * The DB stores these as raw `text` (no CHECK constraint), so we validate at
- * the read boundary. Invalid values (stale data, manual SQL, schema drift) are
- * coerced to `null` so the display layer falls back gracefully.
- *
- * The `Record<T, true>` shape enforces compile-time exhaustiveness against the
- * source-of-truth types in `@y0ngha/siglens-core`.
- */
-const NEWS_SENTIMENT_RECORD: Record<NewsSentiment, true> = {
-    bullish: true,
-    bearish: true,
-    neutral: true,
-};
-const NEWS_CATEGORY_RECORD: Record<NewsCategory, true> = {
-    earnings: true,
-    m_and_a: true,
-    guidance: true,
-    regulation: true,
-    macro: true,
-    product: true,
-    other: true,
-};
-const NEWS_IMPACT_RECORD: Record<NewsImpact, true> = {
-    high: true,
-    medium: true,
-    low: true,
-    negligible: true,
-};
-
-function isNewsSentiment(value: string): value is NewsSentiment {
-    return value in NEWS_SENTIMENT_RECORD;
-}
-function isNewsCategory(value: string): value is NewsCategory {
-    return value in NEWS_CATEGORY_RECORD;
-}
-function isNewsImpact(value: string): value is NewsImpact {
-    return value in NEWS_IMPACT_RECORD;
-}
-
-function toNewsSentiment(value: unknown): NewsSentiment | null {
-    if (typeof value !== 'string') return null;
-    return isNewsSentiment(value) ? value : null;
-}
-function toNewsCategory(value: unknown): NewsCategory | null {
-    if (typeof value !== 'string') return null;
-    return isNewsCategory(value) ? value : null;
-}
-function toNewsImpact(value: unknown): NewsImpact | null {
-    if (typeof value !== 'string') return null;
-    return isNewsImpact(value) ? value : null;
 }
 
 function toMarketNewsRow(row: MarketNewsDbRow): MarketNewsRow {

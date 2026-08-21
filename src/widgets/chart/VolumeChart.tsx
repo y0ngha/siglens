@@ -39,6 +39,7 @@ export function VolumeChart({
     ticker,
 }: VolumeChartProps) {
     const t = useTranslations('widgets.chart');
+    const tMisc = useTranslations('shared.ui.misc');
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -66,7 +67,7 @@ export function VolumeChart({
     // wrapperRef가 아닌 containerRef에 두어 향후 wrapper에 인터랙티브 자식이 추가돼도 영향 없게.
     const chartAriaLabel =
         ticker !== undefined && ticker !== ''
-            ? `${ticker} 거래량 차트`
+            ? tMisc('volumeChartAria', { v0: ticker })
             : t('VolumeChart.1ae051');
 
     return (

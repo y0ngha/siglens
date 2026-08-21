@@ -1,5 +1,6 @@
 import type { EmailMessage } from '@/shared/email';
 import { DEFAULT_LOCALE, localePath, type Locale } from '@/shared/i18n/locales';
+import type { EmailTranslator } from './emailTranslator';
 
 // Duplicates @/shared/lib/seo SITE_NAME/SITE_URL — update both if changed.
 const SITE_NAME = 'Siglens';
@@ -29,36 +30,46 @@ interface BuildPasswordResetEmailInput {
      * 어긋나는 것은 그와 무관한 결함이다.
      */
     locale?: Locale;
+    /** `entities.email-token.email` 네임스페이스 번역자. */
+    t: EmailTranslator;
 }
 
 const RESET_PATH = '/reset-password';
-const SUBJECT = `${SITE_NAME} 비밀번호 재설정 안내`;
 // Redis TTL 전환 이후 코어가 expiresAt를 전달하지 않으므로 만료 시각을 표시하지 않는다.
 
 export function buildPasswordResetEmail({
     email,
     token,
     locale = DEFAULT_LOCALE,
+    t,
 }: BuildPasswordResetEmailInput): EmailMessage {
     const link = `${buildSiteUrl()}${localePath(locale, RESET_PATH)}?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
+    const heading = t('resetHeading', { v0: SITE_NAME });
+    const expiry = t('resetExpiry');
+    const ignore = t('resetIgnore');
     const text = [
-        `${SITE_NAME} 비밀번호 재설정`,
+        heading,
         '',
-        '아래 링크를 눌러 새 비밀번호를 설정해주세요.',
+        t('resetIntroText'),
         link,
         '',
-        '본 링크는 발급 후 30분간 유효합니다.',
-        '본인이 요청하지 않았다면 본 메일을 무시해주세요. 비밀번호는 변경되지 않습니다.',
+        expiry,
+        ignore,
     ].join('\n');
-    const html = `<!doctype html><html lang="ko"><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;padding:32px;">
+    const html = `<!doctype html><html lang="${locale}"><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;padding:32px;">
 <div style="max-width:480px;margin:0 auto;background:#1e293b;border-radius:12px;padding:32px;">
-  <h1 style="font-size:18px;margin:0 0 16px;color:#f1f5f9;">${SITE_NAME} 비밀번호 재설정</h1>
-  <p style="font-size:14px;line-height:1.6;color:#cbd5e1;margin:0 0 16px;">아래 버튼을 눌러 새 비밀번호를 설정해주세요.</p>
-  <p style="margin:24px 0;"><a href="${link}" style="display:inline-block;background:#2563eb;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;">새 비밀번호 설정</a></p>
-  <p style="font-size:12px;color:#94a3b8;margin:0 0 8px;">버튼이 동작하지 않으면 아래 주소를 직접 복사해 브라우저에 붙여넣어 주세요.</p>
+  <h1 style="font-size:18px;margin:0 0 16px;color:#f1f5f9;">${heading}</h1>
+  <p style="font-size:14px;line-height:1.6;color:#cbd5e1;margin:0 0 16px;">${t('resetIntroHtml')}</p>
+  <p style="margin:24px 0;"><a href="${link}" style="display:inline-block;background:#2563eb;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;">${t('resetButton')}</a></p>
+  <p style="font-size:12px;color:#94a3b8;margin:0 0 8px;">${t('resetCopyFallback')}</p>
   <p style="font-size:12px;color:#94a3b8;word-break:break-all;margin:0 0 16px;"><a href="${link}" style="color:#60a5fa;">${link}</a></p>
-  <p style="font-size:12px;color:#94a3b8;margin:0 0 8px;">본 링크는 발급 후 30분간 유효합니다.</p>
-  <p style="font-size:12px;color:#64748b;margin:24px 0 0;">본인이 요청하지 않았다면 본 메일을 무시해주세요. 비밀번호는 변경되지 않습니다.</p>
+  <p style="font-size:12px;color:#94a3b8;margin:0 0 8px;">${expiry}</p>
+  <p style="font-size:12px;color:#64748b;margin:24px 0 0;">${ignore}</p>
 </div></body></html>`;
-    return { to: email, subject: SUBJECT, html, text };
+    return {
+        to: email,
+        subject: t('resetSubject', { v0: SITE_NAME }),
+        html,
+        text,
+    };
 }

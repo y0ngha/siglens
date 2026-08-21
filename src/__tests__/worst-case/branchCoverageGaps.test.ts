@@ -4,7 +4,7 @@
 
 import { getFieldError } from '@/features/contact-form/lib/contactFormUtils';
 import type { ContactFormError } from '@/shared/lib/types';
-import { CONTACT_ERROR_MESSAGES } from '@/shared/lib/contactErrorMessages';
+import { CONTACT_ERROR_KEY } from '@/shared/lib/contactErrorMessages';
 
 describe('contactFormUtils — getFieldError matching field branch', () => {
     it('returns error message when field matches', () => {
@@ -13,7 +13,9 @@ describe('contactFormUtils — getFieldError matching field branch', () => {
             code: 'email_required',
         };
 
-        const result = getFieldError(error, 'email');
-        expect(result).toBe(CONTACT_ERROR_MESSAGES.email_required);
+        // 번역자는 키를 그대로 돌려주는 identity stub — 이 테스트가 보는 건
+        // 필드 일치 분기이지 문구가 아니다.
+        const result = getFieldError(error, 'email', key => key);
+        expect(result).toBe(CONTACT_ERROR_KEY.email_required);
     });
 });

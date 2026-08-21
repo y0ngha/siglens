@@ -17,9 +17,10 @@ const CHAT_MODEL_OPTIONS: readonly ModelOption[] = VALID_CHAT_MODELS.map(
     id => ({ id, ...getModelDisplay(id) })
 );
 
-const LOADING_MESSAGES = {
-    analyzing: '질문 내용을 살펴보고 있어요...',
-    generating: '답변을 작성하고 있어요...',
+/** `widgets.chat.thinking` 메시지 키 — 표시는 렌더 쪽에서 `t()`로. */
+const LOADING_MESSAGE_KEY = {
+    analyzing: 'reading',
+    generating: 'writing',
 } as const;
 
 interface ChatPanelProps {
@@ -29,6 +30,7 @@ interface ChatPanelProps {
 
 export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
     const t = useTranslations('widgets.chat');
+    const tThinking = useTranslations('widgets.chat.thinking');
     const { isAnalysisReady } = useSymbolChat();
 
     const {
@@ -144,7 +146,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                         aria-live="polite"
                     >
                         <p className="text-xs text-secondary-400">
-                            {LOADING_MESSAGES[loadingPhase]}
+                            {tThinking(LOADING_MESSAGE_KEY[loadingPhase])}
                         </p>
                         <span className="mt-1 inline-flex gap-0.5 text-base leading-none text-secondary-500">
                             <span className="animate-bounce [animation-delay:0ms]">

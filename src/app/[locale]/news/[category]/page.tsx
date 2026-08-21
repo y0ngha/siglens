@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale, localePath } from '@/shared/i18n/locales';
+import type { Locale } from '@/shared/i18n/locales';
 import { localeAlternates, localeOpenGraph } from '@/shared/lib/seoAlternates';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -26,8 +27,15 @@ import { JsonLd } from '@/shared/ui/JsonLd';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { regionsOf, type NavRegionId } from '@/shared/config/assetClassNav';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
-import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import {
+    buildBreadcrumbJsonLd,
+    buildWebPageJsonLd,
+    SITE_NAME,
+    SITE_URL,
+} from '@/shared/lib/seo';
+import { resolveNewsTitle } from '@/shared/lib/news/resolveNewsTitle';
 import { buildCategoryPageTitle, buildCategoryPageDescription } from './seo';
 
 // 12h ISR — 신선도는 ensureMarketNewsCardsAnalyzedAction의 on-demand
@@ -66,18 +74,21 @@ function buildCategoryBreadcrumb(
     cfg: CategoryConfig,
     categoryUrl: string,
     /** `shared.config` 번역자. 이 헬퍼는 순수 함수라 훅을 부를 수 없어 주입받는다. */
-    tNav: (key: string) => string
+    tNav: (key: string) => string,
+    locale: Locale
 ): Record<string, unknown> {
     const regionLink = regionsOf('news').find(r => r.region === cfg.region);
-    const trail = [{ name: '시장 뉴스 허브', url: `${SITE_URL}/news` }];
+    const trail = [
+        { name: tNav('app.news.page.dc06c4'), url: `${SITE_URL}/news` },
+    ];
     if (regionLink && `${SITE_URL}${regionLink.href}` !== categoryUrl) {
         trail.push({
             name: tNav(regionLink.fullLabelKey),
             url: `${SITE_URL}${regionLink.href}`,
         });
     }
-    trail.push({ name: cfg.koLabel, url: categoryUrl });
-    return buildBreadcrumbJsonLd(trail);
+    trail.push({ name: tNav(cfg.labelKey), url: categoryUrl });
+    return buildBreadcrumbJsonLd(trail, locale);
 }
 
 interface Props {
@@ -102,16 +113,17 @@ interface CategorySnapshot {
  * 블롭에는 그대로 남는다(감사: 비용 라운드 15).
  */
 async function loadCategorySnapshot(
-    category: NewsFeedCategoryId
+    category: NewsFeedCategoryId,
+    locale: Locale
 ): Promise<CategorySnapshot> {
     const cfg = CATEGORY_CONFIG[category];
     // ISR degrade guard: getMarketNewsList(DB)가 throw하면 ISR 캐시에 0-byte 빈 결과가
     // 굳는 것을 막으려면 여기서 흡수해야 한다. [] 로 degrade → isEmpty:true 가 되어
     // 이미 존재하는 MarketNewsDegraded empty-state 분기로 자연스럽게 빠진다.
     const rows = await staticSymbolCache(
-        ['market-news:list', cfg.sentinel],
+        ['market-news:list', cfg.sentinel, ...contentLocaleKeyPart(locale)],
         cfg.sentinel,
-        () => getMarketNewsCards(cfg.sentinel),
+        () => getMarketNewsCards(cfg.sentinel, locale),
         [`${MARKET_NEWS_CACHE_TAG_PREFIX}:${cfg.sentinel}`],
         SECONDS_PER_HALF_DAY
     ).catch((e: unknown) => {
@@ -129,25 +141,34 @@ async function loadCategorySnapshot(
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, category: slug } = await params;
     const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
+    // 카테고리 라벨은 이미 네 로케일 카탈로그에 있다(`CATEGORY_CONFIG.labelKey`).
+    // `cfg.koLabel`을 번역된 템플릿에 꽂으면 `미국 주식 News`처럼 반쪽만
+    // 번역된 문장이 나간다 — 제목·설명·h1·JSON-LD가 전부 그 상태였다.
+    const tRoot = await getTranslations({ locale });
     const cat = categoryFromSlug(slug);
 
     if (!cat) {
         // 잘못된 slug — not-found.tsx가 404와 robots 메타데이터를 담당하므로
         // 여기서 robots/alternates를 중복 설정하지 않는다(이중 robots 태그 방지).
         return {
-            title: '뉴스 카테고리를 찾을 수 없어요',
-            description: '요청하신 뉴스 카테고리가 존재하지 않아요.',
+            title: tSeo('newsCategory.notFoundTitle'),
+            description: tSeo('newsCategory.notFoundDescription'),
         };
     }
 
     const cfg = CATEGORY_CONFIG[cat];
-    const { isEmpty } = await loadCategorySnapshot(cat);
+    const { isEmpty } = await loadCategorySnapshot(cat, locale);
 
     // 데이터 없으면 noindex — 페이지 본문의 degrade 메시지와 일관.
     if (isEmpty) {
         return {
-            title: `${cfg.koLabel} 뉴스`,
-            description: `${cfg.koLabel} 최신 뉴스를 불러오지 못했어요.`,
+            title: tSeo('newsCategory.emptyTitleTemplate', {
+                label: tRoot(cfg.labelKey),
+            }),
+            description: tSeo('newsCategory.emptyDescriptionTemplate', {
+                label: tRoot(cfg.labelKey),
+            }),
             // `follow: true` — 헤더가 전 페이지에서 이 URL을 링크한다. 콜드 배포
             // 직후의 빈 상태를 `nofollow`로 두면 사이트 전역에서 링크 주스가 끊기는
             // 막다른 길이 된다. 자매 KR 라우트(`/market/kr` 등)도 전부 follow다.
@@ -157,9 +178,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 
     const canonicalPath = `/news/${cfg.slug}`;
-    const title = buildCategoryPageTitle(cfg.koLabel);
+    const title = buildCategoryPageTitle(tRoot(cfg.labelKey), tSeo);
     const fullTitle = `${title} | ${SITE_NAME}`;
-    const description = buildCategoryPageDescription(cfg.koLabel);
+    const description = buildCategoryPageDescription(tRoot(cfg.labelKey), tSeo);
     const keywords = [
         `${cfg.koLabel} 뉴스`,
         `${cfg.koLabel} 최신 뉴스`,
@@ -201,8 +222,11 @@ export default async function CategoryNewsPage({ params }: Props) {
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    // DB 콘텐츠(뉴스 제목·요약) 해석에 쓸 좁혀진 로케일. URL 세그먼트는 신뢰 경계다.
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
     const tNav = await getTranslations();
     const t = await getTranslations('app.news');
+    const tSeo = await getTranslations('shared.seo');
     const cat = categoryFromSlug(slug);
 
     if (!cat) {
@@ -213,7 +237,7 @@ export default async function CategoryNewsPage({ params }: Props) {
     // TODO(market-news-hub): bot user-agents only see degrade state because
     // ensureMarketNewsCardsAnalyzedAction is client-triggered. Investigate server-side
     // gated trigger or cron warmup to improve crawl signal. See PR #598 Phase B audit.
-    const { items, isEmpty } = await loadCategorySnapshot(cat);
+    const { items, isEmpty } = await loadCategorySnapshot(cat, resolved);
 
     const hasEnrichedNews = items.some(item => item.sentiment !== null);
 
@@ -223,19 +247,25 @@ export default async function CategoryNewsPage({ params }: Props) {
     // crawl budget on schema that won't be processed anyway.
     const webPageJsonLd = !isEmpty
         ? {
-              '@context': 'https://schema.org',
-              '@type': 'WebPage',
-              '@id': `${categoryUrl}#webpage`,
-              name: `${buildCategoryPageTitle(cfg.koLabel)} | ${SITE_NAME}`,
-              description: buildCategoryPageDescription(cfg.koLabel),
-              url: categoryUrl,
-              inLanguage: 'ko',
-              isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
+              ...buildWebPageJsonLd({
+                  url: categoryUrl,
+                  name: `${buildCategoryPageTitle(tNav(cfg.labelKey), tSeo)} | ${SITE_NAME}`,
+                  description: buildCategoryPageDescription(
+                      tNav(cfg.labelKey),
+                      tSeo
+                  ),
+                  locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+              }),
           }
         : null;
 
     const breadcrumbJsonLd = !isEmpty
-        ? buildCategoryBreadcrumb(cfg, categoryUrl, tNav)
+        ? buildCategoryBreadcrumb(
+              cfg,
+              categoryUrl,
+              tNav,
+              isLocale(locale) ? locale : DEFAULT_LOCALE
+          )
         : null;
 
     // FMP category news has no per-article image URL, so we use the per-category OG image
@@ -247,7 +277,9 @@ export default async function CategoryNewsPage({ params }: Props) {
             ? {
                   '@context': 'https://schema.org',
                   '@type': 'ItemList',
-                  name: `${cfg.koLabel} 최신 뉴스`,
+                  name: tSeo('newsCategory.itemListName', {
+                      label: tNav(cfg.labelKey),
+                  }),
                   itemListElement: items
                       .slice(0, JSON_LD_NEWS_MAX_ITEMS)
                       .map((item, idx) => ({
@@ -265,7 +297,10 @@ export default async function CategoryNewsPage({ params }: Props) {
                                * we don't hold each source's logo asset.
                                */
                               '@type': 'Article',
-                              headline: item.titleKo ?? item.titleEn,
+                              headline: resolveNewsTitle(
+                                  item,
+                                  isLocale(locale) ? locale : DEFAULT_LOCALE
+                              ),
                               url: item.url,
                               datePublished: item.publishedAt,
                               image: CATEGORY_OG_IMAGE_URL,
@@ -300,7 +335,7 @@ export default async function CategoryNewsPage({ params }: Props) {
                 />
                 <NewsCategoryTabs activeCategory={cat} />
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
-                    {t('page.78de73', { v0: cfg.koLabel })}
+                    {t('page.78de73', { v0: tNav(cfg.labelKey) })}
                 </h1>
                 <Suspense fallback={<DigestSkeleton />}>
                     <MarketNewsDigest
@@ -309,7 +344,7 @@ export default async function CategoryNewsPage({ params }: Props) {
                     />
                 </Suspense>
                 {isEmpty ? (
-                    <MarketNewsDegraded koLabel={cfg.koLabel} />
+                    <MarketNewsDegraded koLabel={tNav(cfg.labelKey)} />
                 ) : (
                     // 그리지 않는 카드까지 RSC 페이로드로 내보내지 않는다 —
                     // MARKET_NEWS_ROW_SERIALIZATION_LIMIT 주석 참고.
@@ -352,7 +387,7 @@ function MarketNewsDegraded({ koLabel }: MarketNewsDegradedProps) {
     const t = useTranslations('app.news');
     return (
         <section
-            aria-label={`${koLabel} 뉴스 없음`}
+            aria-label={t('page.categoryEmptyLabel', { v0: koLabel })}
             className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <p className="text-sm text-secondary-400">

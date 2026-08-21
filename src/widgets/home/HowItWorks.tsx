@@ -25,7 +25,13 @@ export function HowItWorks({ skillCounts }: HowItWorksProps) {
         {
             number: '02',
             title: t('HowItWorks.1174ae'),
-            description: `보조지표 ${indicators}종, 캔들 패턴 ${candlesticks}종, 차트 패턴 ${patterns}종, 전략 ${strategies}종, 지지·저항선 ${supportResistance}종을 자동으로 분석해요`,
+            description: t('HowItWorks.autoAnalysisDescription', {
+                v0: indicators,
+                v1: candlesticks,
+                v2: patterns,
+                v3: strategies,
+                v4: supportResistance,
+            }),
         },
         {
             number: '03',

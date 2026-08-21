@@ -1,8 +1,15 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { getTranslations } from 'next-intl/server';
 import { MarketNewsCard } from '../MarketNewsCard';
-import { SENTIMENT_LABEL, SENTIMENT_CLASS } from '../utils/sentimentConstants';
+import { sentimentLabel, SENTIMENT_CLASS } from '../utils/sentimentConstants';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 import type { MarketNewsCardItem } from '@/entities/market-news';
+
+let t: EnumLabelTranslator;
+beforeAll(async () => {
+    t = await getTranslations({ locale: 'ko', namespace: 'shared.enumLabel' });
+});
 
 const BASE: MarketNewsCardItem = {
     id: 'm1',
@@ -71,7 +78,7 @@ describe('MarketNewsCard는', () => {
         // AnalysisSkeleton renders "AI 분석 중…" text
         expect(screen.getByText('AI 분석 중…')).toBeInTheDocument();
         // Sentiment badge text (e.g. '긍정') must not be in the DOM
-        expect(screen.queryByText(SENTIMENT_LABEL['bullish'])).toBeNull();
+        expect(screen.queryByText(sentimentLabel('bullish', t))).toBeNull();
     });
 
     it('priceImpact === "high"일 때 카드 루트에 border-l-ui-warning 클래스가 있다', () => {
@@ -106,6 +113,26 @@ describe('MarketNewsCard는', () => {
         expect(screen.getByText('BTC 요약이에요.')).toBeInTheDocument();
     });
 
+    /** 회귀 가드 — NewsList와 같은 사고. 제목만 로케일을 타면 안 된다. */
+    it('사이드카 번역이 있으면 요약·본문을 그 언어로 렌더한다', () => {
+        render(
+            <MarketNewsCard
+                category="general"
+                item={{
+                    ...BASE,
+                    summaryKo: 'BTC 요약이에요.',
+                    bodyKo: 'BTC 본문이에요.',
+                    summaryLocalized: 'BTC summary here.',
+                    bodyLocalized: 'BTC body here.',
+                }}
+            />
+        );
+        expect(screen.getByText('BTC summary here.')).toBeInTheDocument();
+        expect(screen.getByText('BTC body here.')).toBeInTheDocument();
+        expect(screen.queryByText('BTC 요약이에요.')).not.toBeInTheDocument();
+        expect(screen.queryByText('BTC 본문이에요.')).not.toBeInTheDocument();
+    });
+
     it('sentiment === "bullish"이면 배지에 "긍정" 레이블과 bullish 클래스가 있다', () => {
         render(
             <MarketNewsCard
@@ -113,7 +140,7 @@ describe('MarketNewsCard는', () => {
                 item={{ ...BASE, sentiment: 'bullish' }}
             />
         );
-        const badge = screen.getByText(SENTIMENT_LABEL['bullish']);
+        const badge = screen.getByText(sentimentLabel('bullish', t));
         expect(badge).toBeInTheDocument();
         expect(badge.className).toContain(
             SENTIMENT_CLASS['bullish'].split(' ')[0]

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { StreamErrorMessages } from '@/shared/hooks/useAnalysisStream';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { useCallback, useMemo } from 'react';
@@ -53,7 +54,16 @@ async function fetchOptionsAnalysis(
         throw new BotBlockedError();
     }
     if (result.status === 'no_chains_error') {
-        throw new Error(result.error ?? messages.noOptionsChains);
+        /**
+         * core는 `no_chains_error`에 **항상** 영어를 채운다
+         * (`snapshot has no usable options chains`,
+         *  `expiration 2026-09-18 not present in snapshot`).
+         * 그래서 `result.error ?? fallback`은 폴백이 절대 안 걸리고 원시 문구가
+         * 전 로케일에 나갔다 — financials·fundamental·congress와 같은 계열이다.
+         */
+        // 옵션이 없는 종목은 정상 상태다 — error가 아니라 debug 레벨로 남긴다.
+        if (result.error) console.debug('[noOptionsChains]', result.error);
+        throw new Error(messages.noOptionsChains);
     }
     if (result.status === 'limit_error') {
         // core가 만든 문구는 **전 로케일 영어**다 — 코드만 믿고 문구는 갈아끼운다.
@@ -113,6 +123,7 @@ export function useOptionsAnalysis({
     isSettingsHydrated = true,
     cacheOnly = false,
 }: UseOptionsAnalysisInput): OptionsAnalysisState {
+    const tError = useTranslations('shared.ui.analysisError');
     const locale = useCurrentLocale();
     const streamMessages = useStreamErrorMessages();
     const queryKey = useMemo(
@@ -182,7 +193,7 @@ export function useOptionsAnalysis({
             error:
                 query.error instanceof Error
                     ? query.error
-                    : new Error('분석 중 오류가 발생했습니다.'),
+                    : new Error(tError('analysisFailed')),
             retry,
             trigger: retry,
         };

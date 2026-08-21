@@ -155,32 +155,181 @@ widgets/share/ui/ShareTriggerDialog.tsx
 
 ### 2.5 DB 저장 콘텐츠 (코드 밖 번역 대상)
 
+> **2026-08-21 갱신** — 아래 표는 구현하면서 세 군데가 바뀌었다. 이유는 §2.5.1.
+
 | 테이블 | 한국어 필드 | 처리 |
 |---|---|---|
-| `terms` | `body` (약관·개인정보처리방침 마크다운) | `locale` 컬럼 추가, uq `(kind, version, locale)`. **인간 번역 필수** |
-| `notices` | `title` `body` `linkLabel` | `locale` 컬럼 추가, ko 폴백 |
-| `profileDescriptionTranslations` | `descriptionKo` | PK를 `(symbol, locale)`로. **en은 FMP 원문 영어를 그대로 사용**(재번역 금지) |
-| `economicIndicatorTranslations` | `koreanName` | PK에 `locale` 추가 |
-| `news` / `marketNews` | AI 생성 한국어 요약 | 후처리 번역 레이어(§6) |
-| `economicCalendar` | 이벤트 한국어 | 후처리 번역 레이어 |
-| `seoAnalysisSnapshots` | 프리웜된 분석 본문 | 로케일별 스냅샷, 프리웜 화이트리스트로 통제 |
-| `sharedAnalyses` | 공유 스냅샷 본문 | **생성 시 로케일 고정** + `contentHash` 페이로드에 locale 포함 — 아래 주의 |
-| `assetTranslations` | `koreanName` | ja/zh 종목명은 v1 범위 밖 — `name`(영문) 폴백 |
+| `terms` | `body` | **사이드카** + `source='human'`만 신뢰. 번역 없으면 원문 + 안내 배너 |
+| `notices` | `title` `body` `linkLabel` | **사이드카**(원본 `id` 유지 — §2.5.1) |
+| `profileDescriptionTranslations` | `descriptionKo` | 사이드카. **비-ko는 FMP 원문 영어 그대로**(재번역 금지) |
+| `news` / `marketNews` | AI 생성 한국어 | 사이드카(§6 후처리 번역 레이어가 채운다) |
+| `economicCalendar` | 이벤트 한국어 | 사이드카 |
+| `seoAnalysisSnapshots` | 프리웜된 분석 본문 | **`locale` 컬럼** + uq `(symbol, tab, locale)` |
+| `sharedAnalyses` | 공유 스냅샷 본문 | **`locale` 컬럼** + `contentHash` 페이로드에 locale |
+| ~~`assetTranslations`~~ | `koreanName` | **레지스트리에서 뺐다** — §2.5.1 (3) |
+| ~~`economicIndicatorTranslations`~~ | `koreanName` | **레지스트리에서 뺐다** — §2.5.1 (3) |
+
+> `seoAnalysisSnapshots`·`sharedAnalyses`도 `TRANSLATABLE_ENTITY`에는 없다.
+> 사이드카를 쓰지 않으므로 등록할 이유가 없다 — 등록해 두면 백필·번역이
+> 대상으로 잡는다.
+
+#### 2.5.1 결정 변경 두 가지
+
+**(1) 대부분은 `locale` 컬럼이 아니라 사이드카 테이블**
+
+원안은 테이블마다 `locale` 컬럼을 더하는 것이었다. 구현하면서 뒤집었다.
+
+- 로케일 추가가 **행 추가**로 끝난다. 컬럼 방식이면 9개 테이블에 매번
+  마이그레이션이 필요하고, 그때마다 PK·unique 인덱스를 다시 설계해야 한다.
+- **`notices`는 컬럼 방식이 기능을 깬다.** 공지 팝업의 "다시 보지 않기"가
+  `id`를 localStorage에 저장한다. 로케일마다 별도 행(=별도 `id`)을 만들면
+  한국어로 닫은 공지가 영어로 다시 뜬다. 사이드카는 원본 `id`를 유지한다.
+- `sharedAnalyses`의 dedupe 충돌(아래 ⚠️)을 건드리지 않는다.
+
+대신 원본 행과의 FK가 없다 — `entity_id`가 테이블마다 타입이 달라(uuid/text)
+단일 FK를 걸 수 없다. 원본 삭제 시 고아 행이 남는다(조회 키가 안 맞아 화면에는
+새어 나오지 않는다). 정리 크론은 후속 항목이다.
+
+**(2) 예외 둘은 여전히 `locale` 컬럼** — `sharedAnalyses`·`seoAnalysisSnapshots`
+
+이 둘의 본문은 **그 언어로 생성된 AI 산출물**이다. 사후에 다른 로케일로 다시
+해석할 수 있는 성질의 값이 아니라, 로케일이 그 행의 정체성의 일부다. 사이드카에
+넣으면 "번역이 없으면 폴백"이라는 사이드카의 의미론과 충돌한다.
 
 > ⚠️ **`sharedAnalyses`의 dedupe 충돌**: `shared_analyses_content_uq`는
-> `contentHash` **단독** unique이고(`src/shared/db/schema.ts:613`),
+> `contentHash` **단독** unique이고(`src/shared/db/schema.ts`),
 > `create()`는 `onConflictDoUpdate({ target: contentHash, set: { expiresAt } })`로
-> 기존 행을 재사용한다(`src/entities/shared-analysis/api.ts:71`).
-> `contentHash(kind, symbol, result, chartBars)`에는 로케일이 없다
-> (`lib/contentHash.ts:14`). 따라서 `locale` 컬럼만 추가하면 **영어 사용자가 만든
+> 기존 행을 재사용한다. `contentHash`에 로케일이 없으면 **영어 사용자가 만든
 > 공유 링크가 먼저 저장된 한국어 행의 id를 돌려받고**, `onConflictDoUpdate`는
 > `expiresAt`만 갱신하므로 로케일도 고쳐지지 않는다 — 조용히 남의 언어 스냅샷을
 > 공유하게 된다.
-> **해결**: `contentHash` 페이로드에 `locale`을 넣는다(unique 제약을
-> `(contentHash, locale)`로 넓히는 것보다 낫다 — 기존 인덱스·쿼리를 건드리지 않고,
-> 로케일이 다르면 해시가 달라져 자연히 다른 행이 된다). 기존 행은 ko로 생성된
-> 해시라 무효화되지만, 공유 링크는 `id`로 조회하므로 **기존 링크는 그대로 살아있다**
-> (새 해시는 새 공유 생성 시에만 쓰인다).
+> **해결**: `contentHash` 페이로드에 `locale`을 넣는다(unique를 `(contentHash,
+> locale)`로 넓히는 것보다 낫다 — 기존 인덱스·쿼리를 안 건드리고, 로케일이
+> 다르면 해시가 달라져 자연히 다른 행이 된다). 기존 행의 해시는 무효가 되지만
+> **공유 링크는 `id`로 조회하므로 살아 있다**.
+> 회귀 가드: `entities/shared-analysis/__tests__/contentHash.test.ts`.
+
+**(3) 종목명·지표명은 레지스트리에서 뺐다**
+
+원안은 두 테이블도 사이드카에 얹는 것이었다. 구현하고 나서 **읽는 경로가
+없다**는 것이 감사에서 드러났다 — 등록만 해 두면 백필과 AI 번역이 매번 돌면서
+결과가 그대로 버려진다. 화면은 멀쩡하고 테스트도 통과하므로 눈으로는 안 잡힌다.
+
+빼는 쪽을 골랐다. 두 경로 모두 **비-ko에서 이미 영문 원본이 나가기 때문**이다:
+
+- `buildDisplayName`은 비-ko에서 `assetInfo.name`(영문 법인명)을 쓴다.
+  한국어명은 영문명이 아예 없을 때만 나오는데, 그 자리의 대안은 맨 티커다.
+  지수·ETF처럼 이름이 고정된 것은 `shared.assetName` 메시지 카탈로그가 덮는다.
+- `resolveIndicatorLabels`는 비-ko에서 사전·DB를 아예 타지 않고 원본 영문
+  지표명을 돌려준다. 사이드카를 붙이면 로케일마다 별도 `unstable_cache`
+  엔트리가 생겨 ISR write만 늘어난다.
+
+즉 **한국어가 새는 자리가 아니다.** 나중에 사람이 ja/zh 종목명을 넣을 값어치가
+생기면 그때 다시 등록한다.
+
+> 회귀 가드: `shared/db/__tests__/contentTranslationRegistry.test.ts`가
+> `TRANSLATABLE_ENTITY`의 모든 키에 대해 백필·번역 스크립트가 아닌 **프로덕션
+> 읽기 경로**가 있는지 검사한다. 없으면 CI가 막는다.
+
+#### 2.5.2 읽기 경로 계약
+
+모든 DB 콘텐츠가 **같은 함수 하나**를 지난다 —
+`shared/db/localizeContent.ts`의 `localizeContent()`. 엔티티마다 폴백을
+따로 구현하면 규칙이 갈린다(실제로 로케일을 보던 것은 뉴스 제목 하나뿐이었고
+나머지는 전부 한국어를 우선했다).
+
+```
+읽기 = 원본 행(레거시 ko 컬럼)  +  content_translations 사이드카
+       → pickContentLocale(폴백 체인)  →  { value, locale, isFallback }
+```
+
+- **폴백 체인**(`shared/db/contentLocale.ts`): ko→[ko,en], en→[en,ko],
+  ja→[ja,en,ko], zh→[zh,en,ko]. ja/zh에 영어를 한국어보다 앞에 둔 이유는
+  읽힐 확률이다.
+- **빈 문자열은 없는 것으로 본다.** DB에 분석 실패로 빈 문자열이 들어간 행이
+  실제로 있고, "번역됨"으로 취급하면 폴백이 막혀 빈 카드가 렌더된다.
+- **`isFallback`을 함께 돌려준다.** 약관·개인정보처리방침이 이 값으로 안내
+  배너를 띄운다 — 읽지 못하는 언어의 문서에 동의시키는 것은 표시 결함이 아니라
+  법적 문제다(`widgets/legal/UntranslatedNotice.tsx`).
+- **쿼리는 행 수와 무관하게 1회.** 카드 20장이 사이드카를 20번 조회하면 목록
+  렌더가 DB 왕복 20회가 된다.
+- **`field`는 `CONTENT_FIELD` 상수만 쓴다.** 컬럼이 문자열이라 오타를 컴파일러가
+  못 잡고, 오타 하나면 그 필드의 번역이 조용히 없는 것으로 취급된다(폴백이 걸려
+  화면은 멀쩡해 보이고 테스트도 통과한다).
+
+#### 2.5.3 배포 순서 (마이그레이션은 아직 적용 전)
+
+> ⛔ **운영 DB에 적용 금지 (사용자 지시, 2026-08-21).** `.env.local`이 운영 Neon을
+> 가리키므로 `yarn db:*`의 기본 대상이 운영이다. 쓰기 스크립트는 원격 대상일 때
+> 거부하도록 가드를 걸어 뒀다(`db/scripts/lib/dbTarget.ts`,
+> `ALLOW_REMOTE_DB_WRITE=1`로만 해제). 아래 순서는 **승인 후** 절차다.
+
+스키마와 코드는 시차를 두고 배포된다(마이그레이션이 수동 `yarn db:migrate`다).
+**스키마가 먼저다.**
+
+| # | 작업 | 상태 |
+|---|---|---|
+| 1 | `yarn db:migrate --until 0029_content_locale` | ⬜ 프로덕션 미적용 (로컬 Postgres 17 실증 완료) |
+| 2 | 코드 배포 | ✅ 구현 완료 |
+| 3 | `yarn db:migrate` (0030) | ⬜ 프로덕션 미적용 |
+| 4 | `yarn db:backfill:content-locale --apply` (ko 행) | ⬜ 프로덕션 미실행 (로컬 실증 완료 — 멱등성 포함) |
+| 5 | `yarn db:translate:content-locale --locale <en\|ja\|zh> --apply` | ⬜ 프로덕션 미실행 (로컬에서 스킵·집계 검증) |
+| 6 | `yarn db:verify:content-locale` — 읽기 전용 점검 | ⬜ |
+| 7 | `DB_CONTENT_LOCALE=1` 설정 후 재배포 | ⬜ |
+
+> ⛔ **1과 2를 뒤집으면 안 된다.** 스위치가 꺼져 있어도 쓰기 경로는 `locale`
+> 컬럼을 넣는다 — Drizzle이 스키마에 있는 컬럼을 values에서 빼도 `default`로
+> 항상 INSERT에 넣기 때문이다(실측: `values({...}).toSQL()`). 이 문서의 이전
+> 판은 "코드 먼저"였고, 그 전제는 틀렸다. 회귀 가드는
+> `src/entities/seo-snapshot/__tests__/upsertSql.test.ts`가 **프로덕션
+> repository가 만든 SQL**을 직접 검사한다.
+>
+> 반대 방향은 안전하다. 0029는 additive라(컬럼 추가 + 인덱스 추가, 기존 unique
+> 유지) 구 코드의 `INSERT ... ON CONFLICT (symbol, tab)`이 그대로 매칭되고
+> `locale`은 기본값 `ko`로 채워진다(로컬 Postgres 17로 실증).
+
+> ⛔ **3의 위치가 좁다.** 2보다 앞서면 배포된 구 코드의 2열 `ON CONFLICT`가
+> 42P10으로 죽고, 7보다 뒤면 구 unique `(symbol, tab)`가 두 번째 로케일 행을
+> **23505**로 막는다(로컬 실증). 즉 3은 "코드 배포 후, 스위치 전"에만 놓인다.
+>
+> 이 창을 없애려고 쓰기 경로의 `ON CONFLICT` 타깃에서 **스위치 분기를 뺐다** —
+> 항상 `(symbol, tab, locale)`이다. 0029가 그 인덱스를 만들고 코드는 그 뒤에
+> 배포되므로 타깃은 항상 존재하고, 스위치가 꺼진 동안엔 `locale`이 언제나
+> `ko`라 2열 타깃과 동작이 같다. 결과적으로 스위치는 **읽기 전용 게이트**가
+> 됐고, 언제든 되돌릴 수 있다(단 3 이후 구 코드로의 롤백은 불가).
+
+> **0030은 저널에 있다.** 예전에는 `db:migrate`가 저널 전체를 훑는다는 이유로
+> 0030을 **저널에서 빼** 뒀는데, 그러면 `drizzle-kit`의 스냅샷 체인이 끊겨
+> `db:generate`가 매번 0029의 DDL을 다시 뱉는다(실제로 그 상태였고
+> `0029_snapshot.json`이 아예 없었다). 저널에 두고 1단계에서 `--until`로
+> 멈추는 쪽이 옳다 — 스냅샷도 맞고 적용 시점도 통제된다.
+> 가드: `shared/db/__tests__/scripts/migrateUntil.test.ts`.
+
+> **4단계가 핵심이다.** 백필(4)은 `ko` 행만 만든다 — 그것만으로는 스위치를 켜도
+> 폴백이 걸려 한국어가 그대로 나간다. 비-ko 행을 만드는 것은 5단계뿐이다.
+> `terms`는 AI 대상에서 제외한다(오역이 곧 의무의 변경이라 읽기 경로가
+> `source='human'` 행만 받는다). 종목명·지표명은 애초에 사이드카에 등록하지
+> 않는다 — 비-ko는 이미 영문 원본이 나가므로 번역할 이유가 없다.
+
+> **로컬 실증 (2026-08-21)**: `docker-compose.e2e.yml`의 Postgres 17에
+> 마이그레이션 29개를 전부 적용하고 백필을 두 번 돌려 멱등성까지 확인했다.
+> 폴백은 `zh` 번역이 없을 때 `en`으로 떨어지는 것까지 실제 SELECT로 확인했다.
+>
+> 그 과정에서 **백필 스크립트가 실행 자체가 불가능한 상태**였다는 것이 드러났다
+> — `@/shared/db/client`를 import했는데 그 모듈이 끌어오는 `server-only`가 Next
+> 번들러 가상 패키지라 `tsx`에서 `MODULE_NOT_FOUND`로 죽었다. 소스를 grep하는
+> 테스트는 전부 통과하고 있었다. `scripts/seed-kr-listed-names.ts`와 같은 형태
+> (로컬 테이블 선언 + `postgres` 드라이버)로 고쳤고, 회귀 가드도
+> "무엇이 쓰여 있는가"에서 "DB 계층을 import하지 않는가"로 바꿨다.
+
+- **OFF일 때**: 사이드카를 조회하지 않고 `locale` 컬럼도 INSERT하지 않는다 —
+  마이그레이션 전과 **정확히 같은 SQL**이 나간다.
+- **ON인데 마이그레이션이 안 됐으면**: `column ... does not exist`로 즉시
+  실패한다(조용한 오작동보다 낫다).
+- **3번을 건너뛰고 4번을 켜면**: 사이드카가 비어 폴백 — 무동작이지 오작동이 아니다.
+- ⚠️ **ISR 비용**: 스위치를 켜면 뉴스 목록의 `unstable_cache` 키에 로케일이
+  붙어 ISR write가 로케일 수만큼 늘어난다(`shared/cache/contentLocaleKeyPart.ts`).
+  이 레포에서 ISR write는 실제 비용 항목이다 — 켜는 것은 의식적인 결정이어야 한다.
 
 ---
 
@@ -807,6 +956,157 @@ openGraph: { locale: OG_LOCALE[locale], alternateLocale: [...나머지] },
 | core 문구가 카탈로그를 우회 | 사용량 한도는 **ko 사용자에게도 영어**, BYOK 키 안내는 **en 사용자에게도 한국어** |
 | 종목 게이트만 `nofollow` | 정적 게이트(`localeRobots`)는 `follow`였다 — 같은 게이트가 두 표면에서 다른 값 |
 
+### 라운드 9 — 수정이 **런타임에서만** 무효였던 건
+
+라운드 8에서 지수·섹터·스킬 표시명 60개를 카탈로그로 옮겼는데, **화면에는 끝까지
+한국어가 나왔다.** 게이트는 전부 초록이었다.
+
+경로는 이랬다. 표시명 조회를 `assetLabel(t, symbol, fallback)` 헬퍼로 빼면서
+번역자를 **인자로** 넘기게 됐다. 추출기는 `t(변수)` 호출만 "동적"으로 보므로 그
+파일을 리터럴 전용으로 분류했고, 네임스페이스가 좁혀져 키가 클라이언트 페이로드에서
+빠졌다. 헬퍼는 `t.has()`로 폴백하도록 짜여 있어 `MISSING_MESSAGE`조차 안 났다.
+컴포넌트 테스트는 **전체 카탈로그**로 렌더되므로 이 축소를 구조적으로 볼 수 없었다.
+
+수정은 휴리스틱이 아니라 구조로 했다:
+
+| 조치 | 이유 |
+|---|---|
+| 조회 테이블을 `shared.assetName`·`shared.skillName` **2세그먼트 전용** 네임스페이스로 분리 | 동적 키는 네임스페이스째 실린다. `widgets.dashboard` 아래 두면 슬라이스 전체가 딸려간다 |
+| 헬퍼를 `useAssetLabel()`·`useSkillLabel()` 훅으로 | 번역자를 넘기지 않으면 오분류 자체가 불가능 |
+| 점 있는 키를 `091160_KS`로 치환 | next-intl이 `.`를 중첩 구분자로 써서 조회 불가 + 요청마다 `INVALID_KEY` |
+| 가드를 **페이로드**에 걸기 | 소스 스캔 가드는 추출기와 같은 모델이라 사이좋게 틀린다 |
+
+부수적으로 드러난 추출기 결함 둘:
+- `t.rich('k')`를 참조로 세지 않아 **태그를 쓰는 키가 `--write` 때마다 삭제**됐다.
+- `manualKeys.json`이 "삭제 방지"와 "크롬 강제 적재" 두 역할을 겸했다. 라우트
+  전용 키를 등록하자 그 네임스페이스가 통째로 크롬에 실려 페이로드가 카탈로그의
+  36%가 됐다. `{preserve, chromeWide}`로 쪼갰다.
+
+**추적 과정에서 두 번 헛짚었다.** 처음엔 추출기 정규식을 넓혔다가 페이로드를
+부풀렸고, 되돌리면서 `dynamicKeyCall` **정의만 지우고 사용부를 남겨** 추출기가
+계속 예외로 죽었다. `>/dev/null` 때문에 그 실패가 안 보였고, 그 사이 측정값이
+전부 stale 파일을 읽고 있었다 — [[feedback_build_exit_code_pipe_masks_failure]]와
+같은 클래스다.
+
+### 라운드 10 — 라운드 9 수정 자체의 결함 3종, 그리고 **가드가 뚫린 채로 통과**
+
+라운드 9의 핵심 수정(표시명 60개)이 실물로 확인됐다 — `/en/market`의
+`S&P 500 Large Cap`·`Technology`, `/ja/market`의 `米国大型株500`,
+`/en/market/kr`의 `SEMICONDUCTOR`, `/en/AAPL`의 `Divergence Strategy`,
+`INVALID_KEY` 0건. 그런데 그 수정 **자체**가 세 군데 틀려 있었다.
+
+| 결함 | 실측 |
+|---|---|
+| `verify.mjs` 길이 검사 | 게으른 정규식이 **마지막 분기의 닫는 중괄호를 블록 종료로 먹어** 그 분기가 스캔에서 사라짐. 1,026자를 넣어도 렌더 길이 74자로 계산돼 통과 |
+| `verify.mjs` 플레이스홀더 검사 | 같은 원인 + 블록을 통째로 지워 분기 **안**의 `{v9}`를 못 봄. 게이트 통과 후 렌더에서 `MissingValueError` |
+| 조회 표를 `chromeWide`에 등록 | `manualKeys.json` 자신이 금지한 형태. `/login`·`/terms` 등 28개 라우트에 1.3KB 사표(死表). 걷어내니 추출기가 소비 라우트에만 정확히 실음(크롬 13.4%→10.3%) |
+
+정규식을 **중괄호 균형 파싱**(`findIcuBlocks`)으로 바꾸고, 플레이스홀더는 분기를
+재귀로 훑게 했다.
+
+**가드가 뚫린 채 통과한 건이 또 나왔다.** 직전에 만든 `noRawCoreErrorInHooks`가
+`useOverallAnalysis`의 삼항(`typeof result.error === 'string' ? result.error : …`)을
+그대로 통과시켰다 — 그 파일이 가드의 목록에 들어 있는데도 8개가 초록이었다.
+`??`와 `new XError(result.error)` **두 형태만 나열**했기 때문이다. 형태 나열을
+버리고 **에러 생성 인자**만 보도록 바꿨다.
+
+같은 클래스로, `assetLabel` 테스트는 이름이 "en 카탈로그에서 나온다"인데 실제로는
+전역 ko 프로바이더로 렌더됐고, 기대값을 `en.json`에서 읽어 **동어반복**이었다 —
+en 값을 한국어로 바꿔도 30개가 통과했다. `renderWithIntl(..., { locale: 'en' })`로
+실제 en 렌더로 바꾸고, 카탈로그와 무관한 성질(한글 없음)을 추가로 걸었다.
+
+그리고 테스트 6건이 **core의 영어 원문이 그대로 새는 것을 정상으로 단언**하고
+있었다. 픽스처가 한국어(`'submit 실패'`, `'일시적 오류'`)라 결함이 안 보였다 —
+core가 실제로 주는 값(`Profile not found for symbol: AAPL`)으로 바꾸자 드러났다.
+
+### 라운드 11~13 — SEO 문구 다국어화, 그리고 **게이트가 전부 초록인 채로 나간 SSR 파괴**
+
+라운드 11에서 사용자가 `/en/market`의 한국어 제목을 지적해 SEO title·description을
+정적 페이지 + 종목 9탭 전부 다국어화했다(`shared.seo`, 서버 전용 네임스페이스).
+`keywords`는 §5.1대로 ko 전용으로 남긴다.
+
+**라운드 12에서 가장 심각한 결함이 나왔다.** 날짜를 로케일화하면서
+`SnapshotSummarySection`에 `useCurrentLocale()`(=`'use client'` 컨텍스트 훅)을
+넣었는데 그 파일에는 `'use client'`가 없었다. 서버 컴포넌트에서 클라이언트 훅을
+부르면 그 서브트리 렌더가 통째로 죽는다:
+
+```
+⨯ Attempted to call useCurrentLocale() from the server but
+  useCurrentLocale is on the client.
+```
+
+**종목 페이지 본문 전체가 전 로케일에서 SSR되지 않았다** — 기본 로케일 ko 포함,
+봇에는 크롬만 노출(2026-07 노출 붕괴와 같은 모양). 그런데
+`tsc` 0 · `lint` 0 · **테스트 10,697개 통과** · **프로덕션 빌드 0**이었다.
+서버/클라이언트 경계는 그중 무엇도 보지 않는다 — vitest는 모든 모듈을 한
+런타임에서 돌려 `'use client'`를 무시하고, 빌드는 그 컴포넌트가 실제로 렌더되는
+라우트를 프리렌더하지 않았다. **런타임 감사가 유일한 탐지 수단이었다.**
+
+해법은 경계와 무관한 `useResolvedLocale()`(next-intl `useLocale` 기반)과,
+소스에서 위반을 잡는 가드다(`noClientHookInServerComponent`).
+
+#### 페이로드: 배럴 하나가 8.4KB를 전 라우트에 실었다
+
+스킬 설명 74키를 추가하자 크롬 페이로드가 카탈로그의 **23.8%**가 됐다. 원인은
+홈이 아니라 **404 경계**였다:
+
+```
+not-found.tsx → NotFoundContent → import { TickerCategories } from '@/widgets/home'
+```
+
+배럴을 타면 홈 전체가 그 경계의 모듈 폐포에 들어오고, 홈 전용 스킬 카탈로그가
+크롬에 실려 `/login`·`/terms`까지 따라다닌다. 파일 직접 import로 끊고 홈을
+라우트 그룹 `(home)`으로 옮겨 자기 버킷을 주자 **7.3%**가 됐다(기존 최저 11.2%
+보다도 낮다). 프로덕션 배럴-only 규칙에 대한 의도적 예외이고, 그 근거를
+`NotFoundContent.tsx` 주석에 남겼다.
+
+#### 반복된 실패: 동적 조회 키의 조용한 삭제
+
+`yarn i18n:extract --write`는 리터럴 `t('…')` 스캔으로 `ko.json`을 다시 만든다.
+`t(KEY_MAP[value])`처럼 **변수로** 오는 키는 스캔에 안 잡혀 삭제된다. 이 브랜치에서
+같은 실수를 **다섯 번** 했다 — `assetName`·`skillName`·`enumLabel`·캡션·
+`regionDescription`. 매번 `i18n:verify`의 고아 키 검사가 잡았지만 **삭제된 뒤**였다.
+`manualKeys.preserve` 등록이 선행 조건이고, 그 근거를 그 파일 주석에 못 박았다.
+
+### 라운드 14 — 게이트가 **원리적으로** 못 보는 경로 두 개
+
+지금까지의 결함은 "가드가 허술해서" 놓친 것이었다. 이 라운드에 드러난 둘은
+성격이 다르다 — 현재 게이트 구성으로는 **볼 수가 없다.**
+
+#### 1. 하이드레이션 이후에만 나타나는 원시 키
+
+종목 페이지의 **가시 h1**이 네 로케일 전부에서 문자열
+`views.symbol.chartPageHeading.heading`을 렌더했다. SSR HTML의 sr-only h1은
+정상이라, 크롤러와 사용자가 서로 다른 것을 봤다 — `chartPageHeading.ts` JSDoc이
+막으려던 cloaking 그 자체다.
+
+원인은 **번역자를 인자로 받는 헬퍼**다. `extract.mjs`의 `keysForFiles`는 번역자
+선언이 없는 파일에서 조기 반환하므로(`translatorNamespace.size === 0`) 그 파일의
+`t('literal')`을 수집하지 않는다. 반면 `collectReferencedKeys`는 파일 종류를
+가리지 않고 스캔하므로 **`ko.json`에는 키가 남는다** — `i18n:verify`도, extract
+드리프트 게이트도 통과한다. 정적 HTML 스캔으로는 하이드레이션 이후를 볼 수 없고,
+vitest는 페이로드가 아니라 전체 카탈로그로 렌더한다.
+
+해법: 헬퍼는 **키만 내보내고**(`CHART_PAGE_HEADING_KEY`) `t()` 호출은 소비 파일에서
+한다. 그리고 그 키가 라우트 페이로드에 있는지 테스트로 못 박았다.
+
+#### 2. 서버/클라이언트 경계
+
+`'use client'` 없는 모듈이 클라이언트 전용 훅을 부르면 그 서브트리 렌더가 죽는데,
+`tsc`·`oxlint`·테스트 10,697개·프로덕션 빌드가 전부 통과한다(§라운드 12 참고).
+가드를 만들었지만 **이름 2개 화이트리스트**였고, 그 뒤 늘어난 훅 셋을 놓쳤다.
+목록을 도출식(`'use client'` 모듈이 내보내는 `use*`)으로 바꾸자 **즉시 실제
+잠재 결함 2건**이 걸렸다. `export const useX` 화살표 형태까지 포함해야 한다.
+
+#### 반복된 실패의 정리
+
+동적 조회 키의 조용한 삭제가 이 브랜치에서 **일곱 번** 재발했다. 매번
+`i18n:verify`의 고아 키 검사가 잡았지만 **삭제된 뒤**였다. 순서를 뒤집었다 —
+키를 추가할 때 `manualKeys.preserve` 등록을 **먼저** 한다.
+
+그리고 파일 수정에 라인 인덱스 슬라이싱을 쓰다 한 세션에 두 번 파일을 훼손했다
+(121줄 소실, 이웃 상수 삼킴). 앵커 문자열 + `assert` 후 `replace`만 쓴다.
+
 ### 알려진 한계 — `notFound()` 404 본문이 SSR되지 않는다
 
 `notFound()`로 도달한 404는 Next가 내장 셸(`<html id="__next_error__">`)로 문서를
@@ -840,7 +1140,7 @@ openGraph: { locale: OG_LOCALE[locale], alternateLocale: [...나머지] },
 
 | Phase | 내용 |
 |---|---|
-| 1 | 잔여 1,666건 이관 (§13) — 카탈로그 자체는 확정. 숫자·날짜 포맷(`LOCALE_INTL`)도 여기서: 현재 전 로케일 `ko-KR` 고정이라 `/ja`에서 시가총액이 `US$3.5조`로 나온다(호출부 5곳에 로케일 스레딩 필요) |
+| 1 | 잔여 1,666건 이관 (§13) — 카탈로그 자체는 확정. 숫자·날짜 포맷(`INTL_LOCALE`)도 여기서: 현재 전 로케일 `ko-KR` 고정이라 `/ja`에서 시가총액이 `US$3.5조`로 나온다(호출부 5곳에 로케일 스레딩 필요) |
 | 1 | 이메일 본문 번역 — 링크 로케일 유실은 수정됨, 본문은 카탈로그·시그니처 변경 필요 |
 | 1 | PWA manifest 로케일화. ⚠️ `[locale]` 아래로 옮기면 프록시 matcher가 `.webmanifest`를 제외해 **설치된 PWA가 전부 404**가 된다 — matcher 제외를 먼저 풀어야 한다 |
 | 2 | **JSON-LD 로케일화**(`inLanguage`·`@id`·`url`) → 그 다음에야 `STATIC_INDEXABLE_LOCALES` 확장. 지금 `@id`가 `/market`과 `/en/market`에서 충돌한다 |
@@ -850,6 +1150,36 @@ openGraph: { locale: OG_LOCALE[locale], alternateLocale: [...나머지] },
 
 
 ---
+
+### 라운드 15 — DB 축의 결함은 **번역이 도착한 뒤에만** 드러나는 종류였다
+
+이 라운드는 게이트가 전부 초록이고, 화면도 정상이고, 심지어 **번역까지 정확히
+생성되는데** 결과가 버려지고 있던 경로들을 잡았다.
+
+| 결함 | 왜 안 보였나 |
+|---|---|
+| `resolveNewsSummary`/`resolveNewsBody`가 **호출부 0개** — 카드가 `item.summaryKo`를 그대로 렌더 | 제목은 배선돼 있어 "번역된 것처럼" 보였다. 두 함수의 유일한 import가 자기 테스트라 스위트는 초록이었고, `NewsList.test.tsx`·`MarketNewsCard.test.tsx`는 **한국어 본문이 렌더되는 것을 기대값으로 못 박아** 반쯤 배선된 상태를 굳혔다 |
+| 경제 캘린더 요약·해석도 같은 구조 | 위와 동일. 사이드카에 `economicCalendar`가 등록돼 있어 번역 비용은 나갔다 |
+| `assetName`·`economicIndicator`·`seoSnapshot`·`sharedAnalysis`가 **읽는 경로 없이** 레지스트리에 등록 | 백필·번역이 도는데 아무도 읽지 않는다. 정상 동작과 구별이 안 된다 |
+| 공지 `isTranslationFallback`이 소비자 0개 | 페이로드만 차지 |
+| 홈 `title`이 루트 `title.template`에 먹혀 `| Siglens`가 부활 | 마스터의 홈은 `title`을 **반환하지 않아** 레이아웃 `default`가 그대로 나갔다. 카탈로그로 옮기며 문자열을 돌려주는 순간 템플릿이 적용됐다 — v0.48.0에서 SERP 폭을 되찾으려 일부러 뗀 접미사다 |
+| 홈·`/backtesting`·`/terms`·`/privacy`의 `og:url`이 전 로케일 동일 | 다른 페이지들은 이미 로케일 URL을 쓰고 있어 눈에 안 띄었다 |
+| `Dataset` JSON-LD `url`이 로케일 무관 | 위와 같은 이유 |
+| `localeAlternates`가 **자기를 뺀** hreflang 클러스터를 선언 | `STATIC_INDEXABLE_LOCALES`가 `[ko]` 하나라 지금은 발화하지 않는다. 두 번째 로케일을 넣는 순간 난다 |
+
+**공통 원인**: 이 축의 결함은 "출력이 틀렸다"가 아니라 **"출력이 안 쓰인다"**다.
+값 비교로는 잡히지 않고, 폴백이 항상 그럴듯한 값을 내놓기 때문에 화면으로도
+안 잡힌다.
+
+**그래서 만든 가드**: `contentTranslationRegistry.test.ts` — `TRANSLATABLE_ENTITY`의
+모든 키에 대해 백필·번역 스크립트가 **아닌** 프로덕션 파일이 그 키를 참조하는지
+검사한다. 등록만 하고 읽지 않으면 CI가 막는다. 뮤테이션으로 확인했다(가짜 엔티티
+추가 → 실패, 제거 → 통과).
+
+**부수적으로 드러난 것**: `vi.mock('@/shared/lib/seo', () => ({...}))` 통짜 목이
+6개 파일에 있었다. 모듈에 export가 하나 생길 때마다 깨질 뿐 아니라, URL을
+만드는 로직 자체가 스텁으로 대체돼 **테스트가 아무것도 검증하지 못한다**.
+`importOriginal` 부분 목으로 바꾸자 `og:url` 로케일 검증이 실제로 동작했다.
 
 ## 13. 잔여 미추출 한국어 (2026-08-20 실측)
 

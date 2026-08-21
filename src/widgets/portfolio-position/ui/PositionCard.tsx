@@ -50,6 +50,7 @@ export function PositionCard({
     avg,
 }: PositionCardProps) {
     const t = useTranslations('widgets.portfolio-position');
+    const tMisc = useTranslations('shared.ui.misc');
     const headingId = useId();
 
     return (
@@ -97,7 +98,9 @@ export function PositionCard({
                 />
                 <ReadoutRow
                     label={t('PositionCard.ffe45d')}
-                    value={`${model.rangePositionPct.toFixed(0)}% 지점`}
+                    value={tMisc('rangePoint', {
+                        v0: model.rangePositionPct.toFixed(0),
+                    })}
                 />
             </dl>
         </section>

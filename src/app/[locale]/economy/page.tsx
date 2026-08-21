@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { setRequestLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { getLocale, getTranslations, setRequestLocale } from 'next-intl/server';
+import { DEFAULT_LOCALE, isLocale, type Locale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
     localeCanonical,
@@ -30,10 +30,13 @@ import { CALENDAR_COUNTRY } from '@/entities/economy/lib/economyCalendarConstant
 import { isEmptyEconomySnapshot } from '@/entities/economy';
 import {
     buildBreadcrumbJsonLd,
+    buildWebPageJsonLd,
     clampSeoDescription,
     ROOT_KEYWORDS,
     SITE_NAME,
     SITE_URL,
+    type SeoTranslator,
+    localizedAbsoluteUrl,
 } from '@/shared/lib/seo';
 import { TERMS_PATH } from '@/shared/lib/legal';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
@@ -43,14 +46,14 @@ import { RegionTabs } from '@/shared/ui/RegionTabs';
 
 import { ECONOMY_INDICATORS } from '@/shared/config/economyIndicators';
 
-import { ECONOMY_TITLE } from './constants';
+import { economyTitle } from './constants';
 import { EconomyDegraded } from './EconomyDegraded';
 
 /** 페이지 최상단 h1 — Suspense 위에 렌더되어 ready와 degraded 양 경로에서 항상 표시된다. */
-function EconomyHeroH1() {
+function EconomyHeroH1({ title }: { title: string }) {
     return (
         <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
-            {ECONOMY_TITLE}
+            {title}
         </h1>
     );
 }
@@ -78,11 +81,9 @@ const REVALIDATE_HOURS = revalidate / SECONDS_PER_HOUR;
  */
 const ISO_DATE_HOUR_SLICE_END = 13;
 
-// Root layout template appends "| Siglens" — 본문 title은 brand 제외.
-const ECONOMY_FULL_TITLE = `${ECONOMY_TITLE} | ${SITE_NAME}`;
-const ECONOMY_DESCRIPTION = clampSeoDescription(
-    '미국 기준금리·물가·고용·성장 지표와 다가오는 경제 발표 일정을 한 페이지에서 봅니다. AI가 현재 거시 국면을 요약해 드려요.'
-);
+function economyDescription(t: SeoTranslator): string {
+    return clampSeoDescription(t('economy.us.description'));
+}
 const ECONOMY_URL = `${SITE_URL}/economy`;
 const ECONOMY_KEYWORDS = [
     ...ROOT_KEYWORDS,
@@ -107,6 +108,13 @@ export async function generateMetadata({
 }: LocaleMetadataParams): Promise<Metadata> {
     const { locale } = await params;
     const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({
+        locale: resolvedLocale,
+        namespace: 'shared.seo',
+    });
+    const title = economyTitle(tSeo);
+    const description = economyDescription(tSeo);
+    const fullTitle = `${title} | ${SITE_NAME}`;
     const ogLocale = localeOpenGraph(resolvedLocale);
     // og:url도 로케일별이어야 한다 — 소셜 언퍼널이 ko URL로 되돌린다.
     const localizedUrl = localeCanonical(resolvedLocale, '/economy');
@@ -118,8 +126,8 @@ export async function generateMetadata({
     });
     const degraded = snapshot === null || isEmptyEconomySnapshot(snapshot);
     return {
-        title: ECONOMY_TITLE,
-        description: ECONOMY_DESCRIPTION,
+        title,
+        description,
         keywords: ECONOMY_KEYWORDS,
         // degraded 시 canonical을 null로 비워 크롤러가 임시 상태를 색인하지 않도록 한다.
         // follow: true는 유지해 링크 주스가 내부 링크로 계속 흐르게 한다.
@@ -133,8 +141,8 @@ export async function generateMetadata({
             ? { index: false, follow: true }
             : localeRobots(resolvedLocale),
         openGraph: {
-            title: ECONOMY_FULL_TITLE,
-            description: ECONOMY_DESCRIPTION,
+            title: fullTitle,
+            description,
             url: localizedUrl,
             siteName: SITE_NAME,
             ...ogLocale,
@@ -144,14 +152,14 @@ export async function generateMetadata({
                     url: '/og-image.png',
                     width: OG_IMAGE_WIDTH,
                     height: OG_IMAGE_HEIGHT,
-                    alt: ECONOMY_FULL_TITLE,
+                    alt: fullTitle,
                 },
             ],
         },
         twitter: {
             card: 'summary_large_image',
-            title: ECONOMY_FULL_TITLE,
-            description: ECONOMY_DESCRIPTION,
+            title: fullTitle,
+            description,
             images: ['/og-image.png'],
         },
     };
@@ -159,6 +167,11 @@ export async function generateMetadata({
 
 /** cold-gen(ISR 정적 생성 컨텍스트)에서 dynamic API(`cookies`/`headers`/`connection()`) 금지. */
 async function EconomyContent() {
+    // setRequestLocale은 이 컴포넌트를 감싸는 EconomyPage에서 이미 호출됐으므로
+    // 로케일을 다시 넘기지 않아도 요청 스코프에서 찾는다(login/page.tsx 본문과 동일 패턴).
+    const tSeo = await getTranslations('shared.seo');
+    const requestLocale = await getLocale();
+    const locale = isLocale(requestLocale) ? requestLocale : DEFAULT_LOCALE;
     // 외부 I/O 오류(Redis 등)는 graceful 처리 — 빈 캐시 동결을 막기 위해 throw 대신
     // null로 폴백해 EconomyDegraded를 반환한다. generateMetadata와 동일한 catch 패턴.
     const snapshot = await getEconomySnapshotStatic().catch(e => {
@@ -199,12 +212,14 @@ async function EconomyContent() {
     // kstDateKey로 그룹화하므로(EconomicCalendarGrid groupEventsByKstDay) 앵커도 같은 KST
     // keyspace여야 한다. 정오-ET 합성은 KST 다음날로 밀려 오늘 그룹을 건너뛰므로 금지.
     const todayKstKey = kstDateOf(now);
-    const calendarEvents = await getCalendarFromDb(todayEt).catch(
-        (e: unknown) => {
-            console.error('[EconomyContent] getCalendarFromDb failed:', e);
-            return [];
-        }
-    );
+    const calendarEvents = await getCalendarFromDb(
+        todayEt,
+        CALENDAR_COUNTRY,
+        locale
+    ).catch((e: unknown) => {
+        console.error('[EconomyContent] getCalendarFromDb failed:', e);
+        return [];
+    });
 
     // `analyzedAt`은 `EconomicCalendarGrid`(클라이언트)에서 역참조되지 않는다. 타입에서
     // 빼는 것만으로는 런타임 값이 그대로 flight에 실리므로 여기서 실제로 떼어낸다.
@@ -213,19 +228,20 @@ async function EconomyContent() {
     );
 
     // dict → DB 캐시 → 영어 fallback 체인. 미매핑은 클라 훅이 AI 트리거(SP-B 설계).
-    const indicatorLabels = await resolveIndicatorLabels(calendarEvents).catch(
-        (e: unknown) => {
-            console.error('[EconomyContent] resolveIndicatorLabels failed:', e);
-            // empty object is always a valid Record<string, string>
-            return {} as Record<string, string>;
-        }
-    );
+    const indicatorLabels = await resolveIndicatorLabels(
+        calendarEvents,
+        locale
+    ).catch((e: unknown) => {
+        console.error('[EconomyContent] resolveIndicatorLabels failed:', e);
+        // empty object is always a valid Record<string, string>
+        return {} as Record<string, string>;
+    });
 
     return (
         <div className="space-y-6">
-            <JsonLd data={WEB_PAGE_JSON_LD} />
-            <JsonLd data={BREADCRUMB_JSON_LD} />
-            <JsonLd data={DATASET_JSON_LD} />
+            <JsonLd data={buildEconomyWebPageJsonLd(tSeo, locale)} />
+            <JsonLd data={buildEconomyBreadcrumbJsonLd(tSeo, locale)} />
+            <JsonLd data={buildEconomyDatasetJsonLd(tSeo, locale)} />
             {/* SSR 크롤 텍스트 — MacroBriefing은 'use client'라 크롤러에 빈 HTML을
                 반환한다. EconomyMacroFacts가 서버사이드에서 핵심 수치를 텍스트로
                 노출해 검색 엔진이 수치 데이터를 색인할 수 있도록 한다. */}
@@ -254,83 +270,82 @@ async function EconomyContent() {
 const DATASET_TEMPORAL_COVERAGE = 'P1Y'; // ISO 8601 — 1년 lookback
 // TREASURY_CARD_META의 키 수에서 파생 — EconomicIndicatorGrid와 동기.
 const TREASURY_MATURITY_COUNT = Object.keys(TREASURY_CARD_META).length;
-const DATASET_VARIABLE_MEASURED = `미국 거시 경제 지표 (기준금리·CPI·GDP·실업률 등 ${ECONOMY_INDICATORS.length}종 + 국채금리 ${TREASURY_MATURITY_COUNT}종)`;
 /**
  * `license`는 GSC "license 누락" 경고를 없애려고 넣은 필드다. 렌더 위치는
  * degrade 게이팅 때문에 `EconomyContent` 안으로 옮겨졌지만, 계약 자체는
- * 페이로드에 있으므로 테스트가 상수를 직접 본다 — 그래서 export한다.
+ * 페이로드에 있으므로 테스트가 함수를 직접 호출해 확인한다 — 그래서 export한다.
+ * `description`만 로케일에 따라 바뀌고 나머지 필드는 고정이다.
  */
-export const DATASET_JSON_LD = {
-    '@context': 'https://schema.org',
-    '@type': 'Dataset',
-    name: 'US Macroeconomic Indicators — Federal Funds, CPI, Unemployment, etc.',
-    description: ECONOMY_DESCRIPTION,
-    variableMeasured: DATASET_VARIABLE_MEASURED,
-    temporalCoverage: DATASET_TEMPORAL_COVERAGE,
-    creator: { '@type': 'Organization', name: SITE_NAME },
-    license: `${SITE_URL}${TERMS_PATH}`,
-    url: ECONOMY_URL,
-};
+export function buildEconomyDatasetJsonLd(t: SeoTranslator, locale: Locale) {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'Dataset',
+        name: 'US Macroeconomic Indicators — Federal Funds, CPI, Unemployment, etc.',
+        description: economyDescription(t),
+        variableMeasured: t('economy.us.datasetVariableMeasured', {
+            v0: ECONOMY_INDICATORS.length,
+            v1: TREASURY_MATURITY_COUNT,
+        }),
+        temporalCoverage: DATASET_TEMPORAL_COVERAGE,
+        creator: { '@type': 'Organization', name: SITE_NAME },
+        license: `${SITE_URL}${TERMS_PATH}`,
+        // 로케일별 URL — 네 언어가 같은 주소를 선언하면 한 문서로 접힌다.
+        url: localizedAbsoluteUrl(ECONOMY_URL, locale),
+    };
+}
 
 /**
  * FAQPage 구조화 데이터 — 자주 묻는 질문 4건. 검색 결과에 FAQ 리치 스니펫으로
  * 노출되어 클릭률을 높이고 핵심 개념(2s10s·FOMC·CPI·데이터 출처)을 직접 전달한다.
+ *
+ * 모듈 상수가 아니라 빌더인 이유: 질문·답변이 한국어 리터럴이면 `/en/economy`가
+ * 영어 페이지에 한국어 FAQ 리치 스니펫을 실어 보낸다. 구글은 구조화데이터가
+ * 페이지 언어와 맞기를 요구하므로 렌더 로케일의 번역자로 만든다.
  */
-const FAQ_JSON_LD = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: [
-        {
+function buildEconomyFaqJsonLd(t: SeoTranslator) {
+    const pairs = [0, 1, 2, 3].map(i => ({
+        question: t(`economy.us.faq${i}q`),
+        // 마지막 항목만 갱신 주기를 값으로 받는다. 나머지는 추가 값을 무시한다.
+        answer: t(`economy.us.faq${i}a`, { v0: REVALIDATE_HOURS }),
+    }));
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: pairs.map(({ question, answer }) => ({
             '@type': 'Question',
-            name: '2s10s 스프레드란 무엇인가요?',
-            acceptedAnswer: {
-                '@type': 'Answer',
-                text: '2년물과 10년물 미국 국채 수익률의 차이입니다. 10년물에서 2년물을 뺀 값으로, 음수가 되면 장단기 금리가 역전된 것으로 경기침체 신호로 해석되기도 합니다.',
-            },
-        },
-        {
-            '@type': 'Question',
-            name: 'FOMC 발표는 어디서 확인하나요?',
-            acceptedAnswer: {
-                '@type': 'Answer',
-                text: '이 페이지 하단의 경제 캘린더에서 FOMC 회의 및 연방기금금리 결정 일정을 확인할 수 있습니다.',
-            },
-        },
-        {
-            '@type': 'Question',
-            name: 'CPI는 얼마나 자주 발표되나요?',
-            acceptedAnswer: {
-                '@type': 'Answer',
-                text: 'CPI(소비자물가지수)는 월 1회, 매월 중순에 미국 노동통계국(BLS)이 발표합니다.',
-            },
-        },
-        {
-            '@type': 'Question',
-            name: '이 데이터는 어디서 가져오나요?',
-            acceptedAnswer: {
-                '@type': 'Answer',
-                text: `FMP(Financial Modeling Prep) API를 기준으로 수집하며, ${REVALIDATE_HOURS}시간마다 최신 데이터로 갱신됩니다.`,
-            },
-        },
-    ],
-} as const;
+            name: question,
+            acceptedAnswer: { '@type': 'Answer', text: answer },
+        })),
+    };
+}
 
-const WEB_PAGE_JSON_LD = {
-    '@context': 'https://schema.org',
-    '@type': 'WebPage',
-    '@id': `${ECONOMY_URL}#webpage`,
-    name: ECONOMY_FULL_TITLE,
-    description: ECONOMY_DESCRIPTION,
-    url: ECONOMY_URL,
-    inLanguage: 'ko',
-    isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
-    // dateModified 제거: SITE_BUILD_DATE는 모듈 로드 시점에 고정되어
-    // 24h ISR 갱신 주기를 반영하지 못한다. /financials 등 peer 페이지와 동일하게 제외.
-};
+function buildEconomyWebPageJsonLd(t: SeoTranslator, locale: Locale) {
+    const fullTitle = `${economyTitle(t)} | ${SITE_NAME}`;
+    return {
+        // dateModified 제거: SITE_BUILD_DATE는 모듈 로드 시점에 고정되어
+        // 24h ISR 갱신 주기를 반영하지 못한다. /financials 등 peer 페이지와 동일하게 제외.
+        ...buildWebPageJsonLd({
+            url: ECONOMY_URL,
+            name: fullTitle,
+            description: economyDescription(t),
+            locale,
+        }),
+    };
+}
 
-const BREADCRUMB_JSON_LD = buildBreadcrumbJsonLd([
-    { name: '미국 경제', url: ECONOMY_URL },
-]);
+/**
+ * 모듈 스코프 상수였다. 그 자리에서는 로케일을 알 수 없어 breadcrumb URL이
+ * 항상 기본 로케일을 가리키고 이름도 한국어로 굳었다 — 렌더 시점으로 옮긴다.
+ */
+function buildEconomyBreadcrumbJsonLd(
+    t: SeoTranslator,
+    locale: Locale
+): Record<string, unknown> {
+    return buildBreadcrumbJsonLd(
+        [{ name: economyTitle(t), url: ECONOMY_URL }],
+        locale
+    );
+}
 
 export default async function EconomyPage({
     params,
@@ -342,18 +357,19 @@ export default async function EconomyPage({
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const tSeo = await getTranslations('shared.seo');
     return (
         <>
             {/* FAQ는 로더 결과와 무관하게 화면에 그대로 있으므로 항상 낸다.
                 나머지는 데이터가 있을 때만 — `EconomyContent` 참조. */}
-            <JsonLd data={FAQ_JSON_LD} />
+            <JsonLd data={buildEconomyFaqJsonLd(tSeo)} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <RegionTabs
                     vertical="economy"
                     active="us"
                     currentPath="/economy"
                 />
-                <EconomyHeroH1 />
+                <EconomyHeroH1 title={economyTitle(tSeo)} />
                 <Suspense fallback={<EconomySkeleton />}>
                     <EconomyContent />
                 </Suspense>

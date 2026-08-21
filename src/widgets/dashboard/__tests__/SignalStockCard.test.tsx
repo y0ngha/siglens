@@ -93,9 +93,11 @@ describe('SignalStockCard', () => {
         render(
             <SignalStockCard tickerIsReadable currencySymbol="$" data={STOCK} />
         );
+        // 티커를 쓴다 — `koreanName`은 로케일과 무관하게 한국어라
+        // `/en`에서도 `애플 분석`이 나갔다.
         const link = screen.getByRole('link');
         expect(link).toHaveAttribute('href', '/AAPL');
-        expect(link).toHaveAttribute('title', '애플 분석');
+        expect(link).toHaveAttribute('title', 'AAPL 분석');
     });
 
     it('renders signal badges', () => {

@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import { localeCanonical } from '@/shared/lib/seoAlternates';
+import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { getTranslations } from 'next-intl/server';
 import { PositionHoldingCard } from './PositionHoldingCard';
 import {
@@ -13,7 +13,6 @@ import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { toView } from '@/entities/portfolio/lib/toView';
 import { getDatabaseClient } from '@/shared/db/client';
-import { SITE_NAME } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { redirect } from 'next/navigation';
@@ -35,11 +34,20 @@ export async function generateMetadata({
 }): Promise<Metadata> {
     const { locale } = await params;
     const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({
+        locale: resolved,
+        namespace: 'shared.seo',
+    });
+    const title = tSeo('portfolio.title');
+    const description = tSeo('portfolio.description');
     return {
-        title: '내 포트폴리오 위치',
-        description: `${SITE_NAME} 보유종목별 최근 가격 범위 안에서 내 평단이 어디에 있는지 확인하는 개인화 페이지`,
+        title,
+        description,
         alternates: { canonical: localeCanonical(resolved, '/portfolio') },
-        openGraph: { url: localeCanonical(resolved, '/portfolio') },
+        ...localePageSocial(resolved, '/portfolio', {
+            title,
+            description,
+        }),
         // 로그인 전용 개인화 서페이스라 색인 대상이 아니다 — 비로그인 방문자는
         // 아래에서 /login?next=/portfolio로 리다이렉트된다.
         robots: { index: false, follow: false },

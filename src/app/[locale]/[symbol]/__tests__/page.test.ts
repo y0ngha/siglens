@@ -11,7 +11,7 @@ vi.mock('@/views/symbol/SymbolPageClient', () => ({
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('@/entities/chat-message', () => ({
-    FALLBACK_ANALYSIS: { summary: 'fallback' },
+    buildFallbackAnalysis: () => ({ summary: 'fallback' }),
 }));
 vi.mock('@y0ngha/siglens-core', () => ({
     DEEPSEEK_V4_FLASH_MODEL: 'deepseek-v4-flash',
@@ -28,6 +28,8 @@ vi.mock('@/shared/config/market', async importOriginal => ({
 }));
 vi.mock('@/entities/ticker', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+    pickAssetName: (info: { name: string; koreanName?: string }) =>
+        info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
     getAssetInfoResilient: vi.fn(),
 }));
@@ -69,6 +71,7 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     // 실제 seo 모듈을 스프레드해 NOINDEX_SYMBOL_METADATA 같은 정적 export를 그대로
     // 가져온다(상수 인라인 복제 → drift 방지). 빌더만 아래에서 결정적으로 오버라이드한다.
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
+    buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     buildSymbolSeoContent: vi.fn().mockReturnValue({
         title: 'AAPL 차트',

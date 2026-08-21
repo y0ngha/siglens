@@ -26,6 +26,8 @@ vi.mock('@/entities/ticker/api', () => ({
 }));
 vi.mock('@/entities/ticker', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+    pickAssetName: (info: { name: string; koreanName?: string }) =>
+        info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
     getAssetInfoResilient: vi.fn(),
 }));
@@ -100,6 +102,7 @@ vi.mock('@/views/symbol/SectionSkeleton', () => ({
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
+    buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     buildSymbolSeoContent: vi.fn().mockReturnValue({ url: '' }),
     buildSymbolFundamentalSeoContent: vi.fn().mockReturnValue({
@@ -242,7 +245,11 @@ describe('FundamentalPage — SEO snapshot prose (Task 7b)', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(mockGetSeoSnapshotsStatic).toHaveBeenCalledWith('AAPL', 86400);
+        expect(mockGetSeoSnapshotsStatic).toHaveBeenCalledWith(
+            'AAPL',
+            86400,
+            'ko'
+        );
     });
 
     it('profile degraded 분기에서도 스냅샷 콘텐츠가 FundamentalDegraded에 전달된다(spec §7)', async () => {

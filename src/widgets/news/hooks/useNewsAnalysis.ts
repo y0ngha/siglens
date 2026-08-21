@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { StreamErrorMessages } from '@/shared/hooks/useAnalysisStream';
 import { useQuery } from '@tanstack/react-query';
 import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
@@ -93,6 +94,7 @@ export function useNewsAnalysis(
         isSettingsHydrated = true,
     }: UseNewsAnalysisOptions = {}
 ): NewsAnalysisState {
+    const tError = useTranslations('shared.ui.analysisError');
     const streamMessages = useStreamErrorMessages();
     // 로케일이 키에 들어가야 ko에서 본 결과가 ja 화면에 재사용되지 않는다.
     const locale = useCurrentLocale();
@@ -142,7 +144,7 @@ export function useNewsAnalysis(
             error:
                 query.error instanceof Error
                     ? query.error
-                    : new Error('분석 중 오류가 발생했습니다.'),
+                    : new Error(tError('analysisFailed')),
             retry,
             trigger: retry,
         };

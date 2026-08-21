@@ -1,3 +1,4 @@
+import type { Locale } from '@/shared/i18n/locales';
 import { MS_PER_DAY } from '@/shared/config/time';
 
 /** SEO 분석 스냅샷이 커버하는 탭 — spec 2026-07-24 §5. */
@@ -28,6 +29,8 @@ export const SNAPSHOT_MAX_AGE_MS = 7 * MS_PER_DAY; // 7d
 export interface SeoAnalysisSnapshot {
     symbol: string;
     tab: SeoSnapshotTab;
+    /** 본문이 생성된 언어. 마이그레이션 전 행은 전부 한국어다. */
+    locale: Locale;
     content: unknown;
     model: string;
     generatedAt: Date;
@@ -38,6 +41,8 @@ export interface SeoAnalysisSnapshot {
 export interface SeoSnapshotUpsertInput {
     symbol: string;
     tab: SeoSnapshotTab;
+    /** 프리웜이 어느 언어로 생성했는지. */
+    locale: Locale;
     content: unknown;
     model: string;
     generatedAt: Date;

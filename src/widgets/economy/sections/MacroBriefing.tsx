@@ -5,15 +5,17 @@ import type { MacroBriefingResponse } from '@y0ngha/siglens-core';
 
 import { cn } from '@/shared/lib/cn';
 import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 
 import { useMacroBriefing } from '../hooks/useMacroBriefing';
 
-const REGIME_LABELS: Record<MacroBriefingResponse['regime'], string> = {
-    expansion: '확장',
-    slowdown: '둔화',
-    contraction: '수축',
-    recovery: '회복',
-    neutral: '중립',
+/** MacroBriefingResponse['regime'] → `shared.enumLabel.macroRegime` 카탈로그 키. */
+const REGIME_LABEL_KEY: Record<MacroBriefingResponse['regime'], string> = {
+    expansion: 'macroRegime.expansion',
+    slowdown: 'macroRegime.slowdown',
+    contraction: 'macroRegime.contraction',
+    recovery: 'macroRegime.recovery',
+    neutral: 'macroRegime.neutral',
 };
 
 const REGIME_COLORS: Record<MacroBriefingResponse['regime'], string> = {
@@ -66,6 +68,8 @@ export function MacroBriefing({ peekSeed }: MacroBriefingProps) {
 
 function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
     const t = useTranslations('widgets.economy');
+    const tLabel = useTranslations('shared.enumLabel');
+    const locale = useResolvedLocale();
     return (
         <section
             className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
@@ -84,7 +88,7 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
                         REGIME_COLORS[briefing.regime]
                     )}
                 >
-                    {REGIME_LABELS[briefing.regime]}
+                    {tLabel(REGIME_LABEL_KEY[briefing.regime])}
                 </span>
             </header>
             <p className="mb-4 leading-relaxed whitespace-pre-line text-secondary-200">
@@ -105,7 +109,7 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
             {generatedAt !== null && (
                 <p className="mt-3 text-xs text-secondary-400">
                     {t('MacroBriefing.62f15d', {
-                        v0: formatKoreanDateTime(generatedAt),
+                        v0: formatKoreanDateTime(generatedAt, locale),
                     })}
                 </p>
             )}

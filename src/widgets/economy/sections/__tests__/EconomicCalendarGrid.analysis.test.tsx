@@ -54,6 +54,38 @@ describe('EconomicCalendarGrid analysis display', () => {
         ).toBeInTheDocument();
     });
 
+    /**
+     * 회귀 가드: 요약·해석은 `summaryKo`를 직접 렌더하고 있었다. 사이드카가
+     * 번역을 만들어도 `/ja` 캘린더는 한국어 그대로였다.
+     */
+    it('사이드카 번역이 있으면 요약·해석을 그 언어로 렌더한다', () => {
+        render(
+            <EconomicCalendarGrid
+                country="US"
+                events={[
+                    ev({
+                        sentiment: 'bullish',
+                        summaryKo: 'CPI가 예상을 상회했어요.',
+                        interpretationKo: '금리 인하 기대가 후퇴할 수 있어요.',
+                        summaryLocalized: 'CPI came in above expectations.',
+                        interpretationLocalized: 'Rate-cut hopes may recede.',
+                        analyzedAt: new Date('2026-06-20T13:00:00Z'),
+                    }),
+                ]}
+                today="2026-06-20"
+            />
+        );
+        expect(
+            screen.getByText('CPI came in above expectations.')
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText('Rate-cut hopes may recede.')
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByText('CPI가 예상을 상회했어요.')
+        ).not.toBeInTheDocument();
+    });
+
     it('renders no sentiment badge for a not-yet-analyzed announced event', () => {
         render(
             <EconomicCalendarGrid

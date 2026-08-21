@@ -16,7 +16,7 @@ export const FMP_TEMPORARY_UNAVAILABLE_KEY = 'shared.api.fmpBusy';
 export const FMP_DATA_UNAVAILABLE_KEY = 'shared.api.fmpUnavailable';
 
 export const FMP_PAYMENT_REQUIRED_LOG_PREFIX =
-    '비용 예외가 필요한 API가 호출되었습니다.';
+    'An API requiring a cost exception was called.';
 
 const loggedPaymentRequiredErrors = new WeakSet<object>();
 

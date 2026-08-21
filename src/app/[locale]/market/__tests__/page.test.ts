@@ -93,6 +93,7 @@ vi.mock('@/shared/config/queryConfig', () => ({
 }));
 
 vi.mock('@/shared/lib/seo', () => ({
+    buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     clampSeoDescription: (text: string) => text,
     ROOT_KEYWORDS: ['주식'],
@@ -151,6 +152,16 @@ describe('Market page', () => {
                 params: Promise.resolve({ locale: 'ko' }),
             });
             expect(metadata.title).toContain('미국 주식');
+        });
+
+        // i18n 회귀 가드: `/en/market`의 title/description이 한국어로 새면
+        // (`shared.seo` 번역자를 빠뜨리는 실수) 여기서 잡힌다.
+        it('en 로케일에서는 title/description에 한글이 없다', async () => {
+            const metadata = await generateMetadata({
+                params: Promise.resolve({ locale: 'en' }),
+            });
+            expect(String(metadata.title)).not.toMatch(/[가-힣]/);
+            expect(String(metadata.description)).not.toMatch(/[가-힣]/);
         });
 
         it('sets canonical to /market when at least one loader has data', async () => {
@@ -471,9 +482,10 @@ describe('/market BreadcrumbList 이름', () => {
         // 렌더될 때 만들어지므로 본문을 직접 호출해야 관측된다.
         const { MarketRouteBody } = await import('../MarketRouteBody');
         vi.mocked(buildBreadcrumbJsonLd).mockClear();
-        MarketRouteBody({ scope: US_DASHBOARD_SCOPE });
-        expect(buildBreadcrumbJsonLd).toHaveBeenCalledWith([
-            expect.objectContaining({ name: '미국 시장 현황' }),
-        ]);
+        await MarketRouteBody({ locale: 'ko', scope: US_DASHBOARD_SCOPE });
+        expect(buildBreadcrumbJsonLd).toHaveBeenCalledWith(
+            [expect.objectContaining({ name: '미국 시장 현황' })],
+            'ko'
+        );
     });
 });

@@ -135,6 +135,10 @@ export function ChartContent({
     marketProfile = 'us-equity',
 }: ChartContentProps) {
     const t = useTranslations('views.symbol');
+    // 폴백 판정의 sentinel — `buildFallbackAnalysis`와 같은 문구여야 한다.
+    const fallbackSummary = useTranslations('entities.chat-message.fallback')(
+        'unavailable'
+    );
     // 비회원 회원가입 유도(Part B) — 같은 심볼에 대한 중복 카운트 방지용.
     const notifiedSymbolRef = useRef<string | null>(null);
 
@@ -276,7 +280,7 @@ export function ChartContent({
     const isFreeUser = tier !== 'pro';
 
     const analysisContent = useMemo(() => {
-        const hasNarrative = !isFallbackAnalysis(analysis);
+        const hasNarrative = !isFallbackAnalysis(analysis, fallbackSummary);
 
         // 분기 우선순위: 서사 유무를 먼저 보고, 봇 차단은 그 안에서 additive로 둔다.
         // 이전엔 `isBotBlocked`를 맨 앞에서 검사해 봇이면 BotBlockedNotice가 사실 층
@@ -366,6 +370,7 @@ export function ChartContent({
         symbol,
         analysisStatus,
         analysis,
+        fallbackSummary,
         clusteredKeyLevels,
         timeframe,
         displayAnalyzing,
@@ -438,7 +443,8 @@ export function ChartContent({
             // a fallback shell.
             hasResult:
                 analysisResult != null ||
-                (analysis != null && !isFallbackAnalysis(analysis)),
+                (analysis != null &&
+                    !isFallbackAnalysis(analysis, fallbackSummary)),
         }),
         result: analysisResult ?? analysis ?? null,
         context: {
@@ -479,11 +485,17 @@ export function ChartContent({
     // 바뀌는 순간 effect가 재실행되도록 deps에 포함시켜 그때 정확히 한 번 기록한다.
     useEffect(() => {
         if (!isNudgeLoginResolved) return;
-        if (isFallbackAnalysis(analysis)) return;
+        if (isFallbackAnalysis(analysis, fallbackSummary)) return;
         if (notifiedSymbolRef.current === symbol) return;
         notifiedSymbolRef.current = symbol;
         onSymbolAnalyzed(symbol);
-    }, [symbol, analysis, isNudgeLoginResolved, onSymbolAnalyzed]);
+    }, [
+        symbol,
+        analysis,
+        fallbackSummary,
+        isNudgeLoginResolved,
+        onSymbolAnalyzed,
+    ]);
 
     return (
         <div className="flex h-full w-full flex-col md:flex-row">

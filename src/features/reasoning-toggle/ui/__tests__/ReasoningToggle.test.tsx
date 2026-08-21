@@ -1,6 +1,12 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ReasoningToggle } from '@/features/reasoning-toggle/ui/ReasoningToggle';
-import { REASONING_FEATURE_LABEL } from '../../model/reasoningFeature';
+import { koMessage } from '@/shared/test-utils/koMessage';
+
+// 기능 이름은 이제 `features.reasoning-toggle.a11y.featureLabel` 키다 —
+// 예전엔 모듈 상수라 `/en`의 토글이 영어 UI 안에서 `상세 분석`을 렌더했다.
+const REASONING_FEATURE_LABEL = koMessage(
+    'features.reasoning-toggle.a11y.featureLabel'
+);
 
 vi.mock('@/shared/hooks/useEscapeKey', () => ({
     useEscapeKey: vi.fn(),

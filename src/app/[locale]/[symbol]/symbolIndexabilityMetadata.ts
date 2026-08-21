@@ -61,11 +61,10 @@ export async function getBlockedSymbolMetadata({
     // 읽지 않는다 — `evaluateSymbolIndexability`가 화이트리스트보다 먼저 로케일을
     // 보므로 결과가 버려진다. 이 함수 JSDoc의 "정상 경로에서 DB 읽기 회피" 목표를
     // 비-ko 경로에도 그대로 적용한다.
-    const localeReady =
-        locale === undefined || SYMBOL_INDEXABLE_LOCALES.includes(locale);
+    const localeReady = SYMBOL_INDEXABLE_LOCALES.includes(locale);
     const hasSnapshot =
         localeReady && degraded && tab !== undefined
-            ? (await getSeoSnapshotsStatic(symbol, revalidateSeconds))
+            ? (await getSeoSnapshotsStatic(symbol, revalidateSeconds, locale))
                   .filter(s => s.tab === tab)
                   .some(s => hasProseForTab(tab, s.content))
             : undefined;

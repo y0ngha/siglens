@@ -7,6 +7,9 @@ import {
 } from '../E2eEmailDispatcher';
 import { buildEmailVerificationEmail } from '@/entities/email-token/templates/emailVerificationEmail';
 import { buildPasswordResetEmail } from '@/entities/email-token/templates/passwordResetEmail';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+
+const tMail = catalogTranslator('entities.email-token.email');
 
 describe('buildEmailDebugKey', () => {
     it('recipient을 prefix와 결합한 키를 만든다', () => {
@@ -19,6 +22,7 @@ describe('buildEmailDebugKey', () => {
 describe('extractEmailDebugRecord', () => {
     it('인증 이메일에서 6자리 코드를 추출한다 (token 없음)', () => {
         const message = buildEmailVerificationEmail({
+            t: tMail,
             to: 'verify@test.com',
             code: '482917',
         });
@@ -30,6 +34,7 @@ describe('extractEmailDebugRecord', () => {
 
     it('비밀번호 재설정 이메일에서 token을 추출한다 (code 없음)', () => {
         const message = buildPasswordResetEmail({
+            t: tMail,
             email: 'reset@test.com',
             token: 'raw-reset-token-123',
         });
@@ -44,6 +49,7 @@ describe('extractEmailDebugRecord', () => {
         // must decode it back to the raw value the store expects.
         const token = 'a+b/c=d&e';
         const message = buildPasswordResetEmail({
+            t: tMail,
             email: 'reset2@test.com',
             token,
         });
@@ -92,6 +98,7 @@ describe('E2eEmailDispatcher', () => {
         const { redis, setMock } = createRedisStub();
         const dispatcher = new E2eEmailDispatcher(redis);
         const message = buildEmailVerificationEmail({
+            t: tMail,
             to: 'verify@test.com',
             code: '654321',
         });
@@ -108,6 +115,7 @@ describe('E2eEmailDispatcher', () => {
         const { redis, setMock } = createRedisStub();
         const dispatcher = new E2eEmailDispatcher(redis);
         const message = buildPasswordResetEmail({
+            t: tMail,
             email: 'reset@test.com',
             token: 'tok-789',
         });

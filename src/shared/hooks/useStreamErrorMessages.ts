@@ -29,6 +29,10 @@ export function useStreamErrorMessages(): StreamErrorMessages {
             noOptionsChains: t('noOptionsChains'),
             analysisFailed: t('analysisFailed'),
             fetchFailed: t('fetchFailed'),
+            congressFetchFailed: t('congressFetchFailed'),
+            digestUnavailable: t('digestUnavailable'),
+            reanalyzeCooldown: (seconds: number) =>
+                t('reanalyzeCooldown', { v0: seconds }),
         }),
         [t]
     );

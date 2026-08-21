@@ -37,26 +37,28 @@ interface OptionsSnapshotProseProps {
     generatedAt?: Date;
 }
 
-const TONE_LABEL: Record<OptionsTone, string> = {
-    bullish: '강세',
-    bearish: '약세',
-    cautious: '신중',
-    neutral: '중립',
+/** OptionsTone → `shared.enumLabel` 카탈로그 키. 값 자체는 더 이상 한글이 아니다 — 렌더 시점에 `tLabel`로 조회한다. */
+const TONE_LABEL_KEY: Record<OptionsTone, string> = {
+    bullish: 'optionsTone.bullish',
+    bearish: 'optionsTone.bearish',
+    cautious: 'optionsTone.cautious',
+    neutral: 'optionsTone.neutral',
 };
 
 // See createEnumGuard's JSDoc for the Object.hasOwn / prototype-chain
 // rationale (audit fix; PR #698 round-2 review FIX 3 extracted the shared
 // implementation).
-const isTone = createEnumGuard(TONE_LABEL);
+const isTone = createEnumGuard(TONE_LABEL_KEY);
 
-const SIGNAL_KIND_LABEL: Record<OptionsSignalKind, string> = {
-    bullish: '강세',
-    bearish: '약세',
-    volatility: '변동성',
-    neutral: '중립',
+/** OptionsSignalKind → `shared.enumLabel` 카탈로그 키. */
+const SIGNAL_KIND_LABEL_KEY: Record<OptionsSignalKind, string> = {
+    bullish: 'optionsSignalKind.bullish',
+    bearish: 'optionsSignalKind.bearish',
+    volatility: 'optionsSignalKind.volatility',
+    neutral: 'optionsSignalKind.neutral',
 };
 
-const isSignalKind = createEnumGuard(SIGNAL_KIND_LABEL);
+const isSignalKind = createEnumGuard(SIGNAL_KIND_LABEL_KEY);
 
 interface NarrowedPerExpiration {
     expirationDate: string;
@@ -180,6 +182,7 @@ export function OptionsSnapshotProse({
     generatedAt,
 }: OptionsSnapshotProseProps) {
     const t = useTranslations('views.symbol');
+    const tLabel = useTranslations('shared.enumLabel');
     const narrowed = narrowOptionsContent(content);
     if (narrowed === null) return null;
 
@@ -204,7 +207,10 @@ export function OptionsSnapshotProse({
                         </h3>
                         <ul
                             role="list"
-                            aria-label={`${symbol} 만기별 해석 목록`}
+                            aria-label={t(
+                                'OptionsSnapshotProse.expiryListLabel',
+                                { v0: symbol }
+                            )}
                             className="space-y-2"
                         >
                             {narrowed.perExpiration.map(item => (
@@ -212,7 +218,7 @@ export function OptionsSnapshotProse({
                                     <span className="font-medium text-secondary-200">
                                         {item.expirationDate}
                                         {item.tone !== null &&
-                                            ` (${TONE_LABEL[item.tone]})`}
+                                            ` (${tLabel(TONE_LABEL_KEY[item.tone])})`}
                                     </span>
                                     <p>{item.commentary}</p>
                                 </li>
@@ -228,7 +234,10 @@ export function OptionsSnapshotProse({
                         </h3>
                         <ul
                             role="list"
-                            aria-label={`${symbol} 옵션 시그널 목록`}
+                            aria-label={t(
+                                'OptionsSnapshotProse.signalListLabel',
+                                { v0: symbol }
+                            )}
                             className="space-y-1"
                         >
                             {narrowed.signals.map(signal => (
@@ -244,7 +253,7 @@ export function OptionsSnapshotProse({
                                     </span>
                                     <span className="min-w-0 break-words">
                                         {signal.kind !== null &&
-                                            `[${SIGNAL_KIND_LABEL[signal.kind]}] `}
+                                            `[${tLabel(SIGNAL_KIND_LABEL_KEY[signal.kind])}] `}
                                         {signal.message}
                                     </span>
                                 </li>

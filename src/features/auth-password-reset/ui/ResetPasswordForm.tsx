@@ -2,11 +2,11 @@
 
 import { useTranslations } from 'next-intl';
 import { AuthErrorAlert } from '@/shared/ui/auth/AuthErrorAlert';
+import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
 import { PasswordField } from '@/shared/ui/auth/PasswordField';
 import { PasswordStrengthHint } from '@/shared/ui/auth/PasswordStrengthHint';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 import { useResetPasswordForm } from '../hooks/useResetPasswordForm';
-import type { ResetPasswordFormState } from '@/shared/lib/types';
 import { useId, useState } from 'react';
 
 interface ResetPasswordFormProps {
@@ -14,25 +14,26 @@ interface ResetPasswordFormProps {
     token: string;
 }
 
-const INVALID_TOKEN_MESSAGE =
-    '재설정 링크가 유효하지 않거나 이미 사용되었습니다. 다시 요청해 주세요.';
-const EXPIRED_TOKEN_MESSAGE =
-    '재설정 링크가 만료되었습니다. 다시 요청해 주세요.';
-
-function describeFormError(state: ResetPasswordFormState): string | null {
-    if (state.error?.code === 'invalid_token') return INVALID_TOKEN_MESSAGE;
-    if (state.error?.code === 'expired_token') return EXPIRED_TOKEN_MESSAGE;
-    if (state.error?.code === 'same_password') return state.error.message;
-    if (state.error?.code === 'redis_unavailable') return state.error.message;
-    return null;
-}
-
-function describePasswordFieldError(
-    state: ResetPasswordFormState
+/**
+ * 에러 **코드**로 문구를 만든다 — use-case가 함께 돌려주는 `message`는
+ * 로그·폴백용 한국어 원문이라 화면에 그대로 쓰면 `/en/reset-password`가
+ * 영어 폼 위에 한국어 오류를 띄운다. 코드가 표에 없을 때만 원문으로 떨어진다.
+ */
+function describeCode(
+    error: { code?: string; message: string } | null | undefined,
+    tAuth: (key: string) => string
 ): string | null {
-    if (state.error?.field === 'password') return state.error.message;
-    return null;
+    if (!error) return null;
+    const key = error.code ? AUTH_ERROR_KEY[error.code] : undefined;
+    return key ? tAuth(key) : error.message;
 }
+
+const FORM_ERROR_CODES = new Set([
+    'invalid_token',
+    'expired_token',
+    'same_password',
+    'redis_unavailable',
+]);
 
 export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
     const t = useTranslations('features.auth-password-reset');
@@ -41,8 +42,15 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
     const [confirmError, setConfirmError] = useState<string | null>(null);
     const hintId = useId();
     const [state, formAction] = useResetPasswordForm();
-    const formError = describeFormError(state);
-    const fieldError = describePasswordFieldError(state);
+    const tAuth = useTranslations('entities.auth');
+    const formError =
+        state.error && FORM_ERROR_CODES.has(state.error.code ?? '')
+            ? describeCode(state.error, tAuth)
+            : null;
+    const fieldError =
+        state.error?.field === 'password'
+            ? describeCode(state.error, tAuth)
+            : null;
 
     const handleAction = (formData: FormData) => {
         if (password !== confirmPassword) {

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { StreamErrorMessages } from '@/shared/hooks/useAnalysisStream';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
@@ -83,8 +84,10 @@ async function fetchOverallAnalysis(
     });
 
     if (result.status === 'reanalyze_cooldown') {
+        // 정상 사용자 경로다(재분석 버튼 연타) — 방어용 폴백이 아니라
+        // 실제로 자주 뜨는 문구라 카탈로그를 거쳐야 한다.
         throw new OverallCooldownError(
-            `재분석은 잠시 후에 가능해요. ${Math.ceil(result.remainingMs / 1000)}초 뒤에 다시 시도해 주세요.`
+            messages.reanalyzeCooldown(Math.ceil(result.remainingMs / 1000))
         );
     }
 
@@ -99,12 +102,16 @@ async function fetchOverallAnalysis(
         if (isGateBlockedResult(result)) {
             throw new OverallAnalysisError(result.error.message, undefined);
         }
-        throw new OverallAnalysisError(
-            typeof result.error === 'string'
-                ? result.error
-                : messages.analysisFailed,
-            result.axis
-        );
+        /**
+         * core가 채우는 `result.error`는 **로케일과 무관한 영어**다
+         * (`Profile not found for symbol: AAPL` 등). 삼항으로 감싸도 결과는
+         * 같다 — financials·fundamental·congress·options에서 고친 것과 동일한
+         * 결함이고, 여기가 종합 결론이라 노출이 가장 크다.
+         */
+        if (typeof result.error === 'string') {
+            console.error('[overallAnalysisFailed]', result.error);
+        }
+        throw new OverallAnalysisError(messages.analysisFailed, result.axis);
     }
 
     if (result.status === 'limit_error') {
@@ -156,6 +163,7 @@ export function useOverallAnalysis(
      */
     isSettingsHydrated = true
 ): UseOverallAnalysisReturn {
+    const tError = useTranslations('shared.ui.analysisError');
     const streamMessages = useStreamErrorMessages();
     const queryClient = useQueryClient();
     const [triggered, setTriggered] = useState(initialResult !== undefined);
@@ -244,7 +252,7 @@ export function useOverallAnalysis(
                 error:
                     err instanceof Error
                         ? err.message
-                        : '분석 중 오류가 발생했습니다.',
+                        : tError('analysisFailed'),
                 axis:
                     err instanceof OverallAnalysisError ? err.axis : undefined,
             };
@@ -252,7 +260,7 @@ export function useOverallAnalysis(
         if (query.data !== undefined)
             return { status: 'done', result: query.data };
         return { status: 'submitting' };
-    }, [triggered, query.isError, query.error, query.data]);
+    }, [triggered, query.isError, query.error, query.data, tError]);
 
     const { refetch } = query;
     const trigger = () => {

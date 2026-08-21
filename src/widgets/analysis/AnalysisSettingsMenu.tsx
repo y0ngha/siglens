@@ -46,6 +46,7 @@ export function AnalysisSettingsMenu({
     openSignupNudge,
 }: AnalysisSettingsMenuProps) {
     const t = useTranslations('widgets.analysis');
+    const tSettings = useTranslations('widgets.analysis.settingsMenu');
     const triggerRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     const titleId = useId();
@@ -73,8 +74,8 @@ export function AnalysisSettingsMenu({
     // header row back out (declutter is intentional; see module doc).
     const modelDisplay = getModelDisplay(modelId);
     const accessibleLabel = isActive
-        ? `분석 설정 · 현재 모델: ${modelDisplay.label} (변경됨)`
-        : `분석 설정 · 현재 모델: ${modelDisplay.label}`;
+        ? tSettings('ariaChanged', { v0: modelDisplay.label })
+        : tSettings('aria', { v0: modelDisplay.label });
 
     return (
         <div className="relative">

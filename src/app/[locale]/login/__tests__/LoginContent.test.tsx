@@ -22,11 +22,13 @@ vi.mock('@/features/auth-oauth/ui/SocialLoginButtons', () => ({
     },
 }));
 
-import {
-    LoginContent,
-    OAUTH_ERROR_MESSAGES,
-    PASSWORD_RESET_SUCCESS_MESSAGE,
-} from '../LoginContent';
+import { LoginContent } from '../LoginContent';
+import koMessages from '@/../messages/ko.json';
+
+// 문구는 이제 `entities.auth.error` 카탈로그에서 온다 — 예전엔 이 파일의 모듈
+// 상수라 `/en/login`이 영어 폼 위에 한국어 배너를 띄웠다. ko 카탈로그를 직접
+// 읽어 렌더 결과와 대조한다(문자열을 테스트에 복제하면 둘이 따로 논다).
+const authError = koMessages.entities.auth.error as Record<string, string>;
 
 describe('LoginContent', () => {
     beforeEach(() => {
@@ -68,7 +70,7 @@ describe('LoginContent', () => {
         render(<LoginContent />);
         expect(loginFormSpy).toHaveBeenCalledWith(
             expect.objectContaining({
-                initialError: OAUTH_ERROR_MESSAGES.oauth_email_conflict,
+                initialError: authError.oauthEmailConflict,
             })
         );
     });
@@ -77,7 +79,7 @@ describe('LoginContent', () => {
         searchParamsRef.value = new URLSearchParams({ password_reset: '1' });
         render(<LoginContent />);
         expect(screen.getByRole('status')).toHaveTextContent(
-            PASSWORD_RESET_SUCCESS_MESSAGE
+            authError.passwordResetSuccess
         );
     });
 

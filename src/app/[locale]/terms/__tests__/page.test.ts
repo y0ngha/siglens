@@ -7,11 +7,11 @@ vi.mock('@/widgets/legal/LegalPageShell', () => ({
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('@/shared/lib/legal', () => ({
     formatKoreanDate: vi.fn().mockReturnValue('2025년 1월 1일'),
-    INVESTMENT_DISCLAIMER: 'disclaimer text',
-    TERMS_DESCRIPTION: 'terms desc',
-    TERMS_FULL_TITLE: 'Terms Full Title',
+    INVESTMENT_DISCLAIMER_KEY: 'investmentDisclaimer',
+    termsDescription: () => 'terms desc',
+    termsFullTitle: () => 'Terms Full Title',
     TERMS_PATH: '/terms',
-    TERMS_TITLE: '이용약관',
+    termsTitle: () => '이용약관',
 }));
 vi.mock('@/shared/lib/legal-toc', () => ({
     extractToc: vi.fn().mockReturnValue([]),
@@ -20,7 +20,14 @@ vi.mock('@/shared/lib/og', () => ({
     OG_IMAGE_WIDTH: 1200,
     OG_IMAGE_HEIGHT: 630,
 }));
-vi.mock('@/shared/lib/seo', () => ({
+/**
+ * **부분 목이다.** 통째로 갈아끼우면 이 모듈에 export가 하나 생길 때마다
+ * `No "x" export is defined on the mock`으로 깨지고, 더 나쁘게는 URL을 만드는
+ * 로직이 스텁으로 대체돼 테스트가 아무것도 검증하지 못한다.
+ */
+vi.mock('@/shared/lib/seo', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
+    buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     SITE_NAME: 'Siglens',
     SITE_URL: 'https://siglens.io',

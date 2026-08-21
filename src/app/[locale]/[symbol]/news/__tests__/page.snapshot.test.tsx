@@ -27,6 +27,8 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/entities/ticker', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+    pickAssetName: (info: { name: string; koreanName?: string }) =>
+        info.koreanName ?? info.name,
     buildDisplayName: vi.fn((assetInfo: { name: string }) => assetInfo.name),
     getAssetInfoResilient: vi.fn(),
 }));
@@ -87,6 +89,7 @@ vi.mock('@/views/symbol/SectionSkeleton', () => ({
 
 vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
+    buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     buildSymbolSeoContent: vi.fn().mockReturnValue({
         title: 'T',
@@ -228,7 +231,11 @@ describe('NewsPage — SEO snapshot prose (Task 7b, dual-section with NewsFactsS
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(mockGetSeoSnapshotsStatic).toHaveBeenCalledWith('AAPL', 43200);
+        expect(mockGetSeoSnapshotsStatic).toHaveBeenCalledWith(
+            'AAPL',
+            43200,
+            'ko'
+        );
     });
 
     it('getSeoSnapshotsStatic이 throw해도 페이지가 깨지지 않는다', async () => {
@@ -298,6 +305,10 @@ describe('NewsPage generateMetadata — snapshot-derived description (Task 8)', 
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(mockGetSeoSnapshotsStatic).toHaveBeenCalledWith('AAPL', 43200);
+        expect(mockGetSeoSnapshotsStatic).toHaveBeenCalledWith(
+            'AAPL',
+            43200,
+            'ko'
+        );
     });
 });

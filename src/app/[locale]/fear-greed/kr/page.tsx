@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
@@ -11,16 +11,13 @@ import { getMarketFearGreedKrStatic } from '@/entities/market-fear-greed/api/mar
 import type { MarketFearGreedView } from '@/entities/market-fear-greed';
 import { SITE_NAME } from '@/shared/lib/seo';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { FEAR_GREED_COPY } from '../copy';
+import { fearGreedCopyFor } from '../copy';
 import { FearGreedRouteBody } from '../FearGreedRouteBody';
 
 // 1h — 미국 라우트와 동일. `getMarketFearGreedKrStatic`이 이미 1h로 판독값을 캐싱하므로
 // 이 값은 페이지 셸의 백그라운드 재생성 주기만 정한다(추가 staleness 없음).
 // literal required — importing a constant breaks Next's static analysis, see src/app/CLAUDE.md
 export const revalidate = 3600;
-
-const COPY = FEAR_GREED_COPY.kr;
-const FULL_TITLE = `${COPY.title} | ${SITE_NAME}`;
 
 interface LocaleMetadataParams {
     readonly params: Promise<{ locale: string }>;
@@ -31,6 +28,12 @@ export async function generateMetadata({
 }: LocaleMetadataParams): Promise<Metadata> {
     const { locale } = await params;
     const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const t = await getTranslations({
+        locale: resolvedLocale,
+        namespace: 'shared.seo',
+    });
+    const COPY = fearGreedCopyFor('kr', t);
+    const FULL_TITLE = `${COPY.title} | ${SITE_NAME}`;
     const ogLocale = localeOpenGraph(resolvedLocale);
     // og:url도 로케일별이어야 한다 — 소셜 언퍼널이 ko URL로 되돌린다.
     const localizedUrl = localeCanonical(resolvedLocale, COPY.path);
@@ -109,5 +112,11 @@ export default async function FearGreedKrRoutePage({
         }
     );
 
-    return <FearGreedRouteBody market="kr" view={view} />;
+    return (
+        <FearGreedRouteBody
+            market="kr"
+            view={view}
+            locale={isLocale(locale) ? locale : DEFAULT_LOCALE}
+        />
+    );
 }

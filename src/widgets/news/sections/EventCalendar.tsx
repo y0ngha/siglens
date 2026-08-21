@@ -1,10 +1,13 @@
 'use client';
 
+import { formatCompactAmount } from '@/shared/lib/priceFormat';
 import { useTranslations } from 'next-intl';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { currencyForSymbol } from '@/shared/config/marketProfile';
 import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 import type React from 'react';
+import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 
 const MATERIAL_SURPRISE_PCT = 2;
 
@@ -15,14 +18,25 @@ interface SurpriseBadge {
     percent: number;
 }
 
-// 포매터는 모듈 스코프에 한 번만 생성한다(렌더마다 new Intl.* 금지).
-// 날짜는 timeZone: 'UTC' 고정 — 날짜만 있는 문자열이 로컬 TZ에서 하루 밀리는 것과
-// 서버/클라이언트 렌더 불일치를 동시에 막는다.
-const SHORT_DATE_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
-    timeZone: 'UTC',
-    month: 'short',
-    day: 'numeric',
-});
+/**
+ * 로케일별 포맷터 캐시(렌더마다 new Intl.* 금지). 날짜는 timeZone: 'UTC'
+ * 고정 — 날짜만 있는 문자열이 로컬 TZ에서 하루 밀리는 것과 서버/클라이언트
+ * 렌더 불일치를 동시에 막는다. 예전에는 `'ko-KR'` 고정이라 `/en/AAPL/news`의
+ * 실적 캘린더가 `Announced 4월 30일`을 찍었다.
+ */
+const SHORT_DATE_FORMATTER_CACHE = new Map<Locale, Intl.DateTimeFormat>();
+
+function shortDateFormatterFor(locale: Locale): Intl.DateTimeFormat {
+    const cached = SHORT_DATE_FORMATTER_CACHE.get(locale);
+    if (cached) return cached;
+    const formatter = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+        timeZone: 'UTC',
+        month: 'short',
+        day: 'numeric',
+    });
+    SHORT_DATE_FORMATTER_CACHE.set(locale, formatter);
+    return formatter;
+}
 
 // 통화는 심볼에서 유도한다 — 국내 종목은 원화다(같은 버그를 FinancialHealthCard/
 // FutureDirectionCard에서 이미 고쳤다). 판정은 currencyForSymbol
@@ -44,28 +58,13 @@ const MONEY_FORMATTERS: Record<'USD' | 'KRW', Intl.NumberFormat> = {
     }),
 };
 
-const COMPACT_MONEY_FORMATTERS: Record<'USD' | 'KRW', Intl.NumberFormat> = {
-    USD: new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        notation: 'compact',
-        maximumFractionDigits: 1,
-    }),
-    KRW: new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'KRW',
-        notation: 'compact',
-        maximumFractionDigits: 1,
-    }),
-};
-
 const SIGNED_PERCENT_FORMATTER = new Intl.NumberFormat('ko-KR', {
     signDisplay: 'always',
     maximumFractionDigits: 1,
 });
 
-function formatShortDate(dateStr: string): string {
-    return SHORT_DATE_FORMATTER.format(new Date(dateStr));
+function formatShortDate(dateStr: string, locale: Locale): string {
+    return shortDateFormatterFor(locale).format(new Date(dateStr));
 }
 
 function formatCurrency(value: number | null, symbol: string): string {
@@ -73,9 +72,19 @@ function formatCurrency(value: number | null, symbol: string): string {
     return MONEY_FORMATTERS[currencyForSymbol(symbol)].format(value);
 }
 
-function formatRevenue(value: number | null, symbol: string): string {
+function formatRevenue(
+    value: number | null,
+    symbol: string,
+    locale: Locale
+): string {
     if (value === null) return '—';
-    return COMPACT_MONEY_FORMATTERS[currencyForSymbol(symbol)].format(value);
+    // 예전에는 KRW도 `en-US` 포매터를 써서 ko 사용자에게 `₩333T`가 나갔다 —
+    // `numberFormat.ts`가 "읽히지 않는다"고 문서화해 둔 바로 그 케이스다.
+    return formatCompactAmount(
+        value,
+        currencyForSymbol(symbol) === 'KRW' ? 'KRW' : 'USD',
+        locale
+    );
 }
 
 interface EarningsReportComparisonProps {
@@ -137,6 +146,7 @@ function EarningsReportCard({
     maxRevenue,
 }: EarningsReportCardProps) {
     const t = useTranslations('widgets.news');
+    const locale = useResolvedLocale();
     const statusLabel =
         item.period === 'future'
             ? t('EventCalendar.7ba954')
@@ -146,7 +156,7 @@ function EarningsReportCard({
     // 항상 동일) — 별도 prop을 새로 뚫지 않고 그대로 통화 판정에 쓴다.
     const fmtEps = (value: number | null) => formatCurrency(value, item.symbol);
     const fmtRevenue = (value: number | null) =>
-        formatRevenue(value, item.symbol);
+        formatRevenue(value, item.symbol, locale);
 
     return (
         <article className="rounded-lg border border-secondary-700 bg-secondary-800 p-4">
@@ -157,7 +167,7 @@ function EarningsReportCard({
                         dateTime={item.earningsDate}
                         className="font-semibold tabular-nums"
                     >
-                        {formatShortDate(item.earningsDate)}
+                        {formatShortDate(item.earningsDate, locale)}
                     </time>
                 </div>
                 <div className="flex flex-wrap justify-end gap-1">
@@ -197,6 +207,7 @@ interface SurpriseBadgeProps {
 }
 
 function SurpriseBadge({ badge }: SurpriseBadgeProps) {
+    const tSurprise = useTranslations('widgets.news.surprise');
     const className =
         badge.kind === 'surprise'
             ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
@@ -208,7 +219,7 @@ function SurpriseBadge({ badge }: SurpriseBadgeProps) {
         <span
             className={`rounded-full border px-2 py-0.5 text-xs tabular-nums ${className}`}
         >
-            {getSurpriseLabel(badge.kind)} {formatSignedPercent(badge.percent)}
+            {tSurprise(badge.kind)} {formatSignedPercent(badge.percent)}
         </span>
     );
 }
@@ -349,15 +360,6 @@ function getSurpriseBadge(
     }
 
     return { kind: 'inline', percent: surprisePercent };
-}
-
-function getSurpriseLabel(kind: SurpriseKind): string {
-    const labels: Record<SurpriseKind, string> = {
-        surprise: '서프라이즈',
-        shock: '쇼크',
-        inline: '예상치 부합',
-    };
-    return labels[kind];
 }
 
 function getSurprisePercent(

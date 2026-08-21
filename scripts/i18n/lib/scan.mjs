@@ -34,8 +34,15 @@ export function namespaceFor(relPath) {
     const layer = parts[0];
     if (layer === 'app') {
         // `app/[locale]/[symbol]/news/page.tsx` → `app.symbol`
-        // `app/[locale]/page.tsx`               → `app.home`
-        const rest = parts.slice(1).filter(p => p !== '[locale]');
+        // `app/[locale]/(home)/page.tsx`         → `app.home`
+        //
+        // **라우트 그룹(`(home)`)도 걸러낸다.** URL에 안 나타나는 조직용
+        // 세그먼트라 네임스페이스에 들어가면 안 된다 — 안 거르면 홈이
+        // `app.(home)`으로 잡히는데, 그 파일은 `getTranslations('app.home')`을
+        // 부르므로 키가 서로 어긋나 화면에 원시 키가 렌더된다(실증).
+        const rest = parts
+            .slice(1)
+            .filter(p => p !== '[locale]' && !/^\(.*\)$/.test(p));
         const first = rest[0];
         if (!first || first.endsWith('.tsx') || first.endsWith('.ts')) {
             return 'app.home';

@@ -17,15 +17,16 @@ import type { DeleteAccountFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-
-const NOT_AUTHENTICATED_MESSAGE = '로그인이 필요합니다.';
-const EMAIL_MISMATCH_MESSAGE =
-    '입력한 이메일이 계정의 이메일과 일치하지 않습니다.';
+import { getTranslations } from 'next-intl/server';
 
 export async function deleteAccountAction(
     _prev: DeleteAccountFormState,
     formData: FormData
 ): Promise<DeleteAccountFormState> {
+    // 세 문구 모두 `entities.auth.error`에 있다 — 로그인 폼이 쓰는 표와 같은
+    // 자리다. 액션이 문구를 만드는 이유는 `state.error.message`가 그대로
+    // `AuthErrorAlert`에 실려 나가기 때문이다.
+    const tAuth = await getTranslations('entities.auth.error');
     try {
         const confirmEmail = normalizeEmail(
             String(formData.get('email') ?? '')
@@ -36,7 +37,7 @@ export async function deleteAccountAction(
             return {
                 error: {
                     code: 'not_authenticated',
-                    message: NOT_AUTHENTICATED_MESSAGE,
+                    message: tAuth('notAuthenticated'),
                 },
             };
         }
@@ -45,7 +46,7 @@ export async function deleteAccountAction(
             return {
                 error: {
                     code: 'email_mismatch',
-                    message: EMAIL_MISMATCH_MESSAGE,
+                    message: tAuth('emailMismatch'),
                 },
             };
         }
@@ -82,8 +83,7 @@ export async function deleteAccountAction(
         return {
             error: {
                 code: 'unexpected',
-                message:
-                    '계정 삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+                message: tAuth('accountDeleteFailed'),
             },
         };
     }

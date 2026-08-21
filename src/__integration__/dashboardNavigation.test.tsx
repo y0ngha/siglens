@@ -122,7 +122,9 @@ describe('Dashboard Navigation', () => {
                 />
             );
             expect(screen.getByText('AAPL')).toBeInTheDocument();
-            expect(screen.getByText('Apple Inc.')).toBeInTheDocument();
+            // 표시 이름은 `shared.assetName` 카탈로그가 심볼로 정한다 —
+            // 픽스처의 `koreanName`은 폴백일 뿐이다.
+            expect(screen.getByText('애플')).toBeInTheDocument();
         });
 
         it('renders link to symbol page', () => {

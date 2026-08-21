@@ -74,7 +74,8 @@ describe('useOptionsAnalysis — branch coverage', () => {
     it('returns error for no_chains_error with message', async () => {
         mockSubmit.mockResolvedValue({
             status: 'no_chains_error',
-            error: '옵션 데이터가 없습니다.',
+            // core가 실제로 주는 값은 영어다.
+            error: 'snapshot has no usable options chains',
         } as never);
 
         const { result } = renderHook(() => useOptionsAnalysis(DEFAULT_PROPS), {
@@ -87,7 +88,11 @@ describe('useOptionsAnalysis — branch coverage', () => {
 
         if (result.current.status !== 'error')
             throw new Error('expected error');
-        expect(result.current.error.message).toBe('옵션 데이터가 없습니다.');
+        // 원문이 그대로 새면 전 로케일에 영어가 나간다.
+        expect(result.current.error.message).toBe(
+            koMessages.app.api.stream.noOptionsChains
+        );
+        expect(result.current.error.message).not.toContain('snapshot has no');
     });
 
     it('returns fallback for no_chains_error without message', async () => {

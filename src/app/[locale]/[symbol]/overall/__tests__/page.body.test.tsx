@@ -24,6 +24,8 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/entities/ticker', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+    pickAssetName: (info: { name: string; koreanName?: string }) =>
+        info.koreanName ?? info.name,
     buildDisplayName: vi.fn((assetInfo: { name: string }) => assetInfo.name),
     getAssetInfoResilient: vi.fn(),
 }));
@@ -61,6 +63,7 @@ vi.mock('@/shared/ui/CrossLinkCards', () => ({
 
 vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
+    buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     buildSymbolSeoContent: vi.fn().mockReturnValue({
         url: 'https://siglens.io/AAPL',

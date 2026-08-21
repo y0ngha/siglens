@@ -20,14 +20,19 @@ const SYMBOL_PATH_RE =
 
 type SymbolSubpage = 'fundamental' | 'news' | 'overall' | 'fear-greed';
 
-const SUBPAGE_LABEL: Record<SymbolSubpage, string> = {
-    fundamental: '펀더멘털 분석',
-    news: '뉴스 분석',
-    overall: 'AI 종합 분석',
-    'fear-greed': '공포 탐욕 지수',
+/**
+ * 표시 문자열이 아니라 `entities.chat-message.pageContext` **키**다.
+ * 이 모듈은 훅을 쓸 수 없는 순수 함수라, 여기서 한국어를 고정하면 챗 헤더의
+ * 페이지 컨텍스트 배지가 `/en`에서도 `차트 분석`으로 나온다.
+ */
+const SUBPAGE_LABEL_KEY: Record<SymbolSubpage, string> = {
+    fundamental: 'fundamental',
+    news: 'news',
+    overall: 'overall',
+    'fear-greed': 'fear-greed',
 };
 
-const BASE_SYMBOL_LABEL = '차트 분석';
+const BASE_SYMBOL_LABEL_KEY = 'chart';
 
 function isSymbolSubpage(value: string | undefined): value is SymbolSubpage {
     return (
@@ -38,8 +43,8 @@ function isSymbolSubpage(value: string | undefined): value is SymbolSubpage {
     );
 }
 
-/** Korean page-context label from pathname; `null` on non-symbol pages (e.g. `/account`). */
-export function deriveLabel(pathname: string): string | null {
+/** Page-context message **key** from pathname; `null` on non-symbol pages (e.g. `/account`). */
+export function deriveLabelKey(pathname: string): string | null {
     const match = SYMBOL_PATH_RE.exec(pathname);
     if (!match) return null;
 
@@ -51,6 +56,6 @@ export function deriveLabel(pathname: string): string | null {
     // Lowercase the captured sub-page so case-insensitive matches resolve correctly.
     const subpage = match[3]?.toLowerCase();
     return isSymbolSubpage(subpage)
-        ? SUBPAGE_LABEL[subpage]
-        : BASE_SYMBOL_LABEL;
+        ? SUBPAGE_LABEL_KEY[subpage]
+        : BASE_SYMBOL_LABEL_KEY;
 }

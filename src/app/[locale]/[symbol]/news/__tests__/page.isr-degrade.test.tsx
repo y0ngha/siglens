@@ -24,6 +24,8 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/entities/ticker', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+    pickAssetName: (info: { name: string; koreanName?: string }) =>
+        info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
     getAssetInfoResilient: vi.fn(),
 }));
@@ -103,6 +105,7 @@ vi.mock('@/views/symbol/SectionSkeleton', () => ({
 
 vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
+    buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     buildSymbolSeoContent: vi.fn().mockReturnValue({
         title: 'T',
@@ -203,7 +206,7 @@ describe('/[symbol]/news ISR empty-cache prevention', () => {
         mockGetNewsList.mockRejectedValue(new Error('DB connection refused'));
 
         // Render the section directly — its .catch(() => []) must absorb the throw.
-        render(await NewsListSection({ symbol: 'AAPL' }));
+        render(await NewsListSection({ symbol: 'AAPL', locale: 'ko' }));
 
         // NewsList stub renders with count 0 (degrade to []).
         const newsList = screen.getByTestId('news-list');
@@ -327,7 +330,7 @@ describe('/[symbol]/news ISR empty-cache prevention', () => {
         mockGetGradeEvents.mockResolvedValue([]);
 
         // Each section renders its real stub content when loaders succeed.
-        render(await NewsListSection({ symbol: 'AAPL' }));
+        render(await NewsListSection({ symbol: 'AAPL', locale: 'ko' }));
         expect(screen.getByTestId('news-list')).toBeInTheDocument();
         expect(
             screen.queryByText('실적 일정을 불러오지 못했어요.')
@@ -387,7 +390,7 @@ describe('/[symbol]/news 직렬화 행 상한', () => {
         mockGetNewsList.mockResolvedValue(
             newsRows(NEWS_ROW_SERIALIZATION_LIMIT + 7)
         );
-        render(await NewsListSection({ symbol: 'AAPL' }));
+        render(await NewsListSection({ symbol: 'AAPL', locale: 'ko' }));
         expect(screen.getByTestId('news-list').getAttribute('data-count')).toBe(
             String(NEWS_ROW_SERIALIZATION_LIMIT)
         );
@@ -397,7 +400,7 @@ describe('/[symbol]/news 직렬화 행 상한', () => {
         mockGetNewsList.mockResolvedValue(
             newsRows(NEWS_ROW_SERIALIZATION_LIMIT)
         );
-        render(await NewsListSection({ symbol: 'AAPL' }));
+        render(await NewsListSection({ symbol: 'AAPL', locale: 'ko' }));
         expect(screen.getByTestId('news-list').getAttribute('data-count')).toBe(
             String(NEWS_ROW_SERIALIZATION_LIMIT)
         );
@@ -407,7 +410,7 @@ describe('/[symbol]/news 직렬화 행 상한', () => {
         mockGetNewsList.mockResolvedValue(
             newsRows(NEWS_ROW_SERIALIZATION_LIMIT + 7)
         );
-        render(await NewsListSection({ symbol: 'AAPL' }));
+        render(await NewsListSection({ symbol: 'AAPL', locale: 'ko' }));
         const el = screen.getByTestId('news-list');
         expect(el.getAttribute('data-first')).toBe('n0');
         expect(el.getAttribute('data-last')).toBe(

@@ -39,7 +39,9 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                     prefetch={false}
                     // Visible brand text is `text-...uppercase` (renders "SIGLENS"),
                     // so the accessible name must match what users see (WCAG 2.5.3).
-                    aria-label={`${SITE_NAME.toUpperCase()} 홈`}
+                    aria-label={t('Header.homeLabel', {
+                        v0: SITE_NAME.toUpperCase(),
+                    })}
                     className="-mx-1 flex min-h-11 shrink-0 touch-manipulation items-center gap-2 rounded px-1 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     {/*

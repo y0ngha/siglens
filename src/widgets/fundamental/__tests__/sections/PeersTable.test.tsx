@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import { EMPTY_MESSAGE } from '@/widgets/fundamental/sections/EmptySectionCard';
 import { PeersTable } from '@/widgets/fundamental/sections/PeersTable';
 import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
+import { koMessage } from '@/shared/test-utils/koMessage';
 
 const SAMPLE_PEERS: FundamentalPeerInput[] = [
     {
@@ -31,6 +31,10 @@ describe('PeersTable', () => {
         expect(
             screen.getByRole('heading', { name: '동종업계 비교' })
         ).toBeInTheDocument();
-        expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                koMessage('widgets.financials.section.emptySection')
+            )
+        ).toBeInTheDocument();
     });
 });

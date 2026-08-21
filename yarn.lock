@@ -10242,6 +10242,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"server-only@npm:^0.0.1":
+  version: 0.0.1
+  resolution: "server-only@npm:0.0.1"
+  checksum: 10c0/4704f0ef85da0be981af6d4ed8e739d39bcfd265b9c246a684060acda5642d0fdc6daffc2308e71e2682c5f508090978802eae0a77623c9b90a49f9ae68048d6
+  languageName: node
+  linkType: hard
+
 "setprototypeof@npm:~1.2.0":
   version: 1.2.0
   resolution: "setprototypeof@npm:1.2.0"
@@ -10544,6 +10551,7 @@ __metadata:
     release-it: "npm:^19.2.4"
     remark-gfm: "npm:^4.0.1"
     resend: "npm:^6.12.2"
+    server-only: "npm:^0.0.1"
     sharp: "npm:^0.35.2"
     stylelint: "npm:^17.0.0"
     stylelint-config-recess-order: "npm:^7.4.0"

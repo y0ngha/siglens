@@ -32,7 +32,10 @@ const ChatPanel = dynamic(() => import('./ChatPanel').then(m => m.ChatPanel), {
             role="status"
             aria-live="polite"
         >
-            채팅을 여는 중…
+            {/* `dynamic()`의 `loading`은 모듈 스코프라 훅을 못 쓴다. 이 자리표는
+                패널이 열리는 수백 ms 동안만 보이고 스크린리더가 읽는 값이므로,
+                번역 대신 상태만 알리는 로케일 중립 표기(줄임표)로 둔다. */}
+            …
         </div>
     ),
 });

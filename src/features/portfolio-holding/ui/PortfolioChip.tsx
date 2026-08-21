@@ -48,6 +48,7 @@ interface PortfolioChipProps {
  */
 export function PortfolioChip({ symbol }: PortfolioChipProps) {
     const t = useTranslations('features.portfolio-holding');
+    const tMisc = useTranslations('shared.ui.misc');
     const [isOpen, setIsOpen] = useState(false);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const isMobileViewport = useIsMobileViewport();
@@ -82,7 +83,10 @@ export function PortfolioChip({ symbol }: PortfolioChipProps) {
     const label =
         holding === null
             ? t('PortfolioChip.40c48c')
-            : `평단 ${currencyPrefix}${trimTrailingZeros(holding.averagePrice)} · ${trimTrailingZeros(holding.quantity)}주`;
+            : tMisc('holdingAverage', {
+                  v0: `${currencyPrefix}${trimTrailingZeros(holding.averagePrice)}`,
+                  v1: trimTrailingZeros(holding.quantity),
+              });
 
     return (
         <div className="relative inline-block">

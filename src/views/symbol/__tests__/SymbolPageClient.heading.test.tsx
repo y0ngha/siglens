@@ -39,8 +39,15 @@ vi.mock('@/features/symbol-model', () => ({
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
+import { buildFallbackAnalysis } from '@/entities/chat-message';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { SymbolPageClient } from '../SymbolPageClient';
+
+// 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을
+// 들고 있어 `/en/AAPL`이 영어 화면에 한국어 폴백을 렌더했다.
+const FALLBACK_ANALYSIS = buildFallbackAnalysis(
+    catalogTranslator('entities.chat-message.fallback', 'ko')('unavailable')
+);
 
 describe('SymbolPageClient 가시 h1', () => {
     it('displayName을 timeframe bar의 가시 h1으로 렌더한다 (sr-only 아님)', () => {

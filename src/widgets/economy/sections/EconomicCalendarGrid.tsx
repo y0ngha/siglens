@@ -1,6 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import {
     useState,
     useMemo,
@@ -14,12 +16,14 @@ import type {
 } from '@y0ngha/siglens-core';
 
 import {
-    CALENDAR_COUNTRY_LABEL,
+    CALENDAR_COUNTRY_LABEL_KEY,
+    resolveCalendarInterpretation,
+    resolveCalendarSummary,
     type CalendarCountry,
     type EconomicCalendarEventWithAnalysis,
 } from '@/entities/economy';
 import {
-    SENTIMENT_LABEL,
+    SENTIMENT_LABEL_KEY,
     SENTIMENT_CLASS,
 } from '@/shared/lib/sentimentDisplay';
 import { cn } from '@/shared/lib/cn';
@@ -28,7 +32,7 @@ import { etDateTimeToKst } from '@/shared/lib/etTimeUtils';
 import { useEconomicCalendarTrigger } from '../hooks/useEconomicCalendarTrigger';
 import { useIndicatorTranslationTrigger } from '../hooks/useIndicatorTranslationTrigger';
 import { ImpactFilter } from './ImpactFilter';
-import { IMPACT_LABELS, IMPACT_ORDER } from '../utils/impactMeta';
+import { IMPACT_LABEL_KEY, IMPACT_ORDER } from '../utils/impactMeta';
 
 const IMPACT_BADGE: Record<CalendarImpact, string> = {
     High: 'bg-ui-danger/20 text-ui-danger-text',
@@ -43,34 +47,63 @@ const IMPACT_DOT: Record<CalendarImpact, string> = {
     Low: 'bg-secondary-400',
 };
 
-/** 7열 그리드 요일 헤더 (일요일 시작) */
-const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
-
-/** 한국어 월 레이블 ('1월' … '12월') */
-const MONTH_LABELS = [
-    '1월',
-    '2월',
-    '3월',
-    '4월',
-    '5월',
-    '6월',
-    '7월',
-    '8월',
-    '9월',
-    '10월',
-    '11월',
-    '12월',
-] as const;
-
-/** 인라인 이벤트 미리보기 최대 표시 건수 (sm 이상 화면) */
-const INLINE_EVENT_MAX = 2;
+const WEEKDAY_LABEL_CACHE = new Map<Locale, readonly string[]>();
 
 /**
- * 중요도 필터 기본값 — High+Medium ON, Low OFF.
+ * 7열 그리드 요일 헤더 (일요일 시작).
+ *
+ * 예전에는 `['일','월',…]` 상수였다 — 캡션·헤더가 `2026 August`로 번역된
+ * 바로 아래에서 요일 줄만 한국어로 남아 있었다. `monthLabel`과 같은
+ * `Intl.DateTimeFormat` 경로로 파생한다.
+ *
+ * 기준일은 **일요일**이어야 한다: 2000-01-02는 일요일이다.
+ */
+function weekdayLabels(locale: Locale): readonly string[] {
+    const cached = WEEKDAY_LABEL_CACHE.get(locale);
+    if (cached !== undefined) return cached;
+    const fmt = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+        weekday: 'short',
+        timeZone: 'UTC',
+    });
+    const labels = Array.from({ length: 7 }, (_, i) =>
+        fmt.format(new Date(Date.UTC(2000, 0, 2 + i)))
+    );
+    WEEKDAY_LABEL_CACHE.set(locale, labels);
+    return labels;
+}
+
+/** 한국어 월 레이블 ('1월' … '12월') */
+/**
+ * 월 이름은 **`Intl`에서 얻는다** — 카탈로그 키 12개를 만들 이유가 없다.
+ *
+ * 예전에는 한국어 배열 상수였다. 감싸는 템플릿은 번역돼 있어서 `/en/economy`가
+ * `2026 8월`, `/ja`가 `2026年8월`을 찍었다 — 번역된 템플릿에 한국어 값을 끼우는,
+ * 이 브랜치에서 반복된 결함 계열이다.
+ */
+/**
+ * 기본으로 켜 두는 영향도.
+ *
  * 연간 Low 이벤트가 2,919건으로 대다수라 기본 노출 시 노이즈가 크다(스펙 SP-C).
  * 결정론적 초기값 — 렌더 중 시각/난수 의존 없음(ISR 안전).
  */
 const DEFAULT_ACTIVE_IMPACTS: readonly CalendarImpact[] = ['High', 'Medium'];
+
+/** 인라인 이벤트 미리보기 최대 표시 건수 (sm 이상 화면) */
+const INLINE_EVENT_MAX = 2;
+
+const MONTH_LABEL_CACHE = new Map<string, string>();
+
+function monthLabel(locale: Locale, month: number): string {
+    const key = `${locale}:${month}`;
+    const cached = MONTH_LABEL_CACHE.get(key);
+    if (cached !== undefined) return cached;
+    const label = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+        month: 'long',
+        timeZone: 'UTC',
+    }).format(new Date(Date.UTC(2000, month, 1)));
+    MONTH_LABEL_CACHE.set(key, label);
+    return label;
+}
 
 /**
  * 그리드 입력 — SP-A `EconomicCalendarEvent` + (선택) SP-D 분석 필드. 분석 필드를
@@ -92,6 +125,8 @@ interface KstEvent {
     iso: string;
     /** 한국시간 레이블 '오전/오후 H:mm' */
     kstTimeLabel: string;
+    /** 월 셀 인라인 표기 — 오전/오후 없음. */
+    inlineTimeLabel: string;
     original: CalendarGridEvent;
 }
 
@@ -148,12 +183,30 @@ function daysInMonth(year: number, month: number): number {
  * 날짜순으로 정렬된 DayGroup[] 를 반환한다.
  * 이벤트는 kstDateKey 오름차순 → kstTimeLabel 오름차순으로 정렬.
  */
-function groupEventsByKstDay(events: readonly CalendarGridEvent[]): DayGroup[] {
+function groupEventsByKstDay(
+    events: readonly CalendarGridEvent[],
+    locale: Locale
+): DayGroup[] {
     const map = new Map<string, KstEvent[]>();
 
     for (const ev of events) {
-        const { iso, kstDateKey, kstTimeLabel } = etDateTimeToKst(ev.date);
-        const kst: KstEvent = { iso, kstTimeLabel, original: ev };
+        const { iso, kstDateKey, kstTimeLabel } = etDateTimeToKst(
+            ev.date,
+            locale
+        );
+        // 월 셀은 한 줄 폭이라 오전/오후를 넣을 자리가 없다. 문자열을 깎으면
+        // 한국어에서만 동작하므로(`replace(/^(오전|오후)/)`), 포맷 단계에서 끈다.
+        const { kstTimeLabel: inlineTimeLabel } = etDateTimeToKst(
+            ev.date,
+            locale,
+            false
+        );
+        const kst: KstEvent = {
+            iso,
+            kstTimeLabel,
+            inlineTimeLabel,
+            original: ev,
+        };
         map.set(kstDateKey, [...(map.get(kstDateKey) ?? []), kst]);
     }
 
@@ -185,12 +238,9 @@ function spannedMonths(groups: DayGroup[]): MonthGrid[] {
     return [...monthMap.values()];
 }
 
-/**
- * KST 날짜 키 'YYYY-MM-DD'를 한국어 요일 레이블로 변환.
- * ('일' | '월' | '화' | '수' | '목' | '금' | '토')
- */
-function kstDayOfWeekLabel(dateKey: string): string {
-    return WEEKDAY_LABELS[dayOfWeekFromKey(dateKey)];
+/** KST 날짜 키 'YYYY-MM-DD'를 로케일 요일 레이블로 변환. */
+function kstDayOfWeekLabel(dateKey: string, locale: Locale): string {
+    return weekdayLabels(locale)[dayOfWeekFromKey(dateKey)]!;
 }
 
 /**
@@ -218,8 +268,14 @@ function DayDetailPanel({
     labels,
 }: DayDetailPanelProps) {
     const t = useTranslations('widgets.economy');
+    // extract.mjs의 동적 키 탐지는 "이 파일 안에서 번역자를 직접 호출하는
+    // 패턴"만 본다 — `SENTIMENT_LABEL_KEY[...]`를 그대로 `tLabel(...)`에
+    // 넣어야 `shared.enumLabel`이 이 라우트의 클라이언트 번들에 실린다
+    // (sentimentDisplay.ts의 SENTIMENT_LABEL_KEY export 주석 참고).
+    const tLabel = useTranslations('shared.enumLabel');
+    const locale = useCurrentLocale();
     const { month, day, dateKey } = group;
-    const dowLabel = kstDayOfWeekLabel(dateKey);
+    const dowLabel = kstDayOfWeekLabel(dateKey, locale);
 
     return (
         /**
@@ -243,12 +299,14 @@ function DayDetailPanel({
             )}
         >
             <h3 className="font-semibold text-secondary-100">
+                {/* 월은 숫자가 아니라 로케일 월 이름으로 넘긴다 — 번역된
+                    템플릿에 `9`를 꽂으면 영어에서 `9 15 (Wed`가 된다. 닫는
+                    괄호도 메시지 안에 있다(예전엔 JSX에 떨어져 있었다). */}
                 {t('EconomicCalendarGrid.dc712b', {
-                    v0: month + 1,
+                    v0: monthLabel(locale, month),
                     v1: day,
                     v2: dowLabel,
                 })}
-                )
             </h3>
             <ul className="space-y-2">
                 {group.events.map(ev => {
@@ -309,7 +367,9 @@ function DayDetailPanel({
                                         IMPACT_BADGE[ev.original.impact]
                                     )}
                                 >
-                                    {IMPACT_LABELS[ev.original.impact]}
+                                    {tLabel(
+                                        IMPACT_LABEL_KEY[ev.original.impact]
+                                    )}
                                 </span>
                             </div>
                             {ev.original.sentiment != null &&
@@ -323,19 +383,24 @@ function DayDetailPanel({
                                                 ]
                                             )}
                                         >
-                                            {
-                                                SENTIMENT_LABEL[
+                                            {tLabel(
+                                                SENTIMENT_LABEL_KEY[
                                                     ev.original.sentiment
                                                 ]
-                                            }
+                                            )}
                                         </span>
                                         <p className="text-sm text-secondary-200">
-                                            {ev.original.summaryKo}
+                                            {resolveCalendarSummary(
+                                                ev.original
+                                            )}
                                         </p>
-                                        {ev.original.interpretationKo !=
-                                            null && (
+                                        {resolveCalendarInterpretation(
+                                            ev.original
+                                        ) !== null && (
                                             <p className="text-xs leading-relaxed text-secondary-400">
-                                                {ev.original.interpretationKo}
+                                                {resolveCalendarInterpretation(
+                                                    ev.original
+                                                )}
                                             </p>
                                         )}
                                     </div>
@@ -364,6 +429,7 @@ function DayCell({
     labels,
 }: DayCellProps) {
     const t = useTranslations('widgets.economy');
+    const tMisc = useTranslations('shared.ui.misc');
     const { day, month, dateKey } = group;
 
     /**
@@ -390,7 +456,11 @@ function DayCell({
             <button
                 id={`day-btn-${dateKey}`}
                 type="button"
-                aria-label={`${month + 1}월 ${day}일, 이벤트 ${count}건`}
+                aria-label={tMisc('calendarDayAria', {
+                    v0: month + 1,
+                    v1: day,
+                    v2: count,
+                })}
                 aria-pressed={isSelected}
                 aria-controls={`panel-${dateKey}`}
                 onClick={() => onSelect(dateKey)}
@@ -439,7 +509,7 @@ function DayCell({
                             key={`${ev.iso}:${ev.original.event}`}
                             className="block min-w-0 truncate text-[10px] leading-tight text-secondary-400"
                         >
-                            {ev.kstTimeLabel.replace(/^(오전|오후)\s*/, '')}{' '}
+                            {ev.inlineTimeLabel}{' '}
                             {displayEventLabel(ev.original.event, labels)}
                         </span>
                     ))}
@@ -475,6 +545,7 @@ function MonthCalendar({
     labels,
 }: MonthCalendarProps) {
     const t = useTranslations('widgets.economy');
+    const locale = useCurrentLocale();
     const weeks = useMemo(() => {
         const totalDays = daysInMonth(year, month);
         /** 1일의 요일 (0=일 … 6=토) */
@@ -499,7 +570,10 @@ function MonthCalendar({
         ) as (DayGroup | null)[][];
     }, [year, month, groupMap]);
 
-    const captionText = `${year}년 ${MONTH_LABELS[month]} 경제 캘린더`;
+    const captionText = t('EconomicCalendarGrid.490b3a', {
+        v0: year,
+        v1: monthLabel(locale, month),
+    });
 
     return (
         <div>
@@ -509,14 +583,14 @@ function MonthCalendar({
             >
                 {t('EconomicCalendarGrid.490b3a', {
                     v0: year,
-                    v1: MONTH_LABELS[month],
+                    v1: monthLabel(locale, month),
                 })}
             </p>
             <table className="w-full table-fixed border-collapse">
                 <caption className="sr-only">{captionText}</caption>
                 <thead>
                     <tr>
-                        {WEEKDAY_LABELS.map(label => (
+                        {weekdayLabels(locale).map(label => (
                             <th
                                 key={label}
                                 scope="col"
@@ -616,13 +690,18 @@ export function EconomicCalendarGrid({
     country,
 }: EconomicCalendarGridProps) {
     const t = useTranslations('widgets.economy');
+    const tCountry = useTranslations('entities.economy.calendarCountry');
+    const locale = useCurrentLocale();
     const [selectedDateKey, setSelectedDateKey] = useState('');
     const [activeImpacts, setActiveImpacts] = useState<
         ReadonlySet<CalendarImpact>
     >(() => new Set(DEFAULT_ACTIVE_IMPACTS));
     useEconomicCalendarTrigger(country);
     useIndicatorTranslationTrigger(events, labels);
-    const groups = useMemo(() => groupEventsByKstDay(events), [events]);
+    const groups = useMemo(
+        () => groupEventsByKstDay(events, locale),
+        [events, locale]
+    );
     const groupMap = useMemo(
         () => new Map<string, DayGroup>(groups.map(g => [g.dateKey, g])),
         [groups]
@@ -670,7 +749,7 @@ export function EconomicCalendarGrid({
                 </h2>
                 <p className="text-sm text-secondary-400">
                     {t('EconomicCalendarGrid.f9d9dc', {
-                        v0: CALENDAR_COUNTRY_LABEL[country],
+                        v0: tCountry(CALENDAR_COUNTRY_LABEL_KEY[country]),
                     })}
                 </p>
             </section>

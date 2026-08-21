@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import type { SeoTranslator } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
@@ -15,6 +16,7 @@ import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { fetchCategoryPreviews } from '../_lib/categoryPreviews';
 import {
     buildBreadcrumbJsonLd,
+    buildWebPageJsonLd,
     clampSeoDescription,
     SITE_NAME,
     SITE_URL,
@@ -26,11 +28,15 @@ import {
 export const revalidate = 86400;
 
 const PATH = '/news/us';
-const TITLE = '미국 시장 뉴스 — 카테고리별 최신 흐름';
-const FULL_TITLE = `${TITLE} | ${SITE_NAME}`;
-const DESCRIPTION = clampSeoDescription(
-    '미국 시장 뉴스를 카테고리별로 한 곳에서 확인해요. 일반·주식·외환·마켓 아티클까지 최신 흐름을 빠짐없이 모았고, 어려운 원문 기사도 한국어 AI 요약으로 핵심만 빠르게 파악할 수 있게 도와드려요.'
-);
+export function newsUsTitle(t: SeoTranslator): string {
+    return t('newsUs.title');
+}
+function newsUsFullTitle(t: SeoTranslator): string {
+    return `${newsUsTitle(t)} | ${SITE_NAME}`;
+}
+export function newsUsDescription(t: SeoTranslator): string {
+    return clampSeoDescription(t('newsUs.description'));
+}
 
 /**
  * 이 페이지는 2026-08 이전 `/news`의 역할을 그대로 이어받았다.
@@ -56,12 +62,21 @@ export async function generateMetadata({
     // 2026-07 thin-content 사태에서 문제가 된 분량(약 677자)보다도 얇다.
     // 첫인상으로 판정되는 신규 URL이라 그 상태를 색인시키지 않는다.
     const previews = await Promise.all(
-        categoriesInRegion('us').map(cat => fetchCategoryPreviews(cat))
+        categoriesInRegion('us').map(cat =>
+            fetchCategoryPreviews(
+                cat,
+                isLocale(locale) ? locale : DEFAULT_LOCALE
+            )
+        )
     );
     const degraded = previews.every(list => list.length === 0);
+    const tSeo = await getTranslations({
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        namespace: 'shared.seo',
+    });
     return {
-        title: TITLE,
-        description: DESCRIPTION,
+        title: newsUsTitle(tSeo),
+        description: newsUsDescription(tSeo),
         keywords: [
             '미국 시장 뉴스',
             // 구 표기. 리브랜딩(2026-08) 전 유입 질의를 잃지 않기 위해 남긴다.
@@ -85,8 +100,8 @@ export async function generateMetadata({
         openGraph: {
             type: 'website',
             siteName: SITE_NAME,
-            title: FULL_TITLE,
-            description: DESCRIPTION,
+            title: newsUsFullTitle(tSeo),
+            description: newsUsDescription(tSeo),
             url,
             ...ogLocale,
             // `/news/opengraph-image.tsx`를 **명시적으로** 가리킨다. 파일 컨벤션은
@@ -97,8 +112,8 @@ export async function generateMetadata({
         },
         twitter: {
             card: 'summary_large_image',
-            title: FULL_TITLE,
-            description: DESCRIPTION,
+            title: newsUsFullTitle(tSeo),
+            description: newsUsDescription(tSeo),
             images: [`${SITE_URL}/news/opengraph-image`],
         },
     };
@@ -115,28 +130,36 @@ export default async function UsNewsHubPage({
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
     const t = await getTranslations('app.news');
+    const tNav = await getTranslations();
+    const tSeo = await getTranslations('shared.seo');
     const categories = categoriesInRegion('us');
     const previewsByCategory = await Promise.all(
-        categories.map(cat => fetchCategoryPreviews(cat))
+        categories.map(cat =>
+            fetchCategoryPreviews(
+                cat,
+                isLocale(locale) ? locale : DEFAULT_LOCALE
+            )
+        )
     );
 
     const url = `${SITE_URL}${PATH}`;
 
     const webPageJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'WebPage',
-        '@id': `${url}#webpage`,
-        name: FULL_TITLE,
-        description: DESCRIPTION,
-        url,
-        inLanguage: 'ko',
-        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
+        ...buildWebPageJsonLd({
+            url: url,
+            name: `${newsUsTitle(tSeo)} | ${SITE_NAME}`,
+            description: newsUsDescription(tSeo),
+            locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        }),
     };
 
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: t('page.dc06c4'), url: `${SITE_URL}/news` },
-        { name: t('page.d311d2'), url },
-    ]);
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd(
+        [
+            { name: t('page.dc06c4'), url: `${SITE_URL}/news` },
+            { name: t('page.d311d2'), url },
+        ],
+        isLocale(locale) ? locale : DEFAULT_LOCALE
+    );
 
     return (
         <>
@@ -157,9 +180,9 @@ export default async function UsNewsHubPage({
                         return (
                             <CategoryCard
                                 key={cat}
-                                koLabel={cfg.koLabel}
+                                label={tNav(cfg.labelKey)}
                                 href={`/news/${cfg.slug}`}
-                                koDescription={cfg.koDescription}
+                                description={tNav(cfg.descriptionKey)}
                                 previewHeadlines={previewsByCategory[i]}
                             />
                         );

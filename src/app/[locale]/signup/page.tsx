@@ -1,11 +1,10 @@
 import { getTranslations } from 'next-intl/server';
-import { localeCanonical } from '@/shared/lib/seoAlternates';
+import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import { Suspense } from 'react';
 
 import { setRequestLocale } from 'next-intl/server';
 import { AuthCardShell, AuthFormSkeleton } from '@/shared/ui/auth';
-import { SITE_NAME } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { SignupContent } from './SignupContent';
@@ -23,11 +22,20 @@ export async function generateMetadata({
 }): Promise<Metadata> {
     const { locale } = await params;
     const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({
+        locale: resolved,
+        namespace: 'shared.seo',
+    });
+    const title = tSeo('signup.title');
+    const description = tSeo('signup.description');
     return {
-        title: '회원가입',
-        description: `${SITE_NAME} 회원이 되면 추가 혜택을 누릴 수 있어요. 가입은 옵션이며 비회원도 모든 기본 기능을 그대로 이용할 수 있습니다.`,
+        title,
+        description,
         alternates: { canonical: localeCanonical(resolved, '/signup') },
-        openGraph: { url: localeCanonical(resolved, '/signup') },
+        ...localePageSocial(resolved, '/signup', {
+            title,
+            description,
+        }),
         robots: { index: false, follow: true },
     };
 }

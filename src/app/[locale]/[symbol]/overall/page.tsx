@@ -17,10 +17,11 @@ import {
     isAdmissibleSymbolShape,
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
-import { Suspense, type ReactNode } from 'react';
+import { Suspense } from 'react';
 import {
     buildAssetAboutNode,
     buildDisplayName,
+    pickAssetName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
 import { getNewsList } from '@/entities/news-article/api';
@@ -29,7 +30,7 @@ import {
     buildBreadcrumbJsonLd,
     buildSnapshotMetaDescription,
     buildSymbolSeoContent,
-    buildSymbolWebPageJsonLd,
+    buildWebPageJsonLd,
     resolveSymbolOverallSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
@@ -45,16 +46,34 @@ import {
 } from '@y0ngha/siglens-core';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 /** H1·FAQ 답변 2개·안내 문단이 market profile별로 갈라 쓰는 카피 번들. */
 interface OverallCopy {
-    heading: string;
-    axesAnswer: string;
-    scenarioAnswer: string;
-    guideParagraphs: ReactNode;
+    /**
+     * h1 **메시지 키**. 문자열이 아니다 — 값(`displayName`)만 로케일화하고
+     * 템플릿을 한국어로 두면 `/en/AAPL/overall`의 h1이
+     * `Apple Inc. (AAPL) 차트와 옵션 시장, 실적, 뉴스 종합 분석`이 된다.
+     * (주변 산문은 §13 잔여 백로그라 여기서 건드리지 않는다.)
+     */
+    headingKey: string;
+    /**
+     * 답변 **키**만 담는다. `t()` 호출은 번역자를 선언한 렌더 쪽에서 한다 —
+     * 질문은 이미 카탈로그를 쓰는데 답변만 한국어 리터럴이라, 같은
+     * `Question` 노드가 영어 질문 + 한국어 답변으로 나갔다.
+     */
+    axesAnswerKey: string;
+    scenarioAnswerKey: string;
+    /**
+     * 안내 문단 **키** 목록. ReactNode를 담으면 문단이 한국어 리터럴로 굳어
+     * `/en/AAPL/overall`이 영어 h1 아래 한국어 산문을 렌더한다 —
+     * `headingKey`와 같은 이유로 키만 담고 `t()`는 렌더 쪽에서 부른다.
+     * 첫 문단만 `{v0}`(호출 쪽 displayName)을 받는다.
+     */
+    guideParagraphKeys: readonly string[];
 }
 
 /**
@@ -68,102 +87,43 @@ interface OverallCopy {
  * `sessionSpecFor`(shared/api/market/sessionSpecFor.ts)와 동일한
  * `_exhaustive: never` 가드 패턴.
  */
-function buildOverallCopy(
-    marketProfile: MarketProfileId,
-    displayName: string
-): OverallCopy {
+function buildOverallCopy(marketProfile: MarketProfileId): OverallCopy {
     switch (marketProfile) {
         case 'us-equity':
             return {
-                heading: `${displayName} 차트와 옵션 시장, 실적, 뉴스 종합 분석`,
-                axesAnswer: `${displayName} 주가의 차트 추세, 옵션 시장이 평가하는 단기 방향성, 분기 실적과 펀더멘털, 최근 뉴스 분위기까지 네 가지 분석 축에 시장 분위기(공포 탐욕 지수)를 더해 강세와 약세 시나리오, 진입을 고려할 만한 가격대, 시나리오가 깨지는 위험 요인을 함께 정리합니다.`,
-                scenarioAnswer:
-                    '차트 추세, 옵션 시장의 콜·풋 베팅 분위기, 실적과 가이던스 흐름, 뉴스 분위기를 종합해 상승 압력이 우세한지 하방 압력이 우세한지 판단합니다. 각 시나리오마다 어떤 가격대에서 진입을 고려할 만한지, 어떤 신호가 나오면 시나리오가 깨지는지를 같이 정리합니다.',
-                guideParagraphs: (
-                    <>
-                        <p className="text-sm leading-relaxed text-secondary-400">
-                            {displayName} 주가가 지금 어디쯤 와 있는지 한
-                            페이지에서 정리해 봅니다. 차트의 추세와 주요
-                            지지선과 저항선, 옵션 시장이 평가하는 단기 방향성,
-                            분기 실적 흐름, 최근 뉴스에서 시장이 무엇에 반응하고
-                            있는지까지 네 가지 분석 축에 시장 분위기를 더해
-                            살펴봅니다.
-                        </p>
-                        <p className="text-sm leading-relaxed text-secondary-400">
-                            옵션 시장이 가까운 만기에서 콜과 풋 어느 쪽에 더 큰
-                            베팅을 걸고 있는지도 한 줄로 짚어 줍니다. 네 축을
-                            합쳐 강세와 약세 시나리오를 각각 정리하고, 어떤
-                            가격대에서 진입을 고려해 볼 만한지, 어떤 신호가
-                            나오면 시나리오가 깨지는지를 함께 짚습니다.
-                        </p>
-                        <p className="text-sm leading-relaxed text-secondary-400">
-                            실적 발표, 가이던스 변화, 매크로 이벤트처럼
-                            시나리오를 뒤집을 수 있는 위험 요인도 따로 표시해
-                            두니, 매수 전에 한 번 훑어보면 도움이 됩니다.
-                        </p>
-                    </>
-                ),
+                headingKey: 'page.overallHeadingUsEquity',
+                axesAnswerKey: 'faq.overallAxesAnswerUsEquity',
+                scenarioAnswerKey: 'faq.overallScenarioAnswerUsEquity',
+                guideParagraphKeys: [
+                    'page.overallGuideUsEquityP1',
+                    'page.overallGuideUsEquityP2',
+                    'page.overallGuideEquityP3',
+                ],
             };
         case 'kr-equity':
             // 한국 개별주식: 옵션 시장이 없으므로(KR_EQUITY_DESCRIPTOR.tabs) 세
             // 축(차트·실적·뉴스)만 다룬다 — 미국 주식 카피의 "옵션 시장"
             // 문단을 실적/가이던스 문단으로 교체한다.
             return {
-                heading: `${displayName} 차트와 실적, 뉴스 종합 분석`,
-                axesAnswer: `${displayName} 주가의 차트 추세, 분기 실적과 펀더멘털, 최근 뉴스 분위기까지 세 가지 분석 축에 시장 분위기(공포 탐욕 지수)를 더해 강세와 약세 시나리오, 진입을 고려할 만한 가격대, 시나리오가 깨지는 위험 요인을 함께 정리합니다.`,
-                scenarioAnswer:
-                    '차트 추세, 실적과 가이던스 흐름, 뉴스 분위기를 종합해 상승 압력이 우세한지 하방 압력이 우세한지 판단합니다. 각 시나리오마다 어떤 가격대에서 진입을 고려할 만한지, 어떤 신호가 나오면 시나리오가 깨지는지를 같이 정리합니다.',
-                guideParagraphs: (
-                    <>
-                        <p className="text-sm leading-relaxed text-secondary-400">
-                            {displayName} 주가가 지금 어디쯤 와 있는지 한
-                            페이지에서 정리해 봅니다. 차트의 추세와 주요
-                            지지선과 저항선, 분기 실적 흐름, 최근 뉴스에서
-                            시장이 무엇에 반응하고 있는지까지 세 가지 분석 축에
-                            시장 분위기를 더해 살펴봅니다.
-                        </p>
-                        <p className="text-sm leading-relaxed text-secondary-400">
-                            분기 실적이 시장 기대치를 웃돌았는지, 다음 분기
-                            가이던스가 어떻게 나왔는지도 한 줄로 짚어 줍니다. 세
-                            축을 합쳐 강세와 약세 시나리오를 각각 정리하고, 어떤
-                            가격대에서 진입을 고려해 볼 만한지, 어떤 신호가
-                            나오면 시나리오가 깨지는지를 함께 짚습니다.
-                        </p>
-                        <p className="text-sm leading-relaxed text-secondary-400">
-                            실적 발표, 가이던스 변화, 매크로 이벤트처럼
-                            시나리오를 뒤집을 수 있는 위험 요인도 따로 표시해
-                            두니, 매수 전에 한 번 훑어보면 도움이 됩니다.
-                        </p>
-                    </>
-                ),
+                headingKey: 'page.overallHeadingKrEquity',
+                axesAnswerKey: 'faq.overallAxesAnswerKrEquity',
+                scenarioAnswerKey: 'faq.overallScenarioAnswerKrEquity',
+                guideParagraphKeys: [
+                    'page.overallGuideKrEquityP1',
+                    'page.overallGuideKrEquityP2',
+                    'page.overallGuideEquityP3',
+                ],
             };
         case 'crypto':
             return {
-                heading: `${displayName} 차트와 뉴스, 매수 분위기 종합 분석`,
-                axesAnswer: `${displayName} 시세의 차트 추세, 최근 뉴스 분위기, 매수 분위기(공포 탐욕 지수)를 묶어 강세와 약세 시나리오, 진입을 고려할 만한 가격대, 시나리오가 깨지는 위험 요인을 함께 정리합니다.`,
-                scenarioAnswer:
-                    '차트 추세, 최근 뉴스 흐름, 매수 분위기를 종합해 상승 압력이 우세한지 하방 압력이 우세한지 판단합니다. 각 시나리오마다 어떤 가격대에서 진입을 고려할 만한지, 어떤 신호가 나오면 시나리오가 깨지는지를 같이 정리합니다.',
-                guideParagraphs: (
-                    <>
-                        <p className="text-sm leading-relaxed text-secondary-400">
-                            {displayName} 시세가 지금 어디쯤 와 있는지 한
-                            페이지에서 정리해 봅니다. 차트의 추세와 주요
-                            지지선과 저항선, 최근 뉴스에서 시장이 무엇에
-                            반응하고 있는지, 매수 분위기(공포 탐욕 지수)를 세
-                            축으로 묶어 살펴봅니다.
-                        </p>
-                        <p className="text-sm leading-relaxed text-secondary-400">
-                            세 축을 합쳐 강세와 약세 시나리오를 각각 정리하고,
-                            어떤 가격대에서 진입을 고려해 볼 만한지, 어떤 신호가
-                            나오면 시나리오가 깨지는지를 함께 짚습니다.
-                        </p>
-                        <p className="text-sm leading-relaxed text-secondary-400">
-                            매크로 이벤트, 규제 이슈, 대형 뉴스처럼 시나리오를
-                            뒤집을 수 있는 위험 요인도 따로 표시해 두니, 매수
-                            전에 한 번 훑어보면 도움이 됩니다.
-                        </p>
-                    </>
-                ),
+                headingKey: 'page.overallHeadingCrypto',
+                axesAnswerKey: 'faq.overallAxesAnswerCrypto',
+                scenarioAnswerKey: 'faq.overallScenarioAnswerCrypto',
+                guideParagraphKeys: [
+                    'page.overallGuideCryptoP1',
+                    'page.overallGuideCryptoP2',
+                    'page.overallGuideCryptoP3',
+                ],
             };
         default: {
             // Exhaustiveness guard: 새 MarketProfileId가 추가되면 TypeScript가
@@ -172,7 +132,7 @@ function buildOverallCopy(
             console.error(
                 `[OverallPage] Unhandled MarketProfileId: ${String(_exhaustive)} — defaulting to us-equity copy`
             );
-            return buildOverallCopy('us-equity', displayName);
+            return buildOverallCopy('us-equity');
         }
     }
 }
@@ -216,7 +176,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // an extra DB round-trip. Falls back to the templated description when no
     // snapshot exists (backward compatible). og/twitter keep the templated copy
     // — only the search-facing <meta name="description"> is overridden.
-    const snap = (await getSeoSnapshotsStatic(upper, revalidate)).find(
+    const snap = (await getSeoSnapshotsStatic(upper, revalidate, locale)).find(
         s => s.tab === 'overall'
     );
 
@@ -265,16 +225,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         if (!cachedOverall) return NOINDEX_SYMBOL_METADATA;
     }
 
-    const displayName = buildDisplayName(assetInfo, upper);
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
+    const displayName = buildDisplayName(assetInfo, upper, locale);
     const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
-    const seo = resolveSymbolOverallSeoContent(upper, assetClass, {
+    const seo = resolveSymbolOverallSeoContent(upper, assetClass, tSeo, {
         displayName,
         koreanName: assetInfo.koreanName,
+        englishName: assetInfo.name,
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
     });
     const metadata = symbolMetadataFromSeo(seo, locale);
 
     const snapshotDescription = snap
-        ? buildSnapshotMetaDescription('overall', snap.content, displayName)
+        ? buildSnapshotMetaDescription(
+              'overall',
+              snap.content,
+              displayName,
+              locale
+          )
         : null;
     return snapshotDescription
         ? { ...metadata, description: snapshotDescription }
@@ -288,7 +256,10 @@ export default async function OverallPage({ params }: Props) {
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    // DB 콘텐츠(뉴스 본문) 해석에 쓸 좁혀진 로케일. URL 세그먼트는 신뢰 경계다.
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
     const t = await getTranslations('app.symbol');
+    const tSeo = await getTranslations('shared.seo');
     const upper = symbol.toUpperCase();
 
     if (!isAdmissibleSymbolShape(upper)) {
@@ -330,9 +301,9 @@ export default async function OverallPage({ params }: Props) {
     // cold path(둘 다 캐시 miss)에서 TTFB가 ~max(t1, t2) 수준으로 줄어든다.
     const [newsItems, cachedOverall, snapshots] = await Promise.all([
         staticSymbolCache(
-            [NEWS_LIST_CACHE_KEY, upper],
+            [NEWS_LIST_CACHE_KEY, upper, ...contentLocaleKeyPart(resolved)],
             upper,
-            () => getNewsList(upper),
+            () => getNewsList(upper, resolved),
             [`news:${upper}`],
             SECONDS_PER_HALF_DAY
         ).catch((error: unknown) => {
@@ -368,7 +339,7 @@ export default async function OverallPage({ params }: Props) {
         // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
         // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
         // `export const revalidate` literal above.
-        getSeoSnapshotsStatic(upper, revalidate),
+        getSeoSnapshotsStatic(upper, revalidate, resolved),
     ]);
     const hasEnrichedNews = newsItems.some(item => item.sentiment !== null);
 
@@ -385,7 +356,11 @@ export default async function OverallPage({ params }: Props) {
     const overallSnapshot = snapshots.find(s => s.tab === 'overall');
     const showSnapshotProse = hasOverallProse(overallSnapshot?.content);
 
-    const displayName = buildDisplayName(assetInfo, upper);
+    const displayName = buildDisplayName(
+        assetInfo,
+        upper,
+        isLocale(locale) ? locale : DEFAULT_LOCALE
+    );
     const marketProfile = marketProfileOf(assetInfo);
     const assetClass = getDescriptor(marketProfile).assetClass;
     const isEquity = assetClass === 'equity';
@@ -395,13 +370,16 @@ export default async function OverallPage({ params }: Props) {
     // 미국 종목과 같은 "옵션 시장" 문구를 그대로 노출하게 된다(SEO 감사 2026-08-18) —
     // tabs whitelist를 직접 물어 실제 옵션 탭 존재 여부로 판정한다.
     const hasOptions = getDescriptor(marketProfile).tabs.includes('options');
-    const copy = buildOverallCopy(marketProfile, displayName);
+    const copy = buildOverallCopy(marketProfile);
     const { fullTitle, description, url } = resolveSymbolOverallSeoContent(
         upper,
         assetClass,
+        tSeo,
         {
             displayName,
             koreanName: assetInfo.koreanName,
+            englishName: assetInfo.name,
+            locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
         }
     );
 
@@ -409,21 +387,29 @@ export default async function OverallPage({ params }: Props) {
     // undefined로 자연 생략된다. crypto는 schema.org 표준 타입이 없어 about 노드 자체를 두지 않는다.
     const aboutNode = buildAssetAboutNode(
         upper,
-        assetInfo.koreanName ?? assetInfo.name,
+        pickAssetName(
+            assetInfo,
+            upper,
+            isLocale(locale) ? locale : DEFAULT_LOCALE
+        ),
         assetInfo.fmpSymbol,
         assetClass
     );
-    const jsonLd = buildSymbolWebPageJsonLd({
+    const jsonLd = buildWebPageJsonLd({
         url,
         name: fullTitle,
         description,
         about: aboutNode,
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
     });
 
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: upper, url: buildSymbolSeoContent(upper).url },
-        { name: t('page.8b7ae7'), url },
-    ]);
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd(
+        [
+            { name: upper, url: buildSymbolSeoContent(upper, tSeo).url },
+            { name: t('page.8b7ae7'), url },
+        ],
+        isLocale(locale) ? locale : DEFAULT_LOCALE
+    );
 
     // FAQ 답변은 market profile별로 분기한다 — 크립토에는 옵션 시장·분기 실적·펀더멘털이
     // 없고, 한국 개별주식은 옵션 시장만 없으므로 해당 문구가 포함된 답변을 그대로
@@ -435,10 +421,10 @@ export default async function OverallPage({ params }: Props) {
         mainEntity: [
             {
                 '@type': 'Question',
-                name: `${displayName} 종합 분석에서는 어떤 축을 같이 보나요?`,
+                name: tSeo('faq.overallAxes', { v0: displayName }),
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: copy.axesAnswer,
+                    text: tSeo(copy.axesAnswerKey, { v0: displayName }),
                 },
             },
             {
@@ -446,7 +432,7 @@ export default async function OverallPage({ params }: Props) {
                 name: t('page.e753ee'),
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: copy.scenarioAnswer,
+                    text: tSeo(copy.scenarioAnswerKey),
                 },
             },
             {
@@ -466,7 +452,9 @@ export default async function OverallPage({ params }: Props) {
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-                <SymbolPageHeading>{copy.heading}</SymbolPageHeading>
+                <SymbolPageHeading>
+                    {t(copy.headingKey, { v0: displayName })}
+                </SymbolPageHeading>
                 <section
                     aria-labelledby="overall-guide-heading"
                     className="space-y-3 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5"
@@ -477,7 +465,14 @@ export default async function OverallPage({ params }: Props) {
                     >
                         {t('page.712907', { v0: displayName })}
                     </h2>
-                    {copy.guideParagraphs}
+                    {copy.guideParagraphKeys.map(key => (
+                        <p
+                            key={key}
+                            className="text-sm leading-relaxed text-secondary-400"
+                        >
+                            {t(key, { v0: displayName })}
+                        </p>
+                    ))}
                 </section>
                 {/* AI 스냅샷 프로즈는 Suspense fallback이 아니라 PERSISTENT server
                     sibling으로 마운트한다(audit fix — fallback 안에 두면 React가
@@ -512,7 +507,6 @@ export default async function OverallPage({ params }: Props) {
                             />
                         ) : (
                             <OverallFactualFallback
-                                symbol={upper}
                                 displayName={displayName}
                                 marketProfile={marketProfile}
                                 newsItems={newsItems}

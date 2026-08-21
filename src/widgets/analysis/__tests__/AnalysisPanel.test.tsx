@@ -19,7 +19,10 @@ vi.mock('@/shared/lib/cn', () => ({
             .join(' '),
 }));
 vi.mock('@/shared/lib/trendline', () => ({
-    TRENDLINE_DIRECTION_LABEL: { ascending: '상승', descending: '하강' },
+    TRENDLINE_DIRECTION_LABEL_KEY: {
+        ascending: 'ascending',
+        descending: 'descending',
+    },
 }));
 vi.mock('@/shared/config/time', () => ({
     MS_PER_SECOND: 1000,
@@ -72,9 +75,16 @@ import type {
     StrategyResult,
 } from '@y0ngha/siglens-core';
 
-import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
+import { buildFallbackAnalysis } from '@/entities/chat-message';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { AnalysisPanel } from '../AnalysisPanel';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+
+// 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을
+// 들고 있어 `/en/AAPL`이 영어 화면에 한국어 폴백을 렌더했다.
+const FALLBACK_ANALYSIS = buildFallbackAnalysis(
+    catalogTranslator('entities.chat-message.fallback', 'ko')('unavailable')
+);
 
 function makeAnalysis(
     overrides: Partial<AnalysisResponse> = {}
@@ -808,8 +818,9 @@ describe('AnalysisPanel', () => {
         );
 
         expect(screen.getByText('추세선')).toBeInTheDocument();
-        expect(screen.getByText('상승')).toBeInTheDocument();
-        expect(screen.getByText('하강')).toBeInTheDocument();
+        // 방향 라벨은 이제 `shared.lib.trendline` 카탈로그에서 온다.
+        expect(screen.getByText('상승 추세선')).toBeInTheDocument();
+        expect(screen.getByText('하락 추세선')).toBeInTheDocument();
     });
 
     it('renders price targets when bullish targets exist', () => {

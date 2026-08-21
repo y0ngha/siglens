@@ -19,11 +19,12 @@ import { buildChatState } from './utils/buildChatState';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
 
-const TONE_LABEL: Record<OptionsTone, string> = {
-    bullish: '강세',
-    bearish: '약세',
-    cautious: '신중',
-    neutral: '중립',
+/** OptionsTone → `shared.enumLabel.optionsTone` 카탈로그 키. */
+const TONE_LABEL_KEY: Record<OptionsTone, string> = {
+    bullish: 'optionsTone.bullish',
+    bearish: 'optionsTone.bearish',
+    cautious: 'optionsTone.cautious',
+    neutral: 'optionsTone.neutral',
 };
 
 // Tone tokens (chart-bullish / chart-bearish) are part of the options-analysis
@@ -65,11 +66,12 @@ const SIGNAL_KIND_CLASS: Record<
     neutral: TONE_CLASS.neutral,
 };
 
-const SIGNAL_KIND_LABEL: Record<OptionsSignalKind, string> = {
-    bullish: '강세',
-    bearish: '약세',
-    volatility: '변동성',
-    neutral: '중립',
+/** OptionsSignalKind → `shared.enumLabel.optionsSignalKind` 카탈로그 키. */
+const SIGNAL_KIND_LABEL_KEY: Record<OptionsSignalKind, string> = {
+    bullish: 'optionsSignalKind.bullish',
+    bearish: 'optionsSignalKind.bearish',
+    volatility: 'optionsSignalKind.volatility',
+    neutral: 'optionsSignalKind.neutral',
 };
 
 interface ToneBadgeProps {
@@ -77,6 +79,7 @@ interface ToneBadgeProps {
 }
 
 function ToneBadge({ tone }: ToneBadgeProps) {
+    const tLabel = useTranslations('shared.enumLabel');
     const cls = TONE_CLASS[tone];
     return (
         <span
@@ -87,7 +90,7 @@ function ToneBadge({ tone }: ToneBadgeProps) {
                 cls.border
             )}
         >
-            {TONE_LABEL[tone]}
+            {tLabel(TONE_LABEL_KEY[tone])}
         </span>
     );
 }
@@ -97,6 +100,7 @@ interface SignalBadgeProps {
 }
 
 function SignalBadge({ kind }: SignalBadgeProps) {
+    const tLabel = useTranslations('shared.enumLabel');
     const cls = SIGNAL_KIND_CLASS[kind];
     return (
         <span
@@ -107,7 +111,7 @@ function SignalBadge({ kind }: SignalBadgeProps) {
                 cls.border
             )}
         >
-            {SIGNAL_KIND_LABEL[kind]}
+            {tLabel(SIGNAL_KIND_LABEL_KEY[kind])}
         </span>
     );
 }

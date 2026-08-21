@@ -52,6 +52,8 @@ vi.mock('@/entities/skill', () => ({
     FileSkillsLoader: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', () => ({
+    buildWebPageJsonLd: () => ({}),
+    localizedAbsoluteUrl: (url: string) => url,
     SITE_DESCRIPTION: 'test description',
     SITE_NAME: 'Siglens',
     SITE_URL: 'https://siglens.io',
@@ -85,7 +87,7 @@ import {
 } from 'vitest';
 import { isValidElement } from 'react';
 import { render, screen } from '@testing-library/react';
-import Home from '@/app/[locale]/page';
+import Home from '@/app/[locale]/(home)/page';
 import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';
 
 const mockCountSkillFiles = countSkillFiles as MockedFunction<

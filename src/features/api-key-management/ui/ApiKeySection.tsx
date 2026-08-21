@@ -148,7 +148,9 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                     <ApiKeyInput
                         name="apiKey"
                         placeholder={PROVIDER_PLACEHOLDERS[provider]}
-                        aria-label={`${LLM_PROVIDER_LABELS[provider]} API 키`}
+                        aria-label={t('ApiKeySection.apiKeyLabel', {
+                            v0: LLM_PROVIDER_LABELS[provider],
+                        })}
                         aria-describedby={saveStatusId}
                     />
                     <SubmitButton

@@ -29,7 +29,9 @@ describe('[symbol]/fundamental OG images', () => {
         });
 
         it('exports alt text containing fundamental', () => {
-            expect(alt).toContain('펀더멘털');
+            // `alt`는 Next가 모듈 스코프 상수로 요구해 로케일별로 낼 수 없다 —
+            // 네 로케일이 한 값을 공유하므로 영어로 둔다(§opengraph-image.tsx).
+            expect(alt).toContain('fundamental');
         });
 
         it('calls buildSymbolOgImage with ticker and fundamental label', async () => {

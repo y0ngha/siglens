@@ -4,12 +4,13 @@ import { setRequestLocale } from 'next-intl/server';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { getCachedSharedAnalysis } from '@/entities/shared-analysis/actions/getCachedSharedAnalysis';
 import { resolveAsOf } from '@/entities/shared-analysis/lib/resolveAsOf';
-import { kindLabel } from '@/widgets/share';
+import { kindLabelKey } from '@/widgets/share';
 import { buildShareMetadata } from '@/entities/shared-analysis/lib/buildShareSeo';
 import { ShareKindPanel } from '@/views/share';
 import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
 import { SITE_NAME } from '@/shared/lib/seo';
-import { INVESTMENT_DISCLAIMER } from '@/shared/lib/legal';
+import { INVESTMENT_DISCLAIMER_KEY } from '@/shared/lib/legal';
+import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 
 // 공유 스냅샷은 id별로 달라 정적 생성 불가 → force-dynamic
 export const dynamic = 'force-dynamic';
@@ -19,9 +20,20 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const { id } = await params;
+    const { id, locale } = await params;
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
     const lookup = await getCachedSharedAnalysis(id);
-    return buildShareMetadata(lookup);
+    const tSeo = await getTranslations({
+        locale: resolved,
+        namespace: 'entities.shared-analysis.seo',
+    });
+    // OG description의 방향성 라벨도 같은 로케일로 — 예전엔 한국어 상수라
+    // 영어 제목 아래 `강세 · …`가 실려 나갔다.
+    const tOg = await getTranslations({
+        locale: resolved,
+        namespace: 'entities.shared-analysis.og',
+    });
+    return buildShareMetadata(lookup, tSeo, resolved, tOg);
 }
 
 export default async function SharePage({ params }: Props) {
@@ -61,8 +73,14 @@ export default async function SharePage({ params }: Props) {
 
     const { snapshot, createdAt } = lookup;
     const ticker = snapshot.symbol.toUpperCase();
-    const asOf = formatKoreanDateTime(resolveAsOf(snapshot, createdAt));
-    const label = kindLabel(snapshot.kind);
+    const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const asOf = formatKoreanDateTime(
+        resolveAsOf(snapshot, createdAt),
+        resolvedLocale
+    );
+    const tLabel = await getTranslations('shared.enumLabel');
+    const tLegal = await getTranslations('shared.lib.legal');
+    const label = tLabel(kindLabelKey(snapshot.kind));
     return (
         <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
             <h1 className="mb-6 flex flex-wrap items-center gap-2">
@@ -100,7 +118,7 @@ export default async function SharePage({ params }: Props) {
                 className="mt-8 rounded-lg border border-ui-danger/30 bg-ui-danger/5 px-4 py-3"
             >
                 <p className="text-xs leading-relaxed text-secondary-400">
-                    {INVESTMENT_DISCLAIMER}
+                    {tLegal(INVESTMENT_DISCLAIMER_KEY)}
                 </p>
             </div>
 

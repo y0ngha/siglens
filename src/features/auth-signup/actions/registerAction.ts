@@ -1,5 +1,7 @@
 'use server';
 
+import { getTranslations } from 'next-intl/server';
+
 import { localeHref } from '@/shared/i18n/localeRedirect';
 import { redirect } from 'next/navigation';
 import type { SignupFormState } from '@/shared/lib/auth/formTypes';
@@ -30,14 +32,14 @@ import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { DrizzleTermsRepository } from '@/entities/terms';
 import { createEmailTokenStore } from '@/entities/email-token';
 import { cookies } from 'next/headers';
-
-const AUTO_LOGIN_FAILED_MESSAGE =
-    '회원가입은 완료되었으나 자동 로그인에 실패했습니다. 로그인 페이지에서 다시 시도해주세요.';
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 
 export async function registerAction(
     _prev: SignupFormState,
     formData: FormData
 ): Promise<SignupFormState> {
+    // 상태의 `message`가 그대로 화면에 뿌려지므로 요청 로케일로 만든다.
+    const tAuth = await getTranslations('entities.auth.error');
     try {
         const email = String(formData.get('email') ?? '').trim();
         const password = String(formData.get('password') ?? '');
@@ -70,8 +72,10 @@ export async function registerAction(
         const { db } = getAuthDatabaseClient();
         const termsRepo = new DrizzleTermsRepository(db);
         const [privacyTerms, tosTerms] = await Promise.all([
-            termsRepo.findActive('privacy'),
-            termsRepo.findActive('tos'),
+            // 신원(`terms.id`)만 필요하다 — 동의 레코드는 로케일과 무관한
+            // 원본 행을 가리킨다. 본문을 쓰지 않으므로 기본 로케일로 조회한다.
+            termsRepo.findActive('privacy', DEFAULT_LOCALE),
+            termsRepo.findActive('tos', DEFAULT_LOCALE),
         ]);
 
         if (!privacyTerms || !tosTerms) {
@@ -125,7 +129,7 @@ export async function registerAction(
             return {
                 error: {
                     code: 'auto_login_failed',
-                    message: AUTO_LOGIN_FAILED_MESSAGE,
+                    message: tAuth('signupAutoLoginFailed'),
                 },
             };
         }

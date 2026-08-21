@@ -52,7 +52,7 @@ describe('formatPriceChange', () => {
             expect(result.isUp).toBe(true);
             expect(result.sign).toBe('+');
             expect(result.arrow).toBe('▲');
-            expect(result.arrowLabel).toBe('상승');
+            expect(result.arrowLabelKey).toBe('up');
         });
     });
 
@@ -70,7 +70,7 @@ describe('formatPriceChange', () => {
             expect(result.isUp).toBe(false);
             expect(result.sign).toBe('');
             expect(result.arrow).toBe('▼');
-            expect(result.arrowLabel).toBe('하락');
+            expect(result.arrowLabelKey).toBe('down');
         });
     });
 });

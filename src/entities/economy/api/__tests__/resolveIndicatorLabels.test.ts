@@ -38,13 +38,16 @@ describe('resolveIndicatorLabels', () => {
     });
 
     it('returns an empty map and skips DB for empty events', async () => {
-        const labels = await resolveIndicatorLabels([]);
+        const labels = await resolveIndicatorLabels([], 'ko');
         expect(labels).toEqual({});
         expect(findByNames).not.toHaveBeenCalled();
     });
 
     it('maps dict-known names to Korean without a DB lookup', async () => {
-        const labels = await resolveIndicatorLabels([ev('Nonfarm Payrolls')]);
+        const labels = await resolveIndicatorLabels(
+            [ev('Nonfarm Payrolls')],
+            'ko'
+        );
         expect(labels['Nonfarm Payrolls']).toBe('비농업 고용');
         // All distinct bases were dict-known → no unknowns → no DB query.
         expect(findByNames).not.toHaveBeenCalled();
@@ -58,18 +61,20 @@ describe('resolveIndicatorLabels', () => {
                 source: 'ai',
             },
         ]);
-        const labels = await resolveIndicatorLabels([
-            ev('Some Obscure Index YoY (May)'),
-        ]);
+        const labels = await resolveIndicatorLabels(
+            [ev('Some Obscure Index YoY (May)')],
+            'ko'
+        );
         expect(labels['Some Obscure Index YoY (May)']).toBe(
             '어떤 모호한 지수(전년比) (5월)'
         );
     });
 
     it('falls back to English for a name missing from both dict and DB', async () => {
-        const labels = await resolveIndicatorLabels([
-            ev('Totally Unknown Thing (Apr)'),
-        ]);
+        const labels = await resolveIndicatorLabels(
+            [ev('Totally Unknown Thing (Apr)')],
+            'ko'
+        );
         expect(labels['Totally Unknown Thing (Apr)']).toBe(
             'Totally Unknown Thing (Apr)'
         );
@@ -79,19 +84,23 @@ describe('resolveIndicatorLabels', () => {
     });
 
     it('queries each distinct base only once', async () => {
-        await resolveIndicatorLabels([
-            ev('Totally Unknown Thing (Apr)'),
-            ev('Totally Unknown Thing (May)'),
-        ]);
+        await resolveIndicatorLabels(
+            [
+                ev('Totally Unknown Thing (Apr)'),
+                ev('Totally Unknown Thing (May)'),
+            ],
+            'ko'
+        );
         expect(findByNames).toHaveBeenCalledTimes(1);
         expect(findByNames).toHaveBeenCalledWith(['Totally Unknown Thing']);
     });
 
     it('degrades to English-only labels on DB failure (graceful)', async () => {
         findByNames.mockRejectedValue(new Error('neon down'));
-        const labels = await resolveIndicatorLabels([
-            ev('Totally Unknown Thing (Apr)'),
-        ]);
+        const labels = await resolveIndicatorLabels(
+            [ev('Totally Unknown Thing (Apr)')],
+            'ko'
+        );
         expect(labels['Totally Unknown Thing (Apr)']).toBe(
             'Totally Unknown Thing (Apr)'
         );
@@ -105,11 +114,14 @@ describe('resolveIndicatorLabels', () => {
                 source: 'ai',
             },
         ]);
-        const labels = await resolveIndicatorLabels([
-            ev('Nonfarm Payrolls'),
-            ev('Some Obscure Index YoY (May)'),
-            ev('Totally Unknown Thing'),
-        ]);
+        const labels = await resolveIndicatorLabels(
+            [
+                ev('Nonfarm Payrolls'),
+                ev('Some Obscure Index YoY (May)'),
+                ev('Totally Unknown Thing'),
+            ],
+            'ko'
+        );
         expect(labels['Nonfarm Payrolls']).toBe('비농업 고용');
         expect(labels['Some Obscure Index YoY (May)']).toBe(
             '어떤 모호한 지수(전년比) (5월)'

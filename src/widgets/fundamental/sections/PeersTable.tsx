@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
@@ -13,6 +14,7 @@ interface PeersTableProps {
 
 export function PeersTable({ peers }: PeersTableProps) {
     const t = useTranslations('widgets.fundamental');
+    const locale = useResolvedLocale();
     if (peers.length === 0) {
         return (
             <EmptySectionCard
@@ -69,7 +71,8 @@ export function PeersTable({ peers }: PeersTableProps) {
                                 <td className="py-2.5 text-right font-mono tabular-nums">
                                     {formatCompactCurrency(
                                         peer.marketCap,
-                                        peer.symbol
+                                        peer.symbol,
+                                        locale
                                     )}
                                 </td>
                             </tr>

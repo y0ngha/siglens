@@ -111,7 +111,44 @@ describe('SSE 사용자 노출 문구 가드', () => {
             // **한 단계 깊은 영어 하드코딩을 통째로 놓친다** — 감사 실증:
             // `runCongressTrendAction`에 인라인 `{ code, message: '...' }`를
             // 넣어도 가드 3개와 263개 테스트가 전부 통과했다.
-            for (const match of stripped.matchAll(
+            /**
+             * 변수 한 번만 거쳐도 뚫린다 — 실증: 계기가 된 그 리터럴을
+             * `const MSG = 'Failed to submit digest'`로 빼고 `error: MSG`로
+             * 쓰면 가드 3개가 전부 통과했다. 그래서 스캔 전에 **파일 안의
+             * 상수 정의를 인라인**한다(같은 파일 안의 한 단계 우회만 막는다).
+             *
+             * 이름 규칙으로 좁히지 않는다 — 처음엔 `[A-Z_][A-Z0-9_]*`만 봐서
+             * `const digestFailureText = …`가 그대로 빠져나갔다. 이 레포의 기본
+             * 명명은 camelCase다.
+             */
+            /**
+             * ES6 축약(`{ status: 'error', error }`)을 풀어 쓴다.
+             *
+             * 이 레포의 액션 반환은 축약이 관용이라 **가장 걸리기 쉬운 경로**인데,
+             * 스캔이 `error:` 리터럴 속성만 봐서 통째로 빠져나갔다(감사 실증:
+             * `const error = 'Failed to submit digest'; return { status: 'error', error };`).
+             */
+            const expanded = stripped.replace(
+                /([{,]\s*)(error|message)(\s*[},])/g,
+                (_, before, name, after) => `${before}${name}: ${name}${after}`
+            );
+
+            const inlined = [
+                ...expanded.matchAll(
+                    /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(['"`])([^'"`]{2,})\2/g
+                ),
+            ].reduce(
+                (code, [, name, , value]) =>
+                    code.replace(
+                        new RegExp(
+                            `([{,]\\s*(?:error|message):\\s*)${name}\\b`,
+                            'g'
+                        ),
+                        `$1'${value}'`
+                    ),
+                expanded
+            );
+            for (const match of inlined.matchAll(
                 /[{,]\s*(?:error|message):\s*(['"`])([^'"`]{2,})\1/g
             )) {
                 if (!ALLOWED_SENTINELS.has(match[2]!)) {

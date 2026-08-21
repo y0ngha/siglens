@@ -17,6 +17,7 @@ import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import {
     buildAssetAboutNode,
     buildDisplayName,
+    pickAssetName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
 import { getSeedBarsStatic } from '@/entities/bars';
@@ -26,7 +27,7 @@ import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolSeoContent,
-    buildSymbolWebPageJsonLd,
+    buildWebPageJsonLd,
     resolveSymbolFearGreedSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
@@ -109,11 +110,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
 
-    const displayName = buildDisplayName(assetInfo, ticker);
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
+    const displayName = buildDisplayName(assetInfo, ticker, locale);
     const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
-    const seo = resolveSymbolFearGreedSeoContent(ticker, assetClass, {
+    const seo = resolveSymbolFearGreedSeoContent(ticker, assetClass, tSeo, {
         displayName,
         koreanName: assetInfo.koreanName,
+        englishName: assetInfo.name,
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
     });
     return symbolMetadataFromSeo(seo, locale);
 }
@@ -125,6 +129,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
     const t = await getTranslations('app.symbol');
+    const tSeo = await getTranslations('shared.seo');
     const ticker = symbol.toUpperCase();
 
     if (!isAdmissibleSymbolShape(ticker)) {
@@ -139,7 +144,11 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         notFound();
     }
 
-    const displayName = buildDisplayName(assetInfo, ticker);
+    const displayName = buildDisplayName(
+        assetInfo,
+        ticker,
+        isLocale(locale) ? locale : DEFAULT_LOCALE
+    );
     const marketProfile = marketProfileOf(assetInfo);
     const assetClass = getDescriptor(marketProfile).assetClass;
     const marketFearGreedLink = MARKET_FEAR_GREED_LINK[marketProfile];
@@ -147,9 +156,12 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     const { fullTitle, description, url } = resolveSymbolFearGreedSeoContent(
         ticker,
         assetClass,
+        tSeo,
         {
             displayName,
             koreanName: assetInfo.koreanName,
+            englishName: assetInfo.name,
+            locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
         }
     );
 
@@ -157,21 +169,29 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     // undefined로 자연 생략된다. crypto는 schema.org 표준 타입이 없어 about 노드 자체를 두지 않는다.
     const aboutNode = buildAssetAboutNode(
         ticker,
-        assetInfo.koreanName ?? assetInfo.name,
+        pickAssetName(
+            assetInfo,
+            ticker,
+            isLocale(locale) ? locale : DEFAULT_LOCALE
+        ),
         assetInfo.fmpSymbol,
         assetClass
     );
-    const webPageJsonLd = buildSymbolWebPageJsonLd({
+    const webPageJsonLd = buildWebPageJsonLd({
         url,
         name: fullTitle,
         description,
         about: aboutNode,
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
     });
 
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: ticker, url: buildSymbolSeoContent(ticker).url },
-        { name: t('page.f9482c'), url },
-    ]);
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd(
+        [
+            { name: ticker, url: buildSymbolSeoContent(ticker, tSeo).url },
+            { name: t('page.f9482c'), url },
+        ],
+        isLocale(locale) ? locale : DEFAULT_LOCALE
+    );
 
     const faqJsonLd = {
         '@context': 'https://schema.org',
@@ -179,10 +199,12 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         mainEntity: [
             {
                 '@type': 'Question',
-                name: `${displayName} 공포 탐욕 지수는 무엇을 측정하나요?`,
+                name: tSeo('faq.fearGreedMeasures', { v0: displayName }),
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: `${displayName} 한 종목의 단기 매매 심리를 0~100 점수로 측정합니다. CNN의 시장 전체 Fear & Greed Index와 달리 종목별 자체 분포(self-normalization)로 산출하므로, 다른 종목과 점수를 직접 비교하기보다는 같은 종목의 시간 흐름 변화를 보는 데 적합합니다.`,
+                    text: tSeo('faq.fearGreedMeasuresAnswer', {
+                        v0: displayName,
+                    }),
                 },
             },
             {

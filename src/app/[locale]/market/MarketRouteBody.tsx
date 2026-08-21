@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { Suspense } from 'react';
+import { getTranslations } from 'next-intl/server';
 import {
     dehydrate,
     HydrationBoundary,
@@ -23,8 +24,14 @@ import {
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
-import { MARKET_COPY } from './copy';
+import type { Locale } from '@/shared/i18n/locales';
+import {
+    buildBreadcrumbJsonLd,
+    buildWebPageJsonLd,
+    SITE_NAME,
+    SITE_URL,
+} from '@/shared/lib/seo';
+import { marketCopyFor } from './copy';
 
 /**
  * 'YYYY-MM-DDTHH' prefix length — used to bucket ISR renders into 1-hour date-hour keys.
@@ -186,27 +193,35 @@ export async function MarketContent({
  * SSR seed 배선(쿼리 키·peek scope) 같은 조용한 항목이 한쪽에서만 갱신되는데,
  * 그건 화면에 아무 표시도 나지 않고 "다른 시장 데이터가 보이는" 형태로만 드러난다.
  */
-export function MarketRouteBody({ scope }: MarketScopeProps): ReactElement {
-    const copy = MARKET_COPY[scope.id];
+export async function MarketRouteBody({
+    scope,
+    // 훅이 아니라 prop으로 받는다 — 이 컴포넌트는 테스트가 함수로 직접
+    // 호출하고(트리를 `JSON.stringify`로 검사) 그 자리에는 React 컨텍스트가
+    // 없어 `useLocale()`이 던진다.
+    locale,
+}: MarketScopeProps & { readonly locale: Locale }): Promise<ReactElement> {
+    // `useTranslations`(client hook) 대신 `getTranslations`를 쓴다 — 이 함수는
+    // 테스트에서 React 렌더 파이프라인 없이 **직접 함수로 호출**된다(예:
+    // `MarketRouteBody({ scope })`의 반환 트리를 `JSON.stringify`로 검사).
+    // `useTranslations`는 훅 디스패처가 없는 그 호출 경로에서 즉시 throw한다.
+    const t = await getTranslations('shared.seo');
+    const copy = marketCopyFor(scope.id, t);
     // 스켈레톤도 클라이언트 컴포넌트다 — `MarketContent`와 같은 이유로 좁힌다.
     const clientScope = toClientScope(scope);
     const url = `${SITE_URL}${copy.path}`;
     const fullTitle = `${copy.title} | ${SITE_NAME}`;
 
-    const jsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'WebPage',
-        '@id': `${url}#webpage`,
+    const jsonLd = buildWebPageJsonLd({
+        url,
         name: fullTitle,
         description: copy.description,
-        url,
-        inLanguage: 'ko',
-        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
-    };
+        locale,
+    });
 
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: copy.breadcrumb, url },
-    ]);
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd(
+        [{ name: copy.breadcrumb, url }],
+        locale
+    );
 
     // ItemList 항목에는 url을 두지 않는다 — 모든 항목이 동일 페이지를 가리키면
     // (변형 ?sector=는 비-canonical) 구조화데이터로서 가치가 낮고 sitelink 후보에서

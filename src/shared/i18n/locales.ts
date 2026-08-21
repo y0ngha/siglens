@@ -19,6 +19,21 @@ export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE = 'ko' satisfies Locale;
 
 /** 타입 가드 — 신뢰 경계(URL 세그먼트, 쿠키)에서 검증에 쓴다. */
+/**
+ * `Intl` API에 넘길 BCP-47 태그.
+ *
+ * 카탈로그 로케일(`ko`)과 지역까지 붙은 Intl 로케일(`ko-KR`)은 다르다. 날짜·숫자
+ * 포맷은 지역에 따라 갈리므로(`en` vs `en-US`의 날짜 순서, `zh` vs `zh-Hans`)
+ * 여기서 한 번만 정한다 — 호출부마다 문자열을 만들면 `/en/AAPL`이 `2026년 8월
+ * 18일`을 찍던 것 같은 고정 로케일이 다시 새어 들어온다.
+ */
+export const INTL_LOCALE: Record<Locale, string> = {
+    ko: 'ko-KR',
+    en: 'en-US',
+    ja: 'ja-JP',
+    zh: 'zh-Hans-CN',
+};
+
 export function isLocale(value: string): value is Locale {
     return (LOCALES as readonly string[]).includes(value);
 }
@@ -54,14 +69,6 @@ export const LOCALE_OG: Record<Locale, string> = {
     en: 'en_US',
     ja: 'ja_JP',
     zh: 'zh_CN',
-};
-
-/** `Intl.*` 생성자에 넘길 로케일 태그. */
-export const LOCALE_INTL: Record<Locale, string> = {
-    ko: 'ko-KR',
-    en: 'en-US',
-    ja: 'ja-JP',
-    zh: 'zh-CN',
 };
 
 /**

@@ -6,9 +6,14 @@ interface BacktestCaseListProps {
     cases: BacktestCase[];
 }
 
-function getMonthLabel(dateStr: string): string {
+/**
+ * `YYYY-MM`에서 표시용 연·월 조각을 뽑는다. 문장 조립은 번역자를 선언한
+ * 컴포넌트가 한다 — 이 헬퍼가 `t('리터럴')`을 부르면 추출기가 파일을
+ * 통째로 건너뛴다(§noTranslatorParamCall.test.ts).
+ */
+function monthParts(dateStr: string): { year: string; month: number } {
     const [year, month] = dateStr.split('-');
-    return `${year}년 ${parseInt(month, 10)}월`;
+    return { year: year ?? '', month: parseInt(month ?? '1', 10) };
 }
 
 interface MonthGroup {
@@ -18,6 +23,7 @@ interface MonthGroup {
 
 export function BacktestCaseList({ cases }: BacktestCaseListProps) {
     const t = useTranslations('widgets.backtesting');
+    const tMisc = useTranslations('shared.ui.misc');
     if (cases.length === 0) {
         return (
             <p className="py-10 text-center text-sm text-secondary-500">
@@ -29,7 +35,8 @@ export function BacktestCaseList({ cases }: BacktestCaseListProps) {
     // 케이스마다 배열을 복제하지 않고 마지막 그룹에 밀어 넣는다(O(n)).
     const groups: MonthGroup[] = [];
     for (const c of cases) {
-        const label = getMonthLabel(c.entryDate);
+        const { year, month } = monthParts(c.entryDate);
+        const label = tMisc('backtestMonth', { v0: year, v1: month });
         const last = groups[groups.length - 1];
         if (!last || last.label !== label) {
             groups.push({ label, items: [c] });

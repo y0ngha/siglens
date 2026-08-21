@@ -4,13 +4,23 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { GradesAction, GradesEvent } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
+import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 
-const ACTION_LABEL: Record<GradesAction, string> = {
-    upgrade: '상향',
-    downgrade: '하향',
-    maintained: '등급 유지',
-    initiated: '신규 커버리지',
-    other: '기타',
+/**
+ * GradesAction → `shared.enumLabel.gradesAction` 카탈로그 키. 값 자체는 더 이상
+ * 한글이 아니다 — `GradeRow`가 `tLabel`로 조회한다.
+ *
+ * 예전에는 이 값이 `'상향'|'하향'|'등급 유지'|...` 한글 리터럴이었다 — `/en/AAPL/news`의
+ * 등급 변경 행이 `Jefferies Hold → changed to Underperform`(영문) 옆에서
+ * `하향`을 그대로 찍었다.
+ */
+const ACTION_LABEL_KEY: Record<GradesAction, string> = {
+    upgrade: 'gradesAction.upgrade',
+    downgrade: 'gradesAction.downgrade',
+    maintained: 'gradesAction.maintained',
+    initiated: 'gradesAction.initiated',
+    other: 'gradesAction.other',
 };
 
 const ACTION_CLASS: Record<GradesAction, string> = {
@@ -31,14 +41,26 @@ const ROW_ACCENT_CLASS: Record<GradesAction, string> = {
 
 const PAGE_SIZE = 5;
 
-// 모듈 스코프 고정 + timeZone: 'UTC'. 공시일은 날짜만 있는 값이라 로컬 TZ로
-// 포맷하면 서버(UTC)와 클라이언트에서 하루가 어긋나 하이드레이션이 깨진다.
-const GRADE_DATE_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
-    timeZone: 'UTC',
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-});
+/**
+ * 로케일별 포맷터 캐시. timeZone: 'UTC' 고정 — 공시일은 날짜만 있는 값이라
+ * 로컬 TZ로 포맷하면 서버(UTC)와 클라이언트에서 하루가 어긋나 하이드레이션이
+ * 깨진다. 예전에는 `'ko-KR'` 고정이라 `/en/AAPL/news`의 등급 변경일이
+ * `2026년 8월 10일`을 찍었다.
+ */
+const GRADE_DATE_FORMATTER_CACHE = new Map<Locale, Intl.DateTimeFormat>();
+
+function gradeDateFormatterFor(locale: Locale): Intl.DateTimeFormat {
+    const cached = GRADE_DATE_FORMATTER_CACHE.get(locale);
+    if (cached) return cached;
+    const formatter = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+        timeZone: 'UTC',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    });
+    GRADE_DATE_FORMATTER_CACHE.set(locale, formatter);
+    return formatter;
+}
 
 interface GradeRowProps {
     event: GradesEvent;
@@ -46,7 +68,15 @@ interface GradeRowProps {
 
 function GradeRow({ event }: GradeRowProps) {
     const t = useTranslations('widgets.news');
-    const dateFormatted = GRADE_DATE_FORMATTER.format(new Date(event.date));
+    // extract.mjs의 동적 키 탐지는 "이 파일 안에서 번역자를 직접 호출하는 패턴"만
+    // 본다 — 아래 `tLabel(ACTION_LABEL_KEY[...])` 직접 호출이 있어야
+    // `shared.enumLabel`이 이 라우트(client component)의 번들에 실린다
+    // (fearGreedLabels.ts의 SENTIMENT_LABEL_KEY export 주석 참고).
+    const tLabel = useTranslations('shared.enumLabel');
+    const locale = useResolvedLocale();
+    const dateFormatted = gradeDateFormatterFor(locale).format(
+        new Date(event.date)
+    );
 
     return (
         <li
@@ -61,7 +91,7 @@ function GradeRow({ event }: GradeRowProps) {
                     ACTION_CLASS[event.action]
                 )}
             >
-                {ACTION_LABEL[event.action]}
+                {tLabel(ACTION_LABEL_KEY[event.action])}
             </span>
             <div className="min-w-0 flex-1">
                 <p className="font-medium">{event.gradingCompany}</p>

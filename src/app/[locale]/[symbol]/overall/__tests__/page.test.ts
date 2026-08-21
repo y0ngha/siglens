@@ -31,12 +31,15 @@ vi.mock('@/shared/config/market', async importOriginal => ({
 }));
 vi.mock('@/entities/ticker', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+    pickAssetName: (info: { name: string; koreanName?: string }) =>
+        info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', async importOriginal => ({
     // 실제 seo를 스프레드해 NOINDEX_SYMBOL_METADATA 등 정적 export를 가져온다(drift 방지).
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
+    buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     buildSymbolSeoContent: vi
         .fn()

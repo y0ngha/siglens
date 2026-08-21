@@ -72,6 +72,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 import { render, screen, fireEvent } from '@testing-library/react';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import type { ReactNode } from 'react';
 import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
 
@@ -277,6 +278,41 @@ describe('OverallContent non-done branches', () => {
         );
         expect(screen.getByText(/technical 축 실패/)).toBeInTheDocument();
     });
+
+    /**
+     * 축 실패 접미사는 카탈로그를 거쳐야 한다.
+     *
+     * ko 정규식만 단언하면 **하드코딩 한국어 리터럴도 똑같이 만족**한다 —
+     * 감사 실측: 소스를 `` ` (${axis} 축 실패)` ``로 되돌려도 3/3, 29/29가
+     * 통과했다. 비-기본 로케일로 렌더해야 반증이 된다.
+     */
+    it.each(['en', 'ja', 'zh'] as const)(
+        '%s: 축 실패 접미사에 한글이 없다',
+        locale => {
+            mockUseOverallAnalysis.mockReturnValue({
+                state: {
+                    status: 'error',
+                    error: 'boom',
+                    axis: 'technical',
+                },
+                trigger: vi.fn(),
+            });
+            const { container } = renderWithIntl(
+                <OverallContent
+                    symbol="AAPL"
+                    companyName="Apple Inc."
+                    hasEnrichedNews={true}
+                    hasOptions={true}
+                />,
+                { locale }
+            );
+
+            const alert = container.querySelector('[role="alert"]');
+
+            expect(alert?.textContent ?? '').toContain('technical');
+            expect(alert?.textContent ?? '').not.toMatch(/[가-힣]/);
+        }
+    );
 
     it('renders retry button in error state that calls trigger', () => {
         const trigger = vi.fn();

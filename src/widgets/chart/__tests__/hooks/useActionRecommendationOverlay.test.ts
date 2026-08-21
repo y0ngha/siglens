@@ -2,6 +2,13 @@
 import { renderHook } from '@testing-library/react';
 import type { ValidatedActionPrices } from '@y0ngha/siglens-core';
 import { useActionRecommendationOverlay } from '../../hooks/useActionRecommendationOverlay';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
+
+/**
+ * 라인 타이틀(`진입점 #1` 등)은 이제 `widgets.chart.actionOverlay` 카탈로그에서
+ * 온다 — 훅이 `useTranslations`를 부르므로 프로바이더 없이는 렌더가 던진다.
+ */
+const withIntl = { wrapper: IntlTestProvider } as const;
 
 const mockCreatePriceLine = vi.fn(() => ({ id: Math.random() }));
 const mockRemovePriceLine = vi.fn();
@@ -35,48 +42,56 @@ describe('useActionRecommendationOverlay', () => {
     });
 
     it('does nothing when seriesRef is null', () => {
-        renderHook(() =>
-            useActionRecommendationOverlay({
-                seriesRef: makeSeriesRef(null),
-                actionPrices: BASE_ACTION_PRICES,
-                isVisible: true,
-            })
+        renderHook(
+            () =>
+                useActionRecommendationOverlay({
+                    seriesRef: makeSeriesRef(null),
+                    actionPrices: BASE_ACTION_PRICES,
+                    isVisible: true,
+                }),
+            withIntl
         );
 
         expect(mockCreatePriceLine).not.toHaveBeenCalled();
     });
 
     it('does nothing when isVisible is false', () => {
-        renderHook(() =>
-            useActionRecommendationOverlay({
-                seriesRef: makeSeriesRef(makeSeries()),
-                actionPrices: BASE_ACTION_PRICES,
-                isVisible: false,
-            })
+        renderHook(
+            () =>
+                useActionRecommendationOverlay({
+                    seriesRef: makeSeriesRef(makeSeries()),
+                    actionPrices: BASE_ACTION_PRICES,
+                    isVisible: false,
+                }),
+            withIntl
         );
 
         expect(mockCreatePriceLine).not.toHaveBeenCalled();
     });
 
     it('does nothing when actionPrices is undefined', () => {
-        renderHook(() =>
-            useActionRecommendationOverlay({
-                seriesRef: makeSeriesRef(makeSeries()),
-                actionPrices: undefined,
-                isVisible: true,
-            })
+        renderHook(
+            () =>
+                useActionRecommendationOverlay({
+                    seriesRef: makeSeriesRef(makeSeries()),
+                    actionPrices: undefined,
+                    isVisible: true,
+                }),
+            withIntl
         );
 
         expect(mockCreatePriceLine).not.toHaveBeenCalled();
     });
 
     it('creates price lines for entry, stopLoss, and takeProfit', () => {
-        renderHook(() =>
-            useActionRecommendationOverlay({
-                seriesRef: makeSeriesRef(makeSeries()),
-                actionPrices: BASE_ACTION_PRICES,
-                isVisible: true,
-            })
+        renderHook(
+            () =>
+                useActionRecommendationOverlay({
+                    seriesRef: makeSeriesRef(makeSeries()),
+                    actionPrices: BASE_ACTION_PRICES,
+                    isVisible: true,
+                }),
+            withIntl
         );
 
         // 1 entry + 1 stopLoss + 2 takeProfit = 4
@@ -90,12 +105,14 @@ describe('useActionRecommendationOverlay', () => {
             takeProfitPrices: [160],
         };
 
-        renderHook(() =>
-            useActionRecommendationOverlay({
-                seriesRef: makeSeriesRef(makeSeries()),
-                actionPrices: prices,
-                isVisible: true,
-            })
+        renderHook(
+            () =>
+                useActionRecommendationOverlay({
+                    seriesRef: makeSeriesRef(makeSeries()),
+                    actionPrices: prices,
+                    isVisible: true,
+                }),
+            withIntl
         );
 
         // 1 entry + 0 stopLoss + 1 takeProfit = 2
@@ -103,16 +120,20 @@ describe('useActionRecommendationOverlay', () => {
     });
 
     it('creates reconciled price lines when reconciledPrices provided', () => {
-        renderHook(() =>
-            useActionRecommendationOverlay({
-                seriesRef: makeSeriesRef(makeSeries()),
-                actionPrices: BASE_ACTION_PRICES,
-                reconciledPrices: {
-                    stopLoss: 138,
-                    takeProfitPrices: [{ price: 162, index: 0, totalCount: 1 }],
-                },
-                isVisible: true,
-            })
+        renderHook(
+            () =>
+                useActionRecommendationOverlay({
+                    seriesRef: makeSeriesRef(makeSeries()),
+                    actionPrices: BASE_ACTION_PRICES,
+                    reconciledPrices: {
+                        stopLoss: 138,
+                        takeProfitPrices: [
+                            { price: 162, index: 0, totalCount: 1 },
+                        ],
+                    },
+                    isVisible: true,
+                }),
+            withIntl
         );
 
         // 1 entry + 1 stopLoss + 2 takeProfit + 1 reconciledSL + 1 reconciledTP = 6
@@ -128,7 +149,7 @@ describe('useActionRecommendationOverlay', () => {
                     actionPrices: BASE_ACTION_PRICES,
                     isVisible: visible,
                 }),
-            { initialProps: { visible: true } }
+            { initialProps: { visible: true }, ...withIntl }
         );
 
         rerender({ visible: false });

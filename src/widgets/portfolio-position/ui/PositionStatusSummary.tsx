@@ -64,6 +64,7 @@ export function PositionStatusSummary({
     quantityRaw,
 }: PositionStatusSummaryProps) {
     const t = useTranslations('widgets.portfolio-position');
+    const tStatus = useTranslations('widgets.portfolio-position.statusSummary');
     // useId는 early return보다 먼저 — 조건부 훅 호출 금지(rules-of-hooks).
     const headingId = useId();
 
@@ -71,7 +72,9 @@ export function PositionStatusSummary({
 
     const currencyPrefix = currencyForSymbol(symbol) === 'KRW' ? '₩' : '$';
     const avgDisplay = `${currencyPrefix}${trimTrailingZeros(avgRaw)}`;
-    const quantityDisplay = `${trimTrailingZeros(quantityRaw)}주`;
+    const quantityDisplay = tStatus('shares', {
+        v0: trimTrailingZeros(quantityRaw),
+    });
 
     return (
         <section
@@ -102,7 +105,9 @@ export function PositionStatusSummary({
                 />
                 <ReadoutRow
                     label={t('PositionStatusSummary.573838')}
-                    value={`${status.rangePositionPct.toFixed(0)}% 지점`}
+                    value={tStatus('rangePoint', {
+                        v0: status.rangePositionPct.toFixed(0),
+                    })}
                 />
                 <ReadoutRow
                     label={t('PositionStatusSummary.160873')}

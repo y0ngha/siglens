@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
@@ -11,7 +11,7 @@ import { getMarketFearGreedStatic } from '@/entities/market-fear-greed/api/marke
 import type { MarketFearGreedView } from '@/entities/market-fear-greed';
 import { SITE_NAME } from '@/shared/lib/seo';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { FEAR_GREED_COPY } from './copy';
+import { fearGreedCopyFor } from './copy';
 import { FearGreedRouteBody } from './FearGreedRouteBody';
 
 // 1h — mirrors /market's single-page revalidate (see docs/architecture/ISR_REVALIDATE.md).
@@ -19,9 +19,6 @@ import { FearGreedRouteBody } from './FearGreedRouteBody';
 // page shell's own background regen without adding extra staleness.
 // literal required — importing a constant breaks Next's static analysis, see src/app/CLAUDE.md
 export const revalidate = 3600;
-
-const COPY = FEAR_GREED_COPY.us;
-const FEAR_GREED_FULL_TITLE = `${COPY.title} | ${SITE_NAME}`;
 
 interface LocaleMetadataParams {
     readonly params: Promise<{ locale: string }>;
@@ -32,6 +29,12 @@ export async function generateMetadata({
 }: LocaleMetadataParams): Promise<Metadata> {
     const { locale } = await params;
     const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const t = await getTranslations({
+        locale: resolvedLocale,
+        namespace: 'shared.seo',
+    });
+    const COPY = fearGreedCopyFor('us', t);
+    const FEAR_GREED_FULL_TITLE = `${COPY.title} | ${SITE_NAME}`;
     const ogLocale = localeOpenGraph(resolvedLocale);
     // og:url도 로케일별이어야 한다 — 소셜 언퍼널이 ko URL로 되돌린다.
     const localizedUrl = localeCanonical(resolvedLocale, COPY.path);
@@ -114,5 +117,11 @@ export default async function FearGreedRoutePage({
         }
     );
 
-    return <FearGreedRouteBody market="us" view={view} />;
+    return (
+        <FearGreedRouteBody
+            market="us"
+            view={view}
+            locale={isLocale(locale) ? locale : DEFAULT_LOCALE}
+        />
+    );
 }

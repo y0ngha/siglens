@@ -295,7 +295,8 @@ describe('useOverallAnalysis', () => {
             mockSubmit.mockResolvedValue({
                 status: 'error',
                 axis: 'technical' as const,
-                error: 'submit 실패',
+                // core가 실제로 주는 값은 영어 예외 문자열이다.
+                error: 'Profile not found for symbol: AAPL',
             });
 
             const { result } = renderHook(
@@ -313,7 +314,9 @@ describe('useOverallAnalysis', () => {
 
             const state = result.current.state;
             if (state.status !== 'error') throw new Error('expected error');
-            expect(state.error).toBe('submit 실패');
+            // 원문이 그대로 새면 전 로케일에 영어가 나간다 — 카탈로그를 거쳐야 한다.
+            expect(state.error).toBe(koMessages.app.api.stream.analysisFailed);
+            expect(state.error).not.toContain('Profile not found');
             expect(state.axis).toBe('technical');
         });
 

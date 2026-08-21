@@ -1,8 +1,8 @@
 import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
-import { setRequestLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { getLocale, setRequestLocale } from 'next-intl/server';
+import { DEFAULT_LOCALE, isLocale, type Locale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
     localeCanonical,
@@ -31,17 +31,19 @@ import { CALENDAR_COUNTRY_KR } from '@/entities/economy/lib/economyCalendarConst
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import {
     buildBreadcrumbJsonLd,
+    buildWebPageJsonLd,
     clampSeoDescription,
     ROOT_KEYWORDS,
     SITE_NAME,
     SITE_URL,
+    type SeoTranslator,
 } from '@/shared/lib/seo';
 import { TERMS_PATH } from '@/shared/lib/legal';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { KR_ECONOMY_INDICATORS } from '@/shared/config/economyIndicatorsKr';
 
-import { KR_ECONOMY_TITLE } from '../constants';
+import { economyKrTitle } from '../constants';
 
 // 24h — ISR. 거시 지표는 월·분기 단위로 변하고, 신선도는 캘린더 인제스션의
 // `revalidateTag('economy:calendar')`가 책임진다. 시간 기반은 상한만 정한다.
@@ -49,10 +51,9 @@ import { KR_ECONOMY_TITLE } from '../constants';
 export const revalidate = 86400;
 
 const ECONOMY_KR_URL = `${SITE_URL}/economy/kr`;
-const ECONOMY_KR_FULL_TITLE = `${KR_ECONOMY_TITLE} | ${SITE_NAME}`;
-const ECONOMY_KR_DESCRIPTION = clampSeoDescription(
-    '한국 경제 지표를 한 페이지에서 확인해요. 기준금리·소비자물가·고용률·GDP 성장률 같은 핵심 지표부터 국고채 금리, 수출 증가율까지 모아서 보여드리고, 다가오는 국내 경제 발표 일정도 함께 안내해드려요.'
-);
+function economyKrDescription(t: SeoTranslator): string {
+    return clampSeoDescription(t('economy.kr.description'));
+}
 const ECONOMY_KR_KEYWORDS = [
     ...ROOT_KEYWORDS,
     '한국 경제 지표',
@@ -84,6 +85,13 @@ export async function generateMetadata({
 }: LocaleMetadataParams): Promise<Metadata> {
     const { locale } = await params;
     const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({
+        locale: resolvedLocale,
+        namespace: 'shared.seo',
+    });
+    const title = economyKrTitle(tSeo);
+    const description = economyKrDescription(tSeo);
+    const fullTitle = `${title} | ${SITE_NAME}`;
     const ogLocale = localeOpenGraph(resolvedLocale);
     // og:url도 로케일별이어야 한다 — 소셜 언퍼널이 ko URL로 되돌린다.
     const localizedUrl = localeCanonical(resolvedLocale, '/economy/kr');
@@ -105,16 +113,21 @@ export async function generateMetadata({
             );
             return [] as KrIndicatorCard[];
         }),
-        getCalendarFromDb(todayEt, CALENDAR_COUNTRY_KR).catch((e: unknown) => {
-            console.error('[economy.kr.generateMetadata] calendar failed:', e);
-            return [];
-        }),
+        getCalendarFromDb(todayEt, CALENDAR_COUNTRY_KR, resolvedLocale).catch(
+            (e: unknown) => {
+                console.error(
+                    '[economy.kr.generateMetadata] calendar failed:',
+                    e
+                );
+                return [];
+            }
+        ),
     ]);
     const degraded = cards.length === 0 && calendarEvents.length === 0;
 
     return {
-        title: KR_ECONOMY_TITLE,
-        description: ECONOMY_KR_DESCRIPTION,
+        title,
+        description,
         keywords: ECONOMY_KR_KEYWORDS,
         // degraded 시 canonical을 비우고 noindex — 지표가 하나도 없는 임시 상태를
         // 색인시키지 않는다. follow는 유지해 내부 링크로 주스가 계속 흐르게 한다.
@@ -128,8 +141,8 @@ export async function generateMetadata({
             ? { index: false, follow: true }
             : localeRobots(resolvedLocale),
         openGraph: {
-            title: ECONOMY_KR_FULL_TITLE,
-            description: ECONOMY_KR_DESCRIPTION,
+            title: fullTitle,
+            description,
             url: localizedUrl,
             siteName: SITE_NAME,
             ...ogLocale,
@@ -139,14 +152,14 @@ export async function generateMetadata({
                     url: '/og-image.png',
                     width: OG_IMAGE_WIDTH,
                     height: OG_IMAGE_HEIGHT,
-                    alt: ECONOMY_KR_FULL_TITLE,
+                    alt: fullTitle,
                 },
             ],
         },
         twitter: {
             card: 'summary_large_image',
-            title: ECONOMY_KR_FULL_TITLE,
-            description: ECONOMY_KR_DESCRIPTION,
+            title: fullTitle,
+            description,
             images: ['/og-image.png'],
         },
     };
@@ -154,6 +167,11 @@ export async function generateMetadata({
 
 /** cold-gen(ISR 정적 생성 컨텍스트)에서 dynamic API(`cookies`/`headers`/`connection()`) 금지. */
 async function KrEconomyContent() {
+    // setRequestLocale은 이 컴포넌트를 감싸는 EconomyKrPage에서 이미 호출됐으므로
+    // 로케일을 다시 넘기지 않아도 요청 스코프에서 찾는다(login/page.tsx 본문과 동일 패턴).
+    const tSeo = await getTranslations('shared.seo');
+    const requestLocale = await getLocale();
+    const locale = isLocale(requestLocale) ? requestLocale : DEFAULT_LOCALE;
     const now = requestNow();
     const todayEt = etDateOf(now);
     // 그리드 기본 선택일 = 현재 인스턴트의 KST 달력일. 그리드가 이벤트를 ET-인스턴트의
@@ -173,23 +191,26 @@ async function KrEconomyContent() {
             console.error('[KrEconomyContent] getKrIndicatorCards failed:', e);
             return [];
         }),
-        getCalendarFromDb(todayEt, CALENDAR_COUNTRY_KR).catch((e: unknown) => {
-            console.error('[KrEconomyContent] getCalendarFromDb failed:', e);
-            return [];
-        }),
+        getCalendarFromDb(todayEt, CALENDAR_COUNTRY_KR, locale).catch(
+            (e: unknown) => {
+                console.error(
+                    '[KrEconomyContent] getCalendarFromDb failed:',
+                    e
+                );
+                return [];
+            }
+        ),
     ]);
 
     // dict → DB 캐시 → 영어 fallback 체인. 미매핑은 클라 훅이 AI 트리거(미국과 동일).
-    const indicatorLabels = await resolveIndicatorLabels(calendarEvents).catch(
-        (e: unknown) => {
-            console.error(
-                '[KrEconomyContent] resolveIndicatorLabels failed:',
-                e
-            );
-            // empty object is always a valid Record<string, string>
-            return {} as Record<string, string>;
-        }
-    );
+    const indicatorLabels = await resolveIndicatorLabels(
+        calendarEvents,
+        locale
+    ).catch((e: unknown) => {
+        console.error('[KrEconomyContent] resolveIndicatorLabels failed:', e);
+        // empty object is always a valid Record<string, string>
+        return {} as Record<string, string>;
+    });
 
     /*
      * **캘린더는 비어 있어도 항상 렌더한다.**
@@ -217,9 +238,9 @@ async function KrEconomyContent() {
         <div className="space-y-6">
             {!degraded && (
                 <>
-                    <JsonLd data={WEB_PAGE_JSON_LD} />
-                    <JsonLd data={BREADCRUMB_JSON_LD} />
-                    <JsonLd data={DATASET_JSON_LD} />
+                    <JsonLd data={buildEconomyKrWebPageJsonLd(tSeo, locale)} />
+                    <JsonLd data={buildEconomyBreadcrumbJsonLd(tSeo, locale)} />
+                    <JsonLd data={buildEconomyKrDatasetJsonLd(tSeo)} />
                 </>
             )}
             {cards.length === 0 ? (
@@ -259,17 +280,21 @@ function KrEconomyDegraded() {
  * `temporalCoverage`를 미국판(P1Y)보다 짧게 잡은 것은 사실 반영이다: FMP 캘린더
  * 조회 상한이 과거 ~180일이라 초기 이력이 그만큼이다.
  */
-const DATASET_JSON_LD = {
-    '@context': 'https://schema.org',
-    '@type': 'Dataset',
-    name: 'Korean Macroeconomic Indicators — Policy Rate, CPI, Unemployment, etc.',
-    description: ECONOMY_KR_DESCRIPTION,
-    variableMeasured: `한국 거시 경제 지표 (기준금리·소비자물가·GDP·실업률 등 ${KR_ECONOMY_INDICATORS.length}종)`,
-    temporalCoverage: 'P6M',
-    creator: { '@type': 'Organization', name: SITE_NAME },
-    license: `${SITE_URL}${TERMS_PATH}`,
-    url: ECONOMY_KR_URL,
-};
+function buildEconomyKrDatasetJsonLd(t: SeoTranslator) {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'Dataset',
+        name: 'Korean Macroeconomic Indicators — Policy Rate, CPI, Unemployment, etc.',
+        description: economyKrDescription(t),
+        variableMeasured: t('economy.kr.datasetVariableMeasured', {
+            v0: KR_ECONOMY_INDICATORS.length,
+        }),
+        temporalCoverage: 'P6M',
+        creator: { '@type': 'Organization', name: SITE_NAME },
+        license: `${SITE_URL}${TERMS_PATH}`,
+        url: ECONOMY_KR_URL,
+    };
+}
 
 /**
  * FAQ 원문 — JSON-LD와 화면 `<dl>`의 **단일 소스**.
@@ -278,45 +303,50 @@ const DATASET_JSON_LD = {
  * 두 벌로 두면 한쪽만 고쳐져 리치 결과 자격을 잃는다 — `/fear-greed` 계열이 이미
  * 이 패턴을 쓴다(`fear-greed/copy.ts`).
  */
-const ECONOMY_KR_FAQ = [
-    {
-        question: '한국 기준금리는 누가 정하나요?',
-        answer: '한국은행 금융통화위원회가 연 8회 회의를 열어 기준금리를 결정합니다. 이 페이지의 "한국 기준금리" 카드가 가장 최근 결정치를 보여줍니다.',
-    },
-    {
-        question: '국고채 낙찰금리는 무엇인가요?',
-        answer: '정부가 국고채를 발행할 때 입찰로 정해지는 금리입니다. 3년물은 단기, 10년물은 장기 시장금리의 기준으로 읽히며, 둘의 차이가 커질수록 경기 확장 기대가 크다는 뜻으로 해석되기도 합니다.',
-    },
-    {
-        question: '이 데이터는 어디서 가져오나요?',
-        answer: 'FMP(Financial Modeling Prep) 경제 캘린더의 한국 발표 이력을 기준으로 수집합니다. 지표 카드는 각 지표의 최근 발표값이며, 발표가 있을 때마다 갱신됩니다.',
-    },
-] as const;
+function buildEconomyKrFaq(t: SeoTranslator) {
+    return [0, 1, 2].map(i => ({
+        question: t(`economy.kr.faq${i}q`),
+        answer: t(`economy.kr.faq${i}a`),
+    }));
+}
 
-const FAQ_JSON_LD = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: ECONOMY_KR_FAQ.map(({ question, answer }) => ({
-        '@type': 'Question',
-        name: question,
-        acceptedAnswer: { '@type': 'Answer', text: answer },
-    })),
-};
+function buildEconomyKrFaqJsonLd(t: SeoTranslator) {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: buildEconomyKrFaq(t).map(({ question, answer }) => ({
+            '@type': 'Question',
+            name: question,
+            acceptedAnswer: { '@type': 'Answer', text: answer },
+        })),
+    };
+}
 
-const WEB_PAGE_JSON_LD = {
-    '@context': 'https://schema.org',
-    '@type': 'WebPage',
-    '@id': `${ECONOMY_KR_URL}#webpage`,
-    name: ECONOMY_KR_FULL_TITLE,
-    description: ECONOMY_KR_DESCRIPTION,
-    url: ECONOMY_KR_URL,
-    inLanguage: 'ko',
-    isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
-};
+function buildEconomyKrWebPageJsonLd(t: SeoTranslator, locale: Locale) {
+    const fullTitle = `${economyKrTitle(t)} | ${SITE_NAME}`;
+    return {
+        ...buildWebPageJsonLd({
+            url: ECONOMY_KR_URL,
+            name: fullTitle,
+            description: economyKrDescription(t),
+            locale,
+        }),
+    };
+}
 
-const BREADCRUMB_JSON_LD = buildBreadcrumbJsonLd([
-    { name: '한국 경제', url: ECONOMY_KR_URL },
-]);
+/**
+ * 모듈 스코프 상수였다. 그 자리에서는 로케일을 알 수 없어 breadcrumb URL이
+ * 항상 기본 로케일을 가리키고 이름도 한국어로 굳었다 — 렌더 시점으로 옮긴다.
+ */
+function buildEconomyBreadcrumbJsonLd(
+    t: SeoTranslator,
+    locale: Locale
+): Record<string, unknown> {
+    return buildBreadcrumbJsonLd(
+        [{ name: economyKrTitle(t), url: ECONOMY_KR_URL }],
+        locale
+    );
+}
 
 export default async function EconomyKrPage({
     params,
@@ -329,11 +359,12 @@ export default async function EconomyKrPage({
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
     const t = await getTranslations('app.economy');
+    const tSeo = await getTranslations('shared.seo');
     return (
         <>
             {/* FAQ는 로더 결과와 무관하게 화면에 그대로 있으므로 항상 낸다.
                 나머지 구조화데이터는 데이터가 있을 때만 — `KrEconomyContent` 참조. */}
-            <JsonLd data={FAQ_JSON_LD} />
+            <JsonLd data={buildEconomyKrFaqJsonLd(tSeo)} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <RegionTabs
                     vertical="economy"
@@ -341,7 +372,7 @@ export default async function EconomyKrPage({
                     currentPath="/economy/kr"
                 />
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
-                    {KR_ECONOMY_TITLE}
+                    {economyKrTitle(tSeo)}
                 </h1>
                 {/*
                     한국 레지스트리를 넘긴다 — 기본값(미국)은 국채 카드 3장을 포함한
@@ -359,7 +390,7 @@ export default async function EconomyKrPage({
                         {t('page.ae2ce9')}
                     </h2>
                     <dl className="mt-3 space-y-4 text-sm leading-relaxed text-secondary-400">
-                        {ECONOMY_KR_FAQ.map(({ question, answer }) => (
+                        {buildEconomyKrFaq(tSeo).map(({ question, answer }) => (
                             <div key={question}>
                                 <dt className="font-medium text-secondary-300">
                                     {question}

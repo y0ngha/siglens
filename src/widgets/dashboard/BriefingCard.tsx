@@ -1,5 +1,7 @@
 import { useTranslations } from 'next-intl';
-import { assetLabel } from './assetLabel';
+import { useAssetLabel } from '@/shared/i18n/assetLabel';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { INTL_LOCALE } from '@/shared/i18n/locales';
 import type { MarketBriefingResponse } from '@y0ngha/siglens-core';
 import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 
@@ -55,6 +57,8 @@ export function BriefingCard({
     scope,
 }: BriefingCardProps) {
     const t = useTranslations('widgets.dashboard');
+    const locale = useResolvedLocale();
+    const assetLabel = useAssetLabel();
     const {
         summary,
         dominantThemes,
@@ -106,7 +110,7 @@ export function BriefingCard({
                             </span>
                             <span className="text-chart-bullish">
                                 {leadingSectors
-                                    .map(s => assetLabel(t, s.symbol, s.name))
+                                    .map(s => assetLabel(s.symbol, s.name))
                                     .join('·')}
                             </span>
                         </p>
@@ -118,7 +122,7 @@ export function BriefingCard({
                             </span>
                             <span className="text-chart-bearish">
                                 {laggingSectors
-                                    .map(s => assetLabel(t, s.symbol, s.name))
+                                    .map(s => assetLabel(s.symbol, s.name))
                                     .join('·')}
                             </span>
                         </p>
@@ -154,17 +158,22 @@ export function BriefingCard({
                 숨겨 "Invalid Date 기준"이 노출되는 것을 막는다. */}
             {generatedAt && !Number.isNaN(new Date(generatedAt).getTime()) && (
                 <p className="text-xs text-secondary-600">
-                    {/* timeZone을 'Asia/Seoul'로 고정해 SSR(Node 서버)와 CSR(브라우저)
-                        사이 timezone mismatch로 인한 hydration 오류를 막는다. 본
-                        프로덕트는 한국어 사용자 대상이라 KST 표기가 의미에도 부합. */}
+                    {/* timeZone은 'Asia/Seoul'로 **고정**한다 — SSR(Node)과
+                        CSR(브라우저) 사이 timezone mismatch로 인한 hydration
+                        오류를 막기 위해서다. 반면 **로케일은 고정하면 안 된다**:
+                        `'ko-KR'`로 박혀 있어서 `/en/market`이 번역된 문장 안에
+                        `8월 20일 오전 02:39`를 찍었다. */}
                     {t('BriefingCard.f97e74', {
-                        v0: new Date(generatedAt).toLocaleString('ko-KR', {
-                            timeZone: 'Asia/Seoul',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                        }),
+                        v0: new Date(generatedAt).toLocaleString(
+                            INTL_LOCALE[locale],
+                            {
+                                timeZone: 'Asia/Seoul',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                            }
+                        ),
                     })}
                 </p>
             )}

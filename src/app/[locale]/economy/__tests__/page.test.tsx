@@ -21,7 +21,14 @@ vi.mock('@/entities/economy/api/macroBriefingStaticCache', () => ({
 vi.mock('@/entities/economy', () => ({
     isEmptyEconomySnapshot: vi.fn(),
 }));
-vi.mock('@/shared/lib/seo', () => ({
+/**
+ * **부분 목이다.** 통째로 갈아끼우면 이 모듈에 export가 하나 생길 때마다
+ * `No "x" export is defined on the mock`으로 깨지고, 더 나쁘게는 URL을 만드는
+ * 로직이 스텁으로 대체돼 테스트가 아무것도 검증하지 못한다.
+ */
+vi.mock('@/shared/lib/seo', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
+    buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     clampSeoDescription: (s: string) => s,
     ROOT_KEYWORDS: [],
@@ -244,13 +251,16 @@ describe('/economy page.tsx integration', () => {
         });
     });
 
-    describe('DATASET_JSON_LD — license field', () => {
+    describe('buildEconomyDatasetJsonLd — license field', () => {
         it('Dataset JSON-LD에 license 필드가 있다', async () => {
-            const { DATASET_JSON_LD } =
+            const { buildEconomyDatasetJsonLd } =
                 await import('@/app/[locale]/economy/page');
 
+            // license는 t와 무관한 고정 필드 — description만 로케일에 따라 바뀐다.
+            const datasetJsonLd = buildEconomyDatasetJsonLd(key => key, 'ko');
+
             // GSC "license 누락" 경고 해소 — backtesting 페이지와 동일한 SITE_URL+TERMS_PATH 형식.
-            expect(DATASET_JSON_LD.license).toBe('https://siglens.io/terms');
+            expect(datasetJsonLd.license).toBe('https://siglens.io/terms');
         });
 
         /**

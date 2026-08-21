@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type {
     MarketFearGreedComparisonKey,
     MarketFearGreedComparisonPoint,
@@ -10,14 +11,15 @@ import { cn } from '@/shared/lib/cn';
  * 나머지 Fear & Greed 라벨과 달리 이 표만 위젯 쪽에 둔다 — shared에 두면 키 유니온을
  * 한 벌 더 적어야 하고, 그 사본이 entity 타입과 조용히 어긋날 수 있다.
  */
-export const MARKET_COMPARISON_LABEL: Record<
+/** `shared.ui.period` 메시지 키 — 표시 문자열이 아니다. */
+export const MARKET_COMPARISON_LABEL_KEY: Record<
     MarketFearGreedComparisonKey,
     string
 > = {
-    now: '현재',
-    '1w': '1주 전',
-    '1m': '1개월 전',
-    '1y': '1년 전',
+    now: 'now',
+    '1w': 'weekAgo',
+    '1m': 'monthAgo',
+    '1y': 'yearAgo',
 };
 
 interface MarketFearGreedComparisonProps {
@@ -29,6 +31,7 @@ interface MarketFearGreedComparisonProps {
 export function MarketFearGreedComparison({
     comparisons,
 }: MarketFearGreedComparisonProps) {
+    const tPeriod = useTranslations('shared.ui.period');
     if (comparisons.length === 0) return null;
     return (
         // 2×4가 아니라 2열→4열 grid — flex-wrap은 4칸이 3+1로 갈라져
@@ -48,7 +51,9 @@ export function MarketFearGreedComparison({
                         score={Math.round(point.score)}
                         label={point.label}
                         size="mini"
-                        periodLabel={MARKET_COMPARISON_LABEL[point.key]}
+                        periodLabel={tPeriod(
+                            MARKET_COMPARISON_LABEL_KEY[point.key]
+                        )}
                     />
                 </li>
             ))}

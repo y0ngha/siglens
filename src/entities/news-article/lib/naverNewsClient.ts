@@ -21,7 +21,9 @@ const RANGE_TO_DISPLAY: Record<NewsTimeRange, number> = {
     '30d': NAVER_MAX_DISPLAY,
 };
 
-const SOURCE_LABEL = '네이버뉴스';
+// 기사 `source` 필드에 그대로 들어가는 **출처 이름**이다. 로케일별로 갈리면
+// 같은 기사가 로케일마다 다른 출처로 저장된다 — 공식 영문 브랜드명 하나로 둔다.
+const SOURCE_LABEL = 'Naver News';
 const LOG_TAG = '[naverNewsClient]';
 
 /**

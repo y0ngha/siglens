@@ -16,6 +16,8 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/entities/ticker', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+    pickAssetName: (info: { name: string; koreanName?: string }) =>
+        info.koreanName ?? info.name,
     buildDisplayName: vi.fn((assetInfo: { name: string }) => assetInfo.name),
     getAssetInfoResilient: vi.fn(),
 }));
@@ -82,6 +84,7 @@ vi.mock('@/views/symbol/SectionSkeleton', () => ({
 
 vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
+    buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     buildSymbolSeoContent: vi.fn().mockReturnValue({
         title: 'T',
@@ -218,7 +221,7 @@ describe('NewsPage — NewsFactsSummary SSR props', () => {
         mockGetNewsList.mockResolvedValue([]);
     });
 
-    it('equity page passes symbol, displayName, assetClass, and fetched news items', async () => {
+    it('equity page passes displayName, assetClass, and fetched news items', async () => {
         mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
         mockGetNewsList.mockResolvedValue(READY_NEWS);
 
@@ -230,7 +233,8 @@ describe('NewsPage — NewsFactsSummary SSR props', () => {
 
         expect(facts).not.toBeNull();
         expect(facts?.props).toMatchObject({
-            symbol: 'AAPL',
+            // `symbol` prop은 제거했다 — `displayName`이 이미 티커를 품어
+            // `Apple Inc. (AAPL) (AAPL)`로 두 번 렌더됐다.
             displayName: 'Apple Inc.',
             assetClass: 'equity',
             items: READY_NEWS,
@@ -372,5 +376,42 @@ describe('NewsPage — aiArticleJsonLd headline/description isEquity branch', ()
         expect(treeStr).toContain('최근 뉴스 AI 요약');
         // crypto-only headline must be absent
         expect(treeStr).not.toContain('최근 코인 뉴스 AI 요약');
+    });
+});
+
+// audit fix item 2: newsListJsonLd headline이 `item.titleKo ?? item.titleEn`을
+// 직접 써서 resolveNewsTitle을 우회했다 — `/en/AAPL/news` 카드는 titleEn을
+// 보여주면서 구조화 데이터만 titleKo를 실었다.
+describe('NewsPage — newsListJsonLd headline locale-awareness (resolveNewsTitle)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetNewsList.mockResolvedValue([]);
+    });
+
+    it('locale=en이면 JSON-LD headline이 titleEn을 쓴다(한글 없음)', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+        mockGetNewsList.mockResolvedValue(READY_NEWS);
+
+        const tree = await NewsPage({
+            params: Promise.resolve({ locale: 'en', symbol: 'aapl' }),
+        });
+
+        const treeStr = JSON.stringify(tree);
+        expect(treeStr).toContain('"headline":"Apple announces new product"');
+        // titleKo는 fixture의 다른 prop(items)에도 그대로 실려 있으므로 문자열
+        // 전체가 아니라 headline 필드 형태로 좁혀 확인한다.
+        expect(treeStr).not.toContain('"headline":"애플, 신제품 발표"');
+    });
+
+    it('locale=ko이면 JSON-LD headline이 titleKo를 쓴다(기존 동작 유지)', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+        mockGetNewsList.mockResolvedValue(READY_NEWS);
+
+        const tree = await NewsPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        const treeStr = JSON.stringify(tree);
+        expect(treeStr).toContain('"headline":"애플, 신제품 발표"');
     });
 });

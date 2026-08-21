@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { StreamErrorMessages } from '@/shared/hooks/useAnalysisStream';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { useQuery } from '@tanstack/react-query';
@@ -67,11 +68,11 @@ async function fetchCongressTrend(
         if (isGateBlockedResult(result)) {
             throw new Error(result.error.message);
         }
-        throw new Error(
-            result.error ?? '의회 거래 데이터를 불러오지 못했습니다.'
-        );
+        // core가 채우는 `result.error`는 영어 예외 문자열이다(위 훅들과 동일).
+        if (result.error) console.error('[congressFetchFailed]', result.error);
+        throw new Error(messages.congressFetchFailed);
     }
-    throw new Error('예상치 못한 오류가 발생했습니다.');
+    throw new Error(messages.unexpected);
 }
 
 export function useCongressTrend(
@@ -89,6 +90,7 @@ export function useCongressTrend(
      */
     isSettingsHydrated = true
 ): CongressTrendState {
+    const tError = useTranslations('shared.ui.analysisError');
     const locale = useCurrentLocale();
     const streamMessages = useStreamErrorMessages();
     // queryKey는 인라인으로 둔다(§17 훅 순서). React Query는 queryKey를
@@ -132,7 +134,7 @@ export function useCongressTrend(
             error:
                 query.error instanceof Error
                     ? query.error
-                    : new Error('동향 해석 중 오류가 발생했습니다.'),
+                    : new Error(tError('trendFailed')),
             retry,
             trigger: retry,
         };

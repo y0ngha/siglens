@@ -136,6 +136,32 @@ describe('/news/[category] CategoryNewsPage default export는', () => {
         expect(firstArticle?.publisher?.name).toBe('CoinWire');
     });
 
+    // audit fix item 2: JSON-LD headline이 `item.titleKo ?? item.titleEn`을
+    // 직접 써서 resolveNewsTitle을 우회했다 — `/en/news/crypto`의 카드는
+    // titleEn을 보여주면서 구조화 데이터만 titleKo를 실었다.
+    it('locale=en이면 JSON-LD headline이 titleEn을 쓴다(resolveNewsTitle 회귀 가드)', async () => {
+        const { container } = render(
+            await CategoryNewsPage({
+                params: Promise.resolve({ locale: 'en', category: 'crypto' }),
+            })
+        );
+        const scripts = Array.from(
+            container.querySelectorAll('script[type="application/ld+json"]')
+        );
+        const itemListScript = scripts.find(s => {
+            try {
+                const parsed = JSON.parse(s.textContent ?? '');
+                return parsed['@type'] === 'ItemList';
+            } catch {
+                return false;
+            }
+        });
+        const itemListData = JSON.parse(itemListScript!.textContent ?? '');
+        const headline = itemListData.itemListElement?.[0]?.item?.headline;
+        expect(headline).toBe('BTC up');
+        expect(headline).not.toMatch(/[가-힣]/);
+    });
+
     it('스냅샷이 비어 있으면(빈 DB) graceful empty state를 렌더한다', async () => {
         vi.mocked(staticSymbolCache).mockResolvedValueOnce([]);
 

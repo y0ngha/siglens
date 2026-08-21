@@ -83,7 +83,7 @@ describe('fetchMarketNewsDigest', () => {
 
         await expect(
             fetchMarketNewsDigest('general', TEST_STREAM_MESSAGES)
-        ).rejects.toThrow('분석할 뉴스가 없어요. 잠시 후 다시 시도해 주세요.');
+        ).rejects.toThrow(TEST_STREAM_MESSAGES.noNews);
     });
 
     it("status 'miss_no_trigger' → throws with miss-no-trigger message", async () => {
@@ -93,8 +93,6 @@ describe('fetchMarketNewsDigest', () => {
 
         await expect(
             fetchMarketNewsDigest('general', TEST_STREAM_MESSAGES)
-        ).rejects.toThrow(
-            '다이제스트를 생성할 수 없어요. 잠시 후 다시 시도해 주세요.'
-        );
+        ).rejects.toThrow(TEST_STREAM_MESSAGES.digestUnavailable);
     });
 });

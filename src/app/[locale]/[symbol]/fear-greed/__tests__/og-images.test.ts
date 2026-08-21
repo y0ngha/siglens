@@ -29,7 +29,9 @@ describe('[symbol]/fear-greed OG images', () => {
         });
 
         it('exports alt text containing fear-greed', () => {
-            expect(alt).toContain('공포 탐욕 지수');
+            // `alt`는 Next가 모듈 스코프 상수로 요구해 로케일별로 낼 수 없다 —
+            // 네 로케일이 한 값을 공유하므로 영어로 둔다(§opengraph-image.tsx).
+            expect(alt).toContain('Fear & Greed');
         });
 
         it('calls buildSymbolOgImage with ticker and fear-greed label', async () => {

@@ -42,6 +42,7 @@ const MarkdownText = dynamic(() =>
  */
 export function NoticePopup() {
     const t = useTranslations('widgets.notice-popup');
+    const tMisc = useTranslations('shared.ui.misc');
     const dialogRef = useRef<HTMLDivElement>(null);
     // `notices.path_pattern`은 운영자가 넣는 접두사 없는 경로(`/market`, `/symbol/*`)다.
     // 접두사가 붙은 경로로 매칭하면 비-ko 사용자에게 **경로 지정 공지가 전부 사라진다**
@@ -112,7 +113,16 @@ export function NoticePopup() {
                     className="-mr-2 min-h-0 flex-1 overflow-y-auto rounded pr-2 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     <p className="mb-3 text-xs text-secondary-500">
-                        {formatNoticeDate(current.createdAt)}
+                        {(() => {
+                            const parts = formatNoticeDate(current.createdAt);
+                            return parts === null
+                                ? ''
+                                : tMisc('noticeWrittenOn', {
+                                      v0: parts.year,
+                                      v1: parts.month,
+                                      v2: parts.day,
+                                  });
+                        })()}
                     </p>
                     <MarkdownText className="text-sm text-secondary-300">
                         {current.body}

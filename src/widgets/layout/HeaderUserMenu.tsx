@@ -100,7 +100,7 @@ export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
                 onClick={toggle}
                 aria-haspopup="menu"
                 aria-expanded={isOpen}
-                aria-label={`사용자 메뉴 (${tierLabel})`}
+                aria-label={t('HeaderUserMenu.menuLabel', { v0: tierLabel })}
                 className="relative flex size-10 items-center justify-center rounded-full bg-secondary-800 text-sm font-semibold text-secondary-100 transition-colors hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
                 {currentUser.avatarUrl ? (

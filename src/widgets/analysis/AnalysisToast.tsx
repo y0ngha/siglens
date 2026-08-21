@@ -20,16 +20,27 @@ interface AnalysisToastProps {
     notice: CooldownNotice | null;
 }
 
-function formatRemaining(ms: number): string {
+/**
+ * 남은 시간을 `widgets.analysis.duration` 템플릿으로 만든다. 번역자를 인자로
+ * 받는 이유는 이 파일의 다른 헬퍼들과 같다 — 모듈 스코프 함수라 훅을 못 쓴다.
+ */
+function formatRemaining(
+    ms: number,
+    t: (key: string, values?: Record<string, string | number>) => string
+): string {
     const totalSec = Math.ceil(ms / MS_PER_SECOND);
     const minutes = Math.floor(totalSec / SECONDS_PER_MINUTE);
     const seconds = totalSec % SECONDS_PER_MINUTE;
-    if (minutes <= 0) return `${seconds}초`;
-    return `${minutes}분 ${seconds.toString().padStart(2, '0')}초`;
+    if (minutes <= 0) return t('seconds', { v0: seconds });
+    return t('minutesSeconds', {
+        v0: minutes,
+        v1: seconds.toString().padStart(2, '0'),
+    });
 }
 
 export function AnalysisToast({ notice }: AnalysisToastProps) {
     const t = useTranslations('widgets.analysis');
+    const tDuration = useTranslations('widgets.analysis.duration');
     const [isVisible, setIsVisible] = useState(notice !== null);
 
     // TOAST_VISIBLE_MS 후 토스트를 숨긴다.
@@ -58,7 +69,7 @@ export function AnalysisToast({ notice }: AnalysisToastProps) {
                 <br />
                 <span className="text-secondary-400">
                     {t('AnalysisToast.b87ea9', {
-                        v0: formatRemaining(notice.remainingMs),
+                        v0: formatRemaining(notice.remainingMs, tDuration),
                     })}
                 </span>
             </span>

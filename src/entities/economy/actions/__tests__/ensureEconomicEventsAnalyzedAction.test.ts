@@ -101,7 +101,7 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
             'US'
         );
         expect(runEconomicEventAnalysis).toHaveBeenCalledWith({
-            region: '미국',
+            region: 'United States',
             event: 'Core CPI MoM (May)',
             impact: 'High',
             actual: 0.4,
@@ -135,7 +135,7 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
      * `region`이 그 축을 받으므로 다시 켰다 — 스킵이 되살아나면 한국 캘린더의
      * 해설 컬럼이 조용히 비어 간다.
      */
-    it('한국 발표도 분석하고 region을 한국으로 넘긴다', async () => {
+    it('한국 발표도 분석하고 region을 South Korea로 넘긴다', async () => {
         await ensureEconomicEventsAnalyzedAction('KR');
 
         expect(listUnanalyzedAnnounced).toHaveBeenCalledWith(
@@ -143,7 +143,7 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
             'KR'
         );
         expect(runEconomicEventAnalysis).toHaveBeenCalledWith(
-            expect.objectContaining({ region: '한국' })
+            expect.objectContaining({ region: 'South Korea' })
         );
         expect(revalidateTag).toHaveBeenCalledWith(
             'economy:calendar:kr',

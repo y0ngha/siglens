@@ -40,6 +40,7 @@ export function ShareCandlestickChart({
     ticker,
 }: ShareCandlestickChartProps) {
     const t = useTranslations('widgets.chart');
+    const tMisc = useTranslations('shared.ui.misc');
     const containerRef = useRef<HTMLDivElement>(null);
     // Store chart and series refs for cleanup.
     const chartRef = useRef<IChartApi | null>(null);
@@ -108,7 +109,7 @@ export function ShareCandlestickChart({
 
     const ariaLabel =
         ticker !== undefined && ticker !== ''
-            ? `${ticker} 스냅샷 캔들 차트`
+            ? tMisc('snapshotChartAria', { v0: ticker })
             : t('ShareCandlestickChart.25e234');
 
     if (snapshotBars.length === 0) {

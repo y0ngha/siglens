@@ -46,8 +46,8 @@ function extractSenatePtrId(link: string): string | null {
 }
 
 const CHAMBER_LABEL: Record<Chamber, string> = {
-    senate: '상원',
-    house: '하원',
+    senate: 'chamber.senate',
+    house: 'chamber.house',
 };
 
 /**
@@ -57,8 +57,8 @@ const CHAMBER_LABEL: Record<Chamber, string> = {
  * so we map it to an empty string and omit the element entirely in the render.
  */
 const SIDE_LABEL: Record<CongressTradeSide, string> = {
-    buy: '매수',
-    sell: '매도',
+    buy: 'tradeSide.buy',
+    sell: 'tradeSide.sell',
     unknown: '',
 };
 
@@ -75,10 +75,10 @@ const SIDE_CLASS: Record<CongressTradeSide, string> = {
  * when the owner is not disclosed.
  */
 const OWNER_LABEL: Record<CongressOwner, string> = {
-    self: '본인',
-    spouse: '배우자',
-    joint: '공동',
-    child: '자녀',
+    self: 'owner.self',
+    spouse: 'owner.spouse',
+    joint: 'owner.joint',
+    child: 'owner.child',
     unknown: '',
 };
 
@@ -89,11 +89,11 @@ const OWNER_LABEL: Record<CongressOwner, string> = {
  * case-insensitive substring match rather than strict equality to be resilient
  * to minor label changes in the upstream API.
  */
-function assetTypeBadge(assetType: string): string {
+function assetTypeBadgeKey(assetType: string): string {
     const lower = assetType.toLowerCase();
-    if (lower.includes('option')) return '옵션';
-    if (lower.includes('stock')) return '주식';
-    return '기타'; // fallback: 알 수 없는 자산 유형은 한국어 레이블로 통일
+    if (lower.includes('option')) return 'option';
+    if (lower.includes('stock')) return 'stock';
+    return 'other'; // fallback: 알 수 없는 자산 유형은 한 라벨로 통일
 }
 
 interface ChamberBadgeProps {
@@ -101,8 +101,9 @@ interface ChamberBadgeProps {
 }
 
 function ChamberBadge({ chamber }: ChamberBadgeProps) {
+    const tLabel = useTranslations('shared.enumLabel');
     const t = useTranslations('widgets.congress');
-    const label = CHAMBER_LABEL[chamber];
+    const label = tLabel(CHAMBER_LABEL[chamber]);
 
     return (
         <span
@@ -128,7 +129,8 @@ interface SideBadgeProps {
 }
 
 function SideBadge({ side }: SideBadgeProps) {
-    const label = SIDE_LABEL[side];
+    const tLabel = useTranslations('shared.enumLabel');
+    const label = tLabel(SIDE_LABEL[side]);
     if (!label) {
         return <span className={cn('text-xs', SIDE_CLASS[side])}>—</span>;
     }
@@ -150,7 +152,8 @@ interface OwnerBadgeProps {
 }
 
 function OwnerBadge({ owner }: OwnerBadgeProps) {
-    const label = OWNER_LABEL[owner];
+    const tLabel = useTranslations('shared.enumLabel');
+    const label = tLabel(OWNER_LABEL[owner]);
     if (!label) return null;
     return (
         <span className="rounded bg-secondary-700 px-1.5 py-0.5 text-xs text-secondary-300">
@@ -164,7 +167,8 @@ interface AssetTypeBadgeProps {
 }
 
 function AssetTypeBadge({ assetType }: AssetTypeBadgeProps) {
-    const label = assetTypeBadge(assetType);
+    const tAsset = useTranslations('widgets.congress.assetType');
+    const label = tAsset(assetTypeBadgeKey(assetType));
     return (
         <span className="rounded bg-secondary-700 px-1.5 py-0.5 text-xs text-secondary-300">
             {label}
@@ -191,6 +195,7 @@ function DisclosureCell({
     office,
     transactionDate,
 }: DisclosureCellProps) {
+    const tLabel = useTranslations('shared.enumLabel');
     const t = useTranslations('widgets.congress');
     const isSenate = chamber === 'senate';
     const href = getDisclosureHref(chamber, link);
@@ -202,7 +207,14 @@ function DisclosureCell({
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`${CHAMBER_LABEL[chamber]} ${office} ${transactionDate} 공시 ${isSenate ? '검색' : '문서'}`}
+                aria-label={t('disclosureLink', {
+                    v0: tLabel(CHAMBER_LABEL[chamber]),
+                    v1: office,
+                    v2: transactionDate,
+                    v3: isSenate
+                        ? t('disclosureSearch')
+                        : t('disclosureDocument'),
+                })}
                 className="rounded text-xs text-primary-400 underline transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
                 {isSenate

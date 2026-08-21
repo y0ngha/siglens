@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import type { PositionTranslator } from '@/widgets/portfolio-position';
 import {
     BAND_COUNT,
     computePosition,
@@ -57,6 +58,10 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, symbol } = await params;
     const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({
+        locale,
+        namespace: 'shared.seo',
+    });
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!isAdmissibleSymbolShape(upper)) {
@@ -80,7 +85,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
 
-    const displayName = buildDisplayName(assetInfo, upper);
+    const displayName = buildDisplayName(assetInfo, upper, locale);
     const url = `${SITE_URL}/${upper}/position`;
     // --- 색인 방침 히스토리 ---
     // 이 탭은 원래 /account·/onboarding과 같은 개인화 surface로 취급해 항상
@@ -115,10 +120,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     //    SEO_DESCRIPTION_MAX_LENGTH(120) clamp에 잘려나가 메타포 자체가
     //    사라진다 — front-load해야 어떤 displayName 길이에서도 세 키워드가
     //    살아남는다.
-    const positionTitle = `내 평단은 몇 층? — ${displayName} 내 위치`;
+    const positionTitle = tSeo('position.title', { v0: displayName });
     const positionDescription = clampSeoDescription(
-        `내 평단은 이 종목 '아파트'의 몇 층일까? 옥상(고점)일까 지하(저점)일까 — ` +
-            `${displayName}의 최근 52주 범위에서 내 평단의 위치를 확인해보세요.`
+        tSeo('position.description', { v0: displayName })
     );
     // sibling 인덱서블 탭(overall/fear-greed 등)과 동일 패턴 — SymbolSeoContent를
     // 만들어 symbolMetadataFromSeo에 넘긴다. title/fullTitle 분리는 그 헬퍼가
@@ -232,14 +236,11 @@ interface CurrentPricePosition {
 const RANGE_TONE_HIGH_THRESHOLD = 70;
 const RANGE_TONE_LOW_THRESHOLD = 30;
 
-function describeRangeTone(percentile: number): string {
-    if (percentile >= RANGE_TONE_HIGH_THRESHOLD) {
-        return '최근 1년 고점에 가까운 상단부예요.';
-    }
-    if (percentile <= RANGE_TONE_LOW_THRESHOLD) {
-        return '최근 1년 저점에 가까운 하단부예요.';
-    }
-    return '최근 1년 고점과 저점 사이 중간 지점이에요.';
+/** `app.symbol.position.band` **키**를 고른다 — 표시는 렌더 쪽에서 `t()`로. */
+function rangeToneKey(percentile: number): string {
+    if (percentile >= RANGE_TONE_HIGH_THRESHOLD) return 'nearHigh';
+    if (percentile <= RANGE_TONE_LOW_THRESHOLD) return 'nearLow';
+    return 'middle';
 }
 
 /**
@@ -262,7 +263,9 @@ function describeRangeTone(percentile: number): string {
  * 가드한다 — 그 경우 이 함수도 null을 반환해 호출부가 섹션을 생략하게 한다.
  */
 function resolveCurrentPricePosition(
-    range: PriceRange
+    range: PriceRange,
+    tPos: PositionTranslator,
+    tBand: PositionTranslator
 ): CurrentPricePosition | null {
     const model = computePosition({
         low52w: range.low52w,
@@ -278,9 +281,10 @@ function resolveCurrentPricePosition(
         floorLabel: describeAvgFloor(
             model.currentPos,
             model.currentClamped,
-            BAND_COUNT
+            BAND_COUNT,
+            tPos
         ),
-        tone: describeRangeTone(percentile),
+        tone: tBand(rangeToneKey(percentile)),
     };
 }
 
@@ -306,7 +310,11 @@ export default async function PositionPage({ params }: Props) {
     }
     if (!(await isTabAllowedForSymbol(upper, 'position'))) notFound();
 
-    const displayName = buildDisplayName(assetInfo, upper);
+    const displayName = buildDisplayName(
+        assetInfo,
+        upper,
+        isLocale(locale) ? locale : DEFAULT_LOCALE
+    );
     const marketProfile = marketProfileOf(assetInfo);
 
     const range = await resolvePriceRange(
@@ -317,8 +325,12 @@ export default async function PositionPage({ params }: Props) {
     // range가 degrade되면(bars 실패 등) null — 섹션 자체를 생략한다(크래시도
     // 빈 껍데기 섹션도 없음). range가 있어도 high52w<=low52w 같은 퇴화 입력이면
     // resolveCurrentPricePosition이 null을 반환해 같은 방식으로 생략된다.
+    const tPos = await getTranslations(
+        'widgets.portfolio-position.positionNote'
+    );
+    const tBand = await getTranslations('app.symbol.position.band');
     const currentPricePosition = range
-        ? resolveCurrentPricePosition(range)
+        ? resolveCurrentPricePosition(range, tPos, tBand)
         : null;
 
     return (

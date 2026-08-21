@@ -33,6 +33,8 @@ vi.mock('@/entities/ticker/api', () => ({
 }));
 vi.mock('@/entities/ticker', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+    pickAssetName: (info: { name: string; koreanName?: string }) =>
+        info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
     getAssetInfoResilient: vi.fn(),
 }));
@@ -54,7 +56,7 @@ vi.mock('@/app/[locale]/[symbol]/fundamental/fundamentalData', () => ({
     getPriceTargetConsensus: vi.fn().mockResolvedValue(null),
     getPriceTargetSummary: vi.fn().mockResolvedValue(null),
     getProfile: vi.fn().mockResolvedValue(null),
-    getProfileDescriptionKo: vi.fn().mockResolvedValue(null),
+    getProfileDescription: vi.fn().mockResolvedValue(null),
     getRatiosTtm: vi.fn().mockResolvedValue(null),
     getStockPeers: vi.fn().mockResolvedValue([]),
 }));
@@ -188,6 +190,7 @@ vi.mock('@/views/symbol/SectionSkeleton', () => ({
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
+    buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     buildSymbolSeoContent: vi.fn().mockReturnValue({ url: '' }),
     buildSymbolFundamentalSeoContent: vi.fn().mockReturnValue({
@@ -229,7 +232,7 @@ import { getAssetInfoResilient } from '@/entities/ticker';
 import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
 import {
     getProfile,
-    getProfileDescriptionKo,
+    getProfileDescription,
     getKeyMetricsTtm,
     getStockPeers,
     getRatiosTtm,
@@ -249,8 +252,8 @@ const mockGetProfileResilient = getProfileResilient as MockedFunction<
     typeof getProfileResilient
 >;
 const mockGetProfile = getProfile as MockedFunction<typeof getProfile>;
-const mockGetProfileDescriptionKo = getProfileDescriptionKo as MockedFunction<
-    typeof getProfileDescriptionKo
+const mockGetProfileDescription = getProfileDescription as MockedFunction<
+    typeof getProfileDescription
 >;
 const mockGetKeyMetricsTtm = getKeyMetricsTtm as MockedFunction<
     typeof getKeyMetricsTtm
@@ -332,7 +335,7 @@ describe('Fundamental page ISR empty-cache prevention — section layer (Layer B
         vi.clearAllMocks();
         // Default: all loaders succeed with safe empty values.
         mockGetProfile.mockResolvedValue(null);
-        mockGetProfileDescriptionKo.mockResolvedValue(null);
+        mockGetProfileDescription.mockResolvedValue(null);
         mockGetKeyMetricsTtm.mockResolvedValue(null);
         mockGetStockPeers.mockResolvedValue(
             [] as Awaited<ReturnType<typeof getStockPeers>>
@@ -355,7 +358,7 @@ describe('Fundamental page ISR empty-cache prevention — section layer (Layer B
 
         // Must not throw — .catch() in ProfileSection absorbs the rejection
         // and passes null to ProfileCard, which the mock renders as data-degraded="true".
-        render(await ProfileSection({ symbol: 'AAPL' }));
+        render(await ProfileSection({ symbol: 'AAPL', locale: 'ko' }));
 
         const card = screen.getByTestId('profile-card');
         expect(card).toBeInTheDocument();
@@ -369,7 +372,7 @@ describe('Fundamental page ISR empty-cache prevention — section layer (Layer B
     });
 
     it('ProfileDescriptionSection: loader throw → renders fallback text, does not throw', async () => {
-        mockGetProfileDescriptionKo.mockRejectedValue(
+        mockGetProfileDescription.mockRejectedValue(
             new Error('translation service 503')
         );
         const consoleSpy = vi
@@ -381,6 +384,7 @@ describe('Fundamental page ISR empty-cache prevention — section layer (Layer B
         render(
             await ProfileDescriptionSection({
                 symbol: 'AAPL',
+                locale: 'ko',
                 fallback: 'English description fallback',
             })
         );

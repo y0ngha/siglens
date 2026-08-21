@@ -146,27 +146,96 @@ function keysForFiles(graph, files) {
         const code = graph.sources.get(relPath) ?? '';
         if (!/\bt\w*\(/.test(code)) continue;
 
-        const translatorNames = new Set();
+        /**
+         * 번역자 변수 → 그 변수가 묶인 네임스페이스.
+         *
+         * 이름만 모으면 안 된다. 한 파일이 번역자를 여러 개 선언하면
+         * (`useTranslations('widgets.layout')` + `useTranslations('shared.seo')`),
+         * 그중 **하나**가 동적 키를 쓸 때 파일이 언급한 네임스페이스가 전부
+         * 넓혀졌다 — 실측: `Footer.tsx`의 `tNav(item.fullLabelKey)` 하나 때문에
+         * 서버 전용인 `shared.seo`(SEO 제목·설명 전부)가 크롬 페이로드에 실려
+         * 카탈로그의 21.8%가 모든 라우트에 딸려갔다.
+         */
+        const translatorNamespace = new Map();
         for (const m of code.matchAll(
-            /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:await\s+)?(?:useTranslations|getTranslations)\s*\(/g
+            /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:await\s+)?(?:useTranslations|getTranslations)\s*\(\s*(?:'([^']+)'|\{[^}]*namespace:\s*'([^']+)')?/g
         )) {
-            translatorNames.add(m[1]);
+            translatorNamespace.set(m[1], m[2] ?? m[3] ?? null);
         }
-        if (translatorNames.size === 0) continue;
-        const names = [...translatorNames].join('|');
+        if (translatorNamespace.size === 0) continue;
 
         const fileNamespaces = new Set([namespaceFor(relPath)]);
-        for (const m of code.matchAll(/useTranslations\(\s*'([^']+)'/g)) {
-            fileNamespaces.add(m[1]);
+        for (const ns of translatorNamespace.values()) {
+            if (ns) fileNamespaces.add(ns);
         }
 
-        if (new RegExp(`\\b(?:${names})\\(\\s*(?!['"])[A-Za-z_$]`).test(code)) {
-            for (const ns of fileNamespaces) wideNamespaces.add(ns);
-            continue;
+        /**
+         * 키가 **변수로 오는** 파일은 어떤 키가 쓰일지 정적으로 알 수 없다.
+         * 그런 파일의 네임스페이스는 통째로 싣는다.
+         *
+         * 조회 테이블(`shared.assetName`·`shared.skillName`)을 **2세그먼트 전용**
+         * 네임스페이스로 분리해 둔 이유가 이것이다 — `widgets.dashboard` 아래
+         * 두면 그 슬라이스 전체가 크롬 페이로드에 딸려간다.
+         */
+        // 동적 키를 쓰는 **번역자만** 그 네임스페이스를 넓힌다. 같은 파일의
+        // 다른 번역자는 리터럴만 쓰면 아래에서 키 단위로 수집된다.
+        const widenedNames = new Set();
+        for (const [name, ns] of translatorNamespace) {
+            /**
+             * 동적 키 = 첫 인자가 **문자열 리터럴이 아닌** 것.
+             *
+             * 예전에는 `[A-Za-z_$]`로 시작하는 식별자만 봤다. 그래서
+             * `` t(`${x}`) ``(템플릿 리터럴)와 `t.rich(x)`가 통째로 빠졌고,
+             * 한 토큰짜리 리팩터가 네임스페이스를 조용히 좁혀 그 라우트에서
+             * **원시 키가 렌더**됐다 — SSR HTML은 멀쩡한 채로. 라운드 9·12에서
+             * 실제로 그렇게 냈다.
+             *
+             * 이제 리터럴(`'`/`"`)이 아닌 모든 첫 인자를 동적으로 본다. 넓게
+             * 잡히는 쪽이 안전하다 — 좁게 잡히면 화면이 깨지고, 넓게 잡히면
+             * 페이로드가 조금 커질 뿐이다.
+             */
+            const usesDynamicKey = new RegExp(
+                `\\b${name}(?:\\.(?:rich|markup|raw))?\\(\\s*(?!['"])\\S`
+            ).test(code);
+            if (!usesDynamicKey) continue;
+            widenedNames.add(name);
+            /**
+             * 네임스페이스를 명시하지 않은 번역자(`useTranslations()`)는 키가
+             * **완전 수식**이라 어느 네임스페이스가 필요한지 알 수 없다. 그래도
+             * 파일이 언급한 다른 네임스페이스까지 끌고 오면 안 된다 — 실측:
+             * `Footer.tsx`의 `tNav(item.fullLabelKey)` 하나가 서버 전용
+             * `shared.seo`를 크롬에 실어 페이로드를 21.8%로 부풀렸다. 그런 키는
+             * 보통 config 상수라 `manualKeys.preserve`로 따로 관리된다.
+             * 그래서 **자기 파일의 네임스페이스만** 넓힌다.
+             */
+            wideNamespaces.add(ns ?? namespaceFor(relPath));
         }
 
+        /**
+         * 넓혀진 번역자는 리터럴 수집 대상에서 뺀다 — 이미 네임스페이스
+         * 전체가 실리므로 빼도 무해하다. **파일 전체를 건너뛰면 안 된다**
+         * (예전 버그): 한 파일에 동적 키 번역자(`tLabel`)와 리터럴 전용
+         * 번역자(`t`)가 공존하면(`MarketNewsDigest.tsx`처럼 enum 라벨 +
+         * 일반 UI 문구를 같이 렌더하는 파일), `tLabel` 하나가 넓혀졌다고
+         * 파일 전체를 스킵해 `t('...')` 리터럴 키까지 통째로 빠졌었다 —
+         * 위 주석이 약속하는 동작과 실제 코드가 어긋나 있었다(실측:
+         * `widgets.market-news.MarketNewsDigest.*` 11개가 `news/[category]`
+         * 라우트에서 조용히 사라짐 → 클라이언트 MISSING_MESSAGE).
+         */
+        const literalNames = [...translatorNamespace.keys()].filter(
+            name => !widenedNames.has(name)
+        );
+        if (literalNames.length === 0) continue;
+        const names = literalNames.join('|');
+
+        // `t('k')`뿐 아니라 `t.rich('k')`·`t.markup('k')`·`t.raw('k')`도 모은다.
+        // 빠져 있으면 rich 텍스트 키가 `--write` 때마다 ko.json에서 **삭제**된다
+        // (실측: 태그를 쓰는 키 3개가 그렇게 사라졌다).
         for (const m of code.matchAll(
-            new RegExp(`\\b(?:${names})\\(\\s*'([A-Za-z0-9_.$-]+)'`, 'g')
+            new RegExp(
+                `\\b(?:${names})(?:\\.(?:rich|markup|raw))?\\(\\s*'([A-Za-z0-9_.$-]+)'`,
+                'g'
+            )
         )) {
             const literal = m[1];
             if (literal.split('.').length >= 3) keys.add(literal);
@@ -235,12 +304,52 @@ function splitJsxWhitespace(raw) {
  * 그래서 재생성은 "리터럴에서 새로 만든 것 + **소스가 아직 참조하는 것** +
  * 손으로 쓴 것"의 합집합이다. 어느 코드도 부르지 않는 키만 사라진다.
  */
+/**
+ * `messages/_meta/manualKeys.json`을 읽는다.
+ *
+ * 두 목록이 **서로 다른 일**을 한다 — 예전에는 한 배열이 둘을 겸했고, 그래서
+ * 라우트 전용 키(표시명 60개)를 등록하자 그 네임스페이스가 통째로 크롬에 실려
+ * 크롬 페이로드가 전체 카탈로그의 36%로 부풀었다(목표 15% 미만).
+ *
+ * - `preserve`: 동적 조회라 스캔에 안 잡히는 키. ko.json 재생성 때 **삭제 금지**.
+ * - `chromeWide`: 그중 소비 라우트를 특정할 수 없어 크롬에 싣는 네임스페이스.
+ * - `routeWide`: 소비 라우트를 **아는** 경우 `{네임스페이스: [라우트id]}`로 그
+ *   라우트에만 싣는다. 훅이 자기 파일 네임스페이스와 다른 네임스페이스를 읽으면
+ *   (`useStreamErrorMessages`가 `app.api.stream`을 읽는 식) 추출기가 그걸 소비
+ *   라우트로 넘기지 못한다 — 그렇다고 `chromeWide`에 넣으면 분석을 하지 않는
+ *   `/login`·`/terms`까지 따라간다.
+ *   전역 내비·카테고리 라벨만 해당한다. 라우트가 특정되는 키는 넣지 않는다 —
+ *   소비 파일의 escape 판정이 해당 라우트에만 넓혀 준다.
+ */
+function readManualKeys(root) {
+    const path = `${root}/messages/_meta/manualKeys.json`;
+    if (!existsSync(path))
+        return { preserve: [], chromeWide: [], routeWide: {} };
+    const raw = JSON.parse(readFileSync(path, 'utf8'));
+    // 예전 형식(평평한 배열)도 읽는다.
+    if (Array.isArray(raw))
+        return { preserve: raw, chromeWide: raw, routeWide: {} };
+    return {
+        preserve: raw.preserve ?? [],
+        chromeWide: raw.chromeWide ?? [],
+        routeWide: raw.routeWide ?? {},
+    };
+}
+
 function collectReferencedKeys(root) {
     const referenced = new Set();
-    const pattern = /\bt\w*\(\s*'([A-Za-z0-9_.$-]+)'/g;
+    // `t.rich('k')`·`t.markup('k')`·`t.raw('k')`도 참조로 센다. `\w`는 `.`를
+    // 포함하지 않아 예전 패턴은 이걸 통째로 놓쳤고, 그래서 태그를 쓰는 키가
+    // `--write` 때마다 "참조 없음"으로 판정돼 ko.json에서 **삭제**됐다.
+    const pattern =
+        /\bt\w*(?:\.(?:rich|markup|raw))?\(\s*'([A-Za-z0-9_.$-]+)'/g;
     for (const relPath of candidateSourceFiles(root)) {
         const code = readFileSync(`${root}/${relPath}`, 'utf8');
         const ns = namespaceFor(relPath);
+        const explicitNamespaces = [
+            ...code.matchAll(/useTranslations\(\s*'([^']+)'/g),
+            ...code.matchAll(/getTranslations\(\s*'([^']+)'/g),
+        ].map(m => m[1]);
         for (const match of code.matchAll(pattern)) {
             // 네임스페이스 번역자(`useTranslations('widgets.legal')`)는 키를
             // 접두사 없이 부르고, 루트 번역자(`useTranslations()`)는 완전 수식
@@ -248,6 +357,14 @@ function collectReferencedKeys(root) {
             // 존재하지 않는 조합은 카탈로그에 없어서 무해하다.
             referenced.add(match[1]);
             referenced.add(`${ns}.${match[1]}`);
+            // `useTranslations('shared.assetName')`처럼 **파일 경로와 다른**
+            // 네임스페이스를 명시한 경우. 이걸 안 세면 그 키가 "참조 없음"으로
+            // 판정돼 `--write` 한 번에 카탈로그에서 사라진다 — 지금은
+            // `manualKeys.preserve` 등록으로만 버티고 있어, 새 조회 테이블을
+            // 같은 방식으로 추가하면 첫 실행에 통째로 날아간다(실측).
+            for (const ns2 of explicitNamespaces) {
+                referenced.add(`${ns2}.${match[1]}`);
+            }
         }
     }
     return referenced;
@@ -297,7 +414,7 @@ for (const relPath of files) {
     const componentsNeedingTranslator = new Map();
 
     for (const candidate of candidates) {
-        const verdict = classify({ candidate, filePath: relPath });
+        const verdict = classify({ candidate, filePath: relPath, code });
         const line = code.slice(0, candidate.start).split('\n').length;
 
         if (!verdict.applicable) {
@@ -460,11 +577,7 @@ if (WRITE) {
      * 나머지는 버린다 — 소스에서 사라진 문자열의 키가 남으면 번역 게이트가
      * "고아 키"로 계속 실패하고 진짜 누락이 그 안에 묻힌다.
      */
-    const manualPrefixes = existsSync(`${ROOT}/messages/_meta/manualKeys.json`)
-        ? JSON.parse(
-              readFileSync(`${ROOT}/messages/_meta/manualKeys.json`, 'utf8')
-          )
-        : [];
+    const manualPrefixes = readManualKeys(ROOT).preserve;
     const existing = existsSync(target)
         ? flatten(JSON.parse(readFileSync(target, 'utf8')))
         : {};
@@ -473,7 +586,12 @@ if (WRITE) {
         Object.entries(existing).filter(
             ([key]) =>
                 referenced.has(key) ||
-                manualPrefixes.some(prefix => key.startsWith(`${prefix}.`))
+                // 접두사(네임스페이스 전체) **또는 정확 키**를 허용한다. 예전에는
+                // `${prefix}.`만 봐서 `app.symbol.page.marketLabelUs` 같은 개별
+                // 키를 등록할 방법이 없었고, 등록해도 조용히 지워졌다.
+                manualPrefixes.some(
+                    prefix => key === prefix || key.startsWith(`${prefix}.`)
+                )
         )
     );
     for (const [ns, entries] of Object.entries(catalog)) {
@@ -523,11 +641,8 @@ if (WRITE) {
                 (node, seg) => (node == null ? undefined : node[seg]),
                 ko
             ) !== undefined;
-    const manual = existsSync(`${ROOT}/messages/_meta/manualKeys.json`)
-        ? JSON.parse(
-              readFileSync(`${ROOT}/messages/_meta/manualKeys.json`, 'utf8')
-          )
-        : [];
+    const manualKeys = readManualKeys(ROOT);
+    const manual = manualKeys.chromeWide;
     const serialize = ({ keys, wideNamespaces }, extraWide = []) => ({
         keys: [...keys].filter(exists).sort(),
         wideNamespaces: [...new Set([...wideNamespaces, ...extraWide])].sort(),
@@ -538,10 +653,16 @@ if (WRITE) {
      * 어느 라우트가 쓰는지도 알 수 없으므로 **크롬에** 둔다 — 내비게이션·카테고리
      * 라벨이라 실제로 전역이다.
      */
-    const manualWide = manual
-        .map(prefix => prefix.split('.'))
-        .filter(parts => parts.length >= 2)
-        .map(parts => parts.slice(0, 2).join('.'));
+    /**
+     * 등록한 경로를 **그대로** 싣는다.
+     *
+     * 예전에는 앞 2세그먼트로 잘랐다 — `shared.lib.skillStats.count`가
+     * `shared.lib` 전체를, `app.api.stream`이 `app.api` 전체를 끌고 왔다.
+     * 실측 577바이트(카탈로그의 1.3%)가 크롬과 31개 라우트 페이로드에 중복
+     * 적재됐다. `pickMessages`는 임의 깊이의 점 경로를 그대로 따라가므로
+     * 자를 이유가 없다.
+     */
+    const manualWide = manual.filter(prefix => prefix.includes('.'));
 
     const APP = 'src/app/[locale]';
     const BOUNDARY_FILES = [
@@ -584,12 +705,14 @@ if (WRITE) {
     /**
      * 크롬 = 루트 레이아웃 서브트리 + 홈 페이지 + **크롬 아래에서 렌더되는 경계 파일**.
      *
-     * 홈은 `[locale]/page.tsx`라 자기 세그먼트 디렉터리가 없어 전용 레이아웃을 둘
-     * 수 없다(라우트 그룹으로 옮기면 테스트 import 경로가 전부 깨진다).
+     * 홈은 라우트 그룹 `(home)`으로 옮겨 **자기 버킷을 갖는다.** 예전에는
+     * `[locale]/page.tsx`라 세그먼트 레이아웃을 둘 수 없어 크롬을 썼는데,
+     * 그 탓에 홈 전용 스킬 카탈로그(`shared.skillDescription` 8.4KB +
+     * `shared.skillName` 0.9KB)가 `/login`·`/terms`까지 따라다녔다 —
+     * 크롬이 카탈로그의 23.8%였다.
      */
     const chromeEntries = [
         `${APP}/layout.tsx`,
-        `${APP}/page.tsx`,
         ...boundaryFiles.filter(rel => nearestLayoutRoute(rel) === null),
     ];
     const chrome = serialize(
@@ -617,10 +740,18 @@ if (WRITE) {
          * **상속하지 않고 교체**한다(`use-intl/react.js`의
          * `messages === undefined ? prevContext?.messages : messages`).
          */
+        // 이 라우트에만 싣기로 등록된 네임스페이스.
+        const routeWide = Object.entries(manualKeys.routeWide)
+            .filter(([, routeIds]) => routeIds.includes(routeId))
+            .map(([ns]) => ns);
         routes[routeId] = {
             keys: [...new Set([...chrome.keys, ...entry.keys])].sort(),
             wideNamespaces: [
-                ...new Set([...chrome.wideNamespaces, ...entry.wideNamespaces]),
+                ...new Set([
+                    ...chrome.wideNamespaces,
+                    ...entry.wideNamespaces,
+                    ...routeWide,
+                ]),
             ].sort(),
         };
     }

@@ -1,7 +1,4 @@
-import {
-    STATIC_INDEXABLE_LOCALES,
-    SYMBOL_INDEXABLE_LOCALES,
-} from '@/shared/i18n/indexableLocales';
+import {} from '@/shared/i18n/indexableLocales';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -272,21 +269,27 @@ function collectSources(dir: string, acc: string[] = []): string[] {
 }
 
 describe('JSON-LD 로케일 하드코딩 가드', () => {
-    it('색인 게이트가 열리면 하드코딩된 JSON-LD를 먼저 걷어내야 한다', () => {
-        const gatesOpen =
-            STATIC_INDEXABLE_LOCALES.length > 1 ||
-            SYMBOL_INDEXABLE_LOCALES.length > 1;
+    /**
+     * 이 가드는 원래 "게이트가 열리기 전까지는 하드코딩이 남아 있어도 된다"는
+     * 유예 조항을 뒀고, 스캔이 헛도는 걸 막으려 **대상이 하나 이상 있을 것**을
+     * 자기검사로 걸었다. 이제 하나도 남지 않았으므로 유예를 걷고 0을 요구한다.
+     *
+     * 자기검사는 그대로 필요하다 — 스캔이 대상 파일을 못 읽는 상태로 조용히
+     * 통과하면 안 된다. 그래서 **알려진 양성 문자열**로 정규식이 실제로
+     * 매칭하는지 먼저 확인한다.
+     */
+    it('하드코딩된 inLanguage가 남아 있지 않다', () => {
+        const PATTERN = /inLanguage:\s*'ko'/;
+        // 정규식 자체가 죽지 않았는지 — 이게 없으면 패턴 오타가 조용히 통과한다.
+        expect(PATTERN.test("inLanguage: 'ko',")).toBe(true);
 
-        const hardcoded = collectSources(join(process.cwd(), 'src')).filter(
-            file => /inLanguage:\s*'ko'/.test(readFileSync(file, 'utf8'))
+        const sources = collectSources(join(process.cwd(), 'src'));
+        // 스캔이 파일을 실제로 모았는지.
+        expect(sources.length).toBeGreaterThan(100);
+
+        const hardcoded = sources.filter(file =>
+            PATTERN.test(readFileSync(file, 'utf8'))
         );
-
-        if (!gatesOpen) {
-            // 게이트가 닫혀 있는 동안은 존재 자체가 정상이다. 다만 이 테스트가
-            // 대상 파일을 하나도 못 찾는 상태로 조용히 통과하면 안 된다.
-            expect(hardcoded.length).toBeGreaterThan(0);
-            return;
-        }
 
         expect(hardcoded).toEqual([]);
     });

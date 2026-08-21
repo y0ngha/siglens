@@ -1,6 +1,9 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+import enMessages from '@/../messages/en.json';
+import jaMessages from '@/../messages/ja.json';
+import zhMessages from '@/../messages/zh.json';
 import koMessages from '../../../messages/ko.json';
 import type { ComponentType, ReactNode } from 'react';
 
@@ -21,6 +24,42 @@ export function IntlTestProvider({ children }: { children: ReactNode }) {
                 timeZone="Asia/Seoul"
             >
                 {children}
+            </NextIntlClientProvider>
+        </LocaleProvider>
+    );
+}
+
+const CATALOGS = {
+    ko: koMessages,
+    en: enMessages,
+    ja: jaMessages,
+    zh: zhMessages,
+} as const;
+
+/**
+ * **로케일을 지정해** 렌더한다 — 로케일별 동작을 검증하는 테스트용.
+ *
+ * `vitest.setup.dom.ts`가 모든 `render`를 ko 프로바이더로 감싸므로, 여기서는
+ * 그 **안쪽에** 대상 로케일 프로바이더를 한 겹 더 넣는다. 중첩 시 안쪽이
+ * 이기므로 결과적으로 지정한 로케일이 적용된다.
+ *
+ * `render`를 여기서 부르지 않는다 — 이 모듈은 `vitest.setup.dom.ts`가
+ * `@testing-library/react` mock 안에서 import하므로, 여기서 그걸 import하면
+ * 순환이 생겨 테스트 러너가 멈춘다. 요소만 감싸서 돌려주고 호출부가 렌더한다:
+ * `render(withLocale(<X />, 'en'))`.
+ */
+export function withLocale(
+    ui: ReactNode,
+    locale: keyof typeof CATALOGS
+): ReactNode {
+    return (
+        <LocaleProvider locale={locale}>
+            <NextIntlClientProvider
+                locale={locale}
+                messages={CATALOGS[locale]}
+                timeZone="Asia/Seoul"
+            >
+                {ui}
             </NextIntlClientProvider>
         </LocaleProvider>
     );

@@ -1,4 +1,8 @@
 import { useTranslations } from 'next-intl';
+import {
+    ECONOMY_CATEGORY_LABEL_KEY,
+    ECONOMY_INDICATOR_LABEL_KEY,
+} from '@/shared/config/economyLabelKey';
 import type { KrIndicatorCard } from '@/entities/economy';
 import {
     ECONOMY_INDICATOR_CATEGORIES,
@@ -25,6 +29,7 @@ interface KrEconomicIndicatorGridProps {
 export function KrEconomicIndicatorGrid({
     cards,
 }: KrEconomicIndicatorGridProps) {
+    const tCfg = useTranslations('shared.config');
     const t = useTranslations('widgets.economy');
     if (cards.length === 0) return null;
 
@@ -50,7 +55,10 @@ export function KrEconomicIndicatorGrid({
                 return (
                     <div key={category.key} className="space-y-2">
                         <h3 className="text-sm font-medium text-secondary-400">
-                            {category.label}
+                            {tCfg(
+                                ECONOMY_CATEGORY_LABEL_KEY[category.key] ??
+                                    category.label
+                            )}
                         </h3>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                             {items.map(card => (
@@ -72,12 +80,17 @@ interface IndicatorCardProps {
 }
 
 function IndicatorCard({ card }: IndicatorCardProps) {
+    const tCfg = useTranslations('shared.config');
     const t = useTranslations('widgets.economy');
     const { meta, latest, latestDate, changeFromPrevious } = card;
     return (
         <article className="rounded-lg border border-secondary-800 bg-secondary-800/30 p-4">
             <div className="flex items-center gap-1.5">
-                <h4 className="text-sm text-secondary-400">{meta.label}</h4>
+                <h4 className="text-sm text-secondary-400">
+                    {ECONOMY_INDICATOR_LABEL_KEY[meta.label]
+                        ? tCfg(ECONOMY_INDICATOR_LABEL_KEY[meta.label])
+                        : meta.label}
+                </h4>
                 <InfoTooltip>{meta.tooltip}</InfoTooltip>
             </div>
             <p className="mt-1 flex items-baseline gap-1">

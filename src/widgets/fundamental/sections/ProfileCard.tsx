@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import type { ReactNode } from 'react';
 import type { FundamentalProfile } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
@@ -14,6 +15,7 @@ interface ProfileCardProps {
 
 export function ProfileCard({ profile, descriptionSlot }: ProfileCardProps) {
     const t = useTranslations('widgets.fundamental');
+    const locale = useResolvedLocale();
     if (profile === null) {
         return (
             <EmptySectionCard
@@ -28,7 +30,8 @@ export function ProfileCard({ profile, descriptionSlot }: ProfileCardProps) {
 
     const formattedMarketCap = formatCompactCurrency(
         profile.marketCap,
-        profile.symbol
+        profile.symbol,
+        locale
     );
 
     return (

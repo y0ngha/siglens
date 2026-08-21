@@ -15,10 +15,8 @@ vi.mock('@/features/auth-password-reset', () => ({
     },
 }));
 
-import {
-    ResetPasswordContent,
-    MISSING_PARAMS_MESSAGE,
-} from '../ResetPasswordContent';
+import { ResetPasswordContent } from '../ResetPasswordContent';
+import { koMessage } from '@/shared/test-utils/koMessage';
 
 describe('ResetPasswordContent', () => {
     beforeEach(() => {
@@ -45,7 +43,7 @@ describe('ResetPasswordContent', () => {
         render(<ResetPasswordContent />);
         expect(resetFormSpy).not.toHaveBeenCalled();
         expect(screen.getByRole('alert')).toHaveTextContent(
-            MISSING_PARAMS_MESSAGE
+            koMessage('entities.auth.error.invalidResetLink')
         );
     });
 
@@ -54,14 +52,14 @@ describe('ResetPasswordContent', () => {
         render(<ResetPasswordContent />);
         expect(resetFormSpy).not.toHaveBeenCalled();
         expect(screen.getByRole('alert')).toHaveTextContent(
-            MISSING_PARAMS_MESSAGE
+            koMessage('entities.auth.error.invalidResetLink')
         );
     });
 
     it('shows the missing-params alert when both absent', () => {
         render(<ResetPasswordContent />);
         expect(screen.getByRole('alert')).toHaveTextContent(
-            MISSING_PARAMS_MESSAGE
+            koMessage('entities.auth.error.invalidResetLink')
         );
     });
 });

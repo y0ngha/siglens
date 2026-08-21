@@ -29,8 +29,7 @@ describe('OverallFactualFallback', () => {
     it('renders equity axes and news enrichment state', () => {
         render(
             <OverallFactualFallback
-                symbol="AAPL"
-                displayName="Apple Inc."
+                displayName="Apple Inc. (AAPL)"
                 marketProfile="us-equity"
                 newsItems={[
                     makeNewsItem('news-1', { sentiment: 'bullish' }),
@@ -41,11 +40,14 @@ describe('OverallFactualFallback', () => {
         );
 
         const section = screen.getByRole('region', {
-            name: 'Apple Inc. 종합 분석 데이터 상태',
+            name: 'Apple Inc. (AAPL) 종합 분석 데이터 상태',
         });
         expect(section).toHaveTextContent(
-            'Apple Inc. (AAPL) 종합 분석은 차트, 뉴스, 펀더멘털, 옵션, 공포 탐욕 지수를 함께 봅니다.'
+            'Apple Inc. (AAPL) 종합 분석은 차트, 뉴스, 펀더멘털, 옵션 및 공포 탐욕 지수를 함께 봅니다.'
         );
+        // 티커가 두 번 나오지 않는다 — `displayName`이 이미 `(AAPL)`을 품는데
+        // 컴포넌트가 `symbol`을 한 번 더 붙여 `(AAPL) (AAPL)`로 나갔다.
+        expect(section).not.toHaveTextContent('(AAPL) (AAPL)');
         expect(section).toHaveTextContent(
             '현재 서버가 확인한 최근 뉴스는 3건이며, 이 중 2건은 AI 뉴스 카드 분석이 완료됐습니다.'
         );
@@ -57,18 +59,17 @@ describe('OverallFactualFallback', () => {
     it('renders crypto axes without equity-only wording', () => {
         render(
             <OverallFactualFallback
-                symbol="BTCUSD"
-                displayName="Bitcoin"
+                displayName="Bitcoin (BTCUSD)"
                 marketProfile="crypto"
                 newsItems={[makeNewsItem('crypto-1', { sentiment: 'bearish' })]}
             />
         );
 
         const section = screen.getByRole('region', {
-            name: 'Bitcoin 종합 분석 데이터 상태',
+            name: 'Bitcoin (BTCUSD) 종합 분석 데이터 상태',
         });
         expect(section).toHaveTextContent(
-            'Bitcoin (BTCUSD) 종합 분석은 차트, 뉴스, 공포 탐욕 지수를 함께 봅니다.'
+            'Bitcoin (BTCUSD) 종합 분석은 차트, 뉴스 및 공포 탐욕 지수를 함께 봅니다.'
         );
         expect(section).not.toHaveTextContent('펀더멘털');
         expect(section).not.toHaveTextContent('옵션');
@@ -83,18 +84,17 @@ describe('OverallFactualFallback', () => {
     it('renders kr-equity axes without the options claim', () => {
         render(
             <OverallFactualFallback
-                symbol="005930.KS"
-                displayName="Samsung Electronics"
+                displayName="Samsung Electronics (005930.KS)"
                 marketProfile="kr-equity"
                 newsItems={[makeNewsItem('kr-1', { sentiment: 'bullish' })]}
             />
         );
 
         const section = screen.getByRole('region', {
-            name: 'Samsung Electronics 종합 분석 데이터 상태',
+            name: 'Samsung Electronics (005930.KS) 종합 분석 데이터 상태',
         });
         expect(section).toHaveTextContent(
-            'Samsung Electronics (005930.KS) 종합 분석은 차트, 뉴스, 펀더멘털, 공포 탐욕 지수를 함께 봅니다.'
+            'Samsung Electronics (005930.KS) 종합 분석은 차트, 뉴스, 펀더멘털 및 공포 탐욕 지수를 함께 봅니다.'
         );
         expect(section).not.toHaveTextContent('옵션');
     });
@@ -102,15 +102,14 @@ describe('OverallFactualFallback', () => {
     it('renders an honest empty news state', () => {
         render(
             <OverallFactualFallback
-                symbol="AAPL"
-                displayName="Apple Inc."
+                displayName="Apple Inc. (AAPL)"
                 marketProfile="us-equity"
                 newsItems={[]}
             />
         );
 
         const section = screen.getByRole('region', {
-            name: 'Apple Inc. 종합 분석 데이터 상태',
+            name: 'Apple Inc. (AAPL) 종합 분석 데이터 상태',
         });
         expect(section).toHaveTextContent(
             '최근 뉴스 데이터는 아직 준비되지 않았습니다. 뉴스 카드가 분석되면 종합 분석의 뉴스 축 상태도 함께 반영됩니다.'

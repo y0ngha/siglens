@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import {
     MIN_PASSWORD_LENGTH,
     hasLetter,
@@ -13,24 +14,22 @@ interface PasswordStrengthHintProps {
 
 interface Rule {
     id: string;
-    label: string;
+    /** `shared.ui.passwordRule` 키. 길이 규칙만 `{v0}`을 받는다. */
+    labelKey: string;
     test: (password: string) => boolean;
 }
 
 const RULES: readonly Rule[] = [
-    {
-        id: 'length',
-        label: `${MIN_PASSWORD_LENGTH}자 이상`,
-        test: hasMinLength,
-    },
-    { id: 'letter', label: '영어 포함', test: hasLetter },
-    { id: 'number', label: '숫자 포함', test: hasNumber },
+    { id: 'length', labelKey: 'minLength', test: hasMinLength },
+    { id: 'letter', labelKey: 'hasLetter', test: hasLetter },
+    { id: 'number', labelKey: 'hasNumber', test: hasNumber },
 ];
 
 export function PasswordStrengthHint({
     password,
     descriptionId,
 }: PasswordStrengthHintProps) {
+    const t = useTranslations('shared.ui.passwordRule');
     return (
         <ul
             id={descriptionId}
@@ -46,7 +45,9 @@ export function PasswordStrengthHint({
                         )}
                     >
                         <span aria-hidden>{ok ? '✓' : '○'}</span>
-                        <span className="ml-1.5">{rule.label}</span>
+                        <span className="ml-1.5">
+                            {t(rule.labelKey, { v0: MIN_PASSWORD_LENGTH })}
+                        </span>
                     </li>
                 );
             })}

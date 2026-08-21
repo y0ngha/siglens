@@ -128,7 +128,9 @@ describe('IndexCard', () => {
         );
         const link = screen.getByRole('link');
         expect(link).toHaveAttribute('href', '/SPY');
-        expect(link).toHaveAttribute('title', 'S&P 500 Index 분석');
+        // 툴팁은 카드에 보이는 이름과 **같은 소스**를 쓴다. 예전엔 core의
+        // `displayName`(`S&P 500 Index`)을 써서 카드와 툴팁이 어긋났다.
+        expect(link).toHaveAttribute('title', 'S&P 500 분석');
     });
 
     it('does not wrap in a Link when href is absent', () => {
@@ -175,6 +177,27 @@ describe('IndexCard', () => {
             />
         );
         const link = screen.getByRole('link');
-        expect(link).toHaveAttribute('title', 'Technology 분석');
+        expect(link).toHaveAttribute('title', '기술 분석');
+    });
+
+    /**
+     * 회귀: 카드 이름만 로케일을 타고 `title`은 `Technology 분석`으로 남아
+     * `/ja/market`에서 카드는 `テクノロジー`, 툴팁은 영+한 혼용이었다.
+     */
+    it('en: title도 그 로케일로 나온다', () => {
+        renderWithIntl(
+            <IndexCard
+                tickerIsReadable
+                currencySymbol="$"
+                data={SECTOR_DATA}
+                href="/XLK"
+            />,
+            { locale: 'en' }
+        );
+
+        const title = screen.getByRole('link').getAttribute('title') ?? '';
+
+        expect(title).toBe('Technology analysis');
+        expect(title).not.toMatch(/[가-힣]/);
     });
 });

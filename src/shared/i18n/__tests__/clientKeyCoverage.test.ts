@@ -2,6 +2,15 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import koMessages from '../../../../messages/ko.json';
 import { pickMessages } from '../loadMessages';
+import type { AbstractIntlMessages } from 'next-intl';
+
+/**
+ * next-intl의 `AbstractIntlMessages`는 **배열 값을 모델링하지 않는다**.
+ * 툴팁 문단은 실제로 배열이고 `TooltipParagraphs`가 `t.raw()`로 읽는다 —
+ * 런타임 계약은 맞는데 정적 import의 추론 타입만 시그니처와 어긋난다.
+ * 그래서 여기서만 좁힌다(프로덕션 로더는 동적 import라 이 문제가 없다).
+ */
+const messages = koMessages as unknown as AbstractIntlMessages;
 import { CHROME_CLIENT_PATHS, routeClientPaths } from '../clientNamespaces';
 
 const ROOT = process.cwd();
@@ -195,7 +204,7 @@ describe('라우트별 클라이언트 메시지 커버리지', () => {
     it.each(ROUTE_FILES)('%s', file => {
         const route = providerRouteFor(file);
         const picked = pickMessages(
-            koMessages,
+            messages,
             route === null ? CHROME_CLIENT_PATHS : routeClientPaths(route)
         );
         const missing: string[] = [];
@@ -212,9 +221,113 @@ describe('라우트별 클라이언트 메시지 커버리지', () => {
     it('크롬 페이로드가 합집합보다 훨씬 작다', () => {
         const full = JSON.stringify(koMessages).length;
         const chrome = JSON.stringify(
-            pickMessages(koMessages, CHROME_CLIENT_PATHS)
+            pickMessages(messages, CHROME_CLIENT_PATHS)
         ).length;
         // 합집합이던 시절 24,299바이트(60.9%)였다.
-        expect(chrome / full).toBeLessThan(0.15);
+        //
+        // 한때 `shared.skillDescription` 때문에 0.238까지 부풀어 임계값을
+        // 0.25로 올렸는데, 원인은 그 테이블이 아니라 **배럴 import 하나**였다.
+        // 그걸 잡고 나서 임계값을 0.10으로 되돌렸다 — 실측치를 수용하려고
+        // 상한을 올리는 건 가드를 끄는 것과 같다.
+        //
+        // 크롬은 모든 라우트에 상속 없이 복제되므로(중첩 프로바이더가 부모
+        // 메시지를 교체) 크롬 크기가 곧 전 라우트 first-load의 하한이다.
+        expect(chrome / full).toBeLessThan(0.1);
+    });
+});
+
+/**
+ * **동적 조회 테이블은 소비 라우트의 페이로드에 실려야 한다 — 거기에만.**
+ *
+ * 이 파일의 다른 단언들은 `t('literal')`만 본다 — 추출기와 **같은 모델**이라
+ * 둘이 사이좋게 틀릴 수 있고, 실제로 그렇게 됐다. 표시명 조회 키 60개가
+ * 페이로드에서 통째로 빠졌는데 전 게이트가 초록이었다(전 로케일 한국어 렌더).
+ * 컴포넌트 테스트는 **전체 카탈로그**로 렌더되므로 이 축소를 구조적으로 못 본다.
+ *
+ * 반대 방향도 같이 잠근다. 한때 두 표를 `chromeWide`에 넣어 32개 라우트 전부에
+ * 실었는데, `/login`·`/terms`처럼 이 표를 **렌더하지 않는** 라우트에까지 1.3KB가
+ * 딸려갔다 — `manualKeys.json`이 스스로 금지한 바로 그 형태다. 추출기의 동적 키
+ * 판정이 소비 라우트만 정확히 넓히므로, 크롬에 있으면 그건 과적재다.
+ */
+describe('동적 조회 테이블이 소비 라우트에만 실린다', () => {
+    const table = (paths: readonly string[], name: 'assetName' | 'skillName') =>
+        Object.keys(
+            (
+                pickMessages(messages, paths) as {
+                    shared?: Record<string, object>;
+                }
+            ).shared?.[name] ?? {}
+        ).length;
+
+    it.each([
+        ['market', 'assetName'],
+        ['market/kr', 'assetName'],
+        ['[symbol]', 'skillName'],
+        ['share/[id]', 'skillName'],
+    ] as const)('%s 는 %s 표를 받는다', (routeId, name) => {
+        expect(table(routeClientPaths(routeId), name)).toBeGreaterThan(20);
+    });
+
+    it.each([
+        ['login', 'assetName'],
+        ['terms', 'assetName'],
+        ['[symbol]', 'assetName'],
+    ] as const)('%s 는 %s 표를 받지 않는다', (routeId, name) => {
+        expect(table(routeClientPaths(routeId), name)).toBe(0);
+    });
+
+    /**
+     * 스킬 카탈로그는 **홈과 종목 라우트에만** 실린다.
+     *
+     * 한때 크롬에 있었다 — 홈이 자기 세그먼트 레이아웃이 없어 크롬 프로바이더를
+     * 썼기 때문이다. 그 결과 `shared.skillDescription`(8.4KB)이 `/login`·
+     * `/terms`까지 따라다녔고 크롬이 카탈로그의 23.8%였다. 홈을 라우트 그룹
+     * `(home)`으로 옮기고, 404 경계가 `@/widgets/home` **배럴**을 타던 것을
+     * 파일 직접 import로 끊어 7.3%가 됐다.
+     */
+    it.each([
+        ['(home)', 'skillName'],
+        ['(home)', 'skillDescription'],
+        ['[symbol]', 'skillName'],
+    ] as const)('%s 는 shared.%s 을 받는다', (routeId, table) => {
+        const picked = pickMessages(messages, routeClientPaths(routeId)) as {
+            shared?: Record<string, object>;
+        };
+
+        expect(
+            Object.keys(picked.shared?.[table] ?? {}).length
+        ).toBeGreaterThan(20);
+    });
+
+    it.each(['skillName', 'skillDescription'] as const)(
+        '크롬에는 shared.%s 이 없다',
+        table => {
+            const picked = pickMessages(messages, CHROME_CLIENT_PATHS) as {
+                shared?: Record<string, object>;
+            };
+
+            expect(Object.keys(picked.shared?.[table] ?? {})).toEqual([]);
+        }
+    );
+
+    /**
+     * `shared.seo`는 **서버 전용**이다 — `generateMetadata`와 서버 컴포넌트만
+     * 읽는다. 클라이언트 페이로드에 들어가면 SEO 제목·설명 전부가 모든 라우트에
+     * 실린다(실측: 크롬이 카탈로그의 21.8%까지 부풀었다).
+     */
+    it('shared.seo 는 어떤 클라이언트 페이로드에도 없다', () => {
+        const buckets = [
+            CHROME_CLIENT_PATHS,
+            ...['market', '[symbol]', 'login', 'terms', 'privacy'].map(
+                routeClientPaths
+            ),
+        ];
+
+        for (const paths of buckets) {
+            expect(
+                (pickMessages(messages, paths) as { shared?: object }).shared ??
+                    {}
+            ).not.toHaveProperty('seo');
+        }
     });
 });

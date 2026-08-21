@@ -5,11 +5,13 @@ import type {
     FearGreedLabel,
     FearGreedSnapshot,
 } from '@y0ngha/siglens-core';
+import { POC_WINDOW_DEFAULT } from '@y0ngha/siglens-core';
 import {
-    FACTOR_LABEL,
     formatFactorRaw,
-    SENTIMENT_LABEL_TEXT,
+    sentimentLabelText,
 } from '@/shared/lib/fearGreedLabels';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import { koWithParticle } from '@/shared/lib/koParticle';
 
 // 5-factor percentile을 낮음/보통/높음 3구간으로 나누는 경계값. FearGreedGroupBar의
 // "극단" 배지 임계값(<10 / >=90)보다 넓게 잡아, 문장 서사에서는 "평소 범위 밖"을
@@ -20,14 +22,22 @@ const HIGH_PERCENTILE_MIN = 75;
 // 판단하는 기준점으로 findMostExtremeFactor·buildFearGreedFactorRankingLine이 공유한다.
 const MEDIAN_PERCENTILE = 50;
 
-function factorInterpretation(pctile: number): string {
-    if (pctile < LOW_PERCENTILE_MAX) {
-        return '최근 200영업일 분포 대비 낮은 편';
-    }
-    if (pctile >= HIGH_PERCENTILE_MIN) {
-        return '최근 200영업일 분포 대비 높은 편';
-    }
-    return '최근 200영업일 분포의 평균 범위 안';
+/**
+ * `views.symbol.fearGreedFacts` 네임스페이스 번역자.
+ *
+ * 이 모듈은 SSR 크롤 텍스트를 만든다 — JS 없이 읽히는 본문이라, 여기 남은
+ * 한국어는 비-ko 페이지에서 그대로 색인된다. 순수 함수를 유지하려고 훅을
+ * 부르지 않고 번역자를 인자로 받는다(호출부는 컴포넌트 하나뿐).
+ */
+type FactsTranslator = (
+    key: string,
+    values?: Record<string, string | number>
+) => string;
+
+function factorInterpretation(pctile: number, t: FactsTranslator): string {
+    if (pctile < LOW_PERCENTILE_MAX) return t('factorLow');
+    if (pctile >= HIGH_PERCENTILE_MIN) return t('factorHigh');
+    return t('factorMid');
 }
 
 /**
@@ -39,19 +49,31 @@ function factorInterpretation(pctile: number): string {
  * 영어 서수 접미사가 한국어 문장에 섞여 있었다.
  */
 export function buildFearGreedFactorLines(
-    snapshot: FearGreedSnapshot
+    snapshot: FearGreedSnapshot,
+    t: FactsTranslator,
+    // 팩터 라벨은 `shared.lib.fearGreedFactor`에 있다 — 위젯(`FearGreedGroupBar`)과
+    // 공유하는 표라 이 뷰 네임스페이스로 옮기면 두 벌이 된다.
+    tFactor: FactsTranslator
 ): string[] {
     return snapshot.groups.flatMap(group =>
         group.factors.map(factor => {
             const pctile = Math.round(factor.percentile);
-            return `${FACTOR_LABEL[factor.key]}: ${formatFactorRaw(factor.key, factor.rawValue)} (${pctile}번째 퍼센타일) — ${factorInterpretation(pctile)}.`;
+            return t('factorLine', {
+                v0: tFactor(`symbolLabel.${factor.key}`, {
+                    v0: POC_WINDOW_DEFAULT,
+                }),
+                v1: formatFactorRaw(factor.key, factor.rawValue),
+                v2: pctile,
+                v3: factorInterpretation(pctile, t),
+            });
         })
     );
 }
 
+/** `views.symbol.fearGreedFacts` 기준 상대 키. */
 const GROUP_LABEL: Record<FearGreedGroupName, string> = {
-    Flow: '수급',
-    Trend: '추세',
+    Flow: 'groupFlow',
+    Trend: 'groupTrend',
 };
 
 /**
@@ -69,7 +91,8 @@ const GROUP_LABEL: Record<FearGreedGroupName, string> = {
  * 넘기지 않도록 명시적으로 좁힌다.
  */
 export function buildFearGreedGroupComparisonLine(
-    snapshot: FearGreedSnapshot
+    snapshot: FearGreedSnapshot,
+    t: FactsTranslator
 ): string | null {
     const flow = snapshot.groups.find(g => g.name === 'Flow');
     const trend = snapshot.groups.find(g => g.name === 'Trend');
@@ -79,7 +102,11 @@ export function buildFearGreedGroupComparisonLine(
     const trendScore = Math.round(trend.score);
 
     if (flowScore === trendScore) {
-        return `${GROUP_LABEL.Flow} 그룹과 ${GROUP_LABEL.Trend} 그룹이 모두 ${flowScore}점으로 균형 잡힌 흐름을 보이고 있습니다.`;
+        return t('groupBalanced', {
+            v0: t(GROUP_LABEL.Flow),
+            v1: t(GROUP_LABEL.Trend),
+            v2: flowScore,
+        });
     }
 
     const leader = flowScore > trendScore ? flow : trend;
@@ -88,7 +115,13 @@ export function buildFearGreedGroupComparisonLine(
     const laggingScore = Math.round(lagging.score);
     const gap = leaderScore - laggingScore;
 
-    return `${GROUP_LABEL[leader.name]} 그룹 점수(${leaderScore}점)가 ${GROUP_LABEL[lagging.name]} 그룹(${laggingScore}점)보다 ${gap}점 높아 ${GROUP_LABEL[leader.name]} 우위 흐름입니다.`;
+    return t('groupLead', {
+        v0: t(GROUP_LABEL[leader.name]),
+        v1: leaderScore,
+        v2: t(GROUP_LABEL[lagging.name]),
+        v3: laggingScore,
+        v4: gap,
+    });
 }
 
 /** MEDIAN_PERCENTILE(중앙값)에서 가장 멀리 떨어진(=가장 두드러진) factor를 고른다. 동률이면 원 순서(Flow → Trend) 중 먼저 나온 쪽을 유지한다(Array.sort는 stable). */
@@ -110,16 +143,24 @@ function findMostExtremeFactor(
  * 넘어 문장 구조(주어)가 달라진다. factor가 하나도 없으면 `null`.
  */
 export function buildFearGreedFactorRankingLine(
-    snapshot: FearGreedSnapshot
+    snapshot: FearGreedSnapshot,
+    t: FactsTranslator,
+    tFactor: FactsTranslator
 ): string | null {
     const allFactors = snapshot.groups.flatMap(g => g.factors);
     const top = findMostExtremeFactor(allFactors);
     if (top === null) return null;
 
     const pctile = Math.round(top.percentile);
-    const direction = pctile >= MEDIAN_PERCENTILE ? '높게' : '낮게';
+    const direction =
+        pctile >= MEDIAN_PERCENTILE ? t('directionHigh') : t('directionLow');
 
-    return `${allFactors.length}개 지표 중 가장 두드러진 지표는 ${FACTOR_LABEL[top.key]}로, ${pctile}번째 퍼센타일을 기록해 평소보다 ${direction} 나타나고 있습니다.`;
+    return t('topFactor', {
+        v0: allFactors.length,
+        v1: tFactor(`symbolLabel.${top.key}`, { v0: POC_WINDOW_DEFAULT }),
+        v2: pctile,
+        v3: direction,
+    });
 }
 
 /**
@@ -145,25 +186,17 @@ export function scoredHistory(
  * 들어오면 `split('-')[2]`가 `19T00:00:00Z`가 되어 `2026년 8월 NaN일`을 뱉는다.
  * 존재 검사만으로는 안 잡히므로 숫자 검사까지 한다 — 실패하면 원문을 그대로 쓴다.
  */
-function formatIsoDateKo(iso: string): string {
+function formatIsoDate(iso: string, t: FactsTranslator): string {
     const [y, m, d] = iso.split('-');
     if (y === undefined || m === undefined || d === undefined) return iso;
     const month = Number(m);
     const day = Number(d);
     if (Number.isNaN(month) || Number.isNaN(day)) return iso;
-    return `${y}년 ${month}월 ${day}일`;
+    return t('isoDate', { v0: y, v1: month, v2: day });
 }
 
-/** 받침 유무로 `와`/`과`를 고른다. 라벨이 5종뿐이라 한글 음절 범위 검사면 충분하다. */
-function withParticle(word: string): string {
-    const last = word.codePointAt(word.length - 1) ?? 0;
-    const hasBatchim =
-        last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0;
-    return `${word}${hasBatchim ? '과' : '와'}`;
-}
-
-function labelText(label: FearGreedLabel): string {
-    return SENTIMENT_LABEL_TEXT[label];
+function labelText(label: FearGreedLabel, t: EnumLabelTranslator): string {
+    return sentimentLabelText(label, t);
 }
 
 /** 최신 봉에서 `back`개 앞선 지점. 시계열이 짧으면 `null`. */
@@ -187,49 +220,68 @@ const TRADING_DAYS = { week: 5, month: 21, year: 252 } as const;
  * 비교 대상이 하나도 없으면(신규 상장 등) `null`.
  */
 export function buildFearGreedPeriodComparisonLine(
-    points: readonly ScoredPoint[]
+    points: readonly ScoredPoint[],
+    t: EnumLabelTranslator,
+    tFacts: FactsTranslator
 ): string | null {
     const current = points.at(-1);
     if (current === undefined) return null;
 
-    // 마지막 절만 종결어미(`높습니다`)를 쓰고 앞 절은 연결어미(`높고`)로 잇는다.
-    // 종결어미를 쉼표로 나열하면 한국어 문장이 안 된다.
-    const CONNECTIVE = { up: '높고', down: '낮고', same: '같고' } as const;
-    const FINAL = {
-        up: '높습니다',
-        down: '낮습니다',
-        same: '같습니다',
+    /**
+     * 절 **전체**를 로케일 메시지로 만든다.
+     *
+     * 한국어는 마지막 절만 종결어미(`높습니다`)를 쓰고 앞 절은 연결어미(`높고`)로
+     * 이어야 문장이 된다 — 다른 언어에는 그 구분이 없다. 그래서 접미사를 따로
+     * 붙이는 대신 `…Mid`/`…Final` 두 벌을 두고 각 로케일이 알아서 쓴다.
+     * 받침에 따른 조사(`과`/`와`)도 ko 메시지 안에서만 다룬다.
+     */
+    const CLAUSE_KEY = {
+        up: { mid: 'clauseUpMid', final: 'clauseUpFinal' },
+        down: { mid: 'clauseDownMid', final: 'clauseDownFinal' },
+        same: { mid: 'clauseSameMid', final: 'clauseSameFinal' },
     } as const;
 
     const clauses = (
         [
-            ['1주 전', TRADING_DAYS.week],
-            ['1개월 전', TRADING_DAYS.month],
-            ['1년 전', TRADING_DAYS.year],
+            ['periodWeek', TRADING_DAYS.week],
+            ['periodMonth', TRADING_DAYS.month],
+            ['periodYear', TRADING_DAYS.year],
         ] as const
     ).flatMap(([label, back]) => {
         const past = pointBefore(points, back);
         if (past === null) return [];
         const diff = Math.round(current.score) - Math.round(past.score);
         const kind = diff === 0 ? 'same' : diff > 0 ? 'up' : 'down';
-        const anchor = `${label} ${Math.round(past.score)}점(${labelText(past.label)})`;
+        const anchor = tFacts('anchorPoint', {
+            v0: tFacts(label),
+            v1: Math.round(past.score),
+            v2: labelText(past.label, t),
+        });
         // 차이가 0이면 `대비 같고`가 되어 비문이다 — 조사를 붙여 `…(중립)과 같고`로 만든다.
-        const head =
-            kind === 'same'
-                ? `${withParticle(anchor)} `
-                : `${anchor} 대비 ${Math.abs(diff)}점 `;
-        return [{ head, kind } as const];
+        return [{ anchor, diff: Math.abs(diff), kind } as const];
     });
 
     if (clauses.length === 0) return null;
     const joined = clauses
-        .map(
-            (c, i) =>
-                c.head +
-                (i === clauses.length - 1 ? FINAL[c.kind] : CONNECTIVE[c.kind])
+        .map((c, i) =>
+            tFacts(
+                CLAUSE_KEY[c.kind][i === clauses.length - 1 ? 'final' : 'mid'],
+                {
+                    // 차이가 0인 절은 ko에서 `…(중립)과 같고`처럼 **조사**가
+                    // 붙어야 문장이 된다. 받침 판정은 ICU가 못 하므로 소스가
+                    // 앵커에 붙여서 넘긴다 — 그래야 메시지 인자 수가 네 로케일
+                    // 모두 같아진다(플레이스홀더 패리티 게이트).
+                    v0: c.kind === 'same' ? koWithParticle(c.anchor) : c.anchor,
+                    v1: c.diff,
+                }
+            )
         )
         .join(', ');
-    return `현재 ${Math.round(current.score)}점(${labelText(current.label)})은 ${joined}.`;
+    return tFacts('currentVsAnchors', {
+        v0: Math.round(current.score),
+        v1: labelText(current.label, t),
+        v2: joined,
+    });
 }
 
 /**
@@ -243,7 +295,8 @@ export function buildFearGreedPeriodComparisonLine(
 const MIN_DISTRIBUTION_SAMPLE = 60;
 
 export function buildFearGreedYearRangeLine(
-    points: readonly ScoredPoint[]
+    points: readonly ScoredPoint[],
+    tFacts: FactsTranslator
 ): string | null {
     const window = points.slice(-TRADING_DAYS.year);
     const current = window.at(-1);
@@ -272,10 +325,19 @@ export function buildFearGreedYearRangeLine(
     // 크롤 텍스트가 된다 — 이 변경의 목적과 정반대다.
     const span =
         window.length >= TRADING_DAYS.year
-            ? '최근 1년'
-            : `최근 ${window.length}거래일`;
+            ? tFacts('lastYear')
+            : tFacts('recentTradingDays', { v0: window.length });
 
-    return `${span} 동안 이 종목의 점수는 최저 ${Math.round(min.score)}점(${formatIsoDateKo(min.date)})에서 최고 ${Math.round(max.score)}점(${formatIsoDateKo(max.date)}) 사이에서 움직였고, 중앙값은 ${Math.round(median)}점입니다. 현재 ${Math.round(current.score)}점은 이 분포에서 ${percentile}% 지점에 해당합니다.`;
+    return tFacts('rangeSummary', {
+        v0: span,
+        v1: Math.round(min.score),
+        v2: formatIsoDate(min.date, tFacts),
+        v3: Math.round(max.score),
+        v4: formatIsoDate(max.date, tFacts),
+        v5: Math.round(median),
+        v6: Math.round(current.score),
+        v7: percentile,
+    });
 }
 
 /**
@@ -284,7 +346,9 @@ export function buildFearGreedYearRangeLine(
  * 0일인 구간은 뺀다 — "극심한 탐욕 0일"은 글자만 늘리고 정보가 없다.
  */
 export function buildFearGreedRegimeDistributionLine(
-    points: readonly ScoredPoint[]
+    points: readonly ScoredPoint[],
+    t: EnumLabelTranslator,
+    tFacts: FactsTranslator
 ): string | null {
     const window = points.slice(-TRADING_DAYS.year);
     if (window.length < MIN_DISTRIBUTION_SAMPLE) return null;
@@ -299,11 +363,24 @@ export function buildFearGreedRegimeDistributionLine(
         if (n === 0) return [];
         const pct = Math.round((n / window.length) * 100);
         // 1% 미만은 `(0%)`로 반올림돼 "1일(0%)" 같은 모순이 나온다 — 비율을 생략한다.
-        return [`${labelText(label)} ${n}일${pct === 0 ? '' : `(${pct}%)`}`];
+        return [
+            tFacts('labelDaysCount', {
+                v0: labelText(label, t),
+                v1: n,
+                v2: pct === 0 ? '' : `(${pct}%)`,
+            }),
+        ];
     });
 
     if (parts.length === 0) return null;
     // 위와 같은 이유 — `최근 1년 87거래일 중`은 그 자체로 모순이다.
-    const span = window.length >= TRADING_DAYS.year ? '최근 1년' : '최근';
-    return `${span} ${window.length}거래일 중 ${parts.join(', ')}을 기록했습니다.`;
+    const span =
+        window.length >= TRADING_DAYS.year
+            ? tFacts('lastYear')
+            : tFacts('recent');
+    return tFacts('labelDistribution', {
+        v0: span,
+        v1: window.length,
+        v2: parts.join(', '),
+    });
 }

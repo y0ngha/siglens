@@ -36,23 +36,6 @@ function formatStrike(strike: number): string {
     return `$${isInteger ? strike.toString() : strike.toFixed(1)}`;
 }
 
-const StrikeTooltip = (
-    <>
-        <p>옵션 계약에 정해진 매수/매도 가격이에요.</p>
-        <p>
-            콜은 &apos;이 가격에 살 권리&apos;, 풋은 &apos;이 가격에 팔
-            권리&apos;를 가진다는 뜻이에요.
-        </p>
-    </>
-);
-
-const ImpliedVolatilityTooltip = (
-    <>
-        <p>옵션 시장이 예측하는 미래 변동성이에요.</p>
-        <p>높을수록 옵션값이 비싸지고, 불확실성이 크다는 뜻이에요.</p>
-    </>
-);
-
 interface OptionsChainTableProps {
     symbol: string;
     /** 'YYYY-MM-DD' or 'all'. Maps to the appropriate chain via the same rule as Metrics/Chart. */
@@ -76,6 +59,7 @@ export function OptionsChainTable({
     nearestExpiry,
 }: OptionsChainTableProps) {
     const t = useTranslations('widgets.options');
+    const tChain = useTranslations('widgets.options.chainTable');
     const [expanded, setExpanded] = useState(false);
 
     // Hooks must run unconditionally — compute derived data even when the
@@ -116,8 +100,12 @@ export function OptionsChainTable({
     const totalContracts = chain ? chain.calls.length + chain.puts.length : 0;
 
     const headerLabel = expanded
-        ? `▾ 전체 옵션 chain 테이블 (선택된 만기: ${chain?.expirationDate ?? '—'})`
-        : `▸ 전체 옵션 chain 테이블 보기 (${numberFormatter.format(totalContracts)} contracts)`;
+        ? tChain('chainHeaderExpanded', {
+              v0: chain?.expirationDate ?? '—',
+          })
+        : tChain('chainHeaderCollapsed', {
+              v0: numberFormatter.format(totalContracts),
+          });
 
     if (!chain || totalContracts === 0) {
         return (
@@ -165,7 +153,10 @@ export function OptionsChainTable({
                             <tr>
                                 <th scope="col" className="px-3 py-2 text-left">
                                     Strike{' '}
-                                    <InfoTooltip>{StrikeTooltip}</InfoTooltip>
+                                    <InfoTooltip>
+                                        <p>{tChain('strikeTooltip1')}</p>
+                                        <p>{tChain('strikeTooltip2')}</p>
+                                    </InfoTooltip>
                                 </th>
                                 <th
                                     scope="col"
@@ -188,7 +179,8 @@ export function OptionsChainTable({
                                 >
                                     Call IV{' '}
                                     <InfoTooltip>
-                                        {ImpliedVolatilityTooltip}
+                                        <p>{tChain('ivTooltip1')}</p>
+                                        <p>{tChain('ivTooltip2')}</p>
                                     </InfoTooltip>
                                 </th>
                                 <th

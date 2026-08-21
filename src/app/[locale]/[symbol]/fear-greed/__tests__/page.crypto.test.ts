@@ -50,6 +50,8 @@ vi.mock('@/entities/ticker', () => ({
         fmpSymbol?: string,
         assetClass?: string
     ) => mockBuildAssetAboutNode(symbol, name, fmpSymbol, assetClass),
+    pickAssetName: (info: { name: string; koreanName?: string }) =>
+        info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Bitcoin USD'),
     getAssetInfoResilient: (ticker: string) =>
         mockGetAssetInfoResilient(ticker),
@@ -87,6 +89,7 @@ vi.mock('react-error-boundary', () => ({
 }));
 vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
+    buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     buildSymbolSeoContent: vi.fn().mockReturnValue({ url: '' }),
     resolveSymbolFearGreedSeoContent: vi

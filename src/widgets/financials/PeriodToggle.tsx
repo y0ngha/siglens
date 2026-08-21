@@ -6,9 +6,10 @@ import { cn } from '@/shared/lib/cn';
 
 const PERIODS: StatementPeriod[] = ['annual', 'quarter'];
 
-const PERIOD_LABEL: Record<StatementPeriod, string> = {
-    annual: '연간',
-    quarter: '분기',
+/** `widgets.financials.periodToggle` 키. */
+const PERIOD_LABEL_KEY: Record<StatementPeriod, string> = {
+    annual: 'annual',
+    quarter: 'quarter',
 };
 
 interface PeriodToggleProps {
@@ -28,6 +29,7 @@ interface PeriodToggleProps {
  */
 export function PeriodToggle({ value, onChange }: PeriodToggleProps) {
     const t = useTranslations('widgets.financials');
+    const tPeriod = useTranslations('widgets.financials.periodToggle');
     return (
         <div
             role="group"
@@ -47,7 +49,7 @@ export function PeriodToggle({ value, onChange }: PeriodToggleProps) {
                             : 'text-secondary-400 hover:text-secondary-200 border-transparent'
                     )}
                 >
-                    {PERIOD_LABEL[period]}
+                    {tPeriod(PERIOD_LABEL_KEY[period])}
                 </button>
             ))}
         </div>

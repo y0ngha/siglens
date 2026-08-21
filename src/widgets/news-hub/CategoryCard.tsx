@@ -10,7 +10,7 @@ import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 export const PREVIEW_HEADLINE_LIMIT = 3;
 
 export interface CategoryCardProps {
-    koLabel: string;
+    label: string;
     /**
      * 카드가 가리키는 목적지.
      *
@@ -20,7 +20,7 @@ export interface CategoryCardProps {
      */
     href: string;
     /** One-sentence category intro shown below the heading. Differentiates each card from thin-duplicate content. */
-    koDescription: string;
+    description: string;
     /**
      * Pre-fetched headline strings for the preview list. The caller is
      * responsible for fetching and passing these — this component does no
@@ -40,9 +40,9 @@ export interface CategoryCardProps {
  * no client-side state or browser-only APIs.
  */
 export function CategoryCard({
-    koLabel,
+    label,
     href,
-    koDescription,
+    description,
     previewHeadlines,
 }: CategoryCardProps) {
     const t = useTranslations('widgets.news-hub');
@@ -61,11 +61,11 @@ export function CategoryCard({
                     prefetch={false}
                     className="transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    {koLabel}
+                    {label}
                 </Link>
             </h2>
             <p className="mb-3 text-xs leading-relaxed text-secondary-400">
-                {koDescription}
+                {description}
             </p>
 
             {previewHeadlines.length > 0 ? (
@@ -73,7 +73,7 @@ export function CategoryCard({
                     className="mb-4 min-w-0 space-y-2"
                     // `koLabel`이 이미 `…뉴스`로 끝나는 경우가 있어(`미국 시장 뉴스`)
                     // 꼬리표에 `뉴스`를 또 붙이면 `뉴스 최신 뉴스`가 된다.
-                    aria-label={`${koLabel} 미리보기`}
+                    aria-label={t('CategoryCard.previewLabel', { v0: label })}
                 >
                     {previewHeadlines.map(headline => (
                         <li

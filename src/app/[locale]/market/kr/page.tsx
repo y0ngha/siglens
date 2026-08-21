@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
@@ -13,7 +13,7 @@ import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
 import { KR_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
 import { SITE_NAME } from '@/shared/lib/seo';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { MARKET_COPY } from '../copy';
+import { marketCopyFor } from '../copy';
 import { MarketRouteBody } from '../MarketRouteBody';
 
 // 1h — 미국 라우트와 동일. 장중 섹터 신호 신선도를 위해 짧게 유지한다.
@@ -21,8 +21,6 @@ import { MarketRouteBody } from '../MarketRouteBody';
 export const revalidate = 3600;
 
 const SCOPE = KR_DASHBOARD_SCOPE;
-const COPY = MARKET_COPY.kr;
-const FULL_TITLE = `${COPY.title} | ${SITE_NAME}`;
 
 interface LocaleMetadataParams {
     readonly params: Promise<{ locale: string }>;
@@ -33,6 +31,12 @@ export async function generateMetadata({
 }: LocaleMetadataParams): Promise<Metadata> {
     const { locale } = await params;
     const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const t = await getTranslations({
+        locale: resolvedLocale,
+        namespace: 'shared.seo',
+    });
+    const COPY = marketCopyFor(SCOPE.id, t);
+    const FULL_TITLE = `${COPY.title} | ${SITE_NAME}`;
     const ogLocale = localeOpenGraph(resolvedLocale);
     // og:url도 로케일별이어야 한다 — 소셜 언퍼널이 ko URL로 되돌린다.
     const localizedUrl = localeCanonical(resolvedLocale, COPY.path);
@@ -107,5 +111,10 @@ export default async function MarketKrPage({
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
-    return <MarketRouteBody scope={SCOPE} />;
+    return (
+        <MarketRouteBody
+            scope={SCOPE}
+            locale={isLocale(locale) ? locale : DEFAULT_LOCALE}
+        />
+    );
 }

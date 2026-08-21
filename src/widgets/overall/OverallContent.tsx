@@ -223,7 +223,11 @@ export function OverallContent({
                 </h2>
                 <p className="text-sm text-ui-danger" role="alert">
                     {state.error ?? t('OverallContent.0bb0bd')}
-                    {state.axis !== undefined ? ` (${state.axis} 축 실패)` : ''}
+                    {state.axis !== undefined
+                        ? t('OverallContent.axisFailedSuffix', {
+                              v0: state.axis,
+                          })
+                        : ''}
                 </p>
                 <button
                     type="button"

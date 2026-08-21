@@ -26,6 +26,7 @@ function StatCard({ value, label, valueClassName }: StatCardProps) {
 
 export function BacktestHero({ meta }: BacktestHeroProps) {
     const t = useTranslations('widgets.backtesting');
+    const tHero = useTranslations('widgets.backtesting.hero');
     return (
         <header className="border-b border-secondary-800 px-6 py-6 text-center">
             <p className="mb-1.5 text-[10px] tracking-widest text-secondary-500 uppercase">
@@ -53,13 +54,13 @@ export function BacktestHero({ meta }: BacktestHeroProps) {
                 />
                 <div className="h-8 w-px bg-secondary-700" aria-hidden="true" />
                 <StatCard
-                    value={`${meta.totalCases}개`}
+                    value={tHero('caseCount', { v0: meta.totalCases })}
                     label={t('BacktestHero.f92294')}
                     valueClassName="text-ui-warning"
                 />
                 <div className="h-8 w-px bg-secondary-700" aria-hidden="true" />
                 <StatCard
-                    value={`${meta.tickerCount}종목`}
+                    value={tHero('tickerCount', { v0: meta.tickerCount })}
                     label={t('BacktestHero.530709')}
                     valueClassName="text-secondary-300"
                 />

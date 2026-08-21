@@ -46,16 +46,19 @@ export function AiSummaryErrorSection({
     resetErrorBoundary,
     heading,
     idPrefix,
-    fallbackMessage = '분석 중 오류가 발생했습니다.',
+    fallbackMessage,
     className,
     getErrorMessage,
 }: AiSummaryErrorSectionProps) {
     const t = useTranslations('shared.ui');
+    // 기본값을 파라미터 자리에 둘 수 없다 — 컴포넌트 본문 밖이라 훅이 아직 없다.
+    const tError = useTranslations('shared.ui.analysisError');
+    const resolvedFallback = fallbackMessage ?? tError('analysisFailed');
     const headingId = `${idPrefix}-error-heading`;
 
     const message =
         getErrorMessage?.(error) ??
-        (error instanceof Error ? error.message : fallbackMessage);
+        (error instanceof Error ? error.message : resolvedFallback);
 
     return (
         <section

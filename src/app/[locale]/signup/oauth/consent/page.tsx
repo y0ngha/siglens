@@ -25,9 +25,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
     const { locale } = await params;
     const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({
+        locale: resolved,
+        namespace: 'shared.seo',
+    });
     return {
-        title: '소셜 로그인 가입 동의',
-        description: `${SITE_NAME} 소셜 로그인 가입 약관 동의`,
+        title: tSeo('oauthConsentTitle'),
+        description: tSeo('oauthConsentFullTitle', { v0: SITE_NAME }),
         alternates: {
             canonical: localeCanonical(resolved, '/signup/oauth/consent'),
         },

@@ -1,8 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { skillLabel } from './skillLabel';
-import type { ReactNode } from 'react';
+import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import {
     startTransition,
     useEffect,
@@ -46,7 +45,7 @@ import { AnalysisProgress } from './AnalysisProgress';
 import { AnalysisToast } from './AnalysisToast';
 import { AdBanner } from './AdBanner';
 import type { CooldownNotice } from './model/types';
-import { TRENDLINE_DIRECTION_LABEL } from '@/shared/lib/trendline';
+import { TRENDLINE_DIRECTION_LABEL_KEY } from '@/shared/lib/trendline';
 import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/shared/config/time';
 import { DEFAULT_RESET_MS as COPY_RESET_MS } from '@/shared/hooks/useCopyToClipboard';
 import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
@@ -61,9 +60,9 @@ function formatCooldown(ms: number): string {
 }
 
 const ENTRY_RECOMMENDATION_LABEL: Record<EntryRecommendation, string> = {
-    enter: '지금 진입',
-    wait: '관망',
-    avoid: '진입 보류',
+    enter: 'entryRecommendation.enter',
+    wait: 'entryRecommendation.wait',
+    avoid: 'entryRecommendation.avoid',
 };
 
 const ENTRY_RECOMMENDATION_COLOR: Record<EntryRecommendation, string> = {
@@ -79,15 +78,16 @@ type ActionRecommendationTextKey =
     | 'riskReward';
 
 interface ActionRecommendationField {
-    label: string;
+    /** `widgets.analysis.sectionLabel` 기준 상대 키. */
+    labelKey: string;
     key: ActionRecommendationTextKey;
 }
 
 const ACTION_RECOMMENDATION_FIELDS: readonly ActionRecommendationField[] = [
-    { label: '현재 위치', key: 'positionAnalysis' },
-    { label: '진입 전략', key: 'entry' },
-    { label: '청산 전략', key: 'exit' },
-    { label: '리스크/리워드', key: 'riskReward' },
+    { labelKey: 'currentPosition', key: 'positionAnalysis' },
+    { labelKey: 'entryStrategy', key: 'entry' },
+    { labelKey: 'exitStrategy', key: 'exit' },
+    { labelKey: 'riskReward', key: 'riskReward' },
 ];
 
 interface ActionRecommendationSectionProps {
@@ -101,6 +101,8 @@ function ActionRecommendationSection({
     isChartVisible,
     onToggleChart,
 }: ActionRecommendationSectionProps) {
+    const tSection = useTranslations('widgets.analysis.sectionLabel');
+    const tLabel = useTranslations('shared.enumLabel');
     const t = useTranslations('widgets.analysis');
     return (
         <div className="flex flex-col gap-2 rounded-lg bg-secondary-700/30 p-3">
@@ -115,7 +117,9 @@ function ActionRecommendationSection({
                             ENTRY_RECOMMENDATION_COLOR[rec.entryRecommendation]
                         )}
                     >
-                        {ENTRY_RECOMMENDATION_LABEL[rec.entryRecommendation]}
+                        {tLabel(
+                            ENTRY_RECOMMENDATION_LABEL[rec.entryRecommendation]
+                        )}
                     </span>
                 </div>
             )}
@@ -143,13 +147,13 @@ function ActionRecommendationSection({
                 </button>
             </div>
             <div className="flex flex-col gap-2">
-                {ACTION_RECOMMENDATION_FIELDS.map(({ label, key }) => {
+                {ACTION_RECOMMENDATION_FIELDS.map(({ labelKey, key }) => {
                     const value = rec[key];
                     if (typeof value !== 'string' || value === '') return null;
                     return (
-                        <div key={label} className="flex flex-col gap-0.5">
+                        <div key={labelKey} className="flex flex-col gap-0.5">
                             <span className="text-xs font-medium text-secondary-400">
-                                {label}
+                                {tSection(labelKey)}
                             </span>
                             <MarkdownText className="text-sm text-secondary-300">
                                 {value}
@@ -237,14 +241,15 @@ const RISK_LEVEL_COLOR: Record<RiskLevel, string> = {
     high: 'text-chart-bearish',
 };
 
-const RISK_LEVEL_LABEL: Record<RiskLevel, string> = {
-    low: '낮음',
-    medium: '보통',
-    high: '높음',
+/** RiskLevel → `shared.enumLabel.riskLevel` 카탈로그 키. */
+const RISK_LEVEL_KEY: Record<RiskLevel, string> = {
+    low: 'riskLevel.low',
+    medium: 'riskLevel.medium',
+    high: 'riskLevel.high',
 };
 
 const SIGNAL_TYPE_LABEL: Record<AnalysisSignalType, string> = {
-    skill: '스킬',
+    skill: 'skill',
 };
 
 interface SignalItemProps {
@@ -253,13 +258,15 @@ interface SignalItemProps {
 }
 
 function SignalItem({ signal, typeLabel }: SignalItemProps) {
+    const tSection = useTranslations('widgets.analysis.sectionLabel');
+    const tStrength = useTranslations('widgets.analysis.signalStrength');
     const strengthDisplay = resolveStrengthDisplay(signal.strength);
 
     return (
         <div className="flex flex-col gap-1.5 rounded bg-secondary-700/40 px-3 py-2">
             <div className="flex items-center gap-2">
                 <span className="min-w-0 flex-1 truncate text-xs font-medium text-secondary-300">
-                    {typeLabel ?? SIGNAL_TYPE_LABEL[signal.type]}
+                    {typeLabel ?? tSection(SIGNAL_TYPE_LABEL[signal.type])}
                 </span>
                 <div className="flex w-36 shrink-0 items-center justify-end gap-1">
                     <TrendBadge trend={signal.trend} />
@@ -270,7 +277,7 @@ function SignalItem({ signal, typeLabel }: SignalItemProps) {
                                 strengthDisplay.color
                             )}
                         >
-                            {strengthDisplay.label}
+                            {tStrength(strengthDisplay.labelKey)}
                         </span>
                     )}
                 </div>
@@ -287,7 +294,8 @@ interface TrendBadgeProps {
 }
 
 function TrendBadge({ trend }: TrendBadgeProps) {
-    const display = resolveTrendDisplay(trend);
+    const tLabel = useTranslations('shared.enumLabel');
+    const display = resolveTrendDisplay(trend, tLabel);
     if (display === null) return null;
 
     return (
@@ -356,31 +364,25 @@ function ChevronIcon({ isOpen }: ChevronIconProps) {
 
 type ConfidenceLevel = 'high' | 'medium';
 
-const CONFIDENCE_BADGE_CONFIG: Record<
+// 색상만 모듈 상수로 남기고 문구는 `widgets.analysis.panel` 키로 옮겼다.
+const CONFIDENCE_BADGE_CLASS: Record<ConfidenceLevel, string> = {
+    high: 'text-chart-bullish bg-chart-bullish/10 border border-chart-bullish/30',
+    medium: 'text-ui-warning bg-ui-warning/10 border border-ui-warning/30',
+};
+
+const CONFIDENCE_BADGE_KEY: Record<
     ConfidenceLevel,
-    { className: string; label: string; tooltip: ReactNode }
+    { label: string; tip1: string; tip2: string }
 > = {
     high: {
-        className:
-            'text-chart-bullish bg-chart-bullish/10 border border-chart-bullish/30',
-        label: '높은 신뢰도',
-        tooltip: (
-            <>
-                <p>신뢰도가 높은 패턴이에요.</p>
-                <p>AI가 이 패턴을 분명하게 감지했다는 뜻이에요.</p>
-            </>
-        ),
+        label: 'confidenceHigh',
+        tip1: 'confidenceHighTip1',
+        tip2: 'confidenceHighTip2',
     },
     medium: {
-        className:
-            'text-ui-warning bg-ui-warning/10 border border-ui-warning/30',
-        label: '중간 신뢰도',
-        tooltip: (
-            <>
-                <p>신뢰도가 중간 정도인 패턴이에요.</p>
-                <p>단독으로 보기보다는 다른 지표와 함께 참고하는 게 좋아요.</p>
-            </>
-        ),
+        label: 'confidenceMedium',
+        tip1: 'confidenceMediumTip1',
+        tip2: 'confidenceMediumTip2',
     },
 };
 
@@ -389,21 +391,25 @@ interface ConfidenceBadgeProps {
 }
 
 function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
+    const tPanel = useTranslations('widgets.analysis.panel');
     const level: ConfidenceLevel =
         confidenceWeight >= HIGH_CONFIDENCE_WEIGHT ? 'high' : 'medium';
-    const { className, label, tooltip } = CONFIDENCE_BADGE_CONFIG[level];
+    const key = CONFIDENCE_BADGE_KEY[level];
 
     return (
         <span className="flex items-center">
             <span
                 className={cn(
                     'rounded px-1.5 py-0.5 text-xs font-medium',
-                    className
+                    CONFIDENCE_BADGE_CLASS[level]
                 )}
             >
-                {label}
+                {tPanel(key.label)}
             </span>
-            <InfoTooltip>{tooltip}</InfoTooltip>
+            <InfoTooltip>
+                <p>{tPanel(key.tip1)}</p>
+                <p>{tPanel(key.tip2)}</p>
+            </InfoTooltip>
         </span>
     );
 }
@@ -465,6 +471,7 @@ function PatternAccordionItem({
     pattern,
     showConfidence,
 }: PatternAccordionItemProps) {
+    const skillLabel = useSkillLabel();
     const t = useTranslations('widgets.analysis');
     const [isOpen, setIsOpen] = useState(false);
 
@@ -486,7 +493,7 @@ function PatternAccordionItem({
                     className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     <span className="min-w-0 flex-1 truncate text-xs font-medium text-secondary-300">
-                        {skillLabel(t, pattern.skillName)}
+                        {skillLabel(pattern.skillName)}
                     </span>
                     <TrendBadge trend={pattern.trend} />
                     <ChevronIcon isOpen={isOpen} />
@@ -572,7 +579,7 @@ function StrategyAccordionItem({
     strategy,
     showConfidence,
 }: StrategyAccordionItemProps) {
-    const t = useTranslations('widgets.analysis');
+    const skillLabel = useSkillLabel();
     const [isOpen, setIsOpen] = useState(false);
 
     const handleToggleOpen = (): void => {
@@ -591,7 +598,7 @@ function StrategyAccordionItem({
                     className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     <span className="min-w-0 flex-1 truncate text-xs font-medium text-secondary-300">
-                        {skillLabel(t, strategy.strategyName)}
+                        {skillLabel(strategy.strategyName)}
                     </span>
                     <TrendBadge trend={strategy.trend} />
                     <ChevronIcon isOpen={isOpen} />
@@ -633,7 +640,6 @@ const TRENDLINE_BG_COLOR: Record<TrendlineDirection, string> = {
 // 방향 enum이 미래에 확장돼 ascending|descending 밖의 값이 들어오면 Record
 // 조회는 undefined를 돌려준다. 라벨/색상에 fallback을 둬 undefined-class
 // 크래시 없이 중립 표시로 degrade한다.
-const TRENDLINE_FALLBACK_LABEL = '추세선';
 const TRENDLINE_FALLBACK_COLOR = 'text-secondary-400';
 const TRENDLINE_FALLBACK_BG = 'bg-secondary-500';
 
@@ -642,9 +648,10 @@ interface TrendlineItemProps {
 }
 
 function TrendlineItem({ trendline }: TrendlineItemProps) {
-    const label =
-        TRENDLINE_DIRECTION_LABEL[trendline.direction] ??
-        TRENDLINE_FALLBACK_LABEL;
+    const tTrendline = useTranslations('shared.lib.trendline');
+    const label = tTrendline(
+        TRENDLINE_DIRECTION_LABEL_KEY[trendline.direction] ?? 'fallback'
+    );
     const colorClass =
         TRENDLINE_COLOR[trendline.direction] ?? TRENDLINE_FALLBACK_COLOR;
     const bgClass =
@@ -714,10 +721,15 @@ function PriceScenarioSection({
     );
 }
 
-function getReanalyzeLabel(isAnalyzing: boolean, cooldownMs: number): string {
-    if (isAnalyzing) return '분석 중…';
-    if (cooldownMs > 0) return `재분석 가능까지 ${formatCooldown(cooldownMs)}`;
-    return '재분석';
+function getReanalyzeLabel(
+    isAnalyzing: boolean,
+    cooldownMs: number,
+    tPanel: (key: string, values?: Record<string, string>) => string
+): string {
+    if (isAnalyzing) return tPanel('analyzing');
+    if (cooldownMs > 0)
+        return tPanel('reanalyzeCooldown', { v0: formatCooldown(cooldownMs) });
+    return tPanel('reanalyze');
 }
 
 interface ReanalyzeButtonProps {
@@ -734,7 +746,8 @@ function ReanalyzeButton({
     const t = useTranslations('widgets.analysis');
     const isCoolingDown = reanalyzeCooldownMs > 0;
     const isDisabled = isAnalyzing || isCoolingDown;
-    const label = getReanalyzeLabel(isAnalyzing, reanalyzeCooldownMs);
+    const tPanel = useTranslations('widgets.analysis.panel');
+    const label = getReanalyzeLabel(isAnalyzing, reanalyzeCooldownMs, tPanel);
     return (
         <button
             type="button"
@@ -821,7 +834,15 @@ export function AnalysisPanel({
     skillCount = 0,
     isPersonalized = false,
 }: AnalysisPanelProps) {
+    const tReport = useTranslations('widgets.analysis.expertReport');
+    const tPanel = useTranslations('widgets.analysis.panel');
+    const skillLabel = useSkillLabel();
     const t = useTranslations('widgets.analysis');
+    const tLabel = useTranslations('shared.enumLabel');
+    // 폴백 판정의 sentinel — `buildFallbackAnalysis`와 같은 문구여야 한다.
+    const fallbackSummary = useTranslations('entities.chat-message.fallback')(
+        'unavailable'
+    );
     const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
         'idle'
     );
@@ -849,7 +870,7 @@ export function AnalysisPanel({
     // 배제한다 — 서사가 없는 placeholder 응답에 "내 평단 기준으로 분석했어요"라고
     // 말하는 건 오해를 준다(TrendBadge·summary와 동일한 신호로 가드).
     const showPersonalizedBadge =
-        isPersonalized && !isFallbackAnalysis(analysis);
+        isPersonalized && !isFallbackAnalysis(analysis, fallbackSummary);
     const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const resetCopyStateLater = (): void => {
@@ -878,9 +899,18 @@ export function AnalysisPanel({
 
         try {
             const report = buildExpertAnalysisReport({
+                tReport,
                 symbol,
                 analysis,
                 keyLevels,
+                // extract.mjs의 동적 키 탐지는 "이 파일 안에서 번역자를 직접
+                // 호출하는 패턴"만 본다 — `tLabel`을 그대로 넘기면(참조 전달)
+                // 호출부가 다른 파일(buildExpertAnalysisReport.ts)이라 감지되지
+                // 않아 `shared.enumLabel`이 이 라우트의 클라이언트 번들에서
+                // 빠진다. 얇은 위임 클로저로 `tLabel(...)` 호출을 이 파일
+                // 안에 남긴다(sentimentDisplay.ts의 SENTIMENT_LABEL_KEY export
+                // 주석 참고 — 동일한 문제·동일한 해법).
+                t: (key, values) => tLabel(key, values),
             });
             await navigator.clipboard.writeText(report);
             setCopyState('copied');
@@ -997,7 +1027,7 @@ export function AnalysisPanel({
                         placeholder처럼 서사가 없는 응답은 normalizeAnalysisResponse가
                         trend를 'neutral'로 채워 넣은 fabricated 값이므로, 그 경우엔
                         배지를 아예 숨겨 가짜 신호를 노출하지 않는다. */}
-                    {!isFallbackAnalysis(analysis) && (
+                    {!isFallbackAnalysis(analysis, fallbackSummary) && (
                         <TrendBadge trend={analysis.trend} />
                     )}
                 </div>
@@ -1057,7 +1087,7 @@ export function AnalysisPanel({
                                     RISK_LEVEL_COLOR[analysis.riskLevel]
                                 )}
                             >
-                                {RISK_LEVEL_LABEL[analysis.riskLevel]}
+                                {tLabel(RISK_LEVEL_KEY[analysis.riskLevel])}
                             </span>
                         </div>
                     )}
@@ -1099,7 +1129,7 @@ export function AnalysisPanel({
                 // 문자열로 채워 넣으므로 그 fabricated 빈 값을 렌더하지 않는다.
                 // free 사용자의 진짜 summary는 direction과 함께 허용된 필드이므로
                 // 그대로 보여준다.
-                !isFallbackAnalysis(analysis) && (
+                !isFallbackAnalysis(analysis, fallbackSummary) && (
                     <MarkdownText className="text-sm text-secondary-300">
                         {analysis.summary}
                     </MarkdownText>
@@ -1274,7 +1304,6 @@ export function AnalysisPanel({
                                                     key={`${indicatorResult.indicatorName}-${signal.type}-${index}`}
                                                     signal={signal}
                                                     typeLabel={skillLabel(
-                                                        t,
                                                         indicatorResult.indicatorName
                                                     )}
                                                 />
@@ -1334,7 +1363,9 @@ export function AnalysisPanel({
                                 </p>
                                 <p className="text-xs leading-relaxed text-balance text-secondary-300">
                                     {skillCount > 0
-                                        ? `회원가입하면 ${skillCount}개 스킬을 모두 적용한 상세 분석을 받아볼 수 있어요.`
+                                        ? tPanel('signupSkillUpsell', {
+                                              v0: skillCount,
+                                          })
                                         : t('AnalysisPanel.f0256c')}
                                 </p>
                                 <p className="text-xs leading-relaxed text-secondary-400">

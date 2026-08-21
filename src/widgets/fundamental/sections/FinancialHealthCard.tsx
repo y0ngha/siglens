@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import type { ReactNode } from 'react';
 import type {
     FundamentalRatiosInput,
@@ -9,6 +10,7 @@ import { EmptySectionCard } from './EmptySectionCard';
 import { cn } from '@/shared/lib/cn';
 import { formatCompactCurrency } from '@/shared/lib/priceFormat';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 
 const HEADING_ID = 'health-heading';
 const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
@@ -78,18 +80,35 @@ function HealthMetric({
     );
 }
 
-function altmanBadge(z: number | null): HealthMetricProps['badge'] {
+/**
+ * Altman Z-Score 구간 → 배지. `financialHealthZone.*` 카탈로그 키를 쓴다
+ * (신규 그룹 — 값 자체가 riskLevel/기존 그룹 어디와도 겹치지 않는다).
+ */
+function altmanBadge(
+    z: number | null,
+    t: EnumLabelTranslator
+): HealthMetricProps['badge'] {
     if (z === null) return undefined;
-    if (z > 2.99) return { text: '안전', variant: 'good' };
-    if (z > 1.81) return { text: '경계', variant: 'warn' };
-    return { text: '위험', variant: 'bad' };
+    if (z > 2.99)
+        return { text: t('financialHealthZone.safe'), variant: 'good' };
+    if (z > 1.81)
+        return { text: t('financialHealthZone.caution'), variant: 'warn' };
+    return { text: t('financialHealthZone.danger'), variant: 'bad' };
 }
 
-function piotroskiBadge(p: number | null): HealthMetricProps['badge'] {
+/**
+ * Piotroski F-Score 구간 → 배지. 중간 구간("보통")은 `riskLevel.medium`을
+ * 재사용한다 — 값이 이미 riskLevel 그룹과 같아 새 키를 또 만들지 않는다.
+ */
+function piotroskiBadge(
+    p: number | null,
+    t: EnumLabelTranslator
+): HealthMetricProps['badge'] {
     if (p === null) return undefined;
-    if (p >= 8) return { text: '강함', variant: 'good' };
-    if (p >= 5) return { text: '보통', variant: 'neutral' };
-    return { text: '약함', variant: 'bad' };
+    if (p >= 8)
+        return { text: t('financialHealthZone.strong'), variant: 'good' };
+    if (p >= 5) return { text: t('riskLevel.medium'), variant: 'neutral' };
+    return { text: t('financialHealthZone.weak'), variant: 'bad' };
 }
 
 export function FinancialHealthCard({
@@ -99,6 +118,8 @@ export function FinancialHealthCard({
     cashFlow,
 }: FinancialHealthCardProps) {
     const t = useTranslations('widgets.fundamental');
+    const locale = useResolvedLocale();
+    const tLabel = useTranslations('shared.enumLabel');
     if (ratios === null && scores === null && cashFlow === null) {
         return (
             <EmptySectionCard
@@ -111,7 +132,7 @@ export function FinancialHealthCard({
 
     const ocf = cashFlow?.operatingCashFlow ?? null;
     const formattedOcf =
-        ocf !== null ? formatCompactCurrency(ocf, symbol) : '—';
+        ocf !== null ? formatCompactCurrency(ocf, symbol, locale) : '—';
 
     return (
         <section
@@ -177,7 +198,7 @@ export function FinancialHealthCard({
                             : '—'
                     }
                     hint={t('FinancialHealthCard.869609')}
-                    badge={altmanBadge(scores?.altmanZScore ?? null)}
+                    badge={altmanBadge(scores?.altmanZScore ?? null, tLabel)}
                     tooltip={
                         <>
                             <p>{t('FinancialHealthCard.fee63b')}</p>
@@ -195,7 +216,10 @@ export function FinancialHealthCard({
                             : '—'
                     }
                     hint={t('FinancialHealthCard.e5bd4a')}
-                    badge={piotroskiBadge(scores?.piotroskiScore ?? null)}
+                    badge={piotroskiBadge(
+                        scores?.piotroskiScore ?? null,
+                        tLabel
+                    )}
                     tooltip={
                         <>
                             <p>{t('FinancialHealthCard.d8fb76')}</p>

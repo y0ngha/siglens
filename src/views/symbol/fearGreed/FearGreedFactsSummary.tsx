@@ -7,9 +7,9 @@ import {
     type BuySellVolumeResult,
 } from '@y0ngha/siglens-core';
 import {
-    SENTIMENT_LABEL_TEXT,
-    WARNING_TEXT,
-    formatConfidenceFooter,
+    SENTIMENT_LABEL_KEY,
+    WARNING_TEXT_KEY,
+    confidenceLabelKey,
 } from '@/shared/lib/fearGreedLabels';
 import {
     buildFearGreedFactorLines,
@@ -41,18 +41,35 @@ export function FearGreedFactsSummary({
     buySellVolume,
 }: FearGreedFactsSummaryProps) {
     const t = useTranslations('views.symbol');
+    // extract.mjs의 동적 키 탐지는 "이 파일 안에서 번역자를 직접 호출하는
+    // 패턴"만 본다 — `SENTIMENT_LABEL_KEY[...]`를 그대로 `tLabel(...)`에
+    // 넣어야 `shared.enumLabel`이 이 라우트의 클라이언트 번들에 실린다
+    // (fearGreedLabels.ts의 SENTIMENT_LABEL_KEY export 주석 참고). 아래
+    // `buildFearGreedPeriodComparisonLine(points, tLabel)` 등 인자 전달 호출도
+    // 이 위젯 범위 안이라 이 직접 호출 하나로 파일 전체가 넓혀진다.
+    const tLabel = useTranslations('shared.enumLabel');
+    const tFacts = useTranslations('views.symbol.fearGreedFacts');
+    const tFactor = useTranslations('shared.lib.fearGreedFactor');
+    const tFearGreed = useTranslations('shared.lib.fearGreed');
     const headingId = useId();
     const snapshot = computeFearGreedIndex(bars, buySellVolume);
     if (!snapshot) return null;
 
     const score = Math.round(snapshot.score);
-    const factorLines = buildFearGreedFactorLines(snapshot);
+    const factorLines = buildFearGreedFactorLines(snapshot, tFacts, tFactor);
     // audit fix FIX 6 (option b): genuinely per-symbol narrative sentences
     // built from group scores / factor ranking (numbers that already exist
     // in `snapshot` but were unused) — materially improves the
     // unique:boilerplate ratio over the fixed-template factor lines alone.
-    const groupComparisonLine = buildFearGreedGroupComparisonLine(snapshot);
-    const factorRankingLine = buildFearGreedFactorRankingLine(snapshot);
+    const groupComparisonLine = buildFearGreedGroupComparisonLine(
+        snapshot,
+        tFacts
+    );
+    const factorRankingLine = buildFearGreedFactorRankingLine(
+        snapshot,
+        tFacts,
+        tFactor
+    );
 
     // 시계열 문장 3종. `useFearGreed`가 **매 클라이언트 로드마다** 이미 부르는 계산이라,
     // ISR 재생성(24h)당 한 번 서버에서 도는 건 총량으로는 오히려 싸다. 새 fetch도,
@@ -77,9 +94,9 @@ export function FearGreedFactsSummary({
 
     const points = scoredHistory(computeFearGreedHistory(bars, buySellVolume));
     const timeSeriesLines = [
-        buildFearGreedPeriodComparisonLine(points),
-        buildFearGreedYearRangeLine(points),
-        buildFearGreedRegimeDistributionLine(points),
+        buildFearGreedPeriodComparisonLine(points, tLabel, tFacts),
+        buildFearGreedYearRangeLine(points, tFacts),
+        buildFearGreedRegimeDistributionLine(points, tLabel, tFacts),
     ].filter((line): line is string => line !== null);
 
     return (
@@ -106,7 +123,8 @@ export function FearGreedFactsSummary({
                         {t('FearGreedFactsSummary.fa167e')}
                     </dt>
                     <dd>
-                        {score} / 100 ({SENTIMENT_LABEL_TEXT[snapshot.label]})
+                        {score} / 100 (
+                        {tLabel(SENTIMENT_LABEL_KEY[snapshot.label])})
                     </dd>
                 </div>
             </dl>
@@ -115,7 +133,7 @@ export function FearGreedFactsSummary({
                     <p key={line}>{line}</p>
                 ))}
                 {snapshot.warning !== null && (
-                    <p>{WARNING_TEXT[snapshot.warning]}</p>
+                    <p>{tFearGreed(WARNING_TEXT_KEY[snapshot.warning])}</p>
                 )}
                 {groupComparisonLine !== null && <p>{groupComparisonLine}</p>}
                 {factorRankingLine !== null && <p>{factorRankingLine}</p>}
@@ -124,10 +142,10 @@ export function FearGreedFactsSummary({
                 ))}
             </div>
             <p className="text-xs text-secondary-400">
-                {formatConfidenceFooter(
-                    snapshot.sampleSize,
-                    snapshot.confidence
-                )}
+                {tFearGreed('confidenceFooter', {
+                    v0: snapshot.sampleSize,
+                    v1: tFearGreed(confidenceLabelKey(snapshot.confidence)),
+                })}
             </p>
         </section>
     );

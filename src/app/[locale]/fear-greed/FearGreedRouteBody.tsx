@@ -1,20 +1,28 @@
 import { useTranslations } from 'next-intl';
+import { useMarketFactorLabels } from '@/shared/lib/useMarketFactorLabels';
+import type { Locale } from '@/shared/i18n/locales';
 import { MARKET_FEAR_GREED_FACTOR_KEYS } from '@y0ngha/siglens-core';
 import { MarketFearGreedPage } from '@/widgets/market-fear-greed';
 import type { MarketFearGreedView } from '@/entities/market-fear-greed';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import {
-    MARKET_FACTOR_DESCRIPTION,
-    MARKET_FACTOR_LABEL,
-    type FearGreedMarketId,
-} from '@/shared/lib/marketFearGreedLabels';
-import { FEAR_GREED_BANDS, FEAR_GREED_COPY } from './copy';
+    buildBreadcrumbJsonLd,
+    buildWebPageJsonLd,
+    SITE_NAME,
+    SITE_URL,
+} from '@/shared/lib/seo';
+import { type FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
+import { FEAR_GREED_BANDS, fearGreedCopyFor } from './copy';
 
 interface FearGreedRouteBodyProps {
     readonly market: FearGreedMarketId;
     readonly view: MarketFearGreedView;
+    /**
+     * 훅이 아니라 prop으로 받는다 — 테스트가 이 컴포넌트를 함수로 직접
+     * 호출하고 그 자리에는 React 컨텍스트가 없어 `useLocale()`이 던진다.
+     */
+    readonly locale: Locale;
 }
 
 /**
@@ -27,11 +35,17 @@ interface FearGreedRouteBodyProps {
  *
  * 서버 컴포넌트 — 활성 지역은 라우트가 알고 있으므로 `usePathname`이 필요 없다.
  */
-export function FearGreedRouteBody({ market, view }: FearGreedRouteBodyProps) {
+export function FearGreedRouteBody({
+    market,
+    view,
+    locale,
+}: FearGreedRouteBodyProps) {
     const t = useTranslations('app.fear-greed');
-    const copy = FEAR_GREED_COPY[market];
-    const factorLabel = MARKET_FACTOR_LABEL[market];
-    const factorDescription = MARKET_FACTOR_DESCRIPTION[market];
+    const tSeo = useTranslations('shared.seo');
+    const tLabel = useTranslations('shared.enumLabel');
+    const copy = fearGreedCopyFor(market, tSeo);
+    const { label: factorLabel, description: factorDescription } =
+        useMarketFactorLabels(market);
     const url = `${SITE_URL}${copy.path}`;
     /*
      * 표본이 부족하면 이 페이지는 설명문만 남고 판독값이 없다. 그 상태에서
@@ -45,22 +59,21 @@ export function FearGreedRouteBody({ market, view }: FearGreedRouteBodyProps) {
     const degraded = view.snapshot === null;
 
     const webPageJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'WebPage',
-        '@id': `${url}#webpage`,
-        name: `${copy.title} | ${SITE_NAME}`,
-        description: copy.description,
-        url,
-        inLanguage: 'ko',
-        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
+        ...buildWebPageJsonLd({
+            url,
+            name: `${copy.title} | ${SITE_NAME}`,
+            description: copy.description,
+            locale,
+        }),
         // snapshot이 있을 때만 실제 세션 날짜를 노출한다 — 표본 부족(snapshot: null)
         // 상태에서는 가짜 날짜를 지어내지 않고 필드 자체를 생략한다.
         ...(view.snapshot ? { dateModified: view.snapshot.asOf } : {}),
     };
 
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: copy.heading, url },
-    ]);
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd(
+        [{ name: copy.heading, url }],
+        locale
+    );
 
     const faqJsonLd = {
         '@context': 'https://schema.org',
@@ -112,11 +125,11 @@ export function FearGreedRouteBody({ market, view }: FearGreedRouteBodyProps) {
                     </h2>
                     <ul className="space-y-1 text-sm leading-relaxed text-secondary-400">
                         {FEAR_GREED_BANDS.map(band => (
-                            <li key={band.label}>
+                            <li key={band.labelKey}>
                                 {band.min}~
                                 {t('FearGreedRouteBody.b35c3b', {
                                     v0: band.max,
-                                    v1: band.label,
+                                    v1: tLabel(band.labelKey),
                                 })}
                             </li>
                         ))}
@@ -124,7 +137,7 @@ export function FearGreedRouteBody({ market, view }: FearGreedRouteBodyProps) {
                     <ul className="space-y-1 text-sm leading-relaxed text-secondary-400">
                         {MARKET_FEAR_GREED_FACTOR_KEYS.map(key => (
                             <li key={key}>
-                                {factorLabel[key]} — {factorDescription[key]}
+                                {factorLabel(key)} — {factorDescription(key)}
                             </li>
                         ))}
                     </ul>

@@ -90,9 +90,12 @@ describe('/market/kr page', () => {
         spy.mockRestore();
     });
 
-    it('names the KR market in the breadcrumb', () => {
+    it('names the KR market in the breadcrumb', async () => {
         // breadcrumb 이름은 SERP에 실제로 출력되는 문자열이다.
-        const tree = MarketRouteBody({ scope: KR_DASHBOARD_SCOPE });
+        const tree = await MarketRouteBody({
+            locale: 'ko',
+            scope: KR_DASHBOARD_SCOPE,
+        });
         const json = JSON.stringify(tree);
         expect(json).toContain('한국 시장 현황');
         expect(json).not.toContain('미국 시장 현황');

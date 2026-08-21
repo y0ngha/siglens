@@ -15,6 +15,7 @@ import {
 } from '@/features/auth-email-verification';
 import { useSignupForm } from '../hooks/useSignupForm';
 import { AuthErrorAlert } from '@/shared/ui/auth/AuthErrorAlert';
+import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
 import { AuthFieldGroup } from '@/shared/ui/auth/AuthFieldGroup';
 import { ConsentCheckboxGroup } from '@/shared/ui/auth/ConsentCheckboxGroup';
 import { PasswordField } from '@/shared/ui/auth/PasswordField';
@@ -27,10 +28,11 @@ interface SignupFormProps {
 
 type Phase = 'email' | 'code' | 'details';
 
-const STEP_LABEL: Record<Phase, string> = {
-    email: '1단계: 이메일 인증 요청',
-    code: '2단계: 인증 코드 확인',
-    details: '3단계: 비밀번호 및 표시 이름 설정',
+/** 단계 제목은 카탈로그 키로 들고 있다 — 문자열이면 `/en/signup`에서 여기만 한국어다. */
+const STEP_LABEL_KEY: Record<Phase, string> = {
+    email: 'SignupForm.stepEmail',
+    code: 'SignupForm.stepCode',
+    details: 'SignupForm.stepDetails',
 };
 
 function derivePhase(submitted: boolean, verified: boolean): Phase {
@@ -44,12 +46,13 @@ interface StepIndicatorProps {
 }
 
 function StepIndicator({ phase }: StepIndicatorProps) {
+    const t = useTranslations('features.auth-signup');
     return (
         <p
             aria-live="polite"
             className="mb-4 text-xs font-medium tracking-wider text-secondary-400 uppercase"
         >
-            {STEP_LABEL[phase]}
+            {t(STEP_LABEL_KEY[phase])}
         </p>
     );
 }
@@ -107,6 +110,7 @@ interface SignupFormFlowProps extends SignupFormProps {
 
 function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
     const t = useTranslations('features.auth-signup');
+    const tAuth = useTranslations('entities.auth');
     const [email, setEmail] = useState('');
     const [name, setName] = useState('');
     const [password, setPassword] = useState('');
@@ -134,19 +138,33 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
     }, [onRestart]);
 
     const signupError = signupState.error;
+    /**
+     * 에러 **코드**로 문구를 만든다.
+     *
+     * use-case가 함께 돌려주는 `message`는 로그·폴백용 한국어 원문이라 화면에
+     * 그대로 쓰면 `/en/signup`이 영어 폼 위에 한국어 오류를 띄운다 — 실제로
+     * 그렇게 나가고 있었다. 코드가 표에 없을 때만 원문으로 떨어진다.
+     */
+    const describe = (
+        error: { code?: string; message: string } | null | undefined
+    ): string | undefined => {
+        if (!error) return undefined;
+        const key = error.code ? AUTH_ERROR_KEY[error.code] : undefined;
+        return key ? tAuth(key) : error.message;
+    };
     const signupEmailError =
-        signupError?.field === 'email' ? signupError.message : undefined;
+        signupError?.field === 'email' ? describe(signupError) : undefined;
     const signupPasswordError =
-        signupError?.field === 'password' ? signupError.message : undefined;
+        signupError?.field === 'password' ? describe(signupError) : undefined;
     const consentErrorMessage =
         signupError?.code === 'consent_required'
-            ? signupError.message
+            ? describe(signupError)
             : undefined;
     const signupFormError =
         signupError &&
         !signupError.field &&
         signupError.code !== 'consent_required'
-            ? signupError.message
+            ? describe(signupError)
             : null;
 
     return (
@@ -155,7 +173,9 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
             {phase === 'email' && (
                 <form action={emailFormAction} className="space-y-4" noValidate>
                     {emailState.error ? (
-                        <AuthErrorAlert message={emailState.error.message} />
+                        <AuthErrorAlert
+                            message={describe(emailState.error) ?? ''}
+                        />
                     ) : null}
                     <AuthFieldGroup
                         id="signup-email"
@@ -189,7 +209,9 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                     </p>
                     {codeState.error?.code === 'redis_unavailable' ||
                     codeState.error?.code === 'email_already_exists' ? (
-                        <AuthErrorAlert message={codeState.error.message} />
+                        <AuthErrorAlert
+                            message={describe(codeState.error) ?? ''}
+                        />
                     ) : null}
                     <AuthFieldGroup
                         id="signup-code"
@@ -202,7 +224,7 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                         error={
                             codeState.error?.code !== 'redis_unavailable' &&
                             codeState.error?.code !== 'email_already_exists'
-                                ? codeState.error?.message
+                                ? describe(codeState.error)
                                 : undefined
                         }
                     />

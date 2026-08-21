@@ -30,6 +30,7 @@ export {
 
 export {
     buildDisplayName,
+    pickAssetName,
     deduplicateResults,
     isKoreanInput,
     shouldShowEnglishName,

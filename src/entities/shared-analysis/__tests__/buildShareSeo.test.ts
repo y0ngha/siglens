@@ -1,6 +1,25 @@
 import { buildShareMetadata } from '../lib/buildShareSeo';
 import type { SharedAnalysisLookup, SharedAnalysisSnapshot } from '../types';
 
+import koMessages from '@/../messages/ko.json';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+
+const tOg = catalogTranslator('entities.shared-analysis.og', 'ko');
+
+/** 실제 ko 카탈로그를 읽는 번역자 — 스텁이면 키 누락이 조용히 통과한다. */
+const tSeo = (key: string, values?: Record<string, string | number>) => {
+    const table = koMessages.entities['shared-analysis'].seo as Record<
+        string,
+        string
+    >;
+    const raw = table[key];
+    if (raw === undefined) return key;
+    return Object.entries(values ?? {}).reduce(
+        (acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)),
+        raw
+    );
+};
+
 vi.mock('../server/buildOgText', () => ({
     buildOgText: vi.fn(() => ({
         description: '강세 · 상승 추세',
@@ -29,7 +48,7 @@ function foundLookup(
 
 describe('buildShareMetadata', () => {
     describe('found state', () => {
-        const meta = buildShareMetadata(foundLookup());
+        const meta = buildShareMetadata(foundLookup(), tSeo, 'ko', tOg);
 
         it('title contains ticker + "AI 분석 결과"', () => {
             expect(meta.title).toBe('AAPL AI 분석 결과');
@@ -78,7 +97,7 @@ describe('buildShareMetadata', () => {
     });
 
     describe('expired state', () => {
-        const meta = buildShareMetadata({ status: 'expired' });
+        const meta = buildShareMetadata({ status: 'expired' }, tSeo, 'ko', tOg);
 
         it('[C-8] robots.index === false', () => {
             expect((meta.robots as { index?: boolean })?.index).toBe(false);
@@ -90,7 +109,12 @@ describe('buildShareMetadata', () => {
     });
 
     describe('not_found state', () => {
-        const meta = buildShareMetadata({ status: 'not_found' });
+        const meta = buildShareMetadata(
+            { status: 'not_found' },
+            tSeo,
+            'ko',
+            tOg
+        );
 
         it('[C-8] robots.index === false', () => {
             expect((meta.robots as { index?: boolean })?.index).toBe(false);

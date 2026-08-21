@@ -175,7 +175,8 @@ describe('OverallContent 사용자 분석 플로우 (userEvent)', () => {
             .mockResolvedValueOnce({
                 status: 'error',
                 axis: 'technical',
-                error: '일시적 오류',
+                // core가 실제로 주는 값은 영어 예외 문자열이다.
+                error: 'Profile not found for symbol: AAPL',
             })
             .mockResolvedValueOnce({
                 status: 'cached',
@@ -189,7 +190,7 @@ describe('OverallContent 사용자 분석 플로우 (userEvent)', () => {
         );
 
         expect(
-            await screen.findByText(/일시적 오류 \(technical 축 실패\)/)
+            await screen.findByText(/technical 축 실패/)
         ).toBeInTheDocument();
         const retry = screen.getByRole('button', { name: '다시 시도' });
         await user.click(retry);

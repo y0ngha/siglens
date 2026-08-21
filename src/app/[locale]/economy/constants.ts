@@ -1,9 +1,15 @@
-/**
- * ECONOMY_TITLE — page.tsx hero h1, metadata title, OG/Twitter title의 단일 source.
- */
-export const ECONOMY_TITLE = '미국 경제 — 지표·캘린더 한눈에';
+import type { SeoTranslator } from '@/shared/lib/seo';
 
 /**
- * KR_ECONOMY_TITLE — `/economy/kr`의 hero h1, metadata title, OG/Twitter title의 단일 source.
+ * economyTitle — page.tsx hero h1, metadata title, OG/Twitter title의 단일 source.
  */
-export const KR_ECONOMY_TITLE = '한국 경제 — 지표·캘린더 한눈에';
+export function economyTitle(t: SeoTranslator): string {
+    return t('economy.us.title');
+}
+
+/**
+ * economyKrTitle — `/economy/kr`의 hero h1, metadata title, OG/Twitter title의 단일 source.
+ */
+export function economyKrTitle(t: SeoTranslator): string {
+    return t('economy.kr.title');
+}

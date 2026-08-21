@@ -34,16 +34,17 @@ interface NewsSnapshotProseProps {
     generatedAt?: Date;
 }
 
-const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
-    bullish: '긍정',
-    neutral: '중립',
-    bearish: '부정',
+/** NewsSentiment → `shared.enumLabel` 카탈로그 키. 값 자체는 더 이상 한글이 아니다 — 렌더 시점에 `tLabel`로 조회한다. */
+const SENTIMENT_LABEL_KEY: Record<NewsSentiment, string> = {
+    bullish: 'sentiment.bullish',
+    neutral: 'sentiment.neutral',
+    bearish: 'sentiment.bearish',
 };
 
 // See createEnumGuard's JSDoc for the Object.hasOwn / prototype-chain
 // rationale (audit fix; PR #698 round-2 review FIX 3 extracted the shared
 // implementation).
-const isSentiment = createEnumGuard(SENTIMENT_LABEL);
+const isSentiment = createEnumGuard(SENTIMENT_LABEL_KEY);
 
 interface NarrowedNewsContent {
     currentDriverKo: string;
@@ -118,6 +119,7 @@ export function NewsSnapshotProse({
     generatedAt,
 }: NewsSnapshotProseProps) {
     const t = useTranslations('views.symbol');
+    const tLabel = useTranslations('shared.enumLabel');
     const narrowed = narrowNewsContent(content);
     if (narrowed === null) return null;
 
@@ -138,7 +140,9 @@ export function NewsSnapshotProse({
                     <p className="font-medium text-secondary-200">
                         {t('NewsSnapshotProse.0e9c3d', {
                             v0: symbol,
-                            v1: SENTIMENT_LABEL[narrowed.overallSentiment],
+                            v1: tLabel(
+                                SENTIMENT_LABEL_KEY[narrowed.overallSentiment]
+                            ),
                         })}
                     </p>
                 )}

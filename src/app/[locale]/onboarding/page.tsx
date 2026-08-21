@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import { localeCanonical } from '@/shared/lib/seoAlternates';
+import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { OnboardingContent } from '@/features/portfolio-onboarding';
 import {
     DEFAULT_LOCALE,
@@ -7,9 +7,8 @@ import {
     localePath,
     type Locale,
 } from '@/shared/i18n/locales';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { SITE_NAME } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
@@ -29,11 +28,20 @@ export async function generateMetadata({
 }): Promise<Metadata> {
     const { locale } = await params;
     const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({
+        locale: resolved,
+        namespace: 'shared.seo',
+    });
+    const title = tSeo('onboarding.title');
+    const description = tSeo('onboarding.description');
     return {
-        title: '보유종목 등록',
-        description: `${SITE_NAME} 가입 후 보유종목 등록 온보딩 페이지`,
+        title,
+        description,
         alternates: { canonical: localeCanonical(resolved, '/onboarding') },
-        openGraph: { url: localeCanonical(resolved, '/onboarding') },
+        ...localePageSocial(resolved, '/onboarding', {
+            title,
+            description,
+        }),
         robots: { index: false, follow: false },
     };
 }

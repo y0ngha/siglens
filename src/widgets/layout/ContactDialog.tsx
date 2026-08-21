@@ -14,10 +14,13 @@ interface ContactDialogProps {
 }
 
 export function ContactDialog({
-    triggerLabel = '문의하기',
+    triggerLabel,
     triggerClassName,
 }: ContactDialogProps) {
     const t = useTranslations('widgets.layout');
+    // 기본값을 파라미터 자리에 둘 수 없다 — 컴포넌트 본문 밖이라 훅이 아직 없다.
+    const tMisc = useTranslations('shared.ui.misc');
+    const resolvedTriggerLabel = triggerLabel ?? tMisc('contact');
     const { isOpen, open, close, dialogRef, triggerRef } = useDialog();
 
     return (
@@ -28,7 +31,7 @@ export function ContactDialog({
                 onClick={open}
                 className={cn(TRIGGER_BASE_CLASS, triggerClassName)}
             >
-                {triggerLabel}
+                {resolvedTriggerLabel}
             </button>
 
             {/* 네이티브 모달: 포커스 트랩·Esc·비활성 배경이 브라우저 기본 동작이고,

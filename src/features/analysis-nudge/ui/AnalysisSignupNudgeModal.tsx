@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
-import { REASONING_FEATURE_LABEL } from '@/features/reasoning-toggle';
+import { REASONING_FEATURE_LABEL_KEY } from '@/features/reasoning-toggle';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useEffect, useRef } from 'react';
 
@@ -23,6 +23,7 @@ export function AnalysisSignupNudgeModal({
     onClose,
 }: AnalysisSignupNudgeModalProps) {
     const t = useTranslations('features.analysis-nudge');
+    const tA11y = useTranslations('features.reasoning-toggle.a11y');
     const panelRef = useRef<HTMLDivElement>(null);
 
     useFocusTrap(panelRef, true);
@@ -78,7 +79,7 @@ export function AnalysisSignupNudgeModal({
                             (분석 ends in 석). Revisit the particle (을/를) if the
                             label ever changes to a vowel-final word. */}
                         {t('AnalysisSignupNudgeModal.486011', {
-                            v0: REASONING_FEATURE_LABEL,
+                            v0: tA11y(REASONING_FEATURE_LABEL_KEY),
                         })}
                     </p>
                 </div>

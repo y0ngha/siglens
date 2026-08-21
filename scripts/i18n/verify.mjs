@@ -27,8 +27,14 @@ const HAN = /[一-鿿]/;
 /** ICU 플레이스홀더: `{name}`, `{count, plural, ...}`의 선행 이름. */
 const PLACEHOLDER = /\{\s*([A-Za-z0-9_]+)/g;
 
-/** 번역 품질과 무관하게 원문을 그대로 유지해야 하는 값. */
-const PASSTHROUGH = /^[\s\p{P}\p{S}\p{N}]*$/u;
+/**
+ * 번역 품질과 무관하게 원문을 그대로 유지해야 하는 값.
+ *
+ * 기호·숫자만인 값에 더해, **전부 대문자인 짧은 약어**(`GDP`·`RSI`·`ETF`)도
+ * 포함한다 — 네 언어가 같은 표기를 쓰므로 "일본어인데 가나·한자가 없다"는
+ * 스크립트 검사가 오탐을 낸다.
+ */
+const PASSTHROUGH = /^(?:[\s\p{P}\p{S}\p{N}]*|[A-Z0-9]{2,6})$/u;
 
 const failures = [];
 function fail(gate, detail) {
@@ -74,8 +80,98 @@ function containsTerm(text, expected) {
     return needle.endsWith('s') && haystack.includes(needle.slice(0, -1));
 }
 
+/**
+ * ICU `plural`/`select` 블록을 **중괄호 균형**으로 찾는다.
+ *
+ * 정규식(`[\s\S]*?\}\s*\}`)으로는 못 한다 — 게으른 매칭이 **마지막 분기의
+ * 닫는 중괄호를 블록 종료로 먹어치운다.** 그러면 그 분기 내용이 스캔에서 통째로
+ * 사라져 두 검사가 동시에 뚫린다(실측):
+ *  - 길이: 마지막 분기에 1,026자를 넣어도 렌더 길이가 74자로 계산돼 통과
+ *  - 플레이스홀더: 마지막 분기의 `{v9}`가 안 보여 렌더 시 `MissingValueError`
+ *
+ * @returns `{ start, end, name, branches }` 목록. `branches`는 분기 본문들.
+ */
+function findIcuBlocks(text) {
+    const OPEN =
+        /\{\s*([A-Za-z0-9_]+)\s*,\s*(?:plural|select|selectordinal)\s*,/g;
+    const blocks = [];
+    for (const m of text.matchAll(OPEN)) {
+        let depth = 1;
+        let i = m.index + m[0].length;
+        const branches = [];
+        let branchStart = -1;
+        while (i < text.length && depth > 0) {
+            if (text[i] === '{') {
+                if (depth === 1) branchStart = i + 1;
+                depth += 1;
+            } else if (text[i] === '}') {
+                depth -= 1;
+                if (depth === 1 && branchStart >= 0) {
+                    branches.push(text.slice(branchStart, i));
+                    branchStart = -1;
+                }
+            }
+            i += 1;
+        }
+        if (depth === 0) {
+            blocks.push({ start: m.index, end: i, name: m[1], branches });
+        }
+    }
+    return blocks;
+}
+
+/**
+ * 실제로 **렌더될 때의 길이**. 가장 긴 분기만 남겨 잰다.
+ *
+ * 분기 안의 중첩 플레이스홀더(`{v9}`)는 길이에 그대로 둔다 — 렌더되면 값이
+ * 들어가므로 0으로 치는 것보다 실제에 가깝다.
+ */
+function renderedLength(text) {
+    const source = String(text);
+    let out = '';
+    let cursor = 0;
+    for (const block of findIcuBlocks(source)) {
+        if (block.start < cursor) continue;
+        const longest = block.branches.reduce(
+            (a, b) => (b.length > a.length ? b : a),
+            ''
+        );
+        out += source.slice(cursor, block.start) + longest;
+        cursor = block.end;
+    }
+    return (out + source.slice(cursor)).length;
+}
+
+/**
+ * 실제로 **값을 제공해야 하는 변수**를 모은다.
+ *
+ * ICU 블록은 인자 이름(`count`)을 내놓고, 분기 **본문 안의** 변수(`{v9}`)도
+ * 그대로 필요하다 — 블록을 통째로 지우면 그게 안 보여서, 마지막 분기에 오타
+ * 변수를 넣어도 게이트가 통과하고 렌더 시점에 `MissingValueError`가 난다(실측).
+ * 그래서 분기를 재귀로 훑는다. 반면 분기 **키워드**(`one`/`other`/`=1`)는
+ * 변수가 아니므로 들어가면 안 된다.
+ */
 function placeholders(text) {
-    return new Set([...String(text).matchAll(PLACEHOLDER)].map(m => m[1]));
+    const source = String(text);
+    const found = new Set();
+    let cursor = 0;
+    for (const block of findIcuBlocks(source)) {
+        if (block.start < cursor) continue;
+        for (const m of source
+            .slice(cursor, block.start)
+            .matchAll(PLACEHOLDER)) {
+            found.add(m[1]);
+        }
+        found.add(block.name);
+        for (const branch of block.branches) {
+            for (const nested of placeholders(branch)) found.add(nested);
+        }
+        cursor = block.end;
+    }
+    for (const m of source.slice(cursor).matchAll(PLACEHOLDER)) {
+        found.add(m[1]);
+    }
+    return found;
 }
 
 const catalogs = Object.fromEntries(
@@ -108,6 +204,81 @@ for (const locale of TARGETS) {
     }
 }
 
+/**
+ * 괄호 균형 — 여는 괄호가 JSX에, 닫는 괄호가 메시지에 나뉘어 있으면 번역자가
+ * 어순을 바꿀 수 없고 로케일별 괄호 문자(전각 등)도 못 쓴다. 실제로 세 메시지가
+ * 그 상태였다: `{v0}) 종합 분석은…`, `{v0}분 지연)`, `{v0}월 {v1}일 ({v2}`.
+ *
+ * **ko 소스에도 적용한다.** 소스가 깨진 채로 번역되면 세 로케일이 같이 깨지고,
+ * 대상 로케일만 보는 검사는 그걸 "충실한 번역"으로 통과시킨다.
+ */
+function checkBrackets(locale, key, text) {
+    /**
+     * ICU 분기 **본문**도 검사한다.
+     *
+     * `text.replace(/\{[^}]*\}/g, '')`는 비재귀라 첫 `}`에서 멈춘다 — 그래서
+     * `plural`/`select` 블록 전체가 통째로 지워졌고, 정작 괄호 손상이 눈으로
+     * 가장 안 보이는 자리가 검사에서 빠져 있었다.
+     */
+    const segments = [text, ...findIcuBlocks(text).flatMap(b => b.branches)];
+    for (const [open, close] of [
+        ['(', ')'],
+        ['（', '）'],
+        ['[', ']'],
+    ]) {
+        for (const segment of segments) {
+            const bare = segment.replace(/\{[^}]*\}/g, '');
+            let depth = 0;
+            let broken = false;
+            for (const ch of bare) {
+                if (ch === open) depth++;
+                else if (ch === close && --depth < 0) {
+                    broken = true;
+                    break;
+                }
+            }
+            if (broken || depth !== 0) {
+                fail(
+                    '2b-괄호균형',
+                    `${locale} ${key}: "${open}${close}" 짝이 안 맞음 "${text.slice(0, 40)}"`
+                );
+            }
+        }
+    }
+}
+
+/**
+ * 빈 값·빈 ICU 분기 — **ko 소스와 대상 로케일 모두** 본다.
+ *
+ * 빈 문자열은 길이-비율 검사(gate 6)가 20자 미만 원문에서 아예 돌지 않아
+ * 그냥 통과했다. UI 라벨 대부분이 20자 미만이라, `en.json`의 값 하나를 `""`로
+ * 만들면 그 자리가 화면에서 통째로 사라진 채 게이트가 초록이었다.
+ *
+ * 빈 ICU 분기 검사도 대상 로케일 루프 안에만 있어서, **기본 로케일**은
+ * `No news in the last 3 .` 같은 값을 그대로 내보낼 수 있었다.
+ */
+function checkEmptiness(locale, key, text) {
+    if (text.trim() === '') {
+        fail('2c-빈값', `${locale} ${key}: 값이 비어 있다`);
+        return;
+    }
+    for (const block of findIcuBlocks(text)) {
+        if (block.branches.some(branch => branch.trim() === '')) {
+            fail(
+                '2c-빈값',
+                `${locale} ${key}: ICU 분기가 비어 있다 ("${block.name}")`
+            );
+        }
+    }
+}
+
+// ko 소스 자체의 괄호 균형.
+for (const key of sourceKeys) {
+    const koText = String(source[key] ?? '');
+    checkBrackets('ko', key, koText);
+    checkEmptiness('ko', key, koText);
+}
+
 // ── 게이트 2~6 ─────────────────────────────────────────────────────────
 for (const locale of TARGETS) {
     const target = catalogs[locale];
@@ -130,8 +301,21 @@ for (const locale of TARGETS) {
             );
         }
 
+        checkBrackets(locale, key, text);
+
         // 원문이 기호·숫자뿐이면 이후 언어 검사를 적용하지 않는다.
-        if (PASSTHROUGH.test(ko)) continue;
+        /**
+         * 원문이 기호·숫자뿐이면 이후 언어 검사를 적용하지 않는다.
+         *
+         * **플레이스홀더를 지우고 판정한다** — `{v0}。`처럼 자리표시자와 구두점만
+         * 남는 값(문장 연결자·꼬리)이 "한자 없음"으로 걸렸다. 그 값들은 번역
+         * 대상이 맞지만, 언어 스크립트를 요구할 내용이 없다.
+         */
+        const bareKo = ko.replace(/\{[^}]*\}/g, '');
+        const bareText = text.replace(/\{[^}]*\}/g, '');
+        // 원문이든 번역이든 **내용이 없으면** 스크립트를 요구할 수 없다.
+        // ko `이며, ` → ja `、`처럼 연결자만 남는 값이 그 경우다.
+        if (PASSTHROUGH.test(bareKo) || PASSTHROUGH.test(bareText)) continue;
 
         // 3. 용어집 준수
         for (const [term, translations] of Object.entries(glossary)) {
@@ -153,20 +337,33 @@ for (const locale of TARGETS) {
             fail('4-한글잔존', `${locale} ${key}: "${text.slice(0, 40)}"`);
         }
 
-        // 5. 스크립트 검사 — "일본어 칸에 중국어" 같은 오배치를 잡는다
-        if (locale === 'ja' && !KANA.test(text) && !HAN.test(text)) {
+        /**
+         * 5. 스크립트 검사 — "일본어 칸에 중국어" 같은 오배치를 잡는다.
+         *
+         * **고유명사 네임스페이스는 뺀다.** `shared.assetName`은 회사·지수 이름이라
+         * `Samsung Electronics`·`Apple`처럼 라틴 표기가 ja/zh에서도 정답이다.
+         * 억지로 가나·한자를 넣으면 오히려 통용되지 않는 표기가 된다.
+         */
+        const isProperNoun = key.startsWith('shared.assetName.');
+
+        if (
+            !isProperNoun &&
+            locale === 'ja' &&
+            !KANA.test(text) &&
+            !HAN.test(text)
+        ) {
             fail(
                 '5-스크립트',
                 `ja ${key}: 가나·한자 없음 "${text.slice(0, 40)}"`
             );
         }
-        if (locale === 'zh' && KANA.test(text)) {
+        if (!isProperNoun && locale === 'zh' && KANA.test(text)) {
             fail(
                 '5-스크립트',
                 `zh ${key}: 가나 포함(일본어 혼입) "${text.slice(0, 40)}"`
             );
         }
-        if (locale === 'zh' && !HAN.test(text)) {
+        if (!isProperNoun && locale === 'zh' && !HAN.test(text)) {
             fail('5-스크립트', `zh ${key}: 한자 없음 "${text.slice(0, 40)}"`);
         }
         if (locale === 'en' && (KANA.test(text) || HAN.test(text))) {
@@ -195,8 +392,18 @@ for (const locale of TARGETS) {
         };
         const MIN_KO_LENGTH_FOR_RATIO = 20;
         const bounds = BOUNDS[locale] ?? { min: 0.3, max: 4 };
+        // ICU 문법은 화면에 안 나오는 길이다 — `renderedLength`가 가장 긴
+        // 분기만 남겨 실제 렌더 길이로 잰다(위 정의 참고).
+        /**
+         * ICU 분기가 **비어 있는지**는 길이 비율로 못 잡는다 —
+         * `renderedLength`는 가장 긴 분기만 보므로 다른 분기를 지워도 총량이
+         * 그대로다(실측: `other {days}}` → `other {}}`가 통과했고, 렌더하면
+         * `No news in the last 3 .`가 된다).
+         */
+        checkEmptiness(locale, key, text);
+
         if (ko.length >= MIN_KO_LENGTH_FOR_RATIO) {
-            const ratio = text.length / ko.length;
+            const ratio = renderedLength(text) / ko.length;
             if (ratio < bounds.min || ratio > bounds.max) {
                 fail(
                     '6-길이',

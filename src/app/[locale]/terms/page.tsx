@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
@@ -9,38 +9,54 @@ import {
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { LegalPageShell } from '@/widgets/legal/LegalPageShell';
+import { UntranslatedNotice } from '@/widgets/legal/UntranslatedNotice';
 import { PolicyMarkdownBody } from '@/widgets/legal/PolicyMarkdownBody';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     formatKoreanDate,
-    INVESTMENT_DISCLAIMER,
-    TERMS_DESCRIPTION,
-    TERMS_FULL_TITLE,
+    INVESTMENT_DISCLAIMER_KEY,
+    termsDescription,
+    termsFullTitle,
     TERMS_PATH,
-    TERMS_TITLE,
+    termsTitle,
 } from '@/shared/lib/legal';
 import { extractToc } from '@/shared/lib/legal-toc';
-import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import {
+    buildBreadcrumbJsonLd,
+    buildWebPageJsonLd,
+    SITE_NAME,
+    SITE_URL,
+    localizedAbsoluteUrl,
+} from '@/shared/lib/seo';
+import type { SeoTranslator } from '@/shared/lib/seo';
+import type { Locale } from '@/shared/i18n/locales';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleTermsRepository } from '@/entities/terms';
 
 const PAGE_URL = `${SITE_URL}${TERMS_PATH}`;
 
-const JSON_LD = {
-    '@context': 'https://schema.org',
-    '@type': 'WebPage',
-    '@id': `${PAGE_URL}#webpage`,
-    name: TERMS_TITLE,
-    description: TERMS_DESCRIPTION,
-    url: PAGE_URL,
-    inLanguage: 'ko',
-    isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
-};
+/**
+ * 모듈 스코프 상수였다 — 번역자도 로케일도 없는 자리라 JSON-LD가 항상
+ * 한국어·기본 로케일 URL로 굳었다. 렌더 시점 함수로 바꾼다.
+ */
+function buildTermsJsonLd(t: SeoTranslator, locale: Locale) {
+    return {
+        ...buildWebPageJsonLd({
+            url: PAGE_URL,
+            name: termsFullTitle(t),
+            description: termsDescription(t),
+            locale,
+        }),
+    };
+}
 
-const BREADCRUMB_JSON_LD = buildBreadcrumbJsonLd([
-    { name: TERMS_TITLE, url: PAGE_URL },
-]);
+function buildTermsBreadcrumbJsonLd(t: SeoTranslator, locale: Locale) {
+    return buildBreadcrumbJsonLd(
+        [{ name: termsTitle(t), url: PAGE_URL }],
+        locale
+    );
+}
 
 interface LocaleMetadataParams {
     readonly params: Promise<{ locale: string }>;
@@ -51,61 +67,68 @@ export async function generateMetadata({
 }: LocaleMetadataParams): Promise<Metadata> {
     const { locale } = await params;
     const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({
+        locale: resolved,
+        namespace: 'shared.seo',
+    });
     const ogLocale = localeOpenGraph(resolved);
     return {
-        title: TERMS_TITLE,
-        description: TERMS_DESCRIPTION,
+        title: termsTitle(tSeo),
+        description: termsDescription(tSeo),
         robots: localeRobots(resolved),
         alternates: await localeAlternatesFrom(params, TERMS_PATH),
         openGraph: {
             type: 'article',
             siteName: SITE_NAME,
-            title: TERMS_FULL_TITLE,
-            description: TERMS_DESCRIPTION,
-            url: PAGE_URL,
+            title: termsFullTitle(tSeo),
+            description: termsDescription(tSeo),
+            url: localizedAbsoluteUrl(PAGE_URL, resolved),
             ...ogLocale,
             images: [
                 {
                     url: '/og-image.png',
                     width: OG_IMAGE_WIDTH,
                     height: OG_IMAGE_HEIGHT,
-                    alt: TERMS_FULL_TITLE,
+                    alt: termsFullTitle(tSeo),
                 },
             ],
         },
         twitter: {
             card: 'summary',
-            title: TERMS_FULL_TITLE,
-            description: TERMS_DESCRIPTION,
+            title: termsFullTitle(tSeo),
+            description: termsDescription(tSeo),
             images: ['/og-image.png'],
         },
     };
 }
 
-const topNotice = (
+const topNoticeFor = (t: SeoTranslator, tLegal: SeoTranslator) => (
     <div
         role="note"
-        aria-label="투자 면책 고지 요약"
+        aria-label={t('a11y.investmentDisclaimerSummary')}
         className="my-8 rounded-lg border border-ui-danger/30 bg-ui-danger/5 p-5"
     >
         <p className="mb-2 text-xs font-semibold tracking-wider text-ui-danger uppercase">
-            중요 안내
+            {tLegal('termsNoticeHeading')}
         </p>
         <p className="text-sm leading-relaxed text-secondary-200 sm:text-base">
-            {INVESTMENT_DISCLAIMER}
+            {tLegal(INVESTMENT_DISCLAIMER_KEY)}
         </p>
         <p className="mt-2 text-xs leading-relaxed text-secondary-400 sm:text-sm">
-            {SITE_NAME}은(는) 투자 자문이나 매매 권유를 제공하지 않으며,
-            제공되는 모든 분석은 통계적·기술적 관점의 정보입니다. 자세한 내용은
-            아래 제5조를 확인해 주세요.
+            {tLegal('termsNoticeBody', { v0: SITE_NAME })}
         </p>
     </div>
 );
 
-async function TermsContent() {
+async function TermsContent({ locale }: { readonly locale: Locale }) {
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
+    const tLegal = await getTranslations({
+        locale,
+        namespace: 'shared.lib.legal',
+    });
     const { db } = getDatabaseClient();
     const repo = new DrizzleTermsRepository(db);
-    const terms = await repo.findActive('tos');
+    const terms = await repo.findActive('tos', locale);
 
     if (!terms) {
         notFound();
@@ -115,13 +138,25 @@ async function TermsContent() {
 
     return (
         <LegalPageShell
-            breadcrumbTitle={TERMS_TITLE}
+            breadcrumbTitle={termsTitle(tSeo)}
             eyebrow="TERMS OF SERVICE"
-            title={TERMS_TITLE}
-            intro={`본 약관은 ${SITE_NAME}(이하 "운영자")이 제공하는 미국 주식 기술적 분석 웹 서비스의 이용 조건 및 운영자와 이용자 간의 권리, 의무 및 책임 사항을 규정함을 목적으로 합니다. 서비스를 이용하기 전에 본 약관을 주의 깊게 읽어 주시기 바랍니다.`}
-            effectiveDate={formatKoreanDate(terms.effectiveDate)}
+            title={termsTitle(tSeo)}
+            intro={tLegal('termsIntro', { v0: SITE_NAME })}
+            effectiveDate={formatKoreanDate(terms.effectiveDate, locale)}
             toc={toc}
-            topNotice={topNotice}
+            topNotice={
+                <>
+                    {/* 번역 안내가 투자 고지보다 위에 온다 — 이 문서를 읽을 수
+                        있는지가 먼저다. */}
+                    {terms.isTranslationFallback && (
+                        <UntranslatedNotice
+                            requested={locale}
+                            served={terms.bodyLocale}
+                        />
+                    )}
+                    {topNoticeFor(tSeo, tLegal)}
+                </>
+            }
         >
             <PolicyMarkdownBody markdown={terms.body} />
         </LegalPageShell>
@@ -138,14 +173,19 @@ export default async function TermsPage({
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({
+        locale: resolved,
+        namespace: 'shared.seo',
+    });
     return (
         <>
-            <JsonLd data={JSON_LD} />
-            <JsonLd data={BREADCRUMB_JSON_LD} />
+            <JsonLd data={buildTermsJsonLd(tSeo, resolved)} />
+            <JsonLd data={buildTermsBreadcrumbJsonLd(tSeo, resolved)} />
             <Suspense
                 fallback={<div className="animate-pulse" aria-hidden="true" />}
             >
-                <TermsContent />
+                <TermsContent locale={resolved} />
             </Suspense>
         </>
     );

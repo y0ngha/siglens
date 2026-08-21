@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import type { SeoTranslator } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
@@ -16,6 +17,7 @@ import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { fetchCategoryPreviews } from './_lib/categoryPreviews';
 import {
     buildBreadcrumbJsonLd,
+    buildWebPageJsonLd,
     clampSeoDescription,
     SITE_NAME,
     SITE_URL,
@@ -33,11 +35,15 @@ const NEWS_HUB_PATH = '/news';
  * 한쪽만 갱신되는 것이 이 저장소에서 세 라운드 반복된 결함이다
  * (`docs/workflows/MISTAKES.md` §6.6).
  */
-export const NEWS_HUB_TITLE = '시장 뉴스 허브 — 미국·한국 주식과 암호화폐';
-const NEWS_HUB_FULL_TITLE = `${NEWS_HUB_TITLE} | ${SITE_NAME}`;
-export const NEWS_HUB_DESCRIPTION = clampSeoDescription(
-    '시장 뉴스를 한 곳에서 확인해요. 미국·한국 주식과 암호화폐까지 세 지역의 최신 뉴스를 카테고리별로 나누고, 어려운 원문 기사는 한국어 AI 요약으로 핵심만 빠르게 짚어드려서 편하게 훑어볼 수 있어요.'
-);
+export function newsHubTitle(t: SeoTranslator): string {
+    return t('newsHub.title');
+}
+function newsHubFullTitle(t: SeoTranslator): string {
+    return `${newsHubTitle(t)} | ${SITE_NAME}`;
+}
+export function newsHubDescription(t: SeoTranslator): string {
+    return clampSeoDescription(t('newsHub.description'));
+}
 
 /**
  * 이 페이지는 **미국 허브에서 3지역 상위 허브로 승격**된 것이다(2026-08).
@@ -63,13 +69,20 @@ export async function generateMetadata({
     // 자매 라우트와 같은 규약: canonical을 비우고 noindex, follow는 유지.
     const previews = await Promise.all(
         regionsOf('news').map(region =>
-            fetchCategoryPreviews(previewCategoryOf(region.region))
+            fetchCategoryPreviews(
+                previewCategoryOf(region.region),
+                isLocale(locale) ? locale : DEFAULT_LOCALE
+            )
         )
     );
     const degraded = previews.every(list => list.length === 0);
+    const tSeo = await getTranslations({
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        namespace: 'shared.seo',
+    });
     return {
-        title: NEWS_HUB_TITLE,
-        description: NEWS_HUB_DESCRIPTION,
+        title: newsHubTitle(tSeo),
+        description: newsHubDescription(tSeo),
         /*
          * **지역 head term은 하나도 넣지 않는다.**
          *
@@ -100,15 +113,15 @@ export async function generateMetadata({
         openGraph: {
             type: 'website',
             siteName: SITE_NAME,
-            title: NEWS_HUB_FULL_TITLE,
-            description: NEWS_HUB_DESCRIPTION,
+            title: newsHubFullTitle(tSeo),
+            description: newsHubDescription(tSeo),
             url,
             ...ogLocale,
         },
         twitter: {
             card: 'summary_large_image',
-            title: NEWS_HUB_FULL_TITLE,
-            description: NEWS_HUB_DESCRIPTION,
+            title: newsHubFullTitle(tSeo),
+            description: newsHubDescription(tSeo),
         },
     };
 }
@@ -135,10 +148,15 @@ function previewCategoryOf(region: NavRegionId) {
  * 카테고리 설명이고, 여기서는 그 지역 전체가 뭘 담는지 말해야 한다(미국은 4개
  * 카테고리를 묶는다).
  */
-const REGION_DESCRIPTION: Record<NavRegionId, string> = {
-    us: '미국 일반·주식·외환·마켓 아티클 4개 카테고리를 모았습니다.',
-    kr: '코스피·코스닥 등 국내 증시 주요 뉴스를 모았습니다.',
-    crypto: '비트코인·이더리움 등 주요 암호화폐 시장 동향을 모았습니다.',
+/**
+ * 키만 내보낸다 — `t()` 호출은 번역자를 **선언한** 렌더 쪽에서 한다.
+ * 여기서 `t`를 인자로 받아 부르면 추출기가 그 파일을 건너뛰어 키가 클라이언트
+ * 페이로드에서 누락된다(`noTranslatorParamCall` 가드가 막는 패턴).
+ */
+const REGION_DESCRIPTION_KEY: Record<NavRegionId, string> = {
+    us: 'regionDescription.us',
+    kr: 'regionDescription.kr',
+    crypto: 'regionDescription.crypto',
 };
 
 export default async function NewsHubPage({
@@ -153,29 +171,32 @@ export default async function NewsHubPage({
     setRequestLocale(locale);
     const tNav = await getTranslations();
     const t = await getTranslations('app.news');
+    const tSeo = await getTranslations('shared.seo');
     const regions = regionsOf('news');
     const previews = await Promise.all(
         regions.map(region =>
-            fetchCategoryPreviews(previewCategoryOf(region.region))
+            fetchCategoryPreviews(
+                previewCategoryOf(region.region),
+                isLocale(locale) ? locale : DEFAULT_LOCALE
+            )
         )
     );
 
     const hubUrl = `${SITE_URL}${NEWS_HUB_PATH}`;
 
     const webPageJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'WebPage',
-        '@id': `${hubUrl}#webpage`,
-        name: NEWS_HUB_FULL_TITLE,
-        description: NEWS_HUB_DESCRIPTION,
-        url: hubUrl,
-        inLanguage: 'ko',
-        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
+        ...buildWebPageJsonLd({
+            url: hubUrl,
+            name: `${newsHubTitle(tSeo)} | ${SITE_NAME}`,
+            description: newsHubDescription(tSeo),
+            locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        }),
     };
 
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: t('page.dc06c4'), url: hubUrl },
-    ]);
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd(
+        [{ name: t('page.dc06c4'), url: hubUrl }],
+        isLocale(locale) ? locale : DEFAULT_LOCALE
+    );
 
     return (
         <>
@@ -193,9 +214,11 @@ export default async function NewsHubPage({
                     {regions.map((region, i) => (
                         <CategoryCard
                             key={region.region}
-                            koLabel={tNav(region.fullLabelKey)}
+                            label={tNav(region.fullLabelKey)}
                             href={region.href}
-                            koDescription={REGION_DESCRIPTION[region.region]}
+                            description={t(
+                                REGION_DESCRIPTION_KEY[region.region]
+                            )}
                             previewHeadlines={previews[i]}
                         />
                     ))}

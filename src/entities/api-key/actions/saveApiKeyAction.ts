@@ -7,28 +7,28 @@ import { DrizzleUserApiKeyRepository } from '@/entities/api-key/api';
 import { isLlmProvider, normalizeLlmApiKey } from '../lib/apiKey';
 import type { ApiKeyActionErrorCode, ApiKeyActionState } from '../lib/types';
 import { revalidatePath } from 'next/cache';
+import { getTranslations } from 'next-intl/server';
 
-interface ErrorMessageEntry {
-    readonly message: string;
-}
-
-const ERROR_MESSAGES: Record<ApiKeyActionErrorCode, ErrorMessageEntry> = {
-    invalid_key_format: { message: '유효하지 않은 API 키입니다.' },
-    server_misconfigured: {
-        message:
-            '서버 설정 오류로 API 키를 저장할 수 없습니다. 관리자에게 문의해 주세요.',
-    },
-    storage_unavailable: {
-        message:
-            'API 키 저장소에 일시적으로 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.',
-    },
-    unknown: { message: '저장 중 알 수 없는 오류가 발생했습니다.' },
+/** 에러 코드 → `entities.api-key.action` 메시지 키. */
+const ERROR_MESSAGE_KEY: Record<ApiKeyActionErrorCode, string> = {
+    invalid_key_format: 'invalidKeyFormat',
+    server_misconfigured: 'serverMisconfigured',
+    storage_unavailable: 'storageUnavailable',
+    unknown: 'unknown',
 };
 
-function buildErrorState(code: ApiKeyActionErrorCode): ApiKeyActionState {
+/**
+ * 액션이 문구를 직접 만든다 — 상태의 `message`가 그대로 화면에 뿌려지므로
+ * 요청 로케일로 번역해야 한다. `getTranslations`는 서버 액션에서도 요청
+ * 로케일을 잡는다(`getBarsAction`·`optionsActions`가 같은 패턴).
+ */
+async function buildErrorState(
+    code: ApiKeyActionErrorCode
+): Promise<ApiKeyActionState> {
+    const t = await getTranslations('entities.api-key.action');
     return {
         status: 'error',
-        message: ERROR_MESSAGES[code].message,
+        message: t(ERROR_MESSAGE_KEY[code]),
         code,
     };
 }
@@ -68,9 +68,10 @@ export async function saveApiKeyAction(
 
     const rawProvider = formData.get('provider');
     if (typeof rawProvider !== 'string' || !isLlmProvider(rawProvider)) {
+        const t = await getTranslations('entities.api-key.action');
         return {
-            ...buildErrorState('invalid_key_format'),
-            message: '유효하지 않은 프로바이더입니다.',
+            ...(await buildErrorState('invalid_key_format')),
+            message: t('invalidProvider'),
         };
     }
 
@@ -81,6 +82,7 @@ export async function saveApiKeyAction(
     if (apiKey === null) {
         return buildErrorState('invalid_key_format');
     }
+    const t = await getTranslations('entities.api-key.action');
 
     try {
         const { db } = getDatabaseClient();
@@ -94,7 +96,7 @@ export async function saveApiKeyAction(
         revalidatePath('/[locale]/account', 'page');
         return {
             status: 'success',
-            message: 'API 키가 저장되었습니다.',
+            message: t('saved'),
         };
     } catch (error) {
         if (isEncryptionKeyMisconfigured(error)) {

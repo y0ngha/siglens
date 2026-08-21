@@ -7,7 +7,7 @@ import { FearGreedComparisonGauges } from './FearGreedComparisonGauges';
 import { FearGreedGroupBar } from './FearGreedGroupBar';
 import { FearGreedHistoricalChart } from '@/widgets/chart/FearGreedHistoricalChart';
 import { SelfNormWarningBadge } from './SelfNormWarningBadge';
-import { formatConfidenceFooter } from '@/shared/lib/fearGreedLabels';
+import { confidenceLabelKey } from '@/shared/lib/fearGreedLabels';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { buildChatState } from './utils/buildChatState';
 import { useHydrated } from '@/shared/hooks/useHydrated';
@@ -82,6 +82,7 @@ export function FearGreedPage({
     hideSelfNormWarning = false,
 }: FearGreedPageProps) {
     const t = useTranslations('widgets.fear-greed');
+    const tFearGreed = useTranslations('shared.lib.fearGreed');
     const isHydrated = useHydrated();
     const { snapshot, history } = useFearGreedFromSymbol({ symbol, fmpSymbol });
 
@@ -154,10 +155,10 @@ export function FearGreedPage({
             </section>
 
             <footer className="text-xs text-secondary-500">
-                {formatConfidenceFooter(
-                    snapshot.sampleSize,
-                    snapshot.confidence
-                )}
+                {tFearGreed('confidenceFooter', {
+                    v0: snapshot.sampleSize,
+                    v1: tFearGreed(confidenceLabelKey(snapshot.confidence)),
+                })}
             </footer>
         </div>
     );

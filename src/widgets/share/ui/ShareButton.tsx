@@ -78,7 +78,7 @@ export function ShareButton() {
                 <ShareSheet
                     shareUrl={shareUrl}
                     tweetText={tweetText}
-                    title={`${symbol} AI 분석 결과`}
+                    title={t('ShareButton.shareTitle', { v0: symbol })}
                     description={tweetText}
                     onClose={onSheetClose}
                 />

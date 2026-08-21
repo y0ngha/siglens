@@ -1,10 +1,12 @@
 import { useTranslations } from 'next-intl';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import type { Locale } from '@/shared/i18n/locales';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
+import { resolveNewsTitle } from '@/shared/lib/news/resolveNewsTitle';
 import type { AssetClass } from '@/shared/config/marketProfile';
 
 export interface NewsFactsSummaryProps {
-    symbol: string;
     displayName: string;
     assetClass: AssetClass;
     items: readonly NewsDisplayItem[];
@@ -59,26 +61,29 @@ function getSentimentCounts(
     );
 }
 
-function getHeadlineItems(items: readonly NewsDisplayItem[]): HeadlineItem[] {
+function getHeadlineItems(
+    items: readonly NewsDisplayItem[],
+    locale: Locale
+): HeadlineItem[] {
     return items
         .flatMap(item => {
-            const title = item.titleKo ?? item.titleEn ?? '';
+            const title = resolveNewsTitle(item, locale);
             return title.length > 0 ? [{ id: item.id, title }] : [];
         })
         .slice(0, MAX_HEADLINES);
 }
 
 export function NewsFactsSummary({
-    symbol,
     displayName,
     assetClass,
     items,
 }: NewsFactsSummaryProps) {
     const t = useTranslations('widgets.news');
+    const locale = useResolvedLocale();
     const latestPublishedAt = getLatestPublishedAt(items);
     const analyzedCount = items.filter(item => item.sentiment !== null).length;
     const sentimentCounts = getSentimentCounts(items);
-    const headlines = getHeadlineItems(items);
+    const headlines = getHeadlineItems(items, locale);
     const isCrypto = assetClass === 'crypto';
 
     return (
@@ -100,16 +105,21 @@ export function NewsFactsSummary({
             ) : (
                 <div className="mt-3 space-y-3 text-sm leading-relaxed text-secondary-300">
                     <p>
-                        {displayName} (
+                        {/* 티커를 따로 넘기지 않는다 — `displayName`이 이미
+                            `Apple Inc. (AAPL)`처럼 티커를 품어서
+                            `(AAPL) (AAPL)`로 두 번 나갔다. */}
                         {t('NewsFactsSummary.34b3fc', {
-                            v0: symbol,
+                            v0: displayName,
                             v1: items.length,
                         })}
                     </p>
                     {latestPublishedAt ? (
                         <p>
                             {t('NewsFactsSummary.d54f8a', {
-                                v0: formatNewsPublishedAt(latestPublishedAt),
+                                v0: formatNewsPublishedAt(
+                                    latestPublishedAt,
+                                    locale
+                                ),
                             })}
                         </p>
                     ) : null}

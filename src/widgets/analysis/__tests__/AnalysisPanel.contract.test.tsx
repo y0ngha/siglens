@@ -58,7 +58,14 @@ import type {
 } from '@y0ngha/siglens-core';
 
 import { AnalysisPanel } from '../AnalysisPanel';
-import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
+import { buildFallbackAnalysis } from '@/entities/chat-message';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+
+// 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을
+// 들고 있어 `/en/AAPL`이 영어 화면에 한국어 폴백을 렌더했다.
+const FALLBACK_ANALYSIS = buildFallbackAnalysis(
+    catalogTranslator('entities.chat-message.fallback', 'ko')('unavailable')
+);
 
 // 타입에서 직접 구성한 완전한 응답. 모든 배열/객체 필드를 채운다.
 function makeFullAnalysis(): AnalysisResponse {

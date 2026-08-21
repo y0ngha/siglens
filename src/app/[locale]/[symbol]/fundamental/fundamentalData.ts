@@ -1,5 +1,11 @@
 import { cache } from 'react';
 import { getDatabaseClient } from '@/shared/db/client';
+import { localizeContentRow } from '@/shared/db/localizeContent';
+import {
+    CONTENT_FIELD,
+    TRANSLATABLE_ENTITY,
+} from '@/shared/db/contentTranslationFields';
+import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 // DrizzleProfileDescriptionTranslationRepository lives in api.ts which is server-only;
 // import from the deep path to avoid pulling the DB chain into the client barrel.
 import { DrizzleProfileDescriptionTranslationRepository } from '@/entities/ticker/api';
@@ -25,7 +31,7 @@ import type {
 // Redis 캐싱(`fundamental:*` 키)·per/psr enrich는 CachedFundamentalProvider
 // (getFundamentalDataProvider가 반환)로 이관됐다. 페이지·core 분석 경로가 동일
 // provider를 통과해 같은 캐시를 공유한다. 이 파일은 provider 위임 + DB 번역
-// (getProfileDescriptionKo)만 담당한다.
+// (getProfileDescription)만 담당한다.
 //
 // provider는 호출 시점에 심볼로 고른다 — 한국 종목(`005930.KS`)은 FMP 플랜이 커버하지
 // 않아 yahoo 백엔드로 가야 하므로, 모듈 레벨 상수 하나로 고정할 수 없다. 양쪽 provider
@@ -36,20 +42,46 @@ export const getProfile = (
     getFundamentalDataProvider(symbol).getProfile(symbol);
 
 /**
- * 회사 설명의 한국어 번역을 반환하고, 최초 호출 시 DB에 저장해 배포 간에도
- * 유지한다. Read: DB 조회(히트 시 즉시). Write: AI 번역 → DB upsert(심볼당 최초 1회).
+ * 회사 설명을 요청 로케일로 반환한다. `null`이면 호출부가 **영어 원문**을
+ * 렌더한다(FMP `profile.description`).
  *
- * `cache()` 래핑 의도: 같은 요청에서 description-Ko를 여러 번 조회해도 DB lookup·
- * 번역을 1회로 묶는다. 내부 `getProfile(symbol)`은 이제 단순 위임이지만, 프로바이더
- * (CachedFundamentalProvider)의 `getProfile`이 `React.cache`로 per-request dedup하므로,
- * 같은 요청에서 profile을 이미 다른 호출자가 가져왔다면 추가 FMP 호출이 발생하지 않는다.
+ * 로케일별 동작:
+ * - `ko`: DB 조회 → 없으면 AI 번역 후 upsert(심볼당 최초 1회).
+ * - 그 외: 사이드카에 **그 로케일 행이 있을 때만** 반환. 없으면 `null`을
+ *   돌려 영어 원문이 나가게 한다. 한국어로 폴백하면 안 된다 — `/ja` 방문자에게
+ *   영어 원문보다 나쁜 결과이고, 폴백 체인(ja→ja,en,ko)의 `en`이 바로 그 원문이다.
+ *
+ * 비-ko에서는 AI 번역을 **만들지 않는다**. 영어 원문이 이미 있으므로 번역할
+ * 이유가 없고, 만들면 심볼 × 로케일만큼 LLM 비용이 붙는다.
+ *
+ * `cache()` 래핑 의도: 같은 요청에서 여러 번 조회해도 DB lookup·번역을 1회로 묶는다.
  */
-export const getProfileDescriptionKo = cache(
-    async (symbol: string): Promise<string | null> => {
+export const getProfileDescription = cache(
+    async (symbol: string, locale: Locale): Promise<string | null> => {
         const { db } = getDatabaseClient();
         const repo = new DrizzleProfileDescriptionTranslationRepository(db);
-
         const existing = await repo.findBySymbol(symbol);
+
+        if (locale !== DEFAULT_LOCALE) {
+            const localized = await localizeContentRow({
+                entity: TRANSLATABLE_ENTITY.profileDescription,
+                row: { symbol, descriptionKo: existing?.descriptionKo ?? null },
+                locale,
+                id: row => row.symbol,
+                fields: {
+                    description: {
+                        field: CONTENT_FIELD.profileDescription.description,
+                        legacy: row => ({ ko: row.descriptionKo }),
+                    },
+                },
+            });
+            const picked = localized.localized.description;
+            // 폴백(요청 로케일이 아닌 값)은 버린다 — 위 주석 참조.
+            return picked !== null && picked.locale === locale
+                ? picked.value
+                : null;
+        }
+
         if (existing !== null) return existing.descriptionKo;
 
         const profile = await getProfile(symbol);

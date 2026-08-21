@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import { localeCanonical } from '@/shared/lib/seoAlternates';
+import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { getTranslations } from 'next-intl/server';
 import { ApiKeySection } from '@/features/api-key-management';
 import {
@@ -13,7 +13,6 @@ import { PortfolioSection } from '@/features/portfolio-management';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions';
 import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
-import { SITE_NAME } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { redirect } from 'next/navigation';
@@ -34,11 +33,20 @@ export async function generateMetadata({
 }): Promise<Metadata> {
     const { locale } = await params;
     const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({
+        locale: resolved,
+        namespace: 'shared.seo',
+    });
+    const title = tSeo('account.title');
+    const description = tSeo('account.description');
     return {
-        title: '계정 설정',
-        description: `${SITE_NAME} 계정 설정 페이지`,
+        title,
+        description,
         alternates: { canonical: localeCanonical(resolved, '/account') },
-        openGraph: { url: localeCanonical(resolved, '/account') },
+        ...localePageSocial(resolved, '/account', {
+            title,
+            description,
+        }),
         robots: { index: false, follow: false },
     };
 }

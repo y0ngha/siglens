@@ -1,11 +1,25 @@
 import { getTranslations } from 'next-intl/server';
 import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';
 import { setRequestLocale } from 'next-intl/server';
-import { localeAlternatesFrom } from '@/shared/lib/seoAlternates';
+import {
+    localeAlternatesFrom,
+    localeOpenGraph,
+} from '@/shared/lib/seoAlternates';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { SymbolSearchPanel } from '@/features/ticker-search';
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import {
+    buildWebPageJsonLd,
+    localizedAbsoluteUrl,
+    SITE_NAME,
+    SITE_URL,
+} from '@/shared/lib/seo';
+import {
+    DEFAULT_LOCALE,
+    isLocale,
+    LOCALE_HREFLANG,
+} from '@/shared/i18n/locales';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { buildHomeHowToJsonLd, HOME_FAQ_JSON_LD } from './homeJsonLd';
+import { buildHomeFaqJsonLd, buildHomeHowToJsonLd } from '../homeJsonLd';
 import {
     CryptoShowcase,
     HeroIllustration,
@@ -31,8 +45,55 @@ interface LocaleMetadataParams {
 export async function generateMetadata({
     params,
 }: LocaleMetadataParams): Promise<Metadata> {
+    const { locale } = await params;
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({
+        locale: resolved,
+        namespace: 'shared.seo',
+    });
+    const title = tSeo('root.title');
+    const description = tSeo('root.description');
+    /**
+     * `openGraph`/`twitter`를 **완전히** 선언한다.
+     *
+     * Next는 이 최상위 키를 부모와 병합하지 않고 **교체**한다. 예전에
+     * `alternates`만 돌려줘서 제목·설명이 루트 레이아웃의 한국어 상수로
+     * 떨어졌고, 그걸 고치며 og를 부분 선언하자 이번엔 `images`·`type`·`url`이
+     * 통째로 사라져 공유 카드에서 미리보기 이미지가 없어졌다.
+     */
     return {
+        // `absolute`가 없으면 루트 레이아웃의 `title.template`(`%s | Siglens`)이
+        // 먹는다 — v0.48.0에서 SERP 폭을 되찾으려고 일부러 뗀 접미사다.
+        // 마스터의 홈은 `title`을 아예 반환하지 않아 레이아웃의 `default`가
+        // 그대로 나갔고(템플릿 미적용), 로케일 카탈로그로 옮기면서 문자열을
+        // 돌려주는 순간 조용히 접미사가 돌아왔다.
+        title: { absolute: title },
+        description,
         alternates: await localeAlternatesFrom(params, '/'),
+        openGraph: {
+            type: 'website',
+            siteName: SITE_NAME,
+            title,
+            description,
+            // 로케일마다 다른 문서다 — 전 로케일이 `og:url`로 ko 루트를 가리키면
+            // 공유 카드가 어느 언어에서 눌러도 한국어 페이지로 간다.
+            url: localizedAbsoluteUrl(SITE_URL, resolved),
+            ...localeOpenGraph(resolved),
+            images: [
+                {
+                    url: '/og-image.png',
+                    width: OG_IMAGE_WIDTH,
+                    height: OG_IMAGE_HEIGHT,
+                    alt: title,
+                },
+            ],
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
+            images: ['/og-image.png'],
+        },
     };
 }
 
@@ -77,6 +138,8 @@ export default async function Home({
     const t = await getTranslations('app.home');
     // 내비 라벨 키는 완전 수식이라 루트 네임스페이스로 푼다.
     const tNav = await getTranslations();
+    const tSeo = await getTranslations('shared.seo');
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
     // countSkillFiles 오류(fs 접근 실패 등)는 graceful 처리 — 0 폴백으로 페이지를 계속 렌더한다.
     // throw가 전파되면 ISR 빈 캐시(0-byte body)가 동결된다.
     const skillCounts = await countSkillFiles().catch(e => {
@@ -92,14 +155,18 @@ export default async function Home({
         };
     });
 
+    // `@id`와 `inLanguage`가 로케일을 따른다 — 예전에는 네 로케일이 같은
+    // `@id`를 쓰면서 전부 `ko`를 자처했고, 형제 `WebPage`는 `inLanguage: en`을
+    // 선언해 **같은 문서가 두 언어를 주장**했다.
+    const webApplicationId = `${localizedAbsoluteUrl(SITE_URL, resolved)}#webapplication`;
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebApplication',
-        '@id': `${SITE_URL}#webapplication`,
+        '@id': webApplicationId,
         name: SITE_NAME,
-        description: SITE_DESCRIPTION,
-        url: SITE_URL,
-        inLanguage: 'ko',
+        description: tSeo('root.description'),
+        url: localizedAbsoluteUrl(SITE_URL, resolved),
+        inLanguage: LOCALE_HREFLANG[resolved],
         applicationCategory: 'FinanceApplication',
         operatingSystem: 'Web',
         offers: {
@@ -113,15 +180,15 @@ export default async function Home({
     // entity graph로 연결한다. 다른 모든 페이지가 WebPage @id 패턴을 따르므로
     // 홈에도 동일 패턴을 둬야 cross-link가 일관된다.
     const webPageJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'WebPage',
-        '@id': `${SITE_URL}#webpage`,
-        name: `${SITE_NAME} — ${SITE_DESCRIPTION}`,
-        description: SITE_DESCRIPTION,
-        url: SITE_URL,
-        inLanguage: 'ko',
-        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
-        mainEntity: { '@id': `${SITE_URL}#webapplication` },
+        ...buildWebPageJsonLd({
+            // 카탈로그를 쓴다 — `SITE_DESCRIPTION`은 한국어 상수라
+            // `inLanguage: "en"`을 달고 한국어 산문을 내보내고 있었다.
+            url: SITE_URL,
+            name: `${SITE_NAME} — ${tSeo('root.description')}`,
+            description: tSeo('root.description'),
+            locale: resolved,
+        }),
+        mainEntity: { '@id': webApplicationId },
     };
 
     const organizationJsonLd = {
@@ -130,11 +197,13 @@ export default async function Home({
         name: SITE_NAME,
         url: SITE_URL,
         logo: `${SITE_URL}/icon512.png`,
-        description: SITE_DESCRIPTION,
+        description: tSeo('root.description'),
         sameAs: ['https://github.com/y0ngha/siglens'],
     };
 
-    const howToJsonLd = buildHomeHowToJsonLd(skillCounts);
+    const tJsonLd = await getTranslations('app.home.jsonLd');
+    const howToJsonLd = buildHomeHowToJsonLd(skillCounts, tJsonLd);
+    const faqJsonLd = buildHomeFaqJsonLd(tJsonLd);
 
     return (
         <>
@@ -142,7 +211,7 @@ export default async function Home({
             <JsonLd data={webPageJsonLd} />
             <JsonLd data={organizationJsonLd} />
             <JsonLd data={howToJsonLd} />
-            <JsonLd data={HOME_FAQ_JSON_LD} />
+            <JsonLd data={faqJsonLd} />
             <a
                 href="#search"
                 className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-4 focus-visible:left-4 focus-visible:z-50 focus-visible:rounded focus-visible:bg-primary-600 focus-visible:px-4 focus-visible:py-2 focus-visible:text-white"

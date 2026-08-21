@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { ResetPasswordForm } from '@/features/auth-password-reset/ui/ResetPasswordForm';
 import { useResetPasswordForm } from '@/features/auth-password-reset/hooks/useResetPasswordForm';
 import type { ResetPasswordFormState } from '@/shared/lib/auth/formTypes';
+import { koMessage } from '@/shared/test-utils/koMessage';
 
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
@@ -77,7 +78,7 @@ describe('ResetPasswordForm', () => {
         });
         render(<ResetPasswordForm email="user@test.com" token="abc123" />);
         expect(screen.getByRole('alert')).toHaveTextContent(
-            '비밀번호가 너무 짧습니다.'
+            koMessage('entities.auth.error.passwordWeak')
         );
     });
 

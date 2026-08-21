@@ -4,17 +4,28 @@ import {
     SUPPORTED_ASSET_IDS,
     SUPPORTED_ASSET_TERMS,
 } from '@/shared/config/supportedAssets';
+import { clampSeoDescription, ROOT_KEYWORDS } from '@/shared/lib/seo';
 import {
-    ROOT_HEADLINE,
-    ROOT_KEYWORDS,
-    ROOT_TITLE,
-    SITE_DESCRIPTION,
-} from '@/shared/lib/seo';
-import {
+    buildHomeFaqJsonLd,
     buildHomeHowToJsonLd,
-    HOME_FAQ_JSON_LD,
 } from '@/app/[locale]/homeJsonLd';
-import { NEWS_HUB_DESCRIPTION, NEWS_HUB_TITLE } from '@/app/[locale]/news/page';
+// newsHubTitle/newsHubDescription은 shared.seo 카탈로그를 받는 함수로 바뀌었다
+// (요구사항: 로케일별 번역자 필수 인자). 이 테스트는 자산군 커버리지가 ko
+// 소스 카피에서 완전한지만 확인하므로, 카탈로그 ko 원문을 직접 읽어 검사한다
+// — next-intl 요청 스코프를 여기서 흉내 낼 필요가 없다.
+import koMessages from '../../../messages/ko.json';
+
+// 홈 카피도 카탈로그가 소유한다 — 자산군 커버리지는 ko 원문 기준이다.
+const ROOT_HEADLINE = koMessages.shared.seo.root.headline;
+const ROOT_TITLE = koMessages.shared.seo.root.title;
+const SITE_DESCRIPTION = clampSeoDescription(
+    koMessages.shared.seo.root.description
+);
+
+const NEWS_HUB_TITLE = koMessages.shared.seo.newsHub.title;
+const NEWS_HUB_DESCRIPTION = clampSeoDescription(
+    koMessages.shared.seo.newsHub.description
+);
 
 const SKILL_COUNTS = {
     indicators: 25,
@@ -39,7 +50,39 @@ const SKILL_COUNTS = {
  * 여기서 동시에 깨진다. 문장은 사람이 쓰되, 커버리지는 기계가 강제한다.
  */
 describe('자산군 커버리지 동기화', () => {
-    const HOWTO = buildHomeHowToJsonLd(SKILL_COUNTS);
+    /**
+     * ko 카탈로그를 그대로 읽는 번역자 — `NEWS_HUB_TITLE`과 같은 이유다.
+     * 자산군 커버리지가 **ko 소스 카피에서** 완전한지만 보므로 요청 스코프를
+     * 흉내 낼 필요가 없다. 스텁이 아니라 실제 카탈로그라, 키가 빠지면
+     * 키 문자열이 그대로 나와 커버리지 단언이 실패한다.
+     */
+    const tJsonLd = (
+        key: string,
+        values?: Record<string, string | number>
+    ): string => {
+        const raw = key
+            .split('.')
+            .reduce<unknown>(
+                (node, seg) =>
+                    node && typeof node === 'object'
+                        ? (node as Record<string, unknown>)[seg]
+                        : undefined,
+                koMessages.app.home.jsonLd
+            ) as string | undefined;
+        if (raw === undefined) return key;
+        return Object.entries(values ?? {}).reduce(
+            (acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)),
+            raw
+        );
+    };
+
+    const HOWTO = buildHomeHowToJsonLd(SKILL_COUNTS, tJsonLd) as {
+        name: string;
+        description: string;
+    };
+    const FAQ = buildHomeFaqJsonLd(tJsonLd) as {
+        mainEntity: Array<{ acceptedAnswer: { text: string } }>;
+    };
 
     const SURFACES: Array<[string, string]> = [
         ['ROOT_TITLE', ROOT_TITLE],
@@ -48,10 +91,7 @@ describe('자산군 커버리지 동기화', () => {
         ['ROOT_KEYWORDS', ROOT_KEYWORDS.join(' ')],
         ['HowTo.name', HOWTO.name],
         ['HowTo.description', HOWTO.description],
-        [
-            'FAQ 서비스 소개 답변',
-            HOME_FAQ_JSON_LD.mainEntity[0]!.acceptedAnswer.text,
-        ],
+        ['FAQ 서비스 소개 답변', FAQ.mainEntity[0]!.acceptedAnswer.text],
         // 뉴스 허브는 사이트에서 자산군 커버리지를 가장 직접적으로 주장하는 표면이다.
         ['NEWS_HUB_TITLE', NEWS_HUB_TITLE],
         ['NEWS_HUB_DESCRIPTION', NEWS_HUB_DESCRIPTION],
@@ -61,10 +101,20 @@ describe('자산군 커버리지 동기화', () => {
         expect(missingAssetMentions(text)).toEqual([]);
     });
 
-    it('OG alt는 ROOT_HEADLINE에서 파생된다 — 별도 리터럴이면 동기화가 깨진다', async () => {
+    it('OG alt는 root.headline에서 파생된다 — 별도 리터럴이면 동기화가 깨진다', async () => {
+        // 루트 메타데이터가 카탈로그로 옮겨지면서 파생 소스도 상수에서
+        // `shared.seo.root.headline`으로 바뀌었다. alt에 자산군 문구를
+        // **직접 쓰면** 헤드라인과 갈리므로, 파생 형태를 그대로 강제한다.
         const { readFile } = await import('node:fs/promises');
         const layout = await readFile('src/app/[locale]/layout.tsx', 'utf8');
-        expect(layout).toContain('${ROOT_HEADLINE}');
+
+        expect(layout).toContain("tSeo('root.ogImageAlt'");
+        expect(layout).toContain("v0: tSeo('root.headline')");
+    });
+
+    it('og alt 문구가 헤드라인을 자리표시자로 받는다', () => {
+        // `{v0}`가 빠지면 헤드라인이 통째로 사라져 자산군 언급이 날아간다.
+        expect(koMessages.shared.seo.root.ogImageAlt).toContain('{v0}');
     });
 
     describe('missingAssetMentions', () => {

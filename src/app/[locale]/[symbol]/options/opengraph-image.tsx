@@ -12,8 +12,10 @@ export const revalidate = 2592000; // 30d
 
 export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
 export const contentType = 'image/png';
-// alt는 module-scope const라 ticker 동적 주입 불가 — 페이지 카테고리까지만 명시한다.
-export const alt = 'Siglens 미국 주식 옵션 분석';
+// `alt`는 Next가 **모듈 스코프 상수**로 요구해 로케일별로 낼 수 없다(이미지
+// 본문은 아래에서 로케일별로 그린다). 네 로케일이 한 값을 공유해야 하므로
+// 한국어 대신 영어로 둔다 — 예전엔 한국어라 `/en/…` 공유 카드의 alt만 한국어였다.
+export const alt = 'Siglens — options analysis';
 
 interface Props {
     params: Promise<{ locale: string; symbol: string }>;

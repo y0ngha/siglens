@@ -1,7 +1,11 @@
 import type { MockedFunction } from 'vitest';
 // 로케일을 케이스마다 바꿔야 판별력이 생긴다 — 고정 mock이면 `localePath('ko',x)===x`라
 // 로케일 전달을 통째로 지워도 통과한다.
-vi.mock('next-intl/server', () => ({ getLocale: vi.fn() }));
+vi.mock('next-intl/server', async () => {
+    const { nextIntlServerStub } =
+        await import('@/shared/test-utils/catalogTranslator');
+    return { ...nextIntlServerStub(), getLocale: vi.fn() };
+});
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: vi.fn(),
@@ -125,6 +129,8 @@ describe('requestPasswordResetAction', () => {
                 email: 'user@example.com',
                 token: 'the-token',
                 locale: 'ko',
+                // 본문도 링크와 같은 로케일로 만든다.
+                t: expect.any(Function),
             });
             expect(message.to).toBe('user@example.com');
             expect(message.html).toContain('the-token');

@@ -3,11 +3,22 @@ import {
     INDICATOR_REGISTRY,
     INDICATOR_META,
     CATEGORY_ORDER,
-    CATEGORY_LABELS,
+    CATEGORY_LABEL_KEY,
     groupBindingsByCategory,
     type IndicatorBinding,
     type IndicatorKey,
 } from '../../model/indicatorRegistry';
+import koMessages from '@/../messages/ko.json';
+import enMessages from '@/../messages/en.json';
+import jaMessages from '@/../messages/ja.json';
+import zhMessages from '@/../messages/zh.json';
+
+const CATALOGS = {
+    ko: koMessages,
+    en: enMessages,
+    ja: jaMessages,
+    zh: zhMessages,
+};
 
 function bindingFor(key: IndicatorKey, active = false): IndicatorBinding {
     return { meta: INDICATOR_META[key], active };
@@ -105,16 +116,26 @@ describe('indicatorRegistry', () => {
         }
     });
 
-    it('maps every category to its exact label', () => {
-        expect(CATEGORY_LABELS).toStrictEqual({
-            trend: '추세',
-            momentum: '모멘텀',
-            volatility: '변동성',
-            volume: '볼륨',
-            statistical: '통계',
-            smc: 'SMC',
-        });
-    });
+    /**
+     * 라벨은 이제 `widgets.chart.indicatorCategory` **키**다 — 예전엔 한국어
+     * 리터럴이라 `/en`의 지표 설정 모달이 `추세`/`모멘텀`을 그대로 렌더했다.
+     * 그래서 한국어를 고정하지 않고, 모든 카테고리 키가 네 로케일에 다 있는지를
+     * 본다(새 카테고리를 추가하고 번역을 빠뜨리면 실패한다).
+     */
+    it.each(['ko', 'en', 'ja', 'zh'] as const)(
+        '%s: 모든 카테고리 키가 카탈로그에 있다',
+        locale => {
+            const group = (
+                CATALOGS[locale].widgets.chart as unknown as Record<
+                    string,
+                    Record<string, string>
+                >
+            ).indicatorCategory;
+            for (const key of Object.values(CATEGORY_LABEL_KEY)) {
+                expect(group[key], `${locale}.${key}`).toBeTruthy();
+            }
+        }
+    );
 
     it('places group-B oscillators in the right categories', () => {
         const byKey = Object.fromEntries(
@@ -183,7 +204,7 @@ describe('indicatorRegistry', () => {
         const groups = groupBindingsByCategory([
             { meta: INDICATOR_META.smc, active: false, onToggle: () => {} },
         ]);
-        expect(groups.find(g => g.category === 'smc')?.label).toBe('SMC');
+        expect(groups.find(g => g.category === 'smc')?.labelKey).toBe('smc');
     });
 });
 
@@ -224,6 +245,6 @@ describe('groupBindingsByCategory', () => {
 
     it('carries the category label on each group', () => {
         const groups = groupBindingsByCategory([bindingFor('ma')]);
-        expect(groups[0]!.label).toBe(CATEGORY_LABELS.trend);
+        expect(groups[0]!.labelKey).toBe(CATEGORY_LABEL_KEY.trend);
     });
 });

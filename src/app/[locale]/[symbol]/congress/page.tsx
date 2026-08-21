@@ -23,6 +23,7 @@ import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotSt
 import {
     buildAssetAboutNode,
     buildDisplayName,
+    pickAssetName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
 import {
@@ -30,7 +31,7 @@ import {
     buildSnapshotMetaDescription,
     buildSymbolCongressSeoContent,
     buildSymbolSeoContent,
-    buildSymbolWebPageJsonLd,
+    buildWebPageJsonLd,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
 } from '@/shared/lib/seo';
@@ -97,10 +98,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (tradesDegraded) {
         return NOINDEX_SYMBOL_METADATA;
     }
-    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
-    const seo = buildSymbolCongressSeoContent(upper, {
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
+    const displayName = assetInfo
+        ? buildDisplayName(assetInfo, upper, locale)
+        : upper;
+    const seo = buildSymbolCongressSeoContent(upper, tSeo, {
         displayName,
         koreanName: assetInfo?.koreanName,
+        englishName: assetInfo?.name,
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
     });
     const metadata = symbolMetadataFromSeo(seo, locale);
 
@@ -110,11 +116,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // an extra DB round-trip. Falls back to the templated description when no
     // snapshot exists (backward compatible). og/twitter keep the templated copy
     // — only the search-facing <meta name="description"> is overridden.
-    const snap = (await getSeoSnapshotsStatic(upper, revalidate)).find(
+    const snap = (await getSeoSnapshotsStatic(upper, revalidate, locale)).find(
         s => s.tab === 'congress'
     );
     const snapshotDescription = snap
-        ? buildSnapshotMetaDescription('congress', snap.content, displayName)
+        ? buildSnapshotMetaDescription(
+              'congress',
+              snap.content,
+              displayName,
+              locale
+          )
         : null;
     // **thin-content 게이트.** 거래 0건이면서 AI 스냅샷도 없으면 본문에 종목 고유
     // 텍스트가 거의 남지 않는다 — 2026-08 실측에서 `B`(1,059자)·`KEEL`(1,079자)이
@@ -149,11 +160,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CongressPage({ params }: Props) {
     const { locale, symbol } = await params;
+    // DB 스냅샷은 로케일별 행이라 좁혀진 로케일이 필요하다. URL 세그먼트는 신뢰 경계다.
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
     // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
     const t = await getTranslations('app.symbol');
+    const tSeo = await getTranslations('shared.seo');
     const upper = symbol.toUpperCase();
 
     if (!isAdmissibleSymbolShape(upper)) {
@@ -175,7 +189,7 @@ export default async function CongressPage({ params }: Props) {
     ] = await Promise.all([
         getProfileResilient(upper),
         getAssetInfoResilient(upper),
-        getSeoSnapshotsStatic(upper, revalidate),
+        getSeoSnapshotsStatic(upper, revalidate, resolved),
     ]);
     const congressSnapshot = snapshots.find(s => s.tab === 'congress');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasCongressProse)
@@ -196,7 +210,13 @@ export default async function CongressPage({ params }: Props) {
     // while the page body renders a 200 with `displayName = upper` as ticker fallback.
     // This mirrors the financials/fundamental pages: a soft-200 keeps the user-facing
     // page navigable while noindex prevents stale/degraded content from being indexed.
-    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
+    const displayName = assetInfo
+        ? buildDisplayName(
+              assetInfo,
+              upper,
+              isLocale(locale) ? locale : DEFAULT_LOCALE
+          )
+        : upper;
 
     // FMP 인프라 일시 실패: 500 대신 degrade 안내(200)를 렌더한다. 다음 revalidate에
     // 인프라가 복구되면 정상 데이터로 자동 갱신된다. 스냅샷이 있으면 degrade 중에도
@@ -236,9 +256,12 @@ export default async function CongressPage({ params }: Props) {
 
     const { fullTitle, description, url } = buildSymbolCongressSeoContent(
         upper,
+        tSeo,
         {
             displayName,
             koreanName: assetInfo?.koreanName,
+            englishName: assetInfo?.name,
+            locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
         }
     );
 
@@ -246,21 +269,31 @@ export default async function CongressPage({ params }: Props) {
     // undefined로 자연 생략된다.
     const aboutNode = buildAssetAboutNode(
         upper,
-        assetInfo?.koreanName ?? assetInfo?.name ?? upper,
+        assetInfo
+            ? pickAssetName(
+                  assetInfo,
+                  upper,
+                  isLocale(locale) ? locale : DEFAULT_LOCALE
+              )
+            : upper,
         assetInfo?.fmpSymbol
     );
 
-    const jsonLd = buildSymbolWebPageJsonLd({
+    const jsonLd = buildWebPageJsonLd({
         url,
         name: fullTitle,
         description,
         about: aboutNode,
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
     });
 
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: upper, url: buildSymbolSeoContent(upper).url },
-        { name: t('page.7b06ac'), url },
-    ]);
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd(
+        [
+            { name: upper, url: buildSymbolSeoContent(upper, tSeo).url },
+            { name: t('page.7b06ac'), url },
+        ],
+        isLocale(locale) ? locale : DEFAULT_LOCALE
+    );
 
     const faqJsonLd = {
         '@context': 'https://schema.org',
@@ -268,7 +301,7 @@ export default async function CongressPage({ params }: Props) {
         mainEntity: [
             {
                 '@type': 'Question',
-                name: `${displayName}의 의회 거래는 어떤 의미가 있나요?`,
+                name: tSeo('faq.congressMeaning', { v0: displayName }),
                 acceptedAnswer: {
                     '@type': 'Answer',
                     text: t('page.1a9e0a'),
@@ -284,7 +317,7 @@ export default async function CongressPage({ params }: Props) {
             },
             {
                 '@type': 'Question',
-                name: `${displayName}의 의회 거래가 매수 신호인가요?`,
+                name: tSeo('faq.congressBuySignal', { v0: displayName }),
                 acceptedAnswer: {
                     '@type': 'Answer',
                     text: t('page.2c1d31'),

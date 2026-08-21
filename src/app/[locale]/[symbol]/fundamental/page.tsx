@@ -10,12 +10,13 @@ import {
     getPriceTargetConsensus,
     getPriceTargetSummary,
     getProfile,
-    getProfileDescriptionKo,
+    getProfileDescription,
     getRatiosTtm,
     getStockPeers,
 } from '@/app/[locale]/[symbol]/fundamental/fundamentalData';
 import { setRequestLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { DEFAULT_LOCALE, isLocale, type Locale } from '@/shared/i18n/locales';
+import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 
@@ -48,13 +49,14 @@ import {
     buildAssetAboutNode,
     buildDisplayName,
     getAssetInfoResilient,
+    pickAssetName,
 } from '@/entities/ticker';
 import {
     buildBreadcrumbJsonLd,
     buildSnapshotMetaDescription,
     buildSymbolFundamentalSeoContent,
     buildSymbolSeoContent,
-    buildSymbolWebPageJsonLd,
+    buildWebPageJsonLd,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
 } from '@/shared/lib/seo';
@@ -121,13 +123,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (profileDegraded || profile === null) {
         return NOINDEX_SYMBOL_METADATA;
     }
-    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
+    const displayName = assetInfo
+        ? buildDisplayName(assetInfo, upper, locale)
+        : upper;
     // sector는 의도적으로 <meta description>에 쓰지 않는다(description은 sector 없는 base
     // 카피, 페이지 본문 JSON-LD만 sector 보강 카피). 위 profile 조회는 noindex 게이트 용도이며
     // 두 description 모두 동일 함수에서 파생되므로 핵심 의미는 일치한다.
-    const seo = buildSymbolFundamentalSeoContent(upper, {
+    const seo = buildSymbolFundamentalSeoContent(upper, tSeo, {
         displayName,
         koreanName: assetInfo?.koreanName,
+        englishName: assetInfo?.name,
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
     });
     const metadata = symbolMetadataFromSeo(seo, locale);
 
@@ -137,11 +144,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // an extra DB round-trip. Falls back to the templated description when no
     // snapshot exists (backward compatible). og/twitter keep the templated copy
     // — only the search-facing <meta name="description"> is overridden.
-    const snap = (await getSeoSnapshotsStatic(upper, revalidate)).find(
+    const snap = (await getSeoSnapshotsStatic(upper, revalidate, locale)).find(
         s => s.tab === 'fundamental'
     );
     const snapshotDescription = snap
-        ? buildSnapshotMetaDescription('fundamental', snap.content, displayName)
+        ? buildSnapshotMetaDescription(
+              'fundamental',
+              snap.content,
+              displayName,
+              locale
+          )
         : null;
     return snapshotDescription
         ? { ...metadata, description: snapshotDescription }
@@ -150,6 +162,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 interface SymbolSectionProps {
     symbol: string;
+}
+
+interface LocalizedSectionProps extends SymbolSectionProps {
+    locale: Locale;
 }
 
 function ProfileDescriptionSkeleton() {
@@ -230,36 +246,42 @@ function ProfileCardSkeleton({ symbol }: ProfileCardSkeletonProps) {
 
 interface ProfileDescriptionSectionProps {
     symbol: string;
+    locale: Locale;
     fallback: string;
 }
 
 export async function ProfileDescriptionSection({
     symbol,
+    locale,
     fallback,
 }: ProfileDescriptionSectionProps) {
-    // ISR degrade guard: getProfileDescriptionKo(AI 번역)가 throw하더라도 ISR 캐시에
+    // ISR degrade guard: getProfileDescription(AI 번역)이 throw하더라도 ISR 캐시에
     // 0-byte 빈 결과가 굳지 않도록 흡수한다. null 로 degrade → fallback(영어 원문)을 렌더.
-    const descriptionKo = await staticSymbolCache(
-        ['fundamental:desc-ko', symbol],
+    const description = await staticSymbolCache(
+        // 로케일을 키에 넣지 않으면 먼저 생성된 로케일의 설명이 전 로케일에 굳는다.
+        ['fundamental:desc', symbol, ...contentLocaleKeyPart(locale)],
         symbol,
-        () => getProfileDescriptionKo(symbol),
+        () => getProfileDescription(symbol, locale),
         [],
         SECONDS_PER_DAY
     ).catch((e: unknown) => {
         console.error(
-            '[ProfileDescriptionSection] getProfileDescriptionKo failed, degrading to null:',
+            '[ProfileDescriptionSection] getProfileDescription failed, degrading to null:',
             e
         );
         return null;
     });
     return (
         <p className="mt-4 line-clamp-4 text-sm leading-relaxed text-secondary-400">
-            {descriptionKo ?? fallback}
+            {description ?? fallback}
         </p>
     );
 }
 
-export async function ProfileSection({ symbol }: SymbolSectionProps) {
+export async function ProfileSection({
+    symbol,
+    locale,
+}: LocalizedSectionProps) {
     // Shares the same key as the notFound guard in the page body — cross-request ISR cache is shared.
     // ISR degrade guard: getProfile(FMP)가 throw하면 null 로 degrade → ProfileCard(null)가
     // 기존 empty-state UI를 렌더하고 페이지 크롬은 유지된다.
@@ -281,6 +303,7 @@ export async function ProfileSection({ symbol }: SymbolSectionProps) {
         <Suspense fallback={<ProfileDescriptionSkeleton />}>
             <ProfileDescriptionSection
                 symbol={symbol}
+                locale={locale}
                 fallback={profile?.description ?? ''}
             />
         </Suspense>
@@ -489,11 +512,14 @@ export async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
 
 export default async function FundamentalPage({ params }: Props) {
     const { locale, symbol } = await params;
+    // DB 스냅샷은 로케일별 행이라 좁혀진 로케일이 필요하다. URL 세그먼트는 신뢰 경계다.
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
     // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
     const t = await getTranslations('app.symbol');
+    const tSeo = await getTranslations('shared.seo');
     const upper = symbol.toUpperCase();
 
     if (!isAdmissibleSymbolShape(upper)) {
@@ -517,7 +543,7 @@ export default async function FundamentalPage({ params }: Props) {
     ] = await Promise.all([
         getProfileResilient(upper),
         getAssetInfoResilient(upper),
-        getSeoSnapshotsStatic(upper, revalidate),
+        getSeoSnapshotsStatic(upper, revalidate, resolved),
     ]);
     const fundamentalSnapshot = snapshots.find(s => s.tab === 'fundamental');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasFundamentalProse)
@@ -536,7 +562,13 @@ export default async function FundamentalPage({ params }: Props) {
     // degraded + digit-first 심볼 = crypto_assets DB와 FMP가 동시 다운 중이고 resolve 불가
     // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
     if (isUnresolvableDegraded(upper, degraded)) notFound();
-    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
+    const displayName = assetInfo
+        ? buildDisplayName(
+              assetInfo,
+              upper,
+              isLocale(locale) ? locale : DEFAULT_LOCALE
+          )
+        : upper;
     // CrossLinkCards에 넘길 시장 프로필. fundamental은 assetInfo가 optional이라(FMP
     // profile만 있어도 렌더) marketProfileOf(assetInfo)를 못 쓸 수 있다 — 그 경우
     // 심볼 형상으로 판정한다(`profileIdForSymbol`, marketProfileOf 내부 fallback과
@@ -573,9 +605,12 @@ export default async function FundamentalPage({ params }: Props) {
     const sector = profile.sector ?? '';
     const { fullTitle, description, url } = buildSymbolFundamentalSeoContent(
         upper,
+        tSeo,
         {
             displayName,
             koreanName: assetInfo?.koreanName,
+            englishName: assetInfo?.name,
+            locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
             sector: sector !== '' ? sector : undefined,
         }
     );
@@ -586,23 +621,33 @@ export default async function FundamentalPage({ params }: Props) {
     // 사용해 displayName 계산 정책과 일관성을 유지한다.
     const aboutNode = buildAssetAboutNode(
         upper,
-        assetInfo?.koreanName ?? assetInfo?.name ?? upper,
+        assetInfo
+            ? pickAssetName(
+                  assetInfo,
+                  upper,
+                  isLocale(locale) ? locale : DEFAULT_LOCALE
+              )
+            : upper,
         assetInfo?.fmpSymbol
     );
-    const jsonLd = buildSymbolWebPageJsonLd({
+    const jsonLd = buildWebPageJsonLd({
         url,
         name: fullTitle,
         description,
         about: aboutNode,
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
     });
 
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: upper, url: buildSymbolSeoContent(upper).url },
-        {
-            name: t('page.412646'),
-            url: buildSymbolFundamentalSeoContent(upper).url,
-        },
-    ]);
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd(
+        [
+            { name: upper, url: buildSymbolSeoContent(upper, tSeo).url },
+            {
+                name: t('page.412646'),
+                url: buildSymbolFundamentalSeoContent(upper, tSeo).url,
+            },
+        ],
+        isLocale(locale) ? locale : DEFAULT_LOCALE
+    );
 
     const faqJsonLd = {
         '@context': 'https://schema.org',
@@ -610,7 +655,7 @@ export default async function FundamentalPage({ params }: Props) {
         mainEntity: [
             {
                 '@type': 'Question',
-                name: `${displayName} 펀더멘털 분석에서 무엇을 볼 수 있나요?`,
+                name: tSeo('faq.fundamentalScope', { v0: displayName }),
                 acceptedAnswer: {
                     '@type': 'Answer',
                     text: t('page.716d9b'),
@@ -654,7 +699,7 @@ export default async function FundamentalPage({ params }: Props) {
                     </p>
                 </section>
                 <Suspense fallback={<ProfileCardSkeleton symbol={upper} />}>
-                    <ProfileSection symbol={upper} />
+                    <ProfileSection symbol={upper} locale={resolved} />
                 </Suspense>
 
                 {/* audit fix FIX 2: XOR — FundamentalAiSummary (client widget) and

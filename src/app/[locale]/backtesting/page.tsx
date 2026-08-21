@@ -1,20 +1,23 @@
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { DEFAULT_LOCALE, isLocale, type Locale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
     localeOpenGraph,
 } from '@/shared/lib/seoAlternates';
 import {
-    BACKTESTING_DESCRIPTION,
+    backtestingDescription,
+    backtestingTitle,
     BACKTESTING_KEYWORDS,
-    BACKTESTING_TITLE,
     BACKTESTING_URL,
     buildBreadcrumbJsonLd,
+    buildWebPageJsonLd,
     SITE_BUILD_DATE,
     SITE_NAME,
     SITE_URL,
+    type SeoTranslator,
+    localizedAbsoluteUrl,
 } from '@/shared/lib/seo';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { TERMS_PATH } from '@/shared/lib/legal';
@@ -52,8 +55,6 @@ const CLIENT_CASES = data.cases.map(c => ({
 // Derived once at module load — intentionally static, data.json is replaced by the script
 const TICKERS = [...new Set(data.cases.map(c => c.ticker))];
 
-const BACKTESTING_FULL_TITLE = `${BACKTESTING_TITLE} | ${SITE_NAME}`;
-
 interface LocaleMetadataParams {
     readonly params: Promise<{ locale: string }>;
 }
@@ -62,18 +63,24 @@ export async function generateMetadata({
     params,
 }: LocaleMetadataParams): Promise<Metadata> {
     const { locale } = await params;
-    const ogLocale = localeOpenGraph(
-        isLocale(locale) ? locale : DEFAULT_LOCALE
-    );
+    const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({
+        locale: resolvedLocale,
+        namespace: 'shared.seo',
+    });
+    const title = backtestingTitle(tSeo);
+    const description = backtestingDescription(tSeo);
+    const fullTitle = `${title} | ${SITE_NAME}`;
+    const ogLocale = localeOpenGraph(resolvedLocale);
     return {
-        title: { absolute: BACKTESTING_FULL_TITLE },
-        description: BACKTESTING_DESCRIPTION,
+        title: { absolute: fullTitle },
+        description,
         keywords: BACKTESTING_KEYWORDS,
         alternates: await localeAlternatesFrom(params, '/backtesting'),
         openGraph: {
-            title: BACKTESTING_FULL_TITLE,
-            description: BACKTESTING_DESCRIPTION,
-            url: BACKTESTING_URL,
+            title: fullTitle,
+            description,
+            url: localizedAbsoluteUrl(BACKTESTING_URL, resolvedLocale),
             siteName: SITE_NAME,
             ...ogLocale,
             type: 'website',
@@ -82,63 +89,82 @@ export async function generateMetadata({
                     url: '/og-image.png',
                     width: OG_IMAGE_WIDTH,
                     height: OG_IMAGE_HEIGHT,
-                    alt: `${SITE_NAME} AI 백테스팅 결과`,
+                    alt: tSeo('backtestingOgAlt', { v0: SITE_NAME }),
                 },
             ],
         },
         twitter: {
             card: 'summary_large_image',
-            title: BACKTESTING_FULL_TITLE,
-            description: BACKTESTING_DESCRIPTION,
+            title: fullTitle,
+            description,
             images: ['/og-image.png'],
         },
     };
 }
 
-const webPageJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'WebPage',
-    '@id': `${BACKTESTING_URL}#webpage`,
-    name: BACKTESTING_FULL_TITLE,
-    description: BACKTESTING_DESCRIPTION,
-    url: BACKTESTING_URL,
-    isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
-};
-
-const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-    { name: BACKTESTING_TITLE, url: BACKTESTING_URL },
-]);
-
-const datasetJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Dataset',
-    name: `${SITE_NAME} AI 기술적 분석 백테스팅 데이터셋`,
-    description: BACKTESTING_DESCRIPTION,
-    url: BACKTESTING_URL,
-    identifier: 'siglens-backtesting-2024-2026',
-    creator: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
-    license: `${SITE_URL}${TERMS_PATH}`,
-    temporalCoverage: '2024-04/2026-04',
-    spatialCoverage: 'US',
-    variableMeasured: '주식 기술적 분석 신호 승률 및 AI 예측 정확도',
-    keywords: [
-        'AI stock prediction backtesting',
-        'US stock technical analysis backtest',
-        'RSI MACD signal accuracy',
-        'Magnificent 7 backtest',
-        'AAPL NVDA TSLA backtest',
-        '주식 기술적 분석 백테스팅',
-        'AI 주식 예측 정확도',
-    ],
-    distribution: [
-        {
-            '@type': 'DataDownload',
-            encodingFormat: 'application/json',
-            contentUrl: `${SITE_URL}/backtesting/data.json`,
-            dateModified: SITE_BUILD_DATE.toISOString(),
+/**
+ * `datasetJsonLd.variableMeasured`/`keywords`는 title/description과 무관한
+ * 별도 문구라 이 함수 밖(§design "Only titles, descriptions, and the page
+ * <h1>s")이지만, `name`/`description`은 `backtestingTitle`/`backtestingDescription`을
+ * 재사용해 title/description과 동일 로케일로 자동 정렬된다.
+ */
+function buildBacktestingJsonLd(t: SeoTranslator, locale: Locale) {
+    const title = backtestingTitle(t);
+    const description = backtestingDescription(t);
+    const fullTitle = `${title} | ${SITE_NAME}`;
+    return {
+        webPageJsonLd: {
+            // 손으로 다시 짜지 않는다 — `@id`·`url`의 로케일 접두사와
+            // `inLanguage`를 빌더가 한 번에 맞춘다.
+            ...buildWebPageJsonLd({
+                url: BACKTESTING_URL,
+                name: fullTitle,
+                description,
+                locale,
+            }),
         },
-    ],
-};
+        breadcrumbJsonLd: buildBreadcrumbJsonLd(
+            [{ name: title, url: BACKTESTING_URL }],
+            locale
+        ),
+        datasetJsonLd: {
+            '@context': 'https://schema.org',
+            '@type': 'Dataset',
+            name: t('datasetName', { v0: SITE_NAME }),
+            description,
+            // 로케일별 URL — 같은 Dataset을 네 URL이 각자 자기 주소로 선언해야
+            // 크롤러가 언어 클러스터를 하나로 접지 않는다.
+            url: localizedAbsoluteUrl(BACKTESTING_URL, locale),
+            identifier: 'siglens-backtesting-2024-2026',
+            creator: {
+                '@type': 'Organization',
+                name: SITE_NAME,
+                url: SITE_URL,
+            },
+            license: `${SITE_URL}${TERMS_PATH}`,
+            temporalCoverage: '2024-04/2026-04',
+            spatialCoverage: 'US',
+            variableMeasured: t('variableMeasured'),
+            keywords: [
+                'AI stock prediction backtesting',
+                'US stock technical analysis backtest',
+                'RSI MACD signal accuracy',
+                'Magnificent 7 backtest',
+                'AAPL NVDA TSLA backtest',
+                '주식 기술적 분석 백테스팅',
+                'AI 주식 예측 정확도',
+            ],
+            distribution: [
+                {
+                    '@type': 'DataDownload',
+                    encodingFormat: 'application/json',
+                    contentUrl: `${SITE_URL}/backtesting/data.json`,
+                    dateModified: SITE_BUILD_DATE.toISOString(),
+                },
+            ],
+        },
+    };
+}
 
 export default async function BacktestingPage({
     params,
@@ -151,6 +177,12 @@ export default async function BacktestingPage({
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
     const t = await getTranslations('app.backtesting');
+    const tSeo = await getTranslations('shared.seo');
+    const { webPageJsonLd, breadcrumbJsonLd, datasetJsonLd } =
+        buildBacktestingJsonLd(
+            tSeo,
+            isLocale(locale) ? locale : DEFAULT_LOCALE
+        );
     return (
         <>
             <JsonLd data={webPageJsonLd} />

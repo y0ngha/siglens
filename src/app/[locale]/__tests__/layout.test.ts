@@ -25,7 +25,13 @@ vi.mock('@/shared/lib/og', () => ({
 
 import { generateMetadata, generateStaticParams } from '@/app/[locale]/layout';
 import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
-import { ROOT_FULL_TITLE, ROOT_TITLE, SITE_NAME } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/lib/seo';
+import koMessages from '@/../messages/ko.json';
+
+// 홈 제목은 `shared.seo.root` 카탈로그가 소유한다. 브랜드 접미사는 레이아웃이
+// 붙이므로 여기서 같은 방식으로 조립해 대조한다.
+const ROOT_TITLE = koMessages.shared.seo.root.title;
+const ROOT_FULL_TITLE = `${ROOT_TITLE} | ${SITE_NAME}`;
 import { LOCALES, LOCALE_OG } from '@/shared/i18n/locales';
 
 async function metadataFor(locale: string) {

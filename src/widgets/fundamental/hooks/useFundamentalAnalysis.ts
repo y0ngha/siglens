@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { StreamErrorMessages } from '@/shared/hooks/useAnalysisStream';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { useCallback, useMemo } from 'react';
@@ -52,9 +53,20 @@ async function fetchFundamentalAnalysis(
         if (isGateBlockedResult(result)) {
             throw new Error(result.error.message);
         }
+        /**
+         * core는 `fetch_failed`에 **항상** `error`를 채운다 — `String(error)`나
+         * `Profile not found for symbol: AAPL` 같은 **영어 예외 문자열**이다
+         * (core의 `dist/application` 아래 run 파일들). 그래서
+         * `result.error ?? fallback`은
+         * 폴백이 절대 안 걸리고 원시 예외가 전 로케일에 그대로 나갔다.
+         * 카탈로그 문구를 먼저 쓰고, 원문은 개발자용으로 콘솔에만 남긴다.
+         */
+        if (result.code === 'fetch_failed' && result.error) {
+            console.error('[fetchFailed]', result.error);
+        }
         const message =
             result.code === 'fetch_failed'
-                ? (result.error ?? messages.fetchFailed)
+                ? messages.fetchFailed
                 : messages.limitExceeded;
         throw new Error(message);
     }
@@ -81,6 +93,7 @@ export function useFundamentalAnalysis(
      */
     isSettingsHydrated = true
 ): FundamentalAnalysisState {
+    const tError = useTranslations('shared.ui.analysisError');
     const locale = useCurrentLocale();
     const streamMessages = useStreamErrorMessages();
     const queryKey = useMemo(
@@ -128,7 +141,7 @@ export function useFundamentalAnalysis(
             error:
                 query.error instanceof Error
                     ? query.error
-                    : new Error('분석 중 오류가 발생했습니다.'),
+                    : new Error(tError('analysisFailed')),
             retry,
             trigger: retry,
         };

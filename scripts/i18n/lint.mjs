@@ -37,14 +37,29 @@ for (const relPath of candidateFiles(ROOT)) {
     }
     let violations = 0;
     for (const candidate of collectCandidates(ast, code)) {
-        const verdict = classify({ candidate, filePath: relPath });
+        const verdict = classify({ candidate, filePath: relPath, code });
         // 위반이 아닌 것들:
         // - 이미 번역됨 / 모듈 경로·타입 리터럴
         // - SEO 키워드: 번역 대상이 아니라 ko 전용 데이터다(seoAlternates.ts 참고)
         if (
             verdict.reason === 'already-translated' ||
             verdict.reason === 'module-specifier' ||
-            verdict.reason === 'seo-keywords-ko-only'
+            verdict.reason === 'seo-keywords-ko-only' ||
+            // 표시 번역이 카탈로그로 옮겨진 데이터 config — 여기 남은 한국어는
+            // 원본 데이터이고 화면은 카탈로그를 조회한다(§context.mjs).
+            verdict.reason === 'catalog-backed-data' ||
+            // 콘솔 로그·`[모듈]` 접두 throw — 운영자만 읽는다(§context.mjs).
+            verdict.reason === 'developer-diagnostic' ||
+            // E2E 전용 스텁 — 프로덕션 렌더 경로에 닿지 않는다(§context.mjs).
+            // `build*Prompt()` 안의 모델 지시문 — 화면 문구가 아니다.
+            verdict.reason === 'ai-prompt' ||
+            verdict.reason === 'e2e-stub' ||
+            // 한국어 조사 규칙 — 번역 대상이 아니다(§context.mjs).
+            verdict.reason === 'ko-grammar' ||
+            // 언어 스위처의 자국어 표기 — 번역하면 기능이 망가진다.
+            verdict.reason === 'native-language-label' ||
+            // use-case의 로그·폴백 원문 — 표시는 UI가 코드로 번역한다.
+            verdict.reason === 'log-fallback-message'
         ) {
             continue;
         }

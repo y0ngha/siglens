@@ -19,6 +19,7 @@ import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotSt
 import {
     buildAssetAboutNode,
     buildDisplayName,
+    pickAssetName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
 import { mapExpirationsToSlots } from '@y0ngha/siglens-core';
@@ -34,7 +35,7 @@ import {
     buildSnapshotMetaDescription,
     buildSymbolOptionsSeoContent,
     buildSymbolSeoContent,
-    buildSymbolWebPageJsonLd,
+    buildWebPageJsonLd,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
 } from '@/shared/lib/seo';
@@ -109,10 +110,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
 
-    const displayName = buildDisplayName(assetInfo, upper);
-    const seo = buildSymbolOptionsSeoContent(upper, {
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
+    const displayName = buildDisplayName(assetInfo, upper, locale);
+    const seo = buildSymbolOptionsSeoContent(upper, tSeo, {
         displayName,
         koreanName: assetInfo.koreanName,
+        englishName: assetInfo.name,
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
         hasOptions,
     });
     const metadata = symbolMetadataFromSeo(seo, locale);
@@ -123,11 +127,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // an extra DB round-trip. Falls back to the templated description when no
     // snapshot exists (backward compatible). og/twitter keep the templated copy
     // — only the search-facing <meta name="description"> is overridden.
-    const snap = (await getSeoSnapshotsStatic(upper, revalidate)).find(
+    const snap = (await getSeoSnapshotsStatic(upper, revalidate, locale)).find(
         s => s.tab === 'options'
     );
     const snapshotDescription = snap
-        ? buildSnapshotMetaDescription('options', snap.content, displayName)
+        ? buildSnapshotMetaDescription(
+              'options',
+              snap.content,
+              displayName,
+              locale
+          )
         : null;
     const description = snapshotDescription ?? metadata.description;
 
@@ -144,11 +153,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function OptionsPage({ params }: Props) {
     const { locale, symbol } = await params;
+    // DB 스냅샷은 로케일별 행이라 좁혀진 로케일이 필요하다. URL 세그먼트는 신뢰 경계다.
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
     // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
     const t = await getTranslations('app.symbol');
+    const tSeo = await getTranslations('shared.seo');
     const upper = symbol.toUpperCase();
 
     if (!isAdmissibleSymbolShape(upper)) notFound();
@@ -177,7 +189,7 @@ export default async function OptionsPage({ params }: Props) {
         // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
         // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
         // `export const revalidate` literal above.
-        getSeoSnapshotsStatic(upper, revalidate),
+        getSeoSnapshotsStatic(upper, revalidate, resolved),
     ]);
     const optionsSnapshot = snapshots.find(s => s.tab === 'options');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasOptionsProse)
@@ -197,7 +209,11 @@ export default async function OptionsPage({ params }: Props) {
     if (isUnresolvableDegraded(upper, degraded)) notFound();
     if (!assetInfo) notFound();
 
-    const displayName = buildDisplayName(assetInfo, upper);
+    const displayName = buildDisplayName(
+        assetInfo,
+        upper,
+        isLocale(locale) ? locale : DEFAULT_LOCALE
+    );
 
     // 옵션 시장이 없으면(또는 조회 실패로 degrade되면) OptionsEmptyState를 렌더한다.
     // 스냅샷이 있으면 이 분기에서도 프로즈를 유지한다(spec §7 — degraded 분기에서도
@@ -279,9 +295,12 @@ export default async function OptionsPage({ params }: Props) {
     // 렌더 경로에서는 false 분기로 빠질 수 없으므로 재조회 없이 상수로 둔다.
     const { fullTitle, description, url } = buildSymbolOptionsSeoContent(
         upper,
+        tSeo,
         {
             displayName,
             koreanName: assetInfo.koreanName,
+            englishName: assetInfo.name,
+            locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
             hasOptions: true,
         }
     );
@@ -290,20 +309,28 @@ export default async function OptionsPage({ params }: Props) {
     // undefined로 자연 생략된다 (assetClassification 모듈 doc 참고).
     const aboutNode = buildAssetAboutNode(
         upper,
-        assetInfo.koreanName ?? assetInfo.name,
+        pickAssetName(
+            assetInfo,
+            upper,
+            isLocale(locale) ? locale : DEFAULT_LOCALE
+        ),
         assetInfo.fmpSymbol
     );
-    const jsonLd = buildSymbolWebPageJsonLd({
+    const jsonLd = buildWebPageJsonLd({
         url,
         name: fullTitle,
         description,
         about: aboutNode,
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
     });
 
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: upper, url: buildSymbolSeoContent(upper).url },
-        { name: t('page.f1b01b'), url },
-    ]);
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd(
+        [
+            { name: upper, url: buildSymbolSeoContent(upper, tSeo).url },
+            { name: t('page.f1b01b'), url },
+        ],
+        isLocale(locale) ? locale : DEFAULT_LOCALE
+    );
 
     const faqJsonLd = {
         '@context': 'https://schema.org',
@@ -311,7 +338,7 @@ export default async function OptionsPage({ params }: Props) {
         mainEntity: [
             {
                 '@type': 'Question',
-                name: `${displayName} 옵션 시장 분석에서 무엇을 볼 수 있나요?`,
+                name: tSeo('faq.optionsScope', { v0: displayName }),
                 acceptedAnswer: {
                     '@type': 'Answer',
                     text: t('page.a32c23'),

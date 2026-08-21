@@ -1,10 +1,9 @@
 import { getTranslations } from 'next-intl/server';
-import { localeCanonical } from '@/shared/lib/seoAlternates';
+import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import { Suspense } from 'react';
 import { setRequestLocale } from 'next-intl/server';
 import { AuthCardShell, AuthFormSkeleton } from '@/shared/ui/auth';
-import { SITE_NAME } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { LoginContent } from './LoginContent';
@@ -25,11 +24,20 @@ export async function generateMetadata({
 }): Promise<Metadata> {
     const { locale } = await params;
     const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({
+        locale: resolved,
+        namespace: 'shared.seo',
+    });
+    const title = tSeo('login.title');
+    const description = tSeo('login.description');
     return {
-        title: '로그인',
-        description: `${SITE_NAME}에 로그인하여 회원 전용 기능을 이용해보세요.`,
+        title,
+        description,
         alternates: { canonical: localeCanonical(resolved, '/login') },
-        openGraph: { url: localeCanonical(resolved, '/login') },
+        ...localePageSocial(resolved, '/login', {
+            title,
+            description,
+        }),
         robots: { index: false, follow: true },
     };
 }

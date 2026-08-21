@@ -20,10 +20,11 @@ import { FundamentalAiSummaryError } from './FundamentalAiSummaryError';
 import { FundamentalAiSummarySkeleton } from './FundamentalAiSummarySkeleton';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 
-const SENTIMENT_LABEL: Record<FundamentalSentiment, string> = {
-    bullish: '긍정',
-    neutral: '중립',
-    bearish: '부정',
+/** FundamentalSentiment → `shared.enumLabel.sentiment` 카탈로그 키. */
+const SENTIMENT_LABEL_KEY: Record<FundamentalSentiment, string> = {
+    bullish: 'sentiment.bullish',
+    neutral: 'sentiment.neutral',
+    bearish: 'sentiment.bearish',
 };
 
 const SENTIMENT_CLASS: Record<FundamentalSentiment, string> = {
@@ -32,12 +33,13 @@ const SENTIMENT_CLASS: Record<FundamentalSentiment, string> = {
     bearish: 'bg-ui-danger/10 text-chart-bearish',
 };
 
-const CATEGORY_LABEL: Record<FundamentalCategory, string> = {
-    valuation: '밸류에이션',
-    profitability: '수익성',
-    growth: '성장성',
-    health: '재무 건전성',
-    futureDirection: '미래 방향',
+/** FundamentalCategory → `shared.enumLabel.fundamentalCategory` 카탈로그 키. */
+const CATEGORY_LABEL_KEY: Record<FundamentalCategory, string> = {
+    valuation: 'fundamentalCategory.valuation',
+    profitability: 'fundamentalCategory.profitability',
+    growth: 'fundamentalCategory.growth',
+    health: 'fundamentalCategory.health',
+    futureDirection: 'fundamentalCategory.futureDirection',
 };
 
 interface FundamentalAiSummaryViewProps {
@@ -48,6 +50,11 @@ export function FundamentalAiSummaryView({
     result,
 }: FundamentalAiSummaryViewProps) {
     const t = useTranslations('widgets.fundamental');
+    // extract.mjs의 동적 키 탐지는 이 파일 안에서 번역자를 직접 호출하는
+    // 패턴만 본다 — `SENTIMENT_LABEL_KEY[...]`/`CATEGORY_LABEL_KEY[...]`를
+    // 그대로 `tLabel(...)`에 넣어야 `shared.enumLabel`이 이 라우트의
+    // 클라이언트 번들에 실린다.
+    const tLabel = useTranslations('shared.enumLabel');
     return (
         <section
             aria-labelledby="ai-summary-heading"
@@ -66,7 +73,7 @@ export function FundamentalAiSummaryView({
                         SENTIMENT_CLASS[result.overallSentiment]
                     )}
                 >
-                    {SENTIMENT_LABEL[result.overallSentiment]}
+                    {tLabel(SENTIMENT_LABEL_KEY[result.overallSentiment])}
                 </span>
             </div>
 
@@ -86,7 +93,7 @@ export function FundamentalAiSummaryView({
                         >
                             <div className="mb-1 flex items-center gap-2">
                                 <span className="text-sm font-medium">
-                                    {CATEGORY_LABEL[a.category]}
+                                    {tLabel(CATEGORY_LABEL_KEY[a.category])}
                                 </span>
                                 <span
                                     className={cn(
@@ -94,7 +101,7 @@ export function FundamentalAiSummaryView({
                                         SENTIMENT_CLASS[a.sentiment]
                                     )}
                                 >
-                                    {SENTIMENT_LABEL[a.sentiment]}
+                                    {tLabel(SENTIMENT_LABEL_KEY[a.sentiment])}
                                 </span>
                             </div>
                             <p className="text-sm leading-relaxed text-secondary-400">

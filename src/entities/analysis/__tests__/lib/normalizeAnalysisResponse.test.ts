@@ -1,7 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import type { AnalysisResponse } from '@y0ngha/siglens-core';
 import { normalizeAnalysisResponse } from '@/entities/analysis/lib/normalizeAnalysisResponse';
-import { FALLBACK_ANALYSIS, isFallbackAnalysis } from '@/entities/chat-message';
+import {
+    buildFallbackAnalysis,
+    isFallbackAnalysis,
+} from '@/entities/chat-message';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+
+// 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을
+// 들고 있어 `/en/AAPL`이 영어 화면에 한국어 폴백을 렌더했다.
+const tFallback = catalogTranslator('entities.chat-message.fallback', 'ko');
+const FALLBACK_SUMMARY = tFallback('unavailable');
+const FALLBACK_ANALYSIS = buildFallbackAnalysis(FALLBACK_SUMMARY);
 
 // 정적 타입은 모든 배열을 required로 선언하므로, 런타임 누락을 재현하려면
 // 의도적으로 타입을 우회한 부분 객체를 만든다.
@@ -124,6 +134,6 @@ describe('normalizeAnalysisResponse', () => {
         // 스프레드로 새 객체가 됐으므로 참조는 이미 깨져 있다. 그럼에도 값 기반
         // isFallbackAnalysis는 true를 반환해야 한다.
         expect(normalized).not.toBe(FALLBACK_ANALYSIS);
-        expect(isFallbackAnalysis(normalized)).toBe(true);
+        expect(isFallbackAnalysis(normalized, FALLBACK_SUMMARY)).toBe(true);
     });
 });

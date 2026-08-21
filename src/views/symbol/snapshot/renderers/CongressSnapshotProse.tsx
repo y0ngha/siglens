@@ -33,16 +33,17 @@ interface CongressSnapshotProseProps {
     generatedAt?: Date;
 }
 
-const SENTIMENT_LABEL: Record<CongressSentiment, string> = {
-    bullish: '매수 우위',
-    neutral: '중립',
-    bearish: '매도 우위',
+/** CongressSentiment → `shared.enumLabel` 카탈로그 키. 값 자체는 더 이상 한글이 아니다 — 렌더 시점에 `tLabel`로 조회한다. */
+const SENTIMENT_LABEL_KEY: Record<CongressSentiment, string> = {
+    bullish: 'congressSentiment.bullish',
+    neutral: 'congressSentiment.neutral',
+    bearish: 'congressSentiment.bearish',
 };
 
 // See createEnumGuard's JSDoc for the Object.hasOwn / prototype-chain
 // rationale (audit fix; PR #698 round-2 review FIX 3 extracted the shared
 // implementation).
-const isSentiment = createEnumGuard(SENTIMENT_LABEL);
+const isSentiment = createEnumGuard(SENTIMENT_LABEL_KEY);
 
 interface NarrowedCongressContent {
     summaryKo: string;
@@ -123,6 +124,7 @@ export function CongressSnapshotProse({
     generatedAt,
 }: CongressSnapshotProseProps) {
     const t = useTranslations('views.symbol');
+    const tLabel = useTranslations('shared.enumLabel');
     const narrowed = narrowCongressContent(content);
     if (narrowed === null) return null;
 
@@ -143,7 +145,9 @@ export function CongressSnapshotProse({
                     <p className="font-medium text-secondary-200">
                         {t('CongressSnapshotProse.739702', {
                             v0: symbol,
-                            v1: SENTIMENT_LABEL[narrowed.overallSentiment],
+                            v1: tLabel(
+                                SENTIMENT_LABEL_KEY[narrowed.overallSentiment]
+                            ),
                         })}
                     </p>
                 )}

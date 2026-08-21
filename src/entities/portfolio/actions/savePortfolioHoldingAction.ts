@@ -4,9 +4,38 @@ import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
-import { validateHoldingInput } from '../lib/validateHoldingInput';
+import {
+    validateHoldingInput,
+    QUANTITY_SCALE,
+    PRICE_SCALE,
+} from '../lib/validateHoldingInput';
 import { toView } from '../lib/toView';
-import type { RawHoldingInput, SavePortfolioResult } from '../model';
+import type {
+    PortfolioActionErrorCode,
+    RawHoldingInput,
+    SavePortfolioResult,
+} from '../model';
+import { getTranslations } from 'next-intl/server';
+
+/**
+ * `validateHoldingInput`이 돌려주는 코드 → `entities.portfolio.action` 키.
+ *
+ * 세 코드만 나온다 — 나머지 `PortfolioActionErrorCode`는 이 액션이 직접 만든다.
+ * 소수 자릿수는 문구에 굳히지 않고 값으로 넘긴다: 예전에는 "소수점 8자리까지"가
+ * 문자열에 박혀 있어 `QUANTITY_SCALE`을 바꿔도 조용히 어긋났다.
+ */
+const VALIDATION_MESSAGE_KEY: Partial<
+    Record<PortfolioActionErrorCode, string>
+> = {
+    invalid_symbol: 'invalidSymbol',
+    invalid_quantity: 'invalidQuantity',
+    invalid_price: 'invalidPrice',
+};
+
+const SCALE_FOR_CODE: Partial<Record<PortfolioActionErrorCode, number>> = {
+    invalid_quantity: QUANTITY_SCALE,
+    invalid_price: PRICE_SCALE,
+};
 
 /**
  * Server-action arguments are attacker-controlled at runtime regardless of
@@ -34,12 +63,13 @@ function isRawHoldingInputShape(input: unknown): input is RawHoldingInput {
 export async function savePortfolioHoldingAction(
     input: RawHoldingInput
 ): Promise<SavePortfolioResult> {
+    const t = await getTranslations('entities.portfolio.action');
     const user = await getCurrentUser();
     if (user === null) {
         return {
             status: 'error',
             code: 'unauthenticated',
-            message: '로그인이 필요합니다.',
+            message: t('unauthenticated'),
         };
     }
 
@@ -47,12 +77,20 @@ export async function savePortfolioHoldingAction(
         return {
             status: 'error',
             code: 'invalid_symbol',
-            message: '유효하지 않은 입력입니다.',
+            message: t('invalidInput'),
         };
     }
 
     const v = validateHoldingInput(input);
-    if (!v.ok) return { status: 'error', code: v.code, message: v.message };
+    if (!v.ok) {
+        return {
+            status: 'error',
+            code: v.code,
+            message: t(VALIDATION_MESSAGE_KEY[v.code] ?? 'invalidInput', {
+                v0: SCALE_FOR_CODE[v.code] ?? 0,
+            }),
+        };
+    }
 
     let companyName: string | null = null;
     let fmpSymbol: string | null = null;
@@ -62,7 +100,7 @@ export async function savePortfolioHoldingAction(
             return {
                 status: 'error',
                 code: 'symbol_not_found',
-                message: '존재하지 않는 종목입니다.',
+                message: t('symbolNotFound'),
             };
         }
         companyName = info.name ?? null;
@@ -90,7 +128,7 @@ export async function savePortfolioHoldingAction(
         return {
             status: 'error',
             code: 'storage_unavailable',
-            message: '저장에 실패했어요. 잠시 후 다시 시도해 주세요.',
+            message: t('saveFailed'),
         };
     }
 }

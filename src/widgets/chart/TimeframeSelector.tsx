@@ -4,15 +4,8 @@ import { useTranslations } from 'next-intl';
 import { TIMEFRAMES } from '@/shared/config/market';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
-
-const TIMEFRAME_LABEL: Record<Timeframe, string> = {
-    '5Min': '5분',
-    '15Min': '15분',
-    '30Min': '30분',
-    '1Hour': '1시간',
-    '4Hour': '4시간',
-    '1Day': '1일',
-};
+import { timeframeLabel } from '@/shared/lib/timeframeLabel';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 
 interface TimeframeSelectorProps {
     value: Timeframe;
@@ -28,6 +21,7 @@ export function TimeframeSelector({
     isTierHydrated = true,
 }: TimeframeSelectorProps) {
     const t = useTranslations('widgets.chart');
+    const locale = useResolvedLocale();
     return (
         <div className="flex w-full items-center gap-1 sm:w-auto">
             {TIMEFRAMES.map(timeframe => {
@@ -54,7 +48,7 @@ export function TimeframeSelector({
                                 : 'text-secondary-400 hover:text-secondary-200 border-transparent'
                         )}
                     >
-                        {TIMEFRAME_LABEL[timeframe]}
+                        {timeframeLabel(timeframe, locale)}
                     </button>
                 );
             })}

@@ -1,3 +1,4 @@
+import koMessages from '@/../messages/ko.json';
 vi.mock('next/navigation', () => ({
     usePathname: vi.fn(() => '/AAPL'),
 }));
@@ -20,15 +21,19 @@ vi.mock('next/link', () => ({
 
 vi.mock('@/views/symbol/utils/symbolTabsConfig', () => ({
     TABS: [
-        { key: 'chart', label: '차트', hrefBuilder: (s: string) => `/${s}` },
+        {
+            key: 'chart',
+            labelKey: 'chart',
+            hrefBuilder: (s: string) => `/${s}`,
+        },
         {
             key: 'news',
-            label: '뉴스',
+            labelKey: 'news',
             hrefBuilder: (s: string) => `/${s}/news`,
         },
         {
             key: 'fundamental',
-            label: '펀더멘털',
+            labelKey: 'fundamental',
             hrefBuilder: (s: string) => `/${s}/fundamental`,
         },
     ],
@@ -36,17 +41,17 @@ vi.mock('@/views/symbol/utils/symbolTabsConfig', () => ({
         const all = [
             {
                 key: 'chart',
-                label: '차트',
+                labelKey: 'chart',
                 hrefBuilder: (s: string) => `/${s}`,
             },
             {
                 key: 'news',
-                label: '뉴스',
+                labelKey: 'news',
                 hrefBuilder: (s: string) => `/${s}/news`,
             },
             {
                 key: 'fundamental',
-                label: '펀더멘털',
+                labelKey: 'fundamental',
                 hrefBuilder: (s: string) => `/${s}/fundamental`,
             },
         ];
@@ -85,26 +90,38 @@ describe('SymbolTabs', () => {
 
     it('renders all tab links', () => {
         render(<SymbolTabs symbol="aapl" />);
-        expect(screen.getByText('차트')).toBeDefined();
-        expect(screen.getByText('뉴스')).toBeDefined();
-        expect(screen.getByText('펀더멘털')).toBeDefined();
+        expect(
+            screen.getByText(koMessages.shared.symbolTab.chart)
+        ).toBeDefined();
+        expect(
+            screen.getByText(koMessages.shared.symbolTab.news)
+        ).toBeDefined();
+        expect(
+            screen.getByText(koMessages.shared.symbolTab.fundamental)
+        ).toBeDefined();
     });
 
     it('marks the active tab with aria-current="page"', () => {
         render(<SymbolTabs symbol="aapl" />);
-        const chartLink = screen.getByText('차트').closest('a')!;
+        const chartLink = screen
+            .getByText(koMessages.shared.symbolTab.chart)
+            .closest('a')!;
         expect(chartLink.getAttribute('aria-current')).toBe('page');
     });
 
     it('does not mark inactive tabs with aria-current', () => {
         render(<SymbolTabs symbol="aapl" />);
-        const newsLink = screen.getByText('뉴스').closest('a')!;
+        const newsLink = screen
+            .getByText(koMessages.shared.symbolTab.news)
+            .closest('a')!;
         expect(newsLink.getAttribute('aria-current')).toBeNull();
     });
 
     it('uppercases the symbol for href building', () => {
         render(<SymbolTabs symbol="aapl" />);
-        const newsLink = screen.getByText('뉴스').closest('a')!;
+        const newsLink = screen
+            .getByText(koMessages.shared.symbolTab.news)
+            .closest('a')!;
         expect(newsLink.getAttribute('href')).toBe('/AAPL/news');
     });
 
@@ -112,10 +129,14 @@ describe('SymbolTabs', () => {
         (usePathname as ReturnType<typeof vi.fn>).mockReturnValue('/AAPL/news');
 
         render(<SymbolTabs symbol="aapl" />);
-        const newsLink = screen.getByText('뉴스').closest('a')!;
+        const newsLink = screen
+            .getByText(koMessages.shared.symbolTab.news)
+            .closest('a')!;
         expect(newsLink.getAttribute('aria-current')).toBe('page');
 
-        const chartLink = screen.getByText('차트').closest('a')!;
+        const chartLink = screen
+            .getByText(koMessages.shared.symbolTab.chart)
+            .closest('a')!;
         expect(chartLink.getAttribute('aria-current')).toBeNull();
     });
 
@@ -142,10 +163,16 @@ describe('SymbolTabs', () => {
             screen.getByRole('navigation', { name: '분석 종류' })
         ).toBeDefined();
         // Equity-only tabs must be present (they would be absent for crypto).
-        expect(screen.getByText('펀더멘털')).toBeDefined();
+        expect(
+            screen.getByText(koMessages.shared.symbolTab.fundamental)
+        ).toBeDefined();
         // Crypto-shared tabs are also present.
-        expect(screen.getByText('차트')).toBeDefined();
-        expect(screen.getByText('뉴스')).toBeDefined();
+        expect(
+            screen.getByText(koMessages.shared.symbolTab.chart)
+        ).toBeDefined();
+        expect(
+            screen.getByText(koMessages.shared.symbolTab.news)
+        ).toBeDefined();
     });
 });
 

@@ -4,15 +4,15 @@ import type { SignalStrength } from '@y0ngha/siglens-core';
 describe('resolveStrengthDisplay', () => {
     describe('유효한 SignalStrength 값일 때', () => {
         it.each<[SignalStrength, string]>([
-            ['strong', '강한 시그널'],
-            ['moderate', '보통 시그널'],
-            ['weak', '약한 시그널'],
+            ['strong', 'strong'],
+            ['moderate', 'moderate'],
+            ['weak', 'weak'],
         ])(
             '%s → label이 %s인 StrengthDisplay를 반환한다',
             (strength, expectedLabel) => {
                 const result = resolveStrengthDisplay(strength);
                 expect(result).not.toBeNull();
-                expect(result!.label).toBe(expectedLabel);
+                expect(result!.labelKey).toBe(expectedLabel);
             }
         );
 

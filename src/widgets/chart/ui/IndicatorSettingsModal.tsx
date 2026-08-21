@@ -103,6 +103,7 @@ export function IndicatorSettingsModal({
     bindings,
 }: IndicatorSettingsModalProps) {
     const t = useTranslations('widgets.chart');
+    const tCategory = useTranslations('widgets.chart.indicatorCategory');
     const { isOpen, open, close, dialogRef, triggerRef } = useDialog();
     // 같은 페이지에 여러 차트가 렌더되어도 dialog title id가 충돌하지 않도록
     // 인스턴스별 고유 id를 생성한다 (aria-labelledby 무결성 보장).
@@ -170,7 +171,7 @@ export function IndicatorSettingsModal({
                                 {groups.map(group => (
                                     <section key={group.category}>
                                         <h3 className="mb-1 text-xs font-semibold tracking-wide text-secondary-500 uppercase">
-                                            {group.label}
+                                            {tCategory(group.labelKey)}
                                         </h3>
                                         <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
                                             {group.items.map(binding =>

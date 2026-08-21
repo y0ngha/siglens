@@ -94,6 +94,12 @@ export interface StreamErrorMessages {
     readonly analysisFailed: string;
     /** 원천 데이터 조회 실패(`code: 'fetch_failed'`). */
     readonly fetchFailed: string;
+    /** 다이제스트 생성 불가(`miss_no_trigger`). */
+    readonly digestUnavailable: string;
+    /** 의회 거래 데이터 조회 실패. */
+    readonly congressFetchFailed: string;
+    /** 재분석 쿨다운. `{v0}`에 남은 초가 들어간다. */
+    readonly reanalyzeCooldown: (seconds: number) => string;
 }
 
 /**

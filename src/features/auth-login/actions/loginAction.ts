@@ -1,5 +1,7 @@
 'use server';
 
+import { getTranslations } from 'next-intl/server';
+
 import { localeHref } from '@/shared/i18n/localeRedirect';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
@@ -24,6 +26,8 @@ export async function loginAction(
     _prev: LoginFormState,
     formData: FormData
 ): Promise<LoginFormState> {
+    // 상태의 `message`가 그대로 화면에 뿌려지므로 요청 로케일로 만든다.
+    const tAuth = await getTranslations('entities.auth.error');
     try {
         const email = normalizeEmail(String(formData.get('email') ?? ''));
         const password = String(formData.get('password') ?? '');
@@ -77,8 +81,7 @@ export async function loginAction(
         return {
             error: {
                 code: 'unexpected',
-                message:
-                    '로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+                message: tAuth('loginFailed'),
             },
         };
     }

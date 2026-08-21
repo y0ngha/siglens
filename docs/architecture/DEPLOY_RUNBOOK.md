@@ -158,8 +158,96 @@ curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge
 | S3 ISR 캐시 외부화 | SSM `ISR_CACHE_DISABLED` + instance refresh | ❌ refresh 필요 |
 | ISR 태그 동기화만 | SSM `ISR_TAG_SYNC_DISABLED` + instance refresh | ❌ refresh 필요 |
 | seo-prewarm 크론 | EventBridge Rule 3개 `disable-rule` | ✅ 즉시 |
+| DB 콘텐츠 다국어 | SSM `DB_CONTENT_LOCALE` 삭제 + instance refresh | ❌ refresh 필요 |
 
 세부 절차는 각각 [ISR_CACHE_HANDLER.md](./ISR_CACHE_HANDLER.md) §1, [CRON.md](../reference/CRON.md)에 있다.
+
+### ⛔ `.env.local`은 **운영 DB**를 가리킨다
+
+`yarn db:*` 스크립트는 전부 `dotenv -e .env.local`로 실행된다. 그 파일의
+`DATABASE_URL`/`DIRECT_DATABASE_URL`은 **운영 Neon 인스턴스**다. 즉 아무 플래그
+없이 `yarn db:migrate`를 치면 기본값이 운영 스키마 변경이다.
+
+그래서 쓰기 작업은 **원격 대상일 때 기본 거부**한다
+(`db/scripts/lib/dbTarget.ts`). 막히는 것:
+
+| 명령 | 원격 대상일 때 |
+|---|---|
+| `yarn db:migrate` | ⛔ 거부 (exit 1) |
+| `yarn db:backfill:content-locale --apply` | ⛔ 거부 |
+| `yarn db:translate:content-locale --apply` | ⛔ 거부 |
+| `yarn db:verify:content-locale` | ✅ 허용 (읽기 전용) |
+
+모든 스크립트가 시작할 때 `[db] target: <host>/<db> (local|REMOTE)`를 찍는다 —
+어느 DB를 봤는지 모르는 채로 "정상"이라 보고하는 것이 가장 위험하다.
+
+**운영에 정말 적용해야 할 때만** `ALLOW_REMOTE_DB_WRITE=1`을 명시한다:
+
+```bash
+ALLOW_REMOTE_DB_WRITE=1 yarn db:migrate
+```
+
+`true`·`yes`·`1` 외의 값으로는 열리지 않는다. 배포 파이프라인은 이 스크립트들을
+부르지 않으므로(마이그레이션은 수동 운영) 이 가드가 자동 배포를 막지 않는다.
+
+**로컬에서 돌리려면** `DATABASE_URL`을 덮어쓴다:
+
+```bash
+docker compose -f docker-compose.e2e.yml up -d postgres
+DIRECT_DATABASE_URL='postgresql://siglens:siglens@localhost:5433/siglens_e2e' \
+  node_modules/.bin/tsx db/scripts/migrate.ts
+```
+
+---
+
+### DB 콘텐츠 다국어 스위치 (`DB_CONTENT_LOCALE`)
+
+뉴스·공지·약관 등 **DB에 저장된 문구**를 로케일별로 서빙하는 스위치.
+`'1'`일 때만 켜지고, 그 외 모든 값(미설정 포함)은 꺼짐이다.
+
+**순서 — 스키마 먼저, 코드 나중 (expand/contract)**
+
+| # | 작업 | 왜 이 순서인가 |
+|---|---|---|
+| 1 | `ALLOW_REMOTE_DB_WRITE=1 yarn db:migrate --until 0029_content_locale` | **코드보다 먼저.** 0029는 additive다(컬럼·인덱스 추가, 기존 unique 유지) — 배포된 구 코드는 `locale`을 모르고 INSERT에서 빼는데 DB 기본값이 채우고, `ON CONFLICT (symbol, tab)`도 그대로 매칭된다(로컬 Postgres 17 실증). `--until`이 없으면 0030까지 적용된다. |
+| 2 | 코드 배포 | 이 시점에 컬럼과 3열 unique가 이미 있다. |
+| 3 | `ALLOW_REMOTE_DB_WRITE=1 yarn db:migrate` (0030) | 전 인스턴스가 새 코드다 = `ON CONFLICT` 타깃이 `(symbol, tab, locale)`뿐이다. 이제 구 unique를 지워도 안전하고, **비-ko 스냅샷이 쓰이기 전에 지워야** 한다. |
+| 4 | `yarn db:backfill:content-locale --apply` | 한국어 컬럼 → 사이드카 `ko` 행. |
+| 5 | `yarn db:translate:content-locale --locale <en\|ja\|zh> --apply` | **비-ko 행을 만드는 유일한 단계.** `GEMINI_API_KEY` 필요. |
+| 6 | `yarn db:verify:content-locale` | 읽기 전용 점검. 실패 시 exit 1이라 게이트로 쓴다. |
+| 7 | SSM `DB_CONTENT_LOCALE=1` → instance refresh | 사이드카 읽기 + ISR 키 분리 시작. |
+
+⛔ **2번을 1번보다 먼저 하면 안 된다.** Drizzle은 스키마에 있는 컬럼을 values에서
+빼도 `default`로 **항상 INSERT에 넣는다**(실측: `values({...}).toSQL()`). 즉
+스위치로는 마이그레이션 전 배포를 보호할 수 없다 — 공유 스냅샷 생성과 프리웜
+크론이 `column "locale" does not exist`로 죽는다. 보호는 순서가 한다.
+회귀 가드: `src/entities/seo-snapshot/__tests__/upsertSql.test.ts`가 **프로덕션
+repository가 만든 SQL**을 직접 검사한다(values 객체를 보는 mock 테스트는 이
+결함을 못 잡았다).
+
+⛔ **3번을 2번보다 먼저 하면 안 된다.** 배포된 구 코드는 `ON CONFLICT
+(symbol, tab)`을 쓰는데, 0030이 그 인덱스를 지운다 — 프리웜이 42P10(`no unique
+or exclusion constraint matching the ON CONFLICT specification`)으로 죽는다.
+
+⛔ **3번을 7번 뒤로 미루면 안 된다.** 구 unique `(symbol, tab)`가 살아 있는 동안
+같은 `(symbol, tab)`에 두 번째 로케일 행을 넣으면 **23505**로 죽는다(로컬 실증).
+스위치를 켜는 순간 비-ko 프리웜이 시작되므로, 그 전에 지워져 있어야 한다.
+
+**되돌리기.** 3번을 적용하기 전까지는 코드 롤백이 안전하다. 3번 이후에는
+구 코드로 롤백하면 안 된다 — `ON CONFLICT (symbol, tab)`이 가리킬 인덱스가 없다.
+스위치(`DB_CONTENT_LOCALE`)는 읽기만 가리므로 언제든 내릴 수 있다.
+
+⚠️ **4·5번 없이 7번을 켜도** 화면은 멀쩡하다(사이드카가 비어 폴백). 무동작이지
+오작동이 아니므로, "켰는데 아무것도 안 바뀐다"면 6번 점검으로 백필(4)이
+빠졌는지 번역(5)이 빠졌는지 가른다.
+
+⚠️ **약관은 AI 번역 대상이 아니다.** 오역이 곧 의무의 변경이라 읽기 경로가
+`source='human'` 행만 신뢰한다. 사람이 넣어야 한다. 종목명·지표명은 애초에
+사이드카에 등록하지 않는다 — 비-ko 표시 경로가 이미 영문 원본을 쓴다.
+
+⚠️ **ISR write 비용**: 켜면 뉴스 목록의 `unstable_cache` 키에 로케일이 붙어
+ISR write가 로케일 수만큼 늘어난다. 이 레포에서 ISR write는 실제 비용 항목이다
+([ISR_REVALIDATE.md](./ISR_REVALIDATE.md)).
 
 ---
 

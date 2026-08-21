@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { NewsFeedCategoryId } from '@/entities/market-news';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
@@ -56,6 +57,7 @@ export function useMarketNewsDigest(
     category: NewsFeedCategoryId,
     hasEnrichedNews: boolean
 ): MarketNewsDigestState {
+    const tError = useTranslations('shared.ui.analysisError');
     const locale = useCurrentLocale();
     const streamMessages = useStreamErrorMessages();
     const [isHydrated, setIsHydrated] = useState(false);
@@ -107,7 +109,7 @@ export function useMarketNewsDigest(
             error:
                 query.error instanceof Error
                     ? query.error
-                    : new Error('AI 다이제스트 생성 중 오류가 발생했어요.'),
+                    : new Error(tError('digestFailed')),
             retry,
         };
     }

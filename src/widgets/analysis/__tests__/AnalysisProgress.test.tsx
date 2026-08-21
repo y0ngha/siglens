@@ -6,8 +6,10 @@ vi.mock('@/shared/lib/cn', () => ({
             .join(' '),
 }));
 vi.mock('../hooks/useAnalysisProgress', () => ({
-    ANALYSIS_PHASES: ['차트 분석 중', '패턴 탐지 중', '결과 생성 중'],
-    ANALYSIS_TIPS: ['팁 하나', '팁 둘', '팁 셋'],
+    ANALYSIS_PHASE_COUNT: 6,
+    ANALYSIS_TIP_COUNT: 8,
+    PRO_INDICATOR_COUNT: 30,
+    SKILL_COUNT: 60,
 }));
 vi.mock('../AdBanner', () => ({
     AdBanner: () => <div data-testid="ad-banner" />,
@@ -21,13 +23,17 @@ describe('AnalysisProgress', () => {
     it('renders the current phase message', () => {
         render(<AnalysisProgress phaseIndex={0} tipIndex={0} />);
 
-        expect(screen.getByText(/차트 분석 중/)).toBeInTheDocument();
+        expect(screen.getByText('시장 데이터 정렬 중')).toBeInTheDocument();
     });
 
     it('renders the current tip', () => {
         render(<AnalysisProgress phaseIndex={0} tipIndex={1} />);
 
-        expect(screen.getByText('팁 둘')).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                'AI 분석은 보통 5분 정도 걸려요. 길어지면 최대 15분까지 걸릴 수 있어요.'
+            )
+        ).toBeInTheDocument();
     });
 
     it('renders phase dots matching the number of phases', () => {
@@ -36,7 +42,8 @@ describe('AnalysisProgress', () => {
         );
 
         const dots = container.querySelectorAll('.rounded-full.h-1.flex-1');
-        expect(dots).toHaveLength(3);
+        // 단계 수는 가 정한다.
+        expect(dots).toHaveLength(6);
     });
 
     it('has a status role with aria-live', () => {

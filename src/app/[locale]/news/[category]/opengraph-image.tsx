@@ -28,7 +28,10 @@ export const contentType = 'image/png';
 // 이 파일은 `/news/kr`·`/news/crypto`까지 모든 카테고리에 붙는 정적 문자열이라
 // 지역을 박으면 한국·암호화폐 페이지가 자기를 미국이라고 말하게 된다.
 // 이미지 본문은 `CATEGORY_CONFIG[cat].koLabel`로 카테고리마다 갈린다.
-export const alt = 'Siglens 시장 뉴스';
+// `alt`는 Next가 **모듈 스코프 상수**로 요구해 로케일별로 낼 수 없다(이미지
+// 본문은 아래에서 로케일별로 그린다). 네 로케일이 한 값을 공유해야 하므로
+// 한국어 대신 영어로 둔다 — 예전엔 한국어라 `/en/…` 공유 카드의 alt만 한국어였다.
+export const alt = 'Siglens — market news';
 
 interface Props {
     params: Promise<{ locale: string; category: string }>;

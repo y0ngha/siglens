@@ -43,6 +43,9 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
             ? marketProfileOf(assetInfo)
             : DEFAULT_MARKET_PROFILE;
     const tabs = tabsFor(profile);
+    // 전용 네임스페이스 — 키가 배열에서 오므로 추출기에는 동적 조회다.
+    // `manualKeys.preserve`에 `shared.symbolTab`이 등록돼 있어야 유지된다.
+    const tTab = useTranslations('shared.symbolTab');
 
     return (
         <nav
@@ -53,12 +56,12 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
             // 가로 스크롤만 유지한다.
             className="flex overflow-x-auto overflow-y-hidden border-b border-secondary-700"
         >
-            {tabs.map(t => {
-                const href = t.hrefBuilder(upper);
+            {tabs.map(tab => {
+                const href = tab.hrefBuilder(upper);
                 const active = pathname === href;
                 return (
                     <Link
-                        key={t.key}
+                        key={tab.key}
                         href={href}
                         // 탭은 전부 같은 심볼의 형제 라우트라 viewport에 동시에 들어온다.
                         // 기본 prefetch는 마운트 즉시 탭 수만큼 RSC 페이로드를 당겨오는데,
@@ -76,7 +79,7 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
                                 : 'text-secondary-400 hover:text-secondary-100'
                         )}
                     >
-                        {t.label}
+                        {tTab(tab.labelKey)}
                     </Link>
                 );
             })}

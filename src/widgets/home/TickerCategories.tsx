@@ -1,3 +1,4 @@
+import { TICKER_CATEGORY_LABEL_KEY } from '@/shared/config/tickerCategoryLabel';
 import { useTranslations } from 'next-intl';
 import type { CategoryId } from '@/shared/lib/types';
 import {
@@ -79,6 +80,8 @@ const CATEGORY_STYLES: Record<CategoryId, CardStyle> = {
 
 const TICKER_CARDS: CategoryCard[] = TICKER_CATEGORIES.map(category => ({
     id: category.id,
+    // 라벨은 렌더 시점에 번역한다 — config는 데이터, 표시는 카탈로그.
+    labelKey: TICKER_CATEGORY_LABEL_KEY[category.label],
     label: category.label,
     ...CATEGORY_STYLES[category.id],
     items: category.items,

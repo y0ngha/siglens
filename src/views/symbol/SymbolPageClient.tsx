@@ -14,7 +14,6 @@ import { useMobileSheet } from './hooks/useMobileSheet';
 import { SNAP_FULL } from './constants/mobileSheet';
 import { useTimeframeChange } from './hooks/useTimeframeChange';
 import { SymbolPageProvider } from './SymbolPageContext';
-import { buildChartPageHeading } from './utils/chartPageHeading';
 import { useSymbolModel } from '@/features/symbol-model';
 import type { AnalysisResponse, TierInfoDepth } from '@y0ngha/siglens-core';
 import {
@@ -105,7 +104,7 @@ export function SymbolPageClient({
                         제공하고, hydration 후 이 가시 h1이 fallback을 대체한다. */}
                     <div className="flex min-w-0 items-center gap-2">
                         <h1 className="line-clamp-2 min-w-0 text-sm font-semibold text-secondary-100 sm:line-clamp-none sm:truncate sm:text-base">
-                            {buildChartPageHeading(displayName)}
+                            {t('chartPageHeading.heading', { v0: displayName })}
                         </h1>
                         {/*
                          * 분석 시트를 여는 명시적 버튼(모바일 전용).

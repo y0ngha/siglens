@@ -7,11 +7,11 @@ import {
 } from '@/shared/config/assetClassNav';
 import { DotSeparator } from '@/shared/ui/DotSeparator';
 import {
-    INVESTMENT_DISCLAIMER,
+    INVESTMENT_DISCLAIMER_KEY,
     PRIVACY_PATH,
-    PRIVACY_TITLE,
+    privacyTitle,
     TERMS_PATH,
-    TERMS_TITLE,
+    termsTitle,
 } from '@/shared/lib/legal';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { Fragment } from 'react';
@@ -28,6 +28,8 @@ export function Footer() {
     const t = useTranslations('widgets.layout');
     // 내비 라벨 키는 네임스페이스까지 포함된 완전 수식 키라 루트로 푼다.
     const tNav = useTranslations();
+    const tSeo = useTranslations('shared.seo');
+    const tLegal = useTranslations('shared.lib.legal');
     return (
         <footer className="border-t border-secondary-800">
             <div className="flex flex-col gap-2 px-6 py-6 lg:px-[15vw]">
@@ -36,7 +38,7 @@ export function Footer() {
                     aria-label={t('Footer.693b62')}
                     className="text-xs leading-relaxed text-secondary-400 sm:text-sm"
                 >
-                    {INVESTMENT_DISCLAIMER}
+                    {tLegal(INVESTMENT_DISCLAIMER_KEY)}
                 </div>
                 <div className="flex flex-col items-center gap-3 border-secondary-800 sm:flex-row sm:justify-between">
                     <p className="text-sm text-secondary-400">
@@ -73,7 +75,7 @@ export function Footer() {
                             prefetch={false}
                             className="text-sm text-secondary-400 transition-colors hover:text-secondary-200"
                         >
-                            {PRIVACY_TITLE}
+                            {privacyTitle(tSeo)}
                         </Link>
                         <DotSeparator />
                         <Link
@@ -83,7 +85,7 @@ export function Footer() {
                             prefetch={false}
                             className="text-sm text-secondary-400 transition-colors hover:text-secondary-200"
                         >
-                            {TERMS_TITLE}
+                            {termsTitle(tSeo)}
                         </Link>
                         <DotSeparator />
                         <ContactDialog

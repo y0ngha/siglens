@@ -1,11 +1,12 @@
 import type { FearGreedWarning } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
-// 문구 자체는 `shared/lib/fearGreedLabels`가 소유한다 — 서버 렌더 요약
+// 문구 **키**는 `shared/lib/fearGreedLabels`가 소유한다 — 서버 렌더 요약
 // (`FearGreedFactsSummary`)이 이 클라이언트 모듈을 끌어오지 않게 하기 위함.
 // 기존 소비자(테스트 포함)의 import 경로를 지키려고 여기서 다시 내보낸다.
-import { WARNING_TEXT } from '@/shared/lib/fearGreedLabels';
+import { useTranslations } from 'next-intl';
+import { WARNING_TEXT_KEY } from '@/shared/lib/fearGreedLabels';
 
-export { WARNING_TEXT };
+export { WARNING_TEXT_KEY };
 
 interface SelfNormWarningBadgeProps {
     warning: FearGreedWarning;
@@ -20,6 +21,9 @@ export function SelfNormWarningBadge({
     warning,
     className,
 }: SelfNormWarningBadgeProps) {
+    // 훅은 조기 반환보다 위에 둔다 — `warning`이 null이 되는 렌더에서만
+    // 훅 호출이 사라지면 훅 순서가 렌더마다 달라진다.
+    const tFearGreed = useTranslations('shared.lib.fearGreed');
     if (!warning) return null;
     return (
         <span
@@ -43,7 +47,7 @@ export function SelfNormWarningBadge({
                     d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.008v.008H12v-.008Z"
                 />
             </svg>
-            {WARNING_TEXT[warning]}
+            {tFearGreed(WARNING_TEXT_KEY[warning])}
         </span>
     );
 }

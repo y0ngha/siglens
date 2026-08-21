@@ -21,14 +21,9 @@ import {
     type NewsSentiment,
 } from '@y0ngha/siglens-core';
 
-import { NEWS_ANALYSIS_PERIOD_LABEL } from '@/shared/lib/news/periodLabels';
+import { NEWS_ANALYSIS_PERIOD_KEY } from '@/shared/lib/news/periodLabels';
 import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
-
-const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
-    bullish: '긍정',
-    neutral: '중립',
-    bearish: '부정',
-};
+import { SENTIMENT_LABEL_KEY } from '@/shared/lib/sentimentDisplay';
 
 const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
     bullish: 'bg-ui-success/10 text-chart-bullish',
@@ -42,6 +37,7 @@ interface StatusCardProps {
 
 function StatusCard({ phase }: StatusCardProps) {
     const t = useTranslations('widgets.news');
+    const tPeriod = useTranslations('shared.lib.newsPeriod');
     const isFetching = phase === 'fetching';
 
     return (
@@ -58,7 +54,7 @@ function StatusCard({ phase }: StatusCardProps) {
                     {t('NewsAiSummary.a74178')}
                 </h2>
                 <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
-                    {NEWS_ANALYSIS_PERIOD_LABEL}
+                    {tPeriod(NEWS_ANALYSIS_PERIOD_KEY)}
                 </span>
             </div>
             <div className="flex items-center gap-3">
@@ -102,6 +98,11 @@ interface NewsAiSummaryViewProps {
 
 export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
     const t = useTranslations('widgets.news');
+    const tPeriod = useTranslations('shared.lib.newsPeriod');
+    // extract.mjs의 동적 키 탐지는 이 파일 안에서 번역자를 직접 호출하는
+    // 패턴만 본다 — `SENTIMENT_LABEL_KEY[...]`를 그대로 `tLabel(...)`에
+    // 넣어야 `shared.enumLabel`이 이 라우트의 클라이언트 번들에 실린다.
+    const tLabel = useTranslations('shared.enumLabel');
     return (
         <section
             aria-labelledby="news-ai-summary-heading"
@@ -116,7 +117,7 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                         {t('NewsAiSummary.a74178')}
                     </h2>
                     <span className="shrink-0 rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
-                        {NEWS_ANALYSIS_PERIOD_LABEL}
+                        {tPeriod(NEWS_ANALYSIS_PERIOD_KEY)}
                     </span>
                 </div>
                 <span
@@ -125,7 +126,7 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                         SENTIMENT_CLASS[result.overallSentiment]
                     )}
                 >
-                    {SENTIMENT_LABEL[result.overallSentiment]}
+                    {tLabel(SENTIMENT_LABEL_KEY[result.overallSentiment])}
                 </span>
             </div>
 
@@ -204,6 +205,7 @@ function NewsAiSummaryInlineError({
     onRetry,
 }: NewsAiSummaryInlineErrorProps) {
     const t = useTranslations('widgets.news');
+    const tPeriod = useTranslations('shared.lib.newsPeriod');
     return (
         <section
             aria-labelledby="news-ai-summary-error-heading"
@@ -217,7 +219,7 @@ function NewsAiSummaryInlineError({
                     {t('NewsAiSummary.a74178')}
                 </h2>
                 <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
-                    {NEWS_ANALYSIS_PERIOD_LABEL}
+                    {tPeriod(NEWS_ANALYSIS_PERIOD_KEY)}
                 </span>
             </div>
             <p className="text-sm wrap-break-word text-ui-danger" role="alert">

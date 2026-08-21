@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { useAssetLabel } from '@/shared/i18n/assetLabel';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
 import { cn } from '@/shared/lib/cn';
@@ -20,10 +21,11 @@ export function SignalStockCard({
     tickerIsReadable,
 }: SignalStockCardProps) {
     const t = useTranslations('widgets.dashboard');
+    const assetLabel = useAssetLabel();
     return (
         <Link
             href={`/${data.symbol}`}
-            title={`${data.koreanName} 분석`}
+            title={t('SignalStockCard.analyzeTitle', { v0: data.symbol })}
             // 카드 그리드로 다수 렌더 — docs/architecture/CDN_CACHING.md §1
             prefetch={false}
             className={cn(
@@ -36,7 +38,8 @@ export function SignalStockCard({
                     layout="signal"
                     data={{
                         symbol: data.symbol,
-                        displayName: data.koreanName,
+                        // `koreanName`은 한국어 데이터다 — 표시는 카탈로그로.
+                        displayName: assetLabel(data.symbol, data.koreanName),
                         price: data.price,
                         changePercent: data.changePercent,
                     }}

@@ -1,4 +1,5 @@
 import type { MarketProfileId } from '@/shared/config/marketProfile';
+import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 
 /**
  * 스냅샷 프로즈의 "기준일" 캡션용 포맷터 — 시장별로 하나씩 고정한다.
@@ -19,29 +20,34 @@ import type { MarketProfileId } from '@/shared/config/marketProfile';
  * 프로덕션 `node:22-alpine` 이미지의 full-ICU가 사전 검증되어 있어(Intl 옵션이
  * 로케일/월 이름을 항상 완전히 지원) `formatToParts`로 재작성할 필요는 없다.
  */
-const SNAPSHOT_AS_OF_FORMATTER_BY_PROFILE: Record<
-    MarketProfileId,
-    Intl.DateTimeFormat
-> = {
-    'us-equity': new Intl.DateTimeFormat('ko-KR', {
-        timeZone: 'America/New_York',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-    }),
-    'kr-equity': new Intl.DateTimeFormat('ko-KR', {
-        timeZone: 'Asia/Seoul',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-    }),
-    crypto: new Intl.DateTimeFormat('ko-KR', {
-        timeZone: 'UTC',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-    }),
+const SNAPSHOT_TIME_ZONE_BY_PROFILE: Record<MarketProfileId, string> = {
+    'us-equity': 'America/New_York',
+    'kr-equity': 'Asia/Seoul',
+    crypto: 'UTC',
 };
+
+/**
+ * 로케일 × 시장 조합으로 포맷터를 캐시한다.
+ *
+ * `Intl.DateTimeFormat` 생성은 싸지 않고 이 캡션은 종목 페이지 9개 탭 전부에
+ * 렌더된다. 예전에는 시장별 상수 3개를 모듈 스코프에 두었는데, 로케일이
+ * `'ko-KR'`로 **고정**돼 있어 `/en/AAPL`이 `2026년 8월 18일`을 찍었다.
+ */
+const FORMATTER_CACHE = new Map<string, Intl.DateTimeFormat>();
+
+function formatterFor(locale: Locale, marketProfile: MarketProfileId) {
+    const key = `${locale}:${marketProfile}`;
+    const cached = FORMATTER_CACHE.get(key);
+    if (cached) return cached;
+    const formatter = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+        timeZone: SNAPSHOT_TIME_ZONE_BY_PROFILE[marketProfile],
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    });
+    FORMATTER_CACHE.set(key, formatter);
+    return formatter;
+}
 
 /**
  * `date`가 Invalid Date이면 `null`을 반환한다 — 절대로 throw하지 않는다.
@@ -56,8 +62,9 @@ const SNAPSHOT_AS_OF_FORMATTER_BY_PROFILE: Record<
  */
 export function formatSnapshotAsOf(
     date: Date,
-    marketProfile: MarketProfileId
+    marketProfile: MarketProfileId,
+    locale: Locale
 ): string | null {
     if (Number.isNaN(date.getTime())) return null;
-    return SNAPSHOT_AS_OF_FORMATTER_BY_PROFILE[marketProfile].format(date);
+    return formatterFor(locale, marketProfile).format(date);
 }

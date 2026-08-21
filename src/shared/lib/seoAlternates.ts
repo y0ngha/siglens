@@ -1,3 +1,6 @@
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
+import { SITE_NAME } from '@/shared/lib/seo';
+import type { Metadata } from 'next';
 import {
     DEFAULT_LOCALE,
     isLocale,
@@ -83,7 +86,18 @@ export function localeAlternates(
             ? localeCanonical(locale, path)
             : options.canonical;
     if (canonical === null) return { canonical: null };
-    const languages = buildLanguageAlternates(path, options.available);
+    /**
+     * **자기 자신이 준비 집합에 없으면 클러스터를 선언하지 않는다.**
+     *
+     * hreflang은 상호 참조가 성립해야 인정된다 — 자기를 뺀 묶음을 광고하면
+     * Google은 그 클러스터를 통째로 버리고, 이 URL은 self-canonical만 남은 채
+     * 중복 후보로 남는다. `localeRobots`가 이런 로케일을 noindex로 내리므로
+     * 지금은 `available`이 ko 하나뿐이라 드러나지 않지만, `STATIC_INDEXABLE_LOCALES`에
+     * 두 번째 로케일을 넣는 순간 준비되지 않은 나머지 두 로케일에서 바로 난다.
+     */
+    const available = options.available ?? STATIC_INDEXABLE_LOCALES;
+    if (!available.includes(locale)) return { canonical };
+    const languages = buildLanguageAlternates(path, available);
     return Object.keys(languages).length > 0
         ? { canonical, languages }
         : { canonical };
@@ -163,4 +177,51 @@ export function localeRobots(
 ): { index: boolean; follow: boolean } {
     if (!base.index) return base;
     return available.includes(locale) ? base : { index: false, follow: true };
+}
+
+/**
+ * 단순 라우트(로그인·가입·계정 등)의 `openGraph`/`twitter`를 **통째로** 만든다.
+ *
+ * Next는 이 최상위 키를 부모와 **병합하지 않고 교체**한다. 그래서
+ * `openGraph: { url }`만 선언하면 레이아웃의 `type`·`siteName`·`locale`·
+ * `images`가 전부 사라진다 — 공유 카드에 미리보기 이미지가 없어지고,
+ * `twitter`를 선언하지 않으면 레이아웃의 한국어 카드가 영어 `<title>` 밑에
+ * 그대로 남는다.
+ *
+ * 이 결함은 세 번 났다(홈 2회, 인증 라우트 7개 1회). 라우트마다 손으로
+ * 채우는 대신 여기서 한 번에 만든다 — 빠뜨릴 필드가 없어야 다시 안 난다.
+ */
+export function localePageSocial(
+    locale: Locale,
+    path: string,
+    { title, description }: { title: string; description: string }
+): {
+    openGraph: NonNullable<Metadata['openGraph']>;
+    twitter: NonNullable<Metadata['twitter']>;
+} {
+    const url = localeCanonical(locale, path);
+    return {
+        openGraph: {
+            type: 'website',
+            siteName: SITE_NAME,
+            title,
+            description,
+            url,
+            ...localeOpenGraph(locale),
+            images: [
+                {
+                    url: '/og-image.png',
+                    width: OG_IMAGE_WIDTH,
+                    height: OG_IMAGE_HEIGHT,
+                    alt: title,
+                },
+            ],
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
+            images: ['/og-image.png'],
+        },
+    };
 }

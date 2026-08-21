@@ -9,9 +9,11 @@ import { cn } from '@/shared/lib/cn';
 import { AuthErrorAlert } from '@/shared/ui/auth/AuthErrorAlert';
 
 const INPUT_HINT_ID = 'delete-account-email-hint';
-const HINT_DEFAULT = '이메일이 일치해야 탈퇴 버튼이 활성화됩니다.';
-const HINT_MISMATCH = '입력한 이메일이 본인 이메일과 일치하지 않습니다.';
-const HINT_MATCH = '입력한 이메일이 일치합니다. 탈퇴 버튼이 활성화되었습니다.';
+// 힌트 문구는 `entities.auth.error`에 있다 — 삭제 흐름의 다른 문구와 같은
+// 자리에 두어야 번역이 갈리지 않는다.
+const HINT_DEFAULT = 'error.deleteHintDefault';
+const HINT_MISMATCH = 'error.deleteHintMismatch';
+const HINT_MATCH = 'error.deleteHintMatch';
 
 interface DangerSubmitButtonProps {
     disabled: boolean;
@@ -49,16 +51,17 @@ interface DeleteAccountConfirmProps {
 
 export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
     const t = useTranslations('features.account-delete');
+    const tAuth = useTranslations('entities.auth');
     const [input, setInput] = useState('');
     const [state, formAction] = useDeleteAccountForm();
     const trimmed = input.trim();
     const isMatch = trimmed.toLowerCase() === userEmail.toLowerCase();
     const hintMessage =
         trimmed.length === 0
-            ? HINT_DEFAULT
+            ? tAuth(HINT_DEFAULT)
             : isMatch
-              ? HINT_MATCH
-              : HINT_MISMATCH;
+              ? tAuth(HINT_MATCH)
+              : tAuth(HINT_MISMATCH);
     const isMismatch = trimmed.length > 0 && !isMatch;
     return (
         <form action={formAction} className="space-y-5" noValidate>

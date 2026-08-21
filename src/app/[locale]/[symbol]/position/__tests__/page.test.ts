@@ -13,6 +13,8 @@
  */
 
 vi.mock('@/entities/ticker', () => ({
+    pickAssetName: (info: { name: string; koreanName?: string }) =>
+        info.koreanName ?? info.name,
     buildDisplayName: vi.fn((assetInfo: { name: string }) => assetInfo.name),
     getAssetInfoResilient: vi.fn(),
 }));

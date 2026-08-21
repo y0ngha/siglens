@@ -36,12 +36,10 @@ export async function fetchMarketNewsDigest(
     if (result.status === 'cached' || result.status === 'done')
         return result.result;
     if (result.status === 'miss_no_trigger') {
-        throw new Error(
-            '다이제스트를 생성할 수 없어요. 잠시 후 다시 시도해 주세요.'
-        );
+        throw new Error(messages.digestUnavailable);
     }
     if (result.status === 'no_news') {
-        throw new Error('분석할 뉴스가 없어요. 잠시 후 다시 시도해 주세요.');
+        throw new Error(messages.noNews);
     }
-    throw new Error('예상치 못한 오류가 발생했습니다.');
+    throw new Error(messages.unexpected);
 }

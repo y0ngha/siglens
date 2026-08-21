@@ -9,6 +9,7 @@ import {
     useState,
 } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { localePath } from '@/shared/i18n/locales';
 import { useShareable } from '../model/ShareableAnalysisContext';
@@ -112,6 +113,7 @@ export function useShareFlow(): UseShareFlowResult {
     const reg = useShareable();
     const { tier: sharerTier } = useUserTier();
     const locale = useCurrentLocale();
+    const t = useTranslations('features.share.useShareFlow');
 
     /**
      * Reset all transient UI state when the user switches to a different analysis tab.
@@ -179,8 +181,10 @@ export function useShareFlow(): UseShareFlowResult {
             setShareUrl(url);
 
             const symbol = regRef.current?.context.symbol ?? '';
-            const title = `${symbol} AI 분석 결과`;
-            const text = `${symbol} AI 분석 결과를 SigLens에서 확인하세요`;
+            // 이 문자열은 **X에 실제로 게시되는 본문**이다 — 영어 UI에서
+            // 한국어가 나가고 있었다.
+            const title = t('shareTitle', { v0: symbol });
+            const text = t('shareText', { v0: symbol });
 
             if (canShareNatively()) {
                 try {
@@ -319,7 +323,7 @@ export function useShareFlow(): UseShareFlowResult {
 
     const describedById = useId();
     const symbol = reg?.context.symbol ?? '';
-    const tweetText = `${symbol} AI 분석 결과를 SigLens에서 확인하세요`;
+    const tweetText = t('shareText', { v0: symbol });
 
     return {
         status: effectiveStatus,

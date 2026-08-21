@@ -9,10 +9,22 @@
  * - Empty groups array (zero group bars)
  */
 import { render, screen } from '@testing-library/react';
+import { beforeAll } from 'vitest';
+import { getTranslations } from 'next-intl/server';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { FearGreedShareView } from '../FearGreedShareView';
-import { SENTIMENT_LABEL_TEXT } from '@/shared/lib/fearGreedLabels';
-import { WARNING_TEXT } from '../SelfNormWarningBadge';
+import { sentimentLabelText } from '@/shared/lib/fearGreedLabels';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import { WARNING_TEXT_KEY } from '../SelfNormWarningBadge';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+
+// 배지 문구는 `shared.lib.fearGreed` 카탈로그에서 온다.
+const tFearGreedKo = catalogTranslator('shared.lib.fearGreed', 'ko');
+
+let t: EnumLabelTranslator;
+beforeAll(async () => {
+    t = await getTranslations({ locale: 'ko', namespace: 'shared.enumLabel' });
+});
 
 function makeSnapshot(
     overrides: Partial<FearGreedSnapshot> = {}
@@ -63,7 +75,7 @@ describe('FearGreedShareView', () => {
                 />
             );
             expect(
-                screen.getByText(SENTIMENT_LABEL_TEXT.FEAR)
+                screen.getByText(sentimentLabelText('FEAR', t))
             ).toBeInTheDocument();
         });
 
@@ -78,7 +90,7 @@ describe('FearGreedShareView', () => {
             );
             expect(screen.getByText('12')).toBeInTheDocument();
             expect(
-                screen.getByText(SENTIMENT_LABEL_TEXT.EXTREME_FEAR)
+                screen.getByText(sentimentLabelText('EXTREME_FEAR', t))
             ).toBeInTheDocument();
         });
     });
@@ -115,7 +127,7 @@ describe('FearGreedShareView', () => {
                 />
             );
             expect(screen.getByRole('status')).toHaveTextContent(
-                WARNING_TEXT.CHRONIC_WEAKNESS
+                tFearGreedKo(WARNING_TEXT_KEY.CHRONIC_WEAKNESS)
             );
         });
 
@@ -126,7 +138,7 @@ describe('FearGreedShareView', () => {
                 />
             );
             expect(screen.getByRole('status')).toHaveTextContent(
-                WARNING_TEXT.CHRONIC_STRENGTH
+                tFearGreedKo(WARNING_TEXT_KEY.CHRONIC_STRENGTH)
             );
         });
     });

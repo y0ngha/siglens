@@ -4,7 +4,12 @@ import {
     getGradeEvents,
 } from '@/app/[locale]/[symbol]/news/newsData';
 import { setRequestLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import {
+    DEFAULT_LOCALE,
+    isLocale,
+    LOCALE_HREFLANG,
+    type Locale,
+} from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { getNewsList } from '@/entities/news-article/api';
 import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
@@ -28,13 +33,16 @@ import {
     isAdmissibleSymbolShape,
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
+import { resolveNewsTitle } from '@/shared/lib/news/resolveNewsTitle';
 import {
     buildAssetAboutNode,
     buildDisplayName,
+    pickAssetName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { getTodayIsoDay } from '@/shared/lib/getTodayIsoDay';
 import { todayKstIsoDate } from '@/shared/lib/dateKey';
@@ -43,7 +51,8 @@ import {
     buildBreadcrumbJsonLd,
     buildSnapshotMetaDescription,
     buildSymbolSeoContent,
-    buildSymbolWebPageJsonLd,
+    buildWebPageJsonLd,
+    localizedAbsoluteUrl,
     resolveSymbolNewsSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
@@ -91,11 +100,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
 
-    const displayName = buildDisplayName(assetInfo, upper);
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
+    const displayName = buildDisplayName(assetInfo, upper, locale);
     const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
-    const seo = resolveSymbolNewsSeoContent(upper, assetClass, {
+    const seo = resolveSymbolNewsSeoContent(upper, assetClass, tSeo, {
         displayName,
         koreanName: assetInfo.koreanName,
+        englishName: assetInfo.name,
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
     });
     const metadata = symbolMetadataFromSeo(seo, locale);
 
@@ -105,11 +117,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // an extra DB round-trip. Falls back to the templated description when no
     // snapshot exists (backward compatible). og/twitter keep the templated copy
     // — only the search-facing <meta name="description"> is overridden.
-    const snap = (await getSeoSnapshotsStatic(upper, revalidate)).find(
+    const snap = (await getSeoSnapshotsStatic(upper, revalidate, locale)).find(
         s => s.tab === 'news'
     );
     const snapshotDescription = snap
-        ? buildSnapshotMetaDescription('news', snap.content, displayName)
+        ? buildSnapshotMetaDescription(
+              'news',
+              snap.content,
+              displayName,
+              locale
+          )
         : null;
     return snapshotDescription
         ? { ...metadata, description: snapshotDescription }
@@ -120,14 +137,25 @@ interface SymbolSectionProps {
     symbol: string;
 }
 
-export async function NewsListSection({ symbol }: SymbolSectionProps) {
+/**
+ * 뉴스 목록만 로케일을 받는다 — 본문이 DB 콘텐츠라 해석이 필요하다. 다른
+ * 섹션(캘린더·애널리스트)은 로케일과 무관한 수치라 `SymbolSectionProps`를 쓴다.
+ */
+interface NewsListSectionProps extends SymbolSectionProps {
+    locale: Locale;
+}
+
+export async function NewsListSection({
+    symbol,
+    locale,
+}: NewsListSectionProps) {
     // ISR degrade guard: getNewsList(Postgres)가 throw하면 ISR 캐시에 0-byte 빈 결과가
     // 굳는 것을 막으려면 여기서 흡수해야 한다. [] 로 degrade → NewsList는 빈 배열로
     // 기존 empty-state UI를 렌더하고 페이지 크롬(heading/CrossLinks 등)은 유지된다.
     const items = await staticSymbolCache(
-        [NEWS_LIST_CACHE_KEY, symbol],
+        [NEWS_LIST_CACHE_KEY, symbol, ...contentLocaleKeyPart(locale)],
         symbol,
-        () => getNewsList(symbol),
+        () => getNewsList(symbol, locale),
         [`news:${symbol}`],
         SECONDS_PER_HALF_DAY
     ).catch((e: unknown) => {
@@ -227,11 +255,14 @@ function NewsDataServerAlert({ title, message }: NewsDataServerAlertProps) {
 
 export default async function NewsPage({ params }: Props) {
     const { locale, symbol } = await params;
+    // DB 콘텐츠(뉴스 본문) 해석에 쓸 좁혀진 로케일. URL 세그먼트는 신뢰 경계다.
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
     // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
     const t = await getTranslations('app.symbol');
+    const tSeo = await getTranslations('shared.seo');
     const upper = symbol.toUpperCase();
 
     if (!isAdmissibleSymbolShape(upper)) {
@@ -246,16 +277,23 @@ export default async function NewsPage({ params }: Props) {
         notFound();
     }
 
-    const displayName = buildDisplayName(assetInfo, upper);
+    const displayName = buildDisplayName(
+        assetInfo,
+        upper,
+        isLocale(locale) ? locale : DEFAULT_LOCALE
+    );
     const marketProfile = marketProfileOf(assetInfo);
     const assetClass = getDescriptor(marketProfile).assetClass;
     const isEquity = assetClass === 'equity';
     const { fullTitle, description, url } = resolveSymbolNewsSeoContent(
         upper,
         assetClass,
+        tSeo,
         {
             displayName,
             koreanName: assetInfo.koreanName,
+            englishName: assetInfo.name,
+            locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
         }
     );
 
@@ -263,21 +301,29 @@ export default async function NewsPage({ params }: Props) {
     // undefined로 자연 생략된다. crypto는 schema.org 표준 타입이 없어 about 노드 자체를 두지 않는다.
     const aboutNode = buildAssetAboutNode(
         upper,
-        assetInfo.koreanName ?? assetInfo.name,
+        pickAssetName(
+            assetInfo,
+            upper,
+            isLocale(locale) ? locale : DEFAULT_LOCALE
+        ),
         assetInfo.fmpSymbol,
         assetClass
     );
-    const jsonLd = buildSymbolWebPageJsonLd({
+    const jsonLd = buildWebPageJsonLd({
         url,
         name: fullTitle,
         description,
         about: aboutNode,
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
     });
 
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: upper, url: buildSymbolSeoContent(upper).url },
-        { name: t('page.2141f2'), url },
-    ]);
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd(
+        [
+            { name: upper, url: buildSymbolSeoContent(upper, tSeo).url },
+            { name: t('page.2141f2'), url },
+        ],
+        isLocale(locale) ? locale : DEFAULT_LOCALE
+    );
 
     // datePublished는 의도적으로 생략한다 — ticker별 최초 뉴스 ingestion 시각
     // fetch 없이는 정확한 datePublished를 알 수 없어 SITE_BUILD_DATE를 쓰면 모든
@@ -291,14 +337,23 @@ export default async function NewsPage({ params }: Props) {
         '@context': 'https://schema.org',
         '@type': 'Article',
         headline: isEquity
-            ? `${displayName} 최근 뉴스 AI 요약`
-            : `${displayName} 최근 코인 뉴스 AI 요약`,
-        description: isEquity
-            ? `${displayName} 최신 뉴스의 호재·악재 분위기와 핵심 이슈를 한국어로 정리합니다.`
-            : `${displayName} 최신 크립토 뉴스의 호재·악재 분위기와 시장 이슈를 한국어로 정리합니다.`,
-        inLanguage: 'ko',
+            ? tSeo('faq.newsArticleHeadlineEquity', { v0: displayName })
+            : tSeo('faq.newsArticleHeadlineCrypto', { v0: displayName }),
+        description: t(
+            isEquity
+                ? 'page.newsArticleDescEquity'
+                : 'page.newsArticleDescCrypto',
+            { v0: displayName }
+        ),
+        inLanguage: LOCALE_HREFLANG[isLocale(locale) ? locale : DEFAULT_LOCALE],
         dateModified: todayIsoDay,
-        isPartOf: { '@type': 'WebPage', '@id': `${url}#webpage` },
+        // `@id`는 `buildWebPageJsonLd`가 로케일 접두사를 붙인 값과 **같아야**
+        // 한다 — 로케일화 이후 이 back-reference만 기본 로케일 URL을 가리켜
+        // 같은 문서 안에 존재하지 않는 노드를 참조하고 있었다.
+        isPartOf: {
+            '@type': 'WebPage',
+            '@id': `${localizedAbsoluteUrl(url, isLocale(locale) ? locale : DEFAULT_LOCALE)}#webpage`,
+        },
         // Article schema는 image를 명시할 때 Rich Results 자격이 강해진다.
         // 정적 og-image.png를 사용해 hashless permanent URL을 보장 — Next.js의
         // file-based opengraph-image route는 빌드 시 `?<hash>` cache-buster를
@@ -329,9 +384,9 @@ export default async function NewsPage({ params }: Props) {
     // Promise.all로 병렬화 — snapshots read는 서로 독립이라 직렬 await할 이유가 없다.
     const [newsItems, snapshots] = await Promise.all([
         staticSymbolCache(
-            [NEWS_LIST_CACHE_KEY, upper],
+            [NEWS_LIST_CACHE_KEY, upper, ...contentLocaleKeyPart(resolved)],
             upper,
-            () => getNewsList(upper),
+            () => getNewsList(upper, resolved),
             [`news:${upper}`],
             SECONDS_PER_HALF_DAY
         ).catch((e: unknown) => {
@@ -341,7 +396,7 @@ export default async function NewsPage({ params }: Props) {
         // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
         // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
         // `export const revalidate` literal above.
-        getSeoSnapshotsStatic(upper, revalidate),
+        getSeoSnapshotsStatic(upper, revalidate, resolved),
     ]);
     const newsSnapshot = snapshots.find(s => s.tab === 'news');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasNewsProse)
@@ -363,7 +418,7 @@ export default async function NewsPage({ params }: Props) {
             ? {
                   '@context': 'https://schema.org',
                   '@type': 'ItemList',
-                  name: `${displayName} 최신 뉴스`,
+                  name: tSeo('faq.newsListName', { v0: displayName }),
                   itemListElement: newsItems
                       .slice(0, JSON_LD_NEWS_MAX_ITEMS)
                       .map((item, idx) => ({
@@ -371,7 +426,10 @@ export default async function NewsPage({ params }: Props) {
                           position: idx + 1,
                           item: {
                               '@type': 'NewsArticle',
-                              headline: item.titleKo ?? item.titleEn,
+                              headline: resolveNewsTitle(
+                                  item,
+                                  isLocale(locale) ? locale : DEFAULT_LOCALE
+                              ),
                               url: item.url,
                               datePublished: item.publishedAt,
                           },
@@ -387,12 +445,14 @@ export default async function NewsPage({ params }: Props) {
             {newsListJsonLd ? <JsonLd data={newsListJsonLd} /> : null}
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>
-                    {isEquity
-                        ? `${displayName} 최신 뉴스와 어닝 일정`
-                        : `${displayName} 최신 코인 뉴스`}
+                    {t(
+                        isEquity
+                            ? 'page.newsHeadingEquity'
+                            : 'page.newsHeadingCrypto',
+                        { v0: displayName }
+                    )}
                 </SymbolPageHeading>
                 <NewsFactsSummary
-                    symbol={upper}
                     displayName={displayName}
                     assetClass={assetClass}
                     items={newsItems}
@@ -406,8 +466,8 @@ export default async function NewsPage({ params }: Props) {
                     coexist. Renders null when no snapshot exists (spec
                     2026-07-24 Task 7b). */}
                 <NewsSnapshotProse
-                    content={newsSnapshot?.content}
                     symbol={upper}
+                    content={newsSnapshot?.content}
                     displayName={displayName}
                     marketProfile={marketProfile}
                     generatedAt={newsSnapshot?.generatedAt}
@@ -415,9 +475,12 @@ export default async function NewsPage({ params }: Props) {
                 <section className="sr-only">
                     <h2>{t('page.2659c6', { v0: displayName })}</h2>
                     <p>
-                        {isEquity
-                            ? `${displayName}의 최신 뉴스 분위기, 다음 어닝 일정, 최근 실적 보고서, 애널리스트 등급 변경을 한국어로 정리합니다.`
-                            : `${displayName}의 최신 뉴스 분위기와 핵심 이슈를 한국어로 정리합니다.`}
+                        {t(
+                            isEquity
+                                ? 'page.newsSrOnlyEquity'
+                                : 'page.newsSrOnlyCrypto',
+                            { v0: displayName }
+                        )}
                     </p>
                 </section>
                 {/* audit fix FIX 2: XOR — NewsAiSummary (client widget) and
@@ -449,7 +512,7 @@ export default async function NewsPage({ params }: Props) {
                 </NewsAiSummaryErrorBoundary>
 
                 <Suspense fallback={<SectionSkeleton />}>
-                    <NewsListSection symbol={upper} />
+                    <NewsListSection symbol={upper} locale={resolved} />
                 </Suspense>
 
                 {isEquity && (

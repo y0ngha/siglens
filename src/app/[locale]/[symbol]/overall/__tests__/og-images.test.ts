@@ -29,7 +29,9 @@ describe('[symbol]/overall OG images', () => {
         });
 
         it('exports alt text containing overall analysis', () => {
-            expect(alt).toContain('종합 분석');
+            // `alt`는 Next가 모듈 스코프 상수로 요구해 로케일별로 낼 수 없다 —
+            // 네 로케일이 한 값을 공유하므로 영어로 둔다(§opengraph-image.tsx).
+            expect(alt).toContain('overall analysis');
         });
 
         it('calls buildSymbolOgImage with ticker and overall label', async () => {

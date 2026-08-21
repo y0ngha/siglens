@@ -66,7 +66,9 @@ export function SignalSubsection({
                 </div>
                 <span
                     className="font-mono text-2xl text-secondary-500 tabular-nums"
-                    aria-label={`${stocks.length}개 종목`}
+                    aria-label={t('SignalSubsection.tickerCount', {
+                        v0: stocks.length,
+                    })}
                 >
                     {count}
                 </span>

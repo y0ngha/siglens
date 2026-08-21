@@ -1,3 +1,5 @@
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+import type { Locale } from '@/shared/i18n/locales';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
@@ -45,14 +47,15 @@ interface StatementTableProps {
 function formatValue(
     value: number | null,
     format: FormatType = 'num',
-    currency: StatementCurrency = DEFAULT_STATEMENT_CURRENCY
+    currency: StatementCurrency = DEFAULT_STATEMENT_CURRENCY,
+    locale: Locale = DEFAULT_LOCALE
 ): string {
     if (value === null) return '—';
 
     switch (format) {
         // 'usd'는 "금액" 축을 뜻하는 레거시 라벨이다 — 실제 통화는 `currency`가 정한다.
         case 'usd':
-            return formatCurrencyCompact(value, currency);
+            return formatCurrencyCompact(value, currency, locale);
         case 'pct':
             return `${value.toFixed(1)}%`;
         case 'num':
@@ -74,6 +77,7 @@ export function StatementTable({
     currency = DEFAULT_STATEMENT_CURRENCY,
 }: StatementTableProps) {
     const t = useTranslations('widgets.financials');
+    const tSection = useTranslations('widgets.financials.section');
     return (
         <>
             <p className="mb-2 text-xs text-secondary-400 sm:hidden">
@@ -84,7 +88,7 @@ export function StatementTable({
                 role="region"
                 aria-label={
                     caption
-                        ? `${caption} (좌우 스크롤 가능)`
+                        ? tSection('tableScrollHint', { v0: caption })
                         : t('StatementTable.99a09e')
                 }
                 tabIndex={0}

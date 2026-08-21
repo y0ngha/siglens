@@ -6,7 +6,7 @@ import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { useMarketNewsDigest } from './hooks/useMarketNewsDigest';
 import {
-    SENTIMENT_LABEL,
+    SENTIMENT_LABEL_KEY,
     SENTIMENT_CLASS,
     isNewsSentiment,
 } from './utils/sentimentConstants';
@@ -55,6 +55,11 @@ interface DigestResultViewProps {
 
 function DigestResultView({ result }: DigestResultViewProps) {
     const t = useTranslations('widgets.market-news');
+    // extract.mjs의 동적 키 탐지는 "이 파일 안에서 번역자를 직접 호출하는
+    // 패턴"만 본다 — `SENTIMENT_LABEL_KEY[...]`를 그대로 `tLabel(...)`에
+    // 넣어야 `shared.enumLabel`이 이 라우트의 클라이언트 번들에 실린다
+    // (sentimentDisplay.ts의 SENTIMENT_LABEL_KEY export 주석 참고).
+    const tLabel = useTranslations('shared.enumLabel');
     return (
         <section
             aria-labelledby="market-news-digest-heading"
@@ -74,7 +79,7 @@ function DigestResultView({ result }: DigestResultViewProps) {
                             SENTIMENT_CLASS[result.overallSentiment]
                         )}
                     >
-                        {SENTIMENT_LABEL[result.overallSentiment]}
+                        {tLabel(SENTIMENT_LABEL_KEY[result.overallSentiment])}
                     </span>
                 )}
             </div>

@@ -2,6 +2,7 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import { useState } from 'react';
 import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 
 vi.mock('next/link', () => ({
     default: ({
@@ -399,5 +400,46 @@ describe('SymbolLayoutHeader', () => {
         expect(screen.getByText('(AAPL)')).toBeInTheDocument();
         expect(screen.getByText(/애플/)).toBeInTheDocument();
         expect(screen.queryByText(/애플,/)).not.toBeInTheDocument();
+    });
+});
+
+/**
+ * 브레드크럼 이름은 같은 페이지의 `<title>`(= `buildDisplayName`)과 **같은 것을
+ * 말해야 한다.** 이 스위트의 다른 이름 테스트는 전부 전역 ko 프로바이더로
+ * 렌더되므로 이 계열을 구조적으로 볼 수 없다.
+ */
+describe('SymbolLayoutHeader — 로케일별 이름', () => {
+    it.each(['en', 'ja', 'zh'] as const)(
+        '%s: 영문명이 있으면 한국어명을 쓰지 않는다',
+        locale => {
+            vi.mocked(useAssetInfo).mockReturnValueOnce({
+                name: 'Apple Inc.',
+                koreanName: '애플',
+                fmpSymbol: 'AAPL',
+            } as ReturnType<typeof useAssetInfo>);
+
+            renderWithIntl(<SymbolLayoutHeader symbol="aapl" />, { locale });
+
+            expect(screen.getByText(/Apple Inc\./)).toBeInTheDocument();
+            expect(screen.queryByText(/애플/)).not.toBeInTheDocument();
+        }
+    );
+
+    /**
+     * 국내 종목 다수가 영문명이 비어 있다. 그때까지 티커만 남기면
+     * `buildDisplayName`(`삼성전자 (005930.KS)`)과 헤더가 어긋난다.
+     */
+    it('en: 영문명이 없으면 한국어명으로 떨어진다', () => {
+        vi.mocked(useAssetInfo).mockReturnValueOnce({
+            name: '',
+            koreanName: '삼성전자',
+            fmpSymbol: '005930.KS',
+        } as ReturnType<typeof useAssetInfo>);
+
+        renderWithIntl(<SymbolLayoutHeader symbol="005930.KS" />, {
+            locale: 'en',
+        });
+
+        expect(screen.getByText(/삼성전자/)).toBeInTheDocument();
     });
 });

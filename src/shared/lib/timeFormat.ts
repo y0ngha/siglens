@@ -1,3 +1,4 @@
+import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import {
     KST_OFFSET_HOURS,
@@ -5,20 +6,27 @@ import {
     MS_PER_SECOND,
 } from '@/shared/config/time';
 
-const MONTH_NAMES = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-] as const;
+/**
+ * 차트 축·크로스헤어의 월 약칭.
+ *
+ * 예전에는 `['Jan','Feb',…]` 영어 상수였다 — ko를 포함한 네 로케일 전부
+ * 영어였고, 정작 차트 축은 `lightweight-charts`가 `navigator.language`로
+ * 그려서 `/en/AAPL`이 `4월 5월`을 찍었다(브라우저가 ko-KR일 때). 축과
+ * 크로스헤어가 같은 로케일을 쓰도록 둘 다 URL 로케일에 맞춘다.
+ */
+const MONTH_DAY_CACHE = new Map<Locale, Intl.DateTimeFormat>();
+
+function monthDayFormatter(locale: Locale): Intl.DateTimeFormat {
+    const cached = MONTH_DAY_CACHE.get(locale);
+    if (cached) return cached;
+    const fmt = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC',
+    });
+    MONTH_DAY_CACHE.set(locale, fmt);
+    return fmt;
+}
 
 function toKstDate(timestampSeconds: number): Date {
     const utcDate = new Date(timestampSeconds * MS_PER_SECOND);
@@ -42,10 +50,10 @@ function formatDateAndTime(date: Date): string {
     return `${month}/${day} ${time}`;
 }
 
-function formatDate(date: Date): string {
-    const month = MONTH_NAMES[date.getUTCMonth()];
-    const day = date.getUTCDate();
-    return `${month} ${day}`;
+function formatDate(date: Date, locale: Locale): string {
+    // 월+일을 통째로 `Intl`에 맡긴다 — 월 이름만 번역하면 ko가 `8월 1`처럼
+    // `일`이 빠진 어색한 표기가 된다. 로케일마다 순서·구분자가 다르다.
+    return monthDayFormatter(locale).format(date);
 }
 
 const MINUTE_TIMEFRAMES: ReadonlySet<Timeframe> = new Set(['5Min']);
@@ -58,14 +66,32 @@ const DATE_TIME_TIMEFRAMES: ReadonlySet<Timeframe> = new Set([
     '4Hour',
 ]);
 
-const NEWS_PUBLISHED_AT_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Asia/Seoul',
-});
+/**
+ * 로케일별 포맷터 캐시.
+ *
+ * 예전에는 `'ko-KR'` 고정 상수 하나였다 — 그래서 `/en/AAPL/news`가
+ * `Latest articles are based on 2026년 8월 20일 오전 02:39 KST.`처럼
+ * **영어 문장 안에 한국어 타임스탬프**를 박았다. 문장 템플릿만 번역하고
+ * 값은 고정 로케일로 두면 통째로 한국어일 때보다 더 나쁘게 읽힌다.
+ *
+ * 타임존은 KST로 유지한다 — 뒤에 `KST`를 명시해 붙이므로 로케일과 무관하다.
+ */
+const NEWS_FORMATTER_CACHE = new Map<Locale, Intl.DateTimeFormat>();
+
+function newsFormatterFor(locale: Locale): Intl.DateTimeFormat {
+    const cached = NEWS_FORMATTER_CACHE.get(locale);
+    if (cached) return cached;
+    const formatter = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Asia/Seoul',
+    });
+    NEWS_FORMATTER_CACHE.set(locale, formatter);
+    return formatter;
+}
 
 /**
  * ISO 발행 시각을 KST 기준 한국어 날짜+시간 문자열로 변환한다.
@@ -77,12 +103,16 @@ const NEWS_PUBLISHED_AT_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
  * formatNewsPublishedAt('2026-05-05T22:35:21.000Z')
  * // → '2026년 5월 6일 오전 07:35 KST'
  */
-export function formatNewsPublishedAt(publishedAt: string): string {
-    return `${NEWS_PUBLISHED_AT_FORMATTER.format(new Date(publishedAt))} KST`;
+export function formatNewsPublishedAt(
+    publishedAt: string,
+    locale: Locale
+): string {
+    return `${newsFormatterFor(locale).format(new Date(publishedAt))} KST`;
 }
 
 export function getTimeFormatter(
-    timeframe: Timeframe
+    timeframe: Timeframe,
+    locale: Locale
 ): (timestamp: number) => string {
     if (MINUTE_TIMEFRAMES.has(timeframe)) {
         return (timestamp: number) => formatTime(toKstDate(timestamp));
@@ -92,5 +122,5 @@ export function getTimeFormatter(
         return (timestamp: number) => formatDateAndTime(toKstDate(timestamp));
     }
 
-    return (timestamp: number) => formatDate(toKstDate(timestamp));
+    return (timestamp: number) => formatDate(toKstDate(timestamp), locale);
 }

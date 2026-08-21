@@ -1,8 +1,35 @@
+import { beforeAll } from 'vitest';
+import { getTranslations } from 'next-intl/server';
 import { buildExpertAnalysisReport } from '@/widgets/analysis/utils/buildExpertAnalysisReport';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+
+import koMessages from '@/../messages/ko.json';
+
+/** 실제 ko 카탈로그를 읽는 번역자 — 스텁이면 키 누락이 조용히 통과한다. */
+const tReport = (key: string, values?: Record<string, string | number>) => {
+    const table = koMessages.widgets.analysis.expertReport as Record<
+        string,
+        string
+    >;
+    const raw = table[key];
+    if (raw === undefined) return key;
+    return Object.entries(values ?? {}).reduce(
+        (acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)),
+        raw
+    );
+};
+
 import type {
     AnalysisResponse,
     ClusteredKeyLevels,
 } from '@y0ngha/siglens-core';
+
+// t는 필수 인자다(§design EnumLabelTranslator required-param). ko로 고정한
+// 실제 번역자를 한 번 만들어 모든 호출에 재사용한다.
+let t: EnumLabelTranslator;
+beforeAll(async () => {
+    t = await getTranslations({ locale: 'ko', namespace: 'shared.enumLabel' });
+});
 
 describe('buildExpertAnalysisReport', () => {
     const baseAnalysis: AnalysisResponse = {
@@ -117,9 +144,11 @@ describe('buildExpertAnalysisReport', () => {
 
     it('숫자 구간과 기술적 근거를 포함한 리포트를 생성한다', () => {
         const result = buildExpertAnalysisReport({
+            tReport,
             symbol: 'aapl',
             analysis: baseAnalysis,
             keyLevels: baseKeyLevels,
+            t,
         });
 
         expect(result).toContain('[AAPL] 기술적 분석 리포트');
@@ -148,9 +177,11 @@ describe('buildExpertAnalysisReport', () => {
         };
 
         const result = buildExpertAnalysisReport({
+            tReport,
             symbol: 'nvda',
             analysis: analysisWithLongRiskReward,
             keyLevels: baseKeyLevels,
+            t,
         });
 
         expect(result).toContain(
@@ -168,9 +199,11 @@ describe('buildExpertAnalysisReport', () => {
         };
 
         const result = buildExpertAnalysisReport({
+            tReport,
             symbol: 'tsla',
             analysis: bearishAnalysis,
             keyLevels: baseKeyLevels,
+            t,
         });
 
         expect(result).toContain('보수적 관리가 더 적절합니다');
@@ -187,9 +220,11 @@ describe('buildExpertAnalysisReport', () => {
         };
 
         const result = buildExpertAnalysisReport({
+            tReport,
             symbol: 'nvda',
             analysis: bullishNoAction,
             keyLevels: baseKeyLevels,
+            t,
         });
 
         expect(result).toContain('지지 확인 이후의 분할 접근 여부를 검토');
@@ -205,9 +240,11 @@ describe('buildExpertAnalysisReport', () => {
         };
 
         const result = buildExpertAnalysisReport({
+            tReport,
             symbol: 'aapl',
             analysis: enterAnalysis,
             keyLevels: baseKeyLevels,
+            t,
         });
 
         expect(result).toContain(
@@ -227,9 +264,11 @@ describe('buildExpertAnalysisReport', () => {
         };
 
         const result = buildExpertAnalysisReport({
+            tReport,
             symbol: 'aapl',
             analysis: avoidAnalysis,
             keyLevels: baseKeyLevels,
+            t,
         });
 
         expect(result).toContain(
@@ -239,9 +278,11 @@ describe('buildExpertAnalysisReport', () => {
 
     it('includes target reference prices when takeProfitPrices are present', () => {
         const result = buildExpertAnalysisReport({
+            tReport,
             symbol: 'aapl',
             analysis: baseAnalysis,
             keyLevels: baseKeyLevels,
+            t,
         });
 
         expect(result).toContain('목표 참고 구간:');
@@ -267,9 +308,11 @@ describe('buildExpertAnalysisReport', () => {
         };
 
         const result = buildExpertAnalysisReport({
+            tReport,
             symbol: 'aapl',
             analysis: analysisWithEmptyIndicator,
             keyLevels: baseKeyLevels,
+            t,
         });
 
         expect(result).not.toContain('should be filtered');
@@ -285,9 +328,11 @@ describe('buildExpertAnalysisReport', () => {
         };
 
         const result = buildExpertAnalysisReport({
+            tReport,
             symbol: 'aapl',
             analysis: onlyBearish,
             keyLevels: baseKeyLevels,
+            t,
         });
 
         expect(result).toContain('하방:');
@@ -317,9 +362,11 @@ describe('buildExpertAnalysisReport', () => {
         };
 
         const result = buildExpertAnalysisReport({
+            tReport,
             symbol: 'tsla',
             analysis: sparseAnalysis,
             keyLevels: sparseKeyLevels,
+            t,
         });
 
         expect(result).toContain('[TSLA] 기술적 분석 리포트');
@@ -350,9 +397,11 @@ describe('buildExpertAnalysisReport', () => {
         } as unknown as ClusteredKeyLevels;
 
         const result = buildExpertAnalysisReport({
+            tReport,
             symbol: 'nvda',
             analysis: partialAnalysis,
             keyLevels: partialKeyLevels,
+            t,
         });
 
         expect(result).toContain('[NVDA] 기술적 분석 리포트');

@@ -21,6 +21,8 @@ vi.mock('@/shared/config/market', async importOriginal => ({
 }));
 vi.mock('@/entities/ticker', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+    pickAssetName: (info: { name: string; koreanName?: string }) =>
+        info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
     getAssetInfoResilient: vi.fn(),
 }));
@@ -328,17 +330,20 @@ describe('generateMetadata', () => {
 });
 
 describe('Congress page JSON-LD schema types', () => {
-    // 소스 그렙 단언(readFileSync + toContain('buildSymbolWebPageJsonLd('))은
+    // 소스 그렙 단언(readFileSync + toContain('buildWebPageJsonLd('))은
     // 동작이 아니라 구현 세부를 검사하므로 제거됐다.
     // WebPage/FAQPage 런타임 JSON-LD 출력은 e2e/specs/symbol-seo.spec.ts가
     // /AAPL/congress 페이지를 크롤러처럼 HTTP로 fetch해 검증한다.
 
     it('buildBreadcrumbJsonLd produces a BreadcrumbList schema', async () => {
         const { buildBreadcrumbJsonLd } = await import('@/shared/lib/seo');
-        const result = buildBreadcrumbJsonLd([
-            { name: 'AAPL', url: '/AAPL' },
-            { name: '의회 거래', url: '/AAPL/congress' },
-        ]);
+        const result = buildBreadcrumbJsonLd(
+            [
+                { name: 'AAPL', url: '/AAPL' },
+                { name: '의회 거래', url: '/AAPL/congress' },
+            ],
+            'ko'
+        );
         expect(result['@type']).toBe('BreadcrumbList');
     });
 });

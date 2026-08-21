@@ -1,9 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { AnalysisResponse } from '@y0ngha/siglens-core';
-import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
+import { buildFallbackAnalysis } from '@/entities/chat-message';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { ChartContent } from '../ChartContent';
 import type { UseAnalysisResult } from '../hooks/useAnalysis';
+
+// 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을
+// 들고 있어 `/en/AAPL`이 영어 화면에 한국어 폴백을 렌더했다.
+const FALLBACK_ANALYSIS = buildFallbackAnalysis(
+    catalogTranslator('entities.chat-message.fallback', 'ko')('unavailable')
+);
 
 // 무거운 차트/하위 훅은 stub. 슬롯 분기에 필요한 useBars/useAnalysis만 제어.
 // vitest가 vi.mock 호출을 파일 최상단으로 호이스팅하므로, 선언 위치와 무관하게

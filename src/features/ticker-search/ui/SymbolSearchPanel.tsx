@@ -13,6 +13,7 @@ interface SymbolSearchPanelProps {
 
 export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
     const t = useTranslations('features.ticker-search');
+    const tRecent = useTranslations('features.ticker-search.recentSearch');
     const { recentSearches, addSearch, removeSearch, clearAll } =
         useRecentSearches();
 
@@ -66,8 +67,13 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                                 // 같은 말을 두 번 읽는다.
                                 aria-label={
                                     entry.label === entry.symbol
-                                        ? `${entry.symbol} 최근 검색에서 제거`
-                                        : `${entry.label} (${entry.symbol}) 최근 검색에서 제거`
+                                        ? tRecent('removeRecent', {
+                                              v0: entry.symbol,
+                                          })
+                                        : tRecent('removeRecentNamed', {
+                                              v0: entry.label,
+                                              v1: entry.symbol,
+                                          })
                                 }
                                 onClick={() => removeSearch(entry.symbol)}
                                 className="inline-flex h-6 w-6 items-center justify-center rounded-full leading-none text-secondary-500 hover:text-secondary-100 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"

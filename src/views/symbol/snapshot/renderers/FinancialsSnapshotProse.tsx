@@ -34,28 +34,29 @@ interface FinancialsSnapshotProseProps {
     generatedAt?: Date;
 }
 
-const SENTIMENT_LABEL: Record<FinancialsSentiment, string> = {
-    bullish: '긍정',
-    neutral: '중립',
-    bearish: '부정',
+/** FinancialsSentiment → `shared.enumLabel` 카탈로그 키. 값 자체는 더 이상 한글이 아니다 — 렌더 시점에 `tLabel`로 조회한다. */
+const SENTIMENT_LABEL_KEY: Record<FinancialsSentiment, string> = {
+    bullish: 'sentiment.bullish',
+    neutral: 'sentiment.neutral',
+    bearish: 'sentiment.bearish',
 };
 
 // See createEnumGuard's JSDoc for the Object.hasOwn / prototype-chain
 // rationale (audit fix; PR #698 round-2 review FIX 3 extracted the shared
 // implementation).
-const isSentiment = createEnumGuard(SENTIMENT_LABEL);
+const isSentiment = createEnumGuard(SENTIMENT_LABEL_KEY);
 
 // `src/widgets/financials/axisLabels.ts`의 AXIS_LABEL_KO와 동일 라벨 —
 // 이 렌더러는 위젯 레이어에 의존하지 않는 established pattern
 // (TechnicalSnapshotProse/OverallSnapshotProse)을 따라 자체 정의한다.
-const AXIS_LABEL: Record<FinancialsAxis, string> = {
-    growth: '성장성',
-    quality: '수익성·질',
-    solvency: '안정성',
-    cash: '현금창출력',
+const AXIS_LABEL_KEY: Record<FinancialsAxis, string> = {
+    growth: 'financialsAxis.growth',
+    quality: 'financialsAxis.quality',
+    solvency: 'financialsAxis.solvency',
+    cash: 'financialsAxis.cash',
 };
 
-const isAxis = createEnumGuard(AXIS_LABEL);
+const isAxis = createEnumGuard(AXIS_LABEL_KEY);
 
 interface NarrowedAxisAssessment {
     axis: FinancialsAxis;
@@ -162,6 +163,7 @@ export function FinancialsSnapshotProse({
     generatedAt,
 }: FinancialsSnapshotProseProps) {
     const t = useTranslations('views.symbol');
+    const tLabel = useTranslations('shared.enumLabel');
     const narrowed = narrowFinancialsContent(content);
     if (narrowed === null) return null;
 
@@ -182,7 +184,9 @@ export function FinancialsSnapshotProse({
                     <p className="font-medium text-secondary-200">
                         {t('FinancialsSnapshotProse.13bd2e', {
                             v0: symbol,
-                            v1: SENTIMENT_LABEL[narrowed.overallSentiment],
+                            v1: tLabel(
+                                SENTIMENT_LABEL_KEY[narrowed.overallSentiment]
+                            ),
                         })}
                     </p>
                 )}
@@ -202,15 +206,18 @@ export function FinancialsSnapshotProse({
                         </h3>
                         <ul
                             role="list"
-                            aria-label={`${symbol} 축별 평가 목록`}
+                            aria-label={t(
+                                'FinancialsSnapshotProse.axisListLabel',
+                                { v0: symbol }
+                            )}
                             className="space-y-2"
                         >
                             {narrowed.axisAssessments.map(a => (
                                 <li key={a.axis}>
                                     <span className="font-medium text-secondary-200">
-                                        {AXIS_LABEL[a.axis]}
+                                        {tLabel(AXIS_LABEL_KEY[a.axis])}
                                         {a.sentiment !== null &&
-                                            ` (${SENTIMENT_LABEL[a.sentiment]})`}
+                                            ` (${tLabel(SENTIMENT_LABEL_KEY[a.sentiment])})`}
                                     </span>
                                     {a.rationaleKo.length > 0 && (
                                         <p>{a.rationaleKo}</p>

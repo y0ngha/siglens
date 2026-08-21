@@ -41,11 +41,12 @@ describe('getNewsList', () => {
         const rows = [{ id: 'r1' }] as never;
         listCardsBySymbolSpy.mockResolvedValueOnce(rows);
 
-        const result = await getNewsList('AAPL');
+        const result = await getNewsList('AAPL', 'ko');
 
         expect(listCardsBySymbolSpy).toHaveBeenCalledWith(
             'AAPL',
-            NEWS_LOOKBACK_MS
+            NEWS_LOOKBACK_MS,
+            'ko'
         );
         expect(result).toBe(rows);
     });
@@ -58,8 +59,8 @@ describe('getNewsList', () => {
         const rows = [{ id: 'r1' }] as never;
         listCardsBySymbolSpy.mockResolvedValue(rows);
 
-        const a = await getNewsList('TSLA');
-        const b = await getNewsList('TSLA');
+        const a = await getNewsList('TSLA', 'ko');
+        const b = await getNewsList('TSLA', 'ko');
 
         expect(a).toEqual(b);
         expect(a).toEqual(rows);
@@ -71,25 +72,29 @@ describe('getNewsList', () => {
         listCardsBySymbolSpy.mockResolvedValueOnce([{ id: 'aapl-1' }] as never);
         listCardsBySymbolSpy.mockResolvedValueOnce([{ id: 'msft-1' }] as never);
 
-        await getNewsList('AAPL_KEY_SEP');
-        await getNewsList('MSFT_KEY_SEP');
+        await getNewsList('AAPL_KEY_SEP', 'ko');
+        await getNewsList('MSFT_KEY_SEP', 'ko');
 
         expect(listCardsBySymbolSpy).toHaveBeenCalledTimes(2);
         expect(listCardsBySymbolSpy).toHaveBeenNthCalledWith(
             1,
             'AAPL_KEY_SEP',
-            NEWS_LOOKBACK_MS
+            NEWS_LOOKBACK_MS,
+            'ko'
         );
         expect(listCardsBySymbolSpy).toHaveBeenNthCalledWith(
             2,
             'MSFT_KEY_SEP',
-            NEWS_LOOKBACK_MS
+            NEWS_LOOKBACK_MS,
+            'ko'
         );
     });
 
     it('listCardsBySymbol이 throw하면 예외를 그대로 상위로 전파한다 (ISR safety는 호출 측 catch에 위임)', async () => {
         listCardsBySymbolSpy.mockRejectedValueOnce(new Error('db down'));
 
-        await expect(getNewsList('THROW_SYMBOL')).rejects.toThrow('db down');
+        await expect(getNewsList('THROW_SYMBOL', 'ko')).rejects.toThrow(
+            'db down'
+        );
     });
 });

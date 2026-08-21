@@ -14,11 +14,18 @@
 // pass — the same pass that becomes the static SSR HTML in production.
 import { renderToStaticMarkup } from 'react-dom/server';
 
-vi.mock('@/shared/lib/seo', () => ({
-    BACKTESTING_DESCRIPTION: 'test desc',
+/**
+ * **부분 목이다.** 통째로 갈아끼우면 이 모듈에 export가 하나 생길 때마다
+ * `No "x" export is defined on the mock`으로 깨지고, 더 나쁘게는 URL을 만드는
+ * 로직이 스텁으로 대체돼 테스트가 아무것도 검증하지 못한다.
+ */
+vi.mock('@/shared/lib/seo', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
+    backtestingDescription: () => 'test desc',
+    backtestingTitle: () => 'AI 백테스팅',
     BACKTESTING_KEYWORDS: ['backtest'],
-    BACKTESTING_TITLE: 'AI 백테스팅',
     BACKTESTING_URL: 'https://siglens.io/backtesting',
+    buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     SITE_BUILD_DATE: new Date('2025-01-01'),
     SITE_NAME: 'Siglens',

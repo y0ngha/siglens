@@ -22,6 +22,7 @@ export function PremiumModelGateModal({
     onClose,
 }: PremiumModelGateModalProps) {
     const t = useTranslations('features.premium-gate');
+    const tMisc = useTranslations('shared.ui.misc');
     const panelRef = useRef<HTMLDivElement>(null);
 
     useFocusTrap(panelRef, true);
@@ -38,7 +39,7 @@ export function PremiumModelGateModal({
         : t('PremiumModelGateModal.2f2f6d');
     const body = isAuth
         ? t('PremiumModelGateModal.671fa2')
-        : `${providerLabel ?? ''} API 키를 등록하면 이 모델을 사용할 수 있어요.`;
+        : tMisc('byokUnlock', { v0: providerLabel ?? '' });
 
     return (
         <div

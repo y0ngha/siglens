@@ -29,7 +29,10 @@ export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
 export const contentType = 'image/png';
 // `/news`는 2026-08부터 미국 허브가 아니라 3지역 허브다. 미국 전용 문구는
 // `/news/us`가 가져갔다 — 여기 남으면 공유 카드가 페이지 제목과 정면으로 어긋난다.
-export const alt = 'Siglens 시장 뉴스 허브';
+// `alt`는 Next가 **모듈 스코프 상수**로 요구해 로케일별로 낼 수 없다(이미지
+// 본문은 아래에서 로케일별로 그린다). 네 로케일이 한 값을 공유해야 하므로
+// 한국어 대신 영어로 둔다 — 예전엔 한국어라 `/en/…` 공유 카드의 alt만 한국어였다.
+export const alt = 'Siglens — market news hub';
 
 interface Props {
     params: Promise<{ locale: string }>;

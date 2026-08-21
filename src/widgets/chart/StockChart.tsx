@@ -1,5 +1,8 @@
 'use client';
 
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { INTL_LOCALE } from '@/shared/i18n/locales';
+
 import { useTranslations } from 'next-intl';
 import type { RefObject } from 'react';
 import { useEffect, useMemo, useRef } from 'react';
@@ -117,6 +120,8 @@ export function StockChart({
     marketProfile = 'us-equity',
 }: StockChartProps) {
     const t = useTranslations('widgets.chart');
+    const tMisc = useTranslations('shared.ui.misc');
+    const locale = useResolvedLocale();
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
@@ -206,10 +211,14 @@ export function StockChart({
 
         chartRef.current.applyOptions({
             localization: {
-                timeFormatter: getTimeFormatter(timeframe),
+                // `locale`을 안 주면 `lightweight-charts`가 축 눈금을
+                // `navigator.language`로 그린다 — `/en/AAPL`인데 브라우저가
+                // ko-KR이면 x축이 `4월 5월`로 나온다.
+                locale: INTL_LOCALE[locale],
+                timeFormatter: getTimeFormatter(timeframe, locale),
             },
         });
-    }, [timeframe]);
+    }, [timeframe, locale]);
 
     useEffect(() => {
         if (!seriesRef.current || !chartRef.current) return;
@@ -603,7 +612,7 @@ export function StockChart({
     // 캔버스만 들어가는 containerRef에 둔다.
     const chartAriaLabel =
         ticker !== undefined && ticker !== ''
-            ? `${ticker} ${timeframe} 캔들 차트`
+            ? tMisc('chartAria', { v0: ticker, v1: timeframe })
             : t('StockChart.a547a0');
 
     return (

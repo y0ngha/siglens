@@ -49,7 +49,7 @@ describe('DrizzleTermsRepository', () => {
             ]);
             const repo = new DrizzleTermsRepository(db);
 
-            const result = await repo.findActive('privacy');
+            const result = await repo.findActive('privacy', 'ko');
 
             expect(result).not.toBeNull();
             expect(result?.kind).toBe('privacy');
@@ -61,7 +61,7 @@ describe('DrizzleTermsRepository', () => {
             const db = makeMockDb([]);
             const repo = new DrizzleTermsRepository(db);
 
-            const result = await repo.findActive('tos');
+            const result = await repo.findActive('tos', 'ko');
 
             expect(result).toBeNull();
         });

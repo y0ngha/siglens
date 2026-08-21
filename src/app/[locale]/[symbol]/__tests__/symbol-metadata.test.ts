@@ -133,6 +133,8 @@ vi.mock('@/entities/ticker', () => ({
     getAssetInfoResilient: mockGetAssetInfoResilient,
     // assetInfo가 존재하는 happy-path에서 generateMetadata가 호출한다. canonical은
     // ticker(params) 기반이라 displayName 정확도는 회귀 검증과 무관 — 간단 stub으로 충분.
+    pickAssetName: (info: { name: string; koreanName?: string }) =>
+        info.koreanName ?? info.name,
     buildDisplayName: (
         info: { name?: string; koreanName?: string } | null,
         ticker: string

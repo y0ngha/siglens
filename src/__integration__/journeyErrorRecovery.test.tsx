@@ -15,14 +15,10 @@ vi.mock('@/shared/db/client', () => ({
 
 // AnalysisProgress가 내부 hook에서 직접 import하므로 여기서 mock한다.
 vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
-    ANALYSIS_PHASES: [
-        '데이터 수집',
-        '패턴 분석',
-        '시그널 종합',
-        'AI 판단',
-        '보고서 작성',
-    ],
-    ANALYSIS_TIPS: ['팁 1', '팁 2'],
+    ANALYSIS_PHASE_COUNT: 6,
+    ANALYSIS_TIP_COUNT: 8,
+    PRO_INDICATOR_COUNT: 30,
+    SKILL_COUNT: 60,
 }));
 
 vi.mock('./AdBanner', () => ({
@@ -105,12 +101,21 @@ describe('Journey: Error Recovery', () => {
 
         it('displays current phase message', () => {
             render(<AnalysisProgress phaseIndex={1} tipIndex={0} />);
-            expect(screen.getByText('패턴 분석')).toBeInTheDocument();
+
+            // 문구는 카탈로그에서 온다 — mock 문자열이 아니라 실제 값을 단언한다.
+            expect(
+                screen.getByText('30개 이상의 보조지표 시그널 분석 중')
+            ).toBeInTheDocument();
         });
 
         it('displays current tip', () => {
             render(<AnalysisProgress phaseIndex={0} tipIndex={1} />);
-            expect(screen.getByText('팁 2')).toBeInTheDocument();
+
+            expect(
+                screen.getByText(
+                    'AI 분석은 보통 5분 정도 걸려요. 길어지면 최대 15분까지 걸릴 수 있어요.'
+                )
+            ).toBeInTheDocument();
         });
     });
 

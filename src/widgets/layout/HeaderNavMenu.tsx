@@ -40,6 +40,7 @@ const ITEM_BASE =
 export function HeaderNavMenu({ vertical, pathname }: HeaderNavMenuProps) {
     // 내비 라벨 키는 완전 수식이라 루트 네임스페이스로 푼다.
     const tNav = useTranslations();
+    const t = useTranslations('widgets.layout');
     const [isOpen, setIsOpen] = useState(false);
     const panelId = useId();
     const containerRef = useRef<HTMLDivElement>(null);
@@ -131,7 +132,9 @@ export function HeaderNavMenu({ vertical, pathname }: HeaderNavMenuProps) {
             */}
             <ul
                 id={panelId}
-                aria-label={`${tNav(vertical.labelKey)} 바로가기`}
+                aria-label={t('HeaderNavMenu.shortcutLabel', {
+                    v0: tNav(vertical.labelKey),
+                })}
                 className={cn(
                     'absolute top-full left-0 z-50 min-w-44 rounded-md border border-secondary-700 bg-secondary-900 py-1 shadow-xl',
                     isOpen ? 'visible' : 'invisible'

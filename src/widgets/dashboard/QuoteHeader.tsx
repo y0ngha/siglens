@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { formatPriceChange, formatUsdPrice } from '@/shared/lib/priceFormat';
 
@@ -54,7 +55,8 @@ export function QuoteHeader({
     currencySymbol,
     tickerIsReadable,
 }: QuoteHeaderProps) {
-    const { sign, colorClass, arrow, arrowLabel } = formatPriceChange(
+    const tMove = useTranslations('shared.lib.priceMove');
+    const { sign, colorClass, arrow, arrowLabelKey } = formatPriceChange(
         data.changePercent
     );
 
@@ -67,7 +69,7 @@ export function QuoteHeader({
             )}
         >
             <span aria-hidden="true">{arrow}</span>
-            <span className="sr-only">{arrowLabel}</span>
+            <span className="sr-only">{tMove(arrowLabelKey)}</span>
             {sign}
             {data.changePercent.toFixed(2)}%
         </span>

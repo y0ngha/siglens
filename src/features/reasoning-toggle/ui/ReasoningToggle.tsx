@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
-import { REASONING_FEATURE_LABEL } from '../model/reasoningFeature';
+import { REASONING_FEATURE_LABEL_KEY } from '../model/reasoningFeature';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 
 interface ReasoningToggleProps {
@@ -44,6 +44,7 @@ export function ReasoningToggle({
     className,
 }: ReasoningToggleProps) {
     const t = useTranslations('features.reasoning-toggle');
+    const tA11y = useTranslations('features.reasoning-toggle.a11y');
     const locked = !canUse;
     // Locked non-members never actually have reasoning enabled server-side,
     // so the switch always reads as OFF regardless of the raw `checked` prop
@@ -53,9 +54,10 @@ export function ReasoningToggle({
     // accessible name must say "signup unlocks this" rather than the generic
     // toggle label — otherwise a screen reader user has no way to know why
     // activating it doesn't flip the switch.
+    const featureLabel = tA11y(REASONING_FEATURE_LABEL_KEY);
     const ariaLabel = locked
-        ? `${REASONING_FEATURE_LABEL} — 회원가입하면 사용할 수 있어요`
-        : `${REASONING_FEATURE_LABEL} (추론) 토글`;
+        ? tA11y('signupPrompt', { v0: featureLabel })
+        : tA11y('toggleAria', { v0: featureLabel });
 
     const handleClick = (): void => {
         // A genuine `disabled` is a full no-op and takes precedence: it reports
@@ -73,7 +75,7 @@ export function ReasoningToggle({
     return (
         <div className={cn('flex items-center gap-1.5', className)}>
             <span className="text-xs whitespace-nowrap text-secondary-400">
-                {REASONING_FEATURE_LABEL}
+                {featureLabel}
             </span>
             <InfoTooltip>
                 <p className="mb-1">{t('ReasoningToggle.3592be')}</p>

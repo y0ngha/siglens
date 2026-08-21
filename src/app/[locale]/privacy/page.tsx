@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
@@ -8,20 +8,29 @@ import {
 } from '@/shared/lib/seoAlternates';
 import { PolicyMarkdownBody } from '@/widgets/legal/PolicyMarkdownBody';
 import { LegalPageShell } from '@/widgets/legal/LegalPageShell';
+import { UntranslatedNotice } from '@/widgets/legal/UntranslatedNotice';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     formatKoreanDate,
-    INVESTMENT_DISCLAIMER,
-    PRIVACY_DESCRIPTION,
-    PRIVACY_FULL_TITLE,
+    INVESTMENT_DISCLAIMER_KEY,
+    privacyDescription,
+    privacyFullTitle,
     PRIVACY_PATH,
-    PRIVACY_TITLE,
+    privacyTitle,
     TERMS_PATH,
-    TERMS_TITLE,
+    termsTitle,
 } from '@/shared/lib/legal';
 import { extractToc } from '@/shared/lib/legal-toc';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import {
+    buildBreadcrumbJsonLd,
+    buildWebPageJsonLd,
+    SITE_NAME,
+    SITE_URL,
+    localizedAbsoluteUrl,
+} from '@/shared/lib/seo';
+import type { Locale } from '@/shared/i18n/locales';
+import type { SeoTranslator } from '@/shared/lib/seo';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleTermsRepository } from '@/entities/terms';
 import type { Metadata } from 'next';
@@ -30,20 +39,27 @@ import { notFound } from 'next/navigation';
 
 const PAGE_URL = `${SITE_URL}${PRIVACY_PATH}`;
 
-const JSON_LD = {
-    '@context': 'https://schema.org',
-    '@type': 'WebPage',
-    '@id': `${PAGE_URL}#webpage`,
-    name: `${PRIVACY_TITLE} | ${SITE_NAME}`,
-    description: PRIVACY_DESCRIPTION,
-    url: PAGE_URL,
-    inLanguage: 'ko',
-    isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
-};
+/**
+ * 모듈 스코프 상수였다 — 그 자리에서는 번역자도 로케일도 없어 JSON-LD가
+ * 항상 한국어·기본 로케일 URL로 굳었다. 렌더 시점 함수로 바꾼다.
+ */
+function buildPrivacyJsonLd(t: SeoTranslator, locale: Locale) {
+    return {
+        ...buildWebPageJsonLd({
+            url: PAGE_URL,
+            name: privacyFullTitle(t),
+            description: privacyDescription(t),
+            locale,
+        }),
+    };
+}
 
-const BREADCRUMB_JSON_LD = buildBreadcrumbJsonLd([
-    { name: PRIVACY_TITLE, url: PAGE_URL },
-]);
+function buildPrivacyBreadcrumbJsonLd(t: SeoTranslator, locale: Locale) {
+    return buildBreadcrumbJsonLd(
+        [{ name: privacyTitle(t), url: PAGE_URL }],
+        locale
+    );
+}
 
 interface LocaleMetadataParams {
     readonly params: Promise<{ locale: string }>;
@@ -55,59 +71,49 @@ export async function generateMetadata({
     const { locale } = await params;
     const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
     const ogLocale = localeOpenGraph(resolved);
+    const tSeo = await getTranslations({
+        locale: resolved,
+        namespace: 'shared.seo',
+    });
     return {
-        title: PRIVACY_TITLE,
-        description: PRIVACY_DESCRIPTION,
+        title: privacyTitle(tSeo),
+        description: privacyDescription(tSeo),
         robots: localeRobots(resolved),
         alternates: await localeAlternatesFrom(params, PRIVACY_PATH),
         openGraph: {
             type: 'article',
             siteName: SITE_NAME,
-            title: PRIVACY_FULL_TITLE,
-            description: PRIVACY_DESCRIPTION,
-            url: PAGE_URL,
+            title: privacyFullTitle(tSeo),
+            description: privacyDescription(tSeo),
+            url: localizedAbsoluteUrl(PAGE_URL, resolved),
             ...ogLocale,
             images: [
                 {
                     url: '/og-image.png',
                     width: OG_IMAGE_WIDTH,
                     height: OG_IMAGE_HEIGHT,
-                    alt: PRIVACY_FULL_TITLE,
+                    alt: privacyFullTitle(tSeo),
                 },
             ],
         },
         twitter: {
             card: 'summary',
-            title: PRIVACY_FULL_TITLE,
-            description: PRIVACY_DESCRIPTION,
+            title: privacyFullTitle(tSeo),
+            description: privacyDescription(tSeo),
             images: ['/og-image.png'],
         },
     };
 }
 
-const bottomNotice = (
-    <div
-        role="note"
-        aria-label="투자 면책 고지"
-        className="mt-12 rounded-lg border border-secondary-800 bg-secondary-900/40 p-5"
-    >
-        <p className="text-xs leading-relaxed text-secondary-400 sm:text-sm">
-            {INVESTMENT_DISCLAIMER} 서비스 이용과 관련한 자세한 조건은&nbsp;
-            <Link
-                href={TERMS_PATH}
-                className="rounded-sm text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-            >
-                {TERMS_TITLE}
-            </Link>
-            을(를) 참고해 주세요.
-        </p>
-    </div>
-);
-
-async function PrivacyContent() {
+async function PrivacyContent({ locale }: { readonly locale: Locale }) {
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
+    const tLegal = await getTranslations({
+        locale,
+        namespace: 'shared.lib.legal',
+    });
     const { db } = getDatabaseClient();
     const repo = new DrizzleTermsRepository(db);
-    const terms = await repo.findActive('privacy');
+    const terms = await repo.findActive('privacy', locale);
 
     if (!terms) {
         notFound();
@@ -117,13 +123,49 @@ async function PrivacyContent() {
 
     return (
         <LegalPageShell
-            breadcrumbTitle={PRIVACY_TITLE}
+            breadcrumbTitle={privacyTitle(tSeo)}
             eyebrow="PRIVACY POLICY"
-            title={PRIVACY_TITLE}
-            intro={`${SITE_NAME}(이하 "운영자")는 이용자의 개인정보를 중요시하며, 「개인정보 보호법」 등 관련 법령을 준수하기 위하여 노력하고 있습니다. 운영자는 개인정보처리방침을 통하여 이용자가 제공하는 개인정보가 어떠한 용도와 방식으로 이용되고 있으며, 개인정보 보호를 위해 어떠한 조치가 취해지고 있는지 알려드립니다.`}
-            effectiveDate={formatKoreanDate(terms.effectiveDate)}
+            title={privacyTitle(tSeo)}
+            intro={tLegal('privacyIntro', { v0: SITE_NAME })}
+            effectiveDate={formatKoreanDate(terms.effectiveDate, locale)}
             toc={toc}
-            bottomNotice={bottomNotice}
+            topNotice={
+                terms.isTranslationFallback ? (
+                    <UntranslatedNotice
+                        requested={locale}
+                        served={terms.bodyLocale}
+                    />
+                ) : undefined
+            }
+            bottomNotice={
+                <div
+                    role="note"
+                    aria-label={tSeo('a11y.investmentDisclaimer')}
+                    className="mt-12 rounded-lg border border-secondary-800 bg-secondary-900/40 p-5"
+                >
+                    <p className="text-xs leading-relaxed text-secondary-400 sm:text-sm">
+                        {tLegal(INVESTMENT_DISCLAIMER_KEY)}{' '}
+                        {/*
+                            약관 링크는 문장 **안에** 둔다 — 한국어는
+                            "…조건은 X을(를) 참고", 영어는 "see the X" 순서라
+                            링크를 문장 밖에 이어 붙이면 로케일마다 어순이 깨진다.
+                            `<link>` 태그 안의 텍스트는 렌더하지 않는다: 표시
+                            라벨은 `termsTitle`이 카탈로그에서 가져오므로 여기서
+                            복제하면 둘이 갈라진다.
+                        */}
+                        {tLegal.rich('privacyBottomNotice', {
+                            link: () => (
+                                <Link
+                                    href={TERMS_PATH}
+                                    className="rounded-sm text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                >
+                                    {termsTitle(tSeo)}
+                                </Link>
+                            ),
+                        })}
+                    </p>
+                </div>
+            }
         >
             <PolicyMarkdownBody markdown={terms.body} />
         </LegalPageShell>
@@ -140,14 +182,19 @@ export default async function PrivacyPage({
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({
+        locale: resolved,
+        namespace: 'shared.seo',
+    });
     return (
         <>
-            <JsonLd data={JSON_LD} />
-            <JsonLd data={BREADCRUMB_JSON_LD} />
+            <JsonLd data={buildPrivacyJsonLd(tSeo, resolved)} />
+            <JsonLd data={buildPrivacyBreadcrumbJsonLd(tSeo, resolved)} />
             <Suspense
                 fallback={<div className="animate-pulse" aria-hidden="true" />}
             >
-                <PrivacyContent />
+                <PrivacyContent locale={resolved} />
             </Suspense>
         </>
     );

@@ -15,7 +15,11 @@ import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { SITE_NAME } from '@/shared/lib/seo';
 import { ContactDialog } from '@/widgets/layout/ContactDialog';
-import { TickerCategories } from '@/widgets/home';
+// 배럴(`@/widgets/home`)이 아니라 파일을 직접 가리킨다. 배럴을 타면 홈 전체가
+// 이 404 경계의 모듈 폐포에 들어오고, 그러면 홈 전용 스킬 카탈로그(8.4KB)가
+// **크롬 페이로드**에 실려 `/login`·`/terms`까지 따라다닌다(실측: 크롬이
+// 카탈로그의 23.8%). 프로덕션 코드의 배럴-only 규칙에 대한 의도적 예외다.
+import { TickerCategories } from '@/widgets/home/TickerCategories';
 
 export function NotFoundContent() {
     const t = useTranslations('app.home');

@@ -1,14 +1,13 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { ResetPasswordForm } from '@/features/auth-password-reset';
-
-export const MISSING_PARAMS_MESSAGE =
-    '재설정 링크가 올바르지 않습니다. 비밀번호 찾기를 다시 시도해주세요.';
 
 // useSearchParams를 읽어 이 subtree만 CSR로 떨군다(라우트는 static 유지).
 // token은 원래도 URL(client 가시) 값이라 client-read로 인한 신규 노출 없음.
 export function ResetPasswordContent() {
+    const tAuth = useTranslations('entities.auth.error');
     const params = useSearchParams();
     const email = params.get('email') ?? '';
     const token = params.get('token') ?? '';
@@ -20,7 +19,7 @@ export function ResetPasswordContent() {
             role="alert"
             className="rounded-md border border-ui-danger/30 bg-ui-danger/5 p-3 text-sm text-ui-danger"
         >
-            {MISSING_PARAMS_MESSAGE}
+            {tAuth('invalidResetLink')}
         </div>
     );
 }

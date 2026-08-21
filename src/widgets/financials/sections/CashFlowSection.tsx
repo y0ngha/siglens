@@ -23,7 +23,8 @@ interface CashFlowSectionProps {
 }
 
 const HEADING_ID = 'cash-flow-heading';
-const TITLE = '현금흐름표';
+/** `widgets.financials.section` 키 — 표시는 렌더 쪽에서 `t()`로. */
+const TITLE_KEY = 'cashFlow';
 
 /**
  * Displays cash flow statement data: operating CF / FCF / CapEx trend chart,
@@ -43,8 +44,9 @@ export function CashFlowSection({
     currency = DEFAULT_STATEMENT_CURRENCY,
 }: CashFlowSectionProps) {
     const t = useTranslations('widgets.financials');
+    const tSection = useTranslations('widgets.financials.section');
     if (rows.length === 0) {
-        return <EmptySectionCard title={TITLE} />;
+        return <EmptySectionCard title={tSection(TITLE_KEY)} />;
     }
 
     const displayRows = toDisplayOrder(rows);
@@ -107,7 +109,7 @@ export function CashFlowSection({
             className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
-                {TITLE}
+                {tSection(TITLE_KEY)}
             </h2>
             <div className="mb-6">
                 <FinancialTrendChart

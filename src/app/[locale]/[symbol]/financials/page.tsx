@@ -30,13 +30,14 @@ import {
     buildAssetAboutNode,
     buildDisplayName,
     getAssetInfoResilient,
+    pickAssetName,
 } from '@/entities/ticker';
 import {
     buildBreadcrumbJsonLd,
     buildSnapshotMetaDescription,
     buildSymbolFinancialsSeoContent,
     buildSymbolSeoContent,
-    buildSymbolWebPageJsonLd,
+    buildWebPageJsonLd,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
 } from '@/shared/lib/seo';
@@ -109,10 +110,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (isEmptyFinancialsSnapshot(snapshot)) {
         return NOINDEX_SYMBOL_METADATA;
     }
-    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
-    const seo = buildSymbolFinancialsSeoContent(upper, {
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
+    const displayName = assetInfo
+        ? buildDisplayName(assetInfo, upper, locale)
+        : upper;
+    const seo = buildSymbolFinancialsSeoContent(upper, tSeo, {
         displayName,
         koreanName: assetInfo?.koreanName,
+        englishName: assetInfo?.name,
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
     });
     const metadata = symbolMetadataFromSeo(seo, locale);
 
@@ -122,11 +128,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // an extra DB round-trip. Falls back to the templated description when no
     // snapshot exists (backward compatible). og/twitter keep the templated copy
     // — only the search-facing <meta name="description"> is overridden.
-    const snap = (await getSeoSnapshotsStatic(upper, revalidate)).find(
+    const snap = (await getSeoSnapshotsStatic(upper, revalidate, locale)).find(
         s => s.tab === 'financials'
     );
     const snapshotDescription = snap
-        ? buildSnapshotMetaDescription('financials', snap.content, displayName)
+        ? buildSnapshotMetaDescription(
+              'financials',
+              snap.content,
+              displayName,
+              locale
+          )
         : null;
     return snapshotDescription
         ? { ...metadata, description: snapshotDescription }
@@ -135,11 +146,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function FinancialsPage({ params }: Props) {
     const { locale, symbol } = await params;
+    // DB 스냅샷은 로케일별 행이라 좁혀진 로케일이 필요하다. URL 세그먼트는 신뢰 경계다.
+    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
     // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
     const t = await getTranslations('app.symbol');
+    const tSeo = await getTranslations('shared.seo');
     const upper = symbol.toUpperCase();
 
     if (!isAdmissibleSymbolShape(upper)) {
@@ -162,7 +176,7 @@ export default async function FinancialsPage({ params }: Props) {
     ] = await Promise.all([
         getProfileResilient(upper),
         getAssetInfoResilient(upper),
-        getSeoSnapshotsStatic(upper, revalidate),
+        getSeoSnapshotsStatic(upper, revalidate, resolved),
     ]);
     const financialsSnapshot = snapshots.find(s => s.tab === 'financials');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasFinancialsProse)
@@ -180,7 +194,13 @@ export default async function FinancialsPage({ params }: Props) {
     // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
     if (isUnresolvableDegraded(upper, degraded)) notFound();
 
-    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
+    const displayName = assetInfo
+        ? buildDisplayName(
+              assetInfo,
+              upper,
+              isLocale(locale) ? locale : DEFAULT_LOCALE
+          )
+        : upper;
     // CrossLinkCards에 넘길 시장 프로필. financials도 fundamental과 동일하게
     // assetInfo가 optional이라(FMP profile만 있어도 렌더) marketProfileOf(assetInfo)를
     // 못 쓸 수 있다 — 그 경우 심볼 형상으로 판정한다(`profileIdForSymbol`, marketProfileOf
@@ -232,9 +252,12 @@ export default async function FinancialsPage({ params }: Props) {
 
     const { fullTitle, description, url } = buildSymbolFinancialsSeoContent(
         upper,
+        tSeo,
         {
             displayName,
             koreanName: assetInfo?.koreanName,
+            englishName: assetInfo?.name,
+            locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
         }
     );
 
@@ -243,21 +266,31 @@ export default async function FinancialsPage({ params }: Props) {
     // optional이라 ticker를 fallback name으로 사용한다.
     const aboutNode = buildAssetAboutNode(
         upper,
-        assetInfo?.koreanName ?? assetInfo?.name ?? upper,
+        assetInfo
+            ? pickAssetName(
+                  assetInfo,
+                  upper,
+                  isLocale(locale) ? locale : DEFAULT_LOCALE
+              )
+            : upper,
         assetInfo?.fmpSymbol
     );
 
-    const jsonLd = buildSymbolWebPageJsonLd({
+    const jsonLd = buildWebPageJsonLd({
         url,
         name: fullTitle,
         description,
         about: aboutNode,
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
     });
 
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: upper, url: buildSymbolSeoContent(upper).url },
-        { name: t('page.128c11'), url },
-    ]);
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd(
+        [
+            { name: upper, url: buildSymbolSeoContent(upper, tSeo).url },
+            { name: t('page.128c11'), url },
+        ],
+        isLocale(locale) ? locale : DEFAULT_LOCALE
+    );
 
     const faqJsonLd = {
         '@context': 'https://schema.org',
@@ -265,7 +298,7 @@ export default async function FinancialsPage({ params }: Props) {
         mainEntity: [
             {
                 '@type': 'Question',
-                name: `${displayName}의 재무는 건전한가요?`,
+                name: tSeo('faq.financialsHealthy', { v0: displayName }),
                 acceptedAnswer: {
                     '@type': 'Answer',
                     text: t('page.24d5a2'),
@@ -273,7 +306,7 @@ export default async function FinancialsPage({ params }: Props) {
             },
             {
                 '@type': 'Question',
-                name: `${displayName}의 성장 추세는 어떤가요?`,
+                name: tSeo('faq.financialsGrowth', { v0: displayName }),
                 acceptedAnswer: {
                     '@type': 'Answer',
                     text: t('page.a79703'),
@@ -281,7 +314,7 @@ export default async function FinancialsPage({ params }: Props) {
             },
             {
                 '@type': 'Question',
-                name: `${displayName}의 현금 창출력은 충분한가요?`,
+                name: tSeo('faq.financialsCashflow', { v0: displayName }),
                 acceptedAnswer: {
                     '@type': 'Answer',
                     text: t('page.0430a5'),

@@ -1,8 +1,10 @@
 import { useTranslations } from 'next-intl';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import type { Locale } from '@/shared/i18n/locales';
+import { formatCurrencyForSymbol } from '@/shared/lib/priceFormat';
 import { EmptySectionCard } from './EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { formatCompactCurrency } from '@/shared/lib/priceFormat';
-import { currencyForSymbol } from '@/shared/config/marketProfile';
 import type {
     FundamentalAnalystEstimateInput,
     FundamentalGradesConsensusInput,
@@ -35,38 +37,22 @@ function pct(value: number, total: number): string {
     return ((value / total) * 100).toFixed(1);
 }
 
-// 포매터 생성 비용을 렌더마다 물지 않도록 모듈 스코프에 고정한다. 통화별로 하나씩 —
-// 국내 종목의 원화 금액에 `US$`를 붙이던 것이 이 카드에서 가장 크게 드러났다
+// 통화 판정은 `formatCurrencyForSymbol`이 한다 — 예전에는 이 파일이 `'ko-KR'`
+// 고정 포매터 테이블을 따로 갖고 있어서, 비-ko 로케일에서도 한국어 표기 규칙이
+// 적용됐다. 국내 종목의 원화 금액에 `US$`를 붙이던 결함도 같은 자리였다
 // (`목표 주가 US$450,000`은 같은 사이트가 차트 탭에서 `₩274,500`으로 쓰는 값이다).
-const MONEY_FORMATTERS: Record<'USD' | 'KRW', Intl.NumberFormat> = {
-    USD: new Intl.NumberFormat('ko-KR', {
-        style: 'currency',
-        currency: 'USD',
-        maximumFractionDigits: 2,
-    }),
-    KRW: new Intl.NumberFormat('ko-KR', {
-        style: 'currency',
-        currency: 'KRW',
-        maximumFractionDigits: 0,
-    }),
-};
-
-// formatCompactCurrency로 위임하지 않는 이유: 이 값들(EPS 컨센서스·목표주가)은
-// 억/조 단위로 뭉개면 안 되는 실제 가격이라 compact notation을 쓸 수 없다 —
-// `fmtBig` 바로 아래가 매출처럼 압축 표기가 맞는 값에 formatCompactCurrency를
-// 그대로 쓰는 예다. 통화 판정 로직만 같고 표기 방식(compact 여부)이 달라 별도
-// 포매터 맵을 둔다.
-function fmtMoney(v: number | null, symbol: string): string {
+function fmtMoney(v: number | null, symbol: string, locale: Locale): string {
     if (v === null) return '—';
-    return MONEY_FORMATTERS[currencyForSymbol(symbol)].format(v);
+    return formatCurrencyForSymbol(v, symbol, locale);
 }
 
-function fmtBig(v: number | null, symbol: string): string {
-    return v !== null ? formatCompactCurrency(v, symbol) : '—';
+function fmtBig(v: number | null, symbol: string, locale: Locale): string {
+    return v !== null ? formatCompactCurrency(v, symbol, locale) : '—';
 }
 
 function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
     const t = useTranslations('widgets.fundamental');
+    const tRating = useTranslations('widgets.fundamental.analystRating');
     const total = strongBuy + buy + hold + sell + strongSell;
     if (total === 0) return null;
 
@@ -75,7 +61,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
             <div className="flex overflow-hidden rounded-md" aria-hidden="true">
                 {strongBuy > 0 && (
                     <div
-                        title={`강력 매수 ${strongBuy}`}
+                        title={tRating('strongBuy', { v0: strongBuy })}
                         className="h-3 w-(--bar-w) bg-ui-success"
                         style={
                             {
@@ -86,7 +72,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 )}
                 {buy > 0 && (
                     <div
-                        title={`매수 ${buy}`}
+                        title={tRating('buy', { v0: buy })}
                         className="h-3 w-(--bar-w) bg-ui-success/60"
                         style={
                             {
@@ -97,7 +83,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 )}
                 {hold > 0 && (
                     <div
-                        title={`중립 ${hold}`}
+                        title={tRating('hold', { v0: hold })}
                         className="h-3 w-(--bar-w) bg-ui-warning"
                         style={
                             {
@@ -108,7 +94,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 )}
                 {sell > 0 && (
                     <div
-                        title={`매도 ${sell}`}
+                        title={tRating('sell', { v0: sell })}
                         className="h-3 w-(--bar-w) bg-ui-danger/60"
                         style={
                             {
@@ -119,7 +105,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 )}
                 {strongSell > 0 && (
                     <div
-                        title={`강력 매도 ${strongSell}`}
+                        title={tRating('strongSell', { v0: strongSell })}
                         className="h-3 w-(--bar-w) bg-ui-danger"
                         style={
                             {
@@ -193,6 +179,7 @@ export function FutureDirectionCard({
     ptSummary,
 }: FutureDirectionCardProps) {
     const t = useTranslations('widgets.fundamental');
+    const locale = useResolvedLocale();
     if (estimates === null && grades === null && ptConsensus === null) {
         return (
             <EmptySectionCard
@@ -227,7 +214,11 @@ export function FutureDirectionCard({
                                 </InfoTooltip>
                             </dt>
                             <dd className="mt-1 font-mono text-lg font-semibold tabular-nums">
-                                {fmtMoney(estimates.estimatedEpsAvg, symbol)}
+                                {fmtMoney(
+                                    estimates.estimatedEpsAvg,
+                                    symbol,
+                                    locale
+                                )}
                             </dd>
                         </div>
                         <div className="rounded-lg bg-secondary-800/40 px-4 py-3">
@@ -239,7 +230,11 @@ export function FutureDirectionCard({
                                 </InfoTooltip>
                             </dt>
                             <dd className="mt-1 font-mono text-lg font-semibold tabular-nums">
-                                {fmtBig(estimates.estimatedRevenueAvg, symbol)}
+                                {fmtBig(
+                                    estimates.estimatedRevenueAvg,
+                                    symbol,
+                                    locale
+                                )}
                             </dd>
                         </div>
                     </dl>
@@ -305,7 +300,7 @@ export function FutureDirectionCard({
                                             )}
                                         </dt>
                                         <dd className="font-mono text-sm font-medium tabular-nums">
-                                            {fmtMoney(val, symbol)}
+                                            {fmtMoney(val, symbol, locale)}
                                         </dd>
                                     </div>
                                 ))
@@ -320,7 +315,8 @@ export function FutureDirectionCard({
                                 <dd className="font-mono">
                                     {fmtMoney(
                                         ptSummary.lastMonth.avgPriceTarget,
-                                        symbol
+                                        symbol,
+                                        locale
                                     )}
                                 </dd>
                             </div>
@@ -331,7 +327,8 @@ export function FutureDirectionCard({
                                 <dd className="font-mono">
                                     {fmtMoney(
                                         ptSummary.lastQuarter.avgPriceTarget,
-                                        symbol
+                                        symbol,
+                                        locale
                                     )}
                                 </dd>
                             </div>
@@ -342,7 +339,8 @@ export function FutureDirectionCard({
                                 <dd className="font-mono">
                                     {fmtMoney(
                                         ptSummary.lastYear.avgPriceTarget,
-                                        symbol
+                                        symbol,
+                                        locale
                                     )}
                                 </dd>
                             </div>

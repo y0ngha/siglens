@@ -104,7 +104,7 @@ describe('/economy/kr page', () => {
         const { getCalendarFromDb: reader } =
             await import('@/entities/economy/api/getCalendarFromDb');
         await vi.waitFor(() => {
-            expect(reader).toHaveBeenCalledWith(expect.any(String), 'KR');
+            expect(reader).toHaveBeenCalledWith(expect.any(String), 'KR', 'ko');
         });
     });
 

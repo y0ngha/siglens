@@ -22,7 +22,8 @@ export function ContactForm() {
         return <ContactSubmittedNotice />;
     }
 
-    const submissionError = getSubmissionError(state.error);
+    const tError = useTranslations('shared.lib.contactError');
+    const submissionError = getSubmissionError(state.error, tError);
 
     // Email field is uncontrolled (defaultValue). Once the form has been
     // re-rendered with an action result, prefer the user's input over the
@@ -52,7 +53,7 @@ export function ContactForm() {
                 maxLength={CONTACT_TITLE_MAX_LENGTH}
                 placeholder={t('ContactForm.b17241')}
                 defaultValue={state.values.title}
-                error={getFieldError(state.error, 'title')}
+                error={getFieldError(state.error, 'title', tError)}
             />
 
             {currentUser.isPending ? (
@@ -67,7 +68,7 @@ export function ContactForm() {
                     required
                     placeholder="answer@example.com"
                     defaultValue={emailDefault}
-                    error={getFieldError(state.error, 'email')}
+                    error={getFieldError(state.error, 'email', tError)}
                 />
             )}
 
@@ -79,7 +80,7 @@ export function ContactForm() {
                 maxLength={CONTACT_CONTENT_MAX_LENGTH}
                 placeholder={t('ContactForm.52d02b')}
                 defaultValue={state.values.content}
-                error={getFieldError(state.error, 'content')}
+                error={getFieldError(state.error, 'content', tError)}
             />
 
             <SubmitButton

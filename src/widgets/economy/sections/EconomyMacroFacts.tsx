@@ -22,6 +22,7 @@ interface EconomyMacroFactsProps {
  */
 export function EconomyMacroFacts({ snapshot }: EconomyMacroFactsProps) {
     const t = useTranslations('widgets.economy');
+    const tFacts = useTranslations('widgets.economy.macroFacts');
     const { indicators, treasury } = snapshot;
 
     const seriesByName = new Map(indicators.map(s => [s.name, s] as const));
@@ -43,18 +44,30 @@ export function EconomyMacroFacts({ snapshot }: EconomyMacroFactsProps) {
         year2 !== null &&
         year10 !== null &&
         spread !== null
-            ? `현재 미국 기준금리는 ${federalFunds.toFixed(2)}%, 2년물·10년물 국채금리는 ${year2.toFixed(2)}%/${year10.toFixed(2)}%로 스프레드 ${spread >= 0 ? '+' : ''}${spread.toFixed(2)}%p입니다.`
+            ? tFacts('ratesWithSpread', {
+                  v0: federalFunds.toFixed(2),
+                  v1: year2.toFixed(2),
+                  v2: year10.toFixed(2),
+                  // 부호는 값에 붙인다 — 문장 안에 `+`를 두면 로케일마다 자리가
+                  // 달라져 번역이 어긋난다.
+                  v3: `${spread >= 0 ? '+' : ''}${spread.toFixed(2)}`,
+              })
             : federalFunds !== null
-              ? `현재 미국 기준금리는 ${federalFunds.toFixed(2)}%입니다.`
+              ? tFacts('ratesOnly', { v0: federalFunds.toFixed(2) })
               : null;
 
     const macroSentence =
         cpi !== null && unemploymentRate !== null
-            ? `최신 소비자물가지수(CPI)는 ${cpi.toFixed(1)}pt, 실업률은 ${unemploymentRate.toFixed(1)}%입니다.`
+            ? tFacts('cpiAndUnemployment', {
+                  v0: cpi.toFixed(1),
+                  v1: unemploymentRate.toFixed(1),
+              })
             : cpi !== null
-              ? `최신 소비자물가지수(CPI)는 ${cpi.toFixed(1)}pt입니다.`
+              ? tFacts('cpiOnly', { v0: cpi.toFixed(1) })
               : unemploymentRate !== null
-                ? `최신 실업률은 ${unemploymentRate.toFixed(1)}%입니다.`
+                ? tFacts('unemploymentOnly', {
+                      v0: unemploymentRate.toFixed(1),
+                  })
                 : null;
 
     if (ratesSentence === null && macroSentence === null) return null;

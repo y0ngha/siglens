@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import type { NewsFeedCategoryId } from '@/entities/market-news';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { MarketNewsCardItem } from '@/entities/market-news';
@@ -7,12 +8,17 @@ import { cn } from '@/shared/lib/cn';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import { NewsCardShell } from '@/shared/ui/NewsCardShell';
 import {
-    SENTIMENT_LABEL,
+    resolveNewsBody,
+    resolveNewsSummary,
+    resolveNewsTitle,
+} from '@/shared/lib/news/resolveNewsTitle';
+import {
+    SENTIMENT_LABEL_KEY,
     SENTIMENT_CLASS,
     isNewsSentiment,
 } from './utils/sentimentConstants';
 import {
-    IMPACT_LABEL,
+    IMPACT_LABEL_KEY,
     IMPACT_CLASS,
     isNewsImpact,
 } from './utils/impactConstants';
@@ -26,6 +32,11 @@ interface SentimentBadgeProps {
 }
 
 function SentimentBadge({ value }: SentimentBadgeProps) {
+    // extract.mjs의 동적 키 탐지는 "이 파일 안에서 번역자를 직접 호출하는
+    // 패턴"만 본다 — `SENTIMENT_LABEL_KEY[value]`를 그대로 `tLabel(...)`에
+    // 넣어야 `shared.enumLabel`이 이 파일이 속한 라우트의 클라이언트 번들에
+    // 실린다(sentimentDisplay.ts의 SENTIMENT_LABEL_KEY export 주석 참고).
+    const tLabel = useTranslations('shared.enumLabel');
     if (!isNewsSentiment(value)) return null;
     return (
         <span
@@ -35,7 +46,7 @@ function SentimentBadge({ value }: SentimentBadgeProps) {
                 SENTIMENT_CLASS[value]
             )}
         >
-            {SENTIMENT_LABEL[value]}
+            {tLabel(SENTIMENT_LABEL_KEY[value])}
         </span>
     );
 }
@@ -45,6 +56,9 @@ interface ImpactBadgeProps {
 }
 
 function ImpactBadge({ value }: ImpactBadgeProps) {
+    // `SENTIMENT_LABEL_KEY`와 같은 이유로 키를 그대로 `tLabel`에 넣는다 —
+    // 추출기가 이 파일에서 `shared.enumLabel`을 보게 해야 페이로드에 실린다.
+    const tLabel = useTranslations('shared.enumLabel');
     if (!isNewsImpact(value)) return null;
     return (
         <span
@@ -53,7 +67,7 @@ function ImpactBadge({ value }: ImpactBadgeProps) {
                 IMPACT_CLASS[value]
             )}
         >
-            {IMPACT_LABEL[value]}
+            {tLabel(IMPACT_LABEL_KEY[value])}
         </span>
     );
 }
@@ -74,6 +88,7 @@ interface TickerChipsProps {
  *   `tickers.length > 0`).
  */
 function TickerChips({ category, tickers }: TickerChipsProps) {
+    const t = useTranslations('widgets.market-news');
     if (category === 'stock') {
         return (
             <div
@@ -84,7 +99,9 @@ function TickerChips({ category, tickers }: TickerChipsProps) {
                     <Link
                         key={ticker}
                         href={`/${ticker}`}
-                        aria-label={`${ticker} 종목 페이지로 이동`}
+                        aria-label={t('MarketNewsCard.goToSymbol', {
+                            v0: ticker,
+                        })}
                         // 뉴스 카드마다 티커 칩이 붙어 다수 렌더 —
                         // docs/architecture/CDN_CACHING.md §1
                         prefetch={false}
@@ -161,13 +178,17 @@ export interface MarketNewsCardProps {
  */
 export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
     const t = useTranslations('widgets.market-news');
+    const locale = useResolvedLocale();
     const pending = isPending(item);
     const isHighImpact = !pending && item.priceImpact === 'high';
-    const publishedDate = formatNewsPublishedAt(item.publishedAt);
+    const publishedDate = formatNewsPublishedAt(item.publishedAt, locale);
+    // 제목만 로케일을 타면 번역된 헤드라인 아래 한국어 본문이 붙는다.
+    const body = resolveNewsBody(item);
+    const summary = resolveNewsSummary(item);
 
     return (
         <NewsCardShell
-            title={item.titleKo ?? item.titleEn}
+            title={resolveNewsTitle(item, locale)}
             isHighImpact={isHighImpact}
             pending={pending}
             url={item.url}
@@ -204,23 +225,23 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
             }
             bodySection={
                 <>
-                    {item.bodyKo !== null && (
+                    {body !== null && (
                         <section className="mt-3 border-t border-secondary-700/70 pt-3">
                             <h4 className="mb-1 text-xs font-semibold text-secondary-300">
                                 {t('MarketNewsCard.c67b87')}
                             </h4>
                             <p className="text-sm leading-relaxed wrap-break-word text-secondary-400">
-                                {item.bodyKo}
+                                {body}
                             </p>
                         </section>
                     )}
-                    {item.summaryKo !== null && (
+                    {summary !== null && (
                         <section className="mt-3 border-t border-secondary-700/70 pt-3">
                             <h4 className="mb-1 text-xs font-semibold text-secondary-300">
                                 {t('MarketNewsCard.3ea27a')}
                             </h4>
                             <p className="text-sm leading-relaxed wrap-break-word text-secondary-400">
-                                {item.summaryKo}
+                                {summary}
                             </p>
                         </section>
                     )}

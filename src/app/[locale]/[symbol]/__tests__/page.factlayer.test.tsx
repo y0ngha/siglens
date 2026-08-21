@@ -30,7 +30,7 @@ vi.mock('@/views/symbol/SymbolPageClient', () => ({
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('@/entities/chat-message', () => ({
-    FALLBACK_ANALYSIS: { summary: 'fallback' },
+    buildFallbackAnalysis: () => ({ summary: 'fallback' }),
 }));
 vi.mock('@y0ngha/siglens-core', () => ({
     DEEPSEEK_V4_FLASH_MODEL: 'deepseek-v4-flash',
@@ -47,6 +47,8 @@ vi.mock('@/shared/config/market', async importOriginal => ({
 }));
 vi.mock('@/entities/ticker', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+    pickAssetName: (info: { name: string; koreanName?: string }) =>
+        info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
     getAssetInfoResilient: vi.fn().mockResolvedValue({
         assetInfo: {
@@ -95,6 +97,7 @@ vi.mock('@/shared/config/queryConfig', () => ({
 vi.mock('@/shared/lib/seo', async importOriginal => ({
     // 실제 seo를 스프레드해 NOINDEX_SYMBOL_METADATA 등 정적 export를 가져온다(drift 방지).
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
+    buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     buildSymbolSeoContent: vi.fn().mockReturnValue({
         title: 'AAPL 차트',
@@ -410,7 +413,8 @@ describe('SymbolPage — FactLayer SSR integration', () => {
 
             expect(mockGetSeoSnapshotsStatic).toHaveBeenCalledWith(
                 'AAPL',
-                21600
+                21600,
+                'ko'
             );
         });
     });

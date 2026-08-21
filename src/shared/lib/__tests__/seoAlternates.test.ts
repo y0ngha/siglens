@@ -39,6 +39,33 @@ describe('buildLanguageAlternates', () => {
     });
 });
 
+/**
+ * 준비 집합에 자기가 없으면 hreflang을 달지 않는다. 자기를 뺀 클러스터는
+ * 상호 참조가 깨져 Google이 통째로 버리고, 그 URL은 self-canonical만 남은 채
+ * 중복 후보가 된다. `STATIC_INDEXABLE_LOCALES`에 두 번째 로케일을 넣는
+ * 순간에만 드러나는 결함이라 가드가 없으면 그때 가서 터진다.
+ */
+describe('localeAlternates — 준비되지 않은 로케일', () => {
+    it('available에 자기가 없으면 languages를 달지 않는다', () => {
+        const result = localeAlternates('ja', '/news', {
+            available: ['ko', 'en'],
+        });
+        expect(result.canonical).toBe('https://siglens.io/ja/news');
+        expect(result.languages).toBeUndefined();
+    });
+
+    it('available에 자기가 있으면 전체 클러스터를 단다', () => {
+        const result = localeAlternates('en', '/news', {
+            available: ['ko', 'en'],
+        });
+        expect(result.languages).toEqual({
+            ko: 'https://siglens.io/news',
+            en: 'https://siglens.io/en/news',
+            'x-default': 'https://siglens.io/news',
+        });
+    });
+});
+
 describe('localeAlternates', () => {
     it('준비 로케일이 여럿이면 languages를 함께 낸다', () => {
         const result = localeAlternates('en', '/news', {

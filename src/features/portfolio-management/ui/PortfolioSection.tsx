@@ -159,7 +159,9 @@ function HoldingRow({
                         <button
                             type="button"
                             onClick={onStartEdit}
-                            aria-label={`${holding.symbol} 보유종목 수정`}
+                            aria-label={t('PortfolioSection.editHolding', {
+                                v0: holding.symbol,
+                            })}
                             className={ACTION_BUTTON}
                         >
                             {t('PortfolioSection.e1407b')}
@@ -168,7 +170,9 @@ function HoldingRow({
                             ref={deleteButtonRef}
                             type="button"
                             onClick={onRequestDelete}
-                            aria-label={`${holding.symbol} 보유종목 삭제`}
+                            aria-label={t('PortfolioSection.deleteHolding', {
+                                v0: holding.symbol,
+                            })}
                             className={DANGER_BUTTON}
                         >
                             {t('PortfolioSection.fc81e2')}
@@ -188,6 +192,7 @@ function HoldingRow({
 /** Account-page section for managing the member's portfolio holdings: list + inline edit + inline delete confirm + add form. */
 export function PortfolioSection() {
     const t = useTranslations('features.portfolio-management');
+    const tToast = useTranslations('features.portfolio-management.toast');
     const [editingSymbol, setEditingSymbol] = useState<string | null>(null);
     const [confirmingDeleteSymbol, setConfirmingDeleteSymbol] = useState<
         string | null
@@ -232,7 +237,7 @@ export function PortfolioSection() {
                 return;
             }
             setConfirmingDeleteSymbol(null);
-            setStatusMessage(`'${symbol}' 보유종목을 삭제했어요`);
+            setStatusMessage(tToast('holdingDeleted', { v0: symbol }));
             setDeleteSuccessTick(tick => tick + 1);
         } catch {
             // remove.mutateAsync can reject outright (e.g. getCurrentUser()
@@ -312,7 +317,9 @@ export function PortfolioSection() {
                                 if (result.status === 'ok') {
                                     setEditingSymbol(null);
                                     setStatusMessage(
-                                        `'${result.holding.symbol}' 보유종목을 저장했어요`
+                                        tToast('holdingSaved', {
+                                            v0: result.holding.symbol,
+                                        })
                                     );
                                 }
                                 return result;
@@ -352,7 +359,9 @@ export function PortfolioSection() {
                             const result = await save.mutateAsync(input);
                             if (result.status === 'ok') {
                                 setStatusMessage(
-                                    `'${result.holding.symbol}' 보유종목을 저장했어요`
+                                    tToast('holdingSaved', {
+                                        v0: result.holding.symbol,
+                                    })
                                 );
                             }
                             return result;

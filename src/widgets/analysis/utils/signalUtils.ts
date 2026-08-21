@@ -1,14 +1,15 @@
 import type { SignalStrength } from '@y0ngha/siglens-core';
 
 export interface StrengthDisplay {
-    label: string;
+    /** `widgets.analysis.signalStrength` 키 — 표시는 렌더 쪽에서 `t()`로. */
+    labelKey: string;
     color: string;
 }
 
 const SIGNAL_STRENGTH_CONFIG: Record<SignalStrength, StrengthDisplay> = {
-    strong: { label: '강한 시그널', color: 'text-chart-bullish' },
-    moderate: { label: '보통 시그널', color: 'text-ui-warning' },
-    weak: { label: '약한 시그널', color: 'text-secondary-400' },
+    strong: { labelKey: 'strong', color: 'text-chart-bullish' },
+    moderate: { labelKey: 'moderate', color: 'text-ui-warning' },
+    weak: { labelKey: 'weak', color: 'text-secondary-400' },
 };
 
 /**

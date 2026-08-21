@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/react';
-import { EMPTY_MESSAGE } from '@/widgets/fundamental/sections/EmptySectionCard';
 import { FutureDirectionCard } from '@/widgets/fundamental/sections/FutureDirectionCard';
 import type {
     FundamentalAnalystEstimateInput,
     FundamentalGradesConsensusInput,
     FundamentalPriceTargetConsensusInput,
 } from '@y0ngha/siglens-core';
+import { koMessage } from '@/shared/test-utils/koMessage';
 
 const SAMPLE_ESTIMATES = {
     estimatedEpsAvg: 6.5,
@@ -57,7 +57,11 @@ describe('FutureDirectionCard', () => {
         expect(
             screen.getByRole('heading', { name: '미래 방향' })
         ).toBeInTheDocument();
-        expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                koMessage('widgets.financials.section.emptySection')
+            )
+        ).toBeInTheDocument();
     });
 
     it('renders only available sections when partial null', () => {

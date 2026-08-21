@@ -3,7 +3,11 @@ import { localeRobots, localeOpenGraph } from '@/shared/lib/seoAlternates';
 import type { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, setRequestLocale } from 'next-intl/server';
+import {
+    getMessages,
+    setRequestLocale,
+    getTranslations,
+} from 'next-intl/server';
 import Script from 'next/script';
 import { Geist, Geist_Mono } from 'next/font/google';
 import localFont from 'next/font/local';
@@ -15,15 +19,7 @@ import { NoticePopupLoader } from '@/widgets/notice-popup';
 import { ReactQueryProvider } from '@/app/providers';
 import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
 import { CF_BEACON_TOKEN } from '@/shared/lib/cloudflareAnalytics';
-import {
-    ROOT_FULL_TITLE,
-    ROOT_HEADLINE,
-    ROOT_KEYWORDS,
-    ROOT_TITLE,
-    SITE_DESCRIPTION,
-    SITE_NAME,
-    SITE_URL,
-} from '@/shared/lib/seo';
+import { ROOT_KEYWORDS, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import {
     DEFAULT_LOCALE,
@@ -107,14 +103,20 @@ export async function generateMetadata({
     const { locale: raw } = await params;
     const locale: Locale = isLocale(raw) ? raw : DEFAULT_LOCALE;
     const siteUrl = `${SITE_URL}${localePath(locale, '/')}`.replace(/\/$/, '');
+    // 루트 메타데이터도 카탈로그를 쓴다 — 예전에는 `ROOT_TITLE`·`SITE_DESCRIPTION`
+    // 한국어 상수라 `/en`·`/ja`·`/zh`의 탭 제목과 공유 카드가 통째로 한국어였다.
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
 
     return {
         metadataBase: new URL(SITE_URL),
         title: {
-            default: ROOT_TITLE,
+            default: tSeo('root.title'),
             template: `%s | ${SITE_NAME}`,
         },
-        description: SITE_DESCRIPTION,
+        description: tSeo('root.description'),
+        // 로케일별 매니페스트. 기본 `/manifest.webmanifest`를 그대로 두면 `/en`에서
+        // 설치해도 홈 화면 이름·바로가기가 한국어로 굳는다.
+        manifest: `${localePath(locale, '/manifest.webmanifest')}`,
         keywords: ROOT_KEYWORDS,
         applicationName: SITE_NAME,
         authors: [{ name: SITE_NAME, url: SITE_URL }],
@@ -122,8 +124,8 @@ export async function generateMetadata({
         openGraph: {
             type: 'website',
             siteName: SITE_NAME,
-            title: ROOT_FULL_TITLE,
-            description: SITE_DESCRIPTION,
+            title: `${tSeo('root.title')} | ${SITE_NAME}`,
+            description: tSeo('root.description'),
             url: siteUrl,
             // 색인 게이트를 존중하는 단일 출처를 쓴다. 여기 하드코딩을 남겨두면
             // 홈 페이지만 준비되지 않은 로케일 3개를 og 대체본으로 광고한다
@@ -134,14 +136,16 @@ export async function generateMetadata({
                     url: '/og-image.png',
                     width: OG_IMAGE_WIDTH,
                     height: OG_IMAGE_HEIGHT,
-                    alt: `${ROOT_HEADLINE} — 차트, 펀더멘털, 뉴스, 옵션, 공포 탐욕 지수, 종합 결론`,
+                    alt: tSeo('root.ogImageAlt', {
+                        v0: tSeo('root.headline'),
+                    }),
                 },
             ],
         },
         twitter: {
             card: 'summary_large_image',
-            title: ROOT_FULL_TITLE,
-            description: SITE_DESCRIPTION,
+            title: `${tSeo('root.title')} | ${SITE_NAME}`,
+            description: tSeo('root.description'),
             images: ['/og-image.png'],
         },
         // apple-touch-icon은 file-based 규약(src/app/apple-icon.png)이 <link rel="apple-touch-icon">

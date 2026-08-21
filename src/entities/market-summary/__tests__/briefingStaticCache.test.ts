@@ -64,7 +64,7 @@ describe('peekBriefingStatic', () => {
 
         expect(result).toBe(sampleBriefing);
         expect(mockPeekBriefingCache).toHaveBeenCalledWith(sampleSummary, {
-            marketLabel: '미국 증시',
+            marketLabel: 'US market',
             // 요약에 VIX 시세가 없으므로 변동성은 없는 것으로 넘어간다 —
             // 프롬프트에 없는 숫자를 요구하지 않기 위해서다.
             volatility: null,
@@ -86,7 +86,7 @@ describe('peekBriefingStatic', () => {
         );
 
         expect(mockPeekBriefingCache).toHaveBeenCalledWith(expect.anything(), {
-            marketLabel: '한국 증시',
+            marketLabel: 'Korean market',
             volatility: null,
         });
     });
@@ -113,7 +113,7 @@ describe('peekBriefingStatic', () => {
         );
 
         expect(mockPeekBriefingCache).toHaveBeenCalledWith(expect.anything(), {
-            marketLabel: '미국 증시',
+            marketLabel: 'US market',
             volatility: { label: 'VIX', level: 18.3 },
         });
     });

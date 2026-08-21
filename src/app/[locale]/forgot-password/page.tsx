@@ -1,12 +1,11 @@
 import { getTranslations } from 'next-intl/server';
-import { localeCanonical } from '@/shared/lib/seoAlternates';
+import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
 import { ForgotPasswordForm } from '@/features/auth-password-reset';
-import { SITE_NAME } from '@/shared/lib/seo';
 
 // noindex 페이지에도 canonical/openGraph.url을 명시한다. 자세한 근거는 src/app/login/page.tsx 주석 참조.
 /**
@@ -21,13 +20,22 @@ export async function generateMetadata({
 }): Promise<Metadata> {
     const { locale } = await params;
     const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({
+        locale: resolved,
+        namespace: 'shared.seo',
+    });
+    const title = tSeo('forgotPassword.title');
+    const description = tSeo('forgotPassword.description');
     return {
-        title: '비밀번호 찾기',
-        description: `${SITE_NAME} 비밀번호 재설정 링크 발송`,
+        title,
+        description,
         alternates: {
             canonical: localeCanonical(resolved, '/forgot-password'),
         },
-        openGraph: { url: localeCanonical(resolved, '/forgot-password') },
+        ...localePageSocial(resolved, '/forgot-password', {
+            title,
+            description,
+        }),
         robots: { index: false, follow: true },
     };
 }

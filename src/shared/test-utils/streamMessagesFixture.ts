@@ -21,4 +21,7 @@ export const TEST_STREAM_MESSAGES: StreamErrorMessages = {
     noOptionsChains: 'noOptionsChains',
     analysisFailed: 'analysisFailed',
     fetchFailed: 'fetchFailed',
+    congressFetchFailed: 'congressFetchFailed',
+    digestUnavailable: 'digestUnavailable',
+    reanalyzeCooldown: (seconds: number) => `reanalyzeCooldown ${seconds}`,
 };

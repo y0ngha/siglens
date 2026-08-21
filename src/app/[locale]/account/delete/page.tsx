@@ -29,9 +29,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
     const { locale } = await params;
     const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({
+        locale: resolved,
+        namespace: 'shared.seo',
+    });
     return {
-        title: '회원 탈퇴',
-        description: `${SITE_NAME} 회원 탈퇴`,
+        title: tSeo('accountDeleteTitle'),
+        description: tSeo('accountDeleteFullTitle', { v0: SITE_NAME }),
         alternates: { canonical: localeCanonical(resolved, '/account/delete') },
         openGraph: { url: localeCanonical(resolved, '/account/delete') },
         robots: { index: false, follow: false },

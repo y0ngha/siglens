@@ -6,10 +6,11 @@ import type {
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { cn } from '@/shared/lib/cn';
 
-const SCENARIO_LABEL: Record<OverallScenarioName, string> = {
-    bullish: '강세',
-    neutral: '중립',
-    bearish: '약세',
+/** OverallScenarioName → `shared.enumLabel.overallScenario` 카탈로그 키. */
+const SCENARIO_LABEL_KEY: Record<OverallScenarioName, string> = {
+    bullish: 'overallScenario.bullish',
+    neutral: 'overallScenario.neutral',
+    bearish: 'overallScenario.bearish',
 };
 
 const SCENARIO_CLASS: Record<OverallScenarioName, string> = {
@@ -25,6 +26,10 @@ interface ScenarioAnalysisProps {
 /** RSC section: bullish/neutral/bearish scenarios with trigger conditions and projected price ranges. */
 export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
     const t = useTranslations('widgets.overall');
+    // extract.mjs의 동적 키 탐지는 이 파일 안에서 번역자를 직접 호출하는
+    // 패턴만 본다 — `SCENARIO_LABEL_KEY[...]`를 그대로 `tLabel(...)`에
+    // 넣어야 `shared.enumLabel`이 이 라우트의 클라이언트 번들에 실린다.
+    const tLabel = useTranslations('shared.enumLabel');
     if (scenarios.length === 0) return null;
     return (
         <section
@@ -50,7 +55,7 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
                                     SCENARIO_CLASS[scenario.name]
                                 )}
                             >
-                                {SCENARIO_LABEL[scenario.name]}
+                                {tLabel(SCENARIO_LABEL_KEY[scenario.name])}
                             </span>
                         </div>
                         <div className="mb-1.5 text-sm">
