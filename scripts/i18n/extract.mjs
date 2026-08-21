@@ -372,18 +372,32 @@ function collectReferencedKeys(root) {
 
 /** `t()` 스캔 대상 — 한국어 유무와 무관하게 전 소스를 본다. */
 function candidateSourceFiles(root) {
-    return execSync(
-        // ⚠️ 괄호가 없으면 `-o` 우선순위 때문에 암시적 `-print`가 뒤쪽 조건에만
-        // 붙어 **`.ts` 파일이 통째로 빠진다** — 그러면 `.ts`에서만 쓰는 키가
-        // "참조 없음"으로 판정돼 카탈로그에서 조용히 지워진다.
-        `find ${JSON.stringify(root + '/src')} \\( -name '*.ts' -o -name '*.tsx' \\) -print`,
-        { encoding: 'utf8', maxBuffer: 1 << 28 }
-    )
-        .trim()
-        .split('\n')
-        .filter(Boolean)
-        .map(f => f.replace(root + '/', ''))
-        .filter(f => !/__tests__|\.test\.|\.spec\./.test(f));
+    return (
+        execSync(
+            // ⚠️ 괄호가 없으면 `-o` 우선순위 때문에 암시적 `-print`가 뒤쪽 조건에만
+            // 붙어 **`.ts` 파일이 통째로 빠진다** — 그러면 `.ts`에서만 쓰는 키가
+            // "참조 없음"으로 판정돼 카탈로그에서 조용히 지워진다.
+            `find ${JSON.stringify(root + '/src')} \\( -name '*.ts' -o -name '*.tsx' \\) -print`,
+            { encoding: 'utf8', maxBuffer: 1 << 28 }
+        )
+            .trim()
+            .split('\n')
+            .filter(Boolean)
+            .map(f => f.replace(root + '/', ''))
+            .filter(f => !/__tests__|\.test\.|\.spec\./.test(f))
+            /**
+             * **정렬이 없으면 산출물이 파일시스템에 의존한다.**
+             *
+             * `find`의 출력 순서는 디렉터리 엔트리 순서다 — macOS APFS는 정렬해서
+             * 주지만 Linux ext4는 inode 순서로 준다. 이 목록의 순서가
+             * `clientKeys.json`의 `routes` **키 삽입 순서**를 정하므로, 정렬하지
+             * 않으면 같은 소스에서 macOS와 CI가 다른 JSON을 만든다
+             * (`git diff --exit-code -- messages/`가 로컬에서 재현되지 않는 실패를
+             * 냈다 — PR #762). 이 파일의 `localeCompare` 건, `scan.mjs`의 grep
+             * collation 건과 같은 부류다.
+             */
+            .sort()
+    );
 }
 
 const files = candidateFiles(ROOT).filter(
@@ -732,6 +746,11 @@ if (WRITE) {
         manualWide
     );
 
+    /**
+     * 키 삽입 순서가 곧 JSON 출력 순서다. 위 `candidateSourceFiles`가 정렬된
+     * 목록을 주므로 결정론적이지만, 그 계약이 여기 적혀 있지 않으면 나중에
+     * 정렬이 빠져도 아무도 모른다 — 아래 `sortedRoutes`가 그 의존을 끊는다.
+     */
     const routes = {};
     for (const rel of candidateSourceFiles(ROOT)) {
         if (!/^src\/app\/\[locale\]\/.*page\.tsx$/.test(rel)) continue;
@@ -768,9 +787,14 @@ if (WRITE) {
         };
     }
 
+    // 파일 순회 순서와 무관하게 키 순서를 고정한다 — 위 `routes` 주석 참고.
+    const sortedRoutes = Object.fromEntries(
+        Object.entries(routes).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    );
+
     writeFileSync(
         `${ROOT}/messages/_meta/clientKeys.json`,
-        JSON.stringify({ chrome, routes }, null, 4) + '\n'
+        JSON.stringify({ chrome, routes: sortedRoutes }, null, 4) + '\n'
     );
 }
 
