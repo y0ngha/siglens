@@ -1,6 +1,7 @@
 import 'server-only';
 import { cache } from 'react';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { sym } from './symKey';
 import { FMP_FUNDAMENTAL_REVALIDATE_SECONDS } from './fundamentalClient';
 import type { FmpEarningsReportItem } from './fundamentalClient';
@@ -41,6 +42,33 @@ export const PEER_LIMIT = 10;
  *
  * earnings(no-store + DB 영속)와 historical-sector(빈 stub)는 pass-through한다.
  */
+/**
+ * 우리가 페이지를 낼 수 있는 peer만 남긴다.
+ *
+ * FMP의 peer 목록에는 해외 상장이 섞여 온다(프로덕션 실측: `2353.TW`·`2357.TW`·
+ * `2364.TW`·`2465.TW`·`6597.T`·`THS.L`·`PRO.MI`). 그대로 두면 둘이 같이 샌다 —
+ * enrich 경로가 그 심볼로 `key-metrics-ttm`을 불러 **402**를 받고(주 21건), 화면의
+ * peers 표는 `/{symbol}/fundamental` 링크를 거는데 그 라우트는 같은 판정으로 이미 404다.
+ *
+ * 판정은 `isAdmissibleSymbolShape` 하나로 통일한다 — `[symbol]` 9개 라우트와
+ * 미들웨어(`proxy.ts`), `getAssetInfo`, 색인 판정이 모두 쓰는 그 함수이고, JSDoc이
+ * "FMP 호출 이전 단계라 402가 원천적으로 발생하지 않는다"고 명시한 목적 그대로다.
+ *
+ * **두 경로에 모두 걸어야 한다.** enrich 경로(`getStockPeers`)만 고치면 402는 멎지만
+ * 화면에 보이는 표는 raw 경로(`getStockPeersRaw`)에서 오므로 죽은 링크가 그대로 남는다.
+ * 그래서 필터를 여기 한 곳에 두고 둘이 함께 부른다.
+ *
+ * 자르는 순서도 중요하다: **필터 → cap**. 반대로 하면 해외 상장이 상위 N을 차지한 만큼
+ * 실제로 보여줄 수 있는 peer가 줄어든다.
+ */
+function serveablePeers(
+    raw: readonly FundamentalPeerInput[]
+): FundamentalPeerInput[] {
+    return raw
+        .filter(peer => isAdmissibleSymbolShape(peer.symbol))
+        .slice(0, PEER_LIMIT);
+}
+
 export class CachedFundamentalProvider implements FundamentalProviderWithRawPeers {
     constructor(private readonly inner: FundamentalProvider) {}
 
@@ -166,11 +194,13 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
      * 않는다. cold 캐시 시 peer당 동시 FMP 폭증(rate-limit)을 피해 순차 enrich하고(await된
      * accumulator를 잇는 async reduce — 다음 peer fetch는 직전 peer 완료 후에만 시작), 비정상
      * 적으로 큰 peer 목록은 PEER_LIMIT으로 제한한다.
+     *
+     * 목록은 `serveablePeers`로 먼저 거른다 — 402와 죽은 링크의 원인이 거기 있다.
      */
     getStockPeers = cache((symbol: string): Promise<FundamentalPeerInput[]> =>
         getOrSetCache(`fundamental:peers:${sym(symbol)}`, TTL, async () => {
             const raw = await this.inner.getStockPeers(symbol);
-            const peers = raw.slice(0, PEER_LIMIT);
+            const peers = serveablePeers(raw);
             // 이전에는 async reduce로 peer를 한 건씩 직렬 조회해 지연이 PEER_LIMIT배로
             // 누적됐다. 심볼 단위로 dedupe한 뒤 병렬 조회한다 — 직렬 루프가 보장했던
             // "중복 심볼은 상류 1회 호출"(첫 조회가 캐시를 채워 두 번째가 히트)을
@@ -212,7 +242,9 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
                 TTL,
                 async () => {
                     const raw = await this.inner.getStockPeers(symbol);
-                    return raw.slice(0, PEER_LIMIT);
+                    // 화면의 peers 표가 이 경로에서 온다 — 여기서 거르지 않으면
+                    // 404로 가는 링크가 그대로 노출된다(`serveablePeers` 참고).
+                    return serveablePeers(raw);
                 }
             )
     );

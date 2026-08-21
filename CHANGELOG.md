@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.60.1](https://github.com/y0ngha/siglens/compare/v0.60.0...v0.60.1) (2026-08-21)
+
+
+### Bug Fixes
+
+* 제휴사 목록 외국 심볼 필터링 추가 ([390fe41](https://github.com/y0ngha/siglens/commit/390fe41fc507db7586103c3a3ecab005dad49d35))
+* 클라이언트 에러 리포트 UA 및 언어 컨텍스트 추가 ([9019b6c](https://github.com/y0ngha/siglens/commit/9019b6cd8f566aa8997c68c8da45b9efeae0a0cd))
+* Yahoo 옵션 어댑터 정상 조건 로깅 제거 ([b2e1559](https://github.com/y0ngha/siglens/commit/b2e15590503e1928ad481bfb07183c57ba4ba673))
+
 # [0.60.0](https://github.com/y0ngha/siglens/compare/v0.59.4...v0.60.0) (2026-08-20)
 
 

@@ -64,11 +64,6 @@
   - Context: Fixed by normalizing `content.replace(/\r\n/g, '\n')` inside `splitFrontmatter` — the single parse entry point every caller (verify, update-meta, tests) funnels through. Added a CRLF-vs-LF fixture-parity unit test. No-op for existing LF files (verified: `yarn skills:digest-verify` still reports 80/80 clean, unchanged).
 
 ## [PR #678 | agent/seo-index-quality-gate | 2026-07-08]
-- Violation: Central symbol indexability gate was applied only to the chart page metadata while sibling symbol routes could still emit indexable metadata for unapproved longtail symbols.
-  - Rule: SEO metadata must stay consistent across route variants that represent the same crawlable entity.
-  - Context: Added a shared app-level metadata helper and wired it into chart, news, fundamental, options, overall, fear-greed, financials, and congress metadata.
-
-## [PR #678 | agent/seo-index-quality-gate | 2026-07-08]
 - Violation: Codex hook configuration hardcoded the author's absolute local project path.
   - Rule: Repository tooling must not depend on contributor-specific absolute paths.
   - Context: Replaced the hook command with a repository-relative path so the checked-in hook works outside the author's machine.
@@ -96,9 +91,6 @@
   - Correction (2026-07-31): this entry originally cited a model id `claude-opus-4-turbo` and a replacement helper `getModelsFor('free_tier')`. Neither exists in any of the three repos; both were fabricated when the entry was written. A deployment audit caught it. Fix-log entries feed MISTAKES.md promotion, so an invented detail here becomes a permanent false "recurring pattern" — verify every symbol name in an entry against the repo before writing it.
 
 ## [perf/cdn-cache-hit-rate | perf/cdn-cache-hit-rate | 2026-08-12]
-- Violation: `.gitignore` — new script `scripts/probe-cdn-cache.sh` invisible to git because `/scripts/**` ignored without `!` allowlist exception
-  - Rule: (new) — Deployment/ops scripts must be committed to version control; .gitignore must include allowlist exceptions for tracked tools
-  - Context: Added `!scripts/probe-cdn-cache.sh` exception to .gitignore to allow the probe script to be version-controlled
 - Violation: `src/proxy.ts` — `NextResponse.redirect(url, 307)` lacks documented WHY for status choice; adjacent redirects in the same file document theirs
   - Rule: MISTAKES.md Predictability §8 — Non-obvious operational choices must document WHY at the decision point (status codes, cacheability, workarounds)
   - Context: Added JSDoc explaining "307 prevents permanent browser caching of search-query parameter redirects"
@@ -107,15 +99,6 @@
 - Finding (R3 - runtime verification, after 2 review rounds approved): `src/proxy.ts` guard checked `reqUrl.searchParams.has('_rsc')` + `req.headers.get('rsc')`, but Next.js strips both before middleware runs (next/dist/server/web/adapter.js: line 153 calls stripInternalSearchParams; lines 139-147 delete FLIGHT_HEADERS including RSC). Guard was dead code. Unit tests passed because mock NextRequest still had param + header — mock encoded false assumption about runtime.
   - Rule: (new) — Middleware/proxy logic inspecting framework-internal request state (_rsc param, RSC/FLIGHT headers) cannot be validated by unit tests with hand-built mock requests. Mock defines the reality being asserted. Such logic requires production build + real HTTP request to verify firing. Origin-side enforcement is impossible; defense must move to edge (Cloudflare cache rule).
   - Context: Guard + tests reverted to master. Defense moved entirely to Cloudflare cache rule. docs/architecture/CDN_CACHING.md updated documenting why origin-side enforcement is impossible.
-
-## [perf/rsc-prefetch-fragmentation Round 1 | perf/rsc-prefetch-fragmentation | 2026-08-12]
-- Violation: Global-render navigation links (/login, /signup) left with default prefetch enabled while the PR justifies the exception with an undocumented assertion ("single conversion action") rather than measurement data. When Cloudflare metrics were pulled, both showed cache misses: /login 22.2% hit ratio (54 misses), /signup 44.0% (38 misses).
-  - Rule: (new) — When a PR establishes a policy and then carves out an exception to that policy, the exception must be backed by measurement or explicit data analysis, not assertion or assumption.
-  - Context: Removed prefetch from /login and /signup to match the policy established by the rest of the PR. Added comment referencing Cloudflare hit-rate data.
-
-## [perf/rsc-prefetch-fragmentation Round 1 | perf/rsc-prefetch-fragmentation | 2026-08-12]
-- Violation: `src/shared/ui/auth/ConsentCheckboxGroup.tsx` — privacy/terms links omitted from the prefetch policy sweep despite being in the same navigation tier. Oversight, not a deliberate exception.
-  - Status: FIXED — links now respect prefetch policy consistently.
 
 
 ## [perf/indicator-precision Round 1 | perf/indicator-precision | 2026-08-13]
@@ -142,11 +125,6 @@
   - Rule: FF.md Readability 1-E — no nested ternaries; early returns preserve clarity
   - Context: Refactored to early return, also eliminating unnecessary DB call for KR symbols (now skips isCryptoSymbolStatic check for all KR market profiles)
 
-## [worktree-refactor+deepseek-model-swap | Migrate Gemini → DeepSeek, Round 3 | 2026-08-17]
-- Violation: Guard condition to skip persisting empty analysis (when titleKo + summaryKo both blank) is too broad; applies only to bot branch but skips re-submission check on human page view → permanently malformed articles re-submitted to LLM on every view for 180-day FMP lookback
-  - Rule: Pattern copied from sibling files without verifying destination's invariant holds
-  - Context: src/entities/news-article/actions/ensureNewsCardsAnalyzedAction.ts. Sibling economy paths pair the skip guard with unconditional TTL flag (cost-bounded), but destination only gates on isRecentlyFetched/markFetched (applies to bot branch only, leaving human path unguarded). Fixed by narrowing skip condition to exact normalizer-fallback signature only so responses model genuinely produced still persist.
-
 ## [feat/market-calendar-adoption Round 5 | Stock market calendar adoption | 2026-08-18]
 - Status: APPROVED (zero findings)
 
@@ -160,9 +138,6 @@
 - Violation: `BriefingCard.knownSectors` unioned dynamic `signalSectors` into its allowlist, admitting US virtual theme names (양자, 우주) that can never appear in the briefing prompt
   - Rule: Allowlists must remain fixed or explicitly documented; dynamic union weakens intended guards
   - Context: Removed union; restored fixed allowlist to block fabricated sector names.
-- Violation: `MarketDataErrorNotice` hardcoded `'미국 증시'` error label and was rendered on `/market/kr` too
-  - Rule: Market-specific strings must not be hardcoded; must derive from context/scope passed to component
-  - Context: Added `marketLabel` prop from scope context; component now displays correct market name on all routes (kr/us/crypto).
 - Violation: Write-path context assertion (`if (price === 0 && volatility === null) return`) pinned only the degenerate case
   - Rule: Defensive assertions must cover all expected valid states, not only degenerate edge cases
   - Context: Expanded assertion to include the additional degraded but valid state (when analysis genuinely produced no meaningful data).
@@ -171,9 +146,6 @@
 - Violation: `seedEconomicEventAnalysis.ts` scanned database with `UNANALYZED_SCAN_LIMIT = 20` cap; logged "Done" indistinguishably whether 20 rows were processed (limit hit) or fewer existed (true completion)
   - Rule: Pagination-capped loops must distinguish completion from pagination-limit-hit in logging/return state
   - Context: Changed logging to report `${processedCount}/${totalFound}` and exposed pagination signal to caller, enabling backfill restart from cursor.
-- Violation: `.gitignore` still contained `!` allowlist exceptions for two deleted script files (`!scripts/seedNewsCardAnalyses.ts`, `!scripts/seedEarningsReports.ts`)
-  - Rule: `.gitignore` allowlist entries must be cleaned when corresponding source files are deleted to prevent accidental commits
-  - Context: Removed stale allowlist entries.
 - Violation: `MarketDataErrorNotice` displayed message "일부를 가져오지 못했어요" (partial-failure message) on the total-failure branch where NO data rendered at all
   - Rule: Error messages must distinguish and report the actual failure mode (total vs partial); mixed messages hide degradation
   - Context: Added `variant` prop (`'partial' | 'total'`) to MarketDataErrorNotice; renders appropriate message for each failure mode.
@@ -187,12 +159,6 @@
   - Context: Reset `failed = 0` at start of each pass; now final tally reflects actual failing rows processed, not cumulative attempts.
 
 ## [feat/asset-class-navigation Round 4 | 3-asset navigation architecture | 2026-08-19]
-- Violation: `data-market-label` attribute assertion tested only against `TEST_SCOPE`, whose `marketLabel` happens to be hardcoded `'미국 증시'`; reverting `marketLabel={scope.marketLabel}` to a hardcoded string still passed the test because test fixture value matched assertion literal
-  - Rule: Test fixture values must differ from assertion literals; shared data between fixture and assertion masks regressions
-  - Context: Added `KR_SCOPE` to test file with `marketLabel: '한국 증시'`; added separate assertions for both scopes; mutation test verified hardcoding fails both.
-- Violation: `KR_SCOPE` inherited `marketLabel` by spread operator, inadvertently inheriting the same `'미국 증시'` value from `TEST_SCOPE`
-  - Rule: Spread in test fixtures + assertion on inherited property = invisible dependency; prop changes silently affect both
-  - Context: Explicitly set `KR_SCOPE.marketLabel = '한국 증시'` in fixture; verified assertion now distinguishes both market labels.
 - Violation: Seed script exit code inconsistency — both abort path (`process.exit(0)`) and non-zero failure count (`process.exit(0)`) returned 0, while uncaught errors returned 1
   - Rule: Exit codes must consistently reflect success/failure state; mixed exit patterns hide errors in CI pipelines
   - Context: Changed abort and failure paths to `process.exit(1)`, success path to `process.exit(0)`.

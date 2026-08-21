@@ -135,6 +135,23 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Unit test: for each file's getMetadata(), assert includes all SUPPORTED_ASSETS (catches addition/removal immediately)
    → Recurring: feat/kr-equity-seo R1–R3 (3 occurrences across asset-coverage claims in 5+ literals spanning 3 files)
 
+6.7. Rule/guard/policy applied to one of N sibling methods/routes/branches but not others
+   → When a fix or validation rule is applied to one call site, all sibling methods/routes/branches wrapping the same upstream dependency must apply the same rule
+   → Typically fixed by hoisting the rule to a shared helper both call sites invoke
+   → Pattern: Multiple entry points (e.g., getStockPeers + getStockPeersRaw, chart page + symbol routes, /login + /signup + privacy links)
+   → Same upstream dependency (e.g., API filter, policy, cache key, prefetch behavior)
+   → Rule applied inconsistently (guard/filter applied to one, not the others)
+   ❌ CachedFundamentalProvider.getStockPeers(symbol) { return filter(data); }
+      CachedFundamentalProvider.getStockPeersRaw(symbol) { return data; }  // missing filter
+   ❌ /[symbol]/page.tsx: apply SEO indexability gate to metadata
+      /[symbol]/news/page.tsx: metadata not gated → renders for unapproved symbols
+   ❌ Prefetch disabled for /features, /analysis, /admin
+      Prefetch left enabled for /login, /signup, /terms, /privacy  // inconsistent policy
+   ✅ Hoist shared rule: filterValidStockPeers(data) → called by both getStockPeers + getStockPeersRaw
+   ✅ Shared app-level metadata helper gating all symbol routes uniformly
+   ✅ Apply prefetch policy consistently to all navigation links, document exceptions with measurement
+   → Recurring: PR #678 (SEO gate), perf/rsc-prefetch-fragmentation (prefetch policy), worktree-refactor+deepseek-model-swap (bot branch guard) — 4+ occurrences
+
 7. Repeating identical className ternary 3+ times
    → Extract to a helper function
 
@@ -853,6 +870,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ Test scope derived from file graph (changed files + consumers), not hand-typed path list; always verify bracketed/dynamic routes included
     ✅ Documented gate execution: `yarn tsc`, `yarn lint`, `yarn format:check`, `yarn test`, `yarn build` with actual exit codes and warnings counted
     → Recurring: PR #725 R3-R4 (misread lint, omitted vitest scope, prettier never run — 5 total false-gate incidents across 2 rounds)
+
+17. Test fixture values hardcoded to match assertion literals or inherited via spread operator
+    → Fixture values must differ from assertion literals to catch regressions when fixtures are accidentally reverted to production values
+    → Never use spread operator to inherit test values across fixtures; always explicitly set fixture properties
+    → When fixture prop is inherited from another fixture, changes to parent silently affect child — invisible dependency hides regressions
+    ❌ TEST_SCOPE.marketLabel = '미국 증시'; KR_SCOPE = { ...TEST_SCOPE }; // assertion checks 'data-market-label=미국 증시' and passes even if prop was hardcoded
+    ❌ const TEST_SCOPE = { marketLabel: '미국 증시' }; const KR_SCOPE = { ...TEST_SCOPE }; it('KR label set', () => expect(data.marketLabel).toBe('한국 증시')); // but KR_SCOPE.marketLabel inherited as '미국 증시'
+    ✅ const TEST_SCOPE = { marketLabel: '미국 증시' }; const KR_SCOPE = { marketLabel: '한국 증시' }; // explicit, distinct fixtures
+    ✅ Fixture values differ from assertion literals; mutation test (revert prop to hardcoded string) fails both test cases
+    ✅ When one fixture is derived from another, explicitly override each property: { ...base, specificProp: differentValue }
+    → Recurring: feat/asset-class-navigation R4 (fixture parity trap, spread inheritance) — 2 occurrences
 ```
 
 ---
@@ -1035,6 +1063,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 3. Missing 'use cache' directive on cacheable server functions
    → server functions accessed during prerender must include 'use cache' directive when they are intended to participate in Cache Components
    → Explicitly marks the function as safe to cache and enables caching at build time
+
+4. .gitignore allowlist entries out of sync with source files
+   → When deployment/ops scripts, tools, or tracked files are added or deleted, .gitignore `!` allowlist exceptions must be updated atomically
+   → Additions: new scripts must have `!scripts/scriptName.ts` exception added to allow version control
+   → Deletions: when scripts are removed, stale allowlist entries must be cleaned to prevent accidental commits
+   → Misalignment causes scripts to be invisible to git (addition) or stale exceptions to match no files (deletion)
+   ❌ Added scripts/probe-cdn-cache.sh but /scripts/** still ignores all → script never committed
+   ❌ Deleted scripts/seedNewsCardAnalyses.ts, seedEarningsReports.ts but !scripts/seed*.ts exceptions remain → drift
+   ✅ Add `!scripts/probe-cdn-cache.sh` to .gitignore when committing probe script
+   ✅ Remove stale allowlist entries when deleting scripts; verify with `git status` showing clean state
+   → Recurring: perf/cdn-cache-hit-rate (missing exception), feat/asset-class-navigation R2 (stale entries) — 2 occurrences
 ```
 
 ## Documentation Sync
