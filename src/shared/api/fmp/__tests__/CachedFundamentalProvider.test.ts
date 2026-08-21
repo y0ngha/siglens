@@ -194,6 +194,43 @@ describe('CachedFundamentalProvider — simple cached methods', () => {
 describe('CachedFundamentalProvider — getStockPeers enrich', () => {
     beforeEach(resetSharedState);
 
+    it('우리가 페이지를 낼 수 없는 해외 상장 peer는 버리고 조회도 하지 않는다', async () => {
+        // FMP peer 목록에는 해외 상장이 섞여 온다(실측: 2357.TW·6597.T·THS.L·PRO.MI).
+        // 그 심볼로 key-metrics-ttm을 부르면 402가 나고(주 21건), 표가 거는
+        // `/{symbol}/fundamental` 링크는 어차피 404다. 판정은 `[symbol]` 라우트·
+        // 미들웨어와 같은 `isAdmissibleSymbolShape`을 쓴다.
+        const getKeyMetricsTtm = vi.fn(async (_symbol: string) => null);
+        const inner = makeInner({
+            getStockPeers: vi.fn(async () => [
+                { symbol: '2357.TW', companyName: 'Asus', marketCap: 1e10 },
+                { symbol: '6597.T', companyName: 'HPC', marketCap: 2e9 },
+                { symbol: 'THS.L', companyName: 'Tharisa', marketCap: 3e8 },
+                { symbol: 'MSFT', companyName: 'Microsoft', marketCap: 2e12 },
+                { symbol: 'BRK.B', companyName: 'Berkshire', marketCap: 9e11 },
+                {
+                    symbol: '005930.KS',
+                    companyName: '삼성전자',
+                    marketCap: 4e11,
+                },
+            ]),
+            getKeyMetricsTtm,
+        });
+        const provider = new CachedFundamentalProvider(inner);
+
+        const peers = await provider.getStockPeers('AAPL');
+
+        expect(peers.map(p => p.symbol)).toEqual([
+            'MSFT',
+            'BRK.B',
+            '005930.KS',
+        ]);
+        // 버린 심볼로는 FMP를 부르지도 않는다 — 402가 나던 지점이다.
+        const probed = getKeyMetricsTtm.mock.calls.map(([s]) => s);
+        expect(probed).not.toContain('2357.TW');
+        expect(probed).not.toContain('6597.T');
+        expect(probed).not.toContain('THS.L');
+    });
+
     it('caches the ENRICHED list as a whole; warm call does zero round-trips', async () => {
         const inner = makeInner({
             getStockPeers: vi.fn(async () => [
@@ -375,6 +412,28 @@ describe('CachedFundamentalProvider — getStockPeers enrich', () => {
 
 describe('CachedFundamentalProvider — getStockPeersRaw', () => {
     beforeEach(resetSharedState);
+
+    it('화면용 raw 경로도 해외 상장 peer를 걸러낸다', async () => {
+        // peers 표는 이 경로에서 온다. enrich 경로만 고치면 402는 멎지만 표가 거는
+        // `/{symbol}/fundamental` 링크는 그대로 404로 남는다 — 리뷰에서 잡힌 누락.
+        const inner = makeInner({
+            getStockPeers: vi.fn(async () => [
+                { symbol: '2357.TW', companyName: 'Asus', marketCap: 1e10 },
+                { symbol: 'THS.L', companyName: 'Tharisa', marketCap: 3e8 },
+                { symbol: 'MSFT', companyName: 'Microsoft', marketCap: 2e12 },
+                {
+                    symbol: 'PBR-A',
+                    companyName: 'Petrobras A',
+                    marketCap: 5e10,
+                },
+            ]),
+        });
+        const provider = new CachedFundamentalProvider(inner);
+
+        const peers = await provider.getStockPeersRaw('AAPL');
+
+        expect(peers.map(p => p.symbol)).toEqual(['MSFT', 'PBR-A']);
+    });
 
     it('getStockPeersRaw caches raw peers WITHOUT enrich (no getKeyMetricsTtm calls)', async () => {
         resetSharedState();
