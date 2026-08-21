@@ -601,7 +601,19 @@ if (WRITE) {
     }
 
     const nested = {};
-    for (const path of Object.keys(merged).sort((a, b) => a.localeCompare(b))) {
+    /**
+     * **코드포인트 정렬이다 — `localeCompare`가 아니다.**
+     *
+     * `localeCompare()`를 로케일 없이 부르면 런타임 기본 로케일과 ICU collation
+     * 데이터를 쓴다. 한글 키가 섞인 이 카탈로그에서는 macOS Node와 Linux Node가
+     * **서로 다른 순서**를 낸다(예: `MACD 대순환 분석`이 한글 앞/뒤로 갈린다).
+     * 그 결과 `yarn i18n:extract --write` 산출물이 환경마다 달라져,
+     * CI의 드리프트 검사(`git diff --exit-code -- messages/`)가 로컬에서
+     * 재현되지 않는 실패를 냈다(PR #762).
+     *
+     * 기본 `.sort()`는 UTF-16 코드포인트 비교라 어디서 돌려도 같다.
+     */
+    for (const path of Object.keys(merged).sort()) {
         setPath(nested, path, merged[path]);
     }
     writeFileSync(target, JSON.stringify(nested, null, 4) + '\n');

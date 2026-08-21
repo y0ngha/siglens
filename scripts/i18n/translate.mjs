@@ -193,7 +193,8 @@ const nextHashes = { ...hashes };
 function persist() {
     const nested = {};
     for (const key of Object.keys(nextTarget).sort((a, b) =>
-        a.localeCompare(b)
+        // 코드포인트 정렬 — extract.mjs 주석 참고.
+        a < b ? -1 : a > b ? 1 : 0
     )) {
         setPath(nested, key, nextTarget[key]);
     }
