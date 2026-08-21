@@ -1,9 +1,11 @@
 /**
  * OptionsDataProvider implementation backed by yahoo-finance2.
  *
- * Error policy: all errors are caught, logged via console.error, and returned
- * as null. The consuming use-case treats null as "no data available" and
- * should not receive thrown exceptions from the data layer.
+ * Error policy: all errors are caught and returned as null. The consuming
+ * use-case treats null as "no data available" and should not receive thrown
+ * exceptions from the data layer. Genuine failures are logged; Yahoo schema
+ * validation errors are not, because they mean "this symbol has no options
+ * market" (see `isYahooValidationError`).
  */
 import { createYahooClient } from '@/shared/api/yahoo/createYahooClient';
 import {
@@ -34,6 +36,23 @@ import {
 // validation: { logErrors: false }를 설정하면 FailedYahooValidationError throw는
 // 그대로 유지한 채 로그 출력만 비활성화된다(라이브러리 v3.15.3 defaults.js:24).
 const yahooFinance = createYahooClient();
+
+/**
+ * yahoo-finance2가 스키마 검증에 실패했을 때 던지는 에러인지.
+ *
+ * **옵션 시장이 없는 심볼에서 정상적으로 발생한다.** OTC·초소형주를 probe하면 Yahoo가
+ * 우리 스키마와 어긋나는 페이로드를 주고 라이브러리가 이 에러를 던지는데, 그건 장애가
+ * 아니라 "이 종목엔 옵션이 없다"는 뜻이다. 그런데도 catch 블록이 로그를 남기는 바람에
+ * 프로덕션에서 **주 1,900줄**이 쌓였다(실측: `hasOptionsMarket` 1,409 + `fetchSnapshot`
+ * 487, MIRO·IQAIF·PKANF 같은 OTC 심볼에 흩어져 심볼당 2~3건).
+ *
+ * 라이브러리 자체 로그는 이미 `validation.logErrors: false`로 껐다(위 주석). 남은 건
+ * 우리 로그이고, 이 판정으로 그 부분만 조용히 만든다 — 네트워크 타임아웃 같은 **진짜**
+ * 장애는 그대로 남는다.
+ */
+function isYahooValidationError(err: unknown): boolean {
+    return err instanceof Error && err.name === 'FailedYahooValidationError';
+}
 
 function toIsoDate(d: Date): string {
     return d.toISOString().slice(0, 10);
@@ -157,7 +176,14 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
 
             return { ...raw, chains: sanitizedChains };
         } catch (err) {
-            console.error('[YahooOptionsAdapter] fetchSnapshot failed', err);
+            // 스키마 검증 실패는 "옵션 없음"이지 장애가 아니다 —
+            // `isYahooValidationError` JSDoc 참고.
+            if (!isYahooValidationError(err)) {
+                console.error(
+                    '[YahooOptionsAdapter] fetchSnapshot failed',
+                    err
+                );
+            }
             return null;
         }
     }
@@ -171,11 +197,13 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
             const response = await yahooFinance.options(toYahooSymbol(symbol));
             return (response.expirationDates?.length ?? 0) > 0;
         } catch (err) {
-            console.warn(
-                '[YahooOptionsAdapter] hasOptionsMarket failed',
-                symbol,
-                err
-            );
+            if (!isYahooValidationError(err)) {
+                console.warn(
+                    '[YahooOptionsAdapter] hasOptionsMarket failed',
+                    symbol,
+                    err
+                );
+            }
             return false;
         }
     }

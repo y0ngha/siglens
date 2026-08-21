@@ -256,6 +256,21 @@ describe('YahooOptionsAdapter.fetchSnapshot', () => {
         );
     });
 
+    it('스키마 검증 실패는 로그를 남기지 않는다', async () => {
+        // 옵션 시장이 없는 심볼(OTC·초소형주)을 probe하면 Yahoo가 스키마에 어긋나는
+        // 페이로드를 주고 라이브러리가 이 에러를 던진다. 장애가 아니라 "옵션 없음"이라
+        // 로그로 남길 이유가 없다 — 프로덕션에서 이것 때문에 주 1,900줄이 쌓였다.
+        const validationError = new Error('Failed Yahoo Schema validation');
+        validationError.name = 'FailedYahooValidationError';
+        mockOptionsMethod.mockRejectedValue(validationError);
+        const adapter = makeAdapter();
+
+        const result = await adapter.fetchSnapshot('IQAIF');
+
+        expect(result).toBeNull();
+        expect(consoleErrorSpy).not.toHaveBeenCalled();
+    });
+
     it('calls sanitizeOptionsChain for each chain', async () => {
         mockOptionsMethod.mockResolvedValue(FULL_FIXTURE);
         const adapter = makeAdapter();
@@ -459,6 +474,23 @@ describe('YahooOptionsAdapter.hasOptionsMarket', () => {
         const result = await adapter.hasOptionsMarket('AAPL');
 
         expect(result).toBe(false);
+    });
+
+    it('스키마 검증 실패는 조용히 false를 돌려준다', async () => {
+        // OTC·초소형주는 옵션 시장이 없어 Yahoo가 비정형 페이로드를 준다. 그건 장애가
+        // 아니라 "옵션 없음"이므로 로그를 남기지 않는다 — 아래 케이스(진짜 장애)와
+        // 갈리는 지점이다.
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const validationError = new Error('Failed Yahoo Schema validation');
+        validationError.name = 'FailedYahooValidationError';
+        mockOptionsMethod.mockRejectedValue(validationError);
+        const adapter = makeAdapter();
+
+        const result = await adapter.hasOptionsMarket('IQAIF');
+
+        expect(result).toBe(false);
+        expect(warnSpy).not.toHaveBeenCalled();
+        warnSpy.mockRestore();
     });
 
     it('returns false on any library error and logs the failure for diagnostics', async () => {

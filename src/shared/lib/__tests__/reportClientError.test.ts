@@ -19,7 +19,11 @@ describe('reportClientError', () => {
     beforeEach(() => {
         __resetReportCountForTests();
         beacon = vi.fn(() => true);
-        vi.stubGlobal('navigator', { sendBeacon: beacon });
+        vi.stubGlobal('navigator', {
+            sendBeacon: beacon,
+            userAgent: 'Mozilla/5.0 (test) AppleWebKit/537.36',
+            language: 'ko-KR',
+        });
         vi.stubGlobal('window', { location: { pathname: '/AAPL' } });
     });
 
@@ -56,6 +60,31 @@ describe('reportClientError', () => {
         expect(toString).not.toHaveBeenCalled();
         const [body] = (await bodiesOf(beacon)) as Record<string, unknown>[];
         expect(body.message).toBe('[non-string: object]');
+    });
+
+    it('UA와 언어를 함께 싣는다 (하이드레이션 불일치 원인 분해용)', async () => {
+        // 프로덕션 #418 스택은 react-dom 내부 프레임뿐이고 dev에서도 재현되지 않는다.
+        // 확장 프로그램·자동번역이 DOM을 건드린 경우인지 갈라내려면 이 둘이 필요하다.
+        reportClientError(new Error('boom'), 'test');
+
+        const [body] = (await bodiesOf(beacon)) as Record<string, unknown>[];
+        expect(body).toMatchObject({
+            ua: 'Mozilla/5.0 (test) AppleWebKit/537.36',
+            lang: 'ko-KR',
+        });
+    });
+
+    it('긴 UA는 잘라 싣는다 (라우트 4KB 상한 보호)', async () => {
+        vi.stubGlobal('navigator', {
+            sendBeacon: beacon,
+            userAgent: 'U'.repeat(1000),
+            language: 'en-US',
+        });
+
+        reportClientError(new Error('boom'), 'test');
+
+        const [body] = (await bodiesOf(beacon)) as Record<string, unknown>[];
+        expect((body.ua as string).length).toBe(200);
     });
 
     it('쿼리스트링은 싣지 않는다 (개인정보 유출 방지)', async () => {
