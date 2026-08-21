@@ -22,6 +22,12 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
     // 탭 href(`/AAPL/news`)는 로케일 접두사가 없다. 접두사가 붙은 경로로
     // 비교하면 en/ja/zh에서 활성 탭 표시와 `aria-current`가 통째로 꺼진다.
     const pathname = useAppPathname();
+    // 전용 네임스페이스 — 키가 배열에서 오므로 추출기에는 동적 조회다.
+    // `manualKeys.preserve`에 `shared.symbolTab`이 등록돼 있어야 유지된다.
+    //
+    // 아래 로딩 분기(`assetInfo === undefined`)보다 **위**여야 한다. 그 뒤에
+    // 두면 로딩 렌더에서만 훅이 하나 줄어 훅 순서가 깨진다.
+    const tTab = useTranslations('shared.symbolTab');
     const assetInfo = useAssetInfo(symbol);
 
     const upper = symbol.toUpperCase();
@@ -43,9 +49,6 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
             ? marketProfileOf(assetInfo)
             : DEFAULT_MARKET_PROFILE;
     const tabs = tabsFor(profile);
-    // 전용 네임스페이스 — 키가 배열에서 오므로 추출기에는 동적 조회다.
-    // `manualKeys.preserve`에 `shared.symbolTab`이 등록돼 있어야 유지된다.
-    const tTab = useTranslations('shared.symbolTab');
 
     return (
         <nav

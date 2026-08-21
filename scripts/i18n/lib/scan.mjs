@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { execSync } from 'node:child_process';
+import { readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
 
 const require = createRequire(import.meta.url);
 const { parse } = require('@babel/parser');
@@ -78,16 +78,43 @@ export function keyFor(prefix, text, taken) {
     throw new Error(`키 충돌을 해소하지 못했다: ${prefix} / ${text}`);
 }
 
-/** 번역 후보 파일 목록. */
+/** 재귀 탐색에서 통째로 건너뛸 디렉터리. */
+const SKIP_DIRS = new Set(['node_modules', '.next', '.git', 'coverage']);
+
+/**
+ * 번역 후보 파일 목록.
+ *
+ * **`grep`을 쓰지 않는다.** 예전에는
+ * `execSync("grep -rl '[가-힣]' src --include='*.ts'")`였는데, 대괄호 범위
+ * `[가-힣]`의 해석이 **로케일 collation에 의존한다**. macOS의 BSD grep은
+ * `LC_ALL=C`에서도 받아 주지만 Ubuntu의 GNU grep은
+ * `grep: Invalid collation character`로 죽는다 — 즉 이 게이트는 로컬에서만
+ * 통과하고 **CI에서는 한 번도 돌지 않았다**(PR #762에서 드러났다).
+ *
+ * `HANGUL` 정규식은 JS 코드포인트 비교라 로케일과 무관하다. 파일 순회를
+ * Node로 옮기면 그 차이가 원천적으로 사라지고 서브프로세스도 없어진다.
+ */
 export function candidateFiles(root) {
-    const out = execSync(
-        `grep -rl '[가-힣]' ${JSON.stringify(root + '/src')} --include='*.ts' --include='*.tsx'`,
-        { encoding: 'utf8', maxBuffer: 1 << 28 }
-    )
-        .trim()
-        .split('\n')
-        .filter(Boolean)
-        .map(f => f.replace(root + '/', ''));
+    const srcRoot = path.join(root, 'src');
+    const out = [];
+
+    const walk = dir => {
+        for (const entry of readdirSync(dir, { withFileTypes: true })) {
+            if (entry.isDirectory()) {
+                if (!SKIP_DIRS.has(entry.name)) {
+                    walk(path.join(dir, entry.name));
+                }
+                continue;
+            }
+            if (!/\.tsx?$/.test(entry.name)) continue;
+            const full = path.join(dir, entry.name);
+            if (HANGUL.test(readFileSync(full, 'utf8'))) {
+                out.push(path.relative(root, full));
+            }
+        }
+    };
+    walk(srcRoot);
+
     return out.filter(f => !EXCLUDE_RE.test(f)).sort();
 }
 

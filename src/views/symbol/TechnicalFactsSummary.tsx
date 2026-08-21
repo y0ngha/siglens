@@ -72,9 +72,11 @@ export function TechnicalFactsSummary({
     const headingId = useId();
     const facts = buildTechnicalFacts(bars, indicators);
     const tFacts = useTranslations('views.symbol.technicalFacts');
+    // `if (!facts) return null`보다 **위**여야 한다. 아래에 두면 지표가 없는
+    // 종목에서만 훅이 하나 줄어 훅 순서가 깨진다.
+    const tMisc = useTranslations('shared.ui.misc');
     if (!facts) return null;
 
-    const tMisc = useTranslations('shared.ui.misc');
     const change = formatVisibleChange(facts.changePercent);
     const { quoteDelayMinutes, priceFormat } = getDescriptor(marketProfile);
     const narrative = buildTechnicalFactsNarrative(

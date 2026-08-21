@@ -15,6 +15,10 @@ import {
 
 export function ContactForm() {
     const t = useTranslations('features.contact-form');
+    // 조기 return(`state.submitted`)보다 **위**에 있어야 한다. 아래에 두면
+    // 제출 성공 렌더에서만 훅이 하나 줄어 "Rendered fewer hooks than expected"로
+    // 트리가 죽는다(react-doctor rules-of-hooks).
+    const tError = useTranslations('shared.lib.contactError');
     const [state, formAction] = useContactForm();
     const currentUser = useCurrentUser();
 
@@ -22,7 +26,6 @@ export function ContactForm() {
         return <ContactSubmittedNotice />;
     }
 
-    const tError = useTranslations('shared.lib.contactError');
     const submissionError = getSubmissionError(state.error, tError);
 
     // Email field is uncontrolled (defaultValue). Once the form has been
