@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.61.0](https://github.com/y0ngha/siglens/compare/v0.60.1...v0.61.0) (2026-08-23)
+
+
+### Features
+
+* 컨플루언스·손익비를 결정론적으로 계산해 프롬프트와 화면에 붙인다 ([#763](https://github.com/y0ngha/siglens/issues/763)) ([0904b19](https://github.com/y0ngha/siglens/commit/0904b1904c231e33e3dcbe0bbe6d7a411d3b3dcc))
+
 ## [0.60.1](https://github.com/y0ngha/siglens/compare/v0.60.0...v0.60.1) (2026-08-21)
 
 
