@@ -1061,11 +1061,40 @@ interface StrategyResult {
     confidenceWeight: number;   // skill의 신뢰도 가중치 (0~1)
 }
 
+// 현재가 기준 검산 — AI가 아니라 도메인이 계산한다.
+//
+// `riskReward`는 AI가 쓰는 산문이고, 그 계산의 기준은 AI가 제안한 **진입가**다.
+// 현재가가 그 자리를 이미 지났으면 문장은 맞은 채로 쓸모가 없어진다. 이 블록은
+// 같은 손절가·목표가를 현재가에 놓고 다시 계산한 것이라 둘이 어긋나는 순간을 잡는다.
+//
+// 보정(reconciledLevels)이 일어난 경우 그쪽 값을 우선 쓴다 — 도메인이 이미 무효
+// 판정한 AI 원본 레벨로 재면 안 되기 때문이다.
+interface PlanCheck {
+    currentPrice: number;         // 검산 기준 가격 (분석 시점의 마지막 종가). 항상 양수
+    entryZoneTop: number | null;  // 권장 진입 구간 상단. 쓸 수 있는 진입가가 없으면 null
+    exceedsEntryZone: boolean;    // 현재가가 진입 구간 상단을 1% 넘어섰는가
+    belowStopLoss: boolean;       // 현재가가 손절가 아래인가 = 이 계획은 이미 무효
+    riskRewardAtEntry: number | null;    // 계획 진입가 기준 손익비
+    riskRewardAtCurrent: number | null;  // 현재가 기준 손익비
+}
+// ⚠️ riskRewardAt*의 0과 null은 다른 답이다.
+//    0    = 목표가는 있는데 현재가 위에 남은 것이 없다 (노릴 수익 구간 없음) → 발견
+//    null = 비율을 낼 입력이 없다 (손절가 없음 / 손절가가 가격 이상 / 목표가 없음) → 판단 불가
+//    둘을 합치면 사실이 침묵으로 바뀐다. UI는 0에만 경고를 띄운다.
+// ⚠️ entryZoneTop은 non-null이면 양수다 (core가 양수만 골라 max를 취한다).
+//    다만 캐시·공유 스냅샷에 옛 페이로드가 남으므로 소비자는 방어 가드를 둔다.
+
 interface ActionRecommendation {
     positionAnalysis: string;  // 현재 가격의 지지/저항 대비 위치
     entry: string;             // 구체적 가격대를 포함한 진입 전략
     exit: string;              // 익절/손절 가격대를 포함한 청산 전략
-    riskReward: string;        // 손익비 계산 (예: "1:3")
+    riskReward: string;        // 손익비 계산 (예: "1:3") — AI가 쓴 산문. 검산은 planCheck
+    entryRecommendation?: EntryRecommendation;  // 'enter' | 'wait' | 'avoid'
+    entryPrices?: number[];       // 권장 진입 가격대
+    stopLoss?: number;            // 손절가
+    takeProfitPrices?: number[];  // 익절 목표가 (오름차순)
+    reconciledLevels?: ReconciledActionLevels;  // AI 레벨이 무효일 때의 도메인 보정값
+    planCheck?: PlanCheck;        // 현재가 기준 검산. 현재가를 알 수 없으면 없음
 }
 
 interface AnalysisResponse {
@@ -1086,6 +1115,12 @@ interface AnalysisResponse {
 ### 필드 ↔ UI 렌더링 매핑
 
 ```
+actionRecommendation.planCheck
+                    → AnalysisPanel "현재가 기준 검산" 블록 (PlanCheckBlock)
+                       경고 4종: 손절가 이탈 / 남은 목표 없음 / 손익비 1 미만 / 진입 구간 초과
+                       경고도 없고 잴 수 있는 비율도 없으면 아무것도 렌더하지 않는다
+                       stoploss+target 티어 게이트를 따른다 (무료 티어에는 내려가지 않음)
+
 indicatorResults[]  → AnalysisPanel "보조지표" 섹션
                        indicator_guide skill의 시그널 결과
                        indicatorName으로 그룹핑 (예: "RSI Signal Guide")

@@ -14,6 +14,14 @@ import { cn } from '@/shared/lib/cn';
 
 const PERCENT = 100;
 
+/**
+ * 손익분기 손익비. 이 아래면 감수하는 손실이 노리는 수익보다 크다.
+ *
+ * 이름을 붙이는 이유는 `< 1`과 `<= 1`의 차이가 리터럴로는 안 보이기 때문이다 —
+ * 정확히 1은 경고 대상이 아니다.
+ */
+const BREAK_EVEN_RISK_REWARD = 1;
+
 /** 위험 순으로 정렬된 경고. 가장 무거운 것 하나만 강조색을 받는다. */
 type Severity = 'danger' | 'warn' | 'info';
 
@@ -49,8 +57,11 @@ function formatRatio(ratio: number): string {
 function buildNotices(planCheck: PlanCheck): Notice[] {
     const { currentPrice, entryZoneTop, riskRewardAtCurrent } = planCheck;
 
+    // `> 0`까지 본다. 이 값은 캐시된 JSON과 공유 스냅샷을 타고 오므로 코어가 지금
+    // 무엇을 보장하든 옛 페이로드가 0이나 null을 들고 올 수 있고, 그대로 나누면
+    // 화면에 `Infinity%` 또는 `NaN%`가 찍힌다.
     const overZone =
-        planCheck.exceedsEntryZone && entryZoneTop !== null
+        planCheck.exceedsEntryZone && entryZoneTop !== null && entryZoneTop > 0
             ? ((currentPrice / entryZoneTop - 1) * PERCENT).toFixed(1)
             : null;
 
@@ -72,7 +83,7 @@ function buildNotices(planCheck: PlanCheck): Notice[] {
         // 것을 배열로 펴면서 배타성이 사라지면 같은 상황에 두 문장이 뜬다.
         riskRewardAtCurrent !== null &&
         riskRewardAtCurrent > 0 &&
-        riskRewardAtCurrent < 1
+        riskRewardAtCurrent < BREAK_EVEN_RISK_REWARD
             ? {
                   severity: 'warn',
                   text: `현재가 기준 손익비가 ${formatRatio(riskRewardAtCurrent)}예요. 감수하는 손실이 노리는 수익보다 커요.`,
@@ -109,7 +120,7 @@ export function PlanCheckBlock({ planCheck }: PlanCheckBlockProps) {
     return (
         <section
             className={cn(
-                'mt-1 flex flex-col gap-1 rounded-md border px-3 py-2',
+                'flex flex-col gap-1 rounded-md border px-3 py-2',
                 SEVERITY_STYLE[severity]
             )}
         >
@@ -125,9 +136,8 @@ export function PlanCheckBlock({ planCheck }: PlanCheckBlockProps) {
                         </p>
                         <p>
                             여기 값은 같은 손절가·목표가를{' '}
-                            <strong>지금 가격</strong>
-                            에 놓고 다시 계산한 것이라, 가격이 이미 움직였을 때
-                            둘이 달라져요.
+                            <strong>지금 가격</strong>에 놓고 다시 계산한
+                            것이라, 가격이 이미 움직였을 때 둘이 달라져요.
                         </p>
                     </div>
                 </InfoTooltip>

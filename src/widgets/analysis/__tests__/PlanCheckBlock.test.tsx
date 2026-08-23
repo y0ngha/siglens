@@ -95,6 +95,52 @@ describe('PlanCheckBlock', () => {
         ).toBeInTheDocument();
     });
 
+    it('stays quiet about the zone when there is no zone top to measure against', () => {
+        // 두 필드는 타입상 독립이라 캐시된 옛 페이로드가 이 조합을 들고 올 수 있다.
+        // 가드가 빠지면 화면에 `NaN%`가 찍힌다.
+        render(
+            <PlanCheckBlock
+                planCheck={planCheck({
+                    exceedsEntryZone: true,
+                    entryZoneTop: null,
+                })}
+            />
+        );
+        expect(
+            screen.queryByText(/권장 진입 구간보다/)
+        ).not.toBeInTheDocument();
+        expect(screen.queryByText(/NaN/)).not.toBeInTheDocument();
+    });
+
+    it('stays quiet about the zone when the zone top is not a usable price', () => {
+        // 0으로 나누면 `Infinity%`가 그대로 렌더된다.
+        for (const entryZoneTop of [0, -5]) {
+            const { unmount } = render(
+                <PlanCheckBlock
+                    planCheck={planCheck({
+                        exceedsEntryZone: true,
+                        entryZoneTop,
+                    })}
+                />
+            );
+            expect(
+                screen.queryByText(/권장 진입 구간보다/),
+                `entryZoneTop=${entryZoneTop}`
+            ).not.toBeInTheDocument();
+            expect(screen.queryByText(/Infinity/)).not.toBeInTheDocument();
+            unmount();
+        }
+    });
+
+    it('treats a risk:reward of exactly 1 as no warning', () => {
+        // `< 1`과 `<= 1`의 차이. 손익분기 지점 자체는 경고 대상이 아니다.
+        render(
+            <PlanCheckBlock planCheck={planCheck({ riskRewardAtCurrent: 1 })} />
+        );
+        expect(screen.queryByText(/감수하는 손실이/)).not.toBeInTheDocument();
+        expect(screen.getByText(/현재가 기준 1\.00/)).toBeInTheDocument();
+    });
+
     it('calls a stopped-out plan void', () => {
         render(
             <PlanCheckBlock planCheck={planCheck({ belowStopLoss: true })} />
