@@ -50,6 +50,7 @@ import { DEFAULT_RESET_MS as COPY_RESET_MS } from '@/shared/hooks/useCopyToClipb
 import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 import { isAnalysisStale } from '@/entities/analysis';
 import { StaleAnalysisBanner } from './StaleAnalysisBanner';
+import { PlanCheckBlock } from './PlanCheckBlock';
 
 function formatCooldown(ms: number): string {
     const totalSec = Math.ceil(ms / MS_PER_SECOND);
@@ -156,6 +157,7 @@ function ActionRecommendationSection({
                 })}
             </div>
             <ReconciledLevelsBlockFromRec rec={rec} />
+            <PlanCheckBlock planCheck={rec.planCheck} />
         </div>
     );
 }
