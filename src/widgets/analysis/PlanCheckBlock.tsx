@@ -47,37 +47,46 @@ function formatRatio(ratio: number): string {
  * 남지 않았다"는 사실이고 `null`은 "잴 수 없다"이다. 후자는 경고가 아니다.
  */
 function buildNotices(planCheck: PlanCheck): Notice[] {
-    const notices: Notice[] = [];
     const { currentPrice, entryZoneTop, riskRewardAtCurrent } = planCheck;
 
-    if (planCheck.belowStopLoss) {
-        notices.push({
-            severity: 'danger',
-            text: '현재가가 손절가 아래로 내려갔어요. 이 계획은 이미 무효예요.',
-        });
-    }
+    const overZone =
+        planCheck.exceedsEntryZone && entryZoneTop !== null
+            ? ((currentPrice / entryZoneTop - 1) * PERCENT).toFixed(1)
+            : null;
 
-    if (riskRewardAtCurrent === 0) {
-        notices.push({
-            severity: 'danger',
-            text: '현재가 위에 남은 목표가가 없어요. 지금 들어가면 노릴 수익 구간이 없어요.',
-        });
-    } else if (riskRewardAtCurrent !== null && riskRewardAtCurrent < 1) {
-        notices.push({
-            severity: 'warn',
-            text: `현재가 기준 손익비가 ${formatRatio(riskRewardAtCurrent)}예요. 감수하는 손실이 노리는 수익보다 커요.`,
-        });
-    }
+    // 심각한 것이 앞이다. 조건이 맞지 않는 항목은 null로 두고 걸러낸다.
+    const candidates: (Notice | null)[] = [
+        planCheck.belowStopLoss
+            ? {
+                  severity: 'danger',
+                  text: '현재가가 손절가 아래로 내려갔어요. 이 계획은 이미 무효예요.',
+              }
+            : null,
+        riskRewardAtCurrent === 0
+            ? {
+                  severity: 'danger',
+                  text: '현재가 위에 남은 목표가가 없어요. 지금 들어가면 노릴 수익 구간이 없어요.',
+              }
+            : null,
+        // `> 0`이 있어야 한다. 0은 위에서 "남은 목표 없음"으로 이미 말했고, if/else였던
+        // 것을 배열로 펴면서 배타성이 사라지면 같은 상황에 두 문장이 뜬다.
+        riskRewardAtCurrent !== null &&
+        riskRewardAtCurrent > 0 &&
+        riskRewardAtCurrent < 1
+            ? {
+                  severity: 'warn',
+                  text: `현재가 기준 손익비가 ${formatRatio(riskRewardAtCurrent)}예요. 감수하는 손실이 노리는 수익보다 커요.`,
+              }
+            : null,
+        overZone !== null
+            ? {
+                  severity: 'warn',
+                  text: `현재가가 권장 진입 구간보다 ${overZone}% 높아요. 이 계획은 눌림을 기다리는 것을 전제로 해요.`,
+              }
+            : null,
+    ];
 
-    if (planCheck.exceedsEntryZone && entryZoneTop !== null) {
-        const over = ((currentPrice / entryZoneTop - 1) * PERCENT).toFixed(1);
-        notices.push({
-            severity: 'warn',
-            text: `현재가가 권장 진입 구간보다 ${over}% 높아요. 이 계획은 눌림을 기다리는 것을 전제로 해요.`,
-        });
-    }
-
-    return notices;
+    return candidates.filter((notice): notice is Notice => notice !== null);
 }
 
 interface PlanCheckBlockProps {
