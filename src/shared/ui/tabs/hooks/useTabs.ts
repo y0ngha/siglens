@@ -88,6 +88,29 @@ export function useTabs<T extends string>({
         focusTabRef.current = focusTab;
     }, [focusTab]);
 
+    /*
+     * 활성 탭을 스크롤 뷰 안으로 끌어온다.
+     *
+     * 탭 줄은 `overflow-x-auto` 스크롤러다. URL로 바로 들어오면(`?sector=SPACE`)
+     * 활성 탭이 목록 끝에 있어도 `scrollLeft`가 0이라 화면 밖으로 잘린 채
+     * 시작한다 — 사용자는 자기가 보고 있는 섹터가 뭔지 탭에서 확인할 수 없다.
+     * 키보드 탐색의 `.focus()`는 완전히 가려진 탭만 끌어오고 **부분적으로 잘린**
+     * 탭은 그대로 두므로 이 경우를 덮지 못한다.
+     *
+     * `inline: 'nearest'`라 이미 보이는 탭은 움직이지 않는다. `block: 'nearest'`가
+     * 없으면 브라우저가 세로도 함께 스크롤해 페이지가 튄다.
+     *
+     * 호출부를 옵셔널로 둔 것은 jsdom이 `scrollIntoView`를 구현하지 않기 때문이다
+     * (없는 채로 부르면 `not a function`으로 렌더가 통째로 죽는다). 순수 뷰포트
+     * API라 테스트 환경에서 건너뛰어도 검증에서 잃는 것이 없다.
+     */
+    useLayoutEffect(() => {
+        tabRefs.current.get(activeTab)?.scrollIntoView?.({
+            inline: 'nearest',
+            block: 'nearest',
+        });
+    }, [activeTab]);
+
     const prefix = idPrefix ?? generatedPrefix;
 
     const getTabProps = useCallback(

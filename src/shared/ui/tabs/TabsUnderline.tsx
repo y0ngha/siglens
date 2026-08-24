@@ -22,7 +22,12 @@ interface SizeStyles {
 const SIZE_STYLES: Record<TabsUnderlineSize, SizeStyles> = {
     xs: {
         container: 'border-secondary-800 overflow-x-auto border-b',
-        innerWrapper: 'flex min-w-max px-4',
+        // 스크롤 컨테이너와 그 `border-b`는 전폭으로 두고, 좌우 여백은 안쪽
+        // 래퍼가 `page-container`로 갖는다 — 그래야 탭이 자기가 거르는 목록과
+        // 같은 선에서 시작한다. 고정 `px-4`였을 때 1920px에서 368px 어긋났다.
+        // `min-w-max`가 `max-width`를 이기므로 탭이 1200px를 넘으면 그대로
+        // 늘어나 가로 스크롤이 유지된다.
+        innerWrapper: 'page-container flex min-w-max',
         button: 'cursor-pointer [touch-action:manipulation] border-b-2 px-3.5 py-2.5 text-[10px] font-medium transition-colors focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-900 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none',
         active: 'border-primary-400 text-primary-400',
         inactive:
