@@ -81,7 +81,7 @@ export function MarketSummaryPanel({
     if (isTotalFailure) {
         if (!showNotice) return null;
         return (
-            <section aria-label={heading} className="px-6 py-10 lg:px-[15vw]">
+            <section aria-label={heading} className="page-container py-10">
                 <MarketDataErrorNotice
                     marketLabel={scope.marketLabel}
                     variant="total"
@@ -95,7 +95,7 @@ export function MarketSummaryPanel({
     // role="alert"(assertive)인 안내를 그 안에 중첩하면 라이브리전이 경쟁하므로,
     // 안내는 polite 영역 밖(제목 아래·그리드 위)에 렌더한다.
     return (
-        <section aria-label={heading} className="px-6 py-10 lg:px-[15vw]">
+        <section aria-label={heading} className="page-container py-10">
             <h2 className="mb-6 text-sm font-semibold tracking-[0.15em] text-secondary-200 uppercase">
                 {heading}
             </h2>

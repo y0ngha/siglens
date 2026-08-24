@@ -47,7 +47,7 @@ export function SectorSignalPanel({
         <section
             aria-label="섹터별 신호 모아보기"
             aria-live="polite"
-            className="sector-panel-bg relative px-6 py-10 lg:px-[15vw]"
+            className="page-container sector-panel-bg relative py-10"
         >
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
                 <h2 className="text-sm font-semibold tracking-[0.01em] text-secondary-200">

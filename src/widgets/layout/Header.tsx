@@ -27,7 +27,10 @@ interface HeaderProps {
 export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
     return (
         <header className="sticky top-0 z-50 border-b border-secondary-800 bg-secondary-900/90 backdrop-blur-md supports-backdrop-filter:bg-secondary-900/75">
-            <div className="flex h-14 items-center gap-2 px-3 sm:gap-4 sm:px-6">
+            {/* 헤더 내용도 본문과 같은 폭 규약을 따라야 로고와 본문 좌측이
+                정렬된다. 이전에는 헤더만 전체 폭을 써서 초광폭 화면에서
+                로고가 본문보다 한참 왼쪽에 떨어져 있었다. */}
+            <div className="page-container flex h-14 items-center gap-2 sm:gap-4">
                 <Link
                     href="/"
                     title="홈으로"

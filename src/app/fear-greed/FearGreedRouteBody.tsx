@@ -80,52 +80,58 @@ export function FearGreedRouteBody({ market, view }: FearGreedRouteBodyProps) {
             )}
             <JsonLd data={faqJsonLd} />
             <main className="flex-1">
-                <div className="px-6 pt-6 lg:px-[15vw]">
+                <div className="page-container pt-6">
                     <RegionTabs
                         vertical="fear-greed"
                         active={market}
                         currentPath={copy.path}
                     />
                 </div>
-                <h1 className="px-6 pt-6 text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl lg:px-[15vw]">
+                <h1 className="page-container pt-6 text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
                     {copy.title}
                 </h1>
-                <section className="space-y-3 px-6 pt-4 text-sm leading-relaxed text-secondary-400 sm:text-base lg:px-[15vw]">
+                <section className="page-container space-y-3 pt-4 text-sm leading-relaxed text-secondary-400 sm:text-base">
                     {copy.intro.map(paragraph => (
                         <p key={paragraph}>{paragraph}</p>
                     ))}
                 </section>
-                <div className="px-6 lg:px-[15vw]">
+                <div className="page-container">
                     <MarketFearGreedPage view={view} market={market} />
                 </div>
-                <section
-                    aria-labelledby="market-fear-greed-guide-heading"
-                    className="mx-6 mt-6 space-y-4 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5 lg:mx-[15vw]"
-                >
-                    <h2
-                        id="market-fear-greed-guide-heading"
-                        className="text-base font-semibold text-secondary-300"
+                {/* 컨테이너가 폭과 좌우 여백을 소유하고, 카드 장식(보더·배경·
+                    패딩)은 안쪽 div가 갖는다. 컨테이너에 보더를 직접 걸면
+                    1200px 전폭을 두르게 되어 형제 섹션과 어긋난다. */}
+                <div className="page-container mt-6">
+                    <section
+                        aria-labelledby="market-fear-greed-guide-heading"
+                        className="space-y-4 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5"
                     >
-                        공포탐욕지수 읽는 법
-                    </h2>
-                    <ul className="space-y-1 text-sm leading-relaxed text-secondary-400">
-                        {FEAR_GREED_BANDS.map(band => (
-                            <li key={band.label}>
-                                {band.min}~{band.max}점 — {band.label}
-                            </li>
-                        ))}
-                    </ul>
-                    <ul className="space-y-1 text-sm leading-relaxed text-secondary-400">
-                        {MARKET_FEAR_GREED_FACTOR_KEYS.map(key => (
-                            <li key={key}>
-                                {factorLabel[key]} — {factorDescription[key]}
-                            </li>
-                        ))}
-                    </ul>
-                </section>
+                        <h2
+                            id="market-fear-greed-guide-heading"
+                            className="text-base font-semibold text-secondary-300"
+                        >
+                            공포탐욕지수 읽는 법
+                        </h2>
+                        <ul className="space-y-1 text-sm leading-relaxed text-secondary-400">
+                            {FEAR_GREED_BANDS.map(band => (
+                                <li key={band.label}>
+                                    {band.min}~{band.max}점 — {band.label}
+                                </li>
+                            ))}
+                        </ul>
+                        <ul className="space-y-1 text-sm leading-relaxed text-secondary-400">
+                            {MARKET_FEAR_GREED_FACTOR_KEYS.map(key => (
+                                <li key={key}>
+                                    {factorLabel[key]} —{' '}
+                                    {factorDescription[key]}
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                </div>
                 <section
                     aria-labelledby="market-fear-greed-faq-heading"
-                    className="px-6 pt-6 lg:px-[15vw]"
+                    className="page-container pt-6"
                 >
                     <h2
                         id="market-fear-greed-faq-heading"

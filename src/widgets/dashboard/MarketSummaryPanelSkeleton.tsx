@@ -11,7 +11,7 @@ export function MarketSummaryPanelSkeleton({
     return (
         <section
             aria-label="시장 현황 로딩 중"
-            className="px-6 py-10 lg:px-[15vw]"
+            className="page-container py-10"
             aria-busy="true"
         >
             <div className="mb-6 h-3.5 w-16 animate-pulse rounded bg-secondary-700/50" />

@@ -26,7 +26,7 @@ const FOOTER_NAV_LINKS = [...NAV_OVERVIEW_LINKS, ...ALL_NAV_REGION_LINKS];
 export function Footer() {
     return (
         <footer className="border-t border-secondary-800">
-            <div className="flex flex-col gap-2 px-6 py-6 lg:px-[15vw]">
+            <div className="page-container flex flex-col gap-2 py-6">
                 <div
                     role="note"
                     aria-label="투자 면책 고지"

@@ -127,7 +127,7 @@ export default async function Home() {
                 검색으로 건너뛰기
             </a>
             <main className="flex flex-1 flex-col">
-                <section className="relative overflow-hidden px-6 py-12 sm:py-16 lg:pr-[10vw] lg:pl-[15vw]">
+                <section className="page-container relative overflow-hidden py-12 sm:py-16">
                     <div
                         aria-hidden="true"
                         className="hero-report-lines pointer-events-none absolute inset-0"
@@ -200,7 +200,7 @@ export default async function Home() {
                     </div>
                 </section>
                 <HowItWorks skillCounts={skillCounts} />
-                <section className="px-6 pb-8 lg:px-[15vw]">
+                <section className="page-container pb-8">
                     <div className="flex flex-col items-center gap-3 rounded-lg border border-secondary-800 bg-secondary-800/30 px-6 py-5 text-center sm:flex-row sm:justify-between sm:text-left">
                         <div>
                             <p className="text-sm font-semibold text-secondary-200">

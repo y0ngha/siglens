@@ -373,6 +373,36 @@
     left: 0 !important;
 }
 
+@layer components {
+    /*
+     * 페이지 폭 규약.
+     *
+     * 이전에는 `lg:px-[15vw]` / `lg:pr-[10vw]`가 13개 파일 21곳에 흩어져 있었고
+     * `max-width`가 아예 없었다. 뷰포트 비율 패딩만으로 폭을 잡으면 2560px 화면에서
+     * 좌우 384px씩 버리면서도 본문 줄 길이는 계속 늘어나 읽기가 힘들어지고,
+     * 1280px에서는 반대로 여백이 부족해진다. 헤더만 전체 폭을 쓰고 있어 초광폭에서
+     * 로고가 본문보다 한참 왼쪽에 떨어지는 문제도 있었다.
+     *
+     * Tailwind `@utility` 대신 일반 클래스로 두는 이유는 `.scrollbar-none`과 같다 —
+     * 변형 조합이 필요 없고 stylelint의 `@utility` 미인식 경고를 피한다.
+     * 유틸리티 클래스와 함께 쓸 때 패딩이 겹치지 않도록 여기서 좌우 패딩까지 소유한다.
+     *
+     * 차트 페이지(`/[symbol]`)는 예외다 — 캔들이 충분히 보이려면 전체 폭이 필요하다.
+     */
+    .page-container {
+        width: 100%;
+        max-width: 1200px;
+        padding-inline: 1rem;
+        margin-inline: auto;
+    }
+
+    @media (width >= 40rem) {
+        .page-container {
+            padding-inline: 1.5rem;
+        }
+    }
+}
+
 /* 스크롤은 유지하되 시각적 스크롤바만 감춘다. 차트 페이지 AI 분석 패널처럼
    페이지 스크롤(footer 도달용)과 패널 내부 스크롤이 공존할 때, 내부 스크롤바가
    같이 보이면 스크롤바가 둘로 겹쳐 보여 산만하다. 패널은 여전히 내부 스크롤로

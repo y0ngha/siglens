@@ -257,7 +257,7 @@ export function SkillsShowcaseSkeleton() {
         <section
             aria-label="AI 분석 스킬 불러오는 중"
             aria-busy="true"
-            className="px-6 py-10 lg:px-[15vw]"
+            className="page-container py-10"
         >
             <div aria-hidden="true">
                 <div className="mb-6 h-3.5 w-20 animate-pulse rounded bg-secondary-700/50" />
@@ -313,7 +313,7 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
     } = useSkillsShowcase();
 
     return (
-        <section className="px-6 py-10 lg:px-[15vw]">
+        <section className="page-container py-10">
             <h2 className="mb-6 text-sm font-semibold tracking-wider text-secondary-200 uppercase">
                 AI 분석 스킬
             </h2>

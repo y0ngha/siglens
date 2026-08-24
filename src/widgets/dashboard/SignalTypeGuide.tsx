@@ -36,7 +36,7 @@ const ENTRIES = [
 export function SignalTypeGuide() {
     return (
         <section
-            className="px-6 py-10 lg:px-[15vw]"
+            className="page-container py-10"
             aria-labelledby="signal-guide-heading"
         >
             <h2

@@ -31,10 +31,7 @@ export function CategoryCardGrid({
     cards,
 }: CategoryCardGridProps) {
     return (
-        <nav
-            aria-label={ariaLabel}
-            className="px-6 py-10 lg:pr-[10vw] lg:pl-[15vw]"
-        >
+        <nav aria-label={ariaLabel} className="page-container py-10">
             <h2 className="mb-6 text-sm font-semibold tracking-wider text-secondary-200 uppercase">
                 {heading}
             </h2>
