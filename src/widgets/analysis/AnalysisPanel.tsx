@@ -66,9 +66,9 @@ const ENTRY_RECOMMENDATION_LABEL: Record<EntryRecommendation, string> = {
 };
 
 const ENTRY_RECOMMENDATION_COLOR: Record<EntryRecommendation, string> = {
-    enter: 'bg-chart-bullish/10 text-chart-bullish border border-chart-bullish/30',
-    wait: 'bg-ui-warning/10 text-ui-warning border border-ui-warning/30',
-    avoid: 'bg-chart-bearish/10 text-chart-bearish border border-chart-bearish/30',
+    enter: 'bg-chart-bullish/10 text-ui-success-text border border-chart-bullish/30',
+    wait: 'bg-ui-warning/10 text-ui-warning-text border border-ui-warning/30',
+    avoid: 'bg-chart-bearish/10 text-ui-danger-text border border-chart-bearish/30',
 };
 
 type ActionRecommendationTextKey =
@@ -365,7 +365,7 @@ const CONFIDENCE_BADGE_CONFIG: Record<
 > = {
     high: {
         className:
-            'text-chart-bullish bg-chart-bullish/10 border border-chart-bullish/30',
+            'text-ui-success-text bg-chart-bullish/10 border border-chart-bullish/30',
         label: '높은 신뢰도',
         tooltip: (
             <>
@@ -376,7 +376,7 @@ const CONFIDENCE_BADGE_CONFIG: Record<
     },
     medium: {
         className:
-            'text-ui-warning bg-ui-warning/10 border border-ui-warning/30',
+            'text-ui-warning-text bg-ui-warning/10 border border-ui-warning/30',
         label: '중간 신뢰도',
         tooltip: (
             <>
@@ -1033,7 +1033,7 @@ export function AnalysisPanel({
                                     !isAnalyzing && {
                                         'border-primary-400/40 bg-primary-400/10 text-primary-300':
                                             copyState === 'copied',
-                                        'border-chart-bearish/40 bg-chart-bearish/10 text-chart-bearish':
+                                        'border-chart-bearish/40 bg-chart-bearish/10 text-ui-danger-text':
                                             copyState === 'failed',
                                         'border-secondary-700 text-secondary-300 hover:border-secondary-600 hover:text-secondary-100':
                                             copyState === 'idle',

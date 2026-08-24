@@ -13,10 +13,10 @@ const ACTION_LABEL: Record<GradesAction, string> = {
 };
 
 const ACTION_CLASS: Record<GradesAction, string> = {
-    upgrade: 'bg-ui-success/10 text-chart-bullish',
-    downgrade: 'bg-ui-danger/10 text-chart-bearish',
+    upgrade: 'bg-ui-success/10 text-ui-success-text',
+    downgrade: 'bg-ui-danger/10 text-ui-danger-text',
     maintained: 'bg-secondary-700 text-secondary-400',
-    initiated: 'bg-ui-warning/10 text-ui-warning',
+    initiated: 'bg-ui-warning/10 text-ui-warning-text',
     other: 'bg-secondary-700 text-secondary-400',
 };
 

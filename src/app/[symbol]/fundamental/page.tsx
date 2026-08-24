@@ -196,7 +196,7 @@ function ProfileCardSkeleton({ symbol }: ProfileCardSkeletonProps) {
                     <div className="mt-1 h-4 w-28 animate-pulse rounded bg-secondary-700" />
                 </div>
                 <div className="text-right">
-                    <span className="text-xs tracking-widest text-secondary-400 uppercase">
+                    <span className="text-xs tracking-[0.01em] text-secondary-400">
                         시가총액
                     </span>
                     <div className="mt-0.5 h-6 w-20 animate-pulse rounded bg-secondary-700" />

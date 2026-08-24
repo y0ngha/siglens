@@ -9,7 +9,7 @@ export function OptionsAiAnalysisStaleNotice() {
         >
             <h2
                 id="options-ai-analysis-heading"
-                className="mb-3 text-xs tracking-widest text-secondary-400 uppercase"
+                className="mb-3 text-xs tracking-[0.01em] text-secondary-400"
             >
                 AI 옵션 분석
             </h2>

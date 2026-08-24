@@ -138,9 +138,18 @@ describe('usePaneLabels', () => {
             })
         );
 
-        const spans = container.querySelectorAll('.pane-indicator-label span');
+        /* 서브라벨은 span 하나가 아니라 두 개다 — 바깥 span이 라벨 텍스트를,
+           안쪽 span이 지표 색 점(●)을 담는다. 점에만 색을 칠해야 라이트
+           테마에서 밝은 지표의 라벨이 읽히기 때문이다(`createSubLabelSpan` 참조). */
+        const spans = container.querySelectorAll(
+            '.pane-indicator-label > span'
+        );
         expect(spans).toHaveLength(1);
         expect(spans[0].textContent).toContain('RSI');
+        /* 점은 장식이므로 스크린리더에서 제외돼야 한다. */
+        expect(
+            spans[0].querySelector('span')?.getAttribute('aria-hidden')
+        ).toBe('true');
     });
 
     it('cleans up labels on unmount', () => {

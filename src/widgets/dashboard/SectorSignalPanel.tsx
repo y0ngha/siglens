@@ -50,7 +50,7 @@ export function SectorSignalPanel({
             className="sector-panel-bg relative px-6 py-10 lg:px-[15vw]"
         >
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-                <h2 className="text-sm font-semibold tracking-[0.15em] text-secondary-200 uppercase">
+                <h2 className="text-sm font-semibold tracking-[0.01em] text-secondary-200">
                     섹터별 신호 모아보기
                 </h2>
                 <TimeframeSelector

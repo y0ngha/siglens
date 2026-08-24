@@ -27,7 +27,7 @@ export function OptionsSummary({ bullets, oiStale }: OptionsSummaryProps) {
                 </h2>
                 {!isEmpty && oiStale && (
                     <span
-                        className="rounded-lg bg-ui-warning/10 px-2 py-0.5 text-xs text-ui-warning"
+                        className="rounded-lg bg-ui-warning/10 px-2 py-0.5 text-xs text-ui-warning-text"
                         title="미국 옵션 정규 거래 시간 외에 수집된 스냅샷으로, Open Interest가 직전 세션 기준일 수 있습니다."
                     >
                         OI 데이터 지연

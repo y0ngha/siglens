@@ -41,7 +41,7 @@ export function SignalTypeGuide() {
         >
             <h2
                 id="signal-guide-heading"
-                className="mb-6 text-sm font-semibold tracking-[0.15em] text-secondary-200 uppercase"
+                className="mb-6 text-sm font-semibold tracking-[0.01em] text-secondary-200"
             >
                 신호 유형 가이드
             </h2>

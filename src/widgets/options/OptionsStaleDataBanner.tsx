@@ -50,7 +50,7 @@ export function OptionsStaleDataBanner() {
     return (
         <div
             role="status"
-            className="rounded-lg border border-ui-warning bg-ui-warning/10 px-3 py-2 text-xs leading-relaxed text-ui-warning"
+            className="rounded-lg border border-ui-warning bg-ui-warning/10 px-3 py-2 text-xs leading-relaxed text-ui-warning-text"
         >
             <p className="font-semibold">옵션 OI 데이터가 비어 있어요</p>
             <div className="mt-1 space-y-1 text-ui-warning/90">

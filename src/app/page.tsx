@@ -144,7 +144,7 @@ export default async function Home() {
                             <HeroIllustration className="mx-auto h-auto w-full max-w-md lg:max-w-none" />
                         </div>
                         <div className="text-center lg:text-left">
-                            <p className="mb-5 font-mono text-[0.68rem] leading-relaxed tracking-[0.18em] text-secondary-400 uppercase sm:text-xs">
+                            <p className="mb-5 text-xs font-semibold tracking-[0.01em] text-secondary-400">
                                 투자의 확신을 더하는 AI 분석
                             </p>
                             {/*

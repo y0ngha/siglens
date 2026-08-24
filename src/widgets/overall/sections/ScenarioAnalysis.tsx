@@ -12,9 +12,9 @@ const SCENARIO_LABEL: Record<OverallScenarioName, string> = {
 };
 
 const SCENARIO_CLASS: Record<OverallScenarioName, string> = {
-    bullish: 'bg-ui-success/10 text-chart-bullish',
+    bullish: 'bg-ui-success/10 text-ui-success-text',
     neutral: 'bg-secondary-700 text-secondary-400',
-    bearish: 'bg-ui-danger/10 text-chart-bearish',
+    bearish: 'bg-ui-danger/10 text-ui-danger-text',
 };
 
 interface ScenarioAnalysisProps {

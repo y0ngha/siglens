@@ -94,7 +94,7 @@ export function StatementTable({
                         </caption>
                     )}
                     <thead>
-                        <tr className="border-b border-secondary-700 text-xs tracking-widest text-secondary-400 uppercase">
+                        <tr className="border-b border-secondary-700 text-xs tracking-[0.01em] text-secondary-400">
                             <th
                                 scope="col"
                                 className="pb-2 text-left font-medium"

@@ -33,7 +33,7 @@ export default async function SharePage({ params }: Props) {
         // indexing this expired/not-found state.
         return (
             <main className="flex flex-1 flex-col items-center px-6 py-20 text-center">
-                <p className="font-mono text-sm tracking-widest text-primary-400">
+                <p className="text-sm font-semibold tracking-[0.01em] text-primary-400">
                     공유 링크 만료
                 </p>
                 <h1 className="mt-4 text-2xl font-bold text-secondary-100 sm:text-3xl">

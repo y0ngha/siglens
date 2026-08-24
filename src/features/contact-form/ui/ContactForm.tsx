@@ -34,7 +34,7 @@ export function ContactForm() {
             {submissionError ? (
                 <div
                     role="alert"
-                    className="flex items-start gap-2 rounded-lg border border-ui-danger/30 bg-ui-danger/10 p-3 text-sm text-ui-danger"
+                    className="flex items-start gap-2 rounded-lg border border-ui-danger/30 bg-ui-danger/10 p-3 text-sm text-ui-danger-text"
                 >
                     <span aria-hidden>⚠</span>
                     <p>{submissionError}</p>

@@ -29,8 +29,16 @@ function getTopOffset(chart: IChartApi, paneIndex: number): number {
 
 function createSubLabelSpan(subLabel: PaneSubLabel): HTMLSpanElement {
     const span = document.createElement('span');
-    span.style.color = subLabel.color;
-    span.textContent = `${SUB_LABEL_DOT}${subLabel.name}`;
+    /*
+     * 지표 색은 점에만 칠한다. 라벨 텍스트까지 지표 색으로 칠하면 라이트
+     * 테마에서 밝은 지표가 2.4~3.3:1로 읽히지 않는다(OverlayLegend와 같은 이유).
+     * 텍스트 색은 지정하지 않고 부모의 전경색을 상속받는다.
+     */
+    const dot = document.createElement('span');
+    dot.setAttribute('aria-hidden', 'true');
+    dot.style.color = subLabel.color;
+    dot.textContent = SUB_LABEL_DOT;
+    span.append(dot, subLabel.name);
     return span;
 }
 

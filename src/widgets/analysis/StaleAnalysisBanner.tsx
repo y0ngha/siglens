@@ -21,7 +21,7 @@ export function StaleAnalysisBanner({
     return (
         <div
             role="status"
-            className="flex items-center justify-between gap-3 rounded-lg border border-ui-warning/30 bg-ui-warning/10 px-3 py-2 text-sm text-ui-warning"
+            className="flex items-center justify-between gap-3 rounded-lg border border-ui-warning/30 bg-ui-warning/10 px-3 py-2 text-sm text-ui-warning-text"
         >
             <span>{STALE_MESSAGE}</span>
             <div className="relative inline-flex">

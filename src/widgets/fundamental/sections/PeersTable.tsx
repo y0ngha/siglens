@@ -32,7 +32,7 @@ export function PeersTable({ peers }: PeersTableProps) {
             <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                     <thead>
-                        <tr className="border-b border-secondary-700 text-left text-xs tracking-widest text-secondary-400 uppercase">
+                        <tr className="border-b border-secondary-700 text-left text-xs tracking-[0.01em] text-secondary-400">
                             <th className="pb-2 font-medium">티커</th>
                             <th className="pb-2 font-medium">회사명</th>
                             <th className="pb-2 text-right font-medium">

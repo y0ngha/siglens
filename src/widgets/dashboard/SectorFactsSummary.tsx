@@ -33,7 +33,7 @@ export function SectorFactsSummary({ data }: SectorFactsSummaryProps) {
             aria-label="섹터별 신호 요약"
             className="sector-panel-bg px-6 py-10 lg:px-[15vw]"
         >
-            <h2 className="mb-6 text-sm font-semibold tracking-[0.15em] text-secondary-200 uppercase">
+            <h2 className="mb-6 text-sm font-semibold tracking-[0.01em] text-secondary-200">
                 섹터별 신호 모아보기
             </h2>
             {facts.length === 0 ? (

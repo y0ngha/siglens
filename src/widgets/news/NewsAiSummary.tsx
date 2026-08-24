@@ -30,9 +30,9 @@ const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
 };
 
 const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
-    bullish: 'bg-ui-success/10 text-chart-bullish',
+    bullish: 'bg-ui-success/10 text-ui-success-text',
     neutral: 'bg-secondary-700 text-secondary-400',
-    bearish: 'bg-ui-danger/10 text-chart-bearish',
+    bearish: 'bg-ui-danger/10 text-ui-danger-text',
 };
 
 interface StatusCardProps {

@@ -16,8 +16,8 @@ const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
 };
 
 const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
-    bullish: 'bg-ui-success/10 text-chart-bullish',
-    bearish: 'bg-ui-danger/10 text-chart-bearish',
+    bullish: 'bg-ui-success/10 text-ui-success-text',
+    bearish: 'bg-ui-danger/10 text-ui-danger-text',
     neutral: 'bg-secondary-700 text-secondary-400',
 };
 
@@ -32,7 +32,7 @@ const IMPACT_LABEL: Record<NewsImpact, string> = {
 };
 
 const IMPACT_CLASS: Record<NewsImpact, string> = {
-    high: 'bg-ui-warning/10 text-ui-warning',
+    high: 'bg-ui-warning/10 text-ui-warning-text',
     medium: 'bg-primary-500/10 text-primary-400',
     low: 'bg-secondary-700 text-secondary-400',
     negligible: 'bg-secondary-700/50 text-secondary-400',

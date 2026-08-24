@@ -48,7 +48,7 @@ export function ProfileCard({ profile, descriptionSlot }: ProfileCardProps) {
                     </p>
                 </div>
                 <div className="text-right">
-                    <span className="text-xs tracking-widest text-secondary-400 uppercase">
+                    <span className="text-xs tracking-[0.01em] text-secondary-400">
                         시가총액
                     </span>
                     <p className="font-mono text-lg font-medium tabular-nums">

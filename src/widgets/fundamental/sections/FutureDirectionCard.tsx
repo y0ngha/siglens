@@ -201,7 +201,7 @@ export function FutureDirectionCard({
 
             {estimates !== null && (
                 <div className="mb-5">
-                    <h3 className="mb-2 text-xs font-medium tracking-widest text-secondary-400 uppercase">
+                    <h3 className="mb-2 text-xs font-medium tracking-[0.01em] text-secondary-400">
                         애널리스트 추정
                     </h3>
                     <dl className="grid grid-cols-2 gap-3">
@@ -248,7 +248,7 @@ export function FutureDirectionCard({
 
             {ptConsensus !== null && (
                 <div className="mb-5">
-                    <h3 className="mb-2 text-xs font-medium tracking-widest text-secondary-400 uppercase">
+                    <h3 className="mb-2 text-xs font-medium tracking-[0.01em] text-secondary-400">
                         목표 주가
                     </h3>
                     <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
@@ -338,7 +338,7 @@ export function FutureDirectionCard({
 
             {grades !== null && (
                 <div>
-                    <h3 className="mb-1 text-xs font-medium tracking-widest text-secondary-400 uppercase">
+                    <h3 className="mb-1 text-xs font-medium tracking-[0.01em] text-secondary-400">
                         투자의견 컨센서스
                         <InfoTooltip>
                             <p>

@@ -14,11 +14,11 @@ function EntryRecBadge({ recommendation }: EntryRecBadgeProps) {
     const config = {
         enter: {
             label: 'AI 진입 권고',
-            cls: 'bg-chart-bullish/10 text-chart-bullish border-chart-bullish/30',
+            cls: 'bg-ui-success/10 text-ui-success-text border-ui-success/30',
         },
         avoid: {
             label: 'AI 회피 권고',
-            cls: 'bg-chart-bearish/10 text-chart-bearish border-chart-bearish/30',
+            cls: 'bg-ui-danger/10 text-ui-danger-text border-ui-danger/30',
         },
         wait: {
             label: 'AI 관망',
@@ -46,9 +46,9 @@ function RiskBadge({ level }: RiskBadgeProps) {
     const isHigh = level === 'high' || level === 'extreme';
     const isLow = level === 'low';
     const cls = isHigh
-        ? 'bg-ui-warning/10 text-ui-warning border-ui-warning/30'
+        ? 'bg-ui-warning/10 text-ui-warning-text border-ui-warning/30'
         : isLow
-          ? 'bg-chart-bullish/10 text-chart-bullish border-chart-bullish/30'
+          ? 'bg-ui-success/10 text-ui-success-text border-ui-success/30'
           : 'bg-secondary-800 text-secondary-400 border-secondary-700';
     return (
         <span
@@ -72,10 +72,10 @@ const winClasses = {
 
 const lossClasses = {
     article: 'border-chart-bearish/20',
-    badge: 'bg-chart-bearish/10 text-chart-bearish',
+    badge: 'bg-chart-bearish/10 text-ui-danger-text',
     returnText: 'text-chart-bearish',
     aiSummary: 'border-ui-warning',
-    tag: 'border border-ui-warning/30 bg-ui-warning/10 text-ui-warning',
+    tag: 'border border-ui-warning/30 bg-ui-warning/10 text-ui-warning-text',
 } as const;
 
 export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {

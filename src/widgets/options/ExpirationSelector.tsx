@@ -104,7 +104,7 @@ export function ExpirationSelector({
             role="tablist"
             aria-label="옵션 만기 선택"
         >
-            <span className="mr-1 text-xs tracking-widest text-secondary-400 uppercase">
+            <span className="mr-1 text-xs tracking-[0.01em] text-secondary-400">
                 만기
                 <InfoTooltip>
                     <p>옵션 계약이 만료되는 날짜예요.</p>

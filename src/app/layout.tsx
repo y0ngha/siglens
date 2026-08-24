@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import type { ReactNode } from 'react';
 import Script from 'next/script';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Geist_Mono } from 'next/font/google';
 import localFont from 'next/font/local';
 import { AuthSessionHeaderClient } from '@/app/_components/AuthSessionHeaderClient';
 import { Footer } from '@/widgets/layout/Footer';
@@ -25,14 +25,11 @@ import {
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import './globals.css';
 
-// Geist는 라틴만 지원하므로 한글 글리프는 globals.css의 --font-sans 스택에서
-// 자동으로 Pretendard Variable로 fallback된다. 한글 OS 폰트 의존을 끊어
-// 디바이스 간 typography 일관성과 한글 CLS를 개선한다.
-const geistSans = Geist({
-    variable: '--font-geist-sans',
-    subsets: ['latin'],
-});
-
+/*
+ * 모노는 티커·가격·타임스탬프 등 자릿수 정렬이 필요한 데이터 전용이다.
+ * 산세리프(Pretendard)와 달리 한글을 담지 않으므로 한글에 적용하면 안 된다 —
+ * 글리프가 없어 OS 폰트로 조용히 떨어지고 기기마다 다르게 보인다.
+ */
 const geistMono = Geist_Mono({
     variable: '--font-geist-mono',
     subsets: ['latin'],
@@ -148,7 +145,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             /* 인라인 스크립트가 하이드레이션 전에 data-theme과 colorScheme을 바꾼다.
                이 속성이 없으면 React가 서버/클라 속성 불일치를 경고한다. */
             suppressHydrationWarning
-            className={`${geistSans.variable} ${geistMono.variable} ${pretendard.variable} h-full overflow-x-hidden antialiased`}
+            className={`${geistMono.variable} ${pretendard.variable} h-full overflow-x-hidden antialiased`}
         >
             <head>
                 {/*

@@ -36,7 +36,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
     return (
         <html lang="ko">
             <body className="flex min-h-dvh flex-col items-center justify-center bg-secondary-900 px-6 text-center text-secondary-50">
-                <p className="font-mono text-xs tracking-widest text-primary-400 uppercase">
+                <p className="text-xs font-semibold tracking-[0.01em] text-primary-400">
                     일시 오류
                 </p>
                 <h1 className="mt-4 text-2xl font-bold text-secondary-100">

@@ -17,7 +17,7 @@ export function OptionsAiAnalysisError({
             className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             role="alert"
         >
-            <p className="text-xs tracking-widest text-secondary-400 uppercase">
+            <p className="text-xs tracking-[0.01em] text-secondary-400">
                 AI 옵션 분석
             </p>
             <p className="mt-3 text-sm leading-relaxed text-secondary-300">

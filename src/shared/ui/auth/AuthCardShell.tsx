@@ -1,4 +1,6 @@
 import { SITE_NAME } from '@/shared/lib/seo';
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import Image from 'next/image';
 import type { ReactNode } from 'react';
 
@@ -32,7 +34,12 @@ export function AuthCardShell({
      */
     return (
         <main className="flex min-h-[calc(100dvh-var(--header-h))] items-center justify-center bg-secondary-950 px-4 py-12">
-            <section className="w-full max-w-md rounded-lg border border-secondary-700 bg-secondary-800 p-8 motion-safe:animate-[fade-up_220ms_ease-out]">
+            <section
+                className={cn(
+                    SURFACE_CARD,
+                    'w-full max-w-md p-8 motion-safe:animate-[fade-up_220ms_ease-out]'
+                )}
+            >
                 <header className="mb-8 flex flex-col items-start gap-5">
                     <div className="flex items-center gap-2">
                         {/*

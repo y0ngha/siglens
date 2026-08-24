@@ -130,7 +130,7 @@ const CONFIDENCE_BADGE_CONFIG: Record<
 > = {
     normal: {
         className:
-            'bg-ui-success/10 text-ui-success border-ui-success/30 inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-medium',
+            'bg-ui-success/10 text-ui-success-text border-ui-success/30 inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-medium',
         label: '신뢰도 정상',
         tooltip: (
             <div className="text-secondary-300">
@@ -141,7 +141,7 @@ const CONFIDENCE_BADGE_CONFIG: Record<
     },
     limited: {
         className:
-            'bg-ui-warning/10 text-ui-warning border-ui-warning/30 inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-medium',
+            'bg-ui-warning/10 text-ui-warning-text border-ui-warning/30 inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-medium',
         label: '신뢰도 제한',
         tooltip: (
             <div className="text-secondary-300">

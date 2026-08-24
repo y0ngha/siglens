@@ -175,7 +175,12 @@
        테마와 무관하게 고정되어야 하므로 램프 밖에 둔다. */
     --color-on-fixed-light: #16181d;
     --color-on-fixed-light-muted: #5c626d;
-    --color-fixed-light-border: #d4d7dd;
+
+    /* 라이트 테마에서는 이 버튼(흰 배경)이 흰 카드 위에 놓인다. 경계선이
+       유일한 구분 수단이 되므로 WCAG 1.4.11의 3:1을 넘겨야 한다 —
+       흰색 대비 3.02:1. 다크에서는 배경 차이만으로도 충분히 구분되지만
+       같은 값을 써도 과하지 않다. */
+    --color-fixed-light-border: #8e95a1;
     --color-fixed-light-hover: #f1f2f5;
 
     /* vaul이 `[data-vaul-handle]`에 하드코딩한 배경색. 디자인 선택이 아니라 외부 제약이며,
@@ -191,15 +196,32 @@
        잔여 영역을 정확히 계산한다. */
     --header-h: 3.5rem;
 
-    /* font stack 순서: Geist(라틴)가 한글 글리프를 못 가지므로 자동으로
-       다음 폰트(Pretendard, self-host)로 fallback된다. next/font/local이
-       --font-pretendard CSS 변수를 주입하고 size-adjust를 자동 측정해
-       fallback OS 폰트와 metric을 맞추므로 CLS가 거의 0이 된다. 이전엔
-       OS 폰트(맥: Apple SD Gothic Neo, 윈도: Malgun Gothic)로 fallback돼
-       디바이스마다 typography가 달라지고 CLS도 발생했다. */
+    /*
+     * 산세리프는 Pretendard **단일 폰트**다.
+     *
+     * 이전에는 Geist(라틴) → Pretendard(한글) 순서였는데, Geist에 한글
+     * 글리프가 없어서 "AI 분석" 같은 혼합 문자열이 **한 단어 안에서 두 폰트로**
+     * 렌더됐다. x-height와 굵기 축이 달라 글줄이 미묘하게 어긋나 보이고,
+     * 사용자는 이유를 모른 채 "조잡하다"고 느낀다. 한국어가 본문의 대부분인
+     * 제품에서 라틴 전용 폰트를 1순위에 두는 구성 자체가 잘못이었다.
+     *
+     * 부수 효과가 두 가지 더 있다. Geist는 Vercel의 폰트라 Next.js 데모와
+     * AI 스타트업 랜딩의 사실상 표준 얼굴이다 — 그것만으로 "템플릿"으로 읽힌다.
+     * 그리고 Google Fonts 요청 하나가 사라져 모바일 CPU에 묶인 이 앱의
+     * 첫 로드가 가벼워진다.
+     *
+     * Pretendard는 self-host + next/font/local이라 fingerprint URL과 1년
+     * immutable 캐시가 붙고, size-adjust 자동 측정으로 CLS가 거의 0이다.
+     */
     --font-sans:
-        var(--font-geist-sans), var(--font-pretendard), -apple-system,
-        blinkmacsystemfont, system-ui, 'Helvetica Neue', arial, sans-serif;
+        var(--font-pretendard), -apple-system, blinkmacsystemfont, system-ui,
+        'Helvetica Neue', arial, sans-serif;
+
+    /*
+     * 모노는 티커·가격·타임스탬프처럼 **자릿수가 맞아야 하는 데이터**에만 쓴다
+     * (84곳). 산세리프와 달리 한글을 담지 않으므로 두 폰트 문제가 없다 —
+     * 한글에 모노를 적용하는 것은 금지다(글리프가 없어 OS 폰트로 떨어진다).
+     */
     --font-mono: var(--font-geist-mono);
 }
 
@@ -301,6 +323,16 @@
     --color-primary-100: #172554;
     --color-primary-900: #dbeafe;
     --color-primary-950: #eff6ff;
+
+    /* 재무 등급 A~F 램프. 다크 값은 흰 카드 위에서 1.9~3.5:1로 전부 미달한다
+       (36px 대형 텍스트인 종합 등급조차 3:1 미만). 색상 정체성인 초록→라임→
+       노랑→주황→빨강 순서는 유지하고 명도만 낮춘 짝을 준다. 모두 흰 카드에서
+       4.9~6.5:1로 텍스트 기준을 넘으므로 게이지 스트로크(3:1)도 함께 만족한다. */
+    --color-grade-a: #15803d;
+    --color-grade-b: #4d7c0f;
+    --color-grade-c: #a16207;
+    --color-grade-d: #c2410c;
+    --color-grade-f: #b91c1c;
 
     /* 상태 텍스트 — 다크 전용으로 튜닝된 값들이라 라이트에서는 1.4~1.9:1로
        전멸한다. 밝은 변형의 어두운 짝을 따로 정의한다. */

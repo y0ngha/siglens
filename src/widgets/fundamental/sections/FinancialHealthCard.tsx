@@ -23,9 +23,9 @@ interface FinancialHealthCardProps {
 type BadgeVariant = 'good' | 'warn' | 'bad' | 'neutral';
 
 const BADGE_VARIANT_CLASS: Record<BadgeVariant, string> = {
-    good: 'bg-ui-success/10 text-chart-bullish',
-    bad: 'bg-ui-danger/10 text-chart-bearish',
-    warn: 'bg-ui-warning/10 text-ui-warning',
+    good: 'bg-ui-success/10 text-ui-success-text',
+    bad: 'bg-ui-danger/10 text-ui-danger-text',
+    warn: 'bg-ui-warning/10 text-ui-warning-text',
     neutral: 'bg-secondary-700 text-secondary-400',
 };
 

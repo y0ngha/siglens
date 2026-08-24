@@ -26,9 +26,9 @@ const SENTIMENT_LABEL: Record<FundamentalSentiment, string> = {
 };
 
 const SENTIMENT_CLASS: Record<FundamentalSentiment, string> = {
-    bullish: 'bg-ui-success/10 text-chart-bullish',
+    bullish: 'bg-ui-success/10 text-ui-success-text',
     neutral: 'bg-secondary-700 text-secondary-400',
-    bearish: 'bg-ui-danger/10 text-chart-bearish',
+    bearish: 'bg-ui-danger/10 text-ui-danger-text',
 };
 
 const CATEGORY_LABEL: Record<FundamentalCategory, string> = {

@@ -30,14 +30,26 @@ export function OverlayLegend({ items, decimals = 2 }: OverlayLegendProps) {
                     {group.items.map(item => (
                         <span
                             key={item.name}
-                            className="font-mono text-[11px] leading-none text-(--legend-color)"
-                            style={
-                                {
-                                    '--legend-color': item.color,
-                                } as CSSProperties
-                            }
+                            className="font-mono text-[11px] leading-none text-secondary-300"
                         >
-                            {'\u25CF'} {item.name}{' '}
+                            {/*
+                                지표 색은 **점에만** 칠한다. 이름·값까지 지표 색으로
+                                칠하면 라이트 테마에서 밝은 지표(BB Middle 2.41:1,
+                                Buy 2.82:1 등)가 읽히지 않는다. 점은 그래픽이라
+                                3:1이면 되고, 텍스트는 전경 토큰으로 대비를 확보한다.
+                            */}
+                            <span
+                                aria-hidden="true"
+                                className="text-(--legend-color)"
+                                style={
+                                    {
+                                        '--legend-color': item.color,
+                                    } as CSSProperties
+                                }
+                            >
+                                {'\u25CF'}
+                            </span>{' '}
+                            {item.name}{' '}
                             {formatOverlayValue(item.value, decimals)}
                         </span>
                     ))}

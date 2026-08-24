@@ -62,17 +62,17 @@ const TYPE_BADGE: Record<SkillType, TypeBadgeConfig> = {
     pattern: {
         label: '패턴',
         className:
-            'bg-chart-bearish/10 text-chart-bearish border border-chart-bearish/30',
+            'bg-ui-danger/10 text-ui-danger-text border border-ui-danger/30',
     },
     strategy: {
         label: '전략',
         className:
-            'bg-ui-warning/10 text-ui-warning border border-ui-warning/30',
+            'bg-ui-warning/10 text-ui-warning-text border border-ui-warning/30',
     },
     candlestick: {
         label: '캔들',
         className:
-            'bg-chart-bullish/10 text-chart-bullish border border-chart-bullish/30',
+            'bg-ui-success/10 text-ui-success-text border border-ui-success/30',
     },
     support_resistance: {
         label: '지지/저항',

@@ -101,7 +101,7 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                         {LLM_PROVIDER_LABELS[provider]}
                     </span>
                     {isRegistered ? (
-                        <span className="rounded-full bg-ui-success/10 px-2 py-0.5 text-xs text-ui-success ring-1 ring-ui-success/30">
+                        <span className="rounded-full bg-ui-success/10 px-2 py-0.5 text-xs text-ui-success-text ring-1 ring-ui-success/30">
                             등록됨
                         </span>
                     ) : (
@@ -129,7 +129,7 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                                 label="삭제"
                                 pendingLabel="삭제 중…"
                                 aria-describedby={deleteStatusId}
-                                className="inline-flex h-7 items-center justify-center rounded-lg border border-ui-danger/40 px-3 text-xs font-medium text-ui-danger transition-colors hover:bg-ui-danger/10 focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none disabled:opacity-50"
+                                className="inline-flex h-7 items-center justify-center rounded-lg border border-ui-danger/40 px-3 text-xs font-medium text-ui-danger-text transition-colors hover:bg-ui-danger/10 focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none disabled:opacity-50"
                             />
                         </form>
                     </div>
