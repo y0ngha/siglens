@@ -47,7 +47,7 @@ export function SignalStockCard({
                             <span key={s.type} className="contents">
                                 {i > 0 && (
                                     <span
-                                        className="text-secondary-600"
+                                        className="text-secondary-500"
                                         aria-hidden="true"
                                     >
                                         ·

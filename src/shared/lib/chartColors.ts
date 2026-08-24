@@ -13,6 +13,12 @@ export const CHART_COLORS = {
     grid: '#1f1f26',
     text: '#96979f',
 
+    /* 선만 보이고 채움은 없어야 하는 AreaSeries 전용(볼린저·켈트너·돈치안).
+       예전에는 배경색을 채워 "안 보이게" 만들었는데, 그러면 테마가 바뀔 때마다
+       채움색도 따라 바꿔야 하고 빠뜨리면 라이트 차트에 검은 블록이 가격을
+       덮는다. 진짜 투명이면 배경이 무엇이든 무관해져 테마 대응 대상에서 빠진다. */
+    transparentFill: 'rgba(0, 0, 0, 0)',
+
     // 상승 / 하락 / 중립
     bullish: '#26a69a',
     bearish: '#ef5350',
@@ -177,6 +183,47 @@ export const CHART_COLORS = {
     smcDiscount: '#26a69a', // 매수/지지 하단
     smcEquilibrium: '#94a3b8', // 50% 공정가 (neutral)
 } as const;
+
+/**
+ * 라이트 테마에서만 달라지는 차트 크롬. `CHART_COLORS`의 부분집합이며 키 이름이
+ * 같아야 한다(하단 타입이 강제). 지표 색은 정체성이라 두 테마 공통이다.
+ *
+ * 값은 `globals.css`의 라이트 블록과 짝을 이룬다:
+ *   secondary-900(페이지) / secondary-700(보더) / secondary-500(흐린 텍스트)
+ */
+export const CHART_COLORS_LIGHT = {
+    background: '#f7f8fa',
+    grid: '#e6e8ec',
+    text: '#565c66',
+} as const satisfies Partial<Record<keyof typeof CHART_COLORS, string>>;
+
+/** 차트 크롬 3키. lightweight-charts에 넘길 형태. */
+export interface ChartChrome {
+    background: string;
+    grid: string;
+    text: string;
+}
+
+/**
+ * 현재 테마에 맞는 차트 크롬을 돌려준다.
+ *
+ * 인자를 받지 않고 DOM 속성을 직접 읽는 이유: 차트 초기화는 훅 여러 겹 아래에서
+ * 일어나 테마 값을 prop으로 내리려면 중간 계층을 전부 고쳐야 한다. `data-theme`은
+ * 인라인 스크립트가 첫 페인트 전에 찍어두므로 어느 시점에 읽어도 정확하다.
+ *
+ * 서버에서는 `document`가 없으므로 다크를 반환한다 — 차트는 클라이언트 전용
+ * (`dynamic({ ssr: false })`)이라 실제로 서버에서 호출되지 않는다.
+ */
+export function getChartChrome(): ChartChrome {
+    if (typeof document === 'undefined') {
+        const { background, grid, text } = CHART_COLORS;
+        return { background, grid, text };
+    }
+    const isLight =
+        document.documentElement.getAttribute('data-theme') === 'light';
+    const src = isLight ? CHART_COLORS_LIGHT : CHART_COLORS;
+    return { background: src.background, grid: src.grid, text: src.text };
+}
 
 const PERIOD_COLOR_MAP: Record<number, string> = {
     5: CHART_COLORS.period5,

@@ -2,6 +2,7 @@ import { HeaderMobileMenu } from './HeaderMobileMenu';
 import { HeaderNav } from './HeaderNav';
 import { HeaderNavStatic } from './HeaderNavStatic';
 import { HeaderUserMenu, type HeaderUserMenuUser } from './HeaderUserMenu';
+import { ThemeToggle } from '@/shared/ui/ThemeToggle';
 import { NAV_TREE } from './headerNavTree';
 import { HeaderSearch } from '@/features/ticker-search';
 import { SITE_NAME } from '@/shared/lib/seo';
@@ -88,6 +89,7 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                     `features/ticker-search/ui/HeaderSearch` JSDoc 참고. */}
                 <HeaderSearch />
                 <div className="flex shrink-0 items-center">
+                    <ThemeToggle />
                     <HeaderUserMenu
                         currentUser={currentUser}
                         loading={loadingUserMenu}

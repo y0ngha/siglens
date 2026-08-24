@@ -1,6 +1,6 @@
 'use client';
 
-import { CHART_COLORS } from '@/shared/lib/chartColors';
+import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import {
     createChart,
@@ -11,6 +11,7 @@ import {
     type Time,
 } from 'lightweight-charts';
 import { useEffect, useRef } from 'react';
+import { useChartThemeSync } from '@/widgets/chart/hooks/useChartThemeSync';
 
 interface FearGreedHistoricalChartProps {
     history: FearGreedHistoryPoint[];
@@ -34,20 +35,27 @@ export function FearGreedHistoricalChart({
 }: FearGreedHistoricalChartProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
+
+    /* 테마 전환 시 크롬만 교체(리마운트 없음). */
+    useChartThemeSync(chartRef);
     const seriesRef = useRef<ISeriesApi<'Line'> | null>(null);
 
     useEffect(() => {
         if (!containerRef.current) return;
+        /* 생성 시점의 테마에 맞는 크롬. 이후 전환은 useChartThemeSync가
+           applyOptions로 처리한다(리마운트 금지 — 줌·스크롤 위치 보존). */
+        const chrome = getChartChrome();
+
         const chart = createChart(containerRef.current, {
             height: CHART_HEIGHT,
             autoSize: true,
             layout: {
                 background: { color: 'transparent' },
-                textColor: CHART_COLORS.text,
+                textColor: chrome.text,
             },
             grid: {
-                vertLines: { color: CHART_COLORS.grid },
-                horzLines: { color: CHART_COLORS.grid },
+                vertLines: { color: chrome.grid },
+                horzLines: { color: chrome.grid },
             },
             timeScale: { borderVisible: false },
             rightPriceScale: {

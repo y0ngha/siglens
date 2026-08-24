@@ -168,6 +168,16 @@
     /* Brand — Social login */
     --color-brand-kakao: #fee500;
 
+    /* 외부 브랜드가 색을 지정한 **고정 표면** 위의 텍스트/경계.
+       구글 버튼은 두 테마 모두 흰 배경이어야 하고(브랜드 가이드), 카카오는
+       항상 노란 배경이다. 이런 자리에 램프 토큰을 쓰면 라이트에서 값이
+       뒤집혀 흰 버튼에 흰 글자가 된다 — 실제로 그렇게 깨져 있었다.
+       테마와 무관하게 고정되어야 하므로 램프 밖에 둔다. */
+    --color-on-fixed-light: #16181d;
+    --color-on-fixed-light-muted: #5c626d;
+    --color-fixed-light-border: #d4d7dd;
+    --color-fixed-light-hover: #f1f2f5;
+
     /* vaul이 `[data-vaul-handle]`에 하드코딩한 배경색. 디자인 선택이 아니라 외부 제약이며,
        MobileSheetPlaceholder의 정적 손잡이가 실제 시트와 픽셀 단위로 일치해야 교체가
        보이지 않는다. secondary-200(#e2e8f0)과 비슷하지만 그쪽이 재조정되면 일치가
@@ -247,6 +257,10 @@
  * 극히 낮아 감수한다.
  */
 :root[data-theme='light'] {
+    /* 네이티브 스크롤바·폼 컨트롤이 테마를 따라가게 한다. 인라인 스크립트도
+       `style.colorScheme`을 세팅하지만 JS가 없는 환경에는 이 선언만 남는다. */
+    color-scheme: light;
+
     /* 표면 — 카드(800)가 페이지(900)보다 밝다. 라이트 UI의 관례이며,
        램프 번호 순서와 어긋나는 것은 의도된 결과다(상단 주석 참조). */
     --color-secondary-950: #eff0f3;
@@ -330,6 +344,16 @@
     display: none; /* WebKit (Chrome/Safari/Edge) */
 }
 
+/*
+ * `color-scheme` 폴백. 인라인 스크립트가 `style.colorScheme`을 직접 세팅하지만,
+ * JS가 꺼진 환경(크롤러, 일부 접근성 도구)에서는 그 경로가 없다. 예전에는
+ * `<html class="scheme-dark">`가 이 역할을 했는데 테마 전환을 위해 걷어냈으므로
+ * CSS로 되살린다. 이게 있어야 네이티브 스크롤바·폼 컨트롤이 배경과 어긋나지 않는다.
+ */
+:root {
+    color-scheme: dark;
+}
+
 body {
     /* Tailwind v4 preflight가 --font-sans를 자동 매핑하지만, 한글 폰트 fallback이
        실제로 발동되는지 시각 확인이 어려워 명시적으로 한 번 더 박는다. var() 체인
@@ -376,6 +400,17 @@ body {
 }
 
 @layer base {
+    /*
+     * Tailwind는 `--tw-ring-offset-color` 기본값을 `#fff`로 굽는다. 색을 명시하지
+     * 않은 `ring-offset-2`가 35곳 있는데, 다크에서는 흰 후광이 뜨고 라이트에서는
+     * 흰 배경에 묻혀 링 간격이 사라진다. 페이지 배경 토큰으로 기본값을 바꾸면
+     * 두 테마에서 모두 "배경색 간격"이라는 원래 의도대로 동작한다.
+     * (색을 명시한 `ring-offset-secondary-*` 42곳은 그대로 우선한다.)
+     */
+    * {
+        --tw-ring-offset-color: var(--color-secondary-900);
+    }
+
     button,
     [type='button'],
     [type='reset'],

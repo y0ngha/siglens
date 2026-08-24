@@ -56,7 +56,7 @@ export function HowItWorks({ skillCounts }: HowItWorksProps) {
                         </div>
                         {idx < STEPS.length - 1 && (
                             <div
-                                className="hidden items-center text-xl text-secondary-600 md:flex"
+                                className="hidden items-center text-xl text-secondary-500 md:flex"
                                 aria-hidden="true"
                             >
                                 →

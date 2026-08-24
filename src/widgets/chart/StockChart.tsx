@@ -9,7 +9,7 @@ import type {
     UTCTimestamp,
 } from 'lightweight-charts';
 import { CandlestickSeries, createChart } from 'lightweight-charts';
-import { CHART_COLORS } from '@/shared/lib/chartColors';
+import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
 import type {
     Bar,
     IndicatorResult,
@@ -74,6 +74,7 @@ import {
     type IndicatorBinding,
     type IndicatorKey,
 } from './model/indicatorRegistry';
+import { useChartThemeSync } from './hooks/useChartThemeSync';
 
 interface CommonHookParams {
     chartRef: RefObject<IChartApi | null>;
@@ -118,6 +119,9 @@ export function StockChart({
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
+
+    /* 테마 전환 시 크롬만 교체(리마운트 없음). */
+    useChartThemeSync(chartRef);
     const seriesRef = useRef<ISeriesApi<'Candlestick', UTCTimestamp> | null>(
         null
     );
@@ -156,15 +160,19 @@ export function StockChart({
     useEffect(() => {
         if (!containerRef.current) return;
 
+        /* 생성 시점의 테마에 맞는 크롬. 이후 전환은 useChartThemeSync가
+           applyOptions로 처리한다(리마운트 금지 — 줌·스크롤 위치 보존). */
+        const chrome = getChartChrome();
+
         const chart = createChart(containerRef.current, {
             autoSize: true,
             layout: {
-                background: { color: CHART_COLORS.background },
-                textColor: CHART_COLORS.text,
+                background: { color: chrome.background },
+                textColor: chrome.text,
             },
             grid: {
-                vertLines: { color: CHART_COLORS.grid },
-                horzLines: { color: CHART_COLORS.grid },
+                vertLines: { color: chrome.grid },
+                horzLines: { color: chrome.grid },
             },
         });
 

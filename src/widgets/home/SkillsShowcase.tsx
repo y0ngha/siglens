@@ -108,7 +108,7 @@ function ConfidenceInfoTooltip() {
                     e.stopPropagation();
                     toggle();
                 }}
-                className="cursor-help rounded text-xs leading-none text-secondary-600 transition-colors hover:text-secondary-400 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                className="cursor-help rounded text-xs leading-none text-secondary-500 transition-colors hover:text-secondary-400 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
                 ⓘ
             </button>

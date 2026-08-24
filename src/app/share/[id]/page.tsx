@@ -63,7 +63,7 @@ export default async function SharePage({ params }: Props) {
                 <span className="text-sm font-medium text-secondary-500">
                     {SITE_NAME}
                 </span>
-                <span className="text-sm text-secondary-600">/</span>
+                <span className="text-sm text-secondary-500">/</span>
                 <span className="text-lg font-bold text-secondary-100">
                     {ticker}
                 </span>

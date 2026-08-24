@@ -40,7 +40,7 @@ export function BacktestCaseList({ cases }: BacktestCaseListProps) {
         <div className="flex flex-col gap-2 px-4 pb-6">
             {groups.map(group => (
                 <div key={group.label}>
-                    <div className="pt-3 pb-1 text-[10px] tracking-widest text-secondary-600 uppercase">
+                    <div className="pt-3 pb-1 text-[10px] tracking-widest text-secondary-500 uppercase">
                         {group.label}
                     </div>
                     <div className="flex flex-col gap-2">

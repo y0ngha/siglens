@@ -141,7 +141,7 @@ export default function BacktestingPage() {
                     aria-label="투자 면책 고지"
                     className="border-t border-secondary-800 px-6 py-4"
                 >
-                    <p className="text-center text-[11px] text-secondary-600">
+                    <p className="text-center text-[11px] text-secondary-500">
                         * 본 결과는 과거 데이터 기반 백테스팅이며 미래 수익을
                         보장하지 않습니다. 투자 판단의 책임은 투자자 본인에게
                         있습니다.

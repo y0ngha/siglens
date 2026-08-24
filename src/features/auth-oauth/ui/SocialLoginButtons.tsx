@@ -43,15 +43,21 @@ const PROVIDERS: readonly SocialProvider[] = [
         id: 'google',
         label: 'Continue with Google',
         icon: <GoogleIcon />,
+        /*
+           구글 브랜드 가이드가 흰 배경을 요구하는 **고정 표면**이다. 램프
+           토큰(`text-secondary-900` 등)을 쓰면 라이트 테마에서 값이 뒤집혀
+           흰 버튼에 흰 글자, 호버 시 버튼이 검게 변하는 상태가 된다.
+           그래서 테마와 무관한 `*-fixed-light-*` 토큰을 쓴다.
+        */
         buttonClassName:
-            'bg-white text-secondary-900 hover:bg-secondary-100 ring-1 ring-secondary-200',
+            'bg-white text-on-fixed-light hover:bg-fixed-light-hover ring-1 ring-fixed-light-border',
     },
     // {
     //     id: 'kakao',
     //     label: '카카오로 시작하기',
     //     icon: <span aria-hidden className="font-mono text-base">K</span>,
     //     buttonClassName:
-    //         'bg-brand-kakao text-secondary-900 hover:brightness-95',
+    //         'bg-brand-kakao text-on-fixed-light hover:brightness-95',
     // },
 ];
 

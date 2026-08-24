@@ -195,7 +195,7 @@ export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
                             >
                                 <span
                                     aria-hidden="true"
-                                    className="mt-0.5 shrink-0 text-secondary-600"
+                                    className="mt-0.5 shrink-0 text-secondary-500"
                                 >
                                     •
                                 </span>

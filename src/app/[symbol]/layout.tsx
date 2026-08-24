@@ -308,7 +308,7 @@ function SymbolHeaderShellFallback() {
                     <span className="font-mono text-xs tracking-[0.2em] text-secondary-500 uppercase">
                         SIGLENS
                     </span>
-                    <span className="text-secondary-700">/</span>
+                    <span className="text-secondary-500">/</span>
                     <span className="inline-block h-5 w-32 animate-pulse rounded bg-secondary-700" />
                 </div>
                 <span className="inline-block h-8 w-36 shrink-0 animate-pulse rounded-md bg-secondary-700" />

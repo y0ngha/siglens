@@ -78,7 +78,7 @@ export function SymbolLayoutHeader({
                     >
                         SIGLENS
                     </Link>
-                    <span className="text-secondary-700">/</span>
+                    <span className="text-secondary-500">/</span>
                     {/* 종목 브레드크럼은 5개 sibling 페이지(/[symbol], /news,
                         /fundamental, /options, /overall, /fear-greed)에 공통으로
                         렌더되므로 h1으로 두면 페이지별 sr-only h1과 충돌해 페이지당

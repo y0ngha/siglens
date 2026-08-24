@@ -1026,7 +1026,7 @@ export function AnalysisPanel({
 
                                 // [1. 로딩/분석 중 상태]
                                 (showProgress || isAnalyzing) &&
-                                    'border-secondary-700 text-secondary-600 cursor-not-allowed',
+                                    'border-secondary-700 text-secondary-500 cursor-not-allowed',
 
                                 // [2. 일반 상태 (진행 중이 아닐 때만 적용)]
                                 !showProgress &&
@@ -1159,7 +1159,7 @@ export function AnalysisPanel({
                                                         }
                                                     )}
                                                 </span>
-                                                <span className="inline-flex items-center text-xs text-secondary-600">
+                                                <span className="inline-flex items-center text-xs text-secondary-500">
                                                     {level.reason}
                                                     <ConfluenceInfo
                                                         level={level}
@@ -1188,7 +1188,7 @@ export function AnalysisPanel({
                                                         }
                                                     )}
                                                 </span>
-                                                <span className="inline-flex items-center text-xs text-secondary-600">
+                                                <span className="inline-flex items-center text-xs text-secondary-500">
                                                     {level.reason}
                                                     <ConfluenceInfo
                                                         level={level}
@@ -1213,7 +1213,7 @@ export function AnalysisPanel({
                                             }
                                         )}
                                     </span>
-                                    <span className="text-xs text-secondary-600">
+                                    <span className="text-xs text-secondary-500">
                                         {keyLevels.poc.reason}
                                     </span>
                                 </div>

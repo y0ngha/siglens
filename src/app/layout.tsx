@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import type { ReactNode } from 'react';
 import Script from 'next/script';
 import { Geist, Geist_Mono } from 'next/font/google';
@@ -125,10 +126,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-    /* secondary-900(다크 페이지 배경)과 일치해야 모바일 브라우저 크롬이
-       페이지와 이어져 보인다. 라이트 테마 대응(미디어 배열 전환)은 테마
-       배선 PR에서 인라인 스크립트의 meta 갱신과 함께 붙인다. */
-    themeColor: '#09090b',
+    /* 모바일 브라우저 상단 바 색. 페이지 배경(secondary-900)과 일치해야 화면이
+       이어져 보인다. 미디어 배열은 **시스템 선호도**만 따르므로, 사용자가
+       명시적으로 반대 테마를 고른 경우는 `useTheme`이 이 meta 태그를 직접
+       갱신해 맞춘다. */
+    themeColor: [
+        { media: '(prefers-color-scheme: light)', color: '#f7f8fa' },
+        { media: '(prefers-color-scheme: dark)', color: '#09090b' },
+    ],
     viewportFit: 'cover',
 };
 
@@ -140,8 +145,24 @@ export default function RootLayout({ children }: RootLayoutProps) {
     return (
         <html
             lang="ko"
-            className={`${geistSans.variable} ${geistMono.variable} ${pretendard.variable} h-full overflow-x-hidden antialiased scheme-dark`}
+            /* 인라인 스크립트가 하이드레이션 전에 data-theme과 colorScheme을 바꾼다.
+               이 속성이 없으면 React가 서버/클라 속성 불일치를 경고한다. */
+            suppressHydrationWarning
+            className={`${geistSans.variable} ${geistMono.variable} ${pretendard.variable} h-full overflow-x-hidden antialiased`}
         >
+            <head>
+                {/*
+                    렌더 블로킹이 **의도된** 유일한 스크립트다. 모든 라우트가 ISR
+                    정적이라 서버는 테마를 모르고, 쿠키로 넘기면 공유 셸이 dynamic이
+                    되어 전 라우트 ISR이 깨진다(축 0 규약). 첫 페인트 전에 속성을
+                    찍지 않으면 다크 셸이 칠해진 뒤 라이트로 바뀌는 깜빡임이 난다.
+                    스크립트 본문과 근거는 `shared/lib/theme.ts` 참조.
+                */}
+                <script
+                    // eslint-disable-next-line react/no-danger
+                    dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
+                />
+            </head>
             {/* overflow-x-hidden on both html and body prevents fixed/transformed elements (mobile drawer)
                 from extending the document scrollWidth past the viewport edge. */}
             <body className="flex min-h-full flex-col overflow-x-hidden">

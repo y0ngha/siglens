@@ -583,7 +583,7 @@ export function PositionBuilding({
                     y2={GROUND_FRONT_Y}
                     stroke="currentColor"
                     strokeWidth={1}
-                    className="text-secondary-700"
+                    className="text-secondary-500"
                 />
                 {/* 좌/우 외곽선 */}
                 <line
@@ -593,7 +593,7 @@ export function PositionBuilding({
                     y2={GROUND_EAVE_Y}
                     stroke="currentColor"
                     strokeWidth={1}
-                    className="text-secondary-700"
+                    className="text-secondary-500"
                 />
                 <line
                     x1={CENTER_X + ISO_DX}
@@ -602,7 +602,7 @@ export function PositionBuilding({
                     y2={GROUND_EAVE_Y}
                     stroke="currentColor"
                     strokeWidth={1}
-                    className="text-secondary-700"
+                    className="text-secondary-500"
                 />
                 {/* 지면 */}
                 <ellipse

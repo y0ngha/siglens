@@ -37,7 +37,7 @@ export default function NotFound() {
                         <p className="text-sm text-secondary-400">
                             실제로 있는 종목인데 찾을 수 없나요?
                         </p>
-                        <p className="mt-1 text-xs text-secondary-600">
+                        <p className="mt-1 text-xs text-secondary-500">
                             시스템 오류일 수 있습니다. 알려주시면
                             확인하겠습니다.
                         </p>

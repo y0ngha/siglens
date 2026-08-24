@@ -164,7 +164,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
             </div>
 
             <div className="border-t border-secondary-700 px-3 py-2">
-                <div className="mb-1.5 flex items-center gap-1.5 text-[10px] text-secondary-600">
+                <div className="mb-1.5 flex items-center gap-1.5 text-[10px] text-secondary-500">
                     <ModelSelect
                         options={CHAT_MODEL_OPTIONS}
                         selected={selectedModel}
@@ -195,7 +195,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                         autoCapitalize="sentences"
                         autoCorrect="on"
                         className={cn(
-                            'border-secondary-600 bg-secondary-800 text-secondary-200 placeholder:text-secondary-600 min-h-11 flex-1 resize-none rounded-lg border px-3 py-1.5 text-base leading-relaxed transition-colors outline-none md:min-h-8 md:text-xs',
+                            'border-secondary-600 bg-secondary-800 text-secondary-200 placeholder:text-secondary-500 min-h-11 flex-1 resize-none rounded-lg border px-3 py-1.5 text-base leading-relaxed transition-colors outline-none md:min-h-8 md:text-xs',
                             'focus:border-primary-500',
                             isInputDisabled && 'cursor-not-allowed opacity-50'
                         )}

@@ -135,7 +135,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                         </span>
                     </div>
                     <span
-                        className="shrink-0 text-secondary-600"
+                        className="shrink-0 text-secondary-500"
                         aria-hidden="true"
                     >
                         →
@@ -144,7 +144,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                         <span className="tabular-nums">{c.holdingDays}</span>일
                     </span>
                     <span
-                        className="shrink-0 text-secondary-600"
+                        className="shrink-0 text-secondary-500"
                         aria-hidden="true"
                     >
                         →

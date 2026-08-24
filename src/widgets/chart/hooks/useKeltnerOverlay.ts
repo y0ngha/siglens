@@ -105,8 +105,8 @@ export function useKeltnerOverlay({
 
         if (!lowerSeriesRef.current) {
             lowerSeriesRef.current = chart.addSeries(AreaSeries, {
-                topColor: CHART_COLORS.background,
-                bottomColor: CHART_COLORS.background,
+                topColor: CHART_COLORS.transparentFill,
+                bottomColor: CHART_COLORS.transparentFill,
                 lineColor: CHART_COLORS.keltnerLower,
                 lineWidth,
                 priceLineVisible: false,
