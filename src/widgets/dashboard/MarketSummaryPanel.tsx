@@ -132,12 +132,17 @@ export function MarketSummaryPanel({
                                 <p className={cn('mb-1.5', LABEL_KO)}>
                                     {group.label}
                                 </p>
+                                {/* 모바일에서는 2열로 접는다. 바로 위 지수 그리드가
+                                    이미 `grid-cols-2 sm:grid-cols-4`인데 이쪽만
+                                    반응형 접두사가 없어, 320px에서 카드가 66px로
+                                    눌리고 `shrink-0`인 등락률 배지(73px)가 카드를
+                                    33px 넘겼다 — 가격이 `$18`처럼 잘렸다. */}
                                 <div
                                     className={cn(
-                                        'grid gap-2',
+                                        'grid grid-cols-2 gap-2',
                                         groupSectors.length === 3
-                                            ? 'grid-cols-3'
-                                            : 'grid-cols-4'
+                                            ? 'sm:grid-cols-3'
+                                            : 'sm:grid-cols-4'
                                     )}
                                 >
                                     {groupSectors.map(etf => (
