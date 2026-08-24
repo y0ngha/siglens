@@ -10,7 +10,7 @@ import {
     ROOT_TITLE,
     SITE_DESCRIPTION,
 } from '@/shared/lib/seo';
-import { buildHomeHowToJsonLd, HOME_FAQ_JSON_LD } from '@/app/homeJsonLd';
+import { HOME_FAQ_JSON_LD } from '@/app/homeJsonLd';
 import { NEWS_HUB_DESCRIPTION, NEWS_HUB_TITLE } from '@/app/news/page';
 
 const SKILL_COUNTS = {
@@ -36,15 +36,11 @@ const SKILL_COUNTS = {
  * 여기서 동시에 깨진다. 문장은 사람이 쓰되, 커버리지는 기계가 강제한다.
  */
 describe('자산군 커버리지 동기화', () => {
-    const HOWTO = buildHomeHowToJsonLd(SKILL_COUNTS);
-
     const SURFACES: Array<[string, string]> = [
         ['ROOT_TITLE', ROOT_TITLE],
         ['ROOT_HEADLINE', ROOT_HEADLINE],
         ['SITE_DESCRIPTION', SITE_DESCRIPTION],
         ['ROOT_KEYWORDS', ROOT_KEYWORDS.join(' ')],
-        ['HowTo.name', HOWTO.name],
-        ['HowTo.description', HOWTO.description],
         [
             'FAQ 서비스 소개 답변',
             HOME_FAQ_JSON_LD.mainEntity[0]!.acceptedAnswer.text,

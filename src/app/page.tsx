@@ -2,12 +2,11 @@ import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';
 import { SymbolSearchPanel } from '@/features/ticker-search';
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { buildHomeHowToJsonLd, HOME_FAQ_JSON_LD } from './homeJsonLd';
+import { HOME_FAQ_JSON_LD } from './homeJsonLd';
 import {
     CryptoShowcase,
     HeroIllustration,
     HERO_QUICK_LINKS,
-    HowItWorks,
     SkillsShowcase,
     SkillsShowcaseSkeleton,
     StatsBar,
@@ -111,14 +110,11 @@ export default async function Home() {
         sameAs: ['https://github.com/y0ngha/siglens'],
     };
 
-    const howToJsonLd = buildHomeHowToJsonLd(skillCounts);
-
     return (
         <>
             <JsonLd data={jsonLd} />
             <JsonLd data={webPageJsonLd} />
             <JsonLd data={organizationJsonLd} />
-            <JsonLd data={howToJsonLd} />
             <JsonLd data={HOME_FAQ_JSON_LD} />
             <a
                 href="#search"
@@ -203,7 +199,6 @@ export default async function Home() {
                         </Suspense>
                     </div>
                 </section>
-                <HowItWorks skillCounts={skillCounts} />
                 <section className="page-container pb-8">
                     {/*
                         백테스팅은 이 제품이 "믿을 만한가"에 답하는 유일한 실증인데
