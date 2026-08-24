@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.62.0](https://github.com/y0ngha/siglens/compare/v0.61.1...v0.62.0) (2026-08-24)
+
+
+### Features
+
+* **seo:** 심볼 페이지 SEO 결함 3종 수정 (고아링크·콘텐츠게이트·JSON-LD) ([7be2222](https://github.com/y0ngha/siglens/commit/7be2222277ae26f6a07192f9c330d55aff884fa9))
+
 ## [0.61.1](https://github.com/y0ngha/siglens/compare/v0.61.0...v0.61.1) (2026-08-24)
 
 
