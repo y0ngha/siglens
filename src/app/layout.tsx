@@ -125,7 +125,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-    themeColor: '#0f172a',
+    /* secondary-900(다크 페이지 배경)과 일치해야 모바일 브라우저 크롬이
+       페이지와 이어져 보인다. 라이트 테마 대응(미디어 배열 전환)은 테마
+       배선 PR에서 인라인 스크립트의 meta 갱신과 함께 붙인다. */
+    themeColor: '#09090b',
     viewportFit: 'cover',
 };
 

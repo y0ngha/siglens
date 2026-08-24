@@ -1,7 +1,24 @@
 @import 'tailwindcss';
 
+/*
+ * 토큰 2계층 구조 (2026-08 리디자인).
+ *
+ * 계층 1 = 아래 `primary-*` / `secondary-*` 램프. 프로덕션 2,400여 곳이 이미
+ *   이 이름을 참조하므로 **이름은 고정하고 값만 재지정**한다. Tailwind v4는
+ *   평범한 유틸리티를 `var(--color-*)`로 컴파일하므로(4.3.0 실측), 값 교체가
+ *   전 코드베이스에 그대로 전파된다.
+ * 계층 2 = 파일 하단 `@theme inline` 시맨틱 별칭(`surface`/`fg`/`accent`…).
+ *   신규·재작성 코드는 계층 2만 참조한다. 계층 1은 호환 레이어로 남는다.
+ *
+ * 램프는 **단조롭지 않아도 된다** — 그라데이션이 아니라 이름 붙은 역할이다.
+ * 라이트 테마에서 800(카드)이 900(페이지)보다 밝은 것이 대표적이며 의도된
+ * 배치다. 코드베이스의 그라데이션 정지점은 3개 파일 5곳뿐이라 이 비단조성이
+ * 시각적으로 드러나지 않는다.
+ */
 @theme {
-    /* Primary — Trust Blue */
+    /* Primary — Signal Blue. 로고(블루-틸 마크)와 정합하는 브랜드 액센트.
+       400=링크·활성 텍스트, 500=포커스 링, 600=채움 버튼 배경. 라이트에서는
+       400이 어두워지고 600은 그대로 남는다(파일 하단 라이트 테이블 참조). */
     --color-primary-50: #eff6ff;
     --color-primary-100: #dbeafe;
     --color-primary-200: #bfdbfe;
@@ -14,18 +31,36 @@
     --color-primary-900: #1e3a8a;
     --color-primary-950: #172554;
 
-    /* Secondary — Slate */
-    --color-secondary-50: #f8fafc;
-    --color-secondary-100: #f1f5f9;
-    --color-secondary-200: #e2e8f0;
-    --color-secondary-300: #cbd5e1;
-    --color-secondary-400: #94a3b8;
-    --color-secondary-500: #64748b;
-    --color-secondary-600: #475569;
-    --color-secondary-700: #334155;
-    --color-secondary-800: #1e293b;
-    --color-secondary-900: #0f172a;
-    --color-secondary-950: #020617;
+    /* Secondary — Neutral Ink. 이전 Tailwind `slate-*` 원본에서 교체됐다.
+       slate는 푸른 기가 돌아 브랜드 블루와 섞이고 "기본값"으로 읽혔다.
+       색조 없는 뉴트럴로 바꿔 액센트가 화면에서 유일한 채도를 갖게 한다.
+
+       역할 고정 (2,400여 참조가 이 역할에 의존한다):
+         950 인셋(입력·차트 우물) · 900 페이지 · 800 카드 · 700 보더/호버 틴트
+         600 강조 보더 · 500~50 텍스트 램프(어두움→밝음)
+
+       대비 목표는 AA(4.5:1)가 아니라 **AAA(7:1)**다. 본문(300)·헤딩(100)·
+       보조 텍스트(400)는 페이지·카드 양쪽에서 7:1을 넘는다. 가장 흐린
+       단계인 500만 6.5:1 부근으로 AAA에 살짝 못 미치는데, 여기서 더 밝히면
+       400과 구분이 사라져 위계가 무너지므로 의도적으로 멈춘 지점이다.
+       (이전 slate-500 #64748b는 페이지 배경에서 3.75:1로 AA조차 미달이었다.) */
+    --color-secondary-50: #f4f4f6;
+    --color-secondary-100: #ecedf0;
+    --color-secondary-200: #dcdde2;
+    --color-secondary-300: #c6c7ce;
+    --color-secondary-400: #abacb6;
+    --color-secondary-500: #96979f;
+    --color-secondary-600: #3a3a45;
+    --color-secondary-700: #2a2a33;
+    --color-secondary-800: #101014;
+    --color-secondary-900: #09090b;
+    --color-secondary-950: #050507;
+
+    /* 컨트롤 경계 전용. WCAG 1.4.11(비텍스트 대비)은 입력·버튼처럼 **상태를
+       경계선으로만 알리는** 요소에 3:1을 요구한다. 장식용 카드 보더
+       (secondary-700)는 이 대상이 아니라 별도 토큰으로 분리했다.
+       다크 3.57:1 / 라이트 3.30:1 (양 테마 실측). */
+    --color-border-control: #6a6a78;
 
     /* Chart — Semantic */
     --color-chart-bullish: #26a69a;
@@ -156,6 +191,106 @@
         var(--font-geist-sans), var(--font-pretendard), -apple-system,
         blinkmacsystemfont, system-ui, 'Helvetica Neue', arial, sans-serif;
     --font-mono: var(--font-geist-mono);
+}
+
+/*
+ * 계층 2 — 시맨틱 토큰. **신규·재작성 코드는 이것만 쓴다.**
+ *
+ * `@theme inline`이라 `.bg-surface`가 `var(--color-surface)`가 아니라
+ * `var(--color-secondary-800)`으로 직접 컴파일된다(4.3.0 실측). 즉 참조가
+ * 한 단계만 남아 램프 재지정이 그대로 흐르고, `:root`에 중복 변수도 안 생긴다.
+ *
+ * 램프 스텝 번호는 "얼마나 어두운가"를 뜻하지만 시맨틱 이름은 "무슨 역할인가"를
+ * 뜻한다. 라이트 테마에서 스텝 번호의 의미는 뒤집히지만 역할은 그대로이므로,
+ * 페이지를 재작업할 때마다 이 이름으로 갈아타면 테마 대응이 자동으로 끝난다.
+ */
+@theme inline {
+    /* 표면 — 3단계로 고정한다. 이전에는 임의 알파 조합이 20종이었다. */
+    --color-surface: var(--color-secondary-800);
+    --color-surface-raised: var(--color-secondary-700);
+    --color-surface-inset: var(--color-secondary-950);
+    --color-surface-page: var(--color-secondary-900);
+
+    /* 경계 — 장식용과 컨트롤용을 구분한다(위 border-control 주석 참조). */
+    --color-border-subtle: var(--color-secondary-700);
+    --color-border-strong: var(--color-secondary-600);
+
+    /* 전경 */
+    --color-fg: var(--color-secondary-50);
+    --color-fg-heading: var(--color-secondary-100);
+    --color-fg-body: var(--color-secondary-300);
+    --color-fg-muted: var(--color-secondary-400);
+    --color-fg-faint: var(--color-secondary-500);
+
+    /* 액센트 — 뷰포트당 2곳까지만. 주 액션과 현재 위치 표시. */
+    --color-accent: var(--color-primary-400);
+    --color-accent-fill: var(--color-primary-600);
+    --color-accent-ring: var(--color-primary-500);
+}
+
+/*
+ * 라이트 테마 값 테이블.
+ *
+ * `@layer theme` 밖(언레이어드)이라 `@theme`이 `:root`에 심은 값을 무조건
+ * 이긴다 — 명시도가 아니라 캐스케이드 레이어 규칙이다(4.3.0 실측).
+ *
+ * `prefers-color-scheme` 미디어 쿼리를 **일부러 넣지 않았다.** 이 블록은
+ * `data-theme="light"`가 명시적으로 찍히기 전까지 비활성이며, 그 속성은
+ * 테마 배선 PR에서 인라인 스크립트가 찍는다. 토큰만 먼저 정의하고 활성화는
+ * 나중에 하는 이유는, 페이지별 대비 점검이 끝나기 전에 라이트가 켜지면
+ * 검증되지 않은 화면이 사용자에게 노출되기 때문이다.
+ *
+ * 알려진 한계: `bg-x/50` 같은 불투명도 변형은 Tailwind가
+ * `@supports (color-mix in lab)` **밖에** 다크 리터럴 폴백을 굽는다. 해당
+ * 기능이 없는 브라우저(2023-05 이전 Chrome 111 / Safari 16.2 / Firefox 113
+ * 미만)는 라이트 테마에서도 그 자리에 다크 값을 그린다. 대상 사용자 비중이
+ * 극히 낮아 감수한다.
+ */
+:root[data-theme='light'] {
+    /* 표면 — 카드(800)가 페이지(900)보다 밝다. 라이트 UI의 관례이며,
+       램프 번호 순서와 어긋나는 것은 의도된 결과다(상단 주석 참조). */
+    --color-secondary-950: #eff0f3;
+    --color-secondary-900: #f7f8fa;
+    --color-secondary-800: #fff;
+    --color-secondary-700: #e6e8ec;
+    --color-secondary-600: #cfd3da;
+
+    /* 텍스트 램프 — 다크와 반대로 번호가 커질수록 **밝아진다**.
+       프로미넌스 서열(400이 500보다 눈에 띈다)은 두 테마에서 동일하게
+       유지되어야 하므로, 라이트에서는 400이 500보다 어둡다.
+       400은 페이지·카드에서 7.4~7.9:1로 AAA를 넘는다. */
+    --color-secondary-500: #565c66;
+    --color-secondary-400: #4d525b;
+    --color-secondary-300: #3e434d;
+    --color-secondary-200: #2b303a;
+    --color-secondary-100: #1f222a;
+    --color-secondary-50: #16181d;
+    --color-border-control: #878e9a;
+
+    /* 액센트 — 400(링크 텍스트)은 흰 배경에서 AAA(8.2:1)가 되도록 진하게,
+       600(채움 배경)은 흰 글자가 6.7:1이 되도록 한 단계 어둡게 잡는다.
+       다크에서 채움이 #2563eb인 것과 값이 갈리는 이유다. */
+    --color-primary-400: #1e40af;
+    --color-primary-500: #1d4ed8;
+    --color-primary-600: #1d4ed8;
+    --color-primary-300: #1e3a8a;
+    --color-primary-900: #dbeafe;
+    --color-primary-950: #eff6ff;
+
+    /* 상태 텍스트 — 다크 전용으로 튜닝된 값들이라 라이트에서는 1.4~1.9:1로
+       전멸한다. 밝은 변형의 어두운 짝을 따로 정의한다. */
+    --color-ui-success-text: #0a5b52;
+    --color-ui-danger-text: #a02420;
+    --color-ui-warning-text: #7a4f00;
+
+    /* 그래픽 — 흰 배경에서 3:1을 넘기도록 진하게. 캔들/추세 색이므로
+       상승=틸, 하락=레드 관례는 유지한다. */
+    --color-ui-success: #0f8074;
+    --color-ui-danger: #d2352f;
+    --color-ui-warning: #b45309;
+    --color-chart-bullish: #0f8074;
+    --color-chart-bearish: #d2352f;
+    --color-chart-neutral: #565c66;
 }
 
 /*

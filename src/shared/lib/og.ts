@@ -2,10 +2,16 @@
 export const OG_IMAGE_WIDTH = 1200;
 export const OG_IMAGE_HEIGHT = 630;
 
-export const OG_BG = '#0f172a';
+/*
+ * OG 이미지는 **항상 다크 고정**이다. 소셜 카드에는 테마 맥락이 없고,
+ * `force-static` + 30일 revalidate로 캐시되므로 테마별 변형을 만들면 캐시만
+ * 두 배가 되고 얻는 게 없다. 값은 다크 테마 램프와 짝을 맞춘다
+ * (secondary-900 / primary-500 / secondary-400).
+ */
+export const OG_BG = '#09090b';
 export const OG_FG = '#ffffff';
 export const OG_ACCENT = '#3b82f6';
-export const OG_MUTED = '#94a3b8';
+export const OG_MUTED = '#a0a1ac';
 
 export const OG_CONTAINER_PADDING = '80px';
 export const OG_TICKER_FONT_SIZE = 240;

@@ -1,8 +1,17 @@
 export const CHART_COLORS = {
-    // 차트 배경 / 그리드 / 텍스트
-    background: '#0f172a',
-    grid: '#1e293b',
-    text: '#94a3b8',
+    /*
+     * 차트 크롬(배경 / 그리드 / 축 텍스트). **이 3키만 테마에 따라 변한다** —
+     * 나머지 90여 키는 지표 고유 색이라 두 테마에서 동일하다. 값은
+     * `globals.css`의 secondary-900 / 800·700 사이 / 500과 짝을 이룬다
+     * (`DESIGN.md`의 단일 진실 공급원 규약).
+     *
+     * lightweight-charts는 CSS 변수를 읽지 못해 JS 리터럴이어야 한다. 라이트
+     * 테마 대응은 테마 배선 PR에서 `CHART_COLORS_LIGHT` 오버라이드 맵으로
+     * 붙인다 — 이 객체의 키 모양은 그대로 두므로 41개 소비처가 무변경이다.
+     */
+    background: '#09090b',
+    grid: '#1f1f26',
+    text: '#96979f',
 
     // 상승 / 하락 / 중립
     bullish: '#26a69a',

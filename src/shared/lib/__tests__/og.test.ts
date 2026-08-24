@@ -25,8 +25,8 @@ describe('OG image dimensions', () => {
 });
 
 describe('OG color constants', () => {
-    it('OG_BG is dark navy hex color', () => {
-        expect(OG_BG).toBe('#0f172a');
+    it('OG_BG is neutral black hex color', () => {
+        expect(OG_BG).toBe('#09090b');
     });
 
     it('OG_FG is white', () => {
@@ -37,8 +37,8 @@ describe('OG color constants', () => {
         expect(OG_ACCENT).toBe('#3b82f6');
     });
 
-    it('OG_MUTED is slate gray', () => {
-        expect(OG_MUTED).toBe('#94a3b8');
+    it('OG_MUTED is neutral gray', () => {
+        expect(OG_MUTED).toBe('#a0a1ac');
     });
 });
 
