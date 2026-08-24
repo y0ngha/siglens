@@ -159,17 +159,27 @@ const CROSS_MARKET_THEME_GROUPS: readonly (readonly string[])[] = [
         'GILD',
         'BMY',
     ],
+];
 
-    /*
-     * 아래 세 그룹은 **관련종목 전용 보강**이다. 원인은 하나 — 큐레이션 카테고리가
-     * 5~6종이라 8칸을 못 채우고 링이 블록 경계를 넘어 엉뚱한 종목을 끌어왔다
-     * (2026-08-25 전수 감사: 로켓랩→몬델리즈, 엑슨모빌→룰루레몬, 엔비디아2배→은행).
-     *
-     * `TICKER_CATEGORIES`를 넓히지 않고 여기에 두는 이유: 그 상수는 홈 디스커버리
-     * 카드에 그대로 렌더되는 제품 카피라, 관련종목 품질 때문에 홈 화면 구성을
-     * 바꾸는 건 범위를 넘는다.
-     */
-
+/**
+ * 큐레이션 카테고리가 작아 생기는 잡음을 메우는 **관련종목 전용 보강 그룹**.
+ *
+ * 시장을 넘지 않는다(전부 미국 심볼) — 그래서 `CROSS_MARKET_THEME_GROUPS`와
+ * 분리한다. 이름과 내용이 어긋나면 다음 사람이 여기에 한국 종목을 넣어도
+ * 되는지 판단할 근거를 잃는다(claude-review PR #768 지적).
+ *
+ * ## 왜 필요한가
+ *
+ * `TICKER_CATEGORIES`의 카테고리가 5~6종뿐이면 8칸을 못 채우고 링이 블록 경계를
+ * 넘어 엉뚱한 종목을 끌어온다 — 2026-08-25 전수 감사에서 로켓랩→몬델리즈,
+ * 엑슨모빌→룰루레몬, 엔비디아2배→은행, 일라이릴리→페덱스가 나왔다.
+ *
+ * ## 왜 `TICKER_CATEGORIES`를 넓히지 않는가
+ *
+ * 그 상수는 홈 디스커버리 카드에 그대로 렌더되는 **제품 카피**다. 관련종목
+ * 스트립 품질을 이유로 홈 화면 구성을 바꾸는 건 범위를 넘는다.
+ */
+const SUPPLEMENTAL_THEME_GROUPS: readonly (readonly string[])[] = [
     // AI 소프트웨어·애플리케이션 — 반도체(하드웨어) 층과 구분되는 응용 층.
     // `PLTR`이 `software-cloud`에만 속해 CRWD·SNOW·NOW만 나왔다. 한국 투자자가
     // 팔란티어를 찾는 맥락은 SaaS가 아니라 AI다(사용자 제보).
@@ -204,6 +214,7 @@ const THEME_GROUPS: readonly (readonly string[])[] = [
     ]),
     ...CRYPTO_CATEGORIES.map(c => c.items.map(i => i.symbol)),
     ...CROSS_MARKET_THEME_GROUPS,
+    ...SUPPLEMENTAL_THEME_GROUPS,
 ];
 
 /**

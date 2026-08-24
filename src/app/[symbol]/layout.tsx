@@ -11,11 +11,7 @@ import {
     SymbolLayoutProviders,
 } from '@/app/[symbol]/SymbolLayoutClient';
 import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
-// 배럴(`@/views/symbol`)이 아니라 직접 경로로 가져온다 — 배럴은
-// `FearGreedFactsSummary`까지 끌고 오고 그게 core의 `POC_WINDOW_DEFAULT`를
-// 모듈 스코프에서 읽는다. 이 레이아웃은 그 심볼이 필요 없고, 배럴로 받으면
-// 레이아웃을 테스트하는 쪽이 무관한 core export까지 목킹해야 한다.
-import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
+import { RelatedSymbols } from '@/views/symbol';
 import { SymbolTabsSkeleton } from '@/views/symbol/SymbolTabsSkeleton';
 import {
     DEFAULT_TIMEFRAME,
