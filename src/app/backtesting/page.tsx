@@ -136,12 +136,16 @@ export default function BacktestingPage() {
                     않으므로(useBacktestFilter 참고) Suspense 경계가 필요 없다 —
                     전체 케이스 목록이 그대로 SSR 정적 HTML에 포함된다. */}
                 <BacktestTabs cases={CLIENT_CASES} tickers={TICKERS} />
+                {/* 구분선은 전폭으로 두고 좌우 여백은 안쪽 `page-container`가
+                    갖는다 — 히어로의 `border-b`와 같은 구조라 두 띠가 같은 선에서
+                    끝난다. 바깥에 `page-container`를 걸면 구분선이 1200px에서
+                    잘려 형제 섹션과 어긋난다. */}
                 <div
                     role="note"
                     aria-label="투자 면책 고지"
-                    className="border-t border-secondary-800 px-6 py-4"
+                    className="border-t border-secondary-800 py-4"
                 >
-                    <p className="text-center text-[11px] text-secondary-500">
+                    <p className="page-container text-center text-[11px] text-secondary-500">
                         * 본 결과는 과거 데이터 기반 백테스팅이며 미래 수익을
                         보장하지 않습니다. 투자 판단의 책임은 투자자 본인에게
                         있습니다.
