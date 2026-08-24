@@ -12,7 +12,12 @@ import {
     CURATED_KOREAN_NAMES,
     POPULAR_TICKERS,
 } from '@/shared/config/popular-tickers';
-import { SECTOR_ETFS, SECTOR_STOCKS } from '@/shared/config/dashboard-tickers';
+import {
+    MARKET_INDICES,
+    SECTOR_ETFS,
+    SECTOR_STOCKS,
+} from '@/shared/config/dashboard-tickers';
+import { CRYPTO_CATEGORIES } from '@/shared/config/crypto-categories';
 import { KR_SYMBOL_RE } from '@/shared/config/ticker';
 
 const UNIVERSE: readonly string[] = [...POPULAR_TICKERS, ...POPULAR_CRYPTOS];
@@ -289,6 +294,64 @@ describe('relatedSymbolsFor', () => {
     });
 
     describe('앵커 텍스트', () => {
+        /**
+         * `KOREAN_NAMES`는 다섯 소스를 spread로 합치는데, `Map` 생성자는 같은 키가
+         * 두 번 오면 **나중 값으로 조용히 덮어쓴다.** 지금은 어긋나는 심볼이 없지만
+         * 그건 우연이고, 소스를 추가하면 예고 없이 이름이 바뀔 수 있다
+         * (claude-review PR #765 제안). 충돌을 즉시 실패로 만든다.
+         */
+        it('소스 간 한글명이 어긋나지 않는다 (조용한 덮어쓰기 방지)', () => {
+            const sources: readonly (readonly (readonly [string, string])[])[] =
+                [
+                    [...CURATED_KOREAN_NAMES],
+                    SECTOR_STOCKS.map(x => [x.symbol, x.koreanName] as const),
+                    SECTOR_ETFS.map(x => [x.symbol, x.koreanName] as const),
+                    MARKET_INDICES.map(x => [x.symbol, x.koreanName] as const),
+                    CRYPTO_CATEGORIES.flatMap(c =>
+                        c.items.map(i => [i.symbol, i.name] as const)
+                    ),
+                ];
+            const seen = new Map<string, string>();
+            const conflicts: string[] = [];
+            for (const source of sources) {
+                for (const [symbol, name] of source) {
+                    const prior = seen.get(symbol);
+                    if (prior !== undefined && prior !== name) {
+                        conflicts.push(`${symbol}: "${prior}" vs "${name}"`);
+                    }
+                    seen.set(symbol, name);
+                }
+            }
+            // 아래 12건은 **이 PR 이전부터 있던** 교차 표면 카피 불일치다 —
+            // 홈 디스커버리 카드(`TICKER_CATEGORIES`)와 마켓 대시보드
+            // (`SECTOR_STOCKS`)가 같은 종목을 다르게 적어 왔다. 대부분 띄어쓰기
+            // 차이(`퀀텀컴퓨팅`/`퀀텀 컴퓨팅`)이거나 표기 흔들림(`엑슨모빌`/
+            // `엑손모빌`)이다.
+            //
+            // 여기서 고치지 않는 이유: 이 상수들은 홈·마켓 화면에 그대로 노출되는
+            // 제품 카피이고, 어느 쪽이 정본인지는 이 PR(내부링크·색인 게이트)이
+            // 정할 문제가 아니다. 대신 **집합을 동결**해 새 불일치만 실패시킨다 —
+            // 소스를 추가하다 이름이 예고 없이 바뀌는 것이 원래 막으려던 회귀다.
+            //
+            // 칩 자체에는 영향이 거의 없다: `KOREAN_NAMES`는 폴백이고 실제 이름은
+            // `RelatedSymbols`가 DB에서 채운다.
+            const KNOWN_CONFLICTS = [
+                'ASTS: "AST스페이스모바일" vs "AST 스페이스모바일"',
+                'CVX: "셰브론" vs "쉐브론"',
+                'GOOGL: "알파벳(구글)" vs "알파벳"',
+                'IBM: "IBM" vs "아이비엠"',
+                'LAES: "세알시큐리티" vs "SEALSQ"',
+                'LUNR: "인튜이티브머신스" vs "인튜이티브 머신스"',
+                'PL: "플래닛랩스" vs "플래닛 랩스"',
+                'QBTS: "디웨이브" vs "디웨이브 퀀텀"',
+                'QUBT: "퀀텀컴퓨팅" vs "퀀텀 컴퓨팅"',
+                'RGTI: "리게티" vs "리게티 컴퓨팅"',
+                'SPCE: "버진갤럭틱" vs "버진 갤럭틱"',
+                'XOM: "엑슨모빌" vs "엑손모빌"',
+            ];
+            expect([...conflicts].sort()).toEqual(KNOWN_CONFLICTS);
+        });
+
         it('큐레이션 한글명이 있으면 함께 노출한다', () => {
             const related = relatedSymbolsFor('MSFT');
             const nvda = related.find(r => r.symbol === 'NVDA');

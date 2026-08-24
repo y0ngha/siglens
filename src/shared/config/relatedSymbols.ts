@@ -52,12 +52,28 @@ export interface RelatedSymbol {
 }
 
 /**
- * 무비용으로 얻을 수 있는 한글명 전부를 합친 맵.
+ * 무비용으로 얻을 수 있는 한글명 전부를 합친 맵 — **폴백 전용**이다.
  *
- * 유니버스 431종 중 약 3분의 1만 덮는다 — 나머지는 티커만 앵커 텍스트로 쓴다.
- * DB(`asset_translations`)를 읽으면 100% 덮을 수 있지만, 이 모듈은 ISR cold-gen
- * 경로에서 심볼당 8번 호출되므로 I/O를 붙이지 않는다. 티커 앵커도 유입 질의
- * (`SOXX 주가`)와 정확히 일치하므로 SEO 손실이 크지 않다.
+ * 실제 칩 이름은 `RelatedSymbols`가 `getAssetInfoResilient`(DB)로 채우고, 이 맵은
+ * DB에 이름이 없을 때만 쓰인다. 이 모듈은 순수 함수라 I/O를 할 수 없으므로
+ * (ISR cold-gen 경로에서 심볼당 8번 호출된다) 상수에서 긁을 수 있는 것만 모은다.
+ * 유니버스 431종 중 약 3분의 1을 덮는다.
+ *
+ * ## 소스 우선순위 — 뒤에 spread된 쪽이 이긴다
+ *
+ * `Map` 생성자는 같은 키가 두 번 오면 **나중 값으로 조용히 덮어쓴다.** 그래서
+ * 아래 나열 순서가 곧 우선순위이고, 의도는 "좁고 사람이 고른 것"보다 "넓고
+ * 기계적인 것"을 뒤에 두지 않는 것이다:
+ *
+ * 1. `CURATED_KOREAN_NAMES` — 홈 디스커버리 카테고리(사람이 고른 표기)
+ * 2. `SECTOR_STOCKS` / `SECTOR_ETFS` — 대시보드 섹터 표기
+ * 3. `MARKET_INDICES` — 지수
+ * 4. `CRYPTO_CATEGORIES` — 암호화폐(주식과 심볼이 겹치지 않는다)
+ *
+ * 현재 소스 간 값이 어긋나는 심볼은 없다. 다만 그건 우연이 아니라 **테스트가
+ * 고정하는 계약**이다 — `relatedSymbols.test.ts`의 "소스 간 한글명이 어긋나지
+ * 않는다"가 충돌을 즉시 실패로 만든다. 소스를 추가할 때 이름이 예고 없이 바뀌는
+ * 회귀를 그 테스트가 잡는다(claude-review PR #765 제안).
  */
 const KOREAN_NAMES: ReadonlyMap<string, string> = new Map<string, string>([
     ...CURATED_KOREAN_NAMES,
