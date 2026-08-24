@@ -90,10 +90,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 추가 FMP round-trip 없음). 그래서 본문 렌더 결과와 metadata noindex 판단이 일치한다:
     //   - profileDegraded(FMP 인프라 실패) → 본문은 degrade(200)를 렌더하므로 noindex.
     //   - profile === null(실존하지 않는 종목) → 본문은 notFound()이므로 noindex.
+    // `displayName`을 가드보다 위에서 계산한다 — 아래 noindex 분기들도
+    // `noindexSymbolMetadata`에 넘겨야 차단된 페이지가 티커가 아니라 사명까지
+    // 담은 title/description을 갖는다. `buildDisplayName`은 순수 함수라 위치를
+    // 올려도 부작용이 없다.
+    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
+    const noindexOpts = { displayName, koreanName: assetInfo?.koreanName };
+
     const { profile, degraded: profileDegraded } =
         await getProfileResilient(upper);
     if (profileDegraded || profile === null) {
-        return noindexSymbolMetadata(upper);
+        return noindexSymbolMetadata(upper, noindexOpts);
     }
     // profile은 있으나 6종 재무 fetch가 모두 비면(FMP 일시 장애 등) 본문은 degrade를
     // 렌더하므로(아래 default export 참조) 메타도 noindex로 일치시킨다.
@@ -103,9 +110,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 정적화는 staticSymbolCache(unstable_cache), 빈 경로의 cross-request dedup은 Redis가 담당.
     const snapshot = await getFinancialsSnapshot(upper);
     if (isEmptyFinancialsSnapshot(snapshot)) {
-        return noindexSymbolMetadata(upper);
+        return noindexSymbolMetadata(upper, noindexOpts);
     }
-    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     const seo = buildSymbolFinancialsSeoContent(upper, {
         displayName,
         koreanName: assetInfo?.koreanName,

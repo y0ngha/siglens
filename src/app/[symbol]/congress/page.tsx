@@ -80,10 +80,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 공유라 추가 FMP round-trip 없음). 본문과 메타의 source-of-truth가 일치한다:
     //   - profileDegraded(FMP 인프라 실패) → 본문은 degrade(200)를 렌더하므로 noindex.
     //   - profile === null(실존하지 않는 종목) → 본문은 notFound()이므로 noindex.
+    // `displayName`을 가드보다 위에서 계산한다 — 아래 noindex 분기들도
+    // `noindexSymbolMetadata`에 넘겨야 차단된 페이지가 티커가 아니라 사명까지
+    // 담은 title/description을 갖는다. `buildDisplayName`은 순수 함수라 위치를
+    // 올려도 부작용이 없다.
+    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
+    const noindexOpts = { displayName, koreanName: assetInfo?.koreanName };
+
     const { profile, degraded: profileDegraded } =
         await getProfileResilient(upper);
     if (profileDegraded || profile === null) {
-        return noindexSymbolMetadata(upper);
+        return noindexSymbolMetadata(upper, noindexOpts);
     }
     // **financials와의 의도적 차이점**: 0건 자체는 정상(sparse 종목)이라, 그것만으로
     // noindex하지 않는다. `degraded === true`(FMP 인프라 실패)는 noindex.
@@ -91,9 +98,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { trades, degraded: tradesDegraded } =
         await getCongressTradesResilient(upper);
     if (tradesDegraded) {
-        return noindexSymbolMetadata(upper);
+        return noindexSymbolMetadata(upper, noindexOpts);
     }
-    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     const seo = buildSymbolCongressSeoContent(upper, {
         displayName,
         koreanName: assetInfo?.koreanName,
