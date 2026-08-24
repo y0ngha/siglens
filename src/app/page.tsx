@@ -148,16 +148,20 @@ export default async function Home() {
                                 투자의 확신을 더하는 AI 분석
                             </p>
                             {/*
-                                H1 크기 단계 — split column 폭에 맞춰 두 줄 구조 유지.
-                                lg(1024-1279, 텍스트 컬럼 ~404px): text-[2.25rem]로 축소
-                                xl(1280+, 텍스트 컬럼 ~530px+): text-5xl로 복귀
-                                (lg에서 text-5xl을 유지하면 첫 줄이 추가로
-                                줄바꿈돼 3줄이 된다.)
+                                크기는 `clamp`가 컨테이너 폭에 맞춰 연속적으로
+                                조절한다. 이전에는 브레이크포인트 4단계였고 그중
+                                `lg`에서 오히려 **작아졌다** — 텍스트 컬럼이 좁아
+                                줄바꿈이 3줄이 되는 걸 크기로 막고 있었던 것이라,
+                                본문 크기가 레이아웃 결함을 보정하는 구조였다.
+                                줄바꿈은 `text-balance`가 맡고 크기는 폭을 따른다.
+
+                                수동 `<br>`과 em 대시도 걷어냈다. 강제 줄바꿈은
+                                컬럼 폭이 바뀌면 어색한 자리에서 끊기고, 대시는
+                                이미 색상 대비로 나뉜 두 구절을 한 번 더 나눈다.
                             */}
-                            <h1 className="mx-auto max-w-sm text-[2.2rem] leading-[1.1] font-bold tracking-tight text-balance text-secondary-100 sm:max-w-2xl sm:text-5xl lg:mx-0 lg:text-[2.25rem] xl:text-5xl">
-                                주식과 코인, 투자의 새로운 기준 —
-                                <br />
-                                <span className="text-primary-300">
+                            <h1 className="mx-auto max-w-sm text-[clamp(2.1rem,4.4vw,3.25rem)] leading-[1.12] font-bold tracking-tight text-balance text-secondary-100 sm:max-w-2xl lg:mx-0">
+                                주식과 코인, 투자의 새로운 기준{' '}
+                                <span className="text-primary-300 sm:block">
                                     AI가 분석하고 완성하는 SIGLENS
                                 </span>
                             </h1>
@@ -201,12 +205,18 @@ export default async function Home() {
                 </section>
                 <HowItWorks skillCounts={skillCounts} />
                 <section className="page-container pb-8">
-                    <div className="flex flex-col items-center gap-3 rounded-lg border border-secondary-800 bg-secondary-800/30 px-6 py-5 text-center sm:flex-row sm:justify-between sm:text-left">
+                    {/*
+                        백테스팅은 이 제품이 "믿을 만한가"에 답하는 유일한 실증인데
+                        회색 스트립에 12px 보조 텍스트로 묻혀 있었다. AI 분석의
+                        신뢰도가 곧 제품 가치이므로, 질문을 제목 크기로 올리고
+                        액센트 보더로 한 번 짚는다. 문구는 그대로 둔다.
+                    */}
+                    <div className="flex flex-col items-center gap-4 rounded-lg border border-l-2 border-secondary-700 border-l-primary-500 bg-secondary-800 px-6 py-6 text-center sm:flex-row sm:justify-between sm:text-left">
                         <div>
-                            <p className="text-sm font-semibold text-secondary-200">
+                            <p className="text-lg font-semibold text-secondary-100">
                                 Siglens는 얼마나 정확할까요?
                             </p>
-                            <p className="mt-0.5 text-xs text-secondary-400">
+                            <p className="mt-1 text-sm leading-relaxed text-secondary-400">
                                 주요 10개 종목으로 2년치 기술적 분석과 AI 예측을
                                 백테스트한 결과를 확인하세요.
                             </p>
@@ -216,7 +226,7 @@ export default async function Home() {
                             // 랜딩은 트래픽이 가장 많은 페이지라 이 링크 하나가 대량의
                             // 파편화된 `_rsc` 요청을 만든다 (CDN_CACHING.md §1).
                             prefetch={false}
-                            className="shrink-0 rounded-lg bg-secondary-700 px-4 py-2 text-xs font-medium text-secondary-200 transition-colors hover:bg-secondary-600"
+                            className="shrink-0 rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             백테스팅 결과 보기 →
                         </Link>
