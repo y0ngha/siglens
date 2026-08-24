@@ -83,10 +83,10 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
         label: '양자컴퓨팅',
         items: [
             { symbol: 'IONQ', name: '아이온큐' },
-            { symbol: 'LAES', name: '세알시큐리티' },
-            { symbol: 'RGTI', name: '리게티' },
-            { symbol: 'QBTS', name: '디웨이브' },
-            { symbol: 'QUBT', name: '퀀텀컴퓨팅' },
+            { symbol: 'LAES', name: '실스큐' },
+            { symbol: 'RGTI', name: '리게티 컴퓨팅' },
+            { symbol: 'QBTS', name: '디웨이브 퀀텀' },
+            { symbol: 'QUBT', name: '퀀텀 컴퓨팅' },
             { symbol: 'IBM', name: 'IBM' },
         ],
     },
@@ -99,11 +99,11 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
         // Corporation JSON-LD까지 펀드를 회사로 잘못 단언하고 있었다).
         items: [
             { symbol: 'RKLB', name: '로켓랩' },
-            { symbol: 'ASTS', name: 'AST스페이스모바일' },
-            { symbol: 'LUNR', name: '인튜이티브머신스' },
+            { symbol: 'ASTS', name: 'AST 스페이스모바일' },
+            { symbol: 'LUNR', name: '인튜이티브 머신스' },
             { symbol: 'RDW', name: '레드와이어' },
-            { symbol: 'PL', name: '플래닛랩스' },
-            { symbol: 'SPCE', name: '버진갤럭틱' },
+            { symbol: 'PL', name: '플래닛 랩스' },
+            { symbol: 'SPCE', name: '버진 갤럭틱' },
         ],
     },
     {

@@ -42,6 +42,9 @@
 - [seo-internal-links relatedSymbols.ts R4 — APPROVED, closes loop](project-seo-internal-links-relatedsymbols-r4.md) — themePeersOf JSDoc relocated correctly, stale phrases now {@link}-referenced; file is untracked so `git diff master --` shows nothing, check `git status`
 - [seo-internal-links RelatedSymbols.tsx R5](project-seo-internal-links-relatedsymbols-r5.md) — new async server component swallows rethrown DYNAMIC_SERVER_USAGE (sole outlier of 20+ getAssetInfoResilient callers); Suspense-shell timing is recommended only
 - [seo-internal-links RelatedSymbols.tsx R6 — APPROVED, closes loop](project-seo-internal-links-relatedsymbols-r6.md) — DSU rethrow mutation-verified live; Suspense-decline judged sound (streaming byte-order ≠ resolution completeness, rebuts R5's own assumption)
+- [canonical-korean-names R2 — searchByKoreanName gap](project-canonical-korean-names-r2-searchbykorean-gap.md) — getKoreanNames fix verified via mutation; missed 3rd consumer of korean_tickers (searchByKoreanName), and "always truthy" broke unmapped-filter self-heal in searchTicker.ts
+- [canonical-korean-names R3 — choke-point verified, 2 recommended](project-canonical-korean-names-r3-choke-point.md) — loader-level withCanonical confirmed complete via grep+live mutation; DB-fetch branch of loadAllEntries untested (mutation survives), getKoreanNames still double-applies override
+- [canonical-korean-names R4 — CLOSED, approved](project-canonical-korean-names-r4-closed.md) — both R3 recommended findings verified fixed via live mutation re-test; loop ends
 
 ## Feedback
 
