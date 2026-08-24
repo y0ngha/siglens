@@ -13,7 +13,14 @@ import { normalizeReactSsrText } from '../support/ssrText';
  * are irrelevant to what a bot indexes.
  *
  * Ground truth captured against `next start` (E2E build, no FMP key):
- *   - /AAPL (seeded)        → 200, robots "index, follow", 1 <h1>, 8 ld+json blocks
+ *   - /AAPL (seeded)        → 200, 1 <h1>, 8 ld+json blocks
+ *
+ *     ⚠️ robots는 이 하네스에서 **`noindex, follow`**다(2026-08-24 이후). 이 환경은
+ *     `FMP_API_KEY`를 의도적으로 주지 않아 봉이 0개이고, 차트 라우트의 콘텐츠 게이트
+ *     (`hasPriceData`, `symbol-indexability`)가 봉 없는 페이지를 차단하기 때문이다 —
+ *     본문에 기술적 지표 블록이 아예 렌더되지 않으므로 올바른 판정이다. 프로덕션은
+ *     FMP 키가 있어 `index, follow`로 나간다. 아래 probe들이 robots가 아니라 JSON-LD
+ *     타입과 SSR 텍스트를 단언하는 이유이기도 하다(환경 의존 값은 고정하지 않는다).
  *   - /ZZZZ (unapproved)    → 200 + robots "noindex, follow" (degraded fallback,
  *                             NOT 500 — getAssetInfoResilient returns a degraded
  *                             ticker rather than throwing; see PR #549, while

@@ -34,6 +34,16 @@ interface BlockedSymbolMetadataInput {
      * behavior is preserved (the DB read is skipped entirely).
      */
     tab?: SeoSnapshotTab;
+    /**
+     * 가격 봉 유무. 전달하는 라우트만 콘텐츠 게이트가 적용된다 —
+     * `SymbolIndexabilityInput.hasPriceData` JSDoc에 배경이 있다.
+     *
+     * 현재 전달자는 차트 라우트뿐이다. 그 페이지는 본문이 사실상 봉으로만
+     * 이루어져 있어(TechnicalFactsSummary + 차트) 봉이 없으면 남는 게 제목과
+     * sr-only 개요뿐이라는 것이 실측으로 확인된 유일한 탭이다. 형제 탭은 각자
+     * 다른 데이터 소스(뉴스·재무·의회 공시)를 갖고 있어 같은 근거를 쓸 수 없다.
+     */
+    hasPriceData?: boolean;
 }
 
 export async function getBlockedSymbolMetadata({
@@ -42,6 +52,7 @@ export async function getBlockedSymbolMetadata({
     degraded,
     revalidateSeconds,
     tab,
+    hasPriceData,
 }: BlockedSymbolMetadataInput): Promise<Metadata | null> {
     // hasSnapshot lookup only when degraded AND the route has a snapshot tab
     // (avoid a DB/cache read on the normal path, and never read for
@@ -65,6 +76,7 @@ export async function getBlockedSymbolMetadata({
         assetInfo,
         degraded,
         hasSnapshot,
+        hasPriceData,
     });
 
     if (decision.indexable) return null;

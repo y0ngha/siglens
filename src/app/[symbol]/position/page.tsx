@@ -14,17 +14,24 @@ import {
     isAdmissibleSymbolShape,
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
-import { buildDisplayName, getAssetInfoResilient } from '@/entities/ticker';
+import {
+    buildAssetAboutNode,
+    buildDisplayName,
+    getAssetInfoResilient,
+} from '@/entities/ticker';
 // isTabAllowedForSymbol은 barrel에서 제외 — fundamental page.tsx와 동일하게
 // api.ts에서 직접 deep import한다 (entities/ticker/index.ts 상단 주석 참고).
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { getQuantizedBarsStatic } from '@/entities/bars';
-import { marketProfileOf } from '@/shared/config/marketProfile';
+import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
 import {
     buildTechnicalFacts,
     RECENT_BARS_WINDOW,
 } from '@/views/symbol/utils/technicalFacts';
 import {
+    buildBreadcrumbJsonLd,
+    buildSymbolSeoContent,
+    buildSymbolWebPageJsonLd,
     clampSeoDescription,
     NOINDEX_SYMBOL_METADATA,
     noindexSymbolMetadata,
@@ -33,6 +40,7 @@ import {
     symbolMetadataFromSeo,
     type SymbolSeoContent,
 } from '@/shared/lib/seo';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
@@ -84,6 +92,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         });
     }
 
+    return symbolMetadataFromSeo(
+        buildPositionSeo(upper, displayName, assetInfo.koreanName)
+    );
+}
+
+/**
+ * position 탭의 SEO 콘텐츠 — `generateMetadata`와 본문 JSON-LD의 **단일 소스**다.
+ *
+ * 둘로 갈라 두면 `<title>`과 `WebPage.name`이 조용히 어긋난다(MISTAKES §2).
+ * 순수 함수라 본문에서 다시 호출해도 비용이 없다.
+ */
+function buildPositionSeo(
+    upper: string,
+    displayName: string,
+    koreanName: string | undefined
+): SymbolSeoContent {
     const url = `${SITE_URL}/${upper}/position`;
     // --- 색인 방침 히스토리 ---
     // 이 탭은 원래 /account·/onboarding과 같은 개인화 surface로 취급해 항상
@@ -130,15 +154,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 것(브랜드 suffix가 fullTitle에만 있어야 og:title/twitter:title에서 브랜딩이
     // 유실되지 않음) 둘 다를 이미 처리한다 — 이 페이지가 그 로직을 다시 구현할
     // 필요가 없다.
-    const seo: SymbolSeoContent = {
+    return {
         ticker: upper,
         title: positionTitle,
         fullTitle: `${positionTitle} | ${SITE_NAME}`,
         description: positionDescription,
         url,
-        keywords: buildPositionKeywords(upper, assetInfo.koreanName),
+        keywords: buildPositionKeywords(upper, koreanName),
     };
-    return symbolMetadataFromSeo(seo);
 }
 
 /**
@@ -307,6 +330,31 @@ export default async function PositionPage({ params }: Props) {
     const displayName = buildDisplayName(assetInfo, upper);
     const marketProfile = marketProfileOf(assetInfo);
 
+    // 구조화 데이터 — 이 탭만 9개 심볼 탭 중 유일하게 WebPage/BreadcrumbList가
+    // 없었다(2026-08-24 프로덕션 실측: `/{ticker}/position`의 JSON-LD는 루트
+    // 레이아웃이 넣는 `WebSite` 하나뿐). 색인 대상 라우트인데 자기가 무슨
+    // 페이지인지, 사이트 어디에 속하는지를 아무것도 선언하지 않던 상태다.
+    // FAQPage는 넣지 않는다 — Google이 2023-08부터 대부분 사이트에서 FAQ 리치
+    // 결과를 중단해 표시 이득이 없고, 402개 종목에 같은 문답을 복제하면 이
+    // 탭이 이미 가장 얇다는 문제(아래 색인 방침 히스토리)를 키우기만 한다.
+    const seo = buildPositionSeo(upper, displayName, assetInfo.koreanName);
+    const webPageJsonLd = buildSymbolWebPageJsonLd({
+        url: seo.url,
+        name: seo.fullTitle,
+        description: seo.description,
+        about: buildAssetAboutNode(
+            upper,
+            assetInfo.koreanName ?? assetInfo.name,
+            assetInfo.fmpSymbol,
+            getDescriptor(marketProfile).assetClass
+        ),
+    });
+    // sibling 탭과 동일한 3단계 — buildBreadcrumbJsonLd가 Siglens를 자동 prepend한다.
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+        { name: upper, url: buildSymbolSeoContent(upper).url },
+        { name: '내 위치', url: seo.url },
+    ]);
+
     const range = await resolvePriceRange(
         upper,
         assetInfo.fmpSymbol,
@@ -319,57 +367,63 @@ export default async function PositionPage({ params }: Props) {
         ? resolveCurrentPricePosition(range)
         : null;
 
+    // <main>의 `w-full`은 필수다: 이 <main>은 SymbolLayoutJail의 `flex flex-col`
+    // 컨테이너의 직계 flex item이다. flex item에 `mx-auto`(양쪽 auto margin)를 걸면
+    // cross-axis stretch가 비활성화되고(CSS Flexbox §9.4 stretch 조건 = "neither
+    // margin is auto"), width가 max-w-5xl까지 채워지는 대신 자식의 shrink-to-fit
+    // (콘텐츠 폭)로 줄어든다.
+    // fundamental/overall은 콘텐츠(카드·표)가 우연히 1024px보다 넓어 이 버그가
+    // 드러나지 않았을 뿐 — CTA 카드 하나뿐인 이 탭(비회원/미보유)이나 options/news
+    // (동일 패턴으로 이미 `w-full` 적용됨)처럼 콘텐츠가 좁으면 <main> 전체가
+    // shrink-wrap돼 heading까지 화면 중앙에 떠 보인다(데스크톱만 — 모바일은 available
+    // width가 max-width보다 좁아 항상 꽉 채워지므로 증상이 없다). `w-full`로 width를
+    // auto가 아닌 명시값(100%)으로 만들면 stretch 비활성 조건을 우회해 sibling과
+    // 동일하게 max-w-5xl까지 채워진다.
     return (
-        // `w-full`은 필수다: 이 <main>은 SymbolLayoutJail의 `flex flex-col` 컨테이너의
-        // 직계 flex item이다. flex item에 `mx-auto`(양쪽 auto margin)를 걸면 cross-axis
-        // stretch가 비활성화되고(CSS Flexbox §9.4 stretch 조건 = "neither margin is auto"),
-        // width가 max-w-5xl까지 채워지는 대신 자식의 shrink-to-fit(콘텐츠 폭)로 줄어든다.
-        // fundamental/overall은 콘텐츠(카드·표)가 우연히 1024px보다 넓어 이 버그가
-        // 드러나지 않았을 뿐 — CTA 카드 하나뿐인 이 탭(비회원/미보유)이나 options/news
-        // (동일 패턴으로 이미 `w-full` 적용됨)처럼 콘텐츠가 좁으면 <main> 전체가
-        // shrink-wrap돼 heading까지 화면 중앙에 떠 보인다(데스크톱만 — 모바일은 available
-        // width가 max-width보다 좁아 항상 꽉 채워지므로 증상이 없다). `w-full`로 width를
-        // auto가 아닌 명시값(100%)으로 만들면 stretch 비활성 조건을 우회해 sibling과
-        // 동일하게 max-w-5xl까지 채워진다.
-        <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
-            <SymbolPageHeading>{displayName} 내 위치</SymbolPageHeading>
-            {/* Task 1(색인 전환 근거) — 이전엔 이 자리에 sr-only 개요 섹션만 있었다
+        <>
+            <JsonLd data={webPageJsonLd} />
+            <JsonLd data={breadcrumbJsonLd} />
+            <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
+                <SymbolPageHeading>{displayName} 내 위치</SymbolPageHeading>
+                {/* Task 1(색인 전환 근거) — 이전엔 이 자리에 sr-only 개요 섹션만 있었다
                 (noindex 시절엔 스크린리더 문맥 보강용이었을 뿐, SEO 신호가 아니었다).
                 지금은 index,follow 라우트라 크롤러가 실제로 보는 유일한 본문 콘텐츠고,
                 심볼마다 달라지는 숫자(퍼센트·층수)를 담아 sr-only였을 때와 달리
                 시각적으로도 노출한다 — 개인화 데이터(★평단/수익률)는 여전히 전혀
                 포함하지 않는다(PositionCta만 그 CTA를 맡는다). range/currentPricePosition이
                 degrade되면(bars 실패, high52w<=low52w 등) 섹션 자체를 생략한다. */}
-            {range && currentPricePosition && (
-                <section
-                    aria-labelledby="position-guide-heading"
-                    className="space-y-3 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5"
-                >
-                    <h2
-                        id="position-guide-heading"
-                        className="text-base font-semibold text-secondary-300"
+                {range && currentPricePosition && (
+                    <section
+                        aria-labelledby="position-guide-heading"
+                        className="space-y-3 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5"
                     >
-                        {displayName} 지금 가격은 이 아파트 몇 층?
-                    </h2>
-                    <p className="text-sm leading-relaxed text-secondary-400">
-                        {displayName}의 최근 52주 범위는{' '}
-                        {formatAmount(range.low52w, upper)} ~{' '}
-                        {formatAmount(range.high52w, upper)}이고, 현재가{' '}
-                        {formatAmount(range.lastClose, upper)}는 이 범위의{' '}
-                        {currentPricePosition.percentile}% 지점 —{' '}
-                        {currentPricePosition.floorLabel}에 해당합니다.{' '}
-                        {currentPricePosition.tone} 아래에서 보유종목을 등록하면
-                        같은 건물 안에서 내가 산 층까지 함께 확인할 수 있어요.
-                    </p>
-                </section>
-            )}
-            <PositionTabContent
-                symbol={upper}
-                low52w={range?.low52w ?? null}
-                high52w={range?.high52w ?? null}
-                lastClose={range?.lastClose ?? null}
-                volumeByBand={range?.volumeByBand ?? null}
-            />
-        </main>
+                        <h2
+                            id="position-guide-heading"
+                            className="text-base font-semibold text-secondary-300"
+                        >
+                            {displayName} 지금 가격은 이 아파트 몇 층?
+                        </h2>
+                        <p className="text-sm leading-relaxed text-secondary-400">
+                            {displayName}의 최근 52주 범위는{' '}
+                            {formatAmount(range.low52w, upper)} ~{' '}
+                            {formatAmount(range.high52w, upper)}이고, 현재가{' '}
+                            {formatAmount(range.lastClose, upper)}는 이 범위의{' '}
+                            {currentPricePosition.percentile}% 지점 —{' '}
+                            {currentPricePosition.floorLabel}에 해당합니다.{' '}
+                            {currentPricePosition.tone} 아래에서 보유종목을
+                            등록하면 같은 건물 안에서 내가 산 층까지 함께 확인할
+                            수 있어요.
+                        </p>
+                    </section>
+                )}
+                <PositionTabContent
+                    symbol={upper}
+                    low52w={range?.low52w ?? null}
+                    high52w={range?.high52w ?? null}
+                    lastClose={range?.lastClose ?? null}
+                    volumeByBand={range?.volumeByBand ?? null}
+                />
+            </main>
+        </>
     );
 }

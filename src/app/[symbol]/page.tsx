@@ -1,10 +1,12 @@
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import {
     MobileSheetPlaceholder,
+    RelatedSymbols,
     TechnicalFactsSummary,
     buildChartPageHeading,
 } from '@/views/symbol';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
+import { buildTechnicalFacts } from '@/views/symbol/utils/technicalFacts';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
 import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
@@ -69,12 +71,48 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
+    // 봉 유무를 게이트에 넘기기 위해 metadata 단계에서 먼저 확정한다. 본문이
+    // **같은 인자**로 부르는 `getQuantizedBarsStatic`은 `React.cache`라 요청
+    // 스코프에서 접히므로 왕복이 늘지 않는다(둘 중 먼저 도는 쪽이 채우고 뒤는
+    // 메모 히트 — `getSeoSnapshotsStatic`을 여기서 다시 부르는 것과 같은 패턴).
+    // assetInfo가 없으면 marketProfile을 유도할 수 없으므로 조회를 건너뛴다 —
+    // 그 경우는 아래 `asset-missing` 분기가 이미 noindex로 처리한다.
+    const metadataBars = assetInfo
+        ? await getQuantizedBarsStatic(
+              ticker,
+              DEFAULT_TIMEFRAME,
+              marketProfileOf(assetInfo),
+              assetInfo.fmpSymbol
+          ).catch((e: unknown) => {
+              console.error(
+                  '[SymbolPage] generateMetadata getQuantizedBarsStatic failed:',
+                  e
+              );
+              return null;
+          })
+        : null;
     const blockedMetadata = await getBlockedSymbolMetadata({
         symbol: ticker,
         assetInfo,
         degraded,
         revalidateSeconds: revalidate,
         tab: 'technical',
+        // 조회가 **실패**한 경우(`null`)와 조회 결과 봉이 **없는** 경우를 구분한다.
+        // 인프라 장애로 null이 온 것까지 noindex로 밀면 일시 장애가 전 종목
+        // 색인 해제로 번진다 — 그 경우는 `undefined`로 남겨 기존 판정을 따른다.
+        //
+        // 술어는 **본문과 동일하게** `buildTechnicalFacts`로 판정한다. `bars.length > 0`
+        // 으로 두었더니 CTK(상장폐지, 봉 1개)가 새어 나갔다 — 그 헬퍼는 등락률 분모로
+        // 직전 봉이 필요해 2개 미만이면 null을 반환하고, 그러면 본문의 지표 요약
+        // 블록이 통째로 렌더되지 않아 페이지가 제목만 남은 껍데기가 된다.
+        // 게이트와 본문이 서로 다른 조건을 쓰면 조용히 어긋난다(MISTAKES §2).
+        hasPriceData:
+            metadataBars === null
+                ? undefined
+                : buildTechnicalFacts(
+                      metadataBars.bars,
+                      metadataBars.indicators
+                  ) !== null,
     });
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return noindexSymbolMetadata(ticker);
@@ -397,6 +435,17 @@ export default async function SymbolPage({ params }: Props) {
                     marketProfile={marketProfile}
                     generatedAt={technicalSnapshot?.generatedAt}
                 />
+                {/* 심볼 간 내부링크. TechnicalSnapshotProse와 같은 이유로
+                    persistent server sibling이다 — Suspense fallback에 두면
+                    boundary resolve 시 React가 서브트리를 파괴해 JS를 실행하는
+                    크롤러에게 링크가 사라진다(위 프로즈 주석 참고). 링크가
+                    목적인 컴포넌트라 그 순간 존재 이유가 없어진다.
+
+                    이 페이지에만 둔다(형제 8개 탭에는 없음): 차트 탭이 sitemap
+                    유니버스의 대표 URL이자 GSC 28일 노출의 48%를 받는 진입점이고,
+                    9개 탭에 같은 링크를 복제하면 HTML만 9배로 늘 뿐 도달 가능성이
+                    더 늘지 않는다. */}
+                <RelatedSymbols symbol={ticker} />
             </main>
         </>
     );

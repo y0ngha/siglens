@@ -5,6 +5,10 @@
 - [FF Principles](rules-ff.md) — 4 principles (Readability, Predictability, Cohesion, Coupling) condensed for review
 - [Conventions](rules-conventions.md) — Coding conventions condensed for review
 
+## Feedback
+
+- [File can change mid-review](feedback-file-can-change-mid-review.md) — implementer may still edit while I read; check mtime vs sibling files, re-read+re-test before finalizing findings
+
 ## Project
 
 - [audit/fix-r4 KRcal + overall degrade gate](project-audit-fix-r4-krcal-overall-degrade.md) — R1 approved: horizon extension math-verified, peek cache-hit verified, 8th file caught via file-count mismatch
@@ -35,6 +39,9 @@
 - [feat/i18n-multilingual R5](project-i18n-multilingual-r5.md) — relayed only: SymbolTabs/NoticePopup/usePageContextLabel path-compare broke on prefix; fixed via new useAppPathname.ts + allowlist audit test
 - [feat/i18n-multilingual R6 — APPROVED, closes epic](project-i18n-multilingual-r6.md) — verified useAppPathname consolidation + all 6 allowlist entries + audit-test soundness (import-line-based, not module-aware) + repo-wide locale-loss sweep, zero findings
 - [feat/mobile-search-overlay R3 — dismissForNavigation gap](project-mobile-search-overlay-r3.md) — pending-nav UI removal genuinely fixes R2's 3 findings; but onNavigate has zero test coverage (mutation-verified) + JSDoc overclaims HistoryUpdater race eliminated (verified live against Next 16.2.12 source)
+- [seo-internal-links relatedSymbols.ts R4 — APPROVED, closes loop](project-seo-internal-links-relatedsymbols-r4.md) — themePeersOf JSDoc relocated correctly, stale phrases now {@link}-referenced; file is untracked so `git diff master --` shows nothing, check `git status`
+- [seo-internal-links RelatedSymbols.tsx R5](project-seo-internal-links-relatedsymbols-r5.md) — new async server component swallows rethrown DYNAMIC_SERVER_USAGE (sole outlier of 20+ getAssetInfoResilient callers); Suspense-shell timing is recommended only
+- [seo-internal-links RelatedSymbols.tsx R6 — APPROVED, closes loop](project-seo-internal-links-relatedsymbols-r6.md) — DSU rethrow mutation-verified live; Suspense-decline judged sound (streaming byte-order ≠ resolution completeness, rebuts R5's own assumption)
 
 ## Feedback
 
