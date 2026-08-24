@@ -32,7 +32,10 @@ export function CategoryCardGrid({
 }: CategoryCardGridProps) {
     return (
         <nav aria-label={ariaLabel} className="page-container py-10">
-            <h2 className="mb-6 text-sm font-semibold tracking-wider text-secondary-200 uppercase">
+            {/* `미국 섹터별 인기 종목` 같은 한글 제목이라 uppercase는 무효고
+                `tracking-wider`(0.05em)는 한글을 흩뜨린다. 위계는 크기와 굵기로
+                만든다 — `shared/lib/typographyStyles.ts` 참조. */}
+            <h2 className="mb-6 text-base font-semibold tracking-tight text-secondary-100">
                 {heading}
             </h2>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -48,7 +51,7 @@ export function CategoryCardGrid({
                     >
                         <h3
                             className={cn(
-                                'mb-3 text-xs font-semibold tracking-wider uppercase',
+                                'mb-3 text-sm font-semibold tracking-[0.01em]',
                                 card.textColor
                             )}
                         >

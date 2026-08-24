@@ -19,8 +19,12 @@ interface HeaderNavMenuProps {
     readonly pathname: string | null;
 }
 
+// 패널 항목도 트리거와 같은 한글 라벨(`미국`·`한국`·`전체`)이라 0.08em 자간을
+// 걷어내고 크기를 트리거(14px)에 맞춘다. 이 항목들은 메뉴가 닫혀 있을 때
+// `visibility: hidden`이라 조판 검사에서 걸러지기 쉬운데, 메뉴를 열면 그대로
+// 보이므로 예외가 아니다.
 const ITEM_BASE =
-    'flex min-h-11 touch-manipulation items-center text-xs font-semibold tracking-[0.08em] transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none focus-visible:-outline-offset-2';
+    'flex min-h-11 touch-manipulation items-center text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none focus-visible:-outline-offset-2';
 
 /**
  * 데스크톱 헤더의 버티컬 1개 = 트리거 버튼 + 지역/목적지 패널.

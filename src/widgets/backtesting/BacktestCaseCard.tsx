@@ -220,7 +220,11 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                         )}
                     </div>
 
-                    <div className="flex flex-wrap gap-x-3 gap-y-1 font-mono tabular-nums">
+                    {/* `목표가:`·`✓ 도달` 같은 한글 라벨이 이 블록 안에 섞여 있어
+                        모노를 걸 수 없다 — Geist Mono에 한글 글리프가 없어 한 줄이
+                        두 서체로 조판된다. 여기서 모노가 하던 일은 가격 자릿수
+                        정렬뿐이고 `tabular-nums`가 본문 서체에서 그대로 해 준다. */}
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 tabular-nums">
                         {firstBullishTarget && (
                             <div>
                                 <span className="text-secondary-500">

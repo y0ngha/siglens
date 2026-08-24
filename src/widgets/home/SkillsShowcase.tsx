@@ -314,7 +314,9 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
 
     return (
         <section className="page-container py-10">
-            <h2 className="mb-6 text-sm font-semibold tracking-wider text-secondary-200 uppercase">
+            {/* 한글 제목이라 uppercase는 무효고 `tracking-wider`는 자모를
+                흩뜨린다. `CategoryCardGrid`의 섹션 제목과 같은 톤으로 맞춘다. */}
+            <h2 className="mb-6 text-base font-semibold tracking-tight text-secondary-100">
                 AI 분석 스킬
             </h2>
             <TabsPill
