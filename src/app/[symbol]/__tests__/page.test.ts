@@ -21,6 +21,12 @@ vi.mock('@y0ngha/siglens-core', () => ({
     POC_WINDOW_DEFAULT: 60,
     // getSeedBarsStatic(barsStaticCache)이 지표 화이트리스트의 baseline으로 쓴다.
     EMPTY_INDICATOR_RESULT: { ma: {}, ema: {} },
+    // quantizeBarsDataToLastClosed가 봉이 **있을 때만** 호출한다. 빈 배열은
+    // `bars.length === 0`에서 단락되므로 이 목이 없던 동안에도 드러나지 않았지만,
+    // 봉이 하나라도 있는 경로(콘텐츠 게이트 hasPriceData:true 검증)에서는 즉시
+    // `is not a function`으로 터진다. 장 마감으로 고정해 quantize가 입력을 그대로
+    // 통과시키게 한다 — 이 파일의 관심사는 세션 판정이 아니다.
+    isRegularSessionOpen: vi.fn(() => false),
 }));
 vi.mock('@/shared/config/market', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/config/market')>()),
@@ -117,6 +123,8 @@ import {
 import { evaluateSymbolIndexability } from '@/entities/symbol-indexability';
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
+import { RelatedSymbols } from '@/views/symbol';
+import { getBarsAction } from '@/entities/bars/actions';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { notFound } from 'next/navigation';
 import type { MockedFunction } from 'vitest';
@@ -131,6 +139,9 @@ const mockEvaluateSymbolIndexability =
     evaluateSymbolIndexability as MockedFunction<
         typeof evaluateSymbolIndexability
     >;
+// 콘텐츠 게이트(hasPriceData) 배선 검증용 — page.tsx는 getQuantizedBarsStatic을
+// 거치지만 그 안쪽이 결국 이 액션을 부른다.
+const mockGetBarsAction = getBarsAction as MockedFunction<typeof getBarsAction>;
 
 interface ClientSeedProps {
     initialAnalysis: unknown;
@@ -329,7 +340,85 @@ describe('Symbol page', () => {
                 symbol: '0NEUSD',
                 assetInfo,
                 degraded: false,
+                hasSnapshot: undefined,
+                // 이 파일의 bars 모킹은 `bars: []`를 돌려주므로 콘텐츠 게이트가
+                // false를 본다(2026-08-24 추가 — 봉 없는 죽은 티커 차단).
+                hasPriceData: false,
             });
+        });
+
+        /**
+         * 콘텐츠 게이트 배선 — 봉 유무가 실제로 평가기까지 전달돼야 한다.
+         * 게이트 자체의 판정 로직은 `evaluateSymbolIndexability.test.ts`가 다룬다.
+         */
+        it('봉이 있으면 hasPriceData: true를 게이트에 넘긴다', async () => {
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo: { symbol: 'HASBARS', name: 'Has Bars' },
+                degraded: false,
+            } as never);
+            // 2봉 — `buildTechnicalFacts`가 등락률을 내려면 직전 봉이 필요하다.
+            mockGetBarsAction.mockResolvedValueOnce({
+                bars: [
+                    { time: 1, open: 1, high: 1, low: 1, close: 1, volume: 1 },
+                    { time: 2, open: 1, high: 2, low: 1, close: 2, volume: 1 },
+                ],
+                indicators: { ma: {}, ema: {}, rsi: [], macd: [] },
+            } as never);
+
+            await generateMetadata({
+                params: Promise.resolve({ symbol: 'hasbars' }),
+            });
+
+            expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith(
+                expect.objectContaining({ hasPriceData: true })
+            );
+        });
+
+        /**
+         * 게이트 술어는 본문과 **같아야** 한다. `bars.length > 0`으로 두었을 때
+         * CTK(상장폐지, 봉 1개)가 프로덕션에서 새어 나갔다 — `buildTechnicalFacts`는
+         * 등락률 분모로 직전 봉이 필요해 2개 미만이면 null을 반환하고, 그러면 본문의
+         * 지표 요약 블록이 통째로 렌더되지 않아 페이지가 껍데기가 된다.
+         */
+        it('봉이 1개뿐이면 hasPriceData: false — 본문 지표 블록이 렌더되지 않는 조건과 일치', async () => {
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo: { symbol: 'ONEBAR', name: 'One Bar' },
+                degraded: false,
+            } as never);
+            mockGetBarsAction.mockResolvedValueOnce({
+                bars: [
+                    { time: 1, open: 1, high: 1, low: 1, close: 1, volume: 1 },
+                ],
+                indicators: { ma: {}, ema: {} },
+            } as never);
+
+            await generateMetadata({
+                params: Promise.resolve({ symbol: 'onebar' }),
+            });
+
+            expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith(
+                expect.objectContaining({ hasPriceData: false })
+            );
+        });
+
+        /**
+         * 인프라 장애(=조회 throw)를 `false`로 매핑하면 FMP 장애 한 번이 전 종목
+         * 색인 해제로 번진다. 실패는 `undefined`(판단 보류)여야 한다.
+         */
+        it('봉 조회가 실패하면 hasPriceData를 undefined로 남긴다 (장애 ≠ 콘텐츠 없음)', async () => {
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo: { symbol: 'NOBARS', name: 'No Bars' },
+                degraded: false,
+            } as never);
+            mockGetBarsAction.mockRejectedValueOnce(new Error('FMP down'));
+
+            await generateMetadata({
+                params: Promise.resolve({ symbol: 'nobars' }),
+            });
+
+            expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith(
+                expect.objectContaining({ hasPriceData: undefined })
+            );
         });
 
         it('gate allowed curated crypto keeps metadata indexable', async () => {
@@ -522,7 +611,7 @@ describe('Symbol page', () => {
         // fix moves it to the LAST child of <main>, after the chart wrapper,
         // and makes <main> itself the scroll container (overflow-y-auto) so
         // the chart wrapper (h-full + shrink-0) never competes for height.
-        it('mounts TechnicalSnapshotProse as the LAST child of <main>, after the chart wrapper (FIX 1)', async () => {
+        it('mounts TechnicalSnapshotProse after the chart wrapper, never as the first flex child (FIX 1)', async () => {
             mockPeekAnalysisCache.mockResolvedValue(null);
 
             const tree = await SymbolPage({
@@ -537,12 +626,62 @@ describe('Symbol page', () => {
                 throw new Error('<main> children is not an array');
             }
 
-            // Last element of <main> must be TechnicalSnapshotProse — proves it
-            // is no longer the first flex child competing with the chart, and
-            // (since the fallback/client h1 lives inside the earlier chart
-            // wrapper child) that it renders after the h1 in DOM order.
-            const lastChild = mainChildren.at(-1);
-            expect(lastChild?.type).toBe(TechnicalSnapshotProse);
+            // 프로즈는 차트 wrapper **뒤**에 와야 한다 — 그래야 (a) 차트와 높이를
+            // 두고 경쟁하는 첫 flex child가 아니게 되고, (b) fallback/클라 h1이
+            // 앞선 차트 wrapper 안에 있으므로 DOM 순서상 h1보다 뒤에 온다.
+            //
+            // "마지막 child"로 단언하지 않는다. 2026-08-24에 RelatedSymbols(심볼 간
+            // 내부링크)가 프로즈 뒤에 추가되면서 마지막 자리가 바뀌었는데, FIX 1이
+            // 지키려던 것은 "마지막"이 아니라 "차트 wrapper보다 뒤"다. 위치를 절대
+            // 인덱스로 고정하면 그 뒤에 뭘 붙일 때마다 의미 없이 깨진다.
+            const proseIndex = mainChildren.findIndex(
+                child =>
+                    (child as { type?: unknown } | null)?.type ===
+                    TechnicalSnapshotProse
+            );
+            expect(proseIndex).toBeGreaterThan(-1);
+            // 차트 wrapper = h-full shrink-0 div (Suspense 경계를 품는 자식).
+            const chartWrapperIndex = mainChildren.findIndex(child => {
+                const className = (
+                    child as { props?: { className?: unknown } } | null
+                )?.props?.className;
+                return (
+                    typeof className === 'string' &&
+                    className.includes('h-full') &&
+                    className.includes('shrink-0')
+                );
+            });
+            expect(chartWrapperIndex).toBeGreaterThan(-1);
+            expect(proseIndex).toBeGreaterThan(chartWrapperIndex);
+        });
+
+        /**
+         * RelatedSymbols는 **persistent server sibling**이어야 한다 — Suspense
+         * fallback 안에 두면 boundary resolve 시 React가 서브트리를 파괴해, JS를
+         * 실행하는 크롤러(Googlebot 렌더러 포함)에게 링크가 사라진다. 내부링크가
+         * 존재 이유인 컴포넌트라 그 순간 목적이 통째로 없어진다(프로즈가 같은
+         * 이유로 fallback 밖에 있다).
+         */
+        it('mounts RelatedSymbols as a persistent child of <main> (fallback 안이 아님)', async () => {
+            mockPeekAnalysisCache.mockResolvedValue(null);
+
+            const tree = await SymbolPage({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+
+            const main = findElementByType(tree, 'main');
+            if (main === null) throw new Error('<main> not found in tree');
+            const mainChildren = (main.props as { children: unknown }).children;
+            if (!Array.isArray(mainChildren)) {
+                throw new Error('<main> children is not an array');
+            }
+            expect(
+                mainChildren.some(
+                    child =>
+                        (child as { type?: unknown } | null)?.type ===
+                        RelatedSymbols
+                )
+            ).toBe(true);
         });
 
         // UI audit FIX 1: <main> must be the scroll container so content

@@ -15,6 +15,10 @@
 vi.mock('@/entities/ticker', () => ({
     buildDisplayName: vi.fn((assetInfo: { name: string }) => assetInfo.name),
     getAssetInfoResilient: vi.fn(),
+    // 본문이 WebPage JSON-LD의 `about` 노드를 만들 때 쓴다. 실제 구현은
+    // classifyAsset 분기를 타므로 여기서는 결정적인 스텁으로 고정한다 — 이
+    // 파일의 관심사는 서버 데이터 경로이지 스키마 분류가 아니다.
+    buildAssetAboutNode: vi.fn(() => undefined),
 }));
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
@@ -406,9 +410,18 @@ describe('PositionPage — SSR crawl safety (no personalized data in the server 
         const tree = await PositionPage({
             params: Promise.resolve({ symbol: 'aapl' }),
         });
+        // <main> 서브트리만 본다. 불변식은 "본문에 개인화 데이터가 없다"이지
+        // "문서 어디에도 '평단'이라는 글자가 없다"가 아니다 — 페이지 제목
+        // (`내 평단은 몇 층? …`)은 이미 <title>/og:title로 공개되는 값이고,
+        // 2026-08-24에 추가된 WebPage JSON-LD가 그 제목을 그대로 싣는다.
+        // 트리 전체를 문자열로 훑으면 그 메타데이터까지 걸려, 실제 결함이 아닌데도
+        // 빨개진다. 반대로 본문으로 좁히면 원래 잡으려던 것(★평단/수익률이
+        // 서버 셸에 새어 나오는 것)은 그대로 잡힌다.
+        const main = findElementByType(tree, 'main');
+        expect(main).not.toBeNull();
         // Functions (component refs) are dropped by JSON.stringify — this only
         // inspects the static string content the RSC itself produced.
-        const serialized = JSON.stringify(tree);
+        const serialized = JSON.stringify(main);
         expect(serialized).not.toContain('★');
         expect(serialized).not.toContain('평단');
         expect(serialized).not.toContain('수익률');
