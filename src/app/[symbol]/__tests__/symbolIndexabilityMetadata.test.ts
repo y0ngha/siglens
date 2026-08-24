@@ -18,8 +18,32 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
 import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
 import type { AssetInfo } from '@/shared/lib/types';
+import type { Metadata } from 'next';
 
 const ASSET_INFO = { symbol: 'AAPL', name: 'Apple Inc.' } as AssetInfo;
+
+/**
+ * 차단(noindex) 결과의 계약.
+ *
+ * 예전엔 `toEqual(NOINDEX_SYMBOL_METADATA)`였는데, 그 상수는 title/description/
+ * openGraph를 갖고 있지 않아 Next가 **루트 레이아웃 값을 상속**시킨다. 그래서
+ * 차단된 심볼 URL이 전부 홈페이지 title·description을 쓰고 `og:url`을
+ * `https://siglens.io`로 선언하고 있었다(2026-08-24 프로덕션 실측). 상수와의
+ * 동등성이 아니라 **심볼 고유 정체성 + noindex**를 단언해야 그 회귀가 잡힌다.
+ */
+function expectBlockedWithOwnIdentity(
+    result: Metadata | null,
+    symbol: string
+): void {
+    expect(result).not.toBeNull();
+    expect(result!.robots).toEqual(NOINDEX_SYMBOL_METADATA.robots);
+    expect(result!.alternates).toEqual(NOINDEX_SYMBOL_METADATA.alternates);
+    expect(result!.title).toEqual({
+        absolute: expect.stringContaining(symbol) as unknown as string,
+    });
+    expect(result!.description).toEqual(expect.any(String));
+    expect(result!.openGraph?.url).toBe(`https://siglens.io/${symbol}`);
+}
 
 describe('getBlockedSymbolMetadata', () => {
     beforeEach(() => {
@@ -65,7 +89,7 @@ describe('getBlockedSymbolMetadata', () => {
         });
 
         expect(mockGetSeoSnapshotsStatic).not.toHaveBeenCalled();
-        expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
+        expectBlockedWithOwnIdentity(result, 'ZZZOF');
     });
 
     it('reads snapshots on the degraded path and threads hasSnapshot=true when a same-tab snapshot exists', async () => {
@@ -123,7 +147,7 @@ describe('getBlockedSymbolMetadata', () => {
             degraded: true,
             hasSnapshot: false,
         });
-        expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
+        expectBlockedWithOwnIdentity(result, 'AAPL');
     });
 
     // Regression guard for FIX 2 (audit): a degraded+whitelisted symbol with a
@@ -156,7 +180,7 @@ describe('getBlockedSymbolMetadata', () => {
             degraded: true,
             hasSnapshot: false,
         });
-        expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
+        expectBlockedWithOwnIdentity(result, 'AAPL');
     });
 
     // FIX 1 (audit): a same-tab row whose `content` is malformed (fails the
@@ -192,7 +216,7 @@ describe('getBlockedSymbolMetadata', () => {
             degraded: true,
             hasSnapshot: false,
         });
-        expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
+        expectBlockedWithOwnIdentity(result, 'AAPL');
     });
 
     // fear-greed/position pass no `tab` — the DB read must be skipped entirely
@@ -218,6 +242,6 @@ describe('getBlockedSymbolMetadata', () => {
             degraded: true,
             hasSnapshot: undefined,
         });
-        expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
+        expectBlockedWithOwnIdentity(result, 'AAPL');
     });
 });

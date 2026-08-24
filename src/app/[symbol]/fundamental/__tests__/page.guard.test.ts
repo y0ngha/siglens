@@ -246,8 +246,11 @@ describe('Fundamental generateMetadata crypto NOINDEX guard', () => {
 
         expect(mockIsTabAllowed).toHaveBeenCalledWith('AAPL', 'fundamental');
         // Must NOT be the hard NOINDEX sentinel object.
-        // NOINDEX_SYMBOL_METADATA has { robots: { index: false, follow: false },
+        // NOINDEX_SYMBOL_METADATA has { robots: { index: false, follow: true },
         //   alternates: { canonical: null } } — the sentinel returned for crypto/invalid.
+        //   `canonical: null` (not follow) is what separates it from an indexable
+        //   page: every noindex branch now keeps follow:true so crawl paths to the
+        //   sibling tabs survive.
         expect(result).not.toEqual(NOINDEX_SYMBOL_METADATA);
         // Equity generateMetadata does not set a robots override — the page is fully
         // indexable.  NOINDEX_SYMBOL_METADATA always has robots.index: false, so

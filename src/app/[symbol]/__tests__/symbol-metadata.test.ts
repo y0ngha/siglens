@@ -305,7 +305,7 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
                 makeParamsWithSearch('0NEUSD')
             );
 
-            expect(metadata.robots).toEqual({ index: false, follow: false });
+            expect(metadata.robots).toEqual({ index: false, follow: true });
             expect(metadata.alternates?.canonical).toBeNull();
         });
     });
@@ -333,7 +333,7 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
 
                 expect(metadata.robots).toEqual({
                     index: false,
-                    follow: false,
+                    follow: true,
                 });
                 expect(metadata.alternates?.canonical).toBeNull();
             }
@@ -502,7 +502,7 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
                 const metadata = await fn();
                 expect(metadata.robots).toEqual({
                     index: false,
-                    follow: false,
+                    follow: true,
                 });
                 // M1: degraded/invalid noindex는 루트 레이아웃의 home canonical을
                 // 상속하지 않는다(canonical: null로 omit).
@@ -559,7 +559,7 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
                 const metadata = await fn();
                 expect(metadata.robots).toEqual({
                     index: false,
-                    follow: false,
+                    follow: true,
                 });
                 expect(metadata.alternates?.canonical).toBeNull();
             }
@@ -575,7 +575,7 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
             const metadata = await generateFundamentalMetadata(
                 makeParams('aapl')
             );
-            expect(metadata.robots).toEqual({ index: false, follow: false });
+            expect(metadata.robots).toEqual({ index: false, follow: true });
             expect(metadata.alternates?.canonical).toBeNull();
         });
 
@@ -587,7 +587,7 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
             const metadata = await generateFundamentalMetadata(
                 makeParams('aapl')
             );
-            expect(metadata.robots).toEqual({ index: false, follow: false });
+            expect(metadata.robots).toEqual({ index: false, follow: true });
             expect(metadata.alternates?.canonical).toBeNull();
         });
     });

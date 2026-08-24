@@ -130,7 +130,7 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ symbol: '!!!invalid' }),
         });
 
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
         expect(metadata.alternates?.canonical).toBeNull();
     });
 
@@ -144,7 +144,7 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ symbol: 'AAPL' }),
         });
 
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
         expect(metadata.alternates?.canonical).toBeNull();
     });
 
@@ -158,7 +158,7 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ symbol: 'AAPL' }),
         });
 
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
         expect(metadata.alternates?.canonical).toBeNull();
     });
 
@@ -172,7 +172,7 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ symbol: 'FAKESYM' }),
         });
 
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
         expect(metadata.alternates?.canonical).toBeNull();
     });
 
@@ -186,7 +186,7 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ symbol: 'aapl' }),
         });
 
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
         expect(metadata.alternates?.canonical).toBeNull();
     });
 

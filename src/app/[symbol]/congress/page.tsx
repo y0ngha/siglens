@@ -129,10 +129,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 본문이 같은 `unstable_cache` 호출을 공유하므로 실패하면 본문에도 프로즈가 없다 —
     // 그 렌더의 페이지는 **실제로** thin이고, noindex가 맞는 판정이다.
     //
-    // `NOINDEX_SYMBOL_METADATA`(index:false, **follow:false**, canonical:null)를 쓰지
-    // 않는다. 그건 존재하지 않는 종목·degrade용이고, 이 페이지는 멀쩡히 살아 있으면서
-    // `CrossLinkCards`로 형제 탭에 내부 링크를 뿌린다 — `follow:false`면 그 링크 자산이
-    // 통째로 끊긴다. 제목·설명도 사용자(브라우저 탭)에게는 그대로 필요하다.
+    // `NOINDEX_SYMBOL_METADATA`(canonical:null)를 쓰지 않는다. 그건 존재하지 않는
+    // 종목·degrade용이고, 이 페이지는 멀쩡히 살아 있으므로 self-canonical을 유지해야
+    // 한다. 제목·설명도 사용자(브라우저 탭)에게는 그대로 필요하다.
+    // (`follow`는 이제 둘 다 true다 — 2026-08-24에 상수 쪽 `follow:false`를 걷어냈다.
+    //  noindex 페이지에 nofollow를 얹으면 `CrossLinkCards`가 뿌리는 형제 탭 링크가
+    //  통째로 끊기는데, 그 결함이 차단된 심볼 페이지 전체에 걸려 있었다.)
     if (trades.length === 0 && !hasCongressProse(snap?.content)) {
         return { ...metadata, robots: { index: false, follow: true } };
     }

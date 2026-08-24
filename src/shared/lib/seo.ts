@@ -95,9 +95,46 @@ export const SITE_NAME = 'Siglens';
  * inherit the layout canonical (a wrong cross-page signal).
  */
 export const NOINDEX_SYMBOL_METADATA: Metadata = {
-    robots: { index: false, follow: false },
+    // `follow: true` — 색인은 막되 링크는 따라가게 둔다. noindex 페이지에
+    // nofollow를 얹으면 그 페이지를 통과하는 크롤 경로가 전부 끊긴다: 차단된
+    // 심볼 페이지도 본문에 같은 심볼의 다른 탭(뉴스·펀더멘털·옵션…) 링크를
+    // 렌더하므로, nofollow는 크롤러가 그 형제 탭에 도달하는 유일한 경로를
+    // 막는다. `[symbol]/options/page.tsx`가 옵션 없는 종목에 대해 이미
+    // `{ index: false, follow: true }`를 쓰고 같은 근거를 주석으로 남겨 뒀다 —
+    // 이 상수만 반대로 돼 있어 정본이 불일치했다.
+    robots: { index: false, follow: true },
     alternates: { canonical: null },
 };
+
+/**
+ * noindex인 `[symbol]` 라우트의 메타데이터. `symbol`을 주면 심볼 고유
+ * title/description/OG를 만들고, 못 주면(심볼을 특정할 수 없는 invalid-shape
+ * 경로) 위 상수로 떨어진다.
+ *
+ * **왜 필요한가 (2026-08-24 프로덕션 실측)**: `title`/`description`/`openGraph`를
+ * 비워 두면 Next가 루트 레이아웃 값을 그대로 상속시킨다. 그 결과 차단된 심볼
+ * URL 전부(`/SOXX`, `/QQQM`, `/TLT`, `/XLK`, `/SOXX/fundamental` …)가
+ *   - 홈페이지와 **똑같은** `<title>`·`<meta name="description">`을 쓰고,
+ *   - `og:url`을 `https://siglens.io`로 선언한다.
+ * 두 번째가 특히 나쁘다 — og:url을 정규 URL 힌트로 쓰는 크롤러에게 수만 개
+ * 심볼 URL이 자기를 홈페이지라고 말하는 셈이다. noindex는 색인을 막을 뿐
+ * 이 잘못된 동일성 선언까지 막아 주지는 않는다.
+ *
+ * 탭 단위가 아니라 **심볼 단위**로만 구분한다. 어차피 noindex라 탭별 정밀도는
+ * 측정 가능한 이득이 없고, 목표는 "홈페이지의 정체성을 참칭하지 않는 것"이다.
+ */
+export function noindexSymbolMetadata(
+    symbol?: string,
+    opts: BuildSymbolSeoOptions = {}
+): Metadata {
+    if (symbol === undefined) return NOINDEX_SYMBOL_METADATA;
+    return {
+        ...symbolMetadataFromSeo(buildSymbolSeoContent(symbol, opts)),
+        // 스프레드 순서가 중요하다 — robots(noindex)와 canonical:null이
+        // symbolMetadataFromSeo의 index 기본값·self-canonical을 덮어야 한다.
+        ...NOINDEX_SYMBOL_METADATA,
+    };
+}
 
 // 빌드 시각 — 매 요청마다 변동되면 안 되는 schema.org datePublished 등에 사용.
 // NEXT_BUILD_DATE env가 있으면 우선, 없으면 모듈 로드 시각(deploy 시점)을 한 번만 캐시.

@@ -66,6 +66,37 @@
 이 방향은 인과가 옳다: 유니버스(편집 결정 + LLM 예산)가 앞서고 sitemap이 따라온다.
 반대로 하면 sitemap이 먼저 커지고 콘텐츠가 못 따라가면서 정확히 2026-07이 재현된다.
 
+## 3-1. 예외가 아니라 §2의 적용 — `/market` 섹터 허브 링크 대상 (2026-08-24)
+
+색인된 허브가 링크하는 심볼은 큐레이션 목록에 있어야 한다. 이건 §1의 "롱테일을 열지
+않는다"와 충돌하지 않는다 — 롱테일은 **아무도 링크하지 않는** 27,000종목이고, 여기 대상은
+우리가 손으로 고른 섹터 그리드가 이미 크롤 가능하게 링크하고 있던 것들이다.
+
+**실측(2026-08-24, 프로덕션 Googlebot UA)**: `SECTOR_ETFS`(11) + `SECTOR_STOCKS`(80) 중
+23종이 `POPULAR_TICKERS`에 없어 `longtail-default-blocked`였다. 23종 전부
+`200` + `noindex, nofollow` + 본문 893~1,131자. 즉 **색인된 허브가 색인 불가한 막다른
+페이지 23개를 링크**하고 있었다 — 크롤 예산은 소모되고, 허브의 `ItemList` JSON-LD가
+가리키는 대상은 색인될 수 없다.
+
+§2 순서를 그대로 밟았다:
+
+1. **prewarm 유니버스** — `POPULAR_TICKERS`에 추가해 `buildPrewarmUniverse()`가 집는다.
+2. **용량** — 유니버스 312 → 335, 유닛 2,027 → 2,165. 야간 처리량은 틱 약 90회 ×
+   `SYMBOLS_PER_TICK` 6 ≈ 540 심볼-슬롯이라 여유가 있다. `[seo-prewarm] batch done`의
+   `remaining`이 매일 밤 0으로 수렴하는지 계속 본다.
+3. **콘텐츠 깊이** — 전원 SPDR 섹터 ETF 또는 S&P 500 대형주로, 기존 283종과 같은 FMP
+   파이프라인에서 차트·펀더멘털·재무가 채워진다. 2026-07 절벽 당시 기준(677자) 근처가
+   아니다.
+4. **목록 반영** — `POPULAR_TICKERS` `[13]` 블록. sitemap은 `buildPopularEntries`가
+   자동으로 따라오되, 섹터 ETF 11종은 `KNOWN_ETF_TICKERS`에 있어 `/financials`
+   엔트리가 나가지 않고(재무제표 없음 → 영구 noindex), `/options`는
+   `POPULAR_OPTIONS_TICKERS` 게이트가 막는다.
+
+**불변식**: `SECTOR_ETFS ∪ SECTOR_STOCKS ⊆ POPULAR_TICKERS`.
+`src/shared/config/__tests__/marketHubIndexability.test.ts`가 멤버십이 아니라
+`evaluateSymbolIndexability`의 판정으로 강제한다. dashboard 그리드에 심볼을 더하면서
+여기를 안 고치면 같은 결함이 조용히 재발한다.
+
 ## 4. 상장폐지
 
 `korean_tickers.delisted_at`이 상장 상태를 들고 있고, 일 1회 크론(`docs/reference/CRON.md`

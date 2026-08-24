@@ -558,6 +558,45 @@ export const POPULAR_TICKERS = [
     'SAP',
     'DLR',
 
+    // --- [13] /market 섹터 허브가 링크하는 대상 (2026-08-24) ---
+    // `/market`은 색인된 허브인데, 그 섹터 그리드가 링크하는 이 23개가 전부
+    // `longtail-default-blocked`(noindex)였다. 실측(2026-08-24): 23개 모두
+    // 200 + `noindex, nofollow` + 본문 893~1,131자 — 크롤 예산은 쓰면서 색인은
+    // 되지 않고, 허브의 ItemList JSON-LD가 가리키는 대상이 색인 불가인 상태다.
+    //
+    // 이건 롱테일 재개방이 아니다. `SECTOR_ETFS`(11) + `SECTOR_STOCKS`(80)에서
+    // 이미 화이트리스트에 있는 것을 뺀 **차집합 전부**이고, 전원 SPDR 섹터 ETF
+    // 또는 S&P 500 대형주라 차트·펀더멘털·재무가 모두 채워진다. prewarm
+    // 유니버스는 312 → 335가 되고, 야간 처리량(틱 ~90 × SYMBOLS_PER_TICK 6
+    // ≈ 540 슬롯)에 여유가 있다.
+    //
+    // 불변식: 이 블록의 합집합 = `SECTOR_ETFS` ∪ `SECTOR_STOCKS` − (다른 블록).
+    // `popular-tickers.test.ts`가 강제한다 — dashboard 그리드에 심볼을 더하면
+    // 여기에도 더해야 하고, 안 그러면 또 색인 불가 링크가 생긴다.
+    'XLK', // 기술 섹터 ETF
+    'XLF', // 금융 섹터 ETF
+    'XLE', // 에너지 섹터 ETF
+    'XLV', // 헬스케어 섹터 ETF
+    'XLY', // 경기소비재 섹터 ETF
+    'XLP', // 필수소비재 섹터 ETF
+    'XLI', // 산업재 섹터 ETF
+    'XLB', // 소재 섹터 ETF
+    'XLU', // 유틸리티 섹터 ETF
+    'XLRE', // 부동산 섹터 ETF
+    'XLC', // 통신서비스 섹터 ETF
+    'PM', // 필립모리스
+    'UNP', // 유니온퍼시픽
+    'LIN', // 린데
+    'APD', // 에어프로덕츠
+    'ECL', // 에코랩
+    'DUK', // 듀크에너지
+    'AEP', // 아메리칸일렉트릭파워
+    'EXC', // 엑셀론
+    'AMT', // 아메리칸타워
+    'EQIX', // 에퀴닉스
+    'CCI', // 크라운캐슬
+    'PSA', // 퍼블릭스토리지
+
     // --- [KR] KOSPI / KOSDAQ (2026-08-16) ---
     // 시가총액 상위 + 코스닥 대표주. 이 목록에 있어야 `evaluateSymbolIndexability`가
     // indexable로 판정하고 sitemap에도 실린다(그 외 종목은 longtail-default-blocked).

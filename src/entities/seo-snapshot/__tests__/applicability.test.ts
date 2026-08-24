@@ -40,17 +40,21 @@ describe('buildPrewarmUniverse', () => {
     // 실패 시 상수 목록 변경 — 스펙 §5 수치도 함께 갱신.
     // SEO 감사 라운드 2에서 SPCX/SKHY를 POPULAR_TICKERS에서 뺀 만큼(옵션 상장
     // US 주식 7탭 버킷에서 2종목) 264→262, 2041→2027로 갱신됐다.
-    it('전체 유닛 수 = 262×7 + 1×6 + 20×5 + 29×3 = 2027 (spec §5 실측)', () => {
+    // 2026-08-24: `/market` 섹터 허브가 링크하던 23종(SPDR 섹터 ETF 11 + S&P 대형주
+    // 12)을 POPULAR_TICKERS에 넣으면서 6탭 버킷이 1→24가 됐다(옵션 미상장이라 7탭이
+    // 아니다). 2027 + 23×6 = 2165. 야간 처리량 여유 확인용 수치이므로 함께 본다:
+    // 틱 ~90 × SYMBOLS_PER_TICK 6 ≈ 540 심볼-슬롯 / 밤, 유니버스 335.
+    it('전체 유닛 수 = 262×7 + 24×6 + 20×5 + 29×3 = 2165 (spec §5 실측)', () => {
         const units = buildPrewarmUniverse().reduce(
             (n, u) => n + u.tabs.length,
             0
         );
-        expect(units).toBe(2027);
+        expect(units).toBe(2165);
     });
 
     // 실패 시 상수 목록 변경 — 스펙 §5 수치도 함께 갱신
-    it('심볼 수 = 312 (POPULAR_TICKERS 283 + POPULAR_CRYPTOS 29)', () => {
-        expect(buildPrewarmUniverse()).toHaveLength(312);
+    it('심볼 수 = 335 (POPULAR_TICKERS 306 + POPULAR_CRYPTOS 29)', () => {
+        expect(buildPrewarmUniverse()).toHaveLength(335);
     });
 
     it('한국 종목은 options·congress를 prewarm하지 않는다', () => {
