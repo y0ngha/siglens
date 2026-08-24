@@ -95,9 +95,55 @@ export const SITE_NAME = 'Siglens';
  * inherit the layout canonical (a wrong cross-page signal).
  */
 export const NOINDEX_SYMBOL_METADATA: Metadata = {
-    robots: { index: false, follow: false },
+    // `follow: true` — 색인은 막되 링크는 따라가게 둔다. noindex 페이지에
+    // nofollow를 얹으면 그 페이지를 통과하는 크롤 경로가 전부 끊긴다: 차단된
+    // 심볼 페이지도 본문에 같은 심볼의 다른 탭(뉴스·펀더멘털·옵션…) 링크를
+    // 렌더하므로, nofollow는 크롤러가 그 형제 탭에 도달하는 유일한 경로를
+    // 막는다. `[symbol]/options/page.tsx`가 옵션 없는 종목에 대해 이미
+    // `{ index: false, follow: true }`를 쓰고 같은 근거를 주석으로 남겨 뒀다 —
+    // 이 상수만 반대로 돼 있어 정본이 불일치했다.
+    robots: { index: false, follow: true },
     alternates: { canonical: null },
 };
+
+/**
+ * noindex인 `[symbol]` 라우트의 메타데이터 — **심볼을 알 때** 쓴다.
+ *
+ * **왜 필요한가 (2026-08-24 프로덕션 실측)**: `title`/`description`/`openGraph`를
+ * 비워 두면 Next가 루트 레이아웃 값을 그대로 상속시킨다. 그 결과 차단된 심볼
+ * URL 전부(`/SOXX`, `/QQQM`, `/TLT`, `/XLK`, `/SOXX/fundamental` …)가
+ *   - 홈페이지와 **똑같은** `<title>`·`<meta name="description">`을 쓰고,
+ *   - `og:url`을 `https://siglens.io`로 선언한다.
+ * 두 번째가 특히 나쁘다 — og:url을 정규 URL 힌트로 쓰는 크롤러에게 수만 개
+ * 심볼 URL이 자기를 홈페이지라고 말하는 셈이다. noindex는 색인을 막을 뿐
+ * 이 잘못된 동일성 선언까지 막아 주지는 않는다.
+ *
+ * **`[symbol]/**\/page.tsx`의 noindex 분기는 하나의 예외만 빼고 전부 이걸 쓴다.**
+ * 예외는 `!isAdmissibleSymbolShape` 가드뿐이다 — 거기서는 세그먼트가 심볼이라고
+ * 신뢰할 수 없으므로(임의 문자열이 title에 그대로 박힌다) `NOINDEX_SYMBOL_METADATA`
+ * 상수로 남긴다. 나머지(tab-not-allowed, assetInfo 없음, FMP profile degrade,
+ * 빈 재무 스냅샷, congress trades degrade, overall 캐시 미스)는 전부 심볼이
+ * 확정된 뒤라 자기 정체성을 가질 수 있고, 그중 degrade 계열은 **실존 티커가
+ * 200을 반환하는 경로**라 홈 메타 상속이 실제로 크롤된다.
+ *
+ * 탭 단위가 아니라 **심볼 단위**로만 구분한다(`og:url`이 탭이 아니라 심볼 루트를
+ * 가리킨다). 어차피 noindex라 탭별 정밀도는 측정 가능한 이득이 없고, 목표는
+ * "홈페이지의 정체성을 참칭하지 않는 것"이다.
+ *
+ * `opts`는 호출부가 이미 `assetInfo`를 들고 있을 때만 넘긴다 — 안 넘겨도
+ * displayName이 티커로 폴백해 동작은 같고, 있으면 description이 사명까지 담는다.
+ */
+export function noindexSymbolMetadata(
+    symbol: string,
+    opts: BuildSymbolSeoOptions = {}
+): Metadata {
+    return {
+        ...symbolMetadataFromSeo(buildSymbolSeoContent(symbol, opts)),
+        // 스프레드 순서가 중요하다 — robots(noindex)와 canonical:null이
+        // symbolMetadataFromSeo의 index 기본값·self-canonical을 덮어야 한다.
+        ...NOINDEX_SYMBOL_METADATA,
+    };
+}
 
 // 빌드 시각 — 매 요청마다 변동되면 안 되는 schema.org datePublished 등에 사용.
 // NEXT_BUILD_DATE env가 있으면 우선, 없으면 모듈 로드 시각(deploy 시점)을 한 번만 캐시.

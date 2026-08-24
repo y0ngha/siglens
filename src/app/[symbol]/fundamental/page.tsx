@@ -53,6 +53,7 @@ import {
     buildSymbolWebPageJsonLd,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
+    noindexSymbolMetadata,
 } from '@/shared/lib/seo';
 import { getProfileResilient } from './getProfileResilient';
 import { FundamentalDegraded } from './FundamentalDegraded';
@@ -93,7 +94,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // generateMetadata도 동일 조건에서 NOINDEX로 반환한다. 가드 없이 계속 진행하면
     // 본문은 notFound()(noindex)인데 메타데이터는 canonical + index:true인 soft-404가 만들어진다.
     if (!(await isTabAllowedForSymbol(upper, 'fundamental'))) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper);
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
     const blockedMetadata = await getBlockedSymbolMetadata({
@@ -110,12 +111,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 추가 FMP round-trip 없음). 그래서 본문 렌더 결과와 metadata noindex 판단이 일치한다:
     //   - profileDegraded(FMP 인프라 실패) → 본문은 degrade(200)를 렌더하므로 noindex.
     //   - profile === null(실존하지 않는 종목) → 본문은 notFound()이므로 noindex.
+    // `displayName`을 가드보다 위에서 계산한다 — 아래 noindex 분기들도
+    // `noindexSymbolMetadata`에 넘겨야 차단된 페이지가 티커가 아니라 사명까지
+    // 담은 title/description을 갖는다. `buildDisplayName`은 순수 함수라 위치를
+    // 올려도 부작용이 없다.
+    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
+
     const { profile, degraded: profileDegraded } =
         await getProfileResilient(upper);
     if (profileDegraded || profile === null) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper, {
+            displayName,
+            koreanName: assetInfo?.koreanName,
+        });
     }
-    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     // sector는 의도적으로 <meta description>에 쓰지 않는다(description은 sector 없는 base
     // 카피, 페이지 본문 JSON-LD만 sector 보강 카피). 위 profile 조회는 noindex 게이트 용도이며
     // 두 description 모두 동일 함수에서 파생되므로 핵심 의미는 일치한다.

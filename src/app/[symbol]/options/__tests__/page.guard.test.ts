@@ -175,9 +175,15 @@ describe('Options generateMetadata crypto NOINDEX guard', () => {
         });
 
         expect(mockIsTabAllowed).toHaveBeenCalledWith('BTCUSD', 'options');
-        // Must exactly match NOINDEX_SYMBOL_METADATA shape: robots index:false + canonical null.
-        // A real indexable metadata object would have alternates.canonical set to a URL string.
-        expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
+        // noindex 계약: robots index:false + canonical null. 상수와의 동등성이
+        // 아니라 계약을 단언한다 — 2026-08-24부터 이 분기는 심볼 고유
+        // title/description/og:url을 함께 낸다(`noindexSymbolMetadata`). 상수
+        // 동등성으로 두면 "루트 레이아웃 메타 상속" 회귀를 영영 못 잡는다.
+        expect(result.robots).toEqual(NOINDEX_SYMBOL_METADATA.robots);
+        expect(result.alternates).toEqual(NOINDEX_SYMBOL_METADATA.alternates);
+        expect(result.title).toEqual({
+            absolute: expect.stringContaining('BTCUSD'),
+        });
     });
 
     it('equity symbol (isTabAllowedForSymbol → true) → returns indexable metadata (not NOINDEX)', async () => {
@@ -205,16 +211,23 @@ describe('Options generateMetadata crypto NOINDEX guard', () => {
 
         expect(mockIsTabAllowed).toHaveBeenCalledWith('AAPL', 'options');
         // Must NOT be the hard NOINDEX sentinel object.
-        // NOINDEX_SYMBOL_METADATA has { robots: { index: false, follow: false },
+        // NOINDEX_SYMBOL_METADATA has { robots: { index: false, follow: true },
         //   alternates: { canonical: null } } — the sentinel returned for crypto/invalid.
+        //   `canonical: null` (not follow) is what separates it from an indexable
+        //   page: every noindex branch now keeps follow:true so crawl paths to the
+        //   sibling tabs survive.
         expect(result).not.toEqual(NOINDEX_SYMBOL_METADATA);
         // The equity path with hasOptionsMarket:false (our mock) sets
         // robots: { index: false, follow: true } — links are still crawlable.
-        // follow:true is the positive falsifiable signal: NOINDEX_SYMBOL_METADATA
-        // has follow:false, and no other equity branch sets follow:false.
+        //
+        // ⚠️ `follow:true`는 더 이상 판별 신호가 아니다 — NOINDEX_SYMBOL_METADATA도
+        // follow:true를 쓴다(noindex 페이지에 nofollow를 얹으면 형제 탭으로 가는
+        // 크롤 경로가 끊기기 때문). 남은 falsifiable 신호는 **self-canonical**이다:
+        // sentinel은 canonical:null인데 이 equity 경로는 자기 URL을 canonical로 낸다.
         const robots = result.robots as
             | { index?: boolean; follow?: boolean }
             | undefined;
         expect(robots?.follow).toBe(true);
+        expect(result.alternates?.canonical).not.toBeNull();
     });
 });

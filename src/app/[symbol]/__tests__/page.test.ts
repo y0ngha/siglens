@@ -171,7 +171,7 @@ describe('Symbol page', () => {
                 params: Promise.resolve({ symbol: '!!!invalid' }),
             });
 
-            expect(metadata.robots).toEqual({ index: false, follow: false });
+            expect(metadata.robots).toEqual({ index: false, follow: true });
         });
 
         it('returns metadata with title for valid ticker', async () => {
@@ -303,7 +303,7 @@ describe('Symbol page', () => {
                 params: Promise.resolve({ symbol: 'aapl' }),
             });
 
-            expect(metadata.robots).toEqual({ index: false, follow: false });
+            expect(metadata.robots).toEqual({ index: false, follow: true });
         });
 
         it('gate blocked unapproved longtail returns noindex', async () => {
@@ -324,7 +324,7 @@ describe('Symbol page', () => {
                 params: Promise.resolve({ symbol: '0NEUSD' }),
             });
 
-            expect(metadata.robots).toEqual({ index: false, follow: false });
+            expect(metadata.robots).toEqual({ index: false, follow: true });
             expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith({
                 symbol: '0NEUSD',
                 assetInfo,

@@ -110,7 +110,7 @@ test.describe('KR equity SEO (crawler-facing)', () => {
 
             // 형제 스펙(`symbol-seo.spec.ts`)이 쓰는 것과 같은 직렬화 형태로 맞춘다.
             expect(await response.text()).toMatch(
-                /<meta name="robots" content="noindex, nofollow"\/?>/
+                /<meta name="robots" content="noindex, follow"\/?>/
             );
         }
     });

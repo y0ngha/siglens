@@ -134,7 +134,7 @@ test.describe('ISR cold-gen safety', () => {
         // degraded 상태에서도 noindex가 설정돼 크롤러에 불완전한 콘텐츠가 색인되지 않는다.
         const html = await response.text();
         expect(html).toMatch(
-            /<meta name="robots" content="noindex, nofollow"\/?>/
+            /<meta name="robots" content="noindex, follow"\/?>/
         );
     });
 });

@@ -183,9 +183,15 @@ describe('Financials generateMetadata crypto NOINDEX guard', () => {
         });
 
         expect(mockIsTabAllowed).toHaveBeenCalledWith('BTCUSD', 'financials');
-        // Must exactly match NOINDEX_SYMBOL_METADATA shape: robots index:false + canonical null.
-        // A real indexable metadata object would have alternates.canonical set to a URL string.
-        expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
+        // noindex 계약: robots index:false + canonical null. 상수와의 동등성이
+        // 아니라 계약을 단언한다 — 2026-08-24부터 이 분기는 심볼 고유
+        // title/description/og:url을 함께 낸다(`noindexSymbolMetadata`). 상수
+        // 동등성으로 두면 "루트 레이아웃 메타 상속" 회귀를 영영 못 잡는다.
+        expect(result.robots).toEqual(NOINDEX_SYMBOL_METADATA.robots);
+        expect(result.alternates).toEqual(NOINDEX_SYMBOL_METADATA.alternates);
+        expect(result.title).toEqual({
+            absolute: expect.stringContaining('BTCUSD'),
+        });
     });
 
     it('equity symbol (isTabAllowedForSymbol → true) → returns indexable metadata (not NOINDEX)', async () => {
@@ -212,8 +218,11 @@ describe('Financials generateMetadata crypto NOINDEX guard', () => {
 
         expect(mockIsTabAllowed).toHaveBeenCalledWith('AAPL', 'financials');
         // Must NOT be the hard NOINDEX sentinel object.
-        // NOINDEX_SYMBOL_METADATA has { robots: { index: false, follow: false },
+        // NOINDEX_SYMBOL_METADATA has { robots: { index: false, follow: true },
         //   alternates: { canonical: null } } — the sentinel returned for crypto/invalid.
+        //   `canonical: null` (not follow) is what separates it from an indexable
+        //   page: every noindex branch now keeps follow:true so crawl paths to the
+        //   sibling tabs survive.
         expect(result).not.toEqual(NOINDEX_SYMBOL_METADATA);
         // Equity generateMetadata does not set a robots override — the page is fully
         // indexable.  NOINDEX_SYMBOL_METADATA always has robots.index: false, so

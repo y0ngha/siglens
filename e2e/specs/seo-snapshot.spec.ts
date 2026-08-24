@@ -102,7 +102,7 @@ test.describe('SEO pre-warm snapshot SSR (crawler-facing)', () => {
         expect(normalizedHtml).not.toContain(SNAPSHOT_HEADING);
     });
 
-    test('longtail noindex invariant intact: unapproved symbol still degrades to 200 + noindex, nofollow', async ({
+    test('longtail noindex invariant intact: unapproved symbol still degrades to 200 + noindex, follow', async ({
         page,
     }) => {
         // Mirrors symbol-seo.spec.ts's "an unapproved but well-formed ticker
@@ -114,7 +114,7 @@ test.describe('SEO pre-warm snapshot SSR (crawler-facing)', () => {
 
         const html = await response.text();
         expect(html).toMatch(
-            /<meta name="robots" content="noindex, nofollow"\/?>/
+            /<meta name="robots" content="noindex, follow"\/?>/
         );
     });
 });

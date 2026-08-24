@@ -30,6 +30,7 @@ import {
     resolveSymbolOverallSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
+    noindexSymbolMetadata,
 } from '@/shared/lib/seo';
 import {
     getDescriptor,
@@ -203,7 +204,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         tab: 'overall',
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
+    if (!assetInfo) return noindexSymbolMetadata(upper);
+
+    // `displayName`을 가드보다 위에서 계산한다 — 아래 `!cachedOverall` noindex
+    // 분기도 `noindexSymbolMetadata`에 넘겨야 차단된 페이지가 티커가 아니라 사명까지
+    // 담은 title/description을 갖는다. `buildDisplayName`은 순수 함수라 위치를
+    // 올려도 부작용이 없다.
+    const displayName = buildDisplayName(assetInfo, upper);
 
     // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
     // getSeoSnapshotsStatic(upper, revalidate) call the page body makes below —
@@ -257,10 +264,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             );
             return null;
         });
-        if (!cachedOverall) return NOINDEX_SYMBOL_METADATA;
+        if (!cachedOverall) {
+            return noindexSymbolMetadata(upper, {
+                displayName,
+                koreanName: assetInfo.koreanName,
+            });
+        }
     }
 
-    const displayName = buildDisplayName(assetInfo, upper);
     const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
     const seo = resolveSymbolOverallSeoContent(upper, assetClass, {
         displayName,

@@ -116,7 +116,7 @@ describe('generateMetadata', () => {
         const metadata = await generateMetadata({
             params: Promise.resolve({ symbol: '!!!invalid' }),
         });
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
     });
 
     it('returns noindex when infra-degraded (unresolvable)', async () => {
@@ -127,7 +127,7 @@ describe('generateMetadata', () => {
         const metadata = await generateMetadata({
             params: Promise.resolve({ symbol: 'aapl' }),
         });
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
     });
 
     it('returns noindex when the tab is not allowed for this market profile', async () => {
@@ -135,7 +135,7 @@ describe('generateMetadata', () => {
         const metadata = await generateMetadata({
             params: Promise.resolve({ symbol: 'aapl' }),
         });
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
     });
 
     it('is index,follow for a valid, resolvable symbol — per-symbol content (Task 1) now justifies indexing (design decision 2026-08-19)', async () => {

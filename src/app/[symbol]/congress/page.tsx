@@ -30,6 +30,7 @@ import {
     buildSymbolWebPageJsonLd,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
+    noindexSymbolMetadata,
 } from '@/shared/lib/seo';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
@@ -62,7 +63,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // generateMetadata도 동일 조건에서 NOINDEX로 반환한다. 가드 없이 계속 진행하면
     // 본문은 notFound()(noindex)인데 메타데이터는 canonical + index:true인 soft-404가 만들어진다.
     if (!(await isTabAllowedForSymbol(upper, 'congress'))) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper);
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
     const blockedMetadata = await getBlockedSymbolMetadata({
@@ -79,10 +80,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 공유라 추가 FMP round-trip 없음). 본문과 메타의 source-of-truth가 일치한다:
     //   - profileDegraded(FMP 인프라 실패) → 본문은 degrade(200)를 렌더하므로 noindex.
     //   - profile === null(실존하지 않는 종목) → 본문은 notFound()이므로 noindex.
+    // `displayName`을 가드보다 위에서 계산한다 — 아래 noindex 분기들도
+    // `noindexSymbolMetadata`에 넘겨야 차단된 페이지가 티커가 아니라 사명까지
+    // 담은 title/description을 갖는다. `buildDisplayName`은 순수 함수라 위치를
+    // 올려도 부작용이 없다.
+    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
+    const noindexOpts = { displayName, koreanName: assetInfo?.koreanName };
+
     const { profile, degraded: profileDegraded } =
         await getProfileResilient(upper);
     if (profileDegraded || profile === null) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper, noindexOpts);
     }
     // **financials와의 의도적 차이점**: 0건 자체는 정상(sparse 종목)이라, 그것만으로
     // noindex하지 않는다. `degraded === true`(FMP 인프라 실패)는 noindex.
@@ -90,9 +98,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { trades, degraded: tradesDegraded } =
         await getCongressTradesResilient(upper);
     if (tradesDegraded) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper, noindexOpts);
     }
-    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     const seo = buildSymbolCongressSeoContent(upper, {
         displayName,
         koreanName: assetInfo?.koreanName,
@@ -129,10 +136,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 본문이 같은 `unstable_cache` 호출을 공유하므로 실패하면 본문에도 프로즈가 없다 —
     // 그 렌더의 페이지는 **실제로** thin이고, noindex가 맞는 판정이다.
     //
-    // `NOINDEX_SYMBOL_METADATA`(index:false, **follow:false**, canonical:null)를 쓰지
-    // 않는다. 그건 존재하지 않는 종목·degrade용이고, 이 페이지는 멀쩡히 살아 있으면서
-    // `CrossLinkCards`로 형제 탭에 내부 링크를 뿌린다 — `follow:false`면 그 링크 자산이
-    // 통째로 끊긴다. 제목·설명도 사용자(브라우저 탭)에게는 그대로 필요하다.
+    // `NOINDEX_SYMBOL_METADATA`(canonical:null)를 쓰지 않는다. 그건 존재하지 않는
+    // 종목·degrade용이고, 이 페이지는 멀쩡히 살아 있으므로 self-canonical을 유지해야
+    // 한다. 제목·설명도 사용자(브라우저 탭)에게는 그대로 필요하다.
+    // (`follow`는 이제 둘 다 true다 — 2026-08-24에 상수 쪽 `follow:false`를 걷어냈다.
+    //  noindex 페이지에 nofollow를 얹으면 `CrossLinkCards`가 뿌리는 형제 탭 링크가
+    //  통째로 끊기는데, 그 결함이 차단된 심볼 페이지 전체에 걸려 있었다.)
     if (trades.length === 0 && !hasCongressProse(snap?.content)) {
         return { ...metadata, robots: { index: false, follow: true } };
     }

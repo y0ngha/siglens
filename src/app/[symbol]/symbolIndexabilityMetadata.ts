@@ -2,7 +2,8 @@ import { evaluateSymbolIndexability } from '@/entities/symbol-indexability';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import type { SeoSnapshotTab } from '@/entities/seo-snapshot';
 import { hasProseForTab } from '@/views/symbol/snapshot/hasProseForTab';
-import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
+import { noindexSymbolMetadata } from '@/shared/lib/seo';
+import { buildDisplayName } from '@/entities/ticker';
 import type { AssetInfo } from '@/shared/lib/types';
 import type { Metadata } from 'next';
 
@@ -66,5 +67,16 @@ export async function getBlockedSymbolMetadata({
         hasSnapshot,
     });
 
-    return decision.indexable ? null : NOINDEX_SYMBOL_METADATA;
+    if (decision.indexable) return null;
+
+    // 차단된 심볼 페이지도 자기 정체성은 가져야 한다. 상수 하나를 돌려주면
+    // Next가 루트 레이아웃의 title/description/openGraph를 상속시켜, 차단된
+    // 심볼 URL 전부가 홈페이지 메타를 복제하고 `og:url`을 홈으로 선언한다
+    // (2026-08-24 실측 — `noindexSymbolMetadata` JSDoc 참고).
+    return noindexSymbolMetadata(symbol, {
+        displayName: assetInfo
+            ? buildDisplayName(assetInfo, symbol)
+            : undefined,
+        koreanName: assetInfo?.koreanName,
+    });
 }

@@ -44,6 +44,7 @@ import {
     resolveSymbolNewsSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
+    noindexSymbolMetadata,
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
@@ -84,7 +85,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         tab: 'news',
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
+    if (!assetInfo) return noindexSymbolMetadata(upper);
 
     const displayName = buildDisplayName(assetInfo, upper);
     const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
