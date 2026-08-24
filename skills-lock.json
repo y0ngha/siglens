@@ -1,6 +1,13 @@
 {
     "version": 1,
     "skills": {
+        "anti-ui-slop": {
+            "source": "uizze.com",
+            "sourceUrl": "https://uizze.com/",
+            "sourceType": "well-known",
+            "computedHash": "cdb9293f9d8461b525a42949d5f3509754c42efa2eab11f20d406b16270eb867",
+            "wellKnownDigest": "sha256:c3dc1a035894db5e60d3cde5e06147c660220f1cffacf8b7469b80f12309bc08"
+        },
         "brainstorming": {
             "source": "obra/superpowers",
             "sourceType": "github",
@@ -42,6 +49,12 @@
             "skillPath": "skills/next-cache-components/SKILL.md",
             "computedHash": "f835d8226c28abf012cc013928e2627c8a7a046de61127ef229be1711bd1f255"
         },
+        "redesign-existing-projects": {
+            "source": "leonxlnx/taste-skill",
+            "sourceType": "github",
+            "skillPath": "skills/redesign-skill/SKILL.md",
+            "computedHash": "b405eee0e0e80fc243f731d9aa368bca307e356db7e6157d27101d369dac6726"
+        },
         "seo-audit": {
             "source": "coreyhaines31/marketingskills",
             "sourceType": "github",
@@ -65,6 +78,20 @@
             "sourceType": "github",
             "skillPath": "skills/typescript-expert/SKILL.md",
             "computedHash": "525e74a7220ed67832001ca89b46deae8f2bab1abc9d25c56c8716d6550c795f"
+        },
+        "ui-design": {
+            "source": "uizze.com",
+            "sourceUrl": "https://uizze.com/",
+            "sourceType": "well-known",
+            "computedHash": "fe14d1158abb50fdece6abe03ade1d8d6d5b2ef8b7f6914d65193a30a3d48712",
+            "wellKnownDigest": "sha256:31db513e7c2d956be22792661e840c44cee474f220d2cce885fa93333a0e8bae"
+        },
+        "ui-radar": {
+            "source": "uizze.com",
+            "sourceUrl": "https://uizze.com/",
+            "sourceType": "well-known",
+            "computedHash": "34305420bba52f3fe7d1d3b2dd355b64ccf12de7411cbbf4557a1231e8ef8ddb",
+            "wellKnownDigest": "sha256:461cf4d25b9e74840cb6f20ab81751ec5352dbcb28dac8e3bce001602965279e"
         },
         "vercel-react-best-practices": {
             "source": "vercel-labs/agent-skills",
