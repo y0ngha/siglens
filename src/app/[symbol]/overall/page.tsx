@@ -30,6 +30,7 @@ import {
     resolveSymbolOverallSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
+    noindexSymbolMetadata,
 } from '@/shared/lib/seo';
 import {
     getDescriptor,
@@ -203,7 +204,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         tab: 'overall',
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
+    if (!assetInfo) return noindexSymbolMetadata(upper);
 
     // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
     // getSeoSnapshotsStatic(upper, revalidate) call the page body makes below —
@@ -257,7 +258,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             );
             return null;
         });
-        if (!cachedOverall) return NOINDEX_SYMBOL_METADATA;
+        if (!cachedOverall) return noindexSymbolMetadata(upper);
     }
 
     const displayName = buildDisplayName(assetInfo, upper);

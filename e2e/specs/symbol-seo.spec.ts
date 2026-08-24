@@ -14,10 +14,16 @@ import { normalizeReactSsrText } from '../support/ssrText';
  *
  * Ground truth captured against `next start` (E2E build, no FMP key):
  *   - /AAPL (seeded)        → 200, robots "index, follow", 1 <h1>, 8 ld+json blocks
- *   - /ZZZZ (unapproved)    → 200 + robots "noindex, nofollow" (degraded fallback,
+ *   - /ZZZZ (unapproved)    → 200 + robots "noindex, follow" (degraded fallback,
  *                             NOT 500 — getAssetInfoResilient returns a degraded
  *                             ticker rather than throwing; see PR #549, while
  *                             the indexability gate blocks longtail exposure)
+ *
+ *     ⚠️ `follow`(not `nofollow`) since 2026-08-24: 차단된 심볼 페이지도 본문에
+ *     형제 탭 링크를 렌더하므로 nofollow는 크롤러가 거기 도달하는 유일한 경로를
+ *     끊는다. Next는 `{ index: false, follow: true }`를 `noindex, follow`로
+ *     직렬화한다(프로덕션 `/NVDL/congress`에서 실측 — 그 라우트는 이전부터
+ *     follow:true를 쓰고 있었다).
  *   - /AAPL  warmed 2nd req → `x-nextjs-cache: HIT` (ISR cache serves the route)
  */
 
@@ -184,7 +190,7 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
 
         const html = await response.text();
         expect(html).toMatch(
-            /<meta name="robots" content="noindex, nofollow"\/?>/
+            /<meta name="robots" content="noindex, follow"\/?>/
         );
     });
 });

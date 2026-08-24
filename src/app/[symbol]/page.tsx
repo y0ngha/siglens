@@ -37,6 +37,7 @@ import {
     resolveSymbolSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
+    noindexSymbolMetadata,
 } from '@/shared/lib/seo';
 import {
     dehydrate,
@@ -76,7 +77,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         tab: 'technical',
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
+    if (!assetInfo) return noindexSymbolMetadata(ticker);
 
     const displayName = buildDisplayName(assetInfo, ticker);
     const profile = marketProfileOf(assetInfo);

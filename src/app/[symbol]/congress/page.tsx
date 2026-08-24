@@ -30,6 +30,7 @@ import {
     buildSymbolWebPageJsonLd,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
+    noindexSymbolMetadata,
 } from '@/shared/lib/seo';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
@@ -62,7 +63,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // generateMetadata도 동일 조건에서 NOINDEX로 반환한다. 가드 없이 계속 진행하면
     // 본문은 notFound()(noindex)인데 메타데이터는 canonical + index:true인 soft-404가 만들어진다.
     if (!(await isTabAllowedForSymbol(upper, 'congress'))) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper);
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
     const blockedMetadata = await getBlockedSymbolMetadata({
@@ -82,7 +83,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { profile, degraded: profileDegraded } =
         await getProfileResilient(upper);
     if (profileDegraded || profile === null) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper);
     }
     // **financials와의 의도적 차이점**: 0건 자체는 정상(sparse 종목)이라, 그것만으로
     // noindex하지 않는다. `degraded === true`(FMP 인프라 실패)는 noindex.
@@ -90,7 +91,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { trades, degraded: tradesDegraded } =
         await getCongressTradesResilient(upper);
     if (tradesDegraded) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper);
     }
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     const seo = buildSymbolCongressSeoContent(upper, {

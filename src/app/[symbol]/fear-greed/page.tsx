@@ -27,6 +27,7 @@ import {
     resolveSymbolFearGreedSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
+    noindexSymbolMetadata,
 } from '@/shared/lib/seo';
 import {
     dehydrate,
@@ -97,7 +98,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         revalidateSeconds: revalidate,
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
+    if (!assetInfo) return noindexSymbolMetadata(ticker);
 
     const displayName = buildDisplayName(assetInfo, ticker);
     const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;

@@ -53,6 +53,7 @@ import {
     buildSymbolWebPageJsonLd,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
+    noindexSymbolMetadata,
 } from '@/shared/lib/seo';
 import { getProfileResilient } from './getProfileResilient';
 import { FundamentalDegraded } from './FundamentalDegraded';
@@ -93,7 +94,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // generateMetadata도 동일 조건에서 NOINDEX로 반환한다. 가드 없이 계속 진행하면
     // 본문은 notFound()(noindex)인데 메타데이터는 canonical + index:true인 soft-404가 만들어진다.
     if (!(await isTabAllowedForSymbol(upper, 'fundamental'))) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper);
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
     const blockedMetadata = await getBlockedSymbolMetadata({
@@ -113,7 +114,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { profile, degraded: profileDegraded } =
         await getProfileResilient(upper);
     if (profileDegraded || profile === null) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper);
     }
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     // sector는 의도적으로 <meta description>에 쓰지 않는다(description은 sector 없는 base

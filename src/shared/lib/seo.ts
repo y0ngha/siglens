@@ -107,9 +107,7 @@ export const NOINDEX_SYMBOL_METADATA: Metadata = {
 };
 
 /**
- * noindex인 `[symbol]` 라우트의 메타데이터. `symbol`을 주면 심볼 고유
- * title/description/OG를 만들고, 못 주면(심볼을 특정할 수 없는 invalid-shape
- * 경로) 위 상수로 떨어진다.
+ * noindex인 `[symbol]` 라우트의 메타데이터 — **심볼을 알 때** 쓴다.
  *
  * **왜 필요한가 (2026-08-24 프로덕션 실측)**: `title`/`description`/`openGraph`를
  * 비워 두면 Next가 루트 레이아웃 값을 그대로 상속시킨다. 그 결과 차단된 심볼
@@ -120,14 +118,25 @@ export const NOINDEX_SYMBOL_METADATA: Metadata = {
  * 심볼 URL이 자기를 홈페이지라고 말하는 셈이다. noindex는 색인을 막을 뿐
  * 이 잘못된 동일성 선언까지 막아 주지는 않는다.
  *
- * 탭 단위가 아니라 **심볼 단위**로만 구분한다. 어차피 noindex라 탭별 정밀도는
- * 측정 가능한 이득이 없고, 목표는 "홈페이지의 정체성을 참칭하지 않는 것"이다.
+ * **`[symbol]/**\/page.tsx`의 noindex 분기는 하나의 예외만 빼고 전부 이걸 쓴다.**
+ * 예외는 `!isAdmissibleSymbolShape` 가드뿐이다 — 거기서는 세그먼트가 심볼이라고
+ * 신뢰할 수 없으므로(임의 문자열이 title에 그대로 박힌다) `NOINDEX_SYMBOL_METADATA`
+ * 상수로 남긴다. 나머지(tab-not-allowed, assetInfo 없음, FMP profile degrade,
+ * 빈 재무 스냅샷, congress trades degrade, overall 캐시 미스)는 전부 심볼이
+ * 확정된 뒤라 자기 정체성을 가질 수 있고, 그중 degrade 계열은 **실존 티커가
+ * 200을 반환하는 경로**라 홈 메타 상속이 실제로 크롤된다.
+ *
+ * 탭 단위가 아니라 **심볼 단위**로만 구분한다(`og:url`이 탭이 아니라 심볼 루트를
+ * 가리킨다). 어차피 noindex라 탭별 정밀도는 측정 가능한 이득이 없고, 목표는
+ * "홈페이지의 정체성을 참칭하지 않는 것"이다.
+ *
+ * `opts`는 호출부가 이미 `assetInfo`를 들고 있을 때만 넘긴다 — 안 넘겨도
+ * displayName이 티커로 폴백해 동작은 같고, 있으면 description이 사명까지 담는다.
  */
 export function noindexSymbolMetadata(
-    symbol?: string,
+    symbol: string,
     opts: BuildSymbolSeoOptions = {}
 ): Metadata {
-    if (symbol === undefined) return NOINDEX_SYMBOL_METADATA;
     return {
         ...symbolMetadataFromSeo(buildSymbolSeoContent(symbol, opts)),
         // 스프레드 순서가 중요하다 — robots(noindex)와 canonical:null이

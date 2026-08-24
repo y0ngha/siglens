@@ -36,6 +36,7 @@ import {
     buildSymbolWebPageJsonLd,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
+    noindexSymbolMetadata,
 } from '@/shared/lib/seo';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
@@ -72,7 +73,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // generateMetadata도 동일 조건에서 NOINDEX로 반환한다. 가드 없이 계속 진행하면
     // 본문은 notFound()(noindex)인데 메타데이터는 canonical + index:true인 soft-404가 만들어진다.
     if (!(await isTabAllowedForSymbol(upper, 'financials'))) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper);
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
     const blockedMetadata = await getBlockedSymbolMetadata({
@@ -92,7 +93,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { profile, degraded: profileDegraded } =
         await getProfileResilient(upper);
     if (profileDegraded || profile === null) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper);
     }
     // profile은 있으나 6종 재무 fetch가 모두 비면(FMP 일시 장애 등) 본문은 degrade를
     // 렌더하므로(아래 default export 참조) 메타도 noindex로 일치시킨다.
@@ -102,7 +103,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 정적화는 staticSymbolCache(unstable_cache), 빈 경로의 cross-request dedup은 Redis가 담당.
     const snapshot = await getFinancialsSnapshot(upper);
     if (isEmptyFinancialsSnapshot(snapshot)) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper);
     }
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     const seo = buildSymbolFinancialsSeoContent(upper, {

@@ -27,6 +27,7 @@ import {
 import {
     clampSeoDescription,
     NOINDEX_SYMBOL_METADATA,
+    noindexSymbolMetadata,
     SITE_NAME,
     SITE_URL,
     symbolMetadataFromSeo,
@@ -66,13 +67,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         revalidateSeconds: revalidate,
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
+    if (!assetInfo) return noindexSymbolMetadata(upper);
     // fundamental 선례와 동일: 탭 허용 여부가 본문 notFound와 어긋나면 soft-404
     // (index:true인데 body는 404)가 생긴다. 현재는 모든 market profile이
     // 'position'을 지원하지만, 이 가드는 미래에 탭 미지원 프로필이 추가돼도
     // notFound()/noindex가 함께 어긋나지 않도록 유지한다.
     if (!(await isTabAllowedForSymbol(upper, 'position'))) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper);
     }
 
     const displayName = buildDisplayName(assetInfo, upper);
