@@ -165,6 +165,40 @@ describe('getAssetInfo', () => {
         expect(mockRepository.findBySymbol).not.toHaveBeenCalled();
     });
 
+    /**
+     * 정본 한글명(`CANONICAL_KOREAN_NAMES`)은 **모든 반환 경로**를 덮어야 한다.
+     *
+     * DB 읽기 지점에만 덮었더니 Redis 캐시가 먼저 답해서 옛 이름이 그대로 나갔다
+     * (로컬 실증에서 제목이 하나도 안 바뀜). 캐시 히트 경로가 가장 잡기 어려운
+     * 구멍이라 그것부터 고정한다.
+     */
+    it('cache hit이어도 정본 한글명이 캐시된 값을 덮는다', async () => {
+        // LAES의 DB/캐시 값은 '씰스큐'였다 — 정본은 '실스큐'(외래어 표기법).
+        mockCache.get.mockResolvedValue({
+            symbol: 'LAES',
+            name: 'SEALSQ Corp',
+            koreanName: '씰스큐',
+        } satisfies AssetInfo);
+
+        await expect(getAssetInfo('laes')).resolves.toEqual({
+            symbol: 'LAES',
+            name: 'SEALSQ Corp',
+            koreanName: '실스큐',
+        });
+    });
+
+    it('정본 목록에 없는 심볼은 저장된 한글명을 그대로 쓴다', async () => {
+        mockCache.get.mockResolvedValue({
+            symbol: 'AAPL',
+            name: 'Apple',
+            koreanName: '애플',
+        } satisfies AssetInfo);
+
+        const result = await getAssetInfo('aapl');
+
+        expect(result?.koreanName).toBe('애플');
+    });
+
     it('cache miss → DB hit 시 DB 결과 반환 후 cache 갱신', async () => {
         mockCache.get.mockResolvedValue(null);
         mockRepository.findBySymbol.mockResolvedValue(dbRecord);
