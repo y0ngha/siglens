@@ -39,7 +39,7 @@ export function OnboardingContent() {
 
             <section
                 aria-label="보유종목"
-                className="space-y-4 rounded-lg bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
+                className="space-y-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             >
                 <PortfolioSection />
             </section>

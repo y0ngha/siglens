@@ -55,7 +55,7 @@ export function OnboardingSkeleton() {
 
 export default function OnboardingPage() {
     return (
-        <main className="min-h-[calc(100dvh-3.5rem)] bg-secondary-950 px-4 py-12">
+        <main className="min-h-[calc(100dvh-var(--header-h))] bg-secondary-950 px-4 py-12">
             <div className="mx-auto w-full max-w-2xl">
                 <Suspense fallback={<OnboardingSkeleton />}>
                     <OnboardingGuard />

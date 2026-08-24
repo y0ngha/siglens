@@ -34,7 +34,7 @@ async function AccountContent() {
         <>
             <section
                 aria-label="프로필"
-                className="space-y-4 rounded-lg bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
+                className="space-y-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             >
                 <h2 className="text-lg font-semibold text-secondary-100">
                     프로필
@@ -59,14 +59,14 @@ async function AccountContent() {
 
             <section
                 aria-label="AI 모델 API 키"
-                className="space-y-4 rounded-lg bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
+                className="space-y-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             >
                 <ApiKeySection registeredProviders={registeredProviders} />
             </section>
 
             <section
                 aria-label="보유종목"
-                className="space-y-4 rounded-lg bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
+                className="space-y-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             >
                 <PortfolioSection />
                 <Link
@@ -116,7 +116,7 @@ function AccountContentSkeleton() {
             {/* 프로필 섹션 */}
             <section
                 aria-label="프로필 로딩 중"
-                className="space-y-4 rounded-lg bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
+                className="space-y-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             >
                 <SkeletonLine className="h-6 w-16" />
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-[120px_1fr]">
@@ -132,7 +132,7 @@ function AccountContentSkeleton() {
             {/* AI 모델 API 키 섹션 */}
             <section
                 aria-label="AI 모델 API 키 로딩 중"
-                className="space-y-4 rounded-lg bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
+                className="space-y-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             >
                 <SkeletonLine className="h-6 w-32" />
                 <SkeletonLine className="h-4 w-64" />
@@ -154,7 +154,7 @@ function AccountContentSkeleton() {
 
 export default function AccountPage() {
     return (
-        <main className="min-h-[calc(100dvh-3.5rem)] bg-secondary-950 px-4 py-12">
+        <main className="min-h-[calc(100dvh-var(--header-h))] bg-secondary-950 px-4 py-12">
             <div className="mx-auto w-full max-w-2xl space-y-6">
                 <header>
                     <h1 className="text-2xl font-semibold text-secondary-50">

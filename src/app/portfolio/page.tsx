@@ -154,7 +154,7 @@ function PortfolioSkeleton() {
 
 export default function PortfolioPage() {
     return (
-        <main className="min-h-[calc(100dvh-3.5rem)] bg-secondary-950 px-4 py-12">
+        <main className="min-h-[calc(100dvh-var(--header-h))] bg-secondary-950 px-4 py-12">
             <div className="mx-auto w-full max-w-5xl space-y-6">
                 <header>
                     <h1 className="text-2xl font-semibold text-secondary-50">
