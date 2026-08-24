@@ -5,7 +5,10 @@ import { useTabs } from '@/shared/ui/tabs/hooks/useTabs';
 import type { TabItem } from '@/shared/ui/tabs/utils/tabIds';
 
 // 'xs' — BacktestTabs 스타일 (10px, font-medium, active: primary text+border)
-// 'sm' — SectorTabs 스타일 (12px uppercase tracking, active: primary border only)
+// 'sm' — SectorTabs 스타일 (14px, active: primary border only)
+//        유일한 소비자가 SectorTabs이고 그 라벨은 전부 섹터 한국어명이라
+//        uppercase는 효과가 없고 0.12em 자간은 한글을 흩뜨렸다. 둘을 걷어내고
+//        12px는 탭 라벨로 작아 14px로 올렸다(`min-h-11`이라 높이는 그대로).
 type TabsUnderlineSize = 'xs' | 'sm';
 
 interface SizeStyles {
@@ -28,7 +31,7 @@ const SIZE_STYLES: Record<TabsUnderlineSize, SizeStyles> = {
     sm: {
         container:
             'border-secondary-700 flex touch-manipulation gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b pb-0',
-        button: '-mb-px min-h-11 shrink-0 border-b-2 px-2 pt-2 pb-2 text-xs font-semibold tracking-[0.12em] uppercase transition-colors duration-150 focus-visible:ring-primary-500 rounded-t focus-visible:ring-2 focus-visible:outline-none',
+        button: '-mb-px min-h-11 shrink-0 border-b-2 px-2 pt-2 pb-2 text-sm font-semibold transition-colors duration-150 focus-visible:ring-primary-500 rounded-t focus-visible:ring-2 focus-visible:outline-none',
         active: 'text-secondary-50 border-primary-500',
         inactive:
             'text-secondary-400 hover:text-secondary-200 border-transparent',

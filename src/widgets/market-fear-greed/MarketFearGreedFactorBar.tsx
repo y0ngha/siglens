@@ -70,7 +70,10 @@ export function MarketFearGreedFactorBar({
                     component (no client-side disclosure widget available), and
                     plain text is trivially reachable by screen readers. */}
                 <p className="text-xs text-secondary-500">{description}</p>
-                <span className="shrink-0 font-mono text-xs text-secondary-400">
+                {/* `백분위`가 섞여 있어 모노를 쓸 수 없다 — Geist Mono에 한글
+                    글리프가 없어 OS 폰트로 조용히 폴백한다. 숫자 정렬만 필요하므로
+                    본문 서체의 tabular 숫자를 쓴다. */}
+                <span className="shrink-0 text-xs text-secondary-400 tabular-nums">
                     백분위 {pctile}
                 </span>
             </div>

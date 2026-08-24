@@ -1070,7 +1070,10 @@ export function AnalysisPanel({
                     클립보드 복사에 실패했습니다. 브라우저 권한을 확인해 주세요.
                 </p>
             )}
-            <p className="font-mono text-xs text-secondary-500">
+            {/* 문장이 `개 스킬 감지 · 39종 인디케이터 적용`처럼 한글이 대부분이라
+                모노를 쓸 수 없다 — Geist Mono에 한글 글리프가 없어 OS 폰트로 조용히
+                폴백한다. 숫자 폭만 고정하면 되므로 tabular 숫자로 바꾼다. */}
+            <p className="text-xs text-secondary-500 tabular-nums">
                 {/* free 티어는 스킬이 그룹당 소수만 샘플되어 감지 개수가 0일 수
                     있으므로, 오해를 주지 않도록 개수 세그먼트를 숨기고 인디케이터
                     적용 수만 노출한다. 회원가입 안내는 아래 업셀 카드가 담당한다. */}

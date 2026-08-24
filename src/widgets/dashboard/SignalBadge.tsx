@@ -43,9 +43,14 @@ interface SignalBadgeProps {
     type: SignalType;
 }
 
+/**
+ * 라벨이 전부 한글이라 uppercase는 아무 효과가 없고, `tracking-wider`(0.05em)는
+ * 라틴 소문자 기준 값이라 한글 자모를 흩뜨린다. 10px은 이 페이지에서 가장 많이
+ * 반복되는 텍스트치고 지나치게 작아 12px로 올린다.
+ */
 export function SignalBadge({ type }: SignalBadgeProps) {
     return (
-        <span className="text-[10px] tracking-wider text-secondary-300 uppercase">
+        <span className="text-xs text-secondary-300">
             {SIGNAL_BADGE_LABELS[type]}
         </span>
     );

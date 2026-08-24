@@ -45,7 +45,7 @@ export function SignalSubsection({
                 <div className="flex items-center gap-2">
                     <h3
                         className={cn(
-                            'text-secondary-200 text-sm tracking-[0.15em] text-pretty uppercase',
+                            'text-secondary-100 text-base tracking-tight text-pretty',
                             VARIANT_LABEL[variant]
                         )}
                     >
@@ -62,8 +62,11 @@ export function SignalSubsection({
                         </InfoTooltip>
                     )}
                 </div>
+                {/* 개수가 24px에 muted라 14px 제목보다 크고 어두웠다 — 소제목보다
+                    장식이 더 크게 읽히는 역전. 제목을 16px로 올린 만큼 개수는
+                    20px로 낮추고 톤을 한 단계 밝혀 둘이 같은 위계에 오게 한다. */}
                 <span
-                    className="font-mono text-2xl text-secondary-500 tabular-nums"
+                    className="font-mono text-xl text-secondary-300 tabular-nums"
                     aria-label={`${stocks.length}개 종목`}
                 >
                     {count}
