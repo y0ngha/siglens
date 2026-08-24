@@ -107,6 +107,22 @@ describe('Footer', () => {
         }
     });
 
+    /**
+     * 저작권 표기가 `© 2026` / `Siglens` 두 줄로 쪼개졌다(2026-08-25 사용자 제보
+     * 스크린샷). 오른쪽 nav가 링크 12개짜리 `flex-wrap`이라 `justify-between`
+     * 아래에서 짧은 이 문단이 대신 밀린 것 — 줄바꿈은 긴 쪽(nav)이 감당해야 한다.
+     */
+    it('저작권 표기는 줄바꿈되지 않는다 (nav에 밀려 쪼개지던 회귀)', () => {
+        const { container } = render(<Footer />);
+
+        const copyright = Array.from(container.querySelectorAll('p')).find(el =>
+            el.textContent?.includes('Siglens')
+        );
+        expect(copyright).toBeDefined();
+        expect(copyright!.className).toContain('shrink-0');
+        expect(copyright!.className).toContain('whitespace-nowrap');
+    });
+
     it('exposes both market regions', () => {
         render(<Footer />);
 

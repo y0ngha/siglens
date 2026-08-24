@@ -143,6 +143,9 @@ const CROSS_MARKET_THEME_GROUPS: readonly (readonly string[])[] = [
         'NFLX',
     ],
     // 바이오·제약 — 오리지널 신약 → 바이오시밀러/CDMO.
+    //
+    // 큐레이션 `healthcare-bio`가 5종뿐이라 링이 4칸을 채웠고, 그 자리에 FDX·UPS
+    // (물류)가 붙었다. 같은 XLV 섹터의 대형 제약을 더해 8칸을 실제 피어로 메운다.
     [
         'LLY',
         '207940.KS', // 삼성바이오로직스
@@ -150,7 +153,43 @@ const CROSS_MARKET_THEME_GROUPS: readonly (readonly string[])[] = [
         'ABBV',
         'AMGN',
         '196170.KQ', // 알테오젠
+        'JNJ',
+        'PFE',
+        'MRK',
+        'GILD',
+        'BMY',
     ],
+];
+
+/**
+ * 큐레이션 카테고리가 작아 생기는 잡음을 메우는 **관련종목 전용 보강 그룹**.
+ *
+ * 시장을 넘지 않는다(전부 미국 심볼) — 그래서 `CROSS_MARKET_THEME_GROUPS`와
+ * 분리한다. 이름과 내용이 어긋나면 다음 사람이 여기에 한국 종목을 넣어도
+ * 되는지 판단할 근거를 잃는다(claude-review PR #768 지적).
+ *
+ * ## 왜 필요한가
+ *
+ * `TICKER_CATEGORIES`의 카테고리가 5~6종뿐이면 8칸을 못 채우고 링이 블록 경계를
+ * 넘어 엉뚱한 종목을 끌어온다 — 2026-08-25 전수 감사에서 로켓랩→몬델리즈,
+ * 엑슨모빌→룰루레몬, 엔비디아2배→은행, 일라이릴리→페덱스가 나왔다.
+ *
+ * ## 왜 `TICKER_CATEGORIES`를 넓히지 않는가
+ *
+ * 그 상수는 홈 디스커버리 카드에 그대로 렌더되는 **제품 카피**다. 관련종목
+ * 스트립 품질을 이유로 홈 화면 구성을 바꾸는 건 범위를 넘는다.
+ */
+const SUPPLEMENTAL_THEME_GROUPS: readonly (readonly string[])[] = [
+    // AI 소프트웨어·애플리케이션 — 반도체(하드웨어) 층과 구분되는 응용 층.
+    // `PLTR`이 `software-cloud`에만 속해 CRWD·SNOW·NOW만 나왔다. 한국 투자자가
+    // 팔란티어를 찾는 맥락은 SaaS가 아니라 AI다(사용자 제보).
+    ['PLTR', 'NVDA', 'BBAI', 'AI', 'SOUN', 'MSFT', 'GOOGL'],
+
+    // 우주·항공우주·방산 — 큐레이션 `space` 6종에 eVTOL·방산을 더한다.
+    ['RKLB', 'ASTS', 'LUNR', 'RDW', 'PL', 'SPCE', 'ACHR', 'RTX', 'BA'],
+
+    // 레버리지·인버스 ETF — 짝(롱/숏)이 같이 보여야 뜻이 통한다.
+    ['TQQQ', 'SQQQ', 'SOXL', 'SOXS', 'TSLL', 'NVDL', 'LABU'],
 ];
 
 /**
@@ -175,6 +214,7 @@ const THEME_GROUPS: readonly (readonly string[])[] = [
     ]),
     ...CRYPTO_CATEGORIES.map(c => c.items.map(i => i.symbol)),
     ...CROSS_MARKET_THEME_GROUPS,
+    ...SUPPLEMENTAL_THEME_GROUPS,
 ];
 
 /**

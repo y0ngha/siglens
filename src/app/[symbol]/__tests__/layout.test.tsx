@@ -53,6 +53,12 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@y0ngha/siglens-core', () => ({
     EMPTY_INDICATOR_RESULT: MOCK_EMPTY_INDICATOR_RESULT,
+    // 레이아웃이 `@/views/symbol` 배럴에서 `RelatedSymbols`를 가져오는데, 그 배럴이
+    // `FearGreedFactsSummary`까지 끌고 오고 그게 모듈 스코프에서 이 상수를 읽는다.
+    // 레이아웃 자체는 쓰지 않지만 배럴 평가를 통과시키려면 필요하다 — production
+    // 코드가 슬라이스 배럴만 import하는 규칙(ARCHITECTURE.md)을 지키는 대가이고,
+    // deep import로 피하지 않는다.
+    POC_WINDOW_DEFAULT: 60,
     // Phase 1 added sessionSpecFor(marketProfileOf(assetInfo)) which imports
     // US_EQUITY_SESSION and CRYPTO_SESSION from siglens-core. Provide minimal
     // valid MarketSessionSpec objects so the switch in sessionSpecFor resolves
@@ -134,6 +140,8 @@ vi.mock('@/entities/bars', () => ({
 }));
 
 import SymbolLayout, { SymbolLayoutChrome } from '@/app/[symbol]/layout';
+import { SymbolLayoutJail } from '@/app/[symbol]/SymbolLayoutClient';
+import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
 
 const ASSET_INFO = {
     symbol: 'AAPL',
@@ -323,6 +331,53 @@ describe('SymbolLayoutChrome — 봉 seed 없이 공포·탐욕 스냅샷만 내
             ([key]) => Array.isArray(key) && key[0] === 'bars'
         );
         expect(barsSeedCalls).toEqual([]);
+    });
+});
+
+/**
+ * 관련 종목 칩의 **위치 계약**.
+ *
+ * 칩은 원래 차트 페이지 `<main>` 안에 있었는데, 그 `<main>`은 차트 라우트에서
+ * 자체 `overflow-y-auto` 스크롤 컨테이너다(jail이 definite height +
+ * overflow-hidden이라 그 안에서 따로 스크롤된다). 그래서 칩이 중첩 스크롤러
+ * 안쪽에 깔려, 사용자가 페이지를 내려 푸터를 봐도 도달하지 못했다 — DOM에는
+ * 있어 크롤러는 봤지만 사람은 못 보는 상태였다(2026-08-25 사용자 제보).
+ *
+ * jail **밖**, floating chat **앞**에 두어야 페이지 일반 스크롤로 닿고 푸터
+ * 바로 위에 놓인다. jail 안으로 되돌아가면 같은 결함이 재발한다.
+ */
+describe('SymbolLayout — 관련 종목 칩 위치 (jail 밖, 푸터 위)', () => {
+    beforeEach(() => {
+        mockGetAssetInfoResilient.mockReset();
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: ASSET_INFO,
+            degraded: false,
+        });
+    });
+
+    it('jail의 자식이 아니라 형제로 렌더된다', async () => {
+        const tree = await SymbolLayout({
+            children: null,
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        const siblings = (tree as { props?: { children?: unknown } }).props
+            ?.children;
+        if (!Array.isArray(siblings)) {
+            throw new Error('providers children is not an array');
+        }
+
+        const types = siblings.map(
+            child => (child as { type?: unknown } | null)?.type
+        );
+        const jailIndex = types.indexOf(SymbolLayoutJail);
+        const chipIndex = types.indexOf(RelatedSymbols);
+
+        expect(jailIndex).toBeGreaterThan(-1);
+        // jail의 **형제**여야 한다 — 자식이면 여기서 찾을 수 없다.
+        expect(chipIndex).toBeGreaterThan(-1);
+        // 푸터 위 자리 = jail 뒤.
+        expect(chipIndex).toBeGreaterThan(jailIndex);
     });
 });
 

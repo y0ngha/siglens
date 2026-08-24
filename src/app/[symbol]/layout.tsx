@@ -11,6 +11,7 @@ import {
     SymbolLayoutProviders,
 } from '@/app/[symbol]/SymbolLayoutClient';
 import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
+import { RelatedSymbols } from '@/views/symbol';
 import { SymbolTabsSkeleton } from '@/views/symbol/SymbolTabsSkeleton';
 import {
     DEFAULT_TIMEFRAME,
@@ -120,6 +121,45 @@ export default async function SymbolLayout({
                 </Suspense>
                 {children}
             </SymbolLayoutJail>
+            {/* 관련 종목 칩 — **jail 밖**이라 페이지 일반 스크롤로 닿는다.
+                푸터 바로 위 자리다.
+
+                예전엔 차트 페이지 `<main>` 안에 있었는데, 그 `<main>`은 차트
+                라우트에서 자체 `overflow-y-auto` 스크롤 컨테이너다(jail이
+                definite height + overflow-hidden이라 그 안에서 따로 스크롤된다).
+                그래서 칩이 **중첩 스크롤러 안쪽**에 깔려, 사용자가 페이지를 내려
+                푸터를 봐도 칩에는 영원히 도달하지 못했다 — DOM에는 있어서 크롤러는
+                봤지만 사람은 못 보는 상태였다(2026-08-25 사용자 제보).
+
+                ⚠️ jail의 높이 계산을 건드리지 않는다 — 형제로 뒤에 붙일 뿐이라
+                차트 세로폭은 그대로다. jail 안으로 되돌리면 같은 문제가 재발한다.
+
+                레이아웃으로 올라오면서 9개 탭 전부에 렌더된다. 칩 8개는 1KB
+                남짓이고, 오히려 모든 탭이 다른 종목으로 나가는 간선을 갖게 돼
+                내부링크 그래프가 촘촘해진다.
+
+                ⚠️ 두 가지가 이 이동으로 **새로 생긴다**(리뷰 round 1 지적):
+
+                1. **잔여 soft-404 탭에도 뜬다.** 크립토가 options/fundamental/
+                   financials/congress를 방문하면 그 page.tsx가 `notFound()`를
+                   던지지만 세그먼트 `loading.tsx`의 Suspense 경계 때문에 200으로
+                   샌다(이 파일 상단 주석의 알려진 잔여 동작). 레이아웃은 그보다
+                   위라 칩이 그대로 렌더된다.
+                   그대로 둔다 — `app/not-found.tsx`가 이미 `TickerCategories`로
+                   종목 링크 그리드를 띄운다. 찾지 못한 페이지에서 탐색로를 주는 건
+                   이 사이트의 의도된 동작이고, 칩만 예외로 막을 이유가 없다.
+
+                2. **콜드젠 blocking I/O가 1탭 → 9탭으로 늘었다.** 칩은 피어 8종의
+                   한글명을 `getAssetInfoResilient`로 조회한다(`Promise.all` 1왕복).
+                   각 피어의 엔트리는 그 종목 자기 페이지가 이미 채운 `unstable_cache`를
+                   공유하므로 워엄에서는 비용이 관측되지 않았지만(실측 0.20~0.26초),
+                   그건 **차트 탭 1회 기준 측정**이었다. 이제 심볼당 최대 9번 콜드젠에서
+                   같은 비용을 치른다.
+                   `<Suspense>`로 감싸지 않는 이유는 그대로다 — 경계 뒤 콘텐츠는 raw
+                   HTML 끝쪽에 스트리밍돼 JS를 실행하지 않는 크롤러(Naver Yeti·Daumoa)
+                   에게 내부링크가 푸터 뒤로 밀린다. 한국어 검색이 주 유입이고 내부링크가
+                   이 컴포넌트의 존재 이유라 그 교환은 하지 않는다. */}
+            <RelatedSymbols symbol={ticker} />
             <Suspense fallback={null}>
                 <SymbolFloatingChat params={params} />
             </Suspense>

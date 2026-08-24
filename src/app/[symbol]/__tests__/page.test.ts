@@ -656,13 +656,15 @@ describe('Symbol page', () => {
         });
 
         /**
-         * RelatedSymbols는 **persistent server sibling**이어야 한다 — Suspense
-         * fallback 안에 두면 boundary resolve 시 React가 서브트리를 파괴해, JS를
-         * 실행하는 크롤러(Googlebot 렌더러 포함)에게 링크가 사라진다. 내부링크가
-         * 존재 이유인 컴포넌트라 그 순간 목적이 통째로 없어진다(프로즈가 같은
-         * 이유로 fallback 밖에 있다).
+         * 칩은 이제 **레이아웃**이 jail 밖에서 렌더한다(`[symbol]/layout.tsx`).
+         * 이 `<main>`은 차트 라우트에서 자체 `overflow-y-auto` 스크롤 컨테이너라,
+         * 여기 두면 칩이 중첩 스크롤러 안쪽에 깔려 사용자가 페이지를 내려 푸터를
+         * 봐도 도달하지 못한다 — DOM에는 있어 크롤러는 보지만 사람은 못 보는
+         * 상태가 된다(2026-08-25 사용자 제보로 발견).
+         *
+         * 되돌아오는 회귀를 막는다. 위치 계약은 layout.test.tsx가 고정한다.
          */
-        it('mounts RelatedSymbols as a persistent child of <main> (fallback 안이 아님)', async () => {
+        it('RelatedSymbols를 <main> 안에 두지 않는다 (중첩 스크롤러에 묻힘)', async () => {
             mockPeekAnalysisCache.mockResolvedValue(null);
 
             const tree = await SymbolPage({
@@ -681,7 +683,7 @@ describe('Symbol page', () => {
                         (child as { type?: unknown } | null)?.type ===
                         RelatedSymbols
                 )
-            ).toBe(true);
+            ).toBe(false);
         });
 
         // UI audit FIX 1: <main> must be the scroll container so content
