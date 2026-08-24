@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.61.1](https://github.com/y0ngha/siglens/compare/v0.61.0...v0.61.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* /market 섹터 허브가 링크하는 23종 색인 차단 해제 + 차단 페이지 메타 고유화 ([1952d4a](https://github.com/y0ngha/siglens/commit/1952d4ab51f0bacb7cd838686ddb77c38185070a))
+* 리뷰 반영(noindex 분기 17곳 통일) + GSC 실측 수요 96종 색인 개방 ([460e107](https://github.com/y0ngha/siglens/commit/460e107d088ce8e3be99ba72ed50e4f7a03c00bc)), closes [#764](https://github.com/y0ngha/siglens/issues/764)
+
 # [0.61.0](https://github.com/y0ngha/siglens/compare/v0.60.1...v0.61.0) (2026-08-23)
 
 
