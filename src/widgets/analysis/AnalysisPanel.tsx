@@ -194,7 +194,7 @@ function ReconciledLevelsBlock({
     reason,
 }: ReconciledLevelsBlockProps) {
     return (
-        <section className="mt-1 flex flex-col gap-1 rounded-md border border-secondary-700 bg-secondary-800/40 px-3 py-2">
+        <section className="mt-1 flex flex-col gap-1 rounded-lg border border-secondary-700 bg-secondary-800/40 px-3 py-2">
             <header className="flex items-center">
                 <span className="text-[10px] font-semibold tracking-wide text-secondary-400 uppercase">
                     내부 보정값
@@ -480,7 +480,7 @@ function PatternAccordionItem({
     const keyPrices = pattern.keyPrices ?? [];
 
     return (
-        <div className="overflow-hidden rounded-md border border-secondary-700">
+        <div className="overflow-hidden rounded-lg border border-secondary-700">
             <div className="flex w-full items-center bg-secondary-700/20 transition-colors hover:bg-secondary-700/40">
                 <button
                     type="button"
@@ -584,7 +584,7 @@ function StrategyAccordionItem({
     const sections = parseStructuredSummary(strategy.summary);
 
     return (
-        <div className="overflow-hidden rounded-md border border-secondary-700">
+        <div className="overflow-hidden rounded-lg border border-secondary-700">
             <div className="flex w-full items-center bg-secondary-700/20 transition-colors hover:bg-secondary-700/40">
                 <button
                     type="button"
@@ -1344,7 +1344,7 @@ export function AnalysisPanel({
                             </div>
                             <Link
                                 href="/signup"
-                                className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
                                 회원가입
                             </Link>

@@ -48,7 +48,7 @@ export function AnalysisToast({ notice }: AnalysisToastProps) {
         <div
             role="status"
             aria-live="polite"
-            className="pointer-events-none absolute top-3 right-3 z-10 flex max-w-[90%] items-start gap-2 rounded-md border border-ui-warning/30 bg-secondary-900/95 px-3 py-2 text-xs text-secondary-100 shadow-lg backdrop-blur-sm"
+            className="pointer-events-none absolute top-3 right-3 z-10 flex max-w-[90%] items-start gap-2 rounded-lg border border-ui-warning/30 bg-secondary-900/95 px-3 py-2 text-xs text-secondary-100 shadow-lg backdrop-blur-sm"
         >
             <span className="mt-1 inline-block h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-ui-warning" />
             <span className="leading-snug">

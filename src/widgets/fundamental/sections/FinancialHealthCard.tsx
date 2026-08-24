@@ -114,7 +114,7 @@ export function FinancialHealthCard({
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 재무 건전성

@@ -180,7 +180,7 @@ function ProfileCardSkeleton({ symbol }: ProfileCardSkeletonProps) {
     return (
         <section
             aria-labelledby="profile-heading"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>

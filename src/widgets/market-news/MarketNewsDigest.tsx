@@ -16,7 +16,7 @@ function DigestStatusCard() {
         <section
             aria-labelledby="market-news-digest-status-heading"
             aria-busy="true"
-            className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
+            className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
         >
             <h2
                 id="market-news-digest-status-heading"
@@ -55,7 +55,7 @@ function DigestResultView({ result }: DigestResultViewProps) {
     return (
         <section
             aria-labelledby="market-news-digest-heading"
-            className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
+            className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
         >
             <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
                 <h2
@@ -140,7 +140,7 @@ function DigestErrorView({ error, onRetry }: DigestErrorViewProps) {
     return (
         <section
             aria-labelledby="market-news-digest-error-heading"
-            className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-ui-danger/30 bg-secondary-800 p-6"
+            className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-ui-danger/30 bg-secondary-800 p-6"
         >
             <h2
                 id="market-news-digest-error-heading"

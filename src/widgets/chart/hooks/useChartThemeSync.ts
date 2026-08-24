@@ -15,8 +15,18 @@ import { getChartChrome } from '@/shared/lib/chartColors';
  * 시스템 선호도 변경도 그 경로를 타므로 여기서 별도로 matchMedia를 듣지 않는다.
  */
 export function useChartThemeSync(
-    chartRef: React.RefObject<IChartApi | null>
+    chartRef: React.RefObject<IChartApi | null>,
+    options?: {
+        /**
+         * 배경을 투명하게 두는 차트용. 부모 표면 색을 그대로 비쳐야 하는
+         * 차트(예: 카드 안에 얹힌 공포탐욕 히스토리)는 배경을 덮어쓰면
+         * 카드 위에 불투명 사각형이 생긴다. 텍스트·그리드만 갱신한다.
+         */
+        readonly keepBackground?: boolean;
+    }
 ): void {
+    const keepBackground = options?.keepBackground ?? false;
+
     useEffect(() => {
         const apply = () => {
             const chart = chartRef.current;
@@ -24,7 +34,9 @@ export function useChartThemeSync(
             const chrome = getChartChrome();
             chart.applyOptions({
                 layout: {
-                    background: { color: chrome.background },
+                    ...(keepBackground
+                        ? {}
+                        : { background: { color: chrome.background } }),
                     textColor: chrome.text,
                 },
                 grid: {
@@ -35,5 +47,5 @@ export function useChartThemeSync(
         };
         window.addEventListener('siglens:themechange', apply);
         return () => window.removeEventListener('siglens:themechange', apply);
-    }, [chartRef]);
+    }, [chartRef, keepBackground]);
 }

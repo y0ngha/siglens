@@ -58,7 +58,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
         : '질문을 입력하세요… (Enter로 전송)';
 
     return (
-        <div className="flex flex-col overflow-hidden rounded-xl">
+        <div className="flex flex-col overflow-hidden rounded-lg">
             <div className="flex items-center justify-between border-b border-secondary-700 px-3 py-2">
                 <span className="text-xs font-semibold text-secondary-300">
                     💬 AI에게 물어보기
@@ -99,7 +99,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
             {/* 메시지 영역 — 고정 높이, 내부 스크롤 */}
             <div className="flex h-80 flex-col gap-2 overflow-y-auto px-3 py-2">
                 {messages.length === 0 && loadingPhase === null && (
-                    <div className="rounded-lg rounded-tl-sm bg-secondary-700/30 p-3">
+                    <div className="rounded-lg rounded-tl bg-secondary-700/30 p-3">
                         <p className="text-sm leading-relaxed text-secondary-400">
                             분석 결과를 바탕으로 질문해 보세요. 진입 타이밍,
                             매도 전략, 지표 해석까지 모두 물어볼 수 있어요.
@@ -124,8 +124,8 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                             className={cn(
                                 'max-w-[85%] rounded-lg p-2.5 text-xs leading-relaxed',
                                 msg.role === 'user'
-                                    ? 'bg-primary-600/80 self-end rounded-tr-sm text-white'
-                                    : 'bg-secondary-700/50 text-secondary-200 self-start rounded-tl-sm'
+                                    ? 'bg-primary-600/80 self-end rounded-tr text-white'
+                                    : 'bg-secondary-700/50 text-secondary-200 self-start rounded-tl'
                             )}
                         >
                             {msg.role === 'user' ? (
@@ -139,7 +139,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
 
                 {loadingPhase !== null && (
                     <div
-                        className="max-w-[85%] self-start rounded-lg rounded-tl-sm bg-secondary-700/50 p-2.5"
+                        className="max-w-[85%] self-start rounded-lg rounded-tl bg-secondary-700/50 p-2.5"
                         role="status"
                         aria-live="polite"
                     >

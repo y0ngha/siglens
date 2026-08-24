@@ -14,7 +14,7 @@ export function FearGreedPageError({
     return (
         <section
             aria-labelledby="fear-greed-error-heading"
-            className="rounded-xl border border-ui-danger/30 bg-secondary-800 p-6"
+            className="rounded-lg border border-ui-danger/30 bg-secondary-800 p-6"
         >
             <h2
                 id="fear-greed-error-heading"

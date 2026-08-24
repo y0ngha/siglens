@@ -48,7 +48,7 @@ export function OverallFactualFallback({
     return (
         <section
             aria-labelledby={headingId}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-5"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-5"
         >
             <h2 id={headingId} className="text-lg font-semibold tracking-tight">
                 {displayName} 종합 분석 데이터 상태

@@ -82,7 +82,7 @@ const bottomNotice = (
             {INVESTMENT_DISCLAIMER} 서비스 이용과 관련한 자세한 조건은&nbsp;
             <Link
                 href={TERMS_PATH}
-                className="rounded-sm text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                className="rounded text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
                 {TERMS_TITLE}
             </Link>

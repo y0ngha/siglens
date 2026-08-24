@@ -233,12 +233,12 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
     const rows = trades.slice(0, MAX_ROWS);
 
     return (
-        <div className="rounded-xl border border-secondary-700 bg-secondary-800">
+        <div className="rounded-lg border border-secondary-700 bg-secondary-800">
             <p className="px-4 pt-3 pb-0 text-xs text-secondary-400 sm:hidden">
                 ← 좌우로 스크롤 →
             </p>
             <div
-                className="overflow-x-auto rounded-xl focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                className="overflow-x-auto rounded-lg focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 role="region"
                 aria-label="의회 거래 내역 표 (좌우 스크롤 가능)"
                 tabIndex={0}

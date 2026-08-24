@@ -46,7 +46,7 @@ export function AiSummarySkeleton({
             aria-labelledby={headingId}
             aria-busy="true"
             className={cn(
-                'border-secondary-700 bg-secondary-800 rounded-xl border p-6',
+                'border-secondary-700 bg-secondary-800 rounded-lg border p-6',
                 className
             )}
         >

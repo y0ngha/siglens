@@ -37,7 +37,7 @@ export function StaleAnalysisBanner({
                             ? `재분석은 ${cooldownMinutes}분에 한 번만 실행할 수 있어요.`
                             : undefined
                     }
-                    className="rounded-md border border-ui-warning/40 px-2 py-1 text-xs font-medium hover:bg-ui-warning/20 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none disabled:opacity-40"
+                    className="rounded-lg border border-ui-warning/40 px-2 py-1 text-xs font-medium hover:bg-ui-warning/20 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none disabled:opacity-40"
                 >
                     {REANALYZE_LABEL}
                 </button>

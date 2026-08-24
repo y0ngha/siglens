@@ -12,7 +12,7 @@ export function IntegratedConclusion({ text }: IntegratedConclusionProps) {
     return (
         <section
             aria-labelledby="overall-integrated-conclusion-heading"
-            className="rounded-xl border border-primary-500/30 bg-primary-600/5 p-6"
+            className="rounded-lg border border-primary-500/30 bg-primary-600/5 p-6"
         >
             <h2
                 id="overall-integrated-conclusion-heading"

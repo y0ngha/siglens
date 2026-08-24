@@ -76,7 +76,7 @@ function CheckboxBox({
                 checked={checked}
                 {...inputProps}
                 className={cn(
-                    'peer size-5 cursor-pointer appearance-none rounded-sm border bg-transparent transition-colors duration-100',
+                    'peer size-5 cursor-pointer appearance-none rounded border bg-transparent transition-colors duration-100',
                     'focus-visible:ring-primary-400 focus-visible:ring-offset-secondary-950 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                     invalid
                         ? 'border-ui-danger'
@@ -176,7 +176,7 @@ function ConsentRow({
                 prefetch={false}
                 aria-label={detailLabel}
                 onClick={e => e.stopPropagation()}
-                className="inline-flex shrink-0 items-center rounded-sm px-1 text-xs text-secondary-400 transition-colors hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
+                className="inline-flex shrink-0 items-center rounded px-1 text-xs text-secondary-400 transition-colors hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
             >
                 자세히 보기
                 <ExternalArrowIcon />

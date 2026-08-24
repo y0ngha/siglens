@@ -46,7 +46,7 @@ export function ContactTextareaField({
                     .filter(Boolean)
                     .join(' ')}
                 className={cn(
-                    'border-secondary-700 bg-secondary-950 text-secondary-50 placeholder:text-secondary-500 focus-visible:border-primary-500 focus-visible:ring-primary-500/40 min-h-32 w-full resize-y rounded-md border px-4 py-3 text-sm leading-relaxed focus-visible:ring-2 focus-visible:outline-none',
+                    'border-secondary-700 bg-secondary-950 text-secondary-50 placeholder:text-secondary-500 focus-visible:border-primary-500 focus-visible:ring-primary-500/40 min-h-32 w-full resize-y rounded-lg border px-4 py-3 text-sm leading-relaxed focus-visible:ring-2 focus-visible:outline-none',
                     error && 'border-ui-danger/60'
                 )}
             />

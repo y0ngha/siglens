@@ -216,7 +216,7 @@ export default async function Home() {
                             // 랜딩은 트래픽이 가장 많은 페이지라 이 링크 하나가 대량의
                             // 파편화된 `_rsc` 요청을 만든다 (CDN_CACHING.md §1).
                             prefetch={false}
-                            className="shrink-0 rounded-md bg-secondary-700 px-4 py-2 text-xs font-medium text-secondary-200 transition-colors hover:bg-secondary-600"
+                            className="shrink-0 rounded-lg bg-secondary-700 px-4 py-2 text-xs font-medium text-secondary-200 transition-colors hover:bg-secondary-600"
                         >
                             백테스팅 결과 보기 →
                         </Link>

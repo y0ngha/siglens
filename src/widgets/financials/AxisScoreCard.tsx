@@ -136,7 +136,7 @@ export function AxisScoreCard({
     return (
         <section
             aria-labelledby={`axis-${axisKey}-heading`}
-            className="flex flex-col gap-4 rounded-xl border border-secondary-700 bg-secondary-800 p-4 sm:p-6"
+            className="flex flex-col gap-4 rounded-lg border border-secondary-700 bg-secondary-800 p-4 sm:p-6"
         >
             <div className="flex items-center justify-between">
                 <h3

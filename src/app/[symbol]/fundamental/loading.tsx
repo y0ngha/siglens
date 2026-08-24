@@ -6,7 +6,7 @@ export default function FundamentalLoading() {
             {[...Array(SKELETON_SECTION_COUNT)].map((_, i) => (
                 <div
                     key={i}
-                    className="h-32 animate-pulse rounded-xl bg-secondary-700"
+                    className="h-32 animate-pulse rounded-lg bg-secondary-700"
                     aria-hidden="true"
                 />
             ))}

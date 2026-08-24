@@ -11,7 +11,7 @@ export function ForgotPasswordForm() {
             <div
                 role="status"
                 aria-live="polite"
-                className="space-y-2 rounded-md border border-secondary-800 bg-secondary-900/60 p-4 text-sm"
+                className="space-y-2 rounded-lg border border-secondary-800 bg-secondary-900/60 p-4 text-sm"
             >
                 <p className="font-semibold text-secondary-100">
                     메일을 확인해 주세요

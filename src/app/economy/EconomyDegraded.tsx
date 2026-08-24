@@ -4,7 +4,7 @@
  */
 export function EconomyDegraded() {
     return (
-        <section className="rounded-xl border border-secondary-700 bg-secondary-800 p-6">
+        <section className="rounded-lg border border-secondary-700 bg-secondary-800 p-6">
             <h2 className="mb-3 text-lg font-semibold text-secondary-100">
                 잠시 후 다시 시도해 주세요
             </h2>

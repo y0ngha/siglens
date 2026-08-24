@@ -41,7 +41,7 @@ export function StrikeBarTooltip({
             id={id}
             role="tooltip"
             hidden={hoveredRow === null || tooltipPos === null}
-            className="pointer-events-none absolute top-[var(--tooltip-y)] left-[var(--tooltip-x)] z-10 min-w-[var(--tooltip-min-w)] -translate-x-1/2 -translate-y-full rounded-md border border-secondary-600 bg-secondary-900/95 px-3 py-2 text-xs text-secondary-100 shadow-lg backdrop-blur"
+            className="pointer-events-none absolute top-[var(--tooltip-y)] left-[var(--tooltip-x)] z-10 min-w-[var(--tooltip-min-w)] -translate-x-1/2 -translate-y-full rounded-lg border border-secondary-600 bg-secondary-900/95 px-3 py-2 text-xs text-secondary-100 shadow-lg backdrop-blur"
             style={
                 // CSS 커스텀 프로퍼티(--*)는 런타임에 유효하나 React의
                 // CSSProperties 타입은 임의 `--*` 키를 포함하지 않아

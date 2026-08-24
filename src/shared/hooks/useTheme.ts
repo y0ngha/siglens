@@ -91,9 +91,15 @@ function applyTheme(next: ResolvedTheme) {
     const root = document.documentElement;
     root.setAttribute('data-theme', next);
     root.style.colorScheme = next;
+    /* `viewport.themeColor`가 미디어 배열이라 meta 태그가 **두 개** 나온다
+       (light 조건 / dark 조건). 첫 번째만 고치면 사용자가 시스템과 반대
+       테마를 골랐을 때 브라우저는 여전히 반대편 태그를 적용한다 — 즉 이
+       함수가 존재하는 이유였던 케이스가 그대로 깨져 있게 된다.
+       선택된 테마에서는 두 태그가 같은 색을 가리켜야 하므로 전부 덮어쓴다. */
+    const themeColor = next === 'light' ? '#f7f8fa' : '#09090b';
     document
-        .querySelector('meta[name="theme-color"]')
-        ?.setAttribute('content', next === 'light' ? '#f7f8fa' : '#09090b');
+        .querySelectorAll('meta[name="theme-color"]')
+        .forEach(meta => meta.setAttribute('content', themeColor));
     /* 차트는 CSS 변수를 못 읽으므로 JS로 색을 갈아끼워야 한다. 리스너를 등록한
        차트 인스턴스들이 이 이벤트를 받아 applyOptions를 호출한다. */
     window.dispatchEvent(

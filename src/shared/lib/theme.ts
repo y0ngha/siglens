@@ -14,7 +14,16 @@ export type ThemePreference = 'light' | 'dark' | 'system';
 /** 실제로 화면에 적용되는 값. */
 export type ResolvedTheme = 'light' | 'dark';
 
-/** 저장된 선택이 없을 때의 기본. 시스템 선호도 못 읽는 환경의 최종 폴백이기도 하다. */
+/**
+ * 저장된 선택이 없을 때의 기본.
+ *
+ * **시스템 선호도를 따르지 않고 다크로 고정한다.** 이 앱은 오랫동안 다크 전용이었고,
+ * 시스템 선호를 따르게 하면 OS가 라이트인 사용자 전원이 아무 동작도 하지 않았는데
+ * 앱 전체 외형이 바뀐다. 라이트는 사용자가 토글을 눌렀을 때만 적용한다.
+ *
+ * `system` 선택지를 노출하게 되면 그때는 `resolveTheme`이 선호도를 반영한다 —
+ * 그 경로는 이미 구현돼 있고, 여기서 막는 것은 "선택하지 않은 사용자"뿐이다.
+ */
 export const DEFAULT_THEME: ResolvedTheme = 'dark';
 
 /** `<html>`이 이 두 값 중 하나를 항상 갖는다 — 미지정 상태를 만들지 않는다. */
@@ -33,7 +42,7 @@ export const THEME_ATTRIBUTE = 'data-theme';
  */
 export const THEME_INIT_SCRIPT = `(function(){try{
 var k=${JSON.stringify(THEME_STORAGE_KEY)},s=localStorage.getItem(k);
-var t=(s==='light'||s==='dark')?s:(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');
+var t=(s==='light'||s==='dark')?s:${JSON.stringify(DEFAULT_THEME)};
 var r=document.documentElement;r.setAttribute('data-theme',t);r.style.colorScheme=t;
 }catch(e){var r2=document.documentElement;r2.setAttribute('data-theme',${JSON.stringify(DEFAULT_THEME)});r2.style.colorScheme=${JSON.stringify(DEFAULT_THEME)};}})()`;
 

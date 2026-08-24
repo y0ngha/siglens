@@ -22,7 +22,7 @@ function PositionSkeleton() {
             aria-busy="true"
             aria-live="polite"
             data-testid="position-loading"
-            className="flex min-h-[280px] flex-col items-center justify-center gap-2 rounded-xl border border-secondary-700 bg-secondary-800/40 p-6"
+            className="flex min-h-[280px] flex-col items-center justify-center gap-2 rounded-lg border border-secondary-700 bg-secondary-800/40 p-6"
         >
             <span className="sr-only">내 위치를 불러오는 중이에요</span>
             <div

@@ -5,7 +5,7 @@ export function OptionsAiAnalysisStaleNotice() {
     return (
         <section
             aria-labelledby="options-ai-analysis-heading"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2
                 id="options-ai-analysis-heading"

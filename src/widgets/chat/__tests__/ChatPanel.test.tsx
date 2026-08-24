@@ -80,12 +80,12 @@ describe('ChatPanel', () => {
     });
 
     describe('PR #407 mobile-input regression guards', () => {
-        it('outermost wrapper carries overflow-hidden + rounded-xl (the moved classes)', () => {
+        it('outermost wrapper carries overflow-hidden + rounded-lg (the moved classes)', () => {
             const { container } = renderPanel();
             const root = container.firstElementChild;
             expect(root).not.toBeNull();
             expect(root!.className).toContain('overflow-hidden');
-            expect(root!.className).toContain('rounded-xl');
+            expect(root!.className).toContain('rounded-lg');
             expect(root!.className).toContain('flex');
             expect(root!.className).toContain('flex-col');
         });

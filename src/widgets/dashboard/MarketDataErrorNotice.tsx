@@ -39,7 +39,7 @@ export function MarketDataErrorNotice({
         <div
             role="alert"
             className={cn(
-                'border-ui-warning/30 bg-ui-warning/5 text-ui-warning flex items-start gap-2 rounded-md border p-3 text-sm',
+                'border-ui-warning/30 bg-ui-warning/5 text-ui-warning flex items-start gap-2 rounded-lg border p-3 text-sm',
                 className
             )}
         >

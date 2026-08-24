@@ -9,7 +9,7 @@ export function NewsSummary({ bullets }: NewsSummaryProps) {
     return (
         <section
             aria-labelledby="news-summary-heading"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2
                 id="news-summary-heading"

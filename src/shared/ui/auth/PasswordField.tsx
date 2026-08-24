@@ -60,14 +60,14 @@ export function PasswordField({
                     onBlur={() => setCapsLock(false)}
                     aria-invalid={!!error}
                     aria-describedby={describedBy}
-                    className="h-12 w-full rounded-md border border-secondary-700 bg-secondary-950 px-4 pr-12 text-sm text-secondary-50 placeholder:text-secondary-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/40 focus:outline-none"
+                    className="h-12 w-full rounded-lg border border-secondary-700 bg-secondary-950 px-4 pr-12 text-sm text-secondary-50 placeholder:text-secondary-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/40 focus:outline-none"
                 />
                 <button
                     type="button"
                     onClick={() => setVisible(v => !v)}
                     aria-label={visible ? '비밀번호 숨기기' : '비밀번호 보이기'}
                     aria-pressed={visible}
-                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-md text-secondary-400 hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
+                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-lg text-secondary-400 hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
                 >
                     <EyeIcon isVisible={visible} className="h-5 w-5" />
                 </button>

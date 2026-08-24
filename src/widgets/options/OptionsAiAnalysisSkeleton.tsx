@@ -11,7 +11,7 @@ const SKELETON_LINE_WIDTHS = [
 export function OptionsAiAnalysisSkeleton() {
     return (
         <section
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             aria-busy="true"
             aria-label="AI 옵션 분석 불러오는 중"
         >

@@ -78,7 +78,7 @@ export interface EconomySkeletonProps {
 /** 실제 `IndicatorCard`(article.p-4: 라벨 / 값 / 델타 배지 / 날짜)와 같은 높이의 자리표. */
 function SkeletonIndicatorCard() {
     return (
-        <div className="animate-pulse rounded-xl border border-secondary-700 bg-secondary-800 p-4 motion-reduce:animate-none">
+        <div className="animate-pulse rounded-lg border border-secondary-700 bg-secondary-800 p-4 motion-reduce:animate-none">
             <div className="mb-2 h-5 w-24 rounded bg-secondary-700" />
             <div className="h-8 w-20 rounded bg-secondary-700" />
             <div className="mt-1 h-5 w-16 rounded bg-secondary-700" />
@@ -103,7 +103,7 @@ function SkeletonIndicatorCard() {
  *   4. Economic calendar placeholder.
  *
  * All pulse blocks use the project's standard:
- *   `border-secondary-700 bg-secondary-800 rounded-xl border p-6 animate-pulse
+ *   `border-secondary-700 bg-secondary-800 rounded-lg border p-6 animate-pulse
  *    motion-reduce:animate-none`
  *
  * Pure presentational — no 'use client', no data dependencies.
@@ -121,7 +121,7 @@ export function EconomySkeleton({ variant = 'us' }: EconomySkeletonProps = {}) {
             {v.showMacroSections && (
                 <>
                     <section
-                        className="animate-pulse rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
+                        className="animate-pulse rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
                         aria-hidden="true"
                     >
                         <div className="mb-3 h-6 w-36 rounded bg-secondary-700" />
@@ -129,7 +129,7 @@ export function EconomySkeleton({ variant = 'us' }: EconomySkeletonProps = {}) {
                     </section>
 
                     <section
-                        className="animate-pulse rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
+                        className="animate-pulse rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
                         aria-hidden="true"
                     >
                         <div className="mb-4 flex items-center gap-3">
@@ -165,7 +165,7 @@ export function EconomySkeleton({ variant = 'us' }: EconomySkeletonProps = {}) {
             </section>
 
             <section
-                className="animate-pulse rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
+                className="animate-pulse rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
                 aria-hidden="true"
             >
                 <div className="mb-4 h-5 w-32 rounded bg-secondary-700" />

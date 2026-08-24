@@ -45,7 +45,7 @@ export function AnalysisSignupNudgeModal({
                 aria-modal="true"
                 aria-labelledby={TITLE_ID}
                 tabIndex={-1}
-                className="relative w-full max-w-sm rounded-2xl bg-secondary-900 p-6 shadow-2xl ring-1 ring-secondary-800 outline-none"
+                className="relative w-full max-w-sm rounded-lg bg-secondary-900 p-6 shadow-2xl ring-1 ring-secondary-800 outline-none"
             >
                 <div className="mb-4 flex flex-col items-center gap-3 text-center">
                     {/* inline SVG avoids lucide-react dependency, mirrors PremiumModelGateModal */}

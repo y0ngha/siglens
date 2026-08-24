@@ -128,7 +128,7 @@ export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
     return (
         <section
             aria-labelledby="options-ai-analysis-heading"
-            className="rounded-xl border border-primary-500/30 bg-gradient-to-br from-secondary-800 to-secondary-900 p-6 shadow-lg ring-1 shadow-primary-500/5 ring-primary-500/10"
+            className="rounded-lg border border-primary-500/30 bg-gradient-to-br from-secondary-800 to-secondary-900 p-6 shadow-lg ring-1 shadow-primary-500/5 ring-primary-500/10"
         >
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <h2
@@ -287,7 +287,7 @@ export function OptionsAiAnalysis({
         return (
             <section
                 aria-labelledby="options-ai-analysis-heading"
-                className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+                className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             >
                 <h2
                     id="options-ai-analysis-heading"

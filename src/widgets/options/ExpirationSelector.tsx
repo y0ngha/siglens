@@ -100,7 +100,7 @@ export function ExpirationSelector({
 
     return (
         <div
-            className="flex flex-wrap items-center gap-2 overflow-x-auto rounded-xl border border-secondary-700 bg-secondary-800 p-3"
+            className="flex flex-wrap items-center gap-2 overflow-x-auto rounded-lg border border-secondary-700 bg-secondary-800 p-3"
             role="tablist"
             aria-label="옵션 만기 선택"
         >

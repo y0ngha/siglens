@@ -14,10 +14,10 @@ export function AuthFormSkeleton({ rows = 2 }: AuthFormSkeletonProps) {
             {Array.from({ length: rows }).map((_, i) => (
                 <div key={i} className="space-y-2">
                     <div className="h-3 w-20 rounded bg-secondary-800 motion-safe:animate-pulse" />
-                    <div className="h-10 w-full rounded-md bg-secondary-800 motion-safe:animate-pulse" />
+                    <div className="h-10 w-full rounded-lg bg-secondary-800 motion-safe:animate-pulse" />
                 </div>
             ))}
-            <div className="h-10 w-full rounded-md bg-secondary-800 motion-safe:animate-pulse" />
+            <div className="h-10 w-full rounded-lg bg-secondary-800 motion-safe:animate-pulse" />
         </div>
     );
 }

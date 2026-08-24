@@ -70,7 +70,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
 
     return (
         <div className="mt-3">
-            <div className="flex overflow-hidden rounded-md" aria-hidden="true">
+            <div className="flex overflow-hidden rounded-lg" aria-hidden="true">
                 {strongBuy > 0 && (
                     <div
                         title={`강력 매수 ${strongBuy}`}
@@ -130,7 +130,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
             <dl className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs">
                 <div className="flex items-center gap-1">
                     <span
-                        className="block h-2 w-2 rounded-sm bg-ui-success"
+                        className="block h-2 w-2 rounded bg-ui-success"
                         aria-hidden="true"
                     />
                     <dt className="text-secondary-400">강력 매수</dt>
@@ -138,7 +138,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 </div>
                 <div className="flex items-center gap-1">
                     <span
-                        className="block h-2 w-2 rounded-sm bg-ui-success/60"
+                        className="block h-2 w-2 rounded bg-ui-success/60"
                         aria-hidden="true"
                     />
                     <dt className="text-secondary-400">매수</dt>
@@ -146,7 +146,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 </div>
                 <div className="flex items-center gap-1">
                     <span
-                        className="block h-2 w-2 rounded-sm bg-ui-warning"
+                        className="block h-2 w-2 rounded bg-ui-warning"
                         aria-hidden="true"
                     />
                     <dt className="text-secondary-400">중립</dt>
@@ -154,7 +154,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 </div>
                 <div className="flex items-center gap-1">
                     <span
-                        className="block h-2 w-2 rounded-sm bg-ui-danger/60"
+                        className="block h-2 w-2 rounded bg-ui-danger/60"
                         aria-hidden="true"
                     />
                     <dt className="text-secondary-400">매도</dt>
@@ -162,7 +162,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 </div>
                 <div className="flex items-center gap-1">
                     <span
-                        className="block h-2 w-2 rounded-sm bg-ui-danger"
+                        className="block h-2 w-2 rounded bg-ui-danger"
                         aria-hidden="true"
                     />
                     <dt className="text-secondary-400">강력 매도</dt>
@@ -193,7 +193,7 @@ export function FutureDirectionCard({
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 전망과 목표가

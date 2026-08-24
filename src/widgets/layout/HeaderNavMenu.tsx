@@ -130,7 +130,7 @@ export function HeaderNavMenu({ vertical, pathname }: HeaderNavMenuProps) {
                 id={panelId}
                 aria-label={`${vertical.label} 바로가기`}
                 className={cn(
-                    'absolute top-full left-0 z-50 min-w-44 rounded-md border border-secondary-700 bg-secondary-900 py-1 shadow-xl',
+                    'absolute top-full left-0 z-50 min-w-44 rounded-lg border border-secondary-700 bg-secondary-900 py-1 shadow-xl',
                     isOpen ? 'visible' : 'invisible'
                 )}
             >

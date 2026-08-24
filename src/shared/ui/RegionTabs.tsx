@@ -46,7 +46,7 @@ export function RegionTabs({
 }: RegionTabsProps) {
     const regions = regionsOf(vertical);
     const baseClass =
-        'flex min-h-11 touch-manipulation items-center rounded-md px-3 text-sm font-semibold transition-colors';
+        'flex min-h-11 touch-manipulation items-center rounded-lg px-3 text-sm font-semibold transition-colors';
 
     return (
         <nav

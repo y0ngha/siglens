@@ -317,7 +317,7 @@ function DigestSkeleton() {
             aria-busy="true"
             role="status"
             aria-label="AI 다이제스트 불러오는 중"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <div className="mb-4 h-5 w-1/3 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             <div className="space-y-2">
@@ -336,7 +336,7 @@ function MarketNewsDegraded({ koLabel }: MarketNewsDegradedProps) {
     return (
         <section
             aria-label={`${koLabel} 뉴스 없음`}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <p className="text-sm text-secondary-400">
                 {koLabel} 최근 뉴스를 불러오지 못했어요. 잠시 후 다시 확인해

@@ -220,7 +220,7 @@ function KrEconomyDegraded() {
     return (
         <section
             aria-label="한국 경제 데이터 없음"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <p className="text-sm text-secondary-400">
                 한국 경제 지표를 준비하고 있어요. 잠시 후 다시 확인해 주세요.

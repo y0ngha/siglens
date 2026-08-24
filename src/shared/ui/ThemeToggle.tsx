@@ -28,7 +28,7 @@ export function ThemeToggle() {
             onClick={toggleTheme}
             aria-label={`${next} 모드로 전환`}
             title={`${next} 모드로 전환`}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
         >
             {/* 다크에서는 속이 빈 원(달), 라이트에서는 광선 있는 원(해).
                 두 상태를 형태로 구분해 색상만으로 의미를 전달하지 않는다. */}

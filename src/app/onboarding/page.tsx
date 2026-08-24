@@ -47,7 +47,7 @@ export function OnboardingSkeleton() {
                     <div className="h-7 w-64 animate-pulse rounded bg-secondary-800" />
                     <div className="h-4 w-full max-w-md animate-pulse rounded bg-secondary-800" />
                 </div>
-                <div className="h-48 animate-pulse rounded-2xl bg-secondary-900/80 ring-1 ring-secondary-800" />
+                <div className="h-48 animate-pulse rounded-lg bg-secondary-900/80 ring-1 ring-secondary-800" />
             </div>
         </div>
     );

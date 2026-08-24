@@ -25,7 +25,7 @@ interface MetricCardProps {
 
 function MetricCard({ label, value, tooltip }: MetricCardProps) {
     return (
-        <div className="rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+        <div className="rounded-lg border border-secondary-700 bg-secondary-800 p-4">
             <div className="flex items-center">
                 <span className="text-xs tracking-widest text-secondary-400 uppercase">
                     {label}

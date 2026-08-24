@@ -53,12 +53,12 @@ export function FloatingChatButton({ symbol }: FloatingChatButtonProps) {
     return (
         <>
             {isOpen && (
-                <div className="fixed inset-x-2 bottom-18 z-60 rounded-xl border border-secondary-700 bg-secondary-900 shadow-2xl md:inset-x-auto md:right-6 md:bottom-20 md:w-95">
+                <div className="fixed inset-x-2 bottom-18 z-60 rounded-lg border border-secondary-700 bg-secondary-900 shadow-2xl md:inset-x-auto md:right-6 md:bottom-20 md:w-95">
                     <ChatPanel symbol={symbol} onClose={handleClose} />
                 </div>
             )}
             {showTooltip && !isOpen && (
-                <div className="fixed right-4 bottom-18 z-60 w-64 rounded-xl border border-secondary-700 bg-secondary-800 px-4 py-3 shadow-xl md:right-6 md:bottom-22">
+                <div className="fixed right-4 bottom-18 z-60 w-64 rounded-lg border border-secondary-700 bg-secondary-800 px-4 py-3 shadow-xl md:right-6 md:bottom-22">
                     <button
                         type="button"
                         onClick={dismissTooltip}

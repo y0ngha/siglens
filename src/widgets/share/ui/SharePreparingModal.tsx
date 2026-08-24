@@ -43,7 +43,7 @@ export function SharePreparingModal({
                 aria-labelledby="share-preparing-modal-title"
                 aria-busy={phase === 'pending' ? 'true' : undefined}
                 tabIndex={-1}
-                className="w-full max-w-sm rounded-xl border border-secondary-700 bg-secondary-800 shadow-2xl outline-none"
+                className="w-full max-w-sm rounded-lg border border-secondary-700 bg-secondary-800 shadow-2xl outline-none"
             >
                 <div className="flex items-center justify-between border-b border-secondary-700 px-5 py-4">
                     <h2

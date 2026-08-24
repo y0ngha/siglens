@@ -16,7 +16,7 @@ export function OptionsSummary({ bullets, oiStale }: OptionsSummaryProps) {
     return (
         <section
             aria-labelledby="overall-options-heading"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <div className="mb-3 flex items-center gap-2">
                 <h2
@@ -27,7 +27,7 @@ export function OptionsSummary({ bullets, oiStale }: OptionsSummaryProps) {
                 </h2>
                 {!isEmpty && oiStale && (
                     <span
-                        className="rounded-md bg-ui-warning/10 px-2 py-0.5 text-xs text-ui-warning"
+                        className="rounded-lg bg-ui-warning/10 px-2 py-0.5 text-xs text-ui-warning"
                         title="미국 옵션 정규 거래 시간 외에 수집된 스냅샷으로, Open Interest가 직전 세션 기준일 수 있습니다."
                     >
                         OI 데이터 지연

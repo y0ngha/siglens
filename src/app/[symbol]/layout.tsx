@@ -311,7 +311,7 @@ function SymbolHeaderShellFallback() {
                     <span className="text-secondary-500">/</span>
                     <span className="inline-block h-5 w-32 animate-pulse rounded bg-secondary-700" />
                 </div>
-                <span className="inline-block h-8 w-36 shrink-0 animate-pulse rounded-md bg-secondary-700" />
+                <span className="inline-block h-8 w-36 shrink-0 animate-pulse rounded-lg bg-secondary-700" />
             </div>
             <div className="-mx-4 mt-3">
                 <SymbolTabsSkeleton />

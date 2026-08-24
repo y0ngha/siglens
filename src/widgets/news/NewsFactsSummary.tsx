@@ -82,7 +82,7 @@ export function NewsFactsSummary({
     return (
         <section
             aria-labelledby="news-facts-summary-heading"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-5"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-5"
         >
             <h2
                 id="news-facts-summary-heading"

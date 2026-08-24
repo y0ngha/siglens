@@ -96,11 +96,11 @@ function EarningsReportComparison({ items }: EarningsReportComparisonProps) {
             <div className="flex flex-wrap items-end justify-between gap-2">
                 <div className="flex gap-3 text-xs text-secondary-400">
                     <span className="inline-flex items-center gap-1">
-                        <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                        <span className="h-2 w-2 rounded-full bg-ui-success" />
                         실제
                     </span>
                     <span className="inline-flex items-center gap-1">
-                        <span className="h-2 w-2 rounded-full bg-sky-400" />
+                        <span className="h-2 w-2 rounded-full bg-primary-400" />
                         컨센서스
                         <InfoTooltip className="ml-0 text-[11px]">
                             <p>
@@ -197,9 +197,9 @@ interface SurpriseBadgeProps {
 function SurpriseBadge({ badge }: SurpriseBadgeProps) {
     const className =
         badge.kind === 'surprise'
-            ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+            ? 'border-ui-success/40 bg-ui-success/10 text-ui-success-text'
             : badge.kind === 'shock'
-              ? 'border-rose-500/40 bg-rose-500/10 text-rose-300'
+              ? 'border-ui-danger/40 bg-ui-danger/10 text-ui-danger-text'
               : 'border-secondary-500/40 bg-secondary-700/50 text-secondary-300';
 
     return (
@@ -239,7 +239,7 @@ function MetricBars({
                     value={actual}
                     maxValue={maxValue}
                     format={format}
-                    className="bg-emerald-400"
+                    className="bg-ui-success"
                     signed={signed}
                 />
                 <MetricBar
@@ -247,7 +247,7 @@ function MetricBars({
                     value={estimated}
                     maxValue={maxValue}
                     format={format}
-                    className="bg-sky-400"
+                    className="bg-primary-400"
                     signed={signed}
                 />
             </div>
@@ -274,7 +274,7 @@ function MetricBar({
 }: MetricBarProps) {
     const width = getBarWidth(value, maxValue, signed);
     const isNegative = value !== null && value < 0;
-    const barClassName = isNegative ? 'bg-rose-400' : className;
+    const barClassName = isNegative ? 'bg-ui-danger' : className;
 
     return (
         <div className="grid grid-cols-[4.5rem_minmax(0,1fr)_4.5rem] items-center gap-2">

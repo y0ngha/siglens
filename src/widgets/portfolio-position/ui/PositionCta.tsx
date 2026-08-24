@@ -18,7 +18,7 @@ export function PositionCta({ symbol, low52w, high52w }: PositionCtaProps) {
     return (
         <section
             data-testid="position-cta"
-            className="flex flex-col items-start gap-3 rounded-xl border border-secondary-700 bg-secondary-800/40 p-6"
+            className="flex flex-col items-start gap-3 rounded-lg border border-secondary-700 bg-secondary-800/40 p-6"
         >
             <p className="text-sm font-semibold text-secondary-100">
                 보유종목을 등록하면 내 매수 층이 표시돼요

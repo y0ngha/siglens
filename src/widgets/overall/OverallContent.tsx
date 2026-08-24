@@ -121,7 +121,7 @@ export function OverallContent({
             <section
                 aria-labelledby="overall-cta-poll-error-heading"
                 role="alert"
-                className="rounded-xl border border-ui-danger/30 bg-secondary-800 p-6 text-center"
+                className="rounded-lg border border-ui-danger/30 bg-secondary-800 p-6 text-center"
             >
                 <h2
                     id="overall-cta-poll-error-heading"
@@ -135,7 +135,7 @@ export function OverallContent({
                 <button
                     type="button"
                     onClick={() => window.location.reload()}
-                    className="mt-4 inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
+                    className="mt-4 inline-flex items-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
                 >
                     다시 시도
                 </button>
@@ -165,7 +165,7 @@ export function OverallContent({
             <section
                 aria-labelledby="overall-loading-heading"
                 aria-busy="true"
-                className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+                className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             >
                 <h2
                     id="overall-loading-heading"
@@ -211,7 +211,7 @@ export function OverallContent({
         return (
             <section
                 aria-labelledby="overall-error-heading"
-                className="rounded-xl border border-ui-danger/30 bg-secondary-800 p-6"
+                className="rounded-lg border border-ui-danger/30 bg-secondary-800 p-6"
             >
                 <h2
                     id="overall-error-heading"
@@ -226,7 +226,7 @@ export function OverallContent({
                 <button
                     type="button"
                     onClick={trigger}
-                    className="mt-3 rounded-sm text-sm text-primary-400 underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    className="mt-3 rounded text-sm text-primary-400 underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
                     다시 시도
                 </button>

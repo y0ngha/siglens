@@ -196,7 +196,7 @@ export function OpenInterestChart({
         // stale-quote 시그니처에 해당한다. 세 경로 모두 사용자 대응법
         // (정규장 시간에 재확인)이 같아 메시지를 통합한다.
         return (
-            <div className="space-y-2 rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+            <div className="space-y-2 rounded-lg border border-secondary-700 bg-secondary-800 p-4">
                 <span className="text-sm font-medium text-secondary-300">
                     Open Interest 분포 (Strike별)
                 </span>
@@ -242,7 +242,7 @@ export function OpenInterestChart({
     return (
         <div
             ref={containerRef}
-            className="relative space-y-2 rounded-xl border border-secondary-700 bg-secondary-800 p-4"
+            className="relative space-y-2 rounded-lg border border-secondary-700 bg-secondary-800 p-4"
         >
             <div className="flex items-center gap-1">
                 <span className="text-sm font-medium text-secondary-300">
@@ -459,7 +459,7 @@ export function OpenInterestChart({
             <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px] text-secondary-500">
                 <span className="flex items-center gap-1">
                     <span
-                        className="inline-block h-2.5 w-2.5 rounded-sm bg-chart-bullish"
+                        className="inline-block h-2.5 w-2.5 rounded bg-chart-bullish"
                         aria-hidden="true"
                     />
                     Call OI
@@ -467,7 +467,7 @@ export function OpenInterestChart({
                 </span>
                 <span className="flex items-center gap-1">
                     <span
-                        className="inline-block h-2.5 w-2.5 rounded-sm bg-chart-bearish"
+                        className="inline-block h-2.5 w-2.5 rounded bg-chart-bearish"
                         aria-hidden="true"
                     />
                     Put OI

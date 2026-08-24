@@ -105,7 +105,7 @@ function NewsCardSkeleton() {
     return (
         <article
             aria-hidden="true"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-4"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-4"
         >
             <div className="h-5 w-4/5 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -162,7 +162,7 @@ function NewsRefreshStatusCard() {
         <div
             role="status"
             aria-live="polite"
-            className="flex w-full max-w-full min-w-0 items-start gap-3 overflow-hidden rounded-xl border border-primary-500/30 bg-primary-500/5 p-4"
+            className="flex w-full max-w-full min-w-0 items-start gap-3 overflow-hidden rounded-lg border border-primary-500/30 bg-primary-500/5 p-4"
         >
             <div
                 aria-hidden="true"
@@ -294,7 +294,7 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
         return (
             <section
                 aria-labelledby="news-list-heading"
-                className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+                className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             >
                 <div className="mb-3 flex items-center gap-2">
                     <h2

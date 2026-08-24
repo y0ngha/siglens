@@ -59,7 +59,7 @@ export function AiSummaryErrorSection({
         <section
             aria-labelledby={headingId}
             className={cn(
-                'border-ui-danger/30 bg-secondary-800 rounded-xl border p-6',
+                'border-ui-danger/30 bg-secondary-800 rounded-lg border p-6',
                 className
             )}
         >

@@ -24,7 +24,7 @@ export function PeersTable({ peers }: PeersTableProps) {
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 동종업계 비교
@@ -51,7 +51,7 @@ export function PeersTable({ peers }: PeersTableProps) {
                                         href={`/${peer.symbol}/fundamental`}
                                         // 표로 다수 렌더 — docs/architecture/CDN_CACHING.md §1
                                         prefetch={false}
-                                        className="rounded-sm font-mono font-medium text-primary-400 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
+                                        className="rounded font-mono font-medium text-primary-400 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
                                         translate="no"
                                     >
                                         {peer.symbol}

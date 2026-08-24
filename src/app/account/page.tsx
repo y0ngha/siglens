@@ -34,7 +34,7 @@ async function AccountContent() {
         <>
             <section
                 aria-label="프로필"
-                className="space-y-4 rounded-2xl bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
+                className="space-y-4 rounded-lg bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
             >
                 <h2 className="text-lg font-semibold text-secondary-100">
                     프로필
@@ -59,19 +59,19 @@ async function AccountContent() {
 
             <section
                 aria-label="AI 모델 API 키"
-                className="space-y-4 rounded-2xl bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
+                className="space-y-4 rounded-lg bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
             >
                 <ApiKeySection registeredProviders={registeredProviders} />
             </section>
 
             <section
                 aria-label="보유종목"
-                className="space-y-4 rounded-2xl bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
+                className="space-y-4 rounded-lg bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
             >
                 <PortfolioSection />
                 <Link
                     href="/portfolio"
-                    className="inline-flex min-h-11 touch-manipulation items-center justify-center rounded-md border border-secondary-700 px-4 text-sm font-medium text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    className="inline-flex min-h-11 touch-manipulation items-center justify-center rounded-lg border border-secondary-700 px-4 text-sm font-medium text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     내 포트폴리오 위치 보기
                 </Link>
@@ -79,7 +79,7 @@ async function AccountContent() {
 
             <section
                 aria-label="위험영역"
-                className="space-y-4 rounded-2xl border border-ui-danger/30 bg-ui-danger/5 p-6"
+                className="space-y-4 rounded-lg border border-ui-danger/30 bg-ui-danger/5 p-6"
             >
                 <div className="flex flex-col gap-3 rounded-lg border border-secondary-800 bg-secondary-900/60 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -92,7 +92,7 @@ async function AccountContent() {
                     </div>
                     <Link
                         href="/account/delete"
-                        className="inline-flex h-11 shrink-0 items-center justify-center rounded-md border border-ui-danger/40 px-5 text-sm font-semibold text-ui-danger transition-colors hover:bg-ui-danger/10 focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none"
+                        className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg border border-ui-danger/40 px-5 text-sm font-semibold text-ui-danger transition-colors hover:bg-ui-danger/10 focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none"
                     >
                         회원 탈퇴 진행
                     </Link>
@@ -116,7 +116,7 @@ function AccountContentSkeleton() {
             {/* 프로필 섹션 */}
             <section
                 aria-label="프로필 로딩 중"
-                className="space-y-4 rounded-2xl bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
+                className="space-y-4 rounded-lg bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
             >
                 <SkeletonLine className="h-6 w-16" />
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-[120px_1fr]">
@@ -132,14 +132,14 @@ function AccountContentSkeleton() {
             {/* AI 모델 API 키 섹션 */}
             <section
                 aria-label="AI 모델 API 키 로딩 중"
-                className="space-y-4 rounded-2xl bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
+                className="space-y-4 rounded-lg bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
             >
                 <SkeletonLine className="h-6 w-32" />
                 <SkeletonLine className="h-4 w-64" />
                 {[0, 1, 2].map(i => (
                     <div
                         key={i}
-                        className="rounded-xl bg-secondary-900/60 p-4 ring-1 ring-secondary-800"
+                        className="rounded-lg bg-secondary-900/60 p-4 ring-1 ring-secondary-800"
                     >
                         <div className="flex items-center gap-2">
                             <SkeletonLine className="h-4 w-20" />

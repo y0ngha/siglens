@@ -101,7 +101,7 @@ export function AnalystActions({ events }: AnalystActionsProps) {
         return (
             <section
                 aria-labelledby="analyst-actions-heading"
-                className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+                className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             >
                 <h2
                     id="analyst-actions-heading"

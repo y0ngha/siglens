@@ -87,7 +87,7 @@ export function PortfolioEmptyState() {
     return (
         <section
             data-testid="portfolio-empty-state"
-            className="flex flex-col items-start gap-3 rounded-xl border border-secondary-700 bg-secondary-800/40 p-6"
+            className="flex flex-col items-start gap-3 rounded-lg border border-secondary-700 bg-secondary-800/40 p-6"
         >
             <p className="text-sm font-semibold text-secondary-100">
                 아직 등록한 보유종목이 없어요
@@ -113,7 +113,7 @@ export function PortfolioErrorState() {
     return (
         <section
             data-testid="portfolio-error-state"
-            className="flex flex-col items-start gap-3 rounded-xl border border-secondary-700 bg-secondary-800/40 p-6"
+            className="flex flex-col items-start gap-3 rounded-lg border border-secondary-700 bg-secondary-800/40 p-6"
         >
             <p className="text-sm font-semibold text-secondary-100">
                 포트폴리오를 불러오지 못했어요
@@ -129,7 +129,7 @@ function SkeletonCard() {
     return (
         <div
             aria-hidden="true"
-            className="h-64 animate-pulse rounded-xl bg-secondary-800/60"
+            className="h-64 animate-pulse rounded-lg bg-secondary-800/60"
         />
     );
 }

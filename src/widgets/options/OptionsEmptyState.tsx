@@ -15,7 +15,7 @@ interface OptionsEmptyStateProps {
 }
 
 const FALLBACK_LINK_CLASSES =
-    'border-secondary-700 hover:border-primary-500 focus-visible:ring-primary-500 rounded-xl border p-4 text-left transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
+    'border-secondary-700 hover:border-primary-500 focus-visible:ring-primary-500 rounded-lg border p-4 text-left transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
 
 const FALLBACK_PAGES = [
     {
@@ -50,7 +50,7 @@ export function OptionsEmptyState({
 }: OptionsEmptyStateProps) {
     return (
         <main className="mx-auto max-w-5xl px-4 py-16">
-            <div className="rounded-xl border border-secondary-700 bg-secondary-800 p-8 text-center">
+            <div className="rounded-lg border border-secondary-700 bg-secondary-800 p-8 text-center">
                 <h1 className="text-xl font-semibold tracking-tight">
                     {symbol} 옵션 시장 정보 없음
                 </h1>

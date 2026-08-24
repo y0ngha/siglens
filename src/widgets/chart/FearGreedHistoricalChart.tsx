@@ -37,7 +37,8 @@ export function FearGreedHistoricalChart({
     const chartRef = useRef<IChartApi | null>(null);
 
     /* 테마 전환 시 크롬만 교체(리마운트 없음). */
-    useChartThemeSync(chartRef);
+    /* 이 차트는 배경을 투명하게 둬 부모 카드 색을 비춘다 — 배경은 건드리지 않는다. */
+    useChartThemeSync(chartRef, { keepBackground: true });
     const seriesRef = useRef<ISeriesApi<'Line'> | null>(null);
 
     useEffect(() => {

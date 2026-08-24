@@ -27,13 +27,13 @@ export default function LoginError({ error, reset }: LoginErrorProps) {
                 <button
                     type="button"
                     onClick={reset}
-                    className="inline-flex min-h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+                    className="inline-flex min-h-11 items-center rounded bg-primary-600 px-4 text-sm font-semibold text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     다시 시도
                 </button>
                 <Link
                     href="/"
-                    className="inline-flex min-h-11 items-center rounded px-4 text-sm font-medium text-secondary-200 hover:text-secondary-50 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+                    className="inline-flex min-h-11 items-center rounded px-4 text-sm font-medium text-secondary-200 hover:text-secondary-50 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     홈으로
                 </Link>

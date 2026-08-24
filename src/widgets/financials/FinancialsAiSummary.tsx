@@ -41,7 +41,7 @@ export function FinancialsAiSummaryView({
     return (
         <section
             aria-labelledby="financials-ai-summary-heading"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <div className="mb-4 flex items-center justify-between gap-3">
                 <h2

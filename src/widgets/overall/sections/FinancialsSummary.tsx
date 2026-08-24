@@ -9,7 +9,7 @@ export function FinancialsSummary({ bullets }: FinancialsSummaryProps) {
     return (
         <section
             aria-labelledby="financials-summary-heading"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2
                 id="financials-summary-heading"

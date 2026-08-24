@@ -14,13 +14,13 @@ import type {
 
 const FIELD_LABEL = 'text-secondary-400 mb-1 block text-xs font-medium';
 const FIELD_INPUT =
-    'bg-secondary-950 border-secondary-700 text-secondary-100 placeholder-secondary-400 focus:border-primary-500 focus:ring-primary-500/40 h-10 w-full touch-manipulation rounded-md border px-3 text-sm tabular-nums transition-colors outline-none focus:ring-2';
+    'bg-secondary-950 border-secondary-700 text-secondary-100 placeholder-secondary-400 focus:border-primary-500 focus:ring-primary-500/40 h-10 w-full touch-manipulation rounded-lg border px-3 text-sm tabular-nums transition-colors outline-none focus:ring-2';
 const FIELD_INPUT_ERROR =
     'border-ui-danger focus:border-ui-danger focus:ring-ui-danger/40';
 const SYMBOL_CHIP =
-    'border-secondary-700 bg-secondary-950 flex h-10 items-center justify-between rounded-md border px-3';
+    'border-secondary-700 bg-secondary-950 flex h-10 items-center justify-between rounded-lg border px-3';
 const BUTTON_PRIMARY =
-    'bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 inline-flex h-10 shrink-0 touch-manipulation items-center justify-center rounded-md px-4 text-sm font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50';
+    'bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 inline-flex h-10 shrink-0 touch-manipulation items-center justify-center rounded-lg px-4 text-sm font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50';
 const BUTTON_GHOST =
     'text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 inline-flex h-10 shrink-0 touch-manipulation items-center justify-center px-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none';
 
@@ -189,7 +189,7 @@ export function HoldingForm({
                                 // 카드가 자체적으로 해석한다.
                                 onSelect={entry => setSymbol(entry.symbol)}
                                 inputClassName={cn(
-                                    'bg-secondary-950 h-10 rounded-md placeholder-secondary-400 focus:ring-2',
+                                    'bg-secondary-950 h-10 rounded-lg placeholder-secondary-400 focus:ring-2',
                                     errorField === 'symbol'
                                         ? FIELD_INPUT_ERROR
                                         : 'focus:border-primary-500 focus:ring-primary-500/40'

@@ -76,7 +76,7 @@ export function NoticePopup() {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={MODAL_TITLE_ID}
-                className="flex max-h-[85dvh] w-full max-w-md flex-col rounded-2xl border border-secondary-700 bg-secondary-800 p-5"
+                className="flex max-h-[85dvh] w-full max-w-md flex-col rounded-lg border border-secondary-700 bg-secondary-800 p-5"
             >
                 <div className="mb-3 flex shrink-0 items-start justify-between gap-3">
                     <h2

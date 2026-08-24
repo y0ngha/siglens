@@ -14,7 +14,7 @@ export function OptionsAiAnalysisError({
 }: OptionsAiAnalysisErrorProps) {
     return (
         <section
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             role="alert"
         >
             <p className="text-xs tracking-widest text-secondary-400 uppercase">
@@ -27,7 +27,7 @@ export function OptionsAiAnalysisError({
                 <button
                     type="button"
                     onClick={resetErrorBoundary}
-                    className="mt-4 inline-flex items-center rounded-md border border-secondary-600 px-3 py-1.5 text-xs font-medium transition-colors hover:border-primary-500 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    className="mt-4 inline-flex items-center rounded-lg border border-secondary-600 px-3 py-1.5 text-xs font-medium transition-colors hover:border-primary-500 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
                     다시 시도
                 </button>

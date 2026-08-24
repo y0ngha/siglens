@@ -175,7 +175,7 @@ function IndicatorCard({ meta, series }: IndicatorCardProps) {
     const prev = series.previous;
     const delta = prev !== null ? latest.value - prev.value : null;
     return (
-        <article className="rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+        <article className="rounded-lg border border-secondary-700 bg-secondary-800 p-4">
             <header className="mb-2 flex items-center gap-1 text-sm text-secondary-300">
                 <span>{meta.label}</span>
                 <InfoTooltip>{meta.tooltip}</InfoTooltip>
@@ -203,7 +203,7 @@ function TreasuryYieldCard({ snapshot, maturity }: TreasuryYieldCardProps) {
     if (value === null) return null;
     const { label, tooltip, unit } = TREASURY_CARD_META[maturity];
     return (
-        <article className="rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+        <article className="rounded-lg border border-secondary-700 bg-secondary-800 p-4">
             <header className="mb-2 flex items-center gap-1 text-sm text-secondary-300">
                 <span>{label}</span>
                 <InfoTooltip>{tooltip}</InfoTooltip>
@@ -222,7 +222,7 @@ function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
     if (spread === null) return null;
     const positive = spread >= 0;
     return (
-        <article className="rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+        <article className="rounded-lg border border-secondary-700 bg-secondary-800 p-4">
             <header className="mb-2 flex items-center gap-1 text-sm text-secondary-300">
                 <span>2s10s 스프레드</span>
                 <InfoTooltip>

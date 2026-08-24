@@ -4,12 +4,12 @@ import { useRouter } from 'next/navigation';
 import { PortfolioSection } from '@/features/portfolio-management';
 
 const PRIMARY_BUTTON =
-    'bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-950 active:bg-primary-800 flex h-12 items-center justify-center rounded-md px-6 text-sm font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:min-w-32';
+    'bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-950 active:bg-primary-800 flex h-12 items-center justify-center rounded-lg px-6 text-sm font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:min-w-32';
 // Deliberately de-emphasized (tertiary text link, no fill/border) — "시작하기"
 // is the expected completion of onboarding, so "나중에 하기" must read as a
 // lightweight skip, not a second equal-weight CTA.
 const SKIP_LINK =
-    'text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-950 flex h-12 items-center justify-center rounded-md px-6 text-sm font-medium underline underline-offset-4 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
+    'text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-950 flex h-12 items-center justify-center rounded-lg px-6 text-sm font-medium underline underline-offset-4 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
 
 /**
  * Skippable post-signup welcome screen offered to a brand-new member with no
@@ -39,7 +39,7 @@ export function OnboardingContent() {
 
             <section
                 aria-label="보유종목"
-                className="space-y-4 rounded-2xl bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
+                className="space-y-4 rounded-lg bg-secondary-900/80 p-6 ring-1 ring-secondary-800 backdrop-blur-xl"
             >
                 <PortfolioSection />
             </section>

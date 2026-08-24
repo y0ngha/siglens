@@ -78,7 +78,7 @@ export function StatementTable({
                 ← 좌우로 스크롤 →
             </p>
             <div
-                className="overflow-x-auto rounded-xl focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                className="overflow-x-auto rounded-lg focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 role="region"
                 aria-label={
                     caption

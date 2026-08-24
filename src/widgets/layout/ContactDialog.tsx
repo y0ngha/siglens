@@ -35,7 +35,7 @@ export function ContactDialog({
                 ref={dialogRef}
                 aria-labelledby="contact-dialog-title"
                 onClose={close}
-                className="max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-xl border border-secondary-700 bg-secondary-800 p-0 text-left shadow-2xl backdrop:bg-secondary-950/80 backdrop:backdrop-blur-sm"
+                className="max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-lg border border-secondary-700 bg-secondary-800 p-0 text-left shadow-2xl backdrop:bg-secondary-950/80 backdrop:backdrop-blur-sm"
             >
                 {isOpen && (
                     <div>

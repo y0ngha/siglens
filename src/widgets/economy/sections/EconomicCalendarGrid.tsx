@@ -675,7 +675,7 @@ export function EconomicCalendarGrid({
                 <ImpactFilter value={activeImpacts} onToggle={toggleImpact} />
             </div>
 
-            <div className="space-y-6 rounded-xl border border-secondary-700 p-3 sm:p-4">
+            <div className="space-y-6 rounded-lg border border-secondary-700 p-3 sm:p-4">
                 {months.map(({ year, month }) => (
                     <MonthCalendar
                         key={`${year}-${month}`}

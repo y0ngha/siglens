@@ -63,7 +63,7 @@ describe('EconomySkeleton', () => {
 
         const skeleton = render(<EconomySkeleton />);
         const placeholderCards = skeleton.container.querySelectorAll(
-            '.grid > .animate-pulse.rounded-xl'
+            '.grid > .animate-pulse.rounded-lg'
         ).length;
 
         // 레지스트리 산술을 두 번 적는 대신 **실제 그리드가 그린 수**와 맞춘다 —
@@ -85,7 +85,7 @@ describe('EconomySkeleton', () => {
     it('variant="kr"이면 한국 카드 수만큼만 예약하고 거시 카드를 그리지 않는다', () => {
         const { container } = render(<EconomySkeleton variant="kr" />);
         expect(
-            container.querySelectorAll('.grid > .animate-pulse.rounded-xl')
+            container.querySelectorAll('.grid > .animate-pulse.rounded-lg')
                 .length
         ).toBe(KR_ECONOMY_INDICATORS.length);
         // 한국 화면에는 거시 요약·브리핑 카드가 없다 — 캘린더 자리표 하나만 남는다.

@@ -142,7 +142,7 @@ export function StrikeVolumeChart({
         // paragraph로 떨어지면 셀 높이/시각 무게가 어긋난다. 텍스트 스타일도
         // OI 차트 빈 상태와 통일(`text-xs leading-relaxed`).
         return (
-            <div className="space-y-2 rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+            <div className="space-y-2 rounded-lg border border-secondary-700 bg-secondary-800 p-4">
                 <span className="text-sm font-medium text-secondary-300">
                     Volume 분포 (Strike별)
                 </span>
@@ -175,7 +175,7 @@ export function StrikeVolumeChart({
     return (
         <div
             ref={containerRef}
-            className="relative space-y-2 rounded-xl border border-secondary-700 bg-secondary-800 p-4"
+            className="relative space-y-2 rounded-lg border border-secondary-700 bg-secondary-800 p-4"
         >
             <span className="text-sm font-medium text-secondary-300">
                 Volume 분포 (Strike별)
@@ -370,7 +370,7 @@ export function StrikeVolumeChart({
             <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px] text-secondary-500">
                 <span className="flex items-center gap-1">
                     <span
-                        className="inline-block h-2.5 w-2.5 rounded-sm bg-chart-bullish"
+                        className="inline-block h-2.5 w-2.5 rounded bg-chart-bullish"
                         aria-hidden="true"
                     />
                     Call Vol
@@ -378,7 +378,7 @@ export function StrikeVolumeChart({
                 </span>
                 <span className="flex items-center gap-1">
                     <span
-                        className="inline-block h-2.5 w-2.5 rounded-sm bg-chart-bearish"
+                        className="inline-block h-2.5 w-2.5 rounded bg-chart-bearish"
                         aria-hidden="true"
                     />
                     Put Vol

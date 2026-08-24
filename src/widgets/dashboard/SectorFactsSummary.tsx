@@ -60,7 +60,7 @@ export function SectorFactsSummary({ data }: SectorFactsSummaryProps) {
                                                 {i > 0 && ', '}
                                                 <Link
                                                     href={`/${symbol}`}
-                                                    className="rounded-sm underline-offset-2 hover:text-secondary-300 hover:underline focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
+                                                    className="rounded underline-offset-2 hover:text-secondary-300 hover:underline focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
                                                 >
                                                     {symbol}
                                                 </Link>

@@ -27,7 +27,7 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
     return (
         <section
             aria-labelledby="scenario-analysis-heading"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2
                 id="scenario-analysis-heading"

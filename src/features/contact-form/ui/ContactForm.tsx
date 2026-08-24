@@ -34,7 +34,7 @@ export function ContactForm() {
             {submissionError ? (
                 <div
                     role="alert"
-                    className="flex items-start gap-2 rounded-md border border-ui-danger/30 bg-ui-danger/10 p-3 text-sm text-ui-danger"
+                    className="flex items-start gap-2 rounded-lg border border-ui-danger/30 bg-ui-danger/10 p-3 text-sm text-ui-danger"
                 >
                     <span aria-hidden>⚠</span>
                     <p>{submissionError}</p>
@@ -94,7 +94,7 @@ function ContactEmailFieldSkeleton() {
             </span>
             <div
                 aria-hidden
-                className="h-12 w-full animate-pulse rounded-md border border-secondary-700 bg-secondary-900/60"
+                className="h-12 w-full animate-pulse rounded-lg border border-secondary-700 bg-secondary-900/60"
             />
         </div>
     );
