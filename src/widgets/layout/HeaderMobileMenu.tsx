@@ -292,7 +292,9 @@ function MobileNavLink({
             onClick={onNavigate}
             tabIndex={focusable ? undefined : -1}
             className={cn(
-                'focus-visible:ring-primary-500 flex min-h-11 w-full touch-manipulation items-center py-2 text-xs tracking-[0.12em] transition-colors focus-visible:ring-2 focus-visible:outline-none',
+                // 한글 메뉴 라벨이라 0.12em 자간을 걷어낸다(HeaderNavMenu와 동일
+                // 근거). 모바일 메뉴 항목은 탭 타깃이기도 해 14px로 올린다.
+                'focus-visible:ring-primary-500 flex min-h-11 w-full touch-manipulation items-center py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none',
                 indented
                     ? 'pr-4 pl-8 font-normal text-secondary-500 hover:text-secondary-200'
                     : 'px-4 font-semibold',

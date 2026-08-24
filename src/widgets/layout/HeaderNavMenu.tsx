@@ -101,7 +101,11 @@ export function HeaderNavMenu({ vertical, pathname }: HeaderNavMenuProps) {
                 aria-controls={panelId}
                 onClick={() => setIsOpen(v => !v)}
                 className={cn(
-                    '-mb-px flex min-h-11 touch-manipulation items-center gap-1 border-b-2 px-2 text-xs font-semibold tracking-[0.12em] uppercase transition-colors focus-visible:rounded focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',
+                    // 라벨이 `시장 분석`·`공포·탐욕 지수` 같은 한글이라
+                    // uppercase는 무효고 0.12em 자간은 자모를 흩뜨린다
+                    // (`shared/lib/typographyStyles.ts`). 사이트의 1차 내비인데
+                    // 12px이라 14px로 올린다 — `min-h-11`이라 헤더 높이는 불변.
+                    '-mb-px flex min-h-11 touch-manipulation items-center gap-1 border-b-2 px-2 text-sm font-semibold transition-colors focus-visible:rounded focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',
                     isVerticalActive(vertical, pathname)
                         ? 'border-primary-500 text-secondary-100'
                         : 'border-transparent text-secondary-400 hover:text-secondary-100'
