@@ -47,6 +47,7 @@
 - [canonical-korean-names R2 — searchByKoreanName gap](project-canonical-korean-names-r2-searchbykorean-gap.md) — getKoreanNames fix verified via mutation; missed 3rd consumer of korean_tickers (searchByKoreanName), and "always truthy" broke unmapped-filter self-heal in searchTicker.ts
 - [canonical-korean-names R3 — choke-point verified, 2 recommended](project-canonical-korean-names-r3-choke-point.md) — loader-level withCanonical confirmed complete via grep+live mutation; DB-fetch branch of loadAllEntries untested (mutation survives), getKoreanNames still double-applies override
 - [canonical-korean-names R4 — CLOSED, approved](project-canonical-korean-names-r4-closed.md) — both R3 recommended findings verified fixed via live mutation re-test; loop ends
+- [related-visibility-footer R2 — APPROVED, closes loop](project-related-visibility-footer-r2.md) — soft-404 TickerCategories claim + SECTOR_ETFS-membership test tightening both mutation/source verified true
 
 ## Feedback
 

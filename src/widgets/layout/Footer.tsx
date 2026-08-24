@@ -35,7 +35,12 @@ export function Footer() {
                     {INVESTMENT_DISCLAIMER}
                 </div>
                 <div className="flex flex-col items-center gap-3 border-secondary-800 sm:flex-row sm:justify-between">
-                    <p className="text-sm text-secondary-400">
+                    {/* `shrink-0` + `whitespace-nowrap`: 오른쪽 nav가 링크 12개짜리
+                        `flex-wrap`이라 폭을 크게 요구한다. 그대로 두면 `justify-between`
+                        아래에서 이 짧은 저작권 표기가 대신 밀려 `© 2026` / `Siglens`
+                        두 줄로 쪼개진다(2026-08-25 사용자 제보 스크린샷). 줄바꿈은
+                        긴 쪽(nav)이 감당해야 한다. */}
+                    <p className="shrink-0 text-sm whitespace-nowrap text-secondary-400">
                         © <CurrentYear /> Siglens
                     </p>
                     <nav

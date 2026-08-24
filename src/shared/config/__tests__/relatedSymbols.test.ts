@@ -279,6 +279,56 @@ describe('relatedSymbolsFor', () => {
         });
 
         /**
+         * 2026-08-25 전수 감사에서 잡힌 오분류. `PLTR`이 `software-cloud`에만
+         * 속해 CRWD·SNOW·NOW만 나왔다 — 한국 투자자가 팔란티어를 찾는 맥락은
+         * SaaS가 아니라 AI다(사용자 제보). AI 소프트웨어 그룹을 신설해 해결했다.
+         */
+        it('PLTR은 AI 맥락 종목과 이어진다 (소프트웨어 피어만 나오지 않는다)', () => {
+            const related = relatedSymbolsFor('PLTR').map(r => r.symbol);
+            expect(related).toContain('NVDA');
+            expect(related.some(s => ['BBAI', 'AI', 'SOUN'].includes(s))).toBe(
+                true
+            );
+        });
+
+        /**
+         * 큐레이션 카테고리가 5~6종뿐이라 8칸을 못 채우고 링이 블록 경계를 넘어
+         * 엉뚱한 종목을 끌어왔다(로켓랩→몬델리즈, 엔비디아2배→은행). 관련종목
+         * 전용 그룹으로 테마 슬롯을 메웠다 — 뒤 2칸은 링 ±1 예약이라 구조적으로
+         * 남는다(고아 0 보장의 비용).
+         */
+        it.each([
+            ['RKLB', ['ASTS', 'LUNR', 'RDW', 'PL', 'SPCE', 'ACHR']],
+            ['NVDL', ['TQQQ', 'SQQQ', 'SOXL', 'SOXS', 'TSLL', 'LABU']],
+            [
+                'LLY',
+                [
+                    'NVO',
+                    'UNH',
+                    'ISRG',
+                    'AMGN',
+                    'JNJ',
+                    'PFE',
+                    'MRK',
+                    '207940.KS', // 삼성바이오로직스 — 교차시장 바이오 그룹
+                    '068270.KS', // 셀트리온
+                ],
+            ],
+        ])('%s의 앞 6칸이 전부 테마 피어다', (symbol, pool) => {
+            const head = relatedSymbolsFor(symbol)
+                .map(r => r.symbol)
+                .slice(0, 6);
+            // 섹터 ETF는 정당한 피어다(`SECTOR_ETFS`가 각 구성종목과 한 그룹).
+            // `startsWith('XL')` 같은 접두사 통과는 오타·무관 심볼까지 흘려보내므로
+            // 실제 목록 멤버십으로 확인한다(리뷰 round 1 지적).
+            const sectorEtfSymbols = new Set(SECTOR_ETFS.map(e => e.symbol));
+            const offTheme = head.filter(
+                s => !pool.includes(s) && !sectorEtfSymbols.has(s)
+            );
+            expect(offTheme).toEqual([]);
+        });
+
+        /**
          * 라운드로빈이 없으면 먼저 나열된 그룹이 예산 6칸을 통째로 먹는다.
          * `NVDA`는 메가캡 카테고리(피어 8개)와 AI 반도체 밸류체인 두 그룹에
          * 속하는데, 평탄화 순서대로 자르면 삼성전자·SK하이닉스가 한 칸도 못

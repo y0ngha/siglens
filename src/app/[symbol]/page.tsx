@@ -1,7 +1,6 @@
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import {
     MobileSheetPlaceholder,
-    RelatedSymbols,
     TechnicalFactsSummary,
     buildChartPageHeading,
 } from '@/views/symbol';
@@ -435,17 +434,6 @@ export default async function SymbolPage({ params }: Props) {
                     marketProfile={marketProfile}
                     generatedAt={technicalSnapshot?.generatedAt}
                 />
-                {/* 심볼 간 내부링크. TechnicalSnapshotProse와 같은 이유로
-                    persistent server sibling이다 — Suspense fallback에 두면
-                    boundary resolve 시 React가 서브트리를 파괴해 JS를 실행하는
-                    크롤러에게 링크가 사라진다(위 프로즈 주석 참고). 링크가
-                    목적인 컴포넌트라 그 순간 존재 이유가 없어진다.
-
-                    이 페이지에만 둔다(형제 8개 탭에는 없음): 차트 탭이 sitemap
-                    유니버스의 대표 URL이자 GSC 28일 노출의 48%를 받는 진입점이고,
-                    9개 탭에 같은 링크를 복제하면 HTML만 9배로 늘 뿐 도달 가능성이
-                    더 늘지 않는다. */}
-                <RelatedSymbols symbol={ticker} />
             </main>
         </>
     );
