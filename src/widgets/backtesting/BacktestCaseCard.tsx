@@ -117,12 +117,16 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                                 : 'border-chart-bearish/20 bg-chart-bearish/10'
                         )}
                     >
+                        {/* 배지 텍스트는 차트 색이 아니라 `ui-*-text`를 쓴다.
+                            차트 색은 캔버스 배경 위에서 고른 값이라 `/10` 틴트
+                            위에 얹으면 라이트 테마에서 4.10:1까지 떨어진다(실측).
+                            `ui-*-text`는 바로 이 틴트 위를 겨냥해 만든 토큰이다. */}
                         <span
                             className={cn(
                                 'font-semibold',
                                 c.signalType === 'buy'
-                                    ? 'text-chart-bullish'
-                                    : 'text-chart-bearish'
+                                    ? 'text-ui-success-text'
+                                    : 'text-ui-danger-text'
                             )}
                         >
                             {c.signalType === 'buy' ? '매수' : '매도'}
@@ -150,7 +154,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                         →
                     </span>
                     <div className="shrink-0 rounded border border-chart-bearish/20 bg-chart-bearish/10 px-2 py-1 text-right">
-                        <span className="font-semibold text-chart-bearish">
+                        <span className="font-semibold text-ui-danger-text">
                             {c.exitReason === 'stop_loss' ? '손절' : '매도'}
                         </span>
                         <span className="ml-1 text-secondary-400">
