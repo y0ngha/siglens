@@ -53,12 +53,10 @@ export function PortfolioChip({ symbol }: PortfolioChipProps) {
         useSymbolHolding(symbol);
 
     // Rendering during hydration risks an SSR/CSR text mismatch (the holdings
-    // query is client-only and gated on isHydrated itself) — same rationale
-    // as FearGreedHeaderChipMounted. Before hydration we render nothing at
-    // all so SSR and the first client paint stay identical (no hydration
-    // mismatch). Once hydrated, a member with the holdings query still
-    // loading gets a fixed-size placeholder (mirrors
-    // FearGreedHeaderChipMounted's skeleton) so the resolved chip doesn't
+    // query is client-only and gated on isHydrated itself). Before hydration we
+    // render nothing at all so SSR and the first client paint stay identical (no
+    // hydration mismatch). Once hydrated, a member with the holdings query still
+    // loading gets a fixed-size placeholder so the resolved chip doesn't
     // pop into the flex-wrap header cluster and shift its siblings (CLS). On
     // error we still hide entirely: rendering the "설정" (unset) button would
     // falsely tell a member with existing holdings that nothing is set yet.

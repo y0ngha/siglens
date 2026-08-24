@@ -41,7 +41,7 @@ interface FearGreedPageProps {
  * always-open), the SSR seed strips the forming bar but the refetched bars
  * include it → SSR score ≠ first-client score → React #418.
  *
- * The fix mirrors FearGreedHeaderChipMounted: render a stable, score-free
+ * The fix: render a stable, score-free
  * skeleton during hydration so SSR HTML and the first sync client render are
  * identical, then swap in the real score-driven UI after useEffect fires.
  * This is intentional: the page comment notes "점수는 클라가 bars로 계산"

@@ -4,11 +4,6 @@
 
 
 
-## [PR #545 Round 1 | fix/symbol-infra-fallback | 2026-06-02]
-- Violation: 변수명 `mockGetAssetInfoCached`가 실제로는 `getAssetInfoResilient`를 참조 (2개 파일)
-  - Rule: MISTAKES.md §11 — 함수/변수명은 실제 참조 대상과 정확하게 일치해야 한다
-  - Context: PR #545에서 `getAssetInfoCached` → `getAssetInfoResilient`로 교체 후 테스트 변수명 rename이 누락됨
-
 ## [feat/bot-cost-caching Round 1 | feat/bot-cost-caching | 2026-05-28]
 - Violation: 'use server' file exported non-async-function constants `POLL_INTERVAL_MS`, `POLL_MAX_ATTEMPTS`
   - Rule: entities/CONVENTIONS.md — 'use server' files may only export async functions; constants must live in separate modules
@@ -29,11 +24,6 @@
   - Review: Fixed non-deterministic CI vitest flake under `pool: 'vmThreads'`. vi.stubEnv() with default `unstubEnvs: false` leaked `E2E_TEST=1` into env-agnostic factory tests. Fix: `unstubEnvs: true` in vitest.config + global `afterEach` in vitest.setup.base.ts restoring `process.env.E2E_TEST` to its worker-start value.
   - Result: Clean merge — no violations logged
 
-## [PR #562 Round 2 | worktree-verify-0.15-current | 2026-06-04]
-- Violation: Manual markdown-notice seeds (priority 100) left in shared docker e2e DB masked 3 existing notice specs (priority 99) → wrong-data failures
-  - Rule: MISTAKES.md E2E #2 — delete manual seeds after verification; leftover high-priority rows hide per-test seeds
-  - Context: Deleted leftover seeds; re-run passed. Added cleanup step to docs/qa/QA_ENV_SETUP.md §7.
-
 ## [PR #564 | fix/fmp-cache-and-earnings-gate | 2026-06-04]
 - Violation: Redis 캐시 키(buildBarsRawKey)가 GetBarsOptions의 일부 필드만 포함(limit 누락) → 옵션 확장 시 서로 다른 요청이 같은 캐시를 반환할 충돌 위험
   - Rule: (신규) 캐시 키는 결과에 영향을 줄 수 있는 모든 입력 필드를 포함해야 한다 (cache key must cover every result-affecting input field)
@@ -41,11 +31,6 @@
 - Violation: getNextEarningsReport가 entities/lib에서 side effect(Date.now/DB/FMP) 포함 — 순수 함수 레이어 위반 (pre-existing, R3 Blocker)
   - Rule: MISTAKES §Architecture #0.7 — entities/{slice}/lib/는 순수 함수 전용
   - Context: PR #564 R3 claude 리뷰에서 Blocker로 지적. pre-existing이라 별도 PR로 분리(이슈 #565). nextEarningsReport.ts JSDoc에 TODO(#565) 링크를 남겨 추적. 이번 PR diff엔 미수정(scope = 캐시/gate).
-
-## [feat/ticker-search-relevance Round 2 | feat/ticker-search-relevance | 2026-06-23]
-- Violation: Pure calculation helper used imperative for...of + mutable accumulators instead of declarative map/filter/reduce
-  - Rule: MISTAKES.md §21 — Pure calculation functions using imperative for-loop + push instead of higher-order functions
-  - Context: computeRelevanceScores iterated with for...of and pushed results into accumulator array. Refactored to use .map() for clarity and immutability.
 
 ## [feat/aws-infra Round 1 | feat/aws-infra | 2026-06-24]
 - Violation: workflow_dispatch trigger on restricted GitHub Actions OIDC trust (scoped to refs/tags/v*) → fails with 403
@@ -91,9 +76,6 @@
   - Correction (2026-07-31): this entry originally cited a model id `claude-opus-4-turbo` and a replacement helper `getModelsFor('free_tier')`. Neither exists in any of the three repos; both were fabricated when the entry was written. A deployment audit caught it. Fix-log entries feed MISTAKES.md promotion, so an invented detail here becomes a permanent false "recurring pattern" — verify every symbol name in an entry against the repo before writing it.
 
 ## [perf/cdn-cache-hit-rate | perf/cdn-cache-hit-rate | 2026-08-12]
-- Violation: `src/proxy.ts` — `NextResponse.redirect(url, 307)` lacks documented WHY for status choice; adjacent redirects in the same file document theirs
-  - Rule: MISTAKES.md Predictability §8 — Non-obvious operational choices must document WHY at the decision point (status codes, cacheability, workarounds)
-  - Context: Added JSDoc explaining "307 prevents permanent browser caching of search-query parameter redirects"
 - Finding: Reviewer claimed Cloudflare rule `len(http.request.headers["rsc"]) > 0` uses invalid type. Cloudflare docs and production deployment verify `len()` supports String|Bytes|Array.
   - Status: REJECTED — false positive; reviewer claim was incorrect
 - Finding (R3 - runtime verification, after 2 review rounds approved): `src/proxy.ts` guard checked `reqUrl.searchParams.has('_rsc')` + `req.headers.get('rsc')`, but Next.js strips both before middleware runs (next/dist/server/web/adapter.js: line 153 calls stripInternalSearchParams; lines 139-147 delete FLIGHT_HEADERS including RSC). Guard was dead code. Unit tests passed because mock NextRequest still had param + header — mock encoded false assumption about runtime.
@@ -119,11 +101,6 @@
 
 ## [fix/bars-seed-fold Round 5 | Fold index mechanism in bars query | 2026-08-13]
 - Status: APPROVED (zero findings)
-
-## [feat/kr-equity Round 2 | Korean stock support | 2026-08-16]
-- Violation: isTabAllowedForSymbol used nested ternary (ternary ? ternary : value) pattern, obscuring control flow
-  - Rule: FF.md Readability 1-E — no nested ternaries; early returns preserve clarity
-  - Context: Refactored to early return, also eliminating unnecessary DB call for KR symbols (now skips isCryptoSymbolStatic check for all KR market profiles)
 
 ## [feat/market-calendar-adoption Round 5 | Stock market calendar adoption | 2026-08-18]
 - Status: APPROVED (zero findings)
@@ -172,9 +149,6 @@
 - Violation: `cache-handler/memStore.mjs` — `setEntry()` deleted the previous entry and decremented the byte budget BEFORE checking the per-entry size cap, so writing an oversized value to an already-cached key silently destroyed a valid existing entry instead of rejecting the oversized write
   - Rule: (new) Guard-Ordering — Validation checks must precede mutation; early-return before mutation prevents silent data loss
   - Context: Moved size-cap check before deletion and decrement. Added regression test verifying that oversized writes leave existing entries intact.
-- Violation: `src/shared/cache/getOrSetCache.ts` — `as Promise<T>` cast had no justification comment, violating docs/workflows/MISTAKES.md TypeScript §7 which requires every `as` cast to carry a comment explaining why the runtime value is guaranteed to match
-  - Rule: MISTAKES.md TypeScript §7 — Every `as` cast must include a comment explaining why the runtime value is guaranteed to match
-  - Context: Added comment explaining why the promise cast is safe: "T is guaranteed by cache contract; cache.get returns T | undefined, but isHit guard ensures T at this point"
 ## [perf/aws-cost-reduction Round 3 | Code logic audit | 2026-08-20]
 - Violation: Length cap applied AFTER regex instead of before, making cap useless against the quadratic blowup it was meant to prevent. Same code later called `String(value)` on untrusted object before capping, invoking arbitrary `toString`.
   - Rule: Validation must be applied in order (type check → size check → parse); size checks must precede regex to prevent quadratic blowup

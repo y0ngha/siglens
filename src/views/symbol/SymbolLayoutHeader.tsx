@@ -10,7 +10,8 @@ import { shouldShowEnglishName } from '@/entities/ticker';
 import { useSymbolModel } from '@/features/symbol-model';
 import { AnalysisSettingsMenu } from '@/widgets/analysis';
 import { ShareButton } from '@/widgets/share';
-import { FearGreedHeaderChipMounted } from './FearGreedHeaderChipMounted';
+import { FearGreedHeaderChip } from './FearGreedHeaderChip';
+import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { PremiumModelGateModal } from '@/features/premium-gate';
 import { PortfolioChipMounted } from '@/features/portfolio-holding';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
@@ -18,6 +19,13 @@ import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 interface SymbolLayoutHeaderProps {
     /** Ticker from the dynamic route param. Internally upper-cased for the breadcrumb. */
     symbol: string;
+    /**
+     * 서버가 계산한 공포·탐욕 스냅샷. 칩이 클라이언트에서 봉으로 파생하는 대신
+     * 이걸 그대로 렌더한다 — 그 덕에 레이아웃이 9탭 전부에 봉 76KB를 seed하지
+     * 않아도 된다(`[symbol]/layout.tsx`의 근거 주석 참고).
+     * 데이터가 없으면(FMP 키 없음·degrade) null.
+     */
+    fearGreedSnapshot: FearGreedSnapshot | null;
 }
 
 /**
@@ -30,7 +38,10 @@ interface SymbolLayoutHeaderProps {
  * scroll-locked container so the layout stays free of `useSearchParams` (which
  * would force the whole route to be dynamic under Next.js Cache Components).
  */
-export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
+export function SymbolLayoutHeader({
+    symbol,
+    fearGreedSnapshot,
+}: SymbolLayoutHeaderProps) {
     const assetInfo = useAssetInfo(symbol);
     const ticker = symbol.toUpperCase();
     // `buildDisplayName`과 판정 자체를 공유한다(`entities/ticker`의
@@ -89,19 +100,22 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                         )}
                         ({ticker})
                     </span>
-                    {/* useBars가 useSuspenseQuery 기반이라 promise를 throw하면 부모 트리까지
-                        suspend된다. 헤더 chip 로딩이 헤더 전체(모델 셀렉터·브레드크럼) 영역에
-                        영향을 주지 않도록 여기서 경계를 잡고, 빈 chip 자리만 잠깐 보이게 한다.
-                        DUAL MOUNT: 데스크톱에서는 타이틀 옆 인라인, 모바일에서는 별도 행에 표시한다.
-                        두 인스턴스는 동일 React Query 캐시를 공유하므로 fetch는 한 번만 발생하지만,
-                        FearGreedHeaderChipMounted에 mount-time side effect(analytics, ref 등)를
-                        추가할 때는 두 번 실행되는 점에 유의한다. */}
+                    {/* 칩은 서버가 계산한 스냅샷을 그대로 렌더하는 순수 컴포넌트다 —
+                        훅도 fetch도 없으므로 suspend하거나 throw하지 않는다. 경계를
+                        그대로 두는 건 방어용이다: 칩이 어떤 이유로든 터져도 헤더
+                        셸(모델 셀렉터·브레드크럼)은 살아남아야 한다.
+                        (예전엔 `useBars`가 `useSuspenseQuery` 기반이라 promise를
+                        throw하면 부모 트리까지 suspend됐고, 그게 경계의 원래 이유였다.)
+
+                        DUAL MOUNT: 데스크톱에서는 타이틀 옆 인라인, 모바일에서는 별도
+                        행에 표시한다. 두 인스턴스 모두 같은 prop을 받으므로 fetch가
+                        유발되지 않는다 — mount-time side effect(analytics, ref 등)를
+                        추가할 때만 두 번 실행되는 점에 유의한다. */}
                     <ErrorBoundary fallback={null}>
                         <Suspense fallback={null}>
                             <span className="hidden sm:contents">
-                                <FearGreedHeaderChipMounted
-                                    symbol={ticker}
-                                    fmpSymbol={assetInfo?.fmpSymbol}
+                                <FearGreedHeaderChip
+                                    snapshot={fearGreedSnapshot}
                                 />
                             </span>
                         </Suspense>
@@ -121,9 +135,8 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                     <ErrorBoundary fallback={null}>
                         <Suspense fallback={null}>
                             <span className="sm:hidden">
-                                <FearGreedHeaderChipMounted
-                                    symbol={ticker}
-                                    fmpSymbol={assetInfo?.fmpSymbol}
+                                <FearGreedHeaderChip
+                                    snapshot={fearGreedSnapshot}
                                 />
                             </span>
                         </Suspense>
