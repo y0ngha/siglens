@@ -1,8 +1,7 @@
-import type { SkillCounts } from '@y0ngha/siglens-core';
-import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/lib/seo';
 
 /**
- * 홈의 FAQ·HowTo JSON-LD.
+ * 홈의 FAQ JSON-LD.
  *
  * **왜 page.tsx 밖으로 뺐는가**: 이 두 블록은 사이트가 어떤 자산군을 다루는지
  * 프로즈로 선언하는 표면이고, 같은 선언이 `ROOT_TITLE`·`SITE_DESCRIPTION`·

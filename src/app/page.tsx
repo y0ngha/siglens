@@ -144,23 +144,36 @@ export default async function Home() {
                                 투자의 확신을 더하는 AI 분석
                             </p>
                             {/*
-                                크기는 `clamp`가 컨테이너 폭에 맞춰 연속적으로
-                                조절한다. 이전에는 브레이크포인트 4단계였고 그중
-                                `lg`에서 오히려 **작아졌다** — 텍스트 컬럼이 좁아
-                                줄바꿈이 3줄이 되는 걸 크기로 막고 있었던 것이라,
-                                본문 크기가 레이아웃 결함을 보정하는 구조였다.
-                                줄바꿈은 `text-balance`가 맡고 크기는 폭을 따른다.
+                                제목 크기는 뷰포트가 아니라 **자기 글상자 폭**을
+                                따라야 한다. `lg`에서 히어로가 2단으로 갈리며 텍스트
+                                컬럼이 975px에서 520px로 좁아지는데, `vw` 기준
+                                clamp은 그걸 볼 수 없어 컬럼이 좁아지는 순간에도
+                                글자는 계속 커진다 — 1024px 한 픽셀 경계에서 제목이
+                                2줄에서 4줄로 뛰었다.
+
+                                래퍼를 컨테이너로 삼고 `cqw`를 쓰면 한 규칙으로
+                                전 구간이 해결된다. 글상자 폭 288~672px 전 범위에서
+                                2줄을 유지하는 한계치를 1px 단위로 실측한 결과가
+                                7.50~7.64cqw로 거의 일정해, 7.4cqw는 모든 폭에서
+                                여유를 두고 2줄 안에 들어온다. 브레이크포인트 사다리가
+                                필요 없어진 이유다.
+
+                                하한 2.1rem은 모바일(글상자 288px)에서 7.4cqw가
+                                21px까지 떨어지는 걸 막는다 — 이 구간은 폭 자체가
+                                좁아 4줄로 흐르는 게 정상이다.
 
                                 수동 `<br>`과 em 대시도 걷어냈다. 강제 줄바꿈은
                                 컬럼 폭이 바뀌면 어색한 자리에서 끊기고, 대시는
                                 이미 색상 대비로 나뉜 두 구절을 한 번 더 나눈다.
                             */}
-                            <h1 className="mx-auto max-w-sm text-[clamp(2.1rem,4.4vw,3.25rem)] leading-[1.12] font-bold tracking-tight text-balance text-secondary-100 sm:max-w-2xl lg:mx-0">
-                                주식과 코인, 투자의 새로운 기준{' '}
-                                <span className="text-primary-300 sm:block">
-                                    AI가 분석하고 완성하는 SIGLENS
-                                </span>
-                            </h1>
+                            <div className="@container mx-auto max-w-sm sm:max-w-2xl lg:mx-0">
+                                <h1 className="text-[clamp(2.1rem,7.4cqw,3.25rem)] leading-[1.12] font-bold tracking-tight text-balance text-secondary-100">
+                                    주식과 코인, 투자의 새로운 기준{' '}
+                                    <span className="text-primary-300 sm:block">
+                                        AI가 분석하고 완성하는 SIGLENS
+                                    </span>
+                                </h1>
+                            </div>
                             <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-secondary-400 sm:max-w-2xl sm:text-lg lg:mx-0">
                                 {skillCounts.indicators}종의 지표와 다양한 투자
                                 전략 기반의 차트 흐름,&nbsp;

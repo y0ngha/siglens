@@ -13,21 +13,11 @@ import {
 import { HOME_FAQ_JSON_LD } from '@/app/homeJsonLd';
 import { NEWS_HUB_DESCRIPTION, NEWS_HUB_TITLE } from '@/app/news/page';
 
-const SKILL_COUNTS = {
-    indicators: 25,
-    candlesticks: 30,
-    patterns: 12,
-    strategies: 8,
-    supportResistance: 5,
-    fundamental: 4,
-    news: 3,
-};
-
 /**
  * 자산군 커버리지가 표면마다 어긋나는 것을 막는다.
  *
  * 이 테스트가 지키는 실패 모드: 자산군을 하나 추가하면서 SEO 타이틀만 고치고
- * FAQ·HowTo·OG alt·키워드를 놓치는 것. 그러면 그 표면들은 "그 자산군은 지원하지
+ * FAQ·OG alt·키워드를 놓치는 것. 그러면 그 표면들은 "그 자산군은 지원하지
  * 않는다"는 신호를 검색엔진에 계속 보내는데, 렌더도 빌드도 아무 것도 실패하지
  * 않아 다음 감사까지 드러나지 않는다 — 실제로 세 라운드 연속 발생했다
  * (MISTAKES.md §6.6).
