@@ -13,7 +13,7 @@ export default function NotFound() {
     return (
         <>
             <main className="flex flex-1 flex-col">
-                <div className="flex flex-col items-center px-6 py-20 text-center">
+                <div className="page-container flex flex-col items-center py-20 text-center">
                     <p className="font-mono text-sm tracking-widest text-primary-400">
                         404
                     </p>

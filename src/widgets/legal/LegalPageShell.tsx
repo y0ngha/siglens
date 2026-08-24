@@ -28,7 +28,7 @@ export function LegalPageShell({
 }: LegalPageShellProps) {
     return (
         <>
-            <main className="flex flex-1 flex-col items-center px-6 py-12 sm:py-16">
+            <main className="page-container flex flex-1 flex-col items-center py-12 sm:py-16">
                 <article className="w-full max-w-3xl">
                     <LegalBreadcrumb pageTitle={breadcrumbTitle} />
 

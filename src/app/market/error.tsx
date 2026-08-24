@@ -30,7 +30,7 @@ export default function MarketError({ error, reset }: MarketErrorProps) {
     }, [error]);
 
     return (
-        <main className="flex flex-1 flex-col items-center px-6 py-20 text-center">
+        <main className="page-container flex flex-1 flex-col items-center py-20 text-center">
             <p className="text-sm font-semibold tracking-[0.01em] text-primary-400">
                 일시 오류
             </p>

@@ -32,7 +32,7 @@ export default async function SharePage({ params }: Props) {
         // metadata in buildShareMetadata() prevents search engines from
         // indexing this expired/not-found state.
         return (
-            <main className="flex flex-1 flex-col items-center px-6 py-20 text-center">
+            <main className="page-container flex flex-1 flex-col items-center py-20 text-center">
                 <p className="text-sm font-semibold tracking-[0.01em] text-primary-400">
                     공유 링크 만료
                 </p>
