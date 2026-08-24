@@ -50,6 +50,9 @@ export function useTabs<T extends string>({
     idPrefix,
 }: UseTabsOptions<T>): UseTabsReturn<T> {
     const generatedPrefix = useId();
+    /* `tabs` 배열은 호출부에서 매 렌더 새로 만들어지므로 effect 의존성에 그대로
+       넣으면 매 렌더 재실행된다. 첫 탭 값(문자열)만 뽑아 쓴다. */
+    const firstTab = tabs[0];
     const tabRefs = useRef(new Map<T, HTMLElement | null>());
     const tabRefCallbacks = useRef(new Map<T, RefCallback<HTMLElement>>());
     // focusTabRef provides a stable focusItem for useRovingKeyboardNav;
@@ -97,19 +100,38 @@ export function useTabs<T extends string>({
      * 키보드 탐색의 `.focus()`는 완전히 가려진 탭만 끌어오고 **부분적으로 잘린**
      * 탭은 그대로 두므로 이 경우를 덮지 못한다.
      *
-     * `inline: 'nearest'`라 이미 보이는 탭은 움직이지 않는다. `block: 'nearest'`가
-     * 없으면 브라우저가 세로도 함께 스크롤해 페이지가 튄다.
+     * **`scrollIntoView`를 쓰지 않는다.** `block: 'nearest'`는 "세로로 스크롤하지
+     * 말라"가 아니라 "보이게 만드는 **최소량**만큼 스크롤하라"는 뜻이다. 탭 줄은
+     * 보통 스크롤 아래에 있으므로 브라우저가 뷰포트를 세로로 끌어올린다 —
+     * 실측: `/market/kr`에서 섹터 탭을 누르면 페이지가 0에서 240px로 튀었고,
+     * `/market`은 진입만 해도 123px에서 시작했다.
      *
-     * 호출부를 옵셔널로 둔 것은 jsdom이 `scrollIntoView`를 구현하지 않기 때문이다
-     * (없는 채로 부르면 `not a function`으로 렌더가 통째로 죽는다). 순수 뷰포트
-     * API라 테스트 환경에서 건너뛰어도 검증에서 잃는 것이 없다.
+     * 대신 스크롤러의 `scrollLeft`만 직접 움직인다. 뷰포트는 건드리지 않고,
+     * 탭이 이미 안에 있으면 아무 일도 하지 않는다. `getBoundingClientRect`와
+     * `scrollLeft`는 jsdom에도 있어(0을 돌려줄 뿐) 옵셔널 가드가 필요 없다.
+     *
+     * 첫 탭만 따로 0으로 되돌린다. 델타 계산만 하면 좌측 패딩(거터)이 스크롤에
+     * 먹힌 상태가 "이미 보이는" 것으로 판정돼 탭 줄이 형제 섹션과 어긋난 채
+     * 남는다.
      */
     useLayoutEffect(() => {
-        tabRefs.current.get(activeTab)?.scrollIntoView?.({
-            inline: 'nearest',
-            block: 'nearest',
-        });
-    }, [activeTab]);
+        const el = tabRefs.current.get(activeTab);
+        const scroller = el?.closest<HTMLElement>('[role="tablist"]');
+        if (!el || !scroller) return;
+
+        if (activeTab === firstTab) {
+            scroller.scrollLeft = 0;
+            return;
+        }
+
+        const tabRect = el.getBoundingClientRect();
+        const viewRect = scroller.getBoundingClientRect();
+        if (tabRect.left < viewRect.left) {
+            scroller.scrollLeft -= viewRect.left - tabRect.left;
+        } else if (tabRect.right > viewRect.right) {
+            scroller.scrollLeft += tabRect.right - viewRect.right;
+        }
+    }, [activeTab, firstTab]);
 
     const prefix = idPrefix ?? generatedPrefix;
 

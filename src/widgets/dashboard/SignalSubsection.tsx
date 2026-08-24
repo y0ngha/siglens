@@ -63,8 +63,11 @@ export function SignalSubsection({
                     )}
                 </div>
                 {/* 개수가 24px에 muted라 14px 제목보다 크고 어두웠다 — 소제목보다
-                    장식이 더 크게 읽히는 역전. 제목을 16px로 올린 만큼 개수는
-                    20px로 낮추고 톤을 한 단계 밝혀 둘이 같은 위계에 오게 한다. */}
+                    장식이 더 크게 읽히는 역전. 개수를 20px로 낮추고 톤을 한 단계
+                    밝혀 제목을 압도하지 않게 한다. 크기는 여전히 제목(16px)보다
+                    4px 크지만, 제목이 굵기(600 대 400)와 대비(16.99 대 11.81)에서
+                    앞서고 모노 숫자가 같은 크기의 한글보다 작게 읽혀 위계는 제목이
+                    가져간다. */}
                 <span
                     className="font-mono text-xl text-secondary-300 tabular-nums"
                     aria-label={`${stocks.length}개 종목`}
