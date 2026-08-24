@@ -125,8 +125,8 @@ const { mockFearGreedChip } = vi.hoisted(() => ({
     mockFearGreedChip: vi.fn(),
 }));
 
-vi.mock('@/views/symbol/FearGreedHeaderChipMounted', () => ({
-    FearGreedHeaderChipMounted: () => mockFearGreedChip(),
+vi.mock('@/views/symbol/FearGreedHeaderChip', () => ({
+    FearGreedHeaderChip: () => mockFearGreedChip(),
 }));
 
 vi.mock('@/features/premium-gate', () => ({
@@ -157,33 +157,33 @@ describe('SymbolLayoutHeader', () => {
     });
 
     it('renders a header element', () => {
-        render(<SymbolLayoutHeader symbol="aapl" />);
+        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
         expect(screen.getByRole('banner')).toBeDefined();
     });
 
     it('renders the SIGLENS logo link', () => {
-        render(<SymbolLayoutHeader symbol="aapl" />);
+        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
         const link = screen.getByText('SIGLENS');
         expect(link.closest('a')?.getAttribute('href')).toBe('/');
     });
 
     it('renders the uppercased ticker', () => {
-        render(<SymbolLayoutHeader symbol="aapl" />);
+        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
         expect(screen.getByText('(AAPL)')).toBeDefined();
     });
 
     it('renders the company name', () => {
-        render(<SymbolLayoutHeader symbol="aapl" />);
+        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
         expect(screen.getByText('Apple Inc.')).toBeDefined();
     });
 
     it('renders the korean name', () => {
-        render(<SymbolLayoutHeader symbol="aapl" />);
+        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
         expect(screen.getByText(/애플/)).toBeDefined();
     });
 
     it('renders the 분석 설정 gear (model selector + reasoning toggle are consolidated behind it)', () => {
-        render(<SymbolLayoutHeader symbol="aapl" />);
+        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
         expect(screen.getByTestId('settings-gear')).toBeDefined();
         // Collapsed by default — the model selector isn't in the DOM until
         // the gear is opened, mirroring the real AnalysisSettingsMenu.
@@ -191,13 +191,13 @@ describe('SymbolLayoutHeader', () => {
     });
 
     it('opening the gear reveals the model selector', () => {
-        render(<SymbolLayoutHeader symbol="aapl" />);
+        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
         fireEvent.click(screen.getByTestId('settings-gear'));
         expect(screen.getByTestId('model-selector')).toBeDefined();
     });
 
     it('renders the portfolio holding chip', () => {
-        render(<SymbolLayoutHeader symbol="aapl" />);
+        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
         expect(screen.getByTestId('portfolio-chip')).toBeDefined();
     });
 
@@ -206,7 +206,7 @@ describe('SymbolLayoutHeader', () => {
             symbolModelValue({ canUseReasoning: false })
         );
 
-        render(<SymbolLayoutHeader symbol="aapl" />);
+        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
         fireEvent.click(screen.getByTestId('settings-gear'));
         const toggle = screen.getByTestId('reasoning-toggle');
         expect(toggle).toBeDefined();
@@ -218,7 +218,7 @@ describe('SymbolLayoutHeader', () => {
             symbolModelValue({ reasoning: true, canUseReasoning: true })
         );
 
-        render(<SymbolLayoutHeader symbol="aapl" />);
+        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
         fireEvent.click(screen.getByTestId('settings-gear'));
         const toggle = screen.getByTestId('reasoning-toggle');
         expect(toggle).toBeDefined();
@@ -231,7 +231,7 @@ describe('SymbolLayoutHeader', () => {
             symbolModelValue({ setReasoning, canUseReasoning: true })
         );
 
-        render(<SymbolLayoutHeader symbol="aapl" />);
+        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
         fireEvent.click(screen.getByTestId('settings-gear'));
         fireEvent.click(screen.getByTestId('reasoning-toggle'));
 
@@ -245,7 +245,7 @@ describe('SymbolLayoutHeader', () => {
             symbolModelValue({ canUseReasoning: false })
         );
 
-        render(<SymbolLayoutHeader symbol="aapl" />);
+        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
         fireEvent.click(screen.getByTestId('settings-gear'));
         // The header does NOT render the modal itself — the provider owns the
         // single instance. Clicking the locked toggle only calls the opener.
@@ -259,9 +259,9 @@ describe('SymbolLayoutHeader', () => {
     });
 
     it('swallows a thrown fear-greed chip error via ErrorBoundary and still renders the header', () => {
-        // FearGreedHeaderChipMounted uses useSuspenseQuery; if its bars fetch
-        // throws (the SSR failure mode #513 guards), the ErrorBoundary
-        // fallback={null} must contain it so the header shell survives.
+        // 칩은 이제 서버 스냅샷을 렌더하는 순수 컴포넌트지만, ErrorBoundary는
+        // 그대로 둔다 — 칩이 어떤 이유로든 throw해도 헤더 셸은 살아남아야 한다
+        // (#513이 지키던 SSR 실패 모드와 같은 계약).
         const consoleSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => undefined);
@@ -272,7 +272,9 @@ describe('SymbolLayoutHeader', () => {
         // try/finally so a failed assertion still restores the spy and doesn't
         // leak the console.error mock into sibling tests.
         try {
-            render(<SymbolLayoutHeader symbol="aapl" />);
+            render(
+                <SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />
+            );
 
             expect(screen.queryByTestId('fear-greed-chip')).toBeNull();
             expect(screen.getByRole('banner')).toBeDefined();
@@ -295,7 +297,7 @@ describe('SymbolLayoutHeader', () => {
     // 형제이고, 그 클러스터는 모바일 공포·탐욕 칩과 같은 단일 컨트롤 행의
     // 형제다(더 이상 별도의 '외톨이 칩 행'이 없다).
     it('모바일 컨트롤 단일 행: 공포·탐욕 칩과 [평단 칩][공유][분석 설정 기어] 클러스터가 하나의 컨트롤 행에 모인다', () => {
-        render(<SymbolLayoutHeader symbol="aapl" />);
+        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
 
         // 공유 버튼·보유종목 칩·설정 기어는 같은 버튼 클러스터의 형제다.
         const buttonCluster = screen.getByTestId('share-button').parentElement;
@@ -323,7 +325,7 @@ describe('SymbolLayoutHeader', () => {
             })
         );
 
-        render(<SymbolLayoutHeader symbol="aapl" />);
+        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
 
         expect(screen.getByTestId('gate-modal')).toBeInTheDocument();
     });
@@ -339,7 +341,7 @@ describe('SymbolLayoutHeader', () => {
             fmpSymbol: 'AAPL',
         } as ReturnType<typeof useAssetInfo>);
 
-        render(<SymbolLayoutHeader symbol="aapl" />);
+        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
 
         expect(screen.getByText('(AAPL)')).toBeInTheDocument();
         expect(screen.getByText(/애플/)).toBeInTheDocument();
@@ -360,7 +362,9 @@ describe('SymbolLayoutHeader', () => {
             koreanName: '삼성전자',
         } as ReturnType<typeof useAssetInfo>);
 
-        render(<SymbolLayoutHeader symbol="005930.KS" />);
+        render(
+            <SymbolLayoutHeader symbol="005930.KS" fearGreedSnapshot={null} />
+        );
 
         expect(screen.getByText('(005930.KS)')).toBeInTheDocument();
         expect(screen.getByText(/삼성전자/)).toBeInTheDocument();
@@ -378,7 +382,7 @@ describe('SymbolLayoutHeader', () => {
             koreanName: '애플',
         } as ReturnType<typeof useAssetInfo>);
 
-        render(<SymbolLayoutHeader symbol="aapl" />);
+        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
 
         expect(screen.queryByText(/애플,/)).not.toBeInTheDocument();
     });
@@ -394,7 +398,7 @@ describe('SymbolLayoutHeader', () => {
             koreanName: '애플',
         } as ReturnType<typeof useAssetInfo>);
 
-        render(<SymbolLayoutHeader symbol="aapl" />);
+        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
 
         expect(screen.getByText('(AAPL)')).toBeInTheDocument();
         expect(screen.getByText(/애플/)).toBeInTheDocument();

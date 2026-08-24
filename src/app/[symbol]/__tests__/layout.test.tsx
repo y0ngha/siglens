@@ -1,17 +1,20 @@
 /**
- * SymbolLayoutChrome SSR seed tests — verifies bars seed quantization +
- * stable updatedAt (forming 봉 차단 + ISR HTML 결정성 보장).
+ * SymbolLayoutChrome 테스트 — **봉을 seed하지 않는다**는 계약과, 헤더에 서버 계산
+ * 공포·탐욕 스냅샷을 내려보낸다는 계약을 고정한다.
  *
- * Pattern: setQueryData(key, quantizedBars, { updatedAt: lastBar.time }).
- * RQ dehydrate는 query state를 spread하므로 dataUpdatedAt이 매 ISR 재생성마다 다르면
- * HTML hash 달라져 ISR write 발생. 마지막 완료 봉의 timestamp로 updatedAt을 고정해
- * 같은 봉 윈도우 안에서는 dehydrated HTML 결정성 보장.
+ * 예전엔 이 레이아웃이 일봉 500개 + buySellVolume을 모든 탭에 seed했고(2026-08-24
+ * 프로덕션 실측 raw 76KB, `/[symbol]/position`에서 RSC 페이로드의 47%), 이 파일도
+ * 그 seed의 `updatedAt` 결정성을 검증했다. 그 seed가 필요한 소비자는 헤더 칩
+ * 하나뿐이었고(차트·공포탐욕 탭은 각자 page.tsx에서 직접 seed한다), 칩이 서버
+ * 스냅샷을 받게 되면서 통째로 사라졌다.
  *
- * - Happy: getQuantizedBarsStatic 성공 → setQueryData에 마지막 봉 time으로 updatedAt
- * - Worst: getQuantizedBarsStatic 실패 → 빈 BarsData sentinel을 updatedAt:0으로 주입 (React 19
- *   SSR 중 getBarsAction 'use server' 호출 방지), assetInfo seed는 정상
- * - fmpSymbol이 없는 assetInfo → bars seed 키가 undefined (assetInfo seed는 그대로 수행)
- * - bars seed에는 prefetchQuery 사용 금지 (회귀 가드 — updatedAt 옵션 없음)
+ * 그래서 지금 이 파일이 지키는 것은 정반대다:
+ * - bars seed 부재 (되살아나면 7개 탭에 76KB가 다시 실린다)
+ * - assetInfo seed는 유지 (updatedAt 0으로 ISR HTML 결정성)
+ * - 헤더에 전달되는 `fearGreedSnapshot` (이 PR의 핵심 — 사용자와 JS 미실행
+ *   크롤러가 보는 값이다)
+ * - 봉 조회 인자가 page.tsx와 동일 (React.cache 메모가 접히는 조건)
+ * - 조회 실패 시 throw 없이 스냅샷만 null
  */
 
 // MISTAKES §17: 모든 vi.mock + 변수 선언은 import 위로(import/first 규칙).
@@ -24,9 +27,15 @@ const {
     mockNotFound,
     mockGetQuantizedBarsStatic,
     mockGetSeedBarsStatic,
+    mockComputeFearGreedIndex,
 } = vi.hoisted(() => ({
     MOCK_EMPTY_INDICATOR_RESULT: { ma: {}, ema: {} } as never,
     mockSetQueryData: vi.fn(),
+    mockComputeFearGreedIndex: vi.fn(() => ({
+        score: 42,
+        label: 'NEUTRAL' as const,
+        confidence: 'full' as const,
+    })),
     mockPrefetchQuery: vi.fn(),
     mockGetAssetInfoResilient: vi.fn(),
     // 실제 next/navigation.notFound()와 동일하게 throw해야, 가드 이후 코드가 실행되지
@@ -56,6 +65,9 @@ vi.mock('@y0ngha/siglens-core', () => ({
         weekendDays: [0, 6],
     },
     CRYPTO_SESSION: { kind: 'always-open' as const },
+    // 칩 값을 서버에서 확정하는 순수 함수. 이 파일의 관심사는 seed 부재와 조회
+    // 인자이지 지수 계산이 아니므로 결정적 스텁으로 고정한다.
+    computeFearGreedIndex: mockComputeFearGreedIndex,
 }));
 
 vi.mock('@tanstack/react-query', () => ({
@@ -122,7 +134,6 @@ vi.mock('@/entities/bars', () => ({
 }));
 
 import SymbolLayout, { SymbolLayoutChrome } from '@/app/[symbol]/layout';
-import { MS_PER_SECOND } from '@/shared/config/time';
 
 const ASSET_INFO = {
     symbol: 'AAPL',
@@ -130,13 +141,26 @@ const ASSET_INFO = {
     fmpSymbol: 'AAPL',
 };
 const LAST_BAR_TIME = 1717718400; // 2024-06-07T00:00:00Z (epoch seconds)
-const LAST_BAR_TIME_MS = LAST_BAR_TIME * MS_PER_SECOND; // RQ dataUpdatedAt은 milliseconds
-const QUANTIZED = { bars: [{ time: LAST_BAR_TIME }], indicators: {} };
+const QUANTIZED = {
+    bars: [{ time: LAST_BAR_TIME }],
+    indicators: { buySellVolume: [{ buy: 10, sell: 5 }] },
+};
 
-describe('SymbolLayoutChrome SSR seed (ISR write churn 차단)', () => {
+/**
+ * `SymbolLayoutChrome`은 RSC라 element 트리만 돌려준다(렌더되지 않는다) — 그래서
+ * 렌더 시점 스파이로는 prop을 볼 수 없고, 반환된 JSX에서 직접 꺼내야 한다.
+ * 구조는 `<HydrationBoundary><SymbolLayoutHeader …/></HydrationBoundary>`.
+ */
+function headerPropsOf(tree: unknown): Record<string, unknown> {
+    const boundary = tree as { props?: { children?: { props?: unknown } } };
+    return (boundary.props?.children?.props ?? {}) as Record<string, unknown>;
+}
+
+describe('SymbolLayoutChrome — 봉 seed 없이 공포·탐욕 스냅샷만 내린다', () => {
     beforeEach(() => {
         mockSetQueryData.mockClear();
         mockPrefetchQuery.mockClear();
+        mockComputeFearGreedIndex.mockClear();
         mockGetAssetInfoResilient.mockReset();
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: ASSET_INFO,
@@ -145,180 +169,163 @@ describe('SymbolLayoutChrome SSR seed (ISR write churn 차단)', () => {
         mockGetSeedBarsStatic.mockResolvedValue(QUANTIZED);
     });
 
-    it('Happy: quantize된 bars로 setQueryData 호출 + updatedAt은 마지막 봉의 time', async () => {
+    /**
+     * **이 스위트의 존재 이유.** 예전엔 이 레이아웃이 일봉 500개 + buySellVolume을
+     * 모든 탭에 seed했다 — 2026-08-24 프로덕션 실측 raw 76KB, `/[symbol]/position`
+     * 에서는 RSC 페이로드의 47%. 그런데 그 seed가 필요한 소비자는 헤더의 공포·탐욕
+     * 칩 하나뿐이었고(차트·공포탐욕 탭은 각자 page.tsx에서 직접 seed한다), 칩이
+     * 서버 계산 스냅샷을 받으면 통째로 불필요해진다.
+     *
+     * seed가 되살아나면 그 76KB가 7개 탭에 다시 실린다 — 그걸 막는 가드다.
+     */
+    it('bars를 seed하지 않는다 (7탭 × 76KB 회귀 가드)', async () => {
         await SymbolLayoutChrome({
             assetInfo: ASSET_INFO,
             params: Promise.resolve({ symbol: 'aapl' }),
         });
 
-        // 대문자 ticker + marketProfile로 호출한다 — page.tsx와 인자가 같아야
-        // 요청 스코프 메모가 접혀 지표가 한 벌만 직렬화된다.
-        // (세션 스레딩은 헬퍼 내부 책임 → barsStaticCache.test.ts에서 검증)
+        const barsSeedCalls = mockSetQueryData.mock.calls.filter(
+            ([key]) => Array.isArray(key) && key[0] === 'bars'
+        );
+        expect(barsSeedCalls).toEqual([]);
+        // 회귀 가드: prefetchQuery도 금지 (updatedAt 옵션이 없어 ISR write churn 유발)
+        expect(mockPrefetchQuery).not.toHaveBeenCalled();
+    });
+
+    /**
+     * **이 PR의 핵심 계약.** 봉 seed를 없앨 수 있었던 유일한 이유가 "칩 값을
+     * 서버가 확정해 prop으로 내려보낸다"이므로, 그게 실제로 일어나는지 단언한다.
+     *
+     * 이 단언이 없으면 `const fearGreedSnapshot = null`로 바꿔도 전부 초록이다 —
+     * 사용자와 JS 미실행 크롤러가 보는 값이 통째로 사라지는데도(리뷰 round 1이
+     * 변이로 확인).
+     */
+    it('서버가 계산한 공포·탐욕 스냅샷을 헤더에 넘긴다', async () => {
+        const tree = await SymbolLayoutChrome({
+            assetInfo: ASSET_INFO,
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(headerPropsOf(tree)).toEqual(
+            expect.objectContaining({
+                fearGreedSnapshot: {
+                    score: 42,
+                    label: 'NEUTRAL',
+                    confidence: 'full',
+                },
+            })
+        );
+    });
+
+    /**
+     * 인자 순서 회귀 가드 — `computeFearGreedIndex(bars, buySellVolume)`이다.
+     * 뒤바꿔도 타입이 통과하는 자리가 아니지만(배열 타입이 다름), 지표 축소판
+     * (`getSeedBarsStatic`)이 `buySellVolume`을 보존한다는 전제가 깨지면 조용히
+     * 빈 배열이 넘어간다 — 그 경우 점수가 항상 같은 값으로 굳는다.
+     */
+    it('봉과 buySellVolume을 그 순서로 넘겨 계산한다', async () => {
+        await SymbolLayoutChrome({
+            assetInfo: ASSET_INFO,
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(mockComputeFearGreedIndex).toHaveBeenCalledWith(
+            QUANTIZED.bars,
+            QUANTIZED.indicators.buySellVolume
+        );
+    });
+
+    it('봉 조회 실패 시 스냅샷은 null (칩이 "데이터 부족"으로 폴백)', async () => {
+        mockGetSeedBarsStatic.mockRejectedValue(new Error('FMP down'));
+
+        const tree = await SymbolLayoutChrome({
+            assetInfo: ASSET_INFO,
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(headerPropsOf(tree)).toEqual(
+            expect.objectContaining({ fearGreedSnapshot: null })
+        );
+        expect(mockComputeFearGreedIndex).not.toHaveBeenCalled();
+    });
+
+    it('assetInfo는 여전히 seed한다 (updatedAt 0으로 ISR 결정성 유지)', async () => {
+        await SymbolLayoutChrome({
+            assetInfo: ASSET_INFO,
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        const assetSeedCalls = mockSetQueryData.mock.calls.filter(
+            ([key]) => Array.isArray(key) && key[0] === 'assetInfo'
+        );
+        expect(assetSeedCalls).toHaveLength(1);
+        expect(assetSeedCalls[0][2]).toEqual({ updatedAt: 0 });
+    });
+
+    /**
+     * 봉 조회 인자는 그대로 유지해야 한다 — page.tsx와 같은 인자여야 `React.cache`
+     * 메모가 접혀 quantize가 요청당 한 번만 돈다. seed를 없앴다고 이 호출까지
+     * 없앨 수는 없다(스냅샷 계산에 봉이 필요하다).
+     */
+    it('page.tsx와 같은 인자로 봉을 조회한다 (요청 스코프 메모 유지)', async () => {
+        await SymbolLayoutChrome({
+            assetInfo: ASSET_INFO,
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
         expect(mockGetSeedBarsStatic).toHaveBeenCalledWith(
             'AAPL',
             '1Day',
             'us-equity',
             'AAPL'
         );
-
-        const barsSeedCalls = mockSetQueryData.mock.calls.filter(
-            ([key]) => Array.isArray(key) && key[0] === 'bars'
-        );
-        expect(barsSeedCalls).toHaveLength(1);
-        const [key, data, options] = barsSeedCalls[0];
-        expect(key).toEqual(['bars', 'aapl', '1Day', 'AAPL']);
-        expect(data).toBe(QUANTIZED);
-        // 회귀 가드: updatedAt 명시 — 마지막 봉의 time으로 고정해야 ISR HTML 결정성 보장
-        expect(options).toEqual({ updatedAt: LAST_BAR_TIME_MS });
-
-        // 회귀 가드: prefetchQuery는 사용 금지 (updatedAt 옵션 없음)
-        expect(mockPrefetchQuery).not.toHaveBeenCalled();
     });
 
-    it('Worst: getQuantizedBarsStatic 실패 → 빈 sentinel을 updatedAt:0으로 주입, assetInfo seed는 정상', async () => {
-        // React 19: getBarsAction('use server')은 SSR render 중 호출 불가.
-        // 빈 BarsData를 query cache에 주입해 useSuspenseQuery가 SSR에서 Server
-        // Action을 호출하는 경로를 차단한다 — 클라이언트는 updatedAt:0 → stale
-        // 판정 즉시 re-fetch해 실제 bars를 가져온다.
-        mockGetSeedBarsStatic.mockRejectedValue(new Error('FMP down'));
-
-        await expect(
-            SymbolLayoutChrome({
-                assetInfo: ASSET_INFO,
-                params: Promise.resolve({ symbol: 'AAPL' }),
-            })
-        ).resolves.toBeDefined();
-
-        const barsSeedCalls = mockSetQueryData.mock.calls.filter(
-            ([key]) => Array.isArray(key) && key[0] === 'bars'
-        );
-        expect(barsSeedCalls).toHaveLength(1);
-        const [key, data, options] = barsSeedCalls[0];
-        expect(key).toEqual(['bars', 'AAPL', '1Day', 'AAPL']);
-        // 빈 sentinel: bars 없음, EMPTY_INDICATOR_RESULT
-        expect(data).toEqual({
-            bars: [],
-            indicators: MOCK_EMPTY_INDICATOR_RESULT,
-        });
-        // updatedAt:0 — 결정적 dehydrated HTML + 클라이언트 즉시 stale 판정
-        expect(options).toEqual({ updatedAt: 0 });
-
-        // assetInfo seed는 그대로 박혀야 한다 (bars 실패가 assetInfo seed 막지 않음)
-        const assetInfoCalls = mockSetQueryData.mock.calls.filter(
-            ([key]) => Array.isArray(key) && key[0] === 'assetInfo'
-        );
-        expect(assetInfoCalls).toHaveLength(1);
-    });
-
-    // 과거엔 "assetInfo가 null이면 seed를 건너뛴다"를 여기서 검증했다. 이제 null assetInfo는
-    // 레이아웃 가드가 404로 끊으므로 chrome에 도달할 수 없고, prop 타입도 non-null이다.
-    // 그 시나리오의 회귀 가드는 파일 하단 `SymbolLayout 404 가드` describe에 있다.
-    it('fmpSymbol이 없는 assetInfo도 bars seed 키를 undefined로 구성한다', async () => {
-        const NO_FMP_SYMBOL = { symbol: 'AAPL', name: 'Apple Inc.' };
-
-        await SymbolLayoutChrome({
-            assetInfo: NO_FMP_SYMBOL,
-            params: Promise.resolve({ symbol: 'AAPL' }),
-        });
-
-        expect(mockGetSeedBarsStatic).toHaveBeenCalledWith(
-            'AAPL',
-            '1Day',
-            'us-equity',
-            undefined
-        );
-        const barsSeedCalls = mockSetQueryData.mock.calls.filter(
-            ([key]) => Array.isArray(key) && key[0] === 'bars'
-        );
-        expect(barsSeedCalls).toHaveLength(1);
-        expect(barsSeedCalls[0][0]).toEqual([
-            'bars',
-            'AAPL',
-            '1Day',
-            undefined,
-        ]);
-        expect(barsSeedCalls[0][2]).toEqual({ updatedAt: LAST_BAR_TIME_MS });
-    });
-
-    it('quantize 결과 bars가 비어 있어도 throw 없음, updatedAt 0으로 fallback', async () => {
-        mockGetSeedBarsStatic.mockResolvedValue({
-            bars: [],
-            indicators: {},
-        });
-
-        await expect(
-            SymbolLayoutChrome({
-                assetInfo: ASSET_INFO,
-                params: Promise.resolve({ symbol: 'AAPL' }),
-            })
-        ).resolves.toBeDefined();
-
-        const barsSeedCalls = mockSetQueryData.mock.calls.filter(
-            ([key]) => Array.isArray(key) && key[0] === 'bars'
-        );
-        expect(barsSeedCalls).toHaveLength(1);
-        // updatedAt 0 fallback — bar 없으면 안정성 보장 안 되지만 throw 없이 진행
-        expect(barsSeedCalls[0][2]).toEqual({ updatedAt: 0 });
-    });
-
-    // 세션 spec 매핑(crypto → always-open, equity → scheduled)은 이제
-    // `getQuantizedBarsStatic` 내부 책임이라 barsStaticCache.test.ts가 검증한다.
-    // 여기서는 레이아웃이 올바른 marketProfile을 헬퍼에 넘기는지만 본다.
     it('CRYPTO assetInfo → 헬퍼에 marketProfile "crypto"를 넘긴다', async () => {
-        const CRYPTO_ASSET_INFO = {
+        const cryptoAssetInfo = {
             symbol: 'BTCUSD',
-            name: 'Bitcoin USD',
-            fmpSymbol: 'BTCUSD',
+            name: 'Bitcoin',
             marketProfile: 'crypto' as const,
         };
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: cryptoAssetInfo,
+            degraded: false,
+        });
 
         await SymbolLayoutChrome({
-            assetInfo: CRYPTO_ASSET_INFO,
-            params: Promise.resolve({ symbol: 'BTCUSD' }),
+            assetInfo: cryptoAssetInfo,
+            params: Promise.resolve({ symbol: 'btcusd' }),
         });
 
         expect(mockGetSeedBarsStatic).toHaveBeenCalledWith(
             'BTCUSD',
             '1Day',
             'crypto',
-            'BTCUSD'
+            undefined
         );
     });
 
-    it('EQUITY assetInfo (marketProfile 없음) → 헬퍼에 "us-equity"를 넘긴다', async () => {
-        const EQUITY_ASSET_INFO = {
-            symbol: 'AAPL',
-            name: 'Apple Inc.',
-            fmpSymbol: 'AAPL',
-            // marketProfile intentionally absent (legacy equity)
-        };
+    /**
+     * 봉 조회가 실패해도(FMP 키 없음·degrade) throw하지 않고 스냅샷만 비운다.
+     * 칩은 null 스냅샷에서 "데이터 부족" 문구로 폴백한다.
+     */
+    it('봉 조회 실패 시 throw하지 않는다', async () => {
+        mockGetSeedBarsStatic.mockRejectedValue(new Error('FMP down'));
 
-        await SymbolLayoutChrome({
-            assetInfo: EQUITY_ASSET_INFO,
-            params: Promise.resolve({ symbol: 'AAPL' }),
-        });
+        await expect(
+            SymbolLayoutChrome({
+                assetInfo: ASSET_INFO,
+                params: Promise.resolve({ symbol: 'aapl' }),
+            })
+        ).resolves.toBeDefined();
 
-        expect(mockGetSeedBarsStatic).toHaveBeenCalledWith(
-            'AAPL',
-            '1Day',
-            'us-equity',
-            'AAPL'
+        const barsSeedCalls = mockSetQueryData.mock.calls.filter(
+            ([key]) => Array.isArray(key) && key[0] === 'bars'
         );
+        expect(barsSeedCalls).toEqual([]);
     });
 });
 
-/**
- * SymbolLayout 404 가드 — 이 PR의 핵심 동작이다.
- *
- * Next 16.2에서 `notFound()`가 Suspense 경계 **안쪽**에서 던져지면 HTTP 상태가 200으로
- * 남는다(soft 404). 이 라우트 트리는 `loading.tsx`와 레이아웃 Suspense를 쓰므로 판정이
- * 반드시 레이아웃 최상단에 있어야 한다 — 자식 page.tsx로 되돌리면 9개 탭 전부가 다시
- * 200이 된다.
- *
- * ⚠️ 유닛 테스트가 고정할 수 있는 건 "`notFound()`가 불렸는가"까지다. 프레임워크가
- * 실제로 어떤 상태 코드를 내보내는지는 프로덕션 빌드에서만 관측 가능하므로
- * `e2e/specs/not-found.spec.ts`가 상태 코드를 단언한다. 두 층이 짝을 이룬다.
- */
 describe('SymbolLayout 404 가드 (Suspense 경계보다 위)', () => {
     beforeEach(() => {
         mockNotFound.mockClear();

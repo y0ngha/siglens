@@ -21,8 +21,7 @@ import { getSeedBarsStatic } from '@/entities/bars';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { marketProfileOf } from '@/shared/config/marketProfile';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
-import { MS_PER_SECOND } from '@/shared/config/time';
-import { EMPTY_INDICATOR_RESULT, type BarsData } from '@y0ngha/siglens-core';
+import { computeFearGreedIndex } from '@y0ngha/siglens-core';
 import type { AssetInfo } from '@/shared/lib/types';
 
 interface SymbolLayoutProps {
@@ -158,14 +157,13 @@ export async function SymbolLayoutChrome({
 }: SymbolLayoutChromeProps) {
     const { symbol } = await params;
 
-    // FearGreedHeaderChipMounted (in SymbolLayoutHeader) calls useBars with DEFAULT_TIMEFRAME
-    // via useSuspenseQuery + getBarsAction (a Server Action). Server Actions cannot be invoked
-    // during SSR rendering. Prefetching here and dehydrating into HydrationBoundary ensures
-    // the header chip satisfies the query from cache instead of calling getBarsAction
-    // during initial render.
+    // 이 QueryClient는 이제 `assetInfo`만 seed한다. 헤더의 공포·탐욕 칩이 봉을
+    // 요구하던 것이 봉 seed의 유일한 이유였는데, 지금은 서버가 계산한 스냅샷을
+    // prop으로 받으므로 그 의존이 사라졌다(아래 `fearGreedSnapshot` 주석에 실측 근거).
     //
-    // ISR static-safe: prefetch는 getQuantizedBarsStatic(=React.cache(unstable_cache(getBarsAction)))으로
-    // 통일한다 — static gen 중 redis no-store fetch가 DYNAMIC_SERVER_USAGE를 throw하지 않게.
+    // ISR static-safe: 봉 조회는 getSeedBarsStatic(=React.cache(unstable_cache(getBarsAction)))
+    // 으로 통일한다 — static gen 중 redis no-store fetch가 DYNAMIC_SERVER_USAGE를
+    // throw하지 않게.
     const queryClient = new QueryClient({
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
     });
@@ -196,39 +194,61 @@ export async function SymbolLayoutChrome({
         console.error('[SymbolLayout] getSeedBarsStatic failed:', e);
         return null;
     });
-    if (quantized !== null) {
-        // Bar.time은 seconds (epoch) — RQ dataUpdatedAt은 milliseconds 기대.
-        const lastBarSec = quantized.bars.at(-1)?.time ?? 0;
-        const stableUpdatedAt = lastBarSec * MS_PER_SECOND;
-        queryClient.setQueryData(
-            QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
-            quantized,
-            { updatedAt: stableUpdatedAt }
-        );
-    } else {
-        // Bars fetch failed (no FMP key, degraded symbol, etc.). Seed an empty
-        // BarsData into the query cache so useSuspenseQuery in
-        // FearGreedHeaderChipMounted → useBars finds data in the dehydrated state
-        // and does NOT call getBarsAction ('use server') during SSR. React 19
-        // throws "Server Functions cannot be called during initial render" when a
-        // Server Action is invoked from a query's queryFn at SSR time.
-        // updatedAt: 0 keeps the dehydrated HTML deterministic (never varies
-        // across ISR regenerations) and signals to the client that it should
-        // re-fetch immediately (staleTime check: 0 < Date.now()).
-        const emptyBars: BarsData = {
-            bars: [],
-            indicators: EMPTY_INDICATOR_RESULT,
-        };
-        queryClient.setQueryData(
-            QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
-            emptyBars,
-            { updatedAt: 0 }
-        );
-    }
+    // 공포·탐욕 칩 값을 **서버에서 확정**한다. `computeFearGreedIndex`는 core의
+    // 순수 함수라 AI 호출도 I/O도 없다(`FearGreedFactsSummary`가 이미 서버에서 쓴다).
+    //
+    // ## 왜 bars를 seed하지 않는가 — 9탭 × 76KB의 실측 낭비
+    //
+    // 예전엔 이 자리에서 `QUERY_KEYS.bars`에 일봉 500개 + buySellVolume을 seed했다.
+    // 레이아웃이라 **9탭 전부**에 실렸는데, 2026-08-24 프로덕션 실측 기준 raw 76KB
+    // (bars 52KB + buySellVolume 24KB)였고 `/[symbol]/position`에서는 RSC 페이로드의
+    // **47%**를 차지했다.
+    //
+    // 그런데 `useBars` 소비자는 셋뿐이다: `ChartContent`(차트 탭), `FearGreedPage`
+    // (공포·탐욕 탭), 그리고 이 헤더 칩(9탭 전부). 앞의 둘은 **각자 page.tsx에서
+    // 직접 seed**하므로 이 레이아웃 seed가 필요한 소비자는 칩 하나뿐이었다. 즉
+    // 나머지 7탭은 헤더 배지 하나 때문에 76KB를 나르고 있었다.
+    //
+    // 칩이 서버 계산 스냅샷(수십 바이트)을 받으면 그 seed가 통째로 불필요해진다.
+    // 차트·공포탐욕 탭은 자기 seed를 그대로 쓰므로 영향이 없다 — 이 레이아웃의
+    // HydrationBoundary는 헤더만 감싸고, 두 페이지는 자신의 안쪽 boundary를 쓴다.
+    //
+    // ## 덤: 크롤러가 칩 값을 본다
+    //
+    // 예전 칩은 하이드레이션 전까지 스켈레톤이라(클라 계산값과 SSR 값이 갈려
+    // React #418 텍스트 mismatch가 났다) JS를 실행하지 않는 크롤러(Naver Yeti·
+    // Daumoa)에겐 아무것도 안 보였다. 서버 값은 SSR HTML에 그대로 박히고, 같은
+    // 값이 하이드레이션 후에도 렌더되므로 mismatch가 원천적으로 없다.
+    //
+    // ## 신선도 — 장중에는 값이 덜 민감해진다 (의도된 트레이드오프)
+    //
+    // 예전 클라 경로는 30초마다 refetch했고 그 응답에는 **형성 중인 당일 봉**이
+    // 포함됐다. 서버 경로는 `getSeedBarsStatic`이 마지막 완료 봉까지만 quantize하고
+    // (ISR HTML 결정성 때문에 필수다), 그 위에 봉 캐시 6h + 페이지 ISR 6~24h가 얹힌다.
+    // 즉 장이 열려 있는 동안 이 배지는 당일 거래량 흐름을 반영하지 않는다.
+    //
+    // 그래도 이 쪽을 택한 이유: (a) 공포·탐욕은 일봉 지표라 세션 중 갱신의 가치가
+    // 작고, (b) 같은 페이지의 다른 모든 숫자가 이미 동일한 ISR 상한에 묶여 있어
+    // 배지만 실시간이면 오히려 어긋나 보이며, (c) 실시간 값이 필요한 사용자를 위한
+    // `/[symbol]/fear-greed` 전용 페이지는 `useFearGreedFromSymbol`로 계속
+    // 라이브 refetch한다. 배지는 그 페이지로 가는 입구일 뿐이다.
+    //
+    // `quantized`가 null(FMP 키 없음·degrade)이면 스냅샷도 null → 칩이 기존
+    // "데이터 부족" 문구로 폴백한다.
+    const fearGreedSnapshot =
+        quantized === null
+            ? null
+            : computeFearGreedIndex(
+                  quantized.bars,
+                  quantized.indicators.buySellVolume
+              );
 
     return (
         <HydrationBoundary state={dehydrate(queryClient)}>
-            <SymbolLayoutHeader symbol={symbol} />
+            <SymbolLayoutHeader
+                symbol={symbol}
+                fearGreedSnapshot={fearGreedSnapshot}
+            />
         </HydrationBoundary>
     );
 }
