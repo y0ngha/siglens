@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.62.1](https://github.com/y0ngha/siglens/compare/v0.62.0...v0.62.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* **seo:** 한글명 정준화로 화면 간 표시 불일치 55종 통일 ([ba49b08](https://github.com/y0ngha/siglens/commit/ba49b08e5648f09c9b3bd9d5a0f2e75648db6bd9))
+
+
+### Performance Improvements
+
+* **seo:** 심볼 레이아웃 칩에서 bars 캐시 제거로 RSC 페이로드 최소화 ([398778f](https://github.com/y0ngha/siglens/commit/398778f7355279dcaa07f655a7e20eecf6cd5537))
+
 # [0.62.0](https://github.com/y0ngha/siglens/compare/v0.61.1...v0.62.0) (2026-08-24)
 
 
