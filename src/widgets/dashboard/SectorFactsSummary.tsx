@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
 import { buildSectorFacts } from '@/entities/sector-signal';
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface SectorFactsSummaryProps {
     data: SectorSignalsResult;
@@ -33,7 +35,7 @@ export function SectorFactsSummary({ data }: SectorFactsSummaryProps) {
             aria-label="섹터별 신호 요약"
             className="page-container sector-panel-bg py-10"
         >
-            <h2 className="mb-6 text-sm font-semibold tracking-[0.01em] text-secondary-200">
+            <h2 className={cn('mb-6', HEADING_SECTION)}>
                 섹터별 신호 모아보기
             </h2>
             {facts.length === 0 ? (

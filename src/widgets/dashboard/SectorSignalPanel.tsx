@@ -5,6 +5,7 @@ import type {
     SectorSignalsResult,
 } from '@y0ngha/siglens-core';
 import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { useSectorSignalState } from './hooks/useSectorSignalState';
 import { SectorTabs } from './SectorTabs';
 import { TimeframeSelector } from './TimeframeSelector';
@@ -50,9 +51,7 @@ export function SectorSignalPanel({
             className="page-container sector-panel-bg relative py-10"
         >
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-                <h2 className="text-sm font-semibold tracking-[0.01em] text-secondary-200">
-                    섹터별 신호 모아보기
-                </h2>
+                <h2 className={HEADING_SECTION}>섹터별 신호 모아보기</h2>
                 <TimeframeSelector
                     timeframe={activeTimeframe}
                     onChange={handleTimeframeChange}

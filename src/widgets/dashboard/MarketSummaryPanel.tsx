@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { cn } from '@/shared/lib/cn';
-import { LABEL_KO } from '@/shared/lib/typographyStyles';
+import { HEADING_SECTION, LABEL_KO } from '@/shared/lib/typographyStyles';
 import { IndexCard } from './IndexCard';
 import {
     BriefingCard,
@@ -97,12 +97,7 @@ export function MarketSummaryPanel({
     // 안내는 polite 영역 밖(제목 아래·그리드 위)에 렌더한다.
     return (
         <section aria-label={heading} className="page-container py-10">
-            {/* 한글 제목이라 uppercase(한글엔 대소문자가 없어 무효)와 0.15em
-                자간(라틴 소문자 기준이라 한글을 흩뜨린다)을 쓰지 않는다 —
-                `shared/lib/typographyStyles.ts` 참조. 위계는 크기와 굵기로 만든다. */}
-            <h2 className="mb-6 text-base font-semibold tracking-tight text-secondary-100">
-                {heading}
-            </h2>
+            <h2 className={cn('mb-6', HEADING_SECTION)}>{heading}</h2>
             {showNotice && (
                 <MarketDataErrorNotice
                     marketLabel={scope.marketLabel}

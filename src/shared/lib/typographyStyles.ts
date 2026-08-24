@@ -39,6 +39,24 @@ export const LABEL_LATIN = cn(
 );
 
 /**
+ * 페이지 안 섹션 제목(h2).
+ *
+ * 이 상수가 생긴 이유: 같은 역할의 h2가 네 파일에 각자 하드코딩돼 있었고,
+ * 한 곳만 손대자 곧바로 위계가 뒤집혔다 — `SignalSubsection`의 h3를 16px로
+ * 올렸더니 그 h3를 담고 있는 `SectorSignalPanel`의 h2가 14px로 남아 소제목이
+ * 상위 제목보다 크고 밝아졌다. 같은 위계는 한 곳에서만 정의한다.
+ *
+ * 한글 제목이므로 uppercase·넓은 자간을 쓰지 않는다([[LABEL_KO]] 주석 참조).
+ *
+ * 값은 제품의 우세 h2 톤을 따른다 — `SnapshotSummarySection`이 이미
+ * `text-lg font-semibold tracking-tight`를 쓰고 그 테스트가 이를 회귀 가드로
+ * 고정해 두고 있다. 18px이라 소제목(h3, 16px)과 한 단계 벌어진다.
+ */
+export const HEADING_SECTION = cn(
+    'text-lg font-semibold tracking-tight text-secondary-100'
+);
+
+/**
  * 자릿수가 맞아야 하는 수치(가격·등락률·개수).
  * 모노 대신 본문 서체의 tabular 숫자를 쓴다 — 한글 단위(“개”, “종”)가 붙어도
  * 폰트가 갈리지 않고, 숫자 폭은 여전히 고정된다.
