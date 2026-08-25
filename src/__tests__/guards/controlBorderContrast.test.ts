@@ -67,7 +67,15 @@ function readThemes(): {
     dark: Map<string, string>;
     light: Map<string, string>;
 } {
-    const source = readFileSync(GLOBALS_CSS, 'utf8');
+    // **주석을 먼저 지운다.** `blockAt`이 원문에서 중괄호를 세면 주석 속 `}`
+    // 하나가 블록을 잘라내고, 라이트 맵이 다크 복사본으로 되돌아가 가드가
+    // 다크 값을 라이트 표면에 대고 재며 초록을 낸다 — 이 파일이 막겠다고 적어둔
+    // 바로 그 실패다. 라이트 블록엔 이미 `bg-grade-{a..f}/10`을 적은 주석이
+    // 있고, 지금 균형이 맞는 건 우연이다. 오프셋 보존을 위해 공백으로 바꾼다.
+    const source = readFileSync(GLOBALS_CSS, 'utf8').replace(
+        /\/\*[\s\S]*?\*\//g,
+        m => m.replace(/[^\n]/g, ' ')
+    );
     const themeOpen = /@theme\s*\{/.exec(source);
     const lightOpen = /:root\[data-theme='light'\]\s*\{/.exec(source);
     if (themeOpen === null || lightOpen === null) {

@@ -54,8 +54,44 @@ const CLASSNAME_RE = /className="([^"]*)"/;
 // 전부 통과시키므로, 새 토큰이 생길 때마다 조용히 뚫린다.
 //
 // 방향 보더(`border-t-*` 등)는 제외한다. 그건 구분선이지 컨트롤의 경계가 아니다.
-const BORDER_COLOUR_RE =
-    /^border-(?![trblxy]-)(?!\d+$)(?!(?:solid|dashed|dotted|double|none|hidden|collapse|separate)$)(.+)$/;
+// 방향 세그먼트(`border-b-…`)는 **건너뛰되 색은 본다.** 예전엔 방향이 붙으면
+// 통째로 면제했는데, 그러면 Tailwind의 관용적 밑줄 입력
+// (`border-0 border-b-2 border-b-secondary-700`)이 그대로 빠져나간다 —
+// 구분선 휴리스틱을 걷어낸 이유가 정확히 그 형태였다.
+const BORDER_STYLE = new Set([
+    'solid',
+    'dashed',
+    'dotted',
+    'double',
+    'none',
+    'hidden',
+    'collapse',
+    'separate',
+]);
+
+/**
+ * 토큰에서 **색 부분만** 뽑는다. `null`이면 색이 아니다(두께·스타일·방향만).
+ *
+ * 정규식 하나로 방향·두께·스타일을 동시에 걸러내려다 백트래킹에 당했다:
+ * `border-b-2`에서 부정 전방탐색이 실패하면 엔진이 방향 세그먼트를 안 먹은
+ * 해석으로 되돌아가 `b-2`를 색으로 넘겼다. 규칙이 여럿이면 정규식보다 코드가
+ * 낫다.
+ *
+ * `ring-*`도 같이 본다 — 시각적으로 보더와 같은 경계를 그리는데 가드는
+ * `border-*`만 봤고, 실제로 소셜 로그인 버튼이 링을 **유일한 경계**로 쓴다.
+ */
+function borderColourPart(token: string): string | null {
+    const m = /^(border|ring)(?:-([trblxy]))?(?:-(.+))?$/.exec(token);
+    if (m === null) return null;
+    const tail = m[3];
+    if (tail === undefined) return null;
+    if (/^\d+$/.test(tail)) return null;
+    if (BORDER_STYLE.has(tail)) return null;
+    if (m[1] === 'ring' && (tail === 'inset' || tail.startsWith('offset-'))) {
+        return null;
+    }
+    return tail;
+}
 
 /**
  * 컨트롤 경계로 허용되는 색. 나머지는 전부 검출 대상이다.
@@ -73,12 +109,13 @@ const BORDER_COLOUR_RE =
 // 20%만 남기면 경계가 사라진다 — 틴트가 필요하면 3:1을 실측하고 여기에
 // 근거와 함께 명시적으로 추가할 것.
 const ALLOWED_BORDER_COLOUR_RE =
-    /^(?:border-control|secondary-500|primary-\d{2,3}|ui-[a-z]+(?:-text)?|chart-[a-z]+|transparent|current|inherit)$/;
+    // `fixed-light-border`: 구글 브랜드 가이드가 요구하는 고정 흰 표면 위의
+    // 경계다(테마와 무관). 흰 배경 대비 3.02:1로 기준을 넘는다.
+    /^(?:border-control|secondary-500|fixed-light-border|primary-\d{2,3}|ui-[a-z]+(?:-text)?|chart-[a-z]+|transparent|current|inherit)$/;
 
 function isDecorativeBorder(token: string): boolean {
-    const match = BORDER_COLOUR_RE.exec(token);
-    if (match === null) return false;
-    return !ALLOWED_BORDER_COLOUR_RE.test(match[1]);
+    const colour = borderColourPart(token);
+    return colour !== null && !ALLOWED_BORDER_COLOUR_RE.test(colour);
 }
 
 /**
@@ -86,6 +123,14 @@ function isDecorativeBorder(token: string): boolean {
  * 적힌 `border-control`·`border-box` 같은 **낱말**이 클래스로 잡혀 없는
  * 위반을 만든다(실제로 ReasoningToggle에서 3건이 그렇게 잡혔다).
  */
+/** 주석을 같은 길이 공백으로 — 오프셋과 줄 수가 보존된다. */
+function blankComments(source: string): string {
+    const blank = (m: string): string => m.replace(/[^\n]/g, ' ');
+    return source
+        .replace(/\/\*[\s\S]*?\*\//g, blank)
+        .replace(/(?<=^|\n)[ \t]*\/\/[^\n]*/g, blank);
+}
+
 function stripInlineComments(value: string): string {
     // 줄 **끝**에 붙은 `//` 주석도 지운다. 줄 맨 앞만 지우던 때는 `cn(...)`
     // 안의 후행 주석에 적힌 클래스 이름이 그대로 위반으로 잡혔다 — 감사가
@@ -179,7 +224,13 @@ const CONST_DECL_HEAD_RE =
  * 끼어도 뒤쪽 인자가 통째로 안 보였다 — 감사가 그대로 통과시켜 증명했다.
  * 라운드 1에서 이 정규식을 넓혔지만 절반만 닫혀 있었던 셈이다.
  */
-function initialiserAt(source: string, start: number): string {
+function initialiserAt(rawSource: string, start: number): string {
+    // **주석을 먼저 지운 사본에서 센다.** 원문에서 괄호·따옴표를 세면 주석 속
+    // 아포스트로피 하나(`don't`)나 짝 없는 괄호 하나가 캡처를 `cn(` 한 줄로
+    // 잘라 상수를 통째로 안 보이게 만든다. 라운드 2에서 게으른 정규식 문제만
+    // 고치고 이 부류는 남겨뒀는데, 이 가드 자신의 설명이 "cn() 안 근거 주석은
+    // 흔하다"고 적고 있다. 오프셋을 유지해야 하므로 같은 길이 공백으로 바꾼다.
+    const source = blankComments(rawSource);
     let depth = 0;
     let quote: string | null = null;
     for (let i = start; i < source.length; i += 1) {
@@ -259,6 +310,46 @@ function usedOnControlTag(source: string, name: string): boolean {
     return controlOpeningTags(source).some(
         ({ tag }) => /className=\{/.test(tag) && nameRe.test(tag)
     );
+}
+
+/**
+ * 객체 속성에 담긴 클래스 문자열(`buttonClassName: '…'`).
+ *
+ * 상수 스캐너는 `const NAME = …`만 본다. 그래서 설정 객체에 담긴 클래스는
+ * 통째로 안 보였고, 실제로 소셜 로그인 버튼의 유일한 경계가 그 형태로 숨어
+ * 있었다 — 감사가 그걸 라이트에서 사라지는 값으로 바꿔도 가드는 초록이었다.
+ *
+ * 이름이 `…ClassName`인 속성은 **선언 자체가 클래스라고 말하므로** 사용처를
+ * 따라가지 않는다. 컨테이너용 장식 보더가 여기 들어오면 예외 목록에 근거와
+ * 함께 적는다.
+ */
+//
+// 이름이 **컨트롤을 가리키는** 속성만 본다. 그냥 `className:`까지 넣었더니
+// 범례 스와치·게이지 밴드·쇼케이스 카드 같은 컨테이너 장식이 6건 딸려 왔다 —
+// 사용처를 안 따라가는 대신 이름이 declare하는 것만 신뢰하는 게 이 스캐너의
+// 계약이므로, 이름이 애매하면 대상이 아니다.
+const CLASS_PROP_RE =
+    /((?:button|link|input|trigger|control|chip|tab|toggle)ClassName)\s*:\s*(?:\n\s*)?('[^']*'|`[^`]*`|cn\([\s\S]*?\))/g;
+
+function findPropHeldBorders(
+    allowed: ReadonlySet<string> = ALLOWED_CONSTANTS
+): string[] {
+    const offenders: string[] = [];
+    for (const file of tsxFiles(SRC_DIR)) {
+        const source = readFileSync(file, 'utf8');
+        for (const match of source.matchAll(CLASS_PROP_RE)) {
+            const [, name, classes] = match;
+            const bare = stripInlineComments(classes)
+                .split(/[\s'"`,]+/)
+                .filter(isDecorativeBorder);
+            if (bare.length === 0) continue;
+            const rel = path.relative(SRC_DIR, file);
+            if (allowed.has(`${rel}::${name}`)) continue;
+            const line = source.slice(0, match.index).split('\n').length;
+            offenders.push(`${rel}:${line} ${name} ${bare.join(' ')}`);
+        }
+    }
+    return offenders.sort();
 }
 
 function findConstantHeldBorders(
@@ -345,6 +436,10 @@ function findHoverContrastDrops(): string[] {
 describe('control border token guard', () => {
     it('조작 요소의 기본 보더는 border-control을 쓴다', () => {
         expect(findDecorativeControlBorders()).toEqual([]);
+    });
+
+    it('객체 속성에 담은 클래스도 같은 규칙을 따른다', () => {
+        expect(findPropHeldBorders()).toEqual([]);
     });
 
     it('상수에 담은 컨트롤 보더도 border-control을 쓴다', () => {

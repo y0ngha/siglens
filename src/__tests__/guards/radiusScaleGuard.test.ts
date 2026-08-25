@@ -22,10 +22,13 @@ const SRC_DIR = path.resolve(__dirname, '../..');
  * 형태였다 — 감사가 `rounded-4xl`(v4 실존 유틸)과 `rounded-[14px]`(임의값)로
  * 통과시켰다. 허용식이면 새 유틸이 생겨도 자동으로 걸린다.
  */
-// 접미사는 낱말이거나 대괄호 임의값이다. 점·괄호까지 받으면 테스트 안의
-// CSS 선택자(`rounded-full.h-1.flex-1`)를 통째로 접미사로 삼켜 오탐이 난다.
+// 접미사는 낱말, 대괄호 임의값, 또는 v4의 CSS 변수 축약형 `(--var)`다.
+// 점·괄호를 무제한으로 받으면 테스트 안의 CSS 선택자(`rounded-full.h-1.flex-1`)를
+// 통째로 삼켜 오탐이 나므로 세 형태만 좁게 받는다. 대괄호만 넣었을 때는
+// `rounded-(--card-radius)`가 **매치 0건**이라 조용히 허용됐다 — 한 문법
+// 가족을 반만 모델링하면 나머지 반이 구멍이 된다.
 const RADIUS_RE =
-    /\brounded(?:-[trblse]{1,2})?(?:-(\[[^\]\s]*\]|[\w-]+))?(?![\w-])/g;
+    /\brounded(?:-[trblse]{1,2})?(?:-(\[[^\]\s]*\]|\(--[^)\s]*\)|[\w-]+))?(?![\w-])/g;
 const ALLOWED_RADIUS = new Set(['full', 'sm', 'lg', 'none']);
 
 function sourceFiles(dir: string): string[] {
@@ -91,6 +94,7 @@ describe('radius scale guard', () => {
         // 열거식이 놓쳤던 둘 — v4 실존 유틸과 임의값.
         expect(offScale('rounded-4xl')).toBe(true);
         expect(offScale('rounded-[14px]')).toBe(true);
+        expect(offScale('rounded-(--card-radius)')).toBe(true);
         expect(offScale('rounded-lg')).toBe(false);
         expect(offScale('rounded-full')).toBe(false);
         expect(offScale('rounded')).toBe(false);
