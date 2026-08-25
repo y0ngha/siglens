@@ -16,8 +16,10 @@ export function SymbolTabsSkeleton() {
             className="overflow-x-auto overflow-y-hidden border-b border-secondary-700"
         >
             {/* 실제 `SymbolTabs`와 **같은 래퍼**를 둔다. 여기만 전폭이면 탭이
-                들어오는 순간 가로로 튄다 — 실측 1280px 140px, 1920px 460px. */}
-            <div className="symbol-container flex min-w-max px-0">
+                들어오는 순간 가로로 튄다 — 실측 1280px 140px, 1920px 460px.
+                `min-h-11`도 실제 탭 링크와 같은 값이다. 알약만 두면 40px이라
+                탭이 들어올 때 세로로도 밀린다. */}
+            <div className="symbol-container -mb-px flex min-h-11 min-w-max items-center px-0">
                 {Array.from({ length: SKELETON_PILL_COUNT }, (_, i) => (
                     <span
                         key={i}

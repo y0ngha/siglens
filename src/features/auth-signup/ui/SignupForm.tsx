@@ -46,7 +46,7 @@ function StepIndicator({ phase }: StepIndicatorProps) {
     return (
         <p
             aria-live="polite"
-            className="mb-4 text-xs font-medium tracking-wider text-secondary-400 uppercase"
+            className="mb-4 text-xs font-medium text-secondary-400"
         >
             {STEP_LABEL[phase]}
         </p>
