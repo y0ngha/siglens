@@ -68,7 +68,7 @@ interface ErrorBannerProps {
 function ErrorBanner({ message }: ErrorBannerProps) {
     return (
         <div className="rounded bg-secondary-700/40 px-3 py-2">
-            <span className="text-sm text-chart-bearish">{message}</span>
+            <span className="text-sm text-ui-danger-text">{message}</span>
         </div>
     );
 }

@@ -40,8 +40,8 @@ function GrowthBar({ label, value, description }: GrowthBarProps) {
                         pct === null
                             ? 'text-secondary-400'
                             : isPositive
-                              ? 'text-chart-bullish'
-                              : 'text-chart-bearish'
+                              ? 'text-ui-success-text'
+                              : 'text-ui-danger-text'
                     )}
                 >
                     {formattedPct}

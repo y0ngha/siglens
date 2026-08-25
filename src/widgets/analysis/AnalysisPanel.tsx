@@ -233,9 +233,9 @@ const LOCKED_ACTION_INFO_DEPTHS: readonly TierInfoDepth[] = [
 ];
 
 const RISK_LEVEL_COLOR: Record<RiskLevel, string> = {
-    low: 'text-chart-bullish',
+    low: 'text-ui-success-text',
     medium: 'text-ui-warning-text',
-    high: 'text-chart-bearish',
+    high: 'text-ui-danger-text',
 };
 
 const RISK_LEVEL_LABEL: Record<RiskLevel, string> = {
@@ -616,8 +616,8 @@ function StrategyAccordionItem({
 }
 
 const TRENDLINE_COLOR: Record<TrendlineDirection, string> = {
-    ascending: 'text-chart-bullish',
-    descending: 'text-chart-bearish',
+    ascending: 'text-ui-success-text',
+    descending: 'text-ui-danger-text',
 };
 
 const TRENDLINE_BG_COLOR: Record<TrendlineDirection, string> = {
@@ -1059,7 +1059,7 @@ export function AnalysisPanel({
                 </div>
             </div>
             {copyState === 'failed' && (
-                <p className="-mt-2 text-xs text-chart-bearish">
+                <p className="-mt-2 text-xs text-ui-danger-text">
                     클립보드 복사에 실패했습니다. 브라우저 권한을 확인해 주세요.
                 </p>
             )}
@@ -1144,7 +1144,7 @@ export function AnalysisPanel({
                                                 key={`resistance-${level.price}`}
                                                 className="flex flex-col"
                                             >
-                                                <span className="text-sm font-medium text-chart-bearish">
+                                                <span className="text-sm font-medium text-ui-danger-text">
                                                     {level.price.toLocaleString(
                                                         undefined,
                                                         {
@@ -1173,7 +1173,7 @@ export function AnalysisPanel({
                                                 key={`support-${level.price}`}
                                                 className="flex flex-col"
                                             >
-                                                <span className="text-sm font-medium text-chart-bullish">
+                                                <span className="text-sm font-medium text-ui-success-text">
                                                     {level.price.toLocaleString(
                                                         undefined,
                                                         {
@@ -1239,12 +1239,12 @@ export function AnalysisPanel({
                                 <PriceScenarioSection
                                     label="상승"
                                     scenario={priceTargets.bullish}
-                                    colorClass="text-chart-bullish"
+                                    colorClass="text-ui-success-text"
                                 />
                                 <PriceScenarioSection
                                     label="하락"
                                     scenario={priceTargets.bearish}
-                                    colorClass="text-chart-bearish"
+                                    colorClass="text-ui-danger-text"
                                 />
                             </div>
                         </div>

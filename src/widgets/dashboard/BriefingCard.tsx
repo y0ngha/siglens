@@ -86,7 +86,7 @@ export function BriefingCard({
                             <span className="mr-1 text-secondary-500">
                                 상승 섹터
                             </span>
-                            <span className="text-chart-bullish">
+                            <span className="text-ui-success-text">
                                 {leadingSectors.join('·')}
                             </span>
                         </p>
@@ -96,7 +96,7 @@ export function BriefingCard({
                             <span className="mr-1 text-secondary-500">
                                 하락 섹터
                             </span>
-                            <span className="text-chart-bearish">
+                            <span className="text-ui-danger-text">
                                 {laggingSectors.join('·')}
                             </span>
                         </p>
@@ -170,7 +170,7 @@ export function BriefingErrorCard() {
             role="alert"
             className="rounded-lg border border-secondary-700/50 p-4"
         >
-            <p className="text-sm text-chart-bearish">
+            <p className="text-sm text-ui-danger-text">
                 브리핑을 불러오지 못했어요.
             </p>
         </div>

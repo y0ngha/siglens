@@ -65,7 +65,7 @@ export function BacktestHero({ meta }: BacktestHeroProps) {
                     <StatCard
                         value={`${meta.winRate}%`}
                         label="지표 신호 승률"
-                        valueClassName="text-chart-bullish"
+                        valueClassName="text-ui-success-text"
                     />
                     <StatCard
                         value={`${meta.aiWinRate}%`}

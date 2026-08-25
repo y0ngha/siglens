@@ -343,13 +343,15 @@ export function StrikeVolumeChart({
                             Strike ${hoveredRow.strike.toLocaleString()}
                         </div>
                         <div className="flex items-center justify-between gap-3">
-                            <span className="text-chart-bullish">Call Vol</span>
+                            <span className="text-ui-success-text">
+                                Call Vol
+                            </span>
                             <span className="tabular-nums">
                                 {hoveredRow.callVolume.toLocaleString()} 계약
                             </span>
                         </div>
                         <div className="flex items-center justify-between gap-3">
-                            <span className="text-chart-bearish">Put Vol</span>
+                            <span className="text-ui-danger-text">Put Vol</span>
                             <span className="tabular-nums">
                                 {hoveredRow.putVolume.toLocaleString()} 계약
                             </span>

@@ -429,14 +429,16 @@ export function OpenInterestChart({
                             Strike ${hoveredRow.strike.toLocaleString()}
                         </div>
                         <div className="flex items-center justify-between gap-3">
-                            <span className="text-chart-bullish">Call OI</span>
+                            <span className="text-ui-success-text">
+                                Call OI
+                            </span>
                             <span className="tabular-nums">
                                 {hoveredRow.callOpenInterest.toLocaleString()}{' '}
                                 계약
                             </span>
                         </div>
                         <div className="flex items-center justify-between gap-3">
-                            <span className="text-chart-bearish">Put OI</span>
+                            <span className="text-ui-danger-text">Put OI</span>
                             <span className="tabular-nums">
                                 {hoveredRow.putOpenInterest.toLocaleString()}{' '}
                                 계약

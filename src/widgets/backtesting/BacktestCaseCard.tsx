@@ -65,7 +65,7 @@ function RiskBadge({ level }: RiskBadgeProps) {
 const winClasses = {
     article: 'border-secondary-700',
     badge: 'bg-secondary-700 text-primary-400',
-    returnText: 'text-chart-bullish',
+    returnText: 'text-ui-success-text',
     aiSummary: 'border-chart-bullish',
     tag: 'border border-primary-900/50 bg-primary-950/40 text-primary-400',
 } as const;
@@ -73,7 +73,7 @@ const winClasses = {
 const lossClasses = {
     article: 'border-chart-bearish/20',
     badge: 'bg-chart-bearish/10 text-ui-danger-text',
-    returnText: 'text-chart-bearish',
+    returnText: 'text-ui-danger-text',
     aiSummary: 'border-ui-warning',
     tag: 'border border-ui-warning/30 bg-ui-warning/10 text-ui-warning-text',
 } as const;
@@ -234,13 +234,13 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                                 <span className="text-secondary-500">
                                     목표가:{' '}
                                 </span>
-                                <span className="text-chart-bullish">
+                                <span className="text-ui-success-text">
                                     {formatUsdCurrency(
                                         firstBullishTarget.price
                                     )}
                                 </span>
                                 {c.aiTrendHit && (
-                                    <span className="ml-1 text-chart-bullish">
+                                    <span className="ml-1 text-ui-success-text">
                                         ✓ 도달
                                     </span>
                                 )}
@@ -249,11 +249,11 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                         {c.aiAnalysis.takeProfit !== undefined && (
                             <div>
                                 <span className="text-secondary-500">TP: </span>
-                                <span className="text-chart-bullish">
+                                <span className="text-ui-success-text">
                                     {formatUsdCurrency(c.aiAnalysis.takeProfit)}
                                 </span>
                                 {c.exitReason === 'take_profit' && (
-                                    <span className="ml-1 text-chart-bullish">
+                                    <span className="ml-1 text-ui-success-text">
                                         ✓
                                     </span>
                                 )}
@@ -262,11 +262,11 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                         {c.aiAnalysis.stopLoss !== undefined && (
                             <div>
                                 <span className="text-secondary-500">SL: </span>
-                                <span className="text-chart-bearish">
+                                <span className="text-ui-danger-text">
                                     {formatUsdCurrency(c.aiAnalysis.stopLoss)}
                                 </span>
                                 {c.exitReason === 'stop_loss' && (
-                                    <span className="ml-1 text-chart-bearish">
+                                    <span className="ml-1 text-ui-danger-text">
                                         ✓
                                     </span>
                                 )}
