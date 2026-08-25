@@ -1,8 +1,11 @@
 /**
  * Overall page body branching tests — verifies crypto-vs-equity copy in:
  *   1. SymbolPageHeading (visible h1 region)
- *   2. Visible 3-paragraph guide section
+ *   2. The visible FAQ section (`FaqSection`)
  *   3. FAQ JSON-LD `mainEntity[*].acceptedAnswer.text` answers
+ *
+ * 2·3은 이제 같은 배열(`copy.faq`)에서 나온다 — 예전에는 안내 문단과 FAQ 답변이
+ * 두 벌이었고 문단만 화면에 보였다.
  *
  * Strategy: invoke the RSC directly (no DOM render) and JSON.stringify the tree
  * to assert presence/absence of branch-specific strings, mirroring the pattern
@@ -93,6 +96,8 @@ import { getAssetInfoResilient } from '@/entities/ticker';
 import { OverallContent } from '@/widgets/overall/OverallContent';
 import { OverallFactualFallback } from '@/widgets/overall';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { expectFaqSingleSource } from '@/__tests__/utils/expectFaqSingleSource';
+import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
 
@@ -185,7 +190,7 @@ describe('OverallPage — isEquity body branching', () => {
         });
     });
 
-    describe('visible guide section body (3 paragraphs)', () => {
+    describe('visible FAQ section body', () => {
         it('crypto → body contains 매수 분위기(공포 탐욕 지수)', async () => {
             mockGetAssetInfoResilient.mockResolvedValue(CRYPTO_ASSET_INFO);
             const tree = await OverallPage({
@@ -223,15 +228,40 @@ describe('OverallPage — isEquity body branching', () => {
         });
     });
 
+    /**
+     * 회귀 가드: FAQPage 마크업과 화면 Q&A는 `copy.faq` 하나에서 나와야 한다.
+     * 예전에는 답변이 JSON-LD 리터럴 안에만 있어 화면 어디에도 없었다 — 구글은
+     * 대응하는 내용이 페이지에 보일 것을 요구한다.
+     */
+    it('FAQPage 구조화데이터가 화면 FaqSection과 같은 질문·답변을 쓴다', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+        const tree = await OverallPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expectFaqSingleSource(tree);
+    });
+
+    /**
+     * 회귀 가드: BreadcrumbList position 2는 화면 브레드크럼과 같은 이름이어야 한다.
+     * 근거는 `expectSymbolBreadcrumbName` JSDoc 참고.
+     */
+    it('BreadcrumbList가 티커가 아니라 displayName을 쓴다', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+        await OverallPage({ params: Promise.resolve({ symbol: 'aapl' }) });
+
+        expectSymbolBreadcrumbName('Apple Inc.');
+    });
+
     describe('FAQ JSON-LD answer branching', () => {
-        it('crypto → FAQ answer contains 매수 분위기(공포 탐욕 지수)를 묶어 강세와 약세', async () => {
+        it('crypto → FAQ answer contains 매수 분위기(공포 탐욕 지수)까지 세 축을 묶어', async () => {
             mockGetAssetInfoResilient.mockResolvedValue(CRYPTO_ASSET_INFO);
             const tree = await OverallPage({
                 params: Promise.resolve({ symbol: 'BTCUSD' }),
             });
             const treeStr = JSON.stringify(tree);
             expect(treeStr).toContain(
-                '매수 분위기(공포 탐욕 지수)를 묶어 강세와 약세'
+                '매수 분위기(공포 탐욕 지수)까지 세 축을 묶어'
             );
             // equity-only FAQ text must be absent
             expect(treeStr).not.toContain('옵션 시장이 평가하는 단기 방향성');
@@ -245,7 +275,7 @@ describe('OverallPage — isEquity body branching', () => {
             const treeStr = JSON.stringify(tree);
             expect(treeStr).toContain('옵션 시장의 콜·풋 베팅 분위기');
             expect(treeStr).not.toContain(
-                '매수 분위기(공포 탐욕 지수)를 묶어 강세와 약세'
+                '매수 분위기(공포 탐욕 지수)까지 세 축을 묶어'
             );
         });
 
@@ -319,7 +349,7 @@ describe('OverallPage — kr-equity hasOptions branching (SEO 감사 finding 1)'
         expect(treeStr).toContain('실적과 가이던스 흐름');
     });
 
-    it('한국 종목 본문 가이드는 옵션 시장 문단 대신 실적/가이던스 문단을 보여준다', async () => {
+    it('한국 종목 FAQ 첫 답변은 옵션 시장 문장 대신 실적/가이던스 문장을 붙인다', async () => {
         mockGetAssetInfoResilient.mockResolvedValue(KR_EQUITY_ASSET_INFO);
         const tree = await OverallPage({
             params: Promise.resolve({ symbol: '005930.ks' }),

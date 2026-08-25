@@ -118,6 +118,9 @@ import { getAssetInfoResilient } from '@/entities/ticker';
 import { getNewsList } from '@/entities/news-article/api';
 import { NewsFactsSummary } from '@/widgets/news';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
+import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
+import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
@@ -371,5 +374,67 @@ describe('NewsPage — aiArticleJsonLd headline/description isEquity branch', ()
         expect(treeStr).toContain('최근 뉴스 AI 요약');
         // crypto-only headline must be absent
         expect(treeStr).not.toContain('최근 코인 뉴스 AI 요약');
+    });
+});
+
+/**
+ * 회귀 가드: `ItemList` 구조화데이터는 **초기 DOM에 실제로 그려지는 뉴스 수**를
+ * 넘으면 안 된다. `NewsList`는 `NEWS_LIST_PAGE_SIZE`개만 그리고 나머지는 "더보기"
+ * 클릭으로 클라이언트 상태에만 들어오는데, 구글은 버튼을 누르지 않는다. 예전에는
+ * 페이지가 자체 상한(10)을 따로 들고 있어 마크업이 10건을 주장하면서 DOM에는
+ * 5건만 있었다 — 리터럴이 두 벌이라 조용히 갈렸다.
+ */
+describe('NewsPage — ItemList 상한은 렌더 개수와 같은 상수를 쓴다', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+    });
+
+    it(`뉴스가 많아도 itemListElement는 NEWS_LIST_PAGE_SIZE(${NEWS_LIST_PAGE_SIZE})건이다`, async () => {
+        const manyItems = Array.from(
+            { length: NEWS_LIST_PAGE_SIZE * 3 },
+            (_, i) => ({
+                id: `news-${i}`,
+                publishedAt: '2026-05-06T00:00:00.000Z',
+                titleEn: `Headline ${i}`,
+                titleKo: `헤드라인 ${i}`,
+                sentiment: 'bullish',
+                category: 'earnings',
+                bodyKo: null,
+                summaryKo: null,
+                priceImpact: 'medium',
+                url: `https://example.com/news-${i}`,
+                source: 'Example',
+            })
+        ) as NewsDisplayItem[];
+        mockGetNewsList.mockResolvedValue(manyItems);
+
+        const tree = await NewsPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        const itemList = collectJsonLdData(tree).find(
+            d => d['@type'] === 'ItemList'
+        );
+        expect(itemList).toBeDefined();
+        expect(itemList?.itemListElement).toHaveLength(NEWS_LIST_PAGE_SIZE);
+    });
+});
+
+describe('NewsPage — BreadcrumbList 이름', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetNewsList.mockResolvedValue([]);
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+    });
+
+    /**
+     * 회귀 가드: BreadcrumbList position 2는 화면 브레드크럼과 같은 이름이어야 한다.
+     * 근거는 `expectSymbolBreadcrumbName` JSDoc 참고.
+     */
+    it('BreadcrumbList가 티커가 아니라 displayName을 쓴다', async () => {
+        await NewsPage({ params: Promise.resolve({ symbol: 'aapl' }) });
+
+        expectSymbolBreadcrumbName('Apple Inc.');
     });
 });

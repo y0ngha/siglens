@@ -33,6 +33,9 @@ import {
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
+// 배럴(`@/widgets/news`)이 아니라 원본에서 직접 가져온다 — `NewsList`와 이 페이지가
+// 같은 모듈 인스턴스를 보게 해서, 테스트가 배럴을 목킹해도 두 값이 갈리지 않는다.
+import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
 import { getTodayIsoDay } from '@/shared/lib/getTodayIsoDay';
 import { todayKstIsoDate } from '@/shared/lib/dateKey';
 import { getFmpUserFacingMessage } from '@/shared/api/fmp/fmpUserMessage';
@@ -61,9 +64,6 @@ export const revalidate = 43200; // 12h — 신선도는 ensureNewsCardsAnalyzed
 export async function generateStaticParams(): Promise<SymbolRouteParams[]> {
     return [];
 }
-
-// JSON-LD ItemList 최대 노출 — Google ItemList 가이드라인의 "주요 항목"만 노출하라는 권고에 맞춤.
-const JSON_LD_NEWS_MAX_ITEMS = 10;
 
 interface Props {
     params: Promise<{ symbol: string }>;
@@ -264,7 +264,7 @@ export default async function NewsPage({ params }: Props) {
     });
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: upper, url: buildSymbolSeoContent(upper).url },
+        { name: displayName, url: buildSymbolSeoContent(upper).url },
         { name: '뉴스 분석', url },
     ]);
 
@@ -353,8 +353,12 @@ export default async function NewsPage({ params }: Props) {
                   '@context': 'https://schema.org',
                   '@type': 'ItemList',
                   name: `${displayName} 최신 뉴스`,
+                  // 초기 DOM에 실제로 그려지는 카드 수와 같은 상수로 자른다.
+                  // "더보기"로 늘어난 카드는 클라이언트 상태에만 있으므로 구글은
+                  // 보지 못한다 — 상한이 렌더 수보다 크면 마크업이 페이지에 없는
+                  // 항목을 주장하게 된다(상수 근거는 `newsSerialization.ts`).
                   itemListElement: newsItems
-                      .slice(0, JSON_LD_NEWS_MAX_ITEMS)
+                      .slice(0, NEWS_LIST_PAGE_SIZE)
                       .map((item, idx) => ({
                           '@type': 'ListItem',
                           position: idx + 1,

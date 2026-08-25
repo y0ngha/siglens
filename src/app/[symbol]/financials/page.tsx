@@ -17,6 +17,7 @@ import {
 } from '@/views/symbol/snapshot/renderers/FinancialsSnapshotProse';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { FaqSection } from '@/shared/ui/FaqSection';
 import {
     isAdmissibleSymbolShape,
     type SymbolRouteParams,
@@ -30,6 +31,7 @@ import {
 } from '@/entities/ticker';
 import {
     buildBreadcrumbJsonLd,
+    buildFaqJsonLd,
     buildSnapshotMetaDescription,
     buildSymbolFinancialsSeoContent,
     buildSymbolSeoContent,
@@ -37,6 +39,7 @@ import {
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
     noindexSymbolMetadata,
+    type FaqItem,
 } from '@/shared/lib/seo';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
@@ -252,40 +255,27 @@ export default async function FinancialsPage({ params }: Props) {
     });
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: upper, url: buildSymbolSeoContent(upper).url },
+        { name: displayName, url: buildSymbolSeoContent(upper).url },
         { name: '재무제표', url },
     ]);
 
-    const faqJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: [
-            {
-                '@type': 'Question',
-                name: `${displayName}의 재무는 건전한가요?`,
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: '안정성 점수는 부채비율과 유동비율을 기반으로 산출됩니다. 점수가 높을수록 부채 부담이 낮고 단기 상환 능력이 우수하다는 신호입니다. 재무상태표의 총자산 대비 총부채 비율도 함께 확인하면 재무 건전성을 더 정확히 파악할 수 있습니다.',
-                },
-            },
-            {
-                '@type': 'Question',
-                name: `${displayName}의 성장 추세는 어떤가요?`,
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: '성장성 점수는 매출과 영업이익의 연간 성장률을 5년 추이로 평가합니다. 매출 성장이 지속되면서 영업이익 마진이 함께 늘어난다면 질적 성장으로 볼 수 있습니다. 손익계산서 차트에서 연도별 추이를 직접 확인할 수 있습니다.',
-                },
-            },
-            {
-                '@type': 'Question',
-                name: `${displayName}의 현금 창출력은 충분한가요?`,
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: '현금창출력 점수는 영업활동현금흐름과 잉여현금흐름(FCF)을 기준으로 산출됩니다. 순이익보다 영업현금흐름이 크면 이익의 질이 높다는 의미이며, 꾸준한 FCF는 배당·자사주매입·투자 여력을 나타냅니다.',
-                },
-            },
-        ],
-    };
+    // FAQ — 화면 `FaqSection`과 FAQPage 구조화데이터의 단일 소스.
+    // 아래 sr-only 개요는 재무제표 3종과 4개 축을 나열하는 다른 내용이라 남겨 둔다.
+    const faq: readonly FaqItem[] = [
+        {
+            question: `${displayName}의 재무는 건전한가요?`,
+            answer: '안정성 점수는 부채비율과 유동비율을 기반으로 산출됩니다. 점수가 높을수록 부채 부담이 낮고 단기 상환 능력이 우수하다는 신호입니다. 재무상태표의 총자산 대비 총부채 비율도 함께 확인하면 재무 건전성을 더 정확히 파악할 수 있습니다.',
+        },
+        {
+            question: `${displayName}의 성장 추세는 어떤가요?`,
+            answer: '성장성 점수는 매출과 영업이익의 연간 성장률을 5년 추이로 평가합니다. 매출 성장이 지속되면서 영업이익 마진이 함께 늘어난다면 질적 성장으로 볼 수 있습니다. 손익계산서 차트에서 연도별 추이를 직접 확인할 수 있습니다.',
+        },
+        {
+            question: `${displayName}의 현금 창출력은 충분한가요?`,
+            answer: '현금창출력 점수는 영업활동현금흐름과 잉여현금흐름(FCF)을 기준으로 산출됩니다. 순이익보다 영업현금흐름이 크면 이익의 질이 높다는 의미이며, 꾸준한 FCF는 배당·자사주매입·투자 여력을 나타냅니다.',
+        },
+    ];
+    const faqJsonLd = buildFaqJsonLd(faq);
 
     return (
         <>
@@ -341,6 +331,10 @@ export default async function FinancialsPage({ params }: Props) {
                     annualSnapshot={snapshot}
                 />
 
+                <FaqSection
+                    heading={`${displayName} 재무제표 자주 묻는 질문`}
+                    items={faq}
+                />
                 <CrossLinkCards
                     symbol={upper}
                     current="financials"

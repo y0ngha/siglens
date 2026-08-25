@@ -131,6 +131,7 @@ import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/Techni
 import { getQuantizedBarsStatic } from '@/entities/bars';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
 
 const mockBarsStatic = vi.mocked(getQuantizedBarsStatic);
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
@@ -293,6 +294,16 @@ describe('SymbolPage — FactLayer SSR integration', () => {
         });
 
         expect(tree).toBeTruthy();
+    });
+
+    /**
+     * 회귀 가드: BreadcrumbList position 2는 화면 브레드크럼과 같은 이름이어야 한다.
+     * 근거는 `expectSymbolBreadcrumbName` JSDoc 참고.
+     */
+    it('BreadcrumbList가 티커가 아니라 displayName을 쓴다', async () => {
+        await SymbolPage({ params: Promise.resolve({ symbol: 'aapl' }) });
+
+        expectSymbolBreadcrumbName('Apple Inc.');
     });
 
     describe('SEO snapshot prose (snapshot-first, complementary to FactLayer)', () => {

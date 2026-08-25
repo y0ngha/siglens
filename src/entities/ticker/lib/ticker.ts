@@ -47,7 +47,21 @@ export function shouldShowEnglishName(
     );
 }
 
-/** Build the canonical display string for an asset, merging Korean and English names with the ticker symbol. */
+/**
+ * Build the canonical display string for an asset, merging Korean and English
+ * names with the ticker symbol.
+ *
+ * Audit fix (SEO structured-data review, finding 2): the no-`koreanName`
+ * branch used to compute its own `name !== '' && name !== ticker` check
+ * instead of routing through `shouldShowEnglishName` — the single predicate
+ * `SymbolLayoutHeader`'s `hasCompanyName` also uses. For a KR-equity symbol
+ * whose `koreanName` translation hasn't landed yet (a real, temporary state —
+ * see `AssetInfo.koreanName` JSDoc), that let this branch show the English
+ * name while the visible header (which always applies
+ * `!isKrEquitySymbol(ticker)`) hid it — a BreadcrumbList `name` vs. visible
+ * breadcrumb text mismatch that makes Google ignore the markup. Both branches
+ * now share one predicate so the two consumers cannot drift again.
+ */
 export function buildDisplayName(
     assetInfo: AssetInfo | null,
     ticker: string
@@ -55,13 +69,12 @@ export function buildDisplayName(
     if (!assetInfo) return ticker;
 
     const { name, koreanName } = assetInfo;
-    const nameIsDifferent = name !== '' && name !== ticker;
+    const showEnglishName = shouldShowEnglishName(name, koreanName, ticker);
 
     if (koreanName) {
-        const showEnglishName = shouldShowEnglishName(name, koreanName, ticker);
         return showEnglishName
             ? `${koreanName}, ${name} (${ticker})`
             : `${koreanName} (${ticker})`;
     }
-    return nameIsDifferent ? `${name} (${ticker})` : ticker;
+    return showEnglishName ? `${name} (${ticker})` : ticker;
 }

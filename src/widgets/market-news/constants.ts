@@ -16,3 +16,10 @@ export {
  * `shared/config/newsSerialization` 주석. 이름만 슬라이스 로컬로 노출한다.
  */
 export { NEWS_ROW_SERIALIZATION_LIMIT as MARKET_NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
+
+/**
+ * `MarketNewsList`(렌더)와 `/news/[category]` 페이지(JSON-LD)가 공유하는
+ * 페이지 크기 — 근거는 `shared/config/newsSerialization`의
+ * `MARKET_NEWS_LIST_PAGE_SIZE` 주석.
+ */
+export { MARKET_NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';

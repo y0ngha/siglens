@@ -7,6 +7,7 @@ import {
 } from '@/views/symbol/snapshot/renderers/OptionsSnapshotProse';
 import { OptionsEmptyState } from '@/widgets/options/OptionsEmptyState';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { FaqSection } from '@/shared/ui/FaqSection';
 import {
     SymbolRouteParams,
     isAdmissibleSymbolShape,
@@ -28,6 +29,7 @@ import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
+    buildFaqJsonLd,
     buildSnapshotMetaDescription,
     buildSymbolOptionsSeoContent,
     buildSymbolSeoContent,
@@ -35,6 +37,7 @@ import {
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
     noindexSymbolMetadata,
+    type FaqItem,
 } from '@/shared/lib/seo';
 import {
     dehydrate,
@@ -292,40 +295,36 @@ export default async function OptionsPage({ params }: Props) {
     });
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: upper, url: buildSymbolSeoContent(upper).url },
+        { name: displayName, url: buildSymbolSeoContent(upper).url },
         { name: '옵션 분석', url },
     ]);
 
-    const faqJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: [
-            {
-                '@type': 'Question',
-                name: `${displayName} 옵션 시장 분석에서 무엇을 볼 수 있나요?`,
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: 'AI가 옵션 시장 데이터를 분석해 주요 만기별로 어디에 돈이 쌓이고 있는지, 시장이 어떤 변동성을 예상하는지 한국어로 설명해줍니다. Max Pain, Put/Call Ratio, ATM IV, Implied Move 같은 핵심 지표와 Strike별 OI 분포 차트도 함께 보여줍니다.',
-                },
-            },
-            {
-                '@type': 'Question',
-                name: 'Max Pain과 Open Interest는 어떻게 해석하나요?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: 'Max Pain은 옵션 만기일이 가까워질 때 주가가 끌리는 가격입니다. Open Interest는 현재 살아있는 옵션 계약 수로, 두꺼운 가격대에 많은 사람이 베팅하고 있다는 뜻입니다.',
-                },
-            },
-            {
-                '@type': 'Question',
-                name: '제 종목에 옵션이 없으면 어떻게 되나요?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: '옵션 시장이 형성되지 않은 종목은 옵션 분석 페이지에 빈 안내가 표시되며, 차트/펀더멘털/뉴스 같은 다른 분석 페이지로 안내됩니다.',
-                },
-            },
-        ],
-    };
+    /**
+     * FAQ — 화면 `FaqSection`과 FAQPage 구조화데이터의 단일 소스.
+     *
+     * 첫 답변에 만기 요약을 붙인다. 예전에는 같은 내용이 화면에 보이지 않는
+     * `sr-only` 개요 문단으로 따로 있었는데, 답변과 거의 같은 문장이라 크롤러에게
+     * 같은 말을 두 번 하는 셈이었다 — 그 문단을 지우고 여기로 합쳤다.
+     */
+    const faq: readonly FaqItem[] = [
+        {
+            question: `${displayName} 옵션 시장 분석에서 무엇을 볼 수 있나요?`,
+            answer:
+                'AI가 옵션 시장 데이터를 분석해 주요 만기별로 어디에 돈이 쌓이고 있는지, 시장이 어떤 변동성을 예상하는지 한국어로 설명해줍니다. Max Pain, Put/Call Ratio, ATM IV, Implied Move 같은 핵심 지표와 Strike별 OI 분포 차트도 함께 보여줍니다.' +
+                (expirations.length > 0
+                    ? ` 현재 거래 가능한 만기일은 총 ${expirations.length}개이며, 가장 가까운 만기는 ${expirations[0]}입니다.`
+                    : ''),
+        },
+        {
+            question: 'Max Pain과 Open Interest는 어떻게 해석하나요?',
+            answer: 'Max Pain은 옵션 만기일이 가까워질 때 주가가 끌리는 가격입니다. Open Interest는 현재 살아있는 옵션 계약 수로, 두꺼운 가격대에 많은 사람이 베팅하고 있다는 뜻입니다.',
+        },
+        {
+            question: '제 종목에 옵션이 없으면 어떻게 되나요?',
+            answer: '옵션 시장이 형성되지 않은 종목은 옵션 분석 페이지에 빈 안내가 표시되며, 차트/펀더멘털/뉴스 같은 다른 분석 페이지로 안내됩니다.',
+        },
+    ];
+    const faqJsonLd = buildFaqJsonLd(faq);
 
     return (
         <>
@@ -347,21 +346,6 @@ export default async function OptionsPage({ params }: Props) {
                 <SymbolPageHeading>
                     {displayName} 옵션 시장 분석
                 </SymbolPageHeading>
-                <section className="sr-only">
-                    <h2>{displayName} 옵션 분석 개요</h2>
-                    <p>
-                        {displayName} 옵션 시장을 AI가 한국어로 해석합니다.
-                        만기별 Max Pain, Put/Call Ratio, ATM IV, Implied Move 등
-                        핵심 지표와 Strike별 Open Interest 분포를 함께 살펴볼 수
-                        있습니다.
-                    </p>
-                    {expirations.length > 0 ? (
-                        <p>
-                            현재 거래 가능한 만기일은 총 {expirations.length}
-                            개이며, 가장 가까운 만기는 {expirations[0]}입니다.
-                        </p>
-                    ) : null}
-                </section>
                 {/* audit fix FIX 2: XOR — OptionsAiAnalysis (client widget,
                     inside OptionsPageClient below) and OptionsSnapshotProse
                     both render the same AI conclusion (summary/perExpiration/
@@ -393,6 +377,10 @@ export default async function OptionsPage({ params }: Props) {
                         hasSnapshotProse={showOptionsProse}
                     />
                 </HydrationBoundary>
+                <FaqSection
+                    heading={`${displayName} 옵션 분석 자주 묻는 질문`}
+                    items={faq}
+                />
             </main>
         </>
     );

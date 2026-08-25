@@ -10,6 +10,12 @@ export interface BreadcrumbItem {
     url: string;
 }
 
+/** 화면 `<dl>`과 FAQPage 구조화데이터가 공유하는 질문·답변 한 쌍. */
+export interface FaqItem {
+    question: string;
+    answer: string;
+}
+
 /**
  * 호스트가 로컬/개발 환경인지 판단한다.
  *
@@ -731,6 +737,12 @@ export function symbolMetadataFromSeo(seo: SymbolSeoContent): Metadata {
 // 홈(Siglens → SITE_URL)이 첫 항목으로 자동 삽입된다.
 // schema.org BreadcrumbList의 `item`은 절대 URL이어야 하므로
 // 상대 경로로 들어온 trail은 SITE_URL prefix를 붙여 절대화한다.
+//
+// `name`은 **화면에 보이는 브레드크럼 텍스트와 같아야 한다**. 구글은 둘이 다르면
+// 리치 결과에서 마크업을 무시한다. 종목 페이지의 가시 브레드크럼
+// (`views/symbol/SymbolLayoutHeader`)은 `buildDisplayName` 결과를 색만 나눠
+// 렌더하므로(예: `애플, Apple Inc. (AAPL)`), 종목 탭들은 티커가 아니라
+// `displayName`을 넘긴다.
 export function buildBreadcrumbJsonLd(
     trail: readonly BreadcrumbItem[]
 ): Record<string, unknown> {
@@ -748,6 +760,29 @@ export function buildBreadcrumbJsonLd(
             item: item.url.startsWith('http')
                 ? item.url
                 : `${SITE_URL}${item.url}`,
+        })),
+    };
+}
+
+/**
+ * FAQPage 구조화데이터를 만든다. 인자로 받은 배열은 반드시 `shared/ui/FaqSection`이
+ * 같은 페이지에 렌더하는 배열과 **같은 상수**여야 한다.
+ *
+ * 구글은 FAQPage에 대응하는 질문·답변이 페이지에 실제로 보일 것을 요구한다. 마크업만
+ * 있고 화면에 없으면 리치 결과 자격이 없을 뿐 아니라 수동 조치 사유다. 종목 탭 5개가
+ * 오랫동안 그 상태였다 — 답변 텍스트를 JSON-LD 리터럴 안에만 두면 화면 카피를 고칠 때
+ * 마크업이 따라오지 않는다. 배열 하나에서 두 표면을 만들면 갈릴 수가 없다.
+ */
+export function buildFaqJsonLd(
+    items: readonly FaqItem[]
+): Record<string, unknown> {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: items.map(({ question, answer }) => ({
+            '@type': 'Question',
+            name: question,
+            acceptedAnswer: { '@type': 'Answer', text: answer },
         })),
     };
 }

@@ -7,6 +7,7 @@ import {
     buildSymbolFearGreedSeoContent,
     buildSymbolOptionsSeoContent,
     buildBreadcrumbJsonLd,
+    buildFaqJsonLd,
     buildSymbolWebPageJsonLd,
     buildSnapshotMetaDescription,
     symbolMetadataFromSeo,
@@ -544,6 +545,36 @@ describe('buildBreadcrumbJsonLd', () => {
             item: string;
         }>;
         expect(items[1].item).toBe('https://other.com/path');
+    });
+});
+
+describe('buildFaqJsonLd', () => {
+    const items = [
+        { question: '질문 1', answer: '답변 1' },
+        { question: '질문 2', answer: '답변 2' },
+    ];
+
+    it('입력 배열을 순서 그대로 FAQPage mainEntity로 옮긴다', () => {
+        const result = buildFaqJsonLd(items);
+
+        expect(result['@context']).toBe('https://schema.org');
+        expect(result['@type']).toBe('FAQPage');
+        expect(result.mainEntity).toEqual([
+            {
+                '@type': 'Question',
+                name: '질문 1',
+                acceptedAnswer: { '@type': 'Answer', text: '답변 1' },
+            },
+            {
+                '@type': 'Question',
+                name: '질문 2',
+                acceptedAnswer: { '@type': 'Answer', text: '답변 2' },
+            },
+        ]);
+    });
+
+    it('빈 배열도 유효한 FAQPage를 만든다 — 호출부가 조건부로 비울 수 있다', () => {
+        expect(buildFaqJsonLd([]).mainEntity).toEqual([]);
     });
 });
 

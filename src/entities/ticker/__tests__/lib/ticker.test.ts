@@ -174,13 +174,21 @@ describe('buildDisplayName — 국내 상장 종목', () => {
         ).toBe('에코프로비엠 (247540.KQ)');
     });
 
-    it('한글명이 없으면 종전대로 영문명을 쓴다', () => {
+    /**
+     * 감사 finding 2(SEO 구조화데이터 리뷰): 이 분기가 예전에는 `shouldShowEnglishName`을
+     * 거치지 않아, 아직 `koreanName` 번역이 없는 국내 상장 종목(예: 갓 상장된 티커)에서
+     * BreadcrumbList JSON-LD는 영문명을 포함했지만 화면 헤더(`SymbolLayoutHeader`의
+     * `hasCompanyName`)는 `!isKrEquitySymbol` 가드 때문에 "(TICKER)"만 보여줬다 —
+     * 구글은 마크업과 화면 텍스트가 다르면 BreadcrumbList 마크업을 무시한다. 지금은
+     * 두 소비자가 같은 술어를 쓰므로 koreanName 부재 상태에서도 영문명을 보여주지 않는다.
+     */
+    it('한글명이 없어도 국내 상장 종목이면 영문명을 보여주지 않는다(헤더 hasCompanyName과 정렬)', () => {
         expect(
             buildDisplayName(
                 { symbol: '005930.KS', name: 'Samsung Electronics Co., Ltd.' },
                 '005930.KS'
             )
-        ).toBe('Samsung Electronics Co., Ltd. (005930.KS)');
+        ).toBe('005930.KS');
     });
 
     it('미국 종목이라도 영문명이 한글명과 같으면 한 번만 쓴다', () => {
