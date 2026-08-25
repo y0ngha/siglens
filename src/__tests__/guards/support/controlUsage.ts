@@ -19,21 +19,26 @@ import { blankComments } from './sourceScan';
 
 export const CONTROL_TAGS = 'button|a|input|textarea|select|Link';
 
-const OPEN_TAG_RE = new RegExp(`<(${CONTROL_TAGS})\\b`, 'g');
-
 export interface OpeningTag {
     tag: string;
     index: number;
 }
 
 /**
- * 컨트롤 여는 태그 전체. 따옴표와 중괄호 균형을 세어 끝을 찾는다 —
- * `[^>]*`로 자르면 문자열 안의 `>` 하나에 태그가 잘려 뒤쪽 className이
- * 통째로 안 보인다(그렇게 12개가 숨어 있었다).
+ * 여는 태그 전체. 따옴표와 중괄호 균형을 세어 끝을 찾는다 — `[^>]*`로 자르면
+ * 문자열 안의 `>` 하나에 태그가 잘려 뒤쪽 className이 통째로 안 보인다
+ * (그렇게 12개가 숨어 있었다).
+ *
+ * `tags`는 파이프로 구분한 태그 이름. 기본값은 컨트롤 계열이고, SVG 글자
+ * (`text`/`tspan`)처럼 다른 계열을 훑는 가드가 같은 리더를 쓴다 — 각자
+ * 정규식을 들고 있다가 이미 고친 절단 버그를 재현하는 걸 막는다.
  */
-export function controlOpeningTags(source: string): OpeningTag[] {
+export function controlOpeningTags(
+    source: string,
+    tags: string = CONTROL_TAGS
+): OpeningTag[] {
     const out: OpeningTag[] = [];
-    for (const match of source.matchAll(OPEN_TAG_RE)) {
+    for (const match of source.matchAll(new RegExp(`<(${tags})\\b`, 'g'))) {
         const start = match.index;
         let i = start;
         let depth = 0;

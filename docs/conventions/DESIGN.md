@@ -398,7 +398,9 @@ Distinction uses three orthogonal cues (not emotional color):
 - **Top rule**: `border-t-2 border-secondary-600` solid (confirmed), `border-t-2 border-secondary-500` (mixed), `border-t border-dashed border-secondary-700` (anticipation)
 - **Label typography**: `font-semibold tracking-[0.15em]` (confirmed / mixed), `font-medium tracking-[0.15em] opacity-70` (anticipation)
 
-`text-chart-*`는 **쓰지 않는다.** 이 계열은 그래픽용(3:1)이라 라이트 인셋 표면에서 4.23~4.30:1로 본문 기준(4.5)을 밑돈다 — 틴트 위만이 아니라 민 배경에서도 그렇다. 텍스트에는 `text-ui-success-text` / `text-ui-danger-text`, 그래픽에는 `fill-`/`stroke-chart-*`를 쓴다. `semanticTextTokenGuard`가 강제한다. Subsection headers are neutral (`text-secondary-200`).
+`text-chart-*`는 **쓰지 않는다.** 이 계열은 그래픽용(3:1)이라 라이트 인셋 표면에서 4.23~4.30:1로 본문 기준(4.5)을 밑돈다 — 틴트 위만이 아니라 민 배경에서도 그렇다. 텍스트에는 `text-ui-success-text` / `text-ui-danger-text`, 그래픽에는 `fill-`/`stroke-chart-*`를 쓴다.
+
+**SVG `<text>`/`<tspan>`의 `fill`도 글자색이다.** `fill-`이 붙었다고 그래픽이 되는 게 아니라, 무엇을 칠하느냐가 기준을 정한다. 차트 안 범례를 막대와 같은 색으로 맞추고 싶어지지만 그건 글자이므로 `-text` 짝을 쓴다 — 옵션 차트 두 곳이 HTML 범례만 옮기고 SVG 범례를 `var(--color-chart-bullish)`로 남겨둔 적이 있다. 막대(`<rect>`)와 색칩은 그대로 `chart-*`다. `semanticTextTokenGuard`가 클래스와 `var()` 두 철자 모두 강제한다. Subsection headers are neutral (`text-secondary-200`).
 
 ### Cards
 

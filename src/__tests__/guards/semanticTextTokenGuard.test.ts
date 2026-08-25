@@ -3,10 +3,11 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { sourceFiles } from './support/controlUsage';
+import { controlOpeningTags, sourceFiles } from './support/controlUsage';
 import {
     blankComments,
     classTokens,
+    readInitialiser,
     stripVariants,
 } from './support/sourceScan';
 import {
@@ -66,8 +67,13 @@ const GRAPHICS_ONLY: Record<string, string> = {
         'text-ui-danger-text (텍스트) / fill-·stroke-chart-bearish (그래픽)',
 };
 
+/**
+ * 글자색을 정하는 유틸리티는 `text-` 하나가 아니다. `placeholder-`,
+ * `caret-`, `decoration-`도 전부 글자에 색을 얹는다 — `text-`만 보던 동안
+ * `placeholder-ui-danger`는 가드를 그냥 지나갔다.
+ */
 const TEXT_UTILITY_RE = new RegExp(
-    `^text-(${[...SURFACE_ONLY, ...Object.keys(GRAPHICS_ONLY)].join('|')})(?:/\\d+)?$`
+    `^(?:text|placeholder|caret|decoration)-(${[...SURFACE_ONLY, ...Object.keys(GRAPHICS_ONLY)].join('|')})(?:/\\d+)?$`
 );
 
 /**
@@ -117,6 +123,61 @@ function offenders(): string[] {
     return out.sort();
 }
 
+const COLOUR_NAMES = [...SURFACE_ONLY, ...Object.keys(GRAPHICS_ONLY)].join('|');
+
+/** SVG 글자에 색을 얹는 두 철자: `fill-<토큰>` 클래스와 `fill="var(--color-…)"`. */
+const SVG_FILL_CLASS_RE = new RegExp(`^fill-(${COLOUR_NAMES})(?:/\\d+)?$`);
+const SVG_FILL_VAR_RE = new RegExp(
+    `var\\(\\s*--color-(${COLOUR_NAMES})\\s*\\)`
+);
+
+/**
+ * SVG `<text>`/`<tspan>`의 `fill`. **여기도 글자색이다.**
+ *
+ * className 스캐너만으로는 안 잡힌다 — 옵션 차트 두 곳이 범례를
+ * `fill={'var(--color-chart-bullish)'}`로 칠하고 있었고, 같은 파일의 HTML
+ * 범례는 이미 `-text`로 옮긴 뒤였다. 규칙을 한 철자로만 막으면 나머지
+ * 철자가 그대로 남는다.
+ *
+ * 상수를 거쳐 들어오는 형태(`fill={COLOR_CALL}`)까지 보려고 파일 안에서
+ * 그 이름의 값을 되짚는다. import를 따라가진 않는다 — 이 레포에서 SVG 색
+ * 상수는 전부 같은 파일에 산다.
+ */
+function svgFillOffenders(): string[] {
+    const out: string[] = [];
+    for (const file of sourceFiles(SRC_DIR, ['.tsx'])) {
+        if (file.includes(`${path.sep}__tests__${path.sep}`)) continue;
+        const source = blankComments(readFileSync(file, 'utf8'));
+        for (const { tag, index } of controlOpeningTags(source, 'text|tspan')) {
+            const fill = /\bfill=(?:"([^"]*)"|\{([\s\S]*?)\})/.exec(tag);
+            const cls = /\bclassName="([^"]*)"/.exec(tag)?.[1] ?? '';
+            const hits = new Set<string>();
+            for (const token of classTokens(cls)) {
+                const { bare } = stripVariants(token);
+                const m = SVG_FILL_CLASS_RE.exec(bare);
+                if (m !== null) hits.add(m[1]);
+            }
+            const raw = fill?.[1] ?? fill?.[2];
+            if (raw !== undefined) {
+                // 리터럴이 아니면 같은 파일에서 그 이름의 초기화식을 찾아 본다.
+                const literal = SVG_FILL_VAR_RE.test(raw)
+                    ? raw
+                    : (new RegExp(
+                          `\\b(?:const|let)\\s+${raw.trim().replace(/\W/g, '')}\\s*=\\s*(['"\`][^'"\`]*['"\`])`
+                      ).exec(source)?.[1] ?? '');
+                const m = SVG_FILL_VAR_RE.exec(literal);
+                if (m !== null) hits.add(m[1]);
+            }
+            for (const name of hits) {
+                out.push(
+                    `${path.relative(SRC_DIR, file)}:${source.slice(0, index).split('\n').length} fill ${name}`
+                );
+            }
+        }
+    }
+    return out.sort();
+}
+
 /**
  * **그 토큰이** 실제로 얹히는 틴트 알파들. 하드코딩한 5% 하나로 규칙을
  * 뒷받침하면 실사용(최대 40%)을 못 덮는다 — 근거가 규칙보다 좁으면 규칙이
@@ -124,6 +185,26 @@ function offenders(): string[] {
  * 만들어 검사하게 되므로, 토큰별로 모은다.
  */
 let alphaCache: Map<string, number[]> | null = null;
+
+/** 정렬된 오프셋 목록에서 `index` 이하의 마지막 값. */
+function lastAtOrBefore(
+    sorted: readonly number[],
+    index: number
+): number | undefined {
+    let out: number | undefined;
+    for (const value of sorted) {
+        if (value > index) break;
+        out = value;
+    }
+    return out;
+}
+
+/** `index`가 속한 줄. */
+function lineAt(source: string, index: number): string {
+    const from = source.lastIndexOf('\n', index) + 1;
+    const to = source.indexOf('\n', index);
+    return source.slice(from, to === -1 ? undefined : to);
+}
 
 /**
  * 트리를 **한 번만** 훑는다. 토큰마다 다시 훑었더니 8토큰 × 2테마 = 16회
@@ -135,20 +216,41 @@ function buildAlphaIndex(): Map<string, number[]> {
     const acc = new Map<string, Set<number>>();
     const pairRe =
         /\bbg-((?:ui-[a-z]+|grade-[a-f]|chart-[a-z]+))\/(\d{1,3})\b/g;
+    const declRe = /\b(?:const|let)\s+\w+\s*[:=]/g;
     for (const file of sourceFiles(SRC_DIR)) {
         if (file.includes(`${path.sep}__tests__${path.sep}`)) continue;
         const source = blankComments(readFileSync(file, 'utf8'));
-        for (const line of source.split('\n')) {
-            for (const m of line.matchAll(pairRe)) {
-                const token = m[1];
-                if (!new RegExp(`\\btext-${token}-text\\b`).test(line))
-                    continue;
-                const pct = Number(m[2]);
-                if (pct <= 0 || pct > 100) continue;
-                const set = acc.get(token) ?? new Set<number>();
-                set.add(pct / 100);
-                acc.set(token, set);
+        const declStarts = [...source.matchAll(declRe)].map(d => d.index);
+        const scopeCache = new Map<number, string>();
+        for (const m of source.matchAll(pairRe)) {
+            const token = m[1];
+            // **줄이 아니라 초기화식 단위로 짝을 찾는다.** 틴트를 얹은 요소와
+            // 그 위에 놓인 글자는 거의 언제나 다른 줄에 있다 — `terms/page.tsx`의
+            // `bg-ui-danger/5` 컨테이너와 그 안 `text-ui-danger-text`가 그렇고,
+            // 클래스 맵 객체도 키마다 줄이 나뉜다. 줄로 자르면 그 알파들이
+            // 불변식 검사에서 통째로 빠져, 규칙의 근거가 실사용을 못 덮는다.
+            const start = lastAtOrBefore(declStarts, m.index);
+            const scope =
+                start === undefined
+                    ? undefined
+                    : (scopeCache.get(start) ?? readInitialiser(source, start));
+            if (start !== undefined && scope !== undefined) {
+                scopeCache.set(start, scope);
             }
+            // 초기화식이 이 매치를 품지 못하면(컴포넌트 본문에 바로 쓴 JSX 등)
+            // 예전처럼 줄로 좁힌다. 넓히다 코드에 없는 조합을 지어내는 것보다
+            // 못 찾고 넘어가는 쪽이 낫다 — 지어낸 조합은 가짜 실패가 된다.
+            const haystack =
+                scope !== undefined && scope.includes(m[0])
+                    ? scope
+                    : lineAt(source, m.index);
+            if (!new RegExp(`\\btext-${token}-text\\b`).test(haystack))
+                continue;
+            const pct = Number(m[2]);
+            if (pct <= 0 || pct > 100) continue;
+            const set = acc.get(token) ?? new Set<number>();
+            set.add(pct / 100);
+            acc.set(token, set);
         }
     }
     alphaCache = new Map(
@@ -166,6 +268,10 @@ function tintAlphasInSource(token: string): number[] {
 describe('semantic text token guard', () => {
     it('의미 색의 표면 토큰을 텍스트 색으로 쓰지 않는다', () => {
         expect(offenders()).toEqual([]);
+    });
+
+    it('SVG 글자의 fill에도 표면·그래픽 토큰을 쓰지 않는다', () => {
+        expect(svgFillOffenders()).toEqual([]);
     });
 
     /**
@@ -222,11 +328,26 @@ describe('semantic text token guard', () => {
     it('검출기가 실제로 잡는다', () => {
         expect(TEXT_UTILITY_RE.test('text-ui-danger')).toBe(true);
         expect(TEXT_UTILITY_RE.test('text-ui-warning/80')).toBe(true);
+        // 글자색을 정하는 나머지 접두어. `text-`만 보던 동안 전부 무사통과였다.
+        expect(TEXT_UTILITY_RE.test('placeholder-ui-danger')).toBe(true);
+        expect(TEXT_UTILITY_RE.test('caret-ui-warning')).toBe(true);
+        expect(TEXT_UTILITY_RE.test('decoration-grade-f')).toBe(true);
         expect(TEXT_UTILITY_RE.test('text-ui-danger-text')).toBe(false);
         expect(TEXT_UTILITY_RE.test('bg-ui-danger')).toBe(false);
         expect(TEXT_UTILITY_RE.test('border-ui-danger/30')).toBe(false);
         expect(relativeLuminance('#ffffff')).toBeCloseTo(1, 5);
         expect(MIN_RATIO).toBe(3);
+    });
+
+    /**
+     * 알파 색인이 **줄을 넘어** 짝을 찾는지 붙들어 둔다. 줄로 자르던 때는
+     * 클래스 맵과 컨테이너/자식 형태의 틴트가 통째로 근거에서 빠졌고,
+     * 그러면 위 불변식이 실사용보다 좁은 알파만 검사하게 된다.
+     */
+    it('알파 색인이 줄을 넘어 틴트를 찾는다', () => {
+        // `OptionsAiAnalysis.tsx`의 `TONE_CLASS.cautious` — `text-ui-warning-text`와
+        // `bg-ui-warning/10`이 객체 리터럴 안에서 서로 다른 줄에 있다.
+        expect(tintAlphasInSource('ui-warning')).toContain(0.1);
     });
 });
 

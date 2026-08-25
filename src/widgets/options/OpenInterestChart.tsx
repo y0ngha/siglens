@@ -68,6 +68,15 @@ const HALF_HEIGHT = CHART_HEIGHT / 2;
 // solid stroke pattern differentiates them visually.
 const COLOR_CALL = 'var(--color-chart-bullish)';
 const COLOR_PUT = 'var(--color-chart-bearish)';
+
+/**
+ * 차트 안 범례는 막대가 아니라 **글자**다. `chart-*`는 그래픽 기준(3:1)에
+ * 맞춘 색이라 라이트 카드 위에서 본문 기준을 겨우 넘고, 같은 자리에서
+ * `-text` 짝이 훨씬 여유롭다. `bg-chart-*` 색칩(아래 범례)은 그래픽이므로
+ * 그대로 둔다.
+ */
+const LABEL_CALL = 'var(--color-ui-success-text)';
+const LABEL_PUT = 'var(--color-ui-danger-text)';
 const COLOR_GUIDE_LINE = 'var(--color-ui-warning)';
 const COLOR_MIDLINE = 'var(--color-secondary-600)';
 const COLOR_LABEL = 'var(--color-secondary-500)';
@@ -285,7 +294,7 @@ export function OpenInterestChart({
                 <text
                     x={PAD_LEFT}
                     y={MIDLINE_Y - CALL_LABEL_MIDLINE_OFFSET_PX}
-                    fill={COLOR_CALL}
+                    fill={LABEL_CALL}
                     fontSize={STRAIGHT_LABEL_FONT_SIZE}
                     textAnchor="start"
                 >
@@ -295,7 +304,7 @@ export function OpenInterestChart({
                 <text
                     x={PAD_LEFT}
                     y={MIDLINE_Y + PUT_LABEL_MIDLINE_OFFSET_PX}
-                    fill={COLOR_PUT}
+                    fill={LABEL_PUT}
                     fontSize={STRAIGHT_LABEL_FONT_SIZE}
                     textAnchor="start"
                 >

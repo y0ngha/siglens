@@ -55,6 +55,16 @@ const HALF_HEIGHT = CHART_HEIGHT / 2;
 // 사용해 "Call 위 / Put 아래" 시각 언어를 통일한다.
 const COLOR_CALL = 'var(--color-chart-bullish)';
 const COLOR_PUT = 'var(--color-chart-bearish)';
+
+/**
+ * 차트 안 범례는 막대와 같은 색으로 칠하고 싶어지지만, **글자다.**
+ * `chart-*`는 그래픽 기준(3:1)에 맞춘 색이라 라이트 카드 위에서 4.82/4.89로
+ * 본문 기준을 겨우 넘는다. 같은 자리에서 `-text` 짝은 6.99~12.15다.
+ * 같은 파일의 HTML 범례는 이미 `-text`로 옮겼는데 SVG 쪽만 남아 있었다 —
+ * 어떤 가드도 SVG `fill`이나 `var()` 문자열은 보지 않는다.
+ */
+const LABEL_CALL = 'var(--color-ui-success-text)';
+const LABEL_PUT = 'var(--color-ui-danger-text)';
 const COLOR_GUIDE_LINE = 'var(--color-ui-warning)';
 const COLOR_MIDLINE = 'var(--color-secondary-600)';
 const COLOR_LABEL = 'var(--color-secondary-500)';
@@ -215,7 +225,7 @@ export function StrikeVolumeChart({
                 <text
                     x={PAD_LEFT}
                     y={MIDLINE_Y - CALL_LABEL_MIDLINE_OFFSET_PX}
-                    fill={COLOR_CALL}
+                    fill={LABEL_CALL}
                     fontSize={STRAIGHT_LABEL_FONT_SIZE}
                     textAnchor="start"
                 >
@@ -225,7 +235,7 @@ export function StrikeVolumeChart({
                 <text
                     x={PAD_LEFT}
                     y={MIDLINE_Y + PUT_LABEL_MIDLINE_OFFSET_PX}
-                    fill={COLOR_PUT}
+                    fill={LABEL_PUT}
                     fontSize={STRAIGHT_LABEL_FONT_SIZE}
                     textAnchor="start"
                 >
