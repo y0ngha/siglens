@@ -155,7 +155,7 @@ export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
 
             {result.perExpiration.length > 0 && (
                 <div className="mb-5">
-                    <h3 className="mb-3 text-xs font-semibold tracking-wider text-secondary-200 uppercase">
+                    <h3 className="mb-3 text-sm font-semibold text-secondary-200">
                         ▸ 만기별 해석
                     </h3>
                     <ul className="space-y-3" aria-label="만기별 옵션 해석">
@@ -181,7 +181,7 @@ export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
 
             {result.signals.length > 0 && (
                 <div>
-                    <h3 className="mb-3 text-xs font-semibold tracking-wider text-secondary-200 uppercase">
+                    <h3 className="mb-3 text-sm font-semibold text-secondary-200">
                         ▸ 시그널
                     </h3>
                     <ul className="space-y-2" aria-label="옵션 시그널 목록">

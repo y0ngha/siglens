@@ -56,7 +56,7 @@ export function LegalPageShell({
                             topNotice ? undefined : 'mt-8'
                         )}
                     >
-                        <p className="mb-3 text-xs font-semibold tracking-wider text-secondary-400 uppercase">
+                        <p className="mb-3 text-xs font-semibold text-secondary-400">
                             목차
                         </p>
                         <ol className="space-y-2 text-sm">

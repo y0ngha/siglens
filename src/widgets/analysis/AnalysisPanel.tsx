@@ -118,7 +118,7 @@ function ActionRecommendationSection({
                 </div>
             )}
             <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
+                <span className="text-xs font-semibold text-secondary-500">
                     매매 전략
                 </span>
                 <button
@@ -196,7 +196,7 @@ function ReconciledLevelsBlock({
     return (
         <section className="mt-1 flex flex-col gap-1 rounded-lg border border-secondary-700 bg-secondary-800/40 px-3 py-2">
             <header className="flex items-center">
-                <span className="text-[10px] font-semibold tracking-wide text-secondary-400 uppercase">
+                <span className="text-xs font-semibold text-secondary-400">
                     내부 보정값
                 </span>
                 <InfoTooltip>
@@ -510,7 +510,7 @@ function PatternAccordionItem({
                     </MarkdownText>
                     {keyPrices.length > 0 && (
                         <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-semibold tracking-wide text-secondary-500 uppercase">
+                            <span className="text-xs font-semibold text-secondary-500">
                                 주요 가격대
                             </span>
                             <div className="flex flex-col gap-1">
@@ -553,7 +553,7 @@ function StructuredSkillSummary({ sections }: StructuredSkillSummaryProps) {
         <div className="flex flex-col gap-2">
             {sections.map(section => (
                 <div key={section.label} className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold tracking-wide text-secondary-500 uppercase">
+                    <span className="text-xs font-semibold text-secondary-500">
                         {section.label}
                     </span>
                     <MarkdownText className="text-xs text-secondary-300">
@@ -1137,7 +1137,7 @@ export function AnalysisPanel({
                         keyLevels.poc !== undefined) && (
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center">
-                                <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
+                                <span className="text-xs font-semibold text-secondary-500">
                                     주요 레벨
                                 </span>
                                 <KeyLevelsHeaderInfo />
@@ -1227,7 +1227,7 @@ export function AnalysisPanel({
                     {trendlines.length > 0 && (
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
+                                <span className="text-xs font-semibold text-secondary-500">
                                     추세선
                                 </span>
                             </div>
@@ -1245,7 +1245,7 @@ export function AnalysisPanel({
                     {((priceTargets.bullish?.targets.length ?? 0) > 0 ||
                         (priceTargets.bearish?.targets.length ?? 0) > 0) && (
                         <div className="flex flex-col gap-2">
-                            <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
+                            <span className="text-xs font-semibold text-secondary-500">
                                 가격 목표
                             </span>
                             <div className="grid grid-cols-2 gap-3">
@@ -1265,7 +1265,7 @@ export function AnalysisPanel({
 
                     {displayedIndicatorResults.length > 0 && (
                         <div className="flex flex-col gap-2">
-                            <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
+                            <span className="text-xs font-semibold text-secondary-500">
                                 보조지표
                             </span>
                             <div className="flex flex-col gap-1.5">
@@ -1288,7 +1288,7 @@ export function AnalysisPanel({
                     )}
 
                     <div className="flex flex-col gap-2">
-                        <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
+                        <span className="text-xs font-semibold text-secondary-500">
                             차트 패턴
                         </span>
                         {hasDetectedPatterns ? (
@@ -1310,7 +1310,7 @@ export function AnalysisPanel({
 
                     {detectedStrategyResults.length > 0 && (
                         <div className="flex flex-col gap-2">
-                            <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
+                            <span className="text-xs font-semibold text-secondary-500">
                                 전략
                             </span>
                             <div className="flex flex-col gap-1.5">

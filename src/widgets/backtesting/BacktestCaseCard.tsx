@@ -213,7 +213,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
             {showPredictionBlock && (
                 <div className="mt-2 rounded bg-secondary-900/60 px-3 py-2 text-[10px] text-secondary-400">
                     <div className="mb-1 flex items-center gap-2">
-                        <span className="text-[9px] font-semibold tracking-wider text-secondary-500 uppercase">
+                        <span className="text-xs font-semibold text-secondary-500">
                             AI 예측 레벨
                         </span>
                         <EntryRecBadge

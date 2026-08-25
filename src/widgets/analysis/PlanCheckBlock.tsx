@@ -125,7 +125,7 @@ export function PlanCheckBlock({ planCheck }: PlanCheckBlockProps) {
             )}
         >
             <header className="flex items-center">
-                <span className="text-[10px] font-semibold tracking-wide text-secondary-400 uppercase">
+                <span className="text-xs font-semibold text-secondary-400">
                     현재가 기준 검산
                 </span>
                 <InfoTooltip>
