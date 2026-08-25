@@ -14,8 +14,19 @@ import { describe, expect, it } from 'vitest';
 
 const SRC_DIR = path.resolve(__dirname, '../..');
 
-/** 스케일 밖 반경. `rounded-full`·`rounded-sm`·`rounded-lg`·`rounded-none`만 쓴다. */
-const OFF_SCALE_RE = /\brounded(-[trblse]{1,2})?-(md|xl|2xl|3xl)\b/;
+/**
+ * 스케일: `rounded-full`·`rounded-sm`·`rounded-lg`·`rounded-none`, 그리고 접미사
+ * 없는 `rounded`. 나머지는 전부 검출 대상이다.
+ *
+ * 처음엔 `md|xl|2xl|3xl`을 열거했는데, 그건 형제 가드에서 방금 걷어낸 바로 그
+ * 형태였다 — 감사가 `rounded-4xl`(v4 실존 유틸)과 `rounded-[14px]`(임의값)로
+ * 통과시켰다. 허용식이면 새 유틸이 생겨도 자동으로 걸린다.
+ */
+// 접미사는 낱말이거나 대괄호 임의값이다. 점·괄호까지 받으면 테스트 안의
+// CSS 선택자(`rounded-full.h-1.flex-1`)를 통째로 접미사로 삼켜 오탐이 난다.
+const RADIUS_RE =
+    /\brounded(?:-[trblse]{1,2})?(?:-(\[[^\]\s]*\]|[\w-]+))?(?![\w-])/g;
+const ALLOWED_RADIUS = new Set(['full', 'sm', 'lg', 'none']);
 
 function sourceFiles(dir: string): string[] {
     const out: string[] = [];
@@ -37,7 +48,10 @@ function blankComments(source: string): string {
     const blank = (m: string) => m.replace(/[^\n]/g, ' ');
     return source
         .replace(/\/\*[\s\S]*?\*\//g, blank)
-        .replace(/(?<=^|\n)[ \t]*\/\/[^\n]*/g, blank);
+        .replace(
+            /(^|[\s,(){}])\/\/[^\n]*/g,
+            (m, p1) => p1 + blank(m.slice(p1.length))
+        );
 }
 
 function offScaleRadii(): string[] {
@@ -51,8 +65,12 @@ function offScaleRadii(): string[] {
             continue;
         const source = blankComments(readFileSync(file, 'utf8'));
         source.split('\n').forEach((line, i) => {
-            const m = OFF_SCALE_RE.exec(line);
-            if (m !== null) out.push(`${rel}:${i + 1} ${m[0]}`);
+            for (const m of line.matchAll(RADIUS_RE)) {
+                const suffix = m[1];
+                if (suffix === undefined || ALLOWED_RADIUS.has(suffix))
+                    continue;
+                out.push(`${rel}:${i + 1} ${m[0]}`);
+            }
         });
     }
     return out.sort();
@@ -64,9 +82,17 @@ describe('radius scale guard', () => {
     });
 
     it('검출기가 실제로 잡는다', () => {
-        expect(OFF_SCALE_RE.test('rounded-xl border')).toBe(true);
-        expect(OFF_SCALE_RE.test('rounded-t-2xl')).toBe(true);
-        expect(OFF_SCALE_RE.test('rounded-lg')).toBe(false);
-        expect(OFF_SCALE_RE.test('rounded-full')).toBe(false);
+        const offScale = (cls: string): boolean =>
+            [...cls.matchAll(RADIUS_RE)].some(
+                m => m[1] !== undefined && !ALLOWED_RADIUS.has(m[1])
+            );
+        expect(offScale('rounded-xl border')).toBe(true);
+        expect(offScale('rounded-t-2xl')).toBe(true);
+        // 열거식이 놓쳤던 둘 — v4 실존 유틸과 임의값.
+        expect(offScale('rounded-4xl')).toBe(true);
+        expect(offScale('rounded-[14px]')).toBe(true);
+        expect(offScale('rounded-lg')).toBe(false);
+        expect(offScale('rounded-full')).toBe(false);
+        expect(offScale('rounded')).toBe(false);
     });
 });

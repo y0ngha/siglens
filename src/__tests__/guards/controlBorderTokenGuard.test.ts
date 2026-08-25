@@ -65,18 +65,15 @@ const BORDER_COLOUR_RE =
  * 라이트 5.91~6.73으로 3:1을 크게 넘는다(표면 램프 950/900/800 기준 실측).
  * `border-control`(3.34~3.83)로 낮추는 건 개선이 아니라 하향이다.
  */
+//
+// **알파 틴트(`/20` 등)는 허용하지 않는다.** 처음엔 `ui-*`·`primary-*`·`chart-*`에
+// `(?:\/\d+)?`를 붙여뒀는데, 감사가 그 구멍으로 `border-ui-danger/20`(라이트에서
+// 인셋 위 약 1.3:1)과 `border-primary-950/10`(약 1.0:1)을 통과시켰다. 열거식을
+// 허용식으로 바꾸면서 한쪽 구멍을 막고 다른 쪽을 연 셈이었다. 색이 무엇이든
+// 20%만 남기면 경계가 사라진다 — 틴트가 필요하면 3:1을 실측하고 여기에
+// 근거와 함께 명시적으로 추가할 것.
 const ALLOWED_BORDER_COLOUR_RE =
-    /^(?:border-control|secondary-500|primary-\d{2,3}(?:\/\d+)?|ui-[a-z]+(?:-text)?(?:\/\d+)?|chart-[a-z]+(?:\/\d+)?|transparent|current|inherit)$/;
-
-/**
- * 방향 보더만 있으면 그 색은 **구분선**이지 컨트롤의 경계가 아니다.
- * (`border-b border-secondary-800` = 메뉴 항목 사이 줄. 색 토큰 자체에는
- * 방향이 안 붙어 있어서 토큰만 봐서는 구분되지 않는다.)
- */
-function bordersAreDividersOnly(tokens: string[]): boolean {
-    const sides = tokens.filter(x => /^border(-[trblxy])?(-\d+)?$/.test(x));
-    return sides.length > 0 && sides.every(x => /^border-[trblxy]/.test(x));
-}
+    /^(?:border-control|secondary-500|primary-\d{2,3}|ui-[a-z]+(?:-text)?|chart-[a-z]+|transparent|current|inherit)$/;
 
 function isDecorativeBorder(token: string): boolean {
     const match = BORDER_COLOUR_RE.exec(token);
@@ -90,9 +87,13 @@ function isDecorativeBorder(token: string): boolean {
  * 위반을 만든다(실제로 ReasoningToggle에서 3건이 그렇게 잡혔다).
  */
 function stripInlineComments(value: string): string {
+    // 줄 **끝**에 붙은 `//` 주석도 지운다. 줄 맨 앞만 지우던 때는 `cn(...)`
+    // 안의 후행 주석에 적힌 클래스 이름이 그대로 위반으로 잡혔다 — 감사가
+    // `// was border-secondary-600`을 덧붙여 50줄 떨어진 자리에 없는 위반을
+    // 만들어 증명했다. `https://`는 `:` 뒤라 아래 문자 클래스에 안 걸린다.
     return value
         .replace(/\/\*[\s\S]*?\*\//g, ' ')
-        .replace(/(?<=^|\n)[ \t]*\/\/[^\n]*/g, ' ');
+        .replace(/(^|[\s,(){}])\/\/[^\n]*/g, '$1');
 }
 
 /**
@@ -116,6 +117,16 @@ const ALLOWED_ELEMENTS: ReadonlySet<string> = new Set([
     // 그 잘못된 주석이 살아 있는 결함을 가렸다. 지금은 `idle`도 `border-control`이며,
     // 이 자리에 분기를 추가할 때는 이 예외가 그것까지 덮는다는 걸 반드시 확인할 것.
     'widgets/analysis/AnalysisPanel.tsx:1012',
+
+    // 드롭다운 메뉴의 첫 항목. `border-b`는 이 항목과 아래 지역 목록을 가르는
+    // **구분선**이고, 컨트롤 자체의 경계는 패널의 보더 + 상태 채움
+    // (`bg-secondary-800`, hover 포함)이 맡는다.
+    //
+    // 방향 보더를 일괄로 봐주는 휴리스틱을 넣었다가 걷어냈다. 감사가 밑줄형
+    // 입력(`border-b`가 경계의 전부, 라이트 1.05:1)을 그 예외로 통과시켰기
+    // 때문이다. 소스만 봐서는 "항목 사이 줄"과 "요소의 유일한 경계"를 가를 수
+    // 없으므로, 휴리스틱 대신 이렇게 자리마다 판단을 적는다.
+    'widgets/layout/HeaderNavMenu.tsx:147',
 
     // 아래 둘은 **카드 표면**이다. 링크이긴 하지만 제목·설명·시세 블록을 담은
     // 면이고, 보더는 그 면의 장식이지 컨트롤의 경계 표시가 아니다.
@@ -157,8 +168,43 @@ function tsxFiles(dir: string): string[] {
 // `surfaceStyles.ts`·`typographyStyles.ts`가 정확히 `.ts` + `cn()` 스타일이라
 // **브랜치 자기 컨벤션을 따르면 자기 가드를 우회**하는 상태였다. 감사가
 // `CHIP_INACTIVE`를 `cn('border-secondary-600 …')`로 바꿔 통과시켜 증명했다.
-const CONST_DECL_RE =
-    /(?:export\s+)?const\s+(\w+)(?:\s*:[^=]*)?\s*=\s*('[^']*'|`[^`]*`|cn\([\s\S]*?\))/g;
+const CONST_DECL_HEAD_RE =
+    /(?:export\s+)?const\s+(\w+)(?:\s*:[^=]*)?\s*=\s*(?='|`|cn\()/g;
+
+/**
+ * 초기화식을 **괄호·따옴표 균형을 세어** 끝까지 읽는다.
+ *
+ * 예전엔 `cn\([\s\S]*?\)`로 잡았는데 첫 `)`에서 잘렸다. 그래서
+ * `cn('bg-…', String(1), 'border-secondary-700 …')`처럼 중간에 호출이 하나만
+ * 끼어도 뒤쪽 인자가 통째로 안 보였다 — 감사가 그대로 통과시켜 증명했다.
+ * 라운드 1에서 이 정규식을 넓혔지만 절반만 닫혀 있었던 셈이다.
+ */
+function initialiserAt(source: string, start: number): string {
+    let depth = 0;
+    let quote: string | null = null;
+    for (let i = start; i < source.length; i += 1) {
+        const ch = source[i];
+        if (quote !== null) {
+            if (ch === '\\') i += 1;
+            else if (ch === quote) quote = null;
+            continue;
+        }
+        if (ch === "'" || ch === '"' || ch === '`') {
+            quote = ch;
+            if (depth === 0 && i > start) break;
+            continue;
+        }
+        if (ch === '(') depth += 1;
+        else if (ch === ')') {
+            depth -= 1;
+            if (depth === 0) return source.slice(start, i + 1);
+        } else if (depth === 0 && (ch === ';' || ch === '\n')) {
+            const chunk = source.slice(start, i);
+            if (/^\s*['`]/.test(chunk)) return chunk;
+        }
+    }
+    return source.slice(start, source.indexOf('\n', start) + 1 || undefined);
+}
 
 /**
  * 그 상수가 조작 요소 태그의 className으로 쓰이는가.
@@ -221,11 +267,14 @@ function findConstantHeldBorders(
     const offenders: string[] = [];
     for (const file of tsxFiles(SRC_DIR)) {
         const source = readFileSync(file, 'utf8');
-        for (const match of source.matchAll(CONST_DECL_RE)) {
-            const [, name, classes] = match;
+        for (const match of source.matchAll(CONST_DECL_HEAD_RE)) {
+            const name = match[1];
+            const classes = initialiserAt(
+                source,
+                match.index + match[0].length
+            );
             if (!usedOnControlTag(source, name)) continue;
             const tokens = stripInlineComments(classes).split(/[\s'"`,]+/);
-            if (bordersAreDividersOnly(tokens)) continue;
             const bare = tokens.filter(isDecorativeBorder);
             if (bare.length === 0) continue;
             const rel = path.relative(SRC_DIR, file);
@@ -250,7 +299,6 @@ function findDecorativeControlBorders(
                 /className=\{([\s\S]*)$/.exec(tag)?.[1];
             if (value === undefined) continue;
             const tokens = stripInlineComments(value).split(/[\s'"`,]+/);
-            if (bordersAreDividersOnly(tokens)) continue;
             const bare = tokens.filter(isDecorativeBorder);
             if (bare.length === 0) continue;
             const rel = path.relative(SRC_DIR, file);
@@ -278,7 +326,14 @@ function findHoverContrastDrops(): string[] {
         )) {
             const value = match[1] ?? match[2] ?? '';
             if (!value.includes('border-border-control')) continue;
-            if (!/hover:border-secondary-(600|700)\b/.test(value)) continue;
+            // 예전엔 여기만 옛 열거(`600|700`)를 그대로 들고 있었다. 그래서
+            // `hover:border-secondary-800`(라이트에서 `#fff` — 호버하면 보더가
+            // 아예 사라진다)이 통과했다. 본 규칙과 같은 판정을 쓴다.
+            const hoverTokens = stripInlineComments(value)
+                .split(/[\s'"`,]+/)
+                .filter(x => x.startsWith('hover:border-'))
+                .map(x => x.slice('hover:'.length));
+            if (!hoverTokens.some(isDecorativeBorder)) continue;
             const rel = path.relative(SRC_DIR, file);
             const line = source.slice(0, match.index).split('\n').length;
             offenders.push(`${rel}:${line}`);

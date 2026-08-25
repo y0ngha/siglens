@@ -45,7 +45,13 @@ function blockAt(source: string, openBraceIndex: number): string {
  */
 function tokenValues(block: string): Map<string, string> {
     const out = new Map<string, string>();
-    for (const m of block.matchAll(/(--color-[\w-]+)\s*:\s*([^;]+);/g)) {
+    // 마지막 선언은 `;`가 없을 수 있다. `;`를 강제하면 그 줄이 **조용히
+    // 목록에서 빠지고**, `light`가 `dark`를 복사해 시작하므로 가드가 다크 값을
+    // 라이트 표면에 대고 재며 초록을 낸다 — 감사가 실제 2.89:1 위반을 그렇게
+    // 숨겼다. 종결자 없이도 블록 끝까지 읽는다.
+    for (const m of block.matchAll(
+        /(--color-[\w-]+)\s*:\s*([^;}]+)(?:;|\s*$)/g
+    )) {
         const value = m[2].trim();
         if (!/^#[0-9a-fA-F]{3,8}$/.test(value)) {
             throw new Error(

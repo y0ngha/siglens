@@ -100,7 +100,10 @@ function stripComments(source: string): string {
             // 평범하게 들어간 `//`(예: "안내 // 참고")가 그 줄 끝까지를 지워
             // **닫는 태그까지 없애고** 다음 heading을 삼킨다. JSX 텍스트 안의
             // `//`는 주석이 아니므로, 주석으로 볼 수 있는 자리만 좁게 본다.
-            .replace(/(?<=^|\n)[ \t]*\/\/[^\n]*/g, blankOut)
+            .replace(
+                /(^|[\s,(){}])\/\/[^\n]*/g,
+                (m, p1) => p1 + blankOut(m.slice(p1.length))
+            )
     );
 }
 
