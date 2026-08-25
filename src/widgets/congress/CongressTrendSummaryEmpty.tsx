@@ -1,3 +1,5 @@
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { cn } from '@/shared/lib/cn';
 /**
  * Empty-state renderer for the `no_trades` branch unique to congress.
  *
@@ -14,7 +16,7 @@ export function CongressTrendSummaryEmpty() {
         >
             <h2
                 id="congress-trend-summary-empty-heading"
-                className="mb-3 text-lg font-semibold tracking-tight"
+                className={cn('mb-3', HEADING_SECTION)}
             >
                 AI 동향 해석
             </h2>

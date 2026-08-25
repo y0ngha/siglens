@@ -3,6 +3,10 @@ import type {
     CongressTrendResponse,
 } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 
 const SENTIMENT_LABEL: Record<CongressSentiment, string> = {
     bullish: '매수 우위',
@@ -34,7 +38,7 @@ export function CongressTrendSummaryView({
             <div className="mb-4 flex items-center justify-between gap-3">
                 <h2
                     id="congress-trend-summary-heading"
-                    className="text-lg font-semibold tracking-tight"
+                    className={HEADING_SECTION}
                 >
                     AI 동향 해석
                 </h2>
@@ -56,7 +60,9 @@ export function CongressTrendSummaryView({
 
             {result.notableMembersKo.length > 0 && (
                 <div className="mb-5">
-                    <h3 className="mb-2 text-sm font-semibold">주목할 인물</h3>
+                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
+                        주목할 인물
+                    </h3>
                     <ul aria-label="주목할 인물" className="space-y-1.5">
                         {result.notableMembersKo.map((member, i) => (
                             <li
@@ -78,7 +84,9 @@ export function CongressTrendSummaryView({
 
             {result.riskNoteKo.trim().length > 0 && (
                 <div>
-                    <h3 className="mb-2 text-sm font-semibold">참고 사항</h3>
+                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
+                        참고 사항
+                    </h3>
                     <p className="text-sm leading-relaxed text-secondary-400">
                         {result.riskNoteKo}
                     </p>

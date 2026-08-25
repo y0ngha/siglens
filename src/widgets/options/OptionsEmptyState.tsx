@@ -51,7 +51,7 @@ export function OptionsEmptyState({
     return (
         <main className="mx-auto w-full max-w-5xl px-4 py-16">
             <div className="rounded-lg border border-secondary-700 bg-secondary-800 p-8 text-center">
-                <h1 className="text-xl font-semibold tracking-tight">
+                <h1 className="text-xl font-bold tracking-tight text-balance text-secondary-50 sm:text-2xl">
                     {symbol} 옵션 시장 정보 없음
                 </h1>
                 <p className="mt-3 text-sm leading-relaxed text-secondary-400">
