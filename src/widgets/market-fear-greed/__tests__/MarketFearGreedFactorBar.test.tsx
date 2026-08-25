@@ -82,7 +82,7 @@ describe('MarketFearGreedFactorBar', () => {
             'bg-ui-danger',
             'bg-ui-warning',
             'bg-secondary-400',
-            'bg-ui-success/70',
+            'bg-ui-success/85',
             'bg-ui-success',
         ] as const;
 
@@ -90,7 +90,7 @@ describe('MarketFearGreedFactorBar', () => {
             ['EXTREME_FEAR', 10, 'bg-ui-danger'],
             ['FEAR', 30, 'bg-ui-warning'],
             ['NEUTRAL', 50, 'bg-secondary-400'],
-            ['GREED', 65, 'bg-ui-success/70'],
+            ['GREED', 65, 'bg-ui-success/85'],
             ['EXTREME_GREED', 85, 'bg-ui-success'],
         ] as const)(
             '%s(percentile=%d) → 정확히 %s 클래스만 렌더된다',
