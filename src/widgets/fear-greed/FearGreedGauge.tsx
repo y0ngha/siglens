@@ -46,7 +46,11 @@ const SEGMENTS: ReadonlyArray<SegmentDef> = [
     { from: 0, to: EXTREME_FEAR_MAX, strokeClass: 'text-ui-danger' },
     { from: EXTREME_FEAR_MAX, to: FEAR_MAX, strokeClass: 'text-ui-warning' },
     { from: FEAR_MAX, to: NEUTRAL_MAX, strokeClass: 'text-secondary-400' },
-    { from: NEUTRAL_MAX, to: GREED_MAX, strokeClass: 'text-ui-success/60' },
+    /* `/60`은 라이트에서 페이지 배경 대비 2.35:1로 3:1에 못 미쳤다(실측).
+       알파를 아예 빼면 EXTREME_GREED와 같은 값이 되어 두 밴드가 하나로 합쳐진다.
+       `/85`는 `BAR_FILL_COLOR.GREED`와 같은 값이고, 요인 막대에서 다크 4.22 ·
+       라이트 3.30으로 이미 검증됐다. */
+    { from: NEUTRAL_MAX, to: GREED_MAX, strokeClass: 'text-ui-success/85' },
     { from: GREED_MAX, to: 100, strokeClass: 'text-ui-success' },
 ];
 
