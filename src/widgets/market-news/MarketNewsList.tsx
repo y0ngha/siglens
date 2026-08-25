@@ -8,6 +8,7 @@ import { MARKET_NEWS_LOOKBACK_DAYS } from '@/entities/market-news';
 import { MARKET_NEWS_ROW_SERIALIZATION_LIMIT } from './constants';
 import { useMarketNewsCardPolling } from './hooks/useMarketNewsCardPolling';
 import { MarketNewsCard } from './MarketNewsCard';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 const PAGE_SIZE = 10;
 const SKELETON_COUNT = 3;
@@ -16,10 +17,7 @@ const PERIOD_LABEL = `최근 ${MARKET_NEWS_LOOKBACK_DAYS}일`;
 function MarketNewsListHeader() {
     return (
         <div className="flex items-center justify-between gap-2">
-            <h2
-                id="market-news-list-heading"
-                className="text-lg font-semibold tracking-tight"
-            >
+            <h2 id="market-news-list-heading" className={HEADING_SECTION}>
                 최신 시장 뉴스
             </h2>
             <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-300">

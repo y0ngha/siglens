@@ -11,6 +11,9 @@ import {
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 // 24h ISR — 허브 인덱스는 지역 구조가 바뀌지 않는 한 신선도가 낮아도 무방.
 // 카드별 헤드라인은 staticSymbolCache(24h TTL)를 통해 캐싱된다 — 페이지 revalidate와
@@ -181,11 +184,11 @@ export default async function NewsHubPage() {
                 */}
                 <section
                     aria-labelledby="news-hub-category-index"
-                    className="rounded-lg border border-secondary-800 bg-secondary-800/30 p-5"
+                    className={cn('p-5', SURFACE_CARD)}
                 >
                     <h2
                         id="news-hub-category-index"
-                        className="text-base font-semibold text-secondary-300"
+                        className={HEADING_SECTION}
                     >
                         카테고리 바로가기
                     </h2>

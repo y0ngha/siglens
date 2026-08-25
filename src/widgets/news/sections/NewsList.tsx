@@ -8,6 +8,7 @@ import type { NewsImpact, NewsSentiment } from '@y0ngha/siglens-core';
 import { useState } from 'react';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import { NewsCardShell } from '@/shared/ui/NewsCardShell';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
@@ -130,10 +131,7 @@ function NewsListLoadingState() {
         >
             <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">
-                    <h2
-                        id="news-list-heading"
-                        className="text-lg font-semibold tracking-tight"
-                    >
+                    <h2 id="news-list-heading" className={HEADING_SECTION}>
                         최근 뉴스
                     </h2>
                     <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
@@ -297,10 +295,7 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
                 className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             >
                 <div className="mb-3 flex items-center gap-2">
-                    <h2
-                        id="news-list-heading"
-                        className="text-lg font-semibold tracking-tight"
-                    >
+                    <h2 id="news-list-heading" className={HEADING_SECTION}>
                         최근 뉴스
                     </h2>
                     <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
@@ -323,10 +318,7 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
             className="w-full max-w-full min-w-0 space-y-3 overflow-hidden"
         >
             <div className="flex items-center gap-2">
-                <h2
-                    id="news-list-heading"
-                    className="text-lg font-semibold tracking-tight"
-                >
+                <h2 id="news-list-heading" className={HEADING_SECTION}>
                     최근 뉴스
                 </h2>
                 <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
