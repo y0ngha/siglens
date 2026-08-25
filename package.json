@@ -86,6 +86,7 @@
         "yahoo-finance2": "^3.15.3"
     },
     "devDependencies": {
+        "@babel/parser": "^8.0.4",
         "@next/bundle-analyzer": "^16.2.0",
         "@playwright/test": "^1.60.0",
         "@release-it/conventional-changelog": "^10.0.6",

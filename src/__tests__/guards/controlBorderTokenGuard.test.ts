@@ -14,7 +14,11 @@ import {
     classTokens,
     readInitialiser,
 } from './support/sourceScan';
-import { MIN_RATIO, minContrastOverSurfaces } from './support/tokenContrast';
+import {
+    MIN_RATIO,
+    minContrastOverSurfaces,
+    type Fill,
+} from './support/tokenContrast';
 
 /**
  * 조작 요소(`button`/`a`/`input`/`textarea`/`select`/`Link`)의 **경계**는 3:1을
@@ -77,7 +81,26 @@ const NON_COLOUR = new Set(['transparent', 'current', 'inherit']);
  * `border-*`만 봤고, 실제로 소셜 로그인 버튼이 링을 유일한 경계로 쓴다.
  */
 export function borderColourPart(token: string): string | null {
-    const m = /^(border|ring)(?:-([a-z]{1,2})\b)?(?:-(.+))?$/.exec(token);
+    // 정지 경계를 **대체하는** 상태 변형만 벗긴다. 예전엔 `hover:`가 붙으면
+    // `null`이라 호버를 인라인 전용 스캐너 하나만 보고 있었고, 같은 토큰을
+    // 클래스 상수로 옮기면 빠져나갔다 — 이 브랜치의 리팩터링 방향이 바로 그
+    // 이동이었다.
+    //
+    // `focus` 계열은 **제외한다.** 그건 경계가 아니라 포커스 표시이고
+    // (WCAG 2.4.11/2.4.13), 보통 정지 보더 위에 겹쳐 그려진다. 여기 넣으면
+    // 정상적인 반투명 포커스 링 7개가 위반으로 잡힌다.
+    if (
+        /^(?:focus|focus-visible|focus-within|peer-focus|group-focus)[-:]/.test(
+            token
+        )
+    ) {
+        return null;
+    }
+    const bare = token.replace(
+        /^(?:hover|active|group-hover|peer-checked|aria-\w+|data-\[[^\]]*\]|dark|sm|md|lg|xl):/g,
+        ''
+    );
+    const m = /^(border|ring)(?:-([a-z]{1,2})\b)?(?:-(.+))?$/.exec(bare);
     if (m === null) return null;
     const head = m[2];
     const rest = m[3];
@@ -94,13 +117,37 @@ export function borderColourPart(token: string): string | null {
     return tail;
 }
 
-/** 경계로 쓰기에 대비가 모자란 색인가. 못 읽는 토큰은 판정하지 않는다. */
-export function isDecorativeBorder(token: string): boolean {
+/**
+ * 요소가 어떤 면 위에 앉는가. 자기 채움이 고정 흰색이면 그 위에서 재야 한다 —
+ * 구글 브랜드 버튼은 두 테마 모두 `bg-white`라, 램프 기준으로 재면 다크 토큰이
+ * 통과해 놓고 실제로는 흰 배경에서 2.26:1이 된다.
+ */
+function fillOf(tokens: string[]): Fill {
+    return tokens.some(t => /^bg-(white|fixed-|brand-)/.test(t))
+        ? 'fixed-white'
+        : 'ramp';
+}
+
+/**
+ * 경계로 쓰기에 대비가 모자란 색인가.
+ *
+ * **해석하지 못하는 색은 예외를 던진다**(`minContrastOverSurfaces`). 예전엔
+ * `null`을 합격으로 접었고, 그래서 Tailwind 기본 팔레트와 임의값이 통째로
+ * 무검사 통과했다 — 흰 버튼 위의 `border-white`가 1.00:1인데도.
+ */
+export function isDecorativeBorder(
+    token: string,
+    fill: Fill = 'ramp'
+): boolean {
     const colour = borderColourPart(token);
     if (colour === null || NON_COLOUR.has(colour)) return false;
-    const ratio = minContrastOverSurfaces(colour);
-    if (ratio === null) return false;
-    return ratio < MIN_RATIO;
+    return minContrastOverSurfaces(colour, fill) < MIN_RATIO;
+}
+
+/** 클래스 목록 하나를 그 요소의 채움 기준으로 판정한다. */
+function decorativeIn(tokens: string[]): string[] {
+    const fill = fillOf(tokens);
+    return tokens.filter(t => isDecorativeBorder(t, fill));
 }
 
 /**
@@ -108,7 +155,15 @@ export function isDecorativeBorder(token: string): boolean {
  * 그 파일의 다른 컨트롤까지 통째로 빠져나가 가드에 구멍이 생긴다.
  * 항목을 추가하려면 그 컨트롤이 보더 없이 무엇으로 식별되는지 함께 적을 것.
  */
-const ALLOWED_CONSTANTS: ReadonlySet<string> = new Set([]);
+const ALLOWED_CONSTANTS: ReadonlySet<string> = new Set([
+    // 카드용 공용 클래스(IndexCard·SignalStockCard). 소비처가 전부 **카드 표면**이고,
+    // 카드의 장식 보더는 globals.css 정책상 1.4.11 대상이 아니다. 그 호버
+    // (`hover:border-secondary-600`)도 같은 이유로 대상이 아니다.
+    //
+    // 이 항목은 상수에 담긴 호버를 처음 잡았을 때 나왔다 — 그 전까지 호버는
+    // 인라인 스캐너 하나만 봤고, 클래스를 상수로 옮기는 순간 감시가 꺼졌다.
+    'shared/lib/cardStyles.ts::CARD_LINK_CLASSES',
+]);
 
 /** 요소 스캐너의 예외. `파일:줄` 단위이며 근거를 함께 적는다. */
 const ALLOWED_ELEMENTS: ReadonlySet<string> = new Set([
@@ -138,15 +193,20 @@ const ALLOWED_ELEMENTS: ReadonlySet<string> = new Set([
 ]);
 
 const CLASSNAME_RE = /className="([^"]*)"/;
-const CONST_DECL_HEAD_RE =
-    /(?:export\s+)?const\s+(\w+)(?:\s*:[^=]*)?\s*=\s*(?='|`|cn\(|clsx\(|twMerge\()/g;
+// 값의 **형태를 미리 제한하지 않는다.** 따옴표나 `cn(`로 시작하는 것만 읽었더니
+// 삼항·객체·배열·식별자 시작·큰따옴표 초기화식이 아예 열리지도 않은 채
+// "검사했고 통과"로 보고됐다. 일단 읽고, 보더 토큰이 없으면 그냥 넘어가면 된다.
+const CONST_DECL_HEAD_RE = /(?:export\s+)?const\s+(\w+)(?:\s*:[^=]*)?\s*=\s*/g;
 
 /**
  * 이름이 컨트롤을 가리키는 클래스 속성. 대문자 합성어까지 받는다 —
  * 소문자 시작으로만 잡았을 때 `submitButtonClassName`류가 통째로 빠져나갔다.
  */
+// `:`(객체 속성)뿐 아니라 `=`(JSX 어트리뷰트)도 본다. 래퍼 컴포넌트에 클래스를
+// 넘겨 그쪽이 진짜 컨트롤에 얹는 형태가 이 레포에 셋 있는데, 속성만 보던 때는
+// 통째로 안 보였다(Footer·not-found의 `triggerClassName=`, HoldingForm의 `inputClassName=`).
 const CLASS_PROP_HEAD_RE =
-    /(\w*(?:[Bb]utton|[Ll]ink|[Ii]nput|[Tt]rigger|[Cc]ontrol|[Cc]hip|[Tt]ab|[Tt]oggle)ClassName)\s*:\s*(?=['`]|cn\(|clsx\(|twMerge\()/g;
+    /(\w*(?:[Bb]utton|[Ll]ink|[Ii]nput|[Tt]rigger|[Cc]ontrol|[Cc]hip|[Tt]ab|[Tt]oggle)ClassName)\s*[:=]\s*\{?\s*/g;
 
 function lineOf(source: string, index: number): number {
     return source.slice(0, index).split('\n').length;
@@ -173,7 +233,7 @@ function findDecorativeControlBorders(
         for (const { tag, index } of controlOpeningTags(source)) {
             const value = classNameOf(tag);
             if (value === undefined) continue;
-            const bare = classTokens(value).filter(isDecorativeBorder);
+            const bare = decorativeIn(classTokens(value));
             if (bare.length === 0) continue;
             const rel = path.relative(SRC_DIR, file);
             const line = lineOf(source, index);
@@ -198,7 +258,7 @@ function findConstantHeldBorders(
                 source,
                 match.index + match[0].length
             );
-            const bare = classTokens(value).filter(isDecorativeBorder);
+            const bare = decorativeIn(classTokens(value));
             if (bare.length === 0) continue;
             const rel = path.relative(SRC_DIR, file);
             if (allowed.has(`${rel}::${name}`)) continue;
@@ -219,43 +279,10 @@ function findPropHeldBorders(): string[] {
                 source,
                 match.index + match[0].length
             );
-            const bare = classTokens(value).filter(isDecorativeBorder);
+            const bare = decorativeIn(classTokens(value));
             if (bare.length === 0) continue;
             offenders.push(
                 `${path.relative(SRC_DIR, file)}:${lineOf(source, match.index)} ${match[1]} ${bare.join(' ')}`
-            );
-        }
-    }
-    return offenders.sort();
-}
-
-/**
- * 호버가 경계를 **덜 보이게** 만드는 자리.
- *
- * 판정을 값으로 한다. 한때 "호버 토큰에 알파가 붙었는가"만 봤는데, 그건 그
- * 직전 코드가 잡으려던 케이스를 도로 열었다 — `hover:border-secondary-800`은
- * 알파가 없지만 라이트에서 `#fff`라 호버하면 보더가 **완전히 사라진다**(1.00:1).
- * 반대로 정지 상태용 허용 목록을 그대로 호버에 적용하면 대비를 **올리는**
- * 정상 호버까지 잡는다. 값을 읽으면 둘 다 옳게 갈린다.
- */
-function findHoverContrastDrops(): string[] {
-    const offenders: string[] = [];
-    for (const file of productFiles(['.tsx'])) {
-        const source = blankComments(readFileSync(file, 'utf8'));
-        for (const { tag, index } of controlOpeningTags(source)) {
-            const value = classNameOf(tag);
-            if (value === undefined) continue;
-            const failing = classTokens(value)
-                .filter(x => /^hover:(?:border|ring)-/.test(x))
-                .map(x => borderColourPart(x.slice('hover:'.length)))
-                .filter((x): x is string => x !== null && !NON_COLOUR.has(x))
-                .filter(colour => {
-                    const ratio = minContrastOverSurfaces(colour);
-                    return ratio !== null && ratio < MIN_RATIO;
-                });
-            if (failing.length === 0) continue;
-            offenders.push(
-                `${path.relative(SRC_DIR, file)}:${lineOf(source, index)} ${failing.join(' ')}`
             );
         }
     }
@@ -273,10 +300,6 @@ describe('control border token guard', () => {
 
     it('객체 속성에 담은 클래스도 같은 규칙을 따른다', () => {
         expect(findPropHeldBorders()).toEqual([]);
-    });
-
-    it('호버가 경계를 3:1 아래로 떨어뜨리지 않는다', () => {
-        expect(findHoverContrastDrops()).toEqual([]);
     });
 
     // `파일:줄` 키는 그 줄이 움직이면 조용히 빗나간다 — 아무것도 면제하지 않거나,

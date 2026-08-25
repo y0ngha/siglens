@@ -1,3 +1,5 @@
+import { parse } from '@babel/parser';
+
 /**
  * 가드들이 공유하는 **소스 스캐너**.
  *
@@ -19,58 +21,57 @@
  *    `https://`는 앞이 `:`라 자연히 제외된다.
  */
 
-const EXPRESSION_CONTEXT = new Set([
-    ',',
-    ';',
-    '(',
-    '{',
-    '[',
-    '=',
-    '+',
-    "'",
-    '"',
-    '`',
-    ')',
-]);
-
-/** 앞선 비공백 문자가 줄 주석을 허용하는 자리인가. */
-function lineCommentAllowed(source: string, index: number): boolean {
-    for (let i = index - 1; i >= 0; i -= 1) {
-        const ch = source[i];
-        if (ch === '\n') return true; // 줄 맨 앞(들여쓰기만 앞섬)
-        if (ch === ' ' || ch === '\t') continue;
-        return EXPRESSION_CONTEXT.has(ch);
-    }
-    return true;
+/**
+ * 주석 구간을 **TypeScript 자신의 파서**로 구한다.
+ *
+ * 손으로 짠 스캐너를 네 번 고쳤고 네 번 다 새 구멍이 남았다 — 정규식 리터럴
+ * 안의 따옴표가 가짜 문자열을 열어 파일 뒷부분의 주석 제거가 통째로 꺼졌고,
+ * 템플릿 보간 안의 주석이 통째로 안 지워졌고, `//`가 주석인지 JSX 텍스트인지를
+ * 앞 문자로 추론하다 양방향으로 틀렸다(`||` 뒤 주석은 놓치고, heading 본문의
+ * `//`는 닫는 태그를 지워 다음 heading을 삼켰다).
+ *
+ * 그 판별은 이미 정확히 구현된 것이 있고, 이 레포의 직접 의존이다. 주석은
+ * 파서에게 **trivia**이고 JSX 텍스트 안의 `//`는 trivia가 아니므로, 양방향이
+ * 정의상 옳아진다. 가드는 테스트라 파서를 부르는 비용이 문제되지 않는다.
+ */
+function commentRanges(source: string): { pos: number; end: number }[] {
+    const ast = parse(source, {
+        sourceType: 'module',
+        errorRecovery: true,
+        plugins: ['typescript', 'jsx'],
+    });
+    return (ast.comments ?? [])
+        .filter(c => c.start != null && c.end != null)
+        .map(c => ({ pos: c.start as number, end: c.end as number }));
 }
 
 /**
- * 주석을 같은 길이 공백으로 바꾼 사본. 문자열 안의 `//`·`/*`는 건드리지 않는다.
+ * 주석을 같은 길이 공백으로 바꾼 사본.
  *
- * 한 번의 좌→우 주사로 문자열·줄 주석·블록 주석 상태를 판별한다. 정규식 두
- * 개를 순서대로 돌리면 `// 메모: /* 정리`처럼 한쪽이 다른 쪽 안에 든 경우
- * 뒤 규칙이 앞 규칙의 결과를 넘어 25줄 아래 `*​/`까지 먹어치운다(실측).
+ * **길이를 보존한다.** 지우면 이후 오프셋이 당겨져 보고되는 줄번호가 어긋나고,
+ * 틀린 좌표는 지적이 없는 것보다 나쁘다 — 무관한 코드를 뒤지게 만든다.
  */
 export function blankComments(source: string): string {
     const out = source.split('');
+    for (const { pos, end } of commentRanges(source)) {
+        for (let i = pos; i < end && i < out.length; i += 1) {
+            if (out[i] !== '\n') out[i] = ' ';
+        }
+    }
+    return out.join('');
+}
+
+/**
+ * CSS용 주석 제거. CSS에는 `/* *​/` 하나뿐이라 파서가 필요 없다.
+ *
+ * JS용과 나눠 둔 이유: 같은 함수를 쓰다가 babel이 `@theme`에서 막혔다.
+ * 문법이 다른 두 언어를 한 함수로 처리하려 한 것 자체가 잘못이었다.
+ */
+export function blankCssComments(source: string): string {
+    const out = source.split('');
     let i = 0;
     while (i < source.length) {
-        const ch = source[i];
-        if (ch === '"' || ch === "'" || ch === '`') {
-            const quote = ch;
-            i += 1;
-            while (i < source.length) {
-                if (source[i] === '\\') {
-                    i += 2;
-                    continue;
-                }
-                if (source[i] === quote) break;
-                i += 1;
-            }
-            i += 1;
-            continue;
-        }
-        if (ch === '/' && source[i + 1] === '*') {
+        if (source[i] === '/' && source[i + 1] === '*') {
             let j = i + 2;
             while (
                 j < source.length &&
@@ -83,19 +84,6 @@ export function blankComments(source: string): string {
                 if (out[k] !== '\n') out[k] = ' ';
             }
             i = end;
-            continue;
-        }
-        if (
-            ch === '/' &&
-            source[i + 1] === '/' &&
-            lineCommentAllowed(source, i)
-        ) {
-            let j = i;
-            while (j < source.length && source[j] !== '\n') {
-                out[j] = ' ';
-                j += 1;
-            }
-            i = j;
             continue;
         }
         i += 1;
@@ -130,7 +118,9 @@ export function readInitialiser(source: string, start: number): string {
                 i += 1;
             }
             i += 1;
-            if (depth === 0) return source.slice(start, i);
+            // 문자열이 닫혔다고 끝내지 않는다. `'a' + 'b'`처럼 이어붙이는
+            // 초기화식에서 뒤쪽이 통째로 안 읽혔다 — 그리고 그 뒤에 위반이
+            // 있었다. 종료는 아래 `;`/개행 규칙이 판단한다.
             continue;
         }
         if (ch === '(' || ch === '[') depth += 1;
@@ -145,7 +135,27 @@ export function readInitialiser(source: string, start: number): string {
     return source.slice(start);
 }
 
-/** 문자열을 Tailwind 토큰들로 쪼갠다. */
+/**
+ * 문자열을 Tailwind 토큰들로 쪼갠다.
+ *
+ * **대괄호 임의값 안은 쪼개지 않는다.** 쉼표로 무조건 나눴더니
+ * `transition-[background-color,border-color]`가 `border-color`라는 없는
+ * 토큰을 만들어냈고, 색 판정이 그걸 해석하려다 실패했다.
+ */
 export function classTokens(value: string): string[] {
-    return value.split(/[\s'"`,()]+/).filter(Boolean);
+    const out: string[] = [];
+    let buf = '';
+    let bracket = 0;
+    for (const ch of value) {
+        if (ch === '[') bracket += 1;
+        else if (ch === ']') bracket -= 1;
+        if (bracket === 0 && /[\s'"`,()]/.test(ch)) {
+            if (buf !== '') out.push(buf);
+            buf = '';
+            continue;
+        }
+        buf += ch;
+    }
+    if (buf !== '') out.push(buf);
+    return out;
 }

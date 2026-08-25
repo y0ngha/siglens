@@ -84,12 +84,18 @@ export function identifiersUsedOnControls(srcDir: string): Set<string> {
         for (const { tag } of controlOpeningTags(source)) {
             const expr = /className=\{([\s\S]*)$/.exec(tag)?.[1];
             if (expr === undefined) continue;
-            // 문자열 리터럴을 먼저 걷어낸다 — 안의 낱말이 식별자로 잡히면
-            // `mb`, `text` 같은 게 색인에 들어가 아무거나 컨트롤로 보이게 된다.
+            // 문자열 리터럴을 걷어낸다 — 안의 낱말이 식별자로 잡히면 `mb`,
+            // `text` 같은 게 색인에 들어가 아무거나 컨트롤로 보이게 된다.
+            //
+            // 단 템플릿 리터럴은 **통째로 버리지 않는다.** `${...}` 안은 코드다.
+            // 예전엔 백틱 전체를 지워서 `className={`${CHIP_BASE} ...`}` 형태가
+            // 식별자를 하나도 내놓지 않았고, 그렇게 적용된 클래스 상수는 어떤
+            // 스캐너에도 안 걸렸다(이 레포에 그 형태가 8개 파일에 있다).
             const withoutStrings = expr
+                .replace(/`(?:[^`$\\]|\\.|\$(?!\{))*`/g, ' ')
+                .replace(/`|\$\{|\}/g, ' ')
                 .replace(/'[^']*'/g, ' ')
-                .replace(/"[^"]*"/g, ' ')
-                .replace(/`[^`]*`/g, ' ');
+                .replace(/"[^"]*"/g, ' ');
             for (const ident of withoutStrings.matchAll(
                 /\b([A-Z][A-Z0-9_]*|[A-Za-z_$][\w$]*)\b/g
             )) {

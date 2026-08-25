@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { blankCssComments } from './support/sourceScan';
+
 /**
  * `border-control`이 **자기가 얹히는 모든 표면**에서 3:1을 지키는지 본다.
  *
@@ -72,10 +74,10 @@ function readThemes(): {
     // 다크 값을 라이트 표면에 대고 재며 초록을 낸다 — 이 파일이 막겠다고 적어둔
     // 바로 그 실패다. 라이트 블록엔 이미 `bg-grade-{a..f}/10`을 적은 주석이
     // 있고, 지금 균형이 맞는 건 우연이다. 오프셋 보존을 위해 공백으로 바꾼다.
-    const source = readFileSync(GLOBALS_CSS, 'utf8').replace(
-        /\/\*[\s\S]*?\*\//g,
-        m => m.replace(/[^\n]/g, ' ')
-    );
+    // 주석 제거는 **공용 구현**을 쓴다. 같은 일을 두 파일이 각자 적고 있었고,
+    // 한쪽만 고쳐진 적이 있다. 지금 두 방식이 같은 결과를 내는 건 이 파일의
+    // 현재 내용에서만 성립하는 우연이다(미종료 `/*` 하나면 갈린다).
+    const source = blankCssComments(readFileSync(GLOBALS_CSS, 'utf8'));
     const themeOpen = /@theme\s*\{/.exec(source);
     const lightOpen = /:root\[data-theme='light'\]\s*\{/.exec(source);
     if (themeOpen === null || lightOpen === null) {

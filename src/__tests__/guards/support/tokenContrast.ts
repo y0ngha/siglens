@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { blankComments } from './sourceScan';
+import { blankCssComments } from './sourceScan';
 
 /**
  * 색 토큰의 **실제 값**으로 대비를 판정한다.
@@ -67,7 +67,7 @@ export interface Themes {
  * 한쪽만 고쳐진 적이 있어서, 여기 한 벌만 둔다.
  */
 export function readThemes(): Themes {
-    const source = blankComments(readFileSync(GLOBALS_CSS, 'utf8'));
+    const source = blankCssComments(readFileSync(GLOBALS_CSS, 'utf8'));
     const themeOpen = /@theme\s*\{/.exec(source);
     const lightOpen = /:root\[data-theme='light'\]\s*\{/.exec(source);
     if (themeOpen === null || lightOpen === null) {
@@ -133,29 +133,45 @@ function composite(fg: string, alpha: number, bg: string): string {
  * 알파가 붙어 있으면 표면 위에 합성한 뒤 잰다 — 알파는 어떤 배경에서도 대비를
  * 낮추므로 이 계산이 곧 "틴트를 써도 되는가"의 답이 된다.
  */
+/** 컨트롤이 어떤 면 위에 앉는가. 요소의 채움 클래스로 정한다. */
+export type Fill = 'ramp' | 'fixed-white';
+
 export function minContrastOverSurfaces(
     colour: string,
+    fill: Fill = 'ramp',
     themes: Themes = readThemes()
-): number | null {
-    if (colour.startsWith('fixed-')) {
-        const resolved =
-            resolve(colour, themes.dark) ?? resolve(colour, themes.light);
-        if (resolved === null) return null;
-        return contrast(
-            composite(resolved.hex, resolved.alpha, FIXED_SURFACE),
-            FIXED_SURFACE
-        );
-    }
+): number {
     let worst = Infinity;
+    let resolvedAnywhere = false;
     for (const tokens of [themes.dark, themes.light]) {
         const resolved = resolve(colour, tokens);
-        if (resolved === null) return null;
-        for (const surface of SURFACE_TOKENS) {
-            const bg = tokens.get(surface);
-            if (bg === undefined) return null;
-            const over = composite(resolved.hex, resolved.alpha, bg);
-            worst = Math.min(worst, contrast(over, bg));
+        if (resolved === null) continue;
+        resolvedAnywhere = true;
+        // **표면을 토큰 이름으로 고르지 않는다.** 한때 `fixed-` 접두어를 보고
+        // 흰 표면만 쟀는데, 그건 방금 걷어낸 계열 와일드카드와 같은 추론이고
+        // 양방향으로 뚫렸다 — `fixed-light-border`를 테마 컨트롤에 쓰면 흰 배경
+        // 기준 3.02로 통과하지만 라이트 램프에서는 2.65였고, 반대로 램프 토큰을
+        // 항상-흰 버튼에 쓰면 램프 기준 6.89로 통과하지만 흰 배경에서는 2.26이었다.
+        // 이제 **호출부가 요소의 채움을 보고** 어느 면인지 알려준다.
+        const surfaces =
+            fill === 'fixed-white'
+                ? [FIXED_SURFACE]
+                : SURFACE_TOKENS.map(s => tokens.get(s));
+        for (const surface of surfaces) {
+            if (surface === undefined) continue;
+            const over = composite(resolved.hex, resolved.alpha, surface);
+            worst = Math.min(worst, contrast(over, surface));
         }
+    }
+    if (!resolvedAnywhere) {
+        // **모르는 색은 통과가 아니라 실패다.** 예전엔 `null`을 돌려줬고
+        // 호출부가 그걸 "장식 아님 = 합격"으로 접었다. 그래서 Tailwind 기본
+        // 팔레트(`border-white`, `border-red-500`)와 임의값(`border-[#2b2f36]`)이
+        // 전부 무검사 통과했다 — 흰 버튼 위의 `border-white`는 1.00:1이다.
+        // 이 파일은 hex 형식에 대해서는 이미 이 원칙을 지키고 있었다.
+        throw new Error(
+            `${colour}: globals.css에 없는 색이라 대비를 잴 수 없다 — 토큰을 쓰거나 실측값과 함께 예외로 명시할 것`
+        );
     }
     return worst;
 }
