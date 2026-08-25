@@ -31,14 +31,6 @@ export const LABEL_KO = cn(
 );
 
 /**
- * 라틴 전용 라벨(티커, `PRIVACY POLICY` 같은 영문 표제).
- * 여기서만 모노·추적 대문자를 쓴다 — 한글이 섞이면 LABEL_KO를 쓸 것.
- */
-export const LABEL_LATIN = cn(
-    'font-mono text-[0.6875rem] font-semibold tracking-[0.14em] text-secondary-400 uppercase'
-);
-
-/**
  * 페이지 안 섹션 제목(h2).
  *
  * 이 상수가 생긴 이유: 같은 역할의 h2가 네 파일에 각자 하드코딩돼 있었고,
@@ -69,10 +61,3 @@ export const HEADING_SECTION = cn(
 export const HEADING_SUBSECTION = cn(
     'text-base font-medium text-secondary-200'
 );
-
-/**
- * 자릿수가 맞아야 하는 수치(가격·등락률·개수).
- * 모노 대신 본문 서체의 tabular 숫자를 쓴다 — 한글 단위(“개”, “종”)가 붙어도
- * 폰트가 갈리지 않고, 숫자 폭은 여전히 고정된다.
- */
-export const NUM_TABULAR = cn('tabular-nums');

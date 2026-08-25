@@ -24,13 +24,3 @@ export const SURFACE_CARD = cn(
 
 /** 카드 안에 한 번 더 들어가는 중첩 블록. 보더 없이 표면값만으로 구분한다. */
 export const SURFACE_NESTED = cn('rounded-lg bg-secondary-700/40');
-
-/** 입력·차트 우물처럼 파여 보여야 하는 면. */
-export const SURFACE_INSET = cn(
-    'rounded-lg border border-secondary-700 bg-secondary-950'
-);
-
-/** 실제로 떠 있는 레이어(모달·시트·팝오버)에만. 그림자를 쓰는 유일한 자리. */
-export const SURFACE_OVERLAY = cn(
-    'rounded-lg border border-secondary-700 bg-secondary-800 shadow-lg shadow-secondary-950/50'
-);
