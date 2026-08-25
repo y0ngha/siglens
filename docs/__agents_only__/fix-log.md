@@ -276,10 +276,6 @@
   - Rule: (new) Conditional branch coverage — When a component is gated on data shape, enumerate all rendering branches via fixture symbols that flip the gate, not by declaring branches unverifiable. A contrast sweep or heading audit that runs once sees only the active branch; multiple branches require multiple test conditions.
   - Context: Found by testing symbols where the hideView prop gates visibility. /CROX (no SEO snapshot prose), /SIEGY (non-optionable ADR + degraded congress path), /NVEC (zero congress trades) exposed AI view, empty states, and stale-data summary branch respectively.
 
-- Violation: Colour tokens validated at one alpha tint (e.g., /10–/20) are not re-validated when a new consumer uses a deeper tint. `FearGreedHeaderChip`'s EXTREME tiers use `/40` tints where they measured 4.35 (success) and 3.89 (danger) in light theme, under the AA 4.5 minimum. The globals.css comment on `ui-*-text` tokens literally says "passes ≥6.9:1 on success/10" — validation was only at /10 depth. No existing consumer at /40 had been measured.
-  - Rule: (new) Colour token validation — Semantic tokens validated at one alpha/tint are not validated at every alpha/tint. Record which tint depths were checked (e.g., "ui-success-text: validated at /10–/20 in light+dark"). Re-validate when a new consumer uses a shallower or deeper tint; darker tints (higher /number) require re-measurement as luminance ratios shift.
-  - Context: Darkened both tokens (#0a5b52→#0a574e, #a02420→#8c201c) so /40 now reaches 4.60+. All shallower tints (/10–/30) improved accordingly (no regression). Measurement was on actual components rendered in both themes; validation applies to new consumers at any tint depth.
-
 - Violation: Expiration chips separated selected/unselected by hue only (blue vs neutral) with three colour-dependent cues (border, fill, text luminance deltas 2.03/1.17/1.14). While each cue individually passed WCAG contrast, the separation failed for colour-blind users — they perceive only brightness differences, which were below threshold for some cues.
   - Rule: (new) Colour-blind accessibility — A state indicator that separates only by hue fails for colour-blind users even when every individual cue passes contrast (WCAG 1.4.3). Independent cues (weight, shape, icon, border-style, pattern) must complement colour to ensure deuteranopia/protanopia distinction.
   - Context: Added font-semibold weight cue independent of hue. Border colour + weight + text weight now provide three independent signals.
@@ -308,3 +304,30 @@
 - Violation: 브라우저 감사가 **측정 중일 때** 소스를 고쳤다. Next dev는 라우트별로 컴파일하므로 약 15분간 `/AAPL/fear-greed`는 옛 `h4` 청크를, `/share/<id>`는 새 `h3` 청크를 서빙했다 — 같은 컴포넌트, 두 라우트, 두 렌더링. **하이드레이션 에러는 0건**이라 아무 신호가 없었다.
   - Rule: 감사·리뷰 에이전트가 측정하는 동안에는 소스를 건드리지 않는다. 부득이 고쳤으면 무엇이 언제 바뀌었는지 알리고 재측정을 요청한다
   - Context: 감사자가 "렌더된 마크업이 HEAD와도 워킹트리와도 안 맞는다"를 눈치채서 잡았다. pre-push build가 dev 서버를 죽여 측정을 무효화하는 문제와 같은 부류다 — 둘 다 "측정 중 환경을 바꾸지 마라".
+
+## [W7 — 컨트롤 보더·대비 가드 | redesign-p1 | 2026-08-25]
+- Violation: 예외 목록 항목의 **근거 주석이 사실과 달랐고, 그 거짓이 살아 있는 결함을 가렸다.** 리포트 복사 버튼을 가드에서 면제하며 "같은 버튼의 활성 분기는 다른 색을 쓴다"고 적었는데, 실제로 다른 색을 쓰는 건 `copied`/`failed`뿐이고 **평상시 기본 상태인 `idle`**은 여전히 장식 보더(1.15~1.50:1)에 hover가 더 낮은 값으로 떨어지고 있었다. 예외가 `파일:줄` 단위라 여는 태그 전체를 덮어 그 분기를 통째로 숨겼다.
+  - Rule: 예외를 추가할 때 근거 주석은 **면제 대상 코드를 실제로 읽고** 쓴다. 그 주석이 곧 다음 사람의 검증 근거가 되므로, 틀린 주석은 결함보다 오래 산다
+  - Rule: 요소 단위 예외는 그 요소의 **모든 상태 분기**를 함께 면제한다는 걸 명시한다 — 분기가 추가되면 조용히 덮인다
+  - Context: `idle`을 `border-control` + `hover:border-primary-500`로 고치고, 주석에 "처음 근거가 틀렸다"는 사실 자체를 남겼다.
+- Violation: `파일:줄` 키로 된 예외 목록은 줄이 밀리면 **조용히 빗나간다** — 아무것도 면제하지 않거나 더 나쁘게는 엉뚱한 요소를 면제하는데, 어느 쪽이든 가드는 초록이라 신호가 없다.
+  - Rule: 위치 기반 예외 목록은 "모든 키가 지금도 실제 검출 대상에 맞는가"를 함께 단언한다. 낡은 항목은 통과가 아니라 실패여야 한다
+  - Context: 빈 allowlist로 검출기를 재실행해 대조하는 테스트를 추가했다. `:142`를 `:999`로 바꾸면 실패하고 복원하면 통과한다.
+- Violation: 컨트롤 태그 스캐너가 **HTML 태그 이름만** 매칭해서 `<Link>`(next/link, 52개 파일이 import, 실제로는 `<a>`로 렌더)가 통째로 안 보였다. 그 사각지대에 살아 있는 결함이 여섯 개 있었고, 그중 하나는 이번 라운드에 같은 파일의 `<input>`을 고치면서 바로 옆의 취소 링크를 놓친 것이다.
+  - Rule: 태그 기반 스캐너는 HTML 명세가 아니라 **이 레포가 실제로 쓰는 컴포넌트 어휘**를 대상으로 한다. 문자열 매칭이라 모듈을 따라가지 않는다는 한계도 함께 적는다
+  - Context: `CONTROL_TAGS`에 `Link` 추가. 카드 표면 둘은 장식 보더 정책으로 예외, 칩 둘과 버튼형 둘은 `border-control`로 수정.
+- Violation: 올바른 인접면을 **지목해놓고 재지 않았다.** 토글 썸을 "보더 대 자기 채움이 아니라 보더 대 트랙이 맞는 인접면"이라고 판정해 오탐으로 기각했으면서, 정작 보더 대 트랙 값을 계산하지 않았다. 실제로 재보니 다크 off가 2.67:1이었다.
+  - Rule: 어떤 값이 맞는 측정인지 판정했으면 **그 값을 실제로 낸다.** 기각 사유가 "다른 걸 재야 한다"라면 그 다른 걸 재기 전까지 기각은 미완이다
+  - Context: 여섯 상태를 전부 재서 불변식이 토큰 하한이 아니라 상태별 `max(썸채움-트랙, 보더-트랙) >= 3`임을 확정하고 테스트로 고정했다.
+- Violation: 하한을 검증하면서 **값이 올라가는 방향**을 확인했다. "카드 표면(#fff)보다 더 밝은 표면이 있는가"를 물었는데, 어두운 보더에 대해 더 밝은 배경은 대비를 **높인다** — 위험 방향은 더 어두운 표면이었고, 그쪽에 시스템 최저점(3.10:1)이 있었다.
+  - Rule: 최솟값을 검증할 때는 값을 **낮추는** 방향을 열거한다. 산술적으로 참인 확인이 검증으로는 무의미할 수 있다
+  - Context: 리뷰가 잡았다. `secondary-700` 트랙이 램프 밖이라 가드가 못 덮던 자리.
+- Violation: 정적 가드를 **기하 전제가 틀린 채로** 만들어 오탐 5건을 냈다. 같은 요소의 `bg-*`가 보더가 대비해야 할 면이라고 가정했지만, 그건 보더 **안쪽** 채움이다.
+  - Rule: 시각 규칙을 정적으로 검사할 땐 규칙이 말하는 **실제 인접 관계**를 모델링한다. 소스에 나란히 적혔다는 사실은 화면에서 인접하다는 뜻이 아니다
+  - Context: 사용처별 페어링을 버리고 "토큰 대 표면 램프"로 좁혔다. 기하가 모호한 자리는 canvas로 합성색을 푸는 브라우저 스윕에 넘긴다.
+- Violation: 가드가 **조용히 통과**할 수 있었다. 6자리가 아닌 hex가 들어오면 `parseInt`가 `NaN`을 내는데 `NaN < 3`은 `false`라, 진짜 위반이 실패 배열에 담기지 않는다.
+  - Rule: 검사기는 모르는 입력에 대해 통과가 아니라 **큰 실패**를 낸다. 비교 연산에 `NaN`이 섞이면 실패 조건이 조용히 거짓이 된다
+  - Context: 3·6자리가 아니면 throw. `#7d838f80`을 넣으면 그 메시지로 실패한다.
+- Violation: (별개 PR) 단일 소스를 검증하는 테스트가 **모의로 구현을 한 벌 더 적어** 자기 복제본을 검증하고 있었다. 중복 리터럴을 없애는 PR이 중복 구현을 들이는 형태였다.
+  - Rule: "한 소스에서 나오는가"를 보는 테스트는 그 소스의 **실물**을 쓴다. `importOriginal`로 펼치고 필요한 것만 덮어쓴다
+  - Context: `/economy` FAQ 단일화 테스트. 모의를 걷어내도 21개 그대로 통과.

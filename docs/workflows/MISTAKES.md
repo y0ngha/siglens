@@ -1061,6 +1061,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Remove aria-hidden from informational content (instructions, data fields, confirmation values)
    ❌ <p aria-hidden>Email: user@example.com</p>  // user needs to verify email before deletion confirmation
    ✅ <p>Email: user@example.com</p>  // make visible and accessible to screen readers
+
+8. Color token contrast claims must specify which contexts (surfaces, tints) were validated
+   → Semantic color tokens validated for contrast at one dimension (alpha/tint depth or background surface) are not automatically valid at all dimensions
+   → Always document validation context when a token is claimed to pass a contrast ratio: "token X passes 3:1 on surface A and 2.9:1 on surface B" instead of "token X passes 3:1"
+   → Re-validate and document whenever a token is used on an unmeasured surface or tint depth; contrast ratios shift based on context
+   → When establishing minimum acceptable contrast, test across all documented and actual use cases, not just one reference context
+   ❌ globals.css comment: "ui-success-text passes ≥6.9:1 on success/10" (validated only at /10 tint; later used at /40 tint where it measures 4.35:1, failing AA 4.5:1 minimum)
+   ❌ border-control measured at 3.30:1 on white card surface (#fff), documented as "light 3.30:1"; same token used on secondary-950 input background where it measures 2.90:1
+   ✅ Explicitly document per-surface/tint: "border-control (light #7d838f): 3.34:1 on secondary-950 inset, 3.58:1 on secondary-900 body, 3.81:1 on secondary-800 card (#fff)" (validates across actual use cases; the tightest surface is the darkest one, not the reference card)
+   ✅ CI guard verifying token contrast across all documented and new surfaces before merge
+   → Recurring: W6f (tint depth: ui-success-text at /10 vs /40 FearGreedHeaderChip), W7 (surface: border-control at #fff white vs secondary-950 input field)
 ```
 
 ---
