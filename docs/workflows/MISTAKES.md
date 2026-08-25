@@ -235,6 +235,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ import { MS_PER_HOUR, KST_OFFSET_HOURS, MS_PER_SECOND } from '@/shared/config/time'; use hours * MS_PER_HOUR
     ✅ <p>{`최근 ${SPARKLINE_DAYS}거래일 섹터 수익률`}</p>  // 상수와 JSX가 항상 일치
 
+15.8. Code mutation helpers — regex anchors must target full syntactic units, not line prefixes
+    → When a script/helper inserts code (imports, exports, directives), anchors must match complete syntactic units, not partial line patterns
+    → Line-prefix patterns fail for: 1) directives that come before imports (`'use client'` must not have code inserted above it), 2) multi-line constructs (import statements spanning lines), 3) dedupe checks on bare identifiers (identifier in JSX can trigger false positive)
+    → All changed files must be scanned after mutation for malformed constructs (imports inside blocks, directives displaced, duplicates created)
+    ❌ regex `^import` + line-based insertion: inserts inside multi-line import block, or inserts above 'use client' directive
+    ❌ dedupe check on bare identifier `importName`: matches identifier in JSX, creates duplicate import statement
+    ✅ regex `^import\b[\s\S]*?;$` matches full import STATEMENT across lines; detects 'use client' separately before anchoring
+    ✅ dedupe checks full module path + statement boundary, not bare identifier
+    ✅ Post-mutation verification: scan all changed files with `grep '^import'` to verify no imports precede 'use client', no imports appear inside blocks
+    → Recurring: W6c (multi-line import blocks, regex line-prefix bug), W6f ('use client' directive override) — 2 occurrences in redesign-p1 audit wave
+
 15.3. Inline comments explaining WHAT code does instead of WHY
     → Comments must explain WHY a decision was made, not WHAT the code does (code structure is self-evident)
     → Code names, function signatures, and control flow already express intent; comments restating them add noise and drift when code changes
