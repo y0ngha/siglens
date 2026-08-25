@@ -38,8 +38,10 @@ const mockUseMarketNewsCardPolling = useMarketNewsCardPolling as MockedFunction<
     typeof useMarketNewsCardPolling
 >;
 
-const PAGE_SIZE = 10; // mirrors the const in MarketNewsList.tsx
-import { MARKET_NEWS_ROW_SERIALIZATION_LIMIT } from '@/widgets/market-news/constants';
+import {
+    MARKET_NEWS_LIST_PAGE_SIZE as PAGE_SIZE,
+    MARKET_NEWS_ROW_SERIALIZATION_LIMIT,
+} from '@/widgets/market-news/constants';
 
 function makeItem(n: number): MarketNewsCardItem {
     return {

@@ -45,7 +45,55 @@ const SRC_DIR = path.resolve(__dirname, '../..');
 const CONTROL_TAGS = 'button|a|input|textarea|select|Link';
 const CONTROL_RE = new RegExp(`<(${CONTROL_TAGS})\\b([^>]*)>`, 'gs');
 const CLASSNAME_RE = /className="([^"]*)"/;
-const DECORATIVE_BORDER_RE = /^border-secondary-(600|700)$/;
+// 컨트롤 보더 판정은 **금지 목록이 아니라 허용 목록**이다.
+//
+// 처음엔 마이그레이션 대상이던 `border-secondary-(600|700)` 두 개만 열거했는데,
+// 감사가 뮤테이션으로 구멍을 증명했다: 컨트롤 보더를 `border-secondary-800`으로
+// 바꿔도 가드가 초록이었다. 그 토큰은 **라이트에서 `#fff`**라 흰 카드 위에서
+// 1.00:1 — 경계가 아예 사라진다. 열거식은 "내가 아는 나쁜 값"만 막고 나머지는
+// 전부 통과시키므로, 새 토큰이 생길 때마다 조용히 뚫린다.
+//
+// 방향 보더(`border-t-*` 등)는 제외한다. 그건 구분선이지 컨트롤의 경계가 아니다.
+const BORDER_COLOUR_RE =
+    /^border-(?![trblxy]-)(?!\d+$)(?!(?:solid|dashed|dotted|double|none|hidden|collapse|separate)$)(.+)$/;
+
+/**
+ * 컨트롤 경계로 허용되는 색. 나머지는 전부 검출 대상이다.
+ *
+ * `secondary-500`이 여기 있는 이유: 동의 체크박스가 `appearance-none
+ * bg-transparent`라 보더가 유일한 식별 수단인데, 이 토큰은 다크 6.53~7.01,
+ * 라이트 5.91~6.73으로 3:1을 크게 넘는다(표면 램프 950/900/800 기준 실측).
+ * `border-control`(3.34~3.83)로 낮추는 건 개선이 아니라 하향이다.
+ */
+const ALLOWED_BORDER_COLOUR_RE =
+    /^(?:border-control|secondary-500|primary-\d{2,3}(?:\/\d+)?|ui-[a-z]+(?:-text)?(?:\/\d+)?|chart-[a-z]+(?:\/\d+)?|transparent|current|inherit)$/;
+
+/**
+ * 방향 보더만 있으면 그 색은 **구분선**이지 컨트롤의 경계가 아니다.
+ * (`border-b border-secondary-800` = 메뉴 항목 사이 줄. 색 토큰 자체에는
+ * 방향이 안 붙어 있어서 토큰만 봐서는 구분되지 않는다.)
+ */
+function bordersAreDividersOnly(tokens: string[]): boolean {
+    const sides = tokens.filter(x => /^border(-[trblxy])?(-\d+)?$/.test(x));
+    return sides.length > 0 && sides.every(x => /^border-[trblxy]/.test(x));
+}
+
+function isDecorativeBorder(token: string): boolean {
+    const match = BORDER_COLOUR_RE.exec(token);
+    if (match === null) return false;
+    return !ALLOWED_BORDER_COLOUR_RE.test(match[1]);
+}
+
+/**
+ * 주석은 토큰화 전에 걷어낸다. `cn(...)` 안에는 근거 주석이 흔한데, 거기
+ * 적힌 `border-control`·`border-box` 같은 **낱말**이 클래스로 잡혀 없는
+ * 위반을 만든다(실제로 ReasoningToggle에서 3건이 그렇게 잡혔다).
+ */
+function stripInlineComments(value: string): string {
+    return value
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .replace(/(?<=^|\n)[ \t]*\/\/[^\n]*/g, ' ');
+}
 
 /**
  * 근거를 적은 예외만 여기 둔다. **상수 단위**로 적는다 — 파일 단위로 면제하면
@@ -75,12 +123,6 @@ const ALLOWED_ELEMENTS: ReadonlySet<string> = new Set([
     // 장식 보더는 제외" 항목이 그대로 적용된다. 칩(rounded-full, 내용이 텍스트
     // 한 줄)은 보더가 곧 경계라서 이 예외에 들지 않는다 — RelatedSymbols와
     // CategoryCardGrid의 칩은 `border-control`로 고쳤다.
-    //
-    // CrossLinkCards는 형제 둘과 달리 **채움이 없다** — 비활성 상태에서 보더가
-    // 배경과 구분되는 유일한 단서다(현재 탭 카드만 `bg-secondary-800/40`).
-    // 카드 정책으로 면제하되, 대비 스윕에서 이 카드 경계의 지각 가능성을
-    // 따로 확인할 것.
-    'shared/ui/CrossLinkCards.tsx:142',
     'widgets/dashboard/SignalStockCard.tsx:22',
 ]);
 
@@ -91,7 +133,10 @@ function tsxFiles(dir: string): string[] {
         const full = path.join(dir, name);
         if (statSync(full).isDirectory()) {
             out.push(...tsxFiles(full));
-        } else if (name.endsWith('.tsx')) {
+        } else if (name.endsWith('.tsx') || name.endsWith('.ts')) {
+            // `.ts`도 훑는다 — 클래스 문자열 모듈(`shared/lib/*Styles.ts`)이
+            // 여기 산다. 요소 스캐너는 `.ts`에 컨트롤 태그가 없어 영향이 없고,
+            // 상수 스캐너만 새로 대상을 얻는다.
             out.push(full);
         }
     }
@@ -107,7 +152,13 @@ function tsxFiles(dir: string): string[] {
  * 들어가는지 본다. 이름이 무엇이든 상관없고, 반대로 이름이 그럴듯해도 `<div>`에만
  * 쓰이면 대상이 아니다(`HoldingForm`의 `SYMBOL_CHIP`이 그 경우다).
  */
-const CONST_DECL_RE = /(?:export\s+)?const\s+(\w+)[^=]*=\s*\n?\s*'([^']*)'/g;
+// 초기화식 **전체**를 잡는다(따옴표 리터럴, 템플릿, `cn(...)` 본문 모두).
+// 예전엔 `const X = '…'` 한 형태만 매칭했는데, 이 브랜치가 새로 만든
+// `surfaceStyles.ts`·`typographyStyles.ts`가 정확히 `.ts` + `cn()` 스타일이라
+// **브랜치 자기 컨벤션을 따르면 자기 가드를 우회**하는 상태였다. 감사가
+// `CHIP_INACTIVE`를 `cn('border-secondary-600 …')`로 바꿔 통과시켜 증명했다.
+const CONST_DECL_RE =
+    /(?:export\s+)?const\s+(\w+)(?:\s*:[^=]*)?\s*=\s*('[^']*'|`[^`]*`|cn\([\s\S]*?\))/g;
 
 /**
  * 그 상수가 조작 요소 태그의 className으로 쓰이는가.
@@ -173,9 +224,9 @@ function findConstantHeldBorders(
         for (const match of source.matchAll(CONST_DECL_RE)) {
             const [, name, classes] = match;
             if (!usedOnControlTag(source, name)) continue;
-            const bare = classes
-                .split(/\s+/)
-                .filter(token => DECORATIVE_BORDER_RE.test(token));
+            const tokens = stripInlineComments(classes).split(/[\s'"`,]+/);
+            if (bordersAreDividersOnly(tokens)) continue;
+            const bare = tokens.filter(isDecorativeBorder);
             if (bare.length === 0) continue;
             const rel = path.relative(SRC_DIR, file);
             if (allowed.has(`${rel}::${name}`)) continue;
@@ -198,9 +249,9 @@ function findDecorativeControlBorders(
                 CLASSNAME_RE.exec(tag)?.[1] ??
                 /className=\{([\s\S]*)$/.exec(tag)?.[1];
             if (value === undefined) continue;
-            const bare = value
-                .split(/[\s'"`,]+/)
-                .filter(token => DECORATIVE_BORDER_RE.test(token));
+            const tokens = stripInlineComments(value).split(/[\s'"`,]+/);
+            if (bordersAreDividersOnly(tokens)) continue;
+            const bare = tokens.filter(isDecorativeBorder);
             if (bare.length === 0) continue;
             const rel = path.relative(SRC_DIR, file);
             const line = source.slice(0, index).split('\n').length;
@@ -275,9 +326,7 @@ describe('control border token guard', () => {
             '<button type="button" className="rounded border border-secondary-700 px-4">닫기</button>';
         const match = [...source.matchAll(CONTROL_RE)][0];
         const className = CLASSNAME_RE.exec(match[2]);
-        const bare = className![1]
-            .split(/\s+/)
-            .filter(token => DECORATIVE_BORDER_RE.test(token));
+        const bare = className![1].split(/\s+/).filter(isDecorativeBorder);
         expect(bare).toEqual(['border-secondary-700']);
     });
 
@@ -287,7 +336,7 @@ describe('control border token guard', () => {
         const match = [...source.matchAll(CONTROL_RE)][0];
         const bare = CLASSNAME_RE.exec(match[2])![1]
             .split(/\s+/)
-            .filter(token => DECORATIVE_BORDER_RE.test(token));
+            .filter(isDecorativeBorder);
         expect(bare).toEqual([]);
     });
 

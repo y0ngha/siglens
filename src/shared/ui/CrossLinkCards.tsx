@@ -146,7 +146,13 @@ export function CrossLinkCards({
                         // 섹션이다. prefetch를 켜두면 같은 페이로드를 탭에 이어 두 번째로
                         // 예약하게 되므로 끈다 (docs/architecture/CDN_CACHING.md §1).
                         prefetch={false}
-                        className="rounded-lg border border-secondary-700 p-6 transition-colors hover:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+                        // 이 카드는 형제들과 달리 **채움이 없다** — 보더가 배경과
+                        // 구분되는 유일한 단서다. 장식 토큰(`secondary-700`)일 때
+                        // 다크 1.40:1 / 라이트 1.15:1로 사실상 안 보였고, 이는
+                        // master(1.72:1)보다도 낮았다. 경계 토큰으로 올려
+                        // 다크 3.74 / 라이트 3.58을 확보한다. 현재 탭 카드와의
+                        // 구분은 그쪽의 채움(`bg-secondary-800/40`)과 액센트가 맡는다.
+                        className="rounded-lg border border-border-control p-6 transition-colors hover:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
                     >
                         <h3 className={HEADING_SUBSECTION}>{LABEL[p]}</h3>
                         <p className="mt-2 text-sm text-secondary-400">

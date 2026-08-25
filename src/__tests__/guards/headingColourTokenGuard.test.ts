@@ -77,17 +77,30 @@ const CLASSNAME_EXPR_RE = /className=\{([\s\S]*?)\}(?=\s|>|$)/;
  * 실제 heading을 통째로 삼킨다. 실측: `src/app/onboarding/page.tsx:38`의 주석
  * 한 줄이 42행의 진짜 h1을 가려 그 파일에서 매칭이 1건만 나왔다.
  */
+/**
+ * 주석을 **지우지 않고 같은 길이의 공백으로 바꾼다.**
+ *
+ * 예전엔 삭제했는데, 그러면 이후 모든 오프셋이 앞으로 당겨져 보고되는 줄번호가
+ * 실제 위치와 어긋난다 — 감사가 `app/economy/page.tsx:324`의 위반을 `:255`로
+ * 보고하는 걸 확인했다(69줄 오차). 가드가 틀린 좌표를 주면 유지보수자는
+ * 무관한 코드를 들여다보게 되므로, 지적 자체보다 나쁠 수 있다.
+ * 줄바꿈은 그대로 둬야 줄 수가 유지된다.
+ */
+function blankOut(match: string): string {
+    return match.replace(/[^\n]/g, ' ');
+}
+
 function stripComments(source: string): string {
     return (
         source
-            .replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, '')
-            .replace(/\/\*[\s\S]*?\*\//g, '')
+            .replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, blankOut)
+            .replace(/\/\*[\s\S]*?\*\//g, blankOut)
             // `//` 줄 주석은 **줄 맨 앞(들여쓰기 제외)**에 있을 때만 지운다.
             // 이전엔 `https://` 앞의 `:`만 예외 처리했는데, 그러면 heading 본문에
             // 평범하게 들어간 `//`(예: "안내 // 참고")가 그 줄 끝까지를 지워
             // **닫는 태그까지 없애고** 다음 heading을 삼킨다. JSX 텍스트 안의
             // `//`는 주석이 아니므로, 주석으로 볼 수 있는 자리만 좁게 본다.
-            .replace(/(?<=^|\n)[ \t]*\/\/[^\n]*/g, '')
+            .replace(/(?<=^|\n)[ \t]*\/\/[^\n]*/g, blankOut)
     );
 }
 

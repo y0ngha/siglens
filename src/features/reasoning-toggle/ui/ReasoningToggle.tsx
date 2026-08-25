@@ -139,12 +139,19 @@ export function ReasoningToggle({
                     // also locked, so this precedence matches `handleClick`, where
                     // `disabled` short-circuits before the locked branch.
                     disabled && 'cursor-not-allowed opacity-60',
-                    // Locked non-members: the switch itself carries the
-                    // "unavailable" meaning through the muted track + reduced
-                    // opacity — there is no separate lock affordance. It stays
-                    // clickable so the click opens the signup nudge
-                    // (cursor-pointer, not cursor-not-allowed; no native
-                    // `disabled` which would swallow onClick).
+                    // Locked non-members: the switch carries the "unavailable"
+                    // meaning through the muted track + a muted thumb
+                    // (`bg-secondary-400`, below) — there is no separate lock
+                    // affordance. It stays clickable so the click opens the
+                    // signup nudge (cursor-pointer, not cursor-not-allowed; no
+                    // native `disabled` which would swallow onClick).
+                    //
+                    // 이 분기에 `opacity-*`를 **다시 넣지 말 것.** opacity는
+                    // 보더까지 함께 흐리게 만드는데, 라이트 테마에서는 흰 썸이
+                    // 흰 트랙에 1.23:1로 묻혀 **보더만이** 썸을 식별한다
+                    // (3.10:1, 시스템 최저점). 흐려지면 그 값이 1.65:1까지
+                    // 떨어져 WCAG 1.4.11(3:1)을 깬다. 그래서 "흐림" 대신
+                    // "썸 색을 낮춤"으로 같은 의미를 전달한다.
                     locked && !disabled && 'cursor-pointer'
                 )}
             >

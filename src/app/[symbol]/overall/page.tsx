@@ -7,6 +7,7 @@ import {
 } from '@/views/symbol/snapshot/renderers/OverallSnapshotProse';
 import { SymbolPageHeading } from '@/views/symbol';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
+import { FaqSection } from '@/shared/ui/FaqSection';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     DEFAULT_TIMEFRAME,
@@ -14,7 +15,7 @@ import {
     isAdmissibleSymbolShape,
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
-import { Suspense, type ReactNode } from 'react';
+import { Suspense } from 'react';
 import {
     buildAssetAboutNode,
     buildDisplayName,
@@ -24,6 +25,7 @@ import { getNewsList } from '@/entities/news-article/api';
 import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
 import {
     buildBreadcrumbJsonLd,
+    buildFaqJsonLd,
     buildSnapshotMetaDescription,
     buildSymbolSeoContent,
     buildSymbolWebPageJsonLd,
@@ -31,6 +33,7 @@ import {
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
     noindexSymbolMetadata,
+    type FaqItem,
 } from '@/shared/lib/seo';
 import {
     getDescriptor,
@@ -46,21 +49,35 @@ import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-
-/** H1·FAQ 답변 2개·안내 문단이 market profile별로 갈라 쓰는 카피 번들. */
-interface OverallCopy {
-    heading: string;
-    axesAnswer: string;
-    scenarioAnswer: string;
-    guideParagraphs: ReactNode;
-}
 
 /**
- * 종합 분석 페이지의 카피(H1·FAQ 답변 2개·안내 문단)는 market profile별로 세
+ * H1과 FAQ가 market profile별로 갈라 쓰는 카피 번들.
+ *
+ * `faq`는 화면 `<dl>`(FaqSection)과 FAQPage 구조화데이터(buildFaqJsonLd) **양쪽의
+ * 단일 소스**다. 예전에는 같은 내용이 "안내 문단 3개"와 "FAQ 답변 3개"로 두 벌
+ * 있었고, 문단만 화면에 보이고 답변은 마크업에만 있었다 — 구글이 요구하는
+ * "마크업한 Q&A가 페이지에 보일 것"을 어기면서 동시에 같은 말을 두 번 하는
+ * 중복 콘텐츠이기도 했다. 문단의 고유한 내용은 답변에 흡수했다.
+ */
+interface OverallCopy {
+    heading: string;
+    faq: readonly FaqItem[];
+}
+
+// 질문 문구는 세 profile이 공유하고 답변만 갈린다. 시나리오가 깨지는 조건은
+// 미국·한국 주식이 같은 답을 쓰므로(실적·가이던스가 둘 다 있다) 리터럴을 하나만 둔다.
+const SCENARIO_QUESTION =
+    '강세 시나리오와 약세 시나리오는 어떤 기준으로 나뉘나요?';
+const BROKEN_SCENARIO_QUESTION =
+    '어떤 신호가 나오면 시나리오가 깨졌다고 봐야 하나요?';
+const EQUITY_BROKEN_SCENARIO_ANSWER =
+    '실적 발표 결과나 가이던스 변화, 매크로 이벤트, 분위기 급반전 같은 위험 요인이 시나리오의 전제를 무너뜨리면 그 시나리오는 깨졌다고 봅니다. 위험 요인 항목에 따로 표시되어 있어 매수 전에 한 번 확인하기 좋습니다.';
+
+/**
+ * 종합 분석 페이지의 카피(H1·FAQ 3건)는 market profile별로 세
  * 갈래로 갈린다 — 미국 개별주식(옵션 있음)·한국 개별주식(옵션 없음)·크립토
  * (펀더멘털·재무·옵션 자체가 없음). `isEquity ? (hasOptions ? A : B) : C` 3항
- * 중첩을 렌더 지점(H1, FAQ 답변 2개, 안내 문단)마다 반복하면 새 market
+ * 중첩을 렌더 지점(H1, FAQ 답변)마다 반복하면 새 market
  * profile이 추가돼도 컴파일 에러 없이 기존 분기 중 하나로 조용히 흡수된다
  * (MISTAKES.md §0.9). `MarketProfileId`(이미 3개 값으로 exhaustive)를 판별식
  * 삼아 카피 번들을 한 번에 만들고, 각 렌더 지점은 이 번들의 필드만 읽는다 —
@@ -75,94 +92,59 @@ function buildOverallCopy(
         case 'us-equity':
             return {
                 heading: `${displayName} 차트와 옵션 시장, 실적, 뉴스 종합 분석`,
-                axesAnswer: `${displayName} 주가의 차트 추세, 옵션 시장이 평가하는 단기 방향성, 분기 실적과 펀더멘털, 최근 뉴스 분위기까지 네 가지 분석 축에 시장 분위기(공포 탐욕 지수)를 더해 강세와 약세 시나리오, 진입을 고려할 만한 가격대, 시나리오가 깨지는 위험 요인을 함께 정리합니다.`,
-                scenarioAnswer:
-                    '차트 추세, 옵션 시장의 콜·풋 베팅 분위기, 실적과 가이던스 흐름, 뉴스 분위기를 종합해 상승 압력이 우세한지 하방 압력이 우세한지 판단합니다. 각 시나리오마다 어떤 가격대에서 진입을 고려할 만한지, 어떤 신호가 나오면 시나리오가 깨지는지를 같이 정리합니다.',
-                guideParagraphs: (
-                    <>
-                        <p className="text-sm leading-relaxed text-secondary-400">
-                            {displayName} 주가가 지금 어디쯤 와 있는지 한
-                            페이지에서 정리해 봅니다. 차트의 추세와 주요
-                            지지선과 저항선, 옵션 시장이 평가하는 단기 방향성,
-                            분기 실적 흐름, 최근 뉴스에서 시장이 무엇에 반응하고
-                            있는지까지 네 가지 분석 축에 시장 분위기를 더해
-                            살펴봅니다.
-                        </p>
-                        <p className="text-sm leading-relaxed text-secondary-400">
-                            옵션 시장이 가까운 만기에서 콜과 풋 어느 쪽에 더 큰
-                            베팅을 걸고 있는지도 한 줄로 짚어 줍니다. 네 축을
-                            합쳐 강세와 약세 시나리오를 각각 정리하고, 어떤
-                            가격대에서 진입을 고려해 볼 만한지, 어떤 신호가
-                            나오면 시나리오가 깨지는지를 함께 짚습니다.
-                        </p>
-                        <p className="text-sm leading-relaxed text-secondary-400">
-                            실적 발표, 가이던스 변화, 매크로 이벤트처럼
-                            시나리오를 뒤집을 수 있는 위험 요인도 따로 표시해
-                            두니, 매수 전에 한 번 훑어보면 도움이 됩니다.
-                        </p>
-                    </>
-                ),
+                faq: [
+                    {
+                        question: `${displayName} 종합 분석에서는 어떤 축을 같이 보나요?`,
+                        answer: `${displayName} 주가의 차트 추세와 주요 지지선과 저항선, 옵션 시장이 평가하는 단기 방향성, 분기 실적 흐름과 펀더멘털, 최근 뉴스에서 시장이 무엇에 반응하고 있는지까지 네 가지 분석 축에 시장 분위기(공포 탐욕 지수)를 더해 살펴봅니다. 옵션 시장이 가까운 만기에서 콜과 풋 어느 쪽에 더 큰 베팅을 걸고 있는지도 한 줄로 짚어 줍니다.`,
+                    },
+                    {
+                        question: SCENARIO_QUESTION,
+                        answer: '차트 추세, 옵션 시장의 콜·풋 베팅 분위기, 실적과 가이던스 흐름, 뉴스 분위기를 종합해 상승 압력이 우세한지 하방 압력이 우세한지 판단합니다. 시나리오마다 어떤 가격대에서 진입을 고려할 만한지도 함께 정리합니다.',
+                    },
+                    {
+                        question: BROKEN_SCENARIO_QUESTION,
+                        answer: EQUITY_BROKEN_SCENARIO_ANSWER,
+                    },
+                ],
             };
         case 'kr-equity':
             // 한국 개별주식: 옵션 시장이 없으므로(KR_EQUITY_DESCRIPTOR.tabs) 세
             // 축(차트·실적·뉴스)만 다룬다 — 미국 주식 카피의 "옵션 시장"
-            // 문단을 실적/가이던스 문단으로 교체한다.
+            // 문장을 실적/가이던스 문장으로 교체한다.
             return {
                 heading: `${displayName} 차트와 실적, 뉴스 종합 분석`,
-                axesAnswer: `${displayName} 주가의 차트 추세, 분기 실적과 펀더멘털, 최근 뉴스 분위기까지 세 가지 분석 축에 시장 분위기(공포 탐욕 지수)를 더해 강세와 약세 시나리오, 진입을 고려할 만한 가격대, 시나리오가 깨지는 위험 요인을 함께 정리합니다.`,
-                scenarioAnswer:
-                    '차트 추세, 실적과 가이던스 흐름, 뉴스 분위기를 종합해 상승 압력이 우세한지 하방 압력이 우세한지 판단합니다. 각 시나리오마다 어떤 가격대에서 진입을 고려할 만한지, 어떤 신호가 나오면 시나리오가 깨지는지를 같이 정리합니다.',
-                guideParagraphs: (
-                    <>
-                        <p className="text-sm leading-relaxed text-secondary-400">
-                            {displayName} 주가가 지금 어디쯤 와 있는지 한
-                            페이지에서 정리해 봅니다. 차트의 추세와 주요
-                            지지선과 저항선, 분기 실적 흐름, 최근 뉴스에서
-                            시장이 무엇에 반응하고 있는지까지 세 가지 분석 축에
-                            시장 분위기를 더해 살펴봅니다.
-                        </p>
-                        <p className="text-sm leading-relaxed text-secondary-400">
-                            분기 실적이 시장 기대치를 웃돌았는지, 다음 분기
-                            가이던스가 어떻게 나왔는지도 한 줄로 짚어 줍니다. 세
-                            축을 합쳐 강세와 약세 시나리오를 각각 정리하고, 어떤
-                            가격대에서 진입을 고려해 볼 만한지, 어떤 신호가
-                            나오면 시나리오가 깨지는지를 함께 짚습니다.
-                        </p>
-                        <p className="text-sm leading-relaxed text-secondary-400">
-                            실적 발표, 가이던스 변화, 매크로 이벤트처럼
-                            시나리오를 뒤집을 수 있는 위험 요인도 따로 표시해
-                            두니, 매수 전에 한 번 훑어보면 도움이 됩니다.
-                        </p>
-                    </>
-                ),
+                faq: [
+                    {
+                        question: `${displayName} 종합 분석에서는 어떤 축을 같이 보나요?`,
+                        answer: `${displayName} 주가의 차트 추세와 주요 지지선과 저항선, 분기 실적 흐름과 펀더멘털, 최근 뉴스에서 시장이 무엇에 반응하고 있는지까지 세 가지 분석 축에 시장 분위기(공포 탐욕 지수)를 더해 살펴봅니다. 분기 실적이 시장 기대치를 웃돌았는지, 다음 분기 가이던스가 어떻게 나왔는지도 한 줄로 짚어 줍니다.`,
+                    },
+                    {
+                        question: SCENARIO_QUESTION,
+                        answer: '차트 추세, 실적과 가이던스 흐름, 뉴스 분위기를 종합해 상승 압력이 우세한지 하방 압력이 우세한지 판단합니다. 시나리오마다 어떤 가격대에서 진입을 고려할 만한지도 함께 정리합니다.',
+                    },
+                    {
+                        question: BROKEN_SCENARIO_QUESTION,
+                        answer: EQUITY_BROKEN_SCENARIO_ANSWER,
+                    },
+                ],
             };
         case 'crypto':
             return {
                 heading: `${displayName} 차트와 뉴스, 매수 분위기 종합 분석`,
-                axesAnswer: `${displayName} 시세의 차트 추세, 최근 뉴스 분위기, 매수 분위기(공포 탐욕 지수)를 묶어 강세와 약세 시나리오, 진입을 고려할 만한 가격대, 시나리오가 깨지는 위험 요인을 함께 정리합니다.`,
-                scenarioAnswer:
-                    '차트 추세, 최근 뉴스 흐름, 매수 분위기를 종합해 상승 압력이 우세한지 하방 압력이 우세한지 판단합니다. 각 시나리오마다 어떤 가격대에서 진입을 고려할 만한지, 어떤 신호가 나오면 시나리오가 깨지는지를 같이 정리합니다.',
-                guideParagraphs: (
-                    <>
-                        <p className="text-sm leading-relaxed text-secondary-400">
-                            {displayName} 시세가 지금 어디쯤 와 있는지 한
-                            페이지에서 정리해 봅니다. 차트의 추세와 주요
-                            지지선과 저항선, 최근 뉴스에서 시장이 무엇에
-                            반응하고 있는지, 매수 분위기(공포 탐욕 지수)를 세
-                            축으로 묶어 살펴봅니다.
-                        </p>
-                        <p className="text-sm leading-relaxed text-secondary-400">
-                            세 축을 합쳐 강세와 약세 시나리오를 각각 정리하고,
-                            어떤 가격대에서 진입을 고려해 볼 만한지, 어떤 신호가
-                            나오면 시나리오가 깨지는지를 함께 짚습니다.
-                        </p>
-                        <p className="text-sm leading-relaxed text-secondary-400">
-                            매크로 이벤트, 규제 이슈, 대형 뉴스처럼 시나리오를
-                            뒤집을 수 있는 위험 요인도 따로 표시해 두니, 매수
-                            전에 한 번 훑어보면 도움이 됩니다.
-                        </p>
-                    </>
-                ),
+                faq: [
+                    {
+                        question: `${displayName} 종합 분석에서는 어떤 축을 같이 보나요?`,
+                        answer: `${displayName} 시세의 차트 추세와 주요 지지선과 저항선, 최근 뉴스에서 시장이 무엇에 반응하고 있는지, 매수 분위기(공포 탐욕 지수)까지 세 축을 묶어 살펴봅니다.`,
+                    },
+                    {
+                        question: SCENARIO_QUESTION,
+                        answer: '차트 추세, 최근 뉴스 흐름, 매수 분위기를 종합해 상승 압력이 우세한지 하방 압력이 우세한지 판단합니다. 시나리오마다 어떤 가격대에서 진입을 고려할 만한지도 함께 정리합니다.',
+                    },
+                    {
+                        question: BROKEN_SCENARIO_QUESTION,
+                        answer: '매크로 이벤트, 규제 이슈, 대형 뉴스, 분위기 급반전 같은 위험 요인이 시나리오의 전제를 무너뜨리면 그 시나리오는 깨졌다고 봅니다. 위험 요인 항목에 따로 표시되어 있어 매수 전에 한 번 확인하기 좋습니다.',
+                    },
+                ],
             };
         default: {
             // Exhaustiveness guard: 새 MarketProfileId가 추가되면 TypeScript가
@@ -390,7 +372,6 @@ export default async function OverallPage({ params }: Props) {
     const displayName = buildDisplayName(assetInfo, upper);
     const marketProfile = marketProfileOf(assetInfo);
     const assetClass = getDescriptor(marketProfile).assetClass;
-    const isEquity = assetClass === 'equity';
     // KR 개별주식은 유동성 있는 옵션 시장이 없다(KR_EQUITY_DESCRIPTOR.tabs 주석 참고 —
     // 국내에 상장된 것은 KOSPI200 지수옵션뿐, 개별주식 옵션은 사실상 무유동성이라 탭
     // 자체가 없다). `isEquity`(assetClass 이진 분류)만으로 문구를 고르면 한국 종목도
@@ -423,46 +404,16 @@ export default async function OverallPage({ params }: Props) {
     });
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: upper, url: buildSymbolSeoContent(upper).url },
+        { name: displayName, url: buildSymbolSeoContent(upper).url },
         { name: 'AI 종합 분석', url },
     ]);
 
     // FAQ 답변은 market profile별로 분기한다 — 크립토에는 옵션 시장·분기 실적·펀더멘털이
     // 없고, 한국 개별주식은 옵션 시장만 없으므로 해당 문구가 포함된 답변을 그대로
     // 노출하면 실재하지 않는 콘텐츠를 약속하게 된다. `copy`(buildOverallCopy)가
-    // marketProfile 하나로 두 답변을 모두 판별한다 — 판별식·가드 이유는 그 함수 JSDoc 참고.
-    const faqJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: [
-            {
-                '@type': 'Question',
-                name: `${displayName} 종합 분석에서는 어떤 축을 같이 보나요?`,
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: copy.axesAnswer,
-                },
-            },
-            {
-                '@type': 'Question',
-                name: '강세 시나리오와 약세 시나리오는 어떤 기준으로 나뉘나요?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: copy.scenarioAnswer,
-                },
-            },
-            {
-                '@type': 'Question',
-                name: '어떤 신호가 나오면 시나리오가 깨졌다고 봐야 하나요?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: isEquity
-                        ? '실적 발표 결과나 가이던스 변화, 매크로 이벤트, 분위기 급반전 같은 위험 요인이 시나리오의 전제를 무너뜨리면 그 시나리오는 깨졌다고 봅니다. 위험 요인 항목에 따로 표시되어 있어 매수 전에 한 번 확인하기 좋습니다.'
-                        : '매크로 이벤트, 규제 이슈, 대형 뉴스, 분위기 급반전 같은 위험 요인이 시나리오의 전제를 무너뜨리면 그 시나리오는 깨졌다고 봅니다. 위험 요인 항목에 따로 표시되어 있어 매수 전에 한 번 확인하기 좋습니다.',
-                },
-            },
-        ],
-    };
+    // marketProfile 하나로 세 답변을 모두 판별한다 — 판별식·가드 이유는 그 함수 JSDoc 참고.
+    // 아래 `FaqSection`이 같은 `copy.faq`를 화면에 그린다.
+    const faqJsonLd = buildFaqJsonLd(copy.faq);
 
     return (
         <>
@@ -471,15 +422,6 @@ export default async function OverallPage({ params }: Props) {
             <JsonLd data={faqJsonLd} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>{copy.heading}</SymbolPageHeading>
-                <section
-                    aria-labelledby="overall-guide-heading"
-                    className="space-y-3 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5"
-                >
-                    <h2 id="overall-guide-heading" className={HEADING_SECTION}>
-                        {displayName} 종합 분석은 어떻게 봐야 할까
-                    </h2>
-                    {copy.guideParagraphs}
-                </section>
                 {/* AI 스냅샷 프로즈는 Suspense fallback이 아니라 PERSISTENT server
                     sibling으로 마운트한다(audit fix — fallback 안에 두면 React가
                     boundary resolve 시 클라이언트에서 그 서브트리를 DESTROY한다:
@@ -530,6 +472,10 @@ export default async function OverallPage({ params }: Props) {
                         hasOptions={hasOptions}
                     />
                 </Suspense>
+                <FaqSection
+                    heading={`${displayName} 종합 분석 자주 묻는 질문`}
+                    items={copy.faq}
+                />
                 <CrossLinkCards
                     symbol={upper}
                     current="overall"

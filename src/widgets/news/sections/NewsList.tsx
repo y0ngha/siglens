@@ -8,6 +8,7 @@ import type { NewsImpact, NewsSentiment } from '@y0ngha/siglens-core';
 import { useState } from 'react';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import { NewsCardShell } from '@/shared/ui/NewsCardShell';
+import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
@@ -41,7 +42,6 @@ const IMPACT_CLASS: Record<NewsImpact, string> = {
 
 const VALID_SENTIMENTS = new Set<string>(['bullish', 'bearish', 'neutral']);
 const VALID_IMPACTS = new Set<string>(['high', 'medium', 'low', 'negligible']);
-const PAGE_SIZE = 5;
 const NEWS_LIST_SKELETON_COUNT = 3;
 
 function isNewsSentiment(value: string): value is NewsSentiment {
@@ -262,7 +262,7 @@ interface NewsListProps {
 }
 
 export function NewsList({ items: initialItems, symbol }: NewsListProps) {
-    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+    const [visibleCount, setVisibleCount] = useState(NEWS_LIST_PAGE_SIZE);
     // Tracks the last rendered symbol for the render-time reset below.
     // Client-side navigation keeps the component mounted while delivering new
     // initialItems for the new symbol, so we must re-baseline explicitly.
@@ -270,7 +270,7 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
 
     if (prevSymbol !== symbol) {
         setPrevSymbol(symbol);
-        setVisibleCount(PAGE_SIZE);
+        setVisibleCount(NEWS_LIST_PAGE_SIZE);
     }
 
     const { items, isPolling, pollError } = useNewsPollingWithInvalidation(
@@ -336,7 +336,9 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
             {hasMore && (
                 <button
                     type="button"
-                    onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+                    onClick={() =>
+                        setVisibleCount(c => c + NEWS_LIST_PAGE_SIZE)
+                    }
                     className="w-full rounded-lg border border-border-control py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     더보기 ({items.length - visibleCount}개 남음)

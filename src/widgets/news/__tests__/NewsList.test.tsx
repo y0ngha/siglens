@@ -5,6 +5,7 @@ import type { NewsDisplayItem } from '@/shared/lib/types';
 import { useNewsPollingWithInvalidation } from '@/widgets/news/hooks/useNewsPollingWithInvalidation';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import { NewsList } from '@/widgets/news/sections/NewsList';
+import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
 
 vi.mock('@/widgets/news/hooks/useNewsPollingWithInvalidation', () => ({
     useNewsPollingWithInvalidation: vi.fn(),
@@ -114,5 +115,28 @@ describe('NewsList', () => {
         // Must render "가격 영향 보통", not "주가 영향 보통".
         expect(screen.getByText('가격 영향 보통')).toBeInTheDocument();
         expect(screen.queryByText('주가 영향 보통')).not.toBeInTheDocument();
+    });
+
+    /**
+     * 초기 DOM 카드 수는 `/[symbol]/news`의 `ItemList` 구조화데이터 상한과 같은
+     * 상수여야 한다. "더보기"로 늘어난 카드는 클라이언트 상태에만 있어 크롤러가
+     * 보지 못하므로, 여기가 곧 마크업이 주장해도 되는 최대 개수다.
+     */
+    it(`처음에는 NEWS_LIST_PAGE_SIZE(${NEWS_LIST_PAGE_SIZE})개만 그린다`, () => {
+        const manyItems = Array.from(
+            { length: NEWS_LIST_PAGE_SIZE * 2 },
+            (_, i) => ({ ...READY_ITEM, id: `news-${i}` })
+        );
+        mockUseNewsPollingWithInvalidation.mockReturnValue({
+            items: manyItems,
+            isPolling: false,
+            pollError: null,
+        });
+
+        renderWithClient(<NewsList items={manyItems} symbol="AAPL" />);
+
+        expect(screen.getAllByRole('article')).toHaveLength(
+            NEWS_LIST_PAGE_SIZE
+        );
     });
 });

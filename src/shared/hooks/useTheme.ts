@@ -30,27 +30,19 @@ export function useTheme() {
         if (current === 'light' || current === 'dark') setThemeState(current);
     }, []);
 
-    /**
-     * 시스템 선호도 변경 추적. 사용자가 명시적으로 고른 상태(localStorage에
-     * 값이 있음)에서는 OS 변경을 따라가지 않는다 — 명시적 선택이 우선이다.
+    /*
+     * 시스템 선호도 변경 리스너는 **일부러 두지 않는다.**
+     *
+     * 한때 "저장된 선택이 없으면 OS를 따라간다"는 리스너가 있었는데, 그건
+     * `theme.ts`의 `DEFAULT_THEME` 주석이 명시적으로 금지하는 동작이다 —
+     * 아무 것도 고르지 않은 사용자가 OS를 라이트로 바꾸는 순간 앱 전체가
+     * 뒤집힌다. 게다가 그 경로는 결과를 저장하지 않아서, 새로고침하면
+     * 초기화 스크립트가 다시 다크로 되돌렸다. 같은 세션 안에서만 라이트인
+     * 상태가 되는 셈이라 정책 위반이면서 동작도 일관되지 않았다.
+     *
+     * `system`을 선택지로 노출하게 되면 `resolveTheme`이 이미 선호도를
+     * 처리하므로, 그때 저장까지 포함해 다시 설계한다.
      */
-    useEffect(() => {
-        const media = window.matchMedia('(prefers-color-scheme: light)');
-        const onChange = (e: MediaQueryListEvent) => {
-            let stored: string | null = null;
-            try {
-                stored = localStorage.getItem(THEME_STORAGE_KEY);
-            } catch {
-                // Safari 프라이빗 모드 등 — 저장된 선택이 없는 것으로 본다.
-            }
-            if (stored === 'light' || stored === 'dark') return;
-            const next: ResolvedTheme = e.matches ? 'light' : 'dark';
-            applyTheme(next);
-            setThemeState(next);
-        };
-        media.addEventListener('change', onChange);
-        return () => media.removeEventListener('change', onChange);
-    }, []);
 
     const setTheme = useCallback((preference: ThemePreference) => {
         const prefersLight = window.matchMedia(

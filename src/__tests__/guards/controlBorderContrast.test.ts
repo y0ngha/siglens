@@ -36,12 +36,23 @@ function blockAt(source: string, openBraceIndex: number): string {
     throw new Error('unbalanced braces in globals.css');
 }
 
+/**
+ * `--color-*` 선언을 **전부** 잡는다. hex만 매칭하고 나머지를 조용히 건너뛰면,
+ * 라이트 블록의 토큰 하나를 `oklch(...)`나 `white`로 적는 평범한 편집이 그
+ * 토큰을 목록에서 지워버리고 — `light`는 `dark`를 상속하므로 — 가드가 **다크
+ * 값을 라이트 표면에 대고 재면서 초록을 낸다.** 감사가 두 형태 모두로 재현했다.
+ * 모르는 형식은 통과가 아니라 큰 실패여야 한다.
+ */
 function tokenValues(block: string): Map<string, string> {
     const out = new Map<string, string>();
-    for (const m of block.matchAll(
-        /(--color-[\w-]+)\s*:\s*(#[0-9a-fA-F]{3,8})\s*;/g
-    )) {
-        out.set(m[1], m[2]);
+    for (const m of block.matchAll(/(--color-[\w-]+)\s*:\s*([^;]+);/g)) {
+        const value = m[2].trim();
+        if (!/^#[0-9a-fA-F]{3,8}$/.test(value)) {
+            throw new Error(
+                `${m[1]}: 이 가드가 읽을 수 없는 색 형식 "${value}" — hex로 적거나 이 파서를 함께 고칠 것`
+            );
+        }
+        out.set(m[1], value);
     }
     return out;
 }
@@ -102,6 +113,59 @@ const SURFACE_TOKENS = [
     '--color-secondary-800',
 ] as const;
 
+const TOGGLE = path.resolve(
+    __dirname,
+    '../../features/reasoning-toggle/ui/ReasoningToggle.tsx'
+);
+
+/**
+ * 토글의 트랙·썸 색을 **컴포넌트에서 읽어온다.**
+ *
+ * 예전엔 이 표를 손으로 적어뒀는데, 감사가 그게 무의미하다는 걸 증명했다:
+ * 트랙을 `bg-secondary-700` → `bg-secondary-600`으로 바꾸면 라이트 off가
+ * 2.54:1로 실제 1.4.11 위반이 되는데도 43개 테스트가 전부 초록이었다.
+ * 가드가 제품에 **없는 상태 조합**을 재고 있었던 것이다. 이제 소스에서
+ * 못 읽으면 통과가 아니라 실패한다.
+ */
+function toggleStates(): { name: string; track: string; thumb: string }[] {
+    const source = readFileSync(TOGGLE, 'utf8');
+    const pick = (re: RegExp, what: string): string => {
+        const m = re.exec(source);
+        if (m === null) {
+            throw new Error(
+                `ReasoningToggle에서 ${what}를 못 읽었다 — 클래스 구조가 바뀌었으면 이 가드를 함께 고칠 것`
+            );
+        }
+        return m[1];
+    };
+    const token = (cls: string): string => `--color-${cls.replace(/^bg-/, '')}`;
+    const on = pick(/effectiveChecked \? '(bg-[\w-]+)'/, '켜짐 트랙');
+    const off = pick(
+        /effectiveChecked \? 'bg-[\w-]+' : '(bg-[\w-]+)'/,
+        '꺼짐 트랙'
+    );
+    const lockedTrack = pick(
+        /locked && !disabled && '(bg-[\w-]+)'/,
+        '잠김 트랙'
+    );
+    const lockedThumb = pick(/locked && !disabled \? '(bg-[\w-]+)'/, '잠김 썸');
+    const thumb = pick(
+        /locked && !disabled \? 'bg-[\w-]+' : '(bg-[\w-]+)'/,
+        '기본 썸'
+    );
+    const asColour = (cls: string): string =>
+        cls === 'bg-white' ? '#ffffff' : token(cls);
+    return [
+        { name: 'off', track: token(off), thumb: asColour(thumb) },
+        { name: 'on', track: token(on), thumb: asColour(thumb) },
+        {
+            name: 'locked',
+            track: token(lockedTrack),
+            thumb: asColour(lockedThumb),
+        },
+    ];
+}
+
 describe('control border contrast', () => {
     it('border-control은 표면 램프 전체에서 두 테마 모두 3:1을 넘는다', () => {
         const themes = readThemes();
@@ -141,16 +205,7 @@ describe('control border contrast', () => {
      */
     it('토글은 모든 상태에서 썸이 트랙과 3:1로 식별된다', () => {
         const themes = readThemes();
-        const WHITE = '#ffffff';
-        const states = [
-            { name: 'off', track: '--color-secondary-700', thumb: WHITE },
-            { name: 'on', track: '--color-primary-600', thumb: WHITE },
-            {
-                name: 'locked',
-                track: '--color-secondary-800',
-                thumb: '--color-secondary-400',
-            },
-        ] as const;
+        const states = toggleStates();
 
         const failures: string[] = [];
         for (const theme of ['dark', 'light'] as const) {

@@ -22,16 +22,18 @@ import { CALENDAR_COUNTRY } from '@/entities/economy/lib/economyCalendarConstant
 import { isEmptyEconomySnapshot } from '@/entities/economy';
 import {
     buildBreadcrumbJsonLd,
+    buildFaqJsonLd,
     clampSeoDescription,
     ROOT_KEYWORDS,
     SITE_NAME,
     SITE_URL,
+    type FaqItem,
 } from '@/shared/lib/seo';
 import { TERMS_PATH } from '@/shared/lib/legal';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { FaqSection } from '@/shared/ui/FaqSection';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 
 import { ECONOMY_INDICATORS } from '@/shared/config/economyIndicators';
@@ -250,14 +252,15 @@ export const DATASET_JSON_LD = {
 };
 
 /**
- * 자주 묻는 질문 — 화면 렌더와 FAQPage 구조화 데이터의 **단일 소스**.
+ * FAQ 원문 — JSON-LD와 화면 `<FaqSection>`의 단일 소스. 4건.
  *
  * 구글은 FAQPage 구조화데이터에 대응하는 내용이 페이지에 실제로 보일 것을 요구한다.
- * 이 페이지는 오랫동안 마크업만 내보내고 화면에는 FAQ가 없었다 — 리치 결과 자격이
- * 없을 뿐 아니라 수동 조치 사유다. 한국 페이지(`kr/page.tsx`)와
- * `/fear-greed` 계열은 이미 이 단일 소스 패턴을 쓴다.
+ * 예전에는 이 배열이 JSON-LD 리터럴로만 있고 화면에는 대응하는 텍스트가 없었다 —
+ * `/economy/kr`(`ECONOMY_KR_FAQ`)이 이미 쓰는 단일 소스 패턴을 그대로 따른다. 9개
+ * 종목 탭이 쓰는 `<FaqSection>` 컴포넌트를 재사용한다 — `/economy/kr`처럼 `<dl>`을
+ * 손으로 새로 짜지 않아도 같은 계약(단일 배열 → JSON-LD + 화면)을 만족한다.
  */
-const ECONOMY_FAQ = [
+const ECONOMY_FAQ: readonly FaqItem[] = [
     {
         question: '2s10s 스프레드란 무엇인가요?',
         answer: '2년물과 10년물 미국 국채 수익률의 차이입니다. 10년물에서 2년물을 뺀 값으로, 음수가 되면 장단기 금리가 역전된 것으로 경기침체 신호로 해석되기도 합니다.',
@@ -274,17 +277,8 @@ const ECONOMY_FAQ = [
         question: '이 데이터는 어디서 가져오나요?',
         answer: `FMP(Financial Modeling Prep) API를 기준으로 수집하며, ${REVALIDATE_HOURS}시간마다 최신 데이터로 갱신됩니다.`,
     },
-] as const;
-
-const FAQ_JSON_LD = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: ECONOMY_FAQ.map(({ question, answer }) => ({
-        '@type': 'Question',
-        name: question,
-        acceptedAnswer: { '@type': 'Answer', text: answer },
-    })),
-} as const;
+];
+const FAQ_JSON_LD = buildFaqJsonLd(ECONOMY_FAQ);
 
 const WEB_PAGE_JSON_LD = {
     '@context': 'https://schema.org',
@@ -320,21 +314,7 @@ export default function EconomyPage() {
                 <Suspense fallback={<EconomySkeleton />}>
                     <EconomyContent />
                 </Suspense>
-                <section aria-labelledby="economy-faq-heading">
-                    <h2 id="economy-faq-heading" className={HEADING_SECTION}>
-                        자주 묻는 질문
-                    </h2>
-                    <dl className="mt-3 space-y-4 text-sm leading-relaxed text-secondary-400">
-                        {ECONOMY_FAQ.map(({ question, answer }) => (
-                            <div key={question}>
-                                <dt className="font-medium text-secondary-300">
-                                    {question}
-                                </dt>
-                                <dd className="mt-1">{answer}</dd>
-                            </div>
-                        ))}
-                    </dl>
-                </section>
+                <FaqSection heading="자주 묻는 질문" items={ECONOMY_FAQ} />
             </main>
         </>
     );

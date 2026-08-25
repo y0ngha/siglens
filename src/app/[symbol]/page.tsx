@@ -222,9 +222,11 @@ export default async function SymbolPage({ params }: Props) {
         about: aboutNode,
     });
 
-    // 차트 페이지는 ticker landing이므로 [Siglens, ticker] 2단계로 통일한다.
-    // (sibling 페이지들은 [Siglens, ticker, 섹션명] 3단계 — buildBreadcrumbJsonLd가 Siglens를 자동 prepend.)
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd([{ name: ticker, url }]);
+    // 차트 페이지는 ticker landing이므로 [Siglens, displayName] 2단계로 통일한다.
+    // (sibling 페이지들은 [Siglens, displayName, 섹션명] 3단계 — buildBreadcrumbJsonLd가 Siglens를 자동 prepend.)
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+        { name: displayName, url },
+    ]);
 
     const queryClient = new QueryClient({
         defaultOptions: {

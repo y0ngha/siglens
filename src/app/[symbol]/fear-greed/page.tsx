@@ -4,6 +4,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { FearGreedPageError } from '@/widgets/fear-greed';
 import { FearGreedFactsSummary, SymbolPageHeading } from '@/views/symbol';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
+import { FaqSection } from '@/shared/ui/FaqSection';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     DEFAULT_TIMEFRAME,
@@ -22,12 +23,14 @@ import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
+    buildFaqJsonLd,
     buildSymbolSeoContent,
     buildSymbolWebPageJsonLd,
     resolveSymbolFearGreedSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
     noindexSymbolMetadata,
+    type FaqItem,
 } from '@/shared/lib/seo';
 import {
     dehydrate,
@@ -38,7 +41,6 @@ import type { BarsData } from '@y0ngha/siglens-core';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 // 종목당 SEO 콘텐츠는 고정이고 동적 데이터는 클라가 재hydrate한다. 엣지 캐시로
 // compute 호출을 줄인다. (일시 인프라 장애의 404 캐싱은 getAssetInfo strict로 차단)
@@ -156,43 +158,39 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     });
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: ticker, url: buildSymbolSeoContent(ticker).url },
+        { name: displayName, url: buildSymbolSeoContent(ticker).url },
         { name: '공포 탐욕 지수', url },
     ]);
 
-    const faqJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: [
-            {
-                '@type': 'Question',
-                name: `${displayName} 공포 탐욕 지수는 무엇을 측정하나요?`,
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: `${displayName} 한 종목의 단기 매매 심리를 0~100 점수로 측정합니다. CNN의 시장 전체 Fear & Greed Index와 달리 종목별 자체 분포(self-normalization)로 산출하므로, 다른 종목과 점수를 직접 비교하기보다는 같은 종목의 시간 흐름 변화를 보는 데 적합합니다.`,
-                },
-            },
-            {
-                '@type': 'Question',
-                name: '점수는 어떤 5가지 요인으로 계산되나요?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: 'Volume z-score, Buy/Sell volume 불균형, Volume Profile POC 거리, MA200 이격, 52주 최고가 대비 위치 — 5개 factor 각각을 200영업일 분포 안에서 percentile로 환산한 뒤 가중 평균합니다. 각 factor가 Flow 그룹과 Trend 그룹으로 묶여 별도 점수로도 표시됩니다.',
-                },
-            },
-            {
-                '@type': 'Question',
-                name: '5단계 분위기 라벨은 어떻게 구분되나요?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    // FAQ JSON-LD는 경계값 상수 변경에 따른 schema 회귀를 막기 위해
-                    // 구체 숫자(0~25, 25~45 등) 대신 질적 표현으로만 정리한다.
-                    // 실제 경계값은 페이지 본문 가이드(공포 탐욕 지수 가이드 섹션)에서 노출.
-                    text: '극심한 공포부터 극심한 탐욕까지 5단계(극심한 공포 · 공포 · 중립 · 탐욕 · 극심한 탐욕)로 구분됩니다. 표본 수가 60일 미만이면 신뢰도 "제한"으로 표시되며, 라벨은 데이터가 더 쌓인 뒤 다시 확인하는 게 안전합니다.',
-                },
-            },
-        ],
-    };
+    /**
+     * FAQ — 화면 `FaqSection`과 FAQPage 구조화데이터의 단일 소스.
+     *
+     * 예전에는 같은 내용이 화면에 보이지 않는 마크업 전용 FAQ 답변 3개와, 화면에만
+     * 보이는 "가이드" 안내 섹션(문단 3개) 두 벌로 있었다 — 구글이 요구하는 "마크업한
+     * Q&A가 페이지에 보일 것"을 어기면서 동시에 같은 말을 두 번 하는 중복 콘텐츠이기도
+     * 했다. 안내 섹션의 5-factor 설명과 60일 신뢰도 문턱은 이미 아래 답변 2·3과
+     * 사실상 같은 문장이라 답변으로 흡수했다. 시장 전체 지수로 가는 내부 링크
+     * (`marketFearGreedLink`)만은 텍스트로 옮길 수 없는 실제 이동 수단이라 아래
+     * `<FaqSection>` 위에 별도 문단으로 남겨 둔다(하단 참고).
+     *
+     * 경계값 라벨(3번 답변)은 경계값 상수 변경에 따른 schema 회귀를 막기 위해
+     * 구체 숫자(0~25, 25~45 등) 대신 질적 표현으로만 정리한다.
+     */
+    const faq: readonly FaqItem[] = [
+        {
+            question: `${displayName} 공포 탐욕 지수는 무엇을 측정하나요?`,
+            answer: `${displayName} 한 종목의 단기 매매 심리를 0~100 점수로 측정합니다. CNN의 시장 전체 Fear & Greed Index와 달리 종목별 자체 분포(self-normalization)로 산출하므로, 다른 종목과 점수를 직접 비교하기보다는 같은 종목의 시간 흐름 변화를 보는 데 적합합니다.`,
+        },
+        {
+            question: '점수는 어떤 5가지 요인으로 계산되나요?',
+            answer: 'Volume z-score, Buy/Sell volume 불균형, Volume Profile POC 거리, MA200 이격, 52주 최고가 대비 위치 — 5개 factor 각각을 200영업일 분포 안에서 percentile로 환산한 뒤 가중 평균합니다. 각 factor가 Flow 그룹과 Trend 그룹으로 묶여 별도 점수로도 표시됩니다.',
+        },
+        {
+            question: '5단계 분위기 라벨은 어떻게 구분되나요?',
+            answer: '극심한 공포부터 극심한 탐욕까지 5단계(극심한 공포 · 공포 · 중립 · 탐욕 · 극심한 탐욕)로 구분됩니다. 표본 수가 60일 미만이면 신뢰도 "제한"으로 표시되며, 라벨은 데이터가 더 쌓인 뒤 다시 확인하는 게 안전합니다.',
+        },
+    ];
+    const faqJsonLd = buildFaqJsonLd(faq);
 
     const queryClient = new QueryClient({
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
@@ -254,58 +252,29 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                 <SymbolPageHeading>
                     {displayName} 공포 탐욕 지수와 단기 매수 분위기
                 </SymbolPageHeading>
-                <section className="sr-only">
-                    <h2>{displayName} 공포 탐욕 지수 개요</h2>
-                    <p>
-                        {displayName}의 단기 매수 분위기를 0~100 점수와 5단계(극
-                        공포 / 공포 / 중립 / 탐욕 / 극탐욕)로 표시합니다. 거래량
-                        흐름과 가격 위치를 종목 자체 분포 안에서 환산해
-                        산출합니다.
-                    </p>
-                </section>
-                <section
-                    aria-labelledby="fear-greed-guide-heading"
-                    className="space-y-3 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5"
-                >
-                    <h2
-                        id="fear-greed-guide-heading"
-                        className={HEADING_SECTION}
+                {/* sr-only 개요 문단(구 시안)은 삭제했다 — 0~100 점수·5단계 라벨·factor
+                    근거를 그대로 되풀이했고, 그 내용은 지금 아래 `FaqSection`의
+                    답변 3개가 화면에 보이는 텍스트로 이미 커버한다(크롤러에게 같은
+                    말을 두 번 하지 않는다). 화면에 실제로 보이던 "가이드" 카드도 같은
+                    이유로 지웠다 — 5-factor 설명·60일 신뢰도 문턱은 아래 답변 2·3과
+                    사실상 같은 문장이었다. 유일하게 답변으로 옮길 수 없던 내용(시장
+                    전체 지수로 가는 실제 이동 링크)만 아래 문단으로 남겨 둔다. */}
+                <p className="text-sm leading-relaxed text-secondary-400">
+                    {/* 상위 지수 링크는 이 종목이 속한 시장을 가리켜야 한다.
+                        `/fear-greed/kr`이 생기기 전에는 둘 다 미국뿐이라
+                        하드코딩이 맞았지만, 지금은 한국 종목 페이지가
+                        "미국 증시 전반"을 참조하게 된다. */}
+                    <Link
+                        href={marketFearGreedLink.href}
+                        className="text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline"
                     >
-                        {displayName} 공포 탐욕 지수는 어떻게 봐야 할까
-                    </h2>
-                    <p className="text-sm leading-relaxed text-secondary-400">
-                        {displayName} 한 종목의 단기 매매 심리를 0~100 점수로
-                        나타냅니다.{' '}
-                        {/* 상위 지수 링크는 이 종목이 속한 시장을 가리켜야 한다.
-                            `/fear-greed/kr`이 생기기 전에는 둘 다 미국뿐이라
-                            하드코딩이 맞았지만, 지금은 한국 종목 페이지가
-                            "미국 증시 전반"을 참조하게 된다. */}
-                        <Link
-                            href={marketFearGreedLink.href}
-                            className="text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline"
-                        >
-                            {marketFearGreedLink.label}
-                        </Link>
-                        가 여러 자산을 합쳐 {marketFearGreedLink.marketLabel}{' '}
-                        전반의 감정을 보여 준다면, 이 페이지는 한 종목의 거래량
-                        흐름과 체결 흐름, 가격 위치를 그 종목의 자체 분포 안에서
-                        환산해 점수로 만듭니다.
-                    </p>
-                    <p className="text-sm leading-relaxed text-secondary-400">
-                        Volume z-score, Buy/Sell volume 불균형, Volume Profile
-                        POC 거리, MA200 이격, 52주 최고가 대비 위치 — 5개
-                        factor를 200 영업일 분포 안에서 percentile로 환산한 뒤
-                        가중 평균합니다. Flow 그룹과 Trend 그룹으로 나뉘어 어느
-                        축이 점수를 끌고 있는지도 같이 볼 수 있습니다.
-                    </p>
-                    <p className="text-sm leading-relaxed text-secondary-400">
-                        종목별 자체 분포로 산출하므로 다른 종목과 점수를 직접
-                        비교하기보다는, 같은 종목의 시간 흐름 변화를 추적하는 데
-                        적합합니다. 표본이 60일 미만일 때는 신뢰도
-                        &ldquo;제한&rdquo; 배지가 붙으니 참고만 하는 게
-                        안전합니다.
-                    </p>
-                </section>
+                        {marketFearGreedLink.label}
+                    </Link>
+                    가 여러 자산을 합쳐 {marketFearGreedLink.marketLabel} 전반의
+                    감정을 보여 준다면, 이 페이지는 {displayName} 한 종목의
+                    거래량 흐름과 체결 흐름, 가격 위치를 그 종목의 자체 분포
+                    안에서 환산해 점수로 만듭니다.
+                </p>
                 {/* 서버 계산 factor 요약 — crawler는 JS 미실행이라 아래 클라 게이지
                     (FearGreedPage)의 점수·factor 수치를 절대 못 본다. 여기서
                     이미 로드된 quantizedFgBars(bars+indicators)로 동일 수치를
@@ -329,6 +298,10 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         />
                     </ErrorBoundary>
                 </HydrationBoundary>
+                <FaqSection
+                    heading={`${displayName} 공포 탐욕 지수 자주 묻는 질문`}
+                    items={faq}
+                />
                 <CrossLinkCards
                     symbol={ticker}
                     current="fear-greed"

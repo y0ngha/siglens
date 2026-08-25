@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.62.2](https://github.com/y0ngha/siglens/compare/v0.62.1...v0.62.2) (2026-08-24)
+
+
+### Bug Fixes
+
+* **seo:** 관련 종목 칩을 페이지 스크롤로 접근 가능하게 옮기고 footer 저작권 줄바꿈 수정 ([a2121a4](https://github.com/y0ngha/siglens/commit/a2121a47476345132017bec8581d476409ccb90e))
+
 ## [0.62.1](https://github.com/y0ngha/siglens/compare/v0.62.0...v0.62.1) (2026-08-24)
 
 
