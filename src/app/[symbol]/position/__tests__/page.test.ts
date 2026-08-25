@@ -70,6 +70,7 @@ import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { getQuantizedBarsStatic } from '@/entities/bars';
 import { PositionTabContent } from '@/widgets/portfolio-position';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
 import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seo';
 import type { MockedFunction } from 'vitest';
 
@@ -293,6 +294,25 @@ describe('PositionPage server data path (static, cookies-free)', () => {
             degraded: false,
         } as never);
         mockIsTabAllowedForSymbol.mockResolvedValue(true);
+    });
+
+    /**
+     * 회귀 가드: BreadcrumbList position 2는 화면 브레드크럼과 같은 이름이어야 한다.
+     * 이 파일은 `@/shared/lib/seo`를 목킹하지 않으므로 렌더된 JSON-LD를 직접 읽는다.
+     */
+    it('BreadcrumbList가 티커가 아니라 displayName을 쓴다', async () => {
+        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
+
+        const tree = await PositionPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        const breadcrumb = collectJsonLdData(tree).find(
+            d => d['@type'] === 'BreadcrumbList'
+        );
+        const trail = breadcrumb?.itemListElement as { name: string }[];
+        // [0]은 buildBreadcrumbJsonLd가 자동으로 붙이는 홈(Siglens).
+        expect(trail[1].name).toBe('Apple Inc.');
     });
 
     it('uses getQuantizedBarsStatic (never getBarsAction) → buildTechnicalFacts, and threads low/high/lastClose/volumeByBand into PositionTabContent', async () => {

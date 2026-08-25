@@ -125,6 +125,8 @@ import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResilient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { expectFaqSingleSource } from '@/__tests__/utils/expectFaqSingleSource';
+import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
 const mockGetProfileResilient = vi.mocked(getProfileResilient);
@@ -203,6 +205,32 @@ describe('FundamentalPage — SEO snapshot prose (Task 7b)', () => {
         const widget = findElementByType(tree, FundamentalAiSummary);
         expect(widget).not.toBeNull();
         expect(widget?.props).toMatchObject({ hideView: true });
+    });
+
+    /**
+     * 회귀 가드: FAQPage 마크업과 화면 Q&A는 배열 하나에서 나와야 한다. 이 탭은
+     * 오랫동안 마크업만 내보내고 화면에는 Q&A가 없었다 — 구글은 대응하는 내용이
+     * 페이지에 보일 것을 요구하며, 없으면 리치 결과 자격을 잃는다. JSON-LD가
+     * 유효한지만 보는 테스트로는 이 결함이 잡히지 않는다.
+     */
+    it('FAQPage 구조화데이터가 화면 FaqSection과 같은 질문·답변을 쓴다', async () => {
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+        const tree = await FundamentalPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expectFaqSingleSource(tree);
+    });
+
+    /**
+     * 회귀 가드: BreadcrumbList position 2는 화면 브레드크럼과 같은 이름이어야 한다.
+     * 근거는 `expectSymbolBreadcrumbName` JSDoc 참고.
+     */
+    it('BreadcrumbList가 티커가 아니라 displayName을 쓴다', async () => {
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+        await FundamentalPage({ params: Promise.resolve({ symbol: 'aapl' }) });
+
+        expectSymbolBreadcrumbName('Apple Inc.');
     });
 
     it('스냅샷 없으면(빈 배열) FundamentalSnapshotProse 대신 FundamentalAiSummary(AI 위젯)를 렌더한다 (audit fix FIX 2)', async () => {

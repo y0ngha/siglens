@@ -14,6 +14,7 @@ import { getMarketNewsCards } from '@/entities/market-news/api';
 import {
     MarketNewsDigest,
     MarketNewsList,
+    MARKET_NEWS_LIST_PAGE_SIZE,
     MARKET_NEWS_ROW_SERIALIZATION_LIMIT,
 } from '@/widgets/market-news';
 import { NewsCategoryTabs } from '@/widgets/news-hub';
@@ -34,9 +35,6 @@ type CategoryPageParams = { category: string };
 export function generateStaticParams(): CategoryPageParams[] {
     return NEWS_CATEGORY_SLUGS.map(category => ({ category }));
 }
-
-// JSON-LD ItemList: Google 가이드라인상 "주요 항목"만 노출.
-const JSON_LD_NEWS_MAX_ITEMS = 10;
 
 /**
  * 지역별 추가 SEO 키워드.
@@ -233,8 +231,10 @@ export default async function CategoryNewsPage({ params }: Props) {
                   '@context': 'https://schema.org',
                   '@type': 'ItemList',
                   name: `${cfg.koLabel} 최신 뉴스`,
+                  // 초기 DOM에 실제로 그려지는 카드 수와 같은 상수로 자른다 — 근거는
+                  // `MARKET_NEWS_LIST_PAGE_SIZE`(shared/config/newsSerialization) 주석.
                   itemListElement: items
-                      .slice(0, JSON_LD_NEWS_MAX_ITEMS)
+                      .slice(0, MARKET_NEWS_LIST_PAGE_SIZE)
                       .map((item, idx) => ({
                           '@type': 'ListItem',
                           position: idx + 1,

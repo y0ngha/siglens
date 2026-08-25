@@ -351,7 +351,7 @@ export default async function PositionPage({ params }: Props) {
     });
     // sibling 탭과 동일한 3단계 — buildBreadcrumbJsonLd가 Siglens를 자동 prepend한다.
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: upper, url: buildSymbolSeoContent(upper).url },
+        { name: displayName, url: buildSymbolSeoContent(upper).url },
         { name: '내 위치', url: seo.url },
     ]);
 

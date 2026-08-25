@@ -154,4 +154,21 @@
   - Rule: Validation must be applied in order (type check → size check → parse); size checks must precede regex to prevent quadratic blowup
   - Context: Moved `.substring(0, MAX_LEN)` BEFORE regex; added `typeof value === 'string'` check before `String(value)`.
 
-
+## [구조화데이터 — 마크업과 화면의 단일 소스 | fix/seo-structured-data | 2026-08-25]
+- Violation: FAQPage JSON-LD를 내보내면서 **그 Q&A가 화면 어디에도 없는** 라우트가 여럿이었다. 구글은 마크업한 Q&A가 페이지에 보일 것을 요구하며, 어기면 리치결과 미노출이 아니라 **수동 조치 사유**다. 심볼 9개 라우트를 고치고도 `/[symbol]/fear-greed`는 브레드크럼만 손대고 지나쳐 같은 결함이 남았고, 리뷰가 잡았다. 그 뒤 `/economy`에서도 같은 형태를 또 찾았다 — 형제 라우트 `/economy/kr`은 이미 올바르게 단일 소스로 돼 있었다.
+  - Rule: 구조화 데이터를 손볼 때는 **같은 종류의 마크업을 내보내는 라우트를 전수로** 훑는다. "이번 diff가 건드린 파일"은 대상 집합이 아니다
+  - Rule: 형제 라우트 중 하나가 이미 옳게 돼 있으면 그게 기준선이다 — 새로 설계하지 말고 그 형태를 따른다
+  - Context: 모든 라우트에서 FAQ 배열 하나가 `buildFaqJsonLd`와 화면 `<FaqSection>`을 동시에 먹인다. 두 벌이 우연히 같은 게 아니라 같은 소스여야 한다.
+- Violation: 같은 값을 정하는 리터럴이 서버와 클라이언트에 따로 있었다. `/[symbol]/news`는 JSON-LD가 10개, 화면 목록이 5개로 **이미 어긋난 뒤였다.** `/news/[category]`도 같은 구조(둘 다 10)라 아직 안 어긋났을 뿐이었다.
+  - Rule: 마크업 개수와 화면 개수처럼 **반드시 같아야 하는 수**는 상수 하나에서 온다. 지금 값이 같다는 건 근거가 아니다
+  - Context: 클라이언트 컴포넌트에서 export하면 서버 컴포넌트가 client-reference 프록시를 받으므로, 상수는 `'use client'` 밖 설정 모듈에 둔다.
+- Violation: 같은 판정을 두 소비자가 **각자 구현**해 갈라졌다. `buildDisplayName`은 자체 `name !== '' && name !== ticker` 검사를, 화면 헤더는 `shouldShowEnglishName`(여기에만 `!isKrEquitySymbol` 가드가 있다)을 썼다. 한글명이 아직 없는 국내 종목에서 JSON-LD와 화면 텍스트가 달라진다 — 구글은 브레드크럼 마크업이 화면과 다르면 무시한다. 기존 테스트가 그 어긋난 동작을 기대값으로 굳혀두고 있어 통과 중이었다.
+  - Rule: 마크업과 화면이 같은 문자열을 말해야 한다면 **판정 자체를 공유**한다. 렌더링은 못 나눠도 술어는 나눌 수 있다
+  - Rule: 기존 테스트가 통과한다는 건 동작이 옳다는 뜻이 아니다 — 기대값이 결함을 박제했을 수 있다
+  - Context: 두 분기 모두 `shouldShowEnglishName`을 거치게 하고, 결함을 박제하던 기대값을 근거 주석과 함께 갱신했다.
+- Violation: 단일 소스를 검증하는 테스트가 모의로 구현을 한 벌 더 적어 **자기 복제본을 검증**하고 있었다. 중복을 없애는 PR이 중복 구현을 들이는 형태였다.
+  - Rule: "한 소스에서 나오는가"를 보는 테스트는 실물을 쓴다 — `importOriginal`로 펼치고 필요한 것만 덮어쓴다
+  - Context: 모의를 걷어내도 21개 그대로 통과.
+- Violation: (프로세스) mistake-managing-agent가 **승격하지 않은 기록을 통째로 삭제**했다. `promoted: 0`을 보고하면서 방금 추가된 블록 전체를 지웠고, 파일이 줄었다는 것 말고는 신호가 없었다. 같은 세션에서 네 번째 재발이다.
+  - Rule: 이 에이전트 실행 전후로 fix-log·MISTAKES를 스냅샷해 대조한다. 보고된 `promoted` 수와 실제 삭제 줄 수가 맞는지 본다 — 보고만 믿지 않는다
+  - Context: 스냅샷 대조로 잡아 수동 복원했다. 같은 실행에서 재설계 워크트리 쪽은 정상 동작했으나, 승격 규칙의 예시에 표면을 뒤바꿔 적어(3.34를 인셋이 아니라 흰 카드로) 그 역시 수동 교정이 필요했다.

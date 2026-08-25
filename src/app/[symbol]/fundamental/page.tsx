@@ -33,6 +33,7 @@ import {
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { SectionSkeleton } from '@/views/symbol/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { FaqSection } from '@/shared/ui/FaqSection';
 import {
     SymbolRouteParams,
     isAdmissibleSymbolShape,
@@ -47,6 +48,7 @@ import {
 } from '@/entities/ticker';
 import {
     buildBreadcrumbJsonLd,
+    buildFaqJsonLd,
     buildSnapshotMetaDescription,
     buildSymbolFundamentalSeoContent,
     buildSymbolSeoContent,
@@ -54,6 +56,7 @@ import {
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
     noindexSymbolMetadata,
+    type FaqItem,
 } from '@/shared/lib/seo';
 import { getProfileResilient } from './getProfileResilient';
 import { FundamentalDegraded } from './FundamentalDegraded';
@@ -591,43 +594,36 @@ export default async function FundamentalPage({ params }: Props) {
     });
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: upper, url: buildSymbolSeoContent(upper).url },
+        { name: displayName, url: buildSymbolSeoContent(upper).url },
         {
             name: '펀더멘털 분석',
             url: buildSymbolFundamentalSeoContent(upper).url,
         },
     ]);
 
-    const faqJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: [
-            {
-                '@type': 'Question',
-                name: `${displayName} 펀더멘털 분석에서 무엇을 볼 수 있나요?`,
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: '회사 프로필, PER, PSR, EPS 같은 밸류에이션 지표, ROE와 마진으로 보는 수익성, 부채와 현금흐름을 통한 재무 건전성, 애널리스트 컨센서스와 목표 주가를 함께 볼 수 있습니다.',
-                },
-            },
-            {
-                '@type': 'Question',
-                name: 'PER, ROE 같은 지표는 어떻게 해석하나요?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: 'PER이 높으면 시장이 미래 성장에 프리미엄을 주고 있다는 신호이고, ROE는 자기자본 대비 얼마나 많은 이익을 내고 있는지 보여줍니다. 동종업계 평균과 비교하며 봐야 의미가 살아납니다.',
-                },
-            },
-            {
-                '@type': 'Question',
-                name: '동종업계 대비 비교는 어떻게 보나요?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: '같은 페이지의 동종업계 표(Peers)에서 같은 섹터의 다른 종목들과 PER, PSR, ROE, 마진 같은 핵심 지표를 한눈에 비교할 수 있습니다. 단일 종목의 절대값만 보면 비싸 보이거나 싸 보이는 착시를 줄여줍니다.',
-                },
-            },
-        ],
-    };
+    /**
+     * FAQ — 화면 `FaqSection`과 FAQPage 구조화데이터의 단일 소스.
+     *
+     * 첫 답변이 섹터를 품는다. 예전에는 같은 지표 나열이 화면에 보이지 않는
+     * `sr-only` 개요 문단으로 따로 있었는데(섹터도 거기 있었다), 답변과 사실상
+     * 같은 문장이라 크롤러에게 같은 말을 두 번 하는 셈이었다 — 문단을 지우고
+     * 섹터만 여기로 옮겼다.
+     */
+    const faq: readonly FaqItem[] = [
+        {
+            question: `${displayName} 펀더멘털 분석에서 무엇을 볼 수 있나요?`,
+            answer: `${displayName}${sector !== '' ? `(${sector} 섹터)` : ''}의 회사 프로필, PER, PSR, EPS 같은 밸류에이션 지표, ROE와 마진으로 보는 수익성, 부채와 현금흐름을 통한 재무 건전성, 애널리스트 컨센서스와 목표 주가를 함께 볼 수 있습니다.`,
+        },
+        {
+            question: 'PER, ROE 같은 지표는 어떻게 해석하나요?',
+            answer: 'PER이 높으면 시장이 미래 성장에 프리미엄을 주고 있다는 신호이고, ROE는 자기자본 대비 얼마나 많은 이익을 내고 있는지 보여줍니다. 동종업계 평균과 비교하며 봐야 의미가 살아납니다.',
+        },
+        {
+            question: '동종업계 대비 비교는 어떻게 보나요?',
+            answer: '같은 페이지의 동종업계 표(Peers)에서 같은 섹터의 다른 종목들과 PER, PSR, ROE, 마진 같은 핵심 지표를 한눈에 비교할 수 있습니다. 단일 종목의 절대값만 보면 비싸 보이거나 싸 보이는 착시를 줄여줍니다.',
+        },
+    ];
+    const faqJsonLd = buildFaqJsonLd(faq);
 
     return (
         <>
@@ -638,16 +634,6 @@ export default async function FundamentalPage({ params }: Props) {
                 <SymbolPageHeading>
                     {displayName} 재무지표와 애널리스트 의견
                 </SymbolPageHeading>
-                <section className="sr-only">
-                    <h2>{displayName} 펀더멘털 분석 개요</h2>
-                    <p>
-                        {displayName}
-                        {sector !== '' ? `(${sector} 섹터)` : ''}의 펀더멘털
-                        분석. 회사 프로필, 밸류에이션(PER, PSR, EPS),
-                        수익성(ROE, 마진), 재무건전성, 애널리스트 컨센서스
-                        목표가를 분석합니다.
-                    </p>
-                </section>
                 <Suspense fallback={<ProfileCardSkeleton symbol={upper} />}>
                     <ProfileSection symbol={upper} />
                 </Suspense>
@@ -712,6 +698,10 @@ export default async function FundamentalPage({ params }: Props) {
                     <FutureDirectionSection symbol={upper} />
                 </Suspense>
 
+                <FaqSection
+                    heading={`${displayName} 펀더멘털 분석 자주 묻는 질문`}
+                    items={faq}
+                />
                 <CrossLinkCards
                     symbol={upper}
                     current="fundamental"
