@@ -108,7 +108,11 @@ function ConfidenceInfoTooltip() {
                     e.stopPropagation();
                     toggle();
                 }}
-                className="cursor-help rounded text-xs leading-none text-secondary-500 transition-colors hover:text-secondary-400 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                // 글리프만 두면 모바일에서 10.4×12로 잡힌다(실측) — WCAG 2.2
+                // SC 2.5.8의 24×24 최소치 미달이고, 같은 ⓘ가 옵션 페이지에서는
+                // `InfoTooltip`을 통해 24×24다. 같은 기호가 화면마다 다른 크기인
+                // 것이 문제이므로 그쪽과 같은 최소 크기를 준다.
+                className="inline-flex min-h-6 min-w-6 cursor-help items-center justify-center rounded text-xs leading-none text-secondary-500 transition-colors hover:text-secondary-400 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
                 ⓘ
             </button>

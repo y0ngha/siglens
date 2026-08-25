@@ -62,7 +62,11 @@ export function FloatingChatButton({ symbol }: FloatingChatButtonProps) {
                     <button
                         type="button"
                         onClick={dismissTooltip}
-                        className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded text-xs text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        // `h-5 w-5`(20×20)였다 — 떠 있는 안내의 단독 컨트롤이라
+                        // WCAG 2.2 SC 2.5.8의 인라인 텍스트 예외가 적용되지 않고,
+                        // 24×24 최소치를 밑돈다. 글리프 크기는 그대로 두고
+                        // 히트 영역만 키운다.
+                        className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded text-xs text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                         aria-label="툴팁 닫기"
                     >
                         ✕
