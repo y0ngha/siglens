@@ -13,6 +13,7 @@ import {
     blankComments,
     classTokens,
     readInitialiser,
+    stripVariants,
 } from './support/sourceScan';
 import {
     MIN_RATIO,
@@ -89,39 +90,21 @@ export function borderColourPart(token: string): string | null {
     // `focus` 계열은 **제외한다.** 그건 경계가 아니라 포커스 표시이고
     // (WCAG 2.4.11/2.4.13), 보통 정지 보더 위에 겹쳐 그려진다. 여기 넣으면
     // 정상적인 반투명 포커스 링 7개가 위반으로 잡힌다.
-    // 변형 프리픽스를 **끝까지, 반복해서** 벗긴다. `^` 앵커로 한 번만 벗기던
-    // 때는 `md:hover:border-…`처럼 겹친 변형이 매칭에 실패했고, 그 실패가 곧
-    // 통과였다 — 이 레포에 이미 `motion-reduce:hover:`가 있다.
-    let bare = token;
-    const seen: string[] = [];
-    for (;;) {
-        const m0 = /^([\w-]+(?:-\[[^\]]*\])?):(?!:)/.exec(bare);
-        if (m0 === null) break;
-        seen.push(m0[1]);
-        bare = bare.slice(m0[0].length);
-    }
+    // 변형 제거는 공용 구현을 쓴다(`support/sourceScan`). 두 가드가 각자
+    // 들고 있다가 한쪽만 고쳐진 적이 있고, 임의 변형(`[&:hover]:`)과 이름 붙은
+    // group/peer(`group-hover/tog:`), 대괄호 안 콜론(`data-[state=open]:`)이
+    // 각각 다른 시점에 구멍이 됐다.
+    const { bare, variants, unknown } = stripVariants(token);
     // 포커스 계열은 경계가 아니라 포커스 표시(2.4.11/2.4.13)라 대상이 아니고,
     // 비활성은 1.4.11이 명시적으로 면제한다.
     if (
-        seen.some(v =>
+        variants.some(v =>
             /^(?:focus|focus-visible|focus-within|peer-focus|group-focus|disabled)$/.test(
                 v
             )
         )
     ) {
         return null;
-    }
-    // **모르는 변형은 통과가 아니다.** 색 해석은 fail-closed로 바꿔놓고 변형
-    // 인식은 허용 목록인 채로 뒀더니, 목록 밖 프리픽스가 붙으면 매칭이 실패해
-    // 그대로 합격했다 — 감사가 `aria-[selected=false]:`로 탭의 정지 경계를
-    // 바꿔 통과시켜 증명했다.
-    const KNOWN_STATE =
-        /^(?:hover|active|group-hover|peer-hover|peer-checked|checked|open|first|last|odd|even|visited|target|aria-[\w-]+|aria-\[[^\]]*\]|data-[\w-]+|data-\[[^\]]*\]|has-\[[^\]]*\]|supports-\[[^\]]*\]|not-[\w-]+|in-[\w-]+|group-[\w-]+|peer-[\w-]+|motion-safe|motion-reduce|print|rtl|ltr|dark|light|sm|md|lg|xl|2xl|max-sm|max-md|max-lg|min-[\w-]+)$/;
-    const unknown = seen.filter(v => !KNOWN_STATE.test(v));
-    if (unknown.length > 0 && /^(?:border|ring)-/.test(bare)) {
-        throw new Error(
-            `${token}: 모르는 변형 프리픽스 "${unknown.join(', ')}" — 판정할 수 없다. 알려진 상태면 목록에 추가하고, 경계와 무관하면 이유를 적을 것`
-        );
     }
     const m = /^(border|ring)(?:-([a-z]{1,2})\b)?(?:-(.+))?$/.exec(bare);
     if (m === null) return null;
@@ -136,6 +119,14 @@ export function borderColourPart(token: string): string | null {
     if (BORDER_STYLE.has(tail)) return null;
     if (m[1] === 'ring' && (tail === 'inset' || tail.startsWith('offset-'))) {
         return null;
+    }
+    // **색이라고 확정된 뒤에** 모르는 변형을 문제 삼는다. 앞에서 던졌더니
+    // `file:border-0`(폭)이나 `before:border-…`처럼 이미 레포에 있는 코어
+    // 변형까지 터졌다 — 판정 대상이 아닌 토큰에 대해 실패를 내는 건 오탐이다.
+    if (unknown.length > 0) {
+        throw new Error(
+            `${token}: 모르는 변형 프리픽스 "${unknown.join(', ')}" — 판정할 수 없다. 알려진 상태면 support/sourceScan의 목록에 추가할 것`
+        );
     }
     return tail;
 }
@@ -153,7 +144,11 @@ function fillOf(tokens: string[], file?: string): Fill {
     // `bg-`를 못 보고 램프로 판정하는데, 그건 모든 램프 토큰에 관대한 방향이다
     // (실제로 흰 버튼 위 2.26:1이 6.89로 읽혔다). 파일 전체에 고정 흰 표면
     // 선언이 있으면 그 파일의 컨트롤은 보수적으로 흰 표면 기준으로 잰다.
-    if (file !== undefined && FIXED_WHITE_FILES.has(file)) return 'fixed-white';
+    // 파일 어딘가에 고정 흰 면이 있으면 **둘 다 재고 최솟값**을 쓴다. 예전엔
+    // 흰 면으로 바꿔치웠는데, 흰 면이 더 후한 토큰이 있어(`primary-800`이
+    // 램프에서 2.18, 흰 면에서 8.72) 램프에 앉은 컨트롤이 검사에서 빠졌다.
+    // 토글이 그 예다 — 썸만 `bg-white`이고 트랙은 램프 면이다.
+    if (file !== undefined && FIXED_WHITE_FILES.has(file)) return 'either';
     return 'ramp';
 }
 
@@ -162,7 +157,11 @@ const FIXED_WHITE_FILES = new Set(
     sourceFiles(SRC_DIR)
         .filter(f => !f.includes(`${path.sep}__tests__${path.sep}`))
         .filter(f =>
-            /\bbg-(?:white|fixed-|brand-)/.test(readFileSync(f, 'utf8'))
+            // **주석을 지운 뒤** 찾는다. 주석 속 `bg-white` 한 줄이면 그 파일의
+            // 판정이 통째로 바뀌던 자리다 — 다른 스캐너는 모두 이미 그렇게 한다.
+            /\bbg-(?:white|fixed-|brand-)/.test(
+                blankComments(readFileSync(f, 'utf8'))
+            )
         )
         .map(f => path.relative(SRC_DIR, f))
 );

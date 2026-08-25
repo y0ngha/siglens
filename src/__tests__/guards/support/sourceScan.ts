@@ -134,13 +134,50 @@ export function readInitialiser(source: string, start: number): string {
         } else if (depth === 0 && (ch === ';' || ch === '\n')) {
             // 이어지는 줄(연산자로 끝나거나 다음 줄이 이어붙임)이면 계속 읽는다.
             const rest = source.slice(i + 1);
-            const cont = /^\s*(?:[+.]|\?\?|\|\||&&|\))/.test(rest);
+            const cont = /^\s*(?:[+.?:]|\?\?|\|\||&&|\))/.test(rest);
             const trailing = /[+({[,?:]\s*$/.test(source.slice(start, i));
             if (!cont && !trailing) return source.slice(start, i);
         }
         i += 1;
     }
     return source.slice(start);
+}
+
+/**
+ * Tailwind 변형 프리픽스를 벗긴다.
+ *
+ * 두 가드가 각자 구현했다가 한쪽만 고쳐진 적이 있다 — 보더 가드는 반복 제거로
+ * 고쳤는데 텍스트 가드는 `^text-…$` 앵커라 `hover:` 하나에 통째로 무력화됐다.
+ * 같은 판별은 한 곳에만 둔다.
+ *
+ * 임의 변형(`[&:hover]:`)과 이름 붙은 group/peer(`group-hover/tog:`)까지 받는다.
+ * 못 알아본 프리픽스는 `unknown`에 담아 **호출부가 판단**하게 한다 — 여기서
+ * 던지면 색과 무관한 토큰(`file:border-0`)까지 터진다.
+ */
+export interface StrippedToken {
+    bare: string;
+    variants: string[];
+    unknown: string[];
+}
+
+const KNOWN_VARIANT =
+    /^(?:hover|focus|focus-visible|focus-within|active|disabled|visited|target|checked|indeterminate|placeholder-shown|autofill|read-only|required|valid|invalid|open|empty|first|last|only|odd|even|first-of-type|last-of-type|before|after|placeholder|marker|selection|file|backdrop|portrait|landscape|starting|motion-safe|motion-reduce|contrast-more|contrast-less|print|rtl|ltr|dark|light|sm|md|lg|xl|2xl|min-\[[^\]]*\]|max-(?:sm|md|lg|xl)|max-\[[^\]]*\]|@[\w-]+|group(?:-[\w-]+)?(?:\/[\w-]+)?|peer(?:-[\w-]+)?(?:\/[\w-]+)?|aria-[\w-]+|aria-\[[^\]]*\]|data-[\w-]+|data-\[[^\]]*\]|has-\[[^\]]*\]|supports-\[[^\]]*\]|not-[\w-]+|in-[\w-]+|nth-\[[^\]]*\]|\[[^\]]*\])$/;
+
+export function stripVariants(token: string): StrippedToken {
+    let bare = token;
+    const variants: string[] = [];
+    for (;;) {
+        // 대괄호 안의 `:`는 변형 구분자가 아니다(`data-[state=open]:`).
+        const m = /^((?:\[[^\]]*\]|[^:[\]])+):(?!:)/.exec(bare);
+        if (m === null) break;
+        variants.push(m[1]);
+        bare = bare.slice(m[0].length);
+    }
+    return {
+        bare,
+        variants,
+        unknown: variants.filter(v => !KNOWN_VARIANT.test(v)),
+    };
 }
 
 /**
@@ -163,7 +200,10 @@ export function classTokens(value: string): string[] {
         // 배열인지 아닌지를 추측하려 했더니 `props['aria-selected']`가 섞인
         // className에서 판정이 뒤집혀, `aria-[…]:border-…` 변형 토큰이 세 조각으로
         // 찢어졌고 그 바람에 위반 하나가 판정 함수에 닿지도 못했다.
-        const sep = bracket > 0 ? /['"`]/.test(ch) : /[\s'"`,()]/.test(ch);
+        // 대괄호 **안에서는 따옴표도 구분자가 아니다.** 배열 리터럴을 쪼개려고
+        // 안에서도 갈랐더니 `data-[state='open']:border-…`가 세 조각으로 찢어져
+        // 판정에 닿지 못했다. 배열은 대괄호 **밖**의 따옴표로 이미 갈라진다.
+        const sep = bracket > 0 ? false : /[\s'"`,()]/.test(ch);
         if (sep) {
             if (buf !== '') out.push(buf);
             buf = '';
@@ -172,5 +212,8 @@ export function classTokens(value: string): string[] {
         buf += ch;
     }
     if (buf !== '') out.push(buf);
-    return out.map(x => x.replace(/^\[+|\]+$/g, '')).filter(Boolean);
+    // 토큰 양끝의 대괄호를 **떼지 않는다.** 떼었더니 임의 변형
+    // `[&:hover]:border-…`의 여는 괄호가 잘려 변형 파서에 닿지 못했다.
+    // 배열 리터럴에서 나온 홀로 남은 `[`·`]`는 어떤 규칙과도 안 맞아 무해하다.
+    return out.filter(Boolean);
 }

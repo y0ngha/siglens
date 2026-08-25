@@ -134,7 +134,7 @@ function composite(fg: string, alpha: number, bg: string): string {
  * 낮추므로 이 계산이 곧 "틴트를 써도 되는가"의 답이 된다.
  */
 /** 컨트롤이 어떤 면 위에 앉는가. 요소의 채움 클래스로 정한다. */
-export type Fill = 'ramp' | 'fixed-white';
+export type Fill = 'ramp' | 'fixed-white' | 'either';
 
 export function minContrastOverSurfaces(
     colour: string,
@@ -153,10 +153,16 @@ export function minContrastOverSurfaces(
         // 기준 3.02로 통과하지만 라이트 램프에서는 2.65였고, 반대로 램프 토큰을
         // 항상-흰 버튼에 쓰면 램프 기준 6.89로 통과하지만 흰 배경에서는 2.26이었다.
         // 이제 **호출부가 요소의 채움을 보고** 어느 면인지 알려준다.
+        // `either`는 **둘 다 재고 최솟값**을 쓴다. 파일 안에 고정 흰 면과 램프 면이
+        // 섞여 있으면 어느 쪽에 앉는지 소스만으로 못 가리는데, 한쪽만 재면 그
+        // 방향이 관대할 수 있다 — 실제로 흰 면이 `primary-800`에는 8.72로 후하고
+        // 램프에서는 2.18이라, 흰 면 기준으로 재면 위반이 사라진다.
         const surfaces =
             fill === 'fixed-white'
                 ? [FIXED_SURFACE]
-                : SURFACE_TOKENS.map(s => tokens.get(s));
+                : fill === 'either'
+                  ? [...SURFACE_TOKENS.map(s => tokens.get(s)), FIXED_SURFACE]
+                  : SURFACE_TOKENS.map(s => tokens.get(s));
         for (const surface of surfaces) {
             if (surface === undefined) continue;
             const over = composite(resolved.hex, resolved.alpha, surface);

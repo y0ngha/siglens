@@ -72,6 +72,17 @@ export function sourceFiles(
     return out;
 }
 
+/** 클래스를 담는 상수가 아니라 **전달 통로**인 이름들. */
+const PASS_THROUGH_NAMES = new Set([
+    'className',
+    'classNames',
+    'classes',
+    'cls',
+    'cn',
+    'clsx',
+    'twMerge',
+]);
+
 let cached: Set<string> | null = null;
 
 /** 컨트롤 태그의 className 표현식에 등장하는 식별자 이름 전부. */
@@ -99,6 +110,12 @@ export function identifiersUsedOnControls(srcDir: string): Set<string> {
             for (const ident of withoutStrings.matchAll(
                 /\b([A-Z][A-Z0-9_]*|[A-Za-z_$][\w$]*)\b/g
             )) {
+                // 프롭 전달 이름은 색인하지 않는다. 컨트롤이
+                // `className={cn(className, …)}`로 받아 넘기는 형태가 흔해서,
+                // 이 이름을 넣으면 트리의 **모든** 지역 `const className`이
+                // 컨트롤 보유로 잡힌다(장식 `<span>` 뱃지가 그렇게 잡혔다).
+                // 전달되는 클래스 자체는 속성 스캐너가 본다.
+                if (PASS_THROUGH_NAMES.has(ident[1])) continue;
                 names.add(ident[1]);
             }
         }
