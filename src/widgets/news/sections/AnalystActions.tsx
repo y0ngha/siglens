@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { GradesAction, GradesEvent } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 const ACTION_LABEL: Record<GradesAction, string> = {
     upgrade: '상향',
@@ -105,7 +106,7 @@ export function AnalystActions({ events }: AnalystActionsProps) {
             >
                 <h2
                     id="analyst-actions-heading"
-                    className="mb-3 text-lg font-semibold tracking-tight"
+                    className={cn('mb-3', HEADING_SECTION)}
                 >
                     애널리스트 등급 변경
                 </h2>
@@ -124,10 +125,7 @@ export function AnalystActions({ events }: AnalystActionsProps) {
             aria-labelledby="analyst-actions-heading"
             className="space-y-3"
         >
-            <h2
-                id="analyst-actions-heading"
-                className="text-lg font-semibold tracking-tight"
-            >
+            <h2 id="analyst-actions-heading" className={HEADING_SECTION}>
                 애널리스트 등급 변경
             </h2>
             <ul className="space-y-2" aria-label="애널리스트 등급 변경 목록">

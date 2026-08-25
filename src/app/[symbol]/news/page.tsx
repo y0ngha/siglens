@@ -52,6 +52,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { cn } from '@/shared/lib/cn';
 
 export const revalidate = 43200; // 12h — 신선도는 ensureNewsCardsAnalyzedAction의 on-demand revalidateTag('news:${symbol}', 'max')가 보장, 시간 기반은 상한만
 
@@ -211,9 +213,7 @@ function NewsDataServerAlert({ title, message }: NewsDataServerAlertProps) {
             className="rounded-lg border border-ui-danger/30 bg-secondary-800 p-6"
             role="alert"
         >
-            <h2 className="mb-2 text-lg font-semibold tracking-tight">
-                {title}
-            </h2>
+            <h2 className={cn('mb-2', HEADING_SECTION)}>{title}</h2>
             <p className="text-sm text-ui-danger">{message}</p>
         </section>
     );

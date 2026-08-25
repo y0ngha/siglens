@@ -22,6 +22,10 @@ import {
 
 import { NEWS_ANALYSIS_PERIOD_LABEL } from '@/shared/lib/news/periodLabels';
 import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
@@ -51,7 +55,7 @@ function StatusCard({ phase }: StatusCardProps) {
             <div className="mb-4 flex items-center gap-2">
                 <h2
                     id="news-ai-summary-status-heading"
-                    className="text-lg font-semibold tracking-tight"
+                    className={HEADING_SECTION}
                 >
                     뉴스 AI 종합 분석
                 </h2>
@@ -108,7 +112,7 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                 <div className="flex min-w-0 items-center gap-2">
                     <h2
                         id="news-ai-summary-heading"
-                        className="text-lg font-semibold tracking-tight"
+                        className={HEADING_SECTION}
                     >
                         뉴스 AI 종합 분석
                     </h2>
@@ -132,7 +136,9 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
 
             {result.keyEventsKo.length > 0 && (
                 <div className="mb-4">
-                    <h3 className="mb-2 text-sm font-semibold">핵심 이벤트</h3>
+                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
+                        핵심 이벤트
+                    </h3>
                     <ul className="space-y-1.5" aria-label="핵심 이벤트 목록">
                         {result.keyEventsKo.map(event => (
                             <li
@@ -156,7 +162,7 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
 
             {result.upcomingEventsKo.length > 0 && (
                 <div>
-                    <h3 className="mb-2 text-sm font-semibold">
+                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
                         다가오는 주요 일정
                     </h3>
                     <ul
@@ -203,7 +209,7 @@ function NewsAiSummaryInlineError({
             <div className="mb-2 flex items-center gap-2">
                 <h2
                     id="news-ai-summary-error-heading"
-                    className="text-lg font-semibold tracking-tight"
+                    className={HEADING_SECTION}
                 >
                     뉴스 AI 종합 분석
                 </h2>

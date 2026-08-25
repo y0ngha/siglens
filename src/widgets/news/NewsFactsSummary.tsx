@@ -1,6 +1,10 @@
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import type { AssetClass } from '@/shared/config/marketProfile';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 
 export interface NewsFactsSummaryProps {
     symbol: string;
@@ -84,10 +88,7 @@ export function NewsFactsSummary({
             aria-labelledby="news-facts-summary-heading"
             className="rounded-lg border border-secondary-700 bg-secondary-800 p-5"
         >
-            <h2
-                id="news-facts-summary-heading"
-                className="text-lg font-semibold tracking-tight"
-            >
+            <h2 id="news-facts-summary-heading" className={HEADING_SECTION}>
                 {displayName} 최근 뉴스 데이터 요약
             </h2>
 
@@ -121,7 +122,7 @@ export function NewsFactsSummary({
 
                     {headlines.length > 0 ? (
                         <div>
-                            <h3 className="text-sm font-semibold text-secondary-200">
+                            <h3 className={HEADING_SUBSECTION}>
                                 최근 기사 제목
                             </h3>
                             <ol className="mt-2 list-decimal space-y-1 pl-5">

@@ -9,7 +9,10 @@ import {
     SENTIMENT_CLASS,
     isNewsSentiment,
 } from './utils/sentimentConstants';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 
 /** Loading / generating status card. */
 function DigestStatusCard() {
@@ -80,7 +83,7 @@ function DigestResultView({ result }: DigestResultViewProps) {
 
             {result.keyEventsKo.length > 0 && (
                 <div className="mb-4">
-                    <h3 className="mb-2 text-sm font-semibold text-secondary-100">
+                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
                         핵심 흐름
                     </h3>
                     <ul className="space-y-1.5" aria-label="핵심 흐름 목록">
@@ -106,7 +109,7 @@ function DigestResultView({ result }: DigestResultViewProps) {
 
             {result.upcomingEventsKo.length > 0 && (
                 <div>
-                    <h3 className="mb-2 text-sm font-semibold text-secondary-100">
+                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
                         주목 일정
                     </h3>
                     <ul className="space-y-1.5" aria-label="주목 일정 목록">
