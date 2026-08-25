@@ -60,8 +60,10 @@ const SURFACE_ONLY = [
  * **틴트가 없어도** 본문 기준을 밑돈다.
  */
 const GRAPHICS_ONLY: Record<string, string> = {
-    'chart-bullish': 'ui-success-text',
-    'chart-bearish': 'ui-danger-text',
+    'chart-bullish':
+        'text-ui-success-text (텍스트) / fill-·stroke-chart-bullish (그래픽)',
+    'chart-bearish':
+        'text-ui-danger-text (텍스트) / fill-·stroke-chart-bearish (그래픽)',
 };
 
 const TEXT_UTILITY_RE = new RegExp(
@@ -86,7 +88,8 @@ function offenders(): string[] {
     for (const file of sourceFiles(SRC_DIR)) {
         if (file.includes(`${path.sep}__tests__${path.sep}`)) continue;
         const source = blankComments(readFileSync(file, 'utf8'));
-        source.split('\n').forEach((line, i) => {
+        const lines = source.split('\n');
+        lines.forEach((line, i) => {
             for (const token of classTokens(line)) {
                 // **변형을 벗기고 본다.** `^text-…$` 앵커만 두었더니 `hover:` 하나에
                 // 가드가 통째로 무력화됐다 — 형제 가드가 같은 커밋에서 고친
@@ -94,11 +97,13 @@ function offenders(): string[] {
                 const { bare } = stripVariants(token);
                 if (!TEXT_UTILITY_RE.test(bare)) continue;
                 const rel = path.relative(SRC_DIR, file);
-                // 이 줄이 속한 상수 이름으로 예외를 찾는다.
+                // 이 줄이 속한 상수 이름으로 예외를 찾는다. **실제 줄 번호로**
+                // 거슬러 올라간다 — 예전엔 `source.indexOf(line)`으로 줄 텍스트를
+                // 다시 찾았는데, 그러면 같은 텍스트를 가진 **첫** 줄이 잡혀서
+                // 면제되지 않은 상수가 면제된 상수의 예외를 그대로 물려받았다.
                 const holder = /(?:const|let)\s+(\w+)/.exec(
-                    source
-                        .slice(0, source.indexOf(line) + line.length)
-                        .split('\n')
+                    lines
+                        .slice(0, i + 1)
                         .reverse()
                         .find(l => /(?:const|let)\s+\w+/.test(l)) ?? ''
                 )?.[1];
@@ -110,6 +115,52 @@ function offenders(): string[] {
         });
     }
     return out.sort();
+}
+
+/**
+ * **그 토큰이** 실제로 얹히는 틴트 알파들. 하드코딩한 5% 하나로 규칙을
+ * 뒷받침하면 실사용(최대 40%)을 못 덮는다 — 근거가 규칙보다 좁으면 규칙이
+ * 틀려도 안 걸린다. 반대로 전 계열의 알파를 한데 모으면 코드에 없는 조합을
+ * 만들어 검사하게 되므로, 토큰별로 모은다.
+ */
+let alphaCache: Map<string, number[]> | null = null;
+
+/**
+ * 트리를 **한 번만** 훑는다. 토큰마다 다시 훑었더니 8토큰 × 2테마 = 16회
+ * 전체 스캔이 되어 기본 5초 타임아웃을 넘겼다 — 가드 하나만 돌릴 땐 통과하고
+ * 전체 스위트에서만 실패해, 원인이 격리 문제처럼 보였다.
+ */
+function buildAlphaIndex(): Map<string, number[]> {
+    if (alphaCache !== null) return alphaCache;
+    const acc = new Map<string, Set<number>>();
+    const pairRe =
+        /\bbg-((?:ui-[a-z]+|grade-[a-f]|chart-[a-z]+))\/(\d{1,3})\b/g;
+    for (const file of sourceFiles(SRC_DIR)) {
+        if (file.includes(`${path.sep}__tests__${path.sep}`)) continue;
+        const source = blankComments(readFileSync(file, 'utf8'));
+        for (const line of source.split('\n')) {
+            for (const m of line.matchAll(pairRe)) {
+                const token = m[1];
+                if (!new RegExp(`\\btext-${token}-text\\b`).test(line))
+                    continue;
+                const pct = Number(m[2]);
+                if (pct <= 0 || pct > 100) continue;
+                const set = acc.get(token) ?? new Set<number>();
+                set.add(pct / 100);
+                acc.set(token, set);
+            }
+        }
+    }
+    alphaCache = new Map(
+        [...acc].map(([k, v]) => [k, [...v].sort((a, b) => a - b)])
+    );
+    return alphaCache;
+}
+
+function tintAlphasInSource(token: string): number[] {
+    return [0.05, ...(buildAlphaIndex().get(token) ?? [])].sort(
+        (a, b) => a - b
+    );
 }
 
 describe('semantic text token guard', () => {
@@ -133,10 +184,25 @@ describe('semantic text token guard', () => {
                 expect(surface, `${theme} ${name}`).toBeDefined();
                 expect(text, `${theme} ${name}-text`).toBeDefined();
                 expect(page).toBeDefined();
-                // 이 계열이 실제로 앉는 자리: 자기 색 5% 틴트 위.
-                const tint = mix(surface as string, 0.05, page as string);
-                const surfaceRatio = contrast(surface as string, tint);
-                const textRatio = contrast(text as string, tint);
+                // **소스에 실제로 쓰이는 알파 전부**에 대해 본다. 5%만 재던 때는
+                // 규칙의 근거가 실사용을 못 덮었다 — 이 계열은 `/40`까지 쓰이고,
+                // 인셋 표면 위 `/40`에서는 `-text`조차 4.36으로 빠듯하다.
+                // **그 토큰에** 실제로 쓰이는 알파만 본다. 전 계열의 알파를
+                // 모아 교차하면 코드에 존재하지 않는 조합을 만들어 검사하게 된다.
+                const alphas = tintAlphasInSource(name);
+                let surfaceRatio = Infinity;
+                let textRatio = Infinity;
+                for (const alpha of alphas) {
+                    const tint = mix(surface as string, alpha, page as string);
+                    surfaceRatio = Math.min(
+                        surfaceRatio,
+                        contrast(surface as string, tint)
+                    );
+                    textRatio = Math.min(
+                        textRatio,
+                        contrast(text as string, tint)
+                    );
+                }
                 // 다크에서는 두 토큰이 같은 값인 계열이 있다(분리가 라이트
                 // 전용). "더 높다"가 아니라 "낮지 않다"가 실제 불변식이다 —
                 // 처음엔 엄격하게 적었다가 `grade-a` 다크에서 8.33 대 8.33으로

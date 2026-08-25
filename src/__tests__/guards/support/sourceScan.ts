@@ -161,17 +161,31 @@ export interface StrippedToken {
 }
 
 const KNOWN_VARIANT =
-    /^(?:hover|focus|focus-visible|focus-within|active|disabled|visited|target|checked|indeterminate|placeholder-shown|autofill|read-only|required|valid|invalid|open|empty|first|last|only|odd|even|first-of-type|last-of-type|before|after|placeholder|marker|selection|file|backdrop|portrait|landscape|starting|motion-safe|motion-reduce|contrast-more|contrast-less|print|rtl|ltr|dark|light|sm|md|lg|xl|2xl|min-\[[^\]]*\]|max-(?:sm|md|lg|xl)|max-\[[^\]]*\]|@[\w-]+|group(?:-[\w-]+)?(?:\/[\w-]+)?|peer(?:-[\w-]+)?(?:\/[\w-]+)?|aria-[\w-]+|aria-\[[^\]]*\]|data-[\w-]+|data-\[[^\]]*\]|has-\[[^\]]*\]|supports-\[[^\]]*\]|not-[\w-]+|in-[\w-]+|nth-\[[^\]]*\]|\[[^\]]*\])$/;
+    /^(?:hover|focus|focus-visible|focus-within|active|disabled|visited|target|checked|indeterminate|placeholder-shown|autofill|read-only|required|valid|invalid|open|empty|first|last|only|odd|even|first-of-type|last-of-type|before|after|placeholder|marker|selection|file|backdrop|portrait|landscape|starting|motion-safe|motion-reduce|contrast-more|contrast-less|print|rtl|ltr|dark|light|sm|md|lg|xl|2xl|min-\[[^\]]*\]|max-(?:sm|md|lg|xl)|max-\[[^\]]*\]|@[\w-]+|group(?:-[\w-]+)?(?:\/[\w-]+)?|peer(?:-[\w-]+)?(?:\/[\w-]+)?|aria-[\w-]+|aria-\[[^\]]*\]|data-[\w-]+|data-\[[^\]]*\]|has-\[[\s\S]*\]|supports-\[[\s\S]*\]|not-[\w-]+|in-[\w-]+|nth-\[[^\]]*\]|\[[\s\S]*\]|group-has-\[[\s\S]*\]|peer-has-\[[\s\S]*\])$/;
 
 export function stripVariants(token: string): StrippedToken {
     let bare = token;
     const variants: string[] = [];
+    // **깊이를 세어** 자른다. 정규식의 `\[[^\]]*\]`는 중첩을 못 해서
+    // `[&:not([hidden])]:`나 `has-[[data-open]]:` 같은 평범한 Tailwind 형태에서
+    // 변형을 하나도 못 벗겼고, 그러면 `bare`가 통째로 남아 색 매칭이 실패하며
+    // **조용히 통과**한다. 이 파일을 지나는 모든 가드가 동시에 눈이 먼다.
+    // 라운드 8이 보고했는데 한 겹짜리만 고쳐 라운드 9에 그대로 다시 나왔다.
     for (;;) {
-        // 대괄호 안의 `:`는 변형 구분자가 아니다(`data-[state=open]:`).
-        const m = /^((?:\[[^\]]*\]|[^:[\]])+):(?!:)/.exec(bare);
-        if (m === null) break;
-        variants.push(m[1]);
-        bare = bare.slice(m[0].length);
+        let depth = 0;
+        let cut = -1;
+        for (let i = 0; i < bare.length; i += 1) {
+            const ch = bare[i];
+            if (ch === '[') depth += 1;
+            else if (ch === ']') depth -= 1;
+            else if (ch === ':' && depth === 0 && bare[i + 1] !== ':') {
+                cut = i;
+                break;
+            }
+        }
+        if (cut <= 0) break;
+        variants.push(bare.slice(0, cut));
+        bare = bare.slice(cut + 1);
     }
     return {
         bare,
