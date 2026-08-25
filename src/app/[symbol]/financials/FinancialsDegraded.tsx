@@ -46,7 +46,7 @@ export function FinancialsDegraded({
     snapshotGeneratedAt,
 }: FinancialsDegradedProps) {
     return (
-        <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+        <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
             <SymbolPageHeading>{displayName} 재무제표</SymbolPageHeading>
             <FinancialsSnapshotProse
                 content={snapshotContent}

@@ -21,7 +21,7 @@ const CROSS_LINK_CARD_COUNT = 3;
 
 export default function OptionsLoading() {
     return (
-        <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
+        <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-6">
             <div className="flex flex-wrap items-center gap-2 rounded-lg border border-secondary-700 bg-secondary-800 p-3">
                 <div className="mr-1 h-3 w-10 animate-pulse rounded bg-secondary-700" />
                 {Array.from({ length: EXPIRATION_CHIP_SKELETON_COUNT }).map(

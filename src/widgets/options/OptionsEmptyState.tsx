@@ -49,7 +49,7 @@ export function OptionsEmptyState({
     snapshotSlot,
 }: OptionsEmptyStateProps) {
     return (
-        <main className="mx-auto max-w-5xl px-4 py-16">
+        <main className="mx-auto w-full max-w-5xl px-4 py-16">
             <div className="rounded-lg border border-secondary-700 bg-secondary-800 p-8 text-center">
                 <h1 className="text-xl font-semibold tracking-tight">
                     {symbol} 옵션 시장 정보 없음

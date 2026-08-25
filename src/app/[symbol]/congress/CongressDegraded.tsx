@@ -40,7 +40,7 @@ export function CongressDegraded({
     snapshotGeneratedAt,
 }: CongressDegradedProps) {
     return (
-        <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+        <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
             <SymbolPageHeading>{displayName} 의회 거래</SymbolPageHeading>
             <CongressSnapshotProse
                 content={snapshotContent}

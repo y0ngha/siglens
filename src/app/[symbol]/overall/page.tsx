@@ -468,7 +468,7 @@ export default async function OverallPage({ params }: Props) {
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
-            <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+            <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>{copy.heading}</SymbolPageHeading>
                 <section
                     aria-labelledby="overall-guide-heading"
