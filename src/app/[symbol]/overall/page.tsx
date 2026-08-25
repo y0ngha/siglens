@@ -46,6 +46,7 @@ import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 /** H1·FAQ 답변 2개·안내 문단이 market profile별로 갈라 쓰는 카피 번들. */
 interface OverallCopy {
@@ -474,10 +475,7 @@ export default async function OverallPage({ params }: Props) {
                     aria-labelledby="overall-guide-heading"
                     className="space-y-3 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5"
                 >
-                    <h2
-                        id="overall-guide-heading"
-                        className="text-base font-semibold text-secondary-300"
-                    >
+                    <h2 id="overall-guide-heading" className={HEADING_SECTION}>
                         {displayName} 종합 분석은 어떻게 봐야 할까
                     </h2>
                     {copy.guideParagraphs}

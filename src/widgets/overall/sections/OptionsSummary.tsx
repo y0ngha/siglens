@@ -1,4 +1,6 @@
 import { MarkdownText } from '@/shared/ui/MarkdownText';
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface OptionsSummaryProps {
     bullets: string[];
@@ -21,7 +23,7 @@ export function OptionsSummary({ bullets, oiStale }: OptionsSummaryProps) {
             <div className="mb-3 flex items-center gap-2">
                 <h2
                     id="overall-options-heading"
-                    className="text-lg font-semibold text-balance"
+                    className={cn(HEADING_SECTION, 'text-balance')}
                 >
                     옵션 시장
                 </h2>

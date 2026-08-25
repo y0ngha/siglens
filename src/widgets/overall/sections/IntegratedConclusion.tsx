@@ -1,4 +1,6 @@
 import { MarkdownText } from '@/shared/ui/MarkdownText';
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface IntegratedConclusionProps {
     text: string;
@@ -16,7 +18,7 @@ export function IntegratedConclusion({ text }: IntegratedConclusionProps) {
         >
             <h2
                 id="overall-integrated-conclusion-heading"
-                className="mb-3 text-lg font-semibold text-balance"
+                className={cn(HEADING_SECTION, 'mb-3 text-balance')}
             >
                 통합 결론
             </h2>

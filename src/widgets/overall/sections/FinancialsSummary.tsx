@@ -1,4 +1,6 @@
 import { MarkdownText } from '@/shared/ui/MarkdownText';
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface FinancialsSummaryProps {
     bullets: string[];
@@ -13,7 +15,7 @@ export function FinancialsSummary({ bullets }: FinancialsSummaryProps) {
         >
             <h2
                 id="financials-summary-heading"
-                className="mb-3 text-lg font-semibold text-balance"
+                className={cn(HEADING_SECTION, 'mb-3 text-balance')}
             >
                 재무 분석
             </h2>

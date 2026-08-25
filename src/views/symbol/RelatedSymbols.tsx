@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { relatedSymbolsFor } from '@/shared/config/relatedSymbols';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface RelatedSymbolsProps {
     /** 현재 심볼(대문자). 자기 자신은 목록에서 제외된다. */
@@ -111,10 +112,7 @@ export async function RelatedSymbols({ symbol }: RelatedSymbolsProps) {
             aria-labelledby="related-symbols-heading"
             className="mt-6 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5"
         >
-            <h2
-                id="related-symbols-heading"
-                className="text-sm font-semibold text-secondary-300"
-            >
+            <h2 id="related-symbols-heading" className={HEADING_SECTION}>
                 관련 종목
             </h2>
             <ul className="mt-3 flex flex-wrap gap-2">

@@ -1,4 +1,6 @@
 import { MarkdownText } from '@/shared/ui/MarkdownText';
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface TechnicalSummaryProps {
     bullets: string[];
@@ -14,7 +16,7 @@ export function TechnicalSummary({ bullets }: TechnicalSummaryProps) {
         >
             <h2
                 id="technical-summary-heading"
-                className="mb-3 text-lg font-semibold text-balance"
+                className={cn(HEADING_SECTION, 'mb-3 text-balance')}
             >
                 기술적 분석 요약
             </h2>

@@ -2,6 +2,7 @@
 
 import type { FallbackProps } from 'react-error-boundary';
 import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 export interface AiSummaryErrorSectionProps extends FallbackProps {
     /**
@@ -63,10 +64,7 @@ export function AiSummaryErrorSection({
                 className
             )}
         >
-            <h2
-                id={headingId}
-                className="mb-2 text-lg font-semibold tracking-tight"
-            >
+            <h2 id={headingId} className={cn('mb-2', HEADING_SECTION)}>
                 {heading}
             </h2>
             <p className="text-sm text-ui-danger-text" role="alert">

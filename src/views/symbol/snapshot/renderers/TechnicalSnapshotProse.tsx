@@ -4,6 +4,8 @@ import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 import { createEnumGuard } from '../lib/createEnumGuard';
 import { LIVE_ANALYSIS_CROSS_REF } from '../lib/liveAnalysisCrossRef';
 import type { MarketProfileId } from '@/shared/config/marketProfile';
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 
 interface TechnicalSnapshotProseProps {
     /**
@@ -191,7 +193,7 @@ export function TechnicalSnapshotProse({
 
                 {narrowed.patternSummaries.length > 0 && (
                     <div>
-                        <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
+                        <h3 className={cn('mb-1.5', HEADING_SUBSECTION)}>
                             차트 패턴
                         </h3>
                         <ul
@@ -215,7 +217,7 @@ export function TechnicalSnapshotProse({
 
                 {narrowed.strategyResults.length > 0 && (
                     <div>
-                        <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
+                        <h3 className={cn('mb-1.5', HEADING_SUBSECTION)}>
                             전략 시그널
                         </h3>
                         <ul

@@ -1,6 +1,7 @@
 import { useId, type ReactNode } from 'react';
 import { formatSnapshotAsOf } from '@/shared/lib/formatSnapshotAsOf';
 import type { MarketProfileId } from '@/shared/config/marketProfile';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface SnapshotSummarySectionProps {
     /** 섹션 헤딩 텍스트. 생략 시 "최근 분석 요약". */
@@ -115,10 +116,7 @@ export function SnapshotSummarySection({
                  * *SnapshotProse.tsx 렌더러에서 처리.
                  */}
                 <div className="flex flex-wrap items-center gap-2">
-                    <h2
-                        id={headingId}
-                        className="text-lg font-semibold tracking-tight text-secondary-100"
-                    >
+                    <h2 id={headingId} className={HEADING_SECTION}>
                         {title}
                     </h2>
                     {formattedAsOf !== null && (

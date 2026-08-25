@@ -43,6 +43,7 @@ import {
 import { JsonLd } from '@/shared/ui/JsonLd';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 // 12h — "내 위치"는 최근 가격 범위(low52w/high52w/lastClose)만 SSR로 내려주는
 // 느리게 변하는 개인화 표층이다. ★평단/수익률은 client(hydration+user 게이트)라
@@ -399,7 +400,7 @@ export default async function PositionPage({ params }: Props) {
                     >
                         <h2
                             id="position-guide-heading"
-                            className="text-base font-semibold text-secondary-300"
+                            className={HEADING_SECTION}
                         >
                             {displayName} 지금 가격은 이 아파트 몇 층?
                         </h2>

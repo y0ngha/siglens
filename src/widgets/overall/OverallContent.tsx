@@ -20,6 +20,7 @@ import { useTimeframeFromUrl } from './hooks/useTimeframeFromUrl';
 import type { AssetClass } from '@/shared/config/marketProfile';
 import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
 import { OverallView } from './OverallView';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 const SKELETON_LINE_COUNT = 3;
 const SKELETON_WIDTH_START_PCT = 85;
@@ -125,7 +126,7 @@ export function OverallContent({
             >
                 <h2
                     id="overall-cta-poll-error-heading"
-                    className="mb-2 text-lg font-semibold text-balance"
+                    className={cn(HEADING_SECTION, 'mb-2 text-balance')}
                 >
                     AI 종합 분석
                 </h2>
@@ -169,7 +170,7 @@ export function OverallContent({
             >
                 <h2
                     id="overall-loading-heading"
-                    className="mb-4 text-lg font-semibold text-balance"
+                    className={cn(HEADING_SECTION, 'mb-4 text-balance')}
                 >
                     AI 종합 분석
                 </h2>
@@ -215,7 +216,7 @@ export function OverallContent({
             >
                 <h2
                     id="overall-error-heading"
-                    className="mb-2 text-lg font-semibold text-balance"
+                    className={cn(HEADING_SECTION, 'mb-2 text-balance')}
                 >
                     AI 종합 분석
                 </h2>

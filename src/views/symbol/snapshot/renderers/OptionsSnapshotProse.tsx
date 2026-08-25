@@ -3,6 +3,8 @@ import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 import { createEnumGuard } from '../lib/createEnumGuard';
 import type { MarketProfileId } from '@/shared/config/marketProfile';
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 
 interface OptionsSnapshotProseProps {
     /**
@@ -197,7 +199,7 @@ export function OptionsSnapshotProse({
 
                 {narrowed.perExpiration.length > 0 && (
                     <div>
-                        <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
+                        <h3 className={cn('mb-1.5', HEADING_SUBSECTION)}>
                             만기별 해석
                         </h3>
                         <ul
@@ -221,7 +223,7 @@ export function OptionsSnapshotProse({
 
                 {narrowed.signals.length > 0 && (
                     <div>
-                        <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
+                        <h3 className={cn('mb-1.5', HEADING_SUBSECTION)}>
                             시그널
                         </h3>
                         <ul

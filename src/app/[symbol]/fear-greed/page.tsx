@@ -38,6 +38,7 @@ import type { BarsData } from '@y0ngha/siglens-core';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 // 종목당 SEO 콘텐츠는 고정이고 동적 데이터는 클라가 재hydrate한다. 엣지 캐시로
 // compute 호출을 줄인다. (일시 인프라 장애의 404 캐싱은 getAssetInfo strict로 차단)
@@ -268,7 +269,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                 >
                     <h2
                         id="fear-greed-guide-heading"
-                        className="text-base font-semibold text-secondary-300"
+                        className={HEADING_SECTION}
                     >
                         {displayName} 공포 탐욕 지수는 어떻게 봐야 할까
                     </h2>

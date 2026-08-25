@@ -4,6 +4,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 const SCENARIO_LABEL: Record<OverallScenarioName, string> = {
     bullish: '강세',
@@ -31,7 +32,7 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
         >
             <h2
                 id="scenario-analysis-heading"
-                className="mb-4 text-lg font-semibold text-balance"
+                className={cn(HEADING_SECTION, 'mb-4 text-balance')}
             >
                 시나리오 분석
             </h2>

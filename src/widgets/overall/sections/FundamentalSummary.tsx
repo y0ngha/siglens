@@ -1,4 +1,6 @@
 import { MarkdownText } from '@/shared/ui/MarkdownText';
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface FundamentalSummaryProps {
     bullets: string[];
@@ -13,7 +15,7 @@ export function FundamentalSummary({ bullets }: FundamentalSummaryProps) {
         >
             <h2
                 id="fundamental-summary-heading"
-                className="mb-3 text-lg font-semibold text-balance"
+                className={cn(HEADING_SECTION, 'mb-3 text-balance')}
             >
                 펀더멘털 분석 요약
             </h2>

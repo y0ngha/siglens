@@ -1,5 +1,6 @@
 import { type CSSProperties } from 'react';
 import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 const SKELETON_LINE_COUNT = 3;
 const SKELETON_WIDTH_START_PCT = 85;
@@ -50,10 +51,7 @@ export function AiSummarySkeleton({
                 className
             )}
         >
-            <h2
-                id={headingId}
-                className="mb-4 text-lg font-semibold tracking-tight"
-            >
+            <h2 id={headingId} className={cn('mb-4', HEADING_SECTION)}>
                 {heading}
             </h2>
             <div className="flex items-center gap-3">

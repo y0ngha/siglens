@@ -4,6 +4,7 @@ import {
     type MarketProfileId,
     type AssetClass,
 } from '@/shared/config/marketProfile';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 
 /** All cross-linked page types in the symbol sub-navigation. */
 const ALL_PAGES = [
@@ -127,9 +128,7 @@ export function CrossLinkCards({
                             aria-current="page"
                             className="cursor-default rounded-lg border border-primary-500 bg-secondary-800/40 p-6 ring-1 ring-primary-500/30"
                         >
-                            <h3 className="font-semibold text-secondary-100">
-                                {LABEL[p]}
-                            </h3>
+                            <h3 className={HEADING_SUBSECTION}>{LABEL[p]}</h3>
                             <p className="mt-2 text-sm text-secondary-400">
                                 {description}
                             </p>
@@ -149,7 +148,7 @@ export function CrossLinkCards({
                         prefetch={false}
                         className="rounded-lg border border-secondary-700 p-6 transition-colors hover:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
                     >
-                        <h3 className="font-semibold">{LABEL[p]}</h3>
+                        <h3 className={HEADING_SUBSECTION}>{LABEL[p]}</h3>
                         <p className="mt-2 text-sm text-secondary-400">
                             {description}
                         </p>
