@@ -59,12 +59,18 @@ export default async function SharePage({ params }: Props) {
     const label = kindLabel(snapshot.kind);
     return (
         <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
+            {/* 이 h1에는 텍스트 스타일이 없다 — 의도된 것이다. 직접 텍스트 노드가
+                없고 네 개의 자식 span이 각자 크기·굵기·색을 갖는 브레드크럼 형태라
+                (SIGLENS / TICKER [종류]), 상속색은 화면에 나타나지 않는다.
+                "색 클래스 없는 heading" 스캐너가 이 줄을 반복해서 잡는데, 그 판정
+                기준은 **직접 텍스트를 가진 heading**에만 적용된다. 여기에 색을 얹으면
+                아무 데도 안 쓰이는 죽은 클래스가 된다. */}
             <h1 className="mb-6 flex flex-wrap items-center gap-2">
                 <span className="text-sm font-medium text-secondary-500">
                     {SITE_NAME}
                 </span>
                 <span className="text-sm text-secondary-500">/</span>
-                <span className="text-lg font-bold text-secondary-100">
+                <span className="text-xl font-bold text-secondary-100">
                     {ticker}
                 </span>
                 <span className="rounded bg-primary-900/40 px-2 py-0.5 text-xs font-semibold text-primary-300">

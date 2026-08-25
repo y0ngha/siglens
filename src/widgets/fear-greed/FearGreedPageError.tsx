@@ -2,6 +2,8 @@
 
 import type { FallbackProps } from 'react-error-boundary';
 import { getFmpUserFacingMessage } from '@/shared/api/fmp/fmpUserMessage';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { cn } from '@/shared/lib/cn';
 
 export function FearGreedPageError({
     error,
@@ -18,7 +20,7 @@ export function FearGreedPageError({
         >
             <h2
                 id="fear-greed-error-heading"
-                className="mb-2 text-lg font-semibold tracking-tight"
+                className={cn('mb-2', HEADING_SECTION)}
             >
                 공포 탐욕 지수
             </h2>

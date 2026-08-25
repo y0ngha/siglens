@@ -6,6 +6,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { FACTOR_LABEL, formatFactorRaw } from '@/shared/lib/fearGreedLabels';
 import { cn } from '@/shared/lib/cn';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 
 interface FearGreedGroupBarProps {
     group: FearGreedGroup;
@@ -35,9 +36,7 @@ export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
     return (
         <section className="flex flex-col gap-2 rounded bg-secondary-800/40 p-3">
             <header className="flex items-center justify-between">
-                <h4 className="text-sm font-medium text-secondary-200">
-                    {group.name} Group
-                </h4>
+                <h3 className={HEADING_SUBSECTION}>{group.name} Group</h3>
                 <span className="font-mono text-sm text-secondary-100">
                     {score} / 100
                 </span>

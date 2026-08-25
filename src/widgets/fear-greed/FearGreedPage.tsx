@@ -11,6 +11,7 @@ import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { buildChatState } from './utils/buildChatState';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { useRegisterShareable } from '@/features/share';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface FearGreedPageProps {
     symbol: string;
@@ -127,7 +128,7 @@ export function FearGreedPage({
         <div className="flex flex-col gap-6 p-4 md:p-6">
             <div className="grid gap-6 md:grid-cols-2">
                 <section className="flex flex-col gap-3">
-                    <h2 className="text-sm font-medium text-secondary-300">
+                    <h2 className={HEADING_SECTION}>
                         현재 공포 탐욕 지수와 기간별 비교
                     </h2>
                     <FearGreedHero snapshot={snapshot} />
@@ -148,7 +149,7 @@ export function FearGreedPage({
             </div>
 
             <section className="flex flex-col gap-2">
-                <h2 className="text-sm font-medium text-secondary-300">
+                <h2 className={HEADING_SECTION}>
                     공포 탐욕 지수 추이 (최근 1년)
                 </h2>
                 <FearGreedHistoricalChart history={history} />
