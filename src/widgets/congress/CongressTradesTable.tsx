@@ -246,7 +246,7 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                 <table className="w-full text-sm">
                     <caption className="sr-only">의회 거래 공시 목록</caption>
                     <thead>
-                        <tr className="border-b border-secondary-700 text-xs tracking-widest text-secondary-400 uppercase">
+                        <tr className="border-b border-secondary-700 text-xs text-secondary-400">
                             <th
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
@@ -317,9 +317,20 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                         </tr>
                     </thead>
                     <tbody>
-                        {rows.map(trade => (
+                        {rows.map((trade, idx) => (
                             <tr
-                                key={`${trade.office}-${trade.transactionDate}-${trade.side}-${trade.amount}`}
+                                /* 원래 key가 `trade.amount`를 그대로 보간해 객체가
+                                   전부 `[object Object]`로 접혔고, 중복 key React
+                                   경고가 났다(`/AAPL/congress` 실측 22건).
+
+                                   라벨·종목 설명까지 넣어도 **여전히 중복이 남는다** —
+                                   같은 의원이 같은 날 같은 금액 구간으로 두 건을
+                                   신고한 실제 데이터가 있다(예: Tommy Tuberville
+                                   2025-12-17 매도 $50,001–$100,000 2건). 공시 자료에
+                                   자연 키가 없으므로 인덱스를 덧붙여 유일성을
+                                   보장한다. 목록은 서버가 정렬해 내려주고 클라이언트
+                                   재정렬이 없어 인덱스가 흔들리지 않는다. */
+                                key={`${trade.office}-${trade.transactionDate}-${trade.side}-${trade.amount.label}-${trade.assetDescription}-${idx}`}
                                 className="border-b border-secondary-700/50 transition-colors last:border-b-0 hover:bg-secondary-700/30"
                             >
                                 <td className="px-4 py-3 whitespace-nowrap">
