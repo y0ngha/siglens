@@ -4,7 +4,11 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { sourceFiles } from './support/controlUsage';
-import { blankComments, classTokens } from './support/sourceScan';
+import {
+    blankComments,
+    classTokens,
+    stripVariants,
+} from './support/sourceScan';
 import {
     MIN_RATIO,
     contrast,
@@ -32,12 +36,50 @@ import {
 
 const SRC_DIR = path.resolve(__dirname, '../..');
 
-/** 표면용 의미 색. 텍스트에 쓰려면 `-text` 짝을 써야 한다. */
-const SURFACE_ONLY = ['ui-danger', 'ui-warning', 'ui-success'] as const;
+/**
+ * 표면용 의미 색. 텍스트에 쓰려면 `-text` 짝을 써야 한다.
+ *
+ * `grade-a..f`가 뒤늦게 들어왔다 — globals.css가 그 계열에도 같은 분리와
+ * 근거("4.32~4.48 AA 미달")를 적어뒀는데 가드는 `ui-*`만 보고 있었다.
+ * 한 계열만 막는 가드는 "이 규칙은 여기만 해당"이라는 잘못된 신호를 준다.
+ */
+const SURFACE_ONLY = [
+    'ui-danger',
+    'ui-warning',
+    'ui-success',
+    'grade-a',
+    'grade-b',
+    'grade-c',
+    'grade-d',
+    'grade-f',
+] as const;
+
+/**
+ * `-text` 짝이 아예 없는 그래픽 전용 색. 텍스트에는 쓸 수 없고, 대신 쓸
+ * 토큰을 함께 알려준다 — 이 계열은 라이트 인셋 표면에서 4.23~4.30이라
+ * **틴트가 없어도** 본문 기준을 밑돈다.
+ */
+const GRAPHICS_ONLY: Record<string, string> = {
+    'chart-bullish': 'ui-success-text',
+    'chart-bearish': 'ui-danger-text',
+};
 
 const TEXT_UTILITY_RE = new RegExp(
-    `^text-(${SURFACE_ONLY.join('|')})(?:/\\d+)?$`
+    `^text-(${[...SURFACE_ONLY, ...Object.keys(GRAPHICS_ONLY)].join('|')})(?:/\\d+)?$`
 );
+
+/**
+ * 근거를 적은 예외만 둔다. **`파일:심볼` 단위**로 적고, 왜 본문 기준이
+ * 적용되지 않는지 함께 쓴다.
+ */
+const ALLOWED: ReadonlySet<string> = new Set([
+    // 등급 게이지의 호(arc)는 SVG `stroke`다 — 글자가 아니라 그래픽이므로
+    // 1.4.11의 3:1이 적용되고, 이 계열은 민 표면에서 4.1 이상이라 통과한다.
+    'widgets/financials/CompositeGradeGauge.tsx::SEGMENTS',
+    // 큰 등급 글자는 `text-4xl font-bold`(36px)라 WCAG의 **큰 텍스트**에
+    // 해당해 기준이 3:1이다. 같은 이유로 `-text` 짝이 필요 없다.
+    'widgets/financials/CompositeGradeGauge.tsx::GRADE_TEXT_COLOR',
+]);
 
 function offenders(): string[] {
     const out: string[] = [];
@@ -46,8 +88,24 @@ function offenders(): string[] {
         const source = blankComments(readFileSync(file, 'utf8'));
         source.split('\n').forEach((line, i) => {
             for (const token of classTokens(line)) {
-                if (!TEXT_UTILITY_RE.test(token)) continue;
-                out.push(`${path.relative(SRC_DIR, file)}:${i + 1} ${token}`);
+                // **변형을 벗기고 본다.** `^text-…$` 앵커만 두었더니 `hover:` 하나에
+                // 가드가 통째로 무력화됐다 — 형제 가드가 같은 커밋에서 고친
+                // 결함인데 이 파일은 공용 구현을 안 쓰고 있었다.
+                const { bare } = stripVariants(token);
+                if (!TEXT_UTILITY_RE.test(bare)) continue;
+                const rel = path.relative(SRC_DIR, file);
+                // 이 줄이 속한 상수 이름으로 예외를 찾는다.
+                const holder = /(?:const|let)\s+(\w+)/.exec(
+                    source
+                        .slice(0, source.indexOf(line) + line.length)
+                        .split('\n')
+                        .reverse()
+                        .find(l => /(?:const|let)\s+\w+/.test(l)) ?? ''
+                )?.[1];
+                if (holder !== undefined && ALLOWED.has(`${rel}::${holder}`)) {
+                    continue;
+                }
+                out.push(`${rel}:${i + 1} ${token}`);
             }
         });
     }
@@ -79,10 +137,14 @@ describe('semantic text token guard', () => {
                 const tint = mix(surface as string, 0.05, page as string);
                 const surfaceRatio = contrast(surface as string, tint);
                 const textRatio = contrast(text as string, tint);
+                // 다크에서는 두 토큰이 같은 값인 계열이 있다(분리가 라이트
+                // 전용). "더 높다"가 아니라 "낮지 않다"가 실제 불변식이다 —
+                // 처음엔 엄격하게 적었다가 `grade-a` 다크에서 8.33 대 8.33으로
+                // 걸렸다.
                 expect(
                     textRatio,
                     `${theme} ${name}: text ${textRatio.toFixed(2)} vs surface ${surfaceRatio.toFixed(2)}`
-                ).toBeGreaterThan(surfaceRatio);
+                ).toBeGreaterThanOrEqual(surfaceRatio);
                 expect(
                     textRatio,
                     `${theme} ${name}-text가 본문 대비 기준 미달`
