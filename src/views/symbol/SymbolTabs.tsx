@@ -51,9 +51,17 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
         >
             {/* 스크롤러(`nav`)와 그 `border-b`는 전폭으로 두고, 탭 버튼은 안쪽
                 래퍼가 `symbol-container`로 본문과 같은 선에서 시작하게 한다.
+                `px-0`이 핵심이다. `symbol-container`의 `padding-inline: 1rem`을
+                그대로 두면 각 링크가 이미 가진 `px-4`와 겹쳐 탭 라벨만 16px 더
+                안쪽으로 밀린다 — 이전 `-mx-4`가 정확히 이걸 상쇄하고 있었다.
+                여백은 링크 자신이 갖고, 컨테이너는 폭만 준다.
+
                 `min-w-max`가 `max-width`를 이기므로 탭이 컨테이너보다 넓어지면
-                그대로 늘어나 가로 스크롤이 유지된다. */}
-            <div className="symbol-container flex min-w-max">
+                그대로 늘어나 가로 스크롤이 유지된다. 다만 그 상태에서는
+                `margin-inline: auto`가 넘친 스트립을 가운데로 밀어 다시 어긋난다
+                — 현재 9탭 max-content가 687px로 1024px 상한까지 337px 여유가 있어
+                도달하지 않는다(탭이 약 23개가 되어야 발생). */}
+            <div className="symbol-container flex min-w-max px-0">
                 {tabs.map(t => {
                     const href = t.hrefBuilder(upper);
                     const active = pathname === href;

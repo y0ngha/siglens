@@ -13,15 +13,19 @@ export function SymbolTabsSkeleton() {
             aria-hidden="true"
             // 실제 SymbolTabs와 동일하게 overflow-y-hidden으로 세로 스크롤 승격을 막는다
             // (overflow-x-auto 단독은 overflow-y를 auto로 승격시켜 세로 스크롤바를 유발).
-            className="flex overflow-x-auto overflow-y-hidden border-b border-secondary-700"
+            className="overflow-x-auto overflow-y-hidden border-b border-secondary-700"
         >
-            {Array.from({ length: SKELETON_PILL_COUNT }, (_, i) => (
-                <span
-                    key={i}
-                    className="mx-1 my-2 h-6 w-16 animate-pulse rounded bg-secondary-700/40"
-                    aria-hidden="true"
-                />
-            ))}
+            {/* 실제 `SymbolTabs`와 **같은 래퍼**를 둔다. 여기만 전폭이면 탭이
+                들어오는 순간 가로로 튄다 — 실측 1280px 140px, 1920px 460px. */}
+            <div className="symbol-container flex min-w-max px-0">
+                {Array.from({ length: SKELETON_PILL_COUNT }, (_, i) => (
+                    <span
+                        key={i}
+                        className="mx-1 my-2 h-6 w-16 animate-pulse rounded bg-secondary-700/40"
+                        aria-hidden="true"
+                    />
+                ))}
+            </div>
         </nav>
     );
 }
