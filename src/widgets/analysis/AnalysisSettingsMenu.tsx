@@ -113,7 +113,7 @@ export function AnalysisSettingsMenu({
                 >
                     <h2
                         id={titleId}
-                        className="text-xs font-semibold tracking-wide text-secondary-100"
+                        className="text-base font-semibold text-secondary-100"
                     >
                         분석 설정
                     </h2>
