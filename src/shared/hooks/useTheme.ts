@@ -7,6 +7,7 @@ import {
     THEME_STORAGE_KEY,
     type ResolvedTheme,
     type ThemePreference,
+    THEME_CHANGE_EVENT,
 } from '@/shared/lib/theme';
 
 /**
@@ -94,7 +95,5 @@ function applyTheme(next: ResolvedTheme) {
         .forEach(meta => meta.setAttribute('content', themeColor));
     /* 차트는 CSS 변수를 못 읽으므로 JS로 색을 갈아끼워야 한다. 리스너를 등록한
        차트 인스턴스들이 이 이벤트를 받아 applyOptions를 호출한다. */
-    window.dispatchEvent(
-        new CustomEvent('siglens:themechange', { detail: next })
-    );
+    window.dispatchEvent(new CustomEvent(THEME_CHANGE_EVENT, { detail: next }));
 }

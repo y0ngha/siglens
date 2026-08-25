@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import type { IChartApi } from 'lightweight-charts';
 import { getChartChrome } from '@/shared/lib/chartColors';
+import { THEME_CHANGE_EVENT } from '@/shared/lib/theme';
 
 /**
  * 테마 전환 시 차트 크롬(배경·그리드·축 텍스트)만 갈아끼운다.
@@ -45,7 +46,7 @@ export function useChartThemeSync(
                 },
             });
         };
-        window.addEventListener('siglens:themechange', apply);
-        return () => window.removeEventListener('siglens:themechange', apply);
+        window.addEventListener(THEME_CHANGE_EVENT, apply);
+        return () => window.removeEventListener(THEME_CHANGE_EVENT, apply);
     }, [chartRef, keepBackground]);
 }

@@ -30,6 +30,16 @@ export const DEFAULT_THEME: ResolvedTheme = 'dark';
 export const THEME_ATTRIBUTE = 'data-theme';
 
 /**
+ * 테마가 바뀔 때 쏘는 이벤트 이름.
+ *
+ * 차트는 CSS 변수를 못 읽어 JS로 색을 받는다. 이 문자열이 발신 1곳·수신 2곳에
+ * **리터럴로 복제돼** 있었는데, 한쪽에 오타가 나면 라이트에서 차트만 검게 남고
+ * 어떤 테스트도 그걸 못 본다(팔레트 테스트는 색만 증명하지 배선을 증명하지
+ * 않는다). 한 곳에서 내보낸다.
+ */
+export const THEME_CHANGE_EVENT = 'siglens:themechange';
+
+/**
  * `<head>`에 인라인으로 박히는 렌더 블로킹 스크립트.
  *
  * 블로킹이 의도된 유일한 자리다. `defer`거나 번들로 빠지면 다크 셸이 먼저

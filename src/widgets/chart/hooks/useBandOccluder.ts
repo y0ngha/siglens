@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import type { ISeriesApi } from 'lightweight-charts';
 import { getChartChrome } from '@/shared/lib/chartColors';
+import { THEME_CHANGE_EVENT } from '@/shared/lib/theme';
 
 /**
  * 밴드형 오버레이(볼린저·켈트너·돈치안)의 **하단 차폐 시리즈**를 테마에 맞춘다.
@@ -32,7 +33,7 @@ export function useBandOccluder(
                 bottomColor: background,
             });
         };
-        window.addEventListener('siglens:themechange', apply);
-        return () => window.removeEventListener('siglens:themechange', apply);
+        window.addEventListener(THEME_CHANGE_EVENT, apply);
+        return () => window.removeEventListener(THEME_CHANGE_EVENT, apply);
     }, [seriesRef]);
 }
