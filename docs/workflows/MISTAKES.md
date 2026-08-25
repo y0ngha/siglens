@@ -643,6 +643,25 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ <button disabled className="disabled:text-secondary-500">Tier-locked feature</button>  // 6.84:1 in both themes
     ✅ <div className="border border-border-control">Locked control</div>  // 3:1+ in both themes (remove opacity)
     → Recurring: W6b Round 1 (disabled timeframe buttons with `disabled:opacity-40`), W6c (disabled switch with `opacity-50`) — 2 occurrences in redesign-p1 audit
+
+19. Heading with no colour class inherits `body { color }` and outranks its own parent heading
+    → `globals.css` sets `body { color: var(--color-secondary-50) }` — the BRIGHTEST tier. A heading whose `className` carries no colour token silently renders at that tier, i.e. at or above the h2/h1 that governs it
+    → **A contrast sweep structurally cannot catch this**: inheriting the brightest colour always PASSES contrast. A 225-element both-theme sweep reported 0 failures while the defect was live. It is a hierarchy defect, not a contrast defect
+    → Detector: extract every `<h[1-6] className="...">` literal and flag any whose class list contains none of `text-secondary-` / `text-primary-` / `text-ui-` / `text-chart-` / `text-white` / `text-grade` / `sr-only`
+    → Detector blind spot: the regex cannot see `className={SOME_CONSTANT}`. Per-file `HEADING_CLASS_NAME` constants hide instances from it — grep those separately
+    → The colour being PRESENT is not sufficient either: a heading sharing its parent's exact colour AND weight (differing only by size) is the same defect. Compare each heading against its own parent, not against a threshold
+    ❌ <h3 className="mb-2 text-sm font-semibold">핵심 이벤트</h3>  // inherits secondary-50, brighter than its own h2
+    ❌ <h3 className="mb-2 text-sm font-semibold text-secondary-100">  // same colour AND weight as its h2
+    ✅ <h3 className={cn('mb-2', HEADING_SUBSECTION)}>  // one step below HEADING_SECTION by design
+    → Recurring: W6c (nine colourless h2 on /[symbol]/overall), W6d (two on NewsAiSummary + two same-colour-as-parent on MarketNewsDigest) — 2 occurrences in redesign-p1
+
+20. Fixing one level of a type ramp breaks the level below it
+    → Lowering a heading's weight/size/colour can leave the level BENEATH it out-ranking the level you just fixed
+    → After any weight/size/colour change, re-measure the level BELOW the one you touched, not only the one you fixed
+    ❌ h3 headline dropped to `font-medium`; the card's h4 sub-labels stayed `font-semibold` and became bolder than the headline above them
+    ✅ h3 `font-medium` + h4 `font-medium` — size and colour still step, so the ramp stays monotonic on all three axes
+    → Weight is not contrast: the h4 measured 9.93:1 light / 11.26:1 dark before AND after the weight change
+    → Recurring: W6d (card h4 after NewsCardShell h3), and the same shape appeared in W6c when raising an h3 without raising its owning h2
 ```
 
 ---
