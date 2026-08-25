@@ -93,7 +93,7 @@ export function PortfolioChip({ symbol }: PortfolioChipProps) {
                     'focus-visible:ring-primary-500 focus-visible:ring-2 focus-visible:outline-none',
                     holding === null
                         ? 'border-border-control text-secondary-300 hover:border-primary-500 hover:bg-secondary-700/30 hover:text-secondary-100'
-                        : 'border-primary-800/60 bg-primary-900/10 text-primary-300 hover:bg-primary-900/20'
+                        : 'border-primary-500 bg-primary-900/10 text-primary-300 hover:bg-primary-900/20'
                 )}
             >
                 {label}

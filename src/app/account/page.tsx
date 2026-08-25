@@ -92,7 +92,7 @@ async function AccountContent() {
                     </div>
                     <Link
                         href="/account/delete"
-                        className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg border border-ui-danger/40 px-5 text-sm font-semibold text-ui-danger-text transition-colors hover:bg-ui-danger/10 focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none"
+                        className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg border border-ui-danger px-5 text-sm font-semibold text-ui-danger-text transition-colors hover:bg-ui-danger/10 focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none"
                     >
                         회원 탈퇴 진행
                     </Link>

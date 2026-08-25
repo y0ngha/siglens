@@ -168,11 +168,18 @@ export default async function Home() {
                                 수동 `<br>`과 em 대시도 걷어냈다. 강제 줄바꿈은
                                 컬럼 폭이 바뀌면 어색한 자리에서 끊기고, 대시는
                                 이미 색상 대비로 나뉜 두 구절을 한 번 더 나눈다.
+
+                                단, 두 구절의 분리는 `sm:` 이상이 아니라 **모든
+                                폭**에서 유지한다. 처음엔 `sm:block`이었는데,
+                                그러면 모바일에서만 두 문장이 한 줄로 붙어
+                                "새로운 기준 AI가 분석하고"처럼 읽힌다 — 대시를
+                                걷어낸 자리를 색상만으로는 못 메운다. 모바일이
+                                주 트래픽이므로 여기서 어긋나면 안 된다.
                             */}
                             <div className="@container mx-auto max-w-sm sm:max-w-2xl lg:mx-0">
                                 <h1 className="text-[clamp(2.1rem,7.4cqw,3.25rem)] leading-[1.12] font-bold tracking-tight text-balance text-secondary-50">
                                     주식과 코인, 투자의 새로운 기준{' '}
-                                    <span className="text-primary-300 sm:block">
+                                    <span className="block text-primary-300">
                                         AI가 분석하고 완성하는 SIGLENS
                                     </span>
                                 </h1>

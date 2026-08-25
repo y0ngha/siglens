@@ -47,7 +47,7 @@ export function ContactTextareaField({
                     .join(' ')}
                 className={cn(
                     'border-border-control bg-secondary-950 text-secondary-50 placeholder:text-secondary-500 focus-visible:border-primary-500 focus-visible:ring-primary-500/40 min-h-32 w-full resize-y rounded-lg border px-4 py-3 text-sm leading-relaxed focus-visible:ring-2 focus-visible:outline-none',
-                    error && 'border-ui-danger/60'
+                    error && 'border-ui-danger'
                 )}
             />
             <p id={helperId} className="text-right text-xs text-secondary-500">
