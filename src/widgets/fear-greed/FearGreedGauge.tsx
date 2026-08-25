@@ -33,11 +33,15 @@ interface SegmentDef {
 
 /**
  * 5-segment palette mapped to design-system semantic tokens (see src/app/globals.css):
- *   EXTREME_FEAR  → text-ui-danger        (#ef5350) — strongest danger
- *   FEAR          → text-ui-warning       (#f59e0b) — warning/caution
- *   NEUTRAL       → text-secondary-400    (#94a3b8) — muted slate
- *   GREED         → text-ui-success/60    (#26a69a @ 60%) — lighter success
- *   EXTREME_GREED → text-ui-success       (#26a69a) — strongest success
+ *   EXTREME_FEAR  → text-ui-danger
+ *   FEAR          → text-ui-warning
+ *   NEUTRAL       → text-secondary-400
+ *   GREED         → text-ui-success/85   — 아래 SEGMENTS 주석 참조
+ *   EXTREME_GREED → text-ui-success
+ *
+ * 토큰 뒤의 실제 hex는 적지 않는다. 테마마다 다르고 리디자인에서 값이 바뀌는데,
+ * 주석에 박아 두면 조용히 낡아 이 목록이 실제로 `/60`·`#94a3b8`을 가리킨 채
+ * 남아 있었다.
  *
  * NEVER use raw Tailwind palette (e.g. yellow-500, red-400).
  * SelfNormWarningBadge와 FearGreedHeaderChip에서도 동일한 시맨틱 토큰을 사용한다.
@@ -59,7 +63,10 @@ const SENTIMENT_TEXT_COLOR: Record<FearGreedLabel, string> = {
     EXTREME_FEAR: 'text-ui-danger',
     FEAR: 'text-ui-warning',
     NEUTRAL: 'text-secondary-300',
-    GREED: 'text-ui-success/80',
+    /* 알파 없이 전체 값을 쓴다. 이 라벨은 아크와 달리 **단어 자체가**
+       밴드를 말하므로(`탐욕` 대 `극단적 탐욕`) 색으로 둘을 갈라 둘 이유가 없다.
+       `/80`은 라이트에서 3.24:1로 AA(4.5)에 못 미쳤다(실측). */
+    GREED: 'text-ui-success',
     EXTREME_GREED: 'text-ui-success',
 };
 
