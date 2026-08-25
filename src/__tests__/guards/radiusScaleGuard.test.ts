@@ -2,6 +2,8 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { blankComments } from './support/sourceScan';
+
 /**
  * 반경 스케일 단일화 가드.
  *
@@ -40,21 +42,6 @@ function sourceFiles(dir: string): string[] {
         else if (name.endsWith('.tsx') || name.endsWith('.ts')) out.push(full);
     }
     return out;
-}
-
-/**
- * 주석을 같은 길이의 공백으로 바꾼다 — 지우면 줄번호가 밀린다.
- * 근거 주석에 `rounded-xl` 같은 토큰 이름이 적히는 건 정상이고(실제로
- * `surfaceStyles.ts`의 설명이 그렇다), 그건 코드가 아니다.
- */
-function blankComments(source: string): string {
-    const blank = (m: string) => m.replace(/[^\n]/g, ' ');
-    return source
-        .replace(/\/\*[\s\S]*?\*\//g, blank)
-        .replace(
-            /(^|[\s,(){}])\/\/[^\n]*/g,
-            (m, p1) => p1 + blank(m.slice(p1.length))
-        );
 }
 
 function offScaleRadii(): string[] {

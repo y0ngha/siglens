@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
+import { blankComments } from './support/sourceScan';
+
 /**
  * heading에 색 클래스가 없으면 `body { color: var(--color-secondary-50) }`을
  * 상속한다 — 램프에서 **가장 밝은** 단계이자 h1이 쓰는 값이다. 그래서 색을
@@ -86,30 +88,16 @@ const CLASSNAME_EXPR_RE = /className=\{([\s\S]*?)\}(?=\s|>|$)/;
  * 무관한 코드를 들여다보게 되므로, 지적 자체보다 나쁠 수 있다.
  * 줄바꿈은 그대로 둬야 줄 수가 유지된다.
  */
-function blankOut(match: string): string {
-    return match.replace(/[^\n]/g, ' ');
-}
-
-function stripComments(source: string): string {
-    return (
-        source
-            .replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, blankOut)
-            .replace(/\/\*[\s\S]*?\*\//g, blankOut)
-            // `//` 줄 주석은 **줄 맨 앞(들여쓰기 제외)**에 있을 때만 지운다.
-            // 이전엔 `https://` 앞의 `:`만 예외 처리했는데, 그러면 heading 본문에
-            // 평범하게 들어간 `//`(예: "안내 // 참고")가 그 줄 끝까지를 지워
-            // **닫는 태그까지 없애고** 다음 heading을 삼킨다. JSX 텍스트 안의
-            // `//`는 주석이 아니므로, 주석으로 볼 수 있는 자리만 좁게 본다.
-            //
-            // 한때 후행 주석까지 지우도록 넓혔다가 되돌렸다 — 위에 적힌 금지를
-            // 그대로 어긴 변경이었고, 실제로 heading 본문의 `//`가 닫는 태그를
-            // 지워 다음 heading을 삼키며 진짜 위반을 숨겼다. 이 가드는 파일
-            // 전체에서 heading 여닫이를 짝지으므로 미탐지의 대가가 오탐보다
-            // 크다. className 문자열만 보는 형제 가드들은 그 위험이 없어 넓은
-            // 형태를 쓴다 — 같은 문제라도 문맥이 다르면 답이 다르다.
-            .replace(/(?<=^|\n)[ \t]*\/\/[^\n]*/g, blankOut)
-    );
-}
+/**
+ * 주석 제거는 공통 스캐너에 맡긴다.
+ *
+ * 이 파일이 직접 짠 규칙 두 개가 각각 결함이었다. JSX 주석 규칙은 게으른
+ * 매칭에 닫는 중괄호 앵커가 붙어, 자기 종료 표시를 지나 멀리 있는 다른
+ * 종료 지점까지 삼켰다(heading 8개가 통째로 안 보였다). 줄 주석 규칙은
+ * 넓혔다 좁혔다 하며 회귀를 한 번 냈다. 문자열·주석 판별은 한 곳에서만
+ * 옳으면 된다.
+ */
+const stripComments = blankComments;
 
 function tsxFiles(dir: string): string[] {
     const out: string[] = [];

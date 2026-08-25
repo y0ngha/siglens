@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { blankComments } from './support/sourceScan';
+
 /**
  * 라이트 테마 블록이 정의하는 모든 `--color-*`는 다크(`@theme`)에도 있어야 한다.
  *
@@ -38,7 +40,10 @@ function colourTokens(block: string): Set<string> {
 }
 
 function readThemeBlocks(): { dark: Set<string>; light: Set<string> } {
-    const source = readFileSync(GLOBALS_CSS, 'utf8');
+    // **주석을 먼저 비운다.** 쌍둥이 가드에서 같은 결함을 고쳤는데 이 파일은
+    // 그대로였다 — 주석 속 `}` 하나면 라이트 블록이 잘리고, 그러면 뒤쪽
+    // 오버라이드가 통째로 목록에서 빠져 오타 토큰이 검출되지 않는다.
+    const source = blankComments(readFileSync(GLOBALS_CSS, 'utf8'));
     const themeOpen = /@theme\s*\{/.exec(source);
     const lightOpen = /:root\[data-theme='light'\]\s*\{/.exec(source);
     if (themeOpen === null || lightOpen === null) {
