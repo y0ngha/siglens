@@ -32,6 +32,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import { HIGH_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
+import { LABEL_KO } from '@/shared/lib/typographyStyles';
 import { isFallbackAnalysis } from '@/entities/chat-message';
 import {
     parseStructuredSummary,
@@ -118,9 +119,7 @@ function ActionRecommendationSection({
                 </div>
             )}
             <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-secondary-500">
-                    매매 전략
-                </span>
+                <span className={LABEL_KO}>매매 전략</span>
                 <button
                     type="button"
                     onClick={onToggleChart}
@@ -146,7 +145,7 @@ function ActionRecommendationSection({
                     if (typeof value !== 'string' || value === '') return null;
                     return (
                         <div key={label} className="flex flex-col gap-0.5">
-                            <span className="text-xs font-medium text-secondary-400">
+                            <span className="text-xs font-medium text-secondary-500">
                                 {label}
                             </span>
                             <MarkdownText className="text-sm text-secondary-300">
@@ -196,9 +195,7 @@ function ReconciledLevelsBlock({
     return (
         <section className="mt-1 flex flex-col gap-1 rounded-lg border border-secondary-700 bg-secondary-800/40 px-3 py-2">
             <header className="flex items-center">
-                <span className="text-xs font-semibold text-secondary-400">
-                    내부 보정값
-                </span>
+                <span className={LABEL_KO}>내부 보정값</span>
                 <InfoTooltip>
                     <div className="text-secondary-300">
                         <p>
@@ -219,7 +216,7 @@ function ReconciledLevelsBlock({
                 </MarkdownText>
             )}
             {riskReward !== '' && (
-                <MarkdownText className="text-xs text-secondary-400">
+                <MarkdownText className="text-xs text-secondary-500">
                     {riskReward}
                 </MarkdownText>
             )}
@@ -510,9 +507,7 @@ function PatternAccordionItem({
                     </MarkdownText>
                     {keyPrices.length > 0 && (
                         <div className="flex flex-col gap-1">
-                            <span className="text-xs font-semibold text-secondary-500">
-                                주요 가격대
-                            </span>
+                            <span className={LABEL_KO}>주요 가격대</span>
                             <div className="flex flex-col gap-1">
                                 {keyPrices.map((kp, index) => (
                                     <div
@@ -553,9 +548,7 @@ function StructuredSkillSummary({ sections }: StructuredSkillSummaryProps) {
         <div className="flex flex-col gap-2">
             {sections.map(section => (
                 <div key={section.label} className="flex flex-col gap-0.5">
-                    <span className="text-xs font-semibold text-secondary-500">
-                        {section.label}
-                    </span>
+                    <span className={LABEL_KO}>{section.label}</span>
                     <MarkdownText className="text-xs text-secondary-300">
                         {section.value}
                     </MarkdownText>
@@ -1137,9 +1130,7 @@ export function AnalysisPanel({
                         keyLevels.poc !== undefined) && (
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center">
-                                <span className="text-xs font-semibold text-secondary-500">
-                                    주요 레벨
-                                </span>
+                                <span className={LABEL_KO}>주요 레벨</span>
                                 <KeyLevelsHeaderInfo />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
@@ -1227,9 +1218,7 @@ export function AnalysisPanel({
                     {trendlines.length > 0 && (
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold text-secondary-500">
-                                    추세선
-                                </span>
+                                <span className={LABEL_KO}>추세선</span>
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 {trendlines.map(trendline => (
@@ -1245,9 +1234,7 @@ export function AnalysisPanel({
                     {((priceTargets.bullish?.targets.length ?? 0) > 0 ||
                         (priceTargets.bearish?.targets.length ?? 0) > 0) && (
                         <div className="flex flex-col gap-2">
-                            <span className="text-xs font-semibold text-secondary-500">
-                                가격 목표
-                            </span>
+                            <span className={LABEL_KO}>가격 목표</span>
                             <div className="grid grid-cols-2 gap-3">
                                 <PriceScenarioSection
                                     label="상승"
@@ -1265,9 +1252,7 @@ export function AnalysisPanel({
 
                     {displayedIndicatorResults.length > 0 && (
                         <div className="flex flex-col gap-2">
-                            <span className="text-xs font-semibold text-secondary-500">
-                                보조지표
-                            </span>
+                            <span className={LABEL_KO}>보조지표</span>
                             <div className="flex flex-col gap-1.5">
                                 {displayedIndicatorResults.map(
                                     indicatorResult =>
@@ -1288,9 +1273,7 @@ export function AnalysisPanel({
                     )}
 
                     <div className="flex flex-col gap-2">
-                        <span className="text-xs font-semibold text-secondary-500">
-                            차트 패턴
-                        </span>
+                        <span className={LABEL_KO}>차트 패턴</span>
                         {hasDetectedPatterns ? (
                             <div className="flex flex-col gap-1.5">
                                 {detectedPatterns.map(pattern => (
@@ -1302,7 +1285,7 @@ export function AnalysisPanel({
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-sm text-secondary-500">
+                            <p className="text-xs text-secondary-500">
                                 감지된 패턴 없음
                             </p>
                         )}
@@ -1310,9 +1293,7 @@ export function AnalysisPanel({
 
                     {detectedStrategyResults.length > 0 && (
                         <div className="flex flex-col gap-2">
-                            <span className="text-xs font-semibold text-secondary-500">
-                                전략
-                            </span>
+                            <span className={LABEL_KO}>전략</span>
                             <div className="flex flex-col gap-1.5">
                                 {detectedStrategyResults.map(strategy => (
                                     <StrategyAccordionItem

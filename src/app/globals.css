@@ -518,6 +518,23 @@ body {
     [type='submit']:disabled {
         cursor: not-allowed;
     }
+
+    /*
+     * 네이티브 `<dialog>`를 중앙에 되돌린다.
+     *
+     * UA 스타일시트는 `dialog:modal`에 `inset: 0` + `margin: auto`를 주어
+     * 뷰포트 중앙에 놓는다. 그런데 Tailwind preflight의 `*, ::before, ::after
+     * { margin: 0 }`이 그 `auto`를 덮어써서, 모달이 조용히 좌상단(0,0)에
+     * 붙는다. 클래스에는 아무 문제가 없어 보이므로 소스만 읽어서는 안 잡힌다.
+     * 실측(vw 1600 × vh 857, max-w-lg): 규칙 없이 [0,0], 있으면 [544,16] —
+     * 좌우 (1600−512)/2 = 544, 상하 (857−825)/2 = 16으로 정확히 중앙이다.
+     *
+     * `:modal`로 한정해 `show()`로 띄우는 비모달 dialog(문서 흐름에 놓이는
+     * 용법)는 건드리지 않는다.
+     */
+    dialog:modal {
+        margin: auto;
+    }
 }
 
 .focus-glow:focus-visible {
