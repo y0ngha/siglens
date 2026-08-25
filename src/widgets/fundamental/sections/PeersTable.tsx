@@ -2,9 +2,11 @@ import Link from 'next/link';
 import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
 import { formatCompactCurrency } from '@/shared/lib/priceFormat';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { cn } from '@/shared/lib/cn';
 
 const HEADING_ID = 'peers-heading';
-const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
+const HEADING_CLASS_NAME = cn('mb-4', HEADING_SECTION);
 
 interface PeersTableProps {
     peers: FundamentalPeerInput[];

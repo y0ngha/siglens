@@ -9,9 +9,14 @@ import type {
     FundamentalPriceTargetSummaryInput,
 } from '@y0ngha/siglens-core';
 import type { CSSProperties, ReactNode } from 'react';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
+import { cn } from '@/shared/lib/cn';
 
 const HEADING_ID = 'future-heading';
-const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
+const HEADING_CLASS_NAME = cn('mb-4', HEADING_SECTION);
 
 interface FutureDirectionCardProps {
     /** 표기 통화를 정하기 위해 필요하다 — 국내 종목은 원화다. */
@@ -201,7 +206,7 @@ export function FutureDirectionCard({
 
             {estimates !== null && (
                 <div className="mb-5">
-                    <h3 className="mb-2 text-xs font-medium tracking-[0.01em] text-secondary-400">
+                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
                         애널리스트 추정
                     </h3>
                     <dl className="grid grid-cols-2 gap-3">
@@ -248,7 +253,7 @@ export function FutureDirectionCard({
 
             {ptConsensus !== null && (
                 <div className="mb-5">
-                    <h3 className="mb-2 text-xs font-medium tracking-[0.01em] text-secondary-400">
+                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
                         목표 주가
                     </h3>
                     <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
@@ -338,7 +343,7 @@ export function FutureDirectionCard({
 
             {grades !== null && (
                 <div>
-                    <h3 className="mb-1 text-xs font-medium tracking-[0.01em] text-secondary-400">
+                    <h3 className={cn('mb-1', HEADING_SUBSECTION)}>
                         투자의견 컨센서스
                         <InfoTooltip>
                             <p>

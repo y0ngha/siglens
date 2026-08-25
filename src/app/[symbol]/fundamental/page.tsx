@@ -67,6 +67,7 @@ import {
     profileIdForSymbol,
     type MarketProfileId,
 } from '@/shared/config/marketProfile';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 // 종목당 SEO 콘텐츠는 고정이고 동적 데이터는 클라가 재hydrate한다. 엣지 캐시로
 // compute 호출을 줄인다. (일시 인프라 장애의 404 캐싱은 getAssetInfo strict로 차단)
@@ -184,10 +185,7 @@ function ProfileCardSkeleton({ symbol }: ProfileCardSkeletonProps) {
         >
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <h2
-                        id="profile-heading"
-                        className="text-xl font-semibold tracking-tight"
-                    >
+                    <h2 id="profile-heading" className={HEADING_SECTION}>
                         <span className="inline-block h-5 w-36 animate-pulse rounded bg-secondary-700 align-middle" />
                         <span className="ml-2 text-base font-normal text-secondary-400">
                             ({symbol})

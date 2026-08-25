@@ -2,6 +2,7 @@
 
 import { cn } from '@/shared/lib/cn';
 import type { AssetClass } from '@/shared/config/marketProfile';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface OverallTriggerCtaProps {
     onTrigger: () => void;
@@ -38,7 +39,7 @@ export function OverallTriggerCta({
         >
             <h2
                 id="overall-cta-heading"
-                className="text-2xl font-semibold text-balance"
+                className={cn(HEADING_SECTION, 'text-balance')}
             >
                 AI 종합 분석
             </h2>

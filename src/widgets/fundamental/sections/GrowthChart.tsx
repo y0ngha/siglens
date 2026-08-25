@@ -1,9 +1,10 @@
 import type { FundamentalGrowthInput } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
 import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 const HEADING_ID = 'growth-heading';
-const HEADING_CLASS_NAME = 'mb-2 text-lg font-semibold tracking-tight';
+const HEADING_CLASS_NAME = cn('mb-2', HEADING_SECTION);
 
 interface GrowthChartProps {
     growth: FundamentalGrowthInput | null;

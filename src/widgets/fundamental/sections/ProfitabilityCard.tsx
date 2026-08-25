@@ -2,9 +2,11 @@ import { EmptySectionCard } from './EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import type { FundamentalRatiosInput } from '@y0ngha/siglens-core';
 import type { CSSProperties, ReactNode } from 'react';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { cn } from '@/shared/lib/cn';
 
 const HEADING_ID = 'profitability-heading';
-const HEADING_CLASS_NAME = 'mb-2 text-lg font-semibold tracking-tight';
+const HEADING_CLASS_NAME = cn('mb-2', HEADING_SECTION);
 
 interface ProfitabilityCardProps {
     ratios: FundamentalRatiosInput | null;

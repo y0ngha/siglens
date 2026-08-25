@@ -155,6 +155,16 @@
     --color-grade-d: #f97316; /* orange — D (35–49) */
     --color-grade-f: #ef5350; /* red    — F (0–34) */
 
+    /* 등급 램프의 텍스트 변형. 위 5개는 게이지 스트로크와 36px 대형 등급 글자를
+       겨냥한 값이라 **자기 /10 틴트 칩 위의 14px 굵은 글씨**로 쓰면 라이트에서
+       4.32~4.48:1로 AA(4.5)에 미달한다(실측). `ui-*` / `ui-*-text`와 같은 분리다.
+       다크는 틴트 위에서 4.94~8.42:1로 이미 통과하므로 기본값을 그대로 쓴다. */
+    --color-grade-a-text: #22c55e;
+    --color-grade-b-text: #84cc16;
+    --color-grade-c-text: #eab308;
+    --color-grade-d-text: #f97316;
+    --color-grade-f-text: #ef5350;
+
     /* AA-compliant text variants of the ui semantic family. The base
        ui-success/warning/danger and chart-bullish/bearish tokens are tuned for
        GRAPHICS (3:1) and fail the 4.5:1 text minimum when used as small (text-xs)
@@ -333,6 +343,17 @@
     --color-grade-c: #a16207;
     --color-grade-d: #c2410c;
     --color-grade-f: #b91c1c;
+
+    /* 틴트 칩 위 텍스트용. 위 값들은 **흰 카드 기준** 4.9~6.5:1이라고 적혀 있지만
+       배지는 흰 카드가 아니라 `bg-grade-{a..f}/10` 틴트 위에 얹힌다 — 그 위에서는
+       A 4.37 / B 4.39 / C 4.32 / D 4.48로 AA 미달이다(실측). 여기서는 색상
+       정체성을 유지한 채 명도만 낮춰 4.80~4.83:1을 만든다(F는 5.46이라 그대로).
+       흰 카드 위에서도 5.47~5.58로 여유가 있다. */
+    --color-grade-a-text: #14793a;
+    --color-grade-b-text: #49750e;
+    --color-grade-c-text: #975c07;
+    --color-grade-d-text: #b93e0b;
+    --color-grade-f-text: #b91c1c;
 
     /* 상태 텍스트 — 다크 전용으로 튜닝된 값들이라 라이트에서는 1.4~1.9:1로
        전멸한다. 밝은 변형의 어두운 짝을 따로 정의한다. */

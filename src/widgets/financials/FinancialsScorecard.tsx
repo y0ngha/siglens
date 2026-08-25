@@ -6,6 +6,8 @@ import {
     type StatementCurrency,
 } from './utils/numberFormat';
 import { AXIS_LABEL_KO } from './axisLabels';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { cn } from '@/shared/lib/cn';
 
 interface FinancialsScorecardProps {
     /** The complete 4-axis financials scorecard from computeFinancialsScorecard. */
@@ -51,7 +53,7 @@ export function FinancialsScorecard({
         >
             <h2
                 id="financials-scorecard-heading"
-                className="mb-6 text-lg font-semibold tracking-tight"
+                className={cn('mb-6', HEADING_SECTION)}
             >
                 재무 종합 점수
             </h2>

@@ -18,6 +18,10 @@ import { buildChatState } from './utils/buildChatState';
 import { FundamentalAiSummaryError } from './FundamentalAiSummaryError';
 import { FundamentalAiSummarySkeleton } from './FundamentalAiSummarySkeleton';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 
 const SENTIMENT_LABEL: Record<FundamentalSentiment, string> = {
     bullish: '긍정',
@@ -52,10 +56,7 @@ export function FundamentalAiSummaryView({
             className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <div className="mb-4 flex items-center justify-between gap-3">
-                <h2
-                    id="ai-summary-heading"
-                    className="text-lg font-semibold tracking-tight"
-                >
+                <h2 id="ai-summary-heading" className={HEADING_SECTION}>
                     AI 펀더멘털 분석
                 </h2>
                 <span
@@ -102,7 +103,9 @@ export function FundamentalAiSummaryView({
 
             {result.riskFactorsKo.length > 0 && (
                 <div>
-                    <h3 className="mb-2 text-sm font-semibold">위험 요인</h3>
+                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
+                        위험 요인
+                    </h3>
                     <ul className="space-y-1.5">
                         {result.riskFactorsKo.map(risk => (
                             <li

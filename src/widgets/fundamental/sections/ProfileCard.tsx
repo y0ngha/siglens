@@ -2,9 +2,10 @@ import type { ReactNode } from 'react';
 import type { FundamentalProfile } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
 import { formatCompactCurrency } from '@/shared/lib/priceFormat';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 const HEADING_ID = 'profile-heading';
-const HEADING_CLASS_NAME = 'text-xl font-semibold tracking-tight';
+const HEADING_CLASS_NAME = HEADING_SECTION;
 
 interface ProfileCardProps {
     profile: FundamentalProfile | null;

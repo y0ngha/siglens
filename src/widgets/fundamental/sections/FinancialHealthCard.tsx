@@ -8,9 +8,10 @@ import { EmptySectionCard } from './EmptySectionCard';
 import { cn } from '@/shared/lib/cn';
 import { formatCompactCurrency } from '@/shared/lib/priceFormat';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 const HEADING_ID = 'health-heading';
-const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
+const HEADING_CLASS_NAME = cn('mb-4', HEADING_SECTION);
 
 interface FinancialHealthCardProps {
     /** 표기 통화를 정하기 위해 필요하다 — 국내 종목은 원화다. */
