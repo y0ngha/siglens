@@ -414,7 +414,7 @@ function SearchOverlayBody({
                                                     entry.label
                                                 )
                                             }
-                                            className="min-h-11 max-w-[12rem] touch-manipulation truncate rounded-full border border-primary-500 bg-primary-600/5 px-3 text-xs text-secondary-200 transition-colors hover:border-primary-500/60 hover:text-primary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                            className="min-h-11 max-w-[12rem] touch-manipulation truncate rounded-full border border-primary-500 bg-primary-600/5 px-3 text-xs text-secondary-200 transition-colors hover:border-primary-400 hover:text-primary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                                         >
                                             {entry.label}
                                         </button>

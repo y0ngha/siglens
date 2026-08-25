@@ -412,21 +412,33 @@ function findHoverContrastDrops(): string[] {
     const offenders: string[] = [];
     for (const file of tsxFiles(SRC_DIR)) {
         const source = readFileSync(file, 'utf8');
-        for (const match of source.matchAll(
-            /className=(?:"([^"]*)"|\{([\s\S]*?)\}(?=\s|>))/g
-        )) {
-            const value = match[1] ?? match[2] ?? '';
-            if (!value.includes('border-border-control')) continue;
-            // 예전엔 여기만 옛 열거(`600|700`)를 그대로 들고 있었다. 그래서
-            // `hover:border-secondary-800`(라이트에서 `#fff` — 호버하면 보더가
-            // 아예 사라진다)이 통과했다. 본 규칙과 같은 판정을 쓴다.
-            const hoverTokens = stripInlineComments(value)
-                .split(/[\s'"`,]+/)
-                .filter(x => x.startsWith('hover:border-'))
+        // **본 규칙과 같은 범위**로 본다 — 컨트롤 태그만. 예전엔 모든 className을
+        // 훑어서 카드·패널의 장식 보더 호버까지 잡혔다. 장식 보더는 정책상
+        // 대상이 아니므로 호버도 대상이 아니다.
+        for (const { tag, index } of controlOpeningTags(source)) {
+            const value =
+                CLASSNAME_RE.exec(tag)?.[1] ??
+                /className=\{([\s\S]*)$/.exec(tag)?.[1] ??
+                '';
+            // 예전엔 **기본값이 `border-control`일 때만** 검사했다. 그래서 기본
+            // 보더를 다른 합격 토큰(`primary-500` 등)으로 올려놓고 hover만 알파로
+            // 남긴 자리가 그대로 빠져나갔다 — 실제로 검색 칩이 호버할 때 5.26에서
+            // 2.60으로 **떨어지고 있었고**, master는 반대로 올라갔으니 이 브랜치가
+            // 만든 역전이었다. 기본 보더가 무엇이든, hover가 허용 밖이면 잡는다.
+            const tokens = stripInlineComments(value).split(/[\s'"`,]+/);
+            if (!tokens.some(x => /^(?:border|ring)-\D/.test(x))) continue;
+            const hoverTokens = tokens
+                .filter(x => /^hover:(?:border|ring)-\D/.test(x))
                 .map(x => x.slice('hover:'.length));
-            if (!hoverTokens.some(isDecorativeBorder)) continue;
+            // **알파가 붙은 호버만 잡는다.** 어떤 배경 위에서든 알파는 대비를
+            // 낮추므로, CSS 값을 몰라도 "호버하면 덜 보인다"가 확정된다.
+            // 램프를 갈아끼우는 호버(`hover:border-secondary-300`)는 대비를
+            // 올리는 정상 동작이라 여기서 판정할 수 없다 — 정지 상태용 허용
+            // 목록을 그대로 쓰면 그런 자리를 오탐한다(실제로 동의 체크박스가
+            // 그렇게 잡혔다). 값 기반 판정은 대비 가드가 실측으로 맡는다.
+            if (!hoverTokens.some(x => /\/\d+$/.test(x))) continue;
             const rel = path.relative(SRC_DIR, file);
-            const line = source.slice(0, match.index).split('\n').length;
+            const line = source.slice(0, index).split('\n').length;
             offenders.push(`${rel}:${line}`);
         }
     }
