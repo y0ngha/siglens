@@ -71,7 +71,7 @@ async function AccountContent() {
                 <PortfolioSection />
                 <Link
                     href="/portfolio"
-                    className="inline-flex min-h-11 touch-manipulation items-center justify-center rounded-lg border border-secondary-700 px-4 text-sm font-medium text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    className="inline-flex min-h-11 touch-manipulation items-center justify-center rounded-lg border border-border-control px-4 text-sm font-medium text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     내 포트폴리오 위치 보기
                 </Link>

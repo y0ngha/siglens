@@ -277,7 +277,7 @@ function SearchOverlayBody({
                     autoCorrect="off"
                     autoCapitalize="off"
                     spellCheck={false}
-                    className="h-11 min-w-0 flex-1 rounded-lg border border-secondary-700 bg-secondary-800 px-3 text-base text-secondary-100 placeholder-secondary-400 outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-500"
+                    className="h-11 min-w-0 flex-1 rounded-lg border border-border-control bg-secondary-800 px-3 text-base text-secondary-100 placeholder-secondary-400 outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-500"
                 />
                 <button
                     type="button"

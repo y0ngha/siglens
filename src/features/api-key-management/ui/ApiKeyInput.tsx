@@ -28,7 +28,7 @@ export function ApiKeyInput({
                 placeholder={placeholder}
                 aria-label={ariaLabel}
                 aria-describedby={ariaDescribedby}
-                className="h-10 w-full rounded-lg border border-secondary-700 bg-secondary-950 px-3 pr-10 font-mono text-sm text-secondary-50 placeholder:text-secondary-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/40 focus:outline-none"
+                className="h-10 w-full rounded-lg border border-border-control bg-secondary-950 px-3 pr-10 font-mono text-sm text-secondary-50 placeholder:text-secondary-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/40 focus:outline-none"
             />
             <button
                 type="button"

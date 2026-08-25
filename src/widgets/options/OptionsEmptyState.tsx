@@ -15,7 +15,7 @@ interface OptionsEmptyStateProps {
 }
 
 const FALLBACK_LINK_CLASSES =
-    'border-secondary-700 hover:border-primary-500 focus-visible:ring-primary-500 rounded-lg border p-4 text-left transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
+    'border-border-control hover:border-primary-500 focus-visible:ring-primary-500 rounded-lg border p-4 text-left transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
 
 const FALLBACK_PAGES = [
     {

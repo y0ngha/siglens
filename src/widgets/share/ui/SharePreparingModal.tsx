@@ -94,7 +94,7 @@ export function SharePreparingModal({
                                 <button
                                     type="button"
                                     onClick={onClose}
-                                    className="flex h-9 touch-manipulation items-center justify-center rounded-lg border border-secondary-700 px-4 text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                    className="flex h-9 touch-manipulation items-center justify-center rounded-lg border border-border-control px-4 text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
                                     닫기
                                 </button>

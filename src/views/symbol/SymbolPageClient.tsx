@@ -174,7 +174,7 @@ export function SymbolPageClient({
                             <button
                                 type="button"
                                 onClick={() => setSheetSnap(SNAP_FULL)}
-                                className="shrink-0 touch-manipulation rounded-lg border border-secondary-700 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-secondary-300 transition-colors hover:border-secondary-600 hover:bg-secondary-700/30 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none md:hidden"
+                                className="shrink-0 touch-manipulation rounded-lg border border-border-control px-2.5 py-1 text-xs font-medium whitespace-nowrap text-secondary-300 transition-colors hover:border-primary-500 hover:bg-secondary-700/30 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none md:hidden"
                             >
                                 AI 분석 보기
                             </button>

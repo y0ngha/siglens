@@ -115,7 +115,7 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                         <button
                             type="button"
                             onClick={() => setEditMode(true)}
-                            className="rounded-lg border border-secondary-700 px-3 py-1.5 text-xs font-medium text-secondary-300 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                            className="rounded-lg border border-border-control px-3 py-1.5 text-xs font-medium text-secondary-300 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             재등록
                         </button>

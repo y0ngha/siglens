@@ -132,7 +132,7 @@ export function NoticePopup() {
                     </button>
                     <button
                         onClick={advance}
-                        className="rounded-lg border border-secondary-600 px-4 py-2 text-sm text-secondary-200 transition-colors hover:bg-secondary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        className="rounded-lg border border-border-control px-4 py-2 text-sm text-secondary-200 transition-colors hover:bg-secondary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         닫기
                     </button>

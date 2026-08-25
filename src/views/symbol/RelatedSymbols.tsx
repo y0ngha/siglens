@@ -129,7 +129,7 @@ export async function RelatedSymbols({ symbol }: RelatedSymbolsProps) {
                                 // 진입 시 RSC 페이로드 8벌(심볼당 ~35KB gzip)을 한꺼번에
                                 // 당긴다. 이 스트립은 탐색 보조라 즉시성이 필요 없다.
                                 prefetch={false}
-                                className="inline-flex items-baseline gap-1.5 rounded-full border border-secondary-700 bg-secondary-900/60 px-3 py-1.5 text-sm text-secondary-300 transition-colors hover:border-primary-600 hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                className="inline-flex items-baseline gap-1.5 rounded-full border border-border-control bg-secondary-900/60 px-3 py-1.5 text-sm text-secondary-300 transition-colors hover:border-primary-500 hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
                                 {koreanName !== undefined && (
                                     <span>{koreanName}</span>

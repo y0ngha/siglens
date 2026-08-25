@@ -337,7 +337,7 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
                 <button
                     type="button"
                     onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
-                    className="w-full rounded-lg border border-secondary-700 py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    className="w-full rounded-lg border border-border-control py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     더보기 ({items.length - visibleCount}개 남음)
                 </button>

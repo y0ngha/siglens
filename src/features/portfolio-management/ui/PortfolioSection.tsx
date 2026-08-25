@@ -14,7 +14,7 @@ import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 const ROW_CHROME =
     'ring-secondary-800 bg-secondary-900/60 rounded-lg p-4 ring-1';
 const ACTION_BUTTON =
-    'border-secondary-700 text-secondary-300 hover:bg-secondary-800 focus-visible:ring-primary-500 touch-manipulation rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50';
+    'border-border-control text-secondary-300 hover:bg-secondary-800 focus-visible:ring-primary-500 touch-manipulation rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50';
 const DANGER_BUTTON =
     'text-ui-danger-text border-ui-danger/40 hover:bg-ui-danger/10 focus-visible:ring-ui-danger touch-manipulation rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50';
 

@@ -94,7 +94,7 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
                     onChange={event => setInput(event.target.value)}
                     aria-invalid={isMismatch}
                     aria-describedby={INPUT_HINT_ID}
-                    className="h-12 w-full rounded-lg border border-secondary-700 bg-secondary-950 px-4 text-sm text-secondary-50 placeholder:text-secondary-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/40 focus:outline-none aria-invalid:border-ui-danger"
+                    className="h-12 w-full rounded-lg border border-border-control bg-secondary-950 px-4 text-sm text-secondary-50 placeholder:text-secondary-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/40 focus:outline-none aria-invalid:border-ui-danger"
                 />
                 <div
                     id={INPUT_HINT_ID}
@@ -111,7 +111,7 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <Link
                     href="/account"
-                    className="inline-flex h-12 items-center justify-center rounded-lg border border-secondary-700 px-5 text-sm font-medium text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900 focus-visible:outline-none sm:flex-1"
+                    className="inline-flex h-12 items-center justify-center rounded-lg border border-border-control px-5 text-sm font-medium text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900 focus-visible:outline-none sm:flex-1"
                 >
                     취소
                 </Link>

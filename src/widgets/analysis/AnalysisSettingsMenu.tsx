@@ -86,7 +86,7 @@ export function AnalysisSettingsMenu({
                 title={accessibleLabel}
                 className={cn(
                     'border-border-control text-secondary-300 relative inline-flex size-11 items-center justify-center rounded-lg border',
-                    'hover:border-secondary-600 hover:bg-secondary-700/30 hover:text-secondary-100',
+                    'hover:border-primary-500 hover:bg-secondary-700/30 hover:text-secondary-100',
                     'focus-visible:ring-primary-500 focus-visible:ring-2 focus-visible:outline-none',
                     'touch-manipulation transition-colors'
                 )}

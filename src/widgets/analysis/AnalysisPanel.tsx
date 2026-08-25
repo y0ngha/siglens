@@ -1028,7 +1028,7 @@ export function AnalysisPanel({
                                             copyState === 'copied',
                                         'border-chart-bearish/40 bg-chart-bearish/10 text-ui-danger-text':
                                             copyState === 'failed',
-                                        'border-secondary-700 text-secondary-300 hover:border-secondary-600 hover:text-secondary-100':
+                                        'border-border-control text-secondary-300 hover:border-primary-500 hover:text-secondary-100':
                                             copyState === 'idle',
                                     }
                             )}

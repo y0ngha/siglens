@@ -136,7 +136,7 @@ export function OptionsChainTable({
                 aria-expanded={expanded}
                 aria-controls="options-chain-table"
                 onClick={() => setExpanded(prev => !prev)}
-                className="flex w-full cursor-pointer items-center justify-between rounded-lg border border-secondary-700 bg-secondary-800 p-4 transition-colors hover:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                className="flex w-full cursor-pointer items-center justify-between rounded-lg border border-border-control bg-secondary-800 p-4 transition-colors hover:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
                 <span className="text-sm text-secondary-200">
                     {headerLabel}

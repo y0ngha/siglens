@@ -101,7 +101,7 @@ export function ShareSheet({
                         type="text"
                         readOnly
                         value={shareUrl}
-                        className="w-full rounded border border-secondary-700 bg-secondary-800 px-2 py-1 text-xs text-secondary-200"
+                        className="w-full rounded border border-border-control bg-secondary-800 px-2 py-1 text-xs text-secondary-200"
                         onClick={e => (e.target as HTMLInputElement).select()}
                         aria-label="공유 링크 (직접 복사)"
                     />

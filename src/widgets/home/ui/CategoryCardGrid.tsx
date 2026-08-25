@@ -71,7 +71,7 @@ export function CategoryCardGrid({
                                         // origin에서 당겨오므로 prefetch를 끈다
                                         // (docs/architecture/CDN_CACHING.md §1).
                                         prefetch={false}
-                                        className="inline-flex items-baseline gap-1.5 rounded-full border border-secondary-700 px-3 py-1 text-xs text-secondary-300 transition-colors hover:border-primary-600/40 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                        className="inline-flex items-baseline gap-1.5 rounded-full border border-border-control px-3 py-1 text-xs text-secondary-300 transition-colors hover:border-primary-500 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                                     >
                                         <span>{item.name}</span>
                                         <span className="text-[10px] text-secondary-500">

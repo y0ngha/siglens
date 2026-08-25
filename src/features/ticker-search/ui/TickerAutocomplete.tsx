@@ -13,7 +13,7 @@ const OPTION_ID_PREFIX = `${LISTBOX_ID}-option`;
 type TickerAutocompleteSize = 'sm' | 'lg';
 
 const INPUT_BASE =
-    'bg-secondary-800 border-secondary-700 text-secondary-100 placeholder-secondary-500 focus:border-primary-600 focus:ring-primary-500 rounded-lg border transition-colors outline-none focus:ring-1';
+    'bg-secondary-800 border-border-control text-secondary-100 placeholder-secondary-500 focus:border-primary-600 focus:ring-primary-500 rounded-lg border transition-colors outline-none focus:ring-1';
 /*
  * `lg`는 홈 히어로 전용이다(다른 소비처는 전부 `sm`). 검색은 이 페이지가
  * 존재하는 이유이자 유일하게 중요한 동작이므로, 화면에서 가장 큰 인터랙티브
