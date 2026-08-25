@@ -28,7 +28,7 @@ export default function SymbolError({ error, reset }: SymbolErrorProps) {
     }, [error]);
 
     return (
-        <main className="page-container flex flex-1 flex-col items-center py-20 text-center">
+        <main className="symbol-container flex flex-1 flex-col items-center py-20 text-center">
             <p className="text-sm font-semibold tracking-[0.01em] text-primary-400">
                 일시 오류
             </p>

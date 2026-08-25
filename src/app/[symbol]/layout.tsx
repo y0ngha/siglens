@@ -300,10 +300,15 @@ async function SymbolFloatingChat({ params }: SymbolLayoutSegmentProps) {
 
 // Static shell mirroring SymbolLayoutHeader's outer shape. Used as the Suspense
 // fallback while params resolve and the bars prefetch completes.
+//
+// 폭 구조도 실제 헤더와 **같아야 한다**. 이전엔 여기만 `px-4` 전폭이라, 안에 든
+// 스켈레톤이 `symbol-container`로 옮겨간 뒤 폴백 자신의 브레드크럼과 탭이
+// 1920px에서 436px 어긋났고, 폴백에서 실제 헤더로 넘어갈 때도 448px 튀었다.
+// 콜드 로드의 첫 페인트라 사용자가 실제로 보는 화면이다.
 function SymbolHeaderShellFallback() {
     return (
-        <header className="px-4 py-3" aria-hidden="true">
-            <div className="flex items-center justify-between gap-4">
+        <header className="py-3" aria-hidden="true">
+            <div className="symbol-container flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                     <span className="font-mono text-xs tracking-[0.2em] text-secondary-500 uppercase">
                         SIGLENS
@@ -313,7 +318,7 @@ function SymbolHeaderShellFallback() {
                 </div>
                 <span className="inline-block h-8 w-36 shrink-0 animate-pulse rounded-lg bg-secondary-700" />
             </div>
-            <div className="-mx-4 mt-3">
+            <div className="mt-3">
                 <SymbolTabsSkeleton />
             </div>
         </header>

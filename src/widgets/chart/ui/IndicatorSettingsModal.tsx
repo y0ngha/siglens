@@ -168,7 +168,7 @@ export function IndicatorSettingsModal({
                             <div className="flex flex-col gap-4 p-5">
                                 {groups.map(group => (
                                     <section key={group.category}>
-                                        <h3 className="mb-1 text-xs font-semibold tracking-wide text-secondary-500 uppercase">
+                                        <h3 className="mb-1 text-xs font-semibold text-secondary-500">
                                             {group.label}
                                         </h3>
                                         <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
