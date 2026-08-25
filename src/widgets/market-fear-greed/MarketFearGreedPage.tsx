@@ -1,4 +1,5 @@
 import type { MarketFearGreedView } from '@/entities/market-fear-greed';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { FearGreedGauge } from '@/widgets/fear-greed';
 import { formatConfidenceFooter } from '@/shared/lib/fearGreedLabels';
 import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
@@ -78,16 +79,12 @@ export function MarketFearGreedPage({
             </section>
 
             <section className="flex flex-col gap-3">
-                <h2 className="text-sm font-medium text-secondary-300">
-                    기간별 비교
-                </h2>
+                <h2 className={HEADING_SECTION}>기간별 비교</h2>
                 <MarketFearGreedComparison comparisons={comparisons} />
             </section>
 
             <section className="flex flex-col gap-3">
-                <h2 className="text-sm font-medium text-secondary-300">
-                    요인별 기여도
-                </h2>
+                <h2 className={HEADING_SECTION}>요인별 기여도</h2>
                 {snapshot.factors.map(factor => (
                     <MarketFearGreedFactorBar
                         key={factor.key}

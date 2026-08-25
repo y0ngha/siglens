@@ -11,6 +11,7 @@ import {
     type FearGreedMarketId,
 } from '@/shared/lib/marketFearGreedLabels';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 
 interface MarketFearGreedFactorBarProps {
     factor: MarketFearGreedFactor;
@@ -40,7 +41,7 @@ export function MarketFearGreedFactorBar({
     const pctile = Math.round(factor.percentile);
 
     return (
-        <section className="flex flex-col gap-2 rounded bg-secondary-800/40 p-3">
+        <section className={cn('flex flex-col gap-2 p-3', SURFACE_NESTED)}>
             <header className="flex items-center justify-between">
                 <h3 className="text-sm font-medium text-secondary-200">
                     {label}

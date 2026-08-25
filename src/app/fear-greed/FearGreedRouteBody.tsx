@@ -3,6 +3,9 @@ import { MarketFearGreedPage } from '@/widgets/market-fear-greed';
 import type { MarketFearGreedView } from '@/entities/market-fear-greed';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import {
     MARKET_FACTOR_DESCRIPTION,
@@ -104,11 +107,11 @@ export function FearGreedRouteBody({ market, view }: FearGreedRouteBodyProps) {
                 <div className="page-container mt-6">
                     <section
                         aria-labelledby="market-fear-greed-guide-heading"
-                        className="space-y-4 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5"
+                        className={cn('space-y-4 p-5', SURFACE_CARD)}
                     >
                         <h2
                             id="market-fear-greed-guide-heading"
-                            className="text-base font-semibold text-secondary-300"
+                            className={HEADING_SECTION}
                         >
                             공포탐욕지수 읽는 법
                         </h2>
@@ -135,7 +138,7 @@ export function FearGreedRouteBody({ market, view }: FearGreedRouteBodyProps) {
                 >
                     <h2
                         id="market-fear-greed-faq-heading"
-                        className="text-base font-semibold text-secondary-300"
+                        className={HEADING_SECTION}
                     >
                         자주 묻는 질문
                     </h2>
