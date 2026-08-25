@@ -14,6 +14,7 @@ import {
 } from '@/shared/config/economyIndicators';
 import { cn } from '@/shared/lib/cn';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 /**
  * 국채 수익률·2s10s 스프레드 카드의 표시 소수 자리수.
@@ -102,10 +103,7 @@ export function EconomicIndicatorGrid({
             aria-labelledby="economy-indicators-heading"
             className="space-y-8"
         >
-            <h2
-                id="economy-indicators-heading"
-                className="text-lg font-semibold text-secondary-100"
-            >
+            <h2 id="economy-indicators-heading" className={HEADING_SECTION}>
                 경제지표
             </h2>
             {ECONOMY_INDICATOR_CATEGORIES.map(cat => (

@@ -28,6 +28,7 @@ import { useEconomicCalendarTrigger } from '../hooks/useEconomicCalendarTrigger'
 import { useIndicatorTranslationTrigger } from '../hooks/useIndicatorTranslationTrigger';
 import { ImpactFilter } from './ImpactFilter';
 import { IMPACT_LABELS, IMPACT_ORDER } from '../utils/impactMeta';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 const IMPACT_BADGE: Record<CalendarImpact, string> = {
     High: 'bg-ui-danger/20 text-ui-danger-text',
@@ -644,7 +645,7 @@ export function EconomicCalendarGrid({
             <section aria-labelledby="economy-calendar-heading">
                 <h2
                     id="economy-calendar-heading"
-                    className="mb-3 text-lg font-semibold text-secondary-100"
+                    className={cn('mb-3', HEADING_SECTION)}
                 >
                     경제 캘린더{' '}
                     <span className="text-sm font-normal text-secondary-400">
@@ -663,7 +664,7 @@ export function EconomicCalendarGrid({
         <section aria-labelledby="economy-calendar-heading">
             <h2
                 id="economy-calendar-heading"
-                className="mb-4 text-lg font-semibold text-secondary-100"
+                className={cn('mb-4', HEADING_SECTION)}
             >
                 경제 캘린더{' '}
                 <span className="text-sm font-normal text-secondary-400">

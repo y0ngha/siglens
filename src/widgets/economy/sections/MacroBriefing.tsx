@@ -6,6 +6,7 @@ import { cn } from '@/shared/lib/cn';
 import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
 
 import { useMacroBriefing } from '../hooks/useMacroBriefing';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 const REGIME_LABELS: Record<MacroBriefingResponse['regime'], string> = {
     expansion: '확장',
@@ -70,10 +71,7 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
             aria-labelledby="macro-briefing-heading"
         >
             <header className="mb-4 flex items-center gap-3">
-                <h2
-                    id="macro-briefing-heading"
-                    className="text-lg font-semibold text-secondary-100"
-                >
+                <h2 id="macro-briefing-heading" className={HEADING_SECTION}>
                     거시 브리핑
                 </h2>
                 <span

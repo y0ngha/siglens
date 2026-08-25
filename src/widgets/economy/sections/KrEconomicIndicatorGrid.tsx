@@ -5,6 +5,7 @@ import {
 } from '@/shared/config/economyIndicators';
 import { cn } from '@/shared/lib/cn';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface KrEconomicIndicatorGridProps {
     readonly cards: readonly KrIndicatorCard[];
@@ -35,10 +36,7 @@ export function KrEconomicIndicatorGrid({
 
     return (
         <section aria-labelledby="kr-economy-indicators" className="space-y-5">
-            <h2
-                id="kr-economy-indicators"
-                className="text-base font-semibold text-secondary-200"
-            >
+            <h2 id="kr-economy-indicators" className={HEADING_SECTION}>
                 경제지표
             </h2>
             {ECONOMY_INDICATOR_CATEGORIES.map(category => {
