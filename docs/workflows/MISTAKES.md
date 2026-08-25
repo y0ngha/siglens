@@ -673,6 +673,18 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ h3 `font-medium` + h4 `font-medium` — size and colour still step, so the ramp stays monotonic on all three axes
     → Weight is not contrast: the h4 measured 9.93:1 light / 11.26:1 dark before AND after the weight change
     → Recurring: W6d (card h4 after NewsCardShell h3), and the same shape appeared in W6c when raising an h3 without raising its owning h2
+
+20.5. Heading design tokens not unified per hierarchy level — drift, per-file duplicates, or inconsistent application
+    → All headings at the same hierarchy level (all h2, all h3) must use a single shared design token (HEADING_SECTION for h2, HEADING_SUBSECTION for h3, etc.)
+    → Per-file local constants re-implementing identical class strings (`text-lg font-semibold tracking-tight` in multiple files) defeat the shared-token intent and hide token usage from grep
+    → Same-level drift (one h2 at 18px, another h2 at 14px, both with no colour class) creates hierarchy defects invisible to contrast sweeps
+    ❌ h2 className="text-lg font-semibold tracking-tight" in widget A; identical string in widget B (per-file constant, defeats grep)
+    ❌ All h2 on route use different sizes/weights: 18/600, 14/600, 14/500 (drift)
+    ❌ FearGreedGroupBar h4 rendered same size/weight as two h2 but brighter (same-level inversion)
+    ✅ All h2 use className={cn('...', HEADING_SECTION)} (single shared token)
+    ✅ Centralized HEADING_SECTION / HEADING_SUBSECTION / HEADING_TERTIARY tokens in typographyStyles.ts; all routes import and apply uniformly
+    ✅ After any heading size/weight/colour change, verify all same-level headings still use the same token
+    → Recurring: W6e (per-file HEADING_CLASS_NAME constants), W6g/W6h (same-level drift on fear-greed + share routes) — 2 occurrences
 ```
 
 ---

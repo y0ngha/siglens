@@ -287,3 +287,24 @@
 - Violation: Turbopack served stale CSS for `globals.css` custom-property edits. File was correct on disk, `git diff` showed the change, tsc/oxlint passed, but `getComputedStyle(documentElement).getPropertyValue('--color-ui-success-text')` returned OLD value. `curl` of the served chunk returned OLD hash; `touch` did not help. Only `yarn clear:build` + dev restart picked it up. Earlier edits to the same file in the same session HAD recompiled (CSS syntax error took server to 500), so not always broken — goes stale at some point.
   - Rule: (new) Dev environment build cache — After editing a CSS token in globals.css or other hot-reload files, assert the token's OWN computed value BEFORE measuring anything downstream. Without that guard the conclusion becomes "the component fix didn't work", and the hunt goes into perfectly good component code. Symptoms: git diff correct, build passes, but runtime value stale.
   - Context: Added guard in audit script: read each token's computed value from documentElement before any measurements. If token value is stale, clear build cache and restart dev server before re-running audit. Caching issue is intermittent; may correlate with timing of stylesheet load vs property-value registration.
+## [W6g/W6h — /[symbol]/fear-greed + /share/[id] | redesign-p1 | 2026-08-25]
+- Violation: 색 없는 heading 스캐너의 오탐 하나를 규칙으로 굳혔다. `src/app/share/[id]/page.tsx`의 브레드크럼 h1은 **직접 텍스트 노드가 없고**(자식 span 넷이 각자 크기·굵기·색을 가짐) 상속색이 화면에 나타나지 않는다.
+  - Rule: 스캔 조건은 "색 토큰 없음"만으로 부족하다 — **직접 텍스트 노드를 가진 heading**에만 적용한다
+  - Context: 색을 얹으면 아무 데도 안 쓰이는 죽은 클래스가 된다. 코드에 근거 주석을 남겨 반복 지적을 막았다.
+- Violation: 한 라우트의 h2를 고치자 그 컴포넌트를 공유하는 다른 라우트에 타이가 생겼다. fear-greed h2를 18/600/sec-100으로 올리니 `/share/[id]`의 브레드크럼 h1 티커 span(18/700/sec-100)과 크기·색이 같아졌고, 그 라우트엔 비교할 다른 h2가 없어 굵기만 남았다.
+  - Rule: 공유 컴포넌트의 위계를 바꾸면 그 컴포넌트가 뜨는 **모든** 라우트에서 다시 재야 한다
+  - Context: 공유 토큰을 다시 쪼개지 않고 h1 쪽을 `text-xl`로 올려 해결했다.
+- Violation: 한 표현식에서 자초한 3단계 회귀. 각 단계가 개선처럼 보였다는 게 핵심이다.
+  (1) 원래: 공유 링크 og/meta 설명이 `공포·탐욕 지수 42.73276474769012`인데 같은 페이지 본문은 `43`. 화면 컴포넌트는 이미 `Math.round`를 쓰고 메타만 예외였다.
+  (2) 1차 수정: `typeof rawScore === 'number' && Number.isFinite(rawScore)` 가드로 반올림. 리뷰 통과.
+  (3) 자체 의심: 대체한 코드가 `String(r.score ?? '')`라 값이 무엇이든 보여줬는데, 숫자만 받도록 좁히면 숫자 문자열일 때 점수가 통째로 사라진다 — 서식 버그를 정보 손실로 바꾸는 것.
+  (4) 2차 수정: `typeof r.score === 'string' ? Number(r.score) : r.score`로 강제 변환 추가.
+  (5) 그 2차 수정이 더 나쁜 결함을 만들었다: `Number('')`와 `Number('   ')`가 **0**이고 `Number.isFinite(0)`은 true라 폴백이 도달 불가가 되어, 빈 점수가 `공포·탐욕 지수 0`이라는 **없는 점수**로 나갔다. 리뷰가 실제 호출로 재현하고 상류까지 추적했다 — `isValidShareInput`은 `result`가 객체이고 65,536바이트 미만인지만 보며 docstring이 내용은 untrusted라고 명시한다. 즉 빈 문자열은 모든 계층에서 유효 입력이다.
+  (6) 3차 수정: 강제 변환 전에 빈 문자열·공백을 제외.
+  - Rule: `Number(x)`를 빈 문자열 가능성이 있는 값에 쓰는 건 파싱 위험이 아니라 **날조 위험**이다 — `''`와 공백이 `0`이 되어 모든 유한성 검사를 통과한다
+  - Rule: 출력 경로를 강화할 때 "아무것도 안 보임"이 "그럴듯한 틀린 값"보다 안전하다. 범위를 좁히는 수정은 **옛 코드가 무엇을 보여줬는지**와 대조해야 한다
+  - Rule: 공유·unfurl 문자열은 페이지에 오지도 않은 사람이 본다 — 같은 버그라도 앱 안에서보다 나쁘다
+  - Context: 뮤테이션 검증 — 가드를 되돌리면 `expected '{"description":"NEUTRAL · 공포·탐욕 지수 0"…' not to contain '지수 0'`으로 정확히 그 케이스만 실패하고, 복원하면 129 passed에 파일이 동일하다.
+- Violation: 브라우저 감사가 **측정 중일 때** 소스를 고쳤다. Next dev는 라우트별로 컴파일하므로 약 15분간 `/AAPL/fear-greed`는 옛 `h4` 청크를, `/share/<id>`는 새 `h3` 청크를 서빙했다 — 같은 컴포넌트, 두 라우트, 두 렌더링. **하이드레이션 에러는 0건**이라 아무 신호가 없었다.
+  - Rule: 감사·리뷰 에이전트가 측정하는 동안에는 소스를 건드리지 않는다. 부득이 고쳤으면 무엇이 언제 바뀌었는지 알리고 재측정을 요청한다
+  - Context: 감사자가 "렌더된 마크업이 HEAD와도 워킹트리와도 안 맞는다"를 눈치채서 잡았다. pre-push build가 dev 서버를 죽여 측정을 무효화하는 문제와 같은 부류다 — 둘 다 "측정 중 환경을 바꾸지 마라".
