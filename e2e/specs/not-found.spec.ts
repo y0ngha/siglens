@@ -54,6 +54,32 @@ test.describe('not found', () => {
         });
     }
 
+    /**
+     * 에러 셸 404가 저장된 테마를 적용하는지 — **프로덕션 빌드에서만** 볼 수 있다.
+     *
+     * `/INVALIDTICKER1`은 동적 세그먼트에서 `notFound()`를 부르므로 Next가
+     * 루트 레이아웃을 거치지 않는 `<html id="__next_error__">` 셸을 내보낸다.
+     * 그 셸의 `<head>`에는 인라인 스크립트가 **하나도 없어서**, 테마를 찍는
+     * 것은 `not-found.tsx`가 렌더하는 클라이언트 폴백뿐이다. 유닛 테스트는
+     * jsdom이라 이 셸을 재현할 수 없다 — 여기서만 진짜로 확인된다.
+     */
+    test('에러 셸 404도 저장된 라이트 테마를 적용한다', async ({ page }) => {
+        await page.addInitScript(() => {
+            localStorage.setItem('siglens-theme', 'light');
+        });
+
+        const response = await page.goto('/INVALIDTICKER1');
+        expect(response?.status()).toBe(404);
+
+        await expect(page.locator('html')).toHaveAttribute(
+            'data-theme',
+            'light'
+        );
+        await expect(
+            page.getByRole('heading', { name: '페이지를 찾을 수 없습니다' })
+        ).toBeVisible();
+    });
+
     test('the not-found home link navigates back to the landing page', async ({
         page,
     }) => {

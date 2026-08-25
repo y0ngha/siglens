@@ -5,6 +5,7 @@ import {
     DEFAULT_THEME,
     resolveTheme,
     THEME_STORAGE_KEY,
+    THEME_ATTRIBUTE,
     type ResolvedTheme,
     type ThemePreference,
     THEME_CHANGE_EVENT,
@@ -27,7 +28,7 @@ export function useTheme() {
     const [theme, setThemeState] = useState<ResolvedTheme>(DEFAULT_THEME);
 
     useEffect(() => {
-        const current = document.documentElement.getAttribute('data-theme');
+        const current = document.documentElement.getAttribute(THEME_ATTRIBUTE);
         if (current === 'light' || current === 'dark') setThemeState(current);
     }, []);
 
@@ -63,7 +64,7 @@ export function useTheme() {
 
     const toggleTheme = useCallback(() => {
         setTheme(
-            document.documentElement.getAttribute('data-theme') === 'light'
+            document.documentElement.getAttribute(THEME_ATTRIBUTE) === 'light'
                 ? 'dark'
                 : 'light'
         );
@@ -82,7 +83,7 @@ export function useTheme() {
  */
 function applyTheme(next: ResolvedTheme) {
     const root = document.documentElement;
-    root.setAttribute('data-theme', next);
+    root.setAttribute(THEME_ATTRIBUTE, next);
     root.style.colorScheme = next;
     /* `viewport.themeColor`가 미디어 배열이라 meta 태그가 **두 개** 나온다
        (light 조건 / dark 조건). 첫 번째만 고치면 사용자가 시스템과 반대

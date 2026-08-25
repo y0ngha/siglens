@@ -45,21 +45,32 @@ interface SeriesColorClasses {
     dot: string;
 }
 
+/**
+ * 막대 채움이 `/85`인 이유: `/70`은 라이트 카드(흰색) 위에서 2.64:1로
+ * 그래픽 기준(3:1)을 밑돈다 — 다크는 통과라 다크만 보면 안 보인다.
+ * `/85`는 램프 세 표면 × 양 테마 전부에서 3.34 이상이고, 옵션 차트의
+ * 막대·`FearGreedGroupBar`의 GREED 밴드와 같은 값이다. 알파를 아예 빼면
+ * 막대가 선(stroke)과 붙어 보인다.
+ *
+ * **리터럴로 적는다.** 알파를 상수로 빼서 템플릿으로 조립하면 Tailwind의
+ * 정적 추출이 그 클래스를 못 보고 규칙이 통째로 안 구워진다 — 타입도 빌드도
+ * 통과하는데 화면에서만 색이 사라진다.
+ */
 const COLOR_CLASSES: Record<SeriesColor, SeriesColorClasses> = {
     bullish: {
-        fill: 'fill-chart-bullish/70',
+        fill: 'fill-chart-bullish/85',
         stroke: 'stroke-chart-bullish',
         legend: 'bg-chart-bullish',
         dot: 'bg-chart-bullish',
     },
     bearish: {
-        fill: 'fill-chart-bearish/70',
+        fill: 'fill-chart-bearish/85',
         stroke: 'stroke-chart-bearish',
         legend: 'bg-chart-bearish',
         dot: 'bg-chart-bearish',
     },
     neutral: {
-        fill: 'fill-primary-500/70',
+        fill: 'fill-primary-500/85',
         stroke: 'stroke-primary-500',
         legend: 'bg-primary-500',
         dot: 'bg-primary-500',
@@ -223,9 +234,14 @@ export function FinancialTrendChart({
                                 rx="1"
                                 className={cn(
                                     colors.fill,
+                                    // `opacity-40`이었다. 채움이 이미 `/85`라
+                                    // 실효 알파가 0.34가 되어 비활성 기간이
+                                    // 1.5:1까지 떨어졌다 — 흐려지는 게 아니라
+                                    // 사실상 사라진다. 강조 대비는 유지하되
+                                    // 나머지도 읽히도록 올린다.
                                     hover !== null &&
                                         hover.periodIdx !== pi &&
-                                        'opacity-40'
+                                        'opacity-60'
                                 )}
                             />
                         );

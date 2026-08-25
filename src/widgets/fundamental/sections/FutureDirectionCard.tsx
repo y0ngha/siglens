@@ -69,6 +69,15 @@ function fmtBig(v: number | null, symbol: string): string {
     return v !== null ? formatCompactCurrency(v, symbol) : '—';
 }
 
+/**
+ * 강/약 밴드는 **같은 색조에 알파만 다르다**(강력매수=불투명, 매수=`/85`).
+ *
+ * `/60`이었는데 카드 위에서 라이트 2.27:1 · 다크 3.00:1로 그래픽 기준(3:1)을
+ * 밑돌았다 — 범례 색칩도 같은 값이라 색↔라벨 매핑이 흐려진다. `/85`는 램프
+ * 세 표면 × 양 테마 전부에서 3.34 이상이면서 불투명 밴드와 여전히 구분된다.
+ * `FearGreedGroupBar`가 GREED/EXTREME_GREED에 대해 같은 이유로 같은 값을
+ * 쓰고 있었다 — 이 파일만 그 결정을 놓쳤다.
+ */
 function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
     const total = strongBuy + buy + hold + sell + strongSell;
     if (total === 0) return null;
@@ -90,7 +99,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 {buy > 0 && (
                     <div
                         title={`매수 ${buy}`}
-                        className="h-3 w-(--bar-w) bg-ui-success/60"
+                        className="h-3 w-(--bar-w) bg-ui-success/85"
                         style={
                             {
                                 '--bar-w': `${pct(buy, total)}%`,
@@ -112,7 +121,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 {sell > 0 && (
                     <div
                         title={`매도 ${sell}`}
-                        className="h-3 w-(--bar-w) bg-ui-danger/60"
+                        className="h-3 w-(--bar-w) bg-ui-danger/85"
                         style={
                             {
                                 '--bar-w': `${pct(sell, total)}%`,
@@ -143,7 +152,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 </div>
                 <div className="flex items-center gap-1">
                     <span
-                        className="block h-2 w-2 rounded bg-ui-success/60"
+                        className="block h-2 w-2 rounded bg-ui-success/85"
                         aria-hidden="true"
                     />
                     <dt className="text-secondary-400">매수</dt>
@@ -159,7 +168,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 </div>
                 <div className="flex items-center gap-1">
                     <span
-                        className="block h-2 w-2 rounded bg-ui-danger/60"
+                        className="block h-2 w-2 rounded bg-ui-danger/85"
                         aria-hidden="true"
                     />
                     <dt className="text-secondary-400">매도</dt>

@@ -1,3 +1,5 @@
+import { THEME_ATTRIBUTE } from './theme';
+
 export const CHART_COLORS = {
     /*
      * 차트 크롬(배경 / 그리드 / 축 텍스트). **이 3키만 테마에 따라 변한다** —
@@ -214,7 +216,7 @@ export function getChartChrome(): ChartChrome {
         return { background, grid, text };
     }
     const isLight =
-        document.documentElement.getAttribute('data-theme') === 'light';
+        document.documentElement.getAttribute(THEME_ATTRIBUTE) === 'light';
     const src = isLight ? CHART_COLORS_LIGHT : CHART_COLORS;
     return { background: src.background, grid: src.grid, text: src.text };
 }
