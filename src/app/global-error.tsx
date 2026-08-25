@@ -39,7 +39,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
                 <p className="text-xs font-semibold tracking-[0.01em] text-primary-400">
                     일시 오류
                 </p>
-                <h1 className="mt-4 text-2xl font-bold text-secondary-100">
+                <h1 className="mt-4 text-2xl font-bold text-secondary-50">
                     서비스를 불러오지 못했어요
                 </h1>
                 <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">

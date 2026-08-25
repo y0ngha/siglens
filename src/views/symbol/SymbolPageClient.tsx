@@ -146,7 +146,7 @@ export function SymbolPageClient({
                         크롤러용 h1은 page.tsx의 Suspense fallback에 동일 텍스트 sr-only h1으로
                         제공하고, hydration 후 이 가시 h1이 fallback을 대체한다. */}
                     <div className="flex min-w-0 items-center gap-2">
-                        <h1 className="line-clamp-2 min-w-0 text-sm font-semibold text-secondary-100 sm:line-clamp-none sm:truncate sm:text-base">
+                        <h1 className="line-clamp-2 min-w-0 text-sm font-semibold text-secondary-50 sm:line-clamp-none sm:truncate sm:text-base">
                             {buildChartPageHeading(displayName)}
                         </h1>
                         {/*

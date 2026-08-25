@@ -306,7 +306,7 @@ export default function EconomyKrPage() {
                     active="kr"
                     currentPath="/economy/kr"
                 />
-                <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
+                <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
                     {KR_ECONOMY_TITLE}
                 </h1>
                 {/*

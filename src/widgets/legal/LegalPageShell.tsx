@@ -36,7 +36,7 @@ export function LegalPageShell({
                         <p className="font-mono text-xs tracking-widest text-primary-400 uppercase">
                             {eyebrow}
                         </p>
-                        <h1 className="mt-3 text-3xl font-bold text-secondary-100 sm:text-4xl">
+                        <h1 className="mt-3 text-3xl font-bold text-secondary-50 sm:text-4xl">
                             {title}
                         </h1>
                         <p className="mt-4 text-sm leading-relaxed text-secondary-400 sm:text-base">

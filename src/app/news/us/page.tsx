@@ -109,7 +109,7 @@ export default async function UsNewsHubPage() {
             <JsonLd data={breadcrumbJsonLd} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <RegionTabs vertical="news" active="us" currentPath={PATH} />
-                <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
+                <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
                     미국 시장 뉴스
                 </h1>
                 <div className="space-y-1 text-sm text-secondary-400">

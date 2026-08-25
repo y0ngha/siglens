@@ -284,7 +284,7 @@ export default async function CategoryNewsPage({ params }: Props) {
                     currentPath={`/news/${cfg.slug}`}
                 />
                 <NewsCategoryTabs activeCategory={cat} />
-                <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
+                <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
                     {cfg.koLabel} 뉴스
                 </h1>
                 <Suspense fallback={<DigestSkeleton />}>

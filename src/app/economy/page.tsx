@@ -42,7 +42,7 @@ import { EconomyDegraded } from './EconomyDegraded';
 /** 페이지 최상단 h1 — Suspense 위에 렌더되어 ready와 degraded 양 경로에서 항상 표시된다. */
 function EconomyHeroH1() {
     return (
-        <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
+        <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
             {ECONOMY_TITLE}
         </h1>
     );

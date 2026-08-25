@@ -170,7 +170,7 @@ export default async function Home() {
                                 이미 색상 대비로 나뉜 두 구절을 한 번 더 나눈다.
                             */}
                             <div className="@container mx-auto max-w-sm sm:max-w-2xl lg:mx-0">
-                                <h1 className="text-[clamp(2.1rem,7.4cqw,3.25rem)] leading-[1.12] font-bold tracking-tight text-balance text-secondary-100">
+                                <h1 className="text-[clamp(2.1rem,7.4cqw,3.25rem)] leading-[1.12] font-bold tracking-tight text-balance text-secondary-50">
                                     주식과 코인, 투자의 새로운 기준{' '}
                                     <span className="text-primary-300 sm:block">
                                         AI가 분석하고 완성하는 SIGLENS

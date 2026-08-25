@@ -90,7 +90,7 @@ export function FearGreedRouteBody({ market, view }: FearGreedRouteBodyProps) {
                         currentPath={copy.path}
                     />
                 </div>
-                <h1 className="page-container pt-6 text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
+                <h1 className="page-container pt-6 text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
                     {copy.title}
                 </h1>
                 <section className="page-container space-y-3 pt-4 text-sm leading-relaxed text-secondary-400 sm:text-base">

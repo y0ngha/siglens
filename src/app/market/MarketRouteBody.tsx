@@ -241,7 +241,7 @@ export function MarketRouteBody({ scope }: MarketScopeProps): ReactElement {
                         currentPath={copy.path}
                     />
                 </div>
-                <h1 className="page-container pt-6 text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
+                <h1 className="page-container pt-6 text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
                     {copy.title}
                 </h1>
                 <Suspense

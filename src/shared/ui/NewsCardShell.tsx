@@ -87,7 +87,11 @@ export function NewsCardShell({
         >
             <h3
                 className={cn(
-                    'leading-snug font-semibold text-balance wrap-break-word',
+                    // 색을 카드에서 상속하면 이 h3가 자기를 거느린 섹션 h2보다
+                    // 밝아진다(실측 다크 17.28 대 16.99). 기사 제목은 이 페이지의
+                    // 본문이지만 구조상으로는 h2 아래이므로, h2와 같은 단계로
+                    // 명시해 위계가 뒤집히지 않게 한다.
+                    'leading-snug font-semibold text-balance text-secondary-100 wrap-break-word',
                     pending && 'opacity-80'
                 )}
             >
