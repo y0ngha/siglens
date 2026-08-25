@@ -49,14 +49,14 @@ export function ImpactFilter({ value, onToggle }: ImpactFilterProps) {
                             'focus-visible:ring-primary-500 inline-flex min-h-11 touch-manipulation items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none motion-reduce:transition-none',
                             active
                                 ? FILTER_ACTIVE[impact]
-                                : 'border-secondary-700 text-secondary-500 hover:text-secondary-300'
+                                : 'border-border-control text-secondary-500 hover:text-secondary-300'
                         )}
                     >
                         <span
                             aria-hidden="true"
                             className={cn(
                                 'inline-block h-1.5 w-1.5 rounded-full',
-                                active ? 'bg-current' : 'bg-secondary-600'
+                                active ? 'bg-current' : 'bg-border-control'
                             )}
                         />
                         {IMPACT_LABELS[impact]}

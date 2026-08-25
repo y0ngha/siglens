@@ -5,7 +5,10 @@ import {
 } from '@/shared/config/economyIndicators';
 import { cn } from '@/shared/lib/cn';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 
 interface KrEconomicIndicatorGridProps {
     readonly cards: readonly KrIndicatorCard[];
@@ -45,9 +48,7 @@ export function KrEconomicIndicatorGrid({
                 if (!items || items.length === 0) return null;
                 return (
                     <div key={category.key} className="space-y-2">
-                        <h3 className="text-sm font-medium text-secondary-400">
-                            {category.label}
-                        </h3>
+                        <h3 className={HEADING_SUBSECTION}>{category.label}</h3>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                             {items.map(card => (
                                 <IndicatorCard

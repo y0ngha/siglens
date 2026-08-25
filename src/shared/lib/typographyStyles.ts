@@ -57,6 +57,20 @@ export const HEADING_SECTION = cn(
 );
 
 /**
+ * 섹션 안의 소제목(h3). 여러 카드를 묶는 그룹 라벨.
+ *
+ * 이 상수가 생긴 이유도 [[HEADING_SECTION]]과 같다. 미국 지표 그리드는
+ * `text-base font-medium text-secondary-200`, 한국 지표 그리드는
+ * `text-sm font-medium text-secondary-400`으로 갈려 있었고, 한국 쪽은 자기가
+ * 묶는 카드 제목(h4, `text-sm text-secondary-400`)과 **크기·색이 완전히 같아**
+ * 굵기 한 단계만 남았다 — 라이트 테마에서는 하위 h4가 오히려 대비가 높았다.
+ * 두 그리드가 같은 h2 토큰을 쓰는 이상 소제목도 같은 값이어야 한다.
+ */
+export const HEADING_SUBSECTION = cn(
+    'text-base font-medium text-secondary-200'
+);
+
+/**
  * 자릿수가 맞아야 하는 수치(가격·등락률·개수).
  * 모노 대신 본문 서체의 tabular 숫자를 쓴다 — 한글 단위(“개”, “종”)가 붙어도
  * 폰트가 갈리지 않고, 숫자 폭은 여전히 고정된다.

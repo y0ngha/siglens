@@ -29,6 +29,7 @@ import {
 import { TERMS_PATH } from '@/shared/lib/legal';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { KR_ECONOMY_INDICATORS } from '@/shared/config/economyIndicatorsKr';
 
 import { KR_ECONOMY_TITLE } from '../constants';
@@ -317,10 +318,7 @@ export default function EconomyKrPage() {
                     <KrEconomyContent />
                 </Suspense>
                 <section aria-labelledby="economy-kr-faq-heading">
-                    <h2
-                        id="economy-kr-faq-heading"
-                        className="text-base font-semibold text-secondary-300"
-                    >
+                    <h2 id="economy-kr-faq-heading" className={HEADING_SECTION}>
                         자주 묻는 질문
                     </h2>
                     <dl className="mt-3 space-y-4 text-sm leading-relaxed text-secondary-400">

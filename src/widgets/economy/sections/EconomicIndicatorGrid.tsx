@@ -14,7 +14,10 @@ import {
 } from '@/shared/config/economyIndicators';
 import { cn } from '@/shared/lib/cn';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 
 /**
  * 국채 수익률·2s10s 스프레드 카드의 표시 소수 자리수.
@@ -156,9 +159,7 @@ function CategorySection({
 
     return (
         <div>
-            <h3 className="mb-3 text-base font-medium text-secondary-200">
-                {label}
-            </h3>
+            <h3 className={cn('mb-3', HEADING_SUBSECTION)}>{label}</h3>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {cards}
                 {treasuryCards}
