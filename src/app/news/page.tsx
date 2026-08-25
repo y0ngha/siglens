@@ -150,7 +150,7 @@ export default async function NewsHubPage() {
             <JsonLd data={webPageJsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
-                <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
+                <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
                     시장 뉴스 허브
                 </h1>
                 <div className="space-y-1 text-sm text-secondary-400">
@@ -188,7 +188,11 @@ export default async function NewsHubPage() {
                 >
                     <h2
                         id="news-hub-category-index"
-                        className={HEADING_SECTION}
+                        /* 이 h2는 카테고리 바로가기라는 **보조 목록**의 라벨이라,
+                           같은 페이지의 지역 카드 제목(h2, 16px)보다 커지면
+                           페이지에서 가장 큰 소리를 내게 된다. 색·굵기는 토큰을
+                           따르되 크기만 한 단계 낮춰 카드와 같은 위계에 둔다. */
+                        className={cn(HEADING_SECTION, 'text-base')}
                     >
                         카테고리 바로가기
                     </h2>

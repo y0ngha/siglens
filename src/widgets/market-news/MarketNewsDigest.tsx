@@ -9,6 +9,7 @@ import {
     SENTIMENT_CLASS,
     isNewsSentiment,
 } from './utils/sentimentConstants';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 /** Loading / generating status card. */
 function DigestStatusCard() {
@@ -20,7 +21,7 @@ function DigestStatusCard() {
         >
             <h2
                 id="market-news-digest-status-heading"
-                className="mb-4 text-lg font-semibold tracking-tight"
+                className={cn('mb-4', HEADING_SECTION)}
             >
                 시장 AI 다이제스트
             </h2>
@@ -58,10 +59,7 @@ function DigestResultView({ result }: DigestResultViewProps) {
             className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
         >
             <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
-                <h2
-                    id="market-news-digest-heading"
-                    className="text-lg font-semibold tracking-tight"
-                >
+                <h2 id="market-news-digest-heading" className={HEADING_SECTION}>
                     시장 AI 다이제스트
                 </h2>
                 {isNewsSentiment(result.overallSentiment) && (
@@ -144,7 +142,7 @@ function DigestErrorView({ error, onRetry }: DigestErrorViewProps) {
         >
             <h2
                 id="market-news-digest-error-heading"
-                className="mb-2 text-lg font-semibold tracking-tight"
+                className={cn('mb-2', HEADING_SECTION)}
             >
                 시장 AI 다이제스트
             </h2>
