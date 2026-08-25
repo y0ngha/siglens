@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { SITE_NAME } from '@/shared/lib/seo';
 import { ContactDialog } from '@/widgets/layout/ContactDialog';
 import { TickerCategories } from '@/widgets/home';
+import { ThemeAttributeFallback } from '@/shared/ui/ThemeAttributeFallback';
 
 export const metadata: Metadata = {
     title: '페이지를 찾을 수 없습니다',
@@ -12,6 +13,9 @@ export const metadata: Metadata = {
 export default function NotFound() {
     return (
         <>
+            {/* 동적 세그먼트의 notFound()는 루트 레이아웃 없는 에러 셸로
+                렌더돼 `<head>`의 테마 스크립트가 없다 — 여기서 메운다. */}
+            <ThemeAttributeFallback />
             <main className="flex flex-1 flex-col">
                 <div className="page-container flex flex-col items-center py-20 text-center">
                     <p className="font-mono text-sm tracking-widest text-primary-400">

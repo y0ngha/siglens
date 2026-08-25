@@ -81,7 +81,13 @@ const COLOR_GUIDE_LINE = 'var(--color-ui-warning)';
 const COLOR_MIDLINE = 'var(--color-secondary-600)';
 const COLOR_LABEL = 'var(--color-secondary-500)';
 
-const BAR_OPACITY_DEFAULT = 0.7;
+/*
+ * 0.7이었는데 라이트 카드 위에서 Call 막대가 2.85:1로 그래픽 기준(3:1)을
+ * 밑돌았다 — 다크에서는 통과해서 다크만 보면 안 보이는 결함이다. 나란히
+ * 놓이는 StrikeVolumeChart가 이미 0.85라 그 값에 맞춘다(실측 3.70:1).
+ * 상위 OI 강조는 1.0과의 차이로 여전히 읽힌다.
+ */
+const BAR_OPACITY_DEFAULT = 0.85;
 const BAR_OPACITY_TOP_OI = 1;
 
 // 모든 strike의 OI가 0일 때 globalMax 가 0이 되어 barPixelHeight에서

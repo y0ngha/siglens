@@ -5,6 +5,7 @@ import {
     THEME_ATTRIBUTE,
     THEME_INIT_SCRIPT,
     THEME_STORAGE_KEY,
+    applyStoredTheme,
     resolveTheme,
 } from '../theme';
 
@@ -84,6 +85,71 @@ describe('THEME_INIT_SCRIPT', () => {
             expect(document.documentElement.style.colorScheme).toBe(
                 DEFAULT_THEME
             );
+        } finally {
+            if (original) {
+                Object.defineProperty(window, 'localStorage', original);
+            }
+        }
+    });
+});
+
+/**
+ * 같은 판정이 **문자열 한 벌, 함수 한 벌**로 존재한다. 인라인 스크립트는
+ * 번들보다 먼저 렌더 블로킹으로 돌아야 하고, 에러 셸에는 그 스크립트가
+ * 아예 없어 번들 쪽 함수가 필요하다.
+ *
+ * 그래서 한쪽만 검사하면 안 된다 — 어느 한쪽만 고치는 편집이 어떤 게이트에도
+ * 안 걸린다. 양쪽을 **실제로 실행해** 결과를 대조한다.
+ */
+describe('applyStoredTheme와 THEME_INIT_SCRIPT의 판정이 같다', () => {
+    const cases = ['light', 'dark', 'sepia', ''] as const;
+
+    beforeEach(() => {
+        localStorage.clear();
+        document.documentElement.removeAttribute(THEME_ATTRIBUTE);
+        document.documentElement.style.colorScheme = '';
+    });
+
+    function observe(run: () => void, stored: string): [string, string] {
+        localStorage.clear();
+        document.documentElement.removeAttribute(THEME_ATTRIBUTE);
+        document.documentElement.style.colorScheme = '';
+        if (stored !== '') localStorage.setItem(THEME_STORAGE_KEY, stored);
+        run();
+        return [
+            document.documentElement.getAttribute(THEME_ATTRIBUTE) ?? '',
+            document.documentElement.style.colorScheme,
+        ];
+    }
+
+    it.each(cases)('저장값 %s에서 두 구현이 같은 결과를 낸다', stored => {
+        expect(observe(applyStoredTheme, stored)).toEqual(
+            observe(runInitScript, stored)
+        );
+    });
+
+    it('localStorage가 막혀도 두 구현이 같은 결과를 낸다', () => {
+        const original = Object.getOwnPropertyDescriptor(
+            window,
+            'localStorage'
+        );
+        Object.defineProperty(window, 'localStorage', {
+            configurable: true,
+            get() {
+                throw new Error('blocked');
+            },
+        });
+        try {
+            document.documentElement.removeAttribute(THEME_ATTRIBUTE);
+            applyStoredTheme();
+            const viaFn =
+                document.documentElement.getAttribute(THEME_ATTRIBUTE);
+            document.documentElement.removeAttribute(THEME_ATTRIBUTE);
+            runInitScript();
+            expect(viaFn).toBe(
+                document.documentElement.getAttribute(THEME_ATTRIBUTE)
+            );
+            expect(viaFn).toBe(DEFAULT_THEME);
         } finally {
             if (original) {
                 Object.defineProperty(window, 'localStorage', original);
