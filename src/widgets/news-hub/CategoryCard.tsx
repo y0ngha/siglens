@@ -52,7 +52,7 @@ export function CategoryCard({
                 페이지인지 알려 주는 신호가 0이다. 키워드를 가진 것은 제목이므로
                 제목을 링크로 만든다.
             */}
-            <h2 className="mb-1 text-base font-semibold tracking-tight text-balance">
+            <h2 className="mb-1 text-base font-semibold tracking-tight text-balance text-secondary-100">
                 <Link
                     href={href}
                     // 카드 그리드로 다수 렌더 — docs/architecture/CDN_CACHING.md §1

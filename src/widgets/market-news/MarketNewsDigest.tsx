@@ -80,7 +80,9 @@ function DigestResultView({ result }: DigestResultViewProps) {
 
             {result.keyEventsKo.length > 0 && (
                 <div className="mb-4">
-                    <h3 className="mb-2 text-sm font-semibold">핵심 흐름</h3>
+                    <h3 className="mb-2 text-sm font-semibold text-secondary-100">
+                        핵심 흐름
+                    </h3>
                     <ul className="space-y-1.5" aria-label="핵심 흐름 목록">
                         {result.keyEventsKo.map(event => (
                             <li
@@ -104,7 +106,9 @@ function DigestResultView({ result }: DigestResultViewProps) {
 
             {result.upcomingEventsKo.length > 0 && (
                 <div>
-                    <h3 className="mb-2 text-sm font-semibold">주목 일정</h3>
+                    <h3 className="mb-2 text-sm font-semibold text-secondary-100">
+                        주목 일정
+                    </h3>
                     <ul className="space-y-1.5" aria-label="주목 일정 목록">
                         {result.upcomingEventsKo.map(event => (
                             <li
