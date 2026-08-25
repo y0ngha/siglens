@@ -171,7 +171,7 @@ function HoldingRow({
             </div>
             <div role="alert" className="min-h-5 text-sm">
                 {deleteError && (
-                    <span className="text-ui-danger">{deleteError}</span>
+                    <span className="text-ui-danger-text">{deleteError}</span>
                 )}
             </div>
         </li>
@@ -258,7 +258,9 @@ export function PortfolioSection() {
 
             <div role="status" aria-live="polite" className="min-h-5 text-sm">
                 {statusMessage && (
-                    <span className="text-ui-success">{statusMessage}</span>
+                    <span className="text-ui-success-text">
+                        {statusMessage}
+                    </span>
                 )}
             </div>
 

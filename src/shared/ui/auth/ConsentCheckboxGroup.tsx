@@ -261,7 +261,7 @@ export function ConsentCheckboxGroup({
                     id={errorId}
                     role="status"
                     aria-live="polite"
-                    className="text-xs text-ui-danger"
+                    className="text-xs text-ui-danger-text"
                 >
                     {error}
                 </p>

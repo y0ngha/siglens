@@ -232,7 +232,7 @@ function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
             <div
                 className={cn(
                     'text-2xl font-semibold',
-                    positive ? 'text-ui-success' : 'text-ui-danger'
+                    positive ? 'text-ui-success-text' : 'text-ui-danger-text'
                 )}
             >
                 {positive ? '+' : ''}

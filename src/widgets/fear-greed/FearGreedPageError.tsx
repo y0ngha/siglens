@@ -24,7 +24,7 @@ export function FearGreedPageError({
             >
                 공포 탐욕 지수
             </h2>
-            <div className="text-sm text-ui-danger" role="alert">
+            <div className="text-sm text-ui-danger-text" role="alert">
                 {message}
             </div>
             <button

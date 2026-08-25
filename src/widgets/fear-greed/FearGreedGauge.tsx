@@ -33,11 +33,11 @@ interface SegmentDef {
 
 /**
  * 5-segment palette mapped to design-system semantic tokens (see src/app/globals.css):
- *   EXTREME_FEAR  → text-ui-danger
- *   FEAR          → text-ui-warning
+ *   EXTREME_FEAR  → text-ui-danger-text
+ *   FEAR          → text-ui-warning-text
  *   NEUTRAL       → text-secondary-400
- *   GREED         → text-ui-success/85   — 아래 SEGMENTS 주석 참조
- *   EXTREME_GREED → text-ui-success
+ *   GREED         → text-ui-success-text/85   — 아래 SEGMENTS 주석 참조
+ *   EXTREME_GREED → text-ui-success-text
  *
  * 토큰 뒤의 실제 hex는 적지 않는다. 테마마다 다르고 리디자인에서 값이 바뀌는데,
  * 주석에 박아 두면 조용히 낡아 이 목록이 실제로 `/60`·`#94a3b8`을 가리킨 채
@@ -47,27 +47,35 @@ interface SegmentDef {
  * SelfNormWarningBadge와 FearGreedHeaderChip에서도 동일한 시맨틱 토큰을 사용한다.
  */
 const SEGMENTS: ReadonlyArray<SegmentDef> = [
-    { from: 0, to: EXTREME_FEAR_MAX, strokeClass: 'text-ui-danger' },
-    { from: EXTREME_FEAR_MAX, to: FEAR_MAX, strokeClass: 'text-ui-warning' },
+    { from: 0, to: EXTREME_FEAR_MAX, strokeClass: 'text-ui-danger-text' },
+    {
+        from: EXTREME_FEAR_MAX,
+        to: FEAR_MAX,
+        strokeClass: 'text-ui-warning-text',
+    },
     { from: FEAR_MAX, to: NEUTRAL_MAX, strokeClass: 'text-secondary-400' },
     /* `/60`은 라이트에서 페이지 배경 대비 2.35:1로 3:1에 못 미쳤다(실측).
        알파를 아예 빼면 EXTREME_GREED와 같은 값이 되어 두 밴드가 하나로 합쳐진다.
        `/85`는 `BAR_FILL_COLOR.GREED`와 같은 값이고, 요인 막대에서 다크 4.22 ·
        라이트 3.30으로 이미 검증됐다. */
-    { from: NEUTRAL_MAX, to: GREED_MAX, strokeClass: 'text-ui-success/85' },
-    { from: GREED_MAX, to: 100, strokeClass: 'text-ui-success' },
+    {
+        from: NEUTRAL_MAX,
+        to: GREED_MAX,
+        strokeClass: 'text-ui-success-text/85',
+    },
+    { from: GREED_MAX, to: 100, strokeClass: 'text-ui-success-text' },
 ];
 
 /** Sentiment-label → focal-stack text color (semantic tokens only). */
 const SENTIMENT_TEXT_COLOR: Record<FearGreedLabel, string> = {
-    EXTREME_FEAR: 'text-ui-danger',
-    FEAR: 'text-ui-warning',
+    EXTREME_FEAR: 'text-ui-danger-text',
+    FEAR: 'text-ui-warning-text',
     NEUTRAL: 'text-secondary-300',
     /* 알파 없이 전체 값을 쓴다. 이 라벨은 아크와 달리 **단어 자체가**
        밴드를 말하므로(`탐욕` 대 `극단적 탐욕`) 색으로 둘을 갈라 둘 이유가 없다.
        `/80`은 라이트에서 3.24:1로 AA(4.5)에 못 미쳤다(실측). */
-    GREED: 'text-ui-success',
-    EXTREME_GREED: 'text-ui-success',
+    GREED: 'text-ui-success-text',
+    EXTREME_GREED: 'text-ui-success-text',
 };
 
 const GAUGE_CX = 100;

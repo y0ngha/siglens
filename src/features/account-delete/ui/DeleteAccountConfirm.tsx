@@ -102,7 +102,9 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
                     aria-live="polite"
                     className={cn(
                         'text-xs',
-                        isMismatch ? 'text-ui-danger' : 'text-secondary-400'
+                        isMismatch
+                            ? 'text-ui-danger-text'
+                            : 'text-secondary-400'
                     )}
                 >
                     {hintMessage}

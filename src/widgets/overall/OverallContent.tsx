@@ -130,7 +130,7 @@ export function OverallContent({
                 >
                     AI 종합 분석
                 </h2>
-                <p className="text-sm text-ui-danger">
+                <p className="text-sm text-ui-danger-text">
                     뉴스 카드 분석 준비 중 오류가 발생했어요.
                 </p>
                 <button
@@ -220,7 +220,7 @@ export function OverallContent({
                 >
                     AI 종합 분석
                 </h2>
-                <p className="text-sm text-ui-danger" role="alert">
+                <p className="text-sm text-ui-danger-text" role="alert">
                     {state.error ?? '분석 중 오류가 발생했습니다.'}
                     {state.axis !== undefined ? ` (${state.axis} 축 실패)` : ''}
                 </p>

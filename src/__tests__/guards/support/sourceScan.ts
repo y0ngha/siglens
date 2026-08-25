@@ -123,12 +123,20 @@ export function readInitialiser(source: string, start: number): string {
             // 있었다. 종료는 아래 `;`/개행 규칙이 판단한다.
             continue;
         }
-        if (ch === '(' || ch === '[') depth += 1;
-        else if (ch === ')' || ch === ']') {
+        if (ch === '(' || ch === '[' || ch === '{') depth += 1;
+        else if (ch === ')' || ch === ']' || ch === '}') {
             depth -= 1;
-            if (depth === 0) return source.slice(start, i + 1);
+            // **닫는 괄호에서 끝내지 않는다.** 그러면 `const X = (a) => cn(...)`가
+            // 매개변수 목록만 남고 본문이 통째로 안 읽힌다 — 감사가 실제로 그
+            // 형태로 위반을 통과시켰다. `f() + ' cls'`, `[...].join(' ')`도 같은
+            // 이유로 잘렸다. 종료는 아래 `;`/개행 규칙만 판단한다.
+            if (depth < 0) return source.slice(start, i);
         } else if (depth === 0 && (ch === ';' || ch === '\n')) {
-            return source.slice(start, i);
+            // 이어지는 줄(연산자로 끝나거나 다음 줄이 이어붙임)이면 계속 읽는다.
+            const rest = source.slice(i + 1);
+            const cont = /^\s*(?:[+.]|\?\?|\|\||&&|\))/.test(rest);
+            const trailing = /[+({[,?:]\s*$/.test(source.slice(start, i));
+            if (!cont && !trailing) return source.slice(start, i);
         }
         i += 1;
     }
@@ -149,7 +157,14 @@ export function classTokens(value: string): string[] {
     for (const ch of value) {
         if (ch === '[') bracket += 1;
         else if (ch === ']') bracket -= 1;
-        if (bracket === 0 && /[\s'"`,()]/.test(ch)) {
+        // 대괄호 안에서도 **따옴표는 언제나 구분자**다. 그래야
+        // `['border-…'].join(' ')` 같은 배열이 쪼개지고,
+        // `transition-[background-color,border-color]` 같은 임의값은 붙어 있다.
+        // 배열인지 아닌지를 추측하려 했더니 `props['aria-selected']`가 섞인
+        // className에서 판정이 뒤집혀, `aria-[…]:border-…` 변형 토큰이 세 조각으로
+        // 찢어졌고 그 바람에 위반 하나가 판정 함수에 닿지도 못했다.
+        const sep = bracket > 0 ? /['"`]/.test(ch) : /[\s'"`,()]/.test(ch);
+        if (sep) {
             if (buf !== '') out.push(buf);
             buf = '';
             continue;
@@ -157,5 +172,5 @@ export function classTokens(value: string): string[] {
         buf += ch;
     }
     if (buf !== '') out.push(buf);
-    return out;
+    return out.map(x => x.replace(/^\[+|\]+$/g, '')).filter(Boolean);
 }

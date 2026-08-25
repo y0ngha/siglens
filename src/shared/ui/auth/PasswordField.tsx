@@ -76,7 +76,7 @@ export function PasswordField({
                 <p
                     id={capsId}
                     aria-live="polite"
-                    className="text-xs text-ui-warning"
+                    className="text-xs text-ui-warning-text"
                 >
                     Caps Lock이 켜져 있습니다.
                 </p>
@@ -86,7 +86,7 @@ export function PasswordField({
                 <p
                     id={errorId}
                     role="alert"
-                    className="flex items-start gap-1 text-sm text-ui-danger"
+                    className="flex items-start gap-1 text-sm text-ui-danger-text"
                 >
                     <span aria-hidden>⚠</span>
                     <span>{error}</span>

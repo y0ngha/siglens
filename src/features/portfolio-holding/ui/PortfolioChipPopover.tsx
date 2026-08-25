@@ -206,7 +206,9 @@ export function PortfolioChipPopover({
                 </div>
 
                 <div id={errorId} role="alert" className="min-h-5 text-sm">
-                    {error && <span className="text-ui-danger">{error}</span>}
+                    {error && (
+                        <span className="text-ui-danger-text">{error}</span>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-2">

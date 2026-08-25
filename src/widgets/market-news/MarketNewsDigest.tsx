@@ -120,7 +120,7 @@ function DigestResultView({ result }: DigestResultViewProps) {
                             >
                                 <span
                                     aria-hidden="true"
-                                    className="mt-0.5 shrink-0 text-ui-warning"
+                                    className="mt-0.5 shrink-0 text-ui-warning-text"
                                 >
                                     ⚠
                                 </span>

@@ -31,10 +31,10 @@ function StatusMessage({ id, state, className }: StatusMessageProps) {
             className={cn('min-h-5 text-sm', className)}
         >
             {state.status === 'success' && (
-                <span className="text-ui-success">{state.message}</span>
+                <span className="text-ui-success-text">{state.message}</span>
             )}
             {state.status === 'error' && (
-                <span className="text-ui-danger">{state.message}</span>
+                <span className="text-ui-danger-text">{state.message}</span>
             )}
         </div>
     );

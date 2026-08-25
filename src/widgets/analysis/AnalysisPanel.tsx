@@ -234,7 +234,7 @@ const LOCKED_ACTION_INFO_DEPTHS: readonly TierInfoDepth[] = [
 
 const RISK_LEVEL_COLOR: Record<RiskLevel, string> = {
     low: 'text-chart-bullish',
-    medium: 'text-ui-warning',
+    medium: 'text-ui-warning-text',
     high: 'text-chart-bearish',
 };
 

@@ -58,7 +58,7 @@ export function MarketDataErrorNotice({
                 type="button"
                 onClick={onClose}
                 aria-label="안내 닫기"
-                className="-m-1 shrink-0 rounded p-1 leading-none text-ui-warning-text transition-colors hover:text-ui-warning focus-visible:ring-2 focus-visible:ring-ui-warning/50 focus-visible:outline-none"
+                className="-m-1 shrink-0 rounded p-1 leading-none text-ui-warning-text transition-colors hover:text-ui-warning-text focus-visible:ring-2 focus-visible:ring-ui-warning/50 focus-visible:outline-none"
             >
                 ✕
             </button>

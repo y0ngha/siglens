@@ -176,7 +176,7 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                             >
                                 <span
                                     aria-hidden="true"
-                                    className="mt-0.5 shrink-0 text-ui-warning"
+                                    className="mt-0.5 shrink-0 text-ui-warning-text"
                                 >
                                     ⚠
                                 </span>
@@ -217,7 +217,10 @@ function NewsAiSummaryInlineError({
                     {NEWS_ANALYSIS_PERIOD_LABEL}
                 </span>
             </div>
-            <p className="text-sm wrap-break-word text-ui-danger" role="alert">
+            <p
+                className="text-sm wrap-break-word text-ui-danger-text"
+                role="alert"
+            >
                 {error.message}
             </p>
             <button

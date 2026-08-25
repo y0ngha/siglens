@@ -57,7 +57,7 @@ export function ContactTextareaField({
                 <div
                     id={errorId}
                     role="alert"
-                    className="flex items-start gap-1 text-sm text-ui-danger"
+                    className="flex items-start gap-1 text-sm text-ui-danger-text"
                 >
                     <span aria-hidden>⚠</span>
                     <span>{error}</span>

@@ -30,7 +30,9 @@ export function PremiumModelGateModal({
     }, []);
 
     const isAuth = mode === 'auth';
-    const iconColorClass = isAuth ? 'text-ui-warning' : 'text-ui-success';
+    const iconColorClass = isAuth
+        ? 'text-ui-warning-text'
+        : 'text-ui-success-text';
     const title = isAuth ? '프리미엄 모델 사용 안내' : 'API 키 등록 필요';
     const body = isAuth
         ? '회원가입 후 API 키를 등록하면 이 모델을 사용할 수 있어요.'

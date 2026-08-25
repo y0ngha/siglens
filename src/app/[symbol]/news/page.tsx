@@ -214,7 +214,7 @@ function NewsDataServerAlert({ title, message }: NewsDataServerAlertProps) {
             role="alert"
         >
             <h2 className={cn('mb-2', HEADING_SECTION)}>{title}</h2>
-            <p className="text-sm text-ui-danger">{message}</p>
+            <p className="text-sm text-ui-danger-text">{message}</p>
         </section>
     );
 }

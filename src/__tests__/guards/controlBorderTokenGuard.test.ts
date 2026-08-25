@@ -89,17 +89,40 @@ export function borderColourPart(token: string): string | null {
     // `focus` 계열은 **제외한다.** 그건 경계가 아니라 포커스 표시이고
     // (WCAG 2.4.11/2.4.13), 보통 정지 보더 위에 겹쳐 그려진다. 여기 넣으면
     // 정상적인 반투명 포커스 링 7개가 위반으로 잡힌다.
+    // 변형 프리픽스를 **끝까지, 반복해서** 벗긴다. `^` 앵커로 한 번만 벗기던
+    // 때는 `md:hover:border-…`처럼 겹친 변형이 매칭에 실패했고, 그 실패가 곧
+    // 통과였다 — 이 레포에 이미 `motion-reduce:hover:`가 있다.
+    let bare = token;
+    const seen: string[] = [];
+    for (;;) {
+        const m0 = /^([\w-]+(?:-\[[^\]]*\])?):(?!:)/.exec(bare);
+        if (m0 === null) break;
+        seen.push(m0[1]);
+        bare = bare.slice(m0[0].length);
+    }
+    // 포커스 계열은 경계가 아니라 포커스 표시(2.4.11/2.4.13)라 대상이 아니고,
+    // 비활성은 1.4.11이 명시적으로 면제한다.
     if (
-        /^(?:focus|focus-visible|focus-within|peer-focus|group-focus)[-:]/.test(
-            token
+        seen.some(v =>
+            /^(?:focus|focus-visible|focus-within|peer-focus|group-focus|disabled)$/.test(
+                v
+            )
         )
     ) {
         return null;
     }
-    const bare = token.replace(
-        /^(?:hover|active|group-hover|peer-checked|aria-\w+|data-\[[^\]]*\]|dark|sm|md|lg|xl):/g,
-        ''
-    );
+    // **모르는 변형은 통과가 아니다.** 색 해석은 fail-closed로 바꿔놓고 변형
+    // 인식은 허용 목록인 채로 뒀더니, 목록 밖 프리픽스가 붙으면 매칭이 실패해
+    // 그대로 합격했다 — 감사가 `aria-[selected=false]:`로 탭의 정지 경계를
+    // 바꿔 통과시켜 증명했다.
+    const KNOWN_STATE =
+        /^(?:hover|active|group-hover|peer-hover|peer-checked|checked|open|first|last|odd|even|visited|target|aria-[\w-]+|aria-\[[^\]]*\]|data-[\w-]+|data-\[[^\]]*\]|has-\[[^\]]*\]|supports-\[[^\]]*\]|not-[\w-]+|in-[\w-]+|group-[\w-]+|peer-[\w-]+|motion-safe|motion-reduce|print|rtl|ltr|dark|light|sm|md|lg|xl|2xl|max-sm|max-md|max-lg|min-[\w-]+)$/;
+    const unknown = seen.filter(v => !KNOWN_STATE.test(v));
+    if (unknown.length > 0 && /^(?:border|ring)-/.test(bare)) {
+        throw new Error(
+            `${token}: 모르는 변형 프리픽스 "${unknown.join(', ')}" — 판정할 수 없다. 알려진 상태면 목록에 추가하고, 경계와 무관하면 이유를 적을 것`
+        );
+    }
     const m = /^(border|ring)(?:-([a-z]{1,2})\b)?(?:-(.+))?$/.exec(bare);
     if (m === null) return null;
     const head = m[2];
@@ -122,11 +145,27 @@ export function borderColourPart(token: string): string | null {
  * 구글 브랜드 버튼은 두 테마 모두 `bg-white`라, 램프 기준으로 재면 다크 토큰이
  * 통과해 놓고 실제로는 흰 배경에서 2.26:1이 된다.
  */
-function fillOf(tokens: string[]): Fill {
-    return tokens.some(t => /^bg-(white|fixed-|brand-)/.test(t))
-        ? 'fixed-white'
-        : 'ramp';
+function fillOf(tokens: string[], file?: string): Fill {
+    if (tokens.some(t => /^bg-(white|fixed-|brand-)/.test(t)))
+        return 'fixed-white';
+    // 채움과 보더가 **다른 스캐너에 걸리는** 경우가 있다 — 채움은 객체 속성에,
+    // 보더는 요소에 있는 식(구글 로그인 버튼이 그 형태다). 그러면 요소 스캐너는
+    // `bg-`를 못 보고 램프로 판정하는데, 그건 모든 램프 토큰에 관대한 방향이다
+    // (실제로 흰 버튼 위 2.26:1이 6.89로 읽혔다). 파일 전체에 고정 흰 표면
+    // 선언이 있으면 그 파일의 컨트롤은 보수적으로 흰 표면 기준으로 잰다.
+    if (file !== undefined && FIXED_WHITE_FILES.has(file)) return 'fixed-white';
+    return 'ramp';
 }
+
+/** 고정 흰 표면을 선언한 파일. 파일 단위라 보수적이다 — 그 방향이 안전하다. */
+const FIXED_WHITE_FILES = new Set(
+    sourceFiles(SRC_DIR)
+        .filter(f => !f.includes(`${path.sep}__tests__${path.sep}`))
+        .filter(f =>
+            /\bbg-(?:white|fixed-|brand-)/.test(readFileSync(f, 'utf8'))
+        )
+        .map(f => path.relative(SRC_DIR, f))
+);
 
 /**
  * 경계로 쓰기에 대비가 모자란 색인가.
@@ -145,8 +184,8 @@ export function isDecorativeBorder(
 }
 
 /** 클래스 목록 하나를 그 요소의 채움 기준으로 판정한다. */
-function decorativeIn(tokens: string[]): string[] {
-    const fill = fillOf(tokens);
+function decorativeIn(tokens: string[], file?: string): string[] {
+    const fill = fillOf(tokens, file);
     return tokens.filter(t => isDecorativeBorder(t, fill));
 }
 
@@ -233,7 +272,10 @@ function findDecorativeControlBorders(
         for (const { tag, index } of controlOpeningTags(source)) {
             const value = classNameOf(tag);
             if (value === undefined) continue;
-            const bare = decorativeIn(classTokens(value));
+            const bare = decorativeIn(
+                classTokens(value),
+                path.relative(SRC_DIR, file)
+            );
             if (bare.length === 0) continue;
             const rel = path.relative(SRC_DIR, file);
             const line = lineOf(source, index);
@@ -258,7 +300,10 @@ function findConstantHeldBorders(
                 source,
                 match.index + match[0].length
             );
-            const bare = decorativeIn(classTokens(value));
+            const bare = decorativeIn(
+                classTokens(value),
+                path.relative(SRC_DIR, file)
+            );
             if (bare.length === 0) continue;
             const rel = path.relative(SRC_DIR, file);
             if (allowed.has(`${rel}::${name}`)) continue;
@@ -279,7 +324,10 @@ function findPropHeldBorders(): string[] {
                 source,
                 match.index + match[0].length
             );
-            const bare = decorativeIn(classTokens(value));
+            const bare = decorativeIn(
+                classTokens(value),
+                path.relative(SRC_DIR, file)
+            );
             if (bare.length === 0) continue;
             offenders.push(
                 `${path.relative(SRC_DIR, file)}:${lineOf(source, match.index)} ${match[1]} ${bare.join(' ')}`

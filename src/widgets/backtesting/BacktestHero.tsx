@@ -75,7 +75,7 @@ export function BacktestHero({ meta }: BacktestHeroProps) {
                     <StatCard
                         value={`${meta.totalCases}개`}
                         label="총 케이스"
-                        valueClassName="text-ui-warning"
+                        valueClassName="text-ui-warning-text"
                     />
                     <StatCard
                         value={`${meta.tickerCount}종목`}

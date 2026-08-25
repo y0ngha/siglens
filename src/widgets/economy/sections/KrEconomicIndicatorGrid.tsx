@@ -87,9 +87,9 @@ function IndicatorCard({ card }: IndicatorCardProps) {
                     className={cn(
                         'mt-1 text-xs',
                         changeFromPrevious > 0
-                            ? 'text-ui-danger'
+                            ? 'text-ui-danger-text'
                             : changeFromPrevious < 0
-                              ? 'text-ui-success'
+                              ? 'text-ui-success-text'
                               : 'text-secondary-400'
                     )}
                 >

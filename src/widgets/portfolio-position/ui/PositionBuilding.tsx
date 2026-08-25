@@ -383,9 +383,9 @@ export function PositionBuilding({
               : 'text-secondary-400';
     const markerIconTokenClass =
         returnSign === 'gain'
-            ? 'text-ui-success'
+            ? 'text-ui-success-text'
             : returnSign === 'loss'
-              ? 'text-ui-danger'
+              ? 'text-ui-danger-text'
               : 'text-secondary-100';
 
     return (
