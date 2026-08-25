@@ -206,6 +206,60 @@ function lineAt(source: string, index: number): string {
     return source.slice(from, to === -1 ? undefined : to);
 }
 
+interface TintPair {
+    token: string;
+    alpha: number;
+    /** 짝을 찾아낸 범위. 테스트가 기전 자체를 붙들 수 있게 남긴다. */
+    via: 'initialiser' | 'line';
+}
+
+const PAIR_RE = /\bbg-((?:ui-[a-z]+|grade-[a-f]|chart-[a-z]+))\/(\d{1,3})\b/g;
+const DECL_RE = /\b(?:const|let)\s+\w+\s*[:=]/g;
+
+/**
+ * 한 소스에서 `bg-<토큰>/NN`과 같은 자리의 `text-<토큰>-text` 짝을 모은다.
+ *
+ * **파일이 아니라 문자열을 받는다.** 트리 전체를 훑는 형태로만 두었더니,
+ * 이 함수의 핵심인 "줄을 넘어 짝을 찾는다"를 검증하는 테스트가 트리에 마침
+ * 같은 알파를 내놓는 같은 줄 짝이 있다는 이유로 **기능을 빼도 통과**했다.
+ * 감사가 그걸 잡았다 — 초기화식 스코프를 통째로 제거해도 6/6 초록이었고
+ * 알파 색인이 바이트 동일했다. 실패할 수 없는 테스트는 근거가 아니다.
+ */
+function tintPairsIn(rawSource: string): TintPair[] {
+    const source = blankComments(rawSource);
+    const declStarts = [...source.matchAll(DECL_RE)].map(d => d.index);
+    const scopeCache = new Map<number, string>();
+    const out: TintPair[] = [];
+    for (const m of source.matchAll(PAIR_RE)) {
+        const token = m[1];
+        // **줄이 아니라 초기화식 단위로 짝을 찾는다.** 틴트를 얹은 요소와
+        // 그 위에 놓인 글자는 거의 언제나 다른 줄에 있다 — `terms/page.tsx`의
+        // `bg-ui-danger/5` 컨테이너와 그 안 `text-ui-danger-text`가 그렇고,
+        // 클래스 맵 객체도 키마다 줄이 나뉜다. 줄로 자르면 그 알파들이
+        // 불변식 검사에서 통째로 빠져, 규칙의 근거가 실사용을 못 덮는다.
+        const start = lastAtOrBefore(declStarts, m.index);
+        let scope: string | undefined;
+        if (start !== undefined) {
+            scope = scopeCache.get(start) ?? readInitialiser(source, start);
+            scopeCache.set(start, scope);
+        }
+        // 초기화식이 이 매치를 품지 못하면(컴포넌트 본문에 바로 쓴 JSX 등)
+        // 예전처럼 줄로 좁힌다. 넓히다 코드에 없는 조합을 지어내는 것보다
+        // 못 찾고 넘어가는 쪽이 낫다 — 지어낸 조합은 가짜 실패가 된다.
+        const useScope = scope !== undefined && scope.includes(m[0]);
+        const haystack = useScope ? (scope as string) : lineAt(source, m.index);
+        if (!new RegExp(`\\btext-${token}-text\\b`).test(haystack)) continue;
+        const pct = Number(m[2]);
+        if (pct <= 0 || pct > 100) continue;
+        out.push({
+            token,
+            alpha: pct / 100,
+            via: useScope ? 'initialiser' : 'line',
+        });
+    }
+    return out;
+}
+
 /**
  * 트리를 **한 번만** 훑는다. 토큰마다 다시 훑었더니 8토큰 × 2테마 = 16회
  * 전체 스캔이 되어 기본 5초 타임아웃을 넘겼다 — 가드 하나만 돌릴 땐 통과하고
@@ -214,42 +268,13 @@ function lineAt(source: string, index: number): string {
 function buildAlphaIndex(): Map<string, number[]> {
     if (alphaCache !== null) return alphaCache;
     const acc = new Map<string, Set<number>>();
-    const pairRe =
-        /\bbg-((?:ui-[a-z]+|grade-[a-f]|chart-[a-z]+))\/(\d{1,3})\b/g;
-    const declRe = /\b(?:const|let)\s+\w+\s*[:=]/g;
     for (const file of sourceFiles(SRC_DIR)) {
         if (file.includes(`${path.sep}__tests__${path.sep}`)) continue;
-        const source = blankComments(readFileSync(file, 'utf8'));
-        const declStarts = [...source.matchAll(declRe)].map(d => d.index);
-        const scopeCache = new Map<number, string>();
-        for (const m of source.matchAll(pairRe)) {
-            const token = m[1];
-            // **줄이 아니라 초기화식 단위로 짝을 찾는다.** 틴트를 얹은 요소와
-            // 그 위에 놓인 글자는 거의 언제나 다른 줄에 있다 — `terms/page.tsx`의
-            // `bg-ui-danger/5` 컨테이너와 그 안 `text-ui-danger-text`가 그렇고,
-            // 클래스 맵 객체도 키마다 줄이 나뉜다. 줄로 자르면 그 알파들이
-            // 불변식 검사에서 통째로 빠져, 규칙의 근거가 실사용을 못 덮는다.
-            const start = lastAtOrBefore(declStarts, m.index);
-            const scope =
-                start === undefined
-                    ? undefined
-                    : (scopeCache.get(start) ?? readInitialiser(source, start));
-            if (start !== undefined && scope !== undefined) {
-                scopeCache.set(start, scope);
-            }
-            // 초기화식이 이 매치를 품지 못하면(컴포넌트 본문에 바로 쓴 JSX 등)
-            // 예전처럼 줄로 좁힌다. 넓히다 코드에 없는 조합을 지어내는 것보다
-            // 못 찾고 넘어가는 쪽이 낫다 — 지어낸 조합은 가짜 실패가 된다.
-            const haystack =
-                scope !== undefined && scope.includes(m[0])
-                    ? scope
-                    : lineAt(source, m.index);
-            if (!new RegExp(`\\btext-${token}-text\\b`).test(haystack))
-                continue;
-            const pct = Number(m[2]);
-            if (pct <= 0 || pct > 100) continue;
+        for (const { token, alpha } of tintPairsIn(
+            readFileSync(file, 'utf8')
+        )) {
             const set = acc.get(token) ?? new Set<number>();
-            set.add(pct / 100);
+            set.add(alpha);
             acc.set(token, set);
         }
     }
@@ -340,14 +365,49 @@ describe('semantic text token guard', () => {
     });
 
     /**
-     * 알파 색인이 **줄을 넘어** 짝을 찾는지 붙들어 둔다. 줄로 자르던 때는
-     * 클래스 맵과 컨테이너/자식 형태의 틴트가 통째로 근거에서 빠졌고,
-     * 그러면 위 불변식이 실사용보다 좁은 알파만 검사하게 된다.
+     * 짝짓기가 **줄을 넘는지** 기전으로 붙든다.
+     *
+     * 처음엔 트리에서 나온 알파 하나(`ui-warning`의 0.1)를 단언했는데, 그
+     * 값은 같은 줄 짝도 내놓기 때문에 **초기화식 스코프를 통째로 빼도**
+     * 통과했다 — 감사가 기능을 제거하고 6/6 초록에 알파 색인이 바이트
+     * 동일함을 보여 드러냈다. 그래서 트리 값이 아니라 합성 스니펫으로
+     * 기전을 검사한다. 이 테스트는 스코프를 빼면 반드시 깨진다.
      */
-    it('알파 색인이 줄을 넘어 틴트를 찾는다', () => {
-        // `OptionsAiAnalysis.tsx`의 `TONE_CLASS.cautious` — `text-ui-warning-text`와
-        // `bg-ui-warning/10`이 객체 리터럴 안에서 서로 다른 줄에 있다.
-        expect(tintAlphasInSource('ui-warning')).toContain(0.1);
+    it('짝짓기가 초기화식 안에서 줄을 넘는다', () => {
+        const crossLine = [
+            'const notice = (',
+            '    <div className="bg-ui-danger/25">',
+            '        <p className="text-ui-danger-text">읽어주세요</p>',
+            '    </div>',
+            ');',
+        ].join('\n');
+        expect(tintPairsIn(crossLine)).toEqual([
+            { token: 'ui-danger', alpha: 0.25, via: 'initialiser' },
+        ]);
+    });
+
+    /**
+     * 넓힌 스코프가 **코드에 없는 조합을 지어내지 않는지** 함께 붙든다.
+     * 근거를 넓히다 데카르트 곱을 만들면 존재하지 않는 반례로 가드가
+     * 깨지고, 그걸 없애려다 규칙 자체를 약하게 만들게 된다.
+     */
+    it('서로 다른 초기화식의 틴트와 글자를 짝짓지 않는다', () => {
+        const unrelated = [
+            'const surface = "bg-ui-warning/25";',
+            'const label = "text-ui-warning-text";',
+        ].join('\n');
+        expect(tintPairsIn(unrelated)).toEqual([]);
+    });
+
+    /** 초기화식이 매치를 못 품는 형태(본문에 바로 쓴 JSX)는 줄로 좁힌다. */
+    it('초기화식 밖에서는 줄 단위로 되돌아간다', () => {
+        const inline =
+            'export function Panel() {\n' +
+            '    return <p className="bg-ui-success/35 text-ui-success-text">완료</p>;\n' +
+            '}';
+        expect(tintPairsIn(inline)).toEqual([
+            { token: 'ui-success', alpha: 0.35, via: 'line' },
+        ]);
     });
 });
 
