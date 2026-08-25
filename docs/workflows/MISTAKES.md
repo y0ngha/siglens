@@ -632,6 +632,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ <div aria-live="polite" id="warning">{warning}</div> <div aria-describedby="warning" aria-hidden="true">{warning}</div>
     ✅ Consolidate to single primary location; reference it from other places
     → Recurring: perf/aws-cost-reduction Round 3 UI audit (1 occurrence in self-norm warning)
+
+18. `opacity-*` classes on interactive control boundaries fail WCAG 1.4.11 contrast requirements
+    → WCAG 1.4.11 (Contrast - Graphics) requires 3:1 minimum for interactive control boundaries and graphical elements
+    → Opacity dims all color channels including text, borders, and backgrounds — never use `opacity-40`, `opacity-50` etc. to express disabled state on controls whose boundary carries required contrast
+    → On buttons: use explicit text-colour tokens (`disabled:text-secondary-500`). On bordered controls: use `border-border-control` (designed for 3:1+) and never apply opacity to it
+    → Opacity measurement must account for: 1) text over any background with opacity applied, 2) borders whose opacity matters for contrast (remove opacity entirely instead of dimming)
+    ❌ <button disabled className="opacity-40">Tier-locked feature</button>  // renders at 2.26:1, fails WCAG AA (4.5:1 minimum for text)
+    ❌ <div className="opacity-50 border border-primary-500">Locked control</div>  // border dims to ~1.65:1, falls below 3:1 minimum
+    ✅ <button disabled className="disabled:text-secondary-500">Tier-locked feature</button>  // 6.84:1 in both themes
+    ✅ <div className="border border-border-control">Locked control</div>  // 3:1+ in both themes (remove opacity)
+    → Recurring: W6b Round 1 (disabled timeframe buttons with `disabled:opacity-40`), W6c (disabled switch with `opacity-50`) — 2 occurrences in redesign-p1 audit
 ```
 
 ---

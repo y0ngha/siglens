@@ -154,4 +154,77 @@
   - Rule: Validation must be applied in order (type check → size check → parse); size checks must precede regex to prevent quadratic blowup
   - Context: Moved `.substring(0, MAX_LEN)` BEFORE regex; added `typeof value === 'string'` check before `String(value)`.
 
+## [W6a — symbol layout header | redesign-p1 | 2026-08-25]
+- Violation: Suspense fallback header shell did not mirror the real header's row structure. Fallback was one row (109px) while the real header stacks to two below 640px (160px), so the fallback->real swap shifted content down 51px on cold first paint (15px at >=640px).
+  - Rule: Layout fallbacks must structurally mirror the real layout to prevent reflow shock on hydration
+  - Context: Fixed by mirroring `flex-col -> sm:flex-row` and matching control sizes. Measured vertical jump after: 0px at 320/375/414/640/768/1280/1920.
+- Violation: Review round 1 filed a REQUIRED finding claiming the fallback's 3 icon placeholders caused Share/Settings to "visibly reposition" for guests. The reasoning about the icon count was right; the impact claim was measured FALSE — the cluster is right-aligned, so the real 2 icons already landed exactly on placeholders #2/#3.
+  - Rule: Layout findings must state the measurement that would demonstrate the defect, not only the mechanism
+  - Context: The change was still made, but for a different reason (fewer phantom placeholders for the majority guest case).
+
+## [W6b — chart tab | redesign-p1 | 2026-08-25]
+- Violation: A W6a change (giving the chart's timeframe bar `.symbol-container`) was itself the defect. The chart route's body is a full-bleed 2-pane split, so centring the bar put the TimeframeSelector at 961-1246 while the canvas is 0-894 and the rail 977-1584 — the control floated over the rail instead of over the chart it controls.
+  - Rule: Layout fixes must verify the documented exception routes; a fix that makes one route consistent can break the documented exception route
+  - Context: Reverted to full-bleed `px-4`.
+- Violation: Contrast/hierarchy sweep produced 33 fake failures in light theme because `getComputedStyle().backgroundColor` returns `oklab(...)` under Tailwind v4 and a naive `rgb()` regex parsed it as near-black.
+  - Rule: Contrast measurement must handle Tailwind v4's `oklab()` color space output; regex-based color parsing is unreliable
+  - Context: Resolved by compositing through a canvas 2D context, sanity-checked with white + rgba(0,0,0,0.1) === 229. Real failure count was 2, both intentional chart-series legend swatches.
+- Violation: The UI audit agent's first dark sweep reported 40 failures at 2.53:1, all fake — its tab was a background tab (`document.hidden === true`), which freezes `transition-colors` at their from-values. Also its first resolver ignored element `opacity`, making `disabled:opacity-40` buttons read 8.82:1 when they render at 2.26:1.
+  - Rule: Contrast measurement in background tabs must call `getAnimations().finish()` to settle transitions; element opacity must be factored into computed contrast
+  - Context: Corrected with settle + `getAnimations().finish()`; the same elements then resolved to 8.82:1.
+- Violation: Applied `LABEL_KO` to three files that shared a class string, then had to revert two of them. In `IndicatorSettingsModal` and `BacktestCaseCard` the governed content is already `secondary-400`, so `LABEL_KO` created an exact colour tie, whereas the original `secondary-500` was correctly dimmer than every content colour.
+  - Rule: Class-name uniformity does not imply semantic role uniformity; check what each site actually governs before a blanket swap
+  - Context: Reverted two of three replacements to restore correct hierarchy.
+- Violation: Review round 3 filed a REQUIRED finding on the same wrong premise (that an eyebrow must out-rank its content). Rejected with structural evidence.
+  - Rule: Label hierarchy: a quiet label may be out-ranked by its content (label/value pattern); an exact size+colour tie between two different levels is the defect
+  - Context: Documented the rule in response to repeated finding.
+- Violation: `<dialog>` centering: Tailwind preflight's `*, ::before, ::after { margin: 0 }` silently overrides the UA stylesheet's `dialog:modal { margin: auto }`, pinning every native modal to the top-left.
+  - Rule: Native element defaults are overridden silently by Tailwind preflight; intent-matching requires explicit `@layer base` restoration
+  - Context: Found only by measuring the rendered box ([0,0] vs [544,16] at vw 1600 x vh 857). Fixed once in `@layer base`.
+## [W6c — /[symbol]/overall heading unification | redesign-p1 | 2026-08-25]
+- Violation: Nine `<h2>` on the route carried NO colour class, so they inherited `body { color: var(--color-secondary-50) }` and rendered at the h1's brightness. Consequence: seven `<h3>` cross-link card titles rendered bigger AND brighter than two `<h2>` that outrank them. Root cause is invisible in source review — "no colour class" does not look like a defect; only measuring the computed colour of the rendered heading exposes it. Fixed by routing every h2/h3 through the existing `HEADING_SECTION` / `HEADING_SUBSECTION` tokens. Measured after: exactly three groups, H1 x1 / H2 x12 / H3 x17, strictly descending on size, weight and prominence, zero ties.
+  - Rule: (new) Heading color hierarchy — every heading must inherit or explicitly apply a semantic colour token; headings without colour classes inherit default body text weight and render indistinguishable from body content
+  - Context: Applied HEADING_SECTION to all h2s, HEADING_SUBSECTION to all h3s. Measured contrast after: all boundaries distinct.
+
+- Violation: Same file family, opposite direction: in `CrossLinkCards` the EMPHASISED current-page card (border-primary-500 + ring) had a DIMMER title (`secondary-100`) than its unemphasised siblings (inherited `secondary-50`). Emphasis and brightness pointed opposite ways.
+  - Rule: Emphasis tokens (border-primary, ring) and text-colour tokens must align — bright emphasis + dim text is discordant
+  - Context: Changed card title to inherit secondary-50 (or primary-text for current card) to align with emphasis.
+
+- Violation: An automated import-inserting helper placed `import { HEADING_SUBSECTION } ...` INSIDE a multi-line `import { ... } from '...'` block, producing a syntax error that took the dev server to HTTP 500. Root cause: the helper inserted after the last line *starting with* `import `, which for a multi-line import is its first line. Fixed by anchoring on the regex `^import\b[\s\S]*?;$` (last full import STATEMENT) instead of line prefixes, and by scanning all 22 changed files afterwards for imports landing inside a block or after a statement. This is the "never edit by line slicing" rule recurring in a new disguise.
+  - Rule: (new) Code mutation helpers — regex anchors must target full syntactic units (statements), not line prefixes. Line-prefixed anchors fail for multi-line constructs (multi-line import/export blocks). Guard against: 1) multi-line import statements, 2) imports placed mid-block, 3) syntax errors from partial insertions.
+  - Context: Refactored import anchor to `^import\b[\s\S]*?;$`; re-scanned all 22 modified files for malformed imports. Verified no HTTP 500 after re-run.
+
+- Violation: Review round 1 filed a recommended finding on ONE file hardcoding a literal byte-identical to `HEADING_SECTION`. Grepping the literal's colourless prefix showed the finding was the tip of a larger one — 26 sites use `text-lg font-semibold tracking-tight` with no colour class at all. Lesson: when a reviewer reports a single instance of a token-vs-literal drift, grep the literal (and its prefixes) before fixing just the reported line.
+  - Rule: (guideline) Reviewer reports of individual style drift must trigger a full grep of the literal (and key prefixes) to surface all instances before fixing only the reported line; single-instance fixes hide systemic drift
+  - Context: Grepped `text-lg font-semibold tracking-tight` across codebase; found 26 sites. Fixed all 26 to use design tokens.
+
+## [W6c — WCAG defects the UI audit surfaced | redesign-p1 | 2026-08-25]
+- Violation: The 상세 분석 switch was invisible in the light theme: track 1.03:1, white thumb on it 1.01:1. It is not exempt as "disabled" — when locked it stays clickable (opens the signup nudge), carries `cursor-pointer`, and sets no native `disabled`. Fixed with `border-border-control` on track and thumb; after: light 3.10/3.30/7.85, dark 3.74/3.57/8.41.
+  - Rule: WCAG 1.4.11 Contrast (Graphics) — interactive control boundaries must meet 3:1 minimum, even in locked state if still clickable
+  - Context: Applied `border-border-control` token to locked switch (now meets 3:1+ in both themes). Added unit test asserting locked state still clickable + meets contrast.
+
+- Violation: Form-field and outline-button boundaries below 3:1 in both themes while `--color-border-control` (built for exactly this) went unused: ContactTextField, ContactTextareaField, ChatPanel's textarea, ReanalyzeButton.
+  - Rule: (guideline) UI control boundary tokens (border-control) must be used wherever 1.4.11 contrast is required; boundaries using other tokens (border-secondary, border-primary) often fall short. Audit all interactive controls for 3:1 minimum.
+  - Context: Applied `border-border-control` to all 4 controls. Measured after: all meet 3:1+ in both light/dark themes.
+
+- Violation: A child element overrode its parent's `text-ui-warning-text` (the on-tint TEXT token) with `text-ui-warning/90` (the GRAPHICS token), giving 3.56:1 on 12px text. Same trap the codebase already documents for `ui-*` vs `ui-*-text`.
+  - Rule: MISTAKES.md already documents: never mix `ui-*` (graphics/background tokens) with `text-ui-*-text` (text-on-tint tokens). Tokens are semantically paired; override breaks the pairing. This is a repeat of documented guidance.
+  - Context: Changed child to inherit `text-ui-warning-text` from parent (or re-apply if override necessary). Contrast now 8.2:1+ on 12px.
+
+- Violation: The 분석 설정 popover title was an `<h2>` at 12px — smaller than every h3 on the page — and carried `tracking-wide` on Korean text, which the repo's own `typographyStyles.ts` doc comment forbids (Hangul has no case and wide tracking scatters the jamo).
+  - Rule: (documented in typographyStyles.ts) Korean text must not use `tracking-wide` (or letter-spacing > 0); Hangul glyphs lack case, and tracking scatters jamo (consonant+vowel pairs). English-only or re-set tracking to normal.
+  - Context: Removed `tracking-wide` from popover title. Restored heading hierarchy by using HEADING_SECTION token (now at 14px, outranks body + every h3).
+
+## [W6c — audit-agent measurement traps | redesign-p1 | 2026-08-25]
+- Violation: The UI audit's tab was a background tab (`document.hidden === true`), which freezes `transition-colors` at their from-values. One read returned dark-theme `rgb(244,244,246)` on a page whose body was light `rgb(22,24,29)`. Corrected with `document.getAnimations().forEach(a => a.finish())` before every read.
+  - Rule: (new) Contrast measurement in background tabs must settle all CSS transitions before reading computed colours; background tab freezes transitions at from-values, producing false contrast reads. Use `getAnimations().finish()` to settle.
+  - Context: Applied settle pattern to all 12 contrast reads in audit script. Re-measured all 40 controls; fake failures vanished, real failures revealed.
+
+- Violation: The same audit's first contrast resolver ignored element `opacity`, reading `disabled:opacity-40` buttons at 8.82:1 when they render at 2.26:1.
+  - Rule: (new) Contrast measurement must incorporate element opacity into computed colour before reading; ignoring opacity masks actual rendered contrast. Apply opacity to RGBA before computing ratio.
+  - Context: Updated resolver to factor element opacity: `finalAlpha = baseAlpha * elementOpacity`. Re-measured; now correctly reports 2.26:1 (dark) / 1.92:1 (light).
+
+- Violation: A horizontal-overflow check is a false negative by construction unless `body { overflow-x: hidden }` is neutralised inside the measuring rig — the first pass reported 0 offenders purely because the body clipped them.
+  - Rule: (new) Overflow/layout measurement in the browser DOM must temporarily neutralise document-level overflow (body/html overflow-x/y) that may be hiding the measured property. Measure with overflow neutralised, then restore.
+  - Context: Audit script now sets `document.body.style.overflow = 'visible'` + `document.documentElement.style.overflow = 'visible'` before overflow scan. Re-measured; found 2 actual offenders previously hidden.
 
