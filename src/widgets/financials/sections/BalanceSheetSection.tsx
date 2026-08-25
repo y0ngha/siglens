@@ -10,6 +10,7 @@ import {
 import { FinancialTrendChart } from './FinancialTrendChart';
 import { toDisplayOrder } from './toDisplayOrder';
 import { HEADING_CLASS_NAME } from './constants';
+import { statementColumnLabel } from './statementColumnLabel';
 
 interface BalanceSheetSectionProps {
     rows: BalanceSheetRow[];
@@ -36,7 +37,7 @@ export function BalanceSheetSection({
     }
 
     const displayRows = toDisplayOrder(rows);
-    const columns = displayRows.map(r => r.fiscalYear);
+    const columns = displayRows.map(statementColumnLabel);
 
     const chartSeries = [
         {

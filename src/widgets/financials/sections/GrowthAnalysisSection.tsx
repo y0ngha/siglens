@@ -3,6 +3,7 @@ import { EmptySectionCard } from './EmptySectionCard';
 import { StatementTable } from './StatementTable';
 import { toDisplayOrder } from './toDisplayOrder';
 import { HEADING_CLASS_NAME } from './constants';
+import { statementColumnLabel } from './statementColumnLabel';
 
 interface GrowthAnalysisSectionProps {
     rows: FinancialGrowthRow[];
@@ -40,7 +41,7 @@ export function GrowthAnalysisSection({ rows }: GrowthAnalysisSectionProps) {
     }
 
     const displayRows = toDisplayOrder(rows);
-    const columns = displayRows.map(r => r.fiscalYear);
+    const columns = displayRows.map(statementColumnLabel);
 
     const yoyRows = [
         {
@@ -100,7 +101,7 @@ export function GrowthAnalysisSection({ rows }: GrowthAnalysisSectionProps) {
                     장기 주당매출 성장 (최근 기준)
                 </p>
                 <StatementTable
-                    columns={[latest.fiscalYear]}
+                    columns={[statementColumnLabel(latest)]}
                     rows={perShareRows}
                 />
             </div>
