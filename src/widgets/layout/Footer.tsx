@@ -13,6 +13,7 @@ import {
     TERMS_TITLE,
 } from '@/shared/lib/legal';
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 
 /**
  * 푸터 링크 하나. `visible`만 눈에 보이고 `srPrefix`/`srSuffix`는 화면에서 숨는다.
@@ -114,23 +115,32 @@ function columnOf(vertical: NavVertical): FooterColumn {
 
 const NAV_COLUMNS: readonly FooterColumn[] = NAV_VERTICALS.map(columnOf);
 
-/** 목적지가 사이트 정보인 마지막 열. 버티컬이 아니라 별도로 적는다. */
-const INFO_LINKS: readonly FooterLink[] = [
-    {
-        href: PRIVACY_PATH,
-        fullLabel: PRIVACY_TITLE,
-        srPrefix: '',
-        visible: PRIVACY_TITLE,
-        srSuffix: '',
-    },
-    {
-        href: TERMS_PATH,
-        fullLabel: TERMS_TITLE,
-        srPrefix: '',
-        visible: TERMS_TITLE,
-        srSuffix: '',
-    },
-];
+/**
+ * 목적지가 사이트 정보인 마지막 열. 버티컬에서 파생되지 않으므로 직접 적되,
+ * **껍데기는 버티컬 열과 공유한다**(`FooterNavColumn`). 제목 클래스·`<ul>`·
+ * `aria-labelledby` 배선을 여기 또 적으면 두 곳 중 한 곳만 바뀐다 — 이 PR이
+ * `DESIGN.md`에 넣은 체크리스트 3번이 금지하는 바로 그 형태다.
+ */
+const INFO_COLUMN: FooterColumn = {
+    id: 'info',
+    label: '서비스',
+    links: [
+        {
+            href: PRIVACY_PATH,
+            fullLabel: PRIVACY_TITLE,
+            srPrefix: '',
+            visible: PRIVACY_TITLE,
+            srSuffix: '',
+        },
+        {
+            href: TERMS_PATH,
+            fullLabel: TERMS_TITLE,
+            srPrefix: '',
+            visible: TERMS_TITLE,
+            srSuffix: '',
+        },
+    ],
+};
 
 const LINK_CLASSES =
     'rounded text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
@@ -143,7 +153,13 @@ const LINK_CLASSES =
  * 섞인다. 목록에 이름을 붙이는 것만으로 스크린리더의 그룹 인지에는 충분하고,
  * 문서 개요는 건드리지 않는다.
  */
-function FooterNavColumn({ column }: { column: FooterColumn }) {
+interface FooterNavColumnProps {
+    readonly column: FooterColumn;
+    /** 링크가 아닌 항목(현재는 문의하기 다이얼로그 트리거)을 목록 끝에 붙인다. */
+    readonly children?: ReactNode;
+}
+
+function FooterNavColumn({ column, children }: FooterNavColumnProps) {
     const headingId = `footer-nav-${column.id}`;
     return (
         <div>
@@ -175,6 +191,7 @@ function FooterNavColumn({ column }: { column: FooterColumn }) {
                         </Link>
                     </li>
                 ))}
+                {children}
             </ul>
         </div>
     );
@@ -191,38 +208,14 @@ export function Footer() {
                     {NAV_COLUMNS.map(column => (
                         <FooterNavColumn key={column.id} column={column} />
                     ))}
-                    <div>
-                        <p
-                            id="footer-nav-info"
-                            className="text-sm font-semibold text-secondary-200"
-                        >
-                            서비스
-                        </p>
-                        <ul
-                            aria-labelledby="footer-nav-info"
-                            className="mt-3 space-y-2"
-                        >
-                            {INFO_LINKS.map(link => (
-                                <li key={link.href}>
-                                    <Link
-                                        href={link.href}
-                                        // 위 버티컬 링크와 동일 — 전역 푸터의 `_rsc` 파편화
-                                        // (docs/architecture/CDN_CACHING.md §1).
-                                        prefetch={false}
-                                        className={LINK_CLASSES}
-                                    >
-                                        {link.visible}
-                                    </Link>
-                                </li>
-                            ))}
-                            <li>
-                                <ContactDialog
-                                    triggerLabel="문의하기"
-                                    triggerClassName={LINK_CLASSES}
-                                />
-                            </li>
-                        </ul>
-                    </div>
+                    <FooterNavColumn column={INFO_COLUMN}>
+                        <li>
+                            <ContactDialog
+                                triggerLabel="문의하기"
+                                triggerClassName={LINK_CLASSES}
+                            />
+                        </li>
+                    </FooterNavColumn>
                 </nav>
 
                 <div className="mt-10 flex flex-col gap-3 border-t border-secondary-700 pt-6">
