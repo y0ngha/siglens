@@ -170,4 +170,35 @@ describe('usePaneLabels', () => {
             container.querySelectorAll('.pane-indicator-label')
         ).toHaveLength(0);
     });
+
+    /**
+     * 부라벨은 **가로로** 놓이고 pane 높이로 잘려야 한다.
+     *
+     * 세로 스택이던 시절 MACD처럼 부라벨이 3개면 11px × 3 + 간격 6px × 2 = 45px가
+     * 되어 36px짜리 보조 pane을 넘고 **아래 pane의 라벨과 겹쳐 찍혔다**
+     * (모바일 500px 실측: `Histogram`과 `+DI(14)`가 한 줄에서 충돌).
+     *
+     * 두 속성을 함께 단언한다 — 방향만 보면 클램프가 사라져도 통과하고,
+     * 클램프만 보면 세로로 되돌아가도 통과한다.
+     */
+    it('부라벨을 가로로 놓고 pane 높이로 자른다', () => {
+        const container = document.createElement('div');
+        renderHook(() =>
+            usePaneLabels({
+                chartRef: makeChartRef(makeChart()),
+                containerRef: makeContainerRef(container),
+                labels: LABELS,
+            })
+        );
+
+        const el = container.querySelector<HTMLDivElement>(
+            '.pane-indicator-label'
+        );
+        expect(el).not.toBeNull();
+        expect(el?.style.flexDirection).toBe('row');
+        expect(el?.style.flexWrap).toBe('wrap');
+        expect(el?.style.overflow).toBe('hidden');
+        // `LABELS`는 pane 1을 쓰고 목 높이가 100 — 상하 인셋 8px씩을 뺀 84px.
+        expect(el?.style.maxHeight).toBe('84px');
+    });
 });

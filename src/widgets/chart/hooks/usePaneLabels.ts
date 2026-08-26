@@ -18,7 +18,15 @@ const LABEL_Z_INDEX = '5';
 const LABEL_FONT_FAMILY = 'monospace';
 const LABEL_LINE_HEIGHT = '1';
 const SUB_LABEL_GAP = '6px';
+/** 가로 배치일 때 부라벨 사이 간격. 세로 간격보다 넓어야 낱말이 붙어 보이지 않는다. */
+const SUB_LABEL_ROW_GAP = '10px';
+/** 클램프 하한 — pane이 아무리 얇아도 한 줄은 보여준다. */
+const LABEL_MIN_BOX_PX = 12;
 const SUB_LABEL_DOT = '\u25CF ';
+
+function paneHeightOf(chart: IChartApi, paneIndex: number): number {
+    return chart.panes()[paneIndex]?.getHeight() ?? 0;
+}
 
 function getTopOffset(chart: IChartApi, paneIndex: number): number {
     const panes = chart.panes();
@@ -44,7 +52,8 @@ function createSubLabelSpan(subLabel: PaneSubLabel): HTMLSpanElement {
 
 function createLabelElement(
     config: PaneLabelConfig,
-    top: number
+    top: number,
+    paneHeight: number
 ): HTMLDivElement {
     const el = document.createElement('div');
     el.className = PANE_LABEL_CLASS;
@@ -56,9 +65,23 @@ function createLabelElement(
     el.style.zIndex = LABEL_Z_INDEX;
     el.style.fontFamily = LABEL_FONT_FAMILY;
     el.style.lineHeight = LABEL_LINE_HEIGHT;
+    /*
+     * **가로로 늘어놓는다.** 세로 스택이었는데, MACD처럼 부라벨이 3개면
+     * 11px × 3 + 간격 6px × 2 = 45px가 되어 36px짜리 보조 pane을 넘고
+     * 아래 pane의 라벨과 겹쳐 찍혔다(모바일 500px에서 실측 — `Histogram`과
+     * `+DI(14)`가 한 줄에서 충돌). 가로로는 한 줄 11px면 끝난다.
+     *
+     * 넘칠 때를 대비해 pane 높이로 잘라 둔다. 폭이 모자라면 `wrap`이 다음
+     * 줄로 넘기고, 그래도 넘치면 `hidden`이 pane 경계에서 끊는다 — 아래
+     * pane을 침범하는 것보다 잘리는 편이 낫다.
+     */
     el.style.display = 'flex';
-    el.style.flexDirection = 'column';
-    el.style.gap = SUB_LABEL_GAP;
+    el.style.flexDirection = 'row';
+    el.style.flexWrap = 'wrap';
+    el.style.columnGap = SUB_LABEL_ROW_GAP;
+    el.style.rowGap = SUB_LABEL_GAP;
+    el.style.maxHeight = `${Math.max(LABEL_MIN_BOX_PX, paneHeight - LABEL_OFFSET_PX * 2)}px`;
+    el.style.overflow = 'hidden';
 
     for (const subLabel of config.subLabels) {
         el.appendChild(createSubLabelSpan(subLabel));
@@ -91,7 +114,11 @@ export function usePaneLabels({
 
         const labelPairs = labels.map(config => {
             const top = getTopOffset(chart, config.paneIndex);
-            const el = createLabelElement(config, top);
+            const el = createLabelElement(
+                config,
+                top,
+                paneHeightOf(chart, config.paneIndex)
+            );
             container.appendChild(el);
             return { config, el };
         });
@@ -104,6 +131,13 @@ export function usePaneLabels({
             for (const { config, el } of labelPairs) {
                 const top = getTopOffset(currentChart, config.paneIndex);
                 el.style.top = `${top + LABEL_OFFSET_PX}px`;
+                /* pane이 재분배되면 클램프도 따라가야 한다 — 안 그러면
+                   좁아진 pane에서 라벨이 다시 아래를 침범한다. */
+                el.style.maxHeight = `${Math.max(
+                    LABEL_MIN_BOX_PX,
+                    paneHeightOf(currentChart, config.paneIndex) -
+                        LABEL_OFFSET_PX * 2
+                )}px`;
             }
         };
 
