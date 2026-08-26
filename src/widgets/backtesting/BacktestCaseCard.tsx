@@ -187,7 +187,18 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
 
             <p
                 className={cn(
-                    'text-secondary-400 line-clamp-3 rounded-r border-l-2 bg-black/20 px-3 py-2 text-[11px] leading-relaxed',
+                    // `bg-black/20`이었다. raw 리터럴이라 테마를 보지 않는데,
+                    // 검은색을 얹는 동작이 두 테마에서 정반대다: 다크 카드
+                    // 위에서는 1.019:1로 거의 안 보이는 미세 인셋이지만(의도),
+                    // 흰 카드 위에서는 1.599:1로 **페이지에서 가장 어두운 면**이
+                    // 되어 본문 산문이 비활성 코드블록처럼 읽힌다. master는
+                    // 다크 전용이라 무해했고 라이트 테마를 들인 이 브랜치에서
+                    // 처음 결함이 된다.
+                    //
+                    // `SURFACE_NESTED`의 표면값을 쓴다(반경은 이 자리의
+                    // `rounded-r`을 지켜야 해서 상수 전체가 아니라 배경만).
+                    // 다크 1.108 / 라이트 1.071로 양쪽이 대칭이다.
+                    'text-secondary-400 line-clamp-3 rounded-r border-l-2 bg-secondary-700/40 px-3 py-2 text-[11px] leading-relaxed',
                     v.aiSummary
                 )}
             >
@@ -211,7 +222,9 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
             )}
 
             {showPredictionBlock && (
-                <div className="mt-2 rounded bg-secondary-900/60 px-3 py-2 text-[10px] text-secondary-400">
+                // 위 요약 밴드와 같은 인셋 처방. `bg-secondary-900/60`이었는데
+                // 양 테마 모두 카드와 1.02:1이라 패널로 읽히지 않았다.
+                <div className="mt-2 rounded bg-secondary-700/40 px-3 py-2 text-[10px] text-secondary-400">
                     <div className="mb-1 flex items-center gap-2">
                         <span className="text-xs font-semibold text-secondary-500">
                             AI 예측 레벨

@@ -221,7 +221,10 @@ const ALLOWED_ELEMENTS: ReadonlySet<string> = new Set([
     // (`border-b`가 경계의 전부, 라이트 1.05:1)이 그 예외로 통과했기 때문이다.
     // 소스만으로는 "항목 사이 줄"과 "요소의 유일한 경계"를 가를 수 없으므로,
     // 휴리스틱 대신 자리마다 판단을 적는다.
-    'widgets/layout/HeaderNavMenu.tsx:147',
+    // 줄 번호로 키를 잡으므로 이 파일이 위쪽에서 길어지면 함께 옮겨야 한다
+    // (아래 '낡은 항목' 검사가 그때 알려준다 — 실제로 `idScope` prop을
+    // 넣으면서 147에서 밀렸다).
+    'widgets/layout/HeaderNavMenu.tsx:163',
 
     // 카드 표면. 링크이지만 제목·설명·시세 블록을 담은 면이고, 보더는 그 면의
     // 장식이지 컨트롤의 경계가 아니다(globals.css 정책의 "카드·패널 장식 보더

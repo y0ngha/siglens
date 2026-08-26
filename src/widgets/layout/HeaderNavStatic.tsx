@@ -21,6 +21,7 @@ export function HeaderNavStatic({ items }: HeaderNavStaticProps) {
                 <HeaderNavMenu
                     key={vertical.id}
                     vertical={vertical}
+                    idScope="nav-static"
                     pathname={null}
                 />
             ))}

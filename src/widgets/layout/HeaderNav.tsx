@@ -17,6 +17,7 @@ export function HeaderNav({ items }: HeaderNavProps) {
                 <HeaderNavMenu
                     key={vertical.id}
                     vertical={vertical}
+                    idScope="nav"
                     pathname={pathname}
                 />
             ))}
