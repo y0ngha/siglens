@@ -98,4 +98,28 @@ describe('ContactDialog', () => {
 
         expect(openFn).toHaveBeenCalledTimes(1);
     });
+
+    /**
+     * **저장된 테마를 `<html>`에 찍는다.**
+     *
+     * 왜 이 컴포넌트가 그 일을 하는지는 구현부 주석에 있다(요약: 동적 세그먼트
+     * `notFound()`가 만드는 에러 셸에는 `<head>` 스크립트가 없고, 전용 컴포넌트를
+     * 새로 두면 홈 first-load가 17.3KB 늘어난다).
+     *
+     * 컴포넌트가 트리에 있는지가 아니라 **속성이 찍혔는지**를 단언한다 —
+     * 존재만 보면 그 효과가 사라져도 통과한다. 감사가 앞서 같은 성격의
+     * 결함을 세 번 잡았다.
+     */
+    it('저장된 테마를 <html>에 적용한다', () => {
+        localStorage.setItem('siglens-theme', 'light');
+        document.documentElement.removeAttribute('data-theme');
+
+        render(<ContactDialog />);
+
+        expect(document.documentElement.getAttribute('data-theme')).toBe(
+            'light'
+        );
+        localStorage.clear();
+        document.documentElement.removeAttribute('data-theme');
+    });
 });
