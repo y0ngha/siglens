@@ -48,6 +48,11 @@
 - [canonical-korean-names R3 — choke-point verified, 2 recommended](project-canonical-korean-names-r3-choke-point.md) — loader-level withCanonical confirmed complete via grep+live mutation; DB-fetch branch of loadAllEntries untested (mutation survives), getKoreanNames still double-applies override
 - [canonical-korean-names R4 — CLOSED, approved](project-canonical-korean-names-r4-closed.md) — both R3 recommended findings verified fixed via live mutation re-test; loop ends
 - [related-visibility-footer R2 — APPROVED, closes loop](project-related-visibility-footer-r2.md) — soft-404 TickerCategories claim + SECTOR_ETFS-membership test tightening both mutation/source verified true
+- [redesign/p1-dark-tokens R2 — APPROVED](project-redesign-p1-heading-section-r2.md) — HEADING_SECTION swept to 3 more shells; undisclosed rounded-xl→rounded-lg was legit documented FIX 4, not scope creep; twMerge/import/FSD all verified clean
+- [redesign/p1-dark-tokens W6d /news R1](project-redesign-p1-heading-section-w6d-news.md) — 8 h2 sites + shell h3 + h4 weight all correct; missed 2 colorless h3 in same already-touched file (NewsAiSummary.tsx) — same bug class, passes contrast so sweep didn't catch it
+- [redesign/p1-dark-tokens fear-greed score coercion R3 — APPROVED, closes loop](project-redesign-p1-fear-greed-score-coercion-r3.md) — 15-case exhaustive audit of kindServerRegistry.ts score coercion, no 3rd defect; only strings get Number()-coerced, everything else safely falls back
+- [redesign/p1-dark-tokens toggle border-contrast R6](project-redesign-p1-toggle-contrast-r6.md) — R5 math re-verified exactly; WCAG 1.4.11 exempts `disabled` (inactive), Math.max fill-or-border reading is sound; found latent (not live) NaN vacuous-pass hole in guard's own hex parser
+- [redesign/p1-dark-tokens toggle border-contrast R7 — CLOSED, approved](project-redesign-p1-toggle-contrast-r7-closed.md) — R6's NaN vacuous-pass hole verified fixed via live mutation (`#7d838f80` throws, reverted byte-identical); loop ends
 
 ## Feedback
 
