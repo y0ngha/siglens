@@ -98,11 +98,23 @@ export default async function Home() {
         inLanguage: 'ko',
         isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
         mainEntity: { '@id': `${SITE_URL}#webapplication` },
+        // 아래 Organization 노드를 그래프에 붙인다 — 이 참조가 없으면 그 노드는
+        // 아무와도 연결되지 않은 채 떠 있다.
+        publisher: { '@id': `${SITE_URL}#organization` },
     };
 
+    /**
+     * `@id`가 없어서 이 노드만 엔티티 그래프 밖에 떠 있었다 — 나머지 셋
+     * (`WebSite`/`WebApplication`/`WebPage`)은 `@id`로 서로를 참조하는데
+     * `Organization`은 아무도 가리키지 않고 자기도 가리키지 않았다. 파서는
+     * 같은 사이트의 발행 주체를 별개 엔티티로 읽는다.
+     *
+     * `@id`를 주고 `WebSite.publisher`가 그것을 가리키게 해서 그래프에 붙인다.
+     */
     const organizationJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'Organization',
+        '@id': `${SITE_URL}#organization`,
         name: SITE_NAME,
         url: SITE_URL,
         logo: `${SITE_URL}/icon512.png`,

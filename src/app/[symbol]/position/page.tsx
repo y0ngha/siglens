@@ -3,7 +3,7 @@ import {
     computePosition,
     computeVolumeByBand,
     describeAvgFloor,
-    formatAmount,
+    formatAmountAligned,
     PositionTabContent,
 } from '@/widgets/portfolio-position';
 import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
@@ -87,6 +87,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const displayName = buildDisplayName(assetInfo, upper);
 
     if (!(await isTabAllowedForSymbol(upper, 'position'))) {
+        return noindexSymbolMetadata(upper, {
+            displayName,
+            koreanName: assetInfo.koreanName,
+        });
+    }
+
+    /*
+     * 본문과 메타데이터가 **같은 조건**을 봐야 한다.
+     *
+     * 예전에는 여기서 `robots`를 무조건 index로 두었는데, 본문의 유일한 고유
+     * 콘텐츠(가격 위치 가이드 섹션)는 `resolvePriceRange`가 null이면 통째로
+     * 생략된다 — CTA는 `useHydrated` 게이트라 SSR에 안 실린다. 그러면 h1과
+     * 문단 하나뿐인 페이지가 색인 대상으로 나갔다(실측: `<main>` 안 `<a>` 0개).
+     * 2026-07 thin-content 사태가 정확히 그 형태였다.
+     *
+     * `getQuantizedBarsStatic`은 같은 요청 안에서 dedupe되므로 본문이 곧 다시
+     * 부르는 값을 여기서 미리 부르는 비용은 없다. sibling 탭(overall/fundamental)이
+     * 쓰는 본문-메타 일치 패턴과 같다.
+     */
+    const range = await resolvePriceRange(
+        upper,
+        assetInfo.fmpSymbol,
+        marketProfileOf(assetInfo)
+    );
+    if (range === null) {
         return noindexSymbolMetadata(upper, {
             displayName,
             koreanName: assetInfo.koreanName,
@@ -420,11 +445,11 @@ export default async function PositionPage({ params }: Props) {
                         </h2>
                         <p className="text-sm leading-relaxed text-secondary-400">
                             {displayName}의 최근 52주 범위는{' '}
-                            {formatAmount(range.low52w, upper)} ~{' '}
-                            {formatAmount(range.high52w, upper)}이고, 현재가{' '}
-                            {formatAmount(range.lastClose, upper)}는 이 범위의{' '}
-                            {currentPricePosition.percentile}% 지점 —{' '}
-                            {currentPricePosition.floorLabel}에 해당합니다.{' '}
+                            {formatAmountAligned(range.low52w, upper)} ~{' '}
+                            {formatAmountAligned(range.high52w, upper)}이고,
+                            현재가 {formatAmountAligned(range.lastClose, upper)}
+                            는 이 범위의 {currentPricePosition.percentile}% 지점
+                            — {currentPricePosition.floorLabel}에 해당합니다.{' '}
                             {currentPricePosition.tone} 아래에서 보유종목을
                             등록하면 같은 건물 안에서 내가 산 층까지 함께 확인할
                             수 있어요.

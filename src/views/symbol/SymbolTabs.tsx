@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useRef } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import {
@@ -19,6 +20,35 @@ interface SymbolTabsProps {
 export function SymbolTabs({ symbol }: SymbolTabsProps) {
     const pathname = usePathname();
     const assetInfo = useAssetInfo(symbol);
+    const railRef = useRef<HTMLElement>(null);
+    const activeRef = useRef<HTMLAnchorElement>(null);
+
+    /**
+     * 활성 탭을 레일 안으로 끌어온다.
+     *
+     * 탭이 9개라 모바일 폭에서 레일이 넘친다(실측 500px 뷰포트: `scrollWidth`
+     * 653, 활성 `position` 탭 x=581, `scrollLeft` 0 → 화면 밖). 그 라우트로
+     * **직접 진입한** 사용자는 자기가 어느 탭에 있는지 볼 수 없다 —
+     * `aria-current`는 있으니 AT는 알지만 눈으로는 알 수 없다.
+     *
+     * `scrollIntoView`를 쓰지 않는 이유: 그 API는 조상 스크롤 컨테이너까지
+     * 함께 움직여 페이지가 세로로 튄다. 레일의 `scrollLeft`만 직접 옮긴다.
+     *
+     * 이미 보이면 건드리지 않는다 — 매 내비게이션마다 중앙 정렬로 재배치하면
+     * 사용자가 손으로 맞춰둔 위치를 빼앗는다.
+     */
+    useEffect(() => {
+        const rail = railRef.current;
+        const active = activeRef.current;
+        if (rail === null || active === null) return;
+        const left = active.offsetLeft;
+        const right = left + active.offsetWidth;
+        const viewLeft = rail.scrollLeft;
+        const viewRight = viewLeft + rail.clientWidth;
+        if (left >= viewLeft && right <= viewRight) return;
+        // 왼쪽으로 벗어났으면 왼쪽 끝에, 오른쪽이면 오른쪽 끝에 붙인다.
+        rail.scrollLeft = left < viewLeft ? left : right - rail.clientWidth;
+    }, [pathname]);
 
     const upper = symbol.toUpperCase();
 
@@ -42,6 +72,7 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
 
     return (
         <nav
+            ref={railRef}
             aria-label="분석 종류"
             // overflow-x-auto만 두면 CSS 명세상 overflow-y가 visible→auto로 승격되고,
             // 각 탭 링크의 -mb-px가 1px 세로 오버플로를 만들어 모바일에서 원치 않는
@@ -68,6 +99,7 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
                     return (
                         <Link
                             key={t.key}
+                            ref={active ? activeRef : undefined}
                             href={href}
                             // 탭은 전부 같은 심볼의 형제 라우트라 viewport에 동시에 들어온다.
                             // 기본 prefetch는 마운트 즉시 탭 수만큼 RSC 페이로드를 당겨오는데,

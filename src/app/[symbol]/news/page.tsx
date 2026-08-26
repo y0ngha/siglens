@@ -8,6 +8,7 @@ import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
 import { NewsFactsSummary, NEWS_ROW_SERIALIZATION_LIMIT } from '@/widgets/news';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import { NewsAiSummaryErrorBoundary } from '@/widgets/news/NewsAiSummaryErrorBoundary';
+import { NewsListErrorBoundary } from '@/widgets/news/NewsListErrorBoundary';
 import { NewsAiSummarySkeleton } from '@/widgets/news/NewsAiSummarySkeleton';
 import { AnalystActions } from '@/widgets/news/sections/AnalystActions';
 import { EventCalendar } from '@/widgets/news/sections/EventCalendar';
@@ -441,9 +442,17 @@ export default async function NewsPage({ params }: Props) {
                     </Suspense>
                 </NewsAiSummaryErrorBoundary>
 
-                <Suspense fallback={<SectionSkeleton />}>
-                    <NewsListSection symbol={upper} />
-                </Suspense>
+                {/*
+                 * `NewsList`도 `NewsAiSummary`처럼 지속 폴링 오류를 다시
+                 * 던진다. 바운더리가 없으면 그 throw가 `[symbol]/error.tsx`까지
+                 * 올라가 헤더·탭 레일·관련 종목까지 **심볼 라우트 전체**를
+                 * 내린다(감사 실측: 본문 1,079 → 582자).
+                 */}
+                <NewsListErrorBoundary>
+                    <Suspense fallback={<SectionSkeleton />}>
+                        <NewsListSection symbol={upper} />
+                    </Suspense>
+                </NewsListErrorBoundary>
 
                 {isEquity && (
                     <Suspense fallback={<SectionSkeleton />}>

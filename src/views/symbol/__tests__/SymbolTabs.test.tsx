@@ -148,3 +148,89 @@ describe('SymbolTabs', () => {
         expect(screen.getByText('뉴스')).toBeDefined();
     });
 });
+
+/**
+ * 활성 탭이 레일 밖에 있으면 안으로 끌어온다.
+ *
+ * 탭이 9개라 모바일 폭에서 레일이 넘친다 — 실측(500px 뷰포트): `scrollWidth`
+ * 653, 활성 `position` 탭 x=581, `scrollLeft` 0으로 화면 밖이었다. 그 라우트로
+ * 직접 진입하면 자기가 어느 탭에 있는지 눈으로 알 수 없다.
+ *
+ * jsdom에는 레이아웃이 없어 `offsetLeft`/`offsetWidth`/`clientWidth`가 전부 0이다.
+ * 그대로 두면 "이미 보인다"로 판정돼 **어떤 구현이든 통과**하므로, 실측 좌표를
+ * 스텁해 조건을 만든다.
+ */
+describe('활성 탭 스크롤', () => {
+    /**
+     * jsdom에는 레이아웃이 없다. `clientWidth`/`offsetLeft`가 0인 것은 물론이고,
+     * **`scrollLeft` 세터가 아무 일도 하지 않고 항상 0을 반환한다** — 그대로
+     * 두면 구현이 무엇을 하든 단언이 0으로 통과하거나 실패한다. 값을 실제로
+     * 보관하는 접근자로 갈아끼워야 이 테스트가 동작을 본다.
+     */
+    function stubRail(rail: HTMLElement, railWidth: number) {
+        let scrollLeft = 0;
+        Object.defineProperty(rail, 'scrollLeft', {
+            configurable: true,
+            get: () => scrollLeft,
+            set: (v: number) => {
+                scrollLeft = v;
+            },
+        });
+        Object.defineProperty(rail, 'clientWidth', {
+            configurable: true,
+            value: railWidth,
+        });
+    }
+
+    function stubTab(el: HTMLElement, left: number, width: number) {
+        Object.defineProperty(el, 'offsetLeft', {
+            configurable: true,
+            value: left,
+        });
+        Object.defineProperty(el, 'offsetWidth', {
+            configurable: true,
+            value: width,
+        });
+    }
+
+    it('오른쪽으로 벗어난 활성 탭을 레일 안으로 끌어온다', () => {
+        (usePathname as ReturnType<typeof vi.fn>).mockReturnValue('/AAPL');
+        const { container, rerender } = render(<SymbolTabs symbol="AAPL" />);
+
+        const rail = container.querySelector('nav') as HTMLElement;
+        const target = container.querySelector(
+            'a[href="/AAPL/news"]'
+        ) as HTMLElement;
+        expect(rail).not.toBeNull();
+        expect(target).not.toBeNull();
+
+        stubRail(rail, 500);
+        // 실측 좌표(500px 뷰포트에서 마지막 탭): x=581, 폭 72.
+        stubTab(target, 581, 72);
+
+        (usePathname as ReturnType<typeof vi.fn>).mockReturnValue('/AAPL/news');
+        rerender(<SymbolTabs symbol="AAPL" />);
+
+        // 581 + 72 - 500 = 153
+        expect(rail.scrollLeft).toBe(153);
+    });
+
+    it('이미 보이는 활성 탭은 건드리지 않는다 — 사용자가 맞춘 위치를 빼앗지 않는다', () => {
+        (usePathname as ReturnType<typeof vi.fn>).mockReturnValue('/AAPL');
+        const { container, rerender } = render(<SymbolTabs symbol="AAPL" />);
+
+        const rail = container.querySelector('nav') as HTMLElement;
+        const target = container.querySelector(
+            'a[href="/AAPL/news"]'
+        ) as HTMLElement;
+
+        stubRail(rail, 500);
+        stubTab(target, 10, 60);
+        rail.scrollLeft = 0;
+
+        (usePathname as ReturnType<typeof vi.fn>).mockReturnValue('/AAPL/news');
+        rerender(<SymbolTabs symbol="AAPL" />);
+
+        expect(rail.scrollLeft).toBe(0);
+    });
+});

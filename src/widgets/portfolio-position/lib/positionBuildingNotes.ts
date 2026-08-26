@@ -5,6 +5,7 @@ import {
 import {
     dynamicDecimals,
     formatPrice,
+    formatUsdCurrency,
     formatUsdPrice,
 } from '@/shared/lib/priceFormat';
 import type { PositionModel, RangeClamp } from './positionGeometry';
@@ -34,6 +35,28 @@ export function formatAmount(value: number, symbol: string): string {
         return `$${value.toFixed(dynamicDecimals(value))}`;
     }
     return `$${formatUsdPrice(value)}`;
+}
+
+/**
+ * 여러 가격을 **한 문장 안에** 나란히 쓰는 자리용. USD는 소수 2자리를 고정한다.
+ *
+ * `formatAmount`는 후행 0을 자른다 — 빌딩 UI의 층 라벨처럼 값 하나만 보여주는
+ * 자리에서는 `$300`이 `$300.00`보다 낫고, 그 동작을 `PositionCard`·
+ * `PositionBuilding` 테스트가 단언한다. 하지만 문장 안에 세 개가 붙으면
+ * "최근 52주 범위는 $224.69 ~ $344.57이고, 현재가 $309.9는"처럼 자릿수가
+ * 들쭉날쭉해져 오타처럼 읽힌다(실측).
+ *
+ * KRW와 1달러 미만은 `formatAmount`와 같은 분기를 그대로 쓴다 — 원화는 소수점이
+ * 없고, sub-$1은 고정 2자리가 "$0"으로 뭉갠다.
+ */
+export function formatAmountAligned(value: number, symbol: string): string {
+    if (currencyForSymbol(symbol) === 'KRW') {
+        return formatPrice(value, getDescriptor('kr-equity').priceFormat);
+    }
+    if (value !== 0 && Math.abs(value) < 1) {
+        return `$${value.toFixed(dynamicDecimals(value))}`;
+    }
+    return formatUsdCurrency(value);
 }
 
 /** in-SVG 라벨 폭이 고정 viewBox라 고가 종목(예: BRK.A $600,000+)에서 잘릴 수 있어

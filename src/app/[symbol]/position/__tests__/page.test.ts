@@ -42,7 +42,7 @@ vi.mock('@/widgets/portfolio-position', async () => {
         await import('@/widgets/portfolio-position/lib/volumeByBand');
     const { BAND_COUNT, computePosition } =
         await import('@/widgets/portfolio-position/lib/positionGeometry');
-    const { formatAmount, describeAvgFloor } =
+    const { formatAmount, formatAmountAligned, describeAvgFloor } =
         await import('@/widgets/portfolio-position/lib/positionBuildingNotes');
     return {
         PositionTabContent: () => null,
@@ -50,6 +50,7 @@ vi.mock('@/widgets/portfolio-position', async () => {
         computePosition,
         describeAvgFloor,
         formatAmount,
+        formatAmountAligned,
         BAND_COUNT,
     };
 });
@@ -115,6 +116,9 @@ describe('generateMetadata', () => {
             degraded: false,
         } as never);
         mockIsTabAllowedForSymbol.mockResolvedValue(true);
+        // 메타데이터가 본문과 같은 조건(가격 범위 확보 여부)을 보므로 bars도
+        // 기본값을 준다 — 없으면 모든 케이스가 noindex 분기로 떨어진다.
+        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
     });
 
     it('returns noindex for an invalid ticker shape', async () => {
@@ -154,6 +158,29 @@ describe('generateMetadata', () => {
         expect(metadata.alternates).toEqual({
             canonical: 'https://siglens.io/AAPL/position',
         });
+    });
+
+    /**
+     * 본문의 유일한 고유 콘텐츠가 없으면 색인시키지 않는다.
+     *
+     * 가이드 섹션은 `resolvePriceRange`가 null이면 생략되고 CTA는 SSR에 안
+     * 실리므로, 그 상태의 페이지는 h1 + 문단 하나뿐이다. 예전에는 그래도
+     * `robots`가 index였다 — 2026-07 thin-content 사태와 같은 형태다.
+     */
+    it('bars가 degrade되면 noindex로 떨어진다', async () => {
+        mockGetQuantizedBarsStatic.mockRejectedValue(new Error('FMP down'));
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
+    });
+
+    it('bars가 정상이면 색인된다 — 위 가드가 항상 noindex를 내지 않는다', async () => {
+        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+        expect(metadata.robots).toBeUndefined();
     });
 
     it('노출용 카피는 "평단 = 몇 층" 아파트 메타포로 후킹 강화 — title/description/OG/Twitter에 반영', async () => {
@@ -551,6 +578,28 @@ describe('PositionPage — per-symbol current-price-position content (Task 1, th
             expect(serialized).toContain(tone);
         }
     );
+
+    /**
+     * 한 문장 안의 세 가격은 자릿수가 같아야 한다. `formatAmount`는 후행 0을
+     * 자르므로(빌딩 UI의 층 라벨에서는 그게 맞다) 이 자리에 그대로 쓰면
+     * "$224.69 ~ $344.57이고, 현재가 $309.9는"처럼 하나만 한 자리가 된다.
+     */
+    it('범위와 현재가의 소수 자릿수가 어긋나지 않는다', async () => {
+        // low=85.00, high=110.00, lastClose=100.00 → 셋 다 후행 0을 갖는다.
+        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
+
+        const tree = await PositionPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+        const serialized = JSON.stringify(tree);
+
+        for (const expected of ['$85.00', '$110.00', '$100.00']) {
+            expect(serialized, expected).toContain(expected);
+        }
+        // 절삭형이 남아 있으면 안 된다.
+        expect(serialized).not.toContain('"$85"');
+        expect(serialized).not.toContain('"$110"');
+    });
 
     it('omits the section entirely (no crash, no empty shell) when getQuantizedBarsStatic fails and range degrades to null', async () => {
         mockGetQuantizedBarsStatic.mockRejectedValue(new Error('FMP down'));

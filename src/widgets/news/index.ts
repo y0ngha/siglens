@@ -5,6 +5,7 @@ export type { NewsFactsSummaryProps } from './NewsFactsSummary';
 export { NewsAiSummary, NewsAiSummaryView } from './NewsAiSummary';
 export { NewsAiSummaryError } from './NewsAiSummaryError';
 export { NewsAiSummaryErrorBoundary } from './NewsAiSummaryErrorBoundary';
+export { NewsListErrorBoundary } from './NewsListErrorBoundary';
 export { NewsAiSummarySkeleton } from './NewsAiSummarySkeleton';
 
 // /overall 등 다른 widget이 동일 게이트(개별 카드 분석 후 종합 trigger)를 재사용할 수

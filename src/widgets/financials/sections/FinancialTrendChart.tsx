@@ -102,14 +102,30 @@ function barY(value: number, height: number, baselineY: number): number {
     return value >= 0 ? baselineY - height : baselineY;
 }
 
+/**
+ * 막대 색은 **시리즈가 선언한 색**을 지킨다.
+ *
+ * 예전에는 값이 음수면 무조건 `bearish`로 덮었다. 그러면 범례가 거짓말을 한다 —
+ * 현금흐름표의 범례는 영업CF 초록 / FCF 파랑 / CapEx 빨강인데, FCF가 음수인
+ * 기간(005930.KS FY2023 −₩16.4조)에는 FCF가 빨강으로 그려져 CapEx와 구분되지
+ * 않았다. 재무상태표의 순부채도 같다.
+ *
+ * 부호는 색이 아니라 **방향**이 나른다 — `barY`가 음수를 baseline 아래로
+ * 그린다. 그래서 색을 덮을 필요가 없다.
+ *
+ * 다만 `neutral`로 선언된 시리즈는 색 자체가 아무 뜻이 없으므로, 그때는 부호로
+ * 색을 얻는 편이 정보가 는다. 그 경우에만 예전 동작을 남긴다.
+ */
 function resolveColor(
     series: TrendSeries[],
     seriesIdx: number,
     value: number | null
 ): SeriesColorClasses {
-    if (value !== null && value < 0) return COLOR_CLASSES.bearish;
-    const c = series[seriesIdx]?.color ?? 'neutral';
-    return COLOR_CLASSES[c];
+    const declared = series[seriesIdx]?.color ?? 'neutral';
+    if (declared === 'neutral' && value !== null && value < 0) {
+        return COLOR_CLASSES.bearish;
+    }
+    return COLOR_CLASSES[declared];
 }
 
 function fmt(value: number | null, currency: StatementCurrency): string {
@@ -127,7 +143,9 @@ interface HoverState extends TooltipPosition {
  * accessible value source) shows each series' value for the hovered period,
  * mirroring the options page charts.
  *
- * Negative values are colored bearish regardless of the series color prop.
+ * 색은 시리즈 선언을 따른다 — 부호는 baseline 위/아래 **방향**이 나른다.
+ * (`neutral` 시리즈만 예외: 색에 뜻이 없으므로 음수를 bearish로 낸다.
+ *  `resolveColor` 주석 참조.)
  * Responsive: width="100%", height is fixed.
  */
 export function FinancialTrendChart({
@@ -286,9 +304,26 @@ export function FinancialTrendChart({
                 ))}
             </svg>
 
-            <div className="mt-1 flex justify-between">
+            {/*
+             * `flex justify-between`이었다. 막대는 `SVG_PADDING_LEFT`부터
+             * `barGroupWidth` 간격으로 놓이는데 라벨만 0~100%에 가장자리 정렬돼,
+             * 끝 라벨이 자기 열 **밖으로** 나갔다(감사 실측 418px 5기간:
+             * 열 0은 [57.7,134.7]인데 라벨 중심 54.3, 열 4는 [365.3,442.3]인데
+             * 444.8). SVG와 같은 좌우 패딩 안에서 n등분해 각 열 중앙에 놓는다.
+             */}
+            <div
+                className="mt-1 grid"
+                style={{
+                    gridTemplateColumns: `repeat(${periods.length}, 1fr)`,
+                    paddingLeft: `${SVG_PADDING_LEFT}%`,
+                    paddingRight: `${SVG_PADDING_RIGHT}%`,
+                }}
+            >
                 {periods.map(p => (
-                    <span key={p} className="text-xs text-secondary-400">
+                    <span
+                        key={p}
+                        className="text-center text-xs text-secondary-400"
+                    >
                         {p}
                     </span>
                 ))}
@@ -315,8 +350,7 @@ export function FinancialTrendChart({
                         {periods[hover.periodIdx]}
                     </div>
                     <ul className="space-y-0.5">
-                        {series.map(s => {
-                            const c = s.color ?? 'neutral';
+                        {series.map((s, si) => {
                             const v = s.values[hover.periodIdx] ?? null;
                             return (
                                 <li
@@ -324,12 +358,13 @@ export function FinancialTrendChart({
                                     className="flex items-center justify-between gap-3"
                                 >
                                     <span className="flex items-center gap-1">
+                                        {/* 막대와 같은 규칙을 쓴다 — 여기만
+                                            부호로 덮으면 툴팁 점과 막대 색이
+                                            어긋난다. */}
                                         <span
                                             className={cn(
                                                 'inline-block h-2 w-2 rounded-full',
-                                                v !== null && v < 0
-                                                    ? COLOR_CLASSES.bearish.dot
-                                                    : COLOR_CLASSES[c].dot
+                                                resolveColor(series, si, v).dot
                                             )}
                                         />
                                         <span className="text-secondary-400">

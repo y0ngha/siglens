@@ -93,7 +93,18 @@ const ACTION_RECOMMENDATION_FIELDS: readonly ActionRecommendationField[] = [
 interface ActionRecommendationSectionProps {
     rec: ActionRecommendation;
     isChartVisible: boolean;
-    onToggleChart: () => void;
+    /**
+     * 없으면 차트 토글 버튼을 **렌더하지 않는다.**
+     *
+     * 공유 페이지(`views/share/kindPanelRegistry`)는 이 핸들러를 넘기지 않고,
+     * 그 주석은 "핸들러가 없으면 패널이 그 UI를 숨긴다"고 적혀 있었다 — 사실이
+     * 아니었다. 버튼은 무조건 렌더됐고 `onToggleChart?.()`가 아무것도 하지
+     * 않아, 눌러도 반응 없는 컨트롤이 공유 화면에 남아 있었다(감사 실측:
+     * `aria-label="차트 가격선 숨기기"`, 클릭 2회 후 DOM 바이트 동일).
+     * 게다가 그 버튼이 숨기겠다고 말하는 가격선은 `StockChart`가 그리는데
+     * 공유 페이지는 `ShareCandlestickChart`를 쓰므로 애초에 존재하지 않는다.
+     */
+    onToggleChart?: () => void;
 }
 
 function ActionRecommendationSection({
@@ -120,24 +131,26 @@ function ActionRecommendationSection({
             )}
             <div className="flex items-center justify-between">
                 <span className={LABEL_KO}>매매 전략</span>
-                <button
-                    type="button"
-                    onClick={onToggleChart}
-                    className={cn(
-                        'focus-visible:ring-primary-500 flex items-center gap-1 rounded px-1.5 py-0.5 text-xs transition-colors focus-visible:ring-1 focus-visible:outline-none',
-                        isChartVisible
-                            ? 'text-primary-400 hover:text-primary-300'
-                            : 'text-secondary-500 hover:text-secondary-400'
-                    )}
-                    aria-label={
-                        isChartVisible
-                            ? '차트 가격선 숨기기'
-                            : '차트 가격선 표시'
-                    }
-                >
-                    <EyeIcon isVisible={isChartVisible} />
-                    차트
-                </button>
+                {onToggleChart !== undefined && (
+                    <button
+                        type="button"
+                        onClick={onToggleChart}
+                        className={cn(
+                            'focus-visible:ring-primary-500 flex items-center gap-1 rounded px-1.5 py-0.5 text-xs transition-colors focus-visible:ring-1 focus-visible:outline-none',
+                            isChartVisible
+                                ? 'text-primary-400 hover:text-primary-300'
+                                : 'text-secondary-500 hover:text-secondary-400'
+                        )}
+                        aria-label={
+                            isChartVisible
+                                ? '차트 가격선 숨기기'
+                                : '차트 가격선 표시'
+                        }
+                    >
+                        <EyeIcon isVisible={isChartVisible} />
+                        차트
+                    </button>
+                )}
             </div>
             <div className="flex flex-col gap-2">
                 {ACTION_RECOMMENDATION_FIELDS.map(({ label, key }) => {
@@ -1117,10 +1130,17 @@ export function AnalysisPanel({
                             <ActionRecommendationSection
                                 rec={analysis.actionRecommendation}
                                 isChartVisible={actionPricesVisible}
-                                onToggleChart={() =>
-                                    onActionPricesVisibilityChange?.(
-                                        !actionPricesVisible
-                                    )
+                                // 화살표 함수를 무조건 넘기면 아래 섹션의
+                                // "핸들러가 없으면 버튼을 숨긴다" 게이트가
+                                // 영원히 발동하지 않는다 — 소비자가 핸들러를
+                                // 안 준 것을 여기서 지워버리기 때문이다.
+                                onToggleChart={
+                                    onActionPricesVisibilityChange === undefined
+                                        ? undefined
+                                        : () =>
+                                              onActionPricesVisibilityChange(
+                                                  !actionPricesVisible
+                                              )
                                 }
                             />
                         )}

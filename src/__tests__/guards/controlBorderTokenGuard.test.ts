@@ -212,7 +212,9 @@ const ALLOWED_ELEMENTS: ReadonlySet<string> = new Set([
     // "활성 분기는 다른 색을 쓴다"고 적었는데 사실이 아니었고 — `copied`/`failed`만
     // 그랬다 — 평상시 기본 상태인 `idle`이 장식 보더인 채로 그 주석 뒤에 숨었다.
     // 이 자리에 분기를 추가할 때는 이 예외가 그것까지 덮는다는 걸 확인할 것.
-    'widgets/analysis/AnalysisPanel.tsx:1012',
+    // 줄 번호 키라 이 파일이 위에서 길어지면 함께 옮겨야 한다 —
+    // 아래 '낡은 항목' 검사가 그때 알려준다(1012 → 1025).
+    'widgets/analysis/AnalysisPanel.tsx:1025',
 
     // 드롭다운 메뉴의 첫 항목. `border-b`는 이 항목과 아래 지역 목록을 가르는
     // **구분선**이고, 컨트롤의 경계는 패널 보더 + 상태 채움이 맡는다.
