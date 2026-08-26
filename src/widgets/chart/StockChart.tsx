@@ -54,6 +54,8 @@ import { useCandlePatternMarkers } from './hooks/useCandlePatternMarkers';
 import { useActionRecommendationOverlay } from './hooks/useActionRecommendationOverlay';
 import { useSmcZones } from './hooks/useSmcZones';
 import { usePaneLabels } from './hooks/usePaneLabels';
+import { usePricePaneSize } from './hooks/usePricePaneSize';
+import { usePricePaneStretch } from './hooks/usePricePaneStretch';
 import { useOverlayLegend } from './hooks/useOverlayLegend';
 import { DEFAULT_LINE_WIDTH } from './constants';
 import { useIndicatorVisibility } from './hooks/useIndicatorVisibility';
@@ -503,6 +505,12 @@ export function StockChart({
         labels: paneLabels,
     });
 
+    // 보조 pane이 늘어도 가격 pane이 절반 아래로 내려가지 않게 한다.
+    // 크기를 재기 전에 실행되도록 usePricePaneSize보다 앞에 둔다.
+    usePricePaneStretch(chartRef, paneIndices);
+
+    const pricePaneSize = usePricePaneSize(chartRef, wrapperRef, paneIndices);
+
     /**
      * 오버레이/period 지표처럼 별도 훅 반환값을 받는 항목의 오버라이드 맵.
      * INDICATOR_REGISTRY 순회 시 이 맵에 있는 key는 오버라이드를 우선하고,
@@ -623,10 +631,15 @@ export function StockChart({
             <div className="absolute top-2 right-14 z-10">
                 <IndicatorSettingsModal bindings={indicatorBindings} />
             </div>
-            <div className="pointer-events-none absolute top-2 left-2 z-10 flex flex-col gap-1">
+            {/* 범례는 자기 pane(pane 0) 안에만 머문다 — 넘치면 보조 pane 라벨을
+                덮어 두 글자가 겹쳐 찍힌다. 상한은 OverlayLegend가 실측 크기에서
+                계산하고, 넘친 항목 수는 `+N` 칩으로 드러낸다. */}
+            <div className="pointer-events-none absolute top-2 left-2 z-10">
                 <OverlayLegend
                     items={overlayLegendItems}
                     decimals={priceDecimals}
+                    pricePaneHeightPx={pricePaneSize.height}
+                    chartWidthPx={pricePaneSize.width}
                 />
             </div>
         </div>

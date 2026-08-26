@@ -50,6 +50,23 @@ if (dialogProto !== undefined && typeof dialogProto.showModal !== 'function') {
 }
 
 /*
+ * jsdom은 `ResizeObserver`를 구현하지 않는다. 차트 위젯이 pane 높이 변화를
+ * 이것으로 추적하므로(`usePaneLabels`·`usePricePaneSize`), StockChart를 렌더하는
+ * 모든 테스트가 없이는 `ResizeObserver is not defined`로 죽는다 — matchMedia와
+ * 같은 성격의 환경 공백이다.
+ *
+ * 관찰은 발화하지 않는 no-op이다. 크기 변화 자체를 검증해야 하는 테스트는
+ * `vi.stubGlobal('ResizeObserver', ...)`로 각자 덮어쓴다(`usePaneLabels.test.ts` 참조).
+ */
+if (typeof globalThis.ResizeObserver !== 'function') {
+    globalThis.ResizeObserver = class {
+        observe(): void {}
+        unobserve(): void {}
+        disconnect(): void {}
+    } as unknown as typeof ResizeObserver;
+}
+
+/*
  * jsdom은 `window.matchMedia`를 구현하지 않는다. 테마 훅(`useTheme`)이 시스템
  * 선호도를 읽고 변경을 구독하므로, 헤더를 렌더하는 모든 테스트가 이것 없이는
  * `TypeError: window.matchMedia is not a function`으로 죽는다.

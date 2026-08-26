@@ -1,0 +1,234 @@
+import type { OverlayLegendItem } from '@/widgets/chart/types';
+import type { OverlayGroup } from '@/widgets/chart/utils/overlayLegendFormat';
+import { groupOverlayItems } from '@/widgets/chart/utils/overlayLegendFormat';
+import {
+    LEGEND_ROW_HEIGHT_PX,
+    legendItemWidthPx,
+    legendMaxHeightPx,
+    legendMaxRows,
+    legendMaxWidthPx,
+    packOverlayLegend,
+} from '@/widgets/chart/utils/overlayLegendLayout';
+
+/**
+ * 감사가 실측한 실패 케이스를 그대로 재현한다: 500x813 뷰포트, 차트 246px,
+ * 가격 pane 오버레이 전부 + 보조 pane 3개. 범례 bounding box는 266x492로
+ * 가격 pane(86px)의 3.1배, 차트 전체의 108%였다.
+ */
+const MOBILE_CHART_WIDTH_PX = 246;
+
+/** `usePricePaneStretch` 적용 후의 가격 pane 높이(전체의 50%). */
+const MOBILE_PRICE_PANE_PX = 110;
+
+function item(name: string, value: number | null = 311.54): OverlayLegendItem {
+    return { name, color: '#ef4444', value };
+}
+
+/** 감사 스크린샷에 찍힌 33개 오버레이 전량. */
+function auditItems(): OverlayLegendItem[] {
+    return [
+        'MA(5)',
+        'MA(20)',
+        'MA(60)',
+        'MA(120)',
+        'MA(200)',
+        'EMA(20)',
+        'EMA(60)',
+        'BB Upper',
+        'BB Middle',
+        'BB Lower',
+        'Tenkan',
+        'Kijun',
+        'Chikou',
+        'Senkou A',
+        'Senkou B',
+        'POC',
+        'VAH',
+        'VAL',
+        'KC Upper',
+        'KC Middle',
+        'KC Lower',
+        'DC Upper',
+        'DC Middle',
+        'DC Lower',
+        'Supertrend',
+        'PSAR',
+        'Chandelier',
+    ].map(name => item(name));
+}
+
+function pack(
+    groups: OverlayGroup[],
+    { width, height }: { width: number; height: number }
+) {
+    return packOverlayLegend({
+        groups,
+        decimals: 2,
+        maxWidthPx: legendMaxWidthPx(width),
+        maxRows: legendMaxRows(height),
+    });
+}
+
+describe('legendMaxRows', () => {
+    it('재지 못한 높이는 제한 없음으로 본다', () => {
+        // 0을 "높이 0"으로 읽으면 마운트 첫 프레임에 범례가 통째로 접힌다.
+        expect(legendMaxRows(0)).toBe(Number.POSITIVE_INFINITY);
+        expect(legendMaxRows(-1)).toBe(Number.POSITIVE_INFINITY);
+    });
+
+    it('모바일 가격 pane에서 몇 줄이 들어가는지', () => {
+        // (110 - 16 인셋 - 8 패딩) / 17 = 5.05 → 5줄
+        expect(legendMaxRows(MOBILE_PRICE_PANE_PX)).toBe(5);
+    });
+
+    it('아주 낮은 pane에서도 최소 한 줄은 남긴다', () => {
+        // 0줄이면 `+33` 칩만 남아 같은 높이를 쓰면서 정보만 사라진다.
+        expect(legendMaxRows(20)).toBe(1);
+    });
+
+    it('데스크톱 높이는 실질적으로 제한이 되지 않는다', () => {
+        expect(legendMaxRows(600)).toBeGreaterThanOrEqual(33);
+    });
+});
+
+describe('legendMaxWidthPx', () => {
+    it('재지 못한 폭은 제한 없음으로 본다', () => {
+        expect(legendMaxWidthPx(0)).toBe(Number.POSITIVE_INFINITY);
+    });
+
+    it('톱니바퀴 버튼과 가격 축 자리를 비워 둔다', () => {
+        // 톱니바퀴는 right-14(56px)에 44px로 놓여 오른쪽 100px을 차지한다.
+        const available = legendMaxWidthPx(MOBILE_CHART_WIDTH_PX);
+        expect(available).toBeLessThanOrEqual(MOBILE_CHART_WIDTH_PX - 100 - 8);
+    });
+
+    it('폭이 예약분보다 좁아도 음수를 돌려주지 않는다', () => {
+        expect(legendMaxWidthPx(50)).toBe(0);
+    });
+});
+
+describe('legendMaxHeightPx', () => {
+    it('재지 못했으면 인라인 스타일을 붙이지 않는다', () => {
+        expect(legendMaxHeightPx(0)).toBeUndefined();
+    });
+
+    it('가격 pane에서 위아래 인셋을 뺀 값이다', () => {
+        expect(legendMaxHeightPx(MOBILE_PRICE_PANE_PX)).toBe(
+            MOBILE_PRICE_PANE_PX - 16
+        );
+    });
+});
+
+describe('legendItemWidthPx', () => {
+    it('이름과 값의 글자 수에 비례한다', () => {
+        expect(legendItemWidthPx(item('MA(120)'), 2)).toBeGreaterThan(
+            legendItemWidthPx(item('POC'), 2)
+        );
+    });
+
+    it('소수 자릿수가 늘면 폭도 늘어난다 — 크립토가 잘려나가지 않게', () => {
+        expect(legendItemWidthPx(item('MA(20)', 0.058158), 5)).toBeGreaterThan(
+            legendItemWidthPx(item('MA(20)', 0.058158), 2)
+        );
+    });
+});
+
+describe('packOverlayLegend', () => {
+    it('그룹마다 새 줄에서 시작한다', () => {
+        const groups = groupOverlayItems([
+            item('MA(5)'),
+            item('MA(20)'),
+            item('POC'),
+        ]);
+
+        const { rows } = pack(groups, { width: 0, height: 0 });
+
+        expect(rows).toHaveLength(2);
+        expect(rows[0].map(i => i.name)).toEqual(['MA(5)', 'MA(20)']);
+        expect(rows[1].map(i => i.name)).toEqual(['POC']);
+    });
+
+    it('폭을 넘는 그룹은 여러 줄로 쪼갠다', () => {
+        const groups = groupOverlayItems(auditItems().slice(0, 5));
+
+        const wide = pack(groups, { width: 0, height: 0 });
+        const narrow = pack(groups, {
+            width: MOBILE_CHART_WIDTH_PX,
+            height: 0,
+        });
+
+        expect(wide.rows).toHaveLength(1);
+        expect(narrow.rows.length).toBeGreaterThan(1);
+    });
+
+    it('한 줄에 최소 한 항목은 넣는다 — 폭 0에서도 빈 줄이 없다', () => {
+        const groups = groupOverlayItems(auditItems());
+
+        const { rows } = pack(groups, { width: 50, height: 0 });
+
+        expect(rows.every(row => row.length > 0)).toBe(true);
+    });
+
+    it('잘라낸 항목 수를 hiddenCount로 정확히 돌려준다', () => {
+        const items = auditItems();
+        const groups = groupOverlayItems(items);
+
+        const { rows, hiddenCount } = pack(groups, {
+            width: MOBILE_CHART_WIDTH_PX,
+            height: MOBILE_PRICE_PANE_PX,
+        });
+
+        const shown = rows.reduce((n, row) => n + row.length, 0);
+        // 아무것도 조용히 사라지지 않는다: 보인 것 + 접힌 것 = 전부.
+        expect(shown + hiddenCount).toBe(items.length);
+        expect(hiddenCount).toBeGreaterThan(0);
+    });
+
+    it('감사 케이스에서 범례가 가격 pane을 넘지 않는다', () => {
+        const groups = groupOverlayItems(auditItems());
+
+        const { rows } = pack(groups, {
+            width: MOBILE_CHART_WIDTH_PX,
+            height: MOBILE_PRICE_PANE_PX,
+        });
+
+        // 실측 492px → 가격 pane(110px)의 인셋 안쪽으로 들어와야 한다.
+        const boxHeight = rows.length * LEGEND_ROW_HEIGHT_PX;
+        expect(boxHeight).toBeLessThanOrEqual(MOBILE_PRICE_PANE_PX - 16);
+    });
+
+    it('가격 pane이 낮아질수록 줄 수가 단조 감소한다', () => {
+        const groups = groupOverlayItems(auditItems());
+        const heights = [400, 300, 200, 110, 60];
+
+        const rowCounts = heights.map(
+            height =>
+                pack(groups, { width: MOBILE_CHART_WIDTH_PX, height }).rows
+                    .length
+        );
+
+        for (let i = 1; i < rowCounts.length; i += 1) {
+            expect(rowCounts[i]).toBeLessThanOrEqual(rowCounts[i - 1]);
+        }
+    });
+
+    it('데스크톱에서는 전부 보여 준다 — 기존 배치를 줄이지 않는다', () => {
+        const items = auditItems();
+        const groups = groupOverlayItems(items);
+
+        const { rows, hiddenCount } = pack(groups, {
+            width: 1200,
+            height: 600,
+        });
+
+        expect(hiddenCount).toBe(0);
+        expect(rows.reduce((n, row) => n + row.length, 0)).toBe(items.length);
+    });
+
+    it('빈 입력은 빈 결과다', () => {
+        expect(pack([], { width: 300, height: 100 })).toEqual({
+            rows: [],
+            hiddenCount: 0,
+        });
+    });
+});

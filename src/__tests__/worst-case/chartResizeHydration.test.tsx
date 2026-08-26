@@ -16,6 +16,9 @@ const { mockCreateChart, mockResize } = vi.hoisted(() => {
         })),
         subscribeCrosshairMove: vi.fn(),
         priceScale: vi.fn(() => ({ applyOptions: vi.fn() })),
+        panes: vi.fn(() => [
+            { getHeight: () => 200, setStretchFactor: vi.fn() },
+        ]),
     }));
     return { mockCreateChart, mockResize };
 });
