@@ -1,4 +1,6 @@
 import { OnboardingContent } from '@/features/portfolio-onboarding';
+import { cn } from '@/shared/lib/cn';
+import { PLACEHOLDER_ON_INSET } from '@/shared/lib/surfaceStyles';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
@@ -43,9 +45,24 @@ export function OnboardingSkeleton() {
             <span className="sr-only">불러오는 중이에요</span>
             <div className="space-y-6" aria-hidden="true">
                 <div className="space-y-3">
-                    <div className="h-6 w-28 animate-pulse rounded-full bg-secondary-700" />
-                    <div className="h-7 w-64 animate-pulse rounded bg-secondary-700" />
-                    <div className="h-4 w-full max-w-md animate-pulse rounded bg-secondary-700" />
+                    <div
+                        className={cn(
+                            'h-6 w-28 animate-pulse rounded-full',
+                            PLACEHOLDER_ON_INSET
+                        )}
+                    />
+                    <div
+                        className={cn(
+                            'h-7 w-64 animate-pulse rounded',
+                            PLACEHOLDER_ON_INSET
+                        )}
+                    />
+                    <div
+                        className={cn(
+                            'h-4 w-full max-w-md animate-pulse rounded',
+                            PLACEHOLDER_ON_INSET
+                        )}
+                    />
                 </div>
                 <div className="h-48 animate-pulse rounded-lg bg-secondary-800 ring-1 ring-secondary-700" />
             </div>

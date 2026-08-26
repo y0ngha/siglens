@@ -1,4 +1,6 @@
 import { PositionHoldingCard } from './PositionHoldingCard';
+import { cn } from '@/shared/lib/cn';
+import { PLACEHOLDER_ON_INSET } from '@/shared/lib/surfaceStyles';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { toView } from '@/entities/portfolio/lib/toView';
@@ -129,7 +131,10 @@ function SkeletonCard() {
     return (
         <div
             aria-hidden="true"
-            className="h-64 animate-pulse rounded-lg bg-secondary-700/60"
+            className={cn(
+                'h-64 animate-pulse rounded-lg',
+                PLACEHOLDER_ON_INSET
+            )}
         />
     );
 }

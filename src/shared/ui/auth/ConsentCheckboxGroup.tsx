@@ -257,10 +257,12 @@ export function ConsentCheckboxGroup({
                 onChange={onTosChange}
             />
             {error ? (
+                // 같은 카드의 다른 오류 표면(`AuthErrorAlert`, `AuthFieldGroup`,
+                // `PasswordField`)이 전부 `role="alert"`다. 여기만 polite면
+                // 제출 실패라는 같은 사건이 화면마다 다르게 읽힌다.
                 <p
                     id={errorId}
-                    role="status"
-                    aria-live="polite"
+                    role="alert"
                     className="text-xs text-ui-danger-text"
                 >
                     {error}
