@@ -77,15 +77,22 @@ describe('ConsentCheckboxGroup', () => {
         expect(master.checked).toBe(false);
     });
 
-    it('renders error message with role=status and aria-live=polite', () => {
+    /**
+     * 같은 인증 카드의 다른 오류 표면(`AuthErrorAlert`, `AuthFieldGroup`,
+     * `PasswordField`)이 전부 `role="alert"`다. 여기만 polite면 제출 실패라는
+     * 같은 사건이 화면마다 다르게 읽힌다.
+     */
+    it('오류를 형제들과 같은 role=alert로 낸다', () => {
         render(
             <Renderer error="개인정보처리방침과 이용약관에 동의해주세요." />
         );
-        const status = screen.getByRole('status');
-        expect(status).toHaveTextContent(
+        const alert = screen.getByRole('alert');
+        expect(alert).toHaveTextContent(
             '개인정보처리방침과 이용약관에 동의해주세요.'
         );
-        expect(status).toHaveAttribute('aria-live', 'polite');
+        // role=alert는 assertive가 암묵값이라 aria-live를 따로 적지 않는다.
+        expect(alert).not.toHaveAttribute('aria-live');
+        expect(screen.queryByRole('status')).toBeNull();
     });
 
     it('individual checkboxes are required and aria-required', () => {

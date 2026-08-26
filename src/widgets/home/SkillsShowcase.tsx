@@ -2,6 +2,7 @@
 
 import React, { useId, useRef } from 'react';
 import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import type { SkillShowcaseItem, SkillType } from '@y0ngha/siglens-core';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { buildPanelId, buildTabId, TabsPill } from '@/shared/ui/tabs';
@@ -62,17 +63,17 @@ const TYPE_BADGE: Record<SkillType, TypeBadgeConfig> = {
     pattern: {
         label: '패턴',
         className:
-            'bg-chart-bearish/10 text-chart-bearish border border-chart-bearish/30',
+            'bg-ui-danger/10 text-ui-danger-text border border-ui-danger/30',
     },
     strategy: {
         label: '전략',
         className:
-            'bg-ui-warning/10 text-ui-warning border border-ui-warning/30',
+            'bg-ui-warning/10 text-ui-warning-text border border-ui-warning/30',
     },
     candlestick: {
         label: '캔들',
         className:
-            'bg-chart-bullish/10 text-chart-bullish border border-chart-bullish/30',
+            'bg-ui-success/10 text-ui-success-text border border-ui-success/30',
     },
     support_resistance: {
         label: '지지/저항',
@@ -108,7 +109,11 @@ function ConfidenceInfoTooltip() {
                     e.stopPropagation();
                     toggle();
                 }}
-                className="cursor-help rounded text-xs leading-none text-secondary-600 transition-colors hover:text-secondary-400 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                // 글리프만 두면 모바일에서 10.4×12로 잡힌다(실측) — WCAG 2.2
+                // SC 2.5.8의 24×24 최소치 미달이고, 같은 ⓘ가 옵션 페이지에서는
+                // `InfoTooltip`을 통해 24×24다. 같은 기호가 화면마다 다른 크기인
+                // 것이 문제이므로 그쪽과 같은 최소 크기를 준다.
+                className="inline-flex min-h-6 min-w-6 cursor-help items-center justify-center rounded text-xs leading-none text-secondary-500 transition-colors hover:text-secondary-400 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
                 ⓘ
             </button>
@@ -257,7 +262,7 @@ export function SkillsShowcaseSkeleton() {
         <section
             aria-label="AI 분석 스킬 불러오는 중"
             aria-busy="true"
-            className="px-6 py-10 lg:px-[15vw]"
+            className="page-container py-10"
         >
             <div aria-hidden="true">
                 <div className="mb-6 h-3.5 w-20 animate-pulse rounded bg-secondary-700/50" />
@@ -313,10 +318,11 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
     } = useSkillsShowcase();
 
     return (
-        <section className="px-6 py-10 lg:px-[15vw]">
-            <h2 className="mb-6 text-sm font-semibold tracking-wider text-secondary-200 uppercase">
-                AI 분석 스킬
-            </h2>
+        <section className="page-container py-10">
+            {/* 같은 위계의 h2는 `HEADING_SECTION` 한 곳에서만 정의한다 —
+                여기와 `CategoryCardGrid`가 각자 리터럴을 복제하고 있었고, 그
+                복제본이 토큰(18px)과 어긋난 16px로 굳어 있었다. */}
+            <h2 className={cn('mb-6', HEADING_SECTION)}>AI 분석 스킬</h2>
             <TabsPill
                 tabs={TABS}
                 activeTab={activeTab}
@@ -359,7 +365,7 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
                                 <button
                                     type="button"
                                     onClick={toggleShowAll}
-                                    className="rounded-full border border-secondary-700 px-6 py-2 text-xs font-medium text-secondary-400 transition-colors hover:border-primary-600/40 hover:text-primary-400 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                    className="rounded-full border border-border-control px-6 py-2 text-xs font-medium text-secondary-400 transition-colors hover:border-primary-500 hover:text-primary-400 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
                                     {showAll
                                         ? '접기'

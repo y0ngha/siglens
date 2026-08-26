@@ -20,8 +20,11 @@ import { DEFAULT_LINE_WIDTH } from '../constants';
 // - 대시 스타일로 AI 원본과 시각적으로 구분
 // - 같은 semantic color에 알파 접미사를 붙여 톤을 낮춤 (0x99 ≈ 60% opacity)
 const RECONCILED_HEX_ALPHA = '99';
-const RECONCILED_STOP_LOSS_COLOR = `${CHART_COLORS.actionStopLoss}${RECONCILED_HEX_ALPHA}`;
-const RECONCILED_TAKE_PROFIT_COLOR = `${CHART_COLORS.actionTakeProfit}${RECONCILED_HEX_ALPHA}`;
+// 모듈 상수로 두면 로드 시점의 테마 색이 굳는다 — 호출 시점에 읽는다.
+const reconciledStopLossColor = (): string =>
+    `${CHART_COLORS.actionStopLoss}${RECONCILED_HEX_ALPHA}`;
+const reconciledTakeProfitColor = (): string =>
+    `${CHART_COLORS.actionTakeProfit}${RECONCILED_HEX_ALPHA}`;
 
 interface UseActionRecommendationOverlayParams {
     seriesRef: RefObject<ISeriesApi<'Candlestick', UTCTimestamp> | null>;
@@ -92,7 +95,7 @@ export function useActionRecommendationOverlay({
                 ? [
                       series.createPriceLine({
                           price: reconciledPrices.stopLoss,
-                          color: RECONCILED_STOP_LOSS_COLOR,
+                          color: reconciledStopLossColor(),
                           lineWidth,
                           lineStyle: LineStyle.LargeDashed,
                           axisLabelVisible: true,
@@ -105,7 +108,7 @@ export function useActionRecommendationOverlay({
             reconciledPrices?.takeProfitPrices.map(tp =>
                 series.createPriceLine({
                     price: tp.price,
-                    color: RECONCILED_TAKE_PROFIT_COLOR,
+                    color: reconciledTakeProfitColor(),
                     lineWidth,
                     lineStyle: LineStyle.LargeDashed,
                     axisLabelVisible: true,

@@ -39,7 +39,7 @@ export function ShareTriggerDialog({
                 aria-modal="true"
                 aria-labelledby="share-trigger-dialog-title"
                 tabIndex={-1}
-                className="w-full max-w-sm rounded-xl border border-secondary-700 bg-secondary-800 shadow-2xl outline-none"
+                className="w-full max-w-sm rounded-lg border border-secondary-700 bg-secondary-800 shadow-2xl outline-none"
             >
                 <div className="flex items-center justify-between border-b border-secondary-700 px-5 py-4">
                     <h2
@@ -76,7 +76,7 @@ export function ShareTriggerDialog({
                         <button
                             type="button"
                             onClick={onCancel}
-                            className="flex h-9 touch-manipulation items-center justify-center rounded-lg border border-secondary-700 px-4 text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                            className="flex h-9 touch-manipulation items-center justify-center rounded-lg border border-border-control px-4 text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             다음에
                         </button>

@@ -44,7 +44,7 @@ import { EconomyDegraded } from './EconomyDegraded';
 /** 페이지 최상단 h1 — Suspense 위에 렌더되어 ready와 degraded 양 경로에서 항상 표시된다. */
 function EconomyHeroH1() {
     return (
-        <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
+        <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
             {ECONOMY_TITLE}
         </h1>
     );
@@ -300,8 +300,9 @@ const BREADCRUMB_JSON_LD = buildBreadcrumbJsonLd([
 export default function EconomyPage() {
     return (
         <>
-            {/* FAQ는 로더 결과와 무관하게 화면에 그대로 있으므로 항상 낸다.
-                나머지는 데이터가 있을 때만 — `EconomyContent` 참조. */}
+            {/* FAQ 질문·답변은 아래에 항상 렌더되므로 로더 결과와 무관하게
+                구조화데이터도 항상 낸다. 나머지는 데이터가 있을 때만 —
+                `EconomyContent` 참조. */}
             <JsonLd data={FAQ_JSON_LD} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <RegionTabs

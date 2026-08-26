@@ -22,6 +22,10 @@ import {
 
 import { NEWS_ANALYSIS_PERIOD_LABEL } from '@/shared/lib/news/periodLabels';
 import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
@@ -30,9 +34,9 @@ const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
 };
 
 const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
-    bullish: 'bg-ui-success/10 text-chart-bullish',
+    bullish: 'bg-ui-success/10 text-ui-success-text',
     neutral: 'bg-secondary-700 text-secondary-400',
-    bearish: 'bg-ui-danger/10 text-chart-bearish',
+    bearish: 'bg-ui-danger/10 text-ui-danger-text',
 };
 
 interface StatusCardProps {
@@ -46,12 +50,12 @@ function StatusCard({ phase }: StatusCardProps) {
         <section
             aria-labelledby="news-ai-summary-status-heading"
             aria-busy="true"
-            className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
+            className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
         >
             <div className="mb-4 flex items-center gap-2">
                 <h2
                     id="news-ai-summary-status-heading"
-                    className="text-lg font-semibold tracking-tight"
+                    className={HEADING_SECTION}
                 >
                     뉴스 AI 종합 분석
                 </h2>
@@ -102,13 +106,13 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
     return (
         <section
             aria-labelledby="news-ai-summary-heading"
-            className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
+            className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
         >
             <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">
                     <h2
                         id="news-ai-summary-heading"
-                        className="text-lg font-semibold tracking-tight"
+                        className={HEADING_SECTION}
                     >
                         뉴스 AI 종합 분석
                     </h2>
@@ -132,7 +136,9 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
 
             {result.keyEventsKo.length > 0 && (
                 <div className="mb-4">
-                    <h3 className="mb-2 text-sm font-semibold">핵심 이벤트</h3>
+                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
+                        핵심 이벤트
+                    </h3>
                     <ul className="space-y-1.5" aria-label="핵심 이벤트 목록">
                         {result.keyEventsKo.map(event => (
                             <li
@@ -156,7 +162,7 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
 
             {result.upcomingEventsKo.length > 0 && (
                 <div>
-                    <h3 className="mb-2 text-sm font-semibold">
+                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
                         다가오는 주요 일정
                     </h3>
                     <ul
@@ -170,7 +176,7 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                             >
                                 <span
                                     aria-hidden="true"
-                                    className="mt-0.5 shrink-0 text-ui-warning"
+                                    className="mt-0.5 shrink-0 text-ui-warning-text"
                                 >
                                     ⚠
                                 </span>
@@ -198,12 +204,12 @@ function NewsAiSummaryInlineError({
     return (
         <section
             aria-labelledby="news-ai-summary-error-heading"
-            className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-ui-danger/30 bg-secondary-800 p-6"
+            className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-ui-danger/30 bg-secondary-800 p-6"
         >
             <div className="mb-2 flex items-center gap-2">
                 <h2
                     id="news-ai-summary-error-heading"
-                    className="text-lg font-semibold tracking-tight"
+                    className={HEADING_SECTION}
                 >
                     뉴스 AI 종합 분석
                 </h2>
@@ -211,7 +217,10 @@ function NewsAiSummaryInlineError({
                     {NEWS_ANALYSIS_PERIOD_LABEL}
                 </span>
             </div>
-            <p className="text-sm wrap-break-word text-ui-danger" role="alert">
+            <p
+                className="text-sm wrap-break-word text-ui-danger-text"
+                role="alert"
+            >
                 {error.message}
             </p>
             <button

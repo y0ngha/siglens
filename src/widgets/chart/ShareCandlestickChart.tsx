@@ -20,7 +20,7 @@ import {
     createChart,
 } from 'lightweight-charts';
 import type { Bar } from '@y0ngha/siglens-core';
-import { CHART_COLORS } from '@/shared/lib/chartColors';
+import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
 import { buildCandlestickData } from './utils/candlestickDataUtils';
 
 interface ShareCandlestickChartProps {
@@ -41,6 +41,8 @@ export function ShareCandlestickChart({
     const containerRef = useRef<HTMLDivElement>(null);
     // Store chart and series refs for cleanup.
     const chartRef = useRef<IChartApi | null>(null);
+
+    /* 테마 전환 시 크롬만 교체(리마운트 없음). */
     const seriesRef = useRef<ISeriesApi<'Candlestick', UTCTimestamp> | null>(
         null
     );
@@ -56,15 +58,19 @@ export function ShareCandlestickChart({
     useEffect(() => {
         if (!containerRef.current || snapshotBars.length === 0) return;
 
+        /* 공유 페이지 셸이 테마를 따르므로 차트 크롬도 따라야 한다. 예전에는
+           다크 리터럴로 고정돼 있어 라이트 셸 위에 검은 캔버스가 얹혔다. */
+        const chrome = getChartChrome();
+
         const chart = createChart(containerRef.current, {
             autoSize: true,
             layout: {
-                background: { color: CHART_COLORS.background },
-                textColor: CHART_COLORS.text,
+                background: { color: chrome.background },
+                textColor: chrome.text,
             },
             grid: {
-                vertLines: { color: CHART_COLORS.grid },
-                horzLines: { color: CHART_COLORS.grid },
+                vertLines: { color: chrome.grid },
+                horzLines: { color: chrome.grid },
             },
             // Hide crosshair on the share page — read-only static snapshot view.
             crosshair: {

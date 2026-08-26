@@ -46,7 +46,7 @@ export function TimeframeSelector({
                         }
                         onClick={() => onChange(timeframe)}
                         className={cn(
-                            'focus-visible:ring-primary-500 flex-1 touch-manipulation rounded border px-2 py-1 text-center text-sm font-medium transition-colors focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none sm:px-3',
+                            'focus-visible:ring-primary-500 flex-1 touch-manipulation rounded border px-2 py-1 text-center text-sm font-medium transition-colors focus-visible:ring-1 disabled:cursor-not-allowed disabled:text-secondary-500 sm:flex-none sm:px-3',
                             timeframe === value
                                 ? 'border-primary-400 text-primary-400'
                                 : 'text-secondary-400 hover:text-secondary-200 border-transparent'

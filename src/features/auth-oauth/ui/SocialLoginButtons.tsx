@@ -43,15 +43,21 @@ const PROVIDERS: readonly SocialProvider[] = [
         id: 'google',
         label: 'Continue with Google',
         icon: <GoogleIcon />,
+        /*
+           구글 브랜드 가이드가 흰 배경을 요구하는 **고정 표면**이다. 램프
+           토큰(`text-secondary-900` 등)을 쓰면 라이트 테마에서 값이 뒤집혀
+           흰 버튼에 흰 글자, 호버 시 버튼이 검게 변하는 상태가 된다.
+           그래서 테마와 무관한 `*-fixed-light-*` 토큰을 쓴다.
+        */
         buttonClassName:
-            'bg-white text-secondary-900 hover:bg-secondary-100 ring-1 ring-secondary-200',
+            'bg-white text-on-fixed-light hover:bg-fixed-light-hover ring-1 ring-fixed-light-border',
     },
     // {
     //     id: 'kakao',
     //     label: '카카오로 시작하기',
     //     icon: <span aria-hidden className="font-mono text-base">K</span>,
     //     buttonClassName:
-    //         'bg-brand-kakao text-secondary-900 hover:brightness-95',
+    //         'bg-brand-kakao text-on-fixed-light hover:brightness-95',
     // },
 ];
 
@@ -71,7 +77,7 @@ export function SocialLoginButtons({ next }: SocialLoginButtonsProps) {
         <div className="space-y-3">
             <div
                 aria-hidden
-                className="my-6 flex items-center gap-3 border-t border-secondary-800 pt-3 text-xs tracking-[0.2em] text-secondary-500 uppercase"
+                className="my-6 flex items-center gap-3 border-t border-secondary-700 pt-3 text-xs tracking-[0.2em] text-secondary-500 uppercase"
             />
 
             {PROVIDERS.map(provider => (
@@ -80,7 +86,7 @@ export function SocialLoginButtons({ next }: SocialLoginButtonsProps) {
                     href={buildHref(provider.id, next)}
                     rel="nofollow"
                     className={cn(
-                        'focus-visible:ring-primary-500 flex h-12 w-full items-center justify-center gap-3 rounded-md text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none',
+                        'focus-visible:ring-primary-500 flex h-12 w-full items-center justify-center gap-3 rounded-lg text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none',
                         provider.buttonClassName
                     )}
                 >

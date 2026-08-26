@@ -1,7 +1,6 @@
 vi.mock('@/widgets/home/HeroIllustration', () => ({
     HeroIllustration: () => null,
 }));
-vi.mock('@/widgets/home/HowItWorks', () => ({ HowItWorks: () => null }));
 vi.mock('@/widgets/home/SkillsShowcase', () => ({
     SkillsShowcase: () => null,
     SkillsShowcaseSkeleton: () => null,

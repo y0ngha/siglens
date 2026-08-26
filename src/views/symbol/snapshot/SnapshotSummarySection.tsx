@@ -1,6 +1,7 @@
 import { useId, type ReactNode } from 'react';
 import { formatSnapshotAsOf } from '@/shared/lib/formatSnapshotAsOf';
 import type { MarketProfileId } from '@/shared/config/marketProfile';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface SnapshotSummarySectionProps {
     /** 섹션 헤딩 텍스트. 생략 시 "최근 분석 요약". */
@@ -54,7 +55,7 @@ const AS_OF_CAPTION_COPY: Record<
  * audit fix FIX 4: 카드 셸은 `TechnicalFactsSummary`(Suspense-fallback
  * 대역이라 `bg-secondary-800 rounded-lg p-4`가 정당화되는 예외 케이스)가
  * 아니라, 이 섹션들이 실제로 나란히 놓이는 제품 전역 우세 패턴(67곳)인
- * `border-secondary-700 bg-secondary-800 rounded-xl border p-6`을 따른다 —
+ * `border-secondary-700 bg-secondary-800 rounded-lg border p-6`을 따른다 —
  * 이전 셸은 소수 패턴(5곳)이라 이 섹션들이 주변 카드보다 부실해 보였다.
  * 순수 프레젠테이션 서버 컴포넌트다 — 'use client' 없음, 데이터 페칭 없음,
  * request context 접근 없음.
@@ -101,7 +102,7 @@ export function SnapshotSummarySection({
     return (
         <section
             aria-labelledby={headingId}
-            className="flex flex-col gap-4 rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="flex flex-col gap-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <div className="flex flex-col gap-1">
                 {/*
@@ -115,10 +116,7 @@ export function SnapshotSummarySection({
                  * *SnapshotProse.tsx 렌더러에서 처리.
                  */}
                 <div className="flex flex-wrap items-center gap-2">
-                    <h2
-                        id={headingId}
-                        className="text-lg font-semibold tracking-tight text-secondary-100"
-                    >
+                    <h2 id={headingId} className={HEADING_SECTION}>
                         {title}
                     </h2>
                     {formattedAsOf !== null && (

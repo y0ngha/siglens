@@ -170,7 +170,7 @@ export function formatPriceChange(percent: number): PriceChangeDisplay {
     return {
         isUp,
         sign: isUp ? '+' : '',
-        colorClass: isUp ? 'text-chart-bullish' : 'text-chart-bearish',
+        colorClass: isUp ? 'text-ui-success-text' : 'text-ui-danger-text',
         arrow: isUp ? '▲' : '▼',
         arrowLabel: isUp ? '상승' : '하락',
     };

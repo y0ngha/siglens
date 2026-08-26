@@ -18,7 +18,7 @@ export function ResetPasswordContent() {
     ) : (
         <div
             role="alert"
-            className="rounded-md border border-ui-danger/30 bg-ui-danger/5 p-3 text-sm text-ui-danger"
+            className="rounded-lg border border-ui-danger/30 bg-ui-danger/5 p-3 text-sm text-ui-danger-text"
         >
             {MISSING_PARAMS_MESSAGE}
         </div>

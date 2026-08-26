@@ -9,7 +9,7 @@ export function ContextSwitchSystemMessage({
 }: ContextSwitchSystemMessageProps) {
     return (
         <div
-            className="my-2 rounded-md bg-secondary-800 px-3 py-2 text-xs text-secondary-300"
+            className="my-2 rounded-lg bg-secondary-800 px-3 py-2 text-xs text-secondary-300"
             role="status"
         >
             {label} 페이지로 전환되었습니다. 이전 페이지의 분석 컨텍스트는 더

@@ -2,9 +2,11 @@ import Link from 'next/link';
 import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
 import { formatCompactCurrency } from '@/shared/lib/priceFormat';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { cn } from '@/shared/lib/cn';
 
 const HEADING_ID = 'peers-heading';
-const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
+const HEADING_CLASS_NAME = cn('mb-4', HEADING_SECTION);
 
 interface PeersTableProps {
     peers: FundamentalPeerInput[];
@@ -24,7 +26,7 @@ export function PeersTable({ peers }: PeersTableProps) {
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 동종업계 비교
@@ -32,7 +34,7 @@ export function PeersTable({ peers }: PeersTableProps) {
             <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                     <thead>
-                        <tr className="border-b border-secondary-700 text-left text-xs tracking-widest text-secondary-400 uppercase">
+                        <tr className="border-b border-secondary-700 text-left text-xs tracking-[0.01em] text-secondary-400">
                             <th className="pb-2 font-medium">티커</th>
                             <th className="pb-2 font-medium">회사명</th>
                             <th className="pb-2 text-right font-medium">
@@ -51,7 +53,7 @@ export function PeersTable({ peers }: PeersTableProps) {
                                         href={`/${peer.symbol}/fundamental`}
                                         // 표로 다수 렌더 — docs/architecture/CDN_CACHING.md §1
                                         prefetch={false}
-                                        className="rounded-sm font-mono font-medium text-primary-400 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
+                                        className="rounded font-mono font-medium text-primary-400 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
                                         translate="no"
                                     >
                                         {peer.symbol}

@@ -1,4 +1,6 @@
 import { OnboardingContent } from '@/features/portfolio-onboarding';
+import { cn } from '@/shared/lib/cn';
+import { PLACEHOLDER_ON_INSET } from '@/shared/lib/surfaceStyles';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
@@ -20,12 +22,20 @@ export const metadata: Metadata = {
 // Exported (rather than module-private) so tests can `await OnboardingGuard()`
 // directly and assert the unauthenticated redirect target, mirroring the
 // `MarketContent` export pattern in `src/app/market/page.tsx`.
-export async function OnboardingGuard() {
+export async function OnboardingGuard({ symbol }: { symbol?: string } = {}) {
     const user = await getCurrentUser();
     if (!user) {
-        redirect('/login?next=/onboarding');
+        // 심볼을 로그인 next에 이어 붙인다. 리터럴 `/login?next=/onboarding`
+        // 이었을 때는 `/AAPL/position`에서 온 사용자가 로그인을 마쳐도
+        // 아무것도 채워지지 않은 온보딩 화면에 떨어졌다 — 두 홉에서 의도가
+        // 두 번 버려졌다.
+        const target =
+            symbol === undefined
+                ? '/onboarding'
+                : `/onboarding?symbol=${encodeURIComponent(symbol)}`;
+        redirect(`/login?next=${encodeURIComponent(target)}`);
     }
-    return <OnboardingContent />;
+    return <OnboardingContent initialSymbol={symbol} />;
 }
 
 // Exported (not module-private) so tests can render it directly and assert
@@ -43,22 +53,45 @@ export function OnboardingSkeleton() {
             <span className="sr-only">불러오는 중이에요</span>
             <div className="space-y-6" aria-hidden="true">
                 <div className="space-y-3">
-                    <div className="h-6 w-28 animate-pulse rounded-full bg-secondary-800" />
-                    <div className="h-7 w-64 animate-pulse rounded bg-secondary-800" />
-                    <div className="h-4 w-full max-w-md animate-pulse rounded bg-secondary-800" />
+                    <div
+                        className={cn(
+                            'h-6 w-28 animate-pulse rounded-full',
+                            PLACEHOLDER_ON_INSET
+                        )}
+                    />
+                    <div
+                        className={cn(
+                            'h-7 w-64 animate-pulse rounded',
+                            PLACEHOLDER_ON_INSET
+                        )}
+                    />
+                    <div
+                        className={cn(
+                            'h-4 w-full max-w-md animate-pulse rounded',
+                            PLACEHOLDER_ON_INSET
+                        )}
+                    />
                 </div>
-                <div className="h-48 animate-pulse rounded-2xl bg-secondary-900/80 ring-1 ring-secondary-800" />
+                <div className="h-48 animate-pulse rounded-lg bg-secondary-800 ring-1 ring-secondary-700" />
             </div>
         </div>
     );
 }
 
-export default function OnboardingPage() {
+interface OnboardingPageProps {
+    searchParams: Promise<{ symbol?: string }>;
+}
+
+export default async function OnboardingPage({
+    searchParams,
+}: OnboardingPageProps) {
+    // `/[symbol]/position` CTA가 실어 보낸 심볼. 없으면 예전과 동일하게 동작한다.
+    const { symbol } = await searchParams;
     return (
-        <main className="min-h-[calc(100dvh-3.5rem)] bg-secondary-950 px-4 py-12">
+        <main className="min-h-[calc(100dvh-var(--header-h))] bg-secondary-950 px-4 py-12">
             <div className="mx-auto w-full max-w-2xl">
                 <Suspense fallback={<OnboardingSkeleton />}>
-                    <OnboardingGuard />
+                    <OnboardingGuard symbol={symbol} />
                 </Suspense>
             </div>
         </main>

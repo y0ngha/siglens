@@ -14,13 +14,13 @@ import type {
 
 const FIELD_LABEL = 'text-secondary-400 mb-1 block text-xs font-medium';
 const FIELD_INPUT =
-    'bg-secondary-950 border-secondary-700 text-secondary-100 placeholder-secondary-400 focus:border-primary-500 focus:ring-primary-500/40 h-10 w-full touch-manipulation rounded-md border px-3 text-sm tabular-nums transition-colors outline-none focus:ring-2';
+    'bg-secondary-950 border-border-control text-secondary-100 placeholder-secondary-400 focus:border-primary-500 focus:ring-primary-500/40 h-10 w-full touch-manipulation rounded-lg border px-3 text-sm tabular-nums transition-colors outline-none focus:ring-2';
 const FIELD_INPUT_ERROR =
     'border-ui-danger focus:border-ui-danger focus:ring-ui-danger/40';
 const SYMBOL_CHIP =
-    'border-secondary-700 bg-secondary-950 flex h-10 items-center justify-between rounded-md border px-3';
+    'border-secondary-700 bg-secondary-950 flex h-10 items-center justify-between rounded-lg border px-3';
 const BUTTON_PRIMARY =
-    'bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 inline-flex h-10 shrink-0 touch-manipulation items-center justify-center rounded-md px-4 text-sm font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50';
+    'bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 inline-flex h-10 shrink-0 touch-manipulation items-center justify-center rounded-lg px-4 text-sm font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-secondary-700 disabled:text-secondary-500';
 const BUTTON_GHOST =
     'text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 inline-flex h-10 shrink-0 touch-manipulation items-center justify-center px-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none';
 
@@ -43,6 +43,12 @@ function fieldForErrorCode(code: PortfolioActionErrorCode): HoldingErrorField {
 interface HoldingFormProps {
     /** Present -> edit mode (symbol is fixed, read-only). Absent -> add mode (symbol picked via autocomplete). */
     initial?: PortfolioHoldingView;
+    /**
+     * 추가 모드의 시작 심볼. `/[symbol]/position`의 CTA에서 넘어온 사용자가
+     * 보던 종목을 다시 입력하지 않게 한다. 편집 모드에서는 `initial`이
+     * 우선한다 — 그쪽은 심볼이 읽기 전용이다.
+     */
+    defaultSymbol?: string;
     onSubmit: (input: RawHoldingInput) => Promise<SavePortfolioResult>;
     submitting?: boolean;
     onCancel?: () => void;
@@ -59,6 +65,7 @@ interface HoldingFormProps {
 /** Controlled add/edit form for a single holding. In add mode, clears itself on success; in edit mode, calls onCancel on success to let the parent close the inline editor. */
 export function HoldingForm({
     initial,
+    defaultSymbol,
     onSubmit,
     submitting = false,
     onCancel,
@@ -68,7 +75,9 @@ export function HoldingForm({
     const formId = useId();
     const errorId = `${formId}-error`;
 
-    const [symbol, setSymbol] = useState(initial?.symbol ?? '');
+    const [symbol, setSymbol] = useState(
+        initial?.symbol ?? defaultSymbol ?? ''
+    );
     const [quantity, setQuantity] = useState(
         initial ? trimTrailingZeros(initial.quantity) : ''
     );
@@ -189,7 +198,7 @@ export function HoldingForm({
                                 // 카드가 자체적으로 해석한다.
                                 onSelect={entry => setSymbol(entry.symbol)}
                                 inputClassName={cn(
-                                    'bg-secondary-950 h-10 rounded-md placeholder-secondary-400 focus:ring-2',
+                                    'bg-secondary-950 h-10 rounded-lg placeholder-secondary-400 focus:ring-2',
                                     errorField === 'symbol'
                                         ? FIELD_INPUT_ERROR
                                         : 'focus:border-primary-500 focus:ring-primary-500/40'
@@ -286,7 +295,7 @@ export function HoldingForm({
                 </div>
             </div>
             <div id={errorId} role="alert" className="min-h-5 text-sm">
-                {error && <span className="text-ui-danger">{error}</span>}
+                {error && <span className="text-ui-danger-text">{error}</span>}
             </div>
         </form>
     );

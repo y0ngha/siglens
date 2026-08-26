@@ -1,6 +1,6 @@
 'use client';
 
-import { CHART_COLORS } from '@/shared/lib/chartColors';
+import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import {
     createChart,
@@ -17,7 +17,6 @@ interface FearGreedHistoricalChartProps {
 }
 
 const CHART_HEIGHT = 240;
-const LINE_COLOR = CHART_COLORS.actionEntry; // primary-400 (#60a5fa)
 const LINE_WIDTH = 1;
 
 /**
@@ -34,20 +33,27 @@ export function FearGreedHistoricalChart({
 }: FearGreedHistoricalChartProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
+
+    /* 테마 전환 시 크롬만 교체(리마운트 없음). */
+    /* 이 차트는 배경을 투명하게 둬 부모 카드 색을 비춘다 — 배경은 건드리지 않는다. */
     const seriesRef = useRef<ISeriesApi<'Line'> | null>(null);
 
     useEffect(() => {
         if (!containerRef.current) return;
+        /* 생성 시점의 테마에 맞는 크롬. 테마 전환은 마운트 지점의
+           `key={themeVersion}`이 이 컴포넌트를 remount해 처리한다. */
+        const chrome = getChartChrome();
+
         const chart = createChart(containerRef.current, {
             height: CHART_HEIGHT,
             autoSize: true,
             layout: {
                 background: { color: 'transparent' },
-                textColor: CHART_COLORS.text,
+                textColor: chrome.text,
             },
             grid: {
-                vertLines: { color: CHART_COLORS.grid },
-                horzLines: { color: CHART_COLORS.grid },
+                vertLines: { color: chrome.grid },
+                horzLines: { color: chrome.grid },
             },
             timeScale: { borderVisible: false },
             rightPriceScale: {
@@ -56,7 +62,8 @@ export function FearGreedHistoricalChart({
             },
         });
         const series = chart.addSeries(LineSeries, {
-            color: LINE_COLOR,
+            // 상수로 빼지 않는다 — 모듈 로드 시점에 굳으면 라이트에서 옛 색이 남는다.
+            color: CHART_COLORS.actionEntry,
             lineWidth: LINE_WIDTH,
             autoscaleInfoProvider: () => ({
                 priceRange: { minValue: 0, maxValue: 100 },

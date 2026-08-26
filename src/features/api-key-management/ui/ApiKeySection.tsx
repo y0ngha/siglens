@@ -31,10 +31,10 @@ function StatusMessage({ id, state, className }: StatusMessageProps) {
             className={cn('min-h-5 text-sm', className)}
         >
             {state.status === 'success' && (
-                <span className="text-ui-success">{state.message}</span>
+                <span className="text-ui-success-text">{state.message}</span>
             )}
             {state.status === 'error' && (
-                <span className="text-ui-danger">{state.message}</span>
+                <span className="text-ui-danger-text">{state.message}</span>
             )}
         </div>
     );
@@ -94,14 +94,20 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
     const deleteStatusId = `api-key-delete-status-${provider}`;
 
     return (
-        <div className="rounded-xl bg-secondary-900/60 p-4 ring-1 ring-secondary-800">
+        // E2E가 카드를 반경 클래스(`div.rounded-xl`)로 집고 있었다. 반경 어휘를
+        // 세 단계로 통일하면서 그 셀렉터가 조용히 아무것도 못 찾게 됐다 —
+        // 스타일 클래스는 테스트가 기대도 되는 계약이 아니다. 안정된 앵커를 준다.
+        <div
+            data-testid={`api-key-card-${provider}`}
+            className="rounded-lg bg-secondary-900/60 p-4 ring-1 ring-secondary-700"
+        >
             <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-secondary-100">
                         {LLM_PROVIDER_LABELS[provider]}
                     </span>
                     {isRegistered ? (
-                        <span className="rounded-full bg-ui-success/10 px-2 py-0.5 text-xs text-ui-success ring-1 ring-ui-success/30">
+                        <span className="rounded-full bg-ui-success/10 px-2 py-0.5 text-xs text-ui-success-text ring-1 ring-ui-success/30">
                             등록됨
                         </span>
                     ) : (
@@ -115,7 +121,7 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                         <button
                             type="button"
                             onClick={() => setEditMode(true)}
-                            className="rounded-md border border-secondary-700 px-3 py-1.5 text-xs font-medium text-secondary-300 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                            className="rounded-lg border border-border-control px-3 py-1.5 text-xs font-medium text-secondary-300 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             재등록
                         </button>
@@ -129,7 +135,7 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                                 label="삭제"
                                 pendingLabel="삭제 중…"
                                 aria-describedby={deleteStatusId}
-                                className="inline-flex h-7 items-center justify-center rounded-md border border-ui-danger/40 px-3 text-xs font-medium text-ui-danger transition-colors hover:bg-ui-danger/10 focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none disabled:opacity-50"
+                                className="inline-flex h-7 items-center justify-center rounded-lg border border-ui-danger/40 px-3 text-xs font-medium text-ui-danger-text transition-colors hover:bg-ui-danger/10 focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none disabled:border-border-control disabled:text-secondary-500"
                             />
                         </form>
                     </div>
@@ -152,7 +158,7 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                     <SubmitButton
                         label="저장"
                         pendingLabel="저장 중…"
-                        className="inline-flex h-10 shrink-0 items-center justify-center rounded-md border border-secondary-700 px-4 text-sm font-medium text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none disabled:opacity-50"
+                        className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-secondary-700 px-4 text-sm font-medium text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none disabled:text-secondary-500"
                     />
                     {isRegistered && (
                         <button

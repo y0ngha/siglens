@@ -1,3 +1,6 @@
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
+
 interface SnapshotBulletListProps {
     title: string;
     symbol: string;
@@ -41,9 +44,7 @@ export function SnapshotBulletList({
 
     return (
         <div>
-            <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
-                {title}
-            </h3>
+            <h3 className={cn('mb-1.5', HEADING_SUBSECTION)}>{title}</h3>
             <ul
                 role="list"
                 aria-label={`${symbol} ${ariaSuffix} 목록`}

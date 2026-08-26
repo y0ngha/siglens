@@ -11,8 +11,8 @@ import { IMPACT_LABELS, IMPACT_ORDER } from '../utils/impactMeta';
  * 활성 칩의 affordance·대비를 위한 의도적 차별화(High/Medium도 밝은 ui-*-text 사용).
  */
 const FILTER_ACTIVE: Record<CalendarImpact, string> = {
-    High: 'border-ui-danger/50 bg-ui-danger/15 text-ui-danger-text',
-    Medium: 'border-ui-warning/50 bg-ui-warning/15 text-ui-warning-text',
+    High: 'border-ui-danger bg-ui-danger/15 text-ui-danger-text',
+    Medium: 'border-ui-warning bg-ui-warning/15 text-ui-warning-text',
     Low: 'border-secondary-500 bg-secondary-700 text-secondary-200',
 };
 
@@ -49,14 +49,14 @@ export function ImpactFilter({ value, onToggle }: ImpactFilterProps) {
                             'focus-visible:ring-primary-500 inline-flex min-h-11 touch-manipulation items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none motion-reduce:transition-none',
                             active
                                 ? FILTER_ACTIVE[impact]
-                                : 'border-secondary-700 text-secondary-500 hover:text-secondary-300'
+                                : 'border-border-control text-secondary-500 hover:text-secondary-300'
                         )}
                     >
                         <span
                             aria-hidden="true"
                             className={cn(
                                 'inline-block h-1.5 w-1.5 rounded-full',
-                                active ? 'bg-current' : 'bg-secondary-600'
+                                active ? 'bg-current' : 'bg-border-control'
                             )}
                         />
                         {IMPACT_LABELS[impact]}

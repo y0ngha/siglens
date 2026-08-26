@@ -12,16 +12,16 @@ import { HoldingForm } from './HoldingForm';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 
 const ROW_CHROME =
-    'ring-secondary-800 bg-secondary-900/60 rounded-xl p-4 ring-1';
+    'ring-secondary-700 bg-secondary-900/60 rounded-lg p-4 ring-1';
 const ACTION_BUTTON =
-    'border-secondary-700 text-secondary-300 hover:bg-secondary-800 focus-visible:ring-primary-500 touch-manipulation rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50';
+    'border-border-control text-secondary-300 hover:bg-secondary-800 focus-visible:ring-primary-500 touch-manipulation rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:text-secondary-500';
 const DANGER_BUTTON =
-    'text-ui-danger-text border-ui-danger/40 hover:bg-ui-danger/10 focus-visible:ring-ui-danger touch-manipulation rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50';
+    'text-ui-danger-text border-ui-danger hover:bg-ui-danger/10 focus-visible:ring-ui-danger touch-manipulation rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:border-border-control disabled:text-secondary-500';
 
 function SkeletonLine({ className }: { className?: string }) {
     return (
         <div
-            className={cn('bg-secondary-800 animate-pulse rounded', className)}
+            className={cn('bg-secondary-700 animate-pulse rounded', className)}
         />
     );
 }
@@ -171,7 +171,7 @@ function HoldingRow({
             </div>
             <div role="alert" className="min-h-5 text-sm">
                 {deleteError && (
-                    <span className="text-ui-danger">{deleteError}</span>
+                    <span className="text-ui-danger-text">{deleteError}</span>
                 )}
             </div>
         </li>
@@ -179,7 +179,17 @@ function HoldingRow({
 }
 
 /** Account-page section for managing the member's portfolio holdings: list + inline edit + inline delete confirm + add form. */
-export function PortfolioSection() {
+interface PortfolioSectionProps {
+    /**
+     * 추가 폼의 시작 심볼. 온보딩이 `/[symbol]/position`에서 넘어온 심볼을
+     * 넘긴다. `/account`에서는 넘기지 않으므로 그쪽 동작은 그대로다.
+     */
+    defaultSymbol?: string;
+}
+
+export function PortfolioSection({
+    defaultSymbol,
+}: PortfolioSectionProps = {}) {
     const [editingSymbol, setEditingSymbol] = useState<string | null>(null);
     const [confirmingDeleteSymbol, setConfirmingDeleteSymbol] = useState<
         string | null
@@ -247,7 +257,7 @@ export function PortfolioSection() {
                 <h2
                     ref={headingRef}
                     tabIndex={-1}
-                    className="rounded-sm text-lg font-semibold text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    className="rounded text-lg font-semibold text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     보유종목
                 </h2>
@@ -258,7 +268,9 @@ export function PortfolioSection() {
 
             <div role="status" aria-live="polite" className="min-h-5 text-sm">
                 {statusMessage && (
-                    <span className="text-ui-success">{statusMessage}</span>
+                    <span className="text-ui-success-text">
+                        {statusMessage}
+                    </span>
                 )}
             </div>
 
@@ -267,7 +279,7 @@ export function PortfolioSection() {
             {!isLoadingState && isError && (
                 <div
                     role="alert"
-                    className="rounded-xl border border-dashed border-secondary-800 px-4 py-6 text-center text-sm text-secondary-400"
+                    className="rounded-lg border border-dashed border-secondary-700 px-4 py-6 text-center text-sm text-secondary-400"
                 >
                     <p>보유종목을 일시적으로 불러오지 못했어요.</p>
                     <button
@@ -281,7 +293,7 @@ export function PortfolioSection() {
             )}
 
             {!isLoadingState && !isError && holdings.length === 0 && (
-                <p className="rounded-xl border border-dashed border-secondary-800 px-4 py-6 text-center text-sm text-secondary-400">
+                <p className="rounded-lg border border-dashed border-secondary-700 px-4 py-6 text-center text-sm text-secondary-400">
                     아직 등록한 보유종목이 없어요. 첫 종목을 추가해 보세요.
                 </p>
             )}
@@ -334,11 +346,12 @@ export function PortfolioSection() {
             )}
 
             {!isLoadingState && !isError && (
-                <div className="space-y-2 border-t border-secondary-800 pt-4">
+                <div className="space-y-2 border-t border-secondary-700 pt-4">
                     <h3 className="text-sm font-semibold text-secondary-200">
                         종목 추가
                     </h3>
                     <HoldingForm
+                        defaultSymbol={defaultSymbol}
                         onSubmit={async input => {
                             setStatusMessage(null);
                             const result = await save.mutateAsync(input);

@@ -42,7 +42,7 @@ export function OAuthConsentForm({
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-3 rounded-lg border border-secondary-800 bg-secondary-900/40 p-4">
+            <div className="flex items-center gap-3 rounded-lg border border-secondary-700 bg-secondary-900/40 p-4">
                 {avatarUrl ? (
                     <Image
                         src={avatarUrl}
@@ -95,7 +95,7 @@ export function OAuthConsentForm({
                     type="submit"
                     disabled={isPending}
                     aria-disabled={isPending}
-                    className="inline-flex h-12 w-full items-center justify-center rounded-md bg-primary-500 text-sm font-semibold text-secondary-950 transition-colors hover:bg-primary-400 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex h-12 w-full items-center justify-center rounded-lg bg-primary-500 text-sm font-semibold text-secondary-950 transition-colors hover:bg-primary-400 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-secondary-700 disabled:text-secondary-500"
                 >
                     {isPending ? '처리 중...' : '가입 완료'}
                 </button>
@@ -105,7 +105,7 @@ export function OAuthConsentForm({
                 <input type="hidden" name="token" value={token} />
                 <button
                     type="submit"
-                    className="inline-flex h-10 w-full items-center justify-center rounded-md text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
+                    className="inline-flex h-10 w-full items-center justify-center rounded-lg text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
                 >
                     취소
                 </button>

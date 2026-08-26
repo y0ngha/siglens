@@ -40,7 +40,7 @@ export function CongressDegraded({
     snapshotGeneratedAt,
 }: CongressDegradedProps) {
     return (
-        <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+        <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
             <SymbolPageHeading>{displayName} 의회 거래</SymbolPageHeading>
             <CongressSnapshotProse
                 content={snapshotContent}
@@ -51,7 +51,7 @@ export function CongressDegraded({
                 marketProfile="us-equity"
                 generatedAt={snapshotGeneratedAt}
             />
-            <section className="rounded-lg border border-secondary-800 bg-secondary-900/40 px-5 py-8 text-center">
+            <section className="rounded-lg border border-secondary-700 bg-secondary-900/40 px-5 py-8 text-center">
                 <p className="text-sm font-medium text-secondary-200">
                     의회 거래 데이터를 일시적으로 불러올 수 없어요
                 </p>

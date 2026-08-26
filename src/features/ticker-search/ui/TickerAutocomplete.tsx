@@ -13,17 +13,24 @@ const OPTION_ID_PREFIX = `${LISTBOX_ID}-option`;
 type TickerAutocompleteSize = 'sm' | 'lg';
 
 const INPUT_BASE =
-    'bg-secondary-800 border-secondary-700 text-secondary-100 placeholder-secondary-500 focus:border-primary-600 focus:ring-primary-500 rounded-lg border transition-colors outline-none focus:ring-1';
+    'bg-secondary-800 border-border-control text-secondary-100 placeholder-secondary-500 focus:border-primary-600 focus:ring-primary-500 rounded-lg border transition-colors outline-none focus:ring-1';
+/*
+ * `lg`는 홈 히어로 전용이다(다른 소비처는 전부 `sm`). 검색은 이 페이지가
+ * 존재하는 이유이자 유일하게 중요한 동작이므로, 화면에서 가장 큰 인터랙티브
+ * 요소여야 한다 — 이전에는 헤더 검색(h-11)과 1px 차이라 위계가 없었다.
+ * 포커스는 링이 아니라 보더 굵기로 표현해(`focus-glow`) 큰 입력에서
+ * 링이 과하게 두꺼워 보이는 문제를 피한다.
+ */
 const INPUT_SIZE: Record<TickerAutocompleteSize, string> = {
     sm: 'h-11 px-3 text-sm',
-    lg: 'focus-glow h-12 px-4 text-base',
+    lg: 'focus-glow h-14 px-5 text-lg',
 };
 
 const BUTTON_BASE =
     'bg-primary-600 hover:bg-primary-700 shrink-0 rounded-lg font-semibold whitespace-nowrap text-white transition-colors focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none';
 const BUTTON_SIZE: Record<TickerAutocompleteSize, string> = {
     sm: 'h-11 px-3 text-sm sm:px-4',
-    lg: 'h-12 w-full px-6 text-base sm:w-auto',
+    lg: 'h-14 w-full px-7 text-base sm:w-auto',
 };
 
 interface TickerAutocompleteProps {

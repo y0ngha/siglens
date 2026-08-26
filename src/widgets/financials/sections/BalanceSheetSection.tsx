@@ -10,6 +10,7 @@ import {
 import { FinancialTrendChart } from './FinancialTrendChart';
 import { toDisplayOrder } from './toDisplayOrder';
 import { HEADING_CLASS_NAME } from './constants';
+import { statementColumnLabel } from './statementColumnLabel';
 
 interface BalanceSheetSectionProps {
     rows: BalanceSheetRow[];
@@ -36,7 +37,7 @@ export function BalanceSheetSection({
     }
 
     const displayRows = toDisplayOrder(rows);
-    const columns = displayRows.map(r => r.fiscalYear);
+    const columns = displayRows.map(statementColumnLabel);
 
     const chartSeries = [
         {
@@ -100,7 +101,7 @@ export function BalanceSheetSection({
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 {TITLE}
@@ -113,6 +114,7 @@ export function BalanceSheetSection({
                 />
             </div>
             <StatementTable
+                caption={TITLE}
                 columns={columns}
                 rows={tableRows}
                 currency={currency}

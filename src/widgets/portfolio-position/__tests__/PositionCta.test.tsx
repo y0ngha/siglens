@@ -32,3 +32,28 @@ describe('PositionCta', () => {
         ).not.toBeInTheDocument();
     });
 });
+
+/**
+ * CTA가 심볼을 실어 보내야 퍼널이 의도를 잃지 않는다. 예전에는
+ * `href="/onboarding"` 리터럴이라 첫 홉에서 이미 버려졌고, 그 뒤의 로그인
+ * 화면도 온보딩 화면도 사용자가 어느 종목을 보다 왔는지 알지 못했다.
+ *
+ * 리터럴로 되돌려도 화면상 아무 차이가 없어 조용히 회귀한다.
+ */
+describe('PositionCta 퍼널 컨텍스트', () => {
+    it('보유종목 등록 링크가 심볼을 싣는다', () => {
+        render(<PositionCta symbol="AAPL" low52w={100} high52w={200} />);
+        expect(screen.getByText('보유종목 등록하기')).toHaveAttribute(
+            'href',
+            '/onboarding?symbol=AAPL'
+        );
+    });
+
+    it('점이 든 한국 심볼도 안전하게 인코딩된다', () => {
+        render(<PositionCta symbol="005930.KS" low52w={100} high52w={200} />);
+        expect(screen.getByText('보유종목 등록하기')).toHaveAttribute(
+            'href',
+            '/onboarding?symbol=005930.KS'
+        );
+    });
+});

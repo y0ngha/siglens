@@ -1,4 +1,5 @@
 import type { FaqItem } from '@/shared/lib/seo';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 // 한 페이지에 FAQ 섹션은 하나뿐이라 id는 상수로 충분하다.
 const FAQ_HEADING_ID = 'faq-heading';
@@ -24,12 +25,9 @@ export function FaqSection({ heading, items }: FaqSectionProps) {
     return (
         <section
             aria-labelledby={FAQ_HEADING_ID}
-            className="space-y-3 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5"
+            className="space-y-3 rounded-lg border border-secondary-700 bg-secondary-800/30 p-5"
         >
-            <h2
-                id={FAQ_HEADING_ID}
-                className="text-base font-semibold text-secondary-300"
-            >
+            <h2 id={FAQ_HEADING_ID} className={HEADING_SECTION}>
                 {heading}
             </h2>
             <dl className="space-y-4 text-sm leading-relaxed text-secondary-400">

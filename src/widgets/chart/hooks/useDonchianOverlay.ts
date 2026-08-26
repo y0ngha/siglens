@@ -10,10 +10,11 @@ import {
     LineStyle,
     LineType,
 } from 'lightweight-charts';
-import { CHART_COLORS } from '@/shared/lib/chartColors';
+import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { DEFAULT_LINE_WIDTH, STORAGE_KEYS } from '../constants';
 import { buildSeriesData } from '../utils/seriesDataUtils';
+import { useBandOccluder } from './useBandOccluder';
 
 interface UseDonchianOverlayParams {
     chartRef: RefObject<IChartApi | null>;
@@ -37,6 +38,10 @@ export function useDonchianOverlay({
     const upperSeriesRef = useRef<ISeriesApi<'Area'> | null>(null);
     const middleSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
     const lowerSeriesRef = useRef<ISeriesApi<'Area'> | null>(null);
+
+    /* 하단 시리즈는 밴드를 잘라내는 마스크다 — 테마가 바뀌면
+       배경색도 따라가야 상단 틴트가 pane 바닥까지 번지지 않는다. */
+    useBandOccluder(lowerSeriesRef);
     const [isVisible, setIsVisible] = usePersistentState(
         STORAGE_KEYS.overlay('donchian'),
         false
@@ -112,10 +117,13 @@ export function useDonchianOverlay({
         }
         middleSeriesRef.current.applyOptions({ lineWidth });
 
+        /* 차폐 색 = 현재 테마의 차트 배경. useBandOccluder가 이후 전환을 따라간다. */
+        const occluder = getChartChrome().background;
+
         if (!lowerSeriesRef.current) {
             lowerSeriesRef.current = chart.addSeries(AreaSeries, {
-                topColor: CHART_COLORS.background,
-                bottomColor: CHART_COLORS.background,
+                topColor: occluder,
+                bottomColor: occluder,
                 lineColor: CHART_COLORS.donchianLower,
                 lineType: LineType.WithSteps,
                 lineWidth,

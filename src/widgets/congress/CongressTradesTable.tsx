@@ -233,12 +233,28 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
     const rows = trades.slice(0, MAX_ROWS);
 
     return (
-        <div className="rounded-xl border border-secondary-700 bg-secondary-800">
-            <p className="px-4 pt-3 pb-0 text-xs text-secondary-400 sm:hidden">
+        <div className="rounded-lg border border-secondary-700 bg-secondary-800">
+            {/*
+             * `sm:hidden`이 붙어 있었는데, 이 표는 모든 폭에서 넘친다 —
+             * 힌트가 사라지는 640px 이상이 정확히 넘치는 구간이었다.
+             *
+             * 왜 항상 넘치는가: 감싸는 `<main>`이 `max-w-5xl px-4`라 콘텐츠
+             * 박스가 뷰포트와 무관하게 992px에서 멈추는데, 이 표는 열 10개가
+             * 전부 `whitespace-nowrap`이고 열마다 `px-4`(좌우 32px)라 패딩만
+             * 320px이다. 감사 실측 min-content 1148px.
+             *
+             * 키보드·AT는 `role="region"` + `tabIndex`로 이미 닿지만, macOS의
+             * 오버레이 스크롤바는 마우스 사용자에게 아무 단서를 주지 않는다.
+             *
+             * 형제인 `StatementTable`은 같은 처방을 하면 안 된다 — 그쪽은
+             * nowrap이 3곳뿐이라 992px 안에 들어가고, 힌트를 항상 띄우면
+             * 데스크톱에서 거짓말이 된다.
+             */}
+            <p className="px-4 pt-3 pb-0 text-xs text-secondary-400">
                 ← 좌우로 스크롤 →
             </p>
             <div
-                className="overflow-x-auto rounded-xl focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                className="overflow-x-auto rounded-lg focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 role="region"
                 aria-label="의회 거래 내역 표 (좌우 스크롤 가능)"
                 tabIndex={0}
@@ -246,7 +262,7 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                 <table className="w-full text-sm">
                     <caption className="sr-only">의회 거래 공시 목록</caption>
                     <thead>
-                        <tr className="border-b border-secondary-700 text-xs tracking-widest text-secondary-400 uppercase">
+                        <tr className="border-b border-secondary-700 text-xs text-secondary-400">
                             <th
                                 scope="col"
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
@@ -317,9 +333,20 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                         </tr>
                     </thead>
                     <tbody>
-                        {rows.map(trade => (
+                        {rows.map((trade, idx) => (
                             <tr
-                                key={`${trade.office}-${trade.transactionDate}-${trade.side}-${trade.amount}`}
+                                /* 원래 key가 `trade.amount`를 그대로 보간해 객체가
+                                   전부 `[object Object]`로 접혔고, 중복 key React
+                                   경고가 났다(`/AAPL/congress` 실측 22건).
+
+                                   라벨·종목 설명까지 넣어도 **여전히 중복이 남는다** —
+                                   같은 의원이 같은 날 같은 금액 구간으로 두 건을
+                                   신고한 실제 데이터가 있다(예: Tommy Tuberville
+                                   2025-12-17 매도 $50,001–$100,000 2건). 공시 자료에
+                                   자연 키가 없으므로 인덱스를 덧붙여 유일성을
+                                   보장한다. 목록은 서버가 정렬해 내려주고 클라이언트
+                                   재정렬이 없어 인덱스가 흔들리지 않는다. */
+                                key={`${trade.office}-${trade.transactionDate}-${trade.side}-${trade.amount.label}-${trade.assetDescription}-${idx}`}
                                 className="border-b border-secondary-700/50 transition-colors last:border-b-0 hover:bg-secondary-700/30"
                             >
                                 <td className="px-4 py-3 whitespace-nowrap">

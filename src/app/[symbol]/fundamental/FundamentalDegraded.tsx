@@ -47,7 +47,7 @@ export function FundamentalDegraded({
     snapshotGeneratedAt,
 }: FundamentalDegradedProps) {
     return (
-        <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+        <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
             <SymbolPageHeading>
                 {displayName} 재무지표와 애널리스트 의견
             </SymbolPageHeading>
@@ -58,7 +58,7 @@ export function FundamentalDegraded({
                 marketProfile={marketProfile}
                 generatedAt={snapshotGeneratedAt}
             />
-            <section className="rounded-lg border border-secondary-800 bg-secondary-900/40 px-5 py-8 text-center">
+            <section className="rounded-lg border border-secondary-700 bg-secondary-900/40 px-5 py-8 text-center">
                 <p className="text-sm font-medium text-secondary-200">
                     재무 데이터를 일시적으로 불러올 수 없어요
                 </p>

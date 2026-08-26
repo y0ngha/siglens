@@ -30,7 +30,9 @@ export function PremiumModelGateModal({
     }, []);
 
     const isAuth = mode === 'auth';
-    const iconColorClass = isAuth ? 'text-ui-warning' : 'text-ui-success';
+    const iconColorClass = isAuth
+        ? 'text-ui-warning-text'
+        : 'text-ui-success-text';
     const title = isAuth ? '프리미엄 모델 사용 안내' : 'API 키 등록 필요';
     const body = isAuth
         ? '회원가입 후 API 키를 등록하면 이 모델을 사용할 수 있어요.'
@@ -53,7 +55,7 @@ export function PremiumModelGateModal({
                 role="dialog"
                 aria-labelledby={TITLE_ID}
                 tabIndex={-1}
-                className="relative w-full max-w-sm rounded-2xl bg-secondary-900 p-6 shadow-2xl ring-1 ring-secondary-800 outline-none"
+                className="relative w-full max-w-sm rounded-lg bg-secondary-900 p-6 shadow-2xl ring-1 ring-secondary-700 outline-none"
             >
                 <div className="mb-4 flex flex-col items-center gap-3 text-center">
                     {/* inline SVG avoids lucide-react dependency */}

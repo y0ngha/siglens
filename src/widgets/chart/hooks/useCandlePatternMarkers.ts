@@ -49,28 +49,33 @@ interface UseCandlePatternMarkersReturn {
 
 // --- Helpers -----------------------------------------------------------------
 
-const MARKER_STYLE_MAP: Record<PatternTrend, MarkerStyle> = {
-    bullish: {
-        position: 'belowBar',
-        shape: 'arrowUp',
-        color: CHART_COLORS.bullish,
-    },
-    bearish: {
-        position: 'aboveBar',
-        shape: 'arrowDown',
-        color: CHART_COLORS.bearish,
-    },
-    neutral: {
+// 모듈 상수 맵으로 두면 로드 시점의 테마 색이 굳는다 — 호출 시점에 만든다.
+const markerStyle = (trend: PatternTrend): MarkerStyle => {
+    if (trend === 'bullish') {
+        return {
+            position: 'belowBar',
+            shape: 'arrowUp',
+            color: CHART_COLORS.bullish,
+        };
+    }
+    if (trend === 'bearish') {
+        return {
+            position: 'aboveBar',
+            shape: 'arrowDown',
+            color: CHART_COLORS.bearish,
+        };
+    }
+    return {
         position: 'aboveBar',
         shape: 'circle',
         color: CHART_COLORS.neutral,
-    },
+    };
 };
 
 const toMarker = (
     entry: CandlePatternMarkerEntry
 ): SeriesMarkerBar<UTCTimestamp> => {
-    const style = MARKER_STYLE_MAP[entry.trend];
+    const style = markerStyle(entry.trend);
     return {
         time: entry.time as UTCTimestamp,
         position: style.position,

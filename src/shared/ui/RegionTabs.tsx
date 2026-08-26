@@ -46,13 +46,13 @@ export function RegionTabs({
 }: RegionTabsProps) {
     const regions = regionsOf(vertical);
     const baseClass =
-        'flex min-h-11 touch-manipulation items-center rounded-md px-3 text-sm font-semibold transition-colors';
+        'flex min-h-11 touch-manipulation items-center rounded-lg px-3 text-sm font-semibold transition-colors';
 
     return (
         <nav
             aria-label="지역 선택"
             className={cn(
-                'flex flex-wrap items-center gap-1 rounded-lg border border-secondary-800 bg-secondary-800/30 p-1',
+                'flex flex-wrap items-center gap-1 rounded-lg border border-secondary-700 bg-secondary-800/30 p-1',
                 className
             )}
         >

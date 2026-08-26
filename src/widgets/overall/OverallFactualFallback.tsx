@@ -3,6 +3,7 @@ import {
     type MarketProfileId,
 } from '@/shared/config/marketProfile';
 import type { NewsDisplayItem } from '@/shared/lib/types';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 export interface OverallFactualFallbackProps {
     symbol: string;
@@ -48,9 +49,9 @@ export function OverallFactualFallback({
     return (
         <section
             aria-labelledby={headingId}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-5"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-5"
         >
-            <h2 id={headingId} className="text-lg font-semibold tracking-tight">
+            <h2 id={headingId} className={HEADING_SECTION}>
                 {displayName} 종합 분석 데이터 상태
             </h2>
             <div className="mt-3 space-y-3 text-sm leading-relaxed text-secondary-300">

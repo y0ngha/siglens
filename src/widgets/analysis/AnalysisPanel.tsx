@@ -32,6 +32,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import { HIGH_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
+import { LABEL_KO } from '@/shared/lib/typographyStyles';
 import { isFallbackAnalysis } from '@/entities/chat-message';
 import {
     parseStructuredSummary,
@@ -66,9 +67,9 @@ const ENTRY_RECOMMENDATION_LABEL: Record<EntryRecommendation, string> = {
 };
 
 const ENTRY_RECOMMENDATION_COLOR: Record<EntryRecommendation, string> = {
-    enter: 'bg-chart-bullish/10 text-chart-bullish border border-chart-bullish/30',
-    wait: 'bg-ui-warning/10 text-ui-warning border border-ui-warning/30',
-    avoid: 'bg-chart-bearish/10 text-chart-bearish border border-chart-bearish/30',
+    enter: 'bg-chart-bullish/10 text-ui-success-text border border-chart-bullish/30',
+    wait: 'bg-ui-warning/10 text-ui-warning-text border border-ui-warning/30',
+    avoid: 'bg-chart-bearish/10 text-ui-danger-text border border-chart-bearish/30',
 };
 
 type ActionRecommendationTextKey =
@@ -92,7 +93,18 @@ const ACTION_RECOMMENDATION_FIELDS: readonly ActionRecommendationField[] = [
 interface ActionRecommendationSectionProps {
     rec: ActionRecommendation;
     isChartVisible: boolean;
-    onToggleChart: () => void;
+    /**
+     * 없으면 차트 토글 버튼을 **렌더하지 않는다.**
+     *
+     * 공유 페이지(`views/share/kindPanelRegistry`)는 이 핸들러를 넘기지 않고,
+     * 그 주석은 "핸들러가 없으면 패널이 그 UI를 숨긴다"고 적혀 있었다 — 사실이
+     * 아니었다. 버튼은 무조건 렌더됐고 `onToggleChart?.()`가 아무것도 하지
+     * 않아, 눌러도 반응 없는 컨트롤이 공유 화면에 남아 있었다(감사 실측:
+     * `aria-label="차트 가격선 숨기기"`, 클릭 2회 후 DOM 바이트 동일).
+     * 게다가 그 버튼이 숨기겠다고 말하는 가격선은 `StockChart`가 그리는데
+     * 공유 페이지는 `ShareCandlestickChart`를 쓰므로 애초에 존재하지 않는다.
+     */
+    onToggleChart?: () => void;
 }
 
 function ActionRecommendationSection({
@@ -118,27 +130,27 @@ function ActionRecommendationSection({
                 </div>
             )}
             <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
-                    매매 전략
-                </span>
-                <button
-                    type="button"
-                    onClick={onToggleChart}
-                    className={cn(
-                        'focus-visible:ring-primary-500 flex items-center gap-1 rounded px-1.5 py-0.5 text-xs transition-colors focus-visible:ring-1 focus-visible:outline-none',
-                        isChartVisible
-                            ? 'text-primary-400 hover:text-primary-300'
-                            : 'text-secondary-500 hover:text-secondary-400'
-                    )}
-                    aria-label={
-                        isChartVisible
-                            ? '차트 가격선 숨기기'
-                            : '차트 가격선 표시'
-                    }
-                >
-                    <EyeIcon isVisible={isChartVisible} />
-                    차트
-                </button>
+                <span className={LABEL_KO}>매매 전략</span>
+                {onToggleChart !== undefined && (
+                    <button
+                        type="button"
+                        onClick={onToggleChart}
+                        className={cn(
+                            'focus-visible:ring-primary-500 flex items-center gap-1 rounded px-1.5 py-0.5 text-xs transition-colors focus-visible:ring-1 focus-visible:outline-none',
+                            isChartVisible
+                                ? 'text-primary-400 hover:text-primary-300'
+                                : 'text-secondary-500 hover:text-secondary-400'
+                        )}
+                        aria-label={
+                            isChartVisible
+                                ? '차트 가격선 숨기기'
+                                : '차트 가격선 표시'
+                        }
+                    >
+                        <EyeIcon isVisible={isChartVisible} />
+                        차트
+                    </button>
+                )}
             </div>
             <div className="flex flex-col gap-2">
                 {ACTION_RECOMMENDATION_FIELDS.map(({ label, key }) => {
@@ -146,7 +158,7 @@ function ActionRecommendationSection({
                     if (typeof value !== 'string' || value === '') return null;
                     return (
                         <div key={label} className="flex flex-col gap-0.5">
-                            <span className="text-xs font-medium text-secondary-400">
+                            <span className="text-xs font-medium text-secondary-500">
                                 {label}
                             </span>
                             <MarkdownText className="text-sm text-secondary-300">
@@ -194,11 +206,9 @@ function ReconciledLevelsBlock({
     reason,
 }: ReconciledLevelsBlockProps) {
     return (
-        <section className="mt-1 flex flex-col gap-1 rounded-md border border-secondary-700 bg-secondary-800/40 px-3 py-2">
+        <section className="mt-1 flex flex-col gap-1 rounded-lg border border-secondary-700 bg-secondary-800/40 px-3 py-2">
             <header className="flex items-center">
-                <span className="text-[10px] font-semibold tracking-wide text-secondary-400 uppercase">
-                    내부 보정값
-                </span>
+                <span className={LABEL_KO}>내부 보정값</span>
                 <InfoTooltip>
                     <div className="text-secondary-300">
                         <p>
@@ -219,7 +229,7 @@ function ReconciledLevelsBlock({
                 </MarkdownText>
             )}
             {riskReward !== '' && (
-                <MarkdownText className="text-xs text-secondary-400">
+                <MarkdownText className="text-xs text-secondary-500">
                     {riskReward}
                 </MarkdownText>
             )}
@@ -236,9 +246,9 @@ const LOCKED_ACTION_INFO_DEPTHS: readonly TierInfoDepth[] = [
 ];
 
 const RISK_LEVEL_COLOR: Record<RiskLevel, string> = {
-    low: 'text-chart-bullish',
-    medium: 'text-ui-warning',
-    high: 'text-chart-bearish',
+    low: 'text-ui-success-text',
+    medium: 'text-ui-warning-text',
+    high: 'text-ui-danger-text',
 };
 
 const RISK_LEVEL_LABEL: Record<RiskLevel, string> = {
@@ -365,7 +375,7 @@ const CONFIDENCE_BADGE_CONFIG: Record<
 > = {
     high: {
         className:
-            'text-chart-bullish bg-chart-bullish/10 border border-chart-bullish/30',
+            'text-ui-success-text bg-chart-bullish/10 border border-chart-bullish/30',
         label: '높은 신뢰도',
         tooltip: (
             <>
@@ -376,7 +386,7 @@ const CONFIDENCE_BADGE_CONFIG: Record<
     },
     medium: {
         className:
-            'text-ui-warning bg-ui-warning/10 border border-ui-warning/30',
+            'text-ui-warning-text bg-ui-warning/10 border border-ui-warning/30',
         label: '중간 신뢰도',
         tooltip: (
             <>
@@ -480,7 +490,7 @@ function PatternAccordionItem({
     const keyPrices = pattern.keyPrices ?? [];
 
     return (
-        <div className="overflow-hidden rounded-md border border-secondary-700">
+        <div className="overflow-hidden rounded-lg border border-secondary-700">
             <div className="flex w-full items-center bg-secondary-700/20 transition-colors hover:bg-secondary-700/40">
                 <button
                     type="button"
@@ -510,9 +520,7 @@ function PatternAccordionItem({
                     </MarkdownText>
                     {keyPrices.length > 0 && (
                         <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-semibold tracking-wide text-secondary-500 uppercase">
-                                주요 가격대
-                            </span>
+                            <span className={LABEL_KO}>주요 가격대</span>
                             <div className="flex flex-col gap-1">
                                 {keyPrices.map((kp, index) => (
                                     <div
@@ -553,9 +561,7 @@ function StructuredSkillSummary({ sections }: StructuredSkillSummaryProps) {
         <div className="flex flex-col gap-2">
             {sections.map(section => (
                 <div key={section.label} className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold tracking-wide text-secondary-500 uppercase">
-                        {section.label}
-                    </span>
+                    <span className={LABEL_KO}>{section.label}</span>
                     <MarkdownText className="text-xs text-secondary-300">
                         {section.value}
                     </MarkdownText>
@@ -584,7 +590,7 @@ function StrategyAccordionItem({
     const sections = parseStructuredSummary(strategy.summary);
 
     return (
-        <div className="overflow-hidden rounded-md border border-secondary-700">
+        <div className="overflow-hidden rounded-lg border border-secondary-700">
             <div className="flex w-full items-center bg-secondary-700/20 transition-colors hover:bg-secondary-700/40">
                 <button
                     type="button"
@@ -623,8 +629,8 @@ function StrategyAccordionItem({
 }
 
 const TRENDLINE_COLOR: Record<TrendlineDirection, string> = {
-    ascending: 'text-chart-bullish',
-    descending: 'text-chart-bearish',
+    ascending: 'text-ui-success-text',
+    descending: 'text-ui-danger-text',
 };
 
 const TRENDLINE_BG_COLOR: Record<TrendlineDirection, string> = {
@@ -1026,16 +1032,16 @@ export function AnalysisPanel({
 
                                 // [1. 로딩/분석 중 상태]
                                 (showProgress || isAnalyzing) &&
-                                    'border-secondary-700 text-secondary-600 cursor-not-allowed',
+                                    'border-secondary-700 text-secondary-500 cursor-not-allowed',
 
                                 // [2. 일반 상태 (진행 중이 아닐 때만 적용)]
                                 !showProgress &&
                                     !isAnalyzing && {
                                         'border-primary-400/40 bg-primary-400/10 text-primary-300':
                                             copyState === 'copied',
-                                        'border-chart-bearish/40 bg-chart-bearish/10 text-chart-bearish':
+                                        'border-chart-bearish/40 bg-chart-bearish/10 text-ui-danger-text':
                                             copyState === 'failed',
-                                        'border-secondary-700 text-secondary-300 hover:border-secondary-600 hover:text-secondary-100':
+                                        'border-border-control text-secondary-300 hover:border-primary-500 hover:text-secondary-100':
                                             copyState === 'idle',
                                     }
                             )}
@@ -1066,11 +1072,14 @@ export function AnalysisPanel({
                 </div>
             </div>
             {copyState === 'failed' && (
-                <p className="-mt-2 text-xs text-chart-bearish">
+                <p className="-mt-2 text-xs text-ui-danger-text">
                     클립보드 복사에 실패했습니다. 브라우저 권한을 확인해 주세요.
                 </p>
             )}
-            <p className="font-mono text-xs text-secondary-500">
+            {/* 문장이 `개 스킬 감지 · 39종 인디케이터 적용`처럼 한글이 대부분이라
+                모노를 쓸 수 없다 — Geist Mono에 한글 글리프가 없어 OS 폰트로 조용히
+                폴백한다. 숫자 폭만 고정하면 되므로 tabular 숫자로 바꾼다. */}
+            <p className="text-xs text-secondary-500 tabular-nums">
                 {/* free 티어는 스킬이 그룹당 소수만 샘플되어 감지 개수가 0일 수
                     있으므로, 오해를 주지 않도록 개수 세그먼트를 숨기고 인디케이터
                     적용 수만 노출한다. 회원가입 안내는 아래 업셀 카드가 담당한다. */}
@@ -1121,10 +1130,17 @@ export function AnalysisPanel({
                             <ActionRecommendationSection
                                 rec={analysis.actionRecommendation}
                                 isChartVisible={actionPricesVisible}
-                                onToggleChart={() =>
-                                    onActionPricesVisibilityChange?.(
-                                        !actionPricesVisible
-                                    )
+                                // 화살표 함수를 무조건 넘기면 아래 섹션의
+                                // "핸들러가 없으면 버튼을 숨긴다" 게이트가
+                                // 영원히 발동하지 않는다 — 소비자가 핸들러를
+                                // 안 준 것을 여기서 지워버리기 때문이다.
+                                onToggleChart={
+                                    onActionPricesVisibilityChange === undefined
+                                        ? undefined
+                                        : () =>
+                                              onActionPricesVisibilityChange(
+                                                  !actionPricesVisible
+                                              )
                                 }
                             />
                         )}
@@ -1134,9 +1150,7 @@ export function AnalysisPanel({
                         keyLevels.poc !== undefined) && (
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center">
-                                <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
-                                    주요 레벨
-                                </span>
+                                <span className={LABEL_KO}>주요 레벨</span>
                                 <KeyLevelsHeaderInfo />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
@@ -1150,7 +1164,7 @@ export function AnalysisPanel({
                                                 key={`resistance-${level.price}`}
                                                 className="flex flex-col"
                                             >
-                                                <span className="text-sm font-medium text-chart-bearish">
+                                                <span className="text-sm font-medium text-ui-danger-text">
                                                     {level.price.toLocaleString(
                                                         undefined,
                                                         {
@@ -1159,7 +1173,7 @@ export function AnalysisPanel({
                                                         }
                                                     )}
                                                 </span>
-                                                <span className="inline-flex items-center text-xs text-secondary-600">
+                                                <span className="inline-flex items-center text-xs text-secondary-500">
                                                     {level.reason}
                                                     <ConfluenceInfo
                                                         level={level}
@@ -1179,7 +1193,7 @@ export function AnalysisPanel({
                                                 key={`support-${level.price}`}
                                                 className="flex flex-col"
                                             >
-                                                <span className="text-sm font-medium text-chart-bullish">
+                                                <span className="text-sm font-medium text-ui-success-text">
                                                     {level.price.toLocaleString(
                                                         undefined,
                                                         {
@@ -1188,7 +1202,7 @@ export function AnalysisPanel({
                                                         }
                                                     )}
                                                 </span>
-                                                <span className="inline-flex items-center text-xs text-secondary-600">
+                                                <span className="inline-flex items-center text-xs text-secondary-500">
                                                     {level.reason}
                                                     <ConfluenceInfo
                                                         level={level}
@@ -1213,7 +1227,7 @@ export function AnalysisPanel({
                                             }
                                         )}
                                     </span>
-                                    <span className="text-xs text-secondary-600">
+                                    <span className="text-xs text-secondary-500">
                                         {keyLevels.poc.reason}
                                     </span>
                                 </div>
@@ -1224,9 +1238,7 @@ export function AnalysisPanel({
                     {trendlines.length > 0 && (
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
-                                    추세선
-                                </span>
+                                <span className={LABEL_KO}>추세선</span>
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 {trendlines.map(trendline => (
@@ -1242,19 +1254,17 @@ export function AnalysisPanel({
                     {((priceTargets.bullish?.targets.length ?? 0) > 0 ||
                         (priceTargets.bearish?.targets.length ?? 0) > 0) && (
                         <div className="flex flex-col gap-2">
-                            <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
-                                가격 목표
-                            </span>
+                            <span className={LABEL_KO}>가격 목표</span>
                             <div className="grid grid-cols-2 gap-3">
                                 <PriceScenarioSection
                                     label="상승"
                                     scenario={priceTargets.bullish}
-                                    colorClass="text-chart-bullish"
+                                    colorClass="text-ui-success-text"
                                 />
                                 <PriceScenarioSection
                                     label="하락"
                                     scenario={priceTargets.bearish}
-                                    colorClass="text-chart-bearish"
+                                    colorClass="text-ui-danger-text"
                                 />
                             </div>
                         </div>
@@ -1262,9 +1272,7 @@ export function AnalysisPanel({
 
                     {displayedIndicatorResults.length > 0 && (
                         <div className="flex flex-col gap-2">
-                            <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
-                                보조지표
-                            </span>
+                            <span className={LABEL_KO}>보조지표</span>
                             <div className="flex flex-col gap-1.5">
                                 {displayedIndicatorResults.map(
                                     indicatorResult =>
@@ -1285,9 +1293,7 @@ export function AnalysisPanel({
                     )}
 
                     <div className="flex flex-col gap-2">
-                        <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
-                            차트 패턴
-                        </span>
+                        <span className={LABEL_KO}>차트 패턴</span>
                         {hasDetectedPatterns ? (
                             <div className="flex flex-col gap-1.5">
                                 {detectedPatterns.map(pattern => (
@@ -1299,7 +1305,7 @@ export function AnalysisPanel({
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-sm text-secondary-500">
+                            <p className="text-xs text-secondary-500">
                                 감지된 패턴 없음
                             </p>
                         )}
@@ -1307,9 +1313,7 @@ export function AnalysisPanel({
 
                     {detectedStrategyResults.length > 0 && (
                         <div className="flex flex-col gap-2">
-                            <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
-                                전략
-                            </span>
+                            <span className={LABEL_KO}>전략</span>
                             <div className="flex flex-col gap-1.5">
                                 {detectedStrategyResults.map(strategy => (
                                     <StrategyAccordionItem
@@ -1344,7 +1348,7 @@ export function AnalysisPanel({
                             </div>
                             <Link
                                 href="/signup"
-                                className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
                                 회원가입
                             </Link>

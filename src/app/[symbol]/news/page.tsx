@@ -8,6 +8,7 @@ import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
 import { NewsFactsSummary, NEWS_ROW_SERIALIZATION_LIMIT } from '@/widgets/news';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import { NewsAiSummaryErrorBoundary } from '@/widgets/news/NewsAiSummaryErrorBoundary';
+import { NewsListErrorBoundary } from '@/widgets/news/NewsListErrorBoundary';
 import { NewsAiSummarySkeleton } from '@/widgets/news/NewsAiSummarySkeleton';
 import { AnalystActions } from '@/widgets/news/sections/AnalystActions';
 import { EventCalendar } from '@/widgets/news/sections/EventCalendar';
@@ -55,6 +56,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { cn } from '@/shared/lib/cn';
 
 export const revalidate = 43200; // 12h — 신선도는 ensureNewsCardsAnalyzedAction의 on-demand revalidateTag('news:${symbol}', 'max')가 보장, 시간 기반은 상한만
 
@@ -208,13 +211,11 @@ interface NewsDataServerAlertProps {
 function NewsDataServerAlert({ title, message }: NewsDataServerAlertProps) {
     return (
         <section
-            className="rounded-xl border border-ui-danger/30 bg-secondary-800 p-6"
+            className="rounded-lg border border-ui-danger/30 bg-secondary-800 p-6"
             role="alert"
         >
-            <h2 className="mb-2 text-lg font-semibold tracking-tight">
-                {title}
-            </h2>
-            <p className="text-sm text-ui-danger">{message}</p>
+            <h2 className={cn('mb-2', HEADING_SECTION)}>{title}</h2>
+            <p className="text-sm text-ui-danger-text">{message}</p>
         </section>
     );
 }
@@ -441,9 +442,17 @@ export default async function NewsPage({ params }: Props) {
                     </Suspense>
                 </NewsAiSummaryErrorBoundary>
 
-                <Suspense fallback={<SectionSkeleton />}>
-                    <NewsListSection symbol={upper} />
-                </Suspense>
+                {/*
+                 * `NewsList`도 `NewsAiSummary`처럼 지속 폴링 오류를 다시
+                 * 던진다. 바운더리가 없으면 그 throw가 `[symbol]/error.tsx`까지
+                 * 올라가 헤더·탭 레일·관련 종목까지 **심볼 라우트 전체**를
+                 * 내린다(감사 실측: 본문 1,079 → 582자).
+                 */}
+                <NewsListErrorBoundary>
+                    <Suspense fallback={<SectionSkeleton />}>
+                        <NewsListSection symbol={upper} />
+                    </Suspense>
+                </NewsListErrorBoundary>
 
                 {isEquity && (
                     <Suspense fallback={<SectionSkeleton />}>

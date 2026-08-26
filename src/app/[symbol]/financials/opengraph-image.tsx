@@ -11,7 +11,9 @@ export const revalidate = 2592000; // 30d
 export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
 export const contentType = 'image/png';
 // alt는 module-scope const라 ticker 동적 주입 불가 — 페이지 카테고리까지만 명시한다.
-export const alt = 'Siglens 미국 주식 재무제표';
+// 시장명은 빼야 한다. 이 탭은 한국 종목에도 열려 있어(/005930.KS/financials 실측)
+// "미국 주식"이 그대로 나가면 카드 대체텍스트가 사실과 어긋난다.
+export const alt = 'Siglens 재무제표';
 
 interface Props {
     params: Promise<{ symbol: string }>;

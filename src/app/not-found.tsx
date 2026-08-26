@@ -13,11 +13,11 @@ export default function NotFound() {
     return (
         <>
             <main className="flex flex-1 flex-col">
-                <div className="flex flex-col items-center px-6 py-20 text-center">
+                <div className="page-container flex flex-col items-center py-20 text-center">
                     <p className="font-mono text-sm tracking-widest text-primary-400">
                         404
                     </p>
-                    <h1 className="mt-4 text-2xl font-bold text-secondary-100 sm:text-3xl">
+                    <h1 className="mt-4 text-2xl font-bold text-secondary-50 sm:text-3xl">
                         페이지를 찾을 수 없습니다
                     </h1>
                     <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">
@@ -33,11 +33,11 @@ export default function NotFound() {
                         {SITE_NAME} 홈으로 돌아가기
                     </Link>
 
-                    <div className="mt-10 border-t border-secondary-800 pt-8">
+                    <div className="mt-10 border-t border-secondary-700 pt-8">
                         <p className="text-sm text-secondary-400">
                             실제로 있는 종목인데 찾을 수 없나요?
                         </p>
-                        <p className="mt-1 text-xs text-secondary-600">
+                        <p className="mt-1 text-xs text-secondary-500">
                             시스템 오류일 수 있습니다. 알려주시면
                             확인하겠습니다.
                         </p>

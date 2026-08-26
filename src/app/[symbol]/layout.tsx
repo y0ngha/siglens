@@ -300,20 +300,50 @@ async function SymbolFloatingChat({ params }: SymbolLayoutSegmentProps) {
 
 // Static shell mirroring SymbolLayoutHeader's outer shape. Used as the Suspense
 // fallback while params resolve and the bars prefetch completes.
+//
+// 폭 구조도 실제 헤더와 **같아야 한다**. 이전엔 여기만 `px-4` 전폭이라, 안에 든
+// 스켈레톤이 `symbol-container`로 옮겨간 뒤 폴백 자신의 브레드크럼과 탭이
+// 1920px에서 436px 어긋났고, 폴백에서 실제 헤더로 넘어갈 때도 448px 튀었다.
+// 콜드 로드의 첫 페인트라 사용자가 실제로 보는 화면이다.
+//
+// **행 구조도 같아야 한다.** 실제 헤더는 640px 미만에서 브레드크럼과 컨트롤이
+// 두 행으로 쌓이는데 폴백은 한 행이라 높이가 109px 대 160px로 갈렸고, 폴백이
+// 실제 헤더로 바뀌는 순간 세로로 51px 밀렸다(640px 이상은 15px). 폴백의 존재
+// 이유가 바로 그 밀림을 막는 것이므로 같은 `flex-col → sm:flex-row` 구조와
+// 같은 컨트롤 크기(size-11)를 쓴다.
+//
+// 컨트롤은 **2개**만 둔다. 실제 헤더의 세 번째 칩(`PortfolioChipMounted`)은
+// 회원 전용이라 게스트에겐 아예 렌더되지 않는다(`useCurrentUser` null → null).
+// 클러스터가 우측 정렬이라 개수가 달라도 공유·설정 버튼의 x는 안 밀린다
+// (375px 실측: 폴백 2·3번이 [263,307]·[315,359], 실제 2개도 같은 좌표).
+// 그래서 남는 문제는 "뜬 자리가 사라지느냐 생기느냐"뿐이고, 다수인 게스트
+// 기준으로 팬텀이 없는 2개가 맞다 — 회원은 칩 하나가 클러스터 왼쪽에 붙을 뿐
+// 나머지 둘은 그대로다.
 function SymbolHeaderShellFallback() {
     return (
-        <header className="px-4 py-3" aria-hidden="true">
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
+        <header className="py-3" aria-hidden="true">
+            <div className="symbol-container flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+                <div className="flex min-w-0 items-center gap-2 sm:flex-1">
                     <span className="font-mono text-xs tracking-[0.2em] text-secondary-500 uppercase">
                         SIGLENS
                     </span>
-                    <span className="text-secondary-700">/</span>
-                    <span className="inline-block h-5 w-32 animate-pulse rounded bg-secondary-700" />
+                    <span className="text-secondary-500">/</span>
+                    <span className="inline-block h-7 w-32 animate-pulse rounded bg-secondary-700" />
+                    {/* 실제 헤더는 이 자리에 데스크톱용 FearGreedHeaderChip을
+                        인라인으로 둔다(모바일 인스턴스는 아래 행). 스냅샷이
+                        null이어도 "공포·탐욕 데이터 부족" 칩을 렌더하므로 이
+                        자리는 항상 채워진다. */}
+                    <span className="hidden h-5 w-20 animate-pulse rounded bg-secondary-700 sm:inline-block" />
                 </div>
-                <span className="inline-block h-8 w-36 shrink-0 animate-pulse rounded-md bg-secondary-700" />
+                <div className="flex items-center justify-between gap-2 sm:order-3 sm:shrink-0 sm:justify-end">
+                    <span className="inline-block h-6 w-16 animate-pulse rounded bg-secondary-700 sm:hidden" />
+                    <div className="flex items-center gap-2">
+                        <span className="inline-block size-11 animate-pulse rounded-lg bg-secondary-700" />
+                        <span className="inline-block size-11 animate-pulse rounded-lg bg-secondary-700" />
+                    </div>
+                </div>
             </div>
-            <div className="-mx-4 mt-3">
+            <div className="mt-3">
                 <SymbolTabsSkeleton />
             </div>
         </header>

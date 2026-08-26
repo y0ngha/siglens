@@ -6,6 +6,7 @@ import './globals.css';
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { reportClientError } from '@/shared/lib/reportClientError';
+import { ThemeInitScript } from '@/shared/ui/ThemeInitScript';
 
 interface GlobalErrorProps {
     error: Error & { digest?: string };
@@ -35,11 +36,14 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 
     return (
         <html lang="ko">
+            <head>
+                <ThemeInitScript />
+            </head>
             <body className="flex min-h-dvh flex-col items-center justify-center bg-secondary-900 px-6 text-center text-secondary-50">
-                <p className="font-mono text-xs tracking-widest text-primary-400 uppercase">
+                <p className="text-xs font-semibold tracking-[0.01em] text-primary-400">
                     일시 오류
                 </p>
-                <h1 className="mt-4 text-2xl font-bold text-secondary-100">
+                <h1 className="mt-4 text-2xl font-bold text-secondary-50">
                     서비스를 불러오지 못했어요
                 </h1>
                 <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">

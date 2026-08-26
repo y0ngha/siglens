@@ -9,7 +9,7 @@ import type {
     UTCTimestamp,
 } from 'lightweight-charts';
 import { CandlestickSeries, createChart } from 'lightweight-charts';
-import { CHART_COLORS } from '@/shared/lib/chartColors';
+import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
 import type {
     Bar,
     IndicatorResult,
@@ -54,6 +54,8 @@ import { useCandlePatternMarkers } from './hooks/useCandlePatternMarkers';
 import { useActionRecommendationOverlay } from './hooks/useActionRecommendationOverlay';
 import { useSmcZones } from './hooks/useSmcZones';
 import { usePaneLabels } from './hooks/usePaneLabels';
+import { usePricePaneSize } from './hooks/usePricePaneSize';
+import { usePricePaneStretch } from './hooks/usePricePaneStretch';
 import { useOverlayLegend } from './hooks/useOverlayLegend';
 import { DEFAULT_LINE_WIDTH } from './constants';
 import { useIndicatorVisibility } from './hooks/useIndicatorVisibility';
@@ -118,6 +120,7 @@ export function StockChart({
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
+
     const seriesRef = useRef<ISeriesApi<'Candlestick', UTCTimestamp> | null>(
         null
     );
@@ -156,15 +159,19 @@ export function StockChart({
     useEffect(() => {
         if (!containerRef.current) return;
 
+        /* 생성 시점의 테마에 맞는 크롬. 테마 전환은 마운트 지점의
+           `key={themeVersion}`이 이 컴포넌트를 통째로 remount해 처리한다. */
+        const chrome = getChartChrome();
+
         const chart = createChart(containerRef.current, {
             autoSize: true,
             layout: {
-                background: { color: CHART_COLORS.background },
-                textColor: CHART_COLORS.text,
+                background: { color: chrome.background },
+                textColor: chrome.text,
             },
             grid: {
-                vertLines: { color: CHART_COLORS.grid },
-                horzLines: { color: CHART_COLORS.grid },
+                vertLines: { color: chrome.grid },
+                horzLines: { color: chrome.grid },
             },
         });
 
@@ -498,6 +505,12 @@ export function StockChart({
         labels: paneLabels,
     });
 
+    // 보조 pane이 늘어도 가격 pane이 절반 아래로 내려가지 않게 한다.
+    // 크기를 재기 전에 실행되도록 usePricePaneSize보다 앞에 둔다.
+    usePricePaneStretch(chartRef, paneIndices);
+
+    const pricePaneSize = usePricePaneSize(chartRef, wrapperRef, paneIndices);
+
     /**
      * 오버레이/period 지표처럼 별도 훅 반환값을 받는 항목의 오버라이드 맵.
      * INDICATOR_REGISTRY 순회 시 이 맵에 있는 key는 오버라이드를 우선하고,
@@ -618,10 +631,15 @@ export function StockChart({
             <div className="absolute top-2 right-14 z-10">
                 <IndicatorSettingsModal bindings={indicatorBindings} />
             </div>
-            <div className="pointer-events-none absolute top-2 left-2 z-10 flex flex-col gap-1">
+            {/* 범례는 자기 pane(pane 0) 안에만 머문다 — 넘치면 보조 pane 라벨을
+                덮어 두 글자가 겹쳐 찍힌다. 상한은 OverlayLegend가 실측 크기에서
+                계산하고, 넘친 항목 수는 `+N` 칩으로 드러낸다. */}
+            <div className="pointer-events-none absolute top-2 left-2 z-10">
                 <OverlayLegend
                     items={overlayLegendItems}
                     decimals={priceDecimals}
+                    pricePaneHeightPx={pricePaneSize.height}
+                    chartWidthPx={pricePaneSize.width}
                 />
             </div>
         </div>

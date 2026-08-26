@@ -18,7 +18,7 @@ export function PositionCta({ symbol, low52w, high52w }: PositionCtaProps) {
     return (
         <section
             data-testid="position-cta"
-            className="flex flex-col items-start gap-3 rounded-xl border border-secondary-700 bg-secondary-800/40 p-6"
+            className="flex flex-col items-start gap-3 rounded-lg border border-secondary-700 bg-secondary-800/40 p-6"
         >
             <p className="text-sm font-semibold text-secondary-100">
                 보유종목을 등록하면 내 매수 층이 표시돼요
@@ -36,8 +36,13 @@ export function PositionCta({ symbol, low52w, high52w }: PositionCtaProps) {
                     {formatAmount(high52w, symbol)}
                 </p>
             )}
+            {/*
+             * 심볼을 실어 보낸다. 예전에는 `href="/onboarding"` 리터럴이라
+             * 클릭 의도가 첫 홉에서 사라졌다 — 온보딩 화면은 물론이고 그 앞의
+             * 로그인 화면조차 사용자가 어느 종목을 보다 왔는지 알지 못했다.
+             */}
             <Link
-                href="/onboarding"
+                href={`/onboarding?symbol=${encodeURIComponent(symbol)}`}
                 className="inline-flex min-h-11 touch-manipulation items-center rounded-lg border border-primary-500 px-4 text-sm font-medium text-primary-300 transition-colors hover:bg-primary-500/10 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
                 보유종목 등록하기

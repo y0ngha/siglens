@@ -5,6 +5,10 @@ import {
 } from '@/shared/config/economyIndicators';
 import { cn } from '@/shared/lib/cn';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 
 interface KrEconomicIndicatorGridProps {
     readonly cards: readonly KrIndicatorCard[];
@@ -35,10 +39,7 @@ export function KrEconomicIndicatorGrid({
 
     return (
         <section aria-labelledby="kr-economy-indicators" className="space-y-5">
-            <h2
-                id="kr-economy-indicators"
-                className="text-base font-semibold text-secondary-200"
-            >
+            <h2 id="kr-economy-indicators" className={HEADING_SECTION}>
                 경제지표
             </h2>
             {ECONOMY_INDICATOR_CATEGORIES.map(category => {
@@ -47,9 +48,7 @@ export function KrEconomicIndicatorGrid({
                 if (!items || items.length === 0) return null;
                 return (
                     <div key={category.key} className="space-y-2">
-                        <h3 className="text-sm font-medium text-secondary-400">
-                            {category.label}
-                        </h3>
+                        <h3 className={HEADING_SUBSECTION}>{category.label}</h3>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                             {items.map(card => (
                                 <IndicatorCard
@@ -72,7 +71,7 @@ interface IndicatorCardProps {
 function IndicatorCard({ card }: IndicatorCardProps) {
     const { meta, latest, latestDate, changeFromPrevious } = card;
     return (
-        <article className="rounded-lg border border-secondary-800 bg-secondary-800/30 p-4">
+        <article className="rounded-lg border border-secondary-700 bg-secondary-800/30 p-4">
             <div className="flex items-center gap-1.5">
                 <h4 className="text-sm text-secondary-400">{meta.label}</h4>
                 <InfoTooltip>{meta.tooltip}</InfoTooltip>
@@ -88,9 +87,9 @@ function IndicatorCard({ card }: IndicatorCardProps) {
                     className={cn(
                         'mt-1 text-xs',
                         changeFromPrevious > 0
-                            ? 'text-ui-danger'
+                            ? 'text-ui-danger-text'
                             : changeFromPrevious < 0
-                              ? 'text-ui-success'
+                              ? 'text-ui-success-text'
                               : 'text-secondary-400'
                     )}
                 >

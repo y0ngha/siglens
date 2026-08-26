@@ -21,8 +21,8 @@ const CROSS_LINK_CARD_COUNT = 3;
 
 export default function OptionsLoading() {
     return (
-        <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
-            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-secondary-700 bg-secondary-800 p-3">
+        <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-6">
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-secondary-700 bg-secondary-800 p-3">
                 <div className="mr-1 h-3 w-10 animate-pulse rounded bg-secondary-700" />
                 {Array.from({ length: EXPIRATION_CHIP_SKELETON_COUNT }).map(
                     (_, i) => (
@@ -35,7 +35,7 @@ export default function OptionsLoading() {
             </div>
 
             <section
-                className="rounded-xl border border-primary-500/30 bg-gradient-to-br from-secondary-800 to-secondary-900 p-6 ring-1 ring-primary-500/10"
+                className="rounded-lg border border-primary-500/30 bg-gradient-to-br from-secondary-800 to-secondary-900 p-6 ring-1 ring-primary-500/10"
                 aria-busy="true"
                 aria-label="AI 옵션 분석 불러오는 중"
             >
@@ -74,7 +74,7 @@ export default function OptionsLoading() {
                 {Array.from({ length: METRIC_CARD_COUNT }).map((_, i) => (
                     <div
                         key={i}
-                        className="animate-pulse rounded-xl border border-secondary-700 bg-secondary-800 p-4"
+                        className="animate-pulse rounded-lg border border-secondary-700 bg-secondary-800 p-4"
                     >
                         <div className="h-3 w-16 rounded bg-secondary-700" />
                         <div className="mt-2 h-6 w-20 rounded bg-secondary-700" />
@@ -82,13 +82,13 @@ export default function OptionsLoading() {
                 ))}
             </div>
 
-            <div className="space-y-2 rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+            <div className="space-y-2 rounded-lg border border-secondary-700 bg-secondary-800 p-4">
                 <div className="h-4 w-48 animate-pulse rounded bg-secondary-700" />
                 <div className="h-60 w-full animate-pulse rounded bg-secondary-700" />
                 <div className="h-3 w-40 animate-pulse rounded bg-secondary-700" />
             </div>
 
-            <div className="space-y-2 rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+            <div className="space-y-2 rounded-lg border border-secondary-700 bg-secondary-800 p-4">
                 <div className="h-4 w-40 animate-pulse rounded bg-secondary-700" />
                 <div className="space-y-2">
                     {Array.from({ length: CHAIN_TABLE_ROW_COUNT }).map(
@@ -106,7 +106,7 @@ export default function OptionsLoading() {
                 {Array.from({ length: CROSS_LINK_CARD_COUNT }).map((_, i) => (
                     <div
                         key={i}
-                        className="h-24 w-full animate-pulse rounded-xl bg-secondary-700"
+                        className="h-24 w-full animate-pulse rounded-lg bg-secondary-700"
                     />
                 ))}
             </div>

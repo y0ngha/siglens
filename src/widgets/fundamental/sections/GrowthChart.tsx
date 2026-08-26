@@ -1,9 +1,10 @@
 import type { FundamentalGrowthInput } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
 import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 const HEADING_ID = 'growth-heading';
-const HEADING_CLASS_NAME = 'mb-2 text-lg font-semibold tracking-tight';
+const HEADING_CLASS_NAME = cn('mb-2', HEADING_SECTION);
 
 interface GrowthChartProps {
     growth: FundamentalGrowthInput | null;
@@ -39,8 +40,8 @@ function GrowthBar({ label, value, description }: GrowthBarProps) {
                         pct === null
                             ? 'text-secondary-400'
                             : isPositive
-                              ? 'text-chart-bullish'
-                              : 'text-chart-bearish'
+                              ? 'text-ui-success-text'
+                              : 'text-ui-danger-text'
                     )}
                 >
                     {formattedPct}
@@ -105,7 +106,7 @@ export function GrowthChart({ growth }: GrowthChartProps) {
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 성장성

@@ -1,4 +1,6 @@
 import { PositionHoldingCard } from './PositionHoldingCard';
+import { cn } from '@/shared/lib/cn';
+import { PLACEHOLDER_ON_INSET } from '@/shared/lib/surfaceStyles';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { toView } from '@/entities/portfolio/lib/toView';
@@ -87,7 +89,7 @@ export function PortfolioEmptyState() {
     return (
         <section
             data-testid="portfolio-empty-state"
-            className="flex flex-col items-start gap-3 rounded-xl border border-secondary-700 bg-secondary-800/40 p-6"
+            className="flex flex-col items-start gap-3 rounded-lg border border-secondary-700 bg-secondary-800/40 p-6"
         >
             <p className="text-sm font-semibold text-secondary-100">
                 아직 등록한 보유종목이 없어요
@@ -113,7 +115,7 @@ export function PortfolioErrorState() {
     return (
         <section
             data-testid="portfolio-error-state"
-            className="flex flex-col items-start gap-3 rounded-xl border border-secondary-700 bg-secondary-800/40 p-6"
+            className="flex flex-col items-start gap-3 rounded-lg border border-secondary-700 bg-secondary-800/40 p-6"
         >
             <p className="text-sm font-semibold text-secondary-100">
                 포트폴리오를 불러오지 못했어요
@@ -129,7 +131,10 @@ function SkeletonCard() {
     return (
         <div
             aria-hidden="true"
-            className="h-64 animate-pulse rounded-xl bg-secondary-800/60"
+            className={cn(
+                'h-64 animate-pulse rounded-lg',
+                PLACEHOLDER_ON_INSET
+            )}
         />
     );
 }
@@ -154,7 +159,7 @@ function PortfolioSkeleton() {
 
 export default function PortfolioPage() {
     return (
-        <main className="min-h-[calc(100dvh-3.5rem)] bg-secondary-950 px-4 py-12">
+        <main className="min-h-[calc(100dvh-var(--header-h))] bg-secondary-950 px-4 py-12">
             <div className="mx-auto w-full max-w-5xl space-y-6">
                 <header>
                     <h1 className="text-2xl font-semibold text-secondary-50">

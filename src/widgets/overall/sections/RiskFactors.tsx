@@ -1,4 +1,6 @@
 import { MarkdownText } from '@/shared/ui/MarkdownText';
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface RiskFactorsProps {
     factors: string[];
@@ -9,11 +11,11 @@ export function RiskFactors({ factors }: RiskFactorsProps) {
     return (
         <section
             aria-labelledby="risk-factors-heading"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2
                 id="risk-factors-heading"
-                className="mb-3 text-lg font-semibold text-balance"
+                className={cn(HEADING_SECTION, 'mb-3 text-balance')}
             >
                 위험 요인
             </h2>

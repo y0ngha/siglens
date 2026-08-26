@@ -235,6 +235,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ import { MS_PER_HOUR, KST_OFFSET_HOURS, MS_PER_SECOND } from '@/shared/config/time'; use hours * MS_PER_HOUR
     ✅ <p>{`최근 ${SPARKLINE_DAYS}거래일 섹터 수익률`}</p>  // 상수와 JSX가 항상 일치
 
+15.8. Code mutation helpers — regex anchors must target full syntactic units, not line prefixes
+    → When a script/helper inserts code (imports, exports, directives), anchors must match complete syntactic units, not partial line patterns
+    → Line-prefix patterns fail for: 1) directives that come before imports (`'use client'` must not have code inserted above it), 2) multi-line constructs (import statements spanning lines), 3) dedupe checks on bare identifiers (identifier in JSX can trigger false positive)
+    → All changed files must be scanned after mutation for malformed constructs (imports inside blocks, directives displaced, duplicates created)
+    ❌ regex `^import` + line-based insertion: inserts inside multi-line import block, or inserts above 'use client' directive
+    ❌ dedupe check on bare identifier `importName`: matches identifier in JSX, creates duplicate import statement
+    ✅ regex `^import\b[\s\S]*?;$` matches full import STATEMENT across lines; detects 'use client' separately before anchoring
+    ✅ dedupe checks full module path + statement boundary, not bare identifier
+    ✅ Post-mutation verification: scan all changed files with `grep '^import'` to verify no imports precede 'use client', no imports appear inside blocks
+    → Recurring: W6c (multi-line import blocks, regex line-prefix bug), W6f ('use client' directive override) — 2 occurrences in redesign-p1 audit wave
+
 15.3. Inline comments explaining WHAT code does instead of WHY
     → Comments must explain WHY a decision was made, not WHAT the code does (code structure is self-evident)
     → Code names, function signatures, and control flow already express intent; comments restating them add noise and drift when code changes
@@ -632,6 +643,57 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ <div aria-live="polite" id="warning">{warning}</div> <div aria-describedby="warning" aria-hidden="true">{warning}</div>
     ✅ Consolidate to single primary location; reference it from other places
     → Recurring: perf/aws-cost-reduction Round 3 UI audit (1 occurrence in self-norm warning)
+
+18. `opacity-*` classes on interactive control boundaries fail WCAG 1.4.11 contrast requirements
+    → WCAG 1.4.11 (Contrast - Graphics) requires 3:1 minimum for interactive control boundaries and graphical elements
+    → Opacity dims all color channels including text, borders, and backgrounds — never use `opacity-40`, `opacity-50` etc. to express disabled state on controls whose boundary carries required contrast
+    → On buttons: use explicit text-colour tokens (`disabled:text-secondary-500`). On bordered controls: use `border-border-control` (designed for 3:1+) and never apply opacity to it
+    → Opacity measurement must account for: 1) text over any background with opacity applied, 2) borders whose opacity matters for contrast (remove opacity entirely instead of dimming)
+    ❌ <button disabled className="opacity-40">Tier-locked feature</button>  // renders at 2.26:1, fails WCAG AA (4.5:1 minimum for text)
+    ❌ <div className="opacity-50 border border-primary-500">Locked control</div>  // border dims to ~1.65:1, falls below 3:1 minimum
+    ✅ <button disabled className="disabled:text-secondary-500">Tier-locked feature</button>  // 6.84:1 in both themes
+    ✅ <div className="border border-border-control">Locked control</div>  // 3:1+ in both themes (remove opacity)
+    → **양 테마를 다 재라.** 다크가 통과해도 라이트는 실패한다 — 라이트에서는 밑판과 글자가 같은 흰
+      배경으로 함께 수렴해 버튼이 종잇장이 된다(실측 최저 1.51:1). 다크 전용이던 master에서는 무해했고
+      라이트 테마를 들이면서 결함이 됐다
+    ✅ 채운 컨트롤: `disabled:bg-secondary-700 disabled:text-secondary-500` → 4.89(다크) / 5.49(라이트)
+    ✅ 고스트·경계 컨트롤: `disabled:text-secondary-500` → 6.84 / 6.34. 색을 띤 경계는
+      `disabled:border-border-control`로 함께 중화 → 3.57 / 3.81
+    → `src/__tests__/guards/disabledOpacityGuard.test.ts`가 정적으로 막는다(`disabled:`·`aria-disabled:`·
+      `group-disabled:` 및 겹친 variant까지)
+    → Recurring: W6b Round 1 (disabled timeframe buttons with `disabled:opacity-40`), W6c (disabled switch
+      with `opacity-50`), PR #771 리뷰 (9개 파일 12곳이 여전히 살아 있었음) — 14 occurrences
+
+19. Heading with no colour class inherits `body { color }` and outranks its own parent heading
+    → `globals.css` sets `body { color: var(--color-secondary-50) }` — the BRIGHTEST tier. A heading whose `className` carries no colour token silently renders at that tier, i.e. at or above the h2/h1 that governs it
+    → **A contrast sweep structurally cannot catch this**: inheriting the brightest colour always PASSES contrast. A 225-element both-theme sweep reported 0 failures while the defect was live. It is a hierarchy defect, not a contrast defect
+    → Detector: extract every `<h[1-6] className="...">` literal and flag any whose class list contains none of `text-secondary-` / `text-primary-` / `text-ui-` / `text-chart-` / `text-white` / `text-grade` / `sr-only`
+    → Detector blind spot: the regex cannot see `className={SOME_CONSTANT}`. Per-file `HEADING_CLASS_NAME` constants hide instances from it — grep those separately
+    → The colour being PRESENT is not sufficient either: a heading sharing its parent's exact colour AND weight (differing only by size) is the same defect. Compare each heading against its own parent, not against a threshold
+    ❌ <h3 className="mb-2 text-sm font-semibold">핵심 이벤트</h3>  // inherits secondary-50, brighter than its own h2
+    ❌ <h3 className="mb-2 text-sm font-semibold text-secondary-100">  // same colour AND weight as its h2
+    ✅ <h3 className={cn('mb-2', HEADING_SUBSECTION)}>  // one step below HEADING_SECTION by design
+    → Recurring: W6c (nine colourless h2 on /[symbol]/overall), W6d (two on NewsAiSummary + two same-colour-as-parent on MarketNewsDigest) — 2 occurrences in redesign-p1
+
+20. Fixing one level of a type ramp breaks the level below it
+    → Lowering a heading's weight/size/colour can leave the level BENEATH it out-ranking the level you just fixed
+    → After any weight/size/colour change, re-measure the level BELOW the one you touched, not only the one you fixed
+    ❌ h3 headline dropped to `font-medium`; the card's h4 sub-labels stayed `font-semibold` and became bolder than the headline above them
+    ✅ h3 `font-medium` + h4 `font-medium` — size and colour still step, so the ramp stays monotonic on all three axes
+    → Weight is not contrast: the h4 measured 9.93:1 light / 11.26:1 dark before AND after the weight change
+    → Recurring: W6d (card h4 after NewsCardShell h3), and the same shape appeared in W6c when raising an h3 without raising its owning h2
+
+20.5. Heading design tokens not unified per hierarchy level — drift, per-file duplicates, or inconsistent application
+    → All headings at the same hierarchy level (all h2, all h3) must use a single shared design token (HEADING_SECTION for h2, HEADING_SUBSECTION for h3, etc.)
+    → Per-file local constants re-implementing identical class strings (`text-lg font-semibold tracking-tight` in multiple files) defeat the shared-token intent and hide token usage from grep
+    → Same-level drift (one h2 at 18px, another h2 at 14px, both with no colour class) creates hierarchy defects invisible to contrast sweeps
+    ❌ h2 className="text-lg font-semibold tracking-tight" in widget A; identical string in widget B (per-file constant, defeats grep)
+    ❌ All h2 on route use different sizes/weights: 18/600, 14/600, 14/500 (drift)
+    ❌ FearGreedGroupBar h4 rendered same size/weight as two h2 but brighter (same-level inversion)
+    ✅ All h2 use className={cn('...', HEADING_SECTION)} (single shared token)
+    ✅ Centralized HEADING_SECTION / HEADING_SUBSECTION / HEADING_TERTIARY tokens in typographyStyles.ts; all routes import and apply uniformly
+    ✅ After any heading size/weight/colour change, verify all same-level headings still use the same token
+    → Recurring: W6e (per-file HEADING_CLASS_NAME constants), W6g/W6h (same-level drift on fear-greed + share routes) — 2 occurrences
 ```
 
 ---
@@ -1008,6 +1070,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Remove aria-hidden from informational content (instructions, data fields, confirmation values)
    ❌ <p aria-hidden>Email: user@example.com</p>  // user needs to verify email before deletion confirmation
    ✅ <p>Email: user@example.com</p>  // make visible and accessible to screen readers
+
+8. Color token contrast claims must specify which contexts (surfaces, tints) were validated
+   → Semantic color tokens validated for contrast at one dimension (alpha/tint depth or background surface) are not automatically valid at all dimensions
+   → Always document validation context when a token is claimed to pass a contrast ratio: "token X passes 3:1 on surface A and 2.9:1 on surface B" instead of "token X passes 3:1"
+   → Re-validate and document whenever a token is used on an unmeasured surface or tint depth; contrast ratios shift based on context
+   → When establishing minimum acceptable contrast, test across all documented and actual use cases, not just one reference context
+   ❌ globals.css comment: "ui-success-text passes ≥6.9:1 on success/10" (validated only at /10 tint; later used at /40 tint where it measures 4.35:1, failing AA 4.5:1 minimum)
+   ❌ border-control measured at 3.30:1 on white card surface (#fff), documented as "light 3.30:1"; same token used on secondary-950 input background where it measures 2.90:1
+   ✅ Explicitly document per-surface/tint: "border-control (light #7d838f): 3.34:1 on secondary-950 inset, 3.58:1 on secondary-900 body, 3.81:1 on secondary-800 card (#fff)" (validates across actual use cases; the tightest surface is the darkest one, not the reference card)
+   ✅ CI guard verifying token contrast across all documented and new surfaces before merge
+   → Recurring: W6f (tint depth: ui-success-text at /10 vs /40 FearGreedHeaderChip), W7 (surface: border-control at #fff white vs secondary-950 input field)
 ```
 
 ---

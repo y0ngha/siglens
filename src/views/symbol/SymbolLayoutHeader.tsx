@@ -64,9 +64,15 @@ export function SymbolLayoutHeader({
         openSignupNudge,
     } = useSymbolModel();
 
+    /*
+     * 헤더 자체는 전폭으로 두고 좌우 여백·최대 폭은 안쪽 `symbol-container`가
+     * 갖는다. 이전에는 헤더가 `px-4` 전폭이라 본문(`max-w-5xl` 중앙 정렬)과
+     * 어긋났다 — 실측 1280px에서 128px, 1920px에서 448px.
+     * 탭 줄은 계속 전폭으로 흘러야 스크롤 스트립이 화면 끝까지 닿는다.
+     */
     return (
-        <header className="relative z-40 px-4 py-3">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+        <header className="relative z-40 py-3">
+            <div className="symbol-container flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                 <div className="flex min-w-0 items-center gap-2 sm:flex-1">
                     <Link
                         href="/"
@@ -78,7 +84,7 @@ export function SymbolLayoutHeader({
                     >
                         SIGLENS
                     </Link>
-                    <span className="text-secondary-700">/</span>
+                    <span className="text-secondary-500">/</span>
                     {/* 종목 브레드크럼은 5개 sibling 페이지(/[symbol], /news,
                         /fundamental, /options, /overall, /fear-greed)에 공통으로
                         렌더되므로 h1으로 두면 페이지별 sr-only h1과 충돌해 페이지당
@@ -157,7 +163,7 @@ export function SymbolLayoutHeader({
                 </div>
             </div>
 
-            <div className="-mx-4 mt-3">
+            <div className="mt-3">
                 <Suspense fallback={<SymbolTabsSkeleton />}>
                     <SymbolTabs symbol={symbol} />
                 </Suspense>

@@ -21,3 +21,20 @@ export function findElementByType(
     const childProps = node.props as { children?: ReactNode };
     return findElementByType(childProps.children, type);
 }
+
+/**
+ * 같은 타입의 요소를 **전부** 모은다. `findElementByType`은 첫 일치에서 멈추므로
+ * "한 번만 렌더됐는가"를 물을 수 없다 — 중복이야말로 확인해야 할 결함일 때가 있다.
+ */
+export function findAllElementsByType(
+    node: ReactNode,
+    type: unknown
+): ReactElement[] {
+    if (Array.isArray(node)) {
+        return node.flatMap(child => findAllElementsByType(child, type));
+    }
+    if (!isValidElement(node)) return [];
+    const childProps = node.props as { children?: ReactNode };
+    const nested = findAllElementsByType(childProps.children, type);
+    return node.type === type ? [node, ...nested] : nested;
+}

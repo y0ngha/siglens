@@ -61,4 +61,10 @@ describe('NotFound page', () => {
             expect.objectContaining({ index: false })
         );
     });
+
+    /*
+     * 테마 적용은 `ContactDialog`가 한다(그 파일의 주석 참고 — 전용 컴포넌트를
+     * 두면 홈 first-load가 17.3KB 늘어난다). 여기서는 그 컴포넌트가 렌더되는지만
+     * 보고, 실제 속성이 찍히는지는 `ContactDialog.test.tsx`와 e2e가 본다.
+     */
 });

@@ -70,6 +70,7 @@ import {
     profileIdForSymbol,
     type MarketProfileId,
 } from '@/shared/config/marketProfile';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 // 종목당 SEO 콘텐츠는 고정이고 동적 데이터는 클라가 재hydrate한다. 엣지 캐시로
 // compute 호출을 줄인다. (일시 인프라 장애의 404 캐싱은 getAssetInfo strict로 차단)
@@ -183,14 +184,11 @@ function ProfileCardSkeleton({ symbol }: ProfileCardSkeletonProps) {
     return (
         <section
             aria-labelledby="profile-heading"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <h2
-                        id="profile-heading"
-                        className="text-xl font-semibold tracking-tight"
-                    >
+                    <h2 id="profile-heading" className={HEADING_SECTION}>
                         <span className="inline-block h-5 w-36 animate-pulse rounded bg-secondary-700 align-middle" />
                         <span className="ml-2 text-base font-normal text-secondary-400">
                             ({symbol})
@@ -199,7 +197,7 @@ function ProfileCardSkeleton({ symbol }: ProfileCardSkeletonProps) {
                     <div className="mt-1 h-4 w-28 animate-pulse rounded bg-secondary-700" />
                 </div>
                 <div className="text-right">
-                    <span className="text-xs tracking-widest text-secondary-400 uppercase">
+                    <span className="text-xs tracking-[0.01em] text-secondary-400">
                         시가총액
                     </span>
                     <div className="mt-0.5 h-6 w-20 animate-pulse rounded bg-secondary-700" />
@@ -630,7 +628,7 @@ export default async function FundamentalPage({ params }: Props) {
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
-            <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+            <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>
                     {displayName} 재무지표와 애널리스트 의견
                 </SymbolPageHeading>

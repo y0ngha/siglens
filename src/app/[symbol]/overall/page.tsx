@@ -420,7 +420,7 @@ export default async function OverallPage({ params }: Props) {
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
-            <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+            <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>{copy.heading}</SymbolPageHeading>
                 {/* AI 스냅샷 프로즈는 Suspense fallback이 아니라 PERSISTENT server
                     sibling으로 마운트한다(audit fix — fallback 안에 두면 React가

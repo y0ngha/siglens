@@ -1,3 +1,5 @@
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { cn } from '@/shared/lib/cn';
 export function OptionsAiAnalysisStaleNotice() {
     // sibling OptionsAiAnalysis는 <section aria-labelledby="...">로 landmark 역할.
     // 같은 region을 mutually exclusive 상태(stale vs ready)로 노출하므로 wrapper
@@ -5,11 +7,11 @@ export function OptionsAiAnalysisStaleNotice() {
     return (
         <section
             aria-labelledby="options-ai-analysis-heading"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2
                 id="options-ai-analysis-heading"
-                className="mb-3 text-xs tracking-widest text-secondary-400 uppercase"
+                className={cn('mb-3', HEADING_SECTION)}
             >
                 AI 옵션 분석
             </h2>

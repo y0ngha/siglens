@@ -2,6 +2,7 @@
 
 import { cn } from '@/shared/lib/cn';
 import type { AssetClass } from '@/shared/config/marketProfile';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface OverallTriggerCtaProps {
     onTrigger: () => void;
@@ -34,11 +35,11 @@ export function OverallTriggerCta({
         <section
             aria-labelledby="overall-cta-heading"
             aria-busy={disabled}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-12 text-center"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-12 text-center"
         >
             <h2
                 id="overall-cta-heading"
-                className="text-2xl font-semibold text-balance"
+                className={cn(HEADING_SECTION, 'text-balance')}
             >
                 AI 종합 분석
             </h2>
@@ -50,9 +51,9 @@ export function OverallTriggerCta({
                 onClick={onTrigger}
                 disabled={disabled}
                 className={cn(
-                    'mt-6 inline-flex items-center rounded-md px-6 py-3 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+                    'mt-6 inline-flex items-center rounded-lg px-6 py-3 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                     disabled
-                        ? 'bg-secondary-600 focus-visible:ring-secondary-500 cursor-not-allowed opacity-60'
+                        ? 'bg-secondary-600 text-secondary-50 focus-visible:ring-secondary-500 cursor-not-allowed opacity-60'
                         : 'bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500'
                 )}
             >

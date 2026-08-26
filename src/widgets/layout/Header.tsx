@@ -2,6 +2,7 @@ import { HeaderMobileMenu } from './HeaderMobileMenu';
 import { HeaderNav } from './HeaderNav';
 import { HeaderNavStatic } from './HeaderNavStatic';
 import { HeaderUserMenu, type HeaderUserMenuUser } from './HeaderUserMenu';
+import { ThemeToggle } from '@/shared/ui/ThemeToggle';
 import { NAV_TREE } from './headerNavTree';
 import { HeaderSearch } from '@/features/ticker-search';
 import { SITE_NAME } from '@/shared/lib/seo';
@@ -25,8 +26,11 @@ interface HeaderProps {
 // 최상위 <header>는 암시적으로 role="banner"이므로 role을 명시하지 않는다(중복 ARIA).
 export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
     return (
-        <header className="sticky top-0 z-50 border-b border-secondary-800 bg-secondary-900/90 backdrop-blur-md supports-backdrop-filter:bg-secondary-900/75">
-            <div className="flex h-14 items-center gap-2 px-3 sm:gap-4 sm:px-6">
+        <header className="sticky top-0 z-50 border-b border-secondary-700 bg-secondary-900/90 backdrop-blur-md supports-backdrop-filter:bg-secondary-900/75">
+            {/* 헤더 내용도 본문과 같은 폭 규약을 따라야 로고와 본문 좌측이
+                정렬된다. 이전에는 헤더만 전체 폭을 써서 초광폭 화면에서
+                로고가 본문보다 한참 왼쪽에 떨어져 있었다. */}
+            <div className="page-container flex h-14 items-center gap-2 sm:gap-4">
                 <Link
                     href="/"
                     title="홈으로"
@@ -88,6 +92,7 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                     `features/ticker-search/ui/HeaderSearch` JSDoc 참고. */}
                 <HeaderSearch />
                 <div className="flex shrink-0 items-center">
+                    <ThemeToggle />
                     <HeaderUserMenu
                         currentUser={currentUser}
                         loading={loadingUserMenu}

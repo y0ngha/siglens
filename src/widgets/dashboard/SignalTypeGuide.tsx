@@ -1,3 +1,6 @@
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+
 const ENTRIES = [
     {
         term: '골든크로스',
@@ -36,12 +39,12 @@ const ENTRIES = [
 export function SignalTypeGuide() {
     return (
         <section
-            className="px-6 py-10 lg:px-[15vw]"
+            className="page-container py-10"
             aria-labelledby="signal-guide-heading"
         >
             <h2
                 id="signal-guide-heading"
-                className="mb-6 text-sm font-semibold tracking-[0.15em] text-secondary-200 uppercase"
+                className={cn('mb-6', HEADING_SECTION)}
             >
                 신호 유형 가이드
             </h2>

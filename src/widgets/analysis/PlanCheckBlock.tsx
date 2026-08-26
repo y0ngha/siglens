@@ -120,12 +120,12 @@ export function PlanCheckBlock({ planCheck }: PlanCheckBlockProps) {
     return (
         <section
             className={cn(
-                'flex flex-col gap-1 rounded-md border px-3 py-2',
+                'flex flex-col gap-1 rounded-lg border px-3 py-2',
                 SEVERITY_STYLE[severity]
             )}
         >
             <header className="flex items-center">
-                <span className="text-[10px] font-semibold tracking-wide text-secondary-400 uppercase">
+                <span className="text-xs font-semibold text-secondary-400">
                     현재가 기준 검산
                 </span>
                 <InfoTooltip>

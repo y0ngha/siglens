@@ -6,8 +6,8 @@ export interface StrengthDisplay {
 }
 
 const SIGNAL_STRENGTH_CONFIG: Record<SignalStrength, StrengthDisplay> = {
-    strong: { label: '강한 시그널', color: 'text-chart-bullish' },
-    moderate: { label: '보통 시그널', color: 'text-ui-warning' },
+    strong: { label: '강한 시그널', color: 'text-ui-success-text' },
+    moderate: { label: '보통 시그널', color: 'text-ui-warning-text' },
     weak: { label: '약한 시그널', color: 'text-secondary-400' },
 };
 

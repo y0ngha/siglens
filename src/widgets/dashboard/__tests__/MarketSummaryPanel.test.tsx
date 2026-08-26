@@ -380,8 +380,15 @@ describe('MarketSummaryPanel', () => {
             sectorMap,
         });
         const { container } = render(<MarketSummaryPanel scope={TEST_SCOPE} />);
-        const grids = container.querySelectorAll('.grid-cols-3');
+        /* 3개짜리 섹터 그룹은 `sm` 이상에서 3열이 된다. 이전에는 반응형 접두사
+           없는 `grid-cols-3`이라 320px에서도 3열이었고, 카드가 66px로 눌리면서
+           `shrink-0`인 등락률 배지가 카드를 33px 넘겨 가격이 잘렸다. */
+        const grids = container.querySelectorAll('.sm\\:grid-cols-3');
         expect(grids.length).toBeGreaterThan(0);
+        /* 모바일 2열 회귀 가드 — 이 클래스가 빠지면 위 결함이 그대로 돌아온다. */
+        grids.forEach(g => {
+            expect(g.className.split(/\s+/)).toContain('grid-cols-2');
+        });
     });
 });
 

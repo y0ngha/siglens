@@ -18,7 +18,7 @@ export function StatsBar({ skills }: StatsBarProps) {
     return (
         <ul
             aria-label="Siglens 분석 규모"
-            className="mt-6 flex list-none flex-wrap items-center justify-center gap-x-2 p-0 font-mono text-xs text-secondary-400 lg:justify-start"
+            className="mt-6 flex list-none flex-wrap items-center justify-center gap-x-2 p-0 text-xs text-secondary-400 tabular-nums lg:justify-start"
         >
             {stats.map((stat, i) => (
                 <Fragment key={stat.label}>

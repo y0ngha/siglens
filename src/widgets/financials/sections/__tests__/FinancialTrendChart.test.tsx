@@ -179,3 +179,56 @@ describe('FinancialTrendChart', () => {
         expect(screen.queryByTestId('chart-tooltip')).toBeNull();
     });
 });
+
+/**
+ * 범례가 거짓말하지 않아야 한다.
+ *
+ * 예전에는 값이 음수면 시리즈 선언 색을 무시하고 `bearish`로 덮었다. 현금흐름표의
+ * 범례는 영업CF 초록 / FCF 파랑 / CapEx 빨강인데, FCF가 음수인 기간에는 FCF 막대가
+ * 빨강으로 그려져 CapEx와 구분되지 않았다 — 파란 범례 칩이 가리키는 막대가 화면에
+ * 없는 상태다. 부호는 baseline 위/아래 방향이 이미 나른다.
+ */
+describe('음수 값의 막대 색', () => {
+    const PERIODS = ['2023', '2024'];
+
+    it('선언된 색을 가진 시리즈는 음수라도 그 색을 지킨다', () => {
+        const { container } = render(
+            <FinancialTrendChart
+                periods={PERIODS}
+                series={[
+                    {
+                        labelKo: 'FCF',
+                        values: [-100, 200],
+                        color: 'bullish' as const,
+                    },
+                ]}
+            />
+        );
+        const bars = [...container.querySelectorAll('rect[rx="1"]')];
+        expect(bars.length).toBe(2);
+        // 음수 기간(첫 막대)도 bullish 채움이어야 한다.
+        expect(bars[0].getAttribute('class')).toContain('fill-chart-bullish');
+        expect(bars[0].getAttribute('class')).not.toContain(
+            'fill-chart-bearish'
+        );
+    });
+
+    it('중립 시리즈는 음수에서 bearish로 갈린다 — 색에 뜻이 없으므로 정보가 는다', () => {
+        const { container } = render(
+            <FinancialTrendChart
+                periods={PERIODS}
+                series={[
+                    {
+                        labelKo: '순부채',
+                        values: [-100, 200],
+                        color: 'neutral' as const,
+                    },
+                ]}
+            />
+        );
+        const bars = [...container.querySelectorAll('rect[rx="1"]')];
+        expect(bars.length).toBe(2);
+        expect(bars[0].getAttribute('class')).toContain('fill-chart-bearish');
+        expect(bars[1].getAttribute('class')).toContain('fill-primary-500');
+    });
+});

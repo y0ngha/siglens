@@ -15,6 +15,9 @@ const { mockCreateChart } = vi.hoisted(() => {
         })),
         subscribeCrosshairMove: vi.fn(),
         priceScale: vi.fn(() => ({ applyOptions: vi.fn() })),
+        panes: vi.fn(() => [
+            { getHeight: () => 200, setStretchFactor: vi.fn() },
+        ]),
     }));
     return { mockCreateChart };
 });
@@ -39,6 +42,12 @@ vi.mock('@/shared/lib/chartColors', () => ({
         bearish: '#ef5350',
     },
     getPeriodColor: (period: number) => `#color-${period}`,
+    /* 차트 크롬을 런타임 테마에서 읽는 리졸버. 테스트는 다크 고정이면 충분하다. */
+    getChartChrome: () => ({
+        background: '#1a1a2e',
+        grid: '#2a2a3e',
+        text: '#a0a0b0',
+    }),
 }));
 
 vi.mock('@/shared/lib/timeFormat', () => ({

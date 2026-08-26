@@ -45,14 +45,14 @@ export function CategoryCard({
     previewHeadlines,
 }: CategoryCardProps) {
     return (
-        <article className="flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-5 transition-colors hover:border-primary-500/50">
+        <article className="flex w-full min-w-0 flex-col overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-5 transition-colors hover:border-primary-500/50">
             {/*
                 **제목이 링크다.** 예전에는 아래 `더보기 →`만 링크라, 이 카드가 거는
                 내부 링크의 앵커 텍스트가 전부 "더보기"였다 — 목적지가 무엇에 관한
                 페이지인지 알려 주는 신호가 0이다. 키워드를 가진 것은 제목이므로
                 제목을 링크로 만든다.
             */}
-            <h2 className="mb-1 text-base font-semibold tracking-tight text-balance">
+            <h2 className="mb-1 text-base font-semibold tracking-tight text-balance text-secondary-100">
                 <Link
                     href={href}
                     // 카드 그리드로 다수 렌더 — docs/architecture/CDN_CACHING.md §1

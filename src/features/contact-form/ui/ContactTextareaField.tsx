@@ -46,8 +46,8 @@ export function ContactTextareaField({
                     .filter(Boolean)
                     .join(' ')}
                 className={cn(
-                    'border-secondary-700 bg-secondary-950 text-secondary-50 placeholder:text-secondary-500 focus-visible:border-primary-500 focus-visible:ring-primary-500/40 min-h-32 w-full resize-y rounded-md border px-4 py-3 text-sm leading-relaxed focus-visible:ring-2 focus-visible:outline-none',
-                    error && 'border-ui-danger/60'
+                    'border-border-control bg-secondary-950 text-secondary-50 placeholder:text-secondary-500 focus-visible:border-primary-500 focus-visible:ring-primary-500/40 min-h-32 w-full resize-y rounded-lg border px-4 py-3 text-sm leading-relaxed focus-visible:ring-2 focus-visible:outline-none',
+                    error && 'border-ui-danger'
                 )}
             />
             <p id={helperId} className="text-right text-xs text-secondary-500">
@@ -57,7 +57,7 @@ export function ContactTextareaField({
                 <div
                     id={errorId}
                     role="alert"
-                    className="flex items-start gap-1 text-sm text-ui-danger"
+                    className="flex items-start gap-1 text-sm text-ui-danger-text"
                 >
                     <span aria-hidden>⚠</span>
                     <span>{error}</span>

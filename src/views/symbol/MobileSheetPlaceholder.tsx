@@ -46,10 +46,10 @@ export function MobileSheetPlaceholder() {
         <div
             data-mobile-sheet-placeholder=""
             aria-hidden="true"
-            // 실제 Drawer.Content와 같은 표면: rounded-t-2xl / border-t / bg / shadow.
+            // 실제 Drawer.Content와 같은 표면: rounded-t-lg / border-t / bg / shadow.
             // 높이만 다르다 — 실제 시트는 h-[97svh]를 translateY로 밀어 PEEK 띠만
             // 보이지만, 껍데기는 그 띠 높이를 그대로 갖는다.
-            className="fixed inset-x-0 bottom-0 z-40 flex h-(--peek-band) flex-col overflow-hidden rounded-t-2xl border-t border-secondary-700 bg-secondary-900 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.6)] md:hidden"
+            className="fixed inset-x-0 bottom-0 z-40 flex h-(--peek-band) flex-col overflow-hidden rounded-t-lg border-t border-secondary-700 bg-secondary-900 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.6)] md:hidden"
             // 높이는 상수에서 계산되므로 정적 Tailwind 클래스가 될 수 없다. MISTAKES.md #19에
             // 따라 raw `style` 대신 CSS 커스텀 프로퍼티 + arbitrary value로 넘긴다.
             style={
@@ -61,7 +61,7 @@ export function MobileSheetPlaceholder() {
             {/* vaul `[data-vaul-handle]`의 기본 지오메트리를 그대로 복제한다
                 (32×5, opacity .7, #e2e2e4, border-radius 1rem, 좌우 auto 마진).
                 교체 순간 손잡이가 튀지 않도록 하기 위함이다. */}
-            <div className="mx-auto h-[5px] w-8 shrink-0 rounded-2xl bg-vaul-handle opacity-70" />
+            <div className="mx-auto h-[5px] w-8 shrink-0 rounded-lg bg-vaul-handle opacity-70" />
             <div className="min-h-0 flex-1 px-4 pt-3">
                 <p className="text-sm font-medium text-secondary-400">
                     AI 분석

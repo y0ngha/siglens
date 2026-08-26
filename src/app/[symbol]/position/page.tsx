@@ -3,7 +3,7 @@ import {
     computePosition,
     computeVolumeByBand,
     describeAvgFloor,
-    formatAmount,
+    formatAmountAligned,
     PositionTabContent,
 } from '@/widgets/portfolio-position';
 import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
@@ -43,6 +43,7 @@ import {
 import { JsonLd } from '@/shared/ui/JsonLd';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 // 12h — "내 위치"는 최근 가격 범위(low52w/high52w/lastClose)만 SSR로 내려주는
 // 느리게 변하는 개인화 표층이다. ★평단/수익률은 client(hydration+user 게이트)라
@@ -86,6 +87,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const displayName = buildDisplayName(assetInfo, upper);
 
     if (!(await isTabAllowedForSymbol(upper, 'position'))) {
+        return noindexSymbolMetadata(upper, {
+            displayName,
+            koreanName: assetInfo.koreanName,
+        });
+    }
+
+    /*
+     * 본문과 메타데이터가 **같은 조건**을 봐야 한다.
+     *
+     * 예전에는 여기서 `robots`를 무조건 index로 두었는데, 본문의 유일한 고유
+     * 콘텐츠(가격 위치 가이드 섹션)는 `resolvePriceRange`가 null이면 통째로
+     * 생략된다 — CTA는 `useHydrated` 게이트라 SSR에 안 실린다. 그러면 h1과
+     * 문단 하나뿐인 페이지가 색인 대상으로 나갔다(실측: `<main>` 안 `<a>` 0개).
+     * 2026-07 thin-content 사태가 정확히 그 형태였다.
+     *
+     * `getQuantizedBarsStatic`은 같은 요청 안에서 dedupe되므로 본문이 곧 다시
+     * 부르는 값을 여기서 미리 부르는 비용은 없다. sibling 탭(overall/fundamental)이
+     * 쓰는 본문-메타 일치 패턴과 같다.
+     */
+    const range = await resolvePriceRange(
+        upper,
+        assetInfo.fmpSymbol,
+        marketProfileOf(assetInfo)
+    );
+    if (range === null) {
         return noindexSymbolMetadata(upper, {
             displayName,
             koreanName: assetInfo.koreanName,
@@ -255,14 +281,26 @@ interface CurrentPricePosition {
     tone: string;
 }
 
-const RANGE_TONE_HIGH_THRESHOLD = 70;
-const RANGE_TONE_LOW_THRESHOLD = 30;
-
-function describeRangeTone(percentile: number): string {
-    if (percentile >= RANGE_TONE_HIGH_THRESHOLD) {
+/**
+ * 층 라벨과 **같은 밴드 경계**로 톤을 고른다.
+ *
+ * 예전에는 70/30 퍼센타일 리터럴을 썼는데, 층 라벨은 `BAND_COUNT`(=5) 기준
+ * 20% 폭 밴드를 쓴다. 두 경계가 어긋나 60~70% 구간에서
+ * "68% 지점 — 4층 · 고층에 해당합니다. 최근 1년 고점과 저점 사이 중간
+ * 지점이에요."처럼 한 문장 안에서 스스로를 부정했다(NVDA·005930.KS 실측).
+ * 20~30% 구간도 "중층 + 하단부"로 같은 모순이 났다.
+ *
+ * `describeFloorTier`의 매핑(0→저층, 1~2→중층, 3→고층, 4→펜트하우스)을 따라
+ * 최하 밴드는 하단부, 상위 두 밴드는 상단부, 나머지는 중간이다. 리터럴이
+ * 아니라 밴드 인덱스에서 파생하므로 `BAND_COUNT`가 바뀌어도 함께 움직인다.
+ */
+function describeRangeTone(currentPos: number): string {
+    const band = Math.min(BAND_COUNT - 1, Math.floor(currentPos * BAND_COUNT));
+    // 고층(BAND_COUNT-2)과 펜트하우스(BAND_COUNT-1).
+    if (band >= BAND_COUNT - 2) {
         return '최근 1년 고점에 가까운 상단부예요.';
     }
-    if (percentile <= RANGE_TONE_LOW_THRESHOLD) {
+    if (band === 0) {
         return '최근 1년 저점에 가까운 하단부예요.';
     }
     return '최근 1년 고점과 저점 사이 중간 지점이에요.';
@@ -306,7 +344,9 @@ function resolveCurrentPricePosition(
             model.currentClamped,
             BAND_COUNT
         ),
-        tone: describeRangeTone(percentile),
+        // 반올림된 퍼센타일이 아니라 `describeAvgFloor`가 받는 것과 **같은**
+        // 원본 위치를 넘긴다 — 반올림을 거치면 경계에서 둘이 또 갈린다.
+        tone: describeRangeTone(model.currentPos),
     };
 }
 
@@ -395,21 +435,21 @@ export default async function PositionPage({ params }: Props) {
                 {range && currentPricePosition && (
                     <section
                         aria-labelledby="position-guide-heading"
-                        className="space-y-3 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5"
+                        className="space-y-3 rounded-lg border border-secondary-700 bg-secondary-800/30 p-5"
                     >
                         <h2
                             id="position-guide-heading"
-                            className="text-base font-semibold text-secondary-300"
+                            className={HEADING_SECTION}
                         >
                             {displayName} 지금 가격은 이 아파트 몇 층?
                         </h2>
                         <p className="text-sm leading-relaxed text-secondary-400">
                             {displayName}의 최근 52주 범위는{' '}
-                            {formatAmount(range.low52w, upper)} ~{' '}
-                            {formatAmount(range.high52w, upper)}이고, 현재가{' '}
-                            {formatAmount(range.lastClose, upper)}는 이 범위의{' '}
-                            {currentPricePosition.percentile}% 지점 —{' '}
-                            {currentPricePosition.floorLabel}에 해당합니다.{' '}
+                            {formatAmountAligned(range.low52w, upper)} ~{' '}
+                            {formatAmountAligned(range.high52w, upper)}이고,
+                            현재가 {formatAmountAligned(range.lastClose, upper)}
+                            는 이 범위의 {currentPricePosition.percentile}% 지점
+                            — {currentPricePosition.floorLabel}에 해당합니다.{' '}
                             {currentPricePosition.tone} 아래에서 보유종목을
                             등록하면 같은 건물 안에서 내가 산 층까지 함께 확인할
                             수 있어요.

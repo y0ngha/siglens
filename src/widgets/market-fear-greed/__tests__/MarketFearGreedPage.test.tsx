@@ -133,4 +133,30 @@ describe('MarketFearGreedPage', () => {
             expect(container.querySelector('svg[role="img"]')).toBeNull();
         });
     });
+
+    /*
+     * 섹션 제목 톤 회귀 가드.
+     *
+     * 이 페이지의 h2 두 개는 원래 `text-sm font-medium text-secondary-300`이라
+     * 자기가 거느린 h3(14px/500)보다 **어두웠다** — 같은 크기·굵기에 더 흐린,
+     * 뒤집힌 위계였다. `HEADING_SECTION`으로 옮겨 18px/600으로 올렸는데,
+     * 이 톤을 고정하는 테스트가 없어 같은 드리프트가 조용히 돌아올 수 있었다.
+     * (`/market`에서 실제로 그렇게 재발했다.)
+     */
+    it('섹션 제목이 HEADING_SECTION 톤을 유지한다', () => {
+        const { getAllByRole } = render(
+            <MarketFearGreedPage market="us" view={view} />
+        );
+        const headings = getAllByRole('heading', { level: 2 });
+        expect(headings).toHaveLength(2);
+        for (const h of headings) {
+            const tokens = h.className.split(/\s+/);
+            expect(tokens).toContain('text-lg');
+            expect(tokens).toContain('font-semibold');
+            expect(tokens).toContain('text-secondary-100');
+            /* 이전 톤으로의 회귀를 직접 막는다. */
+            expect(tokens).not.toContain('text-sm');
+            expect(tokens).not.toContain('font-medium');
+        }
+    });
 });

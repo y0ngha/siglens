@@ -109,3 +109,27 @@ describe('indicatorLabelKoFromMaps', () => {
         );
     });
 });
+
+/**
+ * 한국어 페이지에 영문 이벤트명이 섞여 있었다 — 같은 패널에서
+ * "수출물가지수 전년比" 옆에 "50-Year KTB Auction"이 나란히 놓였고,
+ * 프로덕션에서도 같았다. 사전에 없으면 원문을 그대로 내보내는 설계라
+ * 조용히 영문으로 남는다.
+ */
+describe('한국 캘린더 이벤트명', () => {
+    it.each([
+        ['50-Year KTB Auction (Aug)', '국고채 50년 입찰'],
+        ['10-Year KTB Auction', '국고채 10년 입찰'],
+        ['Consumer Confidence (Aug)', '소비자심리지수'],
+        ['Business Confidence', '기업경기실사지수'],
+        ['M3 Money Supply (Jun)', 'M3 통화량'],
+    ])('%s → 한국어', (raw, expected) => {
+        expect(indicatorLabelKoFromMaps(raw, {})).toContain(expected);
+    });
+
+    it('사전에 없는 이름은 원문을 유지한다 — 임의 번역을 지어내지 않는다', () => {
+        expect(indicatorLabelKoFromMaps('Totally Unknown Series', {})).toBe(
+            'Totally Unknown Series'
+        );
+    });
+});

@@ -137,47 +137,55 @@ export function SymbolPageClient({
                 {/* Chart-only timeframe controls live inside this overflow-hidden chart
                     container so the layout header can stay free of useSearchParams
                     (which would force PPR to mark the whole route as dynamic). */}
-                <div className="flex flex-col gap-2 border-b border-secondary-700 px-4 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-1.5">
-                    {/* 차트 페이지 가시 h1: jail(first-viewport 고정 + overflow-hidden)이라
+                {/* 이 바는 위의 헤더·탭(`symbol-container`, max-w-5xl 중앙 정렬)이 아니라
+                    아래의 차트/AI 레일 2-pane에 정렬한다 — 자기가 제어하는 대상이 그쪽이기
+                    때문이다. 한때 `symbol-container`를 걸었더니 vw=1600에서 캔버스가
+                    0~894인데 타임프레임 버튼이 961~1246으로 레일 위에 떠 실측으로 잡혔다.
+                    `px-4`면 h1은 캔버스 좌단(0)에서 16px, 셀렉터 우단은 레일 우단(vw−16)과
+                    같은 선에 놓인다. */}
+                <div className="border-b border-secondary-700 px-4 py-2 sm:py-1.5">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                        {/* 차트 페이지 가시 h1: jail(first-viewport 고정 + overflow-hidden)이라
                         본문에 별도 블록을 얹으면 chart 가시 영역이 침범된다. 그래서
                         timeframe bar 행에 짧은 한 줄로 둔다(truncate로 좁은 화면에서
                         TimeframeSelector와 한 줄 공존). 단 이 컴포넌트는 useSearchParams로
                         CSR-bailout되므로 이 가시 h1은 SSR HTML엔 박히지 않는다 — JS 미실행
                         크롤러용 h1은 page.tsx의 Suspense fallback에 동일 텍스트 sr-only h1으로
                         제공하고, hydration 후 이 가시 h1이 fallback을 대체한다. */}
-                    <div className="flex min-w-0 items-center gap-2">
-                        <h1 className="line-clamp-2 min-w-0 text-sm font-semibold text-secondary-100 sm:line-clamp-none sm:truncate sm:text-base">
-                            {buildChartPageHeading(displayName)}
-                        </h1>
-                        {/*
-                         * 분석 시트를 여는 명시적 버튼(모바일 전용).
-                         *
-                         * 이게 없으면 시트를 여는 유일한 방법이 PEEK 띠를 잡고 드래그하는
-                         * 것뿐이다. 그런데 띠 높이는 `snap − PEEK_VISIBLE_OFFSET`이고, 시트는 `97svh`
-                         * 고정인 반면 vaul은 오프셋을 `window.innerHeight`로 잡는다 —
-                         * 모바일 툴바가 접혀 innerHeight가 svh보다 커지면 띠가 얇아지고,
-                         * 극단적으로는 0에 수렴해 **잡을 것이 사라진다**. 그 상태에서는
-                         * 제품의 핵심인 AI 분석 패널에 재로드 전까지 접근할 수 없다.
-                         * 이 버튼은 시트 밖(항상 보이는 타임프레임 바)에 있으므로 띠
-                         * 높이와 무관하게 살아 있다.
-                         *
-                         * 세로 공간을 새로 쓰지 않도록 h1과 같은 행의 남는 폭에 둔다 —
-                         * 이 영역은 first-viewport jail이라 한 줄이 늘면 차트가 그만큼 줄어든다.
-                         */}
-                        <button
-                            type="button"
-                            onClick={() => setSheetSnap(SNAP_FULL)}
-                            className="shrink-0 touch-manipulation rounded-lg border border-secondary-700 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-secondary-300 transition-colors hover:border-secondary-600 hover:bg-secondary-700/30 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none md:hidden"
-                        >
-                            AI 분석 보기
-                        </button>
+                        <div className="flex min-w-0 items-center gap-2">
+                            <h1 className="line-clamp-2 min-w-0 text-sm font-semibold text-secondary-50 sm:line-clamp-none sm:truncate sm:text-base">
+                                {buildChartPageHeading(displayName)}
+                            </h1>
+                            {/*
+                             * 분석 시트를 여는 명시적 버튼(모바일 전용).
+                             *
+                             * 이게 없으면 시트를 여는 유일한 방법이 PEEK 띠를 잡고 드래그하는
+                             * 것뿐이다. 그런데 띠 높이는 `snap − PEEK_VISIBLE_OFFSET`이고, 시트는 `97svh`
+                             * 고정인 반면 vaul은 오프셋을 `window.innerHeight`로 잡는다 —
+                             * 모바일 툴바가 접혀 innerHeight가 svh보다 커지면 띠가 얇아지고,
+                             * 극단적으로는 0에 수렴해 **잡을 것이 사라진다**. 그 상태에서는
+                             * 제품의 핵심인 AI 분석 패널에 재로드 전까지 접근할 수 없다.
+                             * 이 버튼은 시트 밖(항상 보이는 타임프레임 바)에 있으므로 띠
+                             * 높이와 무관하게 살아 있다.
+                             *
+                             * 세로 공간을 새로 쓰지 않도록 h1과 같은 행의 남는 폭에 둔다 —
+                             * 이 영역은 first-viewport jail이라 한 줄이 늘면 차트가 그만큼 줄어든다.
+                             */}
+                            <button
+                                type="button"
+                                onClick={() => setSheetSnap(SNAP_FULL)}
+                                className="shrink-0 touch-manipulation rounded-lg border border-border-control px-2.5 py-1 text-xs font-medium whitespace-nowrap text-secondary-300 transition-colors hover:border-primary-500 hover:bg-secondary-700/30 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none md:hidden"
+                            >
+                                AI 분석 보기
+                            </button>
+                        </div>
+                        <TimeframeSelector
+                            value={timeframe}
+                            onChange={handleTimeframeChange}
+                            isFreeTier={isFreeTier}
+                            isTierHydrated={isTierHydrated}
+                        />
                     </div>
-                    <TimeframeSelector
-                        value={timeframe}
-                        onChange={handleTimeframeChange}
-                        isFreeTier={isFreeTier}
-                        isTierHydrated={isTierHydrated}
-                    />
                 </div>
                 <div className="relative flex min-h-0 flex-1 overflow-hidden">
                     <ErrorBoundary

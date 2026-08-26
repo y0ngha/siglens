@@ -85,8 +85,8 @@ export function AnalysisSettingsMenu({
                 aria-label={accessibleLabel}
                 title={accessibleLabel}
                 className={cn(
-                    'border-secondary-700 text-secondary-300 relative inline-flex size-11 items-center justify-center rounded-lg border',
-                    'hover:border-secondary-600 hover:bg-secondary-700/30 hover:text-secondary-100',
+                    'border-border-control text-secondary-300 relative inline-flex size-11 items-center justify-center rounded-lg border',
+                    'hover:border-primary-500 hover:bg-secondary-700/30 hover:text-secondary-100',
                     'focus-visible:ring-primary-500 focus-visible:ring-2 focus-visible:outline-none',
                     'touch-manipulation transition-colors'
                 )}
@@ -113,7 +113,7 @@ export function AnalysisSettingsMenu({
                 >
                     <h2
                         id={titleId}
-                        className="text-xs font-semibold tracking-wide text-secondary-100"
+                        className="text-base font-semibold text-secondary-100"
                     >
                         분석 설정
                     </h2>

@@ -1,5 +1,10 @@
 import { render, screen } from '@testing-library/react';
 
+vi.mock('next/navigation', () => ({
+    // `AuthCrossLink`가 `next`를 읽어 링크에 이어 붙인다 — 셸 렌더 테스트도
+    // 라우터 컨텍스트가 필요하다.
+    useSearchParams: () => new URLSearchParams(),
+}));
 vi.mock('@/app/login/LoginContent', () => ({
     LoginContent: () => <div data-testid="login-content" />,
 }));

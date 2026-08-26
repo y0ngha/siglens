@@ -6,12 +6,14 @@ import {
 import { cn } from '@/shared/lib/cn';
 
 // alpha /40 vs /20 = EXTREME vs base intensity (no separate extreme tokens in design system).
+// 텍스트는 반드시 `-text` 변형을 쓴다 — 기본 `ui-*`는 그래픽(3:1) 기준이라
+// 자기 틴트 위 소형 텍스트로 쓰면 라이트에서 2.5~3.5:1로 미달한다.
 const LABEL_BG: Record<FearGreedLabel, string> = {
-    EXTREME_FEAR: 'bg-ui-danger/40 text-ui-danger',
-    FEAR: 'bg-ui-danger/20 text-ui-danger',
+    EXTREME_FEAR: 'bg-ui-danger/40 text-ui-danger-text',
+    FEAR: 'bg-ui-danger/20 text-ui-danger-text',
     NEUTRAL: 'bg-secondary-700/40 text-secondary-200',
-    GREED: 'bg-ui-success/20 text-ui-success',
-    EXTREME_GREED: 'bg-ui-success/40 text-ui-success',
+    GREED: 'bg-ui-success/20 text-ui-success-text',
+    EXTREME_GREED: 'bg-ui-success/40 text-ui-success-text',
 };
 
 interface FearGreedHeaderChipProps {

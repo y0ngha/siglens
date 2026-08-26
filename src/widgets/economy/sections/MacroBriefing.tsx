@@ -6,6 +6,7 @@ import { cn } from '@/shared/lib/cn';
 import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
 
 import { useMacroBriefing } from '../hooks/useMacroBriefing';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 const REGIME_LABELS: Record<MacroBriefingResponse['regime'], string> = {
     expansion: '확장',
@@ -66,14 +67,11 @@ export function MacroBriefing({ peekSeed }: MacroBriefingProps) {
 function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
     return (
         <section
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             aria-labelledby="macro-briefing-heading"
         >
             <header className="mb-4 flex items-center gap-3">
-                <h2
-                    id="macro-briefing-heading"
-                    className="text-lg font-semibold text-secondary-100"
-                >
+                <h2 id="macro-briefing-heading" className={HEADING_SECTION}>
                     거시 브리핑
                 </h2>
                 <span
@@ -112,7 +110,7 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
 function MacroBriefingSkeleton() {
     return (
         <section
-            className="animate-pulse rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
+            className="animate-pulse rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
             aria-busy="true"
             aria-label="거시 경제 브리핑 로딩 중"
         >
@@ -126,7 +124,7 @@ function MacroBriefingSkeleton() {
 function MacroBriefingBotBlocked() {
     return (
         <section
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6 text-sm text-secondary-300"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6 text-sm text-secondary-300"
             aria-label="거시 경제 브리핑 안내"
         >
             크롤러 접근으로 분석을 생성하지 않았어요.
@@ -137,7 +135,7 @@ function MacroBriefingBotBlocked() {
 function MacroBriefingError({ onRetry }: MacroBriefingErrorProps) {
     return (
         <section
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             role="alert"
             aria-label="거시 경제 브리핑 안내"
         >

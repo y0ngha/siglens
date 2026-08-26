@@ -248,7 +248,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
             <JsonLd data={webPageJsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
-            <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+            <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>
                     {displayName} 공포 탐욕 지수와 단기 매수 분위기
                 </SymbolPageHeading>

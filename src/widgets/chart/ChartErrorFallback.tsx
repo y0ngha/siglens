@@ -15,7 +15,7 @@ export function ChartErrorFallback({
 
     return (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-secondary-900/60">
-            <span className="text-sm text-ui-danger">{errorMessage}</span>
+            <span className="text-sm text-ui-danger-text">{errorMessage}</span>
             <button
                 type="button"
                 onClick={resetErrorBoundary}

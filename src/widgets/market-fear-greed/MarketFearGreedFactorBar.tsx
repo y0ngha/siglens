@@ -11,6 +11,7 @@ import {
     type FearGreedMarketId,
 } from '@/shared/lib/marketFearGreedLabels';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 interface MarketFearGreedFactorBarProps {
     factor: MarketFearGreedFactor;
@@ -26,7 +27,11 @@ const BAR_FILL_COLOR: Record<FearGreedLabel, string> = {
     EXTREME_FEAR: 'bg-ui-danger',
     FEAR: 'bg-ui-warning',
     NEUTRAL: 'bg-secondary-400',
-    GREED: 'bg-ui-success/70',
+    /* `/70`은 트랙 위에서 라이트 2.64:1로 3:1에 못 미친다(실측). 알파를 아예
+       빼면 대비는 5.32/4.18로 좋아지지만 EXTREME_GREED와 **클래스가 같아져**
+       밴드 매핑이 한 칸 밀려도 테스트가 못 잡는다. `/85`가 다크 4.22 ·
+       라이트 3.30으로 양 테마 3:1을 넘으면서 클래스도 구분된다. */
+    GREED: 'bg-ui-success/85',
     EXTREME_GREED: 'bg-ui-success',
 };
 
@@ -39,13 +44,18 @@ export function MarketFearGreedFactorBar({
     const description = MARKET_FACTOR_DESCRIPTION[market][factor.key];
     const pctile = Math.round(factor.percentile);
 
+    /*
+     * 이 행들은 카드 안에 중첩된 블록이 아니라 페이지 위에 바로 놓인다 —
+     * `SURFACE_NESTED`를 쓰면 라이트에서 행은 파이고 형제인 가이드 카드는 떠
+     * 보여, 같은 페이지의 두 패널이 반대 방향으로 읽힌다.
+     */
     return (
-        <section className="flex flex-col gap-2 rounded bg-secondary-800/40 p-3">
+        <section className={cn('flex flex-col gap-2 p-3', SURFACE_CARD)}>
             <header className="flex items-center justify-between">
                 <h3 className="text-sm font-medium text-secondary-200">
                     {label}
                 </h3>
-                <span className="font-mono text-sm text-secondary-100">
+                <span className="font-mono text-sm text-secondary-200">
                     {formatMarketFactorRaw(factor.rawValue)}
                 </span>
             </header>
@@ -70,7 +80,10 @@ export function MarketFearGreedFactorBar({
                     component (no client-side disclosure widget available), and
                     plain text is trivially reachable by screen readers. */}
                 <p className="text-xs text-secondary-500">{description}</p>
-                <span className="shrink-0 font-mono text-xs text-secondary-400">
+                {/* `백분위`가 섞여 있어 모노를 쓸 수 없다 — Geist Mono에 한글
+                    글리프가 없어 OS 폰트로 조용히 폴백한다. 숫자 정렬만 필요하므로
+                    본문 서체의 tabular 숫자를 쓴다. */}
+                <span className="shrink-0 text-xs text-secondary-400 tabular-nums">
                     백분위 {pctile}
                 </span>
             </div>

@@ -29,6 +29,7 @@ import {
 import { TERMS_PATH } from '@/shared/lib/legal';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { KR_ECONOMY_INDICATORS } from '@/shared/config/economyIndicatorsKr';
 
 import { KR_ECONOMY_TITLE } from '../constants';
@@ -220,7 +221,7 @@ function KrEconomyDegraded() {
     return (
         <section
             aria-label="한국 경제 데이터 없음"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <p className="text-sm text-secondary-400">
                 한국 경제 지표를 준비하고 있어요. 잠시 후 다시 확인해 주세요.
@@ -305,7 +306,7 @@ export default function EconomyKrPage() {
                     active="kr"
                     currentPath="/economy/kr"
                 />
-                <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
+                <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
                     {KR_ECONOMY_TITLE}
                 </h1>
                 {/*
@@ -317,10 +318,7 @@ export default function EconomyKrPage() {
                     <KrEconomyContent />
                 </Suspense>
                 <section aria-labelledby="economy-kr-faq-heading">
-                    <h2
-                        id="economy-kr-faq-heading"
-                        className="text-base font-semibold text-secondary-300"
-                    >
+                    <h2 id="economy-kr-faq-heading" className={HEADING_SECTION}>
                         자주 묻는 질문
                     </h2>
                     <dl className="mt-3 space-y-4 text-sm leading-relaxed text-secondary-400">

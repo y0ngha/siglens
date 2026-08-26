@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 import type { FundamentalValuationMetrics } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { cn } from '@/shared/lib/cn';
 
 // 소수 자릿수(digits)가 행마다 달라 단일 상수로 고정할 수 없다. 자릿수별로
 // 포매터를 한 번만 만들어 재사용한다 — 렌더마다 new Intl.NumberFormat 금지.
@@ -19,7 +21,7 @@ function formatDecimal(value: number, digits: number): string {
 }
 
 const HEADING_ID = 'valuation-heading';
-const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
+const HEADING_CLASS_NAME = cn('mb-4', HEADING_SECTION);
 
 interface ValuationCardProps {
     metrics: FundamentalValuationMetrics | null;
@@ -74,7 +76,7 @@ export function ValuationCard({ metrics }: ValuationCardProps) {
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 밸류에이션

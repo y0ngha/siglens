@@ -10,7 +10,7 @@ export function CongressTradesEmpty() {
         <div
             role="status"
             aria-label="의회 거래 내역 없음"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 px-5 py-4"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 px-5 py-4"
         >
             <p className="text-sm text-secondary-400">거래 내역 없음</p>
         </div>

@@ -17,6 +17,10 @@ import { useOptionsAnalysis } from './hooks/useOptionsAnalysis';
 import { buildChatState } from './utils/buildChatState';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 
 const TONE_LABEL: Record<OptionsTone, string> = {
     bullish: '강세',
@@ -25,25 +29,28 @@ const TONE_LABEL: Record<OptionsTone, string> = {
     neutral: '중립',
 };
 
-// Tone tokens (chart-bullish / chart-bearish) are part of the options-analysis
-// shared palette — distinct from the indicator-line-restricted chart-* tokens
-// (rsi/bollinger/period5/period10/period60). Safe for UI badge usage.
+// 배지 **텍스트**는 `-text` 변형을 쓴다. `chart-bullish`/`chart-bearish`/`ui-warning`은
+// 그래픽(3:1) 기준으로 튜닝된 값이라, 자기 `/10` 틴트 위 10px 글씨로 쓰면 라이트에서
+// 3.99~4.14:1로 AA(4.5)에 미달한다(실측). `globals.css`의 `ui-*-text` 주석이 정확히
+// 이 경우를 경고하고 있었는데, 이 파일의 예전 주석은 반대로 "Safe for UI badge usage"라고
+// 적혀 있었다 — 측정으로 반증됐다.
+// 채움·보더는 그래픽이므로 기본 토큰을 그대로 쓴다.
 const TONE_CLASS: Record<
     OptionsTone,
     { text: string; bg: string; border: string }
 > = {
     bullish: {
-        text: 'text-chart-bullish',
+        text: 'text-ui-success-text',
         bg: 'bg-chart-bullish/10',
         border: 'border-chart-bullish/30',
     },
     bearish: {
-        text: 'text-chart-bearish',
+        text: 'text-ui-danger-text',
         bg: 'bg-chart-bearish/10',
         border: 'border-chart-bearish/30',
     },
     cautious: {
-        text: 'text-ui-warning',
+        text: 'text-ui-warning-text',
         bg: 'bg-ui-warning/10',
         border: 'border-ui-warning/30',
     },
@@ -128,12 +135,12 @@ export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
     return (
         <section
             aria-labelledby="options-ai-analysis-heading"
-            className="rounded-xl border border-primary-500/30 bg-gradient-to-br from-secondary-800 to-secondary-900 p-6 shadow-lg ring-1 shadow-primary-500/5 ring-primary-500/10"
+            className="rounded-lg border border-primary-500/30 bg-gradient-to-br from-secondary-800 to-secondary-900 p-6 shadow-lg ring-1 shadow-primary-500/5 ring-primary-500/10"
         >
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <h2
                     id="options-ai-analysis-heading"
-                    className="text-lg font-semibold tracking-tight"
+                    className={HEADING_SECTION}
                 >
                     AI 옵션 분석
                 </h2>
@@ -155,7 +162,7 @@ export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
 
             {result.perExpiration.length > 0 && (
                 <div className="mb-5">
-                    <h3 className="mb-3 text-xs font-semibold tracking-wider text-secondary-200 uppercase">
+                    <h3 className={cn('mb-3', HEADING_SUBSECTION)}>
                         ▸ 만기별 해석
                     </h3>
                     <ul className="space-y-3" aria-label="만기별 옵션 해석">
@@ -181,9 +188,7 @@ export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
 
             {result.signals.length > 0 && (
                 <div>
-                    <h3 className="mb-3 text-xs font-semibold tracking-wider text-secondary-200 uppercase">
-                        ▸ 시그널
-                    </h3>
+                    <h3 className={cn('mb-3', HEADING_SUBSECTION)}>▸ 시그널</h3>
                     <ul className="space-y-2" aria-label="옵션 시그널 목록">
                         {result.signals.map(signal => (
                             <li
@@ -195,7 +200,7 @@ export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
                             >
                                 <span
                                     aria-hidden="true"
-                                    className="mt-0.5 shrink-0 text-secondary-600"
+                                    className="mt-0.5 shrink-0 text-secondary-500"
                                 >
                                     •
                                 </span>
@@ -287,11 +292,11 @@ export function OptionsAiAnalysis({
         return (
             <section
                 aria-labelledby="options-ai-analysis-heading"
-                className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+                className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             >
                 <h2
                     id="options-ai-analysis-heading"
-                    className="mb-3 text-xs tracking-widest text-secondary-400 uppercase"
+                    className={cn('mb-3', HEADING_SECTION)}
                 >
                     AI 옵션 분석
                 </h2>

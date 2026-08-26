@@ -60,7 +60,7 @@ export function IosInstallModal({ onClose }: IosInstallModalProps) {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={MODAL_TITLE_ID}
-                className="w-full max-w-sm rounded-2xl border border-secondary-700 bg-secondary-800 p-5"
+                className="w-full max-w-sm rounded-lg border border-secondary-700 bg-secondary-800 p-5"
             >
                 <div className="mb-4 flex items-center justify-between">
                     <h2
@@ -81,7 +81,7 @@ export function IosInstallModal({ onClose }: IosInstallModalProps) {
                     {STEPS.map(({ step, title, description, img, height }) => (
                         <div
                             key={step}
-                            className="flex gap-3 rounded-xl bg-secondary-900 p-3"
+                            className="flex gap-3 rounded-lg bg-secondary-900 p-3"
                         >
                             <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-600 text-xs font-bold text-white">
                                 {step}

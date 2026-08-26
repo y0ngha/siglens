@@ -80,7 +80,7 @@ function CardSkeleton({ symbol }: { symbol: string }) {
             <span className="sr-only">{symbol} 위치를 불러오는 중이에요</span>
             <div
                 aria-hidden="true"
-                className="h-32 w-32 animate-pulse rounded bg-secondary-800"
+                className="h-32 w-32 animate-pulse rounded bg-secondary-700"
             />
         </div>
     );
@@ -154,12 +154,12 @@ export function PositionHoldingCard({ holding }: PositionHoldingCardProps) {
             href={`/${holding.symbol}/position`}
             // 보유 종목 수만큼 카드가 렌더된다 — docs/architecture/CDN_CACHING.md §1
             prefetch={false}
-            className="group block rounded-xl transition-shadow focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+            className="group block rounded-lg transition-shadow focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
         >
             <div
                 ref={setNode}
                 data-testid="portfolio-holding-card"
-                className="flex flex-col items-center gap-3 rounded-xl bg-secondary-900/60 p-4 ring-1 ring-secondary-800 transition-colors group-hover:ring-secondary-600"
+                className="flex flex-col items-center gap-3 rounded-lg bg-secondary-900/60 p-4 ring-1 ring-secondary-700 transition-colors group-hover:ring-secondary-600"
             >
                 <div className="flex w-full items-baseline justify-between gap-2">
                     <span className="text-sm font-semibold text-secondary-100">

@@ -39,7 +39,7 @@ export function MarketDataErrorNotice({
         <div
             role="alert"
             className={cn(
-                'border-ui-warning/30 bg-ui-warning/5 text-ui-warning flex items-start gap-2 rounded-md border p-3 text-sm',
+                'border-ui-warning/30 bg-ui-warning/5 text-ui-warning-text flex items-start gap-2 rounded-lg border p-3 text-sm',
                 className
             )}
         >
@@ -50,7 +50,7 @@ export function MarketDataErrorNotice({
                         ? `${marketLabel} 데이터를 불러오지 못했어요.`
                         : `${marketLabel} 데이터를 불러오는 중 일부를 가져오지 못했어요.`}
                 </p>
-                <p className="text-ui-warning/80">
+                <p className="text-ui-warning-text/90">
                     잠시 후 새로고침해 다시 시도해 주세요.
                 </p>
             </div>
@@ -58,7 +58,7 @@ export function MarketDataErrorNotice({
                 type="button"
                 onClick={onClose}
                 aria-label="안내 닫기"
-                className="-m-1 shrink-0 rounded p-1 leading-none text-ui-warning/70 transition-colors hover:text-ui-warning focus-visible:ring-2 focus-visible:ring-ui-warning/50 focus-visible:outline-none"
+                className="-m-1 shrink-0 rounded p-1 leading-none text-ui-warning-text transition-colors hover:text-ui-warning-text focus-visible:ring-2 focus-visible:ring-ui-warning/50 focus-visible:outline-none"
             >
                 ✕
             </button>

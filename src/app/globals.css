@@ -1,8 +1,58 @@
-@import 'tailwindcss';
+/*
+   스캔 범위를 렌더 코드로 한정한다. 루트 전체를 훑는 기본값이 문서 예시의
+   클래스 이름까지 유틸리티로 구워냈다 — `docs/superpowers/plans/`의 마크다운
+   한 줄 때문에 `.text-green-400`·`.text-red-400`·`.text-chart-bullish`가
+   번들에 들어갔고, 그 셋은 src/ 어디에도 쓰이지 않는다.
 
+   **`@source`가 아니라 `source()`여야 한다.** 별도 지시어인 `@source`는 경로를
+   **추가**할 뿐이고 자동 루트 탐지는 그대로 살아 있어서, 처음 적었던
+   `@source './../../src'`는 아무것도 바꾸지 못했다(빌드 산출물로 확인 — 수정
+   커밋 이후에 만들어진 CSS에도 죽은 규칙이 그대로 있었다). import에 직접
+   `source()`를 걸어야 자동 탐지가 꺼진다. 죽은 규칙 149개(약 19KB)가 빠지고
+   src/에서 실제로 쓰이는 유틸리티는 하나도 줄지 않는다.
+*/
+@import 'tailwindcss' source('./../../src');
+
+/*
+   테스트 픽스처는 스캔에서 뺀다. 가드 테스트가 검출기를 증명하려고 적어둔
+   클래스 이름(`.caret-ui-warning`, `.border-[#2b2f36]`, `.rounded-[14px]` 등)이
+   프로덕션 CSS로 구워지고 있었다 — 셀렉터 1,019개 중 40개가 그것이었고,
+   그중 하나는 어디에도 정의되지 않은 `--card-radius`를 참조한다.
+
+   두 줄인 이유: `__tests__/` 디렉터리 밖에도 테스트가 있다(`src/__integration__/`).
+   이 한 줄이 테스트 전용 클래스 22개(`rounded-2xl`, `min-w-11`, `translate-x-[18px]` …)를
+   실제로 걷어냈다.
+
+   **`.filter`와 `.transition`은 이 규칙으로 못 없앤다.** 한때 그 둘도
+   `src/__integration__/` 탓이라고 적어 뒀는데 사실이 아니었다 — Tailwind 추출기는
+   원문을 그대로 훑으므로 `.filter(Boolean)` 같은 **평범한 코드**와 주석 속
+   "transition"이라는 낱말에서 나온다(라이브 파일 95개·109개에 등장). 어떤 경로
+   제외로도 사라지지 않는다. `@source not inline(...)`으로 671바이트를 회수할 수는
+   있지만 하지 않는다 — `transition`은 실재하는 유틸리티라, 나중에 누가
+   `className="transition"`을 쓰면 조용히 안 먹는 함정이 된다.
+*/
+@source not './../../src/**/__tests__/**';
+@source not './../../src/**/*.test.*';
+
+/*
+ * 토큰 2계층 구조 (2026-08 리디자인).
+ *
+ * 계층 1 = 아래 `primary-*` / `secondary-*` 램프. 프로덕션 2,400여 곳이 이미
+ *   이 이름을 참조하므로 **이름은 고정하고 값만 재지정**한다. Tailwind v4는
+ *   평범한 유틸리티를 `var(--color-*)`로 컴파일하므로(4.3.0 실측), 값 교체가
+ *   전 코드베이스에 그대로 전파된다.
+ * 계층 2 = 파일 하단 `@theme inline` 시맨틱 별칭(`surface`/`fg`/`accent`…).
+ *   신규·재작성 코드는 계층 2만 참조한다. 계층 1은 호환 레이어로 남는다.
+ *
+ * 램프는 **단조롭지 않아도 된다** — 그라데이션이 아니라 이름 붙은 역할이다.
+ * 라이트 테마에서 800(카드)이 900(페이지)보다 밝은 것이 대표적이며 의도된
+ * 배치다. 코드베이스의 그라데이션 정지점은 3개 파일 5곳뿐이라 이 비단조성이
+ * 시각적으로 드러나지 않는다.
+ */
 @theme {
-    /* Primary — Trust Blue */
-    --color-primary-50: #eff6ff;
+    /* Primary — Signal Blue. 로고(블루-틸 마크)와 정합하는 브랜드 액센트.
+       400=링크·활성 텍스트, 500=포커스 링, 600=채움 버튼 배경. 라이트에서는
+       400이 어두워지고 600은 그대로 남는다(파일 하단 라이트 테이블 참조). */
     --color-primary-100: #dbeafe;
     --color-primary-200: #bfdbfe;
     --color-primary-300: #93c5fd;
@@ -14,103 +64,95 @@
     --color-primary-900: #1e3a8a;
     --color-primary-950: #172554;
 
-    /* Secondary — Slate */
-    --color-secondary-50: #f8fafc;
-    --color-secondary-100: #f1f5f9;
-    --color-secondary-200: #e2e8f0;
-    --color-secondary-300: #cbd5e1;
-    --color-secondary-400: #94a3b8;
-    --color-secondary-500: #64748b;
-    --color-secondary-600: #475569;
-    --color-secondary-700: #334155;
-    --color-secondary-800: #1e293b;
-    --color-secondary-900: #0f172a;
-    --color-secondary-950: #020617;
+    /* Secondary — Neutral Ink. 이전 Tailwind `slate-*` 원본에서 교체됐다.
+       slate는 푸른 기가 돌아 브랜드 블루와 섞이고 "기본값"으로 읽혔다.
+       색조 없는 뉴트럴로 바꿔 액센트가 화면에서 유일한 채도를 갖게 한다.
 
-    /* Chart — Semantic */
+       역할 고정 (2,400여 참조가 이 역할에 의존한다):
+         950 인셋(입력·차트 우물) · 900 페이지 · 800 카드 · 700 보더/호버 틴트
+         600 강조 보더 · 500~50 텍스트 램프(어두움→밝음)
+
+       대비 목표는 AA(4.5:1)가 아니라 **AAA(7:1)**다. 본문(300)·헤딩(100)·
+       보조 텍스트(400)는 페이지·카드 양쪽에서 7:1을 넘는다. 가장 흐린
+       단계인 500만 6.5:1 부근으로 AAA에 살짝 못 미치는데, 여기서 더 밝히면
+       400과 구분이 사라져 위계가 무너지므로 의도적으로 멈춘 지점이다.
+       (이전 slate-500 #64748b는 페이지 배경에서 3.75:1로 AA조차 미달이었다.) */
+    --color-secondary-50: #f4f4f6;
+    --color-secondary-100: #ecedf0;
+    --color-secondary-200: #dcdde2;
+    --color-secondary-300: #c6c7ce;
+    --color-secondary-400: #abacb6;
+    --color-secondary-500: #96979f;
+    --color-secondary-600: #3a3a45;
+    --color-secondary-700: #2a2a33;
+    --color-secondary-800: #101014;
+    --color-secondary-900: #09090b;
+    --color-secondary-950: #050507;
+
+    /* 컨트롤 경계 전용. WCAG 1.4.11(비텍스트 대비)은 입력·버튼처럼 **상태를
+       경계선으로만 알리는** 요소에 3:1을 요구한다. 장식용 카드 보더
+       (secondary-700)는 이 대상이 아니라 별도 토큰으로 분리했다.
+
+       대비는 **이 토큰이 실제로 얹히는 모든 표면**에 대해 성립해야 한다.
+       처음엔 카드 표면(secondary-800) 하나만 재고 "라이트 3.30:1"이라 적었는데,
+       입력 필드는 인셋인 secondary-950 위에 앉는다 — 거기서 라이트가 2.90:1로
+       기준 미달이었고, 그 조합이 입력 계열 8개 파일에 퍼져 있었다.
+       한 표면에서 통과했다고 토큰 전체가 통과한 게 아니다.
+
+       표면별 실측 (인셋 950 / 본문 900 / 카드 800):
+         다크  #6a6a78 → 3.83 / 3.74 / 3.57
+         라이트 #7d838f → 3.34 / 3.58 / 3.81
+
+       위 3.34가 하한이라고 읽지 말 것. 토글 썸은 램프가 아니라 **트랙** 위에
+       앉고, off 트랙은 secondary-700이다 — 라이트에서 보더 대 트랙이 3.10:1로
+       이게 시스템에서 가장 빠듯하다. 그 자리는 흰 썸이 흰 트랙에 1.23:1로
+       묻혀서 보더만이 썸을 식별한다(다크 off는 반대로 채움이 14.21:1로
+       지탱하므로 보더 2.67:1이 위반이 아니다). 상태별 불변식
+       `max(썸채움-트랙, 보더-트랙) >= 3`은 controlBorderContrast 테스트가 건다. */
+    --color-border-control: #6a6a78;
+
+    /*
+     * Chart — 방향 색. **여기 있는 것은 DOM 유틸리티로 쓰이는 둘뿐이다.**
+     *
+     * 지표 색(MA/볼린저/MACD/RSI …)은 캔버스에 그려지므로 CSS가 아니라
+     * `shared/lib/chartColors.ts`가 단일 소스다. 한때 그 41개가 이 블록에도
+     * 그대로 복사돼 있었는데, 어떤 코드도 CSS 쪽을 읽지 않았고
+     * `chartPaletteContrastGuard`도 TS 테이블만 검사했다 — 즉 조용히 갈라질
+     * 수 있는 두 번째 팔레트였다. 지표 색을 추가할 때 이곳에 짝을 만들지 말 것.
+     */
     --color-chart-bullish: #26a69a;
     --color-chart-bearish: #ef5350;
-    --color-chart-neutral: #94a3b8;
-
-    /* Chart — MA/EMA (기간별) */
-    --color-chart-period5: #ef4444;
-    --color-chart-period10: #f97316;
-    --color-chart-period20: #eab308;
-    --color-chart-period60: #22c55e;
-    --color-chart-period120: #3b82f6;
-    --color-chart-period200: #a855f7;
-
-    /* Chart — 볼린저 밴드 */
-    --color-chart-bollinger: #818cf8;
-
-    /* Chart — 켈트너 채널 */
-    --color-chart-keltner-upper: #5eead4;
-    --color-chart-keltner-middle: #14b8a6;
-
-    /* Chart — 돈치안 채널 */
-    --color-chart-donchian-upper: #fcd34d;
-    --color-chart-donchian-middle: #d97706;
-
-    /* Chart — Supertrend (추세 색 고정값: bullish teal / bearish red) */
-    --color-chart-supertrend-up: #26a69a;
-    --color-chart-supertrend-down: #ef5350;
-
-    /* Chart — Parabolic SAR (추세 색 점) */
-    --color-chart-parabolic-sar-up: #26a69a;
-    --color-chart-parabolic-sar-down: #ef5350;
-
-    /* Chart — Chandelier Exit (추세 색 점선 stop) */
-    --color-chart-chandelier-long: #26a69a;
-    --color-chart-chandelier-short: #ef5350;
-
-    /* Chart — Elder Ray */
-    --color-chart-elder-bull-power: #26a69a;
-    --color-chart-elder-bear-power: #ef5350;
-
-    /* Chart — Squeeze Momentum / 상태 점 */
-    --color-chart-squeeze-momentum-up: #26a69a;
-    --color-chart-squeeze-momentum-down: #ef5350;
-    --color-chart-squeeze-on: #fbbf24;
-    --color-chart-squeeze-off: #94a3b8;
-    --color-chart-squeeze-none: #3b82f6;
-
-    /* Chart — Regression */
-    --color-chart-regression-up: #26a69a;
-    --color-chart-regression-down: #ef5350;
-
-    /* Chart — Elder Impulse (캔들 색) */
-    --color-chart-impulse-bullish: #26a69a;
-    --color-chart-impulse-bearish: #ef5350;
-    --color-chart-impulse-neutral: #3b82f6;
-
-    /* Chart — SMC zones */
-    --color-chart-smc-premium: #ef5350;
-    --color-chart-smc-discount: #26a69a;
-    --color-chart-smc-equilibrium: #94a3b8;
-
-    /* Chart — MACD */
-    --color-chart-macd: #3b82f6;
-    --color-chart-signal: #f59e0b;
-
-    /* Chart — RSI */
-    --color-chart-rsi: #a78bfa;
-
-    /* Chart — DMI */
-    --color-chart-dmi-plus: #26a69a;
-    --color-chart-dmi-minus: #ef5350;
-    --color-chart-dmi-adx: #f59e0b;
-
-    /* Chart — Stochastic */
-    --color-chart-stochastic-k: #f472b6;
-    --color-chart-stochastic-d: #38bdf8;
-
-    /* Chart — VWAP */
-    --color-chart-vwap: #e879f9;
 
     /* UI Status — 성공/경고/위험 상태 UI 전용 */
     --color-ui-success: #26a69a;
     --color-ui-warning: #f59e0b;
     --color-ui-danger: #ef5350;
+
+    /*
+     * 위험 **채움 버튼** 전용 단계. `ui-danger`(#ef5350)는 틴트와 막대·점
+     * 그래픽용이라 흰 글자가 얹히면 3.49:1로 AA(4.5)에 미달한다 — 실측이고,
+     * 제품에서 가장 위험한 컨트롤(계정 영구 삭제)이 가장 안 읽히는 상태였다.
+     *
+     * `ui-danger`를 통째로 어둡게 하면 안 된다: 다크 카드가 거의 검정이라
+     * 빨강을 어둡게 할수록 막대·점 그래픽의 대비가 **떨어진다**. 그래서
+     * `ui-danger-text`가 이미 그렇게 하듯 역할별로 값을 가른다.
+     *
+     * 단계는 `primary-600/700/800`과 같은 역할(기본/호버/눌림)이다. 알파로
+     * 호버를 만들면 안 된다 — 흰 카드 위에서는 알파를 낮출수록 빨강이
+     * **밝아져서** 호버 4.26 · 눌림 3.67로 AA 아래로 떨어진다(실측).
+     *
+     * 측정값(흰 글자 / 다크 카드 #101014 / 라이트 카드 #fff):
+     *   fill        #d2352f  4.89 / 3.88 / 4.89
+     *   fill-hover  #c62828  5.62 / 3.38 / 5.62
+     *   fill-active #b3261e  6.54 / 2.90 / 6.54
+     * 눌림 상태만 다크에서 3:1 아래인데, 이는 손가락·포인터가 올라가 있는
+     * 순간에만 존재하고 그때도 라벨이 6.54:1이라 컴포넌트 식별을 해치지 않는다.
+     *
+     * 세 값 모두 두 테마에서 같다 — 라이트 블록에서 재정의하지 않는다.
+     */
+    --color-ui-danger-fill: #d2352f;
+    --color-ui-danger-fill-hover: #c62828;
+    --color-ui-danger-fill-active: #b3261e;
 
     /* Financials letter-grade ramp (A best → F worst). 5 distinct hues so
        adjacent grades are distinguishable by color alone, not opacity. */
@@ -119,6 +161,16 @@
     --color-grade-c: #eab308; /* yellow — C (50–64) */
     --color-grade-d: #f97316; /* orange — D (35–49) */
     --color-grade-f: #ef5350; /* red    — F (0–34) */
+
+    /* 등급 램프의 텍스트 변형. 위 5개는 게이지 스트로크와 36px 대형 등급 글자를
+       겨냥한 값이라 **자기 /10 틴트 칩 위의 14px 굵은 글씨**로 쓰면 라이트에서
+       4.32~4.48:1로 AA(4.5)에 미달한다(실측). `ui-*` / `ui-*-text`와 같은 분리다.
+       다크는 틴트 위에서 4.94~8.42:1로 이미 통과하므로 기본값을 그대로 쓴다. */
+    --color-grade-a-text: #22c55e;
+    --color-grade-b-text: #84cc16;
+    --color-grade-c-text: #eab308;
+    --color-grade-d-text: #f97316;
+    --color-grade-f-text: #ef5350;
 
     /* AA-compliant text variants of the ui semantic family. The base
        ui-success/warning/danger and chart-bullish/bearish tokens are tuned for
@@ -133,6 +185,20 @@
     /* Brand — Social login */
     --color-brand-kakao: #fee500;
 
+    /* 외부 브랜드가 색을 지정한 **고정 표면** 위의 텍스트/경계.
+       구글 버튼은 두 테마 모두 흰 배경이어야 하고(브랜드 가이드), 카카오는
+       항상 노란 배경이다. 이런 자리에 램프 토큰을 쓰면 라이트에서 값이
+       뒤집혀 흰 버튼에 흰 글자가 된다 — 실제로 그렇게 깨져 있었다.
+       테마와 무관하게 고정되어야 하므로 램프 밖에 둔다. */
+    --color-on-fixed-light: #16181d;
+
+    /* 라이트 테마에서는 이 버튼(흰 배경)이 흰 카드 위에 놓인다. 경계선이
+       유일한 구분 수단이 되므로 WCAG 1.4.11의 3:1을 넘겨야 한다 —
+       흰색 대비 3.02:1. 다크에서는 배경 차이만으로도 충분히 구분되지만
+       같은 값을 써도 과하지 않다. */
+    --color-fixed-light-border: #8e95a1;
+    --color-fixed-light-hover: #f1f2f5;
+
     /* vaul이 `[data-vaul-handle]`에 하드코딩한 배경색. 디자인 선택이 아니라 외부 제약이며,
        MobileSheetPlaceholder의 정적 손잡이가 실제 시트와 픽셀 단위로 일치해야 교체가
        보이지 않는다. secondary-200(#e2e8f0)과 비슷하지만 그쪽이 재조정되면 일치가
@@ -146,16 +212,138 @@
        잔여 영역을 정확히 계산한다. */
     --header-h: 3.5rem;
 
-    /* font stack 순서: Geist(라틴)가 한글 글리프를 못 가지므로 자동으로
-       다음 폰트(Pretendard, self-host)로 fallback된다. next/font/local이
-       --font-pretendard CSS 변수를 주입하고 size-adjust를 자동 측정해
-       fallback OS 폰트와 metric을 맞추므로 CLS가 거의 0이 된다. 이전엔
-       OS 폰트(맥: Apple SD Gothic Neo, 윈도: Malgun Gothic)로 fallback돼
-       디바이스마다 typography가 달라지고 CLS도 발생했다. */
+    /*
+     * 산세리프는 Pretendard **단일 폰트**다.
+     *
+     * 이전에는 Geist(라틴) → Pretendard(한글) 순서였는데, Geist에 한글
+     * 글리프가 없어서 "AI 분석" 같은 혼합 문자열이 **한 단어 안에서 두 폰트로**
+     * 렌더됐다. x-height와 굵기 축이 달라 글줄이 미묘하게 어긋나 보이고,
+     * 사용자는 이유를 모른 채 "조잡하다"고 느낀다. 한국어가 본문의 대부분인
+     * 제품에서 라틴 전용 폰트를 1순위에 두는 구성 자체가 잘못이었다.
+     *
+     * 부수 효과가 두 가지 더 있다. Geist는 Vercel의 폰트라 Next.js 데모와
+     * AI 스타트업 랜딩의 사실상 표준 얼굴이다 — 그것만으로 "템플릿"으로 읽힌다.
+     * 그리고 Google Fonts 요청 하나가 사라져 모바일 CPU에 묶인 이 앱의
+     * 첫 로드가 가벼워진다.
+     *
+     * Pretendard는 self-host + next/font/local이라 fingerprint URL과 1년
+     * immutable 캐시가 붙고, size-adjust 자동 측정으로 CLS가 거의 0이다.
+     */
     --font-sans:
-        var(--font-geist-sans), var(--font-pretendard), -apple-system,
-        blinkmacsystemfont, system-ui, 'Helvetica Neue', arial, sans-serif;
+        var(--font-pretendard), -apple-system, blinkmacsystemfont, system-ui,
+        'Helvetica Neue', arial, sans-serif;
+
+    /*
+     * 모노는 티커·가격·타임스탬프처럼 **자릿수가 맞아야 하는 데이터**에만 쓴다
+     * (84곳). 산세리프와 달리 한글을 담지 않으므로 두 폰트 문제가 없다 —
+     * 한글에 모노를 적용하는 것은 금지다(글리프가 없어 OS 폰트로 떨어진다).
+     */
     --font-mono: var(--font-geist-mono);
+}
+
+/*
+ * 라이트 테마 값 테이블.
+ *
+ * `@layer theme` 밖(언레이어드)이라 `@theme`이 `:root`에 심은 값을 무조건
+ * 이긴다 — 명시도가 아니라 캐스케이드 레이어 규칙이다(4.3.0 실측).
+ *
+ * `prefers-color-scheme` 미디어 쿼리를 **일부러 넣지 않았다.** 이 블록은
+ * `data-theme="light"`가 명시적으로 찍히기 전까지 비활성이며, 그 속성은
+ * 테마 배선 PR에서 인라인 스크립트가 찍는다. 토큰만 먼저 정의하고 활성화는
+ * 나중에 하는 이유는, 페이지별 대비 점검이 끝나기 전에 라이트가 켜지면
+ * 검증되지 않은 화면이 사용자에게 노출되기 때문이다.
+ *
+ * 알려진 한계: `bg-x/50` 같은 불투명도 변형은 Tailwind가
+ * `@supports (color-mix in lab)` **밖에** 다크 리터럴 폴백을 굽는다. 해당
+ * 기능이 없는 브라우저(2023-05 이전 Chrome 111 / Safari 16.2 / Firefox 113
+ * 미만)는 라이트 테마에서도 그 자리에 다크 값을 그린다. 대상 사용자 비중이
+ * 극히 낮아 감수한다.
+ */
+:root[data-theme='light'] {
+    /* 네이티브 스크롤바·폼 컨트롤이 테마를 따라가게 한다. 인라인 스크립트도
+       `style.colorScheme`을 세팅하지만 JS가 없는 환경에는 이 선언만 남는다. */
+    color-scheme: light;
+
+    /* 표면 — 카드(800)가 페이지(900)보다 밝다. 라이트 UI의 관례이며,
+       램프 번호 순서와 어긋나는 것은 의도된 결과다(상단 주석 참조). */
+    --color-secondary-950: #eff0f3;
+    --color-secondary-900: #f7f8fa;
+    --color-secondary-800: #fff;
+    --color-secondary-700: #e6e8ec;
+    --color-secondary-600: #cfd3da;
+
+    /* 텍스트 램프 — 다크와 반대로 번호가 커질수록 **밝아진다**.
+       프로미넌스 서열(400이 500보다 눈에 띈다)은 두 테마에서 동일하게
+       유지되어야 하므로, 라이트에서는 400이 500보다 어둡다.
+       400은 페이지·카드에서 7.4~7.9:1로 AAA를 넘는다. */
+    --color-secondary-500: #565c66;
+    --color-secondary-400: #4d525b;
+    --color-secondary-300: #3e434d;
+    --color-secondary-200: #2b303a;
+    --color-secondary-100: #1f222a;
+    --color-secondary-50: #16181d;
+    --color-border-control: #7d838f;
+
+    /* 액센트 — 400(링크 텍스트)은 흰 배경에서 AAA(8.2:1)가 되도록 진하게,
+       600(채움 배경)은 흰 글자가 6.7:1이 되도록 한 단계 어둡게 잡는다.
+       다크에서 채움이 #2563eb인 것과 값이 갈리는 이유다. */
+    --color-primary-400: #1e40af;
+    --color-primary-500: #1d4ed8;
+    --color-primary-600: #1d4ed8;
+    --color-primary-300: #1e3a8a;
+
+    /* 700은 `hover:bg-primary-700`의 대상이다. 600과 같은 값이면 채움 버튼
+       28곳의 호버 피드백이 통째로 사라지므로 반드시 한 단계 더 어두워야 한다. */
+    --color-primary-700: #1e3a8a;
+
+    /* 100·200은 다크에서 "아주 연한 파랑"이지만 **텍스트와 보더로도** 쓰인다
+       (카테고리 헤딩, 시장 배지). 라이트에서 그대로 두면 흰 배경에서 1.2:1로
+       사라지므로 짙은 짝을 준다. 200이 100보다 밝다 — 다크의 명암 서열을
+       뒤집어 프로미넌스 순서를 보존한 결과다. */
+    --color-primary-200: #1e3a8a;
+    --color-primary-100: #172554;
+    --color-primary-900: #dbeafe;
+    --color-primary-950: #eff6ff;
+
+    /* 재무 등급 A~F 램프. 다크 값은 흰 카드 위에서 1.9~3.5:1로 전부 미달한다
+       (36px 대형 텍스트인 종합 등급조차 3:1 미만). 색상 정체성인 초록→라임→
+       노랑→주황→빨강 순서는 유지하고 명도만 낮춘 짝을 준다. 모두 흰 카드에서
+       4.9~6.5:1로 텍스트 기준을 넘으므로 게이지 스트로크(3:1)도 함께 만족한다. */
+    --color-grade-a: #15803d;
+    --color-grade-b: #4d7c0f;
+    --color-grade-c: #a16207;
+    --color-grade-d: #c2410c;
+    --color-grade-f: #b91c1c;
+
+    /* 틴트 칩 위 텍스트용. 위 값들은 **흰 카드 기준** 4.9~6.5:1이라고 적혀 있지만
+       배지는 흰 카드가 아니라 `bg-grade-{a..f}/10` 틴트 위에 얹힌다 — 그 위에서는
+       A 4.37 / B 4.39 / C 4.32 / D 4.48로 AA 미달이다(실측). 여기서는 색상
+       정체성을 유지한 채 명도만 낮춰 4.80~4.83:1을 만든다(F는 5.46이라 그대로).
+       흰 카드 위에서도 5.47~5.58로 여유가 있다. */
+    --color-grade-a-text: #14793a;
+    --color-grade-b-text: #49750e;
+    --color-grade-c-text: #975c07;
+    --color-grade-d-text: #b93e0b;
+    --color-grade-f-text: #b91c1c;
+
+    /* 상태 텍스트 — 다크 전용으로 튜닝된 값들이라 라이트에서는 1.4~1.9:1로
+       전멸한다. 밝은 변형의 어두운 짝을 따로 정의한다.
+
+       success·danger는 `/40` 틴트까지 견디도록 한 단계 더 어둡다. 원래 값
+       (#0a5b52 / #a02420)은 `/10`~`/20`에서만 검증돼 있었는데, 공포·탐욕 헤더 칩이
+       EXTREME 티어에서 `/40`을 쓰면서 4.35 / 3.89:1로 AA에 미달했다(실측).
+       지금 값은 `/40`에서 4.60 / 4.61이고, `/10`~`/20`은 6.1~7.3으로 오히려 올라간다. */
+    --color-ui-success-text: #0a574e;
+    --color-ui-danger-text: #8c201c;
+    --color-ui-warning-text: #7a4f00;
+
+    /* 그래픽 — 흰 배경에서 3:1을 넘기도록 진하게. 캔들/추세 색이므로
+       상승=틸, 하락=레드 관례는 유지한다. */
+    --color-ui-success: #0f8074;
+    --color-ui-danger: #d2352f;
+    --color-ui-warning: #b45309;
+    --color-chart-bullish: #0f8074;
+    --color-chart-bearish: #d2352f;
 }
 
 /*
@@ -181,6 +369,57 @@
     left: 0 !important;
 }
 
+@layer components {
+    /*
+     * 페이지 폭 규약.
+     *
+     * 이전에는 `lg:px-[15vw]` / `lg:pr-[10vw]`가 13개 파일 21곳에 흩어져 있었고
+     * `max-width`가 아예 없었다. 뷰포트 비율 패딩만으로 폭을 잡으면 2560px 화면에서
+     * 좌우 384px씩 버리면서도 본문 줄 길이는 계속 늘어나 읽기가 힘들어지고,
+     * 1280px에서는 반대로 여백이 부족해진다. 헤더만 전체 폭을 쓰고 있어 초광폭에서
+     * 로고가 본문보다 한참 왼쪽에 떨어지는 문제도 있었다.
+     *
+     * Tailwind `@utility` 대신 일반 클래스로 두는 이유는 `.scrollbar-none`과 같다 —
+     * 변형 조합이 필요 없고 stylelint의 `@utility` 미인식 경고를 피한다.
+     * 유틸리티 클래스와 함께 쓸 때 패딩이 겹치지 않도록 여기서 좌우 패딩까지 소유한다.
+     *
+     * 차트 페이지(`/[symbol]`)는 예외다 — 캔들이 충분히 보이려면 전체 폭이 필요하다.
+     */
+    .page-container {
+        width: 100%;
+        max-width: 1200px;
+        padding-inline: 1rem;
+        margin-inline: auto;
+    }
+
+    @media (width >= 40rem) {
+        .page-container {
+            padding-inline: 1.5rem;
+        }
+    }
+
+    /*
+     * 심볼 라우트(`/[symbol]/*`) 전용 폭.
+     *
+     * 이 구역은 사이트 나머지(1200px)보다 좁은 1024px을 쓴다 — 주 콘텐츠가 AI
+     * 분석 프로즈라 읽기 폭이 짧아야 하고, 서브탭 17곳이 이미 그 값으로
+     * 자기들끼리 일치해 있었다.
+     *
+     * 클래스로 묶는 이유: 헤더만 전폭 `px-4`였고 본문은 `mx-auto max-w-5xl`이라
+     * 넓은 화면에서 둘이 어긋났다 — 실측 1280px에서 128px, 1920px에서 448px.
+     * 값이 두 군데 문자열로 흩어져 있으면 한쪽만 고쳐지므로 한 곳에서 정의한다.
+     *
+     * 좌우 여백은 전 구간 1rem으로 둔다. `page-container`처럼 sm에서 1.5rem으로
+     * 키우면 이미 서로 맞아 있는 서브탭 17곳을 전부 함께 바꿔야 한다.
+     */
+    .symbol-container {
+        width: 100%;
+        max-width: 64rem;
+        padding-inline: 1rem;
+        margin-inline: auto;
+    }
+}
+
 /* 스크롤은 유지하되 시각적 스크롤바만 감춘다. 차트 페이지 AI 분석 패널처럼
    페이지 스크롤(footer 도달용)과 패널 내부 스크롤이 공존할 때, 내부 스크롤바가
    같이 보이면 스크롤바가 둘로 겹쳐 보여 산만하다. 패널은 여전히 내부 스크롤로
@@ -193,6 +432,16 @@
 
 .scrollbar-none::-webkit-scrollbar {
     display: none; /* WebKit (Chrome/Safari/Edge) */
+}
+
+/*
+ * `color-scheme` 폴백. 인라인 스크립트가 `style.colorScheme`을 직접 세팅하지만,
+ * JS가 꺼진 환경(크롤러, 일부 접근성 도구)에서는 그 경로가 없다. 예전에는
+ * `<html class="scheme-dark">`가 이 역할을 했는데 테마 전환을 위해 걷어냈으므로
+ * CSS로 되살린다. 이게 있어야 네이티브 스크롤바·폼 컨트롤이 배경과 어긋나지 않는다.
+ */
+:root {
+    color-scheme: dark;
 }
 
 body {
@@ -241,6 +490,17 @@ body {
 }
 
 @layer base {
+    /*
+     * Tailwind는 `--tw-ring-offset-color` 기본값을 `#fff`로 굽는다. 색을 명시하지
+     * 않은 `ring-offset-2`가 35곳 있는데, 다크에서는 흰 후광이 뜨고 라이트에서는
+     * 흰 배경에 묻혀 링 간격이 사라진다. 페이지 배경 토큰으로 기본값을 바꾸면
+     * 두 테마에서 모두 "배경색 간격"이라는 원래 의도대로 동작한다.
+     * (색을 명시한 `ring-offset-secondary-*` 42곳은 그대로 우선한다.)
+     */
+    * {
+        --tw-ring-offset-color: var(--color-secondary-900);
+    }
+
     button,
     [type='button'],
     [type='reset'],
@@ -254,11 +514,36 @@ body {
     [type='submit']:disabled {
         cursor: not-allowed;
     }
+
+    /*
+     * 네이티브 `<dialog>`를 중앙에 되돌린다.
+     *
+     * UA 스타일시트는 `dialog:modal`에 `inset: 0` + `margin: auto`를 주어
+     * 뷰포트 중앙에 놓는다. 그런데 Tailwind preflight의 `*, ::before, ::after
+     * { margin: 0 }`이 그 `auto`를 덮어써서, 모달이 조용히 좌상단(0,0)에
+     * 붙는다. 클래스에는 아무 문제가 없어 보이므로 소스만 읽어서는 안 잡힌다.
+     * 실측(vw 1600 × vh 857, max-w-lg): 규칙 없이 [0,0], 있으면 [544,16] —
+     * 좌우 (1600−512)/2 = 544, 상하 (857−825)/2 = 16으로 정확히 중앙이다.
+     *
+     * `:modal`로 한정해 `show()`로 띄우는 비모달 dialog(문서 흐름에 놓이는
+     * 용법)는 건드리지 않는다.
+     */
+    dialog:modal {
+        margin: auto;
+    }
 }
 
+/*
+   글로우가 **링을 대체하면 안 된다.** 이 규칙이 `@layer` 밖에 있어서
+   Tailwind의 `focus:ring-1`(utilities 레이어)을 통째로 이겼고, 포커스 표시가
+   흐릿한 번짐만 남아 1.32:1(다크)·1.62:1(라이트)이었다 — WCAG 1.4.11의 3:1
+   미달이다. 같은 컴포넌트의 작은 변형(`.focus-glow` 없음)은 5.38:1로 통과하는데
+   큰 변형만 깨져 있었다. 링을 첫 레이어로 직접 그려 글로우가 그 위에 얹히게 한다.
+*/
 .focus-glow:focus-visible {
-    box-shadow: 0 0 20px
-        color-mix(in oklch, var(--color-primary-600) 30%, transparent);
+    box-shadow:
+        0 0 0 2px var(--color-primary-500),
+        0 0 20px color-mix(in oklch, var(--color-primary-600) 30%, transparent);
 }
 
 @keyframes fade-in {

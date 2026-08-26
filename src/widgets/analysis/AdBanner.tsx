@@ -45,7 +45,7 @@ export function AdBanner({ isFreeUser, slot }: AdBannerProps) {
     return (
         <div
             ref={containerRef}
-            className="flex w-full flex-col items-center gap-2 overflow-hidden rounded-md py-4"
+            className="flex w-full flex-col items-center gap-2 overflow-hidden rounded-lg py-4"
         >
             <ins
                 className="adsbygoogle block w-full min-w-60"

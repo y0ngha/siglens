@@ -14,6 +14,10 @@ import {
 } from '@/shared/config/economyIndicators';
 import { cn } from '@/shared/lib/cn';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 
 /**
  * 국채 수익률·2s10s 스프레드 카드의 표시 소수 자리수.
@@ -102,10 +106,7 @@ export function EconomicIndicatorGrid({
             aria-labelledby="economy-indicators-heading"
             className="space-y-8"
         >
-            <h2
-                id="economy-indicators-heading"
-                className="text-lg font-semibold text-secondary-100"
-            >
+            <h2 id="economy-indicators-heading" className={HEADING_SECTION}>
                 경제지표
             </h2>
             {ECONOMY_INDICATOR_CATEGORIES.map(cat => (
@@ -158,9 +159,7 @@ function CategorySection({
 
     return (
         <div>
-            <h3 className="mb-3 text-base font-medium text-secondary-200">
-                {label}
-            </h3>
+            <h3 className={cn('mb-3', HEADING_SUBSECTION)}>{label}</h3>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {cards}
                 {treasuryCards}
@@ -175,7 +174,7 @@ function IndicatorCard({ meta, series }: IndicatorCardProps) {
     const prev = series.previous;
     const delta = prev !== null ? latest.value - prev.value : null;
     return (
-        <article className="rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+        <article className="rounded-lg border border-secondary-700 bg-secondary-800 p-4">
             <header className="mb-2 flex items-center gap-1 text-sm text-secondary-300">
                 <span>{meta.label}</span>
                 <InfoTooltip>{meta.tooltip}</InfoTooltip>
@@ -203,7 +202,7 @@ function TreasuryYieldCard({ snapshot, maturity }: TreasuryYieldCardProps) {
     if (value === null) return null;
     const { label, tooltip, unit } = TREASURY_CARD_META[maturity];
     return (
-        <article className="rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+        <article className="rounded-lg border border-secondary-700 bg-secondary-800 p-4">
             <header className="mb-2 flex items-center gap-1 text-sm text-secondary-300">
                 <span>{label}</span>
                 <InfoTooltip>{tooltip}</InfoTooltip>
@@ -222,7 +221,7 @@ function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
     if (spread === null) return null;
     const positive = spread >= 0;
     return (
-        <article className="rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+        <article className="rounded-lg border border-secondary-700 bg-secondary-800 p-4">
             <header className="mb-2 flex items-center gap-1 text-sm text-secondary-300">
                 <span>2s10s 스프레드</span>
                 <InfoTooltip>
@@ -233,7 +232,7 @@ function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
             <div
                 className={cn(
                     'text-2xl font-semibold',
-                    positive ? 'text-ui-success' : 'text-ui-danger'
+                    positive ? 'text-ui-success-text' : 'text-ui-danger-text'
                 )}
             >
                 {positive ? '+' : ''}

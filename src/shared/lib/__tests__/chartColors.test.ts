@@ -2,16 +2,16 @@ import { CHART_COLORS, getPeriodColor } from '@/shared/lib/chartColors';
 
 describe('CHART_COLORS', () => {
     describe('차트 배경 / 그리드 / 텍스트 컬러', () => {
-        it('background는 네이비(#0f172a)이다', () => {
-            expect(CHART_COLORS.background).toBe('#0f172a');
+        it('background는 뉴트럴 블랙(#09090b)이다', () => {
+            expect(CHART_COLORS.background).toBe('#09090b');
         });
 
-        it('grid는 다크 슬레이트(#1e293b)이다', () => {
-            expect(CHART_COLORS.grid).toBe('#1e293b');
+        it('grid는 뉴트럴 다크(#1f1f26)이다', () => {
+            expect(CHART_COLORS.grid).toBe('#1f1f26');
         });
 
-        it('text는 슬레이트(#94a3b8)이다', () => {
-            expect(CHART_COLORS.text).toBe('#94a3b8');
+        it('text는 뉴트럴 그레이(#96979f)이다', () => {
+            expect(CHART_COLORS.text).toBe('#96979f');
         });
     });
 

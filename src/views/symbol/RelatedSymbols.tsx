@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { relatedSymbolsFor } from '@/shared/config/relatedSymbols';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface RelatedSymbolsProps {
     /** 현재 심볼(대문자). 자기 자신은 목록에서 제외된다. */
@@ -109,12 +110,9 @@ export async function RelatedSymbols({ symbol }: RelatedSymbolsProps) {
     return (
         <nav
             aria-labelledby="related-symbols-heading"
-            className="mt-6 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5"
+            className="mt-6 rounded-lg border border-secondary-700 bg-secondary-800/30 p-5"
         >
-            <h2
-                id="related-symbols-heading"
-                className="text-sm font-semibold text-secondary-300"
-            >
+            <h2 id="related-symbols-heading" className={HEADING_SECTION}>
                 관련 종목
             </h2>
             <ul className="mt-3 flex flex-wrap gap-2">
@@ -131,7 +129,7 @@ export async function RelatedSymbols({ symbol }: RelatedSymbolsProps) {
                                 // 진입 시 RSC 페이로드 8벌(심볼당 ~35KB gzip)을 한꺼번에
                                 // 당긴다. 이 스트립은 탐색 보조라 즉시성이 필요 없다.
                                 prefetch={false}
-                                className="inline-flex items-baseline gap-1.5 rounded-full border border-secondary-700 bg-secondary-900/60 px-3 py-1.5 text-sm text-secondary-300 transition-colors hover:border-primary-600 hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                className="inline-flex items-baseline gap-1.5 rounded-full border border-border-control bg-secondary-900/60 px-3 py-1.5 text-sm text-secondary-300 transition-colors hover:border-primary-500 hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
                                 {koreanName !== undefined && (
                                     <span>{koreanName}</span>

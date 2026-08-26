@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react';
 import { LegalBreadcrumb } from '@/widgets/legal/LegalBreadcrumb';
-import { PolicySection } from '@/widgets/legal/PolicySection';
 
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),
@@ -52,38 +51,6 @@ describe('Legal Page Navigation', () => {
             render(<LegalBreadcrumb pageTitle="개인정보 처리방침" />);
             const currentItem = screen.getByText('개인정보 처리방침');
             expect(currentItem.closest('[aria-current="page"]')).toBeTruthy();
-        });
-    });
-
-    describe('PolicySection', () => {
-        it('renders section with id and title', () => {
-            render(
-                <PolicySection id="data-collection" title="개인정보 수집">
-                    <p>수집 항목에 대한 설명입니다.</p>
-                </PolicySection>
-            );
-            expect(
-                screen.getByRole('heading', { name: '개인정보 수집' })
-            ).toBeInTheDocument();
-        });
-
-        it('renders children content', () => {
-            render(
-                <PolicySection id="usage" title="개인정보 이용">
-                    <p>이용 목적 설명</p>
-                </PolicySection>
-            );
-            expect(screen.getByText('이용 목적 설명')).toBeInTheDocument();
-        });
-
-        it('has correct id attribute for anchor navigation', () => {
-            const { container } = render(
-                <PolicySection id="retention" title="보유기간">
-                    <p>보유기간 설명</p>
-                </PolicySection>
-            );
-            const section = container.querySelector('#retention');
-            expect(section).toBeTruthy();
         });
     });
 });

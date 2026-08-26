@@ -1,8 +1,7 @@
-import type { SkillCounts } from '@y0ngha/siglens-core';
-import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/lib/seo';
 
 /**
- * 홈의 FAQ·HowTo JSON-LD.
+ * 홈의 FAQ JSON-LD.
  *
  * **왜 page.tsx 밖으로 뺐는가**: 이 두 블록은 사이트가 어떤 자산군을 다루는지
  * 프로즈로 선언하는 표면이고, 같은 선언이 `ROOT_TITLE`·`SITE_DESCRIPTION`·
@@ -113,81 +112,3 @@ export const HOME_FAQ_JSON_LD = {
         },
     ],
 };
-
-interface HomeHowToJsonLd {
-    '@context': string;
-    '@type': 'HowTo';
-    name: string;
-    description: string;
-    step: Array<{
-        '@type': 'HowToStep';
-        name: string;
-        text: string;
-        url: string;
-    }>;
-    // `<JsonLd data>`가 `Record<string, unknown>`을 요구한다 — 인덱스 시그니처가
-    // 없으면 이 인터페이스를 그 자리에 넘길 수 없다. 필드별 타입(`name: string` 등)은
-    // 이 시그니처보다 좁으므로 구조적으로 여전히 유효하다.
-    [key: string]: unknown;
-}
-
-/**
- * `Record<string, unknown>` 대신 이름 있는 인터페이스를 쓴다 — 자산군 커버리지
- * 테스트(`supportedAssets.test.ts`)가 `name`·`description`을 문자열로 읽어
- * `missingAssetMentions`에 넘기는데, `Record<string, unknown>`이면 그 필드가
- * `unknown`으로 넓어져 캐스트 없이는 타입체크를 통과할 수 없다.
- */
-export function buildHomeHowToJsonLd(
-    skillCounts: SkillCounts
-): HomeHowToJsonLd {
-    return {
-        '@context': 'https://schema.org',
-        '@type': 'HowTo',
-        name: `${SITE_NAME}로 미국·한국 주식과 암호화폐를 차트, 뉴스, 공포 탐욕 지수로 살펴보고 종합 결론까지 받는 방법`,
-        description: `${SITE_NAME}에서 미국 주식, 코스피·코스닥 국내 종목, 암호화폐를 차트, 뉴스, 공포 탐욕 지수로 살펴보고 이를 묶은 종합 결론과 시나리오를 받는 흐름입니다. 미국 주식에는 실적·재무제표·옵션 시장·의회 거래 공시가, 국내 종목에는 실적·재무제표가 더해집니다.`,
-        step: [
-            {
-                '@type': 'HowToStep',
-                name: '종목명이나 심볼 입력',
-                text: '분석하고 싶은 종목의 이름이나 심볼을 검색창에 입력합니다. 예: 애플, 테슬라, AAPL, TSLA, 국내 종목은 삼성전자, 005930.KS, 암호화폐는 BTCUSD, ETHUSD.',
-                url: `${SITE_URL}/#search`,
-            },
-            {
-                '@type': 'HowToStep',
-                name: '차트 분석 살펴보기',
-                text: `종목 페이지에서 보조지표 ${skillCounts.indicators}종, 캔들 패턴 ${skillCounts.candlesticks}종, 차트 패턴 ${skillCounts.patterns}종, 전략 ${skillCounts.strategies}종, 지지선과 저항선 레벨 ${skillCounts.supportResistance}종 기준으로 추세와 진입 후보 구간을 살펴봅니다.`,
-                url: `${SITE_URL}/AAPL`,
-            },
-            {
-                '@type': 'HowToStep',
-                name: '실적과 뉴스로 보강하기',
-                text: '종목 페이지의 펀더멘털 탭에서 PER, PBR, ROE 같은 밸류에이션과 수익성 지표를, 뉴스 탭에서 어닝과 실적 발표, 뉴스 분위기를 확인해 차트가 보여주지 않는 배경을 보강합니다. 예: /AAPL/fundamental, /AAPL/news.',
-                url: `${SITE_URL}/AAPL/fundamental`,
-            },
-            {
-                '@type': 'HowToStep',
-                name: '옵션 시장 베팅 확인',
-                text: '옵션 분석 탭(예: /AAPL/options)에서 Max Pain, Put/Call Ratio와 Open Interest 분포를 확인해 기관이나 큰손 투자자들이 향후 주가를 어떻게 예상하고 있는지 확인합니다.',
-                url: `${SITE_URL}/AAPL/options`,
-            },
-            {
-                '@type': 'HowToStep',
-                name: '단기 매수 분위기 확인',
-                text: '공포 탐욕 지수 탭(예: /AAPL/fear-greed)에서 단기 매수세가 강한지 약한지를 0~100 점수와 5단계 분위기로 확인합니다. 차트가 좋아 보여도 분위기가 너무 과열이면 진입 타이밍을 한 번 더 따져볼 수 있습니다.',
-                url: `${SITE_URL}/AAPL/fear-greed`,
-            },
-            {
-                '@type': 'HowToStep',
-                name: '종합 결론 확인',
-                text: '종합 분석 탭(예: /AAPL/overall)에서 차트, 실적, 뉴스, 옵션, 공포 탐욕 지수를 묶은 종합 결론과 강세, 약세 시나리오, 점검 포인트, 위험 요인을 함께 확인합니다.',
-                url: `${SITE_URL}/AAPL/overall`,
-            },
-            {
-                '@type': 'HowToStep',
-                name: 'AI에게 추가 질문',
-                text: '판단이 애매할 때는 챗봇에게 직접 질문할 수 있습니다. 현재 보고 있는 종목 데이터를 맥락으로, 지표 해석, 시나리오 비교, 매매 전략 같은 질문에 답변을 받습니다.',
-                url: `${SITE_URL}/AAPL#chat`,
-            },
-        ],
-    };
-}

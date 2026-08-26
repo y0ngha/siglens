@@ -27,10 +27,10 @@ export function ReanalyzeButton({
                 type="button"
                 onClick={onClick}
                 className={cn(
-                    'rounded-md px-4 py-2 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none',
+                    'rounded-lg px-4 py-2 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none',
                     highlighted
-                        ? 'bg-ui-warning/15 text-ui-warning ring-ui-warning/40 hover:bg-ui-warning/25 focus-visible:ring-ui-warning ring-1'
-                        : 'border-secondary-600 bg-secondary-800 text-secondary-200 hover:bg-secondary-700 focus-visible:ring-primary-400 border'
+                        ? 'bg-ui-warning/15 text-ui-warning-text ring-ui-warning hover:bg-ui-warning/25 focus-visible:ring-ui-warning ring-1'
+                        : 'border-border-control bg-secondary-800 text-secondary-200 hover:bg-secondary-700 focus-visible:ring-primary-400 border'
                 )}
             >
                 재분석

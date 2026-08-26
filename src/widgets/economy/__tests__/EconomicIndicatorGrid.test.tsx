@@ -58,8 +58,10 @@ describe('EconomicIndicatorGrid', () => {
         expect(badge).toBeInTheDocument();
         // DeltaBadge는 지표 유형과 무관하게 중립 색상을 사용한다
         // (상승이 CPI·실업률 등에서는 부정적 의미여서 green/red 표시가 오해를 유발).
-        expect(badge).not.toHaveClass('text-ui-success');
-        expect(badge).not.toHaveClass('text-ui-danger');
+        // 토큰명이 `-text` 짝으로 바뀌었다: 의미 색의 표면 토큰을 텍스트에 쓰면
+        // 라이트에서만 4.25~4.43:1로 기준을 밑돈다(다크는 통과해 오래 안 보였다).
+        expect(badge).not.toHaveClass('text-ui-success-text');
+        expect(badge).not.toHaveClass('text-ui-danger-text');
         expect(badge).toHaveClass('text-secondary-300');
     });
 
@@ -93,8 +95,9 @@ describe('EconomicIndicatorGrid', () => {
         // spread = 4.30 - 4.50 = -0.20
         const spreadValue = screen.getByText(/-0\.20/);
         expect(spreadValue).toBeInTheDocument();
-        // The value element carries text-ui-danger class (negative spread)
-        expect(spreadValue).toHaveClass('text-ui-danger');
+        // 음수 스프레드는 위험 색으로 표시한다. 텍스트에는 표면 토큰이 아니라
+        // `-text` 짝을 쓴다 — 표면 토큰은 라이트에서 본문 대비 기준을 밑돈다.
+        expect(spreadValue).toHaveClass('text-ui-danger-text');
     });
 
     it('전기 대비 변화가 precision 미만일 때 "전기 대비 변화 없음" 표시', () => {

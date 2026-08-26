@@ -16,14 +16,17 @@ describe('resolveTrendDisplay', () => {
             }
         );
 
-        it('bullish → color에 chart-bullish 클래스를 포함한다', () => {
+        // 텍스트 색은 `chart-*`가 아니라 `ui-*-text`를 쓴다. `chart-*`는
+        // 그래픽용(3:1)이라 자기 /10 틴트 위 12px 굵은 글씨에서 라이트
+        // 3.99:1로 본문 기준을 밑돈다 — 채움·보더는 여전히 `chart-*`다.
+        it('bullish → color에 ui-success-text 클래스를 쓴다', () => {
             const result = resolveTrendDisplay('bullish');
-            expect(result!.color).toContain('chart-bullish');
+            expect(result!.color).toContain('ui-success-text');
         });
 
-        it('bearish → color에 chart-bearish 클래스를 포함한다', () => {
+        it('bearish → color에 ui-danger-text 클래스를 쓴다', () => {
             const result = resolveTrendDisplay('bearish');
-            expect(result!.color).toContain('chart-bearish');
+            expect(result!.color).toContain('ui-danger-text');
         });
 
         it('neutral → bgColor에 secondary 클래스를 포함한다', () => {

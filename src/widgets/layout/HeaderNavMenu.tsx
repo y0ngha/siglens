@@ -17,10 +17,25 @@ interface HeaderNavMenuProps {
     readonly vertical: NavVerticalNode;
     /** 현재 경로. 정적 fallback(`HeaderNavStatic`)은 `null`을 넘겨 활성 표시를 끈다. */
     readonly pathname: string | null;
+    /**
+     * 패널 id의 네임스페이스. **호출부마다 달라야 한다.**
+     *
+     * `HeaderNavStatic`(Suspense fallback)과 `HeaderNav`(본체)는 같은 트리
+     * 위치라 `useId()`가 **같은 값**을 발급한다. 둘 다 문서에 남으므로
+     * (fallback은 숨겨질 뿐 제거되지 않는다) 같은 id가 두 번 나오고,
+     * `getElementById`는 첫 매치를 돌려준다 — 즉 **보이는 메뉴의
+     * `aria-controls`가 숨겨진 fallback의 패널을 가리켰다**. 실측: 서빙 HTML에
+     * `aria-label="주요 네비게이션"` nav 2개, 중복 id 4개, 각 id의 참조 2개.
+     */
+    readonly idScope: string;
 }
 
+// 패널 항목도 트리거와 같은 한글 라벨(`미국`·`한국`·`전체`)이라 0.08em 자간을
+// 걷어내고 크기를 트리거(14px)에 맞춘다. 이 항목들은 메뉴가 닫혀 있을 때
+// `visibility: hidden`이라 조판 검사에서 걸러지기 쉬운데, 메뉴를 열면 그대로
+// 보이므로 예외가 아니다.
 const ITEM_BASE =
-    'flex min-h-11 touch-manipulation items-center text-xs font-semibold tracking-[0.08em] transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none focus-visible:-outline-offset-2';
+    'flex min-h-11 touch-manipulation items-center text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none focus-visible:-outline-offset-2';
 
 /**
  * 데스크톱 헤더의 버티컬 1개 = 트리거 버튼 + 지역/목적지 패널.
@@ -36,9 +51,14 @@ const ITEM_BASE =
  * 펼친다 — 허브를 한 번 더 거치지 않고 한 클릭으로 도착하게 하는 것이 이 메뉴의
  * 존재 이유다.
  */
-export function HeaderNavMenu({ vertical, pathname }: HeaderNavMenuProps) {
+export function HeaderNavMenu({
+    vertical,
+    pathname,
+    idScope,
+}: HeaderNavMenuProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const panelId = useId();
+    const generatedId = useId();
+    const panelId = `${idScope}-${generatedId}`;
     const containerRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -101,7 +121,11 @@ export function HeaderNavMenu({ vertical, pathname }: HeaderNavMenuProps) {
                 aria-controls={panelId}
                 onClick={() => setIsOpen(v => !v)}
                 className={cn(
-                    '-mb-px flex min-h-11 touch-manipulation items-center gap-1 border-b-2 px-2 text-xs font-semibold tracking-[0.12em] uppercase transition-colors focus-visible:rounded focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',
+                    // 라벨이 `시장 분석`·`공포·탐욕 지수` 같은 한글이라
+                    // uppercase는 무효고 0.12em 자간은 자모를 흩뜨린다
+                    // (`shared/lib/typographyStyles.ts`). 사이트의 1차 내비인데
+                    // 12px이라 14px로 올린다 — `min-h-11`이라 헤더 높이는 불변.
+                    '-mb-px flex min-h-11 touch-manipulation items-center gap-1 border-b-2 px-2 text-sm font-semibold transition-colors focus-visible:rounded focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',
                     isVerticalActive(vertical, pathname)
                         ? 'border-primary-500 text-secondary-100'
                         : 'border-transparent text-secondary-400 hover:text-secondary-100'
@@ -130,7 +154,7 @@ export function HeaderNavMenu({ vertical, pathname }: HeaderNavMenuProps) {
                 id={panelId}
                 aria-label={`${vertical.label} 바로가기`}
                 className={cn(
-                    'absolute top-full left-0 z-50 min-w-44 rounded-md border border-secondary-700 bg-secondary-900 py-1 shadow-xl',
+                    'absolute top-full left-0 z-50 min-w-44 rounded-lg border border-secondary-700 bg-secondary-900 py-1 shadow-xl',
                     isOpen ? 'visible' : 'invisible'
                 )}
             >
@@ -147,7 +171,7 @@ export function HeaderNavMenu({ vertical, pathname }: HeaderNavMenuProps) {
                             onClick={close}
                             className={cn(
                                 ITEM_BASE,
-                                'border-b border-secondary-800 px-4',
+                                'border-b border-secondary-700 px-4',
                                 isHrefActive(vertical.overview.href, pathname)
                                     ? 'bg-secondary-800 text-secondary-100'
                                     : 'text-secondary-400 hover:bg-secondary-800 hover:text-secondary-100'

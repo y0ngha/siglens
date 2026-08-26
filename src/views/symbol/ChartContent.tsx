@@ -1,5 +1,6 @@
 'use client';
 
+import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { isFallbackAnalysis } from '@/entities/chat-message';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { useSymbolHolding } from '@/features/portfolio-holding';
@@ -68,7 +69,7 @@ interface ErrorBannerProps {
 function ErrorBanner({ message }: ErrorBannerProps) {
     return (
         <div className="rounded bg-secondary-700/40 px-3 py-2">
-            <span className="text-sm text-chart-bearish">{message}</span>
+            <span className="text-sm text-ui-danger-text">{message}</span>
         </div>
     );
 }
@@ -130,6 +131,7 @@ export function ChartContent({
     fmpSymbol,
     marketProfile = 'us-equity',
 }: ChartContentProps) {
+    const themeVersion = useThemeVersion();
     // 비회원 회원가입 유도(Part B) — 같은 심볼에 대한 중복 카운트 방지용.
     const notifiedSymbolRef = useRef<string | null>(null);
 
@@ -494,7 +496,22 @@ export function ChartContent({
             >
                 {/* 캔들 차트 */}
                 <div className="relative flex-3">
+                    {/*
+                     * **테마가 바뀌면 차트를 통째로 remount한다.**
+                     *
+                     * 차트 인스턴스만 다시 만들어 봤더니 데이터가 안 얹혔다 —
+                     * 생성 효과만 `themeVersion`에 반응하고, `setData`를 부르는
+                     * 효과와 오버레이 훅 31개는 안정적인 ref에만 의존해 재실행되지
+                     * 않는다. 토글 한 번에 차트가 백지가 됐다(감사 실증: createChart
+                     * 2회, setData 1회). `key`로 갈면 그 훅들이 전부 함께 다시 돌아
+                     * 새 팔레트로 그린다.
+                     *
+                     * 대가는 토글 순간 줌·스크롤 위치 초기화다. 지표 on/off는
+                     * localStorage에 있어 살아남는다. 로드 경로에서는 이 값이 0에서
+                     * 변하지 않으므로 remount가 없다.
+                     */}
                     <StockChart
+                        key={themeVersion}
                         bars={bars}
                         timeframe={timeframe}
                         indicators={indicators}
@@ -511,6 +528,7 @@ export function ChartContent({
                 {/* Buy/Sell Volume 차트 */}
                 <div className="relative flex-1 border-t border-secondary-700">
                     <VolumeChart
+                        key={themeVersion}
                         bars={bars}
                         buySellVolume={indicators.buySellVolume}
                         onChartReady={handleVolumeChartReady}

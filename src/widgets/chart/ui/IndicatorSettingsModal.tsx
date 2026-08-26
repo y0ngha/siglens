@@ -45,9 +45,12 @@ function PeriodChips({ binding }: IndicatorRowProps) {
                         aria-pressed={selected}
                         className={cn(
                             'focus-visible:ring-primary-500 flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors focus-visible:ring-1 focus-visible:outline-none',
+                            /* 선택 상태를 흰 글자로 표현하면 라이트 테마에서
+                               secondary-700(거의 흰색) 위에 얹혀 사라진다.
+                               두 테마에서 모두 최고 대비인 fg 토큰을 쓴다. */
                             selected
-                                ? 'bg-secondary-700 text-white'
-                                : 'text-secondary-400 hover:bg-secondary-700 hover:text-white'
+                                ? 'bg-secondary-700 text-secondary-50'
+                                : 'text-secondary-400 hover:bg-secondary-700 hover:text-secondary-50'
                         )}
                     >
                         <span
@@ -72,7 +75,7 @@ function PeriodRow({ binding }: IndicatorRowProps) {
             <span
                 className={cn(
                     'w-16 shrink-0 font-medium',
-                    binding.active ? 'text-white' : 'text-secondary-400'
+                    binding.active ? 'text-secondary-50' : 'text-secondary-400'
                 )}
             >
                 {binding.meta.label}
@@ -128,7 +131,7 @@ export function IndicatorSettingsModal({
                     ref={dialogRef}
                     aria-labelledby={titleId}
                     onClose={close}
-                    className="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-xl border border-secondary-700 bg-secondary-800 p-0 text-left shadow-2xl backdrop:bg-secondary-950/80 backdrop:backdrop-blur-sm"
+                    className="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-lg border border-secondary-700 bg-secondary-800 p-0 text-left shadow-2xl backdrop:bg-secondary-950/80 backdrop:backdrop-blur-sm"
                 >
                     {isOpen && (
                         <div>
@@ -165,7 +168,7 @@ export function IndicatorSettingsModal({
                             <div className="flex flex-col gap-4 p-5">
                                 {groups.map(group => (
                                     <section key={group.category}>
-                                        <h3 className="mb-1 text-xs font-semibold tracking-wide text-secondary-500 uppercase">
+                                        <h3 className="mb-1 text-xs font-semibold text-secondary-500">
                                             {group.label}
                                         </h3>
                                         <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">

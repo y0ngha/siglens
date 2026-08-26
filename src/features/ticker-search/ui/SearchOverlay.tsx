@@ -250,7 +250,7 @@ function SearchOverlayBody({
             {/* `viewportFit: cover` + standalone PWA에서 `fixed inset-0`는 화면 물리
                 최상단에서 시작한다. 상단 인셋을 주지 않으면 입력과 취소 버튼이
                 상태바 아래에 깔린다(WCAG 2.4.11). */}
-            <div className="flex items-center gap-2 border-b border-secondary-800 px-3 py-2 pt-[calc(env(safe-area-inset-top,0px)+0.5rem)]">
+            <div className="flex items-center gap-2 border-b border-secondary-700 px-3 py-2 pt-[calc(env(safe-area-inset-top,0px)+0.5rem)]">
                 {/* 입력이 DOM 순서상 첫 포커서블이어야 한다 — 위 JSDoc 참고. */}
                 <input
                     ref={inputRef}
@@ -277,7 +277,7 @@ function SearchOverlayBody({
                     autoCorrect="off"
                     autoCapitalize="off"
                     spellCheck={false}
-                    className="h-11 min-w-0 flex-1 rounded-lg border border-secondary-700 bg-secondary-800 px-3 text-base text-secondary-100 placeholder-secondary-400 outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-500"
+                    className="h-11 min-w-0 flex-1 rounded-lg border border-border-control bg-secondary-800 px-3 text-base text-secondary-100 placeholder-secondary-400 outline-none focus:border-primary-600 focus:ring-1 focus:ring-primary-500"
                 />
                 <button
                     type="button"
@@ -414,7 +414,7 @@ function SearchOverlayBody({
                                                     entry.label
                                                 )
                                             }
-                                            className="min-h-11 max-w-[12rem] touch-manipulation truncate rounded-full border border-primary-600/30 bg-primary-600/5 px-3 text-xs text-secondary-200 transition-colors hover:border-primary-500/60 hover:text-primary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                            className="min-h-11 max-w-[12rem] touch-manipulation truncate rounded-full border border-primary-500 bg-primary-600/5 px-3 text-xs text-secondary-200 transition-colors hover:border-primary-400 hover:text-primary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                                         >
                                             {entry.label}
                                         </button>

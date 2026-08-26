@@ -2,6 +2,7 @@
 
 import type { KeyboardEvent } from 'react';
 import { cn } from '@/shared/lib/cn';
+import { LABEL_KO } from '@/shared/lib/typographyStyles';
 import { useRovingKeyboardNav } from '@/shared/hooks/useRovingKeyboardNav';
 import type { DashboardTimeframe } from '@y0ngha/siglens-core';
 import {
@@ -40,10 +41,7 @@ export function TimeframeSelector({
 
     return (
         <div className="flex items-baseline gap-3">
-            <span
-                id={TIMEFRAME_LABEL_ID}
-                className="text-[10px] tracking-wider text-secondary-500 uppercase"
-            >
+            <span id={TIMEFRAME_LABEL_ID} className={LABEL_KO}>
                 타임프레임
             </span>
             <div
@@ -62,7 +60,10 @@ export function TimeframeSelector({
                             onClick={() => onChange(tf)}
                             onKeyDown={handleKeyDown}
                             className={cn(
-                                'min-h-11 touch-manipulation border-b-2 px-2 pt-2 pb-2 text-xs font-semibold tracking-[0.12em] uppercase transition-colors duration-150',
+                                // 라벨이 `15분`·`1시간`·`1일`이라 uppercase는 무효고
+                                // 0.12em 자간은 한글을 흩뜨린다. 크기는 12px로는
+                                // 작아 14px로 올린다(`min-h-11`이라 높이는 불변).
+                                'min-h-11 touch-manipulation border-b-2 px-2 pt-2 pb-2 text-sm font-semibold transition-colors duration-150',
                                 isActive
                                     ? 'text-secondary-100 border-primary-500'
                                     : 'text-secondary-500 hover:text-secondary-300 border-transparent',

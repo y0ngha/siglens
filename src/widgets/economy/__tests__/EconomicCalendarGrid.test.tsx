@@ -516,3 +516,34 @@ describe('EconomicCalendarGrid Korean indicator labels', () => {
         expect(screen.getByText('Mystery Index')).toBeInTheDocument();
     });
 });
+
+/**
+ * 셀에서 심각도를 나르는 것은 6px 점의 **색뿐**이었다 — 점은 `aria-hidden`이고
+ * 텍스트는 건수만 냈다. 그 색은 빨강/주황이라 적록색약에서 수렴한다(WCAG 1.4.1).
+ * 6px에서는 모양이나 링으로 갈라도 읽히지 않으므로 접근 이름에 텍스트로 담는다.
+ */
+describe('날짜 셀의 심각도 노출', () => {
+    it('접근 이름에 중요도가 담긴다', () => {
+        render(
+            <EconomicCalendarGrid country="US" events={[EVENT_A, EVENT_B]} />
+        );
+        const btn = screen.getByRole('button', {
+            name: /6월 20일.*이벤트 2건/,
+        });
+        expect(btn.getAttribute('aria-label')).toContain('중요도');
+    });
+
+    it('이벤트가 없는 날에는 중요도를 붙이지 않는다', () => {
+        // 기본 필터에서 Low는 OFF라 EVENT_C가 걸린 6/21이 0건이 된다.
+        render(
+            <EconomicCalendarGrid
+                country="US"
+                events={[EVENT_A, EVENT_B, EVENT_C]}
+            />
+        );
+        const btn = screen.getByRole('button', {
+            name: /6월 21일.*이벤트 0건/,
+        });
+        expect(btn.getAttribute('aria-label')).not.toContain('중요도');
+    });
+});

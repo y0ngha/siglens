@@ -21,8 +21,10 @@ export default function manifest(): MetadataRoute.Manifest {
         display: 'standalone',
         display_override: ['standalone'],
         orientation: 'portrait',
-        background_color: '#0f172a',
-        theme_color: '#0f172a',
+        /* PWA manifest는 미디어 쿼리 형식을 지원하지 않아 단일 값만 가능하다.
+           기본 테마인 다크(secondary-900)에 고정한다. */
+        background_color: '#09090b',
+        theme_color: '#09090b',
         icons: [
             { src: '/icon192.png', sizes: '192x192', type: 'image/png' },
             { src: '/icon512.png', sizes: '512x512', type: 'image/png' },

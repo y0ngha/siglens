@@ -1,7 +1,6 @@
 // layout.tsx는 컴포넌트 트리 전체를 끌고 오므로, `metadata`만 검증하기 위해
 // 폰트 로더와 하위 위젯/기능 모듈을 전부 stub으로 대체한다.
 vi.mock('next/font/google', () => ({
-    Geist: () => ({ variable: '--font-geist-sans' }),
     Geist_Mono: () => ({ variable: '--font-geist-mono' }),
 }));
 vi.mock('next/font/local', () => ({
