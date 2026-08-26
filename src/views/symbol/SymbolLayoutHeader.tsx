@@ -65,14 +65,21 @@ export function SymbolLayoutHeader({
     } = useSymbolModel();
 
     /*
-     * 헤더 자체는 전폭으로 두고 좌우 여백·최대 폭은 안쪽 `symbol-container`가
-     * 갖는다. 이전에는 헤더가 `px-4` 전폭이라 본문(`max-w-5xl` 중앙 정렬)과
-     * 어긋났다 — 실측 1280px에서 128px, 1920px에서 448px.
-     * 탭 줄은 계속 전폭으로 흘러야 스크롤 스트립이 화면 끝까지 닿는다.
+     * 상단 크롬(브레드크럼·탭)은 **전폭 `px-4`**로 둔다. 서브탭 본문이 쓰는
+     * `symbol-container`(1024px 중앙)를 크롬에도 걸면 기본 탭인 차트와 어긋난다
+     * — 차트는 자기 제목 줄을 전폭 `px-4`로 그리고(캔버스 좌단에 맞추려고), 그
+     * 결과 넓은 화면에서 크롬만 안쪽으로 들여쓰인다(1920px에서 448px).
+     *
+     * 그래서 폭 규약이 둘로 갈린다: **크롬은 뷰포트에, 본문은 읽기 폭에** 맞춘다.
+     * 서브탭(뉴스·펀더멘털)에서는 크롬이 본문보다 바깥에서 시작하는데, 이건
+     * 사용자가 고른 트레이드오프다 — 기본 진입 탭인 차트의 정렬을 우선한다.
+     *
+     * `px-4`는 차트 제목 줄과 **같은 값**이어야 한다. 둘 중 하나만 바뀌면 다시
+     * 어긋난다(`views/symbol/SymbolPageClient.tsx`의 타임프레임 바).
      */
     return (
         <header className="relative z-40 py-3">
-            <div className="symbol-container flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+            <div className="flex flex-col gap-2 px-4 sm:flex-row sm:items-center sm:gap-4">
                 <div className="flex min-w-0 items-center gap-2 sm:flex-1">
                     <Link
                         href="/"

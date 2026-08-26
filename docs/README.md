@@ -23,7 +23,7 @@
 - [CONVENTIONS.md](./conventions/CONVENTIONS.md) — 코딩 컨벤션, 네이밍, 타입, 테스트 커버리지
 - [FF.md](./conventions/FF.md) — FF 4원칙(Readability/Predictability/Cohesion/Coupling)
 - [GIT_CONVENTIONS.md](./conventions/GIT_CONVENTIONS.md) — 브랜치/커밋/PR 규칙
-- [DESIGN.md](./conventions/DESIGN.md) — 컬러 시스템, Tailwind v4 `@theme`, 차트 컬러 상수
+- [DESIGN.md](./conventions/DESIGN.md) — 컬러 시스템(다크·라이트 두 테마), Tailwind v4 `@theme`, 차트 컬러 상수, 공용 클래스 상수, **새 화면을 만들 때 지킬 것**(폭 규약·체크리스트·정적 가드 목록·대비 재는 법·문구 규약)
 - [TOOLCHAIN.md](./conventions/TOOLCHAIN.md) — TypeScript 7 · oxlint/oxfmt · React Doctor(점수 산식 실측, 남은 과제)
 
 ## reference/ — 레퍼런스

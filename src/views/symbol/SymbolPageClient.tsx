@@ -137,12 +137,15 @@ export function SymbolPageClient({
                 {/* Chart-only timeframe controls live inside this overflow-hidden chart
                     container so the layout header can stay free of useSearchParams
                     (which would force PPR to mark the whole route as dynamic). */}
-                {/* 이 바는 위의 헤더·탭(`symbol-container`, max-w-5xl 중앙 정렬)이 아니라
-                    아래의 차트/AI 레일 2-pane에 정렬한다 — 자기가 제어하는 대상이 그쪽이기
-                    때문이다. 한때 `symbol-container`를 걸었더니 vw=1600에서 캔버스가
-                    0~894인데 타임프레임 버튼이 961~1246으로 레일 위에 떠 실측으로 잡혔다.
-                    `px-4`면 h1은 캔버스 좌단(0)에서 16px, 셀렉터 우단은 레일 우단(vw−16)과
-                    같은 선에 놓인다. */}
+                {/* 이 바는 아래의 차트/AI 레일 2-pane에 정렬한다 — 자기가 제어하는
+                    대상이 그쪽이기 때문이다. 한때 `symbol-container`(1024px 중앙)를
+                    걸었더니 vw=1600에서 캔버스가 0~894인데 타임프레임 버튼이
+                    961~1246으로 레일 위에 떠 실측으로 잡혔다. `px-4`면 h1은 캔버스
+                    좌단(0)에서 16px, 셀렉터 우단은 레일 우단(vw−16)과 같은 선에 놓인다.
+
+                    위의 브레드크럼·탭도 같은 전폭 `px-4`를 쓴다. **두 값은 함께
+                    움직여야 한다** — 한쪽만 바꾸면 상단 크롬과 이 바가 다시 어긋난다
+                    (`SymbolLayoutHeader` JSDoc). */}
                 <div className="border-b border-secondary-700 px-4 py-2 sm:py-1.5">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                         {/* 차트 페이지 가시 h1: jail(first-viewport 고정 + overflow-hidden)이라
