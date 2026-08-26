@@ -603,9 +603,17 @@ body {
     }
 }
 
+/*
+   글로우가 **링을 대체하면 안 된다.** 이 규칙이 `@layer` 밖에 있어서
+   Tailwind의 `focus:ring-1`(utilities 레이어)을 통째로 이겼고, 포커스 표시가
+   흐릿한 번짐만 남아 1.32:1(다크)·1.62:1(라이트)이었다 — WCAG 1.4.11의 3:1
+   미달이다. 같은 컴포넌트의 작은 변형(`.focus-glow` 없음)은 5.38:1로 통과하는데
+   큰 변형만 깨져 있었다. 링을 첫 레이어로 직접 그려 글로우가 그 위에 얹히게 한다.
+*/
 .focus-glow:focus-visible {
-    box-shadow: 0 0 20px
-        color-mix(in oklch, var(--color-primary-600) 30%, transparent);
+    box-shadow:
+        0 0 0 2px var(--color-primary-500),
+        0 0 20px color-mix(in oklch, var(--color-primary-600) 30%, transparent);
 }
 
 @keyframes fade-in {

@@ -191,9 +191,20 @@ export default async function Home() {
                                 뉴스·펀더멘털·공포 탐욕 지수를 분석한 AI
                                 리포트를 쉽고 편하게 확인하세요.
                             </p>
+                            {/* `tabIndex={-1}` — 이게 없으면 위의 건너뛰기
+                                링크가 해시만 바꾸고 **DOM 포커스는 body에
+                                남는다**(실측). 링크가 하겠다고 적은 일을
+                                실제로 하게 만든다.
+
+                                남은 한계: 이 링크는 헤더 **뒤**에 있어 실제로
+                                아껴주는 탭 수가 적다. 앞으로 옮기려면 레이아웃이
+                                공용 대상 id를 갖고 각 페이지 `<main>`이 그걸
+                                받아야 해서 이 작업 범위 밖이다. SC 2.4.1 자체는
+                                랜드마크(main 1개 + 라벨된 nav 7개)로 충족된다. */}
                             <div
                                 id="search"
-                                className="mt-8 flex w-full justify-center lg:justify-start"
+                                tabIndex={-1}
+                                className="mt-8 flex w-full justify-center focus:outline-none lg:justify-start"
                             >
                                 <SymbolSearchPanel className="max-w-2xl lg:max-w-none" />
                             </div>

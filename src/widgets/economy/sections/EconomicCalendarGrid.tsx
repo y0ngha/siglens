@@ -385,7 +385,11 @@ function DayCell({
                 onClick={() => onSelect(dateKey)}
                 className={cn(
                     'relative min-h-[4rem] w-full rounded-lg p-1 text-left text-xs transition-colors',
-                    'focus-visible:ring-primary-500 focus-visible:ring-2 focus-visible:outline-none',
+                    /* `ring-offset`이 있어야 **선택된 날**에서도 포커스가 보인다.
+                       선택 표시가 이미 `ring-primary-500 ring-2`라, 포커스 스타일이
+                       같은 값이면 focus 전후 계산값이 바이트 동일해져 표시가 아예
+                       없다(실측: box-shadow 양쪽 다 `rgb(59,130,246) 0 0 0 2px`). */
+                    'focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-900 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                     'motion-reduce:transition-none',
                     isSelected
                         ? 'bg-primary-900/30 ring-primary-500 ring-2'

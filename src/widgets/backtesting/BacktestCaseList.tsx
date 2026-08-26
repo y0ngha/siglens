@@ -43,9 +43,12 @@ export function BacktestCaseList({ cases }: BacktestCaseListProps) {
                     {/* `2024년 11월` 같은 한글 라벨이라 uppercase는 무효고
                         `tracking-widest`(0.1em)는 한글을 흩뜨린다. 10px도 작아
                         12px로 올린다. */}
-                    <div className="pt-3 pb-1 text-xs font-semibold text-secondary-400">
+                    {/* 시각은 그대로 두고 **의미만** 헤딩으로 올린다. 41,000자
+                        페이지에 h1 하나뿐이라 스크린리더가 100개 케이스를 훑을
+                        길이 없었다. */}
+                    <h2 className="pt-3 pb-1 text-xs font-semibold text-secondary-400">
                         {group.label}
-                    </div>
+                    </h2>
                     <div className="flex flex-col gap-2">
                         {group.items.map(c => (
                             <BacktestCaseCard

@@ -60,7 +60,7 @@ export function PasswordField({
                     onBlur={() => setCapsLock(false)}
                     aria-invalid={!!error}
                     aria-describedby={describedBy}
-                    className="h-12 w-full rounded-lg border border-border-control bg-secondary-950 px-4 pr-12 text-sm text-secondary-50 placeholder:text-secondary-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/40 focus:outline-none"
+                    className="h-12 w-full rounded-lg border border-border-control bg-secondary-950 px-4 pr-12 text-sm text-secondary-50 placeholder:text-secondary-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500 focus:outline-none"
                 />
                 <button
                     type="button"
