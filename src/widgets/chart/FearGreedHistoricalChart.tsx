@@ -11,6 +11,7 @@ import {
     type Time,
 } from 'lightweight-charts';
 import { useEffect, useRef } from 'react';
+import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { useChartThemeSync } from '@/widgets/chart/hooks/useChartThemeSync';
 
 interface FearGreedHistoricalChartProps {
@@ -18,7 +19,6 @@ interface FearGreedHistoricalChartProps {
 }
 
 const CHART_HEIGHT = 240;
-const LINE_COLOR = CHART_COLORS.actionEntry; // primary-400 (#60a5fa)
 const LINE_WIDTH = 1;
 
 /**
@@ -35,6 +35,7 @@ export function FearGreedHistoricalChart({
 }: FearGreedHistoricalChartProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
+    const themeVersion = useThemeVersion();
 
     /* 테마 전환 시 크롬만 교체(리마운트 없음). */
     /* 이 차트는 배경을 투명하게 둬 부모 카드 색을 비춘다 — 배경은 건드리지 않는다. */
@@ -65,7 +66,8 @@ export function FearGreedHistoricalChart({
             },
         });
         const series = chart.addSeries(LineSeries, {
-            color: LINE_COLOR,
+            // 상수로 빼지 않는다 — 모듈 로드 시점에 굳으면 라이트에서 옛 색이 남는다.
+            color: CHART_COLORS.actionEntry,
             lineWidth: LINE_WIDTH,
             autoscaleInfoProvider: () => ({
                 priceRange: { minValue: 0, maxValue: 100 },
@@ -80,7 +82,11 @@ export function FearGreedHistoricalChart({
             chartRef.current = null;
             seriesRef.current = null;
         };
-    }, []);
+        /* `themeVersion`을 deps에 두어 테마 토글 시 차트를 다시 만든다.
+       시리즈는 생성 시점의 색을 들고 있어 `applyOptions`만으로는 지표 색이
+       안 바뀌고, 오버레이 훅 31개를 각각 배선하는 대신 생성 지점만 건드린다.
+       로드 경로에서는 이 값이 0에서 변하지 않으므로 리마운트가 없다. */
+    }, [themeVersion]);
 
     useEffect(() => {
         const series = seriesRef.current;

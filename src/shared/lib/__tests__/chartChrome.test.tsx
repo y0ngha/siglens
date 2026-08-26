@@ -47,6 +47,40 @@ describe('getChartChrome', () => {
     });
 
     /**
+     * **지표 색도 테마를 따른다.** 한때 크롬 3키만 테마별 값이 있었고 나머지
+     * 112개는 두 테마 공용이었는데, 그 팔레트는 다크 배경 전용으로 튜닝돼
+     * 있어서 라이트에서 75개가 3:1을 밑돌았다(최악 1.36:1). 차트는 canvas라
+     * DOM 프로브가 볼 수 없어 감사 12라운드가 전부 놓쳤다.
+     *
+     * `CHART_COLORS`는 이제 **접근 시점에** 테마를 보는 게터다. 이 테스트는
+     * 그 배선이 살아 있는지만 본다 — 값의 대비는 `chartPaletteContrastGuard`가
+     * 따로 강제한다.
+     */
+    it('지표 색이 테마에 따라 달라진다', () => {
+        document.documentElement.setAttribute('data-theme', 'light');
+        const light = CHART_COLORS.bullish;
+        document.documentElement.setAttribute('data-theme', 'dark');
+        const dark = CHART_COLORS.bullish;
+
+        expect(light).toBe(CHART_COLORS_LIGHT.bullish);
+        expect(dark).not.toBe(light);
+    });
+
+    /**
+     * 오버라이드가 없는 키는 다크 값으로 떨어져야 한다 — 라이트에서 값이
+     * `undefined`가 되면 lightweight-charts가 색을 못 받아 선이 사라진다.
+     */
+    it('라이트 오버라이드가 없는 키는 다크 값을 그대로 쓴다', () => {
+        document.documentElement.setAttribute('data-theme', 'light');
+        expect(CHART_COLORS.macdLine).toBe('#3b82f6');
+        expect(
+            Object.values(CHART_COLORS).every(
+                v => typeof v === 'string' && v.startsWith('#')
+            )
+        ).toBe(true);
+    });
+
+    /**
      * 팔레트를 **globals.css의 토큰에 못 박는다.**
      *
      * 위 테스트들은 두 팔레트가 서로 다르다는 것만 증명한다. 차트 색은 JS

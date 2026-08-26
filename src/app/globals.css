@@ -14,6 +14,14 @@
 @import 'tailwindcss' source('./../../src');
 
 /*
+   테스트 픽스처는 스캔에서 뺀다. 가드 테스트가 검출기를 증명하려고 적어둔
+   클래스 이름(`.caret-ui-warning`, `.border-[#2b2f36]`, `.rounded-[14px]` 등)이
+   프로덕션 CSS로 구워지고 있었다 — 셀렉터 1,019개 중 40개가 그것이었고,
+   그중 하나는 어디에도 정의되지 않은 `--card-radius`를 참조한다.
+*/
+@source not './../../src/**/__tests__/**';
+
+/*
  * 토큰 2계층 구조 (2026-08 리디자인).
  *
  * 계층 1 = 아래 `primary-*` / `secondary-*` 램프. 프로덕션 2,400여 곳이 이미
@@ -94,7 +102,6 @@
     /* Chart — Semantic */
     --color-chart-bullish: #26a69a;
     --color-chart-bearish: #ef5350;
-    --color-chart-neutral: #94a3b8;
 
     /* Chart — MA/EMA (기간별) */
     --color-chart-period5: #ef4444;
@@ -402,7 +409,6 @@
     --color-ui-warning: #b45309;
     --color-chart-bullish: #0f8074;
     --color-chart-bearish: #d2352f;
-    --color-chart-neutral: #565c66;
 }
 
 /*

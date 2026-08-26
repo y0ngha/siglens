@@ -1,23 +1,14 @@
 'use client';
 
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import type { IChartApi } from 'lightweight-charts';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 import type { Bar, BuySellVolumeResult } from '@y0ngha/siglens-core';
+import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { usePaneLabels } from './hooks/usePaneLabels';
 import { useVolumeChartData } from './hooks/useVolumeChartData';
 import { useVolumeChartLifecycle } from './hooks/useVolumeChartLifecycle';
 import type { PaneLabelConfig } from './types';
-
-const VOLUME_LABELS: PaneLabelConfig[] = [
-    {
-        paneIndex: 0,
-        subLabels: [
-            { name: 'Buy', color: CHART_COLORS.bullish },
-            { name: 'Sell', color: CHART_COLORS.bearish },
-        ],
-    },
-];
 
 interface VolumeChartProps {
     bars: Bar[];
@@ -39,6 +30,7 @@ export function VolumeChart({
 }: VolumeChartProps) {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const themeVersion = useThemeVersion();
 
     const { chartRef, totalSeriesRef, buySeriesRef } = useVolumeChartLifecycle({
         containerRef,
@@ -54,10 +46,32 @@ export function VolumeChart({
         buySellVolume,
     });
 
+    /* 모듈 상수로 두면 로드 시점의 테마 색이 굳는다 — `CHART_COLORS`는 접근
+       시점에 테마를 보는 게터이므로 렌더 안에서, 테마 버전을 물고 만든다. */
+    const volumeLabels = useMemo<PaneLabelConfig[]>(
+        () => [
+            {
+                paneIndex: 0,
+                subLabels: [
+                    { name: 'Buy', color: CHART_COLORS.bullish },
+                    { name: 'Sell', color: CHART_COLORS.bearish },
+                ],
+            },
+        ],
+        /* `CHART_COLORS`는 **접근 시점에** 테마를 보는 게터라, 린터에게는 이
+           콜백이 아무 값에도 의존하지 않는 것처럼 보인다. 실제로는 테마가
+           바뀌면 다른 색을 내놓아야 하므로 이 의존은 진짜다. 빼면 라이트로
+           토글해도 범례 점만 다크 색으로 남는다.
+           메모 자체는 필요하다 — 매 렌더 새 배열을 주면 `usePaneLabels`의
+           효과가 매번 다시 돌아 라벨 DOM을 다시 만든다. */
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [themeVersion]
+    );
+
     usePaneLabels({
         chartRef,
         containerRef: wrapperRef,
-        labels: VOLUME_LABELS,
+        labels: volumeLabels,
     });
 
     // Lightweight Charts 캔버스는 스크린 리더에 노출되지 않으므로 캔버스 컨테이너에 role/aria-label.

@@ -1,6 +1,6 @@
 import {
     TRENDLINE_DIRECTION_LABEL,
-    TRENDLINE_DIRECTION_COLOR,
+    trendlineDirectionColor,
 } from '@/shared/lib/trendline';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 
@@ -18,20 +18,21 @@ describe('TRENDLINE_DIRECTION_LABEL', () => {
     });
 });
 
-describe('TRENDLINE_DIRECTION_COLOR', () => {
+describe('trendlineDirectionColor', () => {
     it('maps ascending to CHART_COLORS.trendlineAscending', () => {
-        expect(TRENDLINE_DIRECTION_COLOR.ascending).toBe(
+        expect(trendlineDirectionColor('ascending')).toBe(
             CHART_COLORS.trendlineAscending
         );
     });
 
     it('maps descending to CHART_COLORS.trendlineDescending', () => {
-        expect(TRENDLINE_DIRECTION_COLOR.descending).toBe(
+        expect(trendlineDirectionColor('descending')).toBe(
             CHART_COLORS.trendlineDescending
         );
     });
 
-    it('has exactly two entries', () => {
-        expect(Object.keys(TRENDLINE_DIRECTION_COLOR)).toHaveLength(2);
-    });
+    /*
+     * 테마별 값이 실제로 갈리는지는 `chartChrome.test.tsx`가 본다 —
+     * 이 파일은 node 환경이라 `document`가 없어 항상 다크로 떨어진다.
+     */
 });
