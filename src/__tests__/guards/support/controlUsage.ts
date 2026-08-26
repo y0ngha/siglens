@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 import { blankComments } from './sourceScan';
@@ -60,20 +60,51 @@ export function controlOpeningTags(
     return out;
 }
 
+/**
+ * 워크 결과 캐시. 가드 9개가 이 함수를 부르고 일부는 한 파일에서 두 번
+ * 부르는데, 트리가 2,300개를 넘어 매번 다시 걷는 비용이 실제로 문제가 됐다 —
+ * CI 러너에서 스캔 가드 3개가 vitest 기본 5초 타임아웃을 넘겼다(로컬 4.61초로
+ * 아슬아슬하게 통과하고 있었다).
+ *
+ * 테스트 실행 중 트리가 바뀌지 않으므로 캐시가 안전하다.
+ */
+/**
+ * 트리 스캔 가드의 타임아웃.
+ *
+ * 이 가드들은 유닛 테스트가 아니라 **전 트리 정적 분석**이다 — 2,300개가 넘는
+ * 파일을 읽고 정규식을 돌린다. vitest 기본 5초는 그 작업에 맞는 예산이 아니고,
+ * 실제로 CI 러너에서 세 개가 한꺼번에 넘쳤다(로컬 4.61초로 아슬아슬하게
+ * 통과하고 있었다 — 트리가 커지면 언제든 넘어갈 상태였다).
+ *
+ * 하나씩 늘리면 다음에 다른 하나가 넘치므로 스캔 가드 전체에 같은 값을 준다.
+ * 전역 `testTimeout`을 올리지 않는 이유: 그러면 진짜로 멈춘 테스트가 30초를
+ * 기다렸다 실패해 원인 파악이 늦어진다.
+ */
+export const SCAN_TIMEOUT_MS = 30_000;
+
+const walkCache = new Map<string, string[]>();
+
 export function sourceFiles(
     dir: string,
     extensions = ['.tsx', '.ts']
 ): string[] {
+    const key = `${dir}\u0000${extensions.join(',')}`;
+    const cached = walkCache.get(key);
+    if (cached !== undefined) return cached;
+
     const out: string[] = [];
-    for (const name of readdirSync(dir)) {
-        if (name === 'node_modules') continue;
-        const full = path.join(dir, name);
-        if (statSync(full).isDirectory()) {
+    // `withFileTypes`로 항목마다 `statSync`를 부르지 않는다 — 2,300개 파일에서
+    // 시스템 콜 수천 번이 줄어든다.
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        if (entry.name === 'node_modules') continue;
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
             out.push(...sourceFiles(full, extensions));
-        } else if (extensions.some(ext => name.endsWith(ext))) {
+        } else if (extensions.some(ext => entry.name.endsWith(ext))) {
             out.push(full);
         }
     }
+    walkCache.set(key, out);
     return out;
 }
 

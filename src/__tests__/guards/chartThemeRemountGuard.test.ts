@@ -3,7 +3,11 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { controlOpeningTags, sourceFiles } from './support/controlUsage';
+import {
+    SCAN_TIMEOUT_MS,
+    controlOpeningTags,
+    sourceFiles,
+} from './support/controlUsage';
 import { blankComments } from './support/sourceScan';
 
 /**
@@ -69,7 +73,7 @@ function mountSites(): MountSite[] {
     return out.sort((a, b) => a.file.localeCompare(b.file));
 }
 
-describe('chart theme remount guard', () => {
+describe('chart theme remount guard', { timeout: SCAN_TIMEOUT_MS }, () => {
     it('차트 마운트 지점이 테마 버전으로 remount된다', () => {
         const sites = mountSites();
         // 스캐너가 아무것도 못 찾았는데 통과하는 일이 없도록 분모를 고정한다.

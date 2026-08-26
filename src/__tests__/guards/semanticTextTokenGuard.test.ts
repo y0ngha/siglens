@@ -3,7 +3,11 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { controlOpeningTags, sourceFiles } from './support/controlUsage';
+import {
+    SCAN_TIMEOUT_MS,
+    controlOpeningTags,
+    sourceFiles,
+} from './support/controlUsage';
 import {
     blankComments,
     classTokens,
@@ -290,7 +294,7 @@ function tintAlphasInSource(token: string): number[] {
     );
 }
 
-describe('semantic text token guard', () => {
+describe('semantic text token guard', { timeout: SCAN_TIMEOUT_MS }, () => {
     it('의미 색의 표면 토큰을 텍스트 색으로 쓰지 않는다', () => {
         expect(offenders()).toEqual([]);
     });

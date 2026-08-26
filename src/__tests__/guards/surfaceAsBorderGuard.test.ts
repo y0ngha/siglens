@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { sourceFiles } from './support/controlUsage';
+import { SCAN_TIMEOUT_MS, sourceFiles } from './support/controlUsage';
 import { blankComments } from './support/sourceScan';
 
 /**
@@ -82,7 +82,7 @@ function offenders(): Offence[] {
     return out.sort((a, b) => a.where.localeCompare(b.where));
 }
 
-describe('surface as border guard', () => {
+describe('surface as border guard', { timeout: SCAN_TIMEOUT_MS }, () => {
     it('표면 토큰이 경계 유틸리티에 쓰이지 않는다', () => {
         expect(offenders()).toEqual([]);
     });

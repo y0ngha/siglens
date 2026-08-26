@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { sourceFiles } from './support/controlUsage';
+import { SCAN_TIMEOUT_MS, sourceFiles } from './support/controlUsage';
 import { blankCssComments } from './support/sourceScan';
 
 /**
@@ -67,7 +67,7 @@ function deadTokens(): string[] {
     });
 }
 
-describe('dead colour token guard', () => {
+describe('dead colour token guard', { timeout: SCAN_TIMEOUT_MS }, () => {
     it('정의된 모든 --color-*에 소비자가 있다', () => {
         expect(definedTokens().length).toBeGreaterThanOrEqual(MIN_TOKENS);
         expect(deadTokens()).toEqual([]);

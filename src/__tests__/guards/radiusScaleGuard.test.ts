@@ -3,6 +3,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { blankComments } from './support/sourceScan';
+import { SCAN_TIMEOUT_MS } from './support/controlUsage';
 
 /**
  * 반경 스케일 단일화 가드.
@@ -66,7 +67,7 @@ function offScaleRadii(): string[] {
     return out.sort();
 }
 
-describe('radius scale guard', () => {
+describe('radius scale guard', { timeout: SCAN_TIMEOUT_MS }, () => {
     it('스케일 밖 반경을 쓰지 않는다', () => {
         expect(offScaleRadii()).toEqual([]);
     });

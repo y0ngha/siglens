@@ -4,7 +4,7 @@ import path from 'node:path';
 import { parse } from '@babel/parser';
 import { describe, expect, it } from 'vitest';
 
-import { sourceFiles } from './support/controlUsage';
+import { SCAN_TIMEOUT_MS, sourceFiles } from './support/controlUsage';
 import { blankComments } from './support/sourceScan';
 
 /**
@@ -59,7 +59,7 @@ function blankedIndices(original: string, blanked: string): Set<number> {
     return out;
 }
 
-describe('source scanner parity', () => {
+describe('source scanner parity', { timeout: SCAN_TIMEOUT_MS }, () => {
     it('babel이 주석이라고 본 구간을 빠짐없이 비운다', () => {
         const missed: string[] = [];
         for (const file of sourceFiles(SRC_DIR)) {

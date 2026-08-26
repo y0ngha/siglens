@@ -8,6 +8,7 @@ import {
     controlOpeningTags,
     identifiersUsedOnControls,
     sourceFiles,
+    SCAN_TIMEOUT_MS,
 } from './support/controlUsage';
 import {
     blankComments,
@@ -341,7 +342,7 @@ function findPropHeldBorders(): string[] {
     return offenders.sort();
 }
 
-describe('control border token guard', () => {
+describe('control border token guard', { timeout: SCAN_TIMEOUT_MS }, () => {
     it('조작 요소의 기본 보더는 3:1을 넘는 색을 쓴다', () => {
         expect(findDecorativeControlBorders()).toEqual([]);
     });

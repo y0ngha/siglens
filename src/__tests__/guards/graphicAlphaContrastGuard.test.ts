@@ -3,7 +3,11 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { controlOpeningTags, sourceFiles } from './support/controlUsage';
+import {
+    SCAN_TIMEOUT_MS,
+    controlOpeningTags,
+    sourceFiles,
+} from './support/controlUsage';
 import {
     blankComments,
     classTokens,
@@ -169,7 +173,7 @@ function offenders(): Offence[] {
     return out.sort((a, b) => a.where.localeCompare(b.where));
 }
 
-describe('graphic alpha contrast guard', () => {
+describe('graphic alpha contrast guard', { timeout: SCAN_TIMEOUT_MS }, () => {
     it('알파가 얹힌 그래픽이 합성 후에도 3:1을 넘는다', () => {
         expect(offenders()).toEqual([]);
     });
