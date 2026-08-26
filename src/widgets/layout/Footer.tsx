@@ -14,6 +14,7 @@ import {
     TERMS_TITLE,
 } from '@/shared/lib/legal';
 import { GITHUB_URL, SITE_NAME } from '@/shared/lib/seo';
+import { LABEL_GROUP } from '@/shared/lib/typographyStyles';
 import Link from 'next/link';
 
 /**
@@ -133,10 +134,7 @@ function FooterNavColumn({ column }: FooterNavColumnProps) {
     const headingId = `footer-nav-${column.id}`;
     return (
         <div>
-            <p
-                id={headingId}
-                className="text-sm font-semibold text-secondary-200"
-            >
+            <p id={headingId} className={LABEL_GROUP}>
                 {column.label}
             </p>
             <ul aria-labelledby={headingId} className="mt-3 space-y-2">

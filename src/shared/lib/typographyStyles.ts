@@ -58,6 +58,21 @@ export const HEADING_SECTION = cn(
  * 굵기 한 단계만 남았다 — 라이트 테마에서는 하위 h4가 오히려 대비가 높았다.
  * 두 그리드가 같은 h2 토큰을 쓰는 이상 소제목도 같은 값이어야 한다.
  */
+/**
+ * 목록 묶음의 이름표. 문서 헤딩이 **아니다.**
+ *
+ * 푸터 사이트맵의 열 제목이 첫 소비자다. 그 자리를 `<h2>`로 두면 푸터가 모든
+ * 라우트에 렌더되는 탓에 전 페이지 문서 개요에 사이트맵 제목이 네 개씩 섞인다 —
+ * 종목 페이지의 실제 h2들과 같은 층에 올라온다. 그래서 마크업은 `<p>` +
+ * `aria-labelledby`로 두고, 위계는 이 상수가 시각적으로만 만든다.
+ *
+ * [[HEADING_SUBSECTION]](h3, `text-base font-medium`)보다 작고 굵다. 헤딩 계열은
+ * 본문 흐름 안의 위계이고 이건 **목록 위에 붙는 이름표**라 역할이 다르다.
+ * [[LABEL_KO]](`text-xs`, `secondary-400`)보다는 크고 밝은데, 라벨이 아니라
+ * 그 아래 항목들을 거느리기 때문이다.
+ */
+export const LABEL_GROUP = cn('text-sm font-semibold text-secondary-200');
+
 export const HEADING_SUBSECTION = cn(
     'text-base font-medium text-secondary-200'
 );

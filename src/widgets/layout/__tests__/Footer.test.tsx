@@ -37,6 +37,7 @@ import {
     ALL_NAV_REGION_LINKS,
     NAV_VERTICALS,
 } from '@/shared/config/assetClassNav';
+import { GITHUB_URL } from '@/shared/lib/seo';
 
 describe('Footer', () => {
     it('renders the investment disclaimer', () => {
@@ -160,12 +161,21 @@ describe('Footer', () => {
         render(<Footer />);
 
         const link = screen.getByRole('link', { name: /GitHub 저장소/ });
-        expect(link).toHaveAttribute(
-            'href',
-            'https://github.com/y0ngha/siglens'
-        );
+        // 배선은 상수로 검증한다 — 기대값을 하드코딩하면 상수가 정상적으로
+        // 바뀌었을 때도 실패해, 진짜 회귀인지 낡은 기대값인지 구분이 안 된다
+        // (MISTAKES.md #13.5).
+        expect(link).toHaveAttribute('href', GITHUB_URL);
         expect(link).toHaveAttribute('target', '_blank');
         expect(link.getAttribute('rel')).toContain('noopener');
+    });
+
+    /**
+     * 위 테스트는 상수를 import하므로 **배선만** 본다 — 상수 자체가 엉뚱한 값으로
+     * 바뀌면 그대로 통과한다. 값의 정확한 저장소 경로는 단위 테스트가 판단할 수
+     * 없지만 **형태**는 판단할 수 있으므로, 그 층만 따로 붙든다.
+     */
+    it('GITHUB_URL은 https GitHub 주소다', () => {
+        expect(GITHUB_URL).toMatch(/^https:\/\/github\.com\/[^/]+\/[^/]+$/);
     });
 
     it('열 제목은 헤딩이 아니다 (전 페이지 문서 개요 오염 방지)', () => {
