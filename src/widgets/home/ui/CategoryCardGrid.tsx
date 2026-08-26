@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import type { TickerItem } from '@/shared/lib/types';
 import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 /** 카드 좌측 보더 + 라벨 텍스트의 Tailwind 색상 클래스 쌍. */
 export interface CardStyle {
@@ -32,12 +33,10 @@ export function CategoryCardGrid({
 }: CategoryCardGridProps) {
     return (
         <nav aria-label={ariaLabel} className="page-container py-10">
-            {/* `미국 섹터별 인기 종목` 같은 한글 제목이라 uppercase는 무효고
-                `tracking-wider`(0.05em)는 한글을 흩뜨린다. 위계는 크기와 굵기로
-                만든다 — `shared/lib/typographyStyles.ts` 참조. */}
-            <h2 className="mb-6 text-base font-semibold tracking-tight text-secondary-100">
-                {heading}
-            </h2>
+            {/* 같은 위계의 h2는 `HEADING_SECTION` 한 곳에서만 정의한다
+                (`shared/lib/typographyStyles.ts`). 한글 제목이라 uppercase·넓은
+                자간을 쓰지 않는 근거도 그 상수의 주석에 있다. */}
+            <h2 className={cn('mb-6', HEADING_SECTION)}>{heading}</h2>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {cards.map(card => (
                     <div

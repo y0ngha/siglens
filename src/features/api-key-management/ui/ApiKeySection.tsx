@@ -135,7 +135,7 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                                 label="삭제"
                                 pendingLabel="삭제 중…"
                                 aria-describedby={deleteStatusId}
-                                className="inline-flex h-7 items-center justify-center rounded-lg border border-ui-danger/40 px-3 text-xs font-medium text-ui-danger-text transition-colors hover:bg-ui-danger/10 focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none disabled:opacity-50"
+                                className="inline-flex h-7 items-center justify-center rounded-lg border border-ui-danger/40 px-3 text-xs font-medium text-ui-danger-text transition-colors hover:bg-ui-danger/10 focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none disabled:border-border-control disabled:text-secondary-500"
                             />
                         </form>
                     </div>
@@ -158,7 +158,7 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                     <SubmitButton
                         label="저장"
                         pendingLabel="저장 중…"
-                        className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-secondary-700 px-4 text-sm font-medium text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none disabled:opacity-50"
+                        className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-secondary-700 px-4 text-sm font-medium text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none disabled:text-secondary-500"
                     />
                     {isRegistered && (
                         <button

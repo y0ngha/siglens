@@ -24,7 +24,7 @@ function DangerSubmitButton({ disabled }: DangerSubmitButtonProps) {
             type="submit"
             disabled={isDisabled}
             aria-busy={pending}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-ui-danger-fill font-semibold text-white transition-colors hover:bg-ui-danger-fill-hover focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none active:bg-ui-danger-fill-active disabled:opacity-50 motion-reduce:transition-none"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-ui-danger-fill font-semibold text-white transition-colors hover:bg-ui-danger-fill-hover focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none active:bg-ui-danger-fill-active disabled:bg-secondary-700 disabled:text-secondary-500 motion-reduce:transition-none"
         >
             {pending ? (
                 <>

@@ -2,6 +2,7 @@
 
 import React, { useId, useRef } from 'react';
 import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import type { SkillShowcaseItem, SkillType } from '@y0ngha/siglens-core';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { buildPanelId, buildTabId, TabsPill } from '@/shared/ui/tabs';
@@ -318,11 +319,10 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
 
     return (
         <section className="page-container py-10">
-            {/* 한글 제목이라 uppercase는 무효고 `tracking-wider`는 자모를
-                흩뜨린다. `CategoryCardGrid`의 섹션 제목과 같은 톤으로 맞춘다. */}
-            <h2 className="mb-6 text-base font-semibold tracking-tight text-secondary-100">
-                AI 분석 스킬
-            </h2>
+            {/* 같은 위계의 h2는 `HEADING_SECTION` 한 곳에서만 정의한다 —
+                여기와 `CategoryCardGrid`가 각자 리터럴을 복제하고 있었고, 그
+                복제본이 토큰(18px)과 어긋난 16px로 굳어 있었다. */}
+            <h2 className={cn('mb-6', HEADING_SECTION)}>AI 분석 스킬</h2>
             <TabsPill
                 tabs={TABS}
                 activeTab={activeTab}

@@ -28,7 +28,6 @@ import type { Locator, Page } from '@playwright/test';
  * provider back to 미등록 (UI delete if present) so the test always starts from a
  * known-clean state and the register→delete assertions hold deterministically.
  */
-const PROVIDER_LABEL = 'Claude (Anthropic)';
 const DUMMY_KEY = 'sk-ant-e2e-dummy';
 /** Timeout for the settled badge after revalidatePath remounts the card. */
 const BADGE_SETTLE_TIMEOUT_MS = 45_000;

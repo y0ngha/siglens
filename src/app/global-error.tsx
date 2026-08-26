@@ -6,7 +6,7 @@ import './globals.css';
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { reportClientError } from '@/shared/lib/reportClientError';
-import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
+import { ThemeInitScript } from '@/shared/ui/ThemeInitScript';
 
 interface GlobalErrorProps {
     error: Error & { digest?: string };
@@ -37,15 +37,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
     return (
         <html lang="ko">
             <head>
-                {/*
-                    이 셸은 루트 레이아웃을 **교체**하므로 거기 있던 테마 부트스트랩도
-                    같이 사라진다. 없으면 라이트를 고른 사용자가 완전히 어두운
-                    에러 화면을 본다 — 토큰 기본값이 다크이기 때문이다.
-                */}
-                <script
-                    // eslint-disable-next-line react/no-danger
-                    dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
-                />
+                <ThemeInitScript />
             </head>
             <body className="flex min-h-dvh flex-col items-center justify-center bg-secondary-900 px-6 text-center text-secondary-50">
                 <p className="text-xs font-semibold tracking-[0.01em] text-primary-400">

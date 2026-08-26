@@ -84,7 +84,7 @@ function CheckboxBox({
                     checked || indeterminate
                         ? 'bg-primary-500 border-primary-500 hover:bg-primary-400'
                         : '',
-                    'disabled:cursor-not-allowed disabled:opacity-50'
+                    'disabled:cursor-not-allowed disabled:border-border-control'
                 )}
             />
             {checked && !indeterminate ? (

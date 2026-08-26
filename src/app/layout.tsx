@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
+import { ThemeInitScript } from '@/shared/ui/ThemeInitScript';
 import type { ReactNode } from 'react';
 import Script from 'next/script';
 import { Geist_Mono } from 'next/font/google';
@@ -148,17 +148,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             className={`${geistMono.variable} ${pretendard.variable} h-full overflow-x-hidden antialiased`}
         >
             <head>
-                {/*
-                    렌더 블로킹이 **의도된** 유일한 스크립트다. 모든 라우트가 ISR
-                    정적이라 서버는 테마를 모르고, 쿠키로 넘기면 공유 셸이 dynamic이
-                    되어 전 라우트 ISR이 깨진다(축 0 규약). 첫 페인트 전에 속성을
-                    찍지 않으면 다크 셸이 칠해진 뒤 라이트로 바뀌는 깜빡임이 난다.
-                    스크립트 본문과 근거는 `shared/lib/theme.ts` 참조.
-                */}
-                <script
-                    // eslint-disable-next-line react/no-danger
-                    dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
-                />
+                <ThemeInitScript />
             </head>
             {/* overflow-x-hidden on both html and body prevents fixed/transformed elements (mobile drawer)
                 from extending the document scrollWidth past the viewport edge. */}

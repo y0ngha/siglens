@@ -20,7 +20,7 @@ const FIELD_INPUT_ERROR =
 const SYMBOL_CHIP =
     'border-secondary-700 bg-secondary-950 flex h-10 items-center justify-between rounded-lg border px-3';
 const BUTTON_PRIMARY =
-    'bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 inline-flex h-10 shrink-0 touch-manipulation items-center justify-center rounded-lg px-4 text-sm font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50';
+    'bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 inline-flex h-10 shrink-0 touch-manipulation items-center justify-center rounded-lg px-4 text-sm font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-secondary-700 disabled:text-secondary-500';
 const BUTTON_GHOST =
     'text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 inline-flex h-10 shrink-0 touch-manipulation items-center justify-center px-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none';
 

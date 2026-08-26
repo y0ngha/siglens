@@ -653,7 +653,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ <div className="opacity-50 border border-primary-500">Locked control</div>  // border dims to ~1.65:1, falls below 3:1 minimum
     ✅ <button disabled className="disabled:text-secondary-500">Tier-locked feature</button>  // 6.84:1 in both themes
     ✅ <div className="border border-border-control">Locked control</div>  // 3:1+ in both themes (remove opacity)
-    → Recurring: W6b Round 1 (disabled timeframe buttons with `disabled:opacity-40`), W6c (disabled switch with `opacity-50`) — 2 occurrences in redesign-p1 audit
+    → **양 테마를 다 재라.** 다크가 통과해도 라이트는 실패한다 — 라이트에서는 밑판과 글자가 같은 흰
+      배경으로 함께 수렴해 버튼이 종잇장이 된다(실측 최저 1.51:1). 다크 전용이던 master에서는 무해했고
+      라이트 테마를 들이면서 결함이 됐다
+    ✅ 채운 컨트롤: `disabled:bg-secondary-700 disabled:text-secondary-500` → 4.89(다크) / 5.49(라이트)
+    ✅ 고스트·경계 컨트롤: `disabled:text-secondary-500` → 6.84 / 6.34. 색을 띤 경계는
+      `disabled:border-border-control`로 함께 중화 → 3.57 / 3.81
+    → `src/__tests__/guards/disabledOpacityGuard.test.ts`가 정적으로 막는다(`disabled:`·`aria-disabled:`·
+      `group-disabled:` 및 겹친 variant까지)
+    → Recurring: W6b Round 1 (disabled timeframe buttons with `disabled:opacity-40`), W6c (disabled switch
+      with `opacity-50`), PR #771 리뷰 (9개 파일 12곳이 여전히 살아 있었음) — 14 occurrences
 
 19. Heading with no colour class inherits `body { color }` and outranks its own parent heading
     → `globals.css` sets `body { color: var(--color-secondary-50) }` — the BRIGHTEST tier. A heading whose `className` carries no colour token silently renders at that tier, i.e. at or above the h2/h1 that governs it
