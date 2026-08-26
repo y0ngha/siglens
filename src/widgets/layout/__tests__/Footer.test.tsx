@@ -135,9 +135,37 @@ describe('Footer', () => {
             const list = screen.getByRole('list', { name: vertical.label });
             expect(list).toBeInTheDocument();
         }
+    });
+
+    /**
+     * 푸터는 축이 둘이다 — 왼쪽은 "누가 만들었는가"(저작권·저장소·약관·문의),
+     * 오른쪽은 "어디로 갈 수 있는가"(사이트맵). 랜드마크도 그렇게 갈라 둔다.
+     */
+    it('두 랜드마크로 갈라진다 — 사이트 정보 · 사이트맵', () => {
+        render(<Footer />);
+
+        const info = screen.getByRole('navigation', { name: '사이트 정보' });
+        const sitemap = screen.getByRole('navigation', { name: '사이트맵' });
+
         expect(
-            screen.getByRole('list', { name: '서비스' })
+            within(info).getByRole('link', { name: '개인정보처리방침' })
         ).toBeInTheDocument();
+        expect(within(info).queryByRole('list')).toBeNull();
+        expect(within(sitemap).getAllByRole('list')).toHaveLength(
+            NAV_VERTICALS.length
+        );
+    });
+
+    it('GitHub 저장소 링크는 새 탭으로 열고 opener를 끊는다', () => {
+        render(<Footer />);
+
+        const link = screen.getByRole('link', { name: /GitHub 저장소/ });
+        expect(link).toHaveAttribute(
+            'href',
+            'https://github.com/y0ngha/siglens'
+        );
+        expect(link).toHaveAttribute('target', '_blank');
+        expect(link.getAttribute('rel')).toContain('noopener');
     });
 
     it('열 제목은 헤딩이 아니다 (전 페이지 문서 개요 오염 방지)', () => {

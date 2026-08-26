@@ -5,6 +5,7 @@ import {
     NAV_VERTICALS,
     type NavVertical,
 } from '@/shared/config/assetClassNav';
+import { GithubIcon } from '@/shared/ui/GithubIcon';
 import {
     INVESTMENT_DISCLAIMER,
     PRIVACY_PATH,
@@ -12,8 +13,8 @@ import {
     TERMS_PATH,
     TERMS_TITLE,
 } from '@/shared/lib/legal';
+import { GITHUB_URL, SITE_NAME } from '@/shared/lib/seo';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
 
 /**
  * 푸터 링크 하나. `visible`만 눈에 보이고 `srPrefix`/`srSuffix`는 화면에서 숨는다.
@@ -22,10 +23,9 @@ import type { ReactNode } from 'react';
  * 다시 적는 게 시각적으로 군더더기다 — 헤더 드롭다운도 이 자리에서 `미국`만
  * 쓴다. 그런데 보이는 글자를 그냥 짧게 줄이면 **앵커 텍스트가 9개 바뀐다.**
  * 푸터는 전 페이지에 렌더되는 전역 링크 집합이라 그 변경의 사정거리가 사이트
- * 전체다. 그래서 눈에는 짧은 라벨만 보이되 접근성 이름과 크롤러가 읽는 텍스트는
- * `fullLabel` 그대로 남긴다.
+ * 전체다. 그래서 눈에는 짧은 라벨만 보이되 크롤러가 읽는 텍스트는 `fullLabel`
+ * 그대로 남긴다.
  */
-/** `fullLabel`을 눈에 보이는 조각과 숨는 조각으로 가른 결과. */
 interface FooterLabelParts {
     readonly srPrefix: string;
     readonly visible: string;
@@ -84,10 +84,9 @@ interface FooterColumn {
 
 /**
  * 지역에 속하지 않는 상위 허브(현재 `/news`)를 자기 버티컬 열의 **첫 항목**으로
- * 넣는다. 평탄 목록이던 시절에는 `NAV_OVERVIEW_LINKS`로 앞에 몰아 붙였는데,
- * 열로 나뉜 지금은 그 링크가 어느 열에 속하는지가 정해져 있다. 판정은 계속
- * `assetClassNav`의 `hasRegionForRoot`가 소유한다 — 같은 식을 여기 또 적으면
- * 그 모듈이 생긴 사고(두 표면이 각자 판정하다 한쪽만 갱신됨)와 같은 모양이 된다.
+ * 넣는다. 판정은 계속 `assetClassNav`의 `hasRegionForRoot`가 소유한다 — 같은 식을
+ * 여기 또 적으면 그 모듈이 생긴 사고(두 표면이 각자 판정하다 한쪽만 갱신됨)와
+ * 같은 모양이 된다.
  */
 function columnOf(vertical: NavVertical): FooterColumn {
     const overview: readonly FooterLink[] = hasRegionForRoot(vertical)
@@ -115,51 +114,22 @@ function columnOf(vertical: NavVertical): FooterColumn {
 
 const NAV_COLUMNS: readonly FooterColumn[] = NAV_VERTICALS.map(columnOf);
 
-/**
- * 목적지가 사이트 정보인 마지막 열. 버티컬에서 파생되지 않으므로 직접 적되,
- * **껍데기는 버티컬 열과 공유한다**(`FooterNavColumn`). 제목 클래스·`<ul>`·
- * `aria-labelledby` 배선을 여기 또 적으면 두 곳 중 한 곳만 바뀐다 — 이 PR이
- * `DESIGN.md`에 넣은 체크리스트 3번이 금지하는 바로 그 형태다.
- */
-const INFO_COLUMN: FooterColumn = {
-    id: 'info',
-    label: '서비스',
-    links: [
-        {
-            href: PRIVACY_PATH,
-            fullLabel: PRIVACY_TITLE,
-            srPrefix: '',
-            visible: PRIVACY_TITLE,
-            srSuffix: '',
-        },
-        {
-            href: TERMS_PATH,
-            fullLabel: TERMS_TITLE,
-            srPrefix: '',
-            visible: TERMS_TITLE,
-            srSuffix: '',
-        },
-    ],
-};
-
 const LINK_CLASSES =
     'rounded text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
+
+interface FooterNavColumnProps {
+    readonly column: FooterColumn;
+}
 
 /**
  * 열 제목은 `<h2>`가 아니라 `<p>` + `aria-labelledby`다.
  *
- * 헤딩으로 쓰면 전 페이지 문서 개요에 h2가 다섯 개씩 추가된다 — 푸터는 모든
+ * 헤딩으로 쓰면 전 페이지 문서 개요에 h2가 네 개씩 추가된다 — 푸터는 모든
  * 라우트에 렌더되므로 종목 페이지의 실제 h2들과 같은 층에 사이트맵 제목이
  * 섞인다. 목록에 이름을 붙이는 것만으로 스크린리더의 그룹 인지에는 충분하고,
  * 문서 개요는 건드리지 않는다.
  */
-interface FooterNavColumnProps {
-    readonly column: FooterColumn;
-    /** 링크가 아닌 항목(현재는 문의하기 다이얼로그 트리거)을 목록 끝에 붙인다. */
-    readonly children?: ReactNode;
-}
-
-function FooterNavColumn({ column, children }: FooterNavColumnProps) {
+function FooterNavColumn({ column }: FooterNavColumnProps) {
     const headingId = `footer-nav-${column.id}`;
     return (
         <div>
@@ -191,50 +161,91 @@ function FooterNavColumn({ column, children }: FooterNavColumnProps) {
                         </Link>
                     </li>
                 ))}
-                {children}
             </ul>
         </div>
     );
 }
 
+/**
+ * 전폭 푸터. 헤더와 같은 폭 규약(전폭 `px-4`)을 쓴다.
+ *
+ * 크롬이 뷰포트에 맞으면 링크를 가운데 1200px 안에 모아둘 이유가 없어지는데,
+ * 그렇다고 사이트맵만 왼쪽에 붙이면 넓은 화면에서 오른쪽 절반이 통째로 빈다.
+ * 그래서 **한 가로 행의 양 끝**에 붙인다 — 왼쪽은 "누가 만들었고 어떤 약속을
+ * 하는가"(저작권·저장소·약관·문의), 오른쪽은 "어디로 갈 수 있는가"(사이트맵).
+ * 면책 고지는 둘 중 어느 쪽 축도 아니라 구분선 아래 자기 줄을 갖는다.
+ *
+ * `lg` 미만에서는 세로로 쌓이고, 그때는 사이트맵이 먼저 온다 — 좁은 화면에서
+ * 푸터에 도달한 사람이 찾는 것은 대개 목적지이지 저작권 표기가 아니다.
+ */
 export function Footer() {
     return (
         <footer className="border-t border-secondary-700">
-            <div className="page-container py-10">
-                <nav
-                    aria-label="사이트 정보"
-                    className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-5"
-                >
-                    {NAV_COLUMNS.map(column => (
-                        <FooterNavColumn key={column.id} column={column} />
-                    ))}
-                    <FooterNavColumn column={INFO_COLUMN}>
-                        <li>
+            <div className="w-full px-4 py-10">
+                <div className="flex flex-col-reverse gap-10 lg:flex-row lg:items-start lg:justify-between lg:gap-16">
+                    {/* 왼쪽 — 저작권·저장소·약관·문의. 한 줄로 흐르되 좁아지면 감싼다. */}
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+                        {/* `whitespace-nowrap`: 320px에서 `© 2026` / `Siglens`
+                            두 줄로 쪼개지던 회귀가 있었다(2026-08-25 사용자 제보). */}
+                        <p className="text-sm whitespace-nowrap text-secondary-400">
+                            © <CurrentYear /> {SITE_NAME}
+                        </p>
+                        <a
+                            href={GITHUB_URL}
+                            target="_blank"
+                            // 외부 탭으로 여는 링크는 opener를 끊는다. `noreferrer`는
+                            // `noopener`를 포함하지만 둘 다 적어 의도를 남긴다.
+                            rel="noopener noreferrer"
+                            aria-label={`${SITE_NAME} GitHub 저장소 (새 탭에서 열림)`}
+                            className="rounded text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        >
+                            <GithubIcon className="h-5 w-5" />
+                        </a>
+                        <nav
+                            aria-label="사이트 정보"
+                            className="flex flex-wrap items-center gap-x-4 gap-y-2"
+                        >
+                            <Link
+                                href={PRIVACY_PATH}
+                                // 위 사이트맵 링크와 동일 — 전역 푸터의 `_rsc` 파편화
+                                // (docs/architecture/CDN_CACHING.md §1).
+                                prefetch={false}
+                                className={LINK_CLASSES}
+                            >
+                                {PRIVACY_TITLE}
+                            </Link>
+                            <Link
+                                href={TERMS_PATH}
+                                prefetch={false}
+                                className={LINK_CLASSES}
+                            >
+                                {TERMS_TITLE}
+                            </Link>
                             <ContactDialog
                                 triggerLabel="문의하기"
                                 triggerClassName={LINK_CLASSES}
                             />
-                        </li>
-                    </FooterNavColumn>
-                </nav>
+                        </nav>
+                    </div>
 
-                <div className="mt-10 flex flex-col gap-3 border-t border-secondary-700 pt-6">
-                    <p
-                        role="note"
-                        aria-label="투자 면책 고지"
-                        className="text-xs leading-relaxed text-secondary-400 sm:text-sm"
+                    {/* 오른쪽 — 사이트맵. 좁은 화면에서는 2열, 넓어지면 버티컬 수만큼 편다. */}
+                    <nav
+                        aria-label="사이트맵"
+                        className="grid grid-cols-2 gap-x-8 gap-y-8 sm:grid-cols-4 lg:gap-x-14"
                     >
-                        {INVESTMENT_DISCLAIMER}
-                    </p>
-                    {/* `whitespace-nowrap`: 320px에서 `© 2026` / `Siglens` 두 줄로
-                        쪼개지던 회귀가 있었다(2026-08-25 사용자 제보). 당시 원인은
-                        옆에 있던 `flex-wrap` nav가 폭을 뺏은 것이었고 지금은 이
-                        문단이 자기 행을 독점하지만, 좁은 화면에서 저작권 한 줄이
-                        쪼개질 이유는 여전히 없다. */}
-                    <p className="text-sm whitespace-nowrap text-secondary-400">
-                        © <CurrentYear /> Siglens
-                    </p>
+                        {NAV_COLUMNS.map(column => (
+                            <FooterNavColumn key={column.id} column={column} />
+                        ))}
+                    </nav>
                 </div>
+
+                <p
+                    role="note"
+                    aria-label="투자 면책 고지"
+                    className="mt-10 border-t border-secondary-700 pt-6 text-xs leading-relaxed text-secondary-400"
+                >
+                    {INVESTMENT_DISCLAIMER}
+                </p>
             </div>
         </footer>
     );
