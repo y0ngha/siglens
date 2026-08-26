@@ -43,6 +43,12 @@ function fieldForErrorCode(code: PortfolioActionErrorCode): HoldingErrorField {
 interface HoldingFormProps {
     /** Present -> edit mode (symbol is fixed, read-only). Absent -> add mode (symbol picked via autocomplete). */
     initial?: PortfolioHoldingView;
+    /**
+     * 추가 모드의 시작 심볼. `/[symbol]/position`의 CTA에서 넘어온 사용자가
+     * 보던 종목을 다시 입력하지 않게 한다. 편집 모드에서는 `initial`이
+     * 우선한다 — 그쪽은 심볼이 읽기 전용이다.
+     */
+    defaultSymbol?: string;
     onSubmit: (input: RawHoldingInput) => Promise<SavePortfolioResult>;
     submitting?: boolean;
     onCancel?: () => void;
@@ -59,6 +65,7 @@ interface HoldingFormProps {
 /** Controlled add/edit form for a single holding. In add mode, clears itself on success; in edit mode, calls onCancel on success to let the parent close the inline editor. */
 export function HoldingForm({
     initial,
+    defaultSymbol,
     onSubmit,
     submitting = false,
     onCancel,
@@ -68,7 +75,9 @@ export function HoldingForm({
     const formId = useId();
     const errorId = `${formId}-error`;
 
-    const [symbol, setSymbol] = useState(initial?.symbol ?? '');
+    const [symbol, setSymbol] = useState(
+        initial?.symbol ?? defaultSymbol ?? ''
+    );
     const [quantity, setQuantity] = useState(
         initial ? trimTrailingZeros(initial.quantity) : ''
     );

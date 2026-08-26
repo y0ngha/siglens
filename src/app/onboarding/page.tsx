@@ -22,12 +22,20 @@ export const metadata: Metadata = {
 // Exported (rather than module-private) so tests can `await OnboardingGuard()`
 // directly and assert the unauthenticated redirect target, mirroring the
 // `MarketContent` export pattern in `src/app/market/page.tsx`.
-export async function OnboardingGuard() {
+export async function OnboardingGuard({ symbol }: { symbol?: string } = {}) {
     const user = await getCurrentUser();
     if (!user) {
-        redirect('/login?next=/onboarding');
+        // 심볼을 로그인 next에 이어 붙인다. 리터럴 `/login?next=/onboarding`
+        // 이었을 때는 `/AAPL/position`에서 온 사용자가 로그인을 마쳐도
+        // 아무것도 채워지지 않은 온보딩 화면에 떨어졌다 — 두 홉에서 의도가
+        // 두 번 버려졌다.
+        const target =
+            symbol === undefined
+                ? '/onboarding'
+                : `/onboarding?symbol=${encodeURIComponent(symbol)}`;
+        redirect(`/login?next=${encodeURIComponent(target)}`);
     }
-    return <OnboardingContent />;
+    return <OnboardingContent initialSymbol={symbol} />;
 }
 
 // Exported (not module-private) so tests can render it directly and assert
@@ -70,12 +78,20 @@ export function OnboardingSkeleton() {
     );
 }
 
-export default function OnboardingPage() {
+interface OnboardingPageProps {
+    searchParams: Promise<{ symbol?: string }>;
+}
+
+export default async function OnboardingPage({
+    searchParams,
+}: OnboardingPageProps) {
+    // `/[symbol]/position` CTA가 실어 보낸 심볼. 없으면 예전과 동일하게 동작한다.
+    const { symbol } = await searchParams;
     return (
         <main className="min-h-[calc(100dvh-var(--header-h))] bg-secondary-950 px-4 py-12">
             <div className="mx-auto w-full max-w-2xl">
                 <Suspense fallback={<OnboardingSkeleton />}>
-                    <OnboardingGuard />
+                    <OnboardingGuard symbol={symbol} />
                 </Suspense>
             </div>
         </main>

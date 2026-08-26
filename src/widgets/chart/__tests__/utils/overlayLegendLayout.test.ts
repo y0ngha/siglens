@@ -82,8 +82,25 @@ describe('legendMaxRows', () => {
     });
 
     it('모바일 가격 pane에서 몇 줄이 들어가는지', () => {
-        // (110 - 16 인셋 - 8 패딩) / 17 = 5.05 → 5줄
-        expect(legendMaxRows(MOBILE_PRICE_PANE_PX)).toBe(5);
+        // 범례는 pane의 65%까지만 쓴다 — 예전에는 pane 전체가 예산이라
+        // 지표를 많이 켜면 범례가 자기 pane의 78.9%를 덮었다(감사 실측:
+        // pane 175px에 범례 138px, 캔들이 보이는 구간 29px).
+        // (110*0.65 - 16 인셋 - 8 패딩) / 17 = 2.68 → 2줄
+        expect(legendMaxRows(MOBILE_PRICE_PANE_PX)).toBe(2);
+    });
+
+    /**
+     * 상한이 실제로 물리는지 — 이 단언이 없으면 지분을 1.0으로 되돌려도
+     * 나머지 케이스가 전부 통과한다.
+     */
+    it('범례는 가격 pane의 65%를 넘지 않는다', () => {
+        // 계약은 `LEGEND_MAX_PANE_FRACTION`(0.65)이다. 지분을 1.0으로
+        // 되돌리면 pane 175에서 0.78이 나와 이 단언이 깨진다 — 나머지
+        // 케이스는 전부 통과하므로 이 검사가 없으면 조용히 회귀한다.
+        for (const pane of [110, 175, 240, 354]) {
+            const px = legendMaxRows(pane) * LEGEND_ROW_HEIGHT_PX;
+            expect(px / pane, `pane=${pane}`).toBeLessThanOrEqual(0.65);
+        }
     });
 
     it('아주 낮은 pane에서도 최소 한 줄은 남긴다', () => {
@@ -91,8 +108,10 @@ describe('legendMaxRows', () => {
         expect(legendMaxRows(20)).toBe(1);
     });
 
-    it('데스크톱 높이는 실질적으로 제한이 되지 않는다', () => {
-        expect(legendMaxRows(600)).toBeGreaterThanOrEqual(33);
+    it('데스크톱 높이에서는 상한이 사실상 걸리지 않는다', () => {
+        // 실제 범례 항목은 최대 14개이고 한 줄에 둘 이상 들어가므로,
+        // 21줄이면 데스크톱에서 `+N` 칩이 생길 일이 없다.
+        expect(legendMaxRows(600)).toBeGreaterThanOrEqual(20);
     });
 });
 

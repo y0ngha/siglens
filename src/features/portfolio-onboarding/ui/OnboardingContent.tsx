@@ -18,7 +18,14 @@ const SKIP_LINK =
  * can seed their holdings immediately after signing up; both actions just
  * return home — adding holdings is entirely optional here.
  */
-export function OnboardingContent() {
+interface OnboardingContentProps {
+    /** `/[symbol]/position` CTA에서 넘어온 심볼. 추가 폼을 미리 채운다. */
+    initialSymbol?: string;
+}
+
+export function OnboardingContent({
+    initialSymbol,
+}: OnboardingContentProps = {}) {
     const router = useRouter();
     const goHome = () => router.push('/');
 
@@ -41,7 +48,7 @@ export function OnboardingContent() {
                 aria-label="보유종목"
                 className="space-y-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             >
-                <PortfolioSection />
+                <PortfolioSection defaultSymbol={initialSymbol} />
             </section>
 
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

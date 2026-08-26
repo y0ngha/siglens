@@ -82,14 +82,37 @@ export function legendItemWidthPx(
 }
 
 /**
+ * 범례가 가격 pane에서 쓸 수 있는 최대 지분.
+ *
+ * 예전에는 pane 높이 전체(인셋만 뺀)를 예산으로 삼았다. 그러면 지표를 많이
+ * 켰을 때 범례가 자기 pane을 거의 다 덮는다 — 감사 실측(보조지표 12개,
+ * 서브 pane 4개): pane 175px에 범례 138px로 **78.9%**를 차지하고 캔들이
+ * 보이는 구간이 29px만 남았다. 범례는 가격 계열을 읽기 위한 보조 정보인데
+ * 그 계열을 가리면 주객이 뒤바뀐다.
+ *
+ * 넘치는 항목은 `+N` 칩으로 드러나므로 정보가 사라지지 않고 "더 있다"는 사실만
+ * 남는다 — 덮어서 안 보이는 것보다 낫다.
+ *
+ * 값이 `0.65`인 것은 계산 결과다. pane 175px(서브 pane 4개) 기준:
+ *   0.50 → 3줄(~51px, pane의 29%)  — 14개 중 3줄만 남아 `+8`, 정보 손실이 크다
+ *   0.65 → 5줄(~85px, 49%)         — 절반으로 줄이면서 대부분을 남긴다
+ *   0.80 → 6줄(~102px, 58%)        — 개선 폭이 얕다
+ * pane이 넉넉할 때(354px)는 12줄까지 허용돼 이 상한이 사실상 걸리지 않는다 —
+ * 짧은 pane에서만 물리는 것이 의도다.
+ */
+const LEGEND_MAX_PANE_FRACTION = 0.65;
+
+/**
  * 가격 pane 높이에서 범례가 쓸 수 있는 줄 수.
  *
- * 인셋(위아래 8px)과 상자 패딩을 뺀 나머지를 줄 높이로 나눈다. 최소 1줄은
- * 보장한다 — 0줄이면 `+33` 칩만 남아 같은 높이를 쓰면서 정보만 사라진다.
+ * 인셋(위아래 8px)과 상자 패딩을 뺀 나머지를 줄 높이로 나누되, 위 지분으로
+ * 한 번 더 묶는다. 최소 1줄은 보장한다 — 0줄이면 `+33` 칩만 남아 같은 높이를
+ * 쓰면서 정보만 사라진다.
  */
 export function legendMaxRows(pricePaneHeightPx: number): number {
     if (!(pricePaneHeightPx > 0)) return UNMEASURED;
-    const budget = pricePaneHeightPx - INSET_PX * 2 - PAD_Y_PX;
+    const usable = pricePaneHeightPx * LEGEND_MAX_PANE_FRACTION;
+    const budget = usable - INSET_PX * 2 - PAD_Y_PX;
     return Math.max(1, Math.floor(budget / LEGEND_ROW_HEIGHT_PX));
 }
 

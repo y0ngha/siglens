@@ -51,8 +51,27 @@ describe('Onboarding page', () => {
 
             await OnboardingGuard();
 
+            // `next`는 이제 항상 인코딩한다 — 심볼이 붙으면 값에 `?`와 `=`가
+            // 들어가므로, 인코딩하지 않으면 쿼리 경계가 깨진다. 값이 단순할
+            // 때만 안 붙이는 두 갈래를 두지 않는다.
             expect(mockRedirect).toHaveBeenCalledWith(
-                '/login?next=/onboarding'
+                '/login?next=%2Fonboarding'
+            );
+        });
+
+        /**
+         * `/[symbol]/position`의 CTA에서 온 사용자는 심볼을 들고 온다. 예전에는
+         * 리디렉트 대상이 `'/login?next=/onboarding'` 문자열 리터럴이라 그
+         * 심볼이 로그인 홉에서 버려졌고, 로그인을 마쳐도 아무것도 채워지지 않은
+         * 온보딩 화면에 떨어졌다.
+         */
+        it('심볼을 로그인 next에 이어 붙인다', async () => {
+            mockGetCurrentUser.mockResolvedValue(null);
+
+            await OnboardingGuard({ symbol: 'AAPL' });
+
+            expect(mockRedirect).toHaveBeenCalledWith(
+                '/login?next=%2Fonboarding%3Fsymbol%3DAAPL'
             );
         });
 
