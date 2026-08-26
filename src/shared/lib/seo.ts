@@ -92,6 +92,16 @@ export const SITE_URL = resolveSiteUrl();
 export const SITE_NAME = 'Siglens';
 
 /**
+ * 공개 소스 저장소. 푸터가 유일한 소비자다.
+ *
+ * 상수로 두는 이유는 재사용이 아니라 **위치**다. 사이트를 가리키는 다른 URL이
+ * 전부 여기 있으므로, 나중에 JSON-LD `sameAs`에 소셜 프로필을 실을 일이 생기면
+ * 이 파일 안에서 함께 다루게 된다. 푸터 JSX 안에 문자열로 박아두면 그 시점에
+ * 두 번째 사본이 생긴다.
+ */
+export const GITHUB_URL = 'https://github.com/y0ngha/siglens';
+
+/**
  * Shared metadata for the noindex early-returns on the `[symbol]` routes
  * (invalid ticker, infra-degraded asset, FMP-degraded profile).
  *

@@ -301,10 +301,10 @@ async function SymbolFloatingChat({ params }: SymbolLayoutSegmentProps) {
 // Static shell mirroring SymbolLayoutHeader's outer shape. Used as the Suspense
 // fallback while params resolve and the bars prefetch completes.
 //
-// 폭 구조도 실제 헤더와 **같아야 한다**. 이전엔 여기만 `px-4` 전폭이라, 안에 든
-// 스켈레톤이 `symbol-container`로 옮겨간 뒤 폴백 자신의 브레드크럼과 탭이
-// 1920px에서 436px 어긋났고, 폴백에서 실제 헤더로 넘어갈 때도 448px 튀었다.
-// 콜드 로드의 첫 페인트라 사용자가 실제로 보는 화면이다.
+// 폭 구조도 실제 헤더와 **같아야 한다**. 둘의 폭 규약이 갈리면 폴백 자신의
+// 브레드크럼과 탭이 어긋나고(과거 1920px에서 436px), 폴백에서 실제 헤더로
+// 넘어갈 때도 그만큼 튄다. 콜드 로드의 첫 페인트라 사용자가 실제로 보는
+// 화면이다. 현재 규약은 전폭 `px-4` — 근거는 `SymbolLayoutHeader` JSDoc.
 //
 // **행 구조도 같아야 한다.** 실제 헤더는 640px 미만에서 브레드크럼과 컨트롤이
 // 두 행으로 쌓이는데 폴백은 한 행이라 높이가 109px 대 160px로 갈렸고, 폴백이
@@ -322,7 +322,7 @@ async function SymbolFloatingChat({ params }: SymbolLayoutSegmentProps) {
 function SymbolHeaderShellFallback() {
     return (
         <header className="py-3" aria-hidden="true">
-            <div className="symbol-container flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+            <div className="flex flex-col gap-2 px-4 sm:flex-row sm:items-center sm:gap-4">
                 <div className="flex min-w-0 items-center gap-2 sm:flex-1">
                     <span className="font-mono text-xs tracking-[0.2em] text-secondary-500 uppercase">
                         SIGLENS

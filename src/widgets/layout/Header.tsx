@@ -27,10 +27,14 @@ interface HeaderProps {
 export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
     return (
         <header className="sticky top-0 z-50 border-b border-secondary-700 bg-secondary-900/90 backdrop-blur-md supports-backdrop-filter:bg-secondary-900/75">
-            {/* 헤더 내용도 본문과 같은 폭 규약을 따라야 로고와 본문 좌측이
-                정렬된다. 이전에는 헤더만 전체 폭을 써서 초광폭 화면에서
-                로고가 본문보다 한참 왼쪽에 떨어져 있었다. */}
-            <div className="page-container flex h-14 items-center gap-2 sm:gap-4">
+            {/* 전역 크롬은 **뷰포트에** 맞춘다(전폭 `px-4`). 심볼 페이지의
+                브레드크럼·탭·차트 제목이 모두 16px에 서 있으므로 헤더 로고도
+                같은 선에 둬야 제품의 주 표면에서 좌측이 하나로 읽힌다.
+                본문이 `page-container`(1200px 중앙)인 라우트에서는 로고가
+                본문보다 바깥에서 시작하는데, 크롬은 전폭·본문은 읽기 폭이라는
+                규약을 고른 결과다(`docs/conventions/DESIGN.md` §폭 규약).
+                푸터도 같은 규약을 쓴다. */}
+            <div className="flex h-14 items-center gap-2 px-4 sm:gap-4">
                 <Link
                     href="/"
                     title="홈으로"
