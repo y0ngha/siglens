@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { BacktestCase, BacktestRiskLevel } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { formatUsdCurrency } from '@/shared/lib/priceFormat';
@@ -98,15 +99,22 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
             )}
         >
             <div className="mb-2 flex items-center gap-2">
-                <span
+                {/*
+                 * 티커를 종목 페이지로 잇는다. 10개 종목을 41.5k자에 걸쳐
+                 * 다루면서 심볼 페이지로 나가는 내부 링크가 **하나도** 없었다
+                 * (감사 실측: 앵커 43개가 전부 전역 nav/footer 크롬).
+                 * 배지는 이미 시각적으로 구분되는 요소라 레이아웃이 그대로다.
+                 */}
+                <Link
+                    href={`/${c.ticker}`}
                     translate="no"
                     className={cn(
-                        'rounded px-2 py-0.5 text-xs font-bold',
+                        'rounded px-2 py-0.5 text-xs font-bold transition-colors hover:brightness-110 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',
                         v.badge
                     )}
                 >
                     {c.ticker}
-                </span>
+                </Link>
 
                 <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto text-xs">
                     <div
@@ -153,8 +161,29 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                     >
                         →
                     </span>
-                    <div className="shrink-0 rounded border border-chart-bearish/20 bg-chart-bearish/10 px-2 py-1 text-right">
-                        <span className="font-semibold text-ui-danger-text">
+                    {/*
+                     * 손절만 danger 배색이다. 예전에는 결과와 무관하게 항상
+                     * 빨강이라, 수익 케이스 70건이 "초록 진입 → 빨강 청산"으로
+                     * 읽혔다 — 이 페이지의 논지가 승률(70%)인데 배색이 그 반대를
+                     * 말하고 있었다. 진입 칩이 `signalType`으로 갈리는 것과 같은
+                     * 모양으로 청산도 `exitReason`으로 가른다.
+                     */}
+                    <div
+                        className={cn(
+                            'shrink-0 rounded border px-2 py-1 text-right',
+                            c.exitReason === 'stop_loss'
+                                ? 'border-chart-bearish/20 bg-chart-bearish/10'
+                                : 'border-secondary-700 bg-secondary-800'
+                        )}
+                    >
+                        <span
+                            className={cn(
+                                'font-semibold',
+                                c.exitReason === 'stop_loss'
+                                    ? 'text-ui-danger-text'
+                                    : 'text-secondary-200'
+                            )}
+                        >
                             {c.exitReason === 'stop_loss' ? '손절' : '매도'}
                         </span>
                         <span className="ml-1 text-secondary-400">

@@ -11,12 +11,19 @@ import { normalizeEmail } from '@/shared/lib/auth/validation';
 import { createEmailDispatcher } from '@/shared/email';
 import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
 
+/** 형식 검사만 한다 — 도메인 존재 확인이 아니다. */
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export async function requestPasswordResetAction(
     _prev: ForgotPasswordFormState,
     formData: FormData
 ): Promise<ForgotPasswordFormState> {
     try {
         const email = normalizeEmail(String(formData.get('email') ?? ''));
+        // 형식만 본다 — 계정 존재 여부는 아래에서 여전히 숨긴다.
+        if (!EMAIL_SHAPE.test(email)) {
+            return { submitted: false, error: '이메일 주소를 확인해 주세요.' };
+        }
 
         const emailTokens = createEmailTokenStore();
         // enumeration 회피: Redis 미설정·미가입 이메일을 구분할 수 없도록 항상 submitted:true 반환.

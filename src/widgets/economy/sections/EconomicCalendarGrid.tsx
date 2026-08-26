@@ -379,7 +379,19 @@ function DayCell({
             <button
                 id={`day-btn-${dateKey}`}
                 type="button"
-                aria-label={`${month + 1}월 ${day}일, 이벤트 ${count}건`}
+                /*
+                 * 심각도를 라벨에 담는다. 셀에서 심각도를 나르는 것은 6px 점의
+                 * **색뿐**이었고(점은 `aria-hidden`, 텍스트는 건수만) 그 색은
+                 * 빨강/주황이라 적록색약에서 수렴한다(WCAG 1.4.1). 6px에서는
+                 * 모양·링으로 갈라도 읽히지 않으므로 텍스트로 낸다.
+                 */
+                aria-label={`${month + 1}월 ${day}일, 이벤트 ${count}건${
+                    dots.length === 0
+                        ? ''
+                        : ` — 중요도 ${dots
+                              .map(impact => IMPACT_LABELS[impact])
+                              .join('·')}`
+                }`}
                 aria-pressed={isSelected}
                 aria-controls={`panel-${dateKey}`}
                 onClick={() => onSelect(dateKey)}
@@ -407,6 +419,10 @@ function DayCell({
                     {day}
                 </span>
 
+                {/*
+                 * 점 자체는 여전히 장식이다 — 심각도는 위 `aria-label`이 나른다.
+                 * 점에 개별 라벨을 붙이면 셀 이름이 두 번 읽힌다.
+                 */}
                 <span
                     aria-hidden="true"
                     className="mt-1 flex flex-wrap gap-0.5"

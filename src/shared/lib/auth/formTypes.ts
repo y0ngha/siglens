@@ -28,6 +28,15 @@ export interface DeleteAccountFormState {
 export interface ForgotPasswordFormState {
     /** Always returns success message regardless of account existence (enumeration mitigation). */
     submitted: boolean;
+    /**
+     * 입력 **형식** 오류. 계정 존재 여부와 무관한 것만 담는다.
+     *
+     * 열거 방어는 "이 주소가 가입돼 있는가"를 숨기는 것이지, 빈 문자열이나
+     * 이메일이 아닌 값에도 "메일을 보냈다"고 말해야 한다는 뜻이 아니다.
+     * 폼이 `noValidate`(폼 13곳의 전역 관례)라 브라우저 검증이 돌지 않으므로,
+     * 빈 제출이 그대로 액션에 도달해 성공 화면이 떴다.
+     */
+    error?: string;
 }
 
 export type LocalInfraErrorCode = 'redis_unavailable';

@@ -43,6 +43,27 @@ export const INDICATOR_NAME_KO: Record<string, string> = {
     '30-Year Bond Auction': '30년물 국채 입찰',
     '2-Year Note Auction': '2년물 국채 입찰',
     '3-Month Bill Auction': '3개월물 국채 입찰',
+    /*
+     * 한국 캘린더 항목. 한국어 페이지(`/economy/kr`)인데 이 이름들만 영문으로
+     * 남아, 같은 패널 안에서 "수출물가지수 전년比" 옆에 "50-Year KTB Auction"이
+     * 나란히 놓였다(프로덕션에서도 동일 확인).
+     *
+     * 국채 입찰은 바로 위 미국 항목과 같은 어법을 쓴다 — 한국은 국고채(KTB)라
+     * 부르므로 '국고채 N년 입찰'이다. 심리지수 둘은 지표 카드가 이미 쓰는
+     * 이름(소비자심리지수)과 통일한다.
+     */
+    '50-Year KTB Auction': '국고채 50년 입찰',
+    '30-Year KTB Auction': '국고채 30년 입찰',
+    '20-Year KTB Auction': '국고채 20년 입찰',
+    '10-Year KTB Auction': '국고채 10년 입찰',
+    '5-Year KTB Auction': '국고채 5년 입찰',
+    '3-Year KTB Auction': '국고채 3년 입찰',
+    '2-Year KTB Auction': '국고채 2년 입찰',
+    'M2 Money Supply': 'M2 통화량',
+    'M3 Money Supply': 'M3 통화량',
+    'M2/M3 Money Supply': 'M2·M3 통화량',
+    'Consumer Confidence': '소비자심리지수',
+    'Business Confidence': '기업경기실사지수',
 };
 
 /** 변화-방향 접미 토큰의 한국어 매핑. */

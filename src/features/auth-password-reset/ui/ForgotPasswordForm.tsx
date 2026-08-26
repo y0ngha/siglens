@@ -60,6 +60,12 @@ export function ForgotPasswordForm() {
                         type="email"
                         autoComplete="email"
                         required
+                        /*
+                         * 형식 오류만 표시한다. 계정 존재 여부는 여전히 숨긴다 —
+                         * 열거 방어는 "가입돼 있는가"를 감추는 것이지, 빈 값에도
+                         * "메일을 보냈다"고 말하라는 뜻이 아니다.
+                         */
+                        error={state.error}
                     />
                     <SubmitButton
                         label="재설정 링크 보내기"
