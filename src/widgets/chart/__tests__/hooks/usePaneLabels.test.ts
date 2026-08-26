@@ -245,8 +245,8 @@ describe('usePaneLabels', () => {
         expect(el?.style.flexDirection).toBe('row');
         expect(el?.style.flexWrap).toBe('wrap');
         expect(el?.style.overflow).toBe('hidden');
-        // `LABELS`는 pane 1을 쓰고 목 높이가 100 — 상하 인셋 8px씩을 뺀 84px.
-        expect(el?.style.maxHeight).toBe('84px');
+        // pane 1 높이 100 → 예산 84px → 온전한 줄 5개(5×17−6 = 79px).
+        expect(el?.style.maxHeight).toBe('79px');
     });
 
     /**
@@ -264,7 +264,7 @@ describe('usePaneLabels', () => {
 
         const el = labelIn(container);
         expect(el.style.top).toBe('208px');
-        expect(el.style.maxHeight).toBe('84px');
+        expect(el.style.maxHeight).toBe('79px');
 
         // 지표를 더 켜서 pane 0이 줄고 pane 1이 늘어난 상황.
         chart.setHeights([120, 180]);
@@ -286,7 +286,7 @@ describe('usePaneLabels', () => {
 
         const el = labelIn(container);
         expect(el.style.top).toBe('148px');
-        expect(el.style.maxHeight).toBe('144px');
+        expect(el.style.maxHeight).toBe('130px');
     });
 
     it('wrapper뿐 아니라 내부 canvas도 관찰한다', () => {
@@ -423,5 +423,86 @@ describe('usePaneLabels', () => {
 
         expect(cancelSpy).toHaveBeenCalled();
         cancelSpy.mockRestore();
+    });
+
+    /**
+     * 클램프는 **온전한 줄 단위**여야 한다.
+     *
+     * 그냥 `pane − 인셋`으로 자르면 두 줄짜리 라벨이 짧은 pane에서 둘째 줄
+     * **중간을 가로질러** 잘려, 글자 윗부분 2~3px만 남은 얼룩이 된다(240px
+     * 컨테이너에서 `● Histogram`·`● ADX(14)`가 그렇게 찍혔다).
+     *
+     * 리터럴이 아니라 **성질**을 단언한다 — 어떤 pane 높이에서도 클램프 값이
+     * 줄 간격 격자에 맞는지 본다. 그래야 상수가 바뀌어도 규칙이 살아 있다.
+     */
+    it('클램프가 항상 온전한 줄 수에 맞는다', () => {
+        const ROW = 11;
+        const GAP = 6;
+        for (const paneHeight of [24, 30, 36, 48, 60, 100, 217]) {
+            const container = document.createElement('div');
+            container.getBoundingClientRect = () =>
+                ({ top: 0, left: 0 }) as DOMRect;
+            const { unmount } = renderLabels(
+                makeChart([200, paneHeight]),
+                container
+            );
+
+            const px = Number.parseFloat(labelIn(container).style.maxHeight);
+            // 12px 하한(한 줄도 못 담는 pane)이거나, n줄 격자에 정확히 맞는다.
+            const rows = (px + GAP) / (ROW + GAP);
+            expect(
+                px === 12 || Number.isInteger(rows),
+                `pane ${paneHeight}px → maxHeight ${px}px (줄 ${rows})`
+            ).toBe(true);
+
+            unmount();
+        }
+    });
+
+    /**
+     * 가로 위치는 **측정된 높이에 의존하면 안 된다.**
+     *
+     * 예전 순서는 높이를 먼저 재고 나중에 `left`를 옮겼는데, `left`가 바뀌면
+     * 남는 폭이 바뀌고 그러면 줄바꿈과 높이가 바뀐다 — 판단의 근거가 그 판단
+     * 때문에 무효가 되는 순서였다. 실측 케이스에서 줄 수가 안 바뀌어 틀린 적은
+     * 없었지만, 잠복이라 순서를 바로잡았다.
+     *
+     * jsdom은 높이가 0이라 두 순서가 구분되지 않는다. 그래서 라벨이 **두 줄**
+     * 높이를 보고하도록 만들고, 마크 띠를 "한 줄이면 안 겹치고 두 줄이면 겹치는"
+     * 위치에 둔다. 옛 순서면 측정 높이(28)로 판단해 비키고, 새 순서면 한 줄
+     * 기준으로 판단해 제자리를 지킨다.
+     */
+    it('가로 위치가 측정된 높이에 좌우되지 않는다', () => {
+        const TALL = 28; // 두 줄
+        const original = HTMLDivElement.prototype.getBoundingClientRect;
+        HTMLDivElement.prototype.getBoundingClientRect = function (
+            this: HTMLDivElement
+        ) {
+            return this.classList.contains('pane-indicator-label')
+                ? ({
+                      height: TALL,
+                      top: 0,
+                      bottom: TALL,
+                      left: 0,
+                      right: 0,
+                  } as DOMRect)
+                : ({ top: 0, left: 0 } as DOMRect);
+        };
+
+        try {
+            const container = document.createElement('div');
+            const logo = document.createElement('a');
+            logo.id = 'tv-attr-logo';
+            // 라벨 top은 208. 한 줄(→219)이면 안 닿고, 두 줄(→236)이면 닿는 띠.
+            logo.getBoundingClientRect = () =>
+                ({ top: 225, bottom: 244, right: 45, height: 19 }) as DOMRect;
+            container.appendChild(logo);
+
+            renderLabels(makeChart([200, 30]), container);
+
+            expect(labelIn(container).style.left).toBe('8px');
+        } finally {
+            HTMLDivElement.prototype.getBoundingClientRect = original;
+        }
     });
 });

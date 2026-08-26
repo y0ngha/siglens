@@ -18,7 +18,9 @@ const LABEL_FONT_SIZE = '11px';
 const LABEL_Z_INDEX = '5';
 const LABEL_FONT_FAMILY = 'monospace';
 const LABEL_LINE_HEIGHT = '1';
-const SUB_LABEL_GAP = '6px';
+/** 부라벨 세로 간격. `positionLabel`이 줄 단위 클램프를 계산할 때도 쓴다. */
+const SUB_LABEL_GAP_PX = 6;
+const SUB_LABEL_GAP = `${SUB_LABEL_GAP_PX}px`;
 /** 가로 배치일 때 부라벨 사이 간격. 세로 간격보다 넓어야 낱말이 붙어 보이지 않는다. */
 const SUB_LABEL_ROW_GAP = '10px';
 /** 클램프 하한 — pane이 아무리 얇아도 한 줄은 보여준다. */
@@ -190,15 +192,32 @@ function positionLabel(
 ): void {
     const top = paneTop + LABEL_OFFSET_PX;
     el.style.top = `${top}px`;
-    /* pane이 재분배되면 클램프도 따라가야 한다 — 안 그러면 좁아진 pane에서
-       라벨이 다시 아래를 침범한다. */
+
+    /*
+     * **가로 위치를 먼저 정한다.** 예전엔 높이를 먼저 재고 나중에 `left`를
+     * 옮겼는데, `left`가 바뀌면 남는 폭이 바뀌고 그러면 줄바꿈과 높이가
+     * 바뀐다 — 판단의 근거가 그 판단 때문에 무효가 되는 순서였다.
+     * 실제로 틀린 적은 없었지만(측정한 케이스에서 줄 수가 안 바뀌었다)
+     * 잠복이라 순서를 바로잡는다.
+     */
+    el.style.left = `${labelLeftPx(container, top, LABEL_ROW_PX)}px`;
+
+    /*
+     * **줄 단위로 자른다.** 그냥 `pane - 인셋`으로 자르면 두 줄짜리 라벨이
+     * 짧은 pane에서 둘째 줄 **중간을 가로질러** 잘려, 글자 윗부분 2~3px만
+     * 남은 얼룩이 된다(240px 컨테이너에서 `● Histogram`·`● ADX(14)`가 그렇게
+     * 찍혔다). 온전한 줄까지만 남기면 깔끔하게 끊긴다.
+     */
+    const budget = paneHeight - LABEL_OFFSET_PX * 2;
+    const rowPitch = LABEL_ROW_PX + SUB_LABEL_GAP_PX;
+    const wholeRows = Math.max(
+        1,
+        Math.floor((budget + SUB_LABEL_GAP_PX) / rowPitch)
+    );
     el.style.maxHeight = `${Math.max(
         LABEL_MIN_BOX_PX,
-        paneHeight - LABEL_OFFSET_PX * 2
+        wholeRows * rowPitch - SUB_LABEL_GAP_PX
     )}px`;
-    /* 실측 높이를 쓰되, 아직 레이아웃이 없으면 한 줄로 본다. */
-    const labelHeight = el.getBoundingClientRect().height || LABEL_ROW_PX;
-    el.style.left = `${labelLeftPx(container, top, labelHeight)}px`;
 }
 
 function clearLabelElements(elements: HTMLDivElement[]): void {

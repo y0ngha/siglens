@@ -48,7 +48,13 @@ import type { PaneIndices } from '../types';
 export const MIN_PRICE_PANE_STRETCH = 2;
 
 /**
- * 보조 pane 하나가 지켜야 할 최소 높이(px).
+ * 보조 pane **한 개당** 잡아 두는 픽셀 예산.
+ *
+ * **합산으로만 보장된다.** 상한은 `N × 이 값`을 보조 pane 높이 **합**에 대해
+ * 걸 뿐, 개별 pane이 이 아래로 안 내려간다는 뜻이 아니다. 사용자가 구분선을
+ * 끌어 보조 pane끼리 stretch가 불균등해지면 합은 지켜지면서 개별 pane이 더
+ * 짧아질 수 있다 — 실측: 드래그 후 보조 4개가 54/22/22/22(합 120 = 4×30)였다.
+ * 그 상태에서도 라벨은 `LABEL_MIN_BOX_PX`가 받아내 깨지지 않는다.
  *
  * LWC 자신이 구분선 드래그에서 쓰는 `MIN_PANE_HEIGHT`와 같은 값이다. 이 아래로
  * 가면 `usePaneLabels`의 라벨 상자(`상단 8px 인셋 + 11px 한 줄 + 8px`)가 pane을
