@@ -94,7 +94,13 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
     const deleteStatusId = `api-key-delete-status-${provider}`;
 
     return (
-        <div className="rounded-lg bg-secondary-900/60 p-4 ring-1 ring-secondary-700">
+        // E2E가 카드를 반경 클래스(`div.rounded-xl`)로 집고 있었다. 반경 어휘를
+        // 세 단계로 통일하면서 그 셀렉터가 조용히 아무것도 못 찾게 됐다 —
+        // 스타일 클래스는 테스트가 기대도 되는 계약이 아니다. 안정된 앵커를 준다.
+        <div
+            data-testid={`api-key-card-${provider}`}
+            className="rounded-lg bg-secondary-900/60 p-4 ring-1 ring-secondary-700"
+        >
             <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-secondary-100">

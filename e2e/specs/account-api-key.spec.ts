@@ -40,10 +40,12 @@ function anthropicCard(page: Page): Locator {
     // ProviderCard renders the label in a <span>; the card is its closest
     // rounded container. Filtering the card list by the label text is more
     // robust than positional indexing if provider order ever changes.
-    return page
-        .locator('div.rounded-xl')
-        .filter({ hasText: PROVIDER_LABEL })
-        .first();
+    //
+    // 반경 클래스로 카드를 집지 않는다. 예전에는 `div.rounded-xl`이었는데
+    // 반경 어휘를 세 단계로 통일하면서 `rounded-lg`가 됐고, 셀렉터가 조용히
+    // 아무것도 못 찾게 됐다 — 스타일 클래스는 테스트가 기대도 되는 계약이
+    // 아니라서, 제품에 전용 앵커를 두고 그걸 쓴다.
+    return page.getByTestId('api-key-card-anthropic');
 }
 
 /** True once the Anthropic card shows the 등록됨 badge (registered). */
