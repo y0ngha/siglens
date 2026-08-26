@@ -11,6 +11,7 @@
  * adding a kind to ShareableKind without a matching entry here is a type error.
  */
 
+import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import type { ReactNode } from 'react';
 import type {
     ShareableKind,
@@ -64,13 +65,18 @@ function ChartSharePanel({
     chartBars?: Bar[];
     symbol: string;
 }) {
+    const themeVersion = useThemeVersion();
     const rawKeyLevels = result.keyLevels ?? { support: [], resistance: [] };
     const clustered = clusterKeyLevels(validateKeyLevels(rawKeyLevels), 0);
     return (
         <div className="flex flex-col gap-6">
             {chartBars !== undefined && chartBars.length > 0 && (
                 <div className="overflow-hidden rounded-lg border border-secondary-700">
-                    <ShareCandlestickChart bars={chartBars} ticker={symbol} />
+                    <ShareCandlestickChart
+                        key={themeVersion}
+                        bars={chartBars}
+                        ticker={symbol}
+                    />
                 </div>
             )}
             <AnalysisPanel

@@ -7,6 +7,7 @@ import { controlOpeningTags, sourceFiles } from './support/controlUsage';
 import {
     blankComments,
     classTokens,
+    readInitialiser,
     stripVariants,
 } from './support/sourceScan';
 import { MIN_RATIO, minContrastOverSurfaces } from './support/tokenContrast';
@@ -35,10 +36,12 @@ import { MIN_RATIO, minContrastOverSurfaces } from './support/tokenContrast';
  *   내용을 감싸지 않는 요소는 색을 보여주는 것 말고 할 일이 없다 —
  *   막대 세그먼트와 범례 색칩이 정확히 그 모양이고, 경고 배너 틴트는 아니다.
  *
- * **알려진 한계**: 상수에 담긴 `bg-<토큰>/NN`이 self-closing 태그에 얹히는
- * 형태는 못 본다(`className={BAR}`). `fill-`/`stroke-`는 상수 경유든 아니든
- * 전부 보므로, 지금까지 실제로 난 결함은 모두 덮인다. 이 한계를 없애려면
- * `controlUsage`의 식별자 추적을 `bg-`까지 넓혀야 한다.
+ * 상수 경유(`className={cn(..., BAR_FILL_COLOR[x])}`)도 본다. 한때 이게
+ * 사각지대였고 그 안에 실제 프로덕션 막대(`MarketFearGreedFactorBar`)가
+ * 들어앉아 있었다 — 감사가 그 값을 `/20`으로 바꿔도 가드는 초록이었다.
+ * self-closing 도형 태그의 `className`에 등장한 **식별자**를 모은 뒤 그 이름의
+ * 상수 초기화식을 스캔한다. 두 단계를 거치므로 내용을 감싸는 요소의 틴트는
+ * 여전히 들어오지 않는다.
  */
 
 const SRC_DIR = path.resolve(__dirname, '../..');
@@ -103,6 +106,20 @@ function push(
     });
 }
 
+/** `bg-` 중 **의미를 나르는 계열**만 검사 대상으로 넘긴다. */
+function pushBg(
+    out: Offence[],
+    file: string,
+    index: number,
+    source: string,
+    token: string
+): void {
+    const { bare } = stripVariants(token);
+    if (!bare.startsWith('bg-')) return;
+    if (!MEANINGFUL_BG_FAMILIES.test(bare.slice('bg-'.length))) return;
+    push(out, file, index, source, token);
+}
+
 function offenders(): Offence[] {
     const out: Offence[] = [];
     for (const file of sourceFiles(SRC_DIR)) {
@@ -124,15 +141,28 @@ function offenders(): Offence[] {
 
         // 2) `bg-`는 **자식 없는 도형 태그**에서만 본다.
         if (!file.endsWith('.tsx')) continue;
+        const viaConstant = new Set<string>();
         for (const { tag, index } of controlOpeningTags(source, GRAPHIC_TAGS)) {
             if (!tag.trimEnd().endsWith('/>')) continue;
             const cls = /\bclassName="([^"]*)"/.exec(tag)?.[1] ?? '';
             for (const token of classTokens(cls)) {
-                const { bare } = stripVariants(token);
-                if (!bare.startsWith('bg-')) continue;
-                if (!MEANINGFUL_BG_FAMILIES.test(bare.slice('bg-'.length)))
-                    continue;
-                push(out, file, index, source, token);
+                pushBg(out, file, index, source, token);
+            }
+            // 상수로 들어오는 클래스는 이름을 모아 뒀다가 아래에서 값을 본다.
+            const expr = /className=\{([\s\S]*)$/.exec(tag)?.[1];
+            if (expr === undefined) continue;
+            for (const m of expr.matchAll(/\b([A-Z][A-Z0-9_]*)\b/g)) {
+                viaConstant.add(m[1]);
+            }
+        }
+        for (const name of viaConstant) {
+            const decl = new RegExp(
+                `\\b(?:const|let)\\s+${name}\\b[^=]*=`
+            ).exec(source);
+            if (decl === null) continue;
+            const start = decl.index + decl[0].length;
+            for (const token of classTokens(readInitialiser(source, start))) {
+                pushBg(out, file, start, source, token);
             }
         }
     }

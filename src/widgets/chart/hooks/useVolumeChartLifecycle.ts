@@ -8,7 +8,6 @@ import {
     type ISeriesApi,
 } from 'lightweight-charts';
 import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
-import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { useChartThemeSync } from './useChartThemeSync';
 
 interface UseVolumeChartLifecycleOptions {
@@ -30,7 +29,6 @@ export function useVolumeChartLifecycle({
     onChartRemove,
 }: UseVolumeChartLifecycleOptions): UseVolumeChartLifecycleReturn {
     const chartRef = useRef<IChartApi | null>(null);
-    const themeVersion = useThemeVersion();
 
     /* 테마 전환 시 크롬만 교체(리마운트 없음). */
     useChartThemeSync(chartRef);
@@ -87,11 +85,7 @@ export function useVolumeChartLifecycle({
             totalSeriesRef.current = null;
             buySeriesRef.current = null;
         };
-        /* `themeVersion`을 deps에 두어 테마 토글 시 차트를 다시 만든다.
-       시리즈는 생성 시점의 색을 들고 있어 `applyOptions`만으로는 지표 색이
-       안 바뀌고, 오버레이 훅 31개를 각각 배선하는 대신 생성 지점만 건드린다.
-       로드 경로에서는 이 값이 0에서 변하지 않으므로 리마운트가 없다. */
-    }, [containerRef, themeVersion]);
+    }, [containerRef]);
 
     return { chartRef, totalSeriesRef, buySeriesRef };
 }

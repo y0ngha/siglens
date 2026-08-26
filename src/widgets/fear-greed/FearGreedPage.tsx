@@ -1,5 +1,6 @@
 'use client';
 
+import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { useFearGreedFromSymbol } from './hooks/useFearGreedFromSymbol';
 import { FearGreedHero } from './FearGreedHero';
 import { FearGreedComparisonGauges } from './FearGreedComparisonGauges';
@@ -80,6 +81,7 @@ export function FearGreedPage({
     fmpSymbol,
     hideSelfNormWarning = false,
 }: FearGreedPageProps) {
+    const themeVersion = useThemeVersion();
     const isHydrated = useHydrated();
     const { snapshot, history } = useFearGreedFromSymbol({ symbol, fmpSymbol });
 
@@ -152,7 +154,10 @@ export function FearGreedPage({
                 <h2 className={HEADING_SECTION}>
                     공포 탐욕 지수 추이 (최근 1년)
                 </h2>
-                <FearGreedHistoricalChart history={history} />
+                <FearGreedHistoricalChart
+                    key={themeVersion}
+                    history={history}
+                />
             </section>
 
             <footer className="text-xs text-secondary-500">

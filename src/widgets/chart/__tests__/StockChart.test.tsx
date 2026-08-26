@@ -1,4 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
+import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
+import { THEME_CHANGE_EVENT } from '@/shared/lib/theme';
 import type { Bar } from '@y0ngha/siglens-core';
 import { StockChart } from '@/widgets/chart/StockChart';
 import { INACTIVE_PANE_INDEX } from '@/widgets/chart/constants';
@@ -460,5 +462,45 @@ describe('StockChart', () => {
 
         const chart = mockCreateChart.mock.results[0].value;
         expect(chart.remove).toHaveBeenCalled();
+    });
+
+    /**
+     * **테마를 바꾸면 차트가 새 팔레트로 *데이터까지* 다시 그려져야 한다.**
+     *
+     * 처음엔 생성 효과의 deps에만 `themeVersion`을 넣었다. 그러면 차트는 다시
+     * 만들어지지만 `setData`를 부르는 효과와 오버레이 훅 31개는 안정적인 ref에만
+     * 의존해 재실행되지 않아, **토글 한 번에 차트가 백지가 됐다**(감사 실증:
+     * createChart 2회 대 setData 1회). 그래서 마운트 지점에서 `key`로 갈아
+     * 컴포넌트를 통째로 remount한다.
+     *
+     * 이 테스트는 `createChart`만 보지 않는다 — 그것만 보면 백지 상태도 통과한다.
+     * `setData`가 함께 다시 불렸는지를 봐야 결함이 잡힌다.
+     */
+    it('테마가 바뀌면 차트를 데이터까지 다시 그린다', () => {
+        function Harness() {
+            const themeVersion = useThemeVersion();
+            return (
+                <StockChart
+                    key={themeVersion}
+                    bars={mockBars}
+                    timeframe="1Day"
+                />
+            );
+        }
+
+        render(<Harness />);
+        const createdBefore = mockCreateChart.mock.calls.length;
+        const dataBefore = mockSetData.mock.calls.length;
+        expect(createdBefore).toBeGreaterThan(0);
+        expect(dataBefore).toBeGreaterThan(0);
+
+        act(() => {
+            window.dispatchEvent(new CustomEvent(THEME_CHANGE_EVENT));
+        });
+
+        expect(mockCreateChart.mock.calls.length).toBeGreaterThan(
+            createdBefore
+        );
+        expect(mockSetData.mock.calls.length).toBeGreaterThan(dataBefore);
     });
 });

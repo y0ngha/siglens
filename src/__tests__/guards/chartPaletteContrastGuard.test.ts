@@ -83,9 +83,12 @@ const PRICE_PANE_KEYS = [
     'keltnerMiddle',
     'donchianUpper',
     'donchianMiddle',
+    'period5',
     'period10',
     'period20',
     'period60',
+    'period120',
+    'period200',
     'vwap',
     'neutral',
     'actionEntry',
@@ -95,10 +98,10 @@ const PRICE_PANE_KEYS = [
  * 다크 팔레트의 가격 pane 최소 ΔE. 라이트가 이보다 나빠지면 안 된다.
  *
  * 절대값이 아니라 **다크와의 비교**로 적는 이유: 이 제품은 다크에서도
- * 어느 정도 겹침을 허용한다(캔들 상승과 Keltner 중앙선이 8.5). 라이트에만
+ * 어느 정도 겹침을 허용한다(하락 캔들과 MA5가 6.89로 가장 가깝다). 라이트에만
  * 더 엄격한 기준을 들이대면 통과할 수 없는 규칙이 된다.
  */
-const DARK_MIN_DELTA_E = 8.5;
+const DARK_MIN_DELTA_E = 6.9;
 
 type Palette = Record<string, string>;
 
