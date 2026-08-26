@@ -74,7 +74,6 @@ import {
     type IndicatorBinding,
     type IndicatorKey,
 } from './model/indicatorRegistry';
-import { useChartThemeSync } from './hooks/useChartThemeSync';
 
 interface CommonHookParams {
     chartRef: RefObject<IChartApi | null>;
@@ -120,8 +119,6 @@ export function StockChart({
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
 
-    /* 테마 전환 시 크롬만 교체(리마운트 없음). */
-    useChartThemeSync(chartRef);
     const seriesRef = useRef<ISeriesApi<'Candlestick', UTCTimestamp> | null>(
         null
     );
@@ -160,8 +157,8 @@ export function StockChart({
     useEffect(() => {
         if (!containerRef.current) return;
 
-        /* 생성 시점의 테마에 맞는 크롬. 이후 전환은 useChartThemeSync가
-           applyOptions로 처리한다(리마운트 금지 — 줌·스크롤 위치 보존). */
+        /* 생성 시점의 테마에 맞는 크롬. 테마 전환은 마운트 지점의
+           `key={themeVersion}`이 이 컴포넌트를 통째로 remount해 처리한다. */
         const chrome = getChartChrome();
 
         const chart = createChart(containerRef.current, {

@@ -227,7 +227,6 @@ export const CHART_COLORS_LIGHT = {
     period20: '#ab7c02',
     period60: '#17992d',
     period120: '#3643fb',
-    period200: '#c447fb',
     bollingerUpper: '#8a6cfa',
     bollingerMiddle: '#7a81a9',
     bollingerLower: '#8a6cfa',
@@ -320,7 +319,8 @@ function isLightTheme(): boolean {
  *
  * 한계: lightweight-charts 시리즈는 생성 시점에 읽은 값을 들고 있다. 첫 로드는
  * 인라인 스크립트가 페인트 전에 `data-theme`을 찍으므로 언제나 정확하고,
- * 세션 중 토글은 `useChartThemeSync`가 다시 칠한다.
+ * 세션 중 토글은 마운트 지점의 `key={themeVersion}`이 차트를 remount해
+ * 처리한다(`chartThemeRemountGuard`가 강제).
  */
 export const CHART_COLORS = Object.defineProperties(
     {},

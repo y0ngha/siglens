@@ -11,7 +11,6 @@ import {
     type Time,
 } from 'lightweight-charts';
 import { useEffect, useRef } from 'react';
-import { useChartThemeSync } from '@/widgets/chart/hooks/useChartThemeSync';
 
 interface FearGreedHistoricalChartProps {
     history: FearGreedHistoryPoint[];
@@ -37,13 +36,12 @@ export function FearGreedHistoricalChart({
 
     /* 테마 전환 시 크롬만 교체(리마운트 없음). */
     /* 이 차트는 배경을 투명하게 둬 부모 카드 색을 비춘다 — 배경은 건드리지 않는다. */
-    useChartThemeSync(chartRef, { keepBackground: true });
     const seriesRef = useRef<ISeriesApi<'Line'> | null>(null);
 
     useEffect(() => {
         if (!containerRef.current) return;
-        /* 생성 시점의 테마에 맞는 크롬. 이후 전환은 useChartThemeSync가
-           applyOptions로 처리한다(리마운트 금지 — 줌·스크롤 위치 보존). */
+        /* 생성 시점의 테마에 맞는 크롬. 테마 전환은 마운트 지점의
+           `key={themeVersion}`이 이 컴포넌트를 remount해 처리한다. */
         const chrome = getChartChrome();
 
         const chart = createChart(containerRef.current, {

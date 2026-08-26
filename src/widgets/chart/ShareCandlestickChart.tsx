@@ -22,7 +22,6 @@ import {
 import type { Bar } from '@y0ngha/siglens-core';
 import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
 import { buildCandlestickData } from './utils/candlestickDataUtils';
-import { useChartThemeSync } from './hooks/useChartThemeSync';
 
 interface ShareCandlestickChartProps {
     bars: Bar[];
@@ -44,7 +43,6 @@ export function ShareCandlestickChart({
     const chartRef = useRef<IChartApi | null>(null);
 
     /* 테마 전환 시 크롬만 교체(리마운트 없음). */
-    useChartThemeSync(chartRef);
     const seriesRef = useRef<ISeriesApi<'Candlestick', UTCTimestamp> | null>(
         null
     );
