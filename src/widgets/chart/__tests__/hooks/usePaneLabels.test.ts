@@ -388,4 +388,40 @@ describe('usePaneLabels', () => {
 
         expect(labelIn(container).style.left).toBe('53px');
     });
+
+    /**
+     * 귀속 마크가 **없는** 빌드에서도 라벨이 제자리에 놓여야 한다.
+     *
+     * 회피 로직의 세 분기 중 이것만 무단언이었다 — 다른 테스트는 전부
+     * 컨테이너에 마크를 심어 두고 돌기 때문에, 마크가 아예 없을 때 라벨이
+     * 어디로 가는지는 아무도 보지 않았다. `999px` 같은 값을 반환해도 통과했다.
+     */
+    it('귀속 마크가 없으면 원래 자리에 놓는다', () => {
+        const container = document.createElement('div');
+        container.getBoundingClientRect = () =>
+            ({ top: 0, left: 0 }) as DOMRect;
+
+        renderLabels(makeChart([200, 30]), container);
+
+        expect(labelIn(container).style.left).toBe('8px');
+    });
+
+    /**
+     * 예약한 프레임을 정리하는지 본다. 형제 훅(`usePricePaneSize`)에는 같은
+     * 단언이 있는데 여기엔 없어서, cleanup의 `cancelAnimationFrame`을 지워도
+     * 전부 초록이었다. 지금은 차트 생성 효과가 먼저 정리돼 콜백이 막히지만,
+     * 그 안전망의 바깥쪽 한 겹이 아무 신호 없이 사라질 수 있었다.
+     */
+    it('unmount하면 예약된 프레임을 정리한다', () => {
+        const cancelSpy = vi.spyOn(globalThis, 'cancelAnimationFrame');
+        const container = document.createElement('div');
+        container.getBoundingClientRect = () =>
+            ({ top: 0, left: 0 }) as DOMRect;
+
+        const { unmount } = renderLabels(makeChart([200, 30]), container);
+        unmount();
+
+        expect(cancelSpy).toHaveBeenCalled();
+        cancelSpy.mockRestore();
+    });
 });

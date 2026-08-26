@@ -207,4 +207,65 @@ describe('usePricePaneStretch', () => {
             );
         }
     });
+
+    /**
+     * 하한을 **값이 아니라 방향으로** 붙든다.
+     *
+     * 위 테스트들은 부등호 양쪽에 같은 `MIN_PRICE_PANE_STRETCH`를 쓰기 때문에,
+     * 그 상수를 2에서 1로 낮추면 전부 그대로 통과한다 — 훅 이름이 걸린 바로 그
+     * 하한인데도. 그리고 낮추면 실제로 나빠진다: 214px 예산·보조 6개에서
+     * 픽셀 상한 1.133이 하한을 이겨 가격 pane이 53.5px(기본 배치 2/8)에서
+     * 34px로 내려앉는다. 모듈 헤더가 "그래도 안 되면 LWC 기본 배치로 돌아간다"고
+     * 약속한 것과 반대 방향이다.
+     *
+     * 그래서 리터럴을 쓰지 않고 **기본 배치와 견준다**. 같은 커밋이
+     * `overlayLegendLayout`에서 이 교훈을 적용했는데 형제 파일인 여기엔
+     * 적용하지 않았다.
+     */
+    it('어떤 예산에서도 가격 pane이 LWC 기본 배치보다 좁아지지 않는다', async () => {
+        const LWC_DEFAULT_PRICE_STRETCH = 2;
+        for (let subPanes = 1; subPanes <= 8; subPanes += 1) {
+            for (const budget of [40, 120, 214, 400]) {
+                const applied = await applyStretch(uniform(subPanes), budget);
+                const ours = distribute(
+                    [
+                        applied ?? MIN_PRICE_PANE_STRETCH,
+                        ...Array<number>(subPanes).fill(1),
+                    ],
+                    budget
+                )[0];
+                const lwcDefault = distribute(
+                    [
+                        LWC_DEFAULT_PRICE_STRETCH,
+                        ...Array<number>(subPanes).fill(1),
+                    ],
+                    budget
+                )[0];
+                expect(
+                    ours,
+                    `보조 ${subPanes}개 · 예산 ${budget}px`
+                ).toBeGreaterThanOrEqual(lwcDefault);
+            }
+        }
+    });
+
+    /**
+     * 예약한 프레임을 정리하는지 본다. 형제 훅(`usePricePaneSize`)에는 같은
+     * 단언이 있는데 이 훅 — 그 RAF 래퍼를 새로 만든 바로 그 커밋 — 에는
+     * 없어서, cleanup의 `cancelAnimationFrame`을 지워도 전부 초록이었다.
+     */
+    it('unmount하면 예약된 프레임을 정리한다', () => {
+        const cancelSpy = vi.spyOn(globalThis, 'cancelAnimationFrame');
+
+        const { unmount } = renderHook(() =>
+            usePricePaneStretch(
+                makeChartRef(makeChart(uniform(2), 400).chart),
+                PANE_INDICES
+            )
+        );
+        unmount();
+
+        expect(cancelSpy).toHaveBeenCalled();
+        cancelSpy.mockRestore();
+    });
 });
