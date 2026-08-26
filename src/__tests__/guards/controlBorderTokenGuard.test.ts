@@ -389,7 +389,7 @@ describe('control border token guard', () => {
 
     it('대비가 모자란 색만 검출한다', () => {
         expect(isDecorativeBorder('border-secondary-700')).toBe(true);
-        expect(isDecorativeBorder('border-secondary-800')).toBe(true);
+        expect(isDecorativeBorder('border-secondary-600')).toBe(true);
         expect(isDecorativeBorder('border-primary-950')).toBe(true);
         expect(isDecorativeBorder('border-ui-danger/20')).toBe(true);
         expect(isDecorativeBorder('border-border-control')).toBe(false);

@@ -71,7 +71,7 @@ interface IndicatorCardProps {
 function IndicatorCard({ card }: IndicatorCardProps) {
     const { meta, latest, latestDate, changeFromPrevious } = card;
     return (
-        <article className="rounded-lg border border-secondary-800 bg-secondary-800/30 p-4">
+        <article className="rounded-lg border border-secondary-700 bg-secondary-800/30 p-4">
             <div className="flex items-center gap-1.5">
                 <h4 className="text-sm text-secondary-400">{meta.label}</h4>
                 <InfoTooltip>{meta.tooltip}</InfoTooltip>

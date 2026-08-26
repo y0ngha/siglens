@@ -158,11 +158,11 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                             aria-hidden={!isOpen}
                             tabIndex={-1}
                             className={cn(
-                                'border-secondary-800 bg-secondary-900 fixed top-0 right-0 z-50 flex h-dvh w-64 flex-col border-l shadow-2xl transition-transform duration-200 outline-none motion-reduce:transition-none',
+                                'border-secondary-700 bg-secondary-900 fixed top-0 right-0 z-50 flex h-dvh w-64 flex-col border-l shadow-2xl transition-transform duration-200 outline-none motion-reduce:transition-none',
                                 isOpen ? 'translate-x-0' : 'translate-x-full'
                             )}
                         >
-                            <div className="flex items-center justify-end border-b border-secondary-800 px-3 py-2">
+                            <div className="flex items-center justify-end border-b border-secondary-700 px-3 py-2">
                                 <button
                                     type="button"
                                     onClick={close}
@@ -203,7 +203,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                         // 버티컬의 `미국`인지 읽히게 한다.
                                         role="group"
                                         aria-labelledby={`mobile-nav-group-${vertical.id}`}
-                                        className="border-t border-secondary-800 py-2 first:border-t-0"
+                                        className="border-t border-secondary-700 py-2 first:border-t-0"
                                     >
                                         <p
                                             id={`mobile-nav-group-${vertical.id}`}

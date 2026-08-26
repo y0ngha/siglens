@@ -110,7 +110,7 @@ export async function RelatedSymbols({ symbol }: RelatedSymbolsProps) {
     return (
         <nav
             aria-labelledby="related-symbols-heading"
-            className="mt-6 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5"
+            className="mt-6 rounded-lg border border-secondary-700 bg-secondary-800/30 p-5"
         >
             <h2 id="related-symbols-heading" className={HEADING_SECTION}>
                 관련 종목

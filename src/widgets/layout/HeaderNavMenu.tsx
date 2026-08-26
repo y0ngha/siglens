@@ -155,7 +155,7 @@ export function HeaderNavMenu({ vertical, pathname }: HeaderNavMenuProps) {
                             onClick={close}
                             className={cn(
                                 ITEM_BASE,
-                                'border-b border-secondary-800 px-4',
+                                'border-b border-secondary-700 px-4',
                                 isHrefActive(vertical.overview.href, pathname)
                                     ? 'bg-secondary-800 text-secondary-100'
                                     : 'text-secondary-400 hover:bg-secondary-800 hover:text-secondary-100'

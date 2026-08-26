@@ -77,7 +77,7 @@ export function SocialLoginButtons({ next }: SocialLoginButtonsProps) {
         <div className="space-y-3">
             <div
                 aria-hidden
-                className="my-6 flex items-center gap-3 border-t border-secondary-800 pt-3 text-xs tracking-[0.2em] text-secondary-500 uppercase"
+                className="my-6 flex items-center gap-3 border-t border-secondary-700 pt-3 text-xs tracking-[0.2em] text-secondary-500 uppercase"
             />
 
             {PROVIDERS.map(provider => (

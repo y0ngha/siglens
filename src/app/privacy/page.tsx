@@ -76,7 +76,7 @@ const bottomNotice = (
     <div
         role="note"
         aria-label="투자 면책 고지"
-        className="mt-12 rounded-lg border border-secondary-800 bg-secondary-900/40 p-5"
+        className="mt-12 rounded-lg border border-secondary-700 bg-secondary-900/40 p-5"
     >
         <p className="text-xs leading-relaxed text-secondary-400 sm:text-sm">
             {INVESTMENT_DISCLAIMER} 서비스 이용과 관련한 자세한 조건은&nbsp;

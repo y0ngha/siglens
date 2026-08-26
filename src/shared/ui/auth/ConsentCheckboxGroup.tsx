@@ -208,7 +208,7 @@ export function ConsentCheckboxGroup({
     }
 
     return (
-        <fieldset className="touch-manipulation space-y-3 border-y border-secondary-800 py-4 [-webkit-tap-highlight-color:transparent]">
+        <fieldset className="touch-manipulation space-y-3 border-y border-secondary-700 py-4 [-webkit-tap-highlight-color:transparent]">
             <legend className="sr-only">동의 항목</legend>
             <p className="text-xs text-secondary-400">
                 계속하려면 아래 항목에 동의해주세요.
@@ -234,7 +234,7 @@ export function ConsentCheckboxGroup({
             <div
                 role="separator"
                 aria-hidden="true"
-                className="border-t border-secondary-800"
+                className="border-t border-secondary-700"
             />
             <ConsentRow
                 id={privacyId}

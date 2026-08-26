@@ -18,7 +18,7 @@ export function BotBlockedNotice({ className }: BotBlockedNoticeProps) {
         <div
             role="status"
             className={cn(
-                'border-secondary-800 bg-secondary-900/60 space-y-2 rounded-lg border p-4 text-sm',
+                'border-secondary-700 bg-secondary-900/60 space-y-2 rounded-lg border p-4 text-sm',
                 className
             )}
         >

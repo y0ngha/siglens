@@ -42,7 +42,7 @@ export function OAuthConsentForm({
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-3 rounded-lg border border-secondary-800 bg-secondary-900/40 p-4">
+            <div className="flex items-center gap-3 rounded-lg border border-secondary-700 bg-secondary-900/40 p-4">
                 {avatarUrl ? (
                     <Image
                         src={avatarUrl}

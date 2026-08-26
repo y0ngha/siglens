@@ -143,7 +143,7 @@ export default function BacktestingPage() {
                 <div
                     role="note"
                     aria-label="투자 면책 고지"
-                    className="border-t border-secondary-800 py-4"
+                    className="border-t border-secondary-700 py-4"
                 >
                     <p className="page-container text-center text-[11px] text-secondary-500">
                         * 본 결과는 과거 데이터 기반 백테스팅이며 미래 수익을

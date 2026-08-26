@@ -32,7 +32,7 @@ export function LegalPageShell({
                 <article className="w-full max-w-3xl">
                     <LegalBreadcrumb pageTitle={breadcrumbTitle} />
 
-                    <header className="border-b border-secondary-800 pb-8">
+                    <header className="border-b border-secondary-700 pb-8">
                         <p className="font-mono text-xs tracking-widest text-primary-400 uppercase">
                             {eyebrow}
                         </p>
@@ -52,7 +52,7 @@ export function LegalPageShell({
                     <nav
                         aria-label="목차"
                         className={cn(
-                            'border-secondary-800 bg-secondary-900/40 mb-8 rounded-lg border p-5',
+                            'border-secondary-700 bg-secondary-900/40 mb-8 rounded-lg border p-5',
                             topNotice ? undefined : 'mt-8'
                         )}
                     >

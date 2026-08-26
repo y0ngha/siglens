@@ -129,7 +129,7 @@ function SkeletonCard() {
     return (
         <div
             aria-hidden="true"
-            className="h-64 animate-pulse rounded-lg bg-secondary-800/60"
+            className="h-64 animate-pulse rounded-lg bg-secondary-700/60"
         />
     );
 }

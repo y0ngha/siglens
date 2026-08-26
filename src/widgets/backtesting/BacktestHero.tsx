@@ -39,7 +39,7 @@ function StatCard({ value, label, valueClassName }: StatCardProps) {
 
 export function BacktestHero({ meta }: BacktestHeroProps) {
     return (
-        <header className="border-b border-secondary-800 py-10 text-center">
+        <header className="border-b border-secondary-700 py-10 text-center">
             <div className="page-container">
                 <p className="mb-2 font-mono text-[0.6875rem] tracking-[0.14em] text-secondary-400 uppercase">
                     BACKTESTING RESULTS · {meta.period}

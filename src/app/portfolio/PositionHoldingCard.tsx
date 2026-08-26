@@ -80,7 +80,7 @@ function CardSkeleton({ symbol }: { symbol: string }) {
             <span className="sr-only">{symbol} 위치를 불러오는 중이에요</span>
             <div
                 aria-hidden="true"
-                className="h-32 w-32 animate-pulse rounded bg-secondary-800"
+                className="h-32 w-32 animate-pulse rounded bg-secondary-700"
             />
         </div>
     );
@@ -159,7 +159,7 @@ export function PositionHoldingCard({ holding }: PositionHoldingCardProps) {
             <div
                 ref={setNode}
                 data-testid="portfolio-holding-card"
-                className="flex flex-col items-center gap-3 rounded-lg bg-secondary-900/60 p-4 ring-1 ring-secondary-800 transition-colors group-hover:ring-secondary-600"
+                className="flex flex-col items-center gap-3 rounded-lg bg-secondary-900/60 p-4 ring-1 ring-secondary-700 transition-colors group-hover:ring-secondary-600"
             >
                 <div className="flex w-full items-baseline justify-between gap-2">
                     <span className="text-sm font-semibold text-secondary-100">

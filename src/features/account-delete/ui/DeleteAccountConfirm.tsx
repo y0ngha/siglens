@@ -24,7 +24,7 @@ function DangerSubmitButton({ disabled }: DangerSubmitButtonProps) {
             type="submit"
             disabled={isDisabled}
             aria-busy={pending}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-ui-danger font-semibold text-white transition-colors hover:bg-ui-danger/90 focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none active:bg-ui-danger/80 disabled:opacity-50 motion-reduce:transition-none"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-ui-danger-fill font-semibold text-white transition-colors hover:bg-ui-danger-fill-hover focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none active:bg-ui-danger-fill-active disabled:opacity-50 motion-reduce:transition-none"
         >
             {pending ? (
                 <>
@@ -79,7 +79,7 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
                 >
                     계속하려면 본인 이메일을 정확히 입력하세요
                 </label>
-                <p className="rounded-lg border border-secondary-800 bg-secondary-950 px-3 py-2 font-mono text-sm break-all text-secondary-100">
+                <p className="rounded-lg border border-secondary-700 bg-secondary-950 px-3 py-2 font-mono text-sm break-all text-secondary-100">
                     {userEmail}
                 </p>
                 <input

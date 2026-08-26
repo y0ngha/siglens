@@ -25,7 +25,7 @@ export function FaqSection({ heading, items }: FaqSectionProps) {
     return (
         <section
             aria-labelledby={FAQ_HEADING_ID}
-            className="space-y-3 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5"
+            className="space-y-3 rounded-lg border border-secondary-700 bg-secondary-800/30 p-5"
         >
             <h2 id={FAQ_HEADING_ID} className={HEADING_SECTION}>
                 {heading}

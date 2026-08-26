@@ -81,7 +81,7 @@ async function AccountContent() {
                 aria-label="위험영역"
                 className="space-y-4 rounded-lg border border-ui-danger/30 bg-ui-danger/5 p-6"
             >
-                <div className="flex flex-col gap-3 rounded-lg border border-secondary-800 bg-secondary-900/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3 rounded-lg border border-secondary-700 bg-secondary-900/60 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h3 className="text-sm font-semibold text-secondary-100">
                             회원 탈퇴
@@ -105,7 +105,7 @@ async function AccountContent() {
 function SkeletonLine({ className }: { className?: string }) {
     return (
         <div
-            className={`animate-pulse rounded bg-secondary-800 ${className ?? ''}`}
+            className={`animate-pulse rounded bg-secondary-700 ${className ?? ''}`}
         />
     );
 }
@@ -139,7 +139,7 @@ function AccountContentSkeleton() {
                 {[0, 1, 2].map(i => (
                     <div
                         key={i}
-                        className="rounded-lg bg-secondary-900/60 p-4 ring-1 ring-secondary-800"
+                        className="rounded-lg bg-secondary-900/60 p-4 ring-1 ring-secondary-700"
                     >
                         <div className="flex items-center gap-2">
                             <SkeletonLine className="h-4 w-20" />

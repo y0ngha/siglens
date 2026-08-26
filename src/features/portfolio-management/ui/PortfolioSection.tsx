@@ -12,7 +12,7 @@ import { HoldingForm } from './HoldingForm';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 
 const ROW_CHROME =
-    'ring-secondary-800 bg-secondary-900/60 rounded-lg p-4 ring-1';
+    'ring-secondary-700 bg-secondary-900/60 rounded-lg p-4 ring-1';
 const ACTION_BUTTON =
     'border-border-control text-secondary-300 hover:bg-secondary-800 focus-visible:ring-primary-500 touch-manipulation rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50';
 const DANGER_BUTTON =
@@ -21,7 +21,7 @@ const DANGER_BUTTON =
 function SkeletonLine({ className }: { className?: string }) {
     return (
         <div
-            className={cn('bg-secondary-800 animate-pulse rounded', className)}
+            className={cn('bg-secondary-700 animate-pulse rounded', className)}
         />
     );
 }
@@ -269,7 +269,7 @@ export function PortfolioSection() {
             {!isLoadingState && isError && (
                 <div
                     role="alert"
-                    className="rounded-lg border border-dashed border-secondary-800 px-4 py-6 text-center text-sm text-secondary-400"
+                    className="rounded-lg border border-dashed border-secondary-700 px-4 py-6 text-center text-sm text-secondary-400"
                 >
                     <p>보유종목을 일시적으로 불러오지 못했어요.</p>
                     <button
@@ -283,7 +283,7 @@ export function PortfolioSection() {
             )}
 
             {!isLoadingState && !isError && holdings.length === 0 && (
-                <p className="rounded-lg border border-dashed border-secondary-800 px-4 py-6 text-center text-sm text-secondary-400">
+                <p className="rounded-lg border border-dashed border-secondary-700 px-4 py-6 text-center text-sm text-secondary-400">
                     아직 등록한 보유종목이 없어요. 첫 종목을 추가해 보세요.
                 </p>
             )}
@@ -336,7 +336,7 @@ export function PortfolioSection() {
             )}
 
             {!isLoadingState && !isError && (
-                <div className="space-y-2 border-t border-secondary-800 pt-4">
+                <div className="space-y-2 border-t border-secondary-700 pt-4">
                     <h3 className="text-sm font-semibold text-secondary-200">
                         종목 추가
                     </h3>

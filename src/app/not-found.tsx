@@ -33,7 +33,7 @@ export default function NotFound() {
                         {SITE_NAME} 홈으로 돌아가기
                     </Link>
 
-                    <div className="mt-10 border-t border-secondary-800 pt-8">
+                    <div className="mt-10 border-t border-secondary-700 pt-8">
                         <p className="text-sm text-secondary-400">
                             실제로 있는 종목인데 찾을 수 없나요?
                         </p>

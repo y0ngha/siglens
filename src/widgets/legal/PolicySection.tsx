@@ -10,7 +10,7 @@ export function PolicySection({ id, title, children }: PolicySectionProps) {
     return (
         <section
             id={id}
-            className="scroll-mt-24 border-t border-secondary-800 pt-8"
+            className="scroll-mt-24 border-t border-secondary-700 pt-8"
         >
             <h2 className="text-xl font-semibold text-secondary-100">
                 {title}

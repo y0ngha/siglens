@@ -94,7 +94,7 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
     const deleteStatusId = `api-key-delete-status-${provider}`;
 
     return (
-        <div className="rounded-lg bg-secondary-900/60 p-4 ring-1 ring-secondary-800">
+        <div className="rounded-lg bg-secondary-900/60 p-4 ring-1 ring-secondary-700">
             <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-secondary-100">

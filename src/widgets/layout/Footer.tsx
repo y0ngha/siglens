@@ -25,7 +25,7 @@ const FOOTER_NAV_LINKS = [...NAV_OVERVIEW_LINKS, ...ALL_NAV_REGION_LINKS];
 
 export function Footer() {
     return (
-        <footer className="border-t border-secondary-800">
+        <footer className="border-t border-secondary-700">
             <div className="page-container flex flex-col gap-2 py-6">
                 <div
                     role="note"
@@ -34,7 +34,7 @@ export function Footer() {
                 >
                     {INVESTMENT_DISCLAIMER}
                 </div>
-                <div className="flex flex-col items-center gap-3 border-secondary-800 sm:flex-row sm:justify-between">
+                <div className="flex flex-col items-center gap-3 border-secondary-700 sm:flex-row sm:justify-between">
                     {/* `shrink-0` + `whitespace-nowrap`: 오른쪽 nav가 링크 12개짜리
                         `flex-wrap`이라 폭을 크게 요구한다. 그대로 두면 `justify-between`
                         아래에서 이 짧은 저작권 표기가 대신 밀려 `© 2026` / `Siglens`

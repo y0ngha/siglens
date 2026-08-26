@@ -21,7 +21,7 @@ interface SizeStyles {
 
 const SIZE_STYLES: Record<TabsUnderlineSize, SizeStyles> = {
     xs: {
-        container: 'border-secondary-800 overflow-x-auto border-b',
+        container: 'border-secondary-700 overflow-x-auto border-b',
         // 스크롤 컨테이너와 그 `border-b`는 전폭으로 두고, 좌우 여백은 안쪽
         // 래퍼가 `page-container`로 갖는다 — 그래야 탭이 자기가 거르는 목록과
         // 같은 선에서 시작한다. 고정 `px-4`였을 때 1920px에서 368px 어긋났다.
