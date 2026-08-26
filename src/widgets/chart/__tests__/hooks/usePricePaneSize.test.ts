@@ -9,6 +9,7 @@ const PANE_INDICES = {} as PaneIndices;
 
 const observed: Element[] = [];
 let notify: (() => void) | null = null;
+const mockDisconnect = vi.fn();
 
 class MockResizeObserver {
     constructor(callback: () => void) {
@@ -18,7 +19,7 @@ class MockResizeObserver {
         observed.push(el);
     };
     unobserve = vi.fn();
-    disconnect = vi.fn();
+    disconnect = mockDisconnect;
 }
 
 vi.stubGlobal('ResizeObserver', MockResizeObserver);
@@ -58,6 +59,7 @@ describe('usePricePaneSize', () => {
     beforeEach(() => {
         observed.length = 0;
         notify = null;
+        mockDisconnect.mockClear();
     });
 
     it('컨테이너가 없으면 0을 돌려준다', () => {
@@ -117,5 +119,22 @@ describe('usePricePaneSize', () => {
         });
 
         expect(result.current).toBe(first);
+    });
+
+    /**
+     * effect의 return을 통째로 `undefined`로 바꿔도 파일이 초록이었다.
+     * 정리 없이 언마운트하면 관찰자가 살아남아 사라진 컴포넌트에 setState를 걸고,
+     * 예약된 프레임은 죽은 ref를 다시 읽는다.
+     */
+    it('unmount하면 관찰과 예약된 프레임을 모두 정리한다', () => {
+        const cancelSpy = vi.spyOn(globalThis, 'cancelAnimationFrame');
+        const { unmount } = render(makeChart([110]), makeContainer(246));
+
+        expect(mockDisconnect).not.toHaveBeenCalled();
+        unmount();
+
+        expect(mockDisconnect).toHaveBeenCalled();
+        expect(cancelSpy).toHaveBeenCalled();
+        cancelSpy.mockRestore();
     });
 });

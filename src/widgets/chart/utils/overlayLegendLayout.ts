@@ -17,8 +17,14 @@ import { formatOverlayValue, type OverlayGroup } from './overlayLegendFormat';
 /** 한 줄 높이 = `text-[11px] leading-none`(11px) + `gap-y-1.5`(6px). */
 export const LEGEND_ROW_HEIGHT_PX = 17;
 
-/** `gap-x-3` — 같은 줄 항목 사이 간격. */
-const ITEM_GAP_PX = 12;
+/**
+ * `gap-x-3` — 같은 줄 항목 사이 간격.
+ *
+ * `LEGEND_ROW_HEIGHT_PX`와 같은 이유로 내보낸다. 이 값들은 실제 CSS를 **작지
+ * 않게** 옮겨 적은 것이라, 줄이면 넘친 항목이 조용히 잘린다. 테스트가 그
+ * 방향을 붙들 수 있어야 한다(`overlayLegendLayout.test.ts`).
+ */
+export const ITEM_GAP_PX = 12;
 
 /** 11px 고정폭 글꼴의 글자 전진폭. 통상 0.6em(6.6px)이지만 넉넉히 7로 잡는다. */
 const CHAR_WIDTH_PX = 7;
@@ -27,7 +33,7 @@ const CHAR_WIDTH_PX = 7;
 const DOT_AND_SPACES = 3;
 
 /** `+12` 칩과 앞 간격. 줄마다 미리 빼 두면 칩이 어느 줄에 붙어도 넘치지 않는다. */
-const MORE_CHIP_PX = 44;
+export const MORE_CHIP_PX = 44;
 
 /** 범례 상자의 `top-2` / `left-2` 인셋. */
 const INSET_PX = 8;

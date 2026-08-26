@@ -3,6 +3,7 @@
 import type { RefObject } from 'react';
 import { useEffect, useRef } from 'react';
 import type { IChartApi } from 'lightweight-charts';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 import type { PaneLabelConfig, PaneSubLabel } from '../types';
 
 interface UsePaneLabelsParams {
@@ -22,7 +23,82 @@ const SUB_LABEL_GAP = '6px';
 const SUB_LABEL_ROW_GAP = '10px';
 /** 클램프 하한 — pane이 아무리 얇아도 한 줄은 보여준다. */
 const LABEL_MIN_BOX_PX = 12;
-const SUB_LABEL_DOT = '\u25CF ';
+const SUB_LABEL_DOT = '● ';
+/** 범례의 `rounded-sm`과 같은 값. */
+const LABEL_RADIUS = '4px';
+/**
+ * 좌우만 준다. 전역 `box-sizing: border-box` 아래에서 세로 패딩은 아래의
+ * `maxHeight` 클램프를 그대로 갉아먹어 라벨을 다시 잘리게 만든다.
+ */
+const LABEL_PADDING = '0 4px';
+
+/** 라벨 한 줄의 높이(`font-size: 11px` + `line-height: 1`). */
+const LABEL_ROW_PX = 11;
+
+/**
+ * LWC가 심는 TradingView 귀속 마크. 지우거나 옮기면 안 되는 서드파티 요구사항이라
+ * **라벨 쪽이 비켜야** 한다.
+ *
+ * 좌표는 라이브러리가 인라인 `<style>`로 못박는다(`dist`의
+ * `a#tv-attr-logo{left:10px;bottom:10px;height:19px;width:35px}`). 실측 rect를
+ * 읽을 수 있으면 그쪽을 쓰고, 못 읽을 때만 이 값들로 되돌아간다.
+ */
+const ATTRIBUTION_SELECTOR = 'a#tv-attr-logo';
+const ATTRIBUTION_LEFT_PX = 10;
+const ATTRIBUTION_BOTTOM_PX = 10;
+const ATTRIBUTION_WIDTH_PX = 35;
+const ATTRIBUTION_HEIGHT_PX = 19;
+
+/** 컨테이너 좌표계에서 본 귀속 마크의 자리. */
+interface AttributionBox {
+    top: number;
+    bottom: number;
+    right: number;
+}
+
+function attributionBox(container: HTMLElement): AttributionBox | null {
+    const logo = container.querySelector(ATTRIBUTION_SELECTOR);
+    if (logo === null) return null;
+
+    const logoRect = logo.getBoundingClientRect();
+    if (logoRect.height > 0) {
+        const containerRect = container.getBoundingClientRect();
+        return {
+            top: logoRect.top - containerRect.top,
+            bottom: logoRect.bottom - containerRect.top,
+            right: logoRect.right - containerRect.left,
+        };
+    }
+
+    // 첫 페인트 전에는 rect가 전부 0이다. 라이브러리가 고정해 둔 값으로 대체한다.
+    const bottom = container.clientHeight - ATTRIBUTION_BOTTOM_PX;
+    return {
+        top: bottom - ATTRIBUTION_HEIGHT_PX,
+        bottom,
+        right: ATTRIBUTION_LEFT_PX + ATTRIBUTION_WIDTH_PX,
+    };
+}
+
+/**
+ * 라벨의 왼쪽 위치. 귀속 마크와 세로로 겹치면 마크 오른쪽으로 물린다.
+ *
+ * 가로 판정은 생략한다 — 기본 위치(8px)는 마크의 가로 범위(10~45px) 안으로
+ * 반드시 들어가므로 세로가 겹치면 그게 곧 충돌이다. 마지막 보조 pane이
+ * 짧아지면(실측 임계 ~43px) 마크가 라벨 위에 얹혀 `● CCI(20)`이 `▓▓I(20)`으로
+ * 찍혔고, 보조 pane 6개에서는 `● MFI`가 통째로 가려졌다.
+ */
+function labelLeftPx(
+    container: HTMLElement,
+    labelTopPx: number,
+    labelHeightPx: number
+): number {
+    const logo = attributionBox(container);
+    if (logo === null) return LABEL_OFFSET_PX;
+
+    const overlaps =
+        labelTopPx < logo.bottom && labelTopPx + labelHeightPx > logo.top;
+    return overlaps ? logo.right + LABEL_OFFSET_PX : LABEL_OFFSET_PX;
+}
 
 function paneHeightOf(chart: IChartApi, paneIndex: number): number {
     return chart.panes()[paneIndex]?.getHeight() ?? 0;
@@ -50,16 +126,10 @@ function createSubLabelSpan(subLabel: PaneSubLabel): HTMLSpanElement {
     return span;
 }
 
-function createLabelElement(
-    config: PaneLabelConfig,
-    top: number,
-    paneHeight: number
-): HTMLDivElement {
+function createLabelElement(config: PaneLabelConfig): HTMLDivElement {
     const el = document.createElement('div');
     el.className = PANE_LABEL_CLASS;
     el.style.position = 'absolute';
-    el.style.top = `${top + LABEL_OFFSET_PX}px`;
-    el.style.left = `${LABEL_OFFSET_PX}px`;
     el.style.fontSize = LABEL_FONT_SIZE;
     el.style.pointerEvents = 'none';
     el.style.zIndex = LABEL_Z_INDEX;
@@ -80,14 +150,55 @@ function createLabelElement(
     el.style.flexWrap = 'wrap';
     el.style.columnGap = SUB_LABEL_ROW_GAP;
     el.style.rowGap = SUB_LABEL_GAP;
-    el.style.maxHeight = `${Math.max(LABEL_MIN_BOX_PX, paneHeight - LABEL_OFFSET_PX * 2)}px`;
     el.style.overflow = 'hidden';
+    /*
+     * **불투명 배경이 필요하다.** 라벨은 지표선 위에 떠 있어서 배경이 없으면
+     * 대비가 선이 지나가는 자리에 따라 무너진다 — 다크 최악 1.13:1(StochRSI
+     * `%D`), 라이트 최악 2.93:1이었고 라벨 면적의 5~36%가 4.5:1 아래였다.
+     * 선이 라벨까지 닿지 않는 54px 거래량 pane만 12.08:1로 멀쩡했다는 게
+     * pane 높이가 악화 요인임을 보여준다. `usePricePaneStretch`가 짧은 보조
+     * pane을 정상 상태로 만들었으니 방치하면 더 나빠진다.
+     *
+     * 값은 차트 배경(`secondary-900`: 다크 #09090b / 라이트 #f7f8fa)과 같은
+     * 것으로, `OverlayLegend`의 `bg-secondary-900`이 해결한 것과 같은 처방이다.
+     * 알파를 섞지 않는 이유도 같다 — 알파면 뒤에 무엇이 오느냐에 따라 다시 흔들린다.
+     *
+     * 테마는 생성 시점 값으로 충분하다. 테마가 바뀌면 `ChartContent`가
+     * `key={themeVersion}`으로 `StockChart`를 통째로 remount하고, 그러면 이
+     * 훅의 effect도 다시 돌아 라벨을 새로 만든다.
+     */
+    el.style.backgroundColor = CHART_COLORS.background;
+    el.style.borderRadius = LABEL_RADIUS;
+    el.style.padding = LABEL_PADDING;
 
     for (const subLabel of config.subLabels) {
         el.appendChild(createSubLabelSpan(subLabel));
     }
 
     return el;
+}
+
+/**
+ * pane 기하에 맞춰 라벨을 놓는다. 생성 직후와 pane 재분배 때 **같은 함수**를
+ * 쓴다 — 한쪽만 고쳐지는 형태를 만들지 않기 위해서다.
+ */
+function positionLabel(
+    container: HTMLElement,
+    el: HTMLDivElement,
+    paneTop: number,
+    paneHeight: number
+): void {
+    const top = paneTop + LABEL_OFFSET_PX;
+    el.style.top = `${top}px`;
+    /* pane이 재분배되면 클램프도 따라가야 한다 — 안 그러면 좁아진 pane에서
+       라벨이 다시 아래를 침범한다. */
+    el.style.maxHeight = `${Math.max(
+        LABEL_MIN_BOX_PX,
+        paneHeight - LABEL_OFFSET_PX * 2
+    )}px`;
+    /* 실측 높이를 쓰되, 아직 레이아웃이 없으면 한 줄로 본다. */
+    const labelHeight = el.getBoundingClientRect().height || LABEL_ROW_PX;
+    el.style.left = `${labelLeftPx(container, top, labelHeight)}px`;
 }
 
 function clearLabelElements(elements: HTMLDivElement[]): void {
@@ -113,13 +224,14 @@ export function usePaneLabels({
         if (!container || !chart || labels.length === 0) return;
 
         const labelPairs = labels.map(config => {
-            const top = getTopOffset(chart, config.paneIndex);
-            const el = createLabelElement(
-                config,
-                top,
+            const el = createLabelElement(config);
+            container.appendChild(el);
+            positionLabel(
+                container,
+                el,
+                getTopOffset(chart, config.paneIndex),
                 paneHeightOf(chart, config.paneIndex)
             );
-            container.appendChild(el);
             return { config, el };
         });
 
@@ -129,15 +241,12 @@ export function usePaneLabels({
             const currentChart = chartRef.current;
             if (!currentChart) return;
             for (const { config, el } of labelPairs) {
-                const top = getTopOffset(currentChart, config.paneIndex);
-                el.style.top = `${top + LABEL_OFFSET_PX}px`;
-                /* pane이 재분배되면 클램프도 따라가야 한다 — 안 그러면
-                   좁아진 pane에서 라벨이 다시 아래를 침범한다. */
-                el.style.maxHeight = `${Math.max(
-                    LABEL_MIN_BOX_PX,
-                    paneHeightOf(currentChart, config.paneIndex) -
-                        LABEL_OFFSET_PX * 2
-                )}px`;
+                positionLabel(
+                    container,
+                    el,
+                    getTopOffset(currentChart, config.paneIndex),
+                    paneHeightOf(currentChart, config.paneIndex)
+                );
             }
         };
 

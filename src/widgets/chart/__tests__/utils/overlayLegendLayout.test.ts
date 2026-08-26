@@ -1,12 +1,17 @@
 import type { OverlayLegendItem } from '@/widgets/chart/types';
 import type { OverlayGroup } from '@/widgets/chart/utils/overlayLegendFormat';
-import { groupOverlayItems } from '@/widgets/chart/utils/overlayLegendFormat';
 import {
+    formatOverlayValue,
+    groupOverlayItems,
+} from '@/widgets/chart/utils/overlayLegendFormat';
+import {
+    ITEM_GAP_PX,
     LEGEND_ROW_HEIGHT_PX,
     legendItemWidthPx,
     legendMaxHeightPx,
     legendMaxRows,
     legendMaxWidthPx,
+    MORE_CHIP_PX,
     packOverlayLegend,
 } from '@/widgets/chart/utils/overlayLegendLayout';
 
@@ -116,6 +121,57 @@ describe('legendMaxHeightPx', () => {
         expect(legendMaxHeightPx(MOBILE_PRICE_PANE_PX)).toBe(
             MOBILE_PRICE_PANE_PX - 16
         );
+    });
+});
+
+/**
+ * **추정 오차의 방향을 붙든다.**
+ *
+ * `overlayLegendLayout` 헤더가 선언한 규약은 "크게 틀려라"다 — 크게 잡으면 여백이
+ * 남고, 작게 잡으면 넘친 항목이 `overflow-hidden`에 잘리면서 `+N` 칩은 그 사실을
+ * 모른 채 거짓말을 한다. 그런데 `CHAR_WIDTH_PX 7→4`, `MORE_CHIP_PX 44→0`,
+ * `ITEM_GAP_PX 12→0`이 전부 초록이었다. 값이 아니라 **부등호**를 고정한다.
+ *
+ * 아래 상수는 렌더 결과의 실제 글리프 폭이지 모듈 상수의 복사본이 아니다.
+ */
+/** 11px 고정폭 글꼴(SFMono/Menlo)의 글자 전진폭 — 0.6em. */
+const TRUE_CHAR_PX = 11 * 0.6;
+/** `●`(U+25CF)는 고정폭 글꼴에 없어 대체 글꼴로 떨어지며 대략 1em을 쓴다. */
+const TRUE_DOT_PX = 11;
+/** `gap-x-3` = 0.75rem. */
+const TRUE_ITEM_GAP_PX = 12;
+
+/** `● NAME VALUE` — 점 + 공백 + 이름 + 공백 + 값. */
+function trueItemWidthPx(name: string, value: string): number {
+    return TRUE_DOT_PX + (2 + name.length + value.length) * TRUE_CHAR_PX;
+}
+
+describe('추정 폭은 실제 글리프 폭보다 작아지지 않는다', () => {
+    it('항목 폭은 실제 렌더 폭 이상이다', () => {
+        const cases: [string, number][] = [
+            ['MA(120)', 281.9],
+            ['BB Middle', 311.54],
+            ['Supertrend', 311.54],
+        ];
+
+        for (const [name, value] of cases) {
+            expect(
+                legendItemWidthPx(item(name, value), 2)
+            ).toBeGreaterThanOrEqual(
+                trueItemWidthPx(name, formatOverlayValue(value, 2))
+            );
+        }
+    });
+
+    it('`+N` 칩 예약폭은 `+99` 칩과 그 앞 간격을 덮는다', () => {
+        // 감사 케이스가 `+33`이었다 — 두 자리는 실제로 나온다.
+        expect(MORE_CHIP_PX).toBeGreaterThanOrEqual(
+            '+99'.length * TRUE_CHAR_PX + ITEM_GAP_PX
+        );
+    });
+
+    it('항목 간격은 실제 `gap-x-3`보다 좁지 않다', () => {
+        expect(ITEM_GAP_PX).toBeGreaterThanOrEqual(TRUE_ITEM_GAP_PX);
     });
 });
 

@@ -39,45 +39,86 @@ const INACTIVE_PANES = Object.fromEntries(
     ].map(k => [k, INACTIVE_PANE_INDEX])
 );
 
-const { mockCreateChart, mockAddSeries, mockSetData, mockFitContent } =
-    vi.hoisted(() => {
-        const mockSetData = vi.fn();
-        const mockFitContent = vi.fn();
-        const mockAddSeries = vi.fn(() => ({
+const {
+    mockCreateChart,
+    mockAddSeries,
+    mockSetData,
+    mockFitContent,
+    setPaneLayout,
+    paneSpies,
+} = vi.hoisted(() => {
+    interface PaneSpec {
+        stretch: number;
+        height: number;
+    }
+
+    interface PaneMock {
+        getHeight: () => number;
+        getStretchFactor: () => number;
+        setStretchFactor: ReturnType<typeof vi.fn>;
+    }
+
+    /*
+     * pane 목록은 테스트가 갈아끼운다. `chart.panes()`는 훅 여러 개가 각자
+     * 부르므로 **같은 객체**를 계속 돌려줘야 spy 호출이 한곳에 모인다.
+     */
+    let panes: PaneMock[] = [];
+
+    const setPaneLayout = (specs: PaneSpec[]): void => {
+        panes = specs.map(spec => ({
+            getHeight: () => spec.height,
+            getStretchFactor: () => spec.stretch,
+            setStretchFactor: vi.fn(),
+        }));
+    };
+
+    // 기본은 가격 pane 하나 — 보조지표가 전부 꺼진 상태다.
+    setPaneLayout([{ stretch: 2, height: 200 }]);
+
+    const paneSpies = { at: (index: number): PaneMock => panes[index] };
+
+    const mockSetData = vi.fn();
+    const mockFitContent = vi.fn();
+    const mockAddSeries = vi.fn(() => ({
+        setData: mockSetData,
+        applyOptions: vi.fn(),
+        setMarkers: vi.fn(),
+    }));
+    const mockCreateChart = vi.fn(() => ({
+        addSeries: mockAddSeries,
+        addCandlestickSeries: vi.fn(() => ({
             setData: mockSetData,
             applyOptions: vi.fn(),
-            setMarkers: vi.fn(),
-        }));
-        const mockCreateChart = vi.fn(() => ({
-            addSeries: mockAddSeries,
-            addCandlestickSeries: vi.fn(() => ({
-                setData: mockSetData,
-                applyOptions: vi.fn(),
-            })),
-            addLineSeries: vi.fn(() => ({
-                setData: vi.fn(),
-                applyOptions: vi.fn(),
-            })),
-            addHistogramSeries: vi.fn(() => ({
-                setData: vi.fn(),
-                applyOptions: vi.fn(),
-            })),
+        })),
+        addLineSeries: vi.fn(() => ({
+            setData: vi.fn(),
             applyOptions: vi.fn(),
-            resize: vi.fn(),
-            remove: vi.fn(),
-            removeSeries: vi.fn(),
-            timeScale: vi.fn(() => ({
-                fitContent: mockFitContent,
-                scrollToRealTime: vi.fn(),
-            })),
-            subscribeCrosshairMove: vi.fn(),
-            priceScale: vi.fn(() => ({ applyOptions: vi.fn() })),
-            panes: vi.fn(() => [
-                { getHeight: () => 200, setStretchFactor: vi.fn() },
-            ]),
-        }));
-        return { mockCreateChart, mockAddSeries, mockSetData, mockFitContent };
-    });
+        })),
+        addHistogramSeries: vi.fn(() => ({
+            setData: vi.fn(),
+            applyOptions: vi.fn(),
+        })),
+        applyOptions: vi.fn(),
+        resize: vi.fn(),
+        remove: vi.fn(),
+        removeSeries: vi.fn(),
+        timeScale: vi.fn(() => ({
+            fitContent: mockFitContent,
+            scrollToRealTime: vi.fn(),
+        })),
+        subscribeCrosshairMove: vi.fn(),
+        priceScale: vi.fn(() => ({ applyOptions: vi.fn() })),
+        panes: vi.fn(() => panes),
+    }));
+    return {
+        mockCreateChart,
+        mockAddSeries,
+        mockSetData,
+        mockFitContent,
+        setPaneLayout,
+        paneSpies,
+    };
+});
 
 vi.mock('lightweight-charts', () => ({
     createChart: mockCreateChart,
@@ -327,6 +368,26 @@ vi.mock('@/widgets/chart/ui/IndicatorSettingsModal', () => ({
     ),
 }));
 
+/*
+ * 범례가 **실측 크기를 받는지**만 본다. 배치 계산 자체는
+ * `overlayLegendLayout.test.ts`가 따로 검증하므로 여기서는 prop만 노출한다.
+ */
+vi.mock('@/widgets/chart/OverlayLegend', () => ({
+    OverlayLegend: ({
+        pricePaneHeightPx,
+        chartWidthPx,
+    }: {
+        pricePaneHeightPx?: number;
+        chartWidthPx?: number;
+    }) => (
+        <div
+            data-testid="overlay-legend"
+            data-price-pane-height={pricePaneHeightPx}
+            data-chart-width={chartWidthPx}
+        />
+    ),
+}));
+
 vi.mock('@/widgets/chart/utils/paneLabelUtils', () => ({
     buildPaneLabels: () => [],
 }));
@@ -378,9 +439,38 @@ const mockBars: Bar[] = [
     { time: 300, open: 15, high: 20, low: 14, close: 18, volume: 1100 },
 ];
 
+/**
+ * jsdom에는 레이아웃이 없어 `clientWidth`가 늘 0이다. 범례 폭 계산이 실제로
+ * 흐르는지 보려면 폭을 하나 심어야 한다. vitest의 mock 생명주기를 건드리지
+ * 않도록 디스크립터를 직접 저장·복원한다.
+ */
+function stubClientWidth(px: number): () => void {
+    const original = Object.getOwnPropertyDescriptor(
+        Element.prototype,
+        'clientWidth'
+    );
+    Object.defineProperty(Element.prototype, 'clientWidth', {
+        configurable: true,
+        get: () => px,
+    });
+    return () => {
+        if (original !== undefined) {
+            Object.defineProperty(Element.prototype, 'clientWidth', original);
+        }
+    };
+}
+
+async function flushFrame(): Promise<void> {
+    await act(
+        async () =>
+            new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+    );
+}
+
 describe('StockChart', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        setPaneLayout([{ stretch: 2, height: 200 }]);
     });
 
     it('renders empty state message when bars is empty', () => {
@@ -505,5 +595,50 @@ describe('StockChart', () => {
             createdBefore
         );
         expect(mockSetData.mock.calls.length).toBeGreaterThan(dataBefore);
+    });
+
+    /**
+     * **훅이 있는 것과 붙어 있는 것은 다르다.**
+     *
+     * `usePricePaneStretch` / `usePricePaneSize`는 각자 단위 테스트가 있지만
+     * 그건 훅을 직접 렌더한다. 감사가 `StockChart`에서 import 두 줄, 호출 두 줄,
+     * prop 두 개를 통째로 지웠는데 typecheck·lint·전체 스위트가 바이트 단위로
+     * 같았다 — 배선을 보는 단언이 하나도 없었기 때문이다. 아래 둘이 그 자리다.
+     */
+    it('가격 pane stretch를 실제 pane 구성에 맞춰 적용한다', async () => {
+        // 246px 모바일: pane 예산 214px을 기본 stretch(2,1,1,1)로 나눈 상태.
+        setPaneLayout([
+            { stretch: 2, height: 85.6 },
+            { stretch: 1, height: 42.8 },
+            { stretch: 1, height: 42.8 },
+            { stretch: 1, height: 42.8 },
+        ]);
+
+        render(<StockChart bars={mockBars} timeframe="1Day" />);
+        await flushFrame();
+
+        // 보조 합계 3, 픽셀 상한 4.13 → 가격 pane이 절반을 받는 3.
+        expect(paneSpies.at(0).setStretchFactor).toHaveBeenCalledWith(3);
+        // 보조 pane에는 손대지 않는다 — 드래그로 맞춰 둔 비율을 되돌리면 안 된다.
+        expect(paneSpies.at(1).setStretchFactor).not.toHaveBeenCalled();
+    });
+
+    it('범례에 실측한 가격 pane 높이와 차트 폭을 넘긴다', async () => {
+        const restoreClientWidth = stubClientWidth(246);
+        setPaneLayout([
+            { stretch: 2, height: 110 },
+            { stretch: 1, height: 52 },
+        ]);
+
+        try {
+            render(<StockChart bars={mockBars} timeframe="1Day" />);
+            await flushFrame();
+
+            const legend = screen.getByTestId('overlay-legend');
+            expect(legend).toHaveAttribute('data-price-pane-height', '110');
+            expect(legend).toHaveAttribute('data-chart-width', '246');
+        } finally {
+            restoreClientWidth();
+        }
     });
 });
