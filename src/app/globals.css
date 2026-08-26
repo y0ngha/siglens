@@ -53,7 +53,6 @@
     /* Primary — Signal Blue. 로고(블루-틸 마크)와 정합하는 브랜드 액센트.
        400=링크·활성 텍스트, 500=포커스 링, 600=채움 버튼 배경. 라이트에서는
        400이 어두워지고 600은 그대로 남는다(파일 하단 라이트 테이블 참조). */
-    --color-primary-50: #eff6ff;
     --color-primary-100: #dbeafe;
     --color-primary-200: #bfdbfe;
     --color-primary-300: #93c5fd;
@@ -112,84 +111,17 @@
        `max(썸채움-트랙, 보더-트랙) >= 3`은 controlBorderContrast 테스트가 건다. */
     --color-border-control: #6a6a78;
 
-    /* Chart — Semantic */
+    /*
+     * Chart — 방향 색. **여기 있는 것은 DOM 유틸리티로 쓰이는 둘뿐이다.**
+     *
+     * 지표 색(MA/볼린저/MACD/RSI …)은 캔버스에 그려지므로 CSS가 아니라
+     * `shared/lib/chartColors.ts`가 단일 소스다. 한때 그 41개가 이 블록에도
+     * 그대로 복사돼 있었는데, 어떤 코드도 CSS 쪽을 읽지 않았고
+     * `chartPaletteContrastGuard`도 TS 테이블만 검사했다 — 즉 조용히 갈라질
+     * 수 있는 두 번째 팔레트였다. 지표 색을 추가할 때 이곳에 짝을 만들지 말 것.
+     */
     --color-chart-bullish: #26a69a;
     --color-chart-bearish: #ef5350;
-
-    /* Chart — MA/EMA (기간별) */
-    --color-chart-period5: #ef4444;
-    --color-chart-period10: #f97316;
-    --color-chart-period20: #eab308;
-    --color-chart-period60: #22c55e;
-    --color-chart-period120: #3b82f6;
-    --color-chart-period200: #a855f7;
-
-    /* Chart — 볼린저 밴드 */
-    --color-chart-bollinger: #818cf8;
-
-    /* Chart — 켈트너 채널 */
-    --color-chart-keltner-upper: #5eead4;
-    --color-chart-keltner-middle: #14b8a6;
-
-    /* Chart — 돈치안 채널 */
-    --color-chart-donchian-upper: #fcd34d;
-    --color-chart-donchian-middle: #d97706;
-
-    /* Chart — Supertrend (추세 색 고정값: bullish teal / bearish red) */
-    --color-chart-supertrend-up: #26a69a;
-    --color-chart-supertrend-down: #ef5350;
-
-    /* Chart — Parabolic SAR (추세 색 점) */
-    --color-chart-parabolic-sar-up: #26a69a;
-    --color-chart-parabolic-sar-down: #ef5350;
-
-    /* Chart — Chandelier Exit (추세 색 점선 stop) */
-    --color-chart-chandelier-long: #26a69a;
-    --color-chart-chandelier-short: #ef5350;
-
-    /* Chart — Elder Ray */
-    --color-chart-elder-bull-power: #26a69a;
-    --color-chart-elder-bear-power: #ef5350;
-
-    /* Chart — Squeeze Momentum / 상태 점 */
-    --color-chart-squeeze-momentum-up: #26a69a;
-    --color-chart-squeeze-momentum-down: #ef5350;
-    --color-chart-squeeze-on: #fbbf24;
-    --color-chart-squeeze-off: #94a3b8;
-    --color-chart-squeeze-none: #3b82f6;
-
-    /* Chart — Regression */
-    --color-chart-regression-up: #26a69a;
-    --color-chart-regression-down: #ef5350;
-
-    /* Chart — Elder Impulse (캔들 색) */
-    --color-chart-impulse-bullish: #26a69a;
-    --color-chart-impulse-bearish: #ef5350;
-    --color-chart-impulse-neutral: #3b82f6;
-
-    /* Chart — SMC zones */
-    --color-chart-smc-premium: #ef5350;
-    --color-chart-smc-discount: #26a69a;
-    --color-chart-smc-equilibrium: #94a3b8;
-
-    /* Chart — MACD */
-    --color-chart-macd: #3b82f6;
-    --color-chart-signal: #f59e0b;
-
-    /* Chart — RSI */
-    --color-chart-rsi: #a78bfa;
-
-    /* Chart — DMI */
-    --color-chart-dmi-plus: #26a69a;
-    --color-chart-dmi-minus: #ef5350;
-    --color-chart-dmi-adx: #f59e0b;
-
-    /* Chart — Stochastic */
-    --color-chart-stochastic-k: #f472b6;
-    --color-chart-stochastic-d: #38bdf8;
-
-    /* Chart — VWAP */
-    --color-chart-vwap: #e879f9;
 
     /* UI Status — 성공/경고/위험 상태 UI 전용 */
     --color-ui-success: #26a69a;
@@ -233,7 +165,6 @@
        뒤집혀 흰 버튼에 흰 글자가 된다 — 실제로 그렇게 깨져 있었다.
        테마와 무관하게 고정되어야 하므로 램프 밖에 둔다. */
     --color-on-fixed-light: #16181d;
-    --color-on-fixed-light-muted: #5c626d;
 
     /* 라이트 테마에서는 이 버튼(흰 배경)이 흰 카드 위에 놓인다. 경계선이
        유일한 구분 수단이 되므로 WCAG 1.4.11의 3:1을 넘겨야 한다 —
@@ -282,41 +213,6 @@
      * 한글에 모노를 적용하는 것은 금지다(글리프가 없어 OS 폰트로 떨어진다).
      */
     --font-mono: var(--font-geist-mono);
-}
-
-/*
- * 계층 2 — 시맨틱 토큰. **신규·재작성 코드는 이것만 쓴다.**
- *
- * `@theme inline`이라 `.bg-surface`가 `var(--color-surface)`가 아니라
- * `var(--color-secondary-800)`으로 직접 컴파일된다(4.3.0 실측). 즉 참조가
- * 한 단계만 남아 램프 재지정이 그대로 흐르고, `:root`에 중복 변수도 안 생긴다.
- *
- * 램프 스텝 번호는 "얼마나 어두운가"를 뜻하지만 시맨틱 이름은 "무슨 역할인가"를
- * 뜻한다. 라이트 테마에서 스텝 번호의 의미는 뒤집히지만 역할은 그대로이므로,
- * 페이지를 재작업할 때마다 이 이름으로 갈아타면 테마 대응이 자동으로 끝난다.
- */
-@theme inline {
-    /* 표면 — 3단계로 고정한다. 이전에는 임의 알파 조합이 20종이었다. */
-    --color-surface: var(--color-secondary-800);
-    --color-surface-raised: var(--color-secondary-700);
-    --color-surface-inset: var(--color-secondary-950);
-    --color-surface-page: var(--color-secondary-900);
-
-    /* 경계 — 장식용과 컨트롤용을 구분한다(위 border-control 주석 참조). */
-    --color-border-subtle: var(--color-secondary-700);
-    --color-border-strong: var(--color-secondary-600);
-
-    /* 전경 */
-    --color-fg: var(--color-secondary-50);
-    --color-fg-heading: var(--color-secondary-100);
-    --color-fg-body: var(--color-secondary-300);
-    --color-fg-muted: var(--color-secondary-400);
-    --color-fg-faint: var(--color-secondary-500);
-
-    /* 액센트 — 뷰포트당 2곳까지만. 주 액션과 현재 위치 표시. */
-    --color-accent: var(--color-primary-400);
-    --color-accent-fill: var(--color-primary-600);
-    --color-accent-ring: var(--color-primary-500);
 }
 
 /*

@@ -19,7 +19,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { id } = await params;
     const lookup = await getCachedSharedAnalysis(id);
-    return buildShareMetadata(lookup);
+    return buildShareMetadata(lookup, id);
 }
 
 export default async function SharePage({ params }: Props) {

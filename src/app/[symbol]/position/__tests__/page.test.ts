@@ -492,7 +492,65 @@ describe('PositionPage — per-symbol current-price-position content (Task 1, th
         expect(serialized).toContain('60');
         expect(serialized).toContain('% 지점');
         expect(serialized).toContain('4층 · 고층');
+        // 같은 문장의 나머지 절반. 이 단언이 없어서 층 라벨과 톤이 서로를
+        // 부정하는 상태가 초록으로 통과했다 — 60%는 '고층'인데 톤은 70/30
+        // 리터럴을 쓰느라 '중간 지점'을 냈다(감사 실측: NVDA 68%, 005930.KS 62%).
+        expect(serialized).toContain('상단부');
+        expect(serialized).not.toContain('중간 지점');
     });
+
+    /**
+     * 층 라벨과 톤 문장이 **모든 위치에서** 서로를 부정하지 않아야 한다.
+     * 위 케이스 하나만으로는 경계가 다시 갈려도 못 잡는다 — 실제로 그렇게
+     * 갈려 있었고, 60%를 단언하는 테스트가 있었는데도 통과하고 있었다.
+     */
+    it.each([
+        [0.05, '저층', '하단부'],
+        [0.25, '중층', '중간 지점'],
+        [0.45, '중층', '중간 지점'],
+        [0.62, '고층', '상단부'],
+        [0.68, '고층', '상단부'],
+        [0.9, '펜트하우스', '상단부'],
+    ])(
+        '위치 %s에서 층 라벨(%s)과 톤(%s)이 어긋나지 않는다',
+        async (pos, tier, tone) => {
+            // RAW_BARS와 같은 모양을 쓰되 범위를 [0,100]으로 잡아
+            // lastClose가 곧 퍼센타일이 되게 한다. 봉을 새로 지어내면
+            // buildTechnicalFacts가 거부해 섹션 자체가 사라진다.
+            const close = pos * 100;
+            mockGetQuantizedBarsStatic.mockResolvedValue({
+                ...RAW_BARS,
+                bars: [
+                    // close는 0이면 안 된다 — buildTechnicalFacts가
+                    // prev.close === 0에서 null을 반환해 섹션이 통째로 사라진다
+                    // (위 RAW_BARS 주석과 같은 조건).
+                    {
+                        time: 1,
+                        open: 50,
+                        high: 100,
+                        low: 0,
+                        close: 50,
+                        volume: 1,
+                    },
+                    {
+                        time: 2,
+                        open: close,
+                        high: close,
+                        low: close,
+                        close,
+                        volume: 1,
+                    },
+                ],
+            } as never);
+
+            const tree = await PositionPage({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+            const serialized = JSON.stringify(tree);
+            expect(serialized).toContain(tier);
+            expect(serialized).toContain(tone);
+        }
+    );
 
     it('omits the section entirely (no crash, no empty shell) when getQuantizedBarsStatic fails and range degrades to null', async () => {
         mockGetQuantizedBarsStatic.mockRejectedValue(new Error('FMP down'));

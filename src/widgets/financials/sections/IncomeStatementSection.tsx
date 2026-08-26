@@ -114,6 +114,7 @@ export function IncomeStatementSection({
                 />
             </div>
             <StatementTable
+                caption={TITLE}
                 columns={columns}
                 rows={tableRows}
                 currency={currency}

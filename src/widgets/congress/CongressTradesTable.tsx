@@ -234,7 +234,23 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
 
     return (
         <div className="rounded-lg border border-secondary-700 bg-secondary-800">
-            <p className="px-4 pt-3 pb-0 text-xs text-secondary-400 sm:hidden">
+            {/*
+             * `sm:hidden`이 붙어 있었는데, 이 표는 모든 폭에서 넘친다 —
+             * 힌트가 사라지는 640px 이상이 정확히 넘치는 구간이었다.
+             *
+             * 왜 항상 넘치는가: 감싸는 `<main>`이 `max-w-5xl px-4`라 콘텐츠
+             * 박스가 뷰포트와 무관하게 992px에서 멈추는데, 이 표는 열 10개가
+             * 전부 `whitespace-nowrap`이고 열마다 `px-4`(좌우 32px)라 패딩만
+             * 320px이다. 감사 실측 min-content 1148px.
+             *
+             * 키보드·AT는 `role="region"` + `tabIndex`로 이미 닿지만, macOS의
+             * 오버레이 스크롤바는 마우스 사용자에게 아무 단서를 주지 않는다.
+             *
+             * 형제인 `StatementTable`은 같은 처방을 하면 안 된다 — 그쪽은
+             * nowrap이 3곳뿐이라 992px 안에 들어가고, 힌트를 항상 띄우면
+             * 데스크톱에서 거짓말이 된다.
+             */}
+            <p className="px-4 pt-3 pb-0 text-xs text-secondary-400">
                 ← 좌우로 스크롤 →
             </p>
             <div

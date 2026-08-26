@@ -116,8 +116,20 @@ export function CrossLinkCards({
     return (
         <section
             className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-            aria-label="다른 분석 탭"
+            aria-labelledby="cross-link-heading"
         >
+            {/*
+             * 카드 제목이 h3인데 이 구역에 h2가 없어서, 문서 개요상 h3 여덟
+             * 개가 바로 앞 FAQ의 h2 밑으로 들어가 있었다(감사 실측: 심볼 탭
+             * 전역). 보이는 제목을 새로 만들 자리는 아니므로 sr-only h2를 두고
+             * `aria-labelledby`로 랜드마크 이름까지 그쪽에 맡긴다 — `aria-label`을
+             * 그대로 두면 이름은 있지만 개요는 여전히 비어 있다.
+             *
+             * `sr-only`는 `position: absolute`라 그리드 트랙을 차지하지 않는다.
+             */}
+            <h2 id="cross-link-heading" className="sr-only">
+                다른 분석 탭
+            </h2>
             {visiblePages.map(p => {
                 const isCurrent = p === current;
                 const description = getDescription(p, assetClass);

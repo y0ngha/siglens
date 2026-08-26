@@ -52,6 +52,28 @@ export function NewsCategoryTabs({ activeCategory }: NewsCategoryTabsProps) {
         >
             {siblings.map(category => {
                 const active = category === activeCategory;
+                const className = cn(
+                    'focus-visible:ring-primary-500 flex min-h-11 touch-manipulation items-center border-b-2 border-transparent px-4 py-2 text-sm whitespace-nowrap focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+                    active
+                        ? 'border-primary-500 text-secondary-100 font-medium'
+                        : 'text-secondary-400 hover:text-secondary-100'
+                );
+                // 현재 카테고리는 링크가 아니라 텍스트다. `<Link>`로 두면 자기
+                // 자신을 가리키는 죽은 앵커가 되어 내부 링크 그래프에 자기
+                // 참조가 들어간다(감사 실측: /news/stock의 내부 링크 집합에
+                // '/news/stock' 포함). 형제인 `shared/ui/RegionTabs`가 이미
+                // 같은 이유로 같은 형태를 쓴다 — 그쪽 JSDoc 참조.
+                if (active) {
+                    return (
+                        <span
+                            key={category}
+                            aria-current="page"
+                            className={className}
+                        >
+                            {TAB_LABELS[category]}
+                        </span>
+                    );
+                }
                 return (
                     <Link
                         key={category}
@@ -60,13 +82,7 @@ export function NewsCategoryTabs({ activeCategory }: NewsCategoryTabsProps) {
                         // `_rsc` 해시가 진입 경로마다 달라 캐시 재사용이 안 되므로
                         // (docs/architecture/CDN_CACHING.md §1) 클릭 시점으로 미룬다.
                         prefetch={false}
-                        aria-current={active ? 'page' : undefined}
-                        className={cn(
-                            'focus-visible:ring-primary-500 flex min-h-11 touch-manipulation items-center border-b-2 border-transparent px-4 py-2 text-sm whitespace-nowrap focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-                            active
-                                ? 'border-primary-500 text-secondary-100 font-medium'
-                                : 'text-secondary-400 hover:text-secondary-100'
-                        )}
+                        className={className}
                     >
                         {TAB_LABELS[category]}
                     </Link>

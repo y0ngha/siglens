@@ -256,14 +256,26 @@ interface CurrentPricePosition {
     tone: string;
 }
 
-const RANGE_TONE_HIGH_THRESHOLD = 70;
-const RANGE_TONE_LOW_THRESHOLD = 30;
-
-function describeRangeTone(percentile: number): string {
-    if (percentile >= RANGE_TONE_HIGH_THRESHOLD) {
+/**
+ * 층 라벨과 **같은 밴드 경계**로 톤을 고른다.
+ *
+ * 예전에는 70/30 퍼센타일 리터럴을 썼는데, 층 라벨은 `BAND_COUNT`(=5) 기준
+ * 20% 폭 밴드를 쓴다. 두 경계가 어긋나 60~70% 구간에서
+ * "68% 지점 — 4층 · 고층에 해당합니다. 최근 1년 고점과 저점 사이 중간
+ * 지점이에요."처럼 한 문장 안에서 스스로를 부정했다(NVDA·005930.KS 실측).
+ * 20~30% 구간도 "중층 + 하단부"로 같은 모순이 났다.
+ *
+ * `describeFloorTier`의 매핑(0→저층, 1~2→중층, 3→고층, 4→펜트하우스)을 따라
+ * 최하 밴드는 하단부, 상위 두 밴드는 상단부, 나머지는 중간이다. 리터럴이
+ * 아니라 밴드 인덱스에서 파생하므로 `BAND_COUNT`가 바뀌어도 함께 움직인다.
+ */
+function describeRangeTone(currentPos: number): string {
+    const band = Math.min(BAND_COUNT - 1, Math.floor(currentPos * BAND_COUNT));
+    // 고층(BAND_COUNT-2)과 펜트하우스(BAND_COUNT-1).
+    if (band >= BAND_COUNT - 2) {
         return '최근 1년 고점에 가까운 상단부예요.';
     }
-    if (percentile <= RANGE_TONE_LOW_THRESHOLD) {
+    if (band === 0) {
         return '최근 1년 저점에 가까운 하단부예요.';
     }
     return '최근 1년 고점과 저점 사이 중간 지점이에요.';
@@ -307,7 +319,9 @@ function resolveCurrentPricePosition(
             model.currentClamped,
             BAND_COUNT
         ),
-        tone: describeRangeTone(percentile),
+        // 반올림된 퍼센타일이 아니라 `describeAvgFloor`가 받는 것과 **같은**
+        // 원본 위치를 넘긴다 — 반올림을 거치면 경계에서 둘이 또 갈린다.
+        tone: describeRangeTone(model.currentPos),
     };
 }
 

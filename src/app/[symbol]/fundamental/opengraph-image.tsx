@@ -11,7 +11,8 @@ export const revalidate = 2592000; // 30d
 export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
 export const contentType = 'image/png';
 // alt는 module-scope const라 ticker 동적 주입 불가 — 페이지 카테고리까지만 명시한다.
-export const alt = 'Siglens 미국 주식 펀더멘털 분석';
+// 시장명은 빼야 한다 — 이 탭은 한국 종목에도 열려 있다(financials와 같은 이유).
+export const alt = 'Siglens 펀더멘털 분석';
 
 interface Props {
     params: Promise<{ symbol: string }>;

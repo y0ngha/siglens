@@ -116,6 +116,7 @@ export function CashFlowSection({
                 />
             </div>
             <StatementTable
+                caption={TITLE}
                 columns={columns}
                 rows={tableRows}
                 currency={currency}

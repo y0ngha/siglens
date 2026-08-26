@@ -68,7 +68,10 @@ describe('theme token parity', () => {
 
     it('두 블록 다 실제로 토큰을 담고 있다 — 파서가 빈 집합을 반환하면 위 검사가 무의미하다', () => {
         const { dark, light } = readThemeBlocks();
-        expect(dark.size).toBeGreaterThan(50);
+        // 지표 색 41개가 CSS에서 빠지면서(캔버스 팔레트는 chartColors.ts가
+        // 단일 소스) 다크 블록이 88 → 45로 줄었다. 이 하한은 파서가 깨졌는지를
+        // 보는 것이지 토큰 수를 고정하려는 게 아니므로, 실제 수 바로 아래에 둔다.
+        expect(dark.size).toBeGreaterThan(40);
         expect(light.size).toBeGreaterThan(20);
     });
 
