@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.63.1](https://github.com/y0ngha/siglens/compare/v0.63.0...v0.63.1) (2026-08-27)
+
+
+### Bug Fixes
+
+* **chart:** 모바일 차트가 눌리던 원인 3종 수정 ([555360d](https://github.com/y0ngha/siglens/commit/555360dbaf028ed67d1d509160aac960d12a6c6d))
+
 # [0.63.0](https://github.com/y0ngha/siglens/compare/v0.62.2...v0.63.0) (2026-08-26)
 
 
