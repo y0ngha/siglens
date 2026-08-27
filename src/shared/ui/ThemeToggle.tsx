@@ -2,6 +2,7 @@
 
 import { useId, useRef } from 'react';
 import { useTheme } from '@/shared/hooks/useTheme';
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
 import type { ThemePreference } from '@/shared/lib/theme';
@@ -38,7 +39,11 @@ const OPTIONS: readonly ThemeOption[] = [
     { value: 'dark', label: '다크' },
 ];
 
-function ThemeIcon({ value }: { value: ThemePreference }) {
+interface ThemeIconProps {
+    readonly value: ThemePreference;
+}
+
+function ThemeIcon({ value }: ThemeIconProps) {
     return (
         <svg
             viewBox="0 0 20 20"
@@ -74,8 +79,29 @@ function ThemeIcon({ value }: { value: ThemePreference }) {
 export function ThemeToggle() {
     const { preference, setTheme } = useTheme();
     const containerRef = useRef<HTMLDivElement>(null);
+    const groupRef = useRef<HTMLDivElement>(null);
     const { isOpen, close, toggle } = usePopoverToggle(containerRef);
+    /* 형제 메뉴(`HeaderUserMenu`·`AnalysisSettingsMenu`)와 같은 짝을 쓴다 —
+       바깥 클릭만 있으면 키보드 사용자에게는 닫을 방법이 없다. */
+    useEscapeKey(close, isOpen);
     const menuId = useId();
+
+    /*
+     * WAI-ARIA APG의 라디오 그룹은 **단일 탭 스톱**이다. 세 버튼을 각각 탭
+     * 스톱으로 두면 Tab만으로 그룹을 빠져나가려는 사용자가 세 번을 눌러야 하고,
+     * 화살표로 항목을 옮기는 관례도 깨진다. 선택된 항목만 `tabIndex=0`으로 두고
+     * 이동은 화살표가 맡는다.
+     */
+    const moveFocus = (from: number, delta: number) => {
+        const next = (from + delta + OPTIONS.length) % OPTIONS.length;
+        const buttons =
+            groupRef.current?.querySelectorAll<HTMLButtonElement>(
+                '[role="radio"]'
+            );
+        buttons?.[next]?.focus();
+        // APG 규약: 화살표 이동은 포커스와 선택을 함께 옮긴다.
+        setTheme(OPTIONS[next]!.value);
+    };
 
     const current = OPTIONS.find(o => o.value === preference) ?? OPTIONS[0]!;
 
@@ -99,12 +125,13 @@ export function ThemeToggle() {
 
             {isOpen && (
                 <div
+                    ref={groupRef}
                     id={menuId}
                     role="radiogroup"
                     aria-label="테마 선택"
                     className="absolute right-0 z-10 mt-1 w-max min-w-44 rounded-lg border border-secondary-700 bg-secondary-800 p-1 shadow-lg"
                 >
-                    {OPTIONS.map(option => {
+                    {OPTIONS.map((option, index) => {
                         const selected = option.value === preference;
                         return (
                             <button
@@ -112,6 +139,22 @@ export function ThemeToggle() {
                                 type="button"
                                 role="radio"
                                 aria-checked={selected}
+                                tabIndex={selected ? 0 : -1}
+                                onKeyDown={e => {
+                                    if (
+                                        e.key === 'ArrowDown' ||
+                                        e.key === 'ArrowRight'
+                                    ) {
+                                        e.preventDefault();
+                                        moveFocus(index, 1);
+                                    } else if (
+                                        e.key === 'ArrowUp' ||
+                                        e.key === 'ArrowLeft'
+                                    ) {
+                                        e.preventDefault();
+                                        moveFocus(index, -1);
+                                    }
+                                }}
                                 onClick={() => {
                                     setTheme(option.value);
                                     close();

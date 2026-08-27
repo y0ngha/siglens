@@ -1,11 +1,17 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
+    removeMatchMedia,
+    stubPrefersColorScheme,
+} from '@/shared/test-utils/matchMedia';
+
+import {
     DEFAULT_THEME,
     THEME_ATTRIBUTE,
     THEME_INIT_SCRIPT,
     THEME_STORAGE_KEY,
     applyStoredTheme,
+    readThemePreference,
     resolveTheme,
 } from '../theme';
 
@@ -19,33 +25,6 @@ import {
 function runInitScript(): void {
     // 실제 `<head>`가 하는 일과 같게 — 문자열을 그대로 실행한다.
     new Function(THEME_INIT_SCRIPT)();
-}
-
-/**
- * jsdom에는 `matchMedia`가 없다. 스텁을 안 두면 모든 테스트가 "선호도 판정
- * 불가" 경로만 타고, **기본값으로 떨어지는 폴백 하나만** 검증하게 된다 —
- * 시스템을 따르는 새 동작은 한 줄도 확인되지 않은 채 전부 초록이 된다.
- */
-function stubPrefersLight(prefersLight: boolean): void {
-    Object.defineProperty(window, 'matchMedia', {
-        configurable: true,
-        writable: true,
-        value: (query: string) => ({
-            matches: query.includes('light') ? prefersLight : !prefersLight,
-            media: query,
-            addEventListener: () => {},
-            removeEventListener: () => {},
-        }),
-    });
-}
-
-/** `matchMedia` 자체가 없는 환경(구형 브라우저·일부 웹뷰). */
-function removeMatchMedia(): void {
-    Object.defineProperty(window, 'matchMedia', {
-        configurable: true,
-        writable: true,
-        value: undefined,
-    });
 }
 
 describe('resolveTheme', () => {
@@ -77,13 +56,13 @@ describe('THEME_INIT_SCRIPT', () => {
     });
 
     it('저장된 값이 없으면 시스템 선호도를 따른다', () => {
-        stubPrefersLight(true);
+        stubPrefersColorScheme(true);
         runInitScript();
         expect(document.documentElement.getAttribute(THEME_ATTRIBUTE)).toBe(
             'light'
         );
 
-        stubPrefersLight(false);
+        stubPrefersColorScheme(false);
         runInitScript();
         expect(document.documentElement.getAttribute(THEME_ATTRIBUTE)).toBe(
             'dark'
@@ -92,7 +71,7 @@ describe('THEME_INIT_SCRIPT', () => {
 
     it('명시적 선택은 시스템 선호도를 이긴다', () => {
         // 이미 다크를 고른 사용자가 OS를 라이트로 바꿔도 앱은 다크로 남아야 한다.
-        stubPrefersLight(true);
+        stubPrefersColorScheme(true);
         localStorage.setItem(THEME_STORAGE_KEY, 'dark');
         runInitScript();
         expect(document.documentElement.getAttribute(THEME_ATTRIBUTE)).toBe(
@@ -111,7 +90,7 @@ describe('THEME_INIT_SCRIPT', () => {
     });
 
     it('알 수 없는 값이 저장돼 있으면 고르지 않은 것과 같게 다룬다', () => {
-        stubPrefersLight(true);
+        stubPrefersColorScheme(true);
         localStorage.setItem(THEME_STORAGE_KEY, 'sepia');
         runInitScript();
         expect(document.documentElement.getAttribute(THEME_ATTRIBUTE)).toBe(
@@ -185,9 +164,9 @@ describe('applyStoredTheme와 THEME_INIT_SCRIPT의 판정이 같다', () => {
     )(
         '저장값 %s · 시스템 라이트=%s에서 두 구현이 같다',
         (stored, prefersLight) => {
-            stubPrefersLight(prefersLight);
+            stubPrefersColorScheme(prefersLight);
             const a = observe(applyStoredTheme, stored);
-            stubPrefersLight(prefersLight);
+            stubPrefersColorScheme(prefersLight);
             const b = observe(runInitScript, stored);
             expect(a).toEqual(b);
         }
@@ -226,6 +205,49 @@ describe('applyStoredTheme와 THEME_INIT_SCRIPT의 판정이 같다', () => {
             if (original) {
                 Object.defineProperty(window, 'localStorage', original);
             }
+        }
+    });
+});
+
+describe('readThemePreference', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
+    it('저장값이 없으면 system이다 — 키의 부재가 곧 그 선택이다', () => {
+        expect(readThemePreference()).toBe('system');
+    });
+
+    it('저장된 명시적 선택을 그대로 돌려준다', () => {
+        localStorage.setItem(THEME_STORAGE_KEY, 'light');
+        expect(readThemePreference()).toBe('light');
+        localStorage.setItem(THEME_STORAGE_KEY, 'dark');
+        expect(readThemePreference()).toBe('dark');
+    });
+
+    it('알 수 없는 값은 고르지 않은 것과 같게 다룬다', () => {
+        localStorage.setItem(THEME_STORAGE_KEY, 'sepia');
+        expect(readThemePreference()).toBe('system');
+    });
+
+    it('localStorage 접근이 막혀도 system으로 떨어진다', () => {
+        // Safari 프라이빗 모드는 접근 자체가 throw한다. catch가 없으면 이
+        // 함수를 부르는 컴포넌트가 마운트에서 통째로 죽는다.
+        const original = Object.getOwnPropertyDescriptor(
+            window,
+            'localStorage'
+        );
+        Object.defineProperty(window, 'localStorage', {
+            configurable: true,
+            get() {
+                throw new Error('blocked');
+            },
+        });
+        try {
+            expect(readThemePreference()).toBe('system');
+        } finally {
+            if (original)
+                Object.defineProperty(window, 'localStorage', original);
         }
     });
 });
