@@ -15,16 +15,24 @@ export type ThemePreference = 'light' | 'dark' | 'system';
 export type ResolvedTheme = 'light' | 'dark';
 
 /**
- * 저장된 선택이 없을 때의 기본.
+ * 저장된 선택이 **없고 시스템 선호도도 읽을 수 없을 때**의 최종 폴백.
  *
- * **시스템 선호도를 따르지 않고 다크로 고정한다.** 이 앱은 오랫동안 다크 전용이었고,
- * 시스템 선호를 따르게 하면 OS가 라이트인 사용자 전원이 아무 동작도 하지 않았는데
- * 앱 전체 외형이 바뀐다. 라이트는 사용자가 토글을 눌렀을 때만 적용한다.
+ * 예전에는 이 값이 "선택하지 않은 사용자 전원의 테마"였다. 라이트가 아직
+ * 실험적이던 시절, 시스템을 따르면 OS가 라이트인 사용자가 아무 동작도 안 했는데
+ * 앱 외형이 뒤집히는 것을 막으려는 결정이었다. 라이트 테마가 1급으로 자리잡은
+ * 지금은 기본이 `system`이고, 이 상수의 역할은 **`matchMedia`가 없는 환경**
+ * (구형 브라우저, 일부 임베디드 웹뷰)으로 좁혀졌다.
  *
- * `system` 선택지를 노출하게 되면 그때는 `resolveTheme`이 선호도를 반영한다 —
- * 그 경로는 이미 구현돼 있고, 여기서 막는 것은 "선택하지 않은 사용자"뿐이다.
+ * 이미 `light`/`dark`를 고른 사용자는 이 변경의 영향을 받지 않는다 —
+ * `localStorage`에 값이 있으면 그것이 언제나 우선한다.
  */
 export const DEFAULT_THEME: ResolvedTheme = 'dark';
+
+/**
+ * 시스템 선호도 질의. 인라인 스크립트·번들 쌍둥이·변경 리스너 **세 곳**이 쓴다.
+ * 문자열이 흩어지면 한쪽만 오타가 나도 아무 테스트가 못 잡으므로 여기서만 정의한다.
+ */
+export const PREFERS_LIGHT_QUERY = '(prefers-color-scheme: light)';
 
 /** `<html>`이 이 두 값 중 하나를 항상 갖는다 — 미지정 상태를 만들지 않는다. */
 export const THEME_ATTRIBUTE = 'data-theme';
@@ -52,7 +60,7 @@ export const THEME_CHANGE_EVENT = 'siglens:themechange';
  */
 export const THEME_INIT_SCRIPT = `(function(){try{
 var k=${JSON.stringify(THEME_STORAGE_KEY)},s=localStorage.getItem(k);
-var t=(s==='light'||s==='dark')?s:${JSON.stringify(DEFAULT_THEME)};
+var t=(s==='light'||s==='dark')?s:(window.matchMedia&&window.matchMedia(${JSON.stringify(PREFERS_LIGHT_QUERY)}).matches?'light':${JSON.stringify(DEFAULT_THEME)});
 var r=document.documentElement;r.setAttribute('data-theme',t);r.style.colorScheme=t;
 }catch(e){var r2=document.documentElement;r2.setAttribute('data-theme',${JSON.stringify(DEFAULT_THEME)});r2.style.colorScheme=${JSON.stringify(DEFAULT_THEME)};}})()`;
 
@@ -72,7 +80,11 @@ export function applyStoredTheme(): void {
     let theme: ResolvedTheme = DEFAULT_THEME;
     try {
         const stored = localStorage.getItem(THEME_STORAGE_KEY);
-        if (stored === 'light' || stored === 'dark') theme = stored;
+        if (stored === 'light' || stored === 'dark') {
+            theme = stored;
+        } else if (window.matchMedia?.(PREFERS_LIGHT_QUERY).matches) {
+            theme = 'light';
+        }
     } catch {
         // Safari 프라이빗 모드는 접근 자체가 throw한다 — 기본값으로 간다.
     }
@@ -88,4 +100,23 @@ export function resolveTheme(
 ): ResolvedTheme {
     if (preference === 'light' || preference === 'dark') return preference;
     return prefersLight ? 'light' : 'dark';
+}
+
+/**
+ * 저장된 **선택**을 읽는다. 저장값이 없으면 `system`이다 — 키의 부재가 곧
+ * "시스템을 따른다"는 표현이기 때문이다(`setTheme('system')`이 키를 지운다).
+ *
+ * `resolveTheme`이 "선택 + 선호도 → 적용값"을 접는다면, 이쪽은 그 앞 단계인
+ * "무엇을 골랐는가"만 돌려준다. 테마 메뉴가 현재 선택을 표시하는 데 쓴다 —
+ * `<html data-theme>`만 봐서는 `dark`가 명시적 선택인지 OS를 따른 결과인지
+ * 구분할 수 없다.
+ */
+export function readThemePreference(): ThemePreference {
+    try {
+        const stored = localStorage.getItem(THEME_STORAGE_KEY);
+        if (stored === 'light' || stored === 'dark') return stored;
+    } catch {
+        // 접근이 막힌 환경에서는 고른 적이 없는 것과 같게 다룬다.
+    }
+    return 'system';
 }
