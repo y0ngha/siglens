@@ -79,8 +79,8 @@ export function SymbolLayoutHeader({
      */
     return (
         <header className="relative z-40 py-3">
-            <div className="flex flex-col gap-2 px-4 sm:flex-row sm:items-center sm:gap-4">
-                <div className="flex min-w-0 items-center gap-2 sm:flex-1">
+            <div className="flex items-center gap-2 px-4 sm:gap-4">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
                     <Link
                         href="/"
                         // 모든 심볼 페이지의 브레드크럼에 렌더되므로 사실상 전역 링크다.
@@ -144,7 +144,7 @@ export function SymbolLayoutHeader({
                     회귀 가드 — 탭 내비가 채팅 패널 아래로 밀리지 않도록 헤더가 커지면
                     안 된다는 제약은 여전히 유효하며, 이 변경은 그 제약을 오히려
                     더 여유 있게 만족시킨다). */}
-                <div className="flex items-center justify-between gap-2 sm:order-3 sm:shrink-0 sm:justify-end">
+                <div className="flex shrink-0 items-center justify-end gap-2">
                     <ErrorBoundary fallback={null}>
                         <Suspense fallback={null}>
                             <span className="sm:hidden">

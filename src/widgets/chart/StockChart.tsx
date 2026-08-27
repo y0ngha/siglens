@@ -165,6 +165,16 @@ export function StockChart({
 
         const chart = createChart(containerRef.current, {
             autoSize: true,
+            /*
+             * 시간축을 그리지 않는다. 이 차트 **바로 아래**에 거래량 차트가 붙고
+             * 그쪽이 자기 시간축을 그리므로, 여기까지 그리면 같은 날짜 라벨이
+             * 화면에 두 번 찍힌다(실측: 각 28px, 합 56px). 축은 스택의 맨 아래
+             * 하나만 두는 것이 관례이고, 여기서 28px을 돌려받아 캔들에 준다.
+             *
+             * `timeScale()` API 자체는 살아 있다 — `useChartSync`가 두 차트의
+             * 보이는 범위를 맞추는 데 계속 쓴다. 렌더만 끈다.
+             */
+            timeScale: { visible: false },
             layout: {
                 background: { color: chrome.background },
                 textColor: chrome.text,

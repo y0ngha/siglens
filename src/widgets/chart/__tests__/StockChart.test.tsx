@@ -84,32 +84,40 @@ const {
         applyOptions: vi.fn(),
         setMarkers: vi.fn(),
     }));
-    const mockCreateChart = vi.fn(() => ({
-        addSeries: mockAddSeries,
-        addCandlestickSeries: vi.fn(() => ({
-            setData: mockSetData,
+    /* 인자 타입을 적어 둔다 — 없으면 호출 시그니처가 `() => …`로 추론돼
+       `mock.calls[0][1]`(옵션) 접근이 타입 에러가 난다. 옵션은 이 테스트가
+       확인하는 `timeScale`만 좁게 선언한다. */
+    const mockCreateChart = vi.fn(
+        (
+            _container?: unknown,
+            _options?: { timeScale?: { visible: boolean } }
+        ) => ({
+            addSeries: mockAddSeries,
+            addCandlestickSeries: vi.fn(() => ({
+                setData: mockSetData,
+                applyOptions: vi.fn(),
+            })),
+            addLineSeries: vi.fn(() => ({
+                setData: vi.fn(),
+                applyOptions: vi.fn(),
+            })),
+            addHistogramSeries: vi.fn(() => ({
+                setData: vi.fn(),
+                applyOptions: vi.fn(),
+            })),
             applyOptions: vi.fn(),
-        })),
-        addLineSeries: vi.fn(() => ({
-            setData: vi.fn(),
-            applyOptions: vi.fn(),
-        })),
-        addHistogramSeries: vi.fn(() => ({
-            setData: vi.fn(),
-            applyOptions: vi.fn(),
-        })),
-        applyOptions: vi.fn(),
-        resize: vi.fn(),
-        remove: vi.fn(),
-        removeSeries: vi.fn(),
-        timeScale: vi.fn(() => ({
-            fitContent: mockFitContent,
-            scrollToRealTime: vi.fn(),
-        })),
-        subscribeCrosshairMove: vi.fn(),
-        priceScale: vi.fn(() => ({ applyOptions: vi.fn() })),
-        panes: vi.fn(() => panes),
-    }));
+            resize: vi.fn(),
+            remove: vi.fn(),
+            removeSeries: vi.fn(),
+            timeScale: vi.fn(() => ({
+                fitContent: mockFitContent,
+                scrollToRealTime: vi.fn(),
+            })),
+            subscribeCrosshairMove: vi.fn(),
+            priceScale: vi.fn(() => ({ applyOptions: vi.fn() })),
+            panes: vi.fn(() => panes),
+        })
+    );
     return {
         mockCreateChart,
         mockAddSeries,
@@ -483,6 +491,21 @@ describe('StockChart', () => {
         render(<StockChart bars={mockBars} timeframe="1Day" />);
 
         expect(mockCreateChart).toHaveBeenCalledTimes(1);
+    });
+
+    /**
+     * 이 차트 **바로 아래**에 거래량 차트가 붙고 그쪽이 자기 시간축을 그린다.
+     * 여기까지 그리면 같은 날짜 라벨이 화면에 두 번 찍히고(각 28px), 세로 예산이
+     * 빠듯한 모바일에서 그 28px이 그대로 캔들에서 빠진다.
+     *
+     * 값 하나짜리 옵션이라 지워져도 렌더는 멀쩡히 되고 기존 테스트도 전부
+     * 통과한다 — 그래서 여기서 명시적으로 붙든다.
+     */
+    it('시간축을 그리지 않는다 (거래량 차트와 중복)', () => {
+        render(<StockChart bars={mockBars} timeframe="1Day" />);
+
+        const options = mockCreateChart.mock.calls[0]?.[1];
+        expect(options?.timeScale).toEqual({ visible: false });
     });
 
     it('adds a candlestick series', () => {
