@@ -1,5 +1,18 @@
 # Changelog
 
+# [0.64.0](https://github.com/y0ngha/siglens/compare/v0.63.1...v0.64.0) (2026-08-27)
+
+
+### Bug Fixes
+
+* **theme:** 리뷰 지적 9건 반영 — 죽은 API 제거 + 라디오 그룹 키보드 지원 ([ab3276d](https://github.com/y0ngha/siglens/commit/ab3276d44b2172308775062775a4997e0484fc72)), closes [#0](https://github.com/y0ngha/siglens/issues/0) [#22](https://github.com/y0ngha/siglens/issues/22) [#1](https://github.com/y0ngha/siglens/issues/1)
+* **theme:** theme.ts JSDoc 위치 수정 (리뷰 지적) ([9c2637d](https://github.com/y0ngha/siglens/commit/9c2637de6e99b96338ba3ade62d43d8c23146e27)), closes [#14](https://github.com/y0ngha/siglens/issues/14)
+
+
+### Features
+
+* **theme:** 시스템 설정 따라가기를 기본값으로 ([803ffd6](https://github.com/y0ngha/siglens/commit/803ffd6354cc0a8fa37272b30bc4f02083f2b5ae))
+
 ## [0.63.1](https://github.com/y0ngha/siglens/compare/v0.63.0...v0.63.1) (2026-08-27)
 
 
