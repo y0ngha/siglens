@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
     DEFAULT_THEME,
+    PREFERS_LIGHT_QUERY,
+    readThemePreference,
     resolveTheme,
     THEME_STORAGE_KEY,
     THEME_ATTRIBUTE,
@@ -26,40 +28,65 @@ import {
  */
 export function useTheme() {
     const [theme, setThemeState] = useState<ResolvedTheme>(DEFAULT_THEME);
+    /* 선택은 적용값과 별개다 — `dark`가 명시적 선택인지 OS를 따른 결과인지
+       `<html data-theme>`만 봐서는 구분되지 않는다. 첫 렌더는 하이드레이션
+       불일치를 피하려 `system`(= 저장값 없음)으로 시작한다. */
+    const [preference, setPreferenceState] =
+        useState<ThemePreference>('system');
 
     useEffect(() => {
         const current = document.documentElement.getAttribute(THEME_ATTRIBUTE);
-        if (current === 'light' || current === 'dark') setThemeState(current);
+        if (current === 'light' || current === 'dark') {
+            setThemeState(current);
+            /* 마운트 때 한 번 meta를 맞춘다.
+               `viewport.themeColor`는 미디어 쿼리 배열이라 **OS**를 따르는데,
+               적용 테마는 저장된 선택이 이긴다. 그래서 OS와 반대를 고른
+               사용자는 페이지는 다크인데 모바일 상단 바만 밝은 상태로 뜬다
+               (실측: 저장값 dark + OS light에서 themeColor가 `#f7f8fa`).
+               지금까지는 `applyTheme`가 **토글할 때만** meta를 덮어써서
+               로드 직후에는 어긋난 채였다. */
+            syncThemeColorMeta(current);
+        }
+        setPreferenceState(readThemePreference());
     }, []);
 
     /*
-     * 시스템 선호도 변경 리스너는 **일부러 두지 않는다.**
+     * OS 선호도 변경을 따라간다 — **선택이 `system`일 때만.**
      *
-     * 한때 "저장된 선택이 없으면 OS를 따라간다"는 리스너가 있었는데, 그건
-     * `theme.ts`의 `DEFAULT_THEME` 주석이 명시적으로 금지하는 동작이다 —
-     * 아무 것도 고르지 않은 사용자가 OS를 라이트로 바꾸는 순간 앱 전체가
-     * 뒤집힌다. 게다가 그 경로는 결과를 저장하지 않아서, 새로고침하면
-     * 초기화 스크립트가 다시 다크로 되돌렸다. 같은 세션 안에서만 라이트인
-     * 상태가 되는 셈이라 정책 위반이면서 동작도 일관되지 않았다.
+     * 예전에 이 리스너가 제거된 적이 있는데, 그때는 `system`이 선택지로
+     * 노출되지 않아 "아무것도 고르지 않은 사용자"가 OS를 바꾸는 순간 앱이
+     * 뒤집혔고, 결과를 저장하지도 않아 새로고침하면 되돌아갔다. 지금은 다르다 —
+     * `system`이 명시적 선택이고 키의 부재로 저장되므로, OS를 따라가는 것이
+     * 사용자가 고른 동작이며 새로고침 후에도 같은 판정이 나온다.
      *
-     * `system`을 선택지로 노출하게 되면 `resolveTheme`이 이미 선호도를
-     * 처리하므로, 그때 저장까지 포함해 다시 설계한다.
+     * `light`/`dark`를 고른 사용자에게는 아무 일도 일어나지 않는다.
      */
+    useEffect(() => {
+        if (preference !== 'system') return;
+        const mql = window.matchMedia?.(PREFERS_LIGHT_QUERY);
+        if (!mql) return;
+        const onChange = (e: MediaQueryListEvent) => {
+            const next: ResolvedTheme = e.matches ? 'light' : 'dark';
+            applyTheme(next);
+            setThemeState(next);
+        };
+        mql.addEventListener('change', onChange);
+        return () => mql.removeEventListener('change', onChange);
+    }, [preference]);
 
-    const setTheme = useCallback((preference: ThemePreference) => {
-        const prefersLight = window.matchMedia(
-            '(prefers-color-scheme: light)'
-        ).matches;
-        const next = resolveTheme(preference, prefersLight);
+    const setTheme = useCallback((next: ThemePreference) => {
+        const prefersLight =
+            window.matchMedia?.(PREFERS_LIGHT_QUERY).matches ?? false;
+        const resolved = resolveTheme(next, prefersLight);
         try {
-            if (preference === 'system')
-                localStorage.removeItem(THEME_STORAGE_KEY);
-            else localStorage.setItem(THEME_STORAGE_KEY, preference);
+            if (next === 'system') localStorage.removeItem(THEME_STORAGE_KEY);
+            else localStorage.setItem(THEME_STORAGE_KEY, next);
         } catch {
             // 저장이 막혀도 이번 세션 적용은 되어야 한다.
         }
-        applyTheme(next);
-        setThemeState(next);
+        applyTheme(resolved);
+        setThemeState(resolved);
+        setPreferenceState(next);
     }, []);
 
     const toggleTheme = useCallback(() => {
@@ -70,16 +97,30 @@ export function useTheme() {
         );
     }, [setTheme]);
 
-    return { theme, setTheme, toggleTheme };
+    return { theme, preference, setTheme, toggleTheme };
+}
+
+/**
+ * `theme-color` meta를 적용 테마에 맞춘다.
+ *
+ * `viewport.themeColor`가 미디어 배열이라 meta 태그가 **두 개** 나온다
+ * (light 조건 / dark 조건). 첫 번째만 고치면 사용자가 시스템과 반대 테마를
+ * 골랐을 때 브라우저는 여전히 반대편 태그를 적용한다 — 즉 이 함수가 존재하는
+ * 이유였던 케이스가 그대로 깨져 있게 된다. 선택된 테마에서는 두 태그가 같은
+ * 색을 가리켜야 하므로 전부 덮어쓴다.
+ */
+function syncThemeColorMeta(next: ResolvedTheme): void {
+    const themeColor = next === 'light' ? '#f7f8fa' : '#09090b';
+    document
+        .querySelectorAll('meta[name="theme-color"]')
+        .forEach(meta => meta.setAttribute('content', themeColor));
 }
 
 /**
  * DOM 반영. `colorScheme`을 같이 세팅해야 네이티브 스크롤바·폼 컨트롤·
  * 날짜 피커가 테마를 따라간다(CSS 변수만으로는 브라우저 크롬이 안 바뀐다).
  *
- * `theme-color` meta도 함께 갱신한다. `viewport` export는 미디어 쿼리 배열이라
- * 시스템 선호도만 따르는데, 사용자가 명시적으로 반대 테마를 골랐을 때
- * 모바일 브라우저 상단 바가 페이지와 어긋나기 때문이다.
+ * `theme-color` meta도 함께 갱신한다 — 근거는 [[syncThemeColorMeta]].
  */
 function applyTheme(next: ResolvedTheme) {
     const root = document.documentElement;
@@ -90,10 +131,7 @@ function applyTheme(next: ResolvedTheme) {
        테마를 골랐을 때 브라우저는 여전히 반대편 태그를 적용한다 — 즉 이
        함수가 존재하는 이유였던 케이스가 그대로 깨져 있게 된다.
        선택된 테마에서는 두 태그가 같은 색을 가리켜야 하므로 전부 덮어쓴다. */
-    const themeColor = next === 'light' ? '#f7f8fa' : '#09090b';
-    document
-        .querySelectorAll('meta[name="theme-color"]')
-        .forEach(meta => meta.setAttribute('content', themeColor));
+    syncThemeColorMeta(next);
     /* 차트는 CSS 변수를 못 읽으므로 JS로 색을 갈아끼워야 한다. 리스너를 등록한
        차트 인스턴스들이 이 이벤트를 받아 applyOptions를 호출한다. */
     window.dispatchEvent(new CustomEvent(THEME_CHANGE_EVENT, { detail: next }));

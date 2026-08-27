@@ -21,6 +21,33 @@ function runInitScript(): void {
     new Function(THEME_INIT_SCRIPT)();
 }
 
+/**
+ * jsdom에는 `matchMedia`가 없다. 스텁을 안 두면 모든 테스트가 "선호도 판정
+ * 불가" 경로만 타고, **기본값으로 떨어지는 폴백 하나만** 검증하게 된다 —
+ * 시스템을 따르는 새 동작은 한 줄도 확인되지 않은 채 전부 초록이 된다.
+ */
+function stubPrefersLight(prefersLight: boolean): void {
+    Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: (query: string) => ({
+            matches: query.includes('light') ? prefersLight : !prefersLight,
+            media: query,
+            addEventListener: () => {},
+            removeEventListener: () => {},
+        }),
+    });
+}
+
+/** `matchMedia` 자체가 없는 환경(구형 브라우저·일부 웹뷰). */
+function removeMatchMedia(): void {
+    Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: undefined,
+    });
+}
+
 describe('resolveTheme', () => {
     it('명시적 선택은 시스템 선호도를 무시한다', () => {
         expect(resolveTheme('light', false)).toBe('light');
@@ -49,18 +76,46 @@ describe('THEME_INIT_SCRIPT', () => {
         expect(document.documentElement.style.colorScheme).toBe('light');
     });
 
-    it('저장된 값이 없으면 기본값으로 고정한다 — 시스템 선호도를 따르지 않는다', () => {
+    it('저장된 값이 없으면 시스템 선호도를 따른다', () => {
+        stubPrefersLight(true);
+        runInitScript();
+        expect(document.documentElement.getAttribute(THEME_ATTRIBUTE)).toBe(
+            'light'
+        );
+
+        stubPrefersLight(false);
+        runInitScript();
+        expect(document.documentElement.getAttribute(THEME_ATTRIBUTE)).toBe(
+            'dark'
+        );
+    });
+
+    it('명시적 선택은 시스템 선호도를 이긴다', () => {
+        // 이미 다크를 고른 사용자가 OS를 라이트로 바꿔도 앱은 다크로 남아야 한다.
+        stubPrefersLight(true);
+        localStorage.setItem(THEME_STORAGE_KEY, 'dark');
+        runInitScript();
+        expect(document.documentElement.getAttribute(THEME_ATTRIBUTE)).toBe(
+            'dark'
+        );
+    });
+
+    it('matchMedia가 없는 환경에서는 기본값으로 떨어진다', () => {
+        // 구형 브라우저·일부 임베디드 웹뷰. 스크립트가 throw하면 `data-theme`이
+        // 아예 안 붙어 페이지가 스타일 없이 뜬다.
+        removeMatchMedia();
         runInitScript();
         expect(document.documentElement.getAttribute(THEME_ATTRIBUTE)).toBe(
             DEFAULT_THEME
         );
     });
 
-    it('알 수 없는 값이 저장돼 있어도 기본값으로 떨어진다', () => {
+    it('알 수 없는 값이 저장돼 있으면 고르지 않은 것과 같게 다룬다', () => {
+        stubPrefersLight(true);
         localStorage.setItem(THEME_STORAGE_KEY, 'sepia');
         runInitScript();
         expect(document.documentElement.getAttribute(THEME_ATTRIBUTE)).toBe(
-            DEFAULT_THEME
+            'light'
         );
     });
 
@@ -103,6 +158,9 @@ describe('THEME_INIT_SCRIPT', () => {
  */
 describe('applyStoredTheme와 THEME_INIT_SCRIPT의 판정이 같다', () => {
     const cases = ['light', 'dark', 'sepia', ''] as const;
+    /* 저장값만 돌리면 두 구현이 **시스템 선호도에서** 갈리는 경우를 못 잡는다 —
+       실제로 이번 변경이 건드린 부분이 정확히 그 분기다. */
+    const preferences = [true, false] as const;
 
     beforeEach(() => {
         localStorage.clear();
@@ -122,9 +180,23 @@ describe('applyStoredTheme와 THEME_INIT_SCRIPT의 판정이 같다', () => {
         ];
     }
 
-    it.each(cases)('저장값 %s에서 두 구현이 같은 결과를 낸다', stored => {
-        expect(observe(applyStoredTheme, stored)).toEqual(
-            observe(runInitScript, stored)
+    it.each(
+        cases.flatMap(stored => preferences.map(pl => [stored, pl] as const))
+    )(
+        '저장값 %s · 시스템 라이트=%s에서 두 구현이 같다',
+        (stored, prefersLight) => {
+            stubPrefersLight(prefersLight);
+            const a = observe(applyStoredTheme, stored);
+            stubPrefersLight(prefersLight);
+            const b = observe(runInitScript, stored);
+            expect(a).toEqual(b);
+        }
+    );
+
+    it('matchMedia가 없어도 두 구현이 같은 결과를 낸다', () => {
+        removeMatchMedia();
+        expect(observe(applyStoredTheme, '')).toEqual(
+            observe(runInitScript, '')
         );
     });
 
