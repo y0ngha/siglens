@@ -65,18 +65,6 @@ var r=document.documentElement;r.setAttribute('data-theme',t);r.style.colorSchem
 }catch(e){var r2=document.documentElement;r2.setAttribute('data-theme',${JSON.stringify(DEFAULT_THEME)});r2.style.colorScheme=${JSON.stringify(DEFAULT_THEME)};}})()`;
 
 /**
- * 저장된 테마를 `<html>`에 적용한다. `THEME_INIT_SCRIPT`와 **같은 판정**이되,
- * 이쪽은 번들 안에서 호출된다.
- *
- * 왜 두 벌인가: 인라인 스크립트는 번들보다 먼저, 렌더 블로킹으로 돌아야
- * FOUC가 없다 — 함수를 import해서 부르는 순간 그 조건이 깨진다. 그래서
- * 판정이 문자열로도 한 벌 존재한다. 두 벌이 어긋나지 않는지는 테스트가
- * **양쪽을 실제로 실행해** 대조한다(한쪽만 보는 테스트는 드리프트를 못 잡는다).
- *
- * 쓰이는 곳은 동적 세그먼트의 `notFound()`가 만드는 에러 셸이다. 그 셸은
- * 루트 레이아웃을 거치지 않아 `<head>`의 스크립트가 아예 없다.
- */
-/**
  * 저장값과 시스템 선호도를 접어 **실제 적용할 테마**를 고른다.
  *
  * `let` + 재할당 대신 이른 반환으로 쓴다 — 분기가 셋(저장값 / 시스템 / 폴백)이라
@@ -95,6 +83,18 @@ function readEffectiveTheme(): ResolvedTheme {
     }
 }
 
+/**
+ * 저장된 테마를 `<html>`에 적용한다. `THEME_INIT_SCRIPT`와 **같은 판정**이되,
+ * 이쪽은 번들 안에서 호출된다.
+ *
+ * 왜 두 벌인가: 인라인 스크립트는 번들보다 먼저, 렌더 블로킹으로 돌아야
+ * FOUC가 없다 — 함수를 import해서 부르는 순간 그 조건이 깨진다. 그래서
+ * 판정이 문자열로도 한 벌 존재한다. 두 벌이 어긋나지 않는지는 테스트가
+ * **양쪽을 실제로 실행해** 대조한다(한쪽만 보는 테스트는 드리프트를 못 잡는다).
+ *
+ * 쓰이는 곳은 동적 세그먼트의 `notFound()`가 만드는 에러 셸이다. 그 셸은
+ * 루트 레이아웃을 거치지 않아 `<head>`의 스크립트가 아예 없다.
+ */
 export function applyStoredTheme(): void {
     const theme = readEffectiveTheme();
     const root = document.documentElement;
