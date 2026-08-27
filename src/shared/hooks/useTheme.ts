@@ -57,14 +57,20 @@ export function useTheme(): UseThemeResult {
         setPreferenceState(next);
     }, []);
 
+    /* 마운트 때 한 번 meta를 맞춘다. `applyTheme`가 meta를 덮어쓰는 것은
+       **선택을 바꿀 때뿐**이라, 저장된 선택으로 페이지를 열면 로드 직후에는
+       어긋난 채였다. 근거는 [[syncThemeColorMeta]]. */
     useEffect(() => {
         const current = document.documentElement.getAttribute(THEME_ATTRIBUTE);
         if (current === 'light' || current === 'dark') {
-            /* 마운트 때 한 번 meta를 맞춘다. `applyTheme`가 meta를 덮어쓰는 것은
-               **선택을 바꿀 때뿐**이라, 저장된 선택으로 페이지를 열면 로드
-               직후에는 어긋난 채였다. 근거는 [[syncThemeColorMeta]]. */
             syncThemeColorMeta(current);
         }
+    }, []);
+
+    /* 첫 렌더는 하이드레이션 불일치를 피하려 `system`으로 시작하므로, 실제
+       선택은 마운트 후에 읽어 채운다. 위 effect와 목적이 다르고 서로 의존하지도
+       않아 따로 둔다(CONVENTIONS — effect 책임 분리). */
+    useEffect(() => {
         setPreferenceState(readThemePreference());
     }, []);
 

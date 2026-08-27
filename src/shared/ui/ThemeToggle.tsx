@@ -86,6 +86,8 @@ export function ThemeToggle() {
     useEscapeKey(close, isOpen);
     const menuId = useId();
 
+    const current = OPTIONS.find(o => o.value === preference) ?? OPTIONS[0]!;
+
     /*
      * WAI-ARIA APG의 라디오 그룹은 **단일 탭 스톱**이다. 세 버튼을 각각 탭
      * 스톱으로 두면 Tab만으로 그룹을 빠져나가려는 사용자가 세 번을 눌러야 하고,
@@ -102,8 +104,6 @@ export function ThemeToggle() {
         // APG 규약: 화살표 이동은 포커스와 선택을 함께 옮긴다.
         setTheme(OPTIONS[next]!.value);
     };
-
-    const current = OPTIONS.find(o => o.value === preference) ?? OPTIONS[0]!;
 
     return (
         <div ref={containerRef} className="relative shrink-0">

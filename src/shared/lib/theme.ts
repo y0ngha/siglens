@@ -65,6 +65,25 @@ var r=document.documentElement;r.setAttribute('data-theme',t);r.style.colorSchem
 }catch(e){var r2=document.documentElement;r2.setAttribute('data-theme',${JSON.stringify(DEFAULT_THEME)});r2.style.colorScheme=${JSON.stringify(DEFAULT_THEME)};}})()`;
 
 /**
+ * 저장값과 시스템 선호도를 접어 **실제 적용할 테마**를 고른다.
+ *
+ * `let` + 재할당 대신 이른 반환으로 쓴다 — 분기가 셋(저장값 / 시스템 / 폴백)이라
+ * 재할당식은 "마지막에 무엇이 남는가"를 읽는 사람이 추적해야 한다(MISTAKES #14).
+ */
+function readEffectiveTheme(): ResolvedTheme {
+    try {
+        const stored = localStorage.getItem(THEME_STORAGE_KEY);
+        if (stored === 'light' || stored === 'dark') return stored;
+        return window.matchMedia?.(PREFERS_LIGHT_QUERY).matches
+            ? 'light'
+            : DEFAULT_THEME;
+    } catch {
+        // Safari 프라이빗 모드는 접근 자체가 throw한다 — 기본값으로 간다.
+        return DEFAULT_THEME;
+    }
+}
+
+/**
  * 저장된 테마를 `<html>`에 적용한다. `THEME_INIT_SCRIPT`와 **같은 판정**이되,
  * 이쪽은 번들 안에서 호출된다.
  *
@@ -77,17 +96,7 @@ var r=document.documentElement;r.setAttribute('data-theme',t);r.style.colorSchem
  * 루트 레이아웃을 거치지 않아 `<head>`의 스크립트가 아예 없다.
  */
 export function applyStoredTheme(): void {
-    let theme: ResolvedTheme = DEFAULT_THEME;
-    try {
-        const stored = localStorage.getItem(THEME_STORAGE_KEY);
-        if (stored === 'light' || stored === 'dark') {
-            theme = stored;
-        } else if (window.matchMedia?.(PREFERS_LIGHT_QUERY).matches) {
-            theme = 'light';
-        }
-    } catch {
-        // Safari 프라이빗 모드는 접근 자체가 throw한다 — 기본값으로 간다.
-    }
+    const theme = readEffectiveTheme();
     const root = document.documentElement;
     root.setAttribute(THEME_ATTRIBUTE, theme);
     root.style.colorScheme = theme;
