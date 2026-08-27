@@ -31,17 +31,13 @@ import {
 const VIEWS_DIR = path.resolve(__dirname, '..');
 
 function sourceFiles(dir: string): string[] {
-    const out: string[] = [];
-    for (const entry of readdirSync(dir)) {
-        if (entry === '__tests__' || entry === 'node_modules') continue;
-        const full = path.join(dir, entry);
-        if (statSync(full).isDirectory()) {
-            out.push(...sourceFiles(full));
-        } else if (/\.tsx?$/.test(entry)) {
-            out.push(full);
-        }
-    }
-    return out;
+    return readdirSync(dir)
+        .filter(entry => entry !== '__tests__' && entry !== 'node_modules')
+        .flatMap(entry => {
+            const full = path.join(dir, entry);
+            if (statSync(full).isDirectory()) return sourceFiles(full);
+            return /\.tsx?$/.test(entry) ? [full] : [];
+        });
 }
 
 /** `SNAP_PEEK`를 CSS 길이로 환산하는 표현. 띄어쓰기·단위 변형을 함께 잡는다. */
