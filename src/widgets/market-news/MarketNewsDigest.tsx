@@ -1,11 +1,12 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { NewsFeedCategoryId } from '@/entities/market-news';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { useMarketNewsDigest } from './hooks/useMarketNewsDigest';
 import {
-    SENTIMENT_LABEL,
+    SENTIMENT_LABEL_KEY,
     SENTIMENT_CLASS,
     isNewsSentiment,
 } from './utils/sentimentConstants';
@@ -16,6 +17,7 @@ import {
 
 /** Loading / generating status card. */
 function DigestStatusCard() {
+    const t = useTranslations('widgets.market-news');
     return (
         <section
             aria-labelledby="market-news-digest-status-heading"
@@ -26,7 +28,7 @@ function DigestStatusCard() {
                 id="market-news-digest-status-heading"
                 className={cn('mb-4', HEADING_SECTION)}
             >
-                시장 AI 다이제스트
+                {t('MarketNewsDigest.69a497')}
             </h2>
             <div
                 role="status"
@@ -39,7 +41,7 @@ function DigestStatusCard() {
                     className="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent motion-reduce:animate-none"
                 />
                 <p className="text-sm text-secondary-400">
-                    AI 다이제스트 생성 중이에요…
+                    {t('MarketNewsDigest.676ec8')}
                 </p>
             </div>
             <div className="mt-4 space-y-2" aria-hidden="true">
@@ -56,6 +58,12 @@ interface DigestResultViewProps {
 }
 
 function DigestResultView({ result }: DigestResultViewProps) {
+    const t = useTranslations('widgets.market-news');
+    // extract.mjs의 동적 키 탐지는 "이 파일 안에서 번역자를 직접 호출하는
+    // 패턴"만 본다 — `SENTIMENT_LABEL_KEY[...]`를 그대로 `tLabel(...)`에
+    // 넣어야 `shared.enumLabel`이 이 라우트의 클라이언트 번들에 실린다
+    // (sentimentDisplay.ts의 SENTIMENT_LABEL_KEY export 주석 참고).
+    const tLabel = useTranslations('shared.enumLabel');
     return (
         <section
             aria-labelledby="market-news-digest-heading"
@@ -63,7 +71,7 @@ function DigestResultView({ result }: DigestResultViewProps) {
         >
             <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
                 <h2 id="market-news-digest-heading" className={HEADING_SECTION}>
-                    시장 AI 다이제스트
+                    {t('MarketNewsDigest.69a497')}
                 </h2>
                 {isNewsSentiment(result.overallSentiment) && (
                     <span
@@ -72,7 +80,7 @@ function DigestResultView({ result }: DigestResultViewProps) {
                             SENTIMENT_CLASS[result.overallSentiment]
                         )}
                     >
-                        {SENTIMENT_LABEL[result.overallSentiment]}
+                        {tLabel(SENTIMENT_LABEL_KEY[result.overallSentiment])}
                     </span>
                 )}
             </div>
@@ -84,9 +92,12 @@ function DigestResultView({ result }: DigestResultViewProps) {
             {result.keyEventsKo.length > 0 && (
                 <div className="mb-4">
                     <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
-                        핵심 흐름
+                        {t('MarketNewsDigest.77f553')}
                     </h3>
-                    <ul className="space-y-1.5" aria-label="핵심 흐름 목록">
+                    <ul
+                        className="space-y-1.5"
+                        aria-label={t('MarketNewsDigest.569722')}
+                    >
                         {result.keyEventsKo.map(event => (
                             <li
                                 key={event}
@@ -110,9 +121,12 @@ function DigestResultView({ result }: DigestResultViewProps) {
             {result.upcomingEventsKo.length > 0 && (
                 <div>
                     <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
-                        주목 일정
+                        {t('MarketNewsDigest.29339e')}
                     </h3>
-                    <ul className="space-y-1.5" aria-label="주목 일정 목록">
+                    <ul
+                        className="space-y-1.5"
+                        aria-label={t('MarketNewsDigest.a404a6')}
+                    >
                         {result.upcomingEventsKo.map(event => (
                             <li
                                 key={event}
@@ -142,6 +156,7 @@ interface DigestErrorViewProps {
 }
 
 function DigestErrorView({ error, onRetry }: DigestErrorViewProps) {
+    const t = useTranslations('widgets.market-news');
     return (
         <section
             aria-labelledby="market-news-digest-error-heading"
@@ -151,7 +166,7 @@ function DigestErrorView({ error, onRetry }: DigestErrorViewProps) {
                 id="market-news-digest-error-heading"
                 className={cn('mb-2', HEADING_SECTION)}
             >
-                시장 AI 다이제스트
+                {t('MarketNewsDigest.69a497')}
             </h2>
             <div
                 role="alert"
@@ -164,7 +179,7 @@ function DigestErrorView({ error, onRetry }: DigestErrorViewProps) {
                 onClick={onRetry}
                 className="mt-4 inline-flex min-h-11 items-center rounded bg-primary-600 px-3 py-2 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
             >
-                다시 시도
+                {t('MarketNewsDigest.0c767c')}
             </button>
         </section>
     );

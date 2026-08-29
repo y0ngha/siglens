@@ -1,4 +1,7 @@
+import { useTranslations } from 'next-intl';
 import { HeaderMobileMenu } from './HeaderMobileMenu';
+import { LocaleSwitcher } from './LocaleSwitcher';
+import { LOCALE_SWITCHER_VISIBLE } from '@/shared/i18n/locales';
 import { HeaderNav } from './HeaderNav';
 import { HeaderNavStatic } from './HeaderNavStatic';
 import { HeaderUserMenu, type HeaderUserMenuUser } from './HeaderUserMenu';
@@ -7,7 +10,7 @@ import { NAV_TREE } from './headerNavTree';
 import { HeaderSearch } from '@/features/ticker-search';
 import { SITE_NAME } from '@/shared/lib/seo';
 import Image from 'next/image';
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { Suspense } from 'react';
 
 interface HeaderProps {
@@ -25,6 +28,7 @@ interface HeaderProps {
 /** Presentational shell; receives resolved current user as a prop so layer rules forbid direct infrastructure access here. */
 // 최상위 <header>는 암시적으로 role="banner"이므로 role을 명시하지 않는다(중복 ARIA).
 export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
+    const t = useTranslations('widgets.layout');
     return (
         <header className="sticky top-0 z-50 border-b border-secondary-700 bg-secondary-900/90 backdrop-blur-md supports-backdrop-filter:bg-secondary-900/75">
             {/* 전역 크롬은 **뷰포트에** 맞춘다(전폭 `px-4`). 심볼 페이지의
@@ -37,14 +41,16 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
             <div className="flex h-14 items-center gap-2 px-4 sm:gap-4">
                 <Link
                     href="/"
-                    title="홈으로"
+                    title={t('Header.d8c261')}
                     // 전역 헤더 로고 — 모든 페이지에서 렌더된다. prefetch는 진입 페이지마다
                     // 다른 `_rsc` 해시를 만들어 `/`의 캐시를 파편화시킨다
                     // (docs/architecture/CDN_CACHING.md §1).
                     prefetch={false}
                     // Visible brand text is `text-...uppercase` (renders "SIGLENS"),
                     // so the accessible name must match what users see (WCAG 2.5.3).
-                    aria-label={`${SITE_NAME.toUpperCase()} 홈`}
+                    aria-label={t('Header.homeLabel', {
+                        v0: SITE_NAME.toUpperCase(),
+                    })}
                     className="-mx-1 flex min-h-11 shrink-0 touch-manipulation items-center gap-2 rounded px-1 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     {/*
@@ -57,7 +63,7 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                     */}
                     <Image
                         src="/icon96.png"
-                        alt="Siglens 로고"
+                        alt={t('Header.1ebe53')}
                         width={24}
                         height={24}
                         className="h-6 w-6"
@@ -95,7 +101,17 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                     자동완성. 폭 계약(`ml-auto`)까지 이 컴포넌트가 소유한다 —
                     `features/ticker-search/ui/HeaderSearch` JSDoc 참고. */}
                 <HeaderSearch />
-                <div className="flex shrink-0 items-center">
+                {/*
+                    모바일 갭이 **행 갭(`gap-2`)과 같아야** 한다. 검색 트리거와
+                    햄버거는 이 div의 형제라 행 갭을 쓰는데, 안쪽만 다른 값을
+                    쓰면 아이콘 넷의 간격이 2·8·2·8로 어긋나 보인다(사용자 제보).
+                    데스크톱은 라벨이 붙어 폭이 커지므로 좁은 갭이 낫다.
+                */}
+                <div className="flex shrink-0 items-center gap-2 sm:gap-0.5">
+                    {/* 모바일에서도 노출한다 — 드로어 안에도 같은 스위처가
+                        있지만, 언어 전환을 쓰려고 햄버거를 여는 것은 한 홉이
+                        더 든다. 검색·언어·테마 세 아이콘이 같은 줄에 선다. */}
+                    {LOCALE_SWITCHER_VISIBLE && <LocaleSwitcher />}
                     <ThemeToggle />
                     <HeaderUserMenu
                         currentUser={currentUser}
@@ -103,7 +119,10 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                     />
                 </div>
                 {/* Mobile hamburger — hidden on desktop */}
-                <HeaderMobileMenu items={NAV_TREE} />
+                <HeaderMobileMenu
+                    items={NAV_TREE}
+                    showAuthCta={currentUser === null && !loadingUserMenu}
+                />
             </div>
         </header>
     );

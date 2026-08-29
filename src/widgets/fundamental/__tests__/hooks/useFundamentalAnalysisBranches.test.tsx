@@ -6,6 +6,7 @@
  * Poll/cancel machinery has been removed; run* functions return results directly.
  */
 
+import koMessages from '../../../../../messages/ko.json';
 import type { Mock } from 'vitest';
 import { useFundamentalAnalysis } from '@/widgets/fundamental/hooks/useFundamentalAnalysis';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
@@ -114,7 +115,8 @@ describe('useFundamentalAnalysis — branch coverage', () => {
         mockSubmit.mockResolvedValue({
             status: 'error',
             code: 'fetch_failed',
-            error: '데이터 로드 실패',
+            // core가 실제로 주는 값은 영어 예외 문자열이다.
+            error: 'Profile not found for symbol: AAPL',
         } as never);
 
         const { result } = renderHook(
@@ -128,7 +130,11 @@ describe('useFundamentalAnalysis — branch coverage', () => {
 
         if (result.current.status !== 'error')
             throw new Error('expected error');
-        expect(result.current.error.message).toBe('데이터 로드 실패');
+        // 원문이 그대로 새면 전 로케일에 영어가 나간다 — 카탈로그를 거쳐야 한다.
+        expect(result.current.error.message).toBe(
+            koMessages.app.api.stream.fetchFailed
+        );
+        expect(result.current.error.message).not.toContain('Profile not found');
     });
 
     it('returns fallback message for fetch_failed without error string', async () => {
@@ -168,7 +174,9 @@ describe('useFundamentalAnalysis — branch coverage', () => {
 
         if (result.current.status !== 'error')
             throw new Error('expected error');
-        expect(result.current.error.message).toContain('사용량 한도');
+        expect(result.current.error.message).toBe(
+            koMessages.app.api.stream.limitExceeded
+        );
     });
 
     it('returns error for key_error status', async () => {
@@ -188,7 +196,9 @@ describe('useFundamentalAnalysis — branch coverage', () => {
 
         if (result.current.status !== 'error')
             throw new Error('expected error');
-        expect(result.current.error.message).toBe('API key missing');
+        expect(result.current.error.message).toBe(
+            koMessages.app.api.stream.keyRequired
+        );
     });
 
     it('non-Error query error gets wrapped', async () => {

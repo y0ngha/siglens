@@ -180,12 +180,6 @@ export function isDashboardTimeframe(
     return DASHBOARD_TIMEFRAMES.includes(value as DashboardTimeframe);
 }
 
-export const DASHBOARD_TIMEFRAME_LABELS: Record<DashboardTimeframe, string> = {
-    '15Min': '15분',
-    '1Hour': '1시간',
-    '1Day': '1일',
-};
-
 // Panel C sector tabs — SECTOR_ETFS + virtual sectors (no ETF)
 export const SIGNAL_SECTORS: readonly SectorEtf[] = [
     ...SECTOR_ETFS,

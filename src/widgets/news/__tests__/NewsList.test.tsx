@@ -96,7 +96,7 @@ describe('NewsList', () => {
     });
 
     it('뉴스 시간을 한국시간 기준으로 표시한다', () => {
-        expect(formatNewsPublishedAt('2026-05-05T22:35:21.000Z')).toBe(
+        expect(formatNewsPublishedAt('2026-05-05T22:35:21.000Z', 'ko')).toBe(
             '2026년 5월 6일 오전 07:35 KST'
         );
     });

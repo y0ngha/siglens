@@ -3,30 +3,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { MS_PER_MINUTE } from '@/shared/config/time';
 
-const PRO_INDICATOR_COUNT = 30;
-const SKILL_COUNT = 60;
+export const PRO_INDICATOR_COUNT = 30;
+export const SKILL_COUNT = 60;
 
-export const ANALYSIS_PHASES = [
-    '시장 데이터 정렬 중',
-    `${PRO_INDICATOR_COUNT}개 이상의 보조지표 시그널 분석 중`,
-    '캔들 패턴 및 차트 패턴 탐지 중',
-    `${SKILL_COUNT}개 이상의 스킬을 조합하여 시그널 매칭 중`,
-    '매수·매도 전략 및 리스크 평가 중',
-    'AI 종합 해석 작성 중',
-] as const;
+/**
+ * 단계·팁 **개수**만 코드가 안다. 문구는 `widgets.analysis.progress`에 있다.
+ *
+ * 예전에는 한국어 문자열 배열이라 분석 진행 화면이 네 로케일 전부 한국어였다.
+ * 개수는 타이머 간격과 진행 점 개수를 정하므로 코드에 남는다.
+ */
+export const ANALYSIS_PHASE_COUNT = 6;
 
 const PHASE_INTERVAL_MS = MS_PER_MINUTE;
 
-export const ANALYSIS_TIPS = [
-    `${PRO_INDICATOR_COUNT}개 이상의 보조지표와 ${SKILL_COUNT}개 이상의 스킬을 조합해 분석합니다.`,
-    'AI 분석은 보통 5분 정도 걸려요. 길어지면 최대 15분까지 걸릴 수 있어요.',
-    '화면을 띄워 놓고 다른 작업을 하셔도 됩니다. 분석이 완료되면 자동으로 결과가 표시돼요.',
-    'RSI, MACD, 볼린저 밴드 등 보조지표의 시그널을 종합하여 추세를 판단하고 있어요.',
-    '엘리어트 파동, 피보나치 등 다양한 전략을 데이터에 적용하고 있어요.',
-    '매수·매도 타이밍, 손절가, 목표가까지 산출하여 실전에 바로 활용 가능한 분석을 제공합니다.',
-    '헤드앤숄더, 더블바텀 등 차트 패턴과 캔들 패턴을 동시에 탐지하고 있어요.',
-    '한 번 분석된 결과는 일정 시간 동안 캐시되어, 다음에 다시 열면 바로 확인할 수 있어요.',
-] as const;
+export const ANALYSIS_TIP_COUNT = 8;
 
 const TIP_INTERVAL_MS = 8000;
 /** 조기 완료 시 마지막 단계로 이동하기 전 잠시 멈추는 시간(ms). */
@@ -101,7 +91,7 @@ export function useAnalysisProgress({
         if (!isAnalyzing || finishing) return;
         const intervalId = window.setInterval(() => {
             setPhaseIndex(prev =>
-                prev < ANALYSIS_PHASES.length - 1 ? prev + 1 : prev
+                prev < ANALYSIS_PHASE_COUNT - 1 ? prev + 1 : prev
             );
         }, PHASE_INTERVAL_MS);
         return () => {
@@ -113,7 +103,7 @@ export function useAnalysisProgress({
     useEffect(() => {
         if (!isAnalyzing || finishing) return;
         const intervalId = window.setInterval(() => {
-            setTipIndex(prev => (prev + 1) % ANALYSIS_TIPS.length);
+            setTipIndex(prev => (prev + 1) % ANALYSIS_TIP_COUNT);
         }, TIP_INTERVAL_MS);
         return () => {
             window.clearInterval(intervalId);
@@ -138,7 +128,7 @@ export function useAnalysisProgress({
 
         const advanceFrom = (current: number) => {
             if (cancelled) return;
-            if (current >= ANALYSIS_PHASES.length - 1) {
+            if (current >= ANALYSIS_PHASE_COUNT - 1) {
                 timers.push(window.setTimeout(callFinished, FINISHING_TAIL_MS));
                 return;
             }
@@ -151,7 +141,7 @@ export function useAnalysisProgress({
 
         // finishing 진입 시점의 phaseIndex를 ref에서 읽는다(커밋된 최신 값).
         const current = phaseIndexRef.current;
-        if (current >= ANALYSIS_PHASES.length - 1) {
+        if (current >= ANALYSIS_PHASE_COUNT - 1) {
             timers.push(window.setTimeout(callFinished, FINISHING_TAIL_MS));
         } else {
             timers.push(

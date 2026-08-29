@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type {
     DashboardTimeframe,
     SectorSignalsResult,
@@ -30,6 +31,7 @@ export function SectorSignalPanel({
     initialTimeframe,
     initialData,
 }: SectorSignalPanelProps) {
+    const t = useTranslations('widgets.dashboard');
     const {
         activeSector,
         activeTimeframe,
@@ -46,12 +48,14 @@ export function SectorSignalPanel({
 
     return (
         <section
-            aria-label="섹터별 신호 모아보기"
+            aria-label={t('SectorSignalPanel.581217')}
             aria-live="polite"
             className="page-container sector-panel-bg relative py-10"
         >
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-                <h2 className={HEADING_SECTION}>섹터별 신호 모아보기</h2>
+                <h2 className={HEADING_SECTION}>
+                    {t('SectorSignalPanel.581217')}
+                </h2>
                 <TimeframeSelector
                     timeframe={activeTimeframe}
                     onChange={handleTimeframeChange}
@@ -71,7 +75,7 @@ export function SectorSignalPanel({
                 <SignalSubsection
                     currencySymbol={scope.currencySymbol}
                     tickerIsReadable={scope.tickerIsReadable}
-                    title="상승 신호"
+                    title={t('SectorSignalPanel.080a8a')}
                     marker="▲"
                     variant="confirmed"
                     stocks={quadrants.bullishConfirmed}
@@ -79,7 +83,7 @@ export function SectorSignalPanel({
                 <SignalSubsection
                     currencySymbol={scope.currencySymbol}
                     tickerIsReadable={scope.tickerIsReadable}
-                    title="상승 조짐"
+                    title={t('SectorSignalPanel.976db4')}
                     marker="△"
                     variant="expected"
                     stocks={quadrants.bullishExpected}
@@ -87,27 +91,21 @@ export function SectorSignalPanel({
                 <SignalSubsection
                     currencySymbol={scope.currencySymbol}
                     tickerIsReadable={scope.tickerIsReadable}
-                    title="혼재"
+                    title={t('SectorSignalPanel.760c9a')}
                     marker="◈"
                     variant="mixed"
                     stocks={mixedStocks}
                     infoMessage={
                         <>
-                            <p>
-                                상승 신호와 하락 신호의 강도가 비슷한
-                                종목들이에요.
-                            </p>
-                            <p>
-                                어느 쪽으로 움직일지 방향이 명확하지 않으니
-                                신중하게 보는 게 좋아요.
-                            </p>
+                            <p>{t('SectorSignalPanel.ede11c')}</p>
+                            <p>{t('SectorSignalPanel.9c8687')}</p>
                         </>
                     }
                 />
                 <SignalSubsection
                     currencySymbol={scope.currencySymbol}
                     tickerIsReadable={scope.tickerIsReadable}
-                    title="하락 조짐"
+                    title={t('SectorSignalPanel.880a67')}
                     marker="▽"
                     variant="expected"
                     stocks={quadrants.bearishExpected}
@@ -115,7 +113,7 @@ export function SectorSignalPanel({
                 <SignalSubsection
                     currencySymbol={scope.currencySymbol}
                     tickerIsReadable={scope.tickerIsReadable}
-                    title="하락 신호"
+                    title={t('SectorSignalPanel.12526e')}
                     marker="▼"
                     variant="confirmed"
                     stocks={quadrants.bearishConfirmed}

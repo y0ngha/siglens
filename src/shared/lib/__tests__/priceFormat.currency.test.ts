@@ -12,31 +12,35 @@ import {
  */
 describe('formatCompactCurrency', () => {
     it('국내 상장 종목은 원화 기호를 쓴다', () => {
-        const out = formatCompactCurrency(1_802_500_000_000_000, '005930.KS');
+        const out = formatCompactCurrency(
+            1_802_500_000_000_000,
+            '005930.KS',
+            'ko'
+        );
         expect(out).toContain('₩');
         expect(out).not.toContain('US$');
     });
 
     it('코스닥 종목도 마찬가지다', () => {
-        expect(formatCompactCurrency(1_000_000_000, '247540.KQ')).toContain(
-            '₩'
-        );
+        expect(
+            formatCompactCurrency(1_000_000_000, '247540.KQ', 'ko')
+        ).toContain('₩');
     });
 
     it('미국 종목은 종전대로 달러다', () => {
-        const out = formatCompactCurrency(4_500_000_000_000, 'AAPL');
+        const out = formatCompactCurrency(4_500_000_000_000, 'AAPL', 'ko');
         expect(out).toContain('$');
         expect(out).not.toContain('₩');
     });
 
     it('크립토도 달러다 — 국내 종목 형상이 아니다', () => {
-        expect(formatCompactCurrency(1_000_000_000, 'BTCUSD')).not.toContain(
-            '₩'
-        );
+        expect(
+            formatCompactCurrency(1_000_000_000, 'BTCUSD', 'ko')
+        ).not.toContain('₩');
     });
 
     it('소문자 심볼도 국내 종목으로 인식한다', () => {
-        expect(formatCompactCurrency(1_000, '005930.ks')).toContain('₩');
+        expect(formatCompactCurrency(1_000, '005930.ks', 'ko')).toContain('₩');
     });
 });
 
@@ -74,5 +78,30 @@ describe('formatSignedAmount', () => {
 
     it('크립토도 $ 표기다 — 국내 종목 형상이 아니다', () => {
         expect(formatSignedAmount(0.1, 'BTCUSD')).toBe('+$0.10000');
+    });
+});
+
+/**
+ * `notation: 'compact'`는 **로케일 단위 체계**를 쓴다. 포매터가 `'ko-KR'`로
+ * 고정돼 있어서 `/en/AAPL`의 시가총액이 `US$3.5조`로 나갔다 — 숫자는 맞고
+ * 단위만 한국어인, 눈에 잘 안 띄는 종류의 오류다.
+ */
+describe('formatCompactCurrency — 로케일 단위', () => {
+    const T = 3_500_000_000_000;
+
+    it('ko는 한국어 단위를 쓴다', () => {
+        expect(formatCompactCurrency(T, 'AAPL', 'ko')).toContain('조');
+    });
+
+    it.each(['en', 'ja', 'zh'] as const)('%s에는 한글이 없다', locale => {
+        expect(formatCompactCurrency(T, 'AAPL', locale)).not.toMatch(/[가-힣]/);
+    });
+
+    it('로케일마다 실제로 다른 단위를 낸다', () => {
+        const all = (['ko', 'en', 'ja', 'zh'] as const).map(l =>
+            formatCompactCurrency(T, 'AAPL', l)
+        );
+
+        expect(new Set(all).size).toBe(4);
     });
 });

@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { getTranslations } from 'next-intl/server';
 import {
     buildCryptoSymbolSeoContent,
     buildCryptoSymbolNewsSeoContent,
@@ -12,11 +13,19 @@ import {
     buildSymbolOverallSeoContent,
     buildSymbolFearGreedSeoContent,
     SEO_DESCRIPTION_MAX_LENGTH,
+    type SeoTranslator,
 } from '../seo';
+
+// t는 이제 필수 인자다(§design SeoTranslator required-param). ko로 고정한
+// 실제 번역자를 한 번 만들어 모든 builder 호출에 재사용한다.
+let t: SeoTranslator;
+beforeAll(async () => {
+    t = await getTranslations({ locale: 'ko', namespace: 'shared.seo' });
+});
 
 describe('buildCryptoSymbolSeoContent', () => {
     it('builds crypto-framed copy (no 주가/펀더멘털 wording)', () => {
-        const c = buildCryptoSymbolSeoContent('BTCUSD', {
+        const c = buildCryptoSymbolSeoContent('BTCUSD', t, {
             displayName: 'Bitcoin USD',
         });
         expect(c.ticker).toBe('BTCUSD');
@@ -31,7 +40,7 @@ describe('buildCryptoSymbolSeoContent', () => {
     });
 
     it('L1: title is ticker-led for SERP length safety', () => {
-        const c = buildCryptoSymbolSeoContent('BTCUSD', {
+        const c = buildCryptoSymbolSeoContent('BTCUSD', t, {
             displayName: 'Bitcoin USD',
         });
         // composeSymbolTitle 도입 이후 title은 ticker/koreanName만 조합한다 —
@@ -43,12 +52,12 @@ describe('buildCryptoSymbolSeoContent', () => {
     });
 
     it('falls back to ticker as display name', () => {
-        const c = buildCryptoSymbolSeoContent('ETHUSD');
+        const c = buildCryptoSymbolSeoContent('ETHUSD', t);
         expect(c.description).toContain('ETHUSD');
     });
 
     it('description is within 120-char SEO safe zone', () => {
-        const c = buildCryptoSymbolSeoContent('BTCUSD', {
+        const c = buildCryptoSymbolSeoContent('BTCUSD', t, {
             displayName: 'Bitcoin USD',
         });
         expect([...c.description].length).toBeLessThanOrEqual(
@@ -59,7 +68,7 @@ describe('buildCryptoSymbolSeoContent', () => {
 
 describe('resolveSymbolSeoContent', () => {
     it('crypto branch — delegates to buildCryptoSymbolSeoContent (시세-framed title, no 주가 keyword)', () => {
-        const c = resolveSymbolSeoContent('BTCUSD', 'crypto', {
+        const c = resolveSymbolSeoContent('BTCUSD', 'crypto', t, {
             displayName: 'Bitcoin USD',
         });
         // buildCryptoSymbolSeoContent produces "BTCUSD 시세 전망 — 차트·매매 신호" 형태.
@@ -73,7 +82,7 @@ describe('resolveSymbolSeoContent', () => {
     });
 
     it('stock branch — delegates to buildSymbolSeoContent (주가-framed title, no 시세 keyword)', () => {
-        const c = resolveSymbolSeoContent('AAPL', 'equity', {
+        const c = resolveSymbolSeoContent('AAPL', 'equity', t, {
             displayName: 'Apple Inc.',
             koreanName: '애플',
         });
@@ -93,7 +102,7 @@ describe('resolveSymbolSeoContent', () => {
 
 describe('buildCryptoSymbolNewsSeoContent', () => {
     it('title is crypto-framed — no 어닝/실적/애널리스트 wording', () => {
-        const c = buildCryptoSymbolNewsSeoContent('BTCUSD', {
+        const c = buildCryptoSymbolNewsSeoContent('BTCUSD', t, {
             displayName: 'Bitcoin USD',
         });
         expect(c.title).not.toContain('어닝');
@@ -103,7 +112,7 @@ describe('buildCryptoSymbolNewsSeoContent', () => {
     });
 
     it('description is crypto-appropriate and within 120 chars', () => {
-        const c = buildCryptoSymbolNewsSeoContent('BTCUSD', {
+        const c = buildCryptoSymbolNewsSeoContent('BTCUSD', t, {
             displayName: 'Bitcoin USD',
         });
         expect(c.description).toContain('Bitcoin USD');
@@ -115,7 +124,7 @@ describe('buildCryptoSymbolNewsSeoContent', () => {
     });
 
     it('keywords include crypto-appropriate terms, exclude stock equity terms', () => {
-        const c = buildCryptoSymbolNewsSeoContent('BTCUSD');
+        const c = buildCryptoSymbolNewsSeoContent('BTCUSD', t);
         expect(c.keywords).toContain('BTCUSD 뉴스');
         expect(c.keywords).toContain('BTCUSD 코인 뉴스');
         expect(c.keywords).toContain('BTCUSD 호재');
@@ -125,19 +134,19 @@ describe('buildCryptoSymbolNewsSeoContent', () => {
     });
 
     it('URL is /[TICKER]/news', () => {
-        const c = buildCryptoSymbolNewsSeoContent('ETHUSD');
+        const c = buildCryptoSymbolNewsSeoContent('ETHUSD', t);
         expect(c.url).toBe('https://siglens.io/ETHUSD/news');
     });
 
     it('falls back to ticker when no displayName provided', () => {
-        const c = buildCryptoSymbolNewsSeoContent('SOLUSD');
+        const c = buildCryptoSymbolNewsSeoContent('SOLUSD', t);
         expect(c.description).toContain('SOLUSD');
     });
 });
 
 describe('resolveSymbolNewsSeoContent', () => {
     it('crypto → buildCryptoSymbolNewsSeoContent (no 어닝/실적 copy)', () => {
-        const c = resolveSymbolNewsSeoContent('BTCUSD', 'crypto', {
+        const c = resolveSymbolNewsSeoContent('BTCUSD', 'crypto', t, {
             displayName: 'Bitcoin USD',
         });
         expect(c.title).not.toContain('어닝');
@@ -146,7 +155,7 @@ describe('resolveSymbolNewsSeoContent', () => {
     });
 
     it('equity → buildSymbolNewsSeoContent (동일 빌더로 위임되며 core가 보존된다)', () => {
-        const c = resolveSymbolNewsSeoContent('AAPL', 'equity', {
+        const c = resolveSymbolNewsSeoContent('AAPL', 'equity', t, {
             displayName: '애플, Apple Inc. (AAPL)',
             koreanName: '애플',
         });
@@ -156,7 +165,7 @@ describe('resolveSymbolNewsSeoContent', () => {
         expect(c.title).toContain('AAPL');
         expect(c.title).toContain('뉴스');
         // Verify equity builder is unchanged
-        const stock = buildSymbolNewsSeoContent('AAPL', {
+        const stock = buildSymbolNewsSeoContent('AAPL', t, {
             displayName: '애플, Apple Inc. (AAPL)',
             koreanName: '애플',
         });
@@ -167,7 +176,7 @@ describe('resolveSymbolNewsSeoContent', () => {
 
 describe('buildCryptoSymbolOverallSeoContent', () => {
     it('title is crypto-framed — no 주가/분기실적/펀더멘털 wording', () => {
-        const c = buildCryptoSymbolOverallSeoContent('BTCUSD', {
+        const c = buildCryptoSymbolOverallSeoContent('BTCUSD', t, {
             displayName: 'Bitcoin USD',
         });
         expect(c.title).not.toContain('주가');
@@ -177,7 +186,7 @@ describe('buildCryptoSymbolOverallSeoContent', () => {
     });
 
     it('description mentions crypto-appropriate axes (차트/뉴스/매수 분위기)', () => {
-        const c = buildCryptoSymbolOverallSeoContent('BTCUSD', {
+        const c = buildCryptoSymbolOverallSeoContent('BTCUSD', t, {
             displayName: 'Bitcoin USD',
         });
         expect(c.description).toContain('Bitcoin USD');
@@ -189,7 +198,7 @@ describe('buildCryptoSymbolOverallSeoContent', () => {
     });
 
     it('keywords include crypto-appropriate terms, exclude stock equity terms', () => {
-        const c = buildCryptoSymbolOverallSeoContent('BTCUSD');
+        const c = buildCryptoSymbolOverallSeoContent('BTCUSD', t);
         expect(c.keywords).toContain('BTCUSD AI 종합 분석');
         expect(c.keywords).toContain('BTCUSD 코인 종합 분석');
         expect(c.keywords).not.toContain('BTCUSD 4축 분석');
@@ -197,19 +206,19 @@ describe('buildCryptoSymbolOverallSeoContent', () => {
     });
 
     it('URL is /[TICKER]/overall', () => {
-        const c = buildCryptoSymbolOverallSeoContent('ETHUSD');
+        const c = buildCryptoSymbolOverallSeoContent('ETHUSD', t);
         expect(c.url).toBe('https://siglens.io/ETHUSD/overall');
     });
 
     it('falls back to ticker when no displayName provided', () => {
-        const c = buildCryptoSymbolOverallSeoContent('SOLUSD');
+        const c = buildCryptoSymbolOverallSeoContent('SOLUSD', t);
         expect(c.description).toContain('SOLUSD');
     });
 });
 
 describe('resolveSymbolOverallSeoContent', () => {
     it('crypto → buildCryptoSymbolOverallSeoContent (no 주가/분기실적 copy)', () => {
-        const c = resolveSymbolOverallSeoContent('BTCUSD', 'crypto', {
+        const c = resolveSymbolOverallSeoContent('BTCUSD', 'crypto', t, {
             displayName: 'Bitcoin USD',
         });
         expect(c.title).not.toContain('주가');
@@ -218,11 +227,11 @@ describe('resolveSymbolOverallSeoContent', () => {
     });
 
     it('equity → buildSymbolOverallSeoContent (주가/실적 copy preserved)', () => {
-        const c = resolveSymbolOverallSeoContent('AAPL', 'equity', {
+        const c = resolveSymbolOverallSeoContent('AAPL', 'equity', t, {
             displayName: '애플, Apple Inc. (AAPL)',
             koreanName: '애플',
         });
-        const stock = buildSymbolOverallSeoContent('AAPL', {
+        const stock = buildSymbolOverallSeoContent('AAPL', t, {
             displayName: '애플, Apple Inc. (AAPL)',
             koreanName: '애플',
         });
@@ -233,7 +242,7 @@ describe('resolveSymbolOverallSeoContent', () => {
 
 describe('buildCryptoSymbolFearGreedSeoContent', () => {
     it('title은 공포 탐욕 지수 core를 담는다 (코인 특화 표현은 keywords에서만 유지)', () => {
-        const c = buildCryptoSymbolFearGreedSeoContent('BTCUSD', {
+        const c = buildCryptoSymbolFearGreedSeoContent('BTCUSD', t, {
             displayName: 'Bitcoin USD',
         });
         // composeSymbolTitle 도입 이후 크립토 fear-greed title은 주식과 동일한
@@ -243,7 +252,7 @@ describe('buildCryptoSymbolFearGreedSeoContent', () => {
     });
 
     it('description is within 120 chars and mentions subject', () => {
-        const c = buildCryptoSymbolFearGreedSeoContent('BTCUSD', {
+        const c = buildCryptoSymbolFearGreedSeoContent('BTCUSD', t, {
             displayName: 'Bitcoin USD',
         });
         expect(c.description).toContain('Bitcoin USD');
@@ -253,7 +262,7 @@ describe('buildCryptoSymbolFearGreedSeoContent', () => {
     });
 
     it('keywords include crypto-appropriate terms, no stock-equity wording', () => {
-        const c = buildCryptoSymbolFearGreedSeoContent('BTCUSD');
+        const c = buildCryptoSymbolFearGreedSeoContent('BTCUSD', t);
         expect(c.keywords).toContain('BTCUSD 공포 지수');
         expect(c.keywords).toContain('BTCUSD 코인 매수 분위기');
         expect(c.keywords).toContain('코인 투자 심리');
@@ -264,19 +273,19 @@ describe('buildCryptoSymbolFearGreedSeoContent', () => {
     });
 
     it('URL is /[TICKER]/fear-greed', () => {
-        const c = buildCryptoSymbolFearGreedSeoContent('ETHUSD');
+        const c = buildCryptoSymbolFearGreedSeoContent('ETHUSD', t);
         expect(c.url).toBe('https://siglens.io/ETHUSD/fear-greed');
     });
 
     it('falls back to ticker when no displayName provided', () => {
-        const c = buildCryptoSymbolFearGreedSeoContent('SOLUSD');
+        const c = buildCryptoSymbolFearGreedSeoContent('SOLUSD', t);
         expect(c.description).toContain('SOLUSD');
     });
 });
 
 describe('resolveSymbolFearGreedSeoContent', () => {
     it('crypto → buildCryptoSymbolFearGreedSeoContent (coin-framed keywords)', () => {
-        const c = resolveSymbolFearGreedSeoContent('BTCUSD', 'crypto', {
+        const c = resolveSymbolFearGreedSeoContent('BTCUSD', 'crypto', t, {
             displayName: 'Bitcoin USD',
         });
         expect(c.keywords).toContain('코인 매수 분위기');
@@ -285,13 +294,13 @@ describe('resolveSymbolFearGreedSeoContent', () => {
     });
 
     it('equity → buildSymbolFearGreedSeoContent (equity wording preserved)', () => {
-        const c = resolveSymbolFearGreedSeoContent('AAPL', 'equity', {
+        const c = resolveSymbolFearGreedSeoContent('AAPL', 'equity', t, {
             displayName: '애플, Apple Inc. (AAPL)',
             koreanName: '애플',
         });
         // resolveSymbolFearGreedSeoContent does not forward sector (no caller provides it),
         // so compare against the no-sector variant of the stock builder.
-        const stock = buildSymbolFearGreedSeoContent('AAPL', {
+        const stock = buildSymbolFearGreedSeoContent('AAPL', t, {
             displayName: '애플, Apple Inc. (AAPL)',
             koreanName: '애플',
         });
@@ -300,7 +309,7 @@ describe('resolveSymbolFearGreedSeoContent', () => {
     });
 
     it('equity branch forwards sector to buildSymbolFearGreedSeoContent', () => {
-        const c = resolveSymbolFearGreedSeoContent('AAPL', 'equity', {
+        const c = resolveSymbolFearGreedSeoContent('AAPL', 'equity', t, {
             displayName: 'Apple Inc.',
         });
         // sector not provided → no sector keyword in result (no crash either)

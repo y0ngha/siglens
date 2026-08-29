@@ -1,5 +1,6 @@
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { cn } from '@/shared/lib/cn';
+import { useTranslations } from 'next-intl';
 /**
  * Empty-state renderer for the `no_trades` branch unique to congress.
  *
@@ -9,6 +10,7 @@ import { cn } from '@/shared/lib/cn';
  * communicates the policy choice without sounding like a failure.
  */
 export function CongressTrendSummaryEmpty() {
+    const t = useTranslations('widgets.congress');
     return (
         <section
             aria-labelledby="congress-trend-summary-empty-heading"
@@ -18,10 +20,10 @@ export function CongressTrendSummaryEmpty() {
                 id="congress-trend-summary-empty-heading"
                 className={cn('mb-3', HEADING_SECTION)}
             >
-                AI 동향 해석
+                {t('CongressTrendSummaryEmpty.bbb041')}
             </h2>
             <p className="text-sm leading-relaxed text-secondary-400">
-                최근 의회 거래가 없어 동향 해석을 생성하지 않았어요.
+                {t('CongressTrendSummaryEmpty.34ec4b')}
             </p>
         </section>
     );

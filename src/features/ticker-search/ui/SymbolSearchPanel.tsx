@@ -1,13 +1,16 @@
 'use client';
 
-import Link from 'next/link';
 import { useRef } from 'react';
+import { useTranslations } from 'next-intl';
+// `next/link`가 아니라 로케일 접두사를 붙이는 래퍼다 — 그냥 `next/link`를 쓰면
+// `/ja`에서 누른 링크가 ko 라우트로 나간다.
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 import { useRecentSearches } from '../hooks/useRecentSearches';
 import { SearchGlyph } from './SearchTriggerButton';
 import {
     HERO_RECENT_CHIP_LIMIT,
-    SEARCH_PLACEHOLDER,
+    SEARCH_PLACEHOLDER_KEY,
 } from '../lib/searchLabels';
 import { useSearchOverlayTrigger } from '../model/SearchOverlayContext';
 import { TickerAutocomplete } from './TickerAutocomplete';
@@ -18,6 +21,8 @@ interface SymbolSearchPanelProps {
 }
 
 export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
+    const t = useTranslations('features.ticker-search');
+    const tRecent = useTranslations('features.ticker-search.recentSearch');
     /**
      * "모두 지우기"는 자기 자신이 든 행을 통째로 언마운트시킨다. 그대로 두면 포커스가
      * `<body>`로 떨어져 다음 Tab이 문서 처음부터 시작한다(WCAG 2.4.3). 지운 뒤
@@ -64,7 +69,7 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                     className="focus-glow flex h-12 w-full touch-manipulation items-center gap-2 rounded-lg border border-border-control bg-secondary-800 px-4 text-left text-base text-secondary-400 transition-colors hover:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none lg:hidden"
                 >
                     <SearchGlyph className="h-4 w-4 shrink-0" />
-                    {SEARCH_PLACEHOLDER}
+                    {t(SEARCH_PLACEHOLDER_KEY)}
                 </button>
             )}
             <div ref={desktopSearchRef} className="hidden lg:block">
@@ -78,7 +83,7 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                     className="mt-4 flex flex-wrap items-center justify-center gap-2 outline-none lg:justify-start"
                 >
                     <span className="text-xs text-secondary-400">
-                        최근 검색
+                        {t('SymbolSearchPanel.d7fe41')}
                     </span>
                     {recentSearches.map((entry, index) => (
                         <span
@@ -130,8 +135,13 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                                 // 같은 말을 두 번 읽는다.
                                 aria-label={
                                     entry.label === entry.symbol
-                                        ? `${entry.symbol} 최근 검색에서 제거`
-                                        : `${entry.label} (${entry.symbol}) 최근 검색에서 제거`
+                                        ? tRecent('removeRecent', {
+                                              v0: entry.symbol,
+                                          })
+                                        : tRecent('removeRecentNamed', {
+                                              v0: entry.label,
+                                              v1: entry.symbol,
+                                          })
                                 }
                                 onClick={() => {
                                     removeSearch(entry.symbol);
@@ -169,7 +179,7 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                         // line-height는 16px뿐이라 세로 패딩으로 채운다.
                         className="ml-1 inline-flex min-h-6 touch-manipulation items-center px-1 text-xs text-secondary-400 underline-offset-2 hover:text-secondary-200 hover:underline"
                     >
-                        모두 지우기
+                        {t('SymbolSearchPanel.9d0d41')}
                     </button>
                 </div>
             )}

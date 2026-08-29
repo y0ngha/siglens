@@ -108,7 +108,11 @@ export interface DashboardScope {
 
 export const US_DASHBOARD_SCOPE: DashboardScope = {
     id: 'us',
-    marketLabel: '미국 증시',
+    // 화면 문구가 아니라 **core 프롬프트로 가는 값**이다(§marketBriefingContext).
+    // 영어로 두는 이유는 `CALENDAR_REGION_LABEL`과 같다 — 모델 지시문이
+    // 로케일로 갈리면 프롬프트만 흔들린다. 화면은 `MarketDataErrorNotice`처럼
+    // 별도 메시지 키를 쓴다.
+    marketLabel: 'US market',
     currencySymbol: '$',
     linkSectorCards: true,
     volatilityIndexSymbol: 'VIX',
@@ -122,7 +126,7 @@ export const US_DASHBOARD_SCOPE: DashboardScope = {
 
 export const KR_DASHBOARD_SCOPE: DashboardScope = {
     id: 'kr',
-    marketLabel: '한국 증시',
+    marketLabel: 'Korean market',
     currencySymbol: '₩',
     linkSectorCards: false,
     volatilityIndexSymbol: null,

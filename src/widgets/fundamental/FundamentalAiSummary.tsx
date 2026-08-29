@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import {
     type FundamentalAnalysisResponse,
     type FundamentalCategory,
@@ -23,10 +24,11 @@ import {
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
 
-const SENTIMENT_LABEL: Record<FundamentalSentiment, string> = {
-    bullish: '긍정',
-    neutral: '중립',
-    bearish: '부정',
+/** FundamentalSentiment → `shared.enumLabel.sentiment` 카탈로그 키. */
+const SENTIMENT_LABEL_KEY: Record<FundamentalSentiment, string> = {
+    bullish: 'sentiment.bullish',
+    neutral: 'sentiment.neutral',
+    bearish: 'sentiment.bearish',
 };
 
 const SENTIMENT_CLASS: Record<FundamentalSentiment, string> = {
@@ -35,12 +37,13 @@ const SENTIMENT_CLASS: Record<FundamentalSentiment, string> = {
     bearish: 'bg-ui-danger/10 text-ui-danger-text',
 };
 
-const CATEGORY_LABEL: Record<FundamentalCategory, string> = {
-    valuation: '밸류에이션',
-    profitability: '수익성',
-    growth: '성장성',
-    health: '재무 건전성',
-    futureDirection: '미래 방향',
+/** FundamentalCategory → `shared.enumLabel.fundamentalCategory` 카탈로그 키. */
+const CATEGORY_LABEL_KEY: Record<FundamentalCategory, string> = {
+    valuation: 'fundamentalCategory.valuation',
+    profitability: 'fundamentalCategory.profitability',
+    growth: 'fundamentalCategory.growth',
+    health: 'fundamentalCategory.health',
+    futureDirection: 'fundamentalCategory.futureDirection',
 };
 
 interface FundamentalAiSummaryViewProps {
@@ -50,6 +53,12 @@ interface FundamentalAiSummaryViewProps {
 export function FundamentalAiSummaryView({
     result,
 }: FundamentalAiSummaryViewProps) {
+    const t = useTranslations('widgets.fundamental');
+    // extract.mjs의 동적 키 탐지는 이 파일 안에서 번역자를 직접 호출하는
+    // 패턴만 본다 — `SENTIMENT_LABEL_KEY[...]`/`CATEGORY_LABEL_KEY[...]`를
+    // 그대로 `tLabel(...)`에 넣어야 `shared.enumLabel`이 이 라우트의
+    // 클라이언트 번들에 실린다.
+    const tLabel = useTranslations('shared.enumLabel');
     return (
         <section
             aria-labelledby="ai-summary-heading"
@@ -57,7 +66,7 @@ export function FundamentalAiSummaryView({
         >
             <div className="mb-4 flex items-center justify-between gap-3">
                 <h2 id="ai-summary-heading" className={HEADING_SECTION}>
-                    AI 펀더멘털 분석
+                    {t('FundamentalAiSummary.17769c')}
                 </h2>
                 <span
                     className={cn(
@@ -65,7 +74,7 @@ export function FundamentalAiSummaryView({
                         SENTIMENT_CLASS[result.overallSentiment]
                     )}
                 >
-                    {SENTIMENT_LABEL[result.overallSentiment]}
+                    {tLabel(SENTIMENT_LABEL_KEY[result.overallSentiment])}
                 </span>
             </div>
 
@@ -74,7 +83,10 @@ export function FundamentalAiSummaryView({
             </p>
 
             {result.categoryAssessments.length > 0 && (
-                <ul aria-label="카테고리별 평가" className="mb-5 space-y-3">
+                <ul
+                    aria-label={t('FundamentalAiSummary.74f3b1')}
+                    className="mb-5 space-y-3"
+                >
                     {result.categoryAssessments.map(a => (
                         <li
                             key={a.category}
@@ -82,7 +94,7 @@ export function FundamentalAiSummaryView({
                         >
                             <div className="mb-1 flex items-center gap-2">
                                 <span className="text-sm font-medium">
-                                    {CATEGORY_LABEL[a.category]}
+                                    {tLabel(CATEGORY_LABEL_KEY[a.category])}
                                 </span>
                                 <span
                                     className={cn(
@@ -90,7 +102,7 @@ export function FundamentalAiSummaryView({
                                         SENTIMENT_CLASS[a.sentiment]
                                     )}
                                 >
-                                    {SENTIMENT_LABEL[a.sentiment]}
+                                    {tLabel(SENTIMENT_LABEL_KEY[a.sentiment])}
                                 </span>
                             </div>
                             <p className="text-sm leading-relaxed text-secondary-400">
@@ -104,7 +116,7 @@ export function FundamentalAiSummaryView({
             {result.riskFactorsKo.length > 0 && (
                 <div>
                     <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
-                        위험 요인
+                        {t('FundamentalAiSummary.af0480')}
                     </h3>
                     <ul className="space-y-1.5">
                         {result.riskFactorsKo.map(risk => (

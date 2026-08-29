@@ -1,5 +1,6 @@
 'use client';
 
+import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
@@ -31,6 +32,7 @@ export function useTimeframeChange(
     const assetInfo = useAssetInfo(symbol);
     const queryClient = useQueryClient();
     const router = useRouter();
+    const toLocalePath = useLocalePath();
 
     const tf = searchParams.get(TIMEFRAME_QUERY_PARAM);
     const requestedTimeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
@@ -68,7 +70,9 @@ export function useTimeframeChange(
             setTimeframeChangeCount(c => c + 1);
             pendingNavigationRef.current = nextTimeframe;
             router.replace(
-                `/${symbol}?${TIMEFRAME_QUERY_PARAM}=${nextTimeframe}`,
+                toLocalePath(
+                    `/${symbol}?${TIMEFRAME_QUERY_PARAM}=${nextTimeframe}`
+                ),
                 { scroll: false }
             );
         });
@@ -94,12 +98,18 @@ export function useTimeframeChange(
         // 변하지 않아 재시도되지 않고, e2e waitForURL이 60s 타임아웃한다. 대신
         // window.history.replaceState는 URL을 동기적으로 바꾸고 Next가 useSearchParams와
         // 동기화하므로(공식 검색 파라미터 갱신 패턴) 캐노니컬라이즈가 결정적으로 완료된다.
+        // 라우터를 우회하는 경로라 로케일 접두사를 직접 붙여야 한다 — 빼면
+        // `/en/AAPL?tf=1Hour` 진입 시 URL이 조용히 `/AAPL?tf=1Day`가 되어
+        // 사용자가 고른 언어가 브라우저 주소에서 사라진다(네트워크·라우터
+        // 레벨 검사로는 보이지 않는다).
         window.history.replaceState(
             null,
             '',
-            `/${symbol}?${TIMEFRAME_QUERY_PARAM}=${DEFAULT_TIMEFRAME}`
+            toLocalePath(
+                `/${symbol}?${TIMEFRAME_QUERY_PARAM}=${DEFAULT_TIMEFRAME}`
+            )
         );
-    }, [isFreeTier, isTierHydrated, symbol, tf]);
+    }, [isFreeTier, isTierHydrated, symbol, tf, toLocalePath]);
 
     useEffect(() => {
         if (!isTierHydrated) return;

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import Image from 'next/image';
 import type { OAuthProvider, SupportedOAuthProvider } from '@/shared/lib/types';
@@ -29,6 +30,7 @@ export function OAuthConsentForm({
     avatarUrl,
     cancelAction,
 }: OAuthConsentFormProps) {
+    const t = useTranslations('features.auth-oauth-consent');
     const [privacyChecked, setPrivacyChecked] = useState(false);
     const [tosChecked, setTosChecked] = useState(false);
     const [finalizeState, finalizeFormAction, isPending] =
@@ -67,7 +69,8 @@ export function OAuthConsentForm({
                         </p>
                     ) : null}
                     <p className="text-xs text-secondary-400">
-                        {PROVIDER_LABEL[provider] ?? provider} 계정으로 가입
+                        {PROVIDER_LABEL[provider] ?? provider}{' '}
+                        {t('OAuthConsentForm.ecb738')}
                     </p>
                 </div>
             </div>
@@ -97,7 +100,9 @@ export function OAuthConsentForm({
                     aria-disabled={isPending}
                     className="inline-flex h-12 w-full items-center justify-center rounded-lg bg-primary-500 text-sm font-semibold text-secondary-950 transition-colors hover:bg-primary-400 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-secondary-700 disabled:text-secondary-500"
                 >
-                    {isPending ? '처리 중...' : '가입 완료'}
+                    {isPending
+                        ? t('OAuthConsentForm.e6e1a2')
+                        : t('OAuthConsentForm.6615ab')}
                 </button>
             </form>
 
@@ -107,7 +112,7 @@ export function OAuthConsentForm({
                     type="submit"
                     className="inline-flex h-10 w-full items-center justify-center rounded-lg text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
                 >
-                    취소
+                    {t('OAuthConsentForm.19b2d1')}
                 </button>
             </form>
         </div>

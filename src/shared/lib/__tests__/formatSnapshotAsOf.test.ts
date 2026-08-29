@@ -5,21 +5,33 @@ describe('formatSnapshotAsOf(us-equity)', () => {
     it('미국 동부 기준 날짜를 한국어로 포맷한다', () => {
         // 2026-07-31T20:00:00Z = 2026-07-31 16:00 America/New_York (EDT, 장마감)
         expect(
-            formatSnapshotAsOf(new Date('2026-07-31T20:00:00Z'), 'us-equity')
+            formatSnapshotAsOf(
+                new Date('2026-07-31T20:00:00Z'),
+                'us-equity',
+                'ko'
+            )
         ).toBe('2026년 7월 31일');
     });
 
     it('UTC 자정을 넘었어도 동부 기준 날짜를 쓴다', () => {
         // 2026-08-01T01:00:00Z = 2026-07-31 21:00 America/New_York
         expect(
-            formatSnapshotAsOf(new Date('2026-08-01T01:00:00Z'), 'us-equity')
+            formatSnapshotAsOf(
+                new Date('2026-08-01T01:00:00Z'),
+                'us-equity',
+                'ko'
+            )
         ).toBe('2026년 7월 31일');
     });
 
     it('월 경계를 올바르게 넘긴다', () => {
         // 2026-08-01T13:00:00Z = 2026-08-01 09:00 America/New_York
         expect(
-            formatSnapshotAsOf(new Date('2026-08-01T13:00:00Z'), 'us-equity')
+            formatSnapshotAsOf(
+                new Date('2026-08-01T13:00:00Z'),
+                'us-equity',
+                'ko'
+            )
         ).toBe('2026년 8월 1일');
     });
 
@@ -45,7 +57,7 @@ describe('formatSnapshotAsOf(us-equity)', () => {
             vi.resetModules();
             const { formatSnapshotAsOf: freshFormat } =
                 await import('../formatSnapshotAsOf');
-            results.push(freshFormat(date, 'us-equity'));
+            results.push(freshFormat(date, 'us-equity', 'ko'));
         }
         vi.unstubAllEnvs();
         vi.resetModules();
@@ -66,8 +78,10 @@ describe('formatSnapshotAsOf(kr-equity)', () => {
         // 2026-07-31T20:00:00Z = 2026-08-01 05:00 KST(다음날) vs America/New_York
         // 기준으로는 여전히 07-31 16:00(EDT) — 같은 순간이 시장에 따라 날짜가 갈린다.
         const instant = new Date('2026-07-31T20:00:00Z');
-        expect(formatSnapshotAsOf(instant, 'kr-equity')).toBe('2026년 8월 1일');
-        expect(formatSnapshotAsOf(instant, 'us-equity')).toBe(
+        expect(formatSnapshotAsOf(instant, 'kr-equity', 'ko')).toBe(
+            '2026년 8월 1일'
+        );
+        expect(formatSnapshotAsOf(instant, 'us-equity', 'ko')).toBe(
             '2026년 7월 31일'
         );
     });
@@ -75,7 +89,11 @@ describe('formatSnapshotAsOf(kr-equity)', () => {
     it('KST는 DST가 없어 겨울에도 같은 +9시간 오프셋이다', () => {
         // 2026-01-12T21:30:00Z + 9h = 2026-01-13 06:30 KST
         expect(
-            formatSnapshotAsOf(new Date('2026-01-12T21:30:00Z'), 'kr-equity')
+            formatSnapshotAsOf(
+                new Date('2026-01-12T21:30:00Z'),
+                'kr-equity',
+                'ko'
+            )
         ).toBe('2026년 1월 13일');
     });
 });
@@ -86,8 +104,10 @@ describe('formatSnapshotAsOf(crypto)', () => {
         // UTC-4)로는 아직 07-31 22:00 — crypto는 특정 거래소 마감이 없는 24/7
         // 시장이라 America/New_York을 더 이상 따르지 않는다.
         const instant = new Date('2026-08-01T02:00:00Z');
-        expect(formatSnapshotAsOf(instant, 'crypto')).toBe('2026년 8월 1일');
-        expect(formatSnapshotAsOf(instant, 'us-equity')).toBe(
+        expect(formatSnapshotAsOf(instant, 'crypto', 'ko')).toBe(
+            '2026년 8월 1일'
+        );
+        expect(formatSnapshotAsOf(instant, 'us-equity', 'ko')).toBe(
             '2026년 7월 31일'
         );
     });
@@ -99,6 +119,38 @@ describe('formatSnapshotAsOf — Invalid Date', () => {
     // 그 throw는 getSeoSnapshotsStatic의 try/catch 바깥이라 잡히지 않는다.
     // null을 반환해 호출부가 고정 캡션으로 degrade하게 한다 — 렌더를 멈추지 않는다.
     it('Invalid Date를 넣으면 throw하지 않고 null을 반환한다', () => {
-        expect(formatSnapshotAsOf(new Date('nope'), 'us-equity')).toBeNull();
+        expect(
+            formatSnapshotAsOf(new Date('nope'), 'us-equity', 'ko')
+        ).toBeNull();
+    });
+});
+
+/**
+ * 로케일 회귀.
+ *
+ * 예전에는 포맷터가 시장별 상수 3개였고 로케일이 `'ko-KR'`로 **고정**돼 있었다 —
+ * `/en/AAPL`의 기준일 캡션이 `2026년 8월 18일`로 나갔다. 종목 9개 탭 전부,
+ * 비-ko 3개 로케일 전부가 영향을 받았다.
+ */
+describe('formatSnapshotAsOf — 로케일', () => {
+    const INSTANT = new Date('2026-07-31T20:00:00Z');
+
+    it('ko는 한국어 날짜다', () => {
+        expect(formatSnapshotAsOf(INSTANT, 'us-equity', 'ko')).toBe(
+            '2026년 7월 31일'
+        );
+    });
+
+    it.each(['en', 'ja', 'zh'] as const)('%s는 한글을 쓰지 않는다', locale => {
+        const formatted = formatSnapshotAsOf(INSTANT, 'us-equity', locale);
+
+        expect(formatted).not.toBeNull();
+        expect(formatted!).not.toMatch(/[가-힣]/);
+    });
+
+    it('en은 영어 월 이름을 쓴다', () => {
+        expect(formatSnapshotAsOf(INSTANT, 'us-equity', 'en')).toBe(
+            'July 31, 2026'
+        );
     });
 });

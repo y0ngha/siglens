@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { SHARE_KIND_OG_BUILDERS } from '../server/kindServerRegistry';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+
+const tOg = catalogTranslator('entities.shared-analysis.og', 'ko');
 
 /*
  * 공유 링크의 og/meta description은 사용자가 링크를 붙일 때마다 보는 문자열이다.
@@ -12,19 +15,27 @@ describe('SHARE_KIND_OG_BUILDERS.fear-greed', () => {
     const build = SHARE_KIND_OG_BUILDERS['fear-greed'];
 
     it('점수를 반올림해서 내보낸다 — 원시 소수가 그대로 나가면 안 된다', () => {
-        const out = build({ label: 'FEAR', score: 42.73276474769012 }, 'AAPL');
+        const out = build(
+            { label: 'FEAR', score: 42.73276474769012 },
+            'AAPL',
+            tOg
+        );
         const text = JSON.stringify(out);
         expect(text).toContain('43');
         expect(text).not.toContain('42.73');
     });
 
     it('경계값도 반올림 규칙을 따른다', () => {
-        expect(JSON.stringify(build({ score: 42.4 }, 'AAPL'))).toContain('42');
-        expect(JSON.stringify(build({ score: 42.5 }, 'AAPL'))).toContain('43');
+        expect(JSON.stringify(build({ score: 42.4 }, 'AAPL', tOg))).toContain(
+            '42'
+        );
+        expect(JSON.stringify(build({ score: 42.5 }, 'AAPL', tOg))).toContain(
+            '43'
+        );
     });
 
     it('숫자 문자열도 반올림해서 보여준다 — 값을 잃지 않는다', () => {
-        expect(JSON.stringify(build({ score: '42.7' }, 'AAPL'))).toContain(
+        expect(JSON.stringify(build({ score: '42.7' }, 'AAPL', tOg))).toContain(
             '43'
         );
     });
@@ -41,7 +52,7 @@ describe('SHARE_KIND_OG_BUILDERS.fear-greed', () => {
             '',
             '   ',
         ]) {
-            const text = JSON.stringify(build({ score }, 'AAPL'));
+            const text = JSON.stringify(build({ score }, 'AAPL', tOg));
             expect(text).not.toContain('NaN');
             expect(text).not.toContain('지수 0');
             expect(text).not.toContain('Infinity');

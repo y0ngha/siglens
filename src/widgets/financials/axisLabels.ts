@@ -1,15 +1,17 @@
 import type { FinancialsAxis } from '@y0ngha/siglens-core';
 
 /**
- * Korean labels for the four financials scorecard axes.
+ * FinancialsAxis → `shared.enumLabel.financialsAxis` 카탈로그 키.
  * Single source shared by FinancialsScorecard (축 카드 제목) and
  * FinancialsAiSummary (축별 평가 라벨) so the two stay in sync.
  *
- * 성장성/수익성·질/안정성/현금창출력 — matches the product requirements.
+ * 값 자체는 더 이상 한글이 아니다 — `FinancialsSnapshotProse`가 이미 같은
+ * 그룹을 쓰고 있었는데(자체 정의), 이쪽 두 소비자만 하드코딩된 한글이 남아
+ * `/en/AAPL/financials`가 축 제목만 한국어로 렌더됐다.
  */
-export const AXIS_LABEL_KO: Record<FinancialsAxis, string> = {
-    growth: '성장성',
-    quality: '수익성·질',
-    solvency: '안정성',
-    cash: '현금창출력',
+export const AXIS_LABEL_KEY: Record<FinancialsAxis, string> = {
+    growth: 'financialsAxis.growth',
+    quality: 'financialsAxis.quality',
+    solvency: 'financialsAxis.solvency',
+    cash: 'financialsAxis.cash',
 };

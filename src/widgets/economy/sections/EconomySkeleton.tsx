@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import {
     ECONOMY_INDICATOR_CATEGORIES,
     ECONOMY_INDICATORS,
@@ -109,13 +110,14 @@ function SkeletonIndicatorCard() {
  * Pure presentational — no 'use client', no data dependencies.
  */
 export function EconomySkeleton({ variant = 'us' }: EconomySkeletonProps = {}) {
+    const t = useTranslations('widgets.economy');
     const v = VARIANTS[variant];
     const categories = deriveCategories(v.indicators, v.treasuryCardCount);
     return (
         <div
             className="space-y-6"
             role="status"
-            aria-label="경제 지표 로딩 중"
+            aria-label={t('EconomySkeleton.e0e86d')}
             aria-busy="true"
         >
             {v.showMacroSections && (

@@ -203,7 +203,7 @@ describe('fmpGet 함수는', () => {
             expect(mockFetch).toHaveBeenCalledTimes(1);
             expect(errorSpy).toHaveBeenCalledOnce();
             expect(errorSpy.mock.calls[0]?.[0]).toContain(
-                '비용 예외가 필요한 API가 호출되었습니다.'
+                'An API requiring a cost exception was called.'
             );
         });
     });

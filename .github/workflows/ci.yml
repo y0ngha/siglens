@@ -79,6 +79,21 @@ jobs:
             - name: Format check
               run: yarn format:check
 
+            - name: i18n lint (미추출 한국어 기준선)
+              run: yarn i18n:lint
+
+            - name: i18n verify (번역 카탈로그 게이트)
+              run: yarn i18n:verify
+
+            # 생성 산출물(`clientKeys.json`·`ko.json`·`skips.json`)이 소스와
+            # 어긋나면 잡는다. stale 산출물은 **조용히** 틀린다 — 커버리지
+            # 테스트는 리터럴 키만 보므로 동적 조회 네임스페이스가 빠져도
+            # 통과하고, 화면에서만 원문이 노출된다(라운드 9 실측).
+            - name: i18n extract drift (생성 산출물이 소스와 일치)
+              run: |
+                  yarn i18n:extract --write
+                  git diff --exit-code -- messages/
+
             - name: Test
               run: yarn test
 

@@ -8,7 +8,8 @@ import { CATEGORY_CONFIG, categoriesInRegion } from '@/entities/market-news';
 
 /** 지역 안에서 한 번에 갈 수 있는 최종 목적지. */
 export interface NavLeafLink {
-    readonly label: string;
+    /** 라벨의 완전 수식 메시지 키. 트리는 모듈 스코프 상수라 여기서 번역할 수 없다. */
+    readonly labelKey: string;
     readonly href: string;
 }
 
@@ -58,7 +59,10 @@ export const NAV_TREE: readonly NavVerticalNode[] = NAV_VERTICALS.map(
         // 같은 규칙을 두 곳에 손으로 적어 두면 한쪽만 갱신된다.
         overview: hasRegionForRoot(vertical)
             ? null
-            : { label: '전체', href: vertical.rootHref },
+            : {
+                  labelKey: 'shared.config.nav.all',
+                  href: vertical.rootHref,
+              },
         regions: vertical.regions.map(region => ({
             ...region,
             children: vertical.id === 'news' ? newsLeavesOf(region.region) : [],
@@ -75,7 +79,8 @@ function newsLeavesOf(region: NavRegionLink['region']): readonly NavLeafLink[] {
     const categories = categoriesInRegion(region);
     if (categories.length < 2) return [];
     return categories.map(cat => ({
-        label: CATEGORY_CONFIG[cat].koLabel,
+        // 표시용 키를 쓴다 — `koLabel`은 AI 프롬프트 입력이라 한국어로 남는다.
+        labelKey: CATEGORY_CONFIG[cat].labelKey,
         href: `/news/${CATEGORY_CONFIG[cat].slug}`,
     }));
 }

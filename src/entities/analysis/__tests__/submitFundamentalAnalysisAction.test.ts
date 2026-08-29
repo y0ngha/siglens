@@ -92,7 +92,7 @@ describe('runFundamentalAnalysisAction 함수는', () => {
     it('siglens-core runFundamentalAnalysis에 symbol과 modelId를 전달한다', async () => {
         mockRunFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
 
-        await runFundamentalAnalysisAction('AAPL', MODEL_ID);
+        await runFundamentalAnalysisAction('AAPL', MODEL_ID, 'ko');
 
         expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -105,7 +105,7 @@ describe('runFundamentalAnalysisAction 함수는', () => {
     it('FmpFundamentalClient 인스턴스를 dataProvider로 전달한다', async () => {
         mockRunFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
 
-        await runFundamentalAnalysisAction('TSLA', MODEL_ID);
+        await runFundamentalAnalysisAction('TSLA', MODEL_ID, 'ko');
 
         const call = mockRunFundamentalAnalysis.mock.calls[0]?.[0];
         expect(call?.dataProvider).toBeDefined();
@@ -115,7 +115,11 @@ describe('runFundamentalAnalysisAction 함수는', () => {
     it('underlying 함수의 cached 결과를 그대로 반환한다', async () => {
         mockRunFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
 
-        const result = await runFundamentalAnalysisAction('AAPL', MODEL_ID);
+        const result = await runFundamentalAnalysisAction(
+            'AAPL',
+            MODEL_ID,
+            'ko'
+        );
 
         expect(result).toBe(CACHED_RESULT);
     });
@@ -123,7 +127,11 @@ describe('runFundamentalAnalysisAction 함수는', () => {
     it('underlying 함수의 done 결과를 그대로 반환한다', async () => {
         mockRunFundamentalAnalysis.mockResolvedValueOnce(DONE_RESULT);
 
-        const result = await runFundamentalAnalysisAction('AAPL', MODEL_ID);
+        const result = await runFundamentalAnalysisAction(
+            'AAPL',
+            MODEL_ID,
+            'ko'
+        );
 
         expect(result).toBe(DONE_RESULT);
     });
@@ -137,7 +145,8 @@ describe('runFundamentalAnalysisAction 함수는', () => {
 
         const result = await runFundamentalAnalysisAction(
             'AAPL',
-            PREMIUM_MODEL
+            PREMIUM_MODEL,
+            'ko'
         );
 
         expect(result).toEqual({ status: 'error', error: gateError });
@@ -152,7 +161,7 @@ describe('runFundamentalAnalysisAction 함수는', () => {
             tier: 'member' as never,
         });
 
-        await runFundamentalAnalysisAction('AAPL', MODEL_ID);
+        await runFundamentalAnalysisAction('AAPL', MODEL_ID, 'ko');
 
         expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ tier: 'member' })
@@ -167,7 +176,7 @@ describe('runFundamentalAnalysisAction 함수는', () => {
             userApiKey: 'usr-key',
         });
 
-        await runFundamentalAnalysisAction('AAPL', PREMIUM_MODEL);
+        await runFundamentalAnalysisAction('AAPL', PREMIUM_MODEL, 'ko');
 
         expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ userApiKey: 'usr-key' })
@@ -182,7 +191,7 @@ describe('runFundamentalAnalysisAction 함수는', () => {
             // no userApiKey
         });
 
-        await runFundamentalAnalysisAction('AAPL', PREMIUM_MODEL);
+        await runFundamentalAnalysisAction('AAPL', PREMIUM_MODEL, 'ko');
 
         const callArg = mockRunFundamentalAnalysis.mock.calls[0]?.[0];
         expect(callArg).toBeDefined();
@@ -196,9 +205,13 @@ describe('runFundamentalAnalysisAction 함수는', () => {
             tier: 'free' as never,
         });
 
-        await runFundamentalAnalysisAction('AAPL', MODEL_ID);
+        await runFundamentalAnalysisAction('AAPL', MODEL_ID, 'ko');
 
-        expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
+        expect(mockResolveTierAndByok).toHaveBeenCalledWith(
+            null,
+            MODEL_ID,
+            'ko'
+        );
     });
 
     it('returns unexpected_error result when an unexpected error is thrown', async () => {
@@ -207,7 +220,11 @@ describe('runFundamentalAnalysisAction 함수는', () => {
             new Error('db connection failed')
         );
 
-        const result = await runFundamentalAnalysisAction('AAPL', MODEL_ID);
+        const result = await runFundamentalAnalysisAction(
+            'AAPL',
+            MODEL_ID,
+            'ko'
+        );
 
         expect(result).toMatchObject({
             status: 'error',
@@ -224,7 +241,7 @@ describe('runFundamentalAnalysisAction 함수는', () => {
         );
         mockRunFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
 
-        await runFundamentalAnalysisAction('AAPL', MODEL_ID);
+        await runFundamentalAnalysisAction('AAPL', MODEL_ID, 'ko');
 
         expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: true })
@@ -239,7 +256,7 @@ describe('runFundamentalAnalysisAction 함수는', () => {
                 tier: 'member' as never,
             });
 
-            await runFundamentalAnalysisAction('AAPL', MODEL_ID, true);
+            await runFundamentalAnalysisAction('AAPL', MODEL_ID, 'ko', true);
 
             expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: true })
@@ -247,7 +264,7 @@ describe('runFundamentalAnalysisAction 함수는', () => {
         });
 
         it('forces reasoning: false for free tier even when client requests true', async () => {
-            await runFundamentalAnalysisAction('AAPL', MODEL_ID, true);
+            await runFundamentalAnalysisAction('AAPL', MODEL_ID, 'ko', true);
 
             expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false })
@@ -261,7 +278,7 @@ describe('runFundamentalAnalysisAction 함수는', () => {
                 tier: 'member' as never,
             });
 
-            await runFundamentalAnalysisAction('AAPL', MODEL_ID);
+            await runFundamentalAnalysisAction('AAPL', MODEL_ID, 'ko');
 
             expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false })
@@ -272,7 +289,7 @@ describe('runFundamentalAnalysisAction 함수는', () => {
     it('passes skipEnqueueIfMiss: false to siglens-core when request UA is not a bot', async () => {
         mockRunFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
 
-        await runFundamentalAnalysisAction('AAPL', MODEL_ID);
+        await runFundamentalAnalysisAction('AAPL', MODEL_ID, 'ko');
 
         expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: false })

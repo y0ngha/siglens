@@ -28,3 +28,4 @@ export {
     formatAmountAligned,
     describeAvgFloor,
 } from './lib/positionBuildingNotes';
+export type { PositionTranslator } from './lib/positionBuildingNotes';

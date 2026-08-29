@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
 import { AuthFieldGroup } from '@/shared/ui/auth/AuthFieldGroup';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 import { useForgotPasswordForm } from '../hooks/useForgotPasswordForm';
@@ -21,6 +23,8 @@ import { useEffect, useRef } from 'react';
  * `tabIndex={-1}`을 주고 마운트 시 포커스를 옮긴다.
  */
 export function ForgotPasswordForm() {
+    const t = useTranslations('features.auth-password-reset');
+    const tAuth = useTranslations('entities.auth');
     const [state, formAction] = useForgotPasswordForm();
     const panelRef = useRef<HTMLDivElement>(null);
 
@@ -39,14 +43,13 @@ export function ForgotPasswordForm() {
                         className="space-y-2 rounded-lg border border-secondary-700 bg-secondary-900/60 p-4 text-sm focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         <p className="font-semibold text-secondary-100">
-                            메일을 확인해 주세요
+                            {t('ForgotPasswordForm.fe04f2')}
                         </p>
                         <p className="text-secondary-300">
-                            입력하신 이메일이 등록된 계정이라면 비밀번호 재설정
-                            링크를 보내드렸습니다.
+                            {t('ForgotPasswordForm.4fd65c')}
                         </p>
                         <p className="text-secondary-300">
-                            메일이 도착하지 않은 경우 스팸함도 확인해 주세요.
+                            {t('ForgotPasswordForm.3e3640')}
                         </p>
                     </div>
                 ) : null}
@@ -56,7 +59,7 @@ export function ForgotPasswordForm() {
                     <AuthFieldGroup
                         id="forgot-email"
                         name="email"
-                        label="이메일"
+                        label={t('ForgotPasswordForm.3c3776')}
                         type="email"
                         autoComplete="email"
                         required
@@ -65,11 +68,18 @@ export function ForgotPasswordForm() {
                          * 열거 방어는 "가입돼 있는가"를 감추는 것이지, 빈 값에도
                          * "메일을 보냈다"고 말하라는 뜻이 아니다.
                          */
-                        error={state.error}
+                        error={
+                            state.errorCode
+                                ? tAuth(
+                                      AUTH_ERROR_KEY[state.errorCode] ??
+                                          'error.emailInvalid'
+                                  )
+                                : undefined
+                        }
                     />
                     <SubmitButton
-                        label="재설정 링크 보내기"
-                        pendingLabel="발송 중…"
+                        label={t('ForgotPasswordForm.f4d6d3')}
+                        pendingLabel={t('ForgotPasswordForm.8321f5')}
                     />
                 </form>
             )}

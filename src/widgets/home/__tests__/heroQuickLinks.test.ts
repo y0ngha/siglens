@@ -1,4 +1,5 @@
 import { HERO_QUICK_LINKS } from '../heroQuickLinks';
+import { koMessage } from '@/shared/test-utils/koMessage';
 import {
     ALL_NAV_REGION_LINKS,
     NAV_VERTICALS,
@@ -6,7 +7,7 @@ import {
 
 describe('HERO_QUICK_LINKS', () => {
     it('pins the exact label for every hero link', () => {
-        expect(HERO_QUICK_LINKS.map(l => l.label)).toEqual([
+        expect(HERO_QUICK_LINKS.map(l => koMessage(l.labelKey))).toEqual([
             '미국 시장 분석',
             '한국 시장 분석',
             '미국 공포·탐욕 지수',
@@ -42,7 +43,7 @@ describe('HERO_QUICK_LINKS', () => {
         // 히어로는 버티컬 맥락 없이 홀로 읽힌다 — `미국`/`한국` 같은 짧은 라벨만
         // 쓰면 무엇의 미국인지 알 수 없다.
         for (const link of HERO_QUICK_LINKS) {
-            expect(link.label).toMatch(/미국|한국|암호화폐/);
+            expect(koMessage(link.labelKey)).toMatch(/미국|한국|암호화폐/);
         }
     });
 

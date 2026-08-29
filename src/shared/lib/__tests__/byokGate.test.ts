@@ -34,6 +34,7 @@ vi.mock('@/entities/api-key/api', async () => {
 });
 
 import { LlmApiKeyDecryptionFailedError } from '@/entities/api-key/api';
+import koMessages from '../../../../messages/ko.json';
 import {
     resolveTierAndByok,
     resolveTierOnly,
@@ -56,7 +57,7 @@ describe('resolveTierAndByok', () => {
     });
 
     it('returns blocked invalid_model for unknown modelId', async () => {
-        const result = await resolveTierAndByok(null, UNKNOWN_MODEL);
+        const result = await resolveTierAndByok(null, UNKNOWN_MODEL, 'ko');
         expect(result).toEqual({
             kind: 'blocked',
             error: expect.objectContaining({ code: 'invalid_model' }),
@@ -66,14 +67,14 @@ describe('resolveTierAndByok', () => {
     });
 
     it('returns allowed with tier=free when userId is null and model is free', async () => {
-        const result = await resolveTierAndByok(null, FREE_MODEL);
+        const result = await resolveTierAndByok(null, FREE_MODEL, 'ko');
         expect(result).toEqual({ kind: 'allowed', tier: 'free' });
         expect(mockGetUserTier).not.toHaveBeenCalled();
         expect(mockFindByUserAndProvider).not.toHaveBeenCalled();
     });
 
     it('returns blocked tier_premium_blocked when userId is null and model is premium', async () => {
-        const result = await resolveTierAndByok(null, PREMIUM_MODEL);
+        const result = await resolveTierAndByok(null, PREMIUM_MODEL, 'ko');
         expect(result).toEqual({
             kind: 'blocked',
             error: expect.objectContaining({ code: 'tier_premium_blocked' }),
@@ -83,14 +84,14 @@ describe('resolveTierAndByok', () => {
 
     it('returns allowed without userApiKey for pro tier on premium model', async () => {
         mockGetUserTier.mockResolvedValue('pro');
-        const result = await resolveTierAndByok('u1', PREMIUM_MODEL);
+        const result = await resolveTierAndByok('u1', PREMIUM_MODEL, 'ko');
         expect(result).toEqual({ kind: 'allowed', tier: 'pro' });
         expect(mockFindByUserAndProvider).not.toHaveBeenCalled();
     });
 
     it('returns allowed without userApiKey for non-pro tier on free model', async () => {
         mockGetUserTier.mockResolvedValue('member');
-        const result = await resolveTierAndByok('u1', FREE_MODEL);
+        const result = await resolveTierAndByok('u1', FREE_MODEL, 'ko');
         expect(result).toEqual({ kind: 'allowed', tier: 'member' });
         expect(mockFindByUserAndProvider).not.toHaveBeenCalled();
     });
@@ -98,7 +99,7 @@ describe('resolveTierAndByok', () => {
     it('returns allowed with userApiKey for non-pro premium with BYOK record', async () => {
         mockGetUserTier.mockResolvedValue('free');
         mockFindByUserAndProvider.mockResolvedValue({ apiKey: 'sk-ant-byok' });
-        const result = await resolveTierAndByok('u1', PREMIUM_MODEL);
+        const result = await resolveTierAndByok('u1', PREMIUM_MODEL, 'ko');
         expect(result).toEqual({
             kind: 'allowed',
             tier: 'free',
@@ -109,7 +110,7 @@ describe('resolveTierAndByok', () => {
     it('returns blocked tier_premium_blocked for non-pro premium without BYOK record', async () => {
         mockGetUserTier.mockResolvedValue('free');
         mockFindByUserAndProvider.mockResolvedValue(null);
-        const result = await resolveTierAndByok('u1', PREMIUM_MODEL);
+        const result = await resolveTierAndByok('u1', PREMIUM_MODEL, 'ko');
         expect(result).toEqual({
             kind: 'blocked',
             error: expect.objectContaining({ code: 'tier_premium_blocked' }),
@@ -121,7 +122,7 @@ describe('resolveTierAndByok', () => {
         mockFindByUserAndProvider.mockRejectedValue(
             new LlmApiKeyDecryptionFailedError('u1', 'anthropic')
         );
-        const result = await resolveTierAndByok('u1', PREMIUM_MODEL);
+        const result = await resolveTierAndByok('u1', PREMIUM_MODEL, 'ko');
         expect(result).toEqual({
             kind: 'blocked',
             error: expect.objectContaining({ code: 'api_key_corrupted' }),
@@ -132,26 +133,39 @@ describe('resolveTierAndByok', () => {
         mockGetUserTier.mockResolvedValue('free');
         const boom = new Error('db connection failed');
         mockFindByUserAndProvider.mockRejectedValue(boom);
-        await expect(resolveTierAndByok('u1', PREMIUM_MODEL)).rejects.toThrow(
-            boom
-        );
+        await expect(
+            resolveTierAndByok('u1', PREMIUM_MODEL, 'ko')
+        ).rejects.toThrow(boom);
     });
 
     it('rethrows getUserTier errors', async () => {
         const boom = new Error('db tier lookup failed');
         mockGetUserTier.mockRejectedValue(boom);
-        await expect(resolveTierAndByok('u1', FREE_MODEL)).rejects.toThrow(
-            boom
-        );
+        await expect(
+            resolveTierAndByok('u1', FREE_MODEL, 'ko')
+        ).rejects.toThrow(boom);
     });
 });
 
 describe('buildGateError', () => {
-    it('returns error with correct code and message', () => {
-        const err = buildGateError('invalid_model');
+    it('returns error with correct code and message', async () => {
+        const err = await buildGateError('invalid_model', 'ko');
         expect(err.code).toBe('invalid_model');
         expect(typeof err.message).toBe('string');
         expect(err.message.length).toBeGreaterThan(0);
+    });
+
+    /**
+     * 문구는 카탈로그에서 온다. 예전에는 이 모듈에 한국어 리터럴이 박혀 있어
+     * ja·en 사용자가 한국어 게이트 메시지를 봤다 — SSE 경로와, 액션이 돌려주는
+     * `{ status: 'error', error }`를 훅이 다시 던지는 경로 양쪽에서.
+     */
+    it('카탈로그 문구를 담는다(코드 문자열이 아니라)', async () => {
+        const err = await buildGateError('tier_premium_blocked', 'ko');
+        expect(err.message).toBe(
+            koMessages.shared.lib.byokGate.tier_premium_blocked
+        );
+        expect(err.message).not.toBe('tier_premium_blocked');
     });
 });
 

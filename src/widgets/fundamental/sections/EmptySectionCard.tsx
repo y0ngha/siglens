@@ -1,6 +1,8 @@
+import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 
-export const EMPTY_MESSAGE = '데이터를 불러올 수 없어요';
+/** `widgets.financials.section` 키 — 두 위젯이 같은 문구를 쓴다. */
+export const EMPTY_MESSAGE_KEY = 'emptySection';
 
 interface EmptySectionCardProps {
     headingId: string;
@@ -15,6 +17,7 @@ export function EmptySectionCard({
     headingClassName,
     children,
 }: EmptySectionCardProps) {
+    const tSection = useTranslations('widgets.financials.section');
     return (
         <section
             aria-labelledby={headingId}
@@ -23,7 +26,9 @@ export function EmptySectionCard({
             <h2 id={headingId} className={headingClassName}>
                 {title}
             </h2>
-            <p className="text-sm text-secondary-400">{EMPTY_MESSAGE}</p>
+            <p className="text-sm text-secondary-400">
+                {tSection(EMPTY_MESSAGE_KEY)}
+            </p>
             {children}
         </section>
     );

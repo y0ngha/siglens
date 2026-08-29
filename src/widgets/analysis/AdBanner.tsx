@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 import {
     ADSENSE_ENABLED,
@@ -15,11 +16,10 @@ const SLOT_MAPPING: Record<AdBannerSlot, string> = {
     'analysis-panel-bottom': ADSENSE_SLOTS.PANEL_BOTTOM,
 };
 
-const SUPPORT_MESSAGE: Record<AdBannerSlot, string> = {
-    'analysis-progress':
-        'AI가 정밀 분석 중입니다… 광고 수익은 더 나은 AI 모델 도입과 서버 유지비로 소중하게 사용됩니다.',
-    'analysis-panel-bottom':
-        '분석 결과가 도움이 되셨나요? 하단 제휴 링크를 통한 활동은 Siglens 서비스를 지속하는 데 큰 힘이 됩니다.',
+/** `widgets.analysis.adBanner` 메시지 키 — 표시는 렌더 쪽에서 `t()`로. */
+const SUPPORT_MESSAGE_KEY: Record<AdBannerSlot, string> = {
+    'analysis-progress': 'analyzing',
+    'analysis-panel-bottom': 'done',
 };
 
 interface AdBannerProps {
@@ -30,6 +30,7 @@ interface AdBannerProps {
 }
 
 export function AdBanner({ isFreeUser, slot }: AdBannerProps) {
+    const tAd = useTranslations('widgets.analysis.adBanner');
     const containerRef = useRef<HTMLDivElement>(null);
     const slotId = SLOT_MAPPING[slot];
     const showAd =
@@ -55,7 +56,7 @@ export function AdBanner({ isFreeUser, slot }: AdBannerProps) {
                 data-full-width-responsive="true"
             />
             <p className="text-center text-xs leading-relaxed text-secondary-400">
-                {SUPPORT_MESSAGE[slot]}
+                {tAd(SUPPORT_MESSAGE_KEY[slot])}
             </p>
         </div>
     );

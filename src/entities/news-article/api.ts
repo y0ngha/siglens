@@ -5,10 +5,7 @@ import { cache } from 'react';
 import { and, desc, eq, gte, isNotNull, sql } from 'drizzle-orm';
 import type {
     NewsCardAnalysis,
-    NewsCategory,
-    NewsImpact,
     NewsItem,
-    NewsSentiment,
     EnrichedNewsItem,
     RunNewsAnalysisResult,
 } from '@y0ngha/siglens-core';
@@ -18,6 +15,14 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { news } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { NewsDisplayItem } from '@/shared/lib/types';
+import type { Locale } from '@/shared/i18n/locales';
+import { TRANSLATABLE_ENTITY } from '@/shared/db/contentTranslationFields';
+import {
+    toNewsCategory,
+    toNewsImpact,
+    toNewsSentiment,
+} from '@/shared/lib/news/newsEnumCoercion';
+import { toLocalizedDisplayItems } from '@/shared/lib/news/toLocalizedDisplayItems';
 import { withRetry } from '@/shared/lib/withRetry';
 import {
     NEWS_LOOKBACK_MS,
@@ -208,7 +213,8 @@ export class DrizzleNewsRepository {
      */
     async listCardsBySymbol(
         symbol: string,
-        sinceMs: number
+        sinceMs: number,
+        locale: Locale
     ): Promise<NewsDisplayItem[]> {
         const cutoff = new Date(Date.now() - sinceMs);
 
@@ -234,19 +240,7 @@ export class DrizzleNewsRepository {
             // 재생성마다 다른 행을 남겨 ISR 블롭이 흔들릴 수 있다.
             .orderBy(desc(news.publishedAt), desc(news.id));
 
-        return rows.map(row => ({
-            id: row.id,
-            source: row.source,
-            url: row.url,
-            publishedAt: row.publishedAt.toISOString(),
-            titleEn: row.titleEn,
-            titleKo: row.titleKo,
-            bodyKo: row.bodyKo,
-            summaryKo: row.summaryKo,
-            sentiment: toNewsSentiment(row.sentiment),
-            category: toNewsCategory(row.category),
-            priceImpact: toNewsImpact(row.priceImpact),
-        }));
+        return toLocalizedDisplayItems(rows, locale, TRANSLATABLE_ENTITY.news);
     }
 }
 
@@ -266,7 +260,7 @@ export class DrizzleNewsRepository {
  * (entities/{slice}/lib/은 순수 함수 전용 — MISTAKES.md Architecture §0.7).
  */
 export const getNewsList = cache(
-    async (symbol: string): Promise<NewsDisplayItem[]> => {
+    async (symbol: string, locale: Locale): Promise<NewsDisplayItem[]> => {
         const { db } = getDatabaseClient();
         const repo = new DrizzleNewsRepository(db);
         // 카드 투영으로 읽는다 — 이 함수의 소비자 셋(뉴스 목록, 뉴스 페이지 본문,
@@ -274,7 +268,7 @@ export const getNewsList = cache(
         // 결과가 `staticSymbolCache`(=`unstable_cache`)로 S3 ISR 블롭에 굳는다.
         // 클라이언트 경계에서만 걸러 내면 Neon 전송과 S3 블롭에는 그대로 남는다
         // (감사: 비용 라운드 15).
-        return repo.listCardsBySymbol(symbol, NEWS_LOOKBACK_MS);
+        return repo.listCardsBySymbol(symbol, NEWS_LOOKBACK_MS, locale);
     }
 );
 
@@ -295,63 +289,6 @@ interface NewsDbRow {
     category: string | null;
     priceImpact: string | null;
     analyzedAt: Date | null;
-}
-
-/**
- * Canonical enum values for the news analysis columns. The DB stores these
- * fields as raw text (no DB-level CHECK constraint), so we validate at the
- * read boundary instead of trusting the writer.
- *
- * The `Record<T, true>` shape forces compile-time exhaustiveness against the
- * source-of-truth types in `@y0ngha/siglens-core` — if the core adds a new
- * `NewsSentiment` / `NewsCategory` / `NewsImpact` member, TypeScript will
- * reject this file until the new member is mirrored here, preventing the
- * silent "valid value gets coerced to null at the boundary" failure.
- */
-const NEWS_SENTIMENT_RECORD: Record<NewsSentiment, true> = {
-    bullish: true,
-    bearish: true,
-    neutral: true,
-};
-const NEWS_CATEGORY_RECORD: Record<NewsCategory, true> = {
-    earnings: true,
-    m_and_a: true,
-    guidance: true,
-    regulation: true,
-    macro: true,
-    product: true,
-    other: true,
-};
-const NEWS_IMPACT_RECORD: Record<NewsImpact, true> = {
-    high: true,
-    medium: true,
-    low: true,
-    negligible: true,
-};
-
-function isNewsSentiment(value: string): value is NewsSentiment {
-    return value in NEWS_SENTIMENT_RECORD;
-}
-function isNewsCategory(value: string): value is NewsCategory {
-    return value in NEWS_CATEGORY_RECORD;
-}
-function isNewsImpact(value: string): value is NewsImpact {
-    return value in NEWS_IMPACT_RECORD;
-}
-
-function toNewsSentiment(value: unknown): NewsSentiment | null {
-    if (typeof value !== 'string') return null;
-    return isNewsSentiment(value) ? value : null;
-}
-
-function toNewsCategory(value: unknown): NewsCategory | null {
-    if (typeof value !== 'string') return null;
-    return isNewsCategory(value) ? value : null;
-}
-
-function toNewsImpact(value: unknown): NewsImpact | null {
-    if (typeof value !== 'string') return null;
-    return isNewsImpact(value) ? value : null;
 }
 
 // DB는 sentiment/category/priceImpact를 raw text로 저장하므로 read 시점에 화이트리스트로 검증한다.

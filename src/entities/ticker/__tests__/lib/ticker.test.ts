@@ -54,14 +54,14 @@ describe('isKoreanInput', () => {
 describe('buildDisplayName', () => {
     describe('assetInfo가 null일 때', () => {
         it('ticker를 그대로 반환한다', () => {
-            expect(buildDisplayName(null, 'AAPL')).toBe('AAPL');
+            expect(buildDisplayName(null, 'AAPL', 'ko')).toBe('AAPL');
         });
     });
 
     describe('assetInfo가 있고 name이 ticker와 다를 때', () => {
         it('koreanName 없이 "name (ticker)" 형식으로 반환한다', () => {
             const assetInfo: AssetInfo = { symbol: 'AAPL', name: 'Apple Inc' };
-            expect(buildDisplayName(assetInfo, 'AAPL')).toBe(
+            expect(buildDisplayName(assetInfo, 'AAPL', 'ko')).toBe(
                 'Apple Inc (AAPL)'
             );
         });
@@ -72,7 +72,7 @@ describe('buildDisplayName', () => {
                 name: 'Apple Inc',
                 koreanName: '애플',
             };
-            expect(buildDisplayName(assetInfo, 'AAPL')).toBe(
+            expect(buildDisplayName(assetInfo, 'AAPL', 'ko')).toBe(
                 '애플, Apple Inc (AAPL)'
             );
         });
@@ -81,7 +81,7 @@ describe('buildDisplayName', () => {
     describe('assetInfo가 있고 name이 ticker와 같을 때', () => {
         it('koreanName 없이 ticker를 반환한다', () => {
             const assetInfo: AssetInfo = { symbol: 'AAPL', name: 'AAPL' };
-            expect(buildDisplayName(assetInfo, 'AAPL')).toBe('AAPL');
+            expect(buildDisplayName(assetInfo, 'AAPL', 'ko')).toBe('AAPL');
         });
 
         it('koreanName이 있으면 "koreanName (ticker)" 형식으로 반환한다', () => {
@@ -90,7 +90,9 @@ describe('buildDisplayName', () => {
                 name: 'AAPL',
                 koreanName: '애플',
             };
-            expect(buildDisplayName(assetInfo, 'AAPL')).toBe('애플 (AAPL)');
+            expect(buildDisplayName(assetInfo, 'AAPL', 'ko')).toBe(
+                '애플 (AAPL)'
+            );
         });
     });
 });
@@ -155,7 +157,8 @@ describe('buildDisplayName — 국내 상장 종목', () => {
                     name: 'Samsung Electronics Co., Ltd.',
                     koreanName: '삼성전자',
                 },
-                '005930.KS'
+                '005930.KS',
+                'ko'
             )
         ).toBe('삼성전자 (005930.KS)');
     });
@@ -169,7 +172,8 @@ describe('buildDisplayName — 국내 상장 종목', () => {
                     name: '에코프로비엠',
                     koreanName: '에코프로비엠',
                 },
-                '247540.KQ'
+                '247540.KQ',
+                'ko'
             )
         ).toBe('에코프로비엠 (247540.KQ)');
     });
@@ -186,7 +190,8 @@ describe('buildDisplayName — 국내 상장 종목', () => {
         expect(
             buildDisplayName(
                 { symbol: '005930.KS', name: 'Samsung Electronics Co., Ltd.' },
-                '005930.KS'
+                '005930.KS',
+                'ko'
             )
         ).toBe('005930.KS');
     });
@@ -197,7 +202,8 @@ describe('buildDisplayName — 국내 상장 종목', () => {
         expect(
             buildDisplayName(
                 { symbol: 'AAPL', name: '애플', koreanName: '애플' },
-                'AAPL'
+                'AAPL',
+                'ko'
             )
         ).toBe('애플 (AAPL)');
     });
@@ -206,7 +212,8 @@ describe('buildDisplayName — 국내 상장 종목', () => {
         expect(
             buildDisplayName(
                 { symbol: 'AAPL', name: 'Apple Inc.', koreanName: '애플' },
-                'AAPL'
+                'AAPL',
+                'ko'
             )
         ).toBe('애플, Apple Inc. (AAPL)');
     });
@@ -217,32 +224,142 @@ describe('buildDisplayName — 국내 상장 종목', () => {
  * `name !== ''` 가드가 빠져 있어 이름이 빈 문자열인 종목에서 `한글명, (TICKER)`처럼
  * 빈 span과 낙오된 쉼표가 렌더됐다 — 이 describe는 그 회귀를 이 함수 하나로 막는다.
  */
-describe('shouldShowEnglishName', () => {
+describe('shouldShowEnglishName — 기본 로케일(ko)', () => {
     it('국내 상장 종목이면 영문명이 달라도 보여주지 않는다', () => {
         expect(
             shouldShowEnglishName(
                 'Samsung Electronics Co., Ltd.',
                 '삼성전자',
-                '005930.KS'
+                '005930.KS',
+                'ko'
             )
         ).toBe(false);
     });
 
     it('name과 koreanName이 같으면 보여주지 않는다', () => {
-        expect(shouldShowEnglishName('애플', '애플', 'AAPL')).toBe(false);
+        expect(shouldShowEnglishName('애플', '애플', 'AAPL', 'ko')).toBe(false);
     });
 
     it('name이 ticker와 같으면 보여주지 않는다', () => {
-        expect(shouldShowEnglishName('AAPL', '애플', 'AAPL')).toBe(false);
+        expect(shouldShowEnglishName('AAPL', '애플', 'AAPL', 'ko')).toBe(false);
     });
 
     it('name이 빈 문자열이면 보여주지 않는다', () => {
         // getAssetInfo.crypto.test.ts가 실증하듯 시세만 있고 이름이 없는 종목에서
         // name은 빈 문자열로 온다 — 빈 span과 낙오된 쉼표를 막는 가드.
-        expect(shouldShowEnglishName('', '애플', 'AAPL')).toBe(false);
+        expect(shouldShowEnglishName('', '애플', 'AAPL', 'ko')).toBe(false);
     });
 
     it('미국 종목에서 name이 ticker·koreanName과 모두 다르면 보여준다', () => {
-        expect(shouldShowEnglishName('Apple Inc.', '애플', 'AAPL')).toBe(true);
+        expect(shouldShowEnglishName('Apple Inc.', '애플', 'AAPL', 'ko')).toBe(
+            true
+        );
+    });
+});
+
+/**
+ * 로케일 회귀.
+ *
+ * `buildDisplayName`은 한국어 *리터럴*을 담지 않고 한국어 *데이터*를 고른다 —
+ * 그래서 `i18n:lint` 기준선이 구조적으로 볼 수 없었고, `/en/AAPL`의
+ * `<title>`·`og:description`·페이지 헤더가 전부 `애플, Apple Inc. (AAPL)`로
+ * 나갔다.
+ */
+describe('buildDisplayName — 로케일', () => {
+    const APPLE = {
+        symbol: 'AAPL',
+        name: 'Apple Inc.',
+        koreanName: '애플',
+    } as never;
+
+    it('ko는 한국어명을 앞세운다', () => {
+        expect(buildDisplayName(APPLE, 'AAPL', 'ko')).toContain('애플');
+    });
+
+    it.each(['en', 'ja', 'zh'] as const)('%s는 한글을 쓰지 않는다', locale => {
+        expect(buildDisplayName(APPLE, 'AAPL', locale)).toBe(
+            'Apple Inc. (AAPL)'
+        );
+    });
+
+    /** 영문명이 없으면 티커만 남기는 것보다 한국어명이 낫다 — 데이터 부재다. */
+    it('영문명이 없으면 비-ko도 한국어명으로 떨어진다', () => {
+        const krOnly = {
+            symbol: '005930.KS',
+            name: '',
+            koreanName: '삼성전자',
+        } as never;
+
+        expect(buildDisplayName(krOnly, '005930.KS', 'en')).toBe(
+            '삼성전자 (005930.KS)'
+        );
+    });
+});
+
+/**
+ * 헤더(`SymbolLayoutHeader`)는 색을 나눠 span으로 그리느라 `buildDisplayName`의
+ * **문자열**을 재사용할 수 없다. 그래서 **판정**만 공유한다. 이 테스트는 그
+ * 공유가 실제로 성립하는지 — 두 소비자가 같은 이름을 말하는지 — 를 본다.
+ *
+ * 갈렸던 실제 사례: `/en/005930.KS`에서 헤더 `삼성전자`, `<title>`
+ * `Samsung Electronics Co Ltd`.
+ */
+describe('shouldShowEnglishName — buildDisplayName과 판정 일치', () => {
+    const cases: Array<{ info: AssetInfo; ticker: string }> = [
+        {
+            info: {
+                name: 'Samsung Electronics Co Ltd',
+                koreanName: '삼성전자',
+            } as AssetInfo,
+            ticker: '005930.KS',
+        },
+        {
+            info: { name: 'Apple Inc.', koreanName: '애플' } as AssetInfo,
+            ticker: 'AAPL',
+        },
+        {
+            info: { name: '', koreanName: '삼성전자' } as AssetInfo,
+            ticker: '005930.KS',
+        },
+    ];
+
+    it.each(cases)(
+        '$ticker — 영문명 노출 판정이 최종 문자열과 어긋나지 않는다',
+        ({ info, ticker }) => {
+            for (const locale of ['ko', 'en', 'ja', 'zh'] as const) {
+                const shown = shouldShowEnglishName(
+                    info.name,
+                    info.koreanName,
+                    ticker,
+                    locale
+                );
+                const display = buildDisplayName(info, ticker, locale);
+
+                // 판정이 true면 영문명이 문자열에 있어야 하고, false면 없어야 한다.
+                expect(info.name !== '' && display.includes(info.name)).toBe(
+                    shown
+                );
+            }
+        }
+    );
+
+    it('비-ko에서는 국내 종목도 영문 법인명을 노출한다', () => {
+        // `isKrEquitySymbol` 배제는 한국어 SERP 예산 규칙이라 ko에만 적용된다.
+        expect(
+            shouldShowEnglishName(
+                'Samsung Electronics Co Ltd',
+                '삼성전자',
+                '005930.KS',
+                'en'
+            )
+        ).toBe(true);
+        expect(
+            shouldShowEnglishName(
+                'Samsung Electronics Co Ltd',
+                '삼성전자',
+                '005930.KS',
+                'ko'
+            )
+        ).toBe(false);
     });
 });

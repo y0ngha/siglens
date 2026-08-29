@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { LegalBreadcrumb } from './LegalBreadcrumb';
 import type { TocItem } from '@/shared/lib/legal-toc';
@@ -26,6 +27,7 @@ export function LegalPageShell({
     bottomNotice,
     children,
 }: LegalPageShellProps) {
+    const t = useTranslations('widgets.legal');
     return (
         <>
             <main className="page-container flex flex-1 flex-col items-center py-12 sm:py-16">
@@ -43,21 +45,21 @@ export function LegalPageShell({
                             {intro}
                         </p>
                         <p className="mt-4 text-xs text-secondary-500">
-                            시행일: {effectiveDate}
+                            {t('LegalPageShell.4ea5e2', { v0: effectiveDate })}
                         </p>
                     </header>
 
                     {topNotice}
 
                     <nav
-                        aria-label="목차"
+                        aria-label={t('LegalPageShell.7474d0')}
                         className={cn(
                             'border-secondary-700 bg-secondary-900/40 mb-8 rounded-lg border p-5',
                             topNotice ? undefined : 'mt-8'
                         )}
                     >
                         <p className="mb-3 text-xs font-semibold text-secondary-400">
-                            목차
+                            {t('LegalPageShell.7474d0')}
                         </p>
                         <ol className="space-y-2 text-sm">
                             {toc.map(item => (

@@ -1,10 +1,10 @@
-import type { ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import {
     FEAR_GREED_LABEL_CUTOFFS,
     type FearGreedLabel,
 } from '@y0ngha/siglens-core';
 import type { SnapshotConfidence } from '@/shared/lib/types';
-import { SENTIMENT_LABEL_TEXT } from '@/shared/lib/fearGreedLabels';
+import { SENTIMENT_LABEL_KEY } from '@/shared/lib/fearGreedLabels';
 import { cn } from '@/shared/lib/cn';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 
@@ -125,17 +125,32 @@ function tickTextAnchor(value: number): 'start' | 'end' | 'middle' {
     return 'middle';
 }
 
+/**
+ * `sentimentText`는 호출부(컴포넌트 본문)가 이미 `tLabel(SENTIMENT_LABEL_KEY[...])`로
+ * 조회해 넘긴 문자열이다 — 이 헬퍼가 번역자를 직접 받지 않는 이유는
+ * `scripts/i18n/extract.mjs`의 동적 키 탐지가 "그 파일 안에서 번역자를 직접
+ * 호출하는 패턴"만 보기 때문이다. 번역자를 여기로 다시 전달해 이 함수 안에서
+ * 호출하면(2단계 전달) 그 호출이 감지되지 않아 `shared.enumLabel`이
+ * `messages/_meta/clientKeys.json`의 이 라우트 항목에서 빠진다.
+ */
 function buildAriaLabel(
     score: number,
-    label: FearGreedLabel,
+    sentimentText: string,
     isHero: boolean,
+    t: (key: string, values?: Record<string, string | number>) => string,
     periodLabel?: string
 ): string {
-    if (isHero)
-        return `공포 탐욕 지수 ${score}점, ${SENTIMENT_LABEL_TEXT[label]}`;
-    if (periodLabel)
-        return `${periodLabel} 공포 탐욕 지수 ${score}점, ${SENTIMENT_LABEL_TEXT[label]}`;
-    return `공포 탐욕 지수 ${score}점`;
+    if (isHero) {
+        return t('ariaScore', { v0: score, v1: sentimentText });
+    }
+    if (periodLabel) {
+        return t('ariaScoreWithPeriod', {
+            v0: periodLabel,
+            v1: score,
+            v2: sentimentText,
+        });
+    }
+    return t('ariaScoreOnly', { v0: score });
 }
 
 /**
@@ -145,29 +160,19 @@ function buildAriaLabel(
  */
 const CONFIDENCE_BADGE_CONFIG: Record<
     SnapshotConfidence,
-    { className: string; label: string; tooltip: ReactNode }
+    { className: string; labelKey: string; tooltipKeys: readonly string[] }
 > = {
     normal: {
         className:
             'bg-ui-success/10 text-ui-success-text border-ui-success/30 inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-medium',
-        label: '신뢰도 정상',
-        tooltip: (
-            <div className="text-secondary-300">
-                <p>표본 수가 충분해 신뢰도 높은 점수예요.</p>
-                <p>지표가 안정적으로 동작하고 있습니다.</p>
-            </div>
-        ),
+        labelKey: 'confidenceNormal',
+        tooltipKeys: ['confidenceNormalNote', 'indicatorStable'],
     },
     limited: {
         className:
             'bg-ui-warning/10 text-ui-warning-text border-ui-warning/30 inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-medium',
-        label: '신뢰도 제한',
-        tooltip: (
-            <div className="text-secondary-300">
-                <p>거래 데이터가 충분하지 않아 신뢰도가 제한돼요.</p>
-                <p>표본이 쌓이면 자동으로 정상 산출로 전환됩니다.</p>
-            </div>
-        ),
+        labelKey: 'confidenceLimited',
+        tooltipKeys: ['confidenceLimitedNote', 'confidenceLimitedRecovery'],
     },
 };
 
@@ -184,6 +189,12 @@ export function FearGreedGauge({
     periodLabel,
     confidence,
 }: FearGreedGaugeProps) {
+    // extract.mjs의 동적 키 탐지는 "이 파일 안에서 번역자를 직접 호출하는
+    // 패턴"만 본다 — `SENTIMENT_LABEL_KEY[...]`를 그대로 `tLabel(...)`에
+    // 넣어야 `shared.enumLabel`이 이 컴포넌트가 닿는 라우트의 클라이언트
+    // 번들에 실린다(fearGreedLabels.ts의 SENTIMENT_LABEL_KEY export 주석 참고).
+    const tLabel = useTranslations('shared.enumLabel');
+    const sentimentText = tLabel(SENTIMENT_LABEL_KEY[label]);
     // needle은 오른쪽(score=100 위치)을 가리키도록 그려진다.
     // score가 낮을수록 왼쪽(score=0 위치)으로 회전해야 하므로
     // -(100 - score) * 1.8° 만큼 반시계 방향으로 회전시킨다.
@@ -198,8 +209,15 @@ export function FearGreedGauge({
     const baseRightX = GAUGE_CX + baseR;
     const baseRightY = GAUGE_CY + NEEDLE_HALF_WIDTH;
 
+    const tGauge = useTranslations('widgets.fear-greed.gauge');
     const isHero = size === 'hero';
-    const ariaLabel = buildAriaLabel(score, label, isHero, periodLabel);
+    const ariaLabel = buildAriaLabel(
+        score,
+        sentimentText,
+        isHero,
+        tGauge,
+        periodLabel
+    );
     const badgeConfig =
         isHero && confidence ? CONFIDENCE_BADGE_CONFIG[confidence] : null;
 
@@ -283,14 +301,20 @@ export function FearGreedGauge({
                                 SENTIMENT_TEXT_COLOR[label]
                             )}
                         >
-                            {SENTIMENT_LABEL_TEXT[label]}
+                            {sentimentText}
                         </div>
                         {badgeConfig && (
                             <div className="mt-1 flex items-center justify-center">
                                 <span className={badgeConfig.className}>
-                                    {badgeConfig.label}
+                                    {tGauge(badgeConfig.labelKey)}
                                 </span>
-                                <InfoTooltip>{badgeConfig.tooltip}</InfoTooltip>
+                                <InfoTooltip>
+                                    <div className="text-secondary-300">
+                                        {badgeConfig.tooltipKeys.map(key => (
+                                            <p key={key}>{tGauge(key)}</p>
+                                        ))}
+                                    </div>
+                                </InfoTooltip>
                             </div>
                         )}
                     </>

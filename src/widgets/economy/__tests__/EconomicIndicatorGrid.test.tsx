@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import type { EconomySnapshot } from '@y0ngha/siglens-core';
 
 import { EconomicIndicatorGrid } from '@/widgets/economy/sections/EconomicIndicatorGrid';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 
 const POINT = (date: string, value: number) => ({ date, value });
 
@@ -117,5 +118,84 @@ describe('EconomicIndicatorGrid', () => {
             />
         );
         expect(screen.getByText(/전기 대비 변화 없음/)).toBeInTheDocument();
+    });
+
+    // audit fix item 4: meta.unit이 '천명'/'건' 리터럴이라 /en/economy가
+    // `vs. Previous Period +41천명`·`-6000건`을 그대로 찍던 결함. unit이
+    // shared.enumLabel.economyUnit 카탈로그 키로 바뀌었으므로 ko 표시 문자열은
+    // 그대로 유지되는지(회귀 가드) 여기서 확인한다.
+    it('천명/건 단위 지표는 ko에서 기존과 동일한 단위 문자열을 렌더한다', () => {
+        render(
+            <EconomicIndicatorGrid
+                snapshot={snap({
+                    indicators: [
+                        {
+                            name: 'totalNonfarmPayroll',
+                            latest: POINT('2026-05-01', 158449),
+                            previous: POINT('2026-04-01', 158408),
+                            trend: [],
+                        },
+                        {
+                            name: 'initialClaims',
+                            latest: POINT('2026-05-01', 220000),
+                            previous: POINT('2026-04-01', 226000),
+                            trend: [],
+                        },
+                    ],
+                })}
+            />
+        );
+        const payrollValue =
+            screen.getByText('158449').closest('div')?.textContent ?? '';
+        expect(payrollValue).toContain('천명');
+        expect(screen.getByText(/\+41천명/)).toBeInTheDocument();
+
+        const claimsValue =
+            screen.getByText('220000').closest('div')?.textContent ?? '';
+        expect(claimsValue).toContain('건');
+        expect(screen.getByText(/-6000건/)).toBeInTheDocument();
+    });
+
+    it('en 로케일에서는 단위가 K/claims로 번역되고 한글이 남지 않는다', () => {
+        renderWithIntl(
+            <EconomicIndicatorGrid
+                snapshot={snap({
+                    indicators: [
+                        {
+                            name: 'totalNonfarmPayroll',
+                            latest: POINT('2026-05-01', 158449),
+                            previous: POINT('2026-04-01', 158408),
+                            trend: [],
+                        },
+                        {
+                            name: 'initialClaims',
+                            latest: POINT('2026-05-01', 220000),
+                            previous: POINT('2026-04-01', 226000),
+                            trend: [],
+                        },
+                    ],
+                })}
+            />,
+            { locale: 'en' }
+        );
+
+        // meta.label/tooltip(경제지표 이름·설명)은 이번 마이그레이션 범위 밖이라
+        // 여전히 ko 고정이다 — 그래서 컨테이너 전체가 아니라 단위가 실제로 찍히는
+        // 값 줄(값+단위 span)과 DeltaBadge 문장만 좁혀서 한글 없음을 확인한다.
+        const payrollValue =
+            screen.getByText('158449').closest('div')?.textContent ?? '';
+        expect(payrollValue).toBe('158449K');
+        expect(payrollValue).not.toMatch(/[가-힣]/);
+        expect(
+            screen.getByText(/vs\. Previous Period \+41K/)
+        ).toBeInTheDocument();
+
+        const claimsValue =
+            screen.getByText('220000').closest('div')?.textContent ?? '';
+        expect(claimsValue).toBe('220000 claims');
+        expect(claimsValue).not.toMatch(/[가-힣]/);
+        expect(
+            screen.getByText(/vs\. Previous Period -6000 claims/)
+        ).toBeInTheDocument();
     });
 });

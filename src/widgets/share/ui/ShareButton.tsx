@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useShareFlow } from '@/features/share';
 import { cn } from '@/shared/lib/cn';
 import { ShareSheet } from './ShareSheet';
@@ -16,6 +17,7 @@ import { ShareIcon, SpinnerIcon } from './icons';
  * renders the appropriate UI elements.
  */
 export function ShareButton() {
+    const t = useTranslations('widgets.share');
     const {
         isMutating,
         sheetOpen,
@@ -41,7 +43,7 @@ export function ShareButton() {
             <button
                 ref={buttonRef}
                 type="button"
-                aria-label="분석 결과 공유"
+                aria-label={t('ShareButton.281cf1')}
                 aria-busy={isMutating ? 'true' : undefined}
                 aria-describedby={
                     unavailableVisible ? describedById : undefined
@@ -68,7 +70,7 @@ export function ShareButton() {
                     role="status"
                     className="absolute top-full right-0 z-50 mt-1 w-max max-w-xs rounded-lg border border-secondary-700 bg-secondary-900 px-3 py-2 text-xs text-secondary-400 shadow-lg"
                 >
-                    이 탭은 공유할 분석이 아직 없어요
+                    {t('ShareButton.30b27f')}
                 </p>
             )}
 
@@ -76,7 +78,7 @@ export function ShareButton() {
                 <ShareSheet
                     shareUrl={shareUrl}
                     tweetText={tweetText}
-                    title={`${symbol} AI 분석 결과`}
+                    title={t('ShareButton.shareTitle', { v0: symbol })}
                     description={tweetText}
                     onClose={onSheetClose}
                 />

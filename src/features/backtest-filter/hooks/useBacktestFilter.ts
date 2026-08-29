@@ -1,11 +1,17 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { BacktestCase } from '@y0ngha/siglens-core';
 import type { TabItem } from '@/shared/ui/tabs';
 
-const ALL_TAB = '전체';
+/**
+ * "전체" 탭의 **값**. 표시 라벨과 분리한다 — 값은 쿼리 파라미터 비교와
+ * 상태 식별에 쓰이므로 로케일에 따라 바뀌면 `/en/backtesting?ticker=…`의
+ * 왕복이 깨진다. 라벨만 `shared.ui.misc.filterAll`로 번역한다.
+ */
+const ALL_TAB = 'all';
 const TICKER_QUERY_PARAM = 'ticker';
 
 interface UseBacktestFilterReturn {
@@ -30,9 +36,14 @@ export function useBacktestFilter(
     const router = useRouter();
     const pathname = usePathname();
 
+    const tMisc = useTranslations('shared.ui.misc');
+    const allLabel = tMisc('filterAll');
     const tabItems = useMemo<readonly TabItem<string>[]>(
-        () => [ALL_TAB, ...tickers].map(t => ({ value: t, label: t })),
-        [tickers]
+        () => [
+            { value: ALL_TAB, label: allLabel },
+            ...tickers.map(ticker => ({ value: ticker, label: ticker })),
+        ],
+        [tickers, allLabel]
     );
 
     const filtered = useMemo(

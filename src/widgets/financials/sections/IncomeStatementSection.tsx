@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { IncomeStatementRow } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { GrossMarginTooltip } from '@/widgets/financials/financialsTooltips';
@@ -19,7 +20,8 @@ interface IncomeStatementSectionProps {
 }
 
 const HEADING_ID = 'income-statement-heading';
-const TITLE = '손익계산서';
+/** `widgets.financials.section` 키 — 표시는 렌더 쪽에서 `t()`로. */
+const TITLE_KEY = 'incomeStatement';
 
 /**
  * Displays income statement data: revenue + net income trend chart,
@@ -32,8 +34,10 @@ export function IncomeStatementSection({
     rows,
     currency = DEFAULT_STATEMENT_CURRENCY,
 }: IncomeStatementSectionProps) {
+    const t = useTranslations('widgets.financials');
+    const tSection = useTranslations('widgets.financials.section');
     if (rows.length === 0) {
-        return <EmptySectionCard title={TITLE} />;
+        return <EmptySectionCard title={tSection(TITLE_KEY)} />;
     }
 
     const displayRows = toDisplayOrder(rows);
@@ -41,12 +45,12 @@ export function IncomeStatementSection({
 
     const chartSeries = [
         {
-            labelKo: '매출',
+            labelKo: t('IncomeStatementSection.191145'),
             values: displayRows.map(r => r.revenue),
             color: 'bullish' as const,
         },
         {
-            labelKo: '순이익',
+            labelKo: t('IncomeStatementSection.1f56bb'),
             values: displayRows.map(r => r.netIncome),
             color: 'neutral' as const,
         },
@@ -54,24 +58,24 @@ export function IncomeStatementSection({
 
     const tableRows = [
         {
-            labelKo: '매출',
+            labelKo: t('IncomeStatementSection.191145'),
             values: displayRows.map(r => r.revenue),
             format: 'usd' as const,
             colorize: false, // absolute magnitude — larger is not inherently good (cf. BalanceSheetSection)
         },
         {
-            labelKo: '매출총이익',
+            labelKo: t('IncomeStatementSection.c8e7f2'),
             values: displayRows.map(r => r.grossProfit),
             format: 'usd' as const,
             colorize: false, // absolute magnitude — larger is not inherently good (cf. BalanceSheetSection)
         },
         {
-            labelKo: '영업이익',
+            labelKo: t('IncomeStatementSection.2d311b'),
             values: displayRows.map(r => r.operatingIncome),
             format: 'usd' as const,
         },
         {
-            labelKo: '순이익',
+            labelKo: t('IncomeStatementSection.1f56bb'),
             values: displayRows.map(r => r.netIncome),
             format: 'usd' as const,
         },
@@ -81,18 +85,18 @@ export function IncomeStatementSection({
             format: 'num' as const,
         },
         {
-            labelKo: '매출총이익률',
+            labelKo: t('IncomeStatementSection.6ae05d'),
             tooltip: <InfoTooltip>{GrossMarginTooltip}</InfoTooltip>,
             values: displayRows.map(r => r.grossMargin),
             format: 'pct' as const,
         },
         {
-            labelKo: '영업이익률',
+            labelKo: t('IncomeStatementSection.c62afe'),
             values: displayRows.map(r => r.operatingMargin),
             format: 'pct' as const,
         },
         {
-            labelKo: '순이익률',
+            labelKo: t('IncomeStatementSection.d1ca4f'),
             values: displayRows.map(r => r.netMargin),
             format: 'pct' as const,
         },
@@ -104,7 +108,7 @@ export function IncomeStatementSection({
             className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
-                {TITLE}
+                {tSection(TITLE_KEY)}
             </h2>
             <div className="mb-6">
                 <FinancialTrendChart
@@ -114,7 +118,7 @@ export function IncomeStatementSection({
                 />
             </div>
             <StatementTable
-                caption={TITLE}
+                caption={tSection(TITLE_KEY)}
                 columns={columns}
                 rows={tableRows}
                 currency={currency}

@@ -1,5 +1,3 @@
-import type { TickerItem } from '@/shared/lib/types';
-
 /**
  * 검색 오버레이의 "인기 종목" 미리보기 — **입력 전에도 쓸 게 있어야 한다**는
  * 이 화면의 전제를 떠받치는 목록이다.
@@ -27,9 +25,27 @@ import type { TickerItem } from '@/shared/lib/types';
  */
 
 export interface PopularPreviewGroup {
-    /** 섹션 제목. 자산군을 이름으로 드러내 사용자가 자기 영역을 바로 찾게 한다. */
-    label: string;
-    items: readonly TickerItem[];
+    /**
+     * 섹션 제목의 `shared.config.nav.region` 키. 자산군을 이름으로 드러내
+     * 사용자가 자기 영역을 바로 찾게 한다.
+     *
+     * 문자열이 아니라 키다 — 이 파일은 번역자를 선언하지 않으므로 추출기가
+     * "리터럴 전용"으로 분류해 네임스페이스를 좁힌다. 그 상태에서 한국어를
+     * 그냥 두면 비-ko 화면에 한국어가 남고, `t()`를 여기서 부르면 이번엔
+     * 키가 클라이언트 페이로드에서 빠진다. 키만 내보내는 것이 유일한 안전한
+     * 형태다(`views/symbol/utils/chartPageHeading.ts`와 같은 이유).
+     *
+     * 지역 이름은 이미 `assetClassNav`가 네 로케일로 갖고 있다 — 새 표를
+     * 만들면 `미국`이 두 곳에 생겨 한쪽만 바뀐다.
+     */
+    labelKey: string;
+    /**
+     * 심볼만 담는다. 표시 이름은 화면이 `useAssetLabel(symbol, symbol)`로
+     * 카탈로그에서 찾는다 — 여기에 한국어 이름을 두면 `/ja` 오버레이가
+     * `애플`을 그대로 그린다. 카탈로그 누락은 `__tests__/popularPreview.test.ts`가
+     * 네 로케일 전부에 대해 막는다.
+     */
+    items: readonly string[];
 }
 
 /**
@@ -41,27 +57,15 @@ export interface PopularPreviewGroup {
  */
 export const POPULAR_PREVIEW_GROUPS: readonly PopularPreviewGroup[] = [
     {
-        label: '미국',
-        items: [
-            { symbol: 'AAPL', name: '애플' },
-            { symbol: 'MSFT', name: '마이크로소프트' },
-            { symbol: 'NVDA', name: '엔비디아' },
-        ],
+        labelKey: 'us',
+        items: ['AAPL', 'MSFT', 'NVDA'],
     },
     {
-        label: '한국',
-        items: [
-            { symbol: '005930.KS', name: '삼성전자' },
-            { symbol: '000660.KS', name: 'SK하이닉스' },
-            { symbol: '006400.KS', name: '삼성SDI' },
-        ],
+        labelKey: 'kr',
+        items: ['005930.KS', '000660.KS', '006400.KS'],
     },
     {
-        label: '암호화폐',
-        items: [
-            { symbol: 'BTCUSD', name: '비트코인' },
-            { symbol: 'ETHUSD', name: '이더리움' },
-            { symbol: 'XRPUSD', name: '리플' },
-        ],
+        labelKey: 'crypto',
+        items: ['BTCUSD', 'ETHUSD', 'XRPUSD'],
     },
 ];

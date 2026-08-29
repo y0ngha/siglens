@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import type { BadgeTone, MarketBadgeSpec } from '../lib/resultDisplay';
 
@@ -15,7 +16,8 @@ const BADGE_TONE_CLASS: Record<BadgeTone, string> = {
  * 맞아야 한다. 오버레이 행(`SearchResultRow`)은 `items-center`라 영향이 없지만,
  * 두 소비자가 같은 컴포넌트를 쓰므로 정렬을 자기 안에서 고정해 둔다.
  */
-export function MarketBadge({ label, tone }: MarketBadgeSpec) {
+export function MarketBadge({ label, labelKey, tone }: MarketBadgeSpec) {
+    const tBadge = useTranslations('features.ticker-search.assetBadge');
     return (
         <span
             data-testid="market-badge"
@@ -24,7 +26,7 @@ export function MarketBadge({ label, tone }: MarketBadgeSpec) {
                 BADGE_TONE_CLASS[tone]
             )}
         >
-            {label}
+            {labelKey ? tBadge(labelKey) : label}
         </span>
     );
 }

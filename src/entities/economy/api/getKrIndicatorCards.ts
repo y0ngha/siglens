@@ -1,3 +1,4 @@
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import 'server-only';
 import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
@@ -95,7 +96,10 @@ const fetchKrIndicatorCards = unstable_cache(
                 {
                     meta,
                     latest: latest.actual,
-                    latestDate: etDateTimeToKst(latest.dateEt).kstDateKey,
+                    latestDate: // `kstDateKey`만 읽으므로 로케일과 무관하다. 그래도 명시한다 —
+                        // 기본값을 두면 호출부에서 빠져도 컴파일이 통과한다.
+                        etDateTimeToKst(latest.dateEt, DEFAULT_LOCALE)
+                            .kstDateKey,
                     changeFromPrevious:
                         prior === undefined
                             ? null

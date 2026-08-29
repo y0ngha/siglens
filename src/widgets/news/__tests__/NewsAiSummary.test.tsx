@@ -47,8 +47,9 @@ vi.mock('@/shared/lib/cn', () => ({
     cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
 }));
 
+// 상수는 이제 표시 문자열이 아니라 `shared.lib.newsPeriod` 키다.
 vi.mock('@/shared/lib/news/periodLabels', () => ({
-    NEWS_ANALYSIS_PERIOD_LABEL: '최근 7일',
+    NEWS_ANALYSIS_PERIOD_KEY: 'last30Days',
 }));
 
 const RESULT: NewsAnalysisResponse = {

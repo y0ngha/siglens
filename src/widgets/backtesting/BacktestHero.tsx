@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { BacktestMeta } from '@y0ngha/siglens-core';
 
 interface BacktestHeroProps {
@@ -38,6 +39,8 @@ function StatCard({ value, label, valueClassName }: StatCardProps) {
 }
 
 export function BacktestHero({ meta }: BacktestHeroProps) {
+    const t = useTranslations('widgets.backtesting');
+    const tHero = useTranslations('widgets.backtesting.hero');
     return (
         <header className="border-b border-secondary-700 py-10 text-center">
             <div className="page-container">
@@ -45,13 +48,12 @@ export function BacktestHero({ meta }: BacktestHeroProps) {
                     BACKTESTING RESULTS · {meta.period}
                 </p>
                 <h1 className="mb-3 text-2xl font-bold text-balance text-secondary-50 sm:text-3xl">
-                    Siglens가 얼마나 정확한가요?
+                    {t('BacktestHero.d8b543')}
                 </h1>
                 <p className="mx-auto mb-8 max-w-2xl text-sm leading-relaxed text-secondary-400 sm:text-base">
-                    실제 시장 데이터로 검증한 백테스트 결과예요.
+                    {t('BacktestHero.116858')}
                     <br />
-                    지금 Siglens가 제공하는 AI 분석 기능을 그대로 과거에
-                    적용했을 때 얼마나 잘 맞았는지 보여드려요.
+                    {t('BacktestHero.caee31')}
                 </p>
                 {/* 구분선(`w-px` 세로 규칙)을 두지 않는다. 구분선은 이 wrap
                     컨테이너의 flex 아이템이라 자기도 줄바꿈 대상이 되고, 그러면
@@ -64,22 +66,22 @@ export function BacktestHero({ meta }: BacktestHeroProps) {
                 <div className="inline-flex flex-wrap items-center justify-center gap-x-8 gap-y-6 rounded-lg border border-secondary-700 bg-secondary-800 px-8 py-6">
                     <StatCard
                         value={`${meta.winRate}%`}
-                        label="지표 신호 승률"
+                        label={t('BacktestHero.394fff')}
                         valueClassName="text-ui-success-text"
                     />
                     <StatCard
                         value={`${meta.aiWinRate}%`}
-                        label="AI 예측 승률"
+                        label={t('BacktestHero.5a254c')}
                         valueClassName="text-primary-400"
                     />
                     <StatCard
-                        value={`${meta.totalCases}개`}
-                        label="총 케이스"
+                        value={tHero('caseCount', { v0: meta.totalCases })}
+                        label={t('BacktestHero.f92294')}
                         valueClassName="text-ui-warning-text"
                     />
                     <StatCard
-                        value={`${meta.tickerCount}종목`}
-                        label="Mag7 + 선도주"
+                        value={tHero('tickerCount', { v0: meta.tickerCount })}
+                        label={t('BacktestHero.530709')}
                         valueClassName="text-secondary-300"
                     />
                 </div>

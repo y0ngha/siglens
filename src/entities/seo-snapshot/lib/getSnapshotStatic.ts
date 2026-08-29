@@ -3,6 +3,8 @@ import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import { SNAPSHOT_MAX_AGE_MS, type SeoAnalysisSnapshot } from '../model';
+import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
+import type { Locale } from '@/shared/i18n/locales';
 
 /**
  * ISR static-safe read of a symbol's SEO snapshots (spec 2026-07-24 §5 NB-2).
@@ -25,18 +27,22 @@ import { SNAPSHOT_MAX_AGE_MS, type SeoAnalysisSnapshot } from '../model';
  */
 export async function getSeoSnapshotsStatic(
     symbol: string,
-    revalidateSeconds: number
+    revalidateSeconds: number,
+    locale: Locale
 ): Promise<SeoAnalysisSnapshot[]> {
     const upper = symbol.toUpperCase();
     const rows = await staticSymbolCache(
-        ['seo-snapshots', upper],
+        // 로케일이 캐시 키에 들어가야 한다 — 스냅샷 본문이 로케일별로 갈리므로,
+        // 키를 공유하면 먼저 생성한 로케일의 분석 산문이 전 로케일에 굳는다
+        // (감사 라운드 1 required #2).
+        ['seo-snapshots', upper, ...contentLocaleKeyPart(locale)],
         upper,
         async () => {
             try {
                 const { db } = getDatabaseClient();
                 const rows = await new DrizzleSeoSnapshotRepository(
                     db
-                ).findBySymbol(upper);
+                ).findBySymbol(upper, locale);
                 const cutoff = Date.now() - SNAPSHOT_MAX_AGE_MS;
                 const fresh = rows.filter(
                     row => row.generatedAt.getTime() >= cutoff

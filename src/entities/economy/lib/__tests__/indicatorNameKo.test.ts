@@ -75,27 +75,31 @@ describe('koreanizePeriodToken', () => {
 describe('indicatorLabelKoFromMaps', () => {
     it('renders dict base + Korean period when the base is mapped', () => {
         expect(
-            indicatorLabelKoFromMaps('Core PCE Price Index YoY (May)', {})
+            indicatorLabelKoFromMaps('Core PCE Price Index YoY (May)', {}, 'ko')
         ).toBe('근원 PCE 물가지수(전년比) (5월)');
     });
 
     it('renders a mapped base with no period parenthetical', () => {
-        expect(indicatorLabelKoFromMaps('Nonfarm Payrolls', {})).toBe(
+        expect(indicatorLabelKoFromMaps('Nonfarm Payrolls', {}, 'ko')).toBe(
             '비농업 고용'
         );
     });
 
     it('falls back to the DB-cache map when dict misses', () => {
         expect(
-            indicatorLabelKoFromMaps('Some Obscure Index YoY (May)', {
-                'Some Obscure Index YoY': '어떤 모호한 지수(전년比)',
-            })
+            indicatorLabelKoFromMaps(
+                'Some Obscure Index YoY (May)',
+                {
+                    'Some Obscure Index YoY': '어떤 모호한 지수(전년比)',
+                },
+                'ko'
+            )
         ).toBe('어떤 모호한 지수(전년比) (5월)');
     });
 
     it('falls back to the raw English name when both maps miss', () => {
         expect(
-            indicatorLabelKoFromMaps('Totally Unknown Thing (Apr)', {})
+            indicatorLabelKoFromMaps('Totally Unknown Thing (Apr)', {}, 'ko')
         ).toBe('Totally Unknown Thing (Apr)');
     });
 
@@ -124,12 +128,12 @@ describe('한국 캘린더 이벤트명', () => {
         ['Business Confidence', '기업경기실사지수'],
         ['M3 Money Supply (Jun)', 'M3 통화량'],
     ])('%s → 한국어', (raw, expected) => {
-        expect(indicatorLabelKoFromMaps(raw, {})).toContain(expected);
+        expect(indicatorLabelKoFromMaps(raw, {}, 'ko')).toContain(expected);
     });
 
     it('사전에 없는 이름은 원문을 유지한다 — 임의 번역을 지어내지 않는다', () => {
-        expect(indicatorLabelKoFromMaps('Totally Unknown Series', {})).toBe(
-            'Totally Unknown Series'
-        );
+        expect(
+            indicatorLabelKoFromMaps('Totally Unknown Series', {}, 'ko')
+        ).toBe('Totally Unknown Series');
     });
 });

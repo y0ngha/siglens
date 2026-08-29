@@ -272,4 +272,55 @@ describe('GET /api/auth/callback/[provider]', () => {
             expect(location).toContain('token=pending-token');
         });
     });
+
+    /**
+     * `/api/*`에는 로케일 접두사가 없으므로 state의 `next`에서 복원한다.
+     *
+     * **ko로는 이 회귀를 잡을 수 없다** — `localePath('ko', x) === x`라 접두사를
+     * 붙이든 말든 결과가 같다. 비-기본 로케일로만 판별된다.
+     */
+    describe('로케일 복원 (state의 next 경유)', () => {
+        it('ja에서 시작한 신규 사용자는 ja consent 페이지로 간다', async () => {
+            mockVerifyOAuthState.mockReturnValue({
+                ok: true,
+                next: '/ja/portfolio',
+            });
+            const res = await GET(
+                makeRequest(
+                    { state: 'valid-state', code: 'auth-code' },
+                    { oauth_state: 'cookie-state' }
+                ),
+                DEFAULT_PARAMS
+            );
+
+            expect(new URL(res.headers.get('location') ?? '').pathname).toBe(
+                '/ja/signup/oauth/consent'
+            );
+        });
+
+        it('en에서 시작한 사용자의 OAuth 에러는 en 로그인으로 돌아간다', async () => {
+            mockVerifyOAuthState.mockReturnValue({
+                ok: true,
+                next: '/en/account',
+            });
+            mockGetOAuthAdapter.mockReturnValue({
+                authorizeUrl: vi.fn(),
+                exchangeCodeForProfile: vi
+                    .fn()
+                    .mockResolvedValue({ ok: false, reason: 'invalid' }),
+            } as never);
+
+            const res = await GET(
+                makeRequest(
+                    { state: 'valid-state', code: 'auth-code' },
+                    { oauth_state: 'cookie-state' }
+                ),
+                DEFAULT_PARAMS
+            );
+
+            const url = new URL(res.headers.get('location') ?? '');
+            expect(url.pathname).toBe('/en/login');
+            expect(url.searchParams.get('error')).toBe('oauth_profile_invalid');
+        });
+    });
 });

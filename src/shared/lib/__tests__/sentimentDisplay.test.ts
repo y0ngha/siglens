@@ -1,8 +1,18 @@
+import { beforeAll } from 'vitest';
+import { getTranslations } from 'next-intl/server';
 import {
     isNewsSentiment,
-    SENTIMENT_LABEL,
+    sentimentLabel,
     SENTIMENT_CLASS,
 } from '@/shared/lib/sentimentDisplay';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+
+// t는 필수 인자다(§design EnumLabelTranslator required-param). ko로 고정한
+// 실제 번역자를 한 번 만들어 모든 호출에 재사용한다.
+let t: EnumLabelTranslator;
+beforeAll(async () => {
+    t = await getTranslations({ locale: 'ko', namespace: 'shared.enumLabel' });
+});
 
 describe('isNewsSentiment', () => {
     it('returns true for bullish', () => {
@@ -42,17 +52,17 @@ describe('isNewsSentiment', () => {
     });
 });
 
-describe('SENTIMENT_LABEL', () => {
+describe('sentimentLabel', () => {
     it('bullish maps to 긍정', () => {
-        expect(SENTIMENT_LABEL.bullish).toBe('긍정');
+        expect(sentimentLabel('bullish', t)).toBe('긍정');
     });
 
     it('neutral maps to 중립', () => {
-        expect(SENTIMENT_LABEL.neutral).toBe('중립');
+        expect(sentimentLabel('neutral', t)).toBe('중립');
     });
 
     it('bearish maps to 부정', () => {
-        expect(SENTIMENT_LABEL.bearish).toBe('부정');
+        expect(sentimentLabel('bearish', t)).toBe('부정');
     });
 });
 

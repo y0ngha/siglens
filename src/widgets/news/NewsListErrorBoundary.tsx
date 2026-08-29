@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import type { FallbackProps } from 'react-error-boundary';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -21,11 +22,12 @@ import { AiSummaryErrorSection } from '@/shared/ui/AiSummaryErrorSection';
  * "옵션 OI 데이터가 비어 있어요" 인라인 배너로 처리한다 — 그쪽이 옳은 모양이다.
  */
 function NewsListError({ error, resetErrorBoundary }: FallbackProps) {
+    const t = useTranslations('widgets.news');
     return (
         <AiSummaryErrorSection
             error={error}
             resetErrorBoundary={resetErrorBoundary}
-            heading="최근 뉴스"
+            heading={t('NewsListErrorBoundary.ac2367')}
             idPrefix="news-list"
             className="w-full max-w-full min-w-0 overflow-hidden"
         />

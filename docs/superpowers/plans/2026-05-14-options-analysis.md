@@ -2475,7 +2475,7 @@ import { mapExpirationsToSlots } from '@y0ngha/siglens-core';
 import {
     fetchOptionsSnapshot,
     hasOptionsMarket,
-} from '@/app/[symbol]/options/optionsData';
+} from '@/app/[locale]/[symbol]/options/optionsData';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
 import {
     buildBreadcrumbJsonLd,
@@ -2761,7 +2761,7 @@ import {
     submitOptionsAnalysis,
     pollOptionsAnalysis,
 } from '@y0ngha/siglens-core';
-import { fetchOptionsChain, fetchOptionsSnapshot } from '@/app/[symbol]/options/optionsData';
+import { fetchOptionsChain, fetchOptionsSnapshot } from '@/app/[locale]/[symbol]/options/optionsData';
 import { getCurrentTier } from '@/infrastructure/tier/getCurrentTier';
 import { hashUsageIp } from '@y0ngha/siglens-core'; // 기존 분석에서 사용 중
 
@@ -3008,7 +3008,7 @@ import {
     calculatePutCallRatio,
     summarizeChainForLlm,
 } from '@y0ngha/siglens-core';
-import { fetchOptionsSnapshot } from '@/app/[symbol]/options/optionsData';
+import { fetchOptionsSnapshot } from '@/app/[locale]/[symbol]/options/optionsData';
 
 export interface OptionsSignals {
     atmIv: number | null;

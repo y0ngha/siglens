@@ -1,7 +1,12 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
-import { ANALYSIS_PHASES, ANALYSIS_TIPS } from './hooks/useAnalysisProgress';
+import {
+    ANALYSIS_PHASE_COUNT,
+    PRO_INDICATOR_COUNT,
+    SKILL_COUNT,
+} from './hooks/useAnalysisProgress';
 import { AdBanner } from './AdBanner';
 
 /**
@@ -27,12 +32,14 @@ export function AnalysisProgress({
     tipIndex,
     isFreeUser = true,
 }: AnalysisProgressProps) {
+    const tProgress = useTranslations('widgets.analysis.progress');
+    const t = useTranslations('widgets.analysis');
     return (
         <div
             className="relative flex flex-col gap-4 overflow-hidden rounded-lg border border-secondary-700/60 bg-secondary-900/40 p-4"
             role="status"
             aria-live="polite"
-            aria-label="AI 분석 진행 중"
+            aria-label={t('AnalysisProgress.784c44')}
         >
             {/* 상단의 흐르는 라이트 바: indeterminate progress */}
             <span className="pointer-events-none absolute inset-x-0 top-0 h-px animate-pulse bg-linear-to-r from-transparent via-primary-500/60 to-transparent" />
@@ -41,7 +48,10 @@ export function AnalysisProgress({
                 <Spinner />
                 <div className="flex min-w-0 flex-1 flex-col">
                     <span className="text-sm font-medium text-secondary-200">
-                        {ANALYSIS_PHASES[phaseIndex]}
+                        {tProgress(`phase.p${phaseIndex}`, {
+                            v0: PRO_INDICATOR_COUNT,
+                            v1: SKILL_COUNT,
+                        })}
                         <span className="ml-1 inline-block animate-pulse text-primary-400">
                             …
                         </span>
@@ -51,14 +61,17 @@ export function AnalysisProgress({
                         className="mt-0.5 text-[11px] leading-relaxed tracking-wide text-secondary-500"
                         style={{ animation: 'fade-in 0.6s ease-in' }}
                     >
-                        {ANALYSIS_TIPS[tipIndex]}
+                        {tProgress(`tip.t${tipIndex}`, {
+                            v0: PRO_INDICATOR_COUNT,
+                            v1: SKILL_COUNT,
+                        })}
                     </span>
                 </div>
             </div>
 
             {/* 페이즈 도트 — 현재 단계까지를 채운다 */}
             <div className="flex items-center gap-1.5">
-                {ANALYSIS_PHASES.map((_, i) => {
+                {Array.from({ length: ANALYSIS_PHASE_COUNT }, (_, i) => {
                     const isActive = i === phaseIndex;
                     const isDone = i < phaseIndex;
                     return (

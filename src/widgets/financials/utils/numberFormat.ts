@@ -1,3 +1,5 @@
+import { formatCompactAmount } from '@/shared/lib/priceFormat';
+import type { Locale } from '@/shared/i18n/locales';
 import {
     currencyForSymbol,
     type PriceFormatConfig,
@@ -16,30 +18,17 @@ export type StatementCurrency = PriceFormatConfig['currency'];
  * 사용자에게 읽히지 않는다. `ko-KR`은 같은 값을 `₩333조`로 낸다. compact 표기는
  * 로케일별 단위 체계를 따르므로 통화만 바꾸는 것으로는 부족하다.
  */
-const FORMATTERS: Record<StatementCurrency, Intl.NumberFormat> = {
-    USD: new Intl.NumberFormat('en-US', {
-        notation: 'compact',
-        maximumFractionDigits: 1,
-        style: 'currency',
-        currency: 'USD',
-    }),
-    KRW: new Intl.NumberFormat('ko-KR', {
-        notation: 'compact',
-        maximumFractionDigits: 1,
-        style: 'currency',
-        currency: 'KRW',
-    }),
-};
-
 /** 기본 통화 — 기존 호출부(미국 종목)의 동작을 보존한다. */
 export const DEFAULT_STATEMENT_CURRENCY: StatementCurrency = 'USD';
 
 /** compact 통화 표기로 포맷한다. */
 export function formatCurrencyCompact(
     value: number,
-    currency: StatementCurrency = DEFAULT_STATEMENT_CURRENCY
+    currency: StatementCurrency = DEFAULT_STATEMENT_CURRENCY,
+    // 기본값을 두지 않는다 — 빠지면 그 카드만 조용히 한국어 단위로 돌아간다.
+    locale: Locale
 ): string {
-    return FORMATTERS[currency].format(value);
+    return formatCompactAmount(value, currency, locale);
 }
 
 /**

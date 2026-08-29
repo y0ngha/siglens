@@ -1,6 +1,25 @@
 import { buildShareMetadata } from '../lib/buildShareSeo';
 import type { SharedAnalysisLookup, SharedAnalysisSnapshot } from '../types';
 
+import koMessages from '@/../messages/ko.json';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+
+const tOg = catalogTranslator('entities.shared-analysis.og', 'ko');
+
+/** 실제 ko 카탈로그를 읽는 번역자 — 스텁이면 키 누락이 조용히 통과한다. */
+const tSeo = (key: string, values?: Record<string, string | number>) => {
+    const table = koMessages.entities['shared-analysis'].seo as Record<
+        string,
+        string
+    >;
+    const raw = table[key];
+    if (raw === undefined) return key;
+    return Object.entries(values ?? {}).reduce(
+        (acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)),
+        raw
+    );
+};
+
 vi.mock('../server/buildOgText', () => ({
     buildOgText: vi.fn(() => ({
         description: '강세 · 상승 추세',
@@ -29,7 +48,13 @@ function foundLookup(
 
 describe('buildShareMetadata', () => {
     describe('found state', () => {
-        const meta = buildShareMetadata(foundLookup(), 'abc123');
+        const meta = buildShareMetadata(
+            foundLookup(),
+            'abc123',
+            tSeo,
+            'ko',
+            tOg
+        );
 
         it('title contains ticker + "AI 분석 결과"', () => {
             expect(meta.title).toBe('AAPL AI 분석 결과');
@@ -85,26 +110,50 @@ describe('buildShareMetadata', () => {
      */
     describe('openGraph.url', () => {
         it('id를 넘기면 공유 URL이 실린다', () => {
-            const meta = buildShareMetadata(foundLookup(), 'abc123');
+            const meta = buildShareMetadata(
+                foundLookup(),
+                'abc123',
+                tSeo,
+                'ko',
+                tOg
+            );
             expect((meta.openGraph as { url?: string })?.url).toMatch(
                 /\/share\/abc123$/
             );
         });
 
         it('canonical은 여전히 null이다 — 두 값은 상충하지 않는다', () => {
-            const meta = buildShareMetadata(foundLookup(), 'abc123');
+            const meta = buildShareMetadata(
+                foundLookup(),
+                'abc123',
+                tSeo,
+                'ko',
+                tOg
+            );
             expect(meta.alternates?.canonical).toBeNull();
             expect((meta.robots as { index?: boolean })?.index).toBe(false);
         });
 
-        it('타입이 호출부를 붙든다 — id는 선택 인자가 아니다', () => {
-            // @ts-expect-error id를 빠뜨리면 컴파일이 막힌다.
-            buildShareMetadata(foundLookup());
+        it('타입이 호출부를 붙든다 — 뒤 인자는 선택이 아니다', () => {
+            // **부르지 않는다.** 목적은 컴파일 시점 검사인데, 인자를 빼고
+            // 실제로 부르면 번역자가 없어 런타임이 먼저 죽는다. 아래
+            // `@ts-expect-error`는 이 호출이 유효해지는 순간 실패하므로
+            // 실행 없이도 계약을 붙든다.
+            const call = () =>
+                // @ts-expect-error 뒤 인자를 빠뜨리면 컴파일이 막힌다.
+                buildShareMetadata(foundLookup());
+            expect(call).toBeTypeOf('function');
         });
     });
 
     describe('expired state', () => {
-        const meta = buildShareMetadata({ status: 'expired' }, 'abc123');
+        const meta = buildShareMetadata(
+            { status: 'expired' },
+            'abc123',
+            tSeo,
+            'ko',
+            tOg
+        );
 
         it('[C-8] robots.index === false', () => {
             expect((meta.robots as { index?: boolean })?.index).toBe(false);
@@ -116,7 +165,13 @@ describe('buildShareMetadata', () => {
     });
 
     describe('not_found state', () => {
-        const meta = buildShareMetadata({ status: 'not_found' }, 'abc123');
+        const meta = buildShareMetadata(
+            { status: 'not_found' },
+            'abc123',
+            tSeo,
+            'ko',
+            tOg
+        );
 
         it('[C-8] robots.index === false', () => {
             expect((meta.robots as { index?: boolean })?.index).toBe(false);

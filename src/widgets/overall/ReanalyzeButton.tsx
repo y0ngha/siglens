@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 
 interface ReanalyzeButtonProps {
@@ -21,6 +22,7 @@ export function ReanalyzeButton({
     onClick,
     highlighted,
 }: ReanalyzeButtonProps) {
+    const t = useTranslations('widgets.overall');
     return (
         <div className="flex justify-center pt-2">
             <button
@@ -33,7 +35,7 @@ export function ReanalyzeButton({
                         : 'border-border-control bg-secondary-800 text-secondary-200 hover:bg-secondary-700 focus-visible:ring-primary-400 border'
                 )}
             >
-                재분석
+                {t('ReanalyzeButton.1d02c7')}
             </button>
         </div>
     );

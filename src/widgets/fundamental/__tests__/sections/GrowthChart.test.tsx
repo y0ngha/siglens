@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import { EMPTY_MESSAGE } from '@/widgets/fundamental/sections/EmptySectionCard';
 import { GrowthChart } from '@/widgets/fundamental/sections/GrowthChart';
 import type { FundamentalGrowthInput } from '@y0ngha/siglens-core';
+import { koMessage } from '@/shared/test-utils/koMessage';
 
 const SAMPLE_GROWTH = {
     growthRevenue: 0.12,
@@ -22,7 +22,11 @@ describe('GrowthChart', () => {
         expect(
             screen.getByRole('heading', { name: '성장성' })
         ).toBeInTheDocument();
-        expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                koMessage('widgets.financials.section.emptySection')
+            )
+        ).toBeInTheDocument();
     });
 
     it('shows positive growth as green with + prefix', () => {

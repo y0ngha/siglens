@@ -1,6 +1,7 @@
 'use server';
 
 import { headers } from 'next/headers';
+import type { Locale } from '@/shared/i18n/locales';
 import {
     runNewsAnalysis,
     type EnrichedNewsItem,
@@ -37,6 +38,13 @@ export async function submitNewsAnalysisAction(
      * Client-requested "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
      * spec Part A). Only honored for member/pro tiers.
      */
+    /**
+     * 요청 로케일. 게이트 거부 문구가 사용자에게 그대로 보이는데
+     * `/api/*`는 next-intl matcher 밖이라 액션이 스스로 알 수 없다.
+     * **기본값을 두지 않는다** — 두면 호출부에서 빠져도 타입체커가 못 잡는다
+     * (실측: `resolveRequestLocale`을 상수로 바꿔도 10,516개 테스트가 초록이었다).
+     */
+    locale: Locale,
     reasoning?: boolean,
     signal?: AbortSignal
 ): Promise<SubmitNewsAnalysisActionResult> {
@@ -58,7 +66,7 @@ export async function submitNewsAnalysisAction(
         const user = await getCurrentUser();
         const userId = user?.id ?? null;
 
-        const gate = await resolveTierAndByok(userId, modelId);
+        const gate = await resolveTierAndByok(userId, modelId, locale);
         if (gate.kind === 'blocked') {
             return { status: 'error', error: gate.error };
         }
@@ -80,6 +88,9 @@ export async function submitNewsAnalysisAction(
 
         return await runNewsAnalysis({
             symbol,
+            // 화면 로케일을 AI 산출물 언어로 그대로 넘긴다 — core 0.53.0부터
+            // 받는다. `ko`는 접미 없는 기존 캐시 키를 그대로 맞힌다.
+            locale,
             companyName,
             modelId,
             news: enrichedNews,
@@ -95,6 +106,9 @@ export async function submitNewsAnalysisAction(
         });
     } catch (err) {
         console.error('[submitNewsAnalysisAction] unexpected error:', err);
-        return { status: 'error', error: buildGateError('unexpected_error') };
+        return {
+            status: 'error',
+            error: await buildGateError('unexpected_error', locale),
+        };
     }
 }

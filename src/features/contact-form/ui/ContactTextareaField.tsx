@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 
 interface ContactTextareaFieldProps {
@@ -23,6 +24,7 @@ export function ContactTextareaField({
     placeholder,
     error,
 }: ContactTextareaFieldProps) {
+    const t = useTranslations('features.contact-form');
     const errorId = `${id}-error`;
     const helperId = `${id}-helper`;
     return (
@@ -51,7 +53,9 @@ export function ContactTextareaField({
                 )}
             />
             <p id={helperId} className="text-right text-xs text-secondary-500">
-                최대 {maxLength.toLocaleString('ko-KR')}자
+                {t('ContactTextareaField.fbccd7', {
+                    v0: maxLength.toLocaleString('ko-KR'),
+                })}
             </p>
             {error ? (
                 <div

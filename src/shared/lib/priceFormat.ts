@@ -1,3 +1,4 @@
+import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import {
     currencyForSymbol,
     getDescriptor,
@@ -9,14 +10,15 @@ import type {
 
 type PriceSign = '+' | '';
 type PriceArrow = '▲' | '▼';
-type PriceArrowLabel = '상승' | '하락';
+/** `shared.lib.priceMove` 키. */
+type PriceArrowLabelKey = 'up' | 'down';
 
 export interface PriceChangeDisplay {
     isUp: boolean;
     sign: PriceSign;
     colorClass: string;
     arrow: PriceArrow;
-    arrowLabel: PriceArrowLabel;
+    arrowLabelKey: PriceArrowLabelKey;
 }
 
 export function formatUsdPrice(price: number): string {
@@ -37,19 +39,33 @@ export function formatUsdCurrency(price: number): string {
 
 // "US$1.2조" 형식 (시가총액/현금흐름 등 큰 금액). 포매터 생성은 비싸므로
 // 모듈 스코프에 한 번만 만든다 — 렌더마다 new Intl.NumberFormat 금지.
-const COMPACT_USD_FORMATTER = new Intl.NumberFormat('ko-KR', {
-    notation: 'compact',
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 1,
-});
+/**
+ * 로케일별 캐시.
+ *
+ * 예전에는 `'ko-KR'` 고정이었다 — `notation: 'compact'`가 **로케일 단위 체계**를
+ * 쓰기 때문에, `/en/AAPL`의 시가총액이 `US$3.5조`로 나갔다(`조`는 한국어 단위다).
+ * 영어는 `$3.5T`, 일본어는 `$3.5兆`, 중국어는 `$3.5万亿`가 맞다.
+ *
+ * 포매터 생성은 비싸므로 렌더마다 만들지 않고 캐시한다.
+ */
+const COMPACT_FORMATTER_CACHE = new Map<string, Intl.NumberFormat>();
 
-const COMPACT_KRW_FORMATTER = new Intl.NumberFormat('ko-KR', {
-    notation: 'compact',
-    style: 'currency',
-    currency: 'KRW',
-    maximumFractionDigits: 1,
-});
+function compactFormatter(
+    locale: Locale,
+    currency: 'USD' | 'KRW'
+): Intl.NumberFormat {
+    const cacheKey = `${locale}:${currency}`;
+    const cached = COMPACT_FORMATTER_CACHE.get(cacheKey);
+    if (cached) return cached;
+    const formatter = new Intl.NumberFormat(INTL_LOCALE[locale], {
+        notation: 'compact',
+        style: 'currency',
+        currency,
+        maximumFractionDigits: 1,
+    });
+    COMPACT_FORMATTER_CACHE.set(cacheKey, formatter);
+    return formatter;
+}
 
 /**
  * 시가총액·현금흐름 같은 큰 금액을 통화 기호와 함께 축약 표기한다.
@@ -64,10 +80,61 @@ const COMPACT_KRW_FORMATTER = new Intl.NumberFormat('ko-KR', {
  * 읽는 REGISTRY가 3개 프로필 전체를 exhaustive하게 갖고 있는 유일한 소스라, 새 호출부가
  * 생겨도 그 함수를 호출하기만 하면 자동으로 맞는다(형상 판정이라 조회도 async도 필요 없다).
  */
-export function formatCompactCurrency(value: number, symbol: string): string {
-    return currencyForSymbol(symbol) === 'KRW'
-        ? COMPACT_KRW_FORMATTER.format(value)
-        : COMPACT_USD_FORMATTER.format(value);
+const CURRENCY_FORMATTER_CACHE = new Map<string, Intl.NumberFormat>();
+
+/**
+ * 통화 금액(비축약) 포매터 — 로케일별 캐시.
+ *
+ * `FutureDirectionCard`가 같은 모양의 `'ko-KR'` 고정 테이블을 따로 갖고 있었다.
+ * 축약 포매터와 같은 결함이라 여기로 합친다.
+ */
+export function formatCurrencyForSymbol(
+    value: number,
+    symbol: string,
+    locale: Locale
+): string {
+    const currency = currencyForSymbol(symbol) === 'KRW' ? 'KRW' : 'USD';
+    const cacheKey = `${locale}:${currency}`;
+    let formatter = CURRENCY_FORMATTER_CACHE.get(cacheKey);
+    if (!formatter) {
+        formatter = new Intl.NumberFormat(INTL_LOCALE[locale], {
+            style: 'currency',
+            currency,
+            // 원화는 소수점을 쓰지 않는다.
+            maximumFractionDigits: currency === 'KRW' ? 0 : 2,
+        });
+        CURRENCY_FORMATTER_CACHE.set(cacheKey, formatter);
+    }
+    return formatter.format(value);
+}
+
+/**
+ * 통화를 **직접 받는** compact 포매터.
+ *
+ * `formatCompactCurrency`는 심볼에서 통화를 유도하는데, 재무제표·이벤트
+ * 캘린더는 통화를 이미 알고 심볼이 없다. 그 두 곳이 각자 `'ko-KR'`/`'en-US'`
+ * 고정 테이블을 갖고 있었고, 그래서 `/en`이 `US$4.7조`를, ko가 `₩333T`를
+ * 냈다 — 서로 반대 방향으로 틀린 같은 결함이다.
+ */
+export function formatCompactAmount(
+    value: number,
+    currency: 'USD' | 'KRW',
+    locale: Locale
+): string {
+    return compactFormatter(locale, currency).format(value);
+}
+
+export function formatCompactCurrency(
+    value: number,
+    symbol: string,
+    // 기본값을 두지 않는다 — 두면 호출부에서 빠져도 컴파일이 통과하고, 그
+    // 카드만 조용히 한국어 단위(`조`)로 되돌아간다.
+    locale: Locale
+): string {
+    return compactFormatter(
+        locale,
+        currencyForSymbol(symbol) === 'KRW' ? 'KRW' : 'USD'
+    ).format(value);
 }
 
 /**
@@ -172,7 +239,8 @@ export function formatPriceChange(percent: number): PriceChangeDisplay {
         sign: isUp ? '+' : '',
         colorClass: isUp ? 'text-ui-success-text' : 'text-ui-danger-text',
         arrow: isUp ? '▲' : '▼',
-        arrowLabel: isUp ? '상승' : '하락',
+        // `shared.lib.priceMove` **키**다 — 소비 컴포넌트가 `t()`로 푼다.
+        arrowLabelKey: isUp ? 'up' : 'down',
     };
 }
 

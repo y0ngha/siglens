@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next';
 import bundleAnalyzer from '@next/bundle-analyzer';
+import createNextIntlPlugin from 'next-intl/plugin';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
@@ -187,4 +188,8 @@ const nextConfig: NextConfig = {
     ],
 };
 
-export default withBundleAnalyzer(nextConfig);
+// next-intl은 `i18n/request.ts`의 위치를 컴파일 타임에 알아야 한다. 이 레포는
+// FSD 레이어링을 따르므로 기본 경로(`./i18n/request.ts`)가 아니라 shared 레이어에 둔다.
+const withNextIntl = createNextIntlPlugin('./src/shared/i18n/request.ts');
+
+export default withBundleAnalyzer(withNextIntl(nextConfig));

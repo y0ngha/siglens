@@ -1,7 +1,10 @@
+import { useTranslations } from 'next-intl';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import type { Locale } from '@/shared/i18n/locales';
+import { formatCurrencyForSymbol } from '@/shared/lib/priceFormat';
 import { EmptySectionCard } from './EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { formatCompactCurrency } from '@/shared/lib/priceFormat';
-import { currencyForSymbol } from '@/shared/config/marketProfile';
 import type {
     FundamentalAnalystEstimateInput,
     FundamentalGradesConsensusInput,
@@ -39,34 +42,17 @@ function pct(value: number, total: number): string {
     return ((value / total) * 100).toFixed(1);
 }
 
-// 포매터 생성 비용을 렌더마다 물지 않도록 모듈 스코프에 고정한다. 통화별로 하나씩 —
-// 국내 종목의 원화 금액에 `US$`를 붙이던 것이 이 카드에서 가장 크게 드러났다
+// 통화 판정은 `formatCurrencyForSymbol`이 한다 — 예전에는 이 파일이 `'ko-KR'`
+// 고정 포매터 테이블을 따로 갖고 있어서, 비-ko 로케일에서도 한국어 표기 규칙이
+// 적용됐다. 국내 종목의 원화 금액에 `US$`를 붙이던 결함도 같은 자리였다
 // (`목표 주가 US$450,000`은 같은 사이트가 차트 탭에서 `₩274,500`으로 쓰는 값이다).
-const MONEY_FORMATTERS: Record<'USD' | 'KRW', Intl.NumberFormat> = {
-    USD: new Intl.NumberFormat('ko-KR', {
-        style: 'currency',
-        currency: 'USD',
-        maximumFractionDigits: 2,
-    }),
-    KRW: new Intl.NumberFormat('ko-KR', {
-        style: 'currency',
-        currency: 'KRW',
-        maximumFractionDigits: 0,
-    }),
-};
-
-// formatCompactCurrency로 위임하지 않는 이유: 이 값들(EPS 컨센서스·목표주가)은
-// 억/조 단위로 뭉개면 안 되는 실제 가격이라 compact notation을 쓸 수 없다 —
-// `fmtBig` 바로 아래가 매출처럼 압축 표기가 맞는 값에 formatCompactCurrency를
-// 그대로 쓰는 예다. 통화 판정 로직만 같고 표기 방식(compact 여부)이 달라 별도
-// 포매터 맵을 둔다.
-function fmtMoney(v: number | null, symbol: string): string {
+function fmtMoney(v: number | null, symbol: string, locale: Locale): string {
     if (v === null) return '—';
-    return MONEY_FORMATTERS[currencyForSymbol(symbol)].format(v);
+    return formatCurrencyForSymbol(v, symbol, locale);
 }
 
-function fmtBig(v: number | null, symbol: string): string {
-    return v !== null ? formatCompactCurrency(v, symbol) : '—';
+function fmtBig(v: number | null, symbol: string, locale: Locale): string {
+    return v !== null ? formatCompactCurrency(v, symbol, locale) : '—';
 }
 
 /**
@@ -79,6 +65,8 @@ function fmtBig(v: number | null, symbol: string): string {
  * 쓰고 있었다 — 이 파일만 그 결정을 놓쳤다.
  */
 function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
+    const t = useTranslations('widgets.fundamental');
+    const tRating = useTranslations('widgets.fundamental.analystRating');
     const total = strongBuy + buy + hold + sell + strongSell;
     if (total === 0) return null;
 
@@ -87,7 +75,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
             <div className="flex overflow-hidden rounded-lg" aria-hidden="true">
                 {strongBuy > 0 && (
                     <div
-                        title={`강력 매수 ${strongBuy}`}
+                        title={tRating('strongBuy', { v0: strongBuy })}
                         className="h-3 w-(--bar-w) bg-ui-success"
                         style={
                             {
@@ -98,7 +86,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 )}
                 {buy > 0 && (
                     <div
-                        title={`매수 ${buy}`}
+                        title={t('analystBuyCount', { v0: buy })}
                         className="h-3 w-(--bar-w) bg-ui-success/85"
                         style={
                             {
@@ -109,7 +97,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 )}
                 {hold > 0 && (
                     <div
-                        title={`중립 ${hold}`}
+                        title={tRating('hold', { v0: hold })}
                         className="h-3 w-(--bar-w) bg-ui-warning"
                         style={
                             {
@@ -120,7 +108,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 )}
                 {sell > 0 && (
                     <div
-                        title={`매도 ${sell}`}
+                        title={t('analystSellCount', { v0: sell })}
                         className="h-3 w-(--bar-w) bg-ui-danger/85"
                         style={
                             {
@@ -131,7 +119,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 )}
                 {strongSell > 0 && (
                     <div
-                        title={`강력 매도 ${strongSell}`}
+                        title={tRating('strongSell', { v0: strongSell })}
                         className="h-3 w-(--bar-w) bg-ui-danger"
                         style={
                             {
@@ -147,7 +135,9 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                         className="block h-2 w-2 rounded bg-ui-success"
                         aria-hidden="true"
                     />
-                    <dt className="text-secondary-400">강력 매수</dt>
+                    <dt className="text-secondary-400">
+                        {t('FutureDirectionCard.cb528c')}
+                    </dt>
                     <dd className="font-mono font-medium">{strongBuy}</dd>
                 </div>
                 <div className="flex items-center gap-1">
@@ -155,7 +145,9 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                         className="block h-2 w-2 rounded bg-ui-success/85"
                         aria-hidden="true"
                     />
-                    <dt className="text-secondary-400">매수</dt>
+                    <dt className="text-secondary-400">
+                        {t('FutureDirectionCard.31e4d3')}
+                    </dt>
                     <dd className="font-mono font-medium">{buy}</dd>
                 </div>
                 <div className="flex items-center gap-1">
@@ -163,7 +155,9 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                         className="block h-2 w-2 rounded bg-ui-warning"
                         aria-hidden="true"
                     />
-                    <dt className="text-secondary-400">중립</dt>
+                    <dt className="text-secondary-400">
+                        {t('FutureDirectionCard.6640f0')}
+                    </dt>
                     <dd className="font-mono font-medium">{hold}</dd>
                 </div>
                 <div className="flex items-center gap-1">
@@ -171,7 +165,9 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                         className="block h-2 w-2 rounded bg-ui-danger/85"
                         aria-hidden="true"
                     />
-                    <dt className="text-secondary-400">매도</dt>
+                    <dt className="text-secondary-400">
+                        {t('FutureDirectionCard.62a65c')}
+                    </dt>
                     <dd className="font-mono font-medium">{sell}</dd>
                 </div>
                 <div className="flex items-center gap-1">
@@ -179,7 +175,9 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                         className="block h-2 w-2 rounded bg-ui-danger"
                         aria-hidden="true"
                     />
-                    <dt className="text-secondary-400">강력 매도</dt>
+                    <dt className="text-secondary-400">
+                        {t('FutureDirectionCard.00129a')}
+                    </dt>
                     <dd className="font-mono font-medium">{strongSell}</dd>
                 </div>
             </dl>
@@ -194,11 +192,13 @@ export function FutureDirectionCard({
     ptConsensus,
     ptSummary,
 }: FutureDirectionCardProps) {
+    const t = useTranslations('widgets.fundamental');
+    const locale = useResolvedLocale();
     if (estimates === null && grades === null && ptConsensus === null) {
         return (
             <EmptySectionCard
                 headingId={HEADING_ID}
-                title="미래 방향"
+                title={t('FutureDirectionCard.c629ac')}
                 headingClassName={HEADING_CLASS_NAME}
             />
         );
@@ -210,50 +210,45 @@ export function FutureDirectionCard({
             className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
-                전망과 목표가
+                {t('FutureDirectionCard.2e31de')}
             </h2>
 
             {estimates !== null && (
                 <div className="mb-5">
                     <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
-                        애널리스트 추정
+                        {t('FutureDirectionCard.dba802')}
                     </h3>
                     <dl className="grid grid-cols-2 gap-3">
                         <div className="rounded-lg bg-secondary-800/40 px-4 py-3">
                             <dt className="text-xs text-secondary-400">
-                                EPS 컨센서스
+                                {t('FutureDirectionCard.bd4c6d')}
                                 <InfoTooltip>
-                                    <p>
-                                        애널리스트들이 예측한 EPS(주당순이익)의
-                                        평균값이에요.
-                                    </p>
-                                    <p>
-                                        실제 발표값이 이보다 높으면 &lsquo;어닝
-                                        서프라이즈&rsquo;, 낮으면 &lsquo;어닝
-                                        쇼크&rsquo;라고 불러요.
-                                    </p>
+                                    <p>{t('FutureDirectionCard.b21bb3')}</p>
+                                    <p>{t('FutureDirectionCard.973dba')}</p>
                                 </InfoTooltip>
                             </dt>
                             <dd className="mt-1 font-mono text-lg font-semibold tabular-nums">
-                                {fmtMoney(estimates.estimatedEpsAvg, symbol)}
+                                {fmtMoney(
+                                    estimates.estimatedEpsAvg,
+                                    symbol,
+                                    locale
+                                )}
                             </dd>
                         </div>
                         <div className="rounded-lg bg-secondary-800/40 px-4 py-3">
                             <dt className="text-xs text-secondary-400">
-                                매출 컨센서스
+                                {t('FutureDirectionCard.69de00')}
                                 <InfoTooltip>
-                                    <p>
-                                        애널리스트들이 예측한 매출의
-                                        평균값이에요.
-                                    </p>
-                                    <p>
-                                        시장이 기대하는 성장 수준을 가늠할 수
-                                        있는 지표예요.
-                                    </p>
+                                    <p>{t('FutureDirectionCard.f23e65')}</p>
+                                    <p>{t('FutureDirectionCard.dea4fe')}</p>
                                 </InfoTooltip>
                             </dt>
                             <dd className="mt-1 font-mono text-lg font-semibold tabular-nums">
-                                {fmtBig(estimates.estimatedRevenueAvg, symbol)}
+                                {fmtBig(
+                                    estimates.estimatedRevenueAvg,
+                                    symbol,
+                                    locale
+                                )}
                             </dd>
                         </div>
                     </dl>
@@ -263,7 +258,7 @@ export function FutureDirectionCard({
             {ptConsensus !== null && (
                 <div className="mb-5">
                     <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
-                        목표 주가
+                        {t('FutureDirectionCard.dbfbf1')}
                     </h3>
                     <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
                         {
@@ -271,28 +266,37 @@ export function FutureDirectionCard({
                             // data is structurally [string, number | null] per the priceTargetSummary shape.
                             (
                                 [
-                                    ['하단', ptConsensus.targetLow, undefined],
                                     [
-                                        '중앙값',
+                                        t('FutureDirectionCard.b84f07'),
+                                        ptConsensus.targetLow,
+                                        undefined,
+                                    ],
+                                    [
+                                        t('FutureDirectionCard.7e0ea3'),
                                         ptConsensus.targetMedian,
                                         undefined,
                                     ],
                                     [
-                                        '컨센서스',
+                                        t('FutureDirectionCard.a06069'),
                                         ptConsensus.targetConsensus,
                                         <>
                                             <p>
-                                                애널리스트들이 제시한 목표주가의
-                                                평균이에요.
+                                                {t(
+                                                    'FutureDirectionCard.2d8af0'
+                                                )}
                                             </p>
                                             <p>
-                                                현재 주가보다 높으면 상승 여력이
-                                                있다고 보고, 낮으면 고평가
-                                                신호로 해석해요.
+                                                {t(
+                                                    'FutureDirectionCard.0b21ed'
+                                                )}
                                             </p>
                                         </>,
                                     ],
-                                    ['상단', ptConsensus.targetHigh, undefined],
+                                    [
+                                        t('FutureDirectionCard.5f23f6'),
+                                        ptConsensus.targetHigh,
+                                        undefined,
+                                    ],
                                 ] as [
                                     string,
                                     number | null,
@@ -310,7 +314,7 @@ export function FutureDirectionCard({
                                             )}
                                         </dt>
                                         <dd className="font-mono text-sm font-medium tabular-nums">
-                                            {fmtMoney(val, symbol)}
+                                            {fmtMoney(val, symbol, locale)}
                                         </dd>
                                     </div>
                                 ))
@@ -319,29 +323,38 @@ export function FutureDirectionCard({
                     {ptSummary !== null && (
                         <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs">
                             <div className="flex gap-1">
-                                <dt className="text-secondary-400">1개월</dt>
+                                <dt className="text-secondary-400">
+                                    {t('FutureDirectionCard.c1648d')}
+                                </dt>
                                 <dd className="font-mono">
                                     {fmtMoney(
                                         ptSummary.lastMonth.avgPriceTarget,
-                                        symbol
+                                        symbol,
+                                        locale
                                     )}
                                 </dd>
                             </div>
                             <div className="flex gap-1">
-                                <dt className="text-secondary-400">3개월</dt>
+                                <dt className="text-secondary-400">
+                                    {t('FutureDirectionCard.f7b7b3')}
+                                </dt>
                                 <dd className="font-mono">
                                     {fmtMoney(
                                         ptSummary.lastQuarter.avgPriceTarget,
-                                        symbol
+                                        symbol,
+                                        locale
                                     )}
                                 </dd>
                             </div>
                             <div className="flex gap-1">
-                                <dt className="text-secondary-400">12개월</dt>
+                                <dt className="text-secondary-400">
+                                    {t('FutureDirectionCard.49aace')}
+                                </dt>
                                 <dd className="font-mono">
                                     {fmtMoney(
                                         ptSummary.lastYear.avgPriceTarget,
-                                        symbol
+                                        symbol,
+                                        locale
                                     )}
                                 </dd>
                             </div>
@@ -353,16 +366,10 @@ export function FutureDirectionCard({
             {grades !== null && (
                 <div>
                     <h3 className={cn('mb-1', HEADING_SUBSECTION)}>
-                        투자의견 컨센서스
+                        {t('FutureDirectionCard.5039cb')}
                         <InfoTooltip>
-                            <p>
-                                애널리스트들이 매수·중립·매도 중 어떤 의견을
-                                내고 있는지 분포예요.
-                            </p>
-                            <p>
-                                매수 의견이 많을수록 시장의 긍정적 시각이
-                                강하다는 뜻이에요.
-                            </p>
+                            <p>{t('FutureDirectionCard.b69220')}</p>
+                            <p>{t('FutureDirectionCard.ebde29')}</p>
                         </InfoTooltip>
                     </h3>
                     <GradesBar

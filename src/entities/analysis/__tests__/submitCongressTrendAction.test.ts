@@ -113,7 +113,7 @@ describe('runCongressTrendAction 함수는', () => {
     it('siglens-core runCongressTrend에 symbol과 modelId를 전달한다', async () => {
         mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-        await runCongressTrendAction('AAPL', MODEL_ID);
+        await runCongressTrendAction('AAPL', MODEL_ID, 'ko');
 
         expect(mockRunCongressTrend).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -127,7 +127,7 @@ describe('runCongressTrendAction 함수는', () => {
     it('getCongressTradesProvider 인스턴스를 dataProvider로 전달한다', async () => {
         mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-        await runCongressTrendAction('TSLA', MODEL_ID);
+        await runCongressTrendAction('TSLA', MODEL_ID, 'ko');
 
         const call = mockRunCongressTrend.mock.calls[0]?.[0];
         expect(call?.dataProvider).toBeDefined();
@@ -137,7 +137,7 @@ describe('runCongressTrendAction 함수는', () => {
     it('underlying 함수의 cached 결과를 그대로 반환한다', async () => {
         mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-        const result = await runCongressTrendAction('AAPL', MODEL_ID);
+        const result = await runCongressTrendAction('AAPL', MODEL_ID, 'ko');
 
         expect(result).toBe(CACHED_RESULT);
     });
@@ -145,7 +145,7 @@ describe('runCongressTrendAction 함수는', () => {
     it('underlying 함수의 done 결과를 그대로 반환한다', async () => {
         mockRunCongressTrend.mockResolvedValueOnce(DONE_RESULT);
 
-        const result = await runCongressTrendAction('AAPL', MODEL_ID);
+        const result = await runCongressTrendAction('AAPL', MODEL_ID, 'ko');
 
         expect(result).toBe(DONE_RESULT);
     });
@@ -158,7 +158,7 @@ describe('runCongressTrendAction 함수는', () => {
         };
         mockRunCongressTrend.mockResolvedValueOnce(FETCH_FAILED_RESULT);
 
-        const result = await runCongressTrendAction('AAPL', MODEL_ID);
+        const result = await runCongressTrendAction('AAPL', MODEL_ID, 'ko');
 
         expect(result).toBe(FETCH_FAILED_RESULT);
     });
@@ -172,7 +172,7 @@ describe('runCongressTrendAction 함수는', () => {
         );
         mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-        await runCongressTrendAction('AAPL', MODEL_ID);
+        await runCongressTrendAction('AAPL', MODEL_ID, 'ko');
 
         expect(mockRunCongressTrend).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: true })
@@ -182,7 +182,7 @@ describe('runCongressTrendAction 함수는', () => {
     it('passes skipEnqueueIfMiss: false to siglens-core when request UA is not a bot', async () => {
         mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-        await runCongressTrendAction('AAPL', MODEL_ID);
+        await runCongressTrendAction('AAPL', MODEL_ID, 'ko');
 
         expect(mockRunCongressTrend).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: false })
@@ -197,7 +197,11 @@ describe('runCongressTrendAction 함수는', () => {
                 error: gateError,
             });
 
-            const result = await runCongressTrendAction('AAPL', PREMIUM_MODEL);
+            const result = await runCongressTrendAction(
+                'AAPL',
+                PREMIUM_MODEL,
+                'ko'
+            );
 
             expect(result).toEqual({ status: 'error', error: gateError });
             // Gate fires before the (expensive) core submit call.
@@ -211,12 +215,17 @@ describe('runCongressTrendAction 함수는', () => {
                 error: gateError,
             });
 
-            const result = await runCongressTrendAction('AAPL', PREMIUM_MODEL);
+            const result = await runCongressTrendAction(
+                'AAPL',
+                PREMIUM_MODEL,
+                'ko'
+            );
 
             expect(result).toEqual({ status: 'error', error: gateError });
             expect(mockResolveTierAndByok).toHaveBeenCalledWith(
                 'u1',
-                PREMIUM_MODEL
+                PREMIUM_MODEL,
+                'ko'
             );
             expect(mockRunCongressTrend).not.toHaveBeenCalled();
         });
@@ -230,7 +239,7 @@ describe('runCongressTrendAction 함수는', () => {
             });
             mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-            await runCongressTrendAction('AAPL', PREMIUM_MODEL);
+            await runCongressTrendAction('AAPL', PREMIUM_MODEL, 'ko');
 
             expect(mockRunCongressTrend).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -249,7 +258,7 @@ describe('runCongressTrendAction 함수는', () => {
             });
             mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-            await runCongressTrendAction('AAPL', PREMIUM_MODEL);
+            await runCongressTrendAction('AAPL', PREMIUM_MODEL, 'ko');
 
             const callArg = mockRunCongressTrend.mock.calls[0]?.[0];
             expect(callArg).toBeDefined();
@@ -264,7 +273,11 @@ describe('runCongressTrendAction 함수는', () => {
             });
             mockRunCongressTrend.mockResolvedValueOnce(DONE_RESULT);
 
-            const result = await runCongressTrendAction('AAPL', PREMIUM_MODEL);
+            const result = await runCongressTrendAction(
+                'AAPL',
+                PREMIUM_MODEL,
+                'ko'
+            );
 
             expect(result).toBe(DONE_RESULT);
             expect(mockRunCongressTrend).toHaveBeenCalledWith(
@@ -280,7 +293,7 @@ describe('runCongressTrendAction 함수는', () => {
             });
             mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-            const result = await runCongressTrendAction('AAPL', MODEL_ID);
+            const result = await runCongressTrendAction('AAPL', MODEL_ID, 'ko');
 
             expect(result).toBe(CACHED_RESULT);
             expect(mockRunCongressTrend).toHaveBeenCalledWith(
@@ -299,9 +312,13 @@ describe('runCongressTrendAction 함수는', () => {
             });
             mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-            await runCongressTrendAction('AAPL', MODEL_ID);
+            await runCongressTrendAction('AAPL', MODEL_ID, 'ko');
 
-            expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
+            expect(mockResolveTierAndByok).toHaveBeenCalledWith(
+                null,
+                MODEL_ID,
+                'ko'
+            );
         });
 
         it('returns unexpected_error result when an unexpected error is thrown', async () => {
@@ -310,7 +327,7 @@ describe('runCongressTrendAction 함수는', () => {
                 new Error('db connection failed')
             );
 
-            const result = await runCongressTrendAction('AAPL', MODEL_ID);
+            const result = await runCongressTrendAction('AAPL', MODEL_ID, 'ko');
 
             expect(result).toMatchObject({
                 status: 'error',
@@ -328,9 +345,13 @@ describe('runCongressTrendAction 함수는', () => {
             });
             mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-            await runCongressTrendAction('AAPL', MODEL_ID, true);
+            await runCongressTrendAction('AAPL', MODEL_ID, 'ko', true);
 
-            expect(mockResolveTierAndByok).toHaveBeenCalledWith('u1', MODEL_ID);
+            expect(mockResolveTierAndByok).toHaveBeenCalledWith(
+                'u1',
+                MODEL_ID,
+                'ko'
+            );
             expect(mockRunCongressTrend).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: true })
             );
@@ -344,9 +365,13 @@ describe('runCongressTrendAction 함수는', () => {
             });
             mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-            await runCongressTrendAction('AAPL', MODEL_ID, true);
+            await runCongressTrendAction('AAPL', MODEL_ID, 'ko', true);
 
-            expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
+            expect(mockResolveTierAndByok).toHaveBeenCalledWith(
+                null,
+                MODEL_ID,
+                'ko'
+            );
             expect(mockRunCongressTrend).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false })
             );
@@ -360,7 +385,7 @@ describe('runCongressTrendAction 함수는', () => {
             });
             mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-            await runCongressTrendAction('AAPL', MODEL_ID);
+            await runCongressTrendAction('AAPL', MODEL_ID, 'ko');
 
             expect(mockRunCongressTrend).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false })
@@ -370,10 +395,14 @@ describe('runCongressTrendAction 함수는', () => {
         it('forwards tier when reasoning is not requested (omitted)', async () => {
             mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-            await runCongressTrendAction('AAPL', MODEL_ID);
+            await runCongressTrendAction('AAPL', MODEL_ID, 'ko');
 
             expect(mockGetCurrentUser).toHaveBeenCalled();
-            expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
+            expect(mockResolveTierAndByok).toHaveBeenCalledWith(
+                null,
+                MODEL_ID,
+                'ko'
+            );
             expect(mockRunCongressTrend).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false, tier: 'free' })
             );
@@ -382,10 +411,14 @@ describe('runCongressTrendAction 함수는', () => {
         it('forwards tier when reasoning is explicitly false', async () => {
             mockRunCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
-            await runCongressTrendAction('AAPL', MODEL_ID, false);
+            await runCongressTrendAction('AAPL', MODEL_ID, 'ko', false);
 
             expect(mockGetCurrentUser).toHaveBeenCalled();
-            expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
+            expect(mockResolveTierAndByok).toHaveBeenCalledWith(
+                null,
+                MODEL_ID,
+                'ko'
+            );
             expect(mockRunCongressTrend).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false, tier: 'free' })
             );
@@ -407,7 +440,7 @@ describe('runCongressTrendAction 함수는', () => {
             };
             mockE2ECached.mockReturnValueOnce(e2eFixture);
 
-            const result = await runCongressTrendAction('AAPL', MODEL_ID);
+            const result = await runCongressTrendAction('AAPL', MODEL_ID, 'ko');
 
             expect(result).toEqual(e2eFixture);
             expect(mockRunCongressTrend).not.toHaveBeenCalled();
@@ -446,7 +479,7 @@ describe('runCongressTrendAction 함수는', () => {
             };
             mockE2EError.mockReturnValueOnce(errorFixture);
 
-            const result = await runCongressTrendAction('AAPL', MODEL_ID);
+            const result = await runCongressTrendAction('AAPL', MODEL_ID, 'ko');
 
             expect(result).toEqual(errorFixture);
             expect(mockRunCongressTrend).not.toHaveBeenCalled();

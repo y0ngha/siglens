@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { CongressSentiment } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { SnapshotBulletList } from '../SnapshotBulletList';
@@ -34,16 +35,17 @@ interface CongressSnapshotProseProps {
     generatedAt?: Date;
 }
 
-const SENTIMENT_LABEL: Record<CongressSentiment, string> = {
-    bullish: '매수 우위',
-    neutral: '중립',
-    bearish: '매도 우위',
+/** CongressSentiment → `shared.enumLabel` 카탈로그 키. 값 자체는 더 이상 한글이 아니다 — 렌더 시점에 `tLabel`로 조회한다. */
+const SENTIMENT_LABEL_KEY: Record<CongressSentiment, string> = {
+    bullish: 'congressSentiment.bullish',
+    neutral: 'congressSentiment.neutral',
+    bearish: 'congressSentiment.bearish',
 };
 
 // See createEnumGuard's JSDoc for the Object.hasOwn / prototype-chain
 // rationale (audit fix; PR #698 round-2 review FIX 3 extracted the shared
 // implementation).
-const isSentiment = createEnumGuard(SENTIMENT_LABEL);
+const isSentiment = createEnumGuard(SENTIMENT_LABEL_KEY);
 
 interface NarrowedCongressContent {
     summaryKo: string;
@@ -123,6 +125,8 @@ export function CongressSnapshotProse({
     marketProfile,
     generatedAt,
 }: CongressSnapshotProseProps) {
+    const t = useTranslations('views.symbol');
+    const tLabel = useTranslations('shared.enumLabel');
     const narrowed = narrowCongressContent(content);
     if (narrowed === null) return null;
 
@@ -133,7 +137,7 @@ export function CongressSnapshotProse({
 
     return (
         <SnapshotSummarySection
-            title="의회 거래 동향 요약"
+            title={t('CongressSnapshotProse.f7e3fb')}
             displayName={displayName}
             marketProfile={marketProfile}
             asOf={generatedAt}
@@ -141,8 +145,12 @@ export function CongressSnapshotProse({
             <div className="space-y-4 text-sm leading-6 text-secondary-300">
                 {narrowed.overallSentiment !== null && (
                     <p className="font-medium text-secondary-200">
-                        {symbol} 의회 거래 동향:{' '}
-                        {SENTIMENT_LABEL[narrowed.overallSentiment]}
+                        {t('CongressSnapshotProse.739702', {
+                            v0: symbol,
+                            v1: tLabel(
+                                SENTIMENT_LABEL_KEY[narrowed.overallSentiment]
+                            ),
+                        })}
                     </p>
                 )}
 
@@ -155,9 +163,9 @@ export function CongressSnapshotProse({
                 )}
 
                 <SnapshotBulletList
-                    title="주목할 인물"
+                    title={t('CongressSnapshotProse.9a15c9')}
                     symbol={symbol}
-                    ariaSuffix="주목할 인물"
+                    ariaSuffix={t('CongressSnapshotProse.9a15c9')}
                     items={narrowed.notableMembersKo}
                     keyPrefix="member"
                 />
@@ -165,7 +173,7 @@ export function CongressSnapshotProse({
                 {narrowed.riskNoteKo.length > 0 && (
                     <div>
                         <h3 className={cn('mb-1.5', HEADING_SUBSECTION)}>
-                            참고 사항
+                            {t('CongressSnapshotProse.b2e4d7')}
                         </h3>
                         <p>{narrowed.riskNoteKo}</p>
                     </div>

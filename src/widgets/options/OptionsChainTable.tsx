@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import {
     type OptionsChain,
@@ -35,23 +36,6 @@ function formatStrike(strike: number): string {
     return `$${isInteger ? strike.toString() : strike.toFixed(1)}`;
 }
 
-const StrikeTooltip = (
-    <>
-        <p>옵션 계약에 정해진 매수/매도 가격이에요.</p>
-        <p>
-            콜은 &apos;이 가격에 살 권리&apos;, 풋은 &apos;이 가격에 팔
-            권리&apos;를 가진다는 뜻이에요.
-        </p>
-    </>
-);
-
-const ImpliedVolatilityTooltip = (
-    <>
-        <p>옵션 시장이 예측하는 미래 변동성이에요.</p>
-        <p>높을수록 옵션값이 비싸지고, 불확실성이 크다는 뜻이에요.</p>
-    </>
-);
-
 interface OptionsChainTableProps {
     symbol: string;
     /** 'YYYY-MM-DD' or 'all'. Maps to the appropriate chain via the same rule as Metrics/Chart. */
@@ -74,6 +58,8 @@ export function OptionsChainTable({
     metrics,
     nearestExpiry,
 }: OptionsChainTableProps) {
+    const t = useTranslations('widgets.options');
+    const tChain = useTranslations('widgets.options.chainTable');
     const [expanded, setExpanded] = useState(false);
 
     // Hooks must run unconditionally — compute derived data even when the
@@ -114,14 +100,18 @@ export function OptionsChainTable({
     const totalContracts = chain ? chain.calls.length + chain.puts.length : 0;
 
     const headerLabel = expanded
-        ? `▾ 전체 옵션 chain 테이블 (선택된 만기: ${chain?.expirationDate ?? '—'})`
-        : `▸ 전체 옵션 chain 테이블 보기 (${numberFormatter.format(totalContracts)} contracts)`;
+        ? tChain('chainHeaderExpanded', {
+              v0: chain?.expirationDate ?? '—',
+          })
+        : tChain('chainHeaderCollapsed', {
+              v0: numberFormatter.format(totalContracts),
+          });
 
     if (!chain || totalContracts === 0) {
         return (
             <div className="flex w-full items-center justify-between rounded-lg border border-secondary-700 bg-secondary-800 p-4">
                 <span className="text-sm text-secondary-400">
-                    ▸ 전체 옵션 chain 테이블 보기 (0 contracts)
+                    {t('OptionsChainTable.1b9687')}
                 </span>
             </div>
         );
@@ -146,24 +136,27 @@ export function OptionsChainTable({
             <div id="options-chain-table" hidden={!expanded}>
                 {expirationDate === 'all' && nearestExpiry && (
                     <p className="mt-2 px-1 text-[10px] text-secondary-500">
-                        전체 만기 합산 — 가장 가까운 만기({nearestExpiry}) 기준
-                        으로 표시합니다. 다른 만기를 보려면 위 만기 버튼에서
-                        선택해 주세요.
+                        {t('OptionsChainTable.0300a5', { v0: nearestExpiry })}
                     </p>
                 )}
 
                 <div className="mt-2 overflow-x-auto">
                     <table className="w-full border-collapse text-sm">
                         <caption className="sr-only">
-                            {symbol} {expirationDate} 옵션 chain (Strike별 콜/풋
-                            가격, OI, IV)
+                            {t('OptionsChainTable.b2411c', {
+                                v0: symbol,
+                                v1: expirationDate,
+                            })}
                         </caption>
 
                         <thead className="border-b border-secondary-700 text-xs tracking-widest text-secondary-400 uppercase">
                             <tr>
                                 <th scope="col" className="px-3 py-2 text-left">
                                     Strike{' '}
-                                    <InfoTooltip>{StrikeTooltip}</InfoTooltip>
+                                    <InfoTooltip>
+                                        <p>{tChain('strikeTooltip1')}</p>
+                                        <p>{tChain('strikeTooltip2')}</p>
+                                    </InfoTooltip>
                                 </th>
                                 <th
                                     scope="col"
@@ -186,7 +179,8 @@ export function OptionsChainTable({
                                 >
                                     Call IV{' '}
                                     <InfoTooltip>
-                                        {ImpliedVolatilityTooltip}
+                                        <p>{tChain('ivTooltip1')}</p>
+                                        <p>{tChain('ivTooltip2')}</p>
                                     </InfoTooltip>
                                 </th>
                                 <th

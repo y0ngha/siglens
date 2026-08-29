@@ -27,6 +27,17 @@ import type { PositionModel, RangeClamp } from './positionGeometry';
  *   (`FutureDirectionCard`의 `MONEY_FORMATTERS.KRW`가 `maximumFractionDigits: 0`을
  *   명시했던 것과 동일한 결정 — 여기서는 REGISTRY 값 하나로 자동 상속된다).
  */
+/**
+ * `widgets.portfolio-position.positionNote` 번역자.
+ *
+ * 이 모듈은 순수 함수 모음이라 훅을 부를 수 없다 — 호출부(컴포넌트)가 받아 넘긴다.
+ * 예전에는 층 비유 문구가 한국어 리터럴이라 네 로케일 전부 한국어로 나갔다.
+ */
+export type PositionTranslator = (
+    key: string,
+    values?: Record<string, string | number>
+) => string;
+
 export function formatAmount(value: number, symbol: string): string {
     if (currencyForSymbol(symbol) === 'KRW') {
         return formatPrice(value, getDescriptor('kr-equity').priceFormat);
@@ -81,19 +92,27 @@ export function buildAriaLabel(
     model: PositionModel,
     avgDisplay: string,
     currentDisplay: string,
-    avgFloorNote: string
+    avgFloorNote: string,
+    t: PositionTranslator
 ): string {
     const returnSign = model.returnPct >= 0 ? '+' : '';
-    return (
-        `${symbol} 내 위치: 평단 ${avgDisplay}, 현재가 ${currentDisplay}, ` +
-        `수익률 ${returnSign}${model.returnPct.toFixed(1)}%, ` +
-        `최근 범위의 ${model.rangePositionPct.toFixed(0)}% 지점, ${avgFloorNote}`
-    );
+    return t('ariaSummary', {
+        v0: symbol,
+        v1: avgDisplay,
+        v2: currentDisplay,
+        v3: returnSign,
+        v4: model.returnPct.toFixed(1),
+        v5: model.rangePositionPct.toFixed(0),
+        v6: avgFloorNote,
+    });
 }
 
-export function outOfRangeNote(clamped: RangeClamp): string | null {
-    if (clamped === 'above') return '최근 고점보다 높은 곳';
-    if (clamped === 'below') return '최근 저점보다 낮은 곳';
+export function outOfRangeNote(
+    clamped: RangeClamp,
+    t: PositionTranslator
+): string | null {
+    if (clamped === 'above') return t('aboveHigh');
+    if (clamped === 'below') return t('belowLow');
     return null;
 }
 
@@ -104,11 +123,15 @@ export function outOfRangeNote(clamped: RangeClamp): string | null {
  * 1~2→중층, 3→고층, 4→펜트하우스). bandCount가 바뀌어도(테스트 등) 안전하게
  * 동작하도록 리터럴 인덱스가 아니라 bandCount 비율로 경계를 계산한다.
  */
-function describeFloorTier(floorIndex: number, bandCount: number): string {
-    if (bandCount <= 1 || floorIndex === bandCount - 1) return '펜트하우스';
-    if (floorIndex === 0) return '저층';
+function describeFloorTier(
+    floorIndex: number,
+    bandCount: number,
+    t: PositionTranslator
+): string {
+    if (bandCount <= 1 || floorIndex === bandCount - 1) return t('penthouse');
+    if (floorIndex === 0) return t('lowFloor');
     const midBoundary = Math.floor((bandCount * 2) / 3);
-    return floorIndex < midBoundary ? '중층' : '고층';
+    return floorIndex < midBoundary ? t('midFloor') : t('highFloor');
 }
 
 /**
@@ -127,25 +150,29 @@ function describeFloorTier(floorIndex: number, bandCount: number): string {
 /** 범위 밖 ★평단의 아파트 메타포 phrase(방향만) — describeAvgFloor(전체 문구)와
  * avgFloorVisualNote(시각 노트, 폭 제약)가 함께 파생하는 단일 소스라 리터럴을
  * 양쪽에 중복 선언하지 않는다. */
-const ROOFTOP_METAPHOR = '옥상 위';
-const BASEMENT_METAPHOR = '지하 세대';
+const ROOFTOP_METAPHOR_KEY = 'rooftop';
+const BASEMENT_METAPHOR_KEY = 'basement';
 
 export function describeAvgFloor(
     avgPos: number,
     avgClamped: RangeClamp,
-    bandCount: number
+    bandCount: number,
+    t: PositionTranslator
 ): string {
     if (avgClamped === 'above')
-        return `${ROOFTOP_METAPHOR} · 최근 고점보다 높은 곳`;
+        return t('rooftopNote', { v0: t(ROOFTOP_METAPHOR_KEY) });
     if (avgClamped === 'below')
-        return `${BASEMENT_METAPHOR} · 최근 저점보다 낮은 곳`;
+        return t('basementNote', { v0: t(BASEMENT_METAPHOR_KEY) });
 
     const floorIndex = Math.min(
         bandCount - 1,
         Math.max(0, Math.floor(avgPos * bandCount))
     );
     const floorNumber = floorIndex + 1;
-    return `${floorNumber}층 · ${describeFloorTier(floorIndex, bandCount)}`;
+    return t('floorNote', {
+        v0: floorNumber,
+        v1: describeFloorTier(floorIndex, bandCount, t),
+    });
 }
 
 /**
@@ -160,10 +187,11 @@ export function describeAvgFloor(
  */
 export function avgFloorVisualNote(
     avgClamped: RangeClamp,
-    fullNote: string
+    fullNote: string,
+    t: PositionTranslator
 ): string {
-    if (avgClamped === 'above') return ROOFTOP_METAPHOR;
-    if (avgClamped === 'below') return BASEMENT_METAPHOR;
+    if (avgClamped === 'above') return t(ROOFTOP_METAPHOR_KEY);
+    if (avgClamped === 'below') return t(BASEMENT_METAPHOR_KEY);
     return fullNote;
 }
 
@@ -219,11 +247,16 @@ function buildFloorTooltipContent(
     bandLow: number,
     bandHigh: number,
     volumePct: number,
-    symbol: string
+    symbol: string,
+    t: PositionTranslator
 ): FloorTooltipContent {
     return {
-        main: `${formatAmount(bandLow, symbol)}–${formatAmount(bandHigh, symbol)} · 거주율 ${Math.round(volumePct)}%`,
-        qualifier: '최근 52주 거래량 기준',
+        main: t('bandMain', {
+            v0: formatAmount(bandLow, symbol),
+            v1: formatAmount(bandHigh, symbol),
+            v2: Math.round(volumePct),
+        }),
+        qualifier: t('bandQualifier'),
     };
 }
 
@@ -255,7 +288,8 @@ export function buildFloorTooltips(
     low52w: number,
     high52w: number,
     bandCount: number,
-    symbol: string
+    symbol: string,
+    t: PositionTranslator
 ): readonly (FloorTooltipContent | null)[] {
     return model.bands.map((_, i) => {
         const volumePct = volumeByBand?.[i];
@@ -268,7 +302,13 @@ export function buildFloorTooltips(
             i,
             bandCount
         );
-        return buildFloorTooltipContent(bandLow, bandHigh, volumePct, symbol);
+        return buildFloorTooltipContent(
+            bandLow,
+            bandHigh,
+            volumePct,
+            symbol,
+            t
+        );
     });
 }
 
@@ -320,8 +360,8 @@ export const SVG_LABEL_AVAILABLE_WIDTH = CENTER_X - ISO_DX - LABEL_GAP;
  * 평단"/"현재가"보다 짧게 둬(audit finding #1) 4자리 이상 가격에서도 라벨이
  * viewBox를 벗어나지 않게 한다.
  */
-export const AVG_LABEL_PREFIX = '★ 평단 ';
-export const CURRENT_LABEL_PREFIX = '● 현재 ';
+export const AVG_LABEL_PREFIX_KEY = 'avgPrefix';
+export const CURRENT_LABEL_PREFIX_KEY = 'currentPrefix';
 
 /**
  * 글자 하나당 대략적인 렌더 폭(px) 추정 — text-[10px] font-medium tabular-nums

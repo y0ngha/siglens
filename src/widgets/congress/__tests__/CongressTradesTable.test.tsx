@@ -361,4 +361,30 @@ describe('CongressTradesTable', () => {
             expect(links).toHaveLength(0);
         });
     });
+
+    /**
+     * `owner`/`side`의 `unknown`은 빈 문자열 센티넬로 배지를 지우는 자리다.
+     * i18n 이전에는 라벨 맵이 한국어 문자열이라 `''`가 falsy였지만, 지금은
+     * **카탈로그 키**를 담는다 — `t('')`는 빈 값이 아니라 폴백 문자열
+     * `shared.enumLabel.`을 돌려주므로(truthy) 번역 결과로 판정하면 가드가
+     * 죽고 raw 키가 그대로 화면에 찍힌다. 실제로 프로덕션 `/AAPL/congress`가
+     * 그 상태였다.
+     */
+    describe('unknown 센티넬', () => {
+        it('raw 카탈로그 키를 노출하지 않는다', () => {
+            const { container } = render(
+                <CongressTradesTable
+                    trades={[
+                        {
+                            ...BASE_TRADE,
+                            owner: 'unknown',
+                            side: 'unknown',
+                            rawType: '',
+                        },
+                    ]}
+                />
+            );
+            expect(container.textContent).not.toContain('shared.enumLabel');
+        });
+    });
 });

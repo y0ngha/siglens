@@ -60,6 +60,7 @@ function snapshotAt(generatedAt: Date, tab = 'technical'): SeoAnalysisSnapshot {
     return {
         symbol: 'AAPL',
         tab: tab as SeoAnalysisSnapshot['tab'],
+        locale: 'ko',
         content: { summary: 'bullish' },
         model: 'deepseek-v4-flash',
         generatedAt,
@@ -84,7 +85,7 @@ describe('getSeoSnapshotsStatic', () => {
     });
 
     it('staticSymbolCache를 정확한 keyParts/symbol/extraTags/revalidateSeconds로 호출한다(소문자 입력 → 대문자 정규화)', async () => {
-        await getSeoSnapshotsStatic('aapl', 3600);
+        await getSeoSnapshotsStatic('aapl', 3600, 'ko');
 
         expect(mockStaticSymbolCache).toHaveBeenCalledTimes(1);
         const [keyParts, symbol, , extraTags, revalidateSeconds] =
@@ -96,17 +97,17 @@ describe('getSeoSnapshotsStatic', () => {
     });
 
     it('성공 시 findBySymbol(대문자 심볼) 결과를 반환한다', async () => {
-        const result = await getSeoSnapshotsStatic('AAPL', 3600);
+        const result = await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
 
         expect(mockRepoCtor).toHaveBeenCalledWith({});
-        expect(mockFindBySymbol).toHaveBeenCalledWith('AAPL');
+        expect(mockFindBySymbol).toHaveBeenCalledWith('AAPL', 'ko');
         expect(result).toEqual(SNAPSHOTS);
     });
 
     it('성공 시 행 수를 info 로그로 남긴다 (audit fix FIX 7 — 전 렌더러 null-render 시 유일한 관측 신호)', async () => {
         const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
 
-        await getSeoSnapshotsStatic('AAPL', 3600);
+        await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
 
         expect(infoSpy).toHaveBeenCalledWith(
             '[getSeoSnapshotsStatic] AAPL: 1 snapshot row(s)'
@@ -121,7 +122,7 @@ describe('getSeoSnapshotsStatic', () => {
             .mockImplementation(() => {});
         mockFindBySymbol.mockRejectedValue(new Error('DB unavailable'));
 
-        const result = await getSeoSnapshotsStatic('AAPL', 3600);
+        const result = await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
 
         expect(result).toEqual([]);
         expect(errorSpy).toHaveBeenCalledWith(
@@ -139,7 +140,7 @@ describe('getSeoSnapshotsStatic', () => {
             );
             mockFindBySymbol.mockResolvedValue([freshRow]);
 
-            const result = await getSeoSnapshotsStatic('AAPL', 3600);
+            const result = await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
 
             expect(result).toEqual([freshRow]);
         });
@@ -150,7 +151,7 @@ describe('getSeoSnapshotsStatic', () => {
             );
             mockFindBySymbol.mockResolvedValue([staleRow]);
 
-            const result = await getSeoSnapshotsStatic('AAPL', 3600);
+            const result = await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
 
             expect(result).toEqual([]);
         });
@@ -166,7 +167,7 @@ describe('getSeoSnapshotsStatic', () => {
             );
             mockFindBySymbol.mockResolvedValue([freshRow, staleRow]);
 
-            const result = await getSeoSnapshotsStatic('AAPL', 3600);
+            const result = await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
 
             expect(result).toEqual([freshRow]);
         });
@@ -180,7 +181,7 @@ describe('getSeoSnapshotsStatic', () => {
             );
             mockFindBySymbol.mockResolvedValue([staleRow]);
 
-            await getSeoSnapshotsStatic('AAPL', 3600);
+            await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
 
             expect(warnSpy).toHaveBeenCalledWith(
                 expect.stringContaining(
@@ -196,7 +197,7 @@ describe('getSeoSnapshotsStatic', () => {
                 .spyOn(console, 'warn')
                 .mockImplementation(() => {});
 
-            await getSeoSnapshotsStatic('AAPL', 3600);
+            await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
 
             expect(warnSpy).not.toHaveBeenCalled();
 
@@ -225,7 +226,7 @@ describe('getSeoSnapshotsStatic', () => {
                 Promise.resolve(roundTripped)
             );
 
-            const result = await getSeoSnapshotsStatic('AAPL', 3600);
+            const result = await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
 
             expect(result[0].generatedAt).toBeInstanceOf(Date);
             expect(result[0].updatedAt).toBeInstanceOf(Date);
@@ -259,7 +260,7 @@ describe('getSeoSnapshotsStatic', () => {
                 Promise.resolve([malformedRow])
             );
 
-            const result = await getSeoSnapshotsStatic('AAPL', 3600);
+            const result = await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
 
             expect(result).toEqual([]);
             expect(warnSpy).toHaveBeenCalledWith(

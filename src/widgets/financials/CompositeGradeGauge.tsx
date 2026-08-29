@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { FinancialsGrade } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 
@@ -96,6 +97,7 @@ export function CompositeGradeGauge({
     grade,
     summaryKo,
 }: CompositeGradeGaugeProps) {
+    const tGauge = useTranslations('widgets.financials.gradeGauge');
     // Clamp to [0,100] for needle rotation; default 0 when score is null.
     const clampedScore = score !== null ? Math.min(100, Math.max(0, score)) : 0;
 
@@ -113,8 +115,8 @@ export function CompositeGradeGauge({
 
     const ariaLabel =
         score !== null
-            ? `재무 종합 점수 ${score}점, 등급 ${grade}`
-            : `재무 종합 점수 없음, 등급 ${grade}`;
+            ? tGauge('aria', { v0: score, v1: grade })
+            : tGauge('ariaNoScore', { v0: grade });
 
     const gradeColorClass = GRADE_TEXT_COLOR[grade];
 

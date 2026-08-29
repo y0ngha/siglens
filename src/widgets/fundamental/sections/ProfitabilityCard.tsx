@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { EmptySectionCard } from './EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import type { FundamentalRatiosInput } from '@y0ngha/siglens-core';
@@ -63,11 +64,12 @@ function MetricBar({ label, value, description, tooltip }: MetricBarProps) {
 }
 
 export function ProfitabilityCard({ ratios }: ProfitabilityCardProps) {
+    const t = useTranslations('widgets.fundamental');
     if (ratios === null) {
         return (
             <EmptySectionCard
                 headingId={HEADING_ID}
-                title="수익성"
+                title={t('ProfitabilityCard.83c700')}
                 headingClassName={HEADING_CLASS_NAME}
             />
         );
@@ -79,73 +81,50 @@ export function ProfitabilityCard({ ratios }: ProfitabilityCardProps) {
             className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
-                수익성
+                {t('ProfitabilityCard.83c700')}
             </h2>
             <div className="divide-y divide-secondary-700/50">
                 <MetricBar
                     label="ROE"
                     value={ratios.returnOnEquityTTM}
-                    description="자기자본이익률"
+                    description={t('ProfitabilityCard.6a5d30')}
                     tooltip={
                         <>
-                            <p>
-                                주주가 투자한 돈으로 얼마만큼 이익을 냈는지
-                                보여주는 비율이에요.
-                            </p>
-                            <p>
-                                15% 이상이면 우수, 10~15%면 양호, 그 아래면
-                                평범한 수준으로 봐요.
-                            </p>
+                            <p>{t('ProfitabilityCard.d73ac0')}</p>
+                            <p>{t('ProfitabilityCard.f5d222')}</p>
                         </>
                     }
                 />
                 <MetricBar
                     label="ROA"
                     value={ratios.returnOnAssetsTTM}
-                    description="총자산이익률"
+                    description={t('ProfitabilityCard.077012')}
                     tooltip={
                         <>
-                            <p>
-                                회사가 가진 자산 전체로 얼마만큼 이익을 냈는지
-                                보여주는 비율이에요.
-                            </p>
-                            <p>
-                                자산을 얼마나 효율적으로 굴리는지 알 수 있고, 5%
-                                이상이면 양호한 편이에요.
-                            </p>
+                            <p>{t('ProfitabilityCard.7a7512')}</p>
+                            <p>{t('ProfitabilityCard.d3c380')}</p>
                         </>
                     }
                 />
                 <MetricBar
-                    label="영업이익률"
+                    label={t('ProfitabilityCard.c62afe')}
                     value={ratios.operatingProfitMarginTTM}
                     description="Operating Margin"
                     tooltip={
                         <>
-                            <p>
-                                매출 100원당 본업으로 몇 원이 남는지 보여주는
-                                비율이에요.
-                            </p>
-                            <p>
-                                핵심 사업의 체력을 가장 잘 드러내고, 높을수록
-                                사업이 탄탄하다는 뜻이에요.
-                            </p>
+                            <p>{t('ProfitabilityCard.b3a38b')}</p>
+                            <p>{t('ProfitabilityCard.3e2d28')}</p>
                         </>
                     }
                 />
                 <MetricBar
-                    label="순이익률"
+                    label={t('ProfitabilityCard.d1ca4f')}
                     value={ratios.netProfitMarginTTM}
                     description="Net Margin"
                     tooltip={
                         <>
-                            <p>
-                                매출 100원에서 모든 비용·세금을 뺐을 때 실제로
-                                몇 원이 남는지 보여줘요.
-                            </p>
-                            <p>
-                                회사의 최종 수익성을 한눈에 보여주는 지표예요.
-                            </p>
+                            <p>{t('ProfitabilityCard.f77781')}</p>
+                            <p>{t('ProfitabilityCard.5fec55')}</p>
                         </>
                     }
                 />

@@ -1,5 +1,4 @@
 import {
-    DASHBOARD_TIMEFRAME_LABELS,
     DASHBOARD_TIMEFRAMES,
     DEFAULT_DASHBOARD_TIMEFRAME,
     isDashboardTimeframe,
@@ -175,21 +174,6 @@ describe('DEFAULT_DASHBOARD_TIMEFRAME', () => {
 
     it('DASHBOARD_TIMEFRAMES에 포함된 값이다', () => {
         expect(DASHBOARD_TIMEFRAMES).toContain(DEFAULT_DASHBOARD_TIMEFRAME);
-    });
-});
-
-describe('DASHBOARD_TIMEFRAME_LABELS', () => {
-    it('모든 DASHBOARD_TIMEFRAMES에 대한 레이블이 존재한다', () => {
-        for (const tf of DASHBOARD_TIMEFRAMES) {
-            expect(typeof DASHBOARD_TIMEFRAME_LABELS[tf]).toBe('string');
-            expect(DASHBOARD_TIMEFRAME_LABELS[tf].length).toBeGreaterThan(0);
-        }
-    });
-
-    it('한국어 레이블을 반환한다', () => {
-        expect(DASHBOARD_TIMEFRAME_LABELS['15Min']).toBe('15분');
-        expect(DASHBOARD_TIMEFRAME_LABELS['1Hour']).toBe('1시간');
-        expect(DASHBOARD_TIMEFRAME_LABELS['1Day']).toBe('1일');
     });
 });
 

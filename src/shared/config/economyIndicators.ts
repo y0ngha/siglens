@@ -23,7 +23,13 @@ export interface EconomyIndicatorMeta {
     category: EconomyCategoryKey;
     /** 카드 표시 라벨(한국어). */
     label: string;
-    /** 값 단위 표기(예: '%', 'pt', '천명'). */
+    /**
+     * 값 단위 표기. `'%'`·`'pt'`·`'B$'`처럼 로케일 불변 기호는 원문 그대로 쓴다.
+     * 한국어 카운터 단위(예전엔 `'천명'`·`'건'`)는 카탈로그 키(`'thousandPeople'`·
+     * `'count'`)로 대신 넣는다 — 렌더 사이트(`EconomicIndicatorGrid`의
+     * `ECONOMY_UNIT_LABEL_KEY`)가 `shared.enumLabel.economyUnit`으로 옮겨 조회하고,
+     * 매핑에 없는 값(기호)은 그대로 통과시킨다.
+     */
     unit: string;
     /** 표시 소수 자리수. */
     precision: number;
@@ -115,7 +121,7 @@ export const ECONOMY_INDICATORS: readonly EconomyIndicatorMeta[] = [
         name: 'totalNonfarmPayroll',
         category: 'labor',
         label: '비농업 고용',
-        unit: '천명',
+        unit: 'thousandPeople',
         precision: 0,
         tooltip:
             '농업을 뺀 미국 전체 일자리 수예요. 매달 얼마나 늘었는지가 고용 시장의 핵심 지표예요.',
@@ -124,7 +130,7 @@ export const ECONOMY_INDICATORS: readonly EconomyIndicatorMeta[] = [
         name: 'initialClaims',
         category: 'labor',
         label: '신규 실업수당청구',
-        unit: '건',
+        unit: 'count',
         precision: 0,
         tooltip:
             '한 주 동안 새로 실업수당을 신청한 사람 수예요. 빠르게 나와서 고용을 선행해서 보여줘요.',

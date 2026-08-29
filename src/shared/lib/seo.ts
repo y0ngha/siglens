@@ -1,5 +1,13 @@
 import type { Metadata } from 'next';
 import {
+    DEFAULT_LOCALE,
+    localePath,
+    LOCALE_HREFLANG,
+    type Locale,
+} from '@/shared/i18n/locales';
+import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
+import { localeAlternates, localeOpenGraph } from '@/shared/lib/seoAlternates';
+import {
     isKrEquitySymbol,
     type AssetClass,
 } from '@/shared/config/marketProfile';
@@ -15,6 +23,23 @@ export interface FaqItem {
     question: string;
     answer: string;
 }
+
+/**
+ * `next-intl`의 `getTranslations`/`useTranslations` 반환값과 구조적으로 호환되는
+ * 최소 형태. 이 파일이 `next-intl`을 직접 import하지 않는 이유(CLAUDE.md "pure
+ * logic 모듈에 외부 라이브러리 금지" — provider는 entity/shared adapter가 감싼다):
+ * 이 파일은 순수 문자열 조립 로직이고, 번역 SDK는 호출부(`generateMetadata` 등)가
+ * 이미 알고 있다. 그래서 SDK 자체가 아니라 그 인터페이스만 여기 선언해 받는다.
+ *
+ * **기본값을 두지 않는다.** 기본값을 두면 호출부가 조용히 `t`를 누락해도 컴파일이
+ * 통과하고, 그 결과 title/description이 `shared.seo.<key>` 같은 raw 키 문자열로
+ * 렌더된다 — 이 브랜치에서 이미 두 차례 감사 라운드를 태운 실수다. 필수 파라미터로
+ * 두면 컴파일러가 모든 호출부를 강제로 나열해 준다.
+ */
+export type SeoTranslator = (
+    key: string,
+    values?: Record<string, string | number>
+) => string;
 
 /**
  * 호스트가 로컬/개발 환경인지 판단한다.
@@ -151,10 +176,15 @@ export const NOINDEX_SYMBOL_METADATA: Metadata = {
  */
 export function noindexSymbolMetadata(
     symbol: string,
+    t: SeoTranslator,
+    locale: Locale,
     opts: BuildSymbolSeoOptions = {}
 ): Metadata {
     return {
-        ...symbolMetadataFromSeo(buildSymbolSeoContent(symbol, opts)),
+        ...symbolMetadataFromSeo(
+            buildSymbolSeoContent(symbol, t, opts),
+            locale
+        ),
         // 스프레드 순서가 중요하다 — robots(noindex)와 canonical:null이
         // symbolMetadataFromSeo의 index 기본값·self-canonical을 덮어야 한다.
         ...NOINDEX_SYMBOL_METADATA,
@@ -355,6 +385,10 @@ function titleTicker(ticker: string): string {
 export interface ComposeSymbolTitleArgs {
     ticker: string;
     koreanName?: string;
+    /** 비-기본 로케일에서 `koreanName` 자리에 들어간다. */
+    englishName?: string;
+    /** 생략하면 기본 로케일로 본다 — 한국어명을 그대로 노출한다. */
+    locale?: Locale;
     /** 검색 매칭을 만드는 키워드. 티커를 줄여서라도 보존한다 — `core` 자체가 예산(55 폭단위)을
      *  넘지 않는 한 잘리지 않는다. 예: `공포 탐욕 지수` */
     core: string;
@@ -379,17 +413,55 @@ export interface ComposeSymbolTitleArgs {
  * SERP에서 읽히지 않는 데다 검색어와도 맞지 않는다.
  */
 export function composeSymbolTitle(args: ComposeSymbolTitleArgs): string {
-    const { ticker, koreanName, core, tail } = args;
+    const { ticker, core, tail } = args;
+    /**
+     * 비-기본 로케일에서는 **한국어명을 title에 넣지 않는다.**
+     *
+     * 이 함수는 21개 빌더가 공유하므로 여기서 한 번에 거른다 — 빌더마다
+     * 고치면 하나만 빠뜨려도 그 탭만 조용히 한국어 제목으로 남는다.
+     * `/en/AAPL`이 `애플(AAPL) Stock Forecast …`로 나가던 결함이다.
+     *
+     * `keywords`는 대상이 아니다 — 설계 §5.1에서 ko 전용 데이터로 확정했다.
+     */
+    // 이름이 로케일을 타므로 `koreanName`이라는 이름은 더 이상 맞지 않다.
+    const titleName =
+        args.locale === undefined || args.locale === DEFAULT_LOCALE
+            ? args.koreanName
+            : args.englishName;
     const withTail = (subject: string) =>
         tail ? `${subject} ${core} — ${tail}` : `${subject} ${core}`;
     const fits = (t: string) => seoTitleWidth(t) <= SEO_TITLE_MAX_WIDTH;
 
-    const subject = buildTitleSubject(ticker, koreanName);
+    const subject = buildTitleSubject(ticker, titleName);
     const full = withTail(subject);
     if (fits(full)) return full;
 
     const coreOnly = `${subject} ${core}`;
     if (fits(coreOnly)) return coreOnly;
+
+    /**
+     * 이름을 통째로 버리기 전에 **법인 접미사만** 떼어 본다.
+     *
+     * 폭 예산(55)은 한글 기준으로 잡혔고 라틴 문자는 1단위라, 영문 법인명은
+     * `Samsung Electronics Co., Ltd.(005930)`처럼 쉽게 37단위를 먹는다. 그래서
+     * 국내 종목의 비-ko 제목이 8개 탭 중 4개에서 `005930 Overall Analysis`가
+     * 됐다 — 숫자만 남는 제목이다. `Apple Inc.`처럼 짧은 이름으로만 검증해서
+     * 처음엔 못 봤다.
+     *
+     * `Co., Ltd.`·`Inc.`·`Corp.` 같은 접미사는 검색어에도 안 쓰이고 화면에서
+     * 읽히지도 않는다 — 이름 자체를 버리는 것보다 이걸 먼저 버린다.
+     */
+    const shortName = titleName?.replace(
+        /[,]?\s*(?:Co\.?,?\s*Ltd\.?|Corporation|Corp\.?|Incorporated|Inc\.?|Limited|Ltd\.?|PLC|S\.A\.|AG|NV|SE)\s*$/i,
+        ''
+    );
+    if (shortName && shortName !== titleName) {
+        const shortSubject = buildTitleSubject(ticker, shortName);
+        const shortFull = withTail(shortSubject);
+        if (fits(shortFull)) return shortFull;
+        const shortCore = `${shortSubject} ${core}`;
+        if (fits(shortCore)) return shortCore;
+    }
 
     const bare = buildTitleSubject(ticker);
     const coreSuffix = ` ${core}`;
@@ -512,8 +584,24 @@ function clampAtSentenceBoundary(text: string, maxLength: number): string {
 export function buildSnapshotMetaDescription(
     tab: string,
     content: unknown,
-    subject: string
+    subject: string,
+    // 기본값을 두지 않는다 — 두면 호출부에서 빠져도 컴파일이 통과하고,
+    // 그 탭만 조용히 한국어 설명으로 되돌아간다(`buildDisplayName`과 같은 규약).
+    locale: Locale
 ): string | null {
+    /**
+     * 스냅샷은 **로케일 없이** 저장된다 — `getSeoSnapshotsStatic(ticker, …)`에
+     * 로케일 인자가 없다. 그래서 `content`의 산문은 항상 한국어다.
+     *
+     * 이걸 그대로 쓰면 `/en/AAPL`의 `<meta name="description">`이
+     * `Apple Inc. (AAPL) — 애플(AAPL) 주식은 최근 급락 이후…`가 되고, 같은
+     * 문서의 `og:description`은 영어라 **한 페이지가 두 언어로 말한다.**
+     *
+     * 비-ko에서는 null을 반환해 템플릿 설명(번역됨)으로 떨어진다. 스냅샷이
+     * 로케일별로 저장되면 이 게이트를 로케일 비교로 바꾸면 된다.
+     */
+    if (locale !== DEFAULT_LOCALE) return null;
+
     const field = SNAPSHOT_META_DESCRIPTION_FIELD[tab];
     if (field === undefined) return null;
     if (typeof content !== 'object' || content === null) return null;
@@ -530,39 +618,13 @@ export function buildSnapshotMetaDescription(
     );
 }
 
-// "보조지표 25종" 같은 동적 숫자는 Skills 개수가 바뀌면 stale되므로 질적 표현으로 둔다
-// (M7에서 FAQ JSON-LD에 적용한 정책을 SITE_DESCRIPTION에도 일관 적용).
-export const SITE_DESCRIPTION = clampSeoDescription(
-    '미국·한국 주식과 암호화폐를 티커 하나로 종합 분석합니다. 다양한 보조지표 차트와 매매 신호, 펀더멘털·뉴스, 공포 탐욕 지수를 묶은 AI 종합 결론을 한 화면에서.'
-);
-
 /**
- * 홈은 사이트 전체의 주제를 선언하는 가장 강한 신호다. 국내 상장 종목을 서비스하면서
- * 여기서 "미국 주식과 암호화폐"라고만 말하면 KR 클러스터 전체의 주제 관련성이 눌린다
- * (홈 본문에는 `한국 주식` 카테고리 카드가 이미 렌더된다 — 본문과 메타가 어긋난 상태였다).
+ * 홈 카피(제목·설명·헤드라인)는 `shared.seo.root` 카탈로그가 소유한다.
+ *
+ * 예전에는 여기 한국어 상수로 있었다 — 그래서 `/en`의 홈 JSON-LD가
+ * `inLanguage: "en"`을 달고 한국어 산문을 실어 보냈다. 이 모듈은 요청 스코프가
+ * 없으므로 문구를 들 수 없고, 소비 지점(레이아웃·홈 페이지)이 번역자로 읽는다.
  */
-export const ROOT_HEADLINE = '미국·한국 주식·암호화폐 AI 분석';
-// Root layout template appends "| Siglens" — 본문 title은 brand 제외
-// (SEO 감사 라운드 2 finding 3: 65 폭단위로 SEO_TITLE_MAX_WIDTH(55)를 넘고 있었다.
-// symbolMetadataFromSeo의 2,247개 URL과 같은 근거 — 브랜드 검색어는 이미 자연 순위
-// 상위라 title 폭을 추가로 쓸 이유가 없다). layout.tsx의 `title.default`는
-// title.template을 거치지 않으므로 접미사를 직접 빼야 한다.
-//
-// (SEO 감사 라운드 3 finding 3) 이 문자열은 정확히 55 폭단위 — SEO_TITLE_MAX_WIDTH와
-// 동일해 여유가 0이다. `clampSeoTitle`을 거치는 12개 심볼 title 템플릿과 달리 홈은
-// 손으로 쓴 리터럴 하나뿐이라 클램프를 씌우기보다("한국 주식 AI 분석" 같은 핵심 문구가
-// 말줄임표에 잘릴 위험) 짧게 유지하는 쪽을 택했다. 대신 안전장치는 코드가 아니라
-// `seo.rootCopy.test.ts`의 폭 테스트다 — 그 테스트는 `SEO_TITLE_MAX_WIDTH` 상수를
-// 직접 참조하므로(하드코딩된 55가 아님) 다음 카피 수정이 예산을 넘으면 그 자리에서
-// 실패한다. 문구를 줄여 여유를 확보하는 대신 이 가드에 의존하기로 한 것은, 남은 여유가
-// 없더라도 회귀를 잡는 테스트가 이미 있으면 카피 품질(핵심 키워드 보존)이 우선한다고
-// 판단했기 때문이다.
-export const ROOT_TITLE = `${ROOT_HEADLINE} — 차트·뉴스로 투자 결론`;
-// 소셜 카드(Kakao/Slack/Twitter/Facebook 언퍼널)는 SERP 폭 제약이 없고 브랜드
-// 노출이 오히려 도움이 된다 — symbolMetadataFromSeo의 fullTitle, MARKET_FULL_TITLE,
-// ECONOMY_FULL_TITLE과 같은 근거로 별도 브랜드 문자열을 둔다. layout.tsx의
-// openGraph.title·twitter.title은 이 값을 쓰고, title.default만 ROOT_TITLE(브랜드 제외)을 쓴다.
-export const ROOT_FULL_TITLE = `${ROOT_TITLE} | ${SITE_NAME}`;
 
 // 한글 SERP는 80~120자가 안전권이라 키워드는 핵심 검색의도 위주로 추렸다.
 export const ROOT_KEYWORDS = [
@@ -590,9 +652,17 @@ export const ROOT_KEYWORDS = [
     '비트코인 차트',
 ];
 
-function buildSymbolDescription(displayName: string, sector?: string): string {
-    const sectorPhrase = sector ? `${sector} 섹터 ` : '';
-    return `${sectorPhrase}${displayName} 주가 흐름과 매매 신호를 차트에서 확인합니다. RSI·MACD·볼린저밴드, 캔들 패턴, 주요 지지·저항선을 AI가 분석해 추세와 진입 후보 가격대를 정리합니다.`;
+function buildSymbolDescription(
+    t: SeoTranslator,
+    displayName: string,
+    sector?: string
+): string {
+    return sector
+        ? t('symbol.chart.descriptionWithSector', {
+              subject: displayName,
+              sector,
+          })
+        : t('symbol.chart.description', { subject: displayName });
 }
 
 export interface SymbolSeoContent {
@@ -609,20 +679,37 @@ export interface BuildSymbolSeoOptions {
     displayName?: string;
     /** Korean company name; expands keyword set when present. */
     koreanName?: string;
+    /**
+     * 영문 법인명. **비-기본 로케일 title에서 한국어명을 대신한다.**
+     *
+     * 없으면 title은 티커만 남는다 — 국내 종목에서는 그게
+     * `005930 Stock Forecast — Chart & Trading Signals`처럼 **숫자만 덩그러니**
+     * 남는 제목이 된다. 같은 페이지 `<h1>`은
+     * `Samsung Electronics Co., Ltd. (005930.KS)`로 제대로 나오는데도.
+     */
+    englishName?: string;
+    /**
+     * URL 로케일. 비-기본 로케일이면 **title에서 한국어명을 뺀다**
+     * (`keywords`는 §5.1대로 ko 전용이라 영향 없음).
+     */
+    locale?: Locale;
     /** Sector name (English, FMP-style — e.g. "Technology"); woven into description when present. */
     sector?: string;
 }
 
 export function buildSymbolSeoContent(
     symbol: string,
+    t: SeoTranslator,
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const ticker = symbol.toUpperCase();
     const title = composeSymbolTitle({
         ticker,
         koreanName: opts.koreanName,
-        core: '주가 전망',
-        tail: '차트·매매 신호',
+        englishName: opts.englishName,
+        locale: opts.locale,
+        core: t('symbol.chart.titleCore'),
+        tail: t('symbol.chart.titleTail'),
     });
     const displayName = opts.displayName ?? ticker;
     return {
@@ -630,7 +717,7 @@ export function buildSymbolSeoContent(
         title,
         fullTitle: `${title} | ${SITE_NAME}`,
         description: clampSeoDescription(
-            buildSymbolDescription(displayName, opts.sector)
+            buildSymbolDescription(t, displayName, opts.sector)
         ),
         url: `${SITE_URL}/${ticker}`,
         keywords: buildSymbolKeywords(ticker, displayName, opts.koreanName),
@@ -684,21 +771,49 @@ function buildSymbolKeywords(
  *   ...(about && { about }),
  * }
  */
-export function buildSymbolWebPageJsonLd(params: {
+/**
+ * 절대 URL에 로케일 접두사를 붙인다.
+ *
+ * JSON-LD의 `url`·`@id`는 **canonical과 같은 문서를 가리켜야 한다.** 예전에는
+ * 기본 로케일 URL을 그대로 실어서, `/en/AAPL`이
+ * `<link rel="canonical" href=".../en/AAPL">`를 걸어 놓고 `WebPage.url`은
+ * `.../AAPL`을 말했다. 더 나쁜 건 `@id`다 — `${url}#webpage`라서 **네 로케일이
+ * 전부 같은 `@id`를 발행하면서** 각자 다른 `inLanguage`와 `name`을 선언했다.
+ * 한 노드를 네 문서가 동시에 자처하는 상태다.
+ */
+export function localizedAbsoluteUrl(url: string, locale: Locale): string {
+    // 기본 로케일은 접두사가 없다. 원본을 그대로 돌려줘야 `SITE_URL`처럼
+    // 경로가 빈 URL에 `/`가 새로 붙는 일이 없다.
+    if (locale === DEFAULT_LOCALE) return url;
+    const path = url.startsWith(SITE_URL) ? url.slice(SITE_URL.length) : url;
+    return `${SITE_URL}${localePath(locale, path || '/')}`;
+}
+
+export function buildWebPageJsonLd(params: {
     url: string;
     name: string;
     description: string;
     about?: Record<string, unknown>;
+    /**
+     * 이 문서의 언어. **기본값을 두지 않는다** — 두면 호출부에서 빠져도
+     * 컴파일이 통과하고, 그 페이지만 조용히 `ko`를 자처한다. `/en/AAPL`의
+     * `WebPage`가 `inLanguage: "ko"`를 달고 있던 게 그 결과다(형제 `Article`
+     * 노드는 이미 로케일을 따르고 있어 한 페이지 안에서 서로 어긋났다).
+     */
+    locale: Locale;
 }): Record<string, unknown> {
-    const { url, name, description, about } = params;
+    const { url, name, description, about, locale } = params;
+    const localizedUrl = localizedAbsoluteUrl(url, locale);
     return {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
-        '@id': `${url}#webpage`,
+        '@id': `${localizedUrl}#webpage`,
         name,
         description,
-        url,
-        inLanguage: 'ko',
+        url: localizedUrl,
+        // `<html lang>`과 같은 태그를 쓴다 — `zh`는 `<html lang="zh-Hans">`인데
+        // JSON-LD만 `zh`를 선언해 한 문서가 두 언어 태그를 말하고 있었다.
+        inLanguage: LOCALE_HREFLANG[locale],
         isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
         ...(about && { about }),
     };
@@ -721,26 +836,55 @@ export function buildSymbolWebPageJsonLd(params: {
  * options/page.tsx의 `robots` 스프레드는 호출측이 직접 추가해야 한다:
  * `return { ...symbolMetadataFromSeo(seo), ...(hasOptions ? {} : { robots }) };`
  */
-export function symbolMetadataFromSeo(seo: SymbolSeoContent): Metadata {
+export function symbolMetadataFromSeo(
+    seo: SymbolSeoContent,
+    locale: Locale
+): Metadata {
     const { title, fullTitle, description, url, keywords } = seo;
+    // `seo.url`은 기본 로케일 절대 URL이다. 경로만 떼어 로케일별 URL을 다시 만든다.
+    const path = url.startsWith(SITE_URL) ? url.slice(SITE_URL.length) : url;
+    const localizedUrl = `${SITE_URL}${localePath(locale, path || '/')}`;
     return {
         title: { absolute: title },
         description,
         keywords,
-        alternates: { canonical: url },
+        // hreflang은 **분석 본문이 준비된 로케일만** 광고한다. 준비되지 않은
+        // 로케일을 광고하면 한국어 본문이 담긴 영어 URL을 크롤러에게 권하는 셈이다.
+        // 준비된 로케일이 하나뿐이면 `buildLanguageAlternates`가 빈 객체를 돌려주고
+        // `languages` 키 자체가 나가지 않는다.
+        alternates: localeAlternates(locale, path, {
+            canonical: localizedUrl,
+            available: SYMBOL_INDEXABLE_LOCALES,
+        }),
         openGraph: {
             type: 'website',
             siteName: SITE_NAME,
             title: fullTitle,
             description,
-            url,
-            locale: 'ko_KR',
+            url: localizedUrl,
+            ...localeOpenGraph(locale),
         },
         twitter: {
             card: 'summary_large_image',
             title: fullTitle,
             description,
         },
+        /**
+         * 준비되지 않은 로케일은 **제목·설명은 그대로 두고 robots만** 덮는다.
+         *
+         * 이전에는 `getBlockedSymbolMetadata`가 통째로 `NOINDEX_SYMBOL_METADATA`를
+         * 돌려줬는데, 그 상수엔 title이 없다. 그래서 `/en/AAPL`의 `<title>`이
+         * 루트 레이아웃의 **한국어 사이트 기본 제목**으로 떨어졌다 — 브라우저 탭·
+         * 북마크·`og:title`이 전부 그렇게 나갔고, `og:image`만 종목별이라 공유하면
+         * AAPL 차트에 한국어 일반 문구가 붙었다.
+         *
+         * `follow: true`인 이유는 정적 페이지 게이트(`localeRobots`)와 같다 —
+         * 색인은 막되 링크는 따라가게 둔다. 같은 게이트가 두 표면에서 다른
+         * `follow` 값을 내면 그것 자체가 크롤 예산 결함이다.
+         */
+        ...(SYMBOL_INDEXABLE_LOCALES.includes(locale)
+            ? {}
+            : { robots: { index: false, follow: true } }),
     };
 }
 
@@ -754,7 +898,10 @@ export function symbolMetadataFromSeo(seo: SymbolSeoContent): Metadata {
 // 렌더하므로(예: `애플, Apple Inc. (AAPL)`), 종목 탭들은 티커가 아니라
 // `displayName`을 넘긴다.
 export function buildBreadcrumbJsonLd(
-    trail: readonly BreadcrumbItem[]
+    trail: readonly BreadcrumbItem[],
+    // 기본값을 두지 않는다 — 두면 호출부에서 빠져도 컴파일이 통과하고, 그
+    // 페이지의 breadcrumb만 조용히 기본 로케일 URL을 가리킨다.
+    locale: Locale
 ): Record<string, unknown> {
     const items: BreadcrumbItem[] = [
         { name: SITE_NAME, url: SITE_URL },
@@ -767,9 +914,12 @@ export function buildBreadcrumbJsonLd(
             '@type': 'ListItem',
             position: index + 1,
             name: item.name,
-            item: item.url.startsWith('http')
-                ? item.url
-                : `${SITE_URL}${item.url}`,
+            item: localizedAbsoluteUrl(
+                item.url.startsWith('http')
+                    ? item.url
+                    : `${SITE_URL}${item.url}`,
+                locale
+            ),
         })),
     };
 }
@@ -800,10 +950,12 @@ export function buildFaqJsonLd(
 export const BACKTESTING_PATH = '/backtesting';
 export const BACKTESTING_URL = `${SITE_URL}${BACKTESTING_PATH}`;
 // Root layout template appends "| Siglens" — exclude brand name to prevent duplication
-export const BACKTESTING_TITLE =
-    'AAPL, NVDA, TSLA 2년 백테스트 — AI 신호 예측 정확도';
-export const BACKTESTING_DESCRIPTION =
-    'AAPL·NVDA·TSLA 등 10개 종목 2년 백테스트입니다. RSI·MACD·Supertrend 기술적 신호와 AI 예측이 실제로 얼마나 맞았는지 데이터로 확인하세요.';
+export function backtestingTitle(t: SeoTranslator): string {
+    return t('backtesting.title');
+}
+export function backtestingDescription(t: SeoTranslator): string {
+    return t('backtesting.description');
+}
 export const BACKTESTING_KEYWORDS = [
     ...ROOT_KEYWORDS,
     '주식 AI 백테스팅',
@@ -823,14 +975,17 @@ export const BACKTESTING_KEYWORDS = [
 /** Build SEO metadata for the `/[symbol]/financials` page. */
 export function buildSymbolFinancialsSeoContent(
     symbol: string,
+    t: SeoTranslator,
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
     const title = composeSymbolTitle({
         ticker: upper,
         koreanName: opts.koreanName,
-        core: '재무제표',
-        tail: '매출·이익·현금흐름',
+        englishName: opts.englishName,
+        locale: opts.locale,
+        core: t('symbol.financials.titleCore'),
+        tail: t('symbol.financials.titleTail'),
     });
     const fullTitle = `${title} | ${SITE_NAME}`;
     const subject = opts.displayName ?? upper;
@@ -839,15 +994,18 @@ export function buildSymbolFinancialsSeoContent(
         title,
         fullTitle,
         description: clampSeoDescription(
-            buildSymbolFinancialsDescription(subject)
+            buildSymbolFinancialsDescription(t, subject)
         ),
         url: `${SITE_URL}/${upper}/financials`,
         keywords: buildSymbolFinancialsKeywords(upper, opts.koreanName),
     };
 }
 
-function buildSymbolFinancialsDescription(subject: string): string {
-    return `${subject}의 손익·재무상태·현금흐름과 성장성·수익성·안정성·현금창출력 점수를 한눈에 확인합니다.`;
+function buildSymbolFinancialsDescription(
+    t: SeoTranslator,
+    subject: string
+): string {
+    return t('symbol.financials.description', { subject });
 }
 
 function buildSymbolFinancialsKeywords(
@@ -885,14 +1043,17 @@ function buildSymbolFinancialsKeywords(
 /** Build SEO metadata for the `/[symbol]/congress` page. */
 export function buildSymbolCongressSeoContent(
     symbol: string,
+    t: SeoTranslator,
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
     const title = composeSymbolTitle({
         ticker: upper,
         koreanName: opts.koreanName,
-        core: '의회 거래',
-        tail: '상원·하원 매매 공시',
+        englishName: opts.englishName,
+        locale: opts.locale,
+        core: t('symbol.congress.titleCore'),
+        tail: t('symbol.congress.titleTail'),
     });
     const fullTitle = `${title} | ${SITE_NAME}`;
     const subject = opts.displayName ?? upper;
@@ -901,16 +1062,19 @@ export function buildSymbolCongressSeoContent(
         title,
         fullTitle,
         description: clampSeoDescription(
-            buildSymbolCongressDescription(subject)
+            buildSymbolCongressDescription(t, subject)
         ),
         url: `${SITE_URL}/${upper}/congress`,
         keywords: buildSymbolCongressKeywords(upper, opts.koreanName),
     };
 }
 
-function buildSymbolCongressDescription(subject: string): string {
+function buildSymbolCongressDescription(
+    t: SeoTranslator,
+    subject: string
+): string {
     // 공시지연 ~45일은 STOCK Act 규정상 거래일로부터 신고 마감까지의 최대치다.
-    return `미국 상원·하원 의원의 ${subject} 매매 공시 내역을 공시지연 약 45일을 감안해 AI가 동향으로 요약합니다.`;
+    return t('symbol.congress.description', { subject });
 }
 
 function buildSymbolCongressKeywords(
@@ -945,14 +1109,17 @@ function buildSymbolCongressKeywords(
 /** Build SEO metadata for the `/[symbol]/fundamental` page. */
 export function buildSymbolFundamentalSeoContent(
     symbol: string,
+    t: SeoTranslator,
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
     const title = composeSymbolTitle({
         ticker: upper,
         koreanName: opts.koreanName,
-        core: '펀더멘털',
-        tail: 'PER·ROE와 컨센서스',
+        englishName: opts.englishName,
+        locale: opts.locale,
+        core: t('symbol.fundamental.titleCore'),
+        tail: t('symbol.fundamental.titleTail'),
     });
     const fullTitle = `${title} | ${SITE_NAME}`;
     const subject = opts.displayName ?? upper;
@@ -961,7 +1128,7 @@ export function buildSymbolFundamentalSeoContent(
         title,
         fullTitle,
         description: clampSeoDescription(
-            buildSymbolFundamentalDescription(subject, opts.sector)
+            buildSymbolFundamentalDescription(t, subject, opts.sector)
         ),
         url: `${SITE_URL}/${upper}/fundamental`,
         keywords: buildSymbolFundamentalKeywords(
@@ -973,11 +1140,13 @@ export function buildSymbolFundamentalSeoContent(
 }
 
 function buildSymbolFundamentalDescription(
+    t: SeoTranslator,
     subject: string,
     sector?: string
 ): string {
-    const sectorPhrase = sector ? ` ${sector} 섹터 위치와` : '';
-    return `${subject} 회사 프로필, PER·PSR·EPS 밸류에이션, ROE·마진 수익성, 부채·현금흐름 재무 건전성을 한 페이지에서 정리합니다.${sectorPhrase} 애널리스트 컨센서스와 목표 주가도 이어 봅니다.`;
+    return sector
+        ? t('symbol.fundamental.descriptionWithSector', { subject, sector })
+        : t('symbol.fundamental.description', { subject });
 }
 
 function buildSymbolFundamentalKeywords(
@@ -1023,6 +1192,7 @@ export interface BuildSymbolOptionsSeoOptions extends BuildSymbolSeoOptions {
 /** Build SEO metadata for the `/[symbol]/options` page. */
 export function buildSymbolOptionsSeoContent(
     symbol: string,
+    t: SeoTranslator,
     opts: BuildSymbolOptionsSeoOptions = {}
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
@@ -1032,13 +1202,17 @@ export function buildSymbolOptionsSeoContent(
         ? composeSymbolTitle({
               ticker: upper,
               koreanName: opts.koreanName,
-              core: '옵션 분석',
-              tail: 'Max Pain·OI·Put/Call',
+              englishName: opts.englishName,
+              locale: opts.locale,
+              core: t('symbol.options.titleCore'),
+              tail: t('symbol.options.titleTail'),
           })
         : composeSymbolTitle({
               ticker: upper,
               koreanName: opts.koreanName,
-              core: '옵션 분석',
+              englishName: opts.englishName,
+              locale: opts.locale,
+              core: t('symbol.options.titleCore'),
           });
     const fullTitle = `${title} | ${SITE_NAME}`;
     return {
@@ -1047,8 +1221,8 @@ export function buildSymbolOptionsSeoContent(
         fullTitle,
         description: clampSeoDescription(
             hasOptions
-                ? `${subject} 옵션 시장을 AI가 한국어로 해석합니다. 만기별 Max Pain·Put/Call·ATM IV·Implied Move와 Strike별 OI로 시장이 어디에 베팅하는지 봅니다.`
-                : `${subject}는 현재 옵션 시장이 형성되어 있지 않습니다. 차트·펀더멘털·뉴스 분석으로 종목을 살펴보세요.`
+                ? t('symbol.options.description', { subject })
+                : t('symbol.options.descriptionNoMarket', { subject })
         ),
         url: `${SITE_URL}/${upper}/options`,
         keywords: buildSymbolOptionsKeywords(upper, opts.koreanName),
@@ -1085,14 +1259,17 @@ function buildSymbolOptionsKeywords(
 /** Build SEO metadata for the `/[symbol]/news` page. */
 export function buildSymbolNewsSeoContent(
     symbol: string,
+    t: SeoTranslator,
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
     const title = composeSymbolTitle({
         ticker: upper,
         koreanName: opts.koreanName,
-        core: '뉴스',
-        tail: '호재 분위기와 애널리스트 등급',
+        englishName: opts.englishName,
+        locale: opts.locale,
+        core: t('symbol.news.titleCore'),
+        tail: t('symbol.news.titleTail'),
     });
     const fullTitle = `${title} | ${SITE_NAME}`;
     const subject = opts.displayName ?? upper;
@@ -1100,14 +1277,16 @@ export function buildSymbolNewsSeoContent(
         ticker: upper,
         title,
         fullTitle,
-        description: clampSeoDescription(buildSymbolNewsDescription(subject)),
+        description: clampSeoDescription(
+            buildSymbolNewsDescription(t, subject)
+        ),
         url: `${SITE_URL}/${upper}/news`,
         keywords: buildSymbolNewsKeywords(upper, opts.koreanName),
     };
 }
 
-function buildSymbolNewsDescription(subject: string): string {
-    return `${subject} 주가가 왜 움직였는지 최신 뉴스에서 확인합니다. 기사마다 호재·악재 분위기와 핵심 이슈를 정리하고, 다음 어닝·실적 발표, 애널리스트 목표 주가와 등급 변경도 이어 봅니다.`;
+function buildSymbolNewsDescription(t: SeoTranslator, subject: string): string {
+    return t('symbol.news.description', { subject });
 }
 
 function buildSymbolNewsKeywords(
@@ -1153,14 +1332,17 @@ function buildSymbolNewsKeywords(
 /** Build SEO metadata for the `/[symbol]/overall` page. */
 export function buildSymbolOverallSeoContent(
     symbol: string,
+    t: SeoTranslator,
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
     const title = composeSymbolTitle({
         ticker: upper,
         koreanName: opts.koreanName,
-        core: '종합 분석',
-        tail: '강세·약세 시나리오',
+        englishName: opts.englishName,
+        locale: opts.locale,
+        core: t('symbol.overall.titleCore'),
+        tail: t('symbol.overall.titleTail'),
     });
     const fullTitle = `${title} | ${SITE_NAME}`;
     const subject = opts.displayName ?? upper;
@@ -1169,15 +1351,18 @@ export function buildSymbolOverallSeoContent(
         title,
         fullTitle,
         description: clampSeoDescription(
-            buildSymbolOverallDescription(subject)
+            buildSymbolOverallDescription(t, subject)
         ),
         url: `${SITE_URL}/${upper}/overall`,
         keywords: buildSymbolOverallKeywords(upper, opts.koreanName),
     };
 }
 
-function buildSymbolOverallDescription(subject: string): string {
-    return `${subject} 주가를 매수할 만한지 차트·실적·뉴스·매수 분위기 네 축으로 묶어 강세·약세 시나리오로 정리합니다. 진입 후보 가격대와 시나리오가 깨지는 위험 요인도 함께 짚습니다.`;
+function buildSymbolOverallDescription(
+    t: SeoTranslator,
+    subject: string
+): string {
+    return t('symbol.overall.description', { subject });
 }
 
 function buildSymbolOverallKeywords(
@@ -1211,8 +1396,11 @@ function buildSymbolOverallKeywords(
     ];
 }
 
-function buildCryptoSymbolDescription(displayName: string): string {
-    return `${displayName} 가격 흐름과 매매 신호를 차트에서 확인합니다. RSI·MACD·볼린저밴드, 캔들 패턴, 주요 지지·저항선을 AI가 분석해 추세와 진입 후보 가격대를 정리합니다.`;
+function buildCryptoSymbolDescription(
+    t: SeoTranslator,
+    displayName: string
+): string {
+    return t('symbol.crypto.description', { subject: displayName });
 }
 
 function buildCryptoSymbolKeywords(
@@ -1238,6 +1426,7 @@ function buildCryptoSymbolKeywords(
 /** Build SEO metadata for a crypto `/[symbol]` chart page (crypto-framed copy). */
 export function buildCryptoSymbolSeoContent(
     symbol: string,
+    t: SeoTranslator,
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const ticker = symbol.toUpperCase();
@@ -1245,15 +1434,20 @@ export function buildCryptoSymbolSeoContent(
     const title = composeSymbolTitle({
         ticker,
         koreanName: opts.koreanName,
-        core: '시세 전망',
-        tail: '차트·매매 신호',
+        englishName: opts.englishName,
+        locale: opts.locale,
+        core: t('symbol.crypto.titleCore'),
+        // 크립토 chart title tail은 주식과 동일 문구("차트·매매 신호") —
+        // `symbol.chart.titleTail` 키를 그대로 재사용해 두 카탈로그 값이
+        // 번역 갱신 시 어긋나지 않게 한다.
+        tail: t('symbol.chart.titleTail'),
     });
     return {
         ticker,
         title,
         fullTitle: `${title} | ${SITE_NAME}`,
         description: clampSeoDescription(
-            buildCryptoSymbolDescription(displayName)
+            buildCryptoSymbolDescription(t, displayName)
         ),
         url: `${SITE_URL}/${ticker}`,
         keywords: buildCryptoSymbolKeywords(ticker, displayName),
@@ -1271,6 +1465,10 @@ export function buildCryptoSymbolSeoContent(
 export interface ResolveSymbolSeoOpts {
     displayName: string;
     koreanName?: string | null;
+    /** 비-기본 로케일 title에서 `koreanName`을 대신한다. */
+    englishName?: string | null;
+    /** URL 로케일. 비-기본 로케일이면 title에서 한국어명을 뺀다. */
+    locale?: Locale;
 }
 
 /**
@@ -1288,23 +1486,29 @@ export interface ResolveSymbolSeoOpts {
 export function resolveSymbolSeoContent(
     ticker: string,
     assetClass: AssetClass,
+    t: SeoTranslator,
     opts: ResolveSymbolSeoOpts
 ): SymbolSeoContent {
     if (assetClass === 'crypto') {
-        return buildCryptoSymbolSeoContent(ticker, {
+        return buildCryptoSymbolSeoContent(ticker, t, {
             displayName: opts.displayName,
             koreanName: opts.koreanName ?? undefined,
+            englishName: opts.englishName ?? undefined,
+            locale: opts.locale,
         });
     }
-    return buildSymbolSeoContent(ticker, {
+    return buildSymbolSeoContent(ticker, t, {
         displayName: opts.displayName,
         koreanName: opts.koreanName ?? undefined,
+        englishName: opts.englishName ?? undefined,
+        locale: opts.locale,
     });
 }
 
 /** Build SEO metadata for a crypto `/[symbol]/news` page (no 어닝/실적/애널리스트). */
 export function buildCryptoSymbolNewsSeoContent(
     symbol: string,
+    t: SeoTranslator,
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const ticker = symbol.toUpperCase();
@@ -1313,8 +1517,10 @@ export function buildCryptoSymbolNewsSeoContent(
     const title = composeSymbolTitle({
         ticker,
         koreanName: opts.koreanName,
-        core: '코인 뉴스',
-        tail: '호재 악재와 시장 분위기',
+        englishName: opts.englishName,
+        locale: opts.locale,
+        core: t('symbol.cryptoNews.titleCore'),
+        tail: t('symbol.cryptoNews.titleTail'),
     });
     const fullTitle = `${title} | ${SITE_NAME}`;
     return {
@@ -1322,7 +1528,7 @@ export function buildCryptoSymbolNewsSeoContent(
         title,
         fullTitle,
         description: clampSeoDescription(
-            `${subject} 최신 뉴스에서 가격을 움직인 호재·악재를 확인합니다. 크립토 시장 분위기와 핵심 이슈를 AI가 한국어로 정리합니다.`
+            t('symbol.cryptoNews.description', { subject })
         ),
         url: `${SITE_URL}/${ticker}/news`,
         keywords: buildCryptoSymbolNewsKeywords(ticker),
@@ -1357,23 +1563,29 @@ function buildCryptoSymbolNewsKeywords(ticker: string): string[] {
 export function resolveSymbolNewsSeoContent(
     ticker: string,
     assetClass: AssetClass,
+    t: SeoTranslator,
     opts: ResolveSymbolSeoOpts
 ): SymbolSeoContent {
     if (assetClass === 'crypto') {
-        return buildCryptoSymbolNewsSeoContent(ticker, {
+        return buildCryptoSymbolNewsSeoContent(ticker, t, {
             displayName: opts.displayName,
             koreanName: opts.koreanName ?? undefined,
+            englishName: opts.englishName ?? undefined,
+            locale: opts.locale,
         });
     }
-    return buildSymbolNewsSeoContent(ticker, {
+    return buildSymbolNewsSeoContent(ticker, t, {
         displayName: opts.displayName,
         koreanName: opts.koreanName ?? undefined,
+        englishName: opts.englishName ?? undefined,
+        locale: opts.locale,
     });
 }
 
 /** Build SEO metadata for a crypto `/[symbol]/overall` page (no 주가/분기실적/펀더멘털). */
 export function buildCryptoSymbolOverallSeoContent(
     symbol: string,
+    t: SeoTranslator,
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const ticker = symbol.toUpperCase();
@@ -1382,8 +1594,10 @@ export function buildCryptoSymbolOverallSeoContent(
     const title = composeSymbolTitle({
         ticker,
         koreanName: opts.koreanName,
-        core: '코인 종합 분석',
-        tail: '강세·약세 시나리오',
+        englishName: opts.englishName,
+        locale: opts.locale,
+        core: t('symbol.cryptoOverall.titleCore'),
+        tail: t('symbol.cryptoOverall.titleTail'),
     });
     const fullTitle = `${title} | ${SITE_NAME}`;
     return {
@@ -1391,7 +1605,7 @@ export function buildCryptoSymbolOverallSeoContent(
         title,
         fullTitle,
         description: clampSeoDescription(
-            `${subject} 시세를 차트 추세·뉴스·매수 분위기 세 축으로 묶어 강세·약세 시나리오로 정리합니다. 진입 후보 가격대와 시나리오가 깨지는 위험 요인도 함께 짚습니다.`
+            t('symbol.cryptoOverall.description', { subject })
         ),
         url: `${SITE_URL}/${ticker}/overall`,
         keywords: buildCryptoSymbolOverallKeywords(ticker),
@@ -1423,23 +1637,29 @@ function buildCryptoSymbolOverallKeywords(ticker: string): string[] {
 export function resolveSymbolOverallSeoContent(
     ticker: string,
     assetClass: AssetClass,
+    t: SeoTranslator,
     opts: ResolveSymbolSeoOpts
 ): SymbolSeoContent {
     if (assetClass === 'crypto') {
-        return buildCryptoSymbolOverallSeoContent(ticker, {
+        return buildCryptoSymbolOverallSeoContent(ticker, t, {
             displayName: opts.displayName,
             koreanName: opts.koreanName ?? undefined,
+            englishName: opts.englishName ?? undefined,
+            locale: opts.locale,
         });
     }
-    return buildSymbolOverallSeoContent(ticker, {
+    return buildSymbolOverallSeoContent(ticker, t, {
         displayName: opts.displayName,
         koreanName: opts.koreanName ?? undefined,
+        englishName: opts.englishName ?? undefined,
+        locale: opts.locale,
     });
 }
 
 /** Build SEO metadata for a crypto `/[symbol]/fear-greed` page (coin-framed keywords). */
 export function buildCryptoSymbolFearGreedSeoContent(
     symbol: string,
+    t: SeoTranslator,
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const ticker = symbol.toUpperCase();
@@ -1448,8 +1668,10 @@ export function buildCryptoSymbolFearGreedSeoContent(
     const title = composeSymbolTitle({
         ticker,
         koreanName: opts.koreanName,
-        core: '공포 탐욕 지수',
-        tail: '0~100 점수와 5단계',
+        englishName: opts.englishName,
+        locale: opts.locale,
+        core: t('symbol.fearGreed.titleCore'),
+        tail: t('symbol.fearGreed.titleTail'),
     });
     const fullTitle = `${title} | ${SITE_NAME}`;
     return {
@@ -1461,7 +1683,7 @@ export function buildCryptoSymbolFearGreedSeoContent(
             // position and volume flow — semantics that are identical for crypto
             // and equity.  Only the title and keywords need crypto-specific copy;
             // the description body is shared intentionally via buildSymbolFearGreedDescription.
-            buildSymbolFearGreedDescription(subject)
+            buildSymbolFearGreedDescription(t, subject)
         ),
         url: `${SITE_URL}/${ticker}/fear-greed`,
         keywords: buildCryptoSymbolFearGreedKeywords(ticker),
@@ -1494,17 +1716,22 @@ function buildCryptoSymbolFearGreedKeywords(ticker: string): string[] {
 export function resolveSymbolFearGreedSeoContent(
     ticker: string,
     assetClass: AssetClass,
+    t: SeoTranslator,
     opts: ResolveSymbolSeoOpts
 ): SymbolSeoContent {
     if (assetClass === 'crypto') {
-        return buildCryptoSymbolFearGreedSeoContent(ticker, {
+        return buildCryptoSymbolFearGreedSeoContent(ticker, t, {
             displayName: opts.displayName,
             koreanName: opts.koreanName ?? undefined,
+            englishName: opts.englishName ?? undefined,
+            locale: opts.locale,
         });
     }
-    return buildSymbolFearGreedSeoContent(ticker, {
+    return buildSymbolFearGreedSeoContent(ticker, t, {
         displayName: opts.displayName,
         koreanName: opts.koreanName ?? undefined,
+        englishName: opts.englishName ?? undefined,
+        locale: opts.locale,
         // sector is not forwarded — none of the fear-greed callers resolve a sector
         // (it's equity-tab metadata context, not tracked at this page level).
     });
@@ -1513,6 +1740,7 @@ export function resolveSymbolFearGreedSeoContent(
 /** Build SEO metadata for the `/[symbol]/fear-greed` page. */
 export function buildSymbolFearGreedSeoContent(
     symbol: string,
+    t: SeoTranslator,
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
@@ -1520,8 +1748,10 @@ export function buildSymbolFearGreedSeoContent(
     const title = composeSymbolTitle({
         ticker: upper,
         koreanName: opts.koreanName,
-        core: '공포 탐욕 지수',
-        tail: '0~100 점수와 5단계',
+        englishName: opts.englishName,
+        locale: opts.locale,
+        core: t('symbol.fearGreed.titleCore'),
+        tail: t('symbol.fearGreed.titleTail'),
     });
     const fullTitle = `${title} | ${SITE_NAME}`;
     return {
@@ -1529,7 +1759,7 @@ export function buildSymbolFearGreedSeoContent(
         title,
         fullTitle,
         description: clampSeoDescription(
-            buildSymbolFearGreedDescription(subject)
+            buildSymbolFearGreedDescription(t, subject)
         ),
         url: `${SITE_URL}/${upper}/fear-greed`,
         keywords: buildSymbolFearGreedKeywords(
@@ -1540,8 +1770,11 @@ export function buildSymbolFearGreedSeoContent(
     };
 }
 
-function buildSymbolFearGreedDescription(subject: string): string {
-    return `${subject} 매수세가 강한지 약한지 거래량 흐름과 가격 위치로 산출한 0~100 점수로 확인합니다. 극심한 공포부터 극심한 탐욕까지 5단계 분위기와 1년 시계열도 같이 봅니다.`;
+function buildSymbolFearGreedDescription(
+    t: SeoTranslator,
+    subject: string
+): string {
+    return t('symbol.fearGreed.description', { subject });
 }
 
 function buildSymbolFearGreedKeywords(

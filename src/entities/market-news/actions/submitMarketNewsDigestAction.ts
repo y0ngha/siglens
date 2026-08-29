@@ -1,6 +1,8 @@
 'use server';
 
 import { headers } from 'next/headers';
+import { getTranslations } from 'next-intl/server';
+import type { Locale } from '@/shared/i18n/locales';
 import {
     runMarketNewsDigest,
     type EnrichedNewsItem,
@@ -63,8 +65,21 @@ function toEnrichedMarketNewsItem(row: MarketNewsRow): EnrichedNewsItem | null {
  * Bot traffic sets `skipEnqueueIfMiss: true` so crawler requests return
  * `miss_no_trigger` without dispatching a worker job.
  */
+/** 사용자에게 그대로 보이는 실패 문구. 영어 리터럴이 전 로케일에 나가고 있었다. */
+async function digestErrorMessage(locale: Locale): Promise<string> {
+    const t = await getTranslations({ locale, namespace: 'app.api.stream' });
+    return t('digestFailed');
+}
+
 export async function submitMarketNewsDigestAction(
     category: NewsFeedCategoryId,
+    /**
+     * 요청 로케일. 게이트 거부 문구가 사용자에게 그대로 보이는데
+     * `/api/*`는 next-intl matcher 밖이라 액션이 스스로 알 수 없다.
+     * **기본값을 두지 않는다** — 두면 호출부에서 빠져도 타입체커가 못 잡는다
+     * (실측: `resolveRequestLocale`을 상수로 바꿔도 10,516개 테스트가 초록이었다).
+     */
+    locale: Locale,
     signal?: AbortSignal
 ): Promise<SubmitMarketNewsDigestActionResult> {
     try {
@@ -75,7 +90,7 @@ export async function submitMarketNewsDigestAction(
         // TypeScript 타입으로는 방어되지만, 런타임 직렬화(SSE JSON 파라미터 등)에서
         // 타입이 우회될 수 있으므로 명시적 가드를 추가한다.
         if (!Object.hasOwn(CATEGORY_CONFIG, category)) {
-            return { status: 'error', error: 'Failed to submit digest' };
+            return { status: 'error', error: await digestErrorMessage(locale) };
         }
         const { sentinel, koLabel } = CATEGORY_CONFIG[category];
         const rows = await getMarketNewsList(sentinel);
@@ -112,6 +127,9 @@ export async function submitMarketNewsDigestAction(
              * (`docs/superpowers/specs/2026-08-19-asset-class-navigation-design.md` §7).
              */
             category: category as NewsFeedCategory,
+            // 화면 로케일을 AI 산출물 언어로 그대로 넘긴다 — core 0.53.0부터
+            // 받는다. `ko`는 접미 없는 기존 캐시 키를 그대로 맞힌다.
+            locale,
             categoryLabel: koLabel,
             modelId: DEFAULT_DIGEST_MODEL_ID,
             news,
@@ -126,6 +144,6 @@ export async function submitMarketNewsDigestAction(
         });
     } catch (error) {
         console.error('[submitMarketNewsDigestAction]', error);
-        return { status: 'error', error: 'Failed to submit digest' };
+        return { status: 'error', error: await digestErrorMessage(locale) };
     }
 }

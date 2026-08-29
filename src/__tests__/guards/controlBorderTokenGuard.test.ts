@@ -215,7 +215,7 @@ const ALLOWED_ELEMENTS: ReadonlySet<string> = new Set([
     // 이 자리에 분기를 추가할 때는 이 예외가 그것까지 덮는다는 걸 확인할 것.
     // 줄 번호 키라 이 파일이 위에서 길어지면 함께 옮겨야 한다 —
     // 아래 '낡은 항목' 검사가 그때 알려준다(1012 → 1025).
-    'widgets/analysis/AnalysisPanel.tsx:1025',
+    'widgets/analysis/AnalysisPanel.tsx:1055',
 
     // 드롭다운 메뉴의 첫 항목. `border-b`는 이 항목과 아래 지역 목록을 가르는
     // **구분선**이고, 컨트롤의 경계는 패널 보더 + 상태 채움이 맡는다.
@@ -227,13 +227,13 @@ const ALLOWED_ELEMENTS: ReadonlySet<string> = new Set([
     // 줄 번호로 키를 잡으므로 이 파일이 위쪽에서 길어지면 함께 옮겨야 한다
     // (아래 '낡은 항목' 검사가 그때 알려준다 — 실제로 `idScope` prop을
     // 넣으면서 147에서 밀렸다).
-    'widgets/layout/HeaderNavMenu.tsx:163',
+    'widgets/layout/HeaderNavMenu.tsx:169',
 
     // 카드 표면. 링크이지만 제목·설명·시세 블록을 담은 면이고, 보더는 그 면의
     // 장식이지 컨트롤의 경계가 아니다(globals.css 정책의 "카드·패널 장식 보더
     // 제외"). 칩(rounded-full, 텍스트 한 줄)은 보더가 곧 경계라 이 예외에 들지
     // 않는다 — RelatedSymbols·CategoryCardGrid의 칩은 경계 토큰으로 고쳤다.
-    'widgets/dashboard/SignalStockCard.tsx:22',
+    'widgets/dashboard/SignalStockCard.tsx:26',
 ]);
 
 const CLASSNAME_RE = /className="([^"]*)"/;

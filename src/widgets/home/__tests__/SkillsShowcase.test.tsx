@@ -59,6 +59,7 @@ vi.mock('../hooks/useSkillsShowcase', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import userEvent from '@testing-library/user-event';
 import {
     HIGH_CONFIDENCE_WEIGHT,
@@ -91,6 +92,50 @@ describe('SkillsShowcase', () => {
         expect(
             screen.getByRole('heading', { name: /AI 분석 스킬/ })
         ).toBeInTheDocument();
+    });
+
+    /**
+     * 홈은 이 표시명의 **최대 노출 지점**이다 — 스킬 카드 36장이 전부
+     * `skills/**.md` front-matter의 한국어 이름이다. `AnalysisPanel`만 훅을
+     * 붙이고 여기는 빠져 있어서, `/en`·`/ja` 홈에서 36개가 통째로 한국어로
+     * 렌더됐다(실측). 비-기본 로케일로 확인한다.
+     */
+    it('en: 한국어 스킬명을 카탈로그로 표시한다', () => {
+        renderWithIntl(
+            <SkillsShowcase skills={[makeSkill('다이버전스 전략')]} />,
+            { locale: 'en' }
+        );
+
+        expect(
+            screen.getAllByText('Divergence Strategy').length
+        ).toBeGreaterThanOrEqual(1);
+        expect(screen.queryByText('다이버전스 전략')).not.toBeInTheDocument();
+    });
+
+    /**
+     * 이름은 카탈로그로 옮겼는데 설명은 안 옮겨서 "영어 제목 + 한국어 본문"이
+     * 남았던 결함(실측: `/en`·`/ja` 홈). 실제 스킬 md의 한국어 설명으로 확인한다.
+     */
+    it('en: 한국어 스킬 설명을 카탈로그로 표시한다', () => {
+        const skill: SkillShowcaseItem = {
+            name: '다중 시간대 분석',
+            type: 'strategy',
+            description:
+                '상위 시간대에서 추세 방향을 확인하고 하위 시간대에서 최적의 진입 타이밍을 잡는 체계적 분석 프레임워크',
+            confidenceWeight: 0.85,
+        };
+        renderWithIntl(<SkillsShowcase skills={[skill]} />, { locale: 'en' });
+
+        // 'strategy' 타입 스킬은 'all' 탭과 'strategy' 탭 양쪽 패널에 렌더된다
+        // (숨김 패널도 크롤러 접근성을 위해 DOM에 남긴다) — 개수만 확인한다.
+        expect(
+            screen.getAllByText(
+                /confirms trend direction on a higher timeframe/
+            ).length
+        ).toBeGreaterThanOrEqual(1);
+        expect(
+            screen.queryByText(/상위 시간대에서 추세 방향을/)
+        ).not.toBeInTheDocument();
     });
 
     it('renders skill cards with names and descriptions', () => {

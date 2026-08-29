@@ -9,7 +9,15 @@ vi.mock('next/navigation', () => ({
 
 import { HeaderSearch } from '@/features/ticker-search/ui/HeaderSearch';
 import { SearchOverlayProvider } from '@/features/ticker-search/model/SearchOverlayContext';
-import { SEARCH_TRIGGER_LABEL } from '@/features/ticker-search/lib/searchLabels';
+import { SEARCH_TRIGGER_LABEL_KEY } from '@/features/ticker-search/lib/searchLabels';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+
+// 문구를 테스트에 복제하지 않는다 — 카탈로그를 읽으면 키 오타나 문구 변경이
+// 곧바로 여기서 드러난다(MISTAKES #13.5).
+const SEARCH_TRIGGER_LABEL = catalogTranslator(
+    'features.ticker-search',
+    'ko'
+)(SEARCH_TRIGGER_LABEL_KEY);
 
 /**
  * `ml-auto`는 레이아웃 **계약**이다. 헤더에서 유저메뉴·햄버거를 오른쪽 끝으로 미는

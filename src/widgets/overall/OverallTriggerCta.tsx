@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import type { AssetClass } from '@/shared/config/marketProfile';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
@@ -26,10 +27,11 @@ export function OverallTriggerCta({
     disabled = false,
     assetClass = 'equity',
 }: OverallTriggerCtaProps) {
+    const t = useTranslations('widgets.overall');
     const subtitle =
         assetClass === 'crypto'
-            ? '차트·뉴스·시장 분위기를 통합한 AI 결론을 받아보세요.'
-            : '차트·옵션·펀더멘털·뉴스·시장 분위기를 통합한 AI 결론을 받아보세요.';
+            ? t('OverallTriggerCta.ec0085')
+            : t('OverallTriggerCta.2a1422');
 
     return (
         <section
@@ -41,7 +43,7 @@ export function OverallTriggerCta({
                 id="overall-cta-heading"
                 className={cn(HEADING_SECTION, 'text-balance')}
             >
-                AI 종합 분석
+                {t('OverallTriggerCta.8b7ae7')}
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-secondary-400">
                 {subtitle}
@@ -57,15 +59,16 @@ export function OverallTriggerCta({
                         : 'bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500'
                 )}
             >
-                {disabled ? '뉴스 카드 분석 중…' : 'AI 종합 분석 받기'}
+                {disabled
+                    ? t('OverallTriggerCta.ff9889')
+                    : t('OverallTriggerCta.51480a')}
             </button>
             {disabled && (
                 <p
                     className="mt-3 text-xs text-secondary-500"
                     aria-live="polite"
                 >
-                    개별 뉴스 분석이 완료되면 자동으로 종합 분석을 받을 수
-                    있어요 (보통 30초~1분 소요).
+                    {t('OverallTriggerCta.5f4a34')}
                 </p>
             )}
         </section>

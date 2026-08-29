@@ -1,81 +1,79 @@
-import {
-    MARKET_FACTOR_DESCRIPTION,
-    MARKET_FACTOR_LABEL,
-    formatMarketFactorRaw,
-} from '@/shared/lib/marketFearGreedLabels';
+import { describe, expect, it } from 'vitest';
+import koMessages from '@/../messages/ko.json';
+import enMessages from '@/../messages/en.json';
+import jaMessages from '@/../messages/ja.json';
+import zhMessages from '@/../messages/zh.json';
+import { MARKET_FEAR_GREED_FACTOR_KEYS } from '@y0ngha/siglens-core';
 
-const FACTOR_KEYS = [
-    'momentum',
-    'volatility',
-    'safe_haven',
-    'junk_bond',
-    'breadth',
-] as const;
+const CATALOGS = {
+    ko: koMessages,
+    en: enMessages,
+    ja: jaMessages,
+    zh: zhMessages,
+};
 
-describe('MARKET_FACTOR_LABEL', () => {
-    it('provides a Korean label for every factor key in the US index', () => {
-        expect(MARKET_FACTOR_LABEL.us.momentum).toBe('시장 모멘텀');
-        expect(MARKET_FACTOR_LABEL.us.volatility).toBe('시장 변동성');
-        expect(MARKET_FACTOR_LABEL.us.safe_haven).toBe('안전자산 선호');
-        expect(MARKET_FACTOR_LABEL.us.junk_bond).toBe('하이일드 수요');
-        expect(MARKET_FACTOR_LABEL.us.breadth).toBe('시장 폭');
-    });
+/**
+ * 팩터 라벨·설명은 카탈로그(`shared.lib.fearGreedFactor`)로 옮겼다 — 예전에는
+ * `MARKET_FACTOR_LABEL`/`MARKET_FACTOR_DESCRIPTION`이 한국어 문자열 테이블이라
+ * `/en/fear-greed`가 `시장 모멘텀`을 그대로 렌더했다.
+ *
+ * 그래서 이 테스트는 **한국어 문자열을 고정하지 않고**, 다섯 팩터 × 두 시장이
+ * 네 로케일에 다 있는지를 본다. 새 팩터를 추가하고 번역을 빠뜨리면 실패한다.
+ */
+describe('market fear-greed 팩터 카탈로그', () => {
+    const group = (locale: keyof typeof CATALOGS) =>
+        (CATALOGS[locale].shared.lib as unknown as Record<string, unknown>)
+            .fearGreedFactor as {
+            label: Record<string, string>;
+            descriptionUs: Record<string, string>;
+            descriptionKr: Record<string, string>;
+        };
 
-    it('renames the credit factor for the KR index', () => {
-        // 국내에는 유동성 있는 하이일드 채권이 없어 `junk_bond` 슬롯을 회사채−국고채
-        // 스프레드로 채웠다 — `하이일드 수요`라고 부르면 화면이 사실과 다른 말을 한다.
-        expect(MARKET_FACTOR_LABEL.kr.junk_bond).toBe('신용 스프레드 수요');
-        expect(MARKET_FACTOR_LABEL.kr.junk_bond).not.toBe(
-            MARKET_FACTOR_LABEL.us.junk_bond
-        );
-    });
-
-    it('covers every factor key in both markets', () => {
-        for (const market of ['us', 'kr'] as const) {
-            for (const key of FACTOR_KEYS) {
-                expect(MARKET_FACTOR_LABEL[market][key].length).toBeGreaterThan(
-                    0
-                );
+    it.each(MARKET_FEAR_GREED_FACTOR_KEYS)(
+        '%s: 라벨이 네 로케일에 다 있다',
+        key => {
+            for (const locale of Object.keys(CATALOGS) as Array<
+                keyof typeof CATALOGS
+            >) {
+                const labels = group(locale).label;
+                // `junk_bond`만 시장별로 이름이 갈린다(미국=하이일드, 한국=신용 스프레드).
+                const names =
+                    key === 'junk_bond'
+                        ? ['junk_bond_us', 'junk_bond_kr']
+                        : [key];
+                for (const name of names) {
+                    expect(labels[name], `${locale}: ${name}`).toBeTruthy();
+                }
             }
         }
-    });
-});
+    );
 
-describe('MARKET_FACTOR_DESCRIPTION', () => {
-    it('provides a non-empty Korean description for every factor key', () => {
-        for (const market of ['us', 'kr'] as const) {
-            for (const key of FACTOR_KEYS) {
+    it.each(MARKET_FEAR_GREED_FACTOR_KEYS)(
+        '%s: 설명이 두 시장 × 네 로케일에 다 있다',
+        key => {
+            for (const locale of Object.keys(CATALOGS) as Array<
+                keyof typeof CATALOGS
+            >) {
                 expect(
-                    MARKET_FACTOR_DESCRIPTION[market][key].length
-                ).toBeGreaterThan(0);
+                    group(locale).descriptionUs[key],
+                    `${locale} us: ${key}`
+                ).toBeTruthy();
+                expect(
+                    group(locale).descriptionKr[key],
+                    `${locale} kr: ${key}`
+                ).toBeTruthy();
             }
         }
-    });
+    );
 
-    it('names the actual KR inputs, not the US ones', () => {
-        // 한국 변동성 요인은 VKOSPI가 아니라 코스피 실현변동성이다. 그 사실이
-        // 설명에서 빠지면 화면이 있지도 않은 지수를 쓰는 것처럼 읽힌다.
-        expect(MARKET_FACTOR_DESCRIPTION.kr.volatility).toContain('실현변동성');
-        expect(MARKET_FACTOR_DESCRIPTION.kr.volatility).not.toContain('VIX');
-        expect(MARKET_FACTOR_DESCRIPTION.kr.momentum).not.toContain('S&P');
-        expect(MARKET_FACTOR_DESCRIPTION.kr.junk_bond).toContain('국고채');
-    });
-});
-
-describe('formatMarketFactorRaw', () => {
-    it('formats a positive ratio as a signed 2dp percent', () => {
-        expect(formatMarketFactorRaw(0.0512)).toBe('+5.12%');
-    });
-
-    it('formats a negative ratio as a signed 2dp percent', () => {
-        expect(formatMarketFactorRaw(-0.0314)).toBe('-3.14%');
-    });
-
-    it('formats zero with an explicit leading sign', () => {
-        expect(formatMarketFactorRaw(0)).toBe('+0.00%');
-    });
-
-    it('rounds to exactly two fraction digits', () => {
-        expect(formatMarketFactorRaw(0.012345)).toBe('+1.23%');
+    it('비-ko 로케일에 한글이 남지 않았다', () => {
+        for (const locale of ['en', 'ja', 'zh'] as const) {
+            const g = group(locale);
+            for (const table of [g.label, g.descriptionUs, g.descriptionKr]) {
+                for (const [key, value] of Object.entries(table)) {
+                    expect(value, `${locale}.${key}`).not.toMatch(/[가-힣]/);
+                }
+            }
+        }
     });
 });

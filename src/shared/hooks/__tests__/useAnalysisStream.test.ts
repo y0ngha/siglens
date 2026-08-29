@@ -1,3 +1,4 @@
+import { TEST_STREAM_MESSAGES } from '@/shared/test-utils/streamMessagesFixture';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 
@@ -41,7 +42,11 @@ describe('runAnalysisStream', () => {
         );
 
         await expect(
-            runAnalysisStream({ type: 'technical', params: { symbol: 'AAPL' } })
+            runAnalysisStream({
+                type: 'technical',
+                params: { symbol: 'AAPL' },
+                messages: TEST_STREAM_MESSAGES,
+            })
         ).resolves.toEqual({ status: 'done', value: 42 });
     });
 
@@ -58,7 +63,11 @@ describe('runAnalysisStream', () => {
         );
 
         await expect(
-            runAnalysisStream({ type: 'technical', params: {} })
+            runAnalysisStream({
+                type: 'technical',
+                params: {},
+                messages: TEST_STREAM_MESSAGES,
+            })
         ).resolves.toEqual({ ok: true });
     });
 
@@ -73,7 +82,11 @@ describe('runAnalysisStream', () => {
         );
 
         await expect(
-            runAnalysisStream({ type: 'technical', params: {} })
+            runAnalysisStream({
+                type: 'technical',
+                params: {},
+                messages: TEST_STREAM_MESSAGES,
+            })
         ).resolves.toBe('finished');
     });
 
@@ -86,7 +99,11 @@ describe('runAnalysisStream', () => {
         );
 
         await expect(
-            runAnalysisStream({ type: 'technical', params: {} })
+            runAnalysisStream({
+                type: 'technical',
+                params: {},
+                messages: TEST_STREAM_MESSAGES,
+            })
         ).rejects.toThrow('분석 시간이 초과되었습니다.');
     });
 
@@ -101,11 +118,15 @@ describe('runAnalysisStream', () => {
         );
 
         await expect(
-            runAnalysisStream({ type: 'technical', params: {} })
-        ).rejects.toThrow(/완료 전에 끊겼습니다/);
+            runAnalysisStream({
+                type: 'technical',
+                params: {},
+                messages: TEST_STREAM_MESSAGES,
+            })
+        ).rejects.toThrow(/disconnected/);
     });
 
-    it('done 프레임의 data가 깨진 JSON이면 한국어 메시지로 실패한다', async () => {
+    it('done 프레임의 data가 깨진 JSON이면 로케일 메시지로 실패한다', async () => {
         // 프록시가 본문을 건드리거나 프레임이 잘리면 발생한다. 가드가 없으면
         // `Unexpected token …`(영문 SyntaxError)이 사용자에게 그대로 노출된다.
         fetchMock.mockResolvedValue(
@@ -113,18 +134,26 @@ describe('runAnalysisStream', () => {
         );
 
         await expect(
-            runAnalysisStream({ type: 'technical', params: {} })
-        ).rejects.toThrow('분석 결과를 읽지 못했습니다. 다시 시도해 주세요.');
+            runAnalysisStream({
+                type: 'technical',
+                params: {},
+                messages: TEST_STREAM_MESSAGES,
+            })
+        ).rejects.toThrow('unreadable');
     });
 
-    it('error 프레임의 data가 깨져도 한국어 메시지로 실패한다', async () => {
+    it('error 프레임의 data가 깨져도 로케일 메시지로 실패한다', async () => {
         fetchMock.mockResolvedValue(
             sseResponse(['event: error\ndata: not-json\n\n'])
         );
 
         await expect(
-            runAnalysisStream({ type: 'technical', params: {} })
-        ).rejects.toThrow('분석 중 오류가 발생했습니다. 다시 시도해 주세요.');
+            runAnalysisStream({
+                type: 'technical',
+                params: {},
+                messages: TEST_STREAM_MESSAGES,
+            })
+        ).rejects.toThrow('generic');
     });
 
     it('503은 서버가 준 한국어 안내를 그대로 전달한다 — 실패가 아니라 재시도 안내다', async () => {
@@ -138,7 +167,11 @@ describe('runAnalysisStream', () => {
         );
 
         await expect(
-            runAnalysisStream({ type: 'technical', params: {} })
+            runAnalysisStream({
+                type: 'technical',
+                params: {},
+                messages: TEST_STREAM_MESSAGES,
+            })
         ).rejects.toThrow(
             '지금 분석 요청이 많습니다. 잠시 후 다시 시도해 주세요.'
         );
@@ -148,8 +181,12 @@ describe('runAnalysisStream', () => {
         fetchMock.mockResolvedValue(new Response('not-json', { status: 503 }));
 
         await expect(
-            runAnalysisStream({ type: 'technical', params: {} })
-        ).rejects.toThrow('지금 분석 요청이 많습니다');
+            runAnalysisStream({
+                type: 'technical',
+                params: {},
+                messages: TEST_STREAM_MESSAGES,
+            })
+        ).rejects.toThrow('busy');
     });
 
     it('non-2xx 응답은 상태 코드를 담아 throw한다', async () => {
@@ -158,7 +195,11 @@ describe('runAnalysisStream', () => {
         );
 
         await expect(
-            runAnalysisStream({ type: 'technical', params: {} })
+            runAnalysisStream({
+                type: 'technical',
+                params: {},
+                messages: TEST_STREAM_MESSAGES,
+            })
         ).rejects.toThrow(/400/);
     });
 
@@ -166,8 +207,12 @@ describe('runAnalysisStream', () => {
         fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
 
         await expect(
-            runAnalysisStream({ type: 'technical', params: {} })
-        ).rejects.toThrow(/분석 요청이 실패했습니다/);
+            runAnalysisStream({
+                type: 'technical',
+                params: {},
+                messages: TEST_STREAM_MESSAGES,
+            })
+        ).rejects.toThrow(/failed/);
     });
 
     it('type과 params를 POST 본문으로 보낸다', async () => {
@@ -178,6 +223,7 @@ describe('runAnalysisStream', () => {
         await runAnalysisStream({
             type: 'overall',
             params: { symbol: 'TSLA', timeframe: '1Day' },
+            messages: TEST_STREAM_MESSAGES,
         });
 
         expect(fetchMock).toHaveBeenCalledWith(
@@ -202,6 +248,7 @@ describe('runAnalysisStream', () => {
             type: 'technical',
             params: {},
             signal: controller.signal,
+            messages: TEST_STREAM_MESSAGES,
         });
 
         expect(fetchMock).toHaveBeenCalledWith(
@@ -216,7 +263,11 @@ describe('runAnalysisStream', () => {
         );
 
         await expect(
-            runAnalysisStream({ type: 'technical', params: {} })
+            runAnalysisStream({
+                type: 'technical',
+                params: {},
+                messages: TEST_STREAM_MESSAGES,
+            })
         ).rejects.toThrow(/aborted/i);
     });
 });

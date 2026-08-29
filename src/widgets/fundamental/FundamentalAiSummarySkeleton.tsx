@@ -1,11 +1,13 @@
+import { useTranslations } from 'next-intl';
 import { AiSummarySkeleton } from '@/shared/ui/AiSummarySkeleton';
 
 export function FundamentalAiSummarySkeleton() {
+    const t = useTranslations('widgets.fundamental');
     return (
         <AiSummarySkeleton
-            heading="AI 펀더멘털 분석"
+            heading={t('FundamentalAiSummarySkeleton.17769c')}
             idPrefix="ai-summary"
-            progressMessage="AI 펀더멘털 분석 진행 중…"
+            progressMessage={t('FundamentalAiSummarySkeleton.a68a30')}
         />
     );
 }

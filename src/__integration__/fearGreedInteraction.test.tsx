@@ -19,13 +19,16 @@ vi.mock('@/shared/ui/InfoTooltip', () => ({
     ),
 }));
 
+// SENTIMENT_LABEL_KEY는 실제 `shared.enumLabel` 카탈로그 키 문자열이다 —
+// 이 값 자체를 mock으로 지어내면 실제 tLabel(useTranslations)이 조회에
+// 실패해 MISSING_MESSAGE로 렌더된다.
 vi.mock('@/shared/lib/fearGreedLabels', () => ({
-    SENTIMENT_LABEL_TEXT: {
-        EXTREME_FEAR: '극심한 공포',
-        FEAR: '공포',
-        NEUTRAL: '중립',
-        GREED: '탐욕',
-        EXTREME_GREED: '극심한 탐욕',
+    SENTIMENT_LABEL_KEY: {
+        EXTREME_FEAR: 'fearGreed.extremeFear',
+        FEAR: 'fearGreed.fear',
+        NEUTRAL: 'fearGreed.neutral',
+        GREED: 'fearGreed.greed',
+        EXTREME_GREED: 'fearGreed.extremeGreed',
     },
 }));
 

@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { getTranslations } from 'next-intl/server';
 import type { FearGreedLabel, FearGreedSnapshot } from '@y0ngha/siglens-core';
 import {
     buildFearGreedFactorLines,
@@ -9,7 +10,50 @@ import {
     buildFearGreedYearRangeLine,
     scoredHistory,
 } from '../utils/fearGreedFacts';
-import { FACTOR_LABEL, formatFactorRaw } from '@/shared/lib/fearGreedLabels';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+
+import koMessages from '@/../messages/ko.json';
+import { formatFactorRaw } from '@/shared/lib/fearGreedLabels';
+
+/**
+ * 실제 ko 카탈로그를 읽는 번역자. `views.symbol.fearGreedFacts` 아래의 값을
+ * 그대로 쓰고 `{v0}` 자리를 치환한다 — 키가 빠지면 키 문자열이 그대로 나와
+ * 단언이 실패한다(스텁이면 조용히 통과한다).
+ */
+const lookup = (
+    root: unknown,
+    key: string,
+    values?: Record<string, string | number>
+) => {
+    const raw = key
+        .split('.')
+        .reduce<unknown>(
+            (node, seg) =>
+                node && typeof node === 'object'
+                    ? (node as Record<string, unknown>)[seg]
+                    : undefined,
+            root
+        ) as string | undefined;
+    if (raw === undefined) return key;
+    return Object.entries(values ?? {}).reduce(
+        (acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)),
+        raw
+    );
+};
+
+const tFacts = (key: string, values?: Record<string, string | number>) =>
+    lookup(koMessages.views.symbol.fearGreedFacts, key, values);
+
+/** 팩터 라벨은 `shared.lib.fearGreedFactor`에 있다. */
+const tFactor = (key: string, values?: Record<string, string | number>) =>
+    lookup(koMessages.shared.lib.fearGreedFactor, key, values);
+
+// t는 필수 인자다(§design EnumLabelTranslator required-param). ko로 고정한
+// 실제 번역자를 한 번 만들어 모든 호출에 재사용한다.
+let t: EnumLabelTranslator;
+beforeAll(async () => {
+    t = await getTranslations({ locale: 'ko', namespace: 'shared.enumLabel' });
+});
 
 /**
  * factorInterpretation은 3구간(<25 low / >=75 high / 그 사이 middle)이다.
@@ -38,12 +82,16 @@ function expectedLine(percentile: number, interpretation: string): string {
     const pctile = Math.round(percentile);
     // FIX 6 (audit): "82th 퍼센타일" mixed an English ordinal suffix into
     // Korean text — native Korean ordinal "번째" replaces it.
-    return `${FACTOR_LABEL.volume_z}: ${formatFactorRaw('volume_z', 1.2345)} (${pctile}번째 퍼센타일) — ${interpretation}.`;
+    return `${(koMessages.shared.lib.fearGreedFactor as unknown as { symbolLabel: Record<string, string> }).symbolLabel.volume_z}: ${formatFactorRaw('volume_z', 1.2345)} (${pctile}번째 퍼센타일) — ${interpretation}.`;
 }
 
 describe('buildFearGreedFactorLines', () => {
     it('낮음 구간(<25)이면 "낮은 편"으로 해석하고 전체 문장을 그대로 생성한다', () => {
-        const lines = buildFearGreedFactorLines(buildSnapshot(10));
+        const lines = buildFearGreedFactorLines(
+            buildSnapshot(10),
+            tFacts,
+            tFactor
+        );
 
         expect(lines).toEqual([
             expectedLine(10, '최근 200영업일 분포 대비 낮은 편'),
@@ -51,7 +99,11 @@ describe('buildFearGreedFactorLines', () => {
     });
 
     it('경계값 24는 여전히 낮음 구간이다', () => {
-        const lines = buildFearGreedFactorLines(buildSnapshot(24));
+        const lines = buildFearGreedFactorLines(
+            buildSnapshot(24),
+            tFacts,
+            tFactor
+        );
 
         expect(lines).toEqual([
             expectedLine(24, '최근 200영업일 분포 대비 낮은 편'),
@@ -59,7 +111,11 @@ describe('buildFearGreedFactorLines', () => {
     });
 
     it('경계값 25는 낮음에서 평균 범위로 넘어간다', () => {
-        const lines = buildFearGreedFactorLines(buildSnapshot(25));
+        const lines = buildFearGreedFactorLines(
+            buildSnapshot(25),
+            tFacts,
+            tFactor
+        );
 
         expect(lines).toEqual([
             expectedLine(25, '최근 200영업일 분포의 평균 범위 안'),
@@ -67,7 +123,11 @@ describe('buildFearGreedFactorLines', () => {
     });
 
     it('중간 구간(25~74)이면 "평균 범위 안"으로 해석한다', () => {
-        const lines = buildFearGreedFactorLines(buildSnapshot(50));
+        const lines = buildFearGreedFactorLines(
+            buildSnapshot(50),
+            tFacts,
+            tFactor
+        );
 
         expect(lines).toEqual([
             expectedLine(50, '최근 200영업일 분포의 평균 범위 안'),
@@ -75,7 +135,11 @@ describe('buildFearGreedFactorLines', () => {
     });
 
     it('경계값 74는 여전히 평균 범위다', () => {
-        const lines = buildFearGreedFactorLines(buildSnapshot(74));
+        const lines = buildFearGreedFactorLines(
+            buildSnapshot(74),
+            tFacts,
+            tFactor
+        );
 
         expect(lines).toEqual([
             expectedLine(74, '최근 200영업일 분포의 평균 범위 안'),
@@ -83,7 +147,11 @@ describe('buildFearGreedFactorLines', () => {
     });
 
     it('경계값 75는 평균 범위에서 높음으로 넘어간다', () => {
-        const lines = buildFearGreedFactorLines(buildSnapshot(75));
+        const lines = buildFearGreedFactorLines(
+            buildSnapshot(75),
+            tFacts,
+            tFactor
+        );
 
         expect(lines).toEqual([
             expectedLine(75, '최근 200영업일 분포 대비 높은 편'),
@@ -91,7 +159,11 @@ describe('buildFearGreedFactorLines', () => {
     });
 
     it('높음 구간(>=75)이면 "높은 편"으로 해석하고 전체 문장을 그대로 생성한다', () => {
-        const lines = buildFearGreedFactorLines(buildSnapshot(90));
+        const lines = buildFearGreedFactorLines(
+            buildSnapshot(90),
+            tFacts,
+            tFactor
+        );
 
         expect(lines).toEqual([
             expectedLine(90, '최근 200영업일 분포 대비 높은 편'),
@@ -99,7 +171,11 @@ describe('buildFearGreedFactorLines', () => {
     });
 
     it('percentile은 반올림 후 구간을 판정한다(83.6 → 84th, 높음 구간)', () => {
-        const lines = buildFearGreedFactorLines(buildSnapshot(83.6));
+        const lines = buildFearGreedFactorLines(
+            buildSnapshot(83.6),
+            tFacts,
+            tFactor
+        );
 
         expect(lines).toEqual([
             expectedLine(84, '최근 200영업일 분포 대비 높은 편'),
@@ -140,12 +216,30 @@ describe('buildFearGreedFactorLines', () => {
             warning: null,
         };
 
-        const lines = buildFearGreedFactorLines(snapshot);
+        const lines = buildFearGreedFactorLines(snapshot, tFacts, tFactor);
 
         expect(lines).toHaveLength(3);
-        expect(lines[0]).toContain(FACTOR_LABEL.volume_z);
-        expect(lines[1]).toContain(FACTOR_LABEL.buysell_imbalance);
-        expect(lines[2]).toContain(FACTOR_LABEL.ma200_distance);
+        expect(lines[0]).toContain(
+            (
+                koMessages.shared.lib.fearGreedFactor as unknown as {
+                    symbolLabel: Record<string, string>;
+                }
+            ).symbolLabel.volume_z
+        );
+        expect(lines[1]).toContain(
+            (
+                koMessages.shared.lib.fearGreedFactor as unknown as {
+                    symbolLabel: Record<string, string>;
+                }
+            ).symbolLabel.buysell_imbalance
+        );
+        expect(lines[2]).toContain(
+            (
+                koMessages.shared.lib.fearGreedFactor as unknown as {
+                    symbolLabel: Record<string, string>;
+                }
+            ).symbolLabel.ma200_distance
+        );
     });
 });
 
@@ -190,7 +284,8 @@ function buildFlowTrendSnapshot(
 describe('buildFearGreedGroupComparisonLine', () => {
     it('Flow 그룹 점수가 더 높으면 Flow 우위 문장을 생성한다', () => {
         const line = buildFearGreedGroupComparisonLine(
-            buildFlowTrendSnapshot(70, 40)
+            buildFlowTrendSnapshot(70, 40),
+            tFacts
         );
         expect(line).toBe(
             '수급 그룹 점수(70점)가 추세 그룹(40점)보다 30점 높아 수급 우위 흐름입니다.'
@@ -199,7 +294,8 @@ describe('buildFearGreedGroupComparisonLine', () => {
 
     it('Trend 그룹 점수가 더 높으면 Trend 우위 문장을 생성한다', () => {
         const line = buildFearGreedGroupComparisonLine(
-            buildFlowTrendSnapshot(35, 80)
+            buildFlowTrendSnapshot(35, 80),
+            tFacts
         );
         expect(line).toBe(
             '추세 그룹 점수(80점)가 수급 그룹(35점)보다 45점 높아 추세 우위 흐름입니다.'
@@ -208,7 +304,8 @@ describe('buildFearGreedGroupComparisonLine', () => {
 
     it('두 그룹 점수가 같으면 균형 문장을 생성한다', () => {
         const line = buildFearGreedGroupComparisonLine(
-            buildFlowTrendSnapshot(55, 55)
+            buildFlowTrendSnapshot(55, 55),
+            tFacts
         );
         expect(line).toBe(
             '수급 그룹과 추세 그룹이 모두 55점으로 균형 잡힌 흐름을 보이고 있습니다.'
@@ -232,24 +329,24 @@ describe('buildFearGreedGroupComparisonLine', () => {
             sampleSize: 220,
             warning: null,
         };
-        expect(buildFearGreedGroupComparisonLine(snapshot)).toBeNull();
+        expect(buildFearGreedGroupComparisonLine(snapshot, tFacts)).toBeNull();
     });
 });
 
 describe('buildFearGreedFactorRankingLine', () => {
     it('50에서 가장 멀리 떨어진(가장 두드러진) factor를 지목한다 — 고percentile', () => {
         const snapshot = buildFlowTrendSnapshot(52, 92);
-        const line = buildFearGreedFactorRankingLine(snapshot);
+        const line = buildFearGreedFactorRankingLine(snapshot, tFacts, tFactor);
         expect(line).toBe(
-            `2개 지표 중 가장 두드러진 지표는 ${FACTOR_LABEL.ma200_distance}로, 92번째 퍼센타일을 기록해 평소보다 높게 나타나고 있습니다.`
+            `2개 지표 중 가장 두드러진 지표는 ${(koMessages.shared.lib.fearGreedFactor as unknown as { symbolLabel: Record<string, string> }).symbolLabel.ma200_distance}로, 92번째 퍼센타일을 기록해 평소보다 높게 나타나고 있습니다.`
         );
     });
 
     it('50에서 가장 멀리 떨어진(가장 두드러진) factor를 지목한다 — 저percentile', () => {
         const snapshot = buildFlowTrendSnapshot(8, 48);
-        const line = buildFearGreedFactorRankingLine(snapshot);
+        const line = buildFearGreedFactorRankingLine(snapshot, tFacts, tFactor);
         expect(line).toBe(
-            `2개 지표 중 가장 두드러진 지표는 ${FACTOR_LABEL.volume_z}로, 8번째 퍼센타일을 기록해 평소보다 낮게 나타나고 있습니다.`
+            `2개 지표 중 가장 두드러진 지표는 ${(koMessages.shared.lib.fearGreedFactor as unknown as { symbolLabel: Record<string, string> }).symbolLabel.volume_z}로, 8번째 퍼센타일을 기록해 평소보다 낮게 나타나고 있습니다.`
         );
     });
 
@@ -262,7 +359,9 @@ describe('buildFearGreedFactorRankingLine', () => {
             sampleSize: 220,
             warning: null,
         };
-        expect(buildFearGreedFactorRankingLine(snapshot)).toBeNull();
+        expect(
+            buildFearGreedFactorRankingLine(snapshot, tFacts, tFactor)
+        ).toBeNull();
     });
 });
 
@@ -271,19 +370,43 @@ describe('FIX 6 — 두 심볼의 서로 다른 입력이 실질적으로 다른
         const flowLeadSnapshot = buildFlowTrendSnapshot(85, 45);
         const trendLeadSnapshot = buildFlowTrendSnapshot(45, 85);
 
-        const flowComparison =
-            buildFearGreedGroupComparisonLine(flowLeadSnapshot);
-        const trendComparison =
-            buildFearGreedGroupComparisonLine(trendLeadSnapshot);
+        const flowComparison = buildFearGreedGroupComparisonLine(
+            flowLeadSnapshot,
+            tFacts
+        );
+        const trendComparison = buildFearGreedGroupComparisonLine(
+            trendLeadSnapshot,
+            tFacts
+        );
         expect(flowComparison).not.toBe(trendComparison);
         expect(flowComparison).toContain('수급 우위');
         expect(trendComparison).toContain('추세 우위');
 
-        const flowRanking = buildFearGreedFactorRankingLine(flowLeadSnapshot);
-        const trendRanking = buildFearGreedFactorRankingLine(trendLeadSnapshot);
+        const flowRanking = buildFearGreedFactorRankingLine(
+            flowLeadSnapshot,
+            tFacts,
+            tFactor
+        );
+        const trendRanking = buildFearGreedFactorRankingLine(
+            trendLeadSnapshot,
+            tFacts,
+            tFactor
+        );
         expect(flowRanking).not.toBe(trendRanking);
-        expect(flowRanking).toContain(FACTOR_LABEL.volume_z);
-        expect(trendRanking).toContain(FACTOR_LABEL.ma200_distance);
+        expect(flowRanking).toContain(
+            (
+                koMessages.shared.lib.fearGreedFactor as unknown as {
+                    symbolLabel: Record<string, string>;
+                }
+            ).symbolLabel.volume_z
+        );
+        expect(trendRanking).toContain(
+            (
+                koMessages.shared.lib.fearGreedFactor as unknown as {
+                    symbolLabel: Record<string, string>;
+                }
+            ).symbolLabel.ma200_distance
+        );
     });
 });
 
@@ -323,7 +446,9 @@ describe('시계열 문장 (P1/P2/P5)', () => {
             scores[260 - 1 - 252] = 43; // 1년 전
             scores[259] = 43; // 현재
             const line = buildFearGreedPeriodComparisonLine(
-                scoredHistory(history(scores))
+                scoredHistory(history(scores)),
+                t,
+                tFacts
             )!;
 
             expect(line).toContain('현재 43점');
@@ -340,7 +465,9 @@ describe('시계열 문장 (P1/P2/P5)', () => {
 
         it('시계열이 짧으면 확보된 기간만 말한다', () => {
             const line = buildFearGreedPeriodComparisonLine(
-                scoredHistory(history(Array.from({ length: 10 }, () => 50)))
+                scoredHistory(history(Array.from({ length: 10 }, () => 50))),
+                t,
+                tFacts
             )!;
             expect(line).toContain('1주 전');
             expect(line).not.toContain('1개월 전');
@@ -349,7 +476,11 @@ describe('시계열 문장 (P1/P2/P5)', () => {
 
         it('비교 대상이 하나도 없으면 null', () => {
             expect(
-                buildFearGreedPeriodComparisonLine(scoredHistory(history([50])))
+                buildFearGreedPeriodComparisonLine(
+                    scoredHistory(history([50])),
+                    t,
+                    tFacts
+                )
             ).toBeNull();
         });
     });
@@ -361,7 +492,8 @@ describe('시계열 문장 (P1/P2/P5)', () => {
             scores[70] = 88; // 최고
             scores[99] = 43; // 현재
             const line = buildFearGreedYearRangeLine(
-                scoredHistory(history(scores))
+                scoredHistory(history(scores)),
+                tFacts
             )!;
 
             expect(line).toContain('최저 12점(2026년 1월 4일)');
@@ -379,7 +511,10 @@ describe('시계열 문장 (P1/P2/P5)', () => {
         it('표본이 60개 미만이면 분포를 말하지 않는다', () => {
             expect(
                 buildFearGreedYearRangeLine(
-                    scoredHistory(history(Array.from({ length: 59 }, () => 50)))
+                    scoredHistory(
+                        history(Array.from({ length: 59 }, () => 50))
+                    ),
+                    tFacts
                 )
             ).toBeNull();
         });
@@ -393,7 +528,9 @@ describe('시계열 문장 (P1/P2/P5)', () => {
                 ...Array.from({ length: 30 }, () => 65),
             ];
             const line = buildFearGreedRegimeDistributionLine(
-                scoredHistory(history(scores))
+                scoredHistory(history(scores)),
+                t,
+                tFacts
             )!;
 
             // 표본이 252거래일에 못 미치면 "최근 1년"이라고 쓰지 않는다.
@@ -411,7 +548,9 @@ describe('시계열 문장 (P1/P2/P5)', () => {
                 ...Array.from({ length: 200 }, () => 50),
             ];
             const line = buildFearGreedRegimeDistributionLine(
-                scoredHistory(history(scores))
+                scoredHistory(history(scores)),
+                t,
+                tFacts
             )!;
 
             expect(line).toContain('극심한 공포 1일,');
@@ -420,7 +559,9 @@ describe('시계열 문장 (P1/P2/P5)', () => {
 
         it('표본이 252거래일 이상이면 "최근 1년"이라고 쓴다', () => {
             const line = buildFearGreedRegimeDistributionLine(
-                scoredHistory(history(Array.from({ length: 300 }, () => 50)))
+                scoredHistory(history(Array.from({ length: 300 }, () => 50))),
+                t,
+                tFacts
             )!;
 
             // 300개를 넣어도 창은 마지막 252개다.

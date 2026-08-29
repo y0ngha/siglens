@@ -1,10 +1,11 @@
+import { useTranslations } from 'next-intl';
 import type { OverallScenarioName } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { SnapshotBulletList } from '../SnapshotBulletList';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 import { createEnumGuard } from '../lib/createEnumGuard';
 import { narrowStringArray } from '../lib/narrowStringArray';
-import { LIVE_ANALYSIS_CROSS_REF } from '../lib/liveAnalysisCrossRef';
+import { LIVE_ANALYSIS_CROSS_REF_KEY } from '../lib/liveAnalysisCrossRef';
 import type { MarketProfileId } from '@/shared/config/marketProfile';
 
 interface OverallSnapshotProseProps {
@@ -34,20 +35,23 @@ interface OverallSnapshotProseProps {
     generatedAt?: Date;
 }
 
-// Guard-only label map — the scenario section headings below are hardcoded
+// Guard-only key map — the scenario section headings below are hardcoded
 // Korean strings ("강세 시나리오" / ...), not derived from this map, but its
 // keys must cover exactly `OverallScenarioName`'s members (PR #698 round-2
 // review FIX 3: converted from an `Array.includes` membership check to the
 // shared `createEnumGuard` factory — semantics are equivalent, both reject
 // any string outside {bullish, neutral, bearish}). See createEnumGuard's
-// JSDoc for the Object.hasOwn / prototype-chain rationale.
-const SCENARIO_NAME_LABEL: Record<OverallScenarioName, string> = {
-    bullish: '강세',
-    neutral: '중립',
-    bearish: '약세',
+// JSDoc for the Object.hasOwn / prototype-chain rationale. Values are
+// `shared.enumLabel` catalog keys (`overallScenario.*`), not Korean text —
+// unused for rendering today, kept in sync in case a future call site needs
+// the display label.
+const SCENARIO_NAME_LABEL_KEY: Record<OverallScenarioName, string> = {
+    bullish: 'overallScenario.bullish',
+    neutral: 'overallScenario.neutral',
+    bearish: 'overallScenario.bearish',
 };
 
-const isScenarioName = createEnumGuard(SCENARIO_NAME_LABEL);
+const isScenarioName = createEnumGuard(SCENARIO_NAME_LABEL_KEY);
 
 interface NarrowedScenario {
     name: OverallScenarioName;
@@ -77,23 +81,34 @@ function narrowScenario(value: unknown): NarrowedScenario | null {
  * 비어있으면(정규화 실패·LLM 누락) `null`을 돌려줘 호출부가 그 항목을
  * 건너뛰게 한다.
  */
-function formatScenarioBullet(scenario: NarrowedScenario): string | null {
+/**
+ * 불릿 조립에 쓸 **조각**을 돌려준다. 문장을 여기서 만들지 않는 이유는 두
+ * 가지다: (1) `narrowOverallContent`는 `hasOverallProse`(순수 술어)도 쓰는
+ * 경로라 번역자를 받을 수 없고, (2) `예상 가격대: X`의 어순이 로케일마다
+ * 달라 접미사만 갈아끼우는 방식으로는 영어 문장이 어색해진다. 조립은
+ * 번역자를 선언한 렌더 컴포넌트가 한다.
+ */
+interface ScenarioBullet {
+    trigger: string;
+    priceRange: string;
+}
+
+function formatScenarioBullet(
+    scenario: NarrowedScenario
+): ScenarioBullet | null {
     const trigger = scenario.triggerConditionKo.trim();
     const priceRange = scenario.priceRangeKo.trim();
 
     if (trigger.length === 0 && priceRange.length === 0) return null;
-    if (trigger.length > 0 && priceRange.length > 0) {
-        return `${trigger} (예상 가격대: ${priceRange})`;
-    }
-    return trigger.length > 0 ? trigger : `예상 가격대: ${priceRange}`;
+    return { trigger, priceRange };
 }
 
 interface NarrowedOverallContent {
     headlineKo: string;
     integratedConclusionKo: string;
-    bullishBullets: string[];
-    neutralBullets: string[];
-    bearishBullets: string[];
+    bullishBullets: ScenarioBullet[];
+    neutralBullets: ScenarioBullet[];
+    bearishBullets: ScenarioBullet[];
     riskFactorsKo: string[];
     technicalBulletsKo: string[];
     fundamentalBulletsKo: string[];
@@ -144,7 +159,7 @@ function narrowOverallContent(content: unknown): NarrowedOverallContent | null {
         : [];
 
     // 이름별 불릿 추출 — 시나리오 배열을 이름당 한 번씩만 순회한다.
-    const bulletsOf = (name: string): string[] =>
+    const bulletsOf = (name: string): ScenarioBullet[] =>
         scenarios.flatMap(scenario => {
             if (scenario.name !== name) return [];
             const bullet = formatScenarioBullet(scenario);
@@ -239,8 +254,26 @@ export function OverallSnapshotProse({
     marketProfile,
     generatedAt,
 }: OverallSnapshotProseProps) {
+    const t = useTranslations('views.symbol');
+    const tProse = useTranslations('views.symbol.snapshot.prose');
+    const tMisc = useTranslations('shared.ui.misc');
     const narrowed = narrowOverallContent(content);
     if (narrowed === null) return null;
+
+    /**
+     * 시나리오 불릿 조립. 트리거·가격대 중 하나만 있으면 그것만 쓰고, 둘 다
+     * 있으면 로케일 어순에 맞춘 템플릿으로 합친다.
+     */
+    const scenarioText = (bullets: ScenarioBullet[]): string[] =>
+        bullets.map(({ trigger, priceRange }) => {
+            if (trigger.length === 0)
+                return tProse('expectedRange', { v0: priceRange });
+            if (priceRange.length === 0) return trigger;
+            return tProse('triggerWithRange', {
+                v0: trigger,
+                v1: priceRange,
+            });
+        });
 
     const conclusionParagraphs = narrowed.integratedConclusionKo
         .split('\n')
@@ -249,7 +282,7 @@ export function OverallSnapshotProse({
 
     return (
         <SnapshotSummarySection
-            title="종합 분석 결론"
+            title={t('OverallSnapshotProse.de4a87')}
             displayName={displayName}
             marketProfile={marketProfile}
             asOf={generatedAt}
@@ -257,7 +290,7 @@ export function OverallSnapshotProse({
             <div className="space-y-4 text-sm leading-6 text-secondary-300">
                 {/* 근거는 LIVE_ANALYSIS_CROSS_REF JSDoc 참고 — 두 탭이 동일 문구를 쓴다. */}
                 <p className="text-xs text-secondary-400">
-                    {LIVE_ANALYSIS_CROSS_REF}
+                    {tMisc(LIVE_ANALYSIS_CROSS_REF_KEY)}
                 </p>
                 {narrowed.headlineKo.length > 0 && (
                     <p className="font-medium text-secondary-200">
@@ -274,66 +307,66 @@ export function OverallSnapshotProse({
                 )}
 
                 <SnapshotBulletList
-                    title="기술적 분석"
+                    title={t('OverallSnapshotProse.da6fd3')}
                     symbol={symbol}
-                    ariaSuffix="기술적 분석"
+                    ariaSuffix={t('OverallSnapshotProse.da6fd3')}
                     items={narrowed.technicalBulletsKo}
                     keyPrefix="technical-bullet"
                 />
                 <SnapshotBulletList
-                    title="펀더멘털"
+                    title={t('OverallSnapshotProse.854e15')}
                     symbol={symbol}
-                    ariaSuffix="펀더멘털"
+                    ariaSuffix={t('OverallSnapshotProse.854e15')}
                     items={narrowed.fundamentalBulletsKo}
                     keyPrefix="fundamental-bullet"
                 />
                 <SnapshotBulletList
-                    title="뉴스"
+                    title={t('OverallSnapshotProse.3a465d')}
                     symbol={symbol}
-                    ariaSuffix="뉴스"
+                    ariaSuffix={t('OverallSnapshotProse.3a465d')}
                     items={narrowed.newsBulletsKo}
                     keyPrefix="news-bullet"
                 />
                 <SnapshotBulletList
-                    title="옵션"
+                    title={t('OverallSnapshotProse.3c7dbc')}
                     symbol={symbol}
-                    ariaSuffix="옵션"
+                    ariaSuffix={t('OverallSnapshotProse.3c7dbc')}
                     items={narrowed.optionsBulletsKo}
                     keyPrefix="options-bullet"
                 />
                 <SnapshotBulletList
-                    title="재무제표"
+                    title={t('OverallSnapshotProse.128c11')}
                     symbol={symbol}
-                    ariaSuffix="재무제표"
+                    ariaSuffix={t('OverallSnapshotProse.128c11')}
                     items={narrowed.financialsBulletsKo}
                     keyPrefix="financials-bullet"
                 />
 
                 <SnapshotBulletList
-                    title="강세 시나리오"
+                    title={t('OverallSnapshotProse.b8f729')}
                     symbol={symbol}
-                    ariaSuffix="강세 시나리오"
-                    items={narrowed.bullishBullets}
+                    ariaSuffix={t('OverallSnapshotProse.b8f729')}
+                    items={scenarioText(narrowed.bullishBullets)}
                     keyPrefix="bullish"
                 />
                 <SnapshotBulletList
-                    title="중립 시나리오"
+                    title={t('OverallSnapshotProse.ac2e2f')}
                     symbol={symbol}
-                    ariaSuffix="중립 시나리오"
-                    items={narrowed.neutralBullets}
+                    ariaSuffix={t('OverallSnapshotProse.ac2e2f')}
+                    items={scenarioText(narrowed.neutralBullets)}
                     keyPrefix="neutral"
                 />
                 <SnapshotBulletList
-                    title="약세 시나리오"
+                    title={t('OverallSnapshotProse.288428')}
                     symbol={symbol}
-                    ariaSuffix="약세 시나리오"
-                    items={narrowed.bearishBullets}
+                    ariaSuffix={t('OverallSnapshotProse.288428')}
+                    items={scenarioText(narrowed.bearishBullets)}
                     keyPrefix="bearish"
                 />
                 <SnapshotBulletList
-                    title="위험 요인"
+                    title={t('OverallSnapshotProse.af0480')}
                     symbol={symbol}
-                    ariaSuffix="위험 요인"
+                    ariaSuffix={t('OverallSnapshotProse.af0480')}
                     items={narrowed.riskFactorsKo}
                     keyPrefix="risk"
                 />

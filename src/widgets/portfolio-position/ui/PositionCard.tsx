@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { useId } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { formatSignedPercent } from '@/shared/lib/priceFormat';
@@ -48,6 +49,8 @@ export function PositionCard({
     current,
     avg,
 }: PositionCardProps) {
+    const t = useTranslations('widgets.portfolio-position');
+    const tMisc = useTranslations('shared.ui.misc');
     const headingId = useId();
 
     return (
@@ -59,40 +62,45 @@ export function PositionCard({
                 id={headingId}
                 className="text-sm font-semibold text-secondary-200"
             >
-                내 위치
+                {t('PositionCard.69d338')}
             </h2>
             <dl className="grid grid-cols-1 gap-2 text-sm text-secondary-300">
                 <ReadoutRow
-                    label="최근 고점"
+                    label={t('PositionCard.e02b15')}
                     value={formatAmount(high52w, symbol)}
                 />
                 <ReadoutRow
-                    label="최근 저점"
+                    label={t('PositionCard.e21fad')}
                     value={formatAmount(low52w, symbol)}
                 />
                 <ReadoutRow
-                    label="현재가"
+                    label={t('PositionCard.497d1e')}
                     value={formatAmount(current, symbol)}
                 />
-                <ReadoutRow label="내 평단" value={formatAmount(avg, symbol)} />
                 <ReadoutRow
-                    label="최근 고점 대비"
+                    label={t('PositionCard.082179')}
+                    value={formatAmount(avg, symbol)}
+                />
+                <ReadoutRow
+                    label={t('PositionCard.5ed98d')}
                     value={formatSignedPercent(model.pctFromHigh)}
                     valueClassName={signColorClass(model.pctFromHigh)}
                 />
                 <ReadoutRow
-                    label="최근 저점 대비"
+                    label={t('PositionCard.f2e157')}
                     value={formatSignedPercent(model.pctAboveLow)}
                     valueClassName={signColorClass(model.pctAboveLow)}
                 />
                 <ReadoutRow
-                    label="수익률"
+                    label={t('PositionCard.fb64df')}
                     value={formatSignedPercent(model.returnPct)}
                     valueClassName={signColorClass(model.returnPct)}
                 />
                 <ReadoutRow
-                    label="최근 범위의 위치"
-                    value={`${model.rangePositionPct.toFixed(0)}% 지점`}
+                    label={t('PositionCard.ffe45d')}
+                    value={tMisc('rangePoint', {
+                        v0: model.rangePositionPct.toFixed(0),
+                    })}
                 />
             </dl>
         </section>

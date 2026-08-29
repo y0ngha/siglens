@@ -1,5 +1,7 @@
 'use client';
 
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import type { Locale } from '@/shared/i18n/locales';
 import { useState, type CSSProperties } from 'react';
 import { cn } from '@/shared/lib/cn';
 import {
@@ -128,8 +130,14 @@ function resolveColor(
     return COLOR_CLASSES[declared];
 }
 
-function fmt(value: number | null, currency: StatementCurrency): string {
-    return value === null ? '—' : formatCurrencyCompact(value, currency);
+function fmt(
+    value: number | null,
+    currency: StatementCurrency,
+    locale: Locale
+): string {
+    return value === null
+        ? '—'
+        : formatCurrencyCompact(value, currency, locale);
 }
 
 interface HoverState extends TooltipPosition {
@@ -153,6 +161,7 @@ export function FinancialTrendChart({
     periods,
     currency = DEFAULT_STATEMENT_CURRENCY,
 }: FinancialTrendChartProps) {
+    const locale = useResolvedLocale();
     const [hover, setHover] = useState<HoverState | null>(null);
 
     const n = periods.length;
@@ -372,7 +381,7 @@ export function FinancialTrendChart({
                                         </span>
                                     </span>
                                     <span className="font-mono tabular-nums">
-                                        {fmt(v, currency)}
+                                        {fmt(v, currency, locale)}
                                     </span>
                                 </li>
                             );

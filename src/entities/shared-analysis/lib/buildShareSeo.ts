@@ -1,7 +1,15 @@
+import type { Locale } from '@/shared/i18n/locales';
+import { localeOpenGraph } from '@/shared/lib/seoAlternates';
+
+/** `entities.shared-analysis.seo` 네임스페이스 번역자. */
+type ShareSeoTranslator = (
+    key: string,
+    values?: Record<string, string | number>
+) => string;
 import type { Metadata } from 'next';
 import type { SharedAnalysisLookup } from '../types';
-import { buildOgText } from '../server/buildOgText';
-import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import { buildOgText, type OgTranslator } from '../server/buildOgText';
+import { SITE_NAME, localizedAbsoluteUrl } from '@/shared/lib/seo';
 
 /**
  * 공유 페이지(`/share/[id]`) generateMetadata 반환값 빌더.
@@ -19,13 +27,16 @@ import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
  */
 export function buildShareMetadata(
     lookup: SharedAnalysisLookup,
-    id: string
+    id: string,
+    t: ShareSeoTranslator,
+    locale: Locale,
+    tOg: OgTranslator
 ): Metadata {
     if (lookup.status === 'found') {
         const { snapshot } = lookup;
         const ticker = snapshot.symbol.toUpperCase();
-        const title = `${ticker} AI 분석 결과`;
-        const { description } = buildOgText(snapshot);
+        const title = t('title', { v0: ticker });
+        const { description } = buildOgText(snapshot, tOg);
 
         return {
             title,
@@ -40,7 +51,9 @@ export function buildShareMetadata(
                 siteName: SITE_NAME,
                 title,
                 description,
-                locale: 'ko_KR',
+                // 예전에는 `'ko_KR'` 고정이라 `/ja/share/x`가 한국어 로케일을
+                // 광고했다.
+                ...localeOpenGraph(locale),
                 // 이 페이지의 존재 이유가 채팅앱에 붙여넣는 것인데 og:url이
                 // 없었다. 없으면 루트 레이아웃의 og:url(홈)이 상속돼, 언펄러가
                 // 공유 스냅샷 카드에 홈 주소를 붙이거나 서로 다른 공유 링크를
@@ -50,7 +63,7 @@ export function buildShareMetadata(
                 // noindex 페이지가 스스로를 정본이라고 선언하지 않게 하려는
                 // 것이고, og:url은 색인 신호가 아니라 언펄링 대상 주소다.
                 // 둘은 서로 상충하지 않는다.
-                url: `${SITE_URL}/share/${id}`,
+                url: localizedAbsoluteUrl(`/share/${id}`, locale),
             },
             twitter: {
                 card: 'summary_large_image',
@@ -62,7 +75,7 @@ export function buildShareMetadata(
 
     // expired | not_found — minimal noindex; canonical: null for the same reason.
     return {
-        title: '공유 분석',
+        title: t('expiredTitle'),
         robots: { index: false },
         alternates: { canonical: null },
     };

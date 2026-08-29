@@ -11,6 +11,7 @@ import {
     type Time,
 } from 'lightweight-charts';
 import { useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface FearGreedHistoricalChartProps {
     history: FearGreedHistoryPoint[];
@@ -31,6 +32,7 @@ const LINE_WIDTH = 1;
 export function FearGreedHistoricalChart({
     history,
 }: FearGreedHistoricalChartProps) {
+    const t = useTranslations('widgets.chart');
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
 
@@ -102,7 +104,7 @@ export function FearGreedHistoricalChart({
             ref={containerRef}
             className="w-full"
             role="img"
-            aria-label="최근 1년 공포 탐욕 지수 추이 차트"
+            aria-label={t('FearGreedHistoricalChart.9b98f6')}
         />
     );
 }

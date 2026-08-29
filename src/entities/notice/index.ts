@@ -5,4 +5,4 @@
 // - noticeStorage(localStorage 사이드이펙트)는 widgets/notice-popup/utils/noticeStorage.ts에 있다.
 export type { NoticeRecord } from './model/types';
 export { matchPath } from './lib/matchPath';
-export { formatNoticeDate } from './lib/formatNoticeDate';
+export { formatNoticeDate, type NoticeDateParts } from './lib/formatNoticeDate';

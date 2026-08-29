@@ -1,4 +1,5 @@
-import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { relatedSymbolsFor } from '@/shared/config/relatedSymbols';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
@@ -103,6 +104,7 @@ async function resolveKoreanNames(
  * 만들지 않는다.
  */
 export async function RelatedSymbols({ symbol }: RelatedSymbolsProps) {
+    const t = await getTranslations('views.symbol');
     const related = relatedSymbolsFor(symbol);
     if (related.length === 0) return null;
     const koreanNames = await resolveKoreanNames(related.map(r => r.symbol));
@@ -113,7 +115,7 @@ export async function RelatedSymbols({ symbol }: RelatedSymbolsProps) {
             className="mt-6 rounded-lg border border-secondary-700 bg-secondary-800/30 p-5"
         >
             <h2 id="related-symbols-heading" className={HEADING_SECTION}>
-                관련 종목
+                {t('RelatedSymbols.c35191')}
             </h2>
             <ul className="mt-3 flex flex-wrap gap-2">
                 {related.map(item => {

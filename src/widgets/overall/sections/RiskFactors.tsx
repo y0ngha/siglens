@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
@@ -7,6 +8,7 @@ interface RiskFactorsProps {
 }
 
 export function RiskFactors({ factors }: RiskFactorsProps) {
+    const t = useTranslations('widgets.overall');
     if (factors.length === 0) return null;
     return (
         <section
@@ -17,9 +19,9 @@ export function RiskFactors({ factors }: RiskFactorsProps) {
                 id="risk-factors-heading"
                 className={cn(HEADING_SECTION, 'mb-3 text-balance')}
             >
-                위험 요인
+                {t('RiskFactors.af0480')}
             </h2>
-            <ul aria-label="위험 요인 목록" className="space-y-2">
+            <ul aria-label={t('RiskFactors.b6fcf8')} className="space-y-2">
                 {factors.map(factor => (
                     <li key={factor} className="flex gap-2 text-sm">
                         <span

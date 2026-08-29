@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useSearchParams } from 'next/navigation';
 
 import { sanitizeNextPath } from '@/shared/lib/auth/redirect';

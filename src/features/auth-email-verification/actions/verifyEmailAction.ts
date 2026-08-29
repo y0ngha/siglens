@@ -6,11 +6,14 @@ import { createEmailTokenStore } from '@/entities/email-token';
 import type { VerifyEmailFormState } from '@/shared/lib/auth/formTypes';
 import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
+import { getTranslations } from 'next-intl/server';
 
 export async function verifyEmailAction(
     _prev: VerifyEmailFormState,
     formData: FormData
 ): Promise<VerifyEmailFormState> {
+    // 상태의 `message`가 그대로 화면에 뿌려지므로 요청 로케일로 만든다.
+    const tAuth = await getTranslations('entities.auth.error');
     try {
         const email = normalizeEmail(String(formData.get('email') ?? ''));
         const code = String(formData.get('code') ?? '').trim();
@@ -47,7 +50,7 @@ export async function verifyEmailAction(
                 verified: false,
                 error: {
                     code: 'email_already_exists',
-                    message: '이미 가입된 이메일 주소입니다. 로그인해 주세요.',
+                    message: tAuth('emailAlreadyRegistered'),
                 },
             };
         }
@@ -59,8 +62,7 @@ export async function verifyEmailAction(
             verified: false,
             error: {
                 code: 'unexpected',
-                message:
-                    '이메일 인증 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+                message: tAuth('verificationFailed'),
             },
         };
     }

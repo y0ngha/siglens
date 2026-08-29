@@ -12,7 +12,7 @@ import { NEWS_LOOKBACK_MS } from './newsLookback';
 import { markFetched } from './newsRefreshFlag';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
 import {
-    getFmpUserFacingMessage,
+    getFmpUserFacingKey,
     isFmpPaymentRequiredError,
     logFmpPaymentRequiredError,
 } from '@/shared/api/fmp/fmpUserMessage';
@@ -112,7 +112,7 @@ export async function ingestNewsForSymbol(
         .catch((err: unknown) => {
             logFmpPaymentRequiredError(err);
             if (
-                getFmpUserFacingMessage(err) === null &&
+                getFmpUserFacingKey(err) === null &&
                 !isFmpPaymentRequiredError(err)
             ) {
                 console.error('[ingestNewsForSymbol] FMP fetch failed:', err);

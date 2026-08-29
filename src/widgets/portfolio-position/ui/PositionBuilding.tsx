@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type React from 'react';
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -17,14 +18,14 @@ import {
     type RangeClamp,
 } from '../lib/positionGeometry';
 import {
-    AVG_LABEL_PREFIX,
+    AVG_LABEL_PREFIX_KEY,
     avgFloorPrefixGlyph,
     avgFloorVisualNote,
     buildAriaLabel,
     buildFloorTooltips,
     CENTER_X,
     computeActiveFloorTooltipContent,
-    CURRENT_LABEL_PREFIX,
+    CURRENT_LABEL_PREFIX_KEY,
     describeAvgFloor,
     formatAmount,
     formatCompactForSvgLabel,
@@ -260,6 +261,8 @@ export function PositionBuilding({
     className,
     volumeByBand,
 }: PositionBuildingProps) {
+    const t = useTranslations('widgets.portfolio-position');
+    const tPos = useTranslations('widgets.portfolio-position.positionNote');
     // 층 hover/tap(pin) 상태 — volumeByBand가 없으면 절대 set되지 않아(아래 이벤트
     // 핸들러가 통째로 붙지 않음) 항상 null로 남고, 건물은 이 기능 추가 전과 동일하게
     // 렌더된다. 마우스/터치 전용(포인터 어포던스) — 층 <g>는 role="img" 자손이라
@@ -319,7 +322,8 @@ export function PositionBuilding({
         low52w,
         high52w,
         model.bands.length,
-        symbol
+        symbol,
+        tPos
     );
 
     // model.bands.length는 volumeByBand 인덱싱(아래)과 describeAvgFloor 둘 다에
@@ -333,22 +337,25 @@ export function PositionBuilding({
     const avgFloorNote = describeAvgFloor(
         model.avgPos,
         model.avgClamped,
-        bandCount
+        bandCount,
+        tPos
     );
     // 시각 노트는 폭 제약을 받아 범위 밖에서 phrase만, aria-label은 전체 문구.
     const avgFloorNoteVisual = avgFloorVisualNote(
         model.avgClamped,
-        avgFloorNote
+        avgFloorNote,
+        tPos
     );
     const ariaLabel = buildAriaLabel(
         symbol,
         model,
         avgDisplay,
         currentDisplay,
-        avgFloorNote
+        avgFloorNote,
+        tPos
     );
 
-    const currentNote = outOfRangeNote(model.currentClamped);
+    const currentNote = outOfRangeNote(model.currentClamped, tPos);
 
     const activeFloor = hoverFloor ?? pinnedFloor;
     const tooltipPositioned =
@@ -634,7 +641,7 @@ export function PositionBuilding({
                     className="fill-current text-[10px] font-medium tabular-nums"
                 >
                     <tspan className="fill-secondary-400">
-                        {AVG_LABEL_PREFIX}
+                        {tPos(AVG_LABEL_PREFIX_KEY)}
                     </tspan>
                     <tspan className="fill-secondary-100">
                         {avgDisplaySvg}
@@ -676,7 +683,7 @@ export function PositionBuilding({
                     className="fill-current text-[10px] font-medium tabular-nums"
                 >
                     <tspan className="fill-secondary-400">
-                        {CURRENT_LABEL_PREFIX}
+                        {tPos(CURRENT_LABEL_PREFIX_KEY)}
                     </tspan>
                     <tspan className="fill-secondary-100">
                         {currentDisplaySvg}
@@ -704,8 +711,10 @@ export function PositionBuilding({
                     returnTokenClass
                 )}
             >
-                수익률 {formatSignedPercent(model.returnPct)} · 최근 범위의{' '}
-                {model.rangePositionPct.toFixed(0)}% 지점
+                {t('PositionBuilding.305967', {
+                    v0: formatSignedPercent(model.returnPct),
+                    v1: model.rangePositionPct.toFixed(0),
+                })}
             </p>
 
             {/* 층 hover/탭 리드아웃 — 마우스/터치를 쓰는 시각 사용자 전용 보강 표시다

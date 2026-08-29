@@ -1,5 +1,6 @@
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
+import { useTranslations } from 'next-intl';
 
 interface SnapshotBulletListProps {
     title: string;
@@ -40,6 +41,8 @@ export function SnapshotBulletList({
     items,
     keyPrefix,
 }: SnapshotBulletListProps) {
+    // 훅은 조기 반환보다 위에 — 빈 목록 렌더에서만 훅이 사라지면 안 된다.
+    const tMisc = useTranslations('shared.ui.misc');
     if (items.length === 0) return null;
 
     return (
@@ -47,7 +50,10 @@ export function SnapshotBulletList({
             <h3 className={cn('mb-1.5', HEADING_SUBSECTION)}>{title}</h3>
             <ul
                 role="list"
-                aria-label={`${symbol} ${ariaSuffix} 목록`}
+                aria-label={tMisc('bulletListAria', {
+                    v0: symbol,
+                    v1: ariaSuffix,
+                })}
                 className="space-y-1"
             >
                 {items.map((item, i) => (

@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { koMessage } from '@/shared/test-utils/koMessage';
 
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),
@@ -77,7 +78,9 @@ describe('Auth Signup Flow', () => {
         } as unknown as typeof emailState;
         const SignupForm = await importSignupForm();
         render(<SignupForm />);
-        expect(screen.getByText('유효하지 않은 이메일')).toBeInTheDocument();
+        expect(
+            screen.getByText(koMessage('entities.auth.error.emailInvalid'))
+        ).toBeInTheDocument();
     });
 
     it('renders submit button with correct pending label', async () => {

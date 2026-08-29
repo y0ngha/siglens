@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
@@ -7,6 +8,7 @@ interface OverallSummaryProps {
 }
 
 export function OverallSummary({ headline }: OverallSummaryProps) {
+    const t = useTranslations('widgets.overall');
     if (!headline) return null;
     return (
         <section
@@ -17,7 +19,7 @@ export function OverallSummary({ headline }: OverallSummaryProps) {
                 id="overall-summary-heading"
                 className={cn(HEADING_SECTION, 'mb-3 text-balance')}
             >
-                종합 요약
+                {t('OverallSummary.99a89d')}
             </h2>
             <MarkdownText className="text-sm text-secondary-400">
                 {headline}

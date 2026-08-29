@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type {
     OverallScenario,
     OverallScenarioName,
@@ -6,10 +7,11 @@ import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
-const SCENARIO_LABEL: Record<OverallScenarioName, string> = {
-    bullish: '강세',
-    neutral: '중립',
-    bearish: '약세',
+/** OverallScenarioName → `shared.enumLabel.overallScenario` 카탈로그 키. */
+const SCENARIO_LABEL_KEY: Record<OverallScenarioName, string> = {
+    bullish: 'overallScenario.bullish',
+    neutral: 'overallScenario.neutral',
+    bearish: 'overallScenario.bearish',
 };
 
 const SCENARIO_CLASS: Record<OverallScenarioName, string> = {
@@ -24,6 +26,11 @@ interface ScenarioAnalysisProps {
 
 /** RSC section: bullish/neutral/bearish scenarios with trigger conditions and projected price ranges. */
 export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
+    const t = useTranslations('widgets.overall');
+    // extract.mjs의 동적 키 탐지는 이 파일 안에서 번역자를 직접 호출하는
+    // 패턴만 본다 — `SCENARIO_LABEL_KEY[...]`를 그대로 `tLabel(...)`에
+    // 넣어야 `shared.enumLabel`이 이 라우트의 클라이언트 번들에 실린다.
+    const tLabel = useTranslations('shared.enumLabel');
     if (scenarios.length === 0) return null;
     return (
         <section
@@ -34,9 +41,9 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
                 id="scenario-analysis-heading"
                 className={cn(HEADING_SECTION, 'mb-4 text-balance')}
             >
-                시나리오 분석
+                {t('ScenarioAnalysis.bb732c')}
             </h2>
-            <ul aria-label="시나리오 목록" className="space-y-4">
+            <ul aria-label={t('ScenarioAnalysis.239da9')} className="space-y-4">
                 {scenarios.map(scenario => (
                     <li
                         key={scenario.name}
@@ -49,12 +56,12 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
                                     SCENARIO_CLASS[scenario.name]
                                 )}
                             >
-                                {SCENARIO_LABEL[scenario.name]}
+                                {tLabel(SCENARIO_LABEL_KEY[scenario.name])}
                             </span>
                         </div>
                         <div className="mb-1.5 text-sm">
                             <p className="mb-0.5 font-medium text-secondary-100">
-                                트리거 조건
+                                {t('ScenarioAnalysis.35e6f0')}
                             </p>
                             <MarkdownText className="text-secondary-400">
                                 {scenario.triggerConditionKo}
@@ -62,7 +69,7 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
                         </div>
                         <div className="text-sm">
                             <p className="mb-0.5 font-medium text-secondary-100">
-                                예상 가격대
+                                {t('ScenarioAnalysis.fcd702')}
                             </p>
                             <MarkdownText className="text-secondary-400">
                                 {scenario.priceRangeKo}

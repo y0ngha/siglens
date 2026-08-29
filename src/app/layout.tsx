@@ -1,198 +1,21 @@
-import type { Metadata, Viewport } from 'next';
-import { ThemeInitScript } from '@/shared/ui/ThemeInitScript';
 import type { ReactNode } from 'react';
-import Script from 'next/script';
-import { Geist_Mono } from 'next/font/google';
-import localFont from 'next/font/local';
-import { AuthSessionHeaderClient } from '@/app/_components/AuthSessionHeaderClient';
-import { Footer } from '@/widgets/layout/Footer';
-import { SiteJsonLd } from '@/widgets/layout/SiteJsonLd';
-import { PwaBanner } from '@/features/pwa-install';
-import { NoticePopupLoader } from '@/widgets/notice-popup';
-import { ReactQueryProvider } from '@/app/providers';
-import { SearchOverlayProvider } from '@/features/ticker-search';
-import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
-import { CF_BEACON_TOKEN } from '@/shared/lib/cloudflareAnalytics';
-import {
-    ROOT_FULL_TITLE,
-    ROOT_HEADLINE,
-    ROOT_KEYWORDS,
-    ROOT_TITLE,
-    SITE_DESCRIPTION,
-    SITE_NAME,
-    SITE_URL,
-} from '@/shared/lib/seo';
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import './globals.css';
 
-/*
- * 모노는 티커·가격·타임스탬프 등 자릿수 정렬이 필요한 데이터 전용이다.
- * 산세리프(Pretendard)와 달리 한글을 담지 않으므로 한글에 적용하면 안 된다 —
- * 글리프가 없어 OS 폰트로 조용히 떨어지고 기기마다 다르게 보인다.
+/**
+ * 패스스루 루트 레이아웃.
+ *
+ * `<html>`·`<body>`는 `[locale]/layout.tsx`가 렌더한다 — `lang`이 로케일에 따라
+ * 달라져야 하는데 루트는 로케일을 모르기 때문이다.
+ *
+ * 그럼에도 이 파일이 필요한 이유: Next는 `src/app/not-found.tsx`(매칭 실패 URL의
+ * 404) 위에 루트 레이아웃을 요구한다. 없으면 그 라우트가 구성되지 않는다.
+ *
+ * ⚠️ 이 파일은 `notFound()` 404의 빈 본문 문제를 **해결하지 않는다** — 실측으로
+ * 확인했다. 그건 별개의 알려진 한계이고 근거는 `[locale]/not-found.tsx` 참고.
  */
-const geistMono = Geist_Mono({
-    variable: '--font-geist-mono',
-    subsets: ['latin'],
-});
-
-// Pretendard Variable (subset) — self-host. next/font/local이 fingerprint URL
-// + 1년 immutable Cache-Control을 자동 부여하고, fallback font(OS)와의 metric
-// 을 자동 측정해 size-adjust로 CLS를 거의 0으로 만든다. third-party CDN 의존
-// 없이도 dynamic-subset CDN 대비 안정성과 privacy가 우위.
-//
-// Subset 범위 (cmap에 포함된 실제 글리프 기준):
-//  • Basic Latin / Latin-1 Supplement
-//  • Hangul Compatibility Jamo (U+3130–U+318F)
-//  • Hangul Syllables 중 KS X 1001 상용 음절 2,350자 (전체 U+AC00–U+D7A3가 아님)
-//  • 일반 구두점 · 통화 · 위·아래 첨자 · 분수 · 수학 기호
-//  • UI 글리프: 화살표(→ ↑ ↓ ←), 도형(▲ ▼ ▽ ○ ◈ ▾), ⚠, ✓ ✕ ✗, ⓘ 등 49자
-// 폰트 파일은 src/app/fonts/에 colocate한다 (next/font/local 권장 패턴 — 단일
-// 소비자인 layout.tsx 옆에 두어 dual-serving 가능성을 차단).
-// 원본 2.0 MB → 467 KB (-77%). 모바일 Slow 4G에서 text LCP 차단 시간을 10초
-// 이상 단축한다. unicode-range 분할은 운영 복잡도 증가 대비 효과가 크지 않아
-// 단일 파일을 유지한다.
-const pretendard = localFont({
-    src: './fonts/PretendardVariable-subset.woff2',
-    variable: '--font-pretendard',
-    display: 'swap',
-    weight: '100 900',
-});
-
-export const metadata: Metadata = {
-    metadataBase: new URL(SITE_URL),
-    title: {
-        default: ROOT_TITLE,
-        template: `%s | ${SITE_NAME}`,
-    },
-    description: SITE_DESCRIPTION,
-    keywords: ROOT_KEYWORDS,
-    applicationName: SITE_NAME,
-    authors: [{ name: SITE_NAME, url: SITE_URL }],
-    creator: SITE_NAME,
-    openGraph: {
-        type: 'website',
-        siteName: SITE_NAME,
-        title: ROOT_FULL_TITLE,
-        description: SITE_DESCRIPTION,
-        url: SITE_URL,
-        locale: 'ko_KR',
-        images: [
-            {
-                url: '/og-image.png',
-                width: OG_IMAGE_WIDTH,
-                height: OG_IMAGE_HEIGHT,
-                alt: `${ROOT_HEADLINE} — 차트, 펀더멘털, 뉴스, 옵션, 공포 탐욕 지수, 종합 결론`,
-            },
-        ],
-    },
-    twitter: {
-        card: 'summary_large_image',
-        title: ROOT_FULL_TITLE,
-        description: SITE_DESCRIPTION,
-        images: ['/og-image.png'],
-    },
-    // apple-touch-icon은 file-based 규약(src/app/apple-icon.png)이 <link rel="apple-touch-icon">
-    // 을 자동 생성하므로 metadata.icons로 중복 선언하지 않는다. 이전엔 둘이 공존해 동일
-    // 이미지(184×180)가 두 번 링크됐고, 수동 선언의 sizes='180x180'도 실제와 불일치했다.
-    robots: {
-        index: true,
-        follow: true,
-        googleBot: {
-            index: true,
-            follow: true,
-            'max-video-preview': -1,
-            'max-image-preview': 'large',
-            'max-snippet': -1,
-        },
-    },
-    // canonical은 root layout에서 설정하지 않는다.
-    // 루트 레벨 canonical은 자기 자신의 URL을 가진 canonical을 선언하지 않는
-    // 미래 페이지에서 SITE_URL이 상속되는 잠재적 footgun이 된다.
-    // 각 인덱서블 페이지는 자체 alternates.canonical을 선언한다.
-    // 홈 페이지의 canonical은 src/app/page.tsx에 명시한다.
-    // Google Search Console token: set NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION env var.
-    verification: {
-        other: {
-            'naver-site-verification':
-                '14d27c128365a7edc27cb6fb330aeea2c9760fa2',
-        },
-        ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
-            ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
-            : {}),
-    },
-};
-
-export const viewport: Viewport = {
-    /* 모바일 브라우저 상단 바 색. 페이지 배경(secondary-900)과 일치해야 화면이
-       이어져 보인다. 미디어 배열은 **시스템 선호도**만 따르므로, 사용자가
-       명시적으로 반대 테마를 고른 경우는 `useTheme`이 이 meta 태그를 직접
-       갱신해 맞춘다. */
-    themeColor: [
-        { media: '(prefers-color-scheme: light)', color: '#f7f8fa' },
-        { media: '(prefers-color-scheme: dark)', color: '#09090b' },
-    ],
-    viewportFit: 'cover',
-};
-
-interface RootLayoutProps {
+export default function RootLayout({
+    children,
+}: {
     readonly children: ReactNode;
-}
-
-export default function RootLayout({ children }: RootLayoutProps) {
-    return (
-        <html
-            lang="ko"
-            /* 인라인 스크립트가 하이드레이션 전에 data-theme과 colorScheme을 바꾼다.
-               이 속성이 없으면 React가 서버/클라 속성 불일치를 경고한다. */
-            suppressHydrationWarning
-            className={`${geistMono.variable} ${pretendard.variable} h-full overflow-x-hidden antialiased`}
-        >
-            <head>
-                <ThemeInitScript />
-            </head>
-            {/* overflow-x-hidden on both html and body prevents fixed/transformed elements (mobile drawer)
-                from extending the document scrollWidth past the viewport edge. */}
-            <body className="flex min-h-full flex-col overflow-x-hidden">
-                <SiteJsonLd />
-                <ReactQueryProvider>
-                    {/* 전체화면 검색 오버레이를 앱 전체에 하나만 둔다 — 헤더와 홈
-                        히어로가 같은 인스턴스를 연다. 근거는 SearchOverlayProvider JSDoc. */}
-                    <SearchOverlayProvider>
-                        <PwaBanner />
-                        <NoticePopupLoader />
-                        {/* 인증 헤더는 클라이언트에서 렌더된다(cookies()를 static render
-                        트리에서 제거 → 전 라우트 ISR 가능). 상세는 AuthSessionHeaderClient JSDoc. */}
-                        <AuthSessionHeaderClient />
-                        {children}
-                        {/* Footer를 root layout에 두는 이유: home/404/legal 페이지에만
-                        footer가 있어 /market, /backtesting, /[symbol]/* 등 대부분 라우트
-                        에 내부 링크가 누수됐다. 차트 페이지(/[symbol])는 SymbolLayout의
-                        sticky-footer jail(`min-h-[calc(100dvh-3.5rem)]`)이 chart+AI를
-                        첫 viewport에 가득 채우고, footer는 jail의 형제로 그 아래에
-                        위치한다 — 사용자가 스크롤을 내리면 footer가 보인다. */}
-                        <Footer />
-                    </SearchOverlayProvider>
-                </ReactQueryProvider>
-                {ADSENSE_ENABLED && (
-                    <Script
-                        async
-                        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"
-                        crossOrigin="anonymous"
-                        strategy="lazyOnload"
-                    />
-                )}
-                {/* Cloudflare Web Analytics — 쿠키리스 트래픽 측정(UV/PV + 페이지별
-                    조회수). beacon이 history API로 SPA 라우팅을 자동 추적하므로 추가
-                    설정이 필요 없다. afterInteractive로 빠른 이탈 방문자까지 집계해
-                    접속자 수 정확도를 확보한다(beacon ~5KB라 LCP/INP 영향은 미미). */}
-                {CF_BEACON_TOKEN && (
-                    <Script
-                        src="https://static.cloudflareinsights.com/beacon.min.js"
-                        data-cf-beacon={`{"token": "${CF_BEACON_TOKEN}"}`}
-                        strategy="afterInteractive"
-                    />
-                )}
-            </body>
-        </html>
-    );
+}) {
+    return children;
 }

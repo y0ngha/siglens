@@ -1,10 +1,8 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { MS_PER_MINUTE } from '@/shared/config/time';
 
-const STALE_MESSAGE =
-    'AI 분석 결과가 오래됐어요. 지금 시장 가격을 반영하려면 재분석해 주세요.';
-const REANALYZE_LABEL = '재분석';
 const COOLDOWN_TOOLTIP_ID = 'stale-banner-cooldown-tooltip';
 
 interface StaleAnalysisBannerProps {
@@ -16,6 +14,7 @@ export function StaleAnalysisBanner({
     onReanalyze,
     reanalyzeCooldownMs,
 }: StaleAnalysisBannerProps) {
+    const t = useTranslations('widgets.analysis.staleBanner');
     const isCoolingDown = reanalyzeCooldownMs > 0;
     const cooldownMinutes = Math.ceil(reanalyzeCooldownMs / MS_PER_MINUTE);
     return (
@@ -23,7 +22,7 @@ export function StaleAnalysisBanner({
             role="status"
             className="flex items-center justify-between gap-3 rounded-lg border border-ui-warning/30 bg-ui-warning/10 px-3 py-2 text-sm text-ui-warning-text"
         >
-            <span>{STALE_MESSAGE}</span>
+            <span>{t('message')}</span>
             <div className="relative inline-flex">
                 <button
                     type="button"
@@ -34,12 +33,12 @@ export function StaleAnalysisBanner({
                     }
                     title={
                         isCoolingDown
-                            ? `재분석은 ${cooldownMinutes}분에 한 번만 실행할 수 있어요.`
+                            ? t('cooldown', { v0: cooldownMinutes })
                             : undefined
                     }
                     className="rounded-lg border border-ui-warning px-2 py-1 text-xs font-medium hover:bg-ui-warning/20 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none disabled:border-border-control disabled:text-secondary-500"
                 >
-                    {REANALYZE_LABEL}
+                    {t('reanalyze')}
                 </button>
                 {isCoolingDown && (
                     <span
@@ -47,7 +46,7 @@ export function StaleAnalysisBanner({
                         role="tooltip"
                         className="sr-only"
                     >
-                        {`재분석은 ${cooldownMinutes}분에 한 번만 실행할 수 있어요.`}
+                        {t('cooldown', { v0: cooldownMinutes })}
                     </span>
                 )}
             </div>

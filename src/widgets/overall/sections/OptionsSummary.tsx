@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
@@ -14,6 +15,7 @@ interface OptionsSummaryProps {
  * 배지를 노출하지 않는다 (분석 자체가 없으므로 stale 의미가 없음).
  */
 export function OptionsSummary({ bullets, oiStale }: OptionsSummaryProps) {
+    const t = useTranslations('widgets.overall');
     const isEmpty = bullets.length === 0;
     return (
         <section
@@ -25,24 +27,26 @@ export function OptionsSummary({ bullets, oiStale }: OptionsSummaryProps) {
                     id="overall-options-heading"
                     className={cn(HEADING_SECTION, 'text-balance')}
                 >
-                    옵션 시장
+                    {t('OptionsSummary.859330')}
                 </h2>
                 {!isEmpty && oiStale && (
                     <span
                         className="rounded-lg bg-ui-warning/10 px-2 py-0.5 text-xs text-ui-warning-text"
-                        title="미국 옵션 정규 거래 시간 외에 수집된 스냅샷으로, Open Interest가 직전 세션 기준일 수 있습니다."
+                        title={t('OptionsSummary.dac637')}
                     >
-                        OI 데이터 지연
+                        {t('OptionsSummary.e55475')}
                     </span>
                 )}
             </div>
             {isEmpty ? (
                 <p className="text-sm text-secondary-400">
-                    이 종목은 옵션이 상장되어 있지 않거나 분석할 데이터가
-                    없어요.
+                    {t('OptionsSummary.bf366f')}
                 </p>
             ) : (
-                <ul aria-label="옵션 분석 항목" className="space-y-2">
+                <ul
+                    aria-label={t('OptionsSummary.56f3e5')}
+                    className="space-y-2"
+                >
                     {bullets.map(bullet => (
                         <li key={bullet} className="flex gap-2 text-sm">
                             <span

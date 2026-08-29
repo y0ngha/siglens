@@ -1,4 +1,5 @@
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { cn } from '@/shared/lib/cn';
 import {
     regionsOf,
@@ -44,13 +45,16 @@ export function RegionTabs({
     currentPath,
     className,
 }: RegionTabsProps) {
+    const t = useTranslations('shared.ui');
+    // 내비 라벨 키는 네임스페이스까지 포함된 완전 수식 키라 루트로 푼다.
+    const tNav = useTranslations();
     const regions = regionsOf(vertical);
     const baseClass =
         'flex min-h-11 touch-manipulation items-center rounded-lg px-3 text-sm font-semibold transition-colors';
 
     return (
         <nav
-            aria-label="지역 선택"
+            aria-label={t('RegionTabs.1eafbd')}
             className={cn(
                 'flex flex-wrap items-center gap-1 rounded-lg border border-secondary-700 bg-secondary-800/30 p-1',
                 className
@@ -66,7 +70,7 @@ export function RegionTabs({
                             'bg-secondary-700 text-secondary-100'
                         )}
                     >
-                        {region.label}
+                        {tNav(region.labelKey)}
                     </span>
                 ) : (
                     <Link
@@ -86,7 +90,7 @@ export function RegionTabs({
                                 : 'text-secondary-400'
                         )}
                     >
-                        {region.label}
+                        {tNav(region.labelKey)}
                     </Link>
                 )
             )}

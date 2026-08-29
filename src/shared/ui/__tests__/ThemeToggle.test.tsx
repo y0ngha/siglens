@@ -1,8 +1,9 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { ThemeToggle } from '../ThemeToggle';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { stubPrefersColorScheme } from '@/shared/test-utils/matchMedia';
 import { THEME_ATTRIBUTE, THEME_STORAGE_KEY } from '@/shared/lib/theme';
 
@@ -27,7 +28,7 @@ describe('ThemeToggle', () => {
     });
 
     it('세 가지 선택지를 라디오로 노출한다', () => {
-        render(<ThemeToggle />);
+        renderWithIntl(<ThemeToggle />);
         openMenu();
 
         expect(
@@ -36,7 +37,7 @@ describe('ThemeToggle', () => {
     });
 
     it('저장값이 없으면 설정 따라가기가 선택돼 있다', () => {
-        render(<ThemeToggle />);
+        renderWithIntl(<ThemeToggle />);
         openMenu();
 
         expect(
@@ -46,7 +47,7 @@ describe('ThemeToggle', () => {
 
     it('저장된 선택을 그대로 표시한다', () => {
         localStorage.setItem(THEME_STORAGE_KEY, 'light');
-        render(<ThemeToggle />);
+        renderWithIntl(<ThemeToggle />);
         openMenu();
 
         expect(screen.getByRole('radio', { name: /라이트/ })).toHaveAttribute(
@@ -59,7 +60,7 @@ describe('ThemeToggle', () => {
     });
 
     it('명시적 선택은 저장하고, 설정 따라가기는 키를 지운다', () => {
-        render(<ThemeToggle />);
+        renderWithIntl(<ThemeToggle />);
 
         openMenu();
         fireEvent.click(screen.getByRole('radio', { name: /다크/ }));
@@ -74,7 +75,7 @@ describe('ThemeToggle', () => {
     it('설정 따라가기를 고르면 시스템 선호도가 화면에 적용된다', () => {
         stubPrefersColorScheme(true); // OS = light
         localStorage.setItem(THEME_STORAGE_KEY, 'dark');
-        render(<ThemeToggle />);
+        renderWithIntl(<ThemeToggle />);
 
         openMenu();
         fireEvent.click(screen.getByRole('radio', { name: /설정 따라가기/ }));
@@ -85,7 +86,7 @@ describe('ThemeToggle', () => {
     });
 
     it('선택 후 메뉴가 닫힌다', () => {
-        render(<ThemeToggle />);
+        renderWithIntl(<ThemeToggle />);
         openMenu();
         expect(screen.getByRole('radiogroup')).toBeInTheDocument();
 
@@ -100,7 +101,7 @@ describe('ThemeToggle', () => {
      */
     it('선택된 항목만 탭 스톱이다', () => {
         localStorage.setItem(THEME_STORAGE_KEY, 'dark');
-        render(<ThemeToggle />);
+        renderWithIntl(<ThemeToggle />);
         openMenu();
 
         expect(
@@ -109,7 +110,7 @@ describe('ThemeToggle', () => {
     });
 
     it('화살표로 포커스와 선택이 함께 옮겨간다', () => {
-        render(<ThemeToggle />); // 저장값 없음 → system(0번)이 선택
+        renderWithIntl(<ThemeToggle />); // 저장값 없음 → system(0번)이 선택
         openMenu();
 
         const radios = screen.getAllByRole('radio');
@@ -125,7 +126,7 @@ describe('ThemeToggle', () => {
 
     it('Escape로 닫힌다', () => {
         // 바깥 클릭만 있으면 키보드 사용자에게는 닫을 방법이 없다.
-        render(<ThemeToggle />);
+        renderWithIntl(<ThemeToggle />);
         openMenu();
         expect(screen.getByRole('radiogroup')).toBeInTheDocument();
 
@@ -137,7 +138,7 @@ describe('ThemeToggle', () => {
         // 2단 토글 시절에는 동작("라이트 모드로 전환")을 적었는데, 결과가 셋이
         // 되면서 그 문구는 무엇을 하는 버튼인지 말하지 못하게 됐다.
         localStorage.setItem(THEME_STORAGE_KEY, 'light');
-        render(<ThemeToggle />);
+        renderWithIntl(<ThemeToggle />);
 
         expect(
             screen.getByRole('button', { name: '테마: 라이트' })

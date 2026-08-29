@@ -1,3 +1,7 @@
+import { useTranslations } from 'next-intl';
+import { useAssetLabel } from '@/shared/i18n/assetLabel';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { INTL_LOCALE } from '@/shared/i18n/locales';
 import type { MarketBriefingResponse } from '@y0ngha/siglens-core';
 import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 
@@ -23,13 +27,28 @@ interface BriefingCardProps {
 function knownSectors(
     names: readonly string[],
     scope: ClientDashboardScope
-): string[] {
+): { symbol: string; name: string }[] {
     // `sectorEtfs`만이 정확히 모델에 준 목록이다 — core `getMarketSummary`가
     // 프롬프트의 섹터 행을 이 배열로만 만든다. `signalSectors`를 합치면 미국의
     // 가상 테마(양자·우주 — 상장 ETF가 없어 브리핑 입력에 절대 없다)가 허용되어,
     // 이 가드가 막으려던 바로 그 "지어낸 이름"을 통과시킨다.
-    const known = new Set(scope.sectorEtfs.map(s => s.koreanName));
-    return names.filter(name => known.has(name));
+    //
+    // **심볼을 돌려준다.** 이름을 그대로 내보내면 영어 페이지에서 `기술·금융`이
+    // 바로 위 번역된 문장 옆에 붙는다. 화이트리스트를 통과했다는 건 이미 알려진
+    // 섹터라는 뜻이므로, 표시 문자열은 심볼로 카탈로그에서 다시 찾는다.
+    // (LLM 번역으로는 못 고친다 — 이 비교 자체가 `koreanName` 기준이라 번역하면
+    //  모든 행이 걸러진다.)
+    const bySectorName = new Map(
+        scope.sectorEtfs.map(s => [s.koreanName, s.symbol])
+    );
+    return names
+        .map(name => {
+            const symbol = bySectorName.get(name);
+            return symbol === undefined ? null : { symbol, name };
+        })
+        .filter(
+            (entry): entry is { symbol: string; name: string } => entry !== null
+        );
 }
 
 export function BriefingCard({
@@ -37,6 +56,9 @@ export function BriefingCard({
     generatedAt,
     scope,
 }: BriefingCardProps) {
+    const t = useTranslations('widgets.dashboard');
+    const locale = useResolvedLocale();
+    const assetLabel = useAssetLabel();
     const {
         summary,
         dominantThemes,
@@ -84,20 +106,28 @@ export function BriefingCard({
                     {leadingSectors.length > 0 && (
                         <p className="text-xs">
                             <span className="mr-1 text-secondary-500">
-                                상승 섹터
+                                {t('BriefingCard.e1760c')}
                             </span>
                             <span className="text-ui-success-text">
-                                {leadingSectors.join('·')}
+                                {leadingSectors
+                                    .map(sector =>
+                                        assetLabel(sector.symbol, sector.name)
+                                    )
+                                    .join('·')}
                             </span>
                         </p>
                     )}
                     {laggingSectors.length > 0 && (
                         <p className="text-xs">
                             <span className="mr-1 text-secondary-500">
-                                하락 섹터
+                                {t('BriefingCard.7bd647')}
                             </span>
                             <span className="text-ui-danger-text">
-                                {laggingSectors.join('·')}
+                                {laggingSectors
+                                    .map(sector =>
+                                        assetLabel(sector.symbol, sector.name)
+                                    )
+                                    .join('·')}
                             </span>
                         </p>
                     )}
@@ -132,17 +162,19 @@ export function BriefingCard({
                 숨겨 "Invalid Date 기준"이 노출되는 것을 막는다. */}
             {generatedAt && !Number.isNaN(new Date(generatedAt).getTime()) && (
                 <p className="text-xs text-secondary-500">
-                    {/* timeZone을 'Asia/Seoul'로 고정해 SSR(Node 서버)와 CSR(브라우저)
-                        사이 timezone mismatch로 인한 hydration 오류를 막는다. 본
-                        프로덕트는 한국어 사용자 대상이라 KST 표기가 의미에도 부합. */}
-                    {new Date(generatedAt).toLocaleString('ko-KR', {
+                    {/* timeZone은 'Asia/Seoul'로 **고정**한다 — SSR(Node)과
+                        CSR(브라우저) 사이 timezone mismatch로 인한 hydration
+                        오류를 막기 위해서다. 반면 **로케일은 고정하면 안 된다**:
+                        `'ko-KR'`로 박혀 있어서 `/en/market`이 번역된 문장 안에
+                        `8월 20일 오전 02:39`를 찍었다. */}
+                    {new Date(generatedAt).toLocaleString(INTL_LOCALE[locale], {
                         timeZone: 'Asia/Seoul',
                         month: 'long',
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit',
                     })}{' '}
-                    기준
+                    {t('BriefingCard.39b300')}
                 </p>
             )}
         </div>
@@ -150,6 +182,7 @@ export function BriefingCard({
 }
 
 export function BriefingLoadingCard() {
+    const t = useTranslations('widgets.dashboard');
     return (
         <div
             role="status"
@@ -158,20 +191,23 @@ export function BriefingLoadingCard() {
         >
             <div className="flex items-center gap-2">
                 <div className="h-2 w-2 animate-pulse rounded-full bg-secondary-700/50" />
-                <p className="text-sm text-secondary-500">AI 브리핑 생성 중…</p>
+                <p className="text-sm text-secondary-500">
+                    {t('BriefingCard.38eff4')}
+                </p>
             </div>
         </div>
     );
 }
 
 export function BriefingErrorCard() {
+    const t = useTranslations('widgets.dashboard');
     return (
         <div
             role="alert"
             className="rounded-lg border border-secondary-700/50 p-4"
         >
             <p className="text-sm text-ui-danger-text">
-                브리핑을 불러오지 못했어요.
+                {t('BriefingCard.8b256d')}
             </p>
         </div>
     );

@@ -1,4 +1,5 @@
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import {
     CATEGORY_CONFIG,
     categoriesInRegion,
@@ -12,14 +13,6 @@ import { cn } from '@/shared/lib/cn';
  * horizontally-scrolling tab bar and carries SEO/AI-prompt roles that must not
  * change. These are a UI concern, so they live in the widget layer.
  */
-const TAB_LABELS: Record<NewsFeedCategoryId, string> = {
-    general: '일반',
-    stock: '주식',
-    crypto: '암호화폐',
-    forex: '외환',
-    articles: '아티클',
-    kr: '국내 증시',
-};
 
 interface NewsCategoryTabsProps {
     /** The category currently being viewed — rendered as the active tab. */
@@ -42,12 +35,16 @@ interface NewsCategoryTabsProps {
  * no client JS — `usePathname` is unnecessary.
  */
 export function NewsCategoryTabs({ activeCategory }: NewsCategoryTabsProps) {
+    const t = useTranslations('widgets.news-hub');
+    // 카테고리 라벨은 `entities.market-news.category`가 단일 소스다 —
+    // 위젯에 한국어 테이블을 따로 두면 두 곳이 갈린다.
+    const tCat = useTranslations('entities.market-news.category');
     const siblings = categoriesInRegion(CATEGORY_CONFIG[activeCategory].region);
     if (siblings.length < 2) return null;
 
     return (
         <nav
-            aria-label="뉴스 카테고리"
+            aria-label={t('NewsCategoryTabs.ab8544')}
             className="flex overflow-x-auto border-b border-secondary-700"
         >
             {siblings.map(category => {
@@ -70,7 +67,7 @@ export function NewsCategoryTabs({ activeCategory }: NewsCategoryTabsProps) {
                             aria-current="page"
                             className={className}
                         >
-                            {TAB_LABELS[category]}
+                            {tCat(`${category}.shortLabel`)}
                         </span>
                     );
                 }
@@ -84,7 +81,7 @@ export function NewsCategoryTabs({ activeCategory }: NewsCategoryTabsProps) {
                         prefetch={false}
                         className={className}
                     >
-                        {TAB_LABELS[category]}
+                        {tCat(`${category}.shortLabel`)}
                     </Link>
                 );
             })}

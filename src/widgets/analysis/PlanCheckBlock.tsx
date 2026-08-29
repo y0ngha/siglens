@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { PlanCheck } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { cn } from '@/shared/lib/cn';
@@ -54,7 +55,10 @@ function formatRatio(ratio: number): string {
  * `riskRewardAtCurrent`의 `0`과 `null`은 다른 뜻이라 다르게 다룬다 — `0`은 "목표가
  * 남지 않았다"는 사실이고 `null`은 "잴 수 없다"이다. 후자는 경고가 아니다.
  */
-function buildNotices(planCheck: PlanCheck): Notice[] {
+function buildNotices(
+    planCheck: PlanCheck,
+    t: (key: string, values?: Record<string, string | number>) => string
+): Notice[] {
     const { currentPrice, entryZoneTop, riskRewardAtCurrent } = planCheck;
 
     // `> 0`까지 본다. 이 값은 캐시된 JSON과 공유 스냅샷을 타고 오므로 코어가 지금
@@ -70,13 +74,13 @@ function buildNotices(planCheck: PlanCheck): Notice[] {
         planCheck.belowStopLoss
             ? {
                   severity: 'danger',
-                  text: '현재가가 손절가 아래로 내려갔어요. 이 계획은 이미 무효예요.',
+                  text: t('planCheck.belowStopLoss'),
               }
             : null,
         riskRewardAtCurrent === 0
             ? {
                   severity: 'danger',
-                  text: '현재가 위에 남은 목표가가 없어요. 지금 들어가면 노릴 수익 구간이 없어요.',
+                  text: t('planCheck.noTargetLeft'),
               }
             : null,
         // `> 0`이 있어야 한다. 0은 위에서 "남은 목표 없음"으로 이미 말했고, if/else였던
@@ -86,13 +90,15 @@ function buildNotices(planCheck: PlanCheck): Notice[] {
         riskRewardAtCurrent < BREAK_EVEN_RISK_REWARD
             ? {
                   severity: 'warn',
-                  text: `현재가 기준 손익비가 ${formatRatio(riskRewardAtCurrent)}예요. 감수하는 손실이 노리는 수익보다 커요.`,
+                  text: t('planCheck.poorRiskReward', {
+                      v0: formatRatio(riskRewardAtCurrent),
+                  }),
               }
             : null,
         overZone !== null
             ? {
                   severity: 'warn',
-                  text: `현재가가 권장 진입 구간보다 ${overZone}% 높아요. 이 계획은 눌림을 기다리는 것을 전제로 해요.`,
+                  text: t('planCheck.aboveEntryZone', { v0: overZone }),
               }
             : null,
     ];
@@ -105,9 +111,10 @@ interface PlanCheckBlockProps {
 }
 
 export function PlanCheckBlock({ planCheck }: PlanCheckBlockProps) {
+    const t = useTranslations('widgets.analysis');
     if (!planCheck) return null;
 
-    const notices = buildNotices(planCheck);
+    const notices = buildNotices(planCheck, t);
     const { riskRewardAtEntry, riskRewardAtCurrent } = planCheck;
     const hasRatios =
         riskRewardAtEntry !== null || riskRewardAtCurrent !== null;
@@ -126,18 +133,17 @@ export function PlanCheckBlock({ planCheck }: PlanCheckBlockProps) {
         >
             <header className="flex items-center">
                 <span className="text-xs font-semibold text-secondary-400">
-                    현재가 기준 검산
+                    {t('PlanCheckBlock.fc05d0')}
                 </span>
                 <InfoTooltip>
                     <div className="text-secondary-300">
+                        <p>{t('PlanCheckBlock.0f23de')}</p>
                         <p>
-                            위 매매 전략의 손익비는 AI가 제안한 진입가를
-                            기준으로 쓴 것이에요.
-                        </p>
-                        <p>
-                            여기 값은 같은 손절가·목표가를{' '}
-                            <strong>지금 가격</strong>에 놓고 다시 계산한
-                            것이라, 가격이 이미 움직였을 때 둘이 달라져요.
+                            {/* 조사(`를`·`에`)가 조각에 붙어 한국어 어순에
+                                고정되므로 rich 메시지 하나로 둔다. */}
+                            {t.rich('PlanCheckBlock.currentPriceNote', {
+                                strong: chunks => <strong>{chunks}</strong>,
+                            })}
                         </p>
                     </div>
                 </InfoTooltip>
@@ -154,14 +160,14 @@ export function PlanCheckBlock({ planCheck }: PlanCheckBlockProps) {
 
             {hasRatios && (
                 <p className="text-xs text-secondary-400">
-                    손익비 — 계획 진입가 기준{' '}
+                    {t('PlanCheckBlock.8895c2')}{' '}
                     {riskRewardAtEntry === null
-                        ? '계산 불가'
+                        ? t('PlanCheckBlock.d6bde3')
                         : formatRatio(riskRewardAtEntry)}
                     {' / '}
-                    현재가 기준{' '}
+                    {t('PlanCheckBlock.690c28')}{' '}
                     {riskRewardAtCurrent === null
-                        ? '계산 불가'
+                        ? t('PlanCheckBlock.d6bde3')
                         : formatRatio(riskRewardAtCurrent)}
                 </p>
             )}

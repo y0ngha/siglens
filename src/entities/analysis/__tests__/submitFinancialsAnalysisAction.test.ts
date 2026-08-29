@@ -104,7 +104,7 @@ describe('runFinancialsAnalysisAction 함수는', () => {
     it('siglens-core runFinancialsAnalysis에 symbol과 modelId를 전달한다', async () => {
         mockRunFinancialsAnalysis.mockResolvedValueOnce(CACHED_RESULT);
 
-        await runFinancialsAnalysisAction('AAPL', MODEL_ID);
+        await runFinancialsAnalysisAction('AAPL', MODEL_ID, 'ko');
 
         expect(mockRunFinancialsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -117,7 +117,7 @@ describe('runFinancialsAnalysisAction 함수는', () => {
     it('getFinancialStatementsProvider 인스턴스를 dataProvider로 전달한다', async () => {
         mockRunFinancialsAnalysis.mockResolvedValueOnce(CACHED_RESULT);
 
-        await runFinancialsAnalysisAction('TSLA', MODEL_ID);
+        await runFinancialsAnalysisAction('TSLA', MODEL_ID, 'ko');
 
         const call = mockRunFinancialsAnalysis.mock.calls[0]?.[0];
         expect(call?.dataProvider).toBeDefined();
@@ -127,7 +127,11 @@ describe('runFinancialsAnalysisAction 함수는', () => {
     it('underlying 함수의 cached 결과를 그대로 반환한다', async () => {
         mockRunFinancialsAnalysis.mockResolvedValueOnce(CACHED_RESULT);
 
-        const result = await runFinancialsAnalysisAction('AAPL', MODEL_ID);
+        const result = await runFinancialsAnalysisAction(
+            'AAPL',
+            MODEL_ID,
+            'ko'
+        );
 
         expect(result).toBe(CACHED_RESULT);
     });
@@ -135,7 +139,11 @@ describe('runFinancialsAnalysisAction 함수는', () => {
     it('underlying 함수의 done 결과를 그대로 반환한다', async () => {
         mockRunFinancialsAnalysis.mockResolvedValueOnce(DONE_RESULT);
 
-        const result = await runFinancialsAnalysisAction('AAPL', MODEL_ID);
+        const result = await runFinancialsAnalysisAction(
+            'AAPL',
+            MODEL_ID,
+            'ko'
+        );
 
         expect(result).toBe(DONE_RESULT);
     });
@@ -147,7 +155,11 @@ describe('runFinancialsAnalysisAction 함수는', () => {
             error: gateError,
         });
 
-        const result = await runFinancialsAnalysisAction('AAPL', PREMIUM_MODEL);
+        const result = await runFinancialsAnalysisAction(
+            'AAPL',
+            PREMIUM_MODEL,
+            'ko'
+        );
 
         expect(result).toEqual({ status: 'error', error: gateError });
         // Gate fires before expensive provider fetch
@@ -161,7 +173,7 @@ describe('runFinancialsAnalysisAction 함수는', () => {
             tier: 'member' as never,
         });
 
-        await runFinancialsAnalysisAction('AAPL', MODEL_ID);
+        await runFinancialsAnalysisAction('AAPL', MODEL_ID, 'ko');
 
         expect(mockRunFinancialsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ tier: 'member' })
@@ -176,7 +188,7 @@ describe('runFinancialsAnalysisAction 함수는', () => {
             userApiKey: 'usr-key',
         });
 
-        await runFinancialsAnalysisAction('AAPL', PREMIUM_MODEL);
+        await runFinancialsAnalysisAction('AAPL', PREMIUM_MODEL, 'ko');
 
         expect(mockRunFinancialsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ userApiKey: 'usr-key' })
@@ -191,7 +203,7 @@ describe('runFinancialsAnalysisAction 함수는', () => {
             // no userApiKey
         });
 
-        await runFinancialsAnalysisAction('AAPL', PREMIUM_MODEL);
+        await runFinancialsAnalysisAction('AAPL', PREMIUM_MODEL, 'ko');
 
         const callArg = mockRunFinancialsAnalysis.mock.calls[0]?.[0];
         expect(callArg).toBeDefined();
@@ -205,9 +217,13 @@ describe('runFinancialsAnalysisAction 함수는', () => {
             tier: 'free' as never,
         });
 
-        await runFinancialsAnalysisAction('AAPL', MODEL_ID);
+        await runFinancialsAnalysisAction('AAPL', MODEL_ID, 'ko');
 
-        expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
+        expect(mockResolveTierAndByok).toHaveBeenCalledWith(
+            null,
+            MODEL_ID,
+            'ko'
+        );
     });
 
     it('returns unexpected_error result when an unexpected error is thrown', async () => {
@@ -216,7 +232,11 @@ describe('runFinancialsAnalysisAction 함수는', () => {
             new Error('db connection failed')
         );
 
-        const result = await runFinancialsAnalysisAction('AAPL', MODEL_ID);
+        const result = await runFinancialsAnalysisAction(
+            'AAPL',
+            MODEL_ID,
+            'ko'
+        );
 
         expect(result).toMatchObject({
             status: 'error',
@@ -233,7 +253,7 @@ describe('runFinancialsAnalysisAction 함수는', () => {
         );
         mockRunFinancialsAnalysis.mockResolvedValueOnce(CACHED_RESULT);
 
-        await runFinancialsAnalysisAction('AAPL', MODEL_ID);
+        await runFinancialsAnalysisAction('AAPL', MODEL_ID, 'ko');
 
         expect(mockRunFinancialsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: true })
@@ -243,7 +263,7 @@ describe('runFinancialsAnalysisAction 함수는', () => {
     it('passes skipEnqueueIfMiss: false to siglens-core when request UA is not a bot', async () => {
         mockRunFinancialsAnalysis.mockResolvedValueOnce(CACHED_RESULT);
 
-        await runFinancialsAnalysisAction('AAPL', MODEL_ID);
+        await runFinancialsAnalysisAction('AAPL', MODEL_ID, 'ko');
 
         expect(mockRunFinancialsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: false })
@@ -258,7 +278,7 @@ describe('runFinancialsAnalysisAction 함수는', () => {
                 tier: 'member' as never,
             });
 
-            await runFinancialsAnalysisAction('AAPL', MODEL_ID, true);
+            await runFinancialsAnalysisAction('AAPL', MODEL_ID, 'ko', true);
 
             expect(mockRunFinancialsAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: true })
@@ -266,7 +286,7 @@ describe('runFinancialsAnalysisAction 함수는', () => {
         });
 
         it('forces reasoning: false for free tier even when client requests true', async () => {
-            await runFinancialsAnalysisAction('AAPL', MODEL_ID, true);
+            await runFinancialsAnalysisAction('AAPL', MODEL_ID, 'ko', true);
 
             expect(mockRunFinancialsAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false })
@@ -280,7 +300,7 @@ describe('runFinancialsAnalysisAction 함수는', () => {
                 tier: 'member' as never,
             });
 
-            await runFinancialsAnalysisAction('AAPL', MODEL_ID);
+            await runFinancialsAnalysisAction('AAPL', MODEL_ID, 'ko');
 
             expect(mockRunFinancialsAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false })
@@ -303,7 +323,11 @@ describe('runFinancialsAnalysisAction 함수는', () => {
             };
             mockE2ECached.mockReturnValueOnce(e2eFixture);
 
-            const result = await runFinancialsAnalysisAction('AAPL', MODEL_ID);
+            const result = await runFinancialsAnalysisAction(
+                'AAPL',
+                MODEL_ID,
+                'ko'
+            );
 
             expect(result).toEqual(e2eFixture);
             expect(mockRunFinancialsAnalysis).not.toHaveBeenCalled();

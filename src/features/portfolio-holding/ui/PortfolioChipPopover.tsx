@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { type RefObject, useId, useRef, useState } from 'react';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
@@ -74,6 +75,7 @@ export function PortfolioChipPopover({
     onClose,
     isMobile,
 }: PortfolioChipPopoverProps) {
+    const t = useTranslations('features.portfolio-holding');
     const titleId = useId();
     const errorId = useId();
     const [quantity, setQuantity] = useState(
@@ -116,7 +118,7 @@ export function PortfolioChipPopover({
             }
             onClose();
         } catch {
-            setError('요청 처리 중 문제가 발생했어요. 다시 시도해 주세요.');
+            setError(t('PortfolioChipPopover.ea9c99'));
         }
     };
 
@@ -136,7 +138,7 @@ export function PortfolioChipPopover({
                 id={titleId}
                 className="mb-3 text-sm font-semibold text-secondary-100"
             >
-                {symbol.toUpperCase()} 평단 설정
+                {t('PortfolioChipPopover.51fc60', { v0: symbol.toUpperCase() })}
             </h2>
 
             <form
@@ -149,7 +151,7 @@ export function PortfolioChipPopover({
                         htmlFor={`${titleId}-quantity`}
                         className={FIELD_LABEL}
                     >
-                        수량
+                        {t('PortfolioChipPopover.7294d6')}
                     </label>
                     <input
                         ref={quantityRef}
@@ -159,7 +161,7 @@ export function PortfolioChipPopover({
                         inputMode="decimal"
                         autoComplete="off"
                         required
-                        placeholder="예: 10…"
+                        placeholder={t('PortfolioChipPopover.7c07f7')}
                         value={quantity}
                         onChange={e =>
                             setQuantity(stripNegativeSign(e.target.value))
@@ -179,7 +181,7 @@ export function PortfolioChipPopover({
                         htmlFor={`${titleId}-average-price`}
                         className={FIELD_LABEL}
                     >
-                        평단
+                        {t('PortfolioChipPopover.900beb')}
                     </label>
                     <input
                         ref={priceRef}
@@ -189,7 +191,7 @@ export function PortfolioChipPopover({
                         inputMode="decimal"
                         autoComplete="off"
                         required
-                        placeholder="예: 152.35…"
+                        placeholder={t('PortfolioChipPopover.ca59e5')}
                         value={averagePrice}
                         onChange={e =>
                             setAveragePrice(stripNegativeSign(e.target.value))
@@ -218,14 +220,16 @@ export function PortfolioChipPopover({
                         aria-busy={save.isPending}
                         className={BUTTON_PRIMARY}
                     >
-                        {save.isPending ? '저장 중…' : '저장'}
+                        {save.isPending
+                            ? t('PortfolioChipPopover.9f6785')
+                            : t('PortfolioChipPopover.1f1712')}
                     </button>
                     <button
                         type="button"
                         onClick={onClose}
                         className={BUTTON_GHOST}
                     >
-                        취소
+                        {t('PortfolioChipPopover.19b2d1')}
                     </button>
                 </div>
             </form>

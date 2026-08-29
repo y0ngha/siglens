@@ -112,9 +112,6 @@
 - Violation: `tsconfig.json` excluded `scripts/` directory from `"exclude"` field, so `npx tsc --noEmit` validated only main src/ but not seed/deploy scripts
   - Rule: Build validation must include all directories that execute on deployment (seeds, migrations, scripts)
   - Context: `seedEconomicEventAnalysis.ts` and `seedCalendarAnalysisBatch.ts` used stale siglens-core API (missing `region` parameter, wrong arity, missing exports from core 0.48.0). Removed `scripts` from tsconfig exclude list; scripts now validated alongside src/.
-- Violation: `marketBriefingContextOf` JSDoc claimed "core's sanitizer normalizes `price: 0` sentinel for the cache key"; sanitizer only normalizes for the prompt, not the key
-  - Rule: Documentation/comments must match actual implementation; mismatched claims hide behavioral gaps
-  - Context: Corrected JSDoc to document what the sanitizer actually does (prompt normalization, not key normalization).
 - Violation: `BriefingCard.knownSectors` unioned dynamic `signalSectors` into its allowlist, admitting US virtual theme names (양자, 우주) that can never appear in the briefing prompt
   - Rule: Allowlists must remain fixed or explicitly documented; dynamic union weakens intended guards
   - Context: Removed union; restored fixed allowlist to block fabricated sector names.
@@ -137,6 +134,7 @@
 - Violation: Seed script's `failed` counter accumulated per attempt across all passes; closing tally counted attempts, not failing rows, and could exceed table size
   - Rule: Counters that track mutable state must reset per iteration/pass; accumulated totals hide actual state and make diagnostics unreliable
   - Context: Reset `failed = 0` at start of each pass; now final tally reflects actual failing rows processed, not cumulative attempts.
+
 ## [feat/asset-class-navigation Round 4 | 3-asset navigation architecture | 2026-08-19]
 - Violation: Seed script exit code inconsistency — both abort path (`process.exit(0)`) and non-zero failure count (`process.exit(0)`) returned 0, while uncaught errors returned 1
   - Rule: Exit codes must consistently reflect success/failure state; mixed exit patterns hide errors in CI pipelines

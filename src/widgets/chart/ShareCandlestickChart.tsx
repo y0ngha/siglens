@@ -12,6 +12,7 @@
  * lightweight-charts usage in one widget boundary.
  */
 
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import {
@@ -38,6 +39,8 @@ export function ShareCandlestickChart({
     bars,
     ticker,
 }: ShareCandlestickChartProps) {
+    const t = useTranslations('widgets.chart');
+    const tMisc = useTranslations('shared.ui.misc');
     const containerRef = useRef<HTMLDivElement>(null);
     // Store chart and series refs for cleanup.
     const chartRef = useRef<IChartApi | null>(null);
@@ -112,14 +115,14 @@ export function ShareCandlestickChart({
 
     const ariaLabel =
         ticker !== undefined && ticker !== ''
-            ? `${ticker} 스냅샷 캔들 차트`
-            : '스냅샷 가격 차트';
+            ? tMisc('snapshotChartAria', { v0: ticker })
+            : t('ShareCandlestickChart.25e234');
 
     if (snapshotBars.length === 0) {
         return (
             <div className="flex h-48 w-full items-center justify-center">
                 <p className="text-sm text-secondary-400">
-                    차트 데이터가 없습니다
+                    {t('ShareCandlestickChart.1b2664')}
                 </p>
             </div>
         );

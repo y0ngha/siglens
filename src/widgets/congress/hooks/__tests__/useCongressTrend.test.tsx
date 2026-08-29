@@ -1,3 +1,4 @@
+import koMessages from '../../../../../messages/ko.json';
 import type { Mock } from 'vitest';
 import { useCongressTrend } from '@/widgets/congress/hooks/useCongressTrend';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
@@ -206,7 +207,8 @@ describe('useCongressTrend', () => {
             .mockResolvedValueOnce({
                 status: 'error',
                 code: 'fetch_failed',
-                error: '데이터 로드 실패',
+                // core가 실제로 주는 값은 영어 예외 문자열이다.
+                error: 'Profile not found for symbol: AAPL',
             })
             .mockResolvedValueOnce({
                 status: 'cached',
@@ -226,7 +228,11 @@ describe('useCongressTrend', () => {
         if (result.current.status !== 'error') {
             throw new Error('expected error state');
         }
-        expect(result.current.error.message).toBe('데이터 로드 실패');
+        // 원문이 그대로 새면 전 로케일에 영어가 나간다 — 카탈로그를 거쳐야 한다.
+        expect(result.current.error.message).toBe(
+            koMessages.app.api.stream.congressFetchFailed
+        );
+        expect(result.current.error.message).not.toContain('Profile not found');
 
         const state = result.current;
         act(() => {

@@ -212,6 +212,13 @@
        잔여 영역을 정확히 계산한다. */
     --header-h: 3.5rem;
 
+    /* `/[symbol]` 크롬(브레드크럼 행 + 탭 행) 높이. site Header와 달리 jail
+       **안쪽**에 있어 `--header-h`로는 뺄 수 없다. 차트 블록이 모바일에서
+       자기 높이를 직접 계산할 때 쓴다 — jail의 확정 높이에 기대던 `h-full`을
+       버려야 페이지가 한 번만 스크롤한다(SymbolLayoutClient JSDoc 참고).
+       `SymbolLayoutChrome`의 `py-3` 헤더 + 탭 행 실측값(124px)이다. */
+    --symbol-chrome-h: 7.75rem;
+
     /*
      * 산세리프는 Pretendard **단일 폰트**다.
      *

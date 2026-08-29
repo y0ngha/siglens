@@ -57,10 +57,14 @@ import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { resolveTierOnly } from '@/shared/lib/byokGate';
 import type { BarsData } from '@y0ngha/siglens-core';
 import { sleep } from '@/shared/lib/sleep';
-import {
-    FMP_DATA_UNAVAILABLE_MESSAGE,
-    FMP_TEMPORARY_UNAVAILABLE_MESSAGE,
-} from '@/shared/api/fmp/fmpUserMessage';
+import koMessages from '../../../../messages/ko.json';
+
+/**
+ * 액션은 이제 **키가 아니라 번역된 문구**를 던진다(`translateFmpError`).
+ * 키 상수를 그대로 단언하면 번역 배선이 빠져도 통과한다.
+ */
+const FMP_UNAVAILABLE_TEXT = koMessages.shared.api.fmpUnavailable;
+const FMP_BUSY_TEXT = koMessages.shared.api.fmpBusy;
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 
@@ -296,7 +300,7 @@ describe('getBarsAction 함수는', () => {
             );
 
             expect(err).toBeInstanceOf(Error);
-            expect((err as Error).message).toBe(FMP_DATA_UNAVAILABLE_MESSAGE);
+            expect((err as Error).message).toBe(FMP_UNAVAILABLE_TEXT);
             // 사용자에겐 친화 문구를 보이되, 원본 FMP 에러는 진단용으로 cause에 남긴다.
             expect((err as Error).cause).toBeInstanceOf(Error);
             expect(((err as Error).cause as Error).message).toBe(
@@ -312,7 +316,7 @@ describe('getBarsAction 함수는', () => {
             );
 
             await expect(getBarsAction('AAPL', '1Day')).rejects.toThrow(
-                FMP_TEMPORARY_UNAVAILABLE_MESSAGE
+                FMP_BUSY_TEXT
             );
             expect(mockFetchBarsWithIndicators).toHaveBeenCalledTimes(1);
             expect(sleepMock).not.toHaveBeenCalled();

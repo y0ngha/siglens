@@ -42,6 +42,7 @@ describe('/market 섹터 허브 링크 대상의 색인 가능성', () => {
                     symbol,
                     assetInfo: { symbol, name: symbol } as AssetInfo,
                     degraded: false,
+                    locale: 'ko',
                 }).indexable
         );
         expect(blocked).toEqual([]);

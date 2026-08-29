@@ -1,4 +1,14 @@
 import type { MockedFunction, Mock } from 'vitest';
+// 액션의 리다이렉트는 `localeHref`/`localeRedirect`를 거치고, 그 안의
+// `getLocale()`은 next-intl config 파일을 요구한다(빌드 플러그인이 만든다).
+// 여기서는 액션 로직만 검증하므로 기본 로케일로 고정한다 — 그러면 리다이렉트
+// 경로가 접두사 없는 기존 값과 같아져 기존 단언이 그대로 유효하다.
+// ko 카탈로그를 실제로 조회하는 스텁 — 키 오타나 카탈로그 누락이 여기서 잡힌다.
+vi.mock('next-intl/server', async () => {
+    const { nextIntlServerStub } =
+        await import('@/shared/test-utils/catalogTranslator');
+    return nextIntlServerStub();
+});
 vi.mock('next/headers', () => ({ cookies: vi.fn() }));
 vi.mock('next/navigation', () => ({
     redirect: vi.fn((path: string) => {

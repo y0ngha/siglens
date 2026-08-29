@@ -1,21 +1,23 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { useNewsPollingWithInvalidation } from '../hooks/useNewsPollingWithInvalidation';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { cn } from '@/shared/lib/cn';
-import { NEWS_LIST_PERIOD_LABEL } from '@/shared/lib/news/periodLabels';
+import { NEWS_LIST_PERIOD_KEY } from '@/shared/lib/news/periodLabels';
 import type { NewsImpact, NewsSentiment } from '@y0ngha/siglens-core';
 import { useState } from 'react';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import { NewsCardShell } from '@/shared/ui/NewsCardShell';
 import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-
-const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
-    bullish: '긍정',
-    bearish: '부정',
-    neutral: '중립',
-};
+import { SENTIMENT_LABEL_KEY } from '@/shared/lib/sentimentDisplay';
+import {
+    resolveNewsBody,
+    resolveNewsSummary,
+    resolveNewsTitle,
+} from '@/shared/lib/news/resolveNewsTitle';
 
 const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
     bullish: 'bg-ui-success/10 text-ui-success-text',
@@ -26,11 +28,19 @@ const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
 // "가격 영향" is asset-neutral: works for both equity ("주가") and crypto ("코인 가격").
 // NewsList is rendered on both equity and crypto news pages, so "주가" (stock-price)
 // would be a misleading label on crypto pages. "가격" covers both without prop threading.
-const IMPACT_LABEL: Record<NewsImpact, string> = {
-    high: '가격 영향 큼',
-    medium: '가격 영향 보통',
-    low: '가격 영향 작음',
-    negligible: '가격 영향 거의 없음',
+/**
+ * 라벨 **키**만 담는다 — `t()`는 소비 컴포넌트에서 부른다.
+ *
+ * 예전에는 이 테이블이 두 벌 있었고(`market-news`는 `주가 영향`,
+ * `news`는 `가격 영향`), 둘 다 한국어 리터럴이라 네 로케일 전부 한국어였다.
+ * 문구는 자산 중립 쪽(`가격`)으로 통일한다 — 크립토 페이지에서 `주가`는
+ * 틀린 말이다.
+ */
+const IMPACT_LABEL_KEY: Record<NewsImpact, string> = {
+    high: 'newsImpact.high',
+    medium: 'newsImpact.medium',
+    low: 'newsImpact.low',
+    negligible: 'newsImpact.negligible',
 };
 
 const IMPACT_CLASS: Record<NewsImpact, string> = {
@@ -57,6 +67,10 @@ function isPendingAnalysis(item: NewsDisplayItem): boolean {
 }
 
 function SentimentBadge({ value }: { value: string }) {
+    // extract.mjs의 동적 키 탐지는 이 파일 안에서 번역자를 직접 호출하는
+    // 패턴만 본다 — `SENTIMENT_LABEL_KEY[...]`를 그대로 `tLabel(...)`에
+    // 넣어야 `shared.enumLabel`이 이 라우트의 클라이언트 번들에 실린다.
+    const tLabel = useTranslations('shared.enumLabel');
     if (!isNewsSentiment(value)) return null;
     return (
         <span
@@ -65,12 +79,15 @@ function SentimentBadge({ value }: { value: string }) {
                 SENTIMENT_CLASS[value]
             )}
         >
-            {SENTIMENT_LABEL[value]}
+            {tLabel(SENTIMENT_LABEL_KEY[value])}
         </span>
     );
 }
 
 function ImpactBadge({ value }: { value: string }) {
+    const tLabel = useTranslations('shared.enumLabel');
+    // `SENTIMENT_LABEL_KEY`와 같은 이유로 키를 그대로 `tLabel`에 넣는다 —
+    // 추출기가 이 파일에서 `shared.enumLabel`을 보게 해야 페이로드에 실린다.
     if (!isNewsImpact(value)) return null;
     return (
         <span
@@ -79,7 +96,7 @@ function ImpactBadge({ value }: { value: string }) {
                 IMPACT_CLASS[value]
             )}
         >
-            {IMPACT_LABEL[value]}
+            {tLabel(IMPACT_LABEL_KEY[value])}
         </span>
     );
 }
@@ -123,6 +140,8 @@ function NewsCardSkeleton() {
 }
 
 function NewsListLoadingState() {
+    const t = useTranslations('widgets.news');
+    const tPeriod = useTranslations('shared.lib.newsPeriod');
     return (
         <section
             aria-labelledby="news-list-heading"
@@ -132,14 +151,14 @@ function NewsListLoadingState() {
             <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">
                     <h2 id="news-list-heading" className={HEADING_SECTION}>
-                        최근 뉴스
+                        {t('NewsList.ac2367')}
                     </h2>
                     <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
-                        {NEWS_LIST_PERIOD_LABEL}
+                        {tPeriod(NEWS_LIST_PERIOD_KEY)}
                     </span>
                 </div>
                 <span className="text-xs text-secondary-400" aria-live="polite">
-                    뉴스 수집 중…
+                    {t('NewsList.b514aa')}
                 </span>
             </div>
             <ul className="space-y-3">
@@ -156,6 +175,7 @@ function NewsListLoadingState() {
 }
 
 function NewsRefreshStatusCard() {
+    const t = useTranslations('widgets.news');
     return (
         <div
             role="status"
@@ -168,11 +188,10 @@ function NewsRefreshStatusCard() {
             />
             <div className="min-w-0">
                 <p className="text-sm font-medium text-secondary-100">
-                    최신 뉴스 확인 중…
+                    {t('NewsList.17ecc6')}
                 </p>
                 <p className="mt-1 text-xs leading-relaxed wrap-break-word text-secondary-400">
-                    기존 뉴스는 먼저 보여드리고, 새로 들어온 기사가 있으면
-                    자동으로 추가합니다.
+                    {t('NewsList.a61f43')}
                 </p>
             </div>
         </div>
@@ -184,11 +203,14 @@ function NewsRefreshStatusCard() {
  * text-secondary-500 텍스트 컬러는 MarketNewsCard(text-secondary-400)와 의도적으로 다르다.
  */
 function AnalysisSkeleton() {
+    const t = useTranslations('widgets.news');
     return (
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
             <div className="h-5 w-10 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             <div className="h-5 w-20 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
-            <span className="text-xs text-secondary-500">AI 분석 중…</span>
+            <span className="text-xs text-secondary-500">
+                {t('NewsList.d12df8')}
+            </span>
         </div>
     );
 }
@@ -204,14 +226,19 @@ function SummarySkeletonLine() {
 }
 
 function NewsCard({ item }: { item: NewsDisplayItem }) {
+    const t = useTranslations('widgets.news');
+    const locale = useCurrentLocale();
     const pending = isPendingAnalysis(item);
     const isHighImpact = !pending && item.priceImpact === 'high';
 
-    const publishedDate = formatNewsPublishedAt(item.publishedAt);
+    const publishedDate = formatNewsPublishedAt(item.publishedAt, locale);
+    // 제목만 로케일을 타면 번역된 헤드라인 아래 한국어 본문이 붙는다.
+    const body = resolveNewsBody(item);
+    const summary = resolveNewsSummary(item);
 
     return (
         <NewsCardShell
-            title={item.titleKo ?? item.titleEn}
+            title={resolveNewsTitle(item, locale)}
             isHighImpact={isHighImpact}
             pending={pending}
             url={item.url}
@@ -243,15 +270,21 @@ function NewsCard({ item }: { item: NewsDisplayItem }) {
             }
             bodySection={
                 <>
-                    {item.bodyKo !== null && (
-                        <NewsTextSection label="본문" text={item.bodyKo} />
+                    {body !== null && (
+                        <NewsTextSection
+                            label={t('NewsList.c67b87')}
+                            text={body}
+                        />
                     )}
-                    {item.summaryKo !== null && (
-                        <NewsTextSection label="요약" text={item.summaryKo} />
+                    {summary !== null && (
+                        <NewsTextSection
+                            label={t('NewsList.3ea27a')}
+                            text={summary}
+                        />
                     )}
                 </>
             }
-            linkChildren="원문 보기 →"
+            linkChildren={t('NewsList.850458')}
         />
     );
 }
@@ -262,6 +295,8 @@ interface NewsListProps {
 }
 
 export function NewsList({ items: initialItems, symbol }: NewsListProps) {
+    const tPeriod = useTranslations('shared.lib.newsPeriod');
+    const t = useTranslations('widgets.news');
     const [visibleCount, setVisibleCount] = useState(NEWS_LIST_PAGE_SIZE);
     // Tracks the last rendered symbol for the render-time reset below.
     // Client-side navigation keeps the component mounted while delivering new
@@ -296,14 +331,16 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
             >
                 <div className="mb-3 flex items-center gap-2">
                     <h2 id="news-list-heading" className={HEADING_SECTION}>
-                        최근 뉴스
+                        {t('NewsList.ac2367')}
                     </h2>
                     <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
-                        {NEWS_LIST_PERIOD_LABEL}
+                        {tPeriod(NEWS_LIST_PERIOD_KEY)}
                     </span>
                 </div>
                 <p className="text-sm text-secondary-400">
-                    {NEWS_LIST_PERIOD_LABEL} 동안 들어온 뉴스가 없어요.
+                    {t('NewsList.b75118', {
+                        v0: tPeriod(NEWS_LIST_PERIOD_KEY),
+                    })}
                 </p>
             </section>
         );
@@ -319,10 +356,10 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
         >
             <div className="flex items-center gap-2">
                 <h2 id="news-list-heading" className={HEADING_SECTION}>
-                    최근 뉴스
+                    {t('NewsList.ac2367')}
                 </h2>
                 <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
-                    {NEWS_LIST_PERIOD_LABEL}
+                    {tPeriod(NEWS_LIST_PERIOD_KEY)}
                 </span>
             </div>
             {isPolling ? <NewsRefreshStatusCard /> : null}
@@ -341,7 +378,7 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
                     }
                     className="w-full rounded-lg border border-border-control py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    더보기 ({items.length - visibleCount}개 남음)
+                    {t('NewsList.8e5a3a', { v0: items.length - visibleCount })}
                 </button>
             )}
         </section>

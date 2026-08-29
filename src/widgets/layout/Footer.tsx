@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { ContactDialog } from './ContactDialog';
 import { CurrentYear } from './CurrentYear';
 import {
@@ -7,15 +8,15 @@ import {
 } from '@/shared/config/assetClassNav';
 import { GithubIcon } from '@/shared/ui/GithubIcon';
 import {
-    INVESTMENT_DISCLAIMER,
+    INVESTMENT_DISCLAIMER_KEY,
     PRIVACY_PATH,
-    PRIVACY_TITLE,
+    privacyTitle,
     TERMS_PATH,
-    TERMS_TITLE,
+    termsTitle,
 } from '@/shared/lib/legal';
 import { GITHUB_URL, SITE_NAME } from '@/shared/lib/seo';
 import { LABEL_GROUP } from '@/shared/lib/typographyStyles';
-import Link from 'next/link';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 /**
  * 푸터 링크 하나. `visible`만 눈에 보이고 `srPrefix`/`srSuffix`는 화면에서 숨는다.
@@ -89,31 +90,38 @@ interface FooterColumn {
  * 여기 또 적으면 그 모듈이 생긴 사고(두 표면이 각자 판정하다 한쪽만 갱신됨)와
  * 같은 모양이 된다.
  */
-function columnOf(vertical: NavVertical): FooterColumn {
+function columnOf(
+    vertical: NavVertical,
+    tNav: (key: string, values?: Record<string, string>) => string
+): FooterColumn {
+    const label = tNav(vertical.labelKey);
+    const token = tNav('shared.config.nav.overviewToken');
+    const allLabel = tNav('shared.config.nav.overviewAll', { v0: label });
     const overview: readonly FooterLink[] = hasRegionForRoot(vertical)
         ? []
         : [
               {
                   href: vertical.rootHref,
-                  fullLabel: `${vertical.label} 전체`,
-                  ...splitFooterLabel(`${vertical.label} 전체`, '전체'),
+                  fullLabel: allLabel,
+                  ...splitFooterLabel(allLabel, token),
               },
           ];
     return {
         id: vertical.id,
-        label: vertical.label,
+        label,
         links: [
             ...overview,
-            ...vertical.regions.map(region => ({
-                href: region.href,
-                fullLabel: region.fullLabel,
-                ...splitFooterLabel(region.fullLabel, region.label),
-            })),
+            ...vertical.regions.map(region => {
+                const full = tNav(region.fullLabelKey);
+                return {
+                    href: region.href,
+                    fullLabel: full,
+                    ...splitFooterLabel(full, tNav(region.labelKey)),
+                };
+            }),
         ],
     };
 }
-
-const NAV_COLUMNS: readonly FooterColumn[] = NAV_VERTICALS.map(columnOf);
 
 const LINK_CLASSES =
     'rounded text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
@@ -177,8 +185,24 @@ function FooterNavColumn({ column }: FooterNavColumnProps) {
  * 푸터에 도달한 사람이 찾는 것은 대개 목적지이지 저작권 표기가 아니다.
  */
 export function Footer() {
+    const t = useTranslations('widgets.layout');
+    // 내비 라벨 키는 네임스페이스까지 포함된 완전 수식 키라 루트로 푼다.
+    const tNav = useTranslations();
+    const tSeo = useTranslations('shared.seo');
+    const tLegal = useTranslations('shared.lib.legal');
+    // 라벨이 카탈로그에서 오므로 모듈 상수로 만들 수 없다 — 렌더에서 계산한다.
+    const navColumns = NAV_VERTICALS.map(v => columnOf(v, tNav));
     return (
-        <footer className="border-t border-secondary-700">
+        <footer
+            /*
+             * `viewportFit: 'cover'`라 문서가 화면 **끝까지** 그려진다. iOS 26
+             * 사파리는 주소창이 하단에 있어 그 띠가 마지막 콘텐츠를 덮는다 —
+             * 푸터가 문서의 마지막 블록이므로 여기 한 곳에서 인셋을 비우면
+             * 일반 스크롤 페이지 전체가 덮인다. 고정 요소(플로팅 챗·시트)는
+             * 문서 흐름 밖이라 각자 따로 처리한다.
+             */
+            className="border-t border-secondary-700 pb-[env(safe-area-inset-bottom)]"
+        >
             <div className="w-full px-4 py-10">
                 <div className="flex flex-col-reverse gap-10 lg:flex-row lg:items-start lg:justify-between lg:gap-16">
                     {/* 왼쪽 — 저작권·저장소·약관·문의. 한 줄로 흐르되 좁아지면 감싼다. */}
@@ -194,13 +218,13 @@ export function Footer() {
                             // 외부 탭으로 여는 링크는 opener를 끊는다. `noreferrer`는
                             // `noopener`를 포함하지만 둘 다 적어 의도를 남긴다.
                             rel="noopener noreferrer"
-                            aria-label={`${SITE_NAME} GitHub 저장소 (새 탭에서 열림)`}
+                            aria-label={t('githubRepoAria', { v0: SITE_NAME })}
                             className="rounded text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             <GithubIcon className="h-5 w-5" />
                         </a>
                         <nav
-                            aria-label="사이트 정보"
+                            aria-label={t('Footer.5f5d12')}
                             className="flex flex-wrap items-center gap-x-4 gap-y-2"
                         >
                             <Link
@@ -210,17 +234,17 @@ export function Footer() {
                                 prefetch={false}
                                 className={LINK_CLASSES}
                             >
-                                {PRIVACY_TITLE}
+                                {privacyTitle(tSeo)}
                             </Link>
                             <Link
                                 href={TERMS_PATH}
                                 prefetch={false}
                                 className={LINK_CLASSES}
                             >
-                                {TERMS_TITLE}
+                                {termsTitle(tSeo)}
                             </Link>
                             <ContactDialog
-                                triggerLabel="문의하기"
+                                triggerLabel={t('Footer.531f6a')}
                                 triggerClassName={LINK_CLASSES}
                             />
                         </nav>
@@ -228,10 +252,10 @@ export function Footer() {
 
                     {/* 오른쪽 — 사이트맵. 좁은 화면에서는 2열, 넓어지면 버티컬 수만큼 편다. */}
                     <nav
-                        aria-label="사이트맵"
+                        aria-label={t('Footer.40df0a')}
                         className="grid grid-cols-2 gap-x-8 gap-y-8 sm:grid-cols-4 lg:gap-x-14"
                     >
-                        {NAV_COLUMNS.map(column => (
+                        {navColumns.map(column => (
                             <FooterNavColumn key={column.id} column={column} />
                         ))}
                     </nav>
@@ -239,10 +263,10 @@ export function Footer() {
 
                 <p
                     role="note"
-                    aria-label="투자 면책 고지"
+                    aria-label={t('Footer.693b62')}
                     className="mt-10 border-t border-secondary-700 pt-6 text-xs leading-relaxed text-secondary-400"
                 >
-                    {INVESTMENT_DISCLAIMER}
+                    {tLegal(INVESTMENT_DISCLAIMER_KEY)}
                 </p>
             </div>
         </footer>

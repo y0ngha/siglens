@@ -9,6 +9,7 @@ import { usePaneLabels } from './hooks/usePaneLabels';
 import { useVolumeChartData } from './hooks/useVolumeChartData';
 import { useVolumeChartLifecycle } from './hooks/useVolumeChartLifecycle';
 import type { PaneLabelConfig } from './types';
+import { useTranslations } from 'next-intl';
 
 interface VolumeChartProps {
     bars: Bar[];
@@ -28,6 +29,8 @@ export function VolumeChart({
     onChartRemove,
     ticker,
 }: VolumeChartProps) {
+    const t = useTranslations('widgets.chart');
+    const tMisc = useTranslations('shared.ui.misc');
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     /* 반환값을 쓰지 않고 호출만 한다 — 이 훅의 일은 테마가 바뀌었을 때
@@ -83,8 +86,8 @@ export function VolumeChart({
     // wrapperRef가 아닌 containerRef에 두어 향후 wrapper에 인터랙티브 자식이 추가돼도 영향 없게.
     const chartAriaLabel =
         ticker !== undefined && ticker !== ''
-            ? `${ticker} 거래량 차트`
-            : '거래량 차트';
+            ? tMisc('volumeChartAria', { v0: ticker })
+            : t('VolumeChart.1ae051');
 
     return (
         <div ref={wrapperRef} className="relative h-full w-full">

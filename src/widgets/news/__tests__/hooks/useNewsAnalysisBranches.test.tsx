@@ -7,6 +7,7 @@
  */
 
 import type { Mock } from 'vitest';
+import koMessages from '../../../../../messages/ko.json';
 import { useNewsAnalysis } from '@/widgets/news/hooks/useNewsAnalysis';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
@@ -133,7 +134,17 @@ describe('useNewsAnalysis — branch coverage', () => {
 
         if (result.current.status !== 'error')
             throw new Error('expected error');
-        expect(result.current.error.message).toBe('사용량 한도 초과입니다.');
+        /**
+         * core가 준 문구는 **전 로케일 영어**(`Daily analysis usage limit exceeded.`)라
+         * 그대로 통과시키면 한국어 사용자도 영어를 본다. 코드만 믿고 카탈로그로
+         * 갈아끼우는지 본다 — 액션이 준 문구가 그대로 나오면 실패다.
+         */
+        expect(result.current.error.message).toBe(
+            koMessages.app.api.stream.limitExceeded
+        );
+        expect(result.current.error.message).not.toBe(
+            '사용량 한도 초과입니다.'
+        );
     });
 
     it('returns generic error for error status without known code', async () => {
@@ -176,7 +187,11 @@ describe('useNewsAnalysis — branch coverage', () => {
 
         if (result.current.status !== 'error')
             throw new Error('expected error');
-        expect(result.current.error.message).toBe('API key is missing');
+        // core의 `USER_API_KEY_REQUIRED_MESSAGE`는 전 로케일 한국어다.
+        expect(result.current.error.message).toBe(
+            koMessages.app.api.stream.keyRequired
+        );
+        expect(result.current.error.message).not.toBe('API key is missing');
     });
 
     it('error that is not an Error instance gets wrapped', async () => {

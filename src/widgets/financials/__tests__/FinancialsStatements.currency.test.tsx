@@ -59,14 +59,14 @@ describe('FinancialsStatements — currency wiring (mutation audit)', () => {
             />
         );
         expect(screen.getByText('₩100만')).toBeInTheDocument();
-        expect(screen.queryByText('$1M')).not.toBeInTheDocument();
+        expect(screen.queryByText('US$100만')).not.toBeInTheDocument();
     });
 
     it('미국 종목은 기존대로 손익계산서 매출 셀을 달러($)로 렌더한다', () => {
         render(
             <FinancialsStatements symbol="AAPL" annualSnapshot={SNAPSHOT} />
         );
-        expect(screen.getByText('$1M')).toBeInTheDocument();
+        expect(screen.getByText('US$100만')).toBeInTheDocument();
         expect(screen.queryByText('₩100만')).not.toBeInTheDocument();
     });
 });

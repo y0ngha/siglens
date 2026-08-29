@@ -1,4 +1,5 @@
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
 import { buildSectorFacts } from '@/entities/sector-signal';
 import { cn } from '@/shared/lib/cn';
@@ -28,20 +29,20 @@ interface SectorFactsSummaryProps {
  * crawlers, so without these this page would ship zero server-side `/{symbol}` links.
  */
 export function SectorFactsSummary({ data }: SectorFactsSummaryProps) {
+    const t = useTranslations('widgets.dashboard');
     const facts = buildSectorFacts(data);
 
     return (
         <section
-            aria-label="섹터별 신호 요약"
+            aria-label={t('SectorFactsSummary.a39a24')}
             className="page-container sector-panel-bg py-10"
         >
             <h2 className={cn('mb-6', HEADING_SECTION)}>
-                섹터별 신호 모아보기
+                {t('SectorFactsSummary.581217')}
             </h2>
             {facts.length === 0 ? (
                 <p className="text-sm text-secondary-300">
-                    현재 기술적 신호가 잡힌 종목이 없습니다. 잠시 후 다시 확인해
-                    보세요.
+                    {t('SectorFactsSummary.9550ad')}
                 </p>
             ) : (
                 <dl className="flex flex-col gap-4 text-sm text-secondary-300">
@@ -51,8 +52,10 @@ export function SectorFactsSummary({ data }: SectorFactsSummaryProps) {
                                 {fact.sectorSymbol}
                             </dt>
                             <dd>
-                                상승 신호 {fact.bullishCount}종목, 하락 신호{' '}
-                                {fact.bearishCount}종목
+                                {t('SectorFactsSummary.e6dcde', {
+                                    v0: fact.bullishCount,
+                                    v1: fact.bearishCount,
+                                })}
                                 {fact.topSymbols.length > 0 && (
                                     <span className="ml-2 text-secondary-500">
                                         {/* parens as JSX expressions → no stray whitespace around them */}

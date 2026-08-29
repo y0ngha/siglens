@@ -117,9 +117,13 @@ describe('requestEmailVerificationAction', () => {
                 buildMessage: (code: string) => unknown;
             };
             const message = options.buildMessage('482917') as { to: string };
+            // 액션이 발송 로케일과 그 로케일의 번역자를 함께 넘긴다 — 본문
+            // 언어가 링크 로케일과 갈라지지 않게 하는 계약이다.
             expect(mockBuild).toHaveBeenCalledWith({
                 to: 'user@example.com',
                 code: '482917',
+                locale: 'ko',
+                t: expect.any(Function),
             });
             expect(message.to).toBe('user@example.com');
         });

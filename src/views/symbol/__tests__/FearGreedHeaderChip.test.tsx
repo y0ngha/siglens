@@ -1,10 +1,31 @@
 import { render } from '@testing-library/react';
+import { beforeAll } from 'vitest';
+import { getTranslations } from 'next-intl/server';
 import type { FearGreedLabel, FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { FearGreedHeaderChip } from '@/views/symbol/FearGreedHeaderChip';
 import {
-    CONFIDENCE_LIMITED_LABEL,
-    SENTIMENT_LABEL_TEXT,
+    CONFIDENCE_LIMITED_KEY,
+    sentimentLabelText,
 } from '@/shared/lib/fearGreedLabels';
+import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+
+// confidence 라벨은 `shared.lib.fearGreed` 카탈로그에서 온다.
+const tFearGreed = catalogTranslator('shared.lib.fearGreed', 'ko');
+
+const FEAR_GREED_LABELS: readonly FearGreedLabel[] = [
+    'EXTREME_FEAR',
+    'FEAR',
+    'NEUTRAL',
+    'GREED',
+    'EXTREME_GREED',
+];
+
+let t: EnumLabelTranslator;
+beforeAll(async () => {
+    t = await getTranslations({ locale: 'ko', namespace: 'shared.enumLabel' });
+});
 
 const make = (
     label: FearGreedSnapshot['label'],
@@ -33,14 +54,17 @@ describe('FearGreedHeaderChip', () => {
     });
 
     describe('label rendering', () => {
-        it.each(
-            Object.entries(SENTIMENT_LABEL_TEXT) as [FearGreedLabel, string][]
-        )('renders %s with text "%s"', (label, text) => {
-            const { getByText } = render(
-                <FearGreedHeaderChip snapshot={make(label)} />
-            );
-            expect(getByText(text)).toBeInTheDocument();
-        });
+        it.each(FEAR_GREED_LABELS)(
+            'renders %s with its localized text',
+            label => {
+                const { getByText } = render(
+                    <FearGreedHeaderChip snapshot={make(label)} />
+                );
+                expect(
+                    getByText(sentimentLabelText(label, t))
+                ).toBeInTheDocument();
+            }
+        );
     });
 
     describe('confidence indicator', () => {
@@ -79,8 +103,27 @@ describe('FearGreedHeaderChip', () => {
             );
             const chip = container.querySelector('[aria-label]');
             expect(chip?.getAttribute('aria-label')).toBe(
-                `공포 탐욕 지수 ${SENTIMENT_LABEL_TEXT.GREED} 61점 (${CONFIDENCE_LIMITED_LABEL})`
+                `공포 탐욕 지수 ${sentimentLabelText('GREED', t)} 61점 (${tFearGreed(CONFIDENCE_LIMITED_KEY)})`
             );
+        });
+    });
+
+    describe('로케일 회귀', () => {
+        // `SENTIMENT_LABEL_TEXT`가 하드코딩 한글 Record였을 때는 en 로케일
+        // 에서도 이 칩만 한글로 남아 "AAPL Technical Direction: 보합" 류의
+        // 반쪽짜리 영어 문장이 나왔다(원 이슈 재현 대상). `renderWithIntl`로
+        // 실제 en 카탈로그를 태워야 이 결함이 잡힌다 — 전역 `render()`는
+        // 항상 ko provider라 이 클래스의 결함을 검출하지 못한다.
+        it('locale=en이면 라벨을 영어로 렌더하고 한글이 남지 않는다', () => {
+            const { container } = renderWithIntl(
+                <FearGreedHeaderChip
+                    snapshot={{ ...make('GREED'), score: 61 }}
+                />,
+                { locale: 'en' }
+            );
+
+            expect(container.textContent).toContain('Greed');
+            expect(container.textContent ?? '').not.toMatch(/[가-힣]/);
         });
     });
 });

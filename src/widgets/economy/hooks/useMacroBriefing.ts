@@ -1,6 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import type {
     MacroBriefingResponse,
     SubmitMacroBriefingCached,
@@ -57,6 +59,8 @@ export interface UseMacroBriefingReturn {
 export function useMacroBriefing(
     peekSeed?: MacroBriefingResponse | null
 ): UseMacroBriefingReturn {
+    const locale = useCurrentLocale();
+    const streamMessages = useStreamErrorMessages();
     const isHydrated = useHydrated();
 
     // §17 exception: `refetch` is destructured immediately after useQuery
@@ -66,9 +70,10 @@ export function useMacroBriefing(
         isError,
         refetch: queryRefetch,
     } = useQuery({
-        queryKey: QUERY_KEYS.macroBriefing(),
+        queryKey: QUERY_KEYS.macroBriefing(locale),
         queryFn: ({ signal }) =>
             runAnalysisStream<MacroBriefingActionResult>({
+                messages: streamMessages,
                 type: 'macroBriefing',
                 params: {},
                 signal,

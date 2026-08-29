@@ -1,6 +1,7 @@
 'use server';
 
 import { getDatabaseClient } from '@/shared/db/client';
+import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
@@ -27,7 +28,11 @@ export async function getNewsCardsAction(
     // 행까지 매 tick 실어 보내면 한 번 실리는 RSC 페이로드보다 누적이 커진다
     // (AAPL 기준 1,417행). `compress: true` 이후로는 그 응답이 매번 오리진에서
     // gzip되기까지 해서 버스터블 인스턴스의 CPU 크레딧을 직접 갉는다.
-    const rows = await repo.listCardsBySymbol(symbol, NEWS_LOOKBACK_MS);
+    const rows = await repo.listCardsBySymbol(
+        symbol,
+        NEWS_LOOKBACK_MS,
+        await resolveRequestLocale()
+    );
     return rows.length > NEWS_ROW_SERIALIZATION_LIMIT
         ? rows.slice(0, NEWS_ROW_SERIALIZATION_LIMIT)
         : rows;

@@ -1,5 +1,10 @@
 import { buildOgText } from '@/entities/shared-analysis/server/buildOgText';
 import type { SharedAnalysisSnapshot } from '@/entities/shared-analysis/types';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+
+// 방향성 라벨(`강세`·`약세`)은 `entities.shared-analysis.og` 카탈로그에서 온다 —
+// 예전엔 모듈 상수라 `/en/share/…`의 OG description이 한국어를 실어 보냈다.
+const tOg = catalogTranslator('entities.shared-analysis.og', 'ko');
 
 function snap(kind: string, result: unknown): SharedAnalysisSnapshot {
     return {
@@ -17,7 +22,8 @@ function snap(kind: string, result: unknown): SharedAnalysisSnapshot {
 describe('buildOgText', () => {
     it('chart: uses trend + summary first line', () => {
         const out = buildOgText(
-            snap('chart', { trend: 'bullish', summary: '상승 추세\n둘째 줄' })
+            snap('chart', { trend: 'bullish', summary: '상승 추세\n둘째 줄' }),
+            tOg
         );
         expect(out.description).toContain('상승');
         expect(out.description).not.toContain('둘째 줄');
@@ -27,13 +33,15 @@ describe('buildOgText', () => {
             snap('news', {
                 overallSentiment: 'bearish',
                 currentDriverKo: '악재 지속',
-            })
+            }),
+            tOg
         );
         expect(out.description).toContain('악재 지속');
     });
     it('fear-greed: uses label + score', () => {
         const out = buildOgText(
-            snap('fear-greed', { label: 'EXTREME_FEAR', score: 12 })
+            snap('fear-greed', { label: 'EXTREME_FEAR', score: 12 }),
+            tOg
         );
         expect(out.description).toContain('12');
     });
@@ -46,7 +54,8 @@ describe('buildOgText', () => {
                     { name: 'bearish' },
                     { name: 'bullish' },
                 ],
-            })
+            }),
+            tOg
         );
         expect(out.description).toContain('혼조세 전망');
     });
@@ -55,14 +64,16 @@ describe('buildOgText', () => {
             snap('options', {
                 summary: '콜 우위',
                 signals: [{ kind: 'bullish' }],
-            })
+            }),
+            tOg
         );
         expect(out.description).toContain('콜 우위');
     });
     it('clamps tweet text to the max length', () => {
         const long = 'x'.repeat(500);
         const out = buildOgText(
-            snap('chart', { trend: 'neutral', summary: long })
+            snap('chart', { trend: 'neutral', summary: long }),
+            tOg
         );
         expect(out.tweet.length).toBeLessThanOrEqual(180);
     });
@@ -74,7 +85,8 @@ describe('buildOgText', () => {
             snap('fundamental', {
                 overallSentiment: 'bullish',
                 overallConclusionKo: '실적 개선 기대',
-            })
+            }),
+            tOg
         );
         expect(out.description).toContain('강세');
         expect(out.description).toContain('실적 개선 기대');
@@ -85,7 +97,8 @@ describe('buildOgText', () => {
             snap('financials', {
                 overallSentiment: 'bearish',
                 overallConclusionKo: '매출 감소 우려',
-            })
+            }),
+            tOg
         );
         expect(out.description).toContain('약세');
         expect(out.description).toContain('매출 감소 우려');
@@ -96,30 +109,31 @@ describe('buildOgText', () => {
             snap('congress', {
                 overallSentiment: 'neutral',
                 summaryKo: '의회 매수 지속',
-            })
+            }),
+            tOg
         );
         expect(out.description).toContain('중립');
         expect(out.description).toContain('의회 매수 지속');
     });
 
     it('fundamental: falls back to "neutral" when overallSentiment is absent', () => {
-        const out = buildOgText(snap('fundamental', {}));
+        const out = buildOgText(snap('fundamental', {}), tOg);
         // direction maps "neutral" → "중립"
         expect(out.description).toContain('중립');
     });
 
     it('financials: falls back to "neutral" when overallSentiment is absent', () => {
-        const out = buildOgText(snap('financials', {}));
+        const out = buildOgText(snap('financials', {}), tOg);
         expect(out.description).toContain('중립');
     });
 
     it('congress: falls back to "neutral" when overallSentiment is absent', () => {
-        const out = buildOgText(snap('congress', {}));
+        const out = buildOgText(snap('congress', {}), tOg);
         expect(out.description).toContain('중립');
     });
 
     it('overall: falls back to "neutral" when scenarios is absent', () => {
-        const out = buildOgText(snap('overall', { headlineKo: '혼조세' }));
+        const out = buildOgText(snap('overall', { headlineKo: '혼조세' }), tOg);
         // majorityName([]) === 'neutral' → "중립"
         expect(out.description).toContain('중립');
     });
@@ -130,7 +144,8 @@ describe('buildOgText', () => {
                 headlineKo: '불확실',
                 // scenarios with no name property → counts map stays empty → best stays 'neutral'
                 scenarios: [{}, {}],
-            })
+            }),
+            tOg
         );
         expect(out.description).toContain('중립');
     });
@@ -138,7 +153,7 @@ describe('buildOgText', () => {
     // ── R3-5: additional ?? fallback branches ─────────────────────────────────
 
     it('chart: {} (no trend / no summary) → direction "중립", empty summary', () => {
-        const out = buildOgText(snap('chart', {}));
+        const out = buildOgText(snap('chart', {}), tOg);
         // trend ?? 'neutral' → '중립'; summary ?? '' → empty → description is just '중립'
         expect(out.description).toBe('중립');
     });
@@ -148,7 +163,8 @@ describe('buildOgText', () => {
             snap('overall', {
                 integratedConclusionKo: '종합 의견',
                 scenarios: [{ name: 'bullish' }, { name: 'bullish' }],
-            })
+            }),
+            tOg
         );
         expect(out.description).toContain('종합 의견');
         expect(out.description).toContain('강세');
@@ -159,20 +175,21 @@ describe('buildOgText', () => {
             snap('overall', {
                 headlineKo: '불확실',
                 scenarios: [{ name: undefined }, {}],
-            })
+            }),
+            tOg
         );
         // No named scenarios → counts map empty → 'neutral' → '중립'
         expect(out.description).toContain('중립');
     });
 
     it('options: { tone: "bullish" } with no signals → uses tone path', () => {
-        const out = buildOgText(snap('options', { tone: 'bullish' }));
+        const out = buildOgText(snap('options', { tone: 'bullish' }), tOg);
         // signals is empty → signals[0]?.kind is undefined → falls back to r.tone
         expect(out.description).toContain('강세');
     });
 
     it('options: {} (no signals, no tone) → direction "neutral" → "중립"', () => {
-        const out = buildOgText(snap('options', {}));
+        const out = buildOgText(snap('options', {}), tOg);
         // signals[0]?.kind = undefined, r.tone ?? 'neutral' = 'neutral' → '중립'
         expect(out.description).toContain('중립');
     });

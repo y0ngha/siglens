@@ -1,4 +1,5 @@
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { BacktestCase, BacktestRiskLevel } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { formatUsdCurrency } from '@/shared/lib/priceFormat';
@@ -12,17 +13,18 @@ interface EntryRecBadgeProps {
 }
 
 function EntryRecBadge({ recommendation }: EntryRecBadgeProps) {
+    const t = useTranslations('widgets.backtesting');
     const config = {
         enter: {
-            label: 'AI 진입 권고',
+            label: t('BacktestCaseCard.0f8bf6'),
             cls: 'bg-ui-success/10 text-ui-success-text border-ui-success/30',
         },
         avoid: {
-            label: 'AI 회피 권고',
+            label: t('BacktestCaseCard.6c8ca5'),
             cls: 'bg-ui-danger/10 text-ui-danger-text border-ui-danger/30',
         },
         wait: {
-            label: 'AI 관망',
+            label: t('BacktestCaseCard.540e42'),
             cls: 'bg-secondary-800 text-secondary-400 border-secondary-700',
         },
     }[recommendation];
@@ -80,6 +82,7 @@ const lossClasses = {
 } as const;
 
 export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
+    const t = useTranslations('widgets.backtesting');
     const isWin = c.result === 'win';
     const v = isWin ? winClasses : lossClasses;
     const returnLabel = `${c.returnPct >= 0 ? '+' : ''}${c.returnPct.toFixed(1)}%`;
@@ -92,7 +95,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
 
     return (
         <article
-            aria-label={`${c.ticker} ${c.entryDate} ${isWin ? '수익' : '손실'} ${returnLabel}`}
+            aria-label={`${c.ticker} ${c.entryDate} ${isWin ? t('BacktestCaseCard.bd6b14') : t('BacktestCaseCard.b19f09')} ${returnLabel}`}
             className={cn(
                 'bg-secondary-800/50 rounded-lg border p-3',
                 v.article
@@ -137,7 +140,9 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                                     : 'text-ui-danger-text'
                             )}
                         >
-                            {c.signalType === 'buy' ? '매수' : '매도'}
+                            {c.signalType === 'buy'
+                                ? t('BacktestCaseCard.31e4d3')
+                                : t('BacktestCaseCard.62a65c')}
                         </span>
                         <span className="ml-1 text-secondary-400">
                             {c.entryDate}
@@ -153,7 +158,12 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                         →
                     </span>
                     <span className="shrink-0 text-[10px] whitespace-nowrap text-secondary-500">
-                        <span className="tabular-nums">{c.holdingDays}</span>일
+                        {t.rich('BacktestCaseCard.06cf3e', {
+                            v0: c.holdingDays,
+                            n: chunks => (
+                                <span className="tabular-nums">{chunks}</span>
+                            ),
+                        })}
                     </span>
                     <span
                         className="shrink-0 text-secondary-500"
@@ -184,7 +194,9 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                                     : 'text-secondary-200'
                             )}
                         >
-                            {c.exitReason === 'stop_loss' ? '손절' : '매도'}
+                            {c.exitReason === 'stop_loss'
+                                ? t('BacktestCaseCard.1e38a3')
+                                : t('BacktestCaseCard.62a65c')}
                         </span>
                         <span className="ml-1 text-secondary-400">
                             {c.exitDate}
@@ -210,7 +222,11 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                     >
                         {isWin ? '✓' : '✗'}
                     </span>
-                    <span className="sr-only">{isWin ? '수익' : '손실'}</span>
+                    <span className="sr-only">
+                        {isWin
+                            ? t('BacktestCaseCard.bd6b14')
+                            : t('BacktestCaseCard.b19f09')}
+                    </span>
                 </div>
             </div>
 
@@ -256,7 +272,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                 <div className="mt-2 rounded bg-secondary-700/40 px-3 py-2 text-[10px] text-secondary-400">
                     <div className="mb-1 flex items-center gap-2">
                         <span className="text-xs font-semibold text-secondary-500">
-                            AI 예측 레벨
+                            {t('BacktestCaseCard.58b71d')}
                         </span>
                         <EntryRecBadge
                             recommendation={c.aiAnalysis.entryRecommendation}
@@ -274,7 +290,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                         {firstBullishTarget && (
                             <div>
                                 <span className="text-secondary-500">
-                                    목표가:{' '}
+                                    {t('BacktestCaseCard.456225')}{' '}
                                 </span>
                                 <span className="text-ui-success-text">
                                     {formatUsdCurrency(
@@ -283,7 +299,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                                 </span>
                                 {c.aiTrendHit && (
                                     <span className="ml-1 text-ui-success-text">
-                                        ✓ 도달
+                                        {t('BacktestCaseCard.fa9de3')}
                                     </span>
                                 )}
                             </div>
@@ -318,7 +334,8 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
 
                     {firstBullishTarget?.basis && (
                         <p className="mt-1 line-clamp-1 text-[9px] text-secondary-500">
-                            근거: {firstBullishTarget.basis}
+                            {t('BacktestCaseCard.75a556')}{' '}
+                            {firstBullishTarget.basis}
                         </p>
                     )}
                 </div>

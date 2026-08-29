@@ -1,3 +1,6 @@
+import { useTranslations } from 'next-intl';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { INTL_LOCALE } from '@/shared/i18n/locales';
 import {
     getDescriptor,
     type MarketProfileId,
@@ -6,7 +9,6 @@ import type { NewsDisplayItem } from '@/shared/lib/types';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 export interface OverallFactualFallbackProps {
-    symbol: string;
     displayName: string;
     marketProfile: MarketProfileId;
     newsItems: readonly NewsDisplayItem[];
@@ -22,25 +24,63 @@ export interface OverallFactualFallbackProps {
  * 약속하게 된다(SEO 감사 2026-08-18) — `marketProfile`로 descriptor의
  * 실제 tabs whitelist를 물어 옵션 탭 존재 여부를 판정한다.
  */
-function getAxesText(marketProfile: MarketProfileId): string {
+function getAxisKeys(marketProfile: MarketProfileId): readonly string[] {
     const descriptor = getDescriptor(marketProfile);
     if (descriptor.assetClass === 'crypto') {
-        return '차트, 뉴스, 공포 탐욕 지수';
+        return ['chart', 'news', 'fear-greed'];
     }
 
     if (descriptor.tabs.includes('options')) {
-        return '차트, 뉴스, 펀더멘털, 옵션, 공포 탐욕 지수';
+        return ['chart', 'news', 'fundamental', 'options', 'fear-greed'];
     }
 
-    return '차트, 뉴스, 펀더멘털, 공포 탐욕 지수';
+    return ['chart', 'news', 'fundamental', 'fear-greed'];
+}
+
+/**
+ * 축 이름을 로케일에 맞게 잇는다.
+ *
+ * 예전에는 `'차트, 뉴스, 펀더멘털, 옵션, 공포 탐욕 지수'` 한국어 리터럴을
+ * **번역된 템플릿에 꽂았다** — `/en/AAPL/overall`이
+ * `Overall Analysis looks at 차트, 뉴스, … together.`를 렌더했다. 이 컴포넌트는
+ * JS 없는 크롤러가 읽는 SSR 본문이라 그대로 색인된다.
+ *
+ * 라벨은 탭바와 같은 `shared.symbolTab`을 쓴다 — 같은 것을 두 번 번역하지 않는다.
+ * 구분자는 `Intl.ListFormat`이 정한다(ko `A, B 및 C`, ja/zh는 `、`).
+ */
+/**
+ * `Intl.ListFormat` 생성은 싸지 않다(로케일 데이터 조회 + 규칙 컴파일).
+ * 렌더마다 새로 만들면 그 비용이 매 렌더에 붙는다 — 로케일 수가 4개뿐이라
+ * 모듈 수준에서 캐시한다.
+ */
+const LIST_FORMAT_CACHE = new Map<string, Intl.ListFormat>();
+
+function listFormatFor(intlLocale: string): Intl.ListFormat {
+    const cached = LIST_FORMAT_CACHE.get(intlLocale);
+    if (cached) return cached;
+    const created = new Intl.ListFormat(intlLocale, {
+        style: 'long',
+        type: 'conjunction',
+    });
+    LIST_FORMAT_CACHE.set(intlLocale, created);
+    return created;
+}
+
+function useAxesText(marketProfile: MarketProfileId): string {
+    const tTab = useTranslations('shared.symbolTab');
+    const locale = useResolvedLocale();
+    return listFormatFor(INTL_LOCALE[locale]).format(
+        getAxisKeys(marketProfile).map(key => tTab(key))
+    );
 }
 
 export function OverallFactualFallback({
-    symbol,
     displayName,
     marketProfile,
     newsItems,
 }: OverallFactualFallbackProps) {
+    const t = useTranslations('widgets.overall');
+    const axesText = useAxesText(marketProfile);
     const headingId = 'overall-factual-fallback-heading';
     const analyzedNewsCount = newsItems.filter(
         item => item.sentiment !== null
@@ -52,30 +92,29 @@ export function OverallFactualFallback({
             className="rounded-lg border border-secondary-700 bg-secondary-800 p-5"
         >
             <h2 id={headingId} className={HEADING_SECTION}>
-                {displayName} 종합 분석 데이터 상태
+                {displayName} {t('OverallFactualFallback.87d0df')}
             </h2>
             <div className="mt-3 space-y-3 text-sm leading-relaxed text-secondary-300">
                 <p>
-                    {displayName} ({symbol}) 종합 분석은{' '}
-                    {getAxesText(marketProfile)}를 함께 봅니다.
+                    {/* 여는 괄호가 JSX에, 닫는 괄호가 메시지에 나뉘어 있었다 —
+                        번역자가 어순을 못 바꾼다. 게다가 `displayName`이 이미
+                        `(AAPL)`을 품고 있어 `(AAPL) (AAPL)`로 중복 출력됐다. */}
+                    {t('OverallFactualFallback.ab960a', {
+                        v0: displayName,
+                        v1: axesText,
+                    })}
                 </p>
                 {newsItems.length > 0 ? (
                     <p>
-                        현재 서버가 확인한 최근 뉴스는 {newsItems.length}건이며,
-                        이 중 {analyzedNewsCount}건은 AI 뉴스 카드 분석이
-                        완료됐습니다.
+                        {t('OverallFactualFallback.278a07', {
+                            v0: newsItems.length,
+                            v1: analyzedNewsCount,
+                        })}
                     </p>
                 ) : (
-                    <p>
-                        최근 뉴스 데이터는 아직 준비되지 않았습니다. 뉴스 카드가
-                        분석되면 종합 분석의 뉴스 축 상태도 함께 반영됩니다.
-                    </p>
+                    <p>{t('OverallFactualFallback.3a92a1')}</p>
                 )}
-                <p>
-                    종합 AI 결론이 아직 캐시되지 않았습니다. 분석 결과가
-                    준비되면 강세, 중립, 약세 시나리오와 위험 요인이 이 영역에
-                    표시됩니다.
-                </p>
+                <p>{t('OverallFactualFallback.ea75f6')}</p>
             </div>
         </section>
     );

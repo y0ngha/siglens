@@ -1,7 +1,30 @@
+import { POC_WINDOW_DEFAULT } from '@y0ngha/siglens-core';
 import { render } from '@testing-library/react';
 import type { FearGreedGroup } from '@y0ngha/siglens-core';
 import { FearGreedGroupBar } from '@/widgets/fear-greed/FearGreedGroupBar';
-import { FACTOR_LABEL } from '@/shared/lib/fearGreedLabels';
+
+import koMessages from '@/../messages/ko.json';
+
+/** ko 카탈로그의 팩터 라벨·설명 — 소스 상수를 대체한다. */
+const RAW_FG = koMessages.shared.lib.fearGreedFactor as unknown as {
+    label: Record<string, string>;
+    descriptionUs: Record<string, string>;
+    symbolLabel: Record<string, string>;
+};
+
+/**
+ * `poc_distance` 라벨은 `{v0}`(POC 창 크기)를 받는다 — 카탈로그 원문을 그대로
+ * 단언하면 플레이스홀더가 남아 실패한다.
+ */
+const FG = {
+    ...RAW_FG,
+    symbolLabel: Object.fromEntries(
+        Object.entries(RAW_FG.symbolLabel).map(([k, v]) => [
+            k,
+            v.replaceAll('{v0}', String(POC_WINDOW_DEFAULT)),
+        ])
+    ),
+};
 
 const flowGroup: FearGreedGroup = {
     name: 'Flow',
@@ -28,13 +51,13 @@ describe('FearGreedGroupBar', () => {
                 <FearGreedGroupBar group={flowGroup} />
             );
             expect(
-                getByText(FACTOR_LABEL.volume_z, { exact: false })
+                getByText(FG.symbolLabel.volume_z, { exact: false })
             ).toBeInTheDocument();
             expect(
-                getByText(FACTOR_LABEL.buysell_imbalance, { exact: false })
+                getByText(FG.symbolLabel.buysell_imbalance, { exact: false })
             ).toBeInTheDocument();
             expect(
-                getByText(FACTOR_LABEL.poc_distance, { exact: false })
+                getByText(FG.symbolLabel.poc_distance, { exact: false })
             ).toBeInTheDocument();
             // percentile rendering
             expect(getByText(/80th/)).toBeInTheDocument();

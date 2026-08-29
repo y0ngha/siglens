@@ -28,10 +28,16 @@ vi.mock('@/shared/lib/cn', () => ({
 vi.mock('@/shared/hooks/useEscapeKey', () => ({
     useEscapeKey: vi.fn(),
 }));
+// LocaleSwitcher는 next-intl 컨텍스트와 로케일 라우터를 요구한다. 여기서는
+// 헤더 조립만 검증하므로 stub으로 대체하고, 스위처 자체는 전용 테스트가 다룬다.
+vi.mock('../LocaleSwitcher', () => ({
+    LocaleSwitcher: () => <div data-testid="locale-switcher" />,
+}));
 vi.mock('@/shared/hooks/useFocusTrap', () => ({
     useFocusTrap: vi.fn(),
 }));
 
+import { koMessage } from '@/shared/test-utils/koMessage';
 import React, { act } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
@@ -168,7 +174,9 @@ describe('HeaderMobileMenu', () => {
         fireEvent.click(screen.getByRole('button', { name: '메뉴 열기' }));
 
         for (const vertical of NAV_TREE) {
-            expect(screen.getByText(vertical.label)).toBeInTheDocument();
+            expect(
+                screen.getByText(koMessage(vertical.labelKey))
+            ).toBeInTheDocument();
         }
         expect(hrefsOf('미국')).toContain('/market');
         expect(hrefsOf('한국')).toContain('/market/kr');

@@ -1,4 +1,6 @@
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { useAssetLabel } from '@/shared/i18n/assetLabel';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
 import { cn } from '@/shared/lib/cn';
 import type { StockWithConflict } from '@y0ngha/siglens-core';
@@ -18,10 +20,12 @@ export function SignalStockCard({
     currencySymbol,
     tickerIsReadable,
 }: SignalStockCardProps) {
+    const t = useTranslations('widgets.dashboard');
+    const assetLabel = useAssetLabel();
     return (
         <Link
             href={`/${data.symbol}`}
-            title={`${data.koreanName} 분석`}
+            title={t('SignalStockCard.analyzeTitle', { v0: data.symbol })}
             // 카드 그리드로 다수 렌더 — docs/architecture/CDN_CACHING.md §1
             prefetch={false}
             className={cn(
@@ -34,7 +38,8 @@ export function SignalStockCard({
                     layout="signal"
                     data={{
                         symbol: data.symbol,
-                        koreanName: data.koreanName,
+                        // `koreanName`은 한국어 데이터다 — 표시는 카탈로그로.
+                        displayName: assetLabel(data.symbol, data.koreanName),
                         price: data.price,
                         changePercent: data.changePercent,
                     }}
@@ -60,8 +65,10 @@ export function SignalStockCard({
                 )}
                 {data.conflict && (
                     <p className="mt-1 text-xs text-secondary-500">
-                        상승 {data.conflict.bullishCount}건 / 하락{' '}
-                        {data.conflict.bearishCount}건 감지
+                        {t('SignalStockCard.fe2ec0', {
+                            v0: data.conflict.bullishCount,
+                            v1: data.conflict.bearishCount,
+                        })}
                     </p>
                 )}
             </div>

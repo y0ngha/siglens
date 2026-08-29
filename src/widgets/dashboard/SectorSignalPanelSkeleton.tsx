@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 
 interface SectorSignalPanelSkeletonProps {
@@ -8,9 +9,10 @@ interface SectorSignalPanelSkeletonProps {
 export function SectorSignalPanelSkeleton({
     scope,
 }: SectorSignalPanelSkeletonProps) {
+    const t = useTranslations('widgets.dashboard');
     return (
         <section
-            aria-label="섹터 신호 로딩 중"
+            aria-label={t('SectorSignalPanelSkeleton.f65a95')}
             aria-busy="true"
             className="page-container sector-panel-bg relative py-10"
         >

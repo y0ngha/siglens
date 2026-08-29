@@ -3,6 +3,11 @@
 const headerSpy = vi.hoisted(() => vi.fn());
 const refetchSpy = vi.hoisted(() => vi.fn());
 const mockPathname = vi.hoisted(() => vi.fn<() => string>());
+// LocaleSwitcher는 로케일 라우터(next-intl navigation)를 요구한다. 이 테스트는
+// 세션 헤더 조립만 검증하므로 stub으로 대체한다(전용 테스트가 스위처를 다룬다).
+vi.mock('@/widgets/layout/LocaleSwitcher', () => ({
+    LocaleSwitcher: () => null,
+}));
 vi.mock('@/widgets/layout/Header', () => ({
     Header: (props: unknown) => {
         headerSpy(props);

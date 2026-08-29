@@ -19,7 +19,10 @@ vi.mock('@/shared/lib/cn', () => ({
             .join(' '),
 }));
 vi.mock('@/shared/lib/trendline', () => ({
-    TRENDLINE_DIRECTION_LABEL: { ascending: '상승', descending: '하강' },
+    TRENDLINE_DIRECTION_LABEL_KEY: {
+        ascending: 'ascending',
+        descending: 'descending',
+    },
 }));
 vi.mock('@/shared/config/time', () => ({
     MS_PER_SECOND: 1000,
@@ -72,8 +75,16 @@ import type {
     StrategyResult,
 } from '@y0ngha/siglens-core';
 
-import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
+import { buildFallbackAnalysis } from '@/entities/chat-message';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { AnalysisPanel } from '../AnalysisPanel';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+
+// 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을
+// 들고 있어 `/en/AAPL`이 영어 화면에 한국어 폴백을 렌더했다.
+const FALLBACK_ANALYSIS = buildFallbackAnalysis(
+    catalogTranslator('entities.chat-message.fallback', 'ko')('unavailable')
+);
 
 function makeAnalysis(
     overrides: Partial<AnalysisResponse> = {}
@@ -145,6 +156,35 @@ describe('AnalysisPanel', () => {
         );
 
         expect(screen.getByText('요약 텍스트')).toBeInTheDocument();
+    });
+
+    /**
+     * 스킬명은 `skills/**.md` front-matter라 36개가 한국어다. 아코디언 제목이라
+     * 영어 페이지에서 눈에 바로 띈다. 문자열 자체는 dedupe 키로도 쓰여 못 바꾸므로
+     * **표시 시점**에만 치환하는지, 카탈로그에 없는 이름은 원문으로 남는지 본다.
+     */
+    it('en: 한국어 스킬명은 카탈로그로, 영문 스킬명은 원문 그대로', () => {
+        renderWithIntl(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    patternSummaries: [
+                        makePattern({ skillName: '상승삼각형' }),
+                        makePattern({
+                            id: 'pattern-2',
+                            skillName: 'RSI Signal Guide',
+                        }),
+                    ],
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+            />,
+            { locale: 'en' }
+        );
+
+        expect(screen.getByText('Ascending Triangle')).toBeInTheDocument();
+        expect(screen.getByText('RSI Signal Guide')).toBeInTheDocument();
+        expect(screen.queryByText('상승삼각형')).not.toBeInTheDocument();
     });
 
     it('shows a single consolidated upsell card with exactly one signup CTA for free', () => {
@@ -778,8 +818,9 @@ describe('AnalysisPanel', () => {
         );
 
         expect(screen.getByText('추세선')).toBeInTheDocument();
-        expect(screen.getByText('상승')).toBeInTheDocument();
-        expect(screen.getByText('하강')).toBeInTheDocument();
+        // 방향 라벨은 이제 `shared.lib.trendline` 카탈로그에서 온다.
+        expect(screen.getByText('상승 추세선')).toBeInTheDocument();
+        expect(screen.getByText('하락 추세선')).toBeInTheDocument();
     });
 
     it('renders price targets when bullish targets exist', () => {

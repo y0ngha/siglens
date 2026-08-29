@@ -30,12 +30,13 @@ describe('DrizzleNoticeRepository.findActive', () => {
         linkLabel: null,
         pathPattern: null,
         createdAt: new Date('2026-06-03T00:00:00+09:00'),
+        // 사이드카가 꺼져 있으면 원본(한국어)으로 해석되므로 폴백이 아니다.
     };
 
     it('활성 공지 행들을 그대로 반환한다', async () => {
         const { db } = makeMockDb([baseRow]);
         const repo = new DrizzleNoticeRepository(db);
-        const result = await repo.findActive();
+        const result = await repo.findActive('ko');
         expect(result).toHaveLength(1);
         expect(result[0].id).toBe('n1');
         expect(result[0].title).toBe('점검 안내');
@@ -45,13 +46,13 @@ describe('DrizzleNoticeRepository.findActive', () => {
     it('활성 공지가 없으면 빈 배열을 반환한다', async () => {
         const { db } = makeMockDb([]);
         const repo = new DrizzleNoticeRepository(db);
-        expect(await repo.findActive()).toEqual([]);
+        expect(await repo.findActive('ko')).toEqual([]);
     });
 
     it('orderBy가 2개 인수(priority, createdAt)로 호출된다 — 실제 정렬 방향은 E2E가 검증', async () => {
         const { db, orderBySpy } = makeMockDb([baseRow]);
         const repo = new DrizzleNoticeRepository(db);
-        await repo.findActive();
+        await repo.findActive('ko');
         expect(orderBySpy).toHaveBeenCalledTimes(1);
         expect(orderBySpy.mock.calls[0]).toHaveLength(2);
     });
@@ -59,7 +60,7 @@ describe('DrizzleNoticeRepository.findActive', () => {
     it('where 절이 한 번 호출된다', async () => {
         const { db, whereSpy } = makeMockDb([baseRow]);
         const repo = new DrizzleNoticeRepository(db);
-        await repo.findActive();
+        await repo.findActive('ko');
         expect(whereSpy).toHaveBeenCalledTimes(1);
         // Drizzle 조건 객체(and(...))는 PgTable 순환 참조를 포함해 JSON 직렬화/AST
         // 비교가 불가능하다. 여기서는 where 절이 truthy 조건과 함께 호출됐는지만 확인하고,

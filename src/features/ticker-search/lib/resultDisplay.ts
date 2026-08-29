@@ -23,7 +23,16 @@ import type { TickerSearchResult } from '@/shared/lib/types';
 export type BadgeTone = 'crypto' | 'kr' | 'us';
 
 export interface MarketBadgeSpec {
+    /**
+     * 거래소 코드처럼 **번역하지 않는** 표시 문자열(`KOSPI`·`NYSE`). 고유명사라
+     * 네 로케일 모두 같다.
+     */
     label: string;
+    /**
+     * 번역이 필요한 배지의 `features.ticker-search.assetBadge` 키.
+     * 있으면 `label`보다 우선한다 — `코인`·`미국 OTC`가 여기 해당한다.
+     */
+    labelKey?: string;
     tone: BadgeTone;
 }
 
@@ -32,10 +41,11 @@ export interface MarketBadgeSpec {
  * 아래 `?? code` 폴백이 원문을 쓴다 — 새 거래소가 생겼다고 배지가 사라지는 것보다 낫다.
  * 그래서 `NASDAQ: 'NASDAQ'` 같은 항등 매핑은 넣지 않는다(폴백과 완전히 같은 동작이다).
  */
-const US_EXCHANGE_LABELS: Record<string, string> = {
-    PNK: '미국 OTC',
-    OTC: '미국 OTC',
-};
+const US_EXCHANGE_LABELS: Record<string, { label: string; labelKey: string }> =
+    {
+        PNK: { label: 'US OTC', labelKey: 'usOtc' },
+        OTC: { label: 'US OTC', labelKey: 'usOtc' },
+    };
 
 /**
  * 검색 결과의 시장 배지 — **모든 결과에 붙는다**.
@@ -58,7 +68,7 @@ export function marketBadgeSpec(
     result: TickerSearchResult
 ): MarketBadgeSpec | null {
     if (result.marketProfile === 'crypto') {
-        return { label: '코인', tone: 'crypto' };
+        return { label: 'Crypto', labelKey: 'coin', tone: 'crypto' };
     }
     if (isKrEquitySymbol(result.symbol)) {
         // 접미사→거래소 매핑은 `krExchangeOf` 한 곳에만 둔다. 여기서 `.KQ`를 다시
@@ -66,11 +76,12 @@ export function marketBadgeSpec(
         return { label: krExchangeOf(result.symbol).code, tone: 'kr' };
     }
     const full = (result.exchangeFullName ?? '').toLowerCase();
-    if (full.includes('otc')) return { label: '미국 OTC', tone: 'us' };
+    if (full.includes('otc'))
+        return { label: 'US OTC', labelKey: 'usOtc', tone: 'us' };
 
     const code = (result.exchange ?? '').trim().toUpperCase();
     if (!code) return null;
-    return { label: US_EXCHANGE_LABELS[code] ?? code, tone: 'us' };
+    return { ...(US_EXCHANGE_LABELS[code] ?? { label: code }), tone: 'us' };
 }
 
 export interface ResultDisplayNames {

@@ -1,11 +1,13 @@
+import { useTranslations } from 'next-intl';
 import { AiSummarySkeleton } from '@/shared/ui/AiSummarySkeleton';
 
 export function CongressTrendSummarySkeleton() {
+    const t = useTranslations('widgets.congress');
     return (
         <AiSummarySkeleton
-            heading="AI 동향 해석"
+            heading={t('CongressTrendSummarySkeleton.bbb041')}
             idPrefix="congress-trend-summary"
-            progressMessage="AI 동향 해석 진행 중…"
+            progressMessage={t('CongressTrendSummarySkeleton.de5a93')}
         />
     );
 }

@@ -7,6 +7,7 @@ import {
     type NewsFeedCategoryId,
 } from '../lib/categoryConfig';
 import type { MarketNewsCardItem } from '../lib/toCardItem';
+import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 
 /**
  * Discriminated union result type for {@link getMarketNewsCardsAction}.
@@ -47,7 +48,10 @@ export async function getMarketNewsCardsAction(
         // 행 수 상한도 같은 이유로 여기서 건다: 이 액션은 3초마다 호출되므로 화면이
         // 다루지 않는 행을 매 tick 실어 보내면 누적이 RSC 한 번보다 커지고,
         // `compress: true` 이후로는 그 응답이 매번 오리진에서 gzip된다.
-        const items = await getMarketNewsCards(sentinel);
+        const items = await getMarketNewsCards(
+            sentinel,
+            await resolveRequestLocale()
+        );
         return {
             ok: true,
             items:

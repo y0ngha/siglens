@@ -1,7 +1,8 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
-import { SEARCH_TRIGGER_LABEL } from '../lib/searchLabels';
+import { SEARCH_TRIGGER_LABEL_KEY } from '../lib/searchLabels';
 
 /**
  * 돋보기 글리프. 헤더 아이콘 버튼과 홈 히어로 트리거가 **같은 모양**을 써야 하므로
@@ -53,11 +54,12 @@ export function SearchTriggerButton({
     onClick,
     className,
 }: SearchTriggerButtonProps) {
+    const t = useTranslations('features.ticker-search');
     return (
         <button
             type="button"
             onClick={onClick}
-            aria-label={SEARCH_TRIGGER_LABEL}
+            aria-label={t(SEARCH_TRIGGER_LABEL_KEY)}
             className={cn(
                 // 44×44 — WCAG 2.5.8 최소 타깃.
                 'flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg',

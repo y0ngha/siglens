@@ -1,5 +1,7 @@
 'use client';
 
+import { ANALYSIS_LOCALE_HEADER, splitLocalePath } from '@/shared/i18n/locales';
+
 /**
  * 분석 SSE 스트림 소비 헬퍼.
  *
@@ -41,6 +43,63 @@ export interface RunAnalysisStreamOptions {
     /** use-case별 파라미터. 라우트가 그대로 core `run*`에 넘긴다. */
     params: Record<string, unknown>;
     signal?: AbortSignal;
+    /**
+     * 사용자에게 그대로 보이는 실패 문구.
+     *
+     * 이 모듈은 훅이 아니라 평범한 async 함수라 `useTranslations`를 쓸 수 없다.
+     * 그런데 여기서 throw한 `Error.message`는 `useAnalysis` → `ChartContent`의
+     * `<ErrorBanner>`에 **그대로 렌더된다** — 서버 쪽 SSE 문구를 카탈로그로
+     * 옮겼는데 클라이언트 쪽만 한국어로 남아 있으면 같은 배너가 로케일에 따라
+     * 반쪽만 번역된다. 호출하는 훅(컴포넌트 스코프)이 번역해 넘긴다.
+     */
+    messages: StreamErrorMessages;
+}
+
+export interface StreamErrorMessages {
+    /** 동시 분석 상한(503). */
+    readonly busy: string;
+    /** 그 외 HTTP 실패. `{v0}`에 상태 코드가 들어간다. */
+    readonly failed: (status: number) => string;
+    /** `done`/`error` 없이 스트림이 끊긴 경우. */
+    readonly disconnected: string;
+    /** `done` 프레임의 payload를 파싱하지 못한 경우. */
+    readonly unreadable: string;
+    /** 서버가 메시지 없는 `error` 프레임을 보낸 경우. */
+    readonly generic: string;
+    /** 결과 payload에 에러 메시지가 없는 경우. */
+    readonly unexpected: string;
+    /** core의 재시도 소진 sentinel(`AI_SERVER_UNSTABLE`)에 대응하는 문구. */
+    readonly unstable: string;
+    /**
+     * BYOK 키가 필요한 모델(`status: 'key_error'`).
+     *
+     * core가 문구를 만들지만 **전 로케일에 한국어**다
+     * (`application/byok/messages.js`의 `USER_API_KEY_REQUIRED_MESSAGE`).
+     * 코드는 정확하므로 문구만 여기서 갈아끼운다.
+     */
+    readonly keyRequired: string;
+    /**
+     * 일일 사용량 초과(`status: 'limit_error'`).
+     *
+     * 이쪽은 반대로 core가 **전 로케일에 영어**를 준다
+     * (`application/usage/limits.js`의 `'Daily analysis usage limit exceeded.'`) —
+     * 한국어 사용자에게도 영어가 나가고 있었다.
+     */
+    readonly limitExceeded: string;
+    /** 분석할 뉴스가 없음(`code: 'no_news'`). */
+    readonly noNews: string;
+    /** 옵션 체인 없음(`status: 'no_chains_error'`). */
+    readonly noOptionsChains: string;
+    /** 그 밖의 분석 실패. */
+    readonly analysisFailed: string;
+    /** 원천 데이터 조회 실패(`code: 'fetch_failed'`). */
+    readonly fetchFailed: string;
+    /** 다이제스트 생성 불가(`miss_no_trigger`). */
+    readonly digestUnavailable: string;
+    /** 의회 거래 데이터 조회 실패. */
+    readonly congressFetchFailed: string;
+    /** 재분석 쿨다운. `{v0}`에 남은 초가 들어간다. */
+    readonly reanalyzeCooldown: (seconds: number) => string;
 }
 
 /**
@@ -54,10 +113,24 @@ export async function runAnalysisStream<T>({
     type,
     params,
     signal,
+    messages,
 }: RunAnalysisStreamOptions): Promise<T> {
     const response = await fetch('/api/analysis/stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            /**
+             * 분석 응답을 어느 언어로 받을지 알린다.
+             *
+             * `/api/*`는 next-intl 미들웨어 matcher에서 제외돼 있어 서버가
+             * 요청 로케일을 알 방법이 없다. 호출부마다 로케일을 프롭으로
+             * 내려보내는 대신 **현재 주소에서 유도**한다 — 이 함수는 항상
+             * 클라이언트에서 돌고, 주소는 로케일의 단일 소스다.
+             */
+            [ANALYSIS_LOCALE_HEADER]: splitLocalePath(
+                typeof window === 'undefined' ? null : window.location.pathname
+            ).locale,
+        },
         body: JSON.stringify({ type, params }),
         signal,
     });
@@ -76,12 +149,9 @@ export async function runAnalysisStream<T>({
                     typeof body.error === 'string' ? body.error : null
                 )
                 .catch(() => null);
-            throw new Error(
-                message ??
-                    '지금 분석 요청이 많습니다. 잠시 후 다시 시도해 주세요.'
-            );
+            throw new Error(message ?? messages.busy);
         }
-        throw new Error(`분석 요청이 실패했습니다 (${response.status})`);
+        throw new Error(messages.failed(response.status));
     }
 
     const reader = response.body
@@ -101,7 +171,7 @@ export async function runAnalysisStream<T>({
                 const frame = buffer.slice(0, boundary);
                 buffer = buffer.slice(boundary + 2);
 
-                const parsed = parseFrame<T>(frame);
+                const parsed = parseFrame<T>(frame, messages);
                 if (parsed.kind === 'done') return parsed.result;
                 if (parsed.kind === 'error') throw new Error(parsed.message);
 
@@ -113,7 +183,7 @@ export async function runAnalysisStream<T>({
         reader.cancel().catch(() => {});
     }
 
-    throw new Error('분석 연결이 완료 전에 끊겼습니다. 다시 시도해 주세요.');
+    throw new Error(messages.disconnected);
 }
 
 type ParsedFrame<T> =
@@ -129,7 +199,10 @@ function tryParse<T>(raw: string): T | null {
     }
 }
 
-function parseFrame<T>(frame: string): ParsedFrame<T> {
+function parseFrame<T>(
+    frame: string,
+    messages: StreamErrorMessages
+): ParsedFrame<T> {
     let event = '';
     let data = '';
     for (const line of frame.split('\n')) {
@@ -145,7 +218,7 @@ function parseFrame<T>(frame: string): ParsedFrame<T> {
         if (payload === null) {
             return {
                 kind: 'error',
-                message: '분석 결과를 읽지 못했습니다. 다시 시도해 주세요.',
+                message: messages.unreadable,
             };
         }
         return { kind: 'done', result: payload.result };
@@ -154,9 +227,7 @@ function parseFrame<T>(frame: string): ParsedFrame<T> {
         const payload = tryParse<StreamErrorPayload>(data);
         return {
             kind: 'error',
-            message:
-                payload?.message ??
-                '분석 중 오류가 발생했습니다. 다시 시도해 주세요.',
+            message: payload?.message ?? messages.generic,
         };
     }
     return { kind: 'other' };

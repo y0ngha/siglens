@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION, LABEL_KO } from '@/shared/lib/typographyStyles';
 import { IndexCard } from './IndexCard';
@@ -56,20 +57,37 @@ interface MarketSummaryPanelProps {
  * 제목이 한 번 더 말해 줘야 한다 — 스크린리더는 탭의 활성 상태를 이 섹션과 함께
  * 읽어 주지 않는다.
  */
-const PANEL_HEADING: Record<ClientDashboardScope['id'], string> = {
-    us: '오늘의 미국 시장',
-    kr: '오늘의 한국 시장',
+const PANEL_HEADING_KEY: Record<ClientDashboardScope['id'], string> = {
+    us: 'panelHeading.us',
+    kr: 'panelHeading.kr',
+};
+
+/**
+ * 섹터 그룹 라벨 → 메시지 키.
+ *
+ * `SectorGroupDef.label`은 `@y0ngha/siglens-core` 타입의 필드라 여기서 모양을
+ * 바꿀 수 없다(§SCOPE 크로스레포 가드). 그래서 **어댑터**로 붙인다 — 라벨은
+ * siglens 쪽 config(`dashboard-tickers*.ts`)가 정하므로 이 표만 맞춰 두면 된다.
+ * 표에 없는 라벨은 원문 그대로 떨어뜨린다(빈 화면보다 낫다).
+ */
+const SECTOR_GROUP_LABEL_KEY: Record<string, string> = {
+    성장: 'sectorGroup.growth',
+    경기민감: 'sectorGroup.cyclical',
+    방어: 'sectorGroup.defensive',
+    성장·기술: 'sectorGroup.growthTech',
+    경기·방어: 'sectorGroup.cyclicalDefensive',
 };
 
 export function MarketSummaryPanel({
     scope,
     peekSeed,
 }: MarketSummaryPanelProps) {
+    const t = useTranslations('widgets.dashboard');
     const [noticeDismissed, setNoticeDismissed] = useState(false);
     const { data, isPending, sectorMap, indices, hasMissingQuotes } =
         useMarketSummary(scope.id);
     const { input: briefing } = useMarketBriefing(scope.id, peekSeed);
-    const heading = PANEL_HEADING[scope.id];
+    const heading = t(PANEL_HEADING_KEY[scope.id]);
 
     if (isPending) return <MarketSummaryPanelSkeleton scope={scope} />;
 
@@ -84,7 +102,7 @@ export function MarketSummaryPanel({
         return (
             <section aria-label={heading} className="page-container py-10">
                 <MarketDataErrorNotice
-                    marketLabel={scope.marketLabel}
+                    scopeId={scope.id}
                     variant="total"
                     onClose={dismissNotice}
                 />
@@ -100,7 +118,7 @@ export function MarketSummaryPanel({
             <h2 className={cn('mb-6', HEADING_SECTION)}>{heading}</h2>
             {showNotice && (
                 <MarketDataErrorNotice
-                    marketLabel={scope.marketLabel}
+                    scopeId={scope.id}
                     variant="partial"
                     onClose={dismissNotice}
                     className="mb-6"
@@ -130,7 +148,9 @@ export function MarketSummaryPanel({
                         return (
                             <div key={group.label}>
                                 <p className={cn('mb-1.5', LABEL_KO)}>
-                                    {group.label}
+                                    {SECTOR_GROUP_LABEL_KEY[group.label]
+                                        ? t(SECTOR_GROUP_LABEL_KEY[group.label])
+                                        : group.label}
                                 </p>
                                 {/* 모바일에서는 2열로 접는다. 바로 위 지수 그리드가
                                     이미 `grid-cols-2 sm:grid-cols-4`인데 이쪽만

@@ -1,4 +1,5 @@
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { formatAmount } from '../lib/positionBuildingNotes';
 
 interface PositionCtaProps {
@@ -15,25 +16,27 @@ interface PositionCtaProps {
  * can render it directly without pulling in the lazy member chunk.
  */
 export function PositionCta({ symbol, low52w, high52w }: PositionCtaProps) {
+    const t = useTranslations('widgets.portfolio-position');
     return (
         <section
             data-testid="position-cta"
             className="flex flex-col items-start gap-3 rounded-lg border border-secondary-700 bg-secondary-800/40 p-6"
         >
             <p className="text-sm font-semibold text-secondary-100">
-                보유종목을 등록하면 내 매수 층이 표시돼요
+                {t('PositionCta.019ed7')}
             </p>
             <p className="text-sm leading-relaxed text-secondary-400">
-                평단과 수량을 등록하면 최근 가격 범위 안에서 내 위치를
-                아이소메트릭 빌딩으로 확인할 수 있어요.
+                {t('PositionCta.5cd686')}
             </p>
             {low52w !== null && high52w !== null && (
                 <p
                     data-testid="position-cta-range"
                     className="text-xs text-secondary-400 tabular-nums"
                 >
-                    최근 범위 {formatAmount(low52w, symbol)} ~{' '}
-                    {formatAmount(high52w, symbol)}
+                    {t('PositionCta.2bf3cd', {
+                        v0: formatAmount(low52w, symbol),
+                    })}{' '}
+                    ~ {formatAmount(high52w, symbol)}
                 </p>
             )}
             {/*
@@ -45,7 +48,7 @@ export function PositionCta({ symbol, low52w, high52w }: PositionCtaProps) {
                 href={`/onboarding?symbol=${encodeURIComponent(symbol)}`}
                 className="inline-flex min-h-11 touch-manipulation items-center rounded-lg border border-primary-500 px-4 text-sm font-medium text-primary-300 transition-colors hover:bg-primary-500/10 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
-                보유종목 등록하기
+                {t('PositionCta.5edaf2')}
             </Link>
         </section>
     );

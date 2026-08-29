@@ -1,9 +1,15 @@
 import {
-    CONFIDENCE_LIMITED_LABEL,
-    CONFIDENCE_NORMAL_LABEL,
-    formatConfidenceFooter,
+    CONFIDENCE_LIMITED_KEY,
+    CONFIDENCE_NORMAL_KEY,
+    confidenceLabelKey,
     formatFactorRaw,
 } from '@/shared/lib/fearGreedLabels';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
+
+// 문구는 `shared.lib.fearGreed` 카탈로그로 옮겼다 — 예전엔 모듈 상수라
+// `/en/AAPL/fear-greed` footer가 `표본 200 — 정상 산출`을 그대로 렌더했다.
+const NS = 'shared.lib.fearGreed';
+const tEn = catalogTranslator(NS, 'en');
 
 describe('formatFactorRaw', () => {
     it('volume_z는 소수 둘째 자리 일반 포맷으로 출력한다', () => {
@@ -28,16 +34,34 @@ describe('formatFactorRaw', () => {
     });
 });
 
-describe('formatConfidenceFooter', () => {
-    it('confidence가 normal이면 정상 라벨로 출력한다', () => {
-        expect(formatConfidenceFooter(200, 'normal')).toBe(
-            `표본 200 — ${CONFIDENCE_NORMAL_LABEL}`
-        );
+describe('confidenceLabelKey', () => {
+    it('confidence가 normal이면 정상 라벨 키를 고른다', () => {
+        expect(confidenceLabelKey('normal')).toBe(CONFIDENCE_NORMAL_KEY);
     });
 
-    it('confidence가 limited이면 제한 라벨로 출력한다', () => {
-        expect(formatConfidenceFooter(45, 'limited')).toBe(
-            `표본 45 — ${CONFIDENCE_LIMITED_LABEL}`
-        );
+    it('confidence가 limited이면 제한 라벨 키를 고른다', () => {
+        expect(confidenceLabelKey('limited')).toBe(CONFIDENCE_LIMITED_KEY);
+    });
+
+    it.each(['ko', 'en', 'ja', 'zh'] as const)(
+        '%s: footer 템플릿과 두 라벨이 카탈로그에 다 있다',
+        locale => {
+            const t = catalogTranslator(NS, locale);
+            for (const key of [
+                'confidenceFooter',
+                CONFIDENCE_NORMAL_KEY,
+                CONFIDENCE_LIMITED_KEY,
+            ]) {
+                expect(t(key), `${locale}.${key}`).toBeTruthy();
+            }
+        }
+    );
+
+    it('en 카탈로그로 조립하면 한글이 남지 않는다', () => {
+        const footer = tEn('confidenceFooter', {
+            v0: 45,
+            v1: tEn(confidenceLabelKey('limited')),
+        });
+        expect(footer).not.toMatch(/[가-힣]/);
     });
 });

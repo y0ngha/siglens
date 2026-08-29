@@ -35,14 +35,22 @@ export interface SeedSeoSnapshotInput {
     tab: SeoSnapshotTab;
     /** Stored as `jsonb`. Serialized with `JSON.stringify` + an explicit `::jsonb` cast. */
     content: unknown;
+    /** 기본값 `ko` — 접두사 없는 경로가 읽는 행이다. */
+    locale?: 'ko' | 'en' | 'ja' | 'zh';
     model: string;
     generatedAt: Date;
 }
 
 /**
- * Upsert a single `seo_analysis_snapshots` row (on the `(symbol, tab)` unique
- * index, matching `DrizzleSeoSnapshotRepository.upsert`) and return a cleanup
- * function that deletes it. Symbol is upper-cased to match the app's write
+ * Upsert a single `seo_analysis_snapshots` row (on the `(symbol, tab, locale)`
+ * unique index, matching `DrizzleSeoSnapshotRepository.upsert`) and return a
+ * cleanup function that deletes it.
+ *
+ * ⚠️ 타깃이 3열인 것이 중요하다. 마이그레이션 0030이 구
+ * `(symbol, tab)` unique를 지우므로 2열 타깃은 42P10(`no unique or exclusion
+ * constraint matching the ON CONFLICT specification`)으로 죽는다. 앱의 쓰기
+ * 경로도 같은 이유로 스위치와 무관하게 3열을 쓴다
+ * (`entities/seo-snapshot/api.ts` 주석, 회귀 가드 `upsertSql.test.ts`). Symbol is upper-cased to match the app's write
  * path (`DrizzleSeoSnapshotRepository.upsert` upper-cases too).
  *
  * Usage in specs:
@@ -58,19 +66,22 @@ export async function seedSeoSnapshot(
     input: SeedSeoSnapshotInput
 ): Promise<() => Promise<void>> {
     const symbol = input.symbol.toUpperCase();
+    // 스펙은 접두사 없는 경로(`/SEOQAX/...`)로 이동하므로 기본 로케일 행이다.
+    const locale = input.locale ?? 'ko';
     const sql = postgres(DB_URL, { max: 1 });
 
     await sql`
-        INSERT INTO seo_analysis_snapshots (symbol, tab, content, model, generated_at, updated_at)
+        INSERT INTO seo_analysis_snapshots (symbol, tab, locale, content, model, generated_at, updated_at)
         VALUES (
             ${symbol},
             ${input.tab},
+            ${locale}::content_locale,
             ${JSON.stringify(input.content)}::jsonb,
             ${input.model},
             ${input.generatedAt.toISOString()}::timestamptz,
             now()
         )
-        ON CONFLICT (symbol, tab) DO UPDATE SET
+        ON CONFLICT (symbol, tab, locale) DO UPDATE SET
             content = EXCLUDED.content,
             model = EXCLUDED.model,
             generated_at = EXCLUDED.generated_at,
@@ -81,7 +92,9 @@ export async function seedSeoSnapshot(
         try {
             await sql`
                 DELETE FROM seo_analysis_snapshots
-                WHERE symbol = ${symbol} AND tab = ${input.tab}
+                WHERE symbol = ${symbol}
+                  AND tab = ${input.tab}
+                  AND locale = ${locale}::content_locale
             `;
         } finally {
             await sql.end();

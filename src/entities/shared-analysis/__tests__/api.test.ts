@@ -41,6 +41,7 @@ describe('DrizzleSharedAnalysisRepository', () => {
                 contentHash: 'h',
                 snapshot,
                 sharerTier: 'free',
+                locale: 'ko',
                 userId: null,
                 expiresAt: new Date('2026-07-06T00:00:00Z'),
             });
@@ -62,6 +63,7 @@ describe('DrizzleSharedAnalysisRepository', () => {
                 contentHash: 'h',
                 snapshot,
                 sharerTier: 'free',
+                locale: 'ko',
                 userId: null,
                 expiresAt: new Date('2026-07-06T00:00:00Z'),
             });

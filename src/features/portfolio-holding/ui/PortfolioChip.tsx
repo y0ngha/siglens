@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { useRef, useState } from 'react';
 import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
@@ -46,6 +47,8 @@ interface PortfolioChipProps {
  * `PortfolioChipPopover` never observes that transition.
  */
 export function PortfolioChip({ symbol }: PortfolioChipProps) {
+    const t = useTranslations('features.portfolio-holding');
+    const tMisc = useTranslations('shared.ui.misc');
     const [isOpen, setIsOpen] = useState(false);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const isMobileViewport = useIsMobileViewport();
@@ -77,8 +80,11 @@ export function PortfolioChip({ symbol }: PortfolioChipProps) {
     const currencyPrefix = currencyForSymbol(symbol) === 'KRW' ? '₩' : '$';
     const label =
         holding === null
-            ? '평단 설정'
-            : `평단 ${currencyPrefix}${trimTrailingZeros(holding.averagePrice)} · ${trimTrailingZeros(holding.quantity)}주`;
+            ? t('PortfolioChip.40c48c')
+            : tMisc('holdingAverage', {
+                  v0: `${currencyPrefix}${trimTrailingZeros(holding.averagePrice)}`,
+                  v1: trimTrailingZeros(holding.quantity),
+              });
 
     return (
         <div className="relative inline-block">

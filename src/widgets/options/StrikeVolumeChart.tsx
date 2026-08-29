@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import type { OptionsChain } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
@@ -93,6 +94,7 @@ export function StrikeVolumeChart({
     underlyingPrice,
     chain,
 }: StrikeVolumeChartProps) {
+    const t = useTranslations('widgets.options');
     const {
         containerRef,
         hoveredIndex,
@@ -154,10 +156,10 @@ export function StrikeVolumeChart({
         return (
             <div className="space-y-2 rounded-lg border border-secondary-700 bg-secondary-800 p-4">
                 <span className="text-sm font-medium text-secondary-300">
-                    Volume 분포 (Strike별)
+                    {t('StrikeVolumeChart.5ceb49')}
                 </span>
                 <p className="text-xs leading-relaxed text-secondary-500">
-                    이 만기에는 거래량 데이터가 없어요.
+                    {t('StrikeVolumeChart.7d0444')}
                 </p>
             </div>
         );
@@ -188,7 +190,7 @@ export function StrikeVolumeChart({
             className="relative space-y-2 rounded-lg border border-secondary-700 bg-secondary-800 p-4"
         >
             <span className="text-sm font-medium text-secondary-300">
-                Volume 분포 (Strike별)
+                {t('StrikeVolumeChart.5ceb49')}
             </span>
 
             <svg
@@ -197,10 +199,11 @@ export function StrikeVolumeChart({
                 aria-labelledby="volume-chart-title volume-chart-desc"
                 className="block w-full"
             >
-                <title id="volume-chart-title">Strike별 거래량 분포</title>
+                <title id="volume-chart-title">
+                    {t('StrikeVolumeChart.75cc47')}
+                </title>
                 <desc id="volume-chart-desc">
-                    Call과 Put의 오늘 거래량을 strike 가격대별로 막대그래프로
-                    표시합니다. 현재 주가는 세로선으로 강조됩니다.
+                    {t('StrikeVolumeChart.2156df')}
                 </desc>
 
                 <line
@@ -357,22 +360,30 @@ export function StrikeVolumeChart({
                                 Call Vol
                             </span>
                             <span className="tabular-nums">
-                                {hoveredRow.callVolume.toLocaleString()} 계약
+                                {t('StrikeVolumeChart.e3558e', {
+                                    v0: hoveredRow.callVolume.toLocaleString(),
+                                })}
                             </span>
                         </div>
                         <div className="flex items-center justify-between gap-3">
                             <span className="text-ui-danger-text">Put Vol</span>
                             <span className="tabular-nums">
-                                {hoveredRow.putVolume.toLocaleString()} 계약
+                                {t('StrikeVolumeChart.e3558e', {
+                                    v0: hoveredRow.putVolume.toLocaleString(),
+                                })}
                             </span>
                         </div>
                         <div className="mt-1 flex items-center justify-between gap-3 border-t border-secondary-700 pt-1">
-                            <span className="text-secondary-400">합계</span>
+                            <span className="text-secondary-400">
+                                {t('StrikeVolumeChart.3dcb27')}
+                            </span>
                             <span className="font-semibold tabular-nums">
-                                {(
-                                    hoveredRow.callVolume + hoveredRow.putVolume
-                                ).toLocaleString()}{' '}
-                                계약
+                                {t('StrikeVolumeChart.e3558e', {
+                                    v0: (
+                                        hoveredRow.callVolume +
+                                        hoveredRow.putVolume
+                                    ).toLocaleString(),
+                                })}
                             </span>
                         </div>
                     </>
@@ -401,12 +412,12 @@ export function StrikeVolumeChart({
                         className="inline-block w-[14px] border-t-[1.5px] border-solid border-ui-warning"
                         aria-hidden="true"
                     />
-                    현재가
+                    {t('StrikeVolumeChart.497d1e')}
                 </span>
             </div>
 
             <StrikeBarSrTable
-                caption="Strike별 거래량 데이터"
+                caption={t('StrikeVolumeChart.f5c9b8')}
                 headers={['Strike', 'Call Volume', 'Put Volume']}
                 rows={volumeByStrike.map(row => ({
                     key: row.strike,

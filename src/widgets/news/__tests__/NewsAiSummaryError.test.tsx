@@ -1,7 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NewsAiSummaryError } from '@/widgets/news/NewsAiSummaryError';
-import { FMP_TEMPORARY_UNAVAILABLE_MESSAGE } from '@/shared/api/fmp/fmpUserMessage';
 
 describe('NewsAiSummaryError', () => {
     it('renders error message from Error object', () => {
@@ -69,8 +68,5 @@ describe('NewsAiSummaryError', () => {
             />
         );
         expect(screen.getByText('FMP profile 429')).toBeInTheDocument();
-        expect(
-            screen.queryByText(FMP_TEMPORARY_UNAVAILABLE_MESSAGE)
-        ).not.toBeInTheDocument();
     });
 });

@@ -1,42 +1,52 @@
+import { useTranslations } from 'next-intl';
 import type { SignalType } from '@y0ngha/siglens-core';
 
-const SIGNAL_BADGE_LABELS: Record<SignalType, string> = {
-    rsi_oversold: 'RSI 과매도',
-    rsi_overbought: 'RSI 과매수',
-    golden_cross: '골든크로스',
-    death_cross: '데드크로스',
-    macd_bullish_cross: 'MACD 상승교차',
-    macd_bearish_cross: 'MACD 하락교차',
-    bollinger_lower_bounce: '볼린저 하단 반등',
-    bollinger_upper_breakout: '볼린저 상단 돌파',
-    bollinger_percentb_oversold: '볼린저 %B 과매도 반등',
-    bollinger_percentb_overbought: '볼린저 %B 과매수 반전',
-    rsi_bullish_divergence: 'RSI 상승 다이버전스',
-    rsi_bearish_divergence: 'RSI 하락 다이버전스',
-    macd_histogram_bullish_convergence: 'MACD 히스토그램 수렴(↑)',
-    macd_histogram_bearish_convergence: 'MACD 히스토그램 수렴(↓)',
-    bollinger_squeeze_bullish: '볼린저 스퀴즈(↑)',
-    bollinger_squeeze_bearish: '볼린저 스퀴즈(↓)',
-    support_proximity_bullish: '지지선 근접',
-    resistance_proximity_bearish: '저항선 근접',
-    supertrend_bullish_flip: 'Supertrend 전환',
-    ichimoku_cloud_breakout: 'Ichimoku 구름 돌파',
-    cci_bullish_cross: 'CCI 100 돌파',
-    dmi_bullish_cross: 'DMI 골든크로스',
-    cmf_bullish_flip: 'CMF 매집 전환',
-    mfi_oversold_bounce: 'MFI 과매도 반등',
-    parabolic_sar_flip: 'Parabolic SAR 전환',
-    keltner_upper_breakout: 'Keltner 상단 돌파',
-    squeeze_momentum_bullish: 'Squeeze 양전환',
-    keltner_lower_breakout: 'Keltner 하단 돌파',
-    supertrend_bearish_flip: 'Supertrend 하락 전환',
-    ichimoku_cloud_breakdown: 'Ichimoku 구름 이탈',
-    cci_bearish_cross: 'CCI 하락 교차',
-    dmi_bearish_cross: 'DMI 데드크로스',
-    cmf_bearish_flip: 'CMF 분산 전환',
-    mfi_overbought_reversal: 'MFI 과매수 반전',
-    parabolic_sar_bearish_flip: 'Parabolic SAR 하락 전환',
-    squeeze_momentum_bearish: 'Squeeze 음전환',
+/**
+ * 신호 라벨 **키**. `t()`는 소비 컴포넌트에서 부른다.
+ *
+ * 예전에는 한국어 문자열 36개가 여기 박혀 있어서 `/en/market`이
+ * `DMI 골든크로스`·`RSI 하락 다이버전스`를 그대로 렌더했다 — 대시보드에서
+ * 가장 눈에 띄는 텍스트다.
+ */
+const SIGNAL_BADGE_LABEL_KEY: Record<SignalType, string> = {
+    rsi_oversold: 'signalType.rsi_oversold',
+    rsi_overbought: 'signalType.rsi_overbought',
+    golden_cross: 'signalType.golden_cross',
+    death_cross: 'signalType.death_cross',
+    macd_bullish_cross: 'signalType.macd_bullish_cross',
+    macd_bearish_cross: 'signalType.macd_bearish_cross',
+    bollinger_lower_bounce: 'signalType.bollinger_lower_bounce',
+    bollinger_upper_breakout: 'signalType.bollinger_upper_breakout',
+    bollinger_percentb_oversold: 'signalType.bollinger_percentb_oversold',
+    bollinger_percentb_overbought: 'signalType.bollinger_percentb_overbought',
+    rsi_bullish_divergence: 'signalType.rsi_bullish_divergence',
+    rsi_bearish_divergence: 'signalType.rsi_bearish_divergence',
+    macd_histogram_bullish_convergence:
+        'signalType.macd_histogram_bullish_convergence',
+    macd_histogram_bearish_convergence:
+        'signalType.macd_histogram_bearish_convergence',
+    bollinger_squeeze_bullish: 'signalType.bollinger_squeeze_bullish',
+    bollinger_squeeze_bearish: 'signalType.bollinger_squeeze_bearish',
+    support_proximity_bullish: 'signalType.support_proximity_bullish',
+    resistance_proximity_bearish: 'signalType.resistance_proximity_bearish',
+    supertrend_bullish_flip: 'signalType.supertrend_bullish_flip',
+    ichimoku_cloud_breakout: 'signalType.ichimoku_cloud_breakout',
+    cci_bullish_cross: 'signalType.cci_bullish_cross',
+    dmi_bullish_cross: 'signalType.dmi_bullish_cross',
+    cmf_bullish_flip: 'signalType.cmf_bullish_flip',
+    mfi_oversold_bounce: 'signalType.mfi_oversold_bounce',
+    parabolic_sar_flip: 'signalType.parabolic_sar_flip',
+    keltner_upper_breakout: 'signalType.keltner_upper_breakout',
+    squeeze_momentum_bullish: 'signalType.squeeze_momentum_bullish',
+    keltner_lower_breakout: 'signalType.keltner_lower_breakout',
+    supertrend_bearish_flip: 'signalType.supertrend_bearish_flip',
+    ichimoku_cloud_breakdown: 'signalType.ichimoku_cloud_breakdown',
+    cci_bearish_cross: 'signalType.cci_bearish_cross',
+    dmi_bearish_cross: 'signalType.dmi_bearish_cross',
+    cmf_bearish_flip: 'signalType.cmf_bearish_flip',
+    mfi_overbought_reversal: 'signalType.mfi_overbought_reversal',
+    parabolic_sar_bearish_flip: 'signalType.parabolic_sar_bearish_flip',
+    squeeze_momentum_bearish: 'signalType.squeeze_momentum_bearish',
 };
 
 interface SignalBadgeProps {
@@ -59,9 +69,11 @@ interface SignalBadgeProps {
  * 즉 지금 조판이 이전의 일괄 대문자보다 정확하다.
  */
 export function SignalBadge({ type }: SignalBadgeProps) {
+    // 키를 그대로 넣어야 추출기가 이 파일에서 `shared.enumLabel`을 본다.
+    const tLabel = useTranslations('shared.enumLabel');
     return (
         <span className="text-xs text-secondary-300">
-            {SIGNAL_BADGE_LABELS[type]}
+            {tLabel(SIGNAL_BADGE_LABEL_KEY[type])}
         </span>
     );
 }

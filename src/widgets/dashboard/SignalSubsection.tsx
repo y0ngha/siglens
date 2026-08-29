@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import type { StockWithConflict } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
@@ -59,6 +60,7 @@ export function SignalSubsection({
     stocks,
     infoMessage,
 }: SignalSubsectionProps) {
+    const t = useTranslations('widgets.dashboard');
     const count = stocks.length.toString().padStart(2, '0');
 
     return (
@@ -96,7 +98,7 @@ export function SignalSubsection({
                         'font-mono text-xl text-secondary-200 tabular-nums',
                         VARIANT_COUNT_DIM[variant]
                     )}
-                    aria-label={`${stocks.length}개 종목`}
+                    aria-label={t('stockCount', { v0: stocks.length })}
                 >
                     {count}
                 </span>
@@ -106,7 +108,7 @@ export function SignalSubsection({
                     className="py-4 text-center text-xs text-secondary-500 italic"
                     role="status"
                 >
-                    오늘은 이 신호가 잡힌 종목이 없어요. 다른 섹터도 살펴보세요.
+                    {t('SignalSubsection.fe9464')}
                 </p>
             ) : (
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">

@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/react';
-import { EMPTY_MESSAGE } from '@/widgets/fundamental/sections/EmptySectionCard';
 import { FinancialHealthCard } from '@/widgets/fundamental/sections/FinancialHealthCard';
 import type {
     FundamentalRatiosInput,
     FundamentalFinancialScoresInput,
     FundamentalCashFlowInput,
 } from '@y0ngha/siglens-core';
+import { koMessage } from '@/shared/test-utils/koMessage';
 
 const SAMPLE_RATIOS = {
     debtRatioTTM: 0.3,
@@ -53,7 +53,11 @@ describe('FinancialHealthCard', () => {
         expect(
             screen.getByRole('heading', { name: '재무 건전성' })
         ).toBeInTheDocument();
-        expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                koMessage('widgets.financials.section.emptySection')
+            )
+        ).toBeInTheDocument();
     });
 
     it('renders metrics when only some data provided (partial null tolerated)', () => {

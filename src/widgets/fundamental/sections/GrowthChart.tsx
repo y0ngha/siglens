@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { FundamentalGrowthInput } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
 import { cn } from '@/shared/lib/cn';
@@ -93,11 +94,12 @@ function GrowthBar({ label, value, description }: GrowthBarProps) {
 
 /** RSC section: YoY revenue and EPS growth bars (inline SVG). */
 export function GrowthChart({ growth }: GrowthChartProps) {
+    const t = useTranslations('widgets.fundamental');
     if (growth === null) {
         return (
             <EmptySectionCard
                 headingId={HEADING_ID}
-                title="성장성"
+                title={t('GrowthChart.9b388e')}
                 headingClassName={HEADING_CLASS_NAME}
             />
         );
@@ -109,19 +111,19 @@ export function GrowthChart({ growth }: GrowthChartProps) {
             className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
-                성장성
+                {t('GrowthChart.9b388e')}
             </h2>
             <p className="mb-4 text-xs text-secondary-400">
-                전년 동기 대비(YoY) 성장률
+                {t('GrowthChart.7de762')}
             </p>
             <div className="divide-y divide-secondary-700/50">
                 <GrowthBar
-                    label="매출 성장률"
+                    label={t('GrowthChart.06ae38')}
                     value={growth.growthRevenue}
                     description="Revenue YoY"
                 />
                 <GrowthBar
-                    label="EPS 성장률"
+                    label={t('GrowthChart.5106ed')}
                     value={growth.growthEPS}
                     description="EPS YoY"
                 />

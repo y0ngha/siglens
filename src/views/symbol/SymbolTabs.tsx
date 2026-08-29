@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useEffect, useRef } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
@@ -10,6 +10,7 @@ import {
     marketProfileOf,
 } from '@/shared/config/marketProfile';
 import { tabsFor } from './utils/symbolTabsConfig';
+import { useAppPathname } from '@/shared/i18n/useAppPathname';
 
 interface SymbolTabsProps {
     /** Ticker symbol. Will be uppercased internally. */
@@ -18,7 +19,16 @@ interface SymbolTabsProps {
 
 /** Header nav strip for the 4 analysis pages of a symbol. Uses nav + aria-current (URL-based, not tablist). */
 export function SymbolTabs({ symbol }: SymbolTabsProps) {
-    const pathname = usePathname();
+    const t = useTranslations('views.symbol');
+    // 탭 href(`/AAPL/news`)는 로케일 접두사가 없다. 접두사가 붙은 경로로
+    // 비교하면 en/ja/zh에서 활성 탭 표시와 `aria-current`가 통째로 꺼진다.
+    const pathname = useAppPathname();
+    // 전용 네임스페이스 — 키가 배열에서 오므로 추출기에는 동적 조회다.
+    // `manualKeys.preserve`에 `shared.symbolTab`이 등록돼 있어야 유지된다.
+    //
+    // 아래 로딩 분기(`assetInfo === undefined`)보다 **위**여야 한다. 그 뒤에
+    // 두면 로딩 렌더에서만 훅이 하나 줄어 훅 순서가 깨진다.
+    const tTab = useTranslations('shared.symbolTab');
     const assetInfo = useAssetInfo(symbol);
     const railRef = useRef<HTMLElement>(null);
     const activeRef = useRef<HTMLAnchorElement>(null);
@@ -73,7 +83,7 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
     return (
         <nav
             ref={railRef}
-            aria-label="분석 종류"
+            aria-label={t('SymbolTabs.765f05')}
             // overflow-x-auto만 두면 CSS 명세상 overflow-y가 visible→auto로 승격되고,
             // 각 탭 링크의 -mb-px가 1px 세로 오버플로를 만들어 모바일에서 원치 않는
             // 세로 스크롤(바)이 생긴다. overflow-y-hidden으로 세로 스크롤을 차단하고
@@ -88,12 +98,12 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
                 `min-w-max`는 탭이 뷰포트보다 넓어질 때 줄어들지 않게 해 `nav`의
                 가로 스크롤을 살린다. */}
             <div className="flex min-w-max">
-                {tabs.map(t => {
-                    const href = t.hrefBuilder(upper);
+                {tabs.map(tab => {
+                    const href = tab.hrefBuilder(upper);
                     const active = pathname === href;
                     return (
                         <Link
-                            key={t.key}
+                            key={tab.key}
                             ref={active ? activeRef : undefined}
                             href={href}
                             // 탭은 전부 같은 심볼의 형제 라우트라 viewport에 동시에 들어온다.
@@ -112,7 +122,7 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
                                     : 'text-secondary-400 hover:text-secondary-100'
                             )}
                         >
-                            {t.label}
+                            {tTab(tab.labelKey)}
                         </Link>
                     );
                 })}

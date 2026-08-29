@@ -1,7 +1,13 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 
 import { FundamentalAiSummaryError } from '../FundamentalAiSummaryError';
-import { FMP_TEMPORARY_UNAVAILABLE_MESSAGE } from '@/shared/api/fmp/fmpUserMessage';
+import koMessages from '../../../../messages/ko.json';
+
+/**
+ * 컴포넌트는 이제 **키가 아니라 번역된 문구**를 렌더한다. 키 상수를 그대로
+ * 단언하면 번역 배선이 빠져도 통과한다(예전에는 상수가 곧 문구였다).
+ */
+const FMP_BUSY_TEXT = koMessages.shared.api.fmpBusy;
 
 describe('FundamentalAiSummaryError 컴포넌트는', () => {
     describe('에러 메시지 표시에서', () => {
@@ -39,9 +45,7 @@ describe('FundamentalAiSummaryError 컴포넌트는', () => {
                 />
             );
 
-            expect(screen.getByRole('alert')).toHaveTextContent(
-                FMP_TEMPORARY_UNAVAILABLE_MESSAGE
-            );
+            expect(screen.getByRole('alert')).toHaveTextContent(FMP_BUSY_TEXT);
         });
 
         it('제목을 표시한다', () => {

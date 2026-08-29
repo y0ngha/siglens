@@ -160,7 +160,7 @@ describe('toIsoDateTime', () => {
 describe('etDateTimeToKst', () => {
     it('EDT 구간: ET 19:30 → KST 다음날 08:30 (날짜 롤오버)', () => {
         // '2026-06-19 19:30:00' ET(-04:00) = '2026-06-19T23:30:00Z' = KST 2026-06-20 08:30
-        const result = etDateTimeToKst('2026-06-19 19:30:00');
+        const result = etDateTimeToKst('2026-06-19 19:30:00', 'ko');
         expect(result.iso).toBe('2026-06-19T19:30:00-04:00');
         expect(result.kstDateKey).toBe('2026-06-20');
         expect(result.kstTimeLabel).toBe('오전 8:30');
@@ -168,7 +168,7 @@ describe('etDateTimeToKst', () => {
 
     it('EST 구간: ET 09:30 → KST 같은날 23:30 (날짜 롤오버 없음)', () => {
         // '2026-12-10 09:30:00' ET(-05:00) = '2026-12-10T14:30:00Z' = KST 2026-12-10 23:30
-        const result = etDateTimeToKst('2026-12-10 09:30:00');
+        const result = etDateTimeToKst('2026-12-10 09:30:00', 'ko');
         expect(result.iso).toBe('2026-12-10T09:30:00-05:00');
         expect(result.kstDateKey).toBe('2026-12-10');
         expect(result.kstTimeLabel).toBe('오후 11:30');
@@ -176,7 +176,7 @@ describe('etDateTimeToKst', () => {
 
     it('DST 경계: 봄 전환일 전날 ET 23:00 → KST 다음날 (EST offset)', () => {
         // '2026-03-07 23:00:00' ET(-05:00) = '2026-03-08T04:00:00Z' = KST 2026-03-08 13:00
-        const result = etDateTimeToKst('2026-03-07 23:00:00');
+        const result = etDateTimeToKst('2026-03-07 23:00:00', 'ko');
         expect(result.iso).toBe('2026-03-07T23:00:00-05:00');
         expect(result.kstDateKey).toBe('2026-03-08');
         expect(result.kstTimeLabel).toBe('오후 1:00');
@@ -184,7 +184,7 @@ describe('etDateTimeToKst', () => {
 
     it('EDT → EST 전환 직후: ET 03:00 → KST (EST offset)', () => {
         // '2026-11-01 03:00:00' ET(-05:00) = '2026-11-01T08:00:00Z' = KST 2026-11-01 17:00
-        const result = etDateTimeToKst('2026-11-01 03:00:00');
+        const result = etDateTimeToKst('2026-11-01 03:00:00', 'ko');
         expect(result.iso).toBe('2026-11-01T03:00:00-05:00');
         expect(result.kstDateKey).toBe('2026-11-01');
         expect(result.kstTimeLabel).toBe('오후 5:00');
@@ -192,13 +192,13 @@ describe('etDateTimeToKst', () => {
 
     it('iso 필드는 ET offset이 부착된 ISO-8601 (7월=EDT -04:00)', () => {
         // 동어반복(toIsoDateTime과 자기 비교) 대신 구체적 기대값으로 검증.
-        const result = etDateTimeToKst('2026-07-04 14:00:00');
+        const result = etDateTimeToKst('2026-07-04 14:00:00', 'ko');
         expect(result.iso).toBe('2026-07-04T14:00:00-04:00');
     });
 
     it('kstDateKey 형식은 YYYY-MM-DD', () => {
         // '2026-06-19 09:00:00' EDT(-04:00) → UTC 13:00 → KST +9h = 2026-06-19 22:00 (날짜 동일)
-        const result = etDateTimeToKst('2026-06-19 09:00:00');
+        const result = etDateTimeToKst('2026-06-19 09:00:00', 'ko');
         expect(result.kstDateKey).toBe('2026-06-19');
         expect(result.kstDateKey).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
@@ -206,15 +206,45 @@ describe('etDateTimeToKst', () => {
     it('formatToParts 변경 후 날짜 롤오버 케이스 kstDateKey 동일성 보장', () => {
         // ET '2026-06-19 19:30:00'(-04:00) → UTC 23:30 → KST +9h = 2026-06-20 08:30
         // en-CA 대신 formatToParts를 써도 같은 '2026-06-20'이 나와야 한다.
-        const result = etDateTimeToKst('2026-06-19 19:30:00');
+        const result = etDateTimeToKst('2026-06-19 19:30:00', 'ko');
         expect(result.kstDateKey).toBe('2026-06-20');
         expect(result.kstDateKey).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
 
     it('1자리 월/일도 2자리 패딩(01, 09)된다', () => {
         // '2026-01-02 09:00:00' EST(-05:00) → UTC 14:00 → KST +9h = 2026-01-02 23:00
-        const result = etDateTimeToKst('2026-01-02 09:00:00');
+        const result = etDateTimeToKst('2026-01-02 09:00:00', 'ko');
         expect(result.kstDateKey).toBe('2026-01-02');
         expect(result.kstDateKey).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
+});
+
+/**
+ * 로케일 + 오전/오후 회귀.
+ *
+ * 예전에는 포맷터가 `'ko-KR'` 고정이었고, 캘린더 월 셀은 그 결과를
+ * 정규식으로 오전·오후 접두사를 깎아 폭을 맞췄다. 로케일을 따르게 만든
+ * 순간 그 깎기가 무력해져 `8:30 AM`·`午前8:30`·`上午8:30`이 셀을 넘쳤다 —
+ * 문자열 후처리가 아니라 **포맷 옵션**으로 껐다.
+ */
+describe('etDateTimeToKst — 로케일과 hour12', () => {
+    const ET = '2026-01-12 18:30';
+
+    it('ko 기본은 오전/오후를 붙인다', () => {
+        expect(etDateTimeToKst(ET, 'ko').kstTimeLabel).toMatch(/^오전|^오후/);
+    });
+
+    it.each(['en', 'ja', 'zh'] as const)('%s는 한글을 쓰지 않는다', locale => {
+        expect(etDateTimeToKst(ET, locale).kstTimeLabel).not.toMatch(/[가-힣]/);
+    });
+
+    it.each(['ko', 'en', 'ja', 'zh'] as const)(
+        '%s: hour12=false면 오전/오후 표기가 없다',
+        locale => {
+            const label = etDateTimeToKst(ET, locale, false).kstTimeLabel;
+
+            expect(label).not.toMatch(/오전|오후|AM|PM|午前|午後|上午|下午/);
+            expect(label).toMatch(/\d/);
+        }
+    );
 });

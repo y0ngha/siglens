@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import {
     ET_MARKET_HOURS_DISPLAY,
     KST_EDT_HOURS_DISPLAY,
@@ -37,6 +38,7 @@ import { useHydrated } from '@/shared/hooks/useHydrated';
  * 마운트 이후에만 실제 DST 값을 채운다 — React 하이드레이션 불일치(#418) 방지.
  */
 export function OptionsStaleDataBanner() {
+    const t = useTranslations('widgets.options');
     const isHydrated = useHydrated();
     // DST 판정은 마운트 후에만 수행 — SSR·첫 CSR 렌더에서 new Date()가 다르면
     // 하이드레이션 불일치(React #418)가 발생하므로 isHydrated로 게이팅한다.
@@ -45,33 +47,37 @@ export function OptionsStaleDataBanner() {
     const currentKstWindow = inEdt
         ? KST_EDT_HOURS_DISPLAY
         : KST_EST_HOURS_DISPLAY;
-    const currentDstLabel = inEdt ? '서머타임(EDT)' : '표준시(EST)';
+    const currentDstLabel = inEdt
+        ? t('OptionsStaleDataBanner.951cc7')
+        : t('OptionsStaleDataBanner.92d2c9');
 
     return (
         <div
             role="status"
             className="rounded-lg border border-ui-warning bg-ui-warning/10 px-3 py-2 text-xs leading-relaxed text-ui-warning-text"
         >
-            <p className="font-semibold">옵션 OI 데이터가 비어 있어요</p>
+            <p className="font-semibold">
+                {t('OptionsStaleDataBanner.6ac929')}
+            </p>
             <div className="mt-1 space-y-1">
+                <p>{t('OptionsStaleDataBanner.baed2a')}</p>
                 <p>
-                    미국 정규장 마감 후에는 Yahoo가 Open Interest, 호가, IV 같은
-                    수치를 갱신하지 않아 일시적으로 공백이에요.
+                    {t('OptionsStaleDataBanner.c5ab1a', {
+                        v0: ET_MARKET_HOURS_DISPLAY,
+                    })}
                 </p>
                 <p>
-                    정확한 수치는 미국 정규장 시간({ET_MARKET_HOURS_DISPLAY},
-                    휴장일을 뺀 평일)에 다시 확인해 주세요. 미국 증시 휴장일과
-                    조기 마감일(13:00 ET)에는 그 시간대에도 갱신되지 않아요.
-                </p>
-                <p>
-                    한국 시간으로는 서머타임(EDT) 기간이면{' '}
-                    {KST_EDT_HOURS_DISPLAY}, 표준시(EST) 기간이면{' '}
-                    {KST_EST_HOURS_DISPLAY}이에요.
+                    {t('OptionsStaleDataBanner.2696b9', {
+                        v0: KST_EDT_HOURS_DISPLAY,
+                        v1: KST_EST_HOURS_DISPLAY,
+                    })}
                 </p>
                 {isHydrated && (
                     <p>
-                        지금은 {currentDstLabel} 기간이니, {currentKstWindow}에
-                        확인해 주세요.
+                        {t('OptionsStaleDataBanner.6bdf35', {
+                            v0: currentDstLabel,
+                            v1: currentKstWindow,
+                        })}
                     </p>
                 )}
             </div>

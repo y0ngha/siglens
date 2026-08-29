@@ -230,6 +230,14 @@ core는 이 I/O를 인터페이스 뒤에 숨긴다. `siglens`는 factory 함수
 > 분석과 무관한 외부 시스템(이메일 SMTP, 인증 DB, OAuth 토큰 revoke 등)은
 > core가 아니라 `siglens`로 간다. Step 2를 다시 본다.
 
+> **예외 — 사후 번역.** 이미 생성된 분석 산문을 다른 언어로 옮기는 LLM 호출은
+> 위 목록의 "AI provider 호출"처럼 보이지만 **core가 아니라 `siglens` 소유**다.
+> 분석을 만들지 않고 이미 만들어진 결과의 표현만 바꾸는 프레젠테이션 가공이며,
+> 판단·수치·enum을 건드리지 않는다. core의 프롬프트·캐시 키·
+> `PROMPT_TEMPLATE_VERSION`과 무관하게 동작해야 하므로 core에 넣으면
+> 로케일 축이 분석 캐시 키에 새어 들어간다.
+> 구현: `src/entities/analysis-translation/`.
+
 ### Step 6 — 위 어디에도 해당하지 않는가?
 
 ```

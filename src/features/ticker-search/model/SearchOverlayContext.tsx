@@ -11,6 +11,8 @@ import {
     type ReactNode,
 } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import { useSearchOverlay } from '../hooks/useSearchOverlay';
 import { NavigationProgressBar } from '../ui/NavigationProgressBar';
 import { SearchOverlay } from '../ui/SearchOverlay';
@@ -62,6 +64,7 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
 
     const { isOpen, open, close, dismissForNavigation } = useSearchOverlay();
     const router = useRouter();
+    const toLocalePath = useLocalePath();
     const pathname = usePathname();
     const [isNavigating, startNavigation] = useTransition();
 
@@ -87,16 +90,20 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
             // 호출 결과를 그대로 돌려준다. 지금 라우터는 void를 반환하지만, React 19의
             // transition은 콜백이 promise를 돌려주면 그게 끝날 때까지 pending을
             // 유지한다 — 반환을 삼키면 그 연결이 끊긴다.
+            //
+            // 경로에 **로케일 접두사를 붙인다**. `/${symbol}`을 그대로 밀면
+            // `/ja`에서 고른 종목이 ko 페이지로 간다 — `useAutocomplete`가 같은
+            // 이유로 `toLocalePath`를 쓴다.
+            const href = toLocalePath(`/${symbol}`);
             startNavigation(() =>
-                hasOwnHistoryEntry
-                    ? router.replace(`/${symbol}`)
-                    : router.push(`/${symbol}`)
+                hasOwnHistoryEntry ? router.replace(href) : router.push(href)
             );
         },
-        [dismissForNavigation, router]
+        [dismissForNavigation, router, toLocalePath]
     );
     // 소비자는 `open`만 필요하다. `isOpen`을 값에 넣으면 오버레이가 열리고 닫힐 때마다
     // 전 소비자가 리렌더된다 — 헤더는 모든 라우트에 있으므로 그 비용이 전역이다.
+    const t = useTranslations('features.ticker-search');
     const value = useMemo(() => ({ open }), [open]);
 
     // 도착했거나(라우트 변경) 사용자가 물러났으면(popstate) 표시를 끝낸다.
@@ -121,7 +128,7 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
                 마운트해 두고 내용만 바꾼다(빈 문자열 ↔ 문구). */}
             <span role="status" className="sr-only">
                 {isNavigating && isNavigationPending
-                    ? '종목 페이지로 이동 중'
+                    ? t('search.navigating')
                     : ''}
             </span>
         </SearchOverlayContext>

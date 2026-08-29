@@ -56,11 +56,26 @@ const CONGRESS_AI_SUMMARY_KO = '최근 의회 거래는 매수 우세예요.';
 // Empty-state copy from CongressTradesEmpty
 const CONGRESS_EMPTY_TABLE_COPY = '거래 내역 없음';
 
-// Forced error text rendered by CongressTrendSummaryError.
-// getFmpUserFacingMessage returns null for this generic message, so the
-// component falls back to error.message.
+/**
+ * **사용자에게 보이는 것은 서버가 준 문구가 아니라 `code`를 번역한 문구다.**
+ *
+ * core는 `fetch_failed`에 항상 `error`를 채우는데 그건 `String(error)` 같은
+ * **영어 예외 문자열**이다. 예전에는 그걸 그대로 렌더해서 전 로케일에 원시
+ * 예외가 나갔다. 지금은 훅이 `code`로 카탈로그 문구를 고르고, 원문은
+ * 개발자용으로 `console.error('[fetchFailed]', …)`에만 남긴다
+ * (`widgets/<x>/hooks/use*Analysis.ts` — JSDoc 안에서는 경로에 `*` + `/`를
+ * 붙여 쓰면 블록 주석이 거기서 끝난다).
+ *
+ * 그래서 이 스펙은 **둘 다** 본다 — 화면의 번역 문구와, 콘솔의 원문.
+ * 번역 문구만 보면 "강제 오류가 났다"와 "그냥 조회에 실패했다"를 구분하지
+ * 못해 테스트가 힘을 잃는다(실제로 이 시더/스펙이 그 상태로 통과하고 있었다).
+ */
+/** 훅이 콘솔에만 남기는 원문 — 강제 오류 경로가 실제로 탔다는 증거. */
 const CONGRESS_FORCED_ERROR_TEXT =
     'E2E 강제 congress 동향 분석 실패 (resilience 테스트용)';
+
+/** 화면에 나오는 문구 — `app.api.stream.congressFetchFailed`. */
+const CONGRESS_FETCH_FAILED_KO = '의회 거래 데이터를 불러오지 못했습니다.';
 
 // FakeCongressTradesProvider senate/house fixture amount strings — present in
 // the SSR table when trades render.
@@ -175,15 +190,36 @@ test.describe('congress: resilience', () => {
             },
         ]);
 
+        // 콘솔은 이동 **전에** 걸어야 첫 렌더의 로그를 놓치지 않는다.
+        const consoleErrors: string[] = [];
+        page.on('console', msg => {
+            if (msg.type() === 'error') consoleErrors.push(msg.text());
+        });
+
         await page.goto('/AAPL/congress');
 
-        // The AI error section renders with the forced error message.
-        // CongressTrendSummaryError renders `error.message` via role="alert".
+        // 화면에는 번역된 문구가 나온다(원시 예외가 아니라).
         await expect(
             page.getByRole('alert').filter({
-                hasText: CONGRESS_FORCED_ERROR_TEXT,
+                hasText: CONGRESS_FETCH_FAILED_KO,
             })
         ).toBeVisible({ timeout: 10_000 });
+
+        // 원문은 개발자용으로 콘솔에 남는다 — 이게 "강제 오류가 실제로 났다"의 증거다.
+        await expect
+            .poll(
+                () =>
+                    consoleErrors.some(line =>
+                        line.includes(CONGRESS_FORCED_ERROR_TEXT)
+                    ),
+                { timeout: 10_000 }
+            )
+            .toBe(true);
+
+        // 원시 예외 문자열이 화면에 새지 않는다.
+        await expect(
+            page.getByText(CONGRESS_FORCED_ERROR_TEXT, { exact: false })
+        ).toHaveCount(0);
 
         // The AI section heading is still "AI 동향 해석" in the error view.
         await expect(
@@ -218,7 +254,7 @@ test.describe('congress: resilience', () => {
 
         // Error message disappears and the cached AI summary renders.
         await expect(
-            page.getByText(CONGRESS_FORCED_ERROR_TEXT, { exact: false })
+            page.getByText(CONGRESS_FETCH_FAILED_KO, { exact: false })
         ).toHaveCount(0, { timeout: 10_000 });
         await expect(
             page.getByText(CONGRESS_AI_SUMMARY_KO, { exact: false })

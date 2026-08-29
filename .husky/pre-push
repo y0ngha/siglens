@@ -5,10 +5,10 @@ echo "🔍 Running pre-push checks..."
 
 tmp_dir=$(mktemp -d)
 status=0
-total_checks=5
+total_checks=6
 
 if [ "${SIGLENS_RELEASE_E2E:-}" = "1" ]; then
-    total_checks=6
+    total_checks=7
 fi
 
 cleanup() {
@@ -48,11 +48,15 @@ wait "$pid_format" || status=1
 wait "$pid_lint" || status=1
 
 run_check "3/$total_checks typecheck" "$tmp_dir/typecheck.log" yarn typecheck || status=1
-run_check "4/$total_checks test" "$tmp_dir/test.log" yarn test:quiet || status=1
-run_check "5/$total_checks build" "$tmp_dir/build.log" yarn build || status=1
+# i18n 게이트: 키 패리티·ICU 따옴표·한글 잔존·용어집, 그리고 미추출 한국어 기준선.
+# 둘 다 초 단위이고 모델을 부르지 않는다(결정적) — 사람이 손으로 칠 때만 도는
+# 게이트는 결국 돌지 않는다.
+run_check "4/$total_checks i18n" "$tmp_dir/i18n.log" sh -c 'yarn i18n:lint && yarn i18n:verify' || status=1
+run_check "5/$total_checks test" "$tmp_dir/test.log" yarn test:quiet || status=1
+run_check "6/$total_checks build" "$tmp_dir/build.log" yarn build || status=1
 
 if [ "${SIGLENS_RELEASE_E2E:-}" = "1" ]; then
-    run_check "6/$total_checks e2e" "$tmp_dir/e2e.log" yarn e2e || status=1
+    run_check "7/$total_checks e2e" "$tmp_dir/e2e.log" yarn e2e || status=1
 fi
 
 if [ "$status" -ne 0 ]; then
