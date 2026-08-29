@@ -3007,7 +3007,7 @@
     },
     {
         "file": "src/shared/i18n/locales.ts",
-        "line": 46,
+        "line": 59,
         "reason": "native-language-label",
         "text": "한국어"
     },
