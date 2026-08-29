@@ -130,10 +130,14 @@ interface SideBadgeProps {
 
 function SideBadge({ side }: SideBadgeProps) {
     const tLabel = useTranslations('shared.enumLabel');
-    const label = tLabel(SIDE_LABEL[side]);
-    if (!label) {
+    // 빈 문자열 센티넬은 **번역 전**에 걸러야 한다. `t('')`는 빈 값이 아니라
+    // 폴백 문자열 `shared.enumLabel.`을 돌려주기 때문에(truthy) 번역 결과로
+    // 판정하면 가드가 죽고 raw 키가 그대로 배지에 찍힌다.
+    const sideKey = SIDE_LABEL[side];
+    if (!sideKey) {
         return <span className={cn('text-xs', SIDE_CLASS[side])}>—</span>;
     }
+    const label = tLabel(sideKey);
     return (
         <span
             className={cn(
@@ -153,8 +157,10 @@ interface OwnerBadgeProps {
 
 function OwnerBadge({ owner }: OwnerBadgeProps) {
     const tLabel = useTranslations('shared.enumLabel');
-    const label = tLabel(OWNER_LABEL[owner]);
-    if (!label) return null;
+    // SideBadge와 동일 — 센티넬은 번역 전에 판정한다.
+    const ownerKey = OWNER_LABEL[owner];
+    if (!ownerKey) return null;
+    const label = tLabel(ownerKey);
     return (
         <span className="rounded bg-secondary-700 px-1.5 py-0.5 text-xs text-secondary-300">
             {label}

@@ -374,6 +374,7 @@
                 "3c87a9": "Could not load Earnings schedule.",
                 "42ddbe": "Summarizes {v0} trading details disclosed by U.S. Senate and House members under the STOCK Act. It shows the transaction date, disclosure date, buy/sell classification, and estimated amount range. Considering the disclosure delay of approximately 45 days, AI summarizes recent Congressional trading trends.",
                 "465a63": "{v0} Financial Statements",
+                "4e7e6f": "While <link>{v1}</link> blends many assets to show sentiment across {v0}, this page scores {v2} alone by mapping its volume flow, order flow and price position against that stock’s own distribution.",
                 "5c38df": "Could not load analyst trends.",
                 "6723ea": "Earnings Schedule",
                 "69d338": "My Position",
@@ -788,7 +789,8 @@
         "pwa-install": {
             "IosInstallModal": {
                 "2c8570": "Add to Home Screen",
-                "94b7db": "Close"
+                "94b7db": "Close",
+                "stepAlt": "Install step {v0} screenshot"
             },
             "PwaBanner": {
                 "15236a": "Install",

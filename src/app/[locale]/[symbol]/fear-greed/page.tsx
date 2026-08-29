@@ -302,6 +302,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                     {t.rich('page.4e7e6f', {
                         v0: t(marketFearGreedLink.marketLabelKey),
                         v1: t(marketFearGreedLink.labelKey),
+                        v2: displayName,
                         link: chunks => (
                             <Link
                                 href={marketFearGreedLink.href}

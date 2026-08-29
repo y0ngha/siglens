@@ -1,3 +1,4 @@
+import type { Page } from '@playwright/test';
 import { test, expect } from '../support/fixtures';
 import { clickHeaderNavRegion } from '../support/headerNav';
 
@@ -24,6 +25,27 @@ import { clickHeaderNavRegion } from '../support/headerNav';
  *   - `/fear-greed/kr`은 `e2eFearGreedFixture`가 결정적 종가를 주므로 게이지까지 렌더된다.
  *   - 뉴스는 `FakeMarketNewsClient`가 카테고리 무관 픽스처를 주므로 카드가 렌더된다.
  */
+
+/**
+ * 지역 탭을 눌러 다른 지역으로 이동한다.
+ *
+ * **왜 헬퍼인가**: 활성 지역은 링크가 아니라 `<span aria-current="page">`다. 즉
+ * 내비게이션이 시작되는 순간 방금 누른 앵커가 DOM에서 사라진다. Playwright는
+ * 클릭 직전 actionability(보임·활성·위치 안정)를 재확인하는데, 그 사이에 요소가
+ * detach되면 **클릭이 이미 성사됐는데도** 재시도 루프에 들어가 다시는 나타나지
+ * 않을 링크를 기다린다. CI에서 정확히 이 자리가 20초 타임아웃으로 죽었다
+ * (실패 스냅샷은 이미 목적지 URL이었다).
+ *
+ * 그래서 h1이 보일 때까지 기다려 스트리밍·레이아웃이 멎은 뒤에 누른다 —
+ * 안정성 판정이 길어질수록 교체 창에 걸릴 확률이 올라가기 때문이다.
+ */
+async function clickRegionTab(page: Page, region: string) {
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await page
+        .getByRole('navigation', { name: '지역 선택' })
+        .getByRole('link', { name: region })
+        .click();
+}
 
 const NEW_ROUTES = [
     { path: '/news/us', heading: /미국 시장 뉴스/ },
@@ -80,16 +102,10 @@ test.describe('지역 탭', () => {
 
     test('탭으로 지역을 오갈 수 있어요 (happy)', async ({ page }) => {
         await page.goto('/market');
-        await page
-            .getByRole('navigation', { name: '지역 선택' })
-            .getByRole('link', { name: '한국' })
-            .click();
+        await clickRegionTab(page, '한국');
         await expect(page).toHaveURL(/\/market\/kr$/);
 
-        await page
-            .getByRole('navigation', { name: '지역 선택' })
-            .getByRole('link', { name: '미국' })
-            .click();
+        await clickRegionTab(page, '미국');
         await expect(page).toHaveURL(/\/market$/);
     });
 

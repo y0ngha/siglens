@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures';
+import { LOCALE_SWITCHER_VISIBLE } from '@/shared/i18n/locales';
 
 /**
  * 로케일 라우팅 스모크.
@@ -47,9 +48,20 @@ test.describe('로케일 라우팅', () => {
     });
 
     test('언어 스위처가 경로를 유지한 채 로케일을 바꾼다', async ({ page }) => {
+        // 스위처는 현재 제품 결정으로 숨겨져 있다(한국어 고정). 라우팅·카탈로그·AI
+        // 출력 언어는 그대로 살아 있으므로 위 테스트들이 계속 실질 위험을 지킨다.
+        // `LOCALE_SWITCHER_VISIBLE`을 다시 켜면 이 테스트도 함께 살아난다.
+        test.skip(
+            !LOCALE_SWITCHER_VISIBLE,
+            '언어 스위처가 숨김 상태 — LOCALE_SWITCHER_VISIBLE=false'
+        );
         await page.goto('/market');
-        const switcher = page.getByRole('combobox', { name: /언어|language/i });
-        await switcher.selectOption('en');
+        // `<select>`가 아니라 팝오버 라디오그룹이다.
+        await page.getByRole('button', { name: /언어|language/i }).click();
+        await page
+            .getByRole('radiogroup', { name: /언어|language/i })
+            .getByRole('radio', { name: 'English' })
+            .click();
         await page.waitForURL('**/en/market');
         await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     });

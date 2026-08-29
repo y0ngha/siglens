@@ -18,6 +18,19 @@ export type Locale = (typeof LOCALES)[number];
  */
 export const DEFAULT_LOCALE = 'ko' satisfies Locale;
 
+/**
+ * 언어 전환 UI를 화면에 낼지.
+ *
+ * **지금은 끈다 — 한국어 고정으로 공개한다.** 다국어 자체(라우팅·카탈로그·
+ * AI 산출물 언어)는 전부 살아 있고, 사용자가 언어를 **고를 수단**만 감춘다.
+ * `/en/AAPL` 같은 URL은 그대로 동작하므로 hreflang·사이트맵·크롤러 경로에는
+ * 영향이 없다.
+ *
+ * 여는 시점에 이 값만 `true`로 바꾸면 된다 — 헤더와 모바일 드로어가 같은
+ * 플래그를 본다. 컴포넌트를 지우지 않는 이유가 그것이다.
+ */
+export const LOCALE_SWITCHER_VISIBLE = false;
+
 /** 타입 가드 — 신뢰 경계(URL 세그먼트, 쿠키)에서 검증에 쓴다. */
 /**
  * `Intl` API에 넘길 BCP-47 태그.

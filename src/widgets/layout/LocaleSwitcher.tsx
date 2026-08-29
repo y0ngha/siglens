@@ -175,7 +175,16 @@ export function LocaleSwitcher({
                 title={t('localeSwitcher.current', {
                     v0: LOCALE_NATIVE_LABEL[locale],
                 })}
-                className="flex h-11 w-11 items-center justify-center gap-1.5 rounded-lg px-0 text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none disabled:text-secondary-500 sm:w-auto sm:px-2"
+                className={cn(
+                    'flex h-11 items-center justify-center gap-1.5 rounded-lg text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none disabled:text-secondary-500',
+                    /*
+                     * 라벨이 **보일 때는 정사각 고정을 푼다.** 모바일 헤더는
+                     * 아이콘만 남으므로 44px 정사각으로 형제(검색·햄버거)와
+                     * 폭을 맞추지만, 드로어처럼 라벨을 강제한 자리에서 그 폭을
+                     * 유지하면 아이콘+글자가 44px 안에 갇혀 왼쪽 벽에 달라붙는다.
+                     */
+                    showLabel ? 'px-2' : 'w-11 px-0 sm:w-auto sm:px-2'
+                )}
             >
                 <GlobeIcon />
                 <span

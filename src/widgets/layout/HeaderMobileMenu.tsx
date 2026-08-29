@@ -13,6 +13,7 @@ import {
 import { createPortal } from 'react-dom';
 import { cn } from '@/shared/lib/cn';
 import { LocaleSwitcher } from './LocaleSwitcher';
+import { LOCALE_SWITCHER_VISIBLE } from '@/shared/i18n/locales';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import type { NavVerticalNode } from './headerNavTree';
@@ -211,13 +212,15 @@ export function HeaderMobileMenu({
                             {/* 언어 전환은 내비게이션 항목이 아니라 설정이므로
                                 <nav> 밖에 둔다 — 안에 넣으면 스크린리더가 메뉴
                                 링크 목록의 일부로 읽는다. */}
-                            <div className="border-b border-secondary-700 px-2 py-2">
-                                <LocaleSwitcher
-                                    tabIndex={isOpen ? undefined : -1}
-                                    showLabel
-                                    align="start"
-                                />
-                            </div>
+                            {LOCALE_SWITCHER_VISIBLE && (
+                                <div className="border-b border-secondary-700 px-2 py-2">
+                                    <LocaleSwitcher
+                                        tabIndex={isOpen ? undefined : -1}
+                                        showLabel
+                                        align="start"
+                                    />
+                                </div>
+                            )}
 
                             <nav
                                 aria-label={t('HeaderMobileMenu.076925')}
