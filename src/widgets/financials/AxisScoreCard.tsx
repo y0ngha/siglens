@@ -17,6 +17,7 @@ import {
     DEFAULT_STATEMENT_CURRENCY,
     type StatementCurrency,
 } from './utils/numberFormat';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 
 interface AxisScoreCardProps {
     /** Korean axis title displayed as the card heading. */
@@ -31,11 +32,15 @@ interface AxisScoreCardProps {
 
 /** Grade badge background + text colors (grade-ramp tokens). */
 const GRADE_BADGE_CLASS: Record<FinancialsGrade, string> = {
-    A: 'bg-grade-a/10 text-grade-a',
-    B: 'bg-grade-b/10 text-grade-b',
-    C: 'bg-grade-c/10 text-grade-c',
-    D: 'bg-grade-d/10 text-grade-d',
-    F: 'bg-grade-f/10 text-ui-danger-text', // AA chip text (text-sm bold); CompositeGradeGauge의 text-4xl 등급 글자는 text-grade-f 유지 (대형 텍스트 3:1 통과)
+    // 칩 텍스트는 `-text` 변형을 쓴다 — 기본 `grade-*`는 게이지 스트로크와
+    // 36px 대형 등급 글자(3:1)를 겨냥한 값이라, 자기 /10 틴트 위 14px 굵은
+    // 글씨로 쓰면 라이트에서 4.32~4.48:1로 AA에 미달한다(실측).
+    // `CompositeGradeGauge`의 text-4xl 글자와 스트로크는 기본 토큰을 그대로 쓴다.
+    A: 'bg-grade-a/10 text-grade-a-text',
+    B: 'bg-grade-b/10 text-grade-b-text',
+    C: 'bg-grade-c/10 text-grade-c-text',
+    D: 'bg-grade-d/10 text-grade-d-text',
+    F: 'bg-grade-f/10 text-grade-f-text',
 };
 
 /** Signal chip colors keyed by direction. */
@@ -142,12 +147,12 @@ export function AxisScoreCard({
     return (
         <section
             aria-labelledby={`axis-${axisKey}-heading`}
-            className="flex flex-col gap-4 rounded-xl border border-secondary-700 bg-secondary-800 p-4 sm:p-6"
+            className="flex flex-col gap-4 rounded-lg border border-secondary-700 bg-secondary-800 p-4 sm:p-6"
         >
             <div className="flex items-center justify-between">
                 <h3
                     id={`axis-${axisKey}-heading`}
-                    className="text-base font-semibold tracking-tight text-secondary-100"
+                    className={HEADING_SUBSECTION}
                 >
                     {title}
                 </h3>

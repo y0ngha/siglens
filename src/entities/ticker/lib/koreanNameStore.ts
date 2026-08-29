@@ -2,6 +2,7 @@ import { tryGetTickerDatabaseClient } from './db';
 import { KOREAN_NAMES_CACHE_TTL, KOREAN_TICKERS_CACHE_KEY } from './cacheKeys';
 import { createCacheProvider, type CacheProvider } from '@y0ngha/siglens-core';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile';
+import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/shared/lib/types';
 import { DrizzleKoreanTickerRepository } from '../api';
 import type { KoreanTickerRepository } from '@/shared/db/types';
@@ -66,7 +67,9 @@ async function loadEntriesFromCache(
 async function loadAllEntries(): Promise<KoreanTickerEntry[]> {
     const cache = createCacheProvider();
     const cached = await loadEntriesFromCache(cache);
-    if (cached !== null) return cached;
+    // 정본은 **반환 지점**에서 입힌다 — 캐시에는 원본을 그대로 둬야 정본 맵을
+    // 고쳤을 때 캐시 무효화 없이 반영된다(`withCanonical` JSDoc).
+    if (cached !== null) return cached.map(withCanonical);
 
     const repository = tryGetRepository();
     if (!repository) return [];
@@ -75,7 +78,7 @@ async function loadAllEntries(): Promise<KoreanTickerEntry[]> {
     if (cache && entries.length > 0) {
         await writeToCache(cache, entries);
     }
-    return entries;
+    return entries.map(withCanonical);
 }
 
 /**
@@ -100,13 +103,17 @@ async function loadEntriesBySymbols(
     const cache = createCacheProvider();
     const cached = await loadEntriesFromCache(cache);
     if (cached !== null) {
-        return resolveFromCacheWithFallback(cached, symbols);
+        return (await resolveFromCacheWithFallback(cached, symbols)).map(
+            withCanonical
+        );
     }
 
     const repository = tryGetRepository();
     if (!repository) return [];
 
-    return readBySymbolsFromDatabase(repository, symbols);
+    return (await readBySymbolsFromDatabase(repository, symbols)).map(
+        withCanonical
+    );
 }
 
 async function resolveFromCacheWithFallback(
@@ -155,7 +162,54 @@ async function readBySymbolsFromDatabase(
     }
 }
 
-/** Korean-name substring lookup over the cached/persisted ticker store. */
+/**
+ * 저장된 행에 정본 한글명을 입힌다 — **이 저장소를 읽는 단일 관문**이다.
+ *
+ * `korean_tickers`는 `asset_translations`와 다른 테이블이라 `getAssetInfo` 출구의
+ * 오버라이드가 닿지 않는다. 검색 자동완성·뉴스가 여기서 이름을 받으므로, 덮지
+ * 않으면 종목 페이지엔 `실스큐`인데 검색엔 `씰스큐`가 뜬다.
+ *
+ * **로더(`loadAllEntries`/`loadEntriesBySymbols`)의 반환 지점에만 적용한다.**
+ * 호출부마다 흩뿌리면 새 리더가 생길 때 조용히 빠진다 — 실제로 `searchByKoreanName`이
+ * 그렇게 빠져 있었고, 그 함수는 반환값뿐 아니라 **매칭 술어**도 원본을 보고 있어서
+ * 사용자가 올바른 이름을 치면 0건이 나왔다(리뷰 round 2). 로더에서 입히면 술어가
+ * 자동으로 정본을 본다.
+ *
+ * 캐시에는 원본을 쓴다 — 파생값을 저장하면 정본 맵 수정이 캐시 TTL에 묶인다.
+ *
+ * ⚠️ **`getKoreanNames`는 자체 오버라이드를 하나 더 갖는다 — 지우지 말 것.**
+ * 이 함수는 *존재하는 행*만 고칠 수 있어서, 저장된 행이 아예 없는 심볼에는
+ * 아무것도 못 한다. 번역이 아직 안 채워진 정본 심볼을 영문 대신 올바른 한글로
+ * 보여 주려면 `getKoreanNames` 쪽 `CANONICAL_KOREAN_NAMES.get(symbol) ?? …`가
+ * 필요하다. 행이 있는 심볼에 대해선 결과가 같아 중복처럼 보이지만 죽은 코드가
+ * 아니다(리뷰 round 3).
+ *
+ * ## 저장된 행은 틀린 채로 남는다 — 의도다
+ *
+ * 정본이 있는 심볼은 `koreanName`이 항상 truthy가 되므로, `searchTicker`의
+ * `unmapped` 필터와 `getAssetInfo`의 번역 트리거가 그 심볼을 다시 번역하지
+ * 않는다. 즉 DB의 틀린 행(`LAES` → `씰스큐`)은 그대로 굳는다.
+ *
+ * 그게 맞다. 그 자가치유는 **LLM 번역기**이고, 애초에 저 틀린 이름을 만든 게
+ * 그 번역기다. 사람이 정본을 정한 심볼에 다시 LLM을 붙이면 표기가 또 흔들린다.
+ * 굳은 행은 이 관문을 지나는 한 어디에도 노출되지 않으므로 무해하다.
+ * (심볼을 정본 맵에서 빼면 저장된 값이 다시 드러나고 자가치유도 되살아난다.)
+ */
+function withCanonical(entry: KoreanTickerEntry): KoreanTickerEntry {
+    const canonical = CANONICAL_KOREAN_NAMES.get(entry.symbol);
+    return canonical === undefined
+        ? entry
+        : { ...entry, koreanName: canonical };
+}
+
+/**
+ * Korean-name substring lookup over the cached/persisted ticker store.
+ *
+ * ⚠️ **매칭 술어와 반환값 둘 다** 정본을 봐야 한다. 반환값만 덮으면 표시만 고쳐지고
+ * 검색은 여전히 저장된(틀린) 이름으로만 걸린다 — 사용자가 올바른 이름(`실스큐`)을
+ * 치면 0건, 틀린 이름(`씰스큐`)을 쳐야 나오는 상태가 된다(리뷰 round 2 지적).
+ * `withCanonical`을 먼저 입히고 그 결과로 필터링하는 이유다.
+ */
 export async function searchByKoreanName(
     query: string
 ): Promise<TickerSearchResult[]> {
@@ -178,7 +232,15 @@ export async function getKoreanNames(
     const symbolMap = new Map(entries.map(e => [e.symbol, e.koreanName]));
 
     const pairs = symbols.flatMap<readonly [string, string]>(symbol => {
-        const koreanName = symbolMap.get(symbol);
+        // 정본이 저장된 이름을 덮는다. `korean_tickers`는 `asset_translations`와
+        // **다른 테이블**이라, `getAssetInfo` 출구의 오버라이드가 이 경로에는
+        // 닿지 않는다 — 검색 자동완성·뉴스가 여기서 이름을 받으므로 덮지 않으면
+        // 종목 페이지엔 `실스큐`, 검색 드롭다운엔 `씰스큐`가 뜬다.
+        //
+        // 저장된 행이 없어도 정본은 내보낸다(`?? symbolMap.get`이 아니라 앞에
+        // 둔 이유) — 번역이 아직 안 채워진 종목도 올바른 이름으로 보이는 편이 낫다.
+        const koreanName =
+            CANONICAL_KOREAN_NAMES.get(symbol) ?? symbolMap.get(symbol);
         return koreanName ? [[symbol, koreanName]] : [];
     });
     // Object.fromEntries widens to { [k: string]: string } but pairs is readonly [string, string][], so the cast is safe.

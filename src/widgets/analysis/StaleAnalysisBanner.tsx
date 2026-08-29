@@ -20,7 +20,7 @@ export function StaleAnalysisBanner({
     return (
         <div
             role="status"
-            className="flex items-center justify-between gap-3 rounded-lg border border-ui-warning/30 bg-ui-warning/10 px-3 py-2 text-sm text-ui-warning"
+            className="flex items-center justify-between gap-3 rounded-lg border border-ui-warning/30 bg-ui-warning/10 px-3 py-2 text-sm text-ui-warning-text"
         >
             <span>{t('message')}</span>
             <div className="relative inline-flex">
@@ -36,7 +36,7 @@ export function StaleAnalysisBanner({
                             ? t('cooldown', { v0: cooldownMinutes })
                             : undefined
                     }
-                    className="rounded-md border border-ui-warning/40 px-2 py-1 text-xs font-medium hover:bg-ui-warning/20 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none disabled:opacity-40"
+                    className="rounded-lg border border-ui-warning px-2 py-1 text-xs font-medium hover:bg-ui-warning/20 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none disabled:border-border-control disabled:text-secondary-500"
                 >
                     {t('reanalyze')}
                 </button>

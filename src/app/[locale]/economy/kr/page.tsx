@@ -41,6 +41,7 @@ import {
 import { TERMS_PATH } from '@/shared/lib/legal';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { KR_ECONOMY_INDICATORS } from '@/shared/config/economyIndicatorsKr';
 
 import { economyKrTitle } from '../constants';
@@ -268,7 +269,7 @@ function KrEconomyDegraded() {
     return (
         <section
             aria-label={t('page.03f79d')}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <p className="text-sm text-secondary-400">{t('page.99ee99')}</p>
         </section>
@@ -371,7 +372,7 @@ export default async function EconomyKrPage({
                     active="kr"
                     currentPath="/economy/kr"
                 />
-                <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
+                <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
                     {economyKrTitle(tSeo)}
                 </h1>
                 {/*
@@ -383,10 +384,7 @@ export default async function EconomyKrPage({
                     <KrEconomyContent />
                 </Suspense>
                 <section aria-labelledby="economy-kr-faq-heading">
-                    <h2
-                        id="economy-kr-faq-heading"
-                        className="text-base font-semibold text-secondary-300"
-                    >
+                    <h2 id="economy-kr-faq-heading" className={HEADING_SECTION}>
                         {t('page.ae2ce9')}
                     </h2>
                     <dl className="mt-3 space-y-4 text-sm leading-relaxed text-secondary-400">

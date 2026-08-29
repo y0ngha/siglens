@@ -48,7 +48,13 @@ function foundLookup(
 
 describe('buildShareMetadata', () => {
     describe('found state', () => {
-        const meta = buildShareMetadata(foundLookup(), tSeo, 'ko', tOg);
+        const meta = buildShareMetadata(
+            foundLookup(),
+            'abc123',
+            tSeo,
+            'ko',
+            tOg
+        );
 
         it('title contains ticker + "AI 분석 결과"', () => {
             expect(meta.title).toBe('AAPL AI 분석 결과');
@@ -96,8 +102,58 @@ describe('buildShareMetadata', () => {
         });
     });
 
+    /**
+     * og:url이 없으면 루트 레이아웃의 og:url(홈)이 상속돼, 언펄러가 공유
+     * 카드에 홈 주소를 붙이거나 서로 다른 공유 링크를 같은 대상으로 접는다.
+     * `id`는 필수 인자라 호출부는 컴파일러가 붙들고, 여기서는 값의 모양과
+     * canonical과의 관계를 본다.
+     */
+    describe('openGraph.url', () => {
+        it('id를 넘기면 공유 URL이 실린다', () => {
+            const meta = buildShareMetadata(
+                foundLookup(),
+                'abc123',
+                tSeo,
+                'ko',
+                tOg
+            );
+            expect((meta.openGraph as { url?: string })?.url).toMatch(
+                /\/share\/abc123$/
+            );
+        });
+
+        it('canonical은 여전히 null이다 — 두 값은 상충하지 않는다', () => {
+            const meta = buildShareMetadata(
+                foundLookup(),
+                'abc123',
+                tSeo,
+                'ko',
+                tOg
+            );
+            expect(meta.alternates?.canonical).toBeNull();
+            expect((meta.robots as { index?: boolean })?.index).toBe(false);
+        });
+
+        it('타입이 호출부를 붙든다 — 뒤 인자는 선택이 아니다', () => {
+            // **부르지 않는다.** 목적은 컴파일 시점 검사인데, 인자를 빼고
+            // 실제로 부르면 번역자가 없어 런타임이 먼저 죽는다. 아래
+            // `@ts-expect-error`는 이 호출이 유효해지는 순간 실패하므로
+            // 실행 없이도 계약을 붙든다.
+            const call = () =>
+                // @ts-expect-error 뒤 인자를 빠뜨리면 컴파일이 막힌다.
+                buildShareMetadata(foundLookup());
+            expect(call).toBeTypeOf('function');
+        });
+    });
+
     describe('expired state', () => {
-        const meta = buildShareMetadata({ status: 'expired' }, tSeo, 'ko', tOg);
+        const meta = buildShareMetadata(
+            { status: 'expired' },
+            'abc123',
+            tSeo,
+            'ko',
+            tOg
+        );
 
         it('[C-8] robots.index === false', () => {
             expect((meta.robots as { index?: boolean })?.index).toBe(false);
@@ -111,6 +167,7 @@ describe('buildShareMetadata', () => {
     describe('not_found state', () => {
         const meta = buildShareMetadata(
             { status: 'not_found' },
+            'abc123',
             tSeo,
             'ko',
             tOg

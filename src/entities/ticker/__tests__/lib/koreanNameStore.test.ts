@@ -112,6 +112,66 @@ describe('searchByKoreanName', () => {
         expect(mockRepository.findAll).not.toHaveBeenCalled();
     });
 
+    /**
+     * **매칭 술어와 반환값 둘 다** 정본을 봐야 한다. 반환값만 덮으면 표시만
+     * 고쳐지고 검색은 저장된(틀린) 이름으로만 걸린다 — 사용자가 올바른 이름을
+     * 치면 0건, 틀린 이름을 쳐야 나오는 상태가 된다(리뷰 round 2가 잡은 결함).
+     * 로더에서 정본을 입히므로 술어가 자동으로 정본을 본다.
+     */
+    it('올바른 정본 이름으로 검색하면 걸린다', async () => {
+        mockCache.get.mockResolvedValue([
+            {
+                symbol: 'LAES',
+                name: 'SEALSQ Corp',
+                koreanName: '씰스큐', // 저장된(틀린) 값
+                exchange: 'NASDAQ',
+                exchangeFullName: 'NASDAQ Global Select',
+            },
+        ]);
+
+        const result = await searchByKoreanName('실스큐');
+
+        expect(result).toHaveLength(1);
+        expect(result[0].koreanName).toBe('실스큐');
+    });
+
+    /**
+     * 캐시 미스(=DB fetch) 분기도 정본을 입혀야 한다. 캐시 히트 분기만 테스트하면
+     * DB 분기의 `.map(withCanonical)`을 지워도 전부 초록이다 — 리뷰 round 3가
+     * 변이로 확인한 구멍이고, 캐시가 콜드한 순간마다 프로덕션에서 도달한다.
+     */
+    it('cache miss → DB 경로에서도 정본을 입힌다', async () => {
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findAll.mockResolvedValue([
+            {
+                symbol: 'LAES',
+                name: 'SEALSQ Corp',
+                koreanName: '씰스큐',
+                exchange: 'NASDAQ',
+                exchangeFullName: 'NASDAQ Global Select',
+            },
+        ]);
+
+        const result = await searchByKoreanName('실스큐');
+
+        expect(result).toHaveLength(1);
+        expect(result[0].koreanName).toBe('실스큐');
+    });
+
+    it('틀린 저장 이름으로는 더 이상 걸리지 않는다', async () => {
+        mockCache.get.mockResolvedValue([
+            {
+                symbol: 'LAES',
+                name: 'SEALSQ Corp',
+                koreanName: '씰스큐',
+                exchange: 'NASDAQ',
+                exchangeFullName: 'NASDAQ Global Select',
+            },
+        ]);
+
+        await expect(searchByKoreanName('씰스큐')).resolves.toEqual([]);
+    });
+
     it('한국 종목에는 marketProfile을 붙인다 — 미국 종목에는 안 붙인다', async () => {
         // 행에 프로필 컬럼이 없어 심볼 형상으로 판정한다. 빠지면 한글 검색으로
         // 찾은 한국 종목이 us-equity로 표시된다.
@@ -231,6 +291,36 @@ describe('getKoreanNames', () => {
         tryGetTickerDatabaseClientMock.mockReturnValue(null);
         await expect(getKoreanNames(['AAPL'])).resolves.toEqual({});
         expect(mockRepository.findBySymbols).not.toHaveBeenCalled();
+    });
+
+    /**
+     * `korean_tickers`는 `asset_translations`와 **다른 테이블**이라,
+     * `getAssetInfo` 출구의 정본 오버라이드가 이 경로에는 닿지 않는다. 검색
+     * 자동완성과 뉴스가 여기서 이름을 받으므로, 덮지 않으면 종목 페이지엔
+     * `실스큐`인데 검색 드롭다운엔 `씰스큐`가 뜬다 — 이 PR이 고치려던 결함이
+     * 그대로 재현되는 우회 경로다(리뷰 round 1 지적).
+     */
+    it('정본 한글명이 저장된 값을 덮는다 (검색 우회 경로 차단)', async () => {
+        mockCache.get.mockResolvedValue([
+            { symbol: 'LAES', koreanName: '씰스큐' },
+        ]);
+        await expect(getKoreanNames(['LAES'])).resolves.toEqual({
+            LAES: '실스큐',
+        });
+    });
+
+    it('저장된 행이 없어도 정본은 내보낸다', async () => {
+        mockCache.get.mockResolvedValue([]);
+        await expect(getKoreanNames(['QBTS'])).resolves.toEqual({
+            QBTS: '디웨이브 퀀텀',
+        });
+    });
+
+    it('정본 목록에 없는 심볼은 저장된 값을 그대로 쓴다', async () => {
+        mockCache.get.mockResolvedValue([apple]);
+        await expect(getKoreanNames(['AAPL'])).resolves.toEqual({
+            AAPL: '애플',
+        });
     });
 });
 

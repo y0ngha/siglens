@@ -16,3 +16,5 @@
 - [vi.spyOn().mockRestore()는 mock.calls도 지운다](reference_vitest_mockrestore_clears_calls.md) — finally에서 restore 전에 호출 기록을 먼저 떼어 둬야 함
 - [dynamicDecimals는 trailing zero를 패딩한다](reference_dynamic_decimals_sig_fig_padding.md) — sub-$1 정확값 단언은 node로 실측 후 작성(예: $0.0006 → 실제 "$0.0006000")
 - [동적 배열 회전 테스트는 shadow-model oracle로](reference_shadow_model_oracle_for_stateful_rotation_tests.md) — 도메인 함수는 실물 재사용, offset 산술만 재구현 후 매 tick 정확히 비교. 커버리지만 단언하면 뮤테이션에 안 걸릴 수 있음
+- [FAQ JSON-LD는 단일 배열로 화면·마크업 공유](reference_faq_jsonld_visible_folding_pattern.md) — 가이드 프로즈는 답변에 흡수 후 삭제(overall 전례). 내부 Link는 답변에 못 담으니 FaqSection 밖에 별도 유지
+- [공유 predicate 추출 시 모든 분기를 grep](reference_shared_predicate_drift_display_name.md) — buildDisplayName이 koreanName 분기만 shouldShowEnglishName을 쓰고 else 분기는 옛 로직 잔존. 버그를 인코딩한 기존 테스트도 함께 수정 대상

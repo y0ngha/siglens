@@ -50,7 +50,7 @@ function StepIndicator({ phase }: StepIndicatorProps) {
     return (
         <p
             aria-live="polite"
-            className="mb-4 text-xs font-medium tracking-wider text-secondary-400 uppercase"
+            className="mb-4 text-xs font-medium text-secondary-400"
         >
             {t(STEP_LABEL_KEY[phase])}
         </p>
@@ -67,7 +67,7 @@ function EmailEditButton({ onClick }: EmailEditButtonProps) {
         <button
             type="button"
             onClick={onClick}
-            className="rounded-sm font-medium text-primary-400 hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
+            className="rounded font-medium text-primary-400 hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
         >
             {t('SignupForm.f38cb1')}
         </button>
@@ -261,7 +261,10 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                         <AuthErrorAlert message={signupEmailError} />
                     ) : null}
                     <p className="text-sm text-secondary-300">
-                        <span className="text-ui-success" aria-hidden="true">
+                        <span
+                            className="text-ui-success-text"
+                            aria-hidden="true"
+                        >
                             ✓
                         </span>{' '}
                         {t('SignupForm.0d75cf')}{' '}

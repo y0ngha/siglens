@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { useFearGreedFromSymbol } from './hooks/useFearGreedFromSymbol';
 import { FearGreedHero } from './FearGreedHero';
 import { FearGreedComparisonGauges } from './FearGreedComparisonGauges';
@@ -12,6 +13,7 @@ import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { buildChatState } from './utils/buildChatState';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { useRegisterShareable } from '@/features/share';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface FearGreedPageProps {
     symbol: string;
@@ -42,7 +44,7 @@ interface FearGreedPageProps {
  * always-open), the SSR seed strips the forming bar but the refetched bars
  * include it → SSR score ≠ first-client score → React #418.
  *
- * The fix mirrors FearGreedHeaderChipMounted: render a stable, score-free
+ * The fix: render a stable, score-free
  * skeleton during hydration so SSR HTML and the first sync client render are
  * identical, then swap in the real score-driven UI after useEffect fires.
  * This is intentional: the page comment notes "점수는 클라가 bars로 계산"
@@ -81,8 +83,9 @@ export function FearGreedPage({
     fmpSymbol,
     hideSelfNormWarning = false,
 }: FearGreedPageProps) {
-    const t = useTranslations('widgets.fear-greed');
     const tFearGreed = useTranslations('shared.lib.fearGreed');
+    const t = useTranslations('widgets.fear-greed');
+    const themeVersion = useThemeVersion();
     const isHydrated = useHydrated();
     const { snapshot, history } = useFearGreedFromSymbol({ symbol, fmpSymbol });
 
@@ -129,7 +132,7 @@ export function FearGreedPage({
         <div className="flex flex-col gap-6 p-4 md:p-6">
             <div className="grid gap-6 md:grid-cols-2">
                 <section className="flex flex-col gap-3">
-                    <h2 className="text-sm font-medium text-secondary-300">
+                    <h2 className={HEADING_SECTION}>
                         {t('FearGreedPage.29eed9')}
                     </h2>
                     <FearGreedHero snapshot={snapshot} />
@@ -148,10 +151,11 @@ export function FearGreedPage({
             </div>
 
             <section className="flex flex-col gap-2">
-                <h2 className="text-sm font-medium text-secondary-300">
-                    {t('FearGreedPage.180c65')}
-                </h2>
-                <FearGreedHistoricalChart history={history} />
+                <h2 className={HEADING_SECTION}>{t('FearGreedPage.180c65')}</h2>
+                <FearGreedHistoricalChart
+                    key={themeVersion}
+                    history={history}
+                />
             </section>
 
             <footer className="text-xs text-secondary-500">

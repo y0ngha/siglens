@@ -14,7 +14,7 @@ export function SectorSignalPanelSkeleton({
         <section
             aria-label={t('SectorSignalPanelSkeleton.f65a95')}
             aria-busy="true"
-            className="sector-panel-bg relative px-6 py-10 lg:px-[15vw]"
+            className="page-container sector-panel-bg relative py-10"
         >
             {/* 의미 없는 pulse 영역은 aria-hidden으로 스크린리더에서 숨기고, 상위 section의 aria-label만 안내한다. */}
             <div

@@ -192,9 +192,12 @@ test.describe('position widget placement (authed storageState)', () => {
 
         const cta = page.getByTestId('position-cta');
         await expect(cta).toBeVisible({ timeout: SETTLE_TIMEOUT_MS });
+        // CTA는 보던 종목을 실어 보낸다. 예전에는 `/onboarding` 리터럴이라
+        // 클릭 의도가 첫 홉에서 사라졌고, 로그인을 거치면 한 번 더 사라져
+        // 가입을 마친 사용자가 빈 온보딩 화면에 도착했다.
         await expect(
             cta.getByRole('link', { name: '보유종목 등록하기' })
-        ).toHaveAttribute('href', '/onboarding');
+        ).toHaveAttribute('href', '/onboarding?symbol=AAPL');
         await expect(page.getByTestId('position-building')).toHaveCount(0);
 
         // ---- 2. Add an AAPL holding, revisit → the building + readout card render ----

@@ -135,7 +135,7 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ locale: 'ko', symbol: '!!!invalid' }),
         });
 
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
         expect(metadata.alternates?.canonical).toBeNull();
     });
 
@@ -149,7 +149,7 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'AAPL' }),
         });
 
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
         expect(metadata.alternates?.canonical).toBeNull();
     });
 
@@ -163,7 +163,7 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'AAPL' }),
         });
 
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
         expect(metadata.alternates?.canonical).toBeNull();
     });
 
@@ -177,7 +177,7 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'FAKESYM' }),
         });
 
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
         expect(metadata.alternates?.canonical).toBeNull();
     });
 
@@ -191,7 +191,7 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
         expect(metadata.alternates?.canonical).toBeNull();
     });
 

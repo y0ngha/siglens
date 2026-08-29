@@ -110,7 +110,7 @@ export function ModelSelector({
                     aria-expanded={isOpen}
                     aria-label={t('ModelSelector.1db1df')}
                     className={cn(
-                        'border-secondary-700 hover:bg-secondary-700/30 focus-visible:ring-primary-500 flex min-h-11 w-full touch-manipulation items-center justify-between rounded-md border px-3 py-2 transition-colors focus-visible:ring-1 focus-visible:outline-none',
+                        'border-border-control hover:bg-secondary-700/30 focus-visible:ring-primary-500 flex min-h-11 w-full touch-manipulation items-center justify-between rounded-lg border px-3 py-2 transition-colors focus-visible:ring-1 focus-visible:outline-none',
                         disabled && 'cursor-not-allowed opacity-60'
                     )}
                 >
@@ -191,7 +191,7 @@ export function ModelSelector({
                                                 </div>
                                             </div>
                                             {!isFreeModel(modelId) && (
-                                                <span className="text-[9px] leading-none font-semibold text-ui-warning uppercase">
+                                                <span className="text-[9px] leading-none font-semibold text-ui-warning-text uppercase">
                                                     PRO
                                                 </span>
                                             )}

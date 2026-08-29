@@ -20,6 +20,7 @@ import {
     buildFearGreedRegimeDistributionLine,
     scoredHistory,
 } from './utils/fearGreedFacts';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface FearGreedFactsSummaryProps {
     symbol: string;
@@ -104,11 +105,8 @@ export function FearGreedFactsSummary({
             aria-labelledby={headingId}
             className="flex flex-col gap-3 rounded-lg bg-secondary-800 p-4"
         >
-            <h2
-                id={headingId}
-                className="text-sm font-semibold text-secondary-200"
-            >
-                {t('FearGreedFactsSummary.b53859', { v0: symbol })}
+            <h2 id={headingId} className={HEADING_SECTION}>
+                {symbol} {t('FearGreedFactsSummary.fabc11')}
                 {asOfLabel !== null && (
                     <span className="ml-2 font-normal text-secondary-400">
                         {t('FearGreedFactsSummary.asOfClose', {

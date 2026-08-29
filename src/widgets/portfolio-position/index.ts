@@ -23,7 +23,9 @@ export {
 // (app 레이어)가 현재가의 "몇 층" 문구를 이 함수로 파생시켜, 회원 전용
 // PositionBuilding이 쓰는 저층/중층/고층/펜트하우스·옥상 위/지하 세대 어휘와
 // 절대 어긋나지 않게 한다(단일 source, MISTAKES #2와 동일 원칙).
-export { formatAmount, describeAvgFloor } from './lib/positionBuildingNotes';
-
-// 순수 함수 모음이라 훅을 못 쓴다 — 호출부가 번역자를 넘긴다.
+export {
+    formatAmount,
+    formatAmountAligned,
+    describeAvgFloor,
+} from './lib/positionBuildingNotes';
 export type { PositionTranslator } from './lib/positionBuildingNotes';

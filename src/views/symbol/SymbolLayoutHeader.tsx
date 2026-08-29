@@ -12,7 +12,8 @@ import { shouldShowEnglishName } from '@/entities/ticker';
 import { useSymbolModel } from '@/features/symbol-model';
 import { AnalysisSettingsMenu } from '@/widgets/analysis';
 import { ShareButton } from '@/widgets/share';
-import { FearGreedHeaderChipMounted } from './FearGreedHeaderChipMounted';
+import { FearGreedHeaderChip } from './FearGreedHeaderChip';
+import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { PremiumModelGateModal } from '@/features/premium-gate';
 import { PortfolioChipMounted } from '@/features/portfolio-holding';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
@@ -20,6 +21,13 @@ import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 interface SymbolLayoutHeaderProps {
     /** Ticker from the dynamic route param. Internally upper-cased for the breadcrumb. */
     symbol: string;
+    /**
+     * 서버가 계산한 공포·탐욕 스냅샷. 칩이 클라이언트에서 봉으로 파생하는 대신
+     * 이걸 그대로 렌더한다 — 그 덕에 레이아웃이 9탭 전부에 봉 76KB를 seed하지
+     * 않아도 된다(`[symbol]/layout.tsx`의 근거 주석 참고).
+     * 데이터가 없으면(FMP 키 없음·degrade) null.
+     */
+    fearGreedSnapshot: FearGreedSnapshot | null;
 }
 
 /**
@@ -32,7 +40,10 @@ interface SymbolLayoutHeaderProps {
  * scroll-locked container so the layout stays free of `useSearchParams` (which
  * would force the whole route to be dynamic under Next.js Cache Components).
  */
-export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
+export function SymbolLayoutHeader({
+    symbol,
+    fearGreedSnapshot,
+}: SymbolLayoutHeaderProps) {
     const assetInfo = useAssetInfo(symbol);
     const ticker = symbol.toUpperCase();
     // `buildDisplayName`과 판정 자체를 공유한다(`entities/ticker`의
@@ -75,10 +86,23 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
         openSignupNudge,
     } = useSymbolModel();
 
+    /*
+     * 상단 크롬(브레드크럼·탭)은 **전폭 `px-4`**로 둔다. 서브탭 본문이 쓰는
+     * `symbol-container`(1024px 중앙)를 크롬에도 걸면 기본 탭인 차트와 어긋난다
+     * — 차트는 자기 제목 줄을 전폭 `px-4`로 그리고(캔버스 좌단에 맞추려고), 그
+     * 결과 넓은 화면에서 크롬만 안쪽으로 들여쓰인다(1920px에서 448px).
+     *
+     * 그래서 폭 규약이 둘로 갈린다: **크롬은 뷰포트에, 본문은 읽기 폭에** 맞춘다.
+     * 서브탭(뉴스·펀더멘털)에서는 크롬이 본문보다 바깥에서 시작하는데, 이건
+     * 사용자가 고른 트레이드오프다 — 기본 진입 탭인 차트의 정렬을 우선한다.
+     *
+     * `px-4`는 차트 제목 줄과 **같은 값**이어야 한다. 둘 중 하나만 바뀌면 다시
+     * 어긋난다(`views/symbol/SymbolPageClient.tsx`의 타임프레임 바).
+     */
     return (
-        <header className="relative z-40 px-4 py-3">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-                <div className="flex min-w-0 items-center gap-2 sm:flex-1">
+        <header className="relative z-40 py-3">
+            <div className="flex items-center gap-2 px-4 sm:gap-4">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
                     <Link
                         href="/"
                         // 모든 심볼 페이지의 브레드크럼에 렌더되므로 사실상 전역 링크다.
@@ -89,7 +113,7 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                     >
                         SIGLENS
                     </Link>
-                    <span className="text-secondary-700">/</span>
+                    <span className="text-secondary-500">/</span>
                     {/* 종목 브레드크럼은 5개 sibling 페이지(/[symbol], /news,
                         /fundamental, /options, /overall, /fear-greed)에 공통으로
                         렌더되므로 h1으로 두면 페이지별 sr-only h1과 충돌해 페이지당
@@ -111,19 +135,22 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                         )}
                         ({ticker})
                     </span>
-                    {/* useBars가 useSuspenseQuery 기반이라 promise를 throw하면 부모 트리까지
-                        suspend된다. 헤더 chip 로딩이 헤더 전체(모델 셀렉터·브레드크럼) 영역에
-                        영향을 주지 않도록 여기서 경계를 잡고, 빈 chip 자리만 잠깐 보이게 한다.
-                        DUAL MOUNT: 데스크톱에서는 타이틀 옆 인라인, 모바일에서는 별도 행에 표시한다.
-                        두 인스턴스는 동일 React Query 캐시를 공유하므로 fetch는 한 번만 발생하지만,
-                        FearGreedHeaderChipMounted에 mount-time side effect(analytics, ref 등)를
-                        추가할 때는 두 번 실행되는 점에 유의한다. */}
+                    {/* 칩은 서버가 계산한 스냅샷을 그대로 렌더하는 순수 컴포넌트다 —
+                        훅도 fetch도 없으므로 suspend하거나 throw하지 않는다. 경계를
+                        그대로 두는 건 방어용이다: 칩이 어떤 이유로든 터져도 헤더
+                        셸(모델 셀렉터·브레드크럼)은 살아남아야 한다.
+                        (예전엔 `useBars`가 `useSuspenseQuery` 기반이라 promise를
+                        throw하면 부모 트리까지 suspend됐고, 그게 경계의 원래 이유였다.)
+
+                        DUAL MOUNT: 데스크톱에서는 타이틀 옆 인라인, 모바일에서는 별도
+                        행에 표시한다. 두 인스턴스 모두 같은 prop을 받으므로 fetch가
+                        유발되지 않는다 — mount-time side effect(analytics, ref 등)를
+                        추가할 때만 두 번 실행되는 점에 유의한다. */}
                     <ErrorBoundary fallback={null}>
                         <Suspense fallback={null}>
                             <span className="hidden sm:contents">
-                                <FearGreedHeaderChipMounted
-                                    symbol={ticker}
-                                    fmpSymbol={assetInfo?.fmpSymbol}
+                                <FearGreedHeaderChip
+                                    snapshot={fearGreedSnapshot}
                                 />
                             </span>
                         </Suspense>
@@ -139,13 +166,12 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                     회귀 가드 — 탭 내비가 채팅 패널 아래로 밀리지 않도록 헤더가 커지면
                     안 된다는 제약은 여전히 유효하며, 이 변경은 그 제약을 오히려
                     더 여유 있게 만족시킨다). */}
-                <div className="flex items-center justify-between gap-2 sm:order-3 sm:shrink-0 sm:justify-end">
+                <div className="flex shrink-0 items-center justify-end gap-2">
                     <ErrorBoundary fallback={null}>
                         <Suspense fallback={null}>
                             <span className="sm:hidden">
-                                <FearGreedHeaderChipMounted
-                                    symbol={ticker}
-                                    fmpSymbol={assetInfo?.fmpSymbol}
+                                <FearGreedHeaderChip
+                                    snapshot={fearGreedSnapshot}
                                 />
                             </span>
                         </Suspense>
@@ -166,7 +192,7 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                 </div>
             </div>
 
-            <div className="-mx-4 mt-3">
+            <div className="mt-3">
                 <Suspense fallback={<SymbolTabsSkeleton />}>
                     <SymbolTabs symbol={symbol} />
                 </Suspense>

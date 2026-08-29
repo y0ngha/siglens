@@ -6,6 +6,7 @@ import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { currencyForSymbol } from '@/shared/config/marketProfile';
 import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 import type React from 'react';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 
@@ -107,11 +108,11 @@ function EarningsReportComparison({ items }: EarningsReportComparisonProps) {
             <div className="flex flex-wrap items-end justify-between gap-2">
                 <div className="flex gap-3 text-xs text-secondary-400">
                     <span className="inline-flex items-center gap-1">
-                        <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                        <span className="h-2 w-2 rounded-full bg-ui-success" />
                         {t('EventCalendar.19aa63')}
                     </span>
                     <span className="inline-flex items-center gap-1">
-                        <span className="h-2 w-2 rounded-full bg-sky-400" />
+                        <span className="h-2 w-2 rounded-full bg-primary-400" />
                         {t('EventCalendar.a06069')}
                         <InfoTooltip className="ml-0 text-[11px]">
                             <p>{t('EventCalendar.6a5765')}</p>
@@ -210,9 +211,9 @@ function SurpriseBadge({ badge }: SurpriseBadgeProps) {
     const tSurprise = useTranslations('widgets.news.surprise');
     const className =
         badge.kind === 'surprise'
-            ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+            ? 'border-ui-success/40 bg-ui-success/10 text-ui-success-text'
             : badge.kind === 'shock'
-              ? 'border-rose-500/40 bg-rose-500/10 text-rose-300'
+              ? 'border-ui-danger/40 bg-ui-danger/10 text-ui-danger-text'
               : 'border-secondary-500/40 bg-secondary-700/50 text-secondary-300';
 
     return (
@@ -253,7 +254,7 @@ function MetricBars({
                     value={actual}
                     maxValue={maxValue}
                     format={format}
-                    className="bg-emerald-400"
+                    className="bg-ui-success"
                     signed={signed}
                 />
                 <MetricBar
@@ -261,7 +262,7 @@ function MetricBars({
                     value={estimated}
                     maxValue={maxValue}
                     format={format}
-                    className="bg-sky-400"
+                    className="bg-primary-400"
                     signed={signed}
                 />
             </div>
@@ -288,7 +289,7 @@ function MetricBar({
 }: MetricBarProps) {
     const width = getBarWidth(value, maxValue, signed);
     const isNegative = value !== null && value < 0;
-    const barClassName = isNegative ? 'bg-rose-400' : className;
+    const barClassName = isNegative ? 'bg-ui-danger' : className;
 
     return (
         <div className="grid grid-cols-[4.5rem_minmax(0,1fr)_4.5rem] items-center gap-2">
@@ -386,10 +387,7 @@ export function EventCalendar({ earningsReports }: EventCalendarProps) {
 
     return (
         <section aria-labelledby="event-calendar-heading" className="space-y-3">
-            <h2
-                id="event-calendar-heading"
-                className="text-lg font-semibold tracking-tight"
-            >
+            <h2 id="event-calendar-heading" className={HEADING_SECTION}>
                 {t('EventCalendar.4732b0')}
             </h2>
             <EarningsReportComparison items={earningsReports} />

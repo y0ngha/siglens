@@ -1,3 +1,5 @@
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { useTranslations } from 'next-intl';
 /**
  * 항목 **키**만 담는다 — 문구는 `widgets.dashboard.signalGuide`에 있다.
@@ -21,12 +23,12 @@ export function SignalTypeGuide() {
     const t = useTranslations('widgets.dashboard');
     return (
         <section
-            className="px-6 py-10 lg:px-[15vw]"
+            className="page-container py-10"
             aria-labelledby="signal-guide-heading"
         >
             <h2
                 id="signal-guide-heading"
-                className="mb-6 text-sm font-semibold tracking-[0.15em] text-secondary-200 uppercase"
+                className={cn('mb-6', HEADING_SECTION)}
             >
                 {t('SignalTypeGuide.03876a')}
             </h2>

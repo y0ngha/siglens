@@ -185,7 +185,7 @@ const E2E_STUB_RE =
 const LOG_FALLBACK_MESSAGE_DIR_RE = /^src\/entities\/auth\/lib\//;
 
 const CATALOG_BACKED_DATA_RE =
-    /src\/shared\/config\/(popular-tickers|dashboard-tickers|dashboard-tickers-kr|crypto-categories|economyIndicators|economyIndicatorsKr|economyLabelKey|tickerCategoryLabel)\.ts$|src\/entities\/economy\/lib\/indicatorNameKo\.ts$|src\/entities\/market-news\/lib\/categoryConfig\.ts$/;
+    /src\/shared\/config\/(canonical-korean-names|popular-tickers|dashboard-tickers|dashboard-tickers-kr|crypto-categories|economyIndicators|economyIndicatorsKr|economyLabelKey|tickerCategoryLabel)\.ts$|src\/entities\/economy\/lib\/indicatorNameKo\.ts$|src\/entities\/market-news\/lib\/categoryConfig\.ts$/;
 
 /**
  * **개발자에게만 보이는 진단 문자열**인가 — 콘솔 로그와 `[tag]` 접두 throw.

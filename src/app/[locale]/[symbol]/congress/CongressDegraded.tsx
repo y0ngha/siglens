@@ -42,9 +42,9 @@ export function CongressDegraded({
 }: CongressDegradedProps) {
     const t = useTranslations('app.symbol');
     return (
-        <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+        <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
             <SymbolPageHeading>
-                {t('CongressDegraded.e607c1', { v0: displayName })}
+                {displayName} {t('CongressDegraded.7b06ac')}
             </SymbolPageHeading>
             <CongressSnapshotProse
                 content={snapshotContent}
@@ -55,7 +55,7 @@ export function CongressDegraded({
                 marketProfile="us-equity"
                 generatedAt={snapshotGeneratedAt}
             />
-            <section className="rounded-lg border border-secondary-800 bg-secondary-900/40 px-5 py-8 text-center">
+            <section className="rounded-lg border border-secondary-700 bg-secondary-900/40 px-5 py-8 text-center">
                 <p className="text-sm font-medium text-secondary-200">
                     {t('CongressDegraded.ea5528')}
                 </p>

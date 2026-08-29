@@ -18,6 +18,7 @@ export function evaluateSymbolIndexability({
     degraded,
     hasSnapshot,
     locale,
+    hasPriceData,
 }: SymbolIndexabilityInput): SymbolIndexabilityDecision {
     const upper = symbol.toUpperCase();
 
@@ -31,8 +32,24 @@ export function evaluateSymbolIndexability({
         return { indexable: false, reason: 'locale-not-ready' };
     }
 
+    // 로케일 게이트는 **가장 먼저** 본다. 아래 화이트리스트(popular 등)보다
+    // 뒤에 두면 인기 티커의 비-ko 페이지가 한국어 본문 그대로 색인된다.
+    if (!SYMBOL_INDEXABLE_LOCALES.includes(locale)) {
+        return { indexable: false, reason: 'locale-not-ready' };
+    }
+
     if (!assetInfo) {
         return { indexable: false, reason: 'asset-missing' };
+    }
+
+    // 콘텐츠 게이트는 화이트리스트보다 **위**에 온다. 멤버십은 "색인할 가치가
+    // 있는 종목인가"만 답하므로, 봉이 하나도 없어 본문이 빈 껍데기인 페이지를
+    // 그대로 통과시킨다(2026-08-24 실측 14종 — `hasPriceData` JSDoc).
+    // degraded 분기보다도 위인 이유: degraded는 "일시적으로 데이터가 얕다"이고
+    // 이쪽은 "가격 자체가 없다"라, 저장된 스냅샷이 있더라도(=degraded-with-snapshot
+    // 경로) 죽은 티커에 대한 낡은 서술을 색인시킬 이유가 없다.
+    if (hasPriceData === false) {
+        return { indexable: false, reason: 'no-price-data' };
     }
 
     if (degraded) {

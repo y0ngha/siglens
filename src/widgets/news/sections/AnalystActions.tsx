@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { GradesAction, GradesEvent } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 
@@ -24,10 +25,10 @@ const ACTION_LABEL_KEY: Record<GradesAction, string> = {
 };
 
 const ACTION_CLASS: Record<GradesAction, string> = {
-    upgrade: 'bg-ui-success/10 text-chart-bullish',
-    downgrade: 'bg-ui-danger/10 text-chart-bearish',
+    upgrade: 'bg-ui-success/10 text-ui-success-text',
+    downgrade: 'bg-ui-danger/10 text-ui-danger-text',
     maintained: 'bg-secondary-700 text-secondary-400',
-    initiated: 'bg-ui-warning/10 text-ui-warning',
+    initiated: 'bg-ui-warning/10 text-ui-warning-text',
     other: 'bg-secondary-700 text-secondary-400',
 };
 
@@ -141,11 +142,11 @@ export function AnalystActions({ events }: AnalystActionsProps) {
         return (
             <section
                 aria-labelledby="analyst-actions-heading"
-                className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+                className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             >
                 <h2
                     id="analyst-actions-heading"
-                    className="mb-3 text-lg font-semibold tracking-tight"
+                    className={cn('mb-3', HEADING_SECTION)}
                 >
                     {t('AnalystActions.b2cd1a')}
                 </h2>
@@ -164,10 +165,7 @@ export function AnalystActions({ events }: AnalystActionsProps) {
             aria-labelledby="analyst-actions-heading"
             className="space-y-3"
         >
-            <h2
-                id="analyst-actions-heading"
-                className="text-lg font-semibold tracking-tight"
-            >
+            <h2 id="analyst-actions-heading" className={HEADING_SECTION}>
                 {t('AnalystActions.b2cd1a')}
             </h2>
             <ul className="space-y-2" aria-label={t('AnalystActions.b37a23')}>
@@ -182,7 +180,7 @@ export function AnalystActions({ events }: AnalystActionsProps) {
                 <button
                     type="button"
                     onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
-                    className="w-full rounded-lg border border-secondary-700 py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
+                    className="w-full rounded-lg border border-border-control py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
                 >
                     {t('AnalystActions.8e5a3a', {
                         v0: events.length - visibleCount,

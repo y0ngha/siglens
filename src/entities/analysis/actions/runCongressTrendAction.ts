@@ -102,6 +102,9 @@ export async function runCongressTrendAction(
 
         return await runCongressTrend({
             symbol,
+            // 화면 로케일을 AI 산출물 언어로 그대로 넘긴다 — core 0.53.0부터
+            // 받는다. `ko`는 접미 없는 기존 캐시 키를 그대로 맞힌다.
+            locale,
             modelId,
             dataProvider: getCongressTradesProvider(),
             tier: gate.tier,

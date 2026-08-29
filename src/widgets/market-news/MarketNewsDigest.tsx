@@ -10,6 +10,10 @@ import {
     SENTIMENT_CLASS,
     isNewsSentiment,
 } from './utils/sentimentConstants';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 
 /** Loading / generating status card. */
 function DigestStatusCard() {
@@ -18,11 +22,11 @@ function DigestStatusCard() {
         <section
             aria-labelledby="market-news-digest-status-heading"
             aria-busy="true"
-            className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
+            className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
         >
             <h2
                 id="market-news-digest-status-heading"
-                className="mb-4 text-lg font-semibold tracking-tight"
+                className={cn('mb-4', HEADING_SECTION)}
             >
                 {t('MarketNewsDigest.69a497')}
             </h2>
@@ -63,13 +67,10 @@ function DigestResultView({ result }: DigestResultViewProps) {
     return (
         <section
             aria-labelledby="market-news-digest-heading"
-            className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
+            className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
         >
             <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
-                <h2
-                    id="market-news-digest-heading"
-                    className="text-lg font-semibold tracking-tight"
-                >
+                <h2 id="market-news-digest-heading" className={HEADING_SECTION}>
                     {t('MarketNewsDigest.69a497')}
                 </h2>
                 {isNewsSentiment(result.overallSentiment) && (
@@ -90,7 +91,7 @@ function DigestResultView({ result }: DigestResultViewProps) {
 
             {result.keyEventsKo.length > 0 && (
                 <div className="mb-4">
-                    <h3 className="mb-2 text-sm font-semibold">
+                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
                         {t('MarketNewsDigest.77f553')}
                     </h3>
                     <ul
@@ -119,7 +120,7 @@ function DigestResultView({ result }: DigestResultViewProps) {
 
             {result.upcomingEventsKo.length > 0 && (
                 <div>
-                    <h3 className="mb-2 text-sm font-semibold">
+                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
                         {t('MarketNewsDigest.29339e')}
                     </h3>
                     <ul
@@ -133,7 +134,7 @@ function DigestResultView({ result }: DigestResultViewProps) {
                             >
                                 <span
                                     aria-hidden="true"
-                                    className="mt-0.5 shrink-0 text-ui-warning"
+                                    className="mt-0.5 shrink-0 text-ui-warning-text"
                                 >
                                     ⚠
                                 </span>
@@ -159,11 +160,11 @@ function DigestErrorView({ error, onRetry }: DigestErrorViewProps) {
     return (
         <section
             aria-labelledby="market-news-digest-error-heading"
-            className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-ui-danger/30 bg-secondary-800 p-6"
+            className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-ui-danger/30 bg-secondary-800 p-6"
         >
             <h2
                 id="market-news-digest-error-heading"
-                className="mb-2 text-lg font-semibold tracking-tight"
+                className={cn('mb-2', HEADING_SECTION)}
             >
                 {t('MarketNewsDigest.69a497')}
             </h2>

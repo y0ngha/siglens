@@ -4,6 +4,10 @@ import type {
     CongressTrendResponse,
 } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 
 /** CongressSentiment → `shared.enumLabel.congressSentiment` 카탈로그 키. */
 const SENTIMENT_LABEL_KEY: Record<CongressSentiment, string> = {
@@ -36,12 +40,12 @@ export function CongressTrendSummaryView({
     return (
         <section
             aria-labelledby="congress-trend-summary-heading"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <div className="mb-4 flex items-center justify-between gap-3">
                 <h2
                     id="congress-trend-summary-heading"
-                    className="text-lg font-semibold tracking-tight"
+                    className={HEADING_SECTION}
                 >
                     {t('CongressTrendSummaryView.bbb041')}
                 </h2>
@@ -65,7 +69,7 @@ export function CongressTrendSummaryView({
 
             {result.notableMembersKo.length > 0 && (
                 <div className="mb-5">
-                    <h3 className="mb-2 text-sm font-semibold">
+                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
                         {t('CongressTrendSummaryView.9a15c9')}
                     </h3>
                     <ul
@@ -92,7 +96,7 @@ export function CongressTrendSummaryView({
 
             {result.riskNoteKo.trim().length > 0 && (
                 <div>
-                    <h3 className="mb-2 text-sm font-semibold">
+                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
                         {t('CongressTrendSummaryView.b2e4d7')}
                     </h3>
                     <p className="text-sm leading-relaxed text-secondary-400">

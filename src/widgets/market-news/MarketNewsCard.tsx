@@ -56,9 +56,9 @@ interface ImpactBadgeProps {
 }
 
 function ImpactBadge({ value }: ImpactBadgeProps) {
+    const tLabel = useTranslations('shared.enumLabel');
     // `SENTIMENT_LABEL_KEY`와 같은 이유로 키를 그대로 `tLabel`에 넣는다 —
     // 추출기가 이 파일에서 `shared.enumLabel`을 보게 해야 페이로드에 실린다.
-    const tLabel = useTranslations('shared.enumLabel');
     if (!isNewsImpact(value)) return null;
     return (
         <span
@@ -227,7 +227,7 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
                 <>
                     {body !== null && (
                         <section className="mt-3 border-t border-secondary-700/70 pt-3">
-                            <h4 className="mb-1 text-xs font-semibold text-secondary-300">
+                            <h4 className="mb-1 text-xs font-medium text-secondary-300">
                                 {t('MarketNewsCard.c67b87')}
                             </h4>
                             <p className="text-sm leading-relaxed wrap-break-word text-secondary-400">
@@ -237,7 +237,7 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
                     )}
                     {summary !== null && (
                         <section className="mt-3 border-t border-secondary-700/70 pt-3">
-                            <h4 className="mb-1 text-xs font-semibold text-secondary-300">
+                            <h4 className="mb-1 text-xs font-medium text-secondary-300">
                                 {t('MarketNewsCard.3ea27a')}
                             </h4>
                             <p className="text-sm leading-relaxed wrap-break-word text-secondary-400">

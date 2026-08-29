@@ -10,10 +10,11 @@ import { EmptySectionCard } from './EmptySectionCard';
 import { cn } from '@/shared/lib/cn';
 import { formatCompactCurrency } from '@/shared/lib/priceFormat';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 
 const HEADING_ID = 'health-heading';
-const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
+const HEADING_CLASS_NAME = cn('mb-4', HEADING_SECTION);
 
 interface FinancialHealthCardProps {
     /** 표기 통화를 정하기 위해 필요하다 — 국내 종목은 원화다. */
@@ -26,9 +27,9 @@ interface FinancialHealthCardProps {
 type BadgeVariant = 'good' | 'warn' | 'bad' | 'neutral';
 
 const BADGE_VARIANT_CLASS: Record<BadgeVariant, string> = {
-    good: 'bg-ui-success/10 text-chart-bullish',
-    bad: 'bg-ui-danger/10 text-chart-bearish',
-    warn: 'bg-ui-warning/10 text-ui-warning',
+    good: 'bg-ui-success/10 text-ui-success-text',
+    bad: 'bg-ui-danger/10 text-ui-danger-text',
+    warn: 'bg-ui-warning/10 text-ui-warning-text',
     neutral: 'bg-secondary-700 text-secondary-400',
 };
 
@@ -137,7 +138,7 @@ export function FinancialHealthCard({
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 {t('FinancialHealthCard.ac568f')}

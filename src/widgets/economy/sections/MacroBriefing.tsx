@@ -8,6 +8,7 @@ import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 
 import { useMacroBriefing } from '../hooks/useMacroBriefing';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 /** MacroBriefingResponse['regime'] → `shared.enumLabel.macroRegime` 카탈로그 키. */
 const REGIME_LABEL_KEY: Record<MacroBriefingResponse['regime'], string> = {
@@ -72,14 +73,11 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
     const locale = useResolvedLocale();
     return (
         <section
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             aria-labelledby="macro-briefing-heading"
         >
             <header className="mb-4 flex items-center gap-3">
-                <h2
-                    id="macro-briefing-heading"
-                    className="text-lg font-semibold text-secondary-100"
-                >
+                <h2 id="macro-briefing-heading" className={HEADING_SECTION}>
                     {t('MacroBriefing.283194')}
                 </h2>
                 <span
@@ -121,7 +119,7 @@ function MacroBriefingSkeleton() {
     const t = useTranslations('widgets.economy');
     return (
         <section
-            className="animate-pulse rounded-xl border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
+            className="animate-pulse rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
             aria-busy="true"
             aria-label={t('MacroBriefing.a0f763')}
         >
@@ -136,7 +134,7 @@ function MacroBriefingBotBlocked() {
     const t = useTranslations('widgets.economy');
     return (
         <section
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6 text-sm text-secondary-300"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6 text-sm text-secondary-300"
             aria-label={t('MacroBriefing.b5f759')}
         >
             {t('MacroBriefing.903a71')}
@@ -148,7 +146,7 @@ function MacroBriefingError({ onRetry }: MacroBriefingErrorProps) {
     const t = useTranslations('widgets.economy');
     return (
         <section
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             role="alert"
             aria-label={t('MacroBriefing.b5f759')}
         >

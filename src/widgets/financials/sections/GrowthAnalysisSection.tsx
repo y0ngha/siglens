@@ -4,6 +4,7 @@ import { EmptySectionCard } from './EmptySectionCard';
 import { StatementTable } from './StatementTable';
 import { toDisplayOrder } from './toDisplayOrder';
 import { HEADING_CLASS_NAME } from './constants';
+import { statementColumnLabel } from './statementColumnLabel';
 
 interface GrowthAnalysisSectionProps {
     rows: FinancialGrowthRow[];
@@ -44,7 +45,7 @@ export function GrowthAnalysisSection({ rows }: GrowthAnalysisSectionProps) {
     }
 
     const displayRows = toDisplayOrder(rows);
-    const columns = displayRows.map(r => r.fiscalYear);
+    const columns = displayRows.map(statementColumnLabel);
 
     const yoyRows = [
         {
@@ -91,20 +92,25 @@ export function GrowthAnalysisSection({ rows }: GrowthAnalysisSectionProps) {
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 {tSection(TITLE_KEY)}
             </h2>
             <div className="mb-6">
-                <StatementTable columns={columns} rows={yoyRows} />
+                <StatementTable
+                    caption={tSection('growthAnalysisYoy')}
+                    columns={columns}
+                    rows={yoyRows}
+                />
             </div>
             <div className="border-t border-secondary-700/50 pt-4">
-                <p className="mb-3 text-xs tracking-wide text-secondary-400 uppercase">
+                <p className="mb-3 text-xs text-secondary-400">
                     {t('GrowthAnalysisSection.fc30d8')}
                 </p>
                 <StatementTable
-                    columns={[latest.fiscalYear]}
+                    caption={t('GrowthAnalysisSection.ca84e3')}
+                    columns={[statementColumnLabel(latest)]}
                     rows={perShareRows}
                 />
             </div>

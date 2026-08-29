@@ -1,3 +1,5 @@
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { cn } from '@/shared/lib/cn';
 import { useTranslations } from 'next-intl';
 export function OptionsAiAnalysisStaleNotice() {
     const t = useTranslations('widgets.options');
@@ -7,11 +9,11 @@ export function OptionsAiAnalysisStaleNotice() {
     return (
         <section
             aria-labelledby="options-ai-analysis-heading"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2
                 id="options-ai-analysis-heading"
-                className="mb-3 text-xs tracking-widest text-secondary-400 uppercase"
+                className={cn('mb-3', HEADING_SECTION)}
             >
                 {t('OptionsAiAnalysisStaleNotice.eefb95')}
             </h2>

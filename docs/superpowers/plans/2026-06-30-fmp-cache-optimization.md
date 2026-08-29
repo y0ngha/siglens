@@ -259,7 +259,7 @@ git commit -m "feat(fmp): add getStockPeersRaw (un-enriched, page-only peer list
 ```ts
 it('getStockPeers (page) delegates to provider.getStockPeersRaw (no enrich), not enriched getStockPeers', async () => {
     const { getStockPeers } = await import(
-        '@/app/[symbol]/fundamental/fundamentalData'
+        '@/app/[locale]/[symbol]/fundamental/fundamentalData'
     );
     await getStockPeers('AAPL');
     expect(mockProvider.getStockPeersRaw).toHaveBeenCalledWith('AAPL');

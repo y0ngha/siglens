@@ -63,10 +63,10 @@
                 "82acf3": "Please try again shortly"
             },
             "error": {
+                "729779": "Temporary Error",
                 "0c767c": "Retry",
                 "19cf82": "A temporary error occurred while fetching economic calendar data. Please try again shortly.",
                 "250bba": "Failed to load economic calendar",
-                "729779": "Temporary Error",
                 "eb2523": "{v0} Home"
             },
             "page": {
@@ -78,13 +78,13 @@
         "fear-greed": {
             "FearGreedRouteBody": {
                 "350c3b": "How to Read the Fear & Greed Index",
-                "ae2ce9": "Frequently Asked Questions",
-                "b35c3b": "{v0} points — {v1}"
+                "ae2ce9": "Frequently Asked Questions"
             },
+            "bandRange": "{v0}–{v1} — {v2}",
             "error": {
+                "729779": "Temporary Error",
                 "0c767c": "Try Again",
                 "4749c9": "The index could not be displayed due to a temporary error. Please try again shortly.",
-                "729779": "Temporary Error",
                 "e533f3": "Failed to load Fear & Greed Index",
                 "eb2523": "{v0} Home"
             }
@@ -98,9 +98,9 @@
         },
         "home": {
             "error": {
+                "729779": "Temporary Error",
                 "0c767c": "Try Again",
                 "32c8a0": "A temporary issue occurred. Please try again shortly.",
-                "729779": "Temporary Error",
                 "80dac7": "Failed to load page",
                 "eb2523": "{v0} Home"
             },
@@ -186,7 +186,7 @@
                 "167f34": "Check the results of 2 years of Backtesting technical analysis and AI predictions for 10 major stocks.",
                 "1d43d2": "SIGLENS: Analyzed and Completed by AI",
                 "24e60c": "Skip to Search",
-                "2573df": "Stocks and Coins, A New Standard for Investment —",
+                "2f20c8": "A new standard for investing in stocks and crypto",
                 "79bd8f": "Easily check AI reports analyzing news, Fundamentals, and the Fear & Greed Index.",
                 "c26658": "AI Analysis for Greater Investment Confidence",
                 "dfbacd": "How accurate is Siglens?",
@@ -211,8 +211,8 @@
         },
         "market": {
             "error": {
-                "0c767c": "Try Again",
                 "729779": "Temporary Error",
+                "0c767c": "Try Again",
                 "a92ddb": "The external quote provider may be temporarily unresponsive. Please try again shortly.",
                 "cccc8a": "Failed to load market data",
                 "eb2523": "{v0} Home"
@@ -220,10 +220,10 @@
         },
         "news": {
             "error": {
+                "729779": "Temporary Error",
                 "0c767c": "Try Again",
                 "1ead41": "A temporary error occurred while fetching news data. Please try again shortly.",
                 "364c32": "An issue occurred while loading market news.",
-                "729779": "Temporary Error",
                 "eb2523": "{v0} Home"
             },
             "opengraph-image": {
@@ -234,16 +234,16 @@
             },
             "page": {
                 "17728f": "US, Korean stock, and crypto news, categorized by region and summarized by AI.",
-                "78de73": "{v0} News",
+                "3a465d": "News",
                 "a96e68": "First, choose the market you want to see. The US is\n                        divided into General, Stocks, Forex, and Market Articles, while Korea and\n                        Crypto lead directly to the article list.",
-                "categoryEmptyLabel": "No {v0} news",
+                "ace274": "Each category page carries an AI digest and bullish/bearish signals, and the article cards take you to the original source.",
                 "d311d2": "US Market News",
                 "d97943": "AI summarizes the latest news from US General, Stocks, Forex, and Market Articles for you.",
                 "dc06c4": "Market News Hub",
                 "e02fdd": "Category Shortcut",
-                "f5e9de": "Each category displays bullish/bearish signals along with an AI digest,\n                        and clicking on a card leads to the original article.",
                 "faef4a": "Loading AI Digest",
-                "fdb87b": "Failed to load recent {v0} news. Please check again shortly."
+                "fdb87b": "Failed to load recent {v0} news. Please check again shortly.",
+                "newsEmptyAria": "No {v0} news"
             },
             "regionDescription": {
                 "crypto": "Market trends for major cryptocurrencies such as Bitcoin and Ethereum.",
@@ -287,10 +287,10 @@
         },
         "share": {
             "error": {
+                "729779": "Temporary Error",
                 "0c767c": "Try Again",
                 "1dedc8": "A temporary error occurred. Please try again shortly or check the analysis directly on {v0} Home.",
                 "3cf233": "Failed to load share page",
-                "729779": "Temporary Error",
                 "eb2523": "{v0} Home"
             },
             "opengraph-image": {
@@ -322,11 +322,11 @@
         "symbol": {
             "CongressDegraded": {
                 "508fee": "The external data provider is temporarily unresponsive. Please visit again shortly to\n                    view the trading history of Senate and House members.",
-                "e607c1": "{v0} Congressional Trades",
+                "7b06ac": "Congressional Trades",
                 "ea5528": "Congressional Trades data is temporarily unavailable."
             },
             "FinancialsDegraded": {
-                "465a63": "{v0} Financial Statements",
+                "128c11": "Financial Statements",
                 "4e578a": "The external data provider is temporarily unresponsive. Please visit again later to view the Financial Statements.",
                 "595d2d": "Financial data is temporarily unavailable"
             },
@@ -336,10 +336,10 @@
                 "a37ac2": "The external data provider is temporarily unresponsive. Please visit again later to view PER, ROE, and analyst consensus."
             },
             "error": {
+                "729779": "Temporary Error",
                 "0c767c": "Try Again",
                 "0de4f6": "Failed to load data",
                 "2e23eb": "The external data provider may be temporarily unresponsive. Please try again later.",
-                "729779": "Temporary Error",
                 "eb2523": "{v0} Home"
             },
             "loading": {
@@ -358,6 +358,7 @@
                 "f9482c": "Fear & Greed Index"
             },
             "page": {
+                "412646": "Fundamentals Analysis",
                 "0430a5": "Cash generation score is calculated based on operating cash flow and free cash flow (FCF). If operating cash flow is greater than net income, it indicates high-quality earnings, and consistent FCF represents the capacity for Dividend, share buybacks, and investments.",
                 "05f287": "How do I view comparisons against peers?",
                 "094886": "It is divided into 5 stages from Extreme Fear to Extreme Greed (Extreme Fear · Fear · Neutral · Greed · Extreme Greed). If the sample size is less than 60 days, reliability is marked as \"Limited,\" and it is safer to recheck the label after more data has accumulated.",
@@ -365,29 +366,19 @@
                 "1a9e0a": "The U.S. STOCK Act mandates that members of the Senate and House of Representatives and their family members disclose stock trades within 45 days. Trades by members of Congress are one of the signals market participants pay attention to in terms of access to industry and policy information. Political trading trends are used as a supplementary indicator of market sentiment, not for quantitative valuation.",
                 "1af282": "{v0} Congressional Member Trading Disclosure Overview",
                 "1b54b3": "Analyzes {v0}'s Income Statement (Revenue, Operating Profit, Net Income, EPS), Balance Sheet (Assets, Liabilities, Equity), and Cash Flow Statement (Operating Cash Flow, Free Cash Flow) over a 5-year trend. It also provides a comprehensive financial score across four axes: Growth, Profitability & Quality, Stability, and Cash Generation, along with key financial ratios.",
-                "1e3497": "{v0}'s recent 52-week range is {v1}",
                 "2141f2": "News Analysis",
                 "24d5a2": "Stability score is calculated based on debt-to-equity ratio and current ratio. A higher score indicates lower debt burden and excellent short-term repayment ability. Checking the total debt-to-total assets ratio on the balance sheet together can provide a more accurate understanding of financial health.",
                 "2659c6": "{v0} News Analysis Overview",
-                "29ae1a": "There are a total of {v0} tradable expiration dates, with the nearest expiration being {v1}.",
+                "2ab959": "which floor of this building is the price on?",
                 "2c1d31": "A net buying dominance by members of Congress for a specific stock does not directly translate into a bullish signal. There are limitations such as disclosure delays, amount by range, and trades under family members' names, so it should be interpreted as a supplementary indicator. The AI trend interpretation on this page is the result of deterministically summarizing transaction counts and congressional distribution, then adding LLM comments. Please consider buy/sell decisions in conjunction with other Fundamentals and technical signals.",
-                "348851": "Volume z-score, Buy/Sell volume imbalance, Volume Profile\n                        POC distance, MA200 deviation, position relative to 52-week high — these 5\n                        factors are converted to percentiles within a 200-trading-day distribution and then\n                        weighted averaged. Divided into Flow and Trend groups, you can also see which\n                        axis is driving the score.",
                 "3c87a9": "Could not load Earnings schedule.",
-                "412646": "Fundamentals Analysis",
                 "42ddbe": "Summarizes {v0} trading details disclosed by U.S. Senate and House members under the STOCK Act. It shows the transaction date, disclosure date, buy/sell classification, and estimated amount range. Considering the disclosure delay of approximately 45 days, AI summarizes recent Congressional trading trends.",
-                "44a64f": "It is {v0}, and the current price {v1} is at {v2}% of this range — {v3}. If you register your Holdings below {v4}, you can also see the floor you bought on within the same building.",
                 "465a63": "{v0} Financial Statements",
-                "469707": "{v0} represents the short-term trading sentiment of a single stock as a score from 0 to 100.",
-                "4e7e6f": "Where <link>{v1}</link> combines many assets to show sentiment across {v0} as a whole, this page scores a single stock by converting its volume flow, execution flow, and price position within that stock’s own distribution.",
-                "5ab35b": "{v0} Current Price: Which Floor of This Apartment?",
                 "5c38df": "Could not load analyst trends.",
-                "632a87": "{v0}{v1} Fundamentals Analysis. Analyzes company profile, valuation (PER, PSR, EPS), profitability (ROE, Margin), financial health, and analyst consensus target price.",
                 "6723ea": "Earnings Schedule",
+                "69d338": "My Position",
                 "6cd32e": "{v0} Fear & Greed Index and Short-Term Buying Sentiment",
                 "6e94dd": "In the Peers table on the same page, you can compare key indicators like PER, PSR, ROE, and margins at a glance with other stocks in the same sector. This reduces the illusion of a stock appearing expensive or cheap when only looking at its absolute value.",
-                "712907": "How to interpret {v0} Overall Analysis",
-                "715b77": "If risk factors such as Earnings release results, guidance changes, macro events, or a sudden shift in sentiment undermine the scenario's premise, that scenario is considered broken. These are separately indicated in the risk factors section, making it good to check before buying.",
-                "716d9b": "Company profile, valuation metrics like PER, PSR, EPS, profitability viewed through ROE and margins, financial health through debt and cash flow, and analyst consensus and target prices can be viewed together.",
                 "72cf41": "Why is the disclosure delay approximately 45 days?",
                 "7b06ac": "Congressional Trades",
                 "7b255a": "A high PER signals that the market is giving a premium to future growth, and ROE shows how much profit is generated relative to equity. Its meaning becomes clear when compared with the industry average.",
@@ -395,29 +386,18 @@
                 "7fcfc0": "What 5 factors are used to calculate the score?",
                 "8770b1": "How are indicators like PER and ROE interpreted?",
                 "8b7ae7": "AI Comprehensive Analysis",
-                "927513": "{v0} My Position",
-                "9dc811": "Displays {v0}'s short-term buying sentiment as a score from 0 to 100 and in 5 stages (Extreme Fear / Fear / Neutral / Greed / Extreme Greed). Calculated by converting volume flow and price position within the stock's own distribution.",
                 "9e0659": "{v0} Financial Metrics and Analyst Opinions",
                 "9f451a": "Web",
                 "a32c23": "AI analyzes Options market data and explains in English where money is accumulating for each major expiration and what Volatility the market expects. It also shows key indicators like Max Pain, Put/Call Ratio, ATM IV, Implied Move, and OI distribution charts by Strike.",
                 "a79703": "The Growth Score evaluates the annual growth rate of revenue and operating profit over a 5-year trend. Sustained revenue growth accompanied by an increase in operating profit margin can be considered qualitative growth. You can directly check the year-over-year trend in the income statement chart.",
                 "a916d9": "The STOCK Act requires members of Congress to notify the ethics office within 30 days of a trade and disclose it within 45 days of notification. Therefore, it is highly likely that the actual trade occurred 1–2 months before the disclosure date. Since the trade date and disclosure date differ, it is safer to interpret cumulative trends rather than using them as short-term trading signals.",
                 "b2cd1a": "Analyst Rating Changes",
-                "b51b30": "If risk factors such as macro events, regulatory issues, major news, or a sudden shift in sentiment undermine the scenario's premise, the scenario is considered broken. These risk factors are separately indicated, making it good to check them once before buying.",
                 "ba2808": "{v0} Options Market Analysis",
-                "c3a35c": "{v0} Options Analysis Overview",
                 "c6cf97": "Translating...",
-                "c7925a": "{v0} AI interprets the options market. You can view key indicators such as Max Pain by expiry, Put/Call Ratio, ATM IV, Implied Move, and strike-specific Open Interest distribution.",
                 "cf643b": "Market Cap",
-                "dbd943": "{v0} Fundamentals Analysis Overview",
                 "dc8a6d": "How are the 5-stage sentiment labels categorized?",
-                "e2a9cb": "What signals indicate that a scenario has been invalidated?",
                 "e607c1": "{v0} Congressional Trades",
                 "e70f2d": "Max Pain is the price to which the stock price is drawn as Options expiration approaches. Open Interest is the number of currently active Options contracts, meaning many people are betting on thick price levels.",
-                "e753ee": "What criteria are used to distinguish between bullish and bearish scenarios?",
-                "e8075f": "Since it is calculated based on the stock's own distribution, it is more suitable for tracking changes over time for the same stock rather than directly comparing scores with other stocks. When the sample is less than 60 days, a \"Limited\" reliability badge is attached, so it is safer to use it only as a reference.",
-                "ea5664": "{v0} How to Interpret the Fear & Greed Index",
-                "eac807": "{v0} Fear & Greed Index Overview",
                 "ec648e": "What happens if my stock does not have Options?",
                 "f07882": "{v0} Chart Analysis Overview",
                 "f07925": "This is the chart page where you can check {v0}'s price movement and technical indicator summaries.",
@@ -446,7 +426,9 @@
                 "overallGuideUsEquityP2": "It also notes in one line whether near-dated options are betting more heavily on calls or puts. The four axes are then combined into bullish and bearish scenarios, with the price zones worth considering for entry and the signals that would break each scenario.",
                 "overallHeadingCrypto": "{v0} Overall Analysis — Chart, News and Buying Sentiment",
                 "overallHeadingKrEquity": "{v0} Overall Analysis — Chart, Earnings and News",
-                "overallHeadingUsEquity": "{v0} Overall Analysis — Chart, Options, Earnings and News"
+                "overallHeadingUsEquity": "{v0} Overall Analysis — Chart, Options, Earnings and News",
+                "positionRangeSentence": "The 52-week range for {v0} is {v1} to {v2}, and the current price of {v3} sits at the {v4}% mark of that range — {v5}.",
+                "positionRegisterHint": "Register a holding below and you can also see the floor you bought on, inside the same building."
             },
             "position": {
                 "band": {
@@ -600,6 +582,7 @@
                 "bullish": "Bullish",
                 "cautious": "Cautious",
                 "fearGreedSummary": "Fear & Greed Index {v0}",
+                "fearGreedSummaryNoScore": "Fear & Greed Index",
                 "neutral": "Neutral"
             },
             "seo": {
@@ -622,8 +605,8 @@
         },
         "analysis-nudge": {
             "AnalysisSignupNudgeModal": {
-                "2b8afd": "Go to Sign Up",
                 "486011": "Sign up to enable ''{v0}'' and receive more detailed analysis reports.",
+                "2b8afd": "Go to Sign Up",
                 "84ff73": "Want deeper analysis?",
                 "94b7db": "Close"
             }
@@ -649,9 +632,9 @@
         },
         "auth-login": {
             "LoginForm": {
+                "819738": "Password",
                 "21fb76": "Logging in…",
                 "3c3776": "Email",
-                "819738": "Password",
                 "e225a6": "Log In"
             }
         },
@@ -671,9 +654,9 @@
         },
         "auth-password-reset": {
             "ForgotPasswordForm": {
-                "3be296": "If the email you entered is associated with a registered account, we have sent a password reset link.",
                 "3c3776": "Email",
                 "3e3640": "If the email hasn't arrived, please check your spam folder.",
+                "4fd65c": "If that email belongs to a registered account, we have sent a password reset link.",
                 "8321f5": "Sending...",
                 "f4d6d3": "Send Reset Link",
                 "fe04f2": "Check your email"
@@ -688,13 +671,13 @@
         },
         "auth-signup": {
             "SignupForm": {
+                "403732": "6-digit code",
+                "819738": "Password",
                 "0d75cf": "Verification complete:",
                 "33c1f7": "Verifying...",
                 "3c3776": "Email",
-                "403732": "6-digit code",
                 "4e96eb": "Name visible to other users",
                 "7b5f5a": "Verify Code",
-                "819738": "Password",
                 "8321f5": "Sending...",
                 "d01150": "Signing up...",
                 "d50482": "We sent a verification code to <email>{v0}</email>.",
@@ -745,10 +728,10 @@
         },
         "portfolio-management": {
             "HoldingForm": {
+                "579429": "Add",
                 "19b2d1": "Cancel",
                 "1f1712": "Save",
                 "3407f9": "Search Ticker",
-                "579429": "Add",
                 "7294d6": "Quantity",
                 "7c07f7": "e.g., 10…",
                 "900beb": "Average Price",
@@ -784,10 +767,10 @@
         },
         "portfolio-onboarding": {
             "OnboardingContent": {
+                "643019": "Welcome",
                 "26bd1f": "Add your holdings",
                 "389b82": "Get Started",
                 "5d18f5": "Add them now to receive analysis based on your average price.\n                    You can also add them later in account settings.",
-                "643019": "Welcome",
                 "c9c840": "Do Later",
                 "cae421": "Holdings"
             }
@@ -805,8 +788,7 @@
         "pwa-install": {
             "IosInstallModal": {
                 "2c8570": "Add to Home Screen",
-                "94b7db": "Close",
-                "stepAlt": "Step {v0} instructions"
+                "94b7db": "Close"
             },
             "PwaBanner": {
                 "15236a": "Install",
@@ -1126,12 +1108,14 @@
                         "us": "US Market News"
                     }
                 },
+                "overviewAll": "All {v0}",
                 "overviewFull": {
                     "economy": "Full Economy",
                     "fear-greed": "Full Fear & Greed Index",
                     "market": "Full Market Analysis",
                     "news": "Full News"
                 },
+                "overviewToken": "All",
                 "region": {
                     "crypto": "Cryptocurrency",
                     "kr": "Korea",
@@ -1488,17 +1472,32 @@
                 "financialsGrowth": "What is the growth trend for {v0}?",
                 "financialsHealthy": "Are {v0} financials healthy?",
                 "fundamentalScope": "What does the {v0} fundamental analysis cover?",
+                "fundamentalScopeAnswer": "For {v0} you can review the company profile, valuation metrics such as P/E, P/S and EPS, profitability through ROE and margins, financial health via debt and cash flow, plus the analyst consensus and price target.",
+                "fundamentalSectorSuffix": " ({v0} sector)",
                 "newsArticleHeadlineCrypto": "AI summary of recent {v0} crypto news",
                 "newsArticleHeadlineEquity": "AI summary of recent {v0} news",
                 "newsListName": "Latest {v0} news",
+                "optionsExpirations": " There are {v0} tradable expirations right now, and the nearest one is {v1}.",
                 "optionsScope": "What does the {v0} options market analysis cover?",
                 "overallAxes": "Which angles does the {v0} overall analysis combine?",
                 "overallAxesAnswerCrypto": "It combines the chart trend, recent news sentiment and buying mood (the Fear & Greed Index) for {v0} to lay out bull and bear scenarios, price levels worth considering for entry, and the risks that would break each scenario.",
                 "overallAxesAnswerKrEquity": "It combines three angles for {v0} — the chart trend, quarterly earnings and fundamentals, and recent news sentiment — then adds market mood (the Fear & Greed Index) to lay out bull and bear scenarios, price levels worth considering for entry, and the risks that would break each scenario.",
                 "overallAxesAnswerUsEquity": "It combines four angles for {v0} — the chart trend, the short-term direction the options market is pricing in, quarterly earnings and fundamentals, and recent news sentiment — then adds market mood (the Fear & Greed Index) to lay out bull and bear scenarios, price levels worth considering for entry, and the risks that would break each scenario.",
+                "overallBrokenAnswerCrypto": "A scenario is treated as broken once a risk factor undermines its premise — a macro event, a regulatory development, major news, or a sharp sentiment reversal. Those factors are listed separately, so they are worth a look before you buy.",
+                "overallBrokenAnswerEquity": "A scenario is treated as broken once a risk factor undermines its premise — an earnings result, a guidance change, a macro event, or a sharp sentiment reversal. Those factors are listed separately, so they are worth a look before you buy.",
+                "overallBrokenQuestion": "Which signals mean the scenario has broken down?",
                 "overallScenarioAnswerCrypto": "It weighs the chart trend, recent news flow and buying mood to judge whether upward or downward pressure has the upper hand. For each scenario it also sets out the price levels worth considering for entry and the signals that would break it.",
                 "overallScenarioAnswerKrEquity": "It weighs the chart trend, the earnings and guidance trajectory, and news sentiment to judge whether upward or downward pressure has the upper hand. For each scenario it also sets out the price levels worth considering for entry and the signals that would break it.",
-                "overallScenarioAnswerUsEquity": "It weighs the chart trend, call/put positioning in the options market, the earnings and guidance trajectory, and news sentiment to judge whether upward or downward pressure has the upper hand. For each scenario it also sets out the price levels worth considering for entry and the signals that would break it."
+                "overallScenarioAnswerUsEquity": "It weighs the chart trend, call/put positioning in the options market, the earnings and guidance trajectory, and news sentiment to judge whether upward or downward pressure has the upper hand. For each scenario it also sets out the price levels worth considering for entry and the signals that would break it.",
+                "overallScenarioQuestion": "What separates the bullish scenario from the bearish one?"
+            },
+            "faqHeading": {
+                "congress": "{v0} Congressional Trades FAQ",
+                "fear-greed": "{v0} Fear & Greed Index FAQ",
+                "financials": "{v0} financial statements FAQ",
+                "fundamental": "{v0} fundamental analysis FAQ",
+                "options": "{v0} options analysis FAQ",
+                "overall": "{v0} overall analysis FAQ"
             },
             "fearGreedPage": {
                 "kr": {
@@ -1586,6 +1585,7 @@
                 "title": "My Portfolio Position"
             },
             "position": {
+                "breadcrumb": "My position",
                 "description": "Is your cost basis near the roof (the high) or the basement (the low)? See where it sits inside the 52-week range of {v0}.",
                 "title": "Where does my cost basis sit? — {v0} My Position"
             },
@@ -1824,12 +1824,21 @@
                 "9b3193": "Additional Information"
             },
             "PasswordField": {
-                "3ddfb5": "Caps Lock is on.",
                 "483994": "Hide Password",
+                "3ddfb5": "Caps Lock is on.",
                 "49d3b5": "Show Password"
+            },
+            "PasswordStrengthHint": {
+                "6fa4dd": " not met",
+                "eba437": " met"
             },
             "RegionTabs": {
                 "1eafbd": "Select Region"
+            },
+            "ThemeToggle": {
+                "current": "Theme: {v0}",
+                "f36b6a": "Select theme",
+                "label": "Theme"
             },
             "analysisError": {
                 "analysisFailed": "An error occurred during analysis.",
@@ -1872,6 +1881,11 @@
                 "weekAgo": "A week ago",
                 "year": "1Y",
                 "yearAgo": "A year ago"
+            },
+            "themeOption": {
+                "dark": "Dark",
+                "light": "Light",
+                "system": "System"
             }
         }
     },
@@ -1891,8 +1905,8 @@
             },
             "FearGreedFactsSummary": {
                 "asOfClose": "(as of {v0} close)",
-                "b53859": "{v0} Fear & Greed Index Summary",
-                "fa167e": "Current Score"
+                "fa167e": "Current Score",
+                "fabc11": "Fear & Greed Index summary"
             },
             "FearGreedHeaderChip": {
                 "afe032": "Insufficient Fear & Greed Data",
@@ -1931,8 +1945,8 @@
                 "signalListLabel": "{v0} options signals"
             },
             "OverallSnapshotProse": {
-                "128c11": "Financial Statements",
                 "288428": "Bearish Scenario",
+                "128c11": "Financial Statements",
                 "3a465d": "News",
                 "3c7dbc": "Options",
                 "854e15": "Fundamentals",
@@ -1941,6 +1955,9 @@
                 "b8f729": "Bullish Scenario",
                 "da6fd3": "Technical Analysis",
                 "de4a87": "Overall Analysis Conclusion"
+            },
+            "RelatedSymbols": {
+                "c35191": "Related tickers"
             },
             "SnapshotSummarySection": {
                 "220156": "Previous AI Analysis",
@@ -1967,9 +1984,9 @@
                 "recentBarsPosition": "Position over the last {v0} bars"
             },
             "TechnicalSnapshotProse": {
+                "938737": "Technical Analysis Summary",
                 "3d874f": "Strategy Signals",
                 "4195b7": "{v0} Technical Direction: {v1}",
-                "938737": "Technical Analysis Summary",
                 "bdeea2": "Chart Patterns",
                 "patternListLabel": "{v0} chart pattern list",
                 "strategyListLabel": "{v0} strategy signal list"
@@ -2047,11 +2064,12 @@
     "widgets": {
         "analysis": {
             "AnalysisPanel": {
+                "251228": "Key Price Levels",
+                "720097": "Risk",
                 "034be7": "Trading Strategy",
                 "06c8ed": "Chart",
                 "0b5eb6": "Trendline",
                 "120a0a": "Curious about a deeper analysis?",
-                "251228": "Key Price Levels",
                 "2a1bed": "Indicators",
                 "2c520f": "Analyzed based on my average price",
                 "31f83c": "Price Target",
@@ -2060,7 +2078,6 @@
                 "3dc47b": "Uptrend",
                 "550fe5": "Re-analysis can only be performed once every 5 minutes.",
                 "5ec98c": "Key Levels",
-                "720097": "Risk",
                 "79282c": "Downtrend",
                 "82e32f": "This is the result of AI-suggested values being further verified and corrected with internal data.\n                            ",
                 "8d481f": "No Pattern Detected",
@@ -2099,6 +2116,14 @@
             "ModelSelector": {
                 "1db1df": "Select AI Analysis Model",
                 "7c0e87": "AI Analysis Model List"
+            },
+            "PlanCheckBlock": {
+                "0f23de": "The risk-reward ratio in the trade plan above uses the entry price the AI suggested.",
+                "690c28": "At current price",
+                "8895c2": "Risk-reward — based on the planned entry",
+                "currentPriceNote": "This value re-runs the same stop loss and targets against the <strong>current price</strong>, so the two differ once the price has already moved.",
+                "d6bde3": "Cannot compute",
+                "fc05d0": "Check against current price"
             },
             "adBanner": {
                 "analyzing": "The AI is running a detailed analysis… Ad revenue funds better AI models and server costs.",
@@ -2148,6 +2173,12 @@
                 "reanalyzeCooldown": "{v0} until you can re-analyze",
                 "signupSkillUpsell": "Sign up to get a detailed analysis with all {v0} skills applied."
             },
+            "planCheck": {
+                "aboveEntryZone": "The current price is {v0}% above the suggested entry zone. This plan assumes you wait for a pullback.",
+                "belowStopLoss": "The current price has fallen below the stop loss. This plan is already void.",
+                "noTargetLeft": "There is no target left above the current price. Entering now leaves no profit range to aim for.",
+                "poorRiskReward": "At the current price the risk-reward ratio is {v0}. The loss you take on is larger than the gain you are after."
+            },
             "progress": {
                 "phase": {
                     "p0": "Sorting market data",
@@ -2192,11 +2223,11 @@
         },
         "backtesting": {
             "BacktestCaseCard": {
+                "456225": "Target Price:",
                 "06cf3e": "<n>{v0}</n> {v0, plural, one {day} other {days}}",
                 "0f8bf6": "AI Entry Recommendation",
                 "1e38a3": "Stop Loss",
                 "31e4d3": "Buy",
-                "456225": "Target Price:",
                 "540e42": "AI Hold",
                 "58b71d": "AI Prediction Level",
                 "62a65c": "Sell",
@@ -2211,10 +2242,10 @@
             },
             "BacktestHero": {
                 "116858": "Backtesting results verified with actual market data.",
-                "139227": "See how accurately Siglens' current AI analysis features performed when applied to historical data.",
-                "394fff": "Indicator Signal Win Rate",
                 "530709": "Mag7 + Leading Stocks",
+                "394fff": "Indicator Signal Win Rate",
                 "5a254c": "AI Prediction Win Rate",
+                "caee31": "We show how well the AI analysis Siglens offers today would have held up applied to the past.",
                 "d8b543": "How accurate is Siglens?",
                 "f92294": "Total Cases"
             },
@@ -2223,7 +2254,7 @@
             },
             "hero": {
                 "caseCount": "{v0}",
-                "tickerCount": "{v0}"
+                "tickerCount": "{v0} tickers"
             }
         },
         "chart": {
@@ -2275,11 +2306,11 @@
         },
         "chat": {
             "ChatPanel": {
+                "408331": "Enter your question… (Press Enter to send)",
                 "0b63e2": "You can ask questions after the analysis is complete.",
                 "1ca3c2": "I only answer based on the analysis results.",
                 "1dbde9": "Close analysis update notification",
                 "4077ce": "Send",
-                "408331": "Enter your question… (Press Enter to send)",
                 "50071e": "💬 Ask AI",
                 "cce9f7": "{v0} remaining today",
                 "d7fb24": "Analysis has been updated — please continue asking questions based on the latest results",
@@ -2290,9 +2321,9 @@
                 "aa779e": "Switched to {v0} page. The analysis context from the previous page no longer applies."
             },
             "FloatingChatButton": {
+                "318233": "If you have any questions about the analysis, please ask me anytime.",
                 "14d856": "Close AI Chat",
                 "21f255": "Close tooltip",
-                "318233": "If you have any questions about the analysis, please ask me anytime.",
                 "75d660": "Open AI Chat"
             },
             "ModelSelect": {
@@ -2300,9 +2331,9 @@
                 "fb54aa": "Select AI Model"
             },
             "UserApiKeyRequiredModal": {
+                "378180": "You can use this model by registering your API key.",
                 "017c94": "You can use this model by signing up and registering your own API key.",
                 "16ec45": "Sign Up",
-                "378180": "You can use this model by registering your API key.",
                 "94b7db": "Close",
                 "e790ae": "Register API Key",
                 "f77cc9": "{v0} API key registration is required.",
@@ -2327,13 +2358,13 @@
                 "cb8eae": "No Trade History"
             },
             "CongressTradesTable": {
+                "373579": "Congressional Trades Table (Scrollable Horizontally)",
                 "0c2cd8": "Holder",
                 "1ed947": "Disclosure Date",
                 "26d466": "Disclosure",
                 "27edc1": "Senate",
                 "29c3ae": "Member",
                 "29efb6": "Type",
-                "373579": "Congressional Trades Table (Scrollable Horizontally)",
                 "5073ef": "Asset Description",
                 "67600a": "Buy/Sell",
                 "af2fee": "Category",
@@ -2399,10 +2430,10 @@
         "dashboard": {
             "BriefingCard": {
                 "38eff4": "Generating AI Briefing...",
+                "39b300": "as of",
                 "7bd647": "Declining Sectors",
                 "8b256d": "Failed to load briefing.",
-                "e1760c": "Rising Sectors",
-                "f97e74": "As of {v0}"
+                "e1760c": "Rising Sectors"
             },
             "IndexCard": {
                 "analyzeTitle": "{v0} analysis"
@@ -2425,9 +2456,9 @@
                 "e6dcde": "{v0} {v0, plural, one {stock} other {stocks}} with bullish signals, {v1} {v1, plural, one {stock} other {stocks}} with bearish signals"
             },
             "SectorSignalPanel": {
+                "581217": "Sector Signals Overview",
                 "080a8a": "Uptrend Signals",
                 "12526e": "Downtrend Signals",
-                "581217": "Sector Signals Overview",
                 "760c9a": "Mixed",
                 "880a67": "Bearish Signs",
                 "976db4": "Bullish Signs",
@@ -2445,8 +2476,7 @@
                 "fe2ec0": "{v0} bullish / {v1} bearish detected"
             },
             "SignalSubsection": {
-                "fe9464": "No stocks detected with this signal today. Explore other sectors.",
-                "tickerCount": "{v0} tickers"
+                "fe9464": "No stocks detected with this signal today. Explore other sectors."
             },
             "SignalTypeGuide": {
                 "03876a": "Signal Type Guide"
@@ -2498,24 +2528,25 @@
                     "desc": "Price is sitting near the MA50 or MA200. This is the zone where you watch whether it bounces or breaks.",
                     "term": "Near support / resistance"
                 }
-            }
+            },
+            "stockCount": "{v0} stocks"
         },
         "economy": {
             "EconomicCalendarGrid": {
+                "703910": "{v0} events",
                 "3ebd79": "Forecast {v0} · Previous {v1}",
                 "490b3a": "{v0} {v1}",
                 "4ccace": "(KST)",
                 "596fce": "Economic Calendar",
-                "703910": "{v0} events",
                 "dc712b": "{v0} {v1} ({v2})",
                 "e1d376": "· Actual {v0}",
                 "f9d9dc": "There are no upcoming {v0} economic announcements scheduled yet."
             },
             "EconomicIndicatorGrid": {
+                "868089": "This is the 10-year yield minus the 2-year yield. If it turns negative,\n                    long-term and short-term interest rates are inverted, which is often seen as a recession signal.",
                 "015416": "No change from previous period",
                 "2388de": "2s10s Spread",
                 "58c098": "vs. Previous Period {v0}{v1}{v2}",
-                "868089": "This is the 10-year yield minus the 2-year yield. If it turns negative,\n                    long-term and short-term interest rates are inverted, which is often seen as a recession signal.",
                 "c2a5bf": "Economic Indicators"
             },
             "EconomyMacroFacts": {
@@ -2532,14 +2563,15 @@
                 "c2a5bf": "Economic Indicators"
             },
             "MacroBriefing": {
+                "283194": "Macro Briefing",
                 "0c767c": "Try Again",
                 "15d863": "Could not generate macro briefing at this time. Please try again\n                later.",
-                "283194": "Macro Briefing",
                 "62f15d": "Generated At: {v0}",
                 "903a71": "Analysis was not generated due to crawler access.",
                 "a0f763": "Loading Macro Economic Briefing",
                 "b5f759": "Macro Economic Briefing Information"
             },
+            "dayCellAriaImpacts": " — impact {v0}",
             "macroFacts": {
                 "cpiAndUnemployment": "The latest Consumer Price Index reads {v0}pt and unemployment is {v1}%.",
                 "cpiOnly": "The latest Consumer Price Index reads {v0}pt.",
@@ -2592,17 +2624,17 @@
                 "67d2cf": "Score"
             },
             "BalanceSheetSection": {
-                "5d4837": "Net Debt",
                 "610240": "Cash",
+                "835374": "Current Ratio",
+                "5d4837": "Net Debt",
                 "72fc67": "Equity",
                 "7c44f5": "Total Assets",
-                "835374": "Current Ratio",
                 "88bf5b": "Total Liabilities"
             },
             "CashFlowSection": {
+                "461536": "Operating CF",
                 "16b9ae": "Operating Cash Flow",
                 "3aa41a": "FCF Margin",
-                "461536": "Operating CF",
                 "98287f": "Dividend"
             },
             "FinancialsAiSummary": {
@@ -2630,6 +2662,7 @@
                 "8a595b": "Sales Growth",
                 "960ca9": "10Y Revenue Per Share Growth",
                 "c0a3ad": "3Y Revenue Per Share Growth",
+                "ca84e3": "Long-term revenue per share growth",
                 "dd9f11": "FCF Growth",
                 "fc30d8": "Long-term Revenue Per Share Growth (latest)"
             },
@@ -2663,6 +2696,7 @@
                 "cashFlow": "Cash flow statement",
                 "emptySection": "We could not load this data",
                 "growthAnalysis": "Growth analysis",
+                "growthAnalysisYoy": "Growth analysis, year over year",
                 "incomeStatement": "Income statement",
                 "tableScrollHint": "{v0} (scrolls horizontally)"
             },
@@ -2696,13 +2730,13 @@
         },
         "fundamental": {
             "FinancialHealthCard": {
+                "869609": "Bankruptcy Risk Index",
                 "093acd": "Piotroski F-Score",
                 "3276b7": "Current Ratio",
                 "3d0688": "The proportion of debt in a company's assets.",
                 "41cf1e": "Shows how much cash actually came in from core operations.\n                                ",
                 "4f21e5": "Above 2.99 is safe, 1.81-2.99 is a cautionary range.",
                 "7a2219": "Too high indicates increased financial risk.",
-                "869609": "Bankruptcy Risk Index",
                 "90cbfe": "Operating Cash Flow",
                 "9673b2": "A positive (+) value indicates strong earnings from core operations.",
                 "a65741": "Below 1 indicates a risk of short-term liquidity issues.",
@@ -2817,13 +2851,15 @@
                 "f63f21": "Typically, the lower it is, the more undervalued; the higher, the more overvalued.",
                 "fccdcd": "This value converts the net profit earned by the company in one year into how much was earned per share."
             },
+            "analystBuyCount": "Buy {v0}",
             "analystRating": {
                 "buy": "Buy {v0}",
                 "hold": "Hold {v0}",
                 "sell": "Sell {v0}",
                 "strongBuy": "Strong Buy {v0}",
                 "strongSell": "Strong Sell {v0}"
-            }
+            },
+            "analystSellCount": "Sell {v0}"
         },
         "home": {
             "CategoryCardGrid": {
@@ -2837,18 +2873,10 @@
             "HeroIllustration": {
                 "018ed1": "Illustration of an analysis dashboard displaying a candlestick chart, indicator trendlines, Golden Cross signal markers, and an RSI sub-panel"
             },
-            "HowItWorks": {
-                "1174ae": "Automatic Analysis",
-                "1493a3": "Enter Asset",
-                "7330a9": "How to Use",
-                "952732": "Enter a stock name or symbol, and the chart is drawn immediately.",
-                "autoAnalysisDescription": "Automatically analyzes {v0} indicators, {v1} candlestick patterns, {v2} chart patterns, {v3} strategies, and {v4} support/resistance methods",
-                "d441e1": "Trends, risks, buy entry guides, trading signals, chart patterns, strategies, and key Support and Resistance can all be checked on one screen.",
-                "f260aa": "AI Report"
-            },
+            "HowItWorks": {},
             "SkillsShowcase": {
-                "0d2c24": "Collapse",
                 "158954": "AI Analysis Skills",
+                "0d2c24": "Collapse",
                 "7e6540": "Reliability Score Explanation",
                 "7f2565": "Loading AI Analysis Skills",
                 "c266ba": "{v0}% is normal, {v1}% or more is high.",
@@ -2861,8 +2889,8 @@
                 "deac8e": "Siglens Analysis Scale"
             },
             "TickerCategories": {
-                "0ab969": "Explore Popular US Stocks by Sector",
                 "227844": "Popular Korean Stocks by Sector",
+                "0ab969": "Explore Popular US Stocks by Sector",
                 "bc06f5": "Explore Popular Korean Stocks by Sector",
                 "f6087a": "Popular US Stocks by Sector"
             },
@@ -2907,6 +2935,7 @@
                 "94b7db": "Close"
             },
             "Footer": {
+                "40df0a": "Sitemap",
                 "531f6a": "Contact Us",
                 "5f5d12": "Site Information",
                 "693b62": "Investment Disclaimer"
@@ -2941,7 +2970,9 @@
                 "ecb4cc": "Sign Up",
                 "menuLabel": "User menu ({v0})"
             },
+            "githubRepoAria": "{v0} GitHub repository (opens in a new tab)",
             "localeSwitcher": {
+                "current": "Language: {v0}",
                 "label": "Select Language"
             }
         },
@@ -2955,7 +2986,7 @@
         },
         "market-fear-greed": {
             "MarketFearGreedFactorBar": {
-                "3d4046": "Percentile {v0}",
+                "330be1": "Percentile",
                 "percentileLabel": "{v0} percentile {v1}"
             },
             "MarketFearGreedPage": {
@@ -2979,9 +3010,9 @@
                 "goToSymbol": "Go to the {v0} page"
             },
             "MarketNewsDigest": {
+                "569722": "Key Trends List",
                 "0c767c": "Retry",
                 "29339e": "Notable Events",
-                "569722": "Key Trends List",
                 "676ec8": "Generating AI Digest...",
                 "69a497": "Market AI Digest",
                 "77f553": "Key Trends",
@@ -3033,20 +3064,20 @@
                 "ed8166": "AI News Overall Analysis"
             },
             "NewsFactsSummary": {
+                "438417": "Recent news data summary",
+                "630450": "AI news card analysis completed for {v0} {v0, plural, one {item} other {items}}.",
                 "0a451a": "Sentiment distribution: Positive {v0}, Neutral {v1}, Negative {v2}.",
                 "34b3fc": "The {v0} page displays the {v1} most recent news items.",
                 "3ed34b": "{v0} latest news data is not yet ready. Once news cards are analyzed, recent articles and sentiment summaries will appear in this area.",
                 "5a1c5f": "You can check key issues and sentiment of coin news together.",
-                "630450": "AI news card analysis completed for {v0} {v0, plural, one {item} other {items}}.",
-                "9a3aa1": "{v0} Latest News Data Summary",
                 "c154a3": "Along with the news flow, you can check earnings schedules, recent earnings, and analyst rating changes.",
                 "d54f8a": "Latest articles are based on {v0}.",
                 "fc9900": "Recent Article Titles"
             },
             "NewsList": {
+                "850458": "View Original →",
                 "17ecc6": "Checking for latest news...",
                 "3ea27a": "Summary",
-                "850458": "View Original →",
                 "8e5a3a": "Show more ({v0} remaining)",
                 "a61f43": "Existing news is displayed first, and new articles are automatically added as they arrive.",
                 "ac2367": "Recent News",
@@ -3054,6 +3085,9 @@
                 "b75118": "No news in {v0}.",
                 "c67b87": "Body",
                 "d12df8": "AI analyzing..."
+            },
+            "NewsListErrorBoundary": {
+                "ac2367": "Recent news"
             },
             "surprise": {
                 "inline": "In line",
@@ -3126,7 +3160,7 @@
                 "b2411c": "{v0} {v1} Options Chain (Call/Put Prices by Strike, OI, IV)"
             },
             "OptionsEmptyState": {
-                "64ff0f": "No {v0} Options Market Information",
+                "68a411": "No options market data",
                 "840bca": "Other Analysis Pages",
                 "97e04b": "{v0} currently has no options market.",
                 "9e8562": "Explore the stock on other analysis pages."
@@ -3231,8 +3265,8 @@
                 "2f750a": "News Analysis Items"
             },
             "OptionsSummary": {
-                "56f3e5": "Options Analysis Items",
                 "859330": "Options Market",
+                "56f3e5": "Options Analysis Items",
                 "bf366f": "Options are not listed for this stock, or there is no data to analyze.",
                 "dac637": "Snapshot collected outside US Options regular trading hours; Open Interest may be based on the previous session.",
                 "e55475": "OI Data Delay"
@@ -3242,7 +3276,6 @@
                 "0c767c": "Retry",
                 "1c85d8": "An error occurred while preparing news card analysis.",
                 "8b7ae7": "AI Overall Analysis",
-                "axisFailedSuffix": " ({v0} axis failed)",
                 "e69812": "Requesting AI Overall Analysis…"
             },
             "OverallFactsSummary": {
@@ -3252,7 +3285,7 @@
             "OverallFactualFallback": {
                 "278a07": "The server has currently identified {v0} recent news items, of which {v1} have completed AI news card analysis.",
                 "3a92a1": "Recent news data is not yet ready. Once news cards are analyzed, the news axis status of the overall analysis will also be reflected.",
-                "662bc5": "{v0} Overall Analysis Data Status",
+                "87d0df": "Overall analysis data status",
                 "ab960a": "{v0} Overall Analysis looks at {v1} together.",
                 "ea75f6": "The overall AI conclusion has not been cached yet. When the analysis results are\n                    ready, bullish, neutral, and bearish scenarios and risk factors will be displayed in this area."
             },
@@ -3281,9 +3314,10 @@
                 "fcd702": "Expected Price Range"
             },
             "TechnicalSummary": {
-                "6d957a": "Technical Analysis Items",
-                "938737": "Technical Analysis Summary"
-            }
+                "938737": "Technical Analysis Summary",
+                "6d957a": "Technical Analysis Items"
+            },
+            "axisFailed": " ({v0} axis failed)"
         },
         "portfolio-position": {
             "PositionBuilding": {
@@ -3308,8 +3342,8 @@
             },
             "PositionStatusSummary": {
                 "160873": "To recent high",
-                "44acd6": "Unrealized P/L",
                 "573838": "Current price position in range",
+                "44acd6": "Unrealized P/L",
                 "70227d": "To recent low",
                 "bda91f": "My Position",
                 "f2116e": "Avg. Price · Quantity",
@@ -3352,9 +3386,9 @@
                 "shareTitle": "{v0} AI analysis"
             },
             "SharePreparingModal": {
+                "797416": "Preparing Analysis",
                 "0c767c": "Try Again",
                 "15b661": "Analysis Failed",
-                "797416": "Preparing Analysis",
                 "94b7db": "Close",
                 "98580d": "Failed to complete analysis. Try again?",
                 "99d27b": "Usually takes 10–30 seconds",

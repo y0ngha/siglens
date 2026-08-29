@@ -43,7 +43,11 @@ vi.mock('@/entities/auth/lib/db', () => ({
     getAuthDatabaseClient: vi.fn(() => ({ db: {} })),
 }));
 
-vi.mock('@/shared/lib/auth/redirect', () => ({
+// `importActual`로 실제 모듈을 펼친 뒤 필요한 것만 덮는다. 열거식으로
+// 적으면 export가 늘 때마다 여기가 조용히 undefined를 돌려준다 —
+// 실제로 `toSameOriginPath`가 추가되자 세 파일이 한꺼번에 깨졌다.
+vi.mock('@/shared/lib/auth/redirect', async () => ({
+    ...(await vi.importActual('@/shared/lib/auth/redirect')),
     sanitizeNextPath: vi.fn((path?: string) => path ?? '/'),
 }));
 

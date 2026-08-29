@@ -568,7 +568,7 @@ import { TechnicalFactsSummary } from '@/widgets/symbol-page/TechnicalFactsSumma
 vi.mock('@/entities/bars/lib/barsStaticCache', () => ({ getBarsStatic: vi.fn() }));
 // ... (page.test.ts의 기존 mock 세트 재사용 — assetInfo/skill/seo/query/navigation)
 
-import { default as SymbolPage } from '@/app/[symbol]/page';
+import { default as SymbolPage } from '@/app/[locale]/[symbol]/page';
 import { getBarsStatic } from '@/entities/bars/lib/barsStaticCache';
 
 const mockBarsStatic = vi.mocked(getBarsStatic);

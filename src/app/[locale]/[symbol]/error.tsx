@@ -30,11 +30,11 @@ export default function SymbolError({ error, reset }: SymbolErrorProps) {
     }, [error]);
 
     return (
-        <main className="flex flex-1 flex-col items-center px-6 py-20 text-center">
-            <p className="font-mono text-sm tracking-widest text-primary-400">
+        <main className="symbol-container flex flex-1 flex-col items-center py-20 text-center">
+            <p className="text-sm font-semibold tracking-[0.01em] text-primary-400">
                 {t('error.729779')}
             </p>
-            <h1 className="mt-4 text-2xl font-bold text-secondary-100 sm:text-3xl">
+            <h1 className="mt-4 text-2xl font-bold text-secondary-50 sm:text-3xl">
                 {t('error.0de4f6')}
             </h1>
             <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">

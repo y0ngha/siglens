@@ -20,6 +20,34 @@ export const PEEK_VISIBLE_OFFSET = 0.03;
 export const MOBILE_SHEET_PEEK_BAND_SVH =
     (SNAP_PEEK - PEEK_VISIBLE_OFFSET) * 100;
 
+/**
+ * 시트 자체의 높이(svh). `MobileAnalysisSheet`의 `h-[97svh]`와 **같은 값**이어야 한다.
+ * Tailwind는 정적 클래스만 스캔하므로 그쪽은 리터럴로 남고, 이 상수와의 일치는
+ * `__tests__/mobileSheetReserve.test.ts`가 지킨다.
+ */
+export const SHEET_HEIGHT_SVH = 97;
+
+/**
+ * PEEK 상태에서 시트가 덮는 만큼 차트가 비워 둘 높이. **CSS 식 그대로**다.
+ *
+ * 고정 비율(`SNAP_PEEK * 100svh`)을 쓰면 안 된다. 세 단위가 서로 다르기 때문이다 —
+ * jail 높이는 `dvh`, 시트 높이는 `svh`, vaul의 오프셋은 `window.innerHeight`(= dvh).
+ * 그래서 실제 띠는
+ *
+ *     띠 = SHEET_HEIGHT_SVH·svh − (1 − SNAP_PEEK)·dvh
+ *
+ * 이고, iOS Safari처럼 툴바가 접혀 `dvh > svh`가 되면 띠가 줄어드는데 고정 예약은
+ * 그대로 남아 그 차이가 **검은 빈 공간**으로 보인다(2026-08-27 사용자 제보).
+ * 위 식을 그대로 CSS로 옮기면 두 값이 어떤 툴바 상태에서도 함께 움직인다.
+ *
+ * 바로 위 [[MOBILE_SHEET_PEEK_BAND_SVH]]와 목적이 다르다 — 그쪽은 SSR 껍데기가
+ * 쓰는 **정적 근사값**이고, 이쪽은 런타임에 실제 띠를 따라가는 **식**이다.
+ *
+ * `max(0px, ...)`는 띠가 0으로 수렴하는 구간(`useMobileSheet` 주석의 0.21·svh 근처)에서
+ * 음수 패딩이 되는 것을 막는다.
+ */
+export const PEEK_RESERVE_CSS = `max(0px, calc(${SHEET_HEIGHT_SVH}svh - ${(1 - SNAP_PEEK) * 100}dvh))`;
+
 // Vaul의 snapPoints prop은 readonly 배열을 허용하지 않아 mutable 사본을 사용한다.
 export const SNAP_POINTS_MUTABLE = [...MOBILE_SNAP_POINTS] as number[];
 

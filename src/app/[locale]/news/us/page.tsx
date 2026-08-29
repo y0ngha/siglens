@@ -170,12 +170,19 @@ export default async function UsNewsHubPage({
             <JsonLd data={breadcrumbJsonLd} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <RegionTabs vertical="news" active="us" currentPath={PATH} />
-                <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
+                <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
                     {t('page.d311d2')}
                 </h1>
                 <div className="space-y-1 text-sm text-secondary-400">
                     <p>{t('page.d97943')}</p>
-                    <p>{t('page.f5e9de')}</p>
+                    {/*
+                     * "카드 클릭 시 원문 기사로 이동합니다"였는데, 이 페이지의
+                     * 카드는 전부 `/news/{slug}`로 가는 내부 링크다 — 실측으로
+                     * 외부 앵커 0개, `target="_blank"` 0개. 원문으로 나가는 것은
+                     * 리프 카테고리 페이지의 기사 카드이고, 그 동작을 허브의
+                     * 카테고리 카드 설명으로 옮겨 적은 문장이었다.
+                     */}
+                    <p>{t('page.ace274')}</p>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {categories.map((cat, i) => {

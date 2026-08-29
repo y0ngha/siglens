@@ -141,7 +141,7 @@ async function PrivacyContent({ locale }: { readonly locale: Locale }) {
                 <div
                     role="note"
                     aria-label={tSeo('a11y.investmentDisclaimer')}
-                    className="mt-12 rounded-lg border border-secondary-800 bg-secondary-900/40 p-5"
+                    className="mt-12 rounded-lg border border-secondary-700 bg-secondary-900/40 p-5"
                 >
                     <p className="text-xs leading-relaxed text-secondary-400 sm:text-sm">
                         {tLegal(INVESTMENT_DISCLAIMER_KEY)}{' '}

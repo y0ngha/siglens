@@ -52,7 +52,7 @@ export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
             <div
                 role="status"
                 aria-label={t('HeaderUserMenu.ce5200')}
-                className="size-10 animate-pulse rounded-full bg-secondary-800 motion-reduce:animate-none"
+                className="size-10 animate-pulse rounded-full bg-secondary-700 motion-reduce:animate-none"
             />
         );
     }
@@ -82,7 +82,10 @@ export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
                 <Link
                     href="/signup"
                     prefetch={false}
-                    className="inline-flex min-h-11 items-center rounded bg-primary-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    /* 모바일에서는 숨긴다 — 좁은 한 줄에 검색·언어·테마·
+                       햄버거가 이미 서 있다. 진입점은 드로어 바닥의 같은
+                       CTA(`HeaderMobileMenu`)가 맡는다. */
+                    className="hidden min-h-11 items-center rounded bg-primary-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none sm:inline-flex"
                 >
                     {t('HeaderUserMenu.ecb4cc')}
                 </Link>
@@ -126,9 +129,9 @@ export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
                 <div
                     role="menu"
                     aria-label={t('HeaderUserMenu.b9a45e')}
-                    className="absolute right-0 z-50 mt-2 w-64 rounded-lg border border-secondary-800 bg-secondary-900 p-2 shadow-2xl"
+                    className="absolute right-0 z-50 mt-2 w-64 rounded-lg border border-secondary-700 bg-secondary-900 p-2 shadow-2xl"
                 >
-                    <div className="border-b border-secondary-800 px-3 py-2 text-sm">
+                    <div className="border-b border-secondary-700 px-3 py-2 text-sm">
                         <p className="font-semibold text-secondary-50">
                             {currentUser.name ?? currentUser.email}
                         </p>

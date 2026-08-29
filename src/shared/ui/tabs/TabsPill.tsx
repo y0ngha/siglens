@@ -49,7 +49,7 @@ export function TabsPill<T extends string>({
                             'focus-visible:ring-primary-500 rounded-full px-4 py-1.5 text-xs font-medium transition-colors focus-visible:ring-1 focus-visible:outline-none',
                             props['aria-selected']
                                 ? 'bg-primary-600 text-white'
-                                : 'border-secondary-700 text-secondary-400 hover:text-secondary-200 border'
+                                : 'border-border-control text-secondary-400 hover:text-secondary-200 border'
                         )}
                     >
                         {tab.label}

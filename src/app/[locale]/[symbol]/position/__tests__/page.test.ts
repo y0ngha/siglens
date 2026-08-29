@@ -17,6 +17,10 @@ vi.mock('@/entities/ticker', () => ({
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn((assetInfo: { name: string }) => assetInfo.name),
     getAssetInfoResilient: vi.fn(),
+    // 본문이 WebPage JSON-LD의 `about` 노드를 만들 때 쓴다. 실제 구현은
+    // classifyAsset 분기를 타므로 여기서는 결정적인 스텁으로 고정한다 — 이
+    // 파일의 관심사는 서버 데이터 경로이지 스키마 분류가 아니다.
+    buildAssetAboutNode: vi.fn(() => undefined),
 }));
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
@@ -40,7 +44,7 @@ vi.mock('@/widgets/portfolio-position', async () => {
         await import('@/widgets/portfolio-position/lib/volumeByBand');
     const { BAND_COUNT, computePosition } =
         await import('@/widgets/portfolio-position/lib/positionGeometry');
-    const { formatAmount, describeAvgFloor } =
+    const { formatAmount, formatAmountAligned, describeAvgFloor } =
         await import('@/widgets/portfolio-position/lib/positionBuildingNotes');
     return {
         PositionTabContent: () => null,
@@ -48,6 +52,7 @@ vi.mock('@/widgets/portfolio-position', async () => {
         computePosition,
         describeAvgFloor,
         formatAmount,
+        formatAmountAligned,
         BAND_COUNT,
     };
 });
@@ -68,6 +73,7 @@ import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { getQuantizedBarsStatic } from '@/entities/bars';
 import { PositionTabContent } from '@/widgets/portfolio-position';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
 import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seo';
 import type { MockedFunction } from 'vitest';
 
@@ -112,13 +118,16 @@ describe('generateMetadata', () => {
             degraded: false,
         } as never);
         mockIsTabAllowedForSymbol.mockResolvedValue(true);
+        // 메타데이터가 본문과 같은 조건(가격 범위 확보 여부)을 보므로 bars도
+        // 기본값을 준다 — 없으면 모든 케이스가 noindex 분기로 떨어진다.
+        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
     });
 
     it('returns noindex for an invalid ticker shape', async () => {
         const metadata = await generateMetadata({
             params: Promise.resolve({ locale: 'ko', symbol: '!!!invalid' }),
         });
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
     });
 
     it('returns noindex when infra-degraded (unresolvable)', async () => {
@@ -129,7 +138,7 @@ describe('generateMetadata', () => {
         const metadata = await generateMetadata({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
     });
 
     it('returns noindex when the tab is not allowed for this market profile', async () => {
@@ -137,7 +146,7 @@ describe('generateMetadata', () => {
         const metadata = await generateMetadata({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
     });
 
     it('is index,follow for a valid, resolvable symbol — per-symbol content (Task 1) now justifies indexing (design decision 2026-08-19)', async () => {
@@ -155,6 +164,29 @@ describe('generateMetadata', () => {
         expect(metadata.alternates).toEqual({
             canonical: 'https://siglens.io/AAPL/position',
         });
+    });
+
+    /**
+     * 본문의 유일한 고유 콘텐츠가 없으면 색인시키지 않는다.
+     *
+     * 가이드 섹션은 `resolvePriceRange`가 null이면 생략되고 CTA는 SSR에 안
+     * 실리므로, 그 상태의 페이지는 h1 + 문단 하나뿐이다. 예전에는 그래도
+     * `robots`가 index였다 — 2026-07 thin-content 사태와 같은 형태다.
+     */
+    it('bars가 degrade되면 noindex로 떨어진다', async () => {
+        mockGetQuantizedBarsStatic.mockRejectedValue(new Error('FMP down'));
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
+    });
+
+    it('bars가 정상이면 색인된다 — 위 가드가 항상 noindex를 내지 않는다', async () => {
+        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+        expect(metadata.robots).toBeUndefined();
     });
 
     it('노출용 카피는 "평단 = 몇 층" 아파트 메타포로 후킹 강화 — title/description/OG/Twitter에 반영', async () => {
@@ -305,6 +337,25 @@ describe('PositionPage server data path (static, cookies-free)', () => {
         mockIsTabAllowedForSymbol.mockResolvedValue(true);
     });
 
+    /**
+     * 회귀 가드: BreadcrumbList position 2는 화면 브레드크럼과 같은 이름이어야 한다.
+     * 이 파일은 `@/shared/lib/seo`를 목킹하지 않으므로 렌더된 JSON-LD를 직접 읽는다.
+     */
+    it('BreadcrumbList가 티커가 아니라 displayName을 쓴다', async () => {
+        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
+
+        const tree = await PositionPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        const breadcrumb = collectJsonLdData(tree).find(
+            d => d['@type'] === 'BreadcrumbList'
+        );
+        const trail = breadcrumb?.itemListElement as { name: string }[];
+        // [0]은 buildBreadcrumbJsonLd가 자동으로 붙이는 홈(Siglens).
+        expect(trail[1].name).toBe('Apple Inc.');
+    });
+
     it('uses getQuantizedBarsStatic (never getBarsAction) → buildTechnicalFacts, and threads low/high/lastClose/volumeByBand into PositionTabContent', async () => {
         mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
 
@@ -420,9 +471,18 @@ describe('PositionPage — SSR crawl safety (no personalized data in the server 
         const tree = await PositionPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
+        // <main> 서브트리만 본다. 불변식은 "본문에 개인화 데이터가 없다"이지
+        // "문서 어디에도 '평단'이라는 글자가 없다"가 아니다 — 페이지 제목
+        // (`내 평단은 몇 층? …`)은 이미 <title>/og:title로 공개되는 값이고,
+        // 2026-08-24에 추가된 WebPage JSON-LD가 그 제목을 그대로 싣는다.
+        // 트리 전체를 문자열로 훑으면 그 메타데이터까지 걸려, 실제 결함이 아닌데도
+        // 빨개진다. 반대로 본문으로 좁히면 원래 잡으려던 것(★평단/수익률이
+        // 서버 셸에 새어 나오는 것)은 그대로 잡힌다.
+        const main = findElementByType(tree, 'main');
+        expect(main).not.toBeNull();
         // Functions (component refs) are dropped by JSON.stringify — this only
         // inspects the static string content the RSC itself produced.
-        const serialized = JSON.stringify(tree);
+        const serialized = JSON.stringify(main);
         expect(serialized).not.toContain('★');
         expect(serialized).not.toContain('평단');
         expect(serialized).not.toContain('수익률');
@@ -473,6 +533,86 @@ describe('PositionPage — per-symbol current-price-position content (Task 1, th
         expect(serialized).toContain('60');
         expect(serialized).toContain('% 지점');
         expect(serialized).toContain('4층 · 고층');
+        // 같은 문장의 나머지 절반. 이 단언이 없어서 층 라벨과 톤이 서로를
+        // 부정하는 상태가 초록으로 통과했다 — 60%는 '고층'인데 톤은 70/30
+        // 리터럴을 쓰느라 '중간 지점'을 냈다(감사 실측: NVDA 68%, 005930.KS 62%).
+        expect(serialized).toContain('상단부');
+        expect(serialized).not.toContain('중간 지점');
+    });
+
+    /**
+     * 층 라벨과 톤 문장이 **모든 위치에서** 서로를 부정하지 않아야 한다.
+     * 위 케이스 하나만으로는 경계가 다시 갈려도 못 잡는다 — 실제로 그렇게
+     * 갈려 있었고, 60%를 단언하는 테스트가 있었는데도 통과하고 있었다.
+     */
+    it.each([
+        [0.05, '저층', '하단부'],
+        [0.25, '중층', '중간 지점'],
+        [0.45, '중층', '중간 지점'],
+        [0.62, '고층', '상단부'],
+        [0.68, '고층', '상단부'],
+        [0.9, '펜트하우스', '상단부'],
+    ])(
+        '위치 %s에서 층 라벨(%s)과 톤(%s)이 어긋나지 않는다',
+        async (pos, tier, tone) => {
+            // RAW_BARS와 같은 모양을 쓰되 범위를 [0,100]으로 잡아
+            // lastClose가 곧 퍼센타일이 되게 한다. 봉을 새로 지어내면
+            // buildTechnicalFacts가 거부해 섹션 자체가 사라진다.
+            const close = pos * 100;
+            mockGetQuantizedBarsStatic.mockResolvedValue({
+                ...RAW_BARS,
+                bars: [
+                    // close는 0이면 안 된다 — buildTechnicalFacts가
+                    // prev.close === 0에서 null을 반환해 섹션이 통째로 사라진다
+                    // (위 RAW_BARS 주석과 같은 조건).
+                    {
+                        time: 1,
+                        open: 50,
+                        high: 100,
+                        low: 0,
+                        close: 50,
+                        volume: 1,
+                    },
+                    {
+                        time: 2,
+                        open: close,
+                        high: close,
+                        low: close,
+                        close,
+                        volume: 1,
+                    },
+                ],
+            } as never);
+
+            const tree = await PositionPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            });
+            const serialized = JSON.stringify(tree);
+            expect(serialized).toContain(tier);
+            expect(serialized).toContain(tone);
+        }
+    );
+
+    /**
+     * 한 문장 안의 세 가격은 자릿수가 같아야 한다. `formatAmount`는 후행 0을
+     * 자르므로(빌딩 UI의 층 라벨에서는 그게 맞다) 이 자리에 그대로 쓰면
+     * "$224.69 ~ $344.57이고, 현재가 $309.9는"처럼 하나만 한 자리가 된다.
+     */
+    it('범위와 현재가의 소수 자릿수가 어긋나지 않는다', async () => {
+        // low=85.00, high=110.00, lastClose=100.00 → 셋 다 후행 0을 갖는다.
+        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
+
+        const tree = await PositionPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+        const serialized = JSON.stringify(tree);
+
+        for (const expected of ['$85.00', '$110.00', '$100.00']) {
+            expect(serialized, expected).toContain(expected);
+        }
+        // 절삭형이 남아 있으면 안 된다.
+        expect(serialized).not.toContain('"$85"');
+        expect(serialized).not.toContain('"$110"');
     });
 
     it('omits the section entirely (no crash, no empty shell) when getQuantizedBarsStatic fails and range degrades to null', async () => {

@@ -56,6 +56,16 @@ const HALF_HEIGHT = CHART_HEIGHT / 2;
 // 사용해 "Call 위 / Put 아래" 시각 언어를 통일한다.
 const COLOR_CALL = 'var(--color-chart-bullish)';
 const COLOR_PUT = 'var(--color-chart-bearish)';
+
+/**
+ * 차트 안 범례는 막대와 같은 색으로 칠하고 싶어지지만, **글자다.**
+ * `chart-*`는 그래픽 기준(3:1)에 맞춘 색이라 라이트 카드 위에서 4.82/4.89로
+ * 본문 기준을 겨우 넘는다. 같은 자리에서 `-text` 짝은 6.99~12.15다.
+ * 같은 파일의 HTML 범례는 이미 `-text`로 옮겼는데 SVG 쪽만 남아 있었다 —
+ * 어떤 가드도 SVG `fill`이나 `var()` 문자열은 보지 않는다.
+ */
+const LABEL_CALL = 'var(--color-ui-success-text)';
+const LABEL_PUT = 'var(--color-ui-danger-text)';
 const COLOR_GUIDE_LINE = 'var(--color-ui-warning)';
 const COLOR_MIDLINE = 'var(--color-secondary-600)';
 const COLOR_LABEL = 'var(--color-secondary-500)';
@@ -144,7 +154,7 @@ export function StrikeVolumeChart({
         // paragraph로 떨어지면 셀 높이/시각 무게가 어긋난다. 텍스트 스타일도
         // OI 차트 빈 상태와 통일(`text-xs leading-relaxed`).
         return (
-            <div className="space-y-2 rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+            <div className="space-y-2 rounded-lg border border-secondary-700 bg-secondary-800 p-4">
                 <span className="text-sm font-medium text-secondary-300">
                     {t('StrikeVolumeChart.5ceb49')}
                 </span>
@@ -177,7 +187,7 @@ export function StrikeVolumeChart({
     return (
         <div
             ref={containerRef}
-            className="relative space-y-2 rounded-xl border border-secondary-700 bg-secondary-800 p-4"
+            className="relative space-y-2 rounded-lg border border-secondary-700 bg-secondary-800 p-4"
         >
             <span className="text-sm font-medium text-secondary-300">
                 {t('StrikeVolumeChart.5ceb49')}
@@ -218,7 +228,7 @@ export function StrikeVolumeChart({
                 <text
                     x={PAD_LEFT}
                     y={MIDLINE_Y - CALL_LABEL_MIDLINE_OFFSET_PX}
-                    fill={COLOR_CALL}
+                    fill={LABEL_CALL}
                     fontSize={STRAIGHT_LABEL_FONT_SIZE}
                     textAnchor="start"
                 >
@@ -228,7 +238,7 @@ export function StrikeVolumeChart({
                 <text
                     x={PAD_LEFT}
                     y={MIDLINE_Y + PUT_LABEL_MIDLINE_OFFSET_PX}
-                    fill={COLOR_PUT}
+                    fill={LABEL_PUT}
                     fontSize={STRAIGHT_LABEL_FONT_SIZE}
                     textAnchor="start"
                 >
@@ -346,7 +356,9 @@ export function StrikeVolumeChart({
                             Strike ${hoveredRow.strike.toLocaleString()}
                         </div>
                         <div className="flex items-center justify-between gap-3">
-                            <span className="text-chart-bullish">Call Vol</span>
+                            <span className="text-ui-success-text">
+                                Call Vol
+                            </span>
                             <span className="tabular-nums">
                                 {t('StrikeVolumeChart.e3558e', {
                                     v0: hoveredRow.callVolume.toLocaleString(),
@@ -354,7 +366,7 @@ export function StrikeVolumeChart({
                             </span>
                         </div>
                         <div className="flex items-center justify-between gap-3">
-                            <span className="text-chart-bearish">Put Vol</span>
+                            <span className="text-ui-danger-text">Put Vol</span>
                             <span className="tabular-nums">
                                 {t('StrikeVolumeChart.e3558e', {
                                     v0: hoveredRow.putVolume.toLocaleString(),
@@ -381,7 +393,7 @@ export function StrikeVolumeChart({
             <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px] text-secondary-500">
                 <span className="flex items-center gap-1">
                     <span
-                        className="inline-block h-2.5 w-2.5 rounded-sm bg-chart-bullish"
+                        className="inline-block h-2.5 w-2.5 rounded bg-chart-bullish"
                         aria-hidden="true"
                     />
                     Call Vol
@@ -389,7 +401,7 @@ export function StrikeVolumeChart({
                 </span>
                 <span className="flex items-center gap-1">
                     <span
-                        className="inline-block h-2.5 w-2.5 rounded-sm bg-chart-bearish"
+                        className="inline-block h-2.5 w-2.5 rounded bg-chart-bearish"
                         aria-hidden="true"
                     />
                     Put Vol

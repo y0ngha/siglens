@@ -66,7 +66,7 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                     // 그게 화면에 보이는 문구와 일치해야 한다(WCAG 2.5.3 Label in Name).
                     // `aria-label="종목 검색 열기"`를 붙이면 음성 입력 사용자가 화면에 보이는
                     // "종목명 · 티커 검색"으로는 이 버튼을 부를 수 없게 된다.
-                    className="focus-glow flex h-12 w-full touch-manipulation items-center gap-2 rounded-lg border border-secondary-700 bg-secondary-800 px-4 text-left text-base text-secondary-400 transition-colors hover:border-secondary-600 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none lg:hidden"
+                    className="focus-glow flex h-12 w-full touch-manipulation items-center gap-2 rounded-lg border border-border-control bg-secondary-800 px-4 text-left text-base text-secondary-400 transition-colors hover:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none lg:hidden"
                 >
                     <SearchGlyph className="h-4 w-4 shrink-0" />
                     {t(SEARCH_PLACEHOLDER_KEY)}

@@ -5,6 +5,10 @@ import type { NewsDisplayItem } from '@/shared/lib/types';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import { resolveNewsTitle } from '@/shared/lib/news/resolveNewsTitle';
 import type { AssetClass } from '@/shared/config/marketProfile';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 
 export interface NewsFactsSummaryProps {
     displayName: string;
@@ -89,13 +93,10 @@ export function NewsFactsSummary({
     return (
         <section
             aria-labelledby="news-facts-summary-heading"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-5"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-5"
         >
-            <h2
-                id="news-facts-summary-heading"
-                className="text-lg font-semibold tracking-tight"
-            >
-                {t('NewsFactsSummary.9a3aa1', { v0: displayName })}
+            <h2 id="news-facts-summary-heading" className={HEADING_SECTION}>
+                {displayName} {t('NewsFactsSummary.438417')}
             </h2>
 
             {items.length === 0 ? (
@@ -136,7 +137,7 @@ export function NewsFactsSummary({
 
                     {headlines.length > 0 ? (
                         <div>
-                            <h3 className="text-sm font-semibold text-secondary-200">
+                            <h3 className={HEADING_SUBSECTION}>
                                 {t('NewsFactsSummary.fc9900')}
                             </h3>
                             <ol className="mt-2 list-decimal space-y-1 pl-5">

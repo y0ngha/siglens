@@ -33,7 +33,7 @@ const MARKET = NAV_TREE.find(v => v.id === 'market')!;
 
 function renderMenu(vertical = MARKET, pathname: string | null = '/') {
     const result = render(
-        <HeaderNavMenu vertical={vertical} pathname={pathname} />
+        <HeaderNavMenu vertical={vertical} pathname={pathname} idScope="test" />
     );
     const trigger = screen.getByRole('button');
     // `aria-controls`가 가리키는 실제 패널. `getByRole('list')`는 2단 하위 목록까지

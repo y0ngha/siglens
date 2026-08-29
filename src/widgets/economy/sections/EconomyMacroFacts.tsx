@@ -1,5 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { computeYieldSpread, type EconomySnapshot } from '@y0ngha/siglens-core';
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface EconomyMacroFactsProps {
     snapshot: EconomySnapshot;
@@ -76,7 +78,7 @@ export function EconomyMacroFacts({ snapshot }: EconomyMacroFactsProps) {
         <section aria-labelledby="economy-macro-facts-heading">
             <h2
                 id="economy-macro-facts-heading"
-                className="mb-3 text-lg font-semibold text-secondary-100"
+                className={cn('mb-3', HEADING_SECTION)}
             >
                 {t('EconomyMacroFacts.59ed20')}
             </h2>

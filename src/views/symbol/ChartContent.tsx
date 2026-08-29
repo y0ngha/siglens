@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { isFallbackAnalysis } from '@/entities/chat-message';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { useSymbolHolding } from '@/features/portfolio-holding';
@@ -22,7 +22,7 @@ import type { MarketProfileId } from '@/shared/config/marketProfile';
 import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
 import React, { useEffect, useEffectEvent, useMemo, useRef } from 'react';
-import { SNAP_PEEK } from './constants/mobileSheet';
+import { PEEK_RESERVE_CSS } from './constants/mobileSheet';
 import { useActionPricesVisibility } from './hooks/useActionPricesVisibility';
 import { useAnalysis } from './hooks/useAnalysis';
 import { useAnalysisDerivedData } from './hooks/useAnalysisDerivedData';
@@ -43,6 +43,7 @@ import { getAnalysisStatus } from './utils/analysisStatus';
 import { buildChatState } from './utils/buildChatState';
 import { buildTechnicalFacts } from './utils/technicalFacts';
 import { useRegisterShareable, deriveChartStatus } from '@/features/share';
+import { useTranslations } from 'next-intl';
 
 const StockChart = dynamic(
     () => import('@/widgets/chart/StockChart').then(mod => mod.StockChart),
@@ -72,7 +73,7 @@ interface ErrorBannerProps {
 function ErrorBanner({ message }: ErrorBannerProps) {
     return (
         <div className="rounded bg-secondary-700/40 px-3 py-2">
-            <span className="text-sm text-chart-bearish">{message}</span>
+            <span className="text-sm text-ui-danger-text">{message}</span>
         </div>
     );
 }
@@ -135,17 +136,9 @@ export function ChartContent({
     marketProfile = 'us-equity',
 }: ChartContentProps) {
     const t = useTranslations('views.symbol');
-    /**
-     * 폴백 판정의 sentinel — `buildFallbackAnalysis`와 같은 문구여야 한다.
-     *
-     * **번역자를 변수에 담아 쓴다.** `useTranslations(ns)('key')`처럼 즉시
-     * 호출하면 추출기가 그 키를 못 본다 — 그러면 `[symbol]` 라우트의 클라이언트
-     * 페이로드에서 통째로 빠져 런타임에 `MISSING_MESSAGE`가 나고, sentinel이
-     * 원시 키 문자열이 되어 **폴백 판정 자체가 성립하지 않는다**(실측: e2e
-     * webServer 로그에 `MISSING_MESSAGE: entities.chat-message.fallback (ko)`).
-     */
     const tFallback = useTranslations('entities.chat-message.fallback');
     const fallbackSummary = tFallback('unavailable');
+    const themeVersion = useThemeVersion();
     // 비회원 회원가입 유도(Part B) — 같은 심볼에 대한 중복 카운트 방지용.
     const notifiedSymbolRef = useRef<string | null>(null);
 
@@ -506,19 +499,47 @@ export function ChartContent({
 
     return (
         <div className="flex h-full w-full flex-col md:flex-row">
-            {/* 차트 영역 — 바텀시트는 fixed 오버레이. pb는 SNAP_PEEK 높이만큼 확보해 Peek 시 거래량 차트가 가려지지 않도록 한다.
+            {/* 차트 영역 — 바텀시트는 fixed 오버레이라 콘텐츠를 밀어내지 않는다.
+                 **그래서** 아래를 직접 비워 둬야 Peek 상태에서 거래량 차트와 면책 문구가
+                 띠 밑으로 들어가지 않는다(실측: 예약을 0으로 두면 pane 3개가 전부 가려지고
+                 면책 문구가 뷰포트 밖으로 밀린다. peek이 최소 스냅이라 사용자가 더 내릴 수도 없다).
+
+                 비우는 양은 `PEEK_RESERVE_CSS` — **시트가 실제로 덮는 높이를 그대로 옮긴 식**이다.
+                 예전에는 `SNAP_PEEK × 100svh` 고정 비율이었는데 그건 띠가 아니다. 단위가 셋으로
+                 갈리기 때문이다(jail=dvh, 시트=svh, vaul 오프셋=innerHeight). 툴바가 접혀
+                 `dvh > svh`가 되면 띠는 줄어드는데 예약만 남아 그 차이가 검은 빈 공간이 됐다.
+                 근거와 식은 `constants/mobileSheet`에 있다.
                  sizing: `h-full` 대신 `flex-1 min-h-0`을 사용한다. 부모 ChartContent outer가 flex-row(md+)일 때
                  h-full(= height:100%)이 부모의 stretch-결과 height를 percentage resolution용 "definite"로 못 읽고
                  자식 컨텐츠 height(24~54px)로 fallback해 차트가 30px로 그려지는 Chrome flex spec 회색-영역 이슈가 있었다.
                  flex-1은 데스크탑에서 main-axis(width) grow + cross-axis stretch로 height를 자동으로 받고,
                  모바일(flex-col)에서는 main-axis(height) grow로 부모 height를 채운다. */}
             <div
-                style={{ '--snap-peek': SNAP_PEEK } as React.CSSProperties}
-                className="flex min-h-0 flex-1 shrink-0 flex-col overflow-hidden pb-[calc(var(--snap-peek)*100svh)] md:pb-0"
+                style={
+                    {
+                        '--peek-reserve': PEEK_RESERVE_CSS,
+                    } as React.CSSProperties
+                }
+                className="flex min-h-0 flex-1 shrink-0 flex-col overflow-hidden pb-[var(--peek-reserve)] md:pb-0"
             >
                 {/* 캔들 차트 */}
                 <div className="relative flex-3">
+                    {/*
+                     * **테마가 바뀌면 차트를 통째로 remount한다.**
+                     *
+                     * 차트 인스턴스만 다시 만들어 봤더니 데이터가 안 얹혔다 —
+                     * 생성 효과만 `themeVersion`에 반응하고, `setData`를 부르는
+                     * 효과와 오버레이 훅 31개는 안정적인 ref에만 의존해 재실행되지
+                     * 않는다. 토글 한 번에 차트가 백지가 됐다(감사 실증: createChart
+                     * 2회, setData 1회). `key`로 갈면 그 훅들이 전부 함께 다시 돌아
+                     * 새 팔레트로 그린다.
+                     *
+                     * 대가는 토글 순간 줌·스크롤 위치 초기화다. 지표 on/off는
+                     * localStorage에 있어 살아남는다. 로드 경로에서는 이 값이 0에서
+                     * 변하지 않으므로 remount가 없다.
+                     */}
                     <StockChart
+                        key={themeVersion}
                         bars={bars}
                         timeframe={timeframe}
                         indicators={indicators}
@@ -535,6 +556,7 @@ export function ChartContent({
                 {/* Buy/Sell Volume 차트 */}
                 <div className="relative flex-1 border-t border-secondary-700">
                     <VolumeChart
+                        key={themeVersion}
                         bars={bars}
                         buySellVolume={indicators.buySellVolume}
                         onChartReady={handleVolumeChartReady}

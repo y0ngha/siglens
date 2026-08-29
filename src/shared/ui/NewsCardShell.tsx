@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 
 export interface NewsCardShellProps {
     /**
@@ -80,14 +81,24 @@ export function NewsCardShell({
     return (
         <article
             className={cn(
-                'border-secondary-700 bg-secondary-800 hover:border-primary-500/50 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-4 transition-[colors,transform] hover:-translate-y-px',
+                'border-secondary-700 bg-secondary-800 hover:border-primary-500/50 w-full max-w-full min-w-0 overflow-hidden rounded-lg border p-4 transition-[colors,transform] hover:-translate-y-px',
                 // content가 3px 바에 붙지 않도록 pl-5로 패딩을 보정한다.
                 isHighImpact && 'border-l-ui-warning border-l-[3px] pl-5'
             )}
         >
             <h3
                 className={cn(
-                    'leading-snug font-semibold text-balance wrap-break-word',
+                    // 색을 카드에서 상속하면 이 h3가 자기를 거느린 섹션 h2보다
+                    // 밝아진다(실측 다크 17.28 대 16.99). 기사 제목은 이 페이지의
+                    // 본문이지만 구조상으로는 h2 아래다.
+                    //
+                    // 한때 `font-semibold text-secondary-100`으로 h2와 **같은 단계**를
+                    // 줬는데, 그러면 h2와 색·굵기가 완전히 같고 크기만 2px 달라진다
+                    // (실측 /news/general: h2 18/600/sec-100, 이 h3 16/600/sec-100).
+                    // 지금은 h3 토큰을 써서 한 단계 아래로 명시한다 — 원래 걱정이던
+                    // "h3가 h2보다 밝아짐"은 sec-200이 sec-100보다 어두우므로 그대로 해결된다.
+                    HEADING_SUBSECTION,
+                    'leading-snug text-balance wrap-break-word',
                     pending && 'opacity-80'
                 )}
             >

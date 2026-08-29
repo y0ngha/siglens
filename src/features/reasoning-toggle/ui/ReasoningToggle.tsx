@@ -124,7 +124,13 @@ export function ReasoningToggle({
                     // within the gap — the resulting ~28px tall hit area
                     // still clears the WCAG 2.5.8 (AA) 24px minimum without
                     // any overhang or layout inflation.
-                    "focus-visible:ring-primary-500 relative inline-flex h-5 w-9 shrink-0 touch-manipulation items-center rounded-full transition-colors before:absolute before:-inset-x-1 before:-inset-y-1 before:content-[''] focus-visible:ring-1 focus-visible:outline-none",
+                    // 트랙·썸에 `border-control`을 두르는 이유: 라이트 테마에서
+                    // 트랙(off `secondary-700`=#e6e8ec, locked `secondary-800`=#fff)과
+                    // 흰 썸이 페이지 배경과 1.01~1.10:1로 사실상 사라졌다(실측).
+                    // WCAG 1.4.11은 상태를 알리는 조작 요소에 3:1을 요구하고,
+                    // 이 스위치는 locked일 때도 클릭 가능한 조작 요소다.
+                    // `border-control`은 그 용도로 만든 토큰이다(다크 3.57 / 라이트 3.30).
+                    "focus-visible:ring-primary-500 relative inline-flex h-5 w-9 shrink-0 touch-manipulation items-center rounded-full border border-border-control transition-colors before:absolute before:-inset-x-1 before:-inset-y-1 before:content-[''] focus-visible:ring-1 focus-visible:outline-none",
                     effectiveChecked ? 'bg-primary-600' : 'bg-secondary-700',
                     locked && !disabled && 'bg-secondary-800',
                     // A genuine `disabled` (true no-op) always wins the cursor:
@@ -132,21 +138,34 @@ export function ReasoningToggle({
                     // also locked, so this precedence matches `handleClick`, where
                     // `disabled` short-circuits before the locked branch.
                     disabled && 'cursor-not-allowed opacity-60',
-                    // Locked non-members: the switch itself carries the
-                    // "unavailable" meaning through the muted track + reduced
-                    // opacity — there is no separate lock affordance. It stays
-                    // clickable so the click opens the signup nudge
-                    // (cursor-pointer, not cursor-not-allowed; no native
-                    // `disabled` which would swallow onClick).
-                    locked && !disabled && 'cursor-pointer opacity-50'
+                    // Locked non-members: the switch carries the "unavailable"
+                    // meaning through the muted track + a muted thumb
+                    // (`bg-secondary-400`, below) — there is no separate lock
+                    // affordance. It stays clickable so the click opens the
+                    // signup nudge (cursor-pointer, not cursor-not-allowed; no
+                    // native `disabled` which would swallow onClick).
+                    //
+                    // 이 분기에 `opacity-*`를 **다시 넣지 말 것.** opacity는
+                    // 보더까지 함께 흐리게 만드는데, 라이트 테마에서는 흰 썸이
+                    // 흰 트랙에 1.23:1로 묻혀 **보더만이** 썸을 식별한다
+                    // (3.10:1, 시스템 최저점). 흐려지면 그 값이 1.65:1까지
+                    // 떨어져 WCAG 1.4.11(3:1)을 깬다. 그래서 "흐림" 대신
+                    // "썸 색을 낮춤"으로 같은 의미를 전달한다.
+                    locked && !disabled && 'cursor-pointer'
                 )}
             >
                 <span
                     aria-hidden="true"
                     className={cn(
-                        'pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform',
+                        // 썸도 같은 보더를 갖는다 — 라이트에서 흰 썸이 흰 트랙 위에
+                        // 1.01:1로 사라지기 때문이다. locked는 `opacity` 대신 썸 색을
+                        // 낮춰 구분한다(흐림은 보더 대비까지 함께 깎는다).
+                        // translate 값이 18px → 16px인 이유: `border-box`라 보더 1px씩이
+                        // 안쪽 폭을 34px로 줄여, 좌측 여백 4px과 대칭이 되는 값이 16px다.
+                        'pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full border border-border-control transition-transform',
+                        locked && !disabled ? 'bg-secondary-400' : 'bg-white',
                         effectiveChecked
-                            ? 'translate-x-[18px]'
+                            ? 'translate-x-[16px]'
                             : 'translate-x-1'
                     )}
                 />

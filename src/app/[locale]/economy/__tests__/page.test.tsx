@@ -21,14 +21,11 @@ vi.mock('@/entities/economy/api/macroBriefingStaticCache', () => ({
 vi.mock('@/entities/economy', () => ({
     isEmptyEconomySnapshot: vi.fn(),
 }));
-/**
- * **부분 목이다.** 통째로 갈아끼우면 이 모듈에 export가 하나 생길 때마다
- * `No "x" export is defined on the mock`으로 깨지고, 더 나쁘게는 URL을 만드는
- * 로직이 스텁으로 대체돼 테스트가 아무것도 검증하지 못한다.
- */
+// `buildFaqJsonLd`만은 **진짜를 쓴다**. 모의로 같은 매핑을 한 벌 더 적으면,
+// 마크업과 화면이 한 소스에서 나오는지 보겠다는 이 테스트가 정작 실물이 아니라
+// 자기 복제본을 검증하게 된다 — 이 PR이 없애고 있는 중복 그 자체다.
 vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
-    buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     clampSeoDescription: (s: string) => s,
     ROOT_KEYWORDS: [],
@@ -68,6 +65,7 @@ import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingSta
 import { isEmptyEconomySnapshot } from '@/entities/economy';
 // JsonLd는 vi.mocked()를 통해 test 내부에서 접근한다(최상단 변수는 호이스팅 충돌 방지).
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { expectFaqSingleSource } from '@/__tests__/utils/expectFaqSingleSource';
 
 const mockGetSnapshot = vi.mocked(getEconomySnapshotStatic);
 const mockPeekStatic = vi.mocked(peekMacroBriefingStatic);
@@ -285,5 +283,21 @@ describe('/economy page.tsx integration', () => {
             expect(types).toContain('FAQPage');
             expect(types).not.toContain('Dataset');
         });
+    });
+
+    /**
+     * 회귀 가드: FAQPage 마크업과 화면 Q&A는 배열 하나에서 나와야 한다. 이 라우트는
+     * 오랫동안 마크업만 내보내고 화면에는 대응하는 Q&A가 없었다 — 구글은 대응하는
+     * 내용이 페이지에 보일 것을 요구하며, 없으면 리치 결과 자격을 잃는다. JSON-LD가
+     * 유효한지만 보는 테스트로는 이 결함이 잡히지 않는다. `/[symbol]/*` 9개 탭과
+     * `/economy/kr`이 이미 쓰는 가드(`expectFaqSingleSource`)를 그대로 적용한다.
+     */
+    it('FAQPage 구조화데이터가 화면 FaqSection과 같은 질문·답변을 쓴다', async () => {
+        const { default: EconomyPage } =
+            await import('@/app/[locale]/economy/page');
+
+        expectFaqSingleSource(
+            await EconomyPage({ params: Promise.resolve({ locale: 'ko' }) })
+        );
     });
 });

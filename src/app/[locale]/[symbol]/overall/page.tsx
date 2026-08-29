@@ -10,6 +10,7 @@ import {
 } from '@/views/symbol/snapshot/renderers/OverallSnapshotProse';
 import { SymbolPageHeading } from '@/views/symbol';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
+import { FaqSection } from '@/shared/ui/FaqSection';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     DEFAULT_TIMEFRAME,
@@ -28,12 +29,15 @@ import { getNewsList } from '@/entities/news-article/api';
 import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
 import {
     buildBreadcrumbJsonLd,
+    buildFaqJsonLd,
     buildSnapshotMetaDescription,
     buildSymbolSeoContent,
     buildWebPageJsonLd,
     resolveSymbolOverallSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
+    noindexSymbolMetadata,
+    type FaqItem,
 } from '@/shared/lib/seo';
 import {
     getDescriptor,
@@ -51,78 +55,112 @@ import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-/** H1·FAQ 답변 2개·안내 문단이 market profile별로 갈라 쓰는 카피 번들. */
+/**
+ * H1과 FAQ가 market profile별로 갈라 쓰는 카피 번들.
+ *
+ * `faq`는 화면 `<dl>`(FaqSection)과 FAQPage 구조화데이터(buildFaqJsonLd) **양쪽의
+ * 단일 소스**다. 예전에는 같은 내용이 "안내 문단 3개"와 "FAQ 답변 3개"로 두 벌
+ * 있었고, 문단만 화면에 보이고 답변은 마크업에만 있었다 — 구글이 요구하는
+ * "마크업한 Q&A가 페이지에 보일 것"을 어기면서 동시에 같은 말을 두 번 하는
+ * 중복 콘텐츠이기도 했다. 문단의 고유한 내용은 답변에 흡수했다.
+ */
 interface OverallCopy {
-    /**
-     * h1 **메시지 키**. 문자열이 아니다 — 값(`displayName`)만 로케일화하고
-     * 템플릿을 한국어로 두면 `/en/AAPL/overall`의 h1이
-     * `Apple Inc. (AAPL) 차트와 옵션 시장, 실적, 뉴스 종합 분석`이 된다.
-     * (주변 산문은 §13 잔여 백로그라 여기서 건드리지 않는다.)
-     */
-    headingKey: string;
-    /**
-     * 답변 **키**만 담는다. `t()` 호출은 번역자를 선언한 렌더 쪽에서 한다 —
-     * 질문은 이미 카탈로그를 쓰는데 답변만 한국어 리터럴이라, 같은
-     * `Question` 노드가 영어 질문 + 한국어 답변으로 나갔다.
-     */
-    axesAnswerKey: string;
-    scenarioAnswerKey: string;
-    /**
-     * 안내 문단 **키** 목록. ReactNode를 담으면 문단이 한국어 리터럴로 굳어
-     * `/en/AAPL/overall`이 영어 h1 아래 한국어 산문을 렌더한다 —
-     * `headingKey`와 같은 이유로 키만 담고 `t()`는 렌더 쪽에서 부른다.
-     * 첫 문단만 `{v0}`(호출 쪽 displayName)을 받는다.
-     */
-    guideParagraphKeys: readonly string[];
+    heading: string;
+    faq: readonly FaqItem[];
 }
 
+// 질문 문구는 세 profile이 공유하고 답변만 갈린다. 시나리오가 깨지는 조건은
+// 미국·한국 주식이 같은 답을 쓰므로(실적·가이던스가 둘 다 있다) 리터럴을 하나만 둔다.
 /**
- * 종합 분석 페이지의 카피(H1·FAQ 답변 2개·안내 문단)는 market profile별로 세
+ * 카피는 `t`로 해석해 번들에 **문자열로** 담는다 — 키만 담으면 소비 지점
+ * (H1·FaqSection·buildFaqJsonLd)마다 네임스페이스를 알아야 하고, FAQ 항목은
+ * `{question, answer}` 쌍이라 키 배열로는 짝을 표현할 수 없다.
+ */
+type OverallTranslator = (
+    key: string,
+    values?: Record<string, string | number>
+) => string;
+
+/**
+ * 종합 분석 페이지의 카피(H1·FAQ 3건)는 market profile별로 세
  * 갈래로 갈린다 — 미국 개별주식(옵션 있음)·한국 개별주식(옵션 없음)·크립토
  * (펀더멘털·재무·옵션 자체가 없음). `isEquity ? (hasOptions ? A : B) : C` 3항
- * 중첩을 렌더 지점(H1, FAQ 답변 2개, 안내 문단)마다 반복하면 새 market
+ * 중첩을 렌더 지점(H1, FAQ 답변)마다 반복하면 새 market
  * profile이 추가돼도 컴파일 에러 없이 기존 분기 중 하나로 조용히 흡수된다
  * (MISTAKES.md §0.9). `MarketProfileId`(이미 3개 값으로 exhaustive)를 판별식
  * 삼아 카피 번들을 한 번에 만들고, 각 렌더 지점은 이 번들의 필드만 읽는다 —
  * `sessionSpecFor`(shared/api/market/sessionSpecFor.ts)와 동일한
  * `_exhaustive: never` 가드 패턴.
  */
-function buildOverallCopy(marketProfile: MarketProfileId): OverallCopy {
+function buildOverallCopy(
+    marketProfile: MarketProfileId,
+    displayName: string,
+    t: OverallTranslator,
+    tSeo: OverallTranslator
+): OverallCopy {
+    // 질문 문구는 세 profile이 공유하고 답변만 갈린다.
+    const axesQuestion = tSeo('faq.overallAxes', { v0: displayName });
+    const scenarioQuestion = tSeo('faq.overallScenarioQuestion');
+    const brokenQuestion = tSeo('faq.overallBrokenQuestion');
+    // 시나리오가 깨지는 조건은 미국·한국 주식이 같은 답을 쓴다(실적·가이던스가 둘 다 있다).
+    const equityBrokenAnswer = tSeo('faq.overallBrokenAnswerEquity');
+
     switch (marketProfile) {
         case 'us-equity':
             return {
-                headingKey: 'page.overallHeadingUsEquity',
-                axesAnswerKey: 'faq.overallAxesAnswerUsEquity',
-                scenarioAnswerKey: 'faq.overallScenarioAnswerUsEquity',
-                guideParagraphKeys: [
-                    'page.overallGuideUsEquityP1',
-                    'page.overallGuideUsEquityP2',
-                    'page.overallGuideEquityP3',
+                heading: t('page.overallHeadingUsEquity', { v0: displayName }),
+                faq: [
+                    {
+                        question: axesQuestion,
+                        answer: tSeo('faq.overallAxesAnswerUsEquity', {
+                            v0: displayName,
+                        }),
+                    },
+                    {
+                        question: scenarioQuestion,
+                        answer: tSeo('faq.overallScenarioAnswerUsEquity'),
+                    },
+                    { question: brokenQuestion, answer: equityBrokenAnswer },
                 ],
             };
         case 'kr-equity':
             // 한국 개별주식: 옵션 시장이 없으므로(KR_EQUITY_DESCRIPTOR.tabs) 세
             // 축(차트·실적·뉴스)만 다룬다 — 미국 주식 카피의 "옵션 시장"
-            // 문단을 실적/가이던스 문단으로 교체한다.
+            // 문장을 실적/가이던스 문장으로 교체한다.
             return {
-                headingKey: 'page.overallHeadingKrEquity',
-                axesAnswerKey: 'faq.overallAxesAnswerKrEquity',
-                scenarioAnswerKey: 'faq.overallScenarioAnswerKrEquity',
-                guideParagraphKeys: [
-                    'page.overallGuideKrEquityP1',
-                    'page.overallGuideKrEquityP2',
-                    'page.overallGuideEquityP3',
+                heading: t('page.overallHeadingKrEquity', { v0: displayName }),
+                faq: [
+                    {
+                        question: axesQuestion,
+                        answer: tSeo('faq.overallAxesAnswerKrEquity', {
+                            v0: displayName,
+                        }),
+                    },
+                    {
+                        question: scenarioQuestion,
+                        answer: tSeo('faq.overallScenarioAnswerKrEquity'),
+                    },
+                    { question: brokenQuestion, answer: equityBrokenAnswer },
                 ],
             };
         case 'crypto':
             return {
-                headingKey: 'page.overallHeadingCrypto',
-                axesAnswerKey: 'faq.overallAxesAnswerCrypto',
-                scenarioAnswerKey: 'faq.overallScenarioAnswerCrypto',
-                guideParagraphKeys: [
-                    'page.overallGuideCryptoP1',
-                    'page.overallGuideCryptoP2',
-                    'page.overallGuideCryptoP3',
+                heading: t('page.overallHeadingCrypto', { v0: displayName }),
+                faq: [
+                    {
+                        question: axesQuestion,
+                        answer: tSeo('faq.overallAxesAnswerCrypto', {
+                            v0: displayName,
+                        }),
+                    },
+                    {
+                        question: scenarioQuestion,
+                        answer: tSeo('faq.overallScenarioAnswerCrypto'),
+                    },
+                    {
+                        question: brokenQuestion,
+                        answer: tSeo('faq.overallBrokenAnswerCrypto'),
+                    },
                 ],
             };
         default: {
@@ -132,7 +170,7 @@ function buildOverallCopy(marketProfile: MarketProfileId): OverallCopy {
             console.error(
                 `[OverallPage] Unhandled MarketProfileId: ${String(_exhaustive)} — defaulting to us-equity copy`
             );
-            return buildOverallCopy('us-equity');
+            return buildOverallCopy('us-equity', displayName, t, tSeo);
         }
     }
 }
@@ -153,6 +191,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, symbol } = await params;
     const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!isAdmissibleSymbolShape(upper)) {
@@ -168,7 +207,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         tab: 'overall',
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
+    if (!assetInfo) return noindexSymbolMetadata(upper, tSeo, locale);
+
+    // `displayName`을 가드보다 위에서 계산한다 — 아래 `!cachedOverall` noindex
+    // 분기도 `noindexSymbolMetadata`에 넘겨야 차단된 페이지가 티커가 아니라 사명까지
+    // 담은 title/description을 갖는다. `buildDisplayName`은 순수 함수라 위치를
+    // 올려도 부작용이 없다.
+    const displayName = buildDisplayName(assetInfo, upper, locale);
 
     // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
     // getSeoSnapshotsStatic(upper, revalidate) call the page body makes below —
@@ -222,11 +267,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             );
             return null;
         });
-        if (!cachedOverall) return NOINDEX_SYMBOL_METADATA;
+        if (!cachedOverall) {
+            return noindexSymbolMetadata(upper, tSeo, locale, {
+                displayName,
+                koreanName: assetInfo.koreanName,
+            });
+        }
     }
 
-    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
-    const displayName = buildDisplayName(assetInfo, upper, locale);
     const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
     const seo = resolveSymbolOverallSeoContent(upper, assetClass, tSeo, {
         displayName,
@@ -363,14 +411,13 @@ export default async function OverallPage({ params }: Props) {
     );
     const marketProfile = marketProfileOf(assetInfo);
     const assetClass = getDescriptor(marketProfile).assetClass;
-    const isEquity = assetClass === 'equity';
     // KR 개별주식은 유동성 있는 옵션 시장이 없다(KR_EQUITY_DESCRIPTOR.tabs 주석 참고 —
     // 국내에 상장된 것은 KOSPI200 지수옵션뿐, 개별주식 옵션은 사실상 무유동성이라 탭
     // 자체가 없다). `isEquity`(assetClass 이진 분류)만으로 문구를 고르면 한국 종목도
     // 미국 종목과 같은 "옵션 시장" 문구를 그대로 노출하게 된다(SEO 감사 2026-08-18) —
     // tabs whitelist를 직접 물어 실제 옵션 탭 존재 여부로 판정한다.
     const hasOptions = getDescriptor(marketProfile).tabs.includes('options');
-    const copy = buildOverallCopy(marketProfile);
+    const copy = buildOverallCopy(marketProfile, displayName, t, tSeo);
     const { fullTitle, description, url } = resolveSymbolOverallSeoContent(
         upper,
         assetClass,
@@ -405,7 +452,7 @@ export default async function OverallPage({ params }: Props) {
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
         [
-            { name: upper, url: buildSymbolSeoContent(upper, tSeo).url },
+            { name: displayName, url: buildSymbolSeoContent(upper, tSeo).url },
             { name: t('page.8b7ae7'), url },
         ],
         isLocale(locale) ? locale : DEFAULT_LOCALE
@@ -414,66 +461,17 @@ export default async function OverallPage({ params }: Props) {
     // FAQ 답변은 market profile별로 분기한다 — 크립토에는 옵션 시장·분기 실적·펀더멘털이
     // 없고, 한국 개별주식은 옵션 시장만 없으므로 해당 문구가 포함된 답변을 그대로
     // 노출하면 실재하지 않는 콘텐츠를 약속하게 된다. `copy`(buildOverallCopy)가
-    // marketProfile 하나로 두 답변을 모두 판별한다 — 판별식·가드 이유는 그 함수 JSDoc 참고.
-    const faqJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: [
-            {
-                '@type': 'Question',
-                name: tSeo('faq.overallAxes', { v0: displayName }),
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: tSeo(copy.axesAnswerKey, { v0: displayName }),
-                },
-            },
-            {
-                '@type': 'Question',
-                name: t('page.e753ee'),
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: tSeo(copy.scenarioAnswerKey),
-                },
-            },
-            {
-                '@type': 'Question',
-                name: t('page.e2a9cb'),
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: isEquity ? t('page.715b77') : t('page.b51b30'),
-                },
-            },
-        ],
-    };
+    // marketProfile 하나로 세 답변을 모두 판별한다 — 판별식·가드 이유는 그 함수 JSDoc 참고.
+    // 아래 `FaqSection`이 같은 `copy.faq`를 화면에 그린다.
+    const faqJsonLd = buildFaqJsonLd(copy.faq);
 
     return (
         <>
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
-            <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-                <SymbolPageHeading>
-                    {t(copy.headingKey, { v0: displayName })}
-                </SymbolPageHeading>
-                <section
-                    aria-labelledby="overall-guide-heading"
-                    className="space-y-3 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5"
-                >
-                    <h2
-                        id="overall-guide-heading"
-                        className="text-base font-semibold text-secondary-300"
-                    >
-                        {t('page.712907', { v0: displayName })}
-                    </h2>
-                    {copy.guideParagraphKeys.map(key => (
-                        <p
-                            key={key}
-                            className="text-sm leading-relaxed text-secondary-400"
-                        >
-                            {t(key, { v0: displayName })}
-                        </p>
-                    ))}
-                </section>
+            <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
+                <SymbolPageHeading>{copy.heading}</SymbolPageHeading>
                 {/* AI 스냅샷 프로즈는 Suspense fallback이 아니라 PERSISTENT server
                     sibling으로 마운트한다(audit fix — fallback 안에 두면 React가
                     boundary resolve 시 클라이언트에서 그 서브트리를 DESTROY한다:
@@ -533,6 +531,10 @@ export default async function OverallPage({ params }: Props) {
                         hasOptions={hasOptions}
                     />
                 </Suspense>
+                <FaqSection
+                    heading={tSeo('faqHeading.overall', { v0: displayName })}
+                    items={copy.faq}
+                />
                 <CrossLinkCards
                     symbol={upper}
                     current="overall"

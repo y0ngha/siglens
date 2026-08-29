@@ -12,6 +12,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
  * `vi.resetModules()`로 모듈 레지스트리를 비운 뒤 다시 import한다.
  */
 describe('SymbolPageClient — 시트 청크 선인출 가드', () => {
+    // 각 케이스가 `vi.resetModules()` 뒤 `SymbolPageClient`의 **모듈 그래프 전체**를
+    // 동적 import한다 — 변환 비용이 커서 기본 5초로는 여유가 없다. 릴리스처럼 다른
+    // 게이트와 CPU를 나눠 쓸 때만 터졌고(pre-push 2회 연속 차단, 2026-08-24),
+    // `yes`로 코어를 채우면 로컬에서도 확정적으로 재현된다.
+    // 느린 테스트라서가 아니라 **환경 부하에 따라 변동하는 비용**이라 올린다.
+    vi.setConfig({ testTimeout: 30_000 });
+
     const originalMatchMedia = globalThis.window?.matchMedia;
 
     beforeEach(() => {

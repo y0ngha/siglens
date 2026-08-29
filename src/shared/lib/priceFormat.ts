@@ -237,7 +237,7 @@ export function formatPriceChange(percent: number): PriceChangeDisplay {
     return {
         isUp,
         sign: isUp ? '+' : '',
-        colorClass: isUp ? 'text-chart-bullish' : 'text-chart-bearish',
+        colorClass: isUp ? 'text-ui-success-text' : 'text-ui-danger-text',
         arrow: isUp ? '▲' : '▼',
         // `shared.lib.priceMove` **키**다 — 소비 컴포넌트가 `t()`로 푼다.
         arrowLabelKey: isUp ? 'up' : 'down',

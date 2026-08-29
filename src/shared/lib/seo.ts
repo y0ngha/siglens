@@ -18,6 +18,12 @@ export interface BreadcrumbItem {
     url: string;
 }
 
+/** 화면 `<dl>`과 FAQPage 구조화데이터가 공유하는 질문·답변 한 쌍. */
+export interface FaqItem {
+    question: string;
+    answer: string;
+}
+
 /**
  * `next-intl`의 `getTranslations`/`useTranslations` 반환값과 구조적으로 호환되는
  * 최소 형태. 이 파일이 `next-intl`을 직접 import하지 않는 이유(CLAUDE.md "pure
@@ -111,6 +117,16 @@ export const SITE_URL = resolveSiteUrl();
 export const SITE_NAME = 'Siglens';
 
 /**
+ * 공개 소스 저장소. 푸터가 유일한 소비자다.
+ *
+ * 상수로 두는 이유는 재사용이 아니라 **위치**다. 사이트를 가리키는 다른 URL이
+ * 전부 여기 있으므로, 나중에 JSON-LD `sameAs`에 소셜 프로필을 실을 일이 생기면
+ * 이 파일 안에서 함께 다루게 된다. 푸터 JSX 안에 문자열로 박아두면 그 시점에
+ * 두 번째 사본이 생긴다.
+ */
+export const GITHUB_URL = 'https://github.com/y0ngha/siglens';
+
+/**
  * Shared metadata for the noindex early-returns on the `[symbol]` routes
  * (invalid ticker, infra-degraded asset, FMP-degraded profile).
  *
@@ -120,9 +136,60 @@ export const SITE_NAME = 'Siglens';
  * inherit the layout canonical (a wrong cross-page signal).
  */
 export const NOINDEX_SYMBOL_METADATA: Metadata = {
-    robots: { index: false, follow: false },
+    // `follow: true` — 색인은 막되 링크는 따라가게 둔다. noindex 페이지에
+    // nofollow를 얹으면 그 페이지를 통과하는 크롤 경로가 전부 끊긴다: 차단된
+    // 심볼 페이지도 본문에 같은 심볼의 다른 탭(뉴스·펀더멘털·옵션…) 링크를
+    // 렌더하므로, nofollow는 크롤러가 그 형제 탭에 도달하는 유일한 경로를
+    // 막는다. `[symbol]/options/page.tsx`가 옵션 없는 종목에 대해 이미
+    // `{ index: false, follow: true }`를 쓰고 같은 근거를 주석으로 남겨 뒀다 —
+    // 이 상수만 반대로 돼 있어 정본이 불일치했다.
+    robots: { index: false, follow: true },
     alternates: { canonical: null },
 };
+
+/**
+ * noindex인 `[symbol]` 라우트의 메타데이터 — **심볼을 알 때** 쓴다.
+ *
+ * **왜 필요한가 (2026-08-24 프로덕션 실측)**: `title`/`description`/`openGraph`를
+ * 비워 두면 Next가 루트 레이아웃 값을 그대로 상속시킨다. 그 결과 차단된 심볼
+ * URL 전부(`/SOXX`, `/QQQM`, `/TLT`, `/XLK`, `/SOXX/fundamental` …)가
+ *   - 홈페이지와 **똑같은** `<title>`·`<meta name="description">`을 쓰고,
+ *   - `og:url`을 `https://siglens.io`로 선언한다.
+ * 두 번째가 특히 나쁘다 — og:url을 정규 URL 힌트로 쓰는 크롤러에게 수만 개
+ * 심볼 URL이 자기를 홈페이지라고 말하는 셈이다. noindex는 색인을 막을 뿐
+ * 이 잘못된 동일성 선언까지 막아 주지는 않는다.
+ *
+ * **`[symbol]/**\/page.tsx`의 noindex 분기는 하나의 예외만 빼고 전부 이걸 쓴다.**
+ * 예외는 `!isAdmissibleSymbolShape` 가드뿐이다 — 거기서는 세그먼트가 심볼이라고
+ * 신뢰할 수 없으므로(임의 문자열이 title에 그대로 박힌다) `NOINDEX_SYMBOL_METADATA`
+ * 상수로 남긴다. 나머지(tab-not-allowed, assetInfo 없음, FMP profile degrade,
+ * 빈 재무 스냅샷, congress trades degrade, overall 캐시 미스)는 전부 심볼이
+ * 확정된 뒤라 자기 정체성을 가질 수 있고, 그중 degrade 계열은 **실존 티커가
+ * 200을 반환하는 경로**라 홈 메타 상속이 실제로 크롤된다.
+ *
+ * 탭 단위가 아니라 **심볼 단위**로만 구분한다(`og:url`이 탭이 아니라 심볼 루트를
+ * 가리킨다). 어차피 noindex라 탭별 정밀도는 측정 가능한 이득이 없고, 목표는
+ * "홈페이지의 정체성을 참칭하지 않는 것"이다.
+ *
+ * `opts`는 호출부가 이미 `assetInfo`를 들고 있을 때만 넘긴다 — 안 넘겨도
+ * displayName이 티커로 폴백해 동작은 같고, 있으면 description이 사명까지 담는다.
+ */
+export function noindexSymbolMetadata(
+    symbol: string,
+    t: SeoTranslator,
+    locale: Locale,
+    opts: BuildSymbolSeoOptions = {}
+): Metadata {
+    return {
+        ...symbolMetadataFromSeo(
+            buildSymbolSeoContent(symbol, t, opts),
+            locale
+        ),
+        // 스프레드 순서가 중요하다 — robots(noindex)와 canonical:null이
+        // symbolMetadataFromSeo의 index 기본값·self-canonical을 덮어야 한다.
+        ...NOINDEX_SYMBOL_METADATA,
+    };
+}
 
 // 빌드 시각 — 매 요청마다 변동되면 안 되는 schema.org datePublished 등에 사용.
 // NEXT_BUILD_DATE env가 있으면 우선, 없으면 모듈 로드 시각(deploy 시점)을 한 번만 캐시.
@@ -824,6 +891,12 @@ export function symbolMetadataFromSeo(
 // 홈(Siglens → SITE_URL)이 첫 항목으로 자동 삽입된다.
 // schema.org BreadcrumbList의 `item`은 절대 URL이어야 하므로
 // 상대 경로로 들어온 trail은 SITE_URL prefix를 붙여 절대화한다.
+//
+// `name`은 **화면에 보이는 브레드크럼 텍스트와 같아야 한다**. 구글은 둘이 다르면
+// 리치 결과에서 마크업을 무시한다. 종목 페이지의 가시 브레드크럼
+// (`views/symbol/SymbolLayoutHeader`)은 `buildDisplayName` 결과를 색만 나눠
+// 렌더하므로(예: `애플, Apple Inc. (AAPL)`), 종목 탭들은 티커가 아니라
+// `displayName`을 넘긴다.
 export function buildBreadcrumbJsonLd(
     trail: readonly BreadcrumbItem[],
     // 기본값을 두지 않는다 — 두면 호출부에서 빠져도 컴파일이 통과하고, 그
@@ -847,6 +920,29 @@ export function buildBreadcrumbJsonLd(
                     : `${SITE_URL}${item.url}`,
                 locale
             ),
+        })),
+    };
+}
+
+/**
+ * FAQPage 구조화데이터를 만든다. 인자로 받은 배열은 반드시 `shared/ui/FaqSection`이
+ * 같은 페이지에 렌더하는 배열과 **같은 상수**여야 한다.
+ *
+ * 구글은 FAQPage에 대응하는 질문·답변이 페이지에 실제로 보일 것을 요구한다. 마크업만
+ * 있고 화면에 없으면 리치 결과 자격이 없을 뿐 아니라 수동 조치 사유다. 종목 탭 5개가
+ * 오랫동안 그 상태였다 — 답변 텍스트를 JSON-LD 리터럴 안에만 두면 화면 카피를 고칠 때
+ * 마크업이 따라오지 않는다. 배열 하나에서 두 표면을 만들면 갈릴 수가 없다.
+ */
+export function buildFaqJsonLd(
+    items: readonly FaqItem[]
+): Record<string, unknown> {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: items.map(({ question, answer }) => ({
+            '@type': 'Question',
+            name: question,
+            acceptedAnswer: { '@type': 'Answer', text: answer },
         })),
     };
 }

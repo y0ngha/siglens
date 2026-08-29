@@ -18,60 +18,32 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
 import type { AssetInfo } from '@/shared/lib/types';
+import type { Metadata } from 'next';
 
 const ASSET_INFO = { symbol: 'AAPL', name: 'Apple Inc.' } as AssetInfo;
 
 /**
- * `locale-not-ready`만 걸린 경우는 **null**을 돌려줘야 한다.
+ * 차단(noindex) 결과의 계약.
  *
- * 이 함수의 blocked 응답(`NOINDEX_SYMBOL_METADATA`)에는 title이 없다. 종목이
- * 없거나 본문이 degrade된 경우엔 맞지만, 번역만 안 된 경우까지 비우면 371티커
- * × 9탭 × 3로케일의 제목이 통째로 사라진다(실측 회귀).
- *
- * 이 분기는 라운드 8에서 넣고도 **테스트가 하나도 없었다** — 그 줄을 지워도
- * 2,221개가 통과했다. 기존 케이스가 전부 `locale: 'ko'`라 도달조차 못 했다.
+ * 예전엔 `toEqual(NOINDEX_SYMBOL_METADATA)`였는데, 그 상수는 title/description/
+ * openGraph를 갖고 있지 않아 Next가 **루트 레이아웃 값을 상속**시킨다. 그래서
+ * 차단된 심볼 URL이 전부 홈페이지 title·description을 쓰고 `og:url`을
+ * `https://siglens.io`로 선언하고 있었다(2026-08-24 프로덕션 실측). 상수와의
+ * 동등성이 아니라 **심볼 고유 정체성 + noindex**를 단언해야 그 회귀가 잡힌다.
  */
-describe('locale-not-ready는 페이지를 비우지 않는다', () => {
-    // 이 분기는 **실제 판정**을 거쳐야 의미가 있다 — 평가자를 mock한 채로는
-    // 내가 만든 mock 반환값을 다시 확인하는 항등식이 된다.
-    beforeEach(async () => {
-        const actual = await vi.importActual<
-            typeof import('@/entities/symbol-indexability')
-        >('@/entities/symbol-indexability');
-        mockEvaluateSymbolIndexability.mockImplementation(
-            actual.evaluateSymbolIndexability
-        );
+function expectBlockedWithOwnIdentity(
+    result: Metadata | null,
+    symbol: string
+): void {
+    expect(result).not.toBeNull();
+    expect(result!.robots).toEqual(NOINDEX_SYMBOL_METADATA.robots);
+    expect(result!.alternates).toEqual(NOINDEX_SYMBOL_METADATA.alternates);
+    expect(result!.title).toEqual({
+        absolute: expect.stringContaining(symbol) as unknown as string,
     });
-
-    it.each(['en', 'ja', 'zh'] as const)(
-        '%s: null을 돌려 호출부가 제목을 만들게 한다',
-        async locale => {
-            await expect(
-                getBlockedSymbolMetadata({
-                    locale,
-                    symbol: 'AAPL',
-                    assetInfo: ASSET_INFO,
-                    degraded: false,
-                    revalidateSeconds: 3600,
-                    tab: 'technical',
-                })
-            ).resolves.toBeNull();
-        }
-    );
-
-    it('ko에서 실제 차단 사유가 있으면 여전히 noindex다', async () => {
-        await expect(
-            getBlockedSymbolMetadata({
-                locale: 'ko',
-                symbol: 'AAPL',
-                assetInfo: null,
-                degraded: false,
-                revalidateSeconds: 3600,
-                tab: 'technical',
-            })
-        ).resolves.not.toBeNull();
-    });
-});
+    expect(result!.description).toEqual(expect.any(String));
+    expect(result!.openGraph?.url).toBe(`https://siglens.io/${symbol}`);
+}
 
 describe('getBlockedSymbolMetadata', () => {
     beforeEach(() => {
@@ -120,7 +92,7 @@ describe('getBlockedSymbolMetadata', () => {
         });
 
         expect(mockGetSeoSnapshotsStatic).not.toHaveBeenCalled();
-        expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
+        expectBlockedWithOwnIdentity(result, 'ZZZOF');
     });
 
     it('reads snapshots on the degraded path and threads hasSnapshot=true when a same-tab snapshot exists', async () => {
@@ -190,7 +162,7 @@ describe('getBlockedSymbolMetadata', () => {
             locale: 'ko',
             hasSnapshot: false,
         });
-        expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
+        expectBlockedWithOwnIdentity(result, 'AAPL');
     });
 
     // Regression guard for FIX 2 (audit): a degraded+whitelisted symbol with a
@@ -229,7 +201,7 @@ describe('getBlockedSymbolMetadata', () => {
             locale: 'ko',
             hasSnapshot: false,
         });
-        expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
+        expectBlockedWithOwnIdentity(result, 'AAPL');
     });
 
     // FIX 1 (audit): a same-tab row whose `content` is malformed (fails the
@@ -271,7 +243,7 @@ describe('getBlockedSymbolMetadata', () => {
             locale: 'ko',
             hasSnapshot: false,
         });
-        expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
+        expectBlockedWithOwnIdentity(result, 'AAPL');
     });
 
     // fear-greed/position pass no `tab` — the DB read must be skipped entirely
@@ -299,6 +271,6 @@ describe('getBlockedSymbolMetadata', () => {
             locale: 'ko',
             hasSnapshot: undefined,
         });
-        expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
+        expectBlockedWithOwnIdentity(result, 'AAPL');
     });
 });

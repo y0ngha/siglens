@@ -6,6 +6,7 @@ import {
     type MarketProfileId,
 } from '@/shared/config/marketProfile';
 import type { NewsDisplayItem } from '@/shared/lib/types';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 export interface OverallFactualFallbackProps {
     displayName: string;
@@ -88,10 +89,10 @@ export function OverallFactualFallback({
     return (
         <section
             aria-labelledby={headingId}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-5"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-5"
         >
-            <h2 id={headingId} className="text-lg font-semibold tracking-tight">
-                {t('OverallFactualFallback.662bc5', { v0: displayName })}
+            <h2 id={headingId} className={HEADING_SECTION}>
+                {displayName} {t('OverallFactualFallback.87d0df')}
             </h2>
             <div className="mt-3 space-y-3 text-sm leading-relaxed text-secondary-300">
                 <p>

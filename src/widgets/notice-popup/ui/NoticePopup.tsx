@@ -82,7 +82,7 @@ export function NoticePopup() {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={MODAL_TITLE_ID}
-                className="flex max-h-[85dvh] w-full max-w-md flex-col rounded-2xl border border-secondary-700 bg-secondary-800 p-5"
+                className="flex max-h-[85dvh] w-full max-w-md flex-col rounded-lg border border-secondary-700 bg-secondary-800 p-5"
             >
                 <div className="mb-3 flex shrink-0 items-start justify-between gap-3">
                     <h2
@@ -147,7 +147,7 @@ export function NoticePopup() {
                     </button>
                     <button
                         onClick={advance}
-                        className="rounded-lg border border-secondary-600 px-4 py-2 text-sm text-secondary-200 transition-colors hover:bg-secondary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        className="rounded-lg border border-border-control px-4 py-2 text-sm text-secondary-200 transition-colors hover:bg-secondary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
                         {t('NoticePopup.94b7db')}
                     </button>

@@ -16,7 +16,7 @@ interface OptionsEmptyStateProps {
 }
 
 const FALLBACK_LINK_CLASSES =
-    'border-secondary-700 hover:border-primary-500 focus-visible:ring-primary-500 rounded-xl border p-4 text-left transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
+    'border-border-control hover:border-primary-500 focus-visible:ring-primary-500 rounded-lg border p-4 text-left transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
 
 /**
  * 라벨·설명은 `shared.crossLink`를 재사용한다 — 같은 네 페이지를 가리키는
@@ -34,13 +34,13 @@ export function OptionsEmptyState({
     symbol,
     snapshotSlot,
 }: OptionsEmptyStateProps) {
-    const tCard = useTranslations('shared.crossLink');
     const t = useTranslations('widgets.options');
+    const tCard = useTranslations('shared.crossLink');
     return (
-        <main className="mx-auto max-w-5xl px-4 py-16">
-            <div className="rounded-xl border border-secondary-700 bg-secondary-800 p-8 text-center">
-                <h1 className="text-xl font-semibold tracking-tight">
-                    {t('OptionsEmptyState.64ff0f', { v0: symbol })}
+        <main className="mx-auto w-full max-w-5xl px-4 py-16">
+            <div className="rounded-lg border border-secondary-700 bg-secondary-800 p-8 text-center">
+                <h1 className="text-xl font-bold tracking-tight text-balance text-secondary-50 sm:text-2xl">
+                    {symbol} {t('OptionsEmptyState.68a411')}
                 </h1>
                 <p className="mt-3 text-sm leading-relaxed text-secondary-400">
                     {t('OptionsEmptyState.97e04b', { v0: symbol })}

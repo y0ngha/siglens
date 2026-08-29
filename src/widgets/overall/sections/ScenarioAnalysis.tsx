@@ -5,6 +5,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 /** OverallScenarioName → `shared.enumLabel.overallScenario` 카탈로그 키. */
 const SCENARIO_LABEL_KEY: Record<OverallScenarioName, string> = {
@@ -14,9 +15,9 @@ const SCENARIO_LABEL_KEY: Record<OverallScenarioName, string> = {
 };
 
 const SCENARIO_CLASS: Record<OverallScenarioName, string> = {
-    bullish: 'bg-ui-success/10 text-chart-bullish',
+    bullish: 'bg-ui-success/10 text-ui-success-text',
     neutral: 'bg-secondary-700 text-secondary-400',
-    bearish: 'bg-ui-danger/10 text-chart-bearish',
+    bearish: 'bg-ui-danger/10 text-ui-danger-text',
 };
 
 interface ScenarioAnalysisProps {
@@ -34,11 +35,11 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
     return (
         <section
             aria-labelledby="scenario-analysis-heading"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2
                 id="scenario-analysis-heading"
-                className="mb-4 text-lg font-semibold text-balance"
+                className={cn(HEADING_SECTION, 'mb-4 text-balance')}
             >
                 {t('ScenarioAnalysis.bb732c')}
             </h2>

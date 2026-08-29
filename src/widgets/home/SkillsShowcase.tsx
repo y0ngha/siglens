@@ -5,6 +5,7 @@ import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import { useSkillDescription } from '@/shared/i18n/skillDescription';
 import React, { useId, useRef } from 'react';
 import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import type { SkillShowcaseItem, SkillType } from '@y0ngha/siglens-core';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { buildPanelId, buildTabId, TabsPill } from '@/shared/ui/tabs';
@@ -66,17 +67,17 @@ const TYPE_BADGE: Record<SkillType, TypeBadgeConfig> = {
     pattern: {
         labelKey: 'skillBadge.pattern',
         className:
-            'bg-chart-bearish/10 text-chart-bearish border border-chart-bearish/30',
+            'bg-ui-danger/10 text-ui-danger-text border border-ui-danger/30',
     },
     strategy: {
         labelKey: 'skillBadge.strategy',
         className:
-            'bg-ui-warning/10 text-ui-warning border border-ui-warning/30',
+            'bg-ui-warning/10 text-ui-warning-text border border-ui-warning/30',
     },
     candlestick: {
         labelKey: 'skillBadge.candlestick',
         className:
-            'bg-chart-bullish/10 text-chart-bullish border border-chart-bullish/30',
+            'bg-ui-success/10 text-ui-success-text border border-ui-success/30',
     },
     support_resistance: {
         labelKey: 'skillBadge.support_resistance',
@@ -113,7 +114,11 @@ function ConfidenceInfoTooltip() {
                     e.stopPropagation();
                     toggle();
                 }}
-                className="cursor-help rounded text-xs leading-none text-secondary-600 transition-colors hover:text-secondary-400 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                // 글리프만 두면 모바일에서 10.4×12로 잡힌다(실측) — WCAG 2.2
+                // SC 2.5.8의 24×24 최소치 미달이고, 같은 ⓘ가 옵션 페이지에서는
+                // `InfoTooltip`을 통해 24×24다. 같은 기호가 화면마다 다른 크기인
+                // 것이 문제이므로 그쪽과 같은 최소 크기를 준다.
+                className="inline-flex min-h-6 min-w-6 cursor-help items-center justify-center rounded text-xs leading-none text-secondary-500 transition-colors hover:text-secondary-400 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
                 ⓘ
             </button>
@@ -159,6 +164,7 @@ export function SkillCard({
     isExpanded,
     onToggleExpand,
 }: SkillCardProps) {
+    const t = useTranslations('widgets.home');
     // 스킬명은 `skills/**.md` front-matter라 36개가 한국어다. 원문은 dedupe·토글
     // 키로도 쓰이므로 바꿀 수 없고, **표시 시점**에만 카탈로그로 옮긴다
     // (`AnalysisPanel`과 같은 훅). 홈은 이 표시명의 최대 노출 지점이다.
@@ -169,7 +175,6 @@ export function SkillCard({
     // 클램프 측정은 접힘 상태에서만 유효(펼치면 판정이 뒤집힘) → enabled=!isExpanded.
     const { ref: descRef, isClamped } = useIsClamped(!isExpanded);
 
-    const t = useTranslations('widgets.home');
     const badge = skill.type != null ? TYPE_BADGE[skill.type] : null;
     const barColor = barColorClass(skill.confidenceWeight);
     const canExpand = isClamped || isExpanded;
@@ -278,7 +283,7 @@ export function SkillsShowcaseSkeleton() {
         <section
             aria-label={t('SkillsShowcase.7f2565')}
             aria-busy="true"
-            className="px-6 py-10 lg:px-[15vw]"
+            className="page-container py-10"
         >
             <div aria-hidden="true">
                 <div className="mb-6 h-3.5 w-20 animate-pulse rounded bg-secondary-700/50" />
@@ -336,8 +341,11 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
     } = useSkillsShowcase();
 
     return (
-        <section className="px-6 py-10 lg:px-[15vw]">
-            <h2 className="mb-6 text-sm font-semibold tracking-wider text-secondary-200 uppercase">
+        <section className="page-container py-10">
+            {/* 같은 위계의 h2는 `HEADING_SECTION` 한 곳에서만 정의한다 —
+                여기와 `CategoryCardGrid`가 각자 리터럴을 복제하고 있었고, 그
+                복제본이 토큰(18px)과 어긋난 16px로 굳어 있었다. */}
+            <h2 className={cn('mb-6', HEADING_SECTION)}>
                 {t('SkillsShowcase.158954')}
             </h2>
             <TabsPill
@@ -385,7 +393,7 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
                                 <button
                                     type="button"
                                     onClick={toggleShowAll}
-                                    className="rounded-full border border-secondary-700 px-6 py-2 text-xs font-medium text-secondary-400 transition-colors hover:border-primary-600/40 hover:text-primary-400 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                    className="rounded-full border border-border-control px-6 py-2 text-xs font-medium text-secondary-400 transition-colors hover:border-primary-500 hover:text-primary-400 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
                                     {showAll
                                         ? t('SkillsShowcase.0d2c24')

@@ -4,6 +4,7 @@ import { LocaleSwitcher } from './LocaleSwitcher';
 import { HeaderNav } from './HeaderNav';
 import { HeaderNavStatic } from './HeaderNavStatic';
 import { HeaderUserMenu, type HeaderUserMenuUser } from './HeaderUserMenu';
+import { ThemeToggle } from '@/shared/ui/ThemeToggle';
 import { NAV_TREE } from './headerNavTree';
 import { HeaderSearch } from '@/features/ticker-search';
 import { SITE_NAME } from '@/shared/lib/seo';
@@ -28,8 +29,15 @@ interface HeaderProps {
 export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
     const t = useTranslations('widgets.layout');
     return (
-        <header className="sticky top-0 z-50 border-b border-secondary-800 bg-secondary-900/90 backdrop-blur-md supports-backdrop-filter:bg-secondary-900/75">
-            <div className="flex h-14 items-center gap-2 px-3 sm:gap-4 sm:px-6">
+        <header className="sticky top-0 z-50 border-b border-secondary-700 bg-secondary-900/90 backdrop-blur-md supports-backdrop-filter:bg-secondary-900/75">
+            {/* 전역 크롬은 **뷰포트에** 맞춘다(전폭 `px-4`). 심볼 페이지의
+                브레드크럼·탭·차트 제목이 모두 16px에 서 있으므로 헤더 로고도
+                같은 선에 둬야 제품의 주 표면에서 좌측이 하나로 읽힌다.
+                본문이 `page-container`(1200px 중앙)인 라우트에서는 로고가
+                본문보다 바깥에서 시작하는데, 크롬은 전폭·본문은 읽기 폭이라는
+                규약을 고른 결과다(`docs/conventions/DESIGN.md` §폭 규약).
+                푸터도 같은 규약을 쓴다. */}
+            <div className="flex h-14 items-center gap-2 px-4 sm:gap-4">
                 <Link
                     href="/"
                     title={t('Header.d8c261')}
@@ -92,17 +100,28 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                     자동완성. 폭 계약(`ml-auto`)까지 이 컴포넌트가 소유한다 —
                     `features/ticker-search/ui/HeaderSearch` JSDoc 참고. */}
                 <HeaderSearch />
-                <div className="flex shrink-0 items-center">
-                    {/* 모바일에서는 드로어 안에 같은 스위처가 있으므로 숨긴다 —
-                        `lg`는 데스크톱 내비/햄버거와 반드시 같은 브레이크포인트다. */}
-                    <LocaleSwitcher className="hidden lg:inline-flex" />
+                {/*
+                    모바일 갭이 **행 갭(`gap-2`)과 같아야** 한다. 검색 트리거와
+                    햄버거는 이 div의 형제라 행 갭을 쓰는데, 안쪽만 다른 값을
+                    쓰면 아이콘 넷의 간격이 2·8·2·8로 어긋나 보인다(사용자 제보).
+                    데스크톱은 라벨이 붙어 폭이 커지므로 좁은 갭이 낫다.
+                */}
+                <div className="flex shrink-0 items-center gap-2 sm:gap-0.5">
+                    {/* 모바일에서도 노출한다 — 드로어 안에도 같은 스위처가
+                        있지만, 언어 전환을 쓰려고 햄버거를 여는 것은 한 홉이
+                        더 든다. 검색·언어·테마 세 아이콘이 같은 줄에 선다. */}
+                    <LocaleSwitcher />
+                    <ThemeToggle />
                     <HeaderUserMenu
                         currentUser={currentUser}
                         loading={loadingUserMenu}
                     />
                 </div>
                 {/* Mobile hamburger — hidden on desktop */}
-                <HeaderMobileMenu items={NAV_TREE} />
+                <HeaderMobileMenu
+                    items={NAV_TREE}
+                    showAuthCta={currentUser === null && !loadingUserMenu}
+                />
             </div>
         </header>
     );

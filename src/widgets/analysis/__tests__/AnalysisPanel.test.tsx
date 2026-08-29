@@ -1025,12 +1025,41 @@ describe('AnalysisPanel', () => {
                 keyLevels={EMPTY_KEY_LEVELS}
                 timeframe="1Day"
                 actionPricesVisible={false}
+                onActionPricesVisibilityChange={vi.fn()}
             />
         );
 
         expect(
             screen.getByRole('button', { name: '차트 가격선 표시' })
         ).toBeInTheDocument();
+    });
+
+    /**
+     * 공유 페이지(`views/share/kindPanelRegistry`)는 이 핸들러를 넘기지 않는다.
+     * 예전에는 그래도 버튼이 렌더돼, 눌러도 아무 일도 없는 컨트롤이 남아
+     * 있었다 — 게다가 그 버튼이 숨기겠다고 말하는 가격선은 `StockChart`가
+     * 그리는데 공유 페이지는 `ShareCandlestickChart`를 쓰므로 존재하지도 않는다.
+     *
+     * 이 케이스가 없으면 게이트를 지워도 스위트가 초록이다.
+     */
+    it('핸들러가 없으면 차트 토글을 렌더하지 않는다', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    actionRecommendation: makeActionRecommendation(),
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                actionPricesVisible={false}
+            />
+        );
+
+        // 섹션 자체는 남아 있어야 한다 — 버튼만 사라진다.
+        expect(screen.getByText('매매 전략')).toBeInTheDocument();
+        expect(
+            screen.queryByRole('button', { name: /차트 가격선/ })
+        ).toBeNull();
     });
 
     it('handles copy report button click', async () => {

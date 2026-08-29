@@ -21,6 +21,7 @@ import { useTimeframeFromUrl } from './hooks/useTimeframeFromUrl';
 import type { AssetClass } from '@/shared/config/marketProfile';
 import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
 import { OverallView } from './OverallView';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 const SKELETON_LINE_COUNT = 3;
 const SKELETON_WIDTH_START_PCT = 85;
@@ -123,21 +124,21 @@ export function OverallContent({
             <section
                 aria-labelledby="overall-cta-poll-error-heading"
                 role="alert"
-                className="rounded-xl border border-ui-danger/30 bg-secondary-800 p-6 text-center"
+                className="rounded-lg border border-ui-danger/30 bg-secondary-800 p-6 text-center"
             >
                 <h2
                     id="overall-cta-poll-error-heading"
-                    className="mb-2 text-lg font-semibold text-balance"
+                    className={cn(HEADING_SECTION, 'mb-2 text-balance')}
                 >
                     {t('OverallContent.8b7ae7')}
                 </h2>
-                <p className="text-sm text-ui-danger">
+                <p className="text-sm text-ui-danger-text">
                     {t('OverallContent.1c85d8')}
                 </p>
                 <button
                     type="button"
                     onClick={() => window.location.reload()}
-                    className="mt-4 inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
+                    className="mt-4 inline-flex items-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
                 >
                     {t('OverallContent.0c767c')}
                 </button>
@@ -167,11 +168,11 @@ export function OverallContent({
             <section
                 aria-labelledby="overall-loading-heading"
                 aria-busy="true"
-                className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+                className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             >
                 <h2
                     id="overall-loading-heading"
-                    className="mb-4 text-lg font-semibold text-balance"
+                    className={cn(HEADING_SECTION, 'mb-4 text-balance')}
                 >
                     {t('OverallContent.8b7ae7')}
                 </h2>
@@ -213,26 +214,24 @@ export function OverallContent({
         return (
             <section
                 aria-labelledby="overall-error-heading"
-                className="rounded-xl border border-ui-danger/30 bg-secondary-800 p-6"
+                className="rounded-lg border border-ui-danger/30 bg-secondary-800 p-6"
             >
                 <h2
                     id="overall-error-heading"
-                    className="mb-2 text-lg font-semibold text-balance"
+                    className={cn(HEADING_SECTION, 'mb-2 text-balance')}
                 >
                     {t('OverallContent.8b7ae7')}
                 </h2>
-                <p className="text-sm text-ui-danger" role="alert">
+                <p className="text-sm text-ui-danger-text" role="alert">
                     {state.error ?? t('OverallContent.0bb0bd')}
                     {state.axis !== undefined
-                        ? t('OverallContent.axisFailedSuffix', {
-                              v0: state.axis,
-                          })
+                        ? t('axisFailed', { v0: state.axis })
                         : ''}
                 </p>
                 <button
                     type="button"
                     onClick={trigger}
-                    className="mt-3 rounded-sm text-sm text-primary-400 underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    className="mt-3 rounded text-sm text-primary-400 underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
                     {t('OverallContent.0c767c')}
                 </button>

@@ -832,7 +832,7 @@ vi.mock('@/entities/og-image', () => ({
 
 describe('[symbol] opengraph-image', () => {
     it('returns ImageResponse for valid symbol', async () => {
-        const { default: handler } = await import('@/app/[symbol]/opengraph-image');
+        const { default: handler } = await import('@/app/[locale]/[symbol]/opengraph-image');
         const response = await handler({ params: { symbol: 'AAPL' } });
         expect(response).toBeDefined();
     });

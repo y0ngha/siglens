@@ -108,7 +108,7 @@ const topNoticeFor = (t: SeoTranslator, tLegal: SeoTranslator) => (
         aria-label={t('a11y.investmentDisclaimerSummary')}
         className="my-8 rounded-lg border border-ui-danger/30 bg-ui-danger/5 p-5"
     >
-        <p className="mb-2 text-xs font-semibold tracking-wider text-ui-danger uppercase">
+        <p className="mb-2 text-xs font-semibold text-ui-danger-text">
             {tLegal('termsNoticeHeading')}
         </p>
         <p className="text-sm leading-relaxed text-secondary-200 sm:text-base">

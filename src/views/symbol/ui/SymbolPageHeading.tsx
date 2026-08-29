@@ -37,7 +37,7 @@ export function SymbolPageHeading({
                  * doubled large-title visual — the breadcrumb header acts as the
                  * primary visual anchor, so a smaller h1 keeps the hierarchy correct.
                  */
-                'text-secondary-100 text-xl font-bold tracking-tight text-balance sm:text-2xl',
+                'text-secondary-50 text-xl font-bold tracking-tight text-balance sm:text-2xl',
                 className
             )}
         >

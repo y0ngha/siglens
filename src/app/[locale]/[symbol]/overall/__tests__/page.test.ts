@@ -130,7 +130,7 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
     });
 
     it('returns normal metadata when not degraded', async () => {
@@ -146,7 +146,7 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ locale: 'ko', symbol: '!!!invalid' }),
         });
 
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
     });
 
     // 라운드4 finding 2: 건강한(비degraded) 자산이라도 AI 분석이 아직 캐시되지
@@ -162,7 +162,7 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
         expect(metadata.alternates).toEqual({ canonical: null });
     });
 

@@ -4,9 +4,10 @@ import type { ReactNode } from 'react';
 import type { FundamentalProfile } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
 import { formatCompactCurrency } from '@/shared/lib/priceFormat';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 const HEADING_ID = 'profile-heading';
-const HEADING_CLASS_NAME = 'text-xl font-semibold tracking-tight';
+const HEADING_CLASS_NAME = HEADING_SECTION;
 
 interface ProfileCardProps {
     profile: FundamentalProfile | null;
@@ -37,7 +38,7 @@ export function ProfileCard({ profile, descriptionSlot }: ProfileCardProps) {
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -53,7 +54,7 @@ export function ProfileCard({ profile, descriptionSlot }: ProfileCardProps) {
                     </p>
                 </div>
                 <div className="text-right">
-                    <span className="text-xs tracking-widest text-secondary-400 uppercase">
+                    <span className="text-xs tracking-[0.01em] text-secondary-400">
                         {t('ProfileCard.cf643b')}
                     </span>
                     <p className="font-mono text-lg font-medium tabular-nums">
@@ -81,7 +82,7 @@ export function ProfileCard({ profile, descriptionSlot }: ProfileCardProps) {
                                 href={profile.website}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="rounded-sm text-secondary-400 underline underline-offset-2 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
+                                className="rounded text-secondary-400 underline underline-offset-2 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
                                 translate="no"
                             >
                                 {profile.website.replace(/^https?:\/\//, '')}

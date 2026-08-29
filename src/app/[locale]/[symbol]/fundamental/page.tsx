@@ -38,6 +38,7 @@ import {
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { SectionSkeleton } from '@/views/symbol/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { FaqSection } from '@/shared/ui/FaqSection';
 import {
     SymbolRouteParams,
     isAdmissibleSymbolShape,
@@ -53,12 +54,15 @@ import {
 } from '@/entities/ticker';
 import {
     buildBreadcrumbJsonLd,
+    buildFaqJsonLd,
     buildSnapshotMetaDescription,
     buildSymbolFundamentalSeoContent,
     buildSymbolSeoContent,
     buildWebPageJsonLd,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
+    noindexSymbolMetadata,
+    type FaqItem,
 } from '@/shared/lib/seo';
 import { getProfileResilient } from './getProfileResilient';
 import { FundamentalDegraded } from './FundamentalDegraded';
@@ -72,6 +76,7 @@ import {
     profileIdForSymbol,
     type MarketProfileId,
 } from '@/shared/config/marketProfile';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 // 종목당 SEO 콘텐츠는 고정이고 동적 데이터는 클라가 재hydrate한다. 엣지 캐시로
 // compute 호출을 줄인다. (일시 인프라 장애의 404 캐싱은 getAssetInfo strict로 차단)
@@ -91,6 +96,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, symbol } = await params;
     const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!isAdmissibleSymbolShape(upper)) {
@@ -100,7 +106,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // generateMetadata도 동일 조건에서 NOINDEX로 반환한다. 가드 없이 계속 진행하면
     // 본문은 notFound()(noindex)인데 메타데이터는 canonical + index:true인 soft-404가 만들어진다.
     if (!(await isTabAllowedForSymbol(upper, 'fundamental'))) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper, tSeo, locale);
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
     const blockedMetadata = await getBlockedSymbolMetadata({
@@ -118,15 +124,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 추가 FMP round-trip 없음). 그래서 본문 렌더 결과와 metadata noindex 판단이 일치한다:
     //   - profileDegraded(FMP 인프라 실패) → 본문은 degrade(200)를 렌더하므로 noindex.
     //   - profile === null(실존하지 않는 종목) → 본문은 notFound()이므로 noindex.
-    const { profile, degraded: profileDegraded } =
-        await getProfileResilient(upper);
-    if (profileDegraded || profile === null) {
-        return NOINDEX_SYMBOL_METADATA;
-    }
-    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
+    // `displayName`을 가드보다 위에서 계산한다 — 아래 noindex 분기들도
+    // `noindexSymbolMetadata`에 넘겨야 차단된 페이지가 티커가 아니라 사명까지
+    // 담은 title/description을 갖는다. `buildDisplayName`은 순수 함수라 위치를
+    // 올려도 부작용이 없다.
     const displayName = assetInfo
         ? buildDisplayName(assetInfo, upper, locale)
         : upper;
+
+    const { profile, degraded: profileDegraded } =
+        await getProfileResilient(upper);
+    if (profileDegraded || profile === null) {
+        return noindexSymbolMetadata(upper, tSeo, locale, {
+            displayName,
+            koreanName: assetInfo?.koreanName,
+        });
+    }
     // sector는 의도적으로 <meta description>에 쓰지 않는다(description은 sector 없는 base
     // 카피, 페이지 본문 JSON-LD만 sector 보강 카피). 위 profile 조회는 noindex 게이트 용도이며
     // 두 description 모두 동일 함수에서 파생되므로 핵심 의미는 일치한다.
@@ -197,14 +210,11 @@ function ProfileCardSkeleton({ symbol }: ProfileCardSkeletonProps) {
     return (
         <section
             aria-labelledby="profile-heading"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <h2
-                        id="profile-heading"
-                        className="text-xl font-semibold tracking-tight"
-                    >
+                    <h2 id="profile-heading" className={HEADING_SECTION}>
                         <span className="inline-block h-5 w-36 animate-pulse rounded bg-secondary-700 align-middle" />
                         <span className="ml-2 text-base font-normal text-secondary-400">
                             ({symbol})
@@ -213,7 +223,7 @@ function ProfileCardSkeleton({ symbol }: ProfileCardSkeletonProps) {
                     <div className="mt-1 h-4 w-28 animate-pulse rounded bg-secondary-700" />
                 </div>
                 <div className="text-right">
-                    <span className="text-xs tracking-widest text-secondary-400 uppercase">
+                    <span className="text-xs tracking-[0.01em] text-secondary-400">
                         {t('page.cf643b')}
                     </span>
                     <div className="mt-0.5 h-6 w-20 animate-pulse rounded bg-secondary-700" />
@@ -640,7 +650,7 @@ export default async function FundamentalPage({ params }: Props) {
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
         [
-            { name: upper, url: buildSymbolSeoContent(upper, tSeo).url },
+            { name: displayName, url: buildSymbolSeoContent(upper, tSeo).url },
             {
                 name: t('page.412646'),
                 url: buildSymbolFundamentalSeoContent(upper, tSeo).url,
@@ -649,55 +659,45 @@ export default async function FundamentalPage({ params }: Props) {
         isLocale(locale) ? locale : DEFAULT_LOCALE
     );
 
-    const faqJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: [
-            {
-                '@type': 'Question',
-                name: tSeo('faq.fundamentalScope', { v0: displayName }),
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: t('page.716d9b'),
-                },
-            },
-            {
-                '@type': 'Question',
-                name: t('page.8770b1'),
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: t('page.7b255a'),
-                },
-            },
-            {
-                '@type': 'Question',
-                name: t('page.05f287'),
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: t('page.6e94dd'),
-                },
-            },
-        ],
-    };
+    /**
+     * FAQ — 화면 `FaqSection`과 FAQPage 구조화데이터의 단일 소스.
+     *
+     * 첫 답변이 섹터를 품는다. 예전에는 같은 지표 나열이 화면에 보이지 않는
+     * `sr-only` 개요 문단으로 따로 있었는데(섹터도 거기 있었다), 답변과 사실상
+     * 같은 문장이라 크롤러에게 같은 말을 두 번 하는 셈이었다 — 문단을 지우고
+     * 섹터만 여기로 옮겼다.
+     */
+    const faq: readonly FaqItem[] = [
+        {
+            question: tSeo('faq.fundamentalScope', { v0: displayName }),
+            answer: tSeo('faq.fundamentalScopeAnswer', {
+                v0:
+                    displayName +
+                    (sector !== ''
+                        ? tSeo('faq.fundamentalSectorSuffix', { v0: sector })
+                        : ''),
+            }),
+        },
+        {
+            question: t('page.8770b1'),
+            answer: t('page.7b255a'),
+        },
+        {
+            question: t('page.05f287'),
+            answer: t('page.6e94dd'),
+        },
+    ];
+    const faqJsonLd = buildFaqJsonLd(faq);
 
     return (
         <>
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
-            <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+            <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>
                     {t('page.9e0659', { v0: displayName })}
                 </SymbolPageHeading>
-                <section className="sr-only">
-                    <h2>{t('page.dbd943', { v0: displayName })}</h2>
-                    <p>
-                        {t('page.632a87', {
-                            v0: displayName,
-                            v1: sector !== '' ? `(${sector} 섹터)` : '',
-                        })}
-                    </p>
-                </section>
                 <Suspense fallback={<ProfileCardSkeleton symbol={upper} />}>
                     <ProfileSection symbol={upper} locale={resolved} />
                 </Suspense>
@@ -762,6 +762,12 @@ export default async function FundamentalPage({ params }: Props) {
                     <FutureDirectionSection symbol={upper} />
                 </Suspense>
 
+                <FaqSection
+                    heading={tSeo('faqHeading.fundamental', {
+                        v0: displayName,
+                    })}
+                    items={faq}
+                />
                 <CrossLinkCards
                     symbol={upper}
                     current="fundamental"

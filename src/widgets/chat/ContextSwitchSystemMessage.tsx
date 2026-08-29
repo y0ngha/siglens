@@ -11,7 +11,7 @@ export function ContextSwitchSystemMessage({
     const t = useTranslations('widgets.chat');
     return (
         <div
-            className="my-2 rounded-md bg-secondary-800 px-3 py-2 text-xs text-secondary-300"
+            className="my-2 rounded-lg bg-secondary-800 px-3 py-2 text-xs text-secondary-300"
             role="status"
         >
             {t('ContextSwitchSystemMessage.aa779e', { v0: label })}

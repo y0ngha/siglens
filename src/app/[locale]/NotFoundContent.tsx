@@ -44,7 +44,7 @@ export function NotFoundContent() {
                         {t('not-found.ba81f0', { v0: SITE_NAME })}
                     </Link>
 
-                    <div className="mt-10 border-t border-secondary-800 pt-8">
+                    <div className="mt-10 border-t border-secondary-700 pt-8">
                         <p className="text-sm text-secondary-400">
                             {t('not-found.f4b235')}
                         </p>

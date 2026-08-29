@@ -52,9 +52,13 @@ describe('SnapshotSummarySection', () => {
         expect(screen.getByText(/Apple Inc\./)).toBeInTheDocument();
     });
 
-    // audit fix FIX 4: 카드 셸은 제품의 우세 패턴(67곳)인
-    // `border-secondary-700 bg-secondary-800 rounded-xl border p-6`을 따른다
-    // — 이전 소수 패턴(bg-secondary-800 rounded-lg p-4, 5곳)으로의 회귀 가드.
+    // audit fix FIX 4: 카드 셸은 제품의 우세 패턴인
+    // `border-secondary-700 bg-secondary-800 rounded-lg border p-6`을 따른다
+    // — 이전 소수 패턴(보더 없는 `bg-secondary-800 p-4`)으로의 회귀 가드.
+    //
+    // 2026-08 리디자인에서 반경이 3단계로 통일돼(`rounded-lg` 하나로 수렴)
+    // 두 패턴을 반경으로는 더 이상 구분할 수 없다. 남은 구분자인 **보더 유무와
+    // 패딩 크기**로 가드를 옮긴다.
     it('제품 우세 카드 셸 패턴을 사용한다(FIX 4)', () => {
         const { container } = render(
             <SnapshotSummarySection
@@ -68,10 +72,12 @@ describe('SnapshotSummarySection', () => {
         const section = container.querySelector('section');
         expect(section?.className).toContain('border-secondary-700');
         expect(section?.className).toContain('bg-secondary-800');
-        expect(section?.className).toContain('rounded-xl');
+        expect(section?.className).toContain('rounded-lg');
         expect(section?.className).toContain('border');
         expect(section?.className).toContain('p-6');
-        expect(section?.className).not.toContain('rounded-lg');
+        /* 부분 문자열이 아니라 클래스 토큰으로 비교한다 — `gap-4`가 `p-4`를
+           부분 문자열로 포함해 substring 단언은 항상 실패한다. */
+        expect(section?.className.split(/\s+/)).not.toContain('p-4');
     });
 
     // audit fix FIX 5: h2는 h3(각 렌더러 내부, text-secondary-200/text-sm)보다

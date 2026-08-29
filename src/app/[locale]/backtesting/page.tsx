@@ -216,7 +216,7 @@ export default async function BacktestingPage({
                 <div
                     role="note"
                     aria-label={t('page.693b62')}
-                    className="border-t border-secondary-800 px-6 py-4"
+                    className="border-t border-secondary-700 px-6 py-4"
                 >
                     <p className="text-center text-[11px] text-secondary-600">
                         {t('page.8e0330')}

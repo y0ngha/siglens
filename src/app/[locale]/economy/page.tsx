@@ -30,18 +30,21 @@ import { CALENDAR_COUNTRY } from '@/entities/economy/lib/economyCalendarConstant
 import { isEmptyEconomySnapshot } from '@/entities/economy';
 import {
     buildBreadcrumbJsonLd,
+    buildFaqJsonLd,
     buildWebPageJsonLd,
     clampSeoDescription,
+    localizedAbsoluteUrl,
     ROOT_KEYWORDS,
     SITE_NAME,
     SITE_URL,
+    type FaqItem,
     type SeoTranslator,
-    localizedAbsoluteUrl,
 } from '@/shared/lib/seo';
 import { TERMS_PATH } from '@/shared/lib/legal';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { FaqSection } from '@/shared/ui/FaqSection';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 
 import { ECONOMY_INDICATORS } from '@/shared/config/economyIndicators';
@@ -52,7 +55,7 @@ import { EconomyDegraded } from './EconomyDegraded';
 /** 페이지 최상단 h1 — Suspense 위에 렌더되어 ready와 degraded 양 경로에서 항상 표시된다. */
 function EconomyHeroH1({ title }: { title: string }) {
     return (
-        <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
+        <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
             {title}
         </h1>
     );
@@ -295,28 +298,23 @@ export function buildEconomyDatasetJsonLd(t: SeoTranslator, locale: Locale) {
 }
 
 /**
- * FAQPage 구조화 데이터 — 자주 묻는 질문 4건. 검색 결과에 FAQ 리치 스니펫으로
- * 노출되어 클릭률을 높이고 핵심 개념(2s10s·FOMC·CPI·데이터 출처)을 직접 전달한다.
+ * FAQ 원문 — JSON-LD와 화면 `<FaqSection>`의 단일 소스. 4건.
  *
- * 모듈 상수가 아니라 빌더인 이유: 질문·답변이 한국어 리터럴이면 `/en/economy`가
- * 영어 페이지에 한국어 FAQ 리치 스니펫을 실어 보낸다. 구글은 구조화데이터가
- * 페이지 언어와 맞기를 요구하므로 렌더 로케일의 번역자로 만든다.
+ * 구글은 FAQPage 구조화데이터에 대응하는 내용이 페이지에 실제로 보일 것을 요구한다.
+ * 예전에는 이 배열이 JSON-LD 리터럴로만 있고 화면에는 대응하는 텍스트가 없었다 —
+ * `/economy/kr`(`ECONOMY_KR_FAQ`)이 이미 쓰는 단일 소스 패턴을 그대로 따른다. 9개
+ * 종목 탭이 쓰는 `<FaqSection>` 컴포넌트를 재사용한다 — `/economy/kr`처럼 `<dl>`을
+ * 손으로 새로 짜지 않아도 같은 계약(단일 배열 → JSON-LD + 화면)을 만족한다.
  */
-function buildEconomyFaqJsonLd(t: SeoTranslator) {
-    const pairs = [0, 1, 2, 3].map(i => ({
+function buildEconomyFaq(t: SeoTranslator): readonly FaqItem[] {
+    // 모듈 상수가 아니라 빌더인 이유: 질문·답변이 한국어 리터럴이면
+    // `/en/economy`가 영어 페이지에 한국어 FAQ 리치 스니펫을 실어 보낸다.
+    // 구글은 구조화데이터가 페이지 언어와 맞기를 요구한다.
+    return [0, 1, 2, 3].map(i => ({
         question: t(`economy.us.faq${i}q`),
         // 마지막 항목만 갱신 주기를 값으로 받는다. 나머지는 추가 값을 무시한다.
         answer: t(`economy.us.faq${i}a`, { v0: REVALIDATE_HOURS }),
     }));
-    return {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: pairs.map(({ question, answer }) => ({
-            '@type': 'Question',
-            name: question,
-            acceptedAnswer: { '@type': 'Answer', text: answer },
-        })),
-    };
 }
 
 function buildEconomyWebPageJsonLd(t: SeoTranslator, locale: Locale) {
@@ -357,12 +355,16 @@ export default async function EconomyPage({
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
+    const t = await getTranslations('app.economy');
     const tSeo = await getTranslations('shared.seo');
+    // JSON-LD와 화면 `<FaqSection>`의 단일 소스 — 두 번 만들지 않는다.
+    const faq = buildEconomyFaq(tSeo);
     return (
         <>
-            {/* FAQ는 로더 결과와 무관하게 화면에 그대로 있으므로 항상 낸다.
-                나머지는 데이터가 있을 때만 — `EconomyContent` 참조. */}
-            <JsonLd data={buildEconomyFaqJsonLd(tSeo)} />
+            {/* FAQ 질문·답변은 아래에 항상 렌더되므로 로더 결과와 무관하게
+                구조화데이터도 항상 낸다. 나머지는 데이터가 있을 때만 —
+                `EconomyContent` 참조. */}
+            <JsonLd data={buildFaqJsonLd(faq)} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <RegionTabs
                     vertical="economy"
@@ -373,6 +375,7 @@ export default async function EconomyPage({
                 <Suspense fallback={<EconomySkeleton />}>
                     <EconomyContent />
                 </Suspense>
+                <FaqSection heading={t('page.ae2ce9')} items={faq} />
             </main>
         </>
     );

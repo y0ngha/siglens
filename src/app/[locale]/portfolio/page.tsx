@@ -1,14 +1,9 @@
 import { useTranslations } from 'next-intl';
 import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { PositionHoldingCard } from './PositionHoldingCard';
-import {
-    DEFAULT_LOCALE,
-    isLocale,
-    localePath,
-    type Locale,
-} from '@/shared/i18n/locales';
-import { setRequestLocale } from 'next-intl/server';
+import { cn } from '@/shared/lib/cn';
+import { PLACEHOLDER_ON_INSET } from '@/shared/lib/surfaceStyles';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { toView } from '@/entities/portfolio/lib/toView';
@@ -18,6 +13,8 @@ import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import type { PortfolioHoldingView } from '@/entities/portfolio';
+import { DEFAULT_LOCALE, isLocale, localePath } from '@/shared/i18n/locales';
+import type { Locale } from '@/shared/i18n/locales';
 
 // noindex 페이지에도 canonical/og:url을 명시한다 (login/signup/account/onboarding
 // 정책과 일관). 외부에 변형 URL이 공유되더라도 "원본은 /portfolio 하나"라는 신호를
@@ -124,7 +121,7 @@ export function PortfolioEmptyState() {
     return (
         <section
             data-testid="portfolio-empty-state"
-            className="flex flex-col items-start gap-3 rounded-xl border border-secondary-700 bg-secondary-800/40 p-6"
+            className="flex flex-col items-start gap-3 rounded-lg border border-secondary-700 bg-secondary-800/40 p-6"
         >
             <p className="text-sm font-semibold text-secondary-100">
                 {t('page.ac9263')}
@@ -150,7 +147,7 @@ export function PortfolioErrorState() {
     return (
         <section
             data-testid="portfolio-error-state"
-            className="flex flex-col items-start gap-3 rounded-xl border border-secondary-700 bg-secondary-800/40 p-6"
+            className="flex flex-col items-start gap-3 rounded-lg border border-secondary-700 bg-secondary-800/40 p-6"
         >
             <p className="text-sm font-semibold text-secondary-100">
                 {t('page.90a081')}
@@ -166,7 +163,10 @@ function SkeletonCard() {
     return (
         <div
             aria-hidden="true"
-            className="h-64 animate-pulse rounded-xl bg-secondary-800/60"
+            className={cn(
+                'h-64 animate-pulse rounded-lg',
+                PLACEHOLDER_ON_INSET
+            )}
         />
     );
 }
@@ -203,7 +203,7 @@ export default async function PortfolioPage({
     setRequestLocale(locale);
     const t = await getTranslations('app.portfolio');
     return (
-        <main className="min-h-[calc(100dvh-3.5rem)] bg-secondary-950 px-4 py-12">
+        <main className="min-h-[calc(100dvh-var(--header-h))] bg-secondary-950 px-4 py-12">
             <div className="mx-auto w-full max-w-5xl space-y-6">
                 <header>
                     <h1 className="text-2xl font-semibold text-secondary-50">

@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 export function EconomyDegraded() {
     const t = useTranslations('app.economy');
     return (
-        <section className="rounded-xl border border-secondary-700 bg-secondary-800 p-6">
+        <section className="rounded-lg border border-secondary-700 bg-secondary-800 p-6">
             <h2 className="mb-3 text-lg font-semibold text-secondary-100">
                 {t('EconomyDegraded.82acf3')}
             </h2>

@@ -863,6 +863,19 @@ export async function POST(request: Request): Promise<Response> {
                         fmpSymbol,
                         {
                             ...options,
+                            /*
+                             * **`locale`을 넘기지 않는다.** core 0.53.0부터
+                             * 받지만, 이 경로에는 이미 사후 번역 계층
+                             * (`withLocalizedProse` → `translateAnalysisForLocale`)이
+                             * 있다. 둘을 같이 켜면 core가 영어로 쓴 산출물이
+                             * "한국어 문장을 번역하라" 프롬프트로 들어가 결과가
+                             * 망가진다(그 함수 JSDoc의 에러 봉투 사례와 같은 형태).
+                             *
+                             * 네이티브 생성으로 갈아타는 편이 LLM 왕복 하나를
+                             * 줄이고 60초 데드라인 위험도 없앤다 — 다만 그건 이
+                             * 슬라이스를 걷어내는 별도 변경이라 여기서 하지 않는다.
+                             * 나머지 일곱 축은 사후 번역을 타지 않아 그대로 배선했다.
+                             */
                             signal: deadlineSignal,
                         }
                     ).then(result => ({

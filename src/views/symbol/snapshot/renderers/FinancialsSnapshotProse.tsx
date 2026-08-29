@@ -6,6 +6,8 @@ import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 import { createEnumGuard } from '../lib/createEnumGuard';
 import { narrowStringArray } from '../lib/narrowStringArray';
 import type { MarketProfileId } from '@/shared/config/marketProfile';
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 
 interface FinancialsSnapshotProseProps {
     /**
@@ -201,7 +203,7 @@ export function FinancialsSnapshotProse({
 
                 {narrowed.axisAssessments.length > 0 && (
                     <div>
-                        <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
+                        <h3 className={cn('mb-1.5', HEADING_SUBSECTION)}>
                             {t('FinancialsSnapshotProse.4f0caa')}
                         </h3>
                         <ul

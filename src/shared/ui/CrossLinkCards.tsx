@@ -5,6 +5,7 @@ import {
     type MarketProfileId,
     type AssetClass,
 } from '@/shared/config/marketProfile';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 
 /** All cross-linked page types in the symbol sub-navigation. */
 const ALL_PAGES = [
@@ -105,8 +106,20 @@ export function CrossLinkCards({
     return (
         <section
             className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-            aria-label={t('CrossLinkCards.be1af0')}
+            aria-labelledby="cross-link-heading"
         >
+            {/*
+             * 카드 제목이 h3인데 이 구역에 h2가 없어서, 문서 개요상 h3 여덟
+             * 개가 바로 앞 FAQ의 h2 밑으로 들어가 있었다(감사 실측: 심볼 탭
+             * 전역). 보이는 제목을 새로 만들 자리는 아니므로 sr-only h2를 두고
+             * `aria-labelledby`로 랜드마크 이름까지 그쪽에 맡긴다 — `aria-label`을
+             * 그대로 두면 이름은 있지만 개요는 여전히 비어 있다.
+             *
+             * `sr-only`는 `position: absolute`라 그리드 트랙을 차지하지 않는다.
+             */}
+            <h2 id="cross-link-heading" className="sr-only">
+                {t('CrossLinkCards.be1af0')}
+            </h2>
             {visiblePages.map(p => {
                 const isCurrent = p === current;
                 const description = tCard(descriptionKey(p, assetClass));
@@ -115,9 +128,9 @@ export function CrossLinkCards({
                         <div
                             key={p}
                             aria-current="page"
-                            className="cursor-default rounded-xl border border-primary-500 bg-secondary-800/40 p-6 ring-1 ring-primary-500/30"
+                            className="cursor-default rounded-lg border border-primary-500 bg-secondary-800/40 p-6 ring-1 ring-primary-500/30"
                         >
-                            <h3 className="font-semibold text-secondary-100">
+                            <h3 className={HEADING_SUBSECTION}>
                                 {tCard(`title.${p}`)}
                             </h3>
                             <p className="mt-2 text-sm text-secondary-400">
@@ -137,9 +150,17 @@ export function CrossLinkCards({
                         // 섹션이다. prefetch를 켜두면 같은 페이로드를 탭에 이어 두 번째로
                         // 예약하게 되므로 끈다 (docs/architecture/CDN_CACHING.md §1).
                         prefetch={false}
-                        className="rounded-xl border border-secondary-700 p-6 transition-colors hover:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+                        // 이 카드는 형제들과 달리 **채움이 없다** — 보더가 배경과
+                        // 구분되는 유일한 단서다. 장식 토큰(`secondary-700`)일 때
+                        // 다크 1.40:1 / 라이트 1.15:1로 사실상 안 보였고, 이는
+                        // master(1.72:1)보다도 낮았다. 경계 토큰으로 올려
+                        // 다크 3.74 / 라이트 3.58을 확보한다. 현재 탭 카드와의
+                        // 구분은 그쪽의 채움(`bg-secondary-800/40`)과 액센트가 맡는다.
+                        className="rounded-lg border border-border-control p-6 transition-colors hover:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
                     >
-                        <h3 className="font-semibold">{tCard(`title.${p}`)}</h3>
+                        <h3 className={HEADING_SUBSECTION}>
+                            {tCard(`title.${p}`)}
+                        </h3>
                         <p className="mt-2 text-sm text-secondary-400">
                             {description}
                         </p>

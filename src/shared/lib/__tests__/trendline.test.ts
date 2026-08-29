@@ -1,11 +1,7 @@
-import {
-    TRENDLINE_DIRECTION_LABEL_KEY,
-    TRENDLINE_DIRECTION_COLOR,
-} from '@/shared/lib/trendline';
-import { CHART_COLORS } from '@/shared/lib/chartColors';
-import koMessages from '@/../messages/ko.json';
+import { TRENDLINE_DIRECTION_LABEL_KEY } from '@/shared/lib/trendline';
 import enMessages from '@/../messages/en.json';
 import jaMessages from '@/../messages/ja.json';
+import koMessages from '@/../messages/ko.json';
 import zhMessages from '@/../messages/zh.json';
 
 const CATALOGS = {
@@ -48,22 +44,4 @@ describe('TRENDLINE_DIRECTION_LABEL_KEY', () => {
             }
         }
     );
-});
-
-describe('TRENDLINE_DIRECTION_COLOR', () => {
-    it('maps ascending to CHART_COLORS.trendlineAscending', () => {
-        expect(TRENDLINE_DIRECTION_COLOR.ascending).toBe(
-            CHART_COLORS.trendlineAscending
-        );
-    });
-
-    it('maps descending to CHART_COLORS.trendlineDescending', () => {
-        expect(TRENDLINE_DIRECTION_COLOR.descending).toBe(
-            CHART_COLORS.trendlineDescending
-        );
-    });
-
-    it('has exactly two entries', () => {
-        expect(Object.keys(TRENDLINE_DIRECTION_COLOR)).toHaveLength(2);
-    });
 });

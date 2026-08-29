@@ -1,5 +1,4 @@
-import type { SkillCounts } from '@y0ngha/siglens-core';
-import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/lib/seo';
 
 /**
  * 홈의 FAQ·HowTo JSON-LD.
@@ -36,43 +35,6 @@ export function buildHomeFaqJsonLd(
                 '@type': 'Answer',
                 text: t(`faq.q${i}.answer`, { v0: SITE_NAME }),
             },
-        })),
-    };
-}
-
-/** HowTo 단계 — 순서와 URL은 코드가, 문구는 카탈로그가 정한다. */
-const HOW_TO_STEPS = [
-    { key: 'step1', url: `${SITE_URL}/#search` },
-    { key: 'step2', url: `${SITE_URL}/AAPL` },
-    { key: 'step3', url: `${SITE_URL}/AAPL/fundamental` },
-    { key: 'step4', url: `${SITE_URL}/AAPL/options` },
-    { key: 'step5', url: `${SITE_URL}/AAPL/fear-greed` },
-    { key: 'step6', url: `${SITE_URL}/AAPL/overall` },
-    { key: 'step7', url: `${SITE_URL}/AAPL#chat` },
-] as const;
-
-export function buildHomeHowToJsonLd(
-    skillCounts: SkillCounts,
-    t: JsonLdTranslator
-): Record<string, unknown> {
-    return {
-        '@context': 'https://schema.org',
-        '@type': 'HowTo',
-        name: t('howTo.name', { v0: SITE_NAME }),
-        description: t('howTo.description', { v0: SITE_NAME }),
-        step: HOW_TO_STEPS.map(({ key, url }) => ({
-            '@type': 'HowToStep',
-            name: t(`howTo.${key}Name`),
-            // 스킬 개수는 step2에만 쓰인다. 다른 단계에 넘겨도 무해하고,
-            // 단계마다 다른 값 목록을 만드는 것보다 읽기 쉽다.
-            text: t(`howTo.${key}Text`, {
-                v0: skillCounts.indicators,
-                v1: skillCounts.candlesticks,
-                v2: skillCounts.patterns,
-                v3: skillCounts.strategies,
-                v4: skillCounts.supportResistance,
-            }),
-            url,
         })),
     };
 }

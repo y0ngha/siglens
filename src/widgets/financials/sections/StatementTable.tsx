@@ -84,7 +84,7 @@ export function StatementTable({
                 {t('StatementTable.b488b1')}
             </p>
             <div
-                className="overflow-x-auto rounded-xl focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                className="overflow-x-auto rounded-lg focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 role="region"
                 aria-label={
                     caption
@@ -94,13 +94,20 @@ export function StatementTable({
                 tabIndex={0}
             >
                 <table className="w-full text-sm">
+                    {/*
+                     * 화면에는 안 낸다. 이 표들은 바로 위에 같은 이름의 h2가
+                     * 이미 있어서 보이는 캡션은 중복이 된다. 캡션이 필요한
+                     * 이유는 다른 데 있다 — 스크롤 컨테이너 다섯 개가 전부
+                     * `role="region"`이라 스크린리더 랜드마크 목록에
+                     * "재무제표 표 (좌우 스크롤 가능)"가 다섯 번 똑같이
+                     * 나왔다(감사 실측). 위 `aria-label`이 캡션을 받아 각
+                     * 랜드마크를 구분한다.
+                     */}
                     {caption && (
-                        <caption className="mb-2 text-left text-xs tracking-widest text-secondary-400 uppercase">
-                            {caption}
-                        </caption>
+                        <caption className="sr-only">{caption}</caption>
                     )}
                     <thead>
-                        <tr className="border-b border-secondary-700 text-xs tracking-widest text-secondary-400 uppercase">
+                        <tr className="border-b border-secondary-700 text-xs tracking-[0.01em] text-secondary-400">
                             <th
                                 scope="col"
                                 className="pb-2 text-left font-medium"

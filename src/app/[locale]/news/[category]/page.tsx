@@ -20,6 +20,7 @@ import { getMarketNewsCards } from '@/entities/market-news/api';
 import {
     MarketNewsDigest,
     MarketNewsList,
+    MARKET_NEWS_LIST_PAGE_SIZE,
     MARKET_NEWS_ROW_SERIALIZATION_LIMIT,
 } from '@/widgets/market-news';
 import { NewsCategoryTabs } from '@/widgets/news-hub';
@@ -47,9 +48,6 @@ type CategoryPageParams = { category: string };
 export function generateStaticParams(): CategoryPageParams[] {
     return NEWS_CATEGORY_SLUGS.map(category => ({ category }));
 }
-
-// JSON-LD ItemList: Google 가이드라인상 "주요 항목"만 노출.
-const JSON_LD_NEWS_MAX_ITEMS = 10;
 
 /**
  * 지역별 추가 SEO 키워드.
@@ -280,11 +278,11 @@ export default async function CategoryNewsPage({ params }: Props) {
             ? {
                   '@context': 'https://schema.org',
                   '@type': 'ItemList',
-                  name: tSeo('newsCategory.itemListName', {
-                      label: tNav(cfg.labelKey),
-                  }),
+                  name: tSeo('faq.newsListName', { v0: cfg.koLabel }),
+                  // 초기 DOM에 실제로 그려지는 카드 수와 같은 상수로 자른다 — 근거는
+                  // `MARKET_NEWS_LIST_PAGE_SIZE`(shared/config/newsSerialization) 주석.
                   itemListElement: items
-                      .slice(0, JSON_LD_NEWS_MAX_ITEMS)
+                      .slice(0, MARKET_NEWS_LIST_PAGE_SIZE)
                       .map((item, idx) => ({
                           '@type': 'ListItem',
                           position: idx + 1,
@@ -337,8 +335,8 @@ export default async function CategoryNewsPage({ params }: Props) {
                     currentPath={`/news/${cfg.slug}`}
                 />
                 <NewsCategoryTabs activeCategory={cat} />
-                <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl">
-                    {t('page.78de73', { v0: tNav(cfg.labelKey) })}
+                <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
+                    {cfg.koLabel} {t('page.3a465d')}
                 </h1>
                 <Suspense fallback={<DigestSkeleton />}>
                     <MarketNewsDigest
@@ -371,7 +369,7 @@ function DigestSkeleton() {
             aria-busy="true"
             role="status"
             aria-label={t('page.faef4a')}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <div className="mb-4 h-5 w-1/3 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             <div className="space-y-2">
@@ -390,8 +388,8 @@ function MarketNewsDegraded({ koLabel }: MarketNewsDegradedProps) {
     const t = useTranslations('app.news');
     return (
         <section
-            aria-label={t('page.categoryEmptyLabel', { v0: koLabel })}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            aria-label={t('page.newsEmptyAria', { v0: koLabel })}
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <p className="text-sm text-secondary-400">
                 {t('page.fdb87b', { v0: koLabel })}

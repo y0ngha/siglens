@@ -6,11 +6,14 @@ import { MarketFearGreedPage } from '@/widgets/market-fear-greed';
 import type { MarketFearGreedView } from '@/entities/market-fear-greed';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import {
     buildBreadcrumbJsonLd,
-    buildWebPageJsonLd,
     SITE_NAME,
     SITE_URL,
+    buildWebPageJsonLd,
 } from '@/shared/lib/seo';
 import { type FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 import { FEAR_GREED_BANDS, fearGreedCopyFor } from './copy';
@@ -95,60 +98,66 @@ export function FearGreedRouteBody({
             )}
             <JsonLd data={faqJsonLd} />
             <main className="flex-1">
-                <div className="px-6 pt-6 lg:px-[15vw]">
+                <div className="page-container pt-6">
                     <RegionTabs
                         vertical="fear-greed"
                         active={market}
                         currentPath={copy.path}
                     />
                 </div>
-                <h1 className="px-6 pt-6 text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl lg:px-[15vw]">
+                <h1 className="page-container pt-6 text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
                     {copy.title}
                 </h1>
-                <section className="space-y-3 px-6 pt-4 text-sm leading-relaxed text-secondary-400 sm:text-base lg:px-[15vw]">
+                <section className="page-container space-y-3 pt-4 text-sm leading-relaxed text-secondary-400 sm:text-base">
                     {copy.intro.map(paragraph => (
                         <p key={paragraph}>{paragraph}</p>
                     ))}
                 </section>
-                <div className="px-6 lg:px-[15vw]">
+                <div className="page-container">
                     <MarketFearGreedPage view={view} market={market} />
                 </div>
-                <section
-                    aria-labelledby="market-fear-greed-guide-heading"
-                    className="mx-6 mt-6 space-y-4 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5 lg:mx-[15vw]"
-                >
-                    <h2
-                        id="market-fear-greed-guide-heading"
-                        className="text-base font-semibold text-secondary-300"
+                {/* 컨테이너가 폭과 좌우 여백을 소유하고, 카드 장식(보더·배경·
+                    패딩)은 안쪽 div가 갖는다. 컨테이너에 보더를 직접 걸면
+                    1200px 전폭을 두르게 되어 형제 섹션과 어긋난다. */}
+                <div className="page-container mt-6">
+                    <section
+                        aria-labelledby="market-fear-greed-guide-heading"
+                        className={cn('space-y-4 p-5', SURFACE_CARD)}
                     >
-                        {t('FearGreedRouteBody.350c3b')}
-                    </h2>
-                    <ul className="space-y-1 text-sm leading-relaxed text-secondary-400">
-                        {FEAR_GREED_BANDS.map(band => (
-                            <li key={band.labelKey}>
-                                {band.min}~
-                                {t('FearGreedRouteBody.b35c3b', {
-                                    v0: band.max,
-                                    v1: tLabel(band.labelKey),
-                                })}
-                            </li>
-                        ))}
-                    </ul>
-                    <ul className="space-y-1 text-sm leading-relaxed text-secondary-400">
-                        {MARKET_FEAR_GREED_FACTOR_KEYS.map(key => (
-                            <li key={key}>
-                                {factorLabel(key)} — {factorDescription(key)}
-                            </li>
-                        ))}
-                    </ul>
-                </section>
+                        <h2
+                            id="market-fear-greed-guide-heading"
+                            className={HEADING_SECTION}
+                        >
+                            {t('FearGreedRouteBody.350c3b')}
+                        </h2>
+                        <ul className="space-y-1 text-sm leading-relaxed text-secondary-400">
+                            {FEAR_GREED_BANDS.map(band => (
+                                <li key={band.labelKey}>
+                                    {t('bandRange', {
+                                        v0: band.min,
+                                        v1: band.max,
+                                        v2: tLabel(band.labelKey),
+                                    })}
+                                </li>
+                            ))}
+                        </ul>
+                        <ul className="space-y-1 text-sm leading-relaxed text-secondary-400">
+                            {MARKET_FEAR_GREED_FACTOR_KEYS.map(key => (
+                                <li key={key}>
+                                    {factorLabel(key)} —{' '}
+                                    {factorDescription(key)}
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                </div>
                 <section
                     aria-labelledby="market-fear-greed-faq-heading"
-                    className="px-6 pt-6 lg:px-[15vw]"
+                    className="page-container pt-6"
                 >
                     <h2
                         id="market-fear-greed-faq-heading"
-                        className="text-base font-semibold text-secondary-300"
+                        className={HEADING_SECTION}
                     >
                         {t('FearGreedRouteBody.ae2ce9')}
                     </h2>

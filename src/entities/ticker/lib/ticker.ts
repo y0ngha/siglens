@@ -118,7 +118,6 @@ export function buildDisplayName(
     if (!assetInfo) return ticker;
 
     const { name, koreanName } = assetInfo;
-    const nameIsDifferent = name !== '' && name !== ticker;
 
     if (locale !== DEFAULT_LOCALE) {
         if (shouldShowEnglishName(name, koreanName, ticker, locale)) {
@@ -127,16 +126,19 @@ export function buildDisplayName(
         return koreanName ? `${koreanName} (${ticker})` : ticker;
     }
 
+    // `koreanName`이 없을 때도 같은 술어를 쓴다 — 화면 헤더
+    // (`SymbolLayoutHeader`의 `hasCompanyName`)와 BreadcrumbList JSON-LD가
+    // 갈라지면 구글이 마크업을 통째로 무시한다(SEO 감사 finding 2).
+    const showEnglishName = shouldShowEnglishName(
+        name,
+        koreanName,
+        ticker,
+        locale
+    );
     if (koreanName) {
-        const showEnglishName = shouldShowEnglishName(
-            name,
-            koreanName,
-            ticker,
-            locale
-        );
         return showEnglishName
             ? `${koreanName}, ${name} (${ticker})`
             : `${koreanName} (${ticker})`;
     }
-    return nameIsDifferent ? `${name} (${ticker})` : ticker;
+    return showEnglishName ? `${name} (${ticker})` : ticker;
 }

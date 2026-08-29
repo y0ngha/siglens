@@ -189,10 +189,17 @@ test.describe('/news 시장 뉴스 허브', () => {
         });
         await expect(categoryNav).toBeVisible();
 
-        // /news/stock에서 '주식' 탭이 활성 상태(aria-current="page")여야 해요.
+        // /news/stock에서 '주식' 탭이 활성 상태여야 해요.
+        //
+        // 활성 탭은 **링크가 아니다.** 자기 자신을 가리키는 앵커는 죽은 링크라
+        // 내부 링크 그래프에 자기 참조를 넣는다 — 형제인 `RegionTabs`가 이미
+        // 같은 이유로 `<span aria-current="page">`를 쓰고 있었고 둘을 맞췄다.
+        await expect(
+            categoryNav.getByText('주식', { exact: true })
+        ).toHaveAttribute('aria-current', 'page');
         await expect(
             categoryNav.getByRole('link', { name: '주식' })
-        ).toHaveAttribute('aria-current', 'page');
+        ).toHaveCount(0);
 
         // 탭바는 **같은 지역 안에서만** 묶인다 — `미국 주식` 옆에 `한국 증시`가
         // 붙으면 지역을 나눈 의미가 없어진다. 그래서 미국 형제 탭으로 이동한다.
@@ -204,10 +211,14 @@ test.describe('/news 시장 뉴스 허브', () => {
             name: '뉴스 카테고리',
         });
         await expect(
-            updatedNav.getByRole('link', { name: '외환' })
+            updatedNav.getByText('외환', { exact: true })
         ).toHaveAttribute('aria-current', 'page');
 
-        // '주식' 탭은 더 이상 활성 상태가 아니에요.
+        // '주식'은 활성이 아니므로 다시 링크가 된다 — 활성/비활성이 실제로
+        // 자리를 바꾸는지까지 본다.
+        await expect(
+            updatedNav.getByRole('link', { name: '주식' })
+        ).toHaveCount(1);
         await expect(
             updatedNav.getByRole('link', { name: '주식' })
         ).not.toHaveAttribute('aria-current', 'page');

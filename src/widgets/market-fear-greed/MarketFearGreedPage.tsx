@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
 import type { MarketFearGreedView } from '@/entities/market-fear-greed';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { FearGreedGauge } from '@/widgets/fear-greed';
 import { confidenceLabelKey } from '@/shared/lib/fearGreedLabels';
 import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
@@ -41,8 +42,8 @@ export function MarketFearGreedPage({
     view,
     market,
 }: MarketFearGreedPageProps) {
-    const tPage = useTranslations('widgets.market-fear-greed.page');
     const t = useTranslations('widgets.market-fear-greed');
+    const tPage = useTranslations('widgets.market-fear-greed.page');
     const tFearGreed = useTranslations('shared.lib.fearGreed');
     const { snapshot, comparisons } = view;
 
@@ -74,14 +75,14 @@ export function MarketFearGreedPage({
             </section>
 
             <section className="flex flex-col gap-3">
-                <h2 className="text-sm font-medium text-secondary-300">
+                <h2 className={HEADING_SECTION}>
                     {t('MarketFearGreedPage.41205a')}
                 </h2>
                 <MarketFearGreedComparison comparisons={comparisons} />
             </section>
 
             <section className="flex flex-col gap-3">
-                <h2 className="text-sm font-medium text-secondary-300">
+                <h2 className={HEADING_SECTION}>
                     {t('MarketFearGreedPage.c099fa')}
                 </h2>
                 {snapshot.factors.map(factor => (

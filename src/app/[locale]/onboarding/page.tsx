@@ -50,17 +50,32 @@ export async function generateMetadata({
 // Exported (rather than module-private) so tests can `await OnboardingGuard()`
 // directly and assert the unauthenticated redirect target, mirroring the
 // `MarketContent` export pattern in `src/app/market/page.tsx`.
-export async function OnboardingGuard({ locale }: { locale: Locale }) {
+export async function OnboardingGuard({
+    locale,
+    symbol,
+}: {
+    locale: Locale;
+    symbol?: string;
+}) {
     const user = await getCurrentUser();
     if (!user) {
-        // 로케일을 유지한다 — 영어 사용자가 한국어 로그인 페이지로 떨어지면 안 된다.
+        // 심볼을 로그인 next에 이어 붙인다. 리터럴 `/login?next=/onboarding`
+        // 이었을 때는 `/AAPL/position`에서 온 사용자가 로그인을 마쳐도
+        // 아무것도 채워지지 않은 온보딩 화면에 떨어졌다 — 두 홉에서 의도가
+        // 두 번 버려졌다.
+        //
+        // 로케일도 같이 유지한다 — 영어 사용자가 한국어 로그인 페이지로
+        // 떨어지면 안 된다.
+        const onboarding = localePath(locale, '/onboarding');
+        const target =
+            symbol === undefined
+                ? onboarding
+                : `${onboarding}?symbol=${encodeURIComponent(symbol)}`;
         redirect(
-            `${localePath(locale, '/login')}?next=${encodeURIComponent(
-                localePath(locale, '/onboarding')
-            )}`
+            `${localePath(locale, '/login')}?next=${encodeURIComponent(target)}`
         );
     }
-    return <OnboardingContent />;
+    return <OnboardingContent initialSymbol={symbol} />;
 }
 
 // Exported (not module-private) so tests can render it directly and assert
@@ -83,7 +98,7 @@ export function OnboardingSkeleton() {
                     <div className="h-7 w-64 animate-pulse rounded bg-secondary-800" />
                     <div className="h-4 w-full max-w-md animate-pulse rounded bg-secondary-800" />
                 </div>
-                <div className="h-48 animate-pulse rounded-2xl bg-secondary-900/80 ring-1 ring-secondary-800" />
+                <div className="h-48 animate-pulse rounded-lg bg-secondary-800 ring-1 ring-secondary-700" />
             </div>
         </div>
     );
@@ -91,10 +106,13 @@ export function OnboardingSkeleton() {
 
 export default async function OnboardingPage({
     params,
+    searchParams,
 }: {
     readonly params: Promise<{ locale: string }>;
+    readonly searchParams: Promise<{ symbol?: string }>;
 }) {
     const { locale: rawLocale } = await params;
+    const { symbol } = await searchParams;
     const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
     // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
     // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
@@ -104,7 +122,7 @@ export default async function OnboardingPage({
         <main className="min-h-[calc(100dvh-3.5rem)] bg-secondary-950 px-4 py-12">
             <div className="mx-auto w-full max-w-2xl">
                 <Suspense fallback={<OnboardingSkeleton />}>
-                    <OnboardingGuard locale={locale} />
+                    <OnboardingGuard locale={locale} symbol={symbol} />
                 </Suspense>
             </div>
         </main>

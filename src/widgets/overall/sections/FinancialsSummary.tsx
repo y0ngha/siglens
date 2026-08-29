@@ -1,5 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface FinancialsSummaryProps {
     bullets: string[];
@@ -11,11 +13,11 @@ export function FinancialsSummary({ bullets }: FinancialsSummaryProps) {
     return (
         <section
             aria-labelledby="financials-summary-heading"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2
                 id="financials-summary-heading"
-                className="mb-3 text-lg font-semibold text-balance"
+                className={cn(HEADING_SECTION, 'mb-3 text-balance')}
             >
                 {t('FinancialsSummary.9f2f34')}
             </h2>

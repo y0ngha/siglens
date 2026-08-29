@@ -4,6 +4,8 @@ import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 import { createEnumGuard } from '../lib/createEnumGuard';
 import type { MarketProfileId } from '@/shared/config/marketProfile';
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 
 interface OptionsSnapshotProseProps {
     /**
@@ -202,7 +204,7 @@ export function OptionsSnapshotProse({
 
                 {narrowed.perExpiration.length > 0 && (
                     <div>
-                        <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
+                        <h3 className={cn('mb-1.5', HEADING_SUBSECTION)}>
                             {t('OptionsSnapshotProse.935f5d')}
                         </h3>
                         <ul
@@ -229,7 +231,7 @@ export function OptionsSnapshotProse({
 
                 {narrowed.signals.length > 0 && (
                     <div>
-                        <h3 className="mb-1.5 text-sm font-semibold text-secondary-200">
+                        <h3 className={cn('mb-1.5', HEADING_SUBSECTION)}>
                             {t('OptionsSnapshotProse.3a0721')}
                         </h3>
                         <ul

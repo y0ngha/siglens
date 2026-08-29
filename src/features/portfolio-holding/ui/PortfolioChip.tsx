@@ -56,12 +56,10 @@ export function PortfolioChip({ symbol }: PortfolioChipProps) {
         useSymbolHolding(symbol);
 
     // Rendering during hydration risks an SSR/CSR text mismatch (the holdings
-    // query is client-only and gated on isHydrated itself) — same rationale
-    // as FearGreedHeaderChipMounted. Before hydration we render nothing at
-    // all so SSR and the first client paint stay identical (no hydration
-    // mismatch). Once hydrated, a member with the holdings query still
-    // loading gets a fixed-size placeholder (mirrors
-    // FearGreedHeaderChipMounted's skeleton) so the resolved chip doesn't
+    // query is client-only and gated on isHydrated itself). Before hydration we
+    // render nothing at all so SSR and the first client paint stay identical (no
+    // hydration mismatch). Once hydrated, a member with the holdings query still
+    // loading gets a fixed-size placeholder so the resolved chip doesn't
     // pop into the flex-wrap header cluster and shift its siblings (CLS). On
     // error we still hide entirely: rendering the "설정" (unset) button would
     // falsely tell a member with existing holdings that nothing is set yet.
@@ -100,8 +98,8 @@ export function PortfolioChip({ symbol }: PortfolioChipProps) {
                     'inline-flex min-h-11 touch-manipulation items-center gap-1 rounded-lg border px-2.5 text-xs font-medium whitespace-nowrap tabular-nums transition-colors',
                     'focus-visible:ring-primary-500 focus-visible:ring-2 focus-visible:outline-none',
                     holding === null
-                        ? 'border-secondary-700 text-secondary-300 hover:border-secondary-600 hover:bg-secondary-700/30 hover:text-secondary-100'
-                        : 'border-primary-800/60 bg-primary-900/10 text-primary-300 hover:bg-primary-900/20'
+                        ? 'border-border-control text-secondary-300 hover:border-primary-500 hover:bg-secondary-700/30 hover:text-secondary-100'
+                        : 'border-primary-500 bg-primary-900/10 text-primary-300 hover:bg-primary-900/20'
                 )}
             >
                 {label}

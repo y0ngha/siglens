@@ -11,6 +11,7 @@
  * adding a kind to ShareableKind without a matching entry here is a type error.
  */
 
+import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import type { ReactNode } from 'react';
 import type {
     ShareableKind,
@@ -51,6 +52,15 @@ import { FearGreedShareView } from '@/widgets/fear-greed';
  *   are intentionally omitted — the panel hides those UI elements when they
  *   are undefined.
  *
+ *   이 문장은 한동안 사실이 아니었다. 차트 토글 버튼은 핸들러 유무와 무관하게
+ *   렌더됐고 `onToggleChart?.()`가 아무것도 하지 않아, 눌러도 반응 없는
+ *   컨트롤이 공유 화면에 남아 있었다(감사 실측: 클릭 2회 후 DOM 바이트 동일).
+ *   게다가 그 버튼이 숨기겠다고 말하는 가격선은 `StockChart`가 그리는데
+ *   이 페이지는 `ShareCandlestickChart`를 쓰므로 애초에 존재하지 않는다.
+ *   `AnalysisPanel`이 이제 핸들러가 없으면 버튼을 렌더하지 않으며,
+ *   `AnalysisPanel.test.tsx`의 "핸들러가 없으면 차트 토글을 렌더하지 않는다"가
+ *   그 계약을 붙든다.
+ *
  * `chartBars` is optional — old snapshots (created before this feature) will
  * not have bars. When present, a read-only candlestick chart is rendered ABOVE
  * the AnalysisPanel so the viewer sees the price context at analysis time.
@@ -64,13 +74,18 @@ function ChartSharePanel({
     chartBars?: Bar[];
     symbol: string;
 }) {
+    const themeVersion = useThemeVersion();
     const rawKeyLevels = result.keyLevels ?? { support: [], resistance: [] };
     const clustered = clusterKeyLevels(validateKeyLevels(rawKeyLevels), 0);
     return (
         <div className="flex flex-col gap-6">
             {chartBars !== undefined && chartBars.length > 0 && (
                 <div className="overflow-hidden rounded-lg border border-secondary-700">
-                    <ShareCandlestickChart bars={chartBars} ticker={symbol} />
+                    <ShareCandlestickChart
+                        key={themeVersion}
+                        bars={chartBars}
+                        ticker={symbol}
+                    />
                 </div>
             )}
             <AnalysisPanel

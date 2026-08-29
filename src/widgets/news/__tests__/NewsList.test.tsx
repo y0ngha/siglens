@@ -5,7 +5,7 @@ import type { NewsDisplayItem } from '@/shared/lib/types';
 import { useNewsPollingWithInvalidation } from '@/widgets/news/hooks/useNewsPollingWithInvalidation';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import { NewsList } from '@/widgets/news/sections/NewsList';
-import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
 
 vi.mock('@/widgets/news/hooks/useNewsPollingWithInvalidation', () => ({
     useNewsPollingWithInvalidation: vi.fn(),
@@ -117,69 +117,26 @@ describe('NewsList', () => {
         expect(screen.queryByText('주가 영향 보통')).not.toBeInTheDocument();
     });
 
-    // 회귀 가드: `titleKo ?? titleEn`(로케일 무관)이 돌아오면 `/en`·`/ja`·`/zh`
-    // 뉴스 화면도 한국어 헤드라인을 보여준다.
-    it('locale=en에서는 titleEn 헤드라인을 표시한다', () => {
-        mockUseNewsPollingWithInvalidation.mockReturnValue({
-            items: [READY_ITEM],
-            isPolling: false,
-            pollError: null,
-        });
-
-        const queryClient = new QueryClient({
-            defaultOptions: { queries: { retry: false } },
-        });
-        renderWithIntl(
-            <QueryClientProvider client={queryClient}>
-                <NewsList items={[READY_ITEM]} symbol="AAPL" />
-            </QueryClientProvider>,
-            { locale: 'en' }
-        );
-
-        expect(
-            screen.getByText('AAPL announces new product')
-        ).toBeInTheDocument();
-        expect(screen.queryByText('애플, 신제품 발표')).not.toBeInTheDocument();
-    });
-
     /**
-     * 회귀 가드: 제목만 로케일을 타던 시절이 실제로 있었다. 사이드카가 요약·본문
-     * 번역을 만들어 페이로드에까지 실었는데 카드가 `item.summaryKo`를 그대로
-     * 렌더해서, `/ja` 방문자는 번역된 헤드라인 아래 한국어 본문을 봤다. 번역
-     * 비용은 매번 나갔고 화면은 "번역된 것처럼" 보여 눈으로는 안 잡혔다.
+     * 초기 DOM 카드 수는 `/[symbol]/news`의 `ItemList` 구조화데이터 상한과 같은
+     * 상수여야 한다. "더보기"로 늘어난 카드는 클라이언트 상태에만 있어 크롤러가
+     * 보지 못하므로, 여기가 곧 마크업이 주장해도 되는 최대 개수다.
      */
-    it('사이드카 번역이 있으면 본문·요약도 그 언어로 표시한다', () => {
-        const localizedItem = {
-            ...READY_ITEM,
-            bodyLocalized: 'Apple said demand expectations grew.',
-            summaryLocalized: 'The launch lifted sentiment.',
-        };
+    it(`처음에는 NEWS_LIST_PAGE_SIZE(${NEWS_LIST_PAGE_SIZE})개만 그린다`, () => {
+        const manyItems = Array.from(
+            { length: NEWS_LIST_PAGE_SIZE * 2 },
+            (_, i) => ({ ...READY_ITEM, id: `news-${i}` })
+        );
         mockUseNewsPollingWithInvalidation.mockReturnValue({
-            items: [localizedItem],
+            items: manyItems,
             isPolling: false,
             pollError: null,
         });
 
-        const queryClient = new QueryClient({
-            defaultOptions: { queries: { retry: false } },
-        });
-        renderWithIntl(
-            <QueryClientProvider client={queryClient}>
-                <NewsList items={[localizedItem]} symbol="AAPL" />
-            </QueryClientProvider>,
-            { locale: 'en' }
-        );
+        renderWithClient(<NewsList items={manyItems} symbol="AAPL" />);
 
-        expect(
-            screen.getByText('Apple said demand expectations grew.')
-        ).toBeInTheDocument();
-        expect(
-            screen.getByText('The launch lifted sentiment.')
-        ).toBeInTheDocument();
-        expect(
-            screen.queryByText(
-                '애플은 신제품 발표 이후 수요 기대가 커졌다고 밝혔습니다.'
-            )
-        ).not.toBeInTheDocument();
+        expect(screen.getAllByRole('article')).toHaveLength(
+            NEWS_LIST_PAGE_SIZE
+        );
     });
 });

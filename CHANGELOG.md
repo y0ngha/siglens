@@ -1,5 +1,153 @@
 # Changelog
 
+# [0.64.0](https://github.com/y0ngha/siglens/compare/v0.63.1...v0.64.0) (2026-08-27)
+
+
+### Bug Fixes
+
+* **theme:** 리뷰 지적 9건 반영 — 죽은 API 제거 + 라디오 그룹 키보드 지원 ([ab3276d](https://github.com/y0ngha/siglens/commit/ab3276d44b2172308775062775a4997e0484fc72)), closes [#0](https://github.com/y0ngha/siglens/issues/0) [#22](https://github.com/y0ngha/siglens/issues/22) [#1](https://github.com/y0ngha/siglens/issues/1)
+* **theme:** theme.ts JSDoc 위치 수정 (리뷰 지적) ([9c2637d](https://github.com/y0ngha/siglens/commit/9c2637de6e99b96338ba3ade62d43d8c23146e27)), closes [#14](https://github.com/y0ngha/siglens/issues/14)
+
+
+### Features
+
+* **theme:** 시스템 설정 따라가기를 기본값으로 ([803ffd6](https://github.com/y0ngha/siglens/commit/803ffd6354cc0a8fa37272b30bc4f02083f2b5ae))
+
+## [0.63.1](https://github.com/y0ngha/siglens/compare/v0.63.0...v0.63.1) (2026-08-27)
+
+
+### Bug Fixes
+
+* **chart:** 모바일 차트가 눌리던 원인 3종 수정 ([555360d](https://github.com/y0ngha/siglens/commit/555360dbaf028ed67d1d509160aac960d12a6c6d))
+
+# [0.63.0](https://github.com/y0ngha/siglens/compare/v0.62.2...v0.63.0) (2026-08-26)
+
+
+### Bug Fixes
+
+* 404/에러 페이지 테마 미적용 ([f40f4cb](https://github.com/y0ngha/siglens/commit/f40f4cb4fd68ba7fce222001bb1b7988d7c36c11))
+* 감사 라운드 3 가드 정합성 결함 수정 ([99ae5a0](https://github.com/y0ngha/siglens/commit/99ae5a00af182fd4dd9498f8d2616fc3c3f4696d))
+* 검색 오버레이 호버 명도 대비 반전 수정 ([8fa8d88](https://github.com/y0ngha/siglens/commit/8fa8d88239c64f70a37c932d8d863ec7ba5169b0))
+* 구조화된 데이터 일관성 - FAQ·BreadcrumbList·뉴스개수 마크업 수정 ([aed5e22](https://github.com/y0ngha/siglens/commit/aed5e225db7d97126382a06dba64843fa74a1f71))
+* 시맨틱 텍스트 토큰 대비 및 경제 지표 필터 수정 ([aee82f2](https://github.com/y0ngha/siglens/commit/aee82f2b84e94ae8e1744eb15b6f3aa551ca6a70))
+* 의미론 색상 토큰 명암비 수정 ([1c11124](https://github.com/y0ngha/siglens/commit/1c1112452224b692729c12fd08d290b63f897e1a))
+* 의미론 텍스트 토큰 가드 — 중첩 대괄호, 텍스트 접두어 확장, 실사용 알파 검증 ([d9909c5](https://github.com/y0ngha/siglens/commit/d9909c5f76919ddf8524439e7b0670d9bb1ffaeb))
+* 토큰 검증 가드 6가지 결함 ([da736c3](https://github.com/y0ngha/siglens/commit/da736c3944291ecaca22d78adb71c0a0c7da68b1))
+* 트렌드 배지 명도대비 불충족 ([4057035](https://github.com/y0ngha/siglens/commit/4057035fc60e9b7f0b37b18fe670a4ca24da392e))
+* **a11y:** 라이트 테마 차트 지표 팔레트 ([#770](https://github.com/y0ngha/siglens/issues/770)) ([b1b0ddb](https://github.com/y0ngha/siglens/commit/b1b0ddb36f90d79d3a2aa637144143e2c433ba04))
+* **a11y:** 라이트 테마에서 사라지던 컨트롤 경계 복구 ([fc61a4f](https://github.com/y0ngha/siglens/commit/fc61a4fd62718d80099f0ad369813249a11f6ace)), closes [#fff](https://github.com/y0ngha/siglens/issues/fff) [#f7f8fa](https://github.com/y0ngha/siglens/issues/f7f8fa)
+* **a11y:** 모바일 탭 타깃 24×24 미달 2곳 ([f5a9e54](https://github.com/y0ngha/siglens/commit/f5a9e54d4545a31be55adb25a57af6e6aeeb9946))
+* **a11y:** 알파 그래픽 대비 가드 + 404 테마 회귀 보호 ([2e7110c](https://github.com/y0ngha/siglens/commit/2e7110ce217082126b9e72cac90997c4deaa0361))
+* **a11y:** 틴트 깊이에 따라 무너지던 텍스트 토큰과 컨트롤 경계 복구 ([52bc691](https://github.com/y0ngha/siglens/commit/52bc691e9aa4404b5c8741b4f29860038901b704)), closes [#0a574e](https://github.com/y0ngha/siglens/issues/0a574e) [#8c201c](https://github.com/y0ngha/siglens/issues/8c201c)
+* **a11y:** 포커스 표시 3건 + 백테스팅 헤딩 구조 ([8eec0db](https://github.com/y0ngha/siglens/commit/8eec0db5fce54785b0943049526008e723dee9c9))
+* **audit:** 남은 선재 결함 6건 — 배색 의미·색전용 심각도·빈 제출 ([3cd0029](https://github.com/y0ngha/siglens/commit/3cd0029cbcb5291361daee82432b7c751a163a51))
+* **audit:** 선재 결함 10건 — 죽은 코드·거짓 범례·라우트 붕괴 ([76a2124](https://github.com/y0ngha/siglens/commit/76a21245416150f669d00f05e6130686e2f54fe8))
+* **audit:** 인증 홉의 next 유실 + 범례가 가격 pane을 덮던 것 ([8825f6e](https://github.com/y0ngha/siglens/commit/8825f6e6c21bf6569a41d3c5d65713bc3a19230a)), closes [#09090b](https://github.com/y0ngha/siglens/issues/09090b) [#f7f8fa](https://github.com/y0ngha/siglens/issues/f7f8fa)
+* **audit:** 페이지별 감사 배치 1 — 죽은 토큰 57개 + SEO·a11y 8건 ([331a872](https://github.com/y0ngha/siglens/commit/331a87222d8bc6cc6c2d6f29f448f7fdc5198762))
+* **audit:** 페이지별 감사 배치 2 — 표면 토큰이 경계로 쓰인 47곳 ([8406573](https://github.com/y0ngha/siglens/commit/8406573f76dc849502cea30f6a51920d9906e84a)), closes [#1e293b](https://github.com/y0ngha/siglens/issues/1e293b) [#0f172a](https://github.com/y0ngha/siglens/issues/0f172a) [#ef5350](https://github.com/y0ngha/siglens/issues/ef5350) [c62828/#b3261e](https://github.com/y0ngha/siglens/issues/b3261e)
+* **auth:** 오픈 리디렉트 차단 + 인셋 면 자리표시자 가시성 ([15e417d](https://github.com/y0ngha/siglens/commit/15e417d86d0a3b770809ec0daf53dc2dd447cca1)), closes [#e6e8ec](https://github.com/y0ngha/siglens/issues/e6e8ec) [#eff0f3](https://github.com/y0ngha/siglens/issues/eff0f3)
+* **backtesting:** 라이트 테마 배지 대비 AA 미달 수정 ([02eafba](https://github.com/y0ngha/siglens/commit/02eafba549b9b5680f84d1b05195a5e553a2e26c))
+* **backtesting:** 히어로 구분선 제거와 통계값 서체 통일 ([b41ce32](https://github.com/y0ngha/siglens/commit/b41ce32572a3a65a5ceb2934da4082104590b5ab))
+* **chart:** 두 줄 라벨 중간 잘림 + 판단 순서 + 상수 주석 정정 ([ba90d8f](https://github.com/y0ngha/siglens/commit/ba90d8f3cef19f2a1c4660df4ff4249451607e37))
+* **chart:** 모바일 범례가 차트를 덮고 가격 패널이 굶던 문제 ([af600d2](https://github.com/y0ngha/siglens/commit/af600d232efd04eefecacb45eac3456b8ece2267))
+* **chart:** 배선·불변식·서브패널 하한 + 라벨 배경판·로고 회피 ([ffeea14](https://github.com/y0ngha/siglens/commit/ffeea14bf47d28a5f09c0b560293d60a2f61979f))
+* **chart:** 보조 pane 라벨이 아래 pane을 침범하던 문제 ([e45a2c1](https://github.com/y0ngha/siglens/commit/e45a2c189a9477b4b2f2fc79244c7d7f6b741599))
+* **chart:** 차트 탭 정렬·라벨 위계·잠금 버튼 대비 + dialog 중앙정렬 복원 ([e7adf7d](https://github.com/y0ngha/siglens/commit/e7adf7db95433371f6980edb6310012201a04f77))
+* **chart:** 테마 토글이 차트를 백지로 만들던 결함 수정 ([e633c66](https://github.com/y0ngha/siglens/commit/e633c665811f2d20d10fc2946e6c9bec1a19389b))
+* **congress:** 중복 key React 에러 제거와 표 헤더 한글 uppercase 수정 ([5541eff](https://github.com/y0ngha/siglens/commit/5541eff8325ee5b787d98fccfe6b8360e0749910))
+* **dashboard:** 섹션 제목 위계 역전 수정 및 HEADING_SECTION 토큰화 ([8fce264](https://github.com/y0ngha/siglens/commit/8fce264b1a298985b2132d7242b7a62a75e8f40d))
+* **dashboard:** 섹터 그룹 그리드가 모바일에서 카드를 넘치던 문제 수정 ([8bc42a4](https://github.com/y0ngha/siglens/commit/8bc42a4a7bbe514930558a254eeba4fd423b0371))
+* **dashboard:** expected 소절에서 개수가 제목을 앞서던 대비 역전 수정 ([e2a4de0](https://github.com/y0ngha/siglens/commit/e2a4de09b51416d3c66ce54370a111346b980ef5))
+* **design:** Tailwind 스캔 범위 실제 적용 + SVG 글자색 가드 확장 ([8e7674f](https://github.com/y0ngha/siglens/commit/8e7674f477c6a53960a5d52aac435530774b9cc4))
+* **economy:** 보이지 않는 FAQ 구조화데이터 해소와 소제목·컨트롤 경계 정리 ([fea94f8](https://github.com/y0ngha/siglens/commit/fea94f8dacf09320e8f60c582eb742c95eed2e21))
+* **fear-greed,share:** 헤딩 위계 통일 + h2→h4 레벨 건너뜀 해소 ([078a6fd](https://github.com/y0ngha/siglens/commit/078a6fd611e97ca88a0ecf3d78c94c2d1ee00884))
+* **fear-greed:** 감사 지적 반영 — 막대 대비·표면 방향·현재 타일 강조 ([20c5702](https://github.com/y0ngha/siglens/commit/20c5702fdd9ddc5f18cc98a2f58f8dca33effcb8))
+* **fear-greed:** 게이지 GREED 아크 대비 미달 수정 ([824a43d](https://github.com/y0ngha/siglens/commit/824a43dc94f580c8343a7e62aa30370cfa1a610c))
+* **fear-greed:** GREED 알파 체인 나머지 두 곳과 낡은 주석 정리 ([db1f118](https://github.com/y0ngha/siglens/commit/db1f1181acf9bdcfff52432fedd2b8407ec7d7f4)), closes [#26a69a](https://github.com/y0ngha/siglens/issues/26a69a)
+* **financials:** 분기↔연간 토글이 재무 수치를 뒤섞던 문제 수정 ([25e13c7](https://github.com/y0ngha/siglens/commit/25e13c74e266bd7225b63d7c30e434f4458250b9))
+* **fundamental,financials:** 헤딩 위계 통일 + 등급 배지 AA 복구 ([3c7202b](https://github.com/y0ngha/siglens/commit/3c7202b03024889c0b8b731be0bf8aa909f254d5))
+* **guards:** 의미 색 텍스트 토큰 가드 확대 및 변형 벗김 ([84f643a](https://github.com/y0ngha/siglens/commit/84f643a5b3ed14e4e25ecb534b0d96a74c933b54))
+* **home:** 히어로 h1 크기를 뷰포트 대신 글상자 폭 기준으로 전환 ([76538a0](https://github.com/y0ngha/siglens/commit/76538a01657a8863033147d7b912df31bb4655c7))
+* **news:** /news/us 인트로가 카드 동작을 잘못 설명 ([c822c22](https://github.com/y0ngha/siglens/commit/c822c2247e44fa4a18b14af22278faf0f153f102))
+* **news:** 뉴스 탭 헤딩 위계를 토큰으로 통일 ([f4b742b](https://github.com/y0ngha/siglens/commit/f4b742b3a82d8aaeb87c65954924e6528abfca0d))
+* **news:** 다이제스트 h2 토큰 누락과 인덱스 h2 과대 크기 수정 ([15d1878](https://github.com/y0ngha/siglens/commit/15d1878e0469d65a0a7f35856745c304f47c3672))
+* **news:** 색을 상속받아 h1과 같아지던 하위 제목 2종 수정 ([0016e69](https://github.com/y0ngha/siglens/commit/0016e693a443b8249e6d18865eed33650b35ec3b))
+* **options,congress:** 데이터 상태에 따라 네 가지로 갈리던 섹션 제목 통일 ([650fe44](https://github.com/y0ngha/siglens/commit/650fe44e2c237f061ebe3d37fdce36ba8d2b1e27))
+* **overall:** 종합 탭 헤딩 위계를 토큰 하나로 통일 ([2c0c4e9](https://github.com/y0ngha/siglens/commit/2c0c4e92184ca60be86d63b1933e25b5f4c9ce47))
+* **review:** PR [#771](https://github.com/y0ngha/siglens/issues/771) Claude 리뷰 블로커 11건 반영 ([2669a75](https://github.com/y0ngha/siglens/commit/2669a752ac846e764f4a1e1a24c2a646777e744f)), closes [#18](https://github.com/y0ngha/siglens/issues/18) [#22](https://github.com/y0ngha/siglens/issues/22)
+* **share:** 공유 링크 설명에 원시 소수가 나가던 문제 수정 ([e06bdb0](https://github.com/y0ngha/siglens/commit/e06bdb0bfb53683d06c923bebc5c9e2a10159d30))
+* **symbol:** 차트 라우트 정렬 회귀와 탭 라벨 이중 패딩 수정 ([73e7fb4](https://github.com/y0ngha/siglens/commit/73e7fb466877a843870699129af24ebf180f7339))
+* **symbol:** 폴백 셸 정렬 누락과 조건부 화면의 한글 uppercase 수정 ([04972ba](https://github.com/y0ngha/siglens/commit/04972badc60bf105482ec81b1f4d24a1b5fbb623))
+* **symbol:** 폴백 헤더 셸을 실제 헤더와 같은 구조로 맞춰 CLS 제거 ([b8f48eb](https://github.com/y0ngha/siglens/commit/b8f48eb05bb8f7c34cab92eb290b3f4b80c2aaf9))
+* **symbol:** 헤더가 본문과 어긋나던 문제 수정 — symbol-container 도입 ([df28bfd](https://github.com/y0ngha/siglens/commit/df28bfd1f23b657087f9d9ae81e3e134d9c76b18))
+* **symbol:** main에 w-full 누락으로 생기던 폭 축소·중앙정렬 수정 ([db4ccb7](https://github.com/y0ngha/siglens/commit/db4ccb758fc8b3795540095155e71d30b2047d25))
+* **tabs:** 탭 스트립 거터를 page-container에 맞추고 활성 탭을 뷰로 스크롤 ([7d31d9f](https://github.com/y0ngha/siglens/commit/7d31d9fcf320cd31442e13c492d472e5a0f780e6))
+* **tabs:** 활성 탭 스크롤이 페이지를 세로로 끌어올리던 문제 수정 ([bd8f84d](https://github.com/y0ngha/siglens/commit/bd8f84db6b2930a93cc4aafa9e516f0a012bc6c8))
+* Tailwind 스캔 범위를 src/로 한정해 문서 클래스 누출 방지 ([9e6f7d3](https://github.com/y0ngha/siglens/commit/9e6f7d3a4cd2ed8222912ca194ae7a57a4d2ae08))
+* **theme:** 404 에러 셸 테마 적용 + OI 막대 라이트 대비 ([d40d270](https://github.com/y0ngha/siglens/commit/d40d270bcc198ae3addce7e4a792f8e5e204b667))
+* **tokens:** 차트 토큰을 의미 색 텍스트 토큰으로 통일 ([a4754a5](https://github.com/y0ngha/siglens/commit/a4754a5da78801500667ecd6fc15102a3d3b6302))
+* **ui:** 테마 눈먼 인셋 + nav 패널 id 충돌 ([9dbf197](https://github.com/y0ngha/siglens/commit/9dbf1978633be7537bdeecd1721df80d1dd8d7d7))
+* **ui:** 푸터 사이트맵 카테고리화 + 심볼 상단 크롬 폭 정렬 ([5489db1](https://github.com/y0ngha/siglens/commit/5489db1cfcefea7adf9f869686565f94298278af))
+
+
+### Features
+
+* 다크 테마 시스템 및 접근성 개선 ([a2475ce](https://github.com/y0ngha/siglens/commit/a2475ceebcfd6f169d494120af90ed4b45c7040f))
+* 디자인 토큰 시스템 2계층화 및 다크/라이트 테마·AAA 명암비 지원 ([2568748](https://github.com/y0ngha/siglens/commit/256874842fa46b856463156fcad0ef2c430fb735))
+* 컨트롤 보더 토큰 조정 및 컴포넌트 수정 ([8cd75f3](https://github.com/y0ngha/siglens/commit/8cd75f33abe7d97948c40fbceba2f102c4d7d3c1))
+* **layout:** 전역 크롬 전폭화 + 푸터 2축 재배치 ([c45602f](https://github.com/y0ngha/siglens/commit/c45602febc7eae0fedbad0bda305805ea887498c))
+
+
+### Performance Improvements
+
+* **home:** 404 테마 폴백이 만든 first-load 17.3KB 회귀 제거 ([bec100a](https://github.com/y0ngha/siglens/commit/bec100a7faf52c39cc37836a460da17f050ec2b7))
+
+
+### Reverts
+
+* not-found.tsx 불필요한 테마 스크립트 제거 ([9cf65c0](https://github.com/y0ngha/siglens/commit/9cf65c094ffa2f82aeef842418ff6958c023455a))
+
+## [0.62.2](https://github.com/y0ngha/siglens/compare/v0.62.1...v0.62.2) (2026-08-24)
+
+
+### Bug Fixes
+
+* **seo:** 관련 종목 칩을 페이지 스크롤로 접근 가능하게 옮기고 footer 저작권 줄바꿈 수정 ([a2121a4](https://github.com/y0ngha/siglens/commit/a2121a47476345132017bec8581d476409ccb90e))
+
+## [0.62.1](https://github.com/y0ngha/siglens/compare/v0.62.0...v0.62.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* **seo:** 한글명 정준화로 화면 간 표시 불일치 55종 통일 ([ba49b08](https://github.com/y0ngha/siglens/commit/ba49b08e5648f09c9b3bd9d5a0f2e75648db6bd9))
+
+
+### Performance Improvements
+
+* **seo:** 심볼 레이아웃 칩에서 bars 캐시 제거로 RSC 페이로드 최소화 ([398778f](https://github.com/y0ngha/siglens/commit/398778f7355279dcaa07f655a7e20eecf6cd5537))
+
+# [0.62.0](https://github.com/y0ngha/siglens/compare/v0.61.1...v0.62.0) (2026-08-24)
+
+
+### Features
+
+* **seo:** 심볼 페이지 SEO 결함 3종 수정 (고아링크·콘텐츠게이트·JSON-LD) ([7be2222](https://github.com/y0ngha/siglens/commit/7be2222277ae26f6a07192f9c330d55aff884fa9))
+
+## [0.61.1](https://github.com/y0ngha/siglens/compare/v0.61.0...v0.61.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* /market 섹터 허브가 링크하는 23종 색인 차단 해제 + 차단 페이지 메타 고유화 ([1952d4a](https://github.com/y0ngha/siglens/commit/1952d4ab51f0bacb7cd838686ddb77c38185070a))
+* 리뷰 반영(noindex 분기 17곳 통일) + GSC 실측 수요 96종 색인 개방 ([460e107](https://github.com/y0ngha/siglens/commit/460e107d088ce8e3be99ba72ed50e4f7a03c00bc)), closes [#764](https://github.com/y0ngha/siglens/issues/764)
+
+# [0.61.0](https://github.com/y0ngha/siglens/compare/v0.60.1...v0.61.0) (2026-08-23)
+
+
+### Features
+
+* 컨플루언스·손익비를 결정론적으로 계산해 프롬프트와 화면에 붙인다 ([#763](https://github.com/y0ngha/siglens/issues/763)) ([0904b19](https://github.com/y0ngha/siglens/commit/0904b1904c231e33e3dcbe0bbe6d7a411d3b3dcc))
+
 ## [0.60.1](https://github.com/y0ngha/siglens/compare/v0.60.0...v0.60.1) (2026-08-21)
 
 

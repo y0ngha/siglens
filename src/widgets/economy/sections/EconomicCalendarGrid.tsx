@@ -33,6 +33,7 @@ import { useEconomicCalendarTrigger } from '../hooks/useEconomicCalendarTrigger'
 import { useIndicatorTranslationTrigger } from '../hooks/useIndicatorTranslationTrigger';
 import { ImpactFilter } from './ImpactFilter';
 import { IMPACT_LABEL_KEY, IMPACT_ORDER } from '../utils/impactMeta';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 const IMPACT_BADGE: Record<CalendarImpact, string> = {
     High: 'bg-ui-danger/20 text-ui-danger-text',
@@ -430,6 +431,7 @@ function DayCell({
 }: DayCellProps) {
     const t = useTranslations('widgets.economy');
     const tMisc = useTranslations('shared.ui.misc');
+    const tLabel = useTranslations('shared.enumLabel');
     const { day, month, dateKey } = group;
 
     /**
@@ -456,17 +458,38 @@ function DayCell({
             <button
                 id={`day-btn-${dateKey}`}
                 type="button"
-                aria-label={tMisc('calendarDayAria', {
-                    v0: month + 1,
-                    v1: day,
-                    v2: count,
-                })}
+                /*
+                 * 심각도를 라벨에 담는다. 셀에서 심각도를 나르는 것은 6px 점의
+                 * **색뿐**이었고(점은 `aria-hidden`, 텍스트는 건수만) 그 색은
+                 * 빨강/주황이라 적록색약에서 수렴한다(WCAG 1.4.1). 6px에서는
+                 * 모양·링으로 갈라도 읽히지 않으므로 텍스트로 낸다.
+                 */
+                aria-label={
+                    tMisc('calendarDayAria', {
+                        v0: month + 1,
+                        v1: day,
+                        v2: count,
+                    }) +
+                    (dots.length === 0
+                        ? ''
+                        : t('dayCellAriaImpacts', {
+                              v0: dots
+                                  .map(impact =>
+                                      tLabel(IMPACT_LABEL_KEY[impact])
+                                  )
+                                  .join('·'),
+                          }))
+                }
                 aria-pressed={isSelected}
                 aria-controls={`panel-${dateKey}`}
                 onClick={() => onSelect(dateKey)}
                 className={cn(
                     'relative min-h-[4rem] w-full rounded-lg p-1 text-left text-xs transition-colors',
-                    'focus-visible:ring-primary-500 focus-visible:ring-2 focus-visible:outline-none',
+                    /* `ring-offset`이 있어야 **선택된 날**에서도 포커스가 보인다.
+                       선택 표시가 이미 `ring-primary-500 ring-2`라, 포커스 스타일이
+                       같은 값이면 focus 전후 계산값이 바이트 동일해져 표시가 아예
+                       없다(실측: box-shadow 양쪽 다 `rgb(59,130,246) 0 0 0 2px`). */
+                    'focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-900 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                     'motion-reduce:transition-none',
                     isSelected
                         ? 'bg-primary-900/30 ring-primary-500 ring-2'
@@ -484,6 +507,10 @@ function DayCell({
                     {day}
                 </span>
 
+                {/*
+                 * 점 자체는 여전히 장식이다 — 심각도는 위 `aria-label`이 나른다.
+                 * 점에 개별 라벨을 붙이면 셀 이름이 두 번 읽힌다.
+                 */}
                 <span
                     aria-hidden="true"
                     className="mt-1 flex flex-wrap gap-0.5"
@@ -740,7 +767,7 @@ export function EconomicCalendarGrid({
             <section aria-labelledby="economy-calendar-heading">
                 <h2
                     id="economy-calendar-heading"
-                    className="mb-3 text-lg font-semibold text-secondary-100"
+                    className={cn('mb-3', HEADING_SECTION)}
                 >
                     {t('EconomicCalendarGrid.596fce')}{' '}
                     <span className="text-sm font-normal text-secondary-400">
@@ -760,7 +787,7 @@ export function EconomicCalendarGrid({
         <section aria-labelledby="economy-calendar-heading">
             <h2
                 id="economy-calendar-heading"
-                className="mb-4 text-lg font-semibold text-secondary-100"
+                className={cn('mb-4', HEADING_SECTION)}
             >
                 {t('EconomicCalendarGrid.596fce')}{' '}
                 <span className="text-sm font-normal text-secondary-400">
@@ -772,7 +799,7 @@ export function EconomicCalendarGrid({
                 <ImpactFilter value={activeImpacts} onToggle={toggleImpact} />
             </div>
 
-            <div className="space-y-6 rounded-xl border border-secondary-700 p-3 sm:p-4">
+            <div className="space-y-6 rounded-lg border border-secondary-700 p-3 sm:p-4">
                 {months.map(({ year, month }) => (
                     <MonthCalendar
                         key={`${year}-${month}`}

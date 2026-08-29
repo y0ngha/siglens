@@ -249,14 +249,14 @@ export async function MarketRouteBody({
                 패턴으로 회귀했었던 이력 — sibling 페이지(/[symbol]/*) 6개와의
                 일관성을 맞춰 둔다. */}
             <main className="flex-1">
-                <div className="px-6 pt-6 lg:px-[15vw]">
+                <div className="page-container pt-6">
                     <RegionTabs
                         vertical="market"
                         active={scope.id}
                         currentPath={copy.path}
                     />
                 </div>
-                <h1 className="px-6 pt-6 text-2xl font-bold tracking-tight text-balance text-secondary-100 sm:text-3xl lg:px-[15vw]">
+                <h1 className="page-container pt-6 text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
                     {copy.title}
                 </h1>
                 <Suspense

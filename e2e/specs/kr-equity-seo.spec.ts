@@ -110,7 +110,7 @@ test.describe('KR equity SEO (crawler-facing)', () => {
 
             // 형제 스펙(`symbol-seo.spec.ts`)이 쓰는 것과 같은 직렬화 형태로 맞춘다.
             expect(await response.text()).toMatch(
-                /<meta name="robots" content="noindex, nofollow"\/?>/
+                /<meta name="robots" content="noindex, follow"\/?>/
             );
         }
     });
@@ -136,17 +136,20 @@ test.describe('KR equity SEO (crawler-facing)', () => {
         expect(metaContent(html, 'description')).toContain('한국');
 
         const blocks = jsonLdBlocks(html);
-        // FAQPage 답변과 HowTo 본문 — Google이 rich result로 직접 읽는 표면이다.
+        // FAQPage 답변 — Google이 rich result로 직접 읽는 표면이다.
         // `SITE_DESCRIPTION`(WebApplication/WebPage/Organization 노드에 공통
         // 임베드됨)이 이미 "한국"을 포함하므로, blocks 전체를 직렬화해 매칭하면
-        // FAQPage/HowTo 본문이 실제로 한국 종목을 언급하는지와 무관하게 항상
-        // 통과한다(뮤테이션 감사 2026-08-18) — 그 두 블록으로 범위를 좁힌다.
+        // FAQPage 본문이 실제로 한국 종목을 언급하는지와 무관하게 항상
+        // 통과한다(뮤테이션 감사 2026-08-18) — 그 블록으로 범위를 좁힌다.
+        //
+        // HowTo 블록도 함께 봤었다. 홈의 "이용 방법" 섹션을 걷어내면서 그
+        // 마크업도 뺐다 — 화면에 없는 내용을 설명하는 구조화 데이터를 남기면
+        // 규정 위반이라 딸려 나간 것이 아니라 필수 제거였다. 그래서 여기서는
+        // **없어야 한다**를 단언한다. 없앤 뒤 다시 살아나면 그때가 결함이다.
         const faqBlock = blocks.find(b => b['@type'] === 'FAQPage');
-        const howToBlock = blocks.find(b => b['@type'] === 'HowTo');
         expect(faqBlock).toBeDefined();
-        expect(howToBlock).toBeDefined();
         expect(JSON.stringify(faqBlock)).toMatch(/코스피|한국/);
-        expect(JSON.stringify(howToBlock)).toMatch(/코스피|한국/);
+        expect(blocks.find(b => b['@type'] === 'HowTo')).toBeUndefined();
     });
 
     test('홈에서 국내 종목으로 가는 크롤 가능한 링크가 있다', async ({

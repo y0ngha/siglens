@@ -10,6 +10,8 @@ import type { NewsImpact, NewsSentiment } from '@y0ngha/siglens-core';
 import { useState } from 'react';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import { NewsCardShell } from '@/shared/ui/NewsCardShell';
+import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SENTIMENT_LABEL_KEY } from '@/shared/lib/sentimentDisplay';
 import {
     resolveNewsBody,
@@ -18,8 +20,8 @@ import {
 } from '@/shared/lib/news/resolveNewsTitle';
 
 const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
-    bullish: 'bg-ui-success/10 text-chart-bullish',
-    bearish: 'bg-ui-danger/10 text-chart-bearish',
+    bullish: 'bg-ui-success/10 text-ui-success-text',
+    bearish: 'bg-ui-danger/10 text-ui-danger-text',
     neutral: 'bg-secondary-700 text-secondary-400',
 };
 
@@ -42,7 +44,7 @@ const IMPACT_LABEL_KEY: Record<NewsImpact, string> = {
 };
 
 const IMPACT_CLASS: Record<NewsImpact, string> = {
-    high: 'bg-ui-warning/10 text-ui-warning',
+    high: 'bg-ui-warning/10 text-ui-warning-text',
     medium: 'bg-primary-500/10 text-primary-400',
     low: 'bg-secondary-700 text-secondary-400',
     negligible: 'bg-secondary-700/50 text-secondary-400',
@@ -50,7 +52,6 @@ const IMPACT_CLASS: Record<NewsImpact, string> = {
 
 const VALID_SENTIMENTS = new Set<string>(['bullish', 'bearish', 'neutral']);
 const VALID_IMPACTS = new Set<string>(['high', 'medium', 'low', 'negligible']);
-const PAGE_SIZE = 5;
 const NEWS_LIST_SKELETON_COUNT = 3;
 
 function isNewsSentiment(value: string): value is NewsSentiment {
@@ -84,9 +85,9 @@ function SentimentBadge({ value }: { value: string }) {
 }
 
 function ImpactBadge({ value }: { value: string }) {
+    const tLabel = useTranslations('shared.enumLabel');
     // `SENTIMENT_LABEL_KEY`와 같은 이유로 키를 그대로 `tLabel`에 넣는다 —
     // 추출기가 이 파일에서 `shared.enumLabel`을 보게 해야 페이로드에 실린다.
-    const tLabel = useTranslations('shared.enumLabel');
     if (!isNewsImpact(value)) return null;
     return (
         <span
@@ -108,7 +109,7 @@ interface NewsTextSectionProps {
 function NewsTextSection({ label, text }: NewsTextSectionProps) {
     return (
         <section className="mt-3 border-t border-secondary-700/70 pt-3">
-            <h4 className="mb-1 text-xs font-semibold text-secondary-300">
+            <h4 className="mb-1 text-xs font-medium text-secondary-300">
                 {label}
             </h4>
             <p className="text-sm leading-relaxed wrap-break-word text-secondary-400">
@@ -122,7 +123,7 @@ function NewsCardSkeleton() {
     return (
         <article
             aria-hidden="true"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-4"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-4"
         >
             <div className="h-5 w-4/5 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -149,10 +150,7 @@ function NewsListLoadingState() {
         >
             <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">
-                    <h2
-                        id="news-list-heading"
-                        className="text-lg font-semibold tracking-tight"
-                    >
+                    <h2 id="news-list-heading" className={HEADING_SECTION}>
                         {t('NewsList.ac2367')}
                     </h2>
                     <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
@@ -182,7 +180,7 @@ function NewsRefreshStatusCard() {
         <div
             role="status"
             aria-live="polite"
-            className="flex w-full max-w-full min-w-0 items-start gap-3 overflow-hidden rounded-xl border border-primary-500/30 bg-primary-500/5 p-4"
+            className="flex w-full max-w-full min-w-0 items-start gap-3 overflow-hidden rounded-lg border border-primary-500/30 bg-primary-500/5 p-4"
         >
             <div
                 aria-hidden="true"
@@ -297,9 +295,9 @@ interface NewsListProps {
 }
 
 export function NewsList({ items: initialItems, symbol }: NewsListProps) {
-    const t = useTranslations('widgets.news');
     const tPeriod = useTranslations('shared.lib.newsPeriod');
-    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+    const t = useTranslations('widgets.news');
+    const [visibleCount, setVisibleCount] = useState(NEWS_LIST_PAGE_SIZE);
     // Tracks the last rendered symbol for the render-time reset below.
     // Client-side navigation keeps the component mounted while delivering new
     // initialItems for the new symbol, so we must re-baseline explicitly.
@@ -307,7 +305,7 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
 
     if (prevSymbol !== symbol) {
         setPrevSymbol(symbol);
-        setVisibleCount(PAGE_SIZE);
+        setVisibleCount(NEWS_LIST_PAGE_SIZE);
     }
 
     const { items, isPolling, pollError } = useNewsPollingWithInvalidation(
@@ -329,13 +327,10 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
         return (
             <section
                 aria-labelledby="news-list-heading"
-                className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+                className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             >
                 <div className="mb-3 flex items-center gap-2">
-                    <h2
-                        id="news-list-heading"
-                        className="text-lg font-semibold tracking-tight"
-                    >
+                    <h2 id="news-list-heading" className={HEADING_SECTION}>
                         {t('NewsList.ac2367')}
                     </h2>
                     <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
@@ -360,10 +355,7 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
             className="w-full max-w-full min-w-0 space-y-3 overflow-hidden"
         >
             <div className="flex items-center gap-2">
-                <h2
-                    id="news-list-heading"
-                    className="text-lg font-semibold tracking-tight"
-                >
+                <h2 id="news-list-heading" className={HEADING_SECTION}>
                     {t('NewsList.ac2367')}
                 </h2>
                 <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
@@ -381,8 +373,10 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
             {hasMore && (
                 <button
                     type="button"
-                    onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
-                    className="w-full rounded-lg border border-secondary-700 py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    onClick={() =>
+                        setVisibleCount(c => c + NEWS_LIST_PAGE_SIZE)
+                    }
+                    className="w-full rounded-lg border border-border-control py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     {t('NewsList.8e5a3a', { v0: items.length - visibleCount })}
                 </button>

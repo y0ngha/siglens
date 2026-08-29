@@ -177,7 +177,7 @@ export function ModelSelect({
                                         </div>
                                     </div>
                                     {!isFreeModel(option.id) && (
-                                        <span className="text-[9px] leading-none font-semibold text-ui-warning uppercase">
+                                        <span className="text-[9px] leading-none font-semibold text-ui-warning-text uppercase">
                                             PRO
                                         </span>
                                     )}

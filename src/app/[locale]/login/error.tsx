@@ -18,7 +18,7 @@ export default function LoginError({ error, reset }: LoginErrorProps) {
     }, [error]);
 
     return (
-        <main className="flex min-h-[calc(100dvh-3.5rem)] flex-col items-center justify-center gap-4 bg-secondary-950 px-4 py-12 text-center">
+        <main className="flex min-h-[calc(100dvh-var(--header-h))] flex-col items-center justify-center gap-4 bg-secondary-950 px-4 py-12 text-center">
             <h1 className="text-2xl font-semibold text-secondary-50">
                 {t('error.ff2e32')}
             </h1>
@@ -27,13 +27,13 @@ export default function LoginError({ error, reset }: LoginErrorProps) {
                 <button
                     type="button"
                     onClick={reset}
-                    className="inline-flex min-h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+                    className="inline-flex min-h-11 items-center rounded bg-primary-600 px-4 text-sm font-semibold text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     {t('error.0c767c')}
                 </button>
                 <Link
                     href="/"
-                    className="inline-flex min-h-11 items-center rounded px-4 text-sm font-medium text-secondary-200 hover:text-secondary-50 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+                    className="inline-flex min-h-11 items-center rounded px-4 text-sm font-medium text-secondary-200 hover:text-secondary-50 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     {t('error.d8c261')}
                 </Link>

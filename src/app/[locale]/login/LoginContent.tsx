@@ -32,7 +32,7 @@ export function LoginContent() {
                 <div
                     role="status"
                     aria-live="polite"
-                    className="mb-4 rounded-md border border-ui-success/30 bg-ui-success/5 p-3 text-sm text-ui-success"
+                    className="mb-4 rounded-lg border border-ui-success/30 bg-ui-success/5 p-3 text-sm text-ui-success-text"
                 >
                     {tAuth('error.passwordResetSuccess')}
                 </div>

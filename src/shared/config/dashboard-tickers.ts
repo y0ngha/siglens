@@ -79,8 +79,8 @@ export const SECTOR_STOCKS: readonly SectorStock[] = [
     { symbol: 'V', koreanName: '비자', sectorSymbol: 'XLF' },
     { symbol: 'MA', koreanName: '마스터카드', sectorSymbol: 'XLF' },
     // Energy (XLE) — 6
-    { symbol: 'XOM', koreanName: '엑손모빌', sectorSymbol: 'XLE' },
-    { symbol: 'CVX', koreanName: '쉐브론', sectorSymbol: 'XLE' },
+    { symbol: 'XOM', koreanName: '엑슨모빌', sectorSymbol: 'XLE' },
+    { symbol: 'CVX', koreanName: '셰브론', sectorSymbol: 'XLE' },
     { symbol: 'COP', koreanName: '코노코필립스', sectorSymbol: 'XLE' },
     { symbol: 'SLB', koreanName: '슐럼버거', sectorSymbol: 'XLE' },
     { symbol: 'OXY', koreanName: '옥시덴탈', sectorSymbol: 'XLE' },
@@ -133,7 +133,7 @@ export const SECTOR_STOCKS: readonly SectorStock[] = [
     { symbol: 'CCI', koreanName: '크라운캐슬', sectorSymbol: 'XLRE' },
     { symbol: 'PSA', koreanName: '퍼블릭스토리지', sectorSymbol: 'XLRE' },
     // Communication Services (XLC) — 6
-    { symbol: 'GOOGL', koreanName: '알파벳', sectorSymbol: 'XLC' },
+    { symbol: 'GOOGL', koreanName: '알파벳(구글)', sectorSymbol: 'XLC' },
     { symbol: 'META', koreanName: '메타', sectorSymbol: 'XLC' },
     { symbol: 'NFLX', koreanName: '넷플릭스', sectorSymbol: 'XLC' },
     { symbol: 'DIS', koreanName: '디즈니', sectorSymbol: 'XLC' },
@@ -141,11 +141,11 @@ export const SECTOR_STOCKS: readonly SectorStock[] = [
     { symbol: 'T', koreanName: 'AT&T', sectorSymbol: 'XLC' },
     // Quantum (QNTM) — 6 (virtual sector, no ETF)
     { symbol: 'IONQ', koreanName: '아이온큐', sectorSymbol: 'QNTM' },
-    { symbol: 'LAES', koreanName: 'SEALSQ', sectorSymbol: 'QNTM' },
+    { symbol: 'LAES', koreanName: '실스큐', sectorSymbol: 'QNTM' },
     { symbol: 'RGTI', koreanName: '리게티 컴퓨팅', sectorSymbol: 'QNTM' },
     { symbol: 'QBTS', koreanName: '디웨이브 퀀텀', sectorSymbol: 'QNTM' },
     { symbol: 'QUBT', koreanName: '퀀텀 컴퓨팅', sectorSymbol: 'QNTM' },
-    { symbol: 'IBM', koreanName: '아이비엠', sectorSymbol: 'QNTM' },
+    { symbol: 'IBM', koreanName: 'IBM', sectorSymbol: 'QNTM' },
     // Space (SPACE) — 6 (virtual sector, no ETF)
     // SPCX는 여기 없다 — SpaceX는 비상장이고, SPCX는 그 이름을 딴 SPAC/신규 발행
     // ETF다. 대체할 진짜 SpaceX 티커가 없으므로 빼기만 한다(SEO 감사 라운드 3

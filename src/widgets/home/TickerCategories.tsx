@@ -30,7 +30,7 @@ const CATEGORY_STYLES: Record<CategoryId, CardStyle> = {
     },
     'leveraged-etf': {
         borderColor: 'border-l-ui-warning',
-        textColor: 'text-ui-warning',
+        textColor: 'text-ui-warning-text',
     },
     'healthcare-bio': {
         borderColor: 'border-l-secondary-400',

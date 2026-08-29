@@ -54,10 +54,16 @@ vi.mock('@/entities/auth/lib/db', () => ({
 vi.mock('next/headers', () => ({
     cookies: vi.fn(),
 }));
-// `@/shared/lib/auth/redirect`는 mock하지 않는다 — 외부 의존이 없는 순수 모듈이고,
-// 로컬에 다시 구현하면 그 사본이 프로덕션과 갈라져도 테스트가 통과한다.
-// 실제로 이 mock이 `next === '/'` 비교를 복제하고 있어서, 로케일 접두사가 붙은
-// `next`(`/en`)로 온보딩 라우팅이 깨진 회귀를 이 파일의 어떤 케이스도 잡지 못했다.
+// `importActual`로 실제 모듈을 펼친 뒤 필요한 것만 덮는다. 열거식으로
+// 적으면 export가 늘 때마다 여기가 조용히 undefined를 돌려준다 —
+// 실제로 `toSameOriginPath`가 추가되자 세 파일이 한꺼번에 깨졌다.
+vi.mock('@/shared/lib/auth/redirect', async () => ({
+    ...(await vi.importActual('@/shared/lib/auth/redirect')),
+    sanitizeNextPath: vi.fn((p: unknown) => (typeof p === 'string' ? p : '/')),
+    resolvePostSignupDestination: vi.fn((next: string) =>
+        next === '/' ? '/onboarding' : next
+    ),
+}));
 vi.mock('next/navigation', () => ({
     redirect: vi.fn().mockImplementation((url: string) => {
         throw Object.assign(new Error('NEXT_REDIRECT'), { url });

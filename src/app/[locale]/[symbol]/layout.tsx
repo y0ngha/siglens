@@ -14,6 +14,7 @@ import {
     SymbolLayoutProviders,
 } from '@/app/[locale]/[symbol]/SymbolLayoutClient';
 import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
+import { RelatedSymbols } from '@/views/symbol';
 import { SymbolTabsSkeleton } from '@/views/symbol/SymbolTabsSkeleton';
 import {
     DEFAULT_TIMEFRAME,
@@ -24,8 +25,7 @@ import { getSeedBarsStatic } from '@/entities/bars';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { marketProfileOf } from '@/shared/config/marketProfile';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
-import { MS_PER_SECOND } from '@/shared/config/time';
-import { EMPTY_INDICATOR_RESULT, type BarsData } from '@y0ngha/siglens-core';
+import { computeFearGreedIndex } from '@y0ngha/siglens-core';
 import type { AssetInfo } from '@/shared/lib/types';
 
 interface SymbolLayoutProps {
@@ -137,6 +137,45 @@ export default async function SymbolLayout({
                     </Suspense>
                     {children}
                 </SymbolLayoutJail>
+                {/* 관련 종목 칩 — **jail 밖**이라 페이지 일반 스크롤로 닿는다.
+                푸터 바로 위 자리다.
+
+                예전엔 차트 페이지 `<main>` 안에 있었는데, 그 `<main>`은 차트
+                라우트에서 자체 `overflow-y-auto` 스크롤 컨테이너다(jail이
+                definite height + overflow-hidden이라 그 안에서 따로 스크롤된다).
+                그래서 칩이 **중첩 스크롤러 안쪽**에 깔려, 사용자가 페이지를 내려
+                푸터를 봐도 칩에는 영원히 도달하지 못했다 — DOM에는 있어서 크롤러는
+                봤지만 사람은 못 보는 상태였다(2026-08-25 사용자 제보).
+
+                ⚠️ jail의 높이 계산을 건드리지 않는다 — 형제로 뒤에 붙일 뿐이라
+                차트 세로폭은 그대로다. jail 안으로 되돌리면 같은 문제가 재발한다.
+
+                레이아웃으로 올라오면서 9개 탭 전부에 렌더된다. 칩 8개는 1KB
+                남짓이고, 오히려 모든 탭이 다른 종목으로 나가는 간선을 갖게 돼
+                내부링크 그래프가 촘촘해진다.
+
+                ⚠️ 두 가지가 이 이동으로 **새로 생긴다**(리뷰 round 1 지적):
+
+                1. **잔여 soft-404 탭에도 뜬다.** 크립토가 options/fundamental/
+                   financials/congress를 방문하면 그 page.tsx가 `notFound()`를
+                   던지지만 세그먼트 `loading.tsx`의 Suspense 경계 때문에 200으로
+                   샌다(이 파일 상단 주석의 알려진 잔여 동작). 레이아웃은 그보다
+                   위라 칩이 그대로 렌더된다.
+                   그대로 둔다 — `app/not-found.tsx`가 이미 `TickerCategories`로
+                   종목 링크 그리드를 띄운다. 찾지 못한 페이지에서 탐색로를 주는 건
+                   이 사이트의 의도된 동작이고, 칩만 예외로 막을 이유가 없다.
+
+                2. **콜드젠 blocking I/O가 1탭 → 9탭으로 늘었다.** 칩은 피어 8종의
+                   한글명을 `getAssetInfoResilient`로 조회한다(`Promise.all` 1왕복).
+                   각 피어의 엔트리는 그 종목 자기 페이지가 이미 채운 `unstable_cache`를
+                   공유하므로 워엄에서는 비용이 관측되지 않았지만(실측 0.20~0.26초),
+                   그건 **차트 탭 1회 기준 측정**이었다. 이제 심볼당 최대 9번 콜드젠에서
+                   같은 비용을 치른다.
+                   `<Suspense>`로 감싸지 않는 이유는 그대로다 — 경계 뒤 콘텐츠는 raw
+                   HTML 끝쪽에 스트리밍돼 JS를 실행하지 않는 크롤러(Naver Yeti·Daumoa)
+                   에게 내부링크가 푸터 뒤로 밀린다. 한국어 검색이 주 유입이고 내부링크가
+                   이 컴포넌트의 존재 이유라 그 교환은 하지 않는다. */}
+                <RelatedSymbols symbol={ticker} />
                 <Suspense fallback={null}>
                     <SymbolFloatingChat params={params} />
                 </Suspense>
@@ -175,14 +214,13 @@ export async function SymbolLayoutChrome({
 }: SymbolLayoutChromeProps) {
     const { symbol } = await params;
 
-    // FearGreedHeaderChipMounted (in SymbolLayoutHeader) calls useBars with DEFAULT_TIMEFRAME
-    // via useSuspenseQuery + getBarsAction (a Server Action). Server Actions cannot be invoked
-    // during SSR rendering. Prefetching here and dehydrating into HydrationBoundary ensures
-    // the header chip satisfies the query from cache instead of calling getBarsAction
-    // during initial render.
+    // 이 QueryClient는 이제 `assetInfo`만 seed한다. 헤더의 공포·탐욕 칩이 봉을
+    // 요구하던 것이 봉 seed의 유일한 이유였는데, 지금은 서버가 계산한 스냅샷을
+    // prop으로 받으므로 그 의존이 사라졌다(아래 `fearGreedSnapshot` 주석에 실측 근거).
     //
-    // ISR static-safe: prefetch는 getQuantizedBarsStatic(=React.cache(unstable_cache(getBarsAction)))으로
-    // 통일한다 — static gen 중 redis no-store fetch가 DYNAMIC_SERVER_USAGE를 throw하지 않게.
+    // ISR static-safe: 봉 조회는 getSeedBarsStatic(=React.cache(unstable_cache(getBarsAction)))
+    // 으로 통일한다 — static gen 중 redis no-store fetch가 DYNAMIC_SERVER_USAGE를
+    // throw하지 않게.
     const queryClient = new QueryClient({
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
     });
@@ -213,39 +251,61 @@ export async function SymbolLayoutChrome({
         console.error('[SymbolLayout] getSeedBarsStatic failed:', e);
         return null;
     });
-    if (quantized !== null) {
-        // Bar.time은 seconds (epoch) — RQ dataUpdatedAt은 milliseconds 기대.
-        const lastBarSec = quantized.bars.at(-1)?.time ?? 0;
-        const stableUpdatedAt = lastBarSec * MS_PER_SECOND;
-        queryClient.setQueryData(
-            QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
-            quantized,
-            { updatedAt: stableUpdatedAt }
-        );
-    } else {
-        // Bars fetch failed (no FMP key, degraded symbol, etc.). Seed an empty
-        // BarsData into the query cache so useSuspenseQuery in
-        // FearGreedHeaderChipMounted → useBars finds data in the dehydrated state
-        // and does NOT call getBarsAction ('use server') during SSR. React 19
-        // throws "Server Functions cannot be called during initial render" when a
-        // Server Action is invoked from a query's queryFn at SSR time.
-        // updatedAt: 0 keeps the dehydrated HTML deterministic (never varies
-        // across ISR regenerations) and signals to the client that it should
-        // re-fetch immediately (staleTime check: 0 < Date.now()).
-        const emptyBars: BarsData = {
-            bars: [],
-            indicators: EMPTY_INDICATOR_RESULT,
-        };
-        queryClient.setQueryData(
-            QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
-            emptyBars,
-            { updatedAt: 0 }
-        );
-    }
+    // 공포·탐욕 칩 값을 **서버에서 확정**한다. `computeFearGreedIndex`는 core의
+    // 순수 함수라 AI 호출도 I/O도 없다(`FearGreedFactsSummary`가 이미 서버에서 쓴다).
+    //
+    // ## 왜 bars를 seed하지 않는가 — 9탭 × 76KB의 실측 낭비
+    //
+    // 예전엔 이 자리에서 `QUERY_KEYS.bars`에 일봉 500개 + buySellVolume을 seed했다.
+    // 레이아웃이라 **9탭 전부**에 실렸는데, 2026-08-24 프로덕션 실측 기준 raw 76KB
+    // (bars 52KB + buySellVolume 24KB)였고 `/[symbol]/position`에서는 RSC 페이로드의
+    // **47%**를 차지했다.
+    //
+    // 그런데 `useBars` 소비자는 셋뿐이다: `ChartContent`(차트 탭), `FearGreedPage`
+    // (공포·탐욕 탭), 그리고 이 헤더 칩(9탭 전부). 앞의 둘은 **각자 page.tsx에서
+    // 직접 seed**하므로 이 레이아웃 seed가 필요한 소비자는 칩 하나뿐이었다. 즉
+    // 나머지 7탭은 헤더 배지 하나 때문에 76KB를 나르고 있었다.
+    //
+    // 칩이 서버 계산 스냅샷(수십 바이트)을 받으면 그 seed가 통째로 불필요해진다.
+    // 차트·공포탐욕 탭은 자기 seed를 그대로 쓰므로 영향이 없다 — 이 레이아웃의
+    // HydrationBoundary는 헤더만 감싸고, 두 페이지는 자신의 안쪽 boundary를 쓴다.
+    //
+    // ## 덤: 크롤러가 칩 값을 본다
+    //
+    // 예전 칩은 하이드레이션 전까지 스켈레톤이라(클라 계산값과 SSR 값이 갈려
+    // React #418 텍스트 mismatch가 났다) JS를 실행하지 않는 크롤러(Naver Yeti·
+    // Daumoa)에겐 아무것도 안 보였다. 서버 값은 SSR HTML에 그대로 박히고, 같은
+    // 값이 하이드레이션 후에도 렌더되므로 mismatch가 원천적으로 없다.
+    //
+    // ## 신선도 — 장중에는 값이 덜 민감해진다 (의도된 트레이드오프)
+    //
+    // 예전 클라 경로는 30초마다 refetch했고 그 응답에는 **형성 중인 당일 봉**이
+    // 포함됐다. 서버 경로는 `getSeedBarsStatic`이 마지막 완료 봉까지만 quantize하고
+    // (ISR HTML 결정성 때문에 필수다), 그 위에 봉 캐시 6h + 페이지 ISR 6~24h가 얹힌다.
+    // 즉 장이 열려 있는 동안 이 배지는 당일 거래량 흐름을 반영하지 않는다.
+    //
+    // 그래도 이 쪽을 택한 이유: (a) 공포·탐욕은 일봉 지표라 세션 중 갱신의 가치가
+    // 작고, (b) 같은 페이지의 다른 모든 숫자가 이미 동일한 ISR 상한에 묶여 있어
+    // 배지만 실시간이면 오히려 어긋나 보이며, (c) 실시간 값이 필요한 사용자를 위한
+    // `/[symbol]/fear-greed` 전용 페이지는 `useFearGreedFromSymbol`로 계속
+    // 라이브 refetch한다. 배지는 그 페이지로 가는 입구일 뿐이다.
+    //
+    // `quantized`가 null(FMP 키 없음·degrade)이면 스냅샷도 null → 칩이 기존
+    // "데이터 부족" 문구로 폴백한다.
+    const fearGreedSnapshot =
+        quantized === null
+            ? null
+            : computeFearGreedIndex(
+                  quantized.bars,
+                  quantized.indicators.buySellVolume
+              );
 
     return (
         <HydrationBoundary state={dehydrate(queryClient)}>
-            <SymbolLayoutHeader symbol={symbol} />
+            <SymbolLayoutHeader
+                symbol={symbol}
+                fearGreedSnapshot={fearGreedSnapshot}
+            />
         </HydrationBoundary>
     );
 }
@@ -257,20 +317,57 @@ async function SymbolFloatingChat({ params }: SymbolLayoutSegmentProps) {
 
 // Static shell mirroring SymbolLayoutHeader's outer shape. Used as the Suspense
 // fallback while params resolve and the bars prefetch completes.
+//
+// 폭 구조도 실제 헤더와 **같아야 한다**. 둘의 폭 규약이 갈리면 폴백 자신의
+// 브레드크럼과 탭이 어긋나고(과거 1920px에서 436px), 폴백에서 실제 헤더로
+// 넘어갈 때도 그만큼 튄다. 콜드 로드의 첫 페인트라 사용자가 실제로 보는
+// 화면이다. 현재 규약은 전폭 `px-4` — 근거는 `SymbolLayoutHeader` JSDoc.
+//
+// **행 구조도 같아야 한다.** 한쪽만 행 수가 다르면 폴백에서 실제 헤더로 바뀌는
+// 순간 세로로 밀린다 — 예전에 폴백이 한 행, 실제가 640px 미만에서 두 행이라
+// 109px 대 160px로 갈렸고 전환 시 51px이 튀었다. 폴백의 존재 이유가 바로 그
+// 밀림을 막는 것이다.
+//
+// 지금은 **양쪽 다 어느 폭에서든 한 행**이다. 모바일에서 두 행으로 쌓던 것을
+// 없앤 이유는 세로 예산 때문이다 — 차트 라우트는 jail이 첫 뷰포트를 고정하므로
+// 헤더가 36px 커지면 그만큼 캔들이 줄어든다(실측: 헤더 160→124px에서 가격
+// pane 170→196px). 종목명이 좁은 화면에서 잘리는 것은 감수한 트레이드오프이며,
+// 탭마다 본문 h1이 전체 이름을 갖고 있어 정보가 사라지지는 않는다
+// (`애플, Apple Inc. (AAPL) 차트 분석` 등 9개 탭 전부 확인).
+// 컨트롤 크기(size-11)도 실제 헤더와 같아야 한다.
+//
+// 컨트롤은 **2개**만 둔다. 실제 헤더의 세 번째 칩(`PortfolioChipMounted`)은
+// 회원 전용이라 게스트에겐 아예 렌더되지 않는다(`useCurrentUser` null → null).
+// 클러스터가 우측 정렬이라 개수가 달라도 공유·설정 버튼의 x는 안 밀린다
+// (375px 실측: 폴백 2·3번이 [263,307]·[315,359], 실제 2개도 같은 좌표).
+// 그래서 남는 문제는 "뜬 자리가 사라지느냐 생기느냐"뿐이고, 다수인 게스트
+// 기준으로 팬텀이 없는 2개가 맞다 — 회원은 칩 하나가 클러스터 왼쪽에 붙을 뿐
+// 나머지 둘은 그대로다.
 function SymbolHeaderShellFallback() {
     return (
-        <header className="px-4 py-3" aria-hidden="true">
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
+        <header className="py-3" aria-hidden="true">
+            <div className="flex items-center gap-2 px-4 sm:gap-4">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
                     <span className="font-mono text-xs tracking-[0.2em] text-secondary-500 uppercase">
                         SIGLENS
                     </span>
-                    <span className="text-secondary-700">/</span>
-                    <span className="inline-block h-5 w-32 animate-pulse rounded bg-secondary-700" />
+                    <span className="text-secondary-500">/</span>
+                    <span className="inline-block h-7 w-32 animate-pulse rounded bg-secondary-700" />
+                    {/* 실제 헤더는 이 자리에 데스크톱용 FearGreedHeaderChip을
+                        인라인으로 둔다(모바일 인스턴스는 아래 행). 스냅샷이
+                        null이어도 "공포·탐욕 데이터 부족" 칩을 렌더하므로 이
+                        자리는 항상 채워진다. */}
+                    <span className="hidden h-5 w-20 animate-pulse rounded bg-secondary-700 sm:inline-block" />
                 </div>
-                <span className="inline-block h-8 w-36 shrink-0 animate-pulse rounded-md bg-secondary-700" />
+                <div className="flex shrink-0 items-center justify-end gap-2">
+                    <span className="inline-block h-6 w-16 animate-pulse rounded bg-secondary-700 sm:hidden" />
+                    <div className="flex items-center gap-2">
+                        <span className="inline-block size-11 animate-pulse rounded-lg bg-secondary-700" />
+                        <span className="inline-block size-11 animate-pulse rounded-lg bg-secondary-700" />
+                    </div>
+                </div>
             </div>
-            <div className="-mx-4 mt-3">
+            <div className="mt-3">
                 <SymbolTabsSkeleton />
             </div>
         </header>

@@ -108,9 +108,11 @@ export function BriefingCard({
                             <span className="mr-1 text-secondary-500">
                                 {t('BriefingCard.e1760c')}
                             </span>
-                            <span className="text-chart-bullish">
+                            <span className="text-ui-success-text">
                                 {leadingSectors
-                                    .map(s => assetLabel(s.symbol, s.name))
+                                    .map(sector =>
+                                        assetLabel(sector.symbol, sector.name)
+                                    )
                                     .join('·')}
                             </span>
                         </p>
@@ -120,9 +122,11 @@ export function BriefingCard({
                             <span className="mr-1 text-secondary-500">
                                 {t('BriefingCard.7bd647')}
                             </span>
-                            <span className="text-chart-bearish">
+                            <span className="text-ui-danger-text">
                                 {laggingSectors
-                                    .map(s => assetLabel(s.symbol, s.name))
+                                    .map(sector =>
+                                        assetLabel(sector.symbol, sector.name)
+                                    )
                                     .join('·')}
                             </span>
                         </p>
@@ -157,24 +161,20 @@ export function BriefingCard({
                 BriefingCard는 action 응답으로 교체되기 전까지 타임스탬프 줄을
                 숨겨 "Invalid Date 기준"이 노출되는 것을 막는다. */}
             {generatedAt && !Number.isNaN(new Date(generatedAt).getTime()) && (
-                <p className="text-xs text-secondary-600">
+                <p className="text-xs text-secondary-500">
                     {/* timeZone은 'Asia/Seoul'로 **고정**한다 — SSR(Node)과
                         CSR(브라우저) 사이 timezone mismatch로 인한 hydration
                         오류를 막기 위해서다. 반면 **로케일은 고정하면 안 된다**:
                         `'ko-KR'`로 박혀 있어서 `/en/market`이 번역된 문장 안에
                         `8월 20일 오전 02:39`를 찍었다. */}
-                    {t('BriefingCard.f97e74', {
-                        v0: new Date(generatedAt).toLocaleString(
-                            INTL_LOCALE[locale],
-                            {
-                                timeZone: 'Asia/Seoul',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                            }
-                        ),
-                    })}
+                    {new Date(generatedAt).toLocaleString(INTL_LOCALE[locale], {
+                        timeZone: 'Asia/Seoul',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    })}{' '}
+                    {t('BriefingCard.39b300')}
                 </p>
             )}
         </div>
@@ -206,7 +206,7 @@ export function BriefingErrorCard() {
             role="alert"
             className="rounded-lg border border-secondary-700/50 p-4"
         >
-            <p className="text-sm text-chart-bearish">
+            <p className="text-sm text-ui-danger-text">
                 {t('BriefingCard.8b256d')}
             </p>
         </div>

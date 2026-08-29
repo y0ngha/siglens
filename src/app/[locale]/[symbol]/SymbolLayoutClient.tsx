@@ -47,7 +47,19 @@ export function SymbolLayoutJail({ children }: SymbolLayoutJailProps) {
             className={cn(
                 'flex flex-col',
                 isChartRoute
-                    ? 'h-[calc(100dvh-var(--header-h,3.5rem)-var(--pwa-banner-h,0px))] overflow-hidden'
+                    ? // 확정 높이와 클립은 **데스크톱에서만** 건다.
+                      //
+                      // 이 높이가 필요한 이유는 `ChartContent`의 aside
+                      // (`md:h-full` + 자체 스크롤)가 조상의 확정 높이 없이는
+                      // 해석되지 않아서인데, 그 aside는 `hidden md:flex`라
+                      // 모바일에 아예 없다. 모바일에서 걸면 얻는 것 없이
+                      // **이중 스크롤**만 남았다 — jail이 뷰포트에 고정되고 그
+                      // 안의 `<main>`이 따로 스크롤해서, 아래 "지난 AI 분석"에
+                      // 닿으려면 스크롤을 두 번 해야 했다(사용자 제보).
+                      //
+                      // 모바일에서 차트 높이는 차트 블록이 `--symbol-chrome-h`로
+                      // 직접 계산한다 — jail의 확정 높이에 기대지 않는다.
+                      'min-h-[calc(100dvh-var(--header-h,3.5rem)-var(--pwa-banner-h,0px))] md:h-[calc(100dvh-var(--header-h,3.5rem)-var(--pwa-banner-h,0px))] md:overflow-hidden'
                     : 'min-h-[calc(100dvh-var(--header-h,3.5rem)-var(--pwa-banner-h,0px))]'
             )}
         >

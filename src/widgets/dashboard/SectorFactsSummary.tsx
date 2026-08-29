@@ -2,6 +2,8 @@ import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
 import { buildSectorFacts } from '@/entities/sector-signal';
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface SectorFactsSummaryProps {
     data: SectorSignalsResult;
@@ -33,9 +35,9 @@ export function SectorFactsSummary({ data }: SectorFactsSummaryProps) {
     return (
         <section
             aria-label={t('SectorFactsSummary.a39a24')}
-            className="sector-panel-bg px-6 py-10 lg:px-[15vw]"
+            className="page-container sector-panel-bg py-10"
         >
-            <h2 className="mb-6 text-sm font-semibold tracking-[0.15em] text-secondary-200 uppercase">
+            <h2 className={cn('mb-6', HEADING_SECTION)}>
                 {t('SectorFactsSummary.581217')}
             </h2>
             {facts.length === 0 ? (
@@ -63,7 +65,7 @@ export function SectorFactsSummary({ data }: SectorFactsSummaryProps) {
                                                 {i > 0 && ', '}
                                                 <Link
                                                     href={`/${symbol}`}
-                                                    className="rounded-sm underline-offset-2 hover:text-secondary-300 hover:underline focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
+                                                    className="rounded underline-offset-2 hover:text-secondary-300 hover:underline focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
                                                 >
                                                     {symbol}
                                                 </Link>

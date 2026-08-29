@@ -4,6 +4,7 @@ import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 import type { TickerItem } from '@/shared/lib/types';
 import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 /** 카드 좌측 보더 + 라벨 텍스트의 Tailwind 색상 클래스 쌍. */
 export interface CardStyle {
@@ -40,13 +41,11 @@ export function CategoryCardGrid({
     const t = useTranslations('widgets.home');
     const assetLabel = useAssetLabel();
     return (
-        <nav
-            aria-label={ariaLabel}
-            className="px-6 py-10 lg:pr-[10vw] lg:pl-[15vw]"
-        >
-            <h2 className="mb-6 text-sm font-semibold tracking-wider text-secondary-200 uppercase">
-                {heading}
-            </h2>
+        <nav aria-label={ariaLabel} className="page-container py-10">
+            {/* 같은 위계의 h2는 `HEADING_SECTION` 한 곳에서만 정의한다
+                (`shared/lib/typographyStyles.ts`). 한글 제목이라 uppercase·넓은
+                자간을 쓰지 않는 근거도 그 상수의 주석에 있다. */}
+            <h2 className={cn('mb-6', HEADING_SECTION)}>{heading}</h2>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {cards.map(card => (
                     <div
@@ -60,7 +59,7 @@ export function CategoryCardGrid({
                     >
                         <h3
                             className={cn(
-                                'mb-3 text-xs font-semibold tracking-wider uppercase',
+                                'mb-3 text-sm font-semibold tracking-[0.01em]',
                                 card.textColor
                             )}
                         >
@@ -87,7 +86,7 @@ export function CategoryCardGrid({
                                         // origin에서 당겨오므로 prefetch를 끈다
                                         // (docs/architecture/CDN_CACHING.md §1).
                                         prefetch={false}
-                                        className="inline-flex items-baseline gap-1.5 rounded-full border border-secondary-700 px-3 py-1 text-xs text-secondary-300 transition-colors hover:border-primary-600/40 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                        className="inline-flex items-baseline gap-1.5 rounded-full border border-border-control px-3 py-1 text-xs text-secondary-300 transition-colors hover:border-primary-500 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                                     >
                                         {/* config의 `name`은 한국어 데이터다 —
                                             표시는 `shared.assetName` 카탈로그를

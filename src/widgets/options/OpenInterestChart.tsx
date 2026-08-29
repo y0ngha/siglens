@@ -69,11 +69,26 @@ const HALF_HEIGHT = CHART_HEIGHT / 2;
 // solid stroke pattern differentiates them visually.
 const COLOR_CALL = 'var(--color-chart-bullish)';
 const COLOR_PUT = 'var(--color-chart-bearish)';
+
+/**
+ * 차트 안 범례는 막대가 아니라 **글자**다. `chart-*`는 그래픽 기준(3:1)에
+ * 맞춘 색이라 라이트 카드 위에서 본문 기준을 겨우 넘고, 같은 자리에서
+ * `-text` 짝이 훨씬 여유롭다. `bg-chart-*` 색칩(아래 범례)은 그래픽이므로
+ * 그대로 둔다.
+ */
+const LABEL_CALL = 'var(--color-ui-success-text)';
+const LABEL_PUT = 'var(--color-ui-danger-text)';
 const COLOR_GUIDE_LINE = 'var(--color-ui-warning)';
 const COLOR_MIDLINE = 'var(--color-secondary-600)';
 const COLOR_LABEL = 'var(--color-secondary-500)';
 
-const BAR_OPACITY_DEFAULT = 0.7;
+/*
+ * 0.7이었는데 라이트 카드 위에서 Call 막대가 2.85:1로 그래픽 기준(3:1)을
+ * 밑돌았다 — 다크에서는 통과해서 다크만 보면 안 보이는 결함이다. 나란히
+ * 놓이는 StrikeVolumeChart가 이미 0.85라 그 값에 맞춘다(실측 3.70:1).
+ * 상위 OI 강조는 1.0과의 차이로 여전히 읽힌다.
+ */
+const BAR_OPACITY_DEFAULT = 0.85;
 const BAR_OPACITY_TOP_OI = 1;
 
 // 모든 strike의 OI가 0일 때 globalMax 가 0이 되어 barPixelHeight에서
@@ -198,7 +213,7 @@ export function OpenInterestChart({
         // stale-quote 시그니처에 해당한다. 세 경로 모두 사용자 대응법
         // (정규장 시간에 재확인)이 같아 메시지를 통합한다.
         return (
-            <div className="space-y-2 rounded-xl border border-secondary-700 bg-secondary-800 p-4">
+            <div className="space-y-2 rounded-lg border border-secondary-700 bg-secondary-800 p-4">
                 <span className="text-sm font-medium text-secondary-300">
                     {t('OpenInterestChart.f0220d')}
                 </span>
@@ -244,7 +259,7 @@ export function OpenInterestChart({
     return (
         <div
             ref={containerRef}
-            className="relative space-y-2 rounded-xl border border-secondary-700 bg-secondary-800 p-4"
+            className="relative space-y-2 rounded-lg border border-secondary-700 bg-secondary-800 p-4"
         >
             <div className="flex items-center gap-1">
                 <span className="text-sm font-medium text-secondary-300">
@@ -286,7 +301,7 @@ export function OpenInterestChart({
                 <text
                     x={PAD_LEFT}
                     y={MIDLINE_Y - CALL_LABEL_MIDLINE_OFFSET_PX}
-                    fill={COLOR_CALL}
+                    fill={LABEL_CALL}
                     fontSize={STRAIGHT_LABEL_FONT_SIZE}
                     textAnchor="start"
                 >
@@ -296,7 +311,7 @@ export function OpenInterestChart({
                 <text
                     x={PAD_LEFT}
                     y={MIDLINE_Y + PUT_LABEL_MIDLINE_OFFSET_PX}
-                    fill={COLOR_PUT}
+                    fill={LABEL_PUT}
                     fontSize={STRAIGHT_LABEL_FONT_SIZE}
                     textAnchor="start"
                 >
@@ -430,7 +445,9 @@ export function OpenInterestChart({
                             Strike ${hoveredRow.strike.toLocaleString()}
                         </div>
                         <div className="flex items-center justify-between gap-3">
-                            <span className="text-chart-bullish">Call OI</span>
+                            <span className="text-ui-success-text">
+                                Call OI
+                            </span>
                             <span className="tabular-nums">
                                 {t('OpenInterestChart.e3558e', {
                                     v0: hoveredRow.callOpenInterest.toLocaleString(),
@@ -438,7 +455,7 @@ export function OpenInterestChart({
                             </span>
                         </div>
                         <div className="flex items-center justify-between gap-3">
-                            <span className="text-chart-bearish">Put OI</span>
+                            <span className="text-ui-danger-text">Put OI</span>
                             <span className="tabular-nums">
                                 {t('OpenInterestChart.e3558e', {
                                     v0: hoveredRow.putOpenInterest.toLocaleString(),
@@ -465,7 +482,7 @@ export function OpenInterestChart({
             <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px] text-secondary-500">
                 <span className="flex items-center gap-1">
                     <span
-                        className="inline-block h-2.5 w-2.5 rounded-sm bg-chart-bullish"
+                        className="inline-block h-2.5 w-2.5 rounded bg-chart-bullish"
                         aria-hidden="true"
                     />
                     Call OI
@@ -473,7 +490,7 @@ export function OpenInterestChart({
                 </span>
                 <span className="flex items-center gap-1">
                     <span
-                        className="inline-block h-2.5 w-2.5 rounded-sm bg-chart-bearish"
+                        className="inline-block h-2.5 w-2.5 rounded bg-chart-bearish"
                         aria-hidden="true"
                     />
                     Put OI

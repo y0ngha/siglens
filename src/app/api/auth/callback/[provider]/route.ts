@@ -22,8 +22,8 @@ import {
     expiredOAuthStateCookie,
     verifyOAuthState,
 } from '@/features/auth-oauth';
+import { sanitizeNextPath, toSameOriginPath } from '@/shared/lib/auth/redirect';
 import { localePath, splitLocalePath } from '@/shared/i18n/locales';
-import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
 
 interface CallbackRouteParams {
     params: Promise<{ provider: string }>;
@@ -119,9 +119,13 @@ export async function GET(
             now: new Date(),
             secureCookie: secure,
         });
+        // 세 서버 액션이 쓰는 것과 **같은** 2차 방어를 여기에도 건다. 예전에는
+        // 파싱 결과를 그대로 넘겨서, 문자열 검사를 통과한 `"/\t/evil.com"`이
+        // `https://evil.com/`으로 해석돼 나갔다(세션 쿠키를 심은 직후라 피싱
+        // 등급의 오픈 리디렉트였다).
         const response = NextResponse.redirect(
             new URL(
-                sanitizeNextPath(stateResult.next),
+                toSameOriginPath(sanitizeNextPath(stateResult.next)),
                 getOAuthRedirectBaseUrl()
             )
         );

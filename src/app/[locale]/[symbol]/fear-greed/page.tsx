@@ -7,6 +7,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { FearGreedPageError } from '@/widgets/fear-greed';
 import { FearGreedFactsSummary, SymbolPageHeading } from '@/views/symbol';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
+import { FaqSection } from '@/shared/ui/FaqSection';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     DEFAULT_TIMEFRAME,
@@ -26,11 +27,14 @@ import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
+    buildFaqJsonLd,
     buildSymbolSeoContent,
     buildWebPageJsonLd,
     resolveSymbolFearGreedSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
+    noindexSymbolMetadata,
+    type FaqItem,
 } from '@/shared/lib/seo';
 import {
     dehydrate,
@@ -94,6 +98,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, symbol } = await params;
     const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const ticker = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!isAdmissibleSymbolShape(ticker)) {
@@ -108,9 +113,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         revalidateSeconds: revalidate,
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
+    if (!assetInfo) return noindexSymbolMetadata(ticker, tSeo, locale);
 
-    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const displayName = buildDisplayName(assetInfo, ticker, locale);
     const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
     const seo = resolveSymbolFearGreedSeoContent(ticker, assetClass, tSeo, {
@@ -187,47 +191,41 @@ export default async function SymbolFearGreedPage({ params }: Props) {
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
         [
-            { name: ticker, url: buildSymbolSeoContent(ticker, tSeo).url },
+            { name: displayName, url: buildSymbolSeoContent(ticker, tSeo).url },
             { name: t('page.f9482c'), url },
         ],
         isLocale(locale) ? locale : DEFAULT_LOCALE
     );
 
-    const faqJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: [
-            {
-                '@type': 'Question',
-                name: tSeo('faq.fearGreedMeasures', { v0: displayName }),
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: tSeo('faq.fearGreedMeasuresAnswer', {
-                        v0: displayName,
-                    }),
-                },
-            },
-            {
-                '@type': 'Question',
-                name: t('page.7fcfc0'),
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: t('page.7ed747'),
-                },
-            },
-            {
-                '@type': 'Question',
-                name: t('page.dc8a6d'),
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    // FAQ JSON-LD는 경계값 상수 변경에 따른 schema 회귀를 막기 위해
-                    // 구체 숫자(0~25, 25~45 등) 대신 질적 표현으로만 정리한다.
-                    // 실제 경계값은 페이지 본문 가이드(공포 탐욕 지수 가이드 섹션)에서 노출.
-                    text: t('page.094886'),
-                },
-            },
-        ],
-    };
+    /**
+     * FAQ — 화면 `FaqSection`과 FAQPage 구조화데이터의 단일 소스.
+     *
+     * 예전에는 같은 내용이 화면에 보이지 않는 마크업 전용 FAQ 답변 3개와, 화면에만
+     * 보이는 "가이드" 안내 섹션(문단 3개) 두 벌로 있었다 — 구글이 요구하는 "마크업한
+     * Q&A가 페이지에 보일 것"을 어기면서 동시에 같은 말을 두 번 하는 중복 콘텐츠이기도
+     * 했다. 안내 섹션의 5-factor 설명과 60일 신뢰도 문턱은 이미 아래 답변 2·3과
+     * 사실상 같은 문장이라 답변으로 흡수했다. 시장 전체 지수로 가는 내부 링크
+     * (`marketFearGreedLink`)만은 텍스트로 옮길 수 없는 실제 이동 수단이라 아래
+     * `<FaqSection>` 위에 별도 문단으로 남겨 둔다(하단 참고).
+     *
+     * 경계값 라벨(3번 답변)은 경계값 상수 변경에 따른 schema 회귀를 막기 위해
+     * 구체 숫자(0~25, 25~45 등) 대신 질적 표현으로만 정리한다.
+     */
+    const faq: readonly FaqItem[] = [
+        {
+            question: tSeo('faq.fearGreedMeasures', { v0: displayName }),
+            answer: tSeo('faq.fearGreedMeasuresAnswer', { v0: displayName }),
+        },
+        {
+            question: t('page.7fcfc0'),
+            answer: t('page.7ed747'),
+        },
+        {
+            question: t('page.dc8a6d'),
+            answer: t('page.094886'),
+        },
+    ];
+    const faqJsonLd = buildFaqJsonLd(faq);
 
     const queryClient = new QueryClient({
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
@@ -285,50 +283,35 @@ export default async function SymbolFearGreedPage({ params }: Props) {
             <JsonLd data={webPageJsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
-            <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+            <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>
                     {t('page.6cd32e', { v0: displayName })}
                 </SymbolPageHeading>
-                <section className="sr-only">
-                    <h2>{t('page.eac807', { v0: displayName })}</h2>
-                    <p>{t('page.9dc811', { v0: displayName })}</p>
-                </section>
-                <section
-                    aria-labelledby="fear-greed-guide-heading"
-                    className="space-y-3 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5"
-                >
-                    <h2
-                        id="fear-greed-guide-heading"
-                        className="text-base font-semibold text-secondary-300"
-                    >
-                        {t('page.ea5664', { v0: displayName })}
-                    </h2>
-                    <p className="text-sm leading-relaxed text-secondary-400">
-                        {t('page.469707', { v0: displayName })}
-                        {/* 상위 지수 링크는 이 종목이 속한 시장을 가리켜야 한다.
-                            `/fear-greed/kr`이 생기기 전에는 둘 다 미국뿐이라
-                            하드코딩이 맞았지만, 지금은 한국 종목 페이지가
-                            "미국 증시 전반"을 참조하게 된다. */}
-                        {t.rich('page.4e7e6f', {
-                            v0: t(marketFearGreedLink.marketLabelKey),
-                            v1: t(marketFearGreedLink.labelKey),
-                            link: chunks => (
-                                <Link
-                                    href={marketFearGreedLink.href}
-                                    className="text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline"
-                                >
-                                    {chunks}
-                                </Link>
-                            ),
-                        })}
-                    </p>
-                    <p className="text-sm leading-relaxed text-secondary-400">
-                        {t('page.348851')}
-                    </p>
-                    <p className="text-sm leading-relaxed text-secondary-400">
-                        {t('page.e8075f')}
-                    </p>
-                </section>
+                {/* sr-only 개요 문단(구 시안)은 삭제했다 — 0~100 점수·5단계 라벨·factor
+                    근거를 그대로 되풀이했고, 그 내용은 지금 아래 `FaqSection`의
+                    답변 3개가 화면에 보이는 텍스트로 이미 커버한다(크롤러에게 같은
+                    말을 두 번 하지 않는다). 화면에 실제로 보이던 "가이드" 카드도 같은
+                    이유로 지웠다 — 5-factor 설명·60일 신뢰도 문턱은 아래 답변 2·3과
+                    사실상 같은 문장이었다. 유일하게 답변으로 옮길 수 없던 내용(시장
+                    전체 지수로 가는 실제 이동 링크)만 아래 문단으로 남겨 둔다. */}
+                <p className="text-sm leading-relaxed text-secondary-400">
+                    {/* 상위 지수 링크는 이 종목이 속한 시장을 가리켜야 한다.
+                        `/fear-greed/kr`이 생기기 전에는 둘 다 미국뿐이라
+                        하드코딩이 맞았지만, 지금은 한국 종목 페이지가
+                        "미국 증시 전반"을 참조하게 된다. */}
+                    {t.rich('page.4e7e6f', {
+                        v0: t(marketFearGreedLink.marketLabelKey),
+                        v1: t(marketFearGreedLink.labelKey),
+                        link: chunks => (
+                            <Link
+                                href={marketFearGreedLink.href}
+                                className="text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline"
+                            >
+                                {chunks}
+                            </Link>
+                        ),
+                    })}
+                </p>
                 {/* 서버 계산 factor 요약 — crawler는 JS 미실행이라 아래 클라 게이지
                     (FearGreedPage)의 점수·factor 수치를 절대 못 본다. 여기서
                     이미 로드된 quantizedFgBars(bars+indicators)로 동일 수치를
@@ -352,6 +335,10 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         />
                     </ErrorBoundary>
                 </HydrationBoundary>
+                <FaqSection
+                    heading={tSeo('faqHeading.fear-greed', { v0: displayName })}
+                    items={faq}
+                />
                 <CrossLinkCards
                     symbol={ticker}
                     current="fear-greed"

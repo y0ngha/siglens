@@ -32,8 +32,14 @@ describe('CrossLinkCards', () => {
                 marketProfile="us-equity"
             />
         );
-        const children = container.querySelector('section')!.children;
-        expect(children).toHaveLength(8);
+        // sr-only h2가 첫 자식이므로 카드만 센다 — 그 h2는 문서 개요에서
+        // 카드 제목(h3) 여덟 개가 앞 섹션의 h2 밑으로 들어가던 것을 고친다.
+        const section = container.querySelector('section')!;
+        expect(section.querySelector('h2.sr-only')).not.toBeNull();
+        expect(section.getAttribute('aria-labelledby')).toBe(
+            section.querySelector('h2')!.id
+        );
+        expect(section.querySelectorAll('h3')).toHaveLength(8);
     });
 
     it('marks the current page card with aria-current="page"', () => {
@@ -89,8 +95,8 @@ describe('CrossLinkCards — crypto profile', () => {
                 marketProfile="crypto"
             />
         );
-        const children = container.querySelector('section')!.children;
-        expect(children).toHaveLength(4);
+        const section = container.querySelector('section')!;
+        expect(section.querySelectorAll('h3')).toHaveLength(4);
     });
 
     it('does not render equity-only tabs (fundamental, financials, options, congress) for crypto', () => {

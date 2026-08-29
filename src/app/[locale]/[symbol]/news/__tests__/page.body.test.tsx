@@ -122,6 +122,9 @@ import { getAssetInfoResilient } from '@/entities/ticker';
 import { getNewsList } from '@/entities/news-article/api';
 import { NewsFactsSummary } from '@/widgets/news';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
+import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
+import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
@@ -379,39 +382,66 @@ describe('NewsPage — aiArticleJsonLd headline/description isEquity branch', ()
     });
 });
 
-// audit fix item 2: newsListJsonLd headline이 `item.titleKo ?? item.titleEn`을
-// 직접 써서 resolveNewsTitle을 우회했다 — `/en/AAPL/news` 카드는 titleEn을
-// 보여주면서 구조화 데이터만 titleKo를 실었다.
-describe('NewsPage — newsListJsonLd headline locale-awareness (resolveNewsTitle)', () => {
+/**
+ * 회귀 가드: `ItemList` 구조화데이터는 **초기 DOM에 실제로 그려지는 뉴스 수**를
+ * 넘으면 안 된다. `NewsList`는 `NEWS_LIST_PAGE_SIZE`개만 그리고 나머지는 "더보기"
+ * 클릭으로 클라이언트 상태에만 들어오는데, 구글은 버튼을 누르지 않는다. 예전에는
+ * 페이지가 자체 상한(10)을 따로 들고 있어 마크업이 10건을 주장하면서 DOM에는
+ * 5건만 있었다 — 리터럴이 두 벌이라 조용히 갈렸다.
+ */
+describe('NewsPage — ItemList 상한은 렌더 개수와 같은 상수를 쓴다', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockGetNewsList.mockResolvedValue([]);
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
     });
 
-    it('locale=en이면 JSON-LD headline이 titleEn을 쓴다(한글 없음)', async () => {
-        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
-        mockGetNewsList.mockResolvedValue(READY_NEWS);
-
-        const tree = await NewsPage({
-            params: Promise.resolve({ locale: 'en', symbol: 'aapl' }),
-        });
-
-        const treeStr = JSON.stringify(tree);
-        expect(treeStr).toContain('"headline":"Apple announces new product"');
-        // titleKo는 fixture의 다른 prop(items)에도 그대로 실려 있으므로 문자열
-        // 전체가 아니라 headline 필드 형태로 좁혀 확인한다.
-        expect(treeStr).not.toContain('"headline":"애플, 신제품 발표"');
-    });
-
-    it('locale=ko이면 JSON-LD headline이 titleKo를 쓴다(기존 동작 유지)', async () => {
-        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
-        mockGetNewsList.mockResolvedValue(READY_NEWS);
+    it(`뉴스가 많아도 itemListElement는 NEWS_LIST_PAGE_SIZE(${NEWS_LIST_PAGE_SIZE})건이다`, async () => {
+        const manyItems = Array.from(
+            { length: NEWS_LIST_PAGE_SIZE * 3 },
+            (_, i) => ({
+                id: `news-${i}`,
+                publishedAt: '2026-05-06T00:00:00.000Z',
+                titleEn: `Headline ${i}`,
+                titleKo: `헤드라인 ${i}`,
+                sentiment: 'bullish',
+                category: 'earnings',
+                bodyKo: null,
+                summaryKo: null,
+                priceImpact: 'medium',
+                url: `https://example.com/news-${i}`,
+                source: 'Example',
+            })
+        ) as NewsDisplayItem[];
+        mockGetNewsList.mockResolvedValue(manyItems);
 
         const tree = await NewsPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        const treeStr = JSON.stringify(tree);
-        expect(treeStr).toContain('"headline":"애플, 신제품 발표"');
+        const itemList = collectJsonLdData(tree).find(
+            d => d['@type'] === 'ItemList'
+        );
+        expect(itemList).toBeDefined();
+        expect(itemList?.itemListElement).toHaveLength(NEWS_LIST_PAGE_SIZE);
+    });
+});
+
+describe('NewsPage — BreadcrumbList 이름', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetNewsList.mockResolvedValue([]);
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+    });
+
+    /**
+     * 회귀 가드: BreadcrumbList position 2는 화면 브레드크럼과 같은 이름이어야 한다.
+     * 근거는 `expectSymbolBreadcrumbName` JSDoc 참고.
+     */
+    it('BreadcrumbList가 티커가 아니라 displayName을 쓴다', async () => {
+        await NewsPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        expectSymbolBreadcrumbName('Apple Inc.');
     });
 });

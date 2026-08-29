@@ -16,9 +16,12 @@ describe('resolveStrengthDisplay', () => {
             }
         );
 
-        it('strong → color에 chart-bullish 클래스를 포함한다', () => {
+        // 텍스트 색은 `chart-*`가 아니라 `ui-*-text`를 쓴다. `chart-*`는 그래픽용(3:1)이라
+        // 라이트에서 인셋 표면 4.23~4.30으로 본문 기준(4.5)을 밑돈다 — 틴트 위만이 아니라
+        // 민 배경에서도 그렇다(처음엔 950을 빼고 재서 통과로 잘못 봤다).
+        it('strong → color에 ui-success-text 클래스를 쓴다', () => {
             const result = resolveStrengthDisplay('strong');
-            expect(result!.color).toContain('chart-bullish');
+            expect(result!.color).toContain('ui-success-text');
         });
 
         it('moderate → color에 ui-warning 클래스를 포함한다', () => {

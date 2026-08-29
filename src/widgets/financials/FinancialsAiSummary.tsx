@@ -19,6 +19,10 @@ import { buildChatState } from './utils/buildChatState';
 import { FinancialsAiSummaryError } from './FinancialsAiSummaryError';
 import { FinancialsAiSummarySkeleton } from './FinancialsAiSummarySkeleton';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 
 /** FinancialsSentiment → `shared.enumLabel.sentiment` 카탈로그 키. */
 const SENTIMENT_LABEL_KEY: Record<FinancialsSentiment, string> = {
@@ -49,12 +53,12 @@ export function FinancialsAiSummaryView({
     return (
         <section
             aria-labelledby="financials-ai-summary-heading"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <div className="mb-4 flex items-center justify-between gap-3">
                 <h2
                     id="financials-ai-summary-heading"
-                    className="text-lg font-semibold tracking-tight"
+                    className={HEADING_SECTION}
                 >
                     {t('FinancialsAiSummary.26f860')}
                 </h2>
@@ -105,7 +109,7 @@ export function FinancialsAiSummaryView({
 
             {result.riskFactorsKo.length > 0 && (
                 <div>
-                    <h3 className="mb-2 text-sm font-semibold">
+                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
                         {t('FinancialsAiSummary.af0480')}
                     </h3>
                     <ul className="space-y-1.5">

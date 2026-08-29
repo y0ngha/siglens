@@ -1,7 +1,36 @@
 /**
+ * 종목 뉴스 목록이 한 번에 그리는 카드 수.
+ *
+ * 이 값은 UI 페이지네이션 크기이자 **크롤러가 실제로 보는 뉴스 개수**다. "더보기"로
+ * 늘어난 카드는 클라이언트 상태에만 있고 초기 DOM에는 없으므로, `/[symbol]/news`의
+ * `ItemList` 구조화데이터도 이 값으로 잘라야 한다. 예전에는 JSON-LD가 10건을
+ * 선언하는데 초기 DOM에는 5건만 있었다 — 마크업이 페이지에 없는 항목을 주장하는
+ * 상태였고, 리터럴이 두 벌이라 조용히 갈렸다.
+ *
+ * `widgets`(렌더)와 `app`(JSON-LD) 양쪽이 봐야 해서 `shared`에 둔다.
+ */
+export const NEWS_LIST_PAGE_SIZE = 5;
+
+/**
+ * 시장 전체(카테고리) 뉴스 목록이 한 번에 그리는 카드 수.
+ *
+ * `NEWS_LIST_PAGE_SIZE`와 같은 이유로 존재하는 짝이다 — `/news/[category]` 페이지의
+ * `ItemList` 구조화데이터와 `MarketNewsList` 위젯의 초기 DOM·"더보기" 증분이 이 값
+ * 하나를 공유해야 한다. 값이 종목 뉴스(5)와 다른 건 카테고리 뉴스가 더 조밀하게
+ * 그려서일 뿐이고, `NEWS_LIST_PAGE_SIZE`가 정확히 이 리터럴-두-벌 패턴으로 한 번
+ * 조용히 갈렸던 전례(`NEWS_LIST_PAGE_SIZE` 주석 참고)가 이 상수를 미리 뽑아 두는
+ * 근거다.
+ *
+ * `widgets/market-news`(렌더)와 `app/news/[category]`(JSON-LD) 양쪽이 봐야 해서
+ * `shared`에 둔다.
+ */
+export const MARKET_NEWS_LIST_PAGE_SIZE = 10;
+
+/**
  * 뉴스/등급 목록을 **클라이언트로 내보낼 때** 쓰는 행 수 상한.
  *
- * 목록 UI는 `PAGE_SIZE`씩만 그리는데(종목 뉴스 5, 카테고리 뉴스 10) 서버는 조회 결과를
+ * 목록 UI는 페이지 크기(종목 뉴스 `NEWS_LIST_PAGE_SIZE`, 카테고리 뉴스
+ * `MARKET_NEWS_LIST_PAGE_SIZE`)씩만 그리는데 서버는 조회 결과를
  * 통째로 넘기고 있었다. 실측(AAPL, 2026-08-19): 뉴스 1,417행 + 등급 1,786행이 실려
  * `/AAPL/news`의 RSC 페이로드가 3,160KB, 문서 HTML이 1,687KB였고 Lighthouse 모바일
  * LCP가 20.3초(전 라우트 최악)였다.

@@ -119,7 +119,7 @@ function SkeletonLine({ widthClass, delayMs }: SkeletonLineProps) {
     return (
         <span
             className={cn(
-                'bg-secondary-700/60 block h-2.5 animate-pulse rounded-sm',
+                'bg-secondary-700/60 block h-2.5 animate-pulse rounded',
                 widthClass
             )}
             style={{ animationDelay: `${delayMs}ms` }}

@@ -108,3 +108,44 @@ describe('BacktestCaseCard', () => {
         ).toBeInTheDocument();
     });
 });
+
+/**
+ * 청산 칩이 결과와 무관하게 항상 danger 배색이면, 수익 케이스가
+ * "초록 진입 → 빨강 청산"으로 읽힌다. 이 페이지의 논지가 승률(70%)인데
+ * 배색이 그 반대를 말하는 셈이다. 손절만 빨강이어야 한다.
+ */
+describe('청산 칩 배색', () => {
+    it('손절은 danger 배색이다', () => {
+        const { container } = render(
+            <BacktestCaseCard case_={makeCase({ exitReason: 'stop_loss' })} />
+        );
+        const chip = screen.getByText('손절').parentElement as HTMLElement;
+        expect(chip.className).toContain('chart-bearish');
+        expect(container).toBeTruthy();
+    });
+
+    it.each(['take_profit', 'time'] as const)(
+        '%s 청산은 danger 배색이 아니다',
+        reason => {
+            render(
+                <BacktestCaseCard
+                    case_={makeCase({ exitReason: reason, result: 'win' })}
+                />
+            );
+            const chip = screen.getByText('매도').parentElement as HTMLElement;
+            expect(chip.className).not.toContain('chart-bearish');
+        }
+    );
+});
+
+/**
+ * 10개 종목을 다루면서 심볼 페이지로 나가는 내부 링크가 하나도 없었다
+ * (감사 실측: 앵커 43개가 전부 전역 nav/footer 크롬). 배지를 링크로 되돌려
+ * 놓아도 화면상 차이가 거의 없어 조용히 회귀한다.
+ */
+describe('티커 링크', () => {
+    it('티커 배지가 종목 페이지로 간다', () => {
+        render(<BacktestCaseCard case_={makeCase({ ticker: 'GOOGL' })} />);
+        expect(screen.getByText('GOOGL')).toHaveAttribute('href', '/GOOGL');
+    });
+});

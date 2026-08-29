@@ -16,6 +16,7 @@ import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
 import { NewsFactsSummary, NEWS_ROW_SERIALIZATION_LIMIT } from '@/widgets/news';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import { NewsAiSummaryErrorBoundary } from '@/widgets/news/NewsAiSummaryErrorBoundary';
+import { NewsListErrorBoundary } from '@/widgets/news/NewsListErrorBoundary';
 import { NewsAiSummarySkeleton } from '@/widgets/news/NewsAiSummarySkeleton';
 import { AnalystActions } from '@/widgets/news/sections/AnalystActions';
 import { EventCalendar } from '@/widgets/news/sections/EventCalendar';
@@ -44,6 +45,9 @@ import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotSt
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
+// 배럴(`@/widgets/news`)이 아니라 원본에서 직접 가져온다 — `NewsList`와 이 페이지가
+// 같은 모듈 인스턴스를 보게 해서, 테스트가 배럴을 목킹해도 두 값이 갈리지 않는다.
+import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
 import { getTodayIsoDay } from '@/shared/lib/getTodayIsoDay';
 import { todayKstIsoDate } from '@/shared/lib/dateKey';
 import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
@@ -56,6 +60,7 @@ import {
     resolveSymbolNewsSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
+    noindexSymbolMetadata,
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
@@ -63,6 +68,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { cn } from '@/shared/lib/cn';
 
 export const revalidate = 43200; // 12h — 신선도는 ensureNewsCardsAnalyzedAction의 on-demand revalidateTag('news:${symbol}', 'max')가 보장, 시간 기반은 상한만
 
@@ -73,9 +80,6 @@ export async function generateStaticParams(): Promise<SymbolRouteParams[]> {
     return [];
 }
 
-// JSON-LD ItemList 최대 노출 — Google ItemList 가이드라인의 "주요 항목"만 노출하라는 권고에 맞춤.
-const JSON_LD_NEWS_MAX_ITEMS = 10;
-
 interface Props {
     params: Promise<{ locale: string; symbol: string }>;
 }
@@ -83,6 +87,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, symbol } = await params;
     const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!isAdmissibleSymbolShape(upper)) {
@@ -98,9 +103,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         tab: 'news',
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
+    if (!assetInfo) return noindexSymbolMetadata(upper, tSeo, locale);
 
-    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const displayName = buildDisplayName(assetInfo, upper, locale);
     const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
     const seo = resolveSymbolNewsSeoContent(upper, assetClass, tSeo, {
@@ -242,13 +246,11 @@ interface NewsDataServerAlertProps {
 function NewsDataServerAlert({ title, message }: NewsDataServerAlertProps) {
     return (
         <section
-            className="rounded-xl border border-ui-danger/30 bg-secondary-800 p-6"
+            className="rounded-lg border border-ui-danger/30 bg-secondary-800 p-6"
             role="alert"
         >
-            <h2 className="mb-2 text-lg font-semibold tracking-tight">
-                {title}
-            </h2>
-            <p className="text-sm text-ui-danger">{message}</p>
+            <h2 className={cn('mb-2', HEADING_SECTION)}>{title}</h2>
+            <p className="text-sm text-ui-danger-text">{message}</p>
         </section>
     );
 }
@@ -319,7 +321,7 @@ export default async function NewsPage({ params }: Props) {
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
         [
-            { name: upper, url: buildSymbolSeoContent(upper, tSeo).url },
+            { name: displayName, url: buildSymbolSeoContent(upper, tSeo).url },
             { name: t('page.2141f2'), url },
         ],
         isLocale(locale) ? locale : DEFAULT_LOCALE
@@ -419,8 +421,12 @@ export default async function NewsPage({ params }: Props) {
                   '@context': 'https://schema.org',
                   '@type': 'ItemList',
                   name: tSeo('faq.newsListName', { v0: displayName }),
+                  // 초기 DOM에 실제로 그려지는 카드 수와 같은 상수로 자른다.
+                  // "더보기"로 늘어난 카드는 클라이언트 상태에만 있으므로 구글은
+                  // 보지 못한다 — 상한이 렌더 수보다 크면 마크업이 페이지에 없는
+                  // 항목을 주장하게 된다(상수 근거는 `newsSerialization.ts`).
                   itemListElement: newsItems
-                      .slice(0, JSON_LD_NEWS_MAX_ITEMS)
+                      .slice(0, NEWS_LIST_PAGE_SIZE)
                       .map((item, idx) => ({
                           '@type': 'ListItem',
                           position: idx + 1,
@@ -511,9 +517,17 @@ export default async function NewsPage({ params }: Props) {
                     </Suspense>
                 </NewsAiSummaryErrorBoundary>
 
-                <Suspense fallback={<SectionSkeleton />}>
-                    <NewsListSection symbol={upper} locale={resolved} />
-                </Suspense>
+                {/*
+                 * `NewsList`도 `NewsAiSummary`처럼 지속 폴링 오류를 다시
+                 * 던진다. 바운더리가 없으면 그 throw가 `[symbol]/error.tsx`까지
+                 * 올라가 헤더·탭 레일·관련 종목까지 **심볼 라우트 전체**를
+                 * 내린다(감사 실측: 본문 1,079 → 582자).
+                 */}
+                <NewsListErrorBoundary>
+                    <Suspense fallback={<SectionSkeleton />}>
+                        <NewsListSection symbol={upper} locale={resolved} />
+                    </Suspense>
+                </NewsListErrorBoundary>
 
                 {isEquity && (
                     <Suspense fallback={<SectionSkeleton />}>

@@ -47,21 +47,32 @@ interface SeriesColorClasses {
     dot: string;
 }
 
+/**
+ * 막대 채움이 `/85`인 이유: `/70`은 라이트 카드(흰색) 위에서 2.64:1로
+ * 그래픽 기준(3:1)을 밑돈다 — 다크는 통과라 다크만 보면 안 보인다.
+ * `/85`는 램프 세 표면 × 양 테마 전부에서 3.34 이상이고, 옵션 차트의
+ * 막대·`FearGreedGroupBar`의 GREED 밴드와 같은 값이다. 알파를 아예 빼면
+ * 막대가 선(stroke)과 붙어 보인다.
+ *
+ * **리터럴로 적는다.** 알파를 상수로 빼서 템플릿으로 조립하면 Tailwind의
+ * 정적 추출이 그 클래스를 못 보고 규칙이 통째로 안 구워진다 — 타입도 빌드도
+ * 통과하는데 화면에서만 색이 사라진다.
+ */
 const COLOR_CLASSES: Record<SeriesColor, SeriesColorClasses> = {
     bullish: {
-        fill: 'fill-chart-bullish/70',
+        fill: 'fill-chart-bullish/85',
         stroke: 'stroke-chart-bullish',
         legend: 'bg-chart-bullish',
         dot: 'bg-chart-bullish',
     },
     bearish: {
-        fill: 'fill-chart-bearish/70',
+        fill: 'fill-chart-bearish/85',
         stroke: 'stroke-chart-bearish',
         legend: 'bg-chart-bearish',
         dot: 'bg-chart-bearish',
     },
     neutral: {
-        fill: 'fill-primary-500/70',
+        fill: 'fill-primary-500/85',
         stroke: 'stroke-primary-500',
         legend: 'bg-primary-500',
         dot: 'bg-primary-500',
@@ -93,14 +104,30 @@ function barY(value: number, height: number, baselineY: number): number {
     return value >= 0 ? baselineY - height : baselineY;
 }
 
+/**
+ * 막대 색은 **시리즈가 선언한 색**을 지킨다.
+ *
+ * 예전에는 값이 음수면 무조건 `bearish`로 덮었다. 그러면 범례가 거짓말을 한다 —
+ * 현금흐름표의 범례는 영업CF 초록 / FCF 파랑 / CapEx 빨강인데, FCF가 음수인
+ * 기간(005930.KS FY2023 −₩16.4조)에는 FCF가 빨강으로 그려져 CapEx와 구분되지
+ * 않았다. 재무상태표의 순부채도 같다.
+ *
+ * 부호는 색이 아니라 **방향**이 나른다 — `barY`가 음수를 baseline 아래로
+ * 그린다. 그래서 색을 덮을 필요가 없다.
+ *
+ * 다만 `neutral`로 선언된 시리즈는 색 자체가 아무 뜻이 없으므로, 그때는 부호로
+ * 색을 얻는 편이 정보가 는다. 그 경우에만 예전 동작을 남긴다.
+ */
 function resolveColor(
     series: TrendSeries[],
     seriesIdx: number,
     value: number | null
 ): SeriesColorClasses {
-    if (value !== null && value < 0) return COLOR_CLASSES.bearish;
-    const c = series[seriesIdx]?.color ?? 'neutral';
-    return COLOR_CLASSES[c];
+    const declared = series[seriesIdx]?.color ?? 'neutral';
+    if (declared === 'neutral' && value !== null && value < 0) {
+        return COLOR_CLASSES.bearish;
+    }
+    return COLOR_CLASSES[declared];
 }
 
 function fmt(
@@ -124,7 +151,9 @@ interface HoverState extends TooltipPosition {
  * accessible value source) shows each series' value for the hovered period,
  * mirroring the options page charts.
  *
- * Negative values are colored bearish regardless of the series color prop.
+ * 색은 시리즈 선언을 따른다 — 부호는 baseline 위/아래 **방향**이 나른다.
+ * (`neutral` 시리즈만 예외: 색에 뜻이 없으므로 음수를 bearish로 낸다.
+ *  `resolveColor` 주석 참조.)
  * Responsive: width="100%", height is fixed.
  */
 export function FinancialTrendChart({
@@ -232,9 +261,26 @@ export function FinancialTrendChart({
                                 rx="1"
                                 className={cn(
                                     colors.fill,
+                                    // `opacity-40`이었다. 채움이 이미 `/85`라
+                                    // 실효 알파가 0.34가 되어 비활성 기간이
+                                    // 1.5:1까지 떨어졌다 — 흐려지는 게 아니라
+                                    // 사실상 사라진다. 강조 대비는 유지하되
+                                    // 나머지도 읽히도록 올린다.
+                                    //
+                                    // 여기서 멈추는 이유를 숫자로 남긴다. 실효
+                                    // 알파는 0.85 x 0.60 = 0.51이고, 흰 카드
+                                    // 위 상승 막대가 2.09:1이다(다크 2.45) —
+                                    // 1.4.11의 3:1에 못 미친다. 그런데 알파만
+                                    // 올려서는 못 넘긴다: 0.70이 2.40,
+                                    // 0.80이 2.76이고 3:1을 넘는 것은 0.90
+                                    // (3.19)부터인데, 그 값은 강조된 막대의
+                                    // 0.85와 사실상 같아서 호버 구분 자체가
+                                    // 사라진다. 기준을 넘기려면 알파가 아니라
+                                    // 채도를 낮추거나 강조 쪽에 표시를 더하는
+                                    // 방식이어야 하고, 그건 이 PR 범위 밖이다.
                                     hover !== null &&
                                         hover.periodIdx !== pi &&
-                                        'opacity-40'
+                                        'opacity-60'
                                 )}
                             />
                         );
@@ -267,9 +313,26 @@ export function FinancialTrendChart({
                 ))}
             </svg>
 
-            <div className="mt-1 flex justify-between">
+            {/*
+             * `flex justify-between`이었다. 막대는 `SVG_PADDING_LEFT`부터
+             * `barGroupWidth` 간격으로 놓이는데 라벨만 0~100%에 가장자리 정렬돼,
+             * 끝 라벨이 자기 열 **밖으로** 나갔다(감사 실측 418px 5기간:
+             * 열 0은 [57.7,134.7]인데 라벨 중심 54.3, 열 4는 [365.3,442.3]인데
+             * 444.8). SVG와 같은 좌우 패딩 안에서 n등분해 각 열 중앙에 놓는다.
+             */}
+            <div
+                className="mt-1 grid"
+                style={{
+                    gridTemplateColumns: `repeat(${periods.length}, 1fr)`,
+                    paddingLeft: `${SVG_PADDING_LEFT}%`,
+                    paddingRight: `${SVG_PADDING_RIGHT}%`,
+                }}
+            >
                 {periods.map(p => (
-                    <span key={p} className="text-xs text-secondary-400">
+                    <span
+                        key={p}
+                        className="text-center text-xs text-secondary-400"
+                    >
                         {p}
                     </span>
                 ))}
@@ -284,7 +347,7 @@ export function FinancialTrendChart({
                     // 접근성 트리에서 완전히 숨긴다. AT 사용자는 아래 StatementTable에서
                     // 동일 수치에 접근하고, 테스트는 data-testid로 조회한다.
                     aria-hidden="true"
-                    className="pointer-events-none fixed top-[var(--tip-top)] left-[var(--tip-left)] z-50 rounded-md border border-secondary-600 bg-secondary-900 px-3 py-2 text-xs shadow-lg"
+                    className="pointer-events-none fixed top-[var(--tip-top)] left-[var(--tip-left)] z-50 rounded-lg border border-secondary-600 bg-secondary-900 px-3 py-2 text-xs shadow-lg"
                     style={
                         {
                             '--tip-left': `${hover.left}px`,
@@ -296,8 +359,7 @@ export function FinancialTrendChart({
                         {periods[hover.periodIdx]}
                     </div>
                     <ul className="space-y-0.5">
-                        {series.map(s => {
-                            const c = s.color ?? 'neutral';
+                        {series.map((s, si) => {
                             const v = s.values[hover.periodIdx] ?? null;
                             return (
                                 <li
@@ -305,12 +367,13 @@ export function FinancialTrendChart({
                                     className="flex items-center justify-between gap-3"
                                 >
                                     <span className="flex items-center gap-1">
+                                        {/* 막대와 같은 규칙을 쓴다 — 여기만
+                                            부호로 덮으면 툴팁 점과 막대 색이
+                                            어긋난다. */}
                                         <span
                                             className={cn(
                                                 'inline-block h-2 w-2 rounded-full',
-                                                v !== null && v < 0
-                                                    ? COLOR_CLASSES.bearish.dot
-                                                    : COLOR_CLASSES[c].dot
+                                                resolveColor(series, si, v).dot
                                             )}
                                         />
                                         <span className="text-secondary-400">

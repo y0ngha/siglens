@@ -37,25 +37,69 @@ process.env.DATABASE_URL = 'test-database-url';
 // 먼저 실행되어야 canonical URL 회귀가드가 production URL로 동작한다.
 process.env.NEXT_PUBLIC_SITE_URL = 'https://siglens.io';
 
-if (
-    typeof globalThis.localStorage === 'undefined' ||
-    typeof globalThis.localStorage.setItem !== 'function'
-) {
-    const store = new Map<string, string>();
-    const storage = {
-        getItem: (key: string) => store.get(key) ?? null,
-        setItem: (key: string, value: string) => store.set(key, String(value)),
-        removeItem: (key: string) => store.delete(key),
-        clear: () => store.clear(),
-        get length() {
-            return store.size;
-        },
-        key: (index: number) => [...store.keys()][index] ?? null,
+/**
+ * `localStorage` 폴리필 — **무조건** 설치하고, `Storage`도 같이 갈아 끼운다.
+ *
+ * 종전에는 "없거나 setItem이 함수가 아닐 때"만 채웠다. Node 25가 네이티브 전역
+ * `localStorage`를 들고 오면서 그 가드가 스킵되고, jsdom 환경에서도 Node 것이
+ * `window.localStorage`까지 차지한다(`window.localStorage === globalThis.localStorage`,
+ * 생성자 `Object`). 동작은 하므로 조용한 교체였다.
+ *
+ * 조용하지 않은 결과: Node 네이티브 객체는 프로토타입이 `Storage.prototype`이 아니라
+ * 평범한 `Object`다. 그래서 `vi.spyOn(Storage.prototype, 'setItem')` — 이 저장소가
+ * 저장소 실패를 흉내 낼 때 쓰는 유일한 방법이자 15군데에서 쓰는 패턴 — 이 아무것도
+ * 가로채지 못한다. 던지도록 만든 목이 호출되지 않으니 "저장소가 막혀도 죽지 않는다"를
+ * 검증하던 테스트가 **아무것도 검증하지 않게 된다.** 두 건은 호출 횟수를 단언해 실패로
+ * 드러났지만 나머지는 통과한 채로 비었다 — 더 나쁜 쪽이다.
+ *
+ * 그래서 `Storage` 전역 자체를 여기 정의한 클래스로 바꾸고 `localStorage`를 그 인스턴스로
+ * 둔다. 테스트가 보는 `Storage.prototype`이 이 클래스의 프로토타입이 되므로 기존 스파이
+ * 15군데가 손대지 않고 다시 동작한다.
+ *
+ * **남의 프로토타입에 얹지 않는 이유**: jsdom과 Node의 `Storage.prototype`은 메서드가
+ * 브랜드 검사에 걸려 있어(`'setItem' called on an object that is not a valid instance of
+ * Storage`) 이 구성에서 쓸 수 없고, `length`가 non-configurable이라 덮어쓰려 하면
+ * `TypeError: Cannot redefine property: length`로 셋업 자체가 죽는다.
+ */
+{
+    class TestStorage {
+        private readonly store = new Map<string, string>();
+
+        getItem(key: string): string | null {
+            return this.store.get(String(key)) ?? null;
+        }
+
+        setItem(key: string, value: string): void {
+            this.store.set(String(key), String(value));
+        }
+
+        removeItem(key: string): void {
+            this.store.delete(String(key));
+        }
+
+        clear(): void {
+            this.store.clear();
+        }
+
+        key(index: number): string | null {
+            return [...this.store.keys()][index] ?? null;
+        }
+
+        get length(): number {
+            return this.store.size;
+        }
+    }
+
+    const define = (name: string, value: unknown): void => {
+        Object.defineProperty(globalThis, name, {
+            value,
+            writable: true,
+            configurable: true,
+        });
     };
-    Object.defineProperty(globalThis, 'localStorage', {
-        value: storage,
-        writable: true,
-    });
+
+    define('Storage', TestStorage);
+    define('localStorage', new TestStorage());
 }
 
 vi.mock('next/cache', () => ({

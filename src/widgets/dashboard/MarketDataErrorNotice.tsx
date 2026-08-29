@@ -46,7 +46,7 @@ export function MarketDataErrorNotice({
         <div
             role="alert"
             className={cn(
-                'border-ui-warning/30 bg-ui-warning/5 text-ui-warning flex items-start gap-2 rounded-md border p-3 text-sm',
+                'border-ui-warning/30 bg-ui-warning/5 text-ui-warning-text flex items-start gap-2 rounded-lg border p-3 text-sm',
                 className
             )}
         >
@@ -66,7 +66,7 @@ export function MarketDataErrorNotice({
                         }
                     )}
                 </p>
-                <p className="text-ui-warning/80">
+                <p className="text-ui-warning-text/90">
                     {t('MarketDataErrorNotice.69afbd')}
                 </p>
             </div>
@@ -74,7 +74,7 @@ export function MarketDataErrorNotice({
                 type="button"
                 onClick={onClose}
                 aria-label={t('MarketDataErrorNotice.76bb07')}
-                className="-m-1 shrink-0 rounded p-1 leading-none text-ui-warning/70 transition-colors hover:text-ui-warning focus-visible:ring-2 focus-visible:ring-ui-warning/50 focus-visible:outline-none"
+                className="-m-1 shrink-0 rounded p-1 leading-none text-ui-warning-text transition-colors hover:text-ui-warning-text focus-visible:ring-2 focus-visible:ring-ui-warning/50 focus-visible:outline-none"
             >
                 ✕
             </button>

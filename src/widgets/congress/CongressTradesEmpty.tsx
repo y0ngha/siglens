@@ -12,7 +12,7 @@ export function CongressTradesEmpty() {
         <div
             role="status"
             aria-label={t('CongressTradesEmpty.be4210')}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 px-5 py-4"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 px-5 py-4"
         >
             <p className="text-sm text-secondary-400">
                 {t('CongressTradesEmpty.cb8eae')}

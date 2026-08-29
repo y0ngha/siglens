@@ -24,7 +24,7 @@ function PositionSkeleton() {
             aria-busy="true"
             aria-live="polite"
             data-testid="position-loading"
-            className="flex min-h-[280px] flex-col items-center justify-center gap-2 rounded-xl border border-secondary-700 bg-secondary-800/40 p-6"
+            className="flex min-h-[280px] flex-col items-center justify-center gap-2 rounded-lg border border-secondary-700 bg-secondary-800/40 p-6"
         >
             <span className="sr-only">
                 {t('PositionTabMemberContent.0b16bc')}

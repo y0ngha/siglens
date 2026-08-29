@@ -237,7 +237,7 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
 }));
 // ... overall/page.test의 기존 mock(assetInfo/seo/navigation) 재사용
 
-import { default as OverallPage } from '@/app/[symbol]/overall/page';
+import { default as OverallPage } from '@/app/[locale]/[symbol]/overall/page';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 
 const mockStatic = vi.mocked(staticSymbolCache);

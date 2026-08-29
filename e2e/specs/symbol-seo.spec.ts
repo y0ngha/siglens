@@ -13,11 +13,24 @@ import { normalizeReactSsrText } from '../support/ssrText';
  * are irrelevant to what a bot indexes.
  *
  * Ground truth captured against `next start` (E2E build, no FMP key):
- *   - /AAPL (seeded)        → 200, robots "index, follow", 1 <h1>, 8 ld+json blocks
- *   - /ZZZZ (unapproved)    → 200 + robots "noindex, nofollow" (degraded fallback,
+ *   - /AAPL (seeded)        → 200, 1 <h1>, 8 ld+json blocks
+ *
+ *     ⚠️ robots는 이 하네스에서 **`noindex, follow`**다(2026-08-24 이후). 이 환경은
+ *     `FMP_API_KEY`를 의도적으로 주지 않아 봉이 0개이고, 차트 라우트의 콘텐츠 게이트
+ *     (`hasPriceData`, `symbol-indexability`)가 봉 없는 페이지를 차단하기 때문이다 —
+ *     본문에 기술적 지표 블록이 아예 렌더되지 않으므로 올바른 판정이다. 프로덕션은
+ *     FMP 키가 있어 `index, follow`로 나간다. 아래 probe들이 robots가 아니라 JSON-LD
+ *     타입과 SSR 텍스트를 단언하는 이유이기도 하다(환경 의존 값은 고정하지 않는다).
+ *   - /ZZZZ (unapproved)    → 200 + robots "noindex, follow" (degraded fallback,
  *                             NOT 500 — getAssetInfoResilient returns a degraded
  *                             ticker rather than throwing; see PR #549, while
  *                             the indexability gate blocks longtail exposure)
+ *
+ *     ⚠️ `follow`(not `nofollow`) since 2026-08-24: 차단된 심볼 페이지도 본문에
+ *     형제 탭 링크를 렌더하므로 nofollow는 크롤러가 거기 도달하는 유일한 경로를
+ *     끊는다. Next는 `{ index: false, follow: true }`를 `noindex, follow`로
+ *     직렬화한다(프로덕션 `/NVDL/congress`에서 실측 — 그 라우트는 이전부터
+ *     follow:true를 쓰고 있었다).
  *   - /AAPL  warmed 2nd req → `x-nextjs-cache: HIT` (ISR cache serves the route)
  */
 
@@ -184,7 +197,7 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
 
         const html = await response.text();
         expect(html).toMatch(
-            /<meta name="robots" content="noindex, nofollow"\/?>/
+            /<meta name="robots" content="noindex, follow"\/?>/
         );
     });
 });

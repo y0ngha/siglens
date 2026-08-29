@@ -134,7 +134,7 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     SITE_NAME: 'Siglens',
     SITE_URL: 'https://siglens.io',
     NOINDEX_SYMBOL_METADATA: {
-        robots: { index: false, follow: false },
+        robots: { index: false, follow: true },
         alternates: { canonical: null },
     },
 }));
@@ -142,6 +142,8 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import SymbolFearGreedPage from '@/app/[locale]/[symbol]/fear-greed/page';
+import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
+import { expectFaqSingleSource } from '@/__tests__/utils/expectFaqSingleSource';
 
 const EQUITY_ASSET_INFO = {
     symbol: 'AAPL',
@@ -193,6 +195,20 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
         expect(mockGetQuantizedBarsStatic).not.toHaveBeenCalled();
     });
 
+    /**
+     * 회귀 가드: BreadcrumbList position 2는 화면 브레드크럼과 같은 이름이어야 한다.
+     * 근거는 `expectSymbolBreadcrumbName` JSDoc 참고.
+     */
+    it('BreadcrumbList가 티커가 아니라 displayName을 쓴다', async () => {
+        mockGetSeedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+
+        await SymbolFearGreedPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        expectSymbolBreadcrumbName('Apple Inc.');
+    });
+
     it('Happy: bars 있으면 SSR HTML에 FearGreedFactsSummary 텍스트(점수·factor)가 렌더된다', async () => {
         mockGetSeedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
 
@@ -240,5 +256,21 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
         expect(
             screen.queryByText(/공포 탐욕 지수 요약/)
         ).not.toBeInTheDocument();
+    });
+
+    /**
+     * 회귀 가드: FAQPage 마크업과 화면 Q&A는 배열 하나에서 나와야 한다. 이 탭은
+     * 오랫동안 마크업만 내보내고 화면에는 Q&A가 없었다 — 구글은 대응하는 내용이
+     * 페이지에 보일 것을 요구하며, 없으면 리치 결과 자격을 잃는다. JSON-LD가
+     * 유효한지만 보는 테스트로는 이 결함이 잡히지 않는다.
+     */
+    it('FAQPage 구조화데이터가 화면 FaqSection과 같은 질문·답변을 쓴다', async () => {
+        mockGetSeedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+
+        const tree = await SymbolFearGreedPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        expectFaqSingleSource(tree);
     });
 });

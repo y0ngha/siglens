@@ -12,9 +12,14 @@ import type {
     FundamentalPriceTargetSummaryInput,
 } from '@y0ngha/siglens-core';
 import type { CSSProperties, ReactNode } from 'react';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
+import { cn } from '@/shared/lib/cn';
 
 const HEADING_ID = 'future-heading';
-const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
+const HEADING_CLASS_NAME = cn('mb-4', HEADING_SECTION);
 
 interface FutureDirectionCardProps {
     /** 표기 통화를 정하기 위해 필요하다 — 국내 종목은 원화다. */
@@ -50,6 +55,15 @@ function fmtBig(v: number | null, symbol: string, locale: Locale): string {
     return v !== null ? formatCompactCurrency(v, symbol, locale) : '—';
 }
 
+/**
+ * 강/약 밴드는 **같은 색조에 알파만 다르다**(강력매수=불투명, 매수=`/85`).
+ *
+ * `/60`이었는데 카드 위에서 라이트 2.27:1 · 다크 3.00:1로 그래픽 기준(3:1)을
+ * 밑돌았다 — 범례 색칩도 같은 값이라 색↔라벨 매핑이 흐려진다. `/85`는 램프
+ * 세 표면 × 양 테마 전부에서 3.34 이상이면서 불투명 밴드와 여전히 구분된다.
+ * `FearGreedGroupBar`가 GREED/EXTREME_GREED에 대해 같은 이유로 같은 값을
+ * 쓰고 있었다 — 이 파일만 그 결정을 놓쳤다.
+ */
 function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
     const t = useTranslations('widgets.fundamental');
     const tRating = useTranslations('widgets.fundamental.analystRating');
@@ -58,7 +72,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
 
     return (
         <div className="mt-3">
-            <div className="flex overflow-hidden rounded-md" aria-hidden="true">
+            <div className="flex overflow-hidden rounded-lg" aria-hidden="true">
                 {strongBuy > 0 && (
                     <div
                         title={tRating('strongBuy', { v0: strongBuy })}
@@ -72,8 +86,8 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 )}
                 {buy > 0 && (
                     <div
-                        title={tRating('buy', { v0: buy })}
-                        className="h-3 w-(--bar-w) bg-ui-success/60"
+                        title={t('analystBuyCount', { v0: buy })}
+                        className="h-3 w-(--bar-w) bg-ui-success/85"
                         style={
                             {
                                 '--bar-w': `${pct(buy, total)}%`,
@@ -94,8 +108,8 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 )}
                 {sell > 0 && (
                     <div
-                        title={tRating('sell', { v0: sell })}
-                        className="h-3 w-(--bar-w) bg-ui-danger/60"
+                        title={t('analystSellCount', { v0: sell })}
+                        className="h-3 w-(--bar-w) bg-ui-danger/85"
                         style={
                             {
                                 '--bar-w': `${pct(sell, total)}%`,
@@ -118,7 +132,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
             <dl className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs">
                 <div className="flex items-center gap-1">
                     <span
-                        className="block h-2 w-2 rounded-sm bg-ui-success"
+                        className="block h-2 w-2 rounded bg-ui-success"
                         aria-hidden="true"
                     />
                     <dt className="text-secondary-400">
@@ -128,7 +142,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 </div>
                 <div className="flex items-center gap-1">
                     <span
-                        className="block h-2 w-2 rounded-sm bg-ui-success/60"
+                        className="block h-2 w-2 rounded bg-ui-success/85"
                         aria-hidden="true"
                     />
                     <dt className="text-secondary-400">
@@ -138,7 +152,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 </div>
                 <div className="flex items-center gap-1">
                     <span
-                        className="block h-2 w-2 rounded-sm bg-ui-warning"
+                        className="block h-2 w-2 rounded bg-ui-warning"
                         aria-hidden="true"
                     />
                     <dt className="text-secondary-400">
@@ -148,7 +162,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 </div>
                 <div className="flex items-center gap-1">
                     <span
-                        className="block h-2 w-2 rounded-sm bg-ui-danger/60"
+                        className="block h-2 w-2 rounded bg-ui-danger/85"
                         aria-hidden="true"
                     />
                     <dt className="text-secondary-400">
@@ -158,7 +172,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 </div>
                 <div className="flex items-center gap-1">
                     <span
-                        className="block h-2 w-2 rounded-sm bg-ui-danger"
+                        className="block h-2 w-2 rounded bg-ui-danger"
                         aria-hidden="true"
                     />
                     <dt className="text-secondary-400">
@@ -193,7 +207,7 @@ export function FutureDirectionCard({
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 {t('FutureDirectionCard.2e31de')}
@@ -201,7 +215,7 @@ export function FutureDirectionCard({
 
             {estimates !== null && (
                 <div className="mb-5">
-                    <h3 className="mb-2 text-xs font-medium tracking-widest text-secondary-400 uppercase">
+                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
                         {t('FutureDirectionCard.dba802')}
                     </h3>
                     <dl className="grid grid-cols-2 gap-3">
@@ -243,7 +257,7 @@ export function FutureDirectionCard({
 
             {ptConsensus !== null && (
                 <div className="mb-5">
-                    <h3 className="mb-2 text-xs font-medium tracking-widest text-secondary-400 uppercase">
+                    <h3 className={cn('mb-2', HEADING_SUBSECTION)}>
                         {t('FutureDirectionCard.dbfbf1')}
                     </h3>
                     <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
@@ -351,7 +365,7 @@ export function FutureDirectionCard({
 
             {grades !== null && (
                 <div>
-                    <h3 className="mb-1 text-xs font-medium tracking-widest text-secondary-400 uppercase">
+                    <h3 className={cn('mb-1', HEADING_SUBSECTION)}>
                         {t('FutureDirectionCard.5039cb')}
                         <InfoTooltip>
                             <p>{t('FutureDirectionCard.b69220')}</p>

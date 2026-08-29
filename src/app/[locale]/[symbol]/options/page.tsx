@@ -10,6 +10,7 @@ import {
 } from '@/views/symbol/snapshot/renderers/OptionsSnapshotProse';
 import { OptionsEmptyState } from '@/widgets/options/OptionsEmptyState';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { FaqSection } from '@/shared/ui/FaqSection';
 import {
     SymbolRouteParams,
     isAdmissibleSymbolShape,
@@ -32,12 +33,15 @@ import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
+    buildFaqJsonLd,
     buildSnapshotMetaDescription,
     buildSymbolOptionsSeoContent,
     buildSymbolSeoContent,
     buildWebPageJsonLd,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
+    noindexSymbolMetadata,
+    type FaqItem,
 } from '@/shared/lib/seo';
 import {
     dehydrate,
@@ -66,6 +70,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, symbol } = await params;
     const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!isAdmissibleSymbolShape(upper)) {
@@ -75,7 +80,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // generateMetadata도 동일 조건에서 NOINDEX로 반환한다. 가드 없이 계속 진행하면
     // 본문은 notFound()(noindex)인데 메타데이터는 canonical + index:true인 soft-404가 만들어진다.
     if (!(await isTabAllowedForSymbol(upper, 'options'))) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper, tSeo, locale);
     }
     const [{ assetInfo, degraded }, hasOptions] = await Promise.all([
         getAssetInfoResilient(upper),
@@ -108,9 +113,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         tab: 'options',
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
+    if (!assetInfo) return noindexSymbolMetadata(upper, tSeo, locale);
 
-    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const displayName = buildDisplayName(assetInfo, upper, locale);
     const seo = buildSymbolOptionsSeoContent(upper, tSeo, {
         displayName,
@@ -326,42 +330,41 @@ export default async function OptionsPage({ params }: Props) {
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
         [
-            { name: upper, url: buildSymbolSeoContent(upper, tSeo).url },
+            { name: displayName, url: buildSymbolSeoContent(upper, tSeo).url },
             { name: t('page.f1b01b'), url },
         ],
         isLocale(locale) ? locale : DEFAULT_LOCALE
     );
 
-    const faqJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: [
-            {
-                '@type': 'Question',
-                name: tSeo('faq.optionsScope', { v0: displayName }),
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: t('page.a32c23'),
-                },
-            },
-            {
-                '@type': 'Question',
-                name: t('page.faa62c'),
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: t('page.e70f2d'),
-                },
-            },
-            {
-                '@type': 'Question',
-                name: t('page.ec648e'),
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: t('page.f865a7'),
-                },
-            },
-        ],
-    };
+    /**
+     * FAQ — 화면 `FaqSection`과 FAQPage 구조화데이터의 단일 소스.
+     *
+     * 첫 답변에 만기 요약을 붙인다. 예전에는 같은 내용이 화면에 보이지 않는
+     * `sr-only` 개요 문단으로 따로 있었는데, 답변과 거의 같은 문장이라 크롤러에게
+     * 같은 말을 두 번 하는 셈이었다 — 그 문단을 지우고 여기로 합쳤다.
+     */
+    const faq: readonly FaqItem[] = [
+        {
+            question: tSeo('faq.optionsScope', { v0: displayName }),
+            answer:
+                t('page.a32c23') +
+                (expirations.length > 0
+                    ? tSeo('faq.optionsExpirations', {
+                          v0: expirations.length,
+                          v1: expirations[0] ?? '',
+                      })
+                    : ''),
+        },
+        {
+            question: t('page.faa62c'),
+            answer: t('page.e70f2d'),
+        },
+        {
+            question: t('page.ec648e'),
+            answer: t('page.f865a7'),
+        },
+    ];
+    const faqJsonLd = buildFaqJsonLd(faq);
 
     return (
         <>
@@ -383,18 +386,6 @@ export default async function OptionsPage({ params }: Props) {
                 <SymbolPageHeading>
                     {t('page.ba2808', { v0: displayName })}
                 </SymbolPageHeading>
-                <section className="sr-only">
-                    <h2>{t('page.c3a35c', { v0: displayName })}</h2>
-                    <p>{t('page.c7925a', { v0: displayName })}</p>
-                    {expirations.length > 0 ? (
-                        <p>
-                            {t('page.29ae1a', {
-                                v0: expirations.length,
-                                v1: expirations[0],
-                            })}
-                        </p>
-                    ) : null}
-                </section>
                 {/* audit fix FIX 2: XOR — OptionsAiAnalysis (client widget,
                     inside OptionsPageClient below) and OptionsSnapshotProse
                     both render the same AI conclusion (summary/perExpiration/
@@ -426,6 +417,10 @@ export default async function OptionsPage({ params }: Props) {
                         hasSnapshotProse={showOptionsProse}
                     />
                 </HydrationBoundary>
+                <FaqSection
+                    heading={tSeo('faqHeading.options', { v0: displayName })}
+                    items={faq}
+                />
             </main>
         </>
     );

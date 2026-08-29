@@ -5,6 +5,10 @@
 - [FF Principles](rules-ff.md) — 4 principles (Readability, Predictability, Cohesion, Coupling) condensed for review
 - [Conventions](rules-conventions.md) — Coding conventions condensed for review
 
+## Feedback
+
+- [File can change mid-review](feedback-file-can-change-mid-review.md) — implementer may still edit while I read; check mtime vs sibling files, re-read+re-test before finalizing findings
+
 ## Project
 
 - [audit/fix-r4 KRcal + overall degrade gate](project-audit-fix-r4-krcal-overall-degrade.md) — R1 approved: horizon extension math-verified, peek cache-hit verified, 8th file caught via file-count mismatch
@@ -16,6 +20,8 @@
 - [market-fg spec error-handling mismatch](project-market-fg-spec-error-handling-mismatch.md) — RESOLVED round 4: fetchDailyCloses now throws on 0 usable rows, comment/tests match Promise.all all-or-nothing reality
 - [market-fg round 4 deployment-audit fixes](project-market-fg-round4-audit-fixes.md) — proxy fear-greed 301 fix, EOD to-bound, alarm+runbook, generateMetadata degrade, FactorBar h3, E2E fixture — all verified correct
 - [position-tab currency fix (audit/fix-currency)](project-position-tab-currency-fix.md) — R1 found sub-$1 "$0" bug (4x dup formatAmount); R2 approved after independent mutation-test + origin/master diff re-verification
+- [seo-perf-bars-seed R1](project-seo-perf-bars-seed-r1.md) — layout bars-seed→server fearGreedSnapshot prop; nesting/cache-fold claims verified true; mutation-verified 0 coverage for the new computation+threading, stale suspend-comment (15.6)
+- [seo-perf-bars-seed R2 — CLOSED, approved](project-seo-perf-bars-seed-r2-closed.md) — all 4 R1 findings verified fixed via live double-mutation re-test; headerPropsOf coupling worry disproved empirically (fails loudly, not vacuous)
 - [seo-prewarm rotation-cursor fix (audit/fix-prewarm)](project-seo-prewarm-rotation-mutation-verify.md) — R2 approved after live re-run of author's mutation claims (shadow-model test, 2 deadline-check tests, lock.ts comment vs route.ts); KRX has no holiday calendar at all in this codebase
 - [OverallView hasOptions audit (audit/fix-seo)](project-overall-hasoptions-audit-fix-seo.md) — R1/R2/R3 recurred (fail-open default, `?? ''`, 3rd derivation); R4 fixed all via `profileIdForSymbol`, approved w/ 1 stale-comment recommendation
 - [audit/fix-seo ROOT_TITLE/SPCX (R6)](project-audit-fix-seo-root-title-spcx.md) — approved: ROOT_FULL_TITLE fixes OG/Twitter brand loss, SPCX purged from SECTOR_STOCKS; both mutation-verified live
@@ -35,6 +41,18 @@
 - [feat/i18n-multilingual R5](project-i18n-multilingual-r5.md) — relayed only: SymbolTabs/NoticePopup/usePageContextLabel path-compare broke on prefix; fixed via new useAppPathname.ts + allowlist audit test
 - [feat/i18n-multilingual R6 — APPROVED, closes epic](project-i18n-multilingual-r6.md) — verified useAppPathname consolidation + all 6 allowlist entries + audit-test soundness (import-line-based, not module-aware) + repo-wide locale-loss sweep, zero findings
 - [feat/mobile-search-overlay R3 — dismissForNavigation gap](project-mobile-search-overlay-r3.md) — pending-nav UI removal genuinely fixes R2's 3 findings; but onNavigate has zero test coverage (mutation-verified) + JSDoc overclaims HistoryUpdater race eliminated (verified live against Next 16.2.12 source)
+- [seo-internal-links relatedSymbols.ts R4 — APPROVED, closes loop](project-seo-internal-links-relatedsymbols-r4.md) — themePeersOf JSDoc relocated correctly, stale phrases now {@link}-referenced; file is untracked so `git diff master --` shows nothing, check `git status`
+- [seo-internal-links RelatedSymbols.tsx R5](project-seo-internal-links-relatedsymbols-r5.md) — new async server component swallows rethrown DYNAMIC_SERVER_USAGE (sole outlier of 20+ getAssetInfoResilient callers); Suspense-shell timing is recommended only
+- [seo-internal-links RelatedSymbols.tsx R6 — APPROVED, closes loop](project-seo-internal-links-relatedsymbols-r6.md) — DSU rethrow mutation-verified live; Suspense-decline judged sound (streaming byte-order ≠ resolution completeness, rebuts R5's own assumption)
+- [canonical-korean-names R2 — searchByKoreanName gap](project-canonical-korean-names-r2-searchbykorean-gap.md) — getKoreanNames fix verified via mutation; missed 3rd consumer of korean_tickers (searchByKoreanName), and "always truthy" broke unmapped-filter self-heal in searchTicker.ts
+- [canonical-korean-names R3 — choke-point verified, 2 recommended](project-canonical-korean-names-r3-choke-point.md) — loader-level withCanonical confirmed complete via grep+live mutation; DB-fetch branch of loadAllEntries untested (mutation survives), getKoreanNames still double-applies override
+- [canonical-korean-names R4 — CLOSED, approved](project-canonical-korean-names-r4-closed.md) — both R3 recommended findings verified fixed via live mutation re-test; loop ends
+- [related-visibility-footer R2 — APPROVED, closes loop](project-related-visibility-footer-r2.md) — soft-404 TickerCategories claim + SECTOR_ETFS-membership test tightening both mutation/source verified true
+- [redesign/p1-dark-tokens R2 — APPROVED](project-redesign-p1-heading-section-r2.md) — HEADING_SECTION swept to 3 more shells; undisclosed rounded-xl→rounded-lg was legit documented FIX 4, not scope creep; twMerge/import/FSD all verified clean
+- [redesign/p1-dark-tokens W6d /news R1](project-redesign-p1-heading-section-w6d-news.md) — 8 h2 sites + shell h3 + h4 weight all correct; missed 2 colorless h3 in same already-touched file (NewsAiSummary.tsx) — same bug class, passes contrast so sweep didn't catch it
+- [redesign/p1-dark-tokens fear-greed score coercion R3 — APPROVED, closes loop](project-redesign-p1-fear-greed-score-coercion-r3.md) — 15-case exhaustive audit of kindServerRegistry.ts score coercion, no 3rd defect; only strings get Number()-coerced, everything else safely falls back
+- [redesign/p1-dark-tokens toggle border-contrast R6](project-redesign-p1-toggle-contrast-r6.md) — R5 math re-verified exactly; WCAG 1.4.11 exempts `disabled` (inactive), Math.max fill-or-border reading is sound; found latent (not live) NaN vacuous-pass hole in guard's own hex parser
+- [redesign/p1-dark-tokens toggle border-contrast R7 — CLOSED, approved](project-redesign-p1-toggle-contrast-r7-closed.md) — R6's NaN vacuous-pass hole verified fixed via live mutation (`#7d838f80` throws, reverted byte-identical); loop ends
 
 ## Feedback
 

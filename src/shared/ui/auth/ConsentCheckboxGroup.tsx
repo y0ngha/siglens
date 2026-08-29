@@ -77,7 +77,7 @@ function CheckboxBox({
                 checked={checked}
                 {...inputProps}
                 className={cn(
-                    'peer size-5 cursor-pointer appearance-none rounded-sm border bg-transparent transition-colors duration-100',
+                    'peer size-5 cursor-pointer appearance-none rounded border bg-transparent transition-colors duration-100',
                     'focus-visible:ring-primary-400 focus-visible:ring-offset-secondary-950 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                     invalid
                         ? 'border-ui-danger'
@@ -85,7 +85,7 @@ function CheckboxBox({
                     checked || indeterminate
                         ? 'bg-primary-500 border-primary-500 hover:bg-primary-400'
                         : '',
-                    'disabled:cursor-not-allowed disabled:opacity-50'
+                    'disabled:cursor-not-allowed disabled:border-border-control'
                 )}
             />
             {checked && !indeterminate ? (
@@ -178,7 +178,7 @@ function ConsentRow({
                 prefetch={false}
                 aria-label={detailLabel}
                 onClick={e => e.stopPropagation()}
-                className="inline-flex shrink-0 items-center rounded-sm px-1 text-xs text-secondary-400 transition-colors hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
+                className="inline-flex shrink-0 items-center rounded px-1 text-xs text-secondary-400 transition-colors hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
             >
                 {t('ConsentCheckboxGroup.918f5d')}
                 <ExternalArrowIcon />
@@ -213,7 +213,7 @@ export function ConsentCheckboxGroup({
     }
 
     return (
-        <fieldset className="touch-manipulation space-y-3 border-y border-secondary-800 py-4 [-webkit-tap-highlight-color:transparent]">
+        <fieldset className="touch-manipulation space-y-3 border-y border-secondary-700 py-4 [-webkit-tap-highlight-color:transparent]">
             <legend className="sr-only">
                 {t('ConsentCheckboxGroup.1f835a')}
             </legend>
@@ -241,7 +241,7 @@ export function ConsentCheckboxGroup({
             <div
                 role="separator"
                 aria-hidden="true"
-                className="border-t border-secondary-800"
+                className="border-t border-secondary-700"
             />
             <ConsentRow
                 id={privacyId}
@@ -264,11 +264,13 @@ export function ConsentCheckboxGroup({
                 onChange={onTosChange}
             />
             {error ? (
+                // 같은 카드의 다른 오류 표면(`AuthErrorAlert`, `AuthFieldGroup`,
+                // `PasswordField`)이 전부 `role="alert"`다. 여기만 polite면
+                // 제출 실패라는 같은 사건이 화면마다 다르게 읽힌다.
                 <p
                     id={errorId}
-                    role="status"
-                    aria-live="polite"
-                    className="text-xs text-ui-danger"
+                    role="alert"
+                    className="text-xs text-ui-danger-text"
                 >
                     {error}
                 </p>

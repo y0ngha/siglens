@@ -58,8 +58,10 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
             return;
         }
         setConfirmError(null);
-        setPassword('');
-        setConfirmPassword('');
+        // 여기서 입력을 비우지 않는다. 성공하면 액션이 리디렉트하므로 비울
+        // 필요가 없고, 실패하면(약한 비밀번호·같은 비밀번호·만료 토큰) 빈 칸
+        // 아래에 오류만 남아 전부 다시 타이핑해야 했다. 강도 체크리스트도
+        // 함께 초기화돼 무엇이 모자랐는지조차 사라졌다.
         formAction(formData);
     };
 

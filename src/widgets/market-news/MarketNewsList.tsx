@@ -6,11 +6,14 @@ import { useState } from 'react';
 import type { MarketNewsCardItem } from '@/entities/market-news';
 import { MARKET_NEWS_LOOKBACK_DAYS } from '@/entities/market-news';
 
-import { MARKET_NEWS_ROW_SERIALIZATION_LIMIT } from './constants';
+import {
+    MARKET_NEWS_LIST_PAGE_SIZE,
+    MARKET_NEWS_ROW_SERIALIZATION_LIMIT,
+} from './constants';
 import { useMarketNewsCardPolling } from './hooks/useMarketNewsCardPolling';
 import { MarketNewsCard } from './MarketNewsCard';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
-const PAGE_SIZE = 10;
 const SKELETON_COUNT = 3;
 
 function MarketNewsListHeader() {
@@ -18,10 +21,7 @@ function MarketNewsListHeader() {
     const tMisc = useTranslations('shared.ui.misc');
     return (
         <div className="flex items-center justify-between gap-2">
-            <h2
-                id="market-news-list-heading"
-                className="text-lg font-semibold tracking-tight"
-            >
+            <h2 id="market-news-list-heading" className={HEADING_SECTION}>
                 {t('MarketNewsList.d107e1')}
             </h2>
             <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-300">
@@ -35,7 +35,7 @@ function MarketNewsCardSkeleton() {
     return (
         <article
             aria-hidden="true"
-            className="rounded-xl border border-secondary-700 bg-secondary-800 p-4"
+            className="rounded-lg border border-secondary-700 bg-secondary-800 p-4"
         >
             <div className="h-5 w-4/5 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -99,12 +99,14 @@ export function MarketNewsList({
     initialItems,
 }: MarketNewsListProps) {
     const t = useTranslations('widgets.market-news');
-    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+    const [visibleCount, setVisibleCount] = useState(
+        MARKET_NEWS_LIST_PAGE_SIZE
+    );
     const [prevCategory, setPrevCategory] = useState(category);
 
     if (prevCategory !== category) {
         setPrevCategory(category);
-        setVisibleCount(PAGE_SIZE);
+        setVisibleCount(MARKET_NEWS_LIST_PAGE_SIZE);
     }
 
     const {
@@ -133,7 +135,7 @@ export function MarketNewsList({
         return (
             <section
                 aria-labelledby="market-news-list-heading"
-                className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-secondary-700 bg-secondary-800 p-6"
+                className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             >
                 <MarketNewsListHeader />
                 <p className="text-sm text-secondary-400">
@@ -165,8 +167,10 @@ export function MarketNewsList({
             {hasMore && (
                 <button
                     type="button"
-                    onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
-                    className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-secondary-700 py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    onClick={() =>
+                        setVisibleCount(c => c + MARKET_NEWS_LIST_PAGE_SIZE)
+                    }
+                    className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-border-control py-2 text-sm text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     {t('MarketNewsList.8e5a3a', {
                         v0: items.length - visibleCount,

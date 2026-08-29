@@ -49,7 +49,7 @@ export function FundamentalDegraded({
 }: FundamentalDegradedProps) {
     const t = useTranslations('app.symbol');
     return (
-        <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+        <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
             <SymbolPageHeading>
                 {t('FundamentalDegraded.9e0659', { v0: displayName })}
             </SymbolPageHeading>
@@ -60,7 +60,7 @@ export function FundamentalDegraded({
                 marketProfile={marketProfile}
                 generatedAt={snapshotGeneratedAt}
             />
-            <section className="rounded-lg border border-secondary-800 bg-secondary-900/40 px-5 py-8 text-center">
+            <section className="rounded-lg border border-secondary-700 bg-secondary-900/40 px-5 py-8 text-center">
                 <p className="text-sm font-medium text-secondary-200">
                     {t('FundamentalDegraded.595d2d')}
                 </p>

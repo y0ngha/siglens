@@ -189,30 +189,38 @@ describe('requestPasswordResetAction', () => {
             );
         });
 
-        it('email 키가 없으면 빈 문자열로 코어를 호출한다', async () => {
+        /**
+         * 예전에는 빈 문자열을 그대로 코어에 넘기고 "메일을 확인해 주세요"를
+         * 냈다. 폼이 `noValidate`(폼 13곳의 전역 관례)라 브라우저 검증이 돌지
+         * 않으므로 빈 제출이 그대로 도달한다. 열거 방어는 "이 주소가 가입돼
+         * 있는가"를 숨기는 것이지, 형식이 틀린 입력에도 성공을 말하라는 뜻이
+         * 아니다.
+         */
+        it.each(['', 'not-an-email', 'a@b'])(
+            '형식이 틀린 입력(%j)은 코어에 닿지 않고 오류를 낸다',
+            async raw => {
+                const state = await requestPasswordResetAction(
+                    { submitted: false },
+                    makeFormData(raw === '' ? {} : { email: raw })
+                );
+                expect(state.submitted).toBe(false);
+                expect(state.errorCode).toBe('invalid_email');
+                expect(mockRequest).not.toHaveBeenCalled();
+            }
+        );
+
+        it('형식이 맞으면 코어를 호출한다 — 위 가드가 항상 막지 않는다', async () => {
             mockRequest.mockResolvedValue({
                 ok: true,
                 tokenIssued: false,
                 emailDispatched: false,
             });
-            await requestPasswordResetAction(
+            const state = await requestPasswordResetAction(
                 { submitted: false },
-                makeFormData({})
+                makeFormData({ email: 'user@example.com' })
             );
-            expect(mockRequest).toHaveBeenCalledWith(
-                { email: '' },
-                expect.objectContaining({
-                    emailTokens: expect.objectContaining({
-                        set: expect.any(Function),
-                        get: expect.any(Function),
-                        delete: expect.any(Function),
-                    }),
-                    emailDispatcher: expect.objectContaining({
-                        sendEmail: expect.any(Function),
-                    }),
-                }),
-                expect.any(Object)
-            );
+            expect(state.submitted).toBe(true);
+            expect(mockRequest).toHaveBeenCalled();
         });
     });
 });

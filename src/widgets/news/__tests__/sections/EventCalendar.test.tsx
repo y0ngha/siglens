@@ -83,7 +83,7 @@ describe('EventCalendar', () => {
         render(<EventCalendar earningsReports={[NEGATIVE_EPS_ITEM]} />);
 
         const negativeBar = screen.getByLabelText('실제: -$0.50');
-        expect(negativeBar).toHaveClass('bg-rose-400');
+        expect(negativeBar).toHaveClass('bg-ui-danger');
         expect(negativeBar).toHaveStyle({ right: '50%' });
         expect(negativeBar).not.toHaveStyle({ left: '50%' });
     });

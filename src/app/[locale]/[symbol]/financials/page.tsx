@@ -20,6 +20,7 @@ import {
 } from '@/views/symbol/snapshot/renderers/FinancialsSnapshotProse';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { FaqSection } from '@/shared/ui/FaqSection';
 import {
     isAdmissibleSymbolShape,
     type SymbolRouteParams,
@@ -34,12 +35,15 @@ import {
 } from '@/entities/ticker';
 import {
     buildBreadcrumbJsonLd,
+    buildFaqJsonLd,
     buildSnapshotMetaDescription,
     buildSymbolFinancialsSeoContent,
     buildSymbolSeoContent,
     buildWebPageJsonLd,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
+    noindexSymbolMetadata,
+    type FaqItem,
 } from '@/shared/lib/seo';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
@@ -68,6 +72,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, symbol } = await params;
     const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!isAdmissibleSymbolShape(upper)) {
@@ -77,7 +82,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // generateMetadata도 동일 조건에서 NOINDEX로 반환한다. 가드 없이 계속 진행하면
     // 본문은 notFound()(noindex)인데 메타데이터는 canonical + index:true인 soft-404가 만들어진다.
     if (!(await isTabAllowedForSymbol(upper, 'financials'))) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper, tSeo, locale);
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
     const blockedMetadata = await getBlockedSymbolMetadata({
@@ -95,10 +100,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 추가 FMP round-trip 없음). 그래서 본문 렌더 결과와 metadata noindex 판단이 일치한다:
     //   - profileDegraded(FMP 인프라 실패) → 본문은 degrade(200)를 렌더하므로 noindex.
     //   - profile === null(실존하지 않는 종목) → 본문은 notFound()이므로 noindex.
+    // `displayName`을 가드보다 위에서 계산한다 — 아래 noindex 분기들도
+    // `noindexSymbolMetadata`에 넘겨야 차단된 페이지가 티커가 아니라 사명까지
+    // 담은 title/description을 갖는다. `buildDisplayName`은 순수 함수라 위치를
+    // 올려도 부작용이 없다.
+    const displayName = assetInfo
+        ? buildDisplayName(assetInfo, upper, locale)
+        : upper;
+    const noindexOpts = { displayName, koreanName: assetInfo?.koreanName };
+
     const { profile, degraded: profileDegraded } =
         await getProfileResilient(upper);
     if (profileDegraded || profile === null) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper, tSeo, locale, noindexOpts);
     }
     // profile은 있으나 6종 재무 fetch가 모두 비면(FMP 일시 장애 등) 본문은 degrade를
     // 렌더하므로(아래 default export 참조) 메타도 noindex로 일치시킨다.
@@ -108,12 +122,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 정적화는 staticSymbolCache(unstable_cache), 빈 경로의 cross-request dedup은 Redis가 담당.
     const snapshot = await getFinancialsSnapshot(upper);
     if (isEmptyFinancialsSnapshot(snapshot)) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper, tSeo, locale, noindexOpts);
     }
-    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
-    const displayName = assetInfo
-        ? buildDisplayName(assetInfo, upper, locale)
-        : upper;
     const seo = buildSymbolFinancialsSeoContent(upper, tSeo, {
         displayName,
         koreanName: assetInfo?.koreanName,
@@ -286,42 +296,29 @@ export default async function FinancialsPage({ params }: Props) {
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
         [
-            { name: upper, url: buildSymbolSeoContent(upper, tSeo).url },
+            { name: displayName, url: buildSymbolSeoContent(upper, tSeo).url },
             { name: t('page.128c11'), url },
         ],
         isLocale(locale) ? locale : DEFAULT_LOCALE
     );
 
-    const faqJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: [
-            {
-                '@type': 'Question',
-                name: tSeo('faq.financialsHealthy', { v0: displayName }),
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: t('page.24d5a2'),
-                },
-            },
-            {
-                '@type': 'Question',
-                name: tSeo('faq.financialsGrowth', { v0: displayName }),
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: t('page.a79703'),
-                },
-            },
-            {
-                '@type': 'Question',
-                name: tSeo('faq.financialsCashflow', { v0: displayName }),
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: t('page.0430a5'),
-                },
-            },
-        ],
-    };
+    // FAQ — 화면 `FaqSection`과 FAQPage 구조화데이터의 단일 소스.
+    // 아래 sr-only 개요는 재무제표 3종과 4개 축을 나열하는 다른 내용이라 남겨 둔다.
+    const faq: readonly FaqItem[] = [
+        {
+            question: tSeo('faq.financialsHealthy', { v0: displayName }),
+            answer: t('page.24d5a2'),
+        },
+        {
+            question: tSeo('faq.financialsGrowth', { v0: displayName }),
+            answer: t('page.a79703'),
+        },
+        {
+            question: tSeo('faq.financialsCashflow', { v0: displayName }),
+            answer: t('page.0430a5'),
+        },
+    ];
+    const faqJsonLd = buildFaqJsonLd(faq);
 
     return (
         <>
@@ -373,6 +370,10 @@ export default async function FinancialsPage({ params }: Props) {
                     annualSnapshot={snapshot}
                 />
 
+                <FaqSection
+                    heading={tSeo('faqHeading.financials', { v0: displayName })}
+                    items={faq}
+                />
                 <CrossLinkCards
                     symbol={upper}
                     current="financials"

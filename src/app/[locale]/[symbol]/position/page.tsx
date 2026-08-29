@@ -1,14 +1,13 @@
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import type { PositionTranslator } from '@/widgets/portfolio-position';
 import {
     BAND_COUNT,
     computePosition,
     computeVolumeByBand,
     describeAvgFloor,
-    formatAmount,
+    formatAmountAligned,
     PositionTabContent,
 } from '@/widgets/portfolio-position';
-import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { SymbolPageHeading } from '@/views/symbol';
@@ -18,26 +17,37 @@ import {
     isAdmissibleSymbolShape,
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
-import { buildDisplayName, getAssetInfoResilient } from '@/entities/ticker';
+import {
+    buildAssetAboutNode,
+    buildDisplayName,
+    getAssetInfoResilient,
+} from '@/entities/ticker';
 // isTabAllowedForSymbol은 barrel에서 제외 — fundamental page.tsx와 동일하게
 // api.ts에서 직접 deep import한다 (entities/ticker/index.ts 상단 주석 참고).
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { getQuantizedBarsStatic } from '@/entities/bars';
-import { marketProfileOf } from '@/shared/config/marketProfile';
+import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
 import {
     buildTechnicalFacts,
     RECENT_BARS_WINDOW,
 } from '@/views/symbol/utils/technicalFacts';
 import {
+    buildBreadcrumbJsonLd,
+    buildSymbolSeoContent,
+    buildWebPageJsonLd,
     clampSeoDescription,
     NOINDEX_SYMBOL_METADATA,
+    noindexSymbolMetadata,
     SITE_NAME,
     SITE_URL,
     symbolMetadataFromSeo,
+    type SeoTranslator,
     type SymbolSeoContent,
 } from '@/shared/lib/seo';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 // 12h — "내 위치"는 최근 가격 범위(low52w/high52w/lastClose)만 SSR로 내려주는
 // 느리게 변하는 개인화 표층이다. ★평단/수익률은 client(hydration+user 게이트)라
@@ -58,10 +68,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, symbol } = await params;
     const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
-    const tSeo = await getTranslations({
-        locale,
-        namespace: 'shared.seo',
-    });
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!isAdmissibleSymbolShape(upper)) {
@@ -76,16 +83,66 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         revalidateSeconds: revalidate,
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
+    if (!assetInfo) return noindexSymbolMetadata(upper, tSeo, locale);
     // fundamental 선례와 동일: 탭 허용 여부가 본문 notFound와 어긋나면 soft-404
     // (index:true인데 body는 404)가 생긴다. 현재는 모든 market profile이
     // 'position'을 지원하지만, 이 가드는 미래에 탭 미지원 프로필이 추가돼도
     // notFound()/noindex가 함께 어긋나지 않도록 유지한다.
+    // `displayName`을 가드보다 위에서 계산한다 — 바로 위 `!assetInfo` 가드를
+    // 통과했으므로 여기서는 non-null이 보장되고, 아래 noindex 분기도 사명까지 담은
+    // title/description을 가질 수 있다.
+    const displayName = buildDisplayName(assetInfo, upper, locale);
+
     if (!(await isTabAllowedForSymbol(upper, 'position'))) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexSymbolMetadata(upper, tSeo, locale, {
+            displayName,
+            koreanName: assetInfo.koreanName,
+        });
     }
 
-    const displayName = buildDisplayName(assetInfo, upper, locale);
+    /*
+     * 본문과 메타데이터가 **같은 조건**을 봐야 한다.
+     *
+     * 예전에는 여기서 `robots`를 무조건 index로 두었는데, 본문의 유일한 고유
+     * 콘텐츠(가격 위치 가이드 섹션)는 `resolvePriceRange`가 null이면 통째로
+     * 생략된다 — CTA는 `useHydrated` 게이트라 SSR에 안 실린다. 그러면 h1과
+     * 문단 하나뿐인 페이지가 색인 대상으로 나갔다(실측: `<main>` 안 `<a>` 0개).
+     * 2026-07 thin-content 사태가 정확히 그 형태였다.
+     *
+     * `getQuantizedBarsStatic`은 같은 요청 안에서 dedupe되므로 본문이 곧 다시
+     * 부르는 값을 여기서 미리 부르는 비용은 없다. sibling 탭(overall/fundamental)이
+     * 쓰는 본문-메타 일치 패턴과 같다.
+     */
+    const range = await resolvePriceRange(
+        upper,
+        assetInfo.fmpSymbol,
+        marketProfileOf(assetInfo)
+    );
+    if (range === null) {
+        return noindexSymbolMetadata(upper, tSeo, locale, {
+            displayName,
+            koreanName: assetInfo.koreanName,
+        });
+    }
+
+    return symbolMetadataFromSeo(
+        buildPositionSeo(upper, displayName, assetInfo.koreanName, tSeo),
+        locale
+    );
+}
+
+/**
+ * position 탭의 SEO 콘텐츠 — `generateMetadata`와 본문 JSON-LD의 **단일 소스**다.
+ *
+ * 둘로 갈라 두면 `<title>`과 `WebPage.name`이 조용히 어긋난다(MISTAKES §2).
+ * 순수 함수라 본문에서 다시 호출해도 비용이 없다.
+ */
+function buildPositionSeo(
+    upper: string,
+    displayName: string,
+    koreanName: string | undefined,
+    tSeo: SeoTranslator
+): SymbolSeoContent {
     const url = `${SITE_URL}/${upper}/position`;
     // --- 색인 방침 히스토리 ---
     // 이 탭은 원래 /account·/onboarding과 같은 개인화 surface로 취급해 항상
@@ -131,15 +188,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 것(브랜드 suffix가 fullTitle에만 있어야 og:title/twitter:title에서 브랜딩이
     // 유실되지 않음) 둘 다를 이미 처리한다 — 이 페이지가 그 로직을 다시 구현할
     // 필요가 없다.
-    const seo: SymbolSeoContent = {
+    return {
         ticker: upper,
         title: positionTitle,
         fullTitle: `${positionTitle} | ${SITE_NAME}`,
         description: positionDescription,
         url,
-        keywords: buildPositionKeywords(upper, assetInfo.koreanName),
+        keywords: buildPositionKeywords(upper, koreanName),
     };
-    return symbolMetadataFromSeo(seo, locale);
 }
 
 /**
@@ -233,13 +289,24 @@ interface CurrentPricePosition {
     tone: string;
 }
 
-const RANGE_TONE_HIGH_THRESHOLD = 70;
-const RANGE_TONE_LOW_THRESHOLD = 30;
-
-/** `app.symbol.position.band` **키**를 고른다 — 표시는 렌더 쪽에서 `t()`로. */
-function rangeToneKey(percentile: number): string {
-    if (percentile >= RANGE_TONE_HIGH_THRESHOLD) return 'nearHigh';
-    if (percentile <= RANGE_TONE_LOW_THRESHOLD) return 'nearLow';
+/**
+ * 층 라벨과 **같은 밴드 경계**로 톤을 고른다.
+ *
+ * 예전에는 70/30 퍼센타일 리터럴을 썼는데, 층 라벨은 `BAND_COUNT`(=5) 기준
+ * 20% 폭 밴드를 쓴다. 두 경계가 어긋나 60~70% 구간에서
+ * "68% 지점 — 4층 · 고층에 해당합니다. 최근 1년 고점과 저점 사이 중간
+ * 지점이에요."처럼 한 문장 안에서 스스로를 부정했다(NVDA·005930.KS 실측).
+ * 20~30% 구간도 "중층 + 하단부"로 같은 모순이 났다.
+ *
+ * `describeFloorTier`의 매핑(0→저층, 1~2→중층, 3→고층, 4→펜트하우스)을 따라
+ * 최하 밴드는 하단부, 상위 두 밴드는 상단부, 나머지는 중간이다. 리터럴이
+ * 아니라 밴드 인덱스에서 파생하므로 `BAND_COUNT`가 바뀌어도 함께 움직인다.
+ */
+function rangeToneKey(currentPos: number): string {
+    const band = Math.min(BAND_COUNT - 1, Math.floor(currentPos * BAND_COUNT));
+    // 고층(BAND_COUNT-2)과 펜트하우스(BAND_COUNT-1).
+    if (band >= BAND_COUNT - 2) return 'nearHigh';
+    if (band === 0) return 'nearLow';
     return 'middle';
 }
 
@@ -284,7 +351,9 @@ function resolveCurrentPricePosition(
             BAND_COUNT,
             tPos
         ),
-        tone: tBand(rangeToneKey(percentile)),
+        // 반올림된 퍼센타일이 아니라 `describeAvgFloor`가 받는 것과 **같은**
+        // 원본 위치를 넘긴다 — 반올림을 거치면 경계에서 둘이 또 갈린다.
+        tone: tBand(rangeToneKey(model.currentPos)),
     };
 }
 
@@ -317,8 +386,42 @@ export default async function PositionPage({ params }: Props) {
     );
     const marketProfile = marketProfileOf(assetInfo);
 
-    // 셋은 서로 독립이다 — 가격 범위 조회를 기다리는 동안 번역자를 함께 푼다.
-    //
+    // 구조화 데이터 — 이 탭만 9개 심볼 탭 중 유일하게 WebPage/BreadcrumbList가
+    // 없었다(2026-08-24 프로덕션 실측: `/{ticker}/position`의 JSON-LD는 루트
+    // 레이아웃이 넣는 `WebSite` 하나뿐). 색인 대상 라우트인데 자기가 무슨
+    // 페이지인지, 사이트 어디에 속하는지를 아무것도 선언하지 않던 상태다.
+    // FAQPage는 넣지 않는다 — Google이 2023-08부터 대부분 사이트에서 FAQ 리치
+    // 결과를 중단해 표시 이득이 없고, 402개 종목에 같은 문답을 복제하면 이
+    // 탭이 이미 가장 얇다는 문제(아래 색인 방침 히스토리)를 키우기만 한다.
+    const tSeo = await getTranslations('shared.seo');
+    const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const seo = buildPositionSeo(
+        upper,
+        displayName,
+        assetInfo.koreanName,
+        tSeo
+    );
+    const webPageJsonLd = buildWebPageJsonLd({
+        url: seo.url,
+        name: seo.fullTitle,
+        description: seo.description,
+        about: buildAssetAboutNode(
+            upper,
+            assetInfo.koreanName ?? assetInfo.name,
+            assetInfo.fmpSymbol,
+            getDescriptor(marketProfile).assetClass
+        ),
+        locale: resolvedLocale,
+    });
+    // sibling 탭과 동일한 3단계 — buildBreadcrumbJsonLd가 Siglens를 자동 prepend한다.
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd(
+        [
+            { name: displayName, url: buildSymbolSeoContent(upper, tSeo).url },
+            { name: tSeo('position.breadcrumb'), url: seo.url },
+        ],
+        resolvedLocale
+    );
+
     // range가 degrade되면(bars 실패 등) null — 섹션 자체를 생략한다(크래시도
     // 빈 껍데기 섹션도 없음). range가 있어도 high52w<=low52w 같은 퇴화 입력이면
     // resolveCurrentPricePosition이 null을 반환해 같은 방식으로 생략된다.
@@ -331,63 +434,69 @@ export default async function PositionPage({ params }: Props) {
         ? resolveCurrentPricePosition(range, tPos, tBand)
         : null;
 
+    // <main>의 `w-full`은 필수다: 이 <main>은 SymbolLayoutJail의 `flex flex-col`
+    // 컨테이너의 직계 flex item이다. flex item에 `mx-auto`(양쪽 auto margin)를 걸면
+    // cross-axis stretch가 비활성화되고(CSS Flexbox §9.4 stretch 조건 = "neither
+    // margin is auto"), width가 max-w-5xl까지 채워지는 대신 자식의 shrink-to-fit
+    // (콘텐츠 폭)로 줄어든다.
+    // fundamental/overall은 콘텐츠(카드·표)가 우연히 1024px보다 넓어 이 버그가
+    // 드러나지 않았을 뿐 — CTA 카드 하나뿐인 이 탭(비회원/미보유)이나 options/news
+    // (동일 패턴으로 이미 `w-full` 적용됨)처럼 콘텐츠가 좁으면 <main> 전체가
+    // shrink-wrap돼 heading까지 화면 중앙에 떠 보인다(데스크톱만 — 모바일은 available
+    // width가 max-width보다 좁아 항상 꽉 채워지므로 증상이 없다). `w-full`로 width를
+    // auto가 아닌 명시값(100%)으로 만들면 stretch 비활성 조건을 우회해 sibling과
+    // 동일하게 max-w-5xl까지 채워진다.
     return (
-        // `w-full`은 필수다: 이 <main>은 SymbolLayoutJail의 `flex flex-col` 컨테이너의
-        // 직계 flex item이다. flex item에 `mx-auto`(양쪽 auto margin)를 걸면 cross-axis
-        // stretch가 비활성화되고(CSS Flexbox §9.4 stretch 조건 = "neither margin is auto"),
-        // width가 max-w-5xl까지 채워지는 대신 자식의 shrink-to-fit(콘텐츠 폭)로 줄어든다.
-        // fundamental/overall은 콘텐츠(카드·표)가 우연히 1024px보다 넓어 이 버그가
-        // 드러나지 않았을 뿐 — CTA 카드 하나뿐인 이 탭(비회원/미보유)이나 options/news
-        // (동일 패턴으로 이미 `w-full` 적용됨)처럼 콘텐츠가 좁으면 <main> 전체가
-        // shrink-wrap돼 heading까지 화면 중앙에 떠 보인다(데스크톱만 — 모바일은 available
-        // width가 max-width보다 좁아 항상 꽉 채워지므로 증상이 없다). `w-full`로 width를
-        // auto가 아닌 명시값(100%)으로 만들면 stretch 비활성 조건을 우회해 sibling과
-        // 동일하게 max-w-5xl까지 채워진다.
-        <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
-            <SymbolPageHeading>
-                {t('page.927513', { v0: displayName })}
-            </SymbolPageHeading>
-            {/* Task 1(색인 전환 근거) — 이전엔 이 자리에 sr-only 개요 섹션만 있었다
+        <>
+            <JsonLd data={webPageJsonLd} />
+            <JsonLd data={breadcrumbJsonLd} />
+            <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
+                <SymbolPageHeading>
+                    {displayName} {t('page.69d338')}
+                </SymbolPageHeading>
+                {/* Task 1(색인 전환 근거) — 이전엔 이 자리에 sr-only 개요 섹션만 있었다
                 (noindex 시절엔 스크린리더 문맥 보강용이었을 뿐, SEO 신호가 아니었다).
                 지금은 index,follow 라우트라 크롤러가 실제로 보는 유일한 본문 콘텐츠고,
                 심볼마다 달라지는 숫자(퍼센트·층수)를 담아 sr-only였을 때와 달리
                 시각적으로도 노출한다 — 개인화 데이터(★평단/수익률)는 여전히 전혀
                 포함하지 않는다(PositionCta만 그 CTA를 맡는다). range/currentPricePosition이
                 degrade되면(bars 실패, high52w<=low52w 등) 섹션 자체를 생략한다. */}
-            {range && currentPricePosition && (
-                <section
-                    aria-labelledby="position-guide-heading"
-                    className="space-y-3 rounded-lg border border-secondary-800 bg-secondary-800/30 p-5"
-                >
-                    <h2
-                        id="position-guide-heading"
-                        className="text-base font-semibold text-secondary-300"
+                {range && currentPricePosition && (
+                    <section
+                        aria-labelledby="position-guide-heading"
+                        className="space-y-3 rounded-lg border border-secondary-700 bg-secondary-800/30 p-5"
                     >
-                        {t('page.5ab35b', { v0: displayName })}
-                    </h2>
-                    <p className="text-sm leading-relaxed text-secondary-400">
-                        {t('page.1e3497', {
-                            v0: displayName,
-                            v1: formatAmount(range.low52w, upper),
-                        })}{' '}
-                        ~{' '}
-                        {t('page.44a64f', {
-                            v0: formatAmount(range.high52w, upper),
-                            v1: formatAmount(range.lastClose, upper),
-                            v2: currentPricePosition.percentile,
-                            v3: currentPricePosition.floorLabel,
-                            v4: currentPricePosition.tone,
-                        })}
-                    </p>
-                </section>
-            )}
-            <PositionTabContent
-                symbol={upper}
-                low52w={range?.low52w ?? null}
-                high52w={range?.high52w ?? null}
-                lastClose={range?.lastClose ?? null}
-                volumeByBand={range?.volumeByBand ?? null}
-            />
-        </main>
+                        <h2
+                            id="position-guide-heading"
+                            className={HEADING_SECTION}
+                        >
+                            {displayName} {t('page.2ab959')}
+                        </h2>
+                        <p className="text-sm leading-relaxed text-secondary-400">
+                            {/* 한 문장을 조각 6개로 쪼개면 한국어 어순에 고정된다 —
+                                조사(`의`·`는`)가 앞 조각에 붙어 있어 영어·일본어로
+                                옮길 자리가 없다. ICU 한 메시지로 둔다. */}
+                            {t('page.positionRangeSentence', {
+                                v0: displayName,
+                                v1: formatAmountAligned(range.low52w, upper),
+                                v2: formatAmountAligned(range.high52w, upper),
+                                v3: formatAmountAligned(range.lastClose, upper),
+                                v4: currentPricePosition.percentile,
+                                v5: currentPricePosition.floorLabel,
+                            })}{' '}
+                            {currentPricePosition.tone}{' '}
+                            {t('page.positionRegisterHint')}
+                        </p>
+                    </section>
+                )}
+                <PositionTabContent
+                    symbol={upper}
+                    low52w={range?.low52w ?? null}
+                    high52w={range?.high52w ?? null}
+                    lastClose={range?.lastClose ?? null}
+                    volumeByBand={range?.volumeByBand ?? null}
+                />
+            </main>
+        </>
     );
 }

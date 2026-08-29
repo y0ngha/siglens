@@ -23,11 +23,17 @@ describe('LocaleSwitcher', () => {
         mockReplace.mockClear();
     });
 
+    /** 팝오버라 항목은 열기 전에는 DOM에 없다. */
+    const open = () => {
+        fireEvent.click(screen.getByRole('button', { name: /언어|Language/ }));
+    };
+
     it('지원 로케일 전체를 자국어 표기로 노출한다', () => {
         renderWithIntl(<LocaleSwitcher />);
+        open();
         for (const locale of LOCALES) {
             expect(
-                screen.getByRole('option', {
+                screen.getByRole('radio', {
                     name: LOCALE_NATIVE_LABEL[locale],
                 })
             ).toBeInTheDocument();
@@ -40,27 +46,42 @@ describe('LocaleSwitcher', () => {
      */
     it('언어명은 로케일이 바뀌어도 자국어 표기 그대로다', () => {
         renderWithIntl(<LocaleSwitcher />, { locale: 'en' });
+        open();
         expect(
-            screen.getByRole('option', { name: '한국어' })
+            screen.getByRole('radio', { name: '한국어' })
         ).toBeInTheDocument();
         expect(
-            screen.getByRole('option', { name: '日本語' })
+            screen.getByRole('radio', { name: '日本語' })
         ).toBeInTheDocument();
     });
 
-    it('각 옵션에 lang 속성이 붙어 스크린리더가 해당 언어로 읽는다', () => {
+    it('각 항목에 lang 속성이 붙어 스크린리더가 해당 언어로 읽는다', () => {
         renderWithIntl(<LocaleSwitcher />);
-        expect(screen.getByRole('option', { name: '日本語' })).toHaveAttribute(
+        open();
+        expect(screen.getByRole('radio', { name: '日本語' })).toHaveAttribute(
             'lang',
             'ja'
         );
     });
 
+    /** 선택 표시가 색에만 실리지 않는지 — `aria-checked`가 그 계약이다. */
+    it('현재 로케일만 aria-checked다', () => {
+        renderWithIntl(<LocaleSwitcher />);
+        open();
+        expect(screen.getByRole('radio', { name: '한국어' })).toHaveAttribute(
+            'aria-checked',
+            'true'
+        );
+        expect(screen.getByRole('radio', { name: '日本語' })).toHaveAttribute(
+            'aria-checked',
+            'false'
+        );
+    });
+
     it('선택 시 같은 경로를 새 로케일로 replace한다', () => {
         renderWithIntl(<LocaleSwitcher />);
-        fireEvent.change(screen.getByRole('combobox'), {
-            target: { value: 'ja' },
-        });
+        open();
+        fireEvent.click(screen.getByRole('radio', { name: '日本語' }));
         expect(mockReplace).toHaveBeenCalledWith('/AAPL/news', {
             locale: 'ja',
         });
@@ -85,9 +106,8 @@ describe('LocaleSwitcher', () => {
             '/AAPL/news?tf=1Hour&sector=tech#chart'
         );
         renderWithIntl(<LocaleSwitcher />);
-        fireEvent.change(screen.getByRole('combobox'), {
-            target: { value: 'ja' },
-        });
+        open();
+        fireEvent.click(screen.getByRole('radio', { name: '日本語' }));
         expect(mockReplace).toHaveBeenCalledWith(
             '/AAPL/news?tf=1Hour&sector=tech#chart',
             { locale: 'ja' }
@@ -96,18 +116,16 @@ describe('LocaleSwitcher', () => {
 
     it('현재 로케일을 다시 고르면 아무 것도 하지 않는다', () => {
         renderWithIntl(<LocaleSwitcher />);
-        fireEvent.change(screen.getByRole('combobox'), {
-            target: { value: 'ko' },
-        });
+        open();
+        fireEvent.click(screen.getByRole('radio', { name: '한국어' }));
         expect(mockReplace).not.toHaveBeenCalled();
     });
 
     /** 드로어가 닫혀 있을 때 포커스 순서에 남으면 Tab이 보이지 않는 곳으로 샌다. */
-    it('tabIndex를 그대로 select에 전달한다', () => {
+    it('tabIndex를 그대로 트리거에 전달한다', () => {
         renderWithIntl(<LocaleSwitcher tabIndex={-1} />);
-        expect(screen.getByRole('combobox', { hidden: true })).toHaveAttribute(
-            'tabindex',
-            '-1'
-        );
+        expect(
+            screen.getByRole('button', { name: /언어|Language/, hidden: true })
+        ).toHaveAttribute('tabindex', '-1');
     });
 });

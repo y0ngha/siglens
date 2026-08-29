@@ -20,12 +20,25 @@ import { isHrefActive } from './navActiveState';
 
 interface HeaderMobileMenuProps {
     readonly items: ReadonlyArray<NavVerticalNode>;
+    /**
+     * 비로그인일 때만 드로어에 인증 CTA를 낸다.
+     *
+     * 모바일 헤더에서 `회원가입` 버튼을 뺐으므로(좁은 한 줄에 아이콘 넷이
+     * 이미 서 있다) 그 진입점이 여기로 온다. 로그인 상태에서는 헤더의
+     * 아바타 메뉴가 계정 링크를 이미 갖고 있어 중복이라 내지 않는다.
+     */
+    readonly showAuthCta?: boolean;
 }
 
-export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
+export function HeaderMobileMenu({
+    items,
+    showAuthCta = false,
+}: HeaderMobileMenuProps) {
     const t = useTranslations('widgets.layout');
     // 내비 라벨 키는 네임스페이스까지 포함된 완전 수식 키라 루트로 푼다.
     const tNav = useTranslations();
+    // 헤더 CTA와 **같은 키**를 쓴다 — 같은 목적지에 다른 문구가 붙으면 안 된다.
+    const tUser = useTranslations('widgets.layout');
     const [isOpen, setIsOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
     // `NAV_TREE`의 href는 로케일 접두사가 없는 `/market` 형태다. `usePathname()`은
@@ -173,11 +186,11 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                             aria-hidden={!isOpen}
                             tabIndex={-1}
                             className={cn(
-                                'border-secondary-800 bg-secondary-900 fixed top-0 right-0 z-50 flex h-dvh w-64 flex-col border-l shadow-2xl transition-transform duration-200 outline-none motion-reduce:transition-none',
+                                'border-secondary-700 bg-secondary-900 fixed top-0 right-0 z-50 flex h-dvh w-64 flex-col border-l shadow-2xl transition-transform duration-200 outline-none motion-reduce:transition-none',
                                 isOpen ? 'translate-x-0' : 'translate-x-full'
                             )}
                         >
-                            <div className="flex items-center justify-end border-b border-secondary-800 px-3 py-2">
+                            <div className="flex items-center justify-end border-b border-secondary-700 px-3 py-2">
                                 <button
                                     type="button"
                                     onClick={close}
@@ -198,9 +211,11 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                             {/* 언어 전환은 내비게이션 항목이 아니라 설정이므로
                                 <nav> 밖에 둔다 — 안에 넣으면 스크린리더가 메뉴
                                 링크 목록의 일부로 읽는다. */}
-                            <div className="border-b border-secondary-800 px-2 py-2">
+                            <div className="border-b border-secondary-700 px-2 py-2">
                                 <LocaleSwitcher
                                     tabIndex={isOpen ? undefined : -1}
+                                    showLabel
+                                    align="start"
                                 />
                             </div>
 
@@ -227,7 +242,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                         // 버티컬의 `미국`인지 읽히게 한다.
                                         role="group"
                                         aria-labelledby={`mobile-nav-group-${vertical.id}`}
-                                        className="border-t border-secondary-800 py-2 first:border-t-0"
+                                        className="border-t border-secondary-700 py-2 first:border-t-0"
                                     >
                                         <p
                                             id={`mobile-nav-group-${vertical.id}`}
@@ -281,6 +296,32 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                     </div>
                                 ))}
                             </nav>
+
+                            {/* 인증 CTA는 내비 **밑**이다 — 위에 두면 메뉴를
+                                열 때마다 목적지 목록보다 가입 유도가 먼저 온다.
+                                `mt-auto`로 바닥에 붙여 스크롤과 무관하게 보인다. */}
+                            {showAuthCta && (
+                                <div className="mt-auto flex flex-col gap-2 border-t border-secondary-700 p-3">
+                                    <Link
+                                        href="/signup"
+                                        prefetch={false}
+                                        tabIndex={isOpen ? undefined : -1}
+                                        onClick={close}
+                                        className="inline-flex min-h-11 items-center justify-center rounded bg-primary-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                    >
+                                        {tUser('HeaderUserMenu.ecb4cc')}
+                                    </Link>
+                                    <Link
+                                        href="/login"
+                                        prefetch={false}
+                                        tabIndex={isOpen ? undefined : -1}
+                                        onClick={close}
+                                        className="inline-flex min-h-11 items-center justify-center rounded border border-border-control px-3 text-sm font-medium text-secondary-200 transition-colors hover:text-secondary-50 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                    >
+                                        {tUser('HeaderUserMenu.e225a6')}
+                                    </Link>
+                                </div>
+                            )}
                         </div>
                     </>,
                     document.body
@@ -318,7 +359,9 @@ function MobileNavLink({
             onClick={onNavigate}
             tabIndex={focusable ? undefined : -1}
             className={cn(
-                'focus-visible:ring-primary-500 flex min-h-11 w-full touch-manipulation items-center py-2 text-xs tracking-[0.12em] transition-colors focus-visible:ring-2 focus-visible:outline-none',
+                // 한글 메뉴 라벨이라 0.12em 자간을 걷어낸다(HeaderNavMenu와 동일
+                // 근거). 모바일 메뉴 항목은 탭 타깃이기도 해 14px로 올린다.
+                'focus-visible:ring-primary-500 flex min-h-11 w-full touch-manipulation items-center py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none',
                 indented
                     ? 'pr-4 pl-8 font-normal text-secondary-500 hover:text-secondary-200'
                     : 'px-4 font-semibold',

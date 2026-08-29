@@ -192,13 +192,27 @@ describe('ReasoningToggle', () => {
         // assistive tech the control cannot be activated.
         expect(toggle.hasAttribute('aria-disabled')).toBe(false);
         expect(toggle.getAttribute('aria-checked')).toBe('false');
-        // The switch itself conveys "locked/unavailable": the muted track +
-        // half opacity read as disabled, while it stays clickable
+        // The switch itself conveys "locked/unavailable": a muted track plus a
+        // muted thumb read as disabled, while it stays clickable
         // (cursor-pointer, not cursor-not-allowed, and no native `disabled`
         // attribute) — the switch carries the locked meaning.
-        expect(toggle.className).toContain('opacity-50');
+        //
+        // The signal used to be `opacity-50` on the button. That was dropped
+        // because opacity dims the element's BORDER too, and the track/thumb
+        // borders are what make this switch visible at all in the light theme
+        // (before them the whole control measured 1.01~1.10:1 — white thumb on
+        // a white track on a near-white popover). At 50% the `border-control`
+        // token fell to ~1.65:1, well under the 3:1 WCAG 1.4.11 requires of an
+        // operable control — and this control IS operable when locked (the
+        // click opens the signup nudge). The muted thumb carries the same
+        // meaning without touching the border.
+        expect(toggle.className).not.toContain('opacity-50');
+        expect(toggle.className).toContain('border-border-control');
         expect(toggle.className).toContain('cursor-pointer');
         expect(toggle.hasAttribute('disabled')).toBe(false);
+        const thumb = toggle.querySelector('span[aria-hidden="true"]');
+        expect(thumb?.className).toContain('bg-secondary-400');
+        expect(thumb?.className).not.toContain('bg-white');
     });
 
     it('member: a genuinely disabled (no-op) switch reports aria-disabled', () => {

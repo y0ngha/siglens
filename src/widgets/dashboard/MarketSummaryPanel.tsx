@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION, LABEL_KO } from '@/shared/lib/typographyStyles';
 import { IndexCard } from './IndexCard';
 import {
     BriefingCard,
@@ -99,7 +100,7 @@ export function MarketSummaryPanel({
     if (isTotalFailure) {
         if (!showNotice) return null;
         return (
-            <section aria-label={heading} className="px-6 py-10 lg:px-[15vw]">
+            <section aria-label={heading} className="page-container py-10">
                 <MarketDataErrorNotice
                     scopeId={scope.id}
                     variant="total"
@@ -113,10 +114,8 @@ export function MarketSummaryPanel({
     // role="alert"(assertive)인 안내를 그 안에 중첩하면 라이브리전이 경쟁하므로,
     // 안내는 polite 영역 밖(제목 아래·그리드 위)에 렌더한다.
     return (
-        <section aria-label={heading} className="px-6 py-10 lg:px-[15vw]">
-            <h2 className="mb-6 text-sm font-semibold tracking-[0.15em] text-secondary-200 uppercase">
-                {heading}
-            </h2>
+        <section aria-label={heading} className="page-container py-10">
+            <h2 className={cn('mb-6', HEADING_SECTION)}>{heading}</h2>
             {showNotice && (
                 <MarketDataErrorNotice
                     scopeId={scope.id}
@@ -148,17 +147,22 @@ export function MarketSummaryPanel({
 
                         return (
                             <div key={group.label}>
-                                <p className="mb-1.5 text-[10px] tracking-wider text-secondary-500 uppercase">
+                                <p className={cn('mb-1.5', LABEL_KO)}>
                                     {SECTOR_GROUP_LABEL_KEY[group.label]
                                         ? t(SECTOR_GROUP_LABEL_KEY[group.label])
                                         : group.label}
                                 </p>
+                                {/* 모바일에서는 2열로 접는다. 바로 위 지수 그리드가
+                                    이미 `grid-cols-2 sm:grid-cols-4`인데 이쪽만
+                                    반응형 접두사가 없어, 320px에서 카드가 66px로
+                                    눌리고 `shrink-0`인 등락률 배지(73px)가 카드를
+                                    33px 넘겼다 — 가격이 `$18`처럼 잘렸다. */}
                                 <div
                                     className={cn(
-                                        'grid gap-2',
+                                        'grid grid-cols-2 gap-2',
                                         groupSectors.length === 3
-                                            ? 'grid-cols-3'
-                                            : 'grid-cols-4'
+                                            ? 'sm:grid-cols-3'
+                                            : 'sm:grid-cols-4'
                                     )}
                                 >
                                     {groupSectors.map(etf => (

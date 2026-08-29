@@ -21,6 +21,6 @@ describe('BotBlockedNotice', () => {
         );
         const root = container.firstChild as HTMLElement;
         expect(root).toHaveClass('custom-class');
-        expect(root).toHaveClass('rounded-md');
+        expect(root).toHaveClass('rounded-lg');
     });
 });

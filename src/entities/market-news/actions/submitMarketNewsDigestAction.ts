@@ -127,6 +127,9 @@ export async function submitMarketNewsDigestAction(
              * (`docs/superpowers/specs/2026-08-19-asset-class-navigation-design.md` §7).
              */
             category: category as NewsFeedCategory,
+            // 화면 로케일을 AI 산출물 언어로 그대로 넘긴다 — core 0.53.0부터
+            // 받는다. `ko`는 접미 없는 기존 캐시 키를 그대로 맞힌다.
+            locale,
             categoryLabel: koLabel,
             modelId: DEFAULT_DIGEST_MODEL_ID,
             news,

@@ -1,5 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
+import { cn } from '@/shared/lib/cn';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface IntegratedConclusionProps {
     text: string;
@@ -14,11 +16,11 @@ export function IntegratedConclusion({ text }: IntegratedConclusionProps) {
     return (
         <section
             aria-labelledby="overall-integrated-conclusion-heading"
-            className="rounded-xl border border-primary-500/30 bg-primary-600/5 p-6"
+            className="rounded-lg border border-primary-500/30 bg-primary-600/5 p-6"
         >
             <h2
                 id="overall-integrated-conclusion-heading"
-                className="mb-3 text-lg font-semibold text-balance"
+                className={cn(HEADING_SECTION, 'mb-3 text-balance')}
             >
                 {t('IntegratedConclusion.85f201')}
             </h2>

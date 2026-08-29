@@ -2,6 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import type { FallbackProps } from 'react-error-boundary';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { cn } from '@/shared/lib/cn';
 import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
 
 export function FearGreedPageError({
@@ -17,15 +19,15 @@ export function FearGreedPageError({
     return (
         <section
             aria-labelledby="fear-greed-error-heading"
-            className="rounded-xl border border-ui-danger/30 bg-secondary-800 p-6"
+            className="rounded-lg border border-ui-danger/30 bg-secondary-800 p-6"
         >
             <h2
                 id="fear-greed-error-heading"
-                className="mb-2 text-lg font-semibold tracking-tight"
+                className={cn('mb-2', HEADING_SECTION)}
             >
                 {t('FearGreedPageError.f9482c')}
             </h2>
-            <div className="text-sm text-ui-danger" role="alert">
+            <div className="text-sm text-ui-danger-text" role="alert">
                 {message}
             </div>
             <button

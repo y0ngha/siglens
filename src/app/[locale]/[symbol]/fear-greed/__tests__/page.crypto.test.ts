@@ -98,7 +98,7 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     SITE_NAME: 'Siglens',
     SITE_URL: 'https://siglens.io',
     NOINDEX_SYMBOL_METADATA: {
-        robots: { index: false, follow: false },
+        robots: { index: false, follow: true },
         alternates: { canonical: null },
     },
 }));

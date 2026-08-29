@@ -1,4 +1,6 @@
 import { SITE_NAME } from '@/shared/lib/seo';
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import Image from 'next/image';
 import type { ReactNode } from 'react';
 
@@ -15,13 +17,29 @@ export function AuthCardShell({
     children,
     footer,
 }: AuthCardShellProps) {
+    /*
+     * 2026-08 리디자인: 장식 레이어를 걷어냈다. 이전에는 좌상단 글로우
+     * blob(`blur-3xl`)과 하드코딩 rgba 그리드 오버레이, 글래스모피즘
+     * 카드(`backdrop-blur-xl` + 30px 확산 그림자)가 겹쳐 있었는데, 세 요소
+     * 모두 2024~25년 AI 생성 랜딩 페이지의 대표 시그니처다. 로그인·회원가입·
+     * 비밀번호 재설정 4개 페이지가 이 셸을 공유하므로 여기 한 곳만 정리하면
+     * 사용자 진입 동선 전체의 인상이 바뀐다.
+     *
+     * 깊이는 그림자가 아니라 표면값 차이(페이지 950 → 카드 800)와 헤어라인
+     * 보더로 낸다. 라이트 테마에서 큰 확산 그림자는 즉시 지저분해 보이는데,
+     * 이 방식은 두 테마에서 동일하게 동작한다.
+     *
+     * `min-h`는 헤더 높이를 빼는데, 하드코딩 3.5rem 대신 `--header-h` 토큰을
+     * 쓴다 — 헤더 높이가 바뀌면 여기도 자동으로 따라간다.
+     */
     return (
-        <main className="relative flex min-h-[calc(100dvh-3.5rem)] items-center justify-center overflow-hidden bg-secondary-950 px-4 py-12">
-            <div aria-hidden className="pointer-events-none absolute inset-0">
-                <div className="absolute -top-40 -left-40 h-144 w-xl rounded-full bg-primary-600/15 blur-3xl" />
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(30,41,59,0.35)_1px,transparent_1px),linear-gradient(to_bottom,rgba(30,41,59,0.35)_1px,transparent_1px)] mask-[radial-gradient(ellipse_at_center,black,transparent_75%)] bg-size-[48px_48px] opacity-30" />
-            </div>
-            <section className="relative w-full max-w-md rounded-2xl bg-secondary-900/80 p-8 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.7)] ring-1 ring-secondary-800 backdrop-blur-xl motion-safe:animate-[fade-up_220ms_ease-out]">
+        <main className="flex min-h-[calc(100dvh-var(--header-h))] items-center justify-center bg-secondary-950 px-4 py-12">
+            <section
+                className={cn(
+                    SURFACE_CARD,
+                    'w-full max-w-md p-8 motion-safe:animate-[fade-up_220ms_ease-out]'
+                )}
+            >
                 <header className="mb-8 flex flex-col items-start gap-5">
                     <div className="flex items-center gap-2">
                         {/*

@@ -4,6 +4,7 @@ import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import { MobileSheetPlaceholder, TechnicalFactsSummary } from '@/views/symbol';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
+import { buildTechnicalFacts } from '@/views/symbol/utils/technicalFacts';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { buildFallbackAnalysis } from '@/entities/chat-message';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
@@ -37,6 +38,7 @@ import {
     resolveSymbolSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
+    noindexSymbolMetadata,
 } from '@/shared/lib/seo';
 import {
     dehydrate,
@@ -63,12 +65,33 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, symbol } = await params;
     const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const ticker = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!isAdmissibleSymbolShape(ticker)) {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
+    // 봉 유무를 게이트에 넘기기 위해 metadata 단계에서 먼저 확정한다. 본문이
+    // **같은 인자**로 부르는 `getQuantizedBarsStatic`은 `React.cache`라 요청
+    // 스코프에서 접히므로 왕복이 늘지 않는다(둘 중 먼저 도는 쪽이 채우고 뒤는
+    // 메모 히트 — `getSeoSnapshotsStatic`을 여기서 다시 부르는 것과 같은 패턴).
+    // assetInfo가 없으면 marketProfile을 유도할 수 없으므로 조회를 건너뛴다 —
+    // 그 경우는 아래 `asset-missing` 분기가 이미 noindex로 처리한다.
+    const metadataBars = assetInfo
+        ? await getQuantizedBarsStatic(
+              ticker,
+              DEFAULT_TIMEFRAME,
+              marketProfileOf(assetInfo),
+              assetInfo.fmpSymbol
+          ).catch((e: unknown) => {
+              console.error(
+                  '[SymbolPage] generateMetadata getQuantizedBarsStatic failed:',
+                  e
+              );
+              return null;
+          })
+        : null;
     const blockedMetadata = await getBlockedSymbolMetadata({
         locale,
         symbol: ticker,
@@ -76,11 +99,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         degraded,
         revalidateSeconds: revalidate,
         tab: 'technical',
+        // 조회가 **실패**한 경우(`null`)와 조회 결과 봉이 **없는** 경우를 구분한다.
+        // 인프라 장애로 null이 온 것까지 noindex로 밀면 일시 장애가 전 종목
+        // 색인 해제로 번진다 — 그 경우는 `undefined`로 남겨 기존 판정을 따른다.
+        //
+        // 술어는 **본문과 동일하게** `buildTechnicalFacts`로 판정한다. `bars.length > 0`
+        // 으로 두었더니 CTK(상장폐지, 봉 1개)가 새어 나갔다 — 그 헬퍼는 등락률 분모로
+        // 직전 봉이 필요해 2개 미만이면 null을 반환하고, 그러면 본문의 지표 요약
+        // 블록이 통째로 렌더되지 않아 페이지가 제목만 남은 껍데기가 된다.
+        // 게이트와 본문이 서로 다른 조건을 쓰면 조용히 어긋난다(MISTAKES §2).
+        hasPriceData:
+            metadataBars === null
+                ? undefined
+                : buildTechnicalFacts(
+                      metadataBars.bars,
+                      metadataBars.indicators
+                  ) !== null,
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
+    if (!assetInfo) return noindexSymbolMetadata(ticker, tSeo, locale);
 
-    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const displayName = buildDisplayName(assetInfo, ticker, locale);
     const profile = marketProfileOf(assetInfo);
     const seo = resolveSymbolSeoContent(
@@ -218,10 +256,10 @@ export default async function SymbolPage({ params }: Props) {
         locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
     });
 
-    // 차트 페이지는 ticker landing이므로 [Siglens, ticker] 2단계로 통일한다.
-    // (sibling 페이지들은 [Siglens, ticker, 섹션명] 3단계 — buildBreadcrumbJsonLd가 Siglens를 자동 prepend.)
+    // 차트 페이지는 ticker landing이므로 [Siglens, displayName] 2단계로 통일한다.
+    // (sibling 페이지들은 [Siglens, displayName, 섹션명] 3단계 — buildBreadcrumbJsonLd가 Siglens를 자동 prepend.)
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
-        [{ name: ticker, url }],
+        [{ name: displayName, url }],
         isLocale(locale) ? locale : DEFAULT_LOCALE
     );
 
@@ -330,7 +368,10 @@ export default async function SymbolPage({ params }: Props) {
                 overflow-hidden에 잘려 사라지지 않는다. h1(SymbolPageClient 또는
                 fallback 안)이 프로즈보다 DOM에서 먼저 오므로 heading 위계(WCAG 1.3.1)도
                 함께 해결된다. */}
-            <main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+            {/* 내부 스크롤은 데스크톱 전용이다 — jail이 모바일에서 높이를
+                    고정하지 않으므로 여기서 스크롤을 잡으면 페이지 스크롤과
+                    겹쳐 이중 스크롤이 된다. */}
+            <main className="flex min-h-0 flex-1 flex-col md:overflow-y-auto">
                 <section className="sr-only">
                     {/* 차트 h1은 SymbolPageClient(이 section보다 DOM 뒤)에 있어,
                         여기에 heading을 두면 h1보다 먼저 나와 위계가 역전된다
@@ -341,7 +382,7 @@ export default async function SymbolPage({ params }: Props) {
                 {/* h-full + shrink-0: main의 전체 높이를 basis로 고정하고 shrink를
                     금지해, 뒤따르는 TechnicalSnapshotProse가 있어도 이 chart+AI
                     영역은 절대 압축되지 않는다(위 audit fix FIX 1 주석 참고). */}
-                <div className="flex h-full shrink-0 flex-col">
+                <div className="flex h-[calc(100dvh-var(--header-h,3.5rem)-var(--pwa-banner-h,0px)-var(--symbol-chrome-h,7.75rem))] shrink-0 flex-col md:h-full">
                     <HydrationBoundary state={dehydrate(queryClient)}>
                         {/* fallback은 두 역할을 겸한다:
                             1. CLS 방지 — 차트 영역(flex-1)을 미리 차지해 useSearchParams

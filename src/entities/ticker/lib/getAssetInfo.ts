@@ -25,6 +25,7 @@ import {
 } from './fmpTickerApi';
 import { translateCompanyNames } from './koreanTranslator';
 import { getKoreanNames, setKoreanTickers } from './koreanNameStore';
+import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
 import type { AssetInfoMatch } from './backgroundTask';
 import { fireAndForget } from './backgroundTask';
 import { createSingleFlight } from './utils/singleFlight';
@@ -46,6 +47,34 @@ function recordToAssetInfo(record: AssetTranslationRecord): AssetInfo {
             fmpSymbol: record.fmpSymbol,
         }),
     };
+}
+
+/**
+ * 정본 한글명이 있으면 덮는다. **`getAssetInfo`의 모든 반환 경로가 이걸 거친다.**
+ *
+ * `asset_translations`의 한글명은 LLM이 종목 방문 시 lazy하게 채운 것이라 표기가
+ * 흔들린다 — 2026-08-24 실측에서 `LAES`가 홈/대시보드/DB에서 각각 세알시큐리티/
+ * SEALSQ/씰스큐로 세 갈래였다. 사람이 고른 표기가 있으면 그쪽이 이겨야 같은
+ * 종목이 화면마다 다른 이름으로 보이지 않는다(`CANONICAL_KOREAN_NAMES` JSDoc).
+ *
+ * ⚠️ **DB 읽기 지점이 아니라 함수 출구에 둔다.** `getAssetInfo`는 Redis 캐시를
+ * 먼저 보고 히트하면 즉시 반환하므로(`if (cached) return cached`), DB 경로에만
+ * 덮으면 이미 캐시에 굳은 옛 이름이 그대로 나간다 — 실제로 그렇게 두었다가 로컬
+ * 실증에서 제목이 하나도 안 바뀌는 것을 확인했다. 출구에 두면 캐시·DB·FMP·크립토
+ * 어느 경로로 왔든 같은 이름이 나가고, 캐시를 비울 필요도 없다.
+ *
+ * 캐시에 쓰는 값은 원본 그대로 둔다 — 캐시가 파생값을 들고 있으면 정본 맵과
+ * 어긋날 수 있기 때문이다. 덕분에 이 Redis 계층은 맵을 고쳐도 무효화가 필요 없다.
+ *
+ * ⚠️ **그렇다고 배포 즉시 전 화면에 반영되는 건 아니다.** `getAssetInfoStatic`이
+ * 결과를 `unstable_cache`(24h, S3 cache-handler라 배포를 넘어 살아남는다)로 다시
+ * 감싸므로, 이미 방문된 `[symbol]` 라우트는 TTL이 끝나거나
+ * `revalidateTag('symbol:<TICKER>')`를 부르기 전까지 옛 이름을 서빙한다.
+ */
+function withCanonicalKoreanName(info: AssetInfo | null): AssetInfo | null {
+    if (info === null) return info;
+    const canonical = CANONICAL_KOREAN_NAMES.get(info.symbol);
+    return canonical === undefined ? info : { ...info, koreanName: canonical };
 }
 
 function setCacheBestEffort(
@@ -238,8 +267,19 @@ export function _resetInFlightTranslationsForTest(): void {
     translationSingleFlight._resetForTest();
 }
 
-/** Resolve canonical asset information for a single ticker symbol via cache → DB → FMP, with optional background Korean-name translation. */
+/**
+ * Resolve canonical asset information for a single ticker symbol.
+ *
+ * 해석은 `resolveAssetInfo`(cache → DB → FMP, 백그라운드 한글명 번역 포함)가
+ * 하고, 이 래퍼는 마지막에 정본 한글명을 덮는다 —
+ * `withCanonicalKoreanName` JSDoc에 출구에 둬야 하는 이유가 있다.
+ */
 export async function getAssetInfo(symbol: string): Promise<AssetInfo | null> {
+    return withCanonicalKoreanName(await resolveAssetInfo(symbol));
+}
+
+/** cache → DB → FMP 순으로 해석한다. 정본 덮어쓰기는 호출자(`getAssetInfo`)가 한다. */
+async function resolveAssetInfo(symbol: string): Promise<AssetInfo | null> {
     const upper = symbol.toUpperCase();
     if (!isAdmissibleSymbolShape(upper)) return null;
 

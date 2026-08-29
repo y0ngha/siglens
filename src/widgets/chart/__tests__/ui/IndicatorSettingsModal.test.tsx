@@ -18,6 +18,12 @@ vi.mock('@/shared/lib/cn', () => ({
 }));
 vi.mock('@/shared/lib/chartColors', () => ({
     getPeriodColor: () => '#abcdef',
+    /* 차트 크롬을 런타임 테마에서 읽는 리졸버. 테스트는 다크 고정이면 충분하다. */
+    getChartChrome: () => ({
+        background: '#1a1a2e',
+        grid: '#2a2a3e',
+        text: '#a0a0b0',
+    }),
 }));
 
 import { render, screen, fireEvent } from '@testing-library/react';

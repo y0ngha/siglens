@@ -1,8 +1,10 @@
+import { getTranslations } from 'next-intl/server';
 import { evaluateSymbolIndexability } from '@/entities/symbol-indexability';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import type { SeoSnapshotTab } from '@/entities/seo-snapshot';
 import { hasProseForTab } from '@/views/symbol/snapshot/hasProseForTab';
-import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
+import { noindexSymbolMetadata } from '@/shared/lib/seo';
+import { buildDisplayName } from '@/entities/ticker';
 import type { AssetInfo } from '@/shared/lib/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
@@ -37,6 +39,16 @@ interface BlockedSymbolMetadataInput {
     tab?: SeoSnapshotTab;
     /** URL 로케일. 준비되지 않은 로케일은 다른 조건과 무관하게 noindex다. */
     locale: Locale;
+    /**
+     * 가격 봉 유무. 전달하는 라우트만 콘텐츠 게이트가 적용된다 —
+     * `SymbolIndexabilityInput.hasPriceData` JSDoc에 배경이 있다.
+     *
+     * 현재 전달자는 차트 라우트뿐이다. 그 페이지는 본문이 사실상 봉으로만
+     * 이루어져 있어(TechnicalFactsSummary + 차트) 봉이 없으면 남는 게 제목과
+     * sr-only 개요뿐이라는 것이 실측으로 확인된 유일한 탭이다. 형제 탭은 각자
+     * 다른 데이터 소스(뉴스·재무·의회 공시)를 갖고 있어 같은 근거를 쓸 수 없다.
+     */
+    hasPriceData?: boolean;
 }
 
 export async function getBlockedSymbolMetadata({
@@ -46,6 +58,7 @@ export async function getBlockedSymbolMetadata({
     revalidateSeconds,
     tab,
     locale,
+    hasPriceData,
 }: BlockedSymbolMetadataInput): Promise<Metadata | null> {
     // hasSnapshot lookup only when degraded AND the route has a snapshot tab
     // (avoid a DB/cache read on the normal path, and never read for
@@ -75,22 +88,20 @@ export async function getBlockedSymbolMetadata({
         degraded,
         hasSnapshot,
         locale,
+        hasPriceData,
     });
 
     if (decision.indexable) return null;
 
-    /**
-     * 로케일 게이트만 걸린 경우는 **페이지를 비우지 않는다.**
-     *
-     * 이 함수의 blocked 응답은 title이 없는 `NOINDEX_SYMBOL_METADATA`다. 종목이
-     * 실존하지 않거나 본문이 degrade된 경우엔 그게 맞지만, `locale-not-ready`는
-     * 종목도 본문도 멀쩡하고 **번역만 안 됐다**는 뜻이다. 그 경우까지 비우면
-     * 371개 티커 × 9탭 × 3로케일의 제목이 전부 사라진다.
-     *
-     * null을 돌려주면 호출부가 평소대로 `symbolMetadataFromSeo(seo, locale)`를
-     * 만들고, 거기서 로케일 게이트가 robots만 덮는다.
-     */
-    if (decision.reason === 'locale-not-ready') return null;
-
-    return NOINDEX_SYMBOL_METADATA;
+    // 차단된 심볼 페이지도 자기 정체성은 가져야 한다. 상수 하나를 돌려주면
+    // Next가 루트 레이아웃의 title/description/openGraph를 상속시켜, 차단된
+    // 심볼 URL 전부가 홈페이지 메타를 복제하고 `og:url`을 홈으로 선언한다
+    // (2026-08-24 실측 — `noindexSymbolMetadata` JSDoc 참고).
+    const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
+    return noindexSymbolMetadata(symbol, tSeo, locale, {
+        displayName: assetInfo
+            ? buildDisplayName(assetInfo, symbol, locale)
+            : undefined,
+        koreanName: assetInfo?.koreanName,
+    });
 }

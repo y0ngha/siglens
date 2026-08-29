@@ -21,3 +21,6 @@ export { FearGreedFactsSummary } from './fearGreed/FearGreedFactsSummary';
 // 메우는 서버 렌더 껍데기. app 라우트가 SSR 트리에서 직접 소비한다(SymbolPageClient는
 // useSearchParams CSR-bailout이라 그 안에 두면 SSR HTML에 박히지 않는다).
 export { MobileSheetPlaceholder } from './MobileSheetPlaceholder';
+// 심볼 간 내부링크(연관검색어형 칩 스트립). 순수 config 조회만 하는 서버
+// 컴포넌트라 barrel 노출 안전. app route가 persistent server sibling으로 소비.
+export { RelatedSymbols } from './RelatedSymbols';

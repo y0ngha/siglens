@@ -92,6 +92,8 @@ import {
     hasOptionsMarket,
 } from '@/entities/options-chain/lib/optionsDataCache';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { expectFaqSingleSource } from '@/__tests__/utils/expectFaqSingleSource';
+import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
 const mockHasOptionsMarket = vi.mocked(hasOptionsMarket);
@@ -163,6 +165,38 @@ describe('OptionsPage — SEO snapshot prose (Task 7b)', () => {
         expect(
             (client?.props as { hasSnapshotProse: unknown }).hasSnapshotProse
         ).toBe(true);
+    });
+
+    /**
+     * 회귀 가드: FAQPage 마크업과 화면 Q&A는 배열 하나에서 나와야 한다. 이 탭은
+     * 오랫동안 마크업만 내보내고 화면에는 Q&A가 없었다 — 구글은 대응하는 내용이
+     * 페이지에 보일 것을 요구하며, 없으면 리치 결과 자격을 잃는다. JSON-LD가
+     * 유효한지만 보는 테스트로는 이 결함이 잡히지 않는다.
+     */
+    it('FAQPage 구조화데이터가 화면 FaqSection과 같은 질문·답변을 쓴다', async () => {
+        mockHasOptionsMarket.mockResolvedValue(true);
+        mockFetchOptionsSnapshot.mockResolvedValue(OPTIONS_SNAPSHOT);
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+        const tree = await OptionsPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        expectFaqSingleSource(tree);
+    });
+
+    /**
+     * 회귀 가드: BreadcrumbList position 2는 화면 브레드크럼과 같은 이름이어야 한다.
+     * 근거는 `expectSymbolBreadcrumbName` JSDoc 참고.
+     */
+    it('BreadcrumbList가 티커가 아니라 displayName을 쓴다', async () => {
+        mockHasOptionsMarket.mockResolvedValue(true);
+        mockFetchOptionsSnapshot.mockResolvedValue(OPTIONS_SNAPSHOT);
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+        await OptionsPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        expectSymbolBreadcrumbName('Apple Inc.');
     });
 
     it('스냅샷 없으면(빈 배열) content가 undefined로 전달되고(렌더러가 자체 null 반환), OptionsPageClient에는 hasSnapshotProse=false가 전달된다', async () => {

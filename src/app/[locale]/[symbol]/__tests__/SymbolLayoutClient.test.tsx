@@ -59,8 +59,15 @@ describe('SymbolLayoutFloatingChat', () => {
 // 레이아웃 높이를 바꾼다"였다). 형제 탭은 반대로 min-h를 유지해 콘텐츠 길이에 따라
 // 자라고 페이지가 스크롤된다.
 describe('SymbolLayoutJail (차트 높이 고정)', () => {
+    /**
+     * 차트 라우트의 확정 높이는 **데스크톱 전용**이다. 이 높이가 필요한 이유는
+     * `ChartContent`의 aside(`md:h-full` + 자체 스크롤)가 조상의 확정 높이 없이는
+     * 해석되지 않아서인데, 그 aside는 `hidden md:flex`라 모바일에 없다.
+     * 모바일에 걸면 jail이 뷰포트에 고정되고 그 안의 `<main>`이 따로 스크롤해
+     * **이중 스크롤**이 된다("지난 AI 분석"에 닿으려면 두 번 스크롤).
+     */
     const DEFINITE_HEIGHT =
-        'h-[calc(100dvh-var(--header-h,3.5rem)-var(--pwa-banner-h,0px))]';
+        'md:h-[calc(100dvh-var(--header-h,3.5rem)-var(--pwa-banner-h,0px))]';
     const MIN_HEIGHT =
         'min-h-[calc(100dvh-var(--header-h,3.5rem)-var(--pwa-banner-h,0px))]';
     const SIBLING_SEGMENTS = [
@@ -101,9 +108,9 @@ describe('SymbolLayoutJail (차트 높이 고정)', () => {
                 const jail = renderJail(LONG_ANALYSIS);
 
                 expect(jail.className).toContain(DEFINITE_HEIGHT);
-                expect(jail.className).toContain('overflow-hidden');
-                // 버그는 min-h로 되돌아간다 — min-h면 긴 패널이 차트를 늘린다.
-                expect(jail.className).not.toContain(MIN_HEIGHT);
+                expect(jail.className).toContain('md:overflow-hidden');
+                // 모바일은 성장한다 — 페이지가 한 번만 스크롤해야 한다.
+                expect(jail.className).toContain(MIN_HEIGHT);
             });
         });
 
@@ -112,8 +119,8 @@ describe('SymbolLayoutJail (차트 높이 고정)', () => {
                 const jail = renderJail(SHORT_ANALYSIS);
 
                 expect(jail.className).toContain(DEFINITE_HEIGHT);
-                expect(jail.className).toContain('overflow-hidden');
-                expect(jail.className).not.toContain(MIN_HEIGHT);
+                expect(jail.className).toContain('md:overflow-hidden');
+                expect(jail.className).toContain(MIN_HEIGHT);
             });
         });
     });

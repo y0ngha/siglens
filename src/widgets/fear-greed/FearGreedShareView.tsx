@@ -11,6 +11,7 @@ import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { FearGreedHero } from './FearGreedHero';
 import { FearGreedGroupBar } from './FearGreedGroupBar';
 import { SelfNormWarningBadge } from './SelfNormWarningBadge';
+import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface FearGreedShareViewProps {
     snapshot: FearGreedSnapshot;
@@ -28,7 +29,7 @@ export function FearGreedShareView({ snapshot }: FearGreedShareViewProps) {
         <div className="flex flex-col gap-6 p-4 md:p-6">
             <div className="grid gap-6 md:grid-cols-2">
                 <section className="flex flex-col gap-3">
-                    <h2 className="text-sm font-medium text-secondary-300">
+                    <h2 className={HEADING_SECTION}>
                         {t('FearGreedShareView.d9e96a')}
                     </h2>
                     <FearGreedHero snapshot={snapshot} />

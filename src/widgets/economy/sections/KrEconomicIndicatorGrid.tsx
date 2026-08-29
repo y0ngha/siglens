@@ -10,6 +10,10 @@ import {
 } from '@/shared/config/economyIndicators';
 import { cn } from '@/shared/lib/cn';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
 
 interface KrEconomicIndicatorGridProps {
     readonly cards: readonly KrIndicatorCard[];
@@ -29,8 +33,8 @@ interface KrEconomicIndicatorGridProps {
 export function KrEconomicIndicatorGrid({
     cards,
 }: KrEconomicIndicatorGridProps) {
-    const tCfg = useTranslations('shared.config');
     const t = useTranslations('widgets.economy');
+    const tCfg = useTranslations('shared.config');
     if (cards.length === 0) return null;
 
     const byCategory = new Map<EconomyCategoryKey, KrIndicatorCard[]>();
@@ -42,10 +46,7 @@ export function KrEconomicIndicatorGrid({
 
     return (
         <section aria-labelledby="kr-economy-indicators" className="space-y-5">
-            <h2
-                id="kr-economy-indicators"
-                className="text-base font-semibold text-secondary-200"
-            >
+            <h2 id="kr-economy-indicators" className={HEADING_SECTION}>
                 {t('KrEconomicIndicatorGrid.c2a5bf')}
             </h2>
             {ECONOMY_INDICATOR_CATEGORIES.map(category => {
@@ -54,7 +55,7 @@ export function KrEconomicIndicatorGrid({
                 if (!items || items.length === 0) return null;
                 return (
                     <div key={category.key} className="space-y-2">
-                        <h3 className="text-sm font-medium text-secondary-400">
+                        <h3 className={HEADING_SUBSECTION}>
                             {tCfg(
                                 ECONOMY_CATEGORY_LABEL_KEY[category.key] ??
                                     category.label
@@ -80,11 +81,11 @@ interface IndicatorCardProps {
 }
 
 function IndicatorCard({ card }: IndicatorCardProps) {
-    const tCfg = useTranslations('shared.config');
     const t = useTranslations('widgets.economy');
+    const tCfg = useTranslations('shared.config');
     const { meta, latest, latestDate, changeFromPrevious } = card;
     return (
-        <article className="rounded-lg border border-secondary-800 bg-secondary-800/30 p-4">
+        <article className="rounded-lg border border-secondary-700 bg-secondary-800/30 p-4">
             <div className="flex items-center gap-1.5">
                 <h4 className="text-sm text-secondary-400">
                     {ECONOMY_INDICATOR_LABEL_KEY[meta.label]
@@ -104,9 +105,9 @@ function IndicatorCard({ card }: IndicatorCardProps) {
                     className={cn(
                         'mt-1 text-xs',
                         changeFromPrevious > 0
-                            ? 'text-ui-danger'
+                            ? 'text-ui-danger-text'
                             : changeFromPrevious < 0
-                              ? 'text-ui-success'
+                              ? 'text-ui-success-text'
                               : 'text-secondary-400'
                     )}
                 >
