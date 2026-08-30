@@ -11,8 +11,18 @@ vi.mock('@/entities/ticker', () => ({
     addRecentSearch: vi.fn(),
     clearRecentSearches: vi.fn(),
     removeRecentSearch: vi.fn(),
+    relabelRecentSearches: vi.fn(),
     getRecentSearches: vi.fn().mockReturnValue([]),
     RECENT_SEARCHES_STORAGE_KEY: 'siglens_recent_searches',
+}));
+
+/**
+ * 회사명 백필은 **서버 액션**을 부른다. mock하지 않으면 라벨이 심볼과 같은
+ * 픽스처(`{ symbol: 'AAPL', label: 'AAPL' }`)마다 실제 액션이 유닛 테스트에서
+ * 호출된다 — 실패가 `.catch`에 삼켜져 초록으로 통과하므로 신호도 남지 않는다.
+ */
+vi.mock('@/entities/ticker/actions', () => ({
+    getAssetLabelsAction: vi.fn().mockResolvedValue({ labels: {}, failed: [] }),
 }));
 
 import {
