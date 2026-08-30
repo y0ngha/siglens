@@ -1,5 +1,33 @@
 # Changelog
 
+# [0.65.0](https://github.com/y0ngha/siglens/compare/v0.64.0...v0.65.0) (2026-08-30)
+
+
+### Bug Fixes
+
+* CI 실패 2건 — i18n:lint의 로케일 의존 grep, 조건부 훅 3곳 ([bd063e5](https://github.com/y0ngha/siglens/commit/bd063e5e9c6d6695c837f61852b963a63ea1d86f))
+* clientKeys 라우트 순서가 파일시스템 순회 순서에 의존 ([2f36114](https://github.com/y0ngha/siglens/commit/2f361145b49b5e90f95639828f85387a8a74d5f7))
+* e2e 실패 3건 + 런타임 MISSING_MESSAGE 3건 ([37d35c2](https://github.com/y0ngha/siglens/commit/37d35c240c661a8698502f377289bb7641b61a95))
+* i18n 산출물 정렬이 ICU 로케일에 의존해 CI 드리프트 검사 실패 ([f102dc0](https://github.com/y0ngha/siglens/commit/f102dc012d2c518d580d03480e721a17224c9f2a))
+* i18n raw 키 노출 3건 + e2e 회귀 2건 ([44dd499](https://github.com/y0ngha/siglens/commit/44dd49907c5c2c32071e7cccba45e9ccab4c5c6f))
+
+
+### Features
+
+* 다국어 번역 및 추출 도구 완성 ([a2a0416](https://github.com/y0ngha/siglens/commit/a2a0416bcd9457c481c43f48dbc837e1494e2c8e))
+* 다국어 지원 완성 — 지역화 자산명 추가 및 미추출 문자열 문서화 ([7d74451](https://github.com/y0ngha/siglens/commit/7d74451e2ff479706c77a2f29d6a4421bc5ee017))
+* 백필에 --since 창 추가 (기본 6개월) ([f16e3c5](https://github.com/y0ngha/siglens/commit/f16e3c564c6a848b4de4df7af54674d1c026a996))
+* 분석 결과 prose 다국어 번역 기능 추가 ([d461c16](https://github.com/y0ngha/siglens/commit/d461c16783d3b7e7692719111fe39569be7c6598))
+* 언어 스위처에 지구본 아이콘 추가 ([8712887](https://github.com/y0ngha/siglens/commit/87128870a9ea20d1d9ee37414fe909b849d3118e))
+* i18n 뉴스·경제·프로필 로컬라이제이션 및 SEO 정규화 ([69f1e72](https://github.com/y0ngha/siglens/commit/69f1e7220fa4ab841649832721fdd00d00965348))
+* i18n 다국어 지원 + 라우팅 [locale] 개편 (next-intl 4.13.7) ([4c8a03a](https://github.com/y0ngha/siglens/commit/4c8a03ac23efef5b8e86e0515a90b28031d5201e))
+* i18n 메시지 카탈로그 추출 및 테스트 인프라 ([792c64b](https://github.com/y0ngha/siglens/commit/792c64b5a1ad6e27428167c8243519438cefac1c))
+
+
+### Performance Improvements
+
+* React Doctor 경고 26 → 14 (score 71 → 83) ([bc5860f](https://github.com/y0ngha/siglens/commit/bc5860fe40c35fa0779a39f47250a9ba83cb8644))
+
 # [0.64.0](https://github.com/y0ngha/siglens/compare/v0.63.1...v0.64.0) (2026-08-27)
 
 
