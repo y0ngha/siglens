@@ -6,15 +6,6 @@
 
 // @vitest-environment jsdom
 import { renderHook, act } from '@testing-library/react';
-
-vi.mock('@/entities/ticker', () => ({
-    addRecentSearch: vi.fn(),
-    clearRecentSearches: vi.fn(),
-    removeRecentSearch: vi.fn(),
-    getRecentSearches: vi.fn().mockReturnValue([]),
-    RECENT_SEARCHES_STORAGE_KEY: 'siglens_recent_searches',
-}));
-
 import {
     addRecentSearch,
     clearRecentSearches,
@@ -22,6 +13,27 @@ import {
     removeRecentSearch,
 } from '@/entities/ticker';
 import { useRecentSearches } from '@/features/ticker-search/hooks/useRecentSearches';
+
+// `vi.mock`은 import 블록 **뒤에** 모아 둔다 — import 사이에 끼우지 않는다
+// (MISTAKES.md Tests §17). 호이스팅 덕에 동작은 같지만, 읽는 사람에게는
+// import 순서가 실행 순서처럼 보인다.
+vi.mock('@/entities/ticker', () => ({
+    addRecentSearch: vi.fn(),
+    clearRecentSearches: vi.fn(),
+    removeRecentSearch: vi.fn(),
+    relabelRecentSearches: vi.fn(),
+    getRecentSearches: vi.fn().mockReturnValue([]),
+    RECENT_SEARCHES_STORAGE_KEY: 'siglens_recent_searches',
+}));
+
+/**
+ * 회사명 백필은 **서버 액션**을 부른다. mock하지 않으면 라벨이 심볼과 같은
+ * 픽스처(`{ symbol: 'AAPL', label: 'AAPL' }`)마다 실제 액션이 유닛 테스트에서
+ * 호출된다 — 실패가 `.catch`에 삼켜져 초록으로 통과하므로 신호도 남지 않는다.
+ */
+vi.mock('@/entities/ticker/actions', () => ({
+    getAssetLabelsAction: vi.fn().mockResolvedValue({ labels: {}, failed: [] }),
+}));
 
 const mockGetRecentSearches = getRecentSearches as ReturnType<typeof vi.fn>;
 const mockAddRecentSearch = addRecentSearch as ReturnType<typeof vi.fn>;

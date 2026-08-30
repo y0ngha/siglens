@@ -23,6 +23,7 @@ export {
     type RecentSearchEntry,
     addRecentSearch,
     removeRecentSearch,
+    relabelRecentSearches,
     clearRecentSearches,
     RECENT_SEARCHES_STORAGE_KEY,
     MAX_RECENT_SEARCHES,
