@@ -65,6 +65,12 @@ vi.mock('../lock', () => ({
     addFmpBudget: mockAddFmpBudget,
     getFmpBudgetUsed: mockGetFmpBudgetUsed,
     advanceRotationCursor: mockAdvanceRotationCursor,
+    // 이 스위트는 구조적 불가 집합을 다루지 않으므로 항상 빈 집합을 준다
+    // (= 이 수정 이전과 동일한 판정). 집합 자체의 계약은
+    // `runPrewarmBatch.structuralUnavailable.test.ts`가 진짜 lock.ts로 검증한다.
+    loadStructurallyUnavailable: vi.fn().mockResolvedValue(new Set<string>()),
+    markStructurallyUnavailable: vi.fn(),
+    clearStructurallyUnavailable: vi.fn(),
     // 구현과 동일한 값(lock.ts). 일시적 실패 backoff TTL.
     TRANSIENT_SKIP_TTL_SECONDS: 1800,
 }));

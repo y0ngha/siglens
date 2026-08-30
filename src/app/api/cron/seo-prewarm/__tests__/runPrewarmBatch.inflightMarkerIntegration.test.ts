@@ -46,6 +46,12 @@ vi.mock('@/shared/cache/redisClient', () => ({
         eval: vi.fn(),
         incrby: mockRedisIncrby,
         expire: vi.fn(),
+        // 구조적 불가 집합. 이 스위트는 in-flight 마커가 관심사라 항상 비어 있게
+        // 두지만, 실제 lock.ts를 통과시키는 것이 이 파일의 취지이므로 스텁이
+        // 아니라 Redis 클라이언트 표면에 그대로 얹는다.
+        sadd: vi.fn(),
+        srem: vi.fn(),
+        smembers: vi.fn().mockResolvedValue([]),
     }),
 }));
 
