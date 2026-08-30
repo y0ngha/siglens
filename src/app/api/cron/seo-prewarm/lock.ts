@@ -160,6 +160,82 @@ export async function markSkipped(
     });
 }
 
+/**
+ * "이 유닛은 **영원히** 못 만든다"로 확정된 `(symbol, tab)` 집합.
+ *
+ * backoff 마커(`markSkipped`)와 다르다. 저쪽은 "지금은 못 만든다"라 TTL이 지나면
+ * 다시 후보가 되지만, 이쪽은 데이터가 구조적으로 존재하지 않는 조합이다 — 의회
+ * 거래가 없는 종목의 `congress`, 옵션 체인이 없는 종목의 `options`.
+ *
+ * **왜 필요한가**: `runPrewarmBatch`의 stale 판정은 "탭 하나라도 fresh가 아니면
+ * 그 심볼은 stale"이고, `resolveHarvest`는 `cached`/`done`일 때만 스냅샷 행을
+ * 쓴다. 즉 만들 수 없는 탭은 행이 영원히 안 생기고, `generatedAtMap`에 키가 없어
+ * 영구히 not-fresh이며, 그 심볼은 **영구 stale**이 된다. 2026-08-30 실측에서
+ * `staleTotal`이 113에 고정된 채 `harvested: 0`이 8시간 이어졌고, 그 113개는
+ * 나머지 탭이 전부 fresh인데 `congress` 하나 때문에 매 회전마다 배치 슬롯을
+ * 소진하고 있었다. starvation watch도 `ALAB(never)`처럼 6탭이 멀쩡한 심볼을
+ * 미도달로 잘못 지목했다.
+ *
+ * 집합(SET) 하나에 모아 두는 것이 핵심이다 — 배치당 `SMEMBERS` **1회**로 전부
+ * 읽으므로, stale 판정이 지켜 온 "DB 1회 + 심볼별 Redis 왕복 없음" 성질을 깨지
+ * 않는다. 심볼별 키였다면 유니버스 크기만큼 왕복이 늘어난다.
+ *
+ * TTL을 두지 않는다. 상장 폐지·옵션 상장 같은 변화로 낡을 수는 있지만, 그때는
+ * 해당 조합이 유니버스에서 사라지거나 `clearStructurallyUnavailable`로 지운다 —
+ * 만료로 되살리면 "6시간마다 되살아나 슬롯을 먹는" 지금 문제로 그대로 돌아간다.
+ */
+const STRUCTURAL_SET_KEY = 'seo-prewarm:structural-unavailable';
+
+/**
+ * prewarm 유닛 `(symbol, tab)`의 정규 키. **이 모듈이 유일한 소스다.**
+ *
+ * 구조적 불가 집합에 SADD로 쓰는 키와, `runPrewarmBatch`가 그 집합을 조회할 때
+ * 만드는 키가 반드시 같아야 기능이 성립한다. 각자 만들면 둘 중 하나만 바뀌었을 때
+ * `structural.has()`가 항상 false가 되어 판정이 **조용히** 무력화되고, 양쪽 모두
+ * 자기 헬퍼로 키를 만드는 테스트는 그 불일치를 재현조차 못 한다.
+ *
+ * `findGeneratedAtMap`(DB)도 같은 포맷(`${symbol.toUpperCase()}:${tab}`)으로 맵을
+ * 만든다 — 그쪽은 저장소 레이어의 사정이라 여기서 강제하지 않지만, 포맷이 갈리면
+ * 신선도 조회가 통째로 빗나가므로 바꿀 때 함께 봐야 한다.
+ */
+export function prewarmUnitKey(symbol: string, tab: string): string {
+    return `${symbol.toUpperCase()}:${tab}`;
+}
+
+/** `(symbol, tab)`을 구조적 불가로 확정한다. 멱등이다(SADD). */
+export async function markStructurallyUnavailable(
+    symbol: string,
+    tab: string
+): Promise<void> {
+    const redis = getRedisClient();
+    if (redis === null) return;
+    await redis.sadd(STRUCTURAL_SET_KEY, prewarmUnitKey(symbol, tab));
+}
+
+/** 확정을 해제한다 — 옵션이 새로 상장되는 등 구조가 바뀐 조합의 복구용. */
+export async function clearStructurallyUnavailable(
+    symbol: string,
+    tab: string
+): Promise<void> {
+    const redis = getRedisClient();
+    if (redis === null) return;
+    await redis.srem(STRUCTURAL_SET_KEY, prewarmUnitKey(symbol, tab));
+}
+
+/**
+ * 구조적 불가 조합 전체를 한 번에 읽는다(배치당 1회).
+ *
+ * redis 미구성이면 빈 집합을 준다 — 그 경우 동작은 이 수정 이전과 동일해질 뿐
+ * (만들 수 없는 탭이 다시 stale로 잡힘) 배치가 죽지는 않는다. `markSkipped` 등
+ * 다른 마커 함수들과 같은 degrade 방침이다.
+ */
+export async function loadStructurallyUnavailable(): Promise<Set<string>> {
+    const redis = getRedisClient();
+    if (redis === null) return new Set();
+    const members = await redis.smembers(STRUCTURAL_SET_KEY);
+    return new Set(members.map(String));
+}
+
 /** (symbol, tab) 조합이 현재 backoff(skip) 상태인지 조회한다(FIX C). */
 export async function isSkipped(symbol: string, tab: string): Promise<boolean> {
     const redis = getRedisClient();

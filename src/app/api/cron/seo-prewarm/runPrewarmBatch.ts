@@ -20,8 +20,10 @@ import {
     getFmpBudgetUsed,
     getInFlightMarker,
     isSkipped,
+    loadStructurallyUnavailable,
     markInFlight,
     markSkipped,
+    prewarmUnitKey,
     TRANSIENT_SKIP_TTL_SECONDS,
 } from './lock';
 import { TAB_SEAMS, resolveHarvest } from './harvest';
@@ -157,8 +159,36 @@ const DEFAULT_CLOCK: PrewarmClock = { now: Date.now, sleep: defaultSleep };
 // findGeneratedAtMap(api.ts)이 UPPERCASE 심볼로 키를 저장/조회하므로
 // 여기서도 대문자화해야 한다 — 소문자 심볼이 유입되면(현재는 화이트리스트가
 // 우연히 전부 대문자라 드러나지 않음) freshness lookup이 항상 miss한다.
+/**
+ * 키 포맷은 `lock.ts`가 소유한다 — 여기서 다시 만들면 구조적 불가 집합에 쓴 키와
+ * 여기서 조회하는 키가 갈릴 수 있고, 그러면 `structural.has()`가 항상 false가 되어
+ * 판정이 조용히 죽는다(양쪽이 각자 헬퍼를 쓰면 테스트도 그 불일치를 못 만든다).
+ */
 function snapshotKey(symbol: string, tab: SeoSnapshotTab): string {
-    return `${symbol.toUpperCase()}:${tab}`;
+    return prewarmUnitKey(symbol, tab);
+}
+
+/**
+ * "이 탭은 이번 tick이 처리해야 할 일감인가."
+ *
+ * stale 판정(`staleSymbols`)과 후보 분류(`classifySymbol`)가 **반드시 같은
+ * 술어**를 써야 한다. 두 곳에 같은 조건을 복사해 두면 한쪽만 고쳐졌을 때
+ * "stale이라 후보엔 올라가는데 actionable한 탭은 없는" 심볼이 생겨 배치 슬롯이
+ * 조용히 새고, 그게 정확히 2026-08-30에 관측된 모양이다.
+ *
+ * 구조적으로 만들 수 없는 조합은 처리 대상이 아니다 — 행이 영원히 안 생기므로
+ * 신선도만 보면 영구히 not-fresh이고, 그 심볼은 영구 stale로 굳는다.
+ */
+function isTabPending(
+    symbol: string,
+    tab: SeoSnapshotTab,
+    generatedAtMap: Map<string, Date>,
+    structural: ReadonlySet<string>,
+    boundary: Date
+): boolean {
+    const key = snapshotKey(symbol, tab);
+    if (structural.has(key)) return false;
+    return !isSnapshotFresh(generatedAtMap.get(key), boundary);
 }
 
 interface StarvedSymbol {
@@ -186,6 +216,7 @@ interface StarvedSymbol {
 function findStarvedSymbols(
     staleSymbols: PrewarmSymbol[],
     generatedAtMap: Map<string, Date>,
+    structural: ReadonlySet<string>,
     nowMs: number
 ): StarvedSymbol[] {
     return staleSymbols
@@ -193,6 +224,11 @@ function findStarvedSymbols(
             let oldestGeneratedAt: Date | undefined;
             let neverGenerated = false;
             for (const tab of u.tabs) {
+                // 만들 수 없는 탭은 "미도달"의 증거가 아니다. 빼지 않으면 6탭이
+                // 멀쩡한 심볼이 congress 하나 때문에 `never`로 찍혀, 이 워치가
+                // 잡으려던 진짜 미도달 심볼을 가려 버린다(2026-08-30 실측:
+                // `ALAB(never)`인데 실제로는 6행이 하루 전 생성돼 있었다).
+                if (structural.has(snapshotKey(u.symbol, tab))) continue;
                 const generatedAt = generatedAtMap.get(
                     snapshotKey(u.symbol, tab)
                 );
@@ -227,9 +263,15 @@ function findStarvedSymbols(
 function logStarvationWatch(
     staleSymbols: PrewarmSymbol[],
     generatedAtMap: Map<string, Date>,
+    structural: ReadonlySet<string>,
     nowMs: number
 ): void {
-    const starved = findStarvedSymbols(staleSymbols, generatedAtMap, nowMs);
+    const starved = findStarvedSymbols(
+        staleSymbols,
+        generatedAtMap,
+        structural,
+        nowMs
+    );
     if (starved.length === 0) return;
     const worst = starved
         .slice(0, STARVATION_LOG_LIMIT)
@@ -277,20 +319,21 @@ export async function runPrewarmBatch(
         universe.map(u => u.symbol)
     );
 
+    // 구조적으로 못 만드는 유닛(의회 거래 없는 종목의 congress 등)은 stale 판정에서
+    // 뺀다 — 안 빼면 그 심볼이 영구 stale로 남아 회전마다 슬롯만 먹는다
+    // (`loadStructurallyUnavailable` JSDoc에 2026-08-30 실측). SMEMBERS 1회라
+    // 심볼별 Redis 왕복이 늘지 않는다.
+    const structural = await loadStructurallyUnavailable();
     const staleSymbols = universe.filter(u => {
         const boundary = boundaryFor(u.symbol);
-        return u.tabs.some(
-            tab =>
-                !isSnapshotFresh(
-                    generatedAtMap.get(snapshotKey(u.symbol, tab)),
-                    boundary
-                )
+        return u.tabs.some(tab =>
+            isTabPending(u.symbol, tab, generatedAtMap, structural, boundary)
         );
     });
     // 2026-08 감사(starvation watch) — 회전에서 구조적으로 빠지고 있는 심볼을
     // 로그에 이름으로 남긴다. 이미 배치당 1회 읽은 `generatedAtMap`(DB)만
     // 재사용하므로 심볼당 Redis 왕복이 늘지 않는다(findStarvedSymbols 참고).
-    logStarvationWatch(staleSymbols, generatedAtMap, now.getTime());
+    logStarvationWatch(staleSymbols, generatedAtMap, structural, now.getTime());
     // 자기 시장이 장중인 심볼은 이번 틱에서 뺀다. 창의 뒤쪽 4시간이 KRX 장중이라,
     // 그 틱에 걸린 국내 종목은 형성 중인 일봉으로 만든 서술이 다음 마감까지 굳는다.
     //
@@ -304,6 +347,7 @@ export async function runPrewarmBatch(
     const batch = await selectFairBatch(
         selectable,
         generatedAtMap,
+        structural,
         boundaryFor
     );
     const counts: PrewarmBatchCounts = {
@@ -432,6 +476,7 @@ export async function runPrewarmBatch(
 async function selectFairBatch(
     staleSymbols: PrewarmSymbol[],
     generatedAtMap: Map<string, Date>,
+    structural: ReadonlySet<string>,
     boundaryFor: (symbol: string) => Date
 ): Promise<PrewarmSymbol[]> {
     if (staleSymbols.length === 0) return [];
@@ -457,6 +502,7 @@ async function selectFairBatch(
             classifySymbol(
                 candidate,
                 generatedAtMap,
+                structural,
                 boundaryFor(candidate.symbol)
             )
         )
@@ -480,14 +526,11 @@ type SymbolCandidacy = 'fresh' | 'blocked';
 async function classifySymbol(
     u: PrewarmSymbol,
     generatedAtMap: Map<string, Date>,
+    structural: ReadonlySet<string>,
     boundary: Date
 ): Promise<SymbolCandidacy> {
-    const staleTabs = u.tabs.filter(
-        tab =>
-            !isSnapshotFresh(
-                generatedAtMap.get(snapshotKey(u.symbol, tab)),
-                boundary
-            )
+    const staleTabs = u.tabs.filter(tab =>
+        isTabPending(u.symbol, tab, generatedAtMap, structural, boundary)
     );
     if (staleTabs.length === 0) return 'blocked'; // 이론상 도달 안 함(staleSymbols 필터로 보장).
 

@@ -11,9 +11,24 @@ import {
 } from '@/entities/analysis/api';
 import { prewarmNews } from '@/entities/news-article/api';
 import { prewarmOptions } from '@/entities/options-chain/api';
-import { markSkipped, clearInFlight, TRANSIENT_SKIP_TTL_SECONDS } from './lock';
+import {
+    markSkipped,
+    clearInFlight,
+    clearStructurallyUnavailable,
+    markStructurallyUnavailable,
+    TRANSIENT_SKIP_TTL_SECONDS,
+} from './lock';
 import type { PrewarmBatchCounts } from './runPrewarmBatch';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+
+/**
+ * "이 유닛은 만들 데이터가 존재하지 않는다"를 뜻하는 seam status.
+ *
+ * 여기 실린 값만 구조적 불가로 **영구** 확정된다. 확정은 TTL이 없으므로 목록을
+ * 늘릴 때는 그 status가 정말 데이터 부재를 뜻하는지 — 일시적 실패나 호출자 설정의
+ * 산물이 아닌지 — 확인해야 한다.
+ */
+const NO_DATA_STATUSES = new Set(['no_trades', 'no_chains_error']);
 
 interface TabSeamContext {
     symbol: string;
@@ -84,6 +99,24 @@ export async function resolveHarvest(
     counts: PrewarmBatchCounts
 ): Promise<boolean> {
     if (result === null) {
+        /**
+         * **여기서는 구조적 불가로 확정하지 않는다** — 의도된 판단이다.
+         *
+         * `null`을 내는 실질적 경로는 `prewarmOptions`의 NoChains인데,
+         * `fetchOptionsSnapshot`의 `null`은 "옵션 없는 종목"과 "Yahoo 일시 장애"를
+         * 구분하지 않는다(그쪽 JSDoc이 명시). 확정하면 장애 한 번에 그 종목의
+         * options 탭이 영구히 죽는다. `hasOptionsMarket`도 판별자가 못 된다 —
+         * 예외에도 `false`를 돌려주므로 같은 혼동을 그대로 물려받는다.
+         *
+         * 그리고 확정하지 않아도 이 자리에서 영구 stale이 생기지 않는다:
+         * `applicableTabsFor`가 `POPULAR_OPTIONS_TICKERS` 화이트리스트로 options
+         * 탭을 걸기 때문에, 옵션이 없는 종목에는 애초에 이 탭이 붙지 않는다.
+         * 화이트리스트 종목이 옵션 시장을 영구히 잃는 경우는 그 목록에서 빼는 것이
+         * 옳은 대응이지, 런타임 블랙리스트가 아니다.
+         *
+         * 즉 6시간 backoff로 충분하다. 상류 seam이 NoChains와 장애를 구분해 서로
+         * 다른 status로 돌려주게 되면 그때 이 분기도 확정 대상이 된다.
+         */
         console.warn(`[seo-prewarm] skip ${symbol}:${tab} — null result`);
         await markSkipped(symbol, tab);
         await clearInFlight(symbol, tab);
@@ -108,6 +141,14 @@ export async function resolveHarvest(
             generatedAt: new Date(),
         });
         counts.harvested++;
+        /**
+         * 구조는 변한다 — 의회 거래가 없던 종목에 거래가 신고되고, 옵션이 새로
+         * 상장된다. 한 번이라도 만들어졌으면 그 조합은 더 이상 "불가능"이 아니므로
+         * 확정을 해제한다. 이게 자동 복구 경로다: 선별(stale 판정)에서는 빠지지만
+         * 다른 탭이 stale해져 심볼이 선택되면 6시간 backoff가 만료된 뒤 한 번
+         * 재시도되고, 그때 성공하면 여기서 풀린다.
+         */
+        await clearStructurallyUnavailable(symbol, tab);
         await clearInFlight(symbol, tab);
         return true;
     }
@@ -132,6 +173,28 @@ export async function resolveHarvest(
         tab,
         isTransient ? TRANSIENT_SKIP_TTL_SECONDS : undefined
     );
+    /**
+     * 구조적으로 불가능한 유닛은 **영속** 집합에도 넣는다 — backoff만으로는
+     * 6시간마다 되살아나 배치 슬롯을 먹고, 무엇보다 그 심볼이 stale 집합에서
+     * 영영 못 빠져나온다(`loadStructurallyUnavailable` JSDoc의 실측 참고).
+     *
+     * **화이트리스트로 판정한다.** `SeamOutcome.status`가 `string`이라 타입이
+     * 좁혀지지 않으므로, "이것들만 아니면 구조적"이라는 부정 조건은 코드가 모르는
+     * 미래의 status를 기본값으로 영구 블랙리스트한다 — 확정은 TTL이 없어 되돌리기
+     * 어려운 방향이라, 모를 때는 확정하지 않는 쪽이 안전하다.
+     *
+     * 그래서 아래 두 상태는 목록에 없다:
+     *
+     * - `error`(=`isTransient`): FMP 장애 한 번이 이 경로로 들어온다. 영구 확정하면
+     *   장애가 끝나도 그 유닛이 다시는 안 만들어진다.
+     * - `miss_no_trigger`: core 계약상 **호출자가 `skipEnqueueIfMiss: true`를 넘겼을
+     *   때만** 나온다 — 데이터 부재가 아니라 caller 설정의 산물이다. 지금은 모든
+     *   prewarm seam이 `false`를 하드코딩해 도달 불가능하지만, 그 불변식이 이
+     *   분류에 묶여 있지 않다.
+     */
+    if (NO_DATA_STATUSES.has(result.status)) {
+        await markStructurallyUnavailable(symbol, tab);
+    }
     await clearInFlight(symbol, tab);
     return false;
 }

@@ -7,6 +7,9 @@ const {
     mockIncrby,
     mockExpire,
     mockEval,
+    mockSadd,
+    mockSrem,
+    mockSmembers,
     mockRedis,
 } = vi.hoisted(() => {
     const mockGet = vi.fn();
@@ -15,9 +18,20 @@ const {
     const mockIncrby = vi.fn();
     const mockExpire = vi.fn();
     const mockEval = vi.fn();
+    const mockSadd = vi.fn();
+    const mockSrem = vi.fn();
+    const mockSmembers = vi.fn();
     const mockRedis: Pick<
         import('@upstash/redis').Redis,
-        'get' | 'set' | 'del' | 'incrby' | 'expire' | 'eval'
+        | 'get'
+        | 'set'
+        | 'del'
+        | 'incrby'
+        | 'expire'
+        | 'eval'
+        | 'sadd'
+        | 'srem'
+        | 'smembers'
     > = {
         get: mockGet,
         set: mockSet,
@@ -25,6 +39,9 @@ const {
         incrby: mockIncrby,
         expire: mockExpire,
         eval: mockEval,
+        sadd: mockSadd,
+        srem: mockSrem,
+        smembers: mockSmembers,
     };
     return {
         mockGet,
@@ -33,6 +50,9 @@ const {
         mockIncrby,
         mockExpire,
         mockEval,
+        mockSadd,
+        mockSrem,
+        mockSmembers,
         mockRedis,
     };
 });
@@ -57,6 +77,10 @@ import {
     addFmpBudget,
     getFmpBudgetUsed,
     advanceRotationCursor,
+    prewarmUnitKey,
+    markStructurallyUnavailable,
+    clearStructurallyUnavailable,
+    loadStructurallyUnavailable,
 } from '../lock';
 
 describe('seo-prewarm lock', () => {
@@ -378,6 +402,103 @@ describe('seo-prewarm lock', () => {
                 'redis unavailable'
             );
             expect(mockIncrby).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * 2026-08-30 인시던트 대응으로 추가된 영속 집합. backoff(`markSkipped`)와 달리
+     * TTL이 없다 — "지금은 못 만든다"가 아니라 "데이터가 구조적으로 없다"를 뜻한다.
+     */
+    describe('구조적 불가 집합', () => {
+        describe('prewarmUnitKey', () => {
+            it('심볼을 대문자화한 `SYMBOL:tab` 포맷이다', () => {
+                expect(prewarmUnitKey('aapl', 'congress')).toBe(
+                    'AAPL:congress'
+                );
+            });
+
+            /**
+             * 이 포맷은 `runPrewarmBatch`의 stale 판정이 집합을 조회할 때 쓰는 키이자
+             * `findGeneratedAtMap`(DB)이 만드는 맵의 키와 같아야 한다. 셋 중 하나만
+             * 바뀌면 조회가 통째로 빗나가는데, 각자 키를 만들면 그 불일치가 어떤
+             * 테스트에도 재현되지 않는다.
+             */
+            it('DB 맵과 같은 포맷을 낸다', () => {
+                const row = { symbol: 'AAPL', tab: 'congress' };
+                expect(prewarmUnitKey('AAPL', 'congress')).toBe(
+                    `${row.symbol}:${row.tab}`
+                );
+            });
+        });
+
+        describe('markStructurallyUnavailable', () => {
+            it('정규 키로 SADD를 호출한다', async () => {
+                await markStructurallyUnavailable('aapl', 'congress');
+                expect(mockSadd).toHaveBeenCalledWith(
+                    'seo-prewarm:structural-unavailable',
+                    'AAPL:congress'
+                );
+            });
+
+            it('redis null이면 noop, throw 없음', async () => {
+                vi.mocked(getRedisClient).mockReturnValue(null);
+                await expect(
+                    markStructurallyUnavailable('aapl', 'congress')
+                ).resolves.toBeUndefined();
+                expect(mockSadd).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('clearStructurallyUnavailable', () => {
+            it('정규 키로 SREM을 호출한다', async () => {
+                await clearStructurallyUnavailable('aapl', 'congress');
+                expect(mockSrem).toHaveBeenCalledWith(
+                    'seo-prewarm:structural-unavailable',
+                    'AAPL:congress'
+                );
+            });
+
+            it('redis null이면 noop, throw 없음', async () => {
+                vi.mocked(getRedisClient).mockReturnValue(null);
+                await expect(
+                    clearStructurallyUnavailable('aapl', 'congress')
+                ).resolves.toBeUndefined();
+                expect(mockSrem).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('loadStructurallyUnavailable', () => {
+            it('SMEMBERS 결과를 Set으로 준다(배치당 1회)', async () => {
+                mockSmembers.mockResolvedValue([
+                    'AAPL:congress',
+                    'MSFT:options',
+                ]);
+                const set = await loadStructurallyUnavailable();
+                expect(mockSmembers).toHaveBeenCalledWith(
+                    'seo-prewarm:structural-unavailable'
+                );
+                expect(set.has('AAPL:congress')).toBe(true);
+                expect(set.has('MSFT:options')).toBe(true);
+                expect(set.size).toBe(2);
+            });
+
+            /**
+             * @upstash/redis는 응답에 JSON.parse를 돌리므로 멤버가 문자열이 아닌
+             * 값으로 돌아올 수 있다(`getInFlightMarker`가 number `1`에 물렸던 것과
+             * 같은 함정). String()으로 정규화하지 않으면 `has()`가 영영 false다.
+             */
+            it('숫자로 역직렬화된 멤버도 문자열로 정규화한다', async () => {
+                mockSmembers.mockResolvedValue([123, 'AAPL:congress']);
+                const set = await loadStructurallyUnavailable();
+                expect(set.has('123')).toBe(true);
+            });
+
+            it('redis null이면 빈 집합 — 이 수정 이전과 같은 판정으로 degrade', async () => {
+                vi.mocked(getRedisClient).mockReturnValue(null);
+                const set = await loadStructurallyUnavailable();
+                expect(set.size).toBe(0);
+                expect(mockSmembers).not.toHaveBeenCalled();
+            });
         });
     });
 });
