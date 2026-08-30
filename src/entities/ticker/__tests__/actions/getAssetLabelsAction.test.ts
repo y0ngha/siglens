@@ -11,7 +11,11 @@ vi.mock('../../lib/getAssetInfo', () => ({
 const mockGetAssetInfo = getAssetInfo as MockedFunction<typeof getAssetInfo>;
 
 function info(partial: Partial<AssetInfo> & { symbol: string }): AssetInfo {
-    return { name: partial.symbol, ...partial } as AssetInfo;
+    return {
+        ...partial,
+        symbol: partial.symbol,
+        name: partial.name ?? partial.symbol,
+    };
 }
 
 describe('getAssetLabelsAction 함수는', () => {

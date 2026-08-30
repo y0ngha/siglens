@@ -6,7 +6,17 @@
 
 // @vitest-environment jsdom
 import { renderHook, act } from '@testing-library/react';
+import {
+    addRecentSearch,
+    clearRecentSearches,
+    getRecentSearches,
+    removeRecentSearch,
+} from '@/entities/ticker';
+import { useRecentSearches } from '@/features/ticker-search/hooks/useRecentSearches';
 
+// `vi.mock`은 import 블록 **뒤에** 모아 둔다 — import 사이에 끼우지 않는다
+// (MISTAKES.md Tests §17). 호이스팅 덕에 동작은 같지만, 읽는 사람에게는
+// import 순서가 실행 순서처럼 보인다.
 vi.mock('@/entities/ticker', () => ({
     addRecentSearch: vi.fn(),
     clearRecentSearches: vi.fn(),
@@ -24,14 +34,6 @@ vi.mock('@/entities/ticker', () => ({
 vi.mock('@/entities/ticker/actions', () => ({
     getAssetLabelsAction: vi.fn().mockResolvedValue({ labels: {}, failed: [] }),
 }));
-
-import {
-    addRecentSearch,
-    clearRecentSearches,
-    getRecentSearches,
-    removeRecentSearch,
-} from '@/entities/ticker';
-import { useRecentSearches } from '@/features/ticker-search/hooks/useRecentSearches';
 
 const mockGetRecentSearches = getRecentSearches as ReturnType<typeof vi.fn>;
 const mockAddRecentSearch = addRecentSearch as ReturnType<typeof vi.fn>;
