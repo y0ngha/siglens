@@ -353,6 +353,29 @@ describe('resolveHarvest', () => {
             warnSpy.mockRestore();
         });
 
+        /**
+         * `SeamOutcome.status`는 `string`이라 타입이 좁혀지지 않는다. 부정 조건
+         * (`!isTransient && status !== 'miss_no_trigger'`)이었다면 코드가 모르는
+         * 미래의 status가 기본값으로 영구 블랙리스트됐다 — 확정은 TTL이 없어
+         * 되돌리기 어려운 방향이라 모를 때는 확정하지 않아야 한다.
+         */
+        it('알 수 없는 status는 확정하지 않는다', async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+
+            await resolveHarvest(
+                'AAPL',
+                'congress',
+                { status: 'submitted' } as never,
+                repo as never,
+                counts
+            );
+
+            expect(mockMarkStructural).not.toHaveBeenCalled();
+            warnSpy.mockRestore();
+        });
+
         it('성공하면 확정을 해제한다(자동 복구 경로)', async () => {
             await resolveHarvest(
                 'AAPL',

@@ -186,7 +186,19 @@ export async function markSkipped(
  */
 const STRUCTURAL_SET_KEY = 'seo-prewarm:structural-unavailable';
 
-function structuralMember(symbol: string, tab: string): string {
+/**
+ * prewarm 유닛 `(symbol, tab)`의 정규 키. **이 모듈이 유일한 소스다.**
+ *
+ * 구조적 불가 집합에 SADD로 쓰는 키와, `runPrewarmBatch`가 그 집합을 조회할 때
+ * 만드는 키가 반드시 같아야 기능이 성립한다. 각자 만들면 둘 중 하나만 바뀌었을 때
+ * `structural.has()`가 항상 false가 되어 판정이 **조용히** 무력화되고, 양쪽 모두
+ * 자기 헬퍼로 키를 만드는 테스트는 그 불일치를 재현조차 못 한다.
+ *
+ * `findGeneratedAtMap`(DB)도 같은 포맷(`${symbol.toUpperCase()}:${tab}`)으로 맵을
+ * 만든다 — 그쪽은 저장소 레이어의 사정이라 여기서 강제하지 않지만, 포맷이 갈리면
+ * 신선도 조회가 통째로 빗나가므로 바꿀 때 함께 봐야 한다.
+ */
+export function prewarmUnitKey(symbol: string, tab: string): string {
     return `${symbol.toUpperCase()}:${tab}`;
 }
 
@@ -197,7 +209,7 @@ export async function markStructurallyUnavailable(
 ): Promise<void> {
     const redis = getRedisClient();
     if (redis === null) return;
-    await redis.sadd(STRUCTURAL_SET_KEY, structuralMember(symbol, tab));
+    await redis.sadd(STRUCTURAL_SET_KEY, prewarmUnitKey(symbol, tab));
 }
 
 /** 확정을 해제한다 — 옵션이 새로 상장되는 등 구조가 바뀐 조합의 복구용. */
@@ -207,7 +219,7 @@ export async function clearStructurallyUnavailable(
 ): Promise<void> {
     const redis = getRedisClient();
     if (redis === null) return;
-    await redis.srem(STRUCTURAL_SET_KEY, structuralMember(symbol, tab));
+    await redis.srem(STRUCTURAL_SET_KEY, prewarmUnitKey(symbol, tab));
 }
 
 /**

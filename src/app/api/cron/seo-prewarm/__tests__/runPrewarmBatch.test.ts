@@ -68,6 +68,10 @@ vi.mock('../lock', () => ({
     // 이 스위트는 구조적 불가 집합을 다루지 않으므로 항상 빈 집합을 준다
     // (= 이 수정 이전과 동일한 판정). 집합 자체의 계약은
     // `runPrewarmBatch.structuralUnavailable.test.ts`가 진짜 lock.ts로 검증한다.
+    // 키 포맷은 lock.ts가 소유한다. 여기서 stub하면 이 스위트만 다른 포맷을 쓰게 돼
+    // 실제 불일치를 못 잡으므로, 구현과 같은 식을 그대로 둔다.
+    prewarmUnitKey: (symbol: string, tab: string) =>
+        `${symbol.toUpperCase()}:${tab}`,
     loadStructurallyUnavailable: vi.fn().mockResolvedValue(new Set<string>()),
     markStructurallyUnavailable: vi.fn(),
     clearStructurallyUnavailable: vi.fn(),

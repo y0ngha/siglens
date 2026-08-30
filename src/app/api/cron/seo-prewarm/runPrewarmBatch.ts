@@ -23,6 +23,7 @@ import {
     loadStructurallyUnavailable,
     markInFlight,
     markSkipped,
+    prewarmUnitKey,
     TRANSIENT_SKIP_TTL_SECONDS,
 } from './lock';
 import { TAB_SEAMS, resolveHarvest } from './harvest';
@@ -158,8 +159,13 @@ const DEFAULT_CLOCK: PrewarmClock = { now: Date.now, sleep: defaultSleep };
 // findGeneratedAtMap(api.ts)이 UPPERCASE 심볼로 키를 저장/조회하므로
 // 여기서도 대문자화해야 한다 — 소문자 심볼이 유입되면(현재는 화이트리스트가
 // 우연히 전부 대문자라 드러나지 않음) freshness lookup이 항상 miss한다.
+/**
+ * 키 포맷은 `lock.ts`가 소유한다 — 여기서 다시 만들면 구조적 불가 집합에 쓴 키와
+ * 여기서 조회하는 키가 갈릴 수 있고, 그러면 `structural.has()`가 항상 false가 되어
+ * 판정이 조용히 죽는다(양쪽이 각자 헬퍼를 쓰면 테스트도 그 불일치를 못 만든다).
+ */
 function snapshotKey(symbol: string, tab: SeoSnapshotTab): string {
-    return `${symbol.toUpperCase()}:${tab}`;
+    return prewarmUnitKey(symbol, tab);
 }
 
 /**
