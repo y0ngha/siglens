@@ -185,3 +185,40 @@ export function clearRecentSearches(
         // ignore
     }
 }
+
+/**
+ * 라벨이 심볼과 같은 항목에만 회사명을 채운다.
+ *
+ * 순서·구성은 건드리지 않는다 — 이름을 채우는 일이 최근 검색 순서를 흔들면
+ * 사용자 눈에는 목록이 저 혼자 재배열된 것으로 보인다. 이미 회사명이 붙은
+ * 항목도 덮어쓰지 않는다(사용자가 검색 결과에서 고른 표기가 더 정확하다).
+ *
+ * 저장은 채운 게 있을 때만 한다. 매 마운트 no-op 쓰기를 하면 다른 탭의
+ * `storage` 이벤트가 의미 없이 깨어난다.
+ */
+export function relabelRecentSearches(
+    labels: Record<string, string>,
+    storage: StorageLike | null = getDefaultStorage()
+): RecentSearchEntry[] {
+    const current = getRecentSearches(storage);
+    let changed = false;
+    const next = current.map(entry => {
+        if (entry.label !== entry.symbol) return entry;
+        const label = labels[entry.symbol]?.trim();
+        if (!label) return entry;
+        changed = true;
+        return { symbol: entry.symbol, label };
+    });
+
+    if (!changed) return current;
+
+    if (storage) {
+        try {
+            storage.setItem(RECENT_SEARCHES_STORAGE_KEY, JSON.stringify(next));
+        } catch {
+            // 저장 실패는 조용히 무시 (quota 초과 등)
+        }
+    }
+
+    return next;
+}
