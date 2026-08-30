@@ -1,5 +1,19 @@
 # Changelog
 
+# [0.66.0](https://github.com/y0ngha/siglens/compare/v0.65.0...v0.66.0) (2026-08-30)
+
+
+### Bug Fixes
+
+* 리뷰 반영 — 유닛 키 단일화 + 화이트리스트 판정 + lock 테스트 ([58e3459](https://github.com/y0ngha/siglens/commit/58e345927d5e30450989e92da8f72fe0ffd14801))
+* 만들 수 없는 탭이 심볼을 영구 stale로 고정하던 문제 ([f093725](https://github.com/y0ngha/siglens/commit/f093725b93ed63517cd6dfe8f70474632a164cb7))
+* **search:** PR [#776](https://github.com/y0ngha/siglens/issues/776) 리뷰 반영 — 배치 부분 실패 내성 + 백필 테스트 ([bf6ed95](https://github.com/y0ngha/siglens/commit/bf6ed9568026023ea25437179777032ebd4a56c8))
+
+
+### Features
+
+* **search:** 최근 검색 칩에 회사명 표시 + 검색창 폭·예시 문구 개선 ([8361bc2](https://github.com/y0ngha/siglens/commit/8361bc2ecdcb9bed94adfd509d3f63ff21c5a3fb))
+
 # [0.65.0](https://github.com/y0ngha/siglens/compare/v0.64.0...v0.65.0) (2026-08-30)
 
 
