@@ -24,9 +24,12 @@ const HASH_LENGTH = 6;
  *   트리에 없다. 여기서 `useTranslations`를 부르면 최후의 에러 경계가 그 자체로
  *   던져 `reset()`에 도달할 수 없다. 로케일도 알 수 없어 ko·en 병기 정적 문구를
  *   쓰는데, 추출기가 그 한국어를 다시 키로 뽑으면 같은 사고가 재발한다.
+ * - `entities/analysis-plain/lib/`: LLM 프롬프트 본문과 재시도 지적 문구.
+ *   화면이 아니라 모델에게 보내는 한국어라 번역 대상이 아니다. 로케일별로 갈리는
+ *   것은 프롬프트가 지정하는 **출력 언어**이지 프롬프트 자체가 아니다.
  */
 const EXCLUDE_RE =
-    /(__tests__|__integration__|\.test\.|\.spec\.|src\/app\/api\/|\/test-utils\/|global-error\.tsx|src\/app\/not-found\.tsx)/;
+    /(__tests__|__integration__|\.test\.|\.spec\.|src\/app\/api\/|\/test-utils\/|global-error\.tsx|src\/app\/not-found\.tsx|src\/entities\/analysis-plain\/lib\/)/;
 
 /** 파일 경로 → 메시지 네임스페이스. */
 export function namespaceFor(relPath) {

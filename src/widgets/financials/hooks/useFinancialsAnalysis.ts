@@ -11,12 +11,15 @@ import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { BotBlockedError } from '@/shared/lib/BotBlockedError';
+import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
 
 export type FinancialsAnalysisState =
     | { status: 'loading'; trigger: () => void }
     | {
           status: 'done';
           result: FinancialsAnalysisResponse;
+          /** 평이화 산문. `null`이면 쉽게보기 토글을 렌더하지 않는다. */
+          plain: string | null;
           trigger: () => void;
       }
     | { status: 'bot_blocked'; trigger: () => void }
@@ -32,7 +35,7 @@ async function fetchFinancialsAnalysis(
     reasoning: boolean,
     messages: StreamErrorMessages,
     signal?: AbortSignal
-): Promise<FinancialsAnalysisResponse> {
+): Promise<WithPlain<FinancialsAnalysisResponse>> {
     const result = await runAnalysisStream<RunFinancialsAnalysisActionResult>({
         type: 'financials',
         params: { symbol, modelId, reasoning },
@@ -41,7 +44,7 @@ async function fetchFinancialsAnalysis(
     });
 
     if (result.status === 'cached' || result.status === 'done')
-        return result.result;
+        return { data: result.result, plain: readPlain(result) };
     if (result.status === 'miss_no_trigger') {
         throw new BotBlockedError();
     }
@@ -141,7 +144,12 @@ export function useFinancialsAnalysis(
     }
 
     if (query.data !== undefined) {
-        return { status: 'done', result: query.data, trigger: retry };
+        return {
+            status: 'done',
+            result: query.data.data,
+            plain: query.data.plain,
+            trigger: retry,
+        };
     }
 
     return { status: 'loading', trigger: retry };

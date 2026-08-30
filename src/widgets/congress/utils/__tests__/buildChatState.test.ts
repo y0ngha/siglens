@@ -13,6 +13,7 @@ describe('buildChatState (congress)', () => {
     it('done 상태에서 congress context와 isAnalysisReady:true를 반환한다', () => {
         const state: CongressTrendState = {
             status: 'done',
+            plain: null,
             result: RESULT,
             trigger: () => {},
         };
@@ -91,6 +92,7 @@ describe('buildChatState (congress)', () => {
     it('timeframe은 항상 null이다', () => {
         const doneState: CongressTrendState = {
             status: 'done',
+            plain: null,
             result: RESULT,
             trigger: () => {},
         };

@@ -120,6 +120,7 @@ function analysisReturn(analysis: AnalysisResponse): UseAnalysisResult {
         reanalyzeCooldownMs: 0,
         cooldownNotice: null,
         isPersonalized: false,
+        plain: null,
     };
 }
 

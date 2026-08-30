@@ -142,6 +142,9 @@ vi.mock('@y0ngha/siglens-core', async () => ({
 vi.mock('@/entities/analysis-translation', () => ({
     translateAnalysisForLocale: vi.fn(async (analysis: unknown) => analysis),
 }));
+vi.mock('@/entities/analysis-plain', () => ({
+    rewriteToPlainLanguage: vi.fn(async () => '쉽게 쓴 분석문입니다.'),
+}));
 vi.mock('@/entities/analysis', () => ({
     tryAcquireReanalyzeCooldown: vi.fn().mockResolvedValue({ ok: true }),
 }));
@@ -161,6 +164,7 @@ import {
     resolveReasoning,
 } from '@/shared/lib/byokGate';
 import { translateAnalysisForLocale } from '@/entities/analysis-translation';
+import { rewriteToPlainLanguage } from '@/entities/analysis-plain';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { isBot } from '@/shared/api/isBot';
@@ -2328,7 +2332,11 @@ describe('POST /api/analysis/stream', () => {
 
                 // heartbeatStream이 JSON.stringify({ result: runAnalysis반환값 })으로
                 // 감싸고, runAnalysisStream이 payload.result를 꺼내야 원래 값이 된다.
-                expect(result).toEqual(expectedResult);
+                // `plain`은 라우트의 `withReaderViews`가 덧붙이는 필드다(쉽게보기).
+                expect(result).toEqual({
+                    ...expectedResult,
+                    plain: '쉽게 쓴 분석문입니다.',
+                });
             } finally {
                 fetchSpy.mockRestore();
             }
@@ -2385,6 +2393,111 @@ describe('POST /api/analysis/stream', () => {
 
             expect(response.status).toBe(400);
             expect(vi.mocked(runOverallAnalysisAction)).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('쉽게보기(plain) 배선', () => {
+        /**
+         * 평이화는 로케일 번역과 **병렬**로 돈다 — 입력이 한국어 원문이라 번역
+         * 결과에 의존하지 않는다. 직렬로 붙이면 추가 지연이 두 마감의 합이 된다.
+         */
+        it('technical 결과에 plain을 동봉한다', async () => {
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'cached',
+                result: { summary: 's' },
+                lockedInfoDepth: [],
+            } as never);
+
+            const events = await collectSseEvents(await POST(makeRequest()));
+            const done = events.find(e => e.includes('event: done'));
+
+            expect(done).toContain('쉽게 쓴 분석문입니다');
+            expect(rewriteToPlainLanguage).toHaveBeenCalledWith(
+                expect.objectContaining({ summary: 's' }),
+                'AAPL',
+                'ko'
+            );
+        });
+
+        /**
+         * 회귀(리뷰 라운드 1): 봉투째 넘기면 `extractProse`가 모든 경로에 `result.`
+         * 접두를 붙여 `dropSupersededPaths`가 조용히 no-op이 되고, 보정 전/후 매매
+         * 가격 두 벌이 함께 프롬프트에 실린다. 단위 테스트는 bare 경로만 써서
+         * 이 배선 결함을 못 잡았다 — 여기서 고정한다.
+         */
+        it('봉투가 아니라 분석 payload를 넘긴다', async () => {
+            const payload = {
+                summary: 's',
+                actionRecommendation: { entry: 'e' },
+            };
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'cached',
+                result: payload,
+                lockedInfoDepth: [],
+            } as never);
+
+            await collectSseEvents(await POST(makeRequest()));
+
+            expect(rewriteToPlainLanguage).toHaveBeenCalledWith(
+                payload,
+                'AAPL',
+                'ko'
+            );
+            const passed = vi.mocked(rewriteToPlainLanguage).mock.calls[0][0];
+            expect(passed).not.toHaveProperty('status');
+            expect(passed).not.toHaveProperty('lockedInfoDepth');
+        });
+
+        /**
+         * 액션은 실패를 `{ status: 'error', ... }`로 돌려주는데 그 안의 `message`가
+         * 산문으로 추출된다. 그대로 두면 게이트 거부 문구를 LLM에 보내 "쉽게 쓴 에러
+         * 메시지"를 만들고, 거부마다 DeepSeek 왕복이 붙는다.
+         */
+        it('에러 봉투에는 plain을 붙이지 않는다', async () => {
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'error',
+                error: { code: 'unexpected_error', message: '오류' },
+            } as never);
+
+            await collectSseEvents(await POST(makeRequest()));
+
+            expect(rewriteToPlainLanguage).not.toHaveBeenCalled();
+        });
+
+        /** 토글 UI가 없는 종류는 호출이 그대로 낭비다. */
+        it('허용 목록 밖 타입에는 호출하지 않는다', async () => {
+            const body = JSON.stringify({
+                type: 'briefing',
+                params: { symbol: 'AAPL' },
+            });
+
+            await collectSseEvents(await POST(makeRequest(undefined, body)));
+
+            expect(rewriteToPlainLanguage).not.toHaveBeenCalled();
+        });
+
+        /** `facts.symbol`이 프롬프트에 들어가므로 빈 값을 넘기면 안 된다. */
+        it('symbol이 없으면 호출하지 않는다', async () => {
+            const body = JSON.stringify({ type: 'news', params: {} });
+
+            await collectSseEvents(await POST(makeRequest(undefined, body)));
+
+            expect(rewriteToPlainLanguage).not.toHaveBeenCalled();
+        });
+
+        /** 재작성 실패는 분석을 막지 않는다 — plain: null로 내려가고 원본이 보인다. */
+        it('평이화가 null이면 plain: null로 내려간다', async () => {
+            vi.mocked(rewriteToPlainLanguage).mockResolvedValueOnce(null);
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'cached',
+                result: { summary: 's' },
+                lockedInfoDepth: [],
+            } as never);
+
+            const events = await collectSseEvents(await POST(makeRequest()));
+            const done = events.find(e => e.includes('event: done'));
+
+            expect(done).toContain('"plain":null');
         });
     });
 });

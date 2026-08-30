@@ -181,6 +181,7 @@ export function ChartContent({
         reanalyzeCooldownMs,
         cooldownNotice,
         isPersonalized,
+        plain,
     } = useAnalysis({
         symbol,
         companyName,
@@ -341,6 +342,7 @@ export function ChartContent({
                     skillCount={skillCount}
                     lockedInfoDepth={lockedInfoDepth}
                     isPersonalized={isPersonalized}
+                    plain={plain}
                     isFreeUser={isFreeUser}
                 />
                 {/* "내 포지션" 결정적 요약 — 홀딩이 있는 회원에게만, AI 분석
@@ -386,6 +388,7 @@ export function ChartContent({
         skillCount,
         lockedInfoDepth,
         isPersonalized,
+        plain,
         isFreeUser,
         positionStatus,
         symbolHolding,

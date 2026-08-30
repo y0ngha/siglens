@@ -14,6 +14,7 @@ import { CongressTrendSummaryError } from './CongressTrendSummaryError';
 import { CongressTrendSummarySkeleton } from './CongressTrendSummarySkeleton';
 import { CongressTrendSummaryView } from './CongressTrendSummaryView';
 import { CongressTrendSummaryEmpty } from './CongressTrendSummaryEmpty';
+import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
 
 interface CongressTrendSummaryProps {
     symbol: string;
@@ -87,5 +88,9 @@ export function CongressTrendSummary({
         );
     }
 
-    return <CongressTrendSummaryView result={state.result} />;
+    return (
+        <PlainAnalysisSwitch plain={state.plain}>
+            <CongressTrendSummaryView result={state.result} />
+        </PlainAnalysisSwitch>
+    );
 }

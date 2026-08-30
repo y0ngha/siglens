@@ -132,6 +132,7 @@ function analysisReturn(
         reanalyzeCooldownMs: 0,
         cooldownNotice: null,
         isPersonalized: false,
+        plain: null,
         ...overrides,
     };
 }

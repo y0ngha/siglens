@@ -14,6 +14,7 @@ describe('fundamental buildChatState', () => {
     it('done → context: fundamental payload, ready=true', () => {
         const state: FundamentalAnalysisState = {
             status: 'done',
+            plain: null,
             result: FAKE_RESULT,
             trigger: () => {},
         };

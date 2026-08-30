@@ -108,7 +108,7 @@ function makeDoneResult(
 
 function mockDoneState(result: OverallAnalysisResponse, trigger = vi.fn()) {
     mockUseOverallAnalysis.mockReturnValue({
-        state: { status: 'done', result },
+        state: { status: 'done', plain: null, result },
         trigger,
     });
 }
@@ -732,6 +732,7 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
         mockUseOverallAnalysis.mockReturnValue({
             state: {
                 status: 'done',
+                plain: null,
                 result: makeDoneResult({ optionsBulletsKo: ['옵션 신호'] }),
             },
             trigger: vi.fn(),
@@ -752,6 +753,7 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
         mockUseOverallAnalysis.mockReturnValue({
             state: {
                 status: 'done',
+                plain: null,
                 result: makeDoneResult({
                     fundamentalBulletsKo: ['펀더멘털 신호'],
                 }),
@@ -776,6 +778,7 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
         mockUseOverallAnalysis.mockReturnValue({
             state: {
                 status: 'done',
+                plain: null,
                 result: makeDoneResult({ financialsBulletsKo: ['재무 신호'] }),
             },
             trigger: vi.fn(),
@@ -798,6 +801,7 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
         mockUseOverallAnalysis.mockReturnValue({
             state: {
                 status: 'done',
+                plain: null,
                 result: makeDoneResult({
                     technicalBulletsKo: ['기술적 신호'],
                     newsBulletsKo: ['뉴스 신호'],

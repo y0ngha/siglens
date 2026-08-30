@@ -23,6 +23,7 @@ import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
+import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
 
 /** FinancialsSentiment → `shared.enumLabel.sentiment` 카탈로그 키. */
 const SENTIMENT_LABEL_KEY: Record<FinancialsSentiment, string> = {
@@ -202,5 +203,9 @@ export function FinancialsAiSummary({
         );
     }
 
-    return <FinancialsAiSummaryView result={state.result} />;
+    return (
+        <PlainAnalysisSwitch plain={state.plain}>
+            <FinancialsAiSummaryView result={state.result} />
+        </PlainAnalysisSwitch>
+    );
 }

@@ -32,7 +32,17 @@ import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
  * `AnalysisGateBlockedResult` never carries it.
  */
 type RunAnalysisActionResult =
-    | (RunAnalysisResult & { personalized?: boolean })
+    | (RunAnalysisResult & {
+          personalized?: boolean;
+          /**
+           * 평이화("쉽게보기") 산문. SSE 라우트의 `withReaderViews`가 붙인다.
+           *
+           * `null`은 재작성 실패(가드 거부·마감 초과·설정 없음)를 뜻하고,
+           * `undefined`는 롤링 배포 중 구버전 인스턴스가 필드 자체를 안 보낸 경우다.
+           * 둘 다 "원본만 보여준다"로 같게 처리한다.
+           */
+          plain?: string | null;
+      })
     | AnalysisGateBlockedResult
     /**
      * 재분석 의도로 보낸 요청인데 서버가 쿨다운을 획득하지 못했다 — 새 분석을
@@ -144,6 +154,11 @@ export interface UseAnalysisResult {
     /** 사용자가 쿨다운 중에 재분석 버튼을 눌렀을 때 갱신되는 알림. */
     cooldownNotice: CooldownNotice | null;
     /**
+     * 평이화 산문. 없으면(`null`) `AnalysisPanel`이 토글을 렌더하지 않고 원본만
+     * 보여준다 — 아무 일도 하지 않는 토글은 고장으로 읽힌다.
+     */
+    plain: string | null;
+    /**
      * 서버가 THIS 제출에서 실제로 개인화(포지션 버킷) 캐시 키를 사용했는지 여부
      * (personalized-analysis-by-position-bucket spec, Subsystem C — 배지 정직성
      * 감사 이후). SSE 분석 라우트가 반환하는 `personalized` 플래그를 그대로
@@ -183,6 +198,14 @@ export function useAnalysis({
         null
     );
     const [isBotBlocked, setIsBotBlocked] = useState(false);
+    /**
+     * 평이화("쉽게보기") 산문. SSE 라우트가 분석 결과와 함께 내려준다.
+     *
+     * 재작성이 실패하면 라우트가 `null`을 싣는다 — 그때는 토글을 렌더하지 않고
+     * 원본만 보여준다. 롤링 배포 중 구버전 인스턴스는 필드 자체를 안 보내므로
+     * `undefined`도 같은 의미로 처리한다.
+     */
+    const [plain, setPlain] = useState<string | null>(null);
     // 서버가 THIS 제출에서 개인화(포지션 버킷) 캐시 키를 실제로 썼는지 여부.
     // SSE 분석 라우트의 `personalized` 플래그를 그대로 미러링 — 배지의
     // 유일한 진실값(personalized-analysis-by-position-bucket spec, Subsystem C).
@@ -197,11 +220,18 @@ export function useAnalysis({
     const previousStateRef = useRef<{
         result: AnalysisResponse | null;
         personalized: boolean;
+        /**
+         * 평이화 산문도 함께 스냅샷한다. 담지 않으면 쿨다운으로 거절됐을 때
+         * `analysisResult`만 복원되고 `plain`은 `onMutate`가 비운 `null`로 남아,
+         * **같은 분석을 보고 있는데 쉽게보기 토글만 사라진다**(리뷰 라운드 1).
+         */
+        plain: string | null;
     } | null>(null);
     // onMutate는 렌더 스코프 밖에서 실행되므로 최신 값을 ref로 미러링한다
     // (갱신은 아래 useLayoutEffect에서 — 렌더 중 ref 쓰기는 금지).
     const analysisResultRef = useRef<AnalysisResponse | null>(analysisResult);
     const isPersonalizedRef = useRef(isPersonalized);
+    const plainRef = useRef<string | null>(plain);
     // 초기 마운트 시 서버 분석 실패 여부를 캡처한다.
     // useState 초기화로 마운트 시 1회만 평가되며, 이후 prop 변경이 있어도 갱신되지 않는다.
     // useRef를 쓰지 않는 이유: 렌더 중 접근이 필요해 react-hooks/refs 룰을 위반하기 때문.
@@ -340,9 +370,13 @@ export function useAnalysis({
             previousStateRef.current = {
                 result: analysisResultRef.current,
                 personalized: isPersonalizedRef.current,
+                plain: plainRef.current,
             };
             setAnalysisResult(null);
             setIsBotBlocked(false);
+            // 이전 결과의 평이화 산문은 새 제출과 무관하다. 지우지 않으면 새 분석이
+            // 도착하기 전까지 이전 종목/타임프레임의 글이 쉽게보기에 남는다.
+            setPlain(null);
             // 새 제출이 시작됨 — 이전 결과의 personalized 여부는 더 이상 유효하지
             // 않다. 새 서버 응답이 올 때까지 false로 되돌린다.
             setIsPersonalized(false);
@@ -356,9 +390,11 @@ export function useAnalysis({
                 ) {
                     setAnalysisResult(null);
                     setLockedInfoDepth(FREE_LOCKED_INFO_DEPTH);
+                    setPlain(null);
                     return;
                 }
                 setAnalysisResult(normalizeAnalysisResponse(data.result));
+                setPlain(data.plain ?? null);
                 // 롤링 배포 중 구버전 인스턴스가 lockedInfoDepth 필드 자체가 없는
                 // 레거시 응답을 돌려줄 수 있다. free 분기는 위에서 이미 처리했으므로
                 // 여기 도달하는 member/pro 호출자에게 undefined가 그대로 저장되면
@@ -382,6 +418,7 @@ export function useAnalysis({
                 if (previous !== null) {
                     setAnalysisResult(previous.result);
                     setIsPersonalized(previous.personalized);
+                    setPlain(previous.plain);
                 }
                 setReanalyzeCooldownMs(data.remainingMs);
                 setCooldownNotice({
@@ -515,6 +552,7 @@ export function useAnalysis({
         latestTierRef.current = tier;
         analysisResultRef.current = analysisResult;
         isPersonalizedRef.current = isPersonalized;
+        plainRef.current = plain;
     });
 
     // 8. useEffect
@@ -727,5 +765,6 @@ export function useAnalysis({
         reanalyzeCooldownMs,
         cooldownNotice,
         isPersonalized,
+        plain,
     };
 }

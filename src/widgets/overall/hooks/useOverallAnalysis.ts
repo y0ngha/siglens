@@ -27,6 +27,7 @@ import { isGateBlockedResult } from '@/entities/analysis';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { BotBlockedError } from '@/shared/lib/BotBlockedError';
 import type { OverallAnalysisState } from '../types';
+import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
 
 export interface UseOverallAnalysisReturn {
     state: OverallAnalysisState;
@@ -72,7 +73,7 @@ async function fetchOverallAnalysis(
     options: { reasoning?: boolean; reanalyze?: boolean },
     messages: StreamErrorMessages,
     signal?: AbortSignal
-): Promise<OverallAnalysisResponse> {
+): Promise<WithPlain<OverallAnalysisResponse>> {
     // `force`(캐시 우회) 자체는 보내지 않는다 — 인증 없는 공개 라우트라 클라이언트가
     // 우회를 지시할 수 있으면 안 된다. 대신 **의도**(`reanalyze`)만 보내고, 서버가
     // 재분석 쿨다운을 획득했을 때만 실제로 우회한다.
@@ -92,7 +93,7 @@ async function fetchOverallAnalysis(
     }
 
     if (result.status === 'cached' || result.status === 'done')
-        return result.result;
+        return { data: result.result, plain: readPlain(result) };
 
     if (result.status === 'miss_no_trigger') {
         throw new BotBlockedError();
@@ -232,7 +233,15 @@ export function useOverallAnalysis(
         staleTime: Infinity,
         // SSR seed: 캐시 HIT면 마운트 시점부터 query.data가 채워져 있어 즉시 done.
         // 마운트 key에서만 — 위 `isMountQueryKey` 주석 참조.
-        initialData: isMountQueryKey ? initialResult : undefined,
+        /**
+         * SSR seed는 서버에서 peek로 읽은 캐시 서사라 평이화 산문이 없다 —
+         * `plain: null`로 감싼다. seed 상태에서는 쉽게보기 토글이 뜨지 않고,
+         * 사용자가 재분석하면 스트림이 `plain`을 채워 준다.
+         */
+        initialData:
+            isMountQueryKey && initialResult !== undefined
+                ? { data: initialResult, plain: null }
+                : undefined,
     });
 
     const state = useMemo((): OverallAnalysisState => {
@@ -246,7 +255,11 @@ export function useOverallAnalysis(
             // 새 분석이 없을 뿐 기존 분석은 여전히 유효하다 — 여기서 error로 넘기면
             // OverallContent가 결과 섹션을 감춰 사용자가 읽던 분석이 사라진다.
             if (err instanceof OverallCooldownError && query.data !== undefined)
-                return { status: 'done', result: query.data };
+                return {
+                    status: 'done',
+                    result: query.data.data,
+                    plain: query.data.plain,
+                };
             return {
                 status: 'error',
                 error:
@@ -258,7 +271,11 @@ export function useOverallAnalysis(
             };
         }
         if (query.data !== undefined)
-            return { status: 'done', result: query.data };
+            return {
+                status: 'done',
+                result: query.data.data,
+                plain: query.data.plain,
+            };
         return { status: 'submitting' };
     }, [triggered, query.isError, query.error, query.data, tError]);
 

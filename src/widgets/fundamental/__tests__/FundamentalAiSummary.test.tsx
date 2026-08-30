@@ -59,6 +59,7 @@ describe('FundamentalAiSummary', () => {
         it('UI를 숨겨도 챗 컨텍스트 publish는 계속된다', () => {
             vi.mocked(useFundamentalAnalysis).mockReturnValue({
                 status: 'done',
+                plain: null,
                 result: {} as never,
                 trigger: vi.fn(),
             } as never);
@@ -107,6 +108,7 @@ describe('FundamentalAiSummary', () => {
     it('renders the analysis result on success', () => {
         vi.mocked(useFundamentalAnalysis).mockReturnValue({
             status: 'done',
+            plain: null,
             result: {
                 overallSentiment: 'bullish',
                 overallConclusionKo: '강세 전망입니다',

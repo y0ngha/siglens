@@ -15,6 +15,7 @@ import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { isBot } from '@/shared/api/isBot';
+import { rewriteToPlainLanguage } from '@/entities/analysis-plain';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { getDescriptor } from '@/shared/config/marketProfile';
 import type { NewsFeedCategoryId } from '@/entities/market-news';
@@ -570,6 +571,109 @@ function withLocalizedProse<T>(work: Promise<T>, locale: Locale): Promise<T> {
     });
 }
 
+/**
+ * 평이화("쉽게보기")를 적용할 분석 종류.
+ *
+ * 토글 UI가 있는 종목 탭 7종만. `briefing`·`macroBriefing`·`marketNewsDigest`는
+ * 화면에 토글이 없어 호출이 그대로 낭비다.
+ *
+ * `extractProse`와 평이화 프롬프트 어느 쪽에도 타입별 분기가 없으므로, 종류를
+ * 늘리는 비용은 이 집합에 문자열 하나를 넣는 것이다.
+ */
+const PLAIN_ENABLED_TYPES: ReadonlySet<AnalysisType> = new Set([
+    'technical',
+    'overall',
+    'news',
+    'fundamental',
+    'financials',
+    'options',
+    'congress',
+]);
+
+/** SSE 응답 봉투에 붙는 평이화 필드. core 타입은 건드리지 않는다. */
+type WithPlain<T> = T & { plain?: string | null };
+
+/**
+ * 결과 봉투에 평이화 산문을 덧붙인다.
+ *
+ * ## 왜 `withLocalizedProse`와 **병렬**인가
+ *
+ * 평이화의 입력은 한국어 원문 산문이라 로케일 번역 결과에 의존하지 않는다. 직렬로
+ * 체이닝하면 추가 지연이 두 마감의 **합**(105초)이 되지만, 병렬이면 **최댓값**
+ * (60초)이다. `ko`는 번역이 즉시 no-op이라 실질 상한이 45초다.
+ *
+ * ## 에러 봉투에는 붙이지 않는다
+ *
+ * 액션은 실패를 `{ status: 'error', ... }`로 돌려주는데, 그 안의 `message`가
+ * `PROSE_FIELD_NAMES`에 걸려 산문으로 추출된다. 그대로 두면 게이트 거부 문구를
+ * LLM에 보내 "쉽게 쓴 에러 메시지"를 만들고, 거부마다 DeepSeek 왕복이 붙는다
+ * (`withLocalizedProse`가 같은 함정을 이미 겪은 자리다).
+ */
+async function withPlainLanguage<T>(
+    result: T,
+    symbol: string,
+    locale: Locale
+): Promise<WithPlain<T>> {
+    if (
+        typeof result !== 'object' ||
+        result === null ||
+        (result as { status?: unknown }).status === 'error'
+    ) {
+        return result as WithPlain<T>;
+    }
+    // **봉투가 아니라 분석 payload를 넘긴다.** 액션은 `{ status, result, ... }`를
+    // 돌려주는데, 봉투째 넘기면 `extractProse`가 모든 경로에 `result.` 접두를 붙여
+    // `dropSupersededPaths`(bare 경로로 매칭)가 조용히 no-op이 된다 — 그러면 보정
+    // 전/후 매매 가격 두 벌이 함께 프롬프트에 실려, 그 함수가 막으려던 모순
+    // 출력("다른 분석에서는 목표가를…")이 그대로 재현된다. 리뷰에서 잡혔다.
+    const envelope = result as { result?: unknown };
+    const payload =
+        typeof envelope.result === 'object' && envelope.result !== null
+            ? envelope.result
+            : result;
+    const plain = await rewriteToPlainLanguage(payload, symbol, locale);
+    return { ...(result as object), plain } as WithPlain<T>;
+}
+
+/**
+ * 로케일 번역과 평이화를 함께 적용한다. 둘은 서로 독립이라 병렬로 돈다.
+ *
+ * `symbol`이 없으면(종목과 무관한 분석) 평이화를 건너뛴다 — `facts.symbol`이
+ * 프롬프트의 사실 블록에 들어가므로 빈 값을 넘기면 안 된다.
+ */
+function withReaderViews<T>(
+    work: Promise<T>,
+    locale: Locale,
+    type: AnalysisType,
+    symbol: unknown
+): Promise<T> {
+    const plainEnabled =
+        typeof symbol === 'string' &&
+        symbol.length > 0 &&
+        PLAIN_ENABLED_TYPES.has(type);
+    if (!plainEnabled) return withLocalizedProse(work, locale);
+
+    /**
+     * **`work`에 체인을 하나만 건다.**
+     *
+     * `withLocalizedProse(work)`와 `work.then(...)`을 따로 만들면 분석이 실패했을 때
+     * 두 체인이 함께 reject되는데 소비되는 것은 하나뿐이라, 나머지가 미처리
+     * rejection으로 샌다(실측: 라우트 스위트의 Errors가 6 → 8로 늘었다).
+     * 이미 resolve된 값으로 번역 체인을 시작하면 실패 경로의 팬아웃이 사라지고,
+     * 두 후처리가 같은 tick에 출발하므로 병렬성은 그대로다.
+     */
+    return work.then(async result => {
+        const [localized, withPlain] = await Promise.all([
+            withLocalizedProse(Promise.resolve(result), locale),
+            withPlainLanguage(result, symbol as string, locale),
+        ]);
+        return {
+            ...(localized as object),
+            plain: (withPlain as { plain?: string | null }).plain ?? null,
+        } as T;
+    });
+}
+
 export async function POST(request: Request): Promise<Response> {
     // --- 1. Parse and validate request body ---
     let body: StreamRequestBody;
@@ -895,9 +999,17 @@ export async function POST(request: Request): Promise<Response> {
             });
 
             return new Response(
-                heartbeatStream(withLocalizedProse(work, requestLocale), {
-                    genericErrorMessage: t('generic'),
-                }),
+                heartbeatStream(
+                    withReaderViews(
+                        work,
+                        requestLocale,
+                        'technical',
+                        body.params.symbol
+                    ),
+                    {
+                        genericErrorMessage: t('generic'),
+                    }
+                ),
                 { headers: SSE_HEADERS }
             );
         } catch (err) {
@@ -961,9 +1073,10 @@ export async function POST(request: Request): Promise<Response> {
             t('timeout')
         );
         return new Response(
-            heartbeatStream(withLocalizedProse(work, locale), {
-                genericErrorMessage: t('generic'),
-            }),
+            heartbeatStream(
+                withReaderViews(work, locale, body.type, body.params.symbol),
+                { genericErrorMessage: t('generic') }
+            ),
             { headers: SSE_HEADERS }
         );
     } catch (err) {

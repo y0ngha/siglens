@@ -230,9 +230,13 @@ describe('useOverallAnalysis', () => {
 
             // 가드가 있으면: query.isError=true + query.data=OVERALL_RESULT → done 유지
             // 가드가 없으면: query.isError=true → error 경로 → state.status === 'error' → 실패 ✓
+            // `plain`도 함께 복원돼야 한다 — 빠지면 같은 분석을 보고 있는데
+            // 쉽게보기 토글만 사라진다(리뷰 라운드 1에서 useAnalysis의 같은
+            // 경로가 실제로 그랬다).
             expect(result.current.state).toEqual({
                 status: 'done',
                 result: OVERALL_RESULT,
+                plain: null,
             });
         });
 

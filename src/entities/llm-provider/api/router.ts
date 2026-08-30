@@ -19,9 +19,16 @@ import type { ProviderCallOptions } from '../model';
  * fall back to the `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` env vars when handed
  * `undefined`, which would bill a BYOK user's request to the server's
  * analysis-side key.
+ *
+ * **`jobId` passthrough.** core's `CallAiProviderOptions` has no `jobId`, but
+ * `ProviderCallOptions` (what adapters receive) does, and the spread below
+ * already forwards it. Widening the parameter here lets a router-dispatched
+ * caller label its own `[Usage]` telemetry instead of being forced to call a
+ * provider adapter directly — which is how a Gemini config once reached
+ * `callDeepseekChat` and threw on every request.
  */
 export async function callAiProviderRouter(
-    options: CallAiProviderOptions
+    options: CallAiProviderOptions & { jobId?: string }
 ): Promise<string> {
     // Validate the model first so the explicit `[router] Unknown model` error
     // surfaces with our message instead of being shadowed by the generic throw

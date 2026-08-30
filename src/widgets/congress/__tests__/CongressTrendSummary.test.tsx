@@ -64,6 +64,7 @@ describe('CongressTrendSummary', () => {
         it('UI를 숨겨도 챗 컨텍스트 publish는 계속된다', () => {
             vi.mocked(useCongressTrend).mockReturnValue({
                 status: 'done',
+                plain: null,
                 result: {} as never,
                 trigger: vi.fn(),
             } as never);
@@ -123,6 +124,7 @@ describe('CongressTrendSummary', () => {
     it('renders view with result on success', () => {
         vi.mocked(useCongressTrend).mockReturnValue({
             status: 'done',
+            plain: null,
             result: {
                 overallSentiment: 'bullish',
                 summaryKo: '의회 매수 동향이 강하게 나타납니다.',
