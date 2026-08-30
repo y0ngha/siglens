@@ -5,6 +5,7 @@ import {
     getRecentSearches,
     MAX_RECENT_SEARCHES,
     RECENT_SEARCHES_STORAGE_KEY,
+    relabelRecentSearches,
     removeRecentSearch,
 } from '../../lib/recentSearches';
 
@@ -385,6 +386,83 @@ describe('recentSearches', () => {
 
         it('window가 undefined인 환경에서 clearRecentSearches storage 인자 없이 호출', () => {
             expect(() => clearRecentSearches()).not.toThrow();
+        });
+    });
+
+    describe('relabelRecentSearches', () => {
+        it('라벨이 심볼과 같은 항목만 회사명으로 채운다', () => {
+            const storage = createMemoryStorage();
+            storage.setItem(
+                RECENT_SEARCHES_STORAGE_KEY,
+                JSON.stringify([
+                    { symbol: '005930.KS', label: '005930.KS' },
+                    { symbol: 'AAPL', label: '애플' },
+                ])
+            );
+
+            const result = relabelRecentSearches(
+                { '005930.KS': '삼성전자', AAPL: 'Apple Inc.' },
+                storage
+            );
+
+            expect(result).toEqual([
+                { symbol: '005930.KS', label: '삼성전자' },
+                // 이미 회사명이 붙은 항목은 덮어쓰지 않는다.
+                { symbol: 'AAPL', label: '애플' },
+            ]);
+            expect(getRecentSearches(storage)).toEqual(result);
+        });
+
+        it('순서를 바꾸지 않는다', () => {
+            const storage = createMemoryStorage();
+            storage.setItem(
+                RECENT_SEARCHES_STORAGE_KEY,
+                JSON.stringify([
+                    { symbol: 'PLTR', label: 'PLTR' },
+                    { symbol: 'TSLA', label: 'TSLA' },
+                ])
+            );
+
+            const result = relabelRecentSearches({ TSLA: '테슬라' }, storage);
+
+            expect(result.map(entry => entry.symbol)).toEqual(['PLTR', 'TSLA']);
+        });
+
+        it('채울 라벨이 없으면 저장하지 않는다', () => {
+            const storage = createMemoryStorage();
+            storage.setItem(
+                RECENT_SEARCHES_STORAGE_KEY,
+                JSON.stringify([{ symbol: 'LAES', label: 'LAES' }])
+            );
+            let writes = 0;
+            const counted = {
+                ...storage,
+                setItem: (key: string, value: string) => {
+                    writes += 1;
+                    storage.setItem(key, value);
+                },
+            };
+
+            const result = relabelRecentSearches({ NVDA: '엔비디아' }, counted);
+
+            expect(writes).toBe(0);
+            expect(result).toEqual([{ symbol: 'LAES', label: 'LAES' }]);
+        });
+
+        it('빈 문자열 라벨은 무시한다', () => {
+            const storage = createMemoryStorage();
+            storage.setItem(
+                RECENT_SEARCHES_STORAGE_KEY,
+                JSON.stringify([{ symbol: 'IONQ', label: 'IONQ' }])
+            );
+
+            expect(relabelRecentSearches({ IONQ: '   ' }, storage)).toEqual([
+                { symbol: 'IONQ', label: 'IONQ' },
+            ]);
+        });
+
+        it('storage가 null이면 빈 배열을 반환한다', () => {
+            expect(relabelRecentSearches({ AAPL: '애플' }, null)).toEqual([]);
         });
     });
 

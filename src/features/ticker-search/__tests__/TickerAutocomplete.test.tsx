@@ -463,9 +463,11 @@ describe('TickerAutocomplete', () => {
         const placeholder =
             screen.getByRole('combobox').getAttribute('placeholder') ?? '';
         // 이름이 약속하는 대로 셋 다 확인한다 — 하나만 보면 나머지 둘이 조용히
-        // 빠져도 통과한다. 한국 종목 예시는 **티커 코드**를 쓴다 — 한글 회사명
-        // (`삼성전자`)은 번역되지 않아 중국어·일본어 UI에 그대로 남았다.
-        for (const example of ['AAPL', '005930', 'BTC']) {
+        // 빠져도 통과한다. 예시는 티커가 아니라 **회사명**이다 — 사용자는 이름으로
+        // 종목을 떠올리고, 이 검색은 한글 회사명 질의를 받는다. 한때 티커를 쓴 것은
+        // 회사명이 ko 카탈로그에만 있어 다른 로케일에 한글이 새기 때문이었는데,
+        // 지금은 네 로케일이 각자의 표기를 갖는다(`124e37`).
+        for (const example of ['애플', '삼성전자', '비트코인']) {
             expect(placeholder).toContain(example);
         }
     });

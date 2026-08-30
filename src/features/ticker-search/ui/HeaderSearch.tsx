@@ -35,8 +35,18 @@ export function HeaderSearch() {
                     className="ml-auto lg:hidden"
                 />
             )}
-            <div className="ml-auto hidden w-full max-w-xs min-w-0 justify-end lg:flex">
-                <TickerAutocomplete size="sm" />
+            {/*
+                폭은 브레이크포인트마다 다르다. `lg`(1024px)에서는 로고·내비 3개·
+                검색·언어·테마·유저메뉴가 `h-14` 한 줄을 나눠 쓰므로 여유가 없고,
+                `xl` 이상에서는 남는 공백이 검색창 쪽에 몰린다. 한 값으로 고정하면
+                둘 중 하나가 손해를 본다 — 좁은 데스크톱에서 내비가 눌리거나, 넓은
+                화면에서 입력이 티커 4글자만 겨우 들어갈 만큼 작아 보이거나.
+            */}
+            <div className="ml-auto hidden w-full max-w-xs min-w-0 justify-end lg:flex xl:max-w-md 2xl:max-w-lg">
+                {/* `w-full`이 없으면 입력이 **내용 폭**(브라우저 기본 `size=20`,
+                    ≈176px)에 머문다 — 래퍼의 `max-w-*`는 상한일 뿐 늘리지 못한다.
+                    1440px에서도 176px이던 원인이 이것이다. */}
+                <TickerAutocomplete size="sm" className="w-full" />
             </div>
         </>
     );
