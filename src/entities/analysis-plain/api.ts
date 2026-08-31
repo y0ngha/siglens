@@ -31,9 +31,21 @@ const CACHE_TTL_SECONDS = 60 * 60 * 24 * 30;
  * 매달리면 스트림 하나가 `canAcceptAnalysisStream` 동시성 슬롯을 30분 붙들고,
  * `instrumentation.node.ts`가 전제하는 180초 SIGTERM 드레인을 넘겨 배포마다 끊긴다.
  *
+ * ## 왜 45초가 아니라 15초인가
+ *
+ * 설계 초안은 "로케일 번역과 병렬이라 추가 지연이 두 마감의 **최댓값**"이라고 적었다.
+ * **`ko`에서는 틀린 말이다** — `translateAnalysisForLocale`은 기본 로케일이면 즉시
+ * 반환하므로(`analysis-translation/api.ts`) 병렬 상대가 없고, 이 마감이 그대로
+ * 크리티컬 패스에 **순증**한다. 한국어 사용자 전원이 매 분석마다 이 값을 기다린다.
+ *
+ * 실측 지연은 6.9~13.5초(346회 전수 실행)다. 15초면 정상 응답을 거의 다 담고,
+ * 프로바이더가 매달릴 때 사용자가 기다리는 시간을 3분의 1로 줄인다. 마감을 넘긴
+ * 요청은 `plain: null`로 떨어져 원본만 보이므로, 손실은 "이번 조회에서 쉽게보기가
+ * 안 뜬다"뿐이고 다음 조회는 캐시가 채워져 있다.
+ *
  * 예산은 시도 횟수가 아니라 **전체**다. 첫 시도가 예산을 다 쓰면 재시도 없이 끝난다.
  */
-const PLAIN_DEADLINE_MS = 45_000;
+const PLAIN_DEADLINE_MS = 15_000;
 
 /**
  * 캐시 키. **원문 산문 + 사실 블록 전체의 해시 + 로케일**이다.
@@ -52,7 +64,18 @@ function buildCacheKey(prompt: string, locale: Locale): string {
     return `plain:${PLAIN_PROMPT_VERSION}:${locale}:${digest}`;
 }
 
-/** 마감을 건 실행. 초과하면 `null`. */
+/**
+ * 마감을 건 실행. 초과하면 `null`.
+ *
+ * ⚠️ **레이스일 뿐 요청을 끊지는 못한다.** `callAiProviderRouter`가 넘겨받는
+ * `ProviderCallOptions`에 `signal`이 없어(`entities/llm-provider/model.ts`)
+ * 어댑터까지 취소를 전달할 방법이 없다. 그래서 마감을 넘긴 호출은 백그라운드에서
+ * 계속 돌며 토큰을 청구하고, 레이스가 이미 끝났으므로 **캐시도 쓰지 않는다**.
+ *
+ * 마감을 45초에서 15초로 줄인 이유 중 하나가 이것이다 — 고아 요청의 수명과
+ * 사용자 대기 시간을 함께 줄인다. 근본 해결은 provider 어댑터 계약에 `signal`을
+ * 추가하는 것이고, 그건 챗·번역 등 다른 호출자에도 영향을 주므로 별도 작업이다.
+ */
 function withDeadline<T>(work: Promise<T>, ms: number): Promise<T | null> {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const expiry = new Promise<null>(resolve => {
@@ -101,26 +124,35 @@ export async function rewriteToPlainLanguage(
     // 비결정성이 들어온다. 분기를 명시해 둔다.
     if (isE2E()) return null;
 
-    const entries = dropSupersededPaths(extractProse(analysis));
-    if (entries.length === 0) return null;
-
-    const config = tryReadPlainModelConfig();
-    if (!config) return null;
-
-    const facts = collectFacts(analysis, symbol, currency);
-    const inputChars = entries.reduce((sum, e) => sum + e.text.length, 0);
-    const allowed = buildAllowedNumbers(
-        facts.numbers,
-        entries.map(e => e.text)
-    );
-
-    const basePrompt = buildPlainPrompt({ entries, facts, locale });
-    const key = buildCacheKey(basePrompt, locale);
-
-    // 캐시 팩토리는 try 안에 둔다. 밖에 두면 팩토리가 던졌을 때 이 함수가 reject되고,
-    // 호출자가 그걸 Promise.all에 넣으므로 거절이 전파돼 분석 전체가 실패한다 —
-    // `null`로 떨어지는 이 레이어의 계약과 정반대다.
+    /**
+     * **준비 단계까지 전부 try 안에 둔다.**
+     *
+     * 이 함수는 "절대 reject하지 않는다"를 계약으로 내걸지만, 예전에는 `try`가
+     * 준비 문장 여섯 개 **뒤에서** 시작했다. `tryReadPlainModelConfig`는 미처리
+     * provider에 대해 의도적으로 throw하고, `collectNumbers`는 임의 객체를 무한
+     * 재귀로 훑는다 — 둘 중 하나라도 던지면 호출자의 `Promise.all`을 통해
+     * 거절이 전파돼 **성공한 분석이 "분석 실패"로 바뀐다.**
+     * 장식 레이어가 분석을 죽이는 것은 이 설계에서 가장 피하려던 결과다.
+     */
+    let config: ReturnType<typeof tryReadPlainModelConfig> = null;
     try {
+        const entries = dropSupersededPaths(extractProse(analysis));
+        if (entries.length === 0) return null;
+
+        config = tryReadPlainModelConfig();
+        if (!config) return null;
+        const resolved = config;
+
+        const facts = collectFacts(analysis, symbol, currency);
+        const inputChars = entries.reduce((sum, e) => sum + e.text.length, 0);
+        const allowed = buildAllowedNumbers(
+            facts.numbers,
+            entries.map(e => e.text)
+        );
+
+        const basePrompt = buildPlainPrompt({ entries, facts, locale });
+        const key = buildCacheKey(basePrompt, locale);
+
         const cache = createCacheProvider();
         const cached = await cache?.get<string>(key).catch(() => null);
         if (typeof cached === 'string' && cached.length > 0) return cached;
@@ -131,12 +163,12 @@ export async function rewriteToPlainLanguage(
                     ? basePrompt
                     : buildPlainPrompt({ entries, facts, locale, retryHint });
             const raw = await callAiProviderRouter({
-                serverApiKey: config.serverApiKey,
+                serverApiKey: resolved.serverApiKey,
                 // BYOK 경로가 아니다 — 평이화는 항상 서버 부담이다.
                 userApiKey: undefined,
                 // `[Usage]` 텔레메트리에서 평이화 지출을 따로 본다.
                 jobId: 'analysis-plain',
-                model: config.model,
+                model: resolved.model,
                 contents: prompt,
             });
             const text = stripMarkdownCodeBlock(raw).trim();
@@ -165,8 +197,7 @@ export async function rewriteToPlainLanguage(
         console.error('[analysisPlain] failed', {
             symbol,
             locale,
-            model: config.model,
-            entryCount: entries.length,
+            model: config?.model ?? null,
             error,
         });
         return null;

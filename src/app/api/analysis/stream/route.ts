@@ -687,7 +687,21 @@ function withReaderViews<T>(
     return work.then(async result => {
         const [localized, withPlain] = await Promise.all([
             withLocalizedProse(Promise.resolve(result), locale),
-            withPlainLanguage(result, symbol as string, locale),
+            /**
+             * **호출부에도 안전망을 둔다.** `rewriteToPlainLanguage`가 "절대
+             * reject하지 않는다"를 계약으로 지키지만, 그 계약이 한 번 깨지면
+             * 성공한 분석이 통째로 에러 프레임이 된다 — 장식 레이어가 감당할
+             * 수 있는 실패가 아니다. 계약과 안전망을 둘 다 둔다.
+             */
+            withPlainLanguage(result, symbol as string, locale).catch(
+                (error: unknown) => {
+                    console.error(
+                        '[withPlainLanguage] unexpected throw',
+                        error
+                    );
+                    return result as WithPlain<T>;
+                }
+            ),
         ]);
         return {
             ...(localized as object),
