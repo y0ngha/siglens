@@ -609,6 +609,23 @@ type WithPlain<T> = T & { plain?: string | null };
  * LLM에 보내 "쉽게 쓴 에러 메시지"를 만들고, 거부마다 DeepSeek 왕복이 붙는다
  * (`withLocalizedProse`가 같은 함정을 이미 겪은 자리다).
  */
+/**
+ * 시장 프로파일 → 통화 **코드**.
+ *
+ * 표기(`'원'`·`'달러'`)로 바꾸는 것은 `analysis-plain`이 한다 — 이 파일에 한글
+ * 리터럴을 두면 `noRawUserFacingApiStrings` 가드에 걸리고, 실제로도 그 문자열은
+ * 화면 문구가 아니라 프롬프트 도메인의 값이다.
+ */
+async function resolveCurrencyCode(symbol: string): Promise<'USD' | 'KRW'> {
+    try {
+        const profile = await resolveMarketProfile(symbol);
+        return getDescriptor(profile).priceFormat.currency;
+    } catch {
+        // 프로파일 조회 실패가 평이화를 막지는 않는다. 미국 종목이 다수다.
+        return 'USD';
+    }
+}
+
 async function withPlainLanguage<T>(
     result: T,
     symbol: string,
@@ -631,7 +648,12 @@ async function withPlainLanguage<T>(
         typeof envelope.result === 'object' && envelope.result !== null
             ? envelope.result
             : result;
-    const plain = await rewriteToPlainLanguage(payload, symbol, locale);
+    const plain = await rewriteToPlainLanguage(
+        payload,
+        symbol,
+        locale,
+        await resolveCurrencyCode(symbol)
+    );
     return { ...(result as object), plain } as WithPlain<T>;
 }
 

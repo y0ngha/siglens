@@ -2412,10 +2412,13 @@ describe('POST /api/analysis/stream', () => {
             const done = events.find(e => e.includes('event: done'));
 
             expect(done).toContain('쉽게 쓴 분석문입니다');
+            // 통화 코드를 함께 넘긴다 — 없으면 모델이 `421.46`처럼 단위 없는
+            // 맨 숫자를 쓴다(실측). 표기로 바꾸는 것은 analysis-plain의 몫이다.
             expect(rewriteToPlainLanguage).toHaveBeenCalledWith(
                 expect.objectContaining({ summary: 's' }),
                 'AAPL',
-                'ko'
+                'ko',
+                'USD'
             );
         });
 
@@ -2441,7 +2444,8 @@ describe('POST /api/analysis/stream', () => {
             expect(rewriteToPlainLanguage).toHaveBeenCalledWith(
                 payload,
                 'AAPL',
-                'ko'
+                'ko',
+                'USD'
             );
             const passed = vi.mocked(rewriteToPlainLanguage).mock.calls[0][0];
             expect(passed).not.toHaveProperty('status');

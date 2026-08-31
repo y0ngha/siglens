@@ -56,3 +56,22 @@ describe('collectFacts', () => {
         expect(collectFacts(null, 'X')).toEqual({ symbol: 'X', numbers: [] });
     });
 });
+
+describe('collectFacts — 통화', () => {
+    /**
+     * 회귀: 통화가 빠지면 모델이 `421.46`처럼 단위 없는 맨 숫자를 쓴다. 원본 분석문이
+     * `MA20 421.46`처럼 지표명 뒤에 단위 없는 숫자를 쓰는데, 지표명을 지우라고 하면
+     * 숫자만 남기 때문이다(49건 실측: 0.47 → 0.14개/건으로 개선).
+     */
+    it('USD를 달러 표기로 바꿔 싣는다', () => {
+        expect(collectFacts({ p: 1 }, 'AAPL', 'USD').currency).toBe('달러');
+    });
+
+    it('KRW를 원 표기로 바꿔 싣는다', () => {
+        expect(collectFacts({ p: 1 }, '005380.KS', 'KRW').currency).toBe('원');
+    });
+
+    it('생략하면 키 자체를 만들지 않는다', () => {
+        expect(collectFacts({ p: 1 }, 'AAPL')).not.toHaveProperty('currency');
+    });
+});

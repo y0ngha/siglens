@@ -5,7 +5,7 @@ import type { PlainFacts } from './collectFacts';
  * 평이화 프롬프트 버전. `PLAIN_RULES`를 고치면 반드시 올린다 — 캐시 키에 들어가므로
  * 올리지 않으면 TTL 30일 동안 예전 문장이 그대로 나온다.
  */
-export const PLAIN_PROMPT_VERSION = 'v1';
+export const PLAIN_PROMPT_VERSION = 'v2';
 
 /**
  * 재작성 규칙.
@@ -53,6 +53,8 @@ const PLAIN_RULES = `과한 어휘 없이, 과한 문장 없이, 읽기 쉽게, 
   하나의 이야기로 엮어, 중요한 것부터 자연스럽게 이어 쓰세요.
 - prose와 facts에 없는 숫자를 만들지 마세요. 퍼센트를 직접 계산하지 마세요.
 - 원본에 있는 가격은 자릿수를 바꾸지 말고 그대로 옮기세요.
+- 가격을 쓸 때는 반드시 facts.currency에 적힌 단위를 붙이세요. 단위 없는 숫자만
+  적으면 읽는 사람은 그 값이 무엇인지 알 수 없습니다.
 - 매수, 매도를 권유하는 단정적 표현을 쓰지 마세요.
 - 마크다운, 불릿, 제목, 이모지를 쓰지 마세요. 문단으로만 씁니다.`;
 

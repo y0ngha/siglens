@@ -3,7 +3,7 @@
 export { rewriteToPlainLanguage } from './api';
 export { tryReadPlainModelConfig } from './lib/plainModel';
 export { collectFacts, collectNumbers } from './lib/collectFacts';
-export type { PlainFacts } from './lib/collectFacts';
+export type { PlainFacts, CurrencyCode } from './lib/collectFacts';
 export { dropSupersededPaths } from './lib/supersededPaths';
 export { buildPlainPrompt, PLAIN_PROMPT_VERSION } from './lib/buildPlainPrompt';
 export {

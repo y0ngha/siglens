@@ -11,6 +11,15 @@
  */
 export interface PlainFacts {
     readonly symbol: string;
+    /**
+     * 가격에 붙일 통화 표기(`'달러'`·`'원'`).
+     *
+     * **없으면 모델이 맨 숫자를 그대로 쓴다.** 원본 분석문이 `MA20 421.46`처럼
+     * 지표명 뒤에 단위 없는 숫자를 쓰는데, 지표명을 지우라고 하면 숫자만 남는다
+     * (실측: technical 8.9개/건, overall 8.0개/건이 단위 없는 맨 숫자였다).
+     * `319.70달러`처럼 원본 산문에 단위가 있던 값만 우연히 살아남았다.
+     */
+    readonly currency?: string;
     readonly trend?: string;
     readonly riskLevel?: string;
     readonly numbers: readonly number[];
@@ -35,13 +44,33 @@ export function collectNumbers(
     return out;
 }
 
-export function collectFacts(analysis: unknown, symbol: string): PlainFacts {
+/**
+ * 통화 코드 → 프롬프트에 실을 표기.
+ *
+ * 화면 문구가 아니라 모델에게 보내는 값이라 i18n 카탈로그를 거치지 않는다
+ * (`analysis-plain/lib/`은 추출 제외 대상 — `scripts/i18n/lib/scan.mjs`).
+ */
+const CURRENCY_LABEL: Record<CurrencyCode, string> = {
+    USD: '달러',
+    KRW: '원',
+};
+
+export type CurrencyCode = 'USD' | 'KRW';
+
+export function collectFacts(
+    analysis: unknown,
+    symbol: string,
+    currency?: CurrencyCode
+): PlainFacts {
     const record =
         typeof analysis === 'object' && analysis !== null
             ? (analysis as Record<string, unknown>)
             : {};
     return {
         symbol,
+        ...(currency !== undefined
+            ? { currency: CURRENCY_LABEL[currency] }
+            : {}),
         ...(typeof record.trend === 'string' ? { trend: record.trend } : {}),
         ...(typeof record.riskLevel === 'string'
             ? { riskLevel: record.riskLevel }

@@ -9,7 +9,7 @@ import { isE2E } from '@/shared/api/e2eEnv';
 import { extractProse } from '@/entities/analysis-translation';
 import { tryReadPlainModelConfig } from './lib/plainModel';
 import type { Locale } from '@/shared/i18n/locales';
-import { collectFacts } from './lib/collectFacts';
+import { collectFacts, type CurrencyCode } from './lib/collectFacts';
 import { dropSupersededPaths } from './lib/supersededPaths';
 import { buildPlainPrompt, PLAIN_PROMPT_VERSION } from './lib/buildPlainPrompt';
 import {
@@ -89,7 +89,12 @@ function withDeadline<T>(work: Promise<T>, ms: number): Promise<T | null> {
 export async function rewriteToPlainLanguage(
     analysis: unknown,
     symbol: string,
-    locale: Locale
+    locale: Locale,
+    /**
+     * 통화 코드. 호출자가 시장 프로파일에서 넘긴다.
+     * 생략하면 모델이 단위 없는 맨 숫자를 쓸 수 있다 — `collectFacts`의 주석 참고.
+     */
+    currency?: CurrencyCode
 ): Promise<string | null> {
     // E2E는 LLM을 태우지 않는다. 키 부재에만 기대면(`tryReadPlainModelConfig`가
     // null을 돌려주므로 결과는 같다) 어느 날 키가 주입되는 순간 조용히 과금과
@@ -102,7 +107,7 @@ export async function rewriteToPlainLanguage(
     const config = tryReadPlainModelConfig();
     if (!config) return null;
 
-    const facts = collectFacts(analysis, symbol);
+    const facts = collectFacts(analysis, symbol, currency);
     const inputChars = entries.reduce((sum, e) => sum + e.text.length, 0);
     const allowed = buildAllowedNumbers(
         facts.numbers,
