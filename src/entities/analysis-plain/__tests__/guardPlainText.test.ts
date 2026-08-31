@@ -148,3 +148,61 @@ describe('describeFailure', () => {
         ).toContain('200자 이상');
     });
 });
+
+describe('findUnsupportedNumbers — 표기 차이를 환각으로 오판하지 않는다', () => {
+    /**
+     * 이 검사기의 거부는 재작성 폐기(`plain: null`)로 이어져 기능이 조용히 꺼진다.
+     * 그래서 "정상 문장을 거부하는 것"이 "환각을 통과시키는 것"보다 비싸다.
+     * 아래 다섯은 전부 실제로 거부되던 케이스다(감사 실측).
+     */
+    it('음수 필드를 산문에서 양수로 쓴 것을 통과시킨다', () => {
+        const allowed = buildAllowedNumbers([-3.5], []);
+        expect(
+            findUnsupportedNumbers('전분기 대비 3.5% 하락했습니다', allowed)
+        ).toEqual([]);
+    });
+
+    it('음수 소수도 마찬가지', () => {
+        const allowed = buildAllowedNumbers([-1.234], []);
+        expect(
+            findUnsupportedNumbers('지표가 1.234만큼 아래입니다', allowed)
+        ).toEqual([]);
+    });
+
+    it('한국어 만 단위 분해를 통과시킨다', () => {
+        const allowed = buildAllowedNumbers([71500], []);
+        expect(
+            findUnsupportedNumbers('7만 1500원 근처입니다', allowed)
+        ).toEqual([]);
+    });
+
+    it('한국어 조·억 단위 분해를 통과시킨다', () => {
+        // 42조 3000억 = 42 × 10^12 + 3000 × 10^8
+        const allowed = buildAllowedNumbers([42_300_000_000_000], []);
+        expect(
+            findUnsupportedNumbers('약 42조 3000억원입니다', allowed)
+        ).toEqual([]);
+    });
+
+    it('연도를 가격으로 오인하지 않는다', () => {
+        const allowed = buildAllowedNumbers([], ['가격 100.5']);
+        expect(
+            findUnsupportedNumbers('2027년까지 지켜봐야 합니다', allowed)
+        ).toEqual([]);
+    });
+
+    /** 면제는 `년` 접미사에만 걸린다 — 같은 숫자가 가격 자리에 오면 여전히 잡는다. */
+    it('연도 면제가 가격 자리의 같은 숫자를 풀어주지 않는다', () => {
+        const allowed = buildAllowedNumbers([], ['가격 100.5']);
+        expect(
+            findUnsupportedNumbers('목표가 2027달러입니다', allowed)
+        ).toEqual(['2027']);
+    });
+
+    it('관대해진 뒤에도 날조된 가격은 계속 잡는다', () => {
+        const allowed = buildAllowedNumbers([-3.5, 71500], []);
+        expect(
+            findUnsupportedNumbers('지지선은 183.65달러입니다', allowed)
+        ).toEqual(['183.65']);
+    });
+});

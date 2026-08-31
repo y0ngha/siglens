@@ -61,6 +61,20 @@ const { US_EQUITY, KR_EQUITY, CRYPTO } = await vi.hoisted(async () => {
 
 vi.mock('@/shared/config/marketProfile', () => ({
     getDescriptor: vi.fn().mockReturnValue(US_EQUITY),
+    /**
+     * 통화 판별은 실물을 쓴다.
+     *
+     * 예전에는 `getDescriptor`만 모킹하고 라우트가 `getDescriptor(...).priceFormat.currency`를
+     * 부르게 두었는데, mock에 `priceFormat`이 없어 **매번 TypeError → catch → 'USD' 폴백**이었다.
+     * `'USD'`를 단언하는 테스트가 실패 경로만으로 통과했고, `'KRW'`는 한 번도 생성된 적이 없다
+     * (감사 실측 M1). 심볼 형상만 보는 순수 함수이므로 모킹할 이유가 없다.
+     *
+     * 지금은 라우트가 디스크립터에서 통화를 읽지만(PR #779), 이 항목은 남겨 둔다 —
+     * 같은 모듈을 쓰는 다른 호출자가 생겼을 때 mock이 조용히 undefined를 돌려주는
+     * 상태로 돌아가지 않게 한다.
+     */
+    currencyForSymbol: (symbol: string) =>
+        /\.(KS|KQ)$/.test(symbol) ? 'KRW' : 'USD',
 }));
 
 // resolveHoldingPositionBucket 경로를 테스트하려면 findByUserAndSymbol 와 getQuote를
@@ -2423,6 +2437,35 @@ describe('POST /api/analysis/stream', () => {
         });
 
         /**
+         * 회귀(감사 M1): 통화 해피 패스가 한 번도 실행된 적이 없었다.
+         * 원화 종목이 조용히 '달러'를 받으면 화면의 모든 가격이 틀린 단위로 나간다.
+         */
+        it('원화 종목에는 KRW를 넘긴다', async () => {
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'cached',
+                result: { summary: 's' },
+                lockedInfoDepth: [],
+            } as never);
+            const body = JSON.stringify({
+                type: 'technical',
+                params: {
+                    symbol: '005930.KS',
+                    companyName: '삼성전자',
+                    timeframe: '1Day',
+                },
+            });
+
+            await collectSseEvents(await POST(makeRequest(undefined, body)));
+
+            expect(rewriteToPlainLanguage).toHaveBeenCalledWith(
+                expect.anything(),
+                '005930.KS',
+                'ko',
+                'KRW'
+            );
+        });
+
+        /**
          * 회귀(리뷰 라운드 1): 봉투째 넘기면 `extractProse`가 모든 경로에 `result.`
          * 접두를 붙여 `dropSupersededPaths`가 조용히 no-op이 되고, 보정 전/후 매매
          * 가격 두 벌이 함께 프롬프트에 실린다. 단위 테스트는 bare 경로만 써서
@@ -2487,6 +2530,78 @@ describe('POST /api/analysis/stream', () => {
             await collectSseEvents(await POST(makeRequest(undefined, body)));
 
             expect(rewriteToPlainLanguage).not.toHaveBeenCalled();
+        });
+
+        /**
+         * 회귀(감사): 봇 가드가 없어 크롤러가 매 크롤마다 DeepSeek을 태웠다.
+         * 비용·동시성·SEO 세 문제가 이 한 줄에 달려 있다 — 특히 robots.txt가
+         * 이 라우트를 크롤러에 열어 두었으므로, 봇이 받는 본문이 압축 산문으로
+         * 바뀌면 thin 콘텐츠 리스크가 생긴다.
+         */
+        it('봇 요청에는 평이화를 호출하지 않는다', async () => {
+            vi.mocked(isBot).mockReturnValue(true);
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'cached',
+                result: { summary: 's' },
+                lockedInfoDepth: [],
+            } as never);
+
+            await collectSseEvents(await POST(makeRequest()));
+
+            expect(rewriteToPlainLanguage).not.toHaveBeenCalled();
+        });
+
+        it('DISPATCH 경로의 봇 요청에도 호출하지 않는다', async () => {
+            vi.mocked(isBot).mockReturnValue(true);
+            vi.mocked(runOverallAnalysisAction).mockResolvedValue({
+                status: 'cached',
+                result: { overallConclusionKo: 'c' },
+                lockedInfoDepth: [],
+            } as never);
+            const body = JSON.stringify({
+                type: 'overall',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple',
+                    timeframe: '1Day',
+                },
+            });
+
+            await collectSseEvents(await POST(makeRequest(undefined, body)));
+
+            expect(rewriteToPlainLanguage).not.toHaveBeenCalled();
+        });
+
+        /**
+         * 회귀(감사 M7): `technical`만 양성으로 단언돼 있어, 나머지 여섯 타입 중
+         * 어느 하나를 허용 목록에서 빼도 테스트가 통과했다.
+         */
+        it.each([
+            ['overall', () => vi.mocked(runOverallAnalysisAction)],
+            ['news', () => vi.mocked(submitNewsAnalysisAction)],
+            ['fundamental', () => vi.mocked(runFundamentalAnalysisAction)],
+            ['financials', () => vi.mocked(runFinancialsAnalysisAction)],
+            ['options', () => vi.mocked(submitOptionsAnalysisAction)],
+            ['congress', () => vi.mocked(runCongressTrendAction)],
+        ])('%s 타입도 평이화 대상이다', async (type, getMock) => {
+            getMock().mockResolvedValue({
+                status: 'cached',
+                result: { summary: 's' },
+                lockedInfoDepth: [],
+            } as never);
+            const body = JSON.stringify({
+                type,
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple',
+                    timeframe: '1Day',
+                    expirationDate: '2026-09-18',
+                },
+            });
+
+            await collectSseEvents(await POST(makeRequest(undefined, body)));
+
+            expect(rewriteToPlainLanguage).toHaveBeenCalled();
         });
 
         /** 재작성 실패는 분석을 막지 않는다 — plain: null로 내려가고 원본이 보인다. */

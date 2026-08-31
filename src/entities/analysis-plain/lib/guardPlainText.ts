@@ -20,10 +20,43 @@
 const PRICE_TOKEN =
     /(?<![\w.])(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+\.\d+|\d{3,})(?![\d])/g;
 
-/** 산문 문자열에서 허용 숫자를 긁을 때 쓰는 느슨한 패턴. */
-const ANY_NUMBER = /\d[\d,]*(?:\.\d+)?/g;
+/**
+ * 산문 문자열에서 허용 숫자를 긁을 때 쓰는 느슨한 패턴.
+ *
+ * 선행 부호를 포함한다 — 없으면 `-3.5%`에서 `3.5`만 주워 담는데, 정작
+ * `collectNumbers`는 구조화 필드의 `-3.5`를 부호째 넣는다. 두 표기가 어긋나면
+ * "전분기 대비 3.5% 하락"처럼 **정상적인 문장이 거부된다**(실측).
+ */
+const ANY_NUMBER = /-?\d[\d,]*(?:\.\d+)?/g;
 
 const toNumber = (token: string): number => Number(token.replace(/,/g, ''));
+
+/**
+ * 한국어 자릿수 단위. `71,500원`을 `7만 1500원`으로 풀어 쓰는 것은 이 레이어가
+ * 권장하는 평이한 표기인데, 그렇게 쓰면 원본에 없는 `1500`이 생겨 거부됐다.
+ * 원본 숫자를 만/억/조로 분해했을 때 나오는 조각을 허용 집합에 함께 넣는다.
+ */
+const KOREAN_UNITS = [10_000, 100_000_000, 1_000_000_000_000] as const;
+
+/**
+ * `n`을 한국어 단위로 분해했을 때 문장에 등장할 수 있는 조각들.
+ *
+ * 나머지를 다시 분해한다 — `42조 3000억`에서 `3000`이 나오려면 `3000억`(3e11)을
+ * 한 번 더 억으로 쪼개야 하고, 한 겹만 벗기면 그 조각이 빠진다.
+ */
+function koreanUnitParts(n: number, depth = 0): number[] {
+    if (!Number.isFinite(n) || depth > KOREAN_UNITS.length) return [];
+    const abs = Math.abs(n);
+    const parts: number[] = [];
+    for (const unit of KOREAN_UNITS) {
+        if (abs < unit) break;
+        const head = Math.floor(abs / unit);
+        const tail = abs % unit;
+        parts.push(head, ...koreanUnitParts(head, depth + 1));
+        if (tail > 0) parts.push(tail, ...koreanUnitParts(tail, depth + 1));
+    }
+    return parts;
+}
 const decimalPlaces = (token: string): number =>
     (token.split('.')[1] ?? '').length;
 
@@ -32,14 +65,25 @@ export function buildAllowedNumbers(
     factNumbers: readonly number[],
     proseTexts: readonly string[]
 ): number[] {
-    const allowed = [...factNumbers];
+    const seed = [...factNumbers];
     for (const text of proseTexts) {
         for (const match of text.matchAll(ANY_NUMBER)) {
             const value = toNumber(match[0]);
-            if (Number.isFinite(value)) allowed.push(value);
+            if (Number.isFinite(value)) seed.push(value);
         }
     }
-    return allowed;
+
+    // 부호와 한국어 단위 분해까지 허용 집합에 편다. 검사기가 **표기 차이**를
+    // 환각으로 잘못 잡으면 그 결과는 재작성 폐기(`plain: null`)이므로,
+    // 관대함의 비용(우연히 일치하는 환각 통과)보다 손실이 크다.
+    const allowed = new Set<number>();
+    for (const n of seed) {
+        if (!Number.isFinite(n)) continue;
+        allowed.add(n);
+        allowed.add(Math.abs(n));
+        for (const part of koreanUnitParts(n)) allowed.add(part);
+    }
+    return [...allowed];
 }
 
 /**
@@ -55,6 +99,21 @@ export function buildAllowedNumbers(
  * 필드의 값과 같으면 통과한다. 그래서 프롬프트가 "퍼센트를 직접 계산하지 마세요"를
  * 함께 요구한다. 이 함수가 확실히 막는 것은 **날조된 가격**이다.
  */
+/**
+ * 연도는 가격이 아니다.
+ *
+ * `2027년까지 지켜봐야` 같은 문장의 `2027`은 원본 숫자 집합에 없을 수 있는데,
+ * 4자리 정수라 `PRICE_TOKEN`이 가격으로 잡아 재작성을 통째로 폐기했다.
+ * 뒤에 `년`이 붙은 4자리 정수만 면제한다 — 접미사를 요구하므로 `2027달러`처럼
+ * 진짜 가격 자리에 쓰인 같은 숫자는 그대로 검사 대상이다.
+ */
+function isYearToken(token: string, text: string, end: number): boolean {
+    if (!/^\d{4}$/.test(token)) return false;
+    const value = Number(token);
+    if (value < 1900 || value > 2200) return false;
+    return text.slice(end, end + 1) === '년';
+}
+
 export function findUnsupportedNumbers(
     text: string,
     allowed: readonly number[]
@@ -62,6 +121,7 @@ export function findUnsupportedNumbers(
     const unsupported: string[] = [];
     for (const match of text.matchAll(PRICE_TOKEN)) {
         const token = match[1];
+        if (isYearToken(token, text, match.index + match[0].length)) continue;
         const value = toNumber(token);
         const factor = 10 ** decimalPlaces(token);
         const explained = allowed.some(

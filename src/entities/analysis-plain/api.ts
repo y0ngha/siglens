@@ -39,9 +39,13 @@ const CACHE_TTL_SECONDS = 60 * 60 * 24 * 30;
  * 크리티컬 패스에 **순증**한다. 한국어 사용자 전원이 매 분석마다 이 값을 기다린다.
  *
  * 실측 지연은 6.9~13.5초(346회 전수 실행)다. 15초면 정상 응답을 거의 다 담고,
- * 프로바이더가 매달릴 때 사용자가 기다리는 시간을 3분의 1로 줄인다. 마감을 넘긴
- * 요청은 `plain: null`로 떨어져 원본만 보이므로, 손실은 "이번 조회에서 쉽게보기가
- * 안 뜬다"뿐이고 다음 조회는 캐시가 채워져 있다.
+ * 프로바이더가 매달릴 때 사용자가 기다리는 시간을 3분의 1로 줄인다.
+ *
+ * ⚠️ **마감을 넘기면 캐시도 비어 있다.** 레이스에서 진 `attempt()`의 결과는 버려지고
+ * 캐시 쓰기는 승자 경로에만 있으므로, 어떤 입력이 지속적으로 15초를 넘기면 그
+ * 입력은 **매 요청마다** 15초를 쓰고 `plain: null`로 끝난다. 손실이 일회성이라고
+ * 적었던 이전 주석은 틀렸다(감사 지적). 그런 입력이 관측되면 마감을 올릴 게 아니라
+ * 캐시 쓰기를 `attempt()` 안으로 옮겨 고아 응답도 다음 요청에 쓰이게 해야 한다.
  *
  * 예산은 시도 횟수가 아니라 **전체**다. 첫 시도가 예산을 다 쓰면 재시도 없이 끝난다.
  */
@@ -143,7 +147,7 @@ export async function rewriteToPlainLanguage(
         if (!config) return null;
         const resolved = config;
 
-        const facts = collectFacts(analysis, symbol, currency);
+        const facts = collectFacts(analysis, symbol, currency, locale);
         const inputChars = entries.reduce((sum, e) => sum + e.text.length, 0);
         const allowed = buildAllowedNumbers(
             facts.numbers,

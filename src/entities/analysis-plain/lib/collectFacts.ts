@@ -49,10 +49,17 @@ export function collectNumbers(
  *
  * 화면 문구가 아니라 모델에게 보내는 값이라 i18n 카탈로그를 거치지 않는다
  * (`analysis-plain/lib/`은 추출 제외 대상 — `scripts/i18n/lib/scan.mjs`).
+ *
+ * **로케일별로 갈린다.** 예전에는 `'달러'`/`'원'` 한 벌뿐이라, 프롬프트가
+ * "일본어로 쓰세요"와 "facts.currency의 단위를 붙이세요"를 동시에 요구하면서
+ * `319.70달러`라는 일본어 문장을 만들었다. 캐시 키에 로케일이 들어가므로 그
+ * 산출물이 30일간 굳는다 — 자가 치유되지 않는 종류의 결함이다(감사 실측).
  */
-const CURRENCY_LABEL: Record<CurrencyCode, string> = {
-    USD: '달러',
-    KRW: '원',
+const CURRENCY_LABEL: Record<string, Record<CurrencyCode, string>> = {
+    ko: { USD: '달러', KRW: '원' },
+    en: { USD: 'dollars', KRW: 'Korean won' },
+    ja: { USD: 'ドル', KRW: 'ウォン' },
+    zh: { USD: '美元', KRW: '韩元' },
 };
 
 export type CurrencyCode = 'USD' | 'KRW';
@@ -60,7 +67,9 @@ export type CurrencyCode = 'USD' | 'KRW';
 export function collectFacts(
     analysis: unknown,
     symbol: string,
-    currency?: CurrencyCode
+    currency?: CurrencyCode,
+    /** 출력 언어. 통화 표기를 그 언어로 고른다. 모르는 값은 한국어로 떨어진다. */
+    locale = 'ko'
 ): PlainFacts {
     const record =
         typeof analysis === 'object' && analysis !== null
@@ -69,7 +78,11 @@ export function collectFacts(
     return {
         symbol,
         ...(currency !== undefined
-            ? { currency: CURRENCY_LABEL[currency] }
+            ? {
+                  currency: (CURRENCY_LABEL[locale] ?? CURRENCY_LABEL.ko)[
+                      currency
+                  ],
+              }
             : {}),
         ...(typeof record.trend === 'string' ? { trend: record.trend } : {}),
         ...(typeof record.riskLevel === 'string'

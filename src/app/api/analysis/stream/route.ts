@@ -17,7 +17,10 @@ import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { isBot } from '@/shared/api/isBot';
 import { rewriteToPlainLanguage } from '@/entities/analysis-plain';
 import { isE2E } from '@/shared/api/e2eEnv';
-import { getDescriptor } from '@/shared/config/marketProfile';
+import {
+    currencyForSymbol,
+    getDescriptor,
+} from '@/shared/config/marketProfile';
 import type { NewsFeedCategoryId } from '@/entities/market-news';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
@@ -609,22 +612,6 @@ type WithPlain<T> = T & { plain?: string | null };
  * LLM에 보내 "쉽게 쓴 에러 메시지"를 만들고, 거부마다 DeepSeek 왕복이 붙는다
  * (`withLocalizedProse`가 같은 함정을 이미 겪은 자리다).
  */
-/**
- * 시장 프로파일 → 통화 **코드**.
- *
- * 표기(`'원'`·`'달러'`)로 바꾸는 것은 `analysis-plain`이 한다 — 이 파일에 한글
- * 리터럴을 두면 `noRawUserFacingApiStrings` 가드에 걸리고, 실제로도 그 문자열은
- * 화면 문구가 아니라 프롬프트 도메인의 값이다.
- */
-async function resolveCurrencyCode(symbol: string): Promise<'USD' | 'KRW'> {
-    try {
-        const profile = await resolveMarketProfile(symbol);
-        return getDescriptor(profile).priceFormat.currency;
-    } catch {
-        // 프로파일 조회 실패가 평이화를 막지는 않는다. 미국 종목이 다수다.
-        return 'USD';
-    }
-}
 
 async function withPlainLanguage<T>(
     result: T,
@@ -652,7 +639,7 @@ async function withPlainLanguage<T>(
         payload,
         symbol,
         locale,
-        await resolveCurrencyCode(symbol)
+        currencyForSymbol(symbol)
     );
     return { ...(result as object), plain } as WithPlain<T>;
 }
@@ -667,9 +654,32 @@ function withReaderViews<T>(
     work: Promise<T>,
     locale: Locale,
     type: AnalysisType,
-    symbol: unknown
+    symbol: unknown,
+    /**
+     * 봇 요청이면 평이화를 건너뛴다.
+     *
+     * ## 세 가지 이유가 같은 한 줄로 해결된다
+     *
+     * 1. **비용.** `skipEnqueueIfMiss`가 크롤러의 LLM 지출을 막는 장치인데 평이화는
+     *    그 뒤에 붙어 커버되지 않았다. 캐시 HIT를 받은 봇이 매 크롤마다 DeepSeek
+     *    왕복을 태운다 — prewarm이 평이화 캐시를 채우지 않으므로 롱테일 종목은
+     *    항상 미스다.
+     * 2. **동시성.** 봇에 2배 천장을 주는 근거가 "봇의 캐시 미스는 즉시 끝나므로
+     *    슬롯을 밀리초만 붙든다"인데(아래 `canAcceptAnalysisStream` 주석), 평이화가
+     *    붙으면 봇이 슬롯을 최대 15초 붙든다. 그 전제가 깨진다.
+     * 3. **SEO.** robots.txt가 이 라우트를 크롤러에 일부러 열어 두었다 — 즉
+     *    **크롤러는 라이브 분석을 실제로 렌더한다.** 설계 문서 §11이 "SEO 영향 0"의
+     *    근거로 삼은 "라이브 분석은 색인되지 않는다"는 전제가 사실이 아니었다.
+     *    기본값이 쉽게보기이므로(localStorage가 빈 크롤러는 항상 기본값) 봇이 받는
+     *    본문이 지표·패턴 이름이 제거된 37% 압축 산문으로 바뀐다. 2026-07 thin
+     *    콘텐츠 절벽에서 회복한 상태를 되돌릴 수 있다.
+     *
+     * 사람 트래픽에는 영향이 없고, 봇은 지금까지와 똑같은 원본을 받는다.
+     */
+    isBotRequest: boolean
 ): Promise<T> {
     const plainEnabled =
+        !isBotRequest &&
         typeof symbol === 'string' &&
         symbol.length > 0 &&
         PLAIN_ENABLED_TYPES.has(type);
@@ -1040,7 +1050,8 @@ export async function POST(request: Request): Promise<Response> {
                         work,
                         requestLocale,
                         'technical',
-                        body.params.symbol
+                        body.params.symbol,
+                        skipEnqueueIfMiss
                     ),
                     {
                         genericErrorMessage: t('generic'),
@@ -1110,7 +1121,13 @@ export async function POST(request: Request): Promise<Response> {
         );
         return new Response(
             heartbeatStream(
-                withReaderViews(work, locale, body.type, body.params.symbol),
+                withReaderViews(
+                    work,
+                    locale,
+                    body.type,
+                    body.params.symbol,
+                    isBot(request.headers)
+                ),
                 { genericErrorMessage: t('generic') }
             ),
             { headers: SSE_HEADERS }

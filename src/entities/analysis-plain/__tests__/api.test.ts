@@ -44,6 +44,69 @@ beforeEach(() => {
 });
 
 describe('rewriteToPlainLanguage', () => {
+    /**
+     * 회귀(감사 M5): `try`가 준비 문장 뒤에서 시작하던 시절, 여기서 던지면 거절이
+     * 호출자의 `Promise.all`로 전파돼 **성공한 분석이 통째로 실패**했다.
+     * `tryReadPlainModelConfig`는 미처리 provider에 대해 의도적으로 throw한다.
+     */
+    it('준비 단계에서 던져도 reject하지 않고 null로 떨어진다', async () => {
+        tryReadPlainModelConfig.mockImplementation(() => {
+            throw new Error('unhandled provider');
+        });
+        await expect(
+            rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')
+        ).resolves.toBeNull();
+    });
+
+    /**
+     * 회귀(감사 M2): `dropSupersededPaths` 호출부가 테스트로 고정돼 있지 않았다.
+     * 이 경로가 빠지면 보정 전/후 매매 가격 두 벌이 함께 프롬프트에 실려,
+     * "다른 분석에서는 목표가를…" 같은 모순 출력이 돌아온다.
+     */
+    it('대체된 경로를 프롬프트에서 실제로 뺀다', async () => {
+        const withReconciled = {
+            summary: '요약'.repeat(60),
+            actionRecommendation: {
+                entry: '진입 문구'.repeat(10),
+                exit: '원본 청산 196.53달러',
+                riskReward: '원본 손익비 3.2',
+                reconciledLevels: {
+                    exit: '보정 청산 190달러',
+                    riskReward: '보정 손익비 2.1',
+                    reason: '보정 사유 문구',
+                },
+            },
+        };
+        await rewriteToPlainLanguage(withReconciled, 'AAPL', 'ko');
+
+        const prompt = callAiProviderRouter.mock.calls[0][0].contents;
+        expect(prompt).toContain('보정 청산 190달러');
+        expect(prompt).not.toContain('원본 청산 196.53달러');
+        expect(prompt).not.toContain('원본 손익비 3.2');
+        expect(prompt).not.toContain('보정 사유 문구');
+    });
+
+    /** 회귀(감사): ja 로케일에서 `319.70달러` 같은 혼합 표기가 나가던 자리. */
+    it('통화 표기가 출력 언어를 따른다', async () => {
+        await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ja', 'USD');
+        expect(callAiProviderRouter.mock.calls[0][0].contents).toContain(
+            'ドル'
+        );
+
+        vi.clearAllMocks();
+        isE2E.mockReturnValue(false);
+        cacheGet.mockResolvedValue(null);
+        createCacheProvider.mockReturnValue({ get: cacheGet, set: cacheSet });
+        tryReadPlainModelConfig.mockReturnValue({
+            serverApiKey: 'k',
+            model: 'deepseek-v4-flash',
+        });
+        callAiProviderRouter.mockResolvedValue(GOOD);
+
+        await rewriteToPlainLanguage(ANALYSIS, '005930.KS', 'ko', 'KRW');
+        expect(callAiProviderRouter.mock.calls[0][0].contents).toContain('원');
+    });
+
     it('E2E에서는 LLM을 태우지 않는다', async () => {
         isE2E.mockReturnValue(true);
         expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBeNull();
