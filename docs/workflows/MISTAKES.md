@@ -910,6 +910,23 @@ This file contains only **recurring gotchas** that agents keep missing despite e
        it('renders KR scope with correct label', () => { render(<Component scope={KR_SCOPE} />); expect(...).toHaveAttribute('data-market-label', '한국 증시'); });
     → Recurring: feat/asset-class-navigation R4 (data-market-label asserted only against TEST_SCOPE, KR_SCOPE inherited hardcoded value via spread)
 
+22. Test fixtures whose SHAPE differs from the real call site hide wiring defects
+    → Sibling of #21: there the fixture VALUES were wrong, here the fixture STRUCTURE is. A path/key-matching helper unit-tested against unwrapped data stays green while the production caller hands it a wrapper, and the helper silently no-ops.
+    → Any helper that matches on paths, keys, or prefixes must have at least one fixture carrying the exact envelope the production caller passes
+    → Mutations: deleting the helper's entire body still passes when every fixture is pre-unwrapped
+    ❌ dropSupersededPaths([{ path: 'actionRecommendation.exit' }])  // unit test — bare paths
+       // production: rewriteToPlainLanguage(envelope) → extractProse yields 'result.actionRecommendation.exit' → zero matches, helper is a no-op
+    ✅ fixture includes the real envelope: { status, result: { actionRecommendation: {...} }, lockedInfoDepth }
+       // plus a route-level assertion that the payload — not the envelope — reaches the helper
+    → Recurring: PR #778 R1 (dropSupersededPaths no-op in production; both its unit test and the tier-isolation test used bare paths, so the exact defect the helper exists to prevent shipped green)
+
+23. A helper extracted to de-duplicate wiring needs a test that fails when a CONSUMER stops calling it
+    → Unit-testing the helper itself proves the helper works; it proves nothing about the six call sites that are supposed to use it
+    → Write one cross-consumer test that drives every call site through the shared seam, then mutation-verify it by deleting the call in one consumer
+    ❌ readPlain() has its own test; five of six hooks that call it have no test referencing `plain` → replacing `plain: readPlain(result)` with `plain: null` in any of them fails zero tests
+    ✅ plainWiring.test.tsx drives all five hooks through a mocked stream and asserts state.plain both when the envelope carries it and when it does not
+    → Recurring: PR #778 R2 (readPlain used by 6 tabs, 5 of them untested; caught only because the reviewer grepped for the field name)
+
 21.5. Test module state reset via reimport; clear store on setup, not via side effects
     → Tests must not rely on reimporting modules to reset test setup state; this causes side effects (e.g., module-level caches cleared) that become indistinguishable from the intended test behavior
     → Use vi.mock() at test file boundaries, or mock flags/dependencies at runtime without reimport; setup/teardown must be explicit and controllable
