@@ -16,6 +16,7 @@ import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarket
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { isBot } from '@/shared/api/isBot';
 import { rewriteToPlainLanguage } from '@/entities/analysis-plain';
+import { getAssetInfoResilient, pickAssetName } from '@/entities/ticker';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
     currencyForSymbol,

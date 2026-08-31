@@ -183,6 +183,10 @@ export async function rewriteToPlainLanguage(
                 locale,
                 kind: failure.kind,
                 retry: retryHint !== undefined,
+                // 거부 토큰을 남긴다 — 없으면 "모델이 지어냈는지" 대 "가드가 너무
+                // 빡빡한지"를 사후에 가릴 수 없다. 실제로 그래서 KRW 재시도율이
+                // USD의 6배인 원인을 특정하지 못했다.
+                tokens: 'tokens' in failure ? failure.tokens : undefined,
             });
             return retryHint === undefined
                 ? attempt(describeFailure(failure))

@@ -206,3 +206,50 @@ describe('findUnsupportedNumbers — 표기 차이를 환각으로 오판하지 
         ).toEqual(['183.65']);
     });
 });
+
+describe('guardPlainText — 크기 접미사', () => {
+    const long = '가'.repeat(400);
+
+    /**
+     * 회귀: 원본 `3,475.2B`(3.48조원)를 `3,475.2억 원`(0.35조)으로 옮긴 사례가 있었다.
+     * **10배 축소된 금액이 그대로 화면에 나갔고**, 숫자 자체는 허용 집합에 있어
+     * 숫자 가드를 통과했다 — 단위는 아무도 보지 않았다. 접미사를 옮기는 것 자체를 막는다.
+     */
+    it('B 접미사가 붙은 숫자를 거부한다', () => {
+        const failure = guardPlainText({
+            text: `${long} 총부채는 3,475.2B 원입니다`,
+            inputChars: 100,
+            allowed: [3475.2],
+        });
+        expect(failure).toMatchObject({ kind: 'magnitude_suffix' });
+    });
+
+    it('M·K 접미사도 거부한다', () => {
+        for (const suffix of ['M', 'K']) {
+            expect(
+                guardPlainText({
+                    text: `${long} 매출 120${suffix} 입니다`,
+                    inputChars: 100,
+                    allowed: [120],
+                })
+            ).toMatchObject({ kind: 'magnitude_suffix' });
+        }
+    });
+
+    it('재시도 문구가 접미사를 지적한다', () => {
+        expect(
+            describeFailure({ kind: 'magnitude_suffix', tokens: ['3,475.2B'] })
+        ).toContain('3,475.2B');
+    });
+
+    /** 영문 단어 안의 대문자를 접미사로 오인하면 정상 문장이 거부된다. */
+    it('숫자와 무관한 대문자는 건드리지 않는다', () => {
+        expect(
+            guardPlainText({
+                text: `${long} KOSPI 지수와 3 M&A 건이 있습니다`,
+                inputChars: 100,
+                allowed: [3],
+            })
+        ).toBeNull();
+    });
+});

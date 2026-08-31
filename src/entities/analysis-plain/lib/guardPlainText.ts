@@ -132,9 +132,19 @@ export function findUnsupportedNumbers(
     return unsupported;
 }
 
+/**
+ * 숫자에 **바로 붙은** 영문 크기 접미사(`1,573.1B`). 원본에서 넘어오는 표기이고,
+ * 그대로 옮기면 자릿수 오류로 이어진다.
+ *
+ * 공백을 허용하지 않는다 — `3 M&A 건` 같은 정상 문장을 접미사로 오인해 재작성을
+ * 통째로 버리게 된다(실측). 원본 표기가 항상 붙여 쓰는 형태라 이걸로 충분하다.
+ */
+const MAGNITUDE_SUFFIX = /\d[BMK](?![A-Za-z])/g;
+
 /** 산출물이 통과하지 못한 이유. 재시도 프롬프트에 그대로 실린다. */
 export type PlainGuardFailure =
     | { readonly kind: 'empty' }
+    | { readonly kind: 'magnitude_suffix'; readonly tokens: readonly string[] }
     | {
           readonly kind: 'too_short';
           readonly chars: number;
@@ -174,6 +184,15 @@ export function guardPlainText({
         return { kind: 'too_short', chars: trimmed.length, min };
     }
 
+    // 크기 접미사를 그대로 옮기면 **10배 금액 오류**가 난다. 실측: 원본 `3,475.2B`
+    // (3.48조원)를 `3,475.2억 원`(0.35조)으로 쓴 사례가 있었고, 숫자 자체는 허용
+    // 집합에 있어 숫자 가드를 그대로 통과했다 — 단위는 아무도 보지 않았다.
+    // 평이한 한국어 산문에 `123B` 같은 표기가 정당하게 등장할 일은 없다.
+    const magnitudes = [...trimmed.matchAll(MAGNITUDE_SUFFIX)].map(m => m[0]);
+    if (magnitudes.length > 0) {
+        return { kind: 'magnitude_suffix', tokens: magnitudes };
+    }
+
     const tokens = findUnsupportedNumbers(trimmed, allowed);
     if (tokens.length > 0) return { kind: 'unsupported_numbers', tokens };
 
@@ -187,6 +206,8 @@ export function describeFailure(failure: PlainGuardFailure): string {
             return '이전 응답이 비어 있었습니다. 완성된 글을 출력하세요.';
         case 'too_short':
             return `이전 응답이 ${failure.chars}자로 너무 짧아 원본의 내용을 담지 못했습니다. ${failure.min}자 이상으로, 원본의 핵심 판단을 빠뜨리지 말고 다시 쓰세요.`;
+        case 'magnitude_suffix':
+            return `이전 응답이 ${failure.tokens.join(', ')}처럼 영문 크기 표시가 붙은 숫자를 그대로 옮겼습니다. 그 표기는 쓰지 말고, 해당 항목이 많은지 적은지 또는 늘었는지 줄었는지를 말로 쓰세요.`;
         case 'unsupported_numbers':
             return `이전 응답이 입력에 없는 숫자 ${failure.tokens.join(', ')}을(를) 포함했습니다. prose와 facts에 있는 숫자만 사용하고, 퍼센트나 비율을 직접 계산하지 마세요.`;
     }
