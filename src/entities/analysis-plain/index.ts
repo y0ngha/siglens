@@ -11,5 +11,6 @@ export {
     describeFailure,
     findUnsupportedNumbers,
     guardPlainText,
+    salvageByRemovingSentences,
 } from './lib/guardPlainText';
 export type { PlainGuardFailure } from './lib/guardPlainText';

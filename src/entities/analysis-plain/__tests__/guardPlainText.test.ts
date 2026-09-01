@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     buildAllowedNumbers,
+    salvageByRemovingSentences,
     describeFailure,
     findUnsupportedNumbers,
     guardPlainText,
@@ -251,5 +252,42 @@ describe('guardPlainText — 크기 접미사', () => {
                 allowed: [3],
             })
         ).toBeNull();
+    });
+});
+
+describe('salvageByRemovingSentences', () => {
+    const allowed = [183.6, 431.29];
+    const long = '괜찮은 문장입니다. '.repeat(30);
+
+    it('위반이 없으면 원문을 그대로 돌려준다', () => {
+        expect(salvageByRemovingSentences(long, allowed, 100)).toBe(long);
+    });
+
+    it('어긋난 숫자가 든 문장만 도려낸다', () => {
+        const text = `${long}\n\n목표가 999.99달러입니다. 지지선은 183.60달러입니다.`;
+        const out = salvageByRemovingSentences(text, allowed, 100);
+        expect(out).not.toBeNull();
+        expect(out).not.toContain('999.99');
+        expect(out).toContain('183.60달러');
+        expect(out).toContain('괜찮은 문장입니다');
+    });
+
+    it('문단이 통째로 비면 그 문단을 없앤다', () => {
+        const text = `${long}\n\n목표가 999.99달러입니다.`;
+        const out = salvageByRemovingSentences(text, allowed, 100);
+        expect(out).not.toContain('999.99');
+        expect(out?.includes('\n\n\n')).toBe(false);
+    });
+
+    /** 도려낸 결과가 요약도 못 되는 조각이면 살리지 않는다. */
+    it('길이 하한에 못 미치면 null', () => {
+        expect(
+            salvageByRemovingSentences('목표가 999.99달러입니다.', allowed, 100)
+        ).toBeNull();
+    });
+
+    it('입력이 길면 비율 하한도 함께 본다', () => {
+        const text = `${'가'.repeat(300)} 목표가 999.99달러입니다.`;
+        expect(salvageByRemovingSentences(text, allowed, 5_000)).toBeNull();
     });
 });

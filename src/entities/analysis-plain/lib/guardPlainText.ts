@@ -155,11 +155,6 @@ export type PlainGuardFailure =
           readonly tokens: readonly string[];
       };
 
-/** 입력 산문 대비 최소 비율. 이보다 짧으면 내용이 소실된 것으로 본다. */
-const MIN_RATIO = 0.2;
-/** 절대 하한. 입력이 아주 짧아도 이보다 짧으면 글이 아니다. */
-const MIN_CHARS = 200;
-
 export interface GuardInput {
     readonly text: string;
     readonly inputChars: number;
@@ -197,6 +192,74 @@ export function guardPlainText({
     if (tokens.length > 0) return { kind: 'unsupported_numbers', tokens };
 
     return null;
+}
+
+/** 입력 산문 대비 최소 비율. 이보다 짧으면 내용이 소실된 것으로 본다. */
+const MIN_RATIO = 0.2;
+/** 절대 하한. 입력이 아주 짧아도 이보다 짧으면 글이 아니다. */
+const MIN_CHARS = 200;
+
+/**
+ * 문장 분해. 한국어 종결(`…다.`)과 서양식 종결부호를 함께 본다.
+ *
+ * 완벽한 분해가 목표가 아니다 — 어긋난 숫자가 든 **덩어리**를 도려내는 것이
+ * 목적이므로, 경계를 조금 넓게 잡아도 결과가 안전한 쪽으로 기운다.
+ */
+function splitSentences(paragraph: string): string[] {
+    return paragraph
+        .split(/(?<=[.!?]|다\.)\s+/)
+        .filter(s => s.trim().length > 0);
+}
+
+/**
+ * 어긋난 숫자가 든 문장만 도려낸 텍스트. 살릴 수 없으면 `null`.
+ *
+ * ## 왜 전체를 버리지 않는가
+ *
+ * 이 가드는 원래 all-or-nothing이었다. 숫자 하나가 어긋나면 글 전체를 폐기했고,
+ * 그 설계가 **프롬프트 개선을 막고 있었다** — 어휘를 풀어 쓰라고 지시할수록 글이
+ * 길어지고, 길어질수록 숫자를 더 많이 언급하고, 그만큼 폐기 확률이 올랐다.
+ * 실측: 어휘 규칙을 강화한 4개 판본에서 최종 실패가 3건 → 17·24·22건으로 늘었다.
+ * 비전문가 이해도(블라인드 평가 2.57·1.86/5점)를 올리려면 이 결합을 먼저 끊어야 한다.
+ *
+ * 실패 사례를 재현해 보면 위반은 대개 **문장 한두 개에 몰려 있다** — 5건을 다시
+ * 돌린 결과 전부 문장 1~3개(전체의 5~16%)를 빼는 것만으로 잔여 위반 0이 됐다.
+ * 문단 몇 문장을 잃는 것이 쉽게보기가 통째로 사라지는 것보다 낫다.
+ *
+ * 도려낸 뒤에도 길이 하한을 다시 검사한다 — 남은 글이 요약도 못 되는 조각이면
+ * 그때는 정말로 버린다.
+ */
+export function salvageByRemovingSentences(
+    text: string,
+    allowed: readonly number[],
+    inputChars: number
+): string | null {
+    const unsupported = findUnsupportedNumbers(text, allowed);
+    if (unsupported.length === 0) return text;
+
+    const cleaned = text
+        .split(/\n\s*\n/)
+        .map(paragraph =>
+            splitSentences(paragraph)
+                .filter(
+                    sentence =>
+                        !unsupported.some(token => sentence.includes(token))
+                )
+                .join(' ')
+        )
+        .filter(paragraph => paragraph.trim().length > 0)
+        .join('\n\n')
+        .trim();
+
+    // 도려낸 결과가 스스로 가드를 통과해야 한다. 잔여 위반이 남거나(문장 경계를
+    // 잘못 잡은 경우) 너무 짧아지면 살리지 않는다.
+    if (findUnsupportedNumbers(cleaned, allowed).length > 0) return null;
+    if (
+        cleaned.length < Math.max(MIN_CHARS, Math.floor(inputChars * MIN_RATIO))
+    ) {
+        return null;
+    }
+    return cleaned;
 }
 
 /** 재시도 프롬프트에 덧붙일 지적 문구. 같은 입력을 그대로 재전송하지 않기 위함이다. */

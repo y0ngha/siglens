@@ -16,6 +16,7 @@ import {
     buildAllowedNumbers,
     describeFailure,
     guardPlainText,
+    salvageByRemovingSentences,
 } from './lib/guardPlainText';
 
 /**
@@ -188,9 +189,34 @@ export async function rewriteToPlainLanguage(
                 // USD의 6배인 원인을 특정하지 못했다.
                 tokens: 'tokens' in failure ? failure.tokens : undefined,
             });
-            return retryHint === undefined
-                ? attempt(describeFailure(failure))
-                : null;
+            if (retryHint === undefined)
+                return attempt(describeFailure(failure));
+
+            /**
+             * 재시도까지 실패했다. 통째로 버리기 전에 **어긋난 문장만 도려내** 본다.
+             *
+             * 위반은 대개 문장 한두 개에 몰려 있고(실측: 5건 전부 문장 1~3개 제거로
+             * 잔여 위반 0), 문단 일부를 잃는 것이 쉽게보기가 통째로 사라지는 것보다
+             * 낫다. 도려낸 결과는 `salvageByRemovingSentences`가 길이·숫자 가드를
+             * 다시 통과시킨 것만 돌려준다.
+             *
+             * 크기 접미사(`1,573.1B`)는 살리지 않는다 — 자릿수가 틀린 금액이라
+             * 문장을 빼는 것으로 고쳐지지 않고, 남겨 두면 10배 오류가 그대로 나간다.
+             */
+            if (failure.kind !== 'unsupported_numbers') return null;
+            const salvaged = salvageByRemovingSentences(
+                text,
+                allowed,
+                inputChars
+            );
+            if (salvaged !== null) {
+                console.info('[analysisPlain] salvaged by sentence removal', {
+                    symbol,
+                    locale,
+                    removedChars: text.length - salvaged.length,
+                });
+            }
+            return salvaged;
         };
 
         const text = await withDeadline(attempt(), PLAIN_DEADLINE_MS);

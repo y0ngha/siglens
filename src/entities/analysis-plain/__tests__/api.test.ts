@@ -151,10 +151,39 @@ describe('rewriteToPlainLanguage', () => {
         expect(retryPrompt).toContain('999.99');
     });
 
-    it('재시도도 실패하면 null이고 캐시에 쓰지 않는다', async () => {
-        callAiProviderRouter.mockResolvedValue(`${GOOD} 목표가 999.99달러`);
-        expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBeNull();
+    /**
+     * 재시도까지 실패해도 어긋난 **문장만** 도려내 살린다. 전체 폐기는 최후 수단이다 —
+     * 위반은 대개 문장 한두 개에 몰려 있고, 문단 일부를 잃는 것이 쉽게보기가 통째로
+     * 사라지는 것보다 낫다.
+     */
+    it('재시도도 실패하면 어긋난 문장을 도려내고 살린다', async () => {
+        callAiProviderRouter.mockResolvedValue(
+            `${GOOD}\n\n목표가 999.99달러입니다.`
+        );
+
+        const result = await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+
+        expect(result).not.toBeNull();
+        expect(result).not.toContain('999.99');
+        expect(result).toContain('좋은 문장입니다');
         expect(callAiProviderRouter).toHaveBeenCalledTimes(2);
+        // 살려낸 결과도 캐시에 넣는다 — 다음 조회가 같은 왕복을 반복하지 않는다.
+        expect(cacheSet).toHaveBeenCalledOnce();
+    });
+
+    /** 도려내도 길이 하한을 못 넘으면 그때는 정말 버린다. */
+    it('도려낸 결과가 너무 짧으면 null', async () => {
+        callAiProviderRouter.mockResolvedValue('목표가 999.99달러입니다.');
+        expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBeNull();
+        expect(cacheSet).not.toHaveBeenCalled();
+    });
+
+    /** 크기 접미사는 자릿수가 틀린 금액이라 문장 제거로 고쳐지지 않는다. */
+    it('크기 접미사 실패는 살리지 않는다', async () => {
+        callAiProviderRouter.mockResolvedValue(
+            `${GOOD}\n\n총부채는 3,475.2B 원입니다.`
+        );
+        expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBeNull();
         expect(cacheSet).not.toHaveBeenCalled();
     });
 
