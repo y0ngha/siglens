@@ -472,12 +472,23 @@ export default async function SymbolPage({ params }: Props) {
                     뒤에 오게 하고(heading 위계, WCAG 1.3.1), (b) chart+AI 영역의
                     flex 분배에서 완전히 제외해(wrapper가 shrink-0) 더 이상 첫 viewport
                     높이를 두고 경쟁하지 않는다. */}
+                {/*
+                    차트 탭에는 라이브 `AnalysisPanel`이 함께 있다. 그래서
+                    `duplicatesLiveWidget`을 세운다 — 이 섹션은 자체 토글을 그리지
+                    않고, 라이브 위젯의 평이화가 뜨면 CSS로 숨는다.
+
+                    그래도 `plain`은 넘긴다. 이 탭이 이 사이트 유입의 본진
+                    (롱테일 `<티커> 주가`)이고, 봇은 라이브 위젯의 평이화를 받지
+                    못하므로(봇 가드) 여기서 실어 보내지 않으면 색인되는 본문이
+                    전문 산문으로만 남는다. */}
                 <TechnicalSnapshotProse
                     content={technicalSnapshot?.content}
                     symbol={ticker}
                     displayName={displayName}
                     marketProfile={marketProfile}
                     generatedAt={technicalSnapshot?.generatedAt}
+                    plain={technicalSnapshot?.plain}
+                    duplicatesLiveWidget
                 />
             </main>
         </>

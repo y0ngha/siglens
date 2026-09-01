@@ -13,6 +13,7 @@ describe('buildChatState', () => {
     it('done 상태에서 financials context와 isAnalysisReady:true를 반환한다', () => {
         const state: FinancialsAnalysisState = {
             status: 'done',
+            plain: null,
             result: RESULT,
             trigger: () => {},
         };
@@ -76,6 +77,7 @@ describe('buildChatState', () => {
     it('timeframe은 항상 null이다', () => {
         const doneState: FinancialsAnalysisState = {
             status: 'done',
+            plain: null,
             result: RESULT,
             trigger: () => {},
         };

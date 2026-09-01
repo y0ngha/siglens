@@ -58,8 +58,9 @@ export { krExchangeOf, type KrExchange } from './lib/krExchange';
  * 번역 모델·키 설정.
  *
  * `ticker` 슬라이스에 있는 것은 이력 때문이다(회사명 한국어 번역이 첫 소비자였다).
- * 지금은 `entities/analysis-translation`도 같은 설정을 쓴다 — 둘 다
- * `DEEPSEEK_API_KEY` 하나로 같은 저가 모델을 부른다. 복제하면 `TRANSLATE_MODEL`
- * 검증 규칙이 두 벌이 되어 한쪽만 갱신되므로, 배럴로 내보내 공유한다.
+ * 한때 `entities/analysis-translation`도 같은 설정을 공유했으나, 분석 산문의
+ * 사후 번역 계층은 걷어냈다 — core가 `locale`을 받아 대상 언어로 직접 쓴다.
+ * 지금 소비자는 회사명 번역(`koreanTranslator.ts`)뿐이다. 배럴 export는
+ * `TRANSLATE_MODEL` 검증 규칙이 두 벌이 되는 것을 막기 위해 유지한다.
  */
 export { tryReadTranslatorConfig } from './lib/config';

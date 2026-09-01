@@ -638,3 +638,15 @@ body:has([data-vaul-drawer]) [data-mobile-sheet-placeholder] {
         transform: translateX(300%);
     }
 }
+
+/*
+ * 쉽게보기가 켜져 있으면 SSR 스냅샷 산문을 감춘다.
+ *
+ * 그 섹션은 크롤러에게 본문을 노출하려고 넣은 SEO 자산이라 DOM에서 지우지 않고
+ * CSS로만 감춘다. 루트의 `data-analysis-view`는 `PlainAnalysisSwitch`가 평이화
+ * 산문이 **실제로 있을 때만** 세우므로, 평이화를 받지 않는 봇에게는 이 규칙이
+ * 발동하지 않는다.
+ */
+[data-analysis-view='plain'] [data-snapshot-prose] {
+    display: none;
+}

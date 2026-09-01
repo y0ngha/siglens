@@ -2221,6 +2221,14 @@
                 "cooldown": "每 {v0} 分钟只能重新分析一次。",
                 "message": "AI 分析结果已过时。请重新分析以反映当前市场价格。",
                 "reanalyze": "重新分析"
+            },
+            "viewToggle": {
+                "cta": "查看指标与形态详情",
+                "label": "分析显示方式",
+                "lockedCta": "注册后查看全部",
+                "lockedNotice": "入场价、止损价、目标价等部分内容仅向会员显示。",
+                "plain": "简明",
+                "raw": "原文"
             }
         },
         "backtesting": {

@@ -15,12 +15,15 @@ import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { BotBlockedError } from '@/shared/lib/BotBlockedError';
+import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
 
 export type FundamentalAnalysisState =
     | { status: 'loading'; trigger: () => void }
     | {
           status: 'done';
           result: FundamentalAnalysisResponse;
+          /** 평이화 산문. `null`이면 쉽게보기 토글을 렌더하지 않는다. */
+          plain: string | null;
           trigger: () => void;
       }
     | { status: 'bot_blocked'; trigger: () => void }
@@ -36,7 +39,7 @@ async function fetchFundamentalAnalysis(
     reasoning: boolean,
     messages: StreamErrorMessages,
     signal?: AbortSignal
-): Promise<FundamentalAnalysisResponse> {
+): Promise<WithPlain<FundamentalAnalysisResponse>> {
     const result = await runAnalysisStream<RunFundamentalAnalysisActionResult>({
         type: 'fundamental',
         params: { symbol, modelId, reasoning },
@@ -45,7 +48,7 @@ async function fetchFundamentalAnalysis(
     });
 
     if (result.status === 'cached' || result.status === 'done')
-        return result.result;
+        return { data: result.result, plain: readPlain(result) };
     if (result.status === 'miss_no_trigger') {
         throw new BotBlockedError();
     }
@@ -148,7 +151,12 @@ export function useFundamentalAnalysis(
     }
 
     if (query.data !== undefined) {
-        return { status: 'done', result: query.data, trigger: retry };
+        return {
+            status: 'done',
+            result: query.data.data,
+            plain: query.data.plain,
+            trigger: retry,
+        };
     }
 
     return { status: 'loading', trigger: retry };

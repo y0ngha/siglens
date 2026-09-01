@@ -28,6 +28,7 @@ import {
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
 import { SENTIMENT_LABEL_KEY } from '@/shared/lib/sentimentDisplay';
+import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
 
 const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
     bullish: 'bg-ui-success/10 text-ui-success-text',
@@ -358,5 +359,9 @@ export function NewsAiSummary({
         return <StatusCard phase="analyzing" />;
     }
 
-    return <NewsAiSummaryView result={analysis.result} />;
+    return (
+        <PlainAnalysisSwitch plain={analysis.plain}>
+            <NewsAiSummaryView result={analysis.result} />
+        </PlainAnalysisSwitch>
+    );
 }

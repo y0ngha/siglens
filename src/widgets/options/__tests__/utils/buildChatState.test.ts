@@ -15,6 +15,7 @@ describe('options buildChatState', () => {
     it('done → context: options payload, ready=true', () => {
         const state: OptionsAnalysisState = {
             status: 'done',
+            plain: null,
             result: FAKE_RESULT,
             trigger: () => {},
         };

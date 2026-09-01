@@ -14,6 +14,7 @@ describe('news buildChatState', () => {
     it('done → context: news payload, ready=true', () => {
         const state: NewsAnalysisState = {
             status: 'done',
+            plain: null,
             result: FAKE_RESULT,
             trigger: () => {},
         };

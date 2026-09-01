@@ -323,6 +323,46 @@ describe('useAnalysis — branch coverage', () => {
             });
             expect(result.current.analysis).toEqual(before);
         });
+
+        /**
+         * 회귀(리뷰 라운드 1): `previousStateRef`가 `plain`을 담지 않으면 결과만
+         * 복원되고 산문은 `onMutate`가 비운 `null`로 남는다. 사용자는 **같은
+         * 분석을 보고 있는데 쉽게보기 토글만 사라지는** 상태가 된다.
+         */
+        it('쿨다운으로 거절돼도 평이화 산문을 잃지 않는다', async () => {
+            mockSubmit.mockResolvedValueOnce({
+                status: 'done' as const,
+                result: { summaryKo: '최초 분석' },
+                lockedInfoDepth: [],
+                personalized: false,
+                plain: '쉽게 쓴 분석문입니다.',
+            });
+
+            const { result } = renderHook(() => useAnalysis(makeOptions()), {
+                wrapper: makeWrapper(),
+            });
+
+            await act(async () => {});
+            act(() => {
+                result.current.handleReanalyze();
+            });
+            await waitFor(() => {
+                expect(result.current.plain).toBe('쉽게 쓴 분석문입니다.');
+            });
+
+            mockSubmit.mockResolvedValueOnce({
+                status: 'reanalyze_cooldown',
+                remainingMs: 120000,
+            });
+            act(() => {
+                result.current.handleReanalyze();
+            });
+
+            await waitFor(() => {
+                expect(result.current.reanalyzeCooldownMs).toBe(120000);
+            });
+            expect(result.current.plain).toBe('쉽게 쓴 분석문입니다.');
+        });
     });
 
     describe('timeframe change (L396-414)', () => {

@@ -2221,6 +2221,14 @@
                 "cooldown": "Re-analysis can run once every {v0} minutes.",
                 "message": "This AI analysis is out of date. Re-run it to reflect the current market price.",
                 "reanalyze": "Re-analyze"
+            },
+            "viewToggle": {
+                "cta": "See indicators and patterns in detail",
+                "label": "Analysis display mode",
+                "lockedCta": "Sign up to see everything",
+                "lockedNotice": "Entry, Stop Loss and target prices are shown to members only.",
+                "plain": "Simple",
+                "raw": "Original"
             }
         },
         "backtesting": {

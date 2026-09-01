@@ -10,6 +10,11 @@ import {
     prewarmCongress,
 } from '@/entities/analysis/api';
 import { prewarmNews } from '@/entities/news-article/api';
+import {
+    rewriteToPlainLanguage,
+    resolveCurrentPrice,
+} from '@/entities/analysis-plain';
+import { currencyForSymbol } from '@/shared/config/marketProfile';
 import { prewarmOptions } from '@/entities/options-chain/api';
 import {
     markSkipped,
@@ -124,9 +129,42 @@ export async function resolveHarvest(
     }
 
     if (result.status === 'cached' || result.status === 'done') {
+        /**
+         * 평이화("쉽게보기")를 스냅샷과 **같은 시점에** 굽는다.
+         *
+         * 여섯 탭(overall·news·fundamental·financials·options·congress)은
+         * 스냅샷이 있으면 클라이언트 AI 위젯을 아예 마운트하지 않는다
+         * (`hasCongressProse`·`hasOverallProse` 등의 XOR 게이팅). 위젯이 없으면
+         * 거기 붙어 있던 쉽게보기 토글도 함께 사라져, 실제로는 차트 탭에서만
+         * 동작했다 — 실증으로 확인한 결함이다.
+         *
+         * 방문 시점에 평이화를 돌리는 대신 여기서 굽는 이유: 그 탭들은 스냅샷을
+         * 그대로 서빙하므로 방문마다 LLM 왕복이 순증한다. 프리웜은 심볼당 하루
+         * 한 번꼴이라 비용이 상수로 묶인다.
+         *
+         * 실패하면 `null`이다 — `rewriteToPlainLanguage`는 절대 throw하지 않고,
+         * 소비자는 `null`이면 토글 없이 원문만 보여준다. 즉 이 호출이 실패해도
+         * 스냅샷 자체는 예전과 똑같이 저장된다.
+         */
+        /*
+         * 현재가를 함께 넘긴다. `fundamental`·`news`·`financials` payload에는
+         * 숫자 필드가 없어, 없이 돌리면 모델이 "현재 주가가 어느 수준인지는
+         * 제시된 자료에 명시되어 있지 않지만"으로 글을 연다 — 실제로 이 배선이
+         * 빠진 채 구운 fundamental 평이화가 그 문장으로 시작했고, 그대로 검색
+         * 스니펫에 실린다.
+         */
+        const plain = await rewriteToPlainLanguage(
+            result.result,
+            symbol,
+            DEFAULT_LOCALE,
+            currencyForSymbol(symbol),
+            await resolveCurrentPrice(symbol, result.result)
+        );
+
         await repo.upsert({
             symbol,
             tab,
+            plain,
             // 프리웜은 현재 한국어로만 생성한다 — 로케일별 프리웜은 화이트리스트로
             // 통제해야 해서(설계 §2.5·§6.4) 별도 작업이다. 컬럼을 명시해 두면
             // 그 작업이 이 값만 바꾸면 되고, 지금 저장되는 행이 어느 언어인지도

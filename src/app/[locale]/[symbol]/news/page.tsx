@@ -477,6 +477,7 @@ export default async function NewsPage({ params }: Props) {
                     displayName={displayName}
                     marketProfile={marketProfile}
                     generatedAt={newsSnapshot?.generatedAt}
+                    plain={newsSnapshot?.plain}
                 />
                 <section className="sr-only">
                     <h2>{t('page.2659c6', { v0: displayName })}</h2>

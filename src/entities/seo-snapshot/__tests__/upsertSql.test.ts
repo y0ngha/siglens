@@ -57,6 +57,7 @@ async function upsertSql(): Promise<string> {
         tab: 'technical',
         locale: 'ko',
         content: {},
+        plain: null,
         model: 'm',
         generatedAt: new Date(),
     });

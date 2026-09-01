@@ -218,6 +218,13 @@
       "when": 1787279990755,
       "tag": "0030_drop_seo_snapshot_legacy_uq",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1788283301093,
+      "tag": "0031_redundant_tattoo",
+      "breakpoints": true
     }
   ]
 }

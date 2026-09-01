@@ -33,6 +33,7 @@ export class DrizzleSeoSnapshotRepository {
                 symbol,
                 tab: input.tab,
                 content: input.content,
+                plain: input.plain,
                 model: input.model,
                 generatedAt: input.generatedAt,
                 updatedAt: new Date(),
@@ -65,6 +66,9 @@ export class DrizzleSeoSnapshotRepository {
                 ],
                 set: {
                     content: input.content,
+                    // 원문과 함께 덮어쓴다 — 따로 두면 원문이 갱신됐는데
+                    // 평이화만 옛것으로 남아 토글이 서로 다른 분석을 오간다.
+                    plain: input.plain,
                     model: input.model,
                     generatedAt: input.generatedAt,
                     updatedAt: new Date(),
@@ -102,6 +106,7 @@ export class DrizzleSeoSnapshotRepository {
                 symbol: seoAnalysisSnapshots.symbol,
                 tab: seoAnalysisSnapshots.tab,
                 content: seoAnalysisSnapshots.content,
+                plain: seoAnalysisSnapshots.plain,
                 model: seoAnalysisSnapshots.model,
                 generatedAt: seoAnalysisSnapshots.generatedAt,
                 updatedAt: seoAnalysisSnapshots.updatedAt,
@@ -114,6 +119,7 @@ export class DrizzleSeoSnapshotRepository {
             symbol: row.symbol,
             tab: row.tab as SeoSnapshotTab,
             content: row.content,
+            plain: row.plain,
             model: row.model,
             generatedAt: row.generatedAt,
             updatedAt: row.updatedAt,

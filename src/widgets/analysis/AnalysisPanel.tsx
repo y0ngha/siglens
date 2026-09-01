@@ -40,6 +40,7 @@ import {
     type SkillSummarySection,
 } from './utils/parseStructuredSummary';
 import { buildExpertAnalysisReport } from './utils/buildExpertAnalysisReport';
+import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
 import { resolveTrendDisplay } from './utils/trendUtils';
 import { resolveStrengthDisplay } from './utils/signalUtils';
 import { AnalysisProgress } from './AnalysisProgress';
@@ -805,6 +806,14 @@ interface AnalysisPanelProps {
      */
     lockedInfoDepth?: readonly TierInfoDepth[];
     /**
+     * 평이화("쉽게보기") 산문. SSE 라우트가 분석 결과와 함께 내려준다.
+     *
+     * `null`/`undefined`면 재작성이 실패했거나 아직 도착하지 않은 것이다. 그때는
+     * 토글을 렌더하지 않고 원본만 보여준다 — 아무 일도 하지 않는 토글을 노출하면
+     * 사용자가 고장으로 읽는다.
+     */
+    plain?: string | null;
+    /**
      * 이번 분석에 적용된 인디케이터 종류 수.
      * analysis → symbol-page 역방향 의존을 제거하기 위해 prop으로 전달한다.
      */
@@ -843,6 +852,7 @@ export function AnalysisPanel({
     indicatorCount = 0,
     skillCount = 0,
     isPersonalized = false,
+    plain,
 }: AnalysisPanelProps) {
     const tPanel = useTranslations('widgets.analysis.panel');
     const t = useTranslations('widgets.analysis');
@@ -861,6 +871,7 @@ export function AnalysisPanel({
     // 이후로 미룬다. `now`가 null인 동안에는 배너가 표시되지 않는다.
     const [now, setNow] = useState<Date | null>(null);
     const hasLockedDetails = lockedInfoDepth.length > 0;
+
     const hasLockedPartialDetail =
         hasLockedDetails && lockedInfoDepth.includes('partial_detail');
     const hasLockedActionDetail =
@@ -1127,281 +1138,303 @@ export function AnalysisPanel({
                 {t('AnalysisPanel.911acb', { v0: indicatorCount })}
             </p>
 
-            {/* 분석 중에는 진행 인디케이터로 대체.
+            {/* 쉽게보기: 카드·표를 접고 산문 한 덩어리로 교체한다. 분석 진행 중에는
+                평이화 결과가 아직 없으므로 원본(진행 인디케이터) 경로를 그대로 탄다. */}
+            <PlainAnalysisSwitch
+                plain={showProgress ? null : plain}
+                hasLockedDetails={hasLockedDetails}
+                renderToggle={toggle =>
+                    toggle !== null && (
+                        <div className="flex justify-end">{toggle}</div>
+                    )
+                }
+            >
+                <>
+                    {/* 분석 중에는 진행 인디케이터로 대체.
                 isAnalyzing이 false로 떨어진 직후에도 마무리 애니메이션이 끝날 때까지
                 showProgress=true가 유지되어 인디케이터가 잠시 더 노출된다. */}
-            {showProgress ? (
-                <AnalysisProgress
-                    phaseIndex={progressPhaseIndex}
-                    tipIndex={progressTipIndex}
-                    isFreeUser={isFreeUser}
-                />
-            ) : (
-                // TrendBadge와 동일한 신호(isFallbackAnalysis)로 가드한다.
-                // 서사가 없는 응답은 normalizeAnalysisResponse가 summary를 빈
-                // 문자열로 채워 넣으므로 그 fabricated 빈 값을 렌더하지 않는다.
-                // free 사용자의 진짜 summary는 direction과 함께 허용된 필드이므로
-                // 그대로 보여준다.
-                !isFallbackAnalysis(analysis, fallbackSummary) && (
-                    <MarkdownText className="text-sm text-secondary-300">
-                        {analysis.summary}
-                    </MarkdownText>
-                )
-            )}
+                    {showProgress ? (
+                        <AnalysisProgress
+                            phaseIndex={progressPhaseIndex}
+                            tipIndex={progressTipIndex}
+                            isFreeUser={isFreeUser}
+                        />
+                    ) : (
+                        // TrendBadge와 동일한 신호(isFallbackAnalysis)로 가드한다.
+                        // 서사가 없는 응답은 normalizeAnalysisResponse가 summary를 빈
+                        // 문자열로 채워 넣으므로 그 fabricated 빈 값을 렌더하지 않는다.
+                        // free 사용자의 진짜 summary는 direction과 함께 허용된 필드이므로
+                        // 그대로 보여준다.
+                        !isFallbackAnalysis(analysis, fallbackSummary) && (
+                            <MarkdownText className="text-sm text-secondary-300">
+                                {analysis.summary}
+                            </MarkdownText>
+                        )
+                    )}
 
-            {/* 마무리 애니메이션이 끝나기 전(showProgress=true) 동안에는 노출하지 않는다.
+                    {/* 마무리 애니메이션이 끝나기 전(showProgress=true) 동안에는 노출하지 않는다.
                 캐시 히트로 분석 결과가 즉시 도착해도 사용자가 5단계를 모두 본 뒤에야
                 결과가 한 번에 드러나도록 하기 위함이다. */}
-            {!showProgress && (
-                <>
-                    {/* free 티어의 상세 잠금 안내와 스킬 샘플 안내는 패널 하단의
+                    {!showProgress && (
+                        <>
+                            {/* free 티어의 상세 잠금 안내와 스킬 샘플 안내는 패널 하단의
                         단일 업셀 카드(아래)로 통합했다. 회원가입 CTA를 한 번만
                         노출해 중복을 없앤다. */}
-                    <div className="border-t border-secondary-700" />
+                            <div className="border-t border-secondary-700" />
 
-                    {!hasLockedActionDetail &&
-                        analysis.actionRecommendation && (
-                            <ActionRecommendationSection
-                                rec={analysis.actionRecommendation}
-                                isChartVisible={actionPricesVisible}
-                                // 화살표 함수를 무조건 넘기면 아래 섹션의
-                                // "핸들러가 없으면 버튼을 숨긴다" 게이트가
-                                // 영원히 발동하지 않는다 — 소비자가 핸들러를
-                                // 안 준 것을 여기서 지워버리기 때문이다.
-                                onToggleChart={
-                                    onActionPricesVisibilityChange === undefined
-                                        ? undefined
-                                        : () =>
-                                              onActionPricesVisibilityChange(
-                                                  !actionPricesVisible
-                                              )
-                                }
-                            />
-                        )}
+                            {!hasLockedActionDetail &&
+                                analysis.actionRecommendation && (
+                                    <ActionRecommendationSection
+                                        rec={analysis.actionRecommendation}
+                                        isChartVisible={actionPricesVisible}
+                                        // 화살표 함수를 무조건 넘기면 아래 섹션의
+                                        // "핸들러가 없으면 버튼을 숨긴다" 게이트가
+                                        // 영원히 발동하지 않는다 — 소비자가 핸들러를
+                                        // 안 준 것을 여기서 지워버리기 때문이다.
+                                        onToggleChart={
+                                            onActionPricesVisibilityChange ===
+                                            undefined
+                                                ? undefined
+                                                : () =>
+                                                      onActionPricesVisibilityChange(
+                                                          !actionPricesVisible
+                                                      )
+                                        }
+                                    />
+                                )}
 
-                    {(supportLevels.length > 0 ||
-                        resistanceLevels.length > 0 ||
-                        keyLevels.poc !== undefined) && (
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center">
-                                <span className={LABEL_KO}>
-                                    {t('AnalysisPanel.5ec98c')}
-                                </span>
-                                <KeyLevelsHeaderInfo />
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                {resistanceLevels.length > 0 && (
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-xs text-secondary-500">
-                                            {t('AnalysisPanel.d930e0')}
+                            {(supportLevels.length > 0 ||
+                                resistanceLevels.length > 0 ||
+                                keyLevels.poc !== undefined) && (
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center">
+                                        <span className={LABEL_KO}>
+                                            {t('AnalysisPanel.5ec98c')}
                                         </span>
-                                        {resistanceLevels.map(level => (
-                                            <div
-                                                key={`resistance-${level.price}`}
-                                                className="flex flex-col"
-                                            >
-                                                <span className="text-sm font-medium text-ui-danger-text">
-                                                    {level.price.toLocaleString(
-                                                        undefined,
-                                                        {
-                                                            minimumFractionDigits: 2,
-                                                            maximumFractionDigits: 2,
-                                                        }
-                                                    )}
-                                                </span>
-                                                <span className="inline-flex items-center text-xs text-secondary-500">
-                                                    {level.reason}
-                                                    <ConfluenceInfo
-                                                        level={level}
-                                                    />
-                                                </span>
-                                            </div>
-                                        ))}
+                                        <KeyLevelsHeaderInfo />
                                     </div>
-                                )}
-                                {supportLevels.length > 0 && (
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-xs text-secondary-500">
-                                            {t('AnalysisPanel.8da27a')}
-                                        </span>
-                                        {supportLevels.map(level => (
-                                            <div
-                                                key={`support-${level.price}`}
-                                                className="flex flex-col"
-                                            >
-                                                <span className="text-sm font-medium text-ui-success-text">
-                                                    {level.price.toLocaleString(
-                                                        undefined,
-                                                        {
-                                                            minimumFractionDigits: 2,
-                                                            maximumFractionDigits: 2,
-                                                        }
-                                                    )}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {resistanceLevels.length > 0 && (
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-xs text-secondary-500">
+                                                    {t('AnalysisPanel.d930e0')}
                                                 </span>
-                                                <span className="inline-flex items-center text-xs text-secondary-500">
-                                                    {level.reason}
-                                                    <ConfluenceInfo
-                                                        level={level}
-                                                    />
-                                                </span>
+                                                {resistanceLevels.map(level => (
+                                                    <div
+                                                        key={`resistance-${level.price}`}
+                                                        className="flex flex-col"
+                                                    >
+                                                        <span className="text-sm font-medium text-ui-danger-text">
+                                                            {level.price.toLocaleString(
+                                                                undefined,
+                                                                {
+                                                                    minimumFractionDigits: 2,
+                                                                    maximumFractionDigits: 2,
+                                                                }
+                                                            )}
+                                                        </span>
+                                                        <span className="inline-flex items-center text-xs text-secondary-500">
+                                                            {level.reason}
+                                                            <ConfluenceInfo
+                                                                level={level}
+                                                            />
+                                                        </span>
+                                                    </div>
+                                                ))}
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                            {keyLevels.poc !== undefined && (
-                                <div className="flex flex-col">
-                                    <span className="text-xs text-secondary-500">
-                                        PoC
-                                    </span>
-                                    <span className="text-sm font-medium">
-                                        {keyLevels.poc.price.toLocaleString(
-                                            undefined,
-                                            {
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 2,
-                                            }
                                         )}
-                                    </span>
-                                    <span className="text-xs text-secondary-500">
-                                        {keyLevels.poc.reason}
-                                    </span>
+                                        {supportLevels.length > 0 && (
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-xs text-secondary-500">
+                                                    {t('AnalysisPanel.8da27a')}
+                                                </span>
+                                                {supportLevels.map(level => (
+                                                    <div
+                                                        key={`support-${level.price}`}
+                                                        className="flex flex-col"
+                                                    >
+                                                        <span className="text-sm font-medium text-ui-success-text">
+                                                            {level.price.toLocaleString(
+                                                                undefined,
+                                                                {
+                                                                    minimumFractionDigits: 2,
+                                                                    maximumFractionDigits: 2,
+                                                                }
+                                                            )}
+                                                        </span>
+                                                        <span className="inline-flex items-center text-xs text-secondary-500">
+                                                            {level.reason}
+                                                            <ConfluenceInfo
+                                                                level={level}
+                                                            />
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    {keyLevels.poc !== undefined && (
+                                        <div className="flex flex-col">
+                                            <span className="text-xs text-secondary-500">
+                                                PoC
+                                            </span>
+                                            <span className="text-sm font-medium">
+                                                {keyLevels.poc.price.toLocaleString(
+                                                    undefined,
+                                                    {
+                                                        minimumFractionDigits: 2,
+                                                        maximumFractionDigits: 2,
+                                                    }
+                                                )}
+                                            </span>
+                                            <span className="text-xs text-secondary-500">
+                                                {keyLevels.poc.reason}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             )}
-                        </div>
-                    )}
 
-                    {trendlines.length > 0 && (
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center justify-between">
+                            {trendlines.length > 0 && (
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className={LABEL_KO}>
+                                            {t('AnalysisPanel.0b5eb6')}
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                        {trendlines.map(trendline => (
+                                            <TrendlineItem
+                                                key={`trendline-${trendline.direction}-${trendline.start.time}-${trendline.end.time}`}
+                                                trendline={trendline}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {((priceTargets.bullish?.targets.length ?? 0) > 0 ||
+                                (priceTargets.bearish?.targets.length ?? 0) >
+                                    0) && (
+                                <div className="flex flex-col gap-2">
+                                    <span className={LABEL_KO}>
+                                        {t('AnalysisPanel.31f83c')}
+                                    </span>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <PriceScenarioSection
+                                            label={t('AnalysisPanel.3dc47b')}
+                                            scenario={priceTargets.bullish}
+                                            colorClass="text-ui-success-text"
+                                        />
+                                        <PriceScenarioSection
+                                            label={t('AnalysisPanel.79282c')}
+                                            scenario={priceTargets.bearish}
+                                            colorClass="text-ui-danger-text"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {displayedIndicatorResults.length > 0 && (
+                                <div className="flex flex-col gap-2">
+                                    <span className={LABEL_KO}>
+                                        {t('AnalysisPanel.2a1bed')}
+                                    </span>
+                                    <div className="flex flex-col gap-1.5">
+                                        {displayedIndicatorResults.map(
+                                            indicatorResult =>
+                                                indicatorResult.signals.map(
+                                                    (signal, index) => (
+                                                        <SignalItem
+                                                            key={`${indicatorResult.indicatorName}-${signal.type}-${index}`}
+                                                            signal={signal}
+                                                            typeLabel={skillLabel(
+                                                                indicatorResult.indicatorName
+                                                            )}
+                                                        />
+                                                    )
+                                                )
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="flex flex-col gap-2">
                                 <span className={LABEL_KO}>
-                                    {t('AnalysisPanel.0b5eb6')}
+                                    {t('AnalysisPanel.bdeea2')}
                                 </span>
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                                {trendlines.map(trendline => (
-                                    <TrendlineItem
-                                        key={`trendline-${trendline.direction}-${trendline.start.time}-${trendline.end.time}`}
-                                        trendline={trendline}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {((priceTargets.bullish?.targets.length ?? 0) > 0 ||
-                        (priceTargets.bearish?.targets.length ?? 0) > 0) && (
-                        <div className="flex flex-col gap-2">
-                            <span className={LABEL_KO}>
-                                {t('AnalysisPanel.31f83c')}
-                            </span>
-                            <div className="grid grid-cols-2 gap-3">
-                                <PriceScenarioSection
-                                    label={t('AnalysisPanel.3dc47b')}
-                                    scenario={priceTargets.bullish}
-                                    colorClass="text-ui-success-text"
-                                />
-                                <PriceScenarioSection
-                                    label={t('AnalysisPanel.79282c')}
-                                    scenario={priceTargets.bearish}
-                                    colorClass="text-ui-danger-text"
-                                />
-                            </div>
-                        </div>
-                    )}
-
-                    {displayedIndicatorResults.length > 0 && (
-                        <div className="flex flex-col gap-2">
-                            <span className={LABEL_KO}>
-                                {t('AnalysisPanel.2a1bed')}
-                            </span>
-                            <div className="flex flex-col gap-1.5">
-                                {displayedIndicatorResults.map(
-                                    indicatorResult =>
-                                        indicatorResult.signals.map(
-                                            (signal, index) => (
-                                                <SignalItem
-                                                    key={`${indicatorResult.indicatorName}-${signal.type}-${index}`}
-                                                    signal={signal}
-                                                    typeLabel={skillLabel(
-                                                        indicatorResult.indicatorName
-                                                    )}
-                                                />
-                                            )
-                                        )
+                                {hasDetectedPatterns ? (
+                                    <div className="flex flex-col gap-1.5">
+                                        {detectedPatterns.map(pattern => (
+                                            <PatternAccordionItem
+                                                key={pattern.id}
+                                                pattern={pattern}
+                                                showConfidence={
+                                                    !hasLockedConfidence
+                                                }
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-secondary-500">
+                                        {t('AnalysisPanel.8d481f')}
+                                    </p>
                                 )}
                             </div>
-                        </div>
-                    )}
 
-                    <div className="flex flex-col gap-2">
-                        <span className={LABEL_KO}>
-                            {t('AnalysisPanel.bdeea2')}
-                        </span>
-                        {hasDetectedPatterns ? (
-                            <div className="flex flex-col gap-1.5">
-                                {detectedPatterns.map(pattern => (
-                                    <PatternAccordionItem
-                                        key={pattern.id}
-                                        pattern={pattern}
-                                        showConfidence={!hasLockedConfidence}
-                                    />
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-xs text-secondary-500">
-                                {t('AnalysisPanel.8d481f')}
-                            </p>
-                        )}
-                    </div>
+                            {detectedStrategyResults.length > 0 && (
+                                <div className="flex flex-col gap-2">
+                                    <span className={LABEL_KO}>
+                                        {t('AnalysisPanel.913a74')}
+                                    </span>
+                                    <div className="flex flex-col gap-1.5">
+                                        {detectedStrategyResults.map(
+                                            strategy => (
+                                                <StrategyAccordionItem
+                                                    key={strategy.id}
+                                                    strategy={strategy}
+                                                    showConfidence={
+                                                        !hasLockedConfidence
+                                                    }
+                                                />
+                                            )
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
-                    {detectedStrategyResults.length > 0 && (
-                        <div className="flex flex-col gap-2">
-                            <span className={LABEL_KO}>
-                                {t('AnalysisPanel.913a74')}
-                            </span>
-                            <div className="flex flex-col gap-1.5">
-                                {detectedStrategyResults.map(strategy => (
-                                    <StrategyAccordionItem
-                                        key={strategy.id}
-                                        strategy={strategy}
-                                        showConfidence={!hasLockedConfidence}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* free 티어 단일 업셀 카드. 궁금증을 유발하는 친절한 구어체로
+                            {/* free 티어 단일 업셀 카드. 궁금증을 유발하는 친절한 구어체로
                         회원 전용 상세 항목 + 전체 스킬 수를 한 카드에 모아, 패널
                         하단에서 회원가입 CTA를 한 번만 노출한다(중복 제거). */}
-                    {hasLockedDetails && (
-                        <div className="flex flex-col items-center gap-3 rounded-lg border border-secondary-700 bg-secondary-800/40 p-5 text-center">
-                            <div className="flex flex-col gap-1.5">
-                                <p className="text-sm font-semibold text-balance text-secondary-100">
-                                    {t('AnalysisPanel.120a0a')}
-                                </p>
-                                <p className="text-xs leading-relaxed text-balance text-secondary-300">
-                                    {skillCount > 0
-                                        ? tPanel('signupSkillUpsell', {
-                                              v0: skillCount,
-                                          })
-                                        : t('AnalysisPanel.f0256c')}
-                                </p>
-                                <p className="text-xs leading-relaxed text-secondary-400">
-                                    {t('AnalysisPanel.9971e1')}
-                                </p>
-                            </div>
-                            <Link
-                                href="/signup"
-                                className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
-                            >
-                                {t('AnalysisPanel.ecb4cc')}
-                            </Link>
-                        </div>
+                            {hasLockedDetails && (
+                                <div className="flex flex-col items-center gap-3 rounded-lg border border-secondary-700 bg-secondary-800/40 p-5 text-center">
+                                    <div className="flex flex-col gap-1.5">
+                                        <p className="text-sm font-semibold text-balance text-secondary-100">
+                                            {t('AnalysisPanel.120a0a')}
+                                        </p>
+                                        <p className="text-xs leading-relaxed text-balance text-secondary-300">
+                                            {skillCount > 0
+                                                ? tPanel('signupSkillUpsell', {
+                                                      v0: skillCount,
+                                                  })
+                                                : t('AnalysisPanel.f0256c')}
+                                        </p>
+                                        <p className="text-xs leading-relaxed text-secondary-400">
+                                            {t('AnalysisPanel.9971e1')}
+                                        </p>
+                                    </div>
+                                    <Link
+                                        href="/signup"
+                                        className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                    >
+                                        {t('AnalysisPanel.ecb4cc')}
+                                    </Link>
+                                </div>
+                            )}
+                        </>
                     )}
                 </>
-            )}
+            </PlainAnalysisSwitch>
 
             {onReanalyze !== undefined && (
                 <div className="mt-1">

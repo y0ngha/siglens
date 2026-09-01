@@ -721,6 +721,7 @@ export default async function FundamentalPage({ params }: Props) {
                         displayName={displayName}
                         marketProfile={marketProfile}
                         generatedAt={fundamentalSnapshot?.generatedAt}
+                        plain={fundamentalSnapshot?.plain}
                     />
                 )}
                 <ErrorBoundary FallbackComponent={FundamentalAiSummaryError}>

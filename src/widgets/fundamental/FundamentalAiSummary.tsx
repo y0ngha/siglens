@@ -19,6 +19,7 @@ import { buildChatState } from './utils/buildChatState';
 import { FundamentalAiSummaryError } from './FundamentalAiSummaryError';
 import { FundamentalAiSummarySkeleton } from './FundamentalAiSummarySkeleton';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
+import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
@@ -208,5 +209,9 @@ export function FundamentalAiSummary({
         );
     }
 
-    return <FundamentalAiSummaryView result={state.result} />;
+    return (
+        <PlainAnalysisSwitch plain={state.plain}>
+            <FundamentalAiSummaryView result={state.result} />
+        </PlainAnalysisSwitch>
+    );
 }

@@ -487,6 +487,7 @@ export default async function OverallPage({ params }: Props) {
                         displayName={displayName}
                         marketProfile={marketProfile}
                         generatedAt={overallSnapshot?.generatedAt}
+                        plain={overallSnapshot?.plain}
                     />
                 )}
                 {/* fallback은 두 역할을 겸한다: (1) useSearchParams CSR-bailout 서브트리가

@@ -258,3 +258,84 @@ describe('SnapshotSummarySection — Invalid Date (A1)', () => {
         expect(screen.queryByText('지난 AI 분석')).not.toBeInTheDocument();
     });
 });
+
+/**
+ * 이 셸은 크롤러에게 본문을 실어 보내는 자리다. 평이화가 있으면 그것을, 없으면
+ * 원문을 낸다 — 어느 쪽이든 **비어 있으면 안 된다**.
+ */
+describe('평이화 연동', () => {
+    afterEach(() => {
+        delete document.documentElement.dataset.analysisView;
+    });
+
+    it('평이화가 있으면 평이화를 렌더한다', () => {
+        render(
+            <SnapshotSummarySection
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+                plain="애플 주가는 지금 오르는 흐름입니다."
+            >
+                <p>전문 원문</p>
+            </SnapshotSummarySection>
+        );
+
+        expect(
+            screen.getByText('애플 주가는 지금 오르는 흐름입니다.')
+        ).toBeInTheDocument();
+        expect(screen.queryByText('전문 원문')).toBeNull();
+    });
+
+    it('평이화가 없으면 원문을 렌더한다', () => {
+        render(
+            <SnapshotSummarySection
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+                plain={null}
+            >
+                <p>전문 원문</p>
+            </SnapshotSummarySection>
+        );
+
+        expect(screen.getByText('전문 원문')).toBeInTheDocument();
+        expect(screen.queryByRole('radiogroup')).toBeNull();
+    });
+
+    /**
+     * 차트 탭은 라이브 위젯이 토글을 소유한다. 여기서 또 그리면 한 화면에
+     * 쉽게보기가 둘이 된다. 대신 표식을 달아 라이브 평이화가 뜨면 숨는다.
+     */
+    it('duplicatesLiveWidget이면 토글 없이 표식만 단다', () => {
+        const { container } = render(
+            <SnapshotSummarySection
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+                plain="애플 주가는 지금 오르는 흐름입니다."
+                duplicatesLiveWidget
+            >
+                <p>전문 원문</p>
+            </SnapshotSummarySection>
+        );
+
+        expect(screen.queryByRole('radiogroup')).toBeNull();
+        expect(container.querySelector('[data-snapshot-prose]')).not.toBeNull();
+        // 토글이 없어도 본문은 평이화다 — 봇이 받는 텍스트가 이것이다.
+        expect(
+            screen.getByText('애플 주가는 지금 오르는 흐름입니다.')
+        ).toBeInTheDocument();
+    });
+
+    it('일반 탭에는 표식을 달지 않는다 — 스스로 숨으면 안 된다', () => {
+        const { container } = render(
+            <SnapshotSummarySection
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+                plain="애플 주가는 지금 오르는 흐름입니다."
+            >
+                <p>전문 원문</p>
+            </SnapshotSummarySection>
+        );
+
+        expect(container.querySelector('[data-snapshot-prose]')).toBeNull();
+        expect(screen.getByRole('radiogroup')).toBeInTheDocument();
+    });
+});

@@ -1,0 +1,11 @@
+-- 프리웜 스냅샷에 평이화("쉽게보기") 산문을 함께 저장한다.
+--
+-- 여섯 탭은 스냅샷이 있으면 클라이언트 AI 위젯을 마운트하지 않는 XOR 게이팅이라
+-- (`hasCongressProse` 등), 위젯에 붙어 있던 토글도 함께 사라졌다 — 쉽게보기가
+-- 실제로는 차트 탭에서만 동작했다. 방문 시점에 평이화를 돌리면 그 탭들이 매
+-- 방문마다 LLM 왕복을 태우므로, 스냅샷과 같은 시점에 굽는다.
+--
+-- ⚠️ `IF NOT EXISTS`다. 이 컬럼은 프로덕션 DB에 **먼저 손으로 적용**됐고(AAPL
+-- 프리웜 실증을 위해), 그 뒤 이 마이그레이션이 생성됐다. 없으면 배포 시
+-- "column already exists"로 죽는다. 새 DB(e2e·로컬)에서는 그대로 생성된다.
+ALTER TABLE "seo_analysis_snapshots" ADD COLUMN IF NOT EXISTS "plain" text;

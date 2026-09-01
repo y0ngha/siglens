@@ -361,6 +361,7 @@ export default async function CongressPage({ params }: Props) {
                         // CongressSnapshotProseProps JSDoc 참고.
                         marketProfile="us-equity"
                         generatedAt={congressSnapshot?.generatedAt}
+                        plain={congressSnapshot?.plain}
                     />
                 )}
                 <CongressTrendSummary

@@ -22,6 +22,7 @@ import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
+import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
 
 /** OptionsTone → `shared.enumLabel.optionsTone` 카탈로그 키. */
 const TONE_LABEL_KEY: Record<OptionsTone, string> = {
@@ -324,5 +325,9 @@ export function OptionsAiAnalysis({
         return <OptionsAiAnalysisError resetErrorBoundary={state.retry} />;
     }
 
-    return <OptionsAiAnalysisView result={state.result} />;
+    return (
+        <PlainAnalysisSwitch plain={state.plain}>
+            <OptionsAiAnalysisView result={state.result} />
+        </PlainAnalysisSwitch>
+    );
 }

@@ -31,6 +31,7 @@ describe('overall buildChatState', () => {
     it('done → context: overall payload, timeframe forwarded, ready=true', () => {
         const state: OverallAnalysisState = {
             status: 'done',
+            plain: null,
             result: FAKE_RESULT,
         };
         expect(buildChatState(state, TIMEFRAME)).toEqual({
@@ -43,6 +44,7 @@ describe('overall buildChatState', () => {
     it('done → 4축 응답의 optionsBulletsKo / integratedConclusionKo가 그대로 payload에 전달된다', () => {
         const state: OverallAnalysisState = {
             status: 'done',
+            plain: null,
             result: FOUR_AXIS_RESULT,
         };
         const next = buildChatState(state, TIMEFRAME);

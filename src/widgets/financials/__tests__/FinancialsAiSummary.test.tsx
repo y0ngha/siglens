@@ -64,6 +64,7 @@ describe('FinancialsAiSummary', () => {
         it('UI를 숨겨도 챗 컨텍스트는 publish한다', () => {
             vi.mocked(useFinancialsAnalysis).mockReturnValue({
                 status: 'done',
+                plain: null,
                 result: {} as never,
                 trigger: vi.fn(),
             });
@@ -114,6 +115,7 @@ describe('FinancialsAiSummary', () => {
     it('renders overall conclusion and sentiment on success', () => {
         vi.mocked(useFinancialsAnalysis).mockReturnValue({
             status: 'done',
+            plain: null,
             result: {
                 overallSentiment: 'bullish',
                 overallConclusionKo: '재무 상태가 우수합니다',
@@ -132,6 +134,7 @@ describe('FinancialsAiSummary', () => {
     it('renders all 4 axes with labels and rationale', () => {
         vi.mocked(useFinancialsAnalysis).mockReturnValue({
             status: 'done',
+            plain: null,
             result: {
                 overallSentiment: 'neutral',
                 overallConclusionKo: '전반적으로 중립입니다',
@@ -177,6 +180,7 @@ describe('FinancialsAiSummary', () => {
     it('renders risk factors bullet list', () => {
         vi.mocked(useFinancialsAnalysis).mockReturnValue({
             status: 'done',
+            plain: null,
             result: {
                 overallSentiment: 'bearish',
                 overallConclusionKo: '위험 요인이 있습니다',

@@ -22,6 +22,7 @@ import type { AssetClass } from '@/shared/config/marketProfile';
 import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
 import { OverallView } from './OverallView';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
 
 const SKELETON_LINE_COUNT = 3;
 const SKELETON_WIDTH_START_PCT = 85;
@@ -251,11 +252,13 @@ export function OverallContent({
 
     return (
         <div className="space-y-6">
-            <OverallView
-                result={r}
-                assetClass={assetClass}
-                hasOptions={hasOptions}
-            />
+            <PlainAnalysisSwitch plain={state.plain}>
+                <OverallView
+                    result={r}
+                    assetClass={assetClass}
+                    hasOptions={hasOptions}
+                />
+            </PlainAnalysisSwitch>
             <ReanalyzeButton
                 onClick={trigger}
                 highlighted={reanalyzeHighlighted}
