@@ -291,3 +291,39 @@ describe('salvageByRemovingSentences', () => {
         expect(salvageByRemovingSentences(text, allowed, 5_000)).toBeNull();
     });
 });
+
+describe('guardPlainText — 외국어 혼입', () => {
+    const long = '괜찮은 문장입니다. '.repeat(30);
+
+    /**
+     * 회귀: `"이是国内 상장사 역사상"` — 모델이 한국어를 쓰다 중국어로 새어 나갔다.
+     * 숫자도 용어도 멀쩡해 다른 가드를 전부 통과했고, 블라인드 평가자는 "글이
+     * 고장 난 것"으로 읽어 신뢰를 잃었다.
+     */
+    it('한자가 섞이면 거부한다', () => {
+        expect(
+            guardPlainText({
+                text: `${long} 이是国内 상장사 역사상 최대입니다.`,
+                inputChars: 100,
+                allowed: [],
+            })
+        ).toMatchObject({ kind: 'foreign_script' });
+    });
+
+    it('재시도 문구가 섞인 글자를 지적한다', () => {
+        expect(
+            describeFailure({ kind: 'foreign_script', tokens: ['是国内'] })
+        ).toContain('是国内');
+    });
+
+    /** 종목명·티커는 라틴 문자라 걸리지 않아야 한다. */
+    it('영문 티커와 한글만 있는 글은 통과한다', () => {
+        expect(
+            guardPlainText({
+                text: `${long} AAPL과 SK하이닉스는 정상입니다.`,
+                inputChars: 100,
+                allowed: [],
+            })
+        ).toBeNull();
+    });
+});

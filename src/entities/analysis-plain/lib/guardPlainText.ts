@@ -141,9 +141,22 @@ export function findUnsupportedNumbers(
  */
 const MAGNITUDE_SUFFIX = /\d[BMK](?![A-Za-z])/g;
 
+/**
+ * 한국어 산문에 섞여 들어온 한자.
+ *
+ * 실측: `"이是国内 상장사 역사상 가장 큰 규모라"` — 모델이 한국어를 쓰다 중국어로
+ * 새어 나갔다. 숫자도 용어도 멀쩡해 다른 가드는 전부 통과했고, 블라인드 평가자는
+ * "글이 고장 난 거라 신뢰도가 확 떨어졌다"고 답했다.
+ *
+ * 이 레이어의 산출물은 평이한 한국어다 — 한자를 쓸 이유가 없다. 종목명·티커는
+ * `facts`에서 오는 라틴 문자라 여기 걸리지 않는다.
+ */
+const CJK_IDEOGRAPH = /[\u3400-\u4DBF\u4E00-\u9FFF]+/g;
+
 /** 산출물이 통과하지 못한 이유. 재시도 프롬프트에 그대로 실린다. */
 export type PlainGuardFailure =
     | { readonly kind: 'empty' }
+    | { readonly kind: 'foreign_script'; readonly tokens: readonly string[] }
     | { readonly kind: 'magnitude_suffix'; readonly tokens: readonly string[] }
     | {
           readonly kind: 'too_short';
@@ -178,6 +191,9 @@ export function guardPlainText({
     if (trimmed.length < min) {
         return { kind: 'too_short', chars: trimmed.length, min };
     }
+
+    const foreign = [...trimmed.matchAll(CJK_IDEOGRAPH)].map(m => m[0]);
+    if (foreign.length > 0) return { kind: 'foreign_script', tokens: foreign };
 
     // 크기 접미사를 그대로 옮기면 **10배 금액 오류**가 난다. 실측: 원본 `3,475.2B`
     // (3.48조원)를 `3,475.2억 원`(0.35조)으로 쓴 사례가 있었고, 숫자 자체는 허용
@@ -269,6 +285,8 @@ export function describeFailure(failure: PlainGuardFailure): string {
             return '이전 응답이 비어 있었습니다. 완성된 글을 출력하세요.';
         case 'too_short':
             return `이전 응답이 ${failure.chars}자로 너무 짧아 원본의 내용을 담지 못했습니다. ${failure.min}자 이상으로, 원본의 핵심 판단을 빠뜨리지 말고 다시 쓰세요.`;
+        case 'foreign_script':
+            return `이전 응답에 한국어가 아닌 글자 ${failure.tokens.join(', ')}가 섞여 있었습니다. 전체를 한국어로만 쓰세요.`;
         case 'magnitude_suffix':
             return `이전 응답이 ${failure.tokens.join(', ')}처럼 영문 크기 표시가 붙은 숫자를 그대로 옮겼습니다. 그 표기는 쓰지 말고, 해당 항목이 많은지 적은지 또는 늘었는지 줄었는지를 말로 쓰세요.`;
         case 'unsupported_numbers':
