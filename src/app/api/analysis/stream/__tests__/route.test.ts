@@ -39,8 +39,28 @@ vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
 
+/**
+ * 디스크립터는 **실물 상수**를 쓴다. 손으로 채운 부분 객체를 `as never`로
+ * 통과시키면 타입 검사가 무력화돼, 라우트가 필드를 하나 더 읽기 시작한 순간
+ * 런타임에서 터진다 — 이 PR이 고친 결함이 정확히 그것이었다(`{ assetClass }`만
+ * 있던 mock 4개가 `priceFormat`을 읽자 죽었다). 실물을 쓰면
+ * `MarketProfileDescriptor`에 필드가 늘어도 자동으로 따라온다.
+ */
+const { US_EQUITY, KR_EQUITY, CRYPTO } = await vi.hoisted(async () => {
+    const [us, kr, crypto] = await Promise.all([
+        import('@/shared/config/marketProfile/usEquity'),
+        import('@/shared/config/marketProfile/krEquity'),
+        import('@/shared/config/marketProfile/crypto'),
+    ]);
+    return {
+        US_EQUITY: us.US_EQUITY_DESCRIPTOR,
+        KR_EQUITY: kr.KR_EQUITY_DESCRIPTOR,
+        CRYPTO: crypto.CRYPTO_DESCRIPTOR,
+    };
+});
+
 vi.mock('@/shared/config/marketProfile', () => ({
-    getDescriptor: vi.fn().mockReturnValue({ assetClass: 'equity' }),
+    getDescriptor: vi.fn().mockReturnValue(US_EQUITY),
 }));
 
 // resolveHoldingPositionBucket 경로를 테스트하려면 findByUserAndSymbol 와 getQuote를
@@ -258,9 +278,7 @@ describe('POST /api/analysis/stream', () => {
         // 마켓 프로필 관련 mock은 개별 테스트에서 오버라이드한 뒤 clearAllMocks만으론
         // 복원되지 않는다 — 명시적으로 기본값을 재설정한다.
         vi.mocked(resolveMarketProfile).mockResolvedValue('us-equity' as never);
-        vi.mocked(getDescriptor).mockReturnValue({
-            assetClass: 'equity',
-        } as never);
+        vi.mocked(getDescriptor).mockReturnValue(US_EQUITY);
         vi.mocked(sessionSpecFor).mockReturnValue({} as never);
         vi.mocked(getCachedMarketDataProvider).mockReturnValue({
             getQuote: mockGetQuote,
@@ -1628,9 +1646,7 @@ describe('POST /api/analysis/stream', () => {
             vi.mocked(resolveMarketProfile).mockResolvedValue(
                 'crypto' as never
             );
-            vi.mocked(getDescriptor).mockReturnValue({
-                assetClass: 'crypto',
-            } as never);
+            vi.mocked(getDescriptor).mockReturnValue(CRYPTO);
 
             const body = JSON.stringify({
                 type: 'technical',
@@ -1663,6 +1679,58 @@ describe('POST /api/analysis/stream', () => {
             expect(opts?.assetClass).toBe('equity');
         });
 
+        /**
+         * core는 심볼에서 통화를 추론하지 않는다 — 거래소 프로파일을 아는 이
+         * 라우트가 넘겨야 한다. 넘기지 않으면 core가 `'USD'`로 기본값을 잡아
+         * 원화 종목의 손절·목표가가 `$121980.70`처럼 달러 기호와 원화에 없는
+         * 소수 정밀도를 달고 나온다(코퍼스 실측: 원화 종목 20건 중 19건).
+         */
+        /**
+         * 호출을 **심볼로** 고른다 — `mock.calls[0]`으로 잡으면 안 된다.
+         * 앞 테스트가 남긴 in-flight 요청이 `clearAllMocks()` 이후에 뒤늦게
+         * `runAnalysis`를 부르면 그 호출이 `[0]`을 차지해, 이 테스트가 남의
+         * 호출(us-equity, USD)을 검사하게 된다. 실제로 전체 스위트에서만
+         * `expected 'USD' to be 'KRW'`로 깨졌고 단일 파일 실행은 통과했다.
+         */
+        function currencyOfCallFor(symbol: string): unknown {
+            const call = vi
+                .mocked(runAnalysis)
+                .mock.calls.find(c => c[0] === symbol);
+            expect(
+                call,
+                `runAnalysis가 ${symbol}로 호출되지 않았다`
+            ).toBeDefined();
+            return (call?.[5] as Record<string, unknown>).currency;
+        }
+
+        it('kr-equity 프로필 → currency: "KRW"로 runAnalysis를 호출한다', async () => {
+            vi.mocked(resolveMarketProfile).mockResolvedValue(
+                'kr-equity' as never
+            );
+            vi.mocked(getDescriptor).mockReturnValue(KR_EQUITY);
+
+            const body = JSON.stringify({
+                type: 'technical',
+                params: {
+                    symbol: '005930.KS',
+                    companyName: '삼성전자',
+                    timeframe: '1Day',
+                },
+            });
+
+            const response = await POST(makeRequest(undefined, body));
+            await collectSseEvents(response);
+
+            expect(currencyOfCallFor('005930.KS')).toBe('KRW');
+        });
+
+        it('us-equity 프로필 → currency: "USD"로 runAnalysis를 호출한다', async () => {
+            const response = await POST(makeRequest());
+            await collectSseEvents(response);
+
+            expect(currencyOfCallFor('AAPL')).toBe('USD');
+        });
+
         it('sessionSpecFor 반환값이 getCachedMarketDataProvider에 전달된다', async () => {
             const MOCK_SESSION = { type: 'crypto-test' } as never;
             vi.mocked(sessionSpecFor).mockReturnValue(MOCK_SESSION);
@@ -1679,9 +1747,7 @@ describe('POST /api/analysis/stream', () => {
             vi.mocked(resolveMarketProfile).mockResolvedValue(
                 'crypto' as never
             );
-            vi.mocked(getDescriptor).mockReturnValue({
-                assetClass: 'crypto',
-            } as never);
+            vi.mocked(getDescriptor).mockReturnValue(CRYPTO);
 
             const response = await POST(makeRequest());
             await collectSseEvents(response);

@@ -66,7 +66,8 @@ export async function prewarmTechnical(
     force: boolean
 ): Promise<RunAnalysisResult> {
     const marketProfile = await resolveMarketProfile(symbol);
-    const assetClass = getDescriptor(marketProfile).assetClass;
+    const descriptor = getDescriptor(marketProfile);
+    const { assetClass } = descriptor;
     const marketDataProvider = getCachedMarketDataProvider(
         sessionSpecFor(marketProfile)
     );
@@ -75,6 +76,9 @@ export async function prewarmTechnical(
         skipEnqueueIfMiss: false,
         marketDataProvider,
         assetClass,
+        // 스트림 경로와 같은 5축 정합을 유지한다 — 통화가 빠지면 prewarm이 쓴
+        // 캐시와 방문자 요청의 산출 텍스트가 갈린다.
+        currency: descriptor.priceFormat.currency,
         tierContext: { userId: null, tier: 'free' },
         reasoning: false,
         positionBucket: undefined,
