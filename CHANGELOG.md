@@ -1,5 +1,27 @@
 # Changelog
 
+# [0.67.0](https://github.com/y0ngha/siglens/compare/v0.66.0...v0.67.0) (2026-09-01)
+
+
+### Bug Fixes
+
+* 원화 종목의 손절·목표가 표기를 통화에 맞춘다 ([768da05](https://github.com/y0ngha/siglens/commit/768da054e04b8d6a7bd19aba96df2385a4067ebc))
+* **analysis:** 봇 가드·통화 로케일·가드 오탐 수정 및 감사 결함 테스트 보강 ([4b7382e](https://github.com/y0ngha/siglens/commit/4b7382e6f28b59626f715bb6594f19ce122d4177))
+* **analysis:** 크기 접미사 가드 추가, 프롬프트는 실측 근거로 v2 유지 ([5b8834b](https://github.com/y0ngha/siglens/commit/5b8834b4a424e39425f7293d5bf0107db1b4f9f0))
+* **analysis:** 평이화 산문에 통화 단위를 붙인다 ([01907de](https://github.com/y0ngha/siglens/commit/01907de9fe711bd1245e08905d78bf28fe24a153))
+* **analysis:** 평이화 실패가 분석을 죽이지 않게 하고 마감을 15초로 줄인다 ([2b6602c](https://github.com/y0ngha/siglens/commit/2b6602ce562d3eb69098a029c5f249e70ac39ecb))
+* **analysis:** 프롬프트 예시를 그대로 베껴 없는 사실을 지어내던 것을 막는다 ([5dfb834](https://github.com/y0ngha/siglens/commit/5dfb8347950a0fbec11728c3909e81a48d901b27))
+* **analysis:** 한국어 산문에 섞인 한자를 가드로 막는다 ([a44e56a](https://github.com/y0ngha/siglens/commit/a44e56af282392f764cbf4d4ea5fddf4ffec299d))
+* **i18n:** lockedCta 키를 클라이언트 매니페스트에 등록 ([12d2e3d](https://github.com/y0ngha/siglens/commit/12d2e3d4237e84e3c8f43ce05364e5d5a95d5c59))
+
+
+### Features
+
+* **analysis:** 가드를 부분 수용으로 바꾸고 어휘 규칙을 다시 적용 ([6afa43b](https://github.com/y0ngha/siglens/commit/6afa43bc95b69300fb4389ac2de870fccd03a2de))
+* **analysis:** 쉽게보기를 7개 탭 전부와 다국어로 확장한다 ([3e51ad8](https://github.com/y0ngha/siglens/commit/3e51ad8a3eef26c3d3e4265265f7398e0509c4a4))
+* **analysis:** 현재 주가를 주입하고 모호한 값 표현을 막는다 ([8980d60](https://github.com/y0ngha/siglens/commit/8980d60c919508a4ed5213bad477e99b7e8dcedc))
+* **analysis:** AI 분석 결과를 비전문가용 산문으로 다시 쓰는 쉽게보기 레이어 ([d183eab](https://github.com/y0ngha/siglens/commit/d183eabfa8e8132f01451d1786af2e799860919c))
+
 # [0.66.0](https://github.com/y0ngha/siglens/compare/v0.65.0...v0.66.0) (2026-08-30)
 
 
