@@ -22,6 +22,17 @@ export interface PlainFacts {
     readonly currency?: string;
     readonly trend?: string;
     readonly riskLevel?: string;
+    /**
+     * 현재 주가.
+     *
+     * `fundamental`·`news`·`financials` payload에는 **숫자 필드가 하나도 없다** —
+     * `facts.numbers`가 빈 배열이라 모델이 현재가를 쓸 방법이 없었다. 블라인드
+     * 평가자 둘 다 같은 지점에서 막혔다: "목표주가 406,200원은 나오는데 현재
+     * 주가가 없어서 싸다는 말이 진짜인지 판단이 안 된다."
+     *
+     * 호출자가 시세에서 넘긴다. 없으면(조회 실패·타임아웃) 생략한다.
+     */
+    readonly currentPrice?: number;
     readonly numbers: readonly number[];
 }
 
@@ -69,7 +80,9 @@ export function collectFacts(
     symbol: string,
     currency?: CurrencyCode,
     /** 출력 언어. 통화 표기를 그 언어로 고른다. 모르는 값은 한국어로 떨어진다. */
-    locale = 'ko'
+    locale = 'ko',
+    /** 현재 주가. 호출자가 시세에서 넘긴다. */
+    currentPrice?: number
 ): PlainFacts {
     const record =
         typeof analysis === 'object' && analysis !== null
@@ -88,6 +101,17 @@ export function collectFacts(
         ...(typeof record.riskLevel === 'string'
             ? { riskLevel: record.riskLevel }
             : {}),
-        numbers: [...collectNumbers(analysis)].sort((a, b) => a - b),
+        ...(typeof currentPrice === 'number' && Number.isFinite(currentPrice)
+            ? { currentPrice }
+            : {}),
+        // 현재가도 허용 숫자에 넣는다 — 넣지 않으면 모델이 그 값을 쓰는 순간
+        // 숫자 가드가 환각으로 잡아 재작성을 통째로 버린다.
+        numbers: [
+            ...collectNumbers(
+                typeof currentPrice === 'number'
+                    ? [analysis, currentPrice]
+                    : analysis
+            ),
+        ].sort((a, b) => a - b),
     };
 }

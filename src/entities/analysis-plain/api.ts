@@ -122,7 +122,9 @@ export async function rewriteToPlainLanguage(
      * 통화 코드. 호출자가 시장 프로파일에서 넘긴다.
      * 생략하면 모델이 단위 없는 맨 숫자를 쓸 수 있다 — `collectFacts`의 주석 참고.
      */
-    currency?: CurrencyCode
+    currency?: CurrencyCode,
+    /** 현재 주가. payload에 값이 없는 분석 타입에서 특히 중요하다. */
+    currentPrice?: number
 ): Promise<string | null> {
     // E2E는 LLM을 태우지 않는다. 키 부재에만 기대면(`tryReadPlainModelConfig`가
     // null을 돌려주므로 결과는 같다) 어느 날 키가 주입되는 순간 조용히 과금과
@@ -148,7 +150,13 @@ export async function rewriteToPlainLanguage(
         if (!config) return null;
         const resolved = config;
 
-        const facts = collectFacts(analysis, symbol, currency, locale);
+        const facts = collectFacts(
+            analysis,
+            symbol,
+            currency,
+            locale,
+            currentPrice
+        );
         const inputChars = entries.reduce((sum, e) => sum + e.text.length, 0);
         const allowed = buildAllowedNumbers(
             facts.numbers,

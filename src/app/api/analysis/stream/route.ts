@@ -15,7 +15,10 @@ import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { isBot } from '@/shared/api/isBot';
-import { rewriteToPlainLanguage } from '@/entities/analysis-plain';
+import {
+    collectNumbers,
+    rewriteToPlainLanguage,
+} from '@/entities/analysis-plain';
 import { getAssetInfoResilient, pickAssetName } from '@/entities/ticker';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
@@ -614,6 +617,48 @@ type WithPlain<T> = T & { plain?: string | null };
  * (`withLocalizedProse`가 같은 함정을 이미 겪은 자리다).
  */
 
+/**
+ * 평이화 프롬프트에 실을 현재 주가. 실패하면 `undefined`.
+ *
+ * `fundamental`·`news`·`financials` payload에는 숫자 필드가 하나도 없어, 이 값이
+ * 없으면 모델이 현재가를 쓸 방법이 없다. 블라인드 평가자 둘 다 같은 지점에서
+ * 막혔다 — "목표주가는 나오는데 현재 주가가 없어서 싸다는 말이 진짜인지 판단이
+ * 안 된다."
+ *
+ * **payload에 숫자가 하나라도 있으면 조회하지 않는다.** `technical`은
+ * `planCheck.currentPrice`를 이미 담고 있어(실측 74/86) 조회가 순수 낭비다.
+ * 이 가드가 없으면 모든 분석이 시세를 한 번씩 더 부른다.
+ *
+ * `resolveHoldingPositionBucket`과 같은 상한을 쓴다. 이쪽은 heartbeat 안이라
+ * 침묵 벽 위험은 없지만, 시세가 느릴 때 평이화 마감(15초)을 잠식하면 안 된다.
+ * 조회 실패는 평이화를 막지 않는다 — 현재가 없이 그대로 진행한다.
+ */
+async function resolveCurrentPrice(
+    symbol: string,
+    payload: unknown
+): Promise<number | undefined> {
+    if (collectNumbers(payload).size > 0) return undefined;
+    try {
+        const profile = await resolveMarketProfile(symbol);
+        const provider = getCachedMarketDataProvider(sessionSpecFor(profile));
+        const quote = await Promise.race([
+            provider.getQuote(symbol),
+            new Promise<null>(resolve => {
+                setTimeout(
+                    () => resolve(null),
+                    QUOTE_LOOKUP_TIMEOUT_MS
+                ).unref();
+            }),
+        ]);
+        const price = quote?.price;
+        return typeof price === 'number' && Number.isFinite(price) && price > 0
+            ? price
+            : undefined;
+    } catch {
+        return undefined;
+    }
+}
+
 async function withPlainLanguage<T>(
     result: T,
     symbol: string,
@@ -640,7 +685,8 @@ async function withPlainLanguage<T>(
         payload,
         symbol,
         locale,
-        currencyForSymbol(symbol)
+        currencyForSymbol(symbol),
+        await resolveCurrentPrice(symbol, payload)
     );
     return { ...(result as object), plain } as WithPlain<T>;
 }

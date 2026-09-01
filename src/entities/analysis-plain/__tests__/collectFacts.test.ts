@@ -75,3 +75,35 @@ describe('collectFacts — 통화', () => {
         expect(collectFacts({ p: 1 }, 'AAPL')).not.toHaveProperty('currency');
     });
 });
+
+describe('collectFacts — 현재 주가', () => {
+    /**
+     * 회귀: `fundamental`·`news`·`financials` payload에는 숫자 필드가 하나도 없어
+     * 모델이 현재가를 쓸 방법이 없었다. 블라인드 평가자 둘 다 같은 지점에서 막혔다 —
+     * "목표주가는 나오는데 현재 주가가 없어서 싸다는 말이 진짜인지 판단이 안 된다."
+     */
+    it('현재가를 facts에 싣는다', () => {
+        expect(collectFacts({}, 'AAPL', 'USD', 'ko', 319.7).currentPrice).toBe(
+            319.7
+        );
+    });
+
+    /** 허용 집합에 없으면 모델이 그 값을 쓰는 순간 숫자 가드가 환각으로 잡는다. */
+    it('현재가를 허용 숫자에도 넣는다', () => {
+        expect(collectFacts({}, 'AAPL', 'USD', 'ko', 319.7).numbers).toContain(
+            319.7
+        );
+    });
+
+    it('생략하면 키를 만들지 않는다', () => {
+        expect(collectFacts({ p: 1 }, 'AAPL')).not.toHaveProperty(
+            'currentPrice'
+        );
+    });
+
+    it('유한하지 않은 값은 무시한다', () => {
+        expect(
+            collectFacts({}, 'AAPL', 'USD', 'ko', Number.NaN)
+        ).not.toHaveProperty('currentPrice');
+    });
+});

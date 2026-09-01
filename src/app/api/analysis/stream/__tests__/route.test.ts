@@ -158,6 +158,27 @@ vi.mock('@/entities/analysis-translation', () => ({
 }));
 vi.mock('@/entities/analysis-plain', () => ({
     rewriteToPlainLanguage: vi.fn(async () => '쉽게 쓴 분석문입니다.'),
+    /**
+     * 실물을 그대로 쓴다. 라우트가 이 함수로 "payload에 숫자가 있는가"를 판단해
+     * 시세 조회 여부를 정하므로, 모킹하면 그 분기가 검증되지 않는다.
+     */
+    collectNumbers: function walk(
+        v: unknown,
+        out: Set<number> = new Set()
+    ): Set<number> {
+        if (typeof v === 'number') {
+            if (Number.isFinite(v)) out.add(v);
+            return out;
+        }
+        if (Array.isArray(v)) {
+            for (const i of v) walk(i, out);
+            return out;
+        }
+        if (typeof v === 'object' && v !== null) {
+            for (const i of Object.values(v)) walk(i, out);
+        }
+        return out;
+    },
 }));
 vi.mock('@/entities/analysis', () => ({
     tryAcquireReanalyzeCooldown: vi.fn().mockResolvedValue({ ok: true }),
@@ -983,6 +1004,16 @@ describe('POST /api/analysis/stream', () => {
 
         it('member + 홀딩 없음 → DB 조회 후 positionBucket undefined, 시세 조회 스킵', async () => {
             mockFindByUserAndSymbol.mockResolvedValue(null); // 홀딩 없음
+            /**
+             * payload에 숫자를 둔다. 평이화도 현재가가 없을 때만 시세를 부르므로,
+             * 숫자가 없으면 이 단언이 그쪽 호출까지 잡아 두 목적이 뒤섞인다.
+             * 여기서 검증하려는 것은 **포지션 버킷용** 조회가 없다는 것이다.
+             */
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'cached',
+                result: { summary: 's', price: 100 },
+                lockedInfoDepth: [],
+            } as never);
 
             const response = await POST(makeRequest(undefined, MEMBER_BODY));
             await collectSseEvents(response);
@@ -1042,6 +1073,16 @@ describe('POST /api/analysis/stream', () => {
             } as never);
             // 영원히 안 끝나는 조회
             mockGetQuote.mockImplementation(() => new Promise(() => {}));
+            /**
+             * payload에 숫자를 둬 평이화 쪽 시세 조회를 막는다. 그쪽도 같은 5초
+             * 상한을 쓰므로, 두 조회가 겹치면 이 테스트가 검증하려는 **포지션 버킷**
+             * 경로의 타임아웃이 아니라 둘의 합을 재게 된다.
+             */
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'cached',
+                result: { summary: 's', price: 100 },
+                lockedInfoDepth: [],
+            } as never);
 
             const responsePromise = POST(makeRequest(undefined, MEMBER_BODY));
             await vi.advanceTimersByTimeAsync(5_000);
@@ -2432,7 +2473,8 @@ describe('POST /api/analysis/stream', () => {
                 expect.objectContaining({ summary: 's' }),
                 'AAPL',
                 'ko',
-                'USD'
+                'USD',
+                undefined
             );
         });
 
@@ -2461,7 +2503,8 @@ describe('POST /api/analysis/stream', () => {
                 expect.anything(),
                 '005930.KS',
                 'ko',
-                'KRW'
+                'KRW',
+                undefined
             );
         });
 
@@ -2488,7 +2531,8 @@ describe('POST /api/analysis/stream', () => {
                 payload,
                 'AAPL',
                 'ko',
-                'USD'
+                'USD',
+                undefined
             );
             const passed = vi.mocked(rewriteToPlainLanguage).mock.calls[0][0];
             expect(passed).not.toHaveProperty('status');
