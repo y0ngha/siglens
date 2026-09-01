@@ -194,6 +194,7 @@ describe('prewarmTechnical', () => {
                 skipEnqueueIfMiss: false,
                 marketDataProvider: mockProvider,
                 assetClass: 'equity',
+                currency: 'USD',
                 tierContext: { userId: null, tier: 'free' },
                 reasoning: false,
                 positionBucket: undefined,

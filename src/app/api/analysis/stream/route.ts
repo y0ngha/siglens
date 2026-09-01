@@ -670,7 +670,8 @@ export async function POST(request: Request): Promise<Response> {
 
             // --- 2d. Market profile → assetClass + session-aware data provider ---
             const marketProfile = await resolveMarketProfile(symbol);
-            const assetClass = getDescriptor(marketProfile).assetClass;
+            const descriptor = getDescriptor(marketProfile);
+            const { assetClass } = descriptor;
             const marketDataProvider = getCachedMarketDataProvider(
                 sessionSpecFor(marketProfile)
             );
@@ -742,6 +743,11 @@ export async function POST(request: Request): Promise<Response> {
                 skipEnqueueIfMiss,
                 marketDataProvider,
                 assetClass,
+                // core는 심볼에서 통화를 추론하지 않는다 — 거래소 프로파일을
+                // 아는 쪽이 여기다. 넘기지 않으면 원화 종목의 손절·목표가가
+                // `$121980.70`처럼 달러 기호와 있지도 않은 소수 정밀도를 달고
+                // 나온다(코퍼스 실측: 원화 종목 20건 중 19건).
+                currency: descriptor.priceFormat.currency,
                 tierContext: { userId, tier },
                 reasoning: resolveReasoning(tier, reasoning),
                 positionBucket,

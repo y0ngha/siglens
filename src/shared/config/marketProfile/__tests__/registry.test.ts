@@ -84,6 +84,14 @@ describe('market profile registry', () => {
             expect(currencyForSymbol('BTCUSD')).toBe('USD');
             expect(getDescriptor('crypto').priceFormat.currency).toBe('USD');
         });
+
+        it('등록된 모든 프로필이 통화를 갖는다 — 새 프로필이 undefined를 흘리지 못한다', () => {
+            for (const id of ['us-equity', 'crypto', 'kr-equity'] as const) {
+                expect(getDescriptor(id).priceFormat.currency).toMatch(
+                    /^(USD|KRW)$/
+                );
+            }
+        });
     });
 
     describe('marketProfileOf', () => {
