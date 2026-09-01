@@ -1,5 +1,9 @@
 import type { ProseEntry } from '@/entities/analysis-translation';
 import type { PlainFacts } from './collectFacts';
+import {
+    plainOutputLanguageDirective,
+    plainOutputLanguageHeader,
+} from './outputLanguage';
 
 /**
  * 평이화 프롬프트 버전.
@@ -12,7 +16,7 @@ import type { PlainFacts } from './collectFacts';
  * 이 값은 사람이 읽는 세대 표시로만 남긴다(로그·문서에서 어느 세대의 산출물인지
  * 가리키는 용도). 캐시 동작에 기대지 말 것.
  */
-export const PLAIN_PROMPT_VERSION = 'v12';
+export const PLAIN_PROMPT_VERSION = 'v13';
 
 /**
  * 재작성 규칙.
@@ -76,6 +80,11 @@ const PLAIN_RULES = `과한 어휘 없이, 과한 문장 없이, 읽기 쉽게, 
   독자가 궁금한 것은 "이 값이 얼마인가"가 아니라 "그래서 어떻다는 것인가"입니다.
 - 원본의 항목을 하나씩 차례대로 옮기지 마세요. 원본이 여러 항목으로 나눠 말한 것을
   하나의 이야기로 엮어, 중요한 것부터 자연스럽게 이어 쓰세요.
+- prose에 **손절 기준이나 목표 가격**이 있으면 반드시 남기세요. 읽는 사람이 실제로
+  행동할 때 쓰는 값이라, 빠지면 글의 쓸모가 크게 줄어듭니다.
+  자릿수가 긴 값은 **반올림**해서 쓰세요. 버리지 말고 가까운 쪽으로 올리거나
+  내립니다. 소수점이 길다고 그 값을 통째로 생략하지는 마세요.
+  예) 손절 기준 121980.69948682484 → "121,981원 아래로 내려가면"
 - facts.currentPrice가 있으면 글 앞부분에서 지금 주가가 얼마인지 밝히세요.
   현재 가격을 모르면 읽는 사람은 싸다 비싸다, 올랐다 내렸다를 판단할 수 없습니다.
 - 지표 이름을 지웠다면 그 값도 함께 지우세요. "어떤 수치가 낮습니다"처럼 무엇을
@@ -96,7 +105,14 @@ const PLAIN_RULES = `과한 어휘 없이, 과한 문장 없이, 읽기 쉽게, 
 - 매수, 매도를 권유하는 단정적 표현을 쓰지 마세요.
 - 마크다운, 불릿, 제목, 이모지를 쓰지 마세요. 문단으로만 씁니다.`;
 
-/** 대상 언어 이름. 프롬프트가 출력 언어를 지정한다. */
+/**
+ * 대상 언어 이름. 한국어 본문 안의 한 줄짜리 지시다.
+ *
+ * ⚠️ **이 줄만으로는 비-ko에서 동작하지 않는다.** 실측에서 ja·zh는 3/3 모두
+ * 한국어로 나왔다 — 모델이 프롬프트 자체의 언어를 본보기로 삼기 때문이다.
+ * 실효적인 지시는 프롬프트 맨 끝의 {@link plainOutputLanguageDirective}이고,
+ * 이 줄은 ko 프롬프트의 바이트를 유지하기 위해 남겨 둔다.
+ */
 const LOCALE_NAME: Record<string, string> = {
     ko: '한국어',
     en: '영어(미국)',
@@ -130,7 +146,7 @@ export function buildPlainPrompt({
     );
     const language = LOCALE_NAME[locale] ?? LOCALE_NAME.ko;
 
-    return `당신은 주식 분석 결과를 투자 초보자가 읽을 수 있게 다시 쓰는 편집자입니다.
+    return `${plainOutputLanguageHeader(locale)}당신은 주식 분석 결과를 투자 초보자가 읽을 수 있게 다시 쓰는 편집자입니다.
 
 아래 \`prose\`는 하나의 전문가용 분석문을 조각낸 것이고, 키는 그 조각이 원래 있던 위치입니다.
 
@@ -143,5 +159,5 @@ prose:
 ${JSON.stringify(prose, null, 1)}
 
 facts:
-${JSON.stringify(facts)}`;
+${JSON.stringify(facts)}${plainOutputLanguageDirective(locale)}`;
 }

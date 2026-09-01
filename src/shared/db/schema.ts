@@ -655,6 +655,21 @@ export const seoAnalysisSnapshots = pgTable(
          */
         locale: contentLocaleEnum('locale').notNull().default('ko'),
         content: jsonb('content').notNull(),
+        /**
+         * 평이화("쉽게보기") 산문. 없으면 `null`.
+         *
+         * 프리웜이 스냅샷을 구울 때 함께 만들어 둔다. 이 컬럼이 없던 동안
+         * 쉽게보기는 차트 탭에서만 동작했다 — 나머지 여섯 탭은 스냅샷이 있으면
+         * 클라이언트 AI 위젯을 아예 마운트하지 않는 XOR 게이팅이라
+         * (`hasCongressProse`·`hasOverallProse` 등), 위젯에 붙어 있던 토글도
+         * 함께 사라졌기 때문이다. 방문 시점에 평이화를 돌리면 그 탭들이 매
+         * 방문마다 LLM 왕복을 태우게 되므로, 스냅샷과 같은 시점에 굽는다.
+         *
+         * `content`와 같은 행에 두는 이유: 둘은 같은 분석 결과의 두 표현이라
+         * 따로 만료되면 안 된다. 원문이 갱신됐는데 평이화가 옛것으로 남으면
+         * 토글이 서로 다른 분석을 오간다.
+         */
+        plain: text('plain'),
         model: varchar('model', { length: 64 }).notNull(),
         generatedAt: timestamp('generated_at', {
             withTimezone: true,

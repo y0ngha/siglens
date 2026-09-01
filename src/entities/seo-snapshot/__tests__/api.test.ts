@@ -26,6 +26,7 @@ const UPSERT_INPUT = {
     tab: 'technical' as const,
     locale: 'ko' as const,
     content: { summary: 'bullish' },
+    plain: null,
     model: 'deepseek-v4-flash',
     generatedAt,
 };

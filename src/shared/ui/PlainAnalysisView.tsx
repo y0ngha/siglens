@@ -55,7 +55,7 @@ export function PlainAnalysisView({
             </div>
 
             {hasLockedDetails && (
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border-control bg-secondary-900/50 px-3 py-2">
+                <div className="flex flex-col gap-2 rounded-lg border border-border-control bg-secondary-900/50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-xs text-secondary-400">
                         {t('lockedNotice')}
                     </p>
@@ -65,9 +65,15 @@ export function PlainAnalysisView({
                      * 전환 경로가 "원본으로 전환" 한 단계 뒤로 밀린다(리뷰 라운드 1
                      * 권고). 링크를 같은 줄에 둔다.
                      */}
+                    {/*
+                     * 모바일에서는 전체 너비다. `flex-wrap`으로 두던 때는 안내
+                     * 문구가 접히면서 버튼만 왼쪽에 덩그러니 남아, 카드 안쪽
+                     * 우측이 비는 어긋난 배치가 됐다(실증 스크린샷). 좁은 화면은
+                     * 세로로 쌓고 넓어지면 한 줄로 돌아간다.
+                     */}
                     <LocaleLink
                         href="/signup"
-                        className="rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-colors hover:bg-primary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-primary-600 px-3 text-xs font-semibold whitespace-nowrap text-white transition-colors hover:bg-primary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none sm:w-auto"
                     >
                         {t('lockedCta')}
                     </LocaleLink>
@@ -77,9 +83,14 @@ export function PlainAnalysisView({
             <button
                 type="button"
                 onClick={onShowRaw}
+                /*
+                 * 모서리와 너비를 위 잠금 안내 카드에 맞춘다. `rounded`(4px)와
+                 * `rounded-lg`(8px)가 섞여 있었고, 안내는 전체 너비인데 이 버튼만
+                 * `self-start`라 우측이 어긋나 보였다.
+                 */
                 className={cn(
                     'border-border-control text-secondary-300 hover:border-primary-500 hover:text-secondary-100',
-                    'focus-visible:ring-primary-500 min-h-11 cursor-pointer touch-manipulation self-start rounded border px-3 py-2 text-xs font-medium transition-colors focus-visible:ring-1 focus-visible:outline-none'
+                    'focus-visible:ring-primary-500 min-h-11 w-full cursor-pointer touch-manipulation rounded-lg border px-3 py-2 text-xs font-medium transition-colors focus-visible:ring-1 focus-visible:outline-none sm:w-auto sm:self-start'
                 )}
             >
                 {t('cta')}

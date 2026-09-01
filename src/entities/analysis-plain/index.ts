@@ -14,3 +14,4 @@ export {
     salvageByRemovingSentences,
 } from './lib/guardPlainText';
 export type { PlainGuardFailure } from './lib/guardPlainText';
+export { resolveCurrentPrice } from './lib/currentPrice';

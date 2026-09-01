@@ -52,7 +52,7 @@ export function AnalysisViewToggle({
             role="radiogroup"
             aria-label={t('label')}
             className={cn(
-                'inline-flex shrink-0 items-center gap-0.5 rounded-full border border-border-control bg-secondary-900/60 p-0.5',
+                'inline-flex shrink-0 items-center gap-1 rounded-full border border-border-control bg-secondary-900/60 p-1',
                 className
             )}
         >
@@ -66,7 +66,15 @@ export function AnalysisViewToggle({
                         aria-checked={active}
                         onClick={() => onChange(value)}
                         className={cn(
-                            'focus-visible:ring-primary-500 cursor-pointer rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none',
+                            /*
+                             * `min-h-11`(44px)은 이 레포의 터치 타겟 표준이다
+                             * (`error.tsx`·`not-found.tsx`·`ThemeToggle`의 `h-11`).
+                             * 이 컨트롤은 `py-1 text-xs`라 24px였다 — iOS 44pt·
+                             * Android 48dp 최소치의 절반이고, 두 버튼이 2px 간격으로
+                             * 붙어 있어 오탭이 난다. 글자 크기는 그대로 두고 세로
+                             * 여백만 키워 데스크톱 밀도를 유지한다.
+                             */
+                            'focus-visible:ring-primary-500 inline-flex min-h-11 cursor-pointer items-center rounded-full px-4 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none',
                             active
                                 ? 'bg-secondary-700 text-secondary-100'
                                 : 'text-secondary-400 hover:text-secondary-200'

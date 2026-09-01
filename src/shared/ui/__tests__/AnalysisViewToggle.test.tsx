@@ -45,3 +45,22 @@ describe('AnalysisViewToggle', () => {
         expect(onChange).toHaveBeenCalledWith('raw');
     });
 });
+
+/**
+ * 터치 타겟은 이 레포 표준(`min-h-11` = 44px)을 지켜야 한다.
+ *
+ * 예전에는 `py-1 text-xs`라 높이가 24px였다 — iOS 44pt·Android 48dp 최소치의
+ * 절반이다. 시각적으로는 멀쩡해 보여서 눈으로는 잡히지 않는 종류의 결함이라
+ * 클래스로 고정한다.
+ */
+describe('터치 타겟', () => {
+    it('두 버튼 모두 44px 최소 높이를 갖는다', () => {
+        render(<AnalysisViewToggle mode="plain" onChange={() => {}} />);
+
+        const buttons = screen.getAllByRole('radio');
+        expect(buttons).toHaveLength(2);
+        for (const button of buttons) {
+            expect(button.className).toContain('min-h-11');
+        }
+    });
+});

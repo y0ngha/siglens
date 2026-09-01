@@ -141,3 +141,88 @@ describe('PlainAnalysisSwitch', () => {
         ).not.toBeInTheDocument();
     });
 });
+
+/**
+ * 쉽게보기는 `AnalysisPanel` 안쪽만 감싼다. 같은 페이지의 SSR 스냅샷 산문
+ * (`data-snapshot-prose`)에는 전문 용어가 그대로 들어 있어, 함께 감추지 않으면
+ * 쉽게보기를 켠 사람이 절반만 쉬운 화면을 보게 된다(실증으로 확인한 결함).
+ *
+ * 숨김은 CSS가 하고, 이 컴포넌트는 루트 속성만 세운다 — 그 섹션은 SEO 자산이라
+ * DOM에서 지우면 안 된다.
+ */
+describe('스냅샷 산문 연동', () => {
+    afterEach(() => {
+        delete document.documentElement.dataset.analysisView;
+    });
+
+    it('평이화가 있고 쉽게보기일 때 루트에 표식을 세운다', () => {
+        render(
+            <PlainAnalysisSwitch
+                plain="쉽게 쓴 분석문입니다."
+                hasLockedDetails={false}
+            >
+                <p>원본</p>
+            </PlainAnalysisSwitch>
+        );
+
+        expect(document.documentElement.dataset.analysisView).toBe('plain');
+    });
+
+    /**
+     * 평이화가 없으면(가드 실패·봇 요청) 토글 자체가 없고 원본만 나온다. 그때
+     * 표식을 세우면 스냅샷까지 사라져 **화면에서 내용이 통째로 줄어든다.**
+     * 봇에게 SEO 자산이 숨겨지는 경로도 이 조건이 막는다.
+     */
+    it('평이화가 없으면 표식을 세우지 않는다', () => {
+        render(
+            <PlainAnalysisSwitch plain={null} hasLockedDetails={false}>
+                <p>원본</p>
+            </PlainAnalysisSwitch>
+        );
+
+        expect(document.documentElement.dataset.analysisView).toBeUndefined();
+    });
+
+    it('언마운트하면 표식을 걷는다', () => {
+        const view = render(
+            <PlainAnalysisSwitch
+                plain="쉽게 쓴 분석문입니다."
+                hasLockedDetails={false}
+            >
+                <p>원본</p>
+            </PlainAnalysisSwitch>
+        );
+        expect(document.documentElement.dataset.analysisView).toBe('plain');
+
+        view.unmount();
+        expect(document.documentElement.dataset.analysisView).toBeUndefined();
+    });
+});
+
+/**
+ * 프리웜이 아직 닿지 않은 종목·탭에는 평이화가 없다. 그때는 토글도 표식도 없이
+ * 원문만 나와야 한다 — 표식을 세우면 스냅샷이 숨겨져 화면이 통째로 비고, 토글을
+ * 띄우면 누를 때마다 빈 화면이 된다.
+ */
+describe('평이화가 없을 때 원문으로 떨어진다', () => {
+    afterEach(() => {
+        delete document.documentElement.dataset.analysisView;
+    });
+
+    it.each([
+        ['null', null],
+        ['undefined', undefined],
+        ['빈 문자열', ''],
+        ['공백만', '   \n  '],
+    ])('%s이면 원문을 그대로 보여준다', (_label, plain) => {
+        render(
+            <PlainAnalysisSwitch plain={plain} hasLockedDetails={false}>
+                <p>원본 본문</p>
+            </PlainAnalysisSwitch>
+        );
+
+        expect(screen.getByText('원본 본문')).toBeInTheDocument();
+        expect(screen.queryByRole('radiogroup')).toBeNull();
+        expect(document.documentElement.dataset.analysisView).toBeUndefined();
+    });
+});

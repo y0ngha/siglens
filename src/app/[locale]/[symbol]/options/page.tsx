@@ -236,6 +236,7 @@ export default async function OptionsPage({ params }: Props) {
                             // 가드) — OptionsSnapshotProseProps JSDoc 참고.
                             marketProfile="us-equity"
                             generatedAt={optionsSnapshot?.generatedAt}
+                            plain={optionsSnapshot?.plain}
                         />
                     ) : undefined
                 }
@@ -273,6 +274,7 @@ export default async function OptionsPage({ params }: Props) {
                             // 가드) — OptionsSnapshotProseProps JSDoc 참고.
                             marketProfile="us-equity"
                             generatedAt={optionsSnapshot?.generatedAt}
+                            plain={optionsSnapshot?.plain}
                         />
                     ) : undefined
                 }
@@ -407,6 +409,7 @@ export default async function OptionsPage({ params }: Props) {
                     // OptionsSnapshotProseProps JSDoc 참고.
                     marketProfile="us-equity"
                     generatedAt={optionsSnapshot?.generatedAt}
+                    plain={optionsSnapshot?.plain}
                 />
                 <HydrationBoundary state={dehydrate(queryClient)}>
                     <OptionsPageClient

@@ -12,6 +12,7 @@ import type { Locale } from '@/shared/i18n/locales';
 import { collectFacts, type CurrencyCode } from './lib/collectFacts';
 import { dropSupersededPaths } from './lib/supersededPaths';
 import { buildPlainPrompt, PLAIN_PROMPT_VERSION } from './lib/buildPlainPrompt';
+import { plainSystemInstruction } from './lib/outputLanguage';
 import {
     buildAllowedNumbers,
     describeFailure,
@@ -21,7 +22,6 @@ import {
 
 /**
  * 평이화 캐시 TTL. 원문이 바뀌면 해시가 달라져 스스로 무효화되므로 길게 잡는다.
- * `analysis-translation`의 번역 캐시와 같은 값이다.
  */
 const CACHE_TTL_SECONDS = 60 * 60 * 24 * 30;
 
@@ -35,9 +35,9 @@ const CACHE_TTL_SECONDS = 60 * 60 * 24 * 30;
  * ## 왜 45초가 아니라 15초인가
  *
  * 설계 초안은 "로케일 번역과 병렬이라 추가 지연이 두 마감의 **최댓값**"이라고 적었다.
- * **`ko`에서는 틀린 말이다** — `translateAnalysisForLocale`은 기본 로케일이면 즉시
- * 반환하므로(`analysis-translation/api.ts`) 병렬 상대가 없고, 이 마감이 그대로
- * 크리티컬 패스에 **순증**한다. 한국어 사용자 전원이 매 분석마다 이 값을 기다린다.
+ * **틀린 말이었다.** 그 사후 번역 계층은 이제 아예 없고(core가 대상 언어로 직접
+ * 쓴다), 이 마감은 로케일과 무관하게 크리티컬 패스에 **순증**한다. 모든 사용자가
+ * 매 분석마다 이 값을 기다린다.
  *
  * 실측 지연은 6.9~13.5초(346회 전수 실행)다. 15초면 정상 응답을 거의 다 담고,
  * 프로바이더가 매달릴 때 사용자가 기다리는 시간을 3분의 1로 줄인다.
@@ -143,6 +143,13 @@ export async function rewriteToPlainLanguage(
      */
     let config: ReturnType<typeof tryReadPlainModelConfig> = null;
     try {
+        /*
+         * 가격 표기는 **여기서 손대지 않는다.** 한때 원화 종목에 `$`가 붙고
+         * 소수점이 11자리까지 나오는 문제를 이 레이어에서 다듬었는데, 그건
+         * core의 `reconciledLevels` 포맷 결함이었고 core 0.54.0이 통화를 받아
+         * 원천에서 고쳤다. 산문을 하류에서 고쳐 쓰면 통화 기호마다 언어별
+         * 접미사를 붙여야 하고, 그 접미사가 비-ko 산문에 한국어를 주입한다.
+         */
         const entries = dropSupersededPaths(extractProse(analysis));
         if (entries.length === 0) return null;
 
@@ -183,9 +190,18 @@ export async function rewriteToPlainLanguage(
                 jobId: 'analysis-plain',
                 model: resolved.model,
                 contents: prompt,
+                // 유저 프롬프트 본문이 한국어라, 끝에 붙인 언어 블록만으로는
+                // 비-ko에서 무게가 밀린다(실측: zh 0/3). core처럼 계약을
+                // 시스템 프롬프트에도 둔다. ko에서는 `undefined`다.
+                systemInstruction: plainSystemInstruction(locale),
             });
             const text = stripMarkdownCodeBlock(raw).trim();
-            const failure = guardPlainText({ text, inputChars, allowed });
+            const failure = guardPlainText({
+                text,
+                inputChars,
+                allowed,
+                locale,
+            });
             if (failure === null) return text;
             console.warn('[analysisPlain] guard rejected', {
                 symbol,
@@ -198,7 +214,7 @@ export async function rewriteToPlainLanguage(
                 tokens: 'tokens' in failure ? failure.tokens : undefined,
             });
             if (retryHint === undefined)
-                return attempt(describeFailure(failure));
+                return attempt(describeFailure(failure, locale));
 
             /**
              * 재시도까지 실패했다. 통째로 버리기 전에 **어긋난 문장만 도려내** 본다.

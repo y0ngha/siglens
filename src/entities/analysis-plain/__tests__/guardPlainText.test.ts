@@ -327,3 +327,161 @@ describe('guardPlainText — 외국어 혼입', () => {
         ).toBeNull();
     });
 });
+
+/**
+ * 로케일별 문자 계열 가드.
+ *
+ * 예전에는 "한자 금지" 하나였다 — 산출물이 한국어라고 못 박고 있었기 때문이다.
+ * 로케일 지원이 들어오면서 그 전제가 깨졌고, 실측에서 ja·zh 요청이 한국어로
+ * 돌아왔는데 한자를 한 글자도 안 써서 옛 가드가 조용히 통과시켰다.
+ */
+describe('guardPlainText — 로케일별 금지 문자', () => {
+    const long = (s: string) => s.repeat(60);
+    const opts = { inputChars: 100, allowed: [] as number[] };
+
+    it('ko 산문에 섞인 한자를 잡는다', () => {
+        const v = guardPlainText({
+            ...opts,
+            text: long('이 종목은 上昇 흐름입니다. '),
+            locale: 'ko',
+        });
+        expect(v?.kind).toBe('foreign_script');
+    });
+
+    it('ja 산문의 한자는 정상이다 — 일본어는 한자를 쓴다', () => {
+        const v = guardPlainText({
+            ...opts,
+            text: long('この銘柄は上昇の流れにあります。'),
+            locale: 'ja',
+        });
+        expect(v).toBeNull();
+    });
+
+    it('zh 산문의 한자도 정상이다', () => {
+        const v = guardPlainText({
+            ...opts,
+            text: long('该股票目前处于上涨趋势之中。'),
+            locale: 'zh',
+        });
+        expect(v).toBeNull();
+    });
+
+    /**
+     * 이것이 이 가드를 뒤집은 **이유**다. 옛 가드는 한자만 봤으므로, 일본어를
+     * 요청했는데 한국어가 돌아온 산출물을 그대로 통과시켰다.
+     */
+    it.each(['ja', 'zh', 'en'])(
+        '%s 요청에 한국어가 돌아오면 잡는다',
+        locale => {
+            const v = guardPlainText({
+                ...opts,
+                text: long('이 종목은 상승 흐름에 있습니다. '),
+                locale,
+            });
+            expect(v?.kind).toBe('foreign_script');
+        }
+    );
+
+    it('en 산문에 섞인 가나를 잡는다', () => {
+        const v = guardPlainText({
+            ...opts,
+            text: long('The stock is trending up です。 '),
+            locale: 'en',
+        });
+        expect(v?.kind).toBe('foreign_script');
+    });
+
+    it('알 수 없는 로케일은 ko 규칙으로 떨어진다 — 프롬프트도 같은 값에서 한국어로 떨어진다', () => {
+        const v = guardPlainText({
+            ...opts,
+            text: long('이 종목은 上昇 흐름입니다. '),
+            locale: 'pt-BR',
+        });
+        expect(v?.kind).toBe('foreign_script');
+        expect(
+            guardPlainText({
+                ...opts,
+                text: long('이 종목은 상승 흐름입니다. '),
+                locale: 'pt-BR',
+            })
+        ).toBeNull();
+    });
+
+    it('locale을 생략하면 ko와 같다', () => {
+        expect(
+            guardPlainText({
+                ...opts,
+                text: long('이 종목은 上昇 흐름입니다. '),
+            })?.kind
+        ).toBe('foreign_script');
+    });
+});
+
+describe('buildAllowedNumbers — 자릿수 단위 분해', () => {
+    it('만/억 분해 조각을 허용한다 — ko·ja·zh가 같은 자릿수를 쓴다', () => {
+        const allowed = buildAllowedNumbers([71500], []);
+        expect(allowed).toContain(7); // 7만
+        expect(allowed).toContain(1500); // 1500
+    });
+
+    it('백만/십억 분해 조각도 허용한다 — 영어는 short scale로 끊는다', () => {
+        const allowed = buildAllowedNumbers([3_500_000_000], []);
+        expect(allowed).toContain(3); // 3 billion
+    });
+});
+
+describe('salvageByRemovingSentences — CJK 종결부호', () => {
+    /**
+     * 일본어·중국어는 `。` 뒤에 공백을 두지 않는다. 공백을 요구하는 분기만 두면
+     * 문단 전체가 문장 하나로 잡혀, 살리기가 문장 하나가 아니라 **문단 전체**를
+     * 버린다 — 목적과 정반대로 동작한다.
+     */
+    it('공백 없는 `。`에서도 문장 단위로만 도려낸다', () => {
+        // 살리기는 남은 글이 최소 길이(200자)를 넘어야 성공한다 — 문장을
+        // 반복해 그 조건을 채운다. 검증 대상은 길이가 아니라 **끊는 위치**다.
+        const keep = '株価は上昇しています。流れは続いています。'.repeat(12);
+        const text = `${keep}過去の高値は9999です。`;
+        const salvaged = salvageByRemovingSentences(text, [], 10);
+
+        expect(salvaged).not.toBeNull();
+        expect(salvaged).not.toContain('9999');
+        // 나머지 두 문장은 남아야 한다.
+        expect(salvaged).toContain('株価は上昇しています');
+        expect(salvaged).toContain('流れは続いています');
+        // 문단이 통째로 사라지지 않았다는 것 — 옛 분리기는 여기서 null을 냈다.
+        expect((salvaged ?? '').length).toBeGreaterThan(200);
+    });
+});
+
+/**
+ * 재무·펀더멘털 탭은 `285.5B` 같은 표기가 데이터의 본질이다. 접미사를 그대로
+ * 옮기는 길은 `magnitude_suffix`가 막으므로, **풀어 쓰는 길**은 열려 있어야
+ * 한다. 실측: 열려 있지 않아 두 탭의 평이화가 초회·재시도 모두 실패했다.
+ */
+describe('buildAllowedNumbers — 크기 접미사 표기', () => {
+    it('285.5B의 한국어 자릿수 표기(2,855억)를 허용한다', () => {
+        const allowed = buildAllowedNumbers([], ['총부채는 285.5B입니다']);
+
+        expect(
+            findUnsupportedNumbers('총부채는 2,855억 달러입니다', allowed)
+        ).toEqual([]);
+    });
+
+    it('접미사를 그대로 옮기는 것은 여전히 막는다', () => {
+        const allowed = buildAllowedNumbers([], ['총부채는 285.5B입니다']);
+        const verdict = guardPlainText({
+            text: '총부채는 285.5B입니다. '.repeat(30),
+            inputChars: 100,
+            allowed,
+        });
+
+        expect(verdict?.kind).toBe('magnitude_suffix');
+    });
+
+    it('M·K도 같은 규칙을 따른다', () => {
+        const allowed = buildAllowedNumbers([], ['영업이익 12.7M, 배당 500K']);
+
+        expect(allowed).toContain(12_700_000);
+        expect(allowed).toContain(500_000);
+    });
+});

@@ -32,6 +32,12 @@ export interface SeoAnalysisSnapshot {
     /** 본문이 생성된 언어. 마이그레이션 전 행은 전부 한국어다. */
     locale: Locale;
     content: unknown;
+    /**
+     * 평이화("쉽게보기") 산문. 프리웜이 함께 구워 둔다. 없으면 `null` —
+     * 이 컬럼이 생기기 전에 저장된 행이거나, 평이화가 가드를 통과하지 못한
+     * 경우다. 소비자는 `null`이면 토글 없이 원문만 보여준다.
+     */
+    plain: string | null;
     model: string;
     generatedAt: Date;
     updatedAt: Date;
@@ -44,6 +50,8 @@ export interface SeoSnapshotUpsertInput {
     /** 프리웜이 어느 언어로 생성했는지. */
     locale: Locale;
     content: unknown;
+    /** 평이화 산문. 생성에 실패했으면 `null`로 넘긴다. */
+    plain: string | null;
     model: string;
     generatedAt: Date;
 }

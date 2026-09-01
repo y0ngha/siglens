@@ -71,7 +71,7 @@ export const QUERY_KEYS = {
     marketSummary: (scope: DashboardScopeId) =>
         ['market-summary', scope] as const,
     /**
-     * 브리핑 산문도 로케일별로 번역된다(`translateAnalysisForLocale`). 다른 분석
+     * 브리핑 산문도 로케일별로 달라진다(core가 `locale`을 받아 그 언어로 쓴다). 다른 분석
      * 키와 같은 이유로 로케일이 키에 들어가야 한다 — 빠지면 ko에서 본 브리핑이
      * ja 화면에 그대로 재사용된다.
      */
@@ -150,7 +150,7 @@ export const QUERY_KEYS = {
     ): readonly ['news-analysis', string] => ['news-analysis', upper(symbol)],
     /**
      * ⚠️ **로케일이 키에 들어가야 한다.** AI 분석 산문은 로케일별로 다른
-     * 결과다(`translateAnalysisForLocale`). 키에서 빼면 ko에서 본 결과가
+     * 결과다(core가 `locale`을 받아 그 언어로 쓴다). 키에서 빼면 ko에서 본 결과가
      * ja로 전환했을 때 그대로 재사용돼 **일본어 화면에 한국어 분석문**이 남고,
      * 재분석(할당량 소모) 말고는 벗어날 방법이 없다. `QueryClient`가
      * `[locale]/layout.tsx`에 있어 로케일 전환 시 remount되지 않으므로

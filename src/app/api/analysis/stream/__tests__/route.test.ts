@@ -153,32 +153,15 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     releaseReanalyzeCooldown: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/entities/analysis-translation', () => ({
-    translateAnalysisForLocale: vi.fn(async (analysis: unknown) => analysis),
-}));
 vi.mock('@/entities/analysis-plain', () => ({
     rewriteToPlainLanguage: vi.fn(async () => '쉽게 쓴 분석문입니다.'),
     /**
-     * 실물을 그대로 쓴다. 라우트가 이 함수로 "payload에 숫자가 있는가"를 판단해
-     * 시세 조회 여부를 정하므로, 모킹하면 그 분기가 검증되지 않는다.
+     * 현재가 조회는 이 라우트의 관심사가 아니다 — "payload에 숫자가 있으면
+     * 조회하지 않는다"는 분기는 `entities/analysis-plain/lib/currentPrice.ts`로
+     * 옮겨졌고, 그쪽 단위 테스트가 실물로 검증한다. 여기서 실물을 쓰면 시세
+     * 프로바이더까지 끌려온다.
      */
-    collectNumbers: function walk(
-        v: unknown,
-        out: Set<number> = new Set()
-    ): Set<number> {
-        if (typeof v === 'number') {
-            if (Number.isFinite(v)) out.add(v);
-            return out;
-        }
-        if (Array.isArray(v)) {
-            for (const i of v) walk(i, out);
-            return out;
-        }
-        if (typeof v === 'object' && v !== null) {
-            for (const i of Object.values(v)) walk(i, out);
-        }
-        return out;
-    },
+    resolveCurrentPrice: vi.fn(async () => undefined),
 }));
 vi.mock('@/entities/analysis', () => ({
     tryAcquireReanalyzeCooldown: vi.fn().mockResolvedValue({ ok: true }),
@@ -198,7 +181,6 @@ import {
     resolvePositionBucket,
     resolveReasoning,
 } from '@/shared/lib/byokGate';
-import { translateAnalysisForLocale } from '@/entities/analysis-translation';
 import { rewriteToPlainLanguage } from '@/entities/analysis-plain';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
@@ -825,9 +807,12 @@ describe('POST /api/analysis/stream', () => {
         });
 
         /**
-         * 분석 산문 번역의 로케일 결속. 이게 끊기면 `translateAnalysisForLocale`이
-         * 기본 로케일에서 즉시 반환하므로 **다국어 분석이 100% 죽는데** 에러가
-         * 하나도 안 난다(실증: 두 호출부를 `DEFAULT_LOCALE`로 고정해도 108개 통과).
+         * 로케일이 core까지 닿는지 본다.
+         *
+         * 사후 번역 계층이 사라진 뒤로 산출물 언어는 **core가 대상 언어로 직접
+         * 쓰는 것**에만 달려 있다. 로케일이 core 호출에서 빠지면 그 축만 조용히
+         * 한국어로 나오고 에러는 하나도 안 난다 — 예전 `technical`이 정확히 그
+         * 상태였다(실증: 두 호출부를 `DEFAULT_LOCALE`로 고정해도 108개 통과).
          */
         it.each([
             ['technical', TECHNICAL_BODY],
@@ -838,7 +823,13 @@ describe('POST /api/analysis/stream', () => {
                     params: { symbol: 'AAPL', modelId: 'gemini-2.5-flash' },
                 }),
             ],
-        ])('%s: 산문 번역이 요청 로케일로 호출된다', async (_name, body) => {
+        ])('%s: 요청 로케일이 core까지 그대로 내려간다', async (name, body) => {
+            /*
+             * 사후 번역 계층이 사라지면서, 산출물 언어는 **core가 대상
+             * 언어로 직접 쓰는 것**에 전적으로 달려 있다. 로케일이 core
+             * 호출에서 누락되면 그 축만 조용히 한국어로 나온다 — 예전
+             * `technical`이 정확히 그 상태였다.
+             */
             vi.mocked(runAnalysis).mockResolvedValue(MOCK_RESULT as never);
             vi.mocked(runCongressTrendAction).mockResolvedValue(
                 MOCK_RESULT as never
@@ -848,8 +839,17 @@ describe('POST /api/analysis/stream', () => {
                 await POST(makeRequest(undefined, body, 'ja'))
             );
 
-            expect(vi.mocked(translateAnalysisForLocale)).toHaveBeenCalledWith(
-                expect.anything(),
+            if (name === 'technical') {
+                const opts = vi
+                    .mocked(runAnalysis)
+                    .mock.calls.find(c => c[0] === 'AAPL')?.[5] as
+                    | Record<string, unknown>
+                    | undefined;
+                expect(opts?.locale).toBe('ja');
+                return;
+            }
+            // 위치 인자다 — (symbol, modelId, locale, reasoning, signal).
+            expect(vi.mocked(runCongressTrendAction).mock.calls[0]?.[2]).toBe(
                 'ja'
             );
         });

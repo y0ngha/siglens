@@ -358,6 +358,7 @@ export default async function FinancialsPage({ params }: Props) {
                         displayName={displayName}
                         marketProfile={marketProfile}
                         generatedAt={financialsSnapshot?.generatedAt}
+                        plain={financialsSnapshot?.plain}
                     />
                 )}
                 <FinancialsAiSummary

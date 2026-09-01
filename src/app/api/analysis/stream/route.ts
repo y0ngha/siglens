@@ -2,7 +2,6 @@ import type { ModelId, PositionBucket, Timeframe } from '@y0ngha/siglens-core';
 import { LocalizedStreamError } from '@/shared/lib/sse/LocalizedStreamError';
 import { getTranslations } from 'next-intl/server';
 import type { AnalysisGateErrorCode } from '@/shared/lib/types';
-import { translateAnalysisForLocale } from '@/entities/analysis-translation';
 import {
     ANALYSIS_LOCALE_HEADER,
     DEFAULT_LOCALE,
@@ -16,10 +15,9 @@ import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarket
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { isBot } from '@/shared/api/isBot';
 import {
-    collectNumbers,
+    resolveCurrentPrice,
     rewriteToPlainLanguage,
 } from '@/entities/analysis-plain';
-import { getAssetInfoResilient, pickAssetName } from '@/entities/ticker';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
     currencyForSymbol,
@@ -496,89 +494,6 @@ async function gateMessage(
 }
 
 /**
- * 분석 결과의 산문을 요청 로케일로 옮긴다.
- *
- * ⚠️ **`heartbeatStream(work)`의 `work` 안에서 일어나야 한다.** 이 체이닝은
- * `work` 프로미스에 붙으므로 heartbeat가 계속 흐르는 동안 실행된다. 밖에서
- * await한 뒤 스트림을 만들면 첫 바이트까지의 침묵이 **프록시 idle 한도**에
- * 걸린다(2026-08-02 프로덕션 실측: 침묵 61.1초에 끊김, 25초 heartbeat면 286초 완주.
- * 당시 벽은 ALB idle 60초였고 master가 cloudflared로 옮긴 뒤에는 125.9초다).
- * 기본 로케일이면 `translateAnalysisForLocale`이 즉시 원본을 돌려준다.
- *
- * ## 왜 자체 마감이 필요한가
- *
- * 이 체이닝은 `withDeadline`의 `Promise.race`가 **이미 끝난 뒤** 붙으므로
- * `STREAM_DEADLINE_MS`의 보호를 받지 못한다. 그런데 `callDeepseekChat`은
- * `timeout`도 `maxRetries`도 지정하지 않아 OpenAI SDK 기본값(10분 × 3회)을
- * 쓴다 — 프로바이더가 매달리면 스트림 하나가 `canAcceptAnalysisStream`
- * 동시성 슬롯을 30분 붙들고, `instrumentation.node.ts`가 전제하는 180초
- * SIGTERM 드레인을 넘겨 배포 때마다 끊긴다.
- *
- * 초과하면 **원문을 그대로 돌려준다** — 이 레이어의 모든 실패 경로와 같은
- * 의미론이다(부분 적용은 한 화면에 두 언어가 섞이는 최악의 상태다).
- */
-const TRANSLATION_DEADLINE_MS = 60_000;
-
-function withLocalizedProse<T>(work: Promise<T>, locale: Locale): Promise<T> {
-    return work.then(async result => {
-        /**
-         * 에러 봉투는 번역하지 않는다.
-         *
-         * 액션은 실패를 `{ status: 'error', error: { code, message } }`로 돌려주는데,
-         * `message`가 `PROSE_FIELD_NAMES`에 있어 그대로 두면 **이미 카탈로그에서
-         * 번역해 온 문구를 LLM에 다시 보낸다**. 프롬프트가 "Translate each Korean
-         * sentence"라 일본어를 넣으면 결과가 망가지고, 게이트 거부마다 DeepSeek
-         * 왕복이 붙어 배너가 늦게 뜬다. 산문 번역의 대상은 분석 결과이지
-         * siglens가 만든 오류 봉투가 아니다.
-         */
-        if (
-            typeof result === 'object' &&
-            result !== null &&
-            (result as { status?: unknown }).status === 'error'
-        ) {
-            /**
-             * core가 만든 `timeframe_not_allowed`는 **영어** 문장이라 ko 사용자에게도
-             * 영어가 나갔다. 코드가 있으므로 카탈로그로 대체한다 — 이 봉투는
-             * 번역 LLM에 보내지 않으므로(위 주석) 여기서 직접 갈아끼운다.
-             */
-            const envelope = result as {
-                error?: { code?: string; message?: string };
-            };
-            if (envelope.error?.code === 'timeframe_not_allowed') {
-                const t = await getTranslations({
-                    locale,
-                    namespace: 'app.api.stream',
-                });
-                return {
-                    ...envelope,
-                    error: {
-                        ...envelope.error,
-                        message: t('timeframeNotAllowed'),
-                    },
-                } as T;
-            }
-            return result;
-        }
-        let timer: ReturnType<typeof setTimeout> | undefined;
-        const fallback = new Promise<T>(resolve => {
-            timer = setTimeout(() => {
-                console.error('[analysisTranslation] deadline exceeded', {
-                    locale,
-                    ms: TRANSLATION_DEADLINE_MS,
-                });
-                resolve(result);
-            }, TRANSLATION_DEADLINE_MS);
-        });
-        return Promise.race([
-            translateAnalysisForLocale(result, locale),
-            fallback,
-        ]).finally(() => {
-            if (timer !== undefined) clearTimeout(timer);
-        });
-    });
-}
-
-/**
  * 평이화("쉽게보기")를 적용할 분석 종류.
  *
  * 토글 UI가 있는 종목 탭 7종만. `briefing`·`macroBriefing`·`marketNewsDigest`는
@@ -597,67 +512,77 @@ const PLAIN_ENABLED_TYPES: ReadonlySet<AnalysisType> = new Set([
     'congress',
 ]);
 
+/**
+ * core가 만든 게이트 거부 문구를 요청 로케일 카탈로그로 갈아끼운다.
+ *
+ * `timeframe_not_allowed`의 `message`는 core가 만든 **영어** 문장이라 ko
+ * 사용자에게도 영어가 나갔다. 코드가 함께 오므로 문구만 대체한다.
+ *
+ * 사라진 사후 번역 계층 안에 얹혀 있던 동작이다. 그 계층은 LLM 번역이었지만
+ * 이것은 카탈로그 조회라 성격이 다르고, 함께 지우면 게이트 거부 배너가 다시
+ * 영어로 돌아간다 — 계층을 걷어낼 때 이 부분만 남긴 이유다.
+ */
+async function withLocalizedGateError<T>(
+    work: Promise<T>,
+    locale: Locale
+): Promise<T> {
+    const result = await work;
+    if (
+        typeof result !== 'object' ||
+        result === null ||
+        (result as { status?: unknown }).status !== 'error'
+    ) {
+        return result;
+    }
+    const envelope = result as { error?: { code?: string; message?: string } };
+    if (envelope.error?.code !== 'timeframe_not_allowed') return result;
+
+    const t = await getTranslations({ locale, namespace: 'app.api.stream' });
+    return {
+        ...envelope,
+        error: { ...envelope.error, message: t('timeframeNotAllowed') },
+    } as T;
+}
+
 /** SSE 응답 봉투에 붙는 평이화 필드. core 타입은 건드리지 않는다. */
 type WithPlain<T> = T & { plain?: string | null };
 
 /**
  * 결과 봉투에 평이화 산문을 덧붙인다.
  *
- * ## 왜 `withLocalizedProse`와 **병렬**인가
+ * ## 입력은 이미 요청 로케일이다
  *
- * 평이화의 입력은 한국어 원문 산문이라 로케일 번역 결과에 의존하지 않는다. 직렬로
- * 체이닝하면 추가 지연이 두 마감의 **합**(105초)이 되지만, 병렬이면 **최댓값**
- * (60초)이다. `ko`는 번역이 즉시 no-op이라 실질 상한이 45초다.
+ * 여덟 축 전부 core에 `locale`을 넘기므로, 이 함수가 받는 `result`의 산문은
+ * 이미 요청 언어로 쓰여 있다. 평이화는 그것을 쉽게 고쳐 쓰기만 하면 된다.
+ *
+ * 그래서 사후 번역 계층(`withLocalizedProse` → `translateAnalysisForLocale`)이
+ * 이 커밋에서 사라졌다. 그 계층은 여덟 축 **전부**에 걸려 있었는데, 일곱 축은
+ * 이미 core가 대상 언어로 써준 산출물을 "한국어를 번역하라" 프롬프트에 다시
+ * 넣고 있었다(라우트 주석은 "일곱 축은 사후 번역을 타지 않는다"고 적어 두었지만
+ * 사실이 아니었다). 그 파손이 드러나지 않은 이유는 번역기 자체가 죽어 있었기
+ * 때문이다 — Gemini 설정(`GEMINI_API_KEY` + `gemini-2.5-flash-lite`)을 읽어
+ * `callDeepseekChat`에 넘겨 `Non-DeepSeek model spec`으로 던지고, 그 예외를
+ * 삼킨 뒤 원문을 그대로 돌려주고 있었다.
+ *
+ * ## 왜 순서가 중요한가
+ *
+ * 평이화 산출물의 언어는 지시가 아니라 **입력 산문의 언어**가 지배한다.
+ * 프로덕션 프롬프트·프로바이더로 측정한 결과(N=6, 재시도 포함):
+ *
+ *   한국어 산문 + "일본어로 쓰라" → 일본어 4/6
+ *   한국어 산문 + "중국어로 쓰라" → 중국어 2/6
+ *
+ * 지시를 시스템 프롬프트·머리말·말미 세 곳에 대상 언어로 넣고도 이 정도였다.
+ * 산문을 먼저 옮겨 넣으면 중국어가 4/4로 올랐다. core가 네이티브로 써주는 지금
+ * 구조에서는 이 문제가 애초에 생기지 않는다.
  *
  * ## 에러 봉투에는 붙이지 않는다
  *
  * 액션은 실패를 `{ status: 'error', ... }`로 돌려주는데, 그 안의 `message`가
  * `PROSE_FIELD_NAMES`에 걸려 산문으로 추출된다. 그대로 두면 게이트 거부 문구를
  * LLM에 보내 "쉽게 쓴 에러 메시지"를 만들고, 거부마다 DeepSeek 왕복이 붙는다
- * (`withLocalizedProse`가 같은 함정을 이미 겪은 자리다).
+ * (지금은 사라진 사후 번역 계층이 같은 함정을 이미 겪은 자리다).
  */
-
-/**
- * 평이화 프롬프트에 실을 현재 주가. 실패하면 `undefined`.
- *
- * `fundamental`·`news`·`financials` payload에는 숫자 필드가 하나도 없어, 이 값이
- * 없으면 모델이 현재가를 쓸 방법이 없다. 블라인드 평가자 둘 다 같은 지점에서
- * 막혔다 — "목표주가는 나오는데 현재 주가가 없어서 싸다는 말이 진짜인지 판단이
- * 안 된다."
- *
- * **payload에 숫자가 하나라도 있으면 조회하지 않는다.** `technical`은
- * `planCheck.currentPrice`를 이미 담고 있어(실측 74/86) 조회가 순수 낭비다.
- * 이 가드가 없으면 모든 분석이 시세를 한 번씩 더 부른다.
- *
- * `resolveHoldingPositionBucket`과 같은 상한을 쓴다. 이쪽은 heartbeat 안이라
- * 침묵 벽 위험은 없지만, 시세가 느릴 때 평이화 마감(15초)을 잠식하면 안 된다.
- * 조회 실패는 평이화를 막지 않는다 — 현재가 없이 그대로 진행한다.
- */
-async function resolveCurrentPrice(
-    symbol: string,
-    payload: unknown
-): Promise<number | undefined> {
-    if (collectNumbers(payload).size > 0) return undefined;
-    try {
-        const profile = await resolveMarketProfile(symbol);
-        const provider = getCachedMarketDataProvider(sessionSpecFor(profile));
-        const quote = await Promise.race([
-            provider.getQuote(symbol),
-            new Promise<null>(resolve => {
-                setTimeout(
-                    () => resolve(null),
-                    QUOTE_LOOKUP_TIMEOUT_MS
-                ).unref();
-            }),
-        ]);
-        const price = quote?.price;
-        return typeof price === 'number' && Number.isFinite(price) && price > 0
-            ? price
-            : undefined;
-    } catch {
-        return undefined;
-    }
-}
 
 async function withPlainLanguage<T>(
     result: T,
@@ -730,38 +655,26 @@ function withReaderViews<T>(
         typeof symbol === 'string' &&
         symbol.length > 0 &&
         PLAIN_ENABLED_TYPES.has(type);
-    if (!plainEnabled) return withLocalizedProse(work, locale);
+    const gated = withLocalizedGateError(work, locale);
+    if (!plainEnabled) return gated;
 
-    /**
-     * **`work`에 체인을 하나만 건다.**
-     *
-     * `withLocalizedProse(work)`와 `work.then(...)`을 따로 만들면 분석이 실패했을 때
-     * 두 체인이 함께 reject되는데 소비되는 것은 하나뿐이라, 나머지가 미처리
-     * rejection으로 샌다(실측: 라우트 스위트의 Errors가 6 → 8로 늘었다).
-     * 이미 resolve된 값으로 번역 체인을 시작하면 실패 경로의 팬아웃이 사라지고,
-     * 두 후처리가 같은 tick에 출발하므로 병렬성은 그대로다.
-     */
-    return work.then(async result => {
-        const [localized, withPlain] = await Promise.all([
-            withLocalizedProse(Promise.resolve(result), locale),
-            /**
-             * **호출부에도 안전망을 둔다.** `rewriteToPlainLanguage`가 "절대
-             * reject하지 않는다"를 계약으로 지키지만, 그 계약이 한 번 깨지면
-             * 성공한 분석이 통째로 에러 프레임이 된다 — 장식 레이어가 감당할
-             * 수 있는 실패가 아니다. 계약과 안전망을 둘 다 둔다.
-             */
-            withPlainLanguage(result, symbol as string, locale).catch(
-                (error: unknown) => {
-                    console.error(
-                        '[withPlainLanguage] unexpected throw',
-                        error
-                    );
-                    return result as WithPlain<T>;
-                }
-            ),
-        ]);
+    return gated.then(async result => {
+        /**
+         * **호출부에도 안전망을 둔다.** `rewriteToPlainLanguage`가 "절대
+         * reject하지 않는다"를 계약으로 지키지만, 그 계약이 한 번 깨지면
+         * 성공한 분석이 통째로 에러 프레임이 된다 — 장식 레이어가 감당할
+         * 수 있는 실패가 아니다. 계약과 안전망을 둘 다 둔다.
+         */
+        const withPlain = await withPlainLanguage(
+            result,
+            symbol as string,
+            locale
+        ).catch((error: unknown) => {
+            console.error('[withPlainLanguage] unexpected throw', error);
+            return result as WithPlain<T>;
+        });
         return {
-            ...(localized as object),
+            ...(result as object),
             plain: (withPlain as { plain?: string | null }).plain ?? null,
         } as T;
     });
@@ -1067,18 +980,17 @@ export async function POST(request: Request): Promise<Response> {
                         {
                             ...options,
                             /*
-                             * **`locale`을 넘기지 않는다.** core 0.53.0부터
-                             * 받지만, 이 경로에는 이미 사후 번역 계층
-                             * (`withLocalizedProse` → `translateAnalysisForLocale`)이
-                             * 있다. 둘을 같이 켜면 core가 영어로 쓴 산출물이
-                             * "한국어 문장을 번역하라" 프롬프트로 들어가 결과가
-                             * 망가진다(그 함수 JSDoc의 에러 봉투 사례와 같은 형태).
+                             * **`locale`을 core에 그대로 넘긴다.** 나머지 일곱
+                             * 축이 이미 이렇게 배선돼 있다 — core가 대상 언어로
+                             * 직접 쓰고(`outputLanguageContract`), 로케일은 core
+                             * 캐시 키에도 접힌다.
                              *
-                             * 네이티브 생성으로 갈아타는 편이 LLM 왕복 하나를
-                             * 줄이고 60초 데드라인 위험도 없앤다 — 다만 그건 이
-                             * 슬라이스를 걷어내는 별도 변경이라 여기서 하지 않는다.
-                             * 나머지 일곱 축은 사후 번역을 타지 않아 그대로 배선했다.
+                             * 이 축만 사후 번역에 기대고 있었는데, 그 계층은 이
+                             * 커밋에서 걷어냈다. 남겨 두면 core가 영어로 쓴
+                             * 산출물이 "한국어를 번역하라" 프롬프트로 들어가
+                             * 망가진다.
                              */
+                            locale: requestLocale,
                             signal: deadlineSignal,
                         }
                     ).then(result => ({
