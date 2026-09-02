@@ -130,6 +130,38 @@ export const usageLogs = pgTable(
     ]
 );
 
+/**
+ * 방문자 1명당 하루 1행. DAU/MAU 집계용.
+ *
+ * 복합 PK 하나가 세 가지를 동시에 한다: 중복 방지(`ON CONFLICT DO NOTHING`의
+ * 대상), DAU 조회 인덱스(`WHERE date = $1`이 PK 접두사), MAU range 스캔.
+ * 별도 인덱스도 `id` 컬럼도 두지 않는다.
+ *
+ * `usage_logs`를 재사용하지 않는 이유가 두 가지다. 그쪽은 `action_type`·
+ * `model_used`가 NOT NULL인 분석 요청 로그라 방문 행을 넣으려면 의미 없는 값을
+ * 채워야 하고, `ip_hash`가 UTC 날짜를 salt로 섞어 매일 달라지므로 날짜를
+ * 가로지르는 MAU 집계가 원리적으로 불가능하다.
+ */
+export const visitorDays = pgTable(
+    'visitor_days',
+    {
+        visitorHash: text('visitor_hash').notNull(),
+        /**
+         * KST 기준 `YYYY-MM-DD`. UTC로 하면 자정이 KST 09:00이라 한국 사용자의
+         * 오전이 이틀로 쪼개진다.
+         */
+        date: date('date').notNull(),
+        /**
+         * 그날 그 방문자의 첫 접속 시각. 집계에는 쓰이지 않는다 — 시간대별
+         * 트래픽 분포를 나중에 보고 싶을 때 이 컬럼이 없으면 소급이 불가능하다.
+         */
+        firstSeenAt: timestamp('first_seen_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [primaryKey({ columns: [table.date, table.visitorHash] })]
+);
+
 /** Linked OAuth accounts — one row per (user, provider) pair. */
 export const oauthAccounts = pgTable(
     'oauth_accounts',

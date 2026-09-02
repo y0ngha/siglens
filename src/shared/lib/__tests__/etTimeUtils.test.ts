@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
     etDateTimeToKst,
     getEtOffset,
+    kstDateKey,
+    kstDateKeyDaysBefore,
     nthSundayDay,
     toIsoDateTime,
 } from '../etTimeUtils';
@@ -219,6 +221,31 @@ describe('etDateTimeToKst', () => {
     });
 });
 
+// ------------------------------------------------------------------
+// kstDateKey
+// ------------------------------------------------------------------
+describe('kstDateKey', () => {
+    it('KST 자정 직전은 그 전날로 남는다', () => {
+        // 2026-09-01T14:59:59Z = KST 2026-09-01 23:59:59
+        expect(kstDateKey(new Date('2026-09-01T14:59:59.000Z'))).toBe(
+            '2026-09-01'
+        );
+    });
+
+    it('KST 자정을 넘기면 다음 날이 된다', () => {
+        // 2026-09-01T15:00:00Z = KST 2026-09-02 00:00:00
+        expect(kstDateKey(new Date('2026-09-01T15:00:00.000Z'))).toBe(
+            '2026-09-02'
+        );
+    });
+
+    it('월·일을 2자리로 0 채움한다', () => {
+        expect(kstDateKey(new Date('2026-01-05T03:00:00.000Z'))).toBe(
+            '2026-01-05'
+        );
+    });
+});
+
 /**
  * 로케일 + 오전/오후 회귀.
  *
@@ -247,4 +274,31 @@ describe('etDateTimeToKst — 로케일과 hour12', () => {
             expect(label).toMatch(/\d/);
         }
     );
+});
+
+// ------------------------------------------------------------------
+// kstDateKeyDaysBefore
+// ------------------------------------------------------------------
+describe('kstDateKeyDaysBefore', () => {
+    it('보존 기간 400일을 뺀다', () => {
+        // /api/presence의 정리 기준일. 이 값이 바뀌면 방침 본문도 바꿔야 한다.
+        expect(kstDateKeyDaysBefore('2026-09-02', 400)).toBe('2025-07-29');
+    });
+
+    it('30일 창을 뺀다', () => {
+        expect(kstDateKeyDaysBefore('2026-09-02', 30)).toBe('2026-08-03');
+    });
+
+    it('월 경계를 넘는다', () => {
+        expect(kstDateKeyDaysBefore('2026-03-01', 1)).toBe('2026-02-28');
+    });
+
+    it('윤년 2월을 통과한다', () => {
+        // 2028은 윤년이라 3월 1일의 하루 전은 2월 29일이다.
+        expect(kstDateKeyDaysBefore('2028-03-01', 1)).toBe('2028-02-29');
+    });
+
+    it('0일이면 그대로다', () => {
+        expect(kstDateKeyDaysBefore('2026-09-02', 0)).toBe('2026-09-02');
+    });
 });

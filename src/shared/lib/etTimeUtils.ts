@@ -1,4 +1,5 @@
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { MS_PER_DAY } from '@/shared/config/time';
 // EDT: 3월 두 번째 일요일 02:00 ~ 11월 첫 번째 일요일 02:00 → UTC-4 (IANA America/New_York)
 // EST: 그 외 구간 → UTC-5
 // 월은 JS Date 0-indexed 기준 (0 = January)
@@ -21,6 +22,44 @@ const KST_DATE_PARTS_FORMATTER = new Intl.DateTimeFormat('en-US', {
     month: '2-digit',
     day: '2-digit',
 });
+
+/**
+ * KST 기준 `YYYY-MM-DD`.
+ *
+ * `en-CA`로 바로 `format()`하면 ICU 버전에 따라 구분자가 `/`가 되거나 순서가
+ * 바뀌어 `split('-')`이 NaN을 내놓는다. `formatToParts`로 조각을 뽑아 조립한다.
+ *
+ * 방문자 집계(`/api/presence`)와 그 클라이언트 비콘이 이 함수를 공유한다 —
+ * 둘이 다른 날짜 경계를 쓰면 특정 날의 방문자가 통째로 누락된다.
+ */
+export function kstDateKey(date: Date): string {
+    const parts = KST_DATE_PARTS_FORMATTER.formatToParts(date);
+    const year = parts.find(p => p.type === 'year')?.value ?? '';
+    const month = parts.find(p => p.type === 'month')?.value ?? '';
+    const day = parts.find(p => p.type === 'day')?.value ?? '';
+    return `${year}-${month}-${day}`;
+}
+
+/** `YYYY-MM-DD`의 길이. 문자열을 자를 때 쓴다. */
+const ISO_DATE_LENGTH = 10;
+
+/**
+ * KST 날짜 키에서 `days`일을 뺀 KST 날짜 키.
+ *
+ * 달력 문자열 산술이라 UTC로 파싱한다 — 키에 시각이 없으므로 어느 타임존으로
+ * 읽든 같은 날 수만큼 물러난다. 로컬 타임존으로 파싱하면 DST가 있는 지역에서
+ * 하루가 밀린다.
+ *
+ * `/api/presence`의 보존 기간 정리와 `yarn metrics`의 조회 창이 이 함수를
+ * 공유한다. 둘이 각자 구현하면 한쪽만 고쳐질 수 있고, 그 어긋남은 방침에
+ * 고지한 보존 기간과 실제 삭제 기준이 달라지는 형태로 나타난다.
+ */
+export function kstDateKeyDaysBefore(dateKey: string, days: number): string {
+    const base = new Date(`${dateKey}T00:00:00Z`);
+    return new Date(base.getTime() - days * MS_PER_DAY)
+        .toISOString()
+        .slice(0, ISO_DATE_LENGTH);
+}
 
 /**
  * KST 시각 레이블 포맷터 — **로케일별**로 캐시한다.
@@ -161,19 +200,9 @@ export function etDateTimeToKst(
     const iso = toIsoDateTime(etDate);
     const d = new Date(iso);
 
-    /**
-     * 'YYYY-MM-DD' 형식으로 KST 날짜 키 생성.
-     * `formatToParts`로 년/월/일을 개별 추출해 직접 조합한다.
-     * `en-CA` 로케일을 직접 format()하면 ICU 버전에 따라 구분자가 '/'로 오거나
-     * 순서가 바뀌어 `split('-')`이 NaN을 반환할 수 있다.
-     */
-    const parts = KST_DATE_PARTS_FORMATTER.formatToParts(d);
-    const year = parts.find(p => p.type === 'year')?.value ?? '';
-    const month = parts.find(p => p.type === 'month')?.value ?? '';
-    const day = parts.find(p => p.type === 'day')?.value ?? '';
-    const kstDateKey = `${year}-${month}-${day}`;
+    const kstDateKeyValue = kstDateKey(d);
 
     const kstTimeLabel = kstTimeLabelFormatter(locale, hour12).format(d);
 
-    return { iso, kstDateKey, kstTimeLabel };
+    return { iso, kstDateKey: kstDateKeyValue, kstTimeLabel };
 }

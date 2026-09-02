@@ -15,6 +15,7 @@ import { AuthSessionHeaderClient } from '@/app/_components/AuthSessionHeaderClie
 import { Footer } from '@/widgets/layout/Footer';
 import { SiteJsonLd } from '@/widgets/layout/SiteJsonLd';
 import { PwaBanner } from '@/features/pwa-install';
+import { VisitorPing } from '@/features/visitor-ping';
 import { NoticePopupLoader } from '@/widgets/notice-popup';
 import { ReactQueryProvider } from '@/app/providers';
 import { SearchOverlayProvider } from '@/features/ticker-search';
@@ -242,6 +243,10 @@ export default async function RootLayout({
                             문구를 쓰므로 `NextIntlClientProvider` **안**이어야
                             한다 — 루트에 두면 로케일 컨텍스트 밖이 된다. */}
                             <SearchOverlayProvider>
+                                {/* 방문자 집계 비콘. 렌더 결과가 없고 하루 한 번만 요청하므로 어느
+                                    위치에 두어도 무방하지만, 다른 UI보다 먼저 보내 이탈이 빠른
+                                    방문자도 잡는다. */}
+                                <VisitorPing />
                                 <PwaBanner />
                                 <NoticePopupLoader />
                                 {/* 인증 헤더는 클라이언트에서 렌더된다(cookies()를 static render
