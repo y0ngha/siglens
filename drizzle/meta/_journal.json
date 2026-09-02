@@ -225,6 +225,13 @@
       "when": 1788283301093,
       "tag": "0031_redundant_tattoo",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1788322523819,
+      "tag": "0032_medical_iron_patriot",
+      "breakpoints": true
     }
   ]
 }
