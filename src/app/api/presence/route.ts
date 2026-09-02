@@ -15,7 +15,7 @@ import { buildVisitorHash, DrizzleVisitorRepository } from '@/entities/visitor';
 import { getClientIp } from '@/shared/api/getClientIp';
 import { isBot } from '@/shared/api/isBot';
 import { getDatabaseClient } from '@/shared/db/client';
-import { kstDateKey } from '@/shared/lib/etTimeUtils';
+import { kstDateKey, kstDateKeyDaysBefore } from '@/shared/lib/etTimeUtils';
 
 const { HTTP_STATUS_NO_CONTENT, HTTP_STATUS_INTERNAL_SERVER_ERROR } = constants;
 
@@ -29,9 +29,6 @@ export const dynamic = 'force-dynamic';
  */
 const RETENTION_DAYS = 400;
 
-const MILLISECONDS_PER_DAY = 86_400_000;
-const ISO_DATE_LENGTH = 10;
-
 /**
  * 이 인스턴스가 마지막으로 정리를 돌린 KST 날짜.
  *
@@ -43,14 +40,6 @@ let lastPrunedDate: string | null = null;
 
 function noContent(): Response {
     return new Response(null, { status: HTTP_STATUS_NO_CONTENT });
-}
-
-/** `todayKst`로부터 `RETENTION_DAYS`일 전 날짜. 달력 문자열 산술이라 UTC로 파싱한다. */
-function retentionCutoff(todayKst: string): string {
-    const base = new Date(`${todayKst}T00:00:00Z`);
-    return new Date(base.getTime() - RETENTION_DAYS * MILLISECONDS_PER_DAY)
-        .toISOString()
-        .slice(0, ISO_DATE_LENGTH);
 }
 
 export async function POST(): Promise<Response> {
@@ -105,7 +94,9 @@ export async function POST(): Promise<Response> {
         lastPrunedDate = today;
         after(async () => {
             try {
-                await repo.pruneOlderThan(retentionCutoff(today));
+                await repo.pruneOlderThan(
+                    kstDateKeyDaysBefore(today, RETENTION_DAYS)
+                );
             } catch (error) {
                 // 다음 날 다시 시도된다.
                 console.error('[visitor-metrics] prune failed:', error);

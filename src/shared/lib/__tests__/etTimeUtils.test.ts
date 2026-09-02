@@ -4,6 +4,7 @@ import {
     etDateTimeToKst,
     getEtOffset,
     kstDateKey,
+    kstDateKeyDaysBefore,
     nthSundayDay,
     toIsoDateTime,
 } from '../etTimeUtils';
@@ -273,4 +274,31 @@ describe('etDateTimeToKst — 로케일과 hour12', () => {
             expect(label).toMatch(/\d/);
         }
     );
+});
+
+// ------------------------------------------------------------------
+// kstDateKeyDaysBefore
+// ------------------------------------------------------------------
+describe('kstDateKeyDaysBefore', () => {
+    it('보존 기간 400일을 뺀다', () => {
+        // /api/presence의 정리 기준일. 이 값이 바뀌면 방침 본문도 바꿔야 한다.
+        expect(kstDateKeyDaysBefore('2026-09-02', 400)).toBe('2025-07-29');
+    });
+
+    it('30일 창을 뺀다', () => {
+        expect(kstDateKeyDaysBefore('2026-09-02', 30)).toBe('2026-08-03');
+    });
+
+    it('월 경계를 넘는다', () => {
+        expect(kstDateKeyDaysBefore('2026-03-01', 1)).toBe('2026-02-28');
+    });
+
+    it('윤년 2월을 통과한다', () => {
+        // 2028은 윤년이라 3월 1일의 하루 전은 2월 29일이다.
+        expect(kstDateKeyDaysBefore('2028-03-01', 1)).toBe('2028-02-29');
+    });
+
+    it('0일이면 그대로다', () => {
+        expect(kstDateKeyDaysBefore('2026-09-02', 0)).toBe('2026-09-02');
+    });
 });

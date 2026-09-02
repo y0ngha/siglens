@@ -7,7 +7,7 @@
  */
 import { DrizzleVisitorRepository } from '@/entities/visitor';
 import { getDatabaseClient } from '@/shared/db/client';
-import { kstDateKey } from '@/shared/lib/etTimeUtils';
+import { kstDateKey, kstDateKeyDaysBefore } from '@/shared/lib/etTimeUtils';
 
 /** 표에 찍을 일수. */
 const DAU_WINDOW_DAYS = 30;
@@ -15,25 +15,14 @@ const DAU_WINDOW_DAYS = 30;
 /** MAU는 롤링 30일이다. 달력 월 기준은 월초에 1일치로 떨어져 추세를 못 읽는다. */
 const MAU_WINDOW_DAYS = 30;
 
-const MILLISECONDS_PER_DAY = 86_400_000;
-const ISO_DATE_LENGTH = 10;
-
-/** 달력 문자열 산술이라 UTC로 파싱한다. */
-function daysBefore(todayKst: string, days: number): string {
-    const base = new Date(`${todayKst}T00:00:00Z`);
-    return new Date(base.getTime() - days * MILLISECONDS_PER_DAY)
-        .toISOString()
-        .slice(0, ISO_DATE_LENGTH);
-}
-
 async function main(): Promise<void> {
     const today = kstDateKey(new Date());
     const { db } = getDatabaseClient();
     const repo = new DrizzleVisitorRepository(db);
 
     const [daily, mau, total] = await Promise.all([
-        repo.dailyActiveUsers(daysBefore(today, DAU_WINDOW_DAYS)),
-        repo.monthlyActiveUsers(daysBefore(today, MAU_WINDOW_DAYS)),
+        repo.dailyActiveUsers(kstDateKeyDaysBefore(today, DAU_WINDOW_DAYS)),
+        repo.monthlyActiveUsers(kstDateKeyDaysBefore(today, MAU_WINDOW_DAYS)),
         repo.totalRows(),
     ]);
 

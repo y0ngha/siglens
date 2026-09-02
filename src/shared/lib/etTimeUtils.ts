@@ -1,4 +1,5 @@
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { MS_PER_DAY } from '@/shared/config/time';
 // EDT: 3월 두 번째 일요일 02:00 ~ 11월 첫 번째 일요일 02:00 → UTC-4 (IANA America/New_York)
 // EST: 그 외 구간 → UTC-5
 // 월은 JS Date 0-indexed 기준 (0 = January)
@@ -37,6 +38,27 @@ export function kstDateKey(date: Date): string {
     const month = parts.find(p => p.type === 'month')?.value ?? '';
     const day = parts.find(p => p.type === 'day')?.value ?? '';
     return `${year}-${month}-${day}`;
+}
+
+/** `YYYY-MM-DD`의 길이. 문자열을 자를 때 쓴다. */
+const ISO_DATE_LENGTH = 10;
+
+/**
+ * KST 날짜 키에서 `days`일을 뺀 KST 날짜 키.
+ *
+ * 달력 문자열 산술이라 UTC로 파싱한다 — 키에 시각이 없으므로 어느 타임존으로
+ * 읽든 같은 날 수만큼 물러난다. 로컬 타임존으로 파싱하면 DST가 있는 지역에서
+ * 하루가 밀린다.
+ *
+ * `/api/presence`의 보존 기간 정리와 `yarn metrics`의 조회 창이 이 함수를
+ * 공유한다. 둘이 각자 구현하면 한쪽만 고쳐질 수 있고, 그 어긋남은 방침에
+ * 고지한 보존 기간과 실제 삭제 기준이 달라지는 형태로 나타난다.
+ */
+export function kstDateKeyDaysBefore(dateKey: string, days: number): string {
+    const base = new Date(`${dateKey}T00:00:00Z`);
+    return new Date(base.getTime() - days * MS_PER_DAY)
+        .toISOString()
+        .slice(0, ISO_DATE_LENGTH);
 }
 
 /**
