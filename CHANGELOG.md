@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.68.0](https://github.com/y0ngha/siglens/compare/v0.67.0...v0.68.0) (2026-09-02)
+
+
+### Features
+
+* **seo:** 차트·종합 탭 meta description을 평이화 산문으로 바꾼다 ([eafa169](https://github.com/y0ngha/siglens/commit/eafa169170a65fc0bd9e125e516540c9b0cbfe1a))
+
 # [0.67.0](https://github.com/y0ngha/siglens/compare/v0.66.0...v0.67.0) (2026-09-01)
 
 
