@@ -791,3 +791,8 @@
 - Violation: `withReaderViews`가 `work`에 체인을 둘 걸어(`withLocalizedProse(work)` + `work.then(...)`), 분석이 실패하면 소비되지 않는 쪽이 **미처리 rejection**으로 샜다(라우트 스위트 Errors 6 → 8). 이미 resolve된 값으로 번역 체인을 시작하도록 접자 8 → 0이 됐다 — master에 있던 6건까지 함께 사라졌다.
   - Rule: 같은 promise에 소비자를 둘 이상 만들 때는 **실패 경로에서 전부 소비되는지**를 본다. 병렬이 필요하면 `work.then` 안에서 갈라 낸다
 - 게이트: typecheck 0, oxlint 0 warnings(직접 카운트), oxfmt clean, i18n verify/lint 통과, `vitest run src` 1,173 파일 / 11,448 통과 / unhandled 0, pre-push 6단계 전부 통과.
+
+## [feat/visitor-metrics Round 1 | visitor presence tracking | 2026-09-02]
+- Violation: `src/app/api/presence/route.ts` handler declared an invariant in comments — "aggregation failure must not break user screen" — and wrapped `repo.recordVisit()` in try/catch. But `getDatabaseClient()`, which throws when `DATABASE_URL` is unset, sat OUTSIDE that try block. One failure mode on the same code path bypassed the stated containment, returning bare framework 500 instead of the deliberate log-and-204.
+  - Rule: (new) A try/catch that guards one call on a path does not guard the path. When code states a containment invariant, every call on that path that can throw must be inside it — including setup and client-construction calls, which are easy to overlook because they look infallible.
+  - Context: Moved `getDatabaseClient()` and repository construction inside the try block, returned early on failure so a dead DB does not consume the module-scope `lastPrunedDate` day marker (which would have suppressed retention pruning for the rest of that day). Regression test added and verified to fail without the fix.

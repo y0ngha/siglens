@@ -30,8 +30,10 @@ vi.mock('next/server', async importOriginal => {
     };
 });
 
+const getDatabaseClient = vi.fn(() => ({ db: {} }));
+
 vi.mock('@/shared/db/client', () => ({
-    getDatabaseClient: () => ({ db: {} }),
+    getDatabaseClient: () => getDatabaseClient(),
 }));
 
 vi.mock('@/entities/visitor', () => ({
@@ -55,6 +57,7 @@ async function importRoute() {
 describe('POST /api/presence', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        getDatabaseClient.mockReturnValue({ db: {} });
         vi.stubEnv('NODE_ENV', 'production');
         vi.stubEnv('VISITOR_HASH_PEPPER', 'test-pepper');
         requestHeaders = new Headers({
@@ -145,5 +148,24 @@ describe('POST /api/presence', () => {
         // KST 2026-09-02 기준 400일 전 = 2025-07-29
         expect(pruneOlderThan).toHaveBeenCalledWith('2025-07-29');
         vi.useRealTimers();
+    });
+
+    it('DB 클라이언트 생성이 던져도 204를 주고 정리를 소진하지 않는다', async () => {
+        getDatabaseClient.mockImplementationOnce(() => {
+            throw new Error('DATABASE_URL is not set');
+        });
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        const { POST } = await importRoute();
+        // 첫 요청은 DB 클라이언트 단계에서 실패한다.
+        expect((await POST()).status).toBe(HTTP_STATUS_NO_CONTENT);
+        expect(spy).toHaveBeenCalled();
+        expect(pruneOlderThan).not.toHaveBeenCalled();
+
+        // 실패가 `lastPrunedDate`를 소진하지 않았으므로 다음 성공 요청이
+        // 그날의 정리를 여전히 돌린다.
+        expect((await POST()).status).toBe(HTTP_STATUS_NO_CONTENT);
+        expect(pruneOlderThan).toHaveBeenCalledTimes(1);
+        spy.mockRestore();
     });
 });

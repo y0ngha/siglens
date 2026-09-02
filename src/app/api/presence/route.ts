@@ -79,14 +79,26 @@ export async function POST(): Promise<Response> {
         headerList.get('user-agent') ?? ''
     );
 
-    const { db } = getDatabaseClient();
-    const repo = new DrizzleVisitorRepository(db);
-
+    /**
+     * DB 클라이언트 생성까지 try 안에 둔다. `getDatabaseClient()`는
+     * `DATABASE_URL`이 없으면 던지는데, 그게 밖에 있으면 이 핸들러가 통째로
+     * reject해 프레임워크 기본 500이 나간다 — 아래 catch가 지키는 "집계 실패는
+     * 화면을 깨뜨리지 않는다"는 불변식이 거기서만 뚫린다.
+     */
+    let repo: DrizzleVisitorRepository;
     try {
+        const { db } = getDatabaseClient();
+        repo = new DrizzleVisitorRepository(db);
         await repo.recordVisit(visitorHash, today);
     } catch (error) {
         // 집계 실패가 사용자 화면을 깨뜨리면 안 된다.
         console.error('[visitor-metrics] recordVisit failed:', error);
+        /**
+         * 정리도 건너뛴다. DB가 죽어 있으면 어차피 실패할 뿐 아니라,
+         * `lastPrunedDate`를 오늘로 소진해 버리면 그날 남은 요청이 전부
+         * 정리를 건너뛴다 — 다음 성공 요청에 기회를 남긴다.
+         */
+        return noContent();
     }
 
     if (lastPrunedDate !== today) {
