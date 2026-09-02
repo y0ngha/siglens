@@ -21,7 +21,7 @@
         "lint:style-fix": "stylelint --fix '**/*.{css,scss}'",
         "db:generate": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- drizzle-kit generate",
         "db:migrate": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/migrate.ts",
-        "db:seed:terms": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/seedTerms.ts",
+        "db:seed:terms": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/seedTerms.ts",
         "db:migrate:tickers": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seed-korean-tickers.ts",
         "db:seed:crypto": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seed-crypto-assets.ts",
         "db:seed:crypto-korean": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seed-crypto-korean-names.ts",
