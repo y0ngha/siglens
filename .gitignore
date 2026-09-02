@@ -108,6 +108,9 @@ next-env.d.ts
 # 실행한다. 추적하지 않으면 fresh checkout·CI에서 스크립트가 통째로 사라진다.
 !/scripts/i18n/
 !/scripts/i18n/**
+# MAU/DAU 조회 스크립트 — `yarn metrics`가 이 파일을 실행한다. 추적하지 않으면
+# fresh checkout에서 스크립트가 사라진다.
+!/scripts/metrics.ts
 
 # Local Lighthouse audit outputs (psi_*.json, desktop.json, mobile.json, headers.txt)
 /lighthouse/
