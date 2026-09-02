@@ -134,6 +134,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
               'congress',
               snap.content,
               displayName,
+              null,
               locale
           )
         : null;

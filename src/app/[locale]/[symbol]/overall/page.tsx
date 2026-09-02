@@ -289,6 +289,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
               'overall',
               snap.content,
               displayName,
+              snap.plain,
               locale
           )
         : null;

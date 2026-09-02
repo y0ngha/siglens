@@ -695,7 +695,7 @@ describe('buildSnapshotMetaDescription', () => {
         (tab, field, prose) => {
             const content = { [field]: prose };
             expect(
-                buildSnapshotMetaDescription(tab, content, 'AAPL', 'ko')
+                buildSnapshotMetaDescription(tab, content, 'AAPL', null, 'ko')
             ).toBe(clampSeoDescription(`AAPL — ${prose}`));
         }
     );
@@ -706,7 +706,13 @@ describe('buildSnapshotMetaDescription', () => {
                 '첫 번째 문단입니다.\n두 번째 문단입니다.\n\n세 번째 문단입니다.',
         };
         expect(
-            buildSnapshotMetaDescription('technical', content, 'AAPL', 'ko')
+            buildSnapshotMetaDescription(
+                'technical',
+                content,
+                'AAPL',
+                null,
+                'ko'
+            )
         ).toBe(
             'AAPL — 첫 번째 문단입니다. 두 번째 문단입니다. 세 번째 문단입니다.'
         );
@@ -722,6 +728,7 @@ describe('buildSnapshotMetaDescription', () => {
             'technical',
             content,
             '애플, Apple Inc. (AAPL)',
+            null,
             'ko'
         );
         expect(result?.startsWith('애플, Apple Inc. (AAPL) — ')).toBe(true);
@@ -736,6 +743,7 @@ describe('buildSnapshotMetaDescription', () => {
             'technical',
             content,
             'AAPL',
+            null,
             'ko'
         );
 
@@ -758,6 +766,7 @@ describe('buildSnapshotMetaDescription', () => {
             'technical',
             content,
             'AAPL',
+            null,
             'ko'
         );
         expect(result).not.toBeNull();
@@ -773,6 +782,7 @@ describe('buildSnapshotMetaDescription', () => {
                 'unknown-tab',
                 { summary: 'x' },
                 'AAPL',
+                null,
                 'ko'
             )
         ).toBeNull();
@@ -780,16 +790,28 @@ describe('buildSnapshotMetaDescription', () => {
 
     it('returns null when content is not an object', () => {
         expect(
-            buildSnapshotMetaDescription('technical', null, 'AAPL', 'ko')
+            buildSnapshotMetaDescription('technical', null, 'AAPL', null, 'ko')
         ).toBeNull();
         expect(
-            buildSnapshotMetaDescription('technical', undefined, 'AAPL', 'ko')
+            buildSnapshotMetaDescription(
+                'technical',
+                undefined,
+                'AAPL',
+                null,
+                'ko'
+            )
         ).toBeNull();
         expect(
-            buildSnapshotMetaDescription('technical', 'a string', 'AAPL', 'ko')
+            buildSnapshotMetaDescription(
+                'technical',
+                'a string',
+                'AAPL',
+                null,
+                'ko'
+            )
         ).toBeNull();
         expect(
-            buildSnapshotMetaDescription('technical', 42, 'AAPL', 'ko')
+            buildSnapshotMetaDescription('technical', 42, 'AAPL', null, 'ko')
         ).toBeNull();
     });
 
@@ -799,6 +821,7 @@ describe('buildSnapshotMetaDescription', () => {
                 'technical',
                 { trend: 'bullish' },
                 'AAPL',
+                null,
                 'ko'
             )
         ).toBeNull();
@@ -810,6 +833,7 @@ describe('buildSnapshotMetaDescription', () => {
                 'technical',
                 { summary: 123 },
                 'AAPL',
+                null,
                 'ko'
             )
         ).toBeNull();
@@ -818,6 +842,7 @@ describe('buildSnapshotMetaDescription', () => {
                 'overall',
                 { headlineKo: null },
                 'AAPL',
+                null,
                 'ko'
             )
         ).toBeNull();
@@ -829,6 +854,7 @@ describe('buildSnapshotMetaDescription', () => {
                 'technical',
                 { summary: '' },
                 'AAPL',
+                null,
                 'ko'
             )
         ).toBeNull();
@@ -837,6 +863,7 @@ describe('buildSnapshotMetaDescription', () => {
                 'news',
                 { currentDriverKo: '   \n  ' },
                 'AAPL',
+                null,
                 'ko'
             )
         ).toBeNull();
@@ -1084,6 +1111,7 @@ describe('비-기본 로케일 SEO — 감사 실측 회귀', () => {
                 'technical',
                 content,
                 'Apple Inc. (AAPL)',
+                null,
                 'ko'
             )
         ).toContain('애플');
@@ -1093,6 +1121,7 @@ describe('비-기본 로케일 SEO — 감사 실측 회귀', () => {
                     'technical',
                     content,
                     'Apple Inc. (AAPL)',
+                    null,
                     locale
                 )
             ).toBeNull();
@@ -1259,5 +1288,86 @@ describe('composeSymbolTitle — 긴 영문 법인명', () => {
                 core: 'Stock Forecast',
             })
         ).toContain('Apple Inc.');
+    });
+});
+
+/**
+ * SERP에 노출되는 두 줄이 여기서 나온다. `chart`·`overall`만 평이화를 넘긴다 —
+ * 나머지 다섯 탭의 원문 요약은 이미 전문 용어가 없고 문장도 온전하다(프로덕션 실측).
+ */
+describe('buildSnapshotMetaDescription — 평이화 우선', () => {
+    const subject = '애플, Apple Inc. (AAPL)';
+    const content = { summary: '기술적 이중천장 패턴이 확인되고 있습니다.' };
+
+    it('평이화가 예산에 맞으면 그것을 쓴다', () => {
+        const result = buildSnapshotMetaDescription(
+            'technical',
+            content,
+            subject,
+            '애플 주가는 현재 325.13달러입니다. 최근에는 오르내림이 반복됩니다.',
+            'ko'
+        );
+
+        expect(result).toContain('325.13달러');
+        expect(result).not.toContain('이중천장');
+    });
+
+    /**
+     * 이 함수가 존재하는 이유. 평이화에는 헤드라인 전용 필드가 없어 본문 첫
+     * 문장부터 쓰게 되는데, 클램프하면 `…`로 잘린다. 문장 단위로만 담으면
+     * 잘림이 구조적으로 불가능하다 — 실측: technical 60건 중 잘림 14 → 0.
+     */
+    it('평이화를 쓸 때는 절대 잘리지 않는다', () => {
+        const long = '가'.repeat(200) + '입니다.';
+        const result = buildSnapshotMetaDescription(
+            'technical',
+            content,
+            subject,
+            `애플 주가는 오르고 있습니다. ${long}`,
+            'ko'
+        );
+
+        expect(result).not.toContain('…');
+        expect(result).toContain('오르고 있습니다');
+        expect([...(result ?? '')].length).toBeLessThanOrEqual(120);
+    });
+
+    /**
+     * 첫 문장조차 예산을 넘으면 평이화를 포기하고 원문으로 간다 — 잘린 평이화를
+     * 내보내느니 온전한 원문이 낫다.
+     */
+    it('한 문장도 예산에 안 들어가면 원문으로 떨어진다', () => {
+        const result = buildSnapshotMetaDescription(
+            'technical',
+            content,
+            subject,
+            '가'.repeat(300) + '입니다.',
+            'ko'
+        );
+
+        expect(result).toContain('이중천장');
+    });
+
+    it.each([
+        ['null', null],
+        ['undefined', undefined],
+        ['빈 문자열', ''],
+        ['공백만', '   '],
+    ])('평이화가 %s이면 원문을 쓴다', (_label, plain) => {
+        expect(
+            buildSnapshotMetaDescription(
+                'technical',
+                content,
+                subject,
+                plain,
+                'ko'
+            )
+        ).toContain('이중천장');
+    });
+
+    it('원문도 평이화도 없으면 null이다', () => {
+        expect(
+            buildSnapshotMetaDescription('technical', {}, subject, null, 'ko')
+        ).toBeNull();
     });
 });

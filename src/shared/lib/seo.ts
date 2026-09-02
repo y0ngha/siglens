@@ -535,6 +535,36 @@ function isDecimalPoint(codePoints: readonly string[], index: number): boolean {
  * is found in that window. Code-point based throughout, same as
  * `clampSeoDescription`, to avoid splitting a surrogate pair.
  */
+/**
+ * 예산 안에 들어가는 **온전한 문장들**만 이어 붙인다. 하나도 못 넣으면 `null`.
+ *
+ * `clampAtSentenceBoundary`와 다르다. 그쪽은 하드 컷 지점에서 뒤로 40자만
+ * 훑어 종결부호를 찾고, 못 찾으면 `…`로 자른다 — 첫 문장이 예산보다 길면
+ * 무조건 잘린다. 이 함수는 자르지 않고 **넣을 수 있는 만큼만** 넣는다.
+ *
+ * 평이화 산문에 이 규칙이 필요한 이유: 평이화는 헤드라인 전용 필드가 없어
+ * 본문 첫 문장부터 쓰게 되는데, 그게 원문의 `headlineKo`보다 길다(실측 40건,
+ * overall 평균 94자 → 104자). 그대로 클램프하면 잘림이 2/40에서 11/40으로
+ * 늘었다. 문장 단위로만 담으면 잘림이 구조적으로 0이 되고, 한 문장도 못 담는
+ * 경우에만 호출자가 원문으로 폴백한다.
+ */
+function takeWholeSentences(text: string, maxLength: number): string | null {
+    // 한국어 종결(`다.`)과 일반 종결부호를 모두 끊는다. CJK 종결부호는 공백을
+    // 두지 않으므로 공백을 요구하지 않는다.
+    const sentences = text
+        .split(/(?<=다\.)\s*|(?<=[.!?。])\s+/)
+        .map(part => part.trim())
+        .filter(part => part.length > 0);
+
+    let out = '';
+    for (const sentence of sentences) {
+        const next = out === '' ? sentence : `${out} ${sentence}`;
+        if ([...next].length > maxLength) break;
+        out = next;
+    }
+    return out === '' ? null : out;
+}
+
 function clampAtSentenceBoundary(text: string, maxLength: number): string {
     const codePoints = [...text];
     if (codePoints.length <= maxLength) return text;
@@ -585,6 +615,20 @@ export function buildSnapshotMetaDescription(
     tab: string,
     content: unknown,
     subject: string,
+    /**
+     * 프리웜이 함께 구워 둔 평이화 산문. 있으면 **이쪽을 먼저 시도한다.**
+     *
+     * SERP에 노출되는 두 줄이 여기서 나온다. 원문 필드는 전문 용어를 그대로
+     * 싣는다(실측: `"기술적 이중천장 패턴과 … 재무 스코어카드 부진이…"`).
+     * 평이화는 같은 내용을 일상어로 말하므로 클릭 판단에 쓸모가 있다.
+     *
+     * ⚠️ **문장 단위로만 담고, 한 문장도 안 들어가면 원문으로 떨어진다.**
+     * 평이화에는 헤드라인 전용 필드가 없어 본문 첫 문장부터 쓰게 되는데 그게
+     * 원문 `headlineKo`보다 길다(실측 40건, overall 평균 94자 → 104자). 그대로
+     * 클램프하면 잘림이 2/40 → 11/40으로 늘었다. `takeWholeSentences`가 그
+     * 교환을 없앤다 — 평이화를 쓰면 잘리지 않고, 잘릴 상황이면 아예 원문을 쓴다.
+     */
+    plain: string | null | undefined,
     // 기본값을 두지 않는다 — 두면 호출부에서 빠져도 컴파일이 통과하고,
     // 그 탭만 조용히 한국어 설명으로 되돌아간다(`buildDisplayName`과 같은 규약).
     locale: Locale
@@ -606,6 +650,15 @@ export function buildSnapshotMetaDescription(
     if (field === undefined) return null;
     if (typeof content !== 'object' || content === null) return null;
 
+    const prefix = `${subject} — `;
+    const budget = SEO_DESCRIPTION_MAX_LENGTH - [...prefix].length;
+
+    if (typeof plain === 'string' && plain.trim().length > 0) {
+        const whole = takeWholeSentences(collapseToSingleLine(plain), budget);
+        if (whole !== null) return `${prefix}${whole}`;
+        // 한 문장도 예산에 안 들어간다 — 아래 원문 경로로 떨어진다.
+    }
+
     const raw = (content as Record<string, unknown>)[field];
     if (typeof raw !== 'string') return null;
 
@@ -613,7 +666,7 @@ export function buildSnapshotMetaDescription(
     if (singleLine.length === 0) return null;
 
     return clampAtSentenceBoundary(
-        `${subject} — ${singleLine}`,
+        `${prefix}${singleLine}`,
         SEO_DESCRIPTION_MAX_LENGTH
     );
 }
