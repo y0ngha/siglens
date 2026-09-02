@@ -69,7 +69,8 @@ describe('DrizzleTermsRepository', () => {
 
     describe('upsertFromSeed', () => {
         it('calls insert with onConflictDoNothing', async () => {
-            const onConflict = vi.fn().mockResolvedValue(undefined);
+            const returning = vi.fn().mockResolvedValue([{ id: 'terms-1' }]);
+            const onConflict = vi.fn().mockReturnValue({ returning });
             const values = vi.fn().mockReturnValue({
                 onConflictDoNothing: onConflict,
             });
@@ -112,18 +113,19 @@ describe('DrizzleTermsRepository', () => {
                 new Error('Error connecting to database: fetch failed'),
                 { name: 'NeonDbError' }
             );
-            const onConflictDoNothing = vi
+            const returning = vi
                 .fn()
                 .mockRejectedValueOnce(neonTransient)
-                .mockResolvedValueOnce(undefined);
+                .mockResolvedValueOnce([{ id: 'terms-1' }]);
+            const onConflictDoNothing = vi.fn(() => ({ returning }));
             const values = vi.fn(() => ({ onConflictDoNothing }));
             const insert = vi.fn(() => ({ values }));
             const db = { insert } as unknown as SiglensDatabase;
             const repo = new DrizzleTermsRepository(db);
 
-            await expect(
-                repo.upsertFromSeed(seedInput)
-            ).resolves.toBeUndefined();
+            await expect(repo.upsertFromSeed(seedInput)).resolves.toBe(
+                'terms-1'
+            );
             expect(insert).toHaveBeenCalledTimes(2);
             expect(onConflictDoNothing).toHaveBeenCalledTimes(2);
         });
@@ -135,9 +137,8 @@ describe('DrizzleTermsRepository', () => {
                 ),
                 { name: 'NeonDbError' }
             );
-            const onConflictDoNothing = vi
-                .fn()
-                .mockRejectedValueOnce(constraintError);
+            const returning = vi.fn().mockRejectedValueOnce(constraintError);
+            const onConflictDoNothing = vi.fn(() => ({ returning }));
             const values = vi.fn(() => ({ onConflictDoNothing }));
             const insert = vi.fn(() => ({ values }));
             const db = { insert } as unknown as SiglensDatabase;
@@ -148,5 +149,77 @@ describe('DrizzleTermsRepository', () => {
             );
             expect(insert).toHaveBeenCalledTimes(1);
         });
+    });
+});
+
+describe('DrizzleTermsRepository.upsertFromSeed', () => {
+    it('새로 삽입하면 그 행의 id를 준다', async () => {
+        const returning = vi.fn().mockResolvedValue([{ id: 'terms-1' }]);
+        const onConflictDoNothing = vi.fn(() => ({ returning }));
+        const values = vi.fn(() => ({ onConflictDoNothing }));
+        const db = {
+            insert: vi.fn(() => ({ values })),
+        } as unknown as SiglensDatabase;
+
+        const id = await new DrizzleTermsRepository(db).upsertFromSeed({
+            kind: 'privacy',
+            version: 2,
+            effectiveDate: new Date('2026-09-09T00:00:00+09:00'),
+            body: '## 1. 총칙',
+        });
+
+        expect(id).toBe('terms-1');
+    });
+
+    it('이미 있는 버전이면 기존 행의 id를 조회해 준다', async () => {
+        // 충돌하면 returning이 빈 배열이다 — 번역을 붙이려면 id가 여전히 필요하다.
+        const returning = vi.fn().mockResolvedValue([]);
+        const onConflictDoNothing = vi.fn(() => ({ returning }));
+        const values = vi.fn(() => ({ onConflictDoNothing }));
+        const limit = vi.fn().mockResolvedValue([{ id: 'terms-existing' }]);
+        const where = vi.fn(() => ({ limit }));
+        const from = vi.fn(() => ({ where }));
+        const db = {
+            insert: vi.fn(() => ({ values })),
+            select: vi.fn(() => ({ from })),
+        } as unknown as SiglensDatabase;
+
+        const id = await new DrizzleTermsRepository(db).upsertFromSeed({
+            kind: 'privacy',
+            version: 1,
+            effectiveDate: new Date('2026-04-30T00:00:00+09:00'),
+            body: '## 1. 총칙',
+        });
+
+        expect(id).toBe('terms-existing');
+    });
+});
+
+describe('DrizzleTermsRepository.upsertTranslation', () => {
+    it('human 출처로 사이드카에 넣고 재실행하면 갱신한다', async () => {
+        const onConflictDoUpdate = vi.fn().mockResolvedValue(undefined);
+        const values = vi.fn(() => ({ onConflictDoUpdate }));
+        const db = {
+            insert: vi.fn(() => ({ values })),
+        } as unknown as SiglensDatabase;
+
+        await new DrizzleTermsRepository(db).upsertTranslation({
+            termsId: 'terms-1',
+            locale: 'en',
+            body: '## 1. General',
+        });
+
+        expect(values).toHaveBeenCalledWith(
+            expect.objectContaining({
+                entity: 'terms',
+                entityId: 'terms-1',
+                field: 'body',
+                locale: 'en',
+                value: '## 1. General',
+                // 약관 읽기 경로는 source='human' 행만 신뢰한다.
+                source: 'human',
+            })
+        );
+        expect(onConflictDoUpdate).toHaveBeenCalledTimes(1);
     });
 });

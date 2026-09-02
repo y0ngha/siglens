@@ -1,6 +1,6 @@
 import type { TermsKind } from '@/shared/db/constants';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
-import { terms } from '@/shared/db/schema';
+import { contentTranslations, terms } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 import { and, desc, eq, lte, sql } from 'drizzle-orm';
@@ -40,6 +40,14 @@ export interface TermsSeedInput {
     body: string;
 }
 
+/** Input used by the seed script to upsert a human-authored body translation. */
+export interface TermsTranslationInput {
+    /** `terms` 행의 uuid. `upsertFromSeed`가 돌려준 값이다. */
+    termsId: string;
+    locale: Locale;
+    body: string;
+}
+
 /** Repository for versioned legal terms documents. */
 export interface TermsRepository {
     /**
@@ -51,8 +59,20 @@ export interface TermsRepository {
      * 세운다.
      */
     findActive(kind: TermsKind, locale: Locale): Promise<TermsRecord | null>;
-    /** Insert a versioned row; no-op on (kind, version) conflict. */
-    upsertFromSeed(input: TermsSeedInput): Promise<void>;
+    /**
+     * Insert a versioned row; no-op on (kind, version) conflict.
+     *
+     * 충돌해도 **그 행의 id를 돌려준다** — 번역 사이드카가 `entityId`로 이 값을
+     * 쓰므로, 이미 적재된 버전에 번역만 덧붙이는 재실행이 성립해야 한다.
+     */
+    upsertFromSeed(input: TermsSeedInput): Promise<string>;
+    /**
+     * 인간이 쓴 본문 번역을 사이드카에 적재한다. 재실행하면 갱신된다.
+     *
+     * `source`를 항상 `human`으로 박는다 — 읽기 경로(`findActive`)가 그 값만
+     * 신뢰하므로, `ai`로 들어간 행은 화면에 나오지도 않으면서 테이블만 채운다.
+     */
+    upsertTranslation(input: TermsTranslationInput): Promise<void>;
 }
 
 /** Drizzle ORM-backed implementation. */
@@ -110,8 +130,8 @@ export class DrizzleTermsRepository implements TermsRepository {
         };
     }
 
-    async upsertFromSeed(input: TermsSeedInput): Promise<void> {
-        await withRetry(
+    async upsertFromSeed(input: TermsSeedInput): Promise<string> {
+        const inserted = await withRetry(
             () =>
                 this.db
                     .insert(terms)
@@ -123,6 +143,63 @@ export class DrizzleTermsRepository implements TermsRepository {
                     })
                     .onConflictDoNothing({
                         target: [terms.kind, terms.version],
+                    })
+                    .returning({ id: terms.id }),
+            NEON_TRANSIENT_RETRY
+        );
+        const insertedId = inserted[0]?.id;
+        if (insertedId !== undefined) return insertedId;
+
+        // 충돌 = 이미 적재된 버전. 발효된 본문은 조용히 바꾸지 않는다(그래서
+        // DoNothing이다). 하지만 번역을 붙이려면 그 행의 id가 여전히 필요하다.
+        const existing = await withRetry(
+            () =>
+                this.db
+                    .select({ id: terms.id })
+                    .from(terms)
+                    .where(
+                        and(
+                            eq(terms.kind, input.kind),
+                            eq(terms.version, input.version)
+                        )
+                    )
+                    .limit(1),
+            NEON_TRANSIENT_RETRY
+        );
+        const existingId = existing[0]?.id;
+        if (existingId === undefined) {
+            throw new Error(
+                `terms ${input.kind} v${input.version} not found after upsert`
+            );
+        }
+        return existingId;
+    }
+
+    async upsertTranslation(input: TermsTranslationInput): Promise<void> {
+        await withRetry(
+            () =>
+                this.db
+                    .insert(contentTranslations)
+                    .values({
+                        entity: TRANSLATABLE_ENTITY.terms,
+                        entityId: input.termsId,
+                        field: CONTENT_FIELD.terms.body,
+                        locale: input.locale,
+                        value: input.body,
+                        source: TRANSLATION_SOURCE.human,
+                    })
+                    .onConflictDoUpdate({
+                        target: [
+                            contentTranslations.entity,
+                            contentTranslations.entityId,
+                            contentTranslations.field,
+                            contentTranslations.locale,
+                        ],
+                        set: {
+                            value: input.body,
+                            source: TRANSLATION_SOURCE.human,
+                            updatedAt: sql`now()`,
+                        },
                     }),
             NEON_TRANSIENT_RETRY
         );
