@@ -37,9 +37,15 @@ export class DrizzleVisitorRepository implements VisitorRepository {
     }
 
     async pruneOlderThan(cutoffDate: string): Promise<void> {
-        await this.db
-            .delete(visitorDays)
-            .where(lt(visitorDays.date, cutoffDate));
+        // 형제 쓰기 메서드와 같은 재시도 정책을 쓴다. Neon 일시 오류로 정리가
+        // 계속 실패하면 방침에 고지한 보존 기간을 넘긴 행이 남는다.
+        await withRetry(
+            () =>
+                this.db
+                    .delete(visitorDays)
+                    .where(lt(visitorDays.date, cutoffDate)),
+            NEON_TRANSIENT_RETRY
+        );
     }
 
     async dailyActiveUsers(fromDate: string): Promise<DailyActiveUsers[]> {

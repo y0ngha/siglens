@@ -70,7 +70,10 @@ export function parseSeedFile(filePath: string): ParsedSeed {
         kind: result.data.kind,
         version: result.data.version,
         locale: isTranslation
-            ? (result.data.locale as Exclude<Locale, typeof DEFAULT_LOCALE>)
+            ? // `isTranslation`이 `locale !== undefined && locale !== DEFAULT_LOCALE`을
+              // 이미 보장한다. TS는 별도 boolean 변수를 통해서는 그 좁히기를
+              // 추론하지 못하므로 캐스트가 필요하다.
+              (result.data.locale as Exclude<Locale, typeof DEFAULT_LOCALE>)
             : undefined,
         effectiveDate: result.data.effectiveDate,
         body: parsed.content.trim(),

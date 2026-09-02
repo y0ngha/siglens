@@ -7,6 +7,13 @@ import { kstDateKey } from '@/shared/lib/etTimeUtils';
 const STORAGE_KEY = 'siglens:visit';
 
 /**
+ * 비콘 타임아웃. 이 요청은 화면에 아무 영향이 없으므로 오래 매달려 있을 이유가
+ * 없다 — 느린 네트워크에서 커넥션을 붙잡고 있으면 정작 필요한 요청이 밀린다.
+ * 놓친 집계는 다음 페이지 로드가 다시 시도한다.
+ */
+const BEACON_TIMEOUT_MS = 5000;
+
+/**
  * 하루 한 번, 방문 사실만 알린다. **본문은 보내지 않는다** — IP와 User-Agent는
  * 이미 요청 헤더에 있다.
  *
@@ -36,7 +43,11 @@ export function VisitorPing(): null {
         }
         if (last === today) return;
 
-        void fetch('/api/presence', { method: 'POST', keepalive: true })
+        void fetch('/api/presence', {
+            method: 'POST',
+            keepalive: true,
+            signal: AbortSignal.timeout(BEACON_TIMEOUT_MS),
+        })
             .then(response => {
                 // 실패는 기록하지 않는다. pepper 미설정 같은 배포 오류가
                 // 다음 로드에서 다시 드러나야 한다.
@@ -48,7 +59,7 @@ export function VisitorPing(): null {
                 }
             })
             .catch(() => {
-                // 차단기·오프라인. 집계 하나 놓치는 편이 화면을 깨뜨리는 것보다 낫다.
+                // 차단기·오프라인·타임아웃. 집계 하나 놓치는 편이 화면을 깨뜨리는 것보다 낫다.
             });
     }, []);
 

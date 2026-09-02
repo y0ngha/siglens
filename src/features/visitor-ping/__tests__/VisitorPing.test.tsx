@@ -30,10 +30,15 @@ describe('VisitorPing', () => {
         render(<VisitorPing />);
 
         await waitFor(() => {
-            expect(fetch).toHaveBeenCalledWith('/api/presence', {
-                method: 'POST',
-                keepalive: true,
-            });
+            expect(fetch).toHaveBeenCalledWith(
+                '/api/presence',
+                expect.objectContaining({
+                    method: 'POST',
+                    keepalive: true,
+                    // 타임아웃 없는 fire-and-forget fetch를 막는 회귀 가드.
+                    signal: expect.any(AbortSignal),
+                })
+            );
         });
     });
 
