@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.69.1](https://github.com/y0ngha/siglens/compare/v0.69.0...v0.69.1) (2026-09-02)
+
+
+### Bug Fixes
+
+* **db:** db:seed:terms에 react-server 조건을 추가한다 ([b716a61](https://github.com/y0ngha/siglens/commit/b716a6132580967712a023500d9b881144721e87))
+* **legal:** /terms·/privacy에 하루 재검증을 건다 ([72e7b0c](https://github.com/y0ngha/siglens/commit/72e7b0c0a616d0f6597aaf3944d2d599cf1df5ab))
+
 # [0.69.0](https://github.com/y0ngha/siglens/compare/v0.68.0...v0.69.0) (2026-09-02)
 
 
