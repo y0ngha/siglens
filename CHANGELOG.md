@@ -1,5 +1,30 @@
 # Changelog
 
+# [0.69.0](https://github.com/y0ngha/siglens/compare/v0.68.0...v0.69.0) (2026-09-02)
+
+
+### Bug Fixes
+
+* **shared:** cf-connecting-ip를 우선해 IP 위조를 막는다 ([86945a0](https://github.com/y0ngha/siglens/commit/86945a0f8fba50fd94fdb6aa0c79bfd11cb23753)), closes [#783](https://github.com/y0ngha/siglens/issues/783)
+* **visitor:** 리뷰 지적 3건을 반영한다 ([591e000](https://github.com/y0ngha/siglens/commit/591e000ace0b7eb5f0dd345d2c7b2d674508f3f1)), closes [#783](https://github.com/y0ngha/siglens/issues/783)
+* **visitor:** DB 클라이언트 생성 실패도 204로 흡수한다 ([706713c](https://github.com/y0ngha/siglens/commit/706713cfd50e3627e57a6d22a2125dc0a4e42fd1))
+
+
+### Features
+
+* **db:** visitor_days 테이블을 추가한다 ([314eca0](https://github.com/y0ngha/siglens/commit/314eca0f672e264302b80c2d3398657c58895e22))
+* **legal:** 개인정보처리방침 v2 — 방문자 통계 수집 고지와 위탁 업체 정정 ([7354abb](https://github.com/y0ngha/siglens/commit/7354abba372be3669e21a68e03d8df983cb8c57c))
+* **legal:** 개인정보처리방침 v2 영어·일본어·중국어 번역을 추가한다 ([d34c89a](https://github.com/y0ngha/siglens/commit/d34c89ae7c6b2703e92327c717bf8e05d7ef1fb1))
+* **legal:** 이용약관 영어·일본어·중국어 번역을 추가한다 ([3077519](https://github.com/y0ngha/siglens/commit/30775199a43c5a6ee4c4bcab810668240136ca57))
+* **terms:** 시드 frontmatter의 locale로 번역을 적재한다 ([fce5f11](https://github.com/y0ngha/siglens/commit/fce5f116f119e9480317795ea8e6d2f08204f592))
+* **terms:** 약관 본문 번역 적재 경로를 리포지토리에 추가한다 ([0b9d891](https://github.com/y0ngha/siglens/commit/0b9d8912b31f7219f5e498f58f209f248aa0883f))
+* **visitor:** /api/presence 수집 라우트를 추가한다 ([ff7ceee](https://github.com/y0ngha/siglens/commit/ff7ceeeb25d47eeefddb538c79e4e9f5fee20635))
+* **visitor:** 루트 레이아웃에 방문 비콘을 마운트한다 ([c75e2ef](https://github.com/y0ngha/siglens/commit/c75e2ef8b39fb8e2fc644ea99b79231e9d0991bf))
+* **visitor:** 방문 비콘 클라이언트 컴포넌트를 추가한다 ([01916b1](https://github.com/y0ngha/siglens/commit/01916b145c5f91ef4ef609d6cd8ad8ed8efc5225))
+* **visitor:** 방문자 가명 해시 함수를 추가한다 ([52de07f](https://github.com/y0ngha/siglens/commit/52de07f2f44e8c3916b2f7b6be9c55ecf5415684))
+* **visitor:** 방문자 집계 리포지토리를 추가한다 ([9693e4f](https://github.com/y0ngha/siglens/commit/9693e4f5af1181ceeed00c53e682a69152fb27f4))
+* **visitor:** yarn metrics 조회 스크립트를 추가한다 ([006b72b](https://github.com/y0ngha/siglens/commit/006b72b2653124a21a90203ef98410cb195ee12d))
+
 # [0.68.0](https://github.com/y0ngha/siglens/compare/v0.67.0...v0.68.0) (2026-09-02)
 
 
