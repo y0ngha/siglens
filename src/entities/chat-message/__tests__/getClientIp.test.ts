@@ -14,7 +14,7 @@ vi.mock('next/headers', () => ({
     headers: () => Promise.resolve({ get: mockGet }),
 }));
 
-import { getClientIp } from '../api/getClientIp';
+import { getClientIp } from '@/shared/api/getClientIp';
 
 describe('getClientIp', () => {
     afterEach(() => {

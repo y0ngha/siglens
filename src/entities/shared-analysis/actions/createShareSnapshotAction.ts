@@ -2,7 +2,7 @@
 
 import { hashUsageIp } from '@y0ngha/siglens-core';
 import { getDatabaseClient } from '@/shared/db/client';
-import { getClientIp } from '@/entities/chat-message/api/getClientIp';
+import { getClientIp } from '@/shared/api/getClientIp';
 import { DrizzleSharedAnalysisRepository } from '../api';
 import { isValidShareInput } from '../server/assertValidInput';
 import { checkShareRateLimit } from '../server/rateLimit';

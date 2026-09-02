@@ -16,7 +16,7 @@ vi.mock('@/entities/shared-analysis/api', () => {
 vi.mock('@/entities/shared-analysis/server/rateLimit', () => ({
     checkShareRateLimit: mockRateLimit,
 }));
-vi.mock('@/entities/chat-message/api/getClientIp', () => ({
+vi.mock('@/shared/api/getClientIp', () => ({
     getClientIp: mockGetClientIp,
 }));
 vi.mock('@y0ngha/siglens-core', async orig => ({
