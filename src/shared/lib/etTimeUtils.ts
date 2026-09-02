@@ -23,6 +23,23 @@ const KST_DATE_PARTS_FORMATTER = new Intl.DateTimeFormat('en-US', {
 });
 
 /**
+ * KST 기준 `YYYY-MM-DD`.
+ *
+ * `en-CA`로 바로 `format()`하면 ICU 버전에 따라 구분자가 `/`가 되거나 순서가
+ * 바뀌어 `split('-')`이 NaN을 내놓는다. `formatToParts`로 조각을 뽑아 조립한다.
+ *
+ * 방문자 집계(`/api/presence`)와 그 클라이언트 비콘이 이 함수를 공유한다 —
+ * 둘이 다른 날짜 경계를 쓰면 특정 날의 방문자가 통째로 누락된다.
+ */
+export function kstDateKey(date: Date): string {
+    const parts = KST_DATE_PARTS_FORMATTER.formatToParts(date);
+    const year = parts.find(p => p.type === 'year')?.value ?? '';
+    const month = parts.find(p => p.type === 'month')?.value ?? '';
+    const day = parts.find(p => p.type === 'day')?.value ?? '';
+    return `${year}-${month}-${day}`;
+}
+
+/**
  * KST 시각 레이블 포맷터 — **로케일별**로 캐시한다.
  *
  * 예전에는 `'ko-KR'` 고정이라 `/en/economy`의 경제 캘린더가 영어 표 안에
@@ -161,19 +178,9 @@ export function etDateTimeToKst(
     const iso = toIsoDateTime(etDate);
     const d = new Date(iso);
 
-    /**
-     * 'YYYY-MM-DD' 형식으로 KST 날짜 키 생성.
-     * `formatToParts`로 년/월/일을 개별 추출해 직접 조합한다.
-     * `en-CA` 로케일을 직접 format()하면 ICU 버전에 따라 구분자가 '/'로 오거나
-     * 순서가 바뀌어 `split('-')`이 NaN을 반환할 수 있다.
-     */
-    const parts = KST_DATE_PARTS_FORMATTER.formatToParts(d);
-    const year = parts.find(p => p.type === 'year')?.value ?? '';
-    const month = parts.find(p => p.type === 'month')?.value ?? '';
-    const day = parts.find(p => p.type === 'day')?.value ?? '';
-    const kstDateKey = `${year}-${month}-${day}`;
+    const kstDateKeyValue = kstDateKey(d);
 
     const kstTimeLabel = kstTimeLabelFormatter(locale, hour12).format(d);
 
-    return { iso, kstDateKey, kstTimeLabel };
+    return { iso, kstDateKey: kstDateKeyValue, kstTimeLabel };
 }

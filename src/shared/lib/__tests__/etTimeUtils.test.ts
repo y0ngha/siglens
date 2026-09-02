@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
     etDateTimeToKst,
     getEtOffset,
+    kstDateKey,
     nthSundayDay,
     toIsoDateTime,
 } from '../etTimeUtils';
@@ -216,6 +217,31 @@ describe('etDateTimeToKst', () => {
         const result = etDateTimeToKst('2026-01-02 09:00:00', 'ko');
         expect(result.kstDateKey).toBe('2026-01-02');
         expect(result.kstDateKey).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    });
+});
+
+// ------------------------------------------------------------------
+// kstDateKey
+// ------------------------------------------------------------------
+describe('kstDateKey', () => {
+    it('KST 자정 직전은 그 전날로 남는다', () => {
+        // 2026-09-01T14:59:59Z = KST 2026-09-01 23:59:59
+        expect(kstDateKey(new Date('2026-09-01T14:59:59.000Z'))).toBe(
+            '2026-09-01'
+        );
+    });
+
+    it('KST 자정을 넘기면 다음 날이 된다', () => {
+        // 2026-09-01T15:00:00Z = KST 2026-09-02 00:00:00
+        expect(kstDateKey(new Date('2026-09-01T15:00:00.000Z'))).toBe(
+            '2026-09-02'
+        );
+    });
+
+    it('월·일을 2자리로 0 채움한다', () => {
+        expect(kstDateKey(new Date('2026-01-05T03:00:00.000Z'))).toBe(
+            '2026-01-05'
+        );
     });
 });
 
