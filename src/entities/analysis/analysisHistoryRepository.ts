@@ -138,6 +138,32 @@ function isFiniteNumber(value: unknown): value is number {
 }
 
 /**
+ * `Trend` / `RiskLevel`의 허용 값 집합.
+ *
+ * `typeof === 'string'`만으로는 부족하다. 이 행들은 몇 달 전 스키마가 쓴
+ * 것일 수 있고(이 모듈의 다른 JSDoc이 인정하는 전제다), 유니온에 없는
+ * 문자열(`'sideways'` 등)이 들어 있으면 캐스트로는 걸러지지 않은 채
+ * **AI 프롬프트에 사실처럼 주입된다.** 값이 실제로 유니온에 속하는지
+ * 확인해야 하고, 아니면 그 행은 버린다.
+ */
+const TRENDS: ReadonlySet<string> = new Set<Trend>([
+    'bullish',
+    'bearish',
+    'neutral',
+]);
+const RISK_LEVELS: ReadonlySet<string> = new Set<RiskLevel>([
+    'low',
+    'medium',
+    'high',
+]);
+
+const isTrend = (value: unknown): value is Trend =>
+    typeof value === 'string' && TRENDS.has(value);
+
+const isRiskLevel = (value: unknown): value is RiskLevel =>
+    typeof value === 'string' && RISK_LEVELS.has(value);
+
+/**
  * `analysis_history.result` jsonb → core's `PriorAnalysis` projection.
  *
  * `result` is `unknown` at the type level and may hold whatever an older
@@ -163,7 +189,7 @@ function toPriorAnalysis(row: {
             takeProfitPrices?: unknown;
         };
     };
-    if (typeof trend !== 'string' || typeof riskLevel !== 'string') {
+    if (!isTrend(trend) || !isRiskLevel(riskLevel)) {
         return null;
     }
 
@@ -181,12 +207,27 @@ function toPriorAnalysis(row: {
 
     return {
         generatedAt: row.generatedAt,
-        trend: trend as Trend,
-        riskLevel: riskLevel as RiskLevel,
+        trend,
+        riskLevel,
         ...(entryPrices !== undefined ? { entryPrices } : {}),
         ...(stopLoss !== undefined ? { stopLoss } : {}),
         ...(takeProfitPrices !== undefined ? { takeProfitPrices } : {}),
     };
+}
+
+/**
+ * `pruneAnalysisHistory`의 결과 — 이번 실행이 실제로 처리한 양.
+ *
+ * 두 수치는 서로 다른 보존 주기를 반영한다: 행 자체는 90일 뒤 삭제되고,
+ * `prompt_dynamic`은 7일 뒤 비워진다(행은 남는다). 배치 상한에 걸려
+ * 남은 분량은 다음 크론 틱이 가져가므로, 이 값이 0이 아니라는 것은
+ * "더 지울 게 남았을 수도 있다"는 뜻이다.
+ */
+export interface PruneAnalysisHistoryResult {
+    /** 90일 보존 기간을 넘겨 삭제된 `analysis_history` 행 수. */
+    rowsDeleted: number;
+    /** 7일이 지나 `prompt_dynamic`을 비운 행 수(행 자체는 유지된다). */
+    promptsCleared: number;
 }
 
 /**
@@ -326,11 +367,9 @@ export class DrizzleAnalysisHistoryRepository {
                 NEON_TRANSIENT_RETRY
             );
 
-            return rows.reduce<PriorAnalysis[]>((acc, row) => {
-                const mapped = toPriorAnalysis(row);
-                if (mapped !== null) acc.push(mapped);
-                return acc;
-            }, []);
+            return rows
+                .map(toPriorAnalysis)
+                .filter((mapped): mapped is PriorAnalysis => mapped !== null);
         } catch (err) {
             console.error(
                 '[analysisHistoryRepository] findRecentForPrompt failed:',
@@ -374,7 +413,7 @@ export class DrizzleAnalysisHistoryRepository {
      */
     async pruneAnalysisHistory(
         now: Date = new Date()
-    ): Promise<{ rowsDeleted: number; promptsCleared: number }> {
+    ): Promise<PruneAnalysisHistoryResult> {
         try {
             const resultCutoff = new Date(
                 now.getTime() - RESULT_RETENTION_DAYS * MS_PER_DAY

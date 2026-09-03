@@ -2910,6 +2910,40 @@ describe('POST /api/analysis/stream', () => {
             );
         });
 
+        it('after() 자체가 동기 throw해도 분석 응답은 정상이다', async () => {
+            // `after()`는 요청 스코프 밖에서 호출되면 **콜백이 아니라 자기 자신이**
+            // 동기 throw한다. overall 호출부는 이 헬퍼를 인라인으로 부르므로,
+            // 방어가 없으면 이미 성공한 분석이 클라이언트에 에러로 보인다.
+            // 다른 새 코드는 방어 분기까지 테스트하는데 여기만 비어 있었다.
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'done' as const,
+                result: { headlineKo: 'h' },
+            } as never);
+            mockAfter.mockImplementationOnce(() => {
+                throw new Error('after() called outside request scope');
+            });
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+
+            try {
+                const events = await collectSseEvents(
+                    await POST(makeRequest())
+                );
+
+                // 분석 결과는 그대로 나가야 한다.
+                expect(JSON.stringify(events)).toContain('headlineKo');
+                // 영속화는 건너뛰되 조용히 삼키지 않고 로그는 남긴다.
+                expect(mockSaveAnalysisHistory).not.toHaveBeenCalled();
+                expect(errorSpy).toHaveBeenCalledWith(
+                    expect.stringContaining('schedulePersistAnalysisHistory'),
+                    expect.any(Error)
+                );
+            } finally {
+                errorSpy.mockRestore();
+            }
+        });
+
         it('technical, modelId 생략 → DEFAULT_TECHNICAL_MODEL_ID(analysis-worker)로 폴백하고, onPromptAssembled 미호출이면 prompt는 undefined다', async () => {
             vi.mocked(runAnalysis).mockResolvedValue({
                 status: 'done' as const,

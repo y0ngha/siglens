@@ -404,6 +404,42 @@ describe('DrizzleAnalysisHistoryRepository.findRecentForPrompt', () => {
         ]);
     });
 
+    it('drops a row whose trend/riskLevel is a string outside the union', async () => {
+        // `typeof === 'string'`만 보면 통과해 버리는 케이스. 이 행들은 몇 달 전
+        // 스키마가 쓴 것일 수 있고, 유니온 밖 문자열이 그대로 통과하면
+        // **AI 프롬프트에 사실처럼 주입된다** — 저장 데이터가 조용히 거짓이 되는
+        // 종류라 증상도 안 난다. 실제 멤버십 검사가 있어야만 실패한다.
+        const valid = {
+            result: { trend: 'bearish', riskLevel: 'high' },
+            generatedAt: new Date('2026-08-29T00:00:00.000Z'),
+        };
+        const unknownTrend = {
+            result: { trend: 'sideways', riskLevel: 'low' },
+            generatedAt: new Date('2026-08-28T00:00:00.000Z'),
+        };
+        const unknownRiskLevel = {
+            result: { trend: 'neutral', riskLevel: 'extreme' },
+            generatedAt: new Date('2026-08-27T00:00:00.000Z'),
+        };
+        const { db } = makeSelectDb([valid, unknownTrend, unknownRiskLevel]);
+        const repository = new DrizzleAnalysisHistoryRepository(db);
+
+        const result = await repository.findRecentForPrompt({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            tab: 'technical',
+            now: NOW,
+        });
+
+        expect(result).toEqual<PriorAnalysis[]>([
+            {
+                generatedAt: valid.generatedAt,
+                trend: 'bearish',
+                riskLevel: 'high',
+            },
+        ]);
+    });
+
     it('drops individual non-finite prices instead of the whole row', async () => {
         const row = {
             result: {
