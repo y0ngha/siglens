@@ -130,15 +130,28 @@ vi.mock('@/entities/portfolio/api', () => ({
     }),
 }));
 
-vi.mock('@/entities/analysis/analysisHistoryRepository', () => ({
-    // Vitest 4.x는 `new` 호출 시 arrow function 구현을 거부한다 — 일반 function을 사용한다.
-    DrizzleAnalysisHistoryRepository: vi.fn().mockImplementation(function () {
-        return {
-            findRecentForPrompt: mockFindRecentForPrompt,
-            saveAnalysisHistory: mockSaveAnalysisHistory,
-        };
-    }),
-}));
+vi.mock('@/entities/analysis/analysisHistoryRepository', async () => {
+    // `resolveGeneratedAt` now lives in this module (shared with the SEO
+    // prewarm seams — see its own JSDoc) — keep the REAL implementation
+    // here via `importActual` rather than mocking it, since the
+    // `generatedAt`-derivation tests below assert its actual parsing
+    // behavior through the route, not a stub.
+    const actual = await vi.importActual<
+        typeof import('@/entities/analysis/analysisHistoryRepository')
+    >('@/entities/analysis/analysisHistoryRepository');
+    return {
+        ...actual,
+        // Vitest 4.x는 `new` 호출 시 arrow function 구현을 거부한다 — 일반 function을 사용한다.
+        DrizzleAnalysisHistoryRepository: vi
+            .fn()
+            .mockImplementation(function () {
+                return {
+                    findRecentForPrompt: mockFindRecentForPrompt,
+                    saveAnalysisHistory: mockSaveAnalysisHistory,
+                };
+            }),
+    };
+});
 
 // E2E 단락은 이 모듈을 동적 import한다 — prod 번들에서 스텁을 제외하기 위한 구조라
 // 정적 import가 아니지만, vi.mock은 동적 import에도 동일하게 적용된다.

@@ -43,7 +43,10 @@ import { heartbeatStream } from '@/shared/lib/sse/heartbeatStream';
 import { canAcceptAnalysisStream } from '@/shared/lib/sse/activeStreams';
 import { runAnalysis, type SubmitAnalysisOptions } from './runAnalysisBridge';
 import { tryAcquireReanalyzeCooldown } from '@/entities/analysis';
-import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
+import {
+    DrizzleAnalysisHistoryRepository,
+    resolveGeneratedAt,
+} from '@/entities/analysis/analysisHistoryRepository';
 // core에서 직접 import — 해제는 서버 전용이어야 한다(클라이언트가 호출할 수 있으면
 // 쿨다운을 지우고 재요청하는 루프로 무력화된다). 아래 `releaseOnFailure` 참고.
 import { releaseReanalyzeCooldown } from '@y0ngha/siglens-core';
@@ -234,23 +237,6 @@ function withDeadline<T>(
  * 결정하는 용도라, 여기가 core 상수와 어긋나도 캐시 동작에는 영향이 없다.
  */
 const DEFAULT_TECHNICAL_MODEL_ID = 'analysis-worker';
-
-/**
- * The analysis's own generation time when it carries one, otherwise now.
- *
- * `AnalysisResponse.analyzedAt` is an ISO string set by core when the result
- * is produced. It is optional and, on a bad value, must not poison the row —
- * an unparseable date would become `Invalid Date` and silently break every
- * ordering and window query that reads this column.
- */
-function resolveGeneratedAt(result: unknown): Date {
-    const stamped = (result as { analyzedAt?: unknown } | null)?.analyzedAt;
-    if (typeof stamped === 'string') {
-        const parsed = new Date(stamped);
-        if (!Number.isNaN(parsed.getTime())) return parsed;
-    }
-    return new Date();
-}
 
 /**
  * Task S2 (prior-analysis-context) — 새로 생성된 technical/overall 분석 1건을

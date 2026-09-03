@@ -111,6 +111,32 @@ export const PRUNE_BATCH_SIZE = 500;
  */
 export const ORPHAN_BLOB_MIN_AGE_MS = 5 * MS_PER_MINUTE;
 
+/**
+ * The analysis's own generation time when it carries one, otherwise now.
+ *
+ * `AnalysisResponse.analyzedAt` is an ISO string set by core when the result
+ * is produced. It is optional and, on a bad value, must not poison the row —
+ * an unparseable date would become `Invalid Date` and silently break every
+ * ordering and window query that reads this column.
+ *
+ * Shared by both `analysis_history` writers — the SSE route
+ * (`app/api/analysis/stream/route.ts`) and the SEO prewarm seams
+ * (`entities/analysis/api.ts`'s `prewarmTechnical`/`prewarmOverall`) — so the
+ * guard lives in exactly one place instead of being copy-pasted per caller.
+ * Lives here (not in the app-layer route) because `entities/analysis/api.ts`
+ * cannot import from `app/` (FSD dependency direction), while both callers
+ * can already import this repository module directly (see this file's
+ * top-of-module JSDoc on why it is excluded from the barrel).
+ */
+export function resolveGeneratedAt(result: unknown): Date {
+    const stamped = (result as { analyzedAt?: unknown } | null)?.analyzedAt;
+    if (typeof stamped === 'string') {
+        const parsed = new Date(stamped);
+        if (!Number.isNaN(parsed.getTime())) return parsed;
+    }
+    return new Date();
+}
+
 export interface SaveAnalysisHistoryInput {
     symbol: string;
     timeframe: string;
