@@ -2944,6 +2944,46 @@ describe('POST /api/analysis/stream', () => {
             }
         });
 
+        it('generatedAt은 결과의 analyzedAt을 쓴다 — 저장 시각이 아니라', async () => {
+            // core가 결과에 찍는 생성 시각을 그대로 써야 한다. 저장 스케줄
+            // 시각을 쓰면 저장이 봉 경계를 넘겨 일어났을 때 그 분석이 **엉뚱한
+            // 봉에 귀속**된다 — 이력 창은 각 과거 호출을 자기 봉에 앵커해서
+            // 그 이후 가격 움직임으로 채점하기 때문에, 한 칸 밀리면 채점 대상
+            // 구간 자체가 어긋난다.
+            const analyzedAt = '2026-08-15T09:30:00.000Z';
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'done' as const,
+                result: { headlineKo: 'h', analyzedAt },
+            } as never);
+
+            await collectSseEvents(await POST(makeRequest()));
+            const callback = mockAfter.mock.calls[0][0] as () => Promise<void>;
+            await callback();
+
+            expect(mockSaveAnalysisHistory).toHaveBeenCalledWith(
+                expect.objectContaining({ generatedAt: new Date(analyzedAt) })
+            );
+        });
+
+        it('analyzedAt이 파싱 불가면 Invalid Date를 쓰지 않고 현재 시각으로 떨어진다', async () => {
+            // `Invalid Date`가 컬럼에 들어가면 이 열을 읽는 모든 정렬·윈도
+            // 쿼리가 조용히 깨진다. 에러도 안 나고 행은 남는다.
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'done' as const,
+                result: { headlineKo: 'h', analyzedAt: 'not-a-date' },
+            } as never);
+
+            await collectSseEvents(await POST(makeRequest()));
+            const callback = mockAfter.mock.calls[0][0] as () => Promise<void>;
+            await callback();
+
+            const saved = mockSaveAnalysisHistory.mock.calls[0][0] as {
+                generatedAt: Date;
+            };
+            expect(saved.generatedAt).toBeInstanceOf(Date);
+            expect(Number.isNaN(saved.generatedAt.getTime())).toBe(false);
+        });
+
         it('technical, modelId 생략 → DEFAULT_TECHNICAL_MODEL_ID(analysis-worker)로 폴백하고, onPromptAssembled 미호출이면 prompt는 undefined다', async () => {
             vi.mocked(runAnalysis).mockResolvedValue({
                 status: 'done' as const,
