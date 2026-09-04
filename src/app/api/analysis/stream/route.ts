@@ -46,6 +46,7 @@ import { tryAcquireReanalyzeCooldown } from '@/entities/analysis';
 import {
     DrizzleAnalysisHistoryRepository,
     resolveGeneratedAt,
+    type AnalysisHistoryTab,
 } from '@/entities/analysis/analysisHistoryRepository';
 // core에서 직접 import — 해제는 서버 전용이어야 한다(클라이언트가 호출할 수 있으면
 // 쿨다운을 지우고 재요청하는 루프로 무력화된다). 아래 `releaseOnFailure` 참고.
@@ -252,7 +253,7 @@ const DEFAULT_TECHNICAL_MODEL_ID = 'analysis-worker';
 function schedulePersistAnalysisHistory(input: {
     symbol: string;
     timeframe: string;
-    tab: 'technical' | 'overall';
+    tab: AnalysisHistoryTab;
     modelId: string;
     locale: Locale;
     result: unknown;
