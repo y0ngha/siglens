@@ -1371,6 +1371,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Unregistered files become dead code and create duplicate-schema-operation risk
    ❌ drizzle/0004_add_oauth_token_columns.sql exists but not listed in _journal.json
    ✅ Every .sql file in drizzle/ has a corresponding _journal.json entry
+
+3. Editing already-persisted seeded artifacts instead of publishing new versions
+   → Source seed files (db/seeds/terms/privacy/v2.md, messages/*.json, etc.) whose write path is guarded by `onConflictDoNothing` or similar immutability patterns cannot propagate edits to the DB or client payloads
+   → Once a seed row is inserted with `.onConflictDoNothing`, the DB rejects subsequent writes to that row
+   → Separately, manifest-generation scripts (i18n clientKeys.json, etc.) must be re-run after source changes; hand-editing source without regenerating manifests leaves the downstream output stale
+   → When body/content updates are needed after v1 is live, publish v2+ (new seed) instead of editing the committed version
+   ❌ Edit db/seeds/terms/privacy/v2.md after the v2 row is already in production; upsert uses `onConflictDoNothing`, so edits are silently ignored
+   ❌ Add new i18n keys to messages/*.json by hand; manifest messages/_meta/clientKeys.json is separate and not regenerated, so raw key-names render on screen
+   ✅ Revert v2 seed edits, publish privacy/v3 with new version ID and effectiveDate
+   ✅ After editing messages/*.json, run `node scripts/i18n/extract.mjs --write` to regenerate manifest
+   → Recurring: PR #778 R1 (i18n keys), feat/visitor-user-agent R1 (seeded privacy v2 edit)
 ```
 
 ## Predictability

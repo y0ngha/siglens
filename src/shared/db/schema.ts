@@ -158,6 +158,32 @@ export const visitorDays = pgTable(
         firstSeenAt: timestamp('first_seen_at', { withTimezone: true })
             .notNull()
             .defaultNow(),
+        /**
+         * 그날 그 방문자의 첫 요청 User-Agent 원문.
+         *
+         * 집계에는 쓰이지 않는다 — 존재 이유는 **사후 검증**이다. `isBot`을 통과한
+         * 트래픽이 정말 사람인지는 UA를 보관하지 않으면 확인할 방법이 없고,
+         * 봇 필터를 조일 때 "이 토큰을 막으면 며칠치 수치가 얼마나 빠지는가"를
+         * 소급해서 볼 수도 없다.
+         *
+         * 이미 `visitorHash`의 입력이라 새로 수집하는 항목은 아니지만, 해시와 달리
+         * 원문이므로 개인정보처리방침 §1의 접속 통계 항목에 명시돼 있어야 한다.
+         */
+        userAgent: text('user_agent'),
+        /**
+         * Cloudflare `cf-ipcountry` (ISO 3166-1 alpha-2). CF를 거치지 않으면 null.
+         *
+         * 봇 농장 판별에 가장 값싼 신호다 — 한국어 서비스에 특정 국가에서 UA가
+         * 균일한 트래픽이 몰리면 사람이 아니다. IP 원문은 여전히 저장하지 않는다.
+         */
+        country: text('country'),
+        /**
+         * 비콘이 뜬 페이지의 경로. 쿼리스트링은 버린다(검색어·토큰이 섞일 수 있다).
+         *
+         * 비콘은 하루 한 번이므로 사실상 그날의 진입 페이지다. 어떤 페이지로
+         * 들어오는지를 보는 용도.
+         */
+        landingPath: text('landing_path'),
     },
     table => [primaryKey({ columns: [table.date, table.visitorHash] })]
 );
