@@ -79,10 +79,35 @@ vi.mock('@/shared/config/marketProfile', () => ({
 
 // resolveHoldingPositionBucket 경로를 테스트하려면 findByUserAndSymbol 와 getQuote를
 // 호이스팅해서 개별 테스트에서 반환값을 제어할 수 있어야 한다.
-const { mockFindByUserAndSymbol, mockGetQuote } = vi.hoisted(() => ({
+const {
+    mockFindByUserAndSymbol,
+    mockGetQuote,
+    mockFindRecentForPrompt,
+    mockSaveAnalysisHistory,
+    mockAfter,
+} = vi.hoisted(() => ({
     mockFindByUserAndSymbol: vi.fn(),
     mockGetQuote: vi.fn(),
+    // Task S3 (prior-analysis-context) — findRecentForPrompt 호출 인자 및
+    // core로의 전달을 단언하기 위해 호이스팅한다.
+    mockFindRecentForPrompt: vi.fn(),
+    // Audit finding #3 — write-path coverage. `saveAnalysisHistory` and the
+    // `after()` callback it runs inside are both hoisted so individual
+    // tests can capture the callback `after()` was scheduled with and
+    // invoke it directly (mirrors `src/app/api/cron/seo-prewarm/__tests__/route.test.ts`).
+    mockSaveAnalysisHistory: vi.fn(),
+    mockAfter: vi.fn(),
 }));
+
+// Audit finding #3 — without this, `after()` is the real Next.js function,
+// which throws synchronously outside a request scope (always true in
+// vitest). `schedulePersistAnalysisHistory` catches that throw by design, so
+// the `after()` callback body — the only place `saveAnalysisHistory` is
+// called — never ran, and nothing verified what the route actually persists.
+// Mock ONLY `after`; every other route dependency stays on its own existing
+// mock (see the `vi.mock` calls throughout this file) — this does not
+// disturb them.
+vi.mock('next/server', () => ({ after: mockAfter }));
 
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: vi.fn().mockReturnValue({
@@ -104,6 +129,29 @@ vi.mock('@/entities/portfolio/api', () => ({
         return { findByUserAndSymbol: mockFindByUserAndSymbol };
     }),
 }));
+
+vi.mock('@/entities/analysis/analysisHistoryRepository', async () => {
+    // `resolveGeneratedAt` now lives in this module (shared with the SEO
+    // prewarm seams — see its own JSDoc) — keep the REAL implementation
+    // here via `importActual` rather than mocking it, since the
+    // `generatedAt`-derivation tests below assert its actual parsing
+    // behavior through the route, not a stub.
+    const actual = await vi.importActual<
+        typeof import('@/entities/analysis/analysisHistoryRepository')
+    >('@/entities/analysis/analysisHistoryRepository');
+    return {
+        ...actual,
+        // Vitest 4.x는 `new` 호출 시 arrow function 구현을 거부한다 — 일반 function을 사용한다.
+        DrizzleAnalysisHistoryRepository: vi
+            .fn()
+            .mockImplementation(function () {
+                return {
+                    findRecentForPrompt: mockFindRecentForPrompt,
+                    saveAnalysisHistory: mockSaveAnalysisHistory,
+                };
+            }),
+    };
+});
 
 // E2E 단락은 이 모듈을 동적 import한다 — prod 번들에서 스텁을 제외하기 위한 구조라
 // 정적 import가 아니지만, vi.mock은 동적 import에도 동일하게 적용된다.
@@ -184,6 +232,7 @@ import {
 import { rewriteToPlainLanguage } from '@/entities/analysis-plain';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
+import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
 import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { e2eCachedTechnical } from '@/shared/api/e2eAnalysisStub';
@@ -284,6 +333,13 @@ describe('POST /api/analysis/stream', () => {
         // 기본값: 홀딩 없음, 시세 없음 — 기존 테스트는 tier='free'라 이 경로를 거치지 않는다.
         mockFindByUserAndSymbol.mockResolvedValue(null);
         mockGetQuote.mockResolvedValue(null);
+        // Task S3 (prior-analysis-context) — 기본값은 빈 히스토리. 전용 describe에서
+        // 개별 테스트가 오버라이드한다.
+        mockFindRecentForPrompt.mockResolvedValue([]);
+        // Audit finding #3 — saveAnalysisHistory never throws in production
+        // (best-effort, catches internally — see the repository's own
+        // JSDoc); default to the same resolved-void behavior here.
+        mockSaveAnalysisHistory.mockResolvedValue(undefined);
         // vi.clearAllMocks()는 구현을 초기화하지 않는다 — 개별 테스트가 mock 반환값을
         // 변경했을 때 다음 테스트로 새지 않도록 기본값을 명시적으로 복원한다.
         vi.mocked(tryAcquireReanalyzeCooldown).mockResolvedValue({
@@ -296,6 +352,14 @@ describe('POST /api/analysis/stream', () => {
         vi.mocked(DrizzlePortfolioRepository).mockImplementation(function () {
             return { findByUserAndSymbol: mockFindByUserAndSymbol };
         } as never);
+        vi.mocked(DrizzleAnalysisHistoryRepository).mockImplementation(
+            function () {
+                return {
+                    findRecentForPrompt: mockFindRecentForPrompt,
+                    saveAnalysisHistory: mockSaveAnalysisHistory,
+                };
+            } as never
+        );
         // 마켓 프로필 관련 mock은 개별 테스트에서 오버라이드한 뒤 clearAllMocks만으론
         // 복원되지 않는다 — 명시적으로 기본값을 재설정한다.
         vi.mocked(resolveMarketProfile).mockResolvedValue('us-equity' as never);
@@ -523,15 +587,25 @@ describe('POST /api/analysis/stream', () => {
             const response = await POST(makeRequest(undefined, body));
             await collectSseEvents(response);
 
-            // overall 핸들러 시그니처: (symbol, companyName, timeframe, modelId, { force, reasoning }, signal)
+            // overall 핸들러 시그니처: (symbol, companyName, timeframe, modelId, { force, reasoning, onPromptAssembled, priorAnalyses }, signal)
             // reanalyze 없음 → cooldown=null → force=false, reasoning=undefined(params에 없음)
+            // onPromptAssembled: Task S2(prior-analysis-context) 히스토리 저장용 콜백 — 항상 전달된다.
+            // priorAnalyses: Task S3(prior-analysis-context) 읽기 — `getDatabaseClient`가
+            // 이 파일에서 `{ db: {} }`로 뭉개져 있어(위 mock) 실제 select가 실패하고
+            // best-effort로 `[]`가 된다. 값 자체보다 "항상 필드가 전달된다"가 이 테스트의
+            // 관심사다 — 봇/실데이터 케이스는 아래 전용 describe에서 별도로 단언한다.
             expect(vi.mocked(runOverallAnalysisAction)).toHaveBeenCalledWith(
                 'AAPL',
                 'Apple',
                 '1Day',
                 'gemini-2.5-flash',
                 'ko',
-                { force: false, reasoning: undefined },
+                {
+                    force: false,
+                    reasoning: undefined,
+                    onPromptAssembled: expect.any(Function),
+                    priorAnalyses: [],
+                },
                 expect.any(AbortSignal)
             );
         });
@@ -1574,6 +1648,129 @@ describe('POST /api/analysis/stream', () => {
                 unknown
             >;
             expect(opts?.skipEnqueueIfMiss).toBe(false);
+        });
+    });
+
+    /**
+     * Task S3 (prior-analysis-context) — both axes read history BEFORE the
+     * core call (never lazily on a cache miss — see the long comment above
+     * each `findRecentForPrompt` call site in `route.ts`) and skip the read
+     * entirely for a bot request, mirroring `skipEnqueueIfMiss` above.
+     */
+    describe('priorAnalyses — 히스토리 읽기가 core 호출 전에 배선된다', () => {
+        beforeEach(() => {
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'miss_no_trigger' as const,
+            });
+            vi.mocked(runOverallAnalysisAction).mockResolvedValue({
+                status: 'miss_no_trigger',
+            } as never);
+        });
+
+        it('technical, 봇 아님 → findRecentForPrompt(symbol, timeframe, tab: technical) 결과가 runAnalysis.priorAnalyses로 전달된다', async () => {
+            vi.mocked(isBot).mockReturnValue(false);
+            const history = [
+                {
+                    generatedAt: new Date('2026-08-01'),
+                    trend: 'bullish',
+                    riskLevel: 'low',
+                },
+            ];
+            mockFindRecentForPrompt.mockResolvedValue(history);
+
+            const response = await POST(makeRequest());
+            await collectSseEvents(response);
+
+            expect(mockFindRecentForPrompt).toHaveBeenCalledWith({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                tab: 'technical',
+            });
+            const opts = vi.mocked(runAnalysis).mock.calls[0]?.[5] as Record<
+                string,
+                unknown
+            >;
+            expect(opts?.priorAnalyses).toBe(history);
+        });
+
+        it('technical, 봇 → findRecentForPrompt를 호출하지 않고 priorAnalyses는 undefined다', async () => {
+            vi.mocked(isBot).mockReturnValue(true);
+
+            const response = await POST(makeRequest());
+            await collectSseEvents(response);
+
+            expect(mockFindRecentForPrompt).not.toHaveBeenCalled();
+            const opts = vi.mocked(runAnalysis).mock.calls[0]?.[5] as Record<
+                string,
+                unknown
+            >;
+            expect(opts?.priorAnalyses).toBeUndefined();
+        });
+
+        it('overall, 봇 아님 → findRecentForPrompt(symbol, timeframe, tab: overall) 결과가 runOverallAnalysisAction의 priorAnalyses로 전달된다', async () => {
+            vi.mocked(isBot).mockReturnValue(false);
+            const history = [
+                {
+                    generatedAt: new Date('2026-08-01'),
+                    trend: 'bearish',
+                    riskLevel: 'high',
+                },
+            ];
+            mockFindRecentForPrompt.mockResolvedValue(history);
+
+            const body = JSON.stringify({
+                type: 'overall',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple',
+                    timeframe: '1Day',
+                    modelId: 'gemini-2.5-flash',
+                },
+            });
+            const response = await POST(makeRequest(undefined, body));
+            await collectSseEvents(response);
+
+            expect(mockFindRecentForPrompt).toHaveBeenCalledWith({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                tab: 'overall',
+            });
+            expect(vi.mocked(runOverallAnalysisAction)).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple',
+                '1Day',
+                'gemini-2.5-flash',
+                'ko',
+                expect.objectContaining({ priorAnalyses: history }),
+                expect.any(AbortSignal)
+            );
+        });
+
+        it('overall, 봇 → findRecentForPrompt를 호출하지 않고 priorAnalyses는 undefined다', async () => {
+            vi.mocked(isBot).mockReturnValue(true);
+
+            const body = JSON.stringify({
+                type: 'overall',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple',
+                    timeframe: '1Day',
+                    modelId: 'gemini-2.5-flash',
+                },
+            });
+            const response = await POST(makeRequest(undefined, body));
+            await collectSseEvents(response);
+
+            expect(mockFindRecentForPrompt).not.toHaveBeenCalled();
+            expect(vi.mocked(runOverallAnalysisAction)).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple',
+                '1Day',
+                'gemini-2.5-flash',
+                'ko',
+                expect.objectContaining({ priorAnalyses: undefined }),
+                expect.any(AbortSignal)
+            );
         });
     });
 
@@ -2661,6 +2858,290 @@ describe('POST /api/analysis/stream', () => {
             const done = events.find(e => e.includes('event: done'));
 
             expect(done).toContain('"plain":null');
+        });
+    });
+
+    /**
+     * Audit finding #3 — write-path coverage. `after()` is the real
+     * Next.js function everywhere else in this file; outside a request
+     * scope (always true in vitest) it throws synchronously, and
+     * `schedulePersistAnalysisHistory` catches that throw by design — so
+     * the callback body (the only place `saveAnalysisHistory` is called)
+     * never ran in any test above this point, and nothing verified which
+     * values the route actually persists. `next/server` is mocked at the
+     * top of this file (`mockAfter`) — narrowly, only `after` — so the
+     * scheduled callback can be captured and invoked directly, mirroring
+     * `src/app/api/cron/seo-prewarm/__tests__/route.test.ts`.
+     */
+    describe('analysis_history 저장 (audit #3) — after() 콜백이 saveAnalysisHistory에 넘기는 값', () => {
+        const capturedPrompt = {
+            system: 'system prompt text',
+            stable: 'stable skill digest',
+            dynamic: 'dynamic per-call block',
+            promptVersion: 'v9',
+        };
+
+        it('technical, status: done → tab/symbol/timeframe/modelId/locale/prompt가 그대로 saveAnalysisHistory에 전달된다', async () => {
+            vi.mocked(runAnalysis).mockImplementation(
+                (_s, _c, _t, _f, _fp, options) => {
+                    options?.onPromptAssembled?.(capturedPrompt as never);
+                    return Promise.resolve({
+                        status: 'done' as const,
+                        result: { headlineKo: 'h' },
+                    } as never);
+                }
+            );
+
+            const body = JSON.stringify({
+                type: 'technical',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    timeframe: '1Day',
+                    modelId: 'gemini-2.5-flash',
+                },
+            });
+            await collectSseEvents(
+                await POST(makeRequest(undefined, body, 'ja'))
+            );
+
+            expect(mockAfter).toHaveBeenCalledTimes(1);
+            const callback = mockAfter.mock.calls[0][0] as () => Promise<void>;
+            await callback();
+
+            expect(mockSaveAnalysisHistory).toHaveBeenCalledTimes(1);
+            expect(mockSaveAnalysisHistory).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    symbol: 'AAPL',
+                    timeframe: '1Day',
+                    tab: 'technical',
+                    modelId: 'gemini-2.5-flash',
+                    locale: 'ja',
+                    result: { headlineKo: 'h' },
+                    prompt: capturedPrompt,
+                })
+            );
+        });
+
+        it('after() 자체가 동기 throw해도 분석 응답은 정상이다', async () => {
+            // `after()`는 요청 스코프 밖에서 호출되면 **콜백이 아니라 자기 자신이**
+            // 동기 throw한다. overall 호출부는 이 헬퍼를 인라인으로 부르므로,
+            // 방어가 없으면 이미 성공한 분석이 클라이언트에 에러로 보인다.
+            // 다른 새 코드는 방어 분기까지 테스트하는데 여기만 비어 있었다.
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'done' as const,
+                result: { headlineKo: 'h' },
+            } as never);
+            mockAfter.mockImplementationOnce(() => {
+                throw new Error('after() called outside request scope');
+            });
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+
+            try {
+                const events = await collectSseEvents(
+                    await POST(makeRequest())
+                );
+
+                // 분석 결과는 그대로 나가야 한다.
+                expect(JSON.stringify(events)).toContain('headlineKo');
+                // 영속화는 건너뛰되 조용히 삼키지 않고 로그는 남긴다.
+                expect(mockSaveAnalysisHistory).not.toHaveBeenCalled();
+                expect(errorSpy).toHaveBeenCalledWith(
+                    expect.stringContaining('schedulePersistAnalysisHistory'),
+                    expect.any(Error)
+                );
+            } finally {
+                errorSpy.mockRestore();
+            }
+        });
+
+        it('generatedAt은 결과의 analyzedAt을 쓴다 — 저장 시각이 아니라', async () => {
+            // core가 결과에 찍는 생성 시각을 그대로 써야 한다. 저장 스케줄
+            // 시각을 쓰면 저장이 봉 경계를 넘겨 일어났을 때 그 분석이 **엉뚱한
+            // 봉에 귀속**된다 — 이력 창은 각 과거 호출을 자기 봉에 앵커해서
+            // 그 이후 가격 움직임으로 채점하기 때문에, 한 칸 밀리면 채점 대상
+            // 구간 자체가 어긋난다.
+            const analyzedAt = '2026-08-15T09:30:00.000Z';
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'done' as const,
+                result: { headlineKo: 'h', analyzedAt },
+            } as never);
+
+            await collectSseEvents(await POST(makeRequest()));
+            const callback = mockAfter.mock.calls[0][0] as () => Promise<void>;
+            await callback();
+
+            expect(mockSaveAnalysisHistory).toHaveBeenCalledWith(
+                expect.objectContaining({ generatedAt: new Date(analyzedAt) })
+            );
+        });
+
+        it('analyzedAt이 파싱 불가면 Invalid Date를 쓰지 않고 현재 시각으로 떨어진다', async () => {
+            // `Invalid Date`가 컬럼에 들어가면 이 열을 읽는 모든 정렬·윈도
+            // 쿼리가 조용히 깨진다. 에러도 안 나고 행은 남는다.
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'done' as const,
+                result: { headlineKo: 'h', analyzedAt: 'not-a-date' },
+            } as never);
+
+            await collectSseEvents(await POST(makeRequest()));
+            const callback = mockAfter.mock.calls[0][0] as () => Promise<void>;
+            await callback();
+
+            const saved = mockSaveAnalysisHistory.mock.calls[0][0] as {
+                generatedAt: Date;
+            };
+            expect(saved.generatedAt).toBeInstanceOf(Date);
+            expect(Number.isNaN(saved.generatedAt.getTime())).toBe(false);
+        });
+
+        it('technical, modelId 생략 → DEFAULT_TECHNICAL_MODEL_ID(analysis-worker)로 폴백하고, onPromptAssembled 미호출이면 prompt는 undefined다', async () => {
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'done' as const,
+                result: { headlineKo: 'h' },
+            } as never);
+
+            await collectSseEvents(await POST(makeRequest()));
+
+            expect(mockAfter).toHaveBeenCalledTimes(1);
+            const callback = mockAfter.mock.calls[0][0] as () => Promise<void>;
+            await callback();
+
+            expect(mockSaveAnalysisHistory).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    symbol: 'AAPL',
+                    timeframe: '1Day',
+                    tab: 'technical',
+                    modelId: 'analysis-worker',
+                    locale: 'ko',
+                    prompt: undefined,
+                })
+            );
+        });
+
+        it("technical, status !== 'done'(miss_no_trigger) → after는 예약되지 않고 saveAnalysisHistory도 호출되지 않는다", async () => {
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'miss_no_trigger' as const,
+            } as never);
+
+            await collectSseEvents(await POST(makeRequest()));
+
+            expect(mockAfter).not.toHaveBeenCalled();
+            expect(mockSaveAnalysisHistory).not.toHaveBeenCalled();
+        });
+
+        it('overall, status: done → tab/symbol/timeframe/modelId/locale/prompt가 그대로 saveAnalysisHistory에 전달된다', async () => {
+            vi.mocked(runOverallAnalysisAction).mockImplementation(
+                (_s, _c, _t, _m, _l, options) => {
+                    (
+                        options as {
+                            onPromptAssembled?: (r: unknown) => void;
+                        }
+                    )?.onPromptAssembled?.(capturedPrompt);
+                    return Promise.resolve({
+                        status: 'done' as const,
+                        result: { overallConclusionKo: 'c' },
+                    } as never);
+                }
+            );
+
+            const body = JSON.stringify({
+                type: 'overall',
+                params: {
+                    symbol: 'TSLA',
+                    companyName: 'Tesla',
+                    timeframe: '1Week',
+                    modelId: 'gemini-2.5-flash',
+                },
+            });
+            await collectSseEvents(
+                await POST(makeRequest(undefined, body, 'ja'))
+            );
+
+            expect(mockAfter).toHaveBeenCalledTimes(1);
+            const callback = mockAfter.mock.calls[0][0] as () => Promise<void>;
+            await callback();
+
+            expect(mockSaveAnalysisHistory).toHaveBeenCalledTimes(1);
+            expect(mockSaveAnalysisHistory).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    symbol: 'TSLA',
+                    timeframe: '1Week',
+                    tab: 'overall',
+                    modelId: 'gemini-2.5-flash',
+                    locale: 'ja',
+                    result: { overallConclusionKo: 'c' },
+                    prompt: capturedPrompt,
+                })
+            );
+        });
+
+        it('overall, prompt 미캡처(동시 요청 패자 경로) → prompt는 undefined다', async () => {
+            vi.mocked(runOverallAnalysisAction).mockResolvedValue({
+                status: 'done' as const,
+                result: { overallConclusionKo: 'c' },
+            } as never);
+
+            const body = JSON.stringify({
+                type: 'overall',
+                params: {
+                    symbol: 'TSLA',
+                    companyName: 'Tesla',
+                    timeframe: '1Week',
+                    modelId: 'gemini-2.5-flash',
+                },
+            });
+            await collectSseEvents(await POST(makeRequest(undefined, body)));
+
+            const callback = mockAfter.mock.calls[0][0] as () => Promise<void>;
+            await callback();
+
+            expect(mockSaveAnalysisHistory).toHaveBeenCalledWith(
+                expect.objectContaining({ prompt: undefined })
+            );
+        });
+
+        it("overall, status !== 'done'(cached) → after가 예약되지 않고 saveAnalysisHistory도 호출되지 않는다", async () => {
+            vi.mocked(runOverallAnalysisAction).mockResolvedValue({
+                status: 'cached' as const,
+                result: { overallConclusionKo: 'c' },
+            } as never);
+
+            const body = JSON.stringify({
+                type: 'overall',
+                params: {
+                    symbol: 'TSLA',
+                    companyName: 'Tesla',
+                    timeframe: '1Week',
+                    modelId: 'gemini-2.5-flash',
+                },
+            });
+            await collectSseEvents(await POST(makeRequest(undefined, body)));
+
+            expect(mockAfter).not.toHaveBeenCalled();
+            expect(mockSaveAnalysisHistory).not.toHaveBeenCalled();
+        });
+
+        it('overall, modelId 없음 → status가 done이어도 저장을 건너뛴다(캐시 키 불일치 방지)', async () => {
+            vi.mocked(runOverallAnalysisAction).mockResolvedValue({
+                status: 'done' as const,
+                result: { overallConclusionKo: 'c' },
+            } as never);
+
+            const body = JSON.stringify({
+                type: 'overall',
+                params: {
+                    symbol: 'TSLA',
+                    companyName: 'Tesla',
+                    timeframe: '1Week',
+                },
+            });
+            await collectSseEvents(await POST(makeRequest(undefined, body)));
+
+            expect(mockAfter).not.toHaveBeenCalled();
+            expect(mockSaveAnalysisHistory).not.toHaveBeenCalled();
         });
     });
 });

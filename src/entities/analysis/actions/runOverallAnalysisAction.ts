@@ -6,9 +6,11 @@ import {
     isEtRegularSessionOpen,
     runOverallAnalysis,
     computeFinancialsScorecard,
+    type AssembledPromptRecord,
     type EnrichedNewsItem,
     type FinancialsScorecard,
     type OptionsSnapshot,
+    type PriorAnalysis,
     type SubmitOverallAnalysisOptions,
     type RunOverallAnalysisResult,
     type Timeframe,
@@ -56,6 +58,21 @@ export interface SubmitOverallAnalysisActionOptions {
      * anonymous/free callers by `resolveReasoning` regardless of this value.
      */
     reasoning?: boolean;
+    /**
+     * Prior-analysis-context 히스토리 저장(Task S2)을 위해 그대로 core에
+     * 전달한다 — `OverallDependencyInputs.onPromptAssembled`와 동일 계약
+     * (캐시 미스에서 정확히 한 번, 프로바이더 호출 직전 동기 호출; 동시
+     * 요청의 패자는 호출받지 않음). 여기서 가공하지 않는다.
+     */
+    onPromptAssembled?: (record: AssembledPromptRecord) => void | Promise<void>;
+    /**
+     * Prior-analysis-context 히스토리(Task S3)를 그대로 core에 전달한다.
+     * 호출자(SSE 라우트)가 core 호출 **이전에** 읽어 넘긴다 — core가 이 값의
+     * fingerprint를 캐시 키에 접기 때문에, 캐시 미스에서만 지연 조회하면 같은
+     * 요청이 키 계산 시점과 프롬프트 렌더 시점에 서로 다른 히스토리 집합을
+     * 보게 된다. 여기서는 가공하지 않고 그대로 넘긴다.
+     */
+    priorAnalyses?: readonly PriorAnalysis[];
 }
 
 /** Server Action: tier + BYOK gate, then submit a 4-axis overall analysis job; loads enriched news + earnings from DB, options snapshot, injects FMP provider; returns `cached | done | error`. */
@@ -192,6 +209,12 @@ export async function runOverallAnalysisAction(
                 ? { userApiKey: gate.userApiKey }
                 : {}),
             ...(options.force ? { force: true } : {}),
+            ...(options.onPromptAssembled !== undefined
+                ? { onPromptAssembled: options.onPromptAssembled }
+                : {}),
+            ...(options.priorAnalyses !== undefined
+                ? { priorAnalyses: options.priorAnalyses }
+                : {}),
         });
     } catch (err) {
         console.error('[runOverallAnalysisAction] unexpected error:', err);

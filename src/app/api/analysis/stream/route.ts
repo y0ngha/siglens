@@ -1,4 +1,10 @@
-import type { ModelId, PositionBucket, Timeframe } from '@y0ngha/siglens-core';
+import type {
+    AssembledPromptRecord,
+    ModelId,
+    PositionBucket,
+    Timeframe,
+} from '@y0ngha/siglens-core';
+import { after } from 'next/server';
 import { LocalizedStreamError } from '@/shared/lib/sse/LocalizedStreamError';
 import { getTranslations } from 'next-intl/server';
 import type { AnalysisGateErrorCode } from '@/shared/lib/types';
@@ -37,6 +43,11 @@ import { heartbeatStream } from '@/shared/lib/sse/heartbeatStream';
 import { canAcceptAnalysisStream } from '@/shared/lib/sse/activeStreams';
 import { runAnalysis, type SubmitAnalysisOptions } from './runAnalysisBridge';
 import { tryAcquireReanalyzeCooldown } from '@/entities/analysis';
+import {
+    DrizzleAnalysisHistoryRepository,
+    resolveGeneratedAt,
+    type AnalysisHistoryTab,
+} from '@/entities/analysis/analysisHistoryRepository';
 // core에서 직접 import — 해제는 서버 전용이어야 한다(클라이언트가 호출할 수 있으면
 // 쿨다운을 지우고 재요청하는 루프로 무력화된다). 아래 `releaseOnFailure` 참고.
 import { releaseReanalyzeCooldown } from '@y0ngha/siglens-core';
@@ -221,6 +232,76 @@ function withDeadline<T>(
 }
 
 /**
+ * `runAnalysis`(technical)가 `modelId` 생략 시 내부적으로 폴백하는 값과
+ * 동일하다(`entities/analysis/api.ts` 상단 주석 참고). 캐시 키와는 무관 —
+ * 오직 이 라우트가 히스토리 행의 `model_id`(감사용 컬럼)에 무엇을 적을지
+ * 결정하는 용도라, 여기가 core 상수와 어긋나도 캐시 동작에는 영향이 없다.
+ */
+const DEFAULT_TECHNICAL_MODEL_ID = 'analysis-worker';
+
+/**
+ * Task S2 (prior-analysis-context) — 새로 생성된 technical/overall 분석 1건을
+ * `analysis_history`에 최선노력으로 기록한다.
+ *
+ * **`after()`로 스케줄한다.** 응답은 이미 SSE로 클라이언트에 나간 뒤이므로,
+ * 여기서 대기해도 사용자 체감 지연이 없다(비교: `onPromptAssembled`은 프로바이더
+ * 호출 직전에 동기 캡처만 하고 절대 await하지 않는다 — 그건 응답 전 경로다).
+ *
+ * `DrizzleAnalysisHistoryRepository.saveAnalysisHistory`는 절대 throw하지
+ * 않는다(내부에서 catch+log) — 이 함수도 마찬가지로 실패를 삼킨다.
+ */
+function schedulePersistAnalysisHistory(input: {
+    symbol: string;
+    timeframe: string;
+    tab: AnalysisHistoryTab;
+    modelId: string;
+    locale: Locale;
+    result: unknown;
+    /**
+     * 캐시 미스 승자만 이 값을 받는다 — 동시 요청의 패자는 `undefined`다.
+     * `undefined`는 정상 경로이지 실패가 아니다(core 계약, 이 파일 상단
+     * import 주석 및 `AssembledPromptRecord` JSDoc 참고). 그대로 repository에
+     * 넘겨 프롬프트 컬럼이 null인 행을 남긴다.
+     */
+    prompt: AssembledPromptRecord | undefined;
+}): void {
+    // Prefer the analysis's OWN generation timestamp over the moment we happen
+    // to schedule the write. The technical axis stamps `analyzedAt` into its
+    // result; the overall axis does not, so it falls back to now. This matters
+    // downstream: the prior-analysis window anchors each past call to the BAR
+    // it belongs to, and a row stamped late enough to cross a bar boundary
+    // would be attributed to the wrong bar.
+    const generatedAt = resolveGeneratedAt(input.result);
+    try {
+        // `after()` itself (not just its callback) can throw synchronously
+        // — e.g. called outside a request scope. The DISPATCH `overall`
+        // call site invokes this function inline (no surrounding
+        // `.then()`/`.catch()`), so a bare `after()` throw here would
+        // reject that whole handler and turn an already-successful
+        // analysis into a client-visible error. Persistence must never do
+        // that — swallow and log instead.
+        after(async () => {
+            const { db } = getDatabaseClient();
+            await new DrizzleAnalysisHistoryRepository(db).saveAnalysisHistory({
+                symbol: input.symbol,
+                timeframe: input.timeframe,
+                tab: input.tab,
+                modelId: input.modelId,
+                locale: input.locale,
+                result: input.result,
+                generatedAt,
+                prompt: input.prompt,
+            });
+        });
+    } catch (err) {
+        console.error(
+            '[streamAnalysisRoute] schedulePersistAnalysisHistory failed:',
+            err
+        );
+    }
+}
+
+/**
  * Dispatch table: maps each non-technical analysis type to a function that
  * receives the raw `params` bag and an optional `AbortSignal`, and returns a
  * Promise. The returned promise is piped into `heartbeatStream`, keeping the
@@ -242,10 +323,18 @@ const DISPATCH: Record<
     (
         params: Record<string, unknown>,
         signal: AbortSignal | undefined,
-        locale: Locale
+        locale: Locale,
+        /**
+         * Task S3 (prior-analysis-context) — only `overall` reads it (to
+         * skip the history query for bot requests, mirroring the technical
+         * branch's `skipEnqueueIfMiss` gate). The other entries ignore the
+         * extra argument; TS structurally allows an implementation with
+         * fewer parameters than the declared function type.
+         */
+        isBotRequest: boolean
     ) => Promise<unknown>
 > = {
-    overall: async (params, signal, locale) => {
+    overall: async (params, signal, locale, isBotRequest) => {
         // technical과 같은 규칙 — 클라이언트는 의도만 보내고, 캐시 우회 여부는
         // 서버가 쿨다운 획득으로 판단한다. 키 namespace를 분리해(`<tf>:overall`)
         // 기술적 분석 재분석이 종합 분석 재분석을 막지 않게 한다.
@@ -262,15 +351,46 @@ const DISPATCH: Record<
                 remainingMs: cooldown.remainingMs,
             };
         }
-        return runOverallAnalysisAction(
-            params.symbol as string,
+
+        const symbol = params.symbol as string;
+        const timeframe = params.timeframe as Timeframe;
+        const modelId = params.modelId as ModelId;
+
+        // core의 `onPromptAssembled`는 캐시 미스에서 정확히 한 번, 프로바이더
+        // 호출 직전에 **동기로** 캡처만 한다 — 여기서 await하지 않는다(Task S2
+        // 계약, `schedulePersistAnalysisHistory` 주석 참고).
+        let capturedPrompt: AssembledPromptRecord | undefined;
+
+        // Task S3 (prior-analysis-context) — read history BEFORE the core
+        // call, unconditionally on the non-bot path. core folds a
+        // fingerprint of `priorAnalyses` into the cache key, so a lazy
+        // read-on-miss would let the key computation and the prompt
+        // rendering see different history sets for the same request. This
+        // costs one indexed query per non-bot request; accepted, not
+        // deferred. `isBotRequest` (passed in from `POST`'s dispatch call
+        // site, same `isBot(request.headers)` value the concurrency cap
+        // uses) skips the query entirely for a request that will not
+        // trigger a generation — `runOverallAnalysisAction` independently
+        // derives its own `skipEnqueueIfMiss` for the same reason.
+        const priorAnalyses = isBotRequest
+            ? undefined
+            : await new DrizzleAnalysisHistoryRepository(
+                  getDatabaseClient().db
+              ).findRecentForPrompt({ symbol, timeframe, tab: 'overall' });
+
+        const result = await runOverallAnalysisAction(
+            symbol,
             params.companyName as string,
-            params.timeframe as Timeframe,
-            params.modelId as ModelId,
+            timeframe,
+            modelId,
             locale,
             {
                 force: cooldown?.ok === true,
                 reasoning: params.reasoning as boolean | undefined,
+                onPromptAssembled: record => {
+                    capturedPrompt = record;
+                },
+                priorAnalyses,
             },
             signal
         ).catch(async (err: unknown) => {
@@ -280,8 +400,8 @@ const DISPATCH: Record<
             if (cooldown?.ok === true) {
                 try {
                     await releaseReanalyzeCooldown(
-                        params.symbol as string,
-                        `${params.timeframe as Timeframe}:overall` as Timeframe
+                        symbol,
+                        `${timeframe}:overall` as Timeframe
                     );
                 } catch (releaseErr) {
                     console.error(
@@ -292,6 +412,26 @@ const DISPATCH: Record<
             }
             throw err;
         });
+
+        // 'cached'는 이미 존재하는 행을 가리키므로 다시 저장하지 않는다 —
+        // 새로 생성된('done') 결과만 히스토리에 남긴다.
+        //
+        // `modelId`에 기본값 폴백을 두지 않는다 — technical과 달리 overall은
+        // core가 캐시 키에 modelId를 그대로 쓰므로(`entities/analysis/api.ts`
+        // 상단 주석) 생략은 정상 입력이 아니다. 누락되면 저장을 건너뛴다.
+        if (result.status === 'done' && modelId !== undefined) {
+            schedulePersistAnalysisHistory({
+                symbol,
+                timeframe,
+                tab: 'overall',
+                modelId,
+                locale,
+                result: result.result,
+                prompt: capturedPrompt,
+            });
+        }
+
+        return result;
     },
 
     fundamental: (params, signal, locale) =>
@@ -848,6 +988,18 @@ export async function POST(request: Request): Promise<Response> {
             );
 
             // --- 2g. Build work promise and stream ---
+            // core의 `onPromptAssembled`는 캐시 미스에서 정확히 한 번, 프로바이더
+            // 호출 직전에 **동기로** 캡처만 한다 — 여기서 await하지 않는다(Task S2
+            // 계약, `schedulePersistAnalysisHistory` 주석 참고).
+            let capturedPrompt: AssembledPromptRecord | undefined;
+
+            // Task S3 (prior-analysis-context) — `priorAnalyses` itself is
+            // fetched further down, inside the `withDeadline` work closure
+            // (audit finding: it used to be read here, before the
+            // concurrency cap below, so every non-bot request paid an
+            // indexed query even when about to be 503'd). See the comment
+            // at that call site for why moving it there is still safe for
+            // the cap-check atomicity this function also has to preserve.
             const options: SubmitAnalysisOptions = {
                 modelId,
                 skipEnqueueIfMiss,
@@ -861,6 +1013,9 @@ export async function POST(request: Request): Promise<Response> {
                 tierContext: { userId, tier },
                 reasoning: resolveReasoning(tier, reasoning),
                 positionBucket,
+                onPromptAssembled: record => {
+                    capturedPrompt = record;
+                },
                 ...(userApiKey !== undefined ? { userApiKey } : {}),
             };
 
@@ -969,38 +1124,95 @@ export async function POST(request: Request): Promise<Response> {
                 );
             }
 
-            const work = withDeadline(
-                deadlineSignal =>
-                    runAnalysis(
-                        symbol,
-                        companyName,
-                        timeframe,
-                        force,
-                        fmpSymbol,
-                        {
-                            ...options,
-                            /*
-                             * **`locale`을 core에 그대로 넘긴다.** 나머지 일곱
-                             * 축이 이미 이렇게 배선돼 있다 — core가 대상 언어로
-                             * 직접 쓰고(`outputLanguageContract`), 로케일은 core
-                             * 캐시 키에도 접힌다.
-                             *
-                             * 이 축만 사후 번역에 기대고 있었는데, 그 계층은 이
-                             * 커밋에서 걷어냈다. 남겨 두면 core가 영어로 쓴
-                             * 산출물이 "한국어를 번역하라" 프롬프트로 들어가
-                             * 망가진다.
-                             */
-                            locale: requestLocale,
-                            signal: deadlineSignal,
-                        }
-                    ).then(result => ({
-                        ...result,
-                        personalized: positionBucket !== undefined,
-                    })),
-                t('timeout')
-            ).catch(async (err: unknown) => {
+            const work = withDeadline(async deadlineSignal => {
+                // Task S3 (prior-analysis-context) — read here, i.e.
+                // AFTER the concurrency cap above and still BEFORE the
+                // `runAnalysis` call directly below. core folds a
+                // fingerprint of `priorAnalyses` into the cache key, so
+                // it has to be resolved before `runAnalysis` is invoked
+                // (a lazy read-on-miss would let the key computation
+                // and the prompt rendering see different history sets
+                // for the same request) — but it no longer has to be
+                // resolved before the cap check, and reading it here
+                // means a request `canAcceptAnalysisStream` rejects
+                // with 503 never pays for this indexed query at all,
+                // which is exactly the DB load a capacity spike should
+                // not carry.
+                //
+                // This does NOT reintroduce the await the cap-check
+                // comment above warns about: `withDeadline` invokes
+                // this closure via `(async () => run(signal))()`, and
+                // calling an async function runs synchronously up to
+                // its first `await` — so the call to `withDeadline`
+                // itself still returns synchronously, with no yield to
+                // the event loop between the cap check and
+                // `heartbeatStream` registering the stream below. The
+                // `await` below only ever suspends *this* closure,
+                // which already only exists because the cap check
+                // passed.
+                const priorAnalyses = skipEnqueueIfMiss
+                    ? undefined
+                    : await new DrizzleAnalysisHistoryRepository(
+                          getDatabaseClient().db
+                      ).findRecentForPrompt({
+                          symbol,
+                          timeframe,
+                          tab: 'technical',
+                      });
+
+                return runAnalysis(
+                    symbol,
+                    companyName,
+                    timeframe,
+                    force,
+                    fmpSymbol,
+                    {
+                        ...options,
+                        priorAnalyses,
+                        /*
+                         * **`locale`을 core에 그대로 넘긴다.** 나머지 일곱
+                         * 축이 이미 이렇게 배선돼 있다 — core가 대상 언어로
+                         * 직접 쓰고(`outputLanguageContract`), 로케일은 core
+                         * 캐시 키에도 접힌다.
+                         *
+                         * 이 축만 사후 번역에 기대고 있었는데, 그 계층은 이
+                         * 커밋에서 걷어냈다. 남겨 두면 core가 영어로 쓴
+                         * 산출물이 "한국어를 번역하라" 프롬프트로 들어가
+                         * 망가진다.
+                         */
+                        locale: requestLocale,
+                        signal: deadlineSignal,
+                    }
+                ).then(result => ({
+                    ...result,
+                    personalized: positionBucket !== undefined,
+                }));
+            }, t('timeout')).catch(async (err: unknown) => {
                 await releaseOnFailure();
                 throw err;
+            });
+
+            // Task S2 (prior-analysis-context) — persist newly-generated
+            // ('done') results only; 'cached' rows already exist. This is an
+            // INDEPENDENT subscriber on `work` (does not replace the
+            // `heartbeatStream(withReaderViews(work, ...))` consumer below),
+            // so it needs its own rejection handler or a timeout/gate-error
+            // here becomes an unhandled rejection.
+            work.then(result => {
+                if (result.status !== 'done') return;
+                schedulePersistAnalysisHistory({
+                    symbol,
+                    timeframe,
+                    tab: 'technical',
+                    modelId: modelId ?? DEFAULT_TECHNICAL_MODEL_ID,
+                    locale: requestLocale,
+                    result: result.result,
+                    prompt: capturedPrompt,
+                });
+            }).catch(() => {
+                // Analysis failed/timed out/aborted — nothing to persist.
+                // The real error is already surfaced to the client via
+                // `withReaderViews(work, ...)` below.
             });
 
             return new Response(
@@ -1063,9 +1275,13 @@ export async function POST(request: Request): Promise<Response> {
     // await가 들어가면 원자성이 깨진다(위 technical 분기 주석 참고).
     const locale = resolveRequestLocale(request);
     const t = await streamMessages(locale);
+    // 한 번만 계산해 동시성 상한·DISPATCH(overall의 히스토리 읽기 skip)·
+    // withReaderViews 세 곳에서 재사용한다 — 각자 다시 계산해도 값은 같지만
+    // (Headers read, side-effect 없음) 하나로 묶는 게 더 명확하다.
+    const isBotRequest = isBot(request.headers);
 
     // 동시 분석 상한. 봇은 더 높은 천장 — 근거는 `canAcceptAnalysisStream` 주석.
-    if (!canAcceptAnalysisStream(isBot(request.headers))) {
+    if (!canAcceptAnalysisStream(isBotRequest)) {
         console.warn('[analysis-stream] rejected: concurrency cap reached');
         return Response.json(
             { error: t('busy') },
@@ -1075,7 +1291,8 @@ export async function POST(request: Request): Promise<Response> {
 
     try {
         const work = withDeadline(
-            deadlineSignal => handler(body.params, deadlineSignal, locale),
+            deadlineSignal =>
+                handler(body.params, deadlineSignal, locale, isBotRequest),
             t('timeout')
         );
         return new Response(
@@ -1085,7 +1302,7 @@ export async function POST(request: Request): Promise<Response> {
                     locale,
                     body.type,
                     body.params.symbol,
-                    isBot(request.headers)
+                    isBotRequest
                 ),
                 { genericErrorMessage: t('generic') }
             ),

@@ -3,9 +3,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const { MOCK_CRYPTO_SESSION, MOCK_EQUITY_SESSION } = vi.hoisted(() => ({
+const {
+    MOCK_CRYPTO_SESSION,
+    MOCK_EQUITY_SESSION,
+    mockFindRecentForPrompt,
+    mockSaveAnalysisHistory,
+} = vi.hoisted(() => ({
     MOCK_CRYPTO_SESSION: { type: 'crypto' } as never,
     MOCK_EQUITY_SESSION: { type: 'equity' } as never,
+    // Task S3/S2 (prior-analysis-context wiring gap, PR #784 review) —
+    // hoisted so individual tests can assert what prewarmTechnical/
+    // prewarmOverall read from and write to analysis_history.
+    mockFindRecentForPrompt: vi.fn(),
+    mockSaveAnalysisHistory: vi.fn(),
 }));
 
 // vi.mock은 vitest가 import 위로 hoist하지만, ESLint(import/first)와 가독성을
@@ -82,6 +92,28 @@ vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
 vi.mock('@/shared/lib/options/openInterestStale', () => ({
     isOpenInterestSnapshotStale: vi.fn(),
 }));
+
+vi.mock('@/entities/analysis/analysisHistoryRepository', async () => {
+    // `resolveGeneratedAt` is a pure function shared with the SSE route —
+    // keep the REAL implementation so `generatedAt`-derivation assertions
+    // below exercise actual parsing behavior, not a stub (mirrors
+    // `app/api/analysis/stream/__tests__/route.test.ts`'s identical mock).
+    const actual = await vi.importActual<
+        typeof import('@/entities/analysis/analysisHistoryRepository')
+    >('@/entities/analysis/analysisHistoryRepository');
+    return {
+        ...actual,
+        // Vitest 4.x는 `new` 호출 시 arrow function 구현을 거부한다 — 일반 function을 사용한다.
+        DrizzleAnalysisHistoryRepository: vi
+            .fn()
+            .mockImplementation(function () {
+                return {
+                    findRecentForPrompt: mockFindRecentForPrompt,
+                    saveAnalysisHistory: mockSaveAnalysisHistory,
+                };
+            }),
+    };
+});
 
 import {
     runAnalysis,
@@ -178,6 +210,10 @@ describe('prewarmTechnical', () => {
         mockRunAnalysis.mockResolvedValue(cachedResult);
         mockResolveMarketProfile.mockResolvedValue('us-equity');
         mockGetCachedMarketDataProvider.mockReturnValue(mockProvider);
+        // Task S3 (prior-analysis-context) — default: empty history, no-op
+        // persistence. Individual tests below override these.
+        mockFindRecentForPrompt.mockResolvedValue([]);
+        mockSaveAnalysisHistory.mockResolvedValue(undefined);
     });
 
     it('calls runAnalysis with the anonymous-free branch shape (modelId default, skipEnqueueIfMiss:false, tier:free, reasoning:false, no bucket)', async () => {
@@ -198,6 +234,12 @@ describe('prewarmTechnical', () => {
                 tierContext: { userId: null, tier: 'free' },
                 reasoning: false,
                 positionBucket: undefined,
+                // Task S3 (prior-analysis-context, PR #784 review) — the SSE
+                // route's non-bot branch always supplies both; prewarm must
+                // match so it computes the SAME core cache key (see the
+                // `priorAnalyses`/`onPromptAssembled` describe block below).
+                priorAnalyses: [],
+                onPromptAssembled: expect.any(Function),
             }
         );
     });
@@ -221,6 +263,109 @@ describe('prewarmTechnical', () => {
             '^BTCUSD',
             expect.objectContaining({ marketDataProvider: mockProvider })
         );
+    });
+
+    describe('analysis_history 배선 (Task S3, PR #784 리뷰 지적)', () => {
+        it('history를 symbol/timeframe/tab:technical로 읽어 priorAnalyses로 그대로 넘긴다', async () => {
+            const history = [
+                {
+                    generatedAt: new Date('2026-08-01'),
+                    trend: 'bullish',
+                    riskLevel: 'medium',
+                },
+            ];
+            mockFindRecentForPrompt.mockResolvedValueOnce(history as never);
+
+            await prewarmTechnical('AAPL', 'Apple Inc.', undefined, false);
+
+            expect(mockFindRecentForPrompt).toHaveBeenCalledWith({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                tab: 'technical',
+            });
+            expect(mockRunAnalysis).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                false,
+                undefined,
+                expect.objectContaining({ priorAnalyses: history })
+            );
+        });
+
+        it("status: 'done' → captured prompt과 함께 saveAnalysisHistory에 저장한다", async () => {
+            const capturedPrompt = {
+                system: 'system prompt text',
+                stable: 'stable skill digest',
+                dynamic: 'dynamic per-call block',
+                promptVersion: 'v9',
+            };
+            mockRunAnalysis.mockImplementationOnce(
+                (_s, _c, _t, _f, _fp, options) => {
+                    options?.onPromptAssembled?.(capturedPrompt as never);
+                    return Promise.resolve({
+                        status: 'done' as const,
+                        result: { headlineKo: 'h' },
+                        lockedInfoDepth: [],
+                    } as never);
+                }
+            );
+
+            await prewarmTechnical('AAPL', 'Apple Inc.', undefined, false);
+
+            expect(mockSaveAnalysisHistory).toHaveBeenCalledTimes(1);
+            expect(mockSaveAnalysisHistory).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    symbol: 'AAPL',
+                    timeframe: '1Day',
+                    tab: 'technical',
+                    modelId: DEEPSEEK_V4_FLASH_MODEL,
+                    locale: 'ko',
+                    result: { headlineKo: 'h' },
+                    prompt: capturedPrompt,
+                })
+            );
+        });
+
+        it("status: 'cached' → saveAnalysisHistory를 호출하지 않는다", async () => {
+            mockRunAnalysis.mockResolvedValueOnce(cachedResult);
+
+            await prewarmTechnical('AAPL', 'Apple Inc.', undefined, false);
+
+            expect(mockSaveAnalysisHistory).not.toHaveBeenCalled();
+        });
+
+        it("status: 'miss_no_trigger' → saveAnalysisHistory를 호출하지 않는다", async () => {
+            mockRunAnalysis.mockResolvedValueOnce({
+                status: 'miss_no_trigger',
+            } as never);
+
+            await prewarmTechnical('AAPL', 'Apple Inc.', undefined, false);
+
+            expect(mockSaveAnalysisHistory).not.toHaveBeenCalled();
+        });
+
+        it('saveAnalysisHistory가 실패해도 prewarmTechnical 자체는 실패하지 않는다', async () => {
+            mockRunAnalysis.mockResolvedValueOnce({
+                status: 'done' as const,
+                result: { headlineKo: 'h' },
+                lockedInfoDepth: [],
+            } as never);
+            mockSaveAnalysisHistory.mockRejectedValueOnce(
+                new Error('db write boom')
+            );
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+
+            try {
+                await expect(
+                    prewarmTechnical('AAPL', 'Apple Inc.', undefined, false)
+                ).resolves.toEqual(expect.objectContaining({ status: 'done' }));
+            } finally {
+                errorSpy.mockRestore();
+            }
+        });
     });
 });
 
@@ -376,6 +521,10 @@ describe('prewarmOverall', () => {
         MockNewsRepository.mockImplementation(function () {
             return { listBySymbol: mockListBySymbol } as never;
         });
+        // Task S3 (prior-analysis-context) — default: empty history, no-op
+        // persistence. The dedicated describe block below overrides these.
+        mockFindRecentForPrompt.mockResolvedValue([]);
+        mockSaveAnalysisHistory.mockResolvedValue(undefined);
     });
 
     it('calls runOverallAnalysis with the anonymous-free branch shape', async () => {
@@ -531,6 +680,99 @@ describe('prewarmOverall', () => {
             expect.any(Error)
         );
         warnSpy.mockRestore();
+    });
+
+    describe('analysis_history 배선 (Task S3, PR #784 리뷰 지적)', () => {
+        it('history를 symbol/timeframe/tab:overall로 읽어 priorAnalyses로 그대로 넘긴다', async () => {
+            const history = [
+                {
+                    generatedAt: new Date('2026-08-01'),
+                    trend: 'bearish',
+                    riskLevel: 'high',
+                },
+            ];
+            mockFindRecentForPrompt.mockResolvedValueOnce(history as never);
+
+            await prewarmOverall('AAPL', 'Apple Inc.', false);
+
+            expect(mockFindRecentForPrompt).toHaveBeenCalledWith({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                tab: 'overall',
+            });
+            expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ priorAnalyses: history })
+            );
+        });
+
+        it("status: 'done' → captured prompt과 함께 saveAnalysisHistory에 저장한다", async () => {
+            const capturedPrompt = {
+                system: 'overall system prompt',
+                stable: 'overall stable digest',
+                dynamic: 'overall dynamic block',
+                promptVersion: 'v9',
+            };
+            mockRunOverallAnalysis.mockImplementationOnce(options => {
+                options?.onPromptAssembled?.(capturedPrompt as never);
+                return Promise.resolve({
+                    status: 'done' as const,
+                    result: { summary: 'ok' },
+                } as never);
+            });
+
+            await prewarmOverall('AAPL', 'Apple Inc.', false);
+
+            expect(mockSaveAnalysisHistory).toHaveBeenCalledTimes(1);
+            expect(mockSaveAnalysisHistory).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    symbol: 'AAPL',
+                    timeframe: '1Day',
+                    tab: 'overall',
+                    modelId: DEEPSEEK_V4_FLASH_MODEL,
+                    locale: 'ko',
+                    result: { summary: 'ok' },
+                    prompt: capturedPrompt,
+                })
+            );
+        });
+
+        it("status: 'cached' → saveAnalysisHistory를 호출하지 않는다", async () => {
+            mockRunOverallAnalysis.mockResolvedValueOnce({
+                status: 'cached',
+                result: { summary: 'cached' },
+            } as never);
+
+            await prewarmOverall('AAPL', 'Apple Inc.', false);
+
+            expect(mockSaveAnalysisHistory).not.toHaveBeenCalled();
+        });
+
+        it("status: 'miss_no_trigger' → saveAnalysisHistory를 호출하지 않는다", async () => {
+            mockRunOverallAnalysis.mockResolvedValueOnce({
+                status: 'miss_no_trigger',
+            } as never);
+
+            await prewarmOverall('AAPL', 'Apple Inc.', false);
+
+            expect(mockSaveAnalysisHistory).not.toHaveBeenCalled();
+        });
+
+        it('saveAnalysisHistory가 실패해도 prewarmOverall 자체는 실패하지 않는다', async () => {
+            mockSaveAnalysisHistory.mockRejectedValueOnce(
+                new Error('db write boom')
+            );
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+
+            try {
+                await expect(
+                    prewarmOverall('AAPL', 'Apple Inc.', false)
+                ).resolves.toEqual(expect.objectContaining({ status: 'done' }));
+            } finally {
+                errorSpy.mockRestore();
+            }
+        });
     });
 });
 
