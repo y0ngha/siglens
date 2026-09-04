@@ -117,6 +117,21 @@ describe('POST /api/presence', () => {
         );
     });
 
+    it('발효 시각 정각에는 진단 컬럼을 저장한다', async () => {
+        // 경계는 `>=`다. `>`로 뒤집히는 회귀는 1초 전 케이스로는 잡히지 않는다.
+        vi.setSystemTime(new Date('2026-09-18T15:00:00.000Z'));
+        const { POST } = await importRoute();
+        await POST();
+
+        expect(recordVisit).toHaveBeenCalledWith(
+            expect.objectContaining({
+                userAgent: HUMAN_UA,
+                country: 'KR',
+                landingPath: '/ko/AAPL',
+            })
+        );
+    });
+
     it('헤더가 없으면 진단 컬럼을 null로 남긴다', async () => {
         requestHeaders = new Headers({
             'user-agent': HUMAN_UA,
