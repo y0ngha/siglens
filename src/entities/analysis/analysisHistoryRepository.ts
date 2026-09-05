@@ -229,6 +229,10 @@ function toPriorAnalysis(row: {
             entryPrices?: unknown;
             stopLoss?: unknown;
             takeProfitPrices?: unknown;
+            reconciledLevels?: {
+                stopLoss?: unknown;
+                takeProfitPrices?: unknown;
+            };
         };
     };
     if (!isTrend(trend) || !isRiskLevel(riskLevel)) {
@@ -238,14 +242,33 @@ function toPriorAnalysis(row: {
     const entryPrices = Array.isArray(actionRecommendation?.entryPrices)
         ? actionRecommendation.entryPrices.filter(isPositivePrice)
         : undefined;
-    const takeProfitPrices = Array.isArray(
-        actionRecommendation?.takeProfitPrices
-    )
-        ? actionRecommendation.takeProfitPrices.filter(isPositivePrice)
+    // 손절/익절은 **보정값이 있으면 그쪽이 이긴다.**
+    //
+    // core는 AI가 낸 손절·익절이 무효할 때(예: 롱인데 손절가가 진입가 위,
+    // 익절 사다리에 말이 안 되는 값이 섞임) 원본을 **그대로 두고** 도메인
+    // 보정값을 `reconciledLevels`에 따로 붙인다 — "The original AI fields
+    // above are never mutated". 그래서 원본만 읽으면 core가 이미 거부한 값을
+    // 집어 오게 된다.
+    //
+    // 그게 조용한 오보로 이어진다: 무효 익절가 `1`이 그대로 오면 core의
+    // 채점기가 `high >= takeProfitPrices[0]`으로 판정하므로 **항상
+    // "target reached"**가 되고, 실제로는 미달한 목표를 달성했다고 프롬프트에
+    // 사실처럼 싣는다. 손절도 마찬가지로 거부된 레벨 기준으로 채점된다.
+    // 자매 레포(siglens-trader)의 `safe-extract.ts`도 같은 이유로 보정값을
+    // 우선한다.
+    const reconciled = actionRecommendation?.reconciledLevels;
+    const takeProfitSource = Array.isArray(reconciled?.takeProfitPrices)
+        ? reconciled.takeProfitPrices
+        : actionRecommendation?.takeProfitPrices;
+    const takeProfitPrices = Array.isArray(takeProfitSource)
+        ? takeProfitSource.filter(isPositivePrice)
         : undefined;
-    const stopLoss = isPositivePrice(actionRecommendation?.stopLoss)
-        ? actionRecommendation.stopLoss
-        : undefined;
+    const reconciledStop = reconciled?.stopLoss;
+    const stopLoss = isPositivePrice(reconciledStop)
+        ? reconciledStop
+        : isPositivePrice(actionRecommendation?.stopLoss)
+          ? actionRecommendation.stopLoss
+          : undefined;
 
     return {
         generatedAt: row.generatedAt,
