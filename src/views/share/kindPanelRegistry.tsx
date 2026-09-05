@@ -115,19 +115,18 @@ type PanelComponent<K extends ShareableKind> = (props: {
     plain?: string;
 }) => ReactNode;
 
+interface WithPlainSwitchProps {
+    plain?: string;
+    children: ReactNode;
+}
+
 /**
  * 라이브 위젯들이 `*AiSummary`/`*Content`에서 하는 것과 **같은 자리**에 스위치를
  * 둔다 — 각 `*View`를 통째로 감싸고, 쉽게보기일 때 원문 트리를 마운트하지 않는다.
  * `plain`이 없는 스냅샷(이 필드 이전 또는 평이화 실패)에서는 스위치가 토글을
  * 그리지 않고 원문만 통과시키므로 기존 공유 링크의 동작이 그대로 유지된다.
  */
-function WithPlainSwitch({
-    plain,
-    children,
-}: {
-    plain?: string;
-    children: ReactNode;
-}) {
+function WithPlainSwitch({ plain, children }: WithPlainSwitchProps) {
     return <PlainAnalysisSwitch plain={plain}>{children}</PlainAnalysisSwitch>;
 }
 
