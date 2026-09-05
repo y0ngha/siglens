@@ -46,7 +46,10 @@ import { analysisHistory, analysisPromptBlobs } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { withRetry } from '@/shared/lib/withRetry';
-import { resolveEffectiveActionLevels } from './lib/effectiveActionLevels';
+import {
+    resolveEffectiveActionLevels,
+    type ActionLevelsSource,
+} from './lib/effectiveActionLevels';
 
 /** `analysis_history` 탭 축 — S2 스코프는 technical/overall 둘뿐. */
 export type AnalysisHistoryTab = 'technical' | 'overall';
@@ -206,15 +209,7 @@ function toPriorAnalysis(row: {
     const { trend, riskLevel, actionRecommendation } = row.result as {
         trend?: unknown;
         riskLevel?: unknown;
-        actionRecommendation?: {
-            entryPrices?: unknown;
-            stopLoss?: unknown;
-            takeProfitPrices?: unknown;
-            reconciledLevels?: {
-                stopLoss?: unknown;
-                takeProfitPrices?: unknown;
-            };
-        };
+        actionRecommendation?: ActionLevelsSource;
     };
     if (!isTrend(trend) || !isRiskLevel(riskLevel)) {
         return null;

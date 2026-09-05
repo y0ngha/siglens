@@ -19,8 +19,13 @@
  * 자매 레포(siglens-trader)의 `safe-extract.ts`도 같은 이유로 보정값을 우선한다.
  */
 
-/** 실효 레벨을 뽑을 수 있는 최소 구조. core `ActionRecommendation`이 그대로 맞는다. */
-interface ActionLevelsSource {
+/**
+ * 실효 레벨을 뽑을 수 있는 최소 구조. core `ActionRecommendation`이 그대로 맞고,
+ * 저장된 jsonb를 좁히는 쪽(`analysisHistoryRepository`)도 이 타입을 재사용한다 —
+ * 필드를 전부 `unknown`으로 둔 이유가 그것이다. 몇 달 전 스키마가 쓴 행이 무엇을
+ * 담고 있든 받아 낸 뒤 값 단위로 검증한다.
+ */
+export interface ActionLevelsSource {
     readonly entryPrices?: unknown;
     readonly stopLoss?: unknown;
     readonly takeProfitPrices?: unknown;
