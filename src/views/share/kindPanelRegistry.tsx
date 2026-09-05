@@ -106,14 +106,22 @@ function ChartSharePanel({
     );
 }
 
-type PanelComponent<K extends ShareableKind> = (props: {
+/**
+ * 공유 패널이 받는 props. `ShareKindPanel`이 registry 엔트리를 이 형태로 좁혀
+ * 호출하므로(그 파일의 캐스트) 두 곳이 같은 타입을 봐야 한다 — 그래서 export한다.
+ */
+export interface SharePanelProps<K extends ShareableKind> {
     result: SnapshotResultOf<K>;
     chartBars?: Bar[];
     assetClass?: AssetClass;
     symbol?: string;
     /** 스냅샷에 저장된 쉽게보기 산문. 없으면 토글이 렌더되지 않는다. */
     plain?: string;
-}) => ReactNode;
+}
+
+type PanelComponent<K extends ShareableKind> = (
+    props: SharePanelProps<K>
+) => ReactNode;
 
 interface WithPlainSwitchProps {
     plain?: string;

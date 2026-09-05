@@ -28,6 +28,7 @@ import type {
 import type { AssetClass } from '@/shared/config/marketProfile';
 import type { Bar } from '@y0ngha/siglens-core';
 import { SHARE_KIND_PANEL_REGISTRY } from './kindPanelRegistry';
+import type { SharePanelProps } from './kindPanelRegistry';
 
 interface ShareKindPanelProps<K extends ShareableKind> {
     kind: K;
@@ -74,13 +75,9 @@ export function ShareKindPanel<K extends ShareableKind>({
     // was passed in. The cast collapses the union return type to the concrete
     // generic signature without narrowing the individual union members at call
     // sites.
-    const Panel = SHARE_KIND_PANEL_REGISTRY[kind] as (props: {
-        result: SnapshotResultOf<K>;
-        chartBars?: Bar[];
-        assetClass?: AssetClass;
-        symbol?: string;
-        plain?: string;
-    }) => ReactNode;
+    const Panel = SHARE_KIND_PANEL_REGISTRY[kind] as (
+        props: SharePanelProps<K>
+    ) => ReactNode;
     return (
         <Panel
             result={result}
