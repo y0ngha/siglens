@@ -46,6 +46,10 @@ import { analysisHistory, analysisPromptBlobs } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { withRetry } from '@/shared/lib/withRetry';
+import {
+    isPositivePrice,
+    resolveEffectiveActionLevels,
+} from './lib/effectiveActionLevels';
 
 /** `analysis_history` 탭 축 — S2 스코프는 technical/overall 둘뿐. */
 export type AnalysisHistoryTab = 'technical' | 'overall';
@@ -160,26 +164,6 @@ function sha256Hex(body: string): string {
 }
 
 /**
- * 가격으로 쓸 수 있는 값인가 — 유한할 뿐 아니라 **양수**여야 한다.
- *
- * 유한성만 보면 `0`이 통과한다. 그런데 `0`은 가격이 아니라 "값이 없다"를
- * 잘못 인코딩한 흔적이고, 통과시키면 조용히 거짓을 만든다: core의 채점기는
- * `high >= takeProfitPrices[0]`으로 목표 도달을 판정하므로 목표가가 `0`이면
- * **항상 "target reached"**가 되어, 달성한 적 없는 목표를 달성했다고
- * 프롬프트에 사실처럼 싣는다(`SL 0.00` / `entry 0.00`도 마찬가지).
- *
- * 이 값들은 몇 달 전 스키마가 쓴 행일 수 있고, core의 프롬프트가 모델에게
- * "`null`이나 `0`을 placeholder 가격으로 쓰지 말라"고 명시적으로 지시할
- * 만큼 알려진 실패 모드다 — `reconciledLevels`가 존재하는 이유 자체가 AI가
- * 낸 레벨이 무효하거나 비어 있을 수 있기 때문이다. 그러니 저장된 값이
- * 양수라고 가정하지 않는다. 자매 레포(siglens-trader)의
- * `isFinitePositive`와 같은 기준이다.
- */
-function isPositivePrice(value: unknown): value is number {
-    return typeof value === 'number' && Number.isFinite(value) && value > 0;
-}
-
-/**
  * `Trend` / `RiskLevel`의 허용 값 집합.
  *
  * `typeof === 'string'`만으로는 부족하다. 이 행들은 몇 달 전 스키마가 쓴
@@ -242,33 +226,9 @@ function toPriorAnalysis(row: {
     const entryPrices = Array.isArray(actionRecommendation?.entryPrices)
         ? actionRecommendation.entryPrices.filter(isPositivePrice)
         : undefined;
-    // 손절/익절은 **보정값이 있으면 그쪽이 이긴다.**
-    //
-    // core는 AI가 낸 손절·익절이 무효할 때(예: 롱인데 손절가가 진입가 위,
-    // 익절 사다리에 말이 안 되는 값이 섞임) 원본을 **그대로 두고** 도메인
-    // 보정값을 `reconciledLevels`에 따로 붙인다 — "The original AI fields
-    // above are never mutated". 그래서 원본만 읽으면 core가 이미 거부한 값을
-    // 집어 오게 된다.
-    //
-    // 그게 조용한 오보로 이어진다: 무효 익절가 `1`이 그대로 오면 core의
-    // 채점기가 `high >= takeProfitPrices[0]`으로 판정하므로 **항상
-    // "target reached"**가 되고, 실제로는 미달한 목표를 달성했다고 프롬프트에
-    // 사실처럼 싣는다. 손절도 마찬가지로 거부된 레벨 기준으로 채점된다.
-    // 자매 레포(siglens-trader)의 `safe-extract.ts`도 같은 이유로 보정값을
-    // 우선한다.
-    const reconciled = actionRecommendation?.reconciledLevels;
-    const takeProfitSource = Array.isArray(reconciled?.takeProfitPrices)
-        ? reconciled.takeProfitPrices
-        : actionRecommendation?.takeProfitPrices;
-    const takeProfitPrices = Array.isArray(takeProfitSource)
-        ? takeProfitSource.filter(isPositivePrice)
-        : undefined;
-    const reconciledStop = reconciled?.stopLoss;
-    const stopLoss = isPositivePrice(reconciledStop)
-        ? reconciledStop
-        : isPositivePrice(actionRecommendation?.stopLoss)
-          ? actionRecommendation.stopLoss
-          : undefined;
+    // 손절/익절은 보정값 우선 — 근거는 `resolveEffectiveActionLevels`의 JSDoc.
+    const { stopLoss, takeProfitPrices } =
+        resolveEffectiveActionLevels(actionRecommendation);
 
     return {
         generatedAt: row.generatedAt,

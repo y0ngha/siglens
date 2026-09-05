@@ -6,6 +6,7 @@ import type {
     RiskLevel,
     Trend,
 } from '@y0ngha/siglens-core';
+import { resolveEffectiveActionLevels } from '@/entities/analysis';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 
 interface BuildExpertAnalysisReportInput {
@@ -154,6 +155,10 @@ function buildKeyLevelsBlock(
     }
 
     const { actionRecommendation } = analysis;
+    // 손절/익절은 AI 원본이 아니라 **실효값**을 싣는다 — core가 무효로 판정한
+    // 레벨을 원본 필드에 그대로 남겨두기 때문. 근거는 헬퍼 JSDoc 참고.
+    const { stopLoss, takeProfitPrices } =
+        resolveEffectiveActionLevels(actionRecommendation);
     if (actionRecommendation?.entryPrices?.length) {
         lines.push(
             tReport('entryZone', {
@@ -161,17 +166,17 @@ function buildKeyLevelsBlock(
             })
         );
     }
-    if (actionRecommendation?.stopLoss !== undefined) {
+    if (stopLoss !== undefined) {
         lines.push(
             tReport('invalidation', {
-                v0: formatPrice(actionRecommendation.stopLoss),
+                v0: formatPrice(stopLoss),
             })
         );
     }
-    if (actionRecommendation?.takeProfitPrices?.length) {
+    if (takeProfitPrices?.length) {
         lines.push(
             tReport('targetZone', {
-                v0: formatPriceList(actionRecommendation.takeProfitPrices),
+                v0: formatPriceList(takeProfitPrices),
             })
         );
     }
@@ -275,10 +280,13 @@ function buildResponseStance(
                       v0: formatPriceList(actionRecommendation.entryPrices),
                   })
                 : '';
+        // 위와 같은 이유로 실효 손절값을 쓴다.
+        const effectiveStopLoss =
+            resolveEffectiveActionLevels(actionRecommendation).stopLoss;
         const invalidation =
-            actionRecommendation.stopLoss !== undefined
+            effectiveStopLoss !== undefined
                 ? tReport('invalidationNote', {
-                      v0: formatPrice(actionRecommendation.stopLoss),
+                      v0: formatPrice(effectiveStopLoss),
                   })
                 : '';
 

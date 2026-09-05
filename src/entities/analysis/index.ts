@@ -29,6 +29,12 @@ export { resolveConflicts } from './lib/resolveConflicts';
 
 export { normalizeAnalysisResponse } from './lib/normalizeAnalysisResponse';
 
+export {
+    isPositivePrice,
+    resolveEffectiveActionLevels,
+    type EffectiveActionLevels,
+} from './lib/effectiveActionLevels';
+
 export { peekAnalysisStatic } from './lib/peekAnalysisStaticCache';
 
 // actions are imported from @/entities/analysis/actions
