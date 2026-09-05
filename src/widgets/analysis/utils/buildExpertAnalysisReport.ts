@@ -159,10 +159,7 @@ function buildKeyLevelsBlock(
     }
 
     const { actionRecommendation } = analysis;
-    // 손절/익절은 AI 원본이 아니라 **실효값**을 싣는다 — core가 무효로 판정한
-    // 레벨을 원본 필드에 그대로 남겨두기 때문. 근거는 헬퍼 JSDoc 참고.
-    const { stopLoss, takeProfitPrices } =
-        resolveEffectiveActionLevels(actionRecommendation);
+    const { stopLoss, takeProfitPrices } = effectiveLevels;
     if (actionRecommendation?.entryPrices?.length) {
         lines.push(
             tReport('entryZone', {
