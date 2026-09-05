@@ -54,6 +54,8 @@
 - [redesign/p1-dark-tokens toggle border-contrast R6](project-redesign-p1-toggle-contrast-r6.md) — R5 math re-verified exactly; WCAG 1.4.11 exempts `disabled` (inactive), Math.max fill-or-border reading is sound; found latent (not live) NaN vacuous-pass hole in guard's own hex parser
 - [redesign/p1-dark-tokens toggle border-contrast R7 — CLOSED, approved](project-redesign-p1-toggle-contrast-r7-closed.md) — R6's NaN vacuous-pass hole verified fixed via live mutation (`#7d838f80` throws, reverted byte-identical); loop ends
 - [feat/visitor-user-agent R2 — privacy v3 seed + effective-date gate, approved](project-visitor-metrics-privacy-v3-r2.md) — R1's onConflictDoNothing-frozen-v2 fix verified: v3 seed diff-clean across 4 locales, gate constant == effectiveDate instant, no other hardcoded version
+- [feat/share-plain-language R1](project-share-plain-language-r1.md) — contentHash omits `plain` (chartBars precedent shows it should be included); onConflictDoUpdate only bumps expiresAt so dedupe silently freezes first sharer's (possibly missing) plain for 7 days
+- [feat/share-plain-language R2 — CLOSED, approved](project-share-plain-language-r2-closed.md) — both R1 findings verified fixed exactly per chartBars precedent; contentHash 6th param, whitespace-plain rejected server-side, no trim mismatch
 
 ## Feedback
 
