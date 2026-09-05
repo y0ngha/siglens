@@ -474,6 +474,44 @@ describe('DrizzleAnalysisHistoryRepository.findRecentForPrompt', () => {
         ]);
     });
 
+    it('drops zero and negative prices — they are not prices, and 0 forges a "target reached"', async () => {
+        // `Number.isFinite(0)`은 참이라 유한성 검사만으로는 통과한다. 그런데
+        // core의 채점기는 `high >= takeProfitPrices[0]`으로 목표 도달을
+        // 판정하므로, 목표가가 0이면 **항상 "target reached"**가 되어 달성한
+        // 적 없는 목표를 달성했다고 프롬프트에 사실처럼 싣는다.
+        const row = {
+            result: {
+                trend: 'bearish',
+                riskLevel: 'low',
+                actionRecommendation: {
+                    entryPrices: [0, 148],
+                    stopLoss: 0,
+                    takeProfitPrices: [0, -12, 160],
+                },
+            },
+            generatedAt: new Date('2026-08-29T00:00:00.000Z'),
+        };
+        const { db } = makeSelectDb([row]);
+        const repository = new DrizzleAnalysisHistoryRepository(db);
+
+        const result = await repository.findRecentForPrompt({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            tab: 'technical',
+            now: NOW,
+        });
+
+        expect(result).toEqual<PriorAnalysis[]>([
+            {
+                generatedAt: row.generatedAt,
+                trend: 'bearish',
+                riskLevel: 'low',
+                entryPrices: [148],
+                takeProfitPrices: [160],
+            },
+        ]);
+    });
+
     it('returns [] and does not throw when the query fails', async () => {
         const { db } = makeSelectDb([], { limitFails: true });
         const repository = new DrizzleAnalysisHistoryRepository(db);
