@@ -38,6 +38,12 @@ export interface ShareableRegistration<
      * share registration so ShareButton can include them in the snapshot action call.
      */
     chartBars?: Bar[];
+    /**
+     * 쉽게보기 산문. 위젯이 이미 화면에 갖고 있는 값을 그대로 넘긴다 —
+     * 공유 스냅샷에 실어야 링크를 받은 사람도 쉽게보기/원문보기를 쓸 수 있다.
+     * 평이화가 실패했거나 아직 안 왔으면 `null`.
+     */
+    plain?: string | null;
 }
 
 interface ShareableContextValue {
@@ -103,7 +109,7 @@ export function useRegisterShareable(reg: ShareableRegistration): void {
     const triggerRef = useRef(reg.trigger);
     const chartBarsRef = useRef(reg.chartBars);
     const resultRef = useRef(reg.result);
-    const { kind, status, context } = reg;
+    const { kind, status, context, plain } = reg;
     const { symbol, displayName, assetClass, analyzedAt } = context;
     useEffect(() => {
         triggerRef.current = reg.trigger;
@@ -124,7 +130,20 @@ export function useRegisterShareable(reg: ShareableRegistration): void {
             context: { symbol, displayName, assetClass, analyzedAt },
             trigger: () => triggerRef.current(),
             chartBars: chartBarsRef.current,
+            plain,
         });
         return () => register(null);
-    }, [register, kind, status, symbol, displayName, assetClass, analyzedAt]);
+    }, [
+        register,
+        kind,
+        status,
+        symbol,
+        displayName,
+        assetClass,
+        analyzedAt,
+        // 문자열(원시값)이라 ref로 우회할 필요가 없다. 평이화는 결과보다 늦게
+        // 도착하는 경우가 있어(SSE 봉투가 같이 오지만 위젯 상태 갱신 순서가
+        // 다를 수 있다) 이 값이 바뀌면 재등록해야 공유에 산문이 실린다.
+        plain,
+    ]);
 }

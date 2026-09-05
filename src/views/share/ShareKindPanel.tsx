@@ -50,6 +50,11 @@ interface ShareKindPanelProps<K extends ShareableKind> {
      * instead of an empty string.
      */
     symbol?: string;
+    /**
+     * 스냅샷에 저장된 쉽게보기 산문. 공유 시점에 공유자 화면에 있던 값이다.
+     * 없으면(이 필드 이전 스냅샷·평이화 실패) 패널이 원문만 렌더한다.
+     */
+    plain?: string;
 }
 
 /**
@@ -62,6 +67,7 @@ export function ShareKindPanel<K extends ShareableKind>({
     chartBars,
     assetClass,
     symbol,
+    plain,
 }: ShareKindPanelProps<K>) {
     // Safe: `kind` and `result` are co-typed via the same generic `K`, so the
     // registry entry for this key always accepts exactly the result type that
@@ -73,6 +79,7 @@ export function ShareKindPanel<K extends ShareableKind>({
         chartBars?: Bar[];
         assetClass?: AssetClass;
         symbol?: string;
+        plain?: string;
     }) => ReactNode;
     return (
         <Panel
@@ -80,6 +87,7 @@ export function ShareKindPanel<K extends ShareableKind>({
             chartBars={chartBars}
             assetClass={assetClass}
             symbol={symbol}
+            plain={plain}
         />
     );
 }

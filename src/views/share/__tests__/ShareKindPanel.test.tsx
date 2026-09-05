@@ -28,8 +28,9 @@ import { ShareKindPanel } from '@/views/share/ShareKindPanel';
 // Mock heavy widget deps so the test stays unit-level.
 // Paths MUST match the imports in kindPanelRegistry.tsx (deep paths, not barrels).
 
+const mockAnalysisPanel = vi.fn((_props: Record<string, unknown>) => null);
 vi.mock('@/widgets/analysis/AnalysisPanel', () => ({
-    AnalysisPanel: () => null,
+    AnalysisPanel: (props: Record<string, unknown>) => mockAnalysisPanel(props),
 }));
 
 const mockOverallView = vi.fn((_props: Record<string, unknown>) => null);
@@ -90,6 +91,54 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
                 ).not.toThrow();
             });
         }
+    });
+
+    /**
+     * 공유 링크의 쉽게보기 — 스냅샷에 `plain`이 실려 있으면 뷰어도 토글을 쓴다.
+     *
+     * 공유를 받은 사람은 SSE 라우트를 타지 않아 평이화를 새로 만들 수 없다.
+     * 그래서 스냅샷의 산문이 화면까지 닿는지가 이 기능의 전부다.
+     */
+    describe('plain(쉽게보기) prose from the snapshot', () => {
+        it('renders the plain prose and the view toggle when plain exists', () => {
+            const { getByRole, getByText } = render(
+                <ShareKindPanel
+                    kind="news"
+                    result={stubResults.news as never}
+                    plain="주가가 오르는 흐름입니다."
+                />
+            );
+            expect(getByText('주가가 오르는 흐름입니다.')).toBeInTheDocument();
+            expect(getByRole('radiogroup')).toBeInTheDocument();
+        });
+
+        it('renders no toggle when the snapshot has no plain prose', () => {
+            // 이 필드 이전에 만들어진 공유 링크. 아무것도 하지 않는 토글이
+            // 뜨면 사용자는 고장으로 읽는다.
+            const { queryByRole } = render(
+                <ShareKindPanel
+                    kind="news"
+                    result={stubResults.news as never}
+                />
+            );
+            expect(queryByRole('radiogroup')).toBeNull();
+        });
+
+        it('forwards plain to AnalysisPanel for the chart kind (no double switch)', () => {
+            render(
+                <ShareKindPanel
+                    kind="chart"
+                    result={stubResults.chart as never}
+                    symbol="AAPL"
+                    plain="차트를 쉬운 말로 풀어 쓴 설명입니다."
+                />
+            );
+            expect(mockAnalysisPanel).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    plain: '차트를 쉬운 말로 풀어 쓴 설명입니다.',
+                })
+            );
+        });
     });
 
     it('renders chart kind with chartBars prop without throwing', () => {

@@ -54,6 +54,22 @@ describe('buildShareSnapshot', () => {
         );
     });
 
+    // plain(쉽게보기) forwarding — 공유 링크에서 토글을 살리는 유일한 경로다.
+    it('includes plain prose in snapshot when provided', () => {
+        const withPlain = {
+            ...input,
+            plain: '주가가 오르는 흐름입니다.',
+        } as unknown as CreateShareInput;
+        expect(buildShareSnapshot(withPlain).plain).toBe(
+            '주가가 오르는 흐름입니다.'
+        );
+    });
+
+    it('omits plain from snapshot when not provided', () => {
+        const snap = buildShareSnapshot(input);
+        expect(Object.prototype.hasOwnProperty.call(snap, 'plain')).toBe(false);
+    });
+
     it('produces a JSON-stable snapshot with chartBars', () => {
         const inputWithBars = {
             ...input,

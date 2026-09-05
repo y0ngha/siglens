@@ -144,6 +144,47 @@ describe('ShareButton', () => {
             await waitFor(() => expect(mockAction).toHaveBeenCalledTimes(1));
         });
 
+        /**
+         * 스냅샷에 산문을 실어야 공유 링크에서 쉽게보기가 산다 —
+         * 링크를 받은 사람은 SSE 라우트를 타지 않아 평이화를 새로 만들 수 없다.
+         */
+        it('sends the registered plain prose to createShareSnapshotAction', async () => {
+            mockUseShareable.mockReturnValue({
+                ...makeReg('success'),
+                plain: '주가가 오르는 흐름입니다.',
+            });
+            renderButton();
+            fireEvent.click(
+                screen.getByRole('button', { name: '분석 결과 공유' })
+            );
+            await waitFor(() =>
+                expect(mockAction).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        plain: '주가가 오르는 흐름입니다.',
+                    })
+                )
+            );
+        });
+
+        it('omits plain when the registration has none (server rejects empty strings)', async () => {
+            mockUseShareable.mockReturnValue({
+                ...makeReg('success'),
+                plain: null,
+            });
+            renderButton();
+            fireEvent.click(
+                screen.getByRole('button', { name: '분석 결과 공유' })
+            );
+            await waitFor(() => expect(mockAction).toHaveBeenCalledTimes(1));
+            const call = mockAction.mock.calls.find(
+                ([arg]) => (arg as { symbol?: string }).symbol === 'AAPL'
+            );
+            expect(call).toBeDefined();
+            expect(
+                Object.prototype.hasOwnProperty.call(call?.[0], 'plain')
+            ).toBe(false);
+        });
+
         it('opens ShareSheet when canShareNatively is false and action returns ok', async () => {
             mockUseShareable.mockReturnValue(makeReg('success'));
             renderButton();

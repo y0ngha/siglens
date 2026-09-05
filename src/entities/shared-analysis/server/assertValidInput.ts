@@ -26,6 +26,16 @@ export const MAX_RESULT_BYTES = 65_536;
 export const MAX_DISPLAY_NAME_LENGTH = 128;
 
 /**
+ * Maximum UTF-8 byte length for the `plain` prose carried in a share snapshot.
+ *
+ * The plain rewrite is guarded upstream (`guardPlainText`) to stay near the length
+ * of the source prose, so 32 KB is far above any legitimate value while keeping the
+ * jsonb column bounded. Measured in bytes for the same multibyte reason as
+ * MAX_RESULT_BYTES.
+ */
+export const MAX_PLAIN_BYTES = 32_768;
+
+/**
  * Returns true when the value is a valid OHLCV Bar element.
  *
  * `time`, `open`, `high`, `low`, and `close` must all be finite numbers.
@@ -100,6 +110,15 @@ export function isValidShareInput(raw: unknown): raw is CreateShareInput {
         if (o.chartBars.length === 0 || o.chartBars.length > MAX_CHART_BARS)
             return false;
         if (!o.chartBars.every(isValidBar)) return false;
+    }
+    // plain is optional; when present it must be a non-empty string within the
+    // byte cap. Contents are not trusted or parsed — it is rendered as text.
+    if (o.plain !== undefined) {
+        // 공백만 있는 값도 거부한다. 클라이언트가 이미 trim으로 거르지만
+        // 신뢰 경계는 여기다 — 통과하면 뷰어에 빈 쉽게보기 화면이 뜬다.
+        if (!isNonEmptyString(o.plain) || o.plain.trim().length === 0)
+            return false;
+        if (Buffer.byteLength(o.plain, 'utf8') > MAX_PLAIN_BYTES) return false;
     }
     return true;
 }

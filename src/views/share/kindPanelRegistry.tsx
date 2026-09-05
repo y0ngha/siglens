@@ -12,6 +12,7 @@
  */
 
 import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
+import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
 import type { ReactNode } from 'react';
 import type {
     ShareableKind,
@@ -69,10 +70,12 @@ function ChartSharePanel({
     result,
     chartBars,
     symbol,
+    plain,
 }: {
     result: SnapshotResultOf<'chart'>;
     chartBars?: Bar[];
     symbol: string;
+    plain?: string;
 }) {
     const themeVersion = useThemeVersion();
     const rawKeyLevels = result.keyLevels ?? { support: [], resistance: [] };
@@ -88,12 +91,16 @@ function ChartSharePanel({
                     />
                 </div>
             )}
+            {/* 차트 kind는 `AnalysisPanel`이 스위치를 자기 안에 갖고 있다 —
+                밖에서 한 번 더 감싸면 쉽게보기일 때 캔들 차트까지 사라진다
+                (라이브 화면과 다른 동작이 된다). */}
             <AnalysisPanel
                 symbol={symbol}
                 analysis={result}
                 keyLevels={clustered}
                 timeframe="1Day"
                 isFreeUser={false}
+                plain={plain}
             />
         </div>
     );
@@ -104,14 +111,33 @@ type PanelComponent<K extends ShareableKind> = (props: {
     chartBars?: Bar[];
     assetClass?: AssetClass;
     symbol?: string;
+    /** 스냅샷에 저장된 쉽게보기 산문. 없으면 토글이 렌더되지 않는다. */
+    plain?: string;
 }) => ReactNode;
 
+/**
+ * 라이브 위젯들이 `*AiSummary`/`*Content`에서 하는 것과 **같은 자리**에 스위치를
+ * 둔다 — 각 `*View`를 통째로 감싸고, 쉽게보기일 때 원문 트리를 마운트하지 않는다.
+ * `plain`이 없는 스냅샷(이 필드 이전 또는 평이화 실패)에서는 스위치가 토글을
+ * 그리지 않고 원문만 통과시키므로 기존 공유 링크의 동작이 그대로 유지된다.
+ */
+function WithPlainSwitch({
+    plain,
+    children,
+}: {
+    plain?: string;
+    children: ReactNode;
+}) {
+    return <PlainAnalysisSwitch plain={plain}>{children}</PlainAnalysisSwitch>;
+}
+
 export const SHARE_KIND_PANEL_REGISTRY = {
-    chart: ({ result, chartBars, symbol }) => (
+    chart: ({ result, chartBars, symbol, plain }) => (
         <ChartSharePanel
             result={result}
             chartBars={chartBars}
             symbol={symbol ?? ''}
+            plain={plain}
         />
     ),
     /**
@@ -136,23 +162,49 @@ export const SHARE_KIND_PANEL_REGISTRY = {
      * `profileIdForSymbol`이 크립토를 us-equity로 떨어뜨리는 한계가 여기선
      * 영향을 주지 않는다.
      */
-    overall: ({ result, assetClass, symbol }) => (
-        <OverallView
-            result={result}
-            assetClass={assetClass}
-            hasOptions={
-                symbol !== undefined &&
-                symbol !== '' &&
-                getDescriptor(profileIdForSymbol(symbol)).tabs.includes(
-                    'options'
-                )
-            }
-        />
+    overall: ({ result, assetClass, symbol, plain }) => (
+        <WithPlainSwitch plain={plain}>
+            <OverallView
+                result={result}
+                assetClass={assetClass}
+                hasOptions={
+                    symbol !== undefined &&
+                    symbol !== '' &&
+                    getDescriptor(profileIdForSymbol(symbol)).tabs.includes(
+                        'options'
+                    )
+                }
+            />
+        </WithPlainSwitch>
     ),
-    news: ({ result }) => <NewsAiSummaryView result={result} />,
-    fundamental: ({ result }) => <FundamentalAiSummaryView result={result} />,
-    financials: ({ result }) => <FinancialsAiSummaryView result={result} />,
-    congress: ({ result }) => <CongressTrendSummaryView result={result} />,
-    options: ({ result }) => <OptionsAiAnalysisView result={result} />,
-    'fear-greed': ({ result }) => <FearGreedShareView snapshot={result} />,
+    news: ({ result, plain }) => (
+        <WithPlainSwitch plain={plain}>
+            <NewsAiSummaryView result={result} />
+        </WithPlainSwitch>
+    ),
+    fundamental: ({ result, plain }) => (
+        <WithPlainSwitch plain={plain}>
+            <FundamentalAiSummaryView result={result} />
+        </WithPlainSwitch>
+    ),
+    financials: ({ result, plain }) => (
+        <WithPlainSwitch plain={plain}>
+            <FinancialsAiSummaryView result={result} />
+        </WithPlainSwitch>
+    ),
+    congress: ({ result, plain }) => (
+        <WithPlainSwitch plain={plain}>
+            <CongressTrendSummaryView result={result} />
+        </WithPlainSwitch>
+    ),
+    options: ({ result, plain }) => (
+        <WithPlainSwitch plain={plain}>
+            <OptionsAiAnalysisView result={result} />
+        </WithPlainSwitch>
+    ),
+    'fear-greed': ({ result, plain }) => (
+        <WithPlainSwitch plain={plain}>
+            <FearGreedShareView snapshot={result} />
+        </WithPlainSwitch>
+    ),
 } satisfies { [K in ShareableKind]: PanelComponent<K> };

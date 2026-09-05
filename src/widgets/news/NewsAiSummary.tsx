@@ -326,6 +326,9 @@ export function NewsAiSummary({
             // NewsAnalysisResponse has no analyzedAt; resolveAsOf falls back to createdAt.
             analyzedAt: undefined,
         },
+        // 공유 스냅샷에 쉽게보기 산문을 함께 싣는다 — 링크를 받은 사람은
+        // SSE 라우트를 타지 않아 평이화를 다시 만들 수 없다.
+        plain: analysis.status === 'done' ? analysis.plain : null,
         trigger: analysis.trigger,
     });
 

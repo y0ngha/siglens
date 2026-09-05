@@ -121,6 +121,7 @@ export default async function SharePage({ params }: Props) {
                         : 'equity'
                 }
                 symbol={ticker}
+                plain={snapshot.plain}
             />
 
             <div

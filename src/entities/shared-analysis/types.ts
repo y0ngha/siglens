@@ -72,6 +72,20 @@ export interface SharedAnalysisSnapshot<
      * Capped to `MAX_CHART_BARS` (400) bars by `isValidShareInput`.
      */
     chartBars?: Bar[];
+    /**
+     * 스냅샷 시점의 쉽게보기 산문.
+     *
+     * 공유 링크를 여는 사람은 SSE 라우트를 타지 않으므로 평이화를 다시 만들 방법이
+     * 없다(LLM 재호출은 비용·비결정성 둘 다 문제다). 그래서 공유하는 쪽이 이미
+     * 화면에 갖고 있던 산문을 그대로 실어 보낸다.
+     *
+     * 공유자 로케일로 쓰인 글이다. 공유 URL이 로케일을 보존하므로(`useShareFlow`)
+     * 링크를 그대로 연 사람은 같은 언어를 본다. `result` 안의 산문도 같은 성질이라
+     * 새로 생기는 제약은 아니다.
+     *
+     * 없으면(이 필드 추가 이전 스냅샷·평이화 실패) 뷰어는 원문만 본다.
+     */
+    plain?: string;
 }
 
 /** createShareSnapshotAction 입력(클라 전달). */
@@ -95,6 +109,11 @@ export interface CreateShareInput<K extends ShareableKind = ShareableKind> {
      * Validated server-side: must be an array with length ≤ MAX_CHART_BARS.
      */
     chartBars?: Bar[];
+    /**
+     * 공유 시점에 화면에 있던 쉽게보기 산문. 없으면 생략한다.
+     * 서버가 길이만 검증하고 내용은 신뢰하지 않는다(표시 전용 텍스트).
+     */
+    plain?: string;
 }
 
 /** 액션 결과. */

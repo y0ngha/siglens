@@ -59,7 +59,8 @@ export async function createShareSnapshotAction(
                 snapshot.symbol,
                 locale,
                 snapshot.result,
-                snapshot.chartBars
+                snapshot.chartBars,
+                snapshot.plain
             ),
             locale,
             snapshot,

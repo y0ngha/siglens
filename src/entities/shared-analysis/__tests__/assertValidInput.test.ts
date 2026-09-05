@@ -1,6 +1,7 @@
 import {
     isValidShareInput,
     MAX_DISPLAY_NAME_LENGTH,
+    MAX_PLAIN_BYTES,
     MAX_RESULT_BYTES,
 } from '@/entities/shared-analysis/server/assertValidInput';
 import { MAX_CHART_BARS } from '@/entities/shared-analysis';
@@ -479,5 +480,38 @@ describe('isValidShareInput', () => {
                 sharerTier: 'free',
             })
         ).toBe(true);
+    });
+    const withPlain = (plain: unknown) => ({
+        kind: 'chart',
+        symbol: 'AAPL',
+        context: { symbol: 'AAPL', displayName: 'Apple' },
+        result: { trend: 'bullish', summary: 'x' },
+        sharerTier: 'free',
+        plain,
+    });
+
+    it('accepts input carrying plain prose', () => {
+        expect(isValidShareInput(withPlain('쉬운 설명입니다.'))).toBe(true);
+    });
+
+    it('rejects an empty plain string', () => {
+        // 빈 문자열이 통과하면 뷰어 쪽에서 아무것도 하지 않는 토글이 생긴다.
+        expect(isValidShareInput(withPlain(''))).toBe(false);
+    });
+
+    it('rejects a whitespace-only plain', () => {
+        // 신뢰 경계는 서버다 — 통과하면 뷰어에 빈 쉽게보기 화면이 뜬다.
+        expect(isValidShareInput(withPlain('   \n  '))).toBe(false);
+    });
+
+    it('rejects a non-string plain', () => {
+        expect(isValidShareInput(withPlain({ text: 'x' }))).toBe(false);
+    });
+
+    it('rejects plain prose over the byte cap', () => {
+        // 한글은 UTF-8 3바이트라 문자 수가 아니라 바이트로 재야 한다.
+        expect(isValidShareInput(withPlain('가'.repeat(MAX_PLAIN_BYTES)))).toBe(
+            false
+        );
     });
 });
