@@ -1,4 +1,9 @@
-const { mockAfter } = vi.hoisted(() => ({ mockAfter: vi.fn() }));
+const { mockAfter, mockPruneAnalysisHistory, mockGetDatabaseClient } =
+    vi.hoisted(() => ({
+        mockAfter: vi.fn(),
+        mockPruneAnalysisHistory: vi.fn(),
+        mockGetDatabaseClient: vi.fn(),
+    }));
 
 vi.mock('next/server', () => ({ after: mockAfter }));
 
@@ -9,6 +14,23 @@ vi.mock('../lock', () => ({
 
 vi.mock('../runPrewarmBatch', () => ({
     runPrewarmBatch: vi.fn(),
+}));
+
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: mockGetDatabaseClient,
+}));
+
+// Task S4 — DrizzleAnalysisHistoryRepository is stubbed so route tests only
+// verify the cron's own isolation contract (prune never blocks lock
+// release), not the repository's own retention logic (covered by
+// entities/analysis/__tests__/analysisHistoryRepository.test.ts).
+vi.mock('@/entities/analysis/analysisHistoryRepository', () => ({
+    // Regular `function` (not an arrow) — the route calls this with `new`,
+    // and an explicit-object return from a `new`-invoked function replaces
+    // the constructed `this`, giving the caller `{ pruneAnalysisHistory }`.
+    DrizzleAnalysisHistoryRepository: vi.fn().mockImplementation(function () {
+        return { pruneAnalysisHistory: mockPruneAnalysisHistory };
+    }),
 }));
 
 import { constants } from 'node:http2';
@@ -36,6 +58,11 @@ describe('PATCH /api/cron/seo-prewarm', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         process.env.CRON_SECRET = 'test-secret';
+        mockGetDatabaseClient.mockReturnValue({ db: {} });
+        mockPruneAnalysisHistory.mockResolvedValue({
+            rowsDeleted: 0,
+            promptsCleared: 0,
+        });
     });
 
     it('CRON_SECRET이 설정되지 않으면 401을 반환한다', async () => {
@@ -125,6 +152,64 @@ describe('PATCH /api/cron/seo-prewarm', () => {
             '[seo-prewarm] redis unavailable — lock acquire threw:',
             expect.any(Error)
         );
+
+        errSpy.mockRestore();
+    });
+
+    it('Task S4 — 배치 성공 후 pruneAnalysisHistory를 호출하고 결과를 로그한 뒤 releasePrewarmLock한다', async () => {
+        vi.mocked(acquirePrewarmLock).mockResolvedValue('token-1');
+        vi.mocked(runPrewarmBatch).mockResolvedValue({
+            harvested: 2,
+            revalidated: 3,
+            remaining: 4,
+            staleTotal: 10,
+            durationMs: 1234,
+            fmpBudgetUsed: 5,
+        });
+        mockPruneAnalysisHistory.mockResolvedValue({
+            rowsDeleted: 7,
+            promptsCleared: 3,
+        });
+        const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+        await PATCH(makeRequest('Bearer test-secret'));
+        const callback = mockAfter.mock.calls[0][0] as () => Promise<void>;
+        await callback();
+
+        expect(mockPruneAnalysisHistory).toHaveBeenCalledTimes(1);
+        expect(logSpy).toHaveBeenCalledWith(
+            '[seo-prewarm] prune done:',
+            JSON.stringify({ rowsDeleted: 7, promptsCleared: 3 })
+        );
+        expect(releasePrewarmLock).toHaveBeenCalledTimes(1);
+        expect(releasePrewarmLock).toHaveBeenCalledWith('token-1');
+
+        logSpy.mockRestore();
+    });
+
+    it('Task S4 — pruneAnalysisHistory가 throw해도(방어적 격리) cron은 정상 종료하고 releasePrewarmLock을 호출한다', async () => {
+        vi.mocked(acquirePrewarmLock).mockResolvedValue('token-1');
+        vi.mocked(runPrewarmBatch).mockResolvedValue({
+            harvested: 2,
+            revalidated: 3,
+            remaining: 4,
+            staleTotal: 10,
+            durationMs: 1234,
+            fmpBudgetUsed: 5,
+        });
+        mockPruneAnalysisHistory.mockRejectedValue(new Error('prune boom'));
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        await PATCH(makeRequest('Bearer test-secret'));
+        const callback = mockAfter.mock.calls[0][0] as () => Promise<void>;
+        await expect(callback()).resolves.toBeUndefined();
+
+        expect(errSpy).toHaveBeenCalledWith(
+            '[seo-prewarm] prune failed:',
+            expect.any(Error)
+        );
+        expect(releasePrewarmLock).toHaveBeenCalledTimes(1);
+        expect(releasePrewarmLock).toHaveBeenCalledWith('token-1');
 
         errSpy.mockRestore();
     });

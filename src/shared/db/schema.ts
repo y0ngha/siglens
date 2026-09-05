@@ -3,6 +3,7 @@ import 'server-only';
 import { sql } from 'drizzle-orm';
 import {
     boolean,
+    char,
     date,
     doublePrecision,
     index,
@@ -807,6 +808,89 @@ export const contentTranslations = pgTable(
             table.entity,
             table.locale,
             table.entityId
+        ),
+    ]
+);
+
+/**
+ * core `AssembledPrompt`의 `stable` 절편을 콘텐츠 주소로 저장하는 블롭 테이블.
+ *
+ * core 계약상 `stable`은 `always_on` skill digest만 담고, 호출마다 **바이트
+ * 단위로 동일**하다(캐시 가능한 요청 프리픽스로 설계됐기 때문). `always_on`
+ * skill이 24개, 원본 소스 합쳐 ~199KB라 이 청크를 행마다 그대로 저장하면
+ * 매 분석마다 프롬프트에서 가장 큰 덩어리를 중복 적재하게 된다. 해시로
+ * 주소화하면 서로 다른 블롭당 한 행만 남는다.
+ */
+export const analysisPromptBlobs = pgTable('analysis_prompt_blobs', {
+    /** sha256(body) hex. */
+    hash: char('hash', { length: CONTENT_HASH_LENGTH }).primaryKey(),
+    body: text('body').notNull(),
+    firstSeenAt: timestamp('first_seen_at', { withTimezone: true })
+        .notNull()
+        .defaultNow(),
+});
+
+/**
+ * 생성된 분석 1건당 1행 — core `priorAnalyses`에 되먹임할 이력.
+ *
+ * **`locale`은 감사용일 뿐, 절대 읽기 필터로 쓰지 않는다.** 분석은 출력
+ * 로케일마다(4개) 별도 LLM 호출로 생성되지만, core가 렌더링하는 다이제스트는
+ * 숫자/enum뿐인 언어중립 요약이라 네 로케일이 이력 풀 하나를 공유한다.
+ * 로케일로 필터링하면 근거 없이 데이터를 4분의 1로 깎는 꼴이다.
+ *
+ * **`model_id`도 마찬가지로 감사용 저장이지, 읽기는 모델 불문이다.** 모델로
+ * 필터링하면 대부분의 이력이 텅 비게 되고, 과거 시장 판단은 어떤 모델이
+ * 냈든 과거 시장 판단이다.
+ *
+ * `prompt_*_hash` 두 컬럼은 `analysis_prompt_blobs.hash`를 가리키지만 FK를
+ * 걸지 않는다 — 블롭 테이블과 이 테이블의 보존 주기가 다르기 때문에(아래),
+ * FK가 있으면 정리(prune)가 막힌다.
+ *
+ * 프롬프트 관련 컬럼은 전부 nullable이다. 프롬프트 영속화가 분석 자체를
+ * 실패시켜서는 안 되므로 쓰기 경로는 best-effort이고, 실패하면 그 행의
+ * 프롬프트 컬럼들이 null로 남을 뿐이다.
+ *
+ * 보존 기간을 일부러 나눴다: `result`는 90일 보관한다 — `'1Day'`
+ * prior-analysis 윈도우가 21 거래일 ≈ 역법일 30일이라 여유가 필요하다.
+ * `prompt_dynamic`은 7일 후 비운다 — 디버깅·오프라인 평가용이라 최신성만
+ * 중요하다. prior-analysis 기능은 `result`만 읽으므로 프롬프트 컬럼을
+ * 비워도 그 기능에는 영향이 없다.
+ */
+export const analysisHistory = pgTable(
+    'analysis_history',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        timeframe: varchar('timeframe', { length: 8 }).notNull(),
+        /** 'technical' | 'overall' */
+        tab: varchar('tab', { length: 16 }).notNull(),
+        modelId: varchar('model_id', { length: 64 }).notNull(),
+        /** 감사용 — 읽기 필터 금지. 테이블 JSDoc 참조. */
+        locale: contentLocaleEnum('locale').notNull(),
+        /** 정규화된 AnalysisResponse. */
+        result: jsonb('result').notNull(),
+        inputFingerprint: varchar('input_fingerprint', { length: 32 }),
+        promptVersion: varchar('prompt_version', { length: 32 }),
+        promptStableHash: char('prompt_stable_hash', {
+            length: CONTENT_HASH_LENGTH,
+        }),
+        promptSystemHash: char('prompt_system_hash', {
+            length: CONTENT_HASH_LENGTH,
+        }),
+        promptDynamic: text('prompt_dynamic'),
+        generatedAt: timestamp('generated_at', {
+            withTimezone: true,
+        }).notNull(),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [
+        index('analysis_history_lookup_idx').on(
+            table.symbol,
+            table.timeframe,
+            table.tab,
+            table.generatedAt.desc()
         ),
     ]
 );

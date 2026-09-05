@@ -1,6 +1,6 @@
 {
-  "id": "ce8883b7-4772-44cc-91cb-5d34a5ab3d29",
-  "prevId": "44b9e131-d5eb-4c47-9257-c9e6e24689d6",
+  "id": "80fdfb68-7a5f-4565-af3d-e45dd0162055",
+  "prevId": "ce8883b7-4772-44cc-91cb-5d34a5ab3d29",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2354,6 +2354,24 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "country": {
+          "name": "country",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "landing_path": {
+          "name": "landing_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},

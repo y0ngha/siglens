@@ -1,5 +1,7 @@
 import { constants } from 'node:http2';
 import { after } from 'next/server';
+import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
+import { getDatabaseClient } from '@/shared/db/client';
 import { safeBearerCompare } from '@/shared/lib/auth/safeBearerCompare';
 import { fireAndForget } from '@/entities/ticker';
 import { acquirePrewarmLock, releasePrewarmLock } from './lock';
@@ -65,6 +67,26 @@ export async function PATCH(request: Request): Promise<Response> {
             console.log('[seo-prewarm] batch done:', JSON.stringify(counts));
         } catch (error) {
             console.error('[seo-prewarm] batch failed:', error);
+        }
+        // Task S4 (retention) — piggybacks on this cron rather than getting
+        // its own endpoint/schedule. Isolated in its own try/catch and run
+        // AFTER the prewarm work above so a prune failure (or even a throw
+        // from client/repo construction) can never affect prewarm's result
+        // or delay lock release beyond one extra bounded query round-trip.
+        // `pruneAnalysisHistory` itself is already best-effort (never
+        // throws) — this try/catch is defense in depth for the surrounding
+        // client lookup.
+        try {
+            const { db } = getDatabaseClient();
+            const pruneCounts = await new DrizzleAnalysisHistoryRepository(
+                db
+            ).pruneAnalysisHistory();
+            console.log(
+                '[seo-prewarm] prune done:',
+                JSON.stringify(pruneCounts)
+            );
+        } catch (error) {
+            console.error('[seo-prewarm] prune failed:', error);
         } finally {
             await releasePrewarmLock(token);
             resolveBatch();
