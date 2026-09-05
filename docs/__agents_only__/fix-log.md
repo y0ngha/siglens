@@ -784,8 +784,6 @@
 - Violation(실증에서만 잡힘): `tryReadTranslatorConfig`는 **Gemini 전용**인데(`GEMINI_API_KEY` + Gemini로 검증된 `TRANSLATE_MODEL`) 그 값을 `callDeepseekChat`에 넘겼다. 로컬 브라우저에서 `[deepseek] Non-DeepSeek model spec: gemini-2.5-flash-lite`로 **매 호출이 던지고** 있었다. 단위 테스트는 provider 어댑터를 모킹해 전부 초록이었다.
   - Rule: provider 특정 config 리더를 다른 provider에 재사용하지 않는다. 모델과 키는 **한 자리에서 함께** 고른다. 그리고 어댑터 호출은 모킹만으로 확인하지 말고 **돌아가는 서버에 한 번 태운다** — 이번엔 그 한 번이 아니었으면 배포까지 갔다
   - Context: 기존 `analysis-translation/api.ts`에 **같은 잠복 버그가 남아 있다**. `ko`는 조기 반환이라 안 터지고 en·ja·zh만 조용히 한국어로 떨어진다. 범위 밖이라 PR 본문에만 적었다
-- Violation(실증에서만 잡힘): 새 i18n 키를 `messages/*.json`에 직접 넣었더니 화면에 `widgets.analysis.viewToggle.plain`이 **원시 키 그대로** 렌더됐다. 카탈로그와 별개로 `messages/_meta/clientKeys.json`(라우트별 매니페스트)이 있고, `node scripts/i18n/extract.mjs --write`로 재생성해야 클라이언트 페이로드에 실린다. 탭을 6개 더 배선한 뒤에도 같은 이유로 `clientKeyCoverage` 6건이 빨개졌다.
-  - Rule: i18n 키 추가는 **카탈로그 + 매니페스트** 두 곳이다. 손으로 JSON만 고치면 조용히 원시 키가 나간다. 그리고 `t(variable)`은 추출기가 못 보므로 **라벨은 리터럴 키로** 부른다(`symbolTabsConfig.ts`·`AnalysisPanel.tsx`가 남긴 주석과 같은 함정)
 - Violation: 디자인 시스템 가드 2건을 깨뜨렸다 — `rounded-md`(스케일 밖)와 `controlBorderTokenGuard`의 줄 번호 면제(`AnalysisPanel.tsx:1055` → 파일이 길어져 1066). 후자는 가드가 "낡은 항목" 검사로 **스스로 알려주도록** 설계돼 있었다.
   - Rule: 줄 번호를 키로 쓰는 면제 목록이 있는 파일을 늘릴 때는 그 목록을 함께 옮긴다. 가드가 알려주게 돼 있으니 **가드를 돌리는 것이 곧 절차**다
 - Violation: `withReaderViews`가 `work`에 체인을 둘 걸어(`withLocalizedProse(work)` + `work.then(...)`), 분석이 실패하면 소비되지 않는 쪽이 **미처리 rejection**으로 샜다(라우트 스위트 Errors 6 → 8). 이미 resolve된 값으로 번역 체인을 시작하도록 접자 8 → 0이 됐다 — master에 있던 6건까지 함께 사라졌다.

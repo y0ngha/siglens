@@ -365,3 +365,68 @@ db/seeds/terms/tos/v1.{en,ja,zh}.md
 6. 시행일에 애플리케이션 배포
 7. 다음 날 `yarn metrics`로 행이 실제로 쌓이는지 확인 — pepper 미설정이면
    여기서 0으로 드러난다
+
+---
+
+## 14. 진단 컬럼 추가 (2026-09-04)
+
+### 14.1 계기
+
+배포 후 실제 수치가 예상보다 많았다. §4.4의 봇 필터 3중이 정말 봇을 다 걸러내는지
+확인할 방법이 없었다 — 통과한 트래픽의 원본 신호를 하나도 보관하지 않았기 때문이다.
+
+원인 하나는 확정됐다. `isBot`이 얇았다. Next 내장 정규식(`Googlebot|Bingbot|
+facebookexternalhit|Twitterbot|…|GPTBot`)에 `AI_BOT_RE` 6개 토큰을 더한 것이 전부라,
+`robots.ts`가 이미 이름을 알고 있는 크롤러 대부분이 그냥 통과했다:
+
+- AI: `PerplexityBot`, `Perplexity-User`, `ChatGPT-User`, `OAI-SearchBot`,
+  `Bytespider`, `Amazonbot`, `CCBot`, `Meta-External*`, `anthropic-ai`,
+  `Claude-Web`, `PetalBot`, `YouBot`, `Applebot`, `DuckAssistBot`
+- 기생 SEO: `AhrefsBot`, `SemrushBot`, `MJ12bot`, `DotBot`, `BLEXBot`, `DataForSeoBot`
+- 국내 검색: `Yeti`(네이버), `Daumoa`
+- 비-브라우저 클라이언트: `curl/`, `python-requests`, `Go-http-client`,
+  `HeadlessChrome`, `Chrome-Lighthouse`, 가동 감시 서비스
+
+다만 이 부류는 상당수가 JS를 돌리지 않아 애초에 비콘을 띄우지 못한다. **남은
+부풀림의 주범은 JS를 돌리는 봇**(headless 농장, AI 브라우저 에이전트)일 가능성이
+크고, 그건 UA 목록으로는 영원히 잡히지 않는다. 그래서 원본 신호를 남긴다.
+
+### 14.2 컬럼
+
+| 컬럼 | 출처 | 왜 |
+|---|---|---|
+| `user_agent` | `user-agent` 헤더 원문 | 통과한 트래픽을 눈으로 검수. 토큰을 추가할 때 "며칠치가 얼마나 빠지는가"를 소급 확인 |
+| `country` | `cf-ipcountry` | 봇 농장의 가장 값싼 신호 — 균일한 UA가 한 국가에서 몰리면 사람이 아니다 |
+| `landing_path` | `referer`의 pathname | 진입 페이지 분포. 쿼리스트링은 버린다(검색어·토큰이 400일 테이블에 남는다) |
+
+셋 다 nullable이고 **집계에 쓰이지 않는다.** 클라이언트 변경은 0 — 전부 이미 요청
+헤더에 있다. `referer`는 비콘이 same-origin `fetch`라 현재 페이지 URL이 그대로 실린다.
+
+읽기는 `yarn metrics`가 30일 상위 (UA, 국가) 표를 찍는다.
+
+### 14.3 방침은 v2 수정이 아니라 v3 발행이다
+
+§8.2가 명시한 대로 `upsertFromSeed`는 `onConflictDoNothing`이다. v2는 이미
+프로덕션에 적재돼 있어(`effective_date = 2026-09-08 15:00+00` 실측 확인) **`v2.md`를
+고쳐도 DB에 영원히 반영되지 않는다.** 번역 3종만 `upsertTranslation`의
+`onConflictDoUpdate`로 갱신돼, 한국어 원문만 옛 문장으로 남는 최악의 형태가 된다.
+
+→ `privacy v3` 발행. 발효일 **2026-09-19 00:00 KST**(v2 발효 9/9 + 10일).
+
+### 14.4 발효 전 배포를 코드가 스스로 막는다
+
+§7.4는 발효 시점을 "코드가 아니라 배포 순서로 푼다"고 했다. 이번엔 반대로 간다 —
+`presence` 라우트가 `DIAGNOSTIC_COLUMNS_EFFECTIVE_AT`(v3 발효 시각)을 직접 보고,
+그 전에는 세 컬럼을 `null`로 남긴다.
+
+배포 순서에 기대면 순서를 한 번 어기는 것만으로 미고지 수집이 된다. 날짜 상수는
+재배포 없이 발효 시각에 스스로 열린다. 방문 기록 자체는 종전대로 계속된다.
+
+### 14.5 배포 절차 (§13 갱신분)
+
+1. PR 병합
+2. `yarn db:migrate` — `visitor_days`에 컬럼 3개 (`ALTER TABLE ADD COLUMN`, 무중단)
+3. `yarn db:seed:terms` — privacy v3 + 번역 3건
+4. 애플리케이션 배포 — **발효일 전에 배포해도 안전하다**(§14.4)
+5. 2026-09-19 이후 `yarn metrics`로 UA 표 확인 → 크롤러가 보이면
+   `src/shared/api/isBot.ts`에 토큰 추가

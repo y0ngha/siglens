@@ -53,6 +53,7 @@
 - [redesign/p1-dark-tokens fear-greed score coercion R3 — APPROVED, closes loop](project-redesign-p1-fear-greed-score-coercion-r3.md) — 15-case exhaustive audit of kindServerRegistry.ts score coercion, no 3rd defect; only strings get Number()-coerced, everything else safely falls back
 - [redesign/p1-dark-tokens toggle border-contrast R6](project-redesign-p1-toggle-contrast-r6.md) — R5 math re-verified exactly; WCAG 1.4.11 exempts `disabled` (inactive), Math.max fill-or-border reading is sound; found latent (not live) NaN vacuous-pass hole in guard's own hex parser
 - [redesign/p1-dark-tokens toggle border-contrast R7 — CLOSED, approved](project-redesign-p1-toggle-contrast-r7-closed.md) — R6's NaN vacuous-pass hole verified fixed via live mutation (`#7d838f80` throws, reverted byte-identical); loop ends
+- [feat/visitor-user-agent R2 — privacy v3 seed + effective-date gate, approved](project-visitor-metrics-privacy-v3-r2.md) — R1's onConflictDoNothing-frozen-v2 fix verified: v3 seed diff-clean across 4 locales, gate constant == effectiveDate instant, no other hardcoded version
 
 ## Feedback
 

@@ -57,16 +57,26 @@ async function importRoute() {
 describe('POST /api/presence', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // `Date.now()`를 고정한다 — 진단 컬럼 저장이 방침 발효일에 걸려 있어
+        // 실제 시각으로 돌면 발효 전후에 따라 결과가 뒤집힌다.
+        vi.useFakeTimers({ shouldAdvanceTime: true });
         getDatabaseClient.mockReturnValue({ db: {} });
         vi.stubEnv('NODE_ENV', 'production');
         vi.stubEnv('VISITOR_HASH_PEPPER', 'test-pepper');
         requestHeaders = new Headers({
             'user-agent': HUMAN_UA,
             'x-forwarded-for': '203.0.113.10, 10.0.0.1',
+            'cf-ipcountry': 'KR',
+            // same-origin fetch라 비콘이 뜬 페이지 URL이 그대로 실린다.
+            referer: 'https://siglens.io/ko/AAPL?tab=chart',
         });
+        // 진단 컬럼은 개인정보처리방침 v3 발효(2026-09-19 KST) 후에만 저장된다.
+        // 대부분의 케이스가 그 이후를 전제하므로 시각을 고정한다.
+        vi.setSystemTime(new Date('2026-09-20T03:00:00.000Z'));
     });
 
     afterEach(() => {
+        vi.useRealTimers();
         vi.unstubAllEnvs();
     });
 
@@ -76,10 +86,76 @@ describe('POST /api/presence', () => {
 
         expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
         // x-forwarded-for의 첫 값만 쓴다(체인의 뒤쪽은 우리 인프라다).
+        expect(recordVisit).toHaveBeenCalledWith({
+            visitorHash: `hash(test-pepper|203.0.113.10|${HUMAN_UA})`,
+            date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+            userAgent: HUMAN_UA,
+            country: 'KR',
+            // 쿼리스트링은 버린다.
+            landingPath: '/ko/AAPL',
+        });
+    });
+
+    it('방침 v3 발효 전에는 진단 컬럼을 저장하지 않는다', async () => {
+        // 코드가 방침보다 먼저 배포돼도 고지되지 않은 항목을 수집하지 않는다.
+        vi.setSystemTime(new Date('2026-09-18T14:59:59.000Z'));
+        const { POST } = await importRoute();
+        await POST();
+
         expect(recordVisit).toHaveBeenCalledWith(
-            `hash(test-pepper|203.0.113.10|${HUMAN_UA})`,
-            expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/)
+            expect.objectContaining({
+                userAgent: null,
+                country: null,
+                landingPath: null,
+            })
         );
+        // 방문 자체는 종전대로 기록된다.
+        expect(recordVisit).toHaveBeenCalledWith(
+            expect.objectContaining({
+                visitorHash: `hash(test-pepper|203.0.113.10|${HUMAN_UA})`,
+            })
+        );
+    });
+
+    it('발효 시각 정각에는 진단 컬럼을 저장한다', async () => {
+        // 경계는 `>=`다. `>`로 뒤집히는 회귀는 1초 전 케이스로는 잡히지 않는다.
+        vi.setSystemTime(new Date('2026-09-18T15:00:00.000Z'));
+        const { POST } = await importRoute();
+        await POST();
+
+        expect(recordVisit).toHaveBeenCalledWith(
+            expect.objectContaining({
+                userAgent: HUMAN_UA,
+                country: 'KR',
+                landingPath: '/ko/AAPL',
+            })
+        );
+    });
+
+    it('헤더가 없으면 진단 컬럼을 null로 남긴다', async () => {
+        requestHeaders = new Headers({
+            'user-agent': HUMAN_UA,
+            'x-forwarded-for': '203.0.113.10',
+        });
+        const { POST } = await importRoute();
+        // 발효 후이므로 헤더가 있었다면 저장됐을 시점이다.
+        await POST();
+
+        expect(recordVisit).toHaveBeenCalledWith(
+            expect.objectContaining({ country: null, landingPath: null })
+        );
+    });
+
+    it('AI 크롤러 User-Agent도 기록하지 않는다', async () => {
+        // Next 내장 isBot 정규식이 잡지 못하는 토큰이다.
+        requestHeaders.set(
+            'user-agent',
+            'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; PerplexityBot/1.0; +https://perplexity.ai/perplexitybot)'
+        );
+        const { POST } = await importRoute();
+
+        expect((await POST()).status).toBe(HTTP_STATUS_NO_CONTENT);
+        expect(recordVisit).not.toHaveBeenCalled();
     });
 
     it('봇 User-Agent는 기록하지 않는다', async () => {
@@ -139,7 +215,6 @@ describe('POST /api/presence', () => {
     });
 
     it('정리 기준일은 오늘로부터 400일 전이다', async () => {
-        vi.useFakeTimers();
         vi.setSystemTime(new Date('2026-09-02T03:00:00.000Z'));
 
         const { POST } = await importRoute();
@@ -147,7 +222,6 @@ describe('POST /api/presence', () => {
 
         // KST 2026-09-02 기준 400일 전 = 2025-07-29
         expect(pruneOlderThan).toHaveBeenCalledWith('2025-07-29');
-        vi.useRealTimers();
     });
 
     it('DB 클라이언트 생성이 던져도 204를 주고 정리를 소진하지 않는다', async () => {
