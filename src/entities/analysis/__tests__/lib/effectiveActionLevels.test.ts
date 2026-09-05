@@ -66,12 +66,25 @@ describe('resolveEffectiveActionLevels', () => {
         expect(levels.stopLoss).toBe(144);
     });
 
+    it('진입가에 섞인 0·NaN도 그 항목만 떨어뜨린다', () => {
+        // core는 진입가를 보정하지 않으므로 `reconciledLevels`에 대응 필드가
+        // 없다. 그래도 검증은 손절·익절과 같은 이유로 필요하다 —
+        // `entry 0.00`이 리포트·프롬프트에 실제 가격처럼 실린다.
+        const levels = resolveEffectiveActionLevels({
+            entryPrices: [0, 148, Number.NaN, 150, -1],
+        });
+
+        expect(levels.entryPrices).toEqual([148, 150]);
+    });
+
     it('양쪽 다 없으면 undefined', () => {
         expect(resolveEffectiveActionLevels(undefined)).toEqual({
+            entryPrices: undefined,
             stopLoss: undefined,
             takeProfitPrices: undefined,
         });
         expect(resolveEffectiveActionLevels({})).toEqual({
+            entryPrices: undefined,
             stopLoss: undefined,
             takeProfitPrices: undefined,
         });

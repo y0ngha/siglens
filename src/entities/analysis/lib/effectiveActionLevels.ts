@@ -21,6 +21,7 @@
 
 /** 실효 레벨을 뽑을 수 있는 최소 구조. core `ActionRecommendation`이 그대로 맞는다. */
 interface ActionLevelsSource {
+    readonly entryPrices?: unknown;
     readonly stopLoss?: unknown;
     readonly takeProfitPrices?: unknown;
     readonly reconciledLevels?: {
@@ -31,6 +32,11 @@ interface ActionLevelsSource {
 
 /** 보정 반영이 끝난 손절·익절. 유효한 값이 없으면 해당 키는 `undefined`. */
 export interface EffectiveActionLevels {
+    /**
+     * 진입가. core는 진입가를 보정하지 않으므로(`reconciledLevels`에 없다)
+     * 원본에서 유효값만 걸러 낸다 — 검증 자체는 손절·익절과 동일하게 필요하다.
+     */
+    readonly entryPrices: number[] | undefined;
     readonly stopLoss: number | undefined;
     readonly takeProfitPrices: number[] | undefined;
 }
@@ -45,7 +51,7 @@ export interface EffectiveActionLevels {
  * `0`을 placeholder 가격으로 쓰지 말라"고 명시할 만큼 알려진 실패 모드다.
  * 자매 레포(siglens-trader)의 `isFinitePositive`와 같은 기준이다.
  */
-export function isPositivePrice(value: unknown): value is number {
+function isPositivePrice(value: unknown): value is number {
     return typeof value === 'number' && Number.isFinite(value) && value > 0;
 }
 
@@ -57,6 +63,10 @@ export function resolveEffectiveActionLevels(
     action: ActionLevelsSource | undefined
 ): EffectiveActionLevels {
     const reconciled = action?.reconciledLevels;
+
+    const entryPrices = Array.isArray(action?.entryPrices)
+        ? action.entryPrices.filter(isPositivePrice)
+        : undefined;
 
     const takeProfitSource = Array.isArray(reconciled?.takeProfitPrices)
         ? reconciled.takeProfitPrices
@@ -71,5 +81,5 @@ export function resolveEffectiveActionLevels(
         isPositivePrice
     );
 
-    return { stopLoss, takeProfitPrices };
+    return { entryPrices, stopLoss, takeProfitPrices };
 }

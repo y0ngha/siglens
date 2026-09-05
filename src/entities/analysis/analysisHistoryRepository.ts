@@ -46,10 +46,7 @@ import { analysisHistory, analysisPromptBlobs } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { withRetry } from '@/shared/lib/withRetry';
-import {
-    isPositivePrice,
-    resolveEffectiveActionLevels,
-} from './lib/effectiveActionLevels';
+import { resolveEffectiveActionLevels } from './lib/effectiveActionLevels';
 
 /** `analysis_history` 탭 축 — S2 스코프는 technical/overall 둘뿐. */
 export type AnalysisHistoryTab = 'technical' | 'overall';
@@ -223,11 +220,8 @@ function toPriorAnalysis(row: {
         return null;
     }
 
-    const entryPrices = Array.isArray(actionRecommendation?.entryPrices)
-        ? actionRecommendation.entryPrices.filter(isPositivePrice)
-        : undefined;
-    // 손절/익절은 보정값 우선 — 근거는 `resolveEffectiveActionLevels`의 JSDoc.
-    const { stopLoss, takeProfitPrices } =
+    // 진입가 검증 + 손절/익절 보정값 우선 — 근거는 헬퍼 JSDoc.
+    const { entryPrices, stopLoss, takeProfitPrices } =
         resolveEffectiveActionLevels(actionRecommendation);
 
     return {

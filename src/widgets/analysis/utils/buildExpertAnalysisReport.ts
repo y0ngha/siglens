@@ -158,12 +158,11 @@ function buildKeyLevelsBlock(
         );
     }
 
-    const { actionRecommendation } = analysis;
-    const { stopLoss, takeProfitPrices } = effectiveLevels;
-    if (actionRecommendation?.entryPrices?.length) {
+    const { entryPrices, stopLoss, takeProfitPrices } = effectiveLevels;
+    if (entryPrices?.length) {
         lines.push(
             tReport('entryZone', {
-                v0: formatPriceList(actionRecommendation.entryPrices),
+                v0: formatPriceList(entryPrices),
             })
         );
     }
@@ -275,13 +274,11 @@ function buildResponseStance(
         const base = t(
             ENTRY_STANCE_KEY[actionRecommendation.entryRecommendation]
         );
-        const entryAnchor =
-            actionRecommendation.entryPrices?.length !== 0 &&
-            actionRecommendation.entryPrices !== undefined
-                ? tReport('entryAnchor', {
-                      v0: formatPriceList(actionRecommendation.entryPrices),
-                  })
-                : '';
+        const entryAnchor = effectiveLevels.entryPrices?.length
+            ? tReport('entryAnchor', {
+                  v0: formatPriceList(effectiveLevels.entryPrices),
+              })
+            : '';
         const invalidation =
             effectiveLevels.stopLoss !== undefined
                 ? tReport('invalidationNote', {

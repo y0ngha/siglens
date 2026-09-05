@@ -445,4 +445,27 @@ describe('buildExpertAnalysisReport', () => {
         expect(result).toContain('목표 참고 구간: 212.50, 218.30');
         expect(result).not.toContain('1.00');
     });
+
+    it('진입가에 섞인 0은 리포트에 실리지 않는다', () => {
+        // AI가 `entryPrices: [0, 150]`으로 응답하면 "진입 구간: 0.00, 150.00"이
+        // 그대로 노출된다 — 손절/익절과 같은 실패 모드다.
+        const analysis: AnalysisResponse = {
+            ...baseAnalysis,
+            actionRecommendation: {
+                ...baseAnalysis.actionRecommendation!,
+                entryPrices: [0, 205.8],
+            },
+        };
+
+        const result = buildExpertAnalysisReport({
+            tReport,
+            symbol: 'nvda',
+            analysis,
+            keyLevels: baseKeyLevels,
+            t,
+        });
+
+        expect(result).toContain('진입 참고 구간: 205.80');
+        expect(result).not.toContain('0.00, 205.80');
+    });
 });

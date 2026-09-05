@@ -30,7 +30,6 @@ export { resolveConflicts } from './lib/resolveConflicts';
 export { normalizeAnalysisResponse } from './lib/normalizeAnalysisResponse';
 
 export {
-    isPositivePrice,
     resolveEffectiveActionLevels,
     type EffectiveActionLevels,
 } from './lib/effectiveActionLevels';
