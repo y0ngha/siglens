@@ -1,6 +1,7 @@
 import {
     isValidShareInput,
     MAX_DISPLAY_NAME_LENGTH,
+    MAX_PLAIN_BYTES,
     MAX_RESULT_BYTES,
 } from '@/entities/shared-analysis/server/assertValidInput';
 import { MAX_CHART_BARS } from '@/entities/shared-analysis';
@@ -479,5 +480,60 @@ describe('isValidShareInput', () => {
                 sharerTier: 'free',
             })
         ).toBe(true);
+    });
+    const withPlain = (plain: unknown) => ({
+        kind: 'chart',
+        symbol: 'AAPL',
+        context: { symbol: 'AAPL', displayName: 'Apple' },
+        result: { trend: 'bullish', summary: 'x' },
+        sharerTier: 'free',
+        plain,
+    });
+
+    it('accepts input carrying plain prose', () => {
+        expect(isValidShareInput(withPlain('쉬운 설명입니다.'))).toBe(true);
+    });
+
+    it('rejects an empty plain string', () => {
+        // 빈 문자열이 통과하면 뷰어 쪽에서 아무것도 하지 않는 토글이 생긴다.
+        expect(isValidShareInput(withPlain(''))).toBe(false);
+    });
+
+    it('rejects a whitespace-only plain', () => {
+        // 신뢰 경계는 서버다 — 통과하면 뷰어에 빈 쉽게보기 화면이 뜬다.
+        expect(isValidShareInput(withPlain('   \n  '))).toBe(false);
+    });
+
+    it('rejects a non-string plain', () => {
+        expect(isValidShareInput(withPlain({ text: 'x' }))).toBe(false);
+    });
+
+    it('rejects plain prose clearly over the byte cap (multibyte)', () => {
+        // 한글은 UTF-8 3바이트라 문자 수가 아니라 바이트로 재야 한다. 이 케이스는
+        // 캡의 ~3배라 경계값 회귀는 못 잡는다 — 그건 아래 exact-boundary 케이스가 한다.
+        expect(isValidShareInput(withPlain('가'.repeat(MAX_PLAIN_BYTES)))).toBe(
+            false
+        );
+    });
+
+    // '가'.repeat(MAX_PLAIN_BYTES)는 캡의 ~3배(문자당 3바이트)라 `>` 비교의
+    // off-by-one은 못 잡는다. 정확히 캡 바이트/캡+1 바이트인 값을 만들어 경계를 잰다.
+    // 멀티바이트 문자 개수 × 3 + ASCII 패딩으로 목표 바이트 수를 정확히 맞춘다.
+    function buildPlainOfByteLength(byteLength: number): string {
+        const multibyteCount = Math.floor(byteLength / 3);
+        const asciiPadding = byteLength - multibyteCount * 3;
+        const value = '가'.repeat(multibyteCount) + 'a'.repeat(asciiPadding);
+        expect(Buffer.byteLength(value, 'utf8')).toBe(byteLength);
+        return value;
+    }
+
+    it('accepts plain prose that is exactly at MAX_PLAIN_BYTES boundary', () => {
+        const boundaryPlain = buildPlainOfByteLength(MAX_PLAIN_BYTES);
+        expect(isValidShareInput(withPlain(boundaryPlain))).toBe(true);
+    });
+
+    it('rejects plain prose that is one byte over MAX_PLAIN_BYTES', () => {
+        const overBoundaryPlain = buildPlainOfByteLength(MAX_PLAIN_BYTES + 1);
+        expect(isValidShareInput(withPlain(overBoundaryPlain))).toBe(false);
     });
 });

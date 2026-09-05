@@ -111,4 +111,56 @@ describe('contentHash', () => {
             contentHash('chart', 'AAPL', 'en', { a: 1 })
         );
     });
+
+    /**
+     * 분석 결과는 캐시로 여러 사용자가 공유해 `result`가 완전히 같은 공유가 흔하다.
+     * 평이화는 늦게 오거나 가드에 걸려 없을 수 있어 `plain`만 다른 공유가 실제로
+     * 생기는데, 해시에 없으면 먼저 저장된 행이 이겨(`ON CONFLICT`는 `expiresAt`만
+     * 갱신) 두 번째 공유자의 산문이 조용히 버려진다.
+     */
+    describe('plain (쉽게보기) participates in dedupe', () => {
+        const result = { trend: 'bullish', summary: '요약' };
+
+        it('differs when plain differs for the same result', () => {
+            expect(
+                contentHash(
+                    'news',
+                    'TSLA',
+                    'ko',
+                    result,
+                    undefined,
+                    '쉬운 설명'
+                )
+            ).not.toBe(
+                contentHash(
+                    'news',
+                    'TSLA',
+                    'ko',
+                    result,
+                    undefined,
+                    '다른 쉬운 설명'
+                )
+            );
+        });
+
+        it('differs between a share with plain and one without', () => {
+            expect(contentHash('news', 'TSLA', 'ko', result)).not.toBe(
+                contentHash(
+                    'news',
+                    'TSLA',
+                    'ko',
+                    result,
+                    undefined,
+                    '쉬운 설명'
+                )
+            );
+        });
+
+        it('omitting plain keeps the pre-feature hash unchanged', () => {
+            // 이 필드 도입 이전에 저장된 행의 해시와 호환되어야 한다.
+            expect(
+                contentHash('news', 'TSLA', 'ko', result, undefined, undefined)
+            ).toBe(contentHash('news', 'TSLA', 'ko', result));
+        });
+    });
 });

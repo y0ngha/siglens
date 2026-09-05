@@ -21,6 +21,7 @@ export function buildShareSnapshot<K extends ShareableKind>(
         context: { ...input.context, symbol: input.symbol.toUpperCase() },
         result: input.result,
         ...(input.chartBars !== undefined && { chartBars: input.chartBars }),
+        ...(input.plain !== undefined && { plain: input.plain }),
     };
     // Safe: JSON.stringify → JSON.parse produces a JSON-safe plain object (no
     // Date instances, undefined fields are dropped, functions are stripped).

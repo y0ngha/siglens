@@ -152,6 +152,13 @@ export function useShareFlow(): UseShareFlowResult {
                 currentReg.chartBars.length > 0
                     ? currentReg.chartBars.slice(-MAX_CHART_BARS)
                     : undefined;
+            // 빈 문자열·공백만 있는 산문은 보내지 않는다 — 서버가 거부해
+            // (isNonEmptyString) 공유 전체가 invalid_input으로 실패한다.
+            const plain =
+                typeof currentReg.plain === 'string' &&
+                currentReg.plain.trim().length > 0
+                    ? currentReg.plain
+                    : undefined;
             return createShareSnapshotAction({
                 kind: currentReg.kind,
                 symbol: currentReg.context.symbol,
@@ -159,6 +166,7 @@ export function useShareFlow(): UseShareFlowResult {
                 result: currentReg.result,
                 sharerTier: sharerTierRef.current,
                 ...(chartBars !== undefined && { chartBars }),
+                ...(plain !== undefined && { plain }),
             });
         },
         onError: () => {

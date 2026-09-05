@@ -26,6 +26,17 @@ export const MAX_RESULT_BYTES = 65_536;
 export const MAX_DISPLAY_NAME_LENGTH = 128;
 
 /**
+ * 공유 스냅샷에 실리는 `plain` 산문의 UTF-8 바이트 길이 상한.
+ *
+ * 업스트림(`guardPlainText`)은 원본 산문 대비 **하한**만 강제하고 상한은 두지
+ * 않는다 — 분석 타입마다 압축률이 37~105%로 제각각이라 고정 상한이 의미가
+ * 없기 때문이다. 따라서 이 값이 파이프라인 전체에서 유일한 방어선이다:
+ * 정상적인 재작성을 걸러내지 않도록 관측된 압축률 범위보다 넉넉히 크게 잡아
+ * jsonb 컬럼만 보호한다. 멀티바이트 이유는 MAX_RESULT_BYTES와 같아 바이트로 잰다.
+ */
+export const MAX_PLAIN_BYTES = 32_768;
+
+/**
  * Returns true when the value is a valid OHLCV Bar element.
  *
  * `time`, `open`, `high`, `low`, and `close` must all be finite numbers.
@@ -100,6 +111,15 @@ export function isValidShareInput(raw: unknown): raw is CreateShareInput {
         if (o.chartBars.length === 0 || o.chartBars.length > MAX_CHART_BARS)
             return false;
         if (!o.chartBars.every(isValidBar)) return false;
+    }
+    // plain is optional; when present it must be a non-empty string within the
+    // byte cap. Contents are not trusted or parsed — it is rendered as text.
+    if (o.plain !== undefined) {
+        // 공백만 있는 값도 거부한다. 클라이언트가 이미 trim으로 거르지만
+        // 신뢰 경계는 여기다 — 통과하면 뷰어에 빈 쉽게보기 화면이 뜬다.
+        if (!isNonEmptyString(o.plain) || o.plain.trim().length === 0)
+            return false;
+        if (Buffer.byteLength(o.plain, 'utf8') > MAX_PLAIN_BYTES) return false;
     }
     return true;
 }

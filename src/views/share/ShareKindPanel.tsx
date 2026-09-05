@@ -28,6 +28,7 @@ import type {
 import type { AssetClass } from '@/shared/config/marketProfile';
 import type { Bar } from '@y0ngha/siglens-core';
 import { SHARE_KIND_PANEL_REGISTRY } from './kindPanelRegistry';
+import type { SharePanelProps } from './kindPanelRegistry';
 
 interface ShareKindPanelProps<K extends ShareableKind> {
     kind: K;
@@ -50,6 +51,11 @@ interface ShareKindPanelProps<K extends ShareableKind> {
      * instead of an empty string.
      */
     symbol?: string;
+    /**
+     * 스냅샷에 저장된 쉽게보기 산문. 공유 시점에 공유자 화면에 있던 값이다.
+     * 없으면(이 필드 이전 스냅샷·평이화 실패) 패널이 원문만 렌더한다.
+     */
+    plain?: string;
 }
 
 /**
@@ -62,24 +68,23 @@ export function ShareKindPanel<K extends ShareableKind>({
     chartBars,
     assetClass,
     symbol,
+    plain,
 }: ShareKindPanelProps<K>) {
     // Safe: `kind` and `result` are co-typed via the same generic `K`, so the
     // registry entry for this key always accepts exactly the result type that
     // was passed in. The cast collapses the union return type to the concrete
     // generic signature without narrowing the individual union members at call
     // sites.
-    const Panel = SHARE_KIND_PANEL_REGISTRY[kind] as (props: {
-        result: SnapshotResultOf<K>;
-        chartBars?: Bar[];
-        assetClass?: AssetClass;
-        symbol?: string;
-    }) => ReactNode;
+    const Panel = SHARE_KIND_PANEL_REGISTRY[kind] as (
+        props: SharePanelProps<K>
+    ) => ReactNode;
     return (
         <Panel
             result={result}
             chartBars={chartBars}
             assetClass={assetClass}
             symbol={symbol}
+            plain={plain}
         />
     );
 }
