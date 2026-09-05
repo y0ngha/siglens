@@ -6,7 +6,10 @@ import type {
     RiskLevel,
     Trend,
 } from '@y0ngha/siglens-core';
-import { resolveEffectiveActionLevels } from '@/entities/analysis';
+import {
+    resolveEffectiveActionLevels,
+    type EffectiveActionLevels,
+} from '@/entities/analysis';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 
 interface BuildExpertAnalysisReportInput {
@@ -124,6 +127,7 @@ function buildInterpretation(
 function buildKeyLevelsBlock(
     analysis: AnalysisResponse,
     keyLevels: ClusteredKeyLevels,
+    effectiveLevels: EffectiveActionLevels,
     tReport: ReportTranslator
 ): string | null {
     const lines: string[] = [];
@@ -264,6 +268,7 @@ function buildScenarioBlock(
 function buildResponseStance(
     analysis: AnalysisResponse,
     keyLevels: ClusteredKeyLevels,
+    effectiveLevels: EffectiveActionLevels,
     t: EnumLabelTranslator,
     tReport: ReportTranslator
 ): string {
@@ -280,13 +285,10 @@ function buildResponseStance(
                       v0: formatPriceList(actionRecommendation.entryPrices),
                   })
                 : '';
-        // 위와 같은 이유로 실효 손절값을 쓴다.
-        const effectiveStopLoss =
-            resolveEffectiveActionLevels(actionRecommendation).stopLoss;
         const invalidation =
-            effectiveStopLoss !== undefined
+            effectiveLevels.stopLoss !== undefined
                 ? tReport('invalidationNote', {
-                      v0: formatPrice(effectiveStopLoss),
+                      v0: formatPrice(effectiveLevels.stopLoss),
                   })
                 : '';
 
@@ -351,6 +353,14 @@ export function buildExpertAnalysisReport({
         return b.price - a.price;
     });
 
+    // 손절/익절은 AI 원본이 아니라 **실효값**을 싣는다 — core는 무효로 판정한
+    // 레벨을 원본 필드에 그대로 남겨두고 보정값을 따로 붙이기 때문(근거는 헬퍼
+    // JSDoc). 입구에서 1회만 해석해 각 helper에 넘긴다 — 원본 필드를 다시 읽는
+    // 소비자가 생기는 것이 이 파일에 있던 버그였다.
+    const effectiveLevels = resolveEffectiveActionLevels(
+        analysis.actionRecommendation
+    );
+
     const sections = [
         buildTitle(symbol, tReport),
         buildInterpretation(
@@ -360,11 +370,11 @@ export function buildExpertAnalysisReport({
             t,
             tReport
         ),
-        buildKeyLevelsBlock(analysis, safeKeyLevels, tReport),
+        buildKeyLevelsBlock(analysis, safeKeyLevels, effectiveLevels, tReport),
         buildEvidenceBlock(analysis, tReport),
         buildScenarioBlock(analysis, tReport),
         `${tReport('responseStance')}
-${buildResponseStance(analysis, safeKeyLevels, t, tReport)}`,
+${buildResponseStance(analysis, safeKeyLevels, effectiveLevels, t, tReport)}`,
         `${tReport('riskLabel')}
 ${buildRiskNote(analysis, tReport)}`,
         tReport('source', { v0: symbol }),
