@@ -1,5 +1,27 @@
 # Changelog
 
+# [0.70.0](https://github.com/y0ngha/siglens/compare/v0.69.1...v0.70.0) (2026-09-05)
+
+
+### Bug Fixes
+
+* 사전조회에서 분석 이력 미저장 수정 ([74d7f3e](https://github.com/y0ngha/siglens/commit/74d7f3e296ac5fc6399eb0347e4ca02e216981b1))
+* 실효 레벨 계산 단일화 및 보정값 우선순위 정리 ([b834967](https://github.com/y0ngha/siglens/commit/b8349678e54a9b8d84ec39b7fd7aac12166588b5))
+* 중복된 ActionLevelsSource 타입 제거 ([9a9a14c](https://github.com/y0ngha/siglens/commit/9a9a14ca7f20356daba6fd1beb987f869837859c))
+* **analysis:** 리뷰 지적 반영 - 타입 가드 및 변경 감지 강화 ([c960438](https://github.com/y0ngha/siglens/commit/c96043809ca9a9b6b6093965f8f9cf53149d5fd8))
+* **analysis:** prior-analysis 가격을 양수로 검증 ([5261a50](https://github.com/y0ngha/siglens/commit/5261a50524234a75f85e399f1342225b6397293e))
+* buildKeyLevelsBlock이 전달받은 effectiveLevels 사용 ([0aa1c8b](https://github.com/y0ngha/siglens/commit/0aa1c8b1bef22ff3198029b81b1706194a18ab19))
+* entryPrices 검증 추가 및 중복 필터 제거 ([aba3bf1](https://github.com/y0ngha/siglens/commit/aba3bf13af25dea00e2102a1790088aa4169ef87))
+* prior-analysis reconciledLevels 우선 적용 ([14c9b5e](https://github.com/y0ngha/siglens/commit/14c9b5e032f8de24e030d5b46486b106035b32c1))
+* **share:** MAX_PLAIN_BYTES 근거 주석을 실제 가드 동작에 맞춘다 ([890870b](https://github.com/y0ngha/siglens/commit/890870b18eda305371dea54dda23d682c8f28871))
+
+
+### Features
+
+* 분석 이력 저장 및 조회 기능 추가 ([7854bf0](https://github.com/y0ngha/siglens/commit/7854bf09c4ec9969e3ddcd76c73536930b8e1b79))
+* **share:** 공유 스냅샷에 쉽게보기 산문을 저장한다 ([ddb2fbe](https://github.com/y0ngha/siglens/commit/ddb2fbe27704cafce92ba72cc8d547dd7f02c3bf))
+* **visitor:** visit_days에 진단 컬럼을 남기고 봇 판정을 넓힌다 ([ec17707](https://github.com/y0ngha/siglens/commit/ec17707c41cbc11b30c2639cc575ca4ca3c4323f))
+
 ## [0.69.1](https://github.com/y0ngha/siglens/compare/v0.69.0...v0.69.1) (2026-09-02)
 
 
