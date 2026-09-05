@@ -6,6 +6,10 @@ import type {
     RiskLevel,
     Trend,
 } from '@y0ngha/siglens-core';
+import {
+    resolveEffectiveActionLevels,
+    type EffectiveActionLevels,
+} from '@/entities/analysis';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 
 interface BuildExpertAnalysisReportInput {
@@ -123,6 +127,7 @@ function buildInterpretation(
 function buildKeyLevelsBlock(
     analysis: AnalysisResponse,
     keyLevels: ClusteredKeyLevels,
+    effectiveLevels: EffectiveActionLevels,
     tReport: ReportTranslator
 ): string | null {
     const lines: string[] = [];
@@ -153,25 +158,25 @@ function buildKeyLevelsBlock(
         );
     }
 
-    const { actionRecommendation } = analysis;
-    if (actionRecommendation?.entryPrices?.length) {
+    const { entryPrices, stopLoss, takeProfitPrices } = effectiveLevels;
+    if (entryPrices?.length) {
         lines.push(
             tReport('entryZone', {
-                v0: formatPriceList(actionRecommendation.entryPrices),
+                v0: formatPriceList(entryPrices),
             })
         );
     }
-    if (actionRecommendation?.stopLoss !== undefined) {
+    if (stopLoss !== undefined) {
         lines.push(
             tReport('invalidation', {
-                v0: formatPrice(actionRecommendation.stopLoss),
+                v0: formatPrice(stopLoss),
             })
         );
     }
-    if (actionRecommendation?.takeProfitPrices?.length) {
+    if (takeProfitPrices?.length) {
         lines.push(
             tReport('targetZone', {
-                v0: formatPriceList(actionRecommendation.takeProfitPrices),
+                v0: formatPriceList(takeProfitPrices),
             })
         );
     }
@@ -259,6 +264,7 @@ function buildScenarioBlock(
 function buildResponseStance(
     analysis: AnalysisResponse,
     keyLevels: ClusteredKeyLevels,
+    effectiveLevels: EffectiveActionLevels,
     t: EnumLabelTranslator,
     tReport: ReportTranslator
 ): string {
@@ -268,17 +274,15 @@ function buildResponseStance(
         const base = t(
             ENTRY_STANCE_KEY[actionRecommendation.entryRecommendation]
         );
-        const entryAnchor =
-            actionRecommendation.entryPrices?.length !== 0 &&
-            actionRecommendation.entryPrices !== undefined
-                ? tReport('entryAnchor', {
-                      v0: formatPriceList(actionRecommendation.entryPrices),
-                  })
-                : '';
+        const entryAnchor = effectiveLevels.entryPrices?.length
+            ? tReport('entryAnchor', {
+                  v0: formatPriceList(effectiveLevels.entryPrices),
+              })
+            : '';
         const invalidation =
-            actionRecommendation.stopLoss !== undefined
+            effectiveLevels.stopLoss !== undefined
                 ? tReport('invalidationNote', {
-                      v0: formatPrice(actionRecommendation.stopLoss),
+                      v0: formatPrice(effectiveLevels.stopLoss),
                   })
                 : '';
 
@@ -343,6 +347,14 @@ export function buildExpertAnalysisReport({
         return b.price - a.price;
     });
 
+    // 손절/익절은 AI 원본이 아니라 **실효값**을 싣는다 — core는 무효로 판정한
+    // 레벨을 원본 필드에 그대로 남겨두고 보정값을 따로 붙이기 때문(근거는 헬퍼
+    // JSDoc). 입구에서 1회만 해석해 각 helper에 넘긴다 — 원본 필드를 다시 읽는
+    // 소비자가 생기는 것이 이 파일에 있던 버그였다.
+    const effectiveLevels = resolveEffectiveActionLevels(
+        analysis.actionRecommendation
+    );
+
     const sections = [
         buildTitle(symbol, tReport),
         buildInterpretation(
@@ -352,11 +364,11 @@ export function buildExpertAnalysisReport({
             t,
             tReport
         ),
-        buildKeyLevelsBlock(analysis, safeKeyLevels, tReport),
+        buildKeyLevelsBlock(analysis, safeKeyLevels, effectiveLevels, tReport),
         buildEvidenceBlock(analysis, tReport),
         buildScenarioBlock(analysis, tReport),
         `${tReport('responseStance')}
-${buildResponseStance(analysis, safeKeyLevels, t, tReport)}`,
+${buildResponseStance(analysis, safeKeyLevels, effectiveLevels, t, tReport)}`,
         `${tReport('riskLabel')}
 ${buildRiskNote(analysis, tReport)}`,
         tReport('source', { v0: symbol }),

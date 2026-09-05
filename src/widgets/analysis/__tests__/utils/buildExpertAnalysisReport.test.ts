@@ -411,4 +411,61 @@ describe('buildExpertAnalysisReport', () => {
         expect(result).not.toContain('기술적 근거:');
         expect(result).not.toContain('시나리오:');
     });
+
+    it('보정값이 있으면 AI 원본 대신 보정된 손절/익절을 싣는다', () => {
+        // core는 AI가 낸 레벨이 무효할 때 원본을 그대로 두고 보정값을
+        // `reconciledLevels`에 따로 붙인다. 원본만 읽으면 core가 이미 거부한
+        // 값이 "무효화 기준"·"목표 참고 구간"으로 리포트에 실린다.
+        const analysis: AnalysisResponse = {
+            ...baseAnalysis,
+            actionRecommendation: {
+                ...baseAnalysis.actionRecommendation!,
+                stopLoss: 260,
+                takeProfitPrices: [1, 218.3],
+                reconciledLevels: {
+                    stopLoss: 199.4,
+                    takeProfitPrices: [212.5, 218.3],
+                    exit: '보정된 청산 전략',
+                    riskReward: '1:2',
+                    reason: '손절가가 진입가 위에 있었습니다',
+                },
+            },
+        };
+
+        const result = buildExpertAnalysisReport({
+            tReport,
+            symbol: 'nvda',
+            analysis,
+            keyLevels: baseKeyLevels,
+            t,
+        });
+
+        expect(result).toContain('무효화 기준: 199.40');
+        expect(result).not.toContain('260.00');
+        expect(result).toContain('목표 참고 구간: 212.50, 218.30');
+        expect(result).not.toContain('1.00');
+    });
+
+    it('진입가에 섞인 0은 리포트에 실리지 않는다', () => {
+        // AI가 `entryPrices: [0, 150]`으로 응답하면 "진입 구간: 0.00, 150.00"이
+        // 그대로 노출된다 — 손절/익절과 같은 실패 모드다.
+        const analysis: AnalysisResponse = {
+            ...baseAnalysis,
+            actionRecommendation: {
+                ...baseAnalysis.actionRecommendation!,
+                entryPrices: [0, 205.8],
+            },
+        };
+
+        const result = buildExpertAnalysisReport({
+            tReport,
+            symbol: 'nvda',
+            analysis,
+            keyLevels: baseKeyLevels,
+            t,
+        });
+
+        expect(result).toContain('진입 참고 구간: 205.80');
+        expect(result).not.toContain('0.00, 205.80');
+    });
 });

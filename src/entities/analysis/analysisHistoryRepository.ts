@@ -46,6 +46,10 @@ import { analysisHistory, analysisPromptBlobs } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { withRetry } from '@/shared/lib/withRetry';
+import {
+    resolveEffectiveActionLevels,
+    type ActionLevelsSource,
+} from './lib/effectiveActionLevels';
 
 /** `analysis_history` 탭 축 — S2 스코프는 technical/overall 둘뿐. */
 export type AnalysisHistoryTab = 'technical' | 'overall';
@@ -160,26 +164,6 @@ function sha256Hex(body: string): string {
 }
 
 /**
- * 가격으로 쓸 수 있는 값인가 — 유한할 뿐 아니라 **양수**여야 한다.
- *
- * 유한성만 보면 `0`이 통과한다. 그런데 `0`은 가격이 아니라 "값이 없다"를
- * 잘못 인코딩한 흔적이고, 통과시키면 조용히 거짓을 만든다: core의 채점기는
- * `high >= takeProfitPrices[0]`으로 목표 도달을 판정하므로 목표가가 `0`이면
- * **항상 "target reached"**가 되어, 달성한 적 없는 목표를 달성했다고
- * 프롬프트에 사실처럼 싣는다(`SL 0.00` / `entry 0.00`도 마찬가지).
- *
- * 이 값들은 몇 달 전 스키마가 쓴 행일 수 있고, core의 프롬프트가 모델에게
- * "`null`이나 `0`을 placeholder 가격으로 쓰지 말라"고 명시적으로 지시할
- * 만큼 알려진 실패 모드다 — `reconciledLevels`가 존재하는 이유 자체가 AI가
- * 낸 레벨이 무효하거나 비어 있을 수 있기 때문이다. 그러니 저장된 값이
- * 양수라고 가정하지 않는다. 자매 레포(siglens-trader)의
- * `isFinitePositive`와 같은 기준이다.
- */
-function isPositivePrice(value: unknown): value is number {
-    return typeof value === 'number' && Number.isFinite(value) && value > 0;
-}
-
-/**
  * `Trend` / `RiskLevel`의 허용 값 집합.
  *
  * `typeof === 'string'`만으로는 부족하다. 이 행들은 몇 달 전 스키마가 쓴
@@ -225,27 +209,15 @@ function toPriorAnalysis(row: {
     const { trend, riskLevel, actionRecommendation } = row.result as {
         trend?: unknown;
         riskLevel?: unknown;
-        actionRecommendation?: {
-            entryPrices?: unknown;
-            stopLoss?: unknown;
-            takeProfitPrices?: unknown;
-        };
+        actionRecommendation?: ActionLevelsSource;
     };
     if (!isTrend(trend) || !isRiskLevel(riskLevel)) {
         return null;
     }
 
-    const entryPrices = Array.isArray(actionRecommendation?.entryPrices)
-        ? actionRecommendation.entryPrices.filter(isPositivePrice)
-        : undefined;
-    const takeProfitPrices = Array.isArray(
-        actionRecommendation?.takeProfitPrices
-    )
-        ? actionRecommendation.takeProfitPrices.filter(isPositivePrice)
-        : undefined;
-    const stopLoss = isPositivePrice(actionRecommendation?.stopLoss)
-        ? actionRecommendation.stopLoss
-        : undefined;
+    // 진입가 검증 + 손절/익절 보정값 우선 — 근거는 헬퍼 JSDoc.
+    const { entryPrices, stopLoss, takeProfitPrices } =
+        resolveEffectiveActionLevels(actionRecommendation);
 
     return {
         generatedAt: row.generatedAt,

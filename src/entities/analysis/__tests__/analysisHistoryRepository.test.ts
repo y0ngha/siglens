@@ -512,6 +512,79 @@ describe('DrizzleAnalysisHistoryRepository.findRecentForPrompt', () => {
         ]);
     });
 
+    it('reconciledLevels가 있으면 원본 AI 손절/익절 대신 보정값을 쓴다', async () => {
+        // core는 AI가 낸 손절·익절이 무효하면 원본을 **그대로 두고**
+        // 도메인 보정값을 `reconciledLevels`에 따로 붙인다. 원본만 읽으면
+        // core가 이미 거부한 값을 집어 오고, 무효 익절가(예: 1)가 섞이면
+        // 채점기가 `high >= takeProfitPrices[0]`으로 판정하므로 **항상**
+        // "target reached"가 되어 미달한 목표를 달성했다고 보고한다.
+        const row = {
+            result: {
+                trend: 'bullish',
+                riskLevel: 'medium',
+                actionRecommendation: {
+                    entryPrices: [148, 150],
+                    stopLoss: 200, // 롱인데 진입가 위 — core가 거부한 값
+                    takeProfitPrices: [1, 165], // 무효 항목 혼입
+                    reconciledLevels: {
+                        stopLoss: 144,
+                        takeProfitPrices: [158, 165],
+                    },
+                },
+            },
+            generatedAt: new Date('2026-08-29T00:00:00.000Z'),
+        };
+        const { db } = makeSelectDb([row]);
+        const repository = new DrizzleAnalysisHistoryRepository(db);
+
+        const result = await repository.findRecentForPrompt({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            tab: 'technical',
+            now: NOW,
+        });
+
+        expect(result).toEqual<PriorAnalysis[]>([
+            {
+                generatedAt: row.generatedAt,
+                trend: 'bullish',
+                riskLevel: 'medium',
+                entryPrices: [148, 150],
+                stopLoss: 144,
+                takeProfitPrices: [158, 165],
+            },
+        ]);
+    });
+
+    it('reconciledLevels가 없으면 원본 AI 값을 그대로 쓴다', async () => {
+        const row = {
+            result: {
+                trend: 'bullish',
+                riskLevel: 'low',
+                actionRecommendation: {
+                    entryPrices: [148],
+                    stopLoss: 144,
+                    takeProfitPrices: [158],
+                },
+            },
+            generatedAt: new Date('2026-08-29T00:00:00.000Z'),
+        };
+        const { db } = makeSelectDb([row]);
+        const repository = new DrizzleAnalysisHistoryRepository(db);
+
+        const result = await repository.findRecentForPrompt({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            tab: 'technical',
+            now: NOW,
+        });
+
+        expect(result[0]).toMatchObject({
+            stopLoss: 144,
+            takeProfitPrices: [158],
+        });
+    });
+
     it('returns [] and does not throw when the query fails', async () => {
         const { db } = makeSelectDb([], { limitFails: true });
         const repository = new DrizzleAnalysisHistoryRepository(db);
