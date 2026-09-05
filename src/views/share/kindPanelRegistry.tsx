@@ -201,9 +201,8 @@ export const SHARE_KIND_PANEL_REGISTRY = {
             <OptionsAiAnalysisView result={result} />
         </WithPlainSwitch>
     ),
-    'fear-greed': ({ result, plain }) => (
-        <WithPlainSwitch plain={plain}>
-            <FearGreedShareView snapshot={result} />
-        </WithPlainSwitch>
-    ),
+    // fear-greed 점수는 클라이언트에서 결정적으로 계산된다 — AI 산문이 없으므로
+    // `useRegisterShareable`도 `plain`을 절대 채우지 않는다. 스위치를 감싸 봐야
+    // 영구히 눌리지 않는 죽은 토글이라, 다른 kind들과 달리 여기엔 두지 않는다.
+    'fear-greed': ({ result }) => <FearGreedShareView snapshot={result} />,
 } satisfies { [K in ShareableKind]: PanelComponent<K> };

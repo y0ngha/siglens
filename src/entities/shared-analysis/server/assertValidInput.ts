@@ -26,12 +26,13 @@ export const MAX_RESULT_BYTES = 65_536;
 export const MAX_DISPLAY_NAME_LENGTH = 128;
 
 /**
- * Maximum UTF-8 byte length for the `plain` prose carried in a share snapshot.
+ * 공유 스냅샷에 실리는 `plain` 산문의 UTF-8 바이트 길이 상한.
  *
- * The plain rewrite is guarded upstream (`guardPlainText`) to stay near the length
- * of the source prose, so 32 KB is far above any legitimate value while keeping the
- * jsonb column bounded. Measured in bytes for the same multibyte reason as
- * MAX_RESULT_BYTES.
+ * 업스트림(`guardPlainText`)은 원본 산문 대비 **하한**만 강제하고 상한은 두지
+ * 않는다 — 분석 타입마다 압축률이 37~105%로 제각각이라 고정 상한이 의미가
+ * 없기 때문이다. 따라서 이 값이 파이프라인 전체에서 유일한 방어선이다:
+ * 정상적인 재작성을 걸러내지 않도록 관측된 압축률 범위보다 넉넉히 크게 잡아
+ * jsonb 컬럼만 보호한다. 멀티바이트 이유는 MAX_RESULT_BYTES와 같아 바이트로 잰다.
  */
 export const MAX_PLAIN_BYTES = 32_768;
 
