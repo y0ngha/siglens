@@ -587,9 +587,10 @@ describe('POST /api/analysis/stream', () => {
             const response = await POST(makeRequest(undefined, body));
             await collectSseEvents(response);
 
-            // overall 핸들러 시그니처: (symbol, companyName, timeframe, modelId, { force, reasoning, onPromptAssembled, priorAnalyses }, signal)
+            // overall 핸들러 시그니처: (symbol, companyName, timeframe, modelId, { force, reasoning, priorAnalyses }, signal)
             // reanalyze 없음 → cooldown=null → force=false, reasoning=undefined(params에 없음)
-            // onPromptAssembled: Task S2(prior-analysis-context) 히스토리 저장용 콜백 — 항상 전달된다.
+            // `onPromptAssembled`는 넘기지 않는다 — overall 결과는 이력으로 저장할 수
+            // 없어(그 응답에 trend/riskLevel이 없다) 프롬프트를 캡처할 이유가 없다.
             // priorAnalyses: Task S3(prior-analysis-context) 읽기 — `getDatabaseClient`가
             // 이 파일에서 `{ db: {} }`로 뭉개져 있어(위 mock) 실제 select가 실패하고
             // best-effort로 `[]`가 된다. 값 자체보다 "항상 필드가 전달된다"가 이 테스트의
@@ -603,7 +604,6 @@ describe('POST /api/analysis/stream', () => {
                 {
                     force: false,
                     reasoning: undefined,
-                    onPromptAssembled: expect.any(Function),
                     priorAnalyses: [],
                 },
                 expect.any(AbortSignal)
@@ -1707,7 +1707,7 @@ describe('POST /api/analysis/stream', () => {
             expect(opts?.priorAnalyses).toBeUndefined();
         });
 
-        it('overall, 봇 아님 → findRecentForPrompt(symbol, timeframe, tab: overall) 결과가 runOverallAnalysisAction의 priorAnalyses로 전달된다', async () => {
+        it('overall, 봇 아님 → findRecentForPrompt(symbol, timeframe, tab: technical) 결과가 runOverallAnalysisAction의 priorAnalyses로 전달된다', async () => {
             vi.mocked(isBot).mockReturnValue(false);
             const history = [
                 {
@@ -1730,10 +1730,12 @@ describe('POST /api/analysis/stream', () => {
             const response = await POST(makeRequest(undefined, body));
             await collectSseEvents(response);
 
+            // overall 응답에는 `PriorAnalysis`가 요구하는 trend/riskLevel이 없어
+            // 자기 축의 이력을 만들 수 없다 — technical 이력을 참고한다.
             expect(mockFindRecentForPrompt).toHaveBeenCalledWith({
                 symbol: 'AAPL',
                 timeframe: '1Day',
-                tab: 'overall',
+                tab: 'technical',
             });
             expect(vi.mocked(runOverallAnalysisAction)).toHaveBeenCalledWith(
                 'AAPL',
@@ -2887,7 +2889,12 @@ describe('POST /api/analysis/stream', () => {
                     options?.onPromptAssembled?.(capturedPrompt as never);
                     return Promise.resolve({
                         status: 'done' as const,
-                        result: { headlineKo: 'h' },
+                        // 렌더용 결과는 tier에 따라 필드가 잘린다.
+                        result: { headlineKo: 'h', riskLevel: null },
+                        unfilteredResult: {
+                            headlineKo: 'h',
+                            riskLevel: 'medium',
+                        },
                     } as never);
                 }
             );
@@ -2917,7 +2924,9 @@ describe('POST /api/analysis/stream', () => {
                     tab: 'technical',
                     modelId: 'gemini-2.5-flash',
                     locale: 'ja',
-                    result: { headlineKo: 'h' },
+                    // 저장되는 것은 필터 전 결과다 — riskLevel이 남아 있어야
+                    // 이후 읽기(`toPriorAnalysis`)가 이 행을 살린다.
+                    result: { headlineKo: 'h', riskLevel: 'medium' },
                     prompt: capturedPrompt,
                 })
             );
@@ -2967,6 +2976,13 @@ describe('POST /api/analysis/stream', () => {
             vi.mocked(runAnalysis).mockResolvedValue({
                 status: 'done' as const,
                 result: { headlineKo: 'h', analyzedAt },
+                // 저장 대상이 `unfilteredResult`이므로 `generatedAt`도 이쪽의
+                // `analyzedAt`에서 나온다.
+                unfilteredResult: {
+                    headlineKo: 'h',
+                    riskLevel: 'medium',
+                    analyzedAt,
+                },
             } as never);
 
             await collectSseEvents(await POST(makeRequest()));
@@ -3032,53 +3048,10 @@ describe('POST /api/analysis/stream', () => {
             expect(mockSaveAnalysisHistory).not.toHaveBeenCalled();
         });
 
-        it('overall, status: done → tab/symbol/timeframe/modelId/locale/prompt가 그대로 saveAnalysisHistory에 전달된다', async () => {
-            vi.mocked(runOverallAnalysisAction).mockImplementation(
-                (_s, _c, _t, _m, _l, options) => {
-                    (
-                        options as {
-                            onPromptAssembled?: (r: unknown) => void;
-                        }
-                    )?.onPromptAssembled?.(capturedPrompt);
-                    return Promise.resolve({
-                        status: 'done' as const,
-                        result: { overallConclusionKo: 'c' },
-                    } as never);
-                }
-            );
-
-            const body = JSON.stringify({
-                type: 'overall',
-                params: {
-                    symbol: 'TSLA',
-                    companyName: 'Tesla',
-                    timeframe: '1Week',
-                    modelId: 'gemini-2.5-flash',
-                },
-            });
-            await collectSseEvents(
-                await POST(makeRequest(undefined, body, 'ja'))
-            );
-
-            expect(mockAfter).toHaveBeenCalledTimes(1);
-            const callback = mockAfter.mock.calls[0][0] as () => Promise<void>;
-            await callback();
-
-            expect(mockSaveAnalysisHistory).toHaveBeenCalledTimes(1);
-            expect(mockSaveAnalysisHistory).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    symbol: 'TSLA',
-                    timeframe: '1Week',
-                    tab: 'overall',
-                    modelId: 'gemini-2.5-flash',
-                    locale: 'ja',
-                    result: { overallConclusionKo: 'c' },
-                    prompt: capturedPrompt,
-                })
-            );
-        });
-
-        it('overall, prompt 미캡처(동시 요청 패자 경로) → prompt는 undefined다', async () => {
+        it('overall, status: done이어도 저장하지 않는다 — after조차 예약되지 않는다', async () => {
+            // `OverallAnalysisResponse`에는 trend/riskLevel이 없어 저장해도
+            // `toPriorAnalysis`가 전부 버린다. 이 축이 참고하는 이력은
+            // technical 쪽이고, 위 읽기 테스트가 그 배선을 고정한다.
             vi.mocked(runOverallAnalysisAction).mockResolvedValue({
                 status: 'done' as const,
                 result: { overallConclusionKo: 'c' },
@@ -3093,14 +3066,12 @@ describe('POST /api/analysis/stream', () => {
                     modelId: 'gemini-2.5-flash',
                 },
             });
-            await collectSseEvents(await POST(makeRequest(undefined, body)));
-
-            const callback = mockAfter.mock.calls[0][0] as () => Promise<void>;
-            await callback();
-
-            expect(mockSaveAnalysisHistory).toHaveBeenCalledWith(
-                expect.objectContaining({ prompt: undefined })
+            await collectSseEvents(
+                await POST(makeRequest(undefined, body, 'ja'))
             );
+
+            expect(mockAfter).not.toHaveBeenCalled();
+            expect(mockSaveAnalysisHistory).not.toHaveBeenCalled();
         });
 
         it("overall, status !== 'done'(cached) → after가 예약되지 않고 saveAnalysisHistory도 호출되지 않는다", async () => {

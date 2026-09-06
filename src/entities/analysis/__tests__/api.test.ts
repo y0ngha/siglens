@@ -305,7 +305,13 @@ describe('prewarmTechnical', () => {
                     options?.onPromptAssembled?.(capturedPrompt as never);
                     return Promise.resolve({
                         status: 'done' as const,
-                        result: { headlineKo: 'h' },
+                        // pre-warm은 free tier라 렌더용 `result`에서는 필드가
+                        // 잘려 나간다. 이력에 실려야 하는 건 아래쪽이다.
+                        result: { headlineKo: 'h', riskLevel: null },
+                        unfilteredResult: {
+                            headlineKo: 'h',
+                            riskLevel: 'medium',
+                        },
                         lockedInfoDepth: [],
                     } as never);
                 }
@@ -321,7 +327,9 @@ describe('prewarmTechnical', () => {
                     tab: 'technical',
                     modelId: DEEPSEEK_V4_FLASH_MODEL,
                     locale: 'ko',
-                    result: { headlineKo: 'h' },
+                    // 필터된 `result`가 아니라 `unfilteredResult`가 저장돼야
+                    // 한다 — riskLevel이 살아 있는 쪽.
+                    result: { headlineKo: 'h', riskLevel: 'medium' },
                     prompt: capturedPrompt,
                 })
             );
@@ -683,7 +691,7 @@ describe('prewarmOverall', () => {
     });
 
     describe('analysis_history 배선 (Task S3, PR #784 리뷰 지적)', () => {
-        it('history를 symbol/timeframe/tab:overall로 읽어 priorAnalyses로 그대로 넘긴다', async () => {
+        it('history를 symbol/timeframe/tab:technical로 읽어 priorAnalyses로 그대로 넘긴다', async () => {
             const history = [
                 {
                     generatedAt: new Date('2026-08-01'),
@@ -695,45 +703,30 @@ describe('prewarmOverall', () => {
 
             await prewarmOverall('AAPL', 'Apple Inc.', false);
 
+            // `OverallAnalysisResponse`에는 `PriorAnalysis`가 요구하는
+            // trend/riskLevel이 없어 overall 결과로는 이력을 만들 수 없다.
+            // 그래서 이 축은 technical 이력을 참고한다.
             expect(mockFindRecentForPrompt).toHaveBeenCalledWith({
                 symbol: 'AAPL',
                 timeframe: '1Day',
-                tab: 'overall',
+                tab: 'technical',
             });
             expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ priorAnalyses: history })
             );
         });
 
-        it("status: 'done' → captured prompt과 함께 saveAnalysisHistory에 저장한다", async () => {
-            const capturedPrompt = {
-                system: 'overall system prompt',
-                stable: 'overall stable digest',
-                dynamic: 'overall dynamic block',
-                promptVersion: 'v9',
-            };
-            mockRunOverallAnalysis.mockImplementationOnce(options => {
-                options?.onPromptAssembled?.(capturedPrompt as never);
-                return Promise.resolve({
-                    status: 'done' as const,
-                    result: { summary: 'ok' },
-                } as never);
-            });
+        it("status: 'done'이어도 overall 결과는 저장하지 않는다", async () => {
+            // 저장해 봐야 `toPriorAnalysis`가 전부 버리는 모양이라 90일짜리
+            // 사문(死文) 행과 프롬프트 블롭만 남는다.
+            mockRunOverallAnalysis.mockResolvedValueOnce({
+                status: 'done' as const,
+                result: { summary: 'ok' },
+            } as never);
 
             await prewarmOverall('AAPL', 'Apple Inc.', false);
 
-            expect(mockSaveAnalysisHistory).toHaveBeenCalledTimes(1);
-            expect(mockSaveAnalysisHistory).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    symbol: 'AAPL',
-                    timeframe: '1Day',
-                    tab: 'overall',
-                    modelId: DEEPSEEK_V4_FLASH_MODEL,
-                    locale: 'ko',
-                    result: { summary: 'ok' },
-                    prompt: capturedPrompt,
-                })
-            );
+            expect(mockSaveAnalysisHistory).not.toHaveBeenCalled();
         });
 
         it("status: 'cached' → saveAnalysisHistory를 호출하지 않는다", async () => {

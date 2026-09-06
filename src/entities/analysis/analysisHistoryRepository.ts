@@ -152,8 +152,13 @@ export interface SaveAnalysisHistoryInput {
     result: unknown;
     generatedAt: Date;
     /**
-     * core `onPromptAssembled`이 캐시 미스에서 정확히 한 번 넘겨준 레코드.
-     * 동시 요청 중 패자는 이 필드가 없다 — 정상 경로다(모듈 JSDoc 참고).
+     * core `onPromptAssembled`이 **캐시 미스에서 정확히 한 번** 넘겨준 레코드.
+     *
+     * 이 필드의 부재는 "이 요청이 분석을 생성하지 않았다"와 동의어다. core는
+     * `dedupeInFlight` factory **안에서만** 콜백을 부르므로, 같은 캐시 키로 겹친
+     * 요청 중 승자만 받고 패자는 승자의 결과를 공유받는다 — 둘 다 `status: 'done'`을
+     * 보게 된다. 그래서 저장 여부를 `status`로 판정할 수 없고, 이 필드로 판정한다
+     * (`saveAnalysisHistory` 참고).
      */
     prompt?: AssembledPromptRecord;
     inputFingerprint?: string;
@@ -254,38 +259,88 @@ export interface PruneAnalysisHistoryResult {
 export class DrizzleAnalysisHistoryRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
+    /**
+     * 이력 한 건을 남긴다. **`prompt`가 없으면 아무것도 쓰지 않는다.**
+     *
+     * ## 왜 prompt 부재가 곧 skip인가
+     *
+     * 호출부는 core가 준 `status: 'done'`으로 "새로 생성됐다"를 판정하지만 그것으로는
+     * 부족하다. `dedupeInFlight`는 같은 캐시 키로 겹친 요청 중 **승자의 factory만**
+     * 실행하고 나머지에는 그 결과를 그대로 나눠 준다. 패자도 `'done'`을 받으므로,
+     * `status`만 보면 **한 번의 분석이 동시 요청 수만큼 행을 만든다.**
+     *
+     * 실측(2026-09-05 운영): AAPL 1Day에서 LLM 호출은 1회(`latency 32.8s`)인데 행은
+     * 2건이 남았고, 그중 하나만 프롬프트를 갖고 있었다.
+     *
+     * 그 중복은 조용히 기능을 무력화한다. 프롬프트에 실리는 이력은 최근
+     * {@link PRIOR_ANALYSIS_LIMIT}건인데, 그 자리가 **같은 시점의 복제본**으로 차면
+     * 모델에게 "이전 분석들"이라며 한 시점을 여러 번 보여 주게 된다 — 서로 다른
+     * 시점의 판단을 비교시키려는 설계 의도와 정반대다.
+     *
+     * 승자를 남기는 쪽이 옳은 이유는 하나 더 있다: 프롬프트가 함께 남아야 결과를
+     * 그 입력과 대조할 수 있다. 프롬프트 없는 행은 중복인 데다 품질 추적도 불가능해
+     * 남길 이유가 없다.
+     */
     async saveAnalysisHistory(input: SaveAnalysisHistoryInput): Promise<void> {
+        const prompt = input.prompt;
+        if (prompt === undefined) return;
+
+        // 읽기가 버릴 행은 쓰지 않는다 — 판정은 읽기와 **같은 함수**로 한다.
+        //
+        // core는 tier별로 응답 필드를 잠근 뒤(`filterAnalysisResult`) 그 결과를
+        // 호출자에게 돌려준다. free tier의 `infoDepth`는 `direction`·`summary`·
+        // `skill_detection`뿐이라 `riskLevel`(= `partial_detail`)이 `null`로
+        // 내려오고, `toPriorAnalysis`는 `trend`/`riskLevel`이 온전하지 않은 행을
+        // 버린다. 즉 free 경로가 남기는 이력은 **읽는 순간 전량 폐기**된다.
+        //
+        // 그 경로가 주변부가 아니다: SEO pre-warm이 `tier: 'free'`로 돌고
+        // (`entities/analysis/api.ts` — 캐시 키 5축 정합 때문에 올릴 수 없다),
+        // 비회원 방문자도 같은 tier다. 저장을 막지 않으면 90일 보존 내내 아무도
+        // 읽지 못하는 행과 그 프롬프트 블롭(수십 KB)만 쌓인다.
+        //
+        // 여기서 `toPriorAnalysis`를 그대로 쓰는 이유는 대칭성이다. 조건을 다시
+        // 적으면 읽기 쪽 판정이 바뀔 때 조용히 어긋난다 — 저장은 되는데 읽히지
+        // 않거나, 그 반대가 된다.
+        //
+        // ⚠️ 이건 봉합이지 근본 해결이 아니다. free tier의 분석도 **이력으로서는**
+        // 온전히 남는 것이 옳고, 그러려면 core가 tier 필터 이전 결과를 이력용으로
+        // 따로 노출해야 한다(캐시에는 이미 필터 전 값이 들어간다).
+        if (
+            toPriorAnalysis({
+                result: input.result,
+                generatedAt: input.generatedAt,
+            }) === null
+        ) {
+            return;
+        }
+
         try {
-            const promptHashes = input.prompt
-                ? {
-                      stableHash: sha256Hex(input.prompt.stable),
-                      systemHash: sha256Hex(input.prompt.system),
-                  }
-                : null;
+            const promptHashes = {
+                stableHash: sha256Hex(prompt.stable),
+                systemHash: sha256Hex(prompt.system),
+            };
 
             // 블롭을 먼저 upsert한다 — history 행이 가리킬 해시가 존재해야
             // 한다(FK는 없지만 쓰기 순서로 동일한 불변식을 지킨다).
-            if (promptHashes && input.prompt) {
-                await withRetry(
-                    () =>
-                        this.db
-                            .insert(analysisPromptBlobs)
-                            .values([
-                                {
-                                    hash: promptHashes.stableHash,
-                                    body: input.prompt!.stable,
-                                },
-                                {
-                                    hash: promptHashes.systemHash,
-                                    body: input.prompt!.system,
-                                },
-                            ])
-                            .onConflictDoNothing({
-                                target: analysisPromptBlobs.hash,
-                            }),
-                    NEON_TRANSIENT_RETRY
-                );
-            }
+            await withRetry(
+                () =>
+                    this.db
+                        .insert(analysisPromptBlobs)
+                        .values([
+                            {
+                                hash: promptHashes.stableHash,
+                                body: prompt.stable,
+                            },
+                            {
+                                hash: promptHashes.systemHash,
+                                body: prompt.system,
+                            },
+                        ])
+                        .onConflictDoNothing({
+                            target: analysisPromptBlobs.hash,
+                        }),
+                NEON_TRANSIENT_RETRY
+            );
 
             await withRetry(
                 () =>
@@ -297,12 +352,10 @@ export class DrizzleAnalysisHistoryRepository {
                         locale: input.locale,
                         result: input.result,
                         inputFingerprint: input.inputFingerprint ?? null,
-                        // prompt가 없는 경우(동시 요청 패자) 전부 null로 남긴다 —
-                        // 정상 경로이지 실패가 아니다. SaveAnalysisHistoryInput JSDoc 참고.
-                        promptVersion: input.prompt?.promptVersion ?? null,
-                        promptStableHash: promptHashes?.stableHash ?? null,
-                        promptSystemHash: promptHashes?.systemHash ?? null,
-                        promptDynamic: input.prompt?.dynamic ?? null,
+                        promptVersion: prompt.promptVersion,
+                        promptStableHash: promptHashes.stableHash,
+                        promptSystemHash: promptHashes.systemHash,
+                        promptDynamic: prompt.dynamic,
                         generatedAt: input.generatedAt,
                     }),
                 NEON_TRANSIENT_RETRY

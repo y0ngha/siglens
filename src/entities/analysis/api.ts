@@ -192,7 +192,10 @@ export async function prewarmTechnical(
             symbol,
             timeframe,
             tab: 'technical',
-            result: result.result,
+            // 필터 전 결과를 저장한다 — pre-warm은 `tier: 'free'`로 돌아
+            // `result.result`에는 `riskLevel`이 없다(스트림 경로의 같은 지점
+            // 주석 참고). 그 모양으로 남기면 읽기가 전부 버린다.
+            result: result.unfilteredResult,
             prompt: capturedPrompt,
         });
     }
@@ -323,9 +326,15 @@ export async function prewarmOverall(
     // `prewarmTechnical` (see that function's comment on the read call).
     const priorAnalyses = await new DrizzleAnalysisHistoryRepository(
         db
-    ).findRecentForPrompt({ symbol, timeframe, tab: 'overall' });
-
-    let capturedPrompt: AssembledPromptRecord | undefined;
+    ).findRecentForPrompt({
+        symbol,
+        timeframe,
+        // overall도 technical 이력을 읽는다 — 근거는 스트림 경로의 같은 호출부
+        // 주석 참고(`OverallAnalysisResponse`에는 `PriorAnalysis`가 요구하는
+        // trend/riskLevel이 없다). 스트림과 **같은 tab**을 읽어야 core가 캐시 키에
+        // 접는 history fingerprint가 갈리지 않는다.
+        tab: 'technical',
+    });
 
     const result = await runOverallAnalysis({
         symbol,
@@ -345,23 +354,11 @@ export async function prewarmOverall(
         optionsOiStale,
         financialsScorecard,
         priorAnalyses,
-        onPromptAssembled: record => {
-            capturedPrompt = record;
-        },
         ...(force ? { force: true } : {}),
     });
 
-    // 'cached'는 이미 존재하는 행을 가리키므로 다시 저장하지 않는다 — 새로
-    // 생성된('done') 결과만 히스토리에 남긴다(SSE 경로와 동일 규칙).
-    if (result.status === 'done') {
-        await persistPrewarmAnalysis({
-            symbol,
-            timeframe,
-            tab: 'overall',
-            result: result.result,
-            prompt: capturedPrompt,
-        });
-    }
+    // overall 결과는 이력으로 저장하지 않는다 — `toPriorAnalysis`가 전부 버리는
+    // 모양이라 사문(死文) 행만 쌓인다(스트림 경로의 같은 지점 주석 참고).
 
     return result;
 }

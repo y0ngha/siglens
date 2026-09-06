@@ -119,6 +119,12 @@ function makeDb(options?: { historyFails?: boolean; blobFails?: boolean }): {
     };
 }
 
+/**
+ * 저장이 허용되는 최소 result — `trend`와 `riskLevel`이 온전해야 한다.
+ * 둘 중 하나라도 없으면 읽기(`toPriorAnalysis`)가 버리므로 저장도 막힌다.
+ */
+const readableResult = { trend: 'bullish', riskLevel: 'medium' };
+
 const promptRecord: AssembledPromptRecord = {
     system: 'system prompt text',
     stable: 'stable skill digest',
@@ -139,7 +145,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             tab: 'technical',
             modelId: 'analysis-worker',
             locale: 'ko',
-            result: { trend: 'bullish' },
+            result: readableResult,
             generatedAt,
             prompt: promptRecord,
         });
@@ -160,7 +166,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             tab: 'technical',
             modelId: 'analysis-worker',
             locale: 'ko',
-            result: { trend: 'bullish' },
+            result: readableResult,
             inputFingerprint: null,
             promptVersion: 'v7',
             promptStableHash: sha256Hex(promptRecord.stable),
@@ -170,10 +176,45 @@ describe('DrizzleAnalysisHistoryRepository', () => {
         });
     });
 
-    it('stores a null-prompt history row without touching the blob table when no prompt was captured (concurrent-loser path)', async () => {
+    it('writes nothing when the result would be dropped on read (free-tier filtered)', async () => {
+        // core의 tier 필터는 free에서 `riskLevel`(= partial_detail)을 null로
+        // 내린다. `toPriorAnalysis`는 그런 행을 버리므로, 저장해 봐야 90일 동안
+        // 아무도 읽지 못하는 행과 프롬프트 블롭만 남는다. SEO pre-warm이
+        // `tier: 'free'`로 도는 탓에 주변부 경로도 아니다.
         const { db, insert, historyValues } = makeDb();
         const repository = new DrizzleAnalysisHistoryRepository(db);
-        const generatedAt = new Date('2026-08-30T00:00:00.000Z');
+        const consoleError = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        await repository.saveAnalysisHistory({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            tab: 'technical',
+            modelId: 'analysis-worker',
+            locale: 'ko',
+            // free tier가 실제로 내려주는 모양 — trend만 살아 있다.
+            result: { trend: 'bullish', riskLevel: null },
+            generatedAt: new Date('2026-08-30T00:00:00.000Z'),
+            prompt: promptRecord,
+        });
+
+        expect(insert).not.toHaveBeenCalled();
+        expect(historyValues).not.toHaveBeenCalled();
+        expect(consoleError).not.toHaveBeenCalled();
+        consoleError.mockRestore();
+    });
+
+    it('writes nothing at all when no prompt was captured (concurrent-loser path)', async () => {
+        // `dedupeInFlight`는 승자의 factory만 실행하고 패자에게는 그 결과를
+        // 그대로 넘긴다 — 둘 다 `status: 'done'`을 보므로 status로는 구분되지
+        // 않는다. prompt 부재가 유일한 판별 신호이고, 여기서 저장하면 한 번의
+        // 분석이 동시 요청 수만큼 행을 만들어 이력 상한을 복제본으로 채운다.
+        const { db, insert, historyValues } = makeDb();
+        const repository = new DrizzleAnalysisHistoryRepository(db);
+        const consoleError = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
 
         await repository.saveAnalysisHistory({
             symbol: 'AAPL',
@@ -181,25 +222,17 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             tab: 'overall',
             modelId: 'analysis-worker',
             locale: 'en',
-            result: { trend: 'neutral' },
-            generatedAt,
+            result: readableResult,
+            generatedAt: new Date('2026-08-30T00:00:00.000Z'),
         });
 
-        expect(insert).not.toHaveBeenCalledWith(analysisPromptBlobs);
-        expect(historyValues).toHaveBeenCalledWith({
-            symbol: 'AAPL',
-            timeframe: '1Day',
-            tab: 'overall',
-            modelId: 'analysis-worker',
-            locale: 'en',
-            result: { trend: 'neutral' },
-            inputFingerprint: null,
-            promptVersion: null,
-            promptStableHash: null,
-            promptSystemHash: null,
-            promptDynamic: null,
-            generatedAt,
-        });
+        expect(insert).not.toHaveBeenCalled();
+        expect(historyValues).not.toHaveBeenCalled();
+        // 에러 로그 부재까지 봐야 한다 — 가드를 지우면 `prompt.stable` 접근이
+        // TypeError를 내고 그것이 best-effort catch에 잡혀, 결과적으로 역시
+        // 아무것도 쓰이지 않는다. 두 경로를 구분하는 신호는 이 단언뿐이다.
+        expect(consoleError).not.toHaveBeenCalled();
+        consoleError.mockRestore();
     });
 
     it('passes inputFingerprint through when supplied', async () => {
@@ -212,9 +245,10 @@ describe('DrizzleAnalysisHistoryRepository', () => {
             tab: 'technical',
             modelId: 'analysis-worker',
             locale: 'ko',
-            result: {},
+            result: readableResult,
             generatedAt: new Date('2026-08-30T00:00:00.000Z'),
             inputFingerprint: 'fp-123',
+            prompt: promptRecord,
         });
 
         expect(historyValues).toHaveBeenCalledWith(
@@ -236,7 +270,7 @@ describe('DrizzleAnalysisHistoryRepository', () => {
                 tab: 'technical',
                 modelId: 'analysis-worker',
                 locale: 'ko',
-                result: {},
+                result: readableResult,
                 generatedAt: new Date('2026-08-30T00:00:00.000Z'),
                 prompt: promptRecord,
             })
@@ -265,8 +299,9 @@ describe('DrizzleAnalysisHistoryRepository', () => {
                 tab: 'overall',
                 modelId: 'analysis-worker',
                 locale: 'ko',
-                result: {},
+                result: readableResult,
                 generatedAt: new Date('2026-08-30T00:00:00.000Z'),
+                prompt: promptRecord,
             })
         ).resolves.toBeUndefined();
 
