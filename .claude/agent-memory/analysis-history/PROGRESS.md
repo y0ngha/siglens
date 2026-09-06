@@ -1346,3 +1346,64 @@ core는 진입가를 보정하지 않으므로 여긴 보정 우선이 아니라
 
 배포 순서는 변경 없음 — **trader `yarn db:migrate` 먼저**, siglens는 순서 무관.
 품질 측정(실제 LLM A/B)은 여전히 미실행.
+
+---
+
+# 라운드 4 (09-06): 이력이 거의 안 쌓이던 진짜 이유 3가지
+
+배포 후 AAPL로 실측하다가 드러났다. **셋 다 독립**이고, 합쳐서 "이력 기능이 사실상 회원
+요청에서만 부분 동작"인 상태였다.
+
+## 1. dedupe 패자가 중복 행을 만든다
+core `dedupeInFlight`는 승자 factory만 돌리고 패자에겐 결과를 나눠 준다 → **둘 다 `'done'`**.
+siglens는 `status === 'done'`만 봤으므로 패자도 저장.
+실측: LLM 1회(`latency 32.8s`)인데 행 2건, 하나만 프롬프트 보유.
+→ `prompt` 부재로 패자 판정(`onPromptAssembled`가 factory 안에서만 불리므로).
+
+## 2. tier 필터된 결과는 읽기에서 전량 폐기
+free `infoDepth` = direction/summary/skill_detection → **`riskLevel`이 null**.
+`toPriorAnalysis`는 trend/riskLevel 없으면 행을 버린다.
+**prewarm이 `tier: 'free'`**로 돌고(캐시 키에 tier가 접혀 못 올림) 비회원도 free —
+즉 이력을 채워야 할 트래픽이 정확히 그 둘.
+→ core v0.57.0에 `unfilteredResult`(필터 전) 추가 후 그걸 저장.
+   캐시에 이미 쓰이는 값이라 새 계산 없음.
+→ 추가로 `saveAnalysisHistory`에 **대칭 가드**: 읽기가 버릴 행은 쓰지 않는다.
+   판정은 읽기와 **같은 `toPriorAnalysis`**로 — 조건을 다시 적으면 조용히 어긋난다.
+
+## 3. overall은 채울 수 없는 풀을 읽고 있었다
+`OverallAnalysisResponse`에 trend/riskLevel이 **아예 없다**(headline·bullets·scenarios만).
+core가 overall 프롬프트에도 이력 섹션을 배선해 뒀는데 채워질 일이 없었다.
+→ **A안**: overall은 technical 이력을 참고. overall 저장은 제거.
+   스트림·prewarm이 **같은 tab**을 읽어야 history fingerprint가 안 갈린다.
+
+## 검증 (스크래치 Postgres)
+같은 free tier 분석, 저장 값만 교체:
+| 저장한 값 | DB rows | 읽힌 이력 | section |
+|---|---|---|---|
+| filtered(기존) | 0 | 0 | 없음 |
+| unfiltered(신규) | 1 | 1 | 665자 |
+
+## 교훈: 되돌림 검증이 두 번 나를 살렸다
+- 패자 차단 테스트 1차본은 **크래시 경로와 구분 불가**라 가드를 지워도 통과했다
+  (`prompt.stable` 접근이 TypeError → best-effort catch → 역시 아무것도 안 씀).
+  `expect(consoleError).not.toHaveBeenCalled()` 추가로 분리.
+- `python replace` 앵커가 **고유하지 않아 첫 발생을 바꾼** 사고 2회
+  (technical/overall에 같은 문구). describe 블록 시작 인덱스부터 검색해 해결.
+
+## 부수: 워크트리 `.env.local` 대량 stale
+운영 Neon 비밀번호가 회전됐는데 **메인 체크아웃만** 갱신됨.
+pre-push build가 ISR 생성에서 DB 인증 실패 → push 차단.
+해시 비교로 8개 워크트리 STALE 확인(`DATABASE_URL`·`DIRECT_DATABASE_URL` 2개만 상이).
+posfix만 동기화함(백업 `.env.local.bak-*`). 나머지는 미처리.
+
+## PR
+| 레포 | PR | 결과 |
+|---|---|---|
+| siglens-core | #189 | APPROVED → 머지 → **v0.57.0** 발행 확인 |
+| siglens | #789 | APPROVED·CLEAN → 머지 진행 |
+
+## tier 정책 판단 (리뷰 Question)
+free가 만든 상세 레벨이 이력에 남고 tier 무관 재사용된다 → **수용(A)**.
+근거: `analysis_history`를 클라이언트로 내보내는 경로 없음(소비처 전수 확인),
+현재 응답의 게이팅은 그대로, 가드레일이 "reference only",
+tier별 마스킹은 캐시를 tier 수만큼 쪼개 prewarm 존재 이유를 깨뜨림.
