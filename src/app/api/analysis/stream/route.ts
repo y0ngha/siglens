@@ -356,11 +356,6 @@ const DISPATCH: Record<
         const timeframe = params.timeframe as Timeframe;
         const modelId = params.modelId as ModelId;
 
-        // core의 `onPromptAssembled`는 캐시 미스에서 정확히 한 번, 프로바이더
-        // 호출 직전에 **동기로** 캡처만 한다 — 여기서 await하지 않는다(Task S2
-        // 계약, `schedulePersistAnalysisHistory` 주석 참고).
-        let capturedPrompt: AssembledPromptRecord | undefined;
-
         // Task S3 (prior-analysis-context) — read history BEFORE the core
         // call, unconditionally on the non-bot path. core folds a
         // fingerprint of `priorAnalyses` into the cache key, so a lazy
@@ -376,7 +371,23 @@ const DISPATCH: Record<
             ? undefined
             : await new DrizzleAnalysisHistoryRepository(
                   getDatabaseClient().db
-              ).findRecentForPrompt({ symbol, timeframe, tab: 'overall' });
+              ).findRecentForPrompt({
+                  symbol,
+                  timeframe,
+                  // overall도 **technical 이력**을 참고한다.
+                  //
+                  // `PriorAnalysis`는 trend / riskLevel / 진입·손절·익절이라
+                  // 본질적으로 technical 모델인데, `OverallAnalysisResponse`에는
+                  // 그 필드가 하나도 없다(headline·bullets·scenarios·riskFactors가
+                  // 전부다). 그래서 overall 결과로 만든 행은 `toPriorAnalysis`가
+                  // 남김없이 버린다 — `tab: 'overall'`로 읽으면 이 섹션은 영원히
+                  // 비어 있다.
+                  //
+                  // overall은 technical 산출물을 입력으로 받아 종합하는 축이므로,
+                  // "이 종목을 이전엔 이렇게 봤다"는 technical 판단은 여기서도
+                  // 그대로 유효한 참고다.
+                  tab: 'technical',
+              });
 
         const result = await runOverallAnalysisAction(
             symbol,
@@ -387,9 +398,6 @@ const DISPATCH: Record<
             {
                 force: cooldown?.ok === true,
                 reasoning: params.reasoning as boolean | undefined,
-                onPromptAssembled: record => {
-                    capturedPrompt = record;
-                },
                 priorAnalyses,
             },
             signal
@@ -413,23 +421,12 @@ const DISPATCH: Record<
             throw err;
         });
 
-        // 'cached'는 이미 존재하는 행을 가리키므로 다시 저장하지 않는다 —
-        // 새로 생성된('done') 결과만 히스토리에 남긴다.
+        // overall 결과는 이력으로 저장하지 않는다.
         //
-        // `modelId`에 기본값 폴백을 두지 않는다 — technical과 달리 overall은
-        // core가 캐시 키에 modelId를 그대로 쓰므로(`entities/analysis/api.ts`
-        // 상단 주석) 생략은 정상 입력이 아니다. 누락되면 저장을 건너뛴다.
-        if (result.status === 'done' && modelId !== undefined) {
-            schedulePersistAnalysisHistory({
-                symbol,
-                timeframe,
-                tab: 'overall',
-                modelId,
-                locale,
-                result: result.result,
-                prompt: capturedPrompt,
-            });
-        }
+        // `OverallAnalysisResponse`에는 `PriorAnalysis`가 요구하는 trend /
+        // riskLevel이 없어서, 저장해도 `toPriorAnalysis`가 전부 버린다. 남는 건
+        // 90일짜리 사문(死文) 행과 그 프롬프트 블롭뿐이다. 이 축이 참고하는
+        // 이력은 위 `findRecentForPrompt`가 읽는 technical 쪽이다.
 
         return result;
     },
@@ -1193,7 +1190,15 @@ export async function POST(request: Request): Promise<Response> {
             });
 
             // Task S2 (prior-analysis-context) — persist newly-generated
-            // ('done') results only; 'cached' rows already exist. This is an
+            // ('done') results only; 'cached' rows already exist.
+            //
+            // ⚠️ `'done'` does NOT mean this request generated the analysis:
+            // `dedupeInFlight` hands the winner's result to every concurrent
+            // loser, and they all see `'done'`. The duplicate is actually
+            // rejected inside `saveAnalysisHistory`, which keys off `prompt`
+            // being absent — see its JSDoc.
+            //
+            // This is an
             // INDEPENDENT subscriber on `work` (does not replace the
             // `heartbeatStream(withReaderViews(work, ...))` consumer below),
             // so it needs its own rejection handler or a timeout/gate-error
@@ -1206,7 +1211,17 @@ export async function POST(request: Request): Promise<Response> {
                     tab: 'technical',
                     modelId: modelId ?? DEFAULT_TECHNICAL_MODEL_ID,
                     locale: requestLocale,
-                    result: result.result,
+                    // 이력에는 **필터 전** 결과를 남긴다.
+                    //
+                    // `result.result`는 이 요청의 tier가 *볼 수 있는* 만큼만
+                    // 담는다. free의 `infoDepth`는 direction/summary/
+                    // skill_detection뿐이라 `riskLevel`이 null로 내려오고,
+                    // `PriorAnalysis`는 trend와 riskLevel을 모두 요구하므로 그
+                    // 모양으로 저장하면 이후 모든 읽기가 그 행을 버린다.
+                    // 비회원 방문자와 SEO pre-warm(캐시 키에 tier가 접혀 올릴 수
+                    // 없다)이 분석 대부분을 만들므로, 렌더용 값을 저장하면 이력이
+                    // 정작 그걸 채워야 할 트래픽에서 조용히 비어 있게 된다.
+                    result: result.unfilteredResult,
                     prompt: capturedPrompt,
                 });
             }).catch(() => {
