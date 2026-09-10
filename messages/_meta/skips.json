@@ -1027,7 +1027,7 @@
     },
     {
         "file": "src/entities/ticker/lib/koreanTranslator.ts",
-        "line": 9,
+        "line": 8,
         "reason": "ai-prompt",
         "text": "`Translate these English company names to Korean (한국에서 통용되는 한국어 이름 또는 음역). Retur"
     },

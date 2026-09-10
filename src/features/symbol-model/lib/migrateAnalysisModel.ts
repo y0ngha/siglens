@@ -16,12 +16,12 @@ import {
 
 /**
  * One-time migration of the persisted analysis model from the legacy default
- * (`gemini-2.5-flash-lite`) to the current default (`deepseek-v4-flash`).
+ * (`gemini-2.5-flash-lite`) to the current default (`deepseek-v4.1-flash`).
  *
  * WHY a one-time flag distinguishes the two user groups:
  *   Before the DeepSeek default flip, the analysis model default was
  *   `gemini-2.5-flash-lite`, so any user who never touched the model selector
- *   has that exact value stored. After the flip, `deepseek-v4-flash` is the
+ *   has that exact value stored. After the flip, `deepseek-v4.1-flash` is the
  *   default. We want to move the first group forward WITHOUT touching users who
  *   *deliberately* pick `gemini-2.5-flash-lite` after the flip.
  *

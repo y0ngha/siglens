@@ -41,8 +41,8 @@ import type { Page } from '@playwright/test';
  *     that list here: it grows every time a model generation lands and a
  *     hand-maintained copy silently goes stale. Read it from tier.ts.
  *     The default/selected model is deepseek-v4.1-flash → trigger shows
- *     "DeepSeek Flash". We exercise the premium branch with "Claude Sonnet 4.6"
- *     (label "Sonnet 4.6", non-free ⇒ guest auth gate).
+ *     "DeepSeek Flash". We exercise the premium branch with "Claude Sonnet 5"
+ *     (label "Sonnet 5", `member` class ⇒ guest auth gate).
  *
  *   - The gate modal is a `role="dialog"` (aria-labelledby the
  *     "프리미엄 모델 사용 안내" heading in auth mode) with a `<Link role="link">`
@@ -68,12 +68,16 @@ const FREE_DEFAULT_LABEL = 'DeepSeek Flash'; // deepseek-v4.1-flash — the free
 // generation, so this string is not a substring of any other option's name,
 // but an accessible-name lookup is substring-based by default and the option
 // list grows with every model generation.
-const FREE_OPTION_ACCESSIBLE_NAME = 'Flash 2.5 Gemini 2.5 Flash';
+const FREE_OPTION_ACCESSIBLE_NAME = 'Flash 3.6 Gemini 3.6 Flash';
 // The same option's trigger label. Labels carry their generation, so this is
-// no longer a prefix of any other option's label ("Flash Lite 2.5", "Flash 3.6").
-const FREE_OPTION_LABEL = 'Flash 2.5';
-const PREMIUM_OPTION_FULLNAME = 'Claude Sonnet 4.6'; // non-free ⇒ guest auth gate
+// no longer a prefix of any other option's label ("Flash Lite 3.5", "Flash 3.7").
+const FREE_OPTION_LABEL = 'Flash 3.6';
+const PREMIUM_OPTION_FULLNAME = 'Claude Sonnet 5'; // `member` class ⇒ guest auth gate
 const PREMIUM_MODEL_ID = 'claude-sonnet-5';
+// 접근 등급 뱃지. 등급이 free/member/byok 셋으로 갈리면서 단일 "PRO"가
+// "MEMBER"(로그인만으로 서버 키가 열림)와 "BYOK"(사용자 키 필요)로 나뉘었다 —
+// `shared/ui/ModelAccessBadge` 참고. free에는 뱃지가 붙지 않는다.
+const PREMIUM_ACCESS_BADGE = 'MEMBER';
 const MODEL_STORAGE_KEY = 'siglens:selected-analysis-model';
 const AUTH_GATE_TITLE = '프리미엄 모델 사용 안내';
 const AUTH_GATE_CTA = '회원가입 하러 가기';
@@ -162,7 +166,7 @@ test.describe('model gate (guest)', () => {
         const premiumOption = listbox
             .getByRole('option')
             .filter({ hasText: PREMIUM_OPTION_FULLNAME });
-        await expect(premiumOption).toContainText('PRO');
+        await expect(premiumOption).toContainText(PREMIUM_ACCESS_BADGE);
         await premiumOption.click();
 
         // useModelGate sees no session ⇒ auth gate. The modal is a dialog whose

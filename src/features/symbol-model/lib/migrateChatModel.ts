@@ -44,7 +44,7 @@ const PASSES = [
 ] as const;
 
 /**
- * One-time migration of the persisted CHAT model to `deepseek-v4-flash`.
+ * One-time migration of the persisted CHAT model to `deepseek-v4.1-flash`.
  *
  * Runs each pass in {@link PASSES} at most once per browser, guarded by that
  * pass's own flag. A browser that already ran pass 1 skips it and runs only
