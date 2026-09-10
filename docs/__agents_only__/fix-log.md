@@ -796,9 +796,6 @@
   - Context: Moved `getDatabaseClient()` and repository construction inside the try block, returned early on failure so a dead DB does not consume the module-scope `lastPrunedDate` day marker (which would have suppressed retention pruning for the rest of that day). Regression test added and verified to fail without the fix.
 
 ## [feat/share-plain-language Round 2 | persist plain-language prose in share snapshot | 2026-09-05]
-- Violation: REQUIRED — New `plain` field added to shared snapshot and to validation, but NOT to the dedupe content hash. When `create()` executes `ON CONFLICT (content_hash) DO UPDATE SET expiresAt`, a second sharer with same `result` but different `plain` text silently inherits the first row's snapshot and loses their prose.
-  - Rule: (recurring) All snapshot fields that can differ between users must be included in the content hash; new fields added to snapshot must simultaneously be added to dedup hash. Same defect was already fixed once for `chartBars` field and once for `locale` field — both documented in file's JSDoc.
-  - Context: Added `plain` to the content hash input in `contentHash.ts`. File's JSDoc now documents three fixed instances of this pattern. Regression test verifies that two identical analyses with different `plain` text produce different content hashes.
 - Violation: RECOMMENDED — Whitespace-only `plain` input passed server validation. Server relied on client-side `trim()` instead of enforcing at the trust boundary (`assertValidInput.ts`).
   - Rule: (guideline) Input validation at server trust boundaries must not assume client filtering. Validate the actual constraint (trimmed + non-empty) server-side, do not delegate to client.
   - Context: Added `plain.trim().length > 0` check in `assertValidInput.ts`. Server now rejects whitespace-only strings before they reach business logic.
