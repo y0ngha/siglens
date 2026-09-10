@@ -15,7 +15,7 @@ const snapshotRow = {
     symbol: 'AAPL',
     tab: 'technical',
     content: { summary: 'bullish' },
-    model: 'deepseek-v4-flash',
+    model: 'deepseek-v4.1-flash',
     generatedAt,
     updatedAt,
     locale: 'ko',
@@ -27,7 +27,7 @@ const UPSERT_INPUT = {
     locale: 'ko' as const,
     content: { summary: 'bullish' },
     plain: null,
-    model: 'deepseek-v4-flash',
+    model: 'deepseek-v4.1-flash',
     generatedAt,
 };
 
@@ -72,7 +72,7 @@ describe('DrizzleSeoSnapshotRepository.upsert', () => {
             symbol: 'AAPL',
             tab: 'technical',
             content: { summary: 'bullish' },
-            model: 'deepseek-v4-flash',
+            model: 'deepseek-v4.1-flash',
             generatedAt,
         });
         expect(
@@ -97,7 +97,7 @@ describe('DrizzleSeoSnapshotRepository.upsert', () => {
             seoAnalysisSnapshots.locale,
         ]);
         expect(set.content).toEqual({ summary: 'bullish' });
-        expect(set.model).toBe('deepseek-v4-flash');
+        expect(set.model).toBe('deepseek-v4.1-flash');
         expect(set.generatedAt).toBe(generatedAt);
         expect(set.updatedAt).toBeInstanceOf(Date);
     });

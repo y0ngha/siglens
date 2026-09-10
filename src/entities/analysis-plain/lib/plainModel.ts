@@ -31,7 +31,7 @@ import { isActiveModelId } from '@/shared/lib/isActiveModelId';
  * `PLAIN_MODEL` 환경변수로 덮어쓸 수 있다. 알 수 없는 모델이면 경고 후 기본값으로
  * 떨어진다 — 오설정이 평이화를 통째로 죽이는 것보다 낫다.
  */
-const DEFAULT_PLAIN_MODEL: ModelId = 'deepseek-v4-flash';
+const DEFAULT_PLAIN_MODEL: ModelId = 'deepseek-v4.1-flash';
 
 let hasWarned = false;
 

@@ -55,6 +55,18 @@ vi.mock('@/shared/config/market', () => ({
 }));
 
 vi.mock('@y0ngha/siglens-core', () => ({
+    isClaudeAdaptiveModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'adaptive',
+    isClaudeBudgetModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'budget',
+    isReasoningToggleable: () => true,
+    getModelAccess: (m: string) =>
+        m === 'claude-opus-5' || m === 'gpt-5.6-sol' ? 'byok' : 'free',
+    supportsHardOff: () => true,
+    resolveReasoningConfig: (
+        modes: { off: unknown; on: unknown; default: string },
+        r?: boolean
+    ) => ((r ?? modes.default === 'on') ? modes.on : modes.off),
     isFreeModel: vi.fn(() => true),
 }));
 
@@ -144,11 +156,11 @@ describe('Journey: Returning User', () => {
         it('renders model selector with selected model', () => {
             render(
                 <ModelSelector
-                    selectedModel={'gemini-2.5-flash-lite' as ModelId}
+                    selectedModel={'gemini-3.5-flash-lite' as ModelId}
                     onModelChange={vi.fn()}
                     allowedModels={[
-                        'gemini-2.5-flash-lite' as ModelId,
-                        'gemini-2.5-flash' as ModelId,
+                        'gemini-3.5-flash-lite' as ModelId,
+                        'gemini-3.6-flash' as ModelId,
                     ]}
                 />
             );
@@ -160,9 +172,9 @@ describe('Journey: Returning User', () => {
         it('opens model dropdown on click', async () => {
             render(
                 <ModelSelector
-                    selectedModel={'gemini-2.5-flash-lite' as ModelId}
+                    selectedModel={'gemini-3.5-flash-lite' as ModelId}
                     onModelChange={vi.fn()}
-                    allowedModels={['gemini-2.5-flash-lite' as ModelId]}
+                    allowedModels={['gemini-3.5-flash-lite' as ModelId]}
                 />
             );
             const user = userEvent.setup();

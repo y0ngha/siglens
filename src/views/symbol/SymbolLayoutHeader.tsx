@@ -83,6 +83,7 @@ export function SymbolLayoutHeader({
         reasoning,
         setReasoning,
         canUseReasoning,
+        isReasoningSupported,
         openSignupNudge,
     } = useSymbolModel();
 
@@ -186,6 +187,7 @@ export function SymbolLayoutHeader({
                             reasoning={reasoning}
                             setReasoning={setReasoning}
                             canUseReasoning={canUseReasoning}
+                            isReasoningSupported={isReasoningSupported}
                             openSignupNudge={openSignupNudge}
                         />
                     </div>

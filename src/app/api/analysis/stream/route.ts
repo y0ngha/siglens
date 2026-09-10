@@ -142,7 +142,7 @@ const SSE_HEADERS: HeadersInit = {
  * consume a Node worker slot.
  *
  * **Why 10 minutes.** 5 minutes was measurably too tight for the premium models.
- * On 2026-08-09 a `deepseek-v4-pro` call on PLTR (promptTokens 29k) returned in
+ * On 2026-08-09 a `deepseek-v4.1-pro` call on PLTR (promptTokens 29k) returned in
  * 248.5s — 52s of headroom — and the next request on the same key was cut at the
  * 300s mark. The ceiling has to clear the slowest legitimate call, not sit beside it.
  *
@@ -697,7 +697,7 @@ type WithPlain<T> = T & { plain?: string | null };
  * 이미 core가 대상 언어로 써준 산출물을 "한국어를 번역하라" 프롬프트에 다시
  * 넣고 있었다(라우트 주석은 "일곱 축은 사후 번역을 타지 않는다"고 적어 두었지만
  * 사실이 아니었다). 그 파손이 드러나지 않은 이유는 번역기 자체가 죽어 있었기
- * 때문이다 — Gemini 설정(`GEMINI_API_KEY` + `gemini-2.5-flash-lite`)을 읽어
+ * 때문이다 — Gemini 설정(`GEMINI_API_KEY` + `gemini-3.5-flash-lite`)을 읽어
  * `callDeepseekChat`에 넘겨 `Non-DeepSeek model spec`으로 던지고, 그 예외를
  * 삼킨 뒤 원문을 그대로 돌려주고 있었다.
  *

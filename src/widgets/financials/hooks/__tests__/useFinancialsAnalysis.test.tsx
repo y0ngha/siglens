@@ -57,7 +57,7 @@ describe('useFinancialsAnalysis — trigger coverage', () => {
 
         const wrapper = makeWrapper();
         const { result } = renderHook(
-            () => useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFinancialsAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -73,7 +73,7 @@ describe('useFinancialsAnalysis — trigger coverage', () => {
 
         const wrapper = makeWrapper();
         const { result } = renderHook(
-            () => useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFinancialsAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -88,7 +88,7 @@ describe('useFinancialsAnalysis — trigger coverage', () => {
 
         const wrapper = makeWrapper();
         const { result } = renderHook(
-            () => useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFinancialsAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -107,7 +107,7 @@ describe('useFinancialsAnalysis — trigger coverage', () => {
 
         const wrapper = makeWrapper();
         const { result } = renderHook(
-            () => useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFinancialsAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 

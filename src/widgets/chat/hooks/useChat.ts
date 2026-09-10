@@ -12,7 +12,7 @@ import {
     withUiIds,
 } from '../utils/chatMessageUtils';
 import {
-    DEEPSEEK_V4_FLASH_MODEL,
+    DEEPSEEK_V4_1_FLASH_MODEL,
     VALID_CHAT_MODELS,
     getProviderForModel,
     type AnalysisResponse,
@@ -127,7 +127,7 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     );
     const [analysisUpdated, setAnalysisUpdated] = useState(false);
     const [selectedModel, setSelectedModel] = useState<ModelId>(
-        DEEPSEEK_V4_FLASH_MODEL
+        DEEPSEEK_V4_1_FLASH_MODEL
     );
     const [isModelHydrated, setIsModelHydrated] = useState(false);
 
@@ -347,8 +347,8 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     // 다음 사용자 변경 시점부터 정상적으로 setItem이 호출된다.
     useEffect(() => {
         // Runs the one-time legacy-default migration BEFORE the read below, so a
-        // browser still holding the old chat default (`gemini-2.5-flash`) has
-        // already been rewritten to `deepseek-v4-flash` by the time we hydrate.
+        // browser still holding the old chat default (`gemini-3.6-flash`) has
+        // already been rewritten to `deepseek-v4.1-flash` by the time we hydrate.
         migrateLegacyChatModel();
         try {
             const stored = localStorage.getItem(MODEL_STORAGE_KEY);

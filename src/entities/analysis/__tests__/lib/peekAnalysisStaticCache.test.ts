@@ -4,6 +4,18 @@ vi.mock('next/cache', () => ({
     unstable_cache: (fn: (...a: unknown[]) => unknown) => fn, // identity로 통과 검증
 }));
 vi.mock('@y0ngha/siglens-core', () => ({
+    isClaudeAdaptiveModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'adaptive',
+    isClaudeBudgetModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'budget',
+    isReasoningToggleable: () => true,
+    getModelAccess: (m: string) =>
+        m === 'claude-opus-5' || m === 'gpt-5.6-sol' ? 'byok' : 'free',
+    supportsHardOff: () => true,
+    resolveReasoningConfig: (
+        modes: { off: unknown; on: unknown; default: string },
+        r?: boolean
+    ) => ((r ?? modes.default === 'on') ? modes.on : modes.off),
     peekAnalysisCache: vi.fn(),
 }));
 
@@ -26,7 +38,7 @@ describe('peekAnalysisStatic', () => {
             'AAPL',
             '1Day',
             'AAPL',
-            'gemini-2.5-flash-lite'
+            'gemini-3.5-flash-lite'
         );
 
         expect(result).toBe(cached);
@@ -34,7 +46,7 @@ describe('peekAnalysisStatic', () => {
             'AAPL',
             '1Day',
             'AAPL',
-            'gemini-2.5-flash-lite',
+            'gemini-3.5-flash-lite',
             false,
             'free',
             undefined,
@@ -49,7 +61,7 @@ describe('peekAnalysisStatic', () => {
             'AAPL',
             '1Day',
             undefined,
-            'gemini-2.5-flash-lite'
+            'gemini-3.5-flash-lite'
         );
 
         expect(result).toBeNull();
@@ -57,7 +69,7 @@ describe('peekAnalysisStatic', () => {
             'AAPL',
             '1Day',
             undefined,
-            'gemini-2.5-flash-lite',
+            'gemini-3.5-flash-lite',
             false,
             'free',
             undefined,
@@ -72,14 +84,14 @@ describe('peekAnalysisStatic', () => {
             'AAPL',
             '1Day',
             undefined,
-            'deepseek-v4-flash'
+            'deepseek-v4.1-flash'
         );
 
         expect(mockPeek).toHaveBeenCalledWith(
             'AAPL',
             '1Day',
             undefined,
-            'deepseek-v4-flash',
+            'deepseek-v4.1-flash',
             false,
             'free',
             undefined,

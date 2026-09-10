@@ -83,7 +83,19 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
 }));
 
 vi.mock('@y0ngha/siglens-core', () => ({
-    DEEPSEEK_V4_FLASH_MODEL: 'deepseek-v4-flash',
+    isClaudeAdaptiveModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'adaptive',
+    isClaudeBudgetModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'budget',
+    isReasoningToggleable: () => true,
+    getModelAccess: (m: string) =>
+        m === 'claude-opus-5' || m === 'gpt-5.6-sol' ? 'byok' : 'free',
+    supportsHardOff: () => true,
+    resolveReasoningConfig: (
+        modes: { off: unknown; on: unknown; default: string },
+        r?: boolean
+    ) => ((r ?? modes.default === 'on') ? modes.on : modes.off),
+    DEEPSEEK_V4_1_FLASH_MODEL: 'deepseek-v4.1-flash',
     peekOverallAnalysisCache: vi.fn().mockResolvedValue(null),
 }));
 

@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useId, useRef } from 'react';
-import { DEEPSEEK_V4_FLASH_MODEL, type ModelId } from '@y0ngha/siglens-core';
+import { DEEPSEEK_V4_1_FLASH_MODEL, type ModelId } from '@y0ngha/siglens-core';
 import { ReasoningToggle } from '@/features/reasoning-toggle';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
@@ -21,6 +21,8 @@ interface AnalysisSettingsMenuProps {
     reasoning: boolean;
     setReasoning: (value: boolean) => void;
     canUseReasoning: boolean;
+    /** 선택된 모델에서 추론 토글이 의미를 갖는지 (`isReasoningToggleable`). */
+    isReasoningSupported: boolean;
     openSignupNudge: () => void;
 }
 
@@ -43,6 +45,7 @@ export function AnalysisSettingsMenu({
     reasoning,
     setReasoning,
     canUseReasoning,
+    isReasoningSupported,
     openSignupNudge,
 }: AnalysisSettingsMenuProps) {
     const t = useTranslations('widgets.analysis');
@@ -66,8 +69,8 @@ export function AnalysisSettingsMenu({
     // Active = a non-default choice is in effect: reasoning turned on, or a
     // model other than the app-wide default free model is selected. Read
     // from the same source of truth `useSelectedModel` falls back to
-    // (`DEEPSEEK_V4_FLASH_MODEL`) rather than hardcoding a model id here.
-    const isActive = reasoning || modelId !== DEEPSEEK_V4_FLASH_MODEL;
+    // (`DEEPSEEK_V4_1_FLASH_MODEL`) rather than hardcoding a model id here.
+    const isActive = reasoning || modelId !== DEEPSEEK_V4_1_FLASH_MODEL;
 
     // Same source ModelSelector reads its own trigger label from — the gear's
     // accessible name/title surface the active model without widening the
@@ -131,6 +134,10 @@ export function AnalysisSettingsMenu({
                         onChange={setReasoning}
                         canUse={canUseReasoning}
                         onLockedClick={openSignupNudge}
+                        // `disabled`가 `canUse`보다 우선한다 — 비회원이 haiku를
+                        // 고른 상태에서 가입 유도를 띄우면 "가입하면 열린다"는
+                        // 거짓 약속이 된다. haiku는 가입해도 열리지 않는다.
+                        disabled={!isReasoningSupported}
                     />
                 </PopoverSurface>
             )}

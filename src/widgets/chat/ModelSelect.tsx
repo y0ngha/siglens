@@ -2,7 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
-import { isFreeModel, type ModelId } from '@y0ngha/siglens-core';
+import { type ModelId } from '@y0ngha/siglens-core';
+import { ModelAccessBadge } from '@/shared/ui/ModelAccessBadge';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
 
@@ -176,11 +177,7 @@ export function ModelSelect({
                                             {option.fullName}
                                         </div>
                                     </div>
-                                    {!isFreeModel(option.id) && (
-                                        <span className="text-[9px] leading-none font-semibold text-ui-warning-text uppercase">
-                                            PRO
-                                        </span>
-                                    )}
+                                    <ModelAccessBadge model={option.id} />
                                 </div>
                             </div>
                         ))}

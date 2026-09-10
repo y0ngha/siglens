@@ -581,7 +581,7 @@ describe('POST /api/analysis/stream', () => {
                     symbol: 'AAPL',
                     companyName: 'Apple',
                     timeframe: '1Day',
-                    modelId: 'gemini-2.5-flash',
+                    modelId: 'gemini-3.6-flash',
                 },
             });
             const response = await POST(makeRequest(undefined, body));
@@ -599,7 +599,7 @@ describe('POST /api/analysis/stream', () => {
                 'AAPL',
                 'Apple',
                 '1Day',
-                'gemini-2.5-flash',
+                'gemini-3.6-flash',
                 'ko',
                 {
                     force: false,
@@ -617,7 +617,7 @@ describe('POST /api/analysis/stream', () => {
 
             const body = JSON.stringify({
                 type: 'fundamental',
-                params: { symbol: 'AAPL', modelId: 'gemini-2.5-flash' },
+                params: { symbol: 'AAPL', modelId: 'gemini-3.6-flash' },
             });
             const response = await POST(makeRequest(undefined, body));
             await collectSseEvents(response);
@@ -627,7 +627,7 @@ describe('POST /api/analysis/stream', () => {
                 vi.mocked(runFundamentalAnalysisAction)
             ).toHaveBeenCalledWith(
                 'AAPL',
-                'gemini-2.5-flash',
+                'gemini-3.6-flash',
                 'ko',
                 undefined,
                 expect.any(AbortSignal)
@@ -641,7 +641,7 @@ describe('POST /api/analysis/stream', () => {
 
             const body = JSON.stringify({
                 type: 'financials',
-                params: { symbol: 'AAPL', modelId: 'gemini-2.5-flash' },
+                params: { symbol: 'AAPL', modelId: 'gemini-3.6-flash' },
             });
             const response = await POST(makeRequest(undefined, body));
             await collectSseEvents(response);
@@ -649,7 +649,7 @@ describe('POST /api/analysis/stream', () => {
             // financials 핸들러 시그니처: (symbol, modelId, reasoning, signal)
             expect(vi.mocked(runFinancialsAnalysisAction)).toHaveBeenCalledWith(
                 'AAPL',
-                'gemini-2.5-flash',
+                'gemini-3.6-flash',
                 'ko',
                 undefined,
                 expect.any(AbortSignal)
@@ -666,7 +666,7 @@ describe('POST /api/analysis/stream', () => {
                 params: {
                     symbol: 'AAPL',
                     companyName: 'Apple',
-                    modelId: 'gemini-2.5-flash',
+                    modelId: 'gemini-3.6-flash',
                 },
             });
             const response = await POST(makeRequest(undefined, body));
@@ -676,7 +676,7 @@ describe('POST /api/analysis/stream', () => {
             expect(vi.mocked(submitNewsAnalysisAction)).toHaveBeenCalledWith(
                 'AAPL',
                 'Apple',
-                'gemini-2.5-flash',
+                'gemini-3.6-flash',
                 'ko',
                 undefined,
                 expect.any(AbortSignal)
@@ -712,7 +712,7 @@ describe('POST /api/analysis/stream', () => {
                     symbol: 'AAPL',
                     companyName: 'Apple',
                     expirationDate: 'nearest',
-                    modelId: 'gemini-2.5-flash',
+                    modelId: 'gemini-3.6-flash',
                 },
             });
             const response = await POST(makeRequest(undefined, body));
@@ -724,7 +724,7 @@ describe('POST /api/analysis/stream', () => {
                 'AAPL',
                 'Apple',
                 'nearest',
-                'gemini-2.5-flash',
+                'gemini-3.6-flash',
                 'ko',
                 undefined,
                 expect.any(AbortSignal),
@@ -748,7 +748,7 @@ describe('POST /api/analysis/stream', () => {
                     symbol: 'AAPL',
                     companyName: 'Apple',
                     expirationDate: 'nearest',
-                    modelId: 'gemini-2.5-flash',
+                    modelId: 'gemini-3.6-flash',
                     cacheOnly: true,
                 },
             });
@@ -759,7 +759,7 @@ describe('POST /api/analysis/stream', () => {
                 'AAPL',
                 'Apple',
                 'nearest',
-                'gemini-2.5-flash',
+                'gemini-3.6-flash',
                 'ko',
                 undefined,
                 expect.any(AbortSignal),
@@ -774,7 +774,7 @@ describe('POST /api/analysis/stream', () => {
 
             const body = JSON.stringify({
                 type: 'congress',
-                params: { symbol: 'AAPL', modelId: 'gemini-2.5-flash' },
+                params: { symbol: 'AAPL', modelId: 'gemini-3.6-flash' },
             });
             const response = await POST(makeRequest(undefined, body));
             await collectSseEvents(response);
@@ -782,7 +782,7 @@ describe('POST /api/analysis/stream', () => {
             // congress 핸들러 시그니처: (symbol, modelId, locale, reasoning, signal)
             expect(vi.mocked(runCongressTrendAction)).toHaveBeenCalledWith(
                 'AAPL',
-                'gemini-2.5-flash',
+                'gemini-3.6-flash',
                 'ko',
                 undefined,
                 expect.any(AbortSignal)
@@ -805,7 +805,7 @@ describe('POST /api/analysis/stream', () => {
 
                 const body = JSON.stringify({
                     type: 'congress',
-                    params: { symbol: 'AAPL', modelId: 'gemini-2.5-flash' },
+                    params: { symbol: 'AAPL', modelId: 'gemini-3.6-flash' },
                 });
                 const response = await POST(
                     makeRequest(undefined, body, locale)
@@ -814,7 +814,7 @@ describe('POST /api/analysis/stream', () => {
 
                 expect(vi.mocked(runCongressTrendAction)).toHaveBeenCalledWith(
                     'AAPL',
-                    'gemini-2.5-flash',
+                    'gemini-3.6-flash',
                     locale,
                     undefined,
                     expect.any(AbortSignal)
@@ -829,7 +829,7 @@ describe('POST /api/analysis/stream', () => {
 
             const body = JSON.stringify({
                 type: 'congress',
-                params: { symbol: 'AAPL', modelId: 'gemini-2.5-flash' },
+                params: { symbol: 'AAPL', modelId: 'gemini-3.6-flash' },
             });
             await collectSseEvents(
                 await POST(makeRequest(undefined, body, '../../etc/passwd'))
@@ -837,7 +837,7 @@ describe('POST /api/analysis/stream', () => {
 
             expect(vi.mocked(runCongressTrendAction)).toHaveBeenCalledWith(
                 'AAPL',
-                'gemini-2.5-flash',
+                'gemini-3.6-flash',
                 'ko',
                 undefined,
                 expect.any(AbortSignal)
@@ -866,7 +866,7 @@ describe('POST /api/analysis/stream', () => {
                     symbol: 'AAPL',
                     companyName: 'Apple Inc.',
                     timeframe: '1Day',
-                    modelId: 'gemini-2.5-flash',
+                    modelId: 'gemini-3.6-flash',
                 },
             });
             await collectSseEvents(
@@ -875,7 +875,7 @@ describe('POST /api/analysis/stream', () => {
 
             expect(vi.mocked(resolveTierAndByok)).toHaveBeenCalledWith(
                 null,
-                'gemini-2.5-flash',
+                'gemini-3.6-flash',
                 'ja'
             );
         });
@@ -894,7 +894,7 @@ describe('POST /api/analysis/stream', () => {
                 'congress',
                 JSON.stringify({
                     type: 'congress',
-                    params: { symbol: 'AAPL', modelId: 'gemini-2.5-flash' },
+                    params: { symbol: 'AAPL', modelId: 'gemini-3.6-flash' },
                 }),
             ],
         ])('%s: 요청 로케일이 core까지 그대로 내려간다', async (name, body) => {
@@ -950,7 +950,7 @@ describe('POST /api/analysis/stream', () => {
                             type: 'congress',
                             params: {
                                 symbol: 'AAPL',
-                                modelId: 'gemini-2.5-flash',
+                                modelId: 'gemini-3.6-flash',
                             },
                         }),
                         'ja'
@@ -1544,7 +1544,7 @@ describe('POST /api/analysis/stream', () => {
                                 symbol: 'AAPL',
                                 companyName: 'Apple',
                                 timeframe: '1Day',
-                                modelId: 'gemini-2.5-flash',
+                                modelId: 'gemini-3.6-flash',
                             },
                         })
                     )
@@ -1571,7 +1571,7 @@ describe('POST /api/analysis/stream', () => {
                                 symbol: 'AAPL',
                                 companyName: 'Apple',
                                 timeframe: '1Day',
-                                modelId: 'gemini-2.5-flash',
+                                modelId: 'gemini-3.6-flash',
                             },
                         })
                     )
@@ -1724,7 +1724,7 @@ describe('POST /api/analysis/stream', () => {
                     symbol: 'AAPL',
                     companyName: 'Apple',
                     timeframe: '1Day',
-                    modelId: 'gemini-2.5-flash',
+                    modelId: 'gemini-3.6-flash',
                 },
             });
             const response = await POST(makeRequest(undefined, body));
@@ -1741,7 +1741,7 @@ describe('POST /api/analysis/stream', () => {
                 'AAPL',
                 'Apple',
                 '1Day',
-                'gemini-2.5-flash',
+                'gemini-3.6-flash',
                 'ko',
                 expect.objectContaining({ priorAnalyses: history }),
                 expect.any(AbortSignal)
@@ -1757,7 +1757,7 @@ describe('POST /api/analysis/stream', () => {
                     symbol: 'AAPL',
                     companyName: 'Apple',
                     timeframe: '1Day',
-                    modelId: 'gemini-2.5-flash',
+                    modelId: 'gemini-3.6-flash',
                 },
             });
             const response = await POST(makeRequest(undefined, body));
@@ -1768,7 +1768,7 @@ describe('POST /api/analysis/stream', () => {
                 'AAPL',
                 'Apple',
                 '1Day',
-                'gemini-2.5-flash',
+                'gemini-3.6-flash',
                 'ko',
                 expect.objectContaining({ priorAnalyses: undefined }),
                 expect.any(AbortSignal)
@@ -1817,7 +1817,7 @@ describe('POST /api/analysis/stream', () => {
                     symbol: 'AAPL',
                     companyName: 'Apple Inc.',
                     timeframe: '1Day',
-                    modelId: 'claude-opus-4-7',
+                    modelId: 'claude-opus-5',
                 },
             });
 
@@ -2279,7 +2279,7 @@ describe('POST /api/analysis/stream', () => {
                 symbol: 'AAPL',
                 companyName: 'Apple',
                 timeframe: '1Day',
-                modelId: 'gemini-2.5-flash',
+                modelId: 'gemini-3.6-flash',
                 reanalyze: true,
             },
         });
@@ -2321,7 +2321,7 @@ describe('POST /api/analysis/stream', () => {
                 'AAPL',
                 'Apple',
                 '1Day',
-                'gemini-2.5-flash',
+                'gemini-3.6-flash',
                 'ko',
                 expect.objectContaining({ force: true }),
                 expect.any(AbortSignal)
@@ -2353,7 +2353,7 @@ describe('POST /api/analysis/stream', () => {
                     symbol: 'AAPL',
                     companyName: 'Apple',
                     timeframe: '1Day',
-                    modelId: 'gemini-2.5-flash',
+                    modelId: 'gemini-3.6-flash',
                     // reanalyze 없음
                 },
             });
@@ -2370,7 +2370,7 @@ describe('POST /api/analysis/stream', () => {
                 'AAPL',
                 'Apple',
                 '1Day',
-                'gemini-2.5-flash',
+                'gemini-3.6-flash',
                 'ko',
                 expect.objectContaining({ force: false }),
                 expect.any(AbortSignal)
@@ -2421,7 +2421,7 @@ describe('POST /api/analysis/stream', () => {
                     symbol: 'AAPL',
                     companyName: 'Apple',
                     timeframe: '1Day',
-                    modelId: 'gemini-2.5-flash',
+                    modelId: 'gemini-3.6-flash',
                     // reanalyze 없음 → cooldown = undefined → cooldown?.ok = undefined ≠ true
                 },
             });
@@ -2619,7 +2619,7 @@ describe('POST /api/analysis/stream', () => {
                             symbol: 'AAPL',
                             companyName: 'Apple',
                             timeframe: '1Day',
-                            modelId: 'gemini-2.5-flash',
+                            modelId: 'gemini-3.6-flash',
                         },
                     })
                 )
@@ -2905,7 +2905,7 @@ describe('POST /api/analysis/stream', () => {
                     symbol: 'AAPL',
                     companyName: 'Apple Inc.',
                     timeframe: '1Day',
-                    modelId: 'gemini-2.5-flash',
+                    modelId: 'gemini-3.6-flash',
                 },
             });
             await collectSseEvents(
@@ -2922,7 +2922,7 @@ describe('POST /api/analysis/stream', () => {
                     symbol: 'AAPL',
                     timeframe: '1Day',
                     tab: 'technical',
-                    modelId: 'gemini-2.5-flash',
+                    modelId: 'gemini-3.6-flash',
                     locale: 'ja',
                     // 저장되는 것은 필터 전 결과다 — riskLevel이 남아 있어야
                     // 이후 읽기(`toPriorAnalysis`)가 이 행을 살린다.
@@ -3063,7 +3063,7 @@ describe('POST /api/analysis/stream', () => {
                     symbol: 'TSLA',
                     companyName: 'Tesla',
                     timeframe: '1Week',
-                    modelId: 'gemini-2.5-flash',
+                    modelId: 'gemini-3.6-flash',
                 },
             });
             await collectSseEvents(
@@ -3086,7 +3086,7 @@ describe('POST /api/analysis/stream', () => {
                     symbol: 'TSLA',
                     companyName: 'Tesla',
                     timeframe: '1Week',
-                    modelId: 'gemini-2.5-flash',
+                    modelId: 'gemini-3.6-flash',
                 },
             });
             await collectSseEvents(await POST(makeRequest(undefined, body)));

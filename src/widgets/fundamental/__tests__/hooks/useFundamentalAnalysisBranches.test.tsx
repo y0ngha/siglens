@@ -68,7 +68,7 @@ describe('useFundamentalAnalysis — branch coverage', () => {
         mockSubmit.mockResolvedValue({ status: 'cached', result: RESULT });
 
         const { result } = renderHook(
-            () => useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFundamentalAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper: makeWrapper() }
         );
 
@@ -81,7 +81,7 @@ describe('useFundamentalAnalysis — branch coverage', () => {
         mockSubmit.mockResolvedValue({ status: 'miss_no_trigger' } as never);
 
         const { result } = renderHook(
-            () => useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFundamentalAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper: makeWrapper() }
         );
 
@@ -98,7 +98,7 @@ describe('useFundamentalAnalysis — branch coverage', () => {
         } as never);
 
         const { result } = renderHook(
-            () => useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFundamentalAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper: makeWrapper() }
         );
 
@@ -120,7 +120,7 @@ describe('useFundamentalAnalysis — branch coverage', () => {
         } as never);
 
         const { result } = renderHook(
-            () => useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFundamentalAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper: makeWrapper() }
         );
 
@@ -144,7 +144,7 @@ describe('useFundamentalAnalysis — branch coverage', () => {
         } as never);
 
         const { result } = renderHook(
-            () => useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFundamentalAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper: makeWrapper() }
         );
 
@@ -164,7 +164,7 @@ describe('useFundamentalAnalysis — branch coverage', () => {
         } as never);
 
         const { result } = renderHook(
-            () => useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFundamentalAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper: makeWrapper() }
         );
 
@@ -186,7 +186,7 @@ describe('useFundamentalAnalysis — branch coverage', () => {
         } as never);
 
         const { result } = renderHook(
-            () => useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFundamentalAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper: makeWrapper() }
         );
 
@@ -205,7 +205,7 @@ describe('useFundamentalAnalysis — branch coverage', () => {
         mockSubmit.mockRejectedValue('string error');
 
         const { result } = renderHook(
-            () => useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFundamentalAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper: makeWrapper() }
         );
 
@@ -228,7 +228,7 @@ describe('useFundamentalAnalysis — branch coverage', () => {
             () =>
                 useFundamentalAnalysis(
                     'AAPL',
-                    'gemini-2.5-flash-lite',
+                    'gemini-3.5-flash-lite',
                     false,
                     false
                 ),
@@ -248,7 +248,7 @@ describe('useFundamentalAnalysis — branch coverage', () => {
 
         const wrapper = makeWrapper();
         const { result, rerender } = renderHook(
-            () => useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFundamentalAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 

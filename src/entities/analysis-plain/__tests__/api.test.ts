@@ -14,6 +14,18 @@ vi.mock('@/entities/llm-provider', () => ({
         raw.replace(/^```[a-z]*\s*|```\s*$/g, ''),
 }));
 vi.mock('@y0ngha/siglens-core', () => ({
+    isClaudeAdaptiveModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'adaptive',
+    isClaudeBudgetModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'budget',
+    isReasoningToggleable: () => true,
+    getModelAccess: (m: string) =>
+        m === 'claude-opus-5' || m === 'gpt-5.6-sol' ? 'byok' : 'free',
+    supportsHardOff: () => true,
+    resolveReasoningConfig: (
+        modes: { off: unknown; on: unknown; default: string },
+        r?: boolean
+    ) => ((r ?? modes.default === 'on') ? modes.on : modes.off),
     createCacheProvider: () => createCacheProvider(),
 }));
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: () => isE2E() }));
@@ -35,7 +47,7 @@ beforeEach(() => {
     isE2E.mockReturnValue(false);
     tryReadPlainModelConfig.mockReturnValue({
         serverApiKey: 'k',
-        model: 'deepseek-v4-flash',
+        model: 'deepseek-v4.1-flash',
     });
     cacheGet.mockResolvedValue(null);
     cacheSet.mockResolvedValue(undefined);
@@ -99,7 +111,7 @@ describe('rewriteToPlainLanguage', () => {
         createCacheProvider.mockReturnValue({ get: cacheGet, set: cacheSet });
         tryReadPlainModelConfig.mockReturnValue({
             serverApiKey: 'k',
-            model: 'deepseek-v4-flash',
+            model: 'deepseek-v4.1-flash',
         });
         callAiProviderRouter.mockResolvedValue(GOOD);
 
@@ -222,7 +234,7 @@ describe('rewriteToPlainLanguage', () => {
         createCacheProvider.mockReturnValue({ get: cacheGet, set: cacheSet });
         tryReadPlainModelConfig.mockReturnValue({
             serverApiKey: 'k',
-            model: 'deepseek-v4-flash',
+            model: 'deepseek-v4.1-flash',
         });
         callAiProviderRouter.mockResolvedValue(GOOD);
         await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ja');

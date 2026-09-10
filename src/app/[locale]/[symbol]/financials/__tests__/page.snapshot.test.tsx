@@ -160,7 +160,7 @@ describe('FinancialsPage — SEO snapshot prose (Task 7b)', () => {
                 symbol: 'AAPL',
                 tab: 'financials',
                 content: SNAPSHOT_CONTENT,
-                model: 'deepseek-v4-flash',
+                model: 'deepseek-v4.1-flash',
                 generatedAt: new Date('2026-07-24'),
             },
         ]);
@@ -245,7 +245,7 @@ describe('FinancialsPage — SEO snapshot prose (Task 7b)', () => {
                 symbol: 'AAPL',
                 tab: 'financials',
                 content: SNAPSHOT_CONTENT,
-                model: 'deepseek-v4-flash',
+                model: 'deepseek-v4.1-flash',
                 generatedAt: new Date('2026-07-24'),
             },
         ]);
@@ -267,7 +267,7 @@ describe('FinancialsPage — SEO snapshot prose (Task 7b)', () => {
                 symbol: 'AAPL',
                 tab: 'financials',
                 content: SNAPSHOT_CONTENT,
-                model: 'deepseek-v4-flash',
+                model: 'deepseek-v4.1-flash',
                 generatedAt: new Date('2026-07-24'),
             },
         ]);

@@ -67,7 +67,19 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('@y0ngha/siglens-core', () => ({
-    DEEPSEEK_V4_FLASH_MODEL: 'deepseek-v4-flash',
+    isClaudeAdaptiveModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'adaptive',
+    isClaudeBudgetModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'budget',
+    isReasoningToggleable: () => true,
+    getModelAccess: (m: string) =>
+        m === 'claude-opus-5' || m === 'gpt-5.6-sol' ? 'byok' : 'free',
+    supportsHardOff: () => true,
+    resolveReasoningConfig: (
+        modes: { off: unknown; on: unknown; default: string },
+        r?: boolean
+    ) => ((r ?? modes.default === 'on') ? modes.on : modes.off),
+    DEEPSEEK_V4_1_FLASH_MODEL: 'deepseek-v4.1-flash',
     peekOverallAnalysisCache: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
@@ -243,7 +255,7 @@ describe('OverallPage — FactLayer SSR integration', () => {
                 optionsBulletsKo: [],
                 riskFactorsKo: [],
             },
-            model: 'deepseek-v4-flash',
+            model: 'deepseek-v4.1-flash',
             generatedAt: new Date('2026-07-24'),
         };
 
@@ -319,7 +331,7 @@ describe('OverallPage — FactLayer SSR integration', () => {
                     symbol: 'AAPL',
                     tab: 'technical',
                     content: { summary: '기술적 요약' },
-                    model: 'deepseek-v4-flash',
+                    model: 'deepseek-v4.1-flash',
                     generatedAt: new Date('2026-07-24'),
                 },
             ]);

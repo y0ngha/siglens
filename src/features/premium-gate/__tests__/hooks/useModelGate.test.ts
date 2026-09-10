@@ -20,6 +20,20 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 
 vi.mock('@y0ngha/siglens-core', () => ({
+    isClaudeAdaptiveModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'adaptive',
+    isClaudeBudgetModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'budget',
+    isReasoningToggleable: () => true,
+    // 픽스처 규약: 'free-model'은 free 등급, 'member-model'은 member 등급,
+    // 그 외('premium-model' 포함)는 byok 등급으로 본다.
+    getModelAccess: (m: string) =>
+        m === 'free-model' ? 'free' : m === 'member-model' ? 'member' : 'byok',
+    supportsHardOff: () => true,
+    resolveReasoningConfig: (
+        modes: { off: unknown; on: unknown; default: string },
+        r?: boolean
+    ) => ((r ?? modes.default === 'on') ? modes.on : modes.off),
     isFreeModel: (model: string) => model === 'free-model',
     getProviderForModel: (_model: string): LlmProvider =>
         'anthropic' as LlmProvider,
@@ -57,6 +71,39 @@ describe('useModelGate', () => {
 
         expect(onAllow).toHaveBeenCalledWith('free-model');
         expect(result.current.gateModal).toBeNull();
+    });
+
+    it('opens auth gate for a member model when the user is not logged in', () => {
+        // member 등급도 로그인은 필요하다 — byok과의 차이는 "누가 요금을 내는가"다.
+        mockCurrentUser = null;
+        const onAllow = vi.fn();
+        const { result } = renderHook(() => useModelGate({ onAllow }));
+
+        act(() => {
+            result.current.handleModelChange('member-model' as ModelId);
+        });
+
+        expect(result.current.gateModal).toEqual({
+            mode: 'auth',
+            provider: 'anthropic',
+        });
+        expect(onAllow).not.toHaveBeenCalled();
+    });
+
+    it('lets a logged-in non-pro user through on a member model without a key', () => {
+        // 이번 3분류 도입의 핵심 회귀 지점. 이진 분류 시절에는 free가 아니면
+        // 전부 BYOK 게이트에 걸려, 서버가 대납하는 모델에서도 키를 요구했다.
+        mockCurrentUser = { tier: 'member' };
+        mockRegisteredProviders = [];
+        const onAllow = vi.fn();
+        const { result } = renderHook(() => useModelGate({ onAllow }));
+
+        act(() => {
+            result.current.handleModelChange('member-model' as ModelId);
+        });
+
+        expect(result.current.gateModal).toBeNull();
+        expect(onAllow).toHaveBeenCalledWith('member-model');
     });
 
     it('opens auth gate for premium model when user is not logged in', () => {

@@ -26,48 +26,39 @@ export interface ModelDisplayInfo {
  * 우선한다.
  *
  * DeepSeek만 세대 표기가 없다(`'DeepSeek Flash'` / `'DeepSeek Pro'`) — 등재된
- * 세대가 V4 하나뿐이라 오독될 다른 세대가 없고, 접힌 트리거에서 `'Flash 2.5'`
- * 같은 Gemini 라벨과 구분되도록 provider 이름을 앞에 둔다. V4 외 세대가 추가되면
- * 그때 세대를 붙일 것.
+ * 세대가 V4.1 하나뿐이라 오독될 다른 세대가 없고, 접힌 트리거에서 `'Flash 3.6'`
+ * 같은 Gemini 라벨과 구분되도록 provider 이름을 앞에 둔다. V4.1 외 세대가
+ * 추가되면 그때 세대를 붙일 것.
  */
 export const MODEL_DISPLAY_MAP: Partial<Record<ModelId, ModelDisplayInfo>> = {
-    'gemini-2.5-flash-lite': {
-        label: 'Flash Lite 2.5',
-        fullName: 'Gemini 2.5 Flash Lite',
-    },
-    'gemini-2.5-flash': { label: 'Flash 2.5', fullName: 'Gemini 2.5 Flash' },
-    'gemini-2.5-pro': { label: 'Pro 2.5', fullName: 'Gemini 2.5 Pro' },
-    'gemini-3.1-pro-preview': {
-        label: 'Pro 3.1',
-        fullName: 'Gemini 3.1 Pro Preview',
-    },
-    'gemini-3-flash-preview': {
-        label: 'Flash 3',
-        fullName: 'Gemini 3 Flash Preview',
-    },
     'gemini-3.5-flash-lite': {
         label: 'Flash Lite 3.5',
         fullName: 'Gemini 3.5 Flash Lite',
     },
-    'gemini-3.6-flash': {
-        label: 'Flash 3.6',
-        fullName: 'Gemini 3.6 Flash',
+    'gemini-3.6-flash': { label: 'Flash 3.6', fullName: 'Gemini 3.6 Flash' },
+    'gemini-3.7-flash': { label: 'Flash 3.7', fullName: 'Gemini 3.7 Flash' },
+    'gemini-3.8-flash': { label: 'Flash 3.8', fullName: 'Gemini 3.8 Flash' },
+    'gemini-3.1-pro-preview': {
+        label: 'Pro 3.1',
+        fullName: 'Gemini 3.1 Pro Preview',
     },
     'claude-haiku-4-5': { label: 'Haiku 4.5', fullName: 'Claude Haiku 4.5' },
-    'claude-sonnet-4-6': { label: 'Sonnet 4.6', fullName: 'Claude Sonnet 4.6' },
-    'claude-opus-4-7': { label: 'Opus 4.7', fullName: 'Claude Opus 4.7' },
     'claude-sonnet-5': { label: 'Sonnet 5', fullName: 'Claude Sonnet 5' },
+    'claude-opus-4-8': { label: 'Opus 4.8', fullName: 'Claude Opus 4.8' },
     'claude-opus-5': { label: 'Opus 5', fullName: 'Claude Opus 5' },
-    'gpt-5-mini': { label: 'GPT 5 Mini', fullName: 'GPT-5 Mini' },
-    'gpt-5.4': { label: 'GPT 5.4', fullName: 'GPT-5.4' },
-    'gpt-5.5': { label: 'GPT 5.5', fullName: 'GPT-5.5' },
+    'claude-fable-5-1': { label: 'Fable 5.1', fullName: 'Claude Fable 5.1' },
+    'gpt-5.6-luna': { label: 'GPT 5.6 Luna', fullName: 'GPT-5.6 Luna' },
     'gpt-5.6-terra': { label: 'GPT 5.6 Terra', fullName: 'GPT-5.6 Terra' },
     'gpt-5.6-sol': { label: 'GPT 5.6 Sol', fullName: 'GPT-5.6 Sol' },
-    'deepseek-v4-flash': {
+    'gpt-6-astra': { label: 'GPT 6 Astra', fullName: 'GPT-6 Astra' },
+    'deepseek-v4.1-flash': {
         label: 'DeepSeek Flash',
-        fullName: 'DeepSeek V4 Flash',
+        fullName: 'DeepSeek V4.1 Flash',
     },
-    'deepseek-v4-pro': { label: 'DeepSeek Pro', fullName: 'DeepSeek V4 Pro' },
+    'deepseek-v4.1-pro': {
+        label: 'DeepSeek Pro',
+        fullName: 'DeepSeek V4.1 Pro',
+    },
 };
 
 /** Falls back to the raw model id (for both label and fullName) when unmapped. */

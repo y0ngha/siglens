@@ -48,7 +48,7 @@ function makeWrapper() {
 }
 
 function Probe() {
-    useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite');
+    useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-3.5-flash-lite');
     return null;
 }
 
@@ -84,7 +84,7 @@ describe('useNewsAnalysis', () => {
 
         const { result } = renderHook(
             () =>
-                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite'),
+                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -99,7 +99,7 @@ describe('useNewsAnalysis', () => {
                 params: expect.objectContaining({
                     symbol: 'AAPL',
                     companyName: 'Apple Inc.',
-                    modelId: 'gemini-2.5-flash-lite',
+                    modelId: 'gemini-3.5-flash-lite',
                     reasoning: false,
                 }),
             })
@@ -111,7 +111,7 @@ describe('useNewsAnalysis', () => {
 
         const { result } = renderHook(
             () =>
-                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite'),
+                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -137,7 +137,7 @@ describe('useNewsAnalysis', () => {
 
         const { result } = renderHook(
             () =>
-                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite'),
+                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -184,7 +184,7 @@ describe('useNewsAnalysis', () => {
                     useNewsAnalysis(
                         'AAPL',
                         'Apple Inc.',
-                        'gemini-2.5-flash-lite'
+                        'gemini-3.5-flash-lite'
                     ),
                 { wrapper }
             );
@@ -226,7 +226,7 @@ describe('useNewsAnalysis', () => {
                     useNewsAnalysis(
                         'AAPL',
                         'Apple Inc.',
-                        'gemini-2.5-flash-lite'
+                        'gemini-3.5-flash-lite'
                     ),
                 { wrapper }
             );
@@ -261,7 +261,7 @@ describe('useNewsAnalysis', () => {
                     useNewsAnalysis(
                         'AAPL',
                         'Apple Inc.',
-                        'gemini-2.5-flash-lite'
+                        'gemini-3.5-flash-lite'
                     ),
                 { wrapper }
             );

@@ -1,4 +1,4 @@
-import { DEEPSEEK_V4_FLASH_MODEL } from '@y0ngha/siglens-core';
+import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
 import { test, expect } from '../support/fixtures';
 import { normalizeReactSsrText } from '../support/ssrText';
 import { seedSeoSnapshot } from '../support/seoSnapshotSeeder';
@@ -67,7 +67,7 @@ test.describe('SEO pre-warm snapshot SSR (crawler-facing)', () => {
             symbol: SEEDED_SYMBOL,
             tab: 'technical',
             content: { summary: SEEDED_SUMMARY, trend: 'bullish' },
-            model: DEEPSEEK_V4_FLASH_MODEL,
+            model: DEEPSEEK_V4_1_FLASH_MODEL,
             generatedAt: new Date(),
         });
     });

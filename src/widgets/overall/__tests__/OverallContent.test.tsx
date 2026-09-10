@@ -25,7 +25,7 @@ vi.mock('@/features/symbol-chat', () => ({
     usePublishSymbolChat: vi.fn(),
 }));
 vi.mock('@/features/symbol-model', () => ({
-    useDefaultModelId: vi.fn(() => 'gemini-2.5-flash-lite'),
+    useDefaultModelId: vi.fn(() => 'gemini-3.5-flash-lite'),
     useDefaultReasoning: vi.fn(() => false),
     useAnalysisSettingsHydrated: vi.fn(() => true),
     useSymbolModel: vi.fn(() => ({ tier: 'member', isTierHydrated: true })),
@@ -141,7 +141,7 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
             'AAPL',
             'Apple Inc.',
             '1Hour',
-            'gemini-2.5-flash-lite',
+            'gemini-3.5-flash-lite',
             undefined,
             'equity',
             false,
@@ -163,7 +163,7 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
             'AAPL',
             'Apple Inc.',
             DEFAULT_TIMEFRAME,
-            'gemini-2.5-flash-lite',
+            'gemini-3.5-flash-lite',
             undefined,
             'equity',
             false,
@@ -720,7 +720,7 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
             'BTCUSD',
             'Bitcoin USD',
             DEFAULT_TIMEFRAME,
-            'gemini-2.5-flash-lite',
+            'gemini-3.5-flash-lite',
             undefined, // initialAnalysis
             'crypto',
             false,

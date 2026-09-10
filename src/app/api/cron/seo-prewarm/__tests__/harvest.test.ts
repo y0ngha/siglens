@@ -1,4 +1,4 @@
-import { DEEPSEEK_V4_FLASH_MODEL } from '@y0ngha/siglens-core';
+import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
 import type { PrewarmBatchCounts } from '../runPrewarmBatch';
 import type { SeamOutcome } from '../harvest';
 
@@ -190,7 +190,7 @@ describe('resolveHarvest', () => {
         expect(call.symbol).toBe('AAPL');
         expect(call.tab).toBe('overall');
         expect(call.content).toEqual({ foo: 'bar' });
-        expect(call.model).toBe(DEEPSEEK_V4_FLASH_MODEL);
+        expect(call.model).toBe(DEEPSEEK_V4_1_FLASH_MODEL);
         expect(typeof call.model).toBe('string');
         expect(call.model.length).toBeGreaterThan(0);
         expect(call.generatedAt).toBeInstanceOf(Date);

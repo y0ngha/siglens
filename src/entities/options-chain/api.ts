@@ -2,7 +2,7 @@ import 'server-only';
 import {
     runOptionsAnalysis,
     mapExpirationsToSlots,
-    DEEPSEEK_V4_FLASH_MODEL,
+    DEEPSEEK_V4_1_FLASH_MODEL,
     type RunOptionsAnalysisResult,
     type SlotMapping,
 } from '@y0ngha/siglens-core';
@@ -25,7 +25,7 @@ const isSlotMapping = (s: SlotMapping | null): s is SlotMapping => s !== null;
  * 선택하고, 매핑되는 슬롯이 하나도 없으면 `'all'`로 폴백한다. 이렇게 해야
  * 익명 방문자의 initial page mount가 만드는 cache key와 정합한다.
  *
- * modelId는 익명/free 방문자가 실제로 보내는 기본값(`DEEPSEEK_V4_FLASH_MODEL`)을
+ * modelId는 익명/free 방문자가 실제로 보내는 기본값(`DEEPSEEK_V4_1_FLASH_MODEL`)을
  * 명시 전달한다 — core의 options submit 옵션은 modelId를 그대로 캐시 키에
  * 쓰고 내부 fallback이 없다.
  *
@@ -49,7 +49,7 @@ export async function prewarmOptions(
         symbol,
         companyName,
         expirationDate,
-        modelId: DEEPSEEK_V4_FLASH_MODEL,
+        modelId: DEEPSEEK_V4_1_FLASH_MODEL,
         snapshot,
         tier: 'free',
         reasoning: false,

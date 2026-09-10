@@ -143,7 +143,7 @@ const NARRATIVE_ANALYSIS = { ...FALLBACK_ANALYSIS, summary: 'AAPL 상승 추세'
 
 function setTier(tier: 'free' | 'pro'): void {
     symbolModelMock.mockReturnValue({
-        modelId: 'gemini-2.5-flash',
+        modelId: 'gemini-3.6-flash',
         isHydrated: true,
         reasoning: false,
         isReasoningHydrated: true,
@@ -187,7 +187,7 @@ describe('ChartContent', () => {
         analysisMock.mockReturnValue(analysisReturn());
         // 기본값: free tier(하이드레이션 완료). isFreeUser = tier !== 'pro'가 true다.
         symbolModelMock.mockReturnValue({
-            modelId: 'gemini-2.5-flash',
+            modelId: 'gemini-3.6-flash',
             isHydrated: true,
             reasoning: false,
             isReasoningHydrated: true,

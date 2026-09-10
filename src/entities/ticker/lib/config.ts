@@ -1,7 +1,7 @@
 import {
     MODEL_SPECS,
     isGeminiModel,
-    supportsDisabledThinking,
+    supportsHardOff,
 } from '@y0ngha/siglens-core';
 import { isActiveModelId } from '@/shared/lib/isActiveModelId';
 import type { TranslatorConfig } from '../model';
@@ -15,7 +15,7 @@ import type { TranslatorConfig } from '../model';
  * (뉴스카드·경제이벤트·지표번역도 같은 커밋에서 함께 되돌렸다 — 그쪽 모델
  * 상수는 core에 있다).
  */
-const DEFAULT_TRANSLATE_MODEL = 'gemini-2.5-flash-lite';
+const DEFAULT_TRANSLATE_MODEL = 'gemini-3.5-flash-lite';
 
 /**
  * `TRANSLATE_MODEL`이 `MODEL_SPECS`에 존재하는 Gemini 모델이면서
@@ -28,11 +28,12 @@ const DEFAULT_TRANSLATE_MODEL = 'gemini-2.5-flash-lite';
  * `koreanTranslator.ts`가 모든 에러를 `{}`/`null`로 삼키므로 한국어 이름이
  * 소리 없이 전부 사라진다.
  *
- * 사고 비활성화 지원까지 확인해야 하는 이유: 리터럴 0을 400("This model only
- * works in thinking mode")으로 거부하는 Gemini 모델이 있다. 허용목록은
- * siglens-core의 `supportsDisabledThinking`에 있다 — 같은 제약을 core의 고정
- * 모델 경로(뉴스카드·경제이벤트·지표번역)도 공유하므로 목록을 여기서 복제하지
- * 않는다.
+ * 사고 비활성화 지원까지 확인해야 하는 이유: Gemini 모델 대부분은 추론을
+ * 완전히 끄지 못한다 — `gemini-3.5-flash-lite`와 `gemini-3.6-flash`만
+ * `thinkingLevel: 'minimal'`에서 사고 토큰이 0이고, 나머지는 `low`가 바닥이며
+ * 그마저 계속 생각한다. 판정은 siglens-core의 `supportsHardOff`가 스펙의
+ * 실측값(`reasoning.hardOff`)으로 내린다 — 같은 제약을 core의 고정 모델
+ * 경로(뉴스카드·경제이벤트·지표번역)도 공유하므로 목록을 여기서 복제하지 않는다.
  *
  * 먼저 `isActiveModelId`(`shared/lib/isActiveModelId.ts` — 프로토타입 체인
  * 키를 own-property 체크로 걸러내는 이유는 그 파일 JSDoc 참고)로
@@ -40,14 +41,12 @@ const DEFAULT_TRANSLATE_MODEL = 'gemini-2.5-flash-lite';
  */
 function isValidTranslateModel(value: string): boolean {
     return (
-        isActiveModelId(value) &&
-        isGeminiModel(value) &&
-        supportsDisabledThinking(value)
+        isActiveModelId(value) && isGeminiModel(value) && supportsHardOff(value)
     );
 }
 
 /**
- * `MODEL_SPECS`의 내부 키(예: 'gemini-2.5-flash-lite')를 실제 Gemini SDK 호출에
+ * `MODEL_SPECS`의 내부 키(예: 'gemini-3.5-flash-lite')를 실제 Gemini SDK 호출에
  * 써야 하는
  * `apiModelId`로 변환한다. router.ts의 `callAiProviderRouter`가
  * `MODEL_SPECS[options.model].apiModelId`로 동일하게 변환하는 것과 같은 이유다
@@ -174,11 +173,11 @@ export function _resetTranslateModelWarningForTest(): void {
  * `DEFAULT_TRANSLATE_MODEL` directly on every "unset/invalid" branch without
  * running it through `isValidTranslateModel` — so nothing but this test pins
  * that the default itself stays a Gemini member of `MODEL_SPECS` that
- * `supportsDisabledThinking` accepts.
+ * `supportsHardOff` accepts.
  * `toApiModelId` is miss-safe (see its JSDoc) so a stale default can no longer
  * *throw* out of `tryReadTranslatorConfig()` — but it would still silently
  * become the one value that reaches Gemini unvalidated and 400s on every
- * fallback if siglens-core renames or removes `gemini-2.5-flash-lite`, or
+ * fallback if siglens-core renames or removes `gemini-3.5-flash-lite`, or
  * drops it from the disabled-thinking allow-list. This
  * self-consistency test is what catches that regression; `toApiModelId`'s
  * safety net only downgrades the failure mode from "uncaught throw" to

@@ -56,6 +56,18 @@ vi.mock('@/views/symbol', () => ({
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('@y0ngha/siglens-core', () => ({
+    isClaudeAdaptiveModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'adaptive',
+    isClaudeBudgetModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'budget',
+    isReasoningToggleable: () => true,
+    getModelAccess: (m: string) =>
+        m === 'claude-opus-5' || m === 'gpt-5.6-sol' ? 'byok' : 'free',
+    supportsHardOff: () => true,
+    resolveReasoningConfig: (
+        modes: { off: unknown; on: unknown; default: string },
+        r?: boolean
+    ) => ((r ?? modes.default === 'on') ? modes.on : modes.off),
     mapExpirationsToSlots: vi.fn().mockReturnValue([]),
 }));
 vi.mock('@/shared/lib/seo', async importOriginal => ({

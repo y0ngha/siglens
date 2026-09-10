@@ -87,8 +87,8 @@ const DONE_RESULT: RunCongressTrendResult = {
     },
 };
 
-const MODEL_ID = 'gemini-2.5-flash' as ModelId;
-const PREMIUM_MODEL = 'claude-opus-4-7' as ModelId;
+const MODEL_ID = 'gemini-3.6-flash' as ModelId;
+const PREMIUM_MODEL = 'claude-opus-5' as ModelId;
 
 const gateError: AnalysisGateError = {
     code: 'tier_premium_blocked',

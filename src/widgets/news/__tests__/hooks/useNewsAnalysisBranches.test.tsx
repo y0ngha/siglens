@@ -62,7 +62,7 @@ describe('useNewsAnalysis — branch coverage', () => {
 
         const { result } = renderHook(
             () =>
-                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite'),
+                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-3.5-flash-lite'),
             { wrapper: makeWrapper() }
         );
 
@@ -80,7 +80,7 @@ describe('useNewsAnalysis — branch coverage', () => {
 
         const { result } = renderHook(
             () =>
-                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite'),
+                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-3.5-flash-lite'),
             { wrapper: makeWrapper() }
         );
 
@@ -102,7 +102,7 @@ describe('useNewsAnalysis — branch coverage', () => {
 
         const { result } = renderHook(
             () =>
-                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite'),
+                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-3.5-flash-lite'),
             { wrapper: makeWrapper() }
         );
 
@@ -124,7 +124,7 @@ describe('useNewsAnalysis — branch coverage', () => {
 
         const { result } = renderHook(
             () =>
-                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite'),
+                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-3.5-flash-lite'),
             { wrapper: makeWrapper() }
         );
 
@@ -156,7 +156,7 @@ describe('useNewsAnalysis — branch coverage', () => {
 
         const { result } = renderHook(
             () =>
-                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite'),
+                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-3.5-flash-lite'),
             { wrapper: makeWrapper() }
         );
 
@@ -177,7 +177,7 @@ describe('useNewsAnalysis — branch coverage', () => {
 
         const { result } = renderHook(
             () =>
-                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite'),
+                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-3.5-flash-lite'),
             { wrapper: makeWrapper() }
         );
 
@@ -199,7 +199,7 @@ describe('useNewsAnalysis — branch coverage', () => {
 
         const { result } = renderHook(
             () =>
-                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite'),
+                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-3.5-flash-lite'),
             { wrapper: makeWrapper() }
         );
 
@@ -225,7 +225,7 @@ describe('useNewsAnalysis — branch coverage', () => {
 
         const { result } = renderHook(
             () =>
-                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite', {
+                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-3.5-flash-lite', {
                     isSettingsHydrated: false,
                 }),
             { wrapper: makeWrapper() }
@@ -240,7 +240,7 @@ describe('useNewsAnalysis — branch coverage', () => {
     it('enabled=false prevents fetching', async () => {
         const { result } = renderHook(
             () =>
-                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite', {
+                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-3.5-flash-lite', {
                     enabled: false,
                 }),
             { wrapper: makeWrapper() }

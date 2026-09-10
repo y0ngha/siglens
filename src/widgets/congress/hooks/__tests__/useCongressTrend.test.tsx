@@ -60,7 +60,7 @@ describe('useCongressTrend', () => {
         const wrapper = makeWrapper();
 
         const { result } = renderHook(
-            () => useCongressTrend('AAPL', 'gemini-2.5-flash-lite'),
+            () => useCongressTrend('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -79,7 +79,7 @@ describe('useCongressTrend', () => {
                 type: 'congress',
                 params: expect.objectContaining({
                     symbol: 'AAPL',
-                    modelId: 'gemini-2.5-flash-lite',
+                    modelId: 'gemini-3.5-flash-lite',
                     reasoning: false,
                 }),
             })
@@ -90,7 +90,7 @@ describe('useCongressTrend', () => {
         // loading → done
         const wrapper = makeWrapper();
         const { result } = renderHook(
-            () => useCongressTrend('AAPL', 'gemini-2.5-flash-lite'),
+            () => useCongressTrend('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -110,7 +110,7 @@ describe('useCongressTrend', () => {
 
         const wrapper = makeWrapper();
         const { result } = renderHook(
-            () => useCongressTrend('AAPL', 'gemini-2.5-flash-lite'),
+            () => useCongressTrend('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -129,7 +129,7 @@ describe('useCongressTrend', () => {
 
         const wrapper = makeWrapper();
         const { result } = renderHook(
-            () => useCongressTrend('AAPL', 'gemini-2.5-flash-lite'),
+            () => useCongressTrend('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -144,7 +144,7 @@ describe('useCongressTrend', () => {
 
         const wrapper = makeWrapper();
         const { result } = renderHook(
-            () => useCongressTrend('AAPL', 'gemini-2.5-flash-lite'),
+            () => useCongressTrend('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -162,7 +162,7 @@ describe('useCongressTrend', () => {
 
         const wrapper = makeWrapper();
         const { result } = renderHook(
-            () => useCongressTrend('AAPL', 'gemini-2.5-flash-lite'),
+            () => useCongressTrend('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -177,7 +177,7 @@ describe('useCongressTrend', () => {
 
         const wrapper = makeWrapper();
         const { result } = renderHook(
-            () => useCongressTrend('AAPL', 'gemini-2.5-flash-lite'),
+            () => useCongressTrend('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -191,7 +191,7 @@ describe('useCongressTrend', () => {
 
         const wrapper = makeWrapper();
         const { result } = renderHook(
-            () => useCongressTrend('AAPL', 'gemini-2.5-flash-lite'),
+            () => useCongressTrend('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -217,7 +217,7 @@ describe('useCongressTrend', () => {
 
         const wrapper = makeWrapper();
         const { result } = renderHook(
-            () => useCongressTrend('AAPL', 'gemini-2.5-flash-lite'),
+            () => useCongressTrend('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 

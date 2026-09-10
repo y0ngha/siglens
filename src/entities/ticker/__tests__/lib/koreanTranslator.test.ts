@@ -1,4 +1,4 @@
-import { DISABLED_THINKING_BUDGET, MODEL_SPECS } from '@y0ngha/siglens-core';
+import { MODEL_SPECS } from '@y0ngha/siglens-core';
 
 const { callGeminiMock } = vi.hoisted(() => ({
     callGeminiMock: vi.fn(),
@@ -24,11 +24,11 @@ import {
 // `vi.stubEnv` + config의 `unstubEnvs: true` 조합으로 케이스마다 자동 복원.
 function stubTranslatorEnv(): void {
     vi.stubEnv('GEMINI_API_KEY', 'server-api-key');
-    // 기본값(gemini-2.5-flash-lite)과 다른 유효 모델을 써서 env pass-through가
+    // 기본값(gemini-3.5-flash-lite)과 다른 유효 모델을 써서 env pass-through가
     // 실제로 일어나는지 검증한다 — config.ts의 TRANSLATE_MODEL 검증이 알 수
     // 없는 값이나 타 provider 모델을 기본 모델로 폴백시키므로, 임의 문자열은
     // 그대로 통과하지 않는다.
-    vi.stubEnv('TRANSLATE_MODEL', 'gemini-2.5-flash');
+    vi.stubEnv('TRANSLATE_MODEL', 'gemini-3.6-flash');
 }
 
 describe('translateCompanyNames', () => {
@@ -58,17 +58,17 @@ describe('translateCompanyNames', () => {
         ]);
         expect(result).toEqual({ AAPL: '애플', NVDA: '엔비디아' });
         expect(callGeminiMock).toHaveBeenCalledTimes(1);
-        // 정확 일치로 단언한다 — `thinkingBudget: 0`이 조용히 빠지면 이
+        // 정확 일치로 단언한다 — `thinkingLevel: 0`이 조용히 빠지면 이
         // 케이스가 깨진다. 번역은 결정적 변환이라 추론을 항상 꺼야 하고,
         // config.ts가 리터럴 0을 받는 모델만 통과시킨다.
         expect(callGeminiMock).toHaveBeenCalledWith({
             apiKey: 'server-api-key',
             // 리터럴이 아니라 MODEL_SPECS에서 파생한 값과 비교한다.
-            model: MODEL_SPECS['gemini-2.5-flash'].apiModelId,
+            model: MODEL_SPECS['gemini-3.6-flash'].apiModelId,
             contents: expect.stringContaining('AAPL: Apple Inc.'),
             // 번역 비용이 챗 비용과 섞이지 않도록 별도 라벨로 집계된다.
             jobId: 'translate',
-            thinkingBudget: DISABLED_THINKING_BUDGET,
+            thinkingLevel: 'minimal',
         });
     });
 
@@ -113,7 +113,7 @@ describe('translateCompanyNames', () => {
         expect(errorSpy).toHaveBeenCalledWith(
             '[koreanTranslator] translateCompanyNames failed',
             expect.objectContaining({
-                model: MODEL_SPECS['gemini-2.5-flash'].apiModelId,
+                model: MODEL_SPECS['gemini-3.6-flash'].apiModelId,
                 entryCount: 1,
                 error: boom,
             })
@@ -128,7 +128,7 @@ describe('translateCompanyNames', () => {
         await translateCompanyNames([{ symbol: 'AAPL', name: 'Apple' }]);
         expect(callGeminiMock).toHaveBeenCalledWith(
             expect.objectContaining({
-                model: MODEL_SPECS['gemini-2.5-flash-lite'].apiModelId,
+                model: MODEL_SPECS['gemini-3.5-flash-lite'].apiModelId,
             })
         );
     });
@@ -181,7 +181,7 @@ describe('translateCompanyDescription', () => {
         expect(errorSpy).toHaveBeenCalledWith(
             '[koreanTranslator] translateCompanyDescription failed',
             expect.objectContaining({
-                model: MODEL_SPECS['gemini-2.5-flash'].apiModelId,
+                model: MODEL_SPECS['gemini-3.6-flash'].apiModelId,
                 descriptionLength: 'Description.'.length,
                 error: boom,
             })

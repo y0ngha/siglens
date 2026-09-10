@@ -17,7 +17,7 @@ describe('tryReadPlainModelConfig', () => {
     it('기본 모델은 DeepSeek이고 그 provider의 서버 키를 고른다', () => {
         vi.stubEnv('DEEPSEEK_CHAT_API_KEY', 'ds-key');
         expect(tryReadPlainModelConfig()).toEqual({
-            model: 'deepseek-v4-flash',
+            model: 'deepseek-v4.1-flash',
             serverApiKey: 'ds-key',
         });
     });
@@ -33,16 +33,16 @@ describe('tryReadPlainModelConfig', () => {
      * 던진다 — 로컬 실증에서 확인. 모델과 키를 한 자리에서 함께 고르면 어긋날 수 없다.
      */
     it('모델을 바꾸면 그 provider의 키를 따라간다', () => {
-        vi.stubEnv('PLAIN_MODEL', 'gemini-2.5-flash-lite');
+        vi.stubEnv('PLAIN_MODEL', 'gemini-3.5-flash-lite');
         vi.stubEnv('GEMINI_CHAT_API_KEY', 'gm-key');
         expect(tryReadPlainModelConfig()).toEqual({
-            model: 'gemini-2.5-flash-lite',
+            model: 'gemini-3.5-flash-lite',
             serverApiKey: 'gm-key',
         });
     });
 
     it('모델을 바꿨는데 그 provider 키가 없으면 null', () => {
-        vi.stubEnv('PLAIN_MODEL', 'gemini-2.5-flash-lite');
+        vi.stubEnv('PLAIN_MODEL', 'gemini-3.5-flash-lite');
         vi.stubEnv('GEMINI_CHAT_API_KEY', '');
         vi.stubEnv('DEEPSEEK_CHAT_API_KEY', 'ds-key');
         expect(tryReadPlainModelConfig()).toBeNull();
@@ -53,7 +53,7 @@ describe('tryReadPlainModelConfig', () => {
         vi.stubEnv('PLAIN_MODEL', 'not-a-model');
         vi.stubEnv('DEEPSEEK_CHAT_API_KEY', 'ds-key');
 
-        expect(tryReadPlainModelConfig()?.model).toBe('deepseek-v4-flash');
+        expect(tryReadPlainModelConfig()?.model).toBe('deepseek-v4.1-flash');
         expect(warn).toHaveBeenCalledOnce();
         warn.mockRestore();
     });
@@ -63,7 +63,7 @@ describe('tryReadPlainModelConfig', () => {
         vi.stubEnv('PLAIN_MODEL', '   ');
         vi.stubEnv('DEEPSEEK_CHAT_API_KEY', 'ds-key');
 
-        expect(tryReadPlainModelConfig()?.model).toBe('deepseek-v4-flash');
+        expect(tryReadPlainModelConfig()?.model).toBe('deepseek-v4.1-flash');
         expect(warn).not.toHaveBeenCalled();
         warn.mockRestore();
     });

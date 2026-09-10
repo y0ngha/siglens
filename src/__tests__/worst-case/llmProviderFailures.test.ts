@@ -17,37 +17,76 @@ vi.mock('openai', () => ({
 }));
 
 vi.mock('@google/genai', () => ({
+    // 어댑터가 도메인 level을 이 enum으로 매핑한다 — 없으면 import가 undefined다.
+    ThinkingLevel: {
+        MINIMAL: 'MINIMAL',
+        LOW: 'LOW',
+        MEDIUM: 'MEDIUM',
+        HIGH: 'HIGH',
+    },
     GoogleGenAI: class MockGoogleGenAI {
         models = { generateContent: mockGeminiGenerate };
     },
 }));
 
 vi.mock('@y0ngha/siglens-core', () => ({
+    isClaudeAdaptiveModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'adaptive',
+    isClaudeBudgetModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'budget',
+    isReasoningToggleable: () => true,
+    getModelAccess: (m: string) =>
+        m === 'claude-opus-5' || m === 'gpt-5.6-sol' ? 'byok' : 'free',
+    supportsHardOff: () => true,
+    resolveReasoningConfig: (
+        modes: { off: unknown; on: unknown; default: string },
+        r?: boolean
+    ) => ((r ?? modes.default === 'on') ? modes.on : modes.off),
+    // provider 값은 MODEL_SPECS taxonomy('claude'/'chatgpt'/'gemini'/'deepseek')를
+    // 따라야 한다 — 키 저장용 LlmProvider('anthropic'/'openai'/'google')와 다르다.
+    // 어댑터가 provider로 좁히므로 어긋나면 429가 아니라 'Non-ChatGPT model spec'이
+    // 먼저 던져져 이 스위트가 겨냥한 재시도 경로에 닿지 못한다.
     MODEL_SPECS: {
         'claude-haiku-4-5': {
             apiModelId: 'claude-haiku-4-5-20251001',
-            provider: 'anthropic',
+            provider: 'claude',
+            thinkingApi: 'budget',
             maxOutputTokens: 8192,
             temperature: 1.0,
+            reasoning: {
+                off: { budgetTokens: 0 },
+                on: { budgetTokens: 0 },
+                default: 'off',
+                toggleable: false,
+            },
         },
         'gpt-4.1-mini': {
             apiModelId: 'gpt-4.1-mini',
-            provider: 'openai',
+            provider: 'chatgpt',
             maxOutputTokens: 16384,
-            temperature: 1.0,
+            reasoning: {
+                off: { effort: 'none' },
+                on: { effort: 'high' },
+                default: 'off',
+            },
         },
-        'gemini-2.5-flash': {
-            apiModelId: 'gemini-2.5-flash',
-            provider: 'google',
+        'gemini-3.6-flash': {
+            apiModelId: 'gemini-3.6-flash',
+            provider: 'gemini',
             maxOutputTokens: 8192,
             temperature: 1.0,
+            reasoning: {
+                off: { level: 'minimal' },
+                on: { level: 'high' },
+                default: 'off',
+            },
         },
     },
     getProviderForModel: (model: string) => {
         const map: Record<string, string> = {
             'claude-haiku-4-5': 'anthropic',
             'gpt-4.1-mini': 'openai',
-            'gemini-2.5-flash': 'google',
+            'gemini-3.6-flash': 'google',
         };
         return map[model];
     },
@@ -158,7 +197,7 @@ describe('LLM provider failure modes', () => {
             await expect(
                 callAiProviderRouter({
                     ...BASE_OPTIONS,
-                    model: 'gemini-2.5-flash',
+                    model: 'gemini-3.6-flash',
                 })
             ).rejects.toThrow('Provider returned null/undefined response');
         });
@@ -169,7 +208,7 @@ describe('LLM provider failure modes', () => {
             await expect(
                 callAiProviderRouter({
                     ...BASE_OPTIONS,
-                    model: 'gemini-2.5-flash',
+                    model: 'gemini-3.6-flash',
                 })
             ).rejects.toThrow('Provider returned null/undefined response');
         });

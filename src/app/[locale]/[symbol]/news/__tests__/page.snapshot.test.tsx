@@ -160,7 +160,7 @@ describe('NewsPage — SEO snapshot prose (Task 7b, dual-section with NewsFactsS
                 symbol: 'AAPL',
                 tab: 'news',
                 content: SNAPSHOT_CONTENT,
-                model: 'deepseek-v4-flash',
+                model: 'deepseek-v4.1-flash',
                 generatedAt: new Date('2026-07-24'),
             },
         ]);
@@ -210,7 +210,7 @@ describe('NewsPage — SEO snapshot prose (Task 7b, dual-section with NewsFactsS
                 symbol: 'AAPL',
                 tab: 'overall',
                 content: { headlineKo: '헤드라인' },
-                model: 'deepseek-v4-flash',
+                model: 'deepseek-v4.1-flash',
                 generatedAt: new Date('2026-07-24'),
             },
         ]);
@@ -267,7 +267,7 @@ describe('NewsPage generateMetadata — snapshot-derived description (Task 8)', 
                 symbol: 'AAPL',
                 tab: 'news',
                 content: SNAPSHOT_CONTENT,
-                model: 'deepseek-v4-flash',
+                model: 'deepseek-v4.1-flash',
                 generatedAt: new Date('2026-07-24'),
             },
         ]);

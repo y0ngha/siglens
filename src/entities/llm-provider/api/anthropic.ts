@@ -1,32 +1,13 @@
 import 'server-only';
 import { toProviderTurns, findSpecByApiModelId } from '../lib/utils';
 import Anthropic from '@anthropic-ai/sdk';
-import type { AiContents, ModelSpec } from '@y0ngha/siglens-core';
+import type { AiContents } from '@y0ngha/siglens-core';
+import {
+    isClaudeAdaptiveModelSpec,
+    resolveReasoningConfig,
+} from '@y0ngha/siglens-core';
 import type { ProviderCallOptions } from '../model';
 import { CHAT_JOB_ID, extractClaudeUsage, logUsage } from '../lib/usage';
-
-/**
- * Allowed reasoning effort values accepted by the Anthropic adaptive thinking
- * `output_config.effort` field. Hoisted to module scope so the runtime guard
- * stays cheap and shareable across calls.
- *
- * The `Record<NonNullable<ModelSpec['effort']>, true>` shape forces compile-
- * time exhaustiveness against siglens-core: if the core widens `ModelSpec.effort`
- * with a new literal, TypeScript will reject this file until the new value
- * is mirrored — preventing the silent "valid effort gets thrown as invalid"
- * failure mode.
- */
-const VALID_EFFORT_RECORD: Record<NonNullable<ModelSpec['effort']>, true> = {
-    low: true,
-    medium: true,
-    high: true,
-};
-
-function isValidEffort(
-    value: string
-): value is NonNullable<ModelSpec['effort']> {
-    return value in VALID_EFFORT_RECORD;
-}
 
 /**
  * Ephemeral prompt-cache breakpoint. Reused for the stable system prefix and the
@@ -95,10 +76,12 @@ export async function callAnthropicChat({
     if (!spec) {
         throw new Error(`Unknown model: ${model}`);
     }
-    if (spec.effort !== undefined && !isValidEffort(spec.effort)) {
-        throw new Error(`[anthropic] Invalid effort value: ${spec.effort}`);
-    }
-    const adaptiveThinking = spec.effort !== undefined;
+    // 챗은 추론 토글이 없다 — 스펙의 기본 상태를 그대로 따른다. Free·Member 모델은
+    // 기본 OFF라 서버 키로 도는 챗이 사고 토큰을 물지 않는다.
+    const adaptiveThinking = isClaudeAdaptiveModelSpec(spec);
+    const adaptiveConfig = adaptiveThinking
+        ? resolveReasoningConfig(spec.reasoning, undefined)
+        : undefined;
     const maxTokens = spec.maxOutputTokens;
 
     const startedAt = Date.now();
@@ -123,14 +106,16 @@ export async function callAnthropicChat({
                   ],
               }
             : {}),
-        ...(adaptiveThinking
-            ? {
-                  thinking: {
-                      type: 'adaptive' as const,
-                      display: 'omitted' as const,
-                  },
-                  output_config: { effort: spec.effort },
-              }
+        ...(adaptiveConfig !== undefined
+            ? adaptiveConfig.mode === 'disabled'
+                ? { thinking: { type: 'disabled' as const } }
+                : {
+                      thinking: {
+                          type: 'adaptive' as const,
+                          display: 'omitted' as const,
+                      },
+                      output_config: { effort: adaptiveConfig.effort },
+                  }
             : { temperature: spec.temperature }),
     });
     const response = await stream.finalMessage();

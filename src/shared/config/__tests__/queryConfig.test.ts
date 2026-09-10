@@ -113,7 +113,7 @@ describe('queryConfig staleTime constants', () => {
 });
 
 describe('QUERY_KEYS.financialsAnalysis', () => {
-    const MODEL_ID = 'gemini-2.5-flash' as ModelId;
+    const MODEL_ID = 'gemini-3.6-flash' as ModelId;
 
     it('key 배열은 [prefix, UPPER_SYMBOL, modelId, reasoning] 형태이다', () => {
         expect(
@@ -170,7 +170,7 @@ describe('QUERY_KEYS.financialsAnalysis', () => {
 });
 
 describe('QUERY_KEYS — 나머지 키 팩토리', () => {
-    const MODEL_ID = 'gemini-2.5-flash' as ModelId;
+    const MODEL_ID = 'gemini-3.6-flash' as ModelId;
     const TIMEFRAME: Timeframe = '1Day';
     const DASHBOARD_TF: DashboardTimeframe = '1Day';
 

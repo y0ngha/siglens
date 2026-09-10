@@ -20,7 +20,7 @@ import type {
     UserTierContext,
 } from '@y0ngha/siglens-core';
 import {
-    DEEPSEEK_V4_FLASH_MODEL,
+    DEEPSEEK_V4_1_FLASH_MODEL,
     DEFAULT_TIER,
     getProviderForModel,
     requestChatCompletion,
@@ -125,7 +125,7 @@ export async function chatAction(
     analysis: AnalysisResponse,
     history: ChatMessage[],
     userMessage: string,
-    model: ModelId = DEEPSEEK_V4_FLASH_MODEL,
+    model: ModelId = DEEPSEEK_V4_1_FLASH_MODEL,
     /**
      * Tagged union representing the analysis result the user is currently
      * looking at (technical / fundamental / news / overall). When provided,

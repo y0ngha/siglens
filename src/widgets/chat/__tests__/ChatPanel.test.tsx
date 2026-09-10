@@ -28,7 +28,7 @@ const mockUseChatReturn = {
     remainingTokens: null as number | null,
     sendMessage: vi.fn(),
     dismissAnalysisUpdated: vi.fn(),
-    selectedModel: 'gemini-2.5-flash',
+    selectedModel: 'gemini-3.6-flash',
     isModelHydrated: true,
     handleModelChange: vi.fn(),
     gateModal: null as { mode: string; provider: string } | null,
@@ -60,7 +60,7 @@ function resetMockChat() {
     mockUseChatReturn.loadingPhase = null;
     mockUseChatReturn.analysisUpdated = false;
     mockUseChatReturn.remainingTokens = null;
-    mockUseChatReturn.selectedModel = 'gemini-2.5-flash';
+    mockUseChatReturn.selectedModel = 'gemini-3.6-flash';
     mockUseChatReturn.isModelHydrated = true;
     mockUseChatReturn.gateModal = null;
 }

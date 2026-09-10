@@ -65,7 +65,10 @@ import type {
     RunNewsAnalysisResult,
     EarningsCalendarItem,
 } from '@y0ngha/siglens-core';
-import { runNewsAnalysis, DEEPSEEK_V4_FLASH_MODEL } from '@y0ngha/siglens-core';
+import {
+    runNewsAnalysis,
+    DEEPSEEK_V4_1_FLASH_MODEL,
+} from '@y0ngha/siglens-core';
 import type { SiglensDatabase } from '@/shared/db/types';
 import {
     DrizzleNewsRepository,
@@ -756,7 +759,7 @@ describe('prewarmNews', () => {
             expect.objectContaining({
                 symbol: 'AAPL',
                 companyName: 'Apple Inc.',
-                modelId: DEEPSEEK_V4_FLASH_MODEL,
+                modelId: DEEPSEEK_V4_1_FLASH_MODEL,
                 tier: 'free',
                 reasoning: false,
                 skipEnqueueIfMiss: false,
@@ -1071,7 +1074,7 @@ describe('prewarmNews', () => {
 
             expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    modelId: DEEPSEEK_V4_FLASH_MODEL,
+                    modelId: DEEPSEEK_V4_1_FLASH_MODEL,
                     tier: 'free',
                     reasoning: false,
                     skipEnqueueIfMiss: false,

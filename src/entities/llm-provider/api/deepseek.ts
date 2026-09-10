@@ -1,4 +1,5 @@
 import 'server-only';
+import { resolveReasoningConfig } from '@y0ngha/siglens-core';
 import { toProviderTurns, findSpecByApiModelId } from '../lib/utils';
 import type { ProviderCallOptions } from '../model';
 import type { DeepSeekUsageLike } from '../lib/usage';
@@ -60,7 +61,12 @@ export async function callDeepseekChat({
         ) as OpenAI.Chat.ChatCompletionMessageParam[]),
     ];
 
-    const thinking: DeepSeekThinkingToggle = spec.thinking
+    // 챗은 추론 토글이 없다 — 스펙의 기본 상태를 따른다(Free·Member는 기본 OFF).
+    const useThinking = resolveReasoningConfig(
+        spec.reasoning,
+        undefined
+    ).thinking;
+    const thinking: DeepSeekThinkingToggle = useThinking
         ? { type: 'enabled', reasoning_effort: 'high' }
         : { type: 'disabled' };
 
@@ -73,7 +79,7 @@ export async function callDeepseekChat({
         max_tokens: spec.maxOutputTokens,
         thinking,
         // temperature only applies in non-thinking mode.
-        ...(!spec.thinking ? { temperature: spec.temperature } : {}),
+        ...(!useThinking ? { temperature: spec.temperature } : {}),
         stream: true,
         stream_options: { include_usage: true },
     };

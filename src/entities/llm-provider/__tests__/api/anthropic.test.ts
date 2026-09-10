@@ -27,7 +27,6 @@ import {
     callAnthropicChat,
     withHistoryCacheBreakpoint,
 } from '@/entities/llm-provider/api/anthropic';
-import { MODEL_SPECS } from '@y0ngha/siglens-core';
 import type Anthropic from '@anthropic-ai/sdk';
 
 const BASE_OPTIONS = {
@@ -38,7 +37,13 @@ const BASE_OPTIONS = {
 
 const SONNET_OPTIONS = {
     ...BASE_OPTIONS,
-    model: 'claude-sonnet-4-6', // sonnet apiModelId
+    model: 'claude-sonnet-5', // sonnet apiModelId — member 등급(기본 OFF)
+} as const;
+
+/** byok 등급 — `reasoning.default: 'on'`이라 adaptive 경로를 탄다. */
+const OPUS_OPTIONS = {
+    ...BASE_OPTIONS,
+    model: 'claude-opus-5',
 } as const;
 
 describe('callAnthropicChat', () => {
@@ -135,13 +140,31 @@ describe('callAnthropicChat', () => {
     });
 
     describe('Sonnet/Opus — adaptive thinking 모드', () => {
-        it('adaptive thinking과 effort로 호출한다', async () => {
+        it('member 등급 모델은 스펙 기본 상태(OFF)로 호출한다', async () => {
             mockFinalMessage.mockResolvedValue({
                 content: [{ type: 'text', text: 'deep answer' }],
                 stop_reason: 'end_turn',
             });
 
             const result = await callAnthropicChat(SONNET_OPTIONS);
+
+            expect(result).toBe('deep answer');
+            const call = mockStream.mock.calls[0][0];
+            // 챗은 추론 토글이 없어 스펙의 `reasoning.default`를 따른다.
+            // claude-sonnet-5는 member 등급이라 기본 OFF다.
+            expect(call.thinking).toEqual({ type: 'disabled' });
+            // thinking이 꺼지면 output_config 자체를 보내지 않는다.
+            expect(call).not.toHaveProperty('output_config');
+            expect(call).not.toHaveProperty('temperature');
+        });
+
+        it('byok 등급 모델은 adaptive thinking과 effort로 호출한다', async () => {
+            mockFinalMessage.mockResolvedValue({
+                content: [{ type: 'text', text: 'deep answer' }],
+                stop_reason: 'end_turn',
+            });
+
+            const result = await callAnthropicChat(OPUS_OPTIONS);
 
             expect(result).toBe('deep answer');
             const call = mockStream.mock.calls[0][0];
@@ -379,32 +402,6 @@ describe('callAnthropicChat', () => {
             });
 
             await expect(callAnthropicChat(SONNET_OPTIONS)).resolves.toBe('ok');
-        });
-
-        it('잘못된 effort 값이 spec에 있으면 에러를 던진다', async () => {
-            // Use a string-indexed view so we don't narrow `original` through the
-            // full MODEL_SPECS union (which would force the assignment shape to
-            // satisfy every spec member, e.g. gemini specs without `effort`).
-            const specs = MODEL_SPECS as unknown as Record<
-                string,
-                Record<string, unknown>
-            >;
-            const original = specs['claude-sonnet-4-6'];
-
-            specs['claude-sonnet-4-6'] = {
-                ...original,
-                // Runtime invalid value to verify the validator throws. The
-                // string-indexed view above keeps this assignment well-typed.
-                effort: 'extreme',
-            };
-
-            try {
-                await expect(callAnthropicChat(SONNET_OPTIONS)).rejects.toThrow(
-                    '[anthropic] Invalid effort value: extreme'
-                );
-            } finally {
-                specs['claude-sonnet-4-6'] = original;
-            }
         });
     });
 });

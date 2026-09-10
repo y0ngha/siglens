@@ -111,7 +111,7 @@ const { mockOpenSignupNudge } = vi.hoisted(() => ({
 
 vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: vi.fn(() => ({
-        modelId: 'gemini-2.5-flash-lite',
+        modelId: 'gemini-3.5-flash-lite',
         isHydrated: true,
         reasoning: false,
         isReasoningHydrated: true,

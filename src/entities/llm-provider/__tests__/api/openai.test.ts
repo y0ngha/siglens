@@ -14,13 +14,13 @@ import { callOpenaiChat } from '@/entities/llm-provider/api/openai';
 
 const BASE_OPTIONS = {
     apiKey: 'server-key',
-    model: 'gpt-5-mini', // apiModelId
+    model: 'gpt-5.6-luna', // apiModelId
     contents: 'Hello',
 } as const;
 
 const GPT5_OPTIONS = {
     ...BASE_OPTIONS,
-    model: 'gpt-5.5', // apiModelId with reasoning
+    model: 'gpt-5.6-sol', // apiModelId with reasoning
 } as const;
 
 describe('callOpenaiChat', () => {
@@ -99,13 +99,13 @@ describe('callOpenaiChat', () => {
             expect(call.reasoning.effort).toBeDefined();
         });
 
-        it('gpt-5-mini에 reasoning.effort medium를 전달한다', async () => {
+        it('gpt-5.6-luna에 스펙 기본 상태(effort none)를 전달한다', async () => {
             mockCreate.mockResolvedValue({ output_text: 'ok' });
 
             await callOpenaiChat(BASE_OPTIONS);
 
             const call = mockCreate.mock.calls[0][0];
-            expect(call.reasoning).toEqual({ effort: 'medium' });
+            expect(call.reasoning).toEqual({ effort: 'none' });
         });
     });
 

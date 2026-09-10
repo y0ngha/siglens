@@ -50,7 +50,7 @@ const TABS: ReadonlyArray<{
         name: 'news',
         result: { headlineKo: 'h', overallSentiment: 'neutral' },
         run: () =>
-            useNewsAnalysis('AAPL', 'Apple', 'deepseek-v4-flash') as never,
+            useNewsAnalysis('AAPL', 'Apple', 'deepseek-v4.1-flash') as never,
     },
     {
         name: 'options',
@@ -60,23 +60,25 @@ const TABS: ReadonlyArray<{
                 symbol: 'AAPL',
                 companyName: 'Apple',
                 expirationDate: '2026-09-18',
-                modelId: 'deepseek-v4-flash',
+                modelId: 'deepseek-v4.1-flash',
             }) as never,
     },
     {
         name: 'financials',
         result: { overallSentiment: 'neutral', overallConclusionKo: 'c' },
-        run: () => useFinancialsAnalysis('AAPL', 'deepseek-v4-flash') as never,
+        run: () =>
+            useFinancialsAnalysis('AAPL', 'deepseek-v4.1-flash') as never,
     },
     {
         name: 'congress',
         result: { overallSentiment: 'neutral', summaryKo: 's' },
-        run: () => useCongressTrend('AAPL', 'deepseek-v4-flash') as never,
+        run: () => useCongressTrend('AAPL', 'deepseek-v4.1-flash') as never,
     },
     {
         name: 'fundamental',
         result: { overallSentiment: 'neutral', overallConclusionKo: 'c' },
-        run: () => useFundamentalAnalysis('AAPL', 'deepseek-v4-flash') as never,
+        run: () =>
+            useFundamentalAnalysis('AAPL', 'deepseek-v4.1-flash') as never,
     },
 ];
 

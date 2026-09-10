@@ -4,7 +4,7 @@ export const LOCAL_STORAGE_ANALYSIS_MODEL_KEY =
 
 /**
  * One-time flag marking that the legacy analysis-model migration has run in this
- * browser. Once set, users who stored the old default (`gemini-2.5-flash-lite`)
+ * browser. Once set, users who stored the old default (`gemini-3.5-flash-lite`)
  * were moved to the new DeepSeek default; any later switch back to flash-lite is
  * a deliberate post-flip choice and must never be migrated again.
  */
@@ -22,8 +22,8 @@ export const LOCAL_STORAGE_CHAT_MODEL_KEY = 'siglens_chat_model';
 /**
  * One-time flag marking that the legacy chat-model migration has run in this
  * browser. Mirrors `LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY` but for the CHAT
- * model default, which also flipped (from `gemini-2.5-flash` to the DeepSeek
- * default). Once set, a later deliberate switch back to `gemini-2.5-flash` is
+ * model default, which also flipped (from `gemini-3.6-flash` to the DeepSeek
+ * default). Once set, a later deliberate switch back to `gemini-3.6-flash` is
  * preserved forever.
  */
 export const LOCAL_STORAGE_CHAT_MODEL_MIGRATION_KEY =
@@ -31,7 +31,7 @@ export const LOCAL_STORAGE_CHAT_MODEL_MIGRATION_KEY =
 
 /**
  * Second one-time flag for the chat-model migration, covering
- * `gemini-2.5-flash-lite` in addition to the `gemini-2.5-flash` handled by
+ * `gemini-3.5-flash-lite` in addition to the `gemini-3.6-flash` handled by
  * {@link LOCAL_STORAGE_CHAT_MODEL_MIGRATION_KEY}.
  *
  * A separate key is required, not optional: every browser that already ran the

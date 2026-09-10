@@ -55,7 +55,19 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('@y0ngha/siglens-core', () => ({
-    DEEPSEEK_V4_FLASH_MODEL: 'deepseek-v4-flash',
+    isClaudeAdaptiveModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'adaptive',
+    isClaudeBudgetModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'budget',
+    isReasoningToggleable: () => true,
+    getModelAccess: (m: string) =>
+        m === 'claude-opus-5' || m === 'gpt-5.6-sol' ? 'byok' : 'free',
+    supportsHardOff: () => true,
+    resolveReasoningConfig: (
+        modes: { off: unknown; on: unknown; default: string },
+        r?: boolean
+    ) => ((r ?? modes.default === 'on') ? modes.on : modes.off),
+    DEEPSEEK_V4_1_FLASH_MODEL: 'deepseek-v4.1-flash',
     peekOverallAnalysisCache: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
@@ -74,7 +86,7 @@ import {
 } from '@/app/[locale]/[symbol]/overall/page';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import {
-    DEEPSEEK_V4_FLASH_MODEL,
+    DEEPSEEK_V4_1_FLASH_MODEL,
     peekOverallAnalysisCache,
 } from '@y0ngha/siglens-core';
 import { OverallContent } from '@/widgets/overall/OverallContent';
@@ -173,7 +185,7 @@ describe('generateMetadata', () => {
                 symbol: 'AAPL',
                 tab: 'overall',
                 content: { headlineKo: 'valid headline' },
-                model: 'deepseek-v4-flash',
+                model: 'deepseek-v4.1-flash',
                 generatedAt: new Date(),
                 updatedAt: new Date(),
             },
@@ -254,7 +266,7 @@ describe('Overall page (narrative seed)', () => {
             'AAPL',
             'Apple Inc.',
             '1Day',
-            DEEPSEEK_V4_FLASH_MODEL,
+            DEEPSEEK_V4_1_FLASH_MODEL,
             false
         );
         expect(props.initialAnalysis).toEqual(cached);
@@ -276,8 +288,8 @@ describe('Overall page (narrative seed)', () => {
         expect(props.initialAnalysis).toBeUndefined();
     });
 
-    it('peek 모델 상수(DEEPSEEK_V4_FLASH_MODEL)가 SEO pre-warm 스냅샷 저장 모델과 동일 참조다 (spec §7 5축 캐시 키 정합)', async () => {
-        // harvest.ts는 이 상수를 PREWARM_MODEL_ID = DEEPSEEK_V4_FLASH_MODEL로 스냅샷
+    it('peek 모델 상수(DEEPSEEK_V4_1_FLASH_MODEL)가 SEO pre-warm 스냅샷 저장 모델과 동일 참조다 (spec §7 5축 캐시 키 정합)', async () => {
+        // harvest.ts는 이 상수를 PREWARM_MODEL_ID = DEEPSEEK_V4_1_FLASH_MODEL로 스냅샷
         // content.model에 저장한다. 이 페이지가 peek을 호출할 때 쓰는 modelId 인자가
         // core에서 import한 그 상수(mock 모듈에서도 동일 참조)임을 고정해 캐시 키 5축
         // 정합을 지킨다.
@@ -289,7 +301,7 @@ describe('Overall page (narrative seed)', () => {
             'AAPL',
             'Apple Inc.',
             '1Day',
-            DEEPSEEK_V4_FLASH_MODEL,
+            DEEPSEEK_V4_1_FLASH_MODEL,
             false
         );
     });
@@ -393,7 +405,7 @@ describe('Overall page snapshot prose placement (FIX 1 / FIX 1b)', () => {
                 symbol: 'AAPL',
                 tab: 'overall',
                 content: { headlineKo: 'valid headline' },
-                model: 'deepseek-v4-flash',
+                model: 'deepseek-v4.1-flash',
                 generatedAt: new Date(),
                 updatedAt: new Date(),
             },
@@ -417,7 +429,7 @@ describe('Overall page snapshot prose placement (FIX 1 / FIX 1b)', () => {
                 // Malformed: none of the fields narrowOverallContent recognizes
                 // are present, so hasOverallProse(content) === false.
                 content: { unrelatedField: 'nope' },
-                model: 'deepseek-v4-flash',
+                model: 'deepseek-v4.1-flash',
                 generatedAt: new Date(),
                 updatedAt: new Date(),
             },

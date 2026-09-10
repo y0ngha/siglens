@@ -21,7 +21,7 @@ export function toProviderTurns(contents: AiContents): ProviderTurn[] {
 }
 
 /**
- * apiModelId(예: 'claude-sonnet-4-6')로 ModelSpec을 역방향 조회한다.
+ * apiModelId(예: 'claude-sonnet-5')로 ModelSpec을 역방향 조회한다.
  * anthropic.ts와 openai.ts 양쪽에서 동일하게 사용하던 로컬 함수를 통합.
  *
  * `Object.values(MODEL_SPECS)`의 반환 타입은 `ModelSpec[]`으로 넓어지므로

@@ -14,7 +14,19 @@ vi.mock('@/entities/chat-message', () => ({
     buildFallbackAnalysis: () => ({ summary: 'fallback' }),
 }));
 vi.mock('@y0ngha/siglens-core', () => ({
-    DEEPSEEK_V4_FLASH_MODEL: 'deepseek-v4-flash',
+    isClaudeAdaptiveModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'adaptive',
+    isClaudeBudgetModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'budget',
+    isReasoningToggleable: () => true,
+    getModelAccess: (m: string) =>
+        m === 'claude-opus-5' || m === 'gpt-5.6-sol' ? 'byok' : 'free',
+    supportsHardOff: () => true,
+    resolveReasoningConfig: (
+        modes: { off: unknown; on: unknown; default: string },
+        r?: boolean
+    ) => ((r ?? modes.default === 'on') ? modes.on : modes.off),
+    DEEPSEEK_V4_1_FLASH_MODEL: 'deepseek-v4.1-flash',
     peekAnalysisCache: vi.fn(),
     // Task 9: @/views/symbol barrel now also exports FearGreedFactsSummary,
     // which pulls in fearGreedLabels → POC_WINDOW_DEFAULT at module scope.
@@ -120,7 +132,7 @@ import {
 } from '@/app/[locale]/[symbol]/page';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import {
-    DEEPSEEK_V4_FLASH_MODEL,
+    DEEPSEEK_V4_1_FLASH_MODEL,
     peekAnalysisCache,
 } from '@y0ngha/siglens-core';
 import { evaluateSymbolIndexability } from '@/entities/symbol-indexability';
@@ -225,7 +237,7 @@ describe('Symbol page', () => {
                     content: {
                         summary: 'AAPL은 200일선 위에서 상승 추세입니다.',
                     },
-                    model: 'deepseek-v4-flash',
+                    model: 'deepseek-v4.1-flash',
                     generatedAt: new Date(),
                     updatedAt: new Date(),
                 },
@@ -488,7 +500,7 @@ describe('Symbol page', () => {
                 'AAPL',
                 '1Day',
                 'AAPL',
-                DEEPSEEK_V4_FLASH_MODEL,
+                DEEPSEEK_V4_1_FLASH_MODEL,
                 false,
                 'free',
                 undefined,
@@ -517,8 +529,8 @@ describe('Symbol page', () => {
             });
         });
 
-        it('peek 모델 상수(DEEPSEEK_V4_FLASH_MODEL)가 SEO pre-warm 스냅샷 저장 모델과 동일 참조다 (spec §7 5축 캐시 키 정합)', async () => {
-            // harvest.ts는 이 상수를 PREWARM_MODEL_ID = DEEPSEEK_V4_FLASH_MODEL로 스냅샷
+        it('peek 모델 상수(DEEPSEEK_V4_1_FLASH_MODEL)가 SEO pre-warm 스냅샷 저장 모델과 동일 참조다 (spec §7 5축 캐시 키 정합)', async () => {
+            // harvest.ts는 이 상수를 PREWARM_MODEL_ID = DEEPSEEK_V4_1_FLASH_MODEL로 스냅샷
             // content.model에 저장한다. peek이 다른 모델 상수로 조회하면 스냅샷이 가리키는
             // 캐시 엔트리와 어긋나 5축 정합이 깨진다 — 여기선 페이지가 peek을 호출할 때 쓰는
             // modelId 인자가 core에서 import한 그 상수(mock 모듈에서도 동일 참조)임을 고정한다.
@@ -530,7 +542,7 @@ describe('Symbol page', () => {
                 'AAPL',
                 '1Day',
                 'AAPL',
-                DEEPSEEK_V4_FLASH_MODEL,
+                DEEPSEEK_V4_1_FLASH_MODEL,
                 false,
                 'free',
                 undefined,

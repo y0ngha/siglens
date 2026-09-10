@@ -14,13 +14,15 @@ import { callDeepseekChat } from '@/entities/llm-provider/api/deepseek';
 
 const FLASH_OPTIONS = {
     apiKey: 'server-key',
-    model: 'deepseek-v4-flash', // apiModelId, non-thinking
+    // apiModelId(와이어 ID)이지 레지스트리 키가 아니다 — 라우터가 변환해서 넘긴다.
+    // 레지스트리 키는 'deepseek-v4.1-flash'이고 와이어 ID는 'deepseek-flash'다.
+    model: 'deepseek-flash',
     contents: 'Hello',
 } as const;
 
 const PRO_OPTIONS = {
     ...FLASH_OPTIONS,
-    model: 'deepseek-v4-pro', // apiModelId, thinking
+    model: 'deepseek-v4-pro', // apiModelId (레지스트리 키는 'deepseek-v4.1-pro')
 } as const;
 
 // DeepSeek chat is called in STREAMING mode, so `create` resolves to an async
@@ -82,7 +84,7 @@ describe('callDeepseekChat', () => {
 
             expect(info).toHaveBeenCalledWith(
                 '[Usage]',
-                expect.stringContaining('"model":"deepseek-v4-flash"')
+                expect.stringContaining('"model":"deepseek-flash"')
             );
             const payload: unknown = JSON.parse(
                 (info.mock.calls[0]?.[1] as string) ?? '{}'
@@ -156,7 +158,7 @@ describe('callDeepseekChat', () => {
             await callDeepseekChat(FLASH_OPTIONS);
 
             const call = mockCreate.mock.calls[0][0];
-            expect(call.model).toBe('deepseek-v4-flash');
+            expect(call.model).toBe('deepseek-flash');
             expect(call.messages).toEqual([{ role: 'user', content: 'Hello' }]);
             // Streaming is mandatory (avoids DeepSeek's ~50-60s non-streaming
             // connection termination on long outputs).
@@ -224,16 +226,16 @@ describe('callDeepseekChat', () => {
             expect(call.thinking).toEqual({ type: 'disabled' });
         });
 
-        it('thinking 모델(pro)은 thinking:{type:"enabled", reasoning_effort:"high"}를 전달한다', async () => {
+        it('pro 모델도 스펙 기본 상태(OFF)를 따라 thinking:{type:"disabled"}를 전달한다', async () => {
             mockCreate.mockResolvedValue(okResponse('ok'));
 
             await callDeepseekChat(PRO_OPTIONS);
 
             const call = mockCreate.mock.calls[0][0];
-            expect(call.thinking).toEqual({
-                type: 'enabled',
-                reasoning_effort: 'high',
-            });
+            // 챗은 추론 토글이 없어 스펙의 `reasoning.default`를 따른다.
+            // deepseek-v4.1-pro는 member 등급이라 기본 OFF — 서버 키로 도는 챗이
+            // 사고 토큰을 물지 않게 하려는 의도된 동작이다.
+            expect(call.thinking).toEqual({ type: 'disabled' });
         });
     });
 
@@ -247,13 +249,14 @@ describe('callDeepseekChat', () => {
             expect(call.temperature).toBe(0);
         });
 
-        it('thinking 모델(pro)은 temperature를 전달하지 않는다', async () => {
+        it('pro 모델은 기본이 non-thinking이라 temperature를 전달한다', async () => {
             mockCreate.mockResolvedValue(okResponse('ok'));
 
             await callDeepseekChat(PRO_OPTIONS);
 
             const call = mockCreate.mock.calls[0][0];
-            expect(call).not.toHaveProperty('temperature');
+            // non-thinking 모드에서만 temperature가 적용된다.
+            expect(call.temperature).toBe(0);
         });
     });
 
@@ -272,9 +275,11 @@ describe('callDeepseekChat', () => {
             await expect(
                 callDeepseekChat({
                     ...FLASH_OPTIONS,
-                    model: 'gpt-5-mini',
+                    model: 'gpt-5.6-luna',
                 })
-            ).rejects.toThrow('[deepseek] Non-DeepSeek model spec: gpt-5-mini');
+            ).rejects.toThrow(
+                '[deepseek] Non-DeepSeek model spec: gpt-5.6-luna'
+            );
             expect(mockCreate).not.toHaveBeenCalled();
         });
     });
