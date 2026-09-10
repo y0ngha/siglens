@@ -30,20 +30,6 @@ export const dynamic = 'force-dynamic';
 const RETENTION_DAYS = 400;
 
 /**
- * 진단 컬럼(User-Agent·접속 국가·진입 경로)을 저장하기 시작하는 시각.
- *
- * 개인정보처리방침 **v3 발효일**(2026-09-19 00:00 KST = 2026-09-18 15:00 UTC)이다.
- * 이 항목들을 고지하는 문서는 v3이고, 그 전에는 v2가 "가명 식별자와 접속 일자"만
- * 저장한다고 말한다 — 코드가 먼저 배포되면 방침에 없는 항목을 수집하게 된다.
- *
- * 배포 순서에 기대지 않고 코드가 스스로 날짜를 지킨다. 그때까지는 컬럼이 null로
- * 남고, 발효 시각이 지나면 재배포 없이 저장이 시작된다.
- *
- * **바꾸면 `db/seeds/terms/privacy/v3.md`의 `effectiveDate`도 같이 바꿔야 한다.**
- */
-const DIAGNOSTIC_COLUMNS_EFFECTIVE_AT = Date.parse('2026-09-18T15:00:00Z');
-
-/**
  * 이 인스턴스가 마지막으로 정리를 돌린 KST 날짜.
  *
  * 보존 기간 집행을 위해 별도 EventBridge cron을 만들지 않는다. `DELETE`는
@@ -107,15 +93,12 @@ export async function POST(): Promise<Response> {
     try {
         const { db } = getDatabaseClient();
         repo = new DrizzleVisitorRepository(db);
-        const disclosed = Date.now() >= DIAGNOSTIC_COLUMNS_EFFECTIVE_AT;
         await repo.recordVisit({
             visitorHash,
             date: today,
-            userAgent: disclosed ? userAgentHeader : null,
-            country: disclosed ? headerList.get('cf-ipcountry') : null,
-            landingPath: disclosed
-                ? landingPathOf(headerList.get('referer'))
-                : null,
+            userAgent: userAgentHeader,
+            country: headerList.get('cf-ipcountry'),
+            landingPath: landingPathOf(headerList.get('referer')),
         });
     } catch (error) {
         // 집계 실패가 사용자 화면을 깨뜨리면 안 된다.

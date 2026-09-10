@@ -57,8 +57,8 @@ async function importRoute() {
 describe('POST /api/presence', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        // `Date.now()`를 고정한다 — 진단 컬럼 저장이 방침 발효일에 걸려 있어
-        // 실제 시각으로 돌면 발효 전후에 따라 결과가 뒤집힌다.
+        // `Date.now()`를 고정한다 — 정리 기준일 케이스가 오늘로부터 400일 전을
+        // 단언하므로 실제 시각으로 돌면 날짜가 매일 어긋난다.
         vi.useFakeTimers({ shouldAdvanceTime: true });
         getDatabaseClient.mockReturnValue({ db: {} });
         vi.stubEnv('NODE_ENV', 'production');
@@ -70,9 +70,6 @@ describe('POST /api/presence', () => {
             // same-origin fetch라 비콘이 뜬 페이지 URL이 그대로 실린다.
             referer: 'https://siglens.io/ko/AAPL?tab=chart',
         });
-        // 진단 컬럼은 개인정보처리방침 v3 발효(2026-09-19 KST) 후에만 저장된다.
-        // 대부분의 케이스가 그 이후를 전제하므로 시각을 고정한다.
-        vi.setSystemTime(new Date('2026-09-20T03:00:00.000Z'));
     });
 
     afterEach(() => {
@@ -96,49 +93,12 @@ describe('POST /api/presence', () => {
         });
     });
 
-    it('방침 v3 발효 전에는 진단 컬럼을 저장하지 않는다', async () => {
-        // 코드가 방침보다 먼저 배포돼도 고지되지 않은 항목을 수집하지 않는다.
-        vi.setSystemTime(new Date('2026-09-18T14:59:59.000Z'));
-        const { POST } = await importRoute();
-        await POST();
-
-        expect(recordVisit).toHaveBeenCalledWith(
-            expect.objectContaining({
-                userAgent: null,
-                country: null,
-                landingPath: null,
-            })
-        );
-        // 방문 자체는 종전대로 기록된다.
-        expect(recordVisit).toHaveBeenCalledWith(
-            expect.objectContaining({
-                visitorHash: `hash(test-pepper|203.0.113.10|${HUMAN_UA})`,
-            })
-        );
-    });
-
-    it('발효 시각 정각에는 진단 컬럼을 저장한다', async () => {
-        // 경계는 `>=`다. `>`로 뒤집히는 회귀는 1초 전 케이스로는 잡히지 않는다.
-        vi.setSystemTime(new Date('2026-09-18T15:00:00.000Z'));
-        const { POST } = await importRoute();
-        await POST();
-
-        expect(recordVisit).toHaveBeenCalledWith(
-            expect.objectContaining({
-                userAgent: HUMAN_UA,
-                country: 'KR',
-                landingPath: '/ko/AAPL',
-            })
-        );
-    });
-
     it('헤더가 없으면 진단 컬럼을 null로 남긴다', async () => {
         requestHeaders = new Headers({
             'user-agent': HUMAN_UA,
             'x-forwarded-for': '203.0.113.10',
         });
         const { POST } = await importRoute();
-        // 발효 후이므로 헤더가 있었다면 저장됐을 시점이다.
         await POST();
 
         expect(recordVisit).toHaveBeenCalledWith(
