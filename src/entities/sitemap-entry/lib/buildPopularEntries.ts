@@ -38,7 +38,7 @@ function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
 }
 
 /**
- * POPULAR_TICKERS의 모든 sub-route(차트/뉴스/펀더멘털/재무제표/옵션/종합/공포탐욕/의회거래)에
+ * POPULAR_TICKERS의 모든 sub-route(차트/뉴스/펀더멘털/재무제표/옵션/종합/공포탐욕/내위치/의회거래)에
  * 대한 sitemap 엔트리를 반환한다. 재무제표는 stock으로 분류된 티커만(ETF는 재무제표가
  * 없어 noindex), 옵션 페이지는 generated static list에 포함된 미국 티커만 포함 —
  * noindex인 종목 페이지를 sitemap에 두면 품질 신호가 약해진다.
@@ -144,6 +144,22 @@ export function buildPopularEntries(now: Date): SitemapEntry[] {
                     lastModified: todayClose,
                     changeFrequency: 'daily',
                     priority: 0.78,
+                },
+                // `/position`은 세 market profile(US·KR·crypto) 전부가 `tabs`에 갖고 있어
+                // 탭 가드가 필요 없다. 페이지는 `index, follow` + self-canonical로 나가는데
+                // sitemap에만 빠져 있었다(2026-09 실측: popular sitemap 3,031 URL 중
+                // position 0건). SSR 고유 콘텐츠는 52주 범위 밴드 + 마지막 종가 해설이라
+                // 종가와 함께 하루 단위로 변한다 — lastmod는 다른 세션 기반 탭과 같은
+                // `todayClose`, priority는 ★평단 입력 전까지 표층이 얇으므로 가장 낮게 둔다.
+                //
+                // ⚠️ 본문의 `resolvePriceRange`가 null이면 그 페이지는 noindex로 나간다
+                // (thin 가드). POPULAR_TICKERS는 bars가 실측으로 채워지는 종목이라 정상
+                // 경로에서는 발생하지 않고, 데이터 공급자 장애 시 일시적으로만 어긋난다.
+                {
+                    url: `${SITE_URL}/${ticker}/position`,
+                    lastModified: todayClose,
+                    changeFrequency: 'daily',
+                    priority: 0.7,
                 },
                 // 국내 상장 종목은 공직자 매매 공시 제도가 없어 `/congress`가 not-found
                 // UI + noindex로 나간다(`KR_EQUITY_DESCRIPTOR.tabs`에서 제외). 상태 코드는

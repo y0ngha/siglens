@@ -51,9 +51,12 @@ function quantizeTo6hBoundary(now: Date): Date {
  *     (actual cadence is 24h; lastmod baseline under-claims by 4×, which is conservative).
  *   - overall (`revalidate=43200`, 12h) → `changeFrequency: 'weekly'`, 6h-boundary lastmod
  *     (AI analysis cache is slow-moving; weekly matches the stock overall convention).
+ *   - position (`revalidate=43200`, 12h) → `changeFrequency: 'daily'`, 6h-boundary lastmod
+ *     (the SSR surface is the 52-week band + last close, which moves with the daily close).
  *
- * Only the crypto-applicable tabs are advertised (chart/news/fear-greed/overall) —
- * fundamental/financials/options/congress are not rendered for crypto.
+ * Only the crypto-applicable tabs are advertised (chart/news/fear-greed/overall/position,
+ * matching `CRYPTO_DESCRIPTOR.tabs`) — fundamental/financials/options/congress are not
+ * rendered for crypto.
  */
 /**
  * 종목 sitemap 엔트리에 다국어 대체본을 붙인다.
@@ -106,6 +109,12 @@ export function buildCryptoPopularEntries(now: Date): SitemapEntry[] {
                 lastModified: boundary6h,
                 changeFrequency: 'weekly',
                 priority: 0.82,
+            },
+            {
+                url: `${SITE_URL}/${sym}/position`,
+                lastModified: boundary6h,
+                changeFrequency: 'daily',
+                priority: 0.7,
             },
         ])
     );

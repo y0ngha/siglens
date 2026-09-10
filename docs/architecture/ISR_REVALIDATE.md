@@ -39,6 +39,7 @@ ISR `revalidate`는 **"크롤러가 보는 SSR HTML을 이만큼 묵혀도 되�
 | `/[symbol]/news` | **43200 (12h)** | 신선도는 on-demand 무효화(§3)가 보장 — 시간 기반은 상한선일 뿐 |
 | `/[symbol]/fear-greed` | **86400 (24h)** | SSR은 정적 가이드뿐(점수는 클라가 bars로 계산) |
 | `/[symbol]/options` | **43200 (12h)** | SSR은 만기일뿐(Max Pain/IV/OI는 클라) |
+| `/[symbol]/position` | **43200 (12h)** | SSR은 52주 범위 밴드 + 마지막 종가뿐(★평단·수익률은 클라 hydration + user 게이트) — overall과 동일 상한 |
 | `/market` | **3600 (1h)** | **단일 페이지**라 재생성 비용이 작고, 장중 섹터 신호 신선도를 위해 짧게 유지 |
 | `/fear-greed` (시장 공포·탐욕) | **3600 (1h)** | **단일 페이지**라 재생성 비용이 작다. 입력이 EOD 종가라 값은 하루 1회만 바뀌지만, 그 새 종가는 장마감 **뒤**에 도착하므로 긴 revalidate는 "당일 종가를 하루 늦게 보여주는" 지연이 된다. ⚠️ 이 페이지는 **클라 refetch가 없다**(전부 서버 컴포넌트)라 §1 전제("사용자 신선도=클라 refetch")가 적용되지 않는다 — 엣지가 들고 있는 것이 곧 모든 사용자가 보는 것이다. Redis 1h + ISR 1h + CF 엣지 2h(CDN_CACHING.md의 blanket Edge TTL) = 최대 ~4h 지연 |
 | `/[symbol]/{og,twitter}-image` | 2592000 (30d) | (ticker, label) 순수 함수 — 템플릿 변경은 배포가 무효화 |
