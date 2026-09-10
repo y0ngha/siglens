@@ -46,6 +46,8 @@ import {
     resolveGeneratedAt,
     type AnalysisHistoryTab,
 } from '@/entities/analysis/analysisHistoryRepository';
+import { marketEventsLookback } from '@/entities/news-article/marketEventsLookback';
+import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 
 /**
@@ -152,9 +154,21 @@ export async function prewarmTechnical(
     // DIFFERENT cache key than the non-bot SSE path for the same
     // (symbol, timeframe, tab), defeating the entire point of prewarming
     // that cache entry for a real visitor to hit.
-    const priorAnalyses = await new DrizzleAnalysisHistoryRepository(
-        getDatabaseClient().db
-    ).findRecentForPrompt({ symbol, timeframe, tab: 'technical' });
+    // 스트림 경로와 **같은** lookback을 써야 한다 — 창이 갈리면 두 경로가
+    // 서로 다른 이벤트 집합을 core에 넘기고, core가 그것을 캐시 키에 접으므로
+    // pre-warm이 채운 캐시를 방문자가 맞히지 못한다.
+    const prewarmDb = getDatabaseClient().db;
+    const [priorAnalyses, marketEvents] = await Promise.all([
+        new DrizzleAnalysisHistoryRepository(prewarmDb).findRecentForPrompt({
+            symbol,
+            timeframe,
+            tab: 'technical',
+        }),
+        findMarketEventsForPrompt(prewarmDb, {
+            symbol,
+            ...marketEventsLookback(timeframe),
+        }),
+    ]);
 
     // core의 `onPromptAssembled`는 캐시 미스에서 정확히 한 번, 프로바이더
     // 호출 직전에 **동기로** 캡처만 한다(SSE 경로와 동일 계약 —
@@ -179,6 +193,7 @@ export async function prewarmTechnical(
             reasoning: false,
             positionBucket: undefined,
             priorAnalyses,
+            marketEvents,
             onPromptAssembled: record => {
                 capturedPrompt = record;
             },

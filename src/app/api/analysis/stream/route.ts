@@ -48,6 +48,8 @@ import {
     resolveGeneratedAt,
     type AnalysisHistoryTab,
 } from '@/entities/analysis/analysisHistoryRepository';
+import { marketEventsLookback } from '@/entities/news-article/marketEventsLookback';
+import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
 // core에서 직접 import — 해제는 서버 전용이어야 한다(클라이언트가 호출할 수 있으면
 // 쿨다운을 지우고 재요청하는 루프로 무력화된다). 아래 `releaseOnFailure` 참고.
 import { releaseReanalyzeCooldown } from '@y0ngha/siglens-core';
@@ -1147,15 +1149,25 @@ export async function POST(request: Request): Promise<Response> {
                 // `await` below only ever suspends *this* closure,
                 // which already only exists because the cap check
                 // passed.
-                const priorAnalyses = skipEnqueueIfMiss
-                    ? undefined
-                    : await new DrizzleAnalysisHistoryRepository(
-                          getDatabaseClient().db
-                      ).findRecentForPrompt({
-                          symbol,
-                          timeframe,
-                          tab: 'technical',
-                      });
+                // 이력과 이벤트를 한 번에 읽는다 — 서로 독립이라 왕복을
+                // 겹치는 편이 낫다. 봇 요청은 생성을 트리거하지 않으므로
+                // 둘 다 건너뛴다.
+                const technicalDb = getDatabaseClient().db;
+                const [priorAnalyses, marketEvents] = skipEnqueueIfMiss
+                    ? [undefined, undefined]
+                    : await Promise.all([
+                          new DrizzleAnalysisHistoryRepository(
+                              technicalDb
+                          ).findRecentForPrompt({
+                              symbol,
+                              timeframe,
+                              tab: 'technical',
+                          }),
+                          findMarketEventsForPrompt(technicalDb, {
+                              symbol,
+                              ...marketEventsLookback(timeframe),
+                          }),
+                      ]);
 
                 return runAnalysis(
                     symbol,
@@ -1166,6 +1178,7 @@ export async function POST(request: Request): Promise<Response> {
                     {
                         ...options,
                         priorAnalyses,
+                        marketEvents,
                         /*
                          * **`locale`을 core에 그대로 넘긴다.** 나머지 일곱
                          * 축이 이미 이렇게 배선돼 있다 — core가 대상 언어로
