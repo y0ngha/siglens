@@ -83,6 +83,7 @@ const {
     mockFindByUserAndSymbol,
     mockGetQuote,
     mockFindRecentForPrompt,
+    mockFindMarketEventsForPrompt,
     mockSaveAnalysisHistory,
     mockAfter,
 } = vi.hoisted(() => ({
@@ -91,6 +92,7 @@ const {
     // Task S3 (prior-analysis-context) — findRecentForPrompt 호출 인자 및
     // core로의 전달을 단언하기 위해 호이스팅한다.
     mockFindRecentForPrompt: vi.fn(),
+    mockFindMarketEventsForPrompt: vi.fn(),
     // Audit finding #3 — write-path coverage. `saveAnalysisHistory` and the
     // `after()` callback it runs inside are both hoisted so individual
     // tests can capture the callback `after()` was scheduled with and
@@ -128,6 +130,10 @@ vi.mock('@/entities/portfolio/api', () => ({
     DrizzlePortfolioRepository: vi.fn().mockImplementation(function () {
         return { findByUserAndSymbol: mockFindByUserAndSymbol };
     }),
+}));
+
+vi.mock('@/entities/news-article/marketEventsRepository', () => ({
+    findMarketEventsForPrompt: mockFindMarketEventsForPrompt,
 }));
 
 vi.mock('@/entities/analysis/analysisHistoryRepository', async () => {
@@ -1691,6 +1697,45 @@ describe('POST /api/analysis/stream', () => {
                 unknown
             >;
             expect(opts?.priorAnalyses).toBe(history);
+        });
+
+        it('technical, 봇 아님 → 뉴스 이벤트가 runAnalysis.marketEvents로 전달된다', async () => {
+            vi.mocked(isBot).mockReturnValue(false);
+            const events = [
+                {
+                    publishedAt: new Date('2026-08-01T14:30:00Z'),
+                    category: 'earnings',
+                    sentiment: 'bullish',
+                    impact: 'high',
+                },
+            ];
+            mockFindMarketEventsForPrompt.mockResolvedValue(events);
+
+            await collectSseEvents(await POST(makeRequest()));
+
+            const [, query] = mockFindMarketEventsForPrompt.mock.calls[0] ?? [];
+            expect(query).toEqual(expect.objectContaining({ symbol: 'AAPL' }));
+            // 조회 창은 벽시계 근사값이고 정확한 절단은 core가 한다.
+            expect(query.from.getTime()).toBeLessThan(query.to.getTime());
+
+            const opts = vi.mocked(runAnalysis).mock.calls[0]?.[5] as Record<
+                string,
+                unknown
+            >;
+            expect(opts?.marketEvents).toBe(events);
+        });
+
+        it('technical, 봇 → 뉴스 이벤트도 조회하지 않고 marketEvents는 undefined다', async () => {
+            vi.mocked(isBot).mockReturnValue(true);
+
+            await collectSseEvents(await POST(makeRequest()));
+
+            expect(mockFindMarketEventsForPrompt).not.toHaveBeenCalled();
+            const opts = vi.mocked(runAnalysis).mock.calls[0]?.[5] as Record<
+                string,
+                unknown
+            >;
+            expect(opts?.marketEvents).toBeUndefined();
         });
 
         it('technical, 봇 → findRecentForPrompt를 호출하지 않고 priorAnalyses는 undefined다', async () => {
