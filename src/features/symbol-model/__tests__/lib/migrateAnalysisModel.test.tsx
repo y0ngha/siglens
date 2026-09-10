@@ -4,8 +4,10 @@ import {
     LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY,
 } from '@/shared/lib/storageKeys';
 
+// 마이그레이션이 겨냥하는 값은 **과거에 저장됐던** ID다. 현재 레지스트리에
+// 없는 문자열이라 절대 최신 모델로 바꾸면 안 된다.
 const OLD_DEFAULT = 'gemini-2.5-flash-lite';
-const NEW_DEFAULT = 'deepseek-v4-flash';
+const NEW_DEFAULT = 'deepseek-v4.1-flash';
 
 function readStored(): string | null {
     return localStorage.getItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY);
@@ -47,7 +49,7 @@ describe('migrateLegacyAnalysisModel', () => {
         expect(readStored()).toBe(OLD_DEFAULT);
     });
 
-    it('leaves the new default (deepseek-v4-flash) unchanged and sets the flag', () => {
+    it('leaves the new default (deepseek-v4.1-flash) unchanged and sets the flag', () => {
         localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, NEW_DEFAULT);
 
         migrateLegacyAnalysisModel();
@@ -56,12 +58,12 @@ describe('migrateLegacyAnalysisModel', () => {
         expect(isFlagSet()).toBe(true);
     });
 
-    it('leaves an unrelated stored model (gpt-5-mini) unchanged and sets the flag', () => {
-        localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, 'gpt-5-mini');
+    it('leaves an unrelated stored model (gpt-5.6-luna) unchanged and sets the flag', () => {
+        localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, 'gpt-5.6-luna');
 
         migrateLegacyAnalysisModel();
 
-        expect(readStored()).toBe('gpt-5-mini');
+        expect(readStored()).toBe('gpt-5.6-luna');
         expect(isFlagSet()).toBe(true);
     });
 

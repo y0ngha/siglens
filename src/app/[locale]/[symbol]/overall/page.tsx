@@ -45,7 +45,7 @@ import {
     type MarketProfileId,
 } from '@/shared/config/marketProfile';
 import {
-    DEEPSEEK_V4_FLASH_MODEL,
+    DEEPSEEK_V4_1_FLASH_MODEL,
     peekOverallAnalysisCache,
 } from '@y0ngha/siglens-core';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
@@ -248,14 +248,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 공짜는 아니다.
     if (!hasOverallProse(snap?.content)) {
         const cachedOverall = await staticSymbolCache(
-            ['peek:overall', upper, DEEPSEEK_V4_FLASH_MODEL],
+            ['peek:overall', upper, DEEPSEEK_V4_1_FLASH_MODEL],
             upper,
             () =>
                 peekOverallAnalysisCache(
                     upper,
                     assetInfo.name,
                     DEFAULT_TIMEFRAME,
-                    DEEPSEEK_V4_FLASH_MODEL,
+                    DEEPSEEK_V4_1_FLASH_MODEL,
                     false
                 ),
             [],
@@ -329,7 +329,7 @@ export default async function OverallPage({ params }: Props) {
     //
     // modelId: chart 페이지와 동일하게 익명/SSR 기본 방문자가 캐시를 쓰는 키와
     // 정렬한다. OverallContent → useDefaultModelId → SymbolModelContext의 DEFAULT_MODEL
-    // (DEEPSEEK_V4_FLASH_MODEL)이 submitOverallAnalysisAction에 그대로 전달되므로
+    // (DEEPSEEK_V4_1_FLASH_MODEL)이 submitOverallAnalysisAction에 그대로 전달되므로
     // writer는 DeepSeek flash 모델 키로 캐시한다. peek도 동일 모델을 넘겨야 HIT한다.
     //
     // 시그니처가 chart의 peekAnalysisCache(symbol, timeframe, fmpSymbol?, modelId?)와
@@ -362,7 +362,7 @@ export default async function OverallPage({ params }: Props) {
             return [] as Awaited<ReturnType<typeof getNewsList>>;
         }),
         staticSymbolCache(
-            ['peek:overall', upper, DEEPSEEK_V4_FLASH_MODEL],
+            ['peek:overall', upper, DEEPSEEK_V4_1_FLASH_MODEL],
             upper,
             // reasoning: false 고정 — member-reasoning-toggle spec Part A.4. 이 SSR
             // peek은 익명/봇 방문자 셸이므로 writer(익명·free의 runOverallAnalysisAction)가
@@ -373,7 +373,7 @@ export default async function OverallPage({ params }: Props) {
                     upper,
                     assetInfo.name,
                     DEFAULT_TIMEFRAME,
-                    DEEPSEEK_V4_FLASH_MODEL,
+                    DEEPSEEK_V4_1_FLASH_MODEL,
                     false
                 ),
             [],

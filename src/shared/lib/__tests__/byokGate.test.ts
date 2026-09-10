@@ -45,8 +45,8 @@ import {
 } from '../byokGate';
 import type { ModelId } from '@y0ngha/siglens-core';
 
-const FREE_MODEL = 'gemini-2.5-flash' as ModelId;
-const PREMIUM_MODEL = 'claude-opus-4-7' as ModelId;
+const FREE_MODEL = 'gemini-3.6-flash' as ModelId;
+const PREMIUM_MODEL = 'claude-opus-5' as ModelId;
 const UNKNOWN_MODEL = 'totally-not-a-model' as ModelId;
 
 describe('resolveTierAndByok', () => {
@@ -245,11 +245,11 @@ describe('resolvePositionBucket', () => {
 
 describe('isKnownModelId', () => {
     it('returns true for a known free model', () => {
-        expect(isKnownModelId('gemini-2.5-flash')).toBe(true);
+        expect(isKnownModelId('gemini-3.6-flash')).toBe(true);
     });
 
     it('returns true for a known premium model', () => {
-        expect(isKnownModelId('claude-opus-4-7')).toBe(true);
+        expect(isKnownModelId('claude-opus-5')).toBe(true);
     });
 
     it('returns false for an unknown model', () => {

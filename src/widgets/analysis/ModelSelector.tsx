@@ -4,7 +4,8 @@ import { useTranslations } from 'next-intl';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
 import { getModelDisplay } from '@/shared/lib/modelDisplay';
-import { isFreeModel, type ModelId } from '@y0ngha/siglens-core';
+import { type ModelId } from '@y0ngha/siglens-core';
+import { ModelAccessBadge } from '@/shared/ui/ModelAccessBadge';
 import { useRef } from 'react';
 
 interface ModelSelectorProps {
@@ -190,11 +191,7 @@ export function ModelSelector({
                                                     {display.fullName}
                                                 </div>
                                             </div>
-                                            {!isFreeModel(modelId) && (
-                                                <span className="text-[9px] leading-none font-semibold text-ui-warning-text uppercase">
-                                                    PRO
-                                                </span>
-                                            )}
+                                            <ModelAccessBadge model={modelId} />
                                         </div>
                                     </div>
                                 );

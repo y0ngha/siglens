@@ -37,7 +37,7 @@ function makeWrapper() {
 }
 
 function hookArgs() {
-    return ['AAPL', 'Apple Inc.', '1Day', 'gemini-2.5-flash-lite'] as const;
+    return ['AAPL', 'Apple Inc.', '1Day', 'gemini-3.5-flash-lite'] as const;
 }
 
 describe('useOverallAnalysis', () => {

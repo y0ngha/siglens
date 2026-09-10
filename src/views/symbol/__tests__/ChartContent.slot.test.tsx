@@ -59,7 +59,7 @@ vi.mock('../hooks/useActionPricesVisibility', () => ({
 }));
 vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: () => ({
-        modelId: 'gemini-2.5-flash',
+        modelId: 'gemini-3.6-flash',
         isHydrated: true,
         reasoning: false,
         isReasoningHydrated: true,

@@ -46,7 +46,7 @@ function makeWrapper() {
 }
 
 function hookArgs() {
-    return ['AAPL', 'Apple Inc.', '1Day', 'gemini-2.5-flash-lite'] as const;
+    return ['AAPL', 'Apple Inc.', '1Day', 'gemini-3.5-flash-lite'] as const;
 }
 
 describe('useOverallAnalysis — branch coverage', () => {
@@ -92,7 +92,7 @@ describe('useOverallAnalysis — branch coverage', () => {
                 wrapper,
                 // tier 미확정: DEFAULT 모델 + 게이트 닫힘
                 initialProps: {
-                    modelId: 'deepseek-v4-flash',
+                    modelId: 'deepseek-v4.1-flash',
                     settingsHydrated: false,
                 },
             }

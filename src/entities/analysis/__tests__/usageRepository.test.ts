@@ -8,7 +8,7 @@ const usageLogRecord = {
     userId: 'user-1',
     ipHash: hashUsageIp('203.0.113.10', new Date('2026-04-28T12:00:00.000Z')),
     actionType: 'analysis',
-    modelUsed: 'gemini-2.5-flash',
+    modelUsed: 'gemini-3.6-flash',
     date: '2026-04-28',
     createdAt: new Date('2026-04-28T12:00:01.000Z'),
 };
@@ -67,7 +67,7 @@ describe('DrizzleUsageRepository', () => {
             userId: 'user-1',
             ipAddress: '203.0.113.10',
             actionType: 'analysis',
-            modelUsed: 'gemini-2.5-flash',
+            modelUsed: 'gemini-3.6-flash',
             occurredAt: new Date('2026-04-28T12:00:00.000Z'),
         });
 
@@ -76,7 +76,7 @@ describe('DrizzleUsageRepository', () => {
             userId: 'user-1',
             ipHash: usageLogRecord.ipHash,
             actionType: 'analysis',
-            modelUsed: 'gemini-2.5-flash',
+            modelUsed: 'gemini-3.6-flash',
             date: '2026-04-28',
         });
         expect(values).not.toHaveBeenCalledWith(
@@ -98,7 +98,7 @@ describe('DrizzleUsageRepository', () => {
         const result = await repository.recordUsage({
             ipAddress: '203.0.113.10',
             actionType: 'chatbot',
-            modelUsed: 'gemini-2.5-flash-lite',
+            modelUsed: 'gemini-3.5-flash-lite',
             occurredAt: new Date('2026-04-28T12:00:00.000Z'),
         });
 
@@ -126,7 +126,7 @@ describe('DrizzleUsageRepository', () => {
             userId: null,
             ipAddress: '203.0.113.10',
             actionType: 'analysis',
-            modelUsed: 'gemini-2.5-flash',
+            modelUsed: 'gemini-3.6-flash',
         });
 
         expect(values).toHaveBeenCalledWith(

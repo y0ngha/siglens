@@ -58,7 +58,7 @@ const DEFAULT_PROPS = {
     symbol: 'AAPL',
     companyName: 'Apple Inc.',
     expirationDate: '2025-06-20' as const,
-    modelId: 'gemini-2.5-flash-lite' as const,
+    modelId: 'gemini-3.5-flash-lite' as const,
 };
 
 describe('useOptionsAnalysis — branch coverage', () => {

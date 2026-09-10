@@ -156,6 +156,18 @@ vi.mock('@/widgets/chart/utils/overlayLabelUtils', () => ({
 }));
 
 vi.mock('@y0ngha/siglens-core', () => ({
+    isClaudeAdaptiveModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'adaptive',
+    isClaudeBudgetModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'budget',
+    isReasoningToggleable: () => true,
+    getModelAccess: (m: string) =>
+        m === 'claude-opus-5' || m === 'gpt-5.6-sol' ? 'byok' : 'free',
+    supportsHardOff: () => true,
+    resolveReasoningConfig: (
+        modes: { off: unknown; on: unknown; default: string },
+        r?: boolean
+    ) => ((r ?? modes.default === 'on') ? modes.on : modes.off),
     EMPTY_INDICATOR_RESULT: { ma: {}, ema: {} },
     MA_DEFAULT_PERIODS: [5, 10, 20, 50, 100, 200],
     EMA_DEFAULT_PERIODS: [9, 12, 21, 26, 50, 200],

@@ -145,7 +145,7 @@ describe('useAnalysis — branch coverage', () => {
                 status: 'key_error',
                 code: 'user_api_key_required',
                 error: 'API key invalid',
-                modelId: 'gemini-2.5-flash',
+                modelId: 'gemini-3.6-flash',
                 tier: 'free',
             });
 
@@ -482,7 +482,7 @@ describe('useAnalysis — branch coverage', () => {
                 {
                     wrapper: makeWrapper(),
                     initialProps: {
-                        modelId: 'gemini-2.5-flash-lite',
+                        modelId: 'gemini-3.5-flash-lite',
                         isModelHydrated: false,
                     },
                 }
@@ -492,7 +492,7 @@ describe('useAnalysis — branch coverage', () => {
 
             // Hydration complete — syncs model but doesn't trigger reanalysis
             rerender({
-                modelId: 'gemini-2.5-flash',
+                modelId: 'gemini-3.6-flash',
                 isModelHydrated: true,
             });
 
@@ -523,7 +523,7 @@ describe('useAnalysis — branch coverage', () => {
                 {
                     wrapper: makeWrapper(),
                     initialProps: {
-                        modelId: 'gemini-2.5-flash-lite',
+                        modelId: 'gemini-3.5-flash-lite',
                         isModelHydrated: true,
                     },
                 }
@@ -531,7 +531,7 @@ describe('useAnalysis — branch coverage', () => {
 
             // Change model after hydration
             rerender({
-                modelId: 'gemini-2.5-flash',
+                modelId: 'gemini-3.6-flash',
                 isModelHydrated: true,
             });
 

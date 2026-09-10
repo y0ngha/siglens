@@ -12,7 +12,7 @@ import type {
     LlmProvider,
 } from '@y0ngha/siglens-core';
 import {
-    DEEPSEEK_V4_FLASH_MODEL,
+    DEEPSEEK_V4_1_FLASH_MODEL,
     getProviderForModel,
     requestChatCompletion,
 } from '@y0ngha/siglens-core';
@@ -140,7 +140,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '지금 사도 돼?',
-                'gemini-2.5-flash'
+                'gemini-3.6-flash'
             );
 
             expect(result).toBe(SUCCESS_RESULT);
@@ -148,7 +148,7 @@ describe('chatAction 함수는', () => {
                 expect.objectContaining({
                     serverApiKey: 'gemini-server-key',
                     userApiKey: undefined,
-                    model: 'gemini-2.5-flash',
+                    model: 'gemini-3.6-flash',
                 }),
                 { callAiProvider: callAiProviderRouter }
             );
@@ -193,14 +193,14 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'gpt-5-mini'
+                'gpt-5.6-luna'
             );
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
                     serverApiKey: 'oai-key',
                     userApiKey: undefined,
-                    model: 'gpt-5-mini',
+                    model: 'gpt-5.6-luna',
                 }),
                 { callAiProvider: callAiProviderRouter }
             );
@@ -219,14 +219,14 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'deepseek-v4-flash'
+                'deepseek-v4.1-flash'
             );
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
                     serverApiKey: 'deepseek-key',
                     userApiKey: undefined,
-                    model: 'deepseek-v4-flash',
+                    model: 'deepseek-v4.1-flash',
                 }),
                 { callAiProvider: callAiProviderRouter }
             );
@@ -244,7 +244,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'gemini-2.5-flash'
+                'gemini-3.6-flash'
             );
 
             expect(result).toEqual({ ok: false, error: 'server_error' });
@@ -274,7 +274,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'gpt-5-mini'
+                'gpt-5.6-luna'
             );
 
             expect(result).toEqual({ ok: false, error: 'server_error' });
@@ -289,7 +289,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'deepseek-v4-flash'
+                'deepseek-v4.1-flash'
             );
 
             expect(result).toEqual({ ok: false, error: 'server_error' });
@@ -313,7 +313,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'claude-opus-4-7'
+                'claude-opus-5'
             );
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
@@ -350,7 +350,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'claude-opus-4-7'
+                'claude-opus-5'
             );
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
@@ -391,7 +391,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'claude-opus-4-7'
+                'claude-opus-5'
             );
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
@@ -435,7 +435,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'claude-opus-4-7'
+                'claude-opus-5'
             );
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
@@ -463,7 +463,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'gemini-2.5-flash'
+                'gemini-3.6-flash'
             );
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
@@ -486,7 +486,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'gemini-2.5-flash'
+                'gemini-3.6-flash'
             );
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
@@ -505,7 +505,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'gemini-2.5-flash'
+                'gemini-3.6-flash'
             );
 
             expect(result).toEqual({ ok: false, error: 'server_error' });
@@ -525,7 +525,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'gemini-2.5-flash'
+                'gemini-3.6-flash'
             );
 
             expect(result).toEqual({ ok: false, error: 'server_error' });
@@ -533,7 +533,7 @@ describe('chatAction 함수는', () => {
     });
 
     describe('기본 모델', () => {
-        it('model을 생략하면 DEEPSEEK_V4_FLASH_MODEL을 core에 전달한다', async () => {
+        it('model을 생략하면 DEEPSEEK_V4_1_FLASH_MODEL을 core에 전달한다', async () => {
             process.env.DEEPSEEK_CHAT_API_KEY = 'deepseek-server-key';
 
             await chatAction(
@@ -547,7 +547,7 @@ describe('chatAction 함수는', () => {
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    model: DEEPSEEK_V4_FLASH_MODEL,
+                    model: DEEPSEEK_V4_1_FLASH_MODEL,
                 }),
                 expect.objectContaining({
                     callAiProvider: callAiProviderRouter,
@@ -565,7 +565,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'gemini-2.5-flash'
+                'gemini-3.6-flash'
             );
 
             const params = mockRequestChatCompletion.mock.calls[0]![0];
@@ -580,7 +580,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'gemini-2.5-flash',
+                'gemini-3.6-flash',
                 null
             );
 
@@ -601,7 +601,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'gemini-2.5-flash',
+                'gemini-3.6-flash',
                 ctx
             );
 
@@ -630,7 +630,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'gemini-2.5-flash',
+                'gemini-3.6-flash',
                 ctx
             );
 
@@ -654,7 +654,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'gemini-2.5-flash'
+                'gemini-3.6-flash'
             );
             expect(result).toEqual({ ok: false, error: 'server_error' });
         });
@@ -669,7 +669,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'gemini-2.5-flash'
+                'gemini-3.6-flash'
             );
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
@@ -686,7 +686,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'gemini-2.5-flash',
+                'gemini-3.6-flash',
                 null,
                 'crypto'
             );

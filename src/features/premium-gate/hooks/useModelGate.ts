@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import {
     getProviderForModel,
-    isFreeModel,
     type ModelId,
     type LlmProvider,
 } from '@y0ngha/siglens-core';
@@ -17,6 +16,7 @@ import {
     REGISTERED_PROVIDERS_STALE_TIME_MS,
 } from '@/shared/config/queryConfig';
 import { useHydrated } from '@/shared/hooks/useHydrated';
+import { resolveGateAccess } from '@/shared/lib/modelAccess';
 
 export interface ModelGateState {
     mode: GateMode;
@@ -35,11 +35,12 @@ interface UseModelGateReturn {
     dismissGate: () => void;
     /**
      * Wraps the model change with gate checks. Mirrors the server-side
-     * resolveUserContext logic in chatAction.ts:
-     * - free models always pass
-     * - premium models require auth (auth gate)
-     * - pro tier bypasses BYOK requirement (server covers cost)
-     * - non-pro tier requires a registered provider key (byok gate)
+     * `resolveTierAndByok` in `shared/lib/byokGate.ts`:
+     * - free models always pass, anonymous included
+     * - member and byok models both require auth (auth gate)
+     * - member models then pass on the server key — no BYOK key needed
+     * - byok models additionally require a registered provider key, unless the
+     *   caller is pro tier (server covers the cost)
      */
     handleModelChange: (model: ModelId) => void;
     /**
@@ -71,21 +72,26 @@ export function useModelGate({
     });
 
     const handleModelChange = (model: ModelId): void => {
-        if (!isFreeModel(model)) {
+        // 알 수 없는 ID는 가장 제한적인 등급으로 접는다 — throw하면 핸들러가
+        // 죽어 모델 선택 자체가 먹통이 된다. `resolveGateAccess` JSDoc 참고.
+        const access = resolveGateAccess(model);
+        if (access !== 'free') {
             const requiredProvider = getProviderForModel(model);
             if (!currentUser) {
                 setGateModal({ mode: 'auth', provider: requiredProvider });
                 return;
             }
-            if (currentUser.tier === 'pro') {
-                onAllow(model);
-                return;
-            }
-            if (
-                !registeredProviders.some(p => p.provider === requiredProvider)
-            ) {
-                setGateModal({ mode: 'byok', provider: requiredProvider });
-                return;
+            // member 모델은 로그인만으로 열린다 — 서버 키가 요금을 낸다.
+            // byok 게이트는 byok 등급에만 적용한다.
+            if (access === 'byok' && currentUser.tier !== 'pro') {
+                if (
+                    !registeredProviders.some(
+                        p => p.provider === requiredProvider
+                    )
+                ) {
+                    setGateModal({ mode: 'byok', provider: requiredProvider });
+                    return;
+                }
             }
         }
         onAllow(model);

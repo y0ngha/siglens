@@ -1,4 +1,8 @@
-import { getAllowedModels, type ModelId } from '@y0ngha/siglens-core';
+import {
+    getAllowedModels,
+    MODEL_SPECS,
+    type ModelId,
+} from '@y0ngha/siglens-core';
 import { MODEL_DISPLAY_MAP, getModelDisplay } from '@/shared/lib/modelDisplay';
 
 describe('MODEL_DISPLAY_MAP', () => {
@@ -62,24 +66,36 @@ describe('MODEL_DISPLAY_MAP', () => {
         });
     });
 
-    // 세대가 둘 이상인 패밀리의 구세대 라벨이 무버전으로 남으면 접힌 트리거에서
-    // "최신"으로 오독된다 (예: "Opus"가 4.7인데 Opus 5가 나온 뒤에도 최신처럼 보임).
-    it('versions the older generation labels that now share a family', () => {
-        expect(getModelDisplay('claude-opus-4-7').label).toBe('Opus 4.7');
-        expect(getModelDisplay('claude-sonnet-4-6').label).toBe('Sonnet 4.6');
-        expect(getModelDisplay('gemini-2.5-flash').label).toBe('Flash 2.5');
-        expect(getModelDisplay('gemini-2.5-flash-lite').label).toBe(
-            'Flash Lite 2.5'
+    // 세대가 둘 이상인 패밀리는 라벨에 세대를 포함해야 한다 — 접힌 트리거에서
+    // 라벨만 단독 노출되므로, 무버전 라벨은 새 세대가 나온 뒤 "최신"으로 오독된다.
+    it('versions every label in a family that has more than one generation', () => {
+        // Claude Opus: 4.8과 5가 공존한다.
+        expect(getModelDisplay('claude-opus-4-8').label).toBe('Opus 4.8');
+        expect(getModelDisplay('claude-opus-5').label).toBe('Opus 5');
+        // Gemini Flash: 3.6/3.7/3.8이 공존한다.
+        expect(getModelDisplay('gemini-3.6-flash').label).toBe('Flash 3.6');
+        expect(getModelDisplay('gemini-3.7-flash').label).toBe('Flash 3.7');
+        expect(getModelDisplay('gemini-3.8-flash').label).toBe('Flash 3.8');
+        // Flash Lite는 Flash와 다른 라인이므로 라인명도 함께 남긴다.
+        expect(getModelDisplay('gemini-3.5-flash-lite').label).toBe(
+            'Flash Lite 3.5'
         );
-        expect(getModelDisplay('gemini-2.5-pro').label).toBe('Pro 2.5');
     });
 
-    it('falls back to the raw id for an unmapped model', () => {
-        // 배포된 적 있는 deprecated alias — MODEL_DISPLAY_MAP에 없다.
-        const legacy: ModelId = 'claude-sonnet-4';
-        expect(getModelDisplay(legacy)).toEqual({
-            label: legacy,
-            fullName: legacy,
+    it('covers every registered model so no id falls back to its raw string', () => {
+        // 폴백은 저장된 옛 값을 위한 안전망이지, 현재 모델의 표시 경로가 아니다.
+        for (const model of Object.keys(MODEL_SPECS) as ModelId[]) {
+            expect(getModelDisplay(model).label, model).not.toBe(model);
+        }
+    });
+
+    it('falls back to the raw id for an id that is no longer registered', () => {
+        // 레지스트리에서 제거된 모델이 localStorage나 분석 이력에 남아 있을 수
+        // 있다. 표시 경로가 그 값에 대해 죽지 않고 원문을 그대로 보여줘야 한다.
+        const removed = 'gpt-5.4' as ModelId;
+        expect(getModelDisplay(removed)).toEqual({
+            label: removed,
+            fullName: removed,
         });
     });
 });

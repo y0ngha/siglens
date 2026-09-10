@@ -48,7 +48,7 @@ function makeWrapper() {
 }
 
 function Probe() {
-    useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite');
+    useFinancialsAnalysis('AAPL', 'gemini-3.5-flash-lite');
     return null;
 }
 
@@ -83,7 +83,7 @@ describe('useFinancialsAnalysis', () => {
         const wrapper = makeWrapper();
 
         const { result } = renderHook(
-            () => useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFinancialsAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -97,7 +97,7 @@ describe('useFinancialsAnalysis', () => {
                 type: 'financials',
                 params: expect.objectContaining({
                     symbol: 'AAPL',
-                    modelId: 'gemini-2.5-flash-lite',
+                    modelId: 'gemini-3.5-flash-lite',
                     reasoning: false,
                 }),
             })
@@ -108,7 +108,7 @@ describe('useFinancialsAnalysis', () => {
         const wrapper = makeWrapper();
 
         const { result } = renderHook(
-            () => useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFinancialsAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -131,7 +131,7 @@ describe('useFinancialsAnalysis', () => {
 
         const wrapper = makeWrapper();
         const { result } = renderHook(
-            () => useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFinancialsAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -148,7 +148,7 @@ describe('useFinancialsAnalysis', () => {
 
         const wrapper = makeWrapper();
         const { result } = renderHook(
-            () => useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFinancialsAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -167,7 +167,7 @@ describe('useFinancialsAnalysis', () => {
 
         const wrapper = makeWrapper();
         const { result } = renderHook(
-            () => useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFinancialsAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -194,7 +194,7 @@ describe('useFinancialsAnalysis', () => {
         const wrapper = makeWrapper();
 
         const { result } = renderHook(
-            () => useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFinancialsAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 

@@ -127,7 +127,7 @@ vi.mock('@/views/symbol/hooks/useActionPricesVisibility', () => ({
 }));
 vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: vi.fn(() => ({
-        modelId: 'gemini-2.5-flash-lite',
+        modelId: 'gemini-3.5-flash-lite',
         isHydrated: true,
         reasoning: false,
         isReasoningHydrated: true,
@@ -175,7 +175,7 @@ vi.mock('@/shared/lib/cn', () => ({
             .join(' '),
 }));
 vi.mock('@/features/symbol-model', () => ({
-    useDefaultModelId: vi.fn(() => 'gemini-2.5-flash-lite'),
+    useDefaultModelId: vi.fn(() => 'gemini-3.5-flash-lite'),
     useAnalysisSettingsHydrated: vi.fn(() => true),
     useDefaultReasoning: vi.fn(() => false),
     useSymbolModel: vi.fn(() => ({ tier: 'member', isTierHydrated: true })),
@@ -458,7 +458,7 @@ describe('공유 등록 plain 배선', () => {
                     symbol="AAPL"
                     companyName="Apple"
                     expirationDate="all"
-                    modelId="deepseek-v4-flash"
+                    modelId="deepseek-v4.1-flash"
                 />
             );
 
@@ -476,7 +476,7 @@ describe('공유 등록 plain 배선', () => {
                     symbol="AAPL"
                     companyName="Apple"
                     expirationDate="all"
-                    modelId="deepseek-v4-flash"
+                    modelId="deepseek-v4.1-flash"
                 />
             );
 

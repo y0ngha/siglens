@@ -56,7 +56,7 @@ describe('useFundamentalAnalysis — trigger coverage', () => {
 
         const wrapper = makeWrapper();
         const { result } = renderHook(
-            () => useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFundamentalAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -72,7 +72,7 @@ describe('useFundamentalAnalysis — trigger coverage', () => {
 
         const wrapper = makeWrapper();
         const { result } = renderHook(
-            () => useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFundamentalAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -87,7 +87,7 @@ describe('useFundamentalAnalysis — trigger coverage', () => {
 
         const wrapper = makeWrapper();
         const { result } = renderHook(
-            () => useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFundamentalAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -106,7 +106,7 @@ describe('useFundamentalAnalysis — trigger coverage', () => {
 
         const wrapper = makeWrapper();
         const { result } = renderHook(
-            () => useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFundamentalAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 

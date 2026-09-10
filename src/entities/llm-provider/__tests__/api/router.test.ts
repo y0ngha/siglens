@@ -98,15 +98,15 @@ describe('callAiProviderRouter', () => {
     });
 
     describe('Google 모델 라우팅', () => {
-        it('gemini-2.5-flash 모델은 callGeminiChat에 위임하고 다른 어댑터는 호출하지 않는다', async () => {
-            const options = { ...BASE_OPTIONS, model: 'gemini-2.5-flash' };
+        it('gemini-3.6-flash 모델은 callGeminiChat에 위임하고 다른 어댑터는 호출하지 않는다', async () => {
+            const options = { ...BASE_OPTIONS, model: 'gemini-3.6-flash' };
 
             const result = await callAiProviderRouter(options);
 
             expect(result).toBe('gemini response');
             expect(mockCallGeminiWithKeyFallback).toHaveBeenCalledTimes(1);
             expect(mockCallGeminiWithKeyFallback).toHaveBeenCalledWith(
-                expectedAdapterCall('gemini-2.5-flash')
+                expectedAdapterCall('gemini-3.6-flash')
             );
             expect(mockCallAnthropicChat).not.toHaveBeenCalled();
             expect(mockCallOpenaiChat).not.toHaveBeenCalled();
@@ -114,15 +114,15 @@ describe('callAiProviderRouter', () => {
     });
 
     describe('OpenAI 모델 라우팅', () => {
-        it('gpt-5-mini 모델은 callOpenaiChat에 위임하고 다른 어댑터는 호출하지 않는다', async () => {
-            const options = { ...BASE_OPTIONS, model: 'gpt-5-mini' };
+        it('gpt-5.6-luna 모델은 callOpenaiChat에 위임하고 다른 어댑터는 호출하지 않는다', async () => {
+            const options = { ...BASE_OPTIONS, model: 'gpt-5.6-luna' };
 
             const result = await callAiProviderRouter(options);
 
             expect(result).toBe('openai response');
             expect(mockCallOpenaiChat).toHaveBeenCalledTimes(1);
             expect(mockCallOpenaiChat).toHaveBeenCalledWith(
-                expectedAdapterCall('gpt-5-mini')
+                expectedAdapterCall('gpt-5.6-luna')
             );
             expect(mockCallAnthropicChat).not.toHaveBeenCalled();
             expect(mockCallGeminiWithKeyFallback).not.toHaveBeenCalled();
@@ -130,15 +130,16 @@ describe('callAiProviderRouter', () => {
     });
 
     describe('DeepSeek 모델 라우팅', () => {
-        it('deepseek-v4-flash 모델은 callDeepseekChat에 위임하고 다른 어댑터는 호출하지 않는다', async () => {
-            const options = { ...BASE_OPTIONS, model: 'deepseek-v4-flash' };
+        it('deepseek-v4.1-flash 모델은 callDeepseekChat에 위임하고 다른 어댑터는 호출하지 않는다', async () => {
+            const options = { ...BASE_OPTIONS, model: 'deepseek-v4.1-flash' };
 
             const result = await callAiProviderRouter(options);
 
             expect(result).toBe('deepseek response');
             expect(mockCallDeepseekChat).toHaveBeenCalledTimes(1);
             expect(mockCallDeepseekChat).toHaveBeenCalledWith(
-                expectedAdapterCall('deepseek-v4-flash')
+                // 어댑터는 apiModelId(와이어 ID)를 받는다 — 라우터가 변환한다.
+                expectedAdapterCall('deepseek-flash')
             );
             expect(mockCallAnthropicChat).not.toHaveBeenCalled();
             expect(mockCallOpenaiChat).not.toHaveBeenCalled();
@@ -206,7 +207,7 @@ describe('callAiProviderRouter', () => {
             await expect(
                 callAiProviderRouter({
                     ...BASE_OPTIONS,
-                    model: 'gemini-2.5-flash',
+                    model: 'gemini-3.6-flash',
                 })
             ).rejects.toThrow('Unhandled AI provider');
         });

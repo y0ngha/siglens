@@ -32,7 +32,7 @@ vi.mock('@/features/symbol-chat', () => ({
     usePublishSymbolChat: vi.fn(),
 }));
 vi.mock('@/features/symbol-model', () => ({
-    useDefaultModelId: vi.fn(() => 'gemini-2.5-flash-lite'),
+    useDefaultModelId: vi.fn(() => 'gemini-3.5-flash-lite'),
     useDefaultReasoning: vi.fn(() => false),
     useAnalysisSettingsHydrated: vi.fn(() => true),
     useSymbolModel: vi.fn(() => ({ tier: 'member', isTierHydrated: true })),

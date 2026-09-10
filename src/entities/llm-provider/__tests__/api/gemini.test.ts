@@ -10,7 +10,17 @@ const { mockGenerateContent, MockGoogleGenAI } = vi.hoisted(() => {
     };
 });
 
-vi.mock('@google/genai', () => ({ GoogleGenAI: MockGoogleGenAI }));
+vi.mock('@google/genai', () => ({
+    GoogleGenAI: MockGoogleGenAI,
+    // 어댑터가 도메인 level을 이 enum으로 매핑하므로 mock에도 있어야 한다 —
+    // 생략하면 import가 런타임에 undefined가 된다.
+    ThinkingLevel: {
+        MINIMAL: 'MINIMAL',
+        LOW: 'LOW',
+        MEDIUM: 'MEDIUM',
+        HIGH: 'HIGH',
+    },
+}));
 
 import { callGeminiChat } from '@/entities/llm-provider/api/gemini';
 
@@ -153,20 +163,20 @@ describe('callGeminiChat', () => {
         });
     });
 
-    describe('thinkingBudget', () => {
-        it('thinkingBudget: 0 이면 config.thinkingConfig에 포함한다', async () => {
+    describe('thinkingLevel', () => {
+        it("thinkingLevel: 'minimal' 이면 config.thinkingConfig에 포함한다", async () => {
             mockGenerateContent.mockResolvedValue({ text: 'ok' });
 
-            await callGeminiChat({ ...BASE_OPTIONS, thinkingBudget: 0 });
+            await callGeminiChat({ ...BASE_OPTIONS, thinkingLevel: 'minimal' });
 
             expect(mockGenerateContent).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    config: { thinkingConfig: { thinkingBudget: 0 } },
+                    config: { thinkingConfig: { thinkingLevel: 'MINIMAL' } },
                 })
             );
         });
 
-        it('thinkingBudget이 없으면 config를 포함하지 않는다', async () => {
+        it('thinkingLevel이 없으면 config를 포함하지 않는다', async () => {
             mockGenerateContent.mockResolvedValue({ text: 'ok' });
 
             await callGeminiChat(BASE_OPTIONS);
@@ -175,62 +185,51 @@ describe('callGeminiChat', () => {
             expect(call).not.toHaveProperty('config');
         });
 
-        it('thinkingBudget과 systemInstruction을 함께 전달하면 config에 모두 포함한다', async () => {
+        it('thinkingLevel과 systemInstruction을 함께 전달하면 config에 모두 포함한다', async () => {
             mockGenerateContent.mockResolvedValue({ text: 'ok' });
 
             await callGeminiChat({
                 ...BASE_OPTIONS,
                 systemInstruction: 'Be concise.',
-                thinkingBudget: 0,
+                thinkingLevel: 'minimal',
             });
 
             expect(mockGenerateContent).toHaveBeenCalledWith(
                 expect.objectContaining({
                     config: {
                         systemInstruction: 'Be concise.',
-                        thinkingConfig: { thinkingBudget: 0 },
+                        thinkingConfig: { thinkingLevel: 'MINIMAL' },
                     },
                 })
             );
         });
 
-        // Boundary contract (GeminiChatOptions.thinkingBudget JSDoc): this
-        // adapter does not validate the value — it forwards any defined
-        // number verbatim, including Gemini's documented "-1 = dynamic
-        // thinking" sentinel and a NaN a caller bug might produce. Whether a
-        // given model accepts the value is left to the Gemini API to reject
-        // loudly (400), not to this provider-neutral wrapper to silently
-        // coerce.
-        it('thinkingBudget이 음수(-1, dynamic thinking sentinel)여도 그대로 전달한다', async () => {
-            mockGenerateContent.mockResolvedValue({ text: 'ok' });
+        // 예전 계약("정의된 숫자는 무엇이든 그대로 전달")은 사라졌다 — 파라미터가
+        // 문자열 union이라 -1 / NaN 같은 값은 타입 단계에서 막힌다. 대신 지금의
+        // 계약은 "도메인 level을 SDK enum으로 정확히 매핑한다"이다.
+        it('모든 도메인 level을 SDK enum 멤버로 매핑한다', async () => {
+            const CASES = [
+                ['minimal', 'MINIMAL'],
+                ['low', 'LOW'],
+                ['medium', 'MEDIUM'],
+                ['high', 'HIGH'],
+            ] as const;
 
-            await callGeminiChat({ ...BASE_OPTIONS, thinkingBudget: -1 });
+            for (const [domain, sdk] of CASES) {
+                mockGenerateContent.mockReset();
+                mockGenerateContent.mockResolvedValue({ text: 'ok' });
 
-            expect(mockGenerateContent).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    config: { thinkingConfig: { thinkingBudget: -1 } },
-                })
-            );
-        });
+                await callGeminiChat({
+                    ...BASE_OPTIONS,
+                    thinkingLevel: domain,
+                });
 
-        it('thinkingBudget이 NaN이어도 그대로 전달한다', async () => {
-            mockGenerateContent.mockResolvedValue({ text: 'ok' });
-
-            await callGeminiChat({ ...BASE_OPTIONS, thinkingBudget: NaN });
-
-            const call = mockGenerateContent.mock.calls[0][0];
-            expect(call).toHaveProperty('config.thinkingConfig.thinkingBudget');
-            expect(
-                Number.isNaN(
-                    (
-                        call as {
-                            config: {
-                                thinkingConfig: { thinkingBudget: number };
-                            };
-                        }
-                    ).config.thinkingConfig.thinkingBudget
-                )
-            ).toBe(true);
+                expect(
+                    mockGenerateContent.mock.calls[0][0].config.thinkingConfig
+                        .thinkingLevel,
+                    domain
+                ).toBe(sdk);
+            }
         });
     });
 });

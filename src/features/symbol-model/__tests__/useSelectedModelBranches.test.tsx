@@ -19,17 +19,17 @@ describe('useSelectedModel — branch coverage', () => {
     it('hydrates from localStorage with stored allowed model', async () => {
         localStorage.setItem(
             LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
-            'gemini-2.5-flash'
+            'gemini-3.6-flash'
         );
 
-        // Includes DEEPSEEK_V4_FLASH_MODEL (the real DEFAULT_MODEL) so the mount-time
+        // Includes DEEPSEEK_V4_1_FLASH_MODEL (the real DEFAULT_MODEL) so the mount-time
         // re-validate effect (L52-61) doesn't race the hydration effect and clobber it —
         // matches production, where tier restrictions are disabled and every model
         // (including the default) is always in allowedModels.
         const allowedModels: ModelId[] = [
-            'deepseek-v4-flash',
-            'gemini-2.5-flash-lite',
-            'gemini-2.5-flash',
+            'deepseek-v4.1-flash',
+            'gemini-3.5-flash-lite',
+            'gemini-3.6-flash',
         ];
         const { result } = renderHook(() =>
             useSelectedModel(allowedModels, true)
@@ -38,7 +38,7 @@ describe('useSelectedModel — branch coverage', () => {
         // Wait for hydration effect
         await act(async () => {});
 
-        expect(result.current[0]).toBe('gemini-2.5-flash');
+        expect(result.current[0]).toBe('gemini-3.6-flash');
         expect(result.current[2]).toBe(true); // isHydrated
     });
 
@@ -46,9 +46,9 @@ describe('useSelectedModel — branch coverage', () => {
         localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, 'unknown-model');
 
         const allowedModels: ModelId[] = [
-            'deepseek-v4-flash',
-            'gemini-2.5-flash-lite',
-            'gemini-2.5-flash',
+            'deepseek-v4.1-flash',
+            'gemini-3.5-flash-lite',
+            'gemini-3.6-flash',
         ];
         const { result } = renderHook(() =>
             useSelectedModel(allowedModels, true)
@@ -56,26 +56,26 @@ describe('useSelectedModel — branch coverage', () => {
 
         await act(async () => {});
 
-        expect(result.current[0]).toBe('deepseek-v4-flash');
+        expect(result.current[0]).toBe('deepseek-v4.1-flash');
     });
 
     it('setSelectedModel persists to localStorage', () => {
         const allowedModels: ModelId[] = [
-            'gemini-2.5-flash-lite',
-            'gemini-2.5-flash',
+            'gemini-3.5-flash-lite',
+            'gemini-3.6-flash',
         ];
         const { result } = renderHook(() =>
             useSelectedModel(allowedModels, true)
         );
 
         act(() => {
-            result.current[1]('gemini-2.5-flash');
+            result.current[1]('gemini-3.6-flash');
         });
 
         expect(localStorage.getItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY)).toBe(
-            'gemini-2.5-flash'
+            'gemini-3.6-flash'
         );
-        expect(result.current[0]).toBe('gemini-2.5-flash');
+        expect(result.current[0]).toBe('gemini-3.6-flash');
     });
 
     it('re-validates when allowedModels changes and current model is not allowed', async () => {
@@ -85,8 +85,8 @@ describe('useSelectedModel — branch coverage', () => {
             {
                 initialProps: {
                     allowed: [
-                        'gemini-2.5-flash-lite',
-                        'gemini-2.5-flash',
+                        'gemini-3.5-flash-lite',
+                        'gemini-3.6-flash',
                     ] as ModelId[],
                 },
             }
@@ -96,21 +96,21 @@ describe('useSelectedModel — branch coverage', () => {
 
         // Change to select a model
         act(() => {
-            result.current[1]('gemini-2.5-flash');
+            result.current[1]('gemini-3.6-flash');
         });
 
-        expect(result.current[0]).toBe('gemini-2.5-flash');
+        expect(result.current[0]).toBe('gemini-3.6-flash');
 
         // Now change allowedModels to exclude the selected model
         await act(async () => {
             rerender({
-                allowed: ['gemini-2.5-flash-lite'] as ModelId[],
+                allowed: ['gemini-3.5-flash-lite'] as ModelId[],
             });
         });
 
-        // DEFAULT_MODEL (deepseek-v4-flash) is not in the new allowedModels either,
+        // DEFAULT_MODEL (deepseek-v4.1-flash) is not in the new allowedModels either,
         // so this falls through to allowedModels[0] (L59), not DEFAULT_MODEL (L57).
-        expect(result.current[0]).toBe('gemini-2.5-flash-lite');
+        expect(result.current[0]).toBe('gemini-3.5-flash-lite');
     });
 
     it('falls back to first allowed model when DEFAULT_MODEL is not in allowedModels', async () => {
@@ -120,8 +120,8 @@ describe('useSelectedModel — branch coverage', () => {
             {
                 initialProps: {
                     allowed: [
-                        'gemini-2.5-flash-lite',
-                        'gemini-2.5-flash',
+                        'gemini-3.5-flash-lite',
+                        'gemini-3.6-flash',
                     ] as ModelId[],
                 },
             }
@@ -130,7 +130,7 @@ describe('useSelectedModel — branch coverage', () => {
         await act(async () => {});
 
         act(() => {
-            result.current[1]('gemini-2.5-flash');
+            result.current[1]('gemini-3.6-flash');
         });
 
         // Change allowedModels to exclude both selected AND default model

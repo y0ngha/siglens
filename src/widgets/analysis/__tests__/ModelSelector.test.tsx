@@ -4,9 +4,9 @@ import { ModelSelector } from '@/widgets/analysis/ModelSelector';
 import type { ModelId } from '@y0ngha/siglens-core';
 
 const ALLOWED_MODELS: readonly ModelId[] = [
-    'gemini-2.5-flash-lite',
-    'gemini-2.5-flash',
-    'claude-sonnet-4-6',
+    'gemini-3.5-flash-lite',
+    'gemini-3.6-flash',
+    'claude-sonnet-5',
 ] as const;
 
 function renderSelector(
@@ -22,7 +22,7 @@ function renderSelector(
         onModelChange,
         ...render(
             <ModelSelector
-                selectedModel={props.selectedModel ?? 'gemini-2.5-flash-lite'}
+                selectedModel={props.selectedModel ?? 'gemini-3.5-flash-lite'}
                 onModelChange={onModelChange}
                 allowedModels={props.allowedModels ?? ALLOWED_MODELS}
                 disabled={props.disabled}
@@ -33,11 +33,11 @@ function renderSelector(
 
 describe('ModelSelector', () => {
     it('renders trigger button with selected model label', () => {
-        renderSelector({ selectedModel: 'gemini-2.5-flash-lite' });
+        renderSelector({ selectedModel: 'gemini-3.5-flash-lite' });
         expect(
             screen.getByRole('button', { name: 'AI 분석 모델 선택' })
         ).toBeInTheDocument();
-        expect(screen.getByText('Flash Lite 2.5')).toBeInTheDocument();
+        expect(screen.getByText('Flash Lite 3.5')).toBeInTheDocument();
     });
 
     it('opens dropdown on trigger click and shows allowed models', async () => {
@@ -50,14 +50,14 @@ describe('ModelSelector', () => {
 
         const listbox = screen.getByRole('listbox');
         expect(listbox).toBeInTheDocument();
-        expect(screen.getByText('Flash 2.5')).toBeInTheDocument();
-        expect(screen.getByText('Sonnet 4.6')).toBeInTheDocument();
+        expect(screen.getByText('Flash 3.6')).toBeInTheDocument();
+        expect(screen.getByText('Sonnet 5')).toBeInTheDocument();
     });
 
     it('clicking a model option calls onModelChange and closes dropdown', async () => {
         const user = userEvent.setup();
         const { onModelChange } = renderSelector({
-            selectedModel: 'gemini-2.5-flash-lite',
+            selectedModel: 'gemini-3.5-flash-lite',
         });
 
         await user.click(
@@ -73,7 +73,7 @@ describe('ModelSelector', () => {
             );
         await user.click(flashOption!);
 
-        expect(onModelChange).toHaveBeenCalledWith('gemini-2.5-flash');
+        expect(onModelChange).toHaveBeenCalledWith('gemini-3.6-flash');
         expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     });
 

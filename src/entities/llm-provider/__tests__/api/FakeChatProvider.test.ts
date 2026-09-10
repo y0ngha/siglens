@@ -9,7 +9,7 @@ import { fakeCallAiProvider } from '../../api/FakeChatProvider';
 // key fields are unused (the fake reads no API keys by design).
 function makeOptions(
     contents: CallAiProviderOptions['contents'],
-    model = 'gemini-2.5-flash'
+    model = 'gemini-3.6-flash'
 ): CallAiProviderOptions {
     return {
         contents,
@@ -22,10 +22,10 @@ function makeOptions(
 describe('fakeCallAiProvider', () => {
     it('echoes a plain string prompt and references the model', async () => {
         const reply = await fakeCallAiProvider(
-            makeOptions('테슬라 어때?', 'gpt-5.5')
+            makeOptions('테슬라 어때?', 'gpt-5.6-sol')
         );
 
-        expect(reply).toContain('[E2E gpt-5.5]');
+        expect(reply).toContain('[E2E gpt-5.6-sol]');
         expect(reply).toContain('"테슬라 어때?"');
         expect(reply).toContain('테스트 답변입니다');
     });

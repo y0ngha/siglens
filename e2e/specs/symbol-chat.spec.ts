@@ -78,7 +78,7 @@ const EXPECTED_ANSWER_FRAGMENT = `"${QUESTION}"에 대한 테스트 답변입니
 // App-wide default chat model. The fake provider prefixes its reply with
 // `[E2E <model>]` (FakeChatProvider.fakeCallAiProvider), so the rendered answer
 // echoes whichever model chatAction resolved — letting the spec pin the default.
-const DEFAULT_CHAT_MODEL = 'deepseek-v4-flash';
+const DEFAULT_CHAT_MODEL = 'deepseek-v4.1-flash';
 const EXPECTED_MODEL_FRAGMENT = `[E2E ${DEFAULT_CHAT_MODEL}]`;
 
 /**
@@ -150,7 +150,7 @@ test.describe('@webkit symbol chat', () => {
         });
 
         // DeepSeek 기본 모델 고정 가드: fake가 해석된 모델을 `[E2E <model>]`로 응답에
-        // 그대로 echo하므로, 기본 채팅 모델이 deepseek-v4-flash에서 (예: Gemini로)
+        // 그대로 echo하므로, 기본 채팅 모델이 deepseek-v4.1-flash에서 (예: Gemini로)
         // 조용히 되돌려지면 이 단언이 실패한다.
         await expect(
             page.getByText(EXPECTED_MODEL_FRAGMENT, { exact: false })

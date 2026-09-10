@@ -63,7 +63,7 @@ function snapshotAt(generatedAt: Date, tab = 'technical'): SeoAnalysisSnapshot {
         locale: 'ko',
         content: { summary: 'bullish' },
         plain: null,
-        model: 'deepseek-v4-flash',
+        model: 'deepseek-v4.1-flash',
         generatedAt,
         updatedAt: generatedAt,
     };

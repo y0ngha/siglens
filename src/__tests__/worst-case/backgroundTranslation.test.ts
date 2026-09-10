@@ -20,7 +20,7 @@ const mockReadConfig = tryReadTranslatorConfig as ReturnType<typeof vi.fn>;
 
 const CONFIG = {
     apiKey: 'test-key',
-    model: 'gemini-2.5-flash-lite',
+    model: 'gemini-3.5-flash-lite',
 };
 
 describe('Background translation failure handling', () => {

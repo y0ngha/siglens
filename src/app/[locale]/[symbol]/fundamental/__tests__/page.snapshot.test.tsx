@@ -185,7 +185,7 @@ describe('FundamentalPage — SEO snapshot prose (Task 7b)', () => {
                 symbol: 'AAPL',
                 tab: 'fundamental',
                 content: SNAPSHOT_CONTENT,
-                model: 'deepseek-v4-flash',
+                model: 'deepseek-v4.1-flash',
                 generatedAt: new Date('2026-07-24'),
             },
         ]);
@@ -255,7 +255,7 @@ describe('FundamentalPage — SEO snapshot prose (Task 7b)', () => {
                 symbol: 'AAPL',
                 tab: 'overall',
                 content: { headlineKo: '헤드라인' },
-                model: 'deepseek-v4-flash',
+                model: 'deepseek-v4.1-flash',
                 generatedAt: new Date('2026-07-24'),
             },
         ]);
@@ -289,7 +289,7 @@ describe('FundamentalPage — SEO snapshot prose (Task 7b)', () => {
                 symbol: 'AAPL',
                 tab: 'fundamental',
                 content: SNAPSHOT_CONTENT,
-                model: 'deepseek-v4-flash',
+                model: 'deepseek-v4.1-flash',
                 generatedAt: new Date('2026-07-24'),
             },
         ]);

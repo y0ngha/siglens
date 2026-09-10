@@ -190,7 +190,7 @@ vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
             symbol: 'AAPL',
             tab: 'overall',
             content: { headlineKo: '테스트용 종합 결론' },
-            model: 'deepseek-v4-flash',
+            model: 'deepseek-v4.1-flash',
             generatedAt: new Date(),
             updatedAt: new Date(),
         },

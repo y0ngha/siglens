@@ -1,5 +1,4 @@
 import 'server-only';
-import { DISABLED_THINKING_BUDGET } from '@y0ngha/siglens-core';
 import { callGeminiChat, parseJsonResponse } from '@/entities/llm-provider';
 import { tryReadTranslatorConfig } from './config';
 import type { TranslatorConfig, TranslatorEntry } from '../model';
@@ -29,12 +28,12 @@ function isStringRecord(value: unknown): value is Record<string, string> {
  * Calls Gemini with the server key (`GEMINI_API_KEY` — see
  * `tryReadTranslatorConfig`).
  *
- * Always sends an explicit `DISABLED_THINKING_BUDGET` (0) — company name /
+ * Always sends an explicit `thinkingLevel: 'minimal'` — company name /
  * description → Korean is a deterministic transformation with no quality gain
  * from extended thinking, only latency and cost. `config.ts` validates
- * `TRANSLATE_MODEL` with `supportsDisabledThinking` so only a model that is
- * live-verified to accept the literal 0 ever reaches this call; an unsupported
- * one would reject it with a 400 ("This model only works in thinking mode").
+ * `TRANSLATE_MODEL` with `supportsHardOff` so only a model that is
+ * live-verified to reach zero thought tokens ever reaches this call. 숫자
+ * `thinkingBudget: 0`은 이 모델들이 400으로 거부하므로 쓰지 않는다.
  *
  * ⚠️ The chat adapter deliberately does NOT request a JSON response mode — it
  * is shared with the chatbot, which must emit prose. `translateCompanyNames`
@@ -52,7 +51,7 @@ async function callTranslateGemini(
         jobId: 'translate',
         model: config.model,
         contents,
-        thinkingBudget: DISABLED_THINKING_BUDGET,
+        thinkingLevel: 'minimal',
     });
 }
 

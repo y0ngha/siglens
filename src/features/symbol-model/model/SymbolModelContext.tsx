@@ -17,6 +17,7 @@ import { useSelectedModel } from '../hooks/useSelectedModel';
 import { useModelGate, type ModelGateState } from '@/features/premium-gate';
 import { useUserTier } from '../hooks/useUserTier';
 import { useReasoningToggle } from '@/features/reasoning-toggle';
+import { isReasoningToggleable } from '@y0ngha/siglens-core';
 import { AnalysisSignupNudgeModal } from '@/features/analysis-nudge';
 
 interface SymbolModelContextValue {
@@ -38,6 +39,15 @@ interface SymbolModelContextValue {
     reasoning: boolean;
     /** Persists the member's raw toggle preference (member-only UI writes this). */
     setReasoning: (value: boolean) => void;
+    /**
+     * Whether the selected model's reasoning toggle changes anything at all.
+     *
+     * Orthogonal to {@link canUseReasoning}: that one is about the caller's
+     * tier, this one about the model. A member on `claude-haiku-4-5` may use
+     * the feature in principle but the toggle is inert for that model, so the
+     * control is disabled rather than shown as an unlocked switch.
+     */
+    isReasoningSupported: boolean;
     /**
      * Whether the current tier may interact with (toggle) the reasoning
      * switch (member/pro). The switch is always rendered — tiers that can't
@@ -104,7 +114,12 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
     // 미리 false로 접어 두면 downgrade(로그아웃/등급 하락) 직후 stale true 값이
     // 한 프레임이라도 실제 submit에 실려 나가는 것을 방지한다.
     const canUseReasoning = tier !== 'free';
-    const reasoning = canUseReasoning && storedReasoning;
+    // 등급과 별개로, 토글이 아무 효과도 없는 모델이 있다(`claude-haiku-4-5` —
+    // `off`와 `on`이 동일). 그런 모델에서는 컨트롤을 비활성화해야 한다. 켜도
+    // 아무 일이 없는데 켜졌다고 보이는 편이 더 나쁘다.
+    const isReasoningSupported = isReasoningToggleable(modelId);
+    const reasoning =
+        canUseReasoning && isReasoningSupported && storedReasoning;
 
     const openSignupNudge = useCallback(() => setIsSignupNudgeOpen(true), []);
     const closeSignupNudge = useCallback(() => setIsSignupNudgeOpen(false), []);
@@ -122,6 +137,7 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
             reasoning,
             setReasoning,
             canUseReasoning,
+            isReasoningSupported,
             isReasoningHydrated,
             openSignupNudge,
             closeSignupNudge,
@@ -138,6 +154,7 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
             reasoning,
             setReasoning,
             canUseReasoning,
+            isReasoningSupported,
             isReasoningHydrated,
             openSignupNudge,
             closeSignupNudge,

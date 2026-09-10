@@ -6,7 +6,7 @@ import {
     TIER_CONFIG,
     bucketizePosition,
     getProviderForModel,
-    isPremiumModel,
+    getModelAccess,
     type ModelId,
     type PositionBucket,
     type Tier,
@@ -195,20 +195,27 @@ export async function resolveTierAndByok(
     }
 
     const tier = await resolveTierOnly(userId);
+    const access = getModelAccess(modelId);
 
-    const premium = isPremiumModel(modelId);
-
-    // pro 또는 free 모델 → server pays, no BYOK needed.
-    if (tier === 'pro' || !premium) {
+    // free 모델은 비회원 포함 누구나 서버 키로 호출한다.
+    if (access === 'free') {
         return { kind: 'allowed', tier };
     }
 
-    // userId가 없으면 BYOK를 조회할 주체가 없어 차단.
+    // free가 아닌 모델은 등급과 무관하게 로그인을 요구한다 — member/byok의 차이는
+    // "누가 요금을 내는가"이지 "인증이 필요한가"가 아니다.
     if (userId === null) {
         return {
             kind: 'blocked',
             error: await buildGateError('tier_premium_blocked', locale),
         };
+    }
+
+    // member 모델은 로그인만으로 서버 키가 열린다. BYOK 키를 요구하지 않는다 —
+    // 3분류 도입 전에는 free가 아니면 전부 키를 요구했고, 그래서 회원이 서버가
+    // 대납하는 모델에서도 키를 내놓아야 했다.
+    if (access === 'member' || tier === 'pro') {
+        return { kind: 'allowed', tier };
     }
 
     const llmProvider = getProviderForModel(modelId);

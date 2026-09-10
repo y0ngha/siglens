@@ -508,7 +508,7 @@ describe('useChat — branch coverage', () => {
 
             // Should not crash
             await act(async () => {
-                result.current.handleModelChange('gemini-2.5-flash');
+                result.current.handleModelChange('gemini-3.6-flash');
             });
 
             setItemSpy.mockRestore();

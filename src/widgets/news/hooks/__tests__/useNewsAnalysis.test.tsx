@@ -57,7 +57,7 @@ describe('useNewsAnalysis — trigger coverage', () => {
         const wrapper = makeWrapper();
         const { result } = renderHook(
             () =>
-                useNewsAnalysis('AAPL', 'Apple', 'gemini-2.5-flash-lite', {
+                useNewsAnalysis('AAPL', 'Apple', 'gemini-3.5-flash-lite', {
                     enabled: true,
                 }),
             { wrapper }
@@ -76,7 +76,7 @@ describe('useNewsAnalysis — trigger coverage', () => {
         const wrapper = makeWrapper();
         const { result } = renderHook(
             () =>
-                useNewsAnalysis('AAPL', 'Apple', 'gemini-2.5-flash-lite', {
+                useNewsAnalysis('AAPL', 'Apple', 'gemini-3.5-flash-lite', {
                     enabled: true,
                 }),
             { wrapper }
@@ -94,7 +94,7 @@ describe('useNewsAnalysis — trigger coverage', () => {
         const wrapper = makeWrapper();
         const { result } = renderHook(
             () =>
-                useNewsAnalysis('AAPL', 'Apple', 'gemini-2.5-flash-lite', {
+                useNewsAnalysis('AAPL', 'Apple', 'gemini-3.5-flash-lite', {
                     enabled: true,
                 }),
             { wrapper }
@@ -116,7 +116,7 @@ describe('useNewsAnalysis — trigger coverage', () => {
         const wrapper = makeWrapper();
         const { result } = renderHook(
             () =>
-                useNewsAnalysis('AAPL', 'Apple', 'gemini-2.5-flash-lite', {
+                useNewsAnalysis('AAPL', 'Apple', 'gemini-3.5-flash-lite', {
                     enabled: true,
                 }),
             { wrapper }

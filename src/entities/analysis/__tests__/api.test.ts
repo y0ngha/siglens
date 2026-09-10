@@ -130,7 +130,7 @@ import {
     runOverallAnalysis,
     isEtRegularSessionOpen,
     computeFinancialsScorecard,
-    DEEPSEEK_V4_FLASH_MODEL,
+    DEEPSEEK_V4_1_FLASH_MODEL,
     type RunAnalysisResult,
     type RunFundamentalAnalysisResult,
     type RunFinancialsAnalysisResult,
@@ -233,7 +233,7 @@ describe('prewarmTechnical', () => {
             false,
             undefined,
             {
-                modelId: DEEPSEEK_V4_FLASH_MODEL,
+                modelId: DEEPSEEK_V4_1_FLASH_MODEL,
                 skipEnqueueIfMiss: false,
                 marketDataProvider: mockProvider,
                 assetClass: 'equity',
@@ -336,7 +336,7 @@ describe('prewarmTechnical', () => {
                     symbol: 'AAPL',
                     timeframe: '1Day',
                     tab: 'technical',
-                    modelId: DEEPSEEK_V4_FLASH_MODEL,
+                    modelId: DEEPSEEK_V4_1_FLASH_MODEL,
                     locale: 'ko',
                     // 필터된 `result`가 아니라 `unfilteredResult`가 저장돼야
                     // 한다 — riskLevel이 살아 있는 쪽.
@@ -405,7 +405,7 @@ describe('prewarmFundamental', () => {
 
         expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith({
             symbol: 'AAPL',
-            modelId: DEEPSEEK_V4_FLASH_MODEL,
+            modelId: DEEPSEEK_V4_1_FLASH_MODEL,
             dataProvider: mockFundamentalProvider,
             tier: 'free',
             reasoning: false,
@@ -448,7 +448,7 @@ describe('prewarmFinancials', () => {
 
         expect(mockRunFinancialsAnalysis).toHaveBeenCalledWith({
             symbol: 'AAPL',
-            modelId: DEEPSEEK_V4_FLASH_MODEL,
+            modelId: DEEPSEEK_V4_1_FLASH_MODEL,
             dataProvider: mockFinancialsProvider,
             tier: 'free',
             reasoning: false,
@@ -489,7 +489,7 @@ describe('prewarmCongress', () => {
 
         expect(mockRunCongressTrend).toHaveBeenCalledWith({
             symbol: 'AAPL',
-            modelId: DEEPSEEK_V4_FLASH_MODEL,
+            modelId: DEEPSEEK_V4_1_FLASH_MODEL,
             dataProvider: mockCongressProvider,
             skipEnqueueIfMiss: false,
             reasoning: false,
@@ -554,7 +554,7 @@ describe('prewarmOverall', () => {
                 symbol: 'AAPL',
                 companyName: 'Apple Inc.',
                 timeframe: '1Day',
-                modelId: DEEPSEEK_V4_FLASH_MODEL,
+                modelId: DEEPSEEK_V4_1_FLASH_MODEL,
                 fundamentalProvider: mockFundamentalProvider,
                 marketDataProvider: mockProvider,
                 technical: { tierContext: { userId: null, tier: 'free' } },

@@ -1,12 +1,12 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { DEEPSEEK_V4_FLASH_MODEL, type ModelId } from '@y0ngha/siglens-core';
+import { DEEPSEEK_V4_1_FLASH_MODEL, type ModelId } from '@y0ngha/siglens-core';
 import { AnalysisSettingsMenu } from '@/widgets/analysis/AnalysisSettingsMenu';
 import { mockViewport } from '@/__tests__/utils/mockViewport';
 
 const ALLOWED_MODELS: readonly ModelId[] = [
-    DEEPSEEK_V4_FLASH_MODEL,
-    'gemini-2.5-flash',
+    DEEPSEEK_V4_1_FLASH_MODEL,
+    'gemini-3.6-flash',
 ] as const;
 
 function renderMenu(
@@ -17,6 +17,7 @@ function renderMenu(
         reasoning: boolean;
         setReasoning: (v: boolean) => void;
         canUseReasoning: boolean;
+        isReasoningSupported?: boolean;
         openSignupNudge: () => void;
     }> = {}
 ) {
@@ -29,12 +30,13 @@ function renderMenu(
         openSignupNudge,
         ...render(
             <AnalysisSettingsMenu
-                modelId={props.modelId ?? DEEPSEEK_V4_FLASH_MODEL}
+                modelId={props.modelId ?? DEEPSEEK_V4_1_FLASH_MODEL}
                 allowedModels={props.allowedModels ?? ALLOWED_MODELS}
                 handleModelChange={handleModelChange}
                 reasoning={props.reasoning ?? false}
                 setReasoning={setReasoning}
                 canUseReasoning={props.canUseReasoning ?? true}
+                isReasoningSupported={props.isReasoningSupported ?? true}
                 openSignupNudge={openSignupNudge}
             />
         ),
@@ -117,11 +119,12 @@ describe('AnalysisSettingsMenu', () => {
         render(
             <div>
                 <AnalysisSettingsMenu
-                    modelId={DEEPSEEK_V4_FLASH_MODEL}
+                    modelId={DEEPSEEK_V4_1_FLASH_MODEL}
                     allowedModels={ALLOWED_MODELS}
                     handleModelChange={vi.fn()}
                     reasoning={false}
                     setReasoning={vi.fn()}
+                    isReasoningSupported
                     canUseReasoning={true}
                     openSignupNudge={vi.fn()}
                 />
@@ -152,7 +155,7 @@ describe('AnalysisSettingsMenu', () => {
     });
 
     it('shows no active dot and surfaces the current model (no "변경됨" suffix) when reasoning is off and the model is the default', () => {
-        renderMenu({ reasoning: false, modelId: DEEPSEEK_V4_FLASH_MODEL });
+        renderMenu({ reasoning: false, modelId: DEEPSEEK_V4_1_FLASH_MODEL });
 
         const gear = gearButton();
         expect(gear.getAttribute('aria-label')).toBe(
@@ -165,7 +168,7 @@ describe('AnalysisSettingsMenu', () => {
     });
 
     it('shows the active dot and appends "변경됨" to the model-bearing aria-label when reasoning is on', () => {
-        renderMenu({ reasoning: true, modelId: DEEPSEEK_V4_FLASH_MODEL });
+        renderMenu({ reasoning: true, modelId: DEEPSEEK_V4_1_FLASH_MODEL });
 
         const gear = gearButton();
         expect(gear.getAttribute('aria-label')).toBe(
@@ -175,11 +178,11 @@ describe('AnalysisSettingsMenu', () => {
     });
 
     it('shows the active dot and the selected model name when a non-default model is selected', () => {
-        renderMenu({ reasoning: false, modelId: 'gemini-2.5-flash' });
+        renderMenu({ reasoning: false, modelId: 'gemini-3.6-flash' });
 
         const gear = gearButton();
         expect(gear.getAttribute('aria-label')).toBe(
-            '분석 설정 · 현재 모델: Flash 2.5 (변경됨)'
+            '분석 설정 · 현재 모델: Flash 3.6 (변경됨)'
         );
         expect(gear.querySelector('.bg-primary-500')).not.toBeNull();
     });
@@ -187,6 +190,7 @@ describe('AnalysisSettingsMenu', () => {
     it('a locked (canUseReasoning=false) member clicking the switch fires openSignupNudge, not setReasoning', async () => {
         const user = userEvent.setup();
         const { setReasoning, openSignupNudge } = renderMenu({
+            isReasoningSupported: true,
             canUseReasoning: false,
         });
 
@@ -200,6 +204,7 @@ describe('AnalysisSettingsMenu', () => {
     it('an unlocked member clicking the switch calls setReasoning', async () => {
         const user = userEvent.setup();
         const { setReasoning, openSignupNudge } = renderMenu({
+            isReasoningSupported: true,
             canUseReasoning: true,
             reasoning: false,
         });
@@ -214,7 +219,7 @@ describe('AnalysisSettingsMenu', () => {
     it('changing the model in the popover calls handleModelChange', async () => {
         const user = userEvent.setup();
         const { handleModelChange } = renderMenu({
-            modelId: DEEPSEEK_V4_FLASH_MODEL,
+            modelId: DEEPSEEK_V4_1_FLASH_MODEL,
             allowedModels: ALLOWED_MODELS,
         });
 
@@ -232,7 +237,7 @@ describe('AnalysisSettingsMenu', () => {
             );
         await user.click(flashOption!);
 
-        expect(handleModelChange).toHaveBeenCalledWith('gemini-2.5-flash');
+        expect(handleModelChange).toHaveBeenCalledWith('gemini-3.6-flash');
     });
 
     it('Escape closes only the innermost open layer: dismisses the model listbox first, then the panel on a second press', async () => {

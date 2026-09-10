@@ -103,7 +103,7 @@ describe('submitMarketNewsDigestAction은', () => {
 
     it('추론을 켜고 DeepSeek 기본 모델로 core를 호출한다', async () => {
         // `reasoning: true`는 모델 스펙을 오버라이드한다 — 스펙상 non-thinking인
-        // deepseek-v4-flash에서도 추론이 켜져야 Gemini 시절 동작(spec
+        // deepseek-v4.1-flash에서도 추론이 켜져야 Gemini 시절 동작(spec
         // thinkingBudget 8192 = 추론 ON)과 같은 깊이가 유지된다. 이 단언이
         // 없으면 모델만 갈아끼웠을 때 다이제스트 추론이 조용히 꺼진다.
         vi.mocked(isBot).mockReturnValue(false);

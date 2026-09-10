@@ -9,12 +9,23 @@ import {
 // useSelectedModel transitively imports migrateLegacyAnalysisModel, which reads
 // both the new and legacy defaults from core — the mock must export both.
 vi.mock('@y0ngha/siglens-core', () => ({
-    DEEPSEEK_V4_FLASH_MODEL: 'deepseek-v4-flash',
-    GEMINI_2_5_FLASH_LITE_MODEL: 'gemini-2.5-flash-lite',
+    isClaudeAdaptiveModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'adaptive',
+    isClaudeBudgetModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'budget',
+    isReasoningToggleable: () => true,
+    getModelAccess: (m: string) =>
+        m === 'claude-opus-5' || m === 'gpt-5.6-sol' ? 'byok' : 'free',
+    supportsHardOff: () => true,
+    resolveReasoningConfig: (
+        modes: { off: unknown; on: unknown; default: string },
+        r?: boolean
+    ) => ((r ?? modes.default === 'on') ? modes.on : modes.off),
+    DEEPSEEK_V4_1_FLASH_MODEL: 'deepseek-v4.1-flash',
 }));
 
-const DEFAULT_MODEL = 'deepseek-v4-flash' as ModelId;
-const PREMIUM_MODEL = 'gemini-2.5-pro' as ModelId;
+const DEFAULT_MODEL = 'deepseek-v4.1-flash' as ModelId;
+const PREMIUM_MODEL = 'gemini-3.1-pro-preview' as ModelId;
 
 describe('useSelectedModel', () => {
     beforeEach(() => {

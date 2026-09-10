@@ -9,7 +9,10 @@ import type {
     EnrichedNewsItem,
     RunNewsAnalysisResult,
 } from '@y0ngha/siglens-core';
-import { runNewsAnalysis, DEEPSEEK_V4_FLASH_MODEL } from '@y0ngha/siglens-core';
+import {
+    runNewsAnalysis,
+    DEEPSEEK_V4_1_FLASH_MODEL,
+} from '@y0ngha/siglens-core';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import { getDatabaseClient } from '@/shared/db/client';
 import { news } from '@/shared/db/schema';
@@ -327,7 +330,7 @@ function toNewsRow(row: NewsDbRow): NewsRow {
  * (캐시 키 5축 정합: model default / tier free / reasoning false / 동일
  * fingerprint). 차이는 skipEnqueueIfMiss:false와 force 뿐.
  *
- * modelId는 익명/free 방문자가 실제로 보내는 기본값(`DEEPSEEK_V4_FLASH_MODEL`
+ * modelId는 익명/free 방문자가 실제로 보내는 기본값(`DEEPSEEK_V4_1_FLASH_MODEL`
  * — `SymbolModelContext`의 `useSelectedModel` 기본값과 동일)을 명시 전달한다.
  * core의 news submit 옵션은 `modelId`를 그대로 캐시 키에 사용하고 내부
  * fallback이 없으므로, 생략하면 익명 writer가 쓰는 키와 어긋난다.
@@ -460,7 +463,7 @@ export async function prewarmNews(
     return runNewsAnalysis({
         symbol,
         companyName,
-        modelId: DEEPSEEK_V4_FLASH_MODEL,
+        modelId: DEEPSEEK_V4_1_FLASH_MODEL,
         news: enrichedNews,
         upcomingCalendar: next !== null ? [next] : [],
         tier: 'free',

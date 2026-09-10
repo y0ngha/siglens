@@ -25,25 +25,25 @@ describe('tryReadTranslatorConfig', () => {
         expect(tryReadTranslatorConfig()).toBeNull();
     });
 
-    it('필수 키만 있을 때 model은 default(gemini-2.5-flash-lite)', () => {
+    it('필수 키만 있을 때 model은 default(gemini-3.5-flash-lite)', () => {
         vi.stubEnv('GEMINI_API_KEY', 'paid');
         expect(tryReadTranslatorConfig()).toEqual({
             apiKey: 'paid',
             // 리터럴이 아니라 MODEL_SPECS에서 파생한 값과 비교한다 — toApiModelId를
             // 지우고 raw key를 그대로 반환해도 리터럴 비교는 우연히 통과해버린다
             // (오늘은 apiModelId === key라서).
-            model: MODEL_SPECS['gemini-2.5-flash-lite'].apiModelId,
+            model: MODEL_SPECS['gemini-3.5-flash-lite'].apiModelId,
         });
     });
 
     it('MODEL 환경변수가 사고 비활성화를 지원하는 유효한 Gemini 모델이면 그 값을 우선 사용한다', () => {
         vi.stubEnv('GEMINI_API_KEY', 'paid');
-        // 기본값(gemini-2.5-flash-lite)과 다른 값을 사용해 실제로 pass-through가
+        // 기본값(gemini-3.5-flash-lite)과 다른 값을 사용해 실제로 pass-through가
         // 일어나는지(기본값으로 우연히 일치하는 게 아닌지) 검증한다.
-        vi.stubEnv('TRANSLATE_MODEL', 'gemini-2.5-flash');
+        vi.stubEnv('TRANSLATE_MODEL', 'gemini-3.6-flash');
         expect(tryReadTranslatorConfig()).toEqual({
             apiKey: 'paid',
-            model: MODEL_SPECS['gemini-2.5-flash'].apiModelId,
+            model: MODEL_SPECS['gemini-3.6-flash'].apiModelId,
         });
     });
 
@@ -54,7 +54,7 @@ describe('tryReadTranslatorConfig', () => {
 
         expect(tryReadTranslatorConfig()).toEqual({
             apiKey: 'paid',
-            model: MODEL_SPECS['gemini-2.5-flash-lite'].apiModelId,
+            model: MODEL_SPECS['gemini-3.5-flash-lite'].apiModelId,
         });
         expect(warnSpy).toHaveBeenCalledWith(
             expect.stringContaining('TRANSLATE_MODEL="gemini-custom"')
@@ -69,34 +69,34 @@ describe('tryReadTranslatorConfig', () => {
         // koreanTranslator가 에러를 삼켜 한국어 이름이 소리 없이 사라진다.
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         vi.stubEnv('GEMINI_API_KEY', 'paid');
-        vi.stubEnv('TRANSLATE_MODEL', 'deepseek-v4-flash');
+        vi.stubEnv('TRANSLATE_MODEL', 'deepseek-v4.1-flash');
 
         expect(tryReadTranslatorConfig()).toEqual({
             apiKey: 'paid',
-            model: MODEL_SPECS['gemini-2.5-flash-lite'].apiModelId,
+            model: MODEL_SPECS['gemini-3.5-flash-lite'].apiModelId,
         });
         expect(warnSpy).toHaveBeenCalledWith(
-            expect.stringContaining('TRANSLATE_MODEL="deepseek-v4-flash"')
+            expect.stringContaining('TRANSLATE_MODEL="deepseek-v4.1-flash"')
         );
 
         warnSpy.mockRestore();
     });
 
     it('MODEL 환경변수가 Gemini 모델이지만 사고 비활성화(thinkingBudget: 0)를 지원하지 않으면 기본값으로 폴백한다', () => {
-        // gemini-2.5-pro는 MODEL_SPECS의 실존 Gemini 모델이지만 core의
+        // gemini-3.1-pro-preview는 MODEL_SPECS의 실존 Gemini 모델이지만 core의
         // GEMINI_MODELS_SUPPORTING_DISABLED_THINKING 라이브 실측 대상이 아니어서
         // 미지원 취급된다. koreanTranslator는 항상 thinkingBudget 0을 보내므로
         // 이 검사가 없으면 매 호출 400이 난다.
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         vi.stubEnv('GEMINI_API_KEY', 'paid');
-        vi.stubEnv('TRANSLATE_MODEL', 'gemini-2.5-pro');
+        vi.stubEnv('TRANSLATE_MODEL', 'gemini-3.1-pro-preview');
 
         expect(tryReadTranslatorConfig()).toEqual({
             apiKey: 'paid',
-            model: MODEL_SPECS['gemini-2.5-flash-lite'].apiModelId,
+            model: MODEL_SPECS['gemini-3.5-flash-lite'].apiModelId,
         });
         expect(warnSpy).toHaveBeenCalledWith(
-            expect.stringContaining('TRANSLATE_MODEL="gemini-2.5-pro"')
+            expect.stringContaining('TRANSLATE_MODEL="gemini-3.1-pro-preview"')
         );
 
         warnSpy.mockRestore();
@@ -109,7 +109,7 @@ describe('tryReadTranslatorConfig', () => {
 
         expect(tryReadTranslatorConfig()).toEqual({
             apiKey: 'paid',
-            model: MODEL_SPECS['gemini-2.5-flash-lite'].apiModelId,
+            model: MODEL_SPECS['gemini-3.5-flash-lite'].apiModelId,
         });
         // 빈 문자열은 "미설정"과 동일하게 취급 — 사용자가 값을 준 게 아니라
         // env가 그냥 비어 있는 흔한 케이스이므로 경고로 시끄럽게 하지 않는다.
@@ -128,7 +128,7 @@ describe('tryReadTranslatorConfig', () => {
 
         expect(tryReadTranslatorConfig()).toEqual({
             apiKey: 'paid',
-            model: MODEL_SPECS['gemini-2.5-flash-lite'].apiModelId,
+            model: MODEL_SPECS['gemini-3.5-flash-lite'].apiModelId,
         });
         expect(warnSpy).toHaveBeenCalledWith(
             expect.stringContaining('TRANSLATE_MODEL="toString"')

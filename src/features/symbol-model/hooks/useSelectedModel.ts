@@ -8,11 +8,11 @@ import {
     useRef,
     useState,
 } from 'react';
-import { DEEPSEEK_V4_FLASH_MODEL, type ModelId } from '@y0ngha/siglens-core';
+import { DEEPSEEK_V4_1_FLASH_MODEL, type ModelId } from '@y0ngha/siglens-core';
 import { LOCAL_STORAGE_ANALYSIS_MODEL_KEY } from '@/shared/lib/storageKeys';
 import { migrateLegacyAnalysisModel } from '../lib/migrateAnalysisModel';
 
-const DEFAULT_MODEL: ModelId = DEEPSEEK_V4_FLASH_MODEL;
+const DEFAULT_MODEL: ModelId = DEEPSEEK_V4_1_FLASH_MODEL;
 
 /**
  * 선택된 분석 모델 상태 — localStorage 영속 + tier 허용 목록 검증.
@@ -44,7 +44,7 @@ export function useSelectedModel(
     const readFromStorage = useEffectEvent((): void => {
         if (typeof window === 'undefined') return;
         // Run the one-time legacy-default migration BEFORE reading, so the read
-        // below picks up the migrated value for users still on gemini-2.5-flash-lite.
+        // below picks up the migrated value for users still on gemini-3.5-flash-lite.
         migrateLegacyAnalysisModel();
         const stored = localStorage.getItem(
             LOCAL_STORAGE_ANALYSIS_MODEL_KEY

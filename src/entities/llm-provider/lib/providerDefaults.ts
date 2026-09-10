@@ -4,7 +4,7 @@
  * ⚠️ **이 파일의 어떤 export도 현재 production 소비처가 없다.**
  * `FALLBACK_MODEL_ID`, 네 개의 `*_MODEL_PRIORITY`, `resolveDefaultModelForProvider`
  * 모두 barrel(`entities/llm-provider`)로 공개돼 있을 뿐 `src/` 어디에서도 호출되지
- * 않는다 — 분석 모델 기본값은 `useSelectedModel`의 `DEEPSEEK_V4_FLASH_MODEL`이,
+ * 않는다 — 분석 모델 기본값은 `useSelectedModel`의 `DEEPSEEK_V4_1_FLASH_MODEL`이,
  * BYOK 게이트는 `shared/lib/byokGate`가 `TIER_CONFIG`를 직접 읽어 처리한다.
  * 따라서 순서를 바꿔도 지금은 런타임 동작이 변하지 않는다.
  *
@@ -29,10 +29,10 @@ export const FALLBACK_MODEL_ID = 'claude-haiku-4-5' as const satisfies ModelId;
 
 /** 세대 우선 — Anthropic은 세대 갭이 라인 갭보다 크다고 보고 5세대를 모두 앞에 둔다. */
 export const CLAUDE_MODEL_PRIORITY: readonly ModelId[] = [
+    'claude-fable-5-1',
     'claude-opus-5',
+    'claude-opus-4-8',
     'claude-sonnet-5',
-    'claude-opus-4-7',
-    'claude-sonnet-4-6',
     'claude-haiku-4-5',
 ];
 
@@ -45,30 +45,27 @@ export const CLAUDE_MODEL_PRIORITY: readonly ModelId[] = [
  */
 export const GEMINI_MODEL_PRIORITY: readonly ModelId[] = [
     'gemini-3.1-pro-preview',
-    'gemini-2.5-pro',
+    'gemini-3.8-flash',
+    'gemini-3.7-flash',
     'gemini-3.6-flash',
-    'gemini-3-flash-preview',
-    'gemini-2.5-flash',
     'gemini-3.5-flash-lite',
-    'gemini-2.5-flash-lite',
 ];
 
 /** 세대 우선, 같은 세대 안에서는 상위 변형 우선(sol → terra). */
 export const CHATGPT_MODEL_PRIORITY: readonly ModelId[] = [
+    'gpt-6-astra',
     'gpt-5.6-sol',
     'gpt-5.6-terra',
-    'gpt-5.5',
-    'gpt-5.4',
-    'gpt-5-mini',
+    'gpt-5.6-luna',
 ];
 
 /**
- * 유일하게 성능 역순 — v4-pro가 상위(`thinking: true`)지만 flash가 앱 전역
- * 기본 모델(`DEEPSEEK_V4_FLASH_MODEL`)이라 기본값 후보로도 flash를 먼저 둔다.
+ * 유일하게 성능 역순 — v4.1-pro가 상위 라인이지만 flash가 앱 전역
+ * 기본 모델(`DEEPSEEK_V4_1_FLASH_MODEL`)이라 기본값 후보로도 flash를 먼저 둔다.
  */
 export const DEEPSEEK_MODEL_PRIORITY: readonly ModelId[] = [
-    'deepseek-v4-flash',
-    'deepseek-v4-pro',
+    'deepseek-v4.1-flash',
+    'deepseek-v4.1-pro',
 ];
 
 const PROVIDER_PRIORITY_MAP: Record<AIProvider, readonly ModelId[]> = {

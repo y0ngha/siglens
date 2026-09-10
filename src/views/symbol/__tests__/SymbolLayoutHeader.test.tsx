@@ -38,8 +38,8 @@ const { mockUseSymbolModel, mockOpenSignupNudge } = vi.hoisted(() => ({
 // toggle click, so these tests assert on that opener, not on a rendered modal.
 function symbolModelValue(overrides: Record<string, unknown> = {}) {
     return {
-        modelId: 'gemini-2.5-flash-lite',
-        allowedModels: ['gemini-2.5-flash-lite'],
+        modelId: 'gemini-3.5-flash-lite',
+        allowedModels: ['gemini-3.5-flash-lite'],
         isHydrated: true,
         gateModal: null,
         dismissGate: vi.fn(),

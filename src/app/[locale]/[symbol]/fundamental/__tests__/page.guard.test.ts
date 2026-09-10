@@ -308,7 +308,7 @@ describe('Fundamental generateMetadata snapshot-derived description', () => {
                     overallConclusionKo:
                         'PER은 업종 평균 대비 높지만 성장성이 이를 상쇄합니다.',
                 },
-                model: 'deepseek-v4-flash',
+                model: 'deepseek-v4.1-flash',
                 generatedAt: new Date(),
                 updatedAt: new Date(),
             },

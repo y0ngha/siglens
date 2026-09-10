@@ -1,7 +1,14 @@
-import {
-    DEEPSEEK_V4_FLASH_MODEL,
-    GEMINI_2_5_FLASH_LITE_MODEL,
-} from '@y0ngha/siglens-core';
+import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
+/**
+ * localStorage에 남아 있을 수 있는 **과거** 모델 ID들.
+ *
+ * core 레지스트리에서 제거된 값이라 `ModelId`로 표현할 수 없고, 상수도 함께
+ * 사라졌으므로 리터럴로 고정한다. 이 목록은 "지금 고를 수 있는 모델"이 아니라
+ * "예전에 저장됐을 수 있는 문자열"이므로, 레지스트리가 바뀌어도 따라 바꾸면 안
+ * 된다 — 바꾸는 순간 마이그레이션이 겨냥하던 사용자를 놓친다.
+ */
+const LEGACY_GEMINI_2_5_FLASH_LITE = 'gemini-2.5-flash-lite';
+
 import {
     LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
     LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY,
@@ -44,10 +51,10 @@ export function migrateLegacyAnalysisModel(): void {
         }
 
         const stored = localStorage.getItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY);
-        if (stored === GEMINI_2_5_FLASH_LITE_MODEL) {
+        if (stored === LEGACY_GEMINI_2_5_FLASH_LITE) {
             localStorage.setItem(
                 LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
-                DEEPSEEK_V4_FLASH_MODEL
+                DEEPSEEK_V4_1_FLASH_MODEL
             );
         }
 

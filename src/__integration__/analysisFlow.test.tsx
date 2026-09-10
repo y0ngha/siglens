@@ -164,9 +164,9 @@ describe('Analysis Flow', () => {
     it('renders model selector in analysis panel', () => {
         render(
             <ModelSelector
-                selectedModel={'gemini-2.5-flash-lite' as ModelId}
+                selectedModel={'gemini-3.5-flash-lite' as ModelId}
                 onModelChange={vi.fn()}
-                allowedModels={['gemini-2.5-flash-lite' as ModelId]}
+                allowedModels={['gemini-3.5-flash-lite' as ModelId]}
             />
         );
         expect(screen.getByLabelText('AI 분석 모델 선택')).toBeInTheDocument();
@@ -176,11 +176,11 @@ describe('Analysis Flow', () => {
         const onModelChange = vi.fn();
         render(
             <ModelSelector
-                selectedModel={'gemini-2.5-flash-lite' as ModelId}
+                selectedModel={'gemini-3.5-flash-lite' as ModelId}
                 onModelChange={onModelChange}
                 allowedModels={[
-                    'gemini-2.5-flash-lite' as ModelId,
-                    'gemini-2.5-flash' as ModelId,
+                    'gemini-3.5-flash-lite' as ModelId,
+                    'gemini-3.6-flash' as ModelId,
                 ]}
             />
         );
@@ -197,7 +197,7 @@ describe('Analysis Flow', () => {
         await user.click(flashOption!);
 
         expect(onModelChange).toHaveBeenCalledTimes(1);
-        expect(onModelChange).toHaveBeenCalledWith('gemini-2.5-flash');
+        expect(onModelChange).toHaveBeenCalledWith('gemini-3.6-flash');
     });
 
     // 실제 AnalysisPanel을 완전한 응답으로 렌더해 코어 출력 계약을

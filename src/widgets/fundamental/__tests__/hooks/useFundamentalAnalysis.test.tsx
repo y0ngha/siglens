@@ -47,7 +47,7 @@ function makeWrapper() {
 }
 
 function Probe() {
-    useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite');
+    useFundamentalAnalysis('AAPL', 'gemini-3.5-flash-lite');
     return null;
 }
 
@@ -82,7 +82,7 @@ describe('useFundamentalAnalysis', () => {
         const wrapper = makeWrapper();
 
         const { result } = renderHook(
-            () => useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFundamentalAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -96,7 +96,7 @@ describe('useFundamentalAnalysis', () => {
                 type: 'fundamental',
                 params: expect.objectContaining({
                     symbol: 'AAPL',
-                    modelId: 'gemini-2.5-flash-lite',
+                    modelId: 'gemini-3.5-flash-lite',
                     reasoning: false,
                 }),
             })
@@ -107,7 +107,7 @@ describe('useFundamentalAnalysis', () => {
         const wrapper = makeWrapper();
 
         const { result } = renderHook(
-            () => useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFundamentalAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 
@@ -132,7 +132,7 @@ describe('useFundamentalAnalysis', () => {
         const wrapper = makeWrapper();
 
         const { result } = renderHook(
-            () => useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            () => useFundamentalAnalysis('AAPL', 'gemini-3.5-flash-lite'),
             { wrapper }
         );
 

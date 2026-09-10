@@ -1,5 +1,5 @@
 import 'server-only';
-import { DEEPSEEK_V4_FLASH_MODEL } from '@y0ngha/siglens-core';
+import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
 import type { SeoSnapshotTab } from '@/entities/seo-snapshot';
 import type { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import {
@@ -171,11 +171,11 @@ export async function resolveHarvest(
             // 분명해진다.
             locale: DEFAULT_LOCALE,
             content: result.result,
-            // 저장소 `model` 필드는 seam이 보낸 modelId(DEEPSEEK_V4_FLASH_MODEL)와
+            // 저장소 `model` 필드는 seam이 보낸 modelId(DEEPSEEK_V4_1_FLASH_MODEL)와
             // 통일한다: 어떤 축의 cached 결과도 자체적으로 모델 식별자를 싣지
             // 않는다(spec 2026-07-24 Task 9 결의 §"resolveHarvest" — 각 결과
             // 타입에 model 필드가 없음을 확인).
-            model: DEEPSEEK_V4_FLASH_MODEL,
+            model: DEEPSEEK_V4_1_FLASH_MODEL,
             generatedAt: new Date(),
         });
         counts.harvested++;

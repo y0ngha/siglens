@@ -79,7 +79,7 @@ describe('useCongressTrend — branch coverage', () => {
 
             const wrapper = makeWrapper();
             const { result } = renderHook(
-                () => useCongressTrend('AAPL', 'claude-opus-4-7'),
+                () => useCongressTrend('AAPL', 'claude-opus-5'),
                 { wrapper }
             );
 
@@ -102,7 +102,7 @@ describe('useCongressTrend — branch coverage', () => {
 
             const wrapper = makeWrapper();
             const { result } = renderHook(
-                () => useCongressTrend('AAPL', 'gemini-2.5-flash-lite'),
+                () => useCongressTrend('AAPL', 'gemini-3.5-flash-lite'),
                 { wrapper }
             );
 
@@ -127,7 +127,7 @@ describe('useCongressTrend — branch coverage', () => {
                 () =>
                     useCongressTrend(
                         'AAPL',
-                        'gemini-2.5-flash-lite',
+                        'gemini-3.5-flash-lite',
                         false,
                         false
                     ),
@@ -148,7 +148,7 @@ describe('useCongressTrend — branch coverage', () => {
 
             const wrapper = makeWrapper();
             const { result, rerender } = renderHook(
-                () => useCongressTrend('AAPL', 'gemini-2.5-flash-lite'),
+                () => useCongressTrend('AAPL', 'gemini-3.5-flash-lite'),
                 { wrapper }
             );
 

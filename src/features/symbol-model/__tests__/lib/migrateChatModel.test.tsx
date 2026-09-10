@@ -7,7 +7,7 @@ import {
 
 const OLD_DEFAULT = 'gemini-2.5-flash';
 const FLASH_LITE = 'gemini-2.5-flash-lite';
-const NEW_DEFAULT = 'deepseek-v4-flash';
+const NEW_DEFAULT = 'deepseek-v4.1-flash';
 
 function readStored(): string | null {
     return localStorage.getItem(LOCAL_STORAGE_CHAT_MODEL_KEY);
@@ -75,7 +75,7 @@ describe('migrateLegacyChatModel', () => {
         expect(isV2FlagSet()).toBe(true);
     });
 
-    it('leaves the new default (deepseek-v4-flash) unchanged and sets the flag', () => {
+    it('leaves the new default (deepseek-v4.1-flash) unchanged and sets the flag', () => {
         localStorage.setItem(LOCAL_STORAGE_CHAT_MODEL_KEY, NEW_DEFAULT);
 
         migrateLegacyChatModel();
@@ -84,12 +84,12 @@ describe('migrateLegacyChatModel', () => {
         expect(isFlagSet()).toBe(true);
     });
 
-    it('leaves an unrelated stored model (gpt-5-mini) unchanged and sets the flag', () => {
-        localStorage.setItem(LOCAL_STORAGE_CHAT_MODEL_KEY, 'gpt-5-mini');
+    it('leaves an unrelated stored model (gpt-5.6-luna) unchanged and sets the flag', () => {
+        localStorage.setItem(LOCAL_STORAGE_CHAT_MODEL_KEY, 'gpt-5.6-luna');
 
         migrateLegacyChatModel();
 
-        expect(readStored()).toBe('gpt-5-mini');
+        expect(readStored()).toBe('gpt-5.6-luna');
         expect(isFlagSet()).toBe(true);
     });
 

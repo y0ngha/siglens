@@ -58,7 +58,7 @@ const CRYPTO_KOREAN_TRANSLATE_LIMIT = Number(
 // Mirrors CHUNK_SIZE from the removed seedIndicatorTranslationsBatch.ts — 300 prompts/batch
 // stays within Gemini enqueue token limits for short translation prompts.
 const CHUNK_SIZE = 300;
-const GEMINI_MODEL = 'gemini-2.5-flash-lite';
+const GEMINI_MODEL = 'gemini-3.5-flash-lite';
 const POLL_INTERVAL_MS = 30 * MS_PER_SECOND;
 const MAX_POLL_MS = 2 * MS_PER_HOUR; // 2h
 const DRY_RUN_PROMPT_PREVIEW_LENGTH = 200;

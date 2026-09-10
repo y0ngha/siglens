@@ -21,12 +21,24 @@ vi.mock('@/features/analysis-nudge', () => ({
 }));
 
 vi.mock('@y0ngha/siglens-core', () => ({
-    getAllowedModels: vi.fn(() => ['gemini-2.5-flash-lite'] as ModelId[]),
-    GEMINI_2_5_FLASH_LITE_MODEL: 'gemini-2.5-flash-lite',
+    isClaudeAdaptiveModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'adaptive',
+    isClaudeBudgetModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'budget',
+    isReasoningToggleable: () => true,
+    getModelAccess: (m: string) =>
+        m === 'claude-opus-5' || m === 'gpt-5.6-sol' ? 'byok' : 'free',
+    supportsHardOff: () => true,
+    resolveReasoningConfig: (
+        modes: { off: unknown; on: unknown; default: string },
+        r?: boolean
+    ) => ((r ?? modes.default === 'on') ? modes.on : modes.off),
+    getAllowedModels: vi.fn(() => ['gemini-3.5-flash-lite'] as ModelId[]),
+    GEMINI_2_5_FLASH_LITE_MODEL: 'gemini-3.5-flash-lite',
 }));
 
 vi.mock('@/features/symbol-model/hooks/useSelectedModel', () => ({
-    useSelectedModel: vi.fn(() => ['gemini-2.5-flash-lite', vi.fn(), true]),
+    useSelectedModel: vi.fn(() => ['gemini-3.5-flash-lite', vi.fn(), true]),
 }));
 
 vi.mock('@/features/premium-gate', () => ({
@@ -84,7 +96,7 @@ describe('SymbolModelContext', () => {
 
         render(<Consumer />, { wrapper: makeWrapper() });
         expect(screen.getByTestId('model').textContent).toBe(
-            'gemini-2.5-flash-lite'
+            'gemini-3.5-flash-lite'
         );
     });
 
@@ -93,7 +105,7 @@ describe('SymbolModelContext', () => {
             wrapper: makeWrapper(),
         });
 
-        expect(result.current.allowedModels).toEqual(['gemini-2.5-flash-lite']);
+        expect(result.current.allowedModels).toEqual(['gemini-3.5-flash-lite']);
     });
 
     it('throws when used outside provider', () => {

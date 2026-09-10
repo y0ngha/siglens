@@ -40,7 +40,7 @@ import type { Page } from '@playwright/test';
  *     model are free while some cheap Gemini ones are not. Do NOT re-enumerate
  *     that list here: it grows every time a model generation lands and a
  *     hand-maintained copy silently goes stale. Read it from tier.ts.
- *     The default/selected model is deepseek-v4-flash → trigger shows
+ *     The default/selected model is deepseek-v4.1-flash → trigger shows
  *     "DeepSeek Flash". We exercise the premium branch with "Claude Sonnet 4.6"
  *     (label "Sonnet 4.6", non-free ⇒ guest auth gate).
  *
@@ -62,7 +62,7 @@ import type { Page } from '@playwright/test';
 
 const SELECTOR_TRIGGER_NAME = 'AI 분석 모델 선택';
 const SELECTOR_LISTBOX_NAME = 'AI 분석 모델 목록';
-const FREE_DEFAULT_LABEL = 'DeepSeek Flash'; // deepseek-v4-flash — the free default model's trigger label
+const FREE_DEFAULT_LABEL = 'DeepSeek Flash'; // deepseek-v4.1-flash — the free default model's trigger label
 // A free, non-default option, matched by its full accessible name (label +
 // fullName). `exact: true` below is defensive: labels now carry their
 // generation, so this string is not a substring of any other option's name,
@@ -73,7 +73,7 @@ const FREE_OPTION_ACCESSIBLE_NAME = 'Flash 2.5 Gemini 2.5 Flash';
 // no longer a prefix of any other option's label ("Flash Lite 2.5", "Flash 3.6").
 const FREE_OPTION_LABEL = 'Flash 2.5';
 const PREMIUM_OPTION_FULLNAME = 'Claude Sonnet 4.6'; // non-free ⇒ guest auth gate
-const PREMIUM_MODEL_ID = 'claude-sonnet-4-6';
+const PREMIUM_MODEL_ID = 'claude-sonnet-5';
 const MODEL_STORAGE_KEY = 'siglens:selected-analysis-model';
 const AUTH_GATE_TITLE = '프리미엄 모델 사용 안내';
 const AUTH_GATE_CTA = '회원가입 하러 가기';
@@ -137,7 +137,7 @@ test.describe('model gate (guest)', () => {
                     MODEL_STORAGE_KEY
                 )
             )
-            .toBe('gemini-2.5-flash');
+            .toBe('gemini-3.6-flash');
     });
 
     test('selecting a premium model as a guest opens the auth gate and blocks the selection', async ({

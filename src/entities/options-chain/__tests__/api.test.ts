@@ -18,7 +18,7 @@ vi.mock('../lib/optionsDataCache', () => ({
 
 import {
     runOptionsAnalysis,
-    DEEPSEEK_V4_FLASH_MODEL,
+    DEEPSEEK_V4_1_FLASH_MODEL,
     type RunOptionsAnalysisResult,
     type OptionsSnapshot,
     type OptionsChain,
@@ -90,7 +90,7 @@ describe('prewarmOptions', () => {
             expect.objectContaining({
                 symbol: 'AAPL',
                 companyName: 'Apple Inc.',
-                modelId: DEEPSEEK_V4_FLASH_MODEL,
+                modelId: DEEPSEEK_V4_1_FLASH_MODEL,
                 snapshot,
                 tier: 'free',
                 reasoning: false,

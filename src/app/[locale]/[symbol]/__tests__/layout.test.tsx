@@ -52,6 +52,18 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@y0ngha/siglens-core', () => ({
+    isClaudeAdaptiveModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'adaptive',
+    isClaudeBudgetModelSpec: (s: { thinkingApi?: string }) =>
+        s.thinkingApi === 'budget',
+    isReasoningToggleable: () => true,
+    getModelAccess: (m: string) =>
+        m === 'claude-opus-5' || m === 'gpt-5.6-sol' ? 'byok' : 'free',
+    supportsHardOff: () => true,
+    resolveReasoningConfig: (
+        modes: { off: unknown; on: unknown; default: string },
+        r?: boolean
+    ) => ((r ?? modes.default === 'on') ? modes.on : modes.off),
     EMPTY_INDICATOR_RESULT: MOCK_EMPTY_INDICATOR_RESULT,
     // 레이아웃이 `@/views/symbol` 배럴에서 `RelatedSymbols`를 가져오는데, 그 배럴이
     // `FearGreedFactsSummary`까지 끌고 오고 그게 모듈 스코프에서 이 상수를 읽는다.

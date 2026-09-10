@@ -87,12 +87,12 @@ describe('useChat — model persistence', () => {
 
     it('does not overwrite stored model with the default on initial mount', async () => {
         // Pre-existing stored model from a previous session. Deliberately NOT the
-        // legacy chat default (`gemini-2.5-flash`) — that exact value now triggers
+        // legacy chat default (`gemini-3.6-flash`) — that exact value now triggers
         // the one-time migration (see the dedicated migration test below), which
         // legitimately writes to MODEL_STORAGE_KEY at mount. This test asserts the
         // unrelated original regression: an arbitrary already-stored selection
         // must never be silently overwritten on mount.
-        localStorage.setItem(MODEL_STORAGE_KEY, 'claude-sonnet-4-6');
+        localStorage.setItem(MODEL_STORAGE_KEY, 'claude-sonnet-5');
         const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
 
         await act(async () => {
@@ -111,7 +111,7 @@ describe('useChat — model persistence', () => {
         setItemSpy.mockRestore();
     });
 
-    it('migrates a legacy gemini-2.5-flash stored chat model to deepseek-v4-flash after mount', async () => {
+    it('migrates a legacy gemini-2.5-flash stored chat model to deepseek-v4.1-flash after mount', async () => {
         // Simulates a pre-DeepSeek-flip user who never touched the model selector:
         // `useChat` used to auto-persist the old chat default, so this exact value
         // is indistinguishable from "never chosen" and must be migrated forward.
@@ -123,9 +123,9 @@ describe('useChat — model persistence', () => {
             });
         });
 
-        expect(result.current.selectedModel).toBe('deepseek-v4-flash');
+        expect(result.current.selectedModel).toBe('deepseek-v4.1-flash');
         expect(localStorage.getItem(MODEL_STORAGE_KEY)).toBe(
-            'deepseek-v4-flash'
+            'deepseek-v4.1-flash'
         );
     });
 
@@ -139,10 +139,10 @@ describe('useChat — model persistence', () => {
 
         // Simulate a user-initiated model change in the first session.
         await act(async () => {
-            first.result.current.handleModelChange('gemini-2.5-flash');
+            first.result.current.handleModelChange('gemini-3.6-flash');
         });
         expect(localStorage.getItem(MODEL_STORAGE_KEY)).toBe(
-            'gemini-2.5-flash'
+            'gemini-3.6-flash'
         );
 
         // Unmount — equivalent to ChatPanel closing.
@@ -160,10 +160,10 @@ describe('useChat — model persistence', () => {
         // hook instance encountered an already-hydrated state and the stale
         // mount-flag heuristic discarded the write.
         await act(async () => {
-            second.result.current.handleModelChange('gemini-2.5-flash-lite');
+            second.result.current.handleModelChange('gemini-3.5-flash-lite');
         });
         expect(localStorage.getItem(MODEL_STORAGE_KEY)).toBe(
-            'gemini-2.5-flash-lite'
+            'gemini-3.5-flash-lite'
         );
 
         second.unmount();

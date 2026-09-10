@@ -7,7 +7,7 @@ import {
     runCongressTrend,
     isEtRegularSessionOpen,
     computeFinancialsScorecard,
-    DEEPSEEK_V4_FLASH_MODEL,
+    DEEPSEEK_V4_1_FLASH_MODEL,
     type AssembledPromptRecord,
     type RunAnalysisResult,
     type RunOverallAnalysisResult,
@@ -51,16 +51,16 @@ import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsR
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 
 /**
- * 이 파일의 모든 seam이 `modelId: DEEPSEEK_V4_FLASH_MODEL`을 직접 명시 전달하는
+ * 이 파일의 모든 seam이 `modelId: DEEPSEEK_V4_1_FLASH_MODEL`을 직접 명시 전달하는
  * 이유 — 익명/free 방문자가 실제로 보내는 기본 모델이다. `SymbolModelContext`의
- * `useSelectedModel` 기본값(`DEFAULT_MODEL = DEEPSEEK_V4_FLASH_MODEL`)과
+ * `useSelectedModel` 기본값(`DEFAULT_MODEL = DEEPSEEK_V4_1_FLASH_MODEL`)과
  * 동일 — `[symbol]/page.tsx`·`[symbol]/overall/page.tsx`의 SSR peek도 이
  * 값으로 캐시를 읽는다. core의 각 submit 함수는 `modelId`를 옵션으로 받을 때
  * "생략(undefined)"에 대해 서로 다르게 동작한다: technical(`runAnalysis`)만
  * 내부적으로 `DEFAULT_ANALYSIS_MODEL_ID`('analysis-worker')로 폴백하고, 나머지
  * 축(fundamental/financials/congress/news/options/overall)은 `modelId`를
  * 캐시 키에 그대로 사용하므로 생략 시 실제 방문자가 쓰는 키와 어긋난다. 그래서
- * 모든 seam이 `DEEPSEEK_V4_FLASH_MODEL`을 명시적으로 전달해 anonymous writer와
+ * 모든 seam이 `DEEPSEEK_V4_1_FLASH_MODEL`을 명시적으로 전달해 anonymous writer와
  * 캐시 키를 맞춘다(스펙 §7 캐시 키 5축 정합).
  */
 
@@ -105,7 +105,7 @@ async function persistPrewarmAnalysis(input: {
             symbol: input.symbol,
             timeframe: input.timeframe,
             tab: input.tab,
-            modelId: DEEPSEEK_V4_FLASH_MODEL,
+            modelId: DEEPSEEK_V4_1_FLASH_MODEL,
             // 프리웜은 현재 한국어로만 생성한다(harvest.ts의 `resolveHarvest`가
             // 같은 이유로 스냅샷에 `DEFAULT_LOCALE`을 적는 것과 동일한 근거).
             locale: DEFAULT_LOCALE,
@@ -182,7 +182,7 @@ export async function prewarmTechnical(
         force,
         fmpSymbol,
         {
-            modelId: DEEPSEEK_V4_FLASH_MODEL,
+            modelId: DEEPSEEK_V4_1_FLASH_MODEL,
             skipEnqueueIfMiss: false,
             marketDataProvider,
             assetClass,
@@ -228,7 +228,7 @@ export async function prewarmFundamental(
 ): Promise<RunFundamentalAnalysisResult> {
     return runFundamentalAnalysis({
         symbol,
-        modelId: DEEPSEEK_V4_FLASH_MODEL,
+        modelId: DEEPSEEK_V4_1_FLASH_MODEL,
         dataProvider: getFundamentalDataProvider(symbol),
         tier: 'free',
         reasoning: false,
@@ -247,7 +247,7 @@ export async function prewarmFinancials(
 ): Promise<RunFinancialsAnalysisResult> {
     return runFinancialsAnalysis({
         symbol,
-        modelId: DEEPSEEK_V4_FLASH_MODEL,
+        modelId: DEEPSEEK_V4_1_FLASH_MODEL,
         dataProvider: getFinancialStatementsProvider(symbol),
         tier: 'free',
         reasoning: false,
@@ -261,7 +261,7 @@ export async function prewarmFinancials(
  * `submitCongressTrendAction`의 비봇 경로를 request-context 없이 재현한다.
  * 이 경로는 액션 레이어(BYOK 게이트 포함)를 우회해 core를 직접 호출한다 — 실 사용자
  * 컨텍스트가 없는 pre-warm이라 gate 대상이 아니다. 항상 free-tier 비프리미엄 모델
- * (DEEPSEEK_V4_FLASH_MODEL)만 사용하므로 프리미엄/BYOK 상황 자체가 발생하지 않는다.
+ * (DEEPSEEK_V4_1_FLASH_MODEL)만 사용하므로 프리미엄/BYOK 상황 자체가 발생하지 않는다.
  */
 export async function prewarmCongress(
     symbol: string,
@@ -269,7 +269,7 @@ export async function prewarmCongress(
 ): Promise<RunCongressTrendResult> {
     return runCongressTrend({
         symbol,
-        modelId: DEEPSEEK_V4_FLASH_MODEL,
+        modelId: DEEPSEEK_V4_1_FLASH_MODEL,
         dataProvider: getCongressTradesProvider(),
         skipEnqueueIfMiss: false,
         reasoning: false,
@@ -355,7 +355,7 @@ export async function prewarmOverall(
         symbol,
         companyName,
         timeframe,
-        modelId: DEEPSEEK_V4_FLASH_MODEL,
+        modelId: DEEPSEEK_V4_1_FLASH_MODEL,
         fundamentalProvider: getFundamentalDataProvider(symbol),
         marketDataProvider,
         newsItems: enrichedNews,
