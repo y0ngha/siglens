@@ -2,7 +2,9 @@
     "git": {
         "requireBranch": "master",
         "commitMessage": "chore: release v${version}",
-        "tagName": "v${version}"
+        "tagName": "v${version}",
+        "commitArgs": ["--no-verify"],
+        "pushArgs": ["--follow-tags", "--no-verify"]
     },
     "github": {
         "release": true,

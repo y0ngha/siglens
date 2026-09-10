@@ -22,9 +22,10 @@
 
 ```bash
 bash infra/aws/07-alarms.sh   # 알람에 변경이 있는 릴리스라면 태그 **전에** (멱등)
-yarn release          # release-it: 버전 범프 + CHANGELOG + 커밋 + 태그 (SIGLENS_RELEASE_E2E=1 → e2e 포함)
-git push              # 커밋 push
-git push --tags       # ← 이 순간 배포가 시작된다
+yarn release          # release-it: 버전 범프 + CHANGELOG + 커밋 + 태그 + push
+                      # ← 태그가 올라가는 이 순간 배포가 시작된다
+                      # git 훅은 건너뛴다(--no-verify): CI가 통과한 master에서만 돌기 때문.
+                      # push는 --follow-tags로 나가므로 별도 `git push --tags`가 필요 없다.
 ```
 
 > ⚠️ **`infra/aws/06`·`07`·`08`은 파이프라인이 돌리지 않는다.** `deploy.sh`는

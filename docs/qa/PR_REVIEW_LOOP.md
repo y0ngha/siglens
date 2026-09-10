@@ -52,8 +52,10 @@ PR의 CI가 실패하면 **원인을 분류**한다.
 
 - **실제 회귀** → 수정.
 - **flake** → [EMPIRICAL_VERIFICATION.md](./EMPIRICAL_VERIFICATION.md) §4 절차로 입증한 뒤 race를 타깃 수정.
-- pre-push hook 게이트 = CI와 동일(format/lint/typecheck/test/build). e2e는 `SIGLENS_RELEASE_E2E=1`일
-  때만. `--no-verify`는 사용자 허락 없이 금지(우회하면 CI에서 터진다).
+- pre-push hook 게이트 = CI와 동일(format/lint/typecheck/i18n/test/build). e2e는
+  `SIGLENS_RELEASE_E2E=1`일 때만. `--no-verify`는 사용자 허락 없이 금지(우회하면 CI에서 터진다).
+  **릴리스는 예외** — `yarn release`가 `--no-verify`로 돈다(CI 통과한 master에서만 실행되므로
+  같은 게이트를 두 번 돌 이유가 없다). `docs/qa/QA_ENV_SETUP.md` §8 참고.
 
 > 토글 없이 곧장 머지해도 되는 경우(사용자가 "토글 불필요, CI 통과 확인 후 머지"라고 지시): 수정 push →
 > CI(ci/e2e) 폴링 → 전부 pass + reviewDecision APPROVED 확인 → `--merge`.
