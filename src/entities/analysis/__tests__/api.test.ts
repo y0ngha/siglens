@@ -76,10 +76,17 @@ vi.mock('@/entities/news-article/api', () => ({
     }),
 }));
 
-vi.mock('@/entities/news-article', () => ({
-    NEWS_ANALYSIS_LOOKBACK_MS: 30 * 24 * 60 * 60 * 1000,
-    buildAnalysisNewsItems: vi.fn(() => []),
-}));
+vi.mock('@/entities/news-article', async importOriginal => {
+    // `marketEventsLookback` 은 DB 의존이 없는 순수 함수라 실제 구현을 쓴다 —
+    // 스텁으로 갈아 끼우면 스트림 경로와 같은 창을 쓰는지가 검증되지 않는다.
+    const actual =
+        await importOriginal<typeof import('@/entities/news-article')>();
+    return {
+        ...actual,
+        NEWS_ANALYSIS_LOOKBACK_MS: 30 * 24 * 60 * 60 * 1000,
+        buildAnalysisNewsItems: vi.fn(() => []),
+    };
+});
 
 vi.mock('@/entities/earnings-report', () => ({
     getNextEarningsReport: vi.fn(),
@@ -239,6 +246,10 @@ describe('prewarmTechnical', () => {
                 // match so it computes the SAME core cache key (see the
                 // `priorAnalyses`/`onPromptAssembled` describe block below).
                 priorAnalyses: [],
+                // 이 테스트의 DB 스텁에는 select 가 없어 이벤트 조회가 실패하고,
+                // best-effort 계약대로 빈 배열이 내려온다 — 뉴스를 못 읽는다고
+                // 분석이 실패하지 않는다는 것 자체가 여기서 함께 고정된다.
+                marketEvents: [],
                 onPromptAssembled: expect.any(Function),
             }
         );

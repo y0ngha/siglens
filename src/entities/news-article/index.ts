@@ -13,6 +13,11 @@ export {
     NEWS_LOOKBACK_MS,
     NEWS_ANALYSIS_LOOKBACK_MS,
 } from './lib/newsLookback';
+
+export {
+    marketEventsLookback,
+    type MarketEventsLookbackWindow,
+} from './lib/marketEventsLookback';
 export { NEWS_LIST_CACHE_KEY } from './lib/cacheKeys';
 // MAX_AGGREGATE_NEWS_ITEMS는 테스트가 expected length 단언에 import해 사용한다.
 // selectAggregateNewsItems는 submitMarketNewsDigestAction에서 EnrichedNewsItem[]를 cap할 때

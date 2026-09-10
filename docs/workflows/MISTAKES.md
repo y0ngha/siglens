@@ -1642,4 +1642,15 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Both layout.tsx and page.tsx apply identical quantize transform; RSC prefetch verified deterministic via byte-compare post-build
    → Requires unit tests for RSC functions verifying quantize + updatedAt logic (e.g., layout.test.tsx with happy/degraded/empty cases)
    → Recurring: PR #573 R8 (4 separate seed determinism violations); requires end-to-end validation (two server instances post-ISR build)
+
+2. Snapshot dedup hash must include all fields that can differ between users
+   → When snapshots can have user-specific fields (analysis results, chart data, plain-text prose), all such fields must be included in the content_hash used for `ON CONFLICT` dedup
+   → Adding a new user-facing field to snapshot without adding it to dedup hash causes silent data loss: a second user with identical primary fields but different new field silently inherits the first user's snapshot
+   → The dedup hash determines uniqueness; fields omitted from hash are invisible to the DB constraint
+   ❌ `chartBars` added to snapshot, but content_hash built from only (result, locale) → two analyses with different charts silently share the same row
+   ❌ `locale` added to snapshot validation, but content_hash unchanged → different-locale analyses overwrite each other
+   ❌ `plain` (plain-language prose) added to snapshot, but content_hash skipped → second sharer with different prose inherits first user's analysis
+   ✅ When adding field to snapshot, simultaneously add it to contentHash() calculation in contentHash.ts
+   ✅ Regression test: verify two identical-except-for-new-field snapshots produce different content hashes
+   → Recurring: chartBars field (prior), locale field (prior), plain field (feat/share-plain-language R2) — 3 occurrences; all documented in contentHash.ts JSDoc
 ```

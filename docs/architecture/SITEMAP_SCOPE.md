@@ -158,6 +158,27 @@ TSDD(레버리지ETF)·ALORU(SPAC유닛)였고, C 구간이 정확히 그 구성
 GSC `크롤링됨 - 현재 색인이 생성되지 않음`이 늘거나, 사이트 평균 게재순위가 나빠지는 것.
 그 경우 C → B → A 순으로 되돌린다.
 
+## 3-3. 탭 축 누락 — `/position` (2026-09-10)
+
+§1~§3-2는 "어떤 **종목**을 싣는가"를 다룬다. 여기는 그 반대축이다: 실은 것으로 정한
+종목의 **탭이 다 실렸는가**.
+
+`/[symbol]/position`이 빌더 두 곳(`buildPopularEntries` · `buildCryptoPopularEntries`)에서
+빠져 있었다. 2026-09-10 프로덕션 실측에서 `sitemap-popular.xml` 3,031 URL 중 position은
+**0건**이었는데, 정작 페이지는 `index, follow` + self-canonical로 나가고 있었다 —
+sitemap에서 광고하지 않으면서 색인은 허용하는, 어느 쪽으로도 정해지지 않은 상태다.
+
+의도적 제외였다면 페이지가 `noindex`여야 했다. 실제로 이 저장소는 그렇게 하는 축들이
+있다 — `/congress`(KR), `/financials`(ETF), `/options`(비-US)는 **페이지가 noindex를
+반환하는 조건과 빌더의 제외 조건이 같은 식**이고, 그 대응이 각 분기 주석에 근거로
+적혀 있다. position에는 그 대응도 근거도 없었다. 누락이다.
+
+**불변식**: 종목이 sitemap에 실린다면, 그 종목 profile의 `tabs`(`shared/config/marketProfile`)
+전부가 실려야 한다. 예외는 **페이지가 그 조건에서 noindex를 반환할 때뿐**이고, 그때는
+빌더 분기 주석에 그 대응을 적는다. 가드는 `buildPopularEntries.test.ts`(티커당 position
+1건 = `POPULAR_TICKERS` 전체)와 `buildCryptoPopularEntries.test.ts`(코인당 정확히 5축)에
+있다 — 새 탭을 추가하면 여기서 먼저 깨진다.
+
 ## 4. 상장폐지
 
 `korean_tickers.delisted_at`이 상장 상태를 들고 있고, 일 1회 크론(`docs/reference/CRON.md`

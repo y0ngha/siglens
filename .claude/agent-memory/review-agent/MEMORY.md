@@ -56,6 +56,7 @@
 - [feat/visitor-user-agent R2 — privacy v3 seed + effective-date gate, approved](project-visitor-metrics-privacy-v3-r2.md) — R1's onConflictDoNothing-frozen-v2 fix verified: v3 seed diff-clean across 4 locales, gate constant == effectiveDate instant, no other hardcoded version
 - [feat/share-plain-language R1](project-share-plain-language-r1.md) — contentHash omits `plain` (chartBars precedent shows it should be included); onConflictDoUpdate only bumps expiresAt so dedupe silently freezes first sharer's (possibly missing) plain for 7 days
 - [feat/share-plain-language R2 — CLOSED, approved](project-share-plain-language-r2-closed.md) — both R1 findings verified fixed exactly per chartBars precedent; contentHash 6th param, whitespace-plain rejected server-side, no trim mismatch
+- [fix/sitemap-position-tab R1 — APPROVED](project-fix-position-sitemap-r1.md) — /position added to both builders, lowest priority (0.7) coherent, count arithmetic + non-tautological tests verified, no stale hardcoded counts elsewhere
 
 ## Feedback
 
