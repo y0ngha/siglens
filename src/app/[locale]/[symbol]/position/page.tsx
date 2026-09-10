@@ -101,34 +101,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 
     /*
-     * 본문과 메타데이터가 **같은 조건**을 봐야 한다.
+     * `/position`은 **항상 noindex**다 (2026-09-11 SEO 회복 감사, 2026-08-19의
+     * "Task 1이 색인을 정당화한다" 결정을 되돌림).
      *
-     * 예전에는 여기서 `robots`를 무조건 index로 두었는데, 본문의 유일한 고유
-     * 콘텐츠(가격 위치 가이드 섹션)는 `resolvePriceRange`가 null이면 통째로
-     * 생략된다 — CTA는 `useHydrated` 게이트라 SSR에 안 실린다. 그러면 h1과
-     * 문단 하나뿐인 페이지가 색인 대상으로 나갔다(실측: `<main>` 안 `<a>` 0개).
-     * 2026-07 thin-content 사태가 정확히 그 형태였다.
+     * 실측: 인기 종목 8종의 SSR 고유 텍스트가 868~1,222자로 형제 탭(2~8천자)의
+     * 1/3 이하고, 그 전부가 52주 범위 밴드 + 층 라벨이라는 **템플릿 문장**이다.
+     * 2026-07 핵심 업데이트가 이 사이트를 강등한 근거가 바로 "숫자만 바뀌는
+     * 템플릿 페이지 수만 개"였는데, 그 뒤에 이 탭을 색인·sitemap에 402 URL로
+     * 더한 셈이 됐다(PR #791). 검색 수요도 없다 — GSC 16개월 실적에 `/position`
+     * 노출은 0건이고, 페이지의 본체(★평단·수익률)는 로그인 후 클라이언트에서만
+     * 그려진다. 색인 코퍼스를 "산문이 있는 페이지"로 좁히는 것이 회복 전략의
+     * 1순위라 이 탭은 빼는 것이 맞다.
      *
-     * `getQuantizedBarsStatic`은 같은 요청 안에서 dedupe되므로 본문이 곧 다시
-     * 부르는 값을 여기서 미리 부르는 비용은 없다. sibling 탭(overall/fundamental)이
-     * 쓰는 본문-메타 일치 패턴과 같다.
+     * 훅 카피(title/OG/Twitter)는 그대로 둔다 — 공유 카드는 noindex와 무관하게
+     * 필요하다. `NOINDEX_SYMBOL_METADATA`를 뒤에 스프레드해 robots와
+     * `canonical: null`만 덮는다(`noindexSymbolMetadata`와 같은 순서 계약).
      */
-    const range = await resolvePriceRange(
-        upper,
-        assetInfo.fmpSymbol,
-        marketProfileOf(assetInfo)
-    );
-    if (range === null) {
-        return noindexSymbolMetadata(upper, tSeo, locale, {
-            displayName,
-            koreanName: assetInfo.koreanName,
-        });
-    }
-
-    return symbolMetadataFromSeo(
-        buildPositionSeo(upper, displayName, assetInfo.koreanName, tSeo),
-        locale
-    );
+    return {
+        ...symbolMetadataFromSeo(
+            buildPositionSeo(upper, displayName, assetInfo.koreanName, tSeo),
+            locale
+        ),
+        ...NOINDEX_SYMBOL_METADATA,
+    };
 }
 
 /**

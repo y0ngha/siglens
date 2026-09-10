@@ -175,9 +175,16 @@ sitemap에서 광고하지 않으면서 색인은 허용하는, 어느 쪽으로
 
 **불변식**: 종목이 sitemap에 실린다면, 그 종목 profile의 `tabs`(`shared/config/marketProfile`)
 전부가 실려야 한다. 예외는 **페이지가 그 조건에서 noindex를 반환할 때뿐**이고, 그때는
-빌더 분기 주석에 그 대응을 적는다. 가드는 `buildPopularEntries.test.ts`(티커당 position
-1건 = `POPULAR_TICKERS` 전체)와 `buildCryptoPopularEntries.test.ts`(코인당 정확히 5축)에
-있다 — 새 탭을 추가하면 여기서 먼저 깨진다.
+빌더 분기 주석에 그 대응을 적는다. 새 탭을 추가하면 `buildPopularEntries.test.ts`와
+`buildCryptoPopularEntries.test.ts`(코인당 정확히 4축)에서 먼저 깨진다.
+
+> **2026-09-11 되돌림.** 위 불변식은 유지하되 `/position`은 **예외 쪽**으로 옮겼다 — 페이지가
+> 항상 `noindex, follow`를 반환하고, 두 빌더 모두 position을 싣지 않는다(PR #791의 추가를
+> 되돌림). 근거는 SSR 고유 텍스트가 868~1,222자 템플릿뿐이고 16개월 노출 0건이라 색인 코퍼스를
+> 좁히는 회복 전략에 반한다는 것 — 전말은
+> [`SEO_RECOVERY_2026_09.md`](./SEO_RECOVERY_2026_09.md) §4·§5-A2. 가드는
+> `buildPopularEntries.test.ts`("`/position` 엔트리를 한 건도 내지 않는다")로 뒤집혀 있다.
+> 이 탭을 다시 실으려면 먼저 페이지를 index로 되돌릴 **내용상의** 근거(산문 스냅샷 등)가 있어야 한다.
 
 ## 4. 상장폐지
 

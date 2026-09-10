@@ -110,9 +110,10 @@ test.describe('crypto symbol page', () => {
         // Suspense가 자식 세그먼트 레이아웃까지 감싸므로 탭별 layout.tsx도 해결책이
         // 아니다. 그래서 이 경로만 200 + 404 UI로 남는다.
         //
-        // 노출은 제한적이다 — sitemap-crypto.xml은 `CRYPTO_DESCRIPTOR.tabs`에 있는
-        // `/`,`/overall`,`/news`,`/fear-greed`,`/position`만 싣고 탭 바도 크립토에선
-        // 이 탭들을 숨기므로 내부 링크가 없다. 게다가 이 응답은
+        // 노출은 제한적이다 — sitemap-crypto.xml은 `CRYPTO_DESCRIPTOR.tabs` 중 색인
+        // 가능한 `/`,`/overall`,`/news`,`/fear-greed`만 싣고(`/position`은 항상
+        // noindex라 제외, 2026-09-11) 탭 바도 크립토에선 이 탭들을 숨기므로 내부
+        // 링크가 없다. 게다가 이 응답은
         // noindex 메타를 달고 나가므로 색인 위험이 아니라 크롤 예산 비용에 가깝다.
         //
         // 이 단언이 실패하면(예: 404로 바뀌면) 잔여 문제가 해소된 것이므로, 이 테스트와
