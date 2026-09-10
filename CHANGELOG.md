@@ -1,5 +1,19 @@
 # Changelog
 
+# [0.72.0](https://github.com/y0ngha/siglens/compare/v0.71.0...v0.72.0) (2026-09-10)
+
+
+### Bug Fixes
+
+* **sitemap:** 종목 sitemap에 누락된 /position 탭을 싣는다 ([138e947](https://github.com/y0ngha/siglens/commit/138e9476f433d61d1ddf2f8a6bf9aac2c68e7c7c))
+* **visitor:** 진단 컬럼 발효일 게이트를 제거하고 v3 발효일을 앞당긴다 ([5c7cb33](https://github.com/y0ngha/siglens/commit/5c7cb33fc347f41edbee8a00ef16025cfb10465b))
+
+
+### Features
+
+* market events 컨텍스트 소비자 구현 ([342fa58](https://github.com/y0ngha/siglens/commit/342fa587ea87ee57cf35f0f18921833b8d1ce1f3))
+* wire model-tier system to siglens-core@1.0.0 ([dcd98fd](https://github.com/y0ngha/siglens/commit/dcd98fd1ac03808a23a72c3b03a10d8e80ee6067))
+
 # [0.70.0](https://github.com/y0ngha/siglens/compare/v0.69.1...v0.70.0) (2026-09-05)
 
 
