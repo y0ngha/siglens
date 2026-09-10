@@ -66,6 +66,6 @@ export async function myAction() { ... }
 | `auth` | `DrizzleSessionRepository`, `DrizzleUserRepository`, `getCurrentUser`, `getAuthDatabaseClient`, `resetAuthDatabaseClientForTests`, `bcryptPasswordHasher`, `bcryptPasswordVerifier` | `api.ts` → `schema.ts` (`server-only`) / `next/headers` 의존 / bcrypt는 Node.js 전용 / DB client는 `import 'server-only'` 체인 |
 | `api-key` | `DrizzleUserApiKeyRepository`, `LlmApiKeyDecryptionFailedError` | `api.ts`가 drizzle/encryption import — `server-only` 보호 대상 |
 | `inquiry` | `DrizzleContactRepository` | `api.ts`가 drizzle/schema import — `server-only` 보호 대상 |
-| `news-article` | `DrizzleNewsRepository`, `getNewsList` | `api.ts`가 drizzle/DB client import, `import 'server-only'` 선언 |
+| `news-article` | `DrizzleNewsRepository`, `getNewsList`, `findMarketEventsForPrompt` | `api.ts`와 `marketEventsRepository.ts`가 drizzle/DB client import, `import 'server-only'` 선언. 같은 슬라이스의 `lib/marketEventsLookback.ts`는 순수 함수라 barrel로 노출된다 |
 | `bars` | `useBars` hook | Server Action barrel이 `@google/genai` ESM을 전이적으로 pull-in → Jest 모듈 해석 깨짐. deep import: `@/entities/bars/hooks/useBars` |
 | `ticker` | `useAssetInfo` hook | Server Action barrel이 `@google/genai` ESM을 전이적으로 pull-in → Jest 모듈 해석 깨짐. deep import: `@/entities/ticker/hooks/useAssetInfo` |

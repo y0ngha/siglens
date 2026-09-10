@@ -76,10 +76,17 @@ vi.mock('@/entities/news-article/api', () => ({
     }),
 }));
 
-vi.mock('@/entities/news-article', () => ({
-    NEWS_ANALYSIS_LOOKBACK_MS: 30 * 24 * 60 * 60 * 1000,
-    buildAnalysisNewsItems: vi.fn(() => []),
-}));
+vi.mock('@/entities/news-article', async importOriginal => {
+    // `marketEventsLookback` 은 DB 의존이 없는 순수 함수라 실제 구현을 쓴다 —
+    // 스텁으로 갈아 끼우면 스트림 경로와 같은 창을 쓰는지가 검증되지 않는다.
+    const actual =
+        await importOriginal<typeof import('@/entities/news-article')>();
+    return {
+        ...actual,
+        NEWS_ANALYSIS_LOOKBACK_MS: 30 * 24 * 60 * 60 * 1000,
+        buildAnalysisNewsItems: vi.fn(() => []),
+    };
+});
 
 vi.mock('@/entities/earnings-report', () => ({
     getNextEarningsReport: vi.fn(),

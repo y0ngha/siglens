@@ -46,7 +46,7 @@ import {
     resolveGeneratedAt,
     type AnalysisHistoryTab,
 } from '@/entities/analysis/analysisHistoryRepository';
-import { marketEventsLookback } from '@/entities/news-article/marketEventsLookback';
+import { marketEventsLookback } from '@/entities/news-article';
 import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 

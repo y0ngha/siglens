@@ -48,7 +48,7 @@ import {
     resolveGeneratedAt,
     type AnalysisHistoryTab,
 } from '@/entities/analysis/analysisHistoryRepository';
-import { marketEventsLookback } from '@/entities/news-article/marketEventsLookback';
+import { marketEventsLookback } from '@/entities/news-article';
 import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
 // core에서 직접 import — 해제는 서버 전용이어야 한다(클라이언트가 호출할 수 있으면
 // 쿨다운을 지우고 재요청하는 루프로 무력화된다). 아래 `releaseOnFailure` 참고.
