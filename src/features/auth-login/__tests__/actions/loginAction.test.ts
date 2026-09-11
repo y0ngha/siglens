@@ -189,4 +189,40 @@ describe('loginAction', () => {
         ).rejects.toThrow(`NEXT_REDIRECT:${next}`);
         expect(mockRedirect).toHaveBeenCalledWith(next);
     });
+
+    /**
+     * `/.//evil.com`은 접두사 검사를 통과하지만 URL 파서가 dot segment를 접어
+     * `//evil.com`이 된다. `/en/en//evil.com`은 `localeHref`가 로케일 접두사를
+     * 벗기면서 같은 `//evil.com`이 된다. 둘 다 같은-오리진 기본 경로로 떨어져야 한다.
+     */
+    it.each(['/.//evil.com', '/en/en//evil.com'])(
+        'next=%j는 같은-오리진 기본 경로로 redirect한다',
+        async next => {
+            mockLogin.mockResolvedValue({
+                ok: true,
+                user: { id: 'u1' } as never,
+                session: { id: 's1' } as never,
+                cookie: {
+                    name: 'siglens_session',
+                    value: 'tok',
+                    httpOnly: true,
+                    secure: false,
+                    sameSite: 'lax',
+                    path: '/',
+                    expires: new Date(),
+                    maxAgeSeconds: 60,
+                },
+            });
+            await expect(
+                loginAction(
+                    { error: null },
+                    makeFormData({
+                        email: 'a@b.com',
+                        password: 'Pass1234',
+                        next,
+                    })
+                )
+            ).rejects.toThrow(/^NEXT_REDIRECT:\/$/);
+        }
+    );
 });

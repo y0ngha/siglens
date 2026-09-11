@@ -84,13 +84,13 @@ describe('GET /api/auth/handoff (main host: issue)', () => {
                 ).headers.get('location')!
             );
             expect(fallback.origin).toBe('https://ai.siglens.io');
-            expect(fallback.pathname).toBe('/evil.com');
+            expect(fallback.pathname).toBe('/');
 
             const start = new URL(
                 (await GET(req(`?to=ai&next=${next}`))).headers.get('location')!
             );
             expect(start.origin).toBe('https://ai.siglens.io');
-            expect(start.searchParams.get('next')).toBe('/evil.com');
+            expect(start.searchParams.get('next')).toBe('/');
         }
     );
 

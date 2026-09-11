@@ -150,6 +150,6 @@ describe('SSO handoff: start → issue → consume', () => {
         );
         const final = new URL(consumeRes.headers.get('location')!);
         expect(final.host).toBe('ai.siglens.io');
-        expect(final.pathname).toBe('/evil.com');
+        expect(final.pathname).toBe('/');
     });
 });

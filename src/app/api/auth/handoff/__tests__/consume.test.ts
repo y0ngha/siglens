@@ -219,9 +219,9 @@ describe('GET /api/auth/handoff/consume (ai host: exchange)', () => {
     });
 
     it.each([
-        // One locale prefix is stripped; the leftover `/ko//evil.com` is still a same-origin path.
-        ['/ko/ko//evil.com', 'https://ai.siglens.io/ko//evil.com'],
-        ['/ko//evil.com', 'https://ai.siglens.io/evil.com'],
+        // Any `//` in the path falls back to the root (open-redirect hotfix #801), never off-origin.
+        ['/ko/ko//evil.com', 'https://ai.siglens.io/'],
+        ['/ko//evil.com', 'https://ai.siglens.io/'],
         ['/api/auth/handoff/start?next=%2Fc%2Fx', 'https://ai.siglens.io/'],
         [
             '/en/api/auth/handoff/start?next=%2Fc%2Fx',
