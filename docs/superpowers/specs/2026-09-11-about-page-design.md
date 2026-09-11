@@ -1,6 +1,6 @@
 # `/about` 소개·방법론 페이지 — 설계 (2026-09-11)
 
-`docs/architecture/SEO_RECOVERY_2026_09.md` §5-B1. 2026-07 core update 강등의 프로필이
+`docs/architecture/SEO_RECOVERY_2026_09.md` §5-B1. 2026-07 노출 절벽(June 2026 spam update 직후의 사이트 단위 품질 강등)의 프로필이
 "운영 주체·방법론 없는 AI 생성 금융(YMYL) 사이트"라, 색인 코퍼스 축소(A)와 함께 가는 신뢰 신호다.
 단독 효과는 작다 — 이 페이지가 순위를 올리는 게 아니라, 재평가 때 불리한 프로필 하나를 지운다.
 
