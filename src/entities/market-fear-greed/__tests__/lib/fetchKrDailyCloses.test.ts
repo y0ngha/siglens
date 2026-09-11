@@ -101,6 +101,98 @@ describe('fetchKrDailyCloses', () => {
         expect(closes).toEqual([{ date: '2026-08-18', close: 3225 }]);
     });
 
+    // 미국 경로(fetchDailyCloses)와 같은 이유 — 월별 분배금이 있는 채권 ETF를
+    // 미조정 종가로 읽으면 배당락일마다 가짜 하락이 20세션 수익률 스프레드에 섞인다.
+    it('(Happy) adjclose가 있으면 close 대신 adjclose를 쓴다', async () => {
+        chart.mockResolvedValue({
+            quotes: [
+                {
+                    date: new Date('2026-08-17T06:30:00.000Z'),
+                    close: 100,
+                    adjclose: 99.5,
+                },
+            ],
+        });
+
+        const closes = await fetchKrDailyCloses('136340.KS', FROM, TO);
+
+        expect(closes).toEqual([{ date: '2026-08-17', close: 99.5 }]);
+    });
+
+    it.each([
+        ['adjclose가 null', null],
+        ['adjclose가 0', 0],
+        ['adjclose가 NaN', Number.NaN],
+        ['adjclose가 없음', undefined],
+    ])('(Edge) %s이면 close로 폴백한다', async (_label, adjclose) => {
+        chart.mockResolvedValue({
+            quotes: [
+                {
+                    date: new Date('2026-08-17T06:30:00.000Z'),
+                    close: 100,
+                    adjclose,
+                },
+            ],
+        });
+
+        const closes = await fetchKrDailyCloses('136340.KS', FROM, TO);
+
+        expect(closes).toEqual([{ date: '2026-08-17', close: 100 }]);
+    });
+
+    it('(Happy) 모든 행에 adjclose가 있으면 시리즈 전체를 adjclose로 쓴다', async () => {
+        chart.mockResolvedValue({
+            quotes: [
+                {
+                    date: new Date('2026-08-17T06:30:00.000Z'),
+                    close: 100,
+                    adjclose: 99.5,
+                },
+                {
+                    date: new Date('2026-08-18T06:30:00.000Z'),
+                    close: 101,
+                    adjclose: 100.4,
+                },
+            ],
+        });
+
+        const closes = await fetchKrDailyCloses('136340.KS', FROM, TO);
+
+        expect(closes).toEqual([
+            { date: '2026-08-17', close: 99.5 },
+            { date: '2026-08-18', close: 100.4 },
+        ]);
+    });
+
+    /**
+     * 행별 폴백이면 배당락일 행만 close로 떨어져 조정가·미조정가가 섞인다.
+     * 그 하락분이 20세션 수익률 스프레드에 다시 섞이는 걸 막기 위해, adjclose가
+     * 하나라도 빠진 행이 있으면 close가 있는 다른 행도 함께 close로 통일한다.
+     */
+    it('(Edge) 한 행이라도 adjclose가 빠지면 close 있는 다른 행도 close로 통일한다', async () => {
+        chart.mockResolvedValue({
+            quotes: [
+                {
+                    date: new Date('2026-08-17T06:30:00.000Z'),
+                    close: 100,
+                    adjclose: 99.5,
+                },
+                {
+                    date: new Date('2026-08-18T06:30:00.000Z'),
+                    close: 101,
+                    adjclose: null,
+                },
+            ],
+        });
+
+        const closes = await fetchKrDailyCloses('136340.KS', FROM, TO);
+
+        expect(closes).toEqual([
+            { date: '2026-08-17', close: 100 },
+            { date: '2026-08-18', close: 101 },
+        ]);
+    });
+
     /**
      * 빈 배열을 조용히 돌려주면 `getOrSetCache`가 그대로 캐싱해 업스트림 장애가
      * "표본이 부족합니다" 화면으로 굳는다.

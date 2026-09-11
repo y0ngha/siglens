@@ -27,18 +27,21 @@ export const KOSPI_INDEX_SYMBOL = '^KS11';
  * | `sp500` | `069500.KS` | KODEX 200 | 시총가중 대형주 벤치마크 ETF = SPY 자리 |
  * | `longTreasury` | `439870.KS` | KODEX 국고채30년 액티브 | 장기물 안전자산 = TLT 자리(20년+) |
  * | `highYield` | `136340.KS` | KStar 회사채 | 신용위험을 지는 쪽. 국내엔 유동성 있는 하이일드 ETF가 없어 회사채가 최선 |
- * | `investmentGrade` | `148070.KS` | KOSEF 국고채10년 | 무위험 쪽. 회사채(중장기)와 듀레이션을 맞추려 10년물 |
+ * | `investmentGrade` | `114260.KS` | Samsung Kodex Treasury Bond Securities ETF(KODEX 국고채3년) | 무위험 쪽. `highYield`(KStar 회사채, 1~3년물, 듀레이션 ≈2년)와 만기를 맞추려 3년물 |
  * | `equalWeight` | `252650.KS` | KODEX 200 동일가중 | 코스피200 동일가중 = RSP의 정확한 대응 |
  *
- * `longTreasury`(30년)와 `investmentGrade`(10년)를 다른 만기로 둔 것은 의도다 —
- * 같은 시리즈를 두 키에 넣으면 `safe_haven`과 `junk_bond`가 같은 다리를 공유해
- * 두 요인의 독립성이 떨어진다.
+ * `investmentGrade`는 `highYield`와 듀레이션을 맞춰야 한다 — 회사채(1~3년물)보다
+ * 훨씬 긴 무위험 채권(예: 10년물)을 짝지으면 `junk_bond` 스프레드가 신용 선호가 아니라
+ * 순수 금리 변화를 재는 지표로 오염된다. 금리 인하 랠리마다 장기 국채가 회사채보다
+ * 더 크게 오르며 스프레드가 벌어져, 신용 시장은 멀쩡한데 매번 거짓 "공포" 신호를 낸다.
+ * `longTreasury`(30년)와는 여전히 만기가 달라 `safe_haven`과 `junk_bond`의 독립성은
+ * 유지된다.
  */
 export const MARKET_FEAR_GREED_KR_SYMBOLS = {
     sp500: '069500.KS',
     longTreasury: '439870.KS',
     highYield: '136340.KS',
-    investmentGrade: '148070.KS',
+    investmentGrade: '114260.KS',
     equalWeight: '252650.KS',
 } as const satisfies Record<Exclude<MarketFearGreedSeriesKey, 'vix'>, string>;
 

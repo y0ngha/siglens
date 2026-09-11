@@ -29,12 +29,18 @@ import type { MarketFearGreedView } from '../model';
  *
  * Old fingerprint keys are left to expire on their own TTL — config changes
  * ship with a deploy, so accumulation is negligible.
+ *
+ * `priceSource` is included so switching from unadjusted to dividend-adjusted
+ * closes (see `fetchDailyCloses` — ETFs read `adjClose`, `^` index symbols keep
+ * `light`'s `price`) invalidates readings computed from the old,
+ * dividend-distorted series instead of serving them until TTL.
  */
 export const MARKET_FEAR_GREED_CONFIG_FINGERPRINT =
     createCacheConfigFingerprint(
         JSON.stringify({
             symbols: MARKET_FEAR_GREED_SYMBOLS,
             lookbackDays: MARKET_FEAR_GREED_LOOKBACK_DAYS,
+            priceSource: 'etf:adjClose,index:price',
         })
     );
 

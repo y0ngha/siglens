@@ -6,10 +6,33 @@ import { MS_PER_DAY } from '@/shared/config/time';
 import { e2eDailyCloses } from './e2eFearGreedFixture';
 import { MARKET_FEAR_GREED_LOOKBACK_DAYS } from './marketFearGreedSymbols';
 
-/** One row of FMP `/stable/historical-price-eod/light`. */
-interface FmpLightEodRow {
+/**
+ * One row of FMP `/stable/historical-price-eod/dividend-adjusted` (`adjClose`)
+ * or `/stable/historical-price-eod/light` (`price`) — see {@link priceSourceFor}.
+ */
+interface FmpEodRow {
     date?: unknown;
+    adjClose?: unknown;
     price?: unknown;
+}
+
+/**
+ * Which FMP endpoint and field carry the close for `symbol`.
+ *
+ * ETFs read the dividend-adjusted close (see {@link fetchDailyCloses}). Index
+ * symbols (`^VIX`) cannot: they pay no distributions, so there is nothing to
+ * adjust, and FMP gates `dividend-adjusted` for them behind a paid tier —
+ * verified 2026-09-11 that `^VIX` answers `402 Premium Query Parameter` there
+ * while `light` returns the full history. Sending `^VIX` to the adjusted
+ * endpoint would throw and take the whole US index down with it.
+ */
+function priceSourceFor(symbol: string) {
+    return symbol.startsWith('^')
+        ? ({ endpoint: 'historical-price-eod/light', field: 'price' } as const)
+        : ({
+              endpoint: 'historical-price-eod/dividend-adjusted',
+              field: 'adjClose',
+          } as const);
 }
 
 /** ISO `YYYY-MM-DD` for `date` in UTC. */
@@ -50,19 +73,24 @@ export function lastPublishedSessionDate(now: Date): string {
 }
 
 /**
- * Daily closes for one ticker from FMP's light EOD endpoint.
+ * Daily closes for one ticker from FMP's dividend-adjusted EOD endpoint
+ * (index symbols use `light` instead — {@link priceSourceFor}).
  *
- * The light endpoint returns `{symbol, date, price, volume}` — closes only,
- * which is all the market Fear & Greed factors need. Deliberately *not* routed
+ * ETFs deliberately do *not* use the `light` endpoint (unadjusted `price`): verified
+ * 2026-08-12 that `HYG`'s `light` close (79.61) differs from its
+ * dividend-adjusted close (79.18). Bond ETFs in this basket (`HYG`, `LQD`,
+ * `TLT`) pay monthly distributions, so an unadjusted series shows a fake drop
+ * on every ex-dividend date — which biases the 20-session return spreads the
+ * `junk_bond`/`safe_haven` factors compare. Also deliberately *not* routed
  * through `getBarsStatic`: that path runs the full `calculateIndicators` suite
  * and produces a ~500KB payload per symbol, and this page needs six symbols'
  * worth of a single number each.
  *
- * Rows without a string date or a positive numeric price are dropped here
+ * Rows without a string date or a positive numeric `adjClose` are dropped here
  * rather than downstream, so a partially malformed response degrades to fewer
- * sessions instead of poisoning a factor. The price check is `typeof` rather
- * than `Number(...)` on purpose: `Number(null)` is `0`, which is finite, so a
- * coercing check would turn an explicit `"price": null` into a zero close.
+ * sessions instead of poisoning a factor. The check is `typeof` rather than
+ * `Number(...)` on purpose: `Number(null)` is `0`, which is finite, so a
+ * coercing check would turn an explicit `"adjClose": null` into a zero close.
  *
  * @param symbol - FMP ticker (e.g. `SPY`, `^VIX`).
  * @param from - Inclusive ISO `YYYY-MM-DD` lower bound.
@@ -80,21 +108,19 @@ export async function fetchDailyCloses(
     // 실제로 렌더시킨다.
     if (isE2E()) return e2eDailyCloses(symbol);
 
-    const rows = await fmpGet<FmpLightEodRow[]>('historical-price-eod/light', {
-        symbol,
-        from,
-        to,
-    });
+    const { endpoint, field } = priceSourceFor(symbol);
+    const rows = await fmpGet<FmpEodRow[]>(endpoint, { symbol, from, to });
 
     const closes = Array.isArray(rows)
-        ? rows.flatMap(row =>
-              typeof row.date === 'string' &&
-              typeof row.price === 'number' &&
-              Number.isFinite(row.price) &&
-              row.price > 0
-                  ? [{ date: row.date, close: row.price }]
-                  : []
-          )
+        ? rows.flatMap(row => {
+              const close = row[field];
+              return typeof row.date === 'string' &&
+                  typeof close === 'number' &&
+                  Number.isFinite(close) &&
+                  close > 0
+                  ? [{ date: row.date, close }]
+                  : [];
+          })
         : [];
 
     // FMP answers an unknown or delisted symbol with `200 []` rather than an
