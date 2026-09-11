@@ -81,34 +81,15 @@ describe('guardPlainText', () => {
     const long = '가'.repeat(400);
 
     it('빈 문자열을 거부한다', () => {
-        expect(
-            guardPlainText({ text: '   ', inputChars: 100, allowed })
-        ).toEqual({ kind: 'empty' });
-    });
-
-    it('절대 하한(200자) 미만을 거부한다', () => {
-        const failure = guardPlainText({
-            text: '짧은 글',
-            inputChars: 100,
-            allowed,
+        expect(guardPlainText({ text: '   ', allowed })).toEqual({
+            kind: 'empty',
         });
-        expect(failure).toMatchObject({ kind: 'too_short', min: 200 });
-    });
-
-    it('입력 대비 20% 미만을 거부한다', () => {
-        const failure = guardPlainText({
-            text: '가'.repeat(250),
-            inputChars: 5_000,
-            allowed,
-        });
-        expect(failure).toMatchObject({ kind: 'too_short', min: 1_000 });
     });
 
     it('상한은 두지 않는다 — 타입마다 적정 분량이 다르다', () => {
         expect(
             guardPlainText({
                 text: '가'.repeat(20_000),
-                inputChars: 1_000,
                 allowed,
             })
         ).toBeNull();
@@ -117,7 +98,6 @@ describe('guardPlainText', () => {
     it('지원되지 않는 숫자를 거부한다', () => {
         const failure = guardPlainText({
             text: `${long} 목표가 999.99달러`,
-            inputChars: 100,
             allowed,
         });
         expect(failure).toMatchObject({
@@ -127,8 +107,20 @@ describe('guardPlainText', () => {
     });
 
     it('모두 통과하면 null', () => {
+        expect(guardPlainText({ text: long, allowed })).toBeNull();
+    });
+
+    /**
+     * 하한 폐지 회귀: 짧은 재작성도 통과해야 한다. 원본보기 토글이 항상 옆에
+     * 있어 짧은 글이 내용을 숨기지 않는다 — 원본이 아무리 길어도 이 함수는
+     * 그 길이를 아예 받지 않는다(`GuardInput`에 입력 길이 파라미터가 없다).
+     */
+    it('짧은 재작성도 숫자가 모두 설명되면 통과한다', () => {
         expect(
-            guardPlainText({ text: long, inputChars: 100, allowed })
+            guardPlainText({
+                text: '지지선은 183.60달러 부근입니다.',
+                allowed,
+            })
         ).toBeNull();
     });
 });
@@ -141,12 +133,6 @@ describe('describeFailure', () => {
                 tokens: ['236.4', '99'],
             })
         ).toContain('236.4, 99');
-    });
-
-    it('길이 실패에 목표 길이를 담는다', () => {
-        expect(
-            describeFailure({ kind: 'too_short', chars: 80, min: 200 })
-        ).toContain('200자 이상');
     });
 });
 
@@ -219,7 +205,6 @@ describe('guardPlainText — 크기 접미사', () => {
     it('B 접미사가 붙은 숫자를 거부한다', () => {
         const failure = guardPlainText({
             text: `${long} 총부채는 3,475.2B 원입니다`,
-            inputChars: 100,
             allowed: [3475.2],
         });
         expect(failure).toMatchObject({ kind: 'magnitude_suffix' });
@@ -230,7 +215,6 @@ describe('guardPlainText — 크기 접미사', () => {
             expect(
                 guardPlainText({
                     text: `${long} 매출 120${suffix} 입니다`,
-                    inputChars: 100,
                     allowed: [120],
                 })
             ).toMatchObject({ kind: 'magnitude_suffix' });
@@ -248,7 +232,6 @@ describe('guardPlainText — 크기 접미사', () => {
         expect(
             guardPlainText({
                 text: `${long} KOSPI 지수와 3 M&A 건이 있습니다`,
-                inputChars: 100,
                 allowed: [3],
             })
         ).toBeNull();
@@ -260,12 +243,12 @@ describe('salvageByRemovingSentences', () => {
     const long = '괜찮은 문장입니다. '.repeat(30);
 
     it('위반이 없으면 원문을 그대로 돌려준다', () => {
-        expect(salvageByRemovingSentences(long, allowed, 100)).toBe(long);
+        expect(salvageByRemovingSentences(long, allowed)).toBe(long);
     });
 
     it('어긋난 숫자가 든 문장만 도려낸다', () => {
         const text = `${long}\n\n목표가 999.99달러입니다. 지지선은 183.60달러입니다.`;
-        const out = salvageByRemovingSentences(text, allowed, 100);
+        const out = salvageByRemovingSentences(text, allowed);
         expect(out).not.toBeNull();
         expect(out).not.toContain('999.99');
         expect(out).toContain('183.60달러');
@@ -274,21 +257,28 @@ describe('salvageByRemovingSentences', () => {
 
     it('문단이 통째로 비면 그 문단을 없앤다', () => {
         const text = `${long}\n\n목표가 999.99달러입니다.`;
-        const out = salvageByRemovingSentences(text, allowed, 100);
+        const out = salvageByRemovingSentences(text, allowed);
         expect(out).not.toContain('999.99');
         expect(out?.includes('\n\n\n')).toBe(false);
     });
 
-    /** 도려낸 결과가 요약도 못 되는 조각이면 살리지 않는다. */
-    it('길이 하한에 못 미치면 null', () => {
-        expect(
-            salvageByRemovingSentences('목표가 999.99달러입니다.', allowed, 100)
-        ).toBeNull();
+    /**
+     * 하한 폐지 회귀: 문장 하나만 남아도 그걸 그대로 돌려준다 — 예전에는
+     * 5,000자 입력 대비 20% 하한(1,000자)에 못 미쳐 null이었다.
+     */
+    it('한 문장만 남아도 null이 아니라 그 문장을 돌려준다', () => {
+        const text = `${'가'.repeat(300)}. 목표가 999.99달러입니다.`;
+        const out = salvageByRemovingSentences(text, allowed);
+        expect(out).not.toBeNull();
+        expect(out).not.toContain('999.99');
+        expect(out).toContain('가'.repeat(300));
     });
 
-    it('입력이 길면 비율 하한도 함께 본다', () => {
-        const text = `${'가'.repeat(300)} 목표가 999.99달러입니다.`;
-        expect(salvageByRemovingSentences(text, allowed, 5_000)).toBeNull();
+    /** 모든 문장이 위반을 안고 있으면 도려낸 결과가 비어 그때는 버린다. */
+    it('모든 문장에 지원되지 않는 숫자가 있으면 null', () => {
+        expect(
+            salvageByRemovingSentences('목표가 999.99달러입니다.', allowed)
+        ).toBeNull();
     });
 });
 
@@ -304,7 +294,6 @@ describe('guardPlainText — 외국어 혼입', () => {
         expect(
             guardPlainText({
                 text: `${long} 이是国内 상장사 역사상 최대입니다.`,
-                inputChars: 100,
                 allowed: [],
             })
         ).toMatchObject({ kind: 'foreign_script' });
@@ -321,7 +310,6 @@ describe('guardPlainText — 외국어 혼입', () => {
         expect(
             guardPlainText({
                 text: `${long} AAPL과 SK하이닉스는 정상입니다.`,
-                inputChars: 100,
                 allowed: [],
             })
         ).toBeNull();
@@ -337,7 +325,7 @@ describe('guardPlainText — 외국어 혼입', () => {
  */
 describe('guardPlainText — 로케일별 금지 문자', () => {
     const long = (s: string) => s.repeat(60);
-    const opts = { inputChars: 100, allowed: [] as number[] };
+    const opts = { allowed: [] as number[] };
 
     it('ko 산문에 섞인 한자를 잡는다', () => {
         const v = guardPlainText({
@@ -437,19 +425,16 @@ describe('salvageByRemovingSentences — CJK 종결부호', () => {
      * 버린다 — 목적과 정반대로 동작한다.
      */
     it('공백 없는 `。`에서도 문장 단위로만 도려낸다', () => {
-        // 살리기는 남은 글이 최소 길이(200자)를 넘어야 성공한다 — 문장을
-        // 반복해 그 조건을 채운다. 검증 대상은 길이가 아니라 **끊는 위치**다.
-        const keep = '株価は上昇しています。流れは続いています。'.repeat(12);
-        const text = `${keep}過去の高値は9999です。`;
-        const salvaged = salvageByRemovingSentences(text, [], 10);
+        const text =
+            '株価は上昇しています。流れは続いています。過去の高値は9999です。';
+        const salvaged = salvageByRemovingSentences(text, []);
 
         expect(salvaged).not.toBeNull();
         expect(salvaged).not.toContain('9999');
-        // 나머지 두 문장은 남아야 한다.
+        // 나머지 두 문장은 남아야 한다 — 옛 분리기는 공백 없는 `。`에서
+        // 문단 전체를 문장 하나로 묶어 여기서 null을 냈다.
         expect(salvaged).toContain('株価は上昇しています');
         expect(salvaged).toContain('流れは続いています');
-        // 문단이 통째로 사라지지 않았다는 것 — 옛 분리기는 여기서 null을 냈다.
-        expect((salvaged ?? '').length).toBeGreaterThan(200);
     });
 });
 
@@ -471,7 +456,6 @@ describe('buildAllowedNumbers — 크기 접미사 표기', () => {
         const allowed = buildAllowedNumbers([], ['총부채는 285.5B입니다']);
         const verdict = guardPlainText({
             text: '총부채는 285.5B입니다. '.repeat(30),
-            inputChars: 100,
             allowed,
         });
 
