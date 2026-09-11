@@ -17,9 +17,10 @@ import { GITHUB_URL, SITE_NAME } from '@/shared/lib/seo';
  * ko만 채워지면 `resolveAboutContent`가 나머지 로케일에 폴백한다. en은 색인
  * 대상(`STATIC_INDEXABLE_LOCALES`)이라 함께 작성한다.
  */
-function buildAboutMarkdown(
-    counts: SkillCounts
-): Readonly<Partial<Record<Locale, string>>> {
+type AboutMarkdownByLocale = Readonly<Record<typeof DEFAULT_LOCALE, string>> &
+    Readonly<Partial<Record<Locale, string>>>;
+
+function buildAboutMarkdown(counts: SkillCounts): AboutMarkdownByLocale {
     return {
         ko: `## Siglens는 무엇인가
 
@@ -101,14 +102,8 @@ export function resolveAboutContent(
     if (body !== undefined) {
         return { body, bodyLocale: locale, isTranslationFallback: false };
     }
-    const fallback = markdown[DEFAULT_LOCALE];
-    if (fallback === undefined) {
-        throw new Error(
-            `[about/content] DEFAULT_LOCALE(${DEFAULT_LOCALE}) 본문이 없습니다.`
-        );
-    }
     return {
-        body: fallback,
+        body: markdown[DEFAULT_LOCALE],
         bodyLocale: DEFAULT_LOCALE,
         isTranslationFallback: true,
     };

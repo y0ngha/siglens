@@ -1,3 +1,4 @@
+import type { SkillCounts } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
 import {
     missingAssetMentions,
@@ -6,6 +7,7 @@ import {
 } from '@/shared/config/supportedAssets';
 import { clampSeoDescription, ROOT_KEYWORDS } from '@/shared/lib/seo';
 import { buildHomeFaqJsonLd } from '@/app/[locale]/homeJsonLd';
+import { resolveAboutContent } from '@/app/[locale]/about/content';
 // newsHubTitle/newsHubDescription은 shared.seo 카탈로그를 받는 함수로 바뀌었다
 // (요구사항: 로케일별 번역자 필수 인자). 이 테스트는 자산군 커버리지가 ko
 // 소스 카피에서 완전한지만 확인하므로, 카탈로그 ko 원문을 직접 읽어 검사한다
@@ -23,6 +25,23 @@ const NEWS_HUB_TITLE = koMessages.shared.seo.newsHub.title;
 const NEWS_HUB_DESCRIPTION = clampSeoDescription(
     koMessages.shared.seo.newsHub.description
 );
+
+const ABOUT_DESCRIPTION = clampSeoDescription(
+    koMessages.shared.seo.about.description
+);
+
+// /about 본문도 자산군 커버리지를 주장하는 표면이다 — ko만 검사한다
+// (SUPPORTED_ASSET_TERMS 별칭이 한국어 문구라 en 본문은 애초에 대상이 아니다).
+const ABOUT_BODY_COUNTS: SkillCounts = {
+    indicators: 13,
+    candlesticks: 30,
+    patterns: 5,
+    strategies: 4,
+    supportResistance: 3,
+    fundamental: 2,
+    news: 1,
+};
+const ABOUT_BODY_KO = resolveAboutContent('ko', ABOUT_BODY_COUNTS).body;
 
 /**
  * 자산군 커버리지가 표면마다 어긋나는 것을 막는다.
@@ -76,6 +95,8 @@ describe('자산군 커버리지 동기화', () => {
         // 뉴스 허브는 사이트에서 자산군 커버리지를 가장 직접적으로 주장하는 표면이다.
         ['NEWS_HUB_TITLE', NEWS_HUB_TITLE],
         ['NEWS_HUB_DESCRIPTION', NEWS_HUB_DESCRIPTION],
+        ['ABOUT_DESCRIPTION', ABOUT_DESCRIPTION],
+        ['ABOUT_BODY_KO', ABOUT_BODY_KO],
     ];
 
     it.each(SURFACES)('%s는 모든 자산군을 언급한다', (_label, text) => {
