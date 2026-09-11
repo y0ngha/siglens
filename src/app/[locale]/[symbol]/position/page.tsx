@@ -101,34 +101,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 
     /*
-     * 본문과 메타데이터가 **같은 조건**을 봐야 한다.
+     * `/position`은 **항상 noindex**다 (2026-09-11 SEO 회복 감사, 2026-08-19의
+     * "Task 1이 색인을 정당화한다" 결정을 되돌림).
      *
-     * 예전에는 여기서 `robots`를 무조건 index로 두었는데, 본문의 유일한 고유
-     * 콘텐츠(가격 위치 가이드 섹션)는 `resolvePriceRange`가 null이면 통째로
-     * 생략된다 — CTA는 `useHydrated` 게이트라 SSR에 안 실린다. 그러면 h1과
-     * 문단 하나뿐인 페이지가 색인 대상으로 나갔다(실측: `<main>` 안 `<a>` 0개).
-     * 2026-07 thin-content 사태가 정확히 그 형태였다.
+     * 실측: 인기 종목 8종의 SSR 고유 텍스트가 868~1,222자로 형제 탭(2~8천자)의
+     * 1/3 이하고, 그 전부가 52주 범위 밴드 + 층 라벨이라는 **템플릿 문장**이다.
+     * 2026-07 핵심 업데이트가 이 사이트를 강등한 근거가 바로 "숫자만 바뀌는
+     * 템플릿 페이지 수만 개"였는데, 그 뒤에 이 탭을 색인·sitemap에 402 URL로
+     * 더한 셈이 됐다(PR #791). 검색 수요도 없다 — GSC 16개월 실적에 `/position`
+     * 노출은 0건이고, 페이지의 본체(★평단·수익률)는 로그인 후 클라이언트에서만
+     * 그려진다. 색인 코퍼스를 "산문이 있는 페이지"로 좁히는 것이 회복 전략의
+     * 1순위라 이 탭은 빼는 것이 맞다.
      *
-     * `getQuantizedBarsStatic`은 같은 요청 안에서 dedupe되므로 본문이 곧 다시
-     * 부르는 값을 여기서 미리 부르는 비용은 없다. sibling 탭(overall/fundamental)이
-     * 쓰는 본문-메타 일치 패턴과 같다.
+     * 훅 카피(title/OG/Twitter)는 그대로 둔다 — 공유 카드는 noindex와 무관하게
+     * 필요하다. `NOINDEX_SYMBOL_METADATA`를 뒤에 스프레드해 robots와
+     * `canonical: null`만 덮는다(`noindexSymbolMetadata`와 같은 순서 계약).
      */
-    const range = await resolvePriceRange(
-        upper,
-        assetInfo.fmpSymbol,
-        marketProfileOf(assetInfo)
-    );
-    if (range === null) {
-        return noindexSymbolMetadata(upper, tSeo, locale, {
-            displayName,
-            koreanName: assetInfo.koreanName,
-        });
-    }
-
-    return symbolMetadataFromSeo(
-        buildPositionSeo(upper, displayName, assetInfo.koreanName, tSeo),
-        locale
-    );
+    return {
+        ...symbolMetadataFromSeo(
+            buildPositionSeo(upper, displayName, assetInfo.koreanName, tSeo),
+            locale
+        ),
+        ...NOINDEX_SYMBOL_METADATA,
+    };
 }
 
 /**
@@ -154,19 +149,26 @@ function buildPositionSeo(
     // 아니라 중복이었다 — 수천 심볼 × 이 얇은 템플릿은 전형적인 thin/doorway
     // 패턴이었다.
     //
-    // **2026-08-19, 사용자 결정으로 index,follow로 전환한다.** 색인을 정당화하기
+    // **2026-08-19, 사용자 결정으로 index,follow로 전환했다.** 색인 근거로 삼기
     // 위해 본문에 심볼별로 달라지는 콘텐츠를 추가했다 — 현재가가 최근 52주 범위
     // 안에서 몇 %/몇 층에 있는지를 서술하는 문단(`resolveCurrentPricePosition`,
     // PositionPage 본문 참고)이다. 세 숫자를 그대로 반복하던 이전과 달리, 이
     // 문단은 그 숫자를 해석한 결과(퍼센트·층수·상단부/하단부 톤)라 chart/overall
-    // 페이지의 원자료 노출과는 다른 층위의 콘텐츠다. 다만 근본 데이터는 여전히
+    // 페이지의 원자료 노출과는 다른 층위의 콘텐츠였다. 다만 근본 데이터는 여전히
     // 동일한 low52w/high52w/lastClose에서 파생되므로(새 데이터 소스를 추가하지
-    // 않았다), thin-content 우려가 완전히 해소된 것은 아니다 — 이 탭이 계속
+    // 않았다), thin-content 우려가 완전히 해소된 것은 아니었다 — 이 탭이 계속
     // sibling 탭들(fundamental/overall/news 등, 서로 다른 AI 생성 콘텐츠를
     // 가짐) 대비 가장 얇은 콘텐츠라는 사실은 sitemap 판단(아래, `buildPopularEntries`
     // 관련 논의는 커밋 설명 참고)에도 반영했다.
     //
-    // 아래 두 가지는 색인 전환과 무관하게 여전히 참이다:
+    // **2026-09-11, SEO 회복 감사로 noindex로 되돌렸다.** 인기 종목 8종 실측에서
+    // SSR 고유 텍스트가 868~1,222자로 sibling 탭(2~8천자)의 1/3 이하였고, GSC
+    // 16개월 실적에 `/position` 노출이 0건이었다 — 자세한 근거는 위
+    // `generateMetadata`의 noindex 분기 주석 참고. 이 함수와 아래
+    // `resolveCurrentPricePosition`이 만드는 문단은 계속 렌더된다(방문자에게는
+    // 여전히 유용한 콘텐츠라 유지) — 더 이상 색인 근거로 쓰이지 않을 뿐이다.
+    //
+    // 아래 두 가지는 색인 여부와 무관하게 여전히 참이다:
     // 1. 회원의 실제 ★평단·수익률(이 탭의 핵심 개인화 가치)은 client-only라
     //    크롤러는 절대 보지 못한다 — 대신 "보유종목 등록하기" CTA(PositionCta)만
     //    SSR HTML에 실린다.
@@ -312,7 +314,9 @@ function rangeToneKey(currentPos: number): string {
 
 /**
  * lastClose가 최근 52주 범위 안에서 몇 %/몇 층에 있는지 계산한다 — Task 1의
- * per-symbol SSR 콘텐츠(색인 정당화 근거)가 이 결과를 렌더한다.
+ * per-symbol SSR 콘텐츠가 이 결과를 렌더한다. 2026-08-19~2026-09-11 사이엔
+ * 이 콘텐츠가 색인 근거였지만, 지금은 항상 noindex라(generateMetadata 주석
+ * 참고) 색인과 무관하게 방문자에게 보여주는 콘텐츠로만 유지한다.
  *
  * 회원 전용 `PositionBuilding`이 쓰는 것과 같은 어휘(저층/중층/고층/펜트하우스,
  * 옥상 위/지하 세대)를 내기 위해 `widgets/portfolio-position`의
@@ -388,8 +392,10 @@ export default async function PositionPage({ params }: Props) {
 
     // 구조화 데이터 — 이 탭만 9개 심볼 탭 중 유일하게 WebPage/BreadcrumbList가
     // 없었다(2026-08-24 프로덕션 실측: `/{ticker}/position`의 JSON-LD는 루트
-    // 레이아웃이 넣는 `WebSite` 하나뿐). 색인 대상 라우트인데 자기가 무슨
-    // 페이지인지, 사이트 어디에 속하는지를 아무것도 선언하지 않던 상태다.
+    // 레이아웃이 넣는 `WebSite` 하나뿐). 당시(index,follow 시절) 색인 대상
+    // 라우트였는데 자기가 무슨 페이지인지, 사이트 어디에 속하는지를 아무것도
+    // 선언하지 않던 상태였다 — 지금은 noindex지만 WebPage/BreadcrumbList
+    // 자체는 페이지 정체성 선언으로서 유효해 그대로 유지한다.
     // FAQPage는 넣지 않는다 — Google이 2023-08부터 대부분 사이트에서 FAQ 리치
     // 결과를 중단해 표시 이득이 없고, 402개 종목에 같은 문답을 복제하면 이
     // 탭이 이미 가장 얇다는 문제(아래 색인 방침 히스토리)를 키우기만 한다.
@@ -454,11 +460,12 @@ export default async function PositionPage({ params }: Props) {
                 <SymbolPageHeading>
                     {displayName} {t('page.69d338')}
                 </SymbolPageHeading>
-                {/* Task 1(색인 전환 근거) — 이전엔 이 자리에 sr-only 개요 섹션만 있었다
-                (noindex 시절엔 스크린리더 문맥 보강용이었을 뿐, SEO 신호가 아니었다).
-                지금은 index,follow 라우트라 크롤러가 실제로 보는 유일한 본문 콘텐츠고,
-                심볼마다 달라지는 숫자(퍼센트·층수)를 담아 sr-only였을 때와 달리
-                시각적으로도 노출한다 — 개인화 데이터(★평단/수익률)는 여전히 전혀
+                {/* 이전엔 이 자리에 sr-only 개요 섹션만 있었다(스크린리더 문맥 보강용,
+                SEO 신호는 아니었다). 2026-08-19~2026-09-11 사이엔 index,follow
+                라우트라 크롤러가 실제로 보는 유일한 본문 콘텐츠이기도 했지만,
+                지금은 다시 항상 noindex라(generateMetadata 주석 참고) 색인 신호는
+                아니고 방문자에게 심볼마다 달라지는 숫자(퍼센트·층수)를 보여주는
+                일반 콘텐츠다 — 개인화 데이터(★평단/수익률)는 여전히 전혀
                 포함하지 않는다(PositionCta만 그 CTA를 맡는다). range/currentPricePosition이
                 degrade되면(bars 실패, high52w<=low52w 등) 섹션 자체를 생략한다. */}
                 {range && currentPricePosition && (

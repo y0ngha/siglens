@@ -57,6 +57,7 @@
 - [feat/share-plain-language R1](project-share-plain-language-r1.md) — contentHash omits `plain` (chartBars precedent shows it should be included); onConflictDoUpdate only bumps expiresAt so dedupe silently freezes first sharer's (possibly missing) plain for 7 days
 - [feat/share-plain-language R2 — CLOSED, approved](project-share-plain-language-r2-closed.md) — both R1 findings verified fixed exactly per chartBars precedent; contentHash 6th param, whitespace-plain rejected server-side, no trim mismatch
 - [fix/sitemap-position-tab R1 — APPROVED](project-fix-position-sitemap-r1.md) — /position added to both builders, lowest priority (0.7) coherent, count arithmetic + non-tautological tests verified, no stale hardcoded counts elsewhere
+- [seo/index-footprint-recovery R1](project-seo-index-footprint-recovery-r1.md) — reverts the above PR #791; metadata spread-order + tests all correct; caught SITEMAP_SCOPE.md §3-3 documenting the exact mistake being undone as still-live guidance (would cause the same regression again), stale e2e comment
 
 ## Feedback
 

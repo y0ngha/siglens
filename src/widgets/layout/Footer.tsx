@@ -8,6 +8,8 @@ import {
 } from '@/shared/config/assetClassNav';
 import { GithubIcon } from '@/shared/ui/GithubIcon';
 import {
+    ABOUT_PATH,
+    aboutTitle,
     INVESTMENT_DISCLAIMER_KEY,
     PRIVACY_PATH,
     privacyTitle,
@@ -227,6 +229,16 @@ export function Footer() {
                             aria-label={t('Footer.5f5d12')}
                             className="flex flex-wrap items-center gap-x-4 gap-y-2"
                         >
+                            {/* 소개가 약관보다 앞 — 크롤러·독자 모두 "누가 만들었나"를
+                                먼저 본다(SEO_RECOVERY_2026_09 §5-B1). 전 페이지에서
+                                크롤 가능한 유일한 `/about` 링크다. */}
+                            <Link
+                                href={ABOUT_PATH}
+                                prefetch={false}
+                                className={LINK_CLASSES}
+                            >
+                                {aboutTitle(tSeo)}
+                            </Link>
                             <Link
                                 href={PRIVACY_PATH}
                                 // 위 사이트맵 링크와 동일 — 전역 푸터의 `_rsc` 파편화

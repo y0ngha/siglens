@@ -1,15 +1,15 @@
 /**
  * `[symbol]/position` page tests — mirrors overall/fear-greed sibling patterns:
- * revalidate literal, generateMetadata branches (index,follow for a valid
- * resolvable symbol since 2026-08-19; noindex still applies to invalid
- * ticker/degraded/tab-not-allowed early-returns), body guards (invalid ticker /
+ * revalidate literal, generateMetadata branches (always noindex,follow since
+ * 2026-09-11 — the 2026-08-19 index flip was reverted by the SEO recovery
+ * audit; the hook copy for share cards is kept), body guards (invalid ticker /
  * unresolvable-degraded / missing asset → notFound), the static-path server
  * data composition (getQuantizedBarsStatic → buildTechnicalFacts, never
  * getBarsAction/cookies), the per-symbol current-price-position content block
- * (Task 1 — the indexing justification), and an SSR crawl-safety check that no
- * personalized marker (★/평단/수익률) ever appears in the server-rendered shell
- * (that invariant is unchanged by the indexing flip — only PositionCta, which
- * is mocked out here, carries those words).
+ * (still rendered for users — it just no longer justifies indexing), and an SSR
+ * crawl-safety check that no personalized marker (★/평단/수익률) ever appears
+ * in the server-rendered shell (only PositionCta, which is mocked out here,
+ * carries those words).
  */
 
 vi.mock('@/entities/ticker', () => ({
@@ -118,8 +118,8 @@ describe('generateMetadata', () => {
             degraded: false,
         } as never);
         mockIsTabAllowedForSymbol.mockResolvedValue(true);
-        // 메타데이터가 본문과 같은 조건(가격 범위 확보 여부)을 보므로 bars도
-        // 기본값을 준다 — 없으면 모든 케이스가 noindex 분기로 떨어진다.
+        // 메타데이터 경로는 bars를 읽지 않는다(항상 noindex). 기본값은 "호출되지
+        // 않는다"를 단언하는 케이스가 mock 상태에 좌우되지 않도록 둔 것이다.
         mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
     });
 
@@ -149,44 +149,31 @@ describe('generateMetadata', () => {
         expect(metadata.robots).toEqual({ index: false, follow: true });
     });
 
-    it('is index,follow for a valid, resolvable symbol — per-symbol content (Task 1) now justifies indexing (design decision 2026-08-19)', async () => {
+    /**
+     * 정상 종목도 **항상 noindex**다 (2026-09-11 SEO 회복 감사 — page.tsx의
+     * generateMetadata 주석 참고). 2026-08-19의 index 플립을 되돌린 것이라,
+     * 여기가 다시 `toBeUndefined()`로 바뀌면 그 결정이 조용히 되살아난 것이다.
+     */
+    it('정상 종목도 noindex,follow — 템플릿 문장뿐인 얇은 탭은 색인 코퍼스에서 뺀다 (2026-09-11)', async () => {
         const metadata = await generateMetadata({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
-        // symbolMetadataFromSeo는 robots를 아예 설정하지 않는다 — root layout의
-        // 기본값(index:true, follow:true)을 그대로 상속해 색인된다. sibling
-        // 인덱서블 탭(overall/fear-greed)과 동일 계약.
-        expect(metadata.robots).toBeUndefined();
-        // hreflang은 **분석 본문이 준비된 로케일만** 광고한다. 지금은 ko뿐이라
-        // `languages` 키 자체가 나가지 않는다 — 자기 자신만 가리키는 hreflang은
-        // 정보가 0이면서 색인된 전 페이지의 HTML만 바꾼다. 번역 레이어가 붙으면
-        // (설계 Phase 3) `SYMBOL_INDEXABLE_LOCALES`에 로케일을 더하면서 나타난다.
-        expect(metadata.alternates).toEqual({
-            canonical: 'https://siglens.io/AAPL/position',
-        });
+        expect(metadata.robots).toEqual({ index: false, follow: true });
+        // noindex 페이지는 self-canonical을 내지 않는다(`NOINDEX_SYMBOL_METADATA`
+        // 계약). canonical과 noindex가 같이 나가면 "표준인데 색인 금지"라는
+        // 모순 신호가 된다.
+        expect(metadata.alternates).toEqual({ canonical: null });
     });
 
-    /**
-     * 본문의 유일한 고유 콘텐츠가 없으면 색인시키지 않는다.
-     *
-     * 가이드 섹션은 `resolvePriceRange`가 null이면 생략되고 CTA는 SSR에 안
-     * 실리므로, 그 상태의 페이지는 h1 + 문단 하나뿐이다. 예전에는 그래도
-     * `robots`가 index였다 — 2026-07 thin-content 사태와 같은 형태다.
-     */
-    it('bars가 degrade되면 noindex로 떨어진다', async () => {
+    it('bars가 degrade돼도 같은 noindex — 메타데이터가 더 이상 가격 범위를 읽지 않는다', async () => {
         mockGetQuantizedBarsStatic.mockRejectedValue(new Error('FMP down'));
         const metadata = await generateMetadata({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
         expect(metadata.robots).toEqual({ index: false, follow: true });
-    });
-
-    it('bars가 정상이면 색인된다 — 위 가드가 항상 noindex를 내지 않는다', async () => {
-        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
-        const metadata = await generateMetadata({
-            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
-        });
-        expect(metadata.robots).toBeUndefined();
+        // 메타데이터 경로는 bars를 호출하지 않는다 — noindex가 확정이라 본문과
+        // "같은 조건"을 볼 이유가 사라졌고, 그 조회 한 번이 메타데이터 생성 지연이었다.
+        expect(mockGetQuantizedBarsStatic).not.toHaveBeenCalled();
     });
 
     it('노출용 카피는 "평단 = 몇 층" 아파트 메타포로 후킹 강화 — title/description/OG/Twitter에 반영', async () => {
@@ -496,7 +483,7 @@ describe('PositionPage — SSR crawl safety (no personalized data in the server 
     // 소스 grep 단언은 구현 세부 검사라 이 레포 컨벤션상 지양한다(financials 선례).
 });
 
-describe('PositionPage — per-symbol current-price-position content (Task 1, the indexing justification)', () => {
+describe('PositionPage — per-symbol current-price-position content (Task 1; rendered for users, no longer an indexing justification since 2026-09-11)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockGetAssetInfoResilient.mockResolvedValue({

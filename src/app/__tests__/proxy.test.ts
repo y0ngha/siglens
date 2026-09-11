@@ -196,6 +196,7 @@ describe('Ticker 케이스 정규화 — 소문자/혼합 케이스 → 대문�
         '/backtesting',
         '/terms',
         '/privacy',
+        '/about',
         '/account',
         '/news',
         '/onboarding',

@@ -71,12 +71,11 @@ function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
  *     (actual cadence is 24h; lastmod baseline under-claims by 4×, which is conservative).
  *   - overall (`revalidate=43200`, 12h) → `changeFrequency: 'weekly'`, 6h-boundary lastmod
  *     (AI analysis cache is slow-moving; weekly matches the stock overall convention).
- *   - position (`revalidate=43200`, 12h) → `changeFrequency: 'daily'`, 6h-boundary lastmod
- *     (the SSR surface is the 52-week band + last close, which moves with the daily close).
  *
- * Only the crypto-applicable tabs are advertised (chart/news/fear-greed/overall/position,
- * matching `CRYPTO_DESCRIPTOR.tabs`) — fundamental/financials/options/congress are not
- * rendered for crypto.
+ * Only the crypto-applicable, indexable tabs are advertised (chart/news/fear-greed/overall)
+ * — fundamental/financials/options/congress are not rendered for crypto, and `/position`
+ * (in `CRYPTO_DESCRIPTOR.tabs`) is always noindex, so listing it would only burn crawl
+ * budget.
  */
 export function buildCryptoPopularEntries(now: Date): SitemapEntry[] {
     const boundary6h = quantizeTo6hBoundary(now);
@@ -110,12 +109,9 @@ export function buildCryptoPopularEntries(now: Date): SitemapEntry[] {
                 changeFrequency: 'weekly',
                 priority: 0.82,
             },
-            {
-                url: `${SITE_URL}/${sym}/position`,
-                lastModified: boundary6h,
-                changeFrequency: 'daily',
-                priority: 0.7,
-            },
+            // `/position` is deliberately absent — the page is always noindex
+            // (2026-09-11 SEO recovery audit; see `buildPopularEntries` and the
+            // position page's generateMetadata comment).
         ])
     );
 }
