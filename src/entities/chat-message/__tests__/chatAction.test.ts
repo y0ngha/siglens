@@ -35,15 +35,23 @@ vi.mock('@y0ngha/siglens-core', async () => {
     };
 });
 
-vi.mock('@/entities/llm-provider', () => {
+vi.mock('@/entities/llm-provider', async () => {
     // chatAction resolves the provider via getLlmProvider() (barrel re-export).
     // Outside E2E it returns callAiProviderRouter, so the mocked getLlmProvider
     // returns the same mocked router instance the assertions reference by
     // identity ({ callAiProvider: callAiProviderRouter }).
     const callAiProviderRouter = vi.fn();
+    // getServerPrimaryKey moved to lib/serverKeys — import the real
+    // implementation (not the whole barrel, to avoid loading SDK adapters)
+    // so this mock can't drift from the source of truth. Tests set
+    // *_CHAT_API_KEY directly and expect it forwarded via real env lookup.
+    const { getServerPrimaryKey } = await vi.importActual<
+        typeof import('@/entities/llm-provider/lib/serverKeys')
+    >('@/entities/llm-provider/lib/serverKeys');
     return {
         callAiProviderRouter,
         getLlmProvider: vi.fn(() => callAiProviderRouter),
+        getServerPrimaryKey,
     };
 });
 
