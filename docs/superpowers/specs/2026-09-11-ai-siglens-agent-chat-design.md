@@ -334,7 +334,10 @@ P4 후보: `get_asset_info`, `get_earnings`, `get_financials`, `get_market_overv
 - **키**: 서버 키 4종 + `BRAVE_SEARCH_API_KEY`(SSM, `OPTIONAL_KEYS`). BYOK는 `resolveTierAndByok` 규칙.
 - **남용**: 일일·턴당 한도, 동시 턴 락, 전역 검색 상한, 메시지 4,000자, fail-closed.
 - **개인정보 외부 전송**: 사용자 메시지·툴 결과(보유종목 포함)가 DeepSeek(중국)으로 전송된다. `/privacy`에 프로바이더·국가·목적·보유종목 전송을 명시하는 개정이 P2 산출물(사용자 결정으로 포트폴리오 연동은 1차 포함).
-- **SSO 핸드오프**: 코드는 32바이트 난수, Redis `auth:handoff:{code}` TTL 60초, `getdel`로 1회 소비, 발급 시 `userId`·`next`(경로 전용)만 저장. 호스트는 `to=ai` enum → 상수 `AI_SITE_URL`. 코드 재사용·만료·위조는 전부 ai 랜딩으로 폴백(로그인 CTA).
+- **SSO 핸드오프**: 코드는 32바이트 난수, Redis `auth:handoff:{code}` TTL 60초, `getdel`로 1회 소비, 발급 시 `userId`·`next`(경로 전용)·`state` 저장. 호스트는 `to=ai` enum → 상수 `AI_SITE_URL`. 코드 재사용·만료·위조·state 불일치는 전부 `/?sso=none` 랜딩(로그인 CTA)으로 폴백.
+- **로그인 CSRF 방지(state 바인딩)**: 공격자가 자기 계정용 코드를 받아 피해자에게 consume URL을 열게 하면 피해자가 공격자 계정으로 로그인되고 대화가 공격자에게 저장된다. 그래서 ai 호스트 `start` 라우트가 host-only state 쿠키를 심고 같은 값을 issue에 넘기며, consume은 쿠키와 저장된 state를 상수시간 비교한다(불일치여도 코드는 소모). 프로덕션에서 쿠키 이름은 `__Host-siglens_ai_sso_state`(Secure·Path=/·Domain 없음) — 형제 서브도메인이 `Domain=siglens.io`로 쿠키를 던져 넣는 cookie tossing을 막는다. 잔여 위험: issue URL 로그(state)와 consume URL 로그(code)를 60초 안에 모두 읽을 수 있는 자는 재생 가능 — 무시 가능 수준으로 수용.
+- **로그인 복귀 경로**: 로케일 접두 헬퍼는 `/api/` 경로를 건드리지 않는다(`/en/api/auth/handoff` 404 방지). 세션 생성 실패(발급~소비 사이 사용자 삭제 등)는 500이 아니라 `/?sso=none`.
+- **오픈 리다이렉트(기존 결함, 별도 hotfix)**: 공용 `toSameOriginPath`가 `/.//evil.com`의 점 세그먼트를 정규화해 `//evil.com`을 만들던 문제를 master hotfix로 수정 — 로그인·OAuth 콜백·핸드오프 모두 같은 헬퍼를 쓴다.
 - **로그**: `[Agent]`에 메시지 본문 없음(툴 이름·인자 요약·토큰·ms).
 - **YMYL**: 시스템 프롬프트 면책 + Composer 하단 고정 면책.
 
@@ -369,14 +372,19 @@ dev: `ai.localhost:3000`을 ai 호스트로 인식(`AI_HOSTS` 상수: `ai.siglen
 
 ```
 ai.siglens.io/{path}  (세션 쿠키 없음, ?sso=none 없음)
-  → 302 https://siglens.io/api/auth/handoff?to=ai&next={path}
+  → 302 /api/auth/handoff/start?next={path}
+ai.siglens.io/api/auth/handoff/start    (ai 호스트에서만)
+  state 쿠키 Set(프로덕션 __Host-siglens_ai_sso_state)
+  → 302 https://siglens.io/api/auth/handoff?to=ai&next={path}&state={state}
 siglens.io/api/auth/handoff            (메인 호스트에서만)
-  세션 유효 → code 발급(Redis auth:handoff:{code} = {userId,next}, TTL 60s)
+  state 없음 → 302 ai start로 되돌림(1회, 루프 없음)
+  세션 유효 → code 발급(Redis auth:handoff:{code} = {userId,next,state}, TTL 60s)
             → 302 https://ai.siglens.io/api/auth/handoff/consume?code={code}
   세션 없음 → 302 https://ai.siglens.io{next}?sso=none
 ai.siglens.io/api/auth/handoff/consume  (ai 호스트에서만)
-  getdel 성공 → createAuthSession(userId) → host-only 쿠키 Set → 302 {next}
-  실패        → 302 {next}?sso=none
+  getdel + state 쿠키 상수시간 비교 성공 → createAuthSession(userId) → 세션·힌트 쿠키 Set, state 쿠키 삭제 → 302 {next}
+  실패(코드 없음·만료·state 불일치·세션 생성 실패) → 302 /?sso=none
+모든 응답 Cache-Control: no-store
 ```
 
 `?sso=none`이면 랜딩(로그인 CTA: 메인 로그인 → `next=/api/auth/handoff?to=ai&next=…`로 복귀). 로그아웃은 호스트별(ai 헤더의 로그아웃은 기존 `logoutAction`이 ai 쿠키의 세션만 지움). 세션 행은 호스트당 1개씩 생긴다(sessions 테이블 그대로).
