@@ -28,6 +28,7 @@ import {
 } from '@y0ngha/siglens-core';
 import type { AssetClass } from '@/shared/config/marketProfile';
 import {
+    currencyForSymbol,
     DEFAULT_MARKET_PROFILE,
     getDescriptor,
 } from '@/shared/config/marketProfile';
@@ -191,6 +192,8 @@ export async function chatAction(
                     ? { currentAnalysisContext }
                     : {}),
                 assetClass,
+                // core는 심볼에서 통화를 추론하지 않는다 — 한국 종목이면 원화 표기·프레이밍.
+                currency: currencyForSymbol(symbol),
             },
             {
                 callAiProvider: getLlmProvider(),

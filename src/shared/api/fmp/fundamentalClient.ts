@@ -237,7 +237,12 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         );
         const r = arr[0];
         if (!r) return null;
-        return { operatingCashFlow: toFiniteNumber(r.operatingCashFlow) };
+        return {
+            operatingCashFlow: toFiniteNumber(r.operatingCashFlow),
+            // core가 EPS·영업현금흐름·애널리스트 추정치 옆에 붙이는 보고 통화 —
+            // ADR(TSM 등)은 상장 통화 USD가 아니라 본국 통화로 보고한다.
+            reportedCurrency: r.reportedCurrency?.trim() || null,
+        };
     }
 
     /** Fetch YoY income statement growth (revenue + EPS); returns `null` when unavailable. */

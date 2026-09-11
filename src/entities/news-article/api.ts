@@ -369,7 +369,8 @@ export async function prewarmNews(
     // 한 번만 resolve하고 assetClass는 그 결과에서 파생(resolveAssetClass가
     // 내부적으로 하는 것과 동일)한 뒤 ingestNewsForSymbol에 그대로 전달한다.
     const profileId = await resolveMarketProfile(symbol);
-    const assetClass = getDescriptor(profileId).assetClass;
+    const descriptor = getDescriptor(profileId);
+    const { assetClass } = descriptor;
     const { db } = getDatabaseClient();
     const repo = new DrizzleNewsRepository(db);
 
@@ -470,6 +471,9 @@ export async function prewarmNews(
         reasoning: false,
         skipEnqueueIfMiss: false,
         assetClass,
+        // 방문자 경로(submitNewsAnalysisAction)와 같은 값을 넘겨야 prewarm이 채운
+        // 캐시의 산출 텍스트가 갈리지 않는다.
+        currency: descriptor.priceFormat.currency,
         ...(force ? { force: true } : {}),
     });
 }

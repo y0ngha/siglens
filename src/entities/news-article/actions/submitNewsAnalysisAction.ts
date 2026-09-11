@@ -23,6 +23,7 @@ import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
+import { currencyForSymbol } from '@/shared/config/marketProfile';
 
 /** Final return type — core's news result + our siglens-side gate errors. */
 export type SubmitNewsAnalysisActionResult =
@@ -99,6 +100,8 @@ export async function submitNewsAnalysisAction(
             reasoning: resolveReasoning(gate.tier, reasoning),
             skipEnqueueIfMiss,
             assetClass,
+            // core는 통화를 심볼에서 추론하지 않는다 — 한국 종목 프레이밍·실적 추정 통화.
+            currency: currencyForSymbol(symbol),
             signal,
             ...(gate.userApiKey !== undefined
                 ? { userApiKey: gate.userApiKey }

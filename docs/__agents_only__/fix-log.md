@@ -806,3 +806,8 @@
 - Violation: RECOMMENDED — Whitespace-only `plain` input passed server validation. Server relied on client-side `trim()` instead of enforcing at the trust boundary (`assertValidInput.ts`).
   - Rule: (guideline) Input validation at server trust boundaries must not assume client filtering. Validate the actual constraint (trimmed + non-empty) server-side, do not delegate to client.
   - Context: Added `plain.trim().length > 0` check in `assertValidInput.ts`. Server now rejects whitespace-only strings before they reach business logic.
+
+## [chore/core-1.0.4-prompt-currency Round 2 | Currency argument assertion gap in action tests | 2026-09-11]
+- Violation: Actions `runFundamentalAnalysisAction`, `runOverallAnalysisAction`, `submitNewsAnalysisAction`, `chatAction`, `prewarmOverall`, `prewarmNews` began passing a new `currency` argument to `@y0ngha/siglens-core`, but tests used `expect.objectContaining` without the `currency` field. Dropping the field or hardcoding `'USD'` for a Korean symbol (e.g., `005930.KS` expecting `'KRW'`) stayed green.
+  - Rule: MISTAKES Tests — When a new argument is threaded through to a mocked dependency, the test must assert it with a value that differs from the default. Silent contract changes are not caught by mocks using structural matchers.
+  - Context: Fixed by asserting `currency` in two cases: US symbol `'USD'` and Korean symbol `005930.KS` expecting `'KRW'`. Verified by hardcoding `'USD'` in production and seeing the KR test fail as expected. Now all six actions and two prewarm functions have explicit currency assertions.

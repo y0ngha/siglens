@@ -56,6 +56,8 @@ describe('getIncomeStatements', () => {
             fiscalYear: '2025',
             period: 'FY',
             date: '2025-12-31',
+            // KRX 상장사는 통화 필드가 없으므로 시장 프로필의 통화(KRW)를 붙인다.
+            reportedCurrency: 'KRW',
             revenue: 333_605_938_000_000,
             grossProfit: 131_370_425_000_000,
             operatingIncome: 43_601_051_000_000,

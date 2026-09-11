@@ -38,6 +38,14 @@ function fmpGet<T>(
 const num = (v: number | undefined): number | null => toFiniteNumber(v);
 
 /**
+ * 보고 통화. core가 재무제표 금액 옆에 이 값을 붙이고, 없으면 통화 없이 둔다 —
+ * ADR은 상장 통화(USD)가 아니라 본국 통화로 보고하므로(TSM은 TWD) 상장 통화를
+ * 대신 넣으면 금액이 수십 배 틀린다.
+ */
+const reportedCurrencyOf = (v: string | null | undefined): string | null =>
+    v?.trim() || null;
+
+/**
  * FMP adapter implementing core's `FinancialStatementsProvider` for the six
  * financial statement time-series endpoints.
  *
@@ -66,6 +74,7 @@ export class FmpFinancialStatementsClient implements FinancialStatementsProvider
             fiscalYear: r.fiscalYear ?? '',
             period: r.period ?? '',
             date: r.date ?? '',
+            reportedCurrency: reportedCurrencyOf(r.reportedCurrency),
             revenue: num(r.revenue),
             grossProfit: num(r.grossProfit),
             operatingIncome: num(r.operatingIncome),
@@ -97,6 +106,7 @@ export class FmpFinancialStatementsClient implements FinancialStatementsProvider
             fiscalYear: r.fiscalYear ?? '',
             period: r.period ?? '',
             date: r.date ?? '',
+            reportedCurrency: reportedCurrencyOf(r.reportedCurrency),
             totalAssets: num(r.totalAssets),
             totalCurrentAssets: num(r.totalCurrentAssets),
             totalLiabilities: num(r.totalLiabilities),
@@ -129,6 +139,7 @@ export class FmpFinancialStatementsClient implements FinancialStatementsProvider
             fiscalYear: r.fiscalYear ?? '',
             period: r.period ?? '',
             date: r.date ?? '',
+            reportedCurrency: reportedCurrencyOf(r.reportedCurrency),
             operatingCashFlow: num(r.operatingCashFlow),
             capitalExpenditure: num(r.capitalExpenditure),
             freeCashFlow: num(r.freeCashFlow),

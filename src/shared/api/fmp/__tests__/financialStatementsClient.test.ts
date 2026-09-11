@@ -59,6 +59,7 @@ describe('FmpFinancialStatementsClient', () => {
                     ebitda: 134_000_000_000,
                     eps: 6.11,
                     epsDiluted: 6.08,
+                    reportedCurrency: 'TWD',
                 },
             ]);
             const client = new FmpFinancialStatementsClient();
@@ -82,6 +83,7 @@ describe('FmpFinancialStatementsClient', () => {
                 grossMargin: null,
                 operatingMargin: null,
                 netMargin: null,
+                reportedCurrency: 'TWD',
             });
         });
 
@@ -217,6 +219,7 @@ describe('FmpFinancialStatementsClient', () => {
                 netDebt: 47_476_000_000,
                 totalStockholdersEquity: 56_950_000_000,
                 currentRatio: null,
+                reportedCurrency: null,
             });
         });
 
@@ -302,6 +305,7 @@ describe('FmpFinancialStatementsClient', () => {
                 freeCashFlow: 108_807_000_000,
                 dividendsPaid: -15_234_000_000,
                 fcfMargin: null,
+                reportedCurrency: null,
             });
         });
 

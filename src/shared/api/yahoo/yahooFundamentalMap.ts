@@ -181,7 +181,15 @@ export function mapCashFlow(
 ): FundamentalCashFlowInput | null {
     const row = latest(data.cashFlow);
     if (!row) return null;
-    return { operatingCashFlow: toNullable(row.operatingCashFlow) };
+    return {
+        operatingCashFlow: toNullable(row.operatingCashFlow),
+        // core가 EPS·영업현금흐름·추정치 옆에 붙이는 보고 통화. 모르면 비워 두어
+        // core가 통화 없이 쓰게 한다 — 틀린 통화보다 낫다. FMP 어댑터
+        // (fundamentalClient.ts/financialStatementsClient.ts)와 동일하게
+        // trim 후 빈 문자열/공백은 null로 정규화한다.
+        reportedCurrency:
+            data.summary?.financialData?.financialCurrency?.trim() || null,
+    };
 }
 
 /**

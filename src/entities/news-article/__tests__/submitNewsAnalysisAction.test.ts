@@ -474,4 +474,30 @@ describe('submitNewsAnalysisAction 함수는', () => {
             );
         });
     });
+
+    describe('currency forwarding', () => {
+        it('forwards currency: "USD" for a US symbol', async () => {
+            await submitNewsAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                MODEL_ID,
+                'ko'
+            );
+            expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ currency: 'USD' })
+            );
+        });
+
+        it('forwards currency: "KRW" for a KR symbol', async () => {
+            await submitNewsAnalysisAction(
+                '005930.KS',
+                '삼성전자',
+                MODEL_ID,
+                'ko'
+            );
+            expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ currency: 'KRW' })
+            );
+        });
+    });
 });

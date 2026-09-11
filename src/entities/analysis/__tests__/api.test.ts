@@ -410,6 +410,7 @@ describe('prewarmFundamental', () => {
             tier: 'free',
             reasoning: false,
             skipEnqueueIfMiss: false,
+            currency: 'USD',
         });
     });
 
@@ -562,7 +563,18 @@ describe('prewarmOverall', () => {
                 reasoning: false,
                 skipEnqueueIfMiss: false,
                 assetClass: 'equity',
+                currency: 'USD',
             })
+        );
+    });
+
+    it('forwards currency: "KRW" when resolveMarketProfile resolves to kr-equity', async () => {
+        mockResolveMarketProfile.mockResolvedValueOnce('kr-equity');
+
+        await prewarmOverall('005930.KS', '삼성전자', false);
+
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ currency: 'KRW' })
         );
     });
 

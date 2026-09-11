@@ -60,6 +60,8 @@ export interface YahooSummary {
         sharesOutstanding?: number;
     };
     financialData?: {
+        /** 재무제표 보고 통화(ISO). KRX 상장사는 `KRW`. */
+        financialCurrency?: string | null;
         returnOnEquity?: number;
         returnOnAssets?: number;
         operatingMargins?: number;

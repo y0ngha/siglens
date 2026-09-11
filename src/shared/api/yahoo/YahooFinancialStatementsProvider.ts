@@ -13,6 +13,7 @@ import {
     getYahooStatements,
     type YahooStatementRaw,
 } from './yahooStatementsSource';
+import { currencyForSymbol } from '@/shared/config/marketProfile';
 
 const PERCENT = 100;
 
@@ -84,12 +85,14 @@ function growth(
 function mapIncome(
     rows: YahooStatementRaw[],
     period: StatementPeriod,
-    limit: number
+    limit: number,
+    reportedCurrency: string
 ): IncomeStatementRow[] {
     return rows.slice(0, limit).map(r => ({
         fiscalYear: fiscalYearOf(r),
         period: periodLabelOf(r, period),
         date: isoDate(r.date),
+        reportedCurrency,
         revenue: toNullable(r.totalRevenue),
         grossProfit: toNullable(r.grossProfit),
         operatingIncome: toNullable(r.operatingIncome),
@@ -107,7 +110,8 @@ function mapIncome(
 function mapBalance(
     rows: YahooStatementRaw[],
     period: StatementPeriod,
-    limit: number
+    limit: number,
+    reportedCurrency: string
 ): BalanceSheetRow[] {
     return rows.slice(0, limit).map(r => {
         const cash = r.cashCashEquivalentsAndShortTermInvestments;
@@ -115,6 +119,7 @@ function mapBalance(
             fiscalYear: fiscalYearOf(r),
             period: periodLabelOf(r, period),
             date: isoDate(r.date),
+            reportedCurrency,
             totalAssets: toNullable(r.totalAssets),
             totalCurrentAssets: toNullable(r.currentAssets),
             totalLiabilities: toNullable(r.totalLiabilitiesNetMinorityInterest),
@@ -141,12 +146,14 @@ function mapBalance(
 function mapCashFlow(
     rows: YahooStatementRaw[],
     period: StatementPeriod,
-    limit: number
+    limit: number,
+    reportedCurrency: string
 ): CashFlowRow[] {
     return rows.slice(0, limit).map(r => ({
         fiscalYear: fiscalYearOf(r),
         period: periodLabelOf(r, period),
         date: isoDate(r.date),
+        reportedCurrency,
         operatingCashFlow: toNullable(r.operatingCashFlow),
         capitalExpenditure: toNullable(r.capitalExpenditure),
         freeCashFlow: toNullable(r.freeCashFlow),
@@ -195,6 +202,10 @@ function labels(
  * 다년 성장률(3/5/10년 주당매출)은 제공하지 않는다. 주당 값이라 각 연도의 주식수가
  * 필요한데 yahoo 재무 시계열이 과거 주식수를 일관되게 채워 주지 않아, 계산하면 자사주
  * 매입·분할이 성장률로 잘못 반영된다.
+ *
+ * 보고 통화: yahoo 재무 시계열 행에는 통화 필드가 없다. 이 공급자는 KRX 상장사
+ * 전용이고 KRX 상장사는 원화로 공시하므로 시장 프로필의 통화를 그대로 쓴다. core는
+ * 이 값을 금액 옆에 붙이며, 비워 두면 통화 없이 쓴다.
  */
 export class YahooFinancialStatementsProvider implements FinancialStatementsProvider {
     async getIncomeStatements(
@@ -203,7 +214,7 @@ export class YahooFinancialStatementsProvider implements FinancialStatementsProv
         limit: number
     ): Promise<IncomeStatementRow[]> {
         const { income } = await getYahooStatements(symbol, period);
-        return mapIncome(income, period, limit);
+        return mapIncome(income, period, limit, currencyForSymbol(symbol));
     }
 
     async getBalanceSheets(
@@ -212,7 +223,7 @@ export class YahooFinancialStatementsProvider implements FinancialStatementsProv
         limit: number
     ): Promise<BalanceSheetRow[]> {
         const { balance } = await getYahooStatements(symbol, period);
-        return mapBalance(balance, period, limit);
+        return mapBalance(balance, period, limit, currencyForSymbol(symbol));
     }
 
     async getCashFlowStatements(
@@ -221,7 +232,7 @@ export class YahooFinancialStatementsProvider implements FinancialStatementsProv
         limit: number
     ): Promise<CashFlowRow[]> {
         const { cashFlow } = await getYahooStatements(symbol, period);
-        return mapCashFlow(cashFlow, period, limit);
+        return mapCashFlow(cashFlow, period, limit, currencyForSymbol(symbol));
     }
 
     async getIncomeStatementGrowths(
