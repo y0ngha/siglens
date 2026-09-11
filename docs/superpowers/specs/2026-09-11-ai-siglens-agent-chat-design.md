@@ -69,7 +69,7 @@ route handler (siglens)
   ├─ AGENT_CHAT_DISABLED → 503
   ├─ getCurrentUser 없음 → 401 · isBot → 403
   ├─ resolveTierAndByok(model) · 대화 소유자 검증(where user_id = me and deleted_at is null, 없으면 404)
-  ├─ 동시 턴 락(Redis SET NX EX 660 = 턴 마감 600초 + 사전 DB·부분 저장·정리 여유 60초, 토큰 compare-and-delete 해제, Redis 장애 시 fail-closed + `[agent] quota store unavailable` 로그) · 일일 턴 한도(Redis, fail-closed)
+  ├─ 동시 턴 락(Redis SET NX EX 720 = 턴 마감 600초 + 여유 120초 — 락을 pre-turn DB 읽기 앞에서 잡고 Neon 재시도는 in-flight 호출을 끊지 못해 최악 50~60초가 선행, 토큰 compare-and-delete 해제, Redis 장애 시 fail-closed + `[agent] quota store unavailable` 로그) · 일일 턴 한도(Redis, fail-closed)
   ├─ user 메시지 저장(seq = max+1, 트랜잭션)
   ├─ core.runAgentTurn(params, deps) ──┐
   │     루프: callAgentProvider(stream) → tool_use? → deps.executeTool → 결과 append → 재호출

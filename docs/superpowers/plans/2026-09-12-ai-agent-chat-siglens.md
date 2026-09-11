@@ -1145,7 +1145,7 @@ export function registerActiveStream(): () => void {
 
 ### Task 8: 동시 턴 락·카운터 조립·티어 해석
 
-> **구현 반영(2026-09-12 리뷰):** 아래 코드와 달리 커밋된 구현은 `TURN_LOCK_TTL_SECONDS = 660`(마감 600초 + 여유 60초, 테스트는 `>` 마감), release는 `redis.del` 대신 토큰 일치 시에만 지우는 Lua compare-and-delete(`redis.eval`), Redis 미설정·SET 실패 시 `[agent] quota store unavailable` 경고 로그. 이후 태스크는 커밋된 코드를 기준으로 한다.
+> **구현 반영(2026-09-12 리뷰):** 아래 코드와 달리 커밋된 구현은 `TURN_LOCK_TTL_SECONDS = 720`(마감 600초 + 여유 120초 — Task 10이 락을 pre-turn DB 호출 앞에서 잡는다, 테스트는 여유 120초 이상), release는 `redis.del` 대신 토큰 일치 시에만 지우는 Lua compare-and-delete(`redis.eval`), Redis 미설정·SET 실패 시 `[agent] quota store unavailable` 경고 로그. 이후 태스크는 커밋된 코드를 기준으로 한다.
 
 **Files:** Create `src/app/api/ai/chat/turnLock.ts`, `counters.ts`, `resolveAgentTier.ts`; Test `src/app/api/ai/chat/__tests__/{turnLock,counters,resolveAgentTier}.test.ts`
 
