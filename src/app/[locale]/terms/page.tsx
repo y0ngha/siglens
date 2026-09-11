@@ -32,6 +32,7 @@ import type { SeoTranslator } from '@/shared/lib/seo';
 import type { Locale } from '@/shared/i18n/locales';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { getDatabaseClient } from '@/shared/db/client';
+import { isOfflineBuild } from '@/shared/api/offlineBuild';
 import { DrizzleTermsRepository } from '@/entities/terms';
 
 const PAGE_URL = `${SITE_URL}${TERMS_PATH}`;
@@ -142,6 +143,10 @@ async function TermsContent({ locale }: { readonly locale: Locale }) {
         locale,
         namespace: 'shared.lib.legal',
     });
+    // 로컬 pre-push 오프라인 빌드(`SIGLENS_OFFLINE_BUILD=1`)에서는 DB에 닿지 않는다.
+    // 산출물은 버려지므로 404로 구워져도 무해하다. 운영(Docker) 빌드는 이 분기를
+    // 타지 않고, DB를 못 읽으면 지금처럼 빌드를 실패시켜 빈 약관이 구워지는 것을 막는다.
+    if (isOfflineBuild()) notFound();
     const { db } = getDatabaseClient();
     const repo = new DrizzleTermsRepository(db);
     const terms = await repo.findActive('tos', locale);

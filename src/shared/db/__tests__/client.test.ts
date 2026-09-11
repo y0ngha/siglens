@@ -22,6 +22,7 @@ import {
     resetDatabaseClientForTests,
     tryGetDatabaseClient,
 } from '@/shared/db/client';
+import { __resetOfflineBuildWarningsForTests } from '@/shared/api/offlineBuild';
 
 describe('createDatabaseClient', () => {
     beforeEach(() => {
@@ -97,5 +98,40 @@ describe('tryGetDatabaseClient', () => {
         vi.mocked(tryReadDatabaseConfig).mockReturnValue(null);
         const client = tryGetDatabaseClient();
         expect(client).toBeNull();
+    });
+});
+
+describe('offline build 가드', () => {
+    beforeEach(() => {
+        resetDatabaseClientForTests();
+        __resetOfflineBuildWarningsForTests();
+        vi.mocked(neon).mockClear();
+        vi.mocked(readDatabaseConfig).mockClear();
+        vi.mocked(tryReadDatabaseConfig).mockReturnValue({
+            databaseUrl: 'postgres://test',
+        });
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
+    it('getDatabaseClient는 neon()을 호출하지 않고 [offline-build] 에러를 던진다', () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
+        expect(() => getDatabaseClient()).toThrow('[offline-build]');
+        expect(neon).not.toHaveBeenCalled();
+        expect(readDatabaseConfig).not.toHaveBeenCalled();
+    });
+
+    it('tryGetDatabaseClient는 neon()을 호출하지 않고 null을 반환한다', () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
+        expect(tryGetDatabaseClient()).toBeNull();
+        expect(neon).not.toHaveBeenCalled();
+    });
+
+    it('SIGLENS_OFFLINE_BUILD가 미설정이면 평소대로 동작한다', () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '');
+        expect(() => getDatabaseClient()).not.toThrow();
+        expect(neon).toHaveBeenCalled();
     });
 });

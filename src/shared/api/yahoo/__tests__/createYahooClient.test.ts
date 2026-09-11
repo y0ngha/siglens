@@ -1,11 +1,21 @@
 import { describe, expect, it, vi } from 'vitest';
 
 const constructorArgs: unknown[] = [];
+const quoteImpl = vi.fn(async (symbol: string) => ({ symbol }));
+// allowlist에 없는 동기 헬퍼 흉내 — 감싸이면 안 되므로 async가 아니다.
+const syncHelperImpl = vi.fn((symbol: string) => ({ symbol, sync: true }));
 
 vi.mock('yahoo-finance2', () => ({
     default: class MockYahooFinance {
         constructor(opts?: unknown) {
             constructorArgs.push(opts);
+        }
+        quote(symbol: string) {
+            return quoteImpl(symbol);
+        }
+        // yahoo-finance2 allowlist 밖의 동기 헬퍼를 흉내낸다(예: `_setOpts`류).
+        notAGuardedMethod(symbol: string) {
+            return syncHelperImpl(symbol);
         }
     },
 }));
@@ -14,6 +24,7 @@ import {
     createYahooClient,
     YAHOO_FETCH_TIMEOUT_MS,
 } from '@/shared/api/yahoo/createYahooClient';
+import { __resetOfflineBuildWarningsForTests } from '@/shared/api/offlineBuild';
 
 interface CapturedOptions {
     suppressNotices?: string[];
@@ -108,5 +119,98 @@ describe('createYahooClient', () => {
 
     it('타임아웃이 ALB idle(60초)보다 충분히 짧다', () => {
         expect(YAHOO_FETCH_TIMEOUT_MS).toBeLessThan(60_000);
+    });
+});
+
+describe('createYahooClient의 offline build 가드는', () => {
+    beforeEach(() => {
+        __resetOfflineBuildWarningsForTests();
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
+    it('SIGLENS_OFFLINE_BUILD=1이면 실제 fetch 없이 [offline-build] 에러를 던진다', async () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
+        createYahooClient();
+        const opts = constructorArgs.at(-1) as CapturedOptions;
+
+        const fetchSpy = vi.spyOn(globalThis, 'fetch');
+        try {
+            // 가드가 `fetch(...)` 호출 전에 동기적으로 throw하므로(async 래핑 없음),
+            // 프라미스 거부가 아니라 동기 예외로 검증한다.
+            expect(() => opts.fetch!('https://example.test/offline')).toThrow(
+                '[offline-build]'
+            );
+            expect(fetchSpy).not.toHaveBeenCalled();
+        } finally {
+            fetchSpy.mockRestore();
+        }
+    });
+
+    it('SIGLENS_OFFLINE_BUILD가 미설정이면 평소대로 fetch를 호출한다', async () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '');
+        createYahooClient();
+        const opts = constructorArgs.at(-1) as CapturedOptions;
+
+        const fetchSpy = vi
+            .spyOn(globalThis, 'fetch')
+            .mockResolvedValue(new Response('{}'));
+        try {
+            await opts.fetch!('https://example.test/online');
+            expect(fetchSpy).toHaveBeenCalledOnce();
+        } finally {
+            fetchSpy.mockRestore();
+        }
+    });
+});
+
+/**
+ * fetch 레벨 가드는 `quote`가 타는 crumb 경로(`lib/getCrumb.js`)를 막지 못한다 —
+ * 거기서 막힌 fetch의 throw가 공유 crumb promise를 영영 안 풀린 채로 남겨, 이후
+ * 모든 `quote` 호출이 그 promise를 기다리며 함께 멈춘다(실측: `/market/kr`
+ * prerender가 60초 타임아웃에 3번 연속 걸림). 그래서 메서드 호출 자체를 라이브러리
+ * 진입 전에 막는 별도 Proxy 가드가 필요하다.
+ */
+describe('createYahooClient의 메서드 레벨 offline 가드는', () => {
+    beforeEach(() => {
+        __resetOfflineBuildWarningsForTests();
+        quoteImpl.mockClear();
+        syncHelperImpl.mockClear();
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
+    it('SIGLENS_OFFLINE_BUILD=1이면 allowlist 메서드는 실제 라이브러리 메서드를 호출하지 않고 reject한다', async () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
+        const client = createYahooClient();
+
+        await expect(client.quote('005930.KS')).rejects.toThrow(
+            '[offline-build]'
+        );
+        expect(quoteImpl).not.toHaveBeenCalled();
+    });
+
+    it('SIGLENS_OFFLINE_BUILD=1이어도 allowlist 밖의 함수 프로퍼티는 그대로 통과시켜 동기 반환을 보존한다', () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock 클래스에만 있는 메서드
+        const client = createYahooClient() as any;
+
+        // Promise가 아니라 동기 값이 그대로 나와야 한다 — 감싸졌다면 Promise가 됐을 것이다.
+        const result = client.notAGuardedMethod('005930.KS');
+        expect(result).toEqual({ symbol: '005930.KS', sync: true });
+        expect(syncHelperImpl).toHaveBeenCalledWith('005930.KS');
+    });
+
+    it('SIGLENS_OFFLINE_BUILD가 미설정이면 allowlist 메서드는 실제 라이브러리 메서드로 전달한다', async () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '');
+        const client = createYahooClient();
+
+        const result = await client.quote('005930.KS');
+        expect(quoteImpl).toHaveBeenCalledWith('005930.KS');
+        expect(result).toEqual({ symbol: '005930.KS' });
     });
 });

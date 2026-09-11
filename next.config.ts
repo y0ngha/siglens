@@ -23,8 +23,12 @@ const nextConfig: NextConfig = {
 
     // ISR/fetch 캐시를 S3로 외부화(디스크풀 방지). production + 버킷 설정 시에만 등록.
     // dev/E2E(버킷 없음)는 기본 파일시스템 캐시로 동작.
+    // offline build(SIGLENS_OFFLINE_BUILD=1)는 핸들러를 끈다 — prerender 중 S3 +
+    // Upstash tag store에 접근하므로 프로덕션 credential 없는 로컬 pre-push 빌드와 맞지 않는다.
     cacheHandler:
-        process.env.NODE_ENV === 'production' && process.env.ISR_CACHE_BUCKET
+        process.env.NODE_ENV === 'production' &&
+        process.env.ISR_CACHE_BUCKET &&
+        process.env.SIGLENS_OFFLINE_BUILD !== '1'
             ? require.resolve('./cache-handler/index.mjs')
             : undefined,
     // 인스턴스 로컬 L1을 끄고 모든 read/write를 핸들러로 보낸다는 의도.

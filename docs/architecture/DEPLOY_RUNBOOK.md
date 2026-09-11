@@ -76,6 +76,27 @@ yarn release          # release-it: 버전 범프 + CHANGELOG + 커밋 + 태그 
 
 검증: 이미지의 페이지 크기를 비교한다(정상 수백 KB vs degraded 수십 KB).
 
+로컬 pre-push 빌드는 다르다 — `.husky/pre-push`가 `SIGLENS_OFFLINE_BUILD=1 yarn build`로 돌려서
+FMP/Neon/Upstash 어댑터가 실제 네트워크 호출 전에 차단되고, 그 산출물은 push 직후 버려진다.
+로컬 `.env.local`은 프로덕션 자격증명이라 여기서 실 서비스를 부르면 안 된다. **이 플래그는
+Docker/`deploy.yml`에 절대 넣지 말 것** — 배포 이미지의 ISR S3 캐시는 GIT_SHA별이라 위에서
+설명한 실데이터가 반드시 필요하다.
+
+Yahoo(`createYahooClient`)는 이 게이트를 fetch 주입이 아니라 **메서드 호출 자체**에 건다 —
+`quote`가 타는 crumb/cookie 경로(`lib/getCrumb.js`)에서 fetch가 throw하면 그 경로가 공유하는
+promise가 영영 안 풀린 채 남아 이후 모든 `quote` 호출이 함께 멈춘다(실측: `/market/kr`
+prerender가 60초 타임아웃에 3번 연속 걸림). 그래서 `createYahooClient`가 반환하는 클라이언트를
+Proxy로 감싸, offline이면 라이브러리 진입 전에 즉시 reject한다(fetch 레벨 가드는 백스톱으로만
+유지).
+
+`pre-push`는 `SIGLENS_OFFLINE_BUILD=1`과 함께 `UPSTASH_REDIS_REST_URL=`/`_TOKEN=`/
+`_READONLY_TOKEN=`도 빈 문자열로 선점한다. `@y0ngha/siglens-core`(`getSectorSignals`,
+`peekBriefingCache` 등)는 앱의 offline 게이트를 거치지 않고 자체적으로 `process.env`에서
+Upstash 자격증명을 읽어 캐시 클라이언트를 만들기 때문이다. Next의 `loadEnvConfig`는 이미
+프리셋된 env(빈 문자열 포함)를 `.env.local` 값으로 덮어쓰지 않으므로, 빈 문자열로 선점해 두면
+core의 `readUpstashConfig`가 `null`을 받아 캐시 접근을 끈다 — siglens 측 어댑터 변경 없이도
+로컬 빌드가 core의 Upstash 접근을 막는다.
+
 ### 배포 후 확인
 
 ```bash

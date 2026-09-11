@@ -1,5 +1,10 @@
 import 'server-only';
 import { Redis } from '@upstash/redis';
+import {
+    isOfflineBuild,
+    warnOfflineBuildOnce,
+    OFFLINE_BUILD_SERVICE,
+} from '@/shared/api/offlineBuild';
 
 export interface RedisClientPair {
     writer: Redis;
@@ -26,6 +31,13 @@ function getUpstashEnv(): UpstashEnv | null {
 }
 
 function readUpstashEnv(): UpstashEnv | null {
+    // offline build 중엔 env가 실제로 설정돼 있어도(로컬 .env.local이 프로덕션
+    // 자격증명을 담고 있으므로) 미설정인 것처럼 취급한다 — 이 결과가 cachedEnv로
+    // 메모되므로 이 체크는 메모이제이션보다 먼저 실행돼야 한다.
+    if (isOfflineBuild()) {
+        warnOfflineBuildOnce(OFFLINE_BUILD_SERVICE.UPSTASH);
+        return null;
+    }
     const url = process.env.UPSTASH_REDIS_REST_URL;
     const token = process.env.UPSTASH_REDIS_REST_TOKEN;
     if (!url || !token) return null;

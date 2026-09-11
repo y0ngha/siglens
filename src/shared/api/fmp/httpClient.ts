@@ -4,6 +4,7 @@ import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 import { FMP_TRANSIENT_RETRY } from '@/shared/api/fmp/fmpRetry';
 import { logFmpPaymentRequiredError } from '@/shared/api/fmp/fmpUserMessage';
 import { toFmpSymbol } from '@/shared/lib/fmpSymbol';
+import { assertOnline, OFFLINE_BUILD_SERVICE } from '@/shared/api/offlineBuild';
 
 /** Base URL for all FMP `/stable/*` endpoints. */
 export const FMP_STABLE_BASE = 'https://financialmodelingprep.com/stable';
@@ -44,6 +45,7 @@ export async function fmpGet<T>(
     query: Record<string, string> = {},
     opts: FmpGetOptions = {}
 ): Promise<T> {
+    assertOnline(OFFLINE_BUILD_SERVICE.FMP, path);
     const { apiKey } = readFmpConfig();
     // Normalize the ticker to FMP notation (e.g. BRK.B → BRK-B) so dual-class
     // shares resolve. Cache keys upstream still use the app symbol; only the

@@ -356,6 +356,9 @@ SIGLENS_GITHUB_TOKEN=
 
 # Debug
 DEBUG_VERBOSE_LOGS=
+
+# Build (로컬 전용)
+SIGLENS_OFFLINE_BUILD=  # `.husky/pre-push`가 로컬 빌드 단계에서만 설정. FMP/Neon/Upstash/Yahoo 호출을 차단한다. Docker·배포 환경에는 절대 설정하지 않는다 — 자세한 내용은 `docs/architecture/DEPLOY_RUNBOOK.md` 참고
 ```
 
 `.env.local`에 작성. 절대 커밋하지 않는다.

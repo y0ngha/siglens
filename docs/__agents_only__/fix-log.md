@@ -829,6 +829,14 @@
 - Rule: `messages/glossary.json` is also consumed by `db/scripts/translateContentLocale.ts` for stored AI content; before renaming/removing a key, grep `@y0ngha/siglens-core` prompts for the old term and keep it if still emitted.
 - Context: core overall/fundamental/financials prompts still emit "종합 결론"; restored the old entry alongside "종합 분석".
 
+## [chore/offline-build Round 1 | offline pre-push build | 2026-09-11]
+- Violation: New env-gate helper `isOfflineBuild()` placed in `src/shared/lib/` despite identical-purpose sibling `isE2E()` living in `src/shared/api/e2eEnv.ts`. Both consumed together by `src/shared/db/client.ts`. Category siblings must colocate.
+  - Rule: FF.md Cohesion 2-C — when adding an env-gate or feature-flag helper, search for siblings in the same category and colocate in the same file. Placing duplicates of the same category in different directories obscures their relationship and makes future changes diverge.
+  - Context: Moved `isOfflineBuild` to new `src/shared/api/offlineBuild.ts` alongside the existing `e2eEnv.ts` pattern.
+- Violation: JSDoc for `getDatabaseClient()` listed only the DATABASE_URL-unset condition and omitted the two new branches added in this round (throws when offline, null condition in `tryGetDatabaseClient`).
+  - Rule: MISTAKES.md — API docs must stay in sync with implementation branches; stale JSDoc hides new code paths from maintainers.
+  - Context: Updated JSDoc to document both branches (DATABASE_URL unset, offline mode active).
+
 ## [PR #799 | chore/core-1.0.4-prompt-currency | 2026-09-11]
 - Violation: BLOCKER — `YahooFinancialStatementsProvider` added a new `reportedCurrency` field and threaded it through three mapper functions (`mapIncome`, `mapBalance`, `mapCashFlow`). Only the income-statement test asserted `reportedCurrency: 'KRW'`; the balance-sheet and cash-flow tests used `toMatchObject` without including the new field. Dropping the field or hardcoding `'USD'` in a Korean symbol test stayed green.
   - Rule: When a new field is threaded through sibling mapper functions, every sibling's unit test must assert it with a value that differs from the default. Tests using structural matchers (`toMatchObject`) without the new field silently tolerate omission bugs — the field may not be passed at all, and the test cannot tell.
@@ -841,4 +849,17 @@
 - Violation: SUGGESTION — `submitNewsAnalysisAction` computed `assetClass` via `resolveAssetClass` and `currency` via a separate `currencyForSymbol` call. Sibling actions (`runFundamentalAnalysisAction`, `runOverallAnalysisAction`, `chatAction`) all use `resolveMarketProfile` to fetch both descriptor values atomically via `getDescriptor`.
   - Rule: Derive related descriptor values (asset class, currency, region, etc.) from one resolution path; separate resolution calls may drift if the underlying mappings diverge.
   - Context: Unified `submitNewsAnalysisAction` to use `resolveMarketProfile` + `getDescriptor`, matching the pattern of siblings. Single resolution point reduces risk of state divergence.
+
+## [PR #800 | chore/offline-build | 2026-09-11]
+- Violation: BLOCKER — Offline/kill-switch gate covered FMP, Neon, and Upstash but not Yahoo Finance (KR market data via `createYahooClient`). Disabling the app Redis client made `getOrSetCache` call the live Yahoo fetcher on every local build.
+  - Rule: (new) Offline/kill-switch gate must cover every external host reachable from the guarded code path, not only the services explicitly named in the task description. Incomplete coverage creates silent fallbacks to live services during offline builds.
+  - Context: Extended gate to guard Yahoo Finance client creation in addition to FMP/Neon/Upstash. Verified by disabling gate and confirming prerender blocks.
+
+- Violation: Implementation lesson — Guarding inside a third-party library's injected `fetch` hook can cause HANG instead of graceful failure. `yahoo-finance2` `quote()` method goes through crumb/cookie logic before fetching; a throwing fetch handler there leaves the build stuck (`/ko/market/kr` exceeded 60s prerender timeout ×3), while `chart()` degrades gracefully.
+  - Rule: Put kill-switch guards ABOVE third-party client libraries, not inside their transport hooks. Guards inside library code risk hanging if the library has pre-fetch initialization steps. Verify with real build, not only unit tests.
+  - Context: Wrapped Yahoo client instantiation in a Proxy that rejects method calls before entering library logic; kept fetch-level guard as backstop. Verified real build no longer times out.
+
+- Violation: Implementation lesson — External package `@y0ngha/siglens-core` creates its own Upstash clients from `process.env.UPSTASH_REDIS_REST_*` in `readUpstashConfig()`, bypassing the app-level offline gate.
+  - Rule: When implementing a service gate, grep all dependencies for direct env readers of that service and ensure env blanking/override reaches them. External packages may initialize clients from env without routing through app gates.
+  - Context: Fixed by blanking `UPSTASH_REDIS_REST_*` environment variables in pre-push build command. Verified Next.js `loadEnvConfig` does not override preset-empty env vars.
 

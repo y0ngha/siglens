@@ -14,6 +14,7 @@ import {
     getRedisReaderWriter,
     __resetRedisClientForTests,
 } from '@/shared/cache/redisClient';
+import { __resetOfflineBuildWarningsForTests } from '@/shared/api/offlineBuild';
 
 const URL = 'https://test.upstash.io';
 const TOKEN = 'writer-token';
@@ -99,6 +100,45 @@ describe('redisClient', () => {
             expect(mockRedisConstructor).toHaveBeenCalledTimes(2); // writer + reader, once each
             expect(first!.reader).toBe(second!.reader);
             expect(first!.writer).toBe(second!.writer);
+        });
+    });
+
+    describe('offline build 가드', () => {
+        beforeEach(() => {
+            __resetOfflineBuildWarningsForTests();
+        });
+
+        afterEach(() => {
+            vi.unstubAllEnvs();
+        });
+
+        it('env가 설정돼 있어도 offline build 중이면 null을 반환하고 Redis를 생성하지 않는다', () => {
+            process.env.UPSTASH_REDIS_REST_URL = URL;
+            process.env.UPSTASH_REDIS_REST_TOKEN = TOKEN;
+            vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
+
+            expect(getRedisClient()).toBeNull();
+            expect(getRedisReaderWriter()).toBeNull();
+            expect(mockRedisConstructor).not.toHaveBeenCalled();
+        });
+
+        it('offline build 판정은 캐시된 env보다 먼저 평가되어 이후 호출에도 유지된다', () => {
+            process.env.UPSTASH_REDIS_REST_URL = URL;
+            process.env.UPSTASH_REDIS_REST_TOKEN = TOKEN;
+            vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
+
+            expect(getRedisClient()).toBeNull();
+            expect(getRedisClient()).toBeNull();
+            expect(mockRedisConstructor).not.toHaveBeenCalled();
+        });
+
+        it('SIGLENS_OFFLINE_BUILD가 미설정이면 평소대로 동작한다', () => {
+            process.env.UPSTASH_REDIS_REST_URL = URL;
+            process.env.UPSTASH_REDIS_REST_TOKEN = TOKEN;
+            vi.stubEnv('SIGLENS_OFFLINE_BUILD', '');
+
+            expect(getRedisClient()).not.toBeNull();
+            expect(mockRedisConstructor).toHaveBeenCalledTimes(1);
         });
     });
 });
