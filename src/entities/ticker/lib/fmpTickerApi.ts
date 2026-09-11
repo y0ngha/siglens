@@ -2,6 +2,10 @@ import { MS_PER_SECOND } from '@/shared/config/time';
 import type { TickerSearchResult } from '@/shared/lib/types';
 import { tryReadFmpConfig } from '@y0ngha/siglens-core';
 import { toFmpSearchSymbol } from '@/shared/lib/fmpSymbol';
+import {
+    isOfflineBuild,
+    warnOfflineBuildOnce,
+} from '@/shared/api/offlineBuild';
 import type { FmpSearchResult } from '../model';
 
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
@@ -69,6 +73,15 @@ async function fetchFmpEndpoint(
     options?: FmpSearchOptions
 ): Promise<FmpSearchResult[]> {
     const throwOnInfraFailure = options?.throwOnInfraFailure ?? false;
+
+    if (isOfflineBuild()) {
+        warnOfflineBuildOnce('FMP');
+        if (throwOnInfraFailure)
+            throw new Error(
+                `[offline-build] blocked FMP request to ${endpoint}`
+            );
+        return [];
+    }
 
     const config = tryReadFmpConfig();
     if (!config) {

@@ -76,6 +76,12 @@ yarn release          # release-it: 버전 범프 + CHANGELOG + 커밋 + 태그 
 
 검증: 이미지의 페이지 크기를 비교한다(정상 수백 KB vs degraded 수십 KB).
 
+로컬 pre-push 빌드는 다르다 — `.husky/pre-push`가 `SIGLENS_OFFLINE_BUILD=1 yarn build`로 돌려서
+FMP/Neon/Upstash 어댑터가 실제 네트워크 호출 전에 차단되고, 그 산출물은 push 직후 버려진다.
+로컬 `.env.local`은 프로덕션 자격증명이라 여기서 실 서비스를 부르면 안 된다. **이 플래그는
+Docker/`deploy.yml`에 절대 넣지 말 것** — 배포 이미지의 ISR S3 캐시는 GIT_SHA별이라 위에서
+설명한 실데이터가 반드시 필요하다.
+
 ### 배포 후 확인
 
 ```bash

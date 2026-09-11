@@ -829,3 +829,11 @@
 - Rule: `messages/glossary.json` is also consumed by `db/scripts/translateContentLocale.ts` for stored AI content; before renaming/removing a key, grep `@y0ngha/siglens-core` prompts for the old term and keep it if still emitted.
 - Context: core overall/fundamental/financials prompts still emit "종합 결론"; restored the old entry alongside "종합 분석".
 
+## [chore/offline-build Round 1 | offline pre-push build | 2026-09-11]
+- Violation: New env-gate helper `isOfflineBuild()` placed in `src/shared/lib/` despite identical-purpose sibling `isE2E()` living in `src/shared/api/e2eEnv.ts`. Both consumed together by `src/shared/db/client.ts`. Category siblings must colocate.
+  - Rule: FF.md Cohesion 2-C — when adding an env-gate or feature-flag helper, search for siblings in the same category and colocate in the same file. Placing duplicates of the same category in different directories obscures their relationship and makes future changes diverge.
+  - Context: Moved `isOfflineBuild` to new `src/shared/api/offlineBuild.ts` alongside the existing `e2eEnv.ts` pattern.
+- Violation: JSDoc for `getDatabaseClient()` listed only the DATABASE_URL-unset condition and omitted the two new branches added in this round (throws when offline, null condition in `tryGetDatabaseClient`).
+  - Rule: MISTAKES.md — API docs must stay in sync with implementation branches; stale JSDoc hides new code paths from maintainers.
+  - Context: Updated JSDoc to document both branches (DATABASE_URL unset, offline mode active).
+

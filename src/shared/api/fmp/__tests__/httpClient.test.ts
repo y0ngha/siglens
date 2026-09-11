@@ -26,6 +26,7 @@ import { FMP_STABLE_BASE, fmpGet } from '@/shared/api/fmp/httpClient';
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 import { sleep } from '@/shared/lib/sleep';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { __resetOfflineBuildWarningsForTests } from '@/shared/api/offlineBuild';
 
 const mockFetch = vi.fn();
 const sleepMock = sleep as MockedFunction<typeof sleep>;
@@ -367,6 +368,39 @@ describe('fmpGet 함수는', () => {
             });
             fetchMock.mockRestore();
         });
+    });
+});
+
+describe('fmpGet의 offline build 가드는', () => {
+    beforeEach(() => {
+        vi.stubGlobal('fetch', mockFetch);
+        mockFetch.mockReset();
+        __resetOfflineBuildWarningsForTests();
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        vi.unstubAllEnvs();
+    });
+
+    it('SIGLENS_OFFLINE_BUILD=1이면 fetch를 호출하지 않고 [offline-build] 에러를 던진다', async () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
+
+        await expect(fmpGet('profile')).rejects.toThrow('[offline-build]');
+        expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('SIGLENS_OFFLINE_BUILD가 미설정이면 평소대로 fetch를 호출한다', async () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '');
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            status: 200,
+            headers: new Headers(),
+            json: async () => ({}),
+        });
+
+        await fmpGet('profile');
+        expect(mockFetch).toHaveBeenCalledOnce();
     });
 });
 

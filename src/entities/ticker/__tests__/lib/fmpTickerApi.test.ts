@@ -6,6 +6,7 @@ import {
     toTickerSearchResult,
 } from '../../lib/fmpTickerApi';
 import type { FmpSearchResult } from '../../model';
+import { __resetOfflineBuildWarningsForTests } from '@/shared/api/offlineBuild';
 
 const mockFetch = vi.fn();
 
@@ -258,6 +259,44 @@ describe('searchBySymbol/searchByName', () => {
  * 죽고, FMP가 먼저 준 아무 row가 URL에 묶인다. decoy를 앞에 두어 이를 falsifiable하게
  * 고정한다 — 비교 기준을 앱 표기로 되돌리면 이 테스트가 실패한다.
  */
+describe('offline build 가드', () => {
+    beforeEach(() => {
+        global.fetch = mockFetch as unknown as typeof fetch;
+        mockFetch.mockReset();
+        process.env.FMP_API_KEY = 'test-key';
+        __resetOfflineBuildWarningsForTests();
+    });
+
+    afterEach(() => {
+        delete process.env.FMP_API_KEY;
+        vi.unstubAllEnvs();
+    });
+
+    it('lenient 모드는 fetch 없이 빈 배열로 degrade한다', async () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
+        await expect(searchBySymbol('AAPL')).resolves.toEqual([]);
+        expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('throwOnInfraFailure 모드는 fetch 없이 [offline-build] 에러를 던진다', async () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
+        await expect(
+            searchBySymbol('AAPL', { throwOnInfraFailure: true })
+        ).rejects.toThrow('[offline-build]');
+        expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('SIGLENS_OFFLINE_BUILD가 미설정이면 평소대로 fetch를 호출한다', async () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '');
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: async () => [apple],
+        });
+        await expect(searchBySymbol('AAPL')).resolves.toEqual([apple]);
+        expect(mockFetch).toHaveBeenCalledOnce();
+    });
+});
+
 describe('findExactUsMatch', () => {
     const row = (symbol: string) => ({
         symbol,

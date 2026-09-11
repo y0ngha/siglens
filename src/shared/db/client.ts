@@ -4,6 +4,10 @@ import { readDatabaseConfig, tryReadDatabaseConfig } from './config';
 import * as schema from './schema';
 import type { DatabaseClient, DatabaseConfig } from './types';
 import { isE2E } from '@/shared/api/e2eEnv';
+import {
+    isOfflineBuild,
+    warnOfflineBuildOnce,
+} from '@/shared/api/offlineBuild';
 
 let cachedClient: DatabaseClient | null = null;
 
@@ -31,14 +35,30 @@ function buildClient(config: DatabaseConfig): DatabaseClient {
     return createDatabaseClient(config);
 }
 
-/** Returns the cached `DatabaseClient`, creating it on first call; throws when `DATABASE_URL` is unset. */
+/**
+ * Returns the cached `DatabaseClient`, creating it on first call; throws when
+ * `DATABASE_URL` is unset, or when `SIGLENS_OFFLINE_BUILD=1` (blocks the Neon
+ * connection before `neon()` is ever constructed).
+ */
 export function getDatabaseClient(): DatabaseClient {
+    if (isOfflineBuild()) {
+        warnOfflineBuildOnce('Neon');
+        throw new Error('[offline-build] blocked Neon connection');
+    }
     cachedClient ??= buildClient(readDatabaseConfig());
     return cachedClient;
 }
 
-/** Returns the cached `DatabaseClient`, or `null` when `DATABASE_URL` is absent (graceful degradation). */
+/**
+ * Returns the cached `DatabaseClient`, or `null` when `DATABASE_URL` is
+ * absent (graceful degradation), or when `SIGLENS_OFFLINE_BUILD=1` (blocks
+ * the Neon connection before `neon()` is ever constructed).
+ */
 export function tryGetDatabaseClient(): DatabaseClient | null {
+    if (isOfflineBuild()) {
+        warnOfflineBuildOnce('Neon');
+        return null;
+    }
     const config = tryReadDatabaseConfig();
     if (config === null) return null;
     cachedClient ??= buildClient(config);
