@@ -194,6 +194,34 @@ describe('GET /api/auth/callback/[provider]', () => {
                 expect.objectContaining({ userId: FAKE_USER.id })
             );
         });
+        /**
+         * 이 파일은 `sanitizeNextPath`를 항등 함수로 mock한다 — 그래서 여기서는
+         * `toSameOriginPath` 혼자서 dot-segment 우회(`/.//evil.com` → `//evil.com`)를
+         * 막아야 한다. 수정 전에는 Location이 `https://evil.com/`이었다.
+         */
+        it('state의 next가 dot-segment 우회(/.//evil.com)여도 신뢰된 base로 리다이렉트한다', async () => {
+            mockVerifyOAuthState.mockReturnValue({
+                ok: true,
+                next: '/.//evil.com',
+            });
+            mockUserRepo.findByOAuthAccount.mockResolvedValue(FAKE_USER);
+            mockCreateAuthSession.mockResolvedValue({
+                ok: true,
+                user: FAKE_USER,
+                session: { id: 's1' } as never,
+                cookie: FAKE_COOKIE,
+            } as never);
+
+            const res = await GET(
+                makeRequest(
+                    { state: 'valid-state', code: 'auth-code' },
+                    { oauth_state: 'cookie-state' }
+                ),
+                DEFAULT_PARAMS
+            );
+
+            expect(res.headers.get('location')).toBe(`${TRUSTED_BASE}/`);
+        });
     });
 
     describe('이메일 충돌', () => {

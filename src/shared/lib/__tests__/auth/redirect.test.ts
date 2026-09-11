@@ -70,9 +70,11 @@ describe('sanitizeNextPath', () => {
  * 뚫려 있었다.
  */
 describe('toSameOriginPath', () => {
-    it('host를 품은 값이 들어와도 경로만 남는다', () => {
-        expect(toSameOriginPath('https://evil.com/x?a=1#f')).toBe('/x?a=1#f');
-        expect(toSameOriginPath('//evil.com/x')).toBe('/x');
+    it('다른 origin으로 해석되는 값은 기본 경로로 떨어진다', () => {
+        expect(toSameOriginPath('https://evil.com/x?a=1#f')).toBe(
+            DEFAULT_REDIRECT_PATH
+        );
+        expect(toSameOriginPath('//evil.com/x')).toBe(DEFAULT_REDIRECT_PATH);
     });
 
     it('평범한 경로는 그대로 통과한다', () => {
@@ -82,6 +84,74 @@ describe('toSameOriginPath', () => {
 
     it('파싱 불가 입력은 기본 경로로 떨어진다', () => {
         expect(toSameOriginPath('')).toBe('/');
+    });
+});
+
+/**
+ * Dot-segment 우회. `"/.//evil.com"`은 `//`로 시작하지 않아 접두사 검사를
+ * 통과하지만, URL 파서가 dot segment를 접으면 경로가 `"//evil.com"`이 되고
+ * 그 값으로 리다이렉트를 만들면 브라우저가 `https://evil.com`으로 간다.
+ * `/en/en//evil.com`은 로케일 접두사를 두 번 벗기는 경로(`useLocalePath` →
+ * `localeHref`)에서 같은 `//evil.com`이 된다.
+ */
+const PARSE_BASE = 'https://siglens.io';
+const COLLAPSING_VECTORS = [
+    '/.//evil.com',
+    '/..//evil.com',
+    '/%2e//evil.com',
+    '/%2E//evil.com',
+    '/a/..//evil.com',
+    '/./\\evil.com',
+    '/%2e%2e//evil.com',
+    '/.\\\\evil.com',
+    '/en//evil.com',
+    '/en/en//evil.com',
+];
+// 파서가 off-origin으로 접지는 않지만 같은 계열의 변형 — 결과가 안전하기만 하면 된다.
+const EDGE_VECTORS = ['/.%2F/evil.com', '/.\\evil.com', '/%2F/evil.com'];
+
+function expectSafeRedirectPath(out: string): void {
+    const url = new URL(out, PARSE_BASE);
+    expect(url.origin).toBe(PARSE_BASE);
+    expect(out.startsWith('//')).toBe(false);
+    expect(out.startsWith('/\\')).toBe(false);
+    expect(url.pathname.includes('//')).toBe(false);
+}
+
+describe('dot-segment open redirect', () => {
+    it.each(COLLAPSING_VECTORS)(
+        'sanitizeNextPath(%j)는 기본 경로로 정규화된다',
+        raw => {
+            expect(sanitizeNextPath(raw)).toBe(DEFAULT_REDIRECT_PATH);
+        }
+    );
+
+    it.each(COLLAPSING_VECTORS)(
+        'toSameOriginPath(%j)는 기본 경로로 정규화된다',
+        raw => {
+            expect(toSameOriginPath(raw)).toBe(DEFAULT_REDIRECT_PATH);
+        }
+    );
+
+    it.each([...COLLAPSING_VECTORS, ...EDGE_VECTORS])(
+        '%j: 어느 함수의 결과도 off-origin이 되지 않는다',
+        raw => {
+            expectSafeRedirectPath(sanitizeNextPath(raw));
+            expectSafeRedirectPath(toSameOriginPath(raw));
+            expectSafeRedirectPath(toSameOriginPath(sanitizeNextPath(raw)));
+        }
+    );
+
+    it.each([
+        '/',
+        '/AAPL',
+        '/en/market?x=1#h',
+        '/account/api-keys',
+        '/%ED%95%9C%EA%B8%80',
+        '/api/auth/handoff?to=ai&next=%2Fc%2Fabc',
+    ])('정상 경로 %j는 두 함수 모두 그대로 통과한다', path => {
+        expect(sanitizeNextPath(path)).toBe(path);
+        expect(toSameOriginPath(path)).toBe(path);
     });
 });
 
