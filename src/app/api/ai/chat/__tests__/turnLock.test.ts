@@ -91,10 +91,13 @@ describe('acquireTurnLock', () => {
         }
     });
 
-    it('TURN_LOCK_TTL_SECONDS는 core AGENT_TURN_CAPS.turnDeadlineMs보다 크다(저장·정리 여유)', async () => {
+    it('TURN_LOCK_TTL_SECONDS는 core AGENT_TURN_CAPS.turnDeadlineMs + 최소 120s 여유(저장·정리·재시도된 pre-turn DB콜)', async () => {
         const { AGENT_TURN_CAPS } = await import('@y0ngha/siglens-core');
-        expect(TURN_LOCK_TTL_SECONDS * 1000).toBeGreaterThan(
-            AGENT_TURN_CAPS.turnDeadlineMs
-        );
+        const marginMs =
+            TURN_LOCK_TTL_SECONDS * 1000 - AGENT_TURN_CAPS.turnDeadlineMs;
+        // A margin of exactly the deadline (i.e. dropping back to 660s = 60s margin) must fail
+        // this assertion — degraded-Neon `withRetry(NEON_TRANSIENT_RETRY)` pre-turn reads can
+        // burn well past 60s across the several calls the route makes before the turn even starts.
+        expect(marginMs).toBeGreaterThanOrEqual(120_000);
     });
 });
