@@ -167,6 +167,61 @@ interface FmpLightEodBar {
 - 지수 심볼은 `volume: 0`이므로 거래량 기반 판정에 쓸 수 없다.
 - 알 수 없는/상장폐지 심볼에 **HTTP 200 + `[]`**로 응답한다 — 에러가 아니라 빈 배열이라
   호출부가 명시적으로 걸러야 한다.
+- ⚠️ `price`는 배당 미조정 종가다. 실측 확인(2026-08-12, `HYG`): `light`의
+  `price` 79.61 vs 아래 `dividend-adjusted`의 `adjClose` 79.18. 월별 배당락이 있는
+  채권 ETF(`HYG`/`LQD`/`TLT`)에 이 엔드포인트를 쓰면 배당락일마다 가짜 하락이
+  섞여 20세션 수익률 스프레드가 왜곡된다 — 시장 공포·탐욕 지수는 ETF에 아래
+  `dividend-adjusted`를 쓴다. **`^VIX` 같은 지수 심볼만 이 엔드포인트에 남는다**(배당이
+  없어 조정할 것도 없고, `dividend-adjusted`는 지수에 402를 낸다 — 아래 2-2 주의사항).
+
+---
+
+### 2-2. Historical Price EOD Dividend-Adjusted (배당 조정 종가)
+
+```
+GET /stable/historical-price-eod/dividend-adjusted?symbol={symbol}&apikey={key}&from={from}&to={to}
+```
+
+`light`와 같은 용도지만 종가가 **배당 재투자 기준으로 조정**되어 있다. 시장 전체
+공포·탐욕 지수(`src/entities/market-fear-greed/lib/fetchDailyCloses.ts`)가 이 엔드포인트를
+쓴다 — 20세션 수익률 스프레드를 비교하는 `junk_bond`/`safe_haven` 요인이 월별 배당락을
+가짜 가격 변동으로 착각하지 않게 하기 위해서다.
+
+**Query Parameters**
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|----------|------|------|------|
+| symbol | string | ✅ | 종목 심볼 |
+| apikey | string | ✅ | FMP API 키 |
+| from | string | - | YYYY-MM-DD 형식 시작일 |
+| to | string | - | YYYY-MM-DD 형식 종료일 |
+
+**Response**
+
+```typescript
+interface FmpDividendAdjustedEodBar {
+    symbol: string;
+    date: string;     // "2026-08-14" (YYYY-MM-DD)
+    adjOpen: number;
+    adjHigh: number;
+    adjLow: number;
+    adjClose: number; // 배당 조정 종가 — `light`의 `price`에 해당하되 조정됨
+    volume: number;
+}
+
+// 응답: FmpDividendAdjustedEodBar[] (newest-first 정렬)
+```
+
+**주의사항**
+- 종가 필드명이 `adjClose`다 — `light`의 `price`, `full`의 `close`와 다르다.
+- `light`와 마찬가지로 `to`를 생략하면 진행 중인 세션이 섞일 수 있고, 알 수
+  없는/상장폐지 심볼은 HTTP 200 + `[]`로 응답한다.
+- ⚠️ **지수 심볼(`^VIX` 등)은 현재 플랜에서 402**다. 실측(2026-09-11): `^VIX` →
+  `402 Premium Query Parameter: 'Special Endpoint : This value set for 'symbol' is not
+  available under your current subscription'`. 같은 요청을 `light`로 보내면 3년치가
+  정상 반환된다. ETF(`SPY`/`TLT`/`HYG`/`LQD`/`RSP`)는 3년 753행 전부 정상.
+  그래서 `fetchDailyCloses`는 `^`로 시작하는 심볼만 `light`의 `price`를 쓴다 — 지수를
+  여기로 보내면 `Promise.all`이 throw해 미국 공포·탐욕 지수가 통째로 죽는다.
 
 ---
 

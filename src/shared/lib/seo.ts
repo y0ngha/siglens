@@ -233,8 +233,8 @@ export function clampSeoDescription(text: string): string {
  * SERP에서 차지하는 시각적 폭을 근사한다 — 한글·전각 2, 그 외 1.
  *
  * Google 데스크톱 title 예산은 약 58~60 폭단위다. 글자 수로 재면 한글 제목의
- * 잘림을 예측할 수 없다: `AAPL 주가 분석 — 차트와 매매 신호, 지지선·저항선 | Siglens`은
- * 41글자지만 58 폭단위로 이미 경계에 있다(2026-07-26 실측 — 이 함수로 직접 측정).
+ * 잘림을 예측할 수 없다: `AAPL 주가 분석 — 차트와 기술적 신호, 지지선·저항선 | Siglens`은
+ * 42글자지만 58 폭단위로 이미 경계에 있다(2026-07-26 실측 — 이 함수로 직접 측정).
  *
  * 코드포인트 기준으로 순회해 서로게이트 페어를 쪼개지 않는다
  * ({@link clampSeoDescription}과 동일한 방침).
@@ -392,7 +392,7 @@ export interface ComposeSymbolTitleArgs {
     /** 검색 매칭을 만드는 키워드. 티커를 줄여서라도 보존한다 — `core` 자체가 예산(55 폭단위)을
      *  넘지 않는 한 잘리지 않는다. 예: `공포 탐욕 지수` */
     core: string;
-    /** 예산이 남을 때만 붙는 서술. 가장 먼저 버려진다. 예: `차트·매매 신호` */
+    /** 예산이 남을 때만 붙는 서술. 가장 먼저 버려진다. 예: `차트·기술적 신호` */
     tail?: string;
 }
 
@@ -790,7 +790,7 @@ function buildSymbolKeywords(
         `${ticker} 매수`,
         `${ticker} 매도`,
         `${ticker} 매매 시점`,
-        `${ticker} 매매 신호`,
+        `${ticker} 기술적 신호`,
         `${ticker} 기술적 분석`,
         `${ticker} AI 분석`,
         `${displayName} 주가 분석`,
@@ -1013,15 +1013,15 @@ export const BACKTESTING_KEYWORDS = [
     ...ROOT_KEYWORDS,
     '주식 AI 백테스팅',
     '기술적 분석 백테스팅',
-    'AI 주식 예측 정확도',
-    '주식 기술적 분석 정확도',
+    'AI 주식 분석 백테스트',
+    '기술적 분석 백테스트 결과',
     'RSI 신호 백테스팅',
     'MACD 백테스팅',
-    'AI 분석 신뢰도',
+    'AI 분석 백테스트 방법론',
     'Magnificent 7 분석',
-    'AI 주식 예측 검증',
+    'AI 시나리오 사후 검증',
     '기술적 분석 백테스트 무료',
-    '주식 매매 신호 정확도',
+    '기술적 신호 사후 검증',
     '미국 주식 백테스트',
 ];
 
@@ -1468,7 +1468,7 @@ function buildCryptoSymbolKeywords(
         `${ticker} 차트 분석`,
         `${ticker} 매수`,
         `${ticker} 매도`,
-        `${ticker} 매매 신호`,
+        `${ticker} 기술적 신호`,
         `${ticker} 기술적 분석`,
         `${ticker} AI 분석`,
         `${displayName} 시세 분석`,
@@ -1490,7 +1490,7 @@ export function buildCryptoSymbolSeoContent(
         englishName: opts.englishName,
         locale: opts.locale,
         core: t('symbol.crypto.titleCore'),
-        // 크립토 chart title tail은 주식과 동일 문구("차트·매매 신호") —
+        // 크립토 chart title tail은 주식과 동일 문구("차트·기술적 신호") —
         // `symbol.chart.titleTail` 키를 그대로 재사용해 두 카탈로그 값이
         // 번역 갱신 시 어긋나지 않게 한다.
         tail: t('symbol.chart.titleTail'),

@@ -39,7 +39,7 @@ describe('buildSymbolSeoContent', () => {
         const content = buildSymbolSeoContent('aapl', t);
 
         expect(content.ticker).toBe('AAPL');
-        // core(주가 전망)만 단언한다 — tail(차트·매매 신호)은
+        // core(주가 전망)만 단언한다 — tail(차트·기술적 신호)은
         // composeSymbolTitle이 예산 압박 시 가장 먼저 버리는 서술이라,
         // 전체 문자열을 고정하면 카피 문구만 바뀌어도 이 테스트가 깨진다.
         // 알고리즘 자체(어떤 조건에서 tail/한국어명이 버려지는지)를 고정하는
@@ -50,7 +50,7 @@ describe('buildSymbolSeoContent', () => {
         expect(content.description).toContain('AAPL');
         expect(content.url).toBe('https://siglens.io/AAPL');
         expect(content.keywords).toContain('AAPL 주가');
-        expect(content.keywords).toContain('AAPL 매매 신호');
+        expect(content.keywords).toContain('AAPL 기술적 신호');
         expect(JSON.stringify(content)).not.toContain('[SYMBOL]');
     });
 
