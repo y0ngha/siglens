@@ -49,8 +49,41 @@ function describeFirstArg(arg: unknown): string {
 }
 
 /**
- * `quote`/`chart`/`search` 등 모든 메서드 호출을 가로채 offline이면 라이브러리에
- * 진입하기 전에 즉시 reject한다.
+ * offline 가드를 걸 네트워크 메서드 allowlist.
+ *
+ * 전체 함수 프로퍼티를 다 감싸지 않고 이 목록만 감싸는 이유: yahoo-finance2가
+ * 동기 헬퍼(예: `_setOpts`)를 노출할 수도 있는데, 그런 걸 Promise.reject로
+ * 감싸버리면 동기 시맨틱이 깨진다. 목록에 없는 프로퍼티는 손대지 않고
+ * 그대로 통과시킨다.
+ *
+ * 구성: (a) 이 레포에서 실제로 호출하는 메서드(`git grep -nE
+ * "yahooFinance\.(\w+)\("`로 확인 — chart/quote/search/options/
+ * fundamentalsTimeSeries/quoteSummary) + (b) 설치된 yahoo-finance2 버전이
+ * 제공하는 나머지 네트워크 모듈 전부(`node_modules/yahoo-finance2/esm/src/modules`).
+ * **새 네트워크 메서드를 쓰게 되면 반드시 여기 추가해야 한다** — 안 그러면
+ * fetch 레벨 백스톱까지는 막히지만(아래 `createYahooClient`의 `fetch` 옵션 참고)
+ * crumb 공유 경로 문제(quote와 동일한 유형)는 재현될 수 있다.
+ */
+const YAHOO_NETWORK_METHODS: ReadonlySet<string> = new Set([
+    'autoc',
+    'chart',
+    'dailyGainers',
+    'dailyLosers',
+    'fundamentalsTimeSeries',
+    'historical',
+    'insights',
+    'options',
+    'quote',
+    'quoteSummary',
+    'recommendationsBySymbol',
+    'screener',
+    'search',
+    'trendingSymbols',
+]);
+
+/**
+ * `quote`/`chart`/`search` 등 allowlist에 있는 메서드 호출을 가로채 offline이면
+ * 라이브러리에 진입하기 전에 즉시 reject한다.
  *
  * **fetch 레벨 가드만으로는 부족한 이유**: `quote`는 내부적으로 crumb/cookie를 먼저
  * 받아오는 별도 경로(`lib/getCrumb.js`)를 타는데, 거기서 주입된 fetch가 throw하면
@@ -66,6 +99,8 @@ function guardMethodsAgainstOfflineBuild<T extends object>(client: T): T {
         get(target, prop, receiver) {
             const value = Reflect.get(target, prop, receiver);
             if (typeof value !== 'function') return value;
+            if (typeof prop !== 'string' || !YAHOO_NETWORK_METHODS.has(prop))
+                return value;
             return new Proxy(value, {
                 apply(fn, _thisArg, args: unknown[]) {
                     try {

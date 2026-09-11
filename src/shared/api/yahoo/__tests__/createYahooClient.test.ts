@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 const constructorArgs: unknown[] = [];
 const quoteImpl = vi.fn(async (symbol: string) => ({ symbol }));
+// allowlist에 없는 동기 헬퍼 흉내 — 감싸이면 안 되므로 async가 아니다.
+const syncHelperImpl = vi.fn((symbol: string) => ({ symbol, sync: true }));
 
 vi.mock('yahoo-finance2', () => ({
     default: class MockYahooFinance {
@@ -10,6 +12,10 @@ vi.mock('yahoo-finance2', () => ({
         }
         quote(symbol: string) {
             return quoteImpl(symbol);
+        }
+        // yahoo-finance2 allowlist 밖의 동기 헬퍼를 흉내낸다(예: `_setOpts`류).
+        notAGuardedMethod(symbol: string) {
+            return syncHelperImpl(symbol);
         }
     },
 }));
@@ -171,13 +177,14 @@ describe('createYahooClient의 메서드 레벨 offline 가드는', () => {
     beforeEach(() => {
         __resetOfflineBuildWarningsForTests();
         quoteImpl.mockClear();
+        syncHelperImpl.mockClear();
     });
 
     afterEach(() => {
         vi.unstubAllEnvs();
     });
 
-    it('SIGLENS_OFFLINE_BUILD=1이면 실제 라이브러리 메서드를 호출하지 않고 reject한다', async () => {
+    it('SIGLENS_OFFLINE_BUILD=1이면 allowlist 메서드는 실제 라이브러리 메서드를 호출하지 않고 reject한다', async () => {
         vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
         const client = createYahooClient();
 
@@ -187,7 +194,18 @@ describe('createYahooClient의 메서드 레벨 offline 가드는', () => {
         expect(quoteImpl).not.toHaveBeenCalled();
     });
 
-    it('SIGLENS_OFFLINE_BUILD가 미설정이면 실제 라이브러리 메서드로 전달한다', async () => {
+    it('SIGLENS_OFFLINE_BUILD=1이어도 allowlist 밖의 함수 프로퍼티는 그대로 통과시켜 동기 반환을 보존한다', () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock 클래스에만 있는 메서드
+        const client = createYahooClient() as any;
+
+        // Promise가 아니라 동기 값이 그대로 나와야 한다 — 감싸졌다면 Promise가 됐을 것이다.
+        const result = client.notAGuardedMethod('005930.KS');
+        expect(result).toEqual({ symbol: '005930.KS', sync: true });
+        expect(syncHelperImpl).toHaveBeenCalledWith('005930.KS');
+    });
+
+    it('SIGLENS_OFFLINE_BUILD가 미설정이면 allowlist 메서드는 실제 라이브러리 메서드로 전달한다', async () => {
         vi.stubEnv('SIGLENS_OFFLINE_BUILD', '');
         const client = createYahooClient();
 
