@@ -6,11 +6,16 @@ import {
     localeOpenGraph,
 } from '@/shared/lib/seoAlternates';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { ABOUT_PATH, SITE_OPERATOR } from '@/shared/lib/legal';
+import {
+    ABOUT_PATH,
+    OPERATOR_PERSON_JSON_LD_ID,
+    SITE_OPERATOR,
+} from '@/shared/lib/legal';
 import { SymbolSearchPanel } from '@/features/ticker-search';
 import {
     buildWebPageJsonLd,
     localizedAbsoluteUrl,
+    ORGANIZATION_JSON_LD_ID,
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
@@ -197,7 +202,7 @@ export default async function Home({
         mainEntity: { '@id': webApplicationId },
         // 아래 Organization 노드를 그래프에 붙인다 — 이 참조가 없으면 그 노드는
         // 아무와도 연결되지 않은 채 떠 있다.
-        publisher: { '@id': `${SITE_URL}#organization` },
+        publisher: { '@id': ORGANIZATION_JSON_LD_ID },
     };
 
     /**
@@ -211,7 +216,7 @@ export default async function Home({
     const organizationJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'Organization',
-        '@id': `${SITE_URL}#organization`,
+        '@id': ORGANIZATION_JSON_LD_ID,
         name: SITE_NAME,
         url: SITE_URL,
         logo: `${SITE_URL}/icon512.png`,
@@ -221,7 +226,7 @@ export default async function Home({
         // 두 페이지의 사람이 하나로 합쳐진다. 값은 `SITE_OPERATOR` 단일 소스.
         founder: {
             '@type': 'Person',
-            '@id': `${SITE_URL}${ABOUT_PATH}#person`,
+            '@id': OPERATOR_PERSON_JSON_LD_ID,
             name: SITE_OPERATOR.name,
             url: `${SITE_URL}${ABOUT_PATH}`,
             sameAs: [SITE_OPERATOR.githubUrl],

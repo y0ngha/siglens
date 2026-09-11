@@ -1,4 +1,5 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { countSkillFiles } from '@/entities/skill';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
@@ -17,12 +18,14 @@ import {
     aboutFullTitle,
     aboutTitle,
     formatKoreanDate,
+    OPERATOR_PERSON_JSON_LD_ID,
     SITE_OPERATOR,
 } from '@/shared/lib/legal';
 import { extractToc } from '@/shared/lib/legal-toc';
 import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
+    ORGANIZATION_JSON_LD_ID,
     SITE_NAME,
     SITE_URL,
     localizedAbsoluteUrl,
@@ -30,7 +33,7 @@ import {
 import type { SeoTranslator } from '@/shared/lib/seo';
 import type { Locale } from '@/shared/i18n/locales';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { resolveAboutContent } from './content';
+import { resolveAboutContent } from '@/app/[locale]/about/content';
 
 const PAGE_URL = `${SITE_URL}${ABOUT_PATH}`;
 
@@ -41,7 +44,7 @@ export const revalidate = 86400;
 /**
  * `buildWebPageJsonLd`는 8개 심볼 페이지가 공유하는 범용 WebPage 노드를
  * 만든다. 여기서는 스프레드 뒤에 `@type`을 `AboutPage`로 덮어써 좁히고,
- * `mainEntity`로 홈 `Organization`(`${SITE_URL}#organization`)을 가리킨다 —
+ * `mainEntity`로 홈 `Organization`(`ORGANIZATION_JSON_LD_ID`)을 가리킨다 —
  * 이 문서가 그 조직에 대한 소개 문서임을 명시한다.
  */
 function buildAboutJsonLd(t: SeoTranslator, locale: Locale) {
@@ -53,25 +56,25 @@ function buildAboutJsonLd(t: SeoTranslator, locale: Locale) {
             locale,
         }),
         '@type': 'AboutPage',
-        mainEntity: { '@id': `${SITE_URL}#organization` },
+        mainEntity: { '@id': ORGANIZATION_JSON_LD_ID },
     };
 }
 
 /**
- * `@id`가 홈 `Organization.founder`(`app/[locale]/page.tsx`)와 문자 그대로
- * 같아야 두 노드를 같은 개체로 크롤러가 묶는다 — 여기서 하나라도 오타가 나면
- * `founder` 링크가 죽은 참조가 된다.
+ * `@id`가 홈 `Organization.founder`(`app/[locale]/(home)/page.tsx`)와 문자
+ * 그대로 같아야 두 노드를 같은 개체로 크롤러가 묶는다 — 둘 다
+ * `OPERATOR_PERSON_JSON_LD_ID` 상수를 공유해 오타로 갈릴 여지를 없앤다.
  */
 function buildAboutPersonJsonLd() {
     return {
         '@context': 'https://schema.org',
         '@type': 'Person',
-        '@id': `${SITE_URL}${ABOUT_PATH}#person`,
+        '@id': OPERATOR_PERSON_JSON_LD_ID,
         name: SITE_OPERATOR.name,
         email: `mailto:${SITE_OPERATOR.email}`,
         url: `${SITE_URL}${ABOUT_PATH}`,
         sameAs: [SITE_OPERATOR.githubUrl],
-        affiliation: { '@id': `${SITE_URL}#organization` },
+        affiliation: { '@id': ORGANIZATION_JSON_LD_ID },
     };
 }
 
@@ -146,8 +149,25 @@ export default async function AboutPage({
         namespace: 'shared.lib.legal',
     });
 
-    const { body, bodyLocale, isTranslationFallback } =
-        resolveAboutContent(resolved);
+    // countSkillFiles 오류는 graceful 처리 — 0 폴백으로 페이지를 계속 렌더한다.
+    // throw가 전파되면 ISR 빈 캐시(0-byte body)가 동결된다((home)/page.tsx와 동일 근거).
+    const skillCounts = await countSkillFiles().catch(e => {
+        console.error('[AboutPage] countSkillFiles failed:', e);
+        return {
+            indicators: 0,
+            candlesticks: 0,
+            patterns: 0,
+            strategies: 0,
+            supportResistance: 0,
+            fundamental: 0,
+            news: 0,
+        };
+    });
+
+    const { body, bodyLocale, isTranslationFallback } = resolveAboutContent(
+        resolved,
+        skillCounts
+    );
     const toc = extractToc(body);
 
     return (

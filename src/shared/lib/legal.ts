@@ -1,4 +1,4 @@
-import { SITE_NAME, type SeoTranslator } from '@/shared/lib/seo';
+import { SITE_NAME, SITE_URL, type SeoTranslator } from '@/shared/lib/seo';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 
 /**
@@ -28,6 +28,13 @@ export const SITE_OPERATOR = {
 
 /** `/about` 본문 마지막 갱신일 — 본문(`about/content.ts`)을 고치면 함께 올린다. */
 export const ABOUT_UPDATED_AT = new Date('2026-09-11T00:00:00+09:00');
+
+/**
+ * `/about`의 `Person` 노드와 홈 `Organization.founder`가 공유하는 `@id`.
+ * 두 페이지가 각자 `${SITE_URL}${ABOUT_PATH}#person`을 조립하면 오타 하나로
+ * 크롤러가 두 노드를 다른 개체로 읽는다 — 상수 하나로 묶는다.
+ */
+export const OPERATOR_PERSON_JSON_LD_ID = `${SITE_URL}${ABOUT_PATH}#person`;
 
 /**
  * title/description은 `shared.seo` 카탈로그에서 온다 — `terms`/`privacy` 페이지의

@@ -1,3 +1,4 @@
+import type { SkillCounts } from '@y0ngha/siglens-core';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { SITE_OPERATOR, TERMS_PATH } from '@/shared/lib/legal';
 import { GITHUB_URL, SITE_NAME } from '@/shared/lib/seo';
@@ -7,11 +8,20 @@ import { GITHUB_URL, SITE_NAME } from '@/shared/lib/seo';
  * 검토용 인프라(버전 관리, 발효일 게이트)는 이 페이지에 과하고, 본문이 배포와
  * 함께 바뀌는 편이 오히려 자연스럽다(설계 §결정 참고).
  *
+ * 보조지표·캔들 패턴·전략 스킬 개수는 하드코딩하지 않는다 — 홈(`(home)/page.tsx`)이
+ * `countSkillFiles()`로 요청 시점에 계산하는 값과 같은 소스를 받아 보간한다. 리뷰에서
+ * 잡힌 문제: 예전엔 여기 39/49/60이 리터럴로 박혀 있어 skills 디렉토리가 바뀌어도
+ * 이 페이지만 조용히 낡은 숫자를 냈다. 카운트는 정확한 값이라 "이상"/"+" 같은
+ * 최솟값 표기는 붙이지 않는다.
+ *
  * ko만 채워지면 `resolveAboutContent`가 나머지 로케일에 폴백한다. en은 색인
  * 대상(`STATIC_INDEXABLE_LOCALES`)이라 함께 작성한다.
  */
-export const ABOUT_MARKDOWN: Readonly<Partial<Record<Locale, string>>> = {
-    ko: `## Siglens는 무엇인가
+function buildAboutMarkdown(
+    counts: SkillCounts
+): Readonly<Partial<Record<Locale, string>>> {
+    return {
+        ko: `## Siglens는 무엇인가
 
 ${SITE_NAME}는 티커 하나만 입력하면 차트, 펀더멘털, 재무제표, 뉴스, 옵션, 의회 거래, 공포·탐욕 지수를 AI가 한데 모아 분석하는 서비스입니다. 미국 주식, 한국 주식, 암호화폐를 다룹니다. 매매나 주문 기능은 없고, 증권 계좌를 연결하지도 않습니다.
 
@@ -21,7 +31,7 @@ ${SITE_NAME}는 개인 개발자 ${SITE_OPERATOR.name}가 혼자 개발하고 �
 
 ## 분석은 어떻게 만들어지나
 
-시세와 재무 데이터는 Yahoo Finance, Financial Modeling Prep, Polygon에서 가져오고, 한국 종목 마스터 데이터는 공공데이터포털(KRX)을 씁니다. 보조지표 39종, 캔들 패턴 49종, 전략 스킬 60종 이상을 먼저 규칙 기반으로 계산한 뒤, 그 계산 결과만 LLM(OpenAI, Anthropic, DeepSeek)에 넘겨 서술을 생성합니다. 생성된 서술은 스키마 검증과 정규화를 거쳐 화면에 나갑니다. LLM의 역할은 계산된 값을 설명하는 것이고, 지표와 신호 자체는 규칙 기반 계산이 결정합니다. 시세는 최대 15분 지연될 수 있습니다.
+시세와 재무 데이터는 Yahoo Finance, Financial Modeling Prep, Polygon에서 가져오고, 한국 종목 마스터 데이터는 공공데이터포털(KRX)을 씁니다. 보조지표 ${counts.indicators}종, 캔들 패턴 ${counts.candlesticks}종, 전략 스킬 ${counts.strategies}종을 먼저 규칙 기반으로 계산한 뒤, 그 계산 결과만 LLM(OpenAI, Anthropic, DeepSeek)에 넘겨 서술을 생성합니다. 생성된 서술은 스키마 검증과 정규화를 거쳐 화면에 나갑니다. LLM의 역할은 계산된 값을 설명하는 것이고, 지표와 신호 자체는 규칙 기반 계산이 결정합니다. 시세는 최대 15분 지연될 수 있습니다.
 
 ## 얼마나 자주 갱신되나
 
@@ -38,7 +48,7 @@ AI가 만든 서술은 사실 오류나 수치 오독을 포함할 수 있습니
 ## 문의
 
 문의는 [이메일](mailto:${SITE_OPERATOR.email})로 보내주시거나, 페이지 하단의 문의하기를 이용해 주세요.`,
-    en: `## What Siglens Is
+        en: `## What Siglens Is
 
 ${SITE_NAME} lets you enter a single ticker and get an AI-combined analysis of charts, fundamentals, financial statements, news, options, congressional trades, and the fear & greed index. It covers US stocks, Korean stocks, and crypto. There is no trading or order feature, and no brokerage account connection.
 
@@ -48,7 +58,7 @@ ${SITE_NAME} is built and run alone by independent developer ${SITE_OPERATOR.nam
 
 ## How Each Analysis Is Made
 
-Price and financial data come from Yahoo Finance, Financial Modeling Prep, and Polygon; Korean ticker master data comes from the Korea Public Data Portal (KRX). 39 technical indicators, 49 candlestick patterns, and 60+ strategy skills are computed with rule-based logic first, and only those computed results are passed to an LLM (OpenAI, Anthropic, DeepSeek) to generate prose. The generated prose is then schema-validated and normalized before it reaches the screen. The LLM's job is to explain the computed values; the indicators and signals themselves are decided by rule-based computation. Prices can lag by up to 15 minutes.
+Price and financial data come from Yahoo Finance, Financial Modeling Prep, and Polygon; Korean ticker master data comes from the Korea Public Data Portal (KRX). ${counts.indicators} technical indicators, ${counts.candlesticks} candlestick patterns, and ${counts.strategies} strategy skills are computed with rule-based logic first, and only those computed results are passed to an LLM (OpenAI, Anthropic, DeepSeek) to generate prose. The generated prose is then schema-validated and normalized before it reaches the screen. The LLM's job is to explain the computed values; the indicators and signals themselves are decided by rule-based computation. Prices can lag by up to 15 minutes.
 
 ## How Often It Updates
 
@@ -65,7 +75,8 @@ The analysis on this service is for reference only; investment decisions are you
 ## Contact
 
 Reach out by [email](mailto:${SITE_OPERATOR.email}), or use the contact link in the footer.`,
-};
+    };
+}
 
 export interface ResolvedAboutContent {
     readonly body: string;
@@ -77,13 +88,20 @@ export interface ResolvedAboutContent {
  * `terms`/`privacy`의 `DrizzleTermsRepository.findActive` 폴백 규약과 같다 —
  * 번역이 없으면 기본 로케일(ko) 원문을 내리고 `isTranslationFallback: true`로
  * 표시해 `UntranslatedNotice`를 띄운다.
+ *
+ * `counts`는 호출부(`about/page.tsx`)가 홈과 동일하게 `countSkillFiles()`로
+ * 계산해 넘긴다 — 이 함수 자체는 그 값의 출처를 모른다.
  */
-export function resolveAboutContent(locale: Locale): ResolvedAboutContent {
-    const body = ABOUT_MARKDOWN[locale];
+export function resolveAboutContent(
+    locale: Locale,
+    counts: SkillCounts
+): ResolvedAboutContent {
+    const markdown = buildAboutMarkdown(counts);
+    const body = markdown[locale];
     if (body !== undefined) {
         return { body, bodyLocale: locale, isTranslationFallback: false };
     }
-    const fallback = ABOUT_MARKDOWN[DEFAULT_LOCALE];
+    const fallback = markdown[DEFAULT_LOCALE];
     if (fallback === undefined) {
         throw new Error(
             `[about/content] DEFAULT_LOCALE(${DEFAULT_LOCALE}) 본문이 없습니다.`
