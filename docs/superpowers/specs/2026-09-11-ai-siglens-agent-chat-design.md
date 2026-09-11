@@ -271,7 +271,7 @@ chat_messages
 
 ### 6-2. 서버 액션 (`entities/chat-conversation/actions/`)
 
-`listConversationsAction(cursor?)`, `getConversationAction(id)`, `renameConversationAction(id,title)`, `deleteConversationAction(id)`(soft).
+`listConversationsAction()`, `getConversationAction(id)`, `renameConversationAction(id,title)`, `deleteConversationAction(id)`(soft). 파일럿은 커서 페이징 없이 목록 상한 300(= 최대 티어 대화 수 상한 pro 300) — 상한보다 적게 보이면 오래된 대화가 사이드바에서 사라진 채 한도만 차감된다. 티어 상한이 커지면 `lastMessageAt`+`id` 커서로 전환. 모든 액션·리포지토리는 비-UUID id를 DB에 보내지 않고 not-found로 처리한다(22P02→500 방지).
 전부 `getCurrentUser` 필수, `where user_id = me and deleted_at is null`.
 
 ### 6-3. SSE 라우트 `POST /api/ai/chat/stream`
