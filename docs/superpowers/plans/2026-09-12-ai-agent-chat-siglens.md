@@ -3398,10 +3398,10 @@ Run: `yarn e2e` → 3 tests PASS (compose 고아 프로세스 주의).
 
 - [ ] **Step 4: Cloudflare·SSM (사용자 수동, 태그 전)**
 
-1. Zero Trust → Tunnels → siglens 터널 → Public Hostname `ai.siglens.io` → `http://localhost:3000`.
+1. Zero Trust → Tunnels → siglens 터널 → Public Hostname `ai.siglens.io` → `http://localhost:3000`. **HTTP Host Header를 덮어쓰지 않는다**(Origin Request 설정의 `httpHostHeader` 비움) — 프록시가 `Host: ai.siglens.io`로 분기하므로 `localhost:3000`으로 바뀌면 ai 요청이 메인 사이트로 떨어진다. DNS의 `ai` CNAME은 터널이 자동 생성(Proxied).
 2. Security → WAF → Rate limiting rules: `/api/ai/*` — 10초 10요청 초과 시 Block 10초(무료 플랜 규칙 1개).
-3. `bash infra/aws/04-params.sh <env-file>`로 `AI_SITE_URL`·`NEXT_PUBLIC_AI_SITE_URL`·`BRAVE_SEARCH_API_KEY`(선택) 등록. `bash infra/aws/07-alarms.sh`.
-4. OAuth 콘솔 변경 없음.
+3. `bash infra/aws/04-params.sh <env-file>`로 `BRAVE_SEARCH_API_KEY`(선택, 없으면 web_search 툴 비노출) 등록. `AGENT_CHAT_DISABLED`는 등록하지 않는다(킬 스위치, 평시 미설정). `AI_SITE_URL`은 Task 12에서 제거됐고, `NEXT_PUBLIC_AI_SITE_URL`은 빌드 시점 인라인이라 SSM 런타임 값은 무효 — 코드 기본값 `https://ai.siglens.io`가 운영값이므로 Dockerfile·deploy.yml 빌드 인자 추가도 불필요(도메인을 바꿀 때만 `--build-arg` 추가). `bash infra/aws/07-alarms.sh`.
+4. OAuth 콘솔 변경 없음(로그인은 메인 호스트에서만 일어나고 ai는 핸드오프로 세션을 받는다).
 
 - [ ] **Step 5: 배포** — 머지 후 사용자 확인 하에 `yarn db:migrate`(대상 로그로 운영 Neon 확인) → `yarn release`. 배포 후:
 
