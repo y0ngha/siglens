@@ -1,5 +1,24 @@
 # Changelog
 
+# [0.73.0](https://github.com/y0ngha/siglens/compare/v0.72.0...v0.73.0) (2026-09-11)
+
+
+### Bug Fixes
+
+* **about:** 자산군 커버리지 가드에 /about 표면 등록, i18n skips 드리프트 정정 ([5e9f321](https://github.com/y0ngha/siglens/commit/5e9f321d7650d180b1406b168d8f823b9d29c258))
+* **about:** PR 리뷰 반영 — 절대경로 import, JSON-LD [@id](https://github.com/id) 상수화, 지표 개수 동적 보간 ([7f2edbb](https://github.com/y0ngha/siglens/commit/7f2edbb091a658eb0853cadf86315dca6e438e27))
+* **analysis-plain:** 쉽게보기 재작성의 길이 하한(too_short) 제거 ([d9a52c5](https://github.com/y0ngha/siglens/commit/d9a52c52903b81a4904296ddf57c20171e43940d))
+* **fear-greed:** 공포·탐욕 지수 데이터 소스 및 계산 로직 정정 ([0a9a9e7](https://github.com/y0ngha/siglens/commit/0a9a9e7444f4efefb336c53e00430538a08980bd))
+* **i18n:** PR 리뷰 반영 — PriceSource 반환 타입, 종합 분석 요약 헤딩, glossary 옛 용어 복원 ([3374c6b](https://github.com/y0ngha/siglens/commit/3374c6b804ef322780a9ab7003bc1fe916c4f5c2))
+* PR [#799](https://github.com/y0ngha/siglens/issues/799) 리뷰 반영 — 보고 통화 헬퍼 통합, currency 테스트 보강 ([10a2308](https://github.com/y0ngha/siglens/commit/10a230855b37ae7bbf003ccef5dc80dc926c48cd))
+* **seo:** /position 탭을 항상 noindex로 하고 sitemap에서 뺀다 — 2026-07 절벽 재감사 ([8c0138c](https://github.com/y0ngha/siglens/commit/8c0138c5eaef908d6ed4ae473649bc9d7813596b)), closes [#791](https://github.com/y0ngha/siglens/issues/791)
+* **seo:** YMYL 문구 정비 및 SEO 타이틀 검증 ([6a2470f](https://github.com/y0ngha/siglens/commit/6a2470f6e69fa3754d7e31ea1a6bc29c83e027f7))
+
+
+### Features
+
+* **seo:** /about 소개·방법론 페이지 — 운영 주체·데이터 출처·면책을 밝힌다 ([50127a4](https://github.com/y0ngha/siglens/commit/50127a404174ec33eafcd41eb21d85b9938a7ad8))
+
 # [0.72.0](https://github.com/y0ngha/siglens/compare/v0.71.0...v0.72.0) (2026-09-10)
 
 
