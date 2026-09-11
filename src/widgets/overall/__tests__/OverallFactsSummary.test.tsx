@@ -38,7 +38,7 @@ describe('OverallFactsSummary', () => {
         expect(screen.getByText('다음 실적 발표 리스크')).toBeInTheDocument();
         expect(screen.getByText('매크로 이벤트 리스크')).toBeInTheDocument();
         // sr-only h2 — 종목 결합
-        expect(screen.getByText('AAPL AI 종합 분석 결론')).toBeInTheDocument();
+        expect(screen.getByText('AAPL AI 종합 분석 요약')).toBeInTheDocument();
     });
 
     it('Worst: scenarios/riskFactors가 비면 해당 목록을 렌더하지 않는다(크래시 없음)', () => {

@@ -163,11 +163,11 @@ function buildBacktestingJsonLd(
             keywords: [
                 'AI stock prediction backtesting',
                 'US stock technical analysis backtest',
-                'RSI MACD signal accuracy',
+                'RSI MACD signal backtest results',
                 'Magnificent 7 backtest',
                 'AAPL NVDA TSLA backtest',
                 '주식 기술적 분석 백테스팅',
-                'AI 주식 예측 정확도',
+                'AI 주식 분석 백테스트',
             ],
             distribution: [
                 {

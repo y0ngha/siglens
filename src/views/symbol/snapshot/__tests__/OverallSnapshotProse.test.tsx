@@ -74,7 +74,7 @@ describe('OverallSnapshotProse', () => {
         );
         expect(text).toContain('180 지지선이 붕괴되는 경우');
         expect(
-            screen.getByRole('heading', { name: '종합 분석 결론' })
+            screen.getByRole('heading', { name: '종합 분석 요약' })
         ).toBeInTheDocument();
     });
 
@@ -592,7 +592,7 @@ describe('OverallSnapshotProse — 기준일 표기 + 라이브 분석 상호참
         );
 
         expect(
-            screen.getByRole('heading', { name: '종합 분석 결론' })
+            screen.getByRole('heading', { name: '종합 분석 요약' })
         ).toBeInTheDocument();
         expect(screen.queryByText('지난 AI 분석')).not.toBeInTheDocument();
     });

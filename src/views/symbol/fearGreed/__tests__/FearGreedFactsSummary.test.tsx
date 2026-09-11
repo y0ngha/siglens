@@ -72,11 +72,11 @@ describe('FearGreedFactsSummary', () => {
         expect(getByText(/Buy\/Sell 불균형/)).toBeInTheDocument();
         expect(getByText(/POC 거리/)).toBeInTheDocument();
         expect(getByText(/MA200 거리/)).toBeInTheDocument();
-        // FIX 6's factor-ranking narrative sentence also mentions "52주
-        // 위치" (it's this fixture's most extreme factor) — anchor on the
-        // per-factor line's "라벨: 값" shape so this assertion targets only
-        // that line, not both.
-        expect(getByText(/52주 위치: /)).toBeInTheDocument();
+        // FIX 6's factor-ranking narrative sentence also mentions "최근
+        // 252봉 위치" (it's this fixture's most extreme factor) — anchor on
+        // the per-factor line's "라벨: 값" shape so this assertion targets
+        // only that line, not both.
+        expect(getByText(/최근 252봉 위치: /)).toBeInTheDocument();
         // confidence footer.
         expect(getByText(/표본 220/)).toBeInTheDocument();
     });
@@ -101,7 +101,9 @@ describe('FearGreedFactsSummary', () => {
             )
         ).toBeInTheDocument();
         expect(getByText(/가장 두드러진 지표는/)).toBeInTheDocument();
-        expect(getByText(/52주 위치로, 95번째 퍼센타일/)).toBeInTheDocument();
+        expect(
+            getByText(/최근 252봉 위치로, 95번째 퍼센타일/)
+        ).toBeInTheDocument();
     });
 
     it('computeFearGreedIndex가 null이면(데이터 부족) 아무것도 렌더하지 않는다', () => {

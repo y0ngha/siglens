@@ -69,7 +69,7 @@
         "file": "src/app/[locale]/backtesting/page.tsx",
         "line": 170,
         "reason": "seo-keywords-ko-only",
-        "text": "AI 주식 예측 정확도"
+        "text": "AI 주식 분석 백테스트"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
@@ -3231,7 +3231,7 @@
         "file": "src/shared/lib/seo.ts",
         "line": 800,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 매매 신호`"
+        "text": "`${ticker} 기술적 신호`"
     },
     {
         "file": "src/shared/lib/seo.ts",
@@ -3309,13 +3309,13 @@
         "file": "src/shared/lib/seo.ts",
         "line": 1023,
         "reason": "seo-keywords-ko-only",
-        "text": "AI 주식 예측 정확도"
+        "text": "AI 주식 분석 백테스트"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1024,
         "reason": "seo-keywords-ko-only",
-        "text": "주식 기술적 분석 정확도"
+        "text": "기술적 분석 백테스트 결과"
     },
     {
         "file": "src/shared/lib/seo.ts",
@@ -3333,7 +3333,7 @@
         "file": "src/shared/lib/seo.ts",
         "line": 1027,
         "reason": "seo-keywords-ko-only",
-        "text": "AI 분석 신뢰도"
+        "text": "AI 분석 백테스트 방법론"
     },
     {
         "file": "src/shared/lib/seo.ts",
@@ -3345,7 +3345,7 @@
         "file": "src/shared/lib/seo.ts",
         "line": 1029,
         "reason": "seo-keywords-ko-only",
-        "text": "AI 주식 예측 검증"
+        "text": "AI 시나리오 사후 검증"
     },
     {
         "file": "src/shared/lib/seo.ts",
@@ -3357,7 +3357,7 @@
         "file": "src/shared/lib/seo.ts",
         "line": 1031,
         "reason": "seo-keywords-ko-only",
-        "text": "주식 매매 신호 정확도"
+        "text": "기술적 신호 사후 검증"
     },
     {
         "file": "src/shared/lib/seo.ts",
@@ -4011,7 +4011,7 @@
         "file": "src/shared/lib/seo.ts",
         "line": 1478,
         "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 매매 신호`"
+        "text": "`${ticker} 기술적 신호`"
     },
     {
         "file": "src/shared/lib/seo.ts",

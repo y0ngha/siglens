@@ -68,6 +68,7 @@ export default async function SharePage({ params }: Props) {
                 </p>
                 <Link
                     href="/"
+                    prefetch={false}
                     className="mt-8 rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     {t('page.ba81f0', { v0: SITE_NAME })}
@@ -137,6 +138,9 @@ export default async function SharePage({ params }: Props) {
             <div className="mt-8 text-center">
                 <Link
                     href={`/${ticker}`}
+                    // 종목 RSC(~1.7MB)를 페이지 열자마자 당기지 않는다 — 클릭 시점 로드
+                    // (docs/architecture/CDN_CACHING.md §1).
+                    prefetch={false}
                     className="inline-flex items-center rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     {t('page.69aebc', { v0: SITE_NAME, v1: ticker })}

@@ -110,6 +110,10 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                  */}
                 <Link
                     href={`/${c.ticker}`}
+                    // 케이스 카드 목록에 종목 링크가 여러 개라 기본 prefetch면
+                    // 뷰포트에 들어오는 즉시 종목 RSC를 개수만큼 당긴다
+                    // (docs/architecture/CDN_CACHING.md §1).
+                    prefetch={false}
                     translate="no"
                     className={cn(
                         'rounded px-2 py-0.5 text-xs font-bold transition-colors hover:brightness-110 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',

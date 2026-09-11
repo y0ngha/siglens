@@ -22,6 +22,37 @@ export function krLookbackStartDate(now: Date): Date {
 interface YahooChartRow {
     date?: unknown;
     close?: unknown;
+    adjclose?: unknown;
+}
+
+function isUsablePrice(value: unknown): value is number {
+    return typeof value === 'number' && Number.isFinite(value) && value > 0;
+}
+
+/**
+ * 시리즈 전체가 `adjclose`를 쓸 수 있는지 — 행별이 아니라 **시리즈 단위**로
+ * 결정한다.
+ *
+ * 행마다 adjclose→close로 개별 폴백하면 한 시리즈 안에 조정가와 미조정가가
+ * 섞인다. 배당락일 행만 adjclose가 비어 close로 떨어지면, 그 행만 배당락
+ * 하락분이 남아 20세션 수익률 스프레드에 가짜 낙폭을 다시 심는다(미국
+ * 경로의 배당 조정 이유와 동일 — `fetchDailyCloses` 참고). `close`가 있는
+ * 행 전부가 `adjclose`도 갖고 있을 때만 시리즈 전체를 adjclose로 쓰고,
+ * 하나라도 어긋나면 시리즈 전체를 close로 통일한다.
+ */
+function shouldUseAdjClose(rows: YahooChartRow[]): boolean {
+    return rows.every(row => {
+        if (!isUsablePrice(row.close)) return true;
+        return isUsablePrice(row.adjclose);
+    });
+}
+
+/** 시리즈 결정(`shouldUseAdjClose`)에 따라 한 행의 종가를 고른다. */
+function selectPrice(row: YahooChartRow, useAdjClose: boolean): number | null {
+    if (useAdjClose) {
+        return isUsablePrice(row.adjclose) ? row.adjclose : null;
+    }
+    return isUsablePrice(row.close) ? row.close : null;
 }
 
 /**
@@ -57,14 +88,13 @@ export async function fetchKrDailyCloses(
     });
 
     const rows = (result?.quotes ?? []) as unknown as YahooChartRow[];
-    const closes = rows.flatMap(row =>
-        row.date instanceof Date &&
-        typeof row.close === 'number' &&
-        Number.isFinite(row.close) &&
-        row.close > 0
-            ? [{ date: toKstDate(row.date), close: row.close }]
-            : []
-    );
+    const useAdjClose = shouldUseAdjClose(rows);
+    const closes = rows.flatMap(row => {
+        const price = selectPrice(row, useAdjClose);
+        return row.date instanceof Date && price !== null
+            ? [{ date: toKstDate(row.date), close: price }]
+            : [];
+    });
 
     if (closes.length === 0) {
         throw new Error(

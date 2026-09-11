@@ -30,6 +30,10 @@ import type { MarketFearGreedView } from '../model';
  *
  * 파생 변동성의 원천(`KOSPI_INDEX_SYMBOL`)도 포함해야 한다 — 그것만 바뀌어도
  * `vix` 요인이 통째로 달라지는데, 심볼 테이블에는 없어서 빠뜨리기 쉽다.
+ *
+ * `priceField`도 포함한다 — 미조정 종가에서 배당 조정 종가(`adjclose`)로 전환하면
+ * (`fetchKrDailyCloses` 참조) 옛 미조정 판독값이 TTL까지 그대로 서빙되지 않고
+ * 무효화되어야 한다.
  */
 export const MARKET_FEAR_GREED_KR_CONFIG_FINGERPRINT =
     createCacheConfigFingerprint(
@@ -37,6 +41,7 @@ export const MARKET_FEAR_GREED_KR_CONFIG_FINGERPRINT =
             symbols: MARKET_FEAR_GREED_KR_SYMBOLS,
             volatilitySource: KOSPI_INDEX_SYMBOL,
             lookbackDays: MARKET_FEAR_GREED_KR_LOOKBACK_DAYS,
+            priceField: 'adjclose',
         })
     );
 

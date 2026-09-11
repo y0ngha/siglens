@@ -56,6 +56,28 @@ describe('root SEO copy is multi-asset (US + KR stocks + crypto)', () => {
     });
 
     /**
+     * 리뷰 라운드에서 en/ja `root.title`·`backtesting.title`가 SEO_TITLE_MAX_WIDTH를
+     * 넘는 채로 들어온 적이 있다(추정치 아닌 `seoTitleWidth` 실측 없이 카피만
+     * 봐서 놓침). 4개 로케일 모두를 실제 함수로 측정해 재발을 막는다.
+     */
+    it.each([
+        ['ko', koMessages],
+        ['en', enMessages],
+        ['ja', jaMessages],
+        ['zh', zhMessages],
+    ] as const)(
+        '%s root.title / backtesting.title 폭이 SEO_TITLE_MAX_WIDTH를 넘지 않는다',
+        (_locale, messages) => {
+            expect(
+                seoTitleWidth(messages.shared.seo.root.title)
+            ).toBeLessThanOrEqual(SEO_TITLE_MAX_WIDTH);
+            expect(
+                seoTitleWidth(messages.shared.seo.backtesting.title)
+            ).toBeLessThanOrEqual(SEO_TITLE_MAX_WIDTH);
+        }
+    );
+
+    /**
      * 비-ko 로케일에 한국어가 남으면 `/en` 홈이 영어 제목과 한국어 설명을 함께
      * 내보낸다 — 실제로 그렇게 나가고 있었다. 자산군 커버리지는 ko 원문 기준으로
      * 위에서 검사하고, 여기서는 나머지 세 로케일이 실제로 번역됐는지만 본다.
