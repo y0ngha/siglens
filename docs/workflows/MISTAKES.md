@@ -856,6 +856,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ Remove spy if assertion is missing or code path never executes
     ✅ expect(mockDelete).toHaveBeenCalledWith(expect.objectContaining({ oauthAccounts: {...}, oauthRevoker: {...} }))
 
+15.5. New argument to mocked dependency not asserted with non-default value
+    → When a function begins passing a new argument to a mocked dependency, all test mocks must assert it with a value that differs from the default
+    → Structural matchers like `toMatchObject()` or `expect.objectContaining()` without the new field silently tolerate the field being dropped from production code
+    → All call sites using the same mocked dependency must have test assertions covering the new argument (not just a subset)
+    ❌ `vi.fn().mockImplementation(({ currency }) => ...)` but test uses `expect.objectContaining({ symbol: '...' })` without currency field; hardcoding 'USD' stays green
+    ❌ Six action functions receive new `currency` argument from `resolveMarketProfile`, but only one test case verifies currency with 'KRW'; others omit the field assertion
+    ✅ Mock assertion includes new field: `expect.objectContaining({ symbol: 'USD', currency: 'USD' })` and `expect.objectContaining({ symbol: '005930.KS', currency: 'KRW' })`
+    ✅ All six sibling actions + prewarm functions have explicit currency assertions with non-default values (e.g., 'KRW' for Korean symbols)
+    → Recurring: chore/core-1.0.4-prompt-currency (R2) + PR #799 (R3) — 2 occurrences, both fixed by explicit non-default-value assertions
+
 16. New dependency added to function but not tested for presence in call chain
     → When a function signature adds a new parameter (deps, options, etc.), all call sites must verify the new parameter is passed
     → Test assertion must explicitly check the new dependency is received and used

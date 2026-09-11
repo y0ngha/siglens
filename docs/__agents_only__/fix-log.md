@@ -807,11 +807,6 @@
   - Rule: (guideline) Input validation at server trust boundaries must not assume client filtering. Validate the actual constraint (trimmed + non-empty) server-side, do not delegate to client.
   - Context: Added `plain.trim().length > 0` check in `assertValidInput.ts`. Server now rejects whitespace-only strings before they reach business logic.
 
-## [chore/core-1.0.4-prompt-currency Round 2 | Currency argument assertion gap in action tests | 2026-09-11]
-- Violation: Actions `runFundamentalAnalysisAction`, `runOverallAnalysisAction`, `submitNewsAnalysisAction`, `chatAction`, `prewarmOverall`, `prewarmNews` began passing a new `currency` argument to `@y0ngha/siglens-core`, but tests used `expect.objectContaining` without the `currency` field. Dropping the field or hardcoding `'USD'` for a Korean symbol (e.g., `005930.KS` expecting `'KRW'`) stayed green.
-  - Rule: MISTAKES Tests — When a new argument is threaded through to a mocked dependency, the test must assert it with a value that differs from the default. Silent contract changes are not caught by mocks using structural matchers.
-  - Context: Fixed by asserting `currency` in two cases: US symbol `'USD'` and Korean symbol `005930.KS` expecting `'KRW'`. Verified by hardcoding `'USD'` in production and seeing the KR test fail as expected. Now all six actions and two prewarm functions have explicit currency assertions.
-
 ## [PR #796 Round 3 review fix | seo/index-footprint-recovery | 2026-09-11]
 - Violation: BLOCKER — Two new asset-coverage surfaces (`/about` ko body text and `messages/ko.json` `shared.seo.about.description`) added but not registered in the existing sync guard `src/app/__tests__/supportedAssets.test.ts` `SURFACES` constant.
   - Rule: New route surfaces and canonical content strings must be added to per-surface guard lists (SURFACES, legal route e2e, proxy allowlists) before merge; omission creates silent drift between guard scope and actual surfaces.
@@ -833,4 +828,17 @@
 - Violation: Glossary key renamed instead of added, dropping locked terminology still produced by upstream AI prompts.
 - Rule: `messages/glossary.json` is also consumed by `db/scripts/translateContentLocale.ts` for stored AI content; before renaming/removing a key, grep `@y0ngha/siglens-core` prompts for the old term and keep it if still emitted.
 - Context: core overall/fundamental/financials prompts still emit "종합 결론"; restored the old entry alongside "종합 분석".
+
+## [PR #799 | chore/core-1.0.4-prompt-currency | 2026-09-11]
+- Violation: BLOCKER — `YahooFinancialStatementsProvider` added a new `reportedCurrency` field and threaded it through three mapper functions (`mapIncome`, `mapBalance`, `mapCashFlow`). Only the income-statement test asserted `reportedCurrency: 'KRW'`; the balance-sheet and cash-flow tests used `toMatchObject` without including the new field. Dropping the field or hardcoding `'USD'` in a Korean symbol test stayed green.
+  - Rule: When a new field is threaded through sibling mapper functions, every sibling's unit test must assert it with a value that differs from the default. Tests using structural matchers (`toMatchObject`) without the new field silently tolerate omission bugs — the field may not be passed at all, and the test cannot tell.
+  - Context: Fixed by asserting `reportedCurrency: 'KRW'` in both balance-sheet and cash-flow test cases. Verified by hardcoding `'USD'` in the `mapBalance` implementation and seeing the test fail as expected. Ensures all three mappers now have explicit currency field assertions.
+
+- Violation: SUGGESTION — `value?.trim() || null` reported-currency normalization was implemented three times: once in `reportedCurrencyOf` (financialStatementsClient.ts), once inline in `fundamentalClient.ts`, and once inline in `yahooFundamentalMap.ts`. Reuse was impractical due to different module dependencies.
+  - Rule: MISTAKES §1 — Extract repeated normalization patterns into a shared helper in `src/shared/lib/`; do not repeat the same pattern across three files, even if each site has slightly different dependencies.
+  - Context: Extracted `normalizeReportedCurrency` to `src/shared/lib/reportedCurrency.ts` with unit tests covering null/whitespace/uppercase normalization. Updated all three call sites to use the helper. Verified: `yarn test src/shared/lib` passes, all consumers green.
+
+- Violation: SUGGESTION — `submitNewsAnalysisAction` computed `assetClass` via `resolveAssetClass` and `currency` via a separate `currencyForSymbol` call. Sibling actions (`runFundamentalAnalysisAction`, `runOverallAnalysisAction`, `chatAction`) all use `resolveMarketProfile` to fetch both descriptor values atomically via `getDescriptor`.
+  - Rule: Derive related descriptor values (asset class, currency, region, etc.) from one resolution path; separate resolution calls may drift if the underlying mappings diverge.
+  - Context: Unified `submitNewsAnalysisAction` to use `resolveMarketProfile` + `getDescriptor`, matching the pattern of siblings. Single resolution point reduces risk of state divergence.
 

@@ -165,6 +165,8 @@ describe('getBalanceSheets', () => {
             fiscalYear: '2025',
             period: 'FY',
             date: '2025-12-31',
+            // KRX 상장사는 통화 필드가 없으므로 시장 프로필의 통화(KRW)를 붙인다.
+            reportedCurrency: 'KRW',
             totalAssets: 566_942_110_000_000,
             totalCurrentAssets: 247_684_612_000_000,
             totalLiabilities: 130_621_773_000_000,
@@ -252,6 +254,8 @@ describe('getCashFlowStatements', () => {
             1
         );
         expect(row).toMatchObject({
+            // KRX 상장사는 통화 필드가 없으므로 시장 프로필의 통화(KRW)를 붙인다.
+            reportedCurrency: 'KRW',
             operatingCashFlow: 85_315_148_000_000,
             capitalExpenditure: -52_153_149_000_000,
             freeCashFlow: 33_161_999_000_000,

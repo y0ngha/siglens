@@ -414,6 +414,14 @@ describe('prewarmFundamental', () => {
         });
     });
 
+    it('forwards currency: "KRW" for a KRX symbol', async () => {
+        await prewarmFundamental('005930.KS', false);
+
+        expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ currency: 'KRW' })
+        );
+    });
+
     it('threads force:true when requested', async () => {
         await prewarmFundamental('AAPL', true);
 

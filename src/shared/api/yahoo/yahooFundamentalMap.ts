@@ -13,6 +13,7 @@ import type {
     YahooStatementRow,
     YahooSummary,
 } from './yahooFundamentalSource';
+import { normalizeReportedCurrency } from '@/shared/lib/reportedCurrency';
 
 /**
  * 0이나 음수 분모로 나눗셈을 막는다.
@@ -183,12 +184,9 @@ export function mapCashFlow(
     if (!row) return null;
     return {
         operatingCashFlow: toNullable(row.operatingCashFlow),
-        // core가 EPS·영업현금흐름·추정치 옆에 붙이는 보고 통화. 모르면 비워 두어
-        // core가 통화 없이 쓰게 한다 — 틀린 통화보다 낫다. FMP 어댑터
-        // (fundamentalClient.ts/financialStatementsClient.ts)와 동일하게
-        // trim 후 빈 문자열/공백은 null로 정규화한다.
-        reportedCurrency:
-            data.summary?.financialData?.financialCurrency?.trim() || null,
+        reportedCurrency: normalizeReportedCurrency(
+            data.summary?.financialData?.financialCurrency
+        ),
     };
 }
 
