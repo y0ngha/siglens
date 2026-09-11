@@ -526,9 +526,9 @@ import {
 import { validateArgs } from '@/domain/agent/validateArgs';
 
 describe('AGENT_TOOL_SPECS', () => {
-    it('8개 툴, 이름 유일, 스키마는 additionalProperties:false', () => {
-        expect(AGENT_TOOL_SPECS).toHaveLength(8);
-        expect(new Set(AGENT_TOOL_NAMES).size).toBe(8);
+    it('9개 툴, 이름 유일, 스키마는 additionalProperties:false', () => {
+        expect(AGENT_TOOL_SPECS).toHaveLength(9);
+        expect(new Set(AGENT_TOOL_NAMES).size).toBe(9);
         for (const spec of AGENT_TOOL_SPECS) {
             expect(spec.inputSchema.additionalProperties).toBe(false);
             expect(spec.description.length).toBeGreaterThan(20);
@@ -545,6 +545,7 @@ describe('AGENT_TOOL_SPECS', () => {
             get_options_summary: { symbol: 'AAPL' },
             run_fresh_analysis: { symbol: 'AAPL', kind: 'technical' },
             web_search: { query: 'Apple earnings', freshness: 'week' },
+            get_my_portfolio: {},
         };
         for (const spec of AGENT_TOOL_SPECS) {
             expect(validateArgs(spec.inputSchema, samples[spec.name]).ok).toBe(
@@ -663,7 +664,7 @@ export const AGENT_TOOL_SPECS: readonly AgentToolSpec[] = [
             type: 'object',
             properties: {
                 symbol: { type: 'string', description: 'Symbol; omit when asking about a market category' },
-                category: { type: 'string', description: 'Market news category slug (e.g. us, kr, crypto); omit when symbol is given' },
+                category: { type: 'string', enum: ['general', 'stock', 'crypto', 'forex', 'articles', 'kr'], description: 'Market news category; omit when symbol is given' },
                 since: { type: 'string', description: 'ISO date (YYYY-MM-DD); only news published on/after it' },
                 query: { type: 'string', description: 'Keyword filter on title/summary' },
                 limit: { type: 'integer', minimum: 1, maximum: 10 },
@@ -699,6 +700,13 @@ export const AGENT_TOOL_SPECS: readonly AgentToolSpec[] = [
             required: ['symbol', 'kind'],
             additionalProperties: false,
         },
+    },
+    {
+        name: 'get_my_portfolio',
+        description:
+            "The signed-in user's own holdings on siglens: symbol, quantity, average price, currency. Call when the user asks about 'my stocks', 'my position', profit/loss, or what they hold. Never guess holdings.",
+        costClass: 'free',
+        inputSchema: { type: 'object', properties: {}, additionalProperties: false },
     },
     {
         name: 'web_search',
@@ -955,6 +963,12 @@ describe('buildAgentSystemPrompt', () => {
         expect(prompt).toContain('US regular session: open');
     });
 
+    it('보유 심볼이 있으면 사용자 컨텍스트 줄을 넣는다', () => {
+        const p = buildAgentSystemPrompt({ locale: 'ko', tools: AGENT_TOOL_SPECS, now: NOW, etSessionStatus: 'open', portfolioSymbols: ['AAPL', '005930.KS'] });
+        expect(p).toContain('The user currently holds: AAPL, 005930.KS');
+        expect(prompt).not.toContain('currently holds');
+    });
+
     it('가용 툴 이름만 나열한다', () => {
         const p = buildAgentSystemPrompt({
             locale: 'en',
@@ -998,6 +1012,8 @@ export interface BuildAgentSystemPromptInput {
     tools: readonly AgentToolSpec[];
     now: Date;
     etSessionStatus: EtSessionStatus;
+    /** Symbols the signed-in user holds (spec §4-3 item 6); quantities stay behind `get_my_portfolio`. */
+    portfolioSymbols?: readonly string[];
 }
 
 function formatClock(now: Date, timeZone: string): string {
@@ -1050,10 +1066,13 @@ Rules:
 
 ## Output
 - Answer in ${language}.
-- Use the currency and decimal places carried in tool results (currency, decimals). Korean equities are in KRW, U.S. equities in USD.
+- Use the currency carried in tool results: KRW as integers, USD with two decimals.
 - Cite which tool the numbers came from and the asOf time, in plain words (e.g. "시세 기준 2026-09-12 10:30 ET").
 - Short paragraphs, bullets for lists, no tables wider than 4 columns. Do not emit markdown images.
 - If your answer was cut off (max_tokens), end with a sentence saying so.
+
+## User
+${input.portfolioSymbols && input.portfolioSymbols.length > 0 ? `- The user currently holds: ${input.portfolioSymbols.join(', ')} (call get_my_portfolio for quantities).` : '- No holdings on file.'}
 
 ## Now
 - ET: ${formatClock(input.now, 'America/New_York')} · KST: ${formatClock(input.now, 'Asia/Seoul')}
@@ -1210,11 +1229,14 @@ describe('createCounterStore', () => {
         expect(mockDecr).toHaveBeenCalledWith('p:u1:2026-09-12');
     });
 
-    it('failurePolicy closed: Redis 없음/오류 → consume false, remaining 0', async () => {
+    it('failurePolicy closed: Redis 없음/오류 → consume false, remaining 0, 알람 마커 로그', async () => {
         process.env = { ...originalEnv };
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const store = createCounterStore({ prefix: 'p', period: 'day', failurePolicy: 'closed', clock: () => NOW });
         await expect(store.consume('u1', 5)).resolves.toBe(false);
         await expect(store.remaining('u1', 5)).resolves.toBe(0);
+        expect(warn.mock.calls[0]![0]).toBe('[agent] quota store unavailable');
+        warn.mockRestore();
     });
 
     it('failurePolicy open: Redis 오류 → consume true, remaining limit', async () => {
@@ -1304,7 +1326,10 @@ export function createCounterStore(options: CounterStoreOptions): CounterStore {
 
     return {
         async consume(subject, limit) {
-            if (redis === null) return allowOnFailure;
+            if (redis === null) {
+                if (!allowOnFailure) console.warn('[agent] quota store unavailable', { op: 'consume', prefix: options.prefix, reason: 'no redis config' });
+                return allowOnFailure;
+            }
             const key = keyFor(subject);
             try {
                 const count = await redis.incr(key);
@@ -1314,7 +1339,8 @@ export function createCounterStore(options: CounterStoreOptions): CounterStore {
                     return false;
                 }
                 return true;
-            } catch {
+            } catch (error) {
+                if (!allowOnFailure) console.warn('[agent] quota store unavailable', { op: 'consume', prefix: options.prefix, error });
                 return allowOnFailure;
             }
         },
@@ -1490,6 +1516,8 @@ export interface RunAgentTurnParams {
     userMessage: string;
     /** Tool names the consumer can execute right now (spec §4-2 step 2). */
     availableTools: ReadonlySet<string>;
+    /** Symbols the user holds, for the system prompt (spec §4-3 item 6). */
+    portfolioSymbols?: readonly string[];
     now?: Date;
     signal?: AbortSignal;
 }
@@ -1636,7 +1664,7 @@ function params(overrides: Partial<RunAgentTurnParams> = {}): RunAgentTurnParams
         locale: 'ko',
         history: [],
         userMessage: 'AAPL 지금 얼마야?',
-        availableTools: new Set(['search_ticker', 'get_quote', 'get_bars_indicators', 'get_cached_analysis', 'get_news', 'get_options_summary', 'run_fresh_analysis', 'web_search']),
+        availableTools: new Set(['search_ticker', 'get_quote', 'get_bars_indicators', 'get_cached_analysis', 'get_news', 'get_options_summary', 'get_my_portfolio', 'run_fresh_analysis', 'web_search']),
         now: new Date('2026-09-12T14:30:00Z'),
         ...overrides,
     };
@@ -1983,6 +2011,7 @@ export async function runAgentTurn(
         tools,
         now,
         etSessionStatus: getEtSessionStatus(now),
+        portfolioSymbols: params.portfolioSymbols,
     });
     const messages: AgentMessage[] = [
         ...selectHistoryWindow(params.history, HISTORY_WINDOW),
@@ -2234,9 +2263,9 @@ git-agent로 push + PR(`feat/agent-loop` → `main`). review-agent 승인 후 `m
 
 ## Self-review
 
-- 스펙 §4-1: 포트 타입 ✓(Task 2). `apiKey` 단일 키 ✓. `providerMeta` 없음 ✓.
+- 스펙 §4-1: 포트 타입 ✓(Task 2). `apiKey` 단일 키 ✓. `providerMeta` 없음 ✓. §7 툴 9종(get_my_portfolio 포함) ✓(Task 4).
 - §4-2: 상한·검증·게이트·타임아웃·환불·abort·estimatedSeconds ✓(Task 10). 마지막 스텝 tools 비움으로 종료 강제 ✓.
-- §4-3: 프롬프트 6항목 ✓(Task 6). 로케일 4종 ✓.
+- §4-3: 프롬프트 6항목(보유 심볼 포함) ✓(Task 6). 로케일 4종 ✓. R12(모델 고정·추론 차단)는 siglens 라우터 몫 — core는 `model` 파라미터를 그대로 받는다.
 - §4-4: 8턴·2턴·32k ✓(Task 5).
 - §4-5: 값 ✓(Task 9). 전역 일 33·월 1,000 ✓. fail-closed ✓(Task 8, 소비처가 `failurePolicy:'closed'`로 생성).
 - 편차 1건: tokenStore 리팩터 생략(Task 8 주석). 스펙 §17에 반영할 것.
