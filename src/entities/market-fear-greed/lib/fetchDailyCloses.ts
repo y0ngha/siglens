@@ -16,6 +16,14 @@ interface FmpEodRow {
     price?: unknown;
 }
 
+/** FMP endpoint and row field that carry the close for a symbol. */
+interface PriceSource {
+    endpoint:
+        | 'historical-price-eod/light'
+        | 'historical-price-eod/dividend-adjusted';
+    field: 'price' | 'adjClose';
+}
+
 /**
  * Which FMP endpoint and field carry the close for `symbol`.
  *
@@ -26,13 +34,13 @@ interface FmpEodRow {
  * while `light` returns the full history. Sending `^VIX` to the adjusted
  * endpoint would throw and take the whole US index down with it.
  */
-function priceSourceFor(symbol: string) {
+function priceSourceFor(symbol: string): PriceSource {
     return symbol.startsWith('^')
-        ? ({ endpoint: 'historical-price-eod/light', field: 'price' } as const)
-        : ({
+        ? { endpoint: 'historical-price-eod/light', field: 'price' }
+        : {
               endpoint: 'historical-price-eod/dividend-adjusted',
               field: 'adjClose',
-          } as const);
+          };
 }
 
 /** ISO `YYYY-MM-DD` for `date` in UTC. */

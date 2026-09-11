@@ -1961,7 +1961,7 @@
                 "af0480": "リスク要因",
                 "b8f729": "強気シナリオ",
                 "da6fd3": "テクニカル分析",
-                "de4a87": "総合分析結論"
+                "de4a87": "総合分析サマリー"
             },
             "RelatedSymbols": {
                 "c35191": "関連銘柄"
@@ -3294,7 +3294,7 @@
                 "e69812": "AI総合分析リクエスト中…"
             },
             "OverallFactsSummary": {
-                "9a8ae8": "{v0}AI総合分析結論",
+                "9a8ae8": "{v0}AI総合分析サマリー",
                 "sectionLabel": "{v0}の総合分析サマリー"
             },
             "OverallFactualFallback": {

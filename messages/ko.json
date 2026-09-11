@@ -1961,7 +1961,7 @@
                 "af0480": "위험 요인",
                 "b8f729": "강세 시나리오",
                 "da6fd3": "기술적 분석",
-                "de4a87": "종합 분석 결론"
+                "de4a87": "종합 분석 요약"
             },
             "RelatedSymbols": {
                 "c35191": "관련 종목"
@@ -3293,7 +3293,7 @@
                 "e69812": "AI 종합 분석 요청 중…"
             },
             "OverallFactsSummary": {
-                "9a8ae8": "{v0} AI 종합 분석 결론",
+                "9a8ae8": "{v0} AI 종합 분석 요약",
                 "sectionLabel": "{v0} 종합 분석 요약"
             },
             "OverallFactualFallback": {

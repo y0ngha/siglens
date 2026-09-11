@@ -1961,7 +1961,7 @@
                 "af0480": "风险因素",
                 "b8f729": "看涨情景",
                 "da6fd3": "技术分析",
-                "de4a87": "综合分析结论"
+                "de4a87": "综合分析摘要"
             },
             "RelatedSymbols": {
                 "c35191": "相关股票"
@@ -3294,7 +3294,7 @@
                 "e69812": "AI 综合分析请求中…"
             },
             "OverallFactsSummary": {
-                "9a8ae8": "{v0} AI 综合分析结论",
+                "9a8ae8": "{v0} AI 综合分析摘要",
                 "sectionLabel": "{v0}综合分析摘要"
             },
             "OverallFactualFallback": {

@@ -1961,7 +1961,7 @@
                 "af0480": "Risk Factors",
                 "b8f729": "Bullish Scenario",
                 "da6fd3": "Technical Analysis",
-                "de4a87": "Overall Analysis Conclusion"
+                "de4a87": "Overall Analysis Summary"
             },
             "RelatedSymbols": {
                 "c35191": "Related tickers"
@@ -3294,7 +3294,7 @@
                 "e69812": "Requesting AI Overall Analysis…"
             },
             "OverallFactsSummary": {
-                "9a8ae8": "{v0} AI Overall Analysis Conclusion",
+                "9a8ae8": "{v0} AI Overall Analysis Summary",
                 "sectionLabel": "{v0} overall analysis summary"
             },
             "OverallFactualFallback": {
