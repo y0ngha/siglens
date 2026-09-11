@@ -89,7 +89,7 @@ route handler (siglens)
 | `domain/agent/selectHistoryWindow.ts` | 최근 N턴·툴 결과 창 선택(순수) |
 | `application/agent/runAgentTurn.ts` | 루프·상한·한도 소비/환불·usage 집계·에러 매핑. `toChatErrorResult`를 `application/shared/providerError.ts`로 추출해 공유 |
 | `application/agent/limits.ts` | `AGENT_LIMITS`(§4-5) |
-| `infrastructure/usage/dailyCounterStore.ts` | 기존 `tokenStore.ts`의 INCR+EXPIRE를 prefix·limit 매개변수화한 범용 카운터. tokenStore는 그것을 쓰도록 리팩터 |
+| `infrastructure/usage/dailyCounterStore.ts` | 기존 `tokenStore.ts`의 INCR+EXPIRE를 prefix·limit·**failurePolicy('open'\|'closed')** 로 매개변수화한 범용 카운터. tokenStore는 `'open'`(기존 계약 유지), 에이전트는 `'closed'`. 두 정책 모두 테스트(§13) |
 
 **siglens**
 
@@ -100,7 +100,7 @@ route handler (siglens)
 | `app/api/ai/chat/stream/route.ts`, `app/api/ai/chat/tools/*.ts`, `app/api/ai/chat/agentEventStream.ts` | SSE 라우트·툴 실행기·스트림 writer |
 | `features/agent-chat/` | `useAgentStream`(SSE 소비·abort·regenerate·edit), 로컬 상태 |
 | `widgets/agent-chat/` | ChatShell·Sidebar·MessageList·Composer·ToolActivity·EmptyState·AgentMarkdown |
-| `app/ai/[locale]/{layout,page}.tsx`, `c/[id]/page.tsx`, `not-found.tsx`, `app/ai/robots.txt/route.ts` | 라우트 |
+| `app/ai/[locale]/{layout,page}.tsx`, `c/[id]/page.tsx`, `not-found.tsx`, `app/ai/[locale]/{login,signup,forgot-password,reset-password,signup/oauth/consent}/page.tsx`(메인 페이지 모듈 re-export) | 라우트 |
 | `src/proxy.ts` | 호스트 분기(§9-1) |
 | `scripts/i18n/extract.mjs`, `shared/i18n/*` | 로케일 루트를 `['src/app/[locale]', 'src/app/ai/[locale]']`로 일반화(§9-3) |
 | `infra/aws/07-alarms.sh`, `check-env.sh`(`OPTIONAL_KEYS`에 `BRAVE_SEARCH_API_KEY`), `.env.example` | 알람·env |
@@ -157,7 +157,8 @@ export type CallAgentProvider = (o: CallAgentProviderOptions) => Promise<AgentPr
 
 ```
 1. turnsPerDay 소비(INCR). 한도 초과 → 'turn_limit'. Redis 오류 → 'server_busy'(fail-closed).
-2. system = buildAgentSystemPrompt({ locale, tier, tools: catalog(tier), now })
+2. tools = catalog(tier, params.availableTools)  // 가용 집합은 siglens가 계산해 넘김(`isE2E()`·Brave 키 부재 시 web_search 제외) — core는 isE2E를 모른다
+   system = buildAgentSystemPrompt({ locale, tier, tools, now })
 3. messages = selectHistoryWindow(history, { turns: 8, toolResultTurns: 2 }) + user
 4. for step in 1..MAX_STEPS(6):
      r = callAgentProvider({... messages, onEvent})           // 텍스트는 즉시 스트림
@@ -203,14 +204,14 @@ export type CallAgentProvider = (o: CallAgentProviderOptions) => Promise<AgentPr
 | 항목 | member | pro |
 |---|---|---|
 | 턴/일 | 60 | 200 |
-| 그중 회원 모델(서버 대납 상위 모델, 예: Sonnet 5) 턴/일 | 10 | 60 |
+| 그중 회원 모델(서버 대납 상위 모델, 예: Sonnet 5) 턴/일 | 10 | 20 |
 | 신선 분석/일 | 6 | 20 |
-| 웹 검색/일 | 10 | 30 |
-| 동시 턴 | 1 | 2 |
+| 웹 검색/일 | 5 | 10 |
+| 동시 턴 | 1 | 1 |
 | 대화 수 / 메시지·대화 | 100 / 200 | 300 / 200 |
 | 모델 | FREE+MEMBER_MODELS(추론 OFF) | +BYOK 모델(서버 키) |
 
-전역 상한(사용자 무관): 웹 검색 일 200·월 1,000(무료 크레딧), 신선 분석 동시 2, 에이전트 동시 턴 4.
+전역 상한(Redis, 사용자·인스턴스 무관): 웹 검색 **일 33·월 1,000**(무료 크레딧 $5를 30일에 나눔; 월 상한 도달 시 툴 비활성, 유료 전환은 사용자 결정). 인스턴스당 상한(프로세스 로컬): 신선 분석 동시 2, 에이전트 동시 턴 4(ASG max 4면 총 8·16).
 Redis 키 `agent:q:{feature}:{userId}:{yyyy-mm-dd}`(**UTC 날짜**, 기존 `hashUsageIp`와 같은 규칙. ET 대비 최대 4~5시간 어긋나지만 일일 한도엔 무해). `INCR` 후 `EXPIRE NX 86400`.
 Redis 오류 → 해당 요청 `server_busy`(fail-closed). regenerate·edit도 턴 1회 소비.
 
@@ -258,7 +259,7 @@ chat_messages
   tool_call_id varchar(64) null, tool_name varchar(64) null
   model_id varchar(64) null
   usage jsonb null                       -- {promptTokens,cachedTokens,cacheWriteTokens,outputTokens,steps,ms,fallback:boolean}
-  status varchar(16) not null default 'complete'   -- 'complete' | 'aborted' | 'error'
+  status varchar(16) not null default 'complete'   -- 'complete' | 'aborted' | 'error' | 'superseded'(regenerate로 대체된 assistant·tool 행)
   created_at timestamptz not null default now()
   unique (conversation_id, seq)
 ```
@@ -288,8 +289,8 @@ usage       {promptTokens, cachedTokens, outputTokens, steps, fallback}
 done        {assistantMessageId, title?}
 error       {code, message}   -- turn_limit|model_not_allowed|user_api_key_required|rate_limited|server_busy|server_error|deadline|aborted
 ```
-- 동시성: 라우트가 `incrementActiveStreams()`를 직접 호출(에이전트 턴 = 1 슬롯), `run_fresh_analysis` 실행기가 실행 동안 1 슬롯 추가 → 중첩 분석도 24 상한에 잡힌다. 에이전트 자체 상한 4(프로세스 로컬) 초과 → `server_busy`.
-- 중단 의미: 분석 라우트와 **다르게** 클라이언트 연결이 끊기면 `AbortSignal`로 프로바이더 스트림·툴 실행을 중단하고 `finally`에서 감소·락 해제·부분 저장(`aborted`). 캐시로 회수할 결과가 없기 때문.
+- 동시성: `activeStreams.ts`에 `registerActiveStream(): () => void`(증가 + 해제 함수)를 추가하고 `heartbeatStream`도 그것을 쓰도록 바꾼다(현재 `increment/decrement`는 "heartbeatStream 전용, 직접 호출 금지"로 문서화돼 있어 계약 변경을 명시). 에이전트 턴 = 1 슬롯, `run_fresh_analysis` 실행기가 실행 동안 1 슬롯 추가 → 중첩 분석도 24 상한에 잡히고, 라우트 진입 시 `canAcceptAnalysisStream()`도 검사한다(에이전트가 공개 분석 라우트의 24 슬롯을 나눠 쓴다는 뜻). 에이전트 자체 상한 4는 **인스턴스당**(프로세스 로컬, ASG max 4면 총 16) 초과 → `server_busy`.
+- 중단 의미: 클라이언트 연결이 끊기면 `AbortSignal`로 **프로바이더 스트림과 무료·외부 툴**을 중단하고 `finally`에서 감소·락 해제·부분 저장(`aborted`). 단 `run_fresh_analysis`에는 시그널을 **넘기지 않는다** — core `dedupeInFlight`가 같은 캐시 키의 프리웜·심볼 페이지 요청을 한 promise로 묶어 두므로 시그널을 넘기면 남의 분석까지 죽는다(기존 `heartbeatStream`이 클라이언트 시그널을 안 넘기는 이유와 동일). 분석은 끝까지 돌아 캐시에 남는다.
 - 배포 drain(180초) 중 진행 턴은 잘릴 수 있음 → `error:deadline`으로 UI 재시도 안내(§2-14).
 
 ---
@@ -302,7 +303,7 @@ error       {code, message}   -- turn_limit|model_not_allowed|user_api_key_requi
 | 툴 | 인자 | 소스(실측 함수) | 비고 |
 |---|---|---|---|
 | `search_ticker` | `query` | `entities/ticker/lib/searchTicker` | 후보 ≤ 8 |
-| `get_quote` | `symbols[≤3]` | `getCachedMarketDataProvider(sessionSpecFor(symbol)).getQuote(symbol)` — 심볼별 세션 스펙 해석(KR은 Yahoo 경로, FMP는 KRX 미지원) | 심볼별 병렬 |
+| `get_quote` | `symbols[≤3]` | `const profile = await resolveMarketProfile(symbol); getCachedMarketDataProvider(sessionSpecFor(profile)).getQuote(symbol)` — 분석 스트림 라우트와 같은 2단계(`sessionSpecFor`는 심볼이 아니라 프로필을 받음). KR은 Yahoo 경로, FMP는 KRX 미지원 | 심볼별 병렬 |
 | `get_bars_indicators` | `symbol, timeframe, bars≤60` | core `fetchBarsWithIndicators` + `detectSignals` + `classifyTrend` | 최근 N봉·최신 지표값·신호·추세 |
 | `get_cached_analysis` | `symbol, tab, timeframe?` | technical·overall: `peekAnalysisCache`/`peekOverallAnalysisCache`에 **ctx의 분석 모델·tier·positionBucket**을 넘김(overall은 modelId 없으면 무조건 null). 6탭 전부: `seo_analysis_snapshots`(locale) → `analysis_history` 최신 | `stale`(core TTL 기준)·`source` 표시. news·fundamental·financials·options는 스냅샷/이력만 |
 | `get_news` | `symbol?` \| `category?`, `since?`, `query?`, `limit≤10`, `includeBody?` | `news`/`market_news` 테이블 | 제목·요약·감성·priceImpact·url. `includeBody`면 상위 3건 본문 1,000자 |
@@ -339,12 +340,14 @@ P4 후보: `get_asset_info`, `get_earnings`, `get_financials`, `get_market_overv
 |---|---|---|
 | `/`, `/{locale}` | `/ai/{locale}` | 회원: 새 대화. 비회원: 랜딩(설명·예시·로그인 CTA) |
 | `/c/{id}` | `/ai/{locale}/c/{id}` | 대화. 소유 아니면 404 |
-| `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/signup/oauth/consent`, `/api/auth/*` | **메인 서브트리 그대로**(`/{locale}/login` 등) | 같은 앱이 ai 호스트에서 인증 UI를 서빙 → 쿠키가 `ai.siglens.io` host-only로 심김. `next`는 경로 전용 |
-| `/robots.txt` | `/ai/robots.txt` | `User-agent: *\nDisallow: /` (proxy matcher에 `robots.txt` 포함) |
+| `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/signup/oauth/consent` | `/ai/{locale}/login` 등 — 메인 페이지 모듈을 ai 서브트리에서 **re-export**(`export { default, metadata } from '@/app/[locale]/login/page'`) | ai 레이아웃(헤더·푸터 없음) 안에서 같은 인증 UI. 쿠키가 `ai.siglens.io` host-only로 심김. `next`는 경로 전용. 메인 레이아웃을 ai 호스트에 렌더하면 상대 `LocaleLink`가 전부 not-found로 떨어지고 `VisitorPing`이 이중 집계되므로 금지 |
+| `/api/auth/*` | (rewrite 없음, `/api`는 matcher 밖) | 로그인·OAuth 콜백 핸들러는 호스트 무관 |
+| `/robots.txt` | (rewrite 없음) | proxy 호스트 분기가 `User-agent: *\nDisallow: /` 본문을 **직접 반환**. matcher에 `'/robots.txt'` 항목을 추가하되 메인 호스트에서는 첫 줄에서 `NextResponse.next()`로 통과시켜 `src/app/robots.ts`가 그대로 서빙되게 한다(intl 미들웨어로 흘리면 `[locale]` 밖의 robots가 404) |
+| `/api/sitemap*` | — | `/api`는 matcher 밖이므로 sitemap 라우트 자체가 `host` 헤더를 보고 ai 호스트면 404 |
 | 그 외 | `/ai/{locale}/not-found` | |
 
 `proxy.ts`: **호스트 분기를 최상단**에 둔다(그 아래 심볼 대문자화 규칙이 `/ai`를 `/AI`로 301시키기 때문). `RESERVED_FIRST_SEGMENTS`에 `'ai'` 추가.
-메인 호스트의 `/ai/*`는 `https://ai.siglens.io/*`로 301. `src/app/__tests__/proxy.test.ts`의 예약어 동기화 검사를 `src/app` 최상위 디렉터리까지 확장.
+메인 호스트의 `/ai/*`는 `https://ai.siglens.io/*`로 301. `src/app/__tests__/proxy.test.ts`의 예약어 동기화 검사는 `page.tsx`가 **직접** 있는 디렉터리만 세므로 `ai/[locale]/page.tsx`를 못 본다 — 검사 대상에 `src/app/ai`를 명시적으로 더하고 `expect(RESERVED).toContain('ai')`를 별도 단언으로 둔다(기존 `fear-greed` 트립와이어는 유지).
 ai 호스트 응답에 CSP 헤더 부착(`NextResponse.rewrite(url, { headers })`).
 dev: `ai.localhost:3000`을 ai 호스트로 인식(`AI_HOSTS` 상수: `ai.siglens.io`, `ai.localhost`).
 
@@ -357,7 +360,7 @@ dev: `ai.localhost:3000`을 ai 호스트로 인식(`AI_HOSTS` 상수: `ai.siglen
 ### 9-2. 화면
 
 - **ChatShell**: 좌 사이드바(대화 목록·새 대화·이름변경·삭제·클라이언트 제목 필터) + 우 메인. `lg:` 2열, 모바일은 `vaul` 드로어(패치 유지, `modal` 전달 함정). 드로어 닫힘 후 포커스 복귀.
-- **상단 바**: 로고(메인 절대 URL), `ModelSelect`(재사용, `toggleable`·tier 배지 `ModelAccessBadge`, tier 확정 전엔 기본 모델 고정 — PR #713 레이스), 로그인/계정(메인 절대 URL).
+- **상단 바**: 로고(메인 절대 URL), `ModelSelect`(재사용, tier 배지 `ModelAccessBadge`, tier 확정 전엔 기본 모델 고정 — PR #713 레이스). 모델은 **턴 단위**로 바뀐다: 요청의 `model`로 그 턴을 게이트·실행하고 `chat_conversations.model_id`를 갱신, 이력은 캐노니컬 메시지라 프로바이더가 바뀌어도 그대로 재생(추론 토글이 붙는 P3에서 `provider_meta` 폐기 규칙 추가). 로그인은 **ai 호스트 상대 경로**(`/login`, host-only 쿠키를 ai 호스트에 심어야 하므로), 계정 설정은 메인 절대 URL.
 - **MessageList**: `AgentMarkdown`. assistant 아래 ToolActivity 칩(`📊 get_bars_indicators AAPL 1Day · 0.4s`, 클릭 시 결과 요약). 신선 분석 진행 중엔 칩에 진행바(`estimatedSeconds`). 메시지별 `model_id`·복사 버튼. assistant 마지막 메시지엔 **재생성**, user 마지막 메시지엔 **수정 후 재전송**. `max_tokens` 종료 시 "답변이 잘렸습니다" 배너. 트랜스크립트 영역 `aria-live="polite"`.
 - **Composer**: 자동 높이, Enter 전송·Shift+Enter 줄바꿈, 4,000자 카운터, 잔여 턴, 중단 버튼, iOS 키보드 대응(`100dvh`·visual viewport·safe-area), 스트리밍 중 스크롤 앵커링(사용자가 위로 올리면 자동 스크롤 중지).
 - **에러**: 인라인 배너 + 재시도(= regenerate, 턴 소비). `aborted` 행은 그대로 두고 재생성으로 대체.
@@ -378,7 +381,7 @@ ai 레이아웃의 `NextIntlClientProvider` 네임스페이스: `agent` + 재사
 | 모델 | 입력(미스) | 입력(캐시 히트) | 캐시 쓰기 | 출력 | 출처 |
 |---|---|---|---|---|---|
 | deepseek-flash peak / off-peak | 0.30 / 0.15 | 0.006 / 0.003 | — | 1.20 / 0.60 | api-docs.deepseek.com |
-| deepseek-v4-pro peak | 1.32 | 0.044 | — | 3.96 | 동일 |
+| deepseek-v4.1-pro (api `deepseek-v4-pro`) peak | 1.32 | 0.044 | — | 3.96 | 동일 |
 | gpt-5.6-luna | 0.20 | 0.02 | — | 1.20 | developers.openai.com |
 | gemini-3.5-flash-lite | 0.30 | 0.03(+저장비) | — | 2.50 | ai.google.dev |
 | claude-haiku-4-5 | 1.00 | 0.10 | 1.25 | 5.00 | platform.claude.com |
@@ -387,23 +390,23 @@ ai 레이아웃의 `NextIntlClientProvider` 네임스페이스: `agent` + 재사
 ### 10-2. 턴당 비용 — 기본 vs 비관
 
 기본: 호출 2.5회, 호출당 캐시 prefix 7k(70% 히트)·신규 3k·출력 0.4k → 턴당 캐시 17.5k·미스 7.5k·출력 1k.
-비관: 호출 4회, 툴 결과 5개(각 1.2k)가 누적, 히트 60%, 출력 2k → 턴당 미스 ~20k·캐시 ~20k·출력 2k. Claude는 5분 캐시 TTL이라 200턴/일 밀도에서는 히트가 거의 없다고 보고 캐시 쓰기 1.25x를 더한다.
+비관: 호출 4회(p90; 하드 상한 6은 알람으로 감시), 툴 결과 5개(각 1.2k)가 누적, 히트 60%, 출력 2k → 턴당 미스 ~20k·캐시 ~20k·출력 2k. Claude 두 행은 5분 캐시 TTL 때문에 200턴/일 밀도에서 히트가 거의 없다고 보고 **전량 미스(40k)** 로 계산한다(쓰기 프리미엄은 히트가 없으면 발생하지 않음).
 
 | 모델 | 기본/턴 | 비관/턴 | 200턴/일 기본 → 비관(월) |
 |---|---|---|---|
 | deepseek-flash peak | $0.0036 | $0.0079 | **$21 → $47** |
 | gpt-5.6-luna | $0.0031 | $0.0068 | $18 → $41 |
-| claude-haiku-4-5 | $0.014 | $0.030 | $86 → $180 |
-| claude-sonnet-5 | $0.029 | $0.080 | $171 → $480 |
+| claude-haiku-4-5 | $0.014 | $0.050 | $86 → $300 |
+| claude-sonnet-5 | $0.029 | $0.100 | $171 → $600 |
 
 기준 — 현재 SEO 프리웜: CloudWatch `[Usage]` 실측 하루 5~6천 호출·입력 5.4k·출력 1.46k, 히트 36~66%. DeepSeek peak 기준 하루 $8~12, **월 $250~350 규모**(로그 역산 추정).
 기본 모델 200턴/일은 현재 AI 지출의 7~15%. 인프라 증분 0.
 
 ### 10-3. 상한 설계
 
-- 회원 모델(Sonnet 5 등) 10턴/일 × 비관 $0.08 = 회원당 최대 $0.8/일. 활성 회원 100명이 매일 상한까지 써야 월 $2,400 — 현실 사용률은 그 수십 분의 일이지만 **알람 + 킬 스위치**(§12)가 최후 방어.
+- 회원 모델(Sonnet 5 등) 비관 $0.10/턴: member 10턴/일 = $1/일, pro 20턴/일 = $2/일. 활성 회원 100명이 매일 상한까지 써야 월 $3,000(member)~$6,000(pro) — 현실 사용률은 그 수십 분의 일이고 pro 라이선스는 현재 미운영. **알람(1M 출력 토큰/일 ≈ Sonnet 500턴 ≈ $50/일) + 킬 스위치**(§12)가 최후 방어.
 - 신선 분석: 회당 $0.003~0.01. FMP 예산은 **계측되지 않는다**(`addFmpBudget`은 프리웜 모니터링용이고 상한 비교 없음). 방어는 턴당 심볼 3개·일일 신선 분석 한도·60초 봉 캐시. KR 심볼은 Yahoo 비공식 경로라 같은 상한이 IP 차단 방지책이기도 하다.
-- Brave: 전역 일 200·월 1,000(무료 크레딧 안). 회원 일 10 × 100명 = 30,000/월 = $150이 이론 최대지만 전역 월 상한이 $0에 고정한다.
+- Brave: 전역 일 33·월 1,000이 무료 크레딧 안에서 $0에 고정. 회원 일 5 × 100명이면 하루 상한에 금방 닿으므로 검색은 "있으면 좋은" 보조 툴로 취급하고, 수요가 확인되면 유료 전환(월 $5/1k)을 결정한다.
 - Neon 저장 +MB, Upstash 명령 +수만/일(무료 범위), EC2 동일. ASG 2대 시 +$30/월.
 
 ---
@@ -493,7 +496,7 @@ SSE 600초 완주·침묵 61초 절단(ALB 시절), 프리웜 5~6천 호출/일�
 | P0 core | 포트·`NormalizedUsage` 이동·툴 스키마·프롬프트·`selectHistoryWindow`·`runAgentTurn`·`AGENT_LIMITS`·`dailyCounterStore` + 테스트 | core 1.1.0 |
 | P1 siglens 골격 | DeepSeek+Haiku 어댑터·라우터, 툴 6종(검색·시세·봉/지표·캐시 분석·뉴스·옵션), SSE 라우트·writer, proxy 호스트 분기·CSP·robots, `app/ai` 레이아웃·페이지, 마이그레이션 0035·리포지토리·사이드바, i18n 루트 일반화, Cloudflare hostname·Rate Limiting, ai 호스트 로그인(OAuth URI) | **ai.siglens.io에서 회원이 대화·저장** |
 | P2 완성 | `run_fresh_analysis`(세마포어·진행 표시), `web_search`(Brave·전역 상한·SSM), regenerate/edit, `/privacy` 개정, 알람·킬 스위치, e2e | 요구사항 R1~R8 충족 |
-| P3 확장 | OpenAI·Gemini 어댑터, 추론 토글 + `provider_meta` 컬럼, 요약 압축, LLM 제목 | |
+| P3 확장 | OpenAI·Gemini 어댑터, 추론 토글(`toggleable:false`인 haiku는 컨트롤 비활성) + `provider_meta` 컬럼, 요약 압축, LLM 제목 | |
 | P4 툴 확장 | asset_info·earnings·financials·market_overview·economic_calendar·congress·portfolio(동의 UI) | |
 
 ## 16. 구현 전 검증 (P-1)
@@ -501,10 +504,12 @@ SSE 600초 완주·침묵 61초 절단(ALB 시절), 프리웜 5~6천 호출/일�
 1. `app/ai/[locale]/layout.tsx`의 `<html>`이 `next build`(standalone)에서 통과하는지. 실패 시 `app/(site)/[locale]`·`app/(ai)/[locale]` 다중 루트 레이아웃(102개 import 경로 수정 동반).
 2. cloudflared가 `Host: ai.siglens.io`를 보존하는지(기본 동작) — 임시 로그로 확인, 아니면 `x-forwarded-host`.
 3. ai 호스트에서 서버 액션 Origin/Host 검사 통과.
-4. DeepSeek `deepseek-v4-pro`의 9/14 이후 툴 콜(회원 모델로 노출되므로 P1 전에 재프로브).
+4. DeepSeek `deepseek-v4.1-pro`(apiModelId `deepseek-v4-pro`)의 9/14 이후 툴 콜(회원 모델로 노출되므로 P1 전에 재프로브).
 5. Gemini 병렬 functionCall `id` 매칭(P3 전).
 
 ## 17. v1 → v2 리뷰 반영 요약
 
 반영(수정): 확인 게이트 폐기·자동 실행(R4) / 회원 전용 / 쿠키 도메인 확장 폐기·호스트별 로그인 / `heartbeatStream` 재사용 불가 → 전용 writer / 툴 실행기 app 레이어 / `provider_meta`·요약 압축·추론 토글 P3로 / 타임아웃 300·마감 600 / fail-closed / CF Rate Limiting·CSP·img 차단 / 절단 규칙 단일화 / seq 트랜잭션 / 동시 턴 Redis 락 / activeStreams 직접 등록·중첩 카운트 / abort 의미 명시 / 소유권 검증 명시 / 비용 비관치·Brave 산술·캐시 쓰기 / 알람 1M·킬 스위치 / KR 세션 스펙 / peek 시그니처·6탭 커버리지 / `NormalizedUsage` 이동 / `isAdmissibleSymbolShape`는 siglens / proxy 순서·예약어·테스트 범위 / robots / i18n 루트 / `OPTIONAL_KEYS` / OAuth redirect base / regenerate·edit·복사·a11y·모바일 / 개인정보 고지 / 롤백 노트 / 툴 8종으로 축소 / 폴백 프로바이더.
-미반영(의도적): 하드 삭제 크론(저장량 미미, soft delete만) / LLM 제목·요약 압축(P3) / `siglens.io/ai` 경로 대안(사용자 요구가 서브도메인) / 비회원 지원(2차 검토).
+미반영(의도적): 하드 삭제 크론(저장량 미미, soft delete만) / LLM 제목·요약 압축(P3) / `siglens.io/ai` 경로 대안(사용자 요구가 서브도메인) / 비회원 지원(2차 검토) / FMP 예산 계측(계측기 자체가 없음, 심볼·일일 상한으로 대체).
+
+v2 재검증(15건) 반영: robots는 proxy가 직접 응답(메인 robots 무변경) / 신선 분석엔 abort 시그널 미전달(dedupeInFlight 공유) / 로그인 링크 ai 호스트 상대 경로 + 인증 페이지 ai 서브트리 re-export / `resolveMarketProfile → sessionSpecFor(profile)` / Brave 일 33·회원 5 / Claude 비관치 전량 미스로 재계산 / pro 회원모델 20·동시 턴 1 / 인스턴스당 상한 명시 / proxy 테스트 명시 단언 / `superseded` 상태 / `availableTools` 주입 / 카운터 failurePolicy / `registerActiveStream` 계약 / ModelId 표기 통일 / sitemap ai 호스트 404.
