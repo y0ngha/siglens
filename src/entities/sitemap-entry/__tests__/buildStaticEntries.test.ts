@@ -136,6 +136,15 @@ describe('buildStaticEntries', () => {
         }
     });
 
+    it('/about은 yearly, legal보다 한 단계 높은 priority 0.4', () => {
+        const entries = buildStaticEntries(NOW);
+        const about = entries.filter(e => e.url.endsWith('/about'));
+        expect(about).toHaveLength(1);
+        expect(about[0].url).toBe('https://siglens.io/about');
+        expect(about[0].changeFrequency).toBe('yearly');
+        expect(about[0].priority).toBe(0.4);
+    });
+
     it('/news hub과 5개 카테고리 entries는 UTC 일 경계를 lastModified로 사용한다', () => {
         const startOfDay = new Date('2026-05-23T00:00:00.000Z');
         const entries = buildStaticEntries(NOW);

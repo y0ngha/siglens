@@ -1654,3 +1654,36 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Regression test: verify two identical-except-for-new-field snapshots produce different content hashes
    → Recurring: chartBars field (prior), locale field (prior), plain field (feat/share-plain-language R2) — 3 occurrences; all documented in contentHash.ts JSDoc
 ```
+
+---
+
+## Scripting & DevOps
+
+```
+1. sed delimiter collision with variable content
+   → When using sed to substitute values, the delimiter must not appear in the variable being substituted
+   → Always use a delimiter that cannot appear in the substitution value: use `|` for paths/URLs that may contain `/`
+   → Never assume tag names, file paths, or other variable values are "simple" — they will eventually contain the chosen delimiter
+   ❌ sed "s/__IMAGE_TAG__/$TAG/" file.txt  // breaks if $TAG contains `/` (e.g., `v2/aws-migration`)
+   ❌ sed "s|OLD|$PATH_VAR|" script.sh  // breaks if $PATH_VAR contains `|`
+   ✅ sed "s|__IMAGE_TAG__|$TAG|" file.txt  // `|` safe for paths
+   ✅ Use `-e` or `printf '%s\n'` to properly escape before substitution if delimiter collision unavoidable
+   → Recurring: feat/aws-infra R1 (tag-as-delimiter collision in 05-launch-template.sh) — 11 occurrences in fix-log across multiple sessions
+```
+
+---
+
+## Testing & Measurement
+
+```
+1. Regex-based color parsing fails on Tailwind v4 oklab() output
+   → Tailwind v4 uses `oklab()` color space, which returns `oklab(L a b / alpha)` format in `getComputedStyle().backgroundColor`
+   → Naive regex parsers looking for `rgb()` or hex patterns fail silently on oklab(), returning false "not a color" or "near-black" readings
+   → Color measurement (contrast sweeps, tone detection, palette validation) must handle oklab() explicitly or use canvas compositing to extract RGB
+   → For contrast measurement: compose the oklab value through a 2D canvas context: create an element, apply the background, read via canvas `getImageData()`, then compute ratio on resulting RGB
+   ❌ /^rgb\(|^#/.test(computed) // regex fails on `oklab(...)`, silently reports "not a color"
+   ❌ Color regex assumes RGB or hex, scores oklab backgrounds as near-black (L value parsed as hex digits), produces 33 fake failures in light theme
+   ✅ Resolve all colors through canvas 2D context before measuring: `ctx.fillStyle = computed; ctx.fillRect(0,0,1,1); const [r,g,b] = ctx.getImageData(...).data`
+   ✅ Sanity-check measurement with known contrasts (white + rgba(0,0,0,0.1) should yield ~229)
+   → Recurring: W6b/W6c contrast measurement (Tailwind v4 oklab parsing in audit script) — 2 occurrences; caused 33 false failures before canvas resolution
+```

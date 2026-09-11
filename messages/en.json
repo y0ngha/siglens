@@ -1392,6 +1392,7 @@
                 }
             },
             "legal": {
+                "aboutIntro": "What {v0} is, who built it, and what data and process each analysis goes through. We believe an investment tool can only be judged when you know who made it and how.",
                 "investmentDisclaimer": "The analysis on this service is for reference only; investment decisions are your own responsibility.",
                 "privacyBottomNotice": "For the full terms of use, see the <link>Terms of Service</link>.",
                 "privacyIntro": "{v0} (“the operator”) takes your personal data seriously and works to comply with the Personal Information Protection Act and related laws. This privacy policy explains how the personal data you provide is used, for what purposes, and what measures protect it.",
@@ -1424,6 +1425,10 @@
             }
         },
         "seo": {
+            "about": {
+                "description": "Siglens is an AI stock and crypto analysis service built and run by independent developer 신용하. Learn where the data comes from, how each analysis is produced, how often it refreshes, its limits, and how to get in touch.",
+                "title": "About Siglens"
+            },
             "a11y": {
                 "investmentDisclaimer": "Investment disclaimer",
                 "investmentDisclaimerSummary": "Investment disclaimer summary"

@@ -18,6 +18,7 @@
 - [ISR_REVALIDATE.md](./architecture/ISR_REVALIDATE.md) — ISR revalidate 정책(페이지별 값·근거, Fast Origin Transfer 절감)
 - [CDN_CACHING.md](./architecture/CDN_CACHING.md) — Cloudflare 캐싱·WAF·봇 보호
 - [SITEMAP_SCOPE.md](./architecture/SITEMAP_SCOPE.md) — sitemap에 무엇을 싣는지의 규칙(시드 2,595종목을 넣지 않는 근거, 늘릴 때의 순서)
+- [SEO_RECOVERY_2026_09.md](./architecture/SEO_RECOVERY_2026_09.md) — 2026-07 노출 절벽 재감사: 원인 판정(품질 강등), 배제된 가설, 회복 전략 A/B/C와 측정 지표
 
 ## conventions/ — 작성 규칙
 - [CONVENTIONS.md](./conventions/CONVENTIONS.md) — 코딩 컨벤션, 네이밍, 타입, 테스트 커버리지

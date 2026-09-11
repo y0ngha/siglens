@@ -117,6 +117,13 @@ export const SITE_URL = resolveSiteUrl();
 export const SITE_NAME = 'Siglens';
 
 /**
+ * 홈 `Organization` 노드의 `@id`. 홈 페이지(`(home)/page.tsx`)와 `/about`
+ * 페이지가 각자 `${SITE_URL}#organization` 리터럴을 조립해 크롤러가 두 문서를
+ * 같은 개체로 묶는 참조가 오타 하나로 갈릴 수 있었다 — 상수 하나로 묶는다.
+ */
+export const ORGANIZATION_JSON_LD_ID = `${SITE_URL}#organization`;
+
+/**
  * 공개 소스 저장소. 푸터가 유일한 소비자다.
  *
  * 상수로 두는 이유는 재사용이 아니라 **위치**다. 사이트를 가리키는 다른 URL이

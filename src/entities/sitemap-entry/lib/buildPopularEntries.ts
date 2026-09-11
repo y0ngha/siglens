@@ -145,22 +145,13 @@ export function buildPopularEntries(now: Date): SitemapEntry[] {
                     changeFrequency: 'daily',
                     priority: 0.78,
                 },
-                // `/position`은 세 market profile(US·KR·crypto) 전부가 `tabs`에 갖고 있어
-                // 탭 가드가 필요 없다. 페이지는 `index, follow` + self-canonical로 나가는데
-                // sitemap에만 빠져 있었다(2026-09 실측: popular sitemap 3,031 URL 중
-                // position 0건). SSR 고유 콘텐츠는 52주 범위 밴드 + 마지막 종가 해설이라
-                // 종가와 함께 하루 단위로 변한다 — lastmod는 다른 세션 기반 탭과 같은
-                // `todayClose`, priority는 ★평단 입력 전까지 표층이 얇으므로 가장 낮게 둔다.
+                // `/position`은 싣지 않는다 — 페이지가 항상 noindex다(2026-09-11 SEO
+                // 회복 감사, `[symbol]/position/page.tsx` generateMetadata 주석 참고).
+                // PR #791이 "index인데 sitemap에 없다"며 402 URL을 더했는데, 그 탭의 SSR
+                // 고유 텍스트는 868~1,222자 템플릿 문장뿐이라 색인 대상에서 뺐다.
+                // noindex URL을 sitemap에 실으면 크롤 예산만 태운다(아래 congress 주석과
+                // 같은 근거).
                 //
-                // ⚠️ 본문의 `resolvePriceRange`가 null이면 그 페이지는 noindex로 나간다
-                // (thin 가드). POPULAR_TICKERS는 bars가 실측으로 채워지는 종목이라 정상
-                // 경로에서는 발생하지 않고, 데이터 공급자 장애 시 일시적으로만 어긋난다.
-                {
-                    url: `${SITE_URL}/${ticker}/position`,
-                    lastModified: todayClose,
-                    changeFrequency: 'daily',
-                    priority: 0.7,
-                },
                 // 국내 상장 종목은 공직자 매매 공시 제도가 없어 `/congress`가 not-found
                 // UI + noindex로 나간다(`KR_EQUITY_DESCRIPTOR.tabs`에서 제외). 상태 코드는
                 // 200이다 — `notFound()`가 부모 `loading.tsx`의 Suspense 안에서 던져지기
