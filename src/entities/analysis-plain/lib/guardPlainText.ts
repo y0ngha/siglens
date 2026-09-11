@@ -234,41 +234,40 @@ export type PlainGuardFailure =
     | { readonly kind: 'foreign_script'; readonly tokens: readonly string[] }
     | { readonly kind: 'magnitude_suffix'; readonly tokens: readonly string[] }
     | {
-          readonly kind: 'too_short';
-          readonly chars: number;
-          readonly min: number;
-      }
-    | {
           readonly kind: 'unsupported_numbers';
           readonly tokens: readonly string[];
       };
 
 export interface GuardInput {
     readonly text: string;
-    readonly inputChars: number;
     readonly allowed: readonly number[];
     /** 출력 언어. 어느 문자 계열이 금지인지 결정한다. 생략하면 `'ko'`. */
     readonly locale?: string;
 }
 
 /**
- * 상한은 두지 않는다. 분석 타입마다 적정 분량이 다르고(실측: 압축률 37~105%),
- * 고정 상한은 특정 타입에 맞춘 상수일 뿐이다. 긴 출력이 무엇을 깨뜨렸는지
- * 관측된 적도 없다.
+ * 상한도 하한도 두지 않는다.
+ *
+ * 상한: 분석 타입마다 적정 분량이 다르고(실측: 압축률 37~105%), 고정 상한은
+ * 특정 타입에 맞춘 상수일 뿐이다. 긴 출력이 무엇을 깨뜨렸는지 관측된 적도 없다.
+ *
+ * 하한: 예전에는 `입력 산문 대비 20%, 최소 200자` 미만이면 거부(`too_short`)했다.
+ * 이 레이어는 항상 원본보기 토글과 짝을 이루므로 — 짧은 재작성이 있어도 원본
+ * 전문이 클릭 한 번 거리에 있어 — 짧다고 내용을 숨기는 일이 없다. 반대로 이
+ * 하한은 **긴 분석일수록 더 세게** 걸렸다: 멤버·프로 티어와 추론 모드 분석은
+ * 산문이 매우 길어지는데, 재작성 모델은 여전히 ~800~1,300 토큰을 돌려주므로
+ * 재시도까지 거의 항상 실패해 토글 자체가 사라졌다(실측 2026-09-11, dev 서버:
+ * AAPL pro+추론 technical·overall에서 `[analysisPlain] guard rejected
+ * { kind: 'too_short' }` 반복 관측. 프로덕션은 최근 7일 평이화 호출의 15~17%가
+ * 가드에 거부됐다 — 종류별 분해는 하지 못했다). 그래서 이 하한을 없앤다.
  */
 export function guardPlainText({
     text,
-    inputChars,
     allowed,
     locale = 'ko',
 }: GuardInput): PlainGuardFailure | null {
     const trimmed = text.trim();
     if (trimmed.length === 0) return { kind: 'empty' };
-
-    const min = Math.max(MIN_CHARS, Math.floor(inputChars * MIN_RATIO));
-    if (trimmed.length < min) {
-        return { kind: 'too_short', chars: trimmed.length, min };
-    }
 
     const foreign = findForeignScript(trimmed, locale);
     if (foreign.length > 0) return { kind: 'foreign_script', tokens: foreign };
@@ -287,11 +286,6 @@ export function guardPlainText({
 
     return null;
 }
-
-/** 입력 산문 대비 최소 비율. 이보다 짧으면 내용이 소실된 것으로 본다. */
-const MIN_RATIO = 0.2;
-/** 절대 하한. 입력이 아주 짧아도 이보다 짧으면 글이 아니다. */
-const MIN_CHARS = 200;
 
 /**
  * 문장 분해. 한국어 종결(`…다.`)과 서양식 종결부호를 함께 본다.
@@ -326,13 +320,15 @@ function splitSentences(paragraph: string): string[] {
  * 돌린 결과 전부 문장 1~3개(전체의 5~16%)를 빼는 것만으로 잔여 위반 0이 됐다.
  * 문단 몇 문장을 잃는 것이 쉽게보기가 통째로 사라지는 것보다 낫다.
  *
- * 도려낸 뒤에도 길이 하한을 다시 검사한다 — 남은 글이 요약도 못 되는 조각이면
- * 그때는 정말로 버린다.
+ * 도려낸 뒤에는 잔여 위반 숫자만 다시 검사한다. 예전에는 길이 하한
+ * (`guardPlainText` 참고 — 원본보기 토글이 항상 옆에 있어 짧은 재작성도 내용을
+ * 숨기지 않는다는 이유로 없앴다)도 함께 봤지만, 지금은 문장을 도려낸 결과가
+ * 아무리 짧아도 숫자가 전부 설명되면 살린다. 도려낸 뒤 **완전히 비면**(모든
+ * 문장이 위반을 포함했던 경우) 그때는 남길 것이 없으므로 버린다.
  */
 export function salvageByRemovingSentences(
     text: string,
-    allowed: readonly number[],
-    inputChars: number
+    allowed: readonly number[]
 ): string | null {
     const unsupported = findUnsupportedNumbers(text, allowed);
     if (unsupported.length === 0) return text;
@@ -352,13 +348,9 @@ export function salvageByRemovingSentences(
         .trim();
 
     // 도려낸 결과가 스스로 가드를 통과해야 한다. 잔여 위반이 남거나(문장 경계를
-    // 잘못 잡은 경우) 너무 짧아지면 살리지 않는다.
+    // 잘못 잡은 경우) 완전히 비면(모든 문장이 위반을 안고 있었던 경우) 살리지 않는다.
+    if (cleaned.length === 0) return null;
     if (findUnsupportedNumbers(cleaned, allowed).length > 0) return null;
-    if (
-        cleaned.length < Math.max(MIN_CHARS, Math.floor(inputChars * MIN_RATIO))
-    ) {
-        return null;
-    }
     return cleaned;
 }
 
@@ -371,8 +363,6 @@ export function describeFailure(
     switch (failure.kind) {
         case 'empty':
             return '이전 응답이 비어 있었습니다. 완성된 글을 출력하세요.';
-        case 'too_short':
-            return `이전 응답이 ${failure.chars}자로 너무 짧아 원본의 내용을 담지 못했습니다. ${failure.min}자 이상으로, 원본의 핵심 판단을 빠뜨리지 말고 다시 쓰세요.`;
         case 'foreign_script': {
             // 지적문을 한국어로 쓰면 그것이 또 하나의 한국어 본보기가 되어,
             // 정정하려는 실패(한국어로 나온 출력)를 오히려 강화한다.

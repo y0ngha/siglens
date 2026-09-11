@@ -1,6 +1,7 @@
 import { fmpGet as fmpGetRaw } from './httpClient';
 import { toFiniteNumber } from './toFiniteNumber';
 import { FMP_STATEMENTS_REVALIDATE_SECONDS } from '@/shared/config/time';
+import { normalizeReportedCurrency } from '@/shared/lib/reportedCurrency';
 import type {
     BalanceSheetRow,
     CashFlowGrowthRow,
@@ -66,6 +67,7 @@ export class FmpFinancialStatementsClient implements FinancialStatementsProvider
             fiscalYear: r.fiscalYear ?? '',
             period: r.period ?? '',
             date: r.date ?? '',
+            reportedCurrency: normalizeReportedCurrency(r.reportedCurrency),
             revenue: num(r.revenue),
             grossProfit: num(r.grossProfit),
             operatingIncome: num(r.operatingIncome),
@@ -97,6 +99,7 @@ export class FmpFinancialStatementsClient implements FinancialStatementsProvider
             fiscalYear: r.fiscalYear ?? '',
             period: r.period ?? '',
             date: r.date ?? '',
+            reportedCurrency: normalizeReportedCurrency(r.reportedCurrency),
             totalAssets: num(r.totalAssets),
             totalCurrentAssets: num(r.totalCurrentAssets),
             totalLiabilities: num(r.totalLiabilities),
@@ -129,6 +132,7 @@ export class FmpFinancialStatementsClient implements FinancialStatementsProvider
             fiscalYear: r.fiscalYear ?? '',
             period: r.period ?? '',
             date: r.date ?? '',
+            reportedCurrency: normalizeReportedCurrency(r.reportedCurrency),
             operatingCashFlow: num(r.operatingCashFlow),
             capitalExpenditure: num(r.capitalExpenditure),
             freeCashFlow: num(r.freeCashFlow),

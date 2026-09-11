@@ -139,6 +139,8 @@ export interface RawFmpSectorPerformance {
 /** Raw FMP cash flow statement (operating cash flow subset). */
 export interface RawFmpCashFlowStatement {
     operatingCashFlow: number | null;
+    /** ISO currency the filer reports in — an ADR's is not its USD listing (TSM: TWD). */
+    reportedCurrency?: string | null;
 }
 
 /** Raw FMP earnings report for a symbol. */

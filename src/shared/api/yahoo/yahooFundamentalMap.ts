@@ -13,6 +13,7 @@ import type {
     YahooStatementRow,
     YahooSummary,
 } from './yahooFundamentalSource';
+import { normalizeReportedCurrency } from '@/shared/lib/reportedCurrency';
 
 /**
  * 0이나 음수 분모로 나눗셈을 막는다.
@@ -181,7 +182,12 @@ export function mapCashFlow(
 ): FundamentalCashFlowInput | null {
     const row = latest(data.cashFlow);
     if (!row) return null;
-    return { operatingCashFlow: toNullable(row.operatingCashFlow) };
+    return {
+        operatingCashFlow: toNullable(row.operatingCashFlow),
+        reportedCurrency: normalizeReportedCurrency(
+            data.summary?.financialData?.financialCurrency
+        ),
+    };
 }
 
 /**

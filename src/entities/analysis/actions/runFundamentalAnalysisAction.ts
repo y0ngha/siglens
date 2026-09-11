@@ -8,6 +8,7 @@ import {
     type RunFundamentalAnalysisResult,
 } from '@y0ngha/siglens-core';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
+import { currencyForSymbol } from '@/shared/config/marketProfile';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import {
     resolveTierAndByok,
@@ -71,6 +72,8 @@ export async function runFundamentalAnalysisAction(
             locale,
             modelId,
             dataProvider: getFundamentalDataProvider(symbol),
+            // 시가총액·목표주가의 상장 통화. core는 심볼에서 추론하지 않는다.
+            currency: currencyForSymbol(symbol),
             tier: gate.tier,
             reasoning: resolveReasoning(gate.tier, reasoning),
             skipEnqueueIfMiss,

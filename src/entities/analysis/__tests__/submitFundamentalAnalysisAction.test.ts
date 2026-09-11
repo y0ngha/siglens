@@ -102,6 +102,26 @@ describe('runFundamentalAnalysisAction 함수는', () => {
         );
     });
 
+    it('forwards currency: "USD" for a US symbol', async () => {
+        mockRunFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
+
+        await runFundamentalAnalysisAction('AAPL', MODEL_ID, 'ko');
+
+        expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ currency: 'USD' })
+        );
+    });
+
+    it('forwards currency: "KRW" for a KR symbol', async () => {
+        mockRunFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
+
+        await runFundamentalAnalysisAction('005930.KS', MODEL_ID, 'ko');
+
+        expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ currency: 'KRW' })
+        );
+    });
+
     it('FmpFundamentalClient 인스턴스를 dataProvider로 전달한다', async () => {
         mockRunFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
 

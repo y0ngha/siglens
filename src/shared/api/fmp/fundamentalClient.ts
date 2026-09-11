@@ -1,6 +1,7 @@
 import { fmpGet as fmpGetRaw } from './httpClient';
 import { toFiniteNumber } from './toFiniteNumber';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { normalizeReportedCurrency } from '@/shared/lib/reportedCurrency';
 import type {
     RawFmpAnalystEstimate,
     RawFmpCashFlowStatement,
@@ -237,7 +238,10 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         );
         const r = arr[0];
         if (!r) return null;
-        return { operatingCashFlow: toFiniteNumber(r.operatingCashFlow) };
+        return {
+            operatingCashFlow: toFiniteNumber(r.operatingCashFlow),
+            reportedCurrency: normalizeReportedCurrency(r.reportedCurrency),
+        };
     }
 
     /** Fetch YoY income statement growth (revenue + EPS); returns `null` when unavailable. */

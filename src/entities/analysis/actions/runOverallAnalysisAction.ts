@@ -179,7 +179,8 @@ export async function runOverallAnalysisAction(
         // assetClass lets core treat absent fundamentals/options/earnings as intentional
         // for crypto (2-axis: technical + news) rather than missing stock data.
         const marketProfile = await resolveMarketProfile(symbol);
-        const assetClass = getDescriptor(marketProfile).assetClass;
+        const descriptor = getDescriptor(marketProfile);
+        const { assetClass } = descriptor;
         const marketDataProvider = getCachedMarketDataProvider(
             sessionSpecFor(marketProfile)
         );
@@ -201,6 +202,8 @@ export async function runOverallAnalysisAction(
             reasoning: resolveReasoning(gate.tier, options.reasoning),
             skipEnqueueIfMiss,
             assetClass,
+            // core는 통화를 심볼에서 추론하지 않는다 — 시장 프로필이 소유한 값을 넘긴다.
+            currency: descriptor.priceFormat.currency,
             optionsSnapshot: optionsSnapshot ?? undefined,
             optionsOiStale,
             financialsScorecard,

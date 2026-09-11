@@ -164,7 +164,6 @@ export async function rewriteToPlainLanguage(
             locale,
             currentPrice
         );
-        const inputChars = entries.reduce((sum, e) => sum + e.text.length, 0);
         const allowed = buildAllowedNumbers(
             facts.numbers,
             entries.map(e => e.text)
@@ -198,7 +197,6 @@ export async function rewriteToPlainLanguage(
             const text = stripMarkdownCodeBlock(raw).trim();
             const failure = guardPlainText({
                 text,
-                inputChars,
                 allowed,
                 locale,
             });
@@ -221,18 +219,14 @@ export async function rewriteToPlainLanguage(
              *
              * 위반은 대개 문장 한두 개에 몰려 있고(실측: 5건 전부 문장 1~3개 제거로
              * 잔여 위반 0), 문단 일부를 잃는 것이 쉽게보기가 통째로 사라지는 것보다
-             * 낫다. 도려낸 결과는 `salvageByRemovingSentences`가 길이·숫자 가드를
-             * 다시 통과시킨 것만 돌려준다.
+             * 낫다. 도려낸 결과는 `salvageByRemovingSentences`가 숫자 가드를 다시
+             * 통과시킨 것만 돌려준다(길이 하한은 없다 — `guardPlainText` 참고).
              *
              * 크기 접미사(`1,573.1B`)는 살리지 않는다 — 자릿수가 틀린 금액이라
              * 문장을 빼는 것으로 고쳐지지 않고, 남겨 두면 10배 오류가 그대로 나간다.
              */
             if (failure.kind !== 'unsupported_numbers') return null;
-            const salvaged = salvageByRemovingSentences(
-                text,
-                allowed,
-                inputChars
-            );
+            const salvaged = salvageByRemovingSentences(text, allowed);
             if (salvaged !== null) {
                 console.info('[analysisPlain] salvaged by sentence removal', {
                     symbol,

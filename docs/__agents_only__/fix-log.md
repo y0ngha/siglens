@@ -829,3 +829,16 @@
 - Rule: `messages/glossary.json` is also consumed by `db/scripts/translateContentLocale.ts` for stored AI content; before renaming/removing a key, grep `@y0ngha/siglens-core` prompts for the old term and keep it if still emitted.
 - Context: core overall/fundamental/financials prompts still emit "종합 결론"; restored the old entry alongside "종합 분석".
 
+## [PR #799 | chore/core-1.0.4-prompt-currency | 2026-09-11]
+- Violation: BLOCKER — `YahooFinancialStatementsProvider` added a new `reportedCurrency` field and threaded it through three mapper functions (`mapIncome`, `mapBalance`, `mapCashFlow`). Only the income-statement test asserted `reportedCurrency: 'KRW'`; the balance-sheet and cash-flow tests used `toMatchObject` without including the new field. Dropping the field or hardcoding `'USD'` in a Korean symbol test stayed green.
+  - Rule: When a new field is threaded through sibling mapper functions, every sibling's unit test must assert it with a value that differs from the default. Tests using structural matchers (`toMatchObject`) without the new field silently tolerate omission bugs — the field may not be passed at all, and the test cannot tell.
+  - Context: Fixed by asserting `reportedCurrency: 'KRW'` in both balance-sheet and cash-flow test cases. Verified by hardcoding `'USD'` in the `mapBalance` implementation and seeing the test fail as expected. Ensures all three mappers now have explicit currency field assertions.
+
+- Violation: SUGGESTION — `value?.trim() || null` reported-currency normalization was implemented three times: once in `reportedCurrencyOf` (financialStatementsClient.ts), once inline in `fundamentalClient.ts`, and once inline in `yahooFundamentalMap.ts`. Reuse was impractical due to different module dependencies.
+  - Rule: MISTAKES §1 — Extract repeated normalization patterns into a shared helper in `src/shared/lib/`; do not repeat the same pattern across three files, even if each site has slightly different dependencies.
+  - Context: Extracted `normalizeReportedCurrency` to `src/shared/lib/reportedCurrency.ts` with unit tests covering null/whitespace/uppercase normalization. Updated all three call sites to use the helper. Verified: `yarn test src/shared/lib` passes, all consumers green.
+
+- Violation: SUGGESTION — `submitNewsAnalysisAction` computed `assetClass` via `resolveAssetClass` and `currency` via a separate `currencyForSymbol` call. Sibling actions (`runFundamentalAnalysisAction`, `runOverallAnalysisAction`, `chatAction`) all use `resolveMarketProfile` to fetch both descriptor values atomically via `getDescriptor`.
+  - Rule: Derive related descriptor values (asset class, currency, region, etc.) from one resolution path; separate resolution calls may drift if the underlying mappings diverge.
+  - Context: Unified `submitNewsAnalysisAction` to use `resolveMarketProfile` + `getDescriptor`, matching the pattern of siblings. Single resolution point reduces risk of state divergence.
+

@@ -764,7 +764,18 @@ describe('prewarmNews', () => {
                 reasoning: false,
                 skipEnqueueIfMiss: false,
                 assetClass: 'equity',
+                currency: 'USD',
             })
+        );
+    });
+
+    it('forwards currency: "KRW" when resolveMarketProfile resolves to kr-equity', async () => {
+        mockResolveMarketProfile.mockResolvedValueOnce('kr-equity');
+
+        await prewarmNews('005930.KS', '삼성전자', false);
+
+        expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ currency: 'KRW' })
         );
     });
 
