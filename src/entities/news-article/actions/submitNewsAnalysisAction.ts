@@ -22,7 +22,8 @@ import {
 import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
-import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { getDescriptor } from '@/shared/config/marketProfile';
 
 /** Final return type — core's news result + our siglens-side gate errors. */
 export type SubmitNewsAnalysisActionResult =
@@ -71,7 +72,11 @@ export async function submitNewsAnalysisAction(
             return { status: 'error', error: gate.error };
         }
 
-        const assetClass = await resolveAssetClass(symbol);
+        // Resolve profile once; derive both assetClass and currency from it
+        // (same pattern as runOverallAnalysisAction/prewarmOverall).
+        const marketProfile = await resolveMarketProfile(symbol);
+        const descriptor = getDescriptor(marketProfile);
+        const { assetClass } = descriptor;
         const { db } = getDatabaseClient();
         const newsRepo = new DrizzleNewsRepository(db);
 
@@ -99,6 +104,8 @@ export async function submitNewsAnalysisAction(
             reasoning: resolveReasoning(gate.tier, reasoning),
             skipEnqueueIfMiss,
             assetClass,
+            // core는 통화를 심볼에서 추론하지 않는다 — 한국 종목 프레이밍·실적 추정 통화.
+            currency: descriptor.priceFormat.currency,
             signal,
             ...(gate.userApiKey !== undefined
                 ? { userApiKey: gate.userApiKey }

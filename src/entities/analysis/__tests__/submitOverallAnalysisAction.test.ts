@@ -879,4 +879,40 @@ describe('runOverallAnalysisAction 함수는', () => {
             );
         });
     });
+
+    describe('currency forwarding', () => {
+        it('resolveMarketProfile가 "us-equity"이면 runOverallAnalysis를 currency: "USD"로 호출한다', async () => {
+            mockResolveMarketProfile.mockResolvedValueOnce('us-equity');
+            mockRunOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+
+            await runOverallAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MODEL_ID,
+                'ko'
+            );
+
+            expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ currency: 'USD' })
+            );
+        });
+
+        it('resolveMarketProfile가 "kr-equity"이면 runOverallAnalysis를 currency: "KRW"로 호출한다', async () => {
+            mockResolveMarketProfile.mockResolvedValueOnce('kr-equity');
+            mockRunOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+
+            await runOverallAnalysisAction(
+                '005930.KS',
+                '삼성전자',
+                '1Day',
+                MODEL_ID,
+                'ko'
+            );
+
+            expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ currency: 'KRW' })
+            );
+        });
+    });
 });

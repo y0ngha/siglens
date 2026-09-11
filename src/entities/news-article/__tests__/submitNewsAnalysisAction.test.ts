@@ -42,7 +42,7 @@ vi.mock('@/shared/lib/byokGate', () => ({
 }));
 
 vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
-    resolveAssetClass: vi.fn().mockResolvedValue('equity'),
+    resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
 
 import { headers } from 'next/headers';
@@ -58,7 +58,7 @@ import {
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
-import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { submitNewsAnalysisAction } from '../actions/submitNewsAnalysisAction';
 
 const mockHeaders = headers as MockedFunction<typeof headers>;
@@ -78,8 +78,8 @@ const mockGetCurrentUser = getCurrentUser as MockedFunction<
 const mockResolveTierAndByok = resolveTierAndByok as MockedFunction<
     typeof resolveTierAndByok
 >;
-const mockResolveAssetClass = resolveAssetClass as MockedFunction<
-    typeof resolveAssetClass
+const mockResolveMarketProfile = resolveMarketProfile as MockedFunction<
+    typeof resolveMarketProfile
 >;
 
 /** An analyzed DB news row (has titleKo, summaryKo, sentiment, category). */
@@ -145,8 +145,8 @@ describe('submitNewsAnalysisAction 함수는', () => {
         mockGetNextEarningsReport.mockReset();
         mockGetCurrentUser.mockReset();
         mockResolveTierAndByok.mockReset();
-        mockResolveAssetClass.mockReset();
-        mockResolveAssetClass.mockResolvedValue('equity');
+        mockResolveMarketProfile.mockReset();
+        mockResolveMarketProfile.mockResolvedValue('us-equity');
 
         mockListBySymbol = vi.fn().mockResolvedValue([ANALYZED_ROW]);
         mockGetNextEarningsReport.mockResolvedValue(null);
@@ -460,17 +460,44 @@ describe('submitNewsAnalysisAction 함수는', () => {
 
     describe('assetClass forwarding', () => {
         it('forwards default equity to runNewsAnalysis', async () => {
-            // default resolveAssetClass mock returns 'equity'
+            // default resolveMarketProfile mock resolves to 'us-equity'
             await submitNewsAnalysisAction('AAPL', 'Apple', MODEL_ID, 'ko');
             expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ assetClass: 'equity' })
             );
         });
-        it('forwards crypto when resolveAssetClass returns "crypto"', async () => {
-            mockResolveAssetClass.mockResolvedValueOnce('crypto');
+        it('forwards crypto when resolveMarketProfile resolves to "crypto"', async () => {
+            mockResolveMarketProfile.mockResolvedValueOnce('crypto');
             await submitNewsAnalysisAction('BTCUSD', 'Bitcoin', MODEL_ID, 'ko');
             expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ assetClass: 'crypto' })
+            );
+        });
+    });
+
+    describe('currency forwarding', () => {
+        it('forwards currency: "USD" for a US symbol', async () => {
+            await submitNewsAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                MODEL_ID,
+                'ko'
+            );
+            expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ currency: 'USD' })
+            );
+        });
+
+        it('forwards currency: "KRW" when resolveMarketProfile resolves to kr-equity', async () => {
+            mockResolveMarketProfile.mockResolvedValueOnce('kr-equity');
+            await submitNewsAnalysisAction(
+                '005930.KS',
+                '삼성전자',
+                MODEL_ID,
+                'ko'
+            );
+            expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ currency: 'KRW' })
             );
         });
     });

@@ -21,7 +21,10 @@ import {
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
-import { getDescriptor } from '@/shared/config/marketProfile';
+import {
+    currencyForSymbol,
+    getDescriptor,
+} from '@/shared/config/marketProfile';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
@@ -230,6 +233,8 @@ export async function prewarmFundamental(
         symbol,
         modelId: DEEPSEEK_V4_1_FLASH_MODEL,
         dataProvider: getFundamentalDataProvider(symbol),
+        // 방문자 경로와 같은 통화를 넘겨야 prewarm이 채운 캐시의 산출 텍스트가 갈리지 않는다.
+        currency: currencyForSymbol(symbol),
         tier: 'free',
         reasoning: false,
         skipEnqueueIfMiss: false,
@@ -331,7 +336,8 @@ export async function prewarmOverall(
         isOpenInterestSnapshotStale(optionsSnapshot);
 
     const marketProfile = await resolveMarketProfile(symbol);
-    const assetClass = getDescriptor(marketProfile).assetClass;
+    const descriptor = getDescriptor(marketProfile);
+    const { assetClass } = descriptor;
     const marketDataProvider = getCachedMarketDataProvider(
         sessionSpecFor(marketProfile)
     );
@@ -365,6 +371,7 @@ export async function prewarmOverall(
         reasoning: false,
         skipEnqueueIfMiss: false,
         assetClass,
+        currency: descriptor.priceFormat.currency,
         optionsSnapshot: optionsSnapshot ?? undefined,
         optionsOiStale,
         financialsScorecard,

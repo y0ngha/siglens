@@ -697,4 +697,40 @@ describe('chatAction 함수는', () => {
             );
         });
     });
+
+    describe('currency forwarding', () => {
+        it('forwards currency: "USD" for a US symbol', async () => {
+            await chatAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-3.6-flash'
+            );
+
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({ currency: 'USD' }),
+                expect.anything()
+            );
+        });
+
+        it('forwards currency: "KRW" for a KR symbol', async () => {
+            await chatAction(
+                '005930.KS',
+                '삼성전자',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-3.6-flash'
+            );
+
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({ currency: 'KRW' }),
+                expect.anything()
+            );
+        });
+    });
 });

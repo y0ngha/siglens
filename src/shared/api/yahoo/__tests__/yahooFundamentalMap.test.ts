@@ -349,17 +349,63 @@ describe('mapCashFlow', () => {
                     ),
                 })
             )
-        ).toEqual({ operatingCashFlow: 85_315_148_000_000 });
+        ).toEqual({
+            operatingCashFlow: 85_315_148_000_000,
+            reportedCurrency: null,
+        });
     });
 
     it('returns a null field when the row lacks the value', () => {
         expect(mapCashFlow(build({ cashFlow: years({}) }))).toEqual({
             operatingCashFlow: null,
+            reportedCurrency: null,
         });
+    });
+
+    it('labels the flow with the filer reporting currency, not the listing', () => {
+        expect(
+            mapCashFlow(
+                build({
+                    cashFlow: years({ operatingCashFlow: 1 }),
+                    summary: { financialData: { financialCurrency: 'TWD' } },
+                } as never)
+            )
+        ).toEqual({ operatingCashFlow: 1, reportedCurrency: 'TWD' });
     });
 
     it('returns null when there are no cash flow rows', () => {
         expect(mapCashFlow(build())).toBeNull();
+    });
+
+    it('trims whitespace around the reporting currency', () => {
+        expect(
+            mapCashFlow(
+                build({
+                    cashFlow: years({ operatingCashFlow: 1 }),
+                    summary: { financialData: { financialCurrency: ' TWD ' } },
+                } as never)
+            )
+        ).toEqual({ operatingCashFlow: 1, reportedCurrency: 'TWD' });
+    });
+
+    it('normalizes an empty or whitespace-only currency to null', () => {
+        expect(
+            mapCashFlow(
+                build({
+                    cashFlow: years({ operatingCashFlow: 1 }),
+                    summary: { financialData: { financialCurrency: '' } },
+                } as never)
+            )
+        ).toEqual({ operatingCashFlow: 1, reportedCurrency: null });
+
+        expect(
+            mapCashFlow(
+                build({
+                    cashFlow: years({ operatingCashFlow: 1 }),
+                    summary: { financialData: { financialCurrency: '   ' } },
+                } as never)
+            )
+        ).toEqual({ operatingCashFlow: 1, reportedCurrency: null });
     });
 });
 

@@ -3,6 +3,8 @@ export interface RawFmpIncomeStatement {
     fiscalYear?: string;
     period?: string;
     date?: string;
+    /** ISO currency the filer reports in — an ADR's is not its USD listing (TSM: TWD). */
+    reportedCurrency?: string | null;
     revenue?: number;
     grossProfit?: number;
     operatingIncome?: number;
@@ -17,6 +19,7 @@ export interface RawFmpBalanceSheet {
     fiscalYear?: string;
     period?: string;
     date?: string;
+    reportedCurrency?: string | null;
     totalAssets?: number;
     totalCurrentAssets?: number;
     totalLiabilities?: number;
@@ -32,6 +35,7 @@ export interface RawFmpCashFlow {
     fiscalYear?: string;
     period?: string;
     date?: string;
+    reportedCurrency?: string | null;
     operatingCashFlow?: number;
     capitalExpenditure?: number;
     freeCashFlow?: number;

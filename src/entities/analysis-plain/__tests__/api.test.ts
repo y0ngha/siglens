@@ -35,7 +35,10 @@ vi.mock('../lib/plainModel', () => ({
 
 const { rewriteToPlainLanguage } = await import('../api');
 
-/** 산문 두 조각. 길이 하한(200자, 입력의 20%)을 넘는 출력만 통과한다. */
+/**
+ * 산문 두 조각. 재작성에 길이 하한은 없다 — 쉽게보기는 항상 원본보기 토글과
+ * 함께 노출되므로, 짧아도 숫자·문자 가드만 통과하면 그대로 쓴다.
+ */
 const ANALYSIS = {
     summary: '요약'.repeat(60),
     keyLevels: { support: [{ price: 183.6, reason: '지지 근거'.repeat(20) }] },
@@ -183,11 +186,27 @@ describe('rewriteToPlainLanguage', () => {
         expect(cacheSet).toHaveBeenCalledOnce();
     });
 
-    /** 도려내도 길이 하한을 못 넘으면 그때는 정말 버린다. */
-    it('도려낸 결과가 너무 짧으면 null', async () => {
+    /** 모든 문장이 어긋난 숫자를 품고 있으면 도려낸 뒤 남는 것이 없어 버린다. */
+    it('도려낸 결과가 비면 null', async () => {
         callAiProviderRouter.mockResolvedValue('목표가 999.99달러입니다.');
         expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBeNull();
         expect(cacheSet).not.toHaveBeenCalled();
+    });
+
+    /**
+     * 길이 하한이 없다 — 입력 산문보다 훨씬 짧아도 가드를 통과하면 쓴다.
+     * 예전에는 200자·입력 20% 미만을 `too_short`로 거부해, 긴 멤버·추론 분석의
+     * 쉽게보기 토글이 통째로 사라졌다.
+     */
+    it('짧은 재작성도 가드를 통과하면 한 번에 쓴다', async () => {
+        const SHORT = '지지선은 183.60달러입니다.';
+        callAiProviderRouter.mockResolvedValue(SHORT);
+
+        expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBe(
+            SHORT
+        );
+        expect(callAiProviderRouter).toHaveBeenCalledTimes(1);
+        expect(cacheSet).toHaveBeenCalledOnce();
     });
 
     /** 크기 접미사는 자릿수가 틀린 금액이라 문장 제거로 고쳐지지 않는다. */
