@@ -47,6 +47,23 @@ describe('localeHref', () => {
         );
     });
 
+    /**
+     * SSO 핸드오프 복귀 경로. 접두사를 붙이면 404, 안쪽 `next`(ai 호스트 경로)를
+     * 메인 로케일로 다시 쓰면 ai 로케일이 바뀐다 — 쿼리까지 바이트 그대로 둔다.
+     */
+    it('/api 경로는 쿼리째 그대로 둔다', async () => {
+        mockGetLocale.mockResolvedValue('en');
+        const href = '/api/auth/handoff?to=ai&next=%2Fja%2Fc%2Fx#h';
+        await expect(localeHref(href)).resolves.toBe(href);
+    });
+
+    it('/api 경로에 잘못 붙어 온 로케일 접두사는 뗀다', async () => {
+        mockGetLocale.mockResolvedValue('en');
+        await expect(
+            localeHref('/en/api/auth/handoff?to=ai&next=%2Fc%2Fx')
+        ).resolves.toBe('/api/auth/handoff?to=ai&next=%2Fc%2Fx');
+    });
+
     it('알 수 없는 로케일은 기본 로케일로 떨어진다', async () => {
         mockGetLocale.mockResolvedValue('xx');
         await expect(localeHref('/account')).resolves.toBe('/account');

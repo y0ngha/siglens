@@ -132,6 +132,15 @@ describe('proxy — ai host', () => {
         expect(status).toBe(301);
     });
 
+    /** `rest='//evil.com'` → 기본 로케일은 접두사가 없어 외부 호스트가 되던 경로. */
+    it('/ai//evil.com — 외부 호스트가 아니라 ai 호스트로 redirect한다', () => {
+        proxy(makeRequest('siglens.io', '/ai//evil.com'));
+        expect(mockRedirect).toHaveBeenCalledTimes(1);
+        const [url] = mockRedirect.mock.calls[0]!;
+        expect((url as URL).host).toBe('ai.siglens.io');
+        expect((url as URL).toString()).toBe('https://ai.siglens.io/evil.com');
+    });
+
     it('/ai?x=1 — 쿼리스트링을 보존한 채 ai 호스트로 redirect한다', () => {
         proxy(makeRequest('siglens.io', '/ai?x=1'));
         expect(mockRedirect).toHaveBeenCalledTimes(1);

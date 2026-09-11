@@ -20,6 +20,44 @@ describe('localePath', () => {
         expect(localePath('en', '/AAPL')).toBe('/en/AAPL');
         expect(localePath('ja', '/')).toBe('/ja');
     });
+
+    /** `/api/*`는 intl 매처 밖이라 `/en/api/…`는 404다(SSO 핸드오프 로그인 복귀). */
+    it.each([
+        '/api',
+        '/api/auth/handoff',
+        '/api/auth/handoff?to=ai&next=%2Fc%2Fx',
+    ])('/api 경로는 어떤 로케일에서도 그대로 둔다: %s', path => {
+        expect(localePath('en', path)).toBe(path);
+        expect(localePath('ko', path)).toBe(path);
+    });
+
+    /**
+     * `splitLocalePath`로 뗀 나머지가 `//evil.com`이면 기본 로케일(접두사 없음)에서
+     * 그대로 나가 `new URL(…, base)`가 외부 호스트가 된다. 결과는 절대 `//`·`/\`로
+     * 시작하지 않는다.
+     */
+    it.each([
+        ['ko', '//x', '/x'],
+        ['en', '//x', '/en/x'],
+        ['ko', '/\\x', '/x'],
+        ['en', '\\\\x', '/en/x'],
+        ['ko', '/\t/x', '/x'],
+        ['ko', '///', '/'],
+        ['en', '//api/x', '/api/x'],
+    ])(
+        '선행 구분자를 하나로 접는다: localePath(%s, %j) → %s',
+        (locale, path, expected) => {
+            const result = localePath(locale as 'ko' | 'en', path);
+            expect(result).toBe(expected);
+            expect(new URL(result, 'https://ai.siglens.io').host).toBe(
+                'ai.siglens.io'
+            );
+        }
+    );
+
+    it('api로 시작할 뿐인 경로는 접두사를 붙인다', () => {
+        expect(localePath('en', '/apis')).toBe('/en/apis');
+    });
 });
 
 describe('splitLocalePath', () => {

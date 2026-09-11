@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getLocale } from 'next-intl/server';
 import {
     DEFAULT_LOCALE,
+    isApiPath,
     isLocale,
     localePath,
     splitLocalePath,
@@ -25,6 +26,10 @@ import {
  * (`splitLocalePath`로 먼저 벗긴 뒤 다시 붙인다). `next` 쿼리 파라미터도 같은
  * 규칙으로 다시 붙인다 — 그러지 않으면 로그인 후 돌아갈 곳만 ko로 떨어진다.
  *
+ * **`/api` 경로는 쿼리째 건드리지 않는다**(잘못 붙어 온 로케일 접두사만 뗀다).
+ * SSO 핸드오프(`/api/auth/handoff?to=ai&next=…`)의 `next`는 ai 호스트 경로라
+ * 메인 사이트 로케일로 다시 쓰면 안 된다.
+ *
  * @param path `/`로 시작하는 경로. 쿼리스트링·해시를 포함할 수 있다.
  * @returns 로케일 접두사가 붙은 경로.
  */
@@ -41,7 +46,11 @@ export async function localeHref(path: string): Promise<string> {
         queryIndex === -1 ? withoutHash : withoutHash.slice(0, queryIndex);
     const search = queryIndex === -1 ? '' : withoutHash.slice(queryIndex + 1);
 
-    const pathname = localePath(locale, splitLocalePath(rawPathname).path);
+    const strippedPathname = splitLocalePath(rawPathname).path;
+    if (isApiPath(strippedPathname)) {
+        return `${strippedPathname}${search ? `?${search}` : ''}${hash}`;
+    }
+    const pathname = localePath(locale, strippedPathname);
 
     let query = '';
     if (search) {

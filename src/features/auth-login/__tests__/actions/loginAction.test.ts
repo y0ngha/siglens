@@ -4,10 +4,11 @@ import type { MockedFunction, Mock } from 'vitest';
 // 여기서는 액션 로직만 검증하므로 기본 로케일로 고정한다 — 그러면 리다이렉트
 // 경로가 접두사 없는 기존 값과 같아져 기존 단언이 그대로 유효하다.
 // ko 카탈로그를 실제로 조회하는 스텁 — 키 오타나 카탈로그 누락이 여기서 잡힌다.
+const intl = vi.hoisted(() => ({ locale: 'ko' }));
 vi.mock('next-intl/server', async () => {
     const { nextIntlServerStub } =
         await import('@/shared/test-utils/catalogTranslator');
-    return nextIntlServerStub();
+    return { ...nextIntlServerStub(), getLocale: async () => intl.locale };
 });
 vi.mock('next/headers', () => ({ cookies: vi.fn() }));
 vi.mock('next/navigation', () => ({
@@ -72,6 +73,7 @@ describe('loginAction', () => {
         } as unknown as Awaited<ReturnType<typeof cookies>>);
         mockLogin.mockReset();
         mockRedirect.mockClear();
+        intl.locale = 'ko';
     });
 
     it('formData에 email/password 키가 없으면 빈 문자열로 loginUser를 호출한다', async () => {
@@ -158,5 +160,33 @@ describe('loginAction', () => {
                 value: 'tok',
             })
         );
+    });
+
+    /** SiglensAI 로그인 CTA 복귀. 비-ko에서 `/en/api/…`로 바뀌면 404다. */
+    it('en 로케일에서도 SSO 핸드오프 next는 정확히 그 경로로 redirect한다', async () => {
+        intl.locale = 'en';
+        mockLogin.mockResolvedValue({
+            ok: true,
+            user: { id: 'u1' } as never,
+            session: { id: 's1' } as never,
+            cookie: {
+                name: 'siglens_session',
+                value: 'tok',
+                httpOnly: true,
+                secure: false,
+                sameSite: 'lax',
+                path: '/',
+                expires: new Date(),
+                maxAgeSeconds: 60,
+            },
+        });
+        const next = '/api/auth/handoff?to=ai&next=%2Fc%2Fx';
+        await expect(
+            loginAction(
+                { error: null },
+                makeFormData({ email: 'a@b.com', password: 'Pass1234', next })
+            )
+        ).rejects.toThrow(`NEXT_REDIRECT:${next}`);
+        expect(mockRedirect).toHaveBeenCalledWith(next);
     });
 });
