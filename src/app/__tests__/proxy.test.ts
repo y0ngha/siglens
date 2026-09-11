@@ -46,6 +46,7 @@ function makeRequest(
 ): NextRequest {
     return {
         url: `https://example.com${path}`,
+        headers: new Headers(),
         cookies: {
             get: vi.fn((name: string) =>
                 name === 'siglens_session' && sessionValue !== undefined

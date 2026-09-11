@@ -29,6 +29,10 @@ const mockToSitemapIndexXml = toSitemapIndexXml as MockedFunction<
     typeof toSitemapIndexXml
 >;
 
+function mainHostRequest(): Request {
+    return new Request('https://siglens.io/api/sitemap');
+}
+
 describe('GET /api/sitemap (index)', () => {
     beforeEach(() => {
         vi.useFakeTimers();
@@ -42,7 +46,7 @@ describe('GET /api/sitemap (index)', () => {
 
     describe('when the permanent sitemap index is requested', () => {
         it('returns XML with correct content-type and cache headers', async () => {
-            const res = await GET();
+            const res = await GET(mainHostRequest());
 
             expect(res.headers.get('Content-Type')).toBe(
                 'application/xml; charset=utf-8'
@@ -51,7 +55,7 @@ describe('GET /api/sitemap (index)', () => {
         });
 
         it('passes only static, popular, and crypto sitemap entries', async () => {
-            await GET();
+            await GET(mainHostRequest());
 
             const entries = mockToSitemapIndexXml.mock.calls[0][0];
             expect(entries).toHaveLength(3);
@@ -80,7 +84,7 @@ describe('GET /api/sitemap (index)', () => {
          */
         it('각 자식 lastmod는 그 sitemap 안 엔트리의 최댓값이다 (요청 시각이 아니라)', async () => {
             const now = new Date('2026-01-01T00:00:00Z');
-            await GET();
+            await GET(mainHostRequest());
 
             const entries = mockToSitemapIndexXml.mock.calls[0][0];
             const expected = [

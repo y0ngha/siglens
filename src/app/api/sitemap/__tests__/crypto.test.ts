@@ -22,13 +22,17 @@ const mockBuildCryptoPopularEntries =
     >;
 const mockToUrlSetXml = toUrlSetXml as MockedFunction<typeof toUrlSetXml>;
 
+function mainHostRequest(): Request {
+    return new Request('https://siglens.io/api/sitemap/crypto');
+}
+
 describe('GET /api/sitemap/crypto', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
     it('returns 200 with XML content-type and sitemap cache headers', async () => {
-        const res = await GET();
+        const res = await GET(mainHostRequest());
 
         expect(res.status).toBe(200);
         expect(res.headers.get('Content-Type')).toBe(
@@ -48,7 +52,7 @@ describe('GET /api/sitemap/crypto', () => {
         };
         mockBuildCryptoPopularEntries.mockReturnValue([popularEntry]);
 
-        await GET();
+        await GET(mainHostRequest());
 
         expect(mockBuildCryptoPopularEntries).toHaveBeenCalledOnce();
         expect(mockToUrlSetXml).toHaveBeenCalledWith([popularEntry]);

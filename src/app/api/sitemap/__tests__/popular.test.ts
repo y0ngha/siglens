@@ -17,13 +17,17 @@ const mockBuildPopularEntries = buildPopularEntries as MockedFunction<
 >;
 const mockToUrlSetXml = toUrlSetXml as MockedFunction<typeof toUrlSetXml>;
 
+function mainHostRequest(): Request {
+    return new Request('https://siglens.io/api/sitemap/popular');
+}
+
 describe('GET /api/sitemap/popular', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
     it('returns XML with correct content-type header', async () => {
-        const res = await GET();
+        const res = await GET(mainHostRequest());
 
         expect(res.headers.get('Content-Type')).toBe(
             'application/xml; charset=utf-8'
@@ -31,7 +35,7 @@ describe('GET /api/sitemap/popular', () => {
     });
 
     it('passes a Date to buildPopularEntries', async () => {
-        await GET();
+        await GET(mainHostRequest());
 
         expect(mockBuildPopularEntries).toHaveBeenCalledTimes(1);
         expect(mockBuildPopularEntries.mock.calls[0][0]).toBeInstanceOf(Date);
@@ -48,13 +52,13 @@ describe('GET /api/sitemap/popular', () => {
         ];
         mockBuildPopularEntries.mockReturnValue(entries);
 
-        await GET();
+        await GET(mainHostRequest());
 
         expect(mockToUrlSetXml).toHaveBeenCalledWith(entries);
     });
 
     it('includes cache-control with stale-while-revalidate', async () => {
-        const res = await GET();
+        const res = await GET(mainHostRequest());
 
         expect(res.headers.get('Cache-Control')).toContain(
             'stale-while-revalidate'
