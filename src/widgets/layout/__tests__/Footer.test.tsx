@@ -22,6 +22,8 @@ vi.mock('../CurrentYear', () => ({
     CurrentYear: () => <>2026</>,
 }));
 vi.mock('@/shared/lib/legal', () => ({
+    ABOUT_PATH: '/about',
+    aboutTitle: () => 'Siglens 소개',
     INVESTMENT_DISCLAIMER_KEY: 'investmentDisclaimer',
     PRIVACY_PATH: '/privacy',
     privacyTitle: () => '개인정보처리방침',
@@ -55,6 +57,13 @@ describe('Footer', () => {
         render(<Footer />);
 
         expect(screen.getByText(/© 2026 Siglens/)).toBeInTheDocument();
+    });
+
+    it('renders the about link', () => {
+        render(<Footer />);
+
+        const link = screen.getByRole('link', { name: /Siglens 소개/ });
+        expect(link).toHaveAttribute('href', '/about');
     });
 
     it('renders the privacy policy link', () => {

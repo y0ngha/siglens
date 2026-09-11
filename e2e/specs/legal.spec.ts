@@ -1,16 +1,19 @@
 import { test, expect } from '../support/fixtures';
 
 /**
- * Legal pages (`/privacy`, `/terms`) — Tier 3 render outcomes.
+ * Legal pages (`/privacy`, `/terms`) + `/about` — Tier 3 render outcomes.
  *
  * LegalPageShell renders the policy title as the page <h1>; the document title
- * comes from each route's metadata. Both render from static legal copy + the
- * seeded active terms row (global-setup seeds active privacy/tos terms), so they
- * are fully data-independent and must NOT error with a missing-terms relation.
+ * comes from each route's metadata. privacy/terms render from static legal copy +
+ * the seeded active terms row (global-setup seeds active privacy/tos terms), so
+ * they are fully data-independent and must NOT error with a missing-terms
+ * relation. `/about` shares the shell but has no DB read at all — its body is a
+ * code constant (`about/content.ts`), so it is the simplest of the three.
  */
 const LEGAL_PAGES = [
     { path: '/privacy', h1: '개인정보처리방침' },
     { path: '/terms', h1: '이용약관' },
+    { path: '/about', h1: 'Siglens 소개' },
 ] as const;
 
 test.describe('legal pages', () => {

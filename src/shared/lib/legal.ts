@@ -12,6 +12,22 @@ export const INVESTMENT_DISCLAIMER_KEY = 'investmentDisclaimer';
 
 export const PRIVACY_PATH = '/privacy';
 export const TERMS_PATH = '/terms';
+export const ABOUT_PATH = '/about';
+
+/**
+ * 운영 주체 — `/about` 본문·`Person` JSON-LD·홈 `Organization.founder`가 공유하는
+ * 단일 소스. 2026-09-11 사용자 결정: 실명·이메일·GitHub 전부 공개(YMYL 재평가에서
+ * "운영 주체 불명 + AI 생성 대량"이 가장 불리한 프로필이라, 이걸 지우는 게 목적).
+ * 이름은 로케일과 무관하게 한글 표기 하나만 쓴다 — 로마자 표기를 지어내지 않는다.
+ */
+export const SITE_OPERATOR = {
+    name: '신용하',
+    email: 'dev.y0ngha@gmail.com',
+    githubUrl: 'https://github.com/y0ngha',
+} as const;
+
+/** `/about` 본문 마지막 갱신일 — 본문(`about/content.ts`)을 고치면 함께 올린다. */
+export const ABOUT_UPDATED_AT = new Date('2026-09-11T00:00:00+09:00');
 
 /**
  * title/description은 `shared.seo` 카탈로그에서 온다 — `terms`/`privacy` 페이지의
@@ -38,6 +54,16 @@ export function termsFullTitle(t: SeoTranslator): string {
 }
 export function termsDescription(t: SeoTranslator): string {
     return t('terms.description');
+}
+
+export function aboutTitle(t: SeoTranslator): string {
+    return t('about.title');
+}
+export function aboutFullTitle(t: SeoTranslator): string {
+    return `${aboutTitle(t)} | ${SITE_NAME}`;
+}
+export function aboutDescription(t: SeoTranslator): string {
+    return t('about.description');
 }
 
 /**

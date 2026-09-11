@@ -6,6 +6,7 @@ import {
     localeOpenGraph,
 } from '@/shared/lib/seoAlternates';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
+import { ABOUT_PATH, SITE_OPERATOR } from '@/shared/lib/legal';
 import { SymbolSearchPanel } from '@/features/ticker-search';
 import {
     buildWebPageJsonLd,
@@ -216,6 +217,15 @@ export default async function Home({
         logo: `${SITE_URL}/icon512.png`,
         description: tSeo('root.description'),
         sameAs: ['https://github.com/y0ngha/siglens'],
+        // 운영 주체를 그래프에 붙인다 — `/about`의 `Person` 노드와 같은 `@id`라
+        // 두 페이지의 사람이 하나로 합쳐진다. 값은 `SITE_OPERATOR` 단일 소스.
+        founder: {
+            '@type': 'Person',
+            '@id': `${SITE_URL}${ABOUT_PATH}#person`,
+            name: SITE_OPERATOR.name,
+            url: `${SITE_URL}${ABOUT_PATH}`,
+            sameAs: [SITE_OPERATOR.githubUrl],
+        },
     };
 
     return (

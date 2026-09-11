@@ -332,25 +332,35 @@ for (const locale of TARGETS) {
             }
         }
 
-        // 4. 한글 잔존 — 미번역이 그대로 통과한 경우
-        if (HANGUL.test(text)) {
-            fail('4-한글잔존', `${locale} ${key}: "${text.slice(0, 40)}"`);
-        }
-
         /**
-         * 5. 스크립트 검사 — "일본어 칸에 중국어" 같은 오배치를 잡는다.
-         *
-         * **고유명사 네임스페이스는 뺀다.** `shared.assetName`은 회사·지수 이름이라
+         * 고유명사 네임스페이스는 뺀다. `shared.assetName`은 회사·지수 이름이라
          * `Samsung Electronics`·`Apple`처럼 라틴 표기가 ja/zh에서도 정답이다.
          * 억지로 가나·한자를 넣으면 오히려 통용되지 않는 표기가 된다.
          *
          * `features.ticker-search.popularName`은 그 표의 9개 부분집합이다 —
          * 검색 오버레이가 전 라우트 크롬에 있어 166키짜리 원본을 끌어올 수 없어
          * 따로 뒀다(`SearchOverlay.tsx` 주석). 같은 값이므로 같은 예외가 맞다.
+         *
+         * `shared.seo.about.description`은 운영 주체 실명(`SITE_OPERATOR.name`,
+         * "신용하")을 담는다 — `/about` 설계(2026-09-11)가 로케일과 무관하게 한글
+         * 표기 하나만 쓰기로 정했다(로마자 표기를 지어내지 않는다). 그래서 en/ja/zh
+         * 설명문에도 한글 세 글자가 그대로 남는 게 정답이고, 이건 4-한글잔존이
+         * 잡는 "미번역 잔존"이 아니라 위 두 네임스페이스와 같은 고유명사다.
+         * 위 둘과 달리 네임스페이스 전체가 고유명사는 아니므로(`title`은 순수
+         * 산문) **그 한 키만** 예외로 둔다 — 같은 네임스페이스에 나중에 붙는 키가
+         * 미번역 한국어를 조용히 통과시키지 않도록.
          */
         const isProperNoun =
             key.startsWith('shared.assetName.') ||
-            key.startsWith('features.ticker-search.popularName.');
+            key.startsWith('features.ticker-search.popularName.') ||
+            key === 'shared.seo.about.description';
+
+        // 4. 한글 잔존 — 미번역이 그대로 통과한 경우
+        if (!isProperNoun && HANGUL.test(text)) {
+            fail('4-한글잔존', `${locale} ${key}: "${text.slice(0, 40)}"`);
+        }
+
+        // 5. 스크립트 검사 — "일본어 칸에 중국어" 같은 오배치를 잡는다.
 
         if (
             !isProperNoun &&

@@ -1,57 +1,69 @@
 [
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 209,
+        "line": 204,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 평단`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 210,
+        "line": 205,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 평단 계산`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 211,
+        "line": 206,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 내 위치`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 212,
+        "line": 207,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 매수 가격대`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 213,
+        "line": 208,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 52주 범위`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 214,
+        "line": 209,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 평단`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 214,
+        "line": 209,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 내 위치`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 215,
+        "line": 210,
         "reason": "seo-keywords-ko-only",
         "text": "평단 확인"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 216,
+        "line": 211,
         "reason": "seo-keywords-ko-only",
         "text": "52주 최고가 최저가"
+    },
+    {
+        "file": "src/app/[locale]/about/content.ts",
+        "line": 14,
+        "reason": "non-component-module",
+        "text": "`## Siglens는 무엇인가 ${SITE_NAME}는 티커 하나만 입력하면 차트, 펀더멘털, 재무제표, 뉴스, 옵션, 의회 거래, 공포·탐욕"
+    },
+    {
+        "file": "src/app/[locale]/about/content.ts",
+        "line": 89,
+        "reason": "developer-diagnostic",
+        "text": "`[about/content] DEFAULT_LOCALE(${DEFAULT_LOCALE}) 본문이 없습니다.`"
     },
     {
         "file": "src/app/[locale]/backtesting/page.tsx",
@@ -3028,6 +3040,12 @@
         "line": 30,
         "reason": "ko-grammar",
         "text": "와"
+    },
+    {
+        "file": "src/shared/lib/legal.ts",
+        "line": 24,
+        "reason": "non-component-module",
+        "text": "신용하"
     },
     {
         "file": "src/shared/lib/seo.ts",
