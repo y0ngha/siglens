@@ -1839,7 +1839,7 @@ vi.mock('@/app/api/ai/chat/resolveAgentTier', () => ({ resolveAgentTier: m.tier 
 vi.mock('@/app/api/ai/chat/turnLock', () => ({ acquireTurnLock: m.lock }));
 vi.mock('@/app/api/ai/chat/counters', () => ({ createAgentCounters: () => ({}) }));
 vi.mock('@/app/api/ai/chat/tools', () => ({ createToolExecutor: () => vi.fn(), availableToolNames: () => new Set(['get_quote']) }));
-vi.mock('@/entities/llm-provider/api/agent', () => ({ getAgentProvider: () => vi.fn(), AGENT_MODEL: 'deepseek-v4.1-flash' }));
+vi.mock('@/entities/llm-provider', () => ({ getAgentProvider: () => vi.fn(), AGENT_MODEL: 'deepseek-v4.1-flash' }));
 vi.mock('@/entities/chat-conversation/api', () => ({ DrizzleChatConversationRepository: vi.fn(() => m.repo) }));
 vi.mock('@/entities/portfolio/api', () => ({ DrizzlePortfolioRepository: vi.fn(() => m.portfolio) }));
 vi.mock('@/shared/db/client', () => ({ getDatabaseClient: () => ({ db: {} }) }));
@@ -1946,7 +1946,7 @@ import { AGENT_LIMITS, agentLimit, runAgentTurn } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzleChatConversationRepository } from '@/entities/chat-conversation/api';
 import { toAgentHistory, type NewChatMessage } from '@/entities/chat-conversation/model';
-import { AGENT_MODEL, getAgentProvider } from '@/entities/llm-provider/api/agent';
+import { AGENT_MODEL, getAgentProvider } from '@/entities/llm-provider';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { isBot } from '@/shared/api/isBot';
 import { getDatabaseClient } from '@/shared/db/client';
