@@ -1,7 +1,7 @@
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import { sitemapAlternates } from './sitemapAlternates';
-import { PRIVACY_PATH, TERMS_PATH } from '@/shared/lib/legal';
+import { ABOUT_PATH, PRIVACY_PATH, TERMS_PATH } from '@/shared/lib/legal';
 import { SITE_BUILD_DATE, SITE_URL } from '@/shared/lib/seo';
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
@@ -168,6 +168,15 @@ export function buildStaticEntries(now: Date): SitemapEntry[] {
             changeFrequency: 'yearly',
             priority: 0.3,
             alternates: sitemapAlternates(TERMS_PATH, STATIC_INDEXABLE_LOCALES),
+        },
+        // `/about` — 운영 주체·방법론·면책. legal(0.3)보다 한 단계 위: YMYL 재평가에서
+        // 사이트 전체의 신뢰 앵커라 크롤러가 먼저 보게 둔다(SEO_RECOVERY_2026_09 §5-B1).
+        {
+            url: `${SITE_URL}${ABOUT_PATH}`,
+            lastModified: SITE_BUILD_DATE,
+            changeFrequency: 'yearly',
+            priority: 0.4,
+            alternates: sitemapAlternates(ABOUT_PATH, STATIC_INDEXABLE_LOCALES),
         },
     ];
 }

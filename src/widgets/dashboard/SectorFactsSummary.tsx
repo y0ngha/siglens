@@ -65,6 +65,10 @@ export function SectorFactsSummary({ data }: SectorFactsSummaryProps) {
                                                 {i > 0 && ', '}
                                                 <Link
                                                     href={`/${symbol}`}
+                                                    // 섹터 × 상위 종목 링크가 한 화면에 수십 개라 기본 prefetch면
+                                                    // 뷰포트에 들어오는 즉시 종목 RSC(~1.7MB)를 개수만큼 당긴다
+                                                    // (docs/architecture/CDN_CACHING.md §1).
+                                                    prefetch={false}
                                                     className="rounded underline-offset-2 hover:text-secondary-300 hover:underline focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
                                                 >
                                                     {symbol}

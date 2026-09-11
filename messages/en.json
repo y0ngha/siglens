@@ -54,7 +54,7 @@
             },
             "seo": {
                 "datasetName": "{v0} AI technical-analysis backtesting dataset",
-                "variableMeasured": "Win rate of technical-analysis signals and AI prediction accuracy"
+                "variableMeasured": "Hit rate of technical-analysis signals and back-tested AI scenario results"
             }
         },
         "economy": {
@@ -107,11 +107,11 @@
             "jsonLd": {
                 "faq": {
                     "q0": {
-                        "answer": "Enter a US ticker and it lays out the chart (indicators, candlestick patterns, support and resistance), earnings and valuation, financial statements, recent news flow, options market data, congressional trade disclosures, and short-term buying mood (the Fear & Greed Index) — then an overall conclusion that ties them together. It is free. For KOSPI and KOSDAQ listings it covers chart, earnings, financial statements, news, Fear & Greed and the overall conclusion (Korea has no congressional disclosure regime and no single-stock options market, so those two are omitted). For crypto such as Bitcoin and Ethereum it covers chart, news, Fear & Greed and the overall conclusion. No sign-up needed.",
+                        "answer": "Enter a US ticker and it lays out the chart (indicators, candlestick patterns, support and resistance), earnings and valuation, financial statements, recent news flow, options market data, congressional trade disclosures, and short-term buying mood (the Fear & Greed Index) — then an overall analysis that ties them together. It is free. For KOSPI and KOSDAQ listings it covers chart, earnings, financial statements, news, Fear & Greed and the overall analysis (Korea has no congressional disclosure regime and no single-stock options market, so those two are omitted). For crypto such as Bitcoin and Ethereum it covers chart, news, Fear & Greed and the overall analysis. No sign-up needed.",
                         "question": "What is {v0}?"
                     },
                     "q1": {
-                        "answer": "The Siglens chatbot answers with the chart and indicator data of the ticker you are viewing as context — reading the trend, entry timing, what an indicator means, comparing patterns, discussing strategy. Answers are grounded in the analysis shown on screen.",
+                        "answer": "The Siglens chatbot answers with the chart and indicator data of the ticker you are viewing as context — reading the trend, scenario interpretation, what an indicator means, comparing patterns, discussing strategy. Answers are grounded in the analysis shown on screen.",
                         "question": "What can I ask the AI chat?"
                     },
                     "q10": {
@@ -119,7 +119,7 @@
                         "question": "Is there a fee to use the service?"
                     },
                     "q11": {
-                        "answer": "Major crypto such as Bitcoin (BTCUSD) and Ethereum (ETHUSD) is analyzed like any other ticker. Enter the symbol and you get the 24-hour price chart with indicators, trading signals, the latest crypto news, the Fear & Greed Index, and an AI Overall Conclusion tying them together. For example /BTCUSD.",
+                        "answer": "Major crypto such as Bitcoin (BTCUSD) and Ethereum (ETHUSD) is analyzed like any other ticker. Enter the symbol and you get the 24-hour price chart with indicators, technical signals, the latest crypto news, the Fear & Greed Index, and an AI Overall Analysis tying them together. For example /BTCUSD.",
                         "question": "Can it analyze crypto too?"
                     },
                     "q2": {
@@ -147,29 +147,29 @@
                         "question": "Can I see where institutions are betting in the options market?"
                     },
                     "q8": {
-                        "answer": "The Overall tab on a ticker page ties chart, earnings, news, the options market and Fear & Greed into one conclusion — bull and bear scenarios, the key things to check, and the risks. For Nvidia that is /NVDA/overall.",
-                        "question": "Where is the conclusion that combines chart, earnings, news and options?"
+                        "answer": "The Overall Analysis tab on a ticker page ties chart, earnings, news, the options market and Fear & Greed into one analysis — bull and bear scenarios, the key things to check, and the risks. For Nvidia that is /NVDA/overall.",
+                        "question": "Where is the overall analysis that combines chart, earnings, news and options?"
                     },
                     "q9": {
-                        "answer": "The /backtesting page publishes two years of technical analysis and AI predictions for major tickers — hit rate and a cumulative-return simulation — so you can judge how much to trust the output.",
-                        "question": "How accurate is the AI analysis in practice?"
+                        "answer": "The /backtesting page publishes two years of technical signals and AI scenarios for major tickers, back-tested against historical data. Results are based on past data and do not guarantee future performance.",
+                        "question": "Where can I see how the AI analysis held up on past data?"
                     }
                 },
                 "howTo": {
-                    "description": "The flow for reviewing US stocks, KOSPI/KOSDAQ listings and crypto on {v0} through chart, news and Fear & Greed, then receiving an overall conclusion and scenarios. US stocks add earnings, financial statements, the options market and Congressional Trades disclosures; Korean listings add earnings and financial statements.",
-                    "name": "How to review US and Korean stocks and crypto on {v0} — chart, news and Fear & Greed — and get an overall conclusion",
+                    "description": "The flow for reviewing US stocks, KOSPI/KOSDAQ listings and crypto on {v0} through chart, news and Fear & Greed, then reviewing the overall analysis and scenarios. US stocks add earnings, financial statements, the options market and Congressional Trades disclosures; Korean listings add earnings and financial statements.",
+                    "name": "How to review US and Korean stocks and crypto on {v0} — chart, news and Fear & Greed — and read the overall analysis",
                     "step1Name": "Enter a name or symbol",
                     "step1Text": "Type the name or symbol of the ticker into the search box. For example Apple, Tesla, AAPL, TSLA; for Korean listings Samsung Electronics or 005930.KS; for crypto BTCUSD or ETHUSD.",
                     "step2Name": "Review the chart analysis",
-                    "step2Text": "On the ticker page, review the trend and candidate entry zones against {v0} indicators, {v1} candlestick patterns, {v2} chart patterns, {v3} strategies and {v4} support/resistance levels.",
+                    "step2Text": "On the ticker page, review the trend and key price zones against {v0} indicators, {v1} candlestick patterns, {v2} chart patterns, {v3} strategies and {v4} support/resistance levels.",
                     "step3Name": "Reinforce with earnings and news",
                     "step3Text": "Use the Fundamentals tab for valuation and profitability metrics such as PER, PBR and ROE, and the News tab for earnings releases and news sentiment — filling in the background the chart does not show. For example /AAPL/fundamental and /AAPL/news.",
                     "step4Name": "Check the options market",
                     "step4Text": "On the Options tab (e.g. /AAPL/options), read Max Pain, the Put/Call ratio and the open-interest distribution to see where institutions expect the price to go.",
                     "step5Name": "Check the short-term mood",
-                    "step5Text": "On the Fear & Greed tab (e.g. /AAPL/fear-greed), check whether short-term buying is strong or weak via the 0–100 score and its five labels. Even when the chart looks good, an overheated mood is a reason to weigh entry timing once more.",
-                    "step6Name": "Read the overall conclusion",
-                    "step6Text": "On the Overall tab (e.g. /AAPL/overall), read the Overall Conclusion that ties chart, earnings, news, options and Fear & Greed together — with bull and bear scenarios, checkpoints and risks.",
+                    "step5Text": "On the Fear & Greed tab (e.g. /AAPL/fear-greed), check whether short-term buying is strong or weak via the 0–100 score and its five labels. Even when the chart looks good, an overheated mood is a reason to re-check your read of the trend.",
+                    "step6Name": "Read the overall analysis",
+                    "step6Text": "On the Overall tab (e.g. /AAPL/overall), read the overall analysis that ties chart, earnings, news, options and Fear & Greed together — with bull and bear scenarios, checkpoints and risks.",
                     "step7Name": "Ask the AI a follow-up",
                     "step7Text": "When the call is unclear, ask the chatbot directly. With the data of the ticker you are viewing as context, it answers on reading indicators, comparing scenarios and trading strategy."
                 }
@@ -183,13 +183,13 @@
                 "f8a2cd": "It might be a system error. Please let us know, and we will check."
             },
             "page": {
-                "167f34": "Check the results of 2 years of Backtesting technical analysis and AI predictions for 10 major stocks.",
+                "167f34": "Check the results of 2 years of Backtesting technical analysis and AI scenarios for 10 major stocks.",
                 "1d43d2": "SIGLENS: Analyzed and Completed by AI",
                 "24e60c": "Skip to Search",
                 "2f20c8": "A new standard for investing in stocks and crypto",
                 "79bd8f": "Easily check AI reports analyzing news, Fundamentals, and the Fear & Greed Index.",
                 "c26658": "AI Analysis for Greater Investment Confidence",
-                "dfbacd": "How accurate is Siglens?",
+                "dfbacd": "Verified Against Historical Data",
                 "eafd49": "Chart trends built on {v0} {v0, plural, one {indicator} other {indicators}} and a range of investment strategies,",
                 "ee41ec": "View Backtesting Results →"
             }
@@ -386,7 +386,7 @@
                 "7ed747": "Volume z-score, Buy/Sell volume imbalance, Volume Profile POC distance, MA200 divergence, position relative to 52-week high — Each of these 5 factors is converted to a percentile within a 200-trading-day distribution and then weighted averaged. Each factor is grouped into Flow and Trend categories and also displayed as separate scores.",
                 "7fcfc0": "What 5 factors are used to calculate the score?",
                 "8770b1": "How are indicators like PER and ROE interpreted?",
-                "8b7ae7": "AI Comprehensive Analysis",
+                "8b7ae7": "AI Overall Analysis",
                 "9e0659": "{v0} Financial Metrics and Analyst Opinions",
                 "9f451a": "Web",
                 "a32c23": "AI analyzes Options market data and explains in English where money is accumulating for each major expiration and what Volatility the market expects. It also shows key indicators like Max Pain, Put/Call Ratio, ATM IV, Implied Move, and OI distribution charts by Strike.",
@@ -1363,7 +1363,7 @@
             "fearGreedFactor": {
                 "descriptionKr": {
                     "breadth": "The more equal-weight KOSPI 200 outruns the cap-weighted one over 20 days — warmth spreading to smaller names — the greedier",
-                    "junk_bond": "The more corporates outrun 10-year KTBs over the last 20 days — more appetite for credit risk — the greedier",
+                    "junk_bond": "The more corporates outrun 3-year KTBs over the last 20 days — more appetite for credit risk — the greedier",
                     "momentum": "The further KOSPI 200 (KODEX 200) sits above its 125-day moving average, the greedier",
                     "safe_haven": "The more stocks outrun 30-year KTBs over the last 20 days, the greedier",
                     "volatility": "The further KOSPI 20-day realized volatility sits below its 50-day average — the calmer the market — the greedier"
@@ -1387,11 +1387,12 @@
                     "buysell_imbalance": "Buy/sell imbalance",
                     "ma200_distance": "Distance from MA200",
                     "poc_distance": "Distance from POC ({v0} bars)",
-                    "range_position": "Position in 52-week range",
+                    "range_position": "Position in last 252 bars",
                     "volume_z": "Volume z-score (direction)"
                 }
             },
             "legal": {
+                "aboutIntro": "What {v0} is, who built it, and what data and process each analysis goes through. We believe an investment tool can only be judged when you know who made it and how.",
                 "investmentDisclaimer": "The analysis on this service is for reference only; investment decisions are your own responsibility.",
                 "privacyBottomNotice": "For the full terms of use, see the <link>Terms of Service</link>.",
                 "privacyIntro": "{v0} (“the operator”) takes your personal data seriously and works to comply with the Personal Information Protection Act and related laws. This privacy policy explains how the personal data you provide is used, for what purposes, and what measures protect it.",
@@ -1424,6 +1425,10 @@
             }
         },
         "seo": {
+            "about": {
+                "description": "Siglens is an AI stock and crypto analysis service built and run by independent developer y0ngha. Learn where the data comes from, how each analysis is produced, how often it refreshes, its limits, and how to get in touch.",
+                "title": "About Siglens"
+            },
             "a11y": {
                 "investmentDisclaimer": "Investment disclaimer",
                 "investmentDisclaimerSummary": "Investment disclaimer summary"
@@ -1435,8 +1440,8 @@
             "accountDeleteFullTitle": "{v0} — delete account",
             "accountDeleteTitle": "Delete account",
             "backtesting": {
-                "description": "A 2-year backtest across 10 stocks including AAPL, NVDA, and TSLA. See the data on how accurate RSI, MACD, and Supertrend signals — and AI predictions — actually were.",
-                "title": "AAPL, NVDA, TSLA 2-Year Backtest — AI Signal Accuracy"
+                "description": "A 2-year backtest across 10 stocks including AAPL, NVDA, and TSLA. RSI, MACD, and Supertrend technical signals and AI scenarios are back-tested against historical data. Results are based on past data and do not guarantee future performance.",
+                "title": "AAPL, NVDA, TSLA 2-Year Backtest — Signal Review"
             },
             "backtestingOgAlt": "{v0} AI backtesting results",
             "economy": {
@@ -1503,15 +1508,15 @@
             },
             "fearGreedPage": {
                 "kr": {
-                    "copy_faq0a": "It combines recent closes of five factors — KOSPI 200, KOSPI realized volatility, 30-year KTBs, corporate bonds, 10-year KTBs and equal-weight KOSPI 200 — into a 0–100 score for short-term buying sentiment across Korean equities.",
+                    "copy_faq0a": "It combines recent closes of five factors — KOSPI 200, KOSPI realized volatility, 30-year KTBs, corporate bonds, 3-year KTBs and equal-weight KOSPI 200 — into a 0–100 score for short-term buying sentiment across Korean equities.",
                     "copy_faq0q": "What does the Korean Fear & Greed Index measure?",
                     "copy_faq1a": "There is no free quote feed for VKOSPI (the KOSPI 200 volatility index). Instead, 20-day realized volatility (annualized) is computed directly from KOSPI closes and used in its place.",
                     "copy_faq1q": "Why realized volatility instead of VKOSPI?",
-                    "copy_faq2a": "The formula is the same but the inputs are not. Korea has no liquid high-yield bond market, so the credit factor is proxied by the spread between corporate bonds and 10-year KTBs.",
+                    "copy_faq2a": "The formula is the same but the inputs are not. Korea has no liquid high-yield bond market, so the credit factor is proxied by the spread between corporate bonds and similarly dated 3-year KTBs.",
                     "copy_faq2q": "Can I compare this score directly with the US index?",
                     "copy_faq3a": "It updates once per session, on the KOSPI regular-hours closing price. The page itself is cached for up to an hour.",
                     "copy_faq3q": "How often does the score update?",
-                    "copy_intro0": "The Korean market Fear & Greed Index combines recent closes of KOSPI 200 (KODEX 200), KOSPI realized volatility, 30-year KTBs, corporate bonds, 10-year KTBs and equal-weight KOSPI 200 into a 0–100 score for short-term buying sentiment across Korean equities.",
+                    "copy_intro0": "The Korean market Fear & Greed Index combines recent closes of KOSPI 200 (KODEX 200), KOSPI realized volatility, 30-year KTBs, corporate bonds, 3-year KTBs and equal-weight KOSPI 200 into a 0–100 score for short-term buying sentiment across Korean equities.",
                     "copy_intro1": "Each of the five factors is converted to a percentile within its own history, then averaged with equal weights. A lower score means fear dominates; a higher score means greed does.",
                     "description": "Combining recent moves in KOSPI 200, government bonds, corporate bonds, and an equal-weight ETF, this shows overall Korean market buying sentiment as a 0–100 score with a 5-level label.",
                     "heading": "Korea Fear & Greed Index",
@@ -1540,7 +1545,7 @@
                 "title": "Log In"
             },
             "manifest": {
-                "description": "AI analysis for US and Korean equities and crypto. Chart, fundamentals and news combined into one indicator-backed Overall Conclusion, with two-year Backtesting.",
+                "description": "AI analysis for US and Korean equities and crypto. Chart, fundamentals and news combined into one indicator-backed Overall Analysis, with two-year Backtesting.",
                 "name": "{v0} — AI analysis for US and Korean equities and crypto",
                 "shortcutMarket": "Market overview",
                 "shortcutSearch": "Search tickers"
@@ -1600,10 +1605,10 @@
                 "title": "Reset Password"
             },
             "root": {
-                "description": "Analyze US and Korean stocks and crypto from one ticker. Charts, trading signals, fundamentals, news and a Fear & Greed read in one AI Overall Conclusion.",
+                "description": "Analyze US and Korean stocks and crypto from one ticker. Charts, technical signals, fundamentals, news and a Fear & Greed read in one AI Overall Analysis.",
                 "headline": "AI Analysis for US & Korean Stocks and Crypto",
-                "ogImageAlt": "{v0} — chart, fundamentals, news, options, Fear & Greed and an overall conclusion",
-                "title": "AI Analysis for US & Korean Stocks and Crypto — Charts and News"
+                "ogImageAlt": "{v0} — chart, fundamentals, news, options, Fear & Greed and an overall analysis",
+                "title": "US, Korean Stocks & Crypto AI Analysis — Charts & News"
             },
             "signup": {
                 "description": "Sign up for extra Siglens benefits. Membership is optional — non-members can still use all core features.",
@@ -1611,10 +1616,10 @@
             },
             "symbol": {
                 "chart": {
-                    "description": "AI analyzes {subject}'s price chart — RSI, MACD, Bollinger Bands, candlestick patterns, and key support/resistance — to map the trend and entry zones.",
-                    "descriptionWithSector": "AI analyzes {sector}-sector {subject}'s price chart — RSI, MACD, Bollinger Bands, candlestick patterns, and key support/resistance — to map the trend and entry zones.",
+                    "description": "AI analyzes {subject}'s price chart — RSI, MACD, Bollinger Bands, candlestick patterns, and key support/resistance — to map the trend and key price levels.",
+                    "descriptionWithSector": "AI analyzes {sector}-sector {subject}'s price chart — RSI, MACD, Bollinger Bands, candlestick patterns, and key support/resistance — to map the trend and key price levels.",
                     "titleCore": "Stock Forecast",
-                    "titleTail": "Chart & Trading Signals"
+                    "titleTail": "Chart & Technical Signals"
                 },
                 "congress": {
                     "description": "AI summarizes {subject} trades disclosed by US Senators and Representatives, accounting for the ~45-day reporting lag under the STOCK Act.",
@@ -1622,7 +1627,7 @@
                     "titleTail": "Senate & House Filings"
                 },
                 "crypto": {
-                    "description": "AI analyzes {subject}'s price chart — RSI, MACD, Bollinger Bands, candlestick patterns, and key support/resistance — to map the trend and entry zones.",
+                    "description": "AI analyzes {subject}'s price chart — RSI, MACD, Bollinger Bands, candlestick patterns, and key support/resistance — to map the trend and key price levels.",
                     "titleCore": "Price Forecast"
                 },
                 "cryptoNews": {
@@ -1631,7 +1636,7 @@
                     "titleTail": "Catalysts & Market Mood"
                 },
                 "cryptoOverall": {
-                    "description": "See {subject}'s price outlook, combining chart trend, news, and buying sentiment into bull/bear scenarios, with entry zones and the risks that would break each scenario.",
+                    "description": "See {subject}'s price outlook, combining chart trend, news, and buying sentiment into bull/bear scenarios, with key price levels and the risks that would break each scenario.",
                     "titleCore": "Crypto Overall Analysis",
                     "titleTail": "Bull & Bear Scenarios"
                 },
@@ -1663,7 +1668,7 @@
                     "titleTail": "Max Pain, OI & Put/Call"
                 },
                 "overall": {
-                    "description": "See whether {subject} is worth buying, combining chart, earnings, news, and buying sentiment into bull/bear scenarios, with entry zones and the risks that would break each scenario.",
+                    "description": "Combine {subject}'s chart, earnings, news, and buying sentiment into bull/bear scenarios to see which is more likely, with key price levels and the risks that would break each scenario.",
                     "titleCore": "Overall Analysis",
                     "titleTail": "Bull & Bear Scenarios"
                 }
@@ -1956,7 +1961,7 @@
                 "af0480": "Risk Factors",
                 "b8f729": "Bullish Scenario",
                 "da6fd3": "Technical Analysis",
-                "de4a87": "Overall Analysis Conclusion"
+                "de4a87": "Overall Analysis Summary"
             },
             "RelatedSymbols": {
                 "c35191": "Related tickers"
@@ -2187,7 +2192,7 @@
                     "p1": "Analyzing signals from {v0}+ indicators",
                     "p2": "Detecting Candlestick Patterns and chart patterns",
                     "p3": "Matching signals across {v1}+ skills",
-                    "p4": "Evaluating entry/exit strategy and risk",
+                    "p4": "Summarizing scenarios and risk",
                     "p5": "Writing the AI overall reading"
                 },
                 "tip": {
@@ -2196,7 +2201,7 @@
                     "t2": "You can leave this open and do something else — the result appears on its own when the analysis finishes.",
                     "t3": "It reads the trend by combining signals from indicators such as RSI, MACD and Bollinger Bands.",
                     "t4": "It is applying strategies such as Elliott Wave and Fibonacci to the data.",
-                    "t5": "It works out entry and exit timing, a Stop Loss and a target so the analysis is usable as it stands.",
+                    "t5": "Summarizes indicator-based scenarios, key price levels, and risk factors.",
                     "t6": "It detects chart patterns such as head-and-shoulders and double bottom alongside candlestick patterns.",
                     "t7": "A finished analysis is cached for a while, so reopening it shows the result immediately."
                 }
@@ -2253,10 +2258,10 @@
             "BacktestHero": {
                 "116858": "Backtesting results verified with actual market data.",
                 "530709": "Mag7 + Leading Stocks",
-                "394fff": "Indicator Signal Win Rate",
-                "5a254c": "AI Prediction Win Rate",
-                "caee31": "We show how well the AI analysis Siglens offers today would have held up applied to the past.",
-                "d8b543": "How accurate is Siglens?",
+                "394fff": "Indicator Signal Hit Rate (Historical)",
+                "5a254c": "AI Scenario Hit Rate (Historical)",
+                "caee31": "Shows what happened when the AI analysis Siglens provides today is applied, as-is, to past data. Based on historical data; it does not guarantee future results.",
+                "d8b543": "2-Year Backtest — Verified Against Historical Data",
                 "f92294": "Total Cases"
             },
             "BacktestTabs": {
@@ -2324,7 +2329,7 @@
                 "50071e": "💬 Ask AI",
                 "cce9f7": "{v0} remaining today",
                 "d7fb24": "Analysis has been updated — please continue asking questions based on the latest results",
-                "f292ff": "Ask questions based on the analysis results. You can ask about entry timing,\n                            selling strategies, and indicator interpretations.",
+                "f292ff": "Ask questions based on the analysis results. You can ask about trend interpretation, indicator meaning,\n                            and scenarios.",
                 "f4ca4c": "Close Chat"
             },
             "ContextSwitchSystemMessage": {
@@ -3008,7 +3013,7 @@
             "page": {
                 "asOfClose": "As of the close on {v1}/{v2}/{v0}",
                 "cnnDifference": "This index is derived independently from daily closes alone. Its construction differs from CNN’s Fear & Greed Index — five factors rather than seven, leaving out the put/call ratio and the NYSE 52-week high/low breadth because no usable data source exists — so the direction broadly agrees while the number itself can differ from CNN’s.",
-                "krDifference": "This index is derived independently from daily closes of Korean-listed ETFs and indices. The volatility factor uses 20-day realized volatility computed from KOSPI closes, because no free VKOSPI feed exists; the credit factor uses the spread between corporate bonds and 10-year KTBs, because Korea has no liquid high-yield bond market. The formula matches the US index, but the inputs differ — do not compare the two scores directly."
+                "krDifference": "This index is derived independently from daily closes of Korean-listed ETFs and indices. The volatility factor uses 20-day realized volatility computed from KOSPI closes, because no free VKOSPI feed exists; the credit factor uses the spread between corporate bonds and similarly dated 3-year KTBs, because Korea has no liquid high-yield bond market. The formula matches the US index, but the inputs differ — do not compare the two scores directly."
             }
         },
         "market-news": {
@@ -3058,7 +3063,7 @@
                 "0c767c": "Try again",
                 "1244e3": "Upcoming Key Events",
                 "3cad3e": "List of Key Events",
-                "595bae": "Analyzing collected news. Please wait.",
+                "595bae": "Running an overall analysis of the collected news. Please wait.",
                 "678c71": "Collecting news data...",
                 "a74178": "News AI Overall Analysis",
                 "a96ba1": "List of Upcoming Key Events",
@@ -3289,7 +3294,7 @@
                 "e69812": "Requesting AI Overall Analysis…"
             },
             "OverallFactsSummary": {
-                "9a8ae8": "{v0} AI Overall Conclusion",
+                "9a8ae8": "{v0} AI Overall Analysis Summary",
                 "sectionLabel": "{v0} overall analysis summary"
             },
             "OverallFactualFallback": {

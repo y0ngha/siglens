@@ -16,20 +16,60 @@ describe('fetchDailyCloses', () => {
         vi.clearAllMocks();
     });
 
-    it('historical-price-eod/light 엔드포인트를 symbol/from/to 쿼리로 호출한다', async () => {
-        mockFmpGet.mockResolvedValue([{ date: '2024-01-02', price: 100 }]);
+    it('historical-price-eod/dividend-adjusted 엔드포인트를 symbol/from/to 쿼리로 호출한다', async () => {
+        mockFmpGet.mockResolvedValue([{ date: '2024-01-02', adjClose: 100 }]);
 
         await fetchDailyCloses('SPY', '2024-01-01', '2024-01-31');
 
+        expect(mockFmpGet).toHaveBeenCalledWith(
+            'historical-price-eod/dividend-adjusted',
+            {
+                symbol: 'SPY',
+                from: '2024-01-01',
+                to: '2024-01-31',
+            }
+        );
+    });
+
+    // FMP는 `^VIX` 같은 지수 심볼의 dividend-adjusted 조회를 유료 플랜으로 막아
+    // 402를 낸다(2026-09-11 실측). 지수는 배당이 없어 조정할 것도 없으므로
+    // light 엔드포인트의 price를 쓴다 — 여기가 adjusted로 바뀌면 미국 지수 전체가
+    // throw로 죽는다.
+    it('^ 지수 심볼은 light 엔드포인트의 price를 close로 쓴다', async () => {
+        mockFmpGet.mockResolvedValue([
+            { date: '2024-01-02', price: 17.84, adjClose: 999 },
+        ]);
+
+        const result = await fetchDailyCloses(
+            '^VIX',
+            '2024-01-01',
+            '2024-01-31'
+        );
+
         expect(mockFmpGet).toHaveBeenCalledWith('historical-price-eod/light', {
-            symbol: 'SPY',
+            symbol: '^VIX',
             from: '2024-01-01',
             to: '2024-01-31',
         });
+        expect(result).toEqual([{ date: '2024-01-02', close: 17.84 }]);
     });
 
-    it('row의 price를 close로 매핑한다', async () => {
-        mockFmpGet.mockResolvedValue([{ date: '2024-01-02', price: 101.5 }]);
+    it('ETF 심볼은 price가 있어도 adjClose만 쓴다', async () => {
+        mockFmpGet.mockResolvedValue([
+            { date: '2024-01-02', price: 79.61, adjClose: 79.18 },
+        ]);
+
+        const result = await fetchDailyCloses(
+            'HYG',
+            '2024-01-01',
+            '2024-01-31'
+        );
+
+        expect(result).toEqual([{ date: '2024-01-02', close: 79.18 }]);
+    });
+
+    it('row의 adjClose를 close로 매핑한다', async () => {
+        mockFmpGet.mockResolvedValue([{ date: '2024-01-02', adjClose: 101.5 }]);
 
         const result = await fetchDailyCloses(
             'SPY',
@@ -42,9 +82,9 @@ describe('fetchDailyCloses', () => {
 
     it('date가 문자열이 아니거나 없는 row는 드롭한다', async () => {
         mockFmpGet.mockResolvedValue([
-            { date: 20240102, price: 101.5 }, // date가 숫자
-            { price: 100 }, // date 자체가 없음
-            { date: '2024-01-03', price: 100 },
+            { date: 20240102, adjClose: 101.5 }, // date가 숫자
+            { adjClose: 100 }, // date 자체가 없음
+            { date: '2024-01-03', adjClose: 100 },
         ]);
 
         const result = await fetchDailyCloses(
@@ -56,11 +96,11 @@ describe('fetchDailyCloses', () => {
         expect(result).toEqual([{ date: '2024-01-03', close: 100 }]);
     });
 
-    it('price가 없거나(undefined) 숫자로 변환 불가능한 row는 드롭한다', async () => {
+    it('adjClose가 없거나(undefined) 숫자로 변환 불가능한 row는 드롭한다', async () => {
         mockFmpGet.mockResolvedValue([
-            { date: '2024-01-02' }, // price 키 자체가 없음 → undefined
-            { date: '2024-01-03', price: 'n/a' }, // Number('n/a') = NaN
-            { date: '2024-01-04', price: 100 },
+            { date: '2024-01-02' }, // adjClose 키 자체가 없음 → undefined
+            { date: '2024-01-03', adjClose: 'n/a' }, // Number('n/a') = NaN
+            { date: '2024-01-04', adjClose: 100 },
         ]);
 
         const result = await fetchDailyCloses(
@@ -80,11 +120,11 @@ describe('fetchDailyCloses', () => {
     // "드롭"되는지는 남는 유효 row(2024-01-05)가 살아남는지로, "전부 드롭되면
     // reject"는 별도 테스트로 확인한다.
     it.each([null, undefined, '100', Number.NaN, 0, -5])(
-        'price가 %p인 row는 드롭되고, 함께 온 유효 row만 남는다',
-        async price => {
+        'adjClose가 %p인 row는 드롭되고, 함께 온 유효 row만 남는다',
+        async adjClose => {
             mockFmpGet.mockResolvedValue([
-                { date: '2024-01-02', price },
-                { date: '2024-01-05', price: 100 },
+                { date: '2024-01-02', adjClose },
+                { date: '2024-01-05', adjClose: 100 },
             ]);
 
             const result = await fetchDailyCloses(
@@ -136,11 +176,11 @@ describe('fetchDailyCloses', () => {
         ).rejects.toThrow('[marketFearGreed] no usable closes for SPY');
     });
 
-    it('모든 row가 price 가드를 통과하지 못하면(usable close 0개) reject한다', async () => {
+    it('모든 row가 adjClose 가드를 통과하지 못하면(usable close 0개) reject한다', async () => {
         mockFmpGet.mockResolvedValue([
-            { date: '2024-01-02', price: null },
-            { date: '2024-01-03', price: 'n/a' },
-            { date: 20240104, price: 100 }, // date가 숫자라 애초에 드롭
+            { date: '2024-01-02', adjClose: null },
+            { date: '2024-01-03', adjClose: 'n/a' },
+            { date: 20240104, adjClose: 100 }, // date가 숫자라 애초에 드롭
         ]);
 
         await expect(

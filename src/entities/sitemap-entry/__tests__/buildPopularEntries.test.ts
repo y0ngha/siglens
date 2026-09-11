@@ -12,17 +12,17 @@ const NOW = new Date('2026-05-23T21:00:00.000Z');
 const LAST_SESSION_CLOSE = new Date('2026-05-22T20:00:00.000Z');
 
 describe('buildPopularEntries', () => {
-    it('모든 POPULAR_TICKERS에 대해 8축 기본 라우트를 생성하고 options/financials는 자산 분류에 맞춘다', () => {
+    it('모든 POPULAR_TICKERS에 대해 7축 기본 라우트를 생성하고 options/financials는 자산 분류에 맞춘다', () => {
         const entries = buildPopularEntries(NOW);
 
-        // 한국 종목은 `/congress`가 없어(국내에 공직자 매매 공시 제도가 없다) 7축이다.
+        // 한국 종목은 `/congress`가 없어(국내에 공직자 매매 공시 제도가 없다) 6축이다.
         const krCount = POPULAR_TICKERS.filter(t => /\.K[SQ]$/.test(t)).length;
         // ETF/지수는 재무제표가 없어 `/financials`가 빠진다(SPY, TQQQ 등).
         const nonStockCount = POPULAR_TICKERS.filter(
             t => classifyAsset(t) !== 'stock'
         ).length;
         expect(entries).toHaveLength(
-            POPULAR_TICKERS.length * 8 -
+            POPULAR_TICKERS.length * 7 -
                 krCount -
                 nonStockCount +
                 POPULAR_OPTIONS_TICKERS.length
@@ -39,7 +39,6 @@ describe('buildPopularEntries', () => {
                 `${base}/financials`,
                 `${base}/overall`,
                 `${base}/fear-greed`,
-                `${base}/position`,
                 `${base}/congress`,
             ])
         );
@@ -59,29 +58,13 @@ describe('buildPopularEntries', () => {
         expect(congressEntry?.priority).toBe(0.75);
     });
 
-    // `/position`은 US·KR·crypto 세 profile 전부의 `tabs`에 있고 페이지가
-    // `index, follow` + self-canonical로 나가는데, 2026-09 실측에서 popular
-    // sitemap 3,031 URL 중 position이 0건이었다(빌더 누락). 티커당 1건이
-    // 빠짐없이 나가는지 고정한다.
-    it('모든 티커에 `/position` 엔트리를 낸다 (한국 종목 포함)', () => {
+    // `/position`은 항상 noindex라 sitemap에 싣지 않는다(2026-09-11 SEO 회복
+    // 감사 — PR #791의 추가를 되돌림). noindex URL이 sitemap에 실리면 크롤
+    // 예산만 태우므로 한 건도 나가지 않는지 고정한다.
+    it('`/position` 엔트리를 한 건도 내지 않는다 (한국 종목 포함)', () => {
         const entries = buildPopularEntries(NOW);
-        const positionSymbols = entries
-            .filter(entry => entry.url.endsWith('/position'))
-            .map(entry => entry.url.split('/')[3])
-            .toSorted();
-
-        expect(positionSymbols).toEqual([...POPULAR_TICKERS].toSorted());
-
-        const krPosition = entries.find(
-            e => e.url === `${SITE_URL}/005930.KS/position`
-        );
-        expect(krPosition?.changeFrequency).toBe('daily');
-        expect(krPosition?.priority).toBe(0.7);
-        // 한국 종목 lastmod는 KRX 세션 마감이라 미국 세션 마감과 다르다.
-        expect(krPosition?.lastModified.toISOString()).toBe(
-            entries
-                .find(e => e.url === `${SITE_URL}/005930.KS`)
-                ?.lastModified.toISOString()
+        expect(entries.some(entry => entry.url.endsWith('/position'))).toBe(
+            false
         );
     });
 

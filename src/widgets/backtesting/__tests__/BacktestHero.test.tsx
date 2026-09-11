@@ -24,7 +24,7 @@ describe('BacktestHero', () => {
 
         expect(
             screen.getByRole('heading', {
-                name: /Siglens가 얼마나 정확한가요/,
+                name: /2년 백테스트 — 과거 데이터 사후 검증/,
             })
         ).toBeInTheDocument();
     });
@@ -41,8 +41,10 @@ describe('BacktestHero', () => {
     it('renders stat labels', () => {
         render(<BacktestHero meta={META} />);
 
-        expect(screen.getByText('지표 신호 승률')).toBeInTheDocument();
-        expect(screen.getByText('AI 예측 승률')).toBeInTheDocument();
+        expect(screen.getByText('지표 신호 적중률(과거)')).toBeInTheDocument();
+        expect(
+            screen.getByText('AI 시나리오 적중률(과거)')
+        ).toBeInTheDocument();
         expect(screen.getByText('총 케이스')).toBeInTheDocument();
     });
 

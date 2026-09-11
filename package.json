@@ -2,7 +2,7 @@
     "name": "siglens",
     "version": "0.72.0",
     "private": true,
-    "author": "신용하 <dev.y0ngha@gmail.com>",
+    "author": "y0ngha <dev.y0ngha@gmail.com>",
     "license": "MIT",
     "scripts": {
         "copy:backtesting": "mkdir -p public/backtesting && cp 'src/app/[locale]/backtesting/data.json' public/backtesting/data.json",

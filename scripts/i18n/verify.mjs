@@ -332,15 +332,8 @@ for (const locale of TARGETS) {
             }
         }
 
-        // 4. 한글 잔존 — 미번역이 그대로 통과한 경우
-        if (HANGUL.test(text)) {
-            fail('4-한글잔존', `${locale} ${key}: "${text.slice(0, 40)}"`);
-        }
-
         /**
-         * 5. 스크립트 검사 — "일본어 칸에 중국어" 같은 오배치를 잡는다.
-         *
-         * **고유명사 네임스페이스는 뺀다.** `shared.assetName`은 회사·지수 이름이라
+         * 고유명사 네임스페이스는 뺀다. `shared.assetName`은 회사·지수 이름이라
          * `Samsung Electronics`·`Apple`처럼 라틴 표기가 ja/zh에서도 정답이다.
          * 억지로 가나·한자를 넣으면 오히려 통용되지 않는 표기가 된다.
          *
@@ -351,6 +344,13 @@ for (const locale of TARGETS) {
         const isProperNoun =
             key.startsWith('shared.assetName.') ||
             key.startsWith('features.ticker-search.popularName.');
+
+        // 4. 한글 잔존 — 미번역이 그대로 통과한 경우
+        if (!isProperNoun && HANGUL.test(text)) {
+            fail('4-한글잔존', `${locale} ${key}: "${text.slice(0, 40)}"`);
+        }
+
+        // 5. 스크립트 검사 — "일본어 칸에 중국어" 같은 오배치를 잡는다.
 
         if (
             !isProperNoun &&

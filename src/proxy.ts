@@ -49,6 +49,7 @@ const RESERVED_FIRST_SEGMENTS = new Set([
     'backtesting',
     'terms',
     'privacy',
+    'about',
     'api',
     '_next',
 ]);
