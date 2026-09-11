@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
     incrementActiveStreams,
     decrementActiveStreams,
+    registerActiveStream,
     waitForActiveStreams,
     __resetActiveStreamsForTests,
     __activeStreamCount,
@@ -82,6 +83,17 @@ describe('activeStreams', () => {
 
         it('이미 0인 상태에서 decrement해도 음수가 되지 않는다', () => {
             decrementActiveStreams();
+            expect(__activeStreamCount()).toBe(0);
+        });
+    });
+
+    describe('registerActiveStream', () => {
+        it('registerActiveStream은 증가시키고 해제 함수는 한 번만 감소시킨다', () => {
+            __resetActiveStreamsForTests();
+            const release = registerActiveStream();
+            expect(__activeStreamCount()).toBe(1);
+            release();
+            release();
             expect(__activeStreamCount()).toBe(0);
         });
     });

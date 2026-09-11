@@ -23,7 +23,9 @@ let count = 0;
  */
 const zeroListeners = new Set<() => void>();
 
-/** in-flight SSE 스트림이 시작될 때 호출. `heartbeatStream` 전용 — 직접 호출 금지. */
+/**
+ * in-flight SSE 스트림이 시작될 때 호출. `registerActiveStream` 전용 — 직접 호출 금지.
+ */
 export function incrementActiveStreams(): void {
     count++;
 }
@@ -33,7 +35,7 @@ export function incrementActiveStreams(): void {
  *
  * count가 0에 도달하면 등록된 리스너를 모두 즉시 호출하고 집합을 비운다.
  * count가 이미 0인 경우(이중 decrement 방어)에는 0 미만으로 떨어지지 않도록 보호한다.
- * `heartbeatStream` 전용 — 직접 호출 금지.
+ * `registerActiveStream` 전용 — 직접 호출 금지.
  */
 export function decrementActiveStreams(): void {
     if (count > 0) count--;
@@ -41,6 +43,20 @@ export function decrementActiveStreams(): void {
         for (const fn of zeroListeners) fn();
         zeroListeners.clear();
     }
+}
+
+/**
+ * Register one unit of in-flight server work (analysis stream or agent turn)
+ * and get an idempotent release. Use this instead of the raw pair.
+ */
+export function registerActiveStream(): () => void {
+    incrementActiveStreams();
+    let released = false;
+    return () => {
+        if (released) return;
+        released = true;
+        decrementActiveStreams();
+    };
 }
 
 /**

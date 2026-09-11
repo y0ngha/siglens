@@ -1,8 +1,5 @@
 import { isPassThroughStreamError } from './LocalizedStreamError';
-import {
-    incrementActiveStreams,
-    decrementActiveStreams,
-} from './activeStreams';
+import { registerActiveStream } from './activeStreams';
 
 /**
  * ALB `idle_timeout`이 60초다(실측: heartbeat 없이 61.1초에 끊김). 그 절반 이하로 잡아
@@ -47,9 +44,9 @@ export const HEARTBEAT_INTERVAL_MS = 25_000;
  *
  * ## In-flight drain 카운터 (Fix 2)
  *
- * 첫 번째 send(open)가 성공하면 `incrementActiveStreams()`를 호출해 drain 카운터에 등록한다.
- * 모든 종료 경로(resolve, reject, cancel)에서 정확히 한 번 `decrementActiveStreams()`를 호출해
- * 감소시킨다. 이중 감소는 `decrement()` 내의 `decremented` 플래그로 방지한다.
+ * 첫 번째 send(open)가 성공하면 `registerActiveStream()`을 호출해 drain 카운터에 등록한다.
+ * 모든 종료 경로(resolve, reject, cancel)에서 반환된 release를 정확히 한 번 호출해
+ * 감소시킨다. 이중 감소는 release 자체의 idempotent 가드로 방지한다.
  *
  * SIGTERM 핸들러(`instrumentation.node.ts`)가 `waitForActiveStreams`를 통해 이 카운터가
  * 0에 도달할 때까지 대기하므로, 배포 롤링 중 진행 중인 분석이 완주할 기회를 얻는다.
@@ -78,19 +75,10 @@ export function heartbeatStream<T>(
     let timer: ReturnType<typeof setInterval> | undefined;
 
     /**
-     * start()와 cancel() 양쪽에서 `decrementActiveStreams`를 호출할 수 있으므로
-     * 이중 감소를 방지하는 idempotent 래퍼.
-     *
-     * `streamRegistered`가 false(첫 send가 실패해 increment가 호출되지 않은 경우)이면
-     * decrement도 호출하지 않는다 — cancel()이 그 경우에도 안전하게 호출될 수 있도록.
+     * `registerActiveStream()`이 반환하는 idempotent release. 첫 send가 실패해
+     * 등록 자체가 안 됐으면 `undefined`로 남아 `release?.()`가 안전하게 no-op된다.
      */
-    let streamRegistered = false;
-    let decremented = false;
-    const decrement = (): void => {
-        if (!streamRegistered || decremented) return;
-        decremented = true;
-        decrementActiveStreams();
-    };
+    let release: (() => void) | undefined;
 
     return new ReadableStream<Uint8Array>({
         start(controller) {
@@ -136,8 +124,7 @@ export function heartbeatStream<T>(
             }
 
             // 스트림이 살아있음을 확인 — drain 카운터에 등록한다.
-            incrementActiveStreams();
-            streamRegistered = true;
+            release = registerActiveStream();
 
             timer = setInterval(() => {
                 send(`event: heartbeat\ndata: {}\n\n`);
@@ -154,7 +141,7 @@ export function heartbeatStream<T>(
                         closed = true;
                     });
                     // 정상 종료 — cancel이 먼저 발화한 경우 no-op(idempotent).
-                    decrement();
+                    release?.();
                 },
                 (err: unknown) => {
                     clearTimer();
@@ -182,7 +169,7 @@ export function heartbeatStream<T>(
                         closed = true;
                     });
                     // 에러 종료 — cancel이 먼저 발화한 경우 no-op(idempotent).
-                    decrement();
+                    release?.();
                 }
             );
         },
