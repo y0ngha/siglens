@@ -69,3 +69,4 @@ export async function myAction() { ... }
 | `news-article` | `DrizzleNewsRepository`, `getNewsList`, `findMarketEventsForPrompt` | `api.ts`와 `marketEventsRepository.ts`가 drizzle/DB client import, `import 'server-only'` 선언. 같은 슬라이스의 `lib/marketEventsLookback.ts`는 순수 함수라 barrel로 노출된다 |
 | `bars` | `useBars` hook | Server Action barrel이 `@google/genai` ESM을 전이적으로 pull-in → Jest 모듈 해석 깨짐. deep import: `@/entities/bars/hooks/useBars` |
 | `ticker` | `useAssetInfo` hook | Server Action barrel이 `@google/genai` ESM을 전이적으로 pull-in → Jest 모듈 해석 깨짐. deep import: `@/entities/ticker/hooks/useAssetInfo` |
+| `chat-conversation` | `DrizzleChatConversationRepository` | `api.ts`가 drizzle/schema import, `import 'server-only'` 선언. 서버 소비자는 `@/entities/chat-conversation/api`에서 직접 import |

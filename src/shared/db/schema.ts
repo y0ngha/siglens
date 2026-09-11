@@ -894,3 +894,71 @@ export const analysisHistory = pgTable(
         ),
     ]
 );
+
+/**
+ * SiglensAI 대화(스펙 §6-1). 회원 전용. `deleted_at`은 soft delete — 저장량이
+ * KB 단위라 하드 삭제 크론은 두지 않는다.
+ */
+export const chatConversations = pgTable(
+    'chat_conversations',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        userId: uuid('user_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        title: varchar('title', { length: 120 }).notNull(),
+        locale: contentLocaleEnum('locale').notNull(),
+        modelId: varchar('model_id', { length: 64 }).notNull(),
+        messageCount: integer('message_count').notNull().default(0),
+        lastMessageAt: timestamp('last_message_at', {
+            withTimezone: true,
+        }).notNull(),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        deletedAt: timestamp('deleted_at', { withTimezone: true }),
+    },
+    table => [
+        index('chat_conversations_user_recent_idx')
+            .on(table.userId, table.lastMessageAt.desc())
+            .where(sql`${table.deletedAt} is null`),
+    ]
+);
+
+/**
+ * 대화 메시지. tool 행의 `content`는 실행기가 4,000자로 절단한 결과 JSON 그대로.
+ * `seq`는 INSERT … SELECT coalesce(max(seq),0)+n 단일 문으로 매긴다(neon-http는
+ * 트랜잭션 미지원). 요청 간 경합은 사용자별 턴 락이 막는다.
+ */
+export const chatMessages = pgTable(
+    'chat_messages',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        conversationId: uuid('conversation_id')
+            .notNull()
+            .references(() => chatConversations.id, { onDelete: 'cascade' }),
+        seq: integer('seq').notNull(),
+        /** 'user' | 'assistant' | 'tool' */
+        role: varchar('role', { length: 16 }).notNull(),
+        content: text('content').notNull(),
+        toolCalls: jsonb('tool_calls'),
+        toolCallId: varchar('tool_call_id', { length: 64 }),
+        toolName: varchar('tool_name', { length: 64 }),
+        modelId: varchar('model_id', { length: 64 }),
+        usage: jsonb('usage'),
+        /** 'complete' | 'aborted' | 'error' | 'superseded' */
+        status: varchar('status', { length: 16 }).notNull().default('complete'),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [
+        uniqueIndex('chat_messages_conversation_seq_uq').on(
+            table.conversationId,
+            table.seq
+        ),
+    ]
+);
