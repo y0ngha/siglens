@@ -116,7 +116,7 @@ refresh 크롤로 돌아간다. 라우트는 남겨 둔다(재제출이 필요�
 
 | # | 조치 | 상태 |
 |---|---|---|
-| B1 | `/about`(운영 주체·분석 방법론·데이터 출처·갱신 주기·면책·문의) 페이지 + 푸터 링크 + `Organization.founder` 연결 | **이 PR** — 실명·이메일·GitHub 공개(사용자 결정 2026-09-11). 설계: `docs/superpowers/specs/2026-09-11-about-page-design.md` |
+| B1 | `/about`(운영 주체·분석 방법론·데이터 출처·갱신 주기·면책·문의) 페이지 + 푸터 링크 + `Organization.founder` 연결 | **이 PR** — 핸들 `y0ngha`·이메일·GitHub 공개(사용자 결정 2026-09-11 — 실명 대신 핸들). 설계: `docs/superpowers/specs/2026-09-11-about-page-design.md` |
 | B2 | 종목 페이지 `WebPage` JSON-LD에 `dateModified`·`publisher` | 후속 PR (B1과 묶음) |
 | B3 | `/{ticker}/fear-greed`는 6월에 실제로 검색을 받던 유일한 탭인데 스냅샷 산문이 없다(2.5K자, 숫자만). 스냅샷 탭 추가는 core+cron 작업 | **보류**(2026-09-11) — 7탭 서술 도입(07-25) 전후 사이트 노출이 16.9 → 11.0회/일로 이득 신호가 없고, 비브랜드 클릭은 서술 없는 FG 탭이 대부분. 비용 월 $25~45 + 개발 3~4일. 배포 후 3개월에 서술 탭 vs FG 탭 노출로 재판단 |
 
@@ -133,7 +133,7 @@ refresh 크롤로 돌아간다. 라우트는 남겨 둔다(재제출이 필요�
 `buildCryptoPopularEntries`에서 position 엔트리 제거(−402 URL, sitemap-popular 3,433 → 3,031, crypto 145 → 116).
 공유 카드용 훅 카피(title/OG/Twitter)는 유지.
 
-**한다 (2차)**: B1. `/about` 페이지(실명 운영 주체·방법론·출처·갱신·한계·면책·문의), 푸터 링크, 정적 sitemap, `AboutPage`·`Person` JSON-LD와 홈 `Organization.founder` 연결.
+**한다 (2차)**: B1. `/about` 페이지(운영 주체 `y0ngha`·방법론·출처·갱신·한계·면책·문의), 푸터 링크, 정적 sitemap, `AboutPage`·`Person` JSON-LD와 홈 `Organization.founder` 연결.
 
 **하지 않는다**: 롱테일 재개방, removal 라우트 삭제, fear-greed 스냅샷.
 

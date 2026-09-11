@@ -11,14 +11,14 @@
 | 렌더 | `LegalPageShell` + `PolicyMarkdownBody` 재사용, 새 UI 없음 | terms/privacy와 같은 정적 문서 페이지. 디자인 작업은 SEO 이득 0 |
 | 본문 저장 | 코드 상수(`content.ts`), ko·en 마크다운 | DB(약관 방식)는 법률 검토용 인프라라 과함. 본문은 배포와 함께 바뀌는 게 맞다 |
 | ja·zh | ko 본문 + `UntranslatedNotice` | 약관과 같은 폴백 규약. 색인은 ko만(`STATIC_INDEXABLE_LOCALES`) |
-| 운영 주체 | 실명 **신용하**, `dev.y0ngha@gmail.com`, `github.com/y0ngha/siglens`(공개) | 사용자 결정 2026-09-11. `siglens-core`는 private라 "지표 계산 공개"는 쓰지 않는다 |
+| 운영 주체 | 핸들 **y0ngha**(실명 비공개 — 2026-09-11 사용자 결정으로 실명에서 변경), `dev.y0ngha@gmail.com`, `github.com/y0ngha/siglens`(공개) | 사용자 결정 2026-09-11. `siglens-core`는 private라 "지표 계산 공개"는 쓰지 않는다 |
 | ISR | `revalidate = 86400` | 약관과 동일. 본문이 코드라 배포가 곧 갱신 |
-| JSON-LD | `AboutPage`(WebPage 헬퍼 + `@type` 덮어쓰기) + `Person`(신용하, sameAs GitHub) · BreadcrumbList | 홈 `Organization#organization`에 `founder` → Person 연결 |
+| JSON-LD | `AboutPage`(WebPage 헬퍼 + `@type` 덮어쓰기) + `Person`(y0ngha, sameAs GitHub) · BreadcrumbList | 홈 `Organization#organization`에 `founder` → Person 연결 |
 
 ## 본문 구성 (ko, h2 7개 — `extractToc`가 목차로 씀)
 
 1. **Siglens는 무엇인가** — 티커 하나로 차트·펀더멘털·재무·뉴스·옵션·의회 거래·공포탐욕을 AI가 종합. 매매 기능 없음.
-2. **누가 만들고 운영하나** — 개인 개발자 신용하. 이메일·GitHub. 회사·광고주·증권사 제휴 없음.
+2. **누가 만들고 운영하나** — 개인 개발자 y0ngha. 이메일·GitHub. 회사·광고주·증권사 제휴 없음.
 3. **분석은 어떻게 만들어지나** — 시세(Yahoo Finance·FMP·Polygon, 한국 종목 마스터는 공공데이터포털) → 보조지표 39종·캔들 패턴 49종·전략 스킬 60+ 계산 → LLM(OpenAI·Anthropic·DeepSeek) 서술 → 스키마 검증·정규화. 시세 최대 15분 지연.
 4. **얼마나 자주 갱신되나** — 검색·공유용 스냅샷은 매일 미국 장마감 후 재생성, 로그인 사용자는 온디맨드 재분석.
 5. **한계** — AI 서술은 사실 오류·수치 오독 가능, 과거 데이터 기반, 실시간 아님, 개인 상황 미반영.

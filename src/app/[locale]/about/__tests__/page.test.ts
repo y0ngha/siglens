@@ -131,7 +131,7 @@ describe('About page', () => {
 
         const person = nodes.find(n => n['@type'] === 'Person');
         expect(person).toBeDefined();
-        expect(person?.name).toBe('신용하');
+        expect(person?.name).toBe('y0ngha');
         expect(person?.['@id']).toBe(OPERATOR_PERSON_JSON_LD_ID);
         expect(person?.email).toBe('mailto:dev.y0ngha@gmail.com');
         expect(person?.sameAs).toEqual(['https://github.com/y0ngha']);

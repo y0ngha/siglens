@@ -3036,12 +3036,6 @@
         "text": "와"
     },
     {
-        "file": "src/shared/lib/legal.ts",
-        "line": 24,
-        "reason": "non-component-module",
-        "text": "신용하"
-    },
-    {
         "file": "src/shared/lib/seo.ts",
         "line": 81,
         "reason": "developer-diagnostic",

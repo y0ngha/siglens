@@ -21,7 +21,7 @@ export const ABOUT_PATH = '/about';
  * 이름은 로케일과 무관하게 한글 표기 하나만 쓴다 — 로마자 표기를 지어내지 않는다.
  */
 export const SITE_OPERATOR = {
-    name: '신용하',
+    name: 'y0ngha',
     email: 'dev.y0ngha@gmail.com',
     githubUrl: 'https://github.com/y0ngha',
 } as const;
