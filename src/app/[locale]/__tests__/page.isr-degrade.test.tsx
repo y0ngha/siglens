@@ -51,6 +51,7 @@ vi.mock('@/entities/skill', () => ({
 }));
 vi.mock('@/shared/lib/seo', () => ({
     buildWebPageJsonLd: () => ({}),
+    GITHUB_URL: 'https://github.com/y0ngha/siglens',
     localizedAbsoluteUrl: (url: string) => url,
     SITE_DESCRIPTION: 'test description',
     SITE_NAME: 'Siglens',

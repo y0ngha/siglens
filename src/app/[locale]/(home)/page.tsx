@@ -14,6 +14,7 @@ import {
 import { SymbolSearchPanel } from '@/features/ticker-search';
 import {
     buildWebPageJsonLd,
+    GITHUB_URL,
     localizedAbsoluteUrl,
     ORGANIZATION_JSON_LD_ID,
     SITE_NAME,
@@ -221,7 +222,7 @@ export default async function Home({
         url: SITE_URL,
         logo: `${SITE_URL}/icon512.png`,
         description: tSeo('root.description'),
-        sameAs: ['https://github.com/y0ngha/siglens'],
+        sameAs: [GITHUB_URL],
         // 운영 주체를 그래프에 붙인다 — `/about`의 `Person` 노드와 같은 `@id`라
         // 두 페이지의 사람이 하나로 합쳐진다. 값은 `SITE_OPERATOR` 단일 소스.
         founder: {
