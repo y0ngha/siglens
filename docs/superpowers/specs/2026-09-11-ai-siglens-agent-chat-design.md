@@ -354,8 +354,8 @@ P4 후보: `get_asset_info`, `get_earnings`, `get_financials`, `get_market_overv
 | `/api/sitemap*` | — | `/api`는 matcher 밖이므로 sitemap 라우트 자체가 `host` 헤더를 보고 ai 호스트면 404 |
 | 그 외 | `/ai/{locale}/not-found` | |
 
-`proxy.ts`: **호스트 분기를 최상단**에 둔다(그 아래 심볼 대문자화 규칙이 `/ai`를 `/AI`로 301시키기 때문). 기존 `proxy.test.ts`의 가짜 요청은 `headers`가 없으므로 `makeRequest`에 `headers: new Headers()`를 추가한다. `RESERVED_FIRST_SEGMENTS`에 `'ai'` 추가.
-메인 호스트의 `/ai/*`는 `https://ai.siglens.io/*`로 301. 예약어 검사는 `expect(RESERVED_FIRST_SEGMENTS.has('ai'))` 단언으로 고정한다(디렉터리 스캔 확장은 `ai/[locale]/page.tsx`가 한 단계 아래라 효과 없음).
+`proxy.ts`: **호스트 분기를 최상단**에 둔다(그 아래 심볼 대문자화 규칙이 `/ai`를 `/AI`로 301시키기 때문). 기존 `proxy.test.ts`의 가짜 요청은 `headers`가 없으므로 `makeRequest`에 `headers: new Headers()`를 추가한다. 호스트 판정은 `host` 헤더만 쓴다(`x-forwarded-host` 폴백 없음 — 스푸핑 여지 제거).
+메인 호스트에서 **첫 세그먼트가 정확히 소문자 `ai`**인 경로만 `https://ai.siglens.io/*`로 301한다(기본 로케일 strip보다 먼저, 1홉). `'ai'`는 `RESERVED_FIRST_SEGMENTS`에 넣지 **않는다** — 대문자 `AI`는 C3.ai 티커(인기 종목·sitemap 포함)라 `/AI`·`/AI/news`는 종목 페이지로 남아야 하고, 예약하면 `/Ai`가 `/AI`로 정규화되지 않는다(구현 리뷰에서 발견, 2026-09-12). ai 호스트 CSP는 `frame-ancestors 'none'; img-src 'self' data:` — 미들웨어 헤더가 next.config의 CSP를 덮어쓰므로 frame-ancestors를 함께 넣는다. 모든 sitemap 라우트가 ai 호스트에서 404.
 ai 호스트 응답에 CSP 헤더 부착(`NextResponse.rewrite(url, { headers })`).
 dev: `ai.localhost:3000`을 ai 호스트로 인식(`AI_HOSTS` 상수: `ai.siglens.io`, `ai.localhost`).
 
