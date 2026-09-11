@@ -3,8 +3,10 @@ import type { TickerSearchResult } from '@/shared/lib/types';
 import { tryReadFmpConfig } from '@y0ngha/siglens-core';
 import { toFmpSearchSymbol } from '@/shared/lib/fmpSymbol';
 import {
+    assertOnline,
     isOfflineBuild,
     warnOfflineBuildOnce,
+    OFFLINE_BUILD_SERVICE,
 } from '@/shared/api/offlineBuild';
 import type { FmpSearchResult } from '../model';
 
@@ -75,11 +77,10 @@ async function fetchFmpEndpoint(
     const throwOnInfraFailure = options?.throwOnInfraFailure ?? false;
 
     if (isOfflineBuild()) {
-        warnOfflineBuildOnce('FMP');
-        if (throwOnInfraFailure)
-            throw new Error(
-                `[offline-build] blocked FMP request to ${endpoint}`
-            );
+        if (throwOnInfraFailure) {
+            assertOnline(OFFLINE_BUILD_SERVICE.FMP, endpoint);
+        }
+        warnOfflineBuildOnce(OFFLINE_BUILD_SERVICE.FMP);
         return [];
     }
 

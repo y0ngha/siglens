@@ -1,6 +1,8 @@
 import {
     isOfflineBuild,
     warnOfflineBuildOnce,
+    assertOnline,
+    OFFLINE_BUILD_SERVICE,
     __resetOfflineBuildWarningsForTests,
 } from '../offlineBuild';
 
@@ -59,6 +61,52 @@ describe('warnOfflineBuildOnce', () => {
         warnOfflineBuildOnce('Upstash');
 
         expect(warnSpy).toHaveBeenCalledTimes(3);
+
+        warnSpy.mockRestore();
+    });
+});
+
+describe('assertOnline', () => {
+    beforeEach(() => {
+        __resetOfflineBuildWarningsForTests();
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
+    it('offline이면 경고 후 [offline-build] 에러를 던진다', () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        expect(() =>
+            assertOnline(OFFLINE_BUILD_SERVICE.YAHOO, 'quote AAPL')
+        ).toThrow('[offline-build] blocked Yahoo request to quote AAPL');
+        expect(warnSpy).toHaveBeenCalledTimes(1);
+
+        warnSpy.mockRestore();
+    });
+
+    it('같은 서비스로 여러 번 불려도 경고는 한 번만 남긴다', () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        expect(() => assertOnline(OFFLINE_BUILD_SERVICE.FMP, 'a')).toThrow();
+        expect(() => assertOnline(OFFLINE_BUILD_SERVICE.FMP, 'b')).toThrow();
+
+        expect(warnSpy).toHaveBeenCalledTimes(1);
+
+        warnSpy.mockRestore();
+    });
+
+    it('online이면 아무 것도 하지 않는다', () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '');
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        expect(() =>
+            assertOnline(OFFLINE_BUILD_SERVICE.NEON, 'connection')
+        ).not.toThrow();
+        expect(warnSpy).not.toHaveBeenCalled();
 
         warnSpy.mockRestore();
     });

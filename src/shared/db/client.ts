@@ -5,8 +5,10 @@ import * as schema from './schema';
 import type { DatabaseClient, DatabaseConfig } from './types';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
+    assertOnline,
     isOfflineBuild,
     warnOfflineBuildOnce,
+    OFFLINE_BUILD_SERVICE,
 } from '@/shared/api/offlineBuild';
 
 let cachedClient: DatabaseClient | null = null;
@@ -41,10 +43,7 @@ function buildClient(config: DatabaseConfig): DatabaseClient {
  * connection before `neon()` is ever constructed).
  */
 export function getDatabaseClient(): DatabaseClient {
-    if (isOfflineBuild()) {
-        warnOfflineBuildOnce('Neon');
-        throw new Error('[offline-build] blocked Neon connection');
-    }
+    assertOnline(OFFLINE_BUILD_SERVICE.NEON, 'connection');
     cachedClient ??= buildClient(readDatabaseConfig());
     return cachedClient;
 }
@@ -56,7 +55,7 @@ export function getDatabaseClient(): DatabaseClient {
  */
 export function tryGetDatabaseClient(): DatabaseClient | null {
     if (isOfflineBuild()) {
-        warnOfflineBuildOnce('Neon');
+        warnOfflineBuildOnce(OFFLINE_BUILD_SERVICE.NEON);
         return null;
     }
     const config = tryReadDatabaseConfig();

@@ -3,6 +3,7 @@ import { Redis } from '@upstash/redis';
 import {
     isOfflineBuild,
     warnOfflineBuildOnce,
+    OFFLINE_BUILD_SERVICE,
 } from '@/shared/api/offlineBuild';
 
 export interface RedisClientPair {
@@ -34,7 +35,7 @@ function readUpstashEnv(): UpstashEnv | null {
     // 자격증명을 담고 있으므로) 미설정인 것처럼 취급한다 — 이 결과가 cachedEnv로
     // 메모되므로 이 체크는 메모이제이션보다 먼저 실행돼야 한다.
     if (isOfflineBuild()) {
-        warnOfflineBuildOnce('Upstash');
+        warnOfflineBuildOnce(OFFLINE_BUILD_SERVICE.UPSTASH);
         return null;
     }
     const url = process.env.UPSTASH_REDIS_REST_URL;
