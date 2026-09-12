@@ -35,7 +35,7 @@ export function EmptyState({
                             <button
                                 type="button"
                                 onClick={() => onPick(s)}
-                                className="border-control w-full rounded-lg border bg-secondary-800 px-3 py-2 text-left text-sm text-secondary-200 hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500"
+                                className="w-full rounded-lg border border-border-control bg-secondary-800 px-3 py-2 text-left text-sm text-secondary-200 hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500"
                             >
                                 {s}
                             </button>

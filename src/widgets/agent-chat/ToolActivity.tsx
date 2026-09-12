@@ -55,7 +55,7 @@ export function ToolActivity({
                         }
                         aria-expanded={open === item.id}
                         className={cn(
-                            'rounded-full border border-control px-2 py-0.5 text-xs text-secondary-300 focus-visible:ring-2 focus-visible:ring-primary-500',
+                            'rounded-full border border-border-control px-2 py-0.5 text-xs text-secondary-300 focus-visible:ring-2 focus-visible:ring-primary-500',
                             item.status === 'error' && 'text-ui-danger-text',
                             item.status === 'running' && 'animate-pulse'
                         )}

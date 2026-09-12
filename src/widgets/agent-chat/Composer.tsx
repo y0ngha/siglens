@@ -41,7 +41,7 @@ export function Composer({
         }
     };
     return (
-        <div className="border-control sticky bottom-0 border-t bg-secondary-900 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
+        <div className="sticky bottom-0 border-t border-border-control bg-secondary-900 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
             <div className="mx-auto flex w-full max-w-3xl items-end gap-2">
                 <textarea
                     ref={textareaRef}
@@ -52,7 +52,7 @@ export function Composer({
                     disabled={disabled}
                     aria-label={t('Composer.fdad68')}
                     placeholder={t('Composer.0aef61')}
-                    className="border-control max-h-40 min-h-11 flex-1 resize-none rounded-lg border bg-secondary-800 px-3 py-2 text-sm text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500"
+                    className="max-h-40 min-h-11 flex-1 resize-none rounded-lg border border-border-control bg-secondary-800 px-3 py-2 text-sm text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500"
                     onInput={e => {
                         const el = e.currentTarget;
                         el.style.height = 'auto';
@@ -63,7 +63,7 @@ export function Composer({
                     <button
                         type="button"
                         onClick={onStop}
-                        className="border-control rounded-lg border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-primary-500"
+                        className="rounded-lg border border-border-control px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-primary-500"
                     >
                         {t('Composer.d2e7e7')}
                     </button>

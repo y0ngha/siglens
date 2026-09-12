@@ -57,7 +57,7 @@ export function Sidebar({ items, activeId, localePrefix }: Props) {
         >
             <a
                 href={`${localePrefix}/`}
-                className="border-control rounded-lg border px-3 py-2 text-sm text-secondary-100 hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500"
+                className="rounded-lg border border-border-control px-3 py-2 text-sm text-secondary-100 hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500"
             >
                 {t('Sidebar.cd889e')}
             </a>
@@ -66,7 +66,7 @@ export function Sidebar({ items, activeId, localePrefix }: Props) {
                 onChange={e => setFilter(e.target.value)}
                 placeholder={t('Sidebar.4cbbe4')}
                 aria-label={t('Sidebar.4cbbe4')}
-                className="border-control rounded border bg-secondary-900 px-2 py-1 text-sm text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500"
+                className="rounded border border-border-control bg-secondary-900 px-2 py-1 text-sm text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500"
             />
             <ul className="flex-1 space-y-1 overflow-y-auto">
                 {visible.map(item => (

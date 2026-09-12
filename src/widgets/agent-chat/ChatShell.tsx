@@ -104,7 +104,7 @@ export function ChatShell({
         : false;
     return (
         <div className="flex min-h-dvh">
-            <aside className="border-control hidden w-64 shrink-0 border-r lg:block">
+            <aside className="hidden w-64 shrink-0 border-r border-border-control lg:block">
                 {sidebar}
             </aside>
             <Drawer.Root
@@ -158,7 +158,7 @@ export function ChatShell({
                             <button
                                 type="button"
                                 onClick={() => void stream.retry()}
-                                className="border-control rounded border px-2 py-0.5 text-xs text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500"
+                                className="rounded border border-border-control px-2 py-0.5 text-xs text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500"
                             >
                                 {t('ChatShell.548fe0')}
                             </button>

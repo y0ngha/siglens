@@ -94,7 +94,7 @@ export function MessageList({
                                             })
                                         }
                                         aria-label={t('MessageList.e6b008')}
-                                        className="border-control min-h-20 w-72 rounded border bg-secondary-900 p-2 text-secondary-100"
+                                        className="min-h-20 w-72 rounded border border-border-control bg-secondary-900 p-2 text-secondary-100"
                                     />
                                     <div className="flex gap-2">
                                         <button

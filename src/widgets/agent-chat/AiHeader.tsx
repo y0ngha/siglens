@@ -37,7 +37,7 @@ export function AiHeader({
 }: Props) {
     const t = useTranslations('widgets.agent-chat');
     return (
-        <header className="border-control flex h-14 items-center gap-3 border-b px-4">
+        <header className="flex h-14 items-center gap-3 border-b border-border-control px-4">
             <button
                 type="button"
                 onClick={onOpenSidebar}
