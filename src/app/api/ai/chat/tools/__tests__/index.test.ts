@@ -22,6 +22,12 @@ vi.mock('@/app/api/ai/chat/tools/getOptionsSummary', () => ({
 vi.mock('@/app/api/ai/chat/tools/getMyPortfolio', () => ({
     getMyPortfolioTool: vi.fn(),
 }));
+vi.mock('@/app/api/ai/chat/tools/runFreshAnalysis', () => ({
+    runFreshAnalysisTool: vi.fn(),
+}));
+vi.mock('@/app/api/ai/chat/tools/webSearch', () => ({
+    webSearchTool: vi.fn(),
+}));
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: () => false }));
 
 import {
@@ -50,7 +56,7 @@ describe('tool registry', () => {
         vi.unstubAllEnvs();
     });
 
-    it('P1 가용 툴 7종(web_search는 키 있을 때만)', () => {
+    it('가용 툴 8종(web_search는 키 있을 때만)', () => {
         expect([...availableToolNames()].sort()).toEqual([
             'get_bars_indicators',
             'get_cached_analysis',
@@ -58,8 +64,14 @@ describe('tool registry', () => {
             'get_news',
             'get_options_summary',
             'get_quote',
+            'run_fresh_analysis',
             'search_ticker',
         ]);
+    });
+
+    it('BRAVE_SEARCH_API_KEY가 있으면 web_search도 가용 목록에 포함된다', () => {
+        vi.stubEnv('BRAVE_SEARCH_API_KEY', 'b');
+        expect(availableToolNames().has('web_search')).toBe(true);
     });
 
     it('심볼 형태가 아니면 실행하지 않는다', async () => {

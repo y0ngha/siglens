@@ -102,6 +102,33 @@ process.env.NEXT_PUBLIC_SITE_URL = 'https://siglens.io';
     define('localStorage', new TestStorage());
 }
 
+/**
+ * Default `fetch` guard (agent-chat Task 13 review item 5): a bare
+ * `vi.spyOn(globalThis, 'fetch')` with no `mockResolvedValue`/
+ * `mockImplementation` silently proxies to the REAL implementation — that
+ * incident already happened once in this repo (a reverted `web_search` guard
+ * dialed the real Brave Search API during a revert-check). Replacing the
+ * global with a rejecting stub BEFORE any test file's own `vi.spyOn` runs
+ * means every unmocked `fetch()` call fails loudly and cheaply instead of
+ * silently reaching the network.
+ *
+ * Uses `Object.defineProperty` (not `vi.spyOn`) so the stub survives a
+ * test file calling `vi.restoreAllMocks()`: that call restores a spy to
+ * whatever it wrapped, and by installing the stub here — before any test's
+ * `vi.spyOn(globalThis, 'fetch')` — that "original" IS this rejecting stub,
+ * not the real network implementation.
+ */
+Object.defineProperty(globalThis, 'fetch', {
+    value: () =>
+        Promise.reject(
+            new Error(
+                'Unmocked global fetch() call in a test — mock it explicitly with vi.spyOn(globalThis, "fetch").mockResolvedValue(...)/.mockImplementation(...). A real network call from a test is not allowed.'
+            )
+        ),
+    writable: true,
+    configurable: true,
+});
+
 vi.mock('next/cache', () => ({
     cacheLife: () => {},
     cacheTag: () => {},

@@ -14,6 +14,8 @@ import { getCachedAnalysisTool } from './getCachedAnalysis';
 import { getNewsTool } from './getNews';
 import { getOptionsSummaryTool } from './getOptionsSummary';
 import { getMyPortfolioTool } from './getMyPortfolio';
+import { runFreshAnalysisTool } from './runFreshAnalysis';
+import { webSearchTool } from './webSearch';
 
 export interface ToolRuntime {
     /** Analysis model for cache keys/fresh runs — pilot: fixed to the agent model. */
@@ -33,7 +35,8 @@ const EXECUTORS: Record<string, ToolExecutor> = {
     get_news: getNewsTool,
     get_options_summary: getOptionsSummaryTool,
     get_my_portfolio: getMyPortfolioTool,
-    // Task 13 adds: run_fresh_analysis, web_search
+    run_fresh_analysis: runFreshAnalysisTool,
+    web_search: webSearchTool,
 };
 
 /** Tools this process can execute now. `web_search` needs a Brave key and is off under E2E. */
