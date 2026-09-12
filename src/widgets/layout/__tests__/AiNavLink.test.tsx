@@ -58,4 +58,30 @@ describe('AiNavLink', () => {
             'page'
         );
     });
+
+    describe('wordmark variant (logo lockup)', () => {
+        it('shows only "AI" but keeps the full accessible name and the ai href', () => {
+            render(<AiNavLink variant="wordmark" />);
+            const link = screen.getByRole('link', { name: 'SiglensAI' });
+            expect(link).toHaveTextContent(/^AI$/);
+            expect(link).toHaveAttribute('translate', 'no');
+            expect(link).toHaveAttribute(
+                'href',
+                `${AI_SITE_URL}${localePath('ko', '/')}`
+            );
+            expect(link).not.toHaveAttribute('aria-current');
+            expect(link.className).toMatch(/font-mono/);
+        });
+
+        it('is the current page on the ai host', () => {
+            render(
+                <LocaleProvider locale="ko" hrefBase="https://siglens.io">
+                    <AiNavLink variant="wordmark" />
+                </LocaleProvider>
+            );
+            expect(
+                screen.getByRole('link', { name: 'SiglensAI' })
+            ).toHaveAttribute('aria-current', 'page');
+        });
+    });
 });

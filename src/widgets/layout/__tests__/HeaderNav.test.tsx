@@ -123,11 +123,8 @@ describe('HeaderNav', () => {
         ).toBeInTheDocument();
     });
 
-    it('renders the SiglensAI entry point as the last nav item', () => {
+    it('SiglensAI 진입점은 로고 락업이 맡는다 — 데스크톱 내비에는 없다', () => {
         render(<HeaderNav items={NAV_TREE} />);
-
-        expect(
-            screen.getByRole('link', { name: 'SiglensAI' })
-        ).toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: /SiglensAI/i })).toBeNull();
     });
 });

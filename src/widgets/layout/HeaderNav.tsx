@@ -4,7 +4,6 @@ import { useTranslations } from 'next-intl';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import type { NavVerticalNode } from './headerNavTree';
 import { HeaderNavMenu } from './HeaderNavMenu';
-import { AiNavLink } from './AiNavLink';
 
 interface HeaderNavProps {
     readonly items: ReadonlyArray<NavVerticalNode>;
@@ -30,7 +29,6 @@ export function HeaderNav({ items }: HeaderNavProps) {
                     pathname={pathname}
                 />
             ))}
-            <AiNavLink />
         </nav>
     );
 }
