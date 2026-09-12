@@ -334,6 +334,10 @@ describe('POST /api/ai/chat/stream', () => {
         expect(res.headers.get('x-accel-buffering')).toBe('no');
         const f = await frames(res);
         expect(f[0]).toContain('"conversationId":"c-new"');
+        // The client needs the stored user row's `seq` on the `meta` frame to make the
+        // optimistic bubble it renders before this response arrives immediately
+        // editable (spec §UI) — otherwise Edit only shows up after a reload.
+        expect(f[0]).toContain('"userMessageSeq":1');
         expect(f.at(-1)).toContain('event: done');
         expect(m.repo.create).toHaveBeenCalledWith({
             userId: 'u1',
@@ -385,7 +389,9 @@ describe('POST /api/ai/chat/stream', () => {
             ROW(3, 'user', '다시'),
             ROW(4, 'assistant', 'old', 'superseded'),
         ]);
-        await POST(post({ conversationId: 'c1', action: 'regenerate' }));
+        const res = await POST(
+            post({ conversationId: 'c1', action: 'regenerate' })
+        );
         const params = m.runTurn.mock.lastCall![0];
         expect(params.userMessage).toBe('다시');
         expect(params.history).toEqual([
@@ -398,6 +404,10 @@ describe('POST /api/ai/chat/stream', () => {
             c => Array.isArray(c[1]) && c[1][0]?.role === 'user'
         );
         expect(userAppendCall).toBeUndefined();
+        // No new user row was appended this turn, so there is no seq for the client
+        // to attach to an (already-existing) bubble.
+        const f = await frames(res);
+        expect(f[0]).toContain('"userMessageSeq":null');
     });
     it('regenerate 대상 user 행이 없으면 400 invalid_body, lock 해제', async () => {
         const release = vi.fn();

@@ -438,6 +438,15 @@
                     "nearLow": "处于接近近一年低点的下方区间。"
                 }
             }
+        },
+        "ai": {
+            "layout": {
+                "9401e4": "SiglensAI 正在维护中，请稍后再试。"
+            },
+            "not-found": {
+                "04598e": "开始新对话",
+                "047c35": "未找到对话"
+            }
         }
     },
     "entities": {
@@ -3423,6 +3432,79 @@
                 "94b7db": "关闭",
                 "b74ea2": "此股票暂无AI分析。稍等片刻即可准备好 — 完成后将直接跳转到分享界面。",
                 "cc6aae": "分析并分享"
+            }
+        },
+        "agent-chat": {
+            "AiHeader": {
+                "615212": "账户",
+                "3879f0": "退出登录",
+                "ac1c4d": "打开对话列表",
+                "e225a6": "登录"
+            },
+            "ChatShell": {
+                "548fe0": "重试",
+                "9a7569": "对话列表",
+                "errorInvalidBody": "无法处理请求。请刷新后重试。",
+                "errorUnauthenticated": "请先登录。",
+                "errorBot": "无法处理请求。",
+                "errorNotFound": "未找到对话。",
+                "errorConversationLimit": "已达到对话数量上限，请删除较旧的对话。",
+                "errorConversationFull": "此对话已满，请开始新对话。",
+                "errorDisabled": "SiglensAI 正在维护中，请稍后再试。",
+                "errorServerBusy": "当前请求较多，请稍后再试。",
+                "errorTurnLimit": "已达到今日使用上限，请明天再来。",
+                "errorPremiumTurnLimit": "已达到今日高级模型使用上限，请明天再来。",
+                "errorRateLimited": "由于请求过多，暂时受到限制，请稍后再试。",
+                "errorServerError": "发生错误，请重试。",
+                "errorDeadline": "响应超时，请重新生成。",
+                "errorAborted": "已中断。",
+                "errorGeneric": "发生错误，请重试。"
+            },
+            "Composer": {
+                "0aef61": "询问股票、市场、新闻或您的持仓（Enter 发送 · Shift+Enter 换行）",
+                "4077ce": "发送",
+                "b21dfd": "仅供参考，不构成投资建议。",
+                "d2e7e7": "停止",
+                "fdad68": "消息输入",
+                "tooLong": "{len} / {max} 字符 — 太长",
+                "remainingTurns": "今日剩余 {n} 次 · ",
+                "charCount": "{len} / {max}"
+            },
+            "EmptyState": {
+                "a00741": "使用 siglens 账户登录",
+                "a12848": "直接查询行情、指标、siglens 分析、新闻、期权和您的持仓来回答。如果没有缓存的分析，会重新进行分析。",
+                "aea068": "向 SiglensAI 提问",
+                "suggestionPortfolio": "我的持仓现在怎么样？",
+                "suggestionSamsung": "总结一下三星电子最新的 siglens 分析",
+                "suggestionAapl": "AAPL 目前的趋势和 RSI 如何？",
+                "suggestionNews": "只看这周美国市场的重要新闻",
+                "suggestionNvda": "NVDA 的期权市场情况如何？",
+                "suggestionBtc": "有 BTCUSD 的缓存分析吗？"
+            },
+            "MessageList": {
+                "259976": "回答被截断了，请继续提问。",
+                "19b2d1": "取消",
+                "43da5e": "重新生成",
+                "6523ca": "重新发送",
+                "96adfe": "此回答已中断。",
+                "a55b1e": "复制",
+                "afd172": "生成回答失败。",
+                "e1407b": "编辑",
+                "e6b008": "编辑消息"
+            },
+            "Sidebar": {
+                "4cbbe4": "搜索对话",
+                "586a5c": "对话名称",
+                "73e5a8": "重命名",
+                "9a7569": "对话列表",
+                "cd889e": "+ 新对话",
+                "fc81e2": "删除",
+                "14bb5e": "要删除这个对话吗？",
+                "19b2d1": "取消"
+            },
+            "ToolActivity": {
+                "b4c619": "使用的工具",
+                "aboutSeconds": "约 {n} 秒"
             }
         }
     }

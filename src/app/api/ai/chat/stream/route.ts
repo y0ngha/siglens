@@ -176,6 +176,7 @@ export async function POST(request: Request): Promise<Response> {
         let conversationId = conversation?.id ?? '';
         let userMessage = body.message;
         let userMessageId: string | null = null;
+        let userMessageSeq: number | null = null;
         let title: string | undefined;
 
         if (conversation === null) {
@@ -228,6 +229,7 @@ export async function POST(request: Request): Promise<Response> {
                 { role: 'user', content: body.message },
             ]);
             userMessageId = saved?.id ?? null;
+            userMessageSeq = saved?.seq ?? null;
         }
 
         const portfolioSymbols = (
@@ -246,6 +248,7 @@ export async function POST(request: Request): Promise<Response> {
             meta: {
                 conversationId,
                 userMessageId,
+                userMessageSeq,
                 model: AGENT_MODEL,
                 ...(title !== undefined ? { title } : {}),
             },
