@@ -249,7 +249,7 @@ chat_conversations
   message_count integer not null default 0
   last_message_at timestamptz not null
   created_at / updated_at timestamptz not null default now()
-  deleted_at timestamptz null            -- soft delete. 하드 삭제 크론은 없음(1차) — 저장량이 KB 단위라 보류
+  deleted_at timestamptz null            -- 0035에 남아 있으나 **미사용**(향후 undo용 여지). 회원의 삭제는 행을 실제로 지운다
   index (user_id, last_message_at desc) where deleted_at is null
 
 chat_messages
@@ -271,7 +271,7 @@ chat_messages
 
 ### 6-2. 서버 액션 (`entities/chat-conversation/actions/`)
 
-`listConversationsAction()`, `getConversationAction(id)`, `renameConversationAction(id,title)`, `deleteConversationAction(id)`(soft). 파일럿은 커서 페이징 없이 목록 상한 300(= 최대 티어 대화 수 상한 pro 300) — 상한보다 적게 보이면 오래된 대화가 사이드바에서 사라진 채 한도만 차감된다. 티어 상한이 커지면 `lastMessageAt`+`id` 커서로 전환. 모든 액션·리포지토리는 비-UUID id를 DB에 보내지 않고 not-found로 처리한다(22P02→500 방지).
+`listConversationsAction()`, `getConversationAction(id)`, `renameConversationAction(id,title)`, `deleteConversationAction(id)`(**하드 삭제** — 행을 지우고 `chat_messages`는 FK cascade로 함께 사라진다. 개인정보 고지가 '삭제 시 즉시 파기'를 약속하므로 soft delete로는 문서와 코드가 어긋난다. 소유자·UUID 검증은 동일). 파일럿은 커서 페이징 없이 목록 상한 300(= 최대 티어 대화 수 상한 pro 300) — 상한보다 적게 보이면 오래된 대화가 사이드바에서 사라진 채 한도만 차감된다. 티어 상한이 커지면 `lastMessageAt`+`id` 커서로 전환. 모든 액션·리포지토리는 비-UUID id를 DB에 보내지 않고 not-found로 처리한다(22P02→500 방지).
 전부 `getCurrentUser` 필수, `where user_id = me and deleted_at is null`.
 
 ### 6-3. SSE 라우트 `POST /api/ai/chat/stream`
@@ -545,7 +545,7 @@ SSE 600초 완주·침묵 61초 절단(ALB 시절), 프리웜 5~6천 호출/일�
 ## 17. v1 → v2 리뷰 반영 요약
 
 반영(수정): 확인 게이트 폐기·자동 실행(R4) / 회원 전용 / 쿠키 도메인 확장 폐기·호스트별 로그인 / `heartbeatStream` 재사용 불가 → 전용 writer / 툴 실행기 app 레이어 / `provider_meta`·요약 압축·추론 토글 P3로 / 타임아웃 300·마감 600 / fail-closed / CF Rate Limiting·CSP·img 차단 / 절단 규칙 단일화 / seq 트랜잭션 / 동시 턴 Redis 락 / activeStreams 직접 등록·중첩 카운트 / abort 의미 명시 / 소유권 검증 명시 / 비용 비관치·Brave 산술·캐시 쓰기 / 알람 1M·킬 스위치 / KR 세션 스펙 / peek 시그니처·6탭 커버리지 / `NormalizedUsage` 이동 / `isAdmissibleSymbolShape`는 siglens / proxy 순서·예약어·테스트 범위 / robots / i18n 루트 / `OPTIONAL_KEYS` / OAuth redirect base / regenerate·edit·복사·a11y·모바일 / 개인정보 고지 / 롤백 노트 / 툴 8종으로 축소 / 폴백 프로바이더.
-미반영(의도적): 하드 삭제 크론(저장량 미미, soft delete만) / LLM 제목·요약 압축(P3) / `siglens.io/ai` 경로 대안(사용자 요구가 서브도메인) / 비회원 지원(2차 검토) / FMP 예산 계측(계측기 자체가 없음, 심볼·일일 상한으로 대체).
+미반영(의도적): 보관 기간 만료용 파기 크론(회원 삭제는 즉시 하드 삭제, 탈퇴는 users cascade라 별도 크론 불필요) / LLM 제목·요약 압축(P3) / `siglens.io/ai` 경로 대안(사용자 요구가 서브도메인) / 비회원 지원(2차 검토) / FMP 예산 계측(계측기 자체가 없음, 심볼·일일 상한으로 대체).
 
 구현 계획(2026-09-12, `docs/superpowers/plans/2026-09-12-ai-agent-chat-{core,siglens}.md`)에서 확정한 편차 2건: (1) `tokenStore` 리팩터 생략 — 기존 키가 날짜 버킷 없는 롤링 24h 형식이라 계약이 바뀜, 새 `createCounterStore`만 추가. (2) i18n 추출기 `APP` 루트 일반화 대신 ai 레이아웃이 클라이언트 네임스페이스를 명시 목록으로 주입(`--only src/app/ai`·`src/widgets/agent-chat`로 추출은 동일).
 
