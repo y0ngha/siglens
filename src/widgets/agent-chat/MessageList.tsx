@@ -21,12 +21,12 @@ export function MessageList({
     onEdit,
 }: Props) {
     const t = useTranslations('widgets.agent-chat');
-    const endRef = useRef<HTMLDivElement>(null);
     const [pinned, setPinned] = useState(true);
     const [editing, setEditing] = useState<{
         seq: number;
         text: string;
     } | null>(null);
+    const endRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         if (pinned) endRef.current?.scrollIntoView({ block: 'end' });
     }, [messages, pinned]);

@@ -1,12 +1,11 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AGENT_ERROR_CODES } from '@/features/agent-chat';
 import ko from '../../../../messages/ko.json';
 
-vi.mock('next/navigation', () => ({
-    useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
-}));
+const router = vi.hoisted(() => ({ refresh: vi.fn(), push: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: () => router }));
 vi.mock('@/features/auth-logout/actions/logoutAction', () => ({
     logoutAction: vi.fn(),
 }));
@@ -22,7 +21,7 @@ const mockStream = vi.hoisted(() => ({
         },
     ],
     conversationId: 'c1',
-    status: 'idle' as const,
+    status: 'idle' as 'idle' | 'streaming' | 'error',
     error: null as string | null,
     remaining: null,
     send: vi.fn(),
@@ -31,10 +30,25 @@ const mockStream = vi.hoisted(() => ({
     retry: vi.fn(),
     stop: vi.fn(),
 }));
+/** Captures what ChatShell passes in, so a test can fire `onConversationCreated` itself. */
+const captured = vi.hoisted(
+    () =>
+        ({ options: null }) as {
+            options: {
+                onConversationCreated?: (id: string, title: string) => void;
+            } | null;
+        }
+);
 vi.mock('@/features/agent-chat', async importOriginal => {
     const actual =
         await importOriginal<typeof import('@/features/agent-chat')>();
-    return { ...actual, useAgentStream: () => mockStream };
+    return {
+        ...actual,
+        useAgentStream: (options: typeof captured.options) => {
+            captured.options = options;
+            return mockStream;
+        },
+    };
 });
 
 import { ChatShell } from '@/widgets/agent-chat/ChatShell';
@@ -46,18 +60,23 @@ const wrap = (ui: React.ReactElement) =>
         </NextIntlClientProvider>
     );
 
+// A fresh element each call: passing the SAME element reference to `rerender`
+// makes React bail out of re-rendering the subtree, so the effect under test
+// never sees the new status.
+const shellTree = () => (
+    <ChatShell
+        conversationId="c1"
+        initialMessages={[]}
+        conversations={[]}
+        signedIn
+        localePrefix=""
+        siteUrl="https://siglens.io"
+        currentPath="/c1"
+    />
+);
+
 function renderShell() {
-    return wrap(
-        <ChatShell
-            conversationId="c1"
-            initialMessages={[]}
-            conversations={[]}
-            signedIn
-            localePrefix=""
-            siteUrl="https://siglens.io"
-            currentPath="/c1"
-        />
-    );
+    return wrap(shellTree());
 }
 
 describe('ChatShell error banner', () => {
@@ -114,5 +133,53 @@ describe('ChatShell error banner', () => {
         fireEvent.click(screen.getByRole('button', { name: /재시도/ }));
         expect(mockStream.retry).toHaveBeenCalledTimes(1);
         expect(mockStream.regenerate).not.toHaveBeenCalled();
+    });
+});
+
+describe('ChatShell new-conversation refresh', () => {
+    beforeAll(() => {
+        Element.prototype.scrollIntoView = vi.fn();
+    });
+    beforeEach(() => {
+        router.refresh.mockClear();
+        captured.options = null;
+        mockStream.error = null;
+    });
+
+    /**
+     * `/c/[id]` is a different route segment than the page that rendered this shell,
+     * so a refresh mid-turn remounts ChatShell: the stream hook's unmount cleanup
+     * aborts the live request and the answer never arrives. Asserting only the final
+     * refresh would pass even if it fired immediately — the point is that it does NOT
+     * fire while `status === 'streaming'`.
+     */
+    it('holds router.refresh() until the turn stops streaming', () => {
+        mockStream.status = 'streaming';
+        const { rerender } = renderShell();
+        act(() => {
+            captured.options?.onConversationCreated?.('c2', 't');
+        });
+        expect(window.location.pathname).toBe('/c/c2');
+        expect(router.refresh).not.toHaveBeenCalled();
+
+        mockStream.status = 'idle';
+        rerender(
+            <NextIntlClientProvider locale="ko" messages={ko}>
+                {shellTree()}
+            </NextIntlClientProvider>
+        );
+        expect(router.refresh).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not refresh when no conversation was created', () => {
+        mockStream.status = 'streaming';
+        const { rerender } = renderShell();
+        mockStream.status = 'idle';
+        rerender(
+            <NextIntlClientProvider locale="ko" messages={ko}>
+                {shellTree()}
+            </NextIntlClientProvider>
+        );
+        expect(router.refresh).not.toHaveBeenCalled();
     });
 });

@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Drawer } from 'vaul';
 import { useRouter } from 'next/navigation';
 import type { ChatMessageView } from '@/entities/chat-conversation';
@@ -39,14 +39,31 @@ export function ChatShell({
     const t = useTranslations('widgets.agent-chat');
     const router = useRouter();
     const [drawerOpen, setDrawerOpen] = useState(false);
+    /**
+     * `replaceState` moves the URL to `/c/<id>`, which is a DIFFERENT route segment
+     * than the page that rendered this shell. Refreshing while the turn is still
+     * streaming makes Next unmount this ChatShell and mount the `/c/[id]` one: the
+     * stream hook's unmount cleanup aborts the in-flight request (the server sees the
+     * client disconnect and logs `turn failed: aborted`) and the fresh instance
+     * re-initializes from server rows that do not hold the answer yet — so the
+     * streaming bubble disappears and no reply ever lands. Defer the refresh (which
+     * exists to pull the new conversation into the sidebar list) until the turn
+     * settles.
+     */
+    const pendingRefreshRef = useRef(false);
     const stream = useAgentStream({
         conversationId,
         initialMessages,
         onConversationCreated: id => {
             window.history.replaceState(null, '', `${localePrefix}/c/${id}`);
-            router.refresh();
+            pendingRefreshRef.current = true;
         },
     });
+    useEffect(() => {
+        if (stream.status === 'streaming' || !pendingRefreshRef.current) return;
+        pendingRefreshRef.current = false;
+        router.refresh();
+    }, [stream.status, router]);
 
     // A session that expired mid-visit surfaces as a 401 on the stream route —
     // bounce through the same handoff flow the login CTA uses instead of

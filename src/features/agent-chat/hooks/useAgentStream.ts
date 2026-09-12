@@ -159,47 +159,48 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
     const [messages, setMessages] = useState<AgentUiMessage[]>(() =>
         fromViews(options.initialMessages)
     );
-    // Mirrors `messages` synchronously (state updates are async) so
-    // `send`/`edit`/`regenerate` can snapshot "what the transcript looked
-    // like right before this optimistic mutation" and hand it to `run` for
-    // an exact rollback on an `HttpError` (nothing persisted server-side).
-    const messagesRef = useRef(messages);
-    // Synced in an effect, not inside the updater: a state updater must stay pure
-    // (React may re-run it). Handlers read this after commit, which is exactly the
-    // "before this optimistic mutation" snapshot they need.
-    useEffect(() => {
-        messagesRef.current = messages;
-    }, [messages]);
-    const updateMessages = useCallback(
-        (updater: (prev: AgentUiMessage[]) => AgentUiMessage[]) => {
-            setMessages(updater);
-        },
-        []
-    );
     const [conversationId, setConversationId] = useState(
         options.conversationId
     );
     const [status, setStatus] = useState<StreamStatus>('idle');
     const [error, setError] = useState<AgentClientErrorCode | null>(null);
     const [remaining, setRemaining] = useState<AgentRemaining | null>(null);
+
+    // Mirrors `messages` synchronously (state updates are async) so
+    // `send`/`edit`/`regenerate` can snapshot "what the transcript looked
+    // like right before this optimistic mutation" and hand it to `run` for
+    // an exact rollback on an `HttpError` (nothing persisted server-side).
+    const messagesRef = useRef(messages);
     const controllerRef = useRef<AbortController | null>(null);
     const onConversationCreatedRef = useRef(options.onConversationCreated);
+    /** Body of the most recent `run()` call, replayed by `retry()` for an HTTP-stage failure (spec: retry must not turn into `regenerate` there). */
+    const lastBodyRef = useRef<Record<string, unknown> | null>(null);
+    /** Which failure kind `retry()` is reacting to — only a `TurnFrameError` may map to `regenerate()` (a partial assistant row was actually persisted for that turn). */
+    const lastErrorKindRef = useRef<'http' | 'turn' | null>(null);
+
+    // Synced in an effect, not inside the updater: a state updater must stay pure
+    // (React may re-run it). Handlers read this after commit, which is exactly the
+    // "before this optimistic mutation" snapshot they need.
+    useEffect(() => {
+        messagesRef.current = messages;
+    }, [messages]);
     // Not assigned during render — a render is allowed to be discarded/replayed
     // (React strict-mode double-invoke, concurrent features), so a callback
     // ref must only be captured once the render has actually committed.
     useEffect(() => {
         onConversationCreatedRef.current = options.onConversationCreated;
     }, [options.onConversationCreated]);
-
-    /** Body of the most recent `run()` call, replayed by `retry()` for an HTTP-stage failure (spec: retry must not turn into `regenerate` there). */
-    const lastBodyRef = useRef<Record<string, unknown> | null>(null);
-    /** Which failure kind `retry()` is reacting to — only a `TurnFrameError` may map to `regenerate()` (a partial assistant row was actually persisted for that turn). */
-    const lastErrorKindRef = useRef<'http' | 'turn' | null>(null);
-
     // Abort an in-flight turn if the component unmounts mid-stream (nav away,
     // conversation swap) — an orphaned reader loop would keep patching state
     // on an unmounted hook instance.
     useEffect(() => () => controllerRef.current?.abort(), []);
+
+    const updateMessages = useCallback(
+        (updater: (prev: AgentUiMessage[]) => AgentUiMessage[]) => {
+            setMessages(updater);
+        },
+        []
+    );
 
     const patchLast = useCallback(
         (fn: (m: AgentUiMessage) => AgentUiMessage) => {
