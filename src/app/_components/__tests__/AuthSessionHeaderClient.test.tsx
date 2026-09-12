@@ -52,6 +52,7 @@ const user: AuthUserRecord = {
 };
 
 interface CapturedHeaderProps {
+    authNext?: string;
     currentUser: unknown;
     loadingUserMenu?: boolean;
 }
@@ -82,6 +83,30 @@ describe('AuthSessionHeaderClient', () => {
             avatarUrl: null,
             tier: 'member',
         });
+    });
+
+    it('authReturn="ai": 로그인/가입 복귀 경로가 현재 pathname을 담은 SSO 핸드오프가 된다', () => {
+        mockAuthHint.mockReturnValue(false);
+        mockPathname.mockReturnValue('/en/c/abc');
+        mockCurrentUser.mockReturnValue({
+            data: null,
+            isPending: false,
+        } as never);
+        render(<AuthSessionHeaderClient authReturn="ai" />);
+        expect(lastHeaderProps().authNext).toBe(
+            '/api/auth/handoff?to=ai&next=%2Fen%2Fc%2Fabc'
+        );
+    });
+
+    it('authReturn 없음(메인 호스트): authNext를 넘기지 않는다', () => {
+        mockAuthHint.mockReturnValue(false);
+        mockPathname.mockReturnValue('/market');
+        mockCurrentUser.mockReturnValue({
+            data: null,
+            isPending: false,
+        } as never);
+        render(<AuthSessionHeaderClient />);
+        expect(lastHeaderProps().authNext).toBeUndefined();
     });
 
     it('Happy: 게스트(쿼리 resolved null, hint 없음) → currentUser=null', () => {

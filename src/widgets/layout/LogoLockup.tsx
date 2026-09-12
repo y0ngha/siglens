@@ -32,10 +32,13 @@ export function LogoLockup() {
                 // 다른 `_rsc` 해시를 만들어 `/`의 캐시를 파편화시킨다
                 // (docs/architecture/CDN_CACHING.md §1).
                 prefetch={false}
-                // Visible brand text is `text-...uppercase` (renders "SIGLENS"),
-                // so the accessible name must match what users see (WCAG 2.5.3).
+                // Visible brand text is `text-...uppercase` (renders "SIGLENS",
+                // and next to it "AI" on the ai host), so the accessible name must
+                // match what users see (WCAG 2.5.3) — and where the link goes.
                 aria-label={t('Header.homeLabel', {
-                    v0: SITE_NAME.toUpperCase(),
+                    v0: onAiHost
+                        ? `${SITE_NAME.toUpperCase()} AI`
+                        : SITE_NAME.toUpperCase(),
                 })}
                 className="-mx-1 flex min-h-11 shrink-0 touch-manipulation items-center gap-2 rounded px-1 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >

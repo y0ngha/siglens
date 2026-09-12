@@ -26,7 +26,7 @@ import { QUERY_KEYS } from '@/shared/config/queryConfig';
  * 전적으로 httpOnly 세션 + DB로만 이뤄지므로 클라가 hint를 읽어도 표면이 넓어지지 않는다.
  */
 export function AuthSessionHeaderClient({
-    authNext,
+    authReturn,
 }: {
     /**
      * SSO handoff query forwarded to every `Header` this component renders.
@@ -34,13 +34,23 @@ export function AuthSessionHeaderClient({
      * signup CTAs return through the handoff instead of stranding the
      * visitor on the main host. Undefined on the main host itself.
      */
-    readonly authNext?: string;
+    /**
+     * `'ai'` on ai.siglens.io: login/signup links carry the SSO handoff back
+     * to the page the user is on (`/c/<id>` included), computed from the live
+     * pathname here because the server layout that mounts this header cannot
+     * see it.
+     */
+    readonly authReturn?: 'ai';
 } = {}) {
     const syncedPathRef = useRef<string | null>(null);
     const hasHint = useAuthHint();
     const { data: user, isPending } = useCurrentUser();
     const queryClient = useQueryClient();
     const pathname = usePathname();
+    const authNext =
+        authReturn === 'ai'
+            ? `/api/auth/handoff?to=ai&next=${encodeURIComponent(pathname)}`
+            : undefined;
 
     // 정적 ISR 셸 헤더 자가치유: login/signup/oauth/delete는 서버 redirect()로 끝나
     // (soft navigation) 클라 currentUser 쿼리가 갱신되지 않으면 헤더가 직전 상태로 남는다.

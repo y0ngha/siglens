@@ -75,7 +75,7 @@ export default async function AiRootLayout({
                         <ReactQueryProvider>
                             <SearchOverlayProvider>
                                 <VisitorPing />
-                                <AuthSessionHeaderClient authNext="/api/auth/handoff?to=ai&next=%2F" />
+                                <AuthSessionHeaderClient authReturn="ai" />
                                 {disabled ? (
                                     <main className="mx-auto flex min-h-dvh w-full max-w-3xl items-center justify-center px-4 text-center text-secondary-200">
                                         {t('layout.9401e4')}

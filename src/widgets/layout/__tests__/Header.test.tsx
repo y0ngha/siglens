@@ -114,6 +114,7 @@ describe('Header', () => {
             expect(
                 logo.getAttribute('data-href') ?? logo.getAttribute('href')
             ).toBe('/');
+            expect(logo).toHaveAttribute('aria-label', 'SIGLENS 홈');
             // No duplicate entry in the desktop nav: the lockup is the entry point.
             expect(
                 screen.getAllByRole('link', { name: 'SiglensAI' })
@@ -133,6 +134,8 @@ describe('Header', () => {
             expect(
                 logo.getAttribute('data-href') ?? logo.getAttribute('href')
             ).toBe(`${AI_SITE_URL}/`);
+            // The name says where the link goes and what is visible next to it.
+            expect(logo).toHaveAttribute('aria-label', 'SIGLENS AI 홈');
             expect(screen.getByText('Siglens').className).toMatch(/\binline\b/);
         });
     });
