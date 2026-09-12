@@ -6,9 +6,6 @@ import ko from '../../../../messages/ko.json';
 
 const router = vi.hoisted(() => ({ refresh: vi.fn(), push: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => router }));
-vi.mock('@/features/auth-logout/actions/logoutAction', () => ({
-    logoutAction: vi.fn(),
-}));
 
 const mockStream = vi.hoisted(() => ({
     messages: [
@@ -181,5 +178,43 @@ describe('ChatShell new-conversation refresh', () => {
             </NextIntlClientProvider>
         );
         expect(router.refresh).not.toHaveBeenCalled();
+    });
+});
+
+/**
+ * Task S3: the ai host now renders the shared main `Header` above this
+ * shell (`AuthSessionHeaderClient`), so `ChatShell` itself must not draw a
+ * second one — that was the old `AiHeader`'s `<header>` element, now removed
+ * in favor of a `lg:hidden` bar that only opens the mobile conversation
+ * drawer.
+ */
+describe('ChatShell chrome', () => {
+    beforeAll(() => {
+        Element.prototype.scrollIntoView = vi.fn();
+    });
+    beforeEach(() => {
+        mockStream.error = null;
+        mockStream.status = 'idle';
+    });
+
+    it('renders no header landmark of its own (the shared Header owns that)', () => {
+        renderShell();
+        expect(screen.queryByRole('banner')).toBeNull();
+    });
+
+    it('the mobile bar opens the sidebar drawer', () => {
+        renderShell();
+        const trigger = screen.getByRole('button', {
+            name: /대화 목록/,
+        });
+        expect(trigger).toHaveAttribute('aria-expanded', 'false');
+        fireEvent.click(trigger);
+        expect(trigger).toHaveAttribute('aria-expanded', 'true');
+        // vaul renders `Drawer.Content` into a portal once open; assert the
+        // drawer's own (sr-only) title becomes reachable rather than relying
+        // on any particular internal vaul DOM structure.
+        expect(screen.getAllByText('대화 목록').length).toBeGreaterThanOrEqual(
+            2
+        ); // mobile-bar button label + drawer title
     });
 });

@@ -10,10 +10,10 @@ import {
     useAgentStream,
     type AgentClientErrorCode,
 } from '@/features/agent-chat';
-import { AiHeader, loginHref } from './AiHeader';
 import { Composer } from './Composer';
 import { AGENT_ERROR_RETRYABLE } from './errorCopy';
 import { EmptyState } from './EmptyState';
+import { loginHref } from './loginHref';
 import { MessageList } from './MessageList';
 import { Sidebar } from './Sidebar';
 
@@ -119,8 +119,10 @@ export function ChatShell({
     const errorRetryable = errorCode
         ? (AGENT_ERROR_RETRYABLE[errorCode] ?? true)
         : false;
+    const activeTitle =
+        conversations.find(c => c.id === stream.conversationId)?.title ?? '';
     return (
-        <div className="flex min-h-dvh">
+        <div className="flex min-h-[calc(100dvh-3.5rem)]">
             <aside className="hidden w-64 shrink-0 border-r border-border-control lg:block">
                 {sidebar}
             </aside>
@@ -131,7 +133,10 @@ export function ChatShell({
                 modal={false}
             >
                 <Drawer.Portal>
-                    <Drawer.Content className="fixed inset-y-0 left-0 z-50 w-72 bg-secondary-900">
+                    <Drawer.Content
+                        id="agent-chat-sidebar-drawer"
+                        className="fixed inset-y-0 left-0 z-[60] w-72 bg-secondary-900"
+                    >
                         <Drawer.Title className="sr-only">
                             {t('ChatShell.9a7569')}
                         </Drawer.Title>
@@ -140,13 +145,29 @@ export function ChatShell({
                 </Drawer.Portal>
             </Drawer.Root>
             <div className="flex min-w-0 flex-1 flex-col">
-                <AiHeader
-                    signedIn={signedIn}
-                    siteUrl={siteUrl}
-                    localePrefix={localePrefix}
-                    currentPath={currentPath}
-                    onOpenSidebar={() => setDrawerOpen(true)}
-                />
+                {/* Sidebar is desktop-only (`aside` above); mobile opens it in the
+                    vaul drawer instead. The shared main `Header` above this shell
+                    already carries the site chrome, so this bar's only job is the
+                    drawer trigger + the active conversation's title. */}
+                <div className="flex h-11 items-center gap-2 border-b border-border-control px-2 lg:hidden">
+                    <button
+                        type="button"
+                        onClick={() => setDrawerOpen(true)}
+                        // vaul unmounts the drawer content while closed, so the id only
+                        // exists once open — a reference to a missing element is invalid ARIA.
+                        aria-controls={
+                            drawerOpen ? 'agent-chat-sidebar-drawer' : undefined
+                        }
+                        aria-expanded={drawerOpen}
+                        className="inline-flex min-h-9 items-center gap-1.5 rounded px-2 text-sm text-secondary-200 hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    >
+                        <span aria-hidden="true">☰</span>
+                        {t('ChatShell.openConversations')}
+                    </button>
+                    <span className="truncate text-sm text-secondary-300">
+                        {activeTitle}
+                    </span>
+                </div>
                 {stream.messages.length === 0 ? (
                     <EmptyState
                         signedIn={signedIn}

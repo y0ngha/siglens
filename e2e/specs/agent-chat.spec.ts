@@ -15,6 +15,17 @@ test.describe('SiglensAI agent chat', () => {
         // through the SSO handoff (start -> main /api/auth/handoff -> consume)
         // before landing back on the ai host.
         await expect(page).toHaveURL(new RegExp(`^${AI}/(ko/)?$`));
+        // Task S3: the ai host renders the shared main `Header` (not the old
+        // bespoke `AiHeader`) — its `SiglensAI` nav pill shows `aria-current`
+        // when `useHrefBase() !== ''`, and the theme toggle rides along with
+        // the rest of the shared chrome.
+        const banner = page.getByRole('banner');
+        await expect(
+            banner.getByRole('link', { name: 'SiglensAI' })
+        ).toHaveAttribute('aria-current', 'page');
+        await expect(
+            banner.getByRole('button', { name: /테마/ })
+        ).toBeVisible();
         await expect(
             page.getByRole('heading', { name: /SiglensAI/ })
         ).toBeVisible();
@@ -87,5 +98,19 @@ test.describe('SiglensAI agent chat', () => {
         const res = await request.get(`${MAIN}/ai/ko`, { maxRedirects: 0 });
         expect(res.status()).toBe(301);
         expect(res.headers().location).toBe(`${AI}/ko`);
+    });
+
+    // Task S3: the shared `Header`'s `AiNavLink` is a plain cross-origin `<a>`
+    // (not a `LocaleLink`) pointing at the ai host — a plain HTML fetch of the
+    // main host is enough to prove it is wired, no `ai.localhost` DNS needed.
+    test('메인 호스트 헤더에 ai 호스트로 나가는 SiglensAI 링크가 있다', async ({
+        request,
+    }) => {
+        const res = await request.get(`${MAIN}/`);
+        expect(res.status()).toBe(200);
+        const html = await res.text();
+        expect(html).toMatch(
+            new RegExp(`<a[^>]+href="${AI}[^"]*"[^>]*>\\s*SiglensAI`)
+        );
     });
 });

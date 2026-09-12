@@ -3435,12 +3435,6 @@
             }
         },
         "agent-chat": {
-            "AiHeader": {
-                "615212": "Account",
-                "3879f0": "Log out",
-                "ac1c4d": "Open conversation list",
-                "e225a6": "Log in"
-            },
             "ChatShell": {
                 "548fe0": "Retry",
                 "9a7569": "Conversation list",
