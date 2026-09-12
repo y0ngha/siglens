@@ -28,7 +28,8 @@ vi.mock('@/app/api/ai/chat/tools/runFreshAnalysis', () => ({
 vi.mock('@/app/api/ai/chat/tools/webSearch', () => ({
     webSearchTool: vi.fn(),
 }));
-vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: () => false }));
+const e2eState = vi.hoisted(() => ({ on: false }));
+vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: () => e2eState.on }));
 
 import {
     availableToolNames,
@@ -72,6 +73,18 @@ describe('tool registry', () => {
     it('BRAVE_SEARCH_API_KEY가 있으면 web_search도 가용 목록에 포함된다', () => {
         vi.stubEnv('BRAVE_SEARCH_API_KEY', 'b');
         expect(availableToolNames().has('web_search')).toBe(true);
+    });
+
+    it('E2E에서는 키가 있어도 web_search를 빼고, AGENT_REAL_PROVIDER=1(실제 프로바이더 dev)이면 다시 넣는다', () => {
+        vi.stubEnv('BRAVE_SEARCH_API_KEY', 'b');
+        e2eState.on = true;
+        try {
+            expect(availableToolNames().has('web_search')).toBe(false);
+            vi.stubEnv('AGENT_REAL_PROVIDER', '1');
+            expect(availableToolNames().has('web_search')).toBe(true);
+        } finally {
+            e2eState.on = false;
+        }
     });
 
     it('심볼 형태가 아니면 실행하지 않는다', async () => {

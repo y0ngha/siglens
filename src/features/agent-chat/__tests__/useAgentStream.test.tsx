@@ -103,6 +103,29 @@ describe('useAgentStream', () => {
         });
     });
 
+    it('narration streamed before a tool call is dropped; only text after the tools becomes the answer', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            sse([
+                'event: meta\ndata: {"conversationId":"c1","userMessageId":"m1","model":"deepseek-v4.1-flash"}',
+                'event: text\ndata: {"delta":"I\'ll fetch the quote first."}',
+                'event: tool_start\ndata: {"id":"t1","name":"get_quote","args":{"symbols":["AAPL"]}}',
+                'event: tool_end\ndata: {"id":"t1","name":"get_quote","status":"ok","ms":12,"summary":"{}"}',
+                'event: text\ndata: {"delta":"231.42"}',
+                'event: done\ndata: {"assistantMessageId":"m2","stopReason":"end"}',
+            ])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: null, initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('AAPL?');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        const assistant = result.current.messages[1]!;
+        expect(assistant.content).toBe('231.42');
+        expect(assistant.tools.map(t => t.name)).toEqual(['get_quote']);
+    });
+
     it('SSE error frame -> status error + code, without touching top-level status text', async () => {
         vi.spyOn(globalThis, 'fetch').mockResolvedValue(
             sse([
@@ -167,6 +190,30 @@ describe('useAgentStream', () => {
         const assistant = result.current.messages.at(-1)!;
         expect(assistant.content).toBe('partial');
         expect(assistant.status).toBe('aborted');
+    });
+
+    it('narration, then a tool call, then the connection drops: the bubble keeps the tool chips, an empty body and the aborted status (no narration resurrected)', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            droppedSse([
+                'event: meta\ndata: {}',
+                'event: text\ndata: {"delta":"I\'ll fetch the quote first."}',
+                'event: tool_start\ndata: {"id":"t1","name":"get_quote","args":{"symbols":["AAPL"]}}',
+            ])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('x');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        const assistant = result.current.messages.at(-1)!;
+        expect(assistant.content).toBe('');
+        expect(assistant.tools.map(t => [t.name, t.status])).toEqual([
+            ['get_quote', 'running'],
+        ]);
+        expect(assistant.status).toBe('aborted');
+        expect(result.current.error).toBeNull();
     });
 
     it('stop aborts the fetch and marks the streaming bubble aborted', async () => {

@@ -88,12 +88,12 @@ export function fromViews(views: ChatMessageView[]): AgentUiMessage[] {
             }
             continue;
         }
-        if (
-            v.role === 'assistant' &&
-            v.toolCalls &&
-            v.toolCalls.length > 0 &&
-            v.content === ''
-        ) {
+        // A tool-carrying assistant row is a step, not an answer. Its `content`
+        // is the model narrating what it is about to fetch ("I'll fetch the
+        // quote…", often in English) — chat products hide that; rendering it
+        // produced stray narration bubbles and detached the tool chips from the
+        // final answer whenever DeepSeek talked before calling.
+        if (v.role === 'assistant' && v.toolCalls && v.toolCalls.length > 0) {
             if (prev?.role === 'assistant' && prev.content === '')
                 prev.tools.push(
                     ...v.toolCalls.map(c => ({
@@ -314,8 +314,12 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                                 content: m.content + String(data.delta ?? ''),
                             }));
                         } else if (event === 'tool_start') {
+                            // Text streamed before a tool call is narration, not the
+                            // answer (see `fromViews`) — drop it so the bubble shows
+                            // the tool steps and then the real reply.
                             patchLast(m => ({
                                 ...m,
+                                content: '',
                                 tools: [
                                     ...m.tools,
                                     {
