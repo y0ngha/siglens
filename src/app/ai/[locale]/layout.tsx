@@ -12,7 +12,8 @@ import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
 import { pickMessages } from '@/shared/i18n/loadMessages';
 import { isLocale, LOCALE_HREFLANG } from '@/shared/i18n/locales';
-import { ThemeInitScript } from '@/shared/ui/ThemeInitScript';
+import Script from 'next/script';
+import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { AI_CLIENT_PATHS } from './aiClientPaths';
 import '../../globals.css';
 
@@ -48,9 +49,21 @@ export default async function AiRootLayout({
         <html
             lang={LOCALE_HREFLANG[locale]}
             className={`${geistSans.variable} ${pretendard.variable} h-full antialiased scheme-dark`}
+            // `THEME_INIT_SCRIPT`는 첫 페인트 전에 `<html>`에 `data-theme`·`color-scheme`을
+            // 찍는다. 서버 HTML에는 그 속성이 없으므로 React가 불일치로 보고 경고한다 —
+            // 의도된 차이라 이 요소에서만 억제한다(자식 트리에는 영향 없음).
+            suppressHydrationWarning
         >
             <body className="flex min-h-full flex-col bg-secondary-900">
-                <ThemeInitScript />
+                {/* 컴포넌트 트리에서 `<script>`를 렌더하면 클라이언트 내비게이션 때
+                    실행되지 않고 React가 경고한다. `next/script`의 beforeInteractive는
+                    루트 레이아웃에서만 허용되고(이 파일이 ai 서브트리의 루트),
+                    하이드레이션 전에 실행돼 테마 깜빡임도 막는다. */}
+                <Script
+                    id="ai-theme-init"
+                    strategy="beforeInteractive"
+                    dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
+                />
                 <LocaleProvider locale={locale}>
                     <NextIntlClientProvider
                         locale={locale}
