@@ -68,7 +68,7 @@
 route handler (siglens)
   ├─ AGENT_CHAT_DISABLED → 503
   ├─ getCurrentUser 없음 → 401 · isBot → 403
-  ├─ resolveTierAndByok(model) · 대화 소유자 검증(where user_id = me and deleted_at is null, 없으면 404)
+  ├─ resolveTierAndByok(model) · 대화 소유자 검증(where id = ? and user_id = me, 없으면 404)
   ├─ 동시 턴 락(Redis SET NX EX 720 = 턴 마감 600초 + 여유 120초 — 락을 pre-turn DB 읽기 앞에서 잡고 Neon 재시도는 in-flight 호출을 끊지 못해 최악 50~60초가 선행, 토큰 compare-and-delete 해제, Redis 장애 시 fail-closed + `[agent] quota store unavailable` 로그) · 일일 턴 한도(Redis, fail-closed)
   ├─ user 메시지 저장(seq = max+1, 트랜잭션)
   ├─ core.runAgentTurn(params, deps) ──┐
@@ -249,8 +249,7 @@ chat_conversations
   message_count integer not null default 0
   last_message_at timestamptz not null
   created_at / updated_at timestamptz not null default now()
-  deleted_at timestamptz null            -- 0035에 남아 있으나 **미사용**(향후 undo용 여지). 회원의 삭제는 행을 실제로 지운다
-  index (user_id, last_message_at desc) where deleted_at is null
+  index (user_id, last_message_at desc)   -- 부분 인덱스 금지: 쿼리에 `deleted_at is null`이 없으면 플래너가 부분 인덱스를 못 쓰고 목록·카운트가 전체 스캔이 된다
 
 chat_messages
   id uuid pk
@@ -272,7 +271,7 @@ chat_messages
 ### 6-2. 서버 액션 (`entities/chat-conversation/actions/`)
 
 `listConversationsAction()`, `getConversationAction(id)`, `renameConversationAction(id,title)`, `deleteConversationAction(id)`(**하드 삭제** — 행을 지우고 `chat_messages`는 FK cascade로 함께 사라진다. 개인정보 고지가 '삭제 시 즉시 파기'를 약속하므로 soft delete로는 문서와 코드가 어긋난다. 소유자·UUID 검증은 동일). 파일럿은 커서 페이징 없이 목록 상한 300(= 최대 티어 대화 수 상한 pro 300) — 상한보다 적게 보이면 오래된 대화가 사이드바에서 사라진 채 한도만 차감된다. 티어 상한이 커지면 `lastMessageAt`+`id` 커서로 전환. 모든 액션·리포지토리는 비-UUID id를 DB에 보내지 않고 not-found로 처리한다(22P02→500 방지).
-전부 `getCurrentUser` 필수, `where user_id = me and deleted_at is null`.
+전부 `getCurrentUser` 필수, `where user_id = me`(삭제는 행을 지우므로 추가 조건 없음).
 
 ### 6-3. SSE 라우트 `POST /api/ai/chat/stream`
 
