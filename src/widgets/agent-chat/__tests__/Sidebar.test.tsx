@@ -84,4 +84,64 @@ describe('Sidebar', () => {
         expect(screen.queryByText(/정말 삭제할까요/)).toBeNull();
         expect(deleteConversationAction).not.toHaveBeenCalled();
     });
+
+    describe('grouping and navigation', () => {
+        const day = (d: number, h = 9) =>
+            new Date(2026, 8, 12 - d, h).toISOString();
+        const many = [
+            { id: 'today', title: 'Today chat', lastMessageAt: day(0) },
+            { id: 'yday', title: 'Yesterday chat', lastMessageAt: day(1) },
+            { id: 'old', title: 'Old chat', lastMessageAt: day(40) },
+        ];
+
+        it('groups conversations under day headings and marks the active one', () => {
+            vi.useFakeTimers({
+                now: new Date(2026, 8, 12, 12),
+                toFake: ['Date'],
+            });
+            try {
+                wrap(
+                    <Sidebar items={many} activeId="yday" localePrefix="/en" />
+                );
+                expect(screen.getByText('오늘')).toBeInTheDocument();
+                expect(screen.getByText('어제')).toBeInTheDocument();
+                expect(screen.getByText('이전')).toBeInTheDocument();
+                expect(screen.queryByText('지난 7일')).toBeNull();
+                const active = screen.getByRole('link', {
+                    name: 'Yesterday chat',
+                });
+                expect(active).toHaveAttribute('aria-current', 'page');
+                expect(active).toHaveAttribute('href', '/en/c/yday');
+                expect(
+                    screen.getByRole('link', { name: 'Today chat' })
+                ).not.toHaveAttribute('aria-current');
+                expect(
+                    screen.getByRole('link', { name: '새 대화' })
+                ).toHaveAttribute('href', '/en/');
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('shows an empty message with no conversations and a no-match message when the filter hits nothing', () => {
+            const { unmount } = wrap(
+                <Sidebar items={[]} activeId={null} localePrefix="" />
+            );
+            expect(
+                screen.getByText('아직 대화가 없습니다.')
+            ).toBeInTheDocument();
+            unmount();
+            wrap(<Sidebar items={items} activeId={null} localePrefix="" />);
+            fireEvent.change(
+                screen.getByRole('searchbox', { name: '대화 검색' }),
+                {
+                    target: { value: 'zzz' },
+                }
+            );
+            expect(
+                screen.getByText('검색 결과가 없습니다.')
+            ).toBeInTheDocument();
+            expect(screen.queryByRole('link', { name: 'My chat' })).toBeNull();
+        });
+    });
 });

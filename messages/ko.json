@@ -2102,15 +2102,20 @@
                 "errorServerBusy": "지금 요청이 많습니다. 잠시 후 다시 시도해 주세요.",
                 "errorServerError": "오류가 발생했습니다. 다시 시도해 주세요.",
                 "errorTurnLimit": "오늘 사용 한도에 도달했습니다. 내일 다시 이용해 주세요.",
-                "errorUnauthenticated": "로그인이 필요합니다."
+                "errorUnauthenticated": "로그인이 필요합니다.",
+                "openConversations": "대화 목록"
+            },
+            "ChatSkeleton": {
+                "loading": "불러오는 중…"
             },
             "Composer": {
-                "0aef61": "종목, 시장, 뉴스, 내 보유 종목에 대해 물어보세요 (Enter 전송 · Shift+Enter 줄바꿈)",
                 "4077ce": "전송",
                 "b21dfd": "정보 제공 목적이며 투자 조언이 아닙니다.",
                 "charCount": "{len} / {max}",
                 "d2e7e7": "중단",
                 "fdad68": "메시지 입력",
+                "keyHint": "Enter 전송 · Shift+Enter 줄바꿈",
+                "placeholder": "SiglensAI에게 물어보세요…",
                 "remainingTurns": "오늘 {n}턴 남음 · ",
                 "tooLong": "{len} / {max}자 — 너무 깁니다"
             },
@@ -2123,7 +2128,8 @@
                 "suggestionNews": "이번 주 미국 시장 뉴스 중요한 것만",
                 "suggestionNvda": "NVDA 옵션 시장은 어떻게 보고 있어?",
                 "suggestionPortfolio": "내 보유 종목 지금 어때?",
-                "suggestionSamsung": "삼성전자 최근 siglens 분석 요약해줘"
+                "suggestionSamsung": "삼성전자 최근 siglens 분석 요약해줘",
+                "suggestionsLabel": "이렇게 물어볼 수 있어요"
             },
             "MessageList": {
                 "259976": "답변이 잘렸습니다. 이어서 질문해 주세요.",
@@ -2133,8 +2139,10 @@
                 "96adfe": "중단된 답변입니다.",
                 "a55b1e": "복사",
                 "afd172": "답변 생성에 실패했습니다.",
+                "copied": "복사됨",
                 "e1407b": "수정",
-                "e6b008": "메시지 수정"
+                "e6b008": "메시지 수정",
+                "generating": "답변 생성 중…"
             },
             "Sidebar": {
                 "14bb5e": "정말 삭제할까요?",
@@ -2143,12 +2151,20 @@
                 "586a5c": "대화 이름",
                 "73e5a8": "이름 변경",
                 "9a7569": "대화 목록",
-                "cd889e": "+ 새 대화",
-                "fc81e2": "삭제"
+                "empty": "아직 대화가 없습니다.",
+                "fc81e2": "삭제",
+                "groupOlder": "이전",
+                "groupToday": "오늘",
+                "groupWeek": "지난 7일",
+                "groupYesterday": "어제",
+                "newChat": "새 대화",
+                "noMatch": "검색 결과가 없습니다."
             },
             "ToolActivity": {
                 "aboutSeconds": "약 {n}초",
-                "b4c619": "사용한 도구"
+                "b4c619": "사용한 도구",
+                "running": "도구 실행 중",
+                "summary": "도구 {n}개 사용"
             }
         },
         "analysis": {

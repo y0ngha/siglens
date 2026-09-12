@@ -14,6 +14,51 @@ interface Props {
     readonly onEdit: (seq: number, text: string) => void;
 }
 
+/** Small inline text action under a message. 32px tall so a row of them stays quiet but still hits the finger-target minimum with its padding. */
+const ACTION =
+    'inline-flex min-h-8 items-center gap-1 rounded px-1.5 text-xs text-secondary-400 hover:bg-secondary-800 hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
+
+const COPIED_RESET_MS = 1_500;
+
+function AssistantMark() {
+    return (
+        <span
+            aria-hidden="true"
+            className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-primary-600 text-[11px] font-semibold text-white select-none"
+        >
+            AI
+        </span>
+    );
+}
+
+/**
+ * Three dots that breathe while the first token is still on its way. Not a
+ * live region of its own — it only renders inside the streaming turn's
+ * `aria-live` wrapper, and nested live regions announce unpredictably.
+ */
+function Thinking({ label }: { readonly label: string }) {
+    return (
+        <span className="inline-flex h-7 items-center gap-1">
+            <span className="sr-only">{label}</span>
+            {[0, 1, 2].map(i => (
+                <span
+                    key={i}
+                    aria-hidden="true"
+                    className="size-1.5 rounded-full bg-secondary-400 motion-safe:animate-pulse"
+                    style={{ animationDelay: `${i * 160}ms` }}
+                />
+            ))}
+        </span>
+    );
+}
+
+/**
+ * The transcript. Assistant turns read as plain text under a small mark —
+ * no bubble, the way chat products lay out the answer column — and user
+ * turns sit right-aligned in a quiet surface. Per-message actions stay in
+ * the DOM at all times (keyboard and screen-reader reachable); on wide
+ * screens they merely fade in on hover/focus so the column stays calm.
+ */
 export function MessageList({
     messages,
     streaming,
@@ -26,18 +71,37 @@ export function MessageList({
         seq: number;
         text: string;
     } | null>(null);
+    const [copiedId, setCopiedId] = useState<string | null>(null);
     const endRef = useRef<HTMLDivElement>(null);
+    const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     useEffect(() => {
         if (pinned) endRef.current?.scrollIntoView({ block: 'end' });
     }, [messages, pinned]);
+    useEffect(
+        () => () => {
+            if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+        },
+        []
+    );
     const lastAssistant = [...messages]
         .reverse()
         .find(m => m.role === 'assistant');
     const lastUser = [...messages].reverse().find(m => m.role === 'user');
+
+    const copy = (m: AgentUiMessage): void => {
+        void navigator.clipboard?.writeText(m.content);
+        setCopiedId(m.id);
+        if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+        copiedTimerRef.current = setTimeout(
+            () => setCopiedId(null),
+            COPIED_RESET_MS
+        );
+    };
+
     return (
         <div
             role="log"
-            className="flex-1 overflow-y-auto px-4 py-6"
+            className="flex-1 overflow-y-auto"
             onScroll={e => {
                 const el = e.currentTarget;
                 setPinned(
@@ -45,123 +109,38 @@ export function MessageList({
                 );
             }}
         >
-            <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-                {messages.map(m => (
-                    <article
-                        key={m.id}
-                        className={cn(
-                            'flex flex-col',
-                            m.role === 'user' ? 'items-end' : 'items-start'
-                        )}
-                    >
+            <div className="mx-auto flex w-full max-w-3xl flex-col gap-7 px-4 py-8">
+                {messages.map(m => {
+                    const isUser = m.role === 'user';
+                    const isEditing = editing !== null && editing.seq === m.seq;
+                    const actions = (
                         <div
-                            // Scoped to the one bubble that's actually changing, not the
-                            // whole log — `aria-live` + `aria-relevant="additions text"`
-                            // on the outer log re-announces the ENTIRE transcript on every
-                            // streamed delta (every character), which drowns a screen
-                            // reader user in noise on a multi-turn conversation.
-                            aria-live={
-                                m.role === 'assistant' &&
-                                m.status === 'streaming'
-                                    ? 'polite'
-                                    : undefined
-                            }
                             className={cn(
-                                'max-w-[85%] rounded-lg px-4 py-3 text-sm leading-relaxed break-words',
-                                m.role === 'user'
-                                    ? 'bg-primary-600 text-white'
-                                    : 'bg-secondary-800 text-secondary-100'
+                                'mt-1 flex gap-0.5',
+                                isUser ? 'justify-end' : 'ml-10',
+                                // Always in the DOM; only the wide-screen presentation is hover/focus-gated.
+                                'sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:focus-within:opacity-100 motion-reduce:transition-none'
                             )}
                         >
-                            {m.role === 'assistant' ? (
-                                <ToolActivity tools={m.tools} />
-                            ) : null}
-                            {editing && editing.seq === m.seq ? (
-                                <form
-                                    onSubmit={e => {
-                                        e.preventDefault();
-                                        onEdit(editing.seq, editing.text);
-                                        setEditing(null);
-                                    }}
-                                    className="flex flex-col gap-2"
-                                >
-                                    <textarea
-                                        value={editing.text}
-                                        onChange={e =>
-                                            setEditing({
-                                                ...editing,
-                                                text: e.target.value,
-                                            })
-                                        }
-                                        aria-label={t('MessageList.e6b008')}
-                                        className="min-h-20 w-72 rounded border border-border-control bg-secondary-900 p-2 text-secondary-100"
-                                    />
-                                    <div className="flex gap-2">
-                                        <button
-                                            type="submit"
-                                            className="rounded bg-primary-600 px-2 py-1 text-xs text-white focus-visible:ring-2 focus-visible:ring-primary-500"
-                                        >
-                                            {t('MessageList.6523ca')}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setEditing(null)}
-                                            className="rounded px-2 py-1 text-xs focus-visible:ring-2 focus-visible:ring-primary-500"
-                                        >
-                                            {t('MessageList.19b2d1')}
-                                        </button>
-                                    </div>
-                                </form>
-                            ) : m.role === 'assistant' ? (
-                                <AgentMarkdown>
-                                    {m.content ||
-                                        (m.status === 'streaming' ? '…' : '')}
-                                </AgentMarkdown>
-                            ) : (
-                                <p className="whitespace-pre-wrap">
-                                    {m.content}
-                                </p>
-                            )}
-                            {m.status === 'aborted' ? (
-                                <p className="mt-2 text-xs text-secondary-400">
-                                    {t('MessageList.96adfe')}
-                                </p>
-                            ) : null}
-                            {m.status === 'error' ? (
-                                <p className="mt-2 text-xs text-ui-danger-text">
-                                    {t('MessageList.afd172')}
-                                </p>
-                            ) : null}
-                            {m.truncated ? (
-                                <p className="mt-2 text-xs text-ui-warning-text">
-                                    {t('MessageList.259976')}
-                                </p>
-                            ) : null}
-                        </div>
-                        <div className="mt-1 flex gap-2 text-xs text-secondary-400">
                             <button
                                 type="button"
-                                onClick={() =>
-                                    void navigator.clipboard?.writeText(
-                                        m.content
-                                    )
-                                }
-                                className="rounded px-1 focus-visible:ring-2 focus-visible:ring-primary-500"
+                                onClick={() => copy(m)}
+                                className={ACTION}
                             >
-                                {t('MessageList.a55b1e')}
+                                {copiedId === m.id
+                                    ? t('MessageList.copied')
+                                    : t('MessageList.a55b1e')}
                             </button>
-                            {m.role === 'assistant' &&
-                            m === lastAssistant &&
-                            !streaming ? (
+                            {!isUser && m === lastAssistant && !streaming ? (
                                 <button
                                     type="button"
                                     onClick={onRegenerate}
-                                    className="rounded px-1 focus-visible:ring-2 focus-visible:ring-primary-500"
+                                    className={ACTION}
                                 >
                                     {t('MessageList.43da5e')}
                                 </button>
                             ) : null}
-                            {m.role === 'user' &&
+                            {isUser &&
                             m === lastUser &&
                             m.seq !== undefined &&
                             !streaming ? (
@@ -173,14 +152,125 @@ export function MessageList({
                                             text: m.content,
                                         })
                                     }
-                                    className="rounded px-1 focus-visible:ring-2 focus-visible:ring-primary-500"
+                                    className={ACTION}
                                 >
                                     {t('MessageList.e1407b')}
                                 </button>
                             ) : null}
                         </div>
-                    </article>
-                ))}
+                    );
+
+                    if (isEditing) {
+                        return (
+                            <article
+                                key={m.id}
+                                data-role={m.role}
+                                className="flex flex-col items-end"
+                            >
+                                <form
+                                    onSubmit={e => {
+                                        e.preventDefault();
+                                        onEdit(editing.seq, editing.text);
+                                        setEditing(null);
+                                    }}
+                                    className="flex w-full max-w-[80%] flex-col gap-2 rounded-lg border border-border-control bg-secondary-800 p-2 focus-within:ring-2 focus-within:ring-primary-500"
+                                >
+                                    <textarea
+                                        value={editing.text}
+                                        onChange={e =>
+                                            setEditing({
+                                                ...editing,
+                                                text: e.target.value,
+                                            })
+                                        }
+                                        rows={3}
+                                        aria-label={t('MessageList.e6b008')}
+                                        className="min-h-20 w-full resize-y bg-transparent px-2 py-1.5 text-[15px] leading-6 text-secondary-100 focus-visible:outline-none"
+                                    />
+                                    <div className="flex justify-end gap-1.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => setEditing(null)}
+                                            className="inline-flex min-h-9 items-center rounded-lg px-3 text-sm text-secondary-300 hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                        >
+                                            {t('MessageList.19b2d1')}
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="inline-flex min-h-9 items-center rounded-lg bg-primary-600 px-3 text-sm font-medium text-white hover:bg-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                        >
+                                            {t('MessageList.6523ca')}
+                                        </button>
+                                    </div>
+                                </form>
+                            </article>
+                        );
+                    }
+
+                    if (isUser) {
+                        return (
+                            <article
+                                key={m.id}
+                                data-role="user"
+                                className="group flex flex-col items-end"
+                            >
+                                <div className="max-w-[80%] rounded-lg bg-secondary-800 px-4 py-2.5 text-[15px] leading-6 break-words whitespace-pre-wrap text-secondary-100">
+                                    {m.content}
+                                </div>
+                                {actions}
+                            </article>
+                        );
+                    }
+
+                    const isStreaming = m.status === 'streaming';
+                    return (
+                        <article
+                            key={m.id}
+                            data-role="assistant"
+                            className="group flex flex-col"
+                        >
+                            <div className="flex items-start gap-3">
+                                <AssistantMark />
+                                <div
+                                    // Scoped to the one turn that is actually changing — an
+                                    // `aria-live` on the whole log re-announces the entire
+                                    // transcript on every streamed delta.
+                                    aria-live={
+                                        isStreaming ? 'polite' : undefined
+                                    }
+                                    className="min-w-0 flex-1 text-[15px] leading-7 break-words text-secondary-100"
+                                >
+                                    <ToolActivity tools={m.tools} />
+                                    {m.content ? (
+                                        <AgentMarkdown>
+                                            {m.content}
+                                        </AgentMarkdown>
+                                    ) : isStreaming ? (
+                                        <Thinking
+                                            label={t('MessageList.generating')}
+                                        />
+                                    ) : null}
+                                    {m.status === 'aborted' ? (
+                                        <p className="mt-2 text-xs text-secondary-400">
+                                            {t('MessageList.96adfe')}
+                                        </p>
+                                    ) : null}
+                                    {m.status === 'error' ? (
+                                        <p className="mt-2 text-xs text-ui-danger-text">
+                                            {t('MessageList.afd172')}
+                                        </p>
+                                    ) : null}
+                                    {m.truncated ? (
+                                        <p className="mt-2 text-xs text-ui-warning-text">
+                                            {t('MessageList.259976')}
+                                        </p>
+                                    ) : null}
+                                </div>
+                            </div>
+                            {actions}
+                        </article>
+                    );
+                })}
                 <div ref={endRef} />
             </div>
         </div>
