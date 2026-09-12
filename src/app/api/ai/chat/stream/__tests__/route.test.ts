@@ -536,6 +536,44 @@ describe('POST /api/ai/chat/stream', () => {
         warn.mockRestore();
     });
 
+    it('부분 저장 중 대화가 삭제되면 원래 턴 오류 대신 not_found 프레임', async () => {
+        // 세 번째 저장 지점(부분 저장): 마감·중단으로 부분 텍스트만 남은 턴이
+        // 저장되는 순간 대화가 사라진 경우.
+        const release = vi.fn();
+        m.lock.mockResolvedValue({ release });
+        m.runTurn.mockResolvedValue({
+            ok: false,
+            error: 'deadline',
+            partialText: '부분 답변',
+        });
+        m.repo.appendMessages
+            .mockImplementationOnce(async (_c: string, rows: unknown[]) =>
+                rows.map((r, i) => ({
+                    ...(r as object),
+                    id: `m${i}`,
+                    seq: i + 1,
+                }))
+            )
+            .mockRejectedValueOnce(
+                Object.assign(
+                    new Error(
+                        'insert or update on table "chat_messages" violates foreign key constraint'
+                    ),
+                    { cause: { code: '23503' } }
+                )
+            );
+        const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const res = await POST(post({ conversationId: 'c1', message: 'x' }));
+        const f = await frames(res);
+        expect(f.some(x => x.includes('"code":"not_found"'))).toBe(true);
+        expect(f.join('\n')).not.toContain('"code":"deadline"');
+        expect(f.join('\n')).not.toContain('foreign key constraint');
+        expect(release).toHaveBeenCalledTimes(1);
+        err.mockRestore();
+        warn.mockRestore();
+    });
+
     // ---- AgentErrorCode mapping ----
     const CODES: Array<{ code: string; persistedStatus: 'aborted' | 'error' }> =
         [
