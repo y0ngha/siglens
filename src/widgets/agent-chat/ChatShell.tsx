@@ -25,6 +25,8 @@ interface Props {
     readonly localePrefix: string;
     readonly siteUrl: string;
     readonly currentPath: string;
+    /** AI-generated suggestions for this hour (spec §4-3); `null`/undefined falls back to `EmptyState`'s static six. */
+    readonly suggestions?: readonly string[] | null;
 }
 
 export function ChatShell({
@@ -35,6 +37,7 @@ export function ChatShell({
     localePrefix,
     siteUrl,
     currentPath,
+    suggestions,
 }: Props) {
     const t = useTranslations('widgets.agent-chat');
     const router = useRouter();
@@ -177,6 +180,7 @@ export function ChatShell({
                             currentPath
                         )}
                         onPick={text => void stream.send(text)}
+                        suggestions={suggestions}
                     />
                 ) : (
                     <MessageList
@@ -187,21 +191,25 @@ export function ChatShell({
                     />
                 )}
                 {errorMessage && stream.error !== 'unauthenticated' ? (
-                    <p
-                        role="alert"
-                        className="mx-auto flex w-full max-w-3xl items-center gap-3 px-4 text-sm text-ui-danger-text"
-                    >
-                        {errorMessage}
-                        {errorRetryable ? (
-                            <button
-                                type="button"
-                                onClick={() => void stream.retry()}
-                                className="rounded border border-border-control px-2 py-0.5 text-xs text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500"
-                            >
-                                {t('ChatShell.548fe0')}
-                            </button>
-                        ) : null}
-                    </p>
+                    <div className="px-4 pb-2">
+                        <p
+                            role="alert"
+                            className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 rounded-lg border border-ui-danger bg-secondary-800 px-4 py-3 text-sm text-ui-danger-text"
+                        >
+                            <span className="min-w-0 break-words">
+                                {errorMessage}
+                            </span>
+                            {errorRetryable ? (
+                                <button
+                                    type="button"
+                                    onClick={() => void stream.retry()}
+                                    className="inline-flex min-h-9 shrink-0 items-center rounded-lg border border-border-control px-3 text-xs font-medium text-secondary-100 hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                >
+                                    {t('ChatShell.548fe0')}
+                                </button>
+                            ) : null}
+                        </p>
+                    </div>
                 ) : null}
                 <Composer
                     disabled={!signedIn}

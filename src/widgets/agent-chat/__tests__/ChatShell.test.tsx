@@ -1,6 +1,14 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
 import { AGENT_ERROR_CODES } from '@/features/agent-chat';
 import ko from '../../../../messages/ko.json';
 
@@ -216,5 +224,47 @@ describe('ChatShell chrome', () => {
         expect(screen.getAllByText('대화 목록').length).toBeGreaterThanOrEqual(
             2
         ); // mobile-bar button label + drawer title
+    });
+});
+
+/**
+ * Task S4: `suggestions` must reach `EmptyState` unchanged so the
+ * AI-generated questions render as pickable buttons instead of the static
+ * fallback six.
+ */
+describe('ChatShell suggestions passthrough (Task S4)', () => {
+    const originalMessages = mockStream.messages;
+    beforeAll(() => {
+        Element.prototype.scrollIntoView = vi.fn();
+    });
+    beforeEach(() => {
+        mockStream.error = null;
+        mockStream.status = 'idle';
+        // EmptyState only renders once the transcript is empty.
+        mockStream.messages = [];
+    });
+    afterEach(() => {
+        mockStream.messages = originalMessages;
+    });
+
+    it('renders the AI-generated suggestions as buttons', () => {
+        wrap(
+            <ChatShell
+                conversationId="c1"
+                initialMessages={[]}
+                conversations={[]}
+                signedIn
+                localePrefix=""
+                siteUrl="https://siglens.io"
+                currentPath="/c1"
+                suggestions={['질문 하나', '질문 둘']}
+            />
+        );
+        expect(
+            screen.getByRole('button', { name: /질문 하나/ })
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole('button', { name: /질문 둘/ })
+        ).toBeInTheDocument();
     });
 });
