@@ -103,14 +103,17 @@ test.describe('SiglensAI agent chat', () => {
     // Task S3: the shared `Header`'s `AiNavLink` is a plain cross-origin `<a>`
     // (not a `LocaleLink`) pointing at the ai host — a plain HTML fetch of the
     // main host is enough to prove it is wired, no `ai.localhost` DNS needed.
+    // The logo lockup shows only "AI"; the product name is its accessible name.
     test('메인 호스트 헤더에 ai 호스트로 나가는 SiglensAI 링크가 있다', async ({
         request,
     }) => {
         const res = await request.get(`${MAIN}/`);
         expect(res.status()).toBe(200);
         const html = await res.text();
-        expect(html).toMatch(
-            new RegExp(`<a[^>]+href="${AI}[^"]*"[^>]*>\\s*SiglensAI`)
-        );
+        const anchor = html.match(
+            new RegExp(`<a[^>]+href="${AI}[^"]*"[^>]*>`)
+        )?.[0];
+        expect(anchor).toBeDefined();
+        expect(anchor).toContain('aria-label="SiglensAI"');
     });
 });
