@@ -1,3 +1,4 @@
+import { constants } from 'node:http2';
 import 'server-only';
 import type { AgentErrorCode, AgentMessage } from '@y0ngha/siglens-core';
 import { AGENT_LIMITS, agentLimit, runAgentTurn } from '@y0ngha/siglens-core';
@@ -23,6 +24,16 @@ import { createAgentCounters } from '../counters';
 import { resolveAgentTier } from '../resolveAgentTier';
 import { availableToolNames, createToolExecutor } from '../tools';
 import { acquireTurnLock } from '../turnLock';
+
+const {
+    HTTP_STATUS_BAD_REQUEST,
+    HTTP_STATUS_CONFLICT,
+    HTTP_STATUS_FORBIDDEN,
+    HTTP_STATUS_INTERNAL_SERVER_ERROR,
+    HTTP_STATUS_NOT_FOUND,
+    HTTP_STATUS_SERVICE_UNAVAILABLE,
+    HTTP_STATUS_UNAUTHORIZED,
+} = constants;
 
 export const dynamic = 'force-dynamic';
 
@@ -110,14 +121,21 @@ function isConversationGone(error: unknown): boolean {
 
 export async function POST(request: Request): Promise<Response> {
     if (process.env.AGENT_CHAT_DISABLED === '1')
-        return json(503, { error: 'disabled' }, { 'Retry-After': '600' });
+        return json(
+            HTTP_STATUS_SERVICE_UNAVAILABLE,
+            { error: 'disabled' },
+            { 'Retry-After': '600' }
+        );
 
     const user = await getCurrentUser();
-    if (!user) return json(401, { error: 'unauthenticated' });
-    if (isBot(request.headers)) return json(403, { error: 'bot' });
+    if (!user)
+        return json(HTTP_STATUS_UNAUTHORIZED, { error: 'unauthenticated' });
+    if (isBot(request.headers))
+        return json(HTTP_STATUS_FORBIDDEN, { error: 'bot' });
 
     const body = parseBody(await request.json().catch(() => null));
-    if (body === null) return json(400, { error: 'invalid_body' });
+    if (body === null)
+        return json(HTTP_STATUS_BAD_REQUEST, { error: 'invalid_body' });
 
     const locale = requestLocale(request);
     const tier = await resolveAgentTier(user.id);
@@ -125,7 +143,11 @@ export async function POST(request: Request): Promise<Response> {
         !canAcceptAnalysisStream() ||
         activeAgentTurns >= MAX_CONCURRENT_AGENT_TURNS
     )
-        return json(503, { error: 'server_busy' }, { 'Retry-After': '30' });
+        return json(
+            HTTP_STATUS_SERVICE_UNAVAILABLE,
+            { error: 'server_busy' },
+            { 'Retry-After': '30' }
+        );
 
     // Reserve a slot the instant the gate passes — not after tier resolution and every
     // pre-turn DB call, which was late enough that many requests arriving in that window
@@ -156,7 +178,7 @@ export async function POST(request: Request): Promise<Response> {
     }
     if (lock === null) {
         decrementOnce();
-        return json(409, { error: 'server_busy' });
+        return json(HTTP_STATUS_CONFLICT, { error: 'server_busy' });
     }
 
     let released = false;
@@ -177,11 +199,11 @@ export async function POST(request: Request): Promise<Response> {
                 : await repo.findForUser(body.conversationId, user.id);
         if (body.conversationId !== null && conversation === null) {
             await releaseOnce();
-            return json(404, { error: 'not_found' });
+            return json(HTTP_STATUS_NOT_FOUND, { error: 'not_found' });
         }
         if (conversation === null && body.action !== 'send') {
             await releaseOnce();
-            return json(400, { error: 'invalid_body' });
+            return json(HTTP_STATUS_BAD_REQUEST, { error: 'invalid_body' });
         }
         if (
             conversation === null &&
@@ -189,7 +211,7 @@ export async function POST(request: Request): Promise<Response> {
                 agentLimit(tier, 'conversationsMax')
         ) {
             await releaseOnce();
-            return json(409, { error: 'conversation_limit' });
+            return json(HTTP_STATUS_CONFLICT, { error: 'conversation_limit' });
         }
 
         let conversationId = conversation?.id ?? '';
@@ -217,20 +239,20 @@ export async function POST(request: Request): Promise<Response> {
             // two consecutive user rows after the append below.
             if (!target || target.role !== 'user') {
                 await releaseOnce();
-                return json(400, { error: 'invalid_body' });
+                return json(HTTP_STATUS_BAD_REQUEST, { error: 'invalid_body' });
             }
             await repo.deleteFromSeq(conversationId, body.editSeq!);
         } else if (body.action === 'regenerate') {
             if ((await repo.supersedeAfterLastUser(conversationId)) === null) {
                 await releaseOnce();
-                return json(400, { error: 'invalid_body' });
+                return json(HTTP_STATUS_BAD_REQUEST, { error: 'invalid_body' });
             }
         }
 
         const rows = await repo.listMessages(conversationId);
         if (rows.length >= AGENT_LIMITS.messagesPerConversation) {
             await releaseOnce();
-            return json(409, { error: 'conversation_full' });
+            return json(HTTP_STATUS_CONFLICT, { error: 'conversation_full' });
         }
 
         // History = every prior turn. `send`/`edit` append the new user row AFTER this read, so the
@@ -254,7 +276,7 @@ export async function POST(request: Request): Promise<Response> {
                 // yet, so answer on the HTTP stage rather than as an SSE frame.
                 if (!isConversationGone(error)) throw error;
                 await releaseOnce();
-                return json(404, { error: 'not_found' });
+                return json(HTTP_STATUS_NOT_FOUND, { error: 'not_found' });
             }
             userMessageId = saved?.id ?? null;
             userMessageSeq = saved?.seq ?? null;
@@ -391,7 +413,9 @@ export async function POST(request: Request): Promise<Response> {
     } catch (error) {
         await releaseOnce();
         console.error('[agent-stream] failed:', error);
-        return json(500, { error: 'server_error' });
+        return json(HTTP_STATUS_INTERNAL_SERVER_ERROR, {
+            error: 'server_error',
+        });
     }
 }
 

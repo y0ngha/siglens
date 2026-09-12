@@ -1,3 +1,4 @@
+import { constants } from 'node:http2';
 import 'server-only';
 import { NextResponse, type NextRequest } from 'next/server';
 import {
@@ -19,6 +20,8 @@ import {
 import { AI_SITE_URL, isAiHost } from '@/shared/config/aiHost';
 import { DEFAULT_LOCALE, localePath, type Locale } from '@/shared/i18n/locales';
 
+const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_FOUND } = constants;
+
 export const dynamic = 'force-dynamic';
 
 /** Landing with `?sso=none` in the given locale (e.g. `/en?sso=none`). */
@@ -29,7 +32,7 @@ function ssoNoneUrl(locale: Locale): URL {
 }
 
 function noStoreRedirect(url: URL): NextResponse {
-    const response = NextResponse.redirect(url, 302);
+    const response = NextResponse.redirect(url, HTTP_STATUS_FOUND);
     response.headers.set('Cache-Control', 'no-store');
     // The state is single use: clear it whether or not the exchange succeeded.
     response.cookies.set(handoffStateCookie(''));
@@ -49,11 +52,18 @@ function noStoreRedirect(url: URL): NextResponse {
  * unknown, so that lands on the default-locale root; a session failure keeps the
  * locale of the stored `next`.
  */
+// 브라우저가 리다이렉트로 도착하는 SSO 복귀 지점이라 GET이어야 한다. CSRF는 메서드가
+// 아니라 1회용 코드(getdel)와 발급 시 바인딩한 state 쿠키 대조로 막는다 — 코드가 없거나
+// 재사용·위조면 세션을 만들지 않고 `?sso=none`으로 떨군다.
+// react-doctor-disable-next-line react-doctor/nextjs-no-side-effect-in-get-handler
 export async function GET(request: NextRequest): Promise<Response> {
     if (!isAiHost(request.headers.get('host'))) {
         return NextResponse.json(
             { error: 'invalid_request' },
-            { status: 400, headers: { 'Cache-Control': 'no-store' } }
+            {
+                status: HTTP_STATUS_BAD_REQUEST,
+                headers: { 'Cache-Control': 'no-store' },
+            }
         );
     }
     let payload: HandoffPayload | null;

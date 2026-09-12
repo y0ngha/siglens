@@ -1,3 +1,4 @@
+import { constants } from 'node:http2';
 import 'server-only';
 import { NextResponse, type NextRequest } from 'next/server';
 import {
@@ -8,6 +9,8 @@ import {
 import { isAiHost } from '@/shared/config/aiHost';
 import { localePath } from '@/shared/i18n/locales';
 import { SITE_URL } from '@/shared/lib/seo';
+
+const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_FOUND } = constants;
 
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +39,10 @@ export async function GET(request: NextRequest): Promise<Response> {
     if (!isAiHost(request.headers.get('host'))) {
         return NextResponse.json(
             { error: 'invalid_request' },
-            { status: 400, headers: { 'Cache-Control': 'no-store' } }
+            {
+                status: HTTP_STATUS_BAD_REQUEST,
+                headers: { 'Cache-Control': 'no-store' },
+            }
         );
     }
     const { locale, next } = resolveHandoffNext(
@@ -47,7 +53,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     target.searchParams.set('to', 'ai');
     target.searchParams.set('next', next);
     target.searchParams.set('state', state);
-    const response = NextResponse.redirect(target, 302);
+    const response = NextResponse.redirect(target, HTTP_STATUS_FOUND);
     response.headers.set('Cache-Control', 'no-store');
     response.cookies.set(handoffStateCookie(state));
     return response;

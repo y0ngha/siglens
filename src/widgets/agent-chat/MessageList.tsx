@@ -99,7 +99,7 @@ export function MessageList({
                                     <div className="flex gap-2">
                                         <button
                                             type="submit"
-                                            className="rounded bg-primary-500 px-2 py-1 text-xs text-white focus-visible:ring-2 focus-visible:ring-primary-500"
+                                            className="rounded bg-primary-600 px-2 py-1 text-xs text-white focus-visible:ring-2 focus-visible:ring-primary-500"
                                         >
                                             {t('MessageList.6523ca')}
                                         </button>

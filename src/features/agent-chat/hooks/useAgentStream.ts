@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChatMessageView } from '@/entities/chat-conversation';
 import { ANALYSIS_LOCALE_HEADER, splitLocalePath } from '@/shared/i18n/locales';
+import {
+    isAgentClientErrorCode,
+    type AgentClientErrorCode,
+} from '../lib/errorCodes';
 import { parseSseFrame, splitFrames } from '../lib/parseSseFrames';
 
 export interface ToolActivityItem {
@@ -62,14 +66,26 @@ export function fromViews(views: ChatMessageView[]): AgentUiMessage[] {
     for (const v of views) {
         const prev = out[out.length - 1];
         if (v.role === 'tool') {
-            if (prev?.role === 'assistant')
-                prev.tools.push({
-                    id: v.id,
-                    name: v.toolName ?? 'tool',
-                    args: {},
-                    status: 'ok',
-                    summary: v.content.slice(0, 120),
-                });
+            if (prev?.role === 'assistant') {
+                // The assistant row's `toolCalls` already produced a chip for this call
+                // (with its args); the `tool` row is that call's RESULT. Pushing it as a
+                // second chip rendered every tool twice — once "get_quote AAPL" from the
+                // args and once bare "get_quote" from here. Merge by name instead.
+                const existing = prev.tools.find(
+                    t =>
+                        t.name === (v.toolName ?? 'tool') &&
+                        t.summary === undefined
+                );
+                if (existing) existing.summary = v.content.slice(0, 120);
+                else
+                    prev.tools.push({
+                        id: v.id,
+                        name: v.toolName ?? 'tool',
+                        args: {},
+                        status: 'ok',
+                        summary: v.content.slice(0, 120),
+                    });
+            }
             continue;
         }
         if (
@@ -126,7 +142,20 @@ export function fromViews(views: ChatMessageView[]): AgentUiMessage[] {
     return out;
 }
 
-export function useAgentStream(options: Options) {
+export interface UseAgentStreamResult {
+    readonly messages: AgentUiMessage[];
+    readonly conversationId: string | null;
+    readonly status: StreamStatus;
+    readonly error: AgentClientErrorCode | null;
+    readonly remaining: AgentRemaining | null;
+    readonly send: (text: string) => Promise<void>;
+    readonly regenerate: () => Promise<void>;
+    readonly edit: (seq: number, text: string) => Promise<void>;
+    readonly retry: () => Promise<void> | undefined;
+    readonly stop: () => void;
+}
+
+export function useAgentStream(options: Options): UseAgentStreamResult {
     const [messages, setMessages] = useState<AgentUiMessage[]>(() =>
         fromViews(options.initialMessages)
     );
@@ -135,13 +164,15 @@ export function useAgentStream(options: Options) {
     // like right before this optimistic mutation" and hand it to `run` for
     // an exact rollback on an `HttpError` (nothing persisted server-side).
     const messagesRef = useRef(messages);
+    // Synced in an effect, not inside the updater: a state updater must stay pure
+    // (React may re-run it). Handlers read this after commit, which is exactly the
+    // "before this optimistic mutation" snapshot they need.
+    useEffect(() => {
+        messagesRef.current = messages;
+    }, [messages]);
     const updateMessages = useCallback(
         (updater: (prev: AgentUiMessage[]) => AgentUiMessage[]) => {
-            setMessages(prev => {
-                const next = updater(prev);
-                messagesRef.current = next;
-                return next;
-            });
+            setMessages(updater);
         },
         []
     );
@@ -149,7 +180,7 @@ export function useAgentStream(options: Options) {
         options.conversationId
     );
     const [status, setStatus] = useState<StreamStatus>('idle');
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<AgentClientErrorCode | null>(null);
     const [remaining, setRemaining] = useState<AgentRemaining | null>(null);
     const controllerRef = useRef<AbortController | null>(null);
     const onConversationCreatedRef = useRef(options.onConversationCreated);
@@ -354,7 +385,9 @@ export function useAgentStream(options: Options) {
                     lastErrorKindRef.current = 'turn';
                     patchLast(m => ({ ...m, status: 'error' }));
                     setStatus('error');
-                    setError(e.code);
+                    setError(
+                        isAgentClientErrorCode(e.code) ? e.code : 'server_error'
+                    );
                 } else if (e instanceof HttpError) {
                     // Never started — nothing was persisted server-side, so the
                     // screen must not show anything this call changed: restore the
@@ -371,7 +404,9 @@ export function useAgentStream(options: Options) {
                     lastErrorKindRef.current = 'http';
                     updateMessages(() => restoreSnapshot);
                     setStatus('error');
-                    setError(e.code);
+                    setError(
+                        isAgentClientErrorCode(e.code) ? e.code : 'server_error'
+                    );
                 } else {
                     // Either the caller aborted (stop button / unmount) or the
                     // connection dropped mid-stream — both cases keep whatever

@@ -340,7 +340,7 @@ ISR write가 로케일 수만큼 늘어난다. 이 레포에서 ISR write는 실
 | `siglens-isr-cache-failures` | IsrCacheFailures 5분 합계 > 5 | S3 권한/버킷/IMDS 확인. fail-open이라 사이트는 살아 있지만 캐시는 사실상 죽은 상태 |
 | `siglens-isr-tag-failures` | IsrTagFailures 15분 합계 ≥ 5 ×2주기 | 태그 동기화 실패 = 다른 인스턴스의 무효화를 놓쳐 **stale HTML을 revalidate TTL(6~24h) 동안 서빙**. 조용히 degrade하므로 이 알람이 유일한 신호 |
 | `siglens-analysis-stream-failed` | `[analysis-stream] failed` 15분 합계 > 2가 연속 2주기 | **분석 전면 장애의 유일한 신호다.** SSE는 실패해도 HTTP 200이라 5xx 알람이 안 뜬다. 1순위 의심: 프로바이더 키(SSM `/siglens/{DEEPSEEK,GEMINI,ANTHROPIC,OPENAI}_API_KEY`) 누락·만료. Logs Insights에서 `[analysis-stream] failed` 원문 확인 → 키 문제면 SSM 갱신 후 인스턴스 재시작, 프로바이더 장애면 회복 대기 |
-| `siglens-agent-stream-failed` | `[agent-stream] failed` 1시간 합계 > 10 | SiglensAI(ai.siglens.io) 에이전트 턴 전면 실패 후보. Logs Insights로 `[agent-stream] failed:` 원문 확인 → 프로바이더 키(SSM `/siglens/DEEPSEEK_API_KEY`) 또는 DB 접근 확인 |
+| `siglens-agent-stream-failed` | `[agent-stream] failed` 1시간 합계 > 10 | SiglensAI(ai.siglens.io) 에이전트 턴 전면 실패 후보. Logs Insights로 `[agent-stream] failed:` 원문 확인 → 프로바이더 키(SSM `/siglens/DEEPSEEK_CHAT_API_KEY`) 또는 DB 접근 확인 |
 | `siglens-agent-quota-store-unavailable` | `[agent] quota store unavailable` 1시간 합계 > 3 | Redis(Upstash) 한도 카운터 스토어 접근 실패. fail-closed라 사용자에겐 `server_busy`(409)만 보이고 이 로그가 유일한 신호. Upstash 도달성 확인 |
 | `siglens-agent-output-tokens-daily` | `AgentOutputTokens`(Siglens/Agent, `[Usage]` JSON의 `outputTokens` 합) 24시간 합계 > 1,000,000 | **주기가 1일이라 지출 발생 시점에서 최대 ~24시간 뒤에야 발화한다** — 위 두 알람(1시간 주기)과 달리 즉각 반응하지 않는다. 급한 대응은 이 알람을 기다리지 말고 킬 스위치(`AGENT_CHAT_DISABLED=1`, §3.5)를 먼저 쓴다. 비용 급등 신호(기본 모델 기준 하루 약 200턴 분량의 5배). `[Usage]`에는 `userId`가 없다(개인정보 최소화) — 특정 대화 의심 시 같은 시간대의 `[Agent]` 라인(`conversationId`·`userId`·`steps`·`toolCalls` 포함)과 대조. 반복 호출/버그 루프면 `resolveAgentTier`의 한도 하향 검토 |
 | `siglens-node-heap-oom` | `JavaScript heap out of memory` 1시간 1건 초과 | 앱 프로세스가 힙 상한(1.5GiB)에 닿아 죽었다 = 진행 중이던 분석 전멸 후 systemd 재시작. worker 제거로 LLM 호출이 앱 안에서 돌면서 생긴 실패 모드다. 동시 분석 상한(24)이 뚫렸는지, 특정 심볼의 bars가 비정상적으로 큰지 확인. 반복되면 인스턴스 타입 상향 또는 상한 하향 |
@@ -379,7 +379,7 @@ ISR write가 로케일 수만큼 늘어난다. 이 레포에서 ISR write는 실
    ```
    `/privacy`는 `revalidate = 86400`이라 전환은 DB 반영 후 최대 ~24시간 뒤에
    화면에 나타난다 — **DB가 아니라 렌더된 `/privacy` 페이지에서** 전환을 확인할 것.
-3. **SSM 파라미터** — `DEEPSEEK_API_KEY`(필수, 없으면 첫 요청부터 실패),
+3. **SSM 파라미터** — `DEEPSEEK_CHAT_API_KEY`(필수, 없으면 첫 요청부터 실패),
    `BRAVE_SEARCH_API_KEY`(선택 — 없으면 에러가 아니라 `web_search` 툴이 그냥
    가용 툴 목록에서 빠진다), `AGENT_CHAT_DISABLED`는 평시엔 미설정 상태여야 한다.
 4. **알람 재적용** — 새 필터/알람 3종이 존재하도록 배포 파이프라인이 자동으로

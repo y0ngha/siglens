@@ -45,7 +45,7 @@ export function EmptyState({
             ) : (
                 <a
                     href={loginHref}
-                    className="rounded-lg bg-primary-500 px-4 py-2 text-sm text-white focus-visible:ring-2 focus-visible:ring-primary-500"
+                    className="rounded-lg bg-primary-600 px-4 py-2 text-sm text-white focus-visible:ring-2 focus-visible:ring-primary-500"
                 >
                     {t('EmptyState.a00741')}
                 </a>

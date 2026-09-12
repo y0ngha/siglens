@@ -2108,11 +2108,11 @@
                 "0aef61": "종목, 시장, 뉴스, 내 보유 종목에 대해 물어보세요 (Enter 전송 · Shift+Enter 줄바꿈)",
                 "4077ce": "전송",
                 "b21dfd": "정보 제공 목적이며 투자 조언이 아닙니다.",
+                "charCount": "{len} / {max}",
                 "d2e7e7": "중단",
                 "fdad68": "메시지 입력",
                 "remainingTurns": "오늘 {n}턴 남음 · ",
-                "tooLong": "{len} / {max}자 — 너무 깁니다",
-                "charCount": "{len} / {max}"
+                "tooLong": "{len} / {max}자 — 너무 깁니다"
             },
             "EmptyState": {
                 "a00741": "siglens 계정으로 로그인",

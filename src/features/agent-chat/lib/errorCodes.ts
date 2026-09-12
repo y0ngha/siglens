@@ -42,3 +42,15 @@ export const AGENT_ERROR_CODES: readonly string[] = [
 ];
 
 export type AgentClientErrorCode = HttpStageCode | AgentErrorCode;
+
+/**
+ * Server codes arrive as plain strings on the wire. Anything outside the closed
+ * union would miss the shell's copy map and render an empty banner, so an
+ * unrecognized code (a newer server, a proxy-injected body) degrades to
+ * `server_error` rather than showing nothing.
+ */
+export function isAgentClientErrorCode(
+    value: string
+): value is AgentClientErrorCode {
+    return AGENT_ERROR_CODES.includes(value);
+}

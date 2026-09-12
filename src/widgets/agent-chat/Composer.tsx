@@ -73,7 +73,7 @@ export function Composer({
                         onClick={submit}
                         disabled={!canSend}
                         className={cn(
-                            'rounded-lg bg-primary-500 px-3 py-2 text-sm text-white focus-visible:ring-2 focus-visible:ring-primary-500',
+                            'rounded-lg bg-primary-600 px-3 py-2 text-sm text-white focus-visible:ring-2 focus-visible:ring-primary-500',
                             !canSend && 'bg-secondary-700 text-secondary-400'
                         )}
                     >

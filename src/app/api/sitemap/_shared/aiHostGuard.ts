@@ -1,3 +1,6 @@
+import { constants } from 'node:http2';
+
+const { HTTP_STATUS_NOT_FOUND } = constants;
 import { isAiHost } from '@/shared/config/aiHost';
 
 /**
@@ -6,6 +9,6 @@ import { isAiHost } from '@/shared/config/aiHost';
  */
 export function rejectAiHost(request: Request): Response | null {
     return isAiHost(request.headers.get('host'))
-        ? new Response(null, { status: 404 })
+        ? new Response(null, { status: HTTP_STATUS_NOT_FOUND })
         : null;
 }
