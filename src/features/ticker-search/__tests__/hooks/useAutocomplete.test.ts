@@ -2,6 +2,8 @@
 import { renderHook, act } from '@testing-library/react';
 import type { ChangeEvent, KeyboardEvent } from 'react';
 import { useAutocomplete } from '@/features/ticker-search/hooks/useAutocomplete';
+import type { Locale } from '@/shared/i18n/locales';
+import { assignLocation } from '@/shared/lib/crossHostNavigate';
 
 const mockPush = vi.fn();
 const mockPrefetch = vi.fn();
@@ -17,6 +19,32 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/shared/hooks/useOnClickOutside', () => ({
     useOnClickOutside: vi.fn(),
 }));
+
+vi.mock('@/shared/lib/crossHostNavigate', () => ({
+    assignLocation: vi.fn(),
+    replaceLocation: vi.fn(),
+}));
+
+/**
+ * ai.siglens.io처럼 `hrefBase`가 설정된 호스트를 흉내낸다. `LocaleProvider`를
+ * JSX로 두르는 대신 컨텍스트 훅만 목킹한다 — 이 파일은 `.ts`라 JSX를 못 쓰고,
+ * `LocaleProvider`의 `children`은 필수 prop이라 `createElement` 두 번째 인자로
+ * 넘기면 `react/no-children-prop` lint에 걸린다.
+ */
+const localeState: { locale: Locale; hrefBase: string } = {
+    locale: 'ko',
+    hrefBase: '',
+};
+vi.mock('@/shared/i18n/LocaleContext', async () => {
+    const actual = await vi.importActual<
+        typeof import('@/shared/i18n/LocaleContext')
+    >('@/shared/i18n/LocaleContext');
+    return {
+        ...actual,
+        useCurrentLocale: () => localeState.locale,
+        useHrefBase: () => localeState.hrefBase,
+    };
+});
 
 /**
  * 조회 상태를 케이스마다 갈아끼운다. 친 문자열 직행은 "결과가 없음을 **확인**했을
@@ -72,6 +100,8 @@ describe('useAutocomplete', () => {
         searchState.isError = false;
         searchState.staleDebouncedQuery = null;
         searchState.hasResults = true;
+        localeState.locale = 'ko';
+        localeState.hrefBase = '';
         vi.clearAllMocks();
     });
 
@@ -293,6 +323,32 @@ describe('useAutocomplete', () => {
         expect(mockPush).not.toHaveBeenCalled();
     });
 
+    it('hrefBase가 있으면 assignLocation으로 크로스호스트 이동하고 router.push는 부르지 않는다', () => {
+        localeState.locale = 'en';
+        localeState.hrefBase = 'https://siglens.io';
+        const { result } = renderHook(() => useAutocomplete());
+
+        act(() => {
+            result.current.navigate('AAPL');
+        });
+
+        expect(assignLocation).toHaveBeenCalledWith(
+            'https://siglens.io/en/AAPL'
+        );
+        expect(mockPush).not.toHaveBeenCalled();
+    });
+
+    it('hrefBase가 없으면(메인 호스트) router.push로 이동하고 assignLocation은 부르지 않는다', () => {
+        const { result } = renderHook(() => useAutocomplete());
+
+        act(() => {
+            result.current.navigate('AAPL');
+        });
+
+        expect(mockPush).toHaveBeenCalledWith('/AAPL');
+        expect(assignLocation).not.toHaveBeenCalled();
+    });
+
     it('resets state after navigate', () => {
         const { result } = renderHook(() => useAutocomplete());
 
@@ -352,6 +408,15 @@ describe('useAutocomplete', () => {
         });
 
         expect(result.current.isOpen).toBe(true);
+    });
+
+    it('hrefBase가 있으면 prefetch를 건너뛴다 — 이 앱의 라우터에는 데울 경로가 없다', () => {
+        localeState.hrefBase = 'https://siglens.io';
+        const { result } = renderHook(() => useAutocomplete());
+        act(() => {
+            result.current.prefetch('AAPL');
+        });
+        expect(mockPrefetch).not.toHaveBeenCalled();
     });
 
     it('prefetch caches the symbol to avoid duplicate prefetches', () => {

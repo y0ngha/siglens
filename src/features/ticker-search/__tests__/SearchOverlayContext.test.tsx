@@ -1,12 +1,22 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { LocaleProvider } from '@/shared/i18n/LocaleContext';
+import {
+    assignLocation,
+    replaceLocation,
+} from '@/shared/lib/crossHostNavigate';
 
 const replaceMock = vi.fn();
 const pushMock = vi.fn();
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ replace: replaceMock, push: pushMock }),
     usePathname: () => '/NVDA',
+}));
+
+vi.mock('@/shared/lib/crossHostNavigate', () => ({
+    assignLocation: vi.fn(),
+    replaceLocation: vi.fn(),
 }));
 
 const searchState = {
@@ -57,11 +67,20 @@ describe('SearchOverlayProvider', () => {
         searchState.debouncedQuery = '';
     });
 
-    async function openAndSelect() {
-        render(
+    async function openAndSelect(hrefBase?: string) {
+        const tree = (
             <SearchOverlayProvider>
                 <Trigger />
             </SearchOverlayProvider>
+        );
+        render(
+            hrefBase ? (
+                <LocaleProvider locale="en" hrefBase={hrefBase}>
+                    {tree}
+                </LocaleProvider>
+            ) : (
+                tree
+            )
         );
         await userEvent.click(screen.getByRole('button', { name: '열기' }));
         await userEvent.click(screen.getByRole('button', { name: '애플' }));
@@ -107,6 +126,46 @@ describe('SearchOverlayProvider', () => {
         expect(pushMock).toHaveBeenCalledWith('/AAPL');
         expect(replaceMock).not.toHaveBeenCalled();
         pushState.mockRestore();
+    });
+
+    /**
+     * ai.siglens.io처럼 `hrefBase`가 있으면 목적지는 다른 호스트다 — 라우터의
+     * 클라이언트 내비게이션(`router.replace`/`push`)으로는 갈 수 없으므로 실제
+     * 이동(`window.location`)으로 대체해야 한다.
+     */
+    it('hrefBase가 있으면 replaceLocation으로 이동하고 router.replace는 부르지 않는다', async () => {
+        await openAndSelect('https://siglens.io');
+
+        expect(replaceLocation).toHaveBeenCalledWith(
+            'https://siglens.io/en/AAPL'
+        );
+        expect(assignLocation).not.toHaveBeenCalled();
+        expect(replaceMock).not.toHaveBeenCalled();
+        expect(pushMock).not.toHaveBeenCalled();
+    });
+
+    it('hrefBase가 있어도 히스토리 항목이 없으면 assignLocation으로 이동한다', async () => {
+        const pushState = vi
+            .spyOn(history, 'pushState')
+            .mockImplementation(() => {
+                throw new DOMException('denied', 'SecurityError');
+            });
+
+        await openAndSelect('https://siglens.io');
+
+        expect(assignLocation).toHaveBeenCalledWith(
+            'https://siglens.io/en/AAPL'
+        );
+        expect(replaceLocation).not.toHaveBeenCalled();
+        pushState.mockRestore();
+    });
+
+    it('hrefBase가 없으면(메인 호스트) replaceLocation/assignLocation을 부르지 않는다', async () => {
+        await openAndSelect();
+
+        expect(replaceMock).toHaveBeenCalledWith('/AAPL');
+        expect(replaceLocation).not.toHaveBeenCalled();
+        expect(assignLocation).not.toHaveBeenCalled();
     });
 
     it('이동을 시작하면 오버레이를 즉시 닫는다', async () => {

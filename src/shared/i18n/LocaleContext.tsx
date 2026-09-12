@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { DEFAULT_LOCALE, type Locale } from './locales';
 
 /**
@@ -16,17 +16,28 @@ import { DEFAULT_LOCALE, type Locale } from './locales';
  * 조각 렌더 테스트는 기본 로케일로 조용히 동작하고, 런타임에는 루트 레이아웃이
  * 실제 값을 넣는다.
  */
-const LocaleContext = createContext<Locale>(DEFAULT_LOCALE);
+interface LocaleContextValue {
+    readonly locale: Locale;
+    readonly hrefBase: string;
+}
+
+const LocaleContext = createContext<LocaleContextValue>({
+    locale: DEFAULT_LOCALE,
+    hrefBase: '',
+});
 
 export function LocaleProvider({
     locale,
+    hrefBase = '',
     children,
 }: {
     readonly locale: Locale;
+    readonly hrefBase?: string;
     readonly children: ReactNode;
 }) {
+    const value = useMemo(() => ({ locale, hrefBase }), [locale, hrefBase]);
     return (
-        <LocaleContext.Provider value={locale}>
+        <LocaleContext.Provider value={value}>
             {children}
         </LocaleContext.Provider>
     );
@@ -34,5 +45,14 @@ export function LocaleProvider({
 
 /** 현재 로케일. 프로바이더가 없으면 기본 로케일. */
 export function useCurrentLocale(): Locale {
-    return useContext(LocaleContext);
+    return useContext(LocaleContext).locale;
+}
+
+/**
+ * Origin prepended to internal links. `''` on the main host (relative paths as
+ * before); the ai.siglens.io layout sets the main site URL so the shared header's
+ * `/market`, `/login`, search results etc. leave the ai host instead of 404-ing there.
+ */
+export function useHrefBase(): string {
+    return useContext(LocaleContext).hrefBase;
 }

@@ -3,9 +3,9 @@ import { LocaleLink } from '../LocaleLink';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
 import type { Locale } from '@/shared/i18n/locales';
 
-function renderIn(locale: Locale, href: string) {
+function renderIn(locale: Locale, href: string, hrefBase?: string) {
     render(
-        <LocaleProvider locale={locale}>
+        <LocaleProvider locale={locale} hrefBase={hrefBase}>
             <LocaleLink href={href}>go</LocaleLink>
         </LocaleProvider>
     );
@@ -48,6 +48,42 @@ describe('LocaleLink', () => {
         expect(screen.getByRole('link', { name: 'go' })).toHaveAttribute(
             'href',
             '/news'
+        );
+    });
+
+    /**
+     * ai.siglens.io는 `hrefBase`로 메인 사이트 origin을 흘려보낸다 — 헤더의
+     * `/market`, `/login` 같은 내부 링크가 ai 호스트 안에 갇혀 404가 나지 않고
+     * 메인 사이트로 나가야 한다.
+     */
+    it('hrefBase가 있으면 로케일 경로 앞에 origin을 붙인다', () => {
+        expect(renderIn('en', '/market', 'https://siglens.io')).toHaveAttribute(
+            'href',
+            'https://siglens.io/en/market'
+        );
+    });
+
+    it('hrefBase가 있어도 기본 로케일은 접두사를 붙이지 않는다', () => {
+        expect(renderIn('ko', '/market', 'https://siglens.io')).toHaveAttribute(
+            'href',
+            'https://siglens.io/market'
+        );
+    });
+
+    it('hrefBase가 없으면 상대 경로 그대로다(메인 호스트, 동작 불변)', () => {
+        expect(renderIn('en', '/market')).toHaveAttribute('href', '/en/market');
+    });
+
+    it('hrefBase가 있어도 외부 URL은 손대지 않는다', () => {
+        expect(
+            renderIn('en', 'https://example.com/x', 'https://siglens.io')
+        ).toHaveAttribute('href', 'https://example.com/x');
+    });
+
+    it('hrefBase가 있어도 앵커는 손대지 않는다', () => {
+        expect(renderIn('en', '#top', 'https://siglens.io')).toHaveAttribute(
+            'href',
+            '#top'
         );
     });
 });

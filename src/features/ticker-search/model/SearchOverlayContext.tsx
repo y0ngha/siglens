@@ -12,7 +12,12 @@ import {
 } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useHrefBase } from '@/shared/i18n/LocaleContext';
 import { useLocalePath } from '@/shared/i18n/useLocalePath';
+import {
+    assignLocation,
+    replaceLocation,
+} from '@/shared/lib/crossHostNavigate';
 import { useSearchOverlay } from '../hooks/useSearchOverlay';
 import { NavigationProgressBar } from '../ui/NavigationProgressBar';
 import { SearchOverlay } from '../ui/SearchOverlay';
@@ -65,6 +70,7 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
     const { isOpen, open, close, dismissForNavigation } = useSearchOverlay();
     const router = useRouter();
     const toLocalePath = useLocalePath();
+    const base = useHrefBase();
     const pathname = usePathname();
     const [isNavigating, startNavigation] = useTransition();
 
@@ -95,11 +101,21 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
             // `/ja`에서 고른 종목이 ko 페이지로 간다 — `useAutocomplete`가 같은
             // 이유로 `toLocalePath`를 쓴다.
             const href = toLocalePath(`/${symbol}`);
+            // `hrefBase`가 있으면(ai.siglens.io) 목적지는 다른 호스트다 — 라우터의
+            // 클라이언트 내비게이션은 같은 앱 안에서만 되므로 실제 이동으로 대체한다.
+            // push/replace 구분은 그대로 유지한다(`assign`은 항목을 남기고
+            // `replace`는 남기지 않는다 — 위 주석과 같은 규칙).
+            if (base) {
+                const target = `${base}${href}`;
+                if (hasOwnHistoryEntry) replaceLocation(target);
+                else assignLocation(target);
+                return;
+            }
             startNavigation(() =>
                 hasOwnHistoryEntry ? router.replace(href) : router.push(href)
             );
         },
-        [dismissForNavigation, router, toLocalePath]
+        [base, dismissForNavigation, router, toLocalePath]
     );
     // 소비자는 `open`만 필요하다. `isOpen`을 값에 넣으면 오버레이가 열리고 닫힐 때마다
     // 전 소비자가 리렌더된다 — 헤더는 모든 라우트에 있으므로 그 비용이 전역이다.
