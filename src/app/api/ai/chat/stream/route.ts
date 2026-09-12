@@ -89,6 +89,25 @@ function requestLocale(request: Request): Locale {
 const json = (status: number, body: unknown, headers?: HeadersInit): Response =>
     Response.json(body, { status, headers });
 
+/**
+ * Postgres foreign-key violation on `chat_messages.conversation_id`.
+ *
+ * The member can delete the conversation from the sidebar (or a second tab) while
+ * this turn is still running: the turn lock is per-USER, not per-conversation, so it
+ * cannot prevent that, and `ON DELETE cascade` only removes rows that already exist
+ * at delete time. The late append then hits the FK and the driver error would escape
+ * as a generic `server_error`, discarding a finished (already billed) turn behind a
+ * confusing message. `not_found` is the honest outcome — the transcript is gone.
+ */
+const FK_VIOLATION_CODE = '23503';
+
+function isConversationGone(error: unknown): boolean {
+    return (
+        (error as { cause?: { code?: unknown } } | null)?.cause?.code ===
+        FK_VIOLATION_CODE
+    );
+}
+
 export async function POST(request: Request): Promise<Response> {
     if (process.env.AGENT_CHAT_DISABLED === '1')
         return json(503, { error: 'disabled' }, { 'Retry-After': '600' });
@@ -225,9 +244,18 @@ export async function POST(request: Request): Promise<Response> {
             history =
                 lastUserIndex >= 0 ? history.slice(0, lastUserIndex) : history;
         } else {
-            const [saved] = await repo.appendMessages(conversationId, [
-                { role: 'user', content: body.message },
-            ]);
+            let saved;
+            try {
+                [saved] = await repo.appendMessages(conversationId, [
+                    { role: 'user', content: body.message },
+                ]);
+            } catch (error) {
+                // Deleted between the ownership check and this insert. No stream exists
+                // yet, so answer on the HTTP stage rather than as an SSE frame.
+                if (!isConversationGone(error)) throw error;
+                await releaseOnce();
+                return json(404, { error: 'not_found' });
+            }
             userMessageId = saved?.id ?? null;
             userMessageSeq = saved?.seq ?? null;
         }
@@ -285,14 +313,22 @@ export async function POST(request: Request): Promise<Response> {
                     if (!result.ok) {
                         const partial = result.partialText?.trim();
                         if (partial) {
-                            await repo.appendMessages(conversationId, [
-                                {
-                                    role: 'assistant',
-                                    content: partial,
-                                    modelId: AGENT_MODEL,
-                                    status: persistedStatusFor(result.error),
-                                },
-                            ]);
+                            try {
+                                await repo.appendMessages(conversationId, [
+                                    {
+                                        role: 'assistant',
+                                        content: partial,
+                                        modelId: AGENT_MODEL,
+                                        status: persistedStatusFor(
+                                            result.error
+                                        ),
+                                    },
+                                ]);
+                            } catch (error) {
+                                if (isConversationGone(error))
+                                    throw new AgentTurnError('not_found');
+                                throw error;
+                            }
                         }
                         throw new AgentTurnError(result.error);
                     }
@@ -315,10 +351,17 @@ export async function POST(request: Request): Promise<Response> {
                             },
                         },
                     ];
-                    const saved = await repo.appendMessages(
-                        conversationId,
-                        rowsToSave
-                    );
+                    let saved;
+                    try {
+                        saved = await repo.appendMessages(
+                            conversationId,
+                            rowsToSave
+                        );
+                    } catch (error) {
+                        if (isConversationGone(error))
+                            throw new AgentTurnError('not_found');
+                        throw error;
+                    }
                     console.info(
                         '[Agent]',
                         JSON.stringify({

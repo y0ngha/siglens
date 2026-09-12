@@ -485,6 +485,57 @@ describe('POST /api/ai/chat/stream', () => {
         err.mockRestore();
     });
 
+    it('사용자 메시지 저장 직전에 대화가 삭제되면 404 not_found, lock 한 번 해제', async () => {
+        // 턴 락은 사용자 단위라 같은 사용자의 다른 탭·사이드바 삭제를 막지 못한다.
+        const release = vi.fn();
+        m.lock.mockResolvedValue({ release });
+        m.repo.appendMessages.mockRejectedValueOnce(
+            Object.assign(
+                new Error(
+                    'insert or update on table "chat_messages" violates foreign key constraint'
+                ),
+                { cause: { code: '23503' } }
+            )
+        );
+        const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const res = await POST(post({ conversationId: 'c1', message: 'x' }));
+        expect(res.status).toBe(404);
+        expect(await res.json()).toEqual({ error: 'not_found' });
+        expect(release).toHaveBeenCalledTimes(1);
+        err.mockRestore();
+    });
+
+    it('턴 도중 대화가 삭제되면 저장 FK 위반을 not_found 프레임으로 알리고 원본 오류는 노출하지 않는다', async () => {
+        // cascade는 삭제 시점에 있던 행만 지우므로 늦게 도착한 저장이 FK에 걸린다.
+        const release = vi.fn();
+        m.lock.mockResolvedValue({ release });
+        m.repo.appendMessages
+            .mockImplementationOnce(async (_c: string, rows: unknown[]) =>
+                rows.map((r, i) => ({
+                    ...(r as object),
+                    id: `m${i}`,
+                    seq: i + 1,
+                }))
+            )
+            .mockRejectedValueOnce(
+                Object.assign(
+                    new Error(
+                        'insert or update on table "chat_messages" violates foreign key constraint'
+                    ),
+                    { cause: { code: '23503' } }
+                )
+            );
+        const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const res = await POST(post({ conversationId: 'c1', message: 'x' }));
+        const f = await frames(res);
+        expect(f.some(x => x.includes('"code":"not_found"'))).toBe(true);
+        expect(f.join('\n')).not.toContain('foreign key constraint');
+        expect(release).toHaveBeenCalledTimes(1);
+        err.mockRestore();
+        warn.mockRestore();
+    });
+
     // ---- AgentErrorCode mapping ----
     const CODES: Array<{ code: string; persistedStatus: 'aborted' | 'error' }> =
         [
