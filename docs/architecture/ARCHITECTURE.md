@@ -236,6 +236,36 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
   → SSE `done` 이벤트로 결과 수신 → AnalysisPanel 업데이트
 ```
 
+### SiglensAI 에이전트 챗 (ai.siglens.io)
+
+`ai.siglens.io`는 메인 사이트와 별개의 호스트로 서빙되며(라우트 트리 `app/ai/[locale]`),
+자체 세션이 없다.
+
+```
+siglens.io에서 로그인 상태로 ai 로그인 CTA 클릭
+  → GET /api/auth/handoff?to=ai&next=…&state=… (메인 호스트)
+    → Redis에 60초 TTL 1회용 코드 발급 → ai.siglens.io로 리다이렉트
+  → GET /api/auth/handoff/consume?code=… (ai 호스트)
+    → 코드 1회 소비 → 세션 쿠키 발급 (실패 시 ?sso=none 랜딩)
+
+메시지 전송
+  → app/ai/[locale]/{page.tsx,c/[id]/page.tsx} → widgets/agent-chat
+    → POST /api/ai/chat/stream (SSE)
+      → 킬 스위치(AGENT_CHAT_DISABLED)·인증·봇 판정·인스턴스당 동시 턴 상한(4)·
+        사용자별 턴 락(turnLock.ts) 순으로 게이트
+      → DrizzleChatConversationRepository로 대화/메시지 조회·저장
+      → @y0ngha/siglens-core `runAgentTurn` (요청 안에서 블로킹, 멀티스텝 툴 호출 루프)
+        → callAgentProvider: entities/llm-provider의 DeepSeek 에이전트 어댑터
+          (프로바이더 호출마다 `[Usage]` JSON 라인, jobId: 'agent')
+        → executeTool: app/api/ai/chat/tools — get_price, get_indicators,
+          get_cached_analysis, get_news, run_fresh_analysis, web_search(Brave, 키 있을 때만) 등
+      → 턴 완료 시 `[Agent]` JSON 라인 1건(steps·toolCalls·ms·stopReason)
+    → SSE 이벤트(text/tool_*/usage/stop/done)로 클라이언트에 스트리밍
+```
+
+자세한 요청/응답 계약은 `docs/reference/API.md`의 해당 절, 알람·킬 스위치 절차는
+`docs/architecture/DEPLOY_RUNBOOK.md` §3.5 참고.
+
 ---
 
 ## Next.js 특이사항

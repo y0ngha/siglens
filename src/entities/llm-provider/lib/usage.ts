@@ -162,9 +162,17 @@ export interface UsageLogFields extends NormalizedUsage {
     latencyMs: number;
 }
 
-/** Emits the single normalized `[Usage]` telemetry line. */
+/**
+ * Emits the single normalized `[Usage]` telemetry line as pure JSON (the
+ * `tag` field carries the marker instead of a leading string argument) so a
+ * CloudWatch JSON metric filter (`{ $.tag = "[Usage]" && $.jobId = "agent" }`)
+ * can extract `outputTokens` directly. The literal text `[Usage]` still
+ * appears in the log line, so the pre-existing `like /\[Usage\]/` Logs
+ * Insights query keeps matching both this format and core's two-arg
+ * `console.info('[Usage]', json)` analysis-path format unchanged.
+ */
 export function logUsage(fields: UsageLogFields): void {
-    console.info('[Usage]', JSON.stringify(fields));
+    console.info(JSON.stringify({ tag: '[Usage]', ...fields }));
 }
 
 /** Default `jobId` for calls dispatched through the provider router. */

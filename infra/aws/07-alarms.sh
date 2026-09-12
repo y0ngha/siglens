@@ -235,6 +235,49 @@ aws logs put-metric-filter --log-group-name /siglens/app \
 aws cloudwatch put-metric-alarm --alarm-name siglens-analysis-stream-failed --namespace Siglens/Analysis \
   --metric-name AnalysisStreamFailed --statistic Sum --period 900 --evaluation-periods 2 --threshold 2 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P1
+# SiglensAI 에이전트 턴 실패 — 1시간 10건 초과. 마커는 stream/route.ts의 '[agent-stream] failed:'
+# (catch-all: 락 획득 후의 모든 미처리 예외가 여기로 떨어진다).
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-agent-stream-failed \
+  --filter-pattern '"[agent-stream] failed"' \
+  --metric-transformations metricName=AgentStreamFailed,metricNamespace=Siglens/Agent,metricValue=1,defaultValue=0
+aws cloudwatch put-metric-alarm --alarm-name siglens-agent-stream-failed --namespace Siglens/Agent \
+  --metric-name AgentStreamFailed --statistic Sum --period 3600 --evaluation-periods 1 --threshold 10 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P1
+# 에이전트 한도 스토어(Redis) 불가 — turnLock.ts가 카운터 스토어 접근 실패 시 찍는
+# 마커. fail-closed라 사용자에겐 server_busy(409)로만 보인다 — 이 로그가 유일한 신호.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-agent-quota-store-unavailable \
+  --filter-pattern '"[agent] quota store unavailable"' \
+  --metric-transformations metricName=AgentQuotaStoreUnavailable,metricNamespace=Siglens/Agent,metricValue=1,defaultValue=0
+aws cloudwatch put-metric-alarm --alarm-name siglens-agent-quota-store-unavailable --namespace Siglens/Agent \
+  --metric-name AgentQuotaStoreUnavailable --statistic Sum --period 3600 --evaluation-periods 1 --threshold 3 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P1
+# 에이전트 출력 토큰 일 1M 초과(기본 모델 200턴의 ~5배). `[Usage]`가 순수 JSON
+# ({"tag":"[Usage]","jobId":"agent",...})이라 JSON 필터가 매치한다 — core의 분석 경로
+# `[Usage]` 라인은 `console.info('[Usage]', json)` 2-인자 포맷(줄 앞에 순수 텍스트가
+# 붙어 JSON 파싱 대상이 아님)이라 이 필터엔 안 걸린다. 의도된 동작: 이 알람은 에이전트만 센다.
+#
+# 이 지표는 `jobId: 'agent'`를 실제로 찍는 단일 호출부(현재
+# `src/entities/llm-provider/api/agent/deepseek.ts`)에만 의존한다.
+# fallback 프로바이더를 추가할 때(스펙 §13) 그 어댑터가 `logUsage`에
+# `jobId: 'agent'`를 넘기지 않으면, 이 필터는 에러 없이 그냥 매치가 줄어들 뿐이고
+# `defaultValue=0` + `notBreaching` 조합상 "지출이 0으로 줄었다"가 아니라
+# "지표 자체가 죽었다"로 조용히 읽힌다 — 새/fallback 어댑터는 반드시
+# `jobId: 'agent'`로 `[Usage]`를 남기게 하라.
+#
+# 주의: period가 86400(1일)이라 이 알람은 지출이 발생한 시점으로부터 최대
+# ~24시간 뒤에야 발화할 수 있다 — `siglens-agent-stream-failed`·
+# `siglens-agent-quota-store-unavailable`(둘 다 1시간 주기)처럼 즉각 반응하는
+# 알람이 아니다. 급한 대응이 필요하면 이 알람을 기다리지 말고 킬 스위치
+# (`AGENT_CHAT_DISABLED=1`, DEPLOY_RUNBOOK.md §3.5)를 먼저 쓴다.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-agent-output-tokens \
+  --filter-pattern '{ $.tag = "[Usage]" && $.jobId = "agent" }' \
+  --metric-transformations metricName=AgentOutputTokens,metricNamespace=Siglens/Agent,metricValue='$.outputTokens',defaultValue=0
+aws cloudwatch put-metric-alarm --alarm-name siglens-agent-output-tokens-daily --namespace Siglens/Agent \
+  --metric-name AgentOutputTokens --statistic Sum --period 86400 --evaluation-periods 1 --threshold 1000000 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P1
 # Node 힙 고갈 — worker 제거 이후 새로 생긴 실패 모드.
 #
 # LLM 호출이 앱 프로세스 안에서 돌면서 요청당 bars+지표+프롬프트를 들고 있게 됐다.

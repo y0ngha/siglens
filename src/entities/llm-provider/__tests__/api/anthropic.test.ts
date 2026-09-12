@@ -101,7 +101,7 @@ describe('callAnthropicChat', () => {
             await callAnthropicChat(BASE_OPTIONS);
 
             const payload: unknown = JSON.parse(
-                (info.mock.calls[0]?.[1] as string) ?? '{}'
+                (info.mock.calls[0]?.[0] as string) ?? '{}'
             );
             expect(payload).toMatchObject({
                 jobId: 'chat',

@@ -340,6 +340,9 @@ ISR write가 로케일 수만큼 늘어난다. 이 레포에서 ISR write는 실
 | `siglens-isr-cache-failures` | IsrCacheFailures 5분 합계 > 5 | S3 권한/버킷/IMDS 확인. fail-open이라 사이트는 살아 있지만 캐시는 사실상 죽은 상태 |
 | `siglens-isr-tag-failures` | IsrTagFailures 15분 합계 ≥ 5 ×2주기 | 태그 동기화 실패 = 다른 인스턴스의 무효화를 놓쳐 **stale HTML을 revalidate TTL(6~24h) 동안 서빙**. 조용히 degrade하므로 이 알람이 유일한 신호 |
 | `siglens-analysis-stream-failed` | `[analysis-stream] failed` 15분 합계 > 2가 연속 2주기 | **분석 전면 장애의 유일한 신호다.** SSE는 실패해도 HTTP 200이라 5xx 알람이 안 뜬다. 1순위 의심: 프로바이더 키(SSM `/siglens/{DEEPSEEK,GEMINI,ANTHROPIC,OPENAI}_API_KEY`) 누락·만료. Logs Insights에서 `[analysis-stream] failed` 원문 확인 → 키 문제면 SSM 갱신 후 인스턴스 재시작, 프로바이더 장애면 회복 대기 |
+| `siglens-agent-stream-failed` | `[agent-stream] failed` 1시간 합계 > 10 | SiglensAI(ai.siglens.io) 에이전트 턴 전면 실패 후보. Logs Insights로 `[agent-stream] failed:` 원문 확인 → 프로바이더 키(SSM `/siglens/DEEPSEEK_API_KEY`) 또는 DB 접근 확인 |
+| `siglens-agent-quota-store-unavailable` | `[agent] quota store unavailable` 1시간 합계 > 3 | Redis(Upstash) 한도 카운터 스토어 접근 실패. fail-closed라 사용자에겐 `server_busy`(409)만 보이고 이 로그가 유일한 신호. Upstash 도달성 확인 |
+| `siglens-agent-output-tokens-daily` | `AgentOutputTokens`(Siglens/Agent, `[Usage]` JSON의 `outputTokens` 합) 24시간 합계 > 1,000,000 | **주기가 1일이라 지출 발생 시점에서 최대 ~24시간 뒤에야 발화한다** — 위 두 알람(1시간 주기)과 달리 즉각 반응하지 않는다. 급한 대응은 이 알람을 기다리지 말고 킬 스위치(`AGENT_CHAT_DISABLED=1`, §3.5)를 먼저 쓴다. 비용 급등 신호(기본 모델 기준 하루 약 200턴 분량의 5배). `[Usage]`에는 `userId`가 없다(개인정보 최소화) — 특정 대화 의심 시 같은 시간대의 `[Agent]` 라인(`conversationId`·`userId`·`steps`·`toolCalls` 포함)과 대조. 반복 호출/버그 루프면 `resolveAgentTier`의 한도 하향 검토 |
 | `siglens-node-heap-oom` | `JavaScript heap out of memory` 1시간 1건 초과 | 앱 프로세스가 힙 상한(1.5GiB)에 닿아 죽었다 = 진행 중이던 분석 전멸 후 systemd 재시작. worker 제거로 LLM 호출이 앱 안에서 돌면서 생긴 실패 모드다. 동시 분석 상한(24)이 뚫렸는지, 특정 심볼의 bars가 비정상적으로 큰지 확인. 반복되면 인스턴스 타입 상향 또는 상한 하향 |
 | `siglens-fear-greed-loader-failed` | `[FearGreedRoute] getMarketFearGreedStatic failed` 1시간 합계 > 4가 연속 2주기 (실패 1회당 로그 2줄 — metadata + 본문이 각각 catch하므로 실질 "시간당 실패 2회 초과") | `/fear-greed` 로더가 계속 실패 중. **fail-open이라 이게 유일한 신호다** — 페이지는 200 + "표본이 부족합니다"를 렌더하고 그 HTML이 ISR/S3에 저장돼 5xx도 헬스체크 실패도 안 뜬다. FMP 402/403처럼 재시도 대상이 아닌 오류면 매시 재생성이 똑같이 실패해 **빈 페이지가 영구화**된다. Logs Insights로 원문 확인 → FMP 키/플랜(SSM `/siglens/FMP_API_KEY`) 우선 의심. 복구 후에는 다음 revalidate(최대 1h)에 자동 정상화 |
 | `siglens-fear-greed-kr-loader-failed` | `[FearGreedKrRoute] getMarketFearGreedKrStatic failed` 1시간 합계 > 4가 연속 2주기 | 미국판과 같은 fail-open 구조. 소스가 **무인증 yahoo**라 429가 주된 원인이고, KRX ETF 상장폐지도 같은 증상을 낸다. Logs Insights 원문 → 429면 회복 대기, 심볼 오류면 `marketFearGreedKrSymbols.ts` 갱신 |
@@ -351,6 +354,46 @@ ISR write가 로케일 수만큼 늘어난다. 이 레포에서 ISR write는 실
 | `siglens-seo-prewarm-batch-failed` | `[seo-prewarm] batch failed` 1시간 3회 초과 | [CRON.md](../reference/CRON.md) — 배치 내부 실패 |
 | `siglens-seo-prewarm-redis-unavailable` | `[seo-prewarm] redis unavailable` 1시간 1회 초과 | Upstash 도달성 확인 |
 | `siglens-seo-prewarm-{evening,evening-late,early}-failed` | EventBridge FailedInvocations 5분 1건 초과 | 타겟 호출 자체가 실패 — Connection `AUTHORIZED` 상태, IAM, API Destination 확인 |
+
+---
+
+## 3.5 SiglensAI(ai.siglens.io) 에이전트 챗
+
+**배포 전 준비**
+
+1. **DB 마이그레이션(0035) 적용** — 코드 배포 **전에** 실행한다. 안 하면 첫 채팅
+   요청이 존재하지 않는 테이블을 때려 `server_error`로 떨어진다. 운영자가 직접
+   실행할 명령이며, 이 문서는 그 명령을 대신 실행하지 않는다:
+   ```bash
+   yarn db:migrate
+   ```
+2. **개인정보처리방침 v4 시드** — 2026-09-19(발효일) 이전 아무 때나 실행해도
+   안전하다. `findActive`가 `effective_date <= NOW() ORDER BY effective_date DESC
+   LIMIT 1`로 조회하므로, 시드해 둔 v4 행은 발효일 전까지는 조용히 대기만 하고
+   화면에는 영향이 없다. 재실행해도 `upsertFromSeed`가 버전 키로 덮어써 멱등하다.
+   반대로 **이 시드를 빼먹으면** `findActive`에 버전 고정도 에러 경로도 없어서
+   그냥 v3를 계속 서빙한다 — v3에는 DeepSeek 전송 고지도, 대화 보존/삭제 조항도
+   없으므로 신호 없이 조용한 컴플라이언스 공백이 된다. 운영자가 직접 실행:
+   ```bash
+   yarn db:seed:terms
+   ```
+   `/privacy`는 `revalidate = 86400`이라 전환은 DB 반영 후 최대 ~24시간 뒤에
+   화면에 나타난다 — **DB가 아니라 렌더된 `/privacy` 페이지에서** 전환을 확인할 것.
+3. **SSM 파라미터** — `DEEPSEEK_API_KEY`(필수, 없으면 첫 요청부터 실패),
+   `BRAVE_SEARCH_API_KEY`(선택 — 없으면 에러가 아니라 `web_search` 툴이 그냥
+   가용 툴 목록에서 빠진다), `AGENT_CHAT_DISABLED`는 평시엔 미설정 상태여야 한다.
+4. **알람 재적용** — 새 필터/알람 3종이 존재하도록 배포 파이프라인이 자동으로
+   돌리지 않는 스크립트를 수동 실행한다(§1의 06·07·08과 같은 카테고리):
+   ```bash
+   bash infra/aws/07-alarms.sh
+   ```
+
+- **킬 스위치**: SSM `/siglens/AGENT_CHAT_DISABLED`을 `1`로 갱신 → 프로바이더 키 회전과 같은 경로로 인스턴스 재시작(`systemctl restart siglens`, ASG 전체 instance refresh는 불필요 — `route.ts`가 요청마다 `process.env.AGENT_CHAT_DISABLED`를 읽으므로 컨테이너가 새 env로 뜨는 즉시 반영된다) → `POST /api/ai/chat/stream`이 모든 요청에 `503 { error: 'disabled' }`(`Retry-After: 600`)를 반환한다. 클라이언트는 재시도 버튼 없이 안내만 표시한다(`src/widgets/agent-chat/errorCopy.ts`의 `disabled: false`). 해제는 파라미터를 `0`으로 갱신(또는 삭제) 후 동일하게 재시작.
+- **알람**: `siglens-agent-stream-failed`(1시간 10건) · `siglens-agent-quota-store-unavailable`(1시간 3건) · `siglens-agent-output-tokens-daily`(1일 100만 토큰) — 조건·1차 대응은 §3 표 참고.
+- **진단 순서**: `[Agent]` 라인(턴당 1건 — `conversationId`·`userId`·`steps`·`toolCalls: [{name, ms, status}]`·`ms`·`stopReason`) → `[Usage]`(`jobId: "agent"`, 토큰·지연) → `[agent-stream] failed` 전후 로그.
+- **SSO**: `ai.siglens.io`는 자체 세션이 없다 — `siglens.io/api/auth/handoff` → Redis에 60초 TTL 1회용 코드 저장 → `ai.siglens.io/api/auth/handoff/consume`이 소비해 세션 발급. 코드가 없거나 만료/재사용이면 `?sso=none` 랜딩(재로그인 CTA만). Redis 장애 시 핸드오프 자체가 불가 — `siglens-agent-quota-store-unavailable`과 같은 Upstash 의존이므로 함께 의심.
+- **Cloudflare**: 터널의 Public Hostname에 `ai.siglens.io` 추가, Rate Limiting은 `/api/ai/*` 10초당 10요청.
+- **롤백**: 이 기능은 테이블 추가만 있고 스키마 변경이 기존 경로를 건드리지 않으므로 마이그레이션 되돌림이 불필요하다. Cloudflare Public Hostname은 코드 롤백을 따라오지 않는다 — 구 빌드로 롤백해도 `ai.siglens.io`는 계속 살아 있고, 라우트가 없는 구 빌드에서는 그 호스트가 메인 사이트를 보여준다(무해하지만 혼란 소지 — 필요시 Cloudflare에서 Public Hostname을 수동으로 내린다).
 
 ---
 

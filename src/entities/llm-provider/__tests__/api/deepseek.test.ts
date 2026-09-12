@@ -83,13 +83,13 @@ describe('callDeepseekChat', () => {
             await callDeepseekChat(FLASH_OPTIONS);
 
             expect(info).toHaveBeenCalledWith(
-                '[Usage]',
                 expect.stringContaining('"model":"deepseek-flash"')
             );
             const payload: unknown = JSON.parse(
-                (info.mock.calls[0]?.[1] as string) ?? '{}'
+                (info.mock.calls[0]?.[0] as string) ?? '{}'
             );
             expect(payload).toMatchObject({
+                tag: '[Usage]',
                 jobId: 'chat',
                 promptTokens: 500,
                 cachedTokens: 400,
@@ -107,7 +107,6 @@ describe('callDeepseekChat', () => {
 
             expect(result).toBe('Hi');
             expect(info).toHaveBeenCalledWith(
-                '[Usage]',
                 expect.stringContaining('"promptTokens":0')
             );
         });
