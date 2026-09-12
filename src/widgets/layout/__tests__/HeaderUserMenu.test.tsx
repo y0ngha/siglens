@@ -16,6 +16,35 @@ describe('HeaderUserMenu', () => {
         ).toBeInTheDocument();
     });
 
+    it('authNext가 없으면 로그인/회원가입 href에 ?next=가 없다', () => {
+        render(<HeaderUserMenu currentUser={null} />);
+        expect(screen.getByRole('link', { name: '로그인' })).toHaveAttribute(
+            'href',
+            '/login'
+        );
+        expect(screen.getByRole('link', { name: '회원가입' })).toHaveAttribute(
+            'href',
+            '/signup'
+        );
+    });
+
+    it('authNext가 있으면 로그인/회원가입 href에 인코딩된 ?next=가 붙는다', () => {
+        render(
+            <HeaderUserMenu
+                currentUser={null}
+                authNext="/api/auth/handoff?to=ai&next=%2F"
+            />
+        );
+        expect(screen.getByRole('link', { name: '로그인' })).toHaveAttribute(
+            'href',
+            '/login?next=%2Fapi%2Fauth%2Fhandoff%3Fto%3Dai%26next%3D%252F'
+        );
+        expect(screen.getByRole('link', { name: '회원가입' })).toHaveAttribute(
+            'href',
+            '/signup?next=%2Fapi%2Fauth%2Fhandoff%3Fto%3Dai%26next%3D%252F'
+        );
+    });
+
     it('currentUser가 주어지면 사용자 메뉴 트리거를 렌더한다', () => {
         render(
             <HeaderUserMenu

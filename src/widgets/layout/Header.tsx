@@ -23,11 +23,22 @@ interface HeaderProps {
      *   - inner fallback: true only when the hint cookie signals an active session
      */
     readonly loadingUserMenu?: boolean;
+    /**
+     * SSO handoff query forwarded to the user menu and mobile drawer's
+     * `/login`/`/signup` hrefs. Set only when this header renders on the ai
+     * host, so the visitor returns there after signing in. Undefined here
+     * leaves auth hrefs unchanged (main host behaviour).
+     */
+    readonly authNext?: string;
 }
 
 /** Presentational shell; receives resolved current user as a prop so layer rules forbid direct infrastructure access here. */
 // 최상위 <header>는 암시적으로 role="banner"이므로 role을 명시하지 않는다(중복 ARIA).
-export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
+export function Header({
+    currentUser,
+    loadingUserMenu,
+    authNext,
+}: HeaderProps) {
     const t = useTranslations('widgets.layout');
     return (
         <header className="sticky top-0 z-50 border-b border-secondary-700 bg-secondary-900/90 backdrop-blur-md supports-backdrop-filter:bg-secondary-900/75">
@@ -116,12 +127,14 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                     <HeaderUserMenu
                         currentUser={currentUser}
                         loading={loadingUserMenu}
+                        authNext={authNext}
                     />
                 </div>
                 {/* Mobile hamburger — hidden on desktop */}
                 <HeaderMobileMenu
                     items={NAV_TREE}
                     showAuthCta={currentUser === null && !loadingUserMenu}
+                    authNext={authNext}
                 />
             </div>
         </header>

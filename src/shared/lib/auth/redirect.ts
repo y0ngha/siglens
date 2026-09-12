@@ -120,3 +120,13 @@ export function resolvePostSignupDestination(next: string): string {
         ? localePath(locale, POST_SIGNUP_ONBOARDING_PATH)
         : next;
 }
+
+/**
+ * `?next=` query for the login/signup links of a shared header. Empty when
+ * there is nothing to return to (the main host), so the plain `/login` href
+ * stays byte-identical there. The ai host passes its SSO handoff path so the
+ * user lands back on ai.siglens.io after signing in on the main host.
+ */
+export function authNextQuery(next?: string): string {
+    return next ? `?next=${encodeURIComponent(next)}` : '';
+}

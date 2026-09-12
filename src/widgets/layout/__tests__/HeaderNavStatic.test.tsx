@@ -71,4 +71,12 @@ describe('HeaderNavStatic', () => {
             screen.getByRole('navigation', { name: /주요 네비게이션/ })
         ).toBeInTheDocument();
     });
+
+    it('renders the SiglensAI entry point as the last nav item', () => {
+        render(<HeaderNavStatic items={NAV_TREE} />);
+
+        expect(
+            screen.getByRole('link', { name: 'SiglensAI' })
+        ).toBeInTheDocument();
+    });
 });

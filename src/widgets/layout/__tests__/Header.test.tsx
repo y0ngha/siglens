@@ -77,4 +77,27 @@ describe('Header', () => {
 
         expect(screen.getByRole('banner')).toBeInTheDocument();
     });
+
+    it('forwards authNext to the mobile drawer auth CTA login href', () => {
+        // HeaderUserMenu is stubbed above, so the SSO handoff pass-through is
+        // observed via HeaderMobileMenu (not mocked in this file) instead.
+        render(
+            <Header
+                currentUser={null}
+                authNext="/api/auth/handoff?to=ai&next=%2F"
+            />
+        );
+
+        // `next/link` is mocked above to a `<span data-href>` (not a real `href`
+        // attribute) — mirrors the pattern the other assertions in this file use.
+        const loginLink = screen
+            .getAllByRole('link', { hidden: true })
+            .find(l =>
+                (l.getAttribute('data-href') ?? '').startsWith('/login?next=')
+            );
+        expect(loginLink).toHaveAttribute(
+            'data-href',
+            '/login?next=%2Fapi%2Fauth%2Fhandoff%3Fto%3Dai%26next%3D%252F'
+        );
+    });
 });
