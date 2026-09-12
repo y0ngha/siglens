@@ -6,7 +6,9 @@ import { DrizzleChatConversationRepository } from '../api';
 import { logActionError } from '../lib/logActionError';
 
 /**
- * Soft-deletes the conversation, scoped to the owner. Non-string `id` and
+ * Hard-deletes the conversation and its messages, scoped to the owner
+ * (privacy policy commits to immediate destruction on deletion — see
+ * `DrizzleChatConversationRepository.delete`). Non-string `id` and
  * unauthenticated callers get a non-throwing `{ ok: false }`; a DB failure
  * resolves to `{ ok: false }` too rather than rejecting.
  */
@@ -23,7 +25,7 @@ export async function deleteConversationAction(
     try {
         await new DrizzleChatConversationRepository(
             getDatabaseClient().db
-        ).softDelete(id, user.id);
+        ).delete(id, user.id);
         return { ok: true };
     } catch (error) {
         logActionError('[deleteConversationAction] delete failed', error);

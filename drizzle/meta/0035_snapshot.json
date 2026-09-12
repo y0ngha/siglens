@@ -1,5 +1,5 @@
 {
-  "id": "e9198d9e-a8e1-4626-9065-30291584863d",
+  "id": "bf587b3a-5a8b-411b-a83e-3758fa710516",
   "prevId": "80fdfb68-7a5f-4565-af3d-e45dd0162055",
   "version": "7",
   "dialect": "postgresql",
@@ -407,12 +407,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -433,7 +427,6 @@
             }
           ],
           "isUnique": false,
-          "where": "\"chat_conversations\".\"deleted_at\" is null",
           "concurrently": false,
           "method": "btree",
           "with": {}

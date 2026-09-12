@@ -896,8 +896,17 @@ export const analysisHistory = pgTable(
 );
 
 /**
- * SiglensAI 대화(스펙 §6-1). 회원 전용. `deleted_at`은 soft delete — 저장량이
- * KB 단위라 하드 삭제 크론은 두지 않는다.
+ * SiglensAI 대화(스펙 §6-1). 회원 전용. 삭제는 하드 삭제다 — 개인정보처리방침
+ * (`db/seeds/terms/privacy/v4.md`)이 삭제 즉시 파기를 약속하므로,
+ * `DrizzleChatConversationRepository.delete`가 행 자체를 지운다(메시지는
+ * `chat_messages.conversation_id`의 `onDelete: 'cascade'`로 함께 삭제, 별도
+ * 크론 불필요). soft-delete용 `deleted_at` 컬럼은 두지 않는다 — nullable
+ * 컬럼에 대한 부분 인덱스(`WHERE deleted_at IS NULL`)는 `WHERE user_id = $1`
+ * 같은 쿼리의 조건이 그 predicate를 함의하지 않는 한 플래너가 채택하지 않아,
+ * 컬럼만 있고 아무도 쓰지 않던 상태에서 이미 인덱스가 죽어 있었다(전체
+ * 테이블 스캔 + 인덱스 유지비만 지불). 향후 되돌릴 수 있는 soft-delete가
+ * 필요해지면 컬럼과 predicate를 함께 다시 추가한다 — 컴파일 타임에 드러나는
+ * 편이 조용히 죽은 인덱스보다 낫다.
  */
 export const chatConversations = pgTable(
     'chat_conversations',
@@ -919,12 +928,12 @@ export const chatConversations = pgTable(
         updatedAt: timestamp('updated_at', { withTimezone: true })
             .notNull()
             .defaultNow(),
-        deletedAt: timestamp('deleted_at', { withTimezone: true }),
     },
     table => [
-        index('chat_conversations_user_recent_idx')
-            .on(table.userId, table.lastMessageAt.desc())
-            .where(sql`${table.deletedAt} is null`),
+        index('chat_conversations_user_recent_idx').on(
+            table.userId,
+            table.lastMessageAt.desc()
+        ),
     ]
 );
 

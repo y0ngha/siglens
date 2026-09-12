@@ -6,7 +6,7 @@ const { mockUser, repo, RepoCtor } = vi.hoisted(() => {
         findForUser: vi.fn(),
         listMessages: vi.fn(),
         rename: vi.fn(),
-        softDelete: vi.fn(),
+        delete: vi.fn(),
     };
     const RepoCtor = vi.fn(function () {
         return repo;
@@ -221,12 +221,12 @@ describe('chat-conversation actions', () => {
     });
 
     describe('deleteConversationAction', () => {
-        it('인증된 사용자는 softDelete(id, userId)를 호출한다', async () => {
+        it('인증된 사용자는 delete(id, userId)를 호출한다', async () => {
             mockUser.mockResolvedValue({ id: VALID_USER });
             expect(await deleteConversationAction(VALID_ID)).toEqual({
                 ok: true,
             });
-            expect(repo.softDelete).toHaveBeenCalledWith(VALID_ID, VALID_USER);
+            expect(repo.delete).toHaveBeenCalledWith(VALID_ID, VALID_USER);
         });
 
         it('id가 문자열이 아니면 거부하고 repository를 생성하지 않는다', async () => {
@@ -239,7 +239,7 @@ describe('chat-conversation actions', () => {
 
         it('repository가 던지면 실패 결과로 낙폭 처리', async () => {
             mockUser.mockResolvedValue({ id: VALID_USER });
-            repo.softDelete.mockRejectedValue(new Error('db down'));
+            repo.delete.mockRejectedValue(new Error('db down'));
             expect(await deleteConversationAction(VALID_ID)).toEqual({
                 ok: false,
             });

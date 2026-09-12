@@ -154,63 +154,80 @@ describe('DrizzleChatConversationRepository — generated SQL', () => {
         expect(captured).toHaveLength(0);
     });
 
-    it('findForUser: WHERE에 id/user_id/deleted_at is null 조건이 전부 있고 파라미터에 값이 들어간다', async () => {
+    it('findForUser: WHERE에 id/user_id 조건이 전부 있고 파라미터에 값이 들어간다', async () => {
         const { db, captured } = await realDbWithCapture();
         const repo = new DrizzleChatConversationRepository(db);
         await repo.findForUser(VALID_ID, VALID_USER);
         const where = whereOnly(captured[0]!.sql);
         expect(where).toContain('"chat_conversations"."id" = $');
         expect(where).toContain('"chat_conversations"."user_id" = $');
-        expect(where).toContain('"chat_conversations"."deleted_at" is null');
         expect(captured[0]!.params).toContain(VALID_ID);
         expect(captured[0]!.params).toContain(VALID_USER);
     });
 
-    it('listForUser: WHERE에 user_id/deleted_at is null이 있다(id 조건 없음)', async () => {
+    it('listForUser: WHERE에 user_id가 있다(id 조건 없음)', async () => {
         const { db, captured } = await realDbWithCapture();
         const repo = new DrizzleChatConversationRepository(db);
         await repo.listForUser(VALID_USER);
         const where = whereOnly(captured[0]!.sql);
         expect(where).toContain('"chat_conversations"."user_id" = $');
-        expect(where).toContain('"chat_conversations"."deleted_at" is null');
         expect(captured[0]!.params).toContain(VALID_USER);
     });
 
-    it('countForUser: WHERE에 user_id/deleted_at is null이 있다', async () => {
+    it('countForUser: WHERE에 user_id가 있다', async () => {
         const { db, captured } = await realDbWithCapture();
         const repo = new DrizzleChatConversationRepository(db);
         await repo.countForUser(VALID_USER);
         const where = whereOnly(captured[0]!.sql);
         expect(where).toContain('"chat_conversations"."user_id" = $');
-        expect(where).toContain('"chat_conversations"."deleted_at" is null');
         expect(captured[0]!.params).toContain(VALID_USER);
     });
 
-    it.each([
-        [
-            'rename',
-            (repo: DrizzleChatConversationRepository) =>
-                repo.rename(VALID_ID, VALID_USER, 't'),
-        ],
-        [
-            'softDelete',
-            (repo: DrizzleChatConversationRepository) =>
-                repo.softDelete(VALID_ID, VALID_USER),
-        ],
-    ])(
-        '%s: WHERE에 user_id/deleted_at is null이 있다(소프트 삭제된 행은 재조작 불가)',
-        async (_name, call) => {
+    it('rename: WHERE에 id/user_id가 있다', async () => {
+        const { db, captured } = await realDbWithCapture();
+        const repo = new DrizzleChatConversationRepository(db);
+        await repo.rename(VALID_ID, VALID_USER, 't');
+        const where = whereOnly(captured[0]!.sql);
+        expect(where).toContain('"chat_conversations"."id" = $');
+        expect(where).toContain('"chat_conversations"."user_id" = $');
+        expect(captured[0]!.params).toContain(VALID_ID);
+        expect(captured[0]!.params).toContain(VALID_USER);
+    });
+
+    describe('delete', () => {
+        it('WHERE절이 id AND user_id로 스코프된 DELETE 하나를 생성한다', async () => {
             const { db, captured } = await realDbWithCapture();
             const repo = new DrizzleChatConversationRepository(db);
-            await call(repo);
+            await repo.delete(VALID_ID, VALID_USER);
+            expect(captured).toHaveLength(1);
+            const sqlLower = captured[0]!.sql.toLowerCase();
+            expect(
+                sqlLower.startsWith('delete from "chat_conversations"')
+            ).toBe(true);
             const where = whereOnly(captured[0]!.sql);
+            expect(where).toContain('"chat_conversations"."id" = $');
             expect(where).toContain('"chat_conversations"."user_id" = $');
-            expect(where).toContain(
-                '"chat_conversations"."deleted_at" is null'
-            );
+            expect(captured[0]!.params).toContain(VALID_ID);
             expect(captured[0]!.params).toContain(VALID_USER);
-        }
-    );
+        });
+
+        it('메시지는 별도 DELETE 없이 FK cascade로 함께 삭제된다(대화 DELETE 문 하나뿐)', async () => {
+            const { db, captured } = await realDbWithCapture();
+            const repo = new DrizzleChatConversationRepository(db);
+            await repo.delete(VALID_ID, VALID_USER);
+            // 애플리케이션 코드가 발행하는 문장은 정확히 1개 — chat_messages를
+            // 향한 DELETE가 없다는 것은 삭제가 DB의 `onDelete: 'cascade'`
+            // (schema.ts의 chat_messages.conversation_id FK)에 의존한다는
+            // 뜻이다. 그 계약 자체는 스키마에 있으므로 여기서 재검증하지
+            // 않고, 애플리케이션이 이중으로 지우려 들지 않는지만 확인한다.
+            expect(captured).toHaveLength(1);
+            expect(
+                captured.some(c =>
+                    c.sql.toLowerCase().includes('"chat_messages"')
+                )
+            ).toBe(false);
+        });
+    });
 
     it('listForUser: LIMIT은 CONVERSATION_LIST_LIMIT(300) 기본값', async () => {
         const { db, captured } = await realDbWithCapture();
@@ -245,14 +262,45 @@ describe('DrizzleChatConversationRepository — invalid UUID guard', () => {
         expect(db.select).not.toHaveBeenCalled();
     });
 
-    it('rename/softDelete: UUID가 아니면 쿼리 없이 no-op', async () => {
+    it('rename: UUID가 아니면 쿼리 없이 no-op', async () => {
         const db = chain([]);
         const repo = new DrizzleChatConversationRepository(
             db as unknown as SiglensDatabase
         );
         await repo.rename('not-a-uuid', VALID_USER, 't');
-        await repo.softDelete('not-a-uuid', VALID_USER);
         expect(db.update).not.toHaveBeenCalled();
+    });
+
+    it('delete: UUID가 아니면 쿼리 없이 no-op', async () => {
+        const db = chain([]);
+        const repo = new DrizzleChatConversationRepository(
+            db as unknown as SiglensDatabase
+        );
+        await repo.delete('not-a-uuid', VALID_USER);
+        expect(db.delete).not.toHaveBeenCalled();
+    });
+
+    /**
+     * A DELETE's WHERE matching zero rows is not an error at the SQL level —
+     * this is what makes a repeated delete (or a delete by an id that
+     * belongs to another user, or was already deleted) a silent no-op
+     * rather than a failure. The `chain()` stub's `.then` always resolves
+     * regardless of how many "rows" it represents, so this asserts the
+     * repository doesn't add its own not-found branching that would make a
+     * second call behave differently from the first.
+     */
+    it('delete: 존재하지 않는 id(이미 삭제됨/타 사용자 소유)도 에러 없이 조용히 끝난다', async () => {
+        const db = chain([]);
+        const repo = new DrizzleChatConversationRepository(
+            db as unknown as SiglensDatabase
+        );
+        await expect(
+            repo.delete(VALID_ID, VALID_USER)
+        ).resolves.toBeUndefined();
+        await expect(
+            repo.delete(VALID_ID, VALID_USER)
+        ).resolves.toBeUndefined();
+        expect(db.delete).toHaveBeenCalledTimes(2);
     });
 
     it('listMessages: UUID가 아니면 쿼리 없이 []', async () => {

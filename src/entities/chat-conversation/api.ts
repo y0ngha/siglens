@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, desc, eq, gte, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import { chatConversations, chatMessages } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -33,7 +33,7 @@ function isValidUuid(id: string): boolean {
  * (spec §6-1).
  *
  * Conversation methods (`create`/`findForUser`/`listForUser`/`countForUser`/
- * `rename`/`softDelete`) are owner-scoped: every query filters by `userId`
+ * `rename`/`delete`) are owner-scoped: every query filters by `userId`
  * in the SQL `WHERE` clause itself — never post-fetch-and-check — so a
  * stray row from another user can never leak through even under a future
  * refactor.
@@ -74,7 +74,7 @@ export class DrizzleChatConversationRepository {
         return row as ChatConversationRecord;
     }
 
-    /** Owner-scoped; null for other users' or deleted conversations, and for a malformed (non-UUID) `id` — no query is issued in that case. */
+    /** Owner-scoped; null for other users' or already-deleted (row no longer exists) conversations, and for a malformed (non-UUID) `id` — no query is issued in that case. */
     async findForUser(
         id: string,
         userId: string
@@ -88,8 +88,7 @@ export class DrizzleChatConversationRepository {
                     .where(
                         and(
                             eq(chatConversations.id, id),
-                            eq(chatConversations.userId, userId),
-                            isNull(chatConversations.deletedAt)
+                            eq(chatConversations.userId, userId)
                         )
                     )
                     .limit(1),
@@ -111,37 +110,25 @@ export class DrizzleChatConversationRepository {
                 this.db
                     .select()
                     .from(chatConversations)
-                    .where(
-                        and(
-                            eq(chatConversations.userId, userId),
-                            isNull(chatConversations.deletedAt)
-                        )
-                    )
+                    .where(eq(chatConversations.userId, userId))
                     .orderBy(desc(chatConversations.lastMessageAt))
                     .limit(limit),
             NEON_TRANSIENT_RETRY
         ) as Promise<ChatConversationRecord[]>;
     }
 
-    /** Owner-scoped count of live (non-deleted) conversations. */
+    /** Owner-scoped count of conversations. */
     async countForUser(userId: string): Promise<number> {
         const [row] = await this.db
             .select({ count: sql<number>`count(*)` })
             .from(chatConversations)
-            .where(
-                and(
-                    eq(chatConversations.userId, userId),
-                    isNull(chatConversations.deletedAt)
-                )
-            );
+            .where(eq(chatConversations.userId, userId));
         return Number(row?.count ?? 0);
     }
 
     /**
-     * Renames the conversation, scoped to the owner and to live (non-deleted)
-     * rows — a soft-deleted conversation cannot be un-deleted by renaming
-     * it. No-ops for a malformed `id` (same effect as the id simply not
-     * matching any row).
+     * Renames the conversation, scoped to the owner. No-ops for a malformed
+     * `id` (same effect as the id simply not matching any row).
      */
     async rename(id: string, userId: string, title: string): Promise<void> {
         if (!isValidUuid(id)) return;
@@ -151,28 +138,34 @@ export class DrizzleChatConversationRepository {
             .where(
                 and(
                     eq(chatConversations.id, id),
-                    eq(chatConversations.userId, userId),
-                    isNull(chatConversations.deletedAt)
+                    eq(chatConversations.userId, userId)
                 )
             );
     }
 
     /**
-     * Soft-deletes the conversation, scoped to the owner and to live rows —
-     * this makes repeated calls idempotent (a second delete matches zero
-     * rows instead of re-stamping `deleted_at`). No-ops for a malformed
-     * `id`.
+     * Hard-deletes the conversation, scoped to the owner. `chat_messages.
+     * conversation_id` has `onDelete: 'cascade'` (schema.ts), so the whole
+     * transcript — including any message content, market data, and
+     * portfolio holdings discussed — is removed in the same statement; no
+     * follow-up cron is needed or exists. Matching zero rows (unknown id,
+     * another user's id, or an id already deleted) is a silent no-op, which
+     * also makes a repeated call idempotent. No-ops for a malformed `id`
+     * without touching the DB.
+     *
+     * The privacy policy (`db/seeds/terms/privacy/v4.md` §4/§8) promises
+     * conversations are destroyed immediately on user-initiated deletion —
+     * a soft-delete flag alone would leave the promised data in Neon
+     * indefinitely, so this must be a real `DELETE`, not an UPDATE.
      */
-    async softDelete(id: string, userId: string): Promise<void> {
+    async delete(id: string, userId: string): Promise<void> {
         if (!isValidUuid(id)) return;
         await this.db
-            .update(chatConversations)
-            .set({ deletedAt: new Date() })
+            .delete(chatConversations)
             .where(
                 and(
                     eq(chatConversations.id, id),
-                    eq(chatConversations.userId, userId),
-                    isNull(chatConversations.deletedAt)
+                    eq(chatConversations.userId, userId)
                 )
             );
     }

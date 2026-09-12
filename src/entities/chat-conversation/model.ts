@@ -30,8 +30,6 @@ export interface ChatConversationRecord {
     lastMessageAt: Date;
     createdAt: Date;
     updatedAt: Date;
-    /** `null` while live; soft-delete timestamp otherwise. */
-    deletedAt: Date | null;
 }
 
 /** A persisted conversation message row. */
