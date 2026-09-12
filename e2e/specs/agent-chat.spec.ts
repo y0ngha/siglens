@@ -34,10 +34,15 @@ test.describe('SiglensAI agent chat', () => {
         await expect(page).toHaveURL(/\/c\/[0-9a-f-]{36}$/);
         await page.reload();
         await expect(page.getByText(/\[E2E agent\]/)).toBeVisible();
+        // Scope to THIS conversation's id: CI retries reuse the same database, so a
+        // retried run finds one leftover conversation per earlier attempt, all with
+        // the same derived title. Matching by title alone hit strict mode with 2 and
+        // then 3 links.
+        const conversationId = new URL(page.url()).pathname.split('/c/')[1]!;
         await expect(
             page
                 .getByRole('navigation', { name: '대화 목록' })
-                .getByRole('link', { name: /AAPL 지금 얼마야/ })
+                .locator(`a[href$="/c/${conversationId}"]`)
         ).toBeVisible();
         await page.getByRole('button', { name: /다시 생성/ }).click();
         // A count of 1 alone proves nothing: an HTTP-stage failure restores the
@@ -47,7 +52,12 @@ test.describe('SiglensAI agent chat', () => {
         // can refill it before the first poll).
         await expect(page.getByText(/\[E2E agent\]/)).toHaveCount(1);
         await expect(page.getByText(/get_quote/)).toHaveCount(1);
-        await expect(page.getByRole('alert')).toHaveCount(0);
+        // Next renders an always-present, always-empty route announcer with
+        // role="alert", so a bare count of 0 can never pass. Only a banner with text
+        // is ours.
+        await expect(
+            page.getByRole('alert').filter({ hasText: /\S/ })
+        ).toHaveCount(0);
     });
 
     test('비로그인: ?sso=none 랜딩과 로그인 CTA, 스트림 401', async ({
