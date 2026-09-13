@@ -97,7 +97,14 @@ export function Composer({
         <div className="sticky bottom-0 bg-gradient-to-t from-secondary-900 from-70% to-transparent px-4 pt-6 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
             <div
                 className={cn(
-                    'mx-auto flex w-full max-w-3xl items-end gap-1 rounded-lg border border-border-control bg-secondary-800 p-1.5 shadow-lg shadow-secondary-950/40',
+                    // Documented exception to "input boundary = border-control"
+                    // (docs/conventions/DESIGN.md §사용처): the chat composer is
+                    // identified by its fixed bottom position, placeholder, filled
+                    // send button and shadow, so its resting edge is one step above
+                    // the decorative card border; focus draws the brand ring. The
+                    // 3.5:1 control edge read as a detached white box on the dark
+                    // page (2026-09-13 사용자 제보).
+                    'mx-auto flex w-full max-w-3xl items-end gap-1 rounded-lg border border-secondary-600 bg-secondary-800 p-1.5 shadow-lg shadow-secondary-950/40',
                     'focus-within:ring-2 focus-within:ring-primary-500',
                     overLimit && 'border-ui-danger'
                 )}

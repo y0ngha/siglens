@@ -24,9 +24,15 @@ interface CapabilityItem {
     readonly label: string;
 }
 
-/** Suggestion card: a quiet surface that lifts to the brand colour on hover — content, not a filter chip. */
+/**
+ * Suggestion card: a quiet surface that lifts to the brand colour on hover —
+ * content, not a filter chip. The resting edge is the decorative card border
+ * (`secondary-700`), not the control border: the question text and the arrow
+ * already say "press me", and the 3.5:1 control edge made six cards read as a
+ * grid of bright boxes detached from the dark page (2026-09-13 사용자 제보).
+ */
 const CARD =
-    'group flex min-h-14 w-full items-center justify-between gap-3 rounded-lg border border-border-control bg-secondary-800 px-4 py-3 text-left text-sm leading-5 text-secondary-200 transition-colors hover:border-primary-400 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none motion-reduce:transition-none';
+    'group flex min-h-14 w-full items-center justify-between gap-3 rounded-lg border border-secondary-700 bg-secondary-800 px-4 py-3 text-left text-sm leading-5 text-secondary-200 transition-colors hover:border-primary-400 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none motion-reduce:transition-none';
 
 /**
  * First screen of a new conversation, and the landing page crawlers index.

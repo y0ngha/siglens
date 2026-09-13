@@ -125,6 +125,15 @@ E2E 로케이터와 SEO 텍스트 위치에 회귀 위험이 생긴다. 클래�
 비활성 컨트롤          disabled:bg-secondary-700 disabled:text-secondary-500
 ```
 
+**경계 예외 (근거와 함께만 추가)**
+- SIGLENS AI 첫 화면 질문 카드(`widgets/agent-chat/EmptyState.tsx` `CARD`) — `border-secondary-700`.
+  버튼 안 질문 문장·화살표가 조작 요소임을 알리는 카드 표면이다. `controlBorderTokenGuard`의
+  `ALLOWED_CONSTANTS`에 같은 근거로 등록돼 있다.
+- SIGLENS AI 입력창 표면(`widgets/agent-chat/Composer.tsx`) — `border-secondary-600`, 포커스 시 `ring-primary-500`.
+  화면 하단 고정 위치·플레이스홀더·채워진 전송 버튼·그림자로 식별되는 채팅 컴포저라서
+  컨트롤 경계(3.5:1)를 쓰지 않는다. 일반 폼 입력에는 적용하지 않는다.
+  두 예외 모두 어두운 페이지 위에서 밝은 상자처럼 떠 보인다는 사용자 제보(2026-09-13)에서 나왔다.
+
 ---
 
 ## Semantic Color — 차트 전용

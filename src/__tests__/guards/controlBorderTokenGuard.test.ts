@@ -202,6 +202,11 @@ const ALLOWED_CONSTANTS: ReadonlySet<string> = new Set([
     // 이 항목은 상수에 담긴 호버를 처음 잡았을 때 나왔다 — 그 전까지 호버는
     // 인라인 스캐너 하나만 봤고, 클래스를 상수로 옮기는 순간 감시가 꺼졌다.
     'shared/lib/cardStyles.ts::CARD_LINK_CLASSES',
+    // SIGLENS AI 첫 화면의 질문 카드. 같은 근거의 카드 표면이다 — 버튼 안의
+    // 질문 문장과 화살표 아이콘이 조작 요소임을 알리고, 호버에서 브랜드색
+    // 경계로 바뀐다. 컨트롤 보더(3.5:1)로 두면 어두운 페이지 위에서 여섯 칸이
+    // 밝은 격자로 떠 보였다(2026-09-13 사용자 제보).
+    'widgets/agent-chat/EmptyState.tsx::CARD',
 ]);
 
 /** 요소 스캐너의 예외. `파일:줄` 단위이며 근거를 함께 적는다. */
