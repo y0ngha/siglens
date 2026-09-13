@@ -65,7 +65,7 @@ function makeRequest(host: string, path: string): NextRequest {
 describe('proxy — ai host', () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it('루트를 /ai/{locale}로 rewrite하고 CSP·noindex 헤더를 붙인다', () => {
+    it('루트를 /ai/{locale}로 rewrite하고 CSP를 붙인다 — 랜딩은 색인 대상이라 noindex 헤더 없음', () => {
         const res = proxy(makeRequest('ai.siglens.io', '/')) as unknown as {
             headers: Headers;
         };
@@ -76,8 +76,19 @@ describe('proxy — ai host', () => {
         expect(res.headers.get('content-security-policy')).toBe(
             "frame-ancestors 'none'; img-src 'self' data:"
         );
-        expect(res.headers.get('x-robots-tag')).toBe('noindex, nofollow');
+        expect(res.headers.get('x-robots-tag')).toBeNull();
     });
+    it.each(['/c/abc', '/en/c/abc'])(
+        '%s — 대화는 사적 기록이라 X-Robots-Tag noindex',
+        path => {
+            const res = proxy(
+                makeRequest('ai.siglens.io', path)
+            ) as unknown as {
+                headers: Headers;
+            };
+            expect(res.headers.get('x-robots-tag')).toBe('noindex, nofollow');
+        }
+    );
     it('로케일 접두 경로 유지', () => {
         proxy(makeRequest('ai.siglens.io', '/en/c/abc'));
         expect(mockRewrite).toHaveBeenCalledTimes(1);
@@ -90,12 +101,28 @@ describe('proxy — ai host', () => {
         expect(mockRewrite).toHaveBeenCalledTimes(1);
         expect((mockRewrite.mock.calls[0]![0] as URL).pathname).toBe('/ai/ko');
     });
-    it('robots.txt는 Disallow 본문 직접 반환', () => {
+    it('robots.txt — 랜딩은 열고 대화(/c/)는 막고, sitemap을 가리킨다', () => {
         const res = proxy(
             makeRequest('ai.siglens.io', '/robots.txt')
         ) as unknown as { body: string };
-        expect(res.body).toBe('User-agent: *\nDisallow: /\n');
+        expect(res.body).toBe(
+            'User-agent: *\nAllow: /\nDisallow: /c/\nDisallow: /*/c/\n\nSitemap: https://ai.siglens.io/sitemap.xml\n'
+        );
         expect(mockRewrite).not.toHaveBeenCalled();
+    });
+    it('sitemap.xml — 색인 가능한 로케일의 홈만, 대화 URL 없음', () => {
+        const res = proxy(
+            makeRequest('ai.siglens.io', '/sitemap.xml')
+        ) as unknown as { body: string; headers: Headers };
+        expect(res.headers.get('content-type')).toMatch(/application\/xml/);
+        expect(res.body).toContain('<loc>https://ai.siglens.io/</loc>');
+        expect(res.body).not.toContain('/c/');
+        expect(mockRewrite).not.toHaveBeenCalled();
+    });
+    it('메인 호스트 sitemap.xml은 next() — ai 전용 응답이 새지 않는다', () => {
+        proxy(makeRequest('siglens.io', '/sitemap.xml'));
+        expect(mockNext).toHaveBeenCalledTimes(1);
+        expect(mockIntlMiddleware).not.toHaveBeenCalled();
     });
     it('메인 호스트 robots.txt는 next()', () => {
         proxy(makeRequest('siglens.io', '/robots.txt'));

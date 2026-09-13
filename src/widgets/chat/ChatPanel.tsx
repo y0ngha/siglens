@@ -12,6 +12,9 @@ import { cn } from '@/shared/lib/cn';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 import { getModelDisplay } from '@/shared/lib/modelDisplay';
 import { VALID_CHAT_MODELS } from '@y0ngha/siglens-core';
+import { aiAskUrl } from '@/shared/config/aiHost';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { localePath } from '@/shared/i18n/locales';
 
 const CHAT_MODEL_OPTIONS: readonly ModelOption[] = VALID_CHAT_MODELS.map(
     id => ({ id, ...getModelDisplay(id) })
@@ -32,6 +35,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
     const t = useTranslations('widgets.chat');
     const tThinking = useTranslations('widgets.chat.thinking');
     const { isAnalysisReady } = useSymbolChat();
+    const locale = useCurrentLocale();
 
     const {
         messages,
@@ -67,6 +71,19 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                 <span className="text-xs font-semibold text-secondary-300">
                     {t('ChatPanel.50071e')}
                 </span>
+                {/* Deeper, multi-symbol questions belong in SiglensAI — offered
+                    here, where the user is already asking, with the symbol
+                    prefilled. Never sent automatically. */}
+                <a
+                    href={aiAskUrl(
+                        localePath(locale, '/'),
+                        t('ChatPanel.askSiglensAiQuestion', { symbol })
+                    )}
+                    className="mr-auto ml-2 inline-flex min-h-11 items-center gap-1 rounded px-1 text-[11px] text-primary-400 hover:text-primary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none md:min-h-6"
+                >
+                    {t('ChatPanel.askSiglensAi')}
+                    <span aria-hidden="true">↗</span>
+                </a>
                 {onClose && (
                     <button
                         type="button"

@@ -191,7 +191,8 @@
                 "c26658": "投資の確信を高めるAI分析",
                 "dfbacd": "過去データで検証した結果",
                 "eafd49": "{v0}種類の指標と多様な投資戦略に基づくチャートの流れ、",
-                "ee41ec": "バックテスト結果を見る →"
+                "ee41ec": "バックテスト結果を見る →",
+                "aiTeaser": "会話でマーケットについて質問できます"
             }
         },
         "login": {
@@ -446,6 +447,11 @@
             "not-found": {
                 "04598e": "新しいチャットを開始",
                 "047c35": "会話が見つかりません"
+            },
+            "seo": {
+                "title": "SiglensAI（ベータ）— 株式・暗号資産のAIリサーチアシスタント",
+                "description": "リアルタイム株価やテクニカル指標、siglensのAI分析、ニュースやウェブ検索を自ら調べ、出典付きで答える対話型リサーチツールです。米国株・韓国株・暗号資産について質問できます。",
+                "ogLabel": "データで答えるAIリサーチアシスタント · ベータ"
             }
         }
     },
@@ -2339,7 +2345,9 @@
                 "cce9f7": "本日残り{v0}回",
                 "d7fb24": "分析が更新されました — 最新の結果に基づいて引き続き\n                        質問してください",
                 "f292ff": "分析結果に基づいて質問してください。トレンドの解釈、指標の意味、\n                            シナリオまで、すべて質問できます。",
-                "f4ca4c": "チャットを閉じる"
+                "f4ca4c": "チャットを閉じる",
+                "askSiglensAi": "SiglensAIでさらに質問",
+                "askSiglensAiQuestion": "{symbol}の今の状況を総合的に教えて"
             },
             "ContextSwitchSystemMessage": {
                 "aa779e": "{v0}ページに切り替わりました。前のページの分析コンテキストは適用されなくなります。"
@@ -3457,26 +3465,35 @@
             },
             "Composer": {
                 "4077ce": "送信",
-                "b21dfd": "情報提供のみを目的としており、投資助言ではありません。",
                 "d2e7e7": "中断",
                 "fdad68": "メッセージ入力",
                 "tooLong": "{len} / {max}文字 — 長すぎます",
                 "remainingTurns": "本日残り{n}ターン · ",
                 "charCount": "{len} / {max}",
                 "placeholder": "SiglensAIに質問…",
-                "keyHint": "Enterで送信 · Shift+Enterで改行"
+                "keyHint": "Enterで送信 · Shift+Enterで改行",
+                "betaNotice": "ベータ版 · 回答には誤りが含まれる場合があり、投資助言ではありません。"
             },
             "EmptyState": {
                 "a00741": "siglensアカウントでログイン",
-                "a12848": "株価・指標・siglens分析・ニュース・オプション・保有銘柄を直接調べて回答します。キャッシュされた分析がなければ新規に分析します。",
-                "aea068": "SiglensAIに聞いてみましょう",
                 "suggestionPortfolio": "今の保有銘柄の調子はどう？",
                 "suggestionSamsung": "サムスン電子の最新のsiglens分析を要約して",
                 "suggestionAapl": "AAPLの現在のトレンドとRSIは？",
                 "suggestionNews": "今週の米国市場の重要ニュースだけ教えて",
                 "suggestionNvda": "NVDAのオプション市場はどう見てる？",
                 "suggestionBtc": "BTCUSDのキャッシュされた分析はある？",
-                "suggestionsLabel": "こんな質問ができます"
+                "suggestionsLabel": "こんな質問ができます",
+                "headlineLead": "マーケットのことなら何でも聞いてください",
+                "headlineAccent": "データで答えるSiglensAI",
+                "description": "リアルタイム株価やテクニカル指標、siglensのAI分析、ニュースやウェブ検索を自ら調べ、出典付きで答えます。",
+                "capQuotes": "リアルタイム株価",
+                "capIndicators": "チャート・テクニカル指標",
+                "capAnalysis": "siglens AI分析",
+                "capNews": "ニュース",
+                "capWeb": "ウェブ検索",
+                "capabilitiesLabel": "SiglensAIが調べるデータ",
+                "guestNote": "ログインすると会話がアカウントに保存され、いつでも続きから見られます。",
+                "examplesLabel": "このような質問に答えられます"
             },
             "MessageList": {
                 "259976": "回答が途中で切れました。続けて質問してください。",
@@ -3489,7 +3506,9 @@
                 "e1407b": "編集",
                 "e6b008": "メッセージを編集",
                 "copied": "コピーしました",
-                "generating": "回答を生成中…"
+                "generating": "回答を生成中…",
+                "relatedPages": "siglensでもっと見る",
+                "openOnSiglens": "siglensで{symbol}を見る"
             },
             "Sidebar": {
                 "4cbbe4": "会話を検索",
@@ -3505,13 +3524,33 @@
                 "groupWeek": "過去7日間",
                 "groupOlder": "それ以前",
                 "empty": "まだ会話がありません。",
-                "noMatch": "一致する会話がありません。"
+                "noMatch": "一致する会話がありません。",
+                "backToSiglens": "siglensホームへ",
+                "terms": "利用規約",
+                "privacy": "プライバシーポリシー",
+                "guestTitle": "会話履歴",
+                "guestBody": "ログインすると会話がここに保存され、他のデバイスでも続きから見られます。",
+                "guestCta": "ログインして始める"
             },
             "ToolActivity": {
                 "b4c619": "使用したツール",
                 "aboutSeconds": "約{n}秒",
-                "summary": "ツール{n}件を使用",
-                "running": "ツール実行中"
+                "toolSearchTicker": "銘柄検索",
+                "toolQuote": "株価",
+                "toolBars": "チャート・指標",
+                "toolAnalysis": "siglens分析",
+                "toolFreshAnalysis": "新規分析",
+                "toolNews": "ニュース",
+                "toolOptions": "オプション",
+                "toolPortfolio": "マイポートフォリオ",
+                "toolWebSearch": "ウェブ検索",
+                "toolOther": "データ照会",
+                "seconds": "{n}秒",
+                "checking": "{label}を確認中",
+                "checked": "{sources}を確認",
+                "partialFailure": "一部失敗",
+                "inProgress": "処理中",
+                "failed": "失敗"
             },
             "ChatSkeleton": {
                 "loading": "読み込み中…"

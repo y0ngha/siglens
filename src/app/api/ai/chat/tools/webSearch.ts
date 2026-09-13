@@ -104,9 +104,11 @@ async function searchBrave(
             .filter(r => isHttpUrl(r.url))
             .slice(0, COUNT)
             .map(r => ({
-                title: r.title,
+                // Brave highlights matches with `<strong>` and encodes quotes as
+                // `&#x27;`; left in, the model quotes the markup back to the user.
+                title: stripNaverMarkup(r.title),
                 url: r.url,
-                snippet: r.description ?? '',
+                snippet: stripNaverMarkup(r.description ?? ''),
                 age: r.age ?? null,
             })),
     };

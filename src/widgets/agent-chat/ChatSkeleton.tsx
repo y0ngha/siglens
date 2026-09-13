@@ -19,7 +19,7 @@ export function ChatSkeleton() {
             aria-label={t('ChatSkeleton.loading')}
             role="status"
         >
-            <aside className="hidden w-64 shrink-0 border-r border-border-control p-3 lg:block">
+            <aside className="hidden w-64 shrink-0 border-r border-secondary-700 bg-secondary-950 p-3 lg:block">
                 <div className={cn(BAR, 'h-10 w-full rounded-lg')} />
                 <div className="mt-6 space-y-2">
                     {[0, 1, 2, 3, 4].map(i => (
@@ -40,7 +40,7 @@ export function ChatSkeleton() {
                         <div className={cn(BAR, 'h-10 w-2/5 rounded-lg')} />
                     </div>
                     <div className="mt-7 flex items-start gap-3">
-                        <div className={cn(BAR, 'size-7 rounded-full')} />
+                        <div className={cn(BAR, 'size-7 rounded-lg')} />
                         <div className="flex-1 space-y-2.5 pt-1">
                             <div className={cn(BAR, 'h-4 w-full')} />
                             <div className={cn(BAR, 'h-4 w-11/12')} />

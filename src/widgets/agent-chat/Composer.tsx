@@ -14,6 +14,8 @@ interface Props {
     readonly remainingTurns: number | null;
     readonly onSend: (text: string) => void;
     readonly onStop: () => void;
+    /** Prefilled text (an entry link's `?q=`); the user still presses send. */
+    readonly initialValue?: string;
 }
 
 /** 44px hit target that sits flush inside the surface; both actions share it so the box never jumps when a turn starts or stops. */
@@ -63,9 +65,10 @@ export function Composer({
     remainingTurns,
     onSend,
     onStop,
+    initialValue = '',
 }: Props) {
     const t = useTranslations('widgets.agent-chat');
-    const [text, setText] = useState('');
+    const [text, setText] = useState(initialValue.slice(0, MAX));
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const overLimit = text.length > MAX;
     const canSend =
@@ -89,10 +92,12 @@ export function Composer({
         }
     };
     return (
-        <div className="sticky bottom-0 bg-secondary-900 px-4 pt-2 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
+        // The fade lets the transcript scroll under the composer instead of
+        // being cut by a hard edge.
+        <div className="sticky bottom-0 bg-gradient-to-t from-secondary-900 from-70% to-transparent px-4 pt-6 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
             <div
                 className={cn(
-                    'mx-auto flex w-full max-w-3xl items-end gap-1 rounded-lg border border-border-control bg-secondary-800 p-1.5',
+                    'mx-auto flex w-full max-w-3xl items-end gap-1 rounded-lg border border-border-control bg-secondary-800 p-1.5 shadow-lg shadow-secondary-950/40',
                     'focus-within:ring-2 focus-within:ring-primary-500',
                     overLimit && 'border-ui-danger'
                 )}
@@ -172,7 +177,7 @@ export function Composer({
                     {remainingTurns !== null
                         ? t('Composer.remainingTurns', { n: remainingTurns })
                         : ''}
-                    {t('Composer.b21dfd')}
+                    {t('Composer.betaNotice')}
                 </span>
             </p>
         </div>

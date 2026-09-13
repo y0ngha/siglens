@@ -112,13 +112,34 @@ const NAMED_ENTITIES: Record<string, string> = {
 /**
  * 네이버는 검색어와 일치하는 구간을 `<b>` 태그로 감싸고 본문을 HTML 엔티티로 인코딩해
  * 보낸다. 그대로 저장하면 제목에 마크업이 섞이고, AI 분석 입력에도 태그가 들어간다.
+ *
+ * 소비자는 네이버만이 아니다 — SiglensAI `web_search`(`app/api/ai/chat/tools/webSearch.ts`)가
+ * Brave 결과(`<strong>` 하이라이트, `&#x27;` 같은 숫자 참조)도 이 함수로 정리한다. 네이버
+ * 전용으로 동작을 바꾸면 Brave 경로도 함께 바뀐다.
  */
 export function stripNaverMarkup(raw: string): string {
     let text = raw.replace(HTML_TAG_RE, '');
     for (const [entity, char] of Object.entries(NAMED_ENTITIES)) {
+        // Numeric references (`&#x27;`, `&#39;` — Brave snippets use them) go
+        // right before `&amp;`, for the same double-encoding reason.
+        if (entity === '&amp;') text = decodeNumericEntities(text);
         text = text.split(entity).join(char);
     }
     return text.trim();
+}
+
+const NUMERIC_ENTITY_RE = /&#(x[0-9a-f]+|\d+);/gi;
+
+function decodeNumericEntities(text: string): string {
+    return text.replace(NUMERIC_ENTITY_RE, (match, code: string) => {
+        const point =
+            code[0] === 'x' || code[0] === 'X'
+                ? Number.parseInt(code.slice(1), 16)
+                : Number.parseInt(code, 10);
+        return Number.isInteger(point) && point > 0 && point <= 0x10ffff
+            ? String.fromCodePoint(point)
+            : match;
+    });
 }
 
 /**

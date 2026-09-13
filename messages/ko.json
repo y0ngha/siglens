@@ -31,6 +31,11 @@
             "not-found": {
                 "04598e": "새 대화 시작",
                 "047c35": "대화를 찾을 수 없습니다"
+            },
+            "seo": {
+                "description": "실시간 시세와 보조지표, siglens AI 분석, 뉴스와 웹 검색을 직접 찾아보고 출처와 함께 답하는 대화형 투자 리서치 도구입니다. 미국 주식·한국 주식·코인을 물어보세요.",
+                "ogLabel": "데이터로 답하는 AI 리서치 어시스턴트 · Beta",
+                "title": "SiglensAI (Beta) — 주식·코인 AI 리서치 어시스턴트"
             }
         },
         "api": {
@@ -197,6 +202,7 @@
                 "24e60c": "검색으로 건너뛰기",
                 "2f20c8": "주식과 코인, 투자의 새로운 기준",
                 "79bd8f": "뉴스·펀더멘털·공포 탐욕 지수를 분석한 AI\n                                리포트를 쉽고 편하게 확인하세요.",
+                "aiTeaser": "대화로 시장을 물어보세요",
                 "c26658": "투자의 확신을 더하는 AI 분석",
                 "dfbacd": "과거 데이터로 검증한 결과",
                 "eafd49": "{v0}종의 지표와 다양한 투자 전략 기반의 차트 흐름,",
@@ -2104,7 +2110,7 @@
             },
             "Composer": {
                 "4077ce": "전송",
-                "b21dfd": "정보 제공 목적이며 투자 조언이 아닙니다.",
+                "betaNotice": "Beta · 답변에 오류가 있을 수 있으며 투자 조언이 아닙니다.",
                 "charCount": "{len} / {max}",
                 "d2e7e7": "중단",
                 "fdad68": "메시지 입력",
@@ -2115,8 +2121,17 @@
             },
             "EmptyState": {
                 "a00741": "siglens 계정으로 로그인",
-                "a12848": "시세·지표·siglens 분석·뉴스·옵션·내 보유 종목을 직접 조회해서 답합니다. 캐시된 분석이 없으면 새로 분석합니다.",
-                "aea068": "SiglensAI에게 물어보세요",
+                "capAnalysis": "siglens AI 분석",
+                "capIndicators": "차트·보조지표",
+                "capNews": "뉴스",
+                "capQuotes": "실시간 시세",
+                "capWeb": "웹 검색",
+                "capabilitiesLabel": "SiglensAI가 찾아보는 데이터",
+                "description": "실시간 시세와 보조지표, siglens AI 분석, 뉴스와 웹 검색을 직접 찾아보고 출처와 함께 답합니다.",
+                "examplesLabel": "이런 질문에 답할 수 있어요",
+                "guestNote": "로그인하면 대화가 계정에 저장되어 언제든 이어서 볼 수 있어요.",
+                "headlineAccent": "데이터로 답하는 SiglensAI",
+                "headlineLead": "시장에 대해 무엇이든 물어보세요",
                 "suggestionAapl": "AAPL 지금 추세랑 RSI 어때?",
                 "suggestionBtc": "BTCUSD 캐시된 분석 있어?",
                 "suggestionNews": "이번 주 미국 시장 뉴스 중요한 것만",
@@ -2136,7 +2151,9 @@
                 "copied": "복사됨",
                 "e1407b": "수정",
                 "e6b008": "메시지 수정",
-                "generating": "답변 생성 중…"
+                "generating": "답변 생성 중…",
+                "openOnSiglens": "siglens에서 {symbol} 보기",
+                "relatedPages": "siglens에서 더 보기"
             },
             "Sidebar": {
                 "14bb5e": "정말 삭제할까요?",
@@ -2145,20 +2162,40 @@
                 "586a5c": "대화 이름",
                 "73e5a8": "이름 변경",
                 "9a7569": "대화 목록",
+                "backToSiglens": "siglens 홈으로",
                 "empty": "아직 대화가 없습니다.",
                 "fc81e2": "삭제",
                 "groupOlder": "이전",
                 "groupToday": "오늘",
                 "groupWeek": "지난 7일",
                 "groupYesterday": "어제",
+                "guestBody": "로그인하면 나눈 대화가 여기에 쌓이고, 다른 기기에서도 이어서 볼 수 있어요.",
+                "guestCta": "로그인하고 시작하기",
+                "guestTitle": "대화 기록",
                 "newChat": "새 대화",
-                "noMatch": "검색 결과가 없습니다."
+                "noMatch": "검색 결과가 없습니다.",
+                "privacy": "개인정보처리방침",
+                "terms": "이용약관"
             },
             "ToolActivity": {
                 "aboutSeconds": "약 {n}초",
                 "b4c619": "사용한 도구",
-                "running": "도구 실행 중",
-                "summary": "도구 {n}개 사용"
+                "checked": "{sources} 확인",
+                "checking": "{label} 확인 중",
+                "failed": "실패",
+                "inProgress": "진행 중",
+                "partialFailure": "일부 실패",
+                "seconds": "{n}초",
+                "toolAnalysis": "siglens 분석",
+                "toolBars": "차트·지표",
+                "toolFreshAnalysis": "새 분석 생성",
+                "toolNews": "뉴스",
+                "toolOptions": "옵션",
+                "toolOther": "데이터 조회",
+                "toolPortfolio": "내 포트폴리오",
+                "toolQuote": "시세",
+                "toolSearchTicker": "종목 검색",
+                "toolWebSearch": "웹 검색"
             }
         },
         "analysis": {
@@ -2419,6 +2456,8 @@
                 "1dbde9": "분석 업데이트 알림 닫기",
                 "4077ce": "전송",
                 "50071e": "💬 AI에게 물어보기",
+                "askSiglensAi": "SiglensAI에서 더 묻기",
+                "askSiglensAiQuestion": "{symbol} 지금 어떤 상황인지 종합적으로 알려줘",
                 "cce9f7": "오늘 {v0}회 남음",
                 "d7fb24": "분석이 업데이트됐어요 — 최신 결과 기반으로 이어서\n                        질문하세요",
                 "f292ff": "분석 결과를 바탕으로 질문해 보세요. 추세 해석, 지표 의미,\n                            시나리오까지 모두 물어볼 수 있어요.",

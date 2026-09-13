@@ -92,4 +92,19 @@ describe('Composer', () => {
             'true'
         );
     });
+
+    it('an entry-link draft is prefilled but only sent when the user presses send', () => {
+        const { onSend } = renderComposer({ initialValue: 'NVDA 지금 어때?' });
+        expect(screen.getByRole('textbox')).toHaveValue('NVDA 지금 어때?');
+        expect(onSend).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole('button', { name: '전송' }));
+        expect(onSend).toHaveBeenCalledWith('NVDA 지금 어때?');
+    });
+
+    it('states the Beta status next to the not-investment-advice notice', () => {
+        renderComposer();
+        expect(
+            screen.getByText(/Beta · 답변에 오류가 있을 수 있으며/)
+        ).toBeInTheDocument();
+    });
 });

@@ -24,8 +24,11 @@ import {
     DEFAULT_LOCALE,
     isLocale,
     LOCALE_HREFLANG,
+    localePath,
 } from '@/shared/i18n/locales';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { BetaBadge } from '@/shared/ui/BetaBadge';
+import { aiAskUrl } from '@/shared/config/aiHost';
 import { buildHomeFaqJsonLd } from '../homeJsonLd';
 import {
     CryptoShowcase,
@@ -264,6 +267,21 @@ export default async function Home({
                             <HeroIllustration className="mx-auto h-auto w-full max-w-md lg:max-w-none" />
                         </div>
                         <div className="text-center lg:text-left">
+                            {/* The one SiglensAI hook on the main home: a quiet
+                                announcement line above the eyebrow, not a banner. */}
+                            <a
+                                href={aiAskUrl(localePath(resolved, '/'))}
+                                className="mb-4 inline-flex min-h-9 max-w-full items-center gap-2 rounded-full border border-border-control px-3 text-xs text-secondary-300 hover:border-primary-400 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                            >
+                                <span className="inline-flex items-center gap-1.5 font-mono font-semibold tracking-[0.12em] text-primary-400 uppercase">
+                                    <span translate="no">Siglens AI</span>
+                                    <BetaBadge />
+                                </span>
+                                <span className="truncate">
+                                    {t('page.aiTeaser')}
+                                </span>
+                                <span aria-hidden="true">→</span>
+                            </a>
                             <p className="mb-5 text-xs font-semibold tracking-[0.01em] text-secondary-400">
                                 {t('page.c26658')}
                             </p>

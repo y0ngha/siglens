@@ -40,6 +40,14 @@ describe('stripNaverMarkup', () => {
         // `&amp;`를 먼저 풀면 `&amp;lt;b&amp;gt;`가 `<b>`로 되살아나 태그가 다시 생긴다.
         expect(stripNaverMarkup('&amp;lt;b&amp;gt;')).toBe('&lt;b&gt;');
     });
+
+    it('decodes numeric references (Brave snippets) without reviving double-encoded ones', () => {
+        expect(
+            stripNaverMarkup('Nvidia&#x27;s <strong>AI</strong> &#39;lead&#39;')
+        ).toBe("Nvidia's AI 'lead'");
+        expect(stripNaverMarkup('&amp;#x27;')).toBe('&#x27;');
+        expect(stripNaverMarkup('&#xFFFFFFF;')).toBe('&#xFFFFFFF;');
+    });
 });
 
 describe('NaverNewsClient', () => {

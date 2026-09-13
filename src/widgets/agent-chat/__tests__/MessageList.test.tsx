@@ -21,6 +21,8 @@ describe('MessageList', () => {
     it('renders tool chips, a regenerate button, a truncation banner, and a log region', () => {
         wrap(
             <MessageList
+                siteUrl="https://siglens.io"
+                localePrefix=""
                 messages={[
                     {
                         id: '1',
@@ -52,7 +54,13 @@ describe('MessageList', () => {
                 onEdit={vi.fn()}
             />
         );
-        expect(screen.getByText(/get_quote/)).toBeInTheDocument();
+        // Tools are named in the reader's language, never by function name.
+        expect(screen.getByText(/시세 확인/)).toBeInTheDocument();
+        expect(screen.queryByText(/get_quote/)).toBeNull();
+        // The symbol the answer read links back to its siglens.io page.
+        expect(
+            screen.getByRole('link', { name: /siglens에서 AAPL 보기/ })
+        ).toHaveAttribute('href', 'https://siglens.io/AAPL');
         expect(
             screen.getByRole('button', { name: /다시 생성/ })
         ).toBeInTheDocument();
@@ -63,6 +71,8 @@ describe('MessageList', () => {
     it('drops aria-relevant from the outer log and moves an explicit aria-live to just the streaming bubble (role="log" still carries an implicit aria-live="polite" of its own; the fix is not making the log inert, it is no longer re-announcing the whole transcript on every delta)', () => {
         wrap(
             <MessageList
+                siteUrl="https://siglens.io"
+                localePrefix=""
                 messages={[
                     {
                         id: '1',
@@ -114,6 +124,8 @@ describe('MessageList', () => {
         const longUrl = `https://example.com/${'a'.repeat(200)}`;
         wrap(
             <MessageList
+                siteUrl="https://siglens.io"
+                localePrefix=""
                 messages={[
                     {
                         id: '1',
@@ -139,6 +151,8 @@ describe('MessageList', () => {
         const onEdit = vi.fn();
         wrap(
             <MessageList
+                siteUrl="https://siglens.io"
+                localePrefix=""
                 messages={[
                     {
                         id: '1',
@@ -166,6 +180,8 @@ describe('MessageList', () => {
         try {
             wrap(
                 <MessageList
+                    siteUrl="https://siglens.io"
+                    localePrefix=""
                     messages={[
                         {
                             id: '1',

@@ -191,7 +191,8 @@
                 "c26658": "AI分析，增加投资信心",
                 "dfbacd": "基于历史数据验证的结果",
                 "eafd49": "基于 {v0} 种指标和多样投资策略的图表走势，",
-                "ee41ec": "查看回测结果 →"
+                "ee41ec": "查看回测结果 →",
+                "aiTeaser": "用对话询问市场"
             }
         },
         "login": {
@@ -446,6 +447,11 @@
             "not-found": {
                 "04598e": "开始新对话",
                 "047c35": "未找到对话"
+            },
+            "seo": {
+                "title": "SiglensAI（测试版）— 股票与加密货币 AI 研究助手",
+                "description": "一款对话式投资研究工具，会实时查询行情、技术指标、siglens AI 分析、新闻和网络搜索，并附上来源作答。可询问美股、韩股和加密货币。",
+                "ogLabel": "用数据作答的 AI 研究助手 · 测试版"
             }
         }
     },
@@ -2339,7 +2345,9 @@
                 "cce9f7": "今日剩余 {v0} 次",
                 "d7fb24": "分析已更新 — 请基于最新结果继续提问",
                 "f292ff": "请基于分析结果提问。您可以询问趋势解读、指标含义、\n                            情景等。",
-                "f4ca4c": "关闭聊天"
+                "f4ca4c": "关闭聊天",
+                "askSiglensAi": "在 SiglensAI 深入提问",
+                "askSiglensAiQuestion": "综合介绍一下 {symbol} 现在的情况"
             },
             "ContextSwitchSystemMessage": {
                 "aa779e": "已切换至 {v0} 页面。上一页的分析上下文不再适用。"
@@ -3457,26 +3465,35 @@
             },
             "Composer": {
                 "4077ce": "发送",
-                "b21dfd": "仅供参考，不构成投资建议。",
                 "d2e7e7": "停止",
                 "fdad68": "消息输入",
                 "tooLong": "{len} / {max} 字符 — 太长",
                 "remainingTurns": "今日剩余 {n} 次 · ",
                 "charCount": "{len} / {max}",
                 "placeholder": "向 SiglensAI 提问…",
-                "keyHint": "Enter 发送 · Shift+Enter 换行"
+                "keyHint": "Enter 发送 · Shift+Enter 换行",
+                "betaNotice": "测试版 · 回答可能有误，不构成投资建议。"
             },
             "EmptyState": {
                 "a00741": "使用 siglens 账户登录",
-                "a12848": "直接查询行情、指标、siglens 分析、新闻、期权和您的持仓来回答。如果没有缓存的分析，会重新进行分析。",
-                "aea068": "向 SiglensAI 提问",
                 "suggestionPortfolio": "我的持仓现在怎么样？",
                 "suggestionSamsung": "总结一下三星电子最新的 siglens 分析",
                 "suggestionAapl": "AAPL 目前的趋势和 RSI 如何？",
                 "suggestionNews": "只看这周美国市场的重要新闻",
                 "suggestionNvda": "NVDA 的期权市场情况如何？",
                 "suggestionBtc": "有 BTCUSD 的缓存分析吗？",
-                "suggestionsLabel": "你可以这样提问"
+                "suggestionsLabel": "你可以这样提问",
+                "headlineLead": "关于市场，尽管提问",
+                "headlineAccent": "用数据作答的 SiglensAI",
+                "description": "它会实时查询行情与技术指标、siglens AI 分析、新闻和网络搜索，并附上来源作答。",
+                "capQuotes": "实时行情",
+                "capIndicators": "图表与技术指标",
+                "capAnalysis": "siglens AI 分析",
+                "capNews": "新闻",
+                "capWeb": "网络搜索",
+                "capabilitiesLabel": "SiglensAI 查询的数据",
+                "guestNote": "登录后对话会保存到账户，随时可以接着查看。",
+                "examplesLabel": "可以回答这样的问题"
             },
             "MessageList": {
                 "259976": "回答被截断了，请继续提问。",
@@ -3489,7 +3506,9 @@
                 "e1407b": "编辑",
                 "e6b008": "编辑消息",
                 "copied": "已复制",
-                "generating": "正在生成回答…"
+                "generating": "正在生成回答…",
+                "relatedPages": "在 siglens 查看更多",
+                "openOnSiglens": "在 siglens 查看 {symbol}"
             },
             "Sidebar": {
                 "4cbbe4": "搜索对话",
@@ -3505,13 +3524,33 @@
                 "groupWeek": "过去 7 天",
                 "groupOlder": "更早",
                 "empty": "还没有对话。",
-                "noMatch": "没有匹配的对话。"
+                "noMatch": "没有匹配的对话。",
+                "backToSiglens": "返回 siglens 首页",
+                "terms": "服务条款",
+                "privacy": "隐私政策",
+                "guestTitle": "对话记录",
+                "guestBody": "登录后对话会保存在这里，在其他设备上也能接着查看。",
+                "guestCta": "登录并开始"
             },
             "ToolActivity": {
                 "b4c619": "使用的工具",
                 "aboutSeconds": "约 {n} 秒",
-                "summary": "使用了 {n} 个工具",
-                "running": "正在运行工具"
+                "toolSearchTicker": "股票搜索",
+                "toolQuote": "行情",
+                "toolBars": "图表与指标",
+                "toolAnalysis": "siglens 分析",
+                "toolFreshAnalysis": "生成新分析",
+                "toolNews": "新闻",
+                "toolOptions": "期权",
+                "toolPortfolio": "我的持仓",
+                "toolWebSearch": "网络搜索",
+                "toolOther": "数据查询",
+                "seconds": "{n} 秒",
+                "checking": "正在查看{label}",
+                "checked": "已查看{sources}",
+                "partialFailure": "部分失败",
+                "inProgress": "进行中",
+                "failed": "失败"
             },
             "ChatSkeleton": {
                 "loading": "加载中…"

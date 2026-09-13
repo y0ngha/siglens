@@ -1,6 +1,7 @@
 import 'server-only';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { isBot } from '@/shared/api/isBot';
 import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { isLocale, localePath, DEFAULT_LOCALE } from '@/shared/i18n/locales';
 
@@ -26,10 +27,17 @@ export async function maybeHandoffRedirect(
 ): Promise<void> {
     const hasSession = (await cookies()).get(AUTH_SESSION_COOKIE_NAME)?.value;
     if (hasSession || searchParams.sso === 'none') return;
+    // Crawlers have no session anywhere; bouncing them through two hosts only
+    // hands them a meta-refresh page instead of the landing they should index.
+    if (isBot(await headers())) return;
     const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    // A prefilled question (`?q=`, the entry links from siglens.io) must survive
+    // the round trip, otherwise a signed-in user lands on an empty composer.
+    const q = typeof searchParams.q === 'string' ? searchParams.q : '';
+    const next = `${localePath(resolved, path)}${q ? `?q=${encodeURIComponent(q)}` : ''}`;
     // `localePath` leaves `/api` untouched; routing through it keeps every server
     // redirect locale-aware (noRawRedirect guard). The locale travels in `next`.
     redirect(
-        `${localePath(resolved, '/api/auth/handoff/start')}?next=${encodeURIComponent(localePath(resolved, path))}`
+        `${localePath(resolved, '/api/auth/handoff/start')}?next=${encodeURIComponent(next)}`
     );
 }

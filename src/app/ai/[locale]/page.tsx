@@ -1,4 +1,5 @@
-import { setRequestLocale } from 'next-intl/server';
+import type { Metadata } from 'next';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { getAgentSuggestions } from '@/entities/agent-suggestions/api';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { listConversationsAction } from '@/entities/chat-conversation/actions';
@@ -11,10 +12,45 @@ import {
     type Locale,
 } from '@/shared/i18n/locales';
 import { SITE_URL } from '@/shared/lib/seo';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import { ChatShell } from '@/widgets/agent-chat';
+import {
+    buildAiHomeJsonLd,
+    buildAiHomeMetadata,
+    type AiSeoCopy,
+} from './aiSeo';
 import { maybeHandoffRedirect } from './handoffRedirect';
 
 export const dynamic = 'force-dynamic';
+
+/** Entry links from siglens.io prefill the composer with `?q=`. */
+const DRAFT_MAX_CHARS = 500;
+function draftFrom(
+    sp: Record<string, string | string[] | undefined>
+): string | undefined {
+    return typeof sp.q === 'string' && sp.q.trim()
+        ? sp.q.trim().slice(0, DRAFT_MAX_CHARS)
+        : undefined;
+}
+
+async function seoCopy(locale: Locale): Promise<AiSeoCopy> {
+    const t = await getTranslations({ locale, namespace: 'app.ai' });
+    return {
+        title: t('seo.title'),
+        description: t('seo.description'),
+        ogLabel: t('seo.ogLabel'),
+    };
+}
+
+export async function generateMetadata({
+    params,
+}: {
+    readonly params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+    const { locale: raw } = await params;
+    const locale = isLocale(raw) ? raw : DEFAULT_LOCALE;
+    return buildAiHomeMetadata(locale, await seoCopy(locale));
+}
 
 /**
  * AI-generated empty-screen suggestions (spec §4-3) — portfolio symbols feed
@@ -46,23 +82,29 @@ export default async function AiHomePage({
     const { locale: raw } = await params;
     const locale = isLocale(raw) ? raw : DEFAULT_LOCALE;
     setRequestLocale(locale);
-    await maybeHandoffRedirect(locale, '/', await searchParams);
+    const sp = await searchParams;
+    await maybeHandoffRedirect(locale, '/', sp);
     const user = await getCurrentUser();
-    const [conversations, suggestions] = await Promise.all([
+    const [conversations, suggestions, copy] = await Promise.all([
         user ? listConversationsAction() : Promise.resolve([]),
         user ? loadSuggestions(user.id, locale) : Promise.resolve(null),
+        seoCopy(locale),
     ]);
     const localePrefix = localePath(locale, '').replace(/\/$/, '');
     return (
-        <ChatShell
-            conversationId={null}
-            initialMessages={[]}
-            conversations={conversations}
-            signedIn={user !== null}
-            localePrefix={localePrefix}
-            siteUrl={SITE_URL}
-            currentPath={`${localePrefix}/`}
-            suggestions={suggestions}
-        />
+        <>
+            <JsonLd data={buildAiHomeJsonLd(locale, copy)} />
+            <ChatShell
+                conversationId={null}
+                initialMessages={[]}
+                conversations={conversations}
+                signedIn={user !== null}
+                localePrefix={localePrefix}
+                siteUrl={SITE_URL}
+                currentPath={`${localePrefix}/`}
+                suggestions={suggestions}
+                initialDraft={draftFrom(sp)}
+            />
+        </>
     );
 }

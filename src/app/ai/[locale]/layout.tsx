@@ -32,6 +32,8 @@ const pretendard = localFont({
 export const metadata: Metadata = {
     metadataBase: new URL(AI_SITE_URL),
     title: { default: 'SiglensAI', template: '%s | SiglensAI' },
+    // Default for everything under the ai host (conversations, not-found):
+    // private or empty, never indexed. The landing (`page.tsx`) overrides it.
     robots: { index: false, follow: false },
 };
 

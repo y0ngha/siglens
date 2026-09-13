@@ -6,6 +6,7 @@
  * on a real device or simulator.
  */
 
+import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { ChatPanel } from '@/widgets/chat/ChatPanel';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
@@ -77,6 +78,18 @@ describe('ChatPanel', () => {
         // 모듈 스코프 mock state는 테스트 간 순서 의존성을 만들 수 있으므로 명시적 초기화.
         mockIsAnalysisReady = true;
         resetMockChat();
+    });
+
+    it('offers SiglensAI with this symbol prefilled — a link, never an auto-sent question', () => {
+        renderPanel();
+        const link = screen.getByRole('link', {
+            name: /SiglensAI에서 더 묻기/,
+        });
+        const href = new URL(link.getAttribute('href')!);
+        expect(`${href.origin}${href.pathname}`).toBe(`${AI_SITE_URL}/`);
+        expect(href.searchParams.get('q')).toBe(
+            'AAPL 지금 어떤 상황인지 종합적으로 알려줘'
+        );
     });
 
     describe('PR #407 mobile-input regression guards', () => {

@@ -14,6 +14,7 @@ import {
     splitLocalePath,
 } from '@/shared/i18n/locales';
 import { routing } from '@/shared/i18n/routing';
+import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import { AI_SITE_URL, isAiHost } from '@/shared/config/aiHost';
 import createIntlMiddleware from 'next-intl/middleware';
 import { NextResponse, type NextRequest } from 'next/server';
@@ -21,7 +22,22 @@ import { NextResponse, type NextRequest } from 'next/server';
 const intlMiddleware = createIntlMiddleware(routing);
 
 const AI_CSP = "frame-ancestors 'none'; img-src 'self' data:";
-const AI_ROBOTS_BODY = 'User-agent: *\nDisallow: /\n';
+/**
+ * SiglensAI의 공개 면은 로케일별 홈(랜딩) 하나뿐이다. 대화(`/c/*`)는 회원 본인만
+ * 볼 수 있는 사적 기록이라 크롤러에 열 이유가 없고, 게스트에게는 404다.
+ */
+const AI_ROBOTS_BODY = `User-agent: *\nAllow: /\nDisallow: /c/\nDisallow: /*/c/\n\nSitemap: ${AI_SITE_URL}/sitemap.xml\n`;
+
+/**
+ * 색인 가능한 로케일의 홈만 싣는다 — 메인 사이트 정적 페이지와 같은 게이트
+ * (`STATIC_INDEXABLE_LOCALES`). 대화 URL은 절대 싣지 않는다.
+ */
+function aiSitemapXml(): string {
+    const urls = STATIC_INDEXABLE_LOCALES.map(
+        l => `<url><loc>${AI_SITE_URL}${localePath(l, '/')}</loc></url>`
+    ).join('');
+    return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`;
+}
 
 /** `ai.siglens.io`(SiglensAI) 호스트 요청을 `/ai/[locale]/*`로 rewrite한다. */
 function handleAiHost(req: NextRequest): NextResponse {
@@ -34,6 +50,14 @@ function handleAiHost(req: NextRequest): NextResponse {
             },
         });
     }
+    if (url.pathname === '/sitemap.xml') {
+        return new NextResponse(aiSitemapXml(), {
+            headers: {
+                'Content-Type': 'application/xml; charset=utf-8',
+                'Cache-Control': 'public, max-age=3600',
+            },
+        });
+    }
     const { locale, path } = splitLocalePath(url.pathname);
     const rewriteUrl = new URL(url);
     rewriteUrl.pathname = `/ai/${locale}${path === '/' ? '' : path}`;
@@ -41,7 +65,9 @@ function handleAiHost(req: NextRequest): NextResponse {
     headers.set('X-NEXT-INTL-LOCALE', locale);
     const response = NextResponse.rewrite(rewriteUrl, { request: { headers } });
     response.headers.set('Content-Security-Policy', AI_CSP);
-    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+    // 페이지 메타데이터도 noindex지만, 404·에러 응답까지 확실히 덮도록 헤더로도 막는다.
+    if (path === '/c' || path.startsWith('/c/'))
+        response.headers.set('X-Robots-Tag', 'noindex, nofollow');
     return response;
 }
 
@@ -88,7 +114,9 @@ const RESERVED_FIRST_SEGMENTS = new Set([
  */
 export function proxy(req: NextRequest): NextResponse {
     if (isAiHost(req.headers.get('host'))) return handleAiHost(req);
-    if (new URL(req.url).pathname === '/robots.txt') return NextResponse.next();
+    const rawPathname = new URL(req.url).pathname;
+    if (rawPathname === '/robots.txt' || rawPathname === '/sitemap.xml')
+        return NextResponse.next();
 
     const hasSession = !!req.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value;
     const reqUrl = new URL(req.url);
@@ -338,5 +366,6 @@ export const config = {
     matcher: [
         '/((?!api|_next/static|_next/image|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|json|xml|txt|js|html|css|webmanifest|map|woff2?|ttf|otf|eot|mp4|webm)$).*)',
         '/robots.txt',
+        '/sitemap.xml',
     ],
 };

@@ -367,18 +367,23 @@ ISR write가 로케일 수만큼 늘어난다. 이 레포에서 ISR write는 실
    ```bash
    yarn db:migrate
    ```
-2. **개인정보처리방침 v4 시드** — 2026-09-19(발효일) 이전 아무 때나 실행해도
-   안전하다. `findActive`가 `effective_date <= NOW() ORDER BY effective_date DESC
+2. **개인정보처리방침 v4 + 이용약관 v2 시드** — 둘 다 발효일 2026-09-21 00:00 KST.
+   발효일 이전 아무 때나 실행해도 안전하다. `findActive`가 `effective_date <= NOW() ORDER BY effective_date DESC
    LIMIT 1`로 조회하므로, 시드해 둔 v4 행은 발효일 전까지는 조용히 대기만 하고
    화면에는 영향이 없다. 재실행해도 `upsertFromSeed`가 버전 키로 덮어써 멱등하다.
    반대로 **이 시드를 빼먹으면** `findActive`에 버전 고정도 에러 경로도 없어서
    그냥 v3를 계속 서빙한다 — v3에는 DeepSeek 전송 고지도, 대화 보존/삭제 조항도
-   없으므로 신호 없이 조용한 컴플라이언스 공백이 된다. 운영자가 직접 실행:
+   없으므로 신호 없이 조용한 컴플라이언스 공백이 된다. tos v1도 같은 이유로 SiglensAI
+   조항(제6조: 베타·정확성 면책·금지 행위·대화 저장) 없이 남는다. 운영자가 직접 실행:
    ```bash
    yarn db:seed:terms
    ```
    `/privacy`는 `revalidate = 86400`이라 전환은 DB 반영 후 최대 ~24시간 뒤에
    화면에 나타난다 — **DB가 아니라 렌더된 `/privacy` 페이지에서** 전환을 확인할 것.
+   **사전 고지**: 방침은 새 국외 이전(DeepSeek)을, 약관은 새 서비스 조항을 담으므로
+   발효 7일 전(2026-09-14)까지 공지 행(`notices` 테이블)으로
+   알린다. **SiglensAI 공개(ai.siglens.io DNS·Cloudflare hostname 활성화)는 발효일 이후**로
+   잡는다 — 방침이 먼저, 수집이 나중이어야 어긋나도 안전한 쪽으로만 어긋난다.
 3. **SSM 파라미터** — `DEEPSEEK_CHAT_API_KEY`(필수, 없으면 첫 요청부터 실패),
    `BRAVE_SEARCH_API_KEY`(선택 — 범용 웹 절반), `NAVER_AI_CLIENT_ID`/`NAVER_AI_CLIENT_SECRET`
    (선택 — 한국어 절반: 네이버 뉴스 3 + 웹문서 2. 뉴스 수집용 `NAVER_CLIENT_*`와
