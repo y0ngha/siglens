@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { inspect } from 'node:util';
 
-const { search, getOptionsSummary } = vi.hoisted(() => ({
+const { search, getOptionsSummary, getCachedAnalysis } = vi.hoisted(() => ({
     search: vi.fn(),
     getOptionsSummary: vi.fn(),
+    getCachedAnalysis: vi.fn(),
 }));
 vi.mock('@/app/api/ai/chat/tools/searchTicker', () => ({
     searchTickerTool: search,
@@ -13,7 +14,7 @@ vi.mock('@/app/api/ai/chat/tools/getBarsIndicators', () => ({
     getBarsIndicatorsTool: vi.fn(),
 }));
 vi.mock('@/app/api/ai/chat/tools/getCachedAnalysis', () => ({
-    getCachedAnalysisTool: vi.fn(),
+    getCachedAnalysisTool: getCachedAnalysis,
 }));
 vi.mock('@/app/api/ai/chat/tools/getNews', () => ({ getNewsTool: vi.fn() }));
 vi.mock('@/app/api/ai/chat/tools/getOptionsSummary', () => ({
@@ -185,5 +186,86 @@ describe('tool registry', () => {
                 makeCtx()
             )
         ).toMatchObject({ truncated: true });
+    });
+
+    it('get_cached_analysis만 자체 한도 — 4,000자를 넘는 저장 분석(원문+평이화)도 온전히 넘긴다', async () => {
+        const analysis = {
+            found: true,
+            analysis: 'a'.repeat(6_000),
+            plain: 'p'.repeat(2_000),
+        };
+        getCachedAnalysis.mockResolvedValue(analysis);
+        const exec = createToolExecutor({
+            analysisModel: 'deepseek-v4.1-flash',
+        });
+        expect(
+            await exec(
+                'get_cached_analysis',
+                { symbol: 'AAPL', tab: 'overall' },
+                makeCtx()
+            )
+        ).toBe(analysis);
+        // The ceiling still exists.
+        getCachedAnalysis.mockResolvedValue({ analysis: 'a'.repeat(20_000) });
+        expect(
+            await exec(
+                'get_cached_analysis',
+                { symbol: 'AAPL', tab: 'overall' },
+                makeCtx()
+            )
+        ).toMatchObject({ truncated: true });
+    });
+
+    it('get_cached_analysis의 큰 한도는 턴당 예산 안에서만 — 소진 뒤 조회는 기본 4,000자로 잘린다', async () => {
+        const big = () => ({ analysis: 'a'.repeat(11_000) });
+        getCachedAnalysis.mockImplementation(async () => big());
+        const exec = createToolExecutor({
+            analysisModel: 'deepseek-v4.1-flash',
+        });
+        const call = () =>
+            exec(
+                'get_cached_analysis',
+                { symbol: 'AAPL', tab: 'overall' },
+                makeCtx()
+            );
+        expect(await call()).not.toHaveProperty('truncated');
+        expect(await call()).not.toHaveProperty('truncated');
+        const third = await call();
+        expect(third).toMatchObject({ truncated: true });
+        expect(JSON.stringify(third).length).toBeLessThanOrEqual(4_000);
+        // A new turn gets a fresh allowance.
+        const next = createToolExecutor({
+            analysisModel: 'deepseek-v4.1-flash',
+        });
+        expect(
+            await next(
+                'get_cached_analysis',
+                { symbol: 'AAPL', tab: 'overall' },
+                makeCtx()
+            )
+        ).not.toHaveProperty('truncated');
+    });
+
+    it('경계값: 남은 예산이 정확히 12,000자면 12,000자 결과가 통과, 예산이 바닥이어도 4,000자까지는 온전하다', async () => {
+        const sized = (n: number) => ({ a: 'x'.repeat(n - '{"a":""}'.length) });
+        const exec = createToolExecutor({
+            analysisModel: 'deepseek-v4.1-flash',
+        });
+        const call = () =>
+            exec(
+                'get_cached_analysis',
+                { symbol: 'AAPL', tab: 'overall' },
+                makeCtx()
+            );
+        // 24,000 − 12,000 = exactly 12,000 left.
+        getCachedAnalysis.mockResolvedValueOnce(sized(12_000));
+        expect(JSON.stringify(await call())).toHaveLength(12_000);
+        getCachedAnalysis.mockResolvedValueOnce(sized(12_000));
+        expect(await call()).not.toHaveProperty('truncated');
+        // Budget is now 0: the floor is the default 4,000.
+        getCachedAnalysis.mockResolvedValueOnce(sized(4_000));
+        expect(await call()).not.toHaveProperty('truncated');
+        getCachedAnalysis.mockResolvedValueOnce(sized(4_001));
+        expect(await call()).toMatchObject({ truncated: true });
     });
 });

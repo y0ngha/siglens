@@ -24,6 +24,17 @@ describe('truncateToolResult', () => {
         );
     });
 
+    it('호출부가 한도를 지정하면 그 한도로 판정·절단한다', () => {
+        const v = { text: 'x'.repeat(6_000) };
+        expect(truncateToolResult(v, 12_000)).toBe(v);
+        const out = truncateToolResult({ text: 'x'.repeat(13_000) }, 12_000);
+        expect(out).toMatchObject({ truncated: true });
+        expect(JSON.stringify(out).length).toBeLessThanOrEqual(12_000);
+        expect(JSON.stringify(out).length).toBeGreaterThan(
+            TOOL_RESULT_MAX_CHARS
+        );
+    });
+
     it('surrogate 쌍 경계에서 자르면 lone high surrogate를 한 칸 더 잘라낸다', () => {
         // Place an emoji (surrogate pair) so its HIGH surrogate lands exactly at
         // serialized index `TOOL_RESULT_MAX_CHARS - 1` — the last char a plain

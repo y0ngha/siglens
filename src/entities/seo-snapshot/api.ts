@@ -13,7 +13,12 @@ import {
     LEGACY_CONTENT_LOCALE,
     toContentLocale,
 } from '@/shared/db/contentLocale';
-import type { Locale } from '@/shared/i18n/locales';
+import { DEFAULT_LOCALE, LOCALES, type Locale } from '@/shared/i18n/locales';
+
+export interface FindBySymbolOptions {
+    /** See `DrizzleSeoSnapshotRepository.findBySymbol`. */
+    readonly anyLocale?: boolean;
+}
 
 /**
  * Drizzle ORM implementation backed by Neon PostgreSQL. One row per
@@ -97,9 +102,21 @@ export class DrizzleSeoSnapshotRepository {
      * **컬럼을 명시해서 읽는다** — `select()`(전 컬럼)는 스키마에 컬럼이
      * 추가되는 순간 마이그레이션 전 배포에서 통째로 실패한다.
      */
+    /**
+     * @param options.anyLocale - Readers get only languages they can read
+     *   (`CONTENT_LOCALE_FALLBACK`). A consumer that re-expresses the analysis
+     *   in the reader's language itself (the SiglensAI agent) does not care
+     *   what language a row is in, so it gets the FRESHEST row per tab across
+     *   all languages; only an exact `generatedAt` tie falls back to
+     *   requested → Korean (the canonical one) → the rest. One row per tab,
+     *   never several: rows of the same tab in different languages are
+     *   translations or separate runs, and mixing them would feed the model
+     *   two analyses with different prices and levels.
+     */
     async findBySymbol(
         symbol: string,
-        locale: Locale
+        locale: Locale,
+        options: FindBySymbolOptions = {}
     ): Promise<SeoAnalysisSnapshot[]> {
         const rows = await this.db
             .select({
@@ -125,7 +142,9 @@ export class DrizzleSeoSnapshotRepository {
             updatedAt: row.updatedAt,
             locale: toContentLocale(row.locale) ?? LEGACY_CONTENT_LOCALE,
         }));
-        return pickSnapshotPerTab(snapshots, locale);
+        return options.anyLocale
+            ? pickFreshestPerTab(snapshots, anyLocaleChain(locale))
+            : pickSnapshotPerTab(snapshots, CONTENT_LOCALE_FALLBACK[locale]);
     }
 
     async findGeneratedAtMap(symbols: string[]): Promise<Map<string, Date>> {
@@ -153,6 +172,33 @@ export class DrizzleSeoSnapshotRepository {
     }
 }
 
+/** 동점 해소 순서: 요청 로케일 → 한국어(원본) → 나머지. */
+function anyLocaleChain(locale: Locale): readonly Locale[] {
+    return [...new Set<Locale>([locale, DEFAULT_LOCALE, ...LOCALES])];
+}
+
+/**
+ * `anyLocale` 전용: 탭마다 언어와 무관하게 `generatedAt`이 가장 최신인 행 하나를
+ * 남긴다. 생성 시각이 정확히 같을 때만 `tieBreak` 순서로 고른다.
+ */
+function pickFreshestPerTab(
+    snapshots: readonly SeoAnalysisSnapshot[],
+    tieBreak: readonly Locale[]
+): SeoAnalysisSnapshot[] {
+    const best = new Map<SeoSnapshotTab, SeoAnalysisSnapshot>();
+    for (const snapshot of snapshots) {
+        const current = best.get(snapshot.tab);
+        const newer =
+            current === undefined ||
+            snapshot.generatedAt.getTime() > current.generatedAt.getTime() ||
+            (snapshot.generatedAt.getTime() === current.generatedAt.getTime() &&
+                tieBreak.indexOf(snapshot.locale) <
+                    tieBreak.indexOf(current.locale));
+        if (newer) best.set(snapshot.tab, snapshot);
+    }
+    return [...best.values()];
+}
+
 /**
  * 탭마다 폴백 체인에서 가장 앞선 로케일의 행 하나만 남긴다.
  *
@@ -163,9 +209,8 @@ export class DrizzleSeoSnapshotRepository {
  */
 function pickSnapshotPerTab(
     snapshots: readonly SeoAnalysisSnapshot[],
-    locale: Locale
+    chain: readonly Locale[]
 ): SeoAnalysisSnapshot[] {
-    const chain = CONTENT_LOCALE_FALLBACK[locale];
     const best = new Map<SeoSnapshotTab, SeoAnalysisSnapshot>();
     for (const snapshot of snapshots) {
         const rank = chain.indexOf(snapshot.locale);

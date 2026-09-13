@@ -7,7 +7,12 @@ import type {
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { naverAiCredentials } from '@/entities/news-article/api';
 import { isE2E } from '@/shared/api/e2eEnv';
-import { truncateToolResult } from './truncate';
+import {
+    CACHED_ANALYSIS_MAX_CHARS,
+    CACHED_ANALYSIS_TURN_BUDGET_CHARS,
+    TOOL_RESULT_MAX_CHARS,
+    truncateToolResult,
+} from './truncate';
 import { searchTickerTool } from './searchTicker';
 import { getQuoteTool } from './getQuote';
 import { getBarsIndicatorsTool } from './getBarsIndicators';
@@ -94,6 +99,16 @@ function symbolsIn(args: Record<string, unknown>): string[] {
  * stops guaranteeing that invariant.
  */
 export function createToolExecutor(runtime: ToolRuntime): ExecuteTool {
+    // One executor per turn (`stream/route.ts`), so this closure is the turn's
+    // allowance for oversized stored analyses — see `CACHED_ANALYSIS_MAX_CHARS`.
+    let cachedAnalysisCharsLeft = CACHED_ANALYSIS_TURN_BUDGET_CHARS;
+    const ceilingFor = (name: string): number => {
+        if (name !== 'get_cached_analysis') return TOOL_RESULT_MAX_CHARS;
+        return Math.max(
+            TOOL_RESULT_MAX_CHARS,
+            Math.min(CACHED_ANALYSIS_MAX_CHARS, cachedAnalysisCharsLeft)
+        );
+    };
     return async (name, args, ctx) => {
         const executor = EXECUTORS[name];
         if (!executor) return { error: 'unknown_tool' };
@@ -101,7 +116,13 @@ export function createToolExecutor(runtime: ToolRuntime): ExecuteTool {
         if (symbolsIn(args).some(s => !isAdmissibleSymbolShape(s)))
             return { error: 'invalid_symbol' };
         try {
-            return truncateToolResult(await executor(args, ctx, runtime));
+            const result = truncateToolResult(
+                await executor(args, ctx, runtime),
+                ceilingFor(name)
+            );
+            if (name === 'get_cached_analysis')
+                cachedAnalysisCharsLeft -= JSON.stringify(result)?.length ?? 0;
+            return result;
         } catch (error) {
             logToolError(name, error);
             return { error: 'tool_failed' };

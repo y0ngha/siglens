@@ -175,12 +175,18 @@ export const getCachedAnalysisTool: ToolExecutor = async (
         }
     }
     const { db } = getDatabaseClient();
-    const snapshot = (
-        await new DrizzleSeoSnapshotRepository(db).findBySymbol(
-            symbol,
-            ctx.locale
-        )
-    ).find(s => s.tab === tab);
+    const snapshot =
+        // Any language: the model answers in the user's language regardless of
+        // what the analysis was written in (verified on Korean snapshots with
+        // en/ja/zh questions), so the freshest row per tab wins in any language
+        // and a Japanese-only row still beats a fresh run.
+        (
+            await new DrizzleSeoSnapshotRepository(db).findBySymbol(
+                symbol,
+                ctx.locale,
+                { anyLocale: true }
+            )
+        ).find(s => s.tab === tab);
     if (snapshot) {
         return {
             found: true,
@@ -189,8 +195,11 @@ export const getCachedAnalysisTool: ToolExecutor = async (
             generatedAt: snapshot.generatedAt.toISOString(),
             stale: stale(tab, snapshot.generatedAt),
             model: snapshot.model,
-            plain: snapshot.plain,
+            contentLanguage: snapshot.locale,
+            // Analysis first, plain rewrite second: if the payload ever outgrows
+            // its budget, the cut lands on the paraphrase, not the source.
             analysis: snapshot.content,
+            plain: snapshot.plain,
         };
     }
     if (isHistoryTab(tab)) {
