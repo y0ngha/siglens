@@ -35,16 +35,11 @@ export type ToolExecutor = (
 ) => Promise<unknown>;
 
 /**
- * Tools a guest may not run: their own holdings (there are none), and the two
- * metered ones core already zeroes for tier `free`. Refused here with the same
- * `login_required` core uses, so the answer offers sign-in — and so a future
- * core quota change can never open a paid path to anonymous callers.
+ * Tools a guest may not run: only their own holdings — there is no account to
+ * hold any. Fresh analyses and web search are open to guests (SIGLENS sets no
+ * count limit on analysis), bounded by core's per-turn caps instead.
  */
-const MEMBER_ONLY_TOOLS: ReadonlySet<string> = new Set([
-    'get_my_portfolio',
-    'run_fresh_analysis',
-    'web_search',
-]);
+const MEMBER_ONLY_TOOLS: ReadonlySet<string> = new Set(['get_my_portfolio']);
 
 const EXECUTORS: Record<string, ToolExecutor> = {
     search_ticker: searchTickerTool,
@@ -115,8 +110,13 @@ export function createToolExecutor(runtime: ToolRuntime): ExecuteTool {
     // One executor per turn (`stream/route.ts`), so this closure is the turn's
     // allowance for oversized stored analyses — see `CACHED_ANALYSIS_MAX_CHARS`.
     let cachedAnalysisCharsLeft = CACHED_ANALYSIS_TURN_BUDGET_CHARS;
+    // `run_fresh_analysis` returns the same analysis shape as
+    // `get_cached_analysis` (see `runFreshAnalysis.ts`), so a just-run
+    // analysis must not be cut harder than a stored one.
+    const isAnalysis = (name: string): boolean =>
+        name === 'get_cached_analysis' || name === 'run_fresh_analysis';
     const ceilingFor = (name: string): number => {
-        if (name !== 'get_cached_analysis') return TOOL_RESULT_MAX_CHARS;
+        if (!isAnalysis(name)) return TOOL_RESULT_MAX_CHARS;
         return Math.max(
             TOOL_RESULT_MAX_CHARS,
             Math.min(CACHED_ANALYSIS_MAX_CHARS, cachedAnalysisCharsLeft)
@@ -135,7 +135,7 @@ export function createToolExecutor(runtime: ToolRuntime): ExecuteTool {
                 await executor(args, ctx, runtime),
                 ceilingFor(name)
             );
-            if (name === 'get_cached_analysis')
+            if (isAnalysis(name))
                 cachedAnalysisCharsLeft -= JSON.stringify(result)?.length ?? 0;
             return result;
         } catch (error) {

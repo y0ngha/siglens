@@ -1,20 +1,21 @@
 import 'server-only';
-import { hashClientIp } from '@y0ngha/siglens-core';
 
 const GUEST_SUBJECT_PREFIX = 'guest:';
 
 /**
- * Quota/lock subject for a visitor without a session — the hashed client IP,
- * so the raw address never reaches a Redis key. It is the `userId` core and
- * the tool executors see for a guest turn.
+ * Quota/lock subject for a visitor without a session — the first-party
+ * `siglens_guest` cookie id (`shared/api/guestId.ts`), so a guest's daily
+ * turn quota and per-subject turn lock follow the browser rather than the
+ * client IP. It is the `userId` core and the tool executors see for a guest
+ * turn.
  *
- * Trade-off: visitors behind one shared IP (office NAT, mobile carrier CGNAT)
- * share one guest subject, so they share the daily guest turn quota and the
- * per-subject turn lock — a second concurrent guest turn from that IP gets a
- * `server_busy` 409. Acceptable for the pilot; signing in removes it.
+ * Clearing the cookie mints a fresh guest and therefore a fresh quota, but
+ * that alone does not buy unlimited turns: the route also runs a per-IP
+ * backstop (`GUEST_IP_TURNS_PER_DAY`, `stream/route.ts`) sized for many
+ * guests behind one shared address before a guest turn is allowed to start.
  */
-export function guestSubject(clientIp: string): string {
-    return `${GUEST_SUBJECT_PREFIX}${hashClientIp(clientIp)}`;
+export function guestSubject(guestId: string): string {
+    return `${GUEST_SUBJECT_PREFIX}${guestId}`;
 }
 
 /** `true` when a turn's `userId` is a {@link guestSubject}, not a member id. */

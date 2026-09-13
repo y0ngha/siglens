@@ -13,6 +13,7 @@ import type {
     AnalysisResponse,
     ChatActionResult,
     ChatMessage,
+    CounterStore,
     CurrentAnalysisContext,
     LlmProvider,
     ModelId,
@@ -20,11 +21,15 @@ import type {
     UserTierContext,
 } from '@y0ngha/siglens-core';
 import {
+    CounterStoreUnavailableError,
+    createCounterStore,
     DEEPSEEK_V4_1_FLASH_MODEL,
     DEFAULT_TIER,
     getProviderForModel,
+    hashClientIp,
     requestChatCompletion,
     requiresByokKey,
+    TIER_CONFIG,
 } from '@y0ngha/siglens-core';
 import type { AssetClass } from '@/shared/config/marketProfile';
 import {
@@ -33,6 +38,7 @@ import {
     getDescriptor,
 } from '@/shared/config/marketProfile';
 import { getClientIp } from '@/shared/api/getClientIp';
+import { getOrCreateGuestId } from '@/shared/api/guestId';
 
 /**
  * Resolve the user's tier and BYOK key for the given model.
@@ -96,6 +102,24 @@ async function resolveRequestLocale(): Promise<Locale> {
     }
 }
 
+/**
+ * Many guests can share one NAT/CGNAT address — this exists only to stop
+ * clearing the `siglens_guest` cookie (`getOrCreateGuestId`) from buying
+ * unlimited free chatbot turns from the same network, not to be a tight
+ * per-guest limit. Mirrors the agent route's guest-IP backstop
+ * (`stream/counters.ts`'s `GUEST_IP_TURNS_PER_DAY`).
+ */
+const GUEST_IP_BACKSTOP_MULTIPLE = 10;
+
+/** Per-IP backstop consumed once per guest chatbot turn. Fails closed. */
+function createChatGuestIpBackstopCounter(): CounterStore {
+    return createCounterStore({
+        prefix: 'chat:q:guest-ip',
+        period: 'day',
+        failurePolicy: 'closed',
+    });
+}
+
 export async function chatAction(
     symbol: string,
     companyName: string,
@@ -150,9 +174,43 @@ export async function chatAction(
             return { ok: false, error: 'server_error' };
         }
 
+        /**
+         * Opaque per-visitor key core stores usage/tokens under — the
+         * `clientIp` field name is historical, core only ever hashes it
+         * (`hashUsageIp`/`hashClientIp`), never inspects it as an address.
+         * A member's own id keys their own bucket; a guest's is the
+         * `siglens_guest` cookie id (`shared/api/guestId.ts`) instead of the
+         * client IP, so clearing browser data no longer resets a bucket a
+         * whole office/CGNAT shares.
+         */
+        const clientKey = tierContext.userId
+            ? `user:${tierContext.userId}`
+            : `guest:${await getOrCreateGuestId()}`;
+
+        if (tierContext.userId === null) {
+            try {
+                const guestIpLimit =
+                    GUEST_IP_BACKSTOP_MULTIPLE *
+                    TIER_CONFIG.limits.chatbotPerDay.free;
+                const allowed =
+                    await createChatGuestIpBackstopCounter().consume(
+                        hashClientIp(clientIp),
+                        guestIpLimit
+                    );
+                // Same code the per-guest token bucket returns, so the client
+                // shows its localized "used up for now" copy — a structured
+                // limit error would render its message verbatim (Korean only).
+                if (!allowed) return { ok: false, error: 'token_exhausted' };
+            } catch (error) {
+                if (error instanceof CounterStoreUnavailableError)
+                    return { ok: false, error: 'server_busy' };
+                throw error;
+            }
+        }
+
         const r = await requestChatCompletion(
             {
-                clientIp,
+                clientIp: clientKey,
                 symbol,
                 companyName,
                 timeframe,

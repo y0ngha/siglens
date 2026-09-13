@@ -86,7 +86,7 @@ export function truncateToolResult(
 }
 
 /**
- * `get_cached_analysis` carries a whole stored analysis plus its plain-language
+ * `get_cached_analysis` (and `run_fresh_analysis`, same shape) carries a whole analysis plus its plain-language
  * rewrite. Measured on production snapshots (2026-09-13): 3 of 7 popular
  * symbol/tab pairs exceeded 4,000 chars (AAPL technical 6,000, AAPL overall
  * 5,431, NVDA overall 8,297), so the model got a front-cut preview — the
@@ -95,7 +95,7 @@ export function truncateToolResult(
  *
  * Nothing in core bounds the size of the CURRENT turn: history windowing
  * applies only to earlier turns, and every step resends the whole growing
- * message list (up to 6 steps / 8 tool calls). So the larger ceiling is
+ * message list (up to core's `AGENT_TURN_CAPS` steps / tool calls). So the larger ceiling is
  * paired with a per-turn allowance (`CACHED_ANALYSIS_TURN_BUDGET_CHARS`):
  * two full analyses per turn, after which further lookups fall back to the
  * default 4,000 cut.

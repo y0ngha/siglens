@@ -87,6 +87,7 @@ export function buildAiHomeJsonLd(
     locale: Locale,
     copy: AiSeoCopy
 ): Record<string, unknown> {
+    const siteName = SITE_NAME.toUpperCase();
     return {
         '@context': 'https://schema.org',
         '@type': 'WebApplication',
@@ -97,15 +98,22 @@ export function buildAiHomeJsonLd(
         url: aiHomeUrl(locale),
         inLanguage: LOCALE_HREFLANG[locale],
         applicationCategory: 'FinanceApplication',
-        applicationSubCategory: 'AI assistant',
+        applicationSubCategory: 'Stock and crypto AI chatbot',
         operatingSystem: 'Web',
-        releaseNotes: 'Beta',
+        // A cross-domain `@id` alone is not resolved by Google: the node has to
+        // carry its own name and URL to mean anything on this page.
         isPartOf: {
             '@type': 'WebSite',
             '@id': `${SITE_URL}#website`,
+            name: siteName,
             url: SITE_URL,
         },
-        publisher: { '@id': ORGANIZATION_JSON_LD_ID },
+        publisher: {
+            '@type': 'Organization',
+            '@id': ORGANIZATION_JSON_LD_ID,
+            name: siteName,
+            url: SITE_URL,
+        },
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'KRW' },
     };
 }

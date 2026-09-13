@@ -16,6 +16,20 @@ describe('AgentMarkdown', () => {
         expect(a.textContent).toContain('example.com');
     });
 
+    it('price ranges with single tildes stay plain text — only ~~double~~ strikes through', () => {
+        const { container } = render(
+            <AgentMarkdown>
+                {
+                    '중립: 266,500~270,666원에서 등락 반복 시 263,225~277,250원 횡보. ~~취소~~'
+                }
+            </AgentMarkdown>
+        );
+        const struck = container.querySelectorAll('del');
+        expect(struck).toHaveLength(1);
+        expect(struck[0]!.textContent).toBe('취소');
+        expect(container.textContent).toContain('266,500~270,666원');
+    });
+
     it('renders non-http(s) schemes as plain text, not a link', () => {
         render(<AgentMarkdown>{'[click](javascript:alert(1))'}</AgentMarkdown>);
         expect(screen.queryByRole('link')).toBeNull();

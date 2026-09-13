@@ -5,5 +5,7 @@ import { GUEST_TURNS_PER_DAY } from '../guestTurnLimit';
 describe('GUEST_TURNS_PER_DAY', () => {
     it('core AGENT_LIMITS.turnsPerDay.free 값과 일치한다 — 어긋나면 배너가 틀린 숫자를 보여준다', () => {
         expect(GUEST_TURNS_PER_DAY).toBe(agentLimit('free', 'turnsPerDay'));
+        // Signed-in turns are uncapped — the landing copy says so without a number.
+        expect(agentLimit('member', 'turnsPerDay')).toBe(Infinity);
     });
 });

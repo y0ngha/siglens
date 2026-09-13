@@ -39,6 +39,8 @@ import {
     ALL_NAV_REGION_LINKS,
     NAV_VERTICALS,
 } from '@/shared/config/assetClassNav';
+import { AI_SITE_URL } from '@/shared/config/aiHost';
+import { localePath } from '@/shared/i18n/locales';
 import { GITHUB_URL, SITE_NAME } from '@/shared/lib/seo';
 import { koMessage } from '@/shared/test-utils/koMessage';
 import en from '../../../../messages/en.json';
@@ -72,6 +74,16 @@ describe('Footer', () => {
         expect(link).toHaveTextContent('SIGLENS 소개');
         expect(link).not.toHaveTextContent('Siglens 소개');
         expect(link).toHaveAttribute('href', '/about');
+    });
+
+    it('renders a link to ai.siglens.io named "SIGLENS AI"', () => {
+        render(<Footer />);
+
+        const link = screen.getByRole('link', { name: 'SIGLENS AI' });
+        expect(link).toHaveAttribute(
+            'href',
+            `${AI_SITE_URL}${localePath('ko', '/')}`
+        );
     });
 
     it('renders the privacy policy link', () => {

@@ -12,9 +12,11 @@ interface Props {
     /**
      * `wordmark` — the "AI" half of the `SIGLENS AI` logo lockup in the header
      * (same mono/tracking grammar as the wordmark, brand colour). `pill` — the
-     * labelled entry in the mobile drawer.
+     * labelled entry in the mobile drawer. `text` — a plain inline link (footer
+     * sitemap row): no Beta badge, no `aria-label` override since the visible
+     * text already is the full product name.
      */
-    readonly variant?: 'pill' | 'wordmark';
+    readonly variant?: 'pill' | 'wordmark' | 'text';
 }
 
 /** Where the AI product lives for the current locale — shared by the lockup and the drawer entry. */
@@ -38,6 +40,19 @@ export function useAiHomeHref(): string {
 export function AiNavLink({ className, tabIndex, variant = 'pill' }: Props) {
     const onAiHost = useHrefBase() !== '';
     const href = useAiHomeHref();
+    if (variant === 'text') {
+        return (
+            <a
+                href={href}
+                translate="no"
+                aria-current={onAiHost ? 'page' : undefined}
+                tabIndex={tabIndex}
+                className={className}
+            >
+                SIGLENS AI
+            </a>
+        );
+    }
     if (variant === 'wordmark') {
         return (
             <a

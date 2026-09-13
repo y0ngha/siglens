@@ -244,6 +244,29 @@ aws logs put-metric-filter --log-group-name /siglens/app \
 aws cloudwatch put-metric-alarm --alarm-name siglens-agent-stream-failed --namespace Siglens/Agent \
   --metric-name AgentStreamFailed --statistic Sum --period 3600 --evaluation-periods 1 --threshold 10 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P1
+# 에이전트 용량 초과(busy) — 인스턴스 하나가 새 분석 동시 실행 상한(10) 또는 에이전트 턴
+# 동시 상한(4)·분석 스트림 슬롯에 걸려 요청을 거절했다. 마커는 `[agent] busy`
+# (tools/runFreshAnalysis.ts의 AGENT_BUSY_LOG, stream/route.ts 용량 게이트). 사용자에겐
+# "지금 혼잡"으로만 보이므로 1건이라도 나면 알린다(5분 창). 사용자별 턴 락(409)은
+# 한 사람의 중복 전송이라 마커를 찍지 않는다. P2: 사이트 다운이 아니라 증설 신호.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-agent-busy \
+  --filter-pattern '"[agent] busy"' \
+  --metric-transformations metricName=AgentBusy,metricNamespace=Siglens/Agent,metricValue=1,defaultValue=0
+aws cloudwatch put-metric-alarm --alarm-name siglens-agent-busy --namespace Siglens/Agent \
+  --metric-name AgentBusy --statistic Sum --period 300 --evaluation-periods 1 --threshold 1 \
+  --comparison-operator GreaterThanOrEqualToThreshold --treat-missing-data notBreaching $P2
+# 공용 웹 검색 예산 소진 — core runAgentTurn이 AGENT_GLOBAL_LIMITS(Brave 무료 요금제:
+# 하루 33회·월 1,000회)에 막히면 `[agent] web search budget exhausted`({scope})를 찍는다.
+# 그 뒤로 그날/그달은 모든 사용자의 웹 검색이 거절된다. 운영자가 Brave 유료 전환을
+# 판단하는 신호라 1건이라도 나면 알린다(1시간 창). P2: 답변은 계속 나간다.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-agent-web-search-budget \
+  --filter-pattern '"[agent] web search budget exhausted"' \
+  --metric-transformations metricName=AgentWebSearchBudgetExhausted,metricNamespace=Siglens/Agent,metricValue=1,defaultValue=0
+aws cloudwatch put-metric-alarm --alarm-name siglens-agent-web-search-budget --namespace Siglens/Agent \
+  --metric-name AgentWebSearchBudgetExhausted --statistic Sum --period 3600 --evaluation-periods 1 --threshold 1 \
+  --comparison-operator GreaterThanOrEqualToThreshold --treat-missing-data notBreaching $P2
 # 에이전트 한도 스토어(Redis) 불가 — turnLock.ts가 카운터 스토어 접근 실패 시 찍는
 # 마커. fail-closed라 사용자에겐 server_busy(409)로만 보인다 — 이 로그가 유일한 신호.
 aws logs put-metric-filter --log-group-name /siglens/app \

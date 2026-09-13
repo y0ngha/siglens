@@ -124,6 +124,50 @@ describe('useAgentStream', () => {
         const assistant = result.current.messages[1]!;
         expect(assistant.content).toBe('231.42');
         expect(assistant.tools.map(t => t.name)).toEqual(['get_quote']);
+        // Short narration is dropped, never kept as a draft.
+        expect(assistant.draft).toBeUndefined();
+    });
+
+    it('an answer the model abandons for more tools stays visible as a draft until the new text arrives, then disappears', async () => {
+        const encoder = new TextEncoder();
+        let push!: (frame: string) => void;
+        let close!: () => void;
+        const body = new ReadableStream<Uint8Array>({
+            start(c) {
+                push = f => c.enqueue(encoder.encode(`${f}\n\n`));
+                close = () => c.close();
+            },
+        });
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            new Response(body, {
+                status: 200,
+                headers: { 'content-type': 'text/event-stream' },
+            })
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: null, initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('삼성전자 최근 분석 요약해줘');
+        });
+        const draft =
+            '삼성전자 최근 분석을 요약하면 장기 추세는 우호적이지만 중기 조정 국면입니다. 삼성전자 최근 분석을 요약하면 장기 추세는 우호적이지만 중기 조정 국면입니다. 삼성전자 최근 분석을 요약하면 장기 추세는 우호적이지만 중기 조정 국면입니다. ';
+        push(`event: text\ndata: ${JSON.stringify({ delta: draft })}`);
+        push(
+            'event: tool_start\ndata: {"id":"t1","name":"get_quote","args":{"symbols":["005930.KS"]}}'
+        );
+        await waitFor(() =>
+            expect(result.current.messages[1]!.draft).toBe(draft)
+        );
+        expect(result.current.messages[1]!.content).toBe('');
+        push('event: text\ndata: {"delta":"새 답변"}');
+        push(
+            'event: done\ndata: {"assistantMessageId":"m2","stopReason":"end"}'
+        );
+        close();
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        expect(result.current.messages[1]!.content).toBe('새 답변');
+        expect(result.current.messages[1]!.draft).toBeUndefined();
     });
 
     it('SSE error frame -> status error + code, without touching top-level status text', async () => {

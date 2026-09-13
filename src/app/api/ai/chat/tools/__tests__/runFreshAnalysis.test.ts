@@ -44,7 +44,10 @@ import {
     __resetFreshSemaphoreForTests,
     runFreshAnalysisTool,
 } from '@/app/api/ai/chat/tools/runFreshAnalysis';
-import { truncateToolResult } from '@/app/api/ai/chat/tools/truncate';
+import {
+    CACHED_ANALYSIS_MAX_CHARS,
+    truncateToolResult,
+} from '@/app/api/ai/chat/tools/truncate';
 import {
     __activeStreamCount,
     __resetActiveStreamsForTests,
@@ -166,7 +169,7 @@ const REALISTIC_OPTIONS_RESULT = {
         expirationDate: `2026-0${(i % 9) + 1}-1${i % 9}`,
         commentary:
             `이 만기의 풋콜 비율은 낙관적인 포지셔닝을 시사하며, 최대 미결제약정 스트라이크는 현재가 부근에 형성되어 저항선 역할을 할 가능성이 있으며, 대형 기관 투자자들의 헤지 수요가 동시에 관찰되고 있습니다. 만기 ${i}. `.repeat(
-                2
+                5
             ),
         tone: 'bullish' as const,
     })),
@@ -305,11 +308,13 @@ describe('runFreshAnalysisTool', () => {
         ).toEqual({ error: 'analysis_failed', code: 'usage_limit_exceeded' });
     });
 
-    it('세마포어 2 초과 → busy, core는 호출되지 않는다', async () => {
-        // Deferreds (not `new Promise(() => {})`) so the two in-flight calls
-        // are resolved and awaited before the test ends — an unsettled
-        // promise here would leak a semaphore/`activeStreams` slot into
-        // whichever test runs next.
+    it('인스턴스당 동시 실행 상한(10) 초과 → busy, core는 호출되지 않는다', async () => {
+        // Deferreds (not `new Promise(() => {})`) so the in-flight calls are
+        // resolved and awaited before the test ends — an unsettled promise
+        // here would leak a semaphore/`activeStreams` slot into whichever
+        // test runs next.
+        const CAP = 10; // MAX_CONCURRENT_FRESH in runFreshAnalysis.ts
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const deferreds: {
             resolve: (v: unknown) => void;
         }[] = [];
@@ -319,31 +324,36 @@ describe('runFreshAnalysisTool', () => {
                     deferreds.push({ resolve });
                 })
         );
-        const p1 = runFreshAnalysisTool(
-            { symbol: 'A', kind: 'technical' },
-            ctx,
-            rt
+        const inFlight = Array.from({ length: CAP }, (_, i) =>
+            runFreshAnalysisTool(
+                { symbol: `S${i}`, kind: 'technical' },
+                ctx,
+                rt
+            )
         );
-        const p2 = runFreshAnalysisTool(
-            { symbol: 'B', kind: 'technical' },
-            ctx,
-            rt
-        );
-        // Let both calls reach `runAnalysis` (past their `Promise.all`
-        // profile/asset lookups) before asserting the third is rejected.
-        await Promise.resolve();
-        await Promise.resolve();
+        // Let every call reach `runAnalysis` (past its `Promise.all`
+        // profile/asset lookups) before asserting the next one is rejected.
+        await vi.waitFor(() => expect(deferreds).toHaveLength(CAP));
         expect(
             await runFreshAnalysisTool(
-                { symbol: 'C', kind: 'technical' },
+                { symbol: 'OVER', kind: 'technical' },
                 ctx,
                 rt
             )
         ).toEqual({ error: 'busy', retryAfterSeconds: 60 });
+        expect(warn).toHaveBeenCalledWith(
+            '[agent] busy',
+            expect.objectContaining({
+                reason: 'fresh_analysis_slots',
+                cap: CAP,
+            })
+        );
+        expect(m.runAnalysis).toHaveBeenCalledTimes(CAP);
         for (const d of deferreds)
             d.resolve({ status: 'done', result: TECHNICAL_FIXTURE });
-        await Promise.all([p1, p2]);
+        await Promise.all(inFlight);
         expect(__activeStreamCount()).toBe(0);
+        warn.mockRestore();
     });
 
     it('심볼 형태가 아니면 슬롯을 잡지 않고 invalid_args', async () => {
@@ -387,8 +397,12 @@ describe('runFreshAnalysisTool', () => {
             rt
         )) as { analysis: Record<string, unknown> };
 
-        expect(truncateToolResult(r)).not.toMatchObject({ truncated: true });
-        expect(JSON.stringify(r).length).toBeLessThanOrEqual(4_000);
+        expect(
+            truncateToolResult(r, CACHED_ANALYSIS_MAX_CHARS)
+        ).not.toMatchObject({ truncated: true });
+        expect(JSON.stringify(r).length).toBeLessThanOrEqual(
+            CACHED_ANALYSIS_MAX_CHARS
+        );
         expect(r.analysis.trend).toBe('bullish');
         expect(r.analysis.riskLevel).toBe('medium');
         expect(r.analysis.keyLevels).toEqual(
@@ -418,8 +432,12 @@ describe('runFreshAnalysisTool', () => {
             rt
         )) as { analysis: Record<string, unknown> };
 
-        expect(truncateToolResult(r)).not.toMatchObject({ truncated: true });
-        expect(JSON.stringify(r).length).toBeLessThanOrEqual(4_000);
+        expect(
+            truncateToolResult(r, CACHED_ANALYSIS_MAX_CHARS)
+        ).not.toMatchObject({ truncated: true });
+        expect(JSON.stringify(r).length).toBeLessThanOrEqual(
+            CACHED_ANALYSIS_MAX_CHARS
+        );
         expect(r.analysis.headline).toBe(REALISTIC_OVERALL_RESULT.headlineKo);
         expect(r.analysis.scenarios).toEqual(
             REALISTIC_OVERALL_RESULT.scenarios
@@ -456,8 +474,12 @@ describe('runFreshAnalysisTool', () => {
             };
         };
 
-        expect(truncateToolResult(r)).not.toMatchObject({ truncated: true });
-        expect(JSON.stringify(r).length).toBeLessThanOrEqual(4_000);
+        expect(
+            truncateToolResult(r, CACHED_ANALYSIS_MAX_CHARS)
+        ).not.toMatchObject({ truncated: true });
+        expect(JSON.stringify(r).length).toBeLessThanOrEqual(
+            CACHED_ANALYSIS_MAX_CHARS
+        );
         expect(r.analysis.signals.length).toBeLessThanOrEqual(10);
         expect(r.analysis.perExpiration.length).toBeGreaterThan(0);
         expect(r.analysis.perExpiration.length).toBeLessThan(

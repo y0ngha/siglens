@@ -192,7 +192,7 @@
                 "dfbacd": "基于历史数据验证的结果",
                 "eafd49": "基于 {v0} 种指标和多样投资策略的图表走势，",
                 "ee41ec": "查看回测结果 →",
-                "aiTeaser": "用对话询问市场"
+                "aiTeaser": "用 AI 聊天助手问股票与加密货币"
             }
         },
         "login": {
@@ -449,9 +449,9 @@
                 "047c35": "未找到对话"
             },
             "seo": {
-                "title": "SIGLENS AI（测试版）— 股票与加密货币 AI 研究助手",
-                "description": "一款对话式投资研究工具，会实时查询行情、技术指标、SIGLENS AI 分析、新闻和网络搜索，并附上来源作答。可询问美股、韩股和加密货币。",
-                "ogLabel": "用数据作答的 AI 研究助手 · 测试版"
+                "title": "股票与加密货币 AI 聊天助手 — 问行情·图表·新闻 | SIGLENS AI",
+                "description": "三星电子、苹果、比特币……想了解的股票，直接问 AI。实时查询行情、图表指标和最新新闻，并附来源作答。支持美股、韩股和加密货币，无需登录即可开始。",
+                "ogLabel": "股票与加密货币，问 AI · 测试版"
             }
         }
     },
@@ -2346,7 +2346,7 @@
                 "d7fb24": "分析已更新 — 请基于最新结果继续提问",
                 "f292ff": "请基于分析结果提问。您可以询问趋势解读、指标含义、\n                            情景等。",
                 "f4ca4c": "关闭聊天",
-                "askSiglensAi": "在 SIGLENS AI 深入提问",
+                "askSiglensAi": "向 SIGLENS AI 聊天助手继续提问",
                 "askSiglensAiQuestion": "综合介绍一下 {symbol} 现在的情况"
             },
             "ContextSwitchSystemMessage": {
@@ -3466,6 +3466,9 @@
                 "loginCta": "登录",
                 "openConversations": "对话列表"
             },
+            "ChatSkeleton": {
+                "loading": "加载中…"
+            },
             "Composer": {
                 "4077ce": "发送",
                 "d2e7e7": "停止",
@@ -3479,39 +3482,74 @@
             },
             "EmptyState": {
                 "a00741": "使用 SIGLENS 账户登录",
-                "capAnalysis": "SIGLENS AI 分析",
+                "capAnalysis": "个股 AI 分析报告",
                 "capIndicators": "图表与技术指标",
                 "capNews": "新闻",
                 "capQuotes": "实时行情",
                 "capWeb": "网络搜索",
                 "capabilitiesLabel": "SIGLENS AI 查询的数据",
-                "description": "它会实时查询行情与技术指标、SIGLENS AI 分析、新闻和网络搜索，并附上来源作答。",
+                "description": "自己查询行情、图表和新闻，并展示每个回答依据的来源。",
                 "examplesLabel": "可以回答这样的问题",
-                "guestNote": "无需登录即可直接提问。持仓分析、实时分析、网络搜索和保存对话需要登录。",
-                "headlineAccent": "用数据作答的 SIGLENS AI",
-                "headlineLead": "关于市场，尽管提问",
-                "suggestionAapl": "AAPL 目前的趋势和 RSI 如何？",
-                "suggestionBtc": "有 BTCUSD 的缓存分析吗？",
+                "guestNote": "无需登录即可直接提问。分析我的持仓和保存对话需要登录。",
+                "headlineAccent": "股票与加密货币 AI 聊天助手 SIGLENS AI",
+                "headlineLead": "想了解的股票，问 AI",
+                "suggestionAapl": "苹果（AAPL）现在的趋势和 RSI 怎么样？",
+                "suggestionBtc": "比特币最近走势如何？",
                 "suggestionNews": "只看这周美国市场的重要新闻",
-                "suggestionNvda": "NVDA 的期权市场情况如何？",
+                "suggestionNvda": "英伟达（NVDA）期权市场情绪如何？",
                 "suggestionPortfolio": "我的持仓现在怎么样？",
-                "suggestionSamsung": "总结一下三星电子最新的 SIGLENS 分析",
+                "suggestionSamsung": "总结一下三星电子的最新分析",
                 "suggestionsLabel": "你可以这样提问"
             },
+            "Landing": {
+                "accessTitle": "无需登录也能用，登录后更多",
+                "faq1a": "不会。这是查询并解释行情、指标、新闻和分析报告的信息服务，不会建议买卖，投资决定与责任由您本人承担。",
+                "faq1q": "会提供投资建议吗？",
+                "faq2a": "可以询问美股和 ETF、KOSPI 和 KOSDAQ 股票，以及比特币等主要加密货币。用名称或代码提问即可。",
+                "faq2q": "可以询问哪些股票？",
+                "faq3a": "不需要。无需登录每天最多可提问 {guest} 次，登录后提问次数不限。",
+                "faq3q": "需要付费吗？",
+                "faq4a": "会。AI 在总结数据时可能出错，因此每个回答都会显示来源和基准时间。做重要决定前请务必查看原文。",
+                "faq4q": "回答会出错吗？",
+                "faq5a": "登录后，对话会保存到账户中，随时可以继续查看。未登录的对话在关闭标签页后会消失。",
+                "faq5q": "对话会被保存吗？",
+                "faqTitle": "常见问题",
+                "guestItem1": "每天最多提问 {guest} 次",
+                "guestItem2": "查看行情、图表指标、分析报告、新闻和网络搜索",
+                "guestItem3": "运行最新分析",
+                "guestTitle": "无需登录",
+                "linkAbout": "关于 SIGLENS",
+                "linkFearGreed": "恐惧与贪婪指数",
+                "linkMarketKr": "韩国股市分析",
+                "linkMarketUs": "美国股市分析",
+                "linkNews": "今日股票新闻",
+                "memberItem1": "提问次数不限",
+                "memberItem2": "分析我的持仓",
+                "memberItem3": "保存并继续查看对话",
+                "memberTitle": "登录后",
+                "moreTitle": "在 SIGLENS 查看更多",
+                "sourceAnalysis": "分析报告 — SIGLENS 为每只股票生成的技术、综合、新闻和期权分析",
+                "sourceIndicators": "图表指标 — 由 SIGLENS 计算的移动平均线、RSI、MACD 等技术指标",
+                "sourceNews": "新闻 — SIGLENS 收集的国内外新闻，必要时进行网络搜索",
+                "sourceQuotes": "行情 — 美股、韩股和加密货币的最新价格",
+                "sourcesBody": "AI 不凭记忆作答。每个问题都会查询所需数据，并在回答末尾注明来源和基准时间。",
+                "sourcesTitle": "回答的数据从哪里来"
+            },
             "MessageList": {
-                "259976": "回答被截断了，请继续提问。",
                 "19b2d1": "取消",
+                "259976": "回答被截断了，请继续提问。",
                 "43da5e": "重新生成",
                 "6523ca": "重新发送",
                 "96adfe": "此回答已中断。",
                 "a55b1e": "复制",
                 "afd172": "生成回答失败。",
+                "copied": "已复制",
                 "e1407b": "编辑",
                 "e6b008": "编辑消息",
-                "copied": "已复制",
                 "generating": "正在生成回答…",
-                "relatedPages": "在 SIGLENS 查看更多",
-                "openOnSiglens": "在 SIGLENS 查看 {symbol}"
+                "openOnSiglens": "在 SIGLENS 查看 {symbol}",
+                "redrafting": "正在查看更多数据并重新整理回答…",
+                "relatedPages": "在 SIGLENS 查看更多"
             },
             "Sidebar": {
                 "14bb5e": "要删除这个对话吗？",
@@ -3527,7 +3565,7 @@
                 "groupToday": "今天",
                 "groupWeek": "过去 7 天",
                 "groupYesterday": "昨天",
-                "guestBody": "关闭此标签页后，访客对话将会消失。登录后可保存对话，并使用持仓分析和网络搜索。",
+                "guestBody": "关闭此标签页后，访客对话将会消失。登录后可保存对话，并使用持仓分析。",
                 "guestCta": "登录",
                 "guestTitle": "对话记录",
                 "newChat": "新对话",
@@ -3555,9 +3593,6 @@
                 "toolQuote": "行情",
                 "toolSearchTicker": "股票搜索",
                 "toolWebSearch": "网络搜索"
-            },
-            "ChatSkeleton": {
-                "loading": "加载中…"
             }
         }
     }

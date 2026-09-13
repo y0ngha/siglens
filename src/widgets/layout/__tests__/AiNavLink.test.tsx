@@ -57,6 +57,26 @@ describe('AiNavLink', () => {
         ).toHaveAttribute('aria-current', 'page');
     });
 
+    describe('text variant (footer sitemap row)', () => {
+        it('shows "SIGLENS AI" with no Beta badge and no aria-label override', () => {
+            render(<AiNavLink variant="text" />);
+            const link = screen.getByRole('link', { name: 'SIGLENS AI' });
+            expect(link).toHaveTextContent('SIGLENS AI');
+            expect(link).not.toHaveAttribute('aria-label');
+            expect(link).toHaveAttribute(
+                'href',
+                `${AI_SITE_URL}${localePath('ko', '/')}`
+            );
+        });
+
+        it('applies the given className', () => {
+            render(<AiNavLink variant="text" className="my-class" />);
+            expect(
+                screen.getByRole('link', { name: 'SIGLENS AI' })
+            ).toHaveClass('my-class');
+        });
+    });
+
     describe('wordmark variant (logo lockup)', () => {
         it('shows "AI" + the Beta tag but keeps the full accessible name and the ai href', () => {
             render(<AiNavLink variant="wordmark" />);

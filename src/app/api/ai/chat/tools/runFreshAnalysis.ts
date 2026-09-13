@@ -17,11 +17,17 @@ import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarket
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile';
 import { registerActiveStream } from '@/shared/lib/sse/activeStreams';
+import { AGENT_BUSY_LOG } from '../busyLog';
 import type { ToolExecutor } from './index';
-import { fitToEscapedBudget, TOOL_RESULT_MAX_CHARS } from './truncate';
+import { CACHED_ANALYSIS_MAX_CHARS, fitToEscapedBudget } from './truncate';
 
-/** Per-instance concurrency cap (spec §4-5) — distinct from core's per-user/global quota. */
-const MAX_CONCURRENT_FRESH = 2;
+/**
+ * Per-instance concurrency cap — distinct from core's per-turn cap. Each run
+ * holds an SSE slot for 30–250s; beyond this the call answers `busy` rather
+ * than queueing. Raised 2 → 10 (2026-09-13) now that one turn may run up to
+ * 3 analyses and several users can do so at once.
+ */
+const MAX_CONCURRENT_FRESH = 10;
 let inFlight = 0;
 export function __resetFreshSemaphoreForTests(): void {
     inFlight = 0;
@@ -66,7 +72,8 @@ type ProseSpec =
 
 /**
  * Fits variable-length prose/bullet leaves of an already-built `envelope`
- * into whatever is left of `TOOL_RESULT_MAX_CHARS`. Only invoked when the
+ * into whatever is left of `CACHED_ANALYSIS_MAX_CHARS` — the same ceiling a
+ * stored analysis gets from the executor (`tools/index.ts`). Only invoked when the
  * full envelope (with the untouched leaves) overflows the budget — a
  * realistic technical/overall analysis usually fits as-is once
  * `indicatorResults`/`patternSummaries`/etc. have been dropped by the
@@ -86,7 +93,8 @@ function fitProse(
     const out: Record<string, string | unknown[]> = {};
     const asIs = (spec: ProseSpec): string | unknown[] =>
         spec.kind === 'text' ? (spec.value ?? '') : [...(spec.value ?? [])];
-    const overflow = JSON.stringify(envelope).length - TOOL_RESULT_MAX_CHARS;
+    const overflow =
+        JSON.stringify(envelope).length - CACHED_ANALYSIS_MAX_CHARS;
     if (overflow <= 0 || keys.length === 0) {
         for (const key of keys) out[key] = asIs(fields[key]!);
         return out;
@@ -158,7 +166,7 @@ const MAX_OPTIONS_SIGNALS = 10;
  * Projects an `OptionsAnalysisResponse`. Unlike news, options has no cap on
  * `perExpiration` anywhere in core's normalizer — requesting `'all'`
  * expirations on a weekly-heavy ticker (PLTR, NVDA) can carry 15-20+ entries
- * of Korean commentary, which alone overflows `TOOL_RESULT_MAX_CHARS`
+ * of Korean commentary, which alone overflows `CACHED_ANALYSIS_MAX_CHARS`
  * before `signals` is even counted. `perExpiration` goes through
  * `fitProse`'s list path (drops trailing expirations whole, earliest
  * survive); `signals` gets a flat cap since it's already short one-liners.
@@ -285,8 +293,17 @@ export const runFreshAnalysisTool: ToolExecutor = async (
             issues: [{ path: 'kind', message: 'unknown kind' }],
         };
 
-    if (inFlight >= MAX_CONCURRENT_FRESH)
+    if (inFlight >= MAX_CONCURRENT_FRESH) {
+        // Alarm marker (infra/aws/07-alarms.sh `siglens-agent-busy`): a busy
+        // refusal means this instance is at capacity — the operator wants to
+        // hear about it, not find it in a user's complaint.
+        console.warn(AGENT_BUSY_LOG, {
+            reason: 'fresh_analysis_slots',
+            inFlight,
+            cap: MAX_CONCURRENT_FRESH,
+        });
         return { error: 'busy', retryAfterSeconds: 60 };
+    }
     inFlight += 1;
     const release = registerActiveStream();
     try {

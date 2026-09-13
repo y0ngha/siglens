@@ -118,30 +118,51 @@ describe('tool registry', () => {
         expect(getOptionsSummary).not.toHaveBeenCalled();
     });
 
-    it.each(['get_my_portfolio', 'run_fresh_analysis', 'web_search'])(
-        '게스트의 %s → login_required, 실행기 미호출',
+    it('게스트의 get_my_portfolio → login_required, 실행기 미호출', async () => {
+        const { getMyPortfolioTool } =
+            await import('@/app/api/ai/chat/tools/getMyPortfolio');
+        const execute = createToolExecutor({ analysisModel: 'm' as never });
+        await expect(
+            execute(
+                'get_my_portfolio',
+                {},
+                {
+                    ...makeCtx(),
+                    userId: guestSubject(
+                        '11111111-1111-4111-8111-111111111111'
+                    ),
+                    tier: 'free' as never,
+                }
+            )
+        ).resolves.toEqual({ error: 'login_required' });
+        expect(getMyPortfolioTool).not.toHaveBeenCalled();
+    });
+
+    it.each(['run_fresh_analysis', 'web_search'])(
+        '게스트도 %s는 실행한다 — 분석·검색은 로그인 없이 쓸 수 있다',
         async name => {
-            const { getMyPortfolioTool } =
-                await import('@/app/api/ai/chat/tools/getMyPortfolio');
             const { runFreshAnalysisTool } =
                 await import('@/app/api/ai/chat/tools/runFreshAnalysis');
             const { webSearchTool } =
                 await import('@/app/api/ai/chat/tools/webSearch');
+            vi.mocked(runFreshAnalysisTool).mockResolvedValue({ found: true });
+            vi.mocked(webSearchTool).mockResolvedValue({ results: [] });
             const execute = createToolExecutor({ analysisModel: 'm' as never });
-            await expect(
-                execute(
-                    name,
-                    { symbol: 'AAPL', query: 'x' },
-                    {
-                        ...makeCtx(),
-                        userId: guestSubject('203.0.113.7'),
-                        tier: 'free' as never,
-                    }
-                )
-            ).resolves.toEqual({ error: 'login_required' });
-            expect(getMyPortfolioTool).not.toHaveBeenCalled();
-            expect(runFreshAnalysisTool).not.toHaveBeenCalled();
-            expect(webSearchTool).not.toHaveBeenCalled();
+            const result = await execute(
+                name,
+                { symbol: 'AAPL', kind: 'technical', query: 'x' },
+                {
+                    ...makeCtx(),
+                    userId: guestSubject(
+                        '11111111-1111-4111-8111-111111111111'
+                    ),
+                    tier: 'free' as never,
+                }
+            );
+            expect(result).not.toEqual({ error: 'login_required' });
+            expect(
+                name === 'web_search' ? webSearchTool : runFreshAnalysisTool
+            ).toHaveBeenCalledTimes(1);
         }
     );
 
@@ -250,6 +271,42 @@ describe('tool registry', () => {
             await exec(
                 'get_cached_analysis',
                 { symbol: 'AAPL', tab: 'overall' },
+                makeCtx()
+            )
+        ).toMatchObject({ truncated: true });
+    });
+
+    it('run_fresh_analysis도 저장 분석과 같은 한도·턴 예산을 쓴다 — 방금 만든 분석이 4,000자에서 잘리지 않는다', async () => {
+        const { runFreshAnalysisTool } =
+            await import('@/app/api/ai/chat/tools/runFreshAnalysis');
+        const fresh = {
+            found: true,
+            analysis: 'a'.repeat(6_000),
+            plain: 'p'.repeat(2_000),
+        };
+        vi.mocked(runFreshAnalysisTool).mockResolvedValue(fresh);
+        getCachedAnalysis.mockResolvedValue({ analysis: 'c'.repeat(12_000) });
+        const exec = createToolExecutor({
+            analysisModel: 'deepseek-v4.1-flash',
+        });
+        expect(
+            await exec(
+                'run_fresh_analysis',
+                { symbol: 'AAPL', kind: 'overall' },
+                makeCtx()
+            )
+        ).toBe(fresh);
+        // The fresh result drew on the same per-turn allowance: after it, one
+        // more 12,000-char stored analysis still fits, the next one does not.
+        await exec(
+            'get_cached_analysis',
+            { symbol: 'AAPL', tab: 'overall' },
+            makeCtx()
+        );
+        expect(
+            await exec(
+                'get_cached_analysis',
+                { symbol: 'AAPL', tab: 'technical' },
                 makeCtx()
             )
         ).toMatchObject({ truncated: true });

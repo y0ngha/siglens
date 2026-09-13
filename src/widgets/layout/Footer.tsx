@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { AiNavLink } from './AiNavLink';
 import { ContactDialog } from './ContactDialog';
 import { CurrentYear } from './CurrentYear';
 import {
@@ -245,6 +246,10 @@ export function Footer() {
                                     SITE_NAME.toUpperCase()
                                 )}
                             </Link>
+                            <AiNavLink
+                                variant="text"
+                                className={LINK_CLASSES}
+                            />
                             <Link
                                 href={PRIVACY_PATH}
                                 // 위 사이트맵 링크와 동일 — 전역 푸터의 `_rsc` 파편화

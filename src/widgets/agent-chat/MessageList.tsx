@@ -8,6 +8,7 @@ import {
     type RelatedSymbolPage,
 } from '@/features/agent-chat';
 import { cn } from '@/shared/lib/cn';
+import { useSymbolLabels } from './hooks/useSymbolLabels';
 import { AgentMarkdown } from './AgentMarkdown';
 import { ArrowUpRightIcon } from './icons';
 import { SiglensMark } from './SiglensMark';
@@ -42,6 +43,7 @@ interface RelatedPagesProps {
  */
 function RelatedPages({ pages, siteUrl, localePrefix }: RelatedPagesProps) {
     const t = useTranslations('widgets.agent-chat');
+    const labels = useSymbolLabels(pages.map(page => page.symbol));
     if (pages.length === 0) return null;
     return (
         <nav
@@ -54,7 +56,9 @@ function RelatedPages({ pages, siteUrl, localePrefix }: RelatedPagesProps) {
                     href={`${siteUrl}${localePrefix}/${encodeURIComponent(page.symbol)}${page.tab ? `/${page.tab}` : ''}`}
                     className="inline-flex min-h-8 items-center gap-1 rounded-full border border-border-control px-2.5 text-xs text-secondary-300 hover:border-primary-400 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    {t('MessageList.openOnSiglens', { symbol: page.symbol })}
+                    {t('MessageList.openOnSiglens', {
+                        symbol: labels[page.symbol] ?? page.symbol,
+                    })}
                     <ArrowUpRightIcon className="size-3" />
                 </a>
             ))}
@@ -278,6 +282,17 @@ export function MessageList({
                                         <AgentMarkdown>
                                             {m.content}
                                         </AgentMarkdown>
+                                    ) : isStreaming && m.draft ? (
+                                        <div>
+                                            <p className="mb-2 text-xs text-secondary-400">
+                                                {t('MessageList.redrafting')}
+                                            </p>
+                                            <div className="text-secondary-400">
+                                                <AgentMarkdown>
+                                                    {m.draft}
+                                                </AgentMarkdown>
+                                            </div>
+                                        </div>
                                     ) : isStreaming ? (
                                         <Thinking
                                             label={t('MessageList.generating')}

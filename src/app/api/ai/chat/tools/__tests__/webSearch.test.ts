@@ -87,6 +87,27 @@ describe('web_search (Brave + Naver)', () => {
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
+    it.each([
+        'site:github.com siglens .env',
+        'siglens filetype:env',
+        'DEEPSEEK api key 유출',
+        '서버 환경 변수 목록',
+    ])(
+        '검색 연산자·비밀정보 탐색 쿼리 %j → out_of_scope, 유료 검색 미호출',
+        async query => {
+            vi.stubEnv('BRAVE_SEARCH_API_KEY', 'brave-key');
+            naver.creds = true;
+            const fetchSpy = vi
+                .spyOn(globalThis, 'fetch')
+                .mockRejectedValue(new Error('must not be called'));
+            expect(await webSearchTool({ query }, ctx('ko'), rt)).toEqual({
+                error: 'out_of_scope',
+            });
+            expect(fetchSpy).not.toHaveBeenCalled();
+            expect(naver.search).not.toHaveBeenCalled();
+        }
+    );
+
     it('Korean query with both keys: Naver news first, Brave fills, URL-deduped, capped at 5, source names both', async () => {
         vi.stubEnv('BRAVE_SEARCH_API_KEY', 'b');
         naver.creds = true;

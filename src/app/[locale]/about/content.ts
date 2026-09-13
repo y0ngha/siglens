@@ -28,7 +28,7 @@ ${SITE_NAME}는 티커 하나만 입력하면 차트, 펀더멘털, 재무제표
 
 ## 누가 만들고 운영하나
 
-${SITE_NAME}는 개인 개발자 ${SITE_OPERATOR.name}가 혼자 개발하고 운영합니다. 문의는 [이메일](mailto:${SITE_OPERATOR.email})로, 개발자 정보는 [GitHub 프로필](${SITE_OPERATOR.githubUrl})에서 확인할 수 있습니다. 서비스 저장소는 [공개](${GITHUB_URL})되어 있습니다. 운영비는 광고(Google AdSense)로 충당하며, 증권사·자산운용사와의 제휴나 특정 종목을 홍보하는 대가는 받지 않습니다.
+${SITE_NAME}는 개인 개발자 ${SITE_OPERATOR.name}가 혼자 개발하고 운영합니다. 문의는 [이메일](mailto:${SITE_OPERATOR.email})로, 개발자 정보는 [GitHub 프로필](${SITE_OPERATOR.githubUrl})에서 확인할 수 있습니다. 서비스 저장소는 [공개](${GITHUB_URL})되어 있습니다. 운영비는 사비로 충당하며, 증권사·자산운용사와의 제휴나 특정 종목을 홍보하는 대가는 받지 않습니다.
 
 ## 분석은 어떻게 만들어지나
 
@@ -55,7 +55,7 @@ ${SITE_NAME} lets you enter a single ticker and get an AI-combined analysis of c
 
 ## Who Built and Runs It
 
-${SITE_NAME} is built and run alone by independent developer ${SITE_OPERATOR.name}. Reach out by [email](mailto:${SITE_OPERATOR.email}), or see the [GitHub profile](${SITE_OPERATOR.githubUrl}). The service's source code is [public](${GITHUB_URL}). Operating costs are covered by ads (Google AdSense); there is no brokerage or asset-manager affiliation, and no payment is accepted for promoting any security.
+${SITE_NAME} is built and run alone by independent developer ${SITE_OPERATOR.name}. Reach out by [email](mailto:${SITE_OPERATOR.email}), or see the [GitHub profile](${SITE_OPERATOR.githubUrl}). The service's source code is [public](${GITHUB_URL}). Operating costs are paid out of pocket; there is no brokerage or asset-manager affiliation, and no payment is accepted for promoting any security.
 
 ## How Each Analysis Is Made
 
