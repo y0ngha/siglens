@@ -13,6 +13,7 @@ import {
 import { Composer } from './Composer';
 import { AGENT_ERROR_RETRYABLE } from './errorCopy';
 import { EmptyState } from './EmptyState';
+import { MenuIcon } from './icons';
 import { loginHref } from './loginHref';
 import { MessageList } from './MessageList';
 import { Sidebar } from './Sidebar';
@@ -27,6 +28,8 @@ interface Props {
     readonly currentPath: string;
     /** AI-generated suggestions for this hour (spec §4-3); `null`/undefined falls back to `EmptyState`'s static six. */
     readonly suggestions?: readonly string[] | null;
+    /** Question prefilled from an entry link (`?q=`); never sent automatically. */
+    readonly initialDraft?: string;
 }
 
 export function ChatShell({
@@ -38,6 +41,7 @@ export function ChatShell({
     siteUrl,
     currentPath,
     suggestions,
+    initialDraft,
 }: Props) {
     const t = useTranslations('widgets.agent-chat');
     const router = useRouter();
@@ -81,11 +85,15 @@ export function ChatShell({
         }
     }, [stream.error, siteUrl, localePrefix, currentPath]);
 
+    const login = loginHref(siteUrl, localePrefix, currentPath);
     const sidebar = (
         <Sidebar
             items={conversations}
             activeId={stream.conversationId}
             localePrefix={localePrefix}
+            signedIn={signedIn}
+            loginHref={login}
+            siteUrl={siteUrl}
         />
     );
 
@@ -126,7 +134,10 @@ export function ChatShell({
         conversations.find(c => c.id === stream.conversationId)?.title ?? '';
     return (
         <div className="flex min-h-[calc(100dvh-3.5rem)]">
-            <aside className="hidden w-64 shrink-0 border-r border-border-control lg:block">
+            {/* Pinned under the sticky site header at viewport height: a long
+                conversation list scrolls inside the rail instead of stretching
+                the page (which pushed the landing hero below the fold). */}
+            <aside className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-64 shrink-0 self-start border-r border-secondary-700 bg-secondary-950 lg:block">
                 {sidebar}
             </aside>
             <Drawer.Root
@@ -138,7 +149,7 @@ export function ChatShell({
                 <Drawer.Portal>
                     <Drawer.Content
                         id="agent-chat-sidebar-drawer"
-                        className="fixed inset-y-0 left-0 z-[60] w-72 bg-secondary-900"
+                        className="fixed inset-y-0 left-0 z-[60] w-72 border-r border-secondary-700 bg-secondary-950"
                     >
                         <Drawer.Title className="sr-only">
                             {t('ChatShell.9a7569')}
@@ -152,7 +163,7 @@ export function ChatShell({
                     vaul drawer instead. The shared main `Header` above this shell
                     already carries the site chrome, so this bar's only job is the
                     drawer trigger + the active conversation's title. */}
-                <div className="flex h-11 items-center gap-2 border-b border-border-control px-2 lg:hidden">
+                <div className="flex h-11 items-center gap-2 border-b border-secondary-700 px-2 lg:hidden">
                     <button
                         type="button"
                         onClick={() => setDrawerOpen(true)}
@@ -164,7 +175,7 @@ export function ChatShell({
                         aria-expanded={drawerOpen}
                         className="inline-flex min-h-9 items-center gap-1.5 rounded px-2 text-sm text-secondary-200 hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
-                        <span aria-hidden="true">☰</span>
+                        <MenuIcon className="size-4" />
                         {t('ChatShell.openConversations')}
                     </button>
                     <span className="truncate text-sm text-secondary-300">
@@ -174,11 +185,7 @@ export function ChatShell({
                 {stream.messages.length === 0 ? (
                     <EmptyState
                         signedIn={signedIn}
-                        loginHref={loginHref(
-                            siteUrl,
-                            localePrefix,
-                            currentPath
-                        )}
+                        loginHref={login}
                         onPick={text => void stream.send(text)}
                         suggestions={suggestions}
                     />
@@ -188,6 +195,8 @@ export function ChatShell({
                         streaming={stream.status === 'streaming'}
                         onRegenerate={() => void stream.regenerate()}
                         onEdit={(seq, text) => void stream.edit(seq, text)}
+                        siteUrl={siteUrl}
+                        localePrefix={localePrefix}
                     />
                 )}
                 {errorMessage && stream.error !== 'unauthenticated' ? (
@@ -217,6 +226,7 @@ export function ChatShell({
                     remainingTurns={stream.remaining?.turns ?? null}
                     onSend={text => void stream.send(text)}
                     onStop={stream.stop}
+                    initialValue={initialDraft}
                 />
             </div>
         </div>

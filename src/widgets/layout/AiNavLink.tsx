@@ -4,6 +4,7 @@ import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { useCurrentLocale, useHrefBase } from '@/shared/i18n/LocaleContext';
 import { localePath } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';
+import { BetaBadge } from '@/shared/ui/BetaBadge';
 
 interface Props {
     readonly className?: string;
@@ -29,9 +30,10 @@ export function useAiHomeHref(): string {
  * (`useHrefBase() !== ''`), which is how the link knows to show itself as the
  * current page.
  *
- * The accessible name is always "SiglensAI" — the wordmark variant only
- * *shows* "AI" (the "SIGLENS" half is the logo right next to it), so the
- * label restores the full product name for assistive tech and the E2E suite.
+ * The accessible name is always "SiglensAI Beta" — the wordmark variant only
+ * *shows* "AI" + the Beta tag (the "SIGLENS" half is the logo right next to
+ * it), so the label restores the full product name for assistive tech and the
+ * E2E suite while still containing every visible word (WCAG 2.5.3).
  */
 export function AiNavLink({ className, tabIndex, variant = 'pill' }: Props) {
     const onAiHost = useHrefBase() !== '';
@@ -41,15 +43,21 @@ export function AiNavLink({ className, tabIndex, variant = 'pill' }: Props) {
             <a
                 href={href}
                 translate="no"
-                aria-label="SiglensAI"
+                aria-label="SiglensAI Beta"
                 aria-current={onAiHost ? 'page' : undefined}
                 tabIndex={tabIndex}
                 className={cn(
-                    'inline-flex min-h-11 items-center rounded px-1 font-mono text-sm font-semibold tracking-[0.15em] text-primary-400 uppercase hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',
+                    'inline-flex min-h-11 items-center gap-1.5 rounded px-1 font-mono text-sm font-semibold tracking-[0.15em] text-primary-400 uppercase hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none',
                     className
                 )}
             >
                 AI
+                {/* The signed-in ai-host header on a 375px phone (logo text +
+                    search + theme + avatar + menu) has no 40px to spare; the
+                    landing's eyebrow and the composer notice carry Beta there. */}
+                <BetaBadge
+                    className={onAiHost ? 'max-[399px]:hidden' : undefined}
+                />
             </a>
         );
     }
@@ -57,6 +65,7 @@ export function AiNavLink({ className, tabIndex, variant = 'pill' }: Props) {
         <a
             href={href}
             translate="no"
+            aria-label="SiglensAI Beta"
             aria-current={onAiHost ? 'page' : undefined}
             tabIndex={tabIndex}
             className={cn(
@@ -66,6 +75,7 @@ export function AiNavLink({ className, tabIndex, variant = 'pill' }: Props) {
             )}
         >
             SiglensAI
+            <BetaBadge className="ml-1.5" />
         </a>
     );
 }

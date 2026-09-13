@@ -191,7 +191,8 @@
                 "c26658": "AI Analysis for Greater Investment Confidence",
                 "dfbacd": "Verified Against Historical Data",
                 "eafd49": "Chart trends built on {v0} {v0, plural, one {indicator} other {indicators}} and a range of investment strategies,",
-                "ee41ec": "View Backtesting Results →"
+                "ee41ec": "View Backtesting Results →",
+                "aiTeaser": "Ask the markets in a conversation"
             }
         },
         "login": {
@@ -446,6 +447,11 @@
             "not-found": {
                 "04598e": "Start a new chat",
                 "047c35": "Conversation not found"
+            },
+            "seo": {
+                "title": "SiglensAI (Beta) — AI research assistant for stocks and crypto",
+                "description": "A conversational research tool that looks up live quotes, indicators, siglens AI analysis, news and the web, and answers with sources. Ask about US stocks, Korean stocks and crypto.",
+                "ogLabel": "An AI research assistant that answers with data · Beta"
             }
         }
     },
@@ -2339,7 +2345,9 @@
                 "cce9f7": "{v0} remaining today",
                 "d7fb24": "Analysis has been updated — please continue asking questions based on the latest results",
                 "f292ff": "Ask questions based on the analysis results. You can ask about trend interpretation, indicator meaning,\n                            and scenarios.",
-                "f4ca4c": "Close Chat"
+                "f4ca4c": "Close Chat",
+                "askSiglensAi": "Ask more in SiglensAI",
+                "askSiglensAiQuestion": "Give me the full picture on {symbol} right now"
             },
             "ContextSwitchSystemMessage": {
                 "aa779e": "Switched to {v0} page. The analysis context from the previous page no longer applies."
@@ -3457,26 +3465,35 @@
             },
             "Composer": {
                 "4077ce": "Send",
-                "b21dfd": "For informational purposes only, not investment advice.",
                 "d2e7e7": "Stop",
                 "fdad68": "Message input",
                 "tooLong": "{len} / {max} characters — too long",
                 "remainingTurns": "{n} turns left today · ",
                 "charCount": "{len} / {max}",
                 "placeholder": "Ask SiglensAI…",
-                "keyHint": "Enter to send · Shift+Enter for a new line"
+                "keyHint": "Enter to send · Shift+Enter for a new line",
+                "betaNotice": "Beta · Answers may contain errors and are not investment advice."
             },
             "EmptyState": {
                 "a00741": "Log in with your siglens account",
-                "a12848": "Looks up quotes, indicators, siglens analysis, news, options, and your holdings directly to answer. Runs a fresh analysis if none is cached.",
-                "aea068": "Ask SiglensAI",
                 "suggestionPortfolio": "How are my holdings doing right now?",
                 "suggestionSamsung": "Summarize the latest siglens analysis for Samsung Electronics",
                 "suggestionAapl": "What's AAPL's current trend and RSI?",
                 "suggestionNews": "Just the important US market news this week",
                 "suggestionNvda": "How does the options market look for NVDA?",
                 "suggestionBtc": "Is there a cached analysis for BTCUSD?",
-                "suggestionsLabel": "Things you can ask"
+                "suggestionsLabel": "Things you can ask",
+                "headlineLead": "Ask anything about the markets",
+                "headlineAccent": "SiglensAI answers with data",
+                "description": "It looks up live quotes and indicators, siglens AI analysis, news and the web, and answers with sources.",
+                "capQuotes": "Live quotes",
+                "capIndicators": "Charts & indicators",
+                "capAnalysis": "siglens AI analysis",
+                "capNews": "News",
+                "capWeb": "Web search",
+                "capabilitiesLabel": "Data SiglensAI looks up",
+                "guestNote": "Log in and your conversations are saved to your account, ready to pick up anytime.",
+                "examplesLabel": "Questions it can answer"
             },
             "MessageList": {
                 "259976": "The response was cut off. Please ask a follow-up question.",
@@ -3489,7 +3506,9 @@
                 "e1407b": "Edit",
                 "e6b008": "Edit message",
                 "copied": "Copied",
-                "generating": "Generating a reply…"
+                "generating": "Generating a reply…",
+                "relatedPages": "More on siglens",
+                "openOnSiglens": "View {symbol} on siglens"
             },
             "Sidebar": {
                 "4cbbe4": "Search conversations",
@@ -3505,13 +3524,33 @@
                 "groupWeek": "Previous 7 days",
                 "groupOlder": "Older",
                 "empty": "No conversations yet.",
-                "noMatch": "No matches."
+                "noMatch": "No matches.",
+                "backToSiglens": "Back to siglens",
+                "terms": "Terms of Service",
+                "privacy": "Privacy Policy",
+                "guestTitle": "Conversation history",
+                "guestBody": "Log in and your conversations collect here, so you can pick them up on any device.",
+                "guestCta": "Log in to start"
             },
             "ToolActivity": {
                 "b4c619": "Tools used",
                 "aboutSeconds": "about {n}s",
-                "summary": "{n, plural, one {Used # tool} other {Used # tools}}",
-                "running": "Running a tool"
+                "toolSearchTicker": "Symbol search",
+                "toolQuote": "Quote",
+                "toolBars": "Chart & indicators",
+                "toolAnalysis": "siglens analysis",
+                "toolFreshAnalysis": "Fresh analysis",
+                "toolNews": "News",
+                "toolOptions": "Options",
+                "toolPortfolio": "My portfolio",
+                "toolWebSearch": "Web search",
+                "toolOther": "Data lookup",
+                "seconds": "{n}s",
+                "checking": "Checking {label}",
+                "checked": "Checked {sources}",
+                "partialFailure": "some failed",
+                "inProgress": "In progress",
+                "failed": "Failed"
             },
             "ChatSkeleton": {
                 "loading": "Loading…"

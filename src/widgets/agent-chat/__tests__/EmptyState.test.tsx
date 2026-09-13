@@ -45,20 +45,39 @@ describe('EmptyState', () => {
         ).toBeInTheDocument();
     });
 
-    it('signed out: a login CTA instead of suggestions', () => {
+    it('signed out: a login CTA, and the example questions lead to login instead of sending', () => {
+        const onPick = vi.fn();
         wrap(
             <EmptyState
-                onPick={vi.fn()}
+                onPick={onPick}
                 signedIn={false}
                 loginHref="https://siglens.io/login?next=x"
+                suggestions={['무시돼야 할 개인화 제안']}
             />
         );
-        expect(screen.queryByRole('list')).toBeNull();
         expect(
             screen.getByRole('link', { name: /siglens 계정으로 로그인/ })
         ).toHaveAttribute('href', 'https://siglens.io/login?next=x');
         expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-            'SiglensAI에게 물어보세요'
+            'SiglensAI'
         );
+        const examples = screen.getByRole('list', {
+            name: '이런 질문에 답할 수 있어요',
+        });
+        const links = examples.querySelectorAll('a');
+        expect(links).toHaveLength(6);
+        links.forEach(a =>
+            expect(a).toHaveAttribute('href', 'https://siglens.io/login?next=x')
+        );
+        expect(screen.queryByText('무시돼야 할 개인화 제안')).toBeNull();
+        expect(screen.queryAllByRole('button')).toHaveLength(0);
+    });
+
+    it('carries the brand: Beta tag and what the assistant looks up', () => {
+        wrap(<EmptyState onPick={vi.fn()} signedIn loginHref="/login" />);
+        expect(screen.getByText('Beta')).toHaveAttribute('translate', 'no');
+        expect(
+            screen.getByRole('list', { name: 'SiglensAI가 찾아보는 데이터' })
+        ).toHaveTextContent('실시간 시세');
     });
 });

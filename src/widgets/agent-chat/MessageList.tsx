@@ -2,9 +2,15 @@
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
-import type { AgentUiMessage } from '@/features/agent-chat';
+import {
+    relatedSymbolPages,
+    type AgentUiMessage,
+    type RelatedSymbolPage,
+} from '@/features/agent-chat';
 import { cn } from '@/shared/lib/cn';
 import { AgentMarkdown } from './AgentMarkdown';
+import { ArrowUpRightIcon } from './icons';
+import { SiglensMark } from './SiglensMark';
 import { ToolActivity } from './ToolActivity';
 
 interface Props {
@@ -12,6 +18,9 @@ interface Props {
     readonly streaming: boolean;
     readonly onRegenerate: () => void;
     readonly onEdit: (seq: number, text: string) => void;
+    /** Main-site origin + locale prefix, for the "open on siglens" links under an answer. */
+    readonly siteUrl: string;
+    readonly localePrefix: string;
 }
 
 /** Small inline text action under a message. 32px tall so a row of them stays quiet but still hits the finger-target minimum with its padding. */
@@ -20,14 +29,36 @@ const ACTION =
 
 const COPIED_RESET_MS = 1_500;
 
-function AssistantMark() {
+interface RelatedPagesProps {
+    readonly pages: RelatedSymbolPage[];
+    readonly siteUrl: string;
+    readonly localePrefix: string;
+}
+
+/**
+ * The way back to siglens.io from an answer: the symbol pages the agent read,
+ * as quiet links under the text. A hook, not a banner — it only appears when
+ * the answer was about a symbol, and only for symbols actually looked up.
+ */
+function RelatedPages({ pages, siteUrl, localePrefix }: RelatedPagesProps) {
+    const t = useTranslations('widgets.agent-chat');
+    if (pages.length === 0) return null;
     return (
-        <span
-            aria-hidden="true"
-            className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-primary-600 text-[11px] font-semibold text-white select-none"
+        <nav
+            aria-label={t('MessageList.relatedPages')}
+            className="mt-4 flex flex-wrap items-center gap-1.5"
         >
-            AI
-        </span>
+            {pages.map(page => (
+                <a
+                    key={page.symbol}
+                    href={`${siteUrl}${localePrefix}/${encodeURIComponent(page.symbol)}${page.tab ? `/${page.tab}` : ''}`}
+                    className="inline-flex min-h-8 items-center gap-1 rounded-full border border-border-control px-2.5 text-xs text-secondary-300 hover:border-primary-400 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                >
+                    {t('MessageList.openOnSiglens', { symbol: page.symbol })}
+                    <ArrowUpRightIcon className="size-3" />
+                </a>
+            ))}
+        </nav>
     );
 }
 
@@ -64,6 +95,8 @@ export function MessageList({
     streaming,
     onRegenerate,
     onEdit,
+    siteUrl,
+    localePrefix,
 }: Props) {
     const t = useTranslations('widgets.agent-chat');
     const [pinned, setPinned] = useState(true);
@@ -230,7 +263,7 @@ export function MessageList({
                             className="group flex flex-col"
                         >
                             <div className="flex items-start gap-3">
-                                <AssistantMark />
+                                <SiglensMark className="mt-0.5" />
                                 <div
                                     // Scoped to the one turn that is actually changing — an
                                     // `aria-live` on the whole log re-announces the entire
@@ -264,6 +297,13 @@ export function MessageList({
                                         <p className="mt-2 text-xs text-ui-warning-text">
                                             {t('MessageList.259976')}
                                         </p>
+                                    ) : null}
+                                    {!isStreaming && m.content ? (
+                                        <RelatedPages
+                                            pages={relatedSymbolPages(m.tools)}
+                                            siteUrl={siteUrl}
+                                            localePrefix={localePrefix}
+                                        />
                                     ) : null}
                                 </div>
                             </div>

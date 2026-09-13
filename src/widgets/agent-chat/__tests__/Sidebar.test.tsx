@@ -37,7 +37,16 @@ describe('Sidebar', () => {
     });
 
     it('focuses the rename input when entering rename mode, and returns focus to the ✎ button on Escape', () => {
-        wrap(<Sidebar items={items} activeId={null} localePrefix="" />);
+        wrap(
+            <Sidebar
+                signedIn
+                loginHref="/login"
+                siteUrl="https://siglens.io"
+                items={items}
+                activeId={null}
+                localePrefix=""
+            />
+        );
         const renameButton = screen.getByRole('button', { name: '이름 변경' });
         fireEvent.click(renameButton);
         const input = screen.getByRole('textbox', { name: '대화 이름' });
@@ -49,7 +58,16 @@ describe('Sidebar', () => {
     });
 
     it('does not cancel the rename when focus merely moves away (no onBlur cancel)', () => {
-        wrap(<Sidebar items={items} activeId={null} localePrefix="" />);
+        wrap(
+            <Sidebar
+                signedIn
+                loginHref="/login"
+                siteUrl="https://siglens.io"
+                items={items}
+                activeId={null}
+                localePrefix=""
+            />
+        );
         fireEvent.click(screen.getByRole('button', { name: '이름 변경' }));
         const input = screen.getByRole('textbox', { name: '대화 이름' });
         fireEvent.change(input, { target: { value: 'Renamed' } });
@@ -61,14 +79,32 @@ describe('Sidebar', () => {
     });
 
     it('requires a confirmation click before deleting (does not delete on the first click)', () => {
-        wrap(<Sidebar items={items} activeId={null} localePrefix="" />);
+        wrap(
+            <Sidebar
+                signedIn
+                loginHref="/login"
+                siteUrl="https://siglens.io"
+                items={items}
+                activeId={null}
+                localePrefix=""
+            />
+        );
         fireEvent.click(screen.getByRole('button', { name: '삭제' }));
         expect(deleteConversationAction).not.toHaveBeenCalled();
         expect(screen.getByText(/정말 삭제할까요/)).toBeInTheDocument();
     });
 
     it('deletes only after the confirmation click', async () => {
-        wrap(<Sidebar items={items} activeId={null} localePrefix="" />);
+        wrap(
+            <Sidebar
+                signedIn
+                loginHref="/login"
+                siteUrl="https://siglens.io"
+                items={items}
+                activeId={null}
+                localePrefix=""
+            />
+        );
         fireEvent.click(screen.getByRole('button', { name: '삭제' }));
         const confirmButtons = screen.getAllByRole('button', { name: '삭제' });
         fireEvent.click(confirmButtons[confirmButtons.length - 1]!);
@@ -78,7 +114,16 @@ describe('Sidebar', () => {
     });
 
     it('cancelling the delete confirmation does not call the action', () => {
-        wrap(<Sidebar items={items} activeId={null} localePrefix="" />);
+        wrap(
+            <Sidebar
+                signedIn
+                loginHref="/login"
+                siteUrl="https://siglens.io"
+                items={items}
+                activeId={null}
+                localePrefix=""
+            />
+        );
         fireEvent.click(screen.getByRole('button', { name: '삭제' }));
         fireEvent.click(screen.getByRole('button', { name: '취소' }));
         expect(screen.queryByText(/정말 삭제할까요/)).toBeNull();
@@ -101,7 +146,14 @@ describe('Sidebar', () => {
             });
             try {
                 wrap(
-                    <Sidebar items={many} activeId="yday" localePrefix="/en" />
+                    <Sidebar
+                        signedIn
+                        loginHref="/login"
+                        siteUrl="https://siglens.io"
+                        items={many}
+                        activeId="yday"
+                        localePrefix="/en"
+                    />
                 );
                 expect(screen.getByText('오늘')).toBeInTheDocument();
                 expect(screen.getByText('어제')).toBeInTheDocument();
@@ -125,13 +177,29 @@ describe('Sidebar', () => {
 
         it('shows an empty message with no conversations and a no-match message when the filter hits nothing', () => {
             const { unmount } = wrap(
-                <Sidebar items={[]} activeId={null} localePrefix="" />
+                <Sidebar
+                    signedIn
+                    loginHref="/login"
+                    siteUrl="https://siglens.io"
+                    items={[]}
+                    activeId={null}
+                    localePrefix=""
+                />
             );
             expect(
                 screen.getByText('아직 대화가 없습니다.')
             ).toBeInTheDocument();
             unmount();
-            wrap(<Sidebar items={items} activeId={null} localePrefix="" />);
+            wrap(
+                <Sidebar
+                    signedIn
+                    loginHref="/login"
+                    siteUrl="https://siglens.io"
+                    items={items}
+                    activeId={null}
+                    localePrefix=""
+                />
+            );
             fireEvent.change(
                 screen.getByRole('searchbox', { name: '대화 검색' }),
                 {
@@ -143,5 +211,29 @@ describe('Sidebar', () => {
             ).toBeInTheDocument();
             expect(screen.queryByRole('link', { name: 'My chat' })).toBeNull();
         });
+    });
+
+    it('guest: no list or search — a sign-in panel, plus legal links back to siglens.io', () => {
+        wrap(
+            <Sidebar
+                signedIn={false}
+                loginHref="https://siglens.io/login?next=x"
+                siteUrl="https://siglens.io"
+                items={[]}
+                activeId={null}
+                localePrefix="/en"
+            />
+        );
+        expect(screen.queryByRole('searchbox')).toBeNull();
+        expect(
+            screen.getByRole('link', { name: '로그인하고 시작하기' })
+        ).toHaveAttribute('href', 'https://siglens.io/login?next=x');
+        expect(screen.getByRole('link', { name: '이용약관' })).toHaveAttribute(
+            'href',
+            'https://siglens.io/en/terms'
+        );
+        expect(
+            screen.getByRole('link', { name: '개인정보처리방침' })
+        ).toHaveAttribute('href', 'https://siglens.io/en/privacy');
     });
 });

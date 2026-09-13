@@ -14,16 +14,55 @@ import {
 } from '@/features/agent-chat';
 import { cn } from '@/shared/lib/cn';
 import { LABEL_KO } from '@/shared/lib/typographyStyles';
+import { ArrowUpRightIcon, PencilIcon, PlusIcon, TrashIcon } from './icons';
 
 interface Props {
     readonly items: ConversationListItem[];
     readonly activeId: string | null;
     readonly localePrefix: string;
+    readonly signedIn: boolean;
+    readonly loginHref: string;
+    /** Main-site origin, for the legal links and the way back to siglens.io. */
+    readonly siteUrl: string;
+}
+
+interface RailFooterProps {
+    readonly siteUrl: string;
+    readonly localePrefix: string;
+}
+
+/**
+ * Bottom of the rail: the ai host has no site footer, so the terms, the
+ * privacy policy and the way back to siglens.io live here.
+ */
+function RailFooter({ siteUrl, localePrefix }: RailFooterProps) {
+    const t = useTranslations('widgets.agent-chat');
+    const link =
+        'rounded px-1 py-1 hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
+    return (
+        <div className="border-t border-secondary-700 px-1 pt-3 text-xs text-secondary-400">
+            <a
+                href={`${siteUrl}${localePrefix}/`}
+                className={cn(link, 'inline-flex items-center gap-1')}
+            >
+                {t('Sidebar.backToSiglens')}
+                <ArrowUpRightIcon className="size-3" />
+            </a>
+            <p className="mt-1 flex flex-wrap gap-x-2">
+                <a href={`${siteUrl}${localePrefix}/terms`} className={link}>
+                    {t('Sidebar.terms')}
+                </a>
+                <a href={`${siteUrl}${localePrefix}/privacy`} className={link}>
+                    {t('Sidebar.privacy')}
+                </a>
+            </p>
+        </div>
+    );
 }
 
 /** Icon-only row actions: reachable at all times, but on wide screens they fade in on hover/focus so the list reads as a list. */
 const ROW_ACTION =
-    'inline-flex size-7 shrink-0 items-center justify-center rounded text-xs text-secondary-400 hover:bg-secondary-700 hover:text-secondary-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100';
+    'inline-flex size-7 shrink-0 items-center justify-center rounded text-secondary-400 hover:bg-secondary-700 hover:text-secondary-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100';
 
 /**
  * Conversation rail. Grouped by day the way chat products do, with rename and
@@ -31,7 +70,14 @@ const ROW_ACTION =
  * The rail's own controls are quiet by design: the conversation column is the
  * product, this is its table of contents.
  */
-export function Sidebar({ items, activeId, localePrefix }: Props) {
+export function Sidebar({
+    items,
+    activeId,
+    localePrefix,
+    signedIn,
+    loginHref,
+    siteUrl,
+}: Props) {
     const t = useTranslations('widgets.agent-chat');
     const router = useRouter();
     const [filter, setFilter] = useState('');
@@ -72,6 +118,34 @@ export function Sidebar({ items, activeId, localePrefix }: Props) {
         renameTriggerRef.current?.focus();
     }
 
+    if (!signedIn) {
+        // A guest has no history to list; say what signing in gets them
+        // instead of rendering an empty search box over "no conversations".
+        return (
+            <nav
+                aria-label={t('Sidebar.9a7569')}
+                className="flex h-full flex-col gap-3 p-3"
+            >
+                <div className="rounded-lg border border-secondary-700 bg-secondary-800 p-4">
+                    <p className="text-sm font-medium text-secondary-100">
+                        {t('Sidebar.guestTitle')}
+                    </p>
+                    <p className="mt-1.5 text-xs leading-5 text-secondary-400">
+                        {t('Sidebar.guestBody')}
+                    </p>
+                    <a
+                        href={loginHref}
+                        className="mt-3 inline-flex min-h-9 items-center rounded-lg bg-primary-600 px-3 text-xs font-medium text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    >
+                        {t('Sidebar.guestCta')}
+                    </a>
+                </div>
+                <div className="flex-1" />
+                <RailFooter siteUrl={siteUrl} localePrefix={localePrefix} />
+            </nav>
+        );
+    }
+
     return (
         <nav
             aria-label={t('Sidebar.9a7569')}
@@ -79,11 +153,9 @@ export function Sidebar({ items, activeId, localePrefix }: Props) {
         >
             <a
                 href={`${localePrefix}/`}
-                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border-control px-3 text-sm font-medium text-secondary-100 hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border-control bg-secondary-800 px-3 text-sm font-medium text-secondary-100 hover:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
-                <span aria-hidden="true" className="text-secondary-400">
-                    +
-                </span>
+                <PlusIcon className="size-4 text-primary-400" />
                 {t('Sidebar.newChat')}
             </a>
             <input
@@ -93,7 +165,7 @@ export function Sidebar({ items, activeId, localePrefix }: Props) {
                 placeholder={t('Sidebar.4cbbe4')}
                 aria-label={t('Sidebar.4cbbe4')}
                 autoComplete="off"
-                className="min-h-9 rounded-lg border border-border-control bg-secondary-900 px-2.5 text-sm text-secondary-100 placeholder:text-secondary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                className="min-h-9 rounded-lg border border-border-control bg-transparent px-2.5 text-sm text-secondary-100 placeholder:text-secondary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             />
             <div className="min-h-0 flex-1 overflow-y-auto">
                 {groups.length === 0 ? (
@@ -119,9 +191,9 @@ export function Sidebar({ items, activeId, localePrefix }: Props) {
                                 <li
                                     key={item.id}
                                     className={cn(
-                                        'group flex min-h-9 items-center gap-0.5 rounded-lg pr-1 pl-2 text-sm',
+                                        'group relative flex min-h-9 items-center gap-0.5 rounded-lg pr-1 pl-2.5 text-sm',
                                         item.id === activeId
-                                            ? 'bg-secondary-800 text-secondary-100'
+                                            ? 'bg-secondary-800 text-secondary-100 before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-primary-400'
                                             : 'text-secondary-300 hover:bg-secondary-800 hover:text-secondary-100'
                                     )}
                                 >
@@ -221,9 +293,7 @@ export function Sidebar({ items, activeId, localePrefix }: Props) {
                                                 }}
                                                 className={ROW_ACTION}
                                             >
-                                                <span aria-hidden="true">
-                                                    ✎
-                                                </span>
+                                                <PencilIcon className="size-3.5" />
                                             </button>
                                             <button
                                                 type="button"
@@ -235,9 +305,7 @@ export function Sidebar({ items, activeId, localePrefix }: Props) {
                                                 }
                                                 className={ROW_ACTION}
                                             >
-                                                <span aria-hidden="true">
-                                                    ✕
-                                                </span>
+                                                <TrashIcon className="size-3.5" />
                                             </button>
                                         </>
                                     )}
@@ -247,6 +315,7 @@ export function Sidebar({ items, activeId, localePrefix }: Props) {
                     </section>
                 ))}
             </div>
+            <RailFooter siteUrl={siteUrl} localePrefix={localePrefix} />
         </nav>
     );
 }

@@ -8,7 +8,7 @@ describe('AiNavLink', () => {
     it('ko href는 AI_SITE_URL + localePath(ko, "/")', () => {
         render(<AiNavLink />);
 
-        const link = screen.getByRole('link', { name: 'SiglensAI' });
+        const link = screen.getByRole('link', { name: 'SiglensAI Beta' });
         expect(link).toHaveAttribute(
             'href',
             `${AI_SITE_URL}${localePath('ko', '/')}`
@@ -22,7 +22,7 @@ describe('AiNavLink', () => {
             </LocaleProvider>
         );
 
-        const link = screen.getByRole('link', { name: 'SiglensAI' });
+        const link = screen.getByRole('link', { name: 'SiglensAI Beta' });
         expect(link).toHaveAttribute(
             'href',
             `${AI_SITE_URL}${localePath('en', '/')}`
@@ -32,17 +32,16 @@ describe('AiNavLink', () => {
     it('브랜드명은 번역기 대상에서 뺀다(translate="no")', () => {
         render(<AiNavLink />);
 
-        expect(screen.getByRole('link', { name: 'SiglensAI' })).toHaveAttribute(
-            'translate',
-            'no'
-        );
+        expect(
+            screen.getByRole('link', { name: 'SiglensAI Beta' })
+        ).toHaveAttribute('translate', 'no');
     });
 
     it('기본은 aria-current를 달지 않는다(메인 호스트)', () => {
         render(<AiNavLink />);
 
         expect(
-            screen.getByRole('link', { name: 'SiglensAI' })
+            screen.getByRole('link', { name: 'SiglensAI Beta' })
         ).not.toHaveAttribute('aria-current');
     });
 
@@ -53,17 +52,16 @@ describe('AiNavLink', () => {
             </LocaleProvider>
         );
 
-        expect(screen.getByRole('link', { name: 'SiglensAI' })).toHaveAttribute(
-            'aria-current',
-            'page'
-        );
+        expect(
+            screen.getByRole('link', { name: 'SiglensAI Beta' })
+        ).toHaveAttribute('aria-current', 'page');
     });
 
     describe('wordmark variant (logo lockup)', () => {
-        it('shows only "AI" but keeps the full accessible name and the ai href', () => {
+        it('shows "AI" + the Beta tag but keeps the full accessible name and the ai href', () => {
             render(<AiNavLink variant="wordmark" />);
-            const link = screen.getByRole('link', { name: 'SiglensAI' });
-            expect(link).toHaveTextContent(/^AI$/);
+            const link = screen.getByRole('link', { name: 'SiglensAI Beta' });
+            expect(link).toHaveTextContent(/^AIBeta$/);
             expect(link).toHaveAttribute('translate', 'no');
             expect(link).toHaveAttribute(
                 'href',
@@ -80,7 +78,7 @@ describe('AiNavLink', () => {
                 </LocaleProvider>
             );
             expect(
-                screen.getByRole('link', { name: 'SiglensAI' })
+                screen.getByRole('link', { name: 'SiglensAI Beta' })
             ).toHaveAttribute('aria-current', 'page');
         });
     });

@@ -12,3 +12,8 @@ export {
     type ConversationGroup,
     type ConversationGroupKey,
 } from './lib/groupConversationsByDay';
+export {
+    relatedSymbolPages,
+    type RelatedSymbolPage,
+    type SymbolTab,
+} from './lib/relatedSymbolPages';

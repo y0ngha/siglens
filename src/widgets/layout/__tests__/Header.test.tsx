@@ -106,8 +106,8 @@ describe('Header', () => {
     describe('SIGLENS AI logo lockup', () => {
         it('main host: the AI wordmark next to the logo links to the AI product; the logo goes home', () => {
             render(<Header currentUser={null} />);
-            const ai = screen.getByRole('link', { name: 'SiglensAI' });
-            expect(ai).toHaveTextContent(/^AI$/);
+            const ai = screen.getByRole('link', { name: 'SiglensAI Beta' });
+            expect(ai).toHaveTextContent(/^AIBeta$/);
             expect(ai).toHaveAttribute('href', `${AI_SITE_URL}/`);
             expect(ai).not.toHaveAttribute('aria-current');
             const logo = screen.getByTitle('홈으로');
@@ -117,7 +117,7 @@ describe('Header', () => {
             expect(logo).toHaveAttribute('aria-label', 'SIGLENS 홈');
             // No duplicate entry in the desktop nav: the lockup is the entry point.
             expect(
-                screen.getAllByRole('link', { name: 'SiglensAI' })
+                screen.getAllByRole('link', { name: 'SiglensAI Beta' })
             ).toHaveLength(1);
         });
 
@@ -128,7 +128,7 @@ describe('Header', () => {
                 </LocaleProvider>
             );
             expect(
-                screen.getByRole('link', { name: 'SiglensAI' })
+                screen.getByRole('link', { name: 'SiglensAI Beta' })
             ).toHaveAttribute('aria-current', 'page');
             const logo = screen.getByTitle('홈으로');
             expect(

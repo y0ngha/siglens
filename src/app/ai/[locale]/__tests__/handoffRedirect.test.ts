@@ -2,11 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const m = vi.hoisted(() => ({
     cookieValue: undefined as string | undefined,
+    userAgent: 'Mozilla/5.0 (Macintosh) Chrome/140.0 Safari/537.36',
     redirect: vi.fn((url: string) => {
         throw new Error(`NEXT_REDIRECT:${url}`);
     }),
 }));
 vi.mock('next/headers', () => ({
+    headers: async () => new Headers({ 'user-agent': m.userAgent }),
     cookies: async () => ({
         get: (name: string) =>
             name === 'siglens_session' && m.cookieValue !== undefined
@@ -22,6 +24,23 @@ describe('maybeHandoffRedirect', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         m.cookieValue = undefined;
+        m.userAgent = 'Mozilla/5.0 (Macintosh) Chrome/140.0 Safari/537.36';
+    });
+
+    it('crawler UA → no redirect, so the landing itself is what gets indexed', async () => {
+        m.userAgent =
+            'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
+        await maybeHandoffRedirect('ko', '/', {});
+        expect(m.redirect).not.toHaveBeenCalled();
+    });
+
+    it('carries a prefilled ?q= through next', async () => {
+        await expect(
+            maybeHandoffRedirect('en', '/', { q: 'NVDA 어때?' })
+        ).rejects.toThrow('NEXT_REDIRECT');
+        expect(m.redirect).toHaveBeenCalledWith(
+            `/api/auth/handoff/start?next=${encodeURIComponent(`/en?q=${encodeURIComponent('NVDA 어때?')}`)}`
+        );
     });
 
     it('no session and no sso=none → redirects to the same-host start route with a locale-prefixed next', async () => {

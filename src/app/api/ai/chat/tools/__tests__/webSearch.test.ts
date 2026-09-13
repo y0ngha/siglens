@@ -264,6 +264,37 @@ describe('web_search (Brave + Naver)', () => {
         expect(out.results).toHaveLength(3);
     });
 
+    it('Brave titles and snippets are cleaned of highlight markup before the model sees them', async () => {
+        vi.stubEnv('BRAVE_SEARCH_API_KEY', 'b');
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    web: {
+                        results: [
+                            {
+                                title: '<strong>NVDA</strong> news',
+                                url: 'https://w/1',
+                                description: 'Nvidia <strong>leads</strong> AI',
+                            },
+                        ],
+                    },
+                }),
+                { status: 200, headers: { 'content-type': 'application/json' } }
+            )
+        );
+        const out = (await webSearchTool(
+            { query: 'NVDA news' },
+            ctx('en'),
+            rt
+        )) as {
+            results: Array<{ title: string; snippet: string }>;
+        };
+        expect(out.results[0]).toMatchObject({
+            title: 'NVDA news',
+            snippet: 'Nvidia leads AI',
+        });
+    });
+
     it('English query never calls Naver even with credentials; Brave only', async () => {
         vi.stubEnv('BRAVE_SEARCH_API_KEY', 'b');
         naver.creds = true;
