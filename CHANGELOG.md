@@ -1,5 +1,60 @@
 # Changelog
 
+# [0.74.0](https://github.com/y0ngha/siglens/compare/v0.73.0...v0.74.0) (2026-09-13)
+
+
+### Bug Fixes
+
+* **ai:** 누락된 busyLog.ts 추가 — AGENT_BUSY_LOG 마커 모듈 ([8e72d0d](https://github.com/y0ngha/siglens/commit/8e72d0dcd370f1551a4421589d28f1159ccf4357))
+* **ai:** 답변 시각을 브라우저 시간대로, 비회원 답변 중복 React key 수정 ([4646eb1](https://github.com/y0ngha/siglens/commit/4646eb1069544049572fd8432040a3cc1cb9fa65))
+* **ai:** 새 대화 첫 턴의 router.refresh()를 스트림 종료 뒤로 미루고 훅 선언 순서 정리 ([3c3eafc](https://github.com/y0ngha/siglens/commit/3c3eafc07beed979b9246649d537cc203b6c139b)), closes [#802](https://github.com/y0ngha/siglens/issues/802)
+* **ai:** 저장 분석을 언어와 무관하게 쓰고, 원문·평이화가 잘리지 않게 한다 ([15b9562](https://github.com/y0ngha/siglens/commit/15b95623ce43231c781853d3904d46c02d893f6f))
+* **ai:** 존재하지 않는 border-control 클래스와 next/link 직접 import 수정 ([a4821dd](https://github.com/y0ngha/siglens/commit/a4821dd6204ea7ddf157b46b27051b8aad62f7e7))
+* **ai:** 콘솔 경고 2건과 E2E_TEST에 묶인 프로바이더 선택 분리 ([7d8dc93](https://github.com/y0ngha/siglens/commit/7d8dc9327a882c3ce4b43ca79c3a4e3dabfbf4e4))
+* **ai:** 툴 호출 전 내레이션을 버리고, 실제 프로바이더 dev에서 web_search 허용 ([b27a0c9](https://github.com/y0ngha/siglens/commit/b27a0c99704098275691e2c57d31cdebb09bd96d))
+* **ai:** PR [#802](https://github.com/y0ngha/siglens/issues/802) 리뷰 블로커 4건과 CI 실패 3건 수정 ([ddde1da](https://github.com/y0ngha/siglens/commit/ddde1da3ad6f5ec7cb1d4fb26b3d142148c75b01))
+* **ai:** PR [#804](https://github.com/y0ngha/siglens/issues/804) Suggestion 2건 — ai 호스트 로고 접근성 이름·로그인 복귀 경로 ([2628699](https://github.com/y0ngha/siglens/commit/2628699fbccaff2ce790ff9b20c2f71291652eda))
+* **ai:** PR [#809](https://github.com/y0ngha/siglens/issues/809) 리뷰 반영 — guestHistory lib 분리·named type, 요청 이력 타입 가드, login_required 정확 매칭, 게스트 한도 문구 파라미터화·드리프트 테스트, guestSubject 테스트 ([8879f94](https://github.com/y0ngha/siglens/commit/8879f9410c05e213065b0bfb32f50c0659695ce0))
+* **ai:** PR [#809](https://github.com/y0ngha/siglens/issues/809) 제안 반영 — toolResultError 테스트, Body.history 필수화, 공유 IP 트레이드오프 문서화 ([b59e900](https://github.com/y0ngha/siglens/commit/b59e900a36549fca48fbf2bf5f2c00da53ff635e))
+* **ai:** PR [#810](https://github.com/y0ngha/siglens/issues/810) 리뷰 반영 — 랜딩 카드 제목 HEADING_SUBSECTION, 정적 COUNTS, 목록 문구 인덱스 키 ([884f4ad](https://github.com/y0ngha/siglens/commit/884f4ad02f54318a0318a7e123b72ec87bfb1658))
+* **ai:** PR [#810](https://github.com/y0ngha/siglens/issues/810) 리뷰 반영 — API.md 스트림 에러표·비회원 경로, 백스탑 카운터 반환 타입·설정 테스트, 드리프트 테스트, SURFACE_CARD·toSorted 정리 ([f592f14](https://github.com/y0ngha/siglens/commit/f592f14cb55f924a3182871b684cb7d9fe972bfd))
+* **ai:** PR [#811](https://github.com/y0ngha/siglens/issues/811) 리뷰 반영 — 게스트 쿠키 HMAC 서명(위조 차단), 세션 쿠키 유무와 무관하게 발급, 타입 단언 제거 ([82dc030](https://github.com/y0ngha/siglens/commit/82dc030bca810aa138b4cbc3d15b3086c533d606))
+* **ai:** PR [#811](https://github.com/y0ngha/siglens/issues/811) 리뷰 반영 — browserTimeZone lib 분리·테스트, 테스트 분리 ([7e82a81](https://github.com/y0ngha/siglens/commit/7e82a8167444da29a346a003972f39135e5a2547))
+* **api/ai:** 턴 도중 대화가 삭제되면 not_found로 끝낸다 ([a03b4c0](https://github.com/y0ngha/siglens/commit/a03b4c067826a1298745c7d2c9d038037d12e3b7))
+* **auth:** next 경로의 점 세그먼트·로케일 strip 오픈 리다이렉트 차단 ([449b294](https://github.com/y0ngha/siglens/commit/449b294ca3337f8b4a5baad26dbf7458a6c7dd40))
+* **build:** PR [#800](https://github.com/y0ngha/siglens/issues/800) 리뷰 반영 — Yahoo 차단, core Upstash 우회 차단, 가드 헬퍼 통합 ([07008ca](https://github.com/y0ngha/siglens/commit/07008ca4af1517aaeb29d21ebdc8be1f4e00e069))
+* **chat-conversation:** 대화 삭제를 하드 삭제로 바꾸고 0035를 재생성 ([774c036](https://github.com/y0ngha/siglens/commit/774c0360f0b6b6c1bfeccac4a463b2fe2c175825))
+* **i18n:** localePath가 // 경로를 만들지 않게 하고 /api 경로는 접두 없이 통과 ([181b615](https://github.com/y0ngha/siglens/commit/181b6158a6c4eb37929763b65517c9b0b9cadc57))
+
+
+### Features
+
+* **ai:** 대화 화면 릴리즈 디자인 — Composer·메시지·도구 활동·빈 화면·사이드바·스켈레톤 ([839c4b6](https://github.com/y0ngha/siglens/commit/839c4b675129d17e8aea026a746ded0702ecbb5f))
+* **ai:** 비회원 SIGLENS AI 사용·로그인 안내, 헤더 폰트 통일, SIGLENS 표기, 만료 세션 쿠키 정리 ([d778fd9](https://github.com/y0ngha/siglens/commit/d778fd98bb321939966703e9a550f5b04b9b0dcf))
+* **ai:** 새 분석 결과 12,000자 한도 공유·답변 최대 8,192토큰, 푸터 SIGLENS AI 링크, 소개 페이지 운영비 문구 ([a7c0699](https://github.com/y0ngha/siglens/commit/a7c0699b1a20b2cdcb88d2250f0793a84fbb585c))
+* **ai:** 에이전트 스냅샷은 언어와 무관하게 가장 최신 분석을 고른다 + PR [#808](https://github.com/y0ngha/siglens/issues/808) 리뷰 반영 ([6fc151f](https://github.com/y0ngha/siglens/commit/6fc151f762aac3e69769e72f734bc40f7a307dd0))
+* **ai:** 첫 화면 제안 질문을 AI 생성으로 (로케일 1h 캐시·보유종목 개인화) + core 1.2.0 ([964c2c5](https://github.com/y0ngha/siglens/commit/964c2c522d24b4fa37d1136fd3a2328d48e44ffe))
+* **ai:** 쿠키 기반 비회원 한도, SEO 문구·랜딩 섹션, 답변 표시 개선, 헤더 로고 분리 ([1b16034](https://github.com/y0ngha/siglens/commit/1b16034842a07da9fc10d384d6b3cc3d3257cedb))
+* **ai:** AI 채팅 API 보호 — Origin 검증·페이지 발급 게스트 쿠키 필수, ai 호스트 robots에 /api/ 차단 ([c54a890](https://github.com/y0ngha/siglens/commit/c54a890a75301a245d89d8c9b47bdf00148426ef))
+* **ai:** ai 호스트가 메인 헤더를 공유(테마·언어·검색·계정 메뉴 포함) ([263cc22](https://github.com/y0ngha/siglens/commit/263cc220be987384e5b1e17ebf8c9b00342b6cb6))
+* **ai:** core 1.4.0 — 분석·웹 검색 무제한(비회원 포함)·회원 턴 무제한, 새 분석 동시 10·결과 12,000자, busy·Brave 예산 알람 ([8e10cbc](https://github.com/y0ngha/siglens/commit/8e10cbc9697fec34f528b8959543eb7baf9aaab3))
+* **ai:** SiglensAI 챗 UI·페이지·SSO 랜딩·i18n ([caac5e7](https://github.com/y0ngha/siglens/commit/caac5e7601dea58dca349251fce13334fa825f1b))
+* **ai:** SiglensAI Beta 마감 — SEO·브랜드 디자인·동선·Beta 표시·답변 위생·약관 ([5627806](https://github.com/y0ngha/siglens/commit/5627806f284bdecce8e0a8afa14b0243c4011cdb))
+* **ai:** web_search를 Brave(범용) + 네이버 뉴스(한국어 질의) 합성으로 ([70e0b2f](https://github.com/y0ngha/siglens/commit/70e0b2f24e00c082642a0fccfa30615c48ec99ab))
+* **ai:** web_search에 네이버 웹문서(webkr) 추가, 에이전트 전용 NCP 키로 분리 ([f95c719](https://github.com/y0ngha/siglens/commit/f95c719c552ab2a0578dc845839ffef978fe3eba))
+* **api/ai:** 사용자별 턴 락·에이전트 카운터·티어 해석 ([3f55d55](https://github.com/y0ngha/siglens/commit/3f55d55deb037c7d3207aeb48214a5740e5b3f0f))
+* **api/ai:** 에이전트 SSE 라우트와 증분 writer ([43bac98](https://github.com/y0ngha/siglens/commit/43bac983d17a586f741c48ac7d19eae14bf2f9ba))
+* **api/ai:** 툴 실행기 7종(검색·시세·봉/지표·캐시 분석·뉴스·옵션·포트폴리오)과 절단 규칙 ([256024a](https://github.com/y0ngha/siglens/commit/256024a5acc9cbc06e15cb8c6c96d7bc66bd5444))
+* **api/ai:** run_fresh_analysis·web_search 실행기와 미목킹 fetch 차단 ([e5946d9](https://github.com/y0ngha/siglens/commit/e5946d9dbdef9a818afbec00e5035565103c3bdb))
+* **auth:** ai.siglens.io SSO 핸드오프(1회용 코드 + state 바인딩) ([3756a02](https://github.com/y0ngha/siglens/commit/3756a02cb6e9896a070e83a073b809abb92e18b7))
+* **chat-conversation:** 대화·메시지 스키마(0035)·리포지토리·서버 액션 ([b05f735](https://github.com/y0ngha/siglens/commit/b05f735d341c064fcefc7c6cffd22f10dffb9de0))
+* **i18n:** 링크 베이스 컨텍스트로 공유 헤더 링크를 호스트 인식으로 ([cdd2e11](https://github.com/y0ngha/siglens/commit/cdd2e113a311810924d5c6d46bad352395dc1d21))
+* **layout:** 로고 락업 "SIGLENS AI" — AI 워드마크가 ai.siglens.io 진입점 ([bad4993](https://github.com/y0ngha/siglens/commit/bad4993da56073f71d15addb3dda130a6bfb9034))
+* **layout:** 메인 헤더에 SiglensAI 진입점과 authNext 추가 ([5eb4ee9](https://github.com/y0ngha/siglens/commit/5eb4ee98ce4f1f18f8d627df32bf76ebe20f7dc5))
+* **llm-provider:** DeepSeek 에이전트 어댑터·고정 모델 라우터·E2E fake ([9db26aa](https://github.com/y0ngha/siglens/commit/9db26aa87b046d08e64782b94ea364756a1e4fa4))
+* **observability:** 에이전트 알람·런북·API 문서와 개인정보 고지 v4 ([ecc9dbd](https://github.com/y0ngha/siglens/commit/ecc9dbda235375cac2e6947c217599169f223b1e))
+* **proxy:** ai.siglens.io 호스트 분기·robots·CSP·sitemap 404, 메인 /ai 301 ([bab29ea](https://github.com/y0ngha/siglens/commit/bab29eaca0cd085ef5a7d834d16ec7b32ec945f8))
+
 # [0.73.0](https://github.com/y0ngha/siglens/compare/v0.72.0...v0.73.0) (2026-09-11)
 
 
