@@ -245,4 +245,27 @@ describe('tool registry', () => {
             )
         ).not.toHaveProperty('truncated');
     });
+
+    it('경계값: 남은 예산이 정확히 12,000자면 12,000자 결과가 통과, 예산이 바닥이어도 4,000자까지는 온전하다', async () => {
+        const sized = (n: number) => ({ a: 'x'.repeat(n - '{"a":""}'.length) });
+        const exec = createToolExecutor({
+            analysisModel: 'deepseek-v4.1-flash',
+        });
+        const call = () =>
+            exec(
+                'get_cached_analysis',
+                { symbol: 'AAPL', tab: 'overall' },
+                makeCtx()
+            );
+        // 24,000 − 12,000 = exactly 12,000 left.
+        getCachedAnalysis.mockResolvedValueOnce(sized(12_000));
+        expect(JSON.stringify(await call())).toHaveLength(12_000);
+        getCachedAnalysis.mockResolvedValueOnce(sized(12_000));
+        expect(await call()).not.toHaveProperty('truncated');
+        // Budget is now 0: the floor is the default 4,000.
+        getCachedAnalysis.mockResolvedValueOnce(sized(4_000));
+        expect(await call()).not.toHaveProperty('truncated');
+        getCachedAnalysis.mockResolvedValueOnce(sized(4_001));
+        expect(await call()).toMatchObject({ truncated: true });
+    });
 });

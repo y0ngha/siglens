@@ -124,26 +124,63 @@ describe('DrizzleSeoSnapshotRepository.findBySymbol', () => {
         await expect(repo.findBySymbol('AAPL', 'ko')).resolves.toEqual([]);
     });
 
-    it('anyLocale keeps the closest row in any language: requested → ko → the rest', async () => {
+    it('anyLocale picks the freshest row per tab in any language — a newer ja row beats an older ko row for a ko asker', async () => {
+        const older = new Date('2026-09-10T00:00:00.000Z');
+        const newer = new Date('2026-09-12T00:00:00.000Z');
         const rows = [
-            { ...snapshotRow, locale: 'zh', content: { v: 'zh' } },
-            { ...snapshotRow, locale: 'ko', content: { v: 'ko' } },
-            { ...snapshotRow, tab: 'news', locale: 'ja', content: { v: 'ja' } },
+            {
+                ...snapshotRow,
+                locale: 'ko',
+                generatedAt: older,
+                content: { v: 'ko-old' },
+            },
+            {
+                ...snapshotRow,
+                locale: 'ja',
+                generatedAt: newer,
+                content: { v: 'ja-new' },
+            },
+            {
+                ...snapshotRow,
+                tab: 'news',
+                locale: 'zh',
+                generatedAt: older,
+                content: { v: 'zh-only' },
+            },
         ];
         const repo = new DrizzleSeoSnapshotRepository(
             makeFindBySymbolDb(rows).db
         );
 
-        const en = await repo.findBySymbol('AAPL', 'en', { anyLocale: true });
-        expect(en.find(s => s.tab === 'technical')?.content).toEqual({
-            v: 'ko',
+        const ko = await repo.findBySymbol('AAPL', 'ko', { anyLocale: true });
+        expect(ko).toHaveLength(2);
+        expect(ko.find(s => s.tab === 'technical')?.content).toEqual({
+            v: 'ja-new',
         });
-        // A ja-only tab is still returned to a ko/en asker.
-        expect(en.find(s => s.tab === 'news')?.content).toEqual({ v: 'ja' });
-        const zh = await repo.findBySymbol('AAPL', 'zh', { anyLocale: true });
-        expect(zh.find(s => s.tab === 'technical')?.content).toEqual({
-            v: 'zh',
+        // A zh-only tab is still returned to a ko asker.
+        expect(ko.find(s => s.tab === 'news')?.content).toEqual({
+            v: 'zh-only',
         });
+    });
+
+    it('anyLocale breaks an exact generatedAt tie by requested language, then Korean', async () => {
+        const rows = [
+            { ...snapshotRow, locale: 'zh', content: { v: 'zh' } },
+            { ...snapshotRow, locale: 'ko', content: { v: 'ko' } },
+            { ...snapshotRow, locale: 'en', content: { v: 'en' } },
+        ];
+        const repo = new DrizzleSeoSnapshotRepository(
+            makeFindBySymbolDb(rows).db
+        );
+
+        expect(
+            (await repo.findBySymbol('AAPL', 'en', { anyLocale: true }))[0]
+                ?.content
+        ).toEqual({ v: 'en' });
+        expect(
+            (await repo.findBySymbol('AAPL', 'ja', { anyLocale: true }))[0]
+                ?.content
+        ).toEqual({ v: 'ko' });
     });
 
     it('returns an empty array when no snapshots exist', async () => {

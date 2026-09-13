@@ -178,7 +178,8 @@ export const getCachedAnalysisTool: ToolExecutor = async (
     const snapshot =
         // Any language: the model answers in the user's language regardless of
         // what the analysis was written in (verified on Korean snapshots with
-        // en/ja/zh questions), so a Japanese-only row still beats a fresh run.
+        // en/ja/zh questions), so the freshest row per tab wins in any language
+        // and a Japanese-only row still beats a fresh run.
         (
             await new DrizzleSeoSnapshotRepository(db).findBySymbol(
                 symbol,

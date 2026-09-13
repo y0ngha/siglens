@@ -303,7 +303,8 @@ error       {code, message}   -- code: turn_limit|premium_turn_limit(1차 도달
 ## 7. 툴 카탈로그 (1차 9종)
 
 스키마는 core `domain/agent/tools.ts`, 실행기는 `app/api/ai/chat/tools/`. 반환마다 `{ asOf, source, currency?, decimals? }` 메타.
-**절단 규칙은 하나**: 실행기가 4,000자로 자르고 `truncated:true` 표시. DB·모델·UI가 같은 문자열을 본다. 실행기 게이트에서 `isAdmissibleSymbolShape`로 심볼 형태 검증.
+**절단 규칙은 하나**: 실행기가 4,000자로 자르고 `truncated:true` 표시. DB·모델·UI가 같은 문자열을 본다.
+> **예외(2026-09-13, PR #808)**: `get_cached_analysis`만 호출당 최대 12,000자, 턴당 24,000자 예산(소진 뒤 기본 4,000자). 운영 스냅샷 실측에서 인기 7건 중 3건이 4,000자를 넘어(NVDA 종합 8,297자) 원문이 앞부분만 남았기 때문이다. 값·근거는 `app/api/ai/chat/tools/truncate.ts`의 `CACHED_ANALYSIS_MAX_CHARS`. 실행기 게이트에서 `isAdmissibleSymbolShape`로 심볼 형태 검증.
 
 | 툴 | 인자 | 소스(실측 함수) | 비고 |
 |---|---|---|---|
