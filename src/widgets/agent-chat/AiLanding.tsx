@@ -3,8 +3,11 @@
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { GUEST_TURNS_PER_DAY, MEMBER_TURNS_PER_DAY } from './guestTurnLimit';
+import {
+    HEADING_SECTION,
+    HEADING_SUBSECTION,
+} from '@/shared/lib/typographyStyles';
+import { GUEST_TURNS_PER_DAY } from './guestTurnLimit';
 import { ArrowUpRightIcon } from './icons';
 
 interface Props {
@@ -15,6 +18,7 @@ interface Props {
 const SECTION = 'border-t border-secondary-700 pt-8';
 const LINK =
     'group inline-flex min-h-11 items-center justify-between gap-3 rounded-lg px-3 text-sm text-secondary-200 hover:bg-secondary-800 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
+const COUNTS = { guest: GUEST_TURNS_PER_DAY };
 
 /**
  * The part of the first screen written for people arriving from search:
@@ -27,7 +31,6 @@ const LINK =
  */
 export function AiLanding({ siteUrl, localePrefix }: Props) {
     const t = useTranslations('widgets.agent-chat');
-    const counts = { guest: GUEST_TURNS_PER_DAY, member: MEMBER_TURNS_PER_DAY };
     const sources = [
         t('Landing.sourceQuotes'),
         t('Landing.sourceIndicators'),
@@ -37,7 +40,7 @@ export function AiLanding({ siteUrl, localePrefix }: Props) {
     const faq = [
         [t('Landing.faq1q'), t('Landing.faq1a')],
         [t('Landing.faq2q'), t('Landing.faq2a')],
-        [t('Landing.faq3q'), t('Landing.faq3a', counts)],
+        [t('Landing.faq3q'), t('Landing.faq3a', COUNTS)],
         [t('Landing.faq4q'), t('Landing.faq4a')],
         [t('Landing.faq5q'), t('Landing.faq5a')],
     ] as const;
@@ -51,11 +54,19 @@ export function AiLanding({ siteUrl, localePrefix }: Props) {
     const access = [
         {
             title: t('Landing.guestTitle'),
-            items: t('Landing.guestItems', counts).split('|'),
+            items: [
+                t('Landing.guestItem1', COUNTS),
+                t('Landing.guestItem2'),
+                t('Landing.guestItem3'),
+            ],
         },
         {
             title: t('Landing.memberTitle'),
-            items: t('Landing.memberItems', counts).split('|'),
+            items: [
+                t('Landing.memberItem1'),
+                t('Landing.memberItem2'),
+                t('Landing.memberItem3'),
+            ],
         },
     ];
     return (
@@ -84,18 +95,9 @@ export function AiLanding({ siteUrl, localePrefix }: Props) {
                     {t('Landing.accessTitle')}
                 </h2>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    {access.map(({ title, items }, i) => (
+                    {access.map(({ title, items }) => (
                         <div key={title} className={cn(SURFACE_CARD, 'p-4')}>
-                            <h3
-                                className={cn(
-                                    'text-sm font-semibold',
-                                    i === 0
-                                        ? 'text-secondary-100'
-                                        : 'text-primary-400'
-                                )}
-                            >
-                                {title}
-                            </h3>
+                            <h3 className={HEADING_SUBSECTION}>{title}</h3>
                             <ul className="mt-2 space-y-1 text-sm leading-6 text-secondary-300">
                                 {items.map(item => (
                                     <li key={item}>{item}</li>
