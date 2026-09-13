@@ -17,11 +17,13 @@ import {
 } from '@/entities/chat-conversation';
 import { AGENT_MODEL, getAgentProvider } from '@/entities/llm-provider';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
+import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { getClientIp } from '@/shared/api/getClientIp';
-import { getOrCreateGuestId } from '@/shared/api/guestId';
+import { readGuestId } from '@/shared/api/guestId';
 import { isBot } from '@/shared/api/isBot';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
+    AGENT_TIME_ZONE_HEADER,
     ANALYSIS_LOCALE_HEADER,
     DEFAULT_LOCALE,
     isLocale,
@@ -52,6 +54,15 @@ const {
 } = constants;
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * A browser always sends `Origin` on a same-origin POST from a page it
+ * rendered; only that page can hold the `siglens_guest`/session cookies this
+ * route relies on. Checking it blocks cross-site calls and naive scripts that
+ * skip the browser entirely — it is not authentication (the cookie checks
+ * below are), just the cheapest filter before spending any quota/DB work.
+ */
+const AI_ORIGIN = new URL(AI_SITE_URL).origin;
 
 const SSE_HEADERS: HeadersInit = {
     'Content-Type': 'text/event-stream; charset=utf-8',
@@ -334,6 +345,8 @@ export async function POST(request: Request): Promise<Response> {
     const user = await getCurrentUser();
     if (isBot(request.headers))
         return json(HTTP_STATUS_FORBIDDEN, { error: 'bot' });
+    if (request.headers.get('Origin') !== AI_ORIGIN)
+        return json(HTTP_STATUS_FORBIDDEN, { error: 'bot' });
 
     const body = parseBody(await request.json().catch(() => null));
     if (body === null)
@@ -350,10 +363,25 @@ export async function POST(request: Request): Promise<Response> {
         (body.conversationId !== null || body.action !== 'send')
     )
         return json(HTTP_STATUS_UNAUTHORIZED, { error: 'unauthenticated' });
+    /**
+     * A guest must already hold the `siglens_guest` cookie minted by a real
+     * page view (`proxy.ts`'s `handleAiHost`) — `readGuestId` never mints one
+     * itself. That closes the gap the Origin check above leaves open: a
+     * request that forges `Origin` still can't manufacture a guest identity,
+     * it can only reuse one issued by loading the page first. The client
+     * already turns this 401 into the same login handoff as the check above.
+     */
+    let subject: string;
+    if (user === null) {
+        const guestId = await readGuestId();
+        if (guestId === null)
+            return json(HTTP_STATUS_UNAUTHORIZED, { error: 'unauthenticated' });
+        subject = guestSubject(guestId);
+    } else {
+        subject = user.id;
+    }
 
     const locale = requestLocale(request);
-    /** Quota/lock subject: the member id, or the guest's cookie id (`shared/api/guestId.ts`). */
-    const subject = user?.id ?? guestSubject(await getOrCreateGuestId());
     const tier: Tier = user ? await resolveAgentTier(user.id) : 'free';
 
     /**
@@ -494,6 +522,10 @@ export async function POST(request: Request): Promise<Response> {
                             userMessage,
                             availableTools: availableToolNames(),
                             portfolioSymbols,
+                            // Untrusted; core validates and falls back to the locale's zone.
+                            timeZone:
+                                request.headers.get(AGENT_TIME_ZONE_HEADER) ??
+                                undefined,
                             signal: controller.signal,
                         },
                         {

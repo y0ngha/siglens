@@ -105,6 +105,7 @@ test.describe('SiglensAI agent chat', () => {
             page.getByText('비회원 대화는 저장되지 않아요.')
         ).toBeVisible();
         const res = await context.request.post(`${AI}/api/ai/chat/stream`, {
+            headers: { Origin: AI },
             data: { conversationId: 'c1', message: 'x' },
         });
         expect(res.status()).toBe(401);

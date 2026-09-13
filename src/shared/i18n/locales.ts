@@ -197,3 +197,10 @@ export function resolvePrerenderLocales(raw: string | undefined): Locale[] {
  * 같은 이름을 두고 다투게 되기 때문이다.
  */
 export const ANALYSIS_LOCALE_HEADER = 'x-siglens-locale';
+
+/**
+ * SIGLENS AI 요청이 브라우저의 IANA 시간대(`Intl` 기준)를 싣는 헤더.
+ * 신뢰하지 않는 값이다 — core `runAgentTurn`이 검증하고, 잘못되면 로케일
+ * 기본 시간대로 떨어진다. 답변의 모든 시각이 이 시간대로 표기된다.
+ */
+export const AGENT_TIME_ZONE_HEADER = 'x-siglens-timezone';
