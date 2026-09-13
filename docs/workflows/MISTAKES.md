@@ -1696,4 +1696,34 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Resolve all colors through canvas 2D context before measuring: `ctx.fillStyle = computed; ctx.fillRect(0,0,1,1); const [r,g,b] = ctx.getImageData(...).data`
    ✅ Sanity-check measurement with known contrasts (white + rgba(0,0,0,0.1) should yield ~229)
    → Recurring: W6b/W6c contrast measurement (Tailwind v4 oklab parsing in audit script) — 2 occurrences; caused 33 false failures before canvas resolution
+
+2. Contrast measurement in background tabs freezes CSS transitions at from-values
+   → Background tabs (`document.hidden === true`) pause all CSS transitions, freezing animated colors at their from-state
+   → Contrast sweeps and color measurements run in background tabs may read stale colors from frozen transitions, producing false failures
+   → Before reading computed styles in a background tab context (audit scripts, hidden measurement iframes), settle all active transitions: `document.getAnimations().forEach(a => a.finish())`
+   → Separately: element opacity must be factored into computed contrast. Ignoring opacity (e.g., measuring `disabled:opacity-40` at full opacity) masks actual rendered contrast
+   ❌ Contrast measurement in background tab reads transition-colors at from-value, reports 2.53:1 on element that renders at 8.82:1 after settlement
+   ❌ Ignoring element opacity when computing contrast: `disabled:opacity-40` buttons read at 8.82:1 when rendered contrast is 2.26:1
+   ✅ const animations = document.getAnimations(); animations.forEach(a => a.finish()); // settle before reading
+   ✅ finalAlpha = baseAlpha * elementOpacity; // factor element opacity into RGBA before ratio calculation
+   → Recurring: W6c audit-agent measurement (freezing transitions + opacity ignored) — 2 occurrences discovered in same measurement round; both fixed by settling transitions and applying opacity
+
+3. Test fixture must match production runtime shape; destructuring only-used props masks omissions
+   → When writing tests, use the actual source of truth (`importOriginal` to fetch real implementation) and mock only what's needed
+   → Test fixtures created by hand or using structural matchers (`toMatchObject`) that omit new fields silently tolerate new-field-omission bugs
+   → Applies to: mapper functions receiving new fields, tests asserting field threading through multiple call sites, snapshot content hash fields
+   ❌ `toMatchObject` in balance-sheet test omits new `reportedCurrency` field → dropping field in production stays green
+   ❌ Hand-built fixture without `reportedCurrency` → hardcoding USD in Korean symbol test passes because fixture never populated the field
+   ✅ importOriginal to fetch real data shape; populate all fields, especially new ones, with values that differ from default (`'KRW'` not `'USD'`)
+   ✅ Multiple sibling tests must each assert the new field with values that differ, catching silent omissions
+   → Recurring: sibling mapper functions receiving new fields (reportedCurrency) — 2 occurrences in test fixtures; third in contentHash dedup logic already documented separately
+
+4. Guard logic that cannot distinguish between actual lack of input and NaN edge cases
+   → When guard logic compares values, NaN comparisons silently fail: `NaN === NaN → false`, `NaN > 0 → false`, making guards think NaN is valid
+   → Validator functions must explicitly check for NaN before comparison operators: `if (Number.isNaN(value)) return FAIL; if (value > MIN) ...`
+   → Edge case where NaN passes a guard and silently breaks downstream logic (e.g., index computations, array slicing)
+   ❌ if (ratio > 0.7) { ... } // passes on NaN because `NaN > 0.7 → false` is false, guard condition evaluates false, but error case is silent
+   ❌ Comparison-based guard misses NaN, data structure ends up with NaN payload, downstream calculations fail silently
+   ✅ if (Number.isNaN(value)) throw new Error('invalid: NaN'); if (value > MIN) proceed
+   → Recurring: validation guards over numeric fields with NaN risk — 2 occurrences in fix-log; third instance already in codebase awaiting discovery
 ```

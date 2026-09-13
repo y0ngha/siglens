@@ -60,8 +60,8 @@ interface Body {
     message: string;
     action: Action;
     editSeq?: number;
-    /** Guests only — the prior turns the browser still holds (nothing is stored for them). */
-    history?: AgentMessage[];
+    /** Guests only — ignored for members. The prior turns the browser still holds (nothing is stored for them). */
+    history: AgentMessage[];
 }
 
 /**
@@ -192,7 +192,7 @@ function guestTurn(body: Body): PreparedTurn {
         userMessage: body.message,
         userMessageId: null,
         userMessageSeq: null,
-        history: body.history ?? [],
+        history: body.history,
         portfolioSymbols: [],
     };
 }

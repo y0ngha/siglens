@@ -167,9 +167,6 @@
 - Violation: Contrast/hierarchy sweep produced 33 fake failures in light theme because `getComputedStyle().backgroundColor` returns `oklab(...)` under Tailwind v4 and a naive `rgb()` regex parsed it as near-black.
   - Rule: Contrast measurement must handle Tailwind v4's `oklab()` color space output; regex-based color parsing is unreliable
   - Context: Resolved by compositing through a canvas 2D context, sanity-checked with white + rgba(0,0,0,0.1) === 229. Real failure count was 2, both intentional chart-series legend swatches.
-- Violation: The UI audit agent's first dark sweep reported 40 failures at 2.53:1, all fake — its tab was a background tab (`document.hidden === true`), which freezes `transition-colors` at their from-values. Also its first resolver ignored element `opacity`, making `disabled:opacity-40` buttons read 8.82:1 when they render at 2.26:1.
-  - Rule: Contrast measurement in background tabs must call `getAnimations().finish()` to settle transitions; element opacity must be factored into computed contrast
-  - Context: Corrected with settle + `getAnimations().finish()`; the same elements then resolved to 8.82:1.
 - Violation: Applied `LABEL_KO` to three files that shared a class string, then had to revert two of them. In `IndicatorSettingsModal` and `BacktestCaseCard` the governed content is already `secondary-400`, so `LABEL_KO` created an exact colour tie, whereas the original `secondary-500` was correctly dimmer than every content colour.
   - Rule: Class-name uniformity does not imply semantic role uniformity; check what each site actually governs before a blanket swap
   - Context: Reverted two of three replacements to restore correct hierarchy.
@@ -210,10 +207,6 @@
   - Context: Removed `tracking-wide` from popover title. Restored heading hierarchy by using HEADING_SECTION token (now at 14px, outranks body + every h3).
 
 ## [W6c — audit-agent measurement traps | redesign-p1 | 2026-08-25]
-- Violation: The UI audit's tab was a background tab (`document.hidden === true`), which freezes `transition-colors` at their from-values. One read returned dark-theme `rgb(244,244,246)` on a page whose body was light `rgb(22,24,29)`. Corrected with `document.getAnimations().forEach(a => a.finish())` before every read.
-  - Rule: (new) Contrast measurement in background tabs must settle all CSS transitions before reading computed colours; background tab freezes transitions at from-values, producing false contrast reads. Use `getAnimations().finish()` to settle.
-  - Context: Applied settle pattern to all 12 contrast reads in audit script. Re-measured all 40 controls; fake failures vanished, real failures revealed.
-
 - Violation: The same audit's first contrast resolver ignored element `opacity`, reading `disabled:opacity-40` buttons at 8.82:1 when they render at 2.26:1.
   - Rule: (new) Contrast measurement must incorporate element opacity into computed colour before reading; ignoring opacity masks actual rendered contrast. Apply opacity to RGBA before computing ratio.
   - Context: Updated resolver to factor element opacity: `finalAlpha = baseAlpha * elementOpacity`. Re-measured; now correctly reports 2.26:1 (dark) / 1.92:1 (light).
@@ -323,12 +316,6 @@
 - Violation: 정적 가드를 **기하 전제가 틀린 채로** 만들어 오탐 5건을 냈다. 같은 요소의 `bg-*`가 보더가 대비해야 할 면이라고 가정했지만, 그건 보더 **안쪽** 채움이다.
   - Rule: 시각 규칙을 정적으로 검사할 땐 규칙이 말하는 **실제 인접 관계**를 모델링한다. 소스에 나란히 적혔다는 사실은 화면에서 인접하다는 뜻이 아니다
   - Context: 사용처별 페어링을 버리고 "토큰 대 표면 램프"로 좁혔다. 기하가 모호한 자리는 canvas로 합성색을 푸는 브라우저 스윕에 넘긴다.
-- Violation: 가드가 **조용히 통과**할 수 있었다. 6자리가 아닌 hex가 들어오면 `parseInt`가 `NaN`을 내는데 `NaN < 3`은 `false`라, 진짜 위반이 실패 배열에 담기지 않는다.
-  - Rule: 검사기는 모르는 입력에 대해 통과가 아니라 **큰 실패**를 낸다. 비교 연산에 `NaN`이 섞이면 실패 조건이 조용히 거짓이 된다
-  - Context: 3·6자리가 아니면 throw. `#7d838f80`을 넣으면 그 메시지로 실패한다.
-- Violation: (별개 PR) 단일 소스를 검증하는 테스트가 **모의로 구현을 한 벌 더 적어** 자기 복제본을 검증하고 있었다. 중복 리터럴을 없애는 PR이 중복 구현을 들이는 형태였다.
-  - Rule: "한 소스에서 나오는가"를 보는 테스트는 그 소스의 **실물**을 쓴다. `importOriginal`로 펼치고 필요한 것만 덮어쓴다
-  - Context: `/economy` FAQ 단일화 테스트. 모의를 걷어내도 21개 그대로 통과.
 ## [구조화데이터 — 마크업과 화면의 단일 소스 | fix/seo-structured-data | 2026-08-25]
 - Violation: FAQPage JSON-LD를 내보내면서 **그 Q&A가 화면 어디에도 없는** 라우트가 여럿이었다. 구글은 마크업한 Q&A가 페이지에 보일 것을 요구하며, 어기면 리치결과 미노출이 아니라 **수동 조치 사유**다. 심볼 9개 라우트를 고치고도 `/[symbol]/fear-greed`는 브레드크럼만 손대고 지나쳐 같은 결함이 남았고, 리뷰가 잡았다. 그 뒤 `/economy`에서도 같은 형태를 또 찾았다 — 형제 라우트 `/economy/kr`은 이미 올바르게 단일 소스로 돼 있었다.
   - Rule: 구조화 데이터를 손볼 때는 **같은 종류의 마크업을 내보내는 라우트를 전수로** 훑는다. "이번 diff가 건드린 파일"은 대상 집합이 아니다
@@ -341,9 +328,6 @@
   - Rule: 마크업과 화면이 같은 문자열을 말해야 한다면 **판정 자체를 공유**한다. 렌더링은 못 나눠도 술어는 나눌 수 있다
   - Rule: 기존 테스트가 통과한다는 건 동작이 옳다는 뜻이 아니다 — 기대값이 결함을 박제했을 수 있다
   - Context: 두 분기 모두 `shouldShowEnglishName`을 거치게 하고, 결함을 박제하던 기대값을 근거 주석과 함께 갱신했다.
-- Violation: 단일 소스를 검증하는 테스트가 모의로 구현을 한 벌 더 적어 **자기 복제본을 검증**하고 있었다. 중복을 없애는 PR이 중복 구현을 들이는 형태였다.
-  - Rule: "한 소스에서 나오는가"를 보는 테스트는 실물을 쓴다 — `importOriginal`로 펼치고 필요한 것만 덮어쓴다
-  - Context: 모의를 걷어내도 21개 그대로 통과.
 - Violation: (프로세스) mistake-managing-agent가 **승격하지 않은 기록을 통째로 삭제**했다. `promoted: 0`을 보고하면서 방금 추가된 블록 전체를 지웠고, 파일이 줄었다는 것 말고는 신호가 없었다. 같은 세션에서 네 번째 재발이다.
   - Rule: 이 에이전트 실행 전후로 fix-log·MISTAKES를 스냅샷해 대조한다. 보고된 `promoted` 수와 실제 삭제 줄 수가 맞는지 본다 — 보고만 믿지 않는다
   - Context: 스냅샷 대조로 잡아 수동 복원했다. 같은 실행에서 재설계 워크트리 쪽은 정상 동작했으나, 승격 규칙의 예시에 표면을 뒤바꿔 적어(3.34를 인셋이 아니라 흰 카드로) 그 역시 수동 교정이 필요했다.
@@ -357,9 +341,6 @@
   - Rule: 스캐너의 대상 집합은 그 레포가 **실제로 쓰는 형태**여야 한다 — 새 컨벤션을 도입했으면 가드도 같이 넓힌다
   - Rule: 금지 목록이 아니라 **허용 목록**으로 쓴다. 열거식은 "내가 아는 나쁜 값"만 막고 새 토큰마다 조용히 뚫린다
   - Context: 셋 다 고친 뒤 감사가 통과시켰던 뮤테이션을 재실행해 각각 정확한 메시지로 실패하는 것을 확인했다.
-- Violation: 검사기가 `NaN`과 조용한 스킵으로 **위반을 통과**시킬 수 있었다. 비-hex 색 선언(`white`, `oklch(...)`)을 만나면 그 토큰을 목록에서 빼버렸고, `light`가 `dark`를 상속하므로 **다크 값을 라이트 표면에 대고 재면서** 초록을 냈다.
-  - Rule: 검사기는 모르는 입력에 통과가 아니라 **큰 실패**를 낸다. 비교에 `NaN`이 섞이면 실패 조건이 조용히 거짓이 된다
-  - Context: 파서가 모든 `--color-*` 선언을 잡고 hex가 아니면 throw한다. `white` 한 글자로 재현·검증했다.
 - Violation: 가드가 **틀린 좌표**를 보고했다. 주석을 삭제한 뒤 오프셋을 계산해서, 실제 324줄의 위반을 255줄로 가리켰다(69줄 오차).
   - Rule: 소스를 전처리해 스캔할 때는 주석을 **같은 길이의 공백으로 치환**한다. 틀린 좌표는 지적이 없는 것보다 나쁠 수 있다 — 무관한 코드를 뒤지게 만든다
   - Context: 같은 실수를 반경 가드에서 반복할 뻔했고(주석 속 `rounded-xl`이 검출됨), 거기엔 처음부터 공백 치환으로 넣었다.
@@ -862,4 +843,3 @@
 - Violation: Implementation lesson — External package `@y0ngha/siglens-core` creates its own Upstash clients from `process.env.UPSTASH_REDIS_REST_*` in `readUpstashConfig()`, bypassing the app-level offline gate.
   - Rule: When implementing a service gate, grep all dependencies for direct env readers of that service and ensure env blanking/override reaches them. External packages may initialize clients from env without routing through app gates.
   - Context: Fixed by blanking `UPSTASH_REDIS_REST_*` environment variables in pre-push build command. Verified Next.js `loadEnvConfig` does not override preset-empty env vars.
-
