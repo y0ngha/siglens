@@ -1,10 +1,10 @@
 import 'server-only';
-import { randomUUID } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { GUEST_ID_COOKIE_NAME } from '@/shared/config/cookieNames';
 import {
     guestIdCookieOptions,
-    isValidGuestId,
+    signGuestId,
+    verifyGuestCookie,
 } from '@/shared/config/guestCookie';
 
 /**
@@ -25,16 +25,22 @@ import {
  *
  * Used by the symbol-page chatbot (siglens.io), which — unlike the SiglensAI
  * agent — has no page-view gate minting the cookie ahead of the API call.
+ *
+ * An unsigned/legacy value (from a cookie minted before signing landed) or a
+ * forged one fails `verifyGuestCookie` the same as a missing cookie and is
+ * simply replaced with a freshly signed one on this call.
  */
 export async function getOrCreateGuestId(): Promise<string> {
     const store = await cookies();
-    const existing = store.get(GUEST_ID_COOKIE_NAME)?.value;
-    if (isValidGuestId(existing)) return existing;
+    const existing = await verifyGuestCookie(
+        store.get(GUEST_ID_COOKIE_NAME)?.value
+    );
+    if (existing !== null) return existing;
 
-    const id = randomUUID();
+    const id = crypto.randomUUID();
     store.set({
         name: GUEST_ID_COOKIE_NAME,
-        value: id,
+        value: await signGuestId(id),
         ...guestIdCookieOptions(),
     });
     return id;
@@ -45,10 +51,10 @@ export async function getOrCreateGuestId(): Promise<string> {
  * must NOT be able to issue a guest id on their own (SiglensAI's chat stream
  * route — see `proxy.ts`'s `handleAiHost`, which mints the cookie on page
  * view instead) so that only a real browser page load can create a guest
- * identity.
+ * identity. Returns `null` for an unsigned/legacy or forged value, same as a
+ * missing cookie.
  */
 export async function readGuestId(): Promise<string | null> {
     const store = await cookies();
-    const existing = store.get(GUEST_ID_COOKIE_NAME)?.value;
-    return isValidGuestId(existing) ? existing : null;
+    return verifyGuestCookie(store.get(GUEST_ID_COOKIE_NAME)?.value);
 }

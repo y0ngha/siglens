@@ -4,7 +4,8 @@ import {
 } from '@/shared/config/cookieNames';
 import {
     guestIdCookieOptions,
-    isValidGuestId,
+    mintGuestCookieValue,
+    verifyGuestCookie,
 } from '@/shared/config/guestCookie';
 // edge runtime 안전성을 위해 외부 의존이 0인 simple constant file에서 직접 import한다.
 // `@/shared/config/market`은 `@y0ngha/siglens-core` 타입을 끌어와 cross-module
@@ -49,7 +50,7 @@ function aiSitemapXml(): string {
 }
 
 /** `ai.siglens.io`(SiglensAI) 호스트 요청을 `/ai/[locale]/*`로 rewrite한다. */
-function handleAiHost(req: NextRequest): NextResponse {
+async function handleAiHost(req: NextRequest): Promise<NextResponse> {
     const url = new URL(req.url);
     if (url.pathname === '/robots.txt') {
         return new NextResponse(AI_ROBOTS_BODY, {
@@ -68,7 +69,6 @@ function handleAiHost(req: NextRequest): NextResponse {
         });
     }
     const { locale, path } = splitLocalePath(url.pathname);
-    const hasSession = !!req.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value;
     const rewriteUrl = new URL(url);
     rewriteUrl.pathname = `/ai/${locale}${path === '/' ? '' : path}`;
     const headers = new Headers(req.headers);
@@ -80,20 +80,34 @@ function handleAiHost(req: NextRequest): NextResponse {
         response.headers.set('X-Robots-Tag', 'noindex, nofollow');
     /**
      * 게스트 쿠키는 여기, 페이지 뷰에서만 발급한다 — `/api/ai/chat/stream`은
-     * 이 쿠키가 이미 있어야만 게스트를 받는다(`readGuestId`, 절대 스스로 발급하지
-     * 않음). 그래야 진짜 브라우저로 페이지를 한 번이라도 연 세션만 API를 부를 수
-     * 있고, 쿠키 없이 곧바로 스트림 엔드포인트를 두드리는 스크립트는 401로 막힌다.
-     * 회원(세션 쿠키 보유)에게는 발급하지 않는다 — 주체가 이미 회원 id로 확정된다.
+     * 이 쿠키가 서명까지 유효해야만 게스트를 받는다(`readGuestId`, 절대 스스로
+     * 발급하지 않음). 그래야 진짜 브라우저로 페이지를 한 번이라도 연 세션만
+     * API를 부를 수 있고, 쿠키 없이 곧바로 스트림 엔드포인트를 두드리는 스크립트는
+     * 401로 막힌다.
+     *
+     * 세션 쿠키 보유 여부와 무관하게 검사한다 — `siglens_session` 쿠키는 존재만
+     * 확인 가능할 뿐 여기서 DB로 유효성을 검증하지 않는데, 스트림 라우트는
+     * `getCurrentUser()`로 세션을 DB째 검증한다. 죽은 세션 쿠키를 가진 방문자를
+     * "회원이니 게스트 쿠키 불필요"로 스킵하면 그 방문자는 회원도 게스트도 아닌
+     * 신원 미확정 상태로 스트림 라우트에서 영구 401을 받는다. 실제 회원에게는
+     * 이 쿠키가 있어도 무해하다 — 스트림 라우트가 세션을 먼저 확인해 주체를
+     * 회원 id로 확정하고 게스트 쿠키는 아예 읽지 않는다.
      */
-    if (
-        !hasSession &&
-        !isValidGuestId(req.cookies.get(GUEST_ID_COOKIE_NAME)?.value)
-    ) {
-        response.cookies.set(
-            GUEST_ID_COOKIE_NAME,
-            crypto.randomUUID(),
-            guestIdCookieOptions()
-        );
+    const existingGuestId = await verifyGuestCookie(
+        req.cookies.get(GUEST_ID_COOKIE_NAME)?.value
+    );
+    if (existingGuestId === null) {
+        try {
+            response.cookies.set(
+                GUEST_ID_COOKIE_NAME,
+                await mintGuestCookieValue(),
+                guestIdCookieOptions()
+            );
+        } catch (error) {
+            // fail closed: 서명 시크릿이 없으면 쿠키를 심지 않을 뿐, 페이지 렌더
+            // 자체를 막지는 않는다. 마커로 1회만 남긴다.
+            console.error('[proxy] guest cookie mint failed:', error);
+        }
     }
     return response;
 }
@@ -139,7 +153,7 @@ const RESERVED_FIRST_SEGMENTS = new Set([
  * 역방향 가드: 로그인된 사용자가 guest-only 페이지(/login, /signup 등)에 진입하면 / 로 redirect.
  * 전방 가드: 비로그인 사용자가 auth-required 페이지(/account 등)에 진입하면 /login 으로 redirect.
  */
-export function proxy(req: NextRequest): NextResponse {
+export async function proxy(req: NextRequest): Promise<NextResponse> {
     if (isAiHost(req.headers.get('host'))) return handleAiHost(req);
     const rawPathname = new URL(req.url).pathname;
     if (rawPathname === '/robots.txt' || rawPathname === '/sitemap.xml')

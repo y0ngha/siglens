@@ -489,11 +489,16 @@ siglens 제공 모델(`TIER_CONFIG.models.free`)은 서버 키로 호출하고, 
 (툴 호출 포함)를 완주할 때까지 결과를 SSE로 스트리밍한다. 라우트 트리는
 `src/app/ai/[locale]/{page.tsx, c/[id]/page.tsx}`.
 
-이 라우트는 실제 SiglensAI 브라우저 세션만 받는다: 매 요청 `Origin`이
-`ai.siglens.io`(dev는 `ai.localhost`)와 일치해야 하고(없거나 다르면 403 `bot`),
-비회원은 페이지 뷰가 발급한 `siglens_guest` 쿠키(`proxy.ts`의 `handleAiHost`가
-심는다)를 이미 들고 있어야 한다 — 이 라우트 자신은 게스트 쿠키를 발급하지 않는다
-(401 `unauthenticated`, 없으면). `robots.txt`도 `/api/`를 통째로 막아 크롤러가
+이 라우트는 매 요청 `Origin`이 `ai.siglens.io`(dev는 `ai.localhost`)와 일치해야 하고
+(없거나 다르면 403 `bot`), 비회원은 페이지 뷰가 발급한 `siglens_guest` 쿠키
+(`proxy.ts`의 `handleAiHost`가 심는다)를 이미 들고 있어야 한다 — 이 라우트 자신은
+게스트 쿠키를 발급하지 않는다(401 `unauthenticated`, 없으면). 그 쿠키는 서버가
+`OAUTH_STATE_HMAC_SECRET`으로 서명한 값(`<uuid>.<서명>`)이라, `Origin`을 위조해도
+서명 없는 임의의 `siglens_guest` 쿠키를 스크립트가 스스로 만들어 낼 수 없다
+(`shared/config/guestCookie.ts`). 다만 그 스크립트가 먼저 페이지를 한 번이라도
+로드해 진짜 서명된 쿠키를 받아 오는 것 자체는 막지 않는다 — 그래서 실제 남용
+방지선은 이 서명이 아니라 Cloudflare rate limiting, 게스트별 일일 턴 쿼터, IP별
+백스탑(`GUEST_IP_TURNS_PER_DAY`)이다. `robots.txt`도 `/api/`를 통째로 막아 크롤러가
 애초에 이 엔드포인트를 알 이유가 없다.
 
 **Body**

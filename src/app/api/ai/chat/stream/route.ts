@@ -371,13 +371,17 @@ export async function POST(request: Request): Promise<Response> {
      * it can only reuse one issued by loading the page first. The client
      * already turns this 401 into the same login handoff as the check above.
      */
-    const guestId = user === null ? await readGuestId() : null;
-    if (user === null && guestId === null)
-        return json(HTTP_STATUS_UNAUTHORIZED, { error: 'unauthenticated' });
+    let subject: string;
+    if (user === null) {
+        const guestId = await readGuestId();
+        if (guestId === null)
+            return json(HTTP_STATUS_UNAUTHORIZED, { error: 'unauthenticated' });
+        subject = guestSubject(guestId);
+    } else {
+        subject = user.id;
+    }
 
     const locale = requestLocale(request);
-    /** Quota/lock subject: the member id, or the guest's cookie id (`shared/api/guestId.ts`). */
-    const subject = user?.id ?? guestSubject(guestId as string);
     const tier: Tier = user ? await resolveAgentTier(user.id) : 'free';
 
     /**
