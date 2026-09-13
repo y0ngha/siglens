@@ -58,6 +58,12 @@ const SSE_HEADERS: HeadersInit = {
     'X-Accel-Buffering': 'no',
 };
 const MESSAGE_MAX_CHARS = 4_000;
+/**
+ * Answer length cap per provider call. Core's default (4,096) cut long
+ * multi-symbol summaries mid-sentence; DeepSeek accepts far more, and a turn
+ * rarely needs more than this.
+ */
+const AGENT_MAX_OUTPUT_TOKENS = 8_192;
 /** Per-instance cap on concurrent agent turns (spec §6-3). */
 const MAX_CONCURRENT_AGENT_TURNS = 4;
 let activeAgentTurns = 0;
@@ -484,6 +490,7 @@ export async function POST(request: Request): Promise<Response> {
                             callAgentProvider: getAgentProvider(),
                             executeTool,
                             counters: createAgentCounters(),
+                            maxOutputTokens: AGENT_MAX_OUTPUT_TOKENS,
                             onEvent: event => {
                                 if (event.type === 'tool_end')
                                     toolTimings.push({

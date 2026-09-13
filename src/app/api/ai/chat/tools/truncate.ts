@@ -86,7 +86,7 @@ export function truncateToolResult(
 }
 
 /**
- * `get_cached_analysis` carries a whole stored analysis plus its plain-language
+ * `get_cached_analysis` (and `run_fresh_analysis`, same shape) carries a whole analysis plus its plain-language
  * rewrite. Measured on production snapshots (2026-09-13): 3 of 7 popular
  * symbol/tab pairs exceeded 4,000 chars (AAPL technical 6,000, AAPL overall
  * 5,431, NVDA overall 8,297), so the model got a front-cut preview — the

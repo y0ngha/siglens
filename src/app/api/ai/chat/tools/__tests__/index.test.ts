@@ -255,6 +255,42 @@ describe('tool registry', () => {
         ).toMatchObject({ truncated: true });
     });
 
+    it('run_fresh_analysis도 저장 분석과 같은 한도·턴 예산을 쓴다 — 방금 만든 분석이 4,000자에서 잘리지 않는다', async () => {
+        const { runFreshAnalysisTool } =
+            await import('@/app/api/ai/chat/tools/runFreshAnalysis');
+        const fresh = {
+            found: true,
+            analysis: 'a'.repeat(6_000),
+            plain: 'p'.repeat(2_000),
+        };
+        vi.mocked(runFreshAnalysisTool).mockResolvedValue(fresh);
+        getCachedAnalysis.mockResolvedValue({ analysis: 'c'.repeat(12_000) });
+        const exec = createToolExecutor({
+            analysisModel: 'deepseek-v4.1-flash',
+        });
+        expect(
+            await exec(
+                'run_fresh_analysis',
+                { symbol: 'AAPL', kind: 'overall' },
+                makeCtx()
+            )
+        ).toBe(fresh);
+        // The fresh result drew on the same per-turn allowance: after it, one
+        // more 12,000-char stored analysis still fits, the next one does not.
+        await exec(
+            'get_cached_analysis',
+            { symbol: 'AAPL', tab: 'overall' },
+            makeCtx()
+        );
+        expect(
+            await exec(
+                'get_cached_analysis',
+                { symbol: 'AAPL', tab: 'technical' },
+                makeCtx()
+            )
+        ).toMatchObject({ truncated: true });
+    });
+
     it('get_cached_analysis의 큰 한도는 턴당 예산 안에서만 — 소진 뒤 조회는 기본 4,000자로 잘린다', async () => {
         const big = () => ({ analysis: 'a'.repeat(11_000) });
         getCachedAnalysis.mockImplementation(async () => big());

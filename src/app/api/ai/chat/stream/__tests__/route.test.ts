@@ -486,6 +486,10 @@ describe('POST /api/ai/chat/stream', () => {
             userMessage: 'AAPL?',
             portfolioSymbols: ['AAPL'],
         });
+        // Long multi-symbol answers need more than core's 4,096 default.
+        expect(m.runTurn.mock.lastCall![1]).toMatchObject({
+            maxOutputTokens: 8_192,
+        });
         expect(release).toHaveBeenCalledTimes(1);
     });
 

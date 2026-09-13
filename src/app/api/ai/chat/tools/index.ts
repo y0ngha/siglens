@@ -115,8 +115,13 @@ export function createToolExecutor(runtime: ToolRuntime): ExecuteTool {
     // One executor per turn (`stream/route.ts`), so this closure is the turn's
     // allowance for oversized stored analyses — see `CACHED_ANALYSIS_MAX_CHARS`.
     let cachedAnalysisCharsLeft = CACHED_ANALYSIS_TURN_BUDGET_CHARS;
+    // `run_fresh_analysis` returns the same analysis shape as
+    // `get_cached_analysis` (see `runFreshAnalysis.ts`), so a just-run
+    // analysis must not be cut harder than a stored one.
+    const isAnalysis = (name: string): boolean =>
+        name === 'get_cached_analysis' || name === 'run_fresh_analysis';
     const ceilingFor = (name: string): number => {
-        if (name !== 'get_cached_analysis') return TOOL_RESULT_MAX_CHARS;
+        if (!isAnalysis(name)) return TOOL_RESULT_MAX_CHARS;
         return Math.max(
             TOOL_RESULT_MAX_CHARS,
             Math.min(CACHED_ANALYSIS_MAX_CHARS, cachedAnalysisCharsLeft)
@@ -135,7 +140,7 @@ export function createToolExecutor(runtime: ToolRuntime): ExecuteTool {
                 await executor(args, ctx, runtime),
                 ceilingFor(name)
             );
-            if (name === 'get_cached_analysis')
+            if (isAnalysis(name))
                 cachedAnalysisCharsLeft -= JSON.stringify(result)?.length ?? 0;
             return result;
         } catch (error) {
