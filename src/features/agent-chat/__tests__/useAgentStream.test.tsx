@@ -622,6 +622,42 @@ describe('useAgentStream', () => {
         ]);
     });
 
+    it('guest answers keep distinct ids when the server sends an empty assistantMessageId, and every request carries the browser time zone', async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, 'fetch')
+            .mockImplementation(async () =>
+                sse([
+                    'event: text\ndata: {"delta":"답"}',
+                    'event: done\ndata: {"assistantMessageId":"","stopReason":"end"}',
+                ])
+            );
+        const { result } = renderHook(() =>
+            useAgentStream({
+                conversationId: null,
+                initialMessages: [],
+                guest: true,
+            })
+        );
+        act(() => {
+            void result.current.send('첫 질문');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        act(() => {
+            void result.current.send('둘째 질문');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        const ids = result.current.messages.map(m => m.id);
+        expect(ids.every(id => id !== '')).toBe(true);
+        expect(new Set(ids).size).toBe(ids.length);
+        const headers = fetchSpy.mock.calls[0]![1]!.headers as Record<
+            string,
+            string
+        >;
+        expect(headers['x-siglens-timezone']).toBe(
+            Intl.DateTimeFormat().resolvedOptions().timeZone
+        );
+    });
+
     it('unmounting mid-stream aborts the in-flight fetch', () => {
         const abort = vi.spyOn(AbortController.prototype, 'abort');
         vi.spyOn(globalThis, 'fetch').mockImplementation(

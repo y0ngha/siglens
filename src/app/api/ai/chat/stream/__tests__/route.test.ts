@@ -509,6 +509,20 @@ describe('POST /api/ai/chat/stream', () => {
         expect(release).toHaveBeenCalledTimes(1);
     });
 
+    it('브라우저 시간대 헤더를 core에 그대로 넘긴다(검증은 core 몫), 없으면 undefined', async () => {
+        await POST(
+            post(
+                { message: 'x' },
+                { 'x-siglens-timezone': 'America/Los_Angeles' }
+            )
+        );
+        expect(m.runTurn.mock.lastCall![0].timeZone).toBe(
+            'America/Los_Angeles'
+        );
+        await POST(post({ message: 'y' }));
+        expect(m.runTurn.mock.lastCall![0].timeZone).toBeUndefined();
+    });
+
     it('send는 기존 이력 전체를 넘긴다(직전 assistant를 자르지 않는다)', async () => {
         m.repo.listMessages.mockResolvedValue([
             ROW(1, 'user', 'q1'),

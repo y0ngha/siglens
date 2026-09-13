@@ -22,6 +22,7 @@ import { getOrCreateGuestId } from '@/shared/api/guestId';
 import { isBot } from '@/shared/api/isBot';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
+    AGENT_TIME_ZONE_HEADER,
     ANALYSIS_LOCALE_HEADER,
     DEFAULT_LOCALE,
     isLocale,
@@ -494,6 +495,10 @@ export async function POST(request: Request): Promise<Response> {
                             userMessage,
                             availableTools: availableToolNames(),
                             portfolioSymbols,
+                            // Untrusted; core validates and falls back to the locale's zone.
+                            timeZone:
+                                request.headers.get(AGENT_TIME_ZONE_HEADER) ??
+                                undefined,
                             signal: controller.signal,
                         },
                         {

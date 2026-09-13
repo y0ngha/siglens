@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChatMessageView } from '@/entities/chat-conversation';
-import { ANALYSIS_LOCALE_HEADER, splitLocalePath } from '@/shared/i18n/locales';
+import {
+    AGENT_TIME_ZONE_HEADER,
+    ANALYSIS_LOCALE_HEADER,
+    splitLocalePath,
+} from '@/shared/i18n/locales';
 import {
     isAgentClientErrorCode,
     type AgentClientErrorCode,
@@ -43,6 +47,15 @@ export interface AgentUiMessage {
  * Known limit: length heuristic; a model-side "answer started" signal would be exact.
  */
 const DRAFT_MIN_CHARS = 120;
+
+/** The browser's IANA zone, or '' when `Intl` cannot tell (core then uses the locale's zone). */
+function browserTimeZone(): string {
+    try {
+        return Intl.DateTimeFormat().resolvedOptions().timeZone ?? '';
+    } catch {
+        return '';
+    }
+}
 /** Daily allowance left; `null` = no daily limit for this tier (core `AgentRemaining`). */
 export interface AgentRemaining {
     turns: number | null;
@@ -270,6 +283,7 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                         [ANALYSIS_LOCALE_HEADER]: splitLocalePath(
                             window.location.pathname
                         ).locale,
+                        [AGENT_TIME_ZONE_HEADER]: browserTimeZone(),
                     },
                     body: JSON.stringify({ conversationId, ...body }),
                     signal: controller.signal,
@@ -390,7 +404,16 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                         } else if (event === 'done') {
                             patchLast(m => ({
                                 ...m,
-                                id: String(data.assistantMessageId ?? m.id),
+                                // Not `?? m.id`: a guest turn is never stored, so
+                                // the server sends `assistantMessageId: ''`. Taking
+                                // that gave every guest answer the same React key
+                                // ("Encountered two children with the same key").
+                                id:
+                                    typeof data.assistantMessageId ===
+                                        'string' &&
+                                    data.assistantMessageId !== ''
+                                        ? data.assistantMessageId
+                                        : m.id,
                                 draft: undefined,
                                 status: 'complete',
                                 truncated: data.stopReason === 'max_tokens',
