@@ -29,20 +29,18 @@ const ACTION =
 
 const COPIED_RESET_MS = 1_500;
 
+interface RelatedPagesProps {
+    readonly pages: RelatedSymbolPage[];
+    readonly siteUrl: string;
+    readonly localePrefix: string;
+}
+
 /**
  * The way back to siglens.io from an answer: the symbol pages the agent read,
  * as quiet links under the text. A hook, not a banner — it only appears when
  * the answer was about a symbol, and only for symbols actually looked up.
  */
-function RelatedPages({
-    pages,
-    siteUrl,
-    localePrefix,
-}: {
-    readonly pages: RelatedSymbolPage[];
-    readonly siteUrl: string;
-    readonly localePrefix: string;
-}) {
+function RelatedPages({ pages, siteUrl, localePrefix }: RelatedPagesProps) {
     const t = useTranslations('widgets.agent-chat');
     if (pages.length === 0) return null;
     return (

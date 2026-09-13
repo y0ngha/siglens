@@ -19,6 +19,11 @@ interface Props {
     readonly suggestions?: readonly string[] | null;
 }
 
+interface CapabilityItem {
+    readonly Icon: ComponentType<{ className?: string }>;
+    readonly label: string;
+}
+
 /** Suggestion card: a quiet surface that lifts to the brand colour on hover — content, not a filter chip. */
 const CARD =
     'group flex min-h-14 w-full items-center justify-between gap-3 rounded-lg border border-border-control bg-secondary-800 px-4 py-3 text-left text-sm leading-5 text-secondary-200 transition-colors hover:border-primary-400 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none motion-reduce:transition-none';
@@ -52,10 +57,7 @@ export function EmptyState({
         signedIn && suggestions && suggestions.length > 0
             ? suggestions
             : fallback;
-    const capabilities: ReadonlyArray<{
-        Icon: ComponentType<{ className?: string }>;
-        label: string;
-    }> = [
+    const capabilities: readonly CapabilityItem[] = [
         { Icon: QuoteIcon, label: t('EmptyState.capQuotes') },
         { Icon: CandlesIcon, label: t('EmptyState.capIndicators') },
         { Icon: SparkIcon, label: t('EmptyState.capAnalysis') },

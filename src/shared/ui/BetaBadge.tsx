@@ -1,5 +1,9 @@
 import { cn } from '@/shared/lib/cn';
 
+interface BetaBadgeProps {
+    readonly className?: string;
+}
+
 /**
  * "Beta" tag for SiglensAI — sits next to the `AI` wordmark in the header and
  * in the product's own eyebrow. Same mono/tracked grammar as the wordmark so it
@@ -7,7 +11,7 @@ import { cn } from '@/shared/lib/cn';
  * copy: it stays in Latin script in every locale and is excluded from page
  * translators.
  */
-export function BetaBadge({ className }: { readonly className?: string }) {
+export function BetaBadge({ className }: BetaBadgeProps) {
     return (
         <span
             translate="no"

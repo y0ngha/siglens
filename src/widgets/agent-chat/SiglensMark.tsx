@@ -1,18 +1,17 @@
 import Image from 'next/image';
 import { cn } from '@/shared/lib/cn';
 
+interface SiglensMarkProps {
+    readonly size?: 'sm' | 'lg';
+    readonly className?: string;
+}
+
 /**
  * The siglens logo in a quiet tile — the assistant's avatar and the landing's
  * mark. Same `icon96.png` the header lockup renders, so the product visibly
  * belongs to siglens instead of wearing a generic "AI" circle.
  */
-export function SiglensMark({
-    size = 'sm',
-    className,
-}: {
-    readonly size?: 'sm' | 'lg';
-    readonly className?: string;
-}) {
+export function SiglensMark({ size = 'sm', className }: SiglensMarkProps) {
     const px = size === 'lg' ? 28 : 16;
     return (
         <span

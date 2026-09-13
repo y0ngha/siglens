@@ -108,6 +108,11 @@ export function ToolActivity({
                 aria-expanded={open}
                 className="group/tools inline-flex min-h-8 max-w-full items-center gap-2 rounded px-1.5 py-1 text-xs text-secondary-400 hover:bg-secondary-800 hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
+                {/* A failed lookup is warning, not danger, on purpose: the
+                    answer below is still written from the lookups that
+                    succeeded, and the summary says "some failed". Danger red
+                    is reserved for a turn that failed outright (the error
+                    banner). */}
                 <span
                     aria-hidden="true"
                     className={cn(

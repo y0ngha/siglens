@@ -5,13 +5,12 @@ import type { ReactNode } from 'react';
  * rather than emoji: emoji render per-platform, ignore the theme's text
  * colour and read as placeholders next to the brand's mono wordmark.
  */
-function Icon({
-    children,
-    className = 'size-4',
-}: {
+interface IconFrameProps {
     readonly children: ReactNode;
     readonly className?: string;
-}) {
+}
+
+function Icon({ children, className = 'size-4' }: IconFrameProps) {
     return (
         <svg
             aria-hidden="true"
@@ -28,7 +27,9 @@ function Icon({
     );
 }
 
-type IconProps = { readonly className?: string };
+interface IconProps {
+    readonly className?: string;
+}
 
 export const PlusIcon = (p: IconProps) => (
     <Icon {...p}>

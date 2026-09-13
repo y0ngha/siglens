@@ -26,17 +26,16 @@ interface Props {
     readonly siteUrl: string;
 }
 
+interface RailFooterProps {
+    readonly siteUrl: string;
+    readonly localePrefix: string;
+}
+
 /**
  * Bottom of the rail: the ai host has no site footer, so the terms, the
  * privacy policy and the way back to siglens.io live here.
  */
-function RailFooter({
-    siteUrl,
-    localePrefix,
-}: {
-    readonly siteUrl: string;
-    readonly localePrefix: string;
-}) {
+function RailFooter({ siteUrl, localePrefix }: RailFooterProps) {
     const t = useTranslations('widgets.agent-chat');
     const link =
         'rounded px-1 py-1 hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
