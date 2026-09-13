@@ -118,7 +118,7 @@ describe('EmptyState', () => {
                 screen.getByRole('heading', { level: 2, name })
             ).toBeInTheDocument();
         expect(screen.getByText('하루 10번까지 질문')).toBeInTheDocument();
-        expect(screen.getByText('하루 60번까지 질문')).toBeInTheDocument();
+        expect(screen.getByText('질문 횟수 제한 없음')).toBeInTheDocument();
         expect(
             screen.getByRole('link', { name: /한국 주식 시장 분석/ })
         ).toHaveAttribute('href', 'https://siglens.io/en/market/kr');

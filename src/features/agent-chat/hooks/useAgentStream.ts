@@ -43,10 +43,11 @@ export interface AgentUiMessage {
  * Known limit: length heuristic; a model-side "answer started" signal would be exact.
  */
 const DRAFT_MIN_CHARS = 120;
+/** Daily allowance left; `null` = no daily limit for this tier (core `AgentRemaining`). */
 export interface AgentRemaining {
-    turns: number;
-    fresh: number;
-    search: number;
+    turns: number | null;
+    fresh: number | null;
+    search: number | null;
 }
 export type StreamStatus = 'idle' | 'streaming' | 'error';
 interface Options {

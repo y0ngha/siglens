@@ -360,11 +360,27 @@ describe('POST /api/ai/chat/stream', () => {
         expect(warn).not.toHaveBeenCalled();
         warn.mockRestore();
     });
-    it('동시성 상한 초과 → 503, lock 획득 전', async () => {
+    it('동시성 상한 초과 → 503, lock 획득 전, 알람 마커를 남긴다', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
         m.canAccept.mockReturnValueOnce(false);
         const res = await POST(post({ message: 'x' }));
         expect(res.status).toBe(503);
         expect(m.lock).not.toHaveBeenCalled();
+        expect(warn).toHaveBeenCalledWith(
+            '[agent] busy',
+            expect.objectContaining({ reason: 'analysis_stream_slots' })
+        );
+        warn.mockRestore();
+    });
+    it('사용자별 턴 락 충돌(409)은 용량 문제가 아니라 알람 마커를 남기지 않는다', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        m.lock.mockResolvedValueOnce(null);
+        const res = await POST(post({ message: 'x' }));
+        expect(res.status).toBe(409);
+        expect(
+            warn.mock.calls.some(([marker]) => marker === '[agent] busy')
+        ).toBe(false);
+        warn.mockRestore();
     });
     it('슬롯은 동시성 게이트 통과 직후 확보된다 — 앞선 요청이 pre-turn DB 대기 중이어도 정원을 채운다', async () => {
         // The slot reservation must happen before the (mocked, pending) `findForUser` call,

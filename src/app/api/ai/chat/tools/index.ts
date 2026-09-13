@@ -35,16 +35,11 @@ export type ToolExecutor = (
 ) => Promise<unknown>;
 
 /**
- * Tools a guest may not run: their own holdings (there are none), and the two
- * metered ones core already zeroes for tier `free`. Refused here with the same
- * `login_required` core uses, so the answer offers sign-in — and so a future
- * core quota change can never open a paid path to anonymous callers.
+ * Tools a guest may not run: only their own holdings — there is no account to
+ * hold any. Fresh analyses and web search are open to guests (SIGLENS sets no
+ * count limit on analysis), bounded by core's per-turn caps instead.
  */
-const MEMBER_ONLY_TOOLS: ReadonlySet<string> = new Set([
-    'get_my_portfolio',
-    'run_fresh_analysis',
-    'web_search',
-]);
+const MEMBER_ONLY_TOOLS: ReadonlySet<string> = new Set(['get_my_portfolio']);
 
 const EXECUTORS: Record<string, ToolExecutor> = {
     search_ticker: searchTickerTool,

@@ -118,30 +118,51 @@ describe('tool registry', () => {
         expect(getOptionsSummary).not.toHaveBeenCalled();
     });
 
-    it.each(['get_my_portfolio', 'run_fresh_analysis', 'web_search'])(
-        '게스트의 %s → login_required, 실행기 미호출',
+    it('게스트의 get_my_portfolio → login_required, 실행기 미호출', async () => {
+        const { getMyPortfolioTool } =
+            await import('@/app/api/ai/chat/tools/getMyPortfolio');
+        const execute = createToolExecutor({ analysisModel: 'm' as never });
+        await expect(
+            execute(
+                'get_my_portfolio',
+                {},
+                {
+                    ...makeCtx(),
+                    userId: guestSubject(
+                        '11111111-1111-4111-8111-111111111111'
+                    ),
+                    tier: 'free' as never,
+                }
+            )
+        ).resolves.toEqual({ error: 'login_required' });
+        expect(getMyPortfolioTool).not.toHaveBeenCalled();
+    });
+
+    it.each(['run_fresh_analysis', 'web_search'])(
+        '게스트도 %s는 실행한다 — 분석·검색은 로그인 없이 쓸 수 있다',
         async name => {
-            const { getMyPortfolioTool } =
-                await import('@/app/api/ai/chat/tools/getMyPortfolio');
             const { runFreshAnalysisTool } =
                 await import('@/app/api/ai/chat/tools/runFreshAnalysis');
             const { webSearchTool } =
                 await import('@/app/api/ai/chat/tools/webSearch');
+            vi.mocked(runFreshAnalysisTool).mockResolvedValue({ found: true });
+            vi.mocked(webSearchTool).mockResolvedValue({ results: [] });
             const execute = createToolExecutor({ analysisModel: 'm' as never });
-            await expect(
-                execute(
-                    name,
-                    { symbol: 'AAPL', query: 'x' },
-                    {
-                        ...makeCtx(),
-                        userId: guestSubject('203.0.113.7'),
-                        tier: 'free' as never,
-                    }
-                )
-            ).resolves.toEqual({ error: 'login_required' });
-            expect(getMyPortfolioTool).not.toHaveBeenCalled();
-            expect(runFreshAnalysisTool).not.toHaveBeenCalled();
-            expect(webSearchTool).not.toHaveBeenCalled();
+            const result = await execute(
+                name,
+                { symbol: 'AAPL', kind: 'technical', query: 'x' },
+                {
+                    ...makeCtx(),
+                    userId: guestSubject(
+                        '11111111-1111-4111-8111-111111111111'
+                    ),
+                    tier: 'free' as never,
+                }
+            );
+            expect(result).not.toEqual({ error: 'login_required' });
+            expect(
+                name === 'web_search' ? webSearchTool : runFreshAnalysisTool
+            ).toHaveBeenCalledTimes(1);
         }
     );
 

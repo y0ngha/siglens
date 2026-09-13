@@ -323,11 +323,15 @@ ISR write가 로케일 수만큼 늘어난다. 이 레포에서 ISR write는 실
 
 ## 3. 알람 대응
 
-알람은 `07-alarms.sh`(인프라·ISR)와 `13-seo-prewarm.sh`(크론)가 생성하고, 전부 SNS 토픽 `siglens-alerts`로 간다. **알람·정상복구 양방향으로 통지**한다.
+알람은 `07-alarms.sh`(인프라·ISR)와 `13-seo-prewarm.sh`(크론)가 생성하고, 두 단계로 나뉜다(`07-alarms.sh` 상단 "알람 2단 체계").
 
-> ⚠️ 알람이 있어도 `siglens-alerts` 구독이 `PendingConfirmation`이면 아무 메일도 오지 않는다. 2026-06-28 디스크풀이 조용히 진행된 원인이 정확히 이것("액션 없는 알람")이었다. 정기적으로 확인할 것:
+- **P1**(표시 없음): SNS 토픽 `siglens-alerts`. **알람·정상복구 양방향으로 통지**한다 — 사이트가 죽었거나 죽기 직전.
+- **P2**(표에 `(P2)` 표시): SNS 토픽 `siglens-alerts-low`. **알람만 통지하고 복구 알림은 없다** — degrade·증설/요금제 판단 신호. 복구는 콘솔에서 알람 상태가 `OK`로 돌아왔는지 직접 확인한다. 기본 구독 대상은 `ALARM_EMAIL`(다른 주소는 `ALARM_EMAIL_LOW`).
+
+> ⚠️ 알람이 있어도 `siglens-alerts`·`siglens-alerts-low` 구독이 `PendingConfirmation`이면 아무 메일도 오지 않는다. 2026-06-28 디스크풀이 조용히 진행된 원인이 정확히 이것("액션 없는 알람")이었다. 정기적으로 확인할 것:
 > ```bash
 > aws sns list-subscriptions-by-topic --topic-arn <siglens-alerts ARN> --profile siglens
+> aws sns list-subscriptions-by-topic --topic-arn <siglens-alerts-low ARN> --profile siglens
 > ```
 
 | 알람 | 발화 조건(실측) | 1차 대응 |
@@ -342,6 +346,8 @@ ISR write가 로케일 수만큼 늘어난다. 이 레포에서 ISR write는 실
 | `siglens-analysis-stream-failed` | `[analysis-stream] failed` 15분 합계 > 2가 연속 2주기 | **분석 전면 장애의 유일한 신호다.** SSE는 실패해도 HTTP 200이라 5xx 알람이 안 뜬다. 1순위 의심: 프로바이더 키(SSM `/siglens/{DEEPSEEK,GEMINI,ANTHROPIC,OPENAI}_API_KEY`) 누락·만료. Logs Insights에서 `[analysis-stream] failed` 원문 확인 → 키 문제면 SSM 갱신 후 인스턴스 재시작, 프로바이더 장애면 회복 대기 |
 | `siglens-agent-stream-failed` | `[agent-stream] failed` 1시간 합계 > 10 | SiglensAI(ai.siglens.io) 에이전트 턴 전면 실패 후보. Logs Insights로 `[agent-stream] failed:` 원문 확인 → 프로바이더 키(SSM `/siglens/DEEPSEEK_CHAT_API_KEY`) 또는 DB 접근 확인 |
 | `siglens-agent-quota-store-unavailable` | `[agent] quota store unavailable` 1시간 합계 > 3 | Redis(Upstash) 한도 카운터 스토어 접근 실패. fail-closed라 사용자에겐 `server_busy`(409)만 보이고 이 로그가 유일한 신호. Upstash 도달성 확인 |
+| `siglens-agent-busy` (P2) | `[agent] busy` 5분 합계 ≥ 1 | 인스턴스 용량 초과로 요청을 거절했다. 로그의 `reason`으로 구분: `fresh_analysis_slots`(새 분석 동시 실행 10개 초과, `runFreshAnalysis.ts` `MAX_CONCURRENT_FRESH`), `agent_turn_slots`(에이전트 턴 동시 4개), `analysis_stream_slots`(분석 스트림 24개). 반복되면 인스턴스 증설 또는 상한 조정. 사용자별 턴 락 충돌(409)은 이 마커를 찍지 않는다 |
+| `siglens-agent-web-search-budget` (P2) | `[agent] web search budget exhausted` 1시간 합계 ≥ 1 | 공용 웹 검색 예산(core `AGENT_GLOBAL_LIMITS`: 하루 33회·월 1,000회, Brave 무료 요금제) 소진. 로그의 `scope`가 `global_day`면 그날, `global_month`면 그달 모든 사용자의 웹 검색이 거절된다(답변은 계속 나감). Brave 유료 전환 판단 신호 |
 | `siglens-agent-output-tokens-daily` | `AgentOutputTokens`(Siglens/Agent, `[Usage]` JSON의 `outputTokens` 합) 24시간 합계 > 1,000,000 | **주기가 1일이라 지출 발생 시점에서 최대 ~24시간 뒤에야 발화한다** — 위 두 알람(1시간 주기)과 달리 즉각 반응하지 않는다. 급한 대응은 이 알람을 기다리지 말고 킬 스위치(`AGENT_CHAT_DISABLED=1`, §3.5)를 먼저 쓴다. 비용 급등 신호(기본 모델 기준 하루 약 200턴 분량의 5배). `[Usage]`에는 `userId`가 없다(개인정보 최소화) — 특정 대화 의심 시 같은 시간대의 `[Agent]` 라인(`conversationId`·`userId`·`steps`·`toolCalls` 포함)과 대조. 반복 호출/버그 루프면 `resolveAgentTier`의 한도 하향 검토 |
 | `siglens-node-heap-oom` | `JavaScript heap out of memory` 1시간 1건 초과 | 앱 프로세스가 힙 상한(1.5GiB)에 닿아 죽었다 = 진행 중이던 분석 전멸 후 systemd 재시작. worker 제거로 LLM 호출이 앱 안에서 돌면서 생긴 실패 모드다. 동시 분석 상한(24)이 뚫렸는지, 특정 심볼의 bars가 비정상적으로 큰지 확인. 반복되면 인스턴스 타입 상향 또는 상한 하향 |
 | `siglens-fear-greed-loader-failed` | `[FearGreedRoute] getMarketFearGreedStatic failed` 1시간 합계 > 4가 연속 2주기 (실패 1회당 로그 2줄 — metadata + 본문이 각각 catch하므로 실질 "시간당 실패 2회 초과") | `/fear-greed` 로더가 계속 실패 중. **fail-open이라 이게 유일한 신호다** — 페이지는 200 + "표본이 부족합니다"를 렌더하고 그 HTML이 ISR/S3에 저장돼 5xx도 헬스체크 실패도 안 뜬다. FMP 402/403처럼 재시도 대상이 아닌 오류면 매시 재생성이 똑같이 실패해 **빈 페이지가 영구화**된다. Logs Insights로 원문 확인 → FMP 키/플랜(SSM `/siglens/FMP_API_KEY`) 우선 의심. 복구 후에는 다음 revalidate(최대 1h)에 자동 정상화 |
@@ -405,7 +411,7 @@ ISR write가 로케일 수만큼 늘어난다. 이 레포에서 ISR write는 실
    ```
 
 - **킬 스위치**: SSM `/siglens/AGENT_CHAT_DISABLED`을 `1`로 갱신 → 프로바이더 키 회전과 같은 경로로 인스턴스 재시작(`systemctl restart siglens`, ASG 전체 instance refresh는 불필요 — `route.ts`가 요청마다 `process.env.AGENT_CHAT_DISABLED`를 읽으므로 컨테이너가 새 env로 뜨는 즉시 반영된다) → `POST /api/ai/chat/stream`이 모든 요청에 `503 { error: 'disabled' }`(`Retry-After: 600`)를 반환한다. 클라이언트는 재시도 버튼 없이 안내만 표시한다(`src/widgets/agent-chat/errorCopy.ts`의 `disabled: false`). 해제는 파라미터를 `0`으로 갱신(또는 삭제) 후 동일하게 재시작.
-- **알람**: `siglens-agent-stream-failed`(1시간 10건) · `siglens-agent-quota-store-unavailable`(1시간 3건) · `siglens-agent-output-tokens-daily`(1일 100만 토큰) — 조건·1차 대응은 §3 표 참고.
+- **알람**: `siglens-agent-stream-failed`(1시간 10건) · `siglens-agent-quota-store-unavailable`(1시간 3건) · `siglens-agent-output-tokens-daily`(1일 100만 토큰) · `siglens-agent-busy`(5분 1건, P2) · `siglens-agent-web-search-budget`(1시간 1건, P2) — 조건·1차 대응은 §3 표 참고.
 - **진단 순서**: `[Agent]` 라인(턴당 1건 — `conversationId`·`userId`·`steps`·`toolCalls: [{name, ms, status}]`·`ms`·`stopReason`) → `[Usage]`(`jobId: "agent"`, 토큰·지연) → `[agent-stream] failed` 전후 로그.
 - **SSO**: `ai.siglens.io`는 자체 세션이 없다 — `siglens.io/api/auth/handoff` → Redis에 60초 TTL 1회용 코드 저장 → `ai.siglens.io/api/auth/handoff/consume`이 소비해 세션 발급. 코드가 없거나 만료/재사용이면 `?sso=none` 랜딩(재로그인 CTA만). Redis 장애 시 핸드오프 자체가 불가 — `siglens-agent-quota-store-unavailable`과 같은 Upstash 의존이므로 함께 의심.
 - **Cloudflare**: 터널의 Public Hostname에 `ai.siglens.io` 추가, Rate Limiting은 `/api/ai/*` 10초당 10요청.

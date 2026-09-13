@@ -36,6 +36,7 @@ import {
 } from '../counters';
 import { resolveAgentTier } from '../resolveAgentTier';
 import { availableToolNames, createToolExecutor } from '../tools';
+import { AGENT_BUSY_LOG } from '../busyLog';
 import { guestSubject } from '../guestSubject';
 import { acquireTurnLock } from '../turnLock';
 
@@ -385,15 +386,24 @@ export async function POST(request: Request): Promise<Response> {
         }
     }
 
-    if (
-        !canAcceptAnalysisStream() ||
-        activeAgentTurns >= MAX_CONCURRENT_AGENT_TURNS
-    )
+    const streamSlotsFull = !canAcceptAnalysisStream();
+    if (streamSlotsFull || activeAgentTurns >= MAX_CONCURRENT_AGENT_TURNS) {
+        // Capacity refusal — alarmed (`siglens-agent-busy`). The per-user turn
+        // lock's 409 below is NOT logged here: that is one person double-sending,
+        // not the instance running out of room.
+        console.warn(AGENT_BUSY_LOG, {
+            reason: streamSlotsFull
+                ? 'analysis_stream_slots'
+                : 'agent_turn_slots',
+            activeAgentTurns,
+            cap: MAX_CONCURRENT_AGENT_TURNS,
+        });
         return json(
             HTTP_STATUS_SERVICE_UNAVAILABLE,
             { error: 'server_busy' },
             { 'Retry-After': '30' }
         );
+    }
 
     // Reserve a slot the instant the gate passes — not after tier resolution and every
     // pre-turn DB call, which was late enough that many requests arriving in that window

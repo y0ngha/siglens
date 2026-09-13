@@ -95,7 +95,7 @@ export function truncateToolResult(
  *
  * Nothing in core bounds the size of the CURRENT turn: history windowing
  * applies only to earlier turns, and every step resends the whole growing
- * message list (up to 6 steps / 8 tool calls). So the larger ceiling is
+ * message list (up to core's `AGENT_TURN_CAPS` steps / tool calls). So the larger ceiling is
  * paired with a per-turn allowance (`CACHED_ANALYSIS_TURN_BUDGET_CHARS`):
  * two full analyses per turn, after which further lookups fall back to the
  * default 4,000 cut.
