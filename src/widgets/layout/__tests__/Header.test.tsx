@@ -50,6 +50,8 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 
 import { Header } from '../Header';
+import { LocaleProvider } from '@/shared/i18n/LocaleContext';
+import { AI_SITE_URL } from '@/shared/config/aiHost';
 
 describe('Header', () => {
     it('renders the site logo and name', () => {
@@ -76,5 +78,65 @@ describe('Header', () => {
         render(<Header currentUser={null} />);
 
         expect(screen.getByRole('banner')).toBeInTheDocument();
+    });
+
+    it('forwards authNext to the mobile drawer auth CTA login href', () => {
+        // HeaderUserMenu is stubbed above, so the SSO handoff pass-through is
+        // observed via HeaderMobileMenu (not mocked in this file) instead.
+        render(
+            <Header
+                currentUser={null}
+                authNext="/api/auth/handoff?to=ai&next=%2F"
+            />
+        );
+
+        // `next/link` is mocked above to a `<span data-href>` (not a real `href`
+        // attribute) — mirrors the pattern the other assertions in this file use.
+        const loginLink = screen
+            .getAllByRole('link', { hidden: true })
+            .find(l =>
+                (l.getAttribute('data-href') ?? '').startsWith('/login?next=')
+            );
+        expect(loginLink).toHaveAttribute(
+            'data-href',
+            '/login?next=%2Fapi%2Fauth%2Fhandoff%3Fto%3Dai%26next%3D%252F'
+        );
+    });
+
+    describe('SIGLENS AI logo lockup', () => {
+        it('main host: the AI wordmark next to the logo links to the AI product; the logo goes home', () => {
+            render(<Header currentUser={null} />);
+            const ai = screen.getByRole('link', { name: 'SiglensAI' });
+            expect(ai).toHaveTextContent(/^AI$/);
+            expect(ai).toHaveAttribute('href', `${AI_SITE_URL}/`);
+            expect(ai).not.toHaveAttribute('aria-current');
+            const logo = screen.getByTitle('홈으로');
+            expect(
+                logo.getAttribute('data-href') ?? logo.getAttribute('href')
+            ).toBe('/');
+            expect(logo).toHaveAttribute('aria-label', 'SIGLENS 홈');
+            // No duplicate entry in the desktop nav: the lockup is the entry point.
+            expect(
+                screen.getAllByRole('link', { name: 'SiglensAI' })
+            ).toHaveLength(1);
+        });
+
+        it('ai host: the lockup is the current brand and the logo returns to the AI home', () => {
+            render(
+                <LocaleProvider locale="ko" hrefBase="https://siglens.io">
+                    <Header currentUser={null} />
+                </LocaleProvider>
+            );
+            expect(
+                screen.getByRole('link', { name: 'SiglensAI' })
+            ).toHaveAttribute('aria-current', 'page');
+            const logo = screen.getByTitle('홈으로');
+            expect(
+                logo.getAttribute('data-href') ?? logo.getAttribute('href')
+            ).toBe(`${AI_SITE_URL}/`);
+            // The name says where the link goes and what is visible next to it.
+            expect(logo).toHaveAttribute('aria-label', 'SIGLENS AI 홈');
+            expect(screen.getByText('Siglens').className).toMatch(/\binline\b/);
+        });
     });
 });

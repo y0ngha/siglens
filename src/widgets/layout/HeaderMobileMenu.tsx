@@ -12,12 +12,14 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/shared/lib/cn';
+import { authNextQuery } from '@/shared/lib/auth';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { LOCALE_SWITCHER_VISIBLE } from '@/shared/i18n/locales';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import type { NavVerticalNode } from './headerNavTree';
 import { isHrefActive } from './navActiveState';
+import { AiNavLink } from './AiNavLink';
 
 interface HeaderMobileMenuProps {
     readonly items: ReadonlyArray<NavVerticalNode>;
@@ -29,12 +31,21 @@ interface HeaderMobileMenuProps {
      * 아바타 메뉴가 계정 링크를 이미 갖고 있어 중복이라 내지 않는다.
      */
     readonly showAuthCta?: boolean;
+    /**
+     * SSO handoff query appended to the auth CTA's `/login`/`/signup` hrefs
+     * (e.g. `/api/auth/handoff?to=ai&next=%2F`), so a visitor who opened the
+     * drawer on the ai host returns there after signing in. Undefined on the
+     * main host — hrefs stay plain `/login`/`/signup`.
+     */
+    readonly authNext?: string;
 }
 
 export function HeaderMobileMenu({
     items,
     showAuthCta = false,
+    authNext,
 }: HeaderMobileMenuProps) {
+    const authQuery = authNextQuery(authNext);
     const t = useTranslations('widgets.layout');
     // 내비 라벨 키는 네임스페이스까지 포함된 완전 수식 키라 루트로 푼다.
     const tNav = useTranslations();
@@ -300,13 +311,20 @@ export function HeaderMobileMenu({
                                 ))}
                             </nav>
 
+                            <div className="border-t border-secondary-700 p-3">
+                                <AiNavLink
+                                    className="w-full justify-center"
+                                    tabIndex={isOpen ? undefined : -1}
+                                />
+                            </div>
+
                             {/* 인증 CTA는 내비 **밑**이다 — 위에 두면 메뉴를
                                 열 때마다 목적지 목록보다 가입 유도가 먼저 온다.
                                 `mt-auto`로 바닥에 붙여 스크롤과 무관하게 보인다. */}
                             {showAuthCta && (
                                 <div className="mt-auto flex flex-col gap-2 border-t border-secondary-700 p-3">
                                     <Link
-                                        href="/signup"
+                                        href={`/signup${authQuery}`}
                                         prefetch={false}
                                         tabIndex={isOpen ? undefined : -1}
                                         onClick={close}
@@ -315,7 +333,7 @@ export function HeaderMobileMenu({
                                         {tUser('HeaderUserMenu.ecb4cc')}
                                     </Link>
                                     <Link
-                                        href="/login"
+                                        href={`/login${authQuery}`}
                                         prefetch={false}
                                         tabIndex={isOpen ? undefined : -1}
                                         onClick={close}

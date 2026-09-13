@@ -2,7 +2,7 @@
 
 import NextLink from 'next/link';
 import type { ComponentProps } from 'react';
-import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { useCurrentLocale, useHrefBase } from '@/shared/i18n/LocaleContext';
 import { localePath, splitLocalePath } from '@/shared/i18n/locales';
 
 type NextLinkProps = ComponentProps<typeof NextLink>;
@@ -21,12 +21,18 @@ type NextLinkProps = ComponentProps<typeof NextLink>;
  * 컴포넌트라 경계도 새로 생기지 않는다).
  *
  * 외부 URL(`https://…`), 앵커(`#…`), 객체 href는 그대로 통과시킨다.
+ *
+ * ai.siglens.io처럼 `hrefBase`(`useHrefBase()`)가 설정된 호스트에서는 로케일 경로
+ * 앞에 그 origin을 붙여 절대 URL로 만든다 — 절대 cross-origin href는 `next/link`가
+ * 클라이언트 라우팅 대신 전체 네비게이션을 하게 만드는데, 그게 의도한 동작이다
+ * (다른 호스트의 라우트 트리로는 애초에 클라이언트 라우팅을 할 수 없다).
  */
 export function LocaleLink({ href, ...rest }: NextLinkProps) {
     const locale = useCurrentLocale();
+    const base = useHrefBase();
     const localized =
         typeof href === 'string' && href.startsWith('/')
-            ? localePath(locale, splitLocalePath(href).path)
+            ? `${base}${localePath(locale, splitLocalePath(href).path)}`
             : href;
     return <NextLink href={localized} {...rest} />;
 }

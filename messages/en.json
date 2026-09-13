@@ -3435,15 +3435,10 @@
             }
         },
         "agent-chat": {
-            "AiHeader": {
-                "615212": "Account",
-                "3879f0": "Log out",
-                "ac1c4d": "Open conversation list",
-                "e225a6": "Log in"
-            },
             "ChatShell": {
                 "548fe0": "Retry",
                 "9a7569": "Conversation list",
+                "openConversations": "Conversations",
                 "errorInvalidBody": "Couldn't process the request. Please refresh and try again.",
                 "errorUnauthenticated": "Please log in.",
                 "errorBot": "Couldn't process the request.",
@@ -3461,14 +3456,15 @@
                 "errorGeneric": "Something went wrong. Please try again."
             },
             "Composer": {
-                "0aef61": "Ask about stocks, the market, news, or your holdings (Enter to send · Shift+Enter for a new line)",
                 "4077ce": "Send",
                 "b21dfd": "For informational purposes only, not investment advice.",
                 "d2e7e7": "Stop",
                 "fdad68": "Message input",
                 "tooLong": "{len} / {max} characters — too long",
                 "remainingTurns": "{n} turns left today · ",
-                "charCount": "{len} / {max}"
+                "charCount": "{len} / {max}",
+                "placeholder": "Ask SiglensAI…",
+                "keyHint": "Enter to send · Shift+Enter for a new line"
             },
             "EmptyState": {
                 "a00741": "Log in with your siglens account",
@@ -3479,7 +3475,8 @@
                 "suggestionAapl": "What's AAPL's current trend and RSI?",
                 "suggestionNews": "Just the important US market news this week",
                 "suggestionNvda": "How does the options market look for NVDA?",
-                "suggestionBtc": "Is there a cached analysis for BTCUSD?"
+                "suggestionBtc": "Is there a cached analysis for BTCUSD?",
+                "suggestionsLabel": "Things you can ask"
             },
             "MessageList": {
                 "259976": "The response was cut off. Please ask a follow-up question.",
@@ -3490,21 +3487,34 @@
                 "a55b1e": "Copy",
                 "afd172": "Failed to generate a response.",
                 "e1407b": "Edit",
-                "e6b008": "Edit message"
+                "e6b008": "Edit message",
+                "copied": "Copied",
+                "generating": "Generating a reply…"
             },
             "Sidebar": {
                 "4cbbe4": "Search conversations",
                 "586a5c": "Conversation name",
                 "73e5a8": "Rename",
                 "9a7569": "Conversation list",
-                "cd889e": "+ New chat",
                 "fc81e2": "Delete",
                 "14bb5e": "Delete this chat?",
-                "19b2d1": "Cancel"
+                "19b2d1": "Cancel",
+                "newChat": "New chat",
+                "groupToday": "Today",
+                "groupYesterday": "Yesterday",
+                "groupWeek": "Previous 7 days",
+                "groupOlder": "Older",
+                "empty": "No conversations yet.",
+                "noMatch": "No matches."
             },
             "ToolActivity": {
                 "b4c619": "Tools used",
-                "aboutSeconds": "about {n}s"
+                "aboutSeconds": "about {n}s",
+                "summary": "{n, plural, one {Used # tool} other {Used # tools}}",
+                "running": "Running a tool"
+            },
+            "ChatSkeleton": {
+                "loading": "Loading…"
             }
         }
     }

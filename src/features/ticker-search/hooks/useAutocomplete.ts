@@ -11,8 +11,10 @@ import {
     useState,
 } from 'react';
 import { useRouter } from 'next/navigation';
+import { useHrefBase } from '@/shared/i18n/LocaleContext';
 import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import type { TickerSearchResult } from '@/shared/lib/types';
+import { assignLocation } from '@/shared/lib/crossHostNavigate';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { useTickerSearch } from './useTickerSearch';
 import { resultDisplayNames } from '../lib/resultDisplay';
@@ -75,6 +77,7 @@ export function useAutocomplete({
 
     const router = useRouter();
     const toLocalePath = useLocalePath();
+    const base = useHrefBase();
     const { results, isSearching, hasQuery, isError, debouncedQuery } =
         useTickerSearch(query);
 
@@ -89,20 +92,29 @@ export function useAutocomplete({
             setIsClosed(true);
             setSelectedIndex(-1);
             onSelect?.({ symbol, label: label?.trim() || symbol });
-            if (navigateOnSelect) router.push(toLocalePath(`/${symbol}`));
+            if (!navigateOnSelect) return;
+            const target = toLocalePath(`/${symbol}`);
+            // `hrefBase`가 있으면(ai.siglens.io) 라우터의 클라이언트 내비게이션이
+            // 아니라 실제 크로스오리진 이동을 해야 한다 — `router.push`는 같은
+            // 앱 안의 경로로만 갈 수 있다.
+            if (base) assignLocation(`${base}${target}`);
+            else router.push(target);
         },
-        [navigateOnSelect, onSelect, router, toLocalePath]
+        [base, navigateOnSelect, onSelect, router, toLocalePath]
     );
 
     const prefetch = useCallback(
         (symbol: string) => {
+            // 크로스오리진 이동(ai.siglens.io)에는 이 앱의 라우터가 데울 경로가
+            // 없다 — 같은 호스트의 존재하지 않는 `/en/AAPL`을 prefetch하게 된다.
+            if (base) return;
             if (prefetchedRef.current.has(symbol)) return;
             prefetchedRef.current.add(symbol);
             // prefetch도 로케일 경로여야 한다 — 아니면 ko 페이지를 데워 두고
             // 실제 이동 대상(`/en/AAPL`)은 콜드로 남는다.
             router.prefetch(toLocalePath(`/${symbol}`));
         },
-        [router, toLocalePath]
+        [base, router, toLocalePath]
     );
 
     const handleChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {

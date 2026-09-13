@@ -45,6 +45,8 @@ import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 
 import { HeaderMobileMenu } from '../HeaderMobileMenu';
 import { NAV_TREE } from '../headerNavTree';
+import { AI_SITE_URL } from '@/shared/config/aiHost';
+import { localePath } from '@/shared/i18n/locales';
 
 /** 같은 라벨(`미국`)이 버티컬마다 반복되므로 href 집합으로 확인한다. */
 function hrefsOf(label: string): string[] {
@@ -137,7 +139,17 @@ describe('HeaderMobileMenu', () => {
             ...(v.overview ? [v.overview.href] : []),
             ...v.regions.flatMap(r => [r.href, ...r.children.map(c => c.href)]),
         ]);
+        // SiglensAI 진입점은 내비 목록 바로 다음, showAuthCta보다 앞이다.
+        expected.push(`${AI_SITE_URL}${localePath('ko', '/')}`);
         expect(hrefs).toEqual(expected);
+    });
+
+    it('renders the SiglensAI entry point below the nav list', () => {
+        render(<HeaderMobileMenu items={NAV_TREE} />);
+
+        expect(
+            screen.getByRole('link', { name: 'SiglensAI', hidden: true })
+        ).toBeInTheDocument();
     });
 
     it('nav links have aria-hidden="true" on the drawer when closed', () => {
@@ -348,5 +360,28 @@ describe('HeaderMobileMenu', () => {
         rerender(<HeaderMobileMenu items={NAV_TREE} />);
 
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    describe('auth CTA + authNext', () => {
+        it('without authNext the drawer login/signup hrefs are plain', () => {
+            render(<HeaderMobileMenu items={NAV_TREE} showAuthCta />);
+            fireEvent.click(screen.getByRole('button', { name: '메뉴 열기' }));
+            expect(linkByHref('/login')).toBeInTheDocument();
+            expect(linkByHref('/signup')).toBeInTheDocument();
+        });
+
+        it('with authNext both drawer auth links carry the encoded ?next=', () => {
+            render(
+                <HeaderMobileMenu
+                    items={NAV_TREE}
+                    showAuthCta
+                    authNext="/api/auth/handoff?to=ai&next=%2F"
+                />
+            );
+            fireEvent.click(screen.getByRole('button', { name: '메뉴 열기' }));
+            const q = '?next=%2Fapi%2Fauth%2Fhandoff%3Fto%3Dai%26next%3D%252F';
+            expect(linkByHref(`/login${q}`)).toBeInTheDocument();
+            expect(linkByHref(`/signup${q}`)).toBeInTheDocument();
+        });
     });
 });

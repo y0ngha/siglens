@@ -3435,15 +3435,10 @@
             }
         },
         "agent-chat": {
-            "AiHeader": {
-                "615212": "アカウント",
-                "3879f0": "ログアウト",
-                "ac1c4d": "会話一覧を開く",
-                "e225a6": "ログイン"
-            },
             "ChatShell": {
                 "548fe0": "再試行",
                 "9a7569": "会話一覧",
+                "openConversations": "会話一覧",
                 "errorInvalidBody": "リクエストを処理できませんでした。更新してもう一度お試しください。",
                 "errorUnauthenticated": "ログインが必要です。",
                 "errorBot": "リクエストを処理できませんでした。",
@@ -3461,14 +3456,15 @@
                 "errorGeneric": "エラーが発生しました。もう一度お試しください。"
             },
             "Composer": {
-                "0aef61": "銘柄・市場・ニュース・保有銘柄について聞いてみましょう（Enterで送信・Shift+Enterで改行）",
                 "4077ce": "送信",
                 "b21dfd": "情報提供のみを目的としており、投資助言ではありません。",
                 "d2e7e7": "中断",
                 "fdad68": "メッセージ入力",
                 "tooLong": "{len} / {max}文字 — 長すぎます",
                 "remainingTurns": "本日残り{n}ターン · ",
-                "charCount": "{len} / {max}"
+                "charCount": "{len} / {max}",
+                "placeholder": "SiglensAIに質問…",
+                "keyHint": "Enterで送信 · Shift+Enterで改行"
             },
             "EmptyState": {
                 "a00741": "siglensアカウントでログイン",
@@ -3479,7 +3475,8 @@
                 "suggestionAapl": "AAPLの現在のトレンドとRSIは？",
                 "suggestionNews": "今週の米国市場の重要ニュースだけ教えて",
                 "suggestionNvda": "NVDAのオプション市場はどう見てる？",
-                "suggestionBtc": "BTCUSDのキャッシュされた分析はある？"
+                "suggestionBtc": "BTCUSDのキャッシュされた分析はある？",
+                "suggestionsLabel": "こんな質問ができます"
             },
             "MessageList": {
                 "259976": "回答が途中で切れました。続けて質問してください。",
@@ -3490,21 +3487,34 @@
                 "a55b1e": "コピー",
                 "afd172": "回答の生成に失敗しました。",
                 "e1407b": "編集",
-                "e6b008": "メッセージを編集"
+                "e6b008": "メッセージを編集",
+                "copied": "コピーしました",
+                "generating": "回答を生成中…"
             },
             "Sidebar": {
                 "4cbbe4": "会話を検索",
                 "586a5c": "会話名",
                 "73e5a8": "名前を変更",
                 "9a7569": "会話一覧",
-                "cd889e": "+ 新しいチャット",
                 "fc81e2": "削除",
                 "14bb5e": "このチャットを削除しますか？",
-                "19b2d1": "キャンセル"
+                "19b2d1": "キャンセル",
+                "newChat": "新しい会話",
+                "groupToday": "今日",
+                "groupYesterday": "昨日",
+                "groupWeek": "過去7日間",
+                "groupOlder": "それ以前",
+                "empty": "まだ会話がありません。",
+                "noMatch": "一致する会話がありません。"
             },
             "ToolActivity": {
                 "b4c619": "使用したツール",
-                "aboutSeconds": "約{n}秒"
+                "aboutSeconds": "約{n}秒",
+                "summary": "ツール{n}件を使用",
+                "running": "ツール実行中"
+            },
+            "ChatSkeleton": {
+                "loading": "読み込み中…"
             }
         }
     }

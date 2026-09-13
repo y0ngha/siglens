@@ -5,6 +5,7 @@ import type {
     ToolExecutionContext,
 } from '@y0ngha/siglens-core';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
+import { naverAiCredentials } from '@/entities/news-article/api';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { truncateToolResult } from './truncate';
 import { searchTickerTool } from './searchTicker';
@@ -39,11 +40,21 @@ const EXECUTORS: Record<string, ToolExecutor> = {
     web_search: webSearchTool,
 };
 
-/** Tools this process can execute now. `web_search` needs a Brave key and is off under E2E. */
+/**
+ * Tools this process can execute now. `web_search` needs a Brave key and is
+ * off under E2E — except when `AGENT_REAL_PROVIDER=1` opts a local dev server
+ * back into the real provider (see `entities/llm-provider/api/agent`): that
+ * server exists to exercise real round-trips, and a search tool that silently
+ * vanishes there is exactly the kind of gap that only shows up in production.
+ * CI never sets it, so the e2e suite keeps the deterministic tool set.
+ */
 export function availableToolNames(): Set<string> {
     const names = new Set(Object.keys(EXECUTORS));
-    if (isE2E() || !process.env.BRAVE_SEARCH_API_KEY)
-        names.delete('web_search');
+    const e2eFake = isE2E() && process.env.AGENT_REAL_PROVIDER !== '1';
+    const keyed =
+        Boolean(process.env.BRAVE_SEARCH_API_KEY) ||
+        naverAiCredentials() !== null;
+    if (e2eFake || !keyed) names.delete('web_search');
     return names;
 }
 

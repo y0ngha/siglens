@@ -10,10 +10,10 @@ import {
     useAgentStream,
     type AgentClientErrorCode,
 } from '@/features/agent-chat';
-import { AiHeader, loginHref } from './AiHeader';
 import { Composer } from './Composer';
 import { AGENT_ERROR_RETRYABLE } from './errorCopy';
 import { EmptyState } from './EmptyState';
+import { loginHref } from './loginHref';
 import { MessageList } from './MessageList';
 import { Sidebar } from './Sidebar';
 
@@ -25,6 +25,8 @@ interface Props {
     readonly localePrefix: string;
     readonly siteUrl: string;
     readonly currentPath: string;
+    /** AI-generated suggestions for this hour (spec §4-3); `null`/undefined falls back to `EmptyState`'s static six. */
+    readonly suggestions?: readonly string[] | null;
 }
 
 export function ChatShell({
@@ -35,6 +37,7 @@ export function ChatShell({
     localePrefix,
     siteUrl,
     currentPath,
+    suggestions,
 }: Props) {
     const t = useTranslations('widgets.agent-chat');
     const router = useRouter();
@@ -119,8 +122,10 @@ export function ChatShell({
     const errorRetryable = errorCode
         ? (AGENT_ERROR_RETRYABLE[errorCode] ?? true)
         : false;
+    const activeTitle =
+        conversations.find(c => c.id === stream.conversationId)?.title ?? '';
     return (
-        <div className="flex min-h-dvh">
+        <div className="flex min-h-[calc(100dvh-3.5rem)]">
             <aside className="hidden w-64 shrink-0 border-r border-border-control lg:block">
                 {sidebar}
             </aside>
@@ -131,7 +136,10 @@ export function ChatShell({
                 modal={false}
             >
                 <Drawer.Portal>
-                    <Drawer.Content className="fixed inset-y-0 left-0 z-50 w-72 bg-secondary-900">
+                    <Drawer.Content
+                        id="agent-chat-sidebar-drawer"
+                        className="fixed inset-y-0 left-0 z-[60] w-72 bg-secondary-900"
+                    >
                         <Drawer.Title className="sr-only">
                             {t('ChatShell.9a7569')}
                         </Drawer.Title>
@@ -140,13 +148,29 @@ export function ChatShell({
                 </Drawer.Portal>
             </Drawer.Root>
             <div className="flex min-w-0 flex-1 flex-col">
-                <AiHeader
-                    signedIn={signedIn}
-                    siteUrl={siteUrl}
-                    localePrefix={localePrefix}
-                    currentPath={currentPath}
-                    onOpenSidebar={() => setDrawerOpen(true)}
-                />
+                {/* Sidebar is desktop-only (`aside` above); mobile opens it in the
+                    vaul drawer instead. The shared main `Header` above this shell
+                    already carries the site chrome, so this bar's only job is the
+                    drawer trigger + the active conversation's title. */}
+                <div className="flex h-11 items-center gap-2 border-b border-border-control px-2 lg:hidden">
+                    <button
+                        type="button"
+                        onClick={() => setDrawerOpen(true)}
+                        // vaul unmounts the drawer content while closed, so the id only
+                        // exists once open — a reference to a missing element is invalid ARIA.
+                        aria-controls={
+                            drawerOpen ? 'agent-chat-sidebar-drawer' : undefined
+                        }
+                        aria-expanded={drawerOpen}
+                        className="inline-flex min-h-9 items-center gap-1.5 rounded px-2 text-sm text-secondary-200 hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    >
+                        <span aria-hidden="true">☰</span>
+                        {t('ChatShell.openConversations')}
+                    </button>
+                    <span className="truncate text-sm text-secondary-300">
+                        {activeTitle}
+                    </span>
+                </div>
                 {stream.messages.length === 0 ? (
                     <EmptyState
                         signedIn={signedIn}
@@ -156,6 +180,7 @@ export function ChatShell({
                             currentPath
                         )}
                         onPick={text => void stream.send(text)}
+                        suggestions={suggestions}
                     />
                 ) : (
                     <MessageList
@@ -166,21 +191,25 @@ export function ChatShell({
                     />
                 )}
                 {errorMessage && stream.error !== 'unauthenticated' ? (
-                    <p
-                        role="alert"
-                        className="mx-auto flex w-full max-w-3xl items-center gap-3 px-4 text-sm text-ui-danger-text"
-                    >
-                        {errorMessage}
-                        {errorRetryable ? (
-                            <button
-                                type="button"
-                                onClick={() => void stream.retry()}
-                                className="rounded border border-border-control px-2 py-0.5 text-xs text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500"
-                            >
-                                {t('ChatShell.548fe0')}
-                            </button>
-                        ) : null}
-                    </p>
+                    <div className="px-4 pb-2">
+                        <p
+                            role="alert"
+                            className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 rounded-lg border border-ui-danger bg-secondary-800 px-4 py-3 text-sm text-ui-danger-text"
+                        >
+                            <span className="min-w-0 break-words">
+                                {errorMessage}
+                            </span>
+                            {errorRetryable ? (
+                                <button
+                                    type="button"
+                                    onClick={() => void stream.retry()}
+                                    className="inline-flex min-h-9 shrink-0 items-center rounded-lg border border-border-control px-3 text-xs font-medium text-secondary-100 hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                >
+                                    {t('ChatShell.548fe0')}
+                                </button>
+                            ) : null}
+                        </p>
+                    </div>
                 ) : null}
                 <Composer
                     disabled={!signedIn}

@@ -380,8 +380,13 @@ ISR write가 로케일 수만큼 늘어난다. 이 레포에서 ISR write는 실
    `/privacy`는 `revalidate = 86400`이라 전환은 DB 반영 후 최대 ~24시간 뒤에
    화면에 나타난다 — **DB가 아니라 렌더된 `/privacy` 페이지에서** 전환을 확인할 것.
 3. **SSM 파라미터** — `DEEPSEEK_CHAT_API_KEY`(필수, 없으면 첫 요청부터 실패),
-   `BRAVE_SEARCH_API_KEY`(선택 — 없으면 에러가 아니라 `web_search` 툴이 그냥
-   가용 툴 목록에서 빠진다), `AGENT_CHAT_DISABLED`는 평시엔 미설정 상태여야 한다.
+   `BRAVE_SEARCH_API_KEY`(선택 — 범용 웹 절반), `NAVER_AI_CLIENT_ID`/`NAVER_AI_CLIENT_SECRET`
+   (선택 — 한국어 절반: 네이버 뉴스 3 + 웹문서 2. 뉴스 수집용 `NAVER_CLIENT_*`와
+   **다른** NCP 애플리케이션 키라 쿼터·회수가 서로 안 섞인다. 그 애플리케이션에
+   '뉴스'·'웹문서' 검색 API가 켜져 있어야 하고, 이 경로의 실패 로그(`webkr request
+   rejected` 등)는 `siglens-naver-news-failed` 알람 필터에 걸리지 않는다). 둘 중
+   하나만 있어도 `web_search`가 켜지고 둘 다 없을 때만 툴이 가용 목록에서 빠진다.
+   `AGENT_CHAT_DISABLED`는 평시엔 미설정 상태여야 한다.
 4. **알람 재적용** — 새 필터/알람 3종이 존재하도록 배포 파이프라인이 자동으로
    돌리지 않는 스크립트를 수동 실행한다(§1의 06·07·08과 같은 카테고리):
    ```bash

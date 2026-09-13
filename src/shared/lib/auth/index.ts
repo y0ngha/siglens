@@ -11,7 +11,11 @@ export {
     hasLetter,
     hasNumber,
 } from './passwordRules';
-export { DEFAULT_REDIRECT_PATH, sanitizeNextPath } from './redirect';
+export {
+    DEFAULT_REDIRECT_PATH,
+    authNextQuery,
+    sanitizeNextPath,
+} from './redirect';
 export type {
     AuthSessionCookie,
     AuthUserRecord,

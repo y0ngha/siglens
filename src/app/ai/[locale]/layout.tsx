@@ -6,13 +6,16 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import { Geist } from 'next/font/google';
 import localFont from 'next/font/local';
+import { AuthSessionHeaderClient } from '@/app/_components/AuthSessionHeaderClient';
 import { ReactQueryProvider } from '@/app/providers';
+import { SearchOverlayProvider } from '@/features/ticker-search';
 import { VisitorPing } from '@/features/visitor-ping';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
 import { pickMessages } from '@/shared/i18n/loadMessages';
 import { isLocale, LOCALE_HREFLANG } from '@/shared/i18n/locales';
 import Script from 'next/script';
+import { SITE_URL } from '@/shared/lib/seo';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { AI_CLIENT_PATHS } from './aiClientPaths';
 import '../../globals.css';
@@ -64,20 +67,23 @@ export default async function AiRootLayout({
                     strategy="beforeInteractive"
                     dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
                 />
-                <LocaleProvider locale={locale}>
+                <LocaleProvider locale={locale} hrefBase={SITE_URL}>
                     <NextIntlClientProvider
                         locale={locale}
                         messages={pickMessages(messages, [...AI_CLIENT_PATHS])}
                     >
                         <ReactQueryProvider>
-                            <VisitorPing />
-                            {disabled ? (
-                                <main className="mx-auto flex min-h-dvh w-full max-w-3xl items-center justify-center px-4 text-center text-secondary-200">
-                                    {t('layout.9401e4')}
-                                </main>
-                            ) : (
-                                children
-                            )}
+                            <SearchOverlayProvider>
+                                <VisitorPing />
+                                <AuthSessionHeaderClient authReturn="ai" />
+                                {disabled ? (
+                                    <main className="mx-auto flex min-h-dvh w-full max-w-3xl items-center justify-center px-4 text-center text-secondary-200">
+                                        {t('layout.9401e4')}
+                                    </main>
+                                ) : (
+                                    children
+                                )}
+                            </SearchOverlayProvider>
                         </ReactQueryProvider>
                     </NextIntlClientProvider>
                 </LocaleProvider>

@@ -1,4 +1,3 @@
-import { useTranslations } from 'next-intl';
 import { HeaderMobileMenu } from './HeaderMobileMenu';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { LOCALE_SWITCHER_VISIBLE } from '@/shared/i18n/locales';
@@ -8,9 +7,7 @@ import { HeaderUserMenu, type HeaderUserMenuUser } from './HeaderUserMenu';
 import { ThemeToggle } from '@/shared/ui/ThemeToggle';
 import { NAV_TREE } from './headerNavTree';
 import { HeaderSearch } from '@/features/ticker-search';
-import { SITE_NAME } from '@/shared/lib/seo';
-import Image from 'next/image';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { LogoLockup } from './LogoLockup';
 import { Suspense } from 'react';
 
 interface HeaderProps {
@@ -23,12 +20,22 @@ interface HeaderProps {
      *   - inner fallback: true only when the hint cookie signals an active session
      */
     readonly loadingUserMenu?: boolean;
+    /**
+     * SSO handoff query forwarded to the user menu and mobile drawer's
+     * `/login`/`/signup` hrefs. Set only when this header renders on the ai
+     * host, so the visitor returns there after signing in. Undefined here
+     * leaves auth hrefs unchanged (main host behaviour).
+     */
+    readonly authNext?: string;
 }
 
 /** Presentational shell; receives resolved current user as a prop so layer rules forbid direct infrastructure access here. */
 // 최상위 <header>는 암시적으로 role="banner"이므로 role을 명시하지 않는다(중복 ARIA).
-export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
-    const t = useTranslations('widgets.layout');
+export function Header({
+    currentUser,
+    loadingUserMenu,
+    authNext,
+}: HeaderProps) {
     return (
         <header className="sticky top-0 z-50 border-b border-secondary-700 bg-secondary-900/90 backdrop-blur-md supports-backdrop-filter:bg-secondary-900/75">
             {/* 전역 크롬은 **뷰포트에** 맞춘다(전폭 `px-4`). 심볼 페이지의
@@ -39,43 +46,7 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                 규약을 고른 결과다(`docs/conventions/DESIGN.md` §폭 규약).
                 푸터도 같은 규약을 쓴다. */}
             <div className="flex h-14 items-center gap-2 px-4 sm:gap-4">
-                <Link
-                    href="/"
-                    title={t('Header.d8c261')}
-                    // 전역 헤더 로고 — 모든 페이지에서 렌더된다. prefetch는 진입 페이지마다
-                    // 다른 `_rsc` 해시를 만들어 `/`의 캐시를 파편화시킨다
-                    // (docs/architecture/CDN_CACHING.md §1).
-                    prefetch={false}
-                    // Visible brand text is `text-...uppercase` (renders "SIGLENS"),
-                    // so the accessible name must match what users see (WCAG 2.5.3).
-                    aria-label={t('Header.homeLabel', {
-                        v0: SITE_NAME.toUpperCase(),
-                    })}
-                    className="-mx-1 flex min-h-11 shrink-0 touch-manipulation items-center gap-2 rounded px-1 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                >
-                    {/*
-                        icon96.png(96×96)을 24×24로 렌더 — Lighthouse의
-                        `image-size-responsive` audit이 1.5× DPI(36×36) 기준으로
-                        검증하므로 source가 display의 최소 1.5× 이상이어야 한다.
-                        `unoptimized`를 제거해 next/image가 24/48 responsive 변형을
-                        자동 생성·서빙하도록 한다(WebP 변환 포함, 실제 전송 바이트는
-                        원본보다 작다).
-                    */}
-                    <Image
-                        src="/icon96.png"
-                        alt={t('Header.1ebe53')}
-                        width={24}
-                        height={24}
-                        className="h-6 w-6"
-                        priority
-                    />
-                    <span
-                        translate="no"
-                        className="hidden font-mono text-sm font-semibold tracking-[0.15em] text-secondary-100 uppercase sm:inline"
-                    >
-                        {SITE_NAME}
-                    </span>
-                </Link>
+                <LogoLockup />
                 {/*
                     Desktop nav — PPR: Suspense fallback renders the static version.
 
@@ -116,12 +87,14 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                     <HeaderUserMenu
                         currentUser={currentUser}
                         loading={loadingUserMenu}
+                        authNext={authNext}
                     />
                 </div>
                 {/* Mobile hamburger — hidden on desktop */}
                 <HeaderMobileMenu
                     items={NAV_TREE}
                     showAuthCta={currentUser === null && !loadingUserMenu}
+                    authNext={authNext}
                 />
             </div>
         </header>

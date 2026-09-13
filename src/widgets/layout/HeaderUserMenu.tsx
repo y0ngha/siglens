@@ -6,6 +6,7 @@ import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
 import { cn } from '@/shared/lib/cn';
+import { authNextQuery } from '@/shared/lib/auth';
 import type { Tier } from '@y0ngha/siglens-core';
 import Image from 'next/image';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -34,6 +35,13 @@ interface HeaderUserMenuProps {
      * is likely logged in while the DB lookup is still in flight.
      */
     readonly loading?: boolean;
+    /**
+     * SSO handoff query appended to `/login`/`/signup` hrefs (e.g.
+     * `/api/auth/handoff?to=ai&next=%2F`), so a visitor who reached the main
+     * host's header from ai.siglens.io returns there after signing in.
+     * Undefined on the main host — hrefs stay plain `/login`/`/signup`.
+     */
+    readonly authNext?: string;
 }
 
 function getInitial(user: HeaderUserMenuUser): string {
@@ -41,8 +49,13 @@ function getInitial(user: HeaderUserMenuUser): string {
     return source.charAt(0).toUpperCase();
 }
 
-export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
+export function HeaderUserMenu({
+    currentUser,
+    loading,
+    authNext,
+}: HeaderUserMenuProps) {
     const t = useTranslations('widgets.layout');
+    const authQuery = authNextQuery(authNext);
     const containerRef = useRef<HTMLDivElement>(null);
     const { isOpen, close, toggle } = usePopoverToggle(containerRef);
     useEscapeKey(close, isOpen);
@@ -73,14 +86,14 @@ export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
                     (docs/architecture/CDN_CACHING.md §1)
                 */}
                 <Link
-                    href="/login"
+                    href={`/login${authQuery}`}
                     prefetch={false}
                     className="hidden min-h-11 items-center rounded px-3 text-sm font-medium text-secondary-200 transition-colors hover:text-secondary-50 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none sm:inline-flex"
                 >
                     {t('HeaderUserMenu.e225a6')}
                 </Link>
                 <Link
-                    href="/signup"
+                    href={`/signup${authQuery}`}
                     prefetch={false}
                     /* 모바일에서는 숨긴다 — 좁은 한 줄에 검색·언어·테마·
                        햄버거가 이미 서 있다. 진입점은 드로어 바닥의 같은

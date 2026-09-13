@@ -56,6 +56,10 @@ OPTIONAL_KEYS=(
   # in normal operation.
   NEXT_PUBLIC_AI_SITE_URL
   BRAVE_SEARCH_API_KEY
+  # SiglensAI web_search's own NCP application. Absent = the Naver half of the
+  # tool is off (Brave alone still works); never falls back to NAVER_CLIENT_*.
+  NAVER_AI_CLIENT_ID
+  NAVER_AI_CLIENT_SECRET
   AGENT_CHAT_DISABLED
 )
 

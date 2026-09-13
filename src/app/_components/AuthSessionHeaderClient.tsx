@@ -25,12 +25,32 @@ import { QUERY_KEYS } from '@/shared/config/queryConfig';
  * 보안: hint 쿠키는 값이 '1' 플래그뿐(PII 없음)이고 이미 non-httpOnly다. 권한 판단은
  * 전적으로 httpOnly 세션 + DB로만 이뤄지므로 클라가 hint를 읽어도 표면이 넓어지지 않는다.
  */
-export function AuthSessionHeaderClient() {
+export function AuthSessionHeaderClient({
+    authReturn,
+}: {
+    /**
+     * SSO handoff query forwarded to every `Header` this component renders.
+     * Set by the ai host (`src/app/ai/[locale]/layout.tsx`) so its login/
+     * signup CTAs return through the handoff instead of stranding the
+     * visitor on the main host. Undefined on the main host itself.
+     */
+    /**
+     * `'ai'` on ai.siglens.io: login/signup links carry the SSO handoff back
+     * to the page the user is on (`/c/<id>` included), computed from the live
+     * pathname here because the server layout that mounts this header cannot
+     * see it.
+     */
+    readonly authReturn?: 'ai';
+} = {}) {
     const syncedPathRef = useRef<string | null>(null);
     const hasHint = useAuthHint();
     const { data: user, isPending } = useCurrentUser();
     const queryClient = useQueryClient();
     const pathname = usePathname();
+    const authNext =
+        authReturn === 'ai'
+            ? `/api/auth/handoff?to=ai&next=${encodeURIComponent(pathname)}`
+            : undefined;
 
     // 정적 ISR 셸 헤더 자가치유: login/signup/oauth/delete는 서버 redirect()로 끝나
     // (soft navigation) 클라 currentUser 쿼리가 갱신되지 않으면 헤더가 직전 상태로 남는다.
@@ -50,7 +70,13 @@ export function AuthSessionHeaderClient() {
 
     if (isPending) {
         // server action 확정 전: hint로 skeleton(로그인 추정) 또는 게스트 셸.
-        return <Header currentUser={null} loadingUserMenu={hasHint} />;
+        return (
+            <Header
+                currentUser={null}
+                loadingUserMenu={hasHint}
+                authNext={authNext}
+            />
+        );
     }
 
     const currentUser: HeaderUserMenuUser | null = user
@@ -61,5 +87,5 @@ export function AuthSessionHeaderClient() {
               avatarUrl: user.avatarUrl,
           }
         : null;
-    return <Header currentUser={currentUser} />;
+    return <Header currentUser={currentUser} authNext={authNext} />;
 }

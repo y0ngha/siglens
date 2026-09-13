@@ -14,6 +14,7 @@ FSD 정석으로는 같은 레이어 안의 다른 슬라이스끼리 import 금
 |---|---|---|
 | `entities/analysis/actions/*` | `entities/news-article`, `entities/earnings-report`, `entities/options-chain` | submitOverallAnalysisAction이 여러 entity 데이터를 조합하는 multi-entity orchestration. FSD에서는 features 레이어가 담당해야 하나, Next.js Server Action 구조상 entity에 위치 |
 | `entities/news-article/actions/*` | `entities/analysis` | submitNewsAnalysisAction이 byokGate(shared/lib) 경유로 analysis 의존 |
+| `entities/agent-suggestions/api.ts` | `entities/market-news/api` (`DrizzleMarketNewsRepository`), `entities/llm-provider` | `getAgentSuggestions`이 카테고리 헤드라인(market-news)과 agent LLM provider(llm-provider)를 조합하는 multi-entity orchestration — `entities/analysis/actions/*` → `news-article` 예외와 동일한 사유. `market-news`는 barrel(`CATEGORY_CONFIG`)과 `api.ts`(`DrizzleMarketNewsRepository`) 양쪽 다 사용 |
 
 이 예외들은 ESLint `boundaries/element-types`에서 `entities → entities` 허용으로 관리됨.
 
@@ -66,7 +67,8 @@ export async function myAction() { ... }
 | `auth` | `DrizzleSessionRepository`, `DrizzleUserRepository`, `getCurrentUser`, `getAuthDatabaseClient`, `resetAuthDatabaseClientForTests`, `bcryptPasswordHasher`, `bcryptPasswordVerifier` | `api.ts` → `schema.ts` (`server-only`) / `next/headers` 의존 / bcrypt는 Node.js 전용 / DB client는 `import 'server-only'` 체인 |
 | `api-key` | `DrizzleUserApiKeyRepository`, `LlmApiKeyDecryptionFailedError` | `api.ts`가 drizzle/encryption import — `server-only` 보호 대상 |
 | `inquiry` | `DrizzleContactRepository` | `api.ts`가 drizzle/schema import — `server-only` 보호 대상 |
-| `news-article` | `DrizzleNewsRepository`, `getNewsList`, `findMarketEventsForPrompt` | `api.ts`와 `marketEventsRepository.ts`가 drizzle/DB client import, `import 'server-only'` 선언. 같은 슬라이스의 `lib/marketEventsLookback.ts`는 순수 함수라 barrel로 노출된다 |
+| `news-article` | `DrizzleNewsRepository`, `getNewsList`, `findMarketEventsForPrompt`, `searchNaverNews`·`searchNaverWeb`·`naverAiCredentials`·`hasNaverCredentials`·`stripNaverMarkup`·`toIsoPublishedAt`(`app/api/ai/chat/tools/webSearch.ts`가 소비) | `api.ts`와 `marketEventsRepository.ts`가 drizzle/DB client import, `import 'server-only'` 선언. 같은 슬라이스의 `lib/marketEventsLookback.ts`는 순수 함수라 barrel로 노출된다 |
 | `bars` | `useBars` hook | Server Action barrel이 `@google/genai` ESM을 전이적으로 pull-in → Jest 모듈 해석 깨짐. deep import: `@/entities/bars/hooks/useBars` |
 | `ticker` | `useAssetInfo` hook | Server Action barrel이 `@google/genai` ESM을 전이적으로 pull-in → Jest 모듈 해석 깨짐. deep import: `@/entities/ticker/hooks/useAssetInfo` |
 | `chat-conversation` | `DrizzleChatConversationRepository` | `api.ts`가 drizzle/schema import, `import 'server-only'` 선언. 서버 소비자는 `@/entities/chat-conversation/api`에서 직접 import |
+| `agent-suggestions` | `getAgentSuggestions` | `api.ts`가 market-news DB repository와 agent LLM provider(둘 다 `server-only` 체인)를 import. 서버 소비자는 `@/entities/agent-suggestions/api`에서 직접 import |

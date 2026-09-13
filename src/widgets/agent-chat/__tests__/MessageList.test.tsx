@@ -103,12 +103,11 @@ describe('MessageList', () => {
         expect(log).not.toHaveAttribute('aria-relevant');
         const streamingBubble = screen
             .getByText('partial')
-            .closest('.rounded-lg');
+            .closest('[aria-live]');
         expect(streamingBubble).toHaveAttribute('aria-live', 'polite');
-        const completedBubble = screen
-            .getByText('answered already')
-            .closest('.rounded-lg');
-        expect(completedBubble).not.toHaveAttribute('aria-live');
+        expect(
+            screen.getByText('answered already').closest('[aria-live]')
+        ).toBeNull();
     });
 
     it('breaks long unbroken tokens (e.g. a 200-char URL from a tool result) instead of forcing horizontal scroll', () => {
@@ -129,8 +128,11 @@ describe('MessageList', () => {
                 onEdit={vi.fn()}
             />
         );
-        const bubble = screen.getByText(longUrl).closest('.rounded-lg');
-        expect(bubble?.className).toMatch(/break-words/);
+        const body = screen
+            .getByText(longUrl)
+            .closest('article[data-role="assistant"]')
+            ?.querySelector('.break-words');
+        expect(body).not.toBeNull();
     });
 
     it('shows an edit control for the last user message but not while streaming', () => {

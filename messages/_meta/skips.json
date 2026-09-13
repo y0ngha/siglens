@@ -1009,7 +1009,7 @@
     },
     {
         "file": "src/entities/news-article/lib/naverNewsSearch.ts",
-        "line": 116,
+        "line": 191,
         "reason": "developer-diagnostic",
         "text": "`${logTag} NAVER_CLIENT_ID/SECRET 미설정 — 빈 결과로 degrade`"
     },
