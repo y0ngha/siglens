@@ -51,17 +51,19 @@ export function fitToEscapedBudget(
  * iteration, which converges in a handful of steps because the escape
  * expansion ratio is bounded (each `"`/`\` adds exactly one extra char).
  */
-function buildTruncatedEnvelope(serialized: string): {
+function buildTruncatedEnvelope(
+    serialized: string,
+    maxChars: number
+): {
     truncated: true;
     preview: string;
 } {
-    let previewLen = TOOL_RESULT_MAX_CHARS;
+    let previewLen = maxChars;
     const MAX_ITERATIONS = 30;
     for (let i = 0; i < MAX_ITERATIONS && previewLen > 0; i++) {
         const preview = safeSliceUtf16(serialized, previewLen);
         const envelope = { truncated: true as const, preview };
-        const overflow =
-            JSON.stringify(envelope).length - TOOL_RESULT_MAX_CHARS;
+        const overflow = JSON.stringify(envelope).length - maxChars;
         if (overflow <= 0) return envelope;
         // Never let one subtraction jump past 0: `overflow` counts ESCAPED units
         // while `previewLen` counts raw ones, so a quote-heavy payload could
@@ -74,9 +76,29 @@ function buildTruncatedEnvelope(serialized: string): {
     return { truncated: true, preview: '' };
 }
 
-export function truncateToolResult(value: unknown): unknown {
+export function truncateToolResult(
+    value: unknown,
+    maxChars: number = TOOL_RESULT_MAX_CHARS
+): unknown {
     const serialized = JSON.stringify(value);
-    if (serialized === undefined || serialized.length <= TOOL_RESULT_MAX_CHARS)
-        return value;
-    return buildTruncatedEnvelope(serialized);
+    if (serialized === undefined || serialized.length <= maxChars) return value;
+    return buildTruncatedEnvelope(serialized, maxChars);
 }
+
+/**
+ * `get_cached_analysis` carries a whole stored analysis plus its plain-language
+ * rewrite. Measured on production snapshots (2026-09-13): 3 of 7 popular
+ * symbol/tab pairs exceeded 4,000 chars (AAPL technical 6,000, AAPL overall
+ * 5,431, NVDA overall 8,297), so the model got a front-cut preview — the
+ * plain rewrite and only ~900 chars of the actual analysis. Its own ceiling
+ * keeps both whole.
+ *
+ * Nothing in core bounds the size of the CURRENT turn: history windowing
+ * applies only to earlier turns, and every step resends the whole growing
+ * message list (up to 6 steps / 8 tool calls). So the larger ceiling is
+ * paired with a per-turn allowance (`CACHED_ANALYSIS_TURN_BUDGET_CHARS`):
+ * two full analyses per turn, after which further lookups fall back to the
+ * default 4,000 cut.
+ */
+export const CACHED_ANALYSIS_MAX_CHARS = 12_000;
+export const CACHED_ANALYSIS_TURN_BUDGET_CHARS = 2 * CACHED_ANALYSIS_MAX_CHARS;

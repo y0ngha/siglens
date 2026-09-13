@@ -117,6 +117,35 @@ describe('DrizzleSeoSnapshotRepository.findBySymbol', () => {
         );
     });
 
+    it('reader mode drops languages the reader cannot read (ko reader, ja-only row)', async () => {
+        const { db } = makeFindBySymbolDb([{ ...snapshotRow, locale: 'ja' }]);
+        const repo = new DrizzleSeoSnapshotRepository(db);
+
+        await expect(repo.findBySymbol('AAPL', 'ko')).resolves.toEqual([]);
+    });
+
+    it('anyLocale keeps the closest row in any language: requested → ko → the rest', async () => {
+        const rows = [
+            { ...snapshotRow, locale: 'zh', content: { v: 'zh' } },
+            { ...snapshotRow, locale: 'ko', content: { v: 'ko' } },
+            { ...snapshotRow, tab: 'news', locale: 'ja', content: { v: 'ja' } },
+        ];
+        const repo = new DrizzleSeoSnapshotRepository(
+            makeFindBySymbolDb(rows).db
+        );
+
+        const en = await repo.findBySymbol('AAPL', 'en', { anyLocale: true });
+        expect(en.find(s => s.tab === 'technical')?.content).toEqual({
+            v: 'ko',
+        });
+        // A ja-only tab is still returned to a ko/en asker.
+        expect(en.find(s => s.tab === 'news')?.content).toEqual({ v: 'ja' });
+        const zh = await repo.findBySymbol('AAPL', 'zh', { anyLocale: true });
+        expect(zh.find(s => s.tab === 'technical')?.content).toEqual({
+            v: 'zh',
+        });
+    });
+
     it('returns an empty array when no snapshots exist', async () => {
         const { db } = makeFindBySymbolDb([]);
         const repo = new DrizzleSeoSnapshotRepository(db);

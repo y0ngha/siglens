@@ -13,7 +13,7 @@ import {
     LEGACY_CONTENT_LOCALE,
     toContentLocale,
 } from '@/shared/db/contentLocale';
-import type { Locale } from '@/shared/i18n/locales';
+import { DEFAULT_LOCALE, LOCALES, type Locale } from '@/shared/i18n/locales';
 
 /**
  * Drizzle ORM implementation backed by Neon PostgreSQL. One row per
@@ -97,9 +97,17 @@ export class DrizzleSeoSnapshotRepository {
      * **컬럼을 명시해서 읽는다** — `select()`(전 컬럼)는 스키마에 컬럼이
      * 추가되는 순간 마이그레이션 전 배포에서 통째로 실패한다.
      */
+    /**
+     * @param options.anyLocale - Readers get only languages they can read
+     *   (`CONTENT_LOCALE_FALLBACK`). A consumer that re-expresses the analysis
+     *   in the reader's language itself (the SiglensAI agent) wants the closest
+     *   row in ANY language instead: requested → Korean (the canonical,
+     *   most complete one) → the rest.
+     */
     async findBySymbol(
         symbol: string,
-        locale: Locale
+        locale: Locale,
+        options: { anyLocale?: boolean } = {}
     ): Promise<SeoAnalysisSnapshot[]> {
         const rows = await this.db
             .select({
@@ -125,7 +133,10 @@ export class DrizzleSeoSnapshotRepository {
             updatedAt: row.updatedAt,
             locale: toContentLocale(row.locale) ?? LEGACY_CONTENT_LOCALE,
         }));
-        return pickSnapshotPerTab(snapshots, locale);
+        const chain = options.anyLocale
+            ? anyLocaleChain(locale)
+            : CONTENT_LOCALE_FALLBACK[locale];
+        return pickSnapshotPerTab(snapshots, chain);
     }
 
     async findGeneratedAtMap(symbols: string[]): Promise<Map<string, Date>> {
@@ -161,11 +172,14 @@ export class DrizzleSeoSnapshotRepository {
  * 단순하게 두는 편이 낫다. 무엇보다 폴백 순서의 단일 소스가
  * `CONTENT_LOCALE_FALLBACK` 한 곳에 남는다.
  */
+function anyLocaleChain(locale: Locale): readonly Locale[] {
+    return [...new Set<Locale>([locale, DEFAULT_LOCALE, ...LOCALES])];
+}
+
 function pickSnapshotPerTab(
     snapshots: readonly SeoAnalysisSnapshot[],
-    locale: Locale
+    chain: readonly Locale[]
 ): SeoAnalysisSnapshot[] {
-    const chain = CONTENT_LOCALE_FALLBACK[locale];
     const best = new Map<SeoSnapshotTab, SeoAnalysisSnapshot>();
     for (const snapshot of snapshots) {
         const rank = chain.indexOf(snapshot.locale);

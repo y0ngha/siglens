@@ -217,6 +217,35 @@ describe('getCachedAnalysisTool', () => {
         expect(r.source).toBe('snapshot');
     });
 
+    it('snapshot은 언어와 무관하게 찾고(anyLocale), 원문 → 평이화 순서와 원문 언어를 함께 넘긴다', async () => {
+        findBySymbol.mockResolvedValue([
+            {
+                tab: 'news',
+                locale: 'ko',
+                generatedAt: new Date('2026-09-11'),
+                model: 'm',
+                plain: '쉬운 설명',
+                content: { summary: '원문' },
+            },
+        ]);
+        const r = (await getCachedAnalysisTool(
+            { symbol: 'TSLA', tab: 'news' },
+            { ...ctx, locale: 'ja' },
+            rt
+        )) as Record<string, unknown>;
+        expect(findBySymbol).toHaveBeenCalledWith('TSLA', 'ja', {
+            anyLocale: true,
+        });
+        expect(r).toMatchObject({
+            source: 'snapshot',
+            contentLanguage: 'ko',
+            analysis: { summary: '원문' },
+            plain: '쉬운 설명',
+        });
+        const keys = Object.keys(r);
+        expect(keys.indexOf('analysis')).toBeLessThan(keys.indexOf('plain'));
+    });
+
     it('overall: peekOverallAnalysisCache hit → 신선도 불명은 null로 표현한다 (item 3), getAssetInfo 조회 없음 (item 10)', async () => {
         peekOverall.mockResolvedValue({
             headlineKo: 'h',
