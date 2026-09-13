@@ -30,7 +30,7 @@ export function useAiHomeHref(): string {
  * (`useHrefBase() !== ''`), which is how the link knows to show itself as the
  * current page.
  *
- * The accessible name is always "SiglensAI Beta" — the wordmark variant only
+ * The accessible name is always "SIGLENS AI Beta" — the wordmark variant only
  * *shows* "AI" + the Beta tag (the "SIGLENS" half is the logo right next to
  * it), so the label restores the full product name for assistive tech and the
  * E2E suite while still containing every visible word (WCAG 2.5.3).
@@ -43,7 +43,7 @@ export function AiNavLink({ className, tabIndex, variant = 'pill' }: Props) {
             <a
                 href={href}
                 translate="no"
-                aria-label="SiglensAI Beta"
+                aria-label="SIGLENS AI Beta"
                 aria-current={onAiHost ? 'page' : undefined}
                 tabIndex={tabIndex}
                 className={cn(
@@ -65,7 +65,7 @@ export function AiNavLink({ className, tabIndex, variant = 'pill' }: Props) {
         <a
             href={href}
             translate="no"
-            aria-label="SiglensAI Beta"
+            aria-label="SIGLENS AI Beta"
             aria-current={onAiHost ? 'page' : undefined}
             tabIndex={tabIndex}
             className={cn(
@@ -74,7 +74,7 @@ export function AiNavLink({ className, tabIndex, variant = 'pill' }: Props) {
                 className
             )}
         >
-            SiglensAI
+            SIGLENS AI
             <BetaBadge className="ml-1.5" />
         </a>
     );

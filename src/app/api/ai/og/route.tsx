@@ -13,5 +13,8 @@ export async function GET(request: Request): Promise<Response> {
     const raw = new URL(request.url).searchParams.get('locale') ?? '';
     const locale = isLocale(raw) ? raw : DEFAULT_LOCALE;
     const t = await getTranslations({ locale, namespace: 'app.ai' });
-    return buildSymbolOgImage({ ticker: 'SiglensAI', label: t('seo.ogLabel') });
+    return buildSymbolOgImage({
+        ticker: 'SIGLENS AI',
+        label: t('seo.ogLabel'),
+    });
 }

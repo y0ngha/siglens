@@ -473,6 +473,111 @@ describe('useAgentStream', () => {
         expect(cancelSpy).toHaveBeenCalled();
     });
 
+    it('guest: every send carries the answered transcript as history; regenerate re-sends the last question as send', async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, 'fetch')
+            .mockImplementation(async () =>
+                sse([
+                    'event: meta\ndata: {"conversationId":null,"userMessageId":null,"userMessageSeq":null}',
+                    'event: text\ndata: {"delta":"답"}',
+                    'event: done\ndata: {"assistantMessageId":"","stopReason":"end"}',
+                ])
+            );
+        const { result } = renderHook(() =>
+            useAgentStream({
+                conversationId: null,
+                initialMessages: [],
+                guest: true,
+            })
+        );
+        act(() => {
+            void result.current.send('첫 질문');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        act(() => {
+            void result.current.send('둘째 질문');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        const bodyOf = (i: number) =>
+            JSON.parse(String(fetchSpy.mock.calls[i]![1]!.body));
+        expect(bodyOf(0)).toEqual({
+            conversationId: null,
+            action: 'send',
+            message: '첫 질문',
+            history: [],
+        });
+        expect(bodyOf(1).history).toEqual([
+            { role: 'user', content: '첫 질문' },
+            { role: 'assistant', content: '답' },
+        ]);
+        // No stored conversation was ever created for a guest.
+        expect(result.current.conversationId).toBeNull();
+
+        act(() => {
+            void result.current.regenerate();
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        expect(bodyOf(2)).toEqual({
+            conversationId: null,
+            action: 'send',
+            message: '둘째 질문',
+            history: [
+                { role: 'user', content: '첫 질문' },
+                { role: 'assistant', content: '답' },
+            ],
+        });
+        expect(result.current.messages.map(m => m.content)).toEqual([
+            '첫 질문',
+            '답',
+            '둘째 질문',
+            '답',
+        ]);
+    });
+
+    it('guest: retry after a failed regenerate replays the regenerate, not a second copy of the question', async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, 'fetch')
+            .mockResolvedValueOnce(
+                sse([
+                    'event: text\ndata: {"delta":"답"}',
+                    'event: done\ndata: {"assistantMessageId":"","stopReason":"end"}',
+                ])
+            )
+            .mockResolvedValueOnce(
+                Response.json({ error: 'server_busy' }, { status: 503 })
+            )
+            .mockResolvedValueOnce(
+                sse([
+                    'event: text\ndata: {"delta":"새 답"}',
+                    'event: done\ndata: {"assistantMessageId":"","stopReason":"end"}',
+                ])
+            );
+        const { result } = renderHook(() =>
+            useAgentStream({
+                conversationId: null,
+                initialMessages: [],
+                guest: true,
+            })
+        );
+        act(() => {
+            void result.current.send('질문');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        act(() => {
+            void result.current.regenerate();
+        });
+        await waitFor(() => expect(result.current.status).toBe('error'));
+        act(() => {
+            void result.current.retry();
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        expect(fetchSpy).toHaveBeenCalledTimes(3);
+        expect(result.current.messages.map(m => m.content)).toEqual([
+            '질문',
+            '새 답',
+        ]);
+    });
+
     it('unmounting mid-stream aborts the in-flight fetch', () => {
         const abort = vi.spyOn(AbortController.prototype, 'abort');
         vi.spyOn(globalThis, 'fetch').mockImplementation(

@@ -7,6 +7,7 @@ import {
     isAgentClientErrorCode,
     type AgentClientErrorCode,
 } from '../lib/errorCodes';
+import { guestHistory } from '../lib/guestHistory';
 import { parseSseFrame, splitFrames } from '../lib/parseSseFrames';
 
 export interface ToolActivityItem {
@@ -37,6 +38,12 @@ interface Options {
     conversationId: string | null;
     initialMessages: ChatMessageView[];
     onConversationCreated?: (id: string, title: string) => void;
+    /**
+     * No session: nothing is stored server-side, so every turn carries the
+     * transcript this hook holds as `history`, and `regenerate` re-sends the
+     * last question instead of asking the server to rewrite stored rows.
+     */
+    guest?: boolean;
 }
 
 /** SSE `error` frame — an `AgentErrorCode` the turn itself reported (spec §8). */
@@ -177,6 +184,8 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
     const lastBodyRef = useRef<Record<string, unknown> | null>(null);
     /** Which failure kind `retry()` is reacting to — only a `TurnFrameError` may map to `regenerate()` (a partial assistant row was actually persisted for that turn). */
     const lastErrorKindRef = useRef<'http' | 'turn' | null>(null);
+    /** The last `run()` was a guest regenerate (sent as `send`) — `retry()` must replay it as one. */
+    const guestRegenerateRef = useRef(false);
 
     // Synced in an effect, not inside the updater: a state updater must stay pure
     // (React may re-run it). Handlers read this after commit, which is exactly the
@@ -436,9 +445,11 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
         [conversationId, patchLast, updateMessages]
     );
 
+    const guest = options.guest === true;
     const send = useCallback(
         (message: string) => {
             const snapshot = messagesRef.current;
+            guestRegenerateRef.current = false;
             updateMessages(prev => [
                 ...prev,
                 {
@@ -449,9 +460,17 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                     status: 'complete',
                 },
             ]);
-            return run({ action: 'send', message }, true, snapshot);
+            return run(
+                {
+                    action: 'send',
+                    message,
+                    ...(guest ? { history: guestHistory(snapshot) } : {}),
+                },
+                true,
+                snapshot
+            );
         },
-        [run, updateMessages]
+        [run, updateMessages, guest]
     );
     const regenerate = useCallback(() => {
         const snapshot = messagesRef.current;
@@ -460,8 +479,23 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                 ? prev.slice(0, -1)
                 : prev
         );
+        guestRegenerateRef.current = guest;
+        if (guest) {
+            // Same question again, with the turns before it as history.
+            const lastUser = snapshot.map(m => m.role).lastIndexOf('user');
+            if (lastUser < 0) return Promise.resolve();
+            return run(
+                {
+                    action: 'send',
+                    message: snapshot[lastUser]!.content,
+                    history: guestHistory(snapshot.slice(0, lastUser)),
+                },
+                false,
+                snapshot
+            );
+        }
         return run({ action: 'regenerate' }, false, snapshot);
-    }, [run, updateMessages]);
+    }, [run, updateMessages, guest]);
     const edit = useCallback(
         (seq: number, message: string) => {
             const snapshot = messagesRef.current;
@@ -498,7 +532,9 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
     const retry = useCallback((): Promise<void> | undefined => {
         if (lastErrorKindRef.current === 'turn') return regenerate();
         const body = lastBodyRef.current;
-        if (!body) return regenerate();
+        // A guest's regenerate goes out as `send` (see `regenerate`): replaying
+        // that body through `send` would put the question on screen twice.
+        if (!body || guestRegenerateRef.current) return regenerate();
         if (body.action === 'send') return send(String(body.message ?? ''));
         if (body.action === 'edit')
             return edit(Number(body.editSeq), String(body.message ?? ''));

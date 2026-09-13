@@ -148,7 +148,7 @@ describe('HeaderMobileMenu', () => {
         render(<HeaderMobileMenu items={NAV_TREE} />);
 
         expect(
-            screen.getByRole('link', { name: 'SiglensAI Beta', hidden: true })
+            screen.getByRole('link', { name: 'SIGLENS AI Beta', hidden: true })
         ).toBeInTheDocument();
     });
 

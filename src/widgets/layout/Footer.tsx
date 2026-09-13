@@ -212,7 +212,7 @@ export function Footer() {
                         {/* `whitespace-nowrap`: 320px에서 `© 2026` / `Siglens`
                             두 줄로 쪼개지던 회귀가 있었다(2026-08-25 사용자 제보). */}
                         <p className="text-sm whitespace-nowrap text-secondary-400">
-                            © <CurrentYear /> {SITE_NAME}
+                            © <CurrentYear /> {SITE_NAME.toUpperCase()}
                         </p>
                         <a
                             href={GITHUB_URL}
@@ -237,7 +237,13 @@ export function Footer() {
                                 prefetch={false}
                                 className={LINK_CLASSES}
                             >
-                                {aboutTitle(tSeo)}
+                                {/* 브랜드는 워드마크와 같은 대문자 표기로 보인다.
+                                    `about.title`은 페이지 제목과 공유라 카탈로그는 두고
+                                    푸터 표기만 맞춘다. */}
+                                {aboutTitle(tSeo).replace(
+                                    SITE_NAME,
+                                    SITE_NAME.toUpperCase()
+                                )}
                             </Link>
                             <Link
                                 href={PRIVACY_PATH}

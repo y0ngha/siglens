@@ -41,6 +41,7 @@ const captured = vi.hoisted(
         ({ options: null }) as {
             options: {
                 onConversationCreated?: (id: string, title: string) => void;
+                guest?: boolean;
             } | null;
         }
 );
@@ -130,6 +131,37 @@ describe('ChatShell error banner', () => {
         mockStream.error = 'turn_limit';
         renderShell();
         expect(screen.queryByRole('button', { name: /재시도/ })).toBeNull();
+    });
+
+    it('guest: the composer is open, the stream runs in guest mode, and a spent daily quota offers login instead of retry', () => {
+        mockStream.error = 'turn_limit';
+        wrap(
+            <ChatShell
+                conversationId={null}
+                initialMessages={[]}
+                conversations={[]}
+                signedIn={false}
+                localePrefix=""
+                siteUrl="https://siglens.io"
+                currentPath="/"
+            />
+        );
+        expect(captured.options).toMatchObject({ guest: true });
+        expect(screen.getByRole('textbox')).toBeEnabled();
+        const alert = screen.getByRole('alert');
+        expect(alert).toHaveTextContent('비회원은 하루 10번까지');
+        expect(screen.queryByRole('button', { name: /재시도/ })).toBeNull();
+        const logins = screen.getAllByRole('link', { name: '로그인' });
+        // The banner CTA plus the "not saved" notice above the composer.
+        expect(logins).toHaveLength(2);
+        logins.forEach(a =>
+            expect(a.getAttribute('href')).toMatch(
+                /^https:\/\/siglens\.io\/login\?next=/
+            )
+        );
+        expect(
+            screen.getByText('비회원 대화는 저장되지 않아요.')
+        ).toBeInTheDocument();
     });
 
     it('the banner retry button calls stream.retry(), never stream.regenerate() directly', () => {

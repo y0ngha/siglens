@@ -8,7 +8,7 @@ describe('AiNavLink', () => {
     it('ko href는 AI_SITE_URL + localePath(ko, "/")', () => {
         render(<AiNavLink />);
 
-        const link = screen.getByRole('link', { name: 'SiglensAI Beta' });
+        const link = screen.getByRole('link', { name: 'SIGLENS AI Beta' });
         expect(link).toHaveAttribute(
             'href',
             `${AI_SITE_URL}${localePath('ko', '/')}`
@@ -22,7 +22,7 @@ describe('AiNavLink', () => {
             </LocaleProvider>
         );
 
-        const link = screen.getByRole('link', { name: 'SiglensAI Beta' });
+        const link = screen.getByRole('link', { name: 'SIGLENS AI Beta' });
         expect(link).toHaveAttribute(
             'href',
             `${AI_SITE_URL}${localePath('en', '/')}`
@@ -33,7 +33,7 @@ describe('AiNavLink', () => {
         render(<AiNavLink />);
 
         expect(
-            screen.getByRole('link', { name: 'SiglensAI Beta' })
+            screen.getByRole('link', { name: 'SIGLENS AI Beta' })
         ).toHaveAttribute('translate', 'no');
     });
 
@@ -41,7 +41,7 @@ describe('AiNavLink', () => {
         render(<AiNavLink />);
 
         expect(
-            screen.getByRole('link', { name: 'SiglensAI Beta' })
+            screen.getByRole('link', { name: 'SIGLENS AI Beta' })
         ).not.toHaveAttribute('aria-current');
     });
 
@@ -53,14 +53,14 @@ describe('AiNavLink', () => {
         );
 
         expect(
-            screen.getByRole('link', { name: 'SiglensAI Beta' })
+            screen.getByRole('link', { name: 'SIGLENS AI Beta' })
         ).toHaveAttribute('aria-current', 'page');
     });
 
     describe('wordmark variant (logo lockup)', () => {
         it('shows "AI" + the Beta tag but keeps the full accessible name and the ai href', () => {
             render(<AiNavLink variant="wordmark" />);
-            const link = screen.getByRole('link', { name: 'SiglensAI Beta' });
+            const link = screen.getByRole('link', { name: 'SIGLENS AI Beta' });
             expect(link).toHaveTextContent(/^AIBeta$/);
             expect(link).toHaveAttribute('translate', 'no');
             expect(link).toHaveAttribute(
@@ -78,7 +78,7 @@ describe('AiNavLink', () => {
                 </LocaleProvider>
             );
             expect(
-                screen.getByRole('link', { name: 'SiglensAI Beta' })
+                screen.getByRole('link', { name: 'SIGLENS AI Beta' })
             ).toHaveAttribute('aria-current', 'page');
         });
     });

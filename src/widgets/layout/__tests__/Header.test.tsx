@@ -57,7 +57,7 @@ describe('Header', () => {
     it('renders the site logo and name', () => {
         render(<Header currentUser={null} />);
 
-        expect(screen.getByLabelText('Siglens 로고')).toBeInTheDocument();
+        expect(screen.getByLabelText('SIGLENS 로고')).toBeInTheDocument();
     });
 
     it('renders the home link', () => {
@@ -106,7 +106,7 @@ describe('Header', () => {
     describe('SIGLENS AI logo lockup', () => {
         it('main host: the AI wordmark next to the logo links to the AI product; the logo goes home', () => {
             render(<Header currentUser={null} />);
-            const ai = screen.getByRole('link', { name: 'SiglensAI Beta' });
+            const ai = screen.getByRole('link', { name: 'SIGLENS AI Beta' });
             expect(ai).toHaveTextContent(/^AIBeta$/);
             expect(ai).toHaveAttribute('href', `${AI_SITE_URL}/`);
             expect(ai).not.toHaveAttribute('aria-current');
@@ -117,25 +117,24 @@ describe('Header', () => {
             expect(logo).toHaveAttribute('aria-label', 'SIGLENS 홈');
             // No duplicate entry in the desktop nav: the lockup is the entry point.
             expect(
-                screen.getAllByRole('link', { name: 'SiglensAI Beta' })
+                screen.getAllByRole('link', { name: 'SIGLENS AI Beta' })
             ).toHaveLength(1);
         });
 
-        it('ai host: the lockup is the current brand and the logo returns to the AI home', () => {
+        it('ai host: the AI wordmark is the current page and the logo goes back to siglens.io', () => {
             render(
                 <LocaleProvider locale="ko" hrefBase="https://siglens.io">
                     <Header currentUser={null} />
                 </LocaleProvider>
             );
             expect(
-                screen.getByRole('link', { name: 'SiglensAI Beta' })
+                screen.getByRole('link', { name: 'SIGLENS AI Beta' })
             ).toHaveAttribute('aria-current', 'page');
             const logo = screen.getByTitle('홈으로');
             expect(
                 logo.getAttribute('data-href') ?? logo.getAttribute('href')
-            ).toBe(`${AI_SITE_URL}/`);
-            // The name says where the link goes and what is visible next to it.
-            expect(logo).toHaveAttribute('aria-label', 'SIGLENS AI 홈');
+            ).toBe('https://siglens.io/');
+            expect(logo).toHaveAttribute('aria-label', 'SIGLENS 홈');
             expect(screen.getByText('Siglens').className).toMatch(/\binline\b/);
         });
     });

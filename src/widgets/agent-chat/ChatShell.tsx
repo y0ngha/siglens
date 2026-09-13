@@ -13,6 +13,7 @@ import {
 import { Composer } from './Composer';
 import { AGENT_ERROR_RETRYABLE } from './errorCopy';
 import { EmptyState } from './EmptyState';
+import { GUEST_TURNS_PER_DAY } from './guestTurnLimit';
 import { MenuIcon } from './icons';
 import { loginHref } from './loginHref';
 import { MessageList } from './MessageList';
@@ -61,6 +62,7 @@ export function ChatShell({
     const stream = useAgentStream({
         conversationId,
         initialMessages,
+        guest: !signedIn,
         onConversationCreated: id => {
             window.history.replaceState(null, '', `${localePrefix}/c/${id}`);
             pendingRefreshRef.current = true;
@@ -116,7 +118,9 @@ export function ChatShell({
         conversation_full: t('ChatShell.errorConversationFull'),
         disabled: t('ChatShell.errorDisabled'),
         server_busy: t('ChatShell.errorServerBusy'),
-        turn_limit: t('ChatShell.errorTurnLimit'),
+        turn_limit: signedIn
+            ? t('ChatShell.errorTurnLimit')
+            : t('ChatShell.errorTurnLimitGuest', { n: GUEST_TURNS_PER_DAY }),
         premium_turn_limit: t('ChatShell.errorPremiumTurnLimit'),
         rate_limited: t('ChatShell.errorRateLimited'),
         server_error: t('ChatShell.errorServerError'),
@@ -130,6 +134,8 @@ export function ChatShell({
     const errorRetryable = errorCode
         ? (AGENT_ERROR_RETRYABLE[errorCode] ?? true)
         : false;
+    /** A guest out of turns has one way forward, and it is not "retry". */
+    const offerLogin = !signedIn && errorCode === 'turn_limit';
     const activeTitle =
         conversations.find(c => c.id === stream.conversationId)?.title ?? '';
     return (
@@ -208,7 +214,14 @@ export function ChatShell({
                             <span className="min-w-0 break-words">
                                 {errorMessage}
                             </span>
-                            {errorRetryable ? (
+                            {offerLogin ? (
+                                <a
+                                    href={login}
+                                    className="inline-flex min-h-9 shrink-0 items-center rounded-lg bg-primary-600 px-3 text-xs font-medium text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                >
+                                    {t('ChatShell.loginCta')}
+                                </a>
+                            ) : errorRetryable ? (
                                 <button
                                     type="button"
                                     onClick={() => void stream.retry()}
@@ -220,8 +233,21 @@ export function ChatShell({
                         </p>
                     </div>
                 ) : null}
+                {!signedIn && stream.messages.length > 0 ? (
+                    // Guests can ask, but the transcript lives only in this tab —
+                    // say so once, next to the one action that keeps it.
+                    <p className="mx-auto w-full max-w-3xl px-4 pb-1 text-center text-xs text-secondary-400">
+                        {t('ChatShell.guestNotice')}{' '}
+                        <a
+                            href={login}
+                            className="font-medium text-primary-400 underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        >
+                            {t('ChatShell.loginCta')}
+                        </a>
+                    </p>
+                ) : null}
                 <Composer
-                    disabled={!signedIn}
+                    disabled={false}
                     streaming={stream.status === 'streaming'}
                     remainingTurns={stream.remaining?.turns ?? null}
                     onSend={text => void stream.send(text)}

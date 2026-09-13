@@ -45,6 +45,7 @@ import {
     availableToolNames,
     createToolExecutor,
 } from '@/app/api/ai/chat/tools';
+import { guestSubject } from '@/app/api/ai/chat/guestSubject';
 
 function makeCtx(aborted = false) {
     const controller = new AbortController();
@@ -115,6 +116,44 @@ describe('tool registry', () => {
             )
         ).toEqual({ error: 'invalid_symbol' });
         expect(getOptionsSummary).not.toHaveBeenCalled();
+    });
+
+    it.each(['get_my_portfolio', 'run_fresh_analysis', 'web_search'])(
+        '게스트의 %s → login_required, 실행기 미호출',
+        async name => {
+            const { getMyPortfolioTool } =
+                await import('@/app/api/ai/chat/tools/getMyPortfolio');
+            const { runFreshAnalysisTool } =
+                await import('@/app/api/ai/chat/tools/runFreshAnalysis');
+            const { webSearchTool } =
+                await import('@/app/api/ai/chat/tools/webSearch');
+            const execute = createToolExecutor({ analysisModel: 'm' as never });
+            await expect(
+                execute(
+                    name,
+                    { symbol: 'AAPL', query: 'x' },
+                    {
+                        ...makeCtx(),
+                        userId: guestSubject('203.0.113.7'),
+                        tier: 'free' as never,
+                    }
+                )
+            ).resolves.toEqual({ error: 'login_required' });
+            expect(getMyPortfolioTool).not.toHaveBeenCalled();
+            expect(runFreshAnalysisTool).not.toHaveBeenCalled();
+            expect(webSearchTool).not.toHaveBeenCalled();
+        }
+    );
+
+    it('게스트도 공개 데이터 툴은 그대로 실행한다', async () => {
+        search.mockResolvedValue({ results: [] });
+        const execute = createToolExecutor({ analysisModel: 'm' as never });
+        await execute(
+            'search_ticker',
+            { query: 'apple' },
+            { ...makeCtx(), userId: guestSubject('203.0.113.7') }
+        );
+        expect(search).toHaveBeenCalledTimes(1);
     });
 
     it('알 수 없는 툴 이름 → unknown_tool', async () => {

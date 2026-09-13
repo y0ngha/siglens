@@ -112,7 +112,7 @@ export const getNewsTool: ToolExecutor = async (args, ctx) => {
         if (bodyItemCount > 0) {
             const envelopeLength = JSON.stringify({
                 asOf: new Date().toISOString(),
-                source: 'siglens news store',
+                source: 'SIGLENS news',
                 count: items.length,
                 coverageLimited: items.length === 0,
                 items,
@@ -137,7 +137,7 @@ export const getNewsTool: ToolExecutor = async (args, ctx) => {
 
     return {
         asOf: new Date().toISOString(),
-        source: 'siglens news store',
+        source: 'SIGLENS news',
         count: items.length,
         coverageLimited: items.length === 0,
         items,

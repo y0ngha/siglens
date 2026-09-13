@@ -74,6 +74,8 @@ describe('HeaderNavStatic', () => {
 
     it('SiglensAI 진입점은 로고 락업이 맡는다 — 데스크톱 내비에는 없다', () => {
         render(<HeaderNavStatic items={NAV_TREE} />);
-        expect(screen.queryByRole('link', { name: /SiglensAI/i })).toBeNull();
+        expect(
+            screen.queryByRole('link', { name: /SIGLENS AI|SiglensAI/i })
+        ).toBeNull();
     });
 });

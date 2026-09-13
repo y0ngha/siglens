@@ -226,7 +226,7 @@ describe('Sidebar', () => {
         );
         expect(screen.queryByRole('searchbox')).toBeNull();
         expect(
-            screen.getByRole('link', { name: '로그인하고 시작하기' })
+            screen.getByRole('link', { name: '로그인하기' })
         ).toHaveAttribute('href', 'https://siglens.io/login?next=x');
         expect(screen.getByRole('link', { name: '이용약관' })).toHaveAttribute(
             'href',

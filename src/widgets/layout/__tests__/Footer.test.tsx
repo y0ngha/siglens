@@ -39,8 +39,12 @@ import {
     ALL_NAV_REGION_LINKS,
     NAV_VERTICALS,
 } from '@/shared/config/assetClassNav';
-import { GITHUB_URL } from '@/shared/lib/seo';
+import { GITHUB_URL, SITE_NAME } from '@/shared/lib/seo';
 import { koMessage } from '@/shared/test-utils/koMessage';
+import en from '../../../../messages/en.json';
+import ja from '../../../../messages/ja.json';
+import ko from '../../../../messages/ko.json';
+import zh from '../../../../messages/zh.json';
 
 describe('Footer', () => {
     it('renders the investment disclaimer', () => {
@@ -56,13 +60,17 @@ describe('Footer', () => {
     it('renders the copyright with year', () => {
         render(<Footer />);
 
-        expect(screen.getByText(/© 2026 Siglens/)).toBeInTheDocument();
+        expect(screen.getByText(/© 2026 SIGLENS/)).toBeInTheDocument();
     });
 
-    it('renders the about link', () => {
+    it('renders the about link, uppercasing the brand token in the title', () => {
         render(<Footer />);
 
-        const link = screen.getByRole('link', { name: /Siglens 소개/ });
+        // The mock returns 'Siglens 소개' (mixed case) — this only passes if
+        // Footer's `.replace(SITE_NAME, SITE_NAME.toUpperCase())` actually ran.
+        const link = screen.getByRole('link', { name: /SIGLENS 소개/ });
+        expect(link).toHaveTextContent('SIGLENS 소개');
+        expect(link).not.toHaveTextContent('Siglens 소개');
         expect(link).toHaveAttribute('href', '/about');
     });
 
@@ -139,7 +147,7 @@ describe('Footer', () => {
         const { container } = render(<Footer />);
 
         const copyright = Array.from(container.querySelectorAll('p')).find(el =>
-            el.textContent?.includes('Siglens')
+            el.textContent?.includes('SIGLENS')
         );
         expect(copyright).toBeDefined();
         expect(copyright!.className).toContain('whitespace-nowrap');
@@ -276,5 +284,23 @@ describe('splitFooterLabel', () => {
             visible: '미국 시장 분석',
             srSuffix: '',
         });
+    });
+});
+
+/**
+ * Footer의 `aboutTitle(tSeo).replace(SITE_NAME, SITE_NAME.toUpperCase())`는
+ * 카탈로그 문구가 `SITE_NAME`을 그대로 담고 있을 때만 동작한다 — 번역이 그
+ * 토큰을 빼면 `.replace`가 조용히 아무것도 안 바꾼다. `Footer.test.tsx`는
+ * `aboutTitle`을 모킹하므로 실제 카탈로그 값은 이 테스트가 아니면 아무도
+ * 검증하지 않는다.
+ */
+describe('shared.seo.about.title 카탈로그', () => {
+    it.each([
+        ['ko', ko],
+        ['en', en],
+        ['ja', ja],
+        ['zh', zh],
+    ])('%s 카탈로그는 SITE_NAME을 담고 있다', (_locale, messages) => {
+        expect(messages.shared.seo.about.title).toContain(SITE_NAME);
     });
 });

@@ -6,7 +6,7 @@ import {
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 
 const copy = {
-    title: 'SiglensAI (Beta) — 주식·코인 AI 리서치 어시스턴트',
+    title: 'SIGLENS AI (Beta) — 주식·코인 AI 리서치 어시스턴트',
     description: '설명',
     ogLabel: '라벨',
 };
@@ -19,7 +19,7 @@ describe('buildAiHomeMetadata', () => {
         expect(m.robots).toEqual({ index: true, follow: true });
         expect(m.alternates?.canonical).toBe(`${AI_SITE_URL}/`);
         expect(m.openGraph).toMatchObject({
-            siteName: 'SiglensAI',
+            siteName: 'SIGLENS AI',
             url: `${AI_SITE_URL}/`,
             images: [{ url: `${AI_SITE_URL}/api/ai/og?locale=ko` }],
         });

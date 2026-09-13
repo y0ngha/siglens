@@ -109,4 +109,47 @@ describe('ToolActivity', () => {
         fireEvent.click(summary);
         expect(screen.getByText('실패')).toBeInTheDocument();
     });
+
+    it('a lookup refused to a guest reads as "login required", not as a failure', () => {
+        wrap(
+            <ToolActivity
+                tools={[
+                    {
+                        id: 'p',
+                        name: 'get_my_portfolio',
+                        args: {},
+                        status: 'error',
+                        ms: 3,
+                        summary: '{"error":"login_required"}',
+                    },
+                ]}
+            />
+        );
+        const summary = screen.getByRole('button');
+        expect(summary).toHaveTextContent('로그인 필요');
+        expect(summary).not.toHaveTextContent('일부 실패');
+        fireEvent.click(summary);
+        expect(screen.queryByText('실패')).toBeNull();
+    });
+
+    it('summary가 login_required를 부분 문자열로만 담아도(다른 error) 로그인 필요로 읽지 않는다', () => {
+        wrap(
+            <ToolActivity
+                tools={[
+                    {
+                        id: 'f',
+                        name: 'get_news',
+                        args: {},
+                        status: 'error',
+                        ms: 3,
+                        summary:
+                            '{"error":"tool_failed","note":"login_required"}',
+                    },
+                ]}
+            />
+        );
+        const summary = screen.getByRole('button');
+        expect(summary).toHaveTextContent('일부 실패');
+        expect(summary).not.toHaveTextContent('로그인 필요');
+    });
 });

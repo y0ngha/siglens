@@ -119,7 +119,7 @@ export const getBarsIndicatorsTool: ToolExecutor = async args => {
     return fitBarsToBudget(
         (barsForOutput, barsTrimmed) => ({
             asOf,
-            source: 'siglens bars + indicators',
+            source: 'SIGLENS bars + indicators',
             symbol,
             timeframe,
             currency,

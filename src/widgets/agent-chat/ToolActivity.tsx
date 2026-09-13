@@ -17,6 +17,7 @@ import {
     SearchIcon,
     SparkIcon,
 } from './icons';
+import { toolResultError } from './utils/toolSummary';
 
 type IconComponent = ComponentType<{ className?: string }>;
 
@@ -43,6 +44,11 @@ function subject(item: ToolActivityItem): string {
     if (typeof args.query === 'string') return `“${args.query}”`;
     return '';
 }
+
+/** A lookup a guest was refused (core/executor `{"error":"login_required"}`) — not a failure. */
+const needsLogin = (item: ToolActivityItem): boolean =>
+    item.status === 'error' &&
+    toolResultError(item.summary) === 'login_required';
 
 /**
  * The data behind one answer, folded into one quiet line ("checked quote ·
@@ -79,7 +85,10 @@ export function ToolActivity({
         t('ToolActivity.seconds', { n: (ms / 1000).toFixed(1) });
 
     const running = tools.find(item => item.status === 'running');
-    const failed = tools.some(item => item.status === 'error');
+    const failed = tools.some(
+        item => item.status === 'error' && !needsLogin(item)
+    );
+    const loginNeeded = tools.some(needsLogin);
     const totalMs = tools.reduce((sum, item) => sum + (item.ms ?? 0), 0);
     const distinct = [...new Set(tools.map(item => labelOf(item.name)))];
     const summary = running
@@ -98,6 +107,7 @@ export function ToolActivity({
         : [
               t('ToolActivity.checked', { sources: distinct.join(' · ') }),
               failed ? t('ToolActivity.partialFailure') : '',
+              loginNeeded ? t('ToolActivity.loginRequired') : '',
               totalMs > 0 ? seconds(totalMs) : '',
           ];
     return (
@@ -157,6 +167,10 @@ export function ToolActivity({
                                     {item.status === 'running' ? (
                                         <span className="motion-safe:animate-pulse">
                                             {t('ToolActivity.inProgress')}
+                                        </span>
+                                    ) : needsLogin(item) ? (
+                                        <span className="text-secondary-300">
+                                            {t('ToolActivity.loginRequired')}
                                         </span>
                                     ) : item.status === 'error' ? (
                                         <span className="text-ui-warning-text">
