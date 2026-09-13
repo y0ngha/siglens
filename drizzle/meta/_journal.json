@@ -246,6 +246,13 @@
       "when": 1788586848347,
       "tag": "0034_red_pyro",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1789176356041,
+      "tag": "0035_agent_chat",
+      "breakpoints": true
     }
   ]
 }

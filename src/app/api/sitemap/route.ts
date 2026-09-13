@@ -9,6 +9,7 @@ import {
 import { SITE_URL } from '@/shared/lib/seo';
 import { NextResponse } from 'next/server';
 import { SITEMAP_CACHE_CONTROL } from '@/app/api/sitemap/_shared/constants';
+import { rejectAiHost } from '@/app/api/sitemap/_shared/aiHostGuard';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,9 @@ export const dynamic = 'force-dynamic';
  * 자식 빌더는 전부 순수 함수라 여기서 한 번 더 호출해도 I/O가 없다(popular 2천여
  * 엔트리 객체 생성이 전부). 최댓값만 뽑고 버린다.
  */
-export async function GET(): Promise<Response> {
+export async function GET(request: Request): Promise<Response> {
+    const aiHostRejection = rejectAiHost(request);
+    if (aiHostRejection) return aiHostRejection;
     const now = new Date();
 
     const entries: SitemapIndexEntry[] = [

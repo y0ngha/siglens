@@ -14,6 +14,7 @@ import {
     SITEMAP_RETRY_AFTER_SECONDS,
     SITEMAP_UNAVAILABLE_BODY,
 } from '@/app/api/sitemap/_shared/constants';
+import { rejectAiHost } from '@/app/api/sitemap/_shared/aiHostGuard';
 
 interface RouteContext {
     params: Promise<{ kind: string }>;
@@ -41,9 +42,11 @@ function unavailableResponse(): NextResponse {
 }
 
 export async function GET(
-    _request: Request,
+    request: Request,
     { params }: RouteContext
-): Promise<NextResponse> {
+): Promise<Response> {
+    const aiHostRejection = rejectAiHost(request);
+    if (aiHostRejection) return aiHostRejection;
     const { kind } = await params;
 
     if (!isRemovalSitemapKind(kind)) {

@@ -4595,9 +4595,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@y0ngha/siglens-core@npm:1.0.4":
-  version: 1.0.4
-  resolution: "@y0ngha/siglens-core@npm:1.0.4::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40y0ngha%2Fsiglens-core%2F1.0.4%2F8b3306e4d146711892a8a741db32c2f50989babb"
+"@y0ngha/siglens-core@npm:1.1.0":
+  version: 1.1.0
+  resolution: "@y0ngha/siglens-core@npm:1.1.0::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40y0ngha%2Fsiglens-core%2F1.1.0%2F55a86b8f7ad58f082eb39eb473612a2a356a1b43"
   dependencies:
     "@anthropic-ai/sdk": "npm:^0.110.0"
     "@google/genai": "npm:^2.10.0"
@@ -4605,7 +4605,7 @@ __metadata:
     openai: "npm:6.35.0"
   peerDependencies:
     "@upstash/redis": ^1.37.0
-  checksum: 10c0/ca7a1f3a95a0d9ffcdbf2d32734d0bff114f9ed55dc86d03dee976951207b1256082dfbfab483e77196d693f0a0d449d4ff31947fbf855a12d24c6d8534e111c
+  checksum: 10c0/18d1aa21f2733f65eac8ece28396af0b775f4cc49ddb5153e1930756c50f6d97fa845c787fe7ff44888f7f80ee3a2c23fbcf16e42a1deb0cbf2566fabd3cca59
   languageName: node
   linkType: hard
 
@@ -10559,7 +10559,7 @@ __metadata:
     "@typescript/native-preview": "npm:7.0.0-dev.20260707.2"
     "@upstash/redis": "npm:^1.37.0"
     "@vitest/coverage-v8": "npm:^4.1.9"
-    "@y0ngha/siglens-core": "npm:1.0.4"
+    "@y0ngha/siglens-core": "npm:1.1.0"
     babel-plugin-react-compiler: "npm:^1.0.0"
     bcryptjs: "npm:^3.0.3"
     clsx: "npm:^2.1.1"

@@ -50,6 +50,13 @@ OPTIONAL_KEYS=(
   # and CloudWatch alarm wiring (07-alarms.sh) are created regardless; only the
   # email subscription is skipped when this is absent. Never block deploy for it.
   ALARM_EMAIL
+  # SiglensAI (ai.siglens.io). NEXT_PUBLIC_AI_SITE_URL defaults to
+  # https://ai.siglens.io (inlined at build time); BRAVE_SEARCH_API_KEY absent =
+  # web_search tool dropped; AGENT_CHAT_DISABLED is a kill switch that is unset
+  # in normal operation.
+  NEXT_PUBLIC_AI_SITE_URL
+  BRAVE_SEARCH_API_KEY
+  AGENT_CHAT_DISABLED
 )
 
 # 필수 키 수집: KEY=... 형태 라인에서 KEY만 추출(주석/빈 줄 스킵, EXCLUDE 제외).

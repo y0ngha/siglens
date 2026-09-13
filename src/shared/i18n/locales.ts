@@ -84,15 +84,52 @@ export const LOCALE_OG: Record<Locale, string> = {
     zh: 'zh_CN',
 };
 
+/** 정규식이 아니라 코드포인트로 본다 — `no-control-regex`를 억제하지 않기 위해서다. */
+const MAX_STRIPPED_CODE_POINT = 0x20;
+
+function stripLeadingSeparators(path: string): string {
+    let i = 0;
+    while (
+        i < path.length &&
+        (path[i] === '/' ||
+            path[i] === '\\' ||
+            path.charCodeAt(i) <= MAX_STRIPPED_CODE_POINT)
+    )
+        i += 1;
+    return path.slice(i);
+}
+
+/**
+ * `/api` 경로인지. 쿼리·해시가 붙은 경로(`/api/x?y=1`)도 판정한다.
+ *
+ * `/api/*`는 next-intl 매처 밖이라 로케일 접두사가 붙으면(`/en/api/…`) 404다.
+ */
+export function isApiPath(path: string): boolean {
+    return /^\/api(?:[/?#]|$)/.test(path);
+}
+
 /**
  * 로케일 접두사를 붙인 경로를 만든다. 기본 로케일은 접두사가 없다
  * (`localePrefix: 'as-needed'`와 반드시 일치해야 한다).
+ *
+ * **결과는 절대 `//`·`/\` 로 시작하지 않는다.** 선행 `/`·`\`·공백/제어문자를 모두
+ * 걷어낸 뒤 `/` 하나만 다시 붙인다. 호출자는 흔히 `splitLocalePath`로 접두사를
+ * 뗀 나머지를 넘기는데, 기본 로케일은 접두사가 없어서 `/ko//evil.com` →
+ * `//evil.com` → `new URL(…, base)` = `https://evil.com/`이 된다(sanitize를 이미
+ * 통과한 값에서 프로토콜-상대 경로가 다시 생긴다). 모든 호출자가 여기를 지나므로
+ * 한 곳에서 막는다. 탭·개행은 URL 파서가 지우므로(`/\t/evil.com`) 함께 걷어낸다.
+ *
+ * **`/api` 경로는 (같은 정규화 후) 그대로 돌려준다.** 로그인 `next`에 핸드오프 라우트
+ * (`/api/auth/handoff?to=ai&next=…`)가 실려 오면 `LoginContent`·`localeHref`가
+ * 이 함수를 거치는데, 접두사를 붙이면 비-ko 사용자만 로그인 직후 404에 떨어진다.
  *
  * @param locale 대상 로케일
  * @param path   `/`로 시작하는 로케일 없는 경로. `/`는 루트를 뜻한다.
  */
 export function localePath(locale: Locale, path: string): string {
-    const normalized = path === '/' ? '' : path;
+    const rooted = `/${stripLeadingSeparators(path)}`;
+    if (isApiPath(rooted)) return rooted;
+    const normalized = rooted === '/' ? '' : rooted;
     return locale === DEFAULT_LOCALE
         ? normalized || '/'
         : `/${locale}${normalized}`;

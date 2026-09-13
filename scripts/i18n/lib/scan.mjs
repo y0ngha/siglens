@@ -27,9 +27,15 @@ const HASH_LENGTH = 6;
  * - `entities/analysis-plain/lib/`: LLM 프롬프트 본문과 재시도 지적 문구.
  *   화면이 아니라 모델에게 보내는 한국어라 번역 대상이 아니다. 로케일별로 갈리는
  *   것은 프롬프트가 지정하는 **출력 언어**이지 프롬프트 자체가 아니다.
+ * - `entities/chat-conversation/model.ts`: SiglensAI 대화의 기본 제목.
+ *   카탈로그 키가 아니라 **생성 시점 로케일로 DB 행에 저장되는 값**이라 렌더 시점에
+ *   번역할 수 없다(제목은 사용자가 바꿀 수도 있다). 4개 로케일 문구를 코드의
+ *   `DEFAULT_TITLE_BY_LOCALE` 맵이 이미 전부 들고 있으므로 미번역 문자열이 아니다.
+ * - `entities/llm-provider/api/agent/fake.ts`: E2E 전용 가짜 프로바이더의 고정 답변.
+ *   `isE2E()`일 때만 쓰이며 운영 경로에서는 렌더되지 않는다.
  */
 const EXCLUDE_RE =
-    /(__tests__|__integration__|\.test\.|\.spec\.|src\/app\/api\/|\/test-utils\/|global-error\.tsx|src\/app\/not-found\.tsx|src\/entities\/analysis-plain\/lib\/)/;
+    /(__tests__|__integration__|\.test\.|\.spec\.|src\/app\/api\/|\/test-utils\/|global-error\.tsx|src\/app\/not-found\.tsx|src\/entities\/analysis-plain\/lib\/|src\/entities\/chat-conversation\/model\.ts|src\/entities\/llm-provider\/api\/agent\/fake\.ts)/;
 
 /** 파일 경로 → 메시지 네임스페이스. */
 export function namespaceFor(relPath) {

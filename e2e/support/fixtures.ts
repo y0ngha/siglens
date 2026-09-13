@@ -1,6 +1,13 @@
 import { test as base, expect } from '@playwright/test';
 
-const ALLOWED_HOSTS = new Set(['localhost:4300', '127.0.0.1:4300']);
+// ai.localhost:4300 is the SiglensAI subtree host (`ai` project, agent-chat.spec.ts) —
+// same app/server, just routed by `src/proxy.ts` on Host, so it belongs in the allowlist
+// alongside the main host.
+const ALLOWED_HOSTS = new Set([
+    'localhost:4300',
+    '127.0.0.1:4300',
+    'ai.localhost:4300',
+]);
 const ALLOWED_PROTOCOLS = new Set(['data:', 'blob:', 'chrome-extension:']);
 
 /**

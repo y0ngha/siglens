@@ -27,7 +27,6 @@ import {
     type RemovalSitemapEntry,
 } from '@/entities/sitemap-entry';
 import { loadRemovalSitemapEntries } from '@/entities/sitemap-entry/server';
-import type { NextResponse } from 'next/server';
 import type { MockedFunction, MockInstance } from 'vitest';
 
 const {
@@ -53,7 +52,7 @@ const entry: RemovalSitemapEntry = {
 let errorSpy: MockInstance;
 let infoSpy: MockInstance;
 
-function callGET(kind: string): Promise<NextResponse> {
+function callGET(kind: string): Promise<Response> {
     return GET(new Request(`https://siglens.io/api/sitemap/removal/${kind}`), {
         params: Promise.resolve({ kind }),
     });

@@ -40,11 +40,23 @@ import { AUTH_STORAGE_STATE } from './e2e/support/authUser';
  *              would exercise the sheet-open input-reachability regression.
  *              Depends on setup, same as authed.
  *
+ *   ai       → agent-chat.spec.ts only. Runs against the `ai.localhost:4300`
+ *              host (SiglensAI subtree, proxy.ts Host-based rewrite) instead
+ *              of `localhost:4300`, so it needs its own baseURL and must be
+ *              excluded from chromium/webkit (it would otherwise also match
+ *              their "every other spec" testIgnore complement). No
+ *              storageState — the spec itself sets up the authed case via
+ *              `AUTH_STORAGE_STATE` (main-host cookies don't cross to the ai
+ *              host, so the first test exercises the SSO handoff) and the
+ *              anonymous case via a fresh context.
+ *
  * `globalSetup` (migrate + seed, incl. the auth user) still runs once before
  * all projects, so the user exists before the setup project tries to log in.
  */
 const ACCOUNT_SPECS =
     /(account-.*|portfolio-(holdings|position)|personalized-analysis)\.spec\.ts/;
+
+const AGENT_CHAT_SPEC = /agent-chat\.spec\.ts/;
 
 /**
  * 모바일 뷰포트 + 로그인 상태에서만 의미가 있는 스펙. `authed`가 Desktop Chrome
@@ -106,14 +118,23 @@ export default defineConfig({
         },
         {
             name: 'chromium',
-            testIgnore: [ACCOUNT_SPECS, AUTHED_MOBILE_SPECS],
+            testIgnore: [ACCOUNT_SPECS, AUTHED_MOBILE_SPECS, AGENT_CHAT_SPEC],
             use: { ...devices['Desktop Chrome'] },
         },
         {
             name: 'webkit',
             grep: /@webkit/,
-            testIgnore: [ACCOUNT_SPECS, AUTHED_MOBILE_SPECS],
+            testIgnore: [ACCOUNT_SPECS, AUTHED_MOBILE_SPECS, AGENT_CHAT_SPEC],
             use: { ...devices['iPhone 14'] },
+        },
+        {
+            name: 'ai',
+            testMatch: AGENT_CHAT_SPEC,
+            dependencies: ['setup'],
+            use: {
+                ...devices['Desktop Chrome'],
+                baseURL: 'http://ai.localhost:4300',
+            },
         },
     ],
     webServer: {

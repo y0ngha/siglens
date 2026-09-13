@@ -319,6 +319,11 @@ GEMINI_CHAT_FREE_API_KEY=
 # AI — 번역 모델(키는 GEMINI_API_KEY 공유)
 TRANSLATE_MODEL=
 
+# AI — SiglensAI(ai.siglens.io) 에이전트 챗
+NEXT_PUBLIC_AI_SITE_URL=  # 기본값 https://ai.siglens.io. `AI_SITE_URL`(src/shared/config/aiHost.ts)은 이 값을 읽는 코드 상수이지 별도 env가 아니다
+BRAVE_SEARCH_API_KEY=  # 미설정 시 web_search 툴 자체가 비활성(가용 툴 목록에서 제외, 에러 아님)
+AGENT_CHAT_DISABLED=  # `1`이면 /api/ai/chat/stream이 모든 요청에 503을 반환(킬 스위치). 자세한 절차는 DEPLOY_RUNBOOK.md §3.5
+
 # Cache
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
@@ -472,3 +477,75 @@ interface AnalysisStreamRequest {
 siglens 제공 모델(`TIER_CONFIG.models.free`)은 서버 키로 호출하고, 그 외 모델은 사용자
 키가 필요하다. 사용자 키가 없으면 `error` 이벤트로 알린다. 목록은 siglens-core의
 `TIER_CONFIG`가 단일 출처다 — 이 문서에 복제하지 않는다.
+
+---
+## SiglensAI(ai.siglens.io) 에이전트 챗 — `POST /api/ai/chat/stream`
+
+`ai.siglens.io` 전용 SSE 라우트. 분석 스트림과 달리 **인증 필수**이며(비회원은 `ai.siglens.io`에
+세션이 없다 — 아래 SSO 참고), core의 `runAgentTurn`을 한 번 호출해 멀티스텝 에이전트 루프
+(툴 호출 포함)를 완주할 때까지 결과를 SSE로 스트리밍한다. 라우트 트리는
+`src/app/ai/[locale]/{page.tsx, c/[id]/page.tsx}`.
+
+**Body**
+
+```typescript
+interface Body {
+    conversationId: string | null; // null이면 새 대화 시작
+    message: string; // 1~4,000자. action이 'regenerate'가 아니면 필수
+    action?: 'send' | 'regenerate' | 'edit'; // 기본 'send'
+    editSeq?: number; // action이 'edit'일 때만, 1 이상의 정수
+}
+```
+
+**에러(모두 SSE가 아니라 일반 JSON 응답)**
+
+| status | `error` | 의미 |
+|---|---|---|
+| 503 | `disabled` | 킬 스위치(`AGENT_CHAT_DISABLED=1`) 활성. `Retry-After: 600` |
+| 401 | `unauthenticated` | 로그인 필요 |
+| 403 | `bot` | 봇 UA로 판정 |
+| 400 | `invalid_body` | 파싱 실패, editSeq 대상 없음 등 |
+| 503 / 409 | `server_busy` | 인스턴스당 동시 턴 상한(4) 또는 SSE 스트림 게이트 초과(503) · 사용자별 턴 락 충돌(409) |
+| 404 | `not_found` | `conversationId`가 이 사용자 소유가 아니거나 존재하지 않음 |
+| 409 | `conversation_limit` | 티어별 대화 개수 상한 초과(새 대화 생성 시도) |
+| 409 | `conversation_full` | 대화당 메시지 상한(`AGENT_LIMITS.messagesPerConversation`) 초과 |
+| 500 | `server_error` | 미처리 예외. `[agent-stream] failed:`로 로깅(§3.5 알람 대상) |
+
+**이벤트** — `AgentTurnEvent`(core) 그대로 전달 + 라우트가 추가하는 `meta`/`done`
+
+| event | 의미 |
+|---|---|
+| `meta` | 스트림 최초 프레임. `conversationId`·`userMessageId`·`model` 등 |
+| `text` | 델타 텍스트 청크 |
+| `tool_call` / `tool_start` / `tool_end` | 툴 호출 선언 → 실행 시작 → 종료(`status: 'ok' | 'error'`, `ms`, `summary`) |
+| `usage` | 정규화된 토큰 사용량(`NormalizedUsage`) |
+| `stop` | 루프 종료 사유(`AgentStopReason`) |
+| `heartbeat` | 25초 주기, idle 방지 |
+| `done` | 턴 완료. `assistantMessageId`·`remaining`·`stopReason` |
+| `error` | 턴 실패. `AgentErrorCode` 기반(§ 아래 참고) |
+
+턴 실패 시 `persistedStatusFor`가 `AgentErrorCode`를 `'aborted' | 'error'`로 접어 부분
+응답의 저장 상태를 정한다 — `deadline`/`aborted`는 `aborted`, 나머지(`turn_limit` 등)는
+`error`.
+
+**관측**: 턴마다 `[Agent]` JSON 라인 1건(`conversationId`·`userId`·`steps`·
+`toolCalls: [{name, ms, status}]`·`ms`·`stopReason`), 프로바이더 호출마다 `[Usage]` JSON
+라인(`jobId: "agent"`) — 자세한 필드는 `src/entities/llm-provider/lib/usage.ts`. 킬
+스위치·알람은 `docs/architecture/DEPLOY_RUNBOOK.md` §3.5.
+
+## SSO 핸드오프 — `GET /api/auth/handoff` · `GET /api/auth/handoff/consume`
+
+`ai.siglens.io`는 메인 사이트와 세션을 공유하지 않는다(별도 호스트). 로그인은 항상
+`siglens.io`에서 이뤄지고, 로그인 상태의 사용자가 ai 호스트로 넘어갈 때만 이 두 라우트가
+쓰인다.
+
+1. `GET /api/auth/handoff?to=ai&next=<path>&state=<token>` — **메인 호스트에서만** 응답.
+   로그인 사용자면 Redis에 60초 TTL 1회용 코드(`HANDOFF_TTL_SECONDS`)를 발급하고
+   `ai.siglens.io`로 리다이렉트한다. `state`가 없거나 유효하지 않으면 먼저
+   `handoff/start`로 보내 CSRF 바인딩 쿠키를 받아온다. 비로그인이면 코드 없이
+   `?sso=none`으로 리다이렉트.
+2. `GET /api/auth/handoff/consume?code=<code>` — **ai 호스트에서만** 응답. 코드를 1회
+   소비해 세션 쿠키를 발급한다. 코드가 없음/만료/재사용/위조거나 상태 쿠키가 일치하지
+   않으면 세션을 발급하지 않고 `?sso=none`으로 랜딩시킨다.
+
+Redis(Upstash) 장애 시 코드 발급·소비 자체가 불가능하다 — 로그인 CTA만 노출된다.

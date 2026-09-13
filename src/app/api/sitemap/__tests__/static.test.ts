@@ -17,13 +17,17 @@ const mockBuildStaticEntries = buildStaticEntries as MockedFunction<
 >;
 const mockToUrlSetXml = toUrlSetXml as MockedFunction<typeof toUrlSetXml>;
 
+function mainHostRequest(): Request {
+    return new Request('https://siglens.io/api/sitemap/static');
+}
+
 describe('GET /api/sitemap/static', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
     it('returns XML with correct content-type header', async () => {
-        const res = await GET();
+        const res = await GET(mainHostRequest());
 
         expect(res.headers.get('Content-Type')).toBe(
             'application/xml; charset=utf-8'
@@ -31,7 +35,7 @@ describe('GET /api/sitemap/static', () => {
     });
 
     it('passes a Date to buildStaticEntries', async () => {
-        await GET();
+        await GET(mainHostRequest());
 
         expect(mockBuildStaticEntries).toHaveBeenCalledTimes(1);
         expect(mockBuildStaticEntries.mock.calls[0][0]).toBeInstanceOf(Date);
@@ -48,13 +52,13 @@ describe('GET /api/sitemap/static', () => {
         ];
         mockBuildStaticEntries.mockReturnValue(entries);
 
-        await GET();
+        await GET(mainHostRequest());
 
         expect(mockToUrlSetXml).toHaveBeenCalledWith(entries);
     });
 
     it('includes cache-control header', async () => {
-        const res = await GET();
+        const res = await GET(mainHostRequest());
 
         expect(res.headers.get('Cache-Control')).toContain(
             'stale-while-revalidate'

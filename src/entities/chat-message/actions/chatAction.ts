@@ -1,6 +1,6 @@
 'use server';
 
-import { getLlmProvider } from '@/entities/llm-provider';
+import { getLlmProvider, getServerPrimaryKey } from '@/entities/llm-provider';
 import { getLocale } from 'next-intl/server';
 import { isLocale, DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { withLocaleDirective } from '../lib/localeEnvelope';
@@ -33,29 +33,6 @@ import {
     getDescriptor,
 } from '@/shared/config/marketProfile';
 import { getClientIp } from '@/shared/api/getClientIp';
-
-/**
- * Server-owned key per provider, forwarded to core as `serverApiKey` on
- * every request. Core charges it for free models (any tier) and pro-tier
- * premium models; non-pro premium requests are charged to the user's BYOK
- * key (`userApiKey`) instead.
- */
-function getServerPrimaryKey(provider: LlmProvider): string | undefined {
-    switch (provider) {
-        case 'google':
-            return process.env.GEMINI_CHAT_API_KEY;
-        case 'anthropic':
-            return process.env.ANTHROPIC_CHAT_API_KEY;
-        case 'openai':
-            return process.env.OPENAI_CHAT_API_KEY;
-        case 'deepseek':
-            return process.env.DEEPSEEK_CHAT_API_KEY;
-        default: {
-            const exhausted: never = provider;
-            throw new Error(`Unhandled LLM provider: ${String(exhausted)}`);
-        }
-    }
-}
 
 /**
  * Resolve the user's tier and BYOK key for the given model.

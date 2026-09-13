@@ -14,10 +14,36 @@ import {
     splitLocalePath,
 } from '@/shared/i18n/locales';
 import { routing } from '@/shared/i18n/routing';
+import { AI_SITE_URL, isAiHost } from '@/shared/config/aiHost';
 import createIntlMiddleware from 'next-intl/middleware';
 import { NextResponse, type NextRequest } from 'next/server';
 
 const intlMiddleware = createIntlMiddleware(routing);
+
+const AI_CSP = "frame-ancestors 'none'; img-src 'self' data:";
+const AI_ROBOTS_BODY = 'User-agent: *\nDisallow: /\n';
+
+/** `ai.siglens.io`(SiglensAI) 호스트 요청을 `/ai/[locale]/*`로 rewrite한다. */
+function handleAiHost(req: NextRequest): NextResponse {
+    const url = new URL(req.url);
+    if (url.pathname === '/robots.txt') {
+        return new NextResponse(AI_ROBOTS_BODY, {
+            headers: {
+                'Content-Type': 'text/plain; charset=utf-8',
+                'Cache-Control': 'public, max-age=3600',
+            },
+        });
+    }
+    const { locale, path } = splitLocalePath(url.pathname);
+    const rewriteUrl = new URL(url);
+    rewriteUrl.pathname = `/ai/${locale}${path === '/' ? '' : path}`;
+    const headers = new Headers(req.headers);
+    headers.set('X-NEXT-INTL-LOCALE', locale);
+    const response = NextResponse.rewrite(rewriteUrl, { request: { headers } });
+    response.headers.set('Content-Security-Policy', AI_CSP);
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+    return response;
+}
 
 /**
  * 첫 segment가 여기 있으면 ticker 케이스 정규화를 건너뛴다.
@@ -61,6 +87,9 @@ const RESERVED_FIRST_SEGMENTS = new Set([
  * 전방 가드: 비로그인 사용자가 auth-required 페이지(/account 등)에 진입하면 /login 으로 redirect.
  */
 export function proxy(req: NextRequest): NextResponse {
+    if (isAiHost(req.headers.get('host'))) return handleAiHost(req);
+    if (new URL(req.url).pathname === '/robots.txt') return NextResponse.next();
+
     const hasSession = !!req.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value;
     const reqUrl = new URL(req.url);
     /**
@@ -70,6 +99,26 @@ export function proxy(req: NextRequest): NextResponse {
      * 자기 언어에서 이탈하지 않게 한다.
      */
     const { locale, path: pathname } = splitLocalePath(reqUrl.pathname);
+
+    /**
+     * `/ai` 예약 라우트(SiglensAI) — 메인 호스트로 잘못 들어온 요청을
+     * `ai.siglens.io`로 영구 이관한다.
+     *
+     * **정확히 소문자 `ai` 전체 세그먼트만** 매치한다 — `AI`는 실존 티커
+     * (C3.ai, popular-tickers·sitemap 등재)라서 대소문자 무시로 매치하면
+     * `/AI`·`/AI/news`·`/en/AI`가 전부 SiglensAI 호스트로 오탐 리다이렉트된다.
+     * 로케일과 철자가 같은 티커를 구제하는 `KO` 판정과 같은 원칙이다.
+     *
+     * 로케일 접두사 제거(`/ko/*` 정규화)보다 먼저 처리해야 `/ko/ai/c/x`가
+     * 2홉이 아니라 한 홉에 `https://ai.siglens.io/c/x`로 끝난다.
+     */
+    if (pathname.split('/').filter(Boolean)[0] === 'ai') {
+        const rest = pathname.replace(/^\/ai(?=\/|$)/, '') || '/';
+        return NextResponse.redirect(
+            new URL(`${localePath(locale, rest)}${reqUrl.search}`, AI_SITE_URL),
+            301
+        );
+    }
 
     /**
      * `/ko/*` → `/*` **영구** 정규화.
@@ -288,5 +337,6 @@ const AUTH_REQUIRED_PATHS = ['/account', '/portfolio'];
 export const config = {
     matcher: [
         '/((?!api|_next/static|_next/image|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|json|xml|txt|js|html|css|webmanifest|map|woff2?|ttf|otf|eot|mp4|webm)$).*)',
+        '/robots.txt',
     ],
 };

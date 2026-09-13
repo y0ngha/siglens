@@ -1,7 +1,7 @@
 import { GET } from '@/app/api/sitemap/longtail/[page]/route';
 
-function callGET(_page: string): Promise<Response> {
-    return GET();
+function callGET(page: string): Promise<Response> {
+    return GET(new Request(`https://siglens.io/api/sitemap/longtail/${page}`));
 }
 
 describe('GET /api/sitemap/longtail/[page]', () => {
