@@ -7,6 +7,7 @@ import {
     ANALYSIS_LOCALE_HEADER,
     splitLocalePath,
 } from '@/shared/i18n/locales';
+import { browserTimeZone } from '../lib/browserTimeZone';
 import {
     isAgentClientErrorCode,
     type AgentClientErrorCode,
@@ -48,14 +49,6 @@ export interface AgentUiMessage {
  */
 const DRAFT_MIN_CHARS = 120;
 
-/** The browser's IANA zone, or '' when `Intl` cannot tell (core then uses the locale's zone). */
-function browserTimeZone(): string {
-    try {
-        return Intl.DateTimeFormat().resolvedOptions().timeZone ?? '';
-    } catch {
-        return '';
-    }
-}
 /** Daily allowance left; `null` = no daily limit for this tier (core `AgentRemaining`). */
 export interface AgentRemaining {
     turns: number | null;
