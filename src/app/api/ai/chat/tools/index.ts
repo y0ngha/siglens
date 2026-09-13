@@ -5,6 +5,7 @@ import type {
     ToolExecutionContext,
 } from '@y0ngha/siglens-core';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
+import { hasNaverCredentials } from '@/entities/news-article/api';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { truncateToolResult } from './truncate';
 import { searchTickerTool } from './searchTicker';
@@ -50,8 +51,9 @@ const EXECUTORS: Record<string, ToolExecutor> = {
 export function availableToolNames(): Set<string> {
     const names = new Set(Object.keys(EXECUTORS));
     const e2eFake = isE2E() && process.env.AGENT_REAL_PROVIDER !== '1';
-    if (e2eFake || !process.env.BRAVE_SEARCH_API_KEY)
-        names.delete('web_search');
+    const keyed =
+        Boolean(process.env.BRAVE_SEARCH_API_KEY) || hasNaverCredentials();
+    if (e2eFake || !keyed) names.delete('web_search');
     return names;
 }
 

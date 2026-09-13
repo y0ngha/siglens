@@ -477,3 +477,12 @@ export async function prewarmNews(
         ...(force ? { force: true } : {}),
     });
 }
+
+// Naver news search, re-exported for server consumers outside this slice
+// (the agent's `web_search` tool blends it with Brave for Korean queries).
+export {
+    hasNaverCredentials,
+    searchNaverNews,
+    stripNaverMarkup,
+    toIsoPublishedAt,
+} from './lib/naverNewsSearch';

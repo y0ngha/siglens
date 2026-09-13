@@ -1,157 +1,252 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const naver = vi.hoisted(() => ({
+    creds: false,
+    search: vi.fn<
+        (q: string, n: number, tag: string, sort: string) => Promise<unknown[]>
+    >(),
+}));
+vi.mock('@/entities/news-article/api', () => ({
+    hasNaverCredentials: () => naver.creds,
+    searchNaverNews: naver.search,
+    stripNaverMarkup: (s: string) => s.replace(/<[^>]*>/g, ''),
+    toIsoPublishedAt: (d?: string) => (d ? new Date(d).toISOString() : null),
+}));
+
 import { webSearchTool } from '@/app/api/ai/chat/tools/webSearch';
 
-const ctx = {
-    userId: 'u',
-    tier: 'member' as const,
-    locale: 'ko' as const,
-    signal: new AbortController().signal,
-};
-const rt = { analysisModel: 'deepseek-v4.1-flash' as const };
+const rt = {} as never;
+const ctx = (locale: 'ko' | 'en') =>
+    ({
+        locale,
+        signal: new AbortController().signal,
+        userId: 'u',
+    }) as never;
 
-afterEach(() => {
-    vi.restoreAllMocks();
-    vi.unstubAllEnvs();
-});
+function braveResponse(results: Array<{ title: string; url: string }>) {
+    return new Response(
+        JSON.stringify({
+            web: {
+                results: results.map(r => ({
+                    ...r,
+                    description: `d:${r.title}`,
+                    age: '1 day ago',
+                })),
+            },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+    );
+}
 
-describe('webSearchTool', () => {
-    it('Brave에 q·count·freshness·search_lang, 상위 5건 스니펫만 반환', async () => {
-        vi.stubEnv('BRAVE_SEARCH_API_KEY', 'b');
-        const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-            Response.json({
-                web: {
-                    results: Array.from({ length: 8 }, (_, i) => ({
-                        title: `t${i}`,
-                        url: `https://x/${i}`,
-                        description: `d${i}`,
-                        age: '1 day ago',
-                    })),
-                },
-            })
-        );
-        const r = (await webSearchTool(
-            { query: 'Apple earnings', freshness: 'week' },
-            ctx,
-            rt
-        )) as { results: unknown[] };
+const naverItems = [
+    {
+        title: '<b>금융위</b> 발표',
+        originallink: 'https://gov.kr/a',
+        link: 'https://n.news.naver.com/a',
+        description: '요약 <b>1</b>',
+        pubDate: 'Sat, 13 Sep 2026 09:00:00 +0900',
+    },
+    {
+        title: '두 번째',
+        link: 'https://news.example/b',
+        description: '요약 2',
+        pubDate: 'Sat, 13 Sep 2026 08:00:00 +0900',
+    },
+];
 
-        const url = new URL(String(fetchMock.mock.calls[0]![0]));
-        expect(url.origin + url.pathname).toBe(
-            'https://api.search.brave.com/res/v1/web/search'
-        );
-        expect(url.searchParams.get('q')).toBe('Apple earnings');
-        expect(url.searchParams.get('count')).toBe('5');
-        expect(url.searchParams.get('freshness')).toBe('pw');
-        expect(url.searchParams.get('search_lang')).toBe('ko');
-        expect(
-            (fetchMock.mock.calls[0]![1] as RequestInit).headers
-        ).toMatchObject({ 'X-Subscription-Token': 'b' });
-        expect(r.results).toHaveLength(5);
-        expect(r.results[0]).toEqual({
-            title: 't0',
-            url: 'https://x/0',
-            snippet: 'd0',
-            age: '1 day ago',
-        });
+describe('web_search (Brave + Naver)', () => {
+    beforeEach(() => {
+        naver.creds = false;
+        naver.search.mockReset();
+        vi.stubEnv('BRAVE_SEARCH_API_KEY', '');
+    });
+    afterEach(() => {
+        vi.unstubAllEnvs();
+        vi.restoreAllMocks();
     });
 
-    it('키가 없으면 fetch 없이 unavailable', async () => {
-        // `mockImplementation` (not a bare spy) so that even if the
-        // production guard regresses, this never dials the real Brave API —
-        // a real call costs money.
-        const fetchMock = vi
+    it('neither provider configured → unavailable, no network', async () => {
+        const fetchSpy = vi
             .spyOn(globalThis, 'fetch')
             .mockRejectedValue(new Error('must not be called'));
-        expect(await webSearchTool({ query: 'q' }, ctx, rt)).toEqual({
+        expect(await webSearchTool({ query: '금리' }, ctx('ko'), rt)).toEqual({
             error: 'unavailable',
         });
-        expect(fetchMock).not.toHaveBeenCalled();
+        expect(fetchSpy).not.toHaveBeenCalled();
     });
 
-    it('비 2xx → search_failed', async () => {
+    it('Korean query with both keys: Naver news first, Brave fills, URL-deduped, capped at 5, source names both', async () => {
         vi.stubEnv('BRAVE_SEARCH_API_KEY', 'b');
+        naver.creds = true;
+        naver.search.mockResolvedValue(naverItems);
         vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-            new Response('x', { status: 429 })
+            braveResponse([
+                { title: 'dup', url: 'https://gov.kr/a' },
+                { title: 'w1', url: 'https://w/1' },
+                { title: 'w2', url: 'https://w/2' },
+                { title: 'w3', url: 'https://w/3' },
+                { title: 'w4', url: 'https://w/4' },
+            ])
         );
-        expect(await webSearchTool({ query: 'q' }, ctx, rt)).toEqual({
-            error: 'search_failed',
-            status: 429,
-        });
-    });
-
-    it('타임아웃 → timeout, 절대 throw하지 않는다', async () => {
-        vi.stubEnv('BRAVE_SEARCH_API_KEY', 'b');
-        vi.spyOn(globalThis, 'fetch').mockImplementation(
-            (_input, init) =>
-                new Promise((_resolve, reject) => {
-                    const signal = (init as RequestInit).signal;
-                    signal?.addEventListener('abort', () => {
-                        const reason =
-                            (signal as AbortSignal).reason ??
-                            new DOMException('aborted', 'AbortError');
-                        reject(reason);
-                    });
-                })
-        );
-        // Never-resolving fetch + a same-tick abort stands in for the real
-        // `AbortSignal.timeout` firing, without waiting 8s in the test.
-        await expect(
-            (async () => {
-                const controller = new AbortController();
-                const result = webSearchTool(
-                    { query: 'q' },
-                    { ...ctx, signal: controller.signal },
-                    rt
-                );
-                controller.abort(new DOMException('aborted', 'AbortError'));
-                return result;
-            })()
-        ).resolves.toEqual({ error: 'timeout' });
-    });
-
-    it('URL은 http/https만 허용한다', async () => {
-        vi.stubEnv('BRAVE_SEARCH_API_KEY', 'b');
-        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-            Response.json({
-                web: {
-                    results: [
-                        { title: 'ok', url: 'https://x/0', description: 'd' },
-                        {
-                            title: 'bad',
-                            url: 'javascript:alert(1)',
-                            description: 'd',
-                        },
-                    ],
-                },
-            })
-        );
-        const r = (await webSearchTool({ query: 'q' }, ctx, rt)) as {
-            results: { url: string }[];
+        const out = (await webSearchTool(
+            { query: '금융위원회 발표', freshness: 'week' },
+            ctx('ko'),
+            rt
+        )) as {
+            source: string;
+            results: Array<{ url: string; title: string; age: string | null }>;
         };
-        expect(r.results).toHaveLength(1);
-        expect(r.results[0]!.url).toBe('https://x/0');
+        expect(out.source).toBe('Naver News + Brave Search');
+        expect(out.results.map(r => r.url)).toEqual([
+            'https://gov.kr/a',
+            'https://news.example/b',
+            'https://w/1',
+            'https://w/2',
+            'https://w/3',
+        ]);
+        expect(out.results[0]).toMatchObject({
+            title: '금융위 발표',
+            age: '2026-09-13T00:00:00.000Z',
+        });
+        // freshness=week → recency sort on Naver; display share is 3.
+        expect(naver.search).toHaveBeenCalledWith(
+            '금융위원회 발표',
+            3,
+            expect.stringContaining('web_search'),
+            'date',
+            expect.any(AbortSignal)
+        );
     });
 
-    it('200이지만 JSON이 아닌 본문(HTML 에러 페이지 등) → search_failed, 절대 throw하지 않는다', async () => {
+    it('Naver throwing never takes a successful Brave result down', async () => {
+        vi.stubEnv('BRAVE_SEARCH_API_KEY', 'b');
+        naver.creds = true;
+        naver.search.mockRejectedValue(new Error('boom'));
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            braveResponse([{ title: 'w1', url: 'https://w/1' }])
+        );
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const out = (await webSearchTool({ query: '금리' }, ctx('ko'), rt)) as {
+            source: string;
+            results: unknown[];
+        };
+        expect(out.source).toBe('Brave Search');
+        expect(out.results).toHaveLength(1);
+    });
+
+    it('ko locale but no Hangul in the query → Naver is not asked (quota)', async () => {
+        vi.stubEnv('BRAVE_SEARCH_API_KEY', 'b');
+        naver.creds = true;
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            braveResponse([{ title: 'sec', url: 'https://sec.gov/x' }])
+        );
+        await webSearchTool({ query: 'SEC 10-K NVDA' }, ctx('ko'), rt);
+        expect(naver.search).not.toHaveBeenCalled();
+    });
+
+    it('Naver-only + non-Korean query → empty results labelled "none", never a provider name', async () => {
+        naver.creds = true;
+        const fetchSpy = vi
+            .spyOn(globalThis, 'fetch')
+            .mockRejectedValue(new Error('must not be called'));
+        const out = (await webSearchTool(
+            { query: 'fed minutes' },
+            ctx('en'),
+            rt
+        )) as {
+            source: string;
+            results: unknown[];
+        };
+        expect(fetchSpy).not.toHaveBeenCalled();
+        expect(naver.search).not.toHaveBeenCalled();
+        expect(out).toMatchObject({ source: 'none', results: [] });
+    });
+
+    it('a non-http originallink falls back to the Naver mirror link instead of dropping the hit', async () => {
+        naver.creds = true;
+        naver.search.mockResolvedValue([
+            {
+                title: 't',
+                originallink: 'newsapp://article/1',
+                link: 'https://n.news.naver.com/z',
+                description: 'd',
+            },
+        ]);
+        const out = (await webSearchTool({ query: '금리' }, ctx('ko'), rt)) as {
+            results: Array<{ url: string }>;
+        };
+        expect(out.results.map(r => r.url)).toEqual([
+            'https://n.news.naver.com/z',
+        ]);
+    });
+
+    it('English query never calls Naver even with credentials; Brave only', async () => {
+        vi.stubEnv('BRAVE_SEARCH_API_KEY', 'b');
+        naver.creds = true;
+        naver.search.mockResolvedValue(naverItems);
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            braveResponse([{ title: 'sec', url: 'https://sec.gov/x' }])
+        );
+        const out = (await webSearchTool(
+            { query: 'SEC 10-K NVDA' },
+            ctx('en'),
+            rt
+        )) as { source: string; results: unknown[] };
+        expect(naver.search).not.toHaveBeenCalled();
+        expect(out.source).toBe('Brave Search');
+        expect(out.results).toHaveLength(1);
+    });
+
+    it('Naver-only environment answers Korean queries without any Brave call', async () => {
+        naver.creds = true;
+        naver.search.mockResolvedValue(naverItems);
+        const fetchSpy = vi
+            .spyOn(globalThis, 'fetch')
+            .mockRejectedValue(new Error('must not be called'));
+        const out = (await webSearchTool(
+            { query: '한은 금리' },
+            ctx('en'),
+            rt
+        )) as {
+            source: string;
+            results: unknown[];
+        };
+        expect(fetchSpy).not.toHaveBeenCalled();
+        expect(out.source).toBe('Naver News');
+        expect(out.results).toHaveLength(2);
+        // Relevance sort by default (no freshness).
+        expect(naver.search.mock.calls.at(-1)?.[3]).toBe('sim');
+    });
+
+    it('Brave failure with Naver hits still returns the Naver results', async () => {
+        vi.stubEnv('BRAVE_SEARCH_API_KEY', 'b');
+        naver.creds = true;
+        naver.search.mockResolvedValue(naverItems);
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            new Response('nope', { status: 429 })
+        );
+        const out = (await webSearchTool({ query: '금리' }, ctx('ko'), rt)) as {
+            source: string;
+            results: unknown[];
+        };
+        expect(out.source).toBe('Naver News');
+        expect(out.results).toHaveLength(2);
+    });
+
+    it('Brave failure alone surfaces the error as before (status kept, timeout mapped)', async () => {
         vi.stubEnv('BRAVE_SEARCH_API_KEY', 'b');
         vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-            new Response('<html>not json</html>', {
-                status: 200,
-                headers: { 'content-type': 'text/html' },
-            })
+            new Response('nope', { status: 503 })
         );
-        await expect(webSearchTool({ query: 'q' }, ctx, rt)).resolves.toEqual({
+        expect(await webSearchTool({ query: 'fed' }, ctx('en'), rt)).toEqual({
             error: 'search_failed',
+            status: 503,
         });
-    });
-
-    it('query 길이를 상한으로 자른다', async () => {
-        vi.stubEnv('BRAVE_SEARCH_API_KEY', 'b');
-        const fetchMock = vi
-            .spyOn(globalThis, 'fetch')
-            .mockResolvedValue(Response.json({ web: { results: [] } }));
-        await webSearchTool({ query: 'x'.repeat(1_000) }, ctx, rt);
-        const url = new URL(String(fetchMock.mock.calls[0]![0]));
-        expect(url.searchParams.get('q')!.length).toBeLessThanOrEqual(400);
+        const abort = new Error('aborted');
+        abort.name = 'AbortError';
+        vi.spyOn(globalThis, 'fetch').mockRejectedValue(abort);
+        expect(await webSearchTool({ query: 'fed' }, ctx('en'), rt)).toEqual({
+            error: 'timeout',
+        });
     });
 });

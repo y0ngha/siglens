@@ -29,6 +29,13 @@ vi.mock('@/app/api/ai/chat/tools/webSearch', () => ({
     webSearchTool: vi.fn(),
 }));
 const e2eState = vi.hoisted(() => ({ on: false }));
+const naverState = vi.hoisted(() => ({ creds: false }));
+vi.mock('@/entities/news-article/api', () => ({
+    hasNaverCredentials: () => naverState.creds,
+    searchNaverNews: vi.fn(),
+    stripNaverMarkup: (s: string) => s,
+    toIsoPublishedAt: () => null,
+}));
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: () => e2eState.on }));
 
 import {
@@ -73,6 +80,15 @@ describe('tool registry', () => {
     it('BRAVE_SEARCH_API_KEY가 있으면 web_search도 가용 목록에 포함된다', () => {
         vi.stubEnv('BRAVE_SEARCH_API_KEY', 'b');
         expect(availableToolNames().has('web_search')).toBe(true);
+    });
+
+    it('네이버 자격증명만 있어도 web_search가 가용 목록에 포함된다(한국어 뉴스 경로)', () => {
+        naverState.creds = true;
+        try {
+            expect(availableToolNames().has('web_search')).toBe(true);
+        } finally {
+            naverState.creds = false;
+        }
     });
 
     it('E2E에서는 키가 있어도 web_search를 빼고, AGENT_REAL_PROVIDER=1(실제 프로바이더 dev)이면 다시 넣는다', () => {

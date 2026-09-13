@@ -105,7 +105,9 @@ export async function searchNaverNews(
     query: string,
     display: number,
     logTag: string,
-    sort: NaverSearchSort = 'sim'
+    sort: NaverSearchSort = 'sim',
+    /** Caller's cancel signal (an agent turn's); combined with the own 8s timeout. */
+    signal?: AbortSignal
 ): Promise<NaverNewsItem[]> {
     const creds = credentials();
     if (!creds) {
@@ -153,7 +155,12 @@ export async function searchNaverNews(
             },
             // 뉴스는 신선도가 핵심이라 상위 계층(news 테이블 + ISR 태그)이 캐싱을 맡는다.
             cache: 'no-store',
-            signal: AbortSignal.timeout(NAVER_FETCH_TIMEOUT_MS),
+            signal: signal
+                ? AbortSignal.any([
+                      signal,
+                      AbortSignal.timeout(NAVER_FETCH_TIMEOUT_MS),
+                  ])
+                : AbortSignal.timeout(NAVER_FETCH_TIMEOUT_MS),
         });
     } catch (e) {
         console.warn(`${logTag} fetch failed`, query, e);
@@ -169,6 +176,15 @@ export async function searchNaverNews(
         return [];
     }
 
-    const body = (await response.json()) as NaverNewsResponse;
+    // A 200 does not guarantee a JSON body (gateway interstitial, outage page);
+    // the contract of this function is "never throws", so parse failures
+    // degrade like every other failure above.
+    let body: NaverNewsResponse;
+    try {
+        body = (await response.json()) as NaverNewsResponse;
+    } catch (e) {
+        console.warn(`${logTag} malformed JSON body`, query, e);
+        return [];
+    }
     return body.items ?? [];
 }
