@@ -83,7 +83,7 @@ describe('ChatPanel', () => {
     it('offers SiglensAI with this symbol prefilled — a link, never an auto-sent question', () => {
         renderPanel();
         const link = screen.getByRole('link', {
-            name: /SiglensAI에서 더 묻기/,
+            name: /SIGLENS AI에서 더 묻기/,
         });
         const href = new URL(link.getAttribute('href')!);
         expect(`${href.origin}${href.pathname}`).toBe(`${AI_SITE_URL}/`);

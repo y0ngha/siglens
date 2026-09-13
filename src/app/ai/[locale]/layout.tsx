@@ -4,8 +4,6 @@ import type { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
-import { Geist } from 'next/font/google';
-import localFont from 'next/font/local';
 import { AuthSessionHeaderClient } from '@/app/_components/AuthSessionHeaderClient';
 import { ReactQueryProvider } from '@/app/providers';
 import { SearchOverlayProvider } from '@/features/ticker-search';
@@ -18,20 +16,14 @@ import Script from 'next/script';
 import { SITE_URL } from '@/shared/lib/seo';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { AI_CLIENT_PATHS } from './aiClientPaths';
+import { FONT_VARIABLE_CLASSES } from '../../fontVariables';
 import '../../globals.css';
 
 export const dynamic = 'force-dynamic';
-const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
-const pretendard = localFont({
-    src: '../../fonts/PretendardVariable-subset.woff2',
-    variable: '--font-pretendard',
-    display: 'swap',
-    weight: '100 900',
-});
 
 export const metadata: Metadata = {
     metadataBase: new URL(AI_SITE_URL),
-    title: { default: 'SiglensAI', template: '%s | SiglensAI' },
+    title: { default: 'SIGLENS AI', template: '%s | SIGLENS AI' },
     // Default for everything under the ai host (conversations, not-found):
     // private or empty, never indexed. The landing (`page.tsx`) overrides it.
     robots: { index: false, follow: false },
@@ -53,7 +45,7 @@ export default async function AiRootLayout({
     return (
         <html
             lang={LOCALE_HREFLANG[locale]}
-            className={`${geistSans.variable} ${pretendard.variable} h-full antialiased scheme-dark`}
+            className={`${FONT_VARIABLE_CLASSES} h-full antialiased scheme-dark`}
             // `THEME_INIT_SCRIPT`는 첫 페인트 전에 `<html>`에 `data-theme`·`color-scheme`을
             // 찍는다. 서버 HTML에는 그 속성이 없으므로 React가 불일치로 보고 경고한다 —
             // 의도된 차이라 이 요소에서만 억제한다(자식 트리에는 영향 없음).

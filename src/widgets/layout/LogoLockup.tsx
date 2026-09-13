@@ -6,39 +6,37 @@ import { useHrefBase } from '@/shared/i18n/LocaleContext';
 import { cn } from '@/shared/lib/cn';
 import { SITE_NAME } from '@/shared/lib/seo';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { AiNavLink, useAiHomeHref } from './AiNavLink';
+import { AiNavLink } from './AiNavLink';
 
 /**
  * Logo lockup: `[icon] SIGLENS` + `AI`. Two anchors because they are two
- * destinations on the main host (site home / AI product); visually one
- * wordmark, so the gap is tighter than the header row's.
+ * destinations on both hosts — `SIGLENS` is the site home (siglens.io, via
+ * `LocaleLink`'s link base on the ai host), `AI` is the AI product — and
+ * visually one wordmark, so the gap is tighter than the header row's.
  *
- * A client island because it reads the link base: on ai.siglens.io the header
- * is the same component with a base set, and there the lockup reads as one
- * brand ("SIGLENS AI") — the logo goes to the AI home (a new conversation),
- * not back to the main site, and the wordmark stays visible on phones.
- * `Header` itself stays hook-free so it can remain a server component.
+ * A client island because it reads the link base: on ai.siglens.io the
+ * wordmark stays visible on phones so the lockup still reads "SIGLENS AI".
+ * The logo there used to open the AI home, which left no way back to the
+ * main site from the header (2026-09-13 사용자 제보). `Header` itself stays
+ * hook-free so it can remain a server component.
  */
 export function LogoLockup() {
     const t = useTranslations('widgets.layout');
     const onAiHost = useHrefBase() !== '';
-    const aiHome = useAiHomeHref();
     return (
         <div className="flex shrink-0 items-center gap-1">
             <Link
-                href={onAiHost ? aiHome : '/'}
+                href="/"
                 title={t('Header.d8c261')}
                 // 전역 헤더 로고 — 모든 페이지에서 렌더된다. prefetch는 진입 페이지마다
                 // 다른 `_rsc` 해시를 만들어 `/`의 캐시를 파편화시킨다
                 // (docs/architecture/CDN_CACHING.md §1).
                 prefetch={false}
-                // Visible brand text is `text-...uppercase` (renders "SIGLENS",
-                // and next to it "AI" on the ai host), so the accessible name must
-                // match what users see (WCAG 2.5.3) — and where the link goes.
+                // Visible brand text is `text-...uppercase` (renders "SIGLENS"),
+                // so the accessible name must match what users see (WCAG 2.5.3)
+                // — and where the link goes: the site home on both hosts.
                 aria-label={t('Header.homeLabel', {
-                    v0: onAiHost
-                        ? `${SITE_NAME.toUpperCase()} AI`
-                        : SITE_NAME.toUpperCase(),
+                    v0: SITE_NAME.toUpperCase(),
                 })}
                 className="-mx-1 flex min-h-11 shrink-0 touch-manipulation items-center gap-2 rounded px-1 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >

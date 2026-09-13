@@ -1,7 +1,12 @@
 import { constants } from 'node:http2';
 import 'server-only';
 import type { AgentErrorCode, AgentMessage } from '@y0ngha/siglens-core';
-import { AGENT_LIMITS, agentLimit, runAgentTurn } from '@y0ngha/siglens-core';
+import {
+    AGENT_LIMITS,
+    agentLimit,
+    runAgentTurn,
+    type Tier,
+} from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzleChatConversationRepository } from '@/entities/chat-conversation/api';
 import {
@@ -10,6 +15,7 @@ import {
 } from '@/entities/chat-conversation';
 import { AGENT_MODEL, getAgentProvider } from '@/entities/llm-provider';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
+import { getClientIp } from '@/shared/api/getClientIp';
 import { isBot } from '@/shared/api/isBot';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
@@ -23,6 +29,7 @@ import { AgentTurnError, agentEventStream } from '../agentEventStream';
 import { createAgentCounters } from '../counters';
 import { resolveAgentTier } from '../resolveAgentTier';
 import { availableToolNames, createToolExecutor } from '../tools';
+import { guestSubject } from '../guestSubject';
 import { acquireTurnLock } from '../turnLock';
 
 const {
@@ -53,6 +60,39 @@ interface Body {
     message: string;
     action: Action;
     editSeq?: number;
+    /** Guests only — the prior turns the browser still holds (nothing is stored for them). */
+    history?: AgentMessage[];
+}
+
+/**
+ * A guest's transcript lives only in the browser, so the client sends it with
+ * every turn. It is the caller's own text, so the only thing to guard is size:
+ * the newest messages are kept and each is clipped (core's history window then
+ * budgets tokens as it does for members). Only plain user/assistant text is
+ * accepted — tool rows and tool calls never cross this boundary.
+ */
+const GUEST_HISTORY_MAX_MESSAGES = 20;
+const GUEST_HISTORY_MESSAGE_MAX_CHARS = 8_000;
+
+function parseGuestHistory(raw: unknown): AgentMessage[] | null {
+    if (raw === undefined) return [];
+    if (!Array.isArray(raw)) return null;
+    const out: AgentMessage[] = [];
+    for (const item of raw.slice(-GUEST_HISTORY_MAX_MESSAGES)) {
+        const m = item as { role?: unknown; content?: unknown } | null;
+        if (
+            (m?.role !== 'user' && m?.role !== 'assistant') ||
+            typeof m.content !== 'string'
+        )
+            return null;
+        const content = m.content.trim();
+        if (content)
+            out.push({
+                role: m.role,
+                content: content.slice(0, GUEST_HISTORY_MESSAGE_MAX_CHARS),
+            });
+    }
+    return out;
 }
 
 /** Pilot: `model`/`analysisModel` from the client are ignored (spec R12). */
@@ -83,12 +123,15 @@ function parseBody(raw: unknown): Body | null {
         (!Number.isInteger(b.editSeq) || (b.editSeq as number) <= 0)
     )
         return null;
+    const history = parseGuestHistory(b.history);
+    if (history === null) return null;
     return {
         conversationId:
             typeof b.conversationId === 'string' ? b.conversationId : null,
         message,
         action,
         ...(action === 'edit' ? { editSeq: b.editSeq as number } : {}),
+        history,
     };
 }
 
@@ -119,6 +162,149 @@ function isConversationGone(error: unknown): boolean {
     );
 }
 
+type PreparedTurn =
+    | { status: number; error: HttpStageError }
+    | {
+          /** `null` for a guest — nothing is read from or written to the database. */
+          repo: DrizzleChatConversationRepository | null;
+          conversationId: string | null;
+          title?: string;
+          userMessage: string;
+          userMessageId: string | null;
+          userMessageSeq: number | null;
+          history: AgentMessage[];
+          portfolioSymbols: string[];
+      };
+type HttpStageError =
+    | 'not_found'
+    | 'invalid_body'
+    | 'conversation_limit'
+    | 'conversation_full';
+
+/** A guest turn: the browser's transcript is the history, and nothing is stored. */
+function guestTurn(body: Body): PreparedTurn {
+    return {
+        repo: null,
+        conversationId: null,
+        userMessage: body.message,
+        userMessageId: null,
+        userMessageSeq: null,
+        history: body.history ?? [],
+        portfolioSymbols: [],
+    };
+}
+
+/**
+ * A member turn: resolve/create the conversation, apply `edit`/`regenerate`,
+ * store the user row and read the history back. Runs under the caller's turn
+ * lock; an HTTP-stage refusal is returned (the caller releases the lock).
+ */
+async function prepareMemberTurn(
+    userId: string,
+    body: Body,
+    tier: Tier,
+    locale: Locale
+): Promise<PreparedTurn> {
+    const { db } = getDatabaseClient();
+    const repo = new DrizzleChatConversationRepository(db);
+
+    const conversation =
+        body.conversationId === null
+            ? null
+            : await repo.findForUser(body.conversationId, userId);
+    if (body.conversationId !== null && conversation === null) {
+        return { status: HTTP_STATUS_NOT_FOUND, error: 'not_found' };
+    }
+    if (conversation === null && body.action !== 'send') {
+        return { status: HTTP_STATUS_BAD_REQUEST, error: 'invalid_body' };
+    }
+    if (
+        conversation === null &&
+        (await repo.countForUser(userId)) >=
+            agentLimit(tier, 'conversationsMax')
+    ) {
+        return { status: HTTP_STATUS_CONFLICT, error: 'conversation_limit' };
+    }
+
+    let conversationId = conversation?.id ?? '';
+    let userMessage = body.message;
+    let userMessageId: string | null = null;
+    let userMessageSeq: number | null = null;
+    let title: string | undefined;
+
+    if (conversation === null) {
+        const created = await repo.create({
+            userId: userId,
+            firstMessage: body.message,
+            locale,
+            modelId: AGENT_MODEL,
+        });
+        conversationId = created.id;
+        title = created.title;
+    }
+
+    if (body.action === 'edit') {
+        const rows = await repo.listMessages(conversationId);
+        const target = rows.find(r => r.seq === body.editSeq);
+        // Reject an editSeq that doesn't point at an existing USER row
+        // owned by this conversation — an assistant/tool row would leave
+        // two consecutive user rows after the append below.
+        if (!target || target.role !== 'user') {
+            return { status: HTTP_STATUS_BAD_REQUEST, error: 'invalid_body' };
+        }
+        await repo.deleteFromSeq(conversationId, body.editSeq!);
+    } else if (body.action === 'regenerate') {
+        if ((await repo.supersedeAfterLastUser(conversationId)) === null) {
+            return { status: HTTP_STATUS_BAD_REQUEST, error: 'invalid_body' };
+        }
+    }
+
+    const rows = await repo.listMessages(conversationId);
+    if (rows.length >= AGENT_LIMITS.messagesPerConversation) {
+        return { status: HTTP_STATUS_CONFLICT, error: 'conversation_full' };
+    }
+
+    // History = every prior turn. `send`/`edit` append the new user row AFTER this read, so the
+    // whole transcript is history; `regenerate` reuses the last user row as `userMessage` and
+    // drops it from history.
+    let history: AgentMessage[] = toAgentHistory(rows);
+    if (body.action === 'regenerate') {
+        userMessage =
+            [...rows].reverse().find(r => r.role === 'user')?.content ?? '';
+        const lastUserIndex = history.map(m => m.role).lastIndexOf('user');
+        history =
+            lastUserIndex >= 0 ? history.slice(0, lastUserIndex) : history;
+    } else {
+        let saved;
+        try {
+            [saved] = await repo.appendMessages(conversationId, [
+                { role: 'user', content: body.message },
+            ]);
+        } catch (error) {
+            // Deleted between the ownership check and this insert. No stream exists
+            // yet, so answer on the HTTP stage rather than as an SSE frame.
+            if (!isConversationGone(error)) throw error;
+            return { status: HTTP_STATUS_NOT_FOUND, error: 'not_found' };
+        }
+        userMessageId = saved?.id ?? null;
+        userMessageSeq = saved?.seq ?? null;
+    }
+
+    const portfolioSymbols = (
+        await new DrizzlePortfolioRepository(db).findByUser(userId)
+    ).map(h => h.symbol);
+    return {
+        repo,
+        conversationId,
+        title,
+        userMessage,
+        userMessageId,
+        userMessageSeq,
+        history,
+        portfolioSymbols,
+    };
+}
+
 export async function POST(request: Request): Promise<Response> {
     if (process.env.AGENT_CHAT_DISABLED === '1')
         return json(
@@ -128,17 +314,29 @@ export async function POST(request: Request): Promise<Response> {
         );
 
     const user = await getCurrentUser();
-    if (!user)
-        return json(HTTP_STATUS_UNAUTHORIZED, { error: 'unauthenticated' });
     if (isBot(request.headers))
         return json(HTTP_STATUS_FORBIDDEN, { error: 'bot' });
 
     const body = parseBody(await request.json().catch(() => null));
     if (body === null)
         return json(HTTP_STATUS_BAD_REQUEST, { error: 'invalid_body' });
+    /**
+     * Guests can ask (tier `free`: a few turns a day, counted per IP) but own no
+     * stored conversation — so anything that names one, or rewrites stored rows
+     * (`regenerate`/`edit`), still needs a session. That is also the path a
+     * member whose session expired on `/c/<id>` takes, and the client turns this
+     * 401 into the login handoff.
+     */
+    if (
+        user === null &&
+        (body.conversationId !== null || body.action !== 'send')
+    )
+        return json(HTTP_STATUS_UNAUTHORIZED, { error: 'unauthenticated' });
 
     const locale = requestLocale(request);
-    const tier = await resolveAgentTier(user.id);
+    /** Quota/lock subject: the member id, or a hashed IP for a guest. */
+    const subject = user?.id ?? guestSubject(await getClientIp());
+    const tier: Tier = user ? await resolveAgentTier(user.id) : 'free';
     if (
         !canAcceptAnalysisStream() ||
         activeAgentTurns >= MAX_CONCURRENT_AGENT_TURNS
@@ -171,7 +369,7 @@ export async function POST(request: Request): Promise<Response> {
     // for the process lifetime — four of those and the instance answers 503 forever.
     let lock: Awaited<ReturnType<typeof acquireTurnLock>>;
     try {
-        lock = await acquireTurnLock(user.id);
+        lock = await acquireTurnLock(subject);
     } catch (error) {
         decrementOnce();
         throw error;
@@ -190,101 +388,24 @@ export async function POST(request: Request): Promise<Response> {
     };
 
     try {
-        const { db } = getDatabaseClient();
-        const repo = new DrizzleChatConversationRepository(db);
-
-        const conversation =
-            body.conversationId === null
-                ? null
-                : await repo.findForUser(body.conversationId, user.id);
-        if (body.conversationId !== null && conversation === null) {
+        const prepared =
+            user === null
+                ? guestTurn(body)
+                : await prepareMemberTurn(user.id, body, tier, locale);
+        if ('error' in prepared) {
             await releaseOnce();
-            return json(HTTP_STATUS_NOT_FOUND, { error: 'not_found' });
+            return json(prepared.status, { error: prepared.error });
         }
-        if (conversation === null && body.action !== 'send') {
-            await releaseOnce();
-            return json(HTTP_STATUS_BAD_REQUEST, { error: 'invalid_body' });
-        }
-        if (
-            conversation === null &&
-            (await repo.countForUser(user.id)) >=
-                agentLimit(tier, 'conversationsMax')
-        ) {
-            await releaseOnce();
-            return json(HTTP_STATUS_CONFLICT, { error: 'conversation_limit' });
-        }
-
-        let conversationId = conversation?.id ?? '';
-        let userMessage = body.message;
-        let userMessageId: string | null = null;
-        let userMessageSeq: number | null = null;
-        let title: string | undefined;
-
-        if (conversation === null) {
-            const created = await repo.create({
-                userId: user.id,
-                firstMessage: body.message,
-                locale,
-                modelId: AGENT_MODEL,
-            });
-            conversationId = created.id;
-            title = created.title;
-        }
-
-        if (body.action === 'edit') {
-            const rows = await repo.listMessages(conversationId);
-            const target = rows.find(r => r.seq === body.editSeq);
-            // Reject an editSeq that doesn't point at an existing USER row
-            // owned by this conversation — an assistant/tool row would leave
-            // two consecutive user rows after the append below.
-            if (!target || target.role !== 'user') {
-                await releaseOnce();
-                return json(HTTP_STATUS_BAD_REQUEST, { error: 'invalid_body' });
-            }
-            await repo.deleteFromSeq(conversationId, body.editSeq!);
-        } else if (body.action === 'regenerate') {
-            if ((await repo.supersedeAfterLastUser(conversationId)) === null) {
-                await releaseOnce();
-                return json(HTTP_STATUS_BAD_REQUEST, { error: 'invalid_body' });
-            }
-        }
-
-        const rows = await repo.listMessages(conversationId);
-        if (rows.length >= AGENT_LIMITS.messagesPerConversation) {
-            await releaseOnce();
-            return json(HTTP_STATUS_CONFLICT, { error: 'conversation_full' });
-        }
-
-        // History = every prior turn. `send`/`edit` append the new user row AFTER this read, so the
-        // whole transcript is history; `regenerate` reuses the last user row as `userMessage` and
-        // drops it from history.
-        let history: AgentMessage[] = toAgentHistory(rows);
-        if (body.action === 'regenerate') {
-            userMessage =
-                [...rows].reverse().find(r => r.role === 'user')?.content ?? '';
-            const lastUserIndex = history.map(m => m.role).lastIndexOf('user');
-            history =
-                lastUserIndex >= 0 ? history.slice(0, lastUserIndex) : history;
-        } else {
-            let saved;
-            try {
-                [saved] = await repo.appendMessages(conversationId, [
-                    { role: 'user', content: body.message },
-                ]);
-            } catch (error) {
-                // Deleted between the ownership check and this insert. No stream exists
-                // yet, so answer on the HTTP stage rather than as an SSE frame.
-                if (!isConversationGone(error)) throw error;
-                await releaseOnce();
-                return json(HTTP_STATUS_NOT_FOUND, { error: 'not_found' });
-            }
-            userMessageId = saved?.id ?? null;
-            userMessageSeq = saved?.seq ?? null;
-        }
-
-        const portfolioSymbols = (
-            await new DrizzlePortfolioRepository(db).findByUser(user.id)
-        ).map(h => h.symbol);
+        const {
+            repo,
+            conversationId,
+            title,
+            userMessage,
+            userMessageId,
+            userMessageSeq,
+            history,
+            portfolioSymbols,
+        } = prepared;
 
         const controller = new AbortController();
         const executeTool = createToolExecutor({ analysisModel: AGENT_MODEL });
@@ -307,7 +428,7 @@ export async function POST(request: Request): Promise<Response> {
                 try {
                     const result = await runAgentTurn(
                         {
-                            userId: user.id,
+                            userId: subject,
                             tier,
                             model: AGENT_MODEL,
                             locale,
@@ -334,7 +455,7 @@ export async function POST(request: Request): Promise<Response> {
                     );
                     if (!result.ok) {
                         const partial = result.partialText?.trim();
-                        if (partial) {
+                        if (partial && repo && conversationId) {
                             try {
                                 await repo.appendMessages(conversationId, [
                                     {
@@ -373,22 +494,26 @@ export async function POST(request: Request): Promise<Response> {
                             },
                         },
                     ];
-                    let saved;
-                    try {
-                        saved = await repo.appendMessages(
-                            conversationId,
-                            rowsToSave
-                        );
-                    } catch (error) {
-                        if (isConversationGone(error))
-                            throw new AgentTurnError('not_found');
-                        throw error;
+                    let assistantMessageId = '';
+                    if (repo && conversationId) {
+                        try {
+                            const saved = await repo.appendMessages(
+                                conversationId,
+                                rowsToSave
+                            );
+                            assistantMessageId = saved.at(-1)?.id ?? '';
+                        } catch (error) {
+                            if (isConversationGone(error))
+                                throw new AgentTurnError('not_found');
+                            throw error;
+                        }
                     }
                     console.info(
                         '[Agent]',
                         JSON.stringify({
                             conversationId,
-                            userId: user.id,
+                            userId: subject,
+                            guest: user === null,
                             model: AGENT_MODEL,
                             steps: result.usage.steps,
                             toolCalls: toolTimings,
@@ -399,7 +524,7 @@ export async function POST(request: Request): Promise<Response> {
                     );
                     emit({ type: 'usage', usage: result.usage });
                     return {
-                        assistantMessageId: saved.at(-1)?.id ?? '',
+                        assistantMessageId,
                         remaining: result.remaining,
                         stopReason: result.stopReason,
                         ...(title !== undefined ? { title } : {}),

@@ -274,7 +274,7 @@ export default async function Home({
                                 className="mb-4 inline-flex min-h-9 max-w-full items-center gap-2 rounded-full border border-border-control px-3 text-xs text-secondary-300 hover:border-primary-400 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
                                 <span className="inline-flex items-center gap-1.5 font-mono font-semibold tracking-[0.12em] text-primary-400 uppercase">
-                                    <span translate="no">Siglens AI</span>
+                                    <span translate="no">SIGLENS AI</span>
                                     <BetaBadge />
                                 </span>
                                 <span className="truncate">

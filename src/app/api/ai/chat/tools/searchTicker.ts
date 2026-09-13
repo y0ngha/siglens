@@ -8,7 +8,7 @@ export const searchTickerTool: ToolExecutor = async args => {
     const results = await searchTicker(String(args.query));
     return {
         asOf: new Date().toISOString(),
-        source: 'siglens ticker index',
+        source: 'SIGLENS ticker search',
         results: results.slice(0, MAX_RESULTS).map(r => ({
             symbol: r.symbol,
             name: r.name,

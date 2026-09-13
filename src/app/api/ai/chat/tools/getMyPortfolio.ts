@@ -22,7 +22,7 @@ export const getMyPortfolioTool: ToolExecutor = async (_args, ctx) => {
     );
     return {
         asOf: new Date().toISOString(),
-        source: 'siglens portfolio',
+        source: 'SIGLENS portfolio',
         count: holdings.length,
         holdings,
     };

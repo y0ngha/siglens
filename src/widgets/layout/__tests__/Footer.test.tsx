@@ -56,13 +56,13 @@ describe('Footer', () => {
     it('renders the copyright with year', () => {
         render(<Footer />);
 
-        expect(screen.getByText(/© 2026 Siglens/)).toBeInTheDocument();
+        expect(screen.getByText(/© 2026 SIGLENS/)).toBeInTheDocument();
     });
 
     it('renders the about link', () => {
         render(<Footer />);
 
-        const link = screen.getByRole('link', { name: /Siglens 소개/ });
+        const link = screen.getByRole('link', { name: /SIGLENS 소개/ });
         expect(link).toHaveAttribute('href', '/about');
     });
 
@@ -139,7 +139,7 @@ describe('Footer', () => {
         const { container } = render(<Footer />);
 
         const copyright = Array.from(container.querySelectorAll('p')).find(el =>
-            el.textContent?.includes('Siglens')
+            el.textContent?.includes('SIGLENS')
         );
         expect(copyright).toBeDefined();
         expect(copyright!.className).toContain('whitespace-nowrap');

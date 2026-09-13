@@ -16,18 +16,18 @@ test.describe('SiglensAI agent chat', () => {
         // before landing back on the ai host.
         await expect(page).toHaveURL(new RegExp(`^${AI}/(ko/)?$`));
         // Task S3: the ai host renders the shared main `Header` (not the old
-        // bespoke `AiHeader`) — its `SiglensAI` nav pill shows `aria-current`
+        // bespoke `AiHeader`) — its `SIGLENS AI` wordmark shows `aria-current`
         // when `useHrefBase() !== ''`, and the theme toggle rides along with
         // the rest of the shared chrome.
         const banner = page.getByRole('banner');
         await expect(
-            banner.getByRole('link', { name: 'SiglensAI Beta' })
+            banner.getByRole('link', { name: 'SIGLENS AI Beta' })
         ).toHaveAttribute('aria-current', 'page');
         await expect(
             banner.getByRole('button', { name: /테마/ })
         ).toBeVisible();
         await expect(
-            page.getByRole('heading', { name: /SiglensAI/ })
+            page.getByRole('heading', { name: /SIGLENS AI/ })
         ).toBeVisible();
         await page
             .getByRole('textbox', { name: /메시지 입력/ })
@@ -40,7 +40,7 @@ test.describe('SiglensAI agent chat', () => {
         await expect(page.getByText(/\[E2E agent\]/)).toBeVisible();
         // The symbol the answer read links back to its siglens.io page.
         await expect(
-            page.getByRole('link', { name: /siglens에서 AAPL 보기/ })
+            page.getByRole('link', { name: /SIGLENS에서 AAPL 보기/ })
         ).toHaveAttribute('href', `${MAIN}/AAPL`);
         // The text frame arrives from the provider mid-turn, but the assistant row
         // is only persisted after `runAgentTurn` returns. `다시 생성` renders exactly
@@ -78,7 +78,7 @@ test.describe('SiglensAI agent chat', () => {
         ).toHaveCount(0);
     });
 
-    test('비로그인: ?sso=none 랜딩과 로그인 CTA, 스트림 401', async ({
+    test('비로그인: 로그인 없이 묻고 답을 받되 저장되지 않고, 저장된 대화를 가리키면 401', async ({
         browser,
     }) => {
         const context = await browser.newContext({
@@ -87,15 +87,24 @@ test.describe('SiglensAI agent chat', () => {
         const page = await context.newPage();
         await page.goto(`${AI}/`);
         await expect(page).toHaveURL(/sso=none/);
-        const cta = page.getByRole('link', {
-            name: /siglens 계정으로 로그인/,
-        });
-        await expect(cta).toHaveAttribute(
-            'href',
-            /localhost:4300\/(ko\/)?login\?next=/
-        );
+        await expect(
+            page.getByRole('link', { name: /SIGLENS 계정으로 로그인/ }).first()
+        ).toHaveAttribute('href', /localhost:4300\/(ko\/)?login\?next=/);
+        await page
+            .getByRole('textbox', { name: /메시지 입력/ })
+            .fill('AAPL 지금 얼마야');
+        await page.keyboard.press('Enter');
+        await expect(page.getByText(/\[E2E agent\]/)).toBeVisible();
+        await expect(
+            page.getByRole('button', { name: /다시 생성/ })
+        ).toBeVisible();
+        // Nothing is stored for a guest: no conversation URL, and the notice says so.
+        await expect(page).not.toHaveURL(/\/c\//);
+        await expect(
+            page.getByText('비회원 대화는 저장되지 않아요.')
+        ).toBeVisible();
         const res = await context.request.post(`${AI}/api/ai/chat/stream`, {
-            data: { message: 'x' },
+            data: { conversationId: 'c1', message: 'x' },
         });
         expect(res.status()).toBe(401);
         await context.close();
@@ -121,11 +130,11 @@ test.describe('SiglensAI agent chat', () => {
             new RegExp(`<a[^>]+href="${AI}[^"]*"[^>]*>`)
         )?.[0];
         expect(anchor).toBeDefined();
-        expect(anchor).toContain('aria-label="SiglensAI Beta"');
+        expect(anchor).toContain('aria-label="SIGLENS AI Beta"');
         // The home hero's one-line SiglensAI teaser also points at the ai host.
         expect(html).toMatch(
             new RegExp(
-                `<a[^>]+href="${AI}/?"[^>]*>(?:(?!</a>).)*Siglens AI`,
+                `<a[^>]+href="${AI}/?"[^>]*>(?:(?!</a>).)*SIGLENS AI`,
                 's'
             )
         );
@@ -218,7 +227,7 @@ test.describe('SiglensAI SEO', () => {
         expect(res.headers()['x-robots-tag']).toBeUndefined();
         const html = await res.text();
         expect(html).not.toContain('http-equiv="refresh"');
-        expect(html).toMatch(/<title>SiglensAI \(Beta\)[^<]+<\/title>/);
+        expect(html).toMatch(/<title>SIGLENS AI \(Beta\)[^<]+<\/title>/);
         expect(html).toMatch(/<meta name="description" content="[^"]{40,}"/);
         expect(html).toContain('<meta name="robots" content="index, follow"/>');
         expect(html).toMatch(

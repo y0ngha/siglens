@@ -59,7 +59,7 @@ describe('MessageList', () => {
         expect(screen.queryByText(/get_quote/)).toBeNull();
         // The symbol the answer read links back to its siglens.io page.
         expect(
-            screen.getByRole('link', { name: /siglens에서 AAPL 보기/ })
+            screen.getByRole('link', { name: /SIGLENS에서 AAPL 보기/ })
         ).toHaveAttribute('href', 'https://siglens.io/AAPL');
         expect(
             screen.getByRole('button', { name: /다시 생성/ })

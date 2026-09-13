@@ -442,15 +442,15 @@
         },
         "ai": {
             "layout": {
-                "9401e4": "SiglensAI is under maintenance right now. Please try again shortly."
+                "9401e4": "SIGLENS AI is under maintenance right now. Please try again shortly."
             },
             "not-found": {
                 "04598e": "Start a new chat",
                 "047c35": "Conversation not found"
             },
             "seo": {
-                "title": "SiglensAI (Beta) — AI research assistant for stocks and crypto",
-                "description": "A conversational research tool that looks up live quotes, indicators, siglens AI analysis, news and the web, and answers with sources. Ask about US stocks, Korean stocks and crypto.",
+                "title": "SIGLENS AI (Beta) — AI research assistant for stocks and crypto",
+                "description": "A conversational research tool that looks up live quotes, indicators, SIGLENS AI analysis, news and the web, and answers with sources. Ask about US stocks, Korean stocks and crypto.",
                 "ogLabel": "An AI research assistant that answers with data · Beta"
             }
         }
@@ -2346,7 +2346,7 @@
                 "d7fb24": "Analysis has been updated — please continue asking questions based on the latest results",
                 "f292ff": "Ask questions based on the analysis results. You can ask about trend interpretation, indicator meaning,\n                            and scenarios.",
                 "f4ca4c": "Close Chat",
-                "askSiglensAi": "Ask more in SiglensAI",
+                "askSiglensAi": "Ask more in SIGLENS AI",
                 "askSiglensAiQuestion": "Give me the full picture on {symbol} right now"
             },
             "ContextSwitchSystemMessage": {
@@ -2973,7 +2973,7 @@
                 "693b62": "Investment Disclaimer"
             },
             "Header": {
-                "1ebe53": "Siglens Logo",
+                "1ebe53": "SIGLENS Logo",
                 "d8c261": "Home",
                 "homeLabel": "{v0} home"
             },
@@ -3446,22 +3446,25 @@
             "ChatShell": {
                 "548fe0": "Retry",
                 "9a7569": "Conversation list",
-                "openConversations": "Conversations",
-                "errorInvalidBody": "Couldn't process the request. Please refresh and try again.",
-                "errorUnauthenticated": "Please log in.",
+                "errorAborted": "Stopped.",
                 "errorBot": "Couldn't process the request.",
-                "errorNotFound": "Conversation not found.",
-                "errorConversationLimit": "You've reached the conversation limit. Please delete an older conversation.",
                 "errorConversationFull": "This conversation is full. Please start a new one.",
-                "errorDisabled": "SiglensAI is under maintenance right now. Please try again shortly.",
-                "errorServerBusy": "We're getting a lot of requests right now. Please try again shortly.",
-                "errorTurnLimit": "You've reached today's usage limit. Please come back tomorrow.",
+                "errorConversationLimit": "You've reached the conversation limit. Please delete an older conversation.",
+                "errorDeadline": "The response timed out. Please try generating it again.",
+                "errorDisabled": "SIGLENS AI is under maintenance right now. Please try again shortly.",
+                "errorGeneric": "Something went wrong. Please try again.",
+                "errorInvalidBody": "Couldn't process the request. Please refresh and try again.",
+                "errorNotFound": "Conversation not found.",
                 "errorPremiumTurnLimit": "You've reached today's advanced model usage limit. Please come back tomorrow.",
                 "errorRateLimited": "Requests are limited right now due to high traffic. Please try again shortly.",
+                "errorServerBusy": "We're getting a lot of requests right now. Please try again shortly.",
                 "errorServerError": "Something went wrong. Please try again.",
-                "errorDeadline": "The response timed out. Please try generating it again.",
-                "errorAborted": "Stopped.",
-                "errorGeneric": "Something went wrong. Please try again."
+                "errorTurnLimit": "You've reached today's usage limit. Please come back tomorrow.",
+                "errorTurnLimitGuest": "Guests can ask up to 10 questions a day. Log in to keep going.",
+                "errorUnauthenticated": "Please log in.",
+                "guestNotice": "Guest conversations are not saved.",
+                "loginCta": "Log in",
+                "openConversations": "Conversations"
             },
             "Composer": {
                 "4077ce": "Send",
@@ -3470,30 +3473,30 @@
                 "tooLong": "{len} / {max} characters — too long",
                 "remainingTurns": "{n} turns left today · ",
                 "charCount": "{len} / {max}",
-                "placeholder": "Ask SiglensAI…",
+                "placeholder": "Ask SIGLENS AI…",
                 "keyHint": "Enter to send · Shift+Enter for a new line",
                 "betaNotice": "Beta · Answers may contain errors and are not investment advice."
             },
             "EmptyState": {
-                "a00741": "Log in with your siglens account",
-                "suggestionPortfolio": "How are my holdings doing right now?",
-                "suggestionSamsung": "Summarize the latest siglens analysis for Samsung Electronics",
+                "a00741": "Log in with your SIGLENS account",
+                "capAnalysis": "SIGLENS AI analysis",
+                "capIndicators": "Charts & indicators",
+                "capNews": "News",
+                "capQuotes": "Live quotes",
+                "capWeb": "Web search",
+                "capabilitiesLabel": "Data SIGLENS AI looks up",
+                "description": "It looks up live quotes and indicators, SIGLENS AI analysis, news and the web, and answers with sources.",
+                "examplesLabel": "Questions it can answer",
+                "guestNote": "Ask right away, no login needed. Holdings analysis, fresh analyses, web search and saved conversations need a login.",
+                "headlineAccent": "SIGLENS AI answers with data",
+                "headlineLead": "Ask anything about the markets",
                 "suggestionAapl": "What's AAPL's current trend and RSI?",
+                "suggestionBtc": "Is there a cached analysis for BTCUSD?",
                 "suggestionNews": "Just the important US market news this week",
                 "suggestionNvda": "How does the options market look for NVDA?",
-                "suggestionBtc": "Is there a cached analysis for BTCUSD?",
-                "suggestionsLabel": "Things you can ask",
-                "headlineLead": "Ask anything about the markets",
-                "headlineAccent": "SiglensAI answers with data",
-                "description": "It looks up live quotes and indicators, siglens AI analysis, news and the web, and answers with sources.",
-                "capQuotes": "Live quotes",
-                "capIndicators": "Charts & indicators",
-                "capAnalysis": "siglens AI analysis",
-                "capNews": "News",
-                "capWeb": "Web search",
-                "capabilitiesLabel": "Data SiglensAI looks up",
-                "guestNote": "Log in and your conversations are saved to your account, ready to pick up anytime.",
-                "examplesLabel": "Questions it can answer"
+                "suggestionPortfolio": "How are my holdings doing right now?",
+                "suggestionSamsung": "Summarize the latest SIGLENS analysis for Samsung Electronics",
+                "suggestionsLabel": "Things you can ask"
             },
             "MessageList": {
                 "259976": "The response was cut off. Please ask a follow-up question.",
@@ -3507,50 +3510,51 @@
                 "e6b008": "Edit message",
                 "copied": "Copied",
                 "generating": "Generating a reply…",
-                "relatedPages": "More on siglens",
-                "openOnSiglens": "View {symbol} on siglens"
+                "relatedPages": "More on SIGLENS",
+                "openOnSiglens": "View {symbol} on SIGLENS"
             },
             "Sidebar": {
+                "14bb5e": "Delete this chat?",
+                "19b2d1": "Cancel",
                 "4cbbe4": "Search conversations",
                 "586a5c": "Conversation name",
                 "73e5a8": "Rename",
                 "9a7569": "Conversation list",
-                "fc81e2": "Delete",
-                "14bb5e": "Delete this chat?",
-                "19b2d1": "Cancel",
-                "newChat": "New chat",
-                "groupToday": "Today",
-                "groupYesterday": "Yesterday",
-                "groupWeek": "Previous 7 days",
-                "groupOlder": "Older",
+                "backToSiglens": "Back to SIGLENS",
                 "empty": "No conversations yet.",
-                "noMatch": "No matches.",
-                "backToSiglens": "Back to siglens",
-                "terms": "Terms of Service",
-                "privacy": "Privacy Policy",
+                "fc81e2": "Delete",
+                "groupOlder": "Older",
+                "groupToday": "Today",
+                "groupWeek": "Previous 7 days",
+                "groupYesterday": "Yesterday",
+                "guestBody": "Guest conversations disappear when you close this tab. Log in to keep them and to use holdings analysis and web search.",
+                "guestCta": "Log in",
                 "guestTitle": "Conversation history",
-                "guestBody": "Log in and your conversations collect here, so you can pick them up on any device.",
-                "guestCta": "Log in to start"
+                "newChat": "New chat",
+                "noMatch": "No matches.",
+                "privacy": "Privacy Policy",
+                "terms": "Terms of Service"
             },
             "ToolActivity": {
-                "b4c619": "Tools used",
                 "aboutSeconds": "about {n}s",
-                "toolSearchTicker": "Symbol search",
-                "toolQuote": "Quote",
+                "b4c619": "Tools used",
+                "checked": "Checked {sources}",
+                "checking": "Checking {label}",
+                "failed": "Failed",
+                "inProgress": "In progress",
+                "loginRequired": "Login required",
+                "partialFailure": "some failed",
+                "seconds": "{n}s",
+                "toolAnalysis": "SIGLENS analysis",
                 "toolBars": "Chart & indicators",
-                "toolAnalysis": "siglens analysis",
                 "toolFreshAnalysis": "Fresh analysis",
                 "toolNews": "News",
                 "toolOptions": "Options",
-                "toolPortfolio": "My portfolio",
-                "toolWebSearch": "Web search",
                 "toolOther": "Data lookup",
-                "seconds": "{n}s",
-                "checking": "Checking {label}",
-                "checked": "Checked {sources}",
-                "partialFailure": "some failed",
-                "inProgress": "In progress",
-                "failed": "Failed"
+                "toolPortfolio": "My portfolio",
+                "toolQuote": "Quote",
+                "toolSearchTicker": "Symbol search",
+                "toolWebSearch": "Web search"
             },
             "ChatSkeleton": {
                 "loading": "Loading…"

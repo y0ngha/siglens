@@ -442,15 +442,15 @@
         },
         "ai": {
             "layout": {
-                "9401e4": "SiglensAIはただいまメンテナンス中です。しばらくしてから再度お試しください。"
+                "9401e4": "SIGLENS AIはただいまメンテナンス中です。しばらくしてから再度お試しください。"
             },
             "not-found": {
                 "04598e": "新しいチャットを開始",
                 "047c35": "会話が見つかりません"
             },
             "seo": {
-                "title": "SiglensAI（ベータ）— 株式・暗号資産のAIリサーチアシスタント",
-                "description": "リアルタイム株価やテクニカル指標、siglensのAI分析、ニュースやウェブ検索を自ら調べ、出典付きで答える対話型リサーチツールです。米国株・韓国株・暗号資産について質問できます。",
+                "title": "SIGLENS AI（ベータ）— 株式・暗号資産のAIリサーチアシスタント",
+                "description": "リアルタイム株価やテクニカル指標、SIGLENSのAI分析、ニュースやウェブ検索を自ら調べ、出典付きで答える対話型リサーチツールです。米国株・韓国株・暗号資産について質問できます。",
                 "ogLabel": "データで答えるAIリサーチアシスタント · ベータ"
             }
         }
@@ -2346,7 +2346,7 @@
                 "d7fb24": "分析が更新されました — 最新の結果に基づいて引き続き\n                        質問してください",
                 "f292ff": "分析結果に基づいて質問してください。トレンドの解釈、指標の意味、\n                            シナリオまで、すべて質問できます。",
                 "f4ca4c": "チャットを閉じる",
-                "askSiglensAi": "SiglensAIでさらに質問",
+                "askSiglensAi": "SIGLENS AIでさらに質問",
                 "askSiglensAiQuestion": "{symbol}の今の状況を総合的に教えて"
             },
             "ContextSwitchSystemMessage": {
@@ -2973,7 +2973,7 @@
                 "693b62": "投資免責事項"
             },
             "Header": {
-                "1ebe53": "Siglensロゴ",
+                "1ebe53": "SIGLENSロゴ",
                 "d8c261": "ホームへ",
                 "homeLabel": "{v0} ホーム"
             },
@@ -3446,22 +3446,25 @@
             "ChatShell": {
                 "548fe0": "再試行",
                 "9a7569": "会話一覧",
-                "openConversations": "会話一覧",
-                "errorInvalidBody": "リクエストを処理できませんでした。更新してもう一度お試しください。",
-                "errorUnauthenticated": "ログインが必要です。",
+                "errorAborted": "中断されました。",
                 "errorBot": "リクエストを処理できませんでした。",
-                "errorNotFound": "会話が見つかりません。",
-                "errorConversationLimit": "会話数の上限に達しました。古い会話を削除してください。",
                 "errorConversationFull": "この会話は上限に達しました。新しい会話を始めてください。",
-                "errorDisabled": "SiglensAIはただいまメンテナンス中です。しばらくしてから再度お試しください。",
-                "errorServerBusy": "現在リクエストが集中しています。しばらくしてから再度お試しください。",
-                "errorTurnLimit": "本日の利用上限に達しました。明日また利用してください。",
+                "errorConversationLimit": "会話数の上限に達しました。古い会話を削除してください。",
+                "errorDeadline": "応答がタイムアウトしました。もう一度生成してください。",
+                "errorDisabled": "SIGLENS AIはただいまメンテナンス中です。しばらくしてから再度お試しください。",
+                "errorGeneric": "エラーが発生しました。もう一度お試しください。",
+                "errorInvalidBody": "リクエストを処理できませんでした。更新してもう一度お試しください。",
+                "errorNotFound": "会話が見つかりません。",
                 "errorPremiumTurnLimit": "本日の高度モデル利用上限に達しました。明日また利用してください。",
                 "errorRateLimited": "アクセスが集中しているため一時的に制限されています。しばらくしてから再度お試しください。",
+                "errorServerBusy": "現在リクエストが集中しています。しばらくしてから再度お試しください。",
                 "errorServerError": "エラーが発生しました。もう一度お試しください。",
-                "errorDeadline": "応答がタイムアウトしました。もう一度生成してください。",
-                "errorAborted": "中断されました。",
-                "errorGeneric": "エラーが発生しました。もう一度お試しください。"
+                "errorTurnLimit": "本日の利用上限に達しました。明日また利用してください。",
+                "errorTurnLimitGuest": "ゲストは1日10回まで質問できます。ログインすると引き続き利用できます。",
+                "errorUnauthenticated": "ログインが必要です。",
+                "guestNotice": "ゲストの会話は保存されません。",
+                "loginCta": "ログイン",
+                "openConversations": "会話一覧"
             },
             "Composer": {
                 "4077ce": "送信",
@@ -3470,30 +3473,30 @@
                 "tooLong": "{len} / {max}文字 — 長すぎます",
                 "remainingTurns": "本日残り{n}ターン · ",
                 "charCount": "{len} / {max}",
-                "placeholder": "SiglensAIに質問…",
+                "placeholder": "SIGLENS AIに質問…",
                 "keyHint": "Enterで送信 · Shift+Enterで改行",
                 "betaNotice": "ベータ版 · 回答には誤りが含まれる場合があり、投資助言ではありません。"
             },
             "EmptyState": {
-                "a00741": "siglensアカウントでログイン",
-                "suggestionPortfolio": "今の保有銘柄の調子はどう？",
-                "suggestionSamsung": "サムスン電子の最新のsiglens分析を要約して",
+                "a00741": "SIGLENSアカウントでログイン",
+                "capAnalysis": "SIGLENS AI分析",
+                "capIndicators": "チャート・テクニカル指標",
+                "capNews": "ニュース",
+                "capQuotes": "リアルタイム株価",
+                "capWeb": "ウェブ検索",
+                "capabilitiesLabel": "SIGLENS AIが調べるデータ",
+                "description": "リアルタイム株価やテクニカル指標、SIGLENSのAI分析、ニュースやウェブ検索を自ら調べ、出典付きで答えます。",
+                "examplesLabel": "このような質問に答えられます",
+                "guestNote": "ログインなしですぐに質問できます。保有銘柄の分析・最新分析の実行・ウェブ検索と会話の保存にはログインが必要です。",
+                "headlineAccent": "データで答えるSIGLENS AI",
+                "headlineLead": "マーケットのことなら何でも聞いてください",
                 "suggestionAapl": "AAPLの現在のトレンドとRSIは？",
+                "suggestionBtc": "BTCUSDのキャッシュされた分析はある？",
                 "suggestionNews": "今週の米国市場の重要ニュースだけ教えて",
                 "suggestionNvda": "NVDAのオプション市場はどう見てる？",
-                "suggestionBtc": "BTCUSDのキャッシュされた分析はある？",
-                "suggestionsLabel": "こんな質問ができます",
-                "headlineLead": "マーケットのことなら何でも聞いてください",
-                "headlineAccent": "データで答えるSiglensAI",
-                "description": "リアルタイム株価やテクニカル指標、siglensのAI分析、ニュースやウェブ検索を自ら調べ、出典付きで答えます。",
-                "capQuotes": "リアルタイム株価",
-                "capIndicators": "チャート・テクニカル指標",
-                "capAnalysis": "siglens AI分析",
-                "capNews": "ニュース",
-                "capWeb": "ウェブ検索",
-                "capabilitiesLabel": "SiglensAIが調べるデータ",
-                "guestNote": "ログインすると会話がアカウントに保存され、いつでも続きから見られます。",
-                "examplesLabel": "このような質問に答えられます"
+                "suggestionPortfolio": "今の保有銘柄の調子はどう？",
+                "suggestionSamsung": "サムスン電子の最新のSIGLENS分析を要約して",
+                "suggestionsLabel": "こんな質問ができます"
             },
             "MessageList": {
                 "259976": "回答が途中で切れました。続けて質問してください。",
@@ -3507,50 +3510,51 @@
                 "e6b008": "メッセージを編集",
                 "copied": "コピーしました",
                 "generating": "回答を生成中…",
-                "relatedPages": "siglensでもっと見る",
-                "openOnSiglens": "siglensで{symbol}を見る"
+                "relatedPages": "SIGLENSでもっと見る",
+                "openOnSiglens": "SIGLENSで{symbol}を見る"
             },
             "Sidebar": {
+                "14bb5e": "このチャットを削除しますか？",
+                "19b2d1": "キャンセル",
                 "4cbbe4": "会話を検索",
                 "586a5c": "会話名",
                 "73e5a8": "名前を変更",
                 "9a7569": "会話一覧",
-                "fc81e2": "削除",
-                "14bb5e": "このチャットを削除しますか？",
-                "19b2d1": "キャンセル",
-                "newChat": "新しい会話",
-                "groupToday": "今日",
-                "groupYesterday": "昨日",
-                "groupWeek": "過去7日間",
-                "groupOlder": "それ以前",
+                "backToSiglens": "SIGLENSホームへ",
                 "empty": "まだ会話がありません。",
-                "noMatch": "一致する会話がありません。",
-                "backToSiglens": "siglensホームへ",
-                "terms": "利用規約",
-                "privacy": "プライバシーポリシー",
+                "fc81e2": "削除",
+                "groupOlder": "それ以前",
+                "groupToday": "今日",
+                "groupWeek": "過去7日間",
+                "groupYesterday": "昨日",
+                "guestBody": "ゲストの会話はこのタブを閉じると消えます。ログインすると会話が保存され、保有銘柄の分析やウェブ検索も使えます。",
+                "guestCta": "ログインする",
                 "guestTitle": "会話履歴",
-                "guestBody": "ログインすると会話がここに保存され、他のデバイスでも続きから見られます。",
-                "guestCta": "ログインして始める"
+                "newChat": "新しい会話",
+                "noMatch": "一致する会話がありません。",
+                "privacy": "プライバシーポリシー",
+                "terms": "利用規約"
             },
             "ToolActivity": {
-                "b4c619": "使用したツール",
                 "aboutSeconds": "約{n}秒",
-                "toolSearchTicker": "銘柄検索",
-                "toolQuote": "株価",
+                "b4c619": "使用したツール",
+                "checked": "{sources}を確認",
+                "checking": "{label}を確認中",
+                "failed": "失敗",
+                "inProgress": "処理中",
+                "loginRequired": "ログインが必要",
+                "partialFailure": "一部失敗",
+                "seconds": "{n}秒",
+                "toolAnalysis": "SIGLENS分析",
                 "toolBars": "チャート・指標",
-                "toolAnalysis": "siglens分析",
                 "toolFreshAnalysis": "新規分析",
                 "toolNews": "ニュース",
                 "toolOptions": "オプション",
-                "toolPortfolio": "マイポートフォリオ",
-                "toolWebSearch": "ウェブ検索",
                 "toolOther": "データ照会",
-                "seconds": "{n}秒",
-                "checking": "{label}を確認中",
-                "checked": "{sources}を確認",
-                "partialFailure": "一部失敗",
-                "inProgress": "処理中",
-                "failed": "失敗"
+                "toolPortfolio": "マイポートフォリオ",
+                "toolQuote": "株価",
+                "toolSearchTicker": "銘柄検索",
+                "toolWebSearch": "ウェブ検索"
             },
             "ChatSkeleton": {
                 "loading": "読み込み中…"

@@ -34,7 +34,8 @@ const CARD =
  * logo tile, the mono `SIGLENS AI` eyebrow with the Beta tag, the two-tone
  * headline the main site's hero uses, and a faint chart grid behind it.
  * Then what the assistant can reach, and questions to start from — sendable
- * for members, a path to login for guests.
+ * by anyone. Guests get one quiet line on what signing in adds (holdings,
+ * fresh analyses, web search, saved conversations) instead of a login wall.
  */
 export function EmptyState({
     onPick,
@@ -81,7 +82,7 @@ export function EmptyState({
                 <div className="flex flex-col items-center text-center">
                     <SiglensMark size="lg" className="mb-5" />
                     <p className="mb-3 flex items-center gap-2 font-mono text-xs font-semibold tracking-[0.2em] text-primary-400 uppercase">
-                        <span translate="no">Siglens AI</span>
+                        <span translate="no">SIGLENS AI</span>
                         <BetaBadge />
                     </p>
                     <h1 className="text-3xl font-semibold tracking-tight text-balance text-secondary-50 sm:text-4xl">
@@ -109,17 +110,15 @@ export function EmptyState({
                     </ul>
                 </div>
                 {signedIn ? null : (
-                    <div className="mt-8 flex flex-col items-center gap-2">
+                    <p className="mt-6 text-center text-xs leading-5 text-pretty text-secondary-400">
+                        {t('EmptyState.guestNote')}{' '}
                         <a
                             href={loginHref}
-                            className="inline-flex min-h-11 items-center rounded-lg bg-primary-600 px-5 text-sm font-medium text-white hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                            className="font-medium whitespace-nowrap text-primary-400 underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             {t('EmptyState.a00741')}
                         </a>
-                        <p className="text-xs text-secondary-400">
-                            {t('EmptyState.guestNote')}
-                        </p>
-                    </div>
+                    </p>
                 )}
                 <h2 className="mt-10 mb-3 text-center text-xs font-medium text-secondary-400">
                     {signedIn
@@ -139,25 +138,16 @@ export function EmptyState({
                         // guarantee at this boundary, and a collision would silently
                         // drop a card.
                         <li key={`${i}-${s}`}>
-                            {signedIn ? (
-                                <button
-                                    type="button"
-                                    onClick={() => onPick(s)}
-                                    className={CARD}
-                                >
-                                    <span className="line-clamp-2 min-w-0 break-words">
-                                        {s}
-                                    </span>
-                                    <ArrowUpRightIcon className="size-4 shrink-0 text-secondary-400 transition-colors group-hover:text-primary-400 motion-reduce:transition-none" />
-                                </button>
-                            ) : (
-                                <a href={loginHref} className={CARD}>
-                                    <span className="line-clamp-2 min-w-0 break-words">
-                                        {s}
-                                    </span>
-                                    <ArrowUpRightIcon className="size-4 shrink-0 text-secondary-400 transition-colors group-hover:text-primary-400 motion-reduce:transition-none" />
-                                </a>
-                            )}
+                            <button
+                                type="button"
+                                onClick={() => onPick(s)}
+                                className={CARD}
+                            >
+                                <span className="line-clamp-2 min-w-0 break-words">
+                                    {s}
+                                </span>
+                                <ArrowUpRightIcon className="size-4 shrink-0 text-secondary-400 transition-colors group-hover:text-primary-400 motion-reduce:transition-none" />
+                            </button>
                         </li>
                     ))}
                 </ul>

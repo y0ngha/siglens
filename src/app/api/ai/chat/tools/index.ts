@@ -22,6 +22,7 @@ import { getOptionsSummaryTool } from './getOptionsSummary';
 import { getMyPortfolioTool } from './getMyPortfolio';
 import { runFreshAnalysisTool } from './runFreshAnalysis';
 import { webSearchTool } from './webSearch';
+import { isGuestSubject } from '../guestSubject';
 
 export interface ToolRuntime {
     /** Analysis model for cache keys/fresh runs — pilot: fixed to the agent model. */
@@ -32,6 +33,18 @@ export type ToolExecutor = (
     ctx: ToolExecutionContext,
     runtime: ToolRuntime
 ) => Promise<unknown>;
+
+/**
+ * Tools a guest may not run: their own holdings (there are none), and the two
+ * metered ones core already zeroes for tier `free`. Refused here with the same
+ * `login_required` core uses, so the answer offers sign-in — and so a future
+ * core quota change can never open a paid path to anonymous callers.
+ */
+const MEMBER_ONLY_TOOLS: ReadonlySet<string> = new Set([
+    'get_my_portfolio',
+    'run_fresh_analysis',
+    'web_search',
+]);
 
 const EXECUTORS: Record<string, ToolExecutor> = {
     search_ticker: searchTickerTool,
@@ -113,6 +126,8 @@ export function createToolExecutor(runtime: ToolRuntime): ExecuteTool {
         const executor = EXECUTORS[name];
         if (!executor) return { error: 'unknown_tool' };
         if (ctx.signal.aborted) return { error: 'aborted' };
+        if (MEMBER_ONLY_TOOLS.has(name) && isGuestSubject(ctx.userId))
+            return { error: 'login_required' };
         if (symbolsIn(args).some(s => !isAdmissibleSymbolShape(s)))
             return { error: 'invalid_symbol' };
         try {

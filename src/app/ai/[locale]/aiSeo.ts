@@ -13,7 +13,7 @@ import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { ORGANIZATION_JSON_LD_ID, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 
 /** Product name as it appears in titles, cards and structured data. */
-export const AI_PRODUCT_NAME = 'SiglensAI';
+export const AI_PRODUCT_NAME = 'SIGLENS AI';
 
 export interface AiSeoCopy {
     readonly title: string;

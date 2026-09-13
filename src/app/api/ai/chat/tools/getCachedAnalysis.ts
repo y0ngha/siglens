@@ -17,6 +17,7 @@ import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import { resolvePositionBucket } from '@/shared/lib/byokGate';
+import { isGuestSubject } from '../guestSubject';
 import type { ToolExecutor } from './index';
 
 const STALE_AFTER_MS: Record<string, number> = {
@@ -97,11 +98,11 @@ export const getCachedAnalysisTool: ToolExecutor = async (
         (args.timeframe as Timeframe | undefined) ?? DEFAULT_TIMEFRAME;
 
     if (tab === 'technical') {
-        const positionBucket = await positionBucketFor(
-            ctx.userId,
-            ctx.tier,
-            symbol
-        );
+        // A guest holds nothing, and its subject is not a user id the holdings
+        // table could even compare against (uuid column).
+        const positionBucket = isGuestSubject(ctx.userId)
+            ? undefined
+            : await positionBucketFor(ctx.userId, ctx.tier, symbol);
         const cached = await peekAnalysisCache(
             symbol,
             timeframe,

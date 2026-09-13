@@ -45,7 +45,7 @@ describe('EmptyState', () => {
         ).toBeInTheDocument();
     });
 
-    it('signed out: a login CTA, and the example questions lead to login instead of sending', () => {
+    it('signed out: the example questions send right away, with one quiet line on what login adds', () => {
         const onPick = vi.fn();
         wrap(
             <EmptyState
@@ -56,28 +56,31 @@ describe('EmptyState', () => {
             />
         );
         expect(
-            screen.getByRole('link', { name: /siglens 계정으로 로그인/ })
+            screen.getByRole('link', { name: /SIGLENS 계정으로 로그인/ })
         ).toHaveAttribute('href', 'https://siglens.io/login?next=x');
         expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-            'SiglensAI'
+            'SIGLENS AI'
         );
         const examples = screen.getByRole('list', {
             name: '이런 질문에 답할 수 있어요',
         });
-        const links = examples.querySelectorAll('a');
-        expect(links).toHaveLength(6);
-        links.forEach(a =>
-            expect(a).toHaveAttribute('href', 'https://siglens.io/login?next=x')
-        );
+        const buttons = examples.querySelectorAll('button');
+        expect(buttons).toHaveLength(6);
+        expect(examples.querySelectorAll('a')).toHaveLength(0);
+        buttons[0]!.click();
+        expect(onPick).toHaveBeenCalledWith('내 보유 종목 지금 어때?');
+        // Personalised suggestions are for members; guests get the static six.
         expect(screen.queryByText('무시돼야 할 개인화 제안')).toBeNull();
-        expect(screen.queryAllByRole('button')).toHaveLength(0);
+        expect(
+            screen.getByText(/로그인 없이 바로 물어볼 수 있어요/)
+        ).toBeInTheDocument();
     });
 
     it('carries the brand: Beta tag and what the assistant looks up', () => {
         wrap(<EmptyState onPick={vi.fn()} signedIn loginHref="/login" />);
         expect(screen.getByText('Beta')).toHaveAttribute('translate', 'no');
         expect(
-            screen.getByRole('list', { name: 'SiglensAI가 찾아보는 데이터' })
+            screen.getByRole('list', { name: 'SIGLENS AI가 찾아보는 데이터' })
         ).toHaveTextContent('실시간 시세');
     });
 });
