@@ -12,6 +12,7 @@ import type {
     LlmProvider,
 } from '@y0ngha/siglens-core';
 import {
+    createCounterStore,
     DEEPSEEK_V4_1_FLASH_MODEL,
     getProviderForModel,
     requestChatCompletion,
@@ -103,6 +104,9 @@ const mockGetCurrentUser = getCurrentUser as MockedFunction<
 >;
 const mockGetProviderForModel = getProviderForModel as MockedFunction<
     typeof getProviderForModel
+>;
+const mockCreateCounterStore = createCounterStore as MockedFunction<
+    typeof createCounterStore
 >;
 
 const MINIMAL_ANALYSIS: AnalysisResponse = {
@@ -775,6 +779,26 @@ describe('chatAction 함수는', () => {
     });
 
     describe('클라이언트 방문자 키(clientKey) 처리', () => {
+        it('게스트 턴에서 IP 백스탑 카운터를 chat 전용 prefix로 생성한다', async () => {
+            await chatAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-3.6-flash'
+            );
+
+            expect(mockCreateCounterStore).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    prefix: 'chat:q:guest-ip',
+                    period: 'day',
+                    failurePolicy: 'closed',
+                })
+            );
+        });
+
         it('게스트는 `guest:<쿠키 id>`를 clientIp로 전달하고 IP 백스탑을 거친다', async () => {
             await chatAction(
                 'AAPL',

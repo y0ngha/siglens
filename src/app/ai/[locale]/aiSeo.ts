@@ -87,6 +87,7 @@ export function buildAiHomeJsonLd(
     locale: Locale,
     copy: AiSeoCopy
 ): Record<string, unknown> {
+    const siteName = SITE_NAME.toUpperCase();
     return {
         '@context': 'https://schema.org',
         '@type': 'WebApplication',
@@ -104,13 +105,13 @@ export function buildAiHomeJsonLd(
         isPartOf: {
             '@type': 'WebSite',
             '@id': `${SITE_URL}#website`,
-            name: SITE_NAME.toUpperCase(),
+            name: siteName,
             url: SITE_URL,
         },
         publisher: {
             '@type': 'Organization',
             '@id': ORGANIZATION_JSON_LD_ID,
-            name: SITE_NAME.toUpperCase(),
+            name: siteName,
             url: SITE_URL,
         },
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'KRW' },

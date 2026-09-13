@@ -9,7 +9,11 @@ import {
  * Many guests can share one NAT/CGNAT address, so this cannot be as tight as
  * a per-guest limit — it exists only to stop clearing `siglens_guest`
  * (`guestSubject.ts`) from buying unlimited free turns from the same
- * network. ~10 guests' worth of the free tier's daily turn allowance.
+ * network. ~10 guests' worth of the free tier's daily turn allowance
+ * (`10 * agentLimit('free', 'turnsPerDay')` — kept a literal rather than
+ * computed from core so importing this module can't run core at load time
+ * and break partial core mocks in tests; `counters.test.ts` has a drift
+ * test against the core value).
  */
 export const GUEST_IP_TURNS_PER_DAY = 100;
 

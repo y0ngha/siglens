@@ -481,8 +481,11 @@ siglens 제공 모델(`TIER_CONFIG.models.free`)은 서버 키로 호출하고, 
 ---
 ## SiglensAI(ai.siglens.io) 에이전트 챗 — `POST /api/ai/chat/stream`
 
-`ai.siglens.io` 전용 SSE 라우트. 분석 스트림과 달리 **인증 필수**이며(비회원은 `ai.siglens.io`에
-세션이 없다 — 아래 SSO 참고), core의 `runAgentTurn`을 한 번 호출해 멀티스텝 에이전트 루프
+`ai.siglens.io` 전용 SSE 라우트. 로그인한 회원뿐 아니라 세션 없는 비회원도
+`action: 'send'`이고 `conversationId`가 없으면 이용할 수 있다 — 비회원 턴은 서버에 아무것도
+저장하지 않으며, 브라우저가 들고 있는 이전 턴을 매 요청 `history`에 실어 보낸다(아래 Body
+참고). 대화를 이름으로 지정하거나(`conversationId`) `regenerate`/`edit`를 쓰려면 로그인이
+필요하다(아래 SSO 참고). core의 `runAgentTurn`을 한 번 호출해 멀티스텝 에이전트 루프
 (툴 호출 포함)를 완주할 때까지 결과를 SSE로 스트리밍한다. 라우트 트리는
 `src/app/ai/[locale]/{page.tsx, c/[id]/page.tsx}`.
 
@@ -490,10 +493,11 @@ siglens 제공 모델(`TIER_CONFIG.models.free`)은 서버 키로 호출하고, 
 
 ```typescript
 interface Body {
-    conversationId: string | null; // null이면 새 대화 시작
+    conversationId: string | null; // null이면 새 대화 시작. 비회원은 항상 null이어야 함
     message: string; // 1~4,000자. action이 'regenerate'가 아니면 필수
-    action?: 'send' | 'regenerate' | 'edit'; // 기본 'send'
+    action?: 'send' | 'regenerate' | 'edit'; // 기본 'send'. 비회원은 'send'만 가능
     editSeq?: number; // action이 'edit'일 때만, 1 이상의 정수
+    history?: AgentMessage[]; // 비회원 전용(회원은 서버 저장 이력을 써서 무시). 최근 20개, 메시지당 8,000자로 서버가 자름
 }
 ```
 
@@ -502,10 +506,11 @@ interface Body {
 | status | `error` | 의미 |
 |---|---|---|
 | 503 | `disabled` | 킬 스위치(`AGENT_CHAT_DISABLED=1`) 활성. `Retry-After: 600` |
-| 401 | `unauthenticated` | 로그인 필요 |
+| 401 | `unauthenticated` | 비회원이 `conversationId`를 지정하거나 `action`이 `regenerate`/`edit`일 때(비회원은 대화를 소유하지 않음). 세션이 끊긴 채 `/c/<id>`에 남은 회원도 이 경로로 로그인 핸드오프를 탄다 |
 | 403 | `bot` | 봇 UA로 판정 |
 | 400 | `invalid_body` | 파싱 실패, editSeq 대상 없음 등 |
-| 503 / 409 | `server_busy` | 인스턴스당 동시 턴 상한(4) 또는 SSE 스트림 게이트 초과(503) · 사용자별 턴 락 충돌(409) |
+| 429 | `turn_limit` | 비회원 IP 백스탑(하루 `GUEST_IP_TURNS_PER_DAY`회) 소진 |
+| 503 / 409 | `server_busy` | 인스턴스당 동시 턴 상한(4) 또는 SSE 스트림 게이트 초과(503) · 사용자별/게스트별 턴 락 충돌(409) · 비회원 IP 백스탑 스토어 장애(503, `Retry-After: 30`) |
 | 404 | `not_found` | `conversationId`가 이 사용자 소유가 아니거나 존재하지 않음 |
 | 409 | `conversation_limit` | 티어별 대화 개수 상한 초과(새 대화 생성 시도) |
 | 409 | `conversation_full` | 대화당 메시지 상한(`AGENT_LIMITS.messagesPerConversation`) 초과 |

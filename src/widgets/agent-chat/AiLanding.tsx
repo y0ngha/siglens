@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { GUEST_TURNS_PER_DAY, MEMBER_TURNS_PER_DAY } from './guestTurnLimit';
 import { ArrowUpRightIcon } from './icons';
@@ -84,10 +85,7 @@ export function AiLanding({ siteUrl, localePrefix }: Props) {
                 </h2>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     {access.map(({ title, items }, i) => (
-                        <div
-                            key={title}
-                            className="rounded-lg border border-secondary-700 bg-secondary-800 p-4"
-                        >
+                        <div key={title} className={cn(SURFACE_CARD, 'p-4')}>
                             <h3
                                 className={cn(
                                     'text-sm font-semibold',

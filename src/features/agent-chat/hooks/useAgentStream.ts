@@ -40,7 +40,7 @@ export interface AgentUiMessage {
  * Text before a tool call shorter than this is narration ("시세를 확인해
  * 볼게요") and is dropped as before; longer text is a real answer the model
  * went back on, and becomes a `draft`.
- * ponytail: length heuristic; a model-side "answer started" signal would be exact.
+ * Known limit: length heuristic; a model-side "answer started" signal would be exact.
  */
 const DRAFT_MIN_CHARS = 120;
 export interface AgentRemaining {

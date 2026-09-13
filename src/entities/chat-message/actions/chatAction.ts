@@ -13,6 +13,7 @@ import type {
     AnalysisResponse,
     ChatActionResult,
     ChatMessage,
+    CounterStore,
     CurrentAnalysisContext,
     LlmProvider,
     ModelId,
@@ -111,7 +112,7 @@ async function resolveRequestLocale(): Promise<Locale> {
 const GUEST_IP_BACKSTOP_MULTIPLE = 10;
 
 /** Per-IP backstop consumed once per guest chatbot turn. Fails closed. */
-function createChatGuestIpBackstopCounter() {
+function createChatGuestIpBackstopCounter(): CounterStore {
     return createCounterStore({
         prefix: 'chat:q:guest-ip',
         period: 'day',
