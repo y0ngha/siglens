@@ -9,6 +9,7 @@ import {
 
 vi.mock('@/shared/config/cookieNames', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
+    GUEST_ID_COOKIE_NAME: 'siglens_guest',
 }));
 const { mockIntlMiddleware } = vi.hoisted(() => ({
     mockIntlMiddleware: vi.fn(() => ({ type: 'intl' })),
@@ -17,6 +18,7 @@ vi.mock('next-intl/middleware', () => ({ default: () => mockIntlMiddleware }));
 vi.mock('next/server', () => {
     class FakeResponse {
         headers = new Headers();
+        cookies = { set: vi.fn() };
         constructor(
             public body: string,
             init?: { headers?: Record<string, string> }
@@ -38,6 +40,7 @@ vi.mock('next/server', () => {
                 type: 'rewrite',
                 url,
                 headers: new Headers(),
+                cookies: { set: vi.fn() },
             })),
         }),
     };
@@ -54,11 +57,20 @@ const mockRewrite = NextResponse.rewrite as MockedFunction<
 >;
 const mockNext = NextResponse.next as MockedFunction<typeof NextResponse.next>;
 
-function makeRequest(host: string, path: string): NextRequest {
+function makeRequest(
+    host: string,
+    path: string,
+    cookieValues: Record<string, string> = {}
+): NextRequest {
     return {
         url: `https://${host}${path}`,
         headers: new Headers({ host }),
-        cookies: { get: () => undefined },
+        cookies: {
+            get: (name: string) =>
+                name in cookieValues
+                    ? { name, value: cookieValues[name] }
+                    : undefined,
+        },
     } as unknown as NextRequest;
 }
 
@@ -78,6 +90,47 @@ describe('proxy — ai host', () => {
         );
         expect(res.headers.get('x-robots-tag')).toBeNull();
     });
+    type CookieSetter = MockedFunction<
+        (name: string, value: string, options: Record<string, unknown>) => void
+    >;
+
+    it('첫 페이지 뷰 — 게스트·세션 쿠키가 모두 없으면 게스트 쿠키를 심는다', () => {
+        const res = proxy(makeRequest('ai.siglens.io', '/')) as unknown as {
+            cookies: { set: CookieSetter };
+        };
+        expect(res.cookies.set).toHaveBeenCalledTimes(1);
+        const [name, value, options] = res.cookies.set.mock.calls[0]!;
+        expect(name).toBe('siglens_guest');
+        expect(typeof value).toBe('string');
+        expect(options).toMatchObject({ httpOnly: true, sameSite: 'lax' });
+    });
+    it('유효한 게스트 쿠키가 이미 있으면 새로 심지 않는다', () => {
+        const res = proxy(
+            makeRequest('ai.siglens.io', '/', {
+                siglens_guest: '11111111-1111-1111-1111-111111111111',
+            })
+        ) as unknown as { cookies: { set: CookieSetter } };
+        expect(res.cookies.set).not.toHaveBeenCalled();
+    });
+    it('변조된(형식이 아닌) 게스트 쿠키는 새로 발급해 대체한다', () => {
+        const res = proxy(
+            makeRequest('ai.siglens.io', '/', { siglens_guest: 'not-a-uuid' })
+        ) as unknown as { cookies: { set: CookieSetter } };
+        expect(res.cookies.set).toHaveBeenCalledTimes(1);
+    });
+    it('세션 쿠키가 있는 회원에게는 게스트 쿠키를 심지 않는다', () => {
+        const res = proxy(
+            makeRequest('ai.siglens.io', '/', { siglens_session: 's' })
+        ) as unknown as { cookies: { set: CookieSetter } };
+        expect(res.cookies.set).not.toHaveBeenCalled();
+    });
+    it('robots.txt 응답에는 게스트 쿠키를 심지 않는다', () => {
+        const res = proxy(
+            makeRequest('ai.siglens.io', '/robots.txt')
+        ) as unknown as { cookies: { set: CookieSetter } };
+        expect(res.cookies.set).not.toHaveBeenCalled();
+    });
+
     it.each(['/c/abc', '/en/c/abc'])(
         '%s — 대화는 사적 기록이라 X-Robots-Tag noindex',
         path => {
@@ -106,7 +159,7 @@ describe('proxy — ai host', () => {
             makeRequest('ai.siglens.io', '/robots.txt')
         ) as unknown as { body: string };
         expect(res.body).toBe(
-            'User-agent: *\nAllow: /\nDisallow: /c/\nDisallow: /*/c/\n\nSitemap: https://ai.siglens.io/sitemap.xml\n'
+            'User-agent: *\nAllow: /\nDisallow: /c/\nDisallow: /*/c/\nDisallow: /api/\n\nSitemap: https://ai.siglens.io/sitemap.xml\n'
         );
         expect(mockRewrite).not.toHaveBeenCalled();
     });

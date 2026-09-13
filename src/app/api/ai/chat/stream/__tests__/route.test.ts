@@ -8,7 +8,7 @@ const { m, RepoCtor, PortfolioCtor } = vi.hoisted(() => {
         lock: vi.fn(),
         runTurn: vi.fn(),
         canAccept: vi.fn(() => true),
-        guestId: vi.fn(async () => 'g-uuid-1'),
+        guestId: vi.fn(async (): Promise<string | null> => 'g-uuid-1'),
         guestIpConsume: vi.fn(async () => true),
         repo: {
             create: vi.fn(),
@@ -38,7 +38,7 @@ vi.mock('@/shared/api/getClientIp', () => ({
     getClientIp: async () => '203.0.113.7',
 }));
 vi.mock('@/shared/api/guestId', () => ({
-    getOrCreateGuestId: m.guestId,
+    readGuestId: m.guestId,
 }));
 vi.mock('@/app/api/ai/chat/resolveAgentTier', () => ({
     resolveAgentTier: m.tier,
@@ -80,17 +80,24 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({
 }));
 
 import { POST } from '@/app/api/ai/chat/stream/route';
+import { AI_SITE_URL } from '@/shared/config/aiHost';
+
+const AI_ORIGIN = new URL(AI_SITE_URL).origin;
 
 const post = (body: unknown, headers: Record<string, string> = {}) =>
     new Request('http://localhost/api/ai/chat/stream', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', ...headers },
+        headers: {
+            'content-type': 'application/json',
+            Origin: AI_ORIGIN,
+            ...headers,
+        },
         body: JSON.stringify(body),
     });
 const postRaw = (raw: string) =>
     new Request('http://localhost/api/ai/chat/stream', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', Origin: AI_ORIGIN },
         body: raw,
     });
 const frames = async (res: Response): Promise<string[]> =>
@@ -283,6 +290,47 @@ describe('POST /api/ai/chat/stream', () => {
         m.isBot.mockReturnValueOnce(true);
         expect((await POST(post({ message: 'x' }))).status).toBe(403);
     });
+
+    // ---- Origin ----
+    it('Origin 헤더 없음 → 403 bot, lock도 runTurn도 돌지 않는다', async () => {
+        const noOrigin = new Request('http://localhost/api/ai/chat/stream', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ message: 'x' }),
+        });
+        const res = await POST(noOrigin);
+        expect(res.status).toBe(403);
+        expect(await res.json()).toEqual({ error: 'bot' });
+        expect(m.lock).not.toHaveBeenCalled();
+        expect(m.runTurn).not.toHaveBeenCalled();
+    });
+    it('다른 Origin(교차 사이트) → 403 bot', async () => {
+        const res = await POST(
+            post({ message: 'x' }, { Origin: 'https://evil.example' })
+        );
+        expect(res.status).toBe(403);
+        expect(await res.json()).toEqual({ error: 'bot' });
+        expect(m.lock).not.toHaveBeenCalled();
+        expect(m.runTurn).not.toHaveBeenCalled();
+    });
+
+    // ---- guest cookie gate ----
+    it('게스트인데 페이지 뷰가 발급한 쿠키가 없으면(readGuestId null) 401, lock도 runTurn도 돌지 않는다', async () => {
+        m.user.mockResolvedValueOnce(null);
+        m.guestId.mockResolvedValueOnce(null);
+        const res = await POST(post({ message: 'x' }));
+        expect(res.status).toBe(401);
+        expect(await res.json()).toEqual({ error: 'unauthenticated' });
+        expect(m.lock).not.toHaveBeenCalled();
+        expect(m.runTurn).not.toHaveBeenCalled();
+    });
+    it('회원은 게스트 쿠키가 없어도 통과한다', async () => {
+        m.guestId.mockResolvedValueOnce(null);
+        const res = await POST(post({ message: 'x' }));
+        expect(res.status).toBe(200);
+        expect(m.guestId).not.toHaveBeenCalled();
+    });
+
     it('4,001자 메시지는 400 invalid_body, lock 획득 전', async () => {
         const res = await POST(post({ message: 'x'.repeat(4001) }));
         expect(res.status).toBe(400);

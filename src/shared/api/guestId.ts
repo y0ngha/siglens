@@ -2,20 +2,10 @@ import 'server-only';
 import { randomUUID } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { GUEST_ID_COOKIE_NAME } from '@/shared/config/cookieNames';
-
-const UUID_RE =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
-
-/**
- * Duplicated from `entities/auth/lib/sessionCookieOptions.ts`'s
- * `isSecureCookieEnv` — `shared` cannot import `entities` (FSD dependency
- * direction), and the check is one line, so it is not worth an exception.
- */
-function isSecureCookieEnv(): boolean {
-    return process.env.NODE_ENV === 'production';
-}
+import {
+    guestIdCookieOptions,
+    isValidGuestId,
+} from '@/shared/config/guestCookie';
 
 /**
  * First-party anonymous visitor id, read from (or minted into) the
@@ -32,21 +22,33 @@ function isSecureCookieEnv(): boolean {
  * Cookies are per-host, so siglens.io and ai.siglens.io each mint and track
  * their own guest id — and therefore their own quota. That is intentional,
  * not a gap.
+ *
+ * Used by the symbol-page chatbot (siglens.io), which — unlike the SiglensAI
+ * agent — has no page-view gate minting the cookie ahead of the API call.
  */
 export async function getOrCreateGuestId(): Promise<string> {
     const store = await cookies();
     const existing = store.get(GUEST_ID_COOKIE_NAME)?.value;
-    if (existing && UUID_RE.test(existing)) return existing;
+    if (isValidGuestId(existing)) return existing;
 
     const id = randomUUID();
     store.set({
         name: GUEST_ID_COOKIE_NAME,
         value: id,
-        httpOnly: true,
-        secure: isSecureCookieEnv(),
-        sameSite: 'lax',
-        path: '/',
-        maxAge: ONE_YEAR_SECONDS,
+        ...guestIdCookieOptions(),
     });
     return id;
+}
+
+/**
+ * Reads the `siglens_guest` cookie without minting one. Used by routes that
+ * must NOT be able to issue a guest id on their own (SiglensAI's chat stream
+ * route — see `proxy.ts`'s `handleAiHost`, which mints the cookie on page
+ * view instead) so that only a real browser page load can create a guest
+ * identity.
+ */
+export async function readGuestId(): Promise<string | null> {
+    const store = await cookies();
+    const existing = store.get(GUEST_ID_COOKIE_NAME)?.value;
+    return isValidGuestId(existing) ? existing : null;
 }

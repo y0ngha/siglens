@@ -489,6 +489,13 @@ siglens 제공 모델(`TIER_CONFIG.models.free`)은 서버 키로 호출하고, 
 (툴 호출 포함)를 완주할 때까지 결과를 SSE로 스트리밍한다. 라우트 트리는
 `src/app/ai/[locale]/{page.tsx, c/[id]/page.tsx}`.
 
+이 라우트는 실제 SiglensAI 브라우저 세션만 받는다: 매 요청 `Origin`이
+`ai.siglens.io`(dev는 `ai.localhost`)와 일치해야 하고(없거나 다르면 403 `bot`),
+비회원은 페이지 뷰가 발급한 `siglens_guest` 쿠키(`proxy.ts`의 `handleAiHost`가
+심는다)를 이미 들고 있어야 한다 — 이 라우트 자신은 게스트 쿠키를 발급하지 않는다
+(401 `unauthenticated`, 없으면). `robots.txt`도 `/api/`를 통째로 막아 크롤러가
+애초에 이 엔드포인트를 알 이유가 없다.
+
 **Body**
 
 ```typescript
@@ -506,8 +513,8 @@ interface Body {
 | status | `error` | 의미 |
 |---|---|---|
 | 503 | `disabled` | 킬 스위치(`AGENT_CHAT_DISABLED=1`) 활성. `Retry-After: 600` |
-| 401 | `unauthenticated` | 비회원이 `conversationId`를 지정하거나 `action`이 `regenerate`/`edit`일 때(비회원은 대화를 소유하지 않음). 세션이 끊긴 채 `/c/<id>`에 남은 회원도 이 경로로 로그인 핸드오프를 탄다 |
-| 403 | `bot` | 봇 UA로 판정 |
+| 401 | `unauthenticated` | 비회원이 `conversationId`를 지정하거나 `action`이 `regenerate`/`edit`일 때(비회원은 대화를 소유하지 않음). 세션이 끊긴 채 `/c/<id>`에 남은 회원도 이 경로로 로그인 핸드오프를 탄다. 또는 비회원이 페이지 뷰가 발급한 `siglens_guest` 쿠키 없이 요청했을 때 |
+| 403 | `bot` | 봇 UA로 판정, 또는 `Origin`이 없거나 SiglensAI 호스트가 아닐 때 |
 | 400 | `invalid_body` | 파싱 실패, editSeq 대상 없음 등 |
 | 429 | `turn_limit` | 비회원 IP 백스탑(하루 `GUEST_IP_TURNS_PER_DAY`회) 소진 |
 | 503 / 409 | `server_busy` | 인스턴스당 동시 턴 상한(4) 또는 SSE 스트림 게이트 초과(503) · 사용자별/게스트별 턴 락 충돌(409) · 비회원 IP 백스탑 스토어 장애(503, `Retry-After: 30`) |
