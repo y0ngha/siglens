@@ -7,6 +7,7 @@ import {
     isAgentClientErrorCode,
     type AgentClientErrorCode,
 } from '../lib/errorCodes';
+import { guestHistory } from '../lib/guestHistory';
 import { parseSseFrame, splitFrames } from '../lib/parseSseFrames';
 
 export interface ToolActivityItem {
@@ -43,22 +44,6 @@ interface Options {
      * last question instead of asking the server to rewrite stored rows.
      */
     guest?: boolean;
-}
-
-/**
- * The prior turns a guest's request carries — answered text only. A failed
- * or still-empty assistant bubble has nothing the model should read back.
- */
-export function guestHistory(
-    messages: readonly AgentUiMessage[]
-): Array<{ role: 'user' | 'assistant'; content: string }> {
-    return messages
-        .filter(
-            m =>
-                m.content.trim() !== '' &&
-                (m.role === 'user' || m.status !== 'error')
-        )
-        .map(m => ({ role: m.role, content: m.content }));
 }
 
 /** SSE `error` frame — an `AgentErrorCode` the turn itself reported (spec §8). */

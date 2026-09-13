@@ -17,6 +17,7 @@ import {
     SearchIcon,
     SparkIcon,
 } from './icons';
+import { toolResultError } from './utils/toolSummary';
 
 type IconComponent = ComponentType<{ className?: string }>;
 
@@ -46,7 +47,8 @@ function subject(item: ToolActivityItem): string {
 
 /** A lookup a guest was refused (core/executor `{"error":"login_required"}`) — not a failure. */
 const needsLogin = (item: ToolActivityItem): boolean =>
-    item.status === 'error' && (item.summary ?? '').includes('login_required');
+    item.status === 'error' &&
+    toolResultError(item.summary) === 'login_required';
 
 /**
  * The data behind one answer, folded into one quiet line ("checked quote ·

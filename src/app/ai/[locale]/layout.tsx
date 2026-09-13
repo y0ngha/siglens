@@ -16,6 +16,7 @@ import Script from 'next/script';
 import { SITE_URL } from '@/shared/lib/seo';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { AI_CLIENT_PATHS } from './aiClientPaths';
+import { AI_PRODUCT_NAME } from './aiSeo';
 import { FONT_VARIABLE_CLASSES } from '../../fontVariables';
 import '../../globals.css';
 
@@ -23,7 +24,10 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
     metadataBase: new URL(AI_SITE_URL),
-    title: { default: 'SIGLENS AI', template: '%s | SIGLENS AI' },
+    title: {
+        default: AI_PRODUCT_NAME,
+        template: `%s | ${AI_PRODUCT_NAME}`,
+    },
     // Default for everything under the ai host (conversations, not-found):
     // private or empty, never indexed. The landing (`page.tsx`) overrides it.
     robots: { index: false, follow: false },

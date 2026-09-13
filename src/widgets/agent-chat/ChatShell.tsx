@@ -13,6 +13,7 @@ import {
 import { Composer } from './Composer';
 import { AGENT_ERROR_RETRYABLE } from './errorCopy';
 import { EmptyState } from './EmptyState';
+import { GUEST_TURNS_PER_DAY } from './guestTurnLimit';
 import { MenuIcon } from './icons';
 import { loginHref } from './loginHref';
 import { MessageList } from './MessageList';
@@ -119,7 +120,7 @@ export function ChatShell({
         server_busy: t('ChatShell.errorServerBusy'),
         turn_limit: signedIn
             ? t('ChatShell.errorTurnLimit')
-            : t('ChatShell.errorTurnLimitGuest'),
+            : t('ChatShell.errorTurnLimitGuest', { n: GUEST_TURNS_PER_DAY }),
         premium_turn_limit: t('ChatShell.errorPremiumTurnLimit'),
         rate_limited: t('ChatShell.errorRateLimited'),
         server_error: t('ChatShell.errorServerError'),

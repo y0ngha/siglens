@@ -2102,7 +2102,7 @@
                 "errorServerBusy": "지금 요청이 많습니다. 잠시 후 다시 시도해 주세요.",
                 "errorServerError": "오류가 발생했습니다. 다시 시도해 주세요.",
                 "errorTurnLimit": "오늘 사용 한도에 도달했습니다. 내일 다시 이용해 주세요.",
-                "errorTurnLimitGuest": "비회원은 하루 10번까지 물어볼 수 있어요. 로그인하면 계속 이용할 수 있어요.",
+                "errorTurnLimitGuest": "비회원은 하루 {n}번까지 물어볼 수 있어요. 로그인하면 계속 이용할 수 있어요.",
                 "errorUnauthenticated": "로그인이 필요합니다.",
                 "guestNotice": "비회원 대화는 저장되지 않아요.",
                 "loginCta": "로그인",

@@ -3460,7 +3460,7 @@
                 "errorServerBusy": "現在リクエストが集中しています。しばらくしてから再度お試しください。",
                 "errorServerError": "エラーが発生しました。もう一度お試しください。",
                 "errorTurnLimit": "本日の利用上限に達しました。明日また利用してください。",
-                "errorTurnLimitGuest": "ゲストは1日10回まで質問できます。ログインすると引き続き利用できます。",
+                "errorTurnLimitGuest": "ゲストは1日{n}回まで質問できます。ログインすると引き続き利用できます。",
                 "errorUnauthenticated": "ログインが必要です。",
                 "guestNotice": "ゲストの会話は保存されません。",
                 "loginCta": "ログイン",

@@ -74,25 +74,28 @@ interface Body {
 const GUEST_HISTORY_MAX_MESSAGES = 20;
 const GUEST_HISTORY_MESSAGE_MAX_CHARS = 8_000;
 
+function isGuestHistoryItem(
+    x: unknown
+): x is { role: 'user' | 'assistant'; content: string } {
+    if (typeof x !== 'object' || x === null) return false;
+    const { role, content } = x as { role?: unknown; content?: unknown };
+    return (
+        (role === 'user' || role === 'assistant') && typeof content === 'string'
+    );
+}
+
 function parseGuestHistory(raw: unknown): AgentMessage[] | null {
     if (raw === undefined) return [];
     if (!Array.isArray(raw)) return null;
-    const out: AgentMessage[] = [];
-    for (const item of raw.slice(-GUEST_HISTORY_MAX_MESSAGES)) {
-        const m = item as { role?: unknown; content?: unknown } | null;
-        if (
-            (m?.role !== 'user' && m?.role !== 'assistant') ||
-            typeof m.content !== 'string'
-        )
-            return null;
-        const content = m.content.trim();
-        if (content)
-            out.push({
-                role: m.role,
-                content: content.slice(0, GUEST_HISTORY_MESSAGE_MAX_CHARS),
-            });
-    }
-    return out;
+    const recent = raw.slice(-GUEST_HISTORY_MAX_MESSAGES);
+    if (!recent.every(isGuestHistoryItem)) return null;
+    return recent
+        .map(m => ({ role: m.role, content: m.content.trim() }))
+        .filter(m => m.content !== '')
+        .map(m => ({
+            ...m,
+            content: m.content.slice(0, GUEST_HISTORY_MESSAGE_MAX_CHARS),
+        }));
 }
 
 /** Pilot: `model`/`analysisModel` from the client are ignored (spec R12). */

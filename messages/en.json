@@ -3460,7 +3460,7 @@
                 "errorServerBusy": "We're getting a lot of requests right now. Please try again shortly.",
                 "errorServerError": "Something went wrong. Please try again.",
                 "errorTurnLimit": "You've reached today's usage limit. Please come back tomorrow.",
-                "errorTurnLimitGuest": "Guests can ask up to 10 questions a day. Log in to keep going.",
+                "errorTurnLimitGuest": "Guests can ask up to {n} questions a day. Log in to keep going.",
                 "errorUnauthenticated": "Please log in.",
                 "guestNotice": "Guest conversations are not saved.",
                 "loginCta": "Log in",

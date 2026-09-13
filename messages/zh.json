@@ -3460,7 +3460,7 @@
                 "errorServerBusy": "当前请求较多，请稍后再试。",
                 "errorServerError": "发生错误，请重试。",
                 "errorTurnLimit": "已达到今日使用上限，请明天再来。",
-                "errorTurnLimitGuest": "访客每天最多可提问 10 次。登录后可继续使用。",
+                "errorTurnLimitGuest": "访客每天最多可提问 {n} 次。登录后可继续使用。",
                 "errorUnauthenticated": "请先登录。",
                 "guestNotice": "访客对话不会被保存。",
                 "loginCta": "登录",
