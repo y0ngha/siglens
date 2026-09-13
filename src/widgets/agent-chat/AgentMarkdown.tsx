@@ -130,7 +130,11 @@ export function AgentMarkdown({ children }: { readonly children: string }) {
     return (
         <div className="leading-7 break-words">
             <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
+                // `singleTilde: false`: answers write price ranges as
+                // `266,500~270,666원`, and GFM's default reads two single
+                // tildes on one line as ~strikethrough~ (2026-09-13 사용자 제보).
+                // Only `~~double~~` strikes now.
+                remarkPlugins={[[remarkGfm, { singleTilde: false }]]}
                 components={AGENT_COMPONENTS}
             >
                 {children}

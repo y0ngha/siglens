@@ -192,7 +192,7 @@
                 "dfbacd": "過去データで検証した結果",
                 "eafd49": "{v0}種類の指標と多様な投資戦略に基づくチャートの流れ、",
                 "ee41ec": "バックテスト結果を見る →",
-                "aiTeaser": "会話でマーケットについて質問できます"
+                "aiTeaser": "株・仮想通貨をAIチャットに質問"
             }
         },
         "login": {
@@ -449,9 +449,9 @@
                 "047c35": "会話が見つかりません"
             },
             "seo": {
-                "title": "SIGLENS AI（ベータ）— 株式・暗号資産のAIリサーチアシスタント",
-                "description": "リアルタイム株価やテクニカル指標、SIGLENSのAI分析、ニュースやウェブ検索を自ら調べ、出典付きで答える対話型リサーチツールです。米国株・韓国株・暗号資産について質問できます。",
-                "ogLabel": "データで答えるAIリサーチアシスタント · ベータ"
+                "title": "株・仮想通貨のAIチャット — 株価・チャート・ニュースを質問 | SIGLENS AI",
+                "description": "サムスン電子・アップル・ビットコインなど、気になる銘柄をAIに気軽に質問。リアルタイム株価・チャート指標・最新ニュースを調べ、出典付きで答えます。米国株・韓国株・仮想通貨に対応、ログインなしで始められます。",
+                "ogLabel": "株・仮想通貨をAIに質問 · ベータ"
             }
         }
     },
@@ -2346,7 +2346,7 @@
                 "d7fb24": "分析が更新されました — 最新の結果に基づいて引き続き\n                        質問してください",
                 "f292ff": "分析結果に基づいて質問してください。トレンドの解釈、指標の意味、\n                            シナリオまで、すべて質問できます。",
                 "f4ca4c": "チャットを閉じる",
-                "askSiglensAi": "SIGLENS AIでさらに質問",
+                "askSiglensAi": "SIGLENS AIチャットでさらに質問",
                 "askSiglensAiQuestion": "{symbol}の今の状況を総合的に教えて"
             },
             "ContextSwitchSystemMessage": {
@@ -3466,6 +3466,9 @@
                 "loginCta": "ログイン",
                 "openConversations": "会話一覧"
             },
+            "ChatSkeleton": {
+                "loading": "読み込み中…"
+            },
             "Composer": {
                 "4077ce": "送信",
                 "d2e7e7": "中断",
@@ -3479,39 +3482,70 @@
             },
             "EmptyState": {
                 "a00741": "SIGLENSアカウントでログイン",
-                "capAnalysis": "SIGLENS AI分析",
+                "capAnalysis": "銘柄のAI分析レポート",
                 "capIndicators": "チャート・テクニカル指標",
                 "capNews": "ニュース",
                 "capQuotes": "リアルタイム株価",
                 "capWeb": "ウェブ検索",
                 "capabilitiesLabel": "SIGLENS AIが調べるデータ",
-                "description": "リアルタイム株価やテクニカル指標、SIGLENSのAI分析、ニュースやウェブ検索を自ら調べ、出典付きで答えます。",
+                "description": "株価・チャート・ニュースを自ら調べ、根拠となる出典も一緒に表示します。",
                 "examplesLabel": "このような質問に答えられます",
                 "guestNote": "ログインなしですぐに質問できます。保有銘柄の分析・最新分析の実行・ウェブ検索と会話の保存にはログインが必要です。",
-                "headlineAccent": "データで答えるSIGLENS AI",
-                "headlineLead": "マーケットのことなら何でも聞いてください",
-                "suggestionAapl": "AAPLの現在のトレンドとRSIは？",
-                "suggestionBtc": "BTCUSDのキャッシュされた分析はある？",
+                "headlineAccent": "株・仮想通貨のAIチャット、SIGLENS AI",
+                "headlineLead": "気になる銘柄、AIに聞いてみよう",
+                "suggestionAapl": "アップル（AAPL）の今のトレンドとRSIは？",
+                "suggestionBtc": "ビットコインの最近の動きはどう？",
                 "suggestionNews": "今週の米国市場の重要ニュースだけ教えて",
-                "suggestionNvda": "NVDAのオプション市場はどう見てる？",
+                "suggestionNvda": "エヌビディア（NVDA）のオプション市場の雰囲気は？",
                 "suggestionPortfolio": "今の保有銘柄の調子はどう？",
-                "suggestionSamsung": "サムスン電子の最新のSIGLENS分析を要約して",
+                "suggestionSamsung": "サムスン電子の最新分析を要約して",
                 "suggestionsLabel": "こんな質問ができます"
             },
+            "Landing": {
+                "accessTitle": "ログインなしでも、ログインするともっと",
+                "faq1a": "いいえ。株価・指標・ニュース・分析レポートを調べて説明する情報サービスです。売買を勧めることはなく、投資判断と責任はご本人にあります。",
+                "faq1q": "投資アドバイスをしてくれますか？",
+                "faq2a": "米国株とETF、KOSPI・KOSDAQ銘柄、ビットコインなど主要な仮想通貨について質問できます。銘柄名かティッカーで聞いてください。",
+                "faq2q": "どの銘柄について質問できますか？",
+                "faq3a": "かかりません。ログインなしで1日{guest}回、ログインすると1日{member}回まで質問できます。",
+                "faq3q": "料金はかかりますか？",
+                "faq4a": "あります。AIがデータを要約する過程で誤ることがあるため、回答ごとに出典と基準時刻を表示しています。重要な判断の前には原文を確認してください。",
+                "faq4q": "回答が間違っていることはありますか？",
+                "faq5a": "ログインすると会話がアカウントに保存され、いつでも続きを見られます。ログインしていない会話はタブを閉じると消えます。",
+                "faq5q": "会話は保存されますか？",
+                "faqTitle": "よくある質問",
+                "guestItems": "1日{guest}回まで質問|株価・チャート指標・分析レポート・ニュースの閲覧",
+                "guestTitle": "ログインなし",
+                "linkAbout": "SIGLENSについて",
+                "linkFearGreed": "恐怖・強欲指数",
+                "linkMarketKr": "韓国株式市場の分析",
+                "linkMarketUs": "米国株式市場の分析",
+                "linkNews": "今日の株式ニュース",
+                "memberItems": "1日{member}回まで質問|保有銘柄の分析|最新分析の実行・ウェブ検索|会話の保存と続きの閲覧",
+                "memberTitle": "ログインすると",
+                "moreTitle": "SIGLENSでもっと見る",
+                "sourceAnalysis": "分析レポート — SIGLENSが銘柄ごとに作成したテクニカル・総合・ニュース・オプション分析",
+                "sourceIndicators": "チャート指標 — 移動平均線・RSI・MACDなど、SIGLENSが計算したテクニカル指標",
+                "sourceNews": "ニュース — SIGLENSが集めた国内外のニュース、必要に応じてウェブ検索",
+                "sourceQuotes": "株価 — 米国株・韓国株・仮想通貨の最新価格",
+                "sourcesBody": "AIは記憶に頼って答えません。質問ごとに必要なデータを調べ、回答の最後に出典と基準時刻を記載します。",
+                "sourcesTitle": "回答のデータはどこから？"
+            },
             "MessageList": {
-                "259976": "回答が途中で切れました。続けて質問してください。",
                 "19b2d1": "キャンセル",
+                "259976": "回答が途中で切れました。続けて質問してください。",
                 "43da5e": "再生成",
                 "6523ca": "再送信",
                 "96adfe": "中断された回答です。",
                 "a55b1e": "コピー",
                 "afd172": "回答の生成に失敗しました。",
+                "copied": "コピーしました",
                 "e1407b": "編集",
                 "e6b008": "メッセージを編集",
-                "copied": "コピーしました",
                 "generating": "回答を生成中…",
-                "relatedPages": "SIGLENSでもっと見る",
-                "openOnSiglens": "SIGLENSで{symbol}を見る"
+                "openOnSiglens": "SIGLENSで{symbol}を見る",
+                "redrafting": "追加のデータを確認して、回答をまとめ直しています…",
+                "relatedPages": "SIGLENSでもっと見る"
             },
             "Sidebar": {
                 "14bb5e": "このチャットを削除しますか？",
@@ -3555,9 +3589,6 @@
                 "toolQuote": "株価",
                 "toolSearchTicker": "銘柄検索",
                 "toolWebSearch": "ウェブ検索"
-            },
-            "ChatSkeleton": {
-                "loading": "読み込み中…"
             }
         }
     }

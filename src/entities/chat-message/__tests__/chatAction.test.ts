@@ -17,6 +17,18 @@ import {
     requestChatCompletion,
 } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
+import { getOrCreateGuestId } from '@/shared/api/guestId';
+
+const GUEST_ID = '11111111-1111-1111-1111-111111111111';
+
+// Guest backstop's counter store — defaults to "allowed" so every existing
+// test (all guest by default; see `mockGetCurrentUser`) keeps passing.
+// Refusal/outage paths override `mockConsume` per-test. Hoisted since both
+// are referenced inside `vi.mock` factories below, which vitest hoists
+// above this file's own top-level statements.
+const { mockConsume } = vi.hoisted(() => ({
+    mockConsume: vi.fn().mockResolvedValue(true),
+}));
 
 vi.mock('next/headers', () => ({
     headers: vi.fn(),
@@ -32,8 +44,19 @@ vi.mock('@y0ngha/siglens-core', async () => {
         getProviderForModel: vi
             .fn()
             .mockImplementation(actual.getProviderForModel),
+        createCounterStore: vi.fn(() => ({
+            consume: mockConsume,
+            refund: vi.fn(),
+            remaining: vi.fn(),
+        })),
     };
 });
+
+vi.mock('@/shared/api/guestId', () => ({
+    getOrCreateGuestId: vi
+        .fn()
+        .mockResolvedValue('11111111-1111-1111-1111-111111111111'),
+}));
 
 vi.mock('@/entities/llm-provider', async () => {
     // chatAction resolves the provider via getLlmProvider() (barrel re-export).
@@ -126,6 +149,10 @@ describe('chatAction 함수는', () => {
         );
         mockRequestChatCompletion.mockResolvedValue(SUCCESS_RESULT);
         mockGetCurrentUser.mockResolvedValue(null);
+        mockConsume.mockResolvedValue(true);
+        (
+            getOrCreateGuestId as MockedFunction<typeof getOrCreateGuestId>
+        ).mockResolvedValue(GUEST_ID);
         const actual = await vi.importActual<
             typeof import('@y0ngha/siglens-core')
         >('@y0ngha/siglens-core');
@@ -456,8 +483,11 @@ describe('chatAction 함수는', () => {
         });
     });
 
-    describe('클라이언트 IP 처리', () => {
-        it('x-forwarded-for에 여러 IP가 있으면 첫 번째 IP만 전달한다', async () => {
+    describe('클라이언트 IP 처리(게스트 IP 백스탑 입력값)', () => {
+        // core로 넘어가는 `clientIp`는 더 이상 raw IP가 아니라 방문자 키
+        // (`클라이언트 방문자 키(clientKey) 처리` 참고) — 여기서는 raw IP가
+        // 여전히 게스트 IP 백스탑의 입력으로 쓰이는지만 확인한다.
+        it('x-forwarded-for에 여러 IP가 있어도 백스탑을 통과하면 게스트 키로 core를 호출한다', async () => {
             mockHeaders.mockResolvedValue(
                 makeHeadersMap('1.2.3.4, 5.6.7.8') as unknown as Awaited<
                     ReturnType<typeof headers>
@@ -474,13 +504,14 @@ describe('chatAction 함수는', () => {
                 'gemini-3.6-flash'
             );
 
+            expect(mockConsume).toHaveBeenCalledTimes(1);
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
-                expect.objectContaining({ clientIp: '1.2.3.4' }),
+                expect.objectContaining({ clientIp: `guest:${GUEST_ID}` }),
                 expect.anything()
             );
         });
 
-        it('x-forwarded-for 헤더가 없으면 unknown을 전달한다', async () => {
+        it('x-forwarded-for 헤더가 없어도 백스탑을 통과하면 게스트 키로 core를 호출한다', async () => {
             mockHeaders.mockResolvedValue(
                 makeHeadersMap() as unknown as Awaited<
                     ReturnType<typeof headers>
@@ -497,8 +528,9 @@ describe('chatAction 함수는', () => {
                 'gemini-3.6-flash'
             );
 
+            expect(mockConsume).toHaveBeenCalledTimes(1);
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
-                expect.objectContaining({ clientIp: 'unknown' }),
+                expect.objectContaining({ clientIp: `guest:${GUEST_ID}` }),
                 expect.anything()
             );
         });
@@ -739,6 +771,102 @@ describe('chatAction 함수는', () => {
                 expect.objectContaining({ currency: 'KRW' }),
                 expect.anything()
             );
+        });
+    });
+
+    describe('클라이언트 방문자 키(clientKey) 처리', () => {
+        it('게스트는 `guest:<쿠키 id>`를 clientIp로 전달하고 IP 백스탑을 거친다', async () => {
+            await chatAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-3.6-flash'
+            );
+
+            expect(getOrCreateGuestId).toHaveBeenCalled();
+            expect(mockConsume).toHaveBeenCalledTimes(1);
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({ clientIp: `guest:${GUEST_ID}` }),
+                expect.anything()
+            );
+        });
+
+        it('로그인한 회원은 `user:<userId>`를 clientIp로 전달하고 IP 백스탑을 건너뛴다', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as Awaited<
+                ReturnType<typeof getCurrentUser>
+            >);
+            const mockFindByUserAndProvider = vi.fn().mockResolvedValue(null);
+            (
+                DrizzleUserApiKeyRepository as MockedClass<
+                    typeof DrizzleUserApiKeyRepository
+                >
+            ).mockImplementation(function () {
+                return {
+                    findByUserAndProvider: mockFindByUserAndProvider,
+                } as unknown as DrizzleUserApiKeyRepository;
+            });
+            (getDatabaseClient as Mock).mockReturnValue({ db: {} });
+
+            await chatAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-3.6-flash'
+            );
+
+            expect(getOrCreateGuestId).not.toHaveBeenCalled();
+            expect(mockConsume).not.toHaveBeenCalled();
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({ clientIp: 'user:user-1' }),
+                expect.anything()
+            );
+        });
+    });
+
+    describe('게스트 IP 백스탑', () => {
+        it('백스탑 소진 시 core를 호출하지 않고 token_exhausted를 반환한다(클라이언트가 현지화 문구로 표시)', async () => {
+            mockConsume.mockResolvedValueOnce(false);
+
+            const result = await chatAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-3.6-flash'
+            );
+
+            expect(result).toEqual({ ok: false, error: 'token_exhausted' });
+            expect(mockRequestChatCompletion).not.toHaveBeenCalled();
+        });
+
+        it('카운터 스토어 장애 시 server_busy를 반환한다(fail-closed)', async () => {
+            const { CounterStoreUnavailableError } = await vi.importActual<
+                typeof import('@y0ngha/siglens-core')
+            >('@y0ngha/siglens-core');
+            mockConsume.mockRejectedValueOnce(
+                new CounterStoreUnavailableError('chat:q:guest-ip')
+            );
+
+            const result = await chatAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-3.6-flash'
+            );
+
+            expect(result).toEqual({ ok: false, error: 'server_busy' });
+            expect(mockRequestChatCompletion).not.toHaveBeenCalled();
         });
     });
 });

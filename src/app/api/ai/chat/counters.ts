@@ -1,5 +1,26 @@
 import 'server-only';
-import { createCounterStore, type AgentCounters } from '@y0ngha/siglens-core';
+import {
+    createCounterStore,
+    type AgentCounters,
+    type CounterStore,
+} from '@y0ngha/siglens-core';
+
+/**
+ * Many guests can share one NAT/CGNAT address, so this cannot be as tight as
+ * a per-guest limit — it exists only to stop clearing `siglens_guest`
+ * (`guestSubject.ts`) from buying unlimited free turns from the same
+ * network. ~10 guests' worth of the free tier's daily turn allowance.
+ */
+export const GUEST_IP_TURNS_PER_DAY = 100;
+
+/** Per-IP backstop consumed once per guest turn, before the per-guest quota. Fails closed. */
+export function createGuestIpBackstopCounter(): CounterStore {
+    return createCounterStore({
+        prefix: 'agent:q:guest-ip',
+        period: 'day',
+        failurePolicy: 'closed',
+    });
+}
 
 /** All agent quotas fail-closed (spec §2-10). Keys: agent:q:<feature>:<subject>:<bucket>. */
 export function createAgentCounters(): AgentCounters {

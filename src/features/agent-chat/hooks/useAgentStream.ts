@@ -27,7 +27,22 @@ export interface AgentUiMessage {
     tools: ToolActivityItem[];
     status: 'complete' | 'streaming' | 'aborted' | 'error';
     truncated?: boolean;
+    /**
+     * An answer the model had already started writing when it decided to
+     * fetch more data. Kept (dimmed, with a note) until the new answer's
+     * first text arrives, so the reply is visibly being redone instead of
+     * silently vanishing. Streaming-only; never persisted.
+     */
+    draft?: string;
 }
+
+/**
+ * Text before a tool call shorter than this is narration ("시세를 확인해
+ * 볼게요") and is dropped as before; longer text is a real answer the model
+ * went back on, and becomes a `draft`.
+ * ponytail: length heuristic; a model-side "answer started" signal would be exact.
+ */
+const DRAFT_MIN_CHARS = 120;
 export interface AgentRemaining {
     turns: number;
     fresh: number;
@@ -329,6 +344,10 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                             patchLast(m => ({
                                 ...m,
                                 content: '',
+                                draft:
+                                    m.content.trim().length >= DRAFT_MIN_CHARS
+                                        ? m.content
+                                        : m.draft,
                                 tools: [
                                     ...m.tools,
                                     {
@@ -371,6 +390,7 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                             patchLast(m => ({
                                 ...m,
                                 id: String(data.assistantMessageId ?? m.id),
+                                draft: undefined,
                                 status: 'complete',
                                 truncated: data.stopReason === 'max_tokens',
                             }));

@@ -27,7 +27,7 @@ test.describe('SiglensAI agent chat', () => {
             banner.getByRole('button', { name: /테마/ })
         ).toBeVisible();
         await expect(
-            page.getByRole('heading', { name: /SIGLENS AI/ })
+            page.getByRole('heading', { level: 1, name: /SIGLENS AI/ })
         ).toBeVisible();
         await page
             .getByRole('textbox', { name: /메시지 입력/ })
@@ -40,7 +40,8 @@ test.describe('SiglensAI agent chat', () => {
         await expect(page.getByText(/\[E2E agent\]/)).toBeVisible();
         // The symbol the answer read links back to its siglens.io page.
         await expect(
-            page.getByRole('link', { name: /SIGLENS에서 AAPL 보기/ })
+            // Named by company once the label lookup lands; the href is the contract.
+            page.getByRole('link', { name: /^SIGLENS에서 .+ 보기/ })
         ).toHaveAttribute('href', `${MAIN}/AAPL`);
         // The text frame arrives from the provider mid-turn, but the assistant row
         // is only persisted after `runAgentTurn` returns. `다시 생성` renders exactly
@@ -227,7 +228,9 @@ test.describe('SiglensAI SEO', () => {
         expect(res.headers()['x-robots-tag']).toBeUndefined();
         const html = await res.text();
         expect(html).not.toContain('http-equiv="refresh"');
-        expect(html).toMatch(/<title>SIGLENS AI \(Beta\)[^<]+<\/title>/);
+        expect(html).toMatch(
+            /<title>주식·코인 AI 챗봇[^<]+\| SIGLENS AI<\/title>/
+        );
         expect(html).toMatch(/<meta name="description" content="[^"]{40,}"/);
         expect(html).toContain('<meta name="robots" content="index, follow"/>');
         expect(html).toMatch(

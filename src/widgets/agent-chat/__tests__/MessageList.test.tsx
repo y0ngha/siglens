@@ -1,14 +1,36 @@
 import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NextIntlClientProvider } from 'next-intl';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { MessageList } from '@/widgets/agent-chat/MessageList';
 import ko from '../../../../messages/ko.json';
+
+const { labels } = vi.hoisted(() => ({
+    labels: vi.fn(async (symbols: readonly string[]) => ({
+        labels: Object.fromEntries(
+            symbols.filter(s => s === '005930.KS').map(s => [s, '삼성전자'])
+        ),
+        failed: [],
+    })),
+}));
+vi.mock('@/entities/ticker/actions', () => ({
+    getAssetLabelsAction: labels,
+}));
+
+import { MessageList } from '@/widgets/agent-chat/MessageList';
 
 const wrap = (ui: React.ReactElement) =>
     render(
-        <NextIntlClientProvider locale="ko" messages={ko}>
-            {ui}
-        </NextIntlClientProvider>
+        <QueryClientProvider
+            client={
+                new QueryClient({
+                    defaultOptions: { queries: { retry: false } },
+                })
+            }
+        >
+            <NextIntlClientProvider locale="ko" messages={ko}>
+                {ui}
+            </NextIntlClientProvider>
+        </QueryClientProvider>
     );
 
 describe('MessageList', () => {
@@ -66,6 +88,66 @@ describe('MessageList', () => {
         ).toBeInTheDocument();
         expect(screen.getByText(/답변이 잘렸/)).toBeInTheDocument();
         expect(screen.getByRole('log')).toBeInTheDocument();
+    });
+
+    it('names the related page by company name once it is known, the symbol until then', async () => {
+        wrap(
+            <MessageList
+                siteUrl="https://siglens.io"
+                localePrefix=""
+                messages={[
+                    {
+                        id: '2',
+                        role: 'assistant',
+                        content: 'a',
+                        tools: [
+                            {
+                                id: 't',
+                                name: 'get_cached_analysis',
+                                args: { symbol: '005930.KS', tab: 'overall' },
+                                status: 'ok',
+                            },
+                        ],
+                        status: 'complete',
+                    },
+                ]}
+                streaming={false}
+                onRegenerate={vi.fn()}
+                onEdit={vi.fn()}
+            />
+        );
+        expect(
+            await screen.findByRole('link', {
+                name: /SIGLENS에서 삼성전자 보기/,
+            })
+        ).toHaveAttribute('href', 'https://siglens.io/005930.KS/overall');
+        expect(labels).toHaveBeenCalledWith(['005930.KS']);
+    });
+
+    it('shows an abandoned draft dimmed with a note while the rewritten answer has not started', () => {
+        wrap(
+            <MessageList
+                siteUrl="https://siglens.io"
+                localePrefix=""
+                messages={[
+                    {
+                        id: '3',
+                        role: 'assistant',
+                        content: '',
+                        draft: '초안 답변 본문',
+                        tools: [],
+                        status: 'streaming',
+                    },
+                ]}
+                streaming
+                onRegenerate={vi.fn()}
+                onEdit={vi.fn()}
+            />
+        );
+        expect(
+            screen.getByText(/답변을 다시 정리하고 있어요/)
+        ).toBeInTheDocument();
+        expect(screen.getByText('초안 답변 본문')).toBeInTheDocument();
     });
 
     it('drops aria-relevant from the outer log and moves an explicit aria-live to just the streaming bubble (role="log" still carries an implicit aria-live="polite" of its own; the fix is not making the log inert, it is no longer re-announcing the whole transcript on every delta)', () => {

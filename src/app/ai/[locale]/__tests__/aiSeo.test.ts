@@ -6,7 +6,7 @@ import {
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 
 const copy = {
-    title: 'SIGLENS AI (Beta) — 주식·코인 AI 리서치 어시스턴트',
+    title: '주식·코인 AI 챗봇 — 시세·차트·뉴스 물어보기 | SIGLENS AI',
     description: '설명',
     ogLabel: '라벨',
 };
@@ -40,9 +40,14 @@ describe('buildAiHomeJsonLd', () => {
         const ld = buildAiHomeJsonLd('ko', copy);
         expect(ld['@type']).toBe('WebApplication');
         expect(ld.url).toBe(`${AI_SITE_URL}/`);
+        // Named and linked, not a bare cross-domain @id Google cannot resolve.
         expect(ld.publisher).toEqual({
+            '@type': 'Organization',
             '@id': expect.stringMatching(/#organization$/),
+            name: 'SIGLENS',
+            url: expect.stringMatching(/^https?:\/\//),
         });
+        expect(ld).not.toHaveProperty('releaseNotes');
         expect(ld.applicationCategory).toBe('FinanceApplication');
     });
 });

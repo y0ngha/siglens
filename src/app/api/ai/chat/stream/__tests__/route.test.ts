@@ -8,6 +8,8 @@ const { m, RepoCtor, PortfolioCtor } = vi.hoisted(() => {
         lock: vi.fn(),
         runTurn: vi.fn(),
         canAccept: vi.fn(() => true),
+        guestId: vi.fn(async () => 'g-uuid-1'),
+        guestIpConsume: vi.fn(async () => true),
         repo: {
             create: vi.fn(),
             findForUser: vi.fn(),
@@ -35,12 +37,21 @@ vi.mock('@/shared/api/isBot', () => ({ isBot: m.isBot }));
 vi.mock('@/shared/api/getClientIp', () => ({
     getClientIp: async () => '203.0.113.7',
 }));
+vi.mock('@/shared/api/guestId', () => ({
+    getOrCreateGuestId: m.guestId,
+}));
 vi.mock('@/app/api/ai/chat/resolveAgentTier', () => ({
     resolveAgentTier: m.tier,
 }));
 vi.mock('@/app/api/ai/chat/turnLock', () => ({ acquireTurnLock: m.lock }));
 vi.mock('@/app/api/ai/chat/counters', () => ({
     createAgentCounters: () => ({}),
+    createGuestIpBackstopCounter: () => ({
+        consume: m.guestIpConsume,
+        refund: vi.fn(),
+        remaining: vi.fn(),
+    }),
+    GUEST_IP_TURNS_PER_DAY: 100,
 }));
 vi.mock('@/app/api/ai/chat/tools', () => ({
     createToolExecutor: () => vi.fn(),
@@ -126,6 +137,8 @@ describe('POST /api/ai/chat/stream', () => {
         m.user.mockResolvedValue({ id: 'u1' });
         m.isBot.mockReturnValue(false);
         m.canAccept.mockReturnValue(true);
+        m.guestId.mockResolvedValue('g-uuid-1');
+        m.guestIpConsume.mockResolvedValue(true);
         m.lock.mockResolvedValue({ release: vi.fn() });
         m.repo.create.mockResolvedValue({ id: 'c-new', title: '제목' });
         m.repo.findForUser.mockResolvedValue({ id: 'c1', title: 't' });
@@ -155,7 +168,7 @@ describe('POST /api/ai/chat/stream', () => {
     });
 
     // ---- auth / bot / body ----
-    it('게스트 send: free 티어·IP 해시 주체로 턴을 돌리고 DB는 건드리지 않는다', async () => {
+    it('게스트 send: free 티어·쿠키 게스트 id 주체로 턴을 돌리고 DB는 건드리지 않는다', async () => {
         m.user.mockResolvedValueOnce(null);
         const res = await POST(
             post({
@@ -185,7 +198,7 @@ describe('POST /api/ai/chat/stream', () => {
         expect(out.at(-1)).toContain('event: done');
         const [params] = m.runTurn.mock.calls.at(-1)!;
         expect(params.tier).toBe('free');
-        expect(params.userId).toMatch(/^guest:[0-9a-f]{64}$/);
+        expect(params.userId).toBe('guest:g-uuid-1');
         expect(params.userId).not.toContain('203.0.113.7');
         expect(params.portfolioSymbols).toEqual([]);
         expect(params.history).toEqual([
@@ -193,10 +206,64 @@ describe('POST /api/ai/chat/stream', () => {
             { role: 'assistant', content: 'a'.repeat(8_000) },
         ]);
         expect(m.lock).toHaveBeenCalledWith(params.userId);
+        expect(m.guestIpConsume).toHaveBeenCalledTimes(1);
         expect(m.tier).not.toHaveBeenCalled();
         expect(RepoCtor).not.toHaveBeenCalled();
         expect(PortfolioCtor).not.toHaveBeenCalled();
     });
+    it('같은 IP의 두 게스트(다른 쿠키)는 서로 다른 subject를 받는다', async () => {
+        m.user.mockResolvedValueOnce(null);
+        m.guestId.mockResolvedValueOnce('g-uuid-1');
+        await POST(post({ message: '지금 AAPL 어때?' }));
+        const [firstParams] = m.runTurn.mock.calls.at(-1)!;
+
+        m.user.mockResolvedValueOnce(null);
+        m.guestId.mockResolvedValueOnce('g-uuid-2');
+        await POST(post({ message: '지금 AAPL 어때?' }));
+        const [secondParams] = m.runTurn.mock.calls.at(-1)!;
+
+        expect(firstParams.userId).toBe('guest:g-uuid-1');
+        expect(secondParams.userId).toBe('guest:g-uuid-2');
+        expect(firstParams.userId).not.toBe(secondParams.userId);
+    });
+
+    // ---- guest IP backstop ----
+    describe('게스트 IP 백스탑', () => {
+        it('소진 시 429 turn_limit — runAgentTurn도 lock도 호출하지 않는다', async () => {
+            m.user.mockResolvedValueOnce(null);
+            m.guestIpConsume.mockResolvedValueOnce(false);
+
+            const res = await POST(post({ message: '지금 AAPL 어때?' }));
+
+            expect(res.status).toBe(429);
+            expect(await res.json()).toEqual({ error: 'turn_limit' });
+            expect(m.lock).not.toHaveBeenCalled();
+            expect(m.runTurn).not.toHaveBeenCalled();
+        });
+
+        it('스토어 장애(fail-closed) 시 503 server_busy', async () => {
+            const { CounterStoreUnavailableError } = await vi.importActual<
+                typeof import('@y0ngha/siglens-core')
+            >('@y0ngha/siglens-core');
+            m.user.mockResolvedValueOnce(null);
+            m.guestIpConsume.mockRejectedValueOnce(
+                new CounterStoreUnavailableError('agent:q:guest-ip')
+            );
+
+            const res = await POST(post({ message: '지금 AAPL 어때?' }));
+
+            expect(res.status).toBe(503);
+            expect(await res.json()).toEqual({ error: 'server_busy' });
+            expect(m.lock).not.toHaveBeenCalled();
+            expect(m.runTurn).not.toHaveBeenCalled();
+        });
+
+        it('회원 요청에는 적용되지 않는다', async () => {
+            await POST(post({ message: 'x' }));
+            expect(m.guestIpConsume).not.toHaveBeenCalled();
+        });
+    });
+
     it.each([
         [{ conversationId: 'c1', message: 'x' }],
         [{ message: '', action: 'regenerate' }],

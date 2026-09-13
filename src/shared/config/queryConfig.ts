@@ -63,6 +63,9 @@ export const QUERY_KEYS = {
     ],
     tickerSearch: (query: string) => ['ticker-search', query] as const,
     assetInfo: (symbol: string) => ['asset-info', upper(symbol)] as const,
+    /** Order-insensitive: the same symbols in any order share one lookup. */
+    assetLabels: (symbols: readonly string[]) =>
+        ['asset-labels', ...symbols.map(upper).sort()] as const,
     /**
      * 시장별로 키를 가른다. `/market`과 `/market/kr`은 같은 클라이언트 캐시를
      * 공유하므로, scope가 키에 없으면 한 페이지에서 다른 페이지로 이동했을 때

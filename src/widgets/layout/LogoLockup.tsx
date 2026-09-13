@@ -24,7 +24,11 @@ export function LogoLockup() {
     const t = useTranslations('widgets.layout');
     const onAiHost = useHrefBase() !== '';
     return (
-        <div className="flex shrink-0 items-center gap-1">
+        // Two destinations, so they read as two: a gap plus a hairline between
+        // the site logo and the AI product. At `gap-1` the pair read as one
+        // wordmark ("SIGLENS AI"), not a home link next to a product link
+        // (2026-09-13 사용자 제보).
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <Link
                 href="/"
                 title={t('Header.d8c261')}
@@ -66,6 +70,10 @@ export function LogoLockup() {
                     {SITE_NAME}
                 </span>
             </Link>
+            <span
+                aria-hidden="true"
+                className="h-4 w-px shrink-0 bg-secondary-600"
+            />
             <AiNavLink variant="wordmark" />
         </div>
     );

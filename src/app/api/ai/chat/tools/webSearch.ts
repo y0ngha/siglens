@@ -24,6 +24,14 @@ const TIMEOUT_MS = 8_000;
 /** The model fully controls `query`; without a ceiling it can build an arbitrarily long URL. */
 const MAX_QUERY_LEN = 400;
 const HANGUL_RE = /[가-힣]/;
+/**
+ * Queries the market assistant has no business sending: search operators
+ * (`site:github.com …`) and secret-hunting terms. The prompt already scopes
+ * `web_search` to market facts; this is the server-side backstop for a turn
+ * where the model is talked out of it — the paid search never runs.
+ */
+const OUT_OF_SCOPE_QUERY_RE =
+    /\b(?:site|filetype|inurl|intitle|intext|ext):|\.env\b|api[\s_-]?key|secret[\s_-]?key|password|비밀번호|환경\s?변수/i;
 const LOG_TAG = '[AgentTool] web_search';
 
 interface SearchHit {
@@ -209,6 +217,7 @@ export const webSearchTool: ToolExecutor = async (args, ctx) => {
     const naverCreds = naverAiCredentials();
     if (!braveKey && !naverCreds) return { error: 'unavailable' };
     const query = String(args.query).slice(0, MAX_QUERY_LEN);
+    if (OUT_OF_SCOPE_QUERY_RE.test(query)) return { error: 'out_of_scope' };
     // Hangul in the query, not the UI locale: a ko-locale user asking about
     // "SEC 10-K NVDA" gets nothing useful from a Korean news index, and each
     // Naver call is quota.

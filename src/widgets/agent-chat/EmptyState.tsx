@@ -9,9 +9,12 @@ import {
     QuoteIcon,
     SparkIcon,
 } from './icons';
+import { AiLanding } from './AiLanding';
 import { SiglensMark } from './SiglensMark';
 
 interface Props {
+    readonly siteUrl: string;
+    readonly localePrefix: string;
     readonly onPick: (text: string) => void;
     readonly signedIn: boolean;
     readonly loginHref: string;
@@ -44,6 +47,8 @@ const CARD =
  * fresh analyses, web search, saved conversations) instead of a login wall.
  */
 export function EmptyState({
+    siteUrl,
+    localePrefix,
     onPick,
     signedIn,
     loginHref,
@@ -92,7 +97,7 @@ export function EmptyState({
                         <BetaBadge />
                     </p>
                     <h1 className="text-3xl font-semibold tracking-tight text-balance text-secondary-50 sm:text-4xl">
-                        {t('EmptyState.headlineLead')}
+                        {t('EmptyState.headlineLead')}{' '}
                         <span className="block text-primary-400">
                             {t('EmptyState.headlineAccent')}
                         </span>
@@ -157,6 +162,7 @@ export function EmptyState({
                         </li>
                     ))}
                 </ul>
+                <AiLanding siteUrl={siteUrl} localePrefix={localePrefix} />
             </div>
         </div>
     );

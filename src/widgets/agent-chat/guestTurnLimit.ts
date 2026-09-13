@@ -7,3 +7,6 @@
  * drift fails CI instead of silently showing the wrong number in the banner.
  */
 export const GUEST_TURNS_PER_DAY = 10;
+
+/** Mirrors core `AGENT_LIMITS.turnsPerDay.member`, same reasons and drift test as above. */
+export const MEMBER_TURNS_PER_DAY = 60;

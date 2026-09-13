@@ -4,6 +4,8 @@ import type { AgentErrorCode, AgentMessage } from '@y0ngha/siglens-core';
 import {
     AGENT_LIMITS,
     agentLimit,
+    CounterStoreUnavailableError,
+    hashClientIp,
     runAgentTurn,
     type Tier,
 } from '@y0ngha/siglens-core';
@@ -16,6 +18,7 @@ import {
 import { AGENT_MODEL, getAgentProvider } from '@/entities/llm-provider';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { getClientIp } from '@/shared/api/getClientIp';
+import { getOrCreateGuestId } from '@/shared/api/guestId';
 import { isBot } from '@/shared/api/isBot';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
@@ -26,7 +29,11 @@ import {
 } from '@/shared/i18n/locales';
 import { canAcceptAnalysisStream } from '@/shared/lib/sse/activeStreams';
 import { AgentTurnError, agentEventStream } from '../agentEventStream';
-import { createAgentCounters } from '../counters';
+import {
+    createAgentCounters,
+    createGuestIpBackstopCounter,
+    GUEST_IP_TURNS_PER_DAY,
+} from '../counters';
 import { resolveAgentTier } from '../resolveAgentTier';
 import { availableToolNames, createToolExecutor } from '../tools';
 import { guestSubject } from '../guestSubject';
@@ -39,6 +46,7 @@ const {
     HTTP_STATUS_INTERNAL_SERVER_ERROR,
     HTTP_STATUS_NOT_FOUND,
     HTTP_STATUS_SERVICE_UNAVAILABLE,
+    HTTP_STATUS_TOO_MANY_REQUESTS,
     HTTP_STATUS_UNAUTHORIZED,
 } = constants;
 
@@ -337,9 +345,40 @@ export async function POST(request: Request): Promise<Response> {
         return json(HTTP_STATUS_UNAUTHORIZED, { error: 'unauthenticated' });
 
     const locale = requestLocale(request);
-    /** Quota/lock subject: the member id, or a hashed IP for a guest. */
-    const subject = user?.id ?? guestSubject(await getClientIp());
+    /** Quota/lock subject: the member id, or the guest's cookie id (`shared/api/guestId.ts`). */
+    const subject = user?.id ?? guestSubject(await getOrCreateGuestId());
     const tier: Tier = user ? await resolveAgentTier(user.id) : 'free';
+
+    /**
+     * Guest-only per-IP backstop, checked before anything else guest-specific
+     * runs. The per-guest quota above is keyed by cookie, not IP, so without
+     * this a cleared cookie would look like a brand-new guest with a fresh
+     * quota — this caps how many guest turns one address can spend per day
+     * regardless of how many cookies it churns through (`counters.ts`).
+     * Not refunded if the turn later fails at the HTTP stage below; a spent
+     * backstop unit on a request that never reached the model is an
+     * acceptable loss for this pilot.
+     */
+    if (user === null) {
+        try {
+            const allowed = await createGuestIpBackstopCounter().consume(
+                hashClientIp(await getClientIp()),
+                GUEST_IP_TURNS_PER_DAY
+            );
+            if (!allowed)
+                return json(HTTP_STATUS_TOO_MANY_REQUESTS, {
+                    error: 'turn_limit',
+                });
+        } catch (error) {
+            if (!(error instanceof CounterStoreUnavailableError)) throw error;
+            return json(
+                HTTP_STATUS_SERVICE_UNAVAILABLE,
+                { error: 'server_busy' },
+                { 'Retry-After': '30' }
+            );
+        }
+    }
+
     if (
         !canAcceptAnalysisStream() ||
         activeAgentTurns >= MAX_CONCURRENT_AGENT_TURNS
