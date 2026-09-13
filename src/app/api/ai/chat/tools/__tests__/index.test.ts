@@ -31,8 +31,10 @@ vi.mock('@/app/api/ai/chat/tools/webSearch', () => ({
 const e2eState = vi.hoisted(() => ({ on: false }));
 const naverState = vi.hoisted(() => ({ creds: false }));
 vi.mock('@/entities/news-article/api', () => ({
-    hasNaverCredentials: () => naverState.creds,
+    naverAiCredentials: () =>
+        naverState.creds ? { id: 'ai', secret: 's' } : null,
     searchNaverNews: vi.fn(),
+    searchNaverWeb: vi.fn(),
     stripNaverMarkup: (s: string) => s,
     toIsoPublishedAt: () => null,
 }));
@@ -82,7 +84,7 @@ describe('tool registry', () => {
         expect(availableToolNames().has('web_search')).toBe(true);
     });
 
-    it('네이버 자격증명만 있어도 web_search가 가용 목록에 포함된다(한국어 뉴스 경로)', () => {
+    it('에이전트 전용 네이버 자격증명(NAVER_AI_CLIENT_*)만 있어도 web_search가 가용 목록에 포함된다', () => {
         naverState.creds = true;
         try {
             expect(availableToolNames().has('web_search')).toBe(true);

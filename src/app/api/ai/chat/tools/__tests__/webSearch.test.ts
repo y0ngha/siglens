@@ -5,10 +5,20 @@ const naver = vi.hoisted(() => ({
     search: vi.fn<
         (q: string, n: number, tag: string, sort: string) => Promise<unknown[]>
     >(),
+    web: vi.fn<
+        (
+            q: string,
+            n: number,
+            tag: string,
+            creds: unknown
+        ) => Promise<unknown[]>
+    >(),
 }));
+const AI_CREDS = { id: 'ai-id', secret: 'ai-secret' };
 vi.mock('@/entities/news-article/api', () => ({
-    hasNaverCredentials: () => naver.creds,
+    naverAiCredentials: () => (naver.creds ? AI_CREDS : null),
     searchNaverNews: naver.search,
+    searchNaverWeb: naver.web,
     stripNaverMarkup: (s: string) => s.replace(/<[^>]*>/g, ''),
     toIsoPublishedAt: (d?: string) => (d ? new Date(d).toISOString() : null),
 }));
@@ -58,6 +68,8 @@ describe('web_search (Brave + Naver)', () => {
     beforeEach(() => {
         naver.creds = false;
         naver.search.mockReset();
+        naver.web.mockReset();
+        naver.web.mockResolvedValue([]);
         vi.stubEnv('BRAVE_SEARCH_API_KEY', '');
     });
     afterEach(() => {
@@ -109,12 +121,15 @@ describe('web_search (Brave + Naver)', () => {
             age: '2026-09-13T00:00:00.000Z',
         });
         // freshness=week → recency sort on Naver; display share is 3.
+        // The agent's own application key travels with every call — never the
+        // news-ingestion key.
         expect(naver.search).toHaveBeenCalledWith(
             '금융위원회 발표',
             3,
             expect.stringContaining('web_search'),
             'date',
-            expect.any(AbortSignal)
+            expect.any(AbortSignal),
+            AI_CREDS
         );
     });
 
@@ -178,6 +193,75 @@ describe('web_search (Brave + Naver)', () => {
         expect(out.results.map(r => r.url)).toEqual([
             'https://n.news.naver.com/z',
         ]);
+    });
+
+    it('Korean query: Naver web documents sit between the news and Brave, deduped and capped', async () => {
+        vi.stubEnv('BRAVE_SEARCH_API_KEY', 'b');
+        naver.creds = true;
+        naver.search.mockResolvedValue(naverItems);
+        naver.web.mockResolvedValue([
+            {
+                title: '<b>금융위</b> 보도자료',
+                link: 'https://fsc.go.kr/p/1',
+                description: 'gov <b>page</b>',
+            },
+            {
+                title: 'dup of news',
+                link: 'https://gov.kr/a',
+                description: 'x',
+            },
+            { title: 'bad', link: 'ftp://nope', description: 'x' },
+        ]);
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            braveResponse([
+                { title: 'w1', url: 'https://w/1' },
+                { title: 'w2', url: 'https://w/2' },
+                { title: 'w3', url: 'https://w/3' },
+            ])
+        );
+        const out = (await webSearchTool(
+            { query: '금융위 보도자료' },
+            ctx('ko'),
+            rt
+        )) as {
+            source: string;
+            results: Array<{ url: string; title: string; age: string | null }>;
+        };
+        expect(out.source).toBe('Naver News + Naver Web + Brave Search');
+        expect(out.results.map(r => r.url)).toEqual([
+            'https://gov.kr/a',
+            'https://news.example/b',
+            'https://fsc.go.kr/p/1',
+            'https://w/1',
+            'https://w/2',
+        ]);
+        expect(out.results[2]).toMatchObject({
+            title: '금융위 보도자료',
+            age: null,
+        });
+        expect(naver.web).toHaveBeenCalledWith(
+            '금융위 보도자료',
+            2,
+            expect.stringContaining('web_search'),
+            AI_CREDS,
+            expect.any(AbortSignal)
+        );
+    });
+
+    it('web documents returning nothing leaves news + Brave intact', async () => {
+        vi.stubEnv('BRAVE_SEARCH_API_KEY', 'b');
+        naver.creds = true;
+        naver.search.mockResolvedValue(naverItems);
+        naver.web.mockResolvedValue([]);
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            braveResponse([{ title: 'w1', url: 'https://w/1' }])
+        );
+        const out = (await webSearchTool({ query: '금리' }, ctx('ko'), rt)) as {
+            source: string;
+            results: unknown[];
+        };
+        expect(out.source).toBe('Naver News + Brave Search');
+        expect(out.results).toHaveLength(3);
     });
 
     it('English query never calls Naver even with credentials; Brave only', async () => {

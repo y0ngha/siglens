@@ -1,16 +1,19 @@
 import 'server-only';
 import {
-    hasNaverCredentials,
+    naverAiCredentials,
     searchNaverNews,
+    searchNaverWeb,
     stripNaverMarkup,
     toIsoPublishedAt,
+    type NaverCredentials,
 } from '@/entities/news-article/api';
 import type { ToolExecutor } from './index';
 
 const BRAVE_ENDPOINT = 'https://api.search.brave.com/res/v1/web/search';
 const COUNT = 5;
-/** Korean queries: the news half comes first, the general-web half fills the rest. */
-const NAVER_SHARE = 3;
+/** Korean queries: Naver news, then Naver web documents, then Brave fills to `COUNT`. */
+const NAVER_NEWS_SHARE = 3;
+const NAVER_WEB_SHARE = 2;
 const FRESHNESS: Record<string, string> = {
     day: 'pd',
     week: 'pw',
@@ -118,6 +121,7 @@ async function searchBrave(
 async function searchNaver(
     query: string,
     freshness: unknown,
+    creds: NaverCredentials,
     signal: AbortSignal
 ): Promise<SearchHit[]> {
     const sort = freshness === 'day' || freshness === 'week' ? 'date' : 'sim';
@@ -125,10 +129,11 @@ async function searchNaver(
     try {
         items = await searchNaverNews(
             query,
-            NAVER_SHARE,
+            NAVER_NEWS_SHARE,
             LOG_TAG,
             sort,
-            signal
+            signal,
+            creds
         );
     } catch (e) {
         // The client promises to degrade, but one provider must never be able
@@ -153,26 +158,66 @@ async function searchNaver(
 }
 
 /**
- * `web_search` = Brave (general web) blended with Naver news for Korean
+ * Naver web documents (`webkr`) — Korean government, agency and company pages
+ * that are not news. Same never-throws contract.
+ */
+async function searchNaverWebDocs(
+    query: string,
+    creds: NaverCredentials,
+    signal: AbortSignal
+): Promise<SearchHit[]> {
+    let items;
+    try {
+        items = await searchNaverWeb(
+            query,
+            NAVER_WEB_SHARE,
+            LOG_TAG,
+            creds,
+            signal
+        );
+    } catch (e) {
+        console.warn(
+            `${LOG_TAG} naver webkr threw`,
+            e instanceof Error ? e.name : e
+        );
+        return [];
+    }
+    return items
+        .map(item => ({
+            title: stripNaverMarkup(item.title ?? ''),
+            url: item.link ?? '',
+            snippet: stripNaverMarkup(item.description ?? ''),
+            age: null,
+        }))
+        .filter(hit => hit.title !== '' && isHttpUrl(hit.url));
+}
+
+/**
+ * `web_search` = Brave (general web) blended with Naver news + web documents
+ * for Korean
  * queries. Naver's index is where Korean government and market coverage
- * actually lives (Brave's own index is thin there), and it is already paid
- * for and keyed; Brave covers everything Naver is not — US regulators,
+ * actually lives (Brave's own index is thin there); Brave covers everything Naver is not — US regulators,
  * filings, English macro. Either provider alone still works; the tool is
  * unavailable only when neither is configured.
  */
 export const webSearchTool: ToolExecutor = async (args, ctx) => {
     const braveKey = process.env.BRAVE_SEARCH_API_KEY;
-    const useNaver = hasNaverCredentials();
-    if (!braveKey && !useNaver) return { error: 'unavailable' };
+    // The agent's own NCP application (`NAVER_AI_CLIENT_*`), never the news
+    // ingestion key — separate quota, separate blast radius.
+    const naverCreds = naverAiCredentials();
+    if (!braveKey && !naverCreds) return { error: 'unavailable' };
     const query = String(args.query).slice(0, MAX_QUERY_LEN);
     // Hangul in the query, not the UI locale: a ko-locale user asking about
     // "SEC 10-K NVDA" gets nothing useful from a Korean news index, and each
     // Naver call is quota.
     const korean = HANGUL_RE.test(query);
 
-    const [naver, brave] = await Promise.all([
-        useNaver && korean
-            ? searchNaver(query, args.freshness, ctx.signal)
+    const [naverNews, naverWeb, brave] = await Promise.all([
+        naverCreds && korean
+            ? searchNaver(query, args.freshness, naverCreds, ctx.signal)
+            : [],
+        naverCreds && korean
+            ? searchNaverWebDocs(query, naverCreds, ctx.signal)
             : [],
         braveKey
             ? searchBrave(
@@ -187,6 +232,7 @@ export const webSearchTool: ToolExecutor = async (args, ctx) => {
 
     // Brave is the only provider that can fail loudly; when it is the only
     // one we asked, surface its failure the way the tool always has.
+    const naver = [...naverNews, ...naverWeb];
     if (brave !== null && !brave.ok && naver.length === 0)
         return brave.status !== undefined
             ? { error: brave.error, status: brave.status }
@@ -204,7 +250,8 @@ export const webSearchTool: ToolExecutor = async (args, ctx) => {
         })
         .slice(0, COUNT);
     const sources = [
-        ...(naver.length > 0 ? ['Naver News'] : []),
+        ...(naverNews.length > 0 ? ['Naver News'] : []),
+        ...(naverWeb.length > 0 ? ['Naver Web'] : []),
         ...(brave !== null && brave.ok ? ['Brave Search'] : []),
     ];
     return {
