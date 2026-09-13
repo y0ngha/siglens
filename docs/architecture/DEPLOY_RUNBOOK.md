@@ -367,10 +367,16 @@ ISR write가 로케일 수만큼 늘어난다. 이 레포에서 ISR write는 실
    ```bash
    yarn db:migrate
    ```
-2. **개인정보처리방침 v4 + 이용약관 v2 시드** — 둘 다 발효일 2026-09-21 00:00 KST.
+2. **개인정보처리방침 v4 + 이용약관 v2 시드** — 둘 다 발효일 2026-09-14 00:00 KST (운영자 결정).
    발효일 이전 아무 때나 실행해도 안전하다. `findActive`가 `effective_date <= NOW() ORDER BY effective_date DESC
    LIMIT 1`로 조회하므로, 시드해 둔 v4 행은 발효일 전까지는 조용히 대기만 하고
-   화면에는 영향이 없다. 재실행해도 `upsertFromSeed`가 버전 키로 덮어써 멱등하다.
+   화면에는 영향이 없다. 재실행은 멱등하지만 **덮어쓰지 않는다** — `upsertFromSeed`는
+   `(kind, version)` 충돌 시 `onConflictDoNothing`이라 이미 적재된 버전의 본문·발효일은
+   시드 파일을 고쳐 다시 돌려도 바뀌지 않는다(번역만 갱신된다). 적재된 버전의 발효일·본문을
+   바꾸려면 새 버전을 발행하거나 DB 행을 직접 수정해야 한다. 이번 v4·tos v2는 발효일을
+   09-14로 바꾼 **뒤** 최초 적재해 파일과 DB가 일치한다(2026-09-13 실측).
+   **발효일 전환은 화면에 최대 24시간 늦게 나타난다**(`revalidate = 86400`) — 고지 기간이
+   짧은 이번 개정처럼 발효 직후 노출이 중요하면 발효 시각 이후 배포(태그 push)로 즉시 재생성한다.
    반대로 **이 시드를 빼먹으면** `findActive`에 버전 고정도 에러 경로도 없어서
    그냥 v3를 계속 서빙한다 — v3에는 DeepSeek 전송 고지도, 대화 보존/삭제 조항도
    없으므로 신호 없이 조용한 컴플라이언스 공백이 된다. tos v1도 같은 이유로 SiglensAI
@@ -380,9 +386,9 @@ ISR write가 로케일 수만큼 늘어난다. 이 레포에서 ISR write는 실
    ```
    `/privacy`는 `revalidate = 86400`이라 전환은 DB 반영 후 최대 ~24시간 뒤에
    화면에 나타난다 — **DB가 아니라 렌더된 `/privacy` 페이지에서** 전환을 확인할 것.
-   **사전 고지**: 방침은 새 국외 이전(DeepSeek)을, 약관은 새 서비스 조항을 담으므로
-   발효 7일 전(2026-09-14)까지 공지 행(`notices` 테이블)으로
-   알린다. **SiglensAI 공개(ai.siglens.io DNS·Cloudflare hostname 활성화)는 발효일 이후**로
+   **고지**: 방침은 새 국외 이전(DeepSeek)을, 약관은 새 서비스 조항을 담는다.
+   발효일을 운영자 결정으로 2026-09-14로 당겼으므로 공지 행(`notices` 테이블)은
+   발효일 전후로 즉시 게시한다. **SiglensAI 공개(ai.siglens.io DNS·Cloudflare hostname 활성화)는 발효일 이후**로
    잡는다 — 방침이 먼저, 수집이 나중이어야 어긋나도 안전한 쪽으로만 어긋난다.
 3. **SSM 파라미터** — `DEEPSEEK_CHAT_API_KEY`(필수, 없으면 첫 요청부터 실패),
    `BRAVE_SEARCH_API_KEY`(선택 — 범용 웹 절반), `NAVER_AI_CLIENT_ID`/`NAVER_AI_CLIENT_SECRET`

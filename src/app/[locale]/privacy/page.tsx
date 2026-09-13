@@ -51,8 +51,10 @@ const PAGE_URL = `${SITE_URL}${PRIVACY_PATH}`;
  * 번역도 같은 경로다. `content_translations`에 인간 번역을 적재해도 재생성이
  * 없으면 화면에 나오지 않는다.
  *
- * 하루면 충분하다 — 약관 개정은 사전 고지를 거치므로 시각 단위 정확도가 필요
- * 없고, 재생성 비용은 DB 조회 한 번이다.
+ * 하루면 보통 충분하다 — 약관 개정은 대개 사전 고지를 거치므로 시각 단위 정확도가
+ * 필요 없고, 재생성 비용은 DB 조회 한 번이다. 고지 기간이 짧아 발효 직후 노출이
+ * 중요하면(2026-09-14 tos v2·privacy v4처럼) 발효 시각 이후 배포로 즉시 재생성한다
+ * (`docs/architecture/DEPLOY_RUNBOOK.md` §3.5).
  */
 export const revalidate = 86400;
 
