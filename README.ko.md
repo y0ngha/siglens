@@ -21,7 +21,7 @@
 
 SIGLENS는 그 해석을 대신한다. 시세, 보조지표, 패턴, 뉴스, 시장 심리를 한데 모아 읽기 쉬운 문장의 리포트로 정리한다. 종목 하나를 열어 분석을 읽을 수도 있고, 궁금한 것을 질문으로 던져 답을 받을 수도 있다.
 
-SIGLENS는 주문을 넣지 않는다. 분석만 제공하며, 투자 판단은 언제나 읽는 사람의 몫이다. 모든 기능은 회원가입 없이 사용할 수 있다.
+SIGLENS는 주문을 넣지 않는다. 분석만 제공하며, 투자 판단은 언제나 읽는 사람의 몫이다. 회원가입 없이도 바로 사용할 수 있고, 로그인하면 아래에 소개하는 몇 가지 기능이 더해진다.
 
 ## 사용 방법
 
@@ -141,7 +141,7 @@ cp .env.example .env.local
 yarn dev
 ```
 
-앱은 `http://localhost:4200`에서 실행된다. `@y0ngha/siglens-core`가 GitHub Packages에 배포되어 있어 의존성을 설치하려면 GitHub 토큰이 필요하다. 환경변수는 `.env.example`과 [API.md](./docs/reference/API.md)에, 스크립트는 `package.json`에 모두 정리되어 있다.
+앱은 `http://localhost:4200`에서 실행된다. Node.js는 `.nvmrc`의 버전을 사용하고, Yarn 버전은 `package.json`에 고정되어 있다. `@y0ngha/siglens-core`가 GitHub Packages에 배포되어 있어 의존성을 설치하려면 GitHub 토큰이 필요하다. 환경변수는 `.env.example`과 [API.md](./docs/reference/API.md)에, 스크립트는 `package.json`에 모두 정리되어 있다.
 
 ### 문서
 

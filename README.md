@@ -21,7 +21,7 @@ Reading a chart well takes more work than it looks. You add indicators one by on
 
 SIGLENS does that reading for you. It gathers price data, indicators, patterns, news, and market sentiment, and turns them into a report written in plain language. You can open a single symbol and read its analysis, or simply ask a question and get an answer.
 
-SIGLENS never places an order. It offers analysis only, and every investment decision remains your own. Everything works without an account.
+SIGLENS never places an order. It offers analysis only, and every investment decision remains your own. You can start without an account; signing in adds a few extras described below.
 
 ## Two ways to use it
 
@@ -141,7 +141,7 @@ cp .env.example .env.local
 yarn dev
 ```
 
-The app starts at `http://localhost:4200`. Installing dependencies requires a GitHub token because `@y0ngha/siglens-core` is published to GitHub Packages. Every environment variable is explained in `.env.example` and [API.md](./docs/reference/API.md), and every script is listed in `package.json`.
+The app starts at `http://localhost:4200`. Use the Node.js version in `.nvmrc`; the Yarn version is pinned in `package.json`. Installing dependencies requires a GitHub token because `@y0ngha/siglens-core` is published to GitHub Packages. Every environment variable is explained in `.env.example` and [API.md](./docs/reference/API.md), and every script is listed in `package.json`.
 
 ### Documentation
 
