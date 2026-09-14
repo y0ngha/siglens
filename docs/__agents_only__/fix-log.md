@@ -327,3 +327,13 @@
 - Violation: countsBySector object mutation with for...of
   - Rule: MISTAKES.md Rule 104 — Array/object mutation via push/splice or direct property assignment
   - Context: Rewrote with Object.groupBy + Object.fromEntries for immutable construction.
+
+## [feat/economy-calendar-tz Round 2 | economy calendar UTC timezone | 2026-09-14]
+- Violation: FMP economic-calendar `date` field ("YYYY-MM-DD HH:mm:ss") was assumed to be ET wall-clock time across etTimeUtils, /economy calendar grid, KR indicator cards, and DB column comment (`date_et`); live FMP data from authoritative known-time events (Fed decision 18:00 UTC, CPI 12:30 UTC) proves it is UTC. /economy grid displayed release times 4-5 hours wrong for months.
+  - Rule: External API field semantics must be verified against known reference events, not inferred from comment consensus or existing code patterns
+  - Context: R1 review argued for ET treatment based on code/DB-comment consensus; R2 resolved by authoritative live check against known event times. Root cause: timezone assumption for an external API field was never validated; tests encoded the same wrong assumption, so unit coverage verified nothing. Fixed by normalizing all consumption points (etTimeUtils, grid, card indicators, DB comments) to treat `date` as UTC.
+- Violation: FMP economic-indicators endpoint called without `to` parameter returns stale rows ending 2025-12-01 (9 months old) with no error signal; fixed by passing `to=today`
+  - Rule: External API results must be validated for staleness/completeness when the API offers filtering parameters (date range, limit) — bare calls may degrade silently to cached or partial data
+  - Context: Added `to` parameter to FMP economic-indicators fetch, ensuring fresh data is returned. Issue discovered during production verification of /economy route.
+- Status: APPROVED (Round 2, zero findings)
+

@@ -5,6 +5,15 @@
  * 00:00~04:59에 "오늘"을 계산할 때 ET 기준 전날로 밀리는 오차를 막는다. 모든 함수는
  * 결정론적(`Intl.DateTimeFormat` + 순수 산술)이라 ISR cold-gen에서 안전하다
  * (`Date.now()`/dynamic API 미사용 — 호출자가 `new Date()` 앵커를 주입).
+ *
+ * **경계 오차(의도적으로 미수정)**: `economicCalendarRepository`가 이 앵커
+ * ('YYYY-MM-DD', ET 달력일)를 `economic_calendar.date_et`(FMP 원본 UTC 벽시계
+ * 문자열)와 직접 문자열 비교한다. ET는 UTC보다 4~5시간 느리므로 ET 달력일은
+ * UTC 달력일과 같거나 하루 이르다 — 즉 과거 경계(`pastWindowStart`)는 항상
+ * 같거나 더 넓게, 미래 경계(`futureWindowEnd`/`ensureEconomicCalendarAction`의
+ * `to`)는 최대 하루 좁게 잡힐 수 있다. 윈도가 14~180일로 넓고, 미래 경계는
+ * 다음 인제스션(재fetch·재렌더)에서 그 하루가 자동으로 편입되므로 이벤트가
+ * 영구히 드롭되거나 중복되지 않는다 — 표시·인제스션용 근사 윈도라 수정하지 않는다.
  */
 
 /** 과거 윈도 일수 — 최소 2주(spec). */

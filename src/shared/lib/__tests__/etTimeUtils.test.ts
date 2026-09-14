@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-    etDateTimeToKst,
+    fmpCalendarDateTimeToIso,
+    fmpCalendarDateTimeToKst,
     getEtOffset,
     kstDateKey,
     kstDateKeyDaysBefore,
     nthSundayDay,
-    toIsoDateTime,
 } from '../etTimeUtils';
 
 // ------------------------------------------------------------------
@@ -46,7 +46,8 @@ describe('nthSundayDay', () => {
 });
 
 // ------------------------------------------------------------------
-// getEtOffset
+// getEtOffset — 시장 세션 판정 등 ET 벽시계 사용처가 여전히 소비한다
+// (economic-calendar 날짜 변환에는 더 이상 쓰이지 않음, 아래 참조).
 // ------------------------------------------------------------------
 describe('getEtOffset', () => {
     // 2026: Spring forward = March 8, Fall back = Nov 1
@@ -120,102 +121,73 @@ describe('getEtOffset', () => {
 });
 
 // ------------------------------------------------------------------
-// toIsoDateTime
+// fmpCalendarDateTimeToIso
+//
+// FMP `economic-calendar`의 `date`는 존 마커 없는 UTC 벽시계다(실측:
+// "2026-09-16 18:00:00 Fed Interest Rate Decision" = FOMC 14:00 EDT =
+// 18:00 UTC). DST와 무관하게 항상 `Z`만 붙는다 — 겨울 샘플로 그 무관함을
+// 증명한다.
 // ------------------------------------------------------------------
-describe('toIsoDateTime', () => {
-    it('EDT 구간(7월): 공백 → T 치환 + -04:00 부여', () => {
-        expect(toIsoDateTime('2026-07-04 10:30:00')).toBe(
-            '2026-07-04T10:30:00-04:00'
+describe('fmpCalendarDateTimeToIso', () => {
+    it('여름 날짜: 공백 → T 치환 + Z 부여 (DST 오프셋 없음)', () => {
+        expect(fmpCalendarDateTimeToIso('2026-07-04 10:30:00')).toBe(
+            '2026-07-04T10:30:00Z'
         );
     });
 
-    it('EST 구간(12월): 공백 → T 치환 + -05:00 부여', () => {
-        expect(toIsoDateTime('2026-12-25 09:00:00')).toBe(
-            '2026-12-25T09:00:00-05:00'
+    it('겨울 날짜: 공백 → T 치환 + Z 부여 (여름과 동일하게 오프셋 없음)', () => {
+        expect(fmpCalendarDateTimeToIso('2026-12-25 09:00:00')).toBe(
+            '2026-12-25T09:00:00Z'
         );
     });
 
-    it('반환 형식 불변식: YYYY-MM-DDTHH:mm:ss±HH:00', () => {
-        const result = toIsoDateTime('2026-03-08 02:30:00');
-        expect(result).toMatch(
-            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:00$/
+    it('실측: CPI 12:30 UTC', () => {
+        expect(fmpCalendarDateTimeToIso('2026-09-11 12:30:00')).toBe(
+            '2026-09-11T12:30:00Z'
         );
     });
 
-    it('봄 전환 경계: 02:00 → EDT(-04:00)', () => {
-        // March 8, 2026 02:00 = spring forward
-        expect(toIsoDateTime('2026-03-08 02:00:00')).toBe(
-            '2026-03-08T02:00:00-04:00'
-        );
-    });
-
-    it('봄 전환 경계: 01:59 → EST(-05:00)', () => {
-        expect(toIsoDateTime('2026-03-08 01:59:00')).toBe(
-            '2026-03-08T01:59:00-05:00'
-        );
+    it('반환 형식 불변식: YYYY-MM-DDTHH:mm:ssZ', () => {
+        const result = fmpCalendarDateTimeToIso('2026-03-08 02:30:00');
+        expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
     });
 });
 
 // ------------------------------------------------------------------
-// etDateTimeToKst
+// fmpCalendarDateTimeToKst
 // ------------------------------------------------------------------
-describe('etDateTimeToKst', () => {
-    it('EDT 구간: ET 19:30 → KST 다음날 08:30 (날짜 롤오버)', () => {
-        // '2026-06-19 19:30:00' ET(-04:00) = '2026-06-19T23:30:00Z' = KST 2026-06-20 08:30
-        const result = etDateTimeToKst('2026-06-19 19:30:00', 'ko');
-        expect(result.iso).toBe('2026-06-19T19:30:00-04:00');
-        expect(result.kstDateKey).toBe('2026-06-20');
-        expect(result.kstTimeLabel).toBe('오전 8:30');
+describe('fmpCalendarDateTimeToKst', () => {
+    it('실측: CPI 2026-09-11 12:30 UTC → KST 같은 날 21:30', () => {
+        const result = fmpCalendarDateTimeToKst('2026-09-11 12:30:00', 'ko');
+        expect(result.iso).toBe('2026-09-11T12:30:00Z');
+        expect(result.kstDateKey).toBe('2026-09-11');
+        expect(result.kstTimeLabel).toBe('오후 9:30');
     });
 
-    it('EST 구간: ET 09:30 → KST 같은날 23:30 (날짜 롤오버 없음)', () => {
-        // '2026-12-10 09:30:00' ET(-05:00) = '2026-12-10T14:30:00Z' = KST 2026-12-10 23:30
-        const result = etDateTimeToKst('2026-12-10 09:30:00', 'ko');
-        expect(result.iso).toBe('2026-12-10T09:30:00-05:00');
+    it('실측: Fed 금리결정 2026-09-16 18:00 UTC → KST 다음날 03:00 (날짜 롤오버)', () => {
+        const result = fmpCalendarDateTimeToKst('2026-09-16 18:00:00', 'ko');
+        expect(result.iso).toBe('2026-09-16T18:00:00Z');
+        expect(result.kstDateKey).toBe('2026-09-17');
+        expect(result.kstTimeLabel).toBe('오전 3:00');
+    });
+
+    it('겨울 날짜: DST 오프셋이 적용되지 않는다', () => {
+        // 2026-12-10 14:30 UTC + 9h = KST 2026-12-10 23:30. ET로 오인했다면
+        // (EST -05:00) 09:30으로 읽혀 KST 23:30이 아니라 다른 값이 나왔을 것이다.
+        const result = fmpCalendarDateTimeToKst('2026-12-10 14:30:00', 'ko');
+        expect(result.iso).toBe('2026-12-10T14:30:00Z');
         expect(result.kstDateKey).toBe('2026-12-10');
         expect(result.kstTimeLabel).toBe('오후 11:30');
     });
 
-    it('DST 경계: 봄 전환일 전날 ET 23:00 → KST 다음날 (EST offset)', () => {
-        // '2026-03-07 23:00:00' ET(-05:00) = '2026-03-08T04:00:00Z' = KST 2026-03-08 13:00
-        const result = etDateTimeToKst('2026-03-07 23:00:00', 'ko');
-        expect(result.iso).toBe('2026-03-07T23:00:00-05:00');
-        expect(result.kstDateKey).toBe('2026-03-08');
-        expect(result.kstTimeLabel).toBe('오후 1:00');
-    });
-
-    it('EDT → EST 전환 직후: ET 03:00 → KST (EST offset)', () => {
-        // '2026-11-01 03:00:00' ET(-05:00) = '2026-11-01T08:00:00Z' = KST 2026-11-01 17:00
-        const result = etDateTimeToKst('2026-11-01 03:00:00', 'ko');
-        expect(result.iso).toBe('2026-11-01T03:00:00-05:00');
-        expect(result.kstDateKey).toBe('2026-11-01');
-        expect(result.kstTimeLabel).toBe('오후 5:00');
-    });
-
-    it('iso 필드는 ET offset이 부착된 ISO-8601 (7월=EDT -04:00)', () => {
-        // 동어반복(toIsoDateTime과 자기 비교) 대신 구체적 기대값으로 검증.
-        const result = etDateTimeToKst('2026-07-04 14:00:00', 'ko');
-        expect(result.iso).toBe('2026-07-04T14:00:00-04:00');
-    });
-
     it('kstDateKey 형식은 YYYY-MM-DD', () => {
-        // '2026-06-19 09:00:00' EDT(-04:00) → UTC 13:00 → KST +9h = 2026-06-19 22:00 (날짜 동일)
-        const result = etDateTimeToKst('2026-06-19 09:00:00', 'ko');
-        expect(result.kstDateKey).toBe('2026-06-19');
-        expect(result.kstDateKey).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    });
-
-    it('formatToParts 변경 후 날짜 롤오버 케이스 kstDateKey 동일성 보장', () => {
-        // ET '2026-06-19 19:30:00'(-04:00) → UTC 23:30 → KST +9h = 2026-06-20 08:30
-        // en-CA 대신 formatToParts를 써도 같은 '2026-06-20'이 나와야 한다.
-        const result = etDateTimeToKst('2026-06-19 19:30:00', 'ko');
-        expect(result.kstDateKey).toBe('2026-06-20');
+        const result = fmpCalendarDateTimeToKst('2026-06-19 09:00:00', 'ko');
         expect(result.kstDateKey).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
 
     it('1자리 월/일도 2자리 패딩(01, 09)된다', () => {
-        // '2026-01-02 09:00:00' EST(-05:00) → UTC 14:00 → KST +9h = 2026-01-02 23:00
-        const result = etDateTimeToKst('2026-01-02 09:00:00', 'ko');
+        // '2026-01-02 09:00:00' UTC → KST +9h = 2026-01-02 18:00
+        const result = fmpCalendarDateTimeToKst('2026-01-02 09:00:00', 'ko');
         expect(result.kstDateKey).toBe('2026-01-02');
         expect(result.kstDateKey).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
@@ -254,21 +226,29 @@ describe('kstDateKey', () => {
  * 순간 그 깎기가 무력해져 `8:30 AM`·`午前8:30`·`上午8:30`이 셀을 넘쳤다 —
  * 문자열 후처리가 아니라 **포맷 옵션**으로 껐다.
  */
-describe('etDateTimeToKst — 로케일과 hour12', () => {
-    const ET = '2026-01-12 18:30';
+describe('fmpCalendarDateTimeToKst — 로케일과 hour12', () => {
+    const UTC_SAMPLE = '2026-01-12 18:30:00';
 
     it('ko 기본은 오전/오후를 붙인다', () => {
-        expect(etDateTimeToKst(ET, 'ko').kstTimeLabel).toMatch(/^오전|^오후/);
+        expect(fmpCalendarDateTimeToKst(UTC_SAMPLE, 'ko').kstTimeLabel).toMatch(
+            /^오전|^오후/
+        );
     });
 
     it.each(['en', 'ja', 'zh'] as const)('%s는 한글을 쓰지 않는다', locale => {
-        expect(etDateTimeToKst(ET, locale).kstTimeLabel).not.toMatch(/[가-힣]/);
+        expect(
+            fmpCalendarDateTimeToKst(UTC_SAMPLE, locale).kstTimeLabel
+        ).not.toMatch(/[가-힣]/);
     });
 
     it.each(['ko', 'en', 'ja', 'zh'] as const)(
         '%s: hour12=false면 오전/오후 표기가 없다',
         locale => {
-            const label = etDateTimeToKst(ET, locale, false).kstTimeLabel;
+            const label = fmpCalendarDateTimeToKst(
+                UTC_SAMPLE,
+                locale,
+                false
+            ).kstTimeLabel;
 
             expect(label).not.toMatch(/오전|오후|AM|PM|午前|午後|上午|下午/);
             expect(label).toMatch(/\d/);

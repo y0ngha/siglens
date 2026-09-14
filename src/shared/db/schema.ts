@@ -483,7 +483,9 @@ export const economicCalendar = pgTable(
     {
         id: text('id').primaryKey(),
         country: text('country').notNull(),
-        // FMP 원본 'YYYY-MM-DD HH:mm:ss' (ET 벽시계). KST 변환은 표시 계층(etDateTimeToKst).
+        // FMP 원본 'YYYY-MM-DD HH:mm:ss' — 존 마커 없는 **UTC** 벽시계다(ET 아님,
+        // 2026-09-14 실측). 컬럼명 `date_et`는 예전 오인의 흔적이지만 마이그레이션
+        // 없이 그대로 둔다. KST 변환은 표시 계층(fmpCalendarDateTimeToKst)에서 한다.
         dateEt: text('date_et').notNull(),
         event: text('event').notNull(),
         // 'High' | 'Medium' | 'Low' — text 저장, 읽기 경계에서 검증.

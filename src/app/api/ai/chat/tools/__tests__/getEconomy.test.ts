@@ -103,6 +103,46 @@ describe('getEconomyTool', () => {
         expect(r.briefing.regime).toBe('expansion');
     });
 
+    it('FMP의 존 표시 없는 UTC 일시를 ISO 인스턴트로 바꿔 창 필터와 사용자 시간대 변환이 맞게 된다', async () => {
+        // 2026-09-15 12:30 UTC = 21:30 KST. 서버 로컬 시간으로 읽히거나 존 없이
+        // 넘어가면 모델이 "12:30"을 한국 시각처럼 옮긴다.
+        snapshot.mockResolvedValue({
+            indicators: [],
+            treasury: null,
+            calendar: [
+                {
+                    date: '2026-09-15 12:30:00',
+                    event: 'NY Empire State Manufacturing Index',
+                    impact: 'High',
+                    actual: null,
+                    estimate: 15,
+                    previous: 20.6,
+                    unit: null,
+                },
+                {
+                    // 창 밖(현재 2026-09-14T00:00Z 이전) — 로컬 파싱이면 경계가 흔들린다.
+                    date: '2026-09-13 23:30:00',
+                    event: 'Past',
+                    impact: 'Low',
+                    actual: 1,
+                    estimate: 1,
+                    previous: 1,
+                    unit: null,
+                },
+            ],
+        });
+        briefing.mockResolvedValue(null);
+        const r = (await getEconomyTool({}, ctx, rt)) as {
+            upcomingCalendar: Array<{ date: string; event: string }>;
+        };
+        expect(r.upcomingCalendar).toEqual([
+            expect.objectContaining({
+                date: '2026-09-15T12:30:00Z',
+                event: 'NY Empire State Manufacturing Index',
+            }),
+        ]);
+    });
+
     it('브리핑 조회가 실패해도(catch) 스냅샷 나머지 필드는 반환된다', async () => {
         snapshot.mockResolvedValue({
             indicators: [],

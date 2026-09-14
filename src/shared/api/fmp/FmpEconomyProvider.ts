@@ -19,12 +19,21 @@ import { SECONDS_PER_DAY } from '@/shared/config/time';
  */
 const ECONOMY_REVALIDATE_SECONDS = SECONDS_PER_DAY;
 
+const ISO_DATE_LENGTH = 10;
+
 /** FMP `/stable/*` 어댑터 — core 정규화에 위임. */
 export class FmpEconomyProvider implements EconomyProvider {
+    /**
+     * `to` 없이 호출하면 FMP가 진행 중인(오래된) 창의 마지막 값을 돌려준다 —
+     * 2026-09-14 실측: `to` 미지정 시 CPI 최신행이 2025-12-01에서 멈춰 있고,
+     * `to=<오늘>`을 주면 2026-08-01(실제 최신)이 온다. 매 호출 시각 기준 오늘
+     * 날짜를 넘겨 항상 최신 창을 요청한다.
+     */
     async getIndicator(name: string): Promise<EconomicIndicatorSeries> {
+        const to = new Date().toISOString().slice(0, ISO_DATE_LENGTH);
         const raw = await fmpGet<unknown>(
             'economic-indicators',
-            { name },
+            { name, to },
             { revalidate: ECONOMY_REVALIDATE_SECONDS }
         );
         return normalizeEconomicIndicatorSeries(
