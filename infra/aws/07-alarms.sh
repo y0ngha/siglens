@@ -318,99 +318,92 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-node-heap-oom --namespace S
   --metric-name NodeHeapOom --statistic Sum --period 3600 --evaluation-periods 1 --threshold 0 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P1
 
-# 시장 공포·탐욕 지수 로더 실패 — fail-open 설계라 알람 없이는 아무 신호가 없다.
+# ── 시장 데이터 로더 실패 (US/KR fear-greed + KR 대시보드 통합) ──────────
 #
-# `/fear-greed`는 로더 예외를 삼키고 200 + "표본이 부족합니다"를 렌더한다(0바이트 ISR
-# 캐시 동결 방지). 문제는 그 결과가 정상 HTML이라 ISR/S3 캐시에 그대로 저장되고,
-# FMP 402/403처럼 재시도 대상이 아닌 오류(`isFmpTransientError`가 false)면 매시 재생성이
-# 똑같이 실패해 **영구히 빈 페이지**가 된다 — 5xx도, 헬스체크 실패도 안 뜬다.
-# DEPLOY_RUNBOOK §7이 말하는 "fail-open이 실패를 조용하게 만드는" 바로 그 사례라
-# 로그 문자열을 유일한 신호로 삼는다.
+# 셋 다 fail-open 설계라 알람 없이는 아무 신호가 없고, 임계값·주기·토픽이 완전히
+# 같아 2026-09 비용 정리에서 필터 1개 + 알람 1개로 합쳤다(CloudWatch 커스텀
+# 메트릭 10개 무료 티어를 넘겨 유료 구간이었다). OR 패턴으로 세 로그 접두 중
+# 하나라도 매치하면 카운트한다:
+#   - `[FearGreedRoute] getMarketFearGreedStatic failed` — `/fear-greed`. 로더
+#     예외를 삼키고 200 + "표본이 부족합니다"를 렌더한다(0바이트 ISR 캐시 동결
+#     방지). FMP 402/403처럼 재시도 대상이 아닌 오류면 매시 재생성이 똑같이
+#     실패해 **영구히 빈 페이지**가 된다 — 5xx도, 헬스체크 실패도 안 뜬다.
+#     실패 1회당 로그 2줄(`generateMetadata` + 본문이 각각 catch).
+#   - `[FearGreedKrRoute] getMarketFearGreedKrStatic failed` — `/fear-greed/kr`.
+#     같은 fail-open 구조. yahoo가 무인증이라 429가 주 원인, KRX ETF 상장폐지도
+#     같은 증상.
+#   - `[MarketContent:kr]` — `/market/kr`. 지수 3 + ETF 6 + 종목 20을 무인증
+#     yahoo로 긁고(리필당 49회), 실패하면 빈 배열로 fail-open해서 canonical
+#     null + noindex가 ISR에 굳는다.
 #
-# ⚠️ 실패 **1회당 로그가 2줄** 남는다 — `generateMetadata`와 페이지 본문이 각각
-# `getMarketFearGreedStatic()`을 호출하고 각각 catch한다(`React.cache`가 프라미스는
-# 공유하지만 reject되면 두 catch가 모두 돈다). 임계값 4 초과 = **시간당 실패 렌더 2회
-# 초과**. 재생성 주기가 1시간이라 일시 장애 1회는 넘기고, 연속 2주기 지속되면 알람.
+# 임계값 4 초과·연속 2주기는 US fear-greed의 "실패 1회당 로그 2줄" 산정을
+# 그대로 물려받는다(가장 보수적인 산정 — 나머지 둘은 실패당 로그 1줄이라
+# 오히려 더 관대해진다).
+#
+# 어느 라우트가 원인인지는 Logs Insights로 갈라본다:
+#   fields @timestamp, @message
+#   | filter @message like /getMarketFearGreedStatic failed|getMarketFearGreedKrStatic failed|MarketContent:kr/
+#   | sort @timestamp desc
 aws logs put-metric-filter --log-group-name /siglens/app \
-  --filter-name siglens-fear-greed-loader-failed \
-  --filter-pattern '"[FearGreedRoute] getMarketFearGreedStatic failed"' \
-  --metric-transformations metricName=FearGreedLoaderFailed,metricNamespace=Siglens/MarketFearGreed,metricValue=1,defaultValue=0
-aws cloudwatch put-metric-alarm --alarm-name siglens-fear-greed-loader-failed --namespace Siglens/MarketFearGreed \
-  --metric-name FearGreedLoaderFailed --statistic Sum --period 3600 --evaluation-periods 2 --threshold 4 \
+  --filter-name siglens-market-data-loader-failed \
+  --filter-pattern '?"[FearGreedRoute] getMarketFearGreedStatic failed" ?"[FearGreedKrRoute] getMarketFearGreedKrStatic failed" ?"[MarketContent:kr]"' \
+  --metric-transformations metricName=MarketDataLoaderFailed,metricNamespace=Siglens/Market,metricValue=1,defaultValue=0
+aws cloudwatch put-metric-alarm --alarm-name siglens-market-data-loader-failed --namespace Siglens/Market \
+  --metric-name MarketDataLoaderFailed --statistic Sum --period 3600 --evaluation-periods 2 --threshold 4 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P2
 
-# ── 한국 공포·탐욕 로더 실패 ──────────────────────────────────────────────
-# 미국판과 **로그 접두사가 다르다**(`[FearGreedKrRoute] getMarketFearGreedKrStatic
-# failed`). 위 필터는 리터럴 부분문자열 매칭이라 KR 로그를 잡지 못한다 — 필터를
-# 따로 두지 않으면 KR 라우트만 fail-open이 무감시 상태가 된다.
+# ── 설정/자격증명 신호 (네이버 뉴스 + KR 캘린더 지평선 + prewarm redis 통합) ──
 #
-# 실패 모드가 미국보다 넓다: yahoo가 무인증이라 429가 나고, KRX ETF 5종 중 하나가
-# 상장폐지되면 `fetchKrDailyCloses`가 던져 200 + "표본이 부족합니다" + noindex가
-# 매시 재생성마다 똑같이 굳는다. 임계값 근거는 미국과 동일(렌더 1회당 로그 2줄).
-aws logs put-metric-filter --log-group-name /siglens/app   --filter-name siglens-fear-greed-kr-loader-failed   --filter-pattern '"[FearGreedKrRoute] getMarketFearGreedKrStatic failed"'   --metric-transformations metricName=FearGreedKrLoaderFailed,metricNamespace=Siglens/MarketFearGreed,metricValue=1,defaultValue=0
-aws cloudwatch put-metric-alarm --alarm-name siglens-fear-greed-kr-loader-failed --namespace Siglens/MarketFearGreed \
-  --metric-name FearGreedKrLoaderFailed --statistic Sum --period 3600 --evaluation-periods 2 --threshold 4 \
-  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P2
-
-# ── 네이버 뉴스 실패(자격증명 부재 + 업스트림 non-OK) ─────────────────────
-# `/news/kr`의 유일한 소스다. 키가 비거나 구독이 만료되면 빈 피드 + noindex가
-# 조용히 굳으므로 두 로그 줄을 알람으로 승격한다(발생 즉시 = 설정/구독 문제라 0 초과).
+# 셋 다 "0 초과 = 즉시 알람"(설정·자격증명류라 발생 자체가 이상 신호)에 period
+# 3600·evaluation-periods 1로 동일해 2026-09 비용 정리에서 필터 1개 + 알람
+# 1개로 합쳤다. `siglens-seo-prewarm-redis-unavailable`(구 `13-seo-prewarm.sh`)도
+# 여기 포함 — 그 스크립트의 `$ACTIONS`가 이 스크립트의 `$P2`(`$ALARM_SNS_LOW`)와
+# 같은 토픽이라 병합해도 알림 등급이 바뀌지 않는다.
 #
 # **필터 패턴은 ASCII만 쓴다.** CloudWatch metric filter는 non-ASCII 리터럴을
 # 매칭하지 못한다(FIX F — `infra/aws/13-seo-prewarm.sh`, `docs/reference/CRON.md`).
-# 원래 `"NAVER_CLIENT_ID/SECRET 미설정"`이었는데, 그러면 알람이 영원히 안 울린다.
-# `?`는 OR — 두 접두 중 하나만 맞아도 센다.
+#   - `NAVER_CLIENT_ID/SECRET` / `non-OK response` — `/news/kr`의 유일한 소스인
+#     네이버 뉴스 API. 키가 비거나 구독이 만료되면 빈 피드 + noindex가 굳는다.
+#   - `[KR_EQUITY_SESSION]` — `KR_CALENDAR_HORIZON`(현재 2026-12-31) 만료.
+#     넘으면 모든 날을 정상 개장으로 보고 `console.warn`만 남긴다. 그 값이
+#     대시보드 캐시 TTL과 `/fear-greed/kr` 사이트맵 lastmod를 끌고 간다.
+#   - `[seo-prewarm] redis unavailable` — 야간 prewarm 락 획득 실패(미구성 또는
+#     Upstash 장애/타임아웃). route.ts가 2xx를 반환해 EventBridge
+#     FailedInvocations도 batch-failed 로그도 안 남는 사각지대라 이 필터가
+#     유일한 신호다.
+#
+# `?"a" ?"b" ?"c" ?"d"`는 CloudWatch Logs 필터 OR 문법 — 넷 중 하나라도 맞으면
+# 센다(3-term OR은 `siglens-isr-tag-failures`에 이미 쓰인 패턴, 4-term도 같은
+# 문법 확장).
+#
+# 원인 구분은 Logs Insights로:
+#   fields @timestamp, @message
+#   | filter @message like /NAVER_CLIENT_ID\/SECRET|non-OK response|KR_EQUITY_SESSION|seo-prewarm\] redis unavailable/
+#   | sort @timestamp desc
 aws logs put-metric-filter --log-group-name /siglens/app \
-  --filter-name siglens-naver-news-failed \
-  --filter-pattern '?"NAVER_CLIENT_ID/SECRET" ?"non-OK response"' \
-  --metric-transformations metricName=NaverNewsFailed,metricNamespace=Siglens/News,metricValue=1,defaultValue=0
-aws cloudwatch put-metric-alarm --alarm-name siglens-naver-news-failed --namespace Siglens/News \
-  --metric-name NaverNewsFailed --statistic Sum --period 3600 --evaluation-periods 1 --threshold 0 \
+  --filter-name siglens-config-signal \
+  --filter-pattern '?"NAVER_CLIENT_ID/SECRET" ?"non-OK response" ?"[KR_EQUITY_SESSION]" ?"[seo-prewarm] redis unavailable"' \
+  --metric-transformations metricName=ConfigSignalDetected,metricNamespace=Siglens/Config,metricValue=1,defaultValue=0
+aws cloudwatch put-metric-alarm --alarm-name siglens-config-signal --namespace Siglens/Config \
+  --metric-name ConfigSignalDetected --statistic Sum --period 3600 --evaluation-periods 1 --threshold 0 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P2
 
-# ── 한국 대시보드 로더 실패 ──────────────────────────────────────────────
-# `/market/kr`은 세 KR 라우트 중 실패 표면이 가장 넓다 — 지수 3 + ETF 6 + 종목 20을
-# 무인증 yahoo로 긁는다(리필당 49회). 실패하면 빈 배열로 fail-open해서
-# canonical null + noindex 상태가 ISR에 굳는데, 로그 말고는 아무 신호가 없다.
-aws logs put-metric-filter --log-group-name /siglens/app \
-  --filter-name siglens-market-kr-loader-failed \
-  --filter-pattern '"[MarketContent:kr]"' \
-  --metric-transformations metricName=MarketKrLoaderFailed,metricNamespace=Siglens/Market,metricValue=1,defaultValue=0
-aws cloudwatch put-metric-alarm --alarm-name siglens-market-kr-loader-failed --namespace Siglens/Market \
-  --metric-name MarketKrLoaderFailed --statistic Sum --period 3600 --evaluation-periods 2 --threshold 4 \
-  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P2
+log "alarms: P1(즉시)=5xx, unhealthy, disk, heap-oom, analysis-stream, capacity-needed(cpu/mem) | P2(오늘중)=mem-high, surplus-credits, isr-cache, isr-tag, redis-cache, seed-bars, market-data-loader(fear-greed us/kr+market-kr), config-signal(naver-news/kr-calendar/prewarm-redis)"
 
-# ── KRX 휴장 캘린더 지평선 만료 ──────────────────────────────────────────
-# `KR_CALENDAR_HORIZON`(현재 2026-12-31)을 넘으면 모든 날을 정상 개장으로 보고
-# `console.warn`만 남긴다. 그 값이 (a) 대시보드 캐시 TTL과 (b) `/fear-greed/kr`
-# 사이트맵 lastmod를 끌고 가므로, 휴장일에 "장중 60초 TTL"로 yahoo를 긁고
-# 바뀌지도 않은 페이지의 신선도를 주장하게 된다. warn 한 줄은 아무도 안 본다.
-aws logs put-metric-filter --log-group-name /siglens/app \
-  --filter-name siglens-kr-calendar-horizon-expired \
-  --filter-pattern '"[KR_EQUITY_SESSION]"' \
-  --metric-transformations metricName=KrCalendarHorizonExpired,metricNamespace=Siglens/Market,metricValue=1,defaultValue=0
-aws cloudwatch put-metric-alarm --alarm-name siglens-kr-calendar-horizon-expired --namespace Siglens/Market \
-  --metric-name KrCalendarHorizonExpired --statistic Sum --period 3600 --evaluation-periods 1 --threshold 0 \
-  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P2
-
-log "alarms: P1(즉시)=5xx, unhealthy, disk, heap-oom, analysis-stream, capacity-needed(cpu/mem) | P2(오늘중)=mem-high, surplus-credits, isr-cache, isr-tag, redis-cache, seed-bars, fear-greed(us/kr), naver-news, market-kr, kr-calendar"
-
-# ── 클라이언트 예외 (알람 없음 — 기준선 수집 단계) ────────────────────────────
+# ── 클라이언트 예외 (메트릭·알람 없음 — Logs Insights로만 기준선 관찰) ────────
 #
 # `src/instrumentation-client.ts` + 9개 error boundary가 `/api/client-error`로 비콘을
 # 보내고, 그 라우트가 `[client-error]`를 로그에 찍는다.
 #
-# **알람을 일부러 안 건다.** 다른 모든 알람과 달리 클라이언트 예외는 건강한 상태에서도
-# 0이 아니다(브라우저 확장, 봇, 중단된 내비게이션). `threshold 0`을 걸면 첫날부터 울린다.
-# 1~2주 메트릭만 모아 Logs Insights로 기준선을 읽은 뒤 그 3~5배로 건다 —
-# `analysis-stream-failed`에 이미 적용한 것과 같은 논리.
+# **커스텀 메트릭을 2026-09-14 비용 정리에서 제거했다.** 다른 모든 알람과 달리
+# 클라이언트 예외는 건강한 상태에서도 0이 아니고(브라우저 확장, 봇, 중단된
+# 내비게이션), `threshold 0`을 걸면 첫날부터 울린다. 아직 기준선도 알람도 없이
+# 메트릭만 커스텀 메트릭 무료 티어(10개)를 갉아먹고 있었다 — 알람을 걸 값이
+# 정해지면 그때 필터를 다시 만든다. 기준선은 로그를 직접 스캔한 만큼만
+# 과금되는 Logs Insights로 본다(같은 데이터):
 #
 #   fields @timestamp, @message | filter @message like /\[client-error\]/
 #   | stats count() by bin(1d)
-aws logs put-metric-filter --log-group-name /siglens/app \
-  --filter-name siglens-client-error \
-  --filter-pattern '"[client-error]"' \
-  --metric-transformations metricName=ClientError,metricNamespace=Siglens/Client,metricValue=1,defaultValue=0
 
 
 # ── 사후 점검 ────────────────────────────────────────────────────────────────
@@ -422,6 +415,30 @@ aws logs put-metric-filter --log-group-name /siglens/app \
 # INSUFFICIENT_DATA로 남는다.
 aws cloudwatch delete-alarms --alarm-names \
   siglens-cpu-credits-low siglens-alb-5xx siglens-unhealthy-targets 2>/dev/null || true
+
+# 2026-09-14 알람 통합: 위에서 하나로 합친 옛 이름들도 같은 이유로 명시 삭제한다
+# (put-metric-alarm처럼 delete-alarms도 몰라도 죽지 않으니 `|| true`). 옛 메트릭
+# 필터도 함께 지운다 — 필터가 남아 있으면 매치가 없어도 계속 로그를 스캔해 비용을
+# 낸다. `siglens-seo-prewarm-redis-unavailable`은 `13-seo-prewarm.sh` 소관이었던
+# 필터/알람이라 여기서 함께 정리한다(그 스크립트에는 더 이상 만들지 않는다).
+aws cloudwatch delete-alarms --alarm-names \
+  siglens-fear-greed-loader-failed siglens-fear-greed-kr-loader-failed \
+  siglens-market-kr-loader-failed siglens-naver-news-failed \
+  siglens-kr-calendar-horizon-expired siglens-seo-prewarm-redis-unavailable 2>/dev/null || true
+aws logs delete-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-fear-greed-loader-failed 2>/dev/null || true
+aws logs delete-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-fear-greed-kr-loader-failed 2>/dev/null || true
+aws logs delete-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-market-kr-loader-failed 2>/dev/null || true
+aws logs delete-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-naver-news-failed 2>/dev/null || true
+aws logs delete-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-kr-calendar-horizon-expired 2>/dev/null || true
+aws logs delete-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-seo-prewarm-redis-unavailable 2>/dev/null || true
+aws logs delete-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-client-error 2>/dev/null || true
 
 # 구독자 없는 토픽은 "액션 없는 알람"과 같다 — 콘솔만 빨개지고 아무도 모른다.
 # 확인 대기(PendingConfirmation)도 통지가 안 가므로 별도로 센다.

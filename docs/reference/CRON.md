@@ -19,7 +19,7 @@
 - **모니터링 신호**:
   - 정상 완료: `[seo-prewarm] batch done: {counts}` (harvested/revalidated/remaining/fmpBudgetUsed)
   - 배치 전체 실패: `[seo-prewarm] batch failed: ...` → CloudWatch 알람 `siglens-seo-prewarm-batch-failed`(1시간 3회 초과 시)
-  - redis 불가용(미구성 또는 락 획득 예외): `[seo-prewarm] redis unavailable ...` → CloudWatch 알람 `siglens-seo-prewarm-redis-unavailable`(1시간 1회 초과 시). 필터 패턴은 ASCII 접두 `"[seo-prewarm] redis unavailable"`만 쓴다(FIX F, 감사) — 원문 로그의 em-dash(—)가 CloudWatch Logs 필터의 따옴표 안 non-ASCII 토큰 매칭에서 검증되지 않은 동작이라 신뢰하지 않는다. `grep`으로 이 저장소에서 두 로그 라인(lock.ts 미구성 케이스 / route.ts 락 획득 예외 케이스)에만 등장함을 확인했다.
+  - redis 불가용(미구성 또는 락 획득 예외): `[seo-prewarm] redis unavailable ...` → CloudWatch 알람 `siglens-config-signal`(1시간 1건 초과 시. 2026-09-14부터 `infra/aws/07-alarms.sh`에서 네이버 뉴스·KR 캘린더 지평선과 통합, 옛 이름 `siglens-seo-prewarm-redis-unavailable`은 폐기). 필터 패턴은 ASCII 접두 `"[seo-prewarm] redis unavailable"`만 쓴다(FIX F, 감사) — 원문 로그의 em-dash(—)가 CloudWatch Logs 필터의 따옴표 안 non-ASCII 토큰 매칭에서 검증되지 않은 동작이라 신뢰하지 않는다. `grep`으로 이 저장소에서 두 로그 라인(lock.ts 미구성 케이스 / route.ts 락 획득 예외 케이스)에만 등장함을 확인했다. 어느 신호가 울렸는지는 Logs Insights로 원문을 확인한다(`07-alarms.sh`의 `siglens-config-signal` 주석 참조).
   - 배치 데드라인 도달(FIX G): `[seo-prewarm] batch deadline reached — N symbols processed, M remaining` — `siglens-seo-prewarm-deadline-reached` 알람이 붙어 있다(6시간 3건 초과). 산발적 1~2회는 느린 프로바이더로 정상 범위지만, 반복되면 커버리지가 줄고 있다는 뜻이라 `SYMBOL_CONCURRENCY`·스케줄 폭을 재검토해야 한다.
   - 심볼/탭 단위 실패는 fail-open으로 격리되어 배치를 중단시키지 않는다(`[seo-prewarm] unit-error ...`, `[seo-prewarm] fmp-402 ...`). 402는 심볼별 플랜/쿼터 이슈라 정책상 알람을 걸지 않는다.
   - 유닛 타임아웃: `[seo-prewarm] unit-timeout {symbol}:{tab} — ...` — 해당 유닛은 30분 backoff(일시적 실패로 간주 — 구조적 불가 유닛의 6시간 backoff는 상태 기반 경로가 담당). 반복되면 provider 지연이나 특정 심볼의 데이터 문제를 의심할 것.

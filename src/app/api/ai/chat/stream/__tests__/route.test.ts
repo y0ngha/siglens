@@ -960,11 +960,12 @@ describe('POST /api/ai/chat/stream', () => {
                 post({ conversationId: 'c1', message: 'x' })
             );
             await frames(res);
-            const call = warn.mock.calls.find(
-                c => c[0] === '[agent] ungrounded numbers'
+            const call = warn.mock.calls.find(c =>
+                (c[0] as string).includes('"[agent] ungrounded numbers"')
             );
             expect(call).toBeDefined();
-            const payload = call![1] as {
+            const payload = JSON.parse(call![0] as string) as {
+                tag: string;
                 count: number;
                 sample: string[];
                 promptVersion: string;
@@ -1001,7 +1002,9 @@ describe('POST /api/ai/chat/stream', () => {
                 await POST(post({ conversationId: 'c1', message: 'x' }))
             );
             expect(
-                warn.mock.calls.some(c => c[0] === '[agent] ungrounded numbers')
+                warn.mock.calls.some(c =>
+                    (c[0] as string).includes('"[agent] ungrounded numbers"')
+                )
             ).toBe(false);
             warn.mockRestore();
         });

@@ -45,9 +45,9 @@ yarn release          # release-it: 버전 범프 + CHANGELOG + 커밋 + 태그 
 > bash infra/aws/00-iam-setup.sh   # ⚠️ 06보다 **먼저**. AsgLifecycle 권한이 없으면
 >                                 #    launch 훅이 600초 뒤 ABANDON → 모든 배포 실패
 > bash infra/aws/06-asg.sh        # ASG 용량 + 라이프사이클 훅
-> bash infra/aws/07-alarms.sh     # 알람 (analysis-stream-failed, fear-greed-loader-failed,
-> #                                 fear-greed-kr-loader-failed, naver-news-failed,
-> #                                 market-kr-loader-failed, kr-calendar-horizon-expired 포함)
+> bash infra/aws/07-alarms.sh     # 알람 (analysis-stream-failed, market-data-loader-failed
+> #                                 [fear-greed us/kr + market-kr 통합], config-signal
+> #                                 [naver-news + kr-calendar + prewarm-redis 통합] 포함)
 > bash infra/aws/08-scaling.sh    # 스케일링 정책 (요청수 + CPU)
 > bash infra/aws/13-seo-prewarm.sh # 크론 알람 (unit-error/unit-timeout 포함)
 > ```
@@ -350,15 +350,11 @@ ISR write가 로케일 수만큼 늘어난다. 이 레포에서 ISR write는 실
 | `siglens-agent-web-search-budget` (P2) | `[agent] web search budget exhausted` 1시간 합계 ≥ 1 | 공용 웹 검색 예산(core `AGENT_GLOBAL_LIMITS`: 하루 33회·월 1,000회, Brave 무료 요금제) 소진. 로그의 `scope`가 `global_day`면 그날, `global_month`면 그달 모든 사용자의 웹 검색이 거절된다(답변은 계속 나감). Brave 유료 전환 판단 신호 |
 | `siglens-agent-output-tokens-daily` | `AgentOutputTokens`(Siglens/Agent, `[Usage]` JSON의 `outputTokens` 합) 24시간 합계 > 1,000,000 | **주기가 1일이라 지출 발생 시점에서 최대 ~24시간 뒤에야 발화한다** — 위 두 알람(1시간 주기)과 달리 즉각 반응하지 않는다. 급한 대응은 이 알람을 기다리지 말고 킬 스위치(`AGENT_CHAT_DISABLED=1`, §3.5)를 먼저 쓴다. 비용 급등 신호(기본 모델 기준 하루 약 200턴 분량의 5배). `[Usage]`에는 `userId`가 없다(개인정보 최소화) — 특정 대화 의심 시 같은 시간대의 `[Agent]` 라인(`conversationId`·`userId`·`steps`·`toolCalls` 포함)과 대조. 반복 호출/버그 루프면 `resolveAgentTier`의 한도 하향 검토 |
 | `siglens-node-heap-oom` | `JavaScript heap out of memory` 1시간 1건 초과 | 앱 프로세스가 힙 상한(1.5GiB)에 닿아 죽었다 = 진행 중이던 분석 전멸 후 systemd 재시작. worker 제거로 LLM 호출이 앱 안에서 돌면서 생긴 실패 모드다. 동시 분석 상한(24)이 뚫렸는지, 특정 심볼의 bars가 비정상적으로 큰지 확인. 반복되면 인스턴스 타입 상향 또는 상한 하향 |
-| `siglens-fear-greed-loader-failed` | `[FearGreedRoute] getMarketFearGreedStatic failed` 1시간 합계 > 4가 연속 2주기 (실패 1회당 로그 2줄 — metadata + 본문이 각각 catch하므로 실질 "시간당 실패 2회 초과") | `/fear-greed` 로더가 계속 실패 중. **fail-open이라 이게 유일한 신호다** — 페이지는 200 + "표본이 부족합니다"를 렌더하고 그 HTML이 ISR/S3에 저장돼 5xx도 헬스체크 실패도 안 뜬다. FMP 402/403처럼 재시도 대상이 아닌 오류면 매시 재생성이 똑같이 실패해 **빈 페이지가 영구화**된다. Logs Insights로 원문 확인 → FMP 키/플랜(SSM `/siglens/FMP_API_KEY`) 우선 의심. 복구 후에는 다음 revalidate(최대 1h)에 자동 정상화 |
-| `siglens-fear-greed-kr-loader-failed` | `[FearGreedKrRoute] getMarketFearGreedKrStatic failed` 1시간 합계 > 4가 연속 2주기 | 미국판과 같은 fail-open 구조. 소스가 **무인증 yahoo**라 429가 주된 원인이고, KRX ETF 상장폐지도 같은 증상을 낸다. Logs Insights 원문 → 429면 회복 대기, 심볼 오류면 `marketFearGreedKrSymbols.ts` 갱신 |
-| `siglens-market-kr-loader-failed` | `[MarketContent:kr]` 1시간 합계 > 4가 연속 2주기 | `/market/kr`이 빈 배열로 fail-open 중 = canonical null + noindex가 ISR에 굳는다. 지수 3 + ETF 6 + 종목 20을 yahoo로 긁으므로 429가 1순위. 캐시 쓰기 가드가 지수 기준이라, 지수까지 빠지면 캐시가 아예 안 써져 부하가 더 커진다 |
-| `siglens-naver-news-failed` | `NAVER_CLIENT_ID/SECRET` 또는 `non-OK response` 1시간 1건 초과 | `/news/kr`의 **유일한** 소스다. 키 회수·NCP 구독 만료·일일 쿼터 소진이 전부 여기로 온다. SSM `/siglens/NAVER_CLIENT_ID`·`NAVER_CLIENT_SECRET` 확인 → NCP 콘솔에서 API HUB 구독 상태 확인 |
-| `siglens-kr-calendar-horizon-expired` | `[KR_EQUITY_SESSION]` 1시간 1건 초과 | **KRX 휴장 캘린더가 만료됐다.** `src/shared/api/market/sessionSpecFor.ts`의 `KR_MARKET_HOLIDAYS`에 다음 해 고시 휴장일을 추가하고 `KR_CALENDAR_HORIZON`을 함께 늘린다. 방치하면 휴장일에 장중 TTL로 yahoo를 긁고 `/fear-greed/kr` 사이트맵이 없던 변경을 주장한다 |
+| `siglens-market-data-loader-failed` | `[FearGreedRoute] getMarketFearGreedStatic failed` 또는 `[FearGreedKrRoute] getMarketFearGreedKrStatic failed` 또는 `[MarketContent:kr]` 1시간 합계 > 4가 연속 2주기 (2026-09-14 통합 — 옛 `siglens-fear-greed-loader-failed`/`-kr-loader-failed`/`-market-kr-loader-failed`) | 셋 다 fail-open 설계라 **이게 유일한 신호다**. `/fear-greed`는 200 + "표본이 부족합니다"를 렌더하고 그 HTML이 ISR/S3에 저장돼 5xx도 헬스체크 실패도 안 뜬다(FMP 402/403이면 빈 페이지가 영구화). `/fear-greed/kr`은 같은 구조에 **무인증 yahoo** 429가 주 원인. `/market/kr`은 빈 배열로 fail-open해 canonical null + noindex가 굳는다. **어느 라우트인지는 Logs Insights로 원문을 봐야 안다** — `fields @timestamp, @message \| filter @message like /getMarketFearGreedStatic failed\|getMarketFearGreedKrStatic failed\|MarketContent:kr/ \| sort @timestamp desc`. FMP 키/플랜(SSM `/siglens/FMP_API_KEY`) 또는 `marketFearGreedKrSymbols.ts` 확인. 복구 후 다음 revalidate(최대 1h)에 자동 정상화 |
+| `siglens-config-signal` | `NAVER_CLIENT_ID/SECRET` 또는 `non-OK response` 또는 `[KR_EQUITY_SESSION]` 또는 `[seo-prewarm] redis unavailable` 1시간 1건 초과 (2026-09-14 통합 — 옛 `siglens-naver-news-failed`/`-kr-calendar-horizon-expired`/`-seo-prewarm-redis-unavailable`) | 설정/자격증명류 신호 묶음(전부 발생 자체가 이상 신호라 0 초과). **어느 신호인지는 Logs Insights로 원문을 봐야 안다** — `fields @timestamp, @message \| filter @message like /NAVER_CLIENT_ID\/SECRET\|non-OK response\|KR_EQUITY_SESSION\|seo-prewarm\] redis unavailable/ \| sort @timestamp desc`. 네이버 뉴스(`/news/kr`의 유일한 소스) → SSM `/siglens/NAVER_CLIENT_ID`·`NAVER_CLIENT_SECRET`, NCP 콘솔 구독 상태 확인. KR 캘린더 지평선 만료 → `src/shared/api/market/sessionSpecFor.ts`의 `KR_MARKET_HOLIDAYS`에 다음 해 고시 휴장일 추가 + `KR_CALENDAR_HORIZON` 연장. prewarm redis 불가 → Upstash 도달성 확인 |
 | `siglens-seo-prewarm-unit-error` | `[seo-prewarm] unit-error` 또는 `unit-timeout` 15분 20건 초과 ×2주기 | 야간 prewarm 유닛이 대량 실패 중. 배치는 fail-open이라 `batch failed`가 안 뜨므로 이게 유일한 신호다. 프로바이더 키·장애를 먼저 의심 |
 | `siglens-seo-prewarm-deadline-reached` | `[seo-prewarm] batch deadline reached` 6시간 3건 초과 | 배치가 데드라인에 걸려 심볼을 버리고 있다 = 커버리지가 조용히 줄고 있다. `SYMBOL_CONCURRENCY`/스케줄 폭 재검토, 유닛 지연 실측 |
 | `siglens-seo-prewarm-batch-failed` | `[seo-prewarm] batch failed` 1시간 3회 초과 | [CRON.md](../reference/CRON.md) — 배치 내부 실패 |
-| `siglens-seo-prewarm-redis-unavailable` | `[seo-prewarm] redis unavailable` 1시간 1회 초과 | Upstash 도달성 확인 |
 | `siglens-seo-prewarm-{evening,evening-late,early}-failed` | EventBridge FailedInvocations 5분 1건 초과 | 타겟 호출 자체가 실패 — Connection `AUTHORIZED` 상태, IAM, API Destination 확인 |
 
 ---
@@ -401,7 +397,7 @@ ISR write가 로케일 수만큼 늘어난다. 이 레포에서 ISR write는 실
    (선택 — 한국어 절반: 네이버 뉴스 3 + 웹문서 2. 뉴스 수집용 `NAVER_CLIENT_*`와
    **다른** NCP 애플리케이션 키라 쿼터·회수가 서로 안 섞인다. 그 애플리케이션에
    '뉴스'·'웹문서' 검색 API가 켜져 있어야 하고, 이 경로의 실패 로그(`webkr request
-   rejected` 등)는 `siglens-naver-news-failed` 알람 필터에 걸리지 않는다). 둘 중
+   rejected` 등)는 `siglens-config-signal` 알람 필터에 걸리지 않는다). 둘 중
    하나만 있어도 `web_search`가 켜지고 둘 다 없을 때만 툴이 가용 목록에서 빠진다.
    `AGENT_CHAT_DISABLED`는 평시엔 미설정 상태여야 한다.
 4. **알람 재적용** — 새 필터/알람 3종이 존재하도록 배포 파이프라인이 자동으로
