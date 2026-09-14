@@ -10,7 +10,6 @@ import {
 import { runOverallAnalysisAction } from '@/entities/analysis/actions';
 import { submitNewsAnalysisAction } from '@/entities/news-article/actions';
 import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions';
-import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
@@ -24,6 +23,7 @@ import {
     fitTechnicalAnalysis,
     projectTechnicalAnalysis,
 } from './projectTechnicalAnalysis';
+import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 
 /**
  * Per-instance concurrency cap — distinct from core's per-turn cap. Each run
@@ -134,6 +134,13 @@ function unwrap(
             // only assembles the raw envelope (empty `prose` skips its own
             // generic fit); the technical-specific fit runs after.
             const envelope = buildFreshResult(kind, timeframe, projected, {});
+            // Safe: `buildFreshResult` returns `{ ...envelope, analysis }`
+            // untouched (bar the `unknown`-typed signature) whenever `prose`
+            // is `{}` — see its `if (Object.keys(prose).length === 0) return
+            // envelope` branch just above, taken here. So `envelope.analysis`
+            // really is `projected` (a `ProjectedTechnicalAnalysis`), and this
+            // cast just recovers the type erased by that shared function's
+            // loose `unknown` return type.
             return fitTechnicalAnalysis(
                 envelope as { analysis: typeof projected }
             );
@@ -229,11 +236,7 @@ export const runFreshAnalysisTool: ToolExecutor = async (
             (args.timeframe as Timeframe | undefined) ?? DEFAULT_TIMEFRAME;
         const [profile, asset] = await Promise.all([
             resolveMarketProfile(symbol),
-            // A DB/FMP failure here must degrade to no company name / no
-            // `fmpSymbol`, not fail the whole tool call via `Promise.all`
-            // rejecting — same treatment as `getBarsIndicators.ts`'s
-            // `getAssetInfo` call.
-            getAssetInfo(symbol).catch(() => null),
+            resolveAssetInfoOrNull(symbol, 'run_fresh_analysis'),
         ]);
         const companyName = asset?.name ?? symbol;
         const descriptor = getDescriptor(profile);

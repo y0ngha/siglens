@@ -1,10 +1,10 @@
 import 'server-only';
-import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile';
 import type { ToolExecutor } from './index';
+import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 
 const MAX_SYMBOLS = 3;
 
@@ -25,9 +25,7 @@ export const getQuoteTool: ToolExecutor = async args => {
         symbols.map(async symbol => {
             const [profile, asset] = await Promise.all([
                 resolveMarketProfile(symbol),
-                // A DB/FMP failure degrades to querying by the canonical
-                // symbol rather than failing this symbol's quote.
-                getAssetInfo(symbol).catch(() => null),
+                resolveAssetInfoOrNull(symbol, 'get_quote'),
             ]);
             const quote = await getCachedMarketDataProvider(
                 sessionSpecFor(profile)

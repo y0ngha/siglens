@@ -5,17 +5,26 @@ import {
     detectSignals,
     getDetectionBars,
     type Bar,
+    type BollingerResult,
+    type CandlePattern,
+    type DMIResult,
+    type IchimokuResult,
     type IndicatorResult,
+    type MACDResult,
+    type MultiCandlePattern,
+    type SqueezeMomentumResult,
+    type StochasticResult,
     type Timeframe,
+    type TrendDirection,
 } from '@y0ngha/siglens-core';
 import { getCachedBarsWithIndicators } from '@/entities/bars/lib/barsDataCache';
 import { roundIndicators } from '@/entities/bars/lib/roundIndicators';
-import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile';
 import type { ToolExecutor } from './index';
+import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 import { BARS_RESULT_MAX_CHARS } from './truncate';
 
 /**
@@ -32,8 +41,8 @@ const DEFAULT_BARS = 30;
  */
 const MAX_BARS = 200;
 
-/** Max candle pattern entries surfaced — the model reads the most recent formations, not a full history. */
-const MAX_CANDLE_PATTERNS = 5;
+/** Max RAW bar-detected candle pattern entries surfaced (`latestCandlePatterns`) — distinct from `MAX_ANALYSIS_CANDLE_PATTERNS` in `projectTechnicalAnalysis.ts`, which caps the AI analysis's own `candlePatterns` field. */
+const MAX_BAR_CANDLE_PATTERNS = 5;
 
 function clampBars(raw: unknown): number {
     if (typeof raw !== 'number' || !Number.isFinite(raw)) return DEFAULT_BARS;
@@ -99,13 +108,36 @@ function lastPick<T, K extends keyof T>(
     return out;
 }
 
+/** Return shape of `latestIndicators` — compact last-value view of every indicator core computes for the series. */
+interface LatestIndicatorsView {
+    rsi: number | null;
+    macd: MACDResult | null;
+    bollinger: BollingerResult | null;
+    atr: number | null;
+    ma: Record<string, number | null>;
+    ema: Record<string, number | null>;
+    dmi: Pick<DMIResult, 'adx' | 'diPlus' | 'diMinus'> | null;
+    stochastic: Pick<StochasticResult, 'percentK' | 'percentD'> | null;
+    cci: number | null;
+    mfi: number | null;
+    williamsR: number | null;
+    vwap: number | null;
+    ichimoku: Pick<
+        IchimokuResult,
+        'tenkan' | 'kijun' | 'senkouA' | 'senkouB'
+    > | null;
+    supertrend: { value: number | null; trend: TrendDirection } | null;
+    parabolicSar: { sar: number | null; trend: TrendDirection } | null;
+    squeezeMomentum: Pick<SqueezeMomentumResult, 'momentum' | 'sqzOn'> | null;
+}
+
 /**
  * Compact last-value view of every indicator core computes for the series —
  * previously only RSI/MACD/Bollinger/ATR/MA/EMA reached the model, leaving
  * ~30 other indicators (DMI, stochastic, CCI, MFI, Williams %R, VWAP,
  * Ichimoku, Supertrend, Parabolic SAR, Squeeze Momentum, ...) invisible.
  */
-function latestIndicators(ind: IndicatorResult) {
+function latestIndicators(ind: IndicatorResult): LatestIndicatorsView {
     const supertrend = last(ind.supertrend);
     const parabolicSar = last(ind.parabolicSar);
     return {
@@ -146,15 +178,26 @@ const isoMinute = (unixSeconds: number): string =>
     new Date(unixSeconds * 1000).toISOString().slice(0, 16);
 
 /**
+ * Return element of `latestCandlePatterns` — named distinctly from core's
+ * `CandlePatternEntry` (which this is derived from but reshapes: a resolved
+ * date instead of a window-relative `barIndex`, and a single `pattern`
+ * instead of separate `singlePattern`/`multiPattern` fields).
+ */
+interface BarCandlePattern {
+    date: string;
+    pattern: CandlePattern | MultiCandlePattern | null;
+}
+
+/**
  * Detects candle patterns over the trailing window core scans
  * (`getDetectionBars`) and maps each entry's window-relative `barIndex`
  * back to the bar's date — `detectCandlePatternEntries`' `barIndex` is
  * relative to that window, NOT the full `bars` series.
  */
-function latestCandlePatterns(bars: Bar[]) {
+function latestCandlePatterns(bars: Bar[]): BarCandlePattern[] {
     const detectionBars = getDetectionBars(bars);
     const entries = detectCandlePatternEntries(bars);
-    return entries.slice(-MAX_CANDLE_PATTERNS).map(entry => ({
+    return entries.slice(-MAX_BAR_CANDLE_PATTERNS).map(entry => ({
         date: isoMinute(detectionBars[entry.barIndex]!.time),
         pattern: entry.singlePattern ?? entry.multiPattern,
     }));
@@ -166,15 +209,11 @@ export const getBarsIndicatorsTool: ToolExecutor = async args => {
     const count = clampBars(args.bars);
     const [profile, asset] = await Promise.all([
         resolveMarketProfile(symbol),
-        // A DB/FMP failure here must degrade to no `fmpSymbol`, not fail the
-        // whole tool call — `Promise.all` rejects as soon as ANY promise
-        // rejects, so an unwrapped `getAssetInfo` would sink the sibling
-        // `resolveMarketProfile` call too and fail bars+indicators outright.
-        // Same treatment applied to `runFreshAnalysis.ts`'s `getAssetInfo`
-        // call, where an unhandled rejection would otherwise fail the whole
-        // analysis instead of just falling back to the symbol as the
-        // company name.
-        getAssetInfo(symbol).catch(() => null),
+        // `Promise.all` rejects as soon as ANY promise rejects, so an
+        // unwrapped `getAssetInfo` would sink the sibling
+        // `resolveMarketProfile` call too and fail bars+indicators outright
+        // over a lookup whose only output here is `fmpSymbol`.
+        resolveAssetInfoOrNull(symbol, 'get_bars_indicators'),
     ]);
     const session = sessionSpecFor(profile);
     const { bars, indicators } = await getCachedBarsWithIndicators(
