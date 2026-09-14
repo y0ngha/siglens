@@ -74,6 +74,15 @@ describe('Header', () => {
         expect(screen.getByTestId('user-menu')).toBeInTheDocument();
     });
 
+    /** 언어 전환 수단을 연다(`LOCALE_SWITCHER_VISIBLE`) — 플래그를 꺼도 이 테스트가 잡는다. */
+    it('renders the locale switcher in the header', () => {
+        render(<Header currentUser={null} />);
+
+        expect(screen.getAllByTestId('locale-switcher').length).toBeGreaterThan(
+            0
+        );
+    });
+
     it('renders as a banner landmark', () => {
         render(<Header currentUser={null} />);
 

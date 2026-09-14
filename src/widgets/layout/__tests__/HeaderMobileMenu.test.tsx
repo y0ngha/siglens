@@ -71,6 +71,16 @@ describe('HeaderMobileMenu', () => {
         expect(button).toBeInTheDocument();
     });
 
+    it('renders the locale switcher inside the drawer', () => {
+        render(<HeaderMobileMenu items={NAV_TREE} />);
+
+        expect(
+            document
+                .getElementById('mobile-nav-drawer')
+                ?.querySelector('[data-testid="locale-switcher"]')
+        ).not.toBeNull();
+    });
+
     it('hamburger button has aria-expanded="false" when closed', () => {
         render(<HeaderMobileMenu items={NAV_TREE} />);
 
