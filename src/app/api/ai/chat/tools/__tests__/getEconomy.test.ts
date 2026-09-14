@@ -143,6 +143,38 @@ describe('getEconomyTool', () => {
         ]);
     });
 
+    it('FMP 형식이 아닌 날짜는 변환 없이 통과시키되 경고 로그를 남긴다', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        snapshot.mockResolvedValue({
+            indicators: [],
+            treasury: null,
+            calendar: [
+                {
+                    // 이미 ISO 인스턴트 — 형식 불일치 분기지만 파싱은 올바르다.
+                    date: '2026-09-15T12:30:00Z',
+                    event: 'Already ISO',
+                    impact: 'High',
+                    actual: null,
+                    estimate: null,
+                    previous: null,
+                    unit: null,
+                },
+            ],
+        });
+        briefing.mockResolvedValue(null);
+        const r = (await getEconomyTool({}, ctx, rt)) as {
+            upcomingCalendar: Array<{ date: string }>;
+        };
+        expect(r.upcomingCalendar).toEqual([
+            expect.objectContaining({ date: '2026-09-15T12:30:00Z' }),
+        ]);
+        expect(warn).toHaveBeenCalledWith(
+            expect.stringContaining('unexpected calendar date format'),
+            { date: '2026-09-15T12:30:00Z' }
+        );
+        warn.mockRestore();
+    });
+
     it('브리핑 조회가 실패해도(catch) 스냅샷 나머지 필드는 반환된다', async () => {
         snapshot.mockResolvedValue({
             indicators: [],

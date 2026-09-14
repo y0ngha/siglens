@@ -1120,6 +1120,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Explicitly document per-surface/tint: "border-control (light #7d838f): 3.34:1 on secondary-950 inset, 3.58:1 on secondary-900 body, 3.81:1 on secondary-800 card (#fff)" (validates across actual use cases; the tightest surface is the darkest one, not the reference card)
    ✅ CI guard verifying token contrast across all documented and new surfaces before merge
    → Recurring: W6f (tint depth: ui-success-text at /10 vs /40 FearGreedHeaderChip), W7 (surface: border-control at #fff white vs secondary-950 input field)
+
+9. Headings without semantic color tokens inherit default body text brightness
+   → Every `<h1>` through `<h6>` must inherit or explicitly apply a semantic colour token from the design system
+   → Headings without colour classes inherit `body { color: var(--color-secondary-50) }` (brightest tier) and render indistinguishable from body text or even outrank their parent headings
+   → Colourless headings are a HIERARCHY defect (not a contrast defect); CSS contrast checks cannot detect them because bright text always passes 3:1+
+   → Detector: grep for `<h[1-6]` elements and flag className lists that contain none of: text-secondary-*, text-primary-*, text-ui-*, text-chart-*, text-white, text-grade, sr-only
+   ❌ <h2>{title}</h2>  // no colour class; inherits body's brightest tier
+   ❌ <h3 className="text-sm font-semibold">{subtitle}</h3>  // size/weight specified, no colour; renders equally bright as body
+   ✅ <h2 className="HEADING_SECTION">{title}</h2>  // semantic token applied
+   ✅ <h3 className={cn(HEADING_SUBSECTION, 'text-xs')}>{subtitle}</h3>  // colour via token, size via utility
+   → Recurring: /[symbol]/overall route (9 colourless h2), /[symbol]/news route (2+ colourless headings) — W6c + W6d
 ```
 
 ---
@@ -1575,6 +1586,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Field addition + docs/PUBLIC_API.md update in the same commit
    ✅ Formula change synced to both implementation and docs/product/DOMAIN.md in one PR
    → Recurring: PR #166 (public API doc omission), feat/latest-llm-models R1 (API union expansion not documented), perf/indicator-precision (histogram formula drift)
+
+3. Single code review finding may indicate a systemic pattern; fix only the reported instance leaves drift hidden
+   → When a code review identifies one instance of a pattern (style class mismatch, colour absence, naming inconsistency, literal misuse), always grep the codebase for all instances of that pattern before applying a fix
+   → Fixes applied to only the reported instance while others exist hide systemic issues and create confusing inconsistency across the codebase
+   → The reported instance is often the tip of a much larger pattern; a single-instance fix masks the systemic drift from future reviewers
+   ❌ Reviewer reports file A missing colour token on heading; apply fix to file A only (leaves files B-D with same issue)
+   ❌ Found one `text-sm font-semibold` class combination used inconsistently; update only the reported file (same pattern exists in 25 other files)
+   ✅ Grep for the class pattern across all files → find all instances with same issue → fix all together in one PR
+   ✅ When reviewer reports a style drift in one file, grep that literal and related patterns across entire codebase before applying any changes
+   → Recurring: Style class drift (26 sites with identical class list), Heading colour drift (8+ additional sites) — W6c + W6d
 ```
 
 ## Architecture

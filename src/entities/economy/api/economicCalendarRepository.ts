@@ -315,7 +315,7 @@ export class DrizzleEconomicCalendarRepository {
 
 /** 발표가 끝난 이벤트 한 건 — 지표 카드가 소비하는 최소 형상. */
 export interface AnnouncedEventPoint {
-    /** FMP 원본 'YYYY-MM-DD HH:mm:ss'(ET 벽시계). */
+    /** FMP 원본 'YYYY-MM-DD HH:mm:ss'(존 표시 없는 UTC — ET 아님. 컬럼명만 과거 오인대로 남아 있다). */
     dateEt: string;
     event: string;
     /** `actual IS NOT NULL` 필터를 통과했으므로 number 보장. */

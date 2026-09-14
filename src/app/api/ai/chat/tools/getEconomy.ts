@@ -20,11 +20,17 @@ const FMP_UTC_DATETIME_RE = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2})?$/;
  *
  * `fmpCalendarDateTimeToIso` (shared with the KST display layer) always
  * appends `Z` unconditionally, so unrecognized shapes are guarded here first.
+ * An unrecognized shape is passed through unchanged but LOGGED: it would be
+ * parsed as server-local time again (the bug this fixes), so a format change
+ * on FMP's side must be visible rather than silently shifting times.
  */
 function toUtcIso(date: string): string {
-    return FMP_UTC_DATETIME_RE.test(date)
-        ? fmpCalendarDateTimeToIso(date)
-        : date;
+    if (FMP_UTC_DATETIME_RE.test(date)) return fmpCalendarDateTimeToIso(date);
+    console.warn(
+        '[AgentTool] get_economy unexpected calendar date format, passing through',
+        { date }
+    );
+    return date;
 }
 
 /**
