@@ -41,7 +41,10 @@ import {
     type SeoTranslator,
 } from '@/shared/lib/seo';
 import { TERMS_PATH } from '@/shared/lib/legal';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import {
+    ISO_DATE_HOUR_SLICE_END,
+    SECONDS_PER_HOUR,
+} from '@/shared/config/time';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FaqSection } from '@/shared/ui/FaqSection';
@@ -73,16 +76,6 @@ export const revalidate = 86400;
  * revalidate 값이 바뀌면 FAQ 문구도 자동으로 동기화된다.
  */
 const REVALIDATE_HOURS = revalidate / SECONDS_PER_HOUR;
-
-/**
- * 1-hour bucket tag used as `unstable_cache` key granularity — must align with
- * the bucket core's `peekMacroBriefingCache` computes internally so the two
- * caches stay in lockstep.
- *
- * `'YYYY-MM-DDTHH'` (length 13) → `new Date().toISOString().slice(0, 13)` gives
- * the current UTC hour string (e.g. `'2026-06-17T14'`).
- */
-const ISO_DATE_HOUR_SLICE_END = 13;
 
 function economyDescription(t: SeoTranslator): string {
     return clampSeoDescription(t('economy.us.description'));

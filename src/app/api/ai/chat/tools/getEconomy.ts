@@ -1,11 +1,9 @@
 import 'server-only';
 import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
-import { MS_PER_DAY } from '@/shared/config/time';
+import { ISO_DATE_HOUR_SLICE_END, MS_PER_DAY } from '@/shared/config/time';
 import type { ToolExecutor } from './index';
 
-/** Matches `/economy`'s `peekMacroBriefingStatic` cache-bucket key (`page.tsx`). */
-const DATE_HOUR_LEN = 13;
 const CALENDAR_WINDOW_DAYS = 7;
 /** Defensive cap — bounds the payload even if an unusually event-dense week slips past the 7-day filter. */
 const CALENDAR_MAX_EVENTS = 10;
@@ -24,7 +22,7 @@ export const getEconomyTool: ToolExecutor = async () => {
     const snapshot = await getEconomySnapshotStatic().catch(() => null);
     if (!snapshot) return { available: false, reason: 'snapshot_unavailable' };
 
-    const dateHour = new Date().toISOString().slice(0, DATE_HOUR_LEN);
+    const dateHour = new Date().toISOString().slice(0, ISO_DATE_HOUR_SLICE_END);
     const briefing = await peekMacroBriefingStatic(snapshot, dateHour).catch(
         () => null
     );

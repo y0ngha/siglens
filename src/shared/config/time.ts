@@ -23,3 +23,13 @@ export const SECONDS_PER_QUARTER_DAY = SECONDS_PER_HOUR * 6;
  */
 export const FMP_STATEMENTS_REVALIDATE_SECONDS = SECONDS_PER_DAY; // 24h
 export const CONGRESS_REVALIDATE_SECONDS = SECONDS_PER_DAY; // 24h — 의회 거래 공시지연 ~45일
+
+/**
+ * `'YYYY-MM-DDTHH'` (length 13) → `new Date().toISOString().slice(0, 13)` gives
+ * the current UTC hour string (e.g. `'2026-06-17T14'`), used as an
+ * `unstable_cache`/cache-key hour bucket by multiple callers. Mirrors
+ * `ISO_DATE_HOUR_PREFIX_LENGTH` in `@y0ngha/siglens-core` (internal, not
+ * exported — e.g. `peekMacroBriefingCache`'s own hour bucket) — must stay in
+ * sync with that value.
+ */
+export const ISO_DATE_HOUR_SLICE_END = 13;

@@ -11,13 +11,22 @@ import type { ToolExecutor } from './index';
 /** Capped so a busy signal scan (dozens of flagged stocks) stays inside the tool's budget. */
 const TOP_SIGNALS_MAX = 10;
 
+/**
+ * `Object.groupBy` groups in one O(n) pass; `Object.fromEntries` over the
+ * grouped entries then just maps each group to its length (O(sector count),
+ * not another pass over `stocks`) — avoids both mutation and the O(n²) cost
+ * of a reduce that spreads into a new object per stock.
+ */
 function countsBySector(
     stocks: readonly StockSignalResult[]
 ): Record<string, number> {
-    const counts: Record<string, number> = {};
-    for (const s of stocks)
-        counts[s.sectorSymbol] = (counts[s.sectorSymbol] ?? 0) + 1;
-    return counts;
+    const groups = Object.groupBy(stocks, s => s.sectorSymbol);
+    return Object.fromEntries(
+        Object.entries(groups).map(([sector, group]) => [
+            sector,
+            group?.length ?? 0,
+        ])
+    );
 }
 
 function topSignals(stocks: readonly StockSignalResult[]) {
