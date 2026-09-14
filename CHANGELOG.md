@@ -1,5 +1,19 @@
 # Changelog
 
+# [0.75.0](https://github.com/y0ngha/siglens/compare/v0.74.0...v0.75.0) (2026-09-14)
+
+
+### Bug Fixes
+
+* **i18n:** 에이전트 도구 라벨 키 정렬을 i18n:extract 산출물과 일치 ([309cb65](https://github.com/y0ngha/siglens/commit/309cb65021a6d54d585e28ecbd08a72bbce0961d))
+* **i18n:** economy 페이지 줄 이동에 맞춰 skips.json 행 번호 재생성 ([94db51a](https://github.com/y0ngha/siglens/commit/94db51aeb2e58b21db1bd2c7904382e04c31cf02))
+
+
+### Features
+
+* **ai:** 에이전트 도구가 SIGLENS 분석의 패턴·전략과 확장 지표를 모델에 전달 ([0d75062](https://github.com/y0ngha/siglens/commit/0d75062e0dc2848f5ff88bbb49ff9717b8ab86e5))
+* **ai:** siglens-core 1.6.0 배선 — 펀더멘털·시장 개요·경제·의회 거래 도구와 답변 숫자 근거 로그 ([ec0eda4](https://github.com/y0ngha/siglens/commit/ec0eda41c3b7ab16feeba7be245e727c9d819d77))
+
 # [0.74.0](https://github.com/y0ngha/siglens/compare/v0.73.0...v0.74.0) (2026-09-13)
 
 
