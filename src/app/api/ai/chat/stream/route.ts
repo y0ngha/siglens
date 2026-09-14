@@ -581,9 +581,13 @@ export async function POST(request: Request): Promise<Response> {
                             toolResults
                         );
                         if (ungrounded.length > 0) {
-                            // Single-line JSON, consistent with `[Usage]`/`[Agent]`
-                            // — CloudWatch splits multi-arg console.warn objects
-                            // across lines, breaking Logs Insights parsing.
+                            // Serialize before logging: passing a plain object lets
+                            // Node's util.inspect pretty-print it over several lines,
+                            // and CloudWatch stores each line as its own event
+                            // (observed 2026-09-14), breaking Logs Insights parsing.
+                            // Same single-JSON shape as `[Usage]`; `[Agent]` passes a
+                            // pre-stringified second argument, which also stays on
+                            // one line.
                             console.warn(
                                 JSON.stringify({
                                     tag: '[agent] ungrounded numbers',

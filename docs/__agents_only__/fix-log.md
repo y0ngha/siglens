@@ -66,12 +66,6 @@
   - Rule: User-facing text must match code state; version numbers in labels must be consistent
   - Context: Added suffix to old Opus label ('Opus 4.7'), clarifying the version relationship.
 
-## [feat/latest-llm-models | siglens | R1 recommended]
-- Violation: E2E spec header contained a stale hand-maintained free/premium model enumeration (a prose copy of TIER_CONFIG.models that drifts every time a generation lands). It was missing all six new models and both DeepSeek models, and labelled gemini-2.5-flash-lite "(default)" while the default is deepseek-v4-flash.
-  - Rule: Test data must not be duplicated from production without continuous sync; outdated comments hide test/prod divergence
-  - Context: Deleted the enumeration and replaced it with a prose pointer to siglens-core `src/domain/tier.ts` (TIER_CONFIG.models), plus a note that "free" means server-key-funded rather than cheap. No code change — the spec's assertions already read the list at runtime.
-  - Correction (2026-07-31): this entry originally cited a model id `claude-opus-4-turbo` and a replacement helper `getModelsFor('free_tier')`. Neither exists in any of the three repos; both were fabricated when the entry was written. A deployment audit caught it. Fix-log entries feed MISTAKES.md promotion, so an invented detail here becomes a permanent false "recurring pattern" — verify every symbol name in an entry against the repo before writing it.
-
 ## [perf/cdn-cache-hit-rate | perf/cdn-cache-hit-rate | 2026-08-12]
 - Finding: Reviewer claimed Cloudflare rule `len(http.request.headers["rsc"]) > 0` uses invalid type. Cloudflare docs and production deployment verify `len()` supports String|Bytes|Array.
   - Status: REJECTED — false positive; reviewer claim was incorrect
@@ -263,9 +257,6 @@
 - Violation: New env-gate helper `isOfflineBuild()` placed in `src/shared/lib/` despite identical-purpose sibling `isE2E()` living in `src/shared/api/e2eEnv.ts`. Both consumed together by `src/shared/db/client.ts`. Category siblings must colocate.
   - Rule: FF.md Cohesion 2-C — when adding an env-gate or feature-flag helper, search for siblings in the same category and colocate in the same file. Placing duplicates of the same category in different directories obscures their relationship and makes future changes diverge.
   - Context: Moved `isOfflineBuild` to new `src/shared/api/offlineBuild.ts` alongside the existing `e2eEnv.ts` pattern.
-- Violation: JSDoc for `getDatabaseClient()` listed only the DATABASE_URL-unset condition and omitted the two new branches added in this round (throws when offline, null condition in `tryGetDatabaseClient`).
-  - Rule: MISTAKES.md — API docs must stay in sync with implementation branches; stale JSDoc hides new code paths from maintainers.
-  - Context: Updated JSDoc to document both branches (DATABASE_URL unset, offline mode active).
 
 ## [PR #799 | chore/core-1.0.4-prompt-currency | 2026-09-11]
 - Violation: BLOCKER — `YahooFinancialStatementsProvider` added a new `reportedCurrency` field and threaded it through three mapper functions (`mapIncome`, `mapBalance`, `mapCashFlow`). Only the income-statement test asserted `reportedCurrency: 'KRW'`; the balance-sheet and cash-flow tests used `toMatchObject` without including the new field. Dropping the field or hardcoding `'USD'` in a Korean symbol test stayed green.
@@ -324,7 +315,3 @@
 - Status: APPROVED (Round 2, zero findings)
 
 
-## [PR #815 | fix/agent-economy-calendar-utc | 2026-09-14]
-- Violation: BLOCKER fixed — After removing the last production call of `getEtOffset`, the function remained as dead code. Test file comments falsely claimed market-session logic still consumed it (stale "still used by" claim after caller removal).
-  - Rule: (new) Dead code removal must include deletion of dead functions, their constants, tests, and all documentation/comments that falsely claim the code is still in use. A stale "still used by" comment is a regression indicator — verify with repo-wide grep after removing a caller.
-  - Context: Deleted `getEtOffset` function, its constants `MINUTE`, `HOUR`, etc., its tests, and corrected stale JSDoc in `eastern.ts`. Repo-wide grep confirms zero references remain.
