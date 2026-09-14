@@ -308,4 +308,22 @@
   - Context: Fixed by blanking `UPSTASH_REDIS_REST_*` environment variables in pre-push build command. Verified Next.js `loadEnvConfig` does not override preset-empty env vars.
 
 ## [feat/agent-tool-analysis-context Round 2 | Agent tool analysis context | 2026-09-14]
+
+## [feat/agent-tool-analysis-context Round 2 | Agent tool analysis context | 2026-09-14]
 - Status: APPROVED (zero findings)
+
+## [PR #813 | feat/agent-tool-analysis-context | Post-approval suggestions | 2026-09-14]
+- Violation: getDescriptor(profile) computed twice in one object literal
+  - Rule: MISTAKES.md Rule 2 — Identical values queried or computed multiple times in a single function
+  - Context: Hoisted duplicate computation outside object literal.
+- Violation: Agent bars tool sliced raw detectCandlePatternEntries instead of using core selectLastCandlePatternEntries like the chart markers and analysis prompt
+  - Rule: (new) Sibling consumers must use identical data selection logic; inconsistent data selectors cause derived systems to diverge
+  - Context: Updated agent bars tool to use selectLastCandlePatternEntries, aligning with chart markers and analysis prompt.
+
+## [PR #814 | feat/agent-data-tools-wiring | Post-approval suggestions | 2026-09-14]
+- Violation: Magic number 13 (ISO date-hour slice end) duplicated in three files
+  - Rule: MISTAKES.md Rule 15 — Hardcoded literals in function names or calculations
+  - Context: Centralized ISO_DATE_HOUR_SLICE_END constant to shared/config/time.ts, updated all three call sites.
+- Violation: countsBySector object mutation with for...of
+  - Rule: MISTAKES.md Rule 104 — Array/object mutation via push/splice or direct property assignment
+  - Context: Rewrote with Object.groupBy + Object.fromEntries for immutable construction.

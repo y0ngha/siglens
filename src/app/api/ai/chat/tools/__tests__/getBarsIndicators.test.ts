@@ -229,7 +229,7 @@ describe('getBarsIndicatorsTool', () => {
         expect(r.latest.supertrend).toBeNull();
     });
 
-    it('candlePatterns: barIndex를 detection window 기준 날짜로 매핑하고 최근 5개만 유지한다', async () => {
+    it('candlePatterns: selectLastCandlePatternEntries와 같은 선택(최신 multi + 최신 single)만 남기고 날짜를 detection window 기준으로 매핑한다', async () => {
         profile.mockResolvedValue('us-equity');
         const bars = Array.from({ length: 20 }, (_, i) =>
             bar(1_700_000_000 + i * 86_400, 100 + i)
@@ -237,15 +237,59 @@ describe('getBarsIndicatorsTool', () => {
         getCachedBars.mockResolvedValue({ bars, indicators });
         classify.mockReturnValue('uptrend');
         detect.mockReturnValue([]);
-        // 7 entries — only the last 5 should survive.
-        detectCandlePatternEntries.mockReturnValue(
-            Array.from({ length: 7 }, (_, i) => ({
-                barIndex: i,
+        // Several detected entries, mixing single/multi at various
+        // barIndex values — only the freshest multi (barIndex 6) and the
+        // freshest single (barIndex 5) should survive, exactly what
+        // `selectLastCandlePatternEntries` (also used by the chart markers
+        // in `useCandlePatternMarkers.ts` and the analysis prompt) selects.
+        // `selectLastCandlePatternEntries` isn't mocked here — the module
+        // mock only overrides `detectCandlePatternEntries`/`getDetectionBars`
+        // and spreads `...actual` for everything else, so this exercises
+        // core's real selection logic against the mocked entries.
+        detectCandlePatternEntries.mockReturnValue([
+            {
+                barIndex: 0,
                 patternType: 'single',
-                singlePattern: `pattern_${i}`,
+                singlePattern: 'pattern_0',
                 multiPattern: null,
-            }))
-        );
+            },
+            {
+                barIndex: 1,
+                patternType: 'multi',
+                singlePattern: null,
+                multiPattern: 'multi_1',
+            },
+            {
+                barIndex: 2,
+                patternType: 'single',
+                singlePattern: 'pattern_2',
+                multiPattern: null,
+            },
+            {
+                barIndex: 3,
+                patternType: 'multi',
+                singlePattern: null,
+                multiPattern: 'multi_3',
+            },
+            {
+                barIndex: 4,
+                patternType: 'single',
+                singlePattern: 'pattern_4',
+                multiPattern: null,
+            },
+            {
+                barIndex: 5,
+                patternType: 'single',
+                singlePattern: 'pattern_5',
+                multiPattern: null,
+            },
+            {
+                barIndex: 6,
+                patternType: 'multi',
+                singlePattern: null,
+                multiPattern: 'multi_6',
+            },
+        ]);
 
         const r = (await getBarsIndicatorsTool(
             { symbol: 'AAPL', timeframe: '1Day' },
@@ -253,21 +297,22 @@ describe('getBarsIndicatorsTool', () => {
             rt
         )) as { candlePatterns: Array<{ date: string; pattern: string }> };
 
-        expect(r.candlePatterns).toHaveLength(5);
-        // detection window = bars.slice(-15); barIndex=2 (kept, 3rd from
-        // last of the surviving 5) resolves to that window's 3rd bar.
+        // Exactly 2 — the freshest single + freshest multi, NOT the last 5
+        // raw entries the old `.slice(-MAX_BAR_CANDLE_PATTERNS)` would keep.
+        expect(r.candlePatterns).toHaveLength(2);
         const detectionWindow = bars.slice(-15);
+        // Sorted by barIndex ascending: single (5) before multi (6).
         expect(r.candlePatterns[0]).toEqual({
-            date: new Date(detectionWindow[2]!.time * 1000)
+            date: new Date(detectionWindow[5]!.time * 1000)
                 .toISOString()
                 .slice(0, 16),
-            pattern: 'pattern_2',
+            pattern: 'pattern_5',
         });
-        expect(r.candlePatterns.at(-1)).toEqual({
+        expect(r.candlePatterns[1]).toEqual({
             date: new Date(detectionWindow[6]!.time * 1000)
                 .toISOString()
                 .slice(0, 16),
-            pattern: 'pattern_6',
+            pattern: 'multi_6',
         });
     });
 

@@ -61,7 +61,7 @@ export type ProjectedTechnicalAnalysis = {
 
 /** The model reads a handful of top signals — no reason to ship every skill verdict. */
 const MAX_PATTERNS = 5;
-/** Caps the AI analysis's own `candlePatterns` verdicts — distinct from `MAX_BAR_CANDLE_PATTERNS` in `getBarsIndicators.ts`, which caps raw bar-level pattern detection. */
+/** Caps the AI analysis's own `candlePatterns` verdicts — distinct from `getBarsIndicators.ts`'s raw bar-level pattern detection, which selects via core's `selectLastCandlePatternEntries` (freshest multi + freshest single) rather than a flat cap. */
 const MAX_ANALYSIS_CANDLE_PATTERNS = 5;
 const MAX_STRATEGIES = 5;
 
