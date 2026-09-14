@@ -24,6 +24,12 @@ interface PlainAnalysisSwitchProps {
      * 봇에게 평이화를 실어 보내는 역할만 맡는다. 둘 다 그리면 한 화면에 쉽게보기가
      * 두 개가 된다. 표시 모드는 전역 하나(`useAnalysisView`)라 토글 없이도 함께
      * 움직인다.
+     *
+     * 이 스위치는 루트 표식(`data-analysis-view`)도 세우지 않는다. 표식은 "라이브
+     * 위젯이 평이화를 띄웠으니 스냅샷 산문을 숨겨라"는 뜻인데, 스냅샷 안의 스위치가
+     * 스스로 세우면 자기 섹션을 숨긴다. 라이브 위젯에 서사가 없는 순간(분석 미실행·
+     * 세션 확인 전)에는 화면에 남은 본문이 그 섹션뿐이라 쉽게보기가 빈 화면이 됐다
+     * (2026-09-14 사용자 제보, AAPL 새로고침). 표식은 라이브 위젯의 스위치만 세운다.
      */
     hideToggle?: boolean;
     /** 티어 게이트로 가려진 정보가 있는지. 쉽게보기 하단 잠금 안내를 켠다. */
@@ -95,13 +101,13 @@ export function PlainAnalysisSwitch({
      * `withReaderViews`에서 평이화를 건너뛰어 `plain`이 항상 `null`이다.
      */
     useEffect(() => {
-        if (!showPlain) return;
+        if (!showPlain || hideToggle) return;
         const root = document.documentElement;
         root.dataset.analysisView = 'plain';
         return () => {
             delete root.dataset.analysisView;
         };
-    }, [showPlain]);
+    }, [showPlain, hideToggle]);
 
     const toggle =
         hasPlain && !hideToggle ? (
