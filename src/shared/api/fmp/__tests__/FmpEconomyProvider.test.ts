@@ -1,6 +1,6 @@
 vi.mock('@/shared/api/fmp/httpClient');
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { FmpEconomyProvider } from '@/shared/api/fmp/FmpEconomyProvider';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
@@ -10,6 +10,12 @@ const mockFmpGet = vi.mocked(fmpGet);
 describe('FmpEconomyProvider', () => {
     beforeEach(() => {
         vi.resetAllMocks();
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-09-14T03:00:00.000Z'));
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     it('getIndicator: 정규화된 latest/previous 추출', async () => {
@@ -25,12 +31,14 @@ describe('FmpEconomyProvider', () => {
         expect(series.previous).toEqual({ date: '2026-04-01', value: 3.58 });
     });
 
-    it('getIndicator: economic-indicators?name 호출 + 24h revalidate', async () => {
+    it('getIndicator: economic-indicators?name+to(오늘) 호출 + 24h revalidate', async () => {
         mockFmpGet.mockResolvedValueOnce([] as unknown[]);
         await new FmpEconomyProvider().getIndicator('CPI');
+        // `to` 없이 호출하면 FMP가 2025-12-01에서 멈춘 진행 중 창을 돌려준다(실측) —
+        // 항상 오늘 날짜를 `to`로 보내야 최신 창이 온다.
         expect(mockFmpGet).toHaveBeenCalledWith(
             'economic-indicators',
-            { name: 'CPI' },
+            { name: 'CPI', to: '2026-09-14' },
             { revalidate: SECONDS_PER_DAY }
         );
     });

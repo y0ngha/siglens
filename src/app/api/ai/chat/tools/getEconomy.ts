@@ -2,11 +2,36 @@ import 'server-only';
 import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
 import { ISO_DATE_HOUR_SLICE_END, MS_PER_DAY } from '@/shared/config/time';
+import { fmpCalendarDateTimeToIso } from '@/shared/lib/etTimeUtils';
 import type { ToolExecutor } from './index';
 
 const CALENDAR_WINDOW_DAYS = 7;
 /** Defensive cap — bounds the payload even if an unusually event-dense week slips past the 7-day filter. */
 const CALENDAR_MAX_EVENTS = 10;
+
+const FMP_UTC_DATETIME_RE = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2})?$/;
+
+/**
+ * FMP `economic-calendar` gives `YYYY-MM-DD HH:mm:ss` in UTC with no zone
+ * marker. Left as-is, two things go wrong: `new Date()` parses it as the
+ * server's LOCAL time, and core's `localizeTimestamps` only converts real ISO
+ * instants — so the model copied "12:30" (UTC) into a Korean answer as if it
+ * were local time. Normalizing to an ISO instant fixes both.
+ *
+ * `fmpCalendarDateTimeToIso` (shared with the KST display layer) always
+ * appends `Z` unconditionally, so unrecognized shapes are guarded here first.
+ * An unrecognized shape is passed through unchanged but LOGGED: it would be
+ * parsed as server-local time again (the bug this fixes), so a format change
+ * on FMP's side must be visible rather than silently shifting times.
+ */
+function toUtcIso(date: string): string {
+    if (FMP_UTC_DATETIME_RE.test(date)) return fmpCalendarDateTimeToIso(date);
+    console.warn(
+        '[AgentTool] get_economy unexpected calendar date format, passing through',
+        { date }
+    );
+    return date;
+}
 
 /**
  * US macro snapshot: indicators, treasury yields, upcoming calendar (next 7
@@ -30,6 +55,7 @@ export const getEconomyTool: ToolExecutor = async () => {
     const now = Date.now();
     const windowEnd = now + CALENDAR_WINDOW_DAYS * MS_PER_DAY;
     const upcomingCalendar = snapshot.calendar
+        .map(e => ({ ...e, date: toUtcIso(e.date) }))
         .filter(e => {
             const t = new Date(e.date).getTime();
             return t >= now && t <= windowEnd;

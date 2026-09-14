@@ -174,17 +174,9 @@
   - Rule: Native element defaults are overridden silently by Tailwind preflight; intent-matching requires explicit `@layer base` restoration
   - Context: Found only by measuring the rendered box ([0,0] vs [544,16] at vw 1600 x vh 857). Fixed once in `@layer base`.
 ## [W6c — /[symbol]/overall heading unification | redesign-p1 | 2026-08-25]
-- Violation: Nine `<h2>` on the route carried NO colour class, so they inherited `body { color: var(--color-secondary-50) }` and rendered at the h1's brightness. Consequence: seven `<h3>` cross-link card titles rendered bigger AND brighter than two `<h2>` that outrank them. Root cause is invisible in source review — "no colour class" does not look like a defect; only measuring the computed colour of the rendered heading exposes it. Fixed by routing every h2/h3 through the existing `HEADING_SECTION` / `HEADING_SUBSECTION` tokens. Measured after: exactly three groups, H1 x1 / H2 x12 / H3 x17, strictly descending on size, weight and prominence, zero ties.
-  - Rule: (new) Heading color hierarchy — every heading must inherit or explicitly apply a semantic colour token; headings without colour classes inherit default body text weight and render indistinguishable from body content
-  - Context: Applied HEADING_SECTION to all h2s, HEADING_SUBSECTION to all h3s. Measured contrast after: all boundaries distinct.
-
 - Violation: Same file family, opposite direction: in `CrossLinkCards` the EMPHASISED current-page card (border-primary-500 + ring) had a DIMMER title (`secondary-100`) than its unemphasised siblings (inherited `secondary-50`). Emphasis and brightness pointed opposite ways.
   - Rule: Emphasis tokens (border-primary, ring) and text-colour tokens must align — bright emphasis + dim text is discordant
   - Context: Changed card title to inherit secondary-50 (or primary-text for current card) to align with emphasis.
-
-- Violation: Review round 1 filed a recommended finding on ONE file hardcoding a literal byte-identical to `HEADING_SECTION`. Grepping the literal's colourless prefix showed the finding was the tip of a larger one — 26 sites use `text-lg font-semibold tracking-tight` with no colour class at all. Lesson: when a reviewer reports a single instance of a token-vs-literal drift, grep the literal (and its prefixes) before fixing just the reported line.
-  - Rule: (guideline) Reviewer reports of individual style drift must trigger a full grep of the literal (and key prefixes) to surface all instances before fixing only the reported line; single-instance fixes hide systemic drift
-  - Context: Grepped `text-lg font-semibold tracking-tight` across codebase; found 26 sites. Fixed all 26 to use design tokens.
 
 ## [W6c — WCAG defects the UI audit surfaced | redesign-p1 | 2026-08-25]
 - Violation: The 상세 분석 switch was invisible in the light theme: track 1.03:1, white thumb on it 1.01:1. It is not exempt as "disabled" — when locked it stays clickable (opens the signup nudge), carries `cursor-pointer`, and sets no native `disabled`. Fixed with `border-border-control` on track and thumb; after: light 3.10/3.30/7.85, dark 3.74/3.57/8.41.
@@ -213,15 +205,9 @@
   - Context: Audit script now sets `document.body.style.overflow = 'visible'` + `document.documentElement.style.overflow = 'visible'` before overflow scan. Re-measured; found 2 actual offenders previously hidden.
 
 ## [W6d — /[symbol]/news heading unification | redesign-p1 | 2026-08-25]
-- Violation: A heading whose `className` contains NO colour token inherits `body { color: var(--color-secondary-50) }` — the brightest tier — so it renders at or above its own parent heading's prominence. Found at `NewsAiSummary.tsx:136,160`. **Inheriting the brightest colour ALWAYS passes a contrast check**, so a contrast sweep structurally cannot detect this: a 225-element both-theme sweep reported 0 failures while the defect was live.
-  - Rule: Colourless headings are a HIERARCHY defect, not a contrast defect, and need their own detector — extract every `<h[1-6] className="...">` literal and flag any whose class list contains none of `text-secondary-` / `text-primary-` / `text-ui-` / `text-chart-` / `text-white` / `text-grade` / `sr-only`
-  - Context: SECOND occurrence — W6c fixed nine colourless h2 on `/[symbol]/overall` for the identical reason. Detector caveat: the regex cannot see `className={SOME_CONSTANT}`, which is how `widgets/fundamental/**` and `widgets/financials/**` hide six more instances behind per-file `HEADING_CLASS_NAME` constants. Fixed the two in this route's scope; the other six are logged per-wave.
 - Violation: Same defect class with the colour present — `MarketNewsDigest.tsx:83,109` used `text-sm font-semibold text-secondary-100`, the same colour AND same weight as its own h2 (which uses `HEADING_SECTION`), differing only by size.
   - Rule: A "has a colour class" check passes this; only comparing a heading against its own PARENT heading catches it
   - Context: Both moved to `cn('mb-2', HEADING_SUBSECTION)`.
-- Violation: A single reviewer finding on one file was the tip of a repeating shape. Grepping the reported literal's prefix showed eight sites sharing the identical `mb-2 text-sm font-semibold` h3 pair, one per `*AiSummary` component.
-  - Rule: When a reviewer reports one instance of token-vs-literal drift, grep the literal AND its prefixes before fixing only the reported line
-  - Context: SECOND occurrence — the same lesson was recorded in W6c. Fixed the two in scope; logged six for W6e/W6f/W6h rather than editing unaudited routes.
 - Violation: Lowering the card headline to `font-medium` created a NEW inversion one level down — the card's `<h4>` sub-labels were still `font-semibold`, so they out-weighed the headline above them.
   - Rule: After any weight/size/colour change, re-measure the level BELOW the one you touched, not just the one you fixed
   - Context: h4 moved to `font-medium` in `NewsList.tsx` and `MarketNewsCard.tsx` (2 sites). Contrast is unaffected by weight — measured 9.93:1 light / 11.26:1 dark before and after. Final ramp `/AAPL/news` light: h1 24/700 → h2 18/600 → h3 16/500 → h4 12/500.
@@ -327,3 +313,18 @@
 - Violation: countsBySector object mutation with for...of
   - Rule: MISTAKES.md Rule 104 — Array/object mutation via push/splice or direct property assignment
   - Context: Rewrote with Object.groupBy + Object.fromEntries for immutable construction.
+
+## [feat/economy-calendar-tz Round 2 | economy calendar UTC timezone | 2026-09-14]
+- Violation: FMP economic-calendar `date` field ("YYYY-MM-DD HH:mm:ss") was assumed to be ET wall-clock time across etTimeUtils, /economy calendar grid, KR indicator cards, and DB column comment (`date_et`); live FMP data from authoritative known-time events (Fed decision 18:00 UTC, CPI 12:30 UTC) proves it is UTC. /economy grid displayed release times 4-5 hours wrong for months.
+  - Rule: External API field semantics must be verified against known reference events, not inferred from comment consensus or existing code patterns
+  - Context: R1 review argued for ET treatment based on code/DB-comment consensus; R2 resolved by authoritative live check against known event times. Root cause: timezone assumption for an external API field was never validated; tests encoded the same wrong assumption, so unit coverage verified nothing. Fixed by normalizing all consumption points (etTimeUtils, grid, card indicators, DB comments) to treat `date` as UTC.
+- Violation: FMP economic-indicators endpoint called without `to` parameter returns stale rows ending 2025-12-01 (9 months old) with no error signal; fixed by passing `to=today`
+  - Rule: External API results must be validated for staleness/completeness when the API offers filtering parameters (date range, limit) — bare calls may degrade silently to cached or partial data
+  - Context: Added `to` parameter to FMP economic-indicators fetch, ensuring fresh data is returned. Issue discovered during production verification of /economy route.
+- Status: APPROVED (Round 2, zero findings)
+
+
+## [PR #815 | fix/agent-economy-calendar-utc | 2026-09-14]
+- Violation: BLOCKER fixed — After removing the last production call of `getEtOffset`, the function remained as dead code. Test file comments falsely claimed market-session logic still consumed it (stale "still used by" claim after caller removal).
+  - Rule: (new) Dead code removal must include deletion of dead functions, their constants, tests, and all documentation/comments that falsely claim the code is still in use. A stale "still used by" comment is a regression indicator — verify with repo-wide grep after removing a caller.
+  - Context: Deleted `getEtOffset` function, its constants `MINUTE`, `HOUR`, etc., its tests, and corrected stale JSDoc in `eastern.ts`. Repo-wide grep confirms zero references remain.

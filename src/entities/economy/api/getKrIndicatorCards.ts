@@ -4,7 +4,7 @@ import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 
 import { getDatabaseClient } from '@/shared/db/client';
-import { etDateTimeToKst } from '@/shared/lib/etTimeUtils';
+import { fmpCalendarDateTimeToKst } from '@/shared/lib/etTimeUtils';
 import {
     KR_ECONOMY_INDICATORS,
     normalizeKrEventName,
@@ -27,10 +27,10 @@ export interface KrIndicatorCard {
     /**
      * 발표일 `YYYY-MM-DD` — **KST 달력일**.
      *
-     * DB의 `date_et`는 ET 벽시계라 그대로 자르면 한국 아침 발표가 하루 앞으로
-     * 밀린다(한국 CPI 08:00 KST = 전날 19:00 ET). 같은 행을 그리는 아래 캘린더는
-     * 이미 `etDateTimeToKst`로 KST 키를 쓰므로, 카드만 ET로 두면 **같은 발표가
-     * 카드와 캘린더에서 다른 날짜로** 보인다.
+     * DB의 `date_et`는 FMP 원본 UTC 벽시계라 그대로 자르면 한국 늦은 밤 발표가
+     * 다음 날로 밀린다(한국 CPI 00:00 KST = 전날 15:00 UTC 근처). 같은 행을 그리는
+     * 아래 캘린더는 이미 `fmpCalendarDateTimeToKst`로 KST 키를 쓰므로, 카드만 UTC
+     * 그대로 두면 **같은 발표가 카드와 캘린더에서 다른 날짜로** 보인다.
      */
     latestDate: string;
     /**
@@ -98,7 +98,7 @@ const fetchKrIndicatorCards = unstable_cache(
                     latest: latest.actual,
                     latestDate: // `kstDateKey`만 읽으므로 로케일과 무관하다. 그래도 명시한다 —
                         // 기본값을 두면 호출부에서 빠져도 컴파일이 통과한다.
-                        etDateTimeToKst(latest.dateEt, DEFAULT_LOCALE)
+                        fmpCalendarDateTimeToKst(latest.dateEt, DEFAULT_LOCALE)
                             .kstDateKey,
                     changeFromPrevious:
                         prior === undefined

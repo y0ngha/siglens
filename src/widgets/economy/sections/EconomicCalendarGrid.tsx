@@ -28,7 +28,7 @@ import {
 } from '@/shared/lib/sentimentDisplay';
 import { cn } from '@/shared/lib/cn';
 import { formatNum } from '@/shared/lib/formatNum';
-import { etDateTimeToKst } from '@/shared/lib/etTimeUtils';
+import { fmpCalendarDateTimeToKst } from '@/shared/lib/etTimeUtils';
 import { useEconomicCalendarTrigger } from '../hooks/useEconomicCalendarTrigger';
 import { useIndicatorTranslationTrigger } from '../hooks/useIndicatorTranslationTrigger';
 import { ImpactFilter } from './ImpactFilter';
@@ -122,7 +122,7 @@ type CalendarGridEvent = EconomicCalendarEvent &
     >;
 
 interface KstEvent {
-    /** ET ISO-8601 문자열 — `<time dateTime>` 용 */
+    /** UTC ISO-8601 문자열 — `<time dateTime>` 용 */
     iso: string;
     /** 한국시간 레이블 '오전/오후 H:mm' */
     kstTimeLabel: string;
@@ -191,13 +191,13 @@ function groupEventsByKstDay(
     const map = new Map<string, KstEvent[]>();
 
     for (const ev of events) {
-        const { iso, kstDateKey, kstTimeLabel } = etDateTimeToKst(
+        const { iso, kstDateKey, kstTimeLabel } = fmpCalendarDateTimeToKst(
             ev.date,
             locale
         );
         // 월 셀은 한 줄 폭이라 오전/오후를 넣을 자리가 없다. 문자열을 깎으면
         // 한국어에서만 동작하므로(`replace(/^(오전|오후)/)`), 포맷 단계에서 끈다.
-        const { kstTimeLabel: inlineTimeLabel } = etDateTimeToKst(
+        const { kstTimeLabel: inlineTimeLabel } = fmpCalendarDateTimeToKst(
             ev.date,
             locale,
             false

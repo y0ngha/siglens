@@ -10,8 +10,8 @@ vi.mock('@/entities/economy/actions', () => ({
 }));
 
 /**
- * 기준 이벤트: 2026-06-19 19:30:00 ET(-04:00) → KST 2026-06-20 오전 8:30
- * (날짜 롤오버 케이스)
+ * 기준 이벤트: 2026-06-19 19:30:00 UTC(FMP 원본은 존 마커 없는 UTC) → KST
+ * 2026-06-20 오전 4:30 (날짜 롤오버 케이스)
  */
 const EVENT_A: EconomicCalendarEvent = {
     date: '2026-06-19 19:30:00',
@@ -34,9 +34,9 @@ const EVENT_B: EconomicCalendarEvent = {
     unit: '%',
 };
 
-/** 다른 KST 날(2026-06-21)에 속하는 이벤트 */
+/** 다른 KST 날(2026-06-21)에 속하는 이벤트 — 2026-06-20 20:00 UTC + 9h = 6/21 05:00 */
 const EVENT_C: EconomicCalendarEvent = {
-    date: '2026-06-20 14:00:00',
+    date: '2026-06-20 20:00:00',
     event: 'Unemployment Claims',
     impact: 'Low',
     actual: null,
@@ -76,11 +76,11 @@ describe('EconomicCalendarGrid — 빈 상태', () => {
 });
 
 describe('EconomicCalendarGrid — KST 그룹핑', () => {
-    it('ET 날짜가 다르더라도 같은 KST 날이면 한 그룹으로 묶인다', () => {
+    it('UTC 날짜가 다르더라도 같은 KST 날이면 한 그룹으로 묶인다', () => {
         render(
             <EconomicCalendarGrid country="US" events={[EVENT_A, EVENT_B]} />
         );
-        // EVENT_A(2026-06-19 ET) + EVENT_B(2026-06-19 ET) 모두 KST 2026-06-20
+        // EVENT_A(2026-06-19 UTC) + EVENT_B(2026-06-19 UTC) 모두 KST 2026-06-20
         // → 한 날짜 버튼에 "이벤트 2건" aria-label
         const btn = screen.getByRole('button', {
             name: /6월 20일.*이벤트 2건/,
@@ -226,21 +226,21 @@ describe('EconomicCalendarGrid — 상세 패널 데이터', () => {
         expect(screen.getByText(/이전 229,000건/)).toBeInTheDocument();
     });
 
-    it('time 요소에 ET ISO-8601 dateTime 속성', () => {
+    it('time 요소에 UTC ISO-8601 dateTime 속성', () => {
         const { container } = render(
             <EconomicCalendarGrid country="US" events={[EVENT_A]} />
         );
-        // EVENT_A: 2026-06-19 19:30:00 ET → -04:00
+        // EVENT_A: 2026-06-19 19:30:00 UTC → 'Z'
         const times = container.querySelectorAll('time');
         const isoValues = Array.from(times).map(t =>
             t.getAttribute('dateTime')
         );
-        expect(isoValues).toContain('2026-06-19T19:30:00-04:00');
+        expect(isoValues).toContain('2026-06-19T19:30:00Z');
     });
 
-    it('KST 시각 레이블이 상세 패널에 표시된다 (오전 8:30)', () => {
+    it('KST 시각 레이블이 상세 패널에 표시된다 (오전 4:30)', () => {
         render(<EconomicCalendarGrid country="US" events={[EVENT_A]} />);
-        expect(screen.getByText('오전 8:30')).toBeInTheDocument();
+        expect(screen.getByText('오전 4:30')).toBeInTheDocument();
     });
 });
 
@@ -288,7 +288,7 @@ describe('EconomicCalendarGrid default selection from today', () => {
     });
 
     it("selects today's panel when an event exists for today (KST)", () => {
-        // 2026-06-20 08:30 ET → KST 2026-06-20 21:30 → KST date key 2026-06-20.
+        // 2026-06-20 08:30 UTC → KST 2026-06-20 17:30 → KST date key 2026-06-20.
         render(
             <EconomicCalendarGrid
                 country="US"
