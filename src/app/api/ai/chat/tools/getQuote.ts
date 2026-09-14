@@ -31,14 +31,15 @@ export const getQuoteTool: ToolExecutor = async args => {
                 sessionSpecFor(profile)
             ).getQuote(asset?.fmpSymbol ?? symbol);
             if (quote === null) return { symbol, found: false };
+            const descriptor = getDescriptor(profile);
             return {
                 symbol,
                 found: true,
                 price: quote.price,
                 changesPercentage: quote.changesPercentage,
-                currency: getDescriptor(profile).priceFormat.currency,
+                currency: descriptor.priceFormat.currency,
                 marketProfile: profile,
-                quoteDelayMinutes: getDescriptor(profile).quoteDelayMinutes,
+                quoteDelayMinutes: descriptor.quoteDelayMinutes,
             };
         })
     );

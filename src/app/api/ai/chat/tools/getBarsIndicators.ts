@@ -4,6 +4,7 @@ import {
     detectCandlePatternEntries,
     detectSignals,
     getDetectionBars,
+    selectLastCandlePatternEntries,
     type Bar,
     type BollingerResult,
     type CandlePattern,
@@ -40,9 +41,6 @@ const DEFAULT_BARS = 30;
  * WHOLE array, not none), and a negative value slices from the wrong end.
  */
 const MAX_BARS = 200;
-
-/** Max RAW bar-detected candle pattern entries surfaced (`latestCandlePatterns`) — distinct from `MAX_ANALYSIS_CANDLE_PATTERNS` in `projectTechnicalAnalysis.ts`, which caps the AI analysis's own `candlePatterns` field. */
-const MAX_BAR_CANDLE_PATTERNS = 5;
 
 function clampBars(raw: unknown): number {
     if (typeof raw !== 'number' || !Number.isFinite(raw)) return DEFAULT_BARS;
@@ -190,14 +188,19 @@ interface BarCandlePattern {
 
 /**
  * Detects candle patterns over the trailing window core scans
- * (`getDetectionBars`) and maps each entry's window-relative `barIndex`
- * back to the bar's date — `detectCandlePatternEntries`' `barIndex` is
- * relative to that window, NOT the full `bars` series.
+ * (`getDetectionBars`), then keeps only the freshest multi-bar + freshest
+ * single-bar entry via `selectLastCandlePatternEntries` — the SAME selection
+ * the chart markers (`useCandlePatternMarkers.ts`) and the analysis prompt
+ * use, so the model sees the same candle semantics as the chart rather than
+ * an arbitrary tail slice of the raw detection list. Maps each entry's
+ * window-relative `barIndex` back to the bar's date —
+ * `detectCandlePatternEntries`' `barIndex` is relative to that window, NOT
+ * the full `bars` series.
  */
 function latestCandlePatterns(bars: Bar[]): BarCandlePattern[] {
     const detectionBars = getDetectionBars(bars);
     const entries = detectCandlePatternEntries(bars);
-    return entries.slice(-MAX_BAR_CANDLE_PATTERNS).map(entry => ({
+    return selectLastCandlePatternEntries(entries).map(entry => ({
         date: isoMinute(detectionBars[entry.barIndex]!.time),
         pattern: entry.singlePattern ?? entry.multiPattern,
     }));
