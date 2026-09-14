@@ -12,6 +12,9 @@ import {
 import { AiLanding } from './AiLanding';
 import { SiglensMark } from './SiglensMark';
 
+/** Member suggestions still being generated; resolves to null when there are none. */
+export type PendingSuggestions = Promise<readonly string[] | null>;
+
 interface Props {
     readonly siteUrl: string;
     readonly localePrefix: string;
@@ -24,7 +27,7 @@ interface Props {
      * and awaiting it held back the whole landing (the SSR body went into a hidden
      * streaming chunk behind a skeleton). `null`/empty falls back to the static six.
      */
-    readonly suggestions?: Promise<readonly string[] | null> | null;
+    readonly suggestions?: PendingSuggestions | null;
 }
 
 interface SuggestionCardsProps {
@@ -61,7 +64,7 @@ interface PendingSuggestionCardsProps extends Omit<
     SuggestionCardsProps,
     'items'
 > {
-    readonly pending: Promise<readonly string[] | null>;
+    readonly pending: PendingSuggestions;
     readonly fallback: readonly string[];
 }
 
@@ -85,7 +88,14 @@ interface SuggestionCardsSkeletonProps {
     readonly count: number;
 }
 
-/** Same footprint as six cards, so the page does not jump when they land. */
+/**
+ * Same footprint as six cards, so the page does not jump when they land.
+ * Colours are hardcoded to `CARD`'s resting `secondary-700`/`secondary-800`
+ * rather than a `PLACEHOLDER_ON_*` token from `surfaceStyles.ts`: this
+ * skeleton mirrors the real card surface it stands in for, and it sits on
+ * the page background (`secondary-900`), not on a card or inset, so those
+ * tokens do not apply here.
+ */
 function SuggestionCardsSkeleton({ count }: SuggestionCardsSkeletonProps) {
     return (
         <ul aria-hidden="true" className="grid w-full gap-2 sm:grid-cols-2">

@@ -11,7 +11,7 @@ import {
 } from '@/features/agent-chat';
 import { Composer } from './Composer';
 import { AGENT_ERROR_RETRYABLE } from './errorCopy';
-import { EmptyState } from './EmptyState';
+import { EmptyState, type PendingSuggestions } from './EmptyState';
 import { GUEST_TURNS_PER_DAY } from './guestTurnLimit';
 import { MenuIcon } from './icons';
 import { loginHref } from './loginHref';
@@ -27,7 +27,7 @@ interface Props {
     readonly siteUrl: string;
     readonly currentPath: string;
     /** AI-generated suggestions for this hour (spec §4-3), still in flight; `null`/undefined falls back to `EmptyState`'s static six. */
-    readonly suggestions?: Promise<readonly string[] | null> | null;
+    readonly suggestions?: PendingSuggestions | null;
     /** Question prefilled from an entry link (`?q=`); never sent automatically. */
     readonly initialDraft?: string;
 }
