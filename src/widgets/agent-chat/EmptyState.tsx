@@ -81,8 +81,12 @@ function PendingSuggestionCards({
     );
 }
 
+interface SuggestionCardsSkeletonProps {
+    readonly count: number;
+}
+
 /** Same footprint as six cards, so the page does not jump when they land. */
-function SuggestionCardsSkeleton({ count }: { readonly count: number }) {
+function SuggestionCardsSkeleton({ count }: SuggestionCardsSkeletonProps) {
     return (
         <ul aria-hidden="true" className="grid w-full gap-2 sm:grid-cols-2">
             {Array.from({ length: count }, (_, i) => (

@@ -209,6 +209,8 @@ describe('ChatShell new-conversation list update', () => {
                 {shellTree()}
             </NextIntlClientProvider>
         );
+        // Regression guard: a prior version called router.refresh() here, which
+        // swapped in the /c/[id] tree and flashed its loading skeleton.
         expect(router.refresh).not.toHaveBeenCalled();
         mockStream.conversationId = 'c1';
     });

@@ -3571,8 +3571,8 @@
                 "newChat": "新しい会話",
                 "noMatch": "一致する会話がありません。",
                 "privacy": "プライバシーポリシー",
-                "terms": "利用規約",
-                "renameCancel": "名前の変更をキャンセル"
+                "renameCancel": "名前の変更をキャンセル",
+                "terms": "利用規約"
             },
             "ToolActivity": {
                 "aboutSeconds": "約{n}秒",
