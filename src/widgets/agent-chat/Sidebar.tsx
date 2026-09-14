@@ -14,6 +14,7 @@ import {
 } from '@/features/agent-chat';
 import { cn } from '@/shared/lib/cn';
 import { LABEL_KO } from '@/shared/lib/typographyStyles';
+import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import {
     ArrowUpRightIcon,
     CloseIcon,
@@ -130,18 +131,10 @@ export function Sidebar({
     // for reasons the user did not choose (a screen reader's virtual cursor), and
     // a real press outside is the only signal that means "I'm done here". The row
     // itself is excluded so the ✕ toggle and the input keep their own behaviour.
-    useEffect(() => {
-        if (renamingId === null) return;
-        function cancelOnOutsidePress(event: PointerEvent): void {
-            if (renameRowRef.current?.contains(event.target as Node)) return;
-            // No focus return here — the press already put focus where the
-            // user wanted it.
-            setRenaming(null);
-        }
-        document.addEventListener('pointerdown', cancelOnOutsidePress);
-        return () =>
-            document.removeEventListener('pointerdown', cancelOnOutsidePress);
-    }, [renamingId]);
+    // No focus return here — the press already put focus where the user wanted it.
+    useOnClickOutside(renameRowRef, () => setRenaming(null), {
+        enabled: renamingId !== null,
+    });
 
     function closeRename(): void {
         setRenaming(null);

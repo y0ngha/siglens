@@ -1,10 +1,18 @@
 // @vitest-environment jsdom
-import { UnrecognizedActionError } from 'next/dist/client/components/unrecognized-action-error';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     isVersionSkewError,
     reloadOnVersionSkew,
 } from '@/shared/lib/reloadOnVersionSkew';
+
+const { FakeUnrecognizedActionError } = vi.hoisted(() => ({
+    FakeUnrecognizedActionError: class extends Error {},
+}));
+
+vi.mock('next/navigation', () => ({
+    unstable_isUnrecognizedActionError: (error: unknown) =>
+        error instanceof FakeUnrecognizedActionError,
+}));
 
 describe('reloadOnVersionSkew', () => {
     const reload = vi.fn();
@@ -19,14 +27,14 @@ describe('reloadOnVersionSkew', () => {
     });
 
     it('reloads once when a Server Action is unknown to the server', () => {
-        const error = new UnrecognizedActionError('not found');
+        const error = new FakeUnrecognizedActionError('not found');
         expect(isVersionSkewError(error)).toBe(true);
         expect(reloadOnVersionSkew(error, 1_000_000)).toBe(true);
         expect(reload).toHaveBeenCalledTimes(1);
     });
 
     it('does not reload again inside the window — a mixed-version rollout must not loop', () => {
-        const error = new UnrecognizedActionError('not found');
+        const error = new FakeUnrecognizedActionError('not found');
         reloadOnVersionSkew(error, 1_000_000);
         expect(reloadOnVersionSkew(error, 1_030_000)).toBe(false);
         expect(reloadOnVersionSkew(error, 1_061_000)).toBe(true);
