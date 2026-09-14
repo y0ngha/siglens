@@ -2,6 +2,10 @@ import 'server-only';
 import type {
     AnalysisResponse,
     FilteredAnalysisResponse,
+    KeyLevels,
+    PriceTargets,
+    RiskLevel,
+    Trend,
 } from '@y0ngha/siglens-core';
 import { fitProse, type ProseSpec } from './fitProse';
 
@@ -13,9 +17,52 @@ import { fitProse, type ProseSpec } from './fitProse';
  */
 type ProjectableAnalysis = AnalysisResponse | FilteredAnalysisResponse;
 
+/** One capped, confidence-sorted entry of `ProjectedTechnicalAnalysis['patterns']`. */
+export interface ProjectedPatternSummary {
+    name: string;
+    trend: Trend;
+    confidence: number;
+    summary: string;
+}
+
+/** One capped entry of `ProjectedTechnicalAnalysis['candlePatterns']` (the AI analysis's own candle-pattern verdicts — distinct from `BarCandlePattern` in `getBarsIndicators.ts`, which is raw bar-level pattern detection). */
+export interface ProjectedCandlePatternSummary {
+    name: string;
+    trend: Trend;
+    summary: string;
+}
+
+/** One capped, confidence-sorted entry of `ProjectedTechnicalAnalysis['strategies']`. */
+export interface ProjectedStrategySummary {
+    name: string;
+    trend: Trend;
+    summary: string;
+}
+
+/**
+ * Return shape of `projectTechnicalAnalysis`. `summary`/`trend`/`riskLevel`/
+ * `keyLevels`/`priceTargets` are nullable because a `FilteredAnalysisResponse`
+ * (tier-locked fragment) carries `null` for a locked field — this projection
+ * passes that through unchanged rather than inventing a placeholder.
+ */
+export type ProjectedTechnicalAnalysis = {
+    summary: string | null;
+    trend: Trend | null;
+    riskLevel: RiskLevel | null;
+    keyLevels: KeyLevels | null;
+    priceTargets: PriceTargets | null;
+    actionRecommendation: NonNullable<
+        ProjectableAnalysis['actionRecommendation']
+    > | null;
+    patterns: ProjectedPatternSummary[];
+    candlePatterns: ProjectedCandlePatternSummary[];
+    strategies: ProjectedStrategySummary[];
+};
+
 /** The model reads a handful of top signals — no reason to ship every skill verdict. */
 const MAX_PATTERNS = 5;
-const MAX_CANDLE_PATTERNS = 5;
+/** Caps the AI analysis's own `candlePatterns` verdicts — distinct from `MAX_BAR_CANDLE_PATTERNS` in `getBarsIndicators.ts`, which caps raw bar-level pattern detection. */
+const MAX_ANALYSIS_CANDLE_PATTERNS = 5;
 const MAX_STRATEGIES = 5;
 
 /**
@@ -29,7 +76,9 @@ const MAX_STRATEGIES = 5;
  * `candlePatterns` so the model can answer "is there a head-and-shoulders?"
  * without the prose summary having to mention it.
  */
-export function projectTechnicalAnalysis(a: ProjectableAnalysis) {
+export function projectTechnicalAnalysis(
+    a: ProjectableAnalysis
+): ProjectedTechnicalAnalysis {
     return {
         summary: a.summary,
         trend: a.trend,
@@ -49,7 +98,7 @@ export function projectTechnicalAnalysis(a: ProjectableAnalysis) {
             })),
         candlePatterns: (a.candlePatterns ?? [])
             .filter(p => p.detected === true)
-            .slice(0, MAX_CANDLE_PATTERNS)
+            .slice(0, MAX_ANALYSIS_CANDLE_PATTERNS)
             .map(p => ({
                 name: p.patternName,
                 trend: p.trend,
@@ -65,8 +114,6 @@ export function projectTechnicalAnalysis(a: ProjectableAnalysis) {
             })),
     };
 }
-
-type ProjectedTechnicalAnalysis = ReturnType<typeof projectTechnicalAnalysis>;
 
 /**
  * The `fitProse` field spec for a `projectTechnicalAnalysis` result —
