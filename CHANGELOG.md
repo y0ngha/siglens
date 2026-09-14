@@ -1,5 +1,26 @@
 # Changelog
 
+# [0.76.0](https://github.com/y0ngha/siglens/compare/v0.75.3...v0.76.0) (2026-09-14)
+
+
+### Bug Fixes
+
+* **ai:** 대화 생성·이름 변경 후 스켈레톤 깜빡임과 제목 미반영 수정 ([4fdea37](https://github.com/y0ngha/siglens/commit/4fdea3725645491bcb579e2cf19ec382e2425cb9))
+* **ai:** 랜딩 본문이 로딩 스켈레톤 뒤 숨김 청크로 나가던 문제 수정 ([2378630](https://github.com/y0ngha/siglens/commit/23786303087538c27e9b670d862d7aa01501c4ab))
+* **ai:** PR [#820](https://github.com/y0ngha/siglens/issues/820) 리뷰 반영 — 추천 질문 실패 로깅, renameCancel 키 정렬·해시, loading.tsx 정책 문서화 ([2919aaa](https://github.com/y0ngha/siglens/commit/2919aaa3b020660e2ec100f13b2a12f67d2dd437))
+* **analysis:** 차트 탭 쉽게보기에서 스냅샷 요약이 스스로 숨던 버그 수정 ([a3d600d](https://github.com/y0ngha/siglens/commit/a3d600d590c14da057c3be316c14b01e381fd46e))
+* **app:** 배포 직후 옛 빌드 탭의 Server Action 불일치로 로그아웃처럼 보이던 문제 완화 ([4fe5f60](https://github.com/y0ngha/siglens/commit/4fe5f60b058ad9225796844fdf2cbb37bfb0d8bf))
+
+
+### Features
+
+* **i18n:** 언어 전환 스위처를 헤더·모바일 드로어에 노출 ([b1483bf](https://github.com/y0ngha/siglens/commit/b1483bfa86e2f4f235d099599f4d16aee9b222ce))
+
+
+### Reverts
+
+* **i18n:** 언어 전환 스위처 노출 되돌리기 ([#821](https://github.com/y0ngha/siglens/issues/821)) ([2748e48](https://github.com/y0ngha/siglens/commit/2748e488d8b88978f7ae5ac7dc2de5f8f6c97fb4))
+
 ## [0.75.3](https://github.com/y0ngha/siglens/compare/v0.75.2...v0.75.3) (2026-09-14)
 
 ## [0.75.2](https://github.com/y0ngha/siglens/compare/v0.75.1...v0.75.2) (2026-09-14)
