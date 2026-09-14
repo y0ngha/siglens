@@ -328,4 +328,4 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-deadline-reache
 
 log "skipped fmp-429 alarm: no stable log marker exists yet (see comment above) — batch-failed alarm covers structural failure in the meantime"
 
-log "seo-prewarm alarms ready (batch-failed, redis-unavailable; fmp-429 skipped, see log above)"
+log "seo-prewarm alarms ready (batch-failed, unit-error, deadline-reached; fmp-429 skipped, see log above). redis-unavailable is monitored by siglens-config-signal — run 07-alarms.sh too"

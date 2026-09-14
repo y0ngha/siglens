@@ -970,6 +970,7 @@ describe('POST /api/ai/chat/stream', () => {
                 sample: string[];
                 promptVersion: string;
             };
+            expect(payload.tag).toBe('[agent] ungrounded numbers');
             expect(payload.count).toBeGreaterThan(0);
             expect(payload.sample.length).toBeGreaterThan(0);
             expect(payload.promptVersion).toBe(OK_TURN.promptVersion);
