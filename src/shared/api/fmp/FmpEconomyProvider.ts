@@ -11,15 +11,13 @@ import { fmpGet } from '@/shared/api/fmp/httpClient';
 import { normalizeCalendarForCountry } from './normalizeCalendarForCountry';
 import type { EconomyProvider } from '@/shared/api/economy/EconomyProvider';
 import { INDICATOR_TREND_LENGTH } from '@/shared/config/economyIndicators';
-import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { ISO_DATE_LENGTH, SECONDS_PER_DAY } from '@/shared/config/time';
 
 /**
  * Next.js Data Cache 갱신 주기 — 24h, /economy revalidate(86400)와 단일 TTL 공유.
  * 같은 상수가 양 계층(`unstable_cache` + Next data cache)에 박혀 드리프트를 막는다.
  */
 const ECONOMY_REVALIDATE_SECONDS = SECONDS_PER_DAY;
-
-const ISO_DATE_LENGTH = 10;
 
 /** FMP `/stable/*` 어댑터 — core 정규화에 위임. */
 export class FmpEconomyProvider implements EconomyProvider {

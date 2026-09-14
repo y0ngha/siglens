@@ -298,6 +298,74 @@ GET /stable/income-statement?symbol=AAPL&period=annual&limit=5&apikey={key}
 
 ---
 
+### 5. Economic Indicators (거시 지표 시계열)
+
+```
+GET /stable/economic-indicators?name={name}&to={to}&apikey={key}
+```
+
+`/economy` 페이지의 지표 카드(`FmpEconomyProvider.getIndicator`)가 사용.
+
+**Query Parameters**
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|----------|------|------|------|
+| name | string | ✅ | 지표명(예: `CPI`, `federalFunds`) |
+| to | string | ✅ (실질적으로) | YYYY-MM-DD 형식 종료일 |
+| apikey | string | ✅ | FMP API 키 |
+
+**주의사항**
+- ⚠️ **`to`를 생략하면 진행 중인(오래된) 창의 마지막 값을 돌려준다.** 실측
+  (2026-09-14): `to` 미지정 시 CPI 최신 행이 `2025-12-01`에서 멈춰 있고,
+  `to=<오늘 UTC 날짜>`를 주면 `2026-08-01`(실제 최신)이 온다.
+- `to`를 매 호출 시각 기준 오늘 날짜로 넘겨도 응답은 최신 2~3행만 온다 — 전체
+  시계열이 아니라 최근 구간만 반환하는 엔드포인트다.
+
+---
+
+### 6. Economic Calendar (경제 캘린더)
+
+```
+GET /stable/economic-calendar?from={from}&to={to}&apikey={key}
+```
+
+`/economy`(미국)·`/economy/kr`(한국) 캘린더 위젯과 챗 `get_economy` 도구가 사용
+(`FmpEconomyProvider.getCalendar` / `getCalendarForCountry`).
+
+**Query Parameters**
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|----------|------|------|------|
+| from | string | ✅ | YYYY-MM-DD 형식 시작일 |
+| to | string | ✅ | YYYY-MM-DD 형식 종료일 |
+| apikey | string | ✅ | FMP API 키 |
+
+**Response**
+
+```typescript
+interface FmpEconomicCalendarEvent {
+    date: string;   // "2026-09-16 18:00:00" — UTC 벽시계, 존 마커 없음
+    event: string;
+    country: string;
+    impact: string;
+    actual: number | null;
+    estimate: number | null;
+    previous: number | null;
+    unit: string | null;
+}
+```
+
+**주의사항**
+- ⚠️ **`date`는 존 마커 없는 UTC 벽시계다** — ET로 오인하기 쉽다. 실측
+  (2026-09-16): `"2026-09-16 18:00:00 Fed Interest Rate Decision"` = FOMC
+  14:00 EDT = 18:00 UTC. ET 벽시계로 읽고 DST 오프셋을 다시 적용하면 4~5시간
+  어긋난 절대 시각이 나온다. `Z`만 붙이면 된다
+  (`src/shared/lib/etTimeUtils.ts`의 `fmpCalendarDateTimeToIso`).
+- 한 번의 호출로 전 국가 이벤트가 섞여 오므로 국가 필터는 호출부(`country`
+  필드 매칭)가 책임진다 — core `normalizeEconomicCalendar`는 `US`만 하드코딩.
+
+---
+
 ## 환경변수 전체 목록
 
 ```bash

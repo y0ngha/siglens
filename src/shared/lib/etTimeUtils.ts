@@ -1,5 +1,5 @@
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
-import { MS_PER_DAY } from '@/shared/config/time';
+import { ISO_DATE_LENGTH, MS_PER_DAY } from '@/shared/config/time';
 import { nthSundayDay } from './eastern';
 
 // nthSundayDay는 eastern.ts의 정규 원시 함수를 위임해 사용한다.
@@ -30,9 +30,6 @@ export function kstDateKey(date: Date): string {
     const day = parts.find(p => p.type === 'day')?.value ?? '';
     return `${year}-${month}-${day}`;
 }
-
-/** `YYYY-MM-DD`의 길이. 문자열을 자를 때 쓴다. */
-const ISO_DATE_LENGTH = 10;
 
 /**
  * KST 날짜 키에서 `days`일을 뺀 KST 날짜 키.
@@ -78,6 +75,12 @@ function kstTimeLabelFormatter(
     return formatter;
 }
 
+/** FMP `economic-calendar`의 `date` shape — 'YYYY-MM-DD HH:mm(:ss)?'. */
+const FMP_UTC_DATETIME_RE = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2})?$/;
+
+/** 이미 ISO-8601 인스턴트인 형태 — `Z`를 다시 붙이면 안 되므로 그대로 통과시킨다. */
+const ISO_INSTANT_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?Z$/;
+
 /**
  * FMP `economic-calendar`의 `date`('YYYY-MM-DD HH:mm:ss')를 HTML `<time dateTime>`이
  * 인식하는 ISO-8601 인스턴트로 정규화한다.
@@ -86,9 +89,23 @@ function kstTimeLabelFormatter(
  * Decision" = FOMC 14:00 EDT = 18:00 UTC). 예전 구현은 이걸 ET 벽시계로 오인해
  * DST 오프셋을 붙였는데, 그러면 UTC 시각에 다시 -4/-5시간이 빠져 항상 4~5시간
  * 어긋난 절대 시각이 나온다. 그냥 `Z`를 붙이면 된다.
+ *
+ * 형식 가드는 여기(공유 헬퍼) 한 곳에 둔다 — 예전에는 `getEconomy.ts`가 자체
+ * 정규식으로 이 함수 호출 **전에** 걸렀는데, `EconomicCalendarGrid`·
+ * `getKrIndicatorCards` 같은 다른 소비자는 그 가드 없이 이 함수를 직접 호출해서
+ * 같은 보호를 못 받았다. 이미 ISO 인스턴트인 입력은 변환 없이 통과시키고(중복
+ * `Z` 부여 방지), 그 외 인식 불가 형태는 **경고만 남기고 그대로 통과**시켜 호출부가
+ * 크래시하지 않게 한다 — FMP 쪽 형식 변경은 조용히 시각이 틀어지는 대신 로그로
+ * 드러나야 한다.
  */
 export function fmpCalendarDateTimeToIso(date: string): string {
-    return `${date.replace(' ', 'T')}Z`;
+    if (FMP_UTC_DATETIME_RE.test(date)) return `${date.replace(' ', 'T')}Z`;
+    if (ISO_INSTANT_RE.test(date)) return date;
+    console.warn(
+        '[etTimeUtils] fmpCalendarDateTimeToIso: unexpected date format, passing through',
+        date
+    );
+    return date;
 }
 
 /**

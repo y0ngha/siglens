@@ -143,14 +143,15 @@ describe('getEconomyTool', () => {
         ]);
     });
 
-    it('FMP 형식이 아닌 날짜는 변환 없이 통과시키되 경고 로그를 남긴다', async () => {
-        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    it('통합: 이미 ISO 인스턴트인 날짜는 shared 헬퍼를 거쳐도 그대로 유지된다', async () => {
+        // 형식 가드/경고 자체는 `fmpCalendarDateTimeToIso`(shared/lib/etTimeUtils)
+        // 테스트가 책임진다. 여기서는 getEconomyTool이 그 헬퍼와 올바르게
+        // 연결돼 있는지만 확인한다.
         snapshot.mockResolvedValue({
             indicators: [],
             treasury: null,
             calendar: [
                 {
-                    // 이미 ISO 인스턴트 — 형식 불일치 분기지만 파싱은 올바르다.
                     date: '2026-09-15T12:30:00Z',
                     event: 'Already ISO',
                     impact: 'High',
@@ -168,11 +169,6 @@ describe('getEconomyTool', () => {
         expect(r.upcomingCalendar).toEqual([
             expect.objectContaining({ date: '2026-09-15T12:30:00Z' }),
         ]);
-        expect(warn).toHaveBeenCalledWith(
-            expect.stringContaining('unexpected calendar date format'),
-            { date: '2026-09-15T12:30:00Z' }
-        );
-        warn.mockRestore();
     });
 
     it('브리핑 조회가 실패해도(catch) 스냅샷 나머지 필드는 반환된다', async () => {
