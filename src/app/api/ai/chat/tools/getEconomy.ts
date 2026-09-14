@@ -10,15 +10,6 @@ const CALENDAR_WINDOW_DAYS = 7;
 const CALENDAR_MAX_EVENTS = 10;
 
 /**
- * FMP `economic-calendar` gives `YYYY-MM-DD HH:mm:ss` in UTC with no zone
- * marker. Left as-is, two things go wrong: `new Date()` parses it as the
- * server's LOCAL time, and core's `localizeTimestamps` only converts real ISO
- * instants — so the model copied "12:30" (UTC) into a Korean answer as if it
- * were local time. `fmpCalendarDateTimeToIso` (shared with the KST display
- * layer) normalizes this and owns the format guard/passthrough/warn itself.
- */
-
-/**
  * US macro snapshot: indicators, treasury yields, upcoming calendar (next 7
  * days out of the cached snapshot's 14-day window), and the cached macro
  * briefing headline when available.
@@ -27,6 +18,9 @@ const CALENDAR_MAX_EVENTS = 10;
  * concurrently with the snapshot fetch (no `Promise.allSettled` fan-out here
  * — the sections are sequentially dependent, not independent). Its own
  * failure still degrades gracefully via `.catch`.
+ *
+ * Calendar dates go through `fmpCalendarDateTimeToIso` (FMP sends UTC with no
+ * zone marker; see its JSDoc) so core can localize them to the user's zone.
  */
 export const getEconomyTool: ToolExecutor = async () => {
     const snapshot = await getEconomySnapshotStatic().catch(() => null);
