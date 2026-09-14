@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.75.2](https://github.com/y0ngha/siglens/compare/v0.75.1...v0.75.2) (2026-09-14)
+
+
+### Bug Fixes
+
+* **observability:** PR [#817](https://github.com/y0ngha/siglens/issues/817) 재리뷰 반영 — 프리웜 스크립트 완료 로그 정정, 로그 tag 명시 검증 ([bdc9f67](https://github.com/y0ngha/siglens/commit/bdc9f670fa0f7f66f9bfa66835be8bfbcca44b83))
+
 ## [0.75.1](https://github.com/y0ngha/siglens/compare/v0.75.0...v0.75.1) (2026-09-14)
 
 
