@@ -59,6 +59,12 @@ export async function ensureEconomicCalendarAction(
 
         const today = etDateOf(new Date());
         const from = addEtDays(today, -CALENDAR_PAST_WINDOW_DAYS[country]);
+        // `to`는 ET 날짜 앵커에서 계산되지만 저장된 `date`는 UTC 벽시계 문자열이다
+        // (calendarWindow.ts의 "경계 오차" 문서 참조) — 같은 비대칭이 여기 fetch
+        // 윈도에도 적용돼 `to`가 UTC 기준보다 최대 하루 좁을 수 있다. 60분
+        // refresh-flag TTL로 재호출이 잦고(CALENDAR_REFRESH_FLAG_TTL_SECONDS),
+        // 미래 윈도가 14~30일로 넓어 그 하루는 다음 인제스션에서 자동 편입된다 —
+        // 영구 드롭 아님, 의도적으로 미수정.
         const to = addEtDays(today, CALENDAR_INGESTION_WINDOW_DAYS);
 
         const provider = new FmpEconomyProvider();

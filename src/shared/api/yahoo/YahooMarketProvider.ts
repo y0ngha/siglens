@@ -7,15 +7,17 @@ import type {
     Timeframe,
 } from '@y0ngha/siglens-core';
 import type { SiglensMarketProvider } from '@/shared/api/market/marketProvider.types';
-import { MS_PER_SECOND, MS_PER_HOUR } from '@/shared/config/time';
+import {
+    ISO_DATE_LENGTH,
+    MS_PER_SECOND,
+    MS_PER_HOUR,
+} from '@/shared/config/time';
 import { pickYahooDisplayName } from './displayName';
 
 const yahooFinance = createYahooClient();
 
 /** KST는 서머타임이 없다 — ET와 달리 고정 오프셋이라 DST 분기가 필요 없다. */
 const KST_OFFSET_HOURS = 9;
-
-const ISO_DATE_LENGTH = 10; // "YYYY-MM-DD"
 
 /**
  * core `Timeframe` → yahoo chart interval.

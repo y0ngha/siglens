@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
     fmpCalendarDateTimeToIso,
@@ -74,6 +74,25 @@ describe('fmpCalendarDateTimeToIso', () => {
     it('반환 형식 불변식: YYYY-MM-DDTHH:mm:ssZ', () => {
         const result = fmpCalendarDateTimeToIso('2026-03-08 02:30:00');
         expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+    });
+
+    it('이미 ISO 인스턴트인 입력은 변환 없이 그대로 통과시키고 경고를 남기지 않는다', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        expect(fmpCalendarDateTimeToIso('2026-09-15T12:30:00Z')).toBe(
+            '2026-09-15T12:30:00Z'
+        );
+        expect(warn).not.toHaveBeenCalled();
+        warn.mockRestore();
+    });
+
+    it('인식 불가 형식은 그대로 통과시키되 경고 로그를 남긴다', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        expect(fmpCalendarDateTimeToIso('garbage')).toBe('garbage');
+        expect(warn).toHaveBeenCalledWith(
+            expect.stringContaining('unexpected date format'),
+            'garbage'
+        );
+        warn.mockRestore();
     });
 });
 

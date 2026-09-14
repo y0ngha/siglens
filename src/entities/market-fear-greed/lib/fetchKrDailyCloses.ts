@@ -2,11 +2,9 @@ import 'server-only';
 import type { MarketDailyClose } from '@y0ngha/siglens-core';
 import { createYahooClient } from '@/shared/api/yahoo/createYahooClient';
 import { isE2E } from '@/shared/api/e2eEnv';
-import { MS_PER_DAY } from '@/shared/config/time';
+import { ISO_DATE_LENGTH, MS_PER_DAY } from '@/shared/config/time';
 import { e2eDailyCloses } from './e2eFearGreedFixture';
 import { MARKET_FEAR_GREED_KR_LOOKBACK_DAYS } from './marketFearGreedKrSymbols';
-
-const ISO_DATE_LENGTH = 10;
 
 /**
  * 조회 창의 하한. 캐시 계층이 한 번 계산해 모든 시리즈에 같은 값을 넘긴다 —
