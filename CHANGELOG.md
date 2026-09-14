@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.75.1](https://github.com/y0ngha/siglens/compare/v0.75.0...v0.75.1) (2026-09-14)
+
+
+### Bug Fixes
+
+* **economy:** FMP 경제 캘린더 시각을 UTC로 해석하고 경제 지표 최신 구간 조회 ([c4c491f](https://github.com/y0ngha/siglens/commit/c4c491f80831ce182f87390b4f20f277d3d4d939))
+* **economy:** PR [#815](https://github.com/y0ngha/siglens/issues/815) 리뷰 반영 — dateEt 주석 UTC 정정, 형식 불일치 날짜 경고 로그와 테스트 ([88966b5](https://github.com/y0ngha/siglens/commit/88966b5e63293968ab3e5fbbc82c85e2f82d0499))
+
 # [0.75.0](https://github.com/y0ngha/siglens/compare/v0.74.0...v0.75.0) (2026-09-14)
 
 
