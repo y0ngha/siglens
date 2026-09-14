@@ -31,6 +31,14 @@ export const metadata: Metadata = {
     // Default for everything under the ai host (conversations, not-found):
     // private or empty, never indexed. The landing (`page.tsx`) overrides it.
     robots: { index: false, follow: false },
+    // 네이버 서치어드바이저는 호스트별로 소유 확인을 받는다. siglens.io 토큰은
+    // `[locale]/layout.tsx`에 있고, 이 레이아웃은 별도 루트라 상속되지 않는다.
+    verification: {
+        other: {
+            'naver-site-verification':
+                'dd05a56cc099f67ca0597793f6965c8c9bd13ba3',
+        },
+    },
 };
 
 export default async function AiRootLayout({
