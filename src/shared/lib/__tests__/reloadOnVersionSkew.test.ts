@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     isVersionSkewError,
     reloadOnVersionSkew,
@@ -14,16 +14,15 @@ vi.mock('next/navigation', () => ({
         error instanceof FakeUnrecognizedActionError,
 }));
 
-describe('reloadOnVersionSkew', () => {
-    const reload = vi.fn();
+const reload = vi.fn();
+vi.mock('@/shared/lib/pageReload', () => ({
+    pageReload: () => reload(),
+}));
 
+describe('reloadOnVersionSkew', () => {
     beforeEach(() => {
         sessionStorage.clear();
         reload.mockClear();
-        vi.stubGlobal('location', { ...window.location, reload });
-    });
-    afterEach(() => {
-        vi.unstubAllGlobals();
     });
 
     it('reloads once when a Server Action is unknown to the server', () => {

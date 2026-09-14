@@ -1,4 +1,5 @@
 import { unstable_isUnrecognizedActionError } from 'next/navigation';
+import { pageReload } from '@/shared/lib/pageReload';
 
 /**
  * Server Action IDs change on every build. A tab whose JS came from the previous
@@ -33,6 +34,6 @@ export function reloadOnVersionSkew(
         // rollout could loop, so don't reload at all.
         return false;
     }
-    window.location.reload();
+    pageReload();
     return true;
 }
