@@ -121,61 +121,61 @@
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 93,
+        "line": 86,
         "reason": "seo-keywords-ko-only",
         "text": "미국 경제 지표"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 94,
+        "line": 87,
         "reason": "seo-keywords-ko-only",
         "text": "미국 기준금리"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 95,
+        "line": 88,
         "reason": "seo-keywords-ko-only",
         "text": "FOMC 일정"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 96,
+        "line": 89,
         "reason": "seo-keywords-ko-only",
         "text": "CPI 발표"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 97,
+        "line": 90,
         "reason": "seo-keywords-ko-only",
         "text": "미국 실업률"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 98,
+        "line": 91,
         "reason": "seo-keywords-ko-only",
         "text": "경제 캘린더"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 99,
+        "line": 92,
         "reason": "seo-keywords-ko-only",
         "text": "장단기 금리차"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 100,
+        "line": 93,
         "reason": "seo-keywords-ko-only",
         "text": "미국 경기침체"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 101,
+        "line": 94,
         "reason": "seo-keywords-ko-only",
         "text": "2s10s 스프레드"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 102,
+        "line": 95,
         "reason": "seo-keywords-ko-only",
         "text": "10년물 국채 금리"
     },

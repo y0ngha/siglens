@@ -22,6 +22,7 @@ import {
     type DashboardScope,
 } from '@/shared/config/dashboardScope';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { ISO_DATE_HOUR_SLICE_END } from '@/shared/config/time';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import type { Locale } from '@/shared/i18n/locales';
@@ -32,12 +33,6 @@ import {
     SITE_URL,
 } from '@/shared/lib/seo';
 import { marketCopyFor } from './copy';
-
-/**
- * 'YYYY-MM-DDTHH' prefix length — used to bucket ISR renders into 1-hour date-hour keys.
- * Mirrors ISO_DATE_HOUR_PREFIX_LENGTH in @y0ngha/siglens-core (internal, not exported) — must stay in sync.
- */
-const ISO_DATE_HOUR_SLICE_END = 13;
 
 /**
  * SSR seed를 만들어 dehydrate한다.

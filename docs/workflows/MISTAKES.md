@@ -152,6 +152,18 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Apply prefetch policy consistently to all navigation links, document exceptions with measurement
    → Recurring: PR #678 (SEO gate), perf/rsc-prefetch-fragmentation (prefetch policy), worktree-refactor+deepseek-model-swap (bot branch guard) — 4+ occurrences
 
+6.8. Tool/function specification promises data fields but executor omits them
+   → Tool JSDoc, schema, or comment descriptions that list output fields must match the actual implementation
+   → When a tool description claims it returns a field (e.g., "returns { upcomingEarningsDate, ... }"), the executor must include that field in output
+   → Description→executor mismatch silently drops features and hides available data from consumers
+   → Before claiming "the provider doesn't expose this field", grep existing loaders and helpers to confirm availability
+   ❌ get_fundamentals tool description: "@returns { ... upcomingEarningsDate ... }" but implementation returns null for earningsDate; stale comment: "provider doesn't expose it" (while getEarningsReport exists)
+   ❌ get_quote tool description: "returns volume" but executor omits volume field in returned payload (core issue)
+   ✅ Tool description lists only fields present in executor output; no false promises
+   ✅ If a data field is available via another loader (e.g., getEarningsReport), reuse it in the tool executor to align output with description
+   ✅ Before writing comment "provider unavailable", grep provider API for existing loaders that fetch the needed data
+   → Recurring: feat/agent-tool-analysis-context Round 1 (get_fundamentals omits earningsDate), siglens-core (get_quote omits volume) — 2 occurrences
+
 7. Repeating identical className ternary 3+ times
    → Extract to a helper function
 

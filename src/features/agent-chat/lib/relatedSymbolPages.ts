@@ -29,6 +29,8 @@ const ANALYSIS_TAB: Record<string, SymbolTab> = {
 function tabFor(item: ToolActivityItem): SymbolTab {
     if (item.name === 'get_news') return 'news';
     if (item.name === 'get_options_summary') return 'options';
+    if (item.name === 'get_fundamentals') return 'fundamental';
+    if (item.name === 'get_congress_trades') return 'congress';
     const key = item.args.tab ?? item.args.kind;
     if (
         (item.name === 'get_cached_analysis' ||
