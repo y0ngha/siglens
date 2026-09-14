@@ -8,6 +8,8 @@ vi.mock('@tanstack/react-query', () => ({
             return {};
         }
     },
+    QueryCache: class MockQueryCache {},
+    MutationCache: class MockMutationCache {},
     QueryClientProvider: ({ children }: { children: React.ReactNode }) => (
         <div data-testid="query-provider">{children}</div>
     ),

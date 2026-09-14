@@ -44,7 +44,7 @@ export function AuthSessionHeaderClient({
 } = {}) {
     const syncedPathRef = useRef<string | null>(null);
     const hasHint = useAuthHint();
-    const { data: user, isPending } = useCurrentUser();
+    const { data: user, isPending, isError } = useCurrentUser();
     const queryClient = useQueryClient();
     const pathname = usePathname();
     const authNext =
@@ -68,7 +68,11 @@ export function AuthSessionHeaderClient({
         });
     }, [pathname, queryClient]);
 
-    if (isPending) {
+    // A failed lookup is not "logged out": `currentUserAction` already turns a missing
+    // or dead session into `null`, so an error here is transport-level (network, or a
+    // tab on an older build during a deploy). Drawing guest CTAs would tell a signed-in
+    // member they were logged out; keep the hint-based shell until a real answer lands.
+    if (isPending || (isError && user === undefined)) {
         // server action 확정 전: hint로 skeleton(로그인 추정) 또는 게스트 셸.
         return (
             <Header
