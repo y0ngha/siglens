@@ -323,3 +323,8 @@
   - Context: Added `to` parameter to FMP economic-indicators fetch, ensuring fresh data is returned. Issue discovered during production verification of /economy route.
 - Status: APPROVED (Round 2, zero findings)
 
+
+## [PR #815 | fix/agent-economy-calendar-utc | 2026-09-14]
+- Violation: BLOCKER fixed — After removing the last production call of `getEtOffset`, the function remained as dead code. Test file comments falsely claimed market-session logic still consumed it (stale "still used by" claim after caller removal).
+  - Rule: (new) Dead code removal must include deletion of dead functions, their constants, tests, and all documentation/comments that falsely claim the code is still in use. A stale "still used by" comment is a regression indicator — verify with repo-wide grep after removing a caller.
+  - Context: Deleted `getEtOffset` function, its constants `MINUTE`, `HOUR`, etc., its tests, and corrected stale JSDoc in `eastern.ts`. Repo-wide grep confirms zero references remain.

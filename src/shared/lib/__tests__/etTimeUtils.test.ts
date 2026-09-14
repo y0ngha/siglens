@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
     fmpCalendarDateTimeToIso,
     fmpCalendarDateTimeToKst,
-    getEtOffset,
     kstDateKey,
     kstDateKeyDaysBefore,
     nthSundayDay,
@@ -42,81 +41,6 @@ describe('nthSundayDay', () => {
     it('2026년 11월 1번째 일요일 = 1일 (11월 1일이 일요일)', () => {
         // Nov 2026: 1st day = Sunday → firstSundayOffset = 0 → 1st Sunday = 1
         expect(nthSundayDay(2026, 10, 1)).toBe(1);
-    });
-});
-
-// ------------------------------------------------------------------
-// getEtOffset — 시장 세션 판정 등 ET 벽시계 사용처가 여전히 소비한다
-// (economic-calendar 날짜 변환에는 더 이상 쓰이지 않음, 아래 참조).
-// ------------------------------------------------------------------
-describe('getEtOffset', () => {
-    // 2026: Spring forward = March 8, Fall back = Nov 1
-
-    describe('2026년 기준 DST 규칙', () => {
-        it('2월(봄 전환 전) → EST(-05:00)', () => {
-            expect(getEtOffset(2026, 1, 15, 12)).toBe('-05:00');
-        });
-
-        it('3월 봄 전환일 전날 → EST(-05:00)', () => {
-            expect(getEtOffset(2026, 2, 7, 23)).toBe('-05:00');
-        });
-
-        it('봄 전환일 01:59 → EST(-05:00) (전환 전)', () => {
-            expect(getEtOffset(2026, 2, 8, 1)).toBe('-05:00');
-        });
-
-        it('봄 전환일 02:00 → EDT(-04:00) (전환 후)', () => {
-            expect(getEtOffset(2026, 2, 8, 2)).toBe('-04:00');
-        });
-
-        it('봄 전환일 03:00 → EDT(-04:00)', () => {
-            expect(getEtOffset(2026, 2, 8, 3)).toBe('-04:00');
-        });
-
-        it('7월(EDT 구간) → EDT(-04:00)', () => {
-            expect(getEtOffset(2026, 6, 4, 12)).toBe('-04:00');
-        });
-
-        it('가을 전환일 01:59 → EDT(-04:00) (전환 전)', () => {
-            // Fall back: Nov 1, 2026
-            expect(getEtOffset(2026, 10, 1, 1)).toBe('-04:00');
-        });
-
-        it('가을 전환일 02:00 → EST(-05:00) (전환 후)', () => {
-            expect(getEtOffset(2026, 10, 1, 2)).toBe('-05:00');
-        });
-
-        it('12월(가을 전환 후) → EST(-05:00)', () => {
-            expect(getEtOffset(2026, 11, 15, 12)).toBe('-05:00');
-        });
-    });
-
-    describe('2024년 기준 DST 규칙 (spring=March 10, fall=Nov 3)', () => {
-        it('봄 전환일 01:59 → EST(-05:00)', () => {
-            expect(getEtOffset(2024, 2, 10, 1)).toBe('-05:00');
-        });
-
-        it('봄 전환일 02:00 → EDT(-04:00)', () => {
-            expect(getEtOffset(2024, 2, 10, 2)).toBe('-04:00');
-        });
-
-        it('가을 전환일 01:59 → EDT(-04:00)', () => {
-            expect(getEtOffset(2024, 10, 3, 1)).toBe('-04:00');
-        });
-
-        it('가을 전환일 02:00 → EST(-05:00)', () => {
-            expect(getEtOffset(2024, 10, 3, 2)).toBe('-05:00');
-        });
-    });
-
-    describe('2030년 기준 DST 규칙', () => {
-        it('여름(7월) → EDT(-04:00)', () => {
-            expect(getEtOffset(2030, 6, 15, 10)).toBe('-04:00');
-        });
-
-        it('1월 → EST(-05:00)', () => {
-            expect(getEtOffset(2030, 0, 1, 0)).toBe('-05:00');
-        });
     });
 });
 

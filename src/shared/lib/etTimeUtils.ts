@@ -1,15 +1,6 @@
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { MS_PER_DAY } from '@/shared/config/time';
-// EDT: 3월 두 번째 일요일 02:00 ~ 11월 첫 번째 일요일 02:00 → UTC-4 (IANA America/New_York)
-// EST: 그 외 구간 → UTC-5
-// 월은 JS Date 0-indexed 기준 (0 = January)
-import {
-    FIRST_SUNDAY,
-    MARCH,
-    NOVEMBER,
-    SECOND_SUNDAY,
-    nthSundayDay,
-} from './eastern';
+import { nthSundayDay } from './eastern';
 
 // nthSundayDay는 eastern.ts의 정규 원시 함수를 위임해 사용한다.
 // 하위 호환성을 위해 re-export한다 (기존 import 경로 유지).
@@ -87,69 +78,14 @@ function kstTimeLabelFormatter(
     return formatter;
 }
 
-const SPRING_FORWARD_MONTH = MARCH;
-const SPRING_FORWARD_NTH = SECOND_SUNDAY;
-const FALL_BACK_MONTH = NOVEMBER;
-const FALL_BACK_NTH = FIRST_SUNDAY;
-const DST_TRANSITION_LOCAL_HOUR = 2;
-
-/**
- * ET 로컬 벽시계 날짜·시각을 직접 받아 해당 시점의 ET UTC 오프셋을 반환한다.
- *
- * DST 전환 규칙(IANA America/New_York):
- * - Spring forward: 3월 두 번째 일요일 02:00 EST → 03:00 EDT (EST→EDT, UTC-5→UTC-4)
- * - Fall back:     11월 첫 번째 일요일 02:00 EDT → 01:00 EST (EDT→EST, UTC-4→UTC-5)
- *
- * 경계 처리:
- * - Spring 당일 00:00~01:59 → EST(-05:00); 02:00 이후 → EDT(-04:00)
- *   (02:00-02:59는 실제로 존재하지 않지만 EDT로 처리)
- * - Fall 당일 00:00~01:59 → EDT(-04:00); 02:00 이후 → EST(-05:00)
- *   (01:00-01:59는 중복 구간이지만 첫 발생=EDT로 처리)
- *
- * UTC 날짜 기반 Date 객체가 아닌 ET 로컬 컴포넌트로 직접 비교해
- * UTC→ET 변환 시 발생하는 오프셋 불일치 버그를 방지한다.
- */
-export function getEtOffset(
-    year: number,
-    month: number,
-    day: number,
-    hour: number
-): '-04:00' | '-05:00' {
-    const springDay = nthSundayDay(
-        year,
-        SPRING_FORWARD_MONTH,
-        SPRING_FORWARD_NTH
-    );
-    const fallDay = nthSundayDay(year, FALL_BACK_MONTH, FALL_BACK_NTH);
-
-    if (month < SPRING_FORWARD_MONTH || month > FALL_BACK_MONTH)
-        return '-05:00';
-
-    if (month === SPRING_FORWARD_MONTH) {
-        if (day < springDay) return '-05:00';
-        if (day === springDay && hour < DST_TRANSITION_LOCAL_HOUR)
-            return '-05:00';
-        return '-04:00';
-    }
-
-    if (month === FALL_BACK_MONTH) {
-        if (day < fallDay) return '-04:00';
-        if (day === fallDay && hour < DST_TRANSITION_LOCAL_HOUR)
-            return '-04:00';
-        return '-05:00';
-    }
-
-    return '-04:00';
-}
-
 /**
  * FMP `economic-calendar`의 `date`('YYYY-MM-DD HH:mm:ss')를 HTML `<time dateTime>`이
  * 인식하는 ISO-8601 인스턴트로 정규화한다.
  *
  * FMP 원본은 **UTC**다(존 마커 없음, 실측: "2026-09-16 18:00:00 Fed Interest Rate
  * Decision" = FOMC 14:00 EDT = 18:00 UTC). 예전 구현은 이걸 ET 벽시계로 오인해
- * `getEtOffset`으로 DST 오프셋을 붙였는데, 그러면 UTC 시각에 다시 -4/-5시간이
- * 빠져 항상 4~5시간 어긋난 절대 시각이 나온다. 그냥 `Z`를 붙이면 된다.
+ * DST 오프셋을 붙였는데, 그러면 UTC 시각에 다시 -4/-5시간이 빠져 항상 4~5시간
+ * 어긋난 절대 시각이 나온다. 그냥 `Z`를 붙이면 된다.
  */
 export function fmpCalendarDateTimeToIso(date: string): string {
     return `${date.replace(' ', 'T')}Z`;

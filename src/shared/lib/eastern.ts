@@ -20,8 +20,10 @@ export const EST_OFFSET_HOURS = -5 as const;
 /**
  * 해당 연도·월(0-indexed)의 N번째 일요일의 날짜(day-of-month)를 반환하는 정규 원시 함수.
  *
- * 세 DST 구현(eastern.ts, etTimeUtils.ts, FmpMarketProvider.ts)의 공통 기반이다.
- * etTimeUtils.getEtOffset와 FmpMarketProvider.getEtOffsetHours는 이 함수를 위임해 사용한다.
+ * 두 DST 구현(eastern.ts, FmpMarketProvider.ts)의 공통 기반이다.
+ * `FmpMarketProvider.getEtOffsetHours`는 이 함수를 위임해 사용하고, `etTimeUtils.ts`는
+ * 하위 호환 re-export만 유지한다(그 자체는 더는 DST 오프셋을 계산하지 않음 —
+ * economic-calendar 날짜는 UTC라 오프셋 계산이 불필요해졌다).
  *
  * @param year  - 연도
  * @param month - 0-indexed 월 (0 = January)

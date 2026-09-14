@@ -1,5 +1,5 @@
 import { getEasternOffsetHours } from '@/shared/lib/eastern';
-import { getEtOffset, nthSundayDay } from '@/shared/lib/etTimeUtils';
+import { nthSundayDay } from '@/shared/lib/etTimeUtils';
 
 describe('eastern', () => {
     describe('getEasternOffsetHours', () => {
@@ -141,55 +141,6 @@ describe('DST 경계 동치 핀 — 통합 전 실제 출력 캡처', () => {
             expect(
                 getEasternOffsetHours(new Date('2024-07-01T12:00:00Z'))
             ).toBe(-4);
-        });
-    });
-
-    describe('getEtOffset (etTimeUtils.ts) — ET 로컬 시각 기반, 시각 인식 경계', () => {
-        // 봄 전환일: 해당 연도·월·일에서 hour < 2 → EST, >= 2 → EDT
-        it('2024 봄 전환일(3/10) hour=1 → "-05:00" (02:00 전 EST)', () => {
-            expect(getEtOffset(2024, 2, 10, 1)).toBe('-05:00');
-        });
-        it('2024 봄 전환일(3/10) hour=2 → "-04:00" (02:00 이후 EDT)', () => {
-            expect(getEtOffset(2024, 2, 10, 2)).toBe('-04:00');
-        });
-        it('2024 봄 전환일(3/10) hour=3 → "-04:00"', () => {
-            expect(getEtOffset(2024, 2, 10, 3)).toBe('-04:00');
-        });
-        it('2024 봄 전환일(3/10) hour=9 → "-04:00" (장중 시각)', () => {
-            expect(getEtOffset(2024, 2, 10, 9)).toBe('-04:00');
-        });
-
-        // 가을 전환일: hour < 2 → EDT, >= 2 → EST
-        it('2024 가을 전환일(11/3) hour=1 → "-04:00" (02:00 전 EDT)', () => {
-            expect(getEtOffset(2024, 10, 3, 1)).toBe('-04:00');
-        });
-        it('2024 가을 전환일(11/3) hour=2 → "-05:00" (02:00 이후 EST)', () => {
-            expect(getEtOffset(2024, 10, 3, 2)).toBe('-05:00');
-        });
-        it('2024 가을 전환일(11/3) hour=9 → "-05:00" (장중 시각)', () => {
-            expect(getEtOffset(2024, 10, 3, 9)).toBe('-05:00');
-        });
-
-        // 2026: 1일이 일요일인 극단 케이스
-        it('2026 봄 전환일(3/8) hour=1 → "-05:00"', () => {
-            expect(getEtOffset(2026, 2, 8, 1)).toBe('-05:00');
-        });
-        it('2026 봄 전환일(3/8) hour=2 → "-04:00"', () => {
-            expect(getEtOffset(2026, 2, 8, 2)).toBe('-04:00');
-        });
-        it('2026 가을 전환일(11/1) hour=1 → "-04:00"', () => {
-            expect(getEtOffset(2026, 10, 1, 1)).toBe('-04:00');
-        });
-        it('2026 가을 전환일(11/1) hour=2 → "-05:00"', () => {
-            expect(getEtOffset(2026, 10, 1, 2)).toBe('-05:00');
-        });
-
-        // 비경계 날짜
-        it('비경계: 2024-07-01 hour=12 → "-04:00" (EDT)', () => {
-            expect(getEtOffset(2024, 6, 1, 12)).toBe('-04:00');
-        });
-        it('비경계: 2024-01-15 hour=12 → "-05:00" (EST)', () => {
-            expect(getEtOffset(2024, 0, 15, 12)).toBe('-05:00');
         });
     });
 });
