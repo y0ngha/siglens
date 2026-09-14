@@ -2,6 +2,17 @@
 export const TOOL_RESULT_MAX_CHARS = 4_000;
 
 /**
+ * `get_bars_indicators`' own ceiling — its `latest` block now covers ~16
+ * indicator groups plus `candlePatterns` (2026-09-14), pushing even the
+ * default-sized request past `TOOL_RESULT_MAX_CHARS` before `fitBarsToBudget`
+ * gets to trim a single bar. `tools/index.ts`'s `ceilingFor` must route this
+ * tool to this constant — otherwise the registry's generic
+ * `truncateToolResult(..., TOOL_RESULT_MAX_CHARS)` re-cuts the already-fit
+ * result down to 4,000 and collapses it into a front-cut preview blob.
+ */
+export const BARS_RESULT_MAX_CHARS = 6_000;
+
+/**
  * Cuts at `maxChars` UTF-16 code units, then backs off one more unit if that
  * lands mid-surrogate-pair (a lone high surrogate at the tail is invalid
  * UTF-16 and corrupts downstream JSON/text handling for emoji or rare CJK
@@ -87,18 +98,23 @@ export function truncateToolResult(
 
 /**
  * `get_cached_analysis` (and `run_fresh_analysis`, same shape) carries a whole analysis plus its plain-language
- * rewrite. Measured on production snapshots (2026-09-13): 3 of 7 popular
- * symbol/tab pairs exceeded 4,000 chars (AAPL technical 6,000, AAPL overall
- * 5,431, NVDA overall 8,297), so the model got a front-cut preview — the
- * plain rewrite and only ~900 chars of the actual analysis. Its own ceiling
- * keeps both whole.
+ * rewrite. Measured on production snapshots (2026-09-13, before
+ * `patterns`/`candlePatterns`/`strategies` were added to the technical
+ * projection): 3 of 7 popular symbol/tab pairs exceeded 4,000 chars (AAPL
+ * technical ~6,000, AAPL overall 5,431, NVDA overall ~8,300), so the model
+ * got a front-cut preview — the plain rewrite and only ~900 chars of the
+ * actual analysis. Raised 12,000 → 16,000 (2026-09-14) once those three
+ * fields joined the technical projection and pushed realistic payloads
+ * closer to the old ceiling again; its own ceiling keeps both the analysis
+ * and the plain rewrite whole.
  *
  * Nothing in core bounds the size of the CURRENT turn: history windowing
  * applies only to earlier turns, and every step resends the whole growing
- * message list (up to core's `AGENT_TURN_CAPS` steps / tool calls). So the larger ceiling is
- * paired with a per-turn allowance (`CACHED_ANALYSIS_TURN_BUDGET_CHARS`):
- * two full analyses per turn, after which further lookups fall back to the
- * default 4,000 cut.
+ * message list (up to core's `AGENT_TURN_CAPS` steps / tool calls) — so we
+ * do not raise this further without also reconsidering the per-turn
+ * allowance below. The larger ceiling is paired with a per-turn allowance
+ * (`CACHED_ANALYSIS_TURN_BUDGET_CHARS`): two full analyses per turn, after
+ * which further lookups fall back to the default 4,000 cut.
  */
-export const CACHED_ANALYSIS_MAX_CHARS = 12_000;
+export const CACHED_ANALYSIS_MAX_CHARS = 16_000;
 export const CACHED_ANALYSIS_TURN_BUDGET_CHARS = 2 * CACHED_ANALYSIS_MAX_CHARS;

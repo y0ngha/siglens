@@ -107,15 +107,27 @@ const REALISTIC_TECHNICAL_RESULT = {
             ),
     })),
     patternSummaries: Array.from({ length: 4 }, (_, i) => ({
-        pattern: `pattern-${i}`,
-        confidence: 0.8,
+        id: `pattern-${i}`,
+        patternName: `pattern-${i}`,
+        skillName: `skill-${i}`,
+        detected: true,
+        trend: 'bullish',
+        summary: `패턴 ${i}는 상승 반전 신호를 시사합니다. `.repeat(3),
+        confidenceWeight: 0.8 - i * 0.1,
     })),
     strategyResults: Array.from({ length: 3 }, (_, i) => ({
-        skill: `strategy-${i}`,
-        verdict: 'buy',
+        id: `strategy-${i}`,
+        strategyName: `strategy-${i}`,
+        trend: 'bullish',
+        summary: `전략 ${i}는 매수 우위를 나타냅니다. `.repeat(3),
+        confidenceWeight: 0.7 - i * 0.1,
     })),
     candlePatterns: Array.from({ length: 3 }, (_, i) => ({
-        pattern: `candle-${i}`,
+        id: `candle-${i}`,
+        patternName: `candle-${i}`,
+        detected: true,
+        trend: 'bullish',
+        summary: `캔들 패턴 ${i}가 감지되었습니다. `.repeat(3),
     })),
     trendlines: Array.from({ length: 2 }, (_, i) => ({ slope: i })),
 };
@@ -169,7 +181,12 @@ const REALISTIC_OPTIONS_RESULT = {
         expirationDate: `2026-0${(i % 9) + 1}-1${i % 9}`,
         commentary:
             `이 만기의 풋콜 비율은 낙관적인 포지셔닝을 시사하며, 최대 미결제약정 스트라이크는 현재가 부근에 형성되어 저항선 역할을 할 가능성이 있으며, 대형 기관 투자자들의 헤지 수요가 동시에 관찰되고 있습니다. 만기 ${i}. `.repeat(
-                5
+                // Raised 5 → 8 (2026-09-14, CACHED_ANALYSIS_MAX_CHARS
+                // 12,000 → 16,000): the old repeat count no longer forces
+                // an overflow at the larger ceiling, which let all 18
+                // expirations through unfitted instead of exercising the
+                // "drop trailing whole" path this fixture exists to catch.
+                8
             ),
         tone: 'bullish' as const,
     })),
@@ -386,6 +403,26 @@ describe('runFreshAnalysisTool', () => {
         expect(__activeStreamCount()).toBe(0);
     });
 
+    it('getAssetInfo가 throw해도 심볼을 회사명으로, fmpSymbol 없이 진행된다 (Promise.all이 통째로 reject하지 않는다)', async () => {
+        m.assetInfo.mockRejectedValue(new Error('db down'));
+        m.runAnalysis.mockResolvedValue({
+            status: 'done',
+            result: TECHNICAL_FIXTURE,
+        });
+        const result = await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'technical' },
+            ctx,
+            rt
+        );
+        expect(result).toMatchObject({ found: true });
+        const [symbol, companyName, , , fmpSymbol] =
+            m.runAnalysis.mock.calls[0]!;
+        expect(symbol).toBe('AAPL');
+        expect(companyName).toBe('AAPL');
+        expect(fmpSymbol).toBeUndefined();
+        expect(__activeStreamCount()).toBe(0);
+    });
+
     it('technical: 현실적인 크기의 결과도 절단 없이 핵심 필드가 살아남는다', async () => {
         m.runAnalysis.mockResolvedValue({
             status: 'done',
@@ -419,6 +456,27 @@ describe('runFreshAnalysisTool', () => {
         // The bulk offender must never reach the tool result.
         expect(r.analysis).not.toHaveProperty('indicatorResults');
         expect(r.analysis).not.toHaveProperty('patternSummaries');
+        expect(r.analysis).not.toHaveProperty('trendlines');
+        // Patterns/strategies/candle patterns survive the projection so the
+        // model can answer "is there a head-and-shoulders?" without the
+        // prose summary having to mention it.
+        const patterns = r.analysis.patterns as { name: string }[];
+        expect(patterns.length).toBe(
+            REALISTIC_TECHNICAL_RESULT.patternSummaries.length
+        );
+        expect(patterns[0]!.name).toBe(
+            REALISTIC_TECHNICAL_RESULT.patternSummaries[0]!.patternName
+        );
+        const strategies = r.analysis.strategies as { name: string }[];
+        expect(strategies.length).toBe(
+            REALISTIC_TECHNICAL_RESULT.strategyResults.length
+        );
+        const candlePatterns = r.analysis.candlePatterns as {
+            name: string;
+        }[];
+        expect(candlePatterns.length).toBe(
+            REALISTIC_TECHNICAL_RESULT.candlePatterns.length
+        );
     });
 
     it('overall: 현실적인 크기의 결과도 절단 없이 핵심 필드가 살아남는다', async () => {

@@ -1,24 +1,39 @@
 import 'server-only';
 import {
     classifyTrend,
+    detectCandlePatternEntries,
     detectSignals,
-    fetchBarsWithIndicators,
+    getDetectionBars,
+    type Bar,
     type IndicatorResult,
     type Timeframe,
 } from '@y0ngha/siglens-core';
+import { getCachedBarsWithIndicators } from '@/entities/bars/lib/barsDataCache';
+import { roundIndicators } from '@/entities/bars/lib/roundIndicators';
+import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile';
 import type { ToolExecutor } from './index';
-import { TOOL_RESULT_MAX_CHARS } from './truncate';
+import { BARS_RESULT_MAX_CHARS } from './truncate';
 
+/**
+ * Restored 20 → 30 (2026-09-14): this tool now fits against its own
+ * `BARS_RESULT_MAX_CHARS` (6,000, not the shared `TOOL_RESULT_MAX_CHARS`
+ * 4,000) — `fitBarsToBudget`'s trim loop already guarantees that ceiling
+ * for any `bars` the model requests, so the default no longer needs to
+ * shrink just to keep the common (unbudgeted) case comfortably under 4,000.
+ */
 const DEFAULT_BARS = 30;
 /**
  * The model controls `bars`. `0` would hit the `slice(-0)` trap (JS returns the
  * WHOLE array, not none), and a negative value slices from the wrong end.
  */
 const MAX_BARS = 200;
+
+/** Max candle pattern entries surfaced — the model reads the most recent formations, not a full history. */
+const MAX_CANDLE_PATTERNS = 5;
 
 function clampBars(raw: unknown): number {
     if (typeof raw !== 'number' || !Number.isFinite(raw)) return DEFAULT_BARS;
@@ -56,7 +71,7 @@ function fitBarsToBudget<T extends { bars: BarPoint[] }>(
     const MAX_ITERATIONS = 30;
     for (let i = 0; i < MAX_ITERATIONS && bars.length > 1; i++) {
         const serialized = JSON.stringify(buildResult(bars, barsTrimmed));
-        const overflow = serialized.length - TOOL_RESULT_MAX_CHARS;
+        const overflow = serialized.length - BARS_RESULT_MAX_CHARS;
         if (overflow <= 0) break;
         const perBar = Math.max(1, Math.ceil(serialized.length / bars.length));
         const drop = Math.min(
@@ -72,7 +87,27 @@ function fitBarsToBudget<T extends { bars: BarPoint[] }>(
 const last = <T>(arr: readonly T[] | undefined): T | null =>
     arr && arr.length > 0 ? arr[arr.length - 1]! : null;
 
+/** Picks a compact subset of fields from the latest entry of a per-bar indicator array. Tolerates a missing/empty array. */
+function lastPick<T, K extends keyof T>(
+    arr: readonly T[] | undefined,
+    keys: readonly K[]
+): Pick<T, K> | null {
+    const item = last(arr);
+    if (!item) return null;
+    const out = {} as Pick<T, K>;
+    for (const k of keys) out[k] = item[k];
+    return out;
+}
+
+/**
+ * Compact last-value view of every indicator core computes for the series —
+ * previously only RSI/MACD/Bollinger/ATR/MA/EMA reached the model, leaving
+ * ~30 other indicators (DMI, stochastic, CCI, MFI, Williams %R, VWAP,
+ * Ichimoku, Supertrend, Parabolic SAR, Squeeze Momentum, ...) invisible.
+ */
 function latestIndicators(ind: IndicatorResult) {
+    const supertrend = last(ind.supertrend);
+    const parabolicSar = last(ind.parabolicSar);
     return {
         rsi: last(ind.rsi),
         macd: last(ind.macd),
@@ -84,22 +119,74 @@ function latestIndicators(ind: IndicatorResult) {
         ema: Object.fromEntries(
             Object.entries(ind.ema).map(([p, s]) => [p, last(s)])
         ),
+        dmi: lastPick(ind.dmi, ['adx', 'diPlus', 'diMinus']),
+        stochastic: lastPick(ind.stochastic, ['percentK', 'percentD']),
+        cci: last(ind.cci),
+        mfi: last(ind.mfi),
+        williamsR: last(ind.williamsR),
+        vwap: last(ind.vwap),
+        ichimoku: lastPick(ind.ichimoku, [
+            'tenkan',
+            'kijun',
+            'senkouA',
+            'senkouB',
+        ]),
+        supertrend: supertrend
+            ? { value: supertrend.supertrend, trend: supertrend.trend }
+            : null,
+        parabolicSar: parabolicSar
+            ? { sar: parabolicSar.sar, trend: parabolicSar.trend }
+            : null,
+        squeezeMomentum: lastPick(ind.squeezeMomentum, ['momentum', 'sqzOn']),
     };
+}
+
+/** Same `t` formatting as `BarPoint.t` (`YYYY-MM-DDTHH:mm`) so a candle pattern's date lines up with the `bars` series. */
+const isoMinute = (unixSeconds: number): string =>
+    new Date(unixSeconds * 1000).toISOString().slice(0, 16);
+
+/**
+ * Detects candle patterns over the trailing window core scans
+ * (`getDetectionBars`) and maps each entry's window-relative `barIndex`
+ * back to the bar's date — `detectCandlePatternEntries`' `barIndex` is
+ * relative to that window, NOT the full `bars` series.
+ */
+function latestCandlePatterns(bars: Bar[]) {
+    const detectionBars = getDetectionBars(bars);
+    const entries = detectCandlePatternEntries(bars);
+    return entries.slice(-MAX_CANDLE_PATTERNS).map(entry => ({
+        date: isoMinute(detectionBars[entry.barIndex]!.time),
+        pattern: entry.singlePattern ?? entry.multiPattern,
+    }));
 }
 
 export const getBarsIndicatorsTool: ToolExecutor = async args => {
     const symbol = String(args.symbol).toUpperCase();
     const timeframe = args.timeframe as Timeframe;
     const count = clampBars(args.bars);
-    const profile = await resolveMarketProfile(symbol);
-    const { bars, indicators } = await fetchBarsWithIndicators(
-        getCachedMarketDataProvider(sessionSpecFor(profile)),
+    const [profile, asset] = await Promise.all([
+        resolveMarketProfile(symbol),
+        // A DB/FMP failure here must degrade to no `fmpSymbol`, not fail the
+        // whole tool call — `Promise.all` rejects as soon as ANY promise
+        // rejects, so an unwrapped `getAssetInfo` would sink the sibling
+        // `resolveMarketProfile` call too and fail bars+indicators outright.
+        // Same treatment applied to `runFreshAnalysis.ts`'s `getAssetInfo`
+        // call, where an unhandled rejection would otherwise fail the whole
+        // analysis instead of just falling back to the symbol as the
+        // company name.
+        getAssetInfo(symbol).catch(() => null),
+    ]);
+    const session = sessionSpecFor(profile);
+    const { bars, indicators } = await getCachedBarsWithIndicators(
+        getCachedMarketDataProvider(session),
         symbol,
-        timeframe
+        timeframe,
+        asset?.fmpSymbol,
+        session
     );
     if (bars.length === 0) return { symbol, timeframe, found: false };
     const requestedBars: BarPoint[] = bars.slice(-count).map(b => ({
-        t: new Date(b.time * 1000).toISOString().slice(0, 16),
+        t: isoMinute(b.time),
         o: b.open,
         h: b.high,
         l: b.low,
@@ -113,7 +200,10 @@ export const getBarsIndicatorsTool: ToolExecutor = async args => {
         direction: s.direction,
         phase: s.phase,
     }));
-    const latest = latestIndicators(indicators);
+    // Client-serialization-boundary rounding only, same as
+    // `getBarsAction.ts` — the cache still holds full-precision values.
+    const latest = latestIndicators(roundIndicators(indicators));
+    const candlePatterns = latestCandlePatterns(bars);
     const asOf = new Date(bars[bars.length - 1]!.time * 1000).toISOString();
 
     return fitBarsToBudget(
@@ -126,6 +216,7 @@ export const getBarsIndicatorsTool: ToolExecutor = async args => {
             trend,
             signals,
             latest,
+            candlePatterns,
             barsReturned: barsForOutput.length,
             barsTrimmed,
             bars: barsForOutput,

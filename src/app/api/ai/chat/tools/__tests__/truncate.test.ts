@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    CACHED_ANALYSIS_MAX_CHARS,
     fitToEscapedBudget,
     TOOL_RESULT_MAX_CHARS,
     truncateToolResult,
@@ -25,11 +26,16 @@ describe('truncateToolResult', () => {
     });
 
     it('호출부가 한도를 지정하면 그 한도로 판정·절단한다', () => {
-        const v = { text: 'x'.repeat(6_000) };
-        expect(truncateToolResult(v, 12_000)).toBe(v);
-        const out = truncateToolResult({ text: 'x'.repeat(13_000) }, 12_000);
+        const v = { text: 'x'.repeat(CACHED_ANALYSIS_MAX_CHARS / 2) };
+        expect(truncateToolResult(v, CACHED_ANALYSIS_MAX_CHARS)).toBe(v);
+        const out = truncateToolResult(
+            { text: 'x'.repeat(CACHED_ANALYSIS_MAX_CHARS + 1_000) },
+            CACHED_ANALYSIS_MAX_CHARS
+        );
         expect(out).toMatchObject({ truncated: true });
-        expect(JSON.stringify(out).length).toBeLessThanOrEqual(12_000);
+        expect(JSON.stringify(out).length).toBeLessThanOrEqual(
+            CACHED_ANALYSIS_MAX_CHARS
+        );
         expect(JSON.stringify(out).length).toBeGreaterThan(
             TOOL_RESULT_MAX_CHARS
         );

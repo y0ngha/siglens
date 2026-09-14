@@ -1,4 +1,5 @@
 import 'server-only';
+import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
@@ -7,7 +8,12 @@ import type { ToolExecutor } from './index';
 
 const MAX_SYMBOLS = 3;
 
-/** Per-symbol profile → session spec (KR = Yahoo, US/crypto = FMP). */
+/**
+ * Per-symbol profile → session spec (KR = Yahoo, US/crypto = FMP), quoted
+ * through `fmpSymbol` when the canonical symbol differs from the one the
+ * provider expects (e.g. indices). `quoteDelayMinutes` is surfaced so the
+ * model doesn't present a 20-minute-delayed KR quote as real-time.
+ */
 export const getQuoteTool: ToolExecutor = async args => {
     const symbols = (args.symbols as string[])
         .slice(0, MAX_SYMBOLS)
@@ -17,10 +23,15 @@ export const getQuoteTool: ToolExecutor = async args => {
     // quote in the same call.
     const settled = await Promise.allSettled(
         symbols.map(async symbol => {
-            const profile = await resolveMarketProfile(symbol);
+            const [profile, asset] = await Promise.all([
+                resolveMarketProfile(symbol),
+                // A DB/FMP failure degrades to querying by the canonical
+                // symbol rather than failing this symbol's quote.
+                getAssetInfo(symbol).catch(() => null),
+            ]);
             const quote = await getCachedMarketDataProvider(
                 sessionSpecFor(profile)
-            ).getQuote(symbol);
+            ).getQuote(asset?.fmpSymbol ?? symbol);
             if (quote === null) return { symbol, found: false };
             return {
                 symbol,
@@ -29,6 +40,7 @@ export const getQuoteTool: ToolExecutor = async args => {
                 changesPercentage: quote.changesPercentage,
                 currency: getDescriptor(profile).priceFormat.currency,
                 marketProfile: profile,
+                quoteDelayMinutes: getDescriptor(profile).quoteDelayMinutes,
             };
         })
     );
