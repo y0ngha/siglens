@@ -8,6 +8,7 @@ import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { naverAiCredentials } from '@/entities/news-article/api';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
+    AGGREGATE_RESULT_MAX_CHARS,
     BARS_RESULT_MAX_CHARS,
     CACHED_ANALYSIS_MAX_CHARS,
     CACHED_ANALYSIS_TURN_BUDGET_CHARS,
@@ -23,6 +24,10 @@ import { getOptionsSummaryTool } from './getOptionsSummary';
 import { getMyPortfolioTool } from './getMyPortfolio';
 import { runFreshAnalysisTool } from './runFreshAnalysis';
 import { webSearchTool } from './webSearch';
+import { getFundamentalsTool } from './getFundamentals';
+import { getMarketOverviewTool } from './getMarketOverview';
+import { getEconomyTool } from './getEconomy';
+import { getCongressTradesTool } from './getCongressTrades';
 import { isGuestSubject } from '../guestSubject';
 
 export interface ToolRuntime {
@@ -52,6 +57,10 @@ const EXECUTORS: Record<string, ToolExecutor> = {
     get_my_portfolio: getMyPortfolioTool,
     run_fresh_analysis: runFreshAnalysisTool,
     web_search: webSearchTool,
+    get_fundamentals: getFundamentalsTool,
+    get_market_overview: getMarketOverviewTool,
+    get_economy: getEconomyTool,
+    get_congress_trades: getCongressTradesTool,
 };
 
 /**
@@ -123,6 +132,8 @@ export function createToolExecutor(runtime: ToolRuntime): ExecuteTool {
         // here would re-cut an already-fit 6,000-char result down to 4,000
         // and collapse it into a front-cut preview blob.
         if (name === 'get_bars_indicators') return BARS_RESULT_MAX_CHARS;
+        if (name === 'get_market_overview' || name === 'get_economy')
+            return AGGREGATE_RESULT_MAX_CHARS;
         if (!isAnalysis(name)) return TOOL_RESULT_MAX_CHARS;
         return Math.max(
             TOOL_RESULT_MAX_CHARS,

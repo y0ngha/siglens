@@ -123,3 +123,27 @@ export const GlobeIcon = (p: IconProps) => (
         <path d="M3.5 12h17M12 3.5c2.5 2.6 3.5 5.4 3.5 8.5s-1 5.9-3.5 8.5c-2.5-2.6-3.5-5.4-3.5-8.5s1-5.9 3.5-8.5z" />
     </Icon>
 );
+export const BuildingIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <rect x="5" y="3.5" width="10" height="17" rx="1" />
+        <path d="M8 7h1M11 7h1M8 10.5h1M11 10.5h1M8 14h1M11 14h1M15 10v10.5h5V13a1.5 1.5 0 00-1.5-1.5H15" />
+    </Icon>
+);
+export const LayersIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <path d="M12 3.5L4 8l8 4.5L20 8z" />
+        <path d="M4 12l8 4.5L20 12M4 16l8 4.5L20 16" />
+    </Icon>
+);
+export const BankIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <path d="M4 9.5L12 4l8 5.5" />
+        <path d="M5 9.5h14M6 9.5v9M10 9.5v9M14 9.5v9M18 9.5v9M4 20.5h16" />
+    </Icon>
+);
+export const GavelIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <path d="M9 6.5l4 4M6 9.5l7 7M14 4l6 6M4 20l4-4" />
+        <path d="M11.5 8.5l-6 6" />
+    </Icon>
+);

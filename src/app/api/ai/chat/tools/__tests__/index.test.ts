@@ -76,10 +76,14 @@ describe('tool registry', () => {
         vi.unstubAllEnvs();
     });
 
-    it('가용 툴 8종(web_search는 키 있을 때만)', () => {
+    it('가용 툴 12종(web_search는 키 있을 때만)', () => {
         expect([...availableToolNames()].sort()).toEqual([
             'get_bars_indicators',
             'get_cached_analysis',
+            'get_congress_trades',
+            'get_economy',
+            'get_fundamentals',
+            'get_market_overview',
             'get_my_portfolio',
             'get_news',
             'get_options_summary',

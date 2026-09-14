@@ -5,10 +5,14 @@ import { useState, type ComponentType } from 'react';
 import type { ToolActivityItem } from '@/features/agent-chat';
 import { cn } from '@/shared/lib/cn';
 import {
+    BankIcon,
+    BuildingIcon,
     CandlesIcon,
     CheckIcon,
     ChevronDownIcon,
+    GavelIcon,
     GlobeIcon,
+    LayersIcon,
     NewsIcon,
     OptionsIcon,
     PortfolioIcon,
@@ -31,6 +35,10 @@ const ICON: Record<string, IconComponent> = {
     get_options_summary: OptionsIcon,
     get_my_portfolio: PortfolioIcon,
     web_search: GlobeIcon,
+    get_fundamentals: BuildingIcon,
+    get_market_overview: LayersIcon,
+    get_economy: BankIcon,
+    get_congress_trades: GavelIcon,
 };
 
 /** What the call was about — the symbol(s) or the search query, never raw JSON. */
@@ -78,6 +86,10 @@ export function ToolActivity({
         get_options_summary: t('ToolActivity.toolOptions'),
         get_my_portfolio: t('ToolActivity.toolPortfolio'),
         web_search: t('ToolActivity.toolWebSearch'),
+        get_fundamentals: t('ToolActivity.toolFundamentals'),
+        get_market_overview: t('ToolActivity.toolMarketOverview'),
+        get_economy: t('ToolActivity.toolEconomy'),
+        get_congress_trades: t('ToolActivity.toolCongressTrades'),
     };
     const labelOf = (name: string): string =>
         labels[name] ?? t('ToolActivity.toolOther');

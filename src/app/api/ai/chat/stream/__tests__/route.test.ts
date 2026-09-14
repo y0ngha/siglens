@@ -937,4 +937,73 @@ describe('POST /api/ai/chat/stream', () => {
         expect(toolEndFrame).not.toContain('SELECT');
         expect(toolEndFrame).toContain('tool_failed');
     });
+
+    describe('그라운딩 로그', () => {
+        it('답변에 어떤 tool 결과에도 없는 숫자가 있으면 경고만 남기고 답변은 그대로 저장된다', async () => {
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            m.runTurn.mockResolvedValue({
+                ...OK_TURN,
+                assistant: {
+                    role: 'assistant',
+                    content: 'AAPL은 현재 $9,999.99입니다.',
+                },
+                intermediate: [
+                    {
+                        role: 'tool',
+                        content: '{"symbol":"AAPL","price":230.5}',
+                        toolCallId: 't1',
+                        toolName: 'get_quote',
+                    },
+                ],
+            });
+            const res = await POST(
+                post({ conversationId: 'c1', message: 'x' })
+            );
+            await frames(res);
+            const call = warn.mock.calls.find(
+                c => c[0] === '[agent] ungrounded numbers'
+            );
+            expect(call).toBeDefined();
+            const payload = call![1] as {
+                count: number;
+                sample: string[];
+                promptVersion: string;
+            };
+            expect(payload.count).toBeGreaterThan(0);
+            expect(payload.sample.length).toBeGreaterThan(0);
+            expect(payload.promptVersion).toBe(OK_TURN.promptVersion);
+            // The answer itself is never altered by the grounding check.
+            const saved = m.repo.appendMessages.mock.calls.at(-1)![1] as Array<{
+                content: string;
+            }>;
+            expect(saved.at(-1)!.content).toBe('AAPL은 현재 $9,999.99입니다.');
+            warn.mockRestore();
+        });
+
+        it('답변 속 숫자가 전부 tool 결과에 있으면 경고를 남기지 않는다', async () => {
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            m.runTurn.mockResolvedValue({
+                ...OK_TURN,
+                assistant: {
+                    role: 'assistant',
+                    content: 'AAPL은 현재 230.5입니다.',
+                },
+                intermediate: [
+                    {
+                        role: 'tool',
+                        content: '{"symbol":"AAPL","price":230.5}',
+                        toolCallId: 't1',
+                        toolName: 'get_quote',
+                    },
+                ],
+            });
+            await frames(
+                await POST(post({ conversationId: 'c1', message: 'x' }))
+            );
+            expect(
+                warn.mock.calls.some(c => c[0] === '[agent] ungrounded numbers')
+            ).toBe(false);
+            warn.mockRestore();
+        });
+    });
 });

@@ -545,10 +545,39 @@ interface Body {
 응답의 저장 상태를 정한다 — `deadline`/`aborted`는 `aborted`, 나머지(`turn_limit` 등)는
 `error`.
 
+**툴 카탈로그** — 스펙(`AGENT_TOOL_SPECS`, core)은 이름·설명·입력 스키마를 정의하고,
+실행기는 전부 siglens 쪽(`src/app/api/ai/chat/tools/*`)에 있다. 결과는
+`truncate.ts`의 `ceilingFor`로 자른다(기본 `TOOL_RESULT_MAX_CHARS`=4,000자,
+`get_bars_indicators`=6,000, `get_market_overview`/`get_economy`=6,000,
+`get_cached_analysis`/`run_fresh_analysis`=최대 16,000·턴당 32,000 예산).
+
+| 툴 | 데이터 출처 |
+|---|---|
+| `search_ticker` | 종목 검색(자체 DB + FMP) |
+| `get_quote` | 시세 provider(FMP/yahoo, 세션별 캐시) |
+| `get_bars_indicators` | 봉 데이터 + core 지표 계산 |
+| `get_cached_analysis` | Redis peek → SEO 스냅샷 → 분석 이력(DB) |
+| `run_fresh_analysis` | core 분석 엔진 신규 실행(최대 250초) |
+| `get_news` | 뉴스 DB(`market-news`/`news-article`) |
+| `get_options_summary` | 옵션 체인 스냅샷(yahoo, 캐시) |
+| `get_fundamentals` | FMP(미국)/yahoo(한국) 펀더멘털 provider — 밸류에이션·수익성·성장·재무건전성·애널리스트 컨센서스 |
+| `get_market_overview` | 시장 공포·탐욕 지수 + 지수/섹터 요약 + (미국만) 섹터 신호 스캔, 전부 1h 캐시 |
+| `get_economy` | 매크로 지표·국채 금리·경제 캘린더(24h 캐시) + 매크로 브리핑 캐시 |
+| `get_congress_trades` | 의회 거래 공시(FMP) |
+| `get_my_portfolio` | 회원 보유종목(DB) — 회원 전용 |
+| `web_search` | Brave/네이버 검색(키 있을 때만 노출) |
+
 **관측**: 턴마다 `[Agent]` JSON 라인 1건(`conversationId`·`userId`·`steps`·
 `toolCalls: [{name, ms, status}]`·`ms`·`stopReason`), 프로바이더 호출마다 `[Usage]` JSON
 라인(`jobId: "agent"`) — 자세한 필드는 `src/entities/llm-provider/lib/usage.ts`. 킬
 스위치·알람은 `docs/architecture/DEPLOY_RUNBOOK.md` §3.5.
+
+성공한 턴마다 `stream/route.ts`가 core의 `findUngroundedNumbers(answer, toolResults)`로
+최종 답변의 숫자가 그 턴의 tool 결과 어디에도 없는지 확인하고, 있으면 로그만 남긴다:
+`[agent] ungrounded numbers` JSON 라인(`count`·`sample`(최대 5개)·`promptVersion`).
+답변 자체는 절대 바꾸지 않고, 이 확인이 실패해도(예외) 턴은 그대로 성공 처리된다
+(try/catch로 감쌈). 비용 때문에 CloudWatch 메트릭 필터·알람은 의도적으로 만들지
+않았다 — 로그 검색으로만 확인한다.
 
 ## SSO 핸드오프 — `GET /api/auth/handoff` · `GET /api/auth/handoff/consume`
 

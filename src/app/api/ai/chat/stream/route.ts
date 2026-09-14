@@ -5,6 +5,7 @@ import {
     AGENT_LIMITS,
     agentLimit,
     CounterStoreUnavailableError,
+    findUngroundedNumbers,
     hashClientIp,
     runAgentTurn,
     type Tier,
@@ -565,6 +566,29 @@ export async function POST(request: Request): Promise<Response> {
                             }
                         }
                         throw new AgentTurnError(result.error);
+                    }
+                    // Log-only grounding check: flags numbers in the final
+                    // answer that don't trace back to any tool result this
+                    // turn. Never alters the answer and must never throw —
+                    // a false positive/negative here is a telemetry gap, not
+                    // a reason to fail an otherwise-successful turn.
+                    try {
+                        const toolResults = result.intermediate
+                            .filter(m => m.role === 'tool')
+                            .map(m => m.content);
+                        const ungrounded = findUngroundedNumbers(
+                            result.assistant.content,
+                            toolResults
+                        );
+                        if (ungrounded.length > 0) {
+                            console.warn('[agent] ungrounded numbers', {
+                                count: ungrounded.length,
+                                sample: ungrounded.slice(0, 5),
+                                promptVersion: result.promptVersion,
+                            });
+                        }
+                    } catch (error) {
+                        console.error('[agent] grounding check failed:', error);
                     }
                     const rowsToSave: NewChatMessage[] = [
                         ...result.intermediate.map(m => ({

@@ -66,4 +66,24 @@ describe('relatedSymbolPages', () => {
             ).map(p => p.symbol)
         ).toEqual(['A', 'B']);
     });
+
+    it('get_fundamentals points at the fundamental tab, get_congress_trades at congress', () => {
+        expect(
+            relatedSymbolPages([tool('get_fundamentals', { symbol: 'AAPL' })])
+        ).toEqual([{ symbol: 'AAPL', tab: 'fundamental' }]);
+        expect(
+            relatedSymbolPages([
+                tool('get_congress_trades', { symbol: 'AAPL' }),
+            ])
+        ).toEqual([{ symbol: 'AAPL', tab: 'congress' }]);
+    });
+
+    it('get_market_overview/get_economy name no symbol and are skipped', () => {
+        expect(
+            relatedSymbolPages([
+                tool('get_market_overview', { market: 'us' }),
+                tool('get_economy', {}),
+            ])
+        ).toEqual([]);
+    });
 });

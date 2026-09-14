@@ -13,6 +13,20 @@ export const TOOL_RESULT_MAX_CHARS = 4_000;
 export const BARS_RESULT_MAX_CHARS = 6_000;
 
 /**
+ * `get_market_overview` / `get_economy` ceiling. Measured on representative
+ * worst-case fixtures (2026-09-14): a full US signal scan (15 sectors, 10
+ * capped top signals, long tickers/labels) serializes to ~3,460 chars;
+ * a dense macro week (9 indicators, 10 capped calendar events, a two-
+ * paragraph Korean briefing) serializes to ~3,670 chars. Both already cap
+ * their list lengths by construction (`topSignals`/`upcomingCalendar`), so
+ * this ceiling is headroom against the JSON envelope, not a rescue for an
+ * unbounded list. `get_fundamentals` and `get_congress_trades` fit
+ * comfortably under the shared `TOOL_RESULT_MAX_CHARS` default (~830 and
+ * ~2,500 chars respectively) and do not need their own ceiling.
+ */
+export const AGGREGATE_RESULT_MAX_CHARS = 6_000;
+
+/**
  * Cuts at `maxChars` UTF-16 code units, then backs off one more unit if that
  * lands mid-surrogate-pair (a lone high surrogate at the tail is invalid
  * UTF-16 and corrupts downstream JSON/text handling for emoji or rare CJK
