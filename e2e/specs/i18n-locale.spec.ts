@@ -48,8 +48,9 @@ test.describe('로케일 라우팅', () => {
     });
 
     test('언어 스위처가 경로를 유지한 채 로케일을 바꾼다', async ({ page }) => {
-        // 스위처를 다시 감추면(`LOCALE_SWITCHER_VISIBLE=false`) 이 테스트만 건너뛴다.
-        // 라우팅·카탈로그·AI 출력 언어는 위 테스트들이 계속 지킨다.
+        // 스위처는 현재 제품 결정으로 숨겨져 있다(한국어 고정). 라우팅·카탈로그·AI
+        // 출력 언어는 그대로 살아 있으므로 위 테스트들이 계속 실질 위험을 지킨다.
+        // `LOCALE_SWITCHER_VISIBLE`을 다시 켜면 이 테스트도 함께 살아난다.
         test.skip(
             !LOCALE_SWITCHER_VISIBLE,
             '언어 스위처가 숨김 상태 — LOCALE_SWITCHER_VISIBLE=false'
